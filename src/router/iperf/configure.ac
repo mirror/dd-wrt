@@ -24,7 +24,8 @@
 # file for complete information.
 
 # Initialize the autoconf system for the specified tool, version and mailing list
-AC_INIT(iperf, 3.1.7, https://github.com/esnet/iperf, iperf, http://software.es.net/iperf/)
+AC_INIT(iperf, 3.2, https://github.com/esnet/iperf, iperf, http://software.es.net/iperf/)
+m4_include([config/ax_check_openssl.m4])
 AC_LANG(C)
 
 # Specify where the auxiliary files created by configure should go. The config
@@ -69,12 +70,6 @@ echo "nanosleep() required for timing operations."
 exit 1
 ])
 
-# Solaris puts hstrerror in -lresolv
-AC_SEARCH_LIBS(hstrerror, [resolv], [], [
-echo "nanosleep() required for timing operations."
-exit 1
-])
-
 # On illumos we need -lsocket
 AC_SEARCH_LIBS(socket, [socket], [], [
 echo "socket()"
@@ -90,6 +85,9 @@ exit 1
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 
+# Check for poll.h (it's in POSIX so everyone should have it?)
+AC_CHECK_HEADERS([poll.h])
+
 # Check for SCTP support
 AC_CHECK_HEADERS([sys/socket.h])
 AC_CHECK_HEADERS([netinet/sctp.h],
@@ -102,6 +100,14 @@ AC_CHECK_HEADERS([netinet/sctp.h],
 #include <sys/socket.h>
 #endif
 ])
+
+# Check for OPENSSL support
+AX_CHECK_OPENSSL(
+	AC_DEFINE([HAVE_SSL], [1], [OpenSSL Is Available])
+)
+LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
+LIBS="$OPENSSL_LIBS $LIBS"
+CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
 
 # Check for TCP_CONGESTION sockopt (believed to be Linux and FreeBSD only)
 AC_CACHE_CHECK([TCP_CONGESTION socket option],
