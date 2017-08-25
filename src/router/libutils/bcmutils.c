@@ -17,6 +17,7 @@
 #include <netinet/in.h>
 #include <stdarg.h>
 #include <sys/ioctl.h>
+#undef _LINUX_KERNEL_H
 #include <sys/sysinfo.h>
 #include <arpa/inet.h>
 #include <netdb.h>
