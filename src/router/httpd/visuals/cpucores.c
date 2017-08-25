@@ -299,11 +299,11 @@ static struct CPUFEATURES cpufeatures[] = {
 	{"Features", "java", "JAVA"},
 //mips
 
-	{"isa", "mips1", "MIPS1"},
+/*	{"isa", "mips1", "MIPS1"},
 	{"isa", "mips2", "MIPS2"},
 	{"isa", "mips3", "MIPS3"},
 	{"isa", "mips4", "MIPS4"},
-	{"isa", "mips5", "MIPS5"},
+	{"isa", "mips5", "MIPS5"},*/
 	{"isa", "mips32r1", "MIPS32r1"},
 	{"isa", "mips32r2", "MIPS32r2"},
 	{"isa", "mips32r6", "MIPS32r6"},
