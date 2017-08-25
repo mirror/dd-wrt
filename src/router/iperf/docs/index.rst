@@ -9,7 +9,7 @@ iperf3
 iperf is a tool for active measurements of the maximum achievable
 bandwidth on IP networks.  It supports tuning of various parameters
 related to timing, protocols, and buffers.  For each test it reports
-the bandwidth, loss, and other parameters.
+the measured throughput, loss, and other parameters.
 
 This version, sometimes referred to as iperf3, is a redesign of an
 original version developed at NLANR / DAST.  iperf3 is a new
@@ -21,8 +21,8 @@ original iperf.  These include, for example, a zero-copy mode and
 optional JSON output.  Note that iperf3 is *not* backwards compatible
 with the original iperf.
 
-Primary development for iperf3 takes place on CentOS 6 Linux, FreeBSD
-10, and MacOS 10.10.  At this time, these are the only officially
+Primary development for iperf3 takes place on CentOS 7 Linux, FreeBSD
+10, and MacOS 10.12.  At this time, these are the only officially
 supported platforms, however there have been some reports of success
 with OpenBSD, Android, and other Linux distributions.
 
@@ -53,6 +53,7 @@ Contents
    building
    invoking
    dev
+   faq
 
 Indices and tables
 ------------------
