@@ -630,9 +630,17 @@ backward:
 				stackSize = abs((short)(v & 0xffff));
 				airbag_printf("%s[0x%" FMTBIT "lx]: stack size %u\n", comment, addr, stackSize);
 				break;
+			case 0x67bd0000:	/* daddiu   sp,sp,??? */
+				stackSize = abs((short)(v & 0xffff));
+				airbag_printf("%s[0x%" FMTBIT "lx]: stack size %lu\n", comment, addr, stackSize);
+				break;
 			case 0xafbf0000:	/* sw      ra,???(sp) */
 				raOffset = (v & 0xffff);
-				airbag_printf("%s[0x%" FMTBIT "lx]: ra offset %u\n", comment, addr, raOffset);
+				airbag_printf("%s[0x%" FMTBIT "lx]: ra offset %lu\n", comment, addr, raOffset);
+				break;
+			case 0xffbf0000:	/* ld     ra,???(sp) */
+				raOffset = (v & 0xffff);
+				airbag_printf("%s[0x%" FMTBIT "lx]: ra offset %lu\n", comment, addr, raOffset);
 				break;
 			case 0x3c1c0000:	/* lui     gp,??? */
 				return depth + 1;
