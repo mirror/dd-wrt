@@ -267,7 +267,6 @@ char *getTXQ(char *ifname)
 	return txq;
 }
 
-
 int check_vlan_support(void)
 {
 #if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_MAGICBOX)  || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
@@ -6330,7 +6329,6 @@ int has_gateway(void)
 	return 0;
 }
 
-
 int writeproc(char *path, char *value)
 {
 	int fd;
@@ -6607,7 +6605,7 @@ int writestr(char *path, char *a)
 	return 0;
 }
 
-#define PER_MAC_LEN	18      // contain '\0'
+#define PER_MAC_LEN	18	// contain '\0'
 
 static void s_MAC_ADD(char *mac, int inc)
 {
@@ -6662,7 +6660,6 @@ void MAC_SUB(char *mac)
 	s_MAC_ADD(mac, -1);
 }
 
-
 int buf_to_file(char *path, char *buf)
 {
 	FILE *fp;
@@ -6675,4 +6672,3 @@ int buf_to_file(char *path, char *buf)
 
 	return 0;
 }
-

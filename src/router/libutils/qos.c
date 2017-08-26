@@ -89,7 +89,6 @@ char *qos_nfmark(uint32 x)
 	return get_NFServiceMark("QOS", x);
 }
 
-
 char
 *get_wshaper_dev(void)
 {
@@ -98,6 +97,7 @@ char
 	else
 		return "br0";
 }
+
 static char *my_getBridgeMTU(const char *ifname, char *word)
 {
 	char *next, *wordlist;
