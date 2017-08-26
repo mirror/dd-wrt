@@ -38,7 +38,6 @@ static char *stalist[] = {
 	"ath0", "ath1", "ath2", "ath3", "ath4", "ath5", "ath6", "ath8", "ath9"
 };
 
-
 char *getWifi(char *ifname)
 {
 #ifdef HAVE_MVEBU
@@ -63,7 +62,6 @@ char *getWifi(char *ifname)
 	return NULL;
 #endif
 }
-
 
 char *get_wl_instance_name(int instance)
 {
@@ -139,8 +137,6 @@ char *getWET(void)
 	}
 	return NULL;
 }
-
-
 
 #else
 char *get_wl_instance_name(int instance)

@@ -836,7 +836,7 @@ int check_action(void)
 			return ACT_WEBS_UPGRADE;
 		}
 #endif
-		 else if (!strcmp(buf, "ACT_SW_RESTORE")) {
+		else if (!strcmp(buf, "ACT_SW_RESTORE")) {
 			fprintf(stderr, "Receiving restore command from web ...\n");
 			return ACT_SW_RESTORE;
 		} else if (!strcmp(buf, "ACT_HW_RESTORE")) {
