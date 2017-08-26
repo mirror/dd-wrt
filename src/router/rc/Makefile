@@ -1026,6 +1026,7 @@ ifneq ($(CONFIG_RT2880),y)
 	install wland $(INSTALLDIR)/sbin	
 endif
 	install init $(INSTALLDIR)/sbin	
+	install resetbutton $(INSTALLDIR)/sbin	
 ifeq ($(CONFIG_QTN),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc qtn_monitor
 endif
