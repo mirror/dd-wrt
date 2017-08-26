@@ -34,9 +34,39 @@ int get_wl_instance(char *name)
 
 #elif HAVE_MADWIFI
 
+static char *stalist[] = {
+	"ath0", "ath1", "ath2", "ath3", "ath4", "ath5", "ath6", "ath8", "ath9"
+};
+
+
+char *getWifi(char *ifname)
+{
+#ifdef HAVE_MVEBU
+	if (!strncmp(ifname, "ath0", 4))
+		return "wlan0";
+	if (!strncmp(ifname, "ath1", 4))
+		return "wlan1";
+	if (!strncmp(ifname, "ath2", 4))
+		return "wlan2";
+	if (!strncmp(ifname, "ath3", 4))
+		return "wlan3";
+	return NULL;
+#else
+	if (!strncmp(ifname, "ath0", 4))
+		return "wifi0";
+	if (!strncmp(ifname, "ath1", 4))
+		return "wifi1";
+	if (!strncmp(ifname, "ath2", 4))
+		return "wifi2";
+	if (!strncmp(ifname, "ath3", 4))
+		return "wifi3";
+	return NULL;
+#endif
+}
+
 char *get_wl_instance_name(int instance)
 {
-	return "ath0";
+	return stalist[instance];
 }
 
 int get_wl_instances(void)

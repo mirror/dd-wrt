@@ -93,9 +93,9 @@ OBJS := utils.o
 ifeq ($(CONFIG_RT2880),y)
 OBJS += utils.o crypt.save des.save md5.save
 endif
-OBJS += wl_basic.o linux_timer.o gpio.o md5c.o crc.o nvparse.o bcmutils.o linux_osl.o airbag.o
+OBJS += linux_timer.o gpio.o md5c.o crc.o nvparse.o bcmutils.o linux_osl.o airbag.o
 SHOBJS =  timezones.o shutils.o sha1.o
-WOBJS := wl.o wl_linux.o country.o wl_macfuncs.o
+WOBJS := wl.o wl_basic.o wl_linux.o country.o wl_macfuncs.o
 
 #defaults.o
 ifeq ($(CONFIG_MAGICBOX),y)
@@ -1459,17 +1459,6 @@ clean:
 	rm -f *.c~
 	rm -f $(TOP)/private/telkom/*.o
 
-
-
-libutils.so: $(OBJS)
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils $(QTNFLAGS)
-
-libshutils.so: $(SHOBJS)
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram
-
-mchillispot.o: $(TOP)/private/telkom/mchillispot.c
-	$(CC) -DNEED_PRINTF -I$(TOP)/jansson/src $(ATH9KCFLAGS) $(MIPS16_OPT) -c -o $@ $^
-
 madwififiles:
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 	$(CC) -shared -c $(NCFLAGS) $(MIPS16_OPT) $(NFILES)
@@ -1485,6 +1474,17 @@ endif
 
 libwireless.so: $(WOBJS) madwififiles ath9kfiles
 	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $(WOBJS) $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram -L. -lshutils $(WLDFLAGS) $(ATH9KLDFLAGS)
+
+
+libutils.so: $(OBJS) libwireless.so
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils -lwireless $(QTNFLAGS)
+
+libshutils.so: $(SHOBJS)
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram
+
+mchillispot.o: $(TOP)/private/telkom/mchillispot.c
+	$(CC) -DNEED_PRINTF -I$(TOP)/jansson/src $(ATH9KCFLAGS) $(MIPS16_OPT) -c -o $@ $^
+
 
 
 libutils.a: $(OBJS)

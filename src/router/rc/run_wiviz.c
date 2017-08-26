@@ -8,7 +8,7 @@
 #include <utils.h>
 #include <bcmnvram.h>
 
-int run_wiviz_main(int argc, char **argv)
+static int run_wiviz_main(int argc, char **argv)
 {
 	pid_t pid;
 

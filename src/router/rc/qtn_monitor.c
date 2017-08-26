@@ -136,7 +136,7 @@ void rpc_parse_nvram_from_httpd(void)
 //      rpc_show_config();
 }
 
-int qtn_monitor_main(int argc, char *argv[])
+static int qtn_monitor_main(int argc, char *argv[])
 {
 	FILE *fp;
 	sigset_t sigs_to_catch;
