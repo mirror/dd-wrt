@@ -131,7 +131,7 @@ static void watchdog(void)
 #endif
 		}
 #ifdef HAVE_MVEBU
-		if (getRouterBrand() == ROUTER_WRT_1900AC) {
+		if (brand == ROUTER_WRT_1900AC) {
 			int cpu;
 			FILE *tempfp;
 			tempfp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");

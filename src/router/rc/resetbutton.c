@@ -57,6 +57,7 @@
 
 static unsigned int *page;
 static int fd;
+static int brand;
 
 static void init_gpio()
 {
@@ -154,7 +155,7 @@ static int getbuttonstate()
 static int getbuttonstate()
 {
 	int ret;
-	if (getRouterBrand() == ROUTER_WRT_1900AC)
+	if (brand == ROUTER_WRT_1900AC)
 		ret = get_gpio(33);
 	else
 		ret = get_gpio(29);
@@ -170,7 +171,7 @@ static int getbuttonstate()
 static int getbuttonstate()
 {
 	int ret = 0;
-	switch (getRouterBrand()) {
+	switch (brand) {
 	case ROUTER_LINKSYS_EA8500:
 		ret = get_gpio(68);
 		break;
@@ -190,7 +191,6 @@ static int getbuttonstate()
 #elif defined(HAVE_UBNTM)
 static int getbuttonstate()
 {
-	int brand = getRouterBrand();
 	if (brand == ROUTER_UBNT_UAPAC)
 		return !get_gpio(2);
 	return !get_gpio(12);
@@ -598,7 +598,6 @@ static int isCompex(void)
 static int isGW2369(void)
 {
 
-	int brand = getRouterBrand();
 	if (brand == ROUTER_BOARD_GATEWORX_GW2369)
 		return 1;
 	return 0;
@@ -660,7 +659,6 @@ static int wifi5_pushed = 0;
 static int initses = 1;
 #endif
 
-static int brand;
 
 static void resetbtn_alarmtimer(unsigned long sec, unsigned long usec)
 {
@@ -1100,7 +1098,7 @@ static void resetbtn_period_check(int sig)
 	val |= get_gpio(8) << 8;	//aoss pushbutton
 #elif defined(HAVE_MVEBU)
 	sesgpio = 0x101;
-	if (getRouterBrand() == ROUTER_WRT_1900AC)
+	if (brand == ROUTER_WRT_1900AC)
 		val |= get_gpio(32) << 1;	//aoss pushbutton
 	else
 		val |= get_gpio(24) << 1;	//aoss pushbutton
