@@ -1,5 +1,4 @@
 /*
-
  * qos.c
  *
  * Copyright (C) 2017 Sebastian Gottschall <gottschall@dd-wrt.com>
