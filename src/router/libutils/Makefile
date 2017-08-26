@@ -93,9 +93,9 @@ OBJS := utils.o
 ifeq ($(CONFIG_RT2880),y)
 OBJS += utils.o crypt.save des.save md5.save
 endif
-OBJS += wl_basic.o linux_timer.o wl_linux.o gpio.o md5c.o crc.o nvparse.o bcmutils.o linux_osl.o airbag.o
-SHOBJS = sha1.o country.o
-WOBJS := wl.o wl_macfuncs.o
+OBJS += wl_basic.o linux_timer.o gpio.o md5c.o crc.o nvparse.o bcmutils.o linux_osl.o airbag.o
+SHOBJS =  timezones.o shutils.o sha1.o
+WOBJS := wl.o wl_linux.o country.o wl_macfuncs.o
 
 #defaults.o
 ifeq ($(CONFIG_MAGICBOX),y)
@@ -202,7 +202,7 @@ CFLAGS += -DHAVE_MADWIFI -I../services/networking -I../madwifi.dev/madwifi.dev -
 endif
 WLDFLAGS = -L $(TOP)/wireless-tools -liw
 else
-WLDFLAGS = -lutils
+#WLDFLAGS = -lutils
 endif
 
 
@@ -1464,7 +1464,7 @@ clean:
 libutils.so: $(OBJS)
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils $(QTNFLAGS)
 
-libshutils.so: timezones.o shutils.o $(SHOBJS)
+libshutils.so: $(SHOBJS)
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram
 
 mchillispot.o: $(TOP)/private/telkom/mchillispot.c

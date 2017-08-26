@@ -1209,7 +1209,6 @@ struct arph {
 #define ARP_HLEN	sizeof(struct arph) + ETH_HLEN
 #define BCAST		"\xff\xff\xff\xff\xff\xff"
 
-int gratarp_main(char *iface);
 
 int writeproc(char *path, char *value);
 int writeprocsysnet(char *path, char *value);
