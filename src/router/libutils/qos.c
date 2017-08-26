@@ -25,6 +25,71 @@
 #include <shutils.h>
 
 #ifdef HAVE_SVQOS
+/* NF Mark/Mask
+ *
+ * since multiple services needs a NF packet mark,
+ * we need to use masks to split the 32bit value into several pieces
+ *
+ *                                             31       23       15       7      0
+ * port_forwards         1 bit(s) offset 31  > 10000000 00000000 00000000 00000000
+ * hotspot				 8 bit(s) offset 23  > 01111111 10000000 00000000 00000000
+ * quality of service   13 bit(s) offset 10  > 00000000 01111111 11111100 00000000
+ *
+ * the remaining 11 bits are currently not in use
+ */
+
+struct NF_MASKS {
+	char *service_name;	// name of the service
+	int bits_used;		// bits used by this service
+	int bit_offset;		// position of the fist bit 
+};
+
+static struct NF_MASKS service_masks[] = {
+	{"FORWARD", 1, 31},
+	{"HOTSPOT", 8, 23},
+	{"QOS", 13, 10},
+};
+
+char *get_NFServiceMark(char *service, uint32 mark)
+{
+	static char buffer[32];
+	bzero(&buffer, sizeof(buffer));
+
+#if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
+// no mask support possible in kernel 2.4
+	sprintf(buffer, "0x%x", mark);
+	return buffer;
+#else
+	int x, offset, bitpos;
+	uint32 nfmark = 0, nfmask = 0;
+
+	for (x = 0; x < sizeof(service_masks) / sizeof(struct NF_MASKS); x++) {
+		if (strcmp(service, service_masks[x].service_name) == 0) {
+			if (mark >= (1 << service_masks[x].bits_used))
+				return "0xffffffff/0xffffffff";
+
+			offset = service_masks[x].bit_offset;
+			bitpos = offset + service_masks[x].bits_used - 1;
+
+			nfmark = (mark << offset);
+
+			for (; bitpos >= offset; bitpos--)
+				nfmask |= (1 << bitpos);
+
+			sprintf(buffer, "0x%x/0x%x", nfmark, nfmask);
+			return buffer;
+		}
+	}
+	return "0xffffffff/0xffffffff";
+#endif
+}
+
+char *qos_nfmark(uint32 x)
+{
+	return get_NFServiceMark("QOS", x);
+}
+
+
 char
 *get_wshaper_dev(void)
 {
