@@ -20,7 +20,7 @@ endif
 CFG_BCMIGD ?= 1
 
 UPNP	:= $(TOP)/upnp/src/linux
-CFLAGS += -Os -s -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
+CFLAGS += $(COPTS) -s -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 ifeq ($(strip $(CFG_BCMIGD)),1)
 CFLAGS  += -D__BCMIGD__
 endif
@@ -44,7 +44,7 @@ endif
 endif
 
 CFLAGS += $(MIPS16_OPT)
-LDFLAGS += $(MIPS16_OPT)
+LDFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 ifeq ($(CONFIG_TIEXTRA1),y)
 ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
 ifeq ($(ARCHITECTURE),openrisc)

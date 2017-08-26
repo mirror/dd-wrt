@@ -74,8 +74,10 @@ SOURCES.OBJ := $(patsubst %.c,$(OBJDIR)/%.o,$(SOURCES.OBJ))
 
 TARGET = upnp
 LIBS = -L$(UPNPBASE) -L$(TOP)/netconf -L$(TOP)/libutils -L$(TOP)/iptables/libiptc \
-	-L$(TOP)/nvram -L$(TOP)/shared -lupnp -lnetconf -lutils -lshutils -lnvram -liptc $(ADDLIBS)
-
+	-L$(TOP)/nvram -L$(TOP)/shared -lupnp -lnetconf -lutils -lshutils -lnvram -lwireless -liptc $(ADDLIBS)
+ifeq ($(CONFIG_ATH9K),y)
+LIBS += -L$(TOP)/libnl-tiny -lnl-tiny
+endif
 all : $(OBJDIR) $(TARGET)
 
 $(OBJDIR):
