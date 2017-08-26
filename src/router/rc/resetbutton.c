@@ -659,7 +659,6 @@ static int wifi5_pushed = 0;
 static int initses = 1;
 #endif
 
-
 static void resetbtn_alarmtimer(unsigned long sec, unsigned long usec)
 {
 	struct itimerval itv;
