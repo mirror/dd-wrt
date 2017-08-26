@@ -29,7 +29,6 @@ extern void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
 /*
  * ppp scripts 
  */
-extern int mtd_main(int argc, char **argv);
 extern int ipup_main(int argc, char **argv);
 extern int ipdown_main(int argc, char **argv);
 extern int set_pppoepid_to_nv_main(int argc, char **argv);	// tallest
@@ -125,9 +124,6 @@ extern int dropbear_main(int argc, char **argv);
 extern int scp_main(int argc, char **argv);
 #endif
 
-#ifdef HAVE_PPTPD
-extern int pptpd_main(int argc, char **argv);
-#endif
 
 extern int create_rc_file(char *name);
 extern int wland_main(int argc, char **argv);
@@ -153,7 +149,6 @@ extern int filter_del(int seq);
 void ntp_main(timer_t t, int arg);
 extern int ipupdate_main(int argc, char **argv);
 extern int gpio_main(int argc, char **argv);
-extern int redial_main(int argc, char **argv);
 
 extern int write_boot(const char *path, const char *mtd);
 extern void do_mssid(char *wlname);
