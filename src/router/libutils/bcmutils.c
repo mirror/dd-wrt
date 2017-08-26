@@ -1003,66 +1003,6 @@ unsigned int get_register_value(unsigned short id, unsigned short num)
 	return ((stats.val_in << 16) | stats.val_out);
 }
 
-struct wl_assoc_mac *get_wl_assoc_mac(int instance, int *c)
-{
-	FILE *fp;
-	struct wl_assoc_mac *wlmac = NULL;
-	int count;
-	char line[80];
-	char list[2][20];
-	char checkif[12];
-	char assoccmd[32];
-
-	wlmac = NULL;
-	count = *c = 0;
-
-	int ifcnt = 4;
-	int i;
-	int gotit = 0;
-
-	// fprintf(stderr,"assoclist\n");
-
-	for (i = 0; i < ifcnt; i++) {
-		if (i == 0)
-			strcpy(checkif, get_wl_instance_name(instance));
-		else
-			sprintf(checkif, "wl%d.%d", instance, i);
-		if (!ifexists(checkif))
-			break;
-
-		sprintf(assoccmd, "wl -i %s assoclist", checkif);
-
-		if ((fp = popen(assoccmd, "r"))) {
-			gotit = 1;
-			while (fgets(line, sizeof(line), fp) != NULL) {
-				strcpy(list[0], "");
-				strcpy(list[1], "");
-
-				if (sscanf(line, "%s %s", list[0], list[1]) != 2)	// assoclist 
-					// 00:11:22:33:44:55
-					continue;
-				if (strcmp(list[0], "assoclist"))
-					continue;
-
-				wlmac = realloc(wlmac, sizeof(struct wl_assoc_mac) * (count + 1));
-
-				bzero(&wlmac[count], sizeof(struct wl_assoc_mac));
-				strncpy(wlmac[count].mac, list[1], sizeof(wlmac[0].mac));
-				count++;
-			}
-
-			pclose(fp);
-		}
-	}
-
-	if (gotit) {
-		// cprintf("Count of wl assoclist mac is %d\n", count);
-		*c = count;
-		return wlmac;
-	} else
-		return NULL;
-}
-
 struct mtu_lists mtu_list[] = {
 #ifdef BUFFALO_JP
 	{

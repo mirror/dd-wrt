@@ -167,9 +167,6 @@ extern int hb_connect_main(int argc, char **argv);
 extern int hb_disconnect_main(int argc, char **argv);
 extern int ddns_success_main(int argc, char **argv);
 extern int sendudp_main(int argc, char *argv[]);
-extern int autokill_wiviz_main(int argc, char **argv);
-extern int run_wiviz_main(int argc, char **argv);
-extern int event_main(int argc, char **argv);
 void cfe_default(void);
 
 // extern int nvram_restore(const char *path, char *mtd);

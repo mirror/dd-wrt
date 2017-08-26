@@ -7,7 +7,7 @@
 #include <shutils.h>
 #include <utils.h>
 
-int autokill_wiviz_main(int argc, char **argv)
+static int autokill_wiviz_main(int argc, char **argv)
 {
 	pid_t pid;
 

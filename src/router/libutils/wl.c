@@ -13,6 +13,7 @@
  */
 #include <string.h>
 #include <unistd.h>
+#include <net/if.h>
 
 #include <typedefs.h>
 #include <bcmutils.h>
@@ -3471,3 +3472,273 @@ int get_maxbssid(char *name)
 }
 
 #endif
+
+#ifdef HAVE_MADWIFI
+
+char *getWDSSTA(void)
+{
+
+	int c = getdevicecount();
+	int i;
+
+	for (i = 0; i < c; i++) {
+		char mode[32];
+		char netmode[32];
+
+		sprintf(mode, "ath%d_mode", i);
+		sprintf(netmode, "ath%d_net_mode", i);
+		if (nvram_match(mode, "wdssta")
+		    && !nvram_match(netmode, "disabled")) {
+			return stalist[i];
+		}
+
+	}
+	return NULL;
+}
+
+char *getSTA(void)
+{
+
+#ifdef HAVE_WAVESAT
+	if (nvram_match("ofdm_mode", "sta"))
+		return "ofdm";
+#endif
+	int c = getdevicecount();
+	int i;
+
+	for (i = 0; i < c; i++) {
+		if (nvram_nmatch("sta", "ath%d_mode", i)
+		    && !nvram_nmatch("disabled", "ath%d_net_mode", i)) {
+			return stalist[i];
+		}
+
+	}
+	return NULL;
+}
+
+char *getWET(void)
+{
+#ifdef HAVE_WAVESAT
+	if (nvram_match("ofdm_mode", "bridge"))
+		return "ofdm";
+#endif
+	int c = getdevicecount();
+	int i;
+
+	for (i = 0; i < c; i++) {
+		if (nvram_nmatch("wet", "ath%d_mode", i)
+		    && !nvram_nmatch("disabled", "ath%d_net_mode", i)) {
+			return stalist[i];
+		}
+
+	}
+	return NULL;
+}
+
+#elif defined(HAVE_RT2880) || defined(HAVE_RT61)
+
+char *getSTA()
+{
+	int c = get_wl_instances();
+	int i;
+
+	for (i = 0; i < c; i++) {
+		if (nvram_nmatch("sta", "wl%d_mode", i)) {
+			if (!nvram_nmatch("disabled", "wl%d_net_mode", i)) {
+				if (i == 0)
+					return "ra0";
+				else
+					return "ba0";
+			}
+		}
+
+		if (nvram_nmatch("apsta", "wl%d_mode", i)) {
+			if (!nvram_nmatch("disabled", "wl%d_net_mode", i)) {
+				if (i == 0)
+					return "apcli0";
+				else
+					return "apcli1";
+			}
+		}
+
+	}
+	return NULL;
+}
+
+char *getWET()
+{
+	int c = get_wl_instances();
+	int i;
+
+	for (i = 0; i < c; i++) {
+		if (!nvram_nmatch("disabled", "wl%d_net_mode", i)
+		    && nvram_nmatch("wet", "wl%d_mode", i))
+			if (i == 0)
+				return "ra0";
+			else
+				return "ba0";
+
+		if (!nvram_nmatch("disabled", "wl%d_net_mode", i)
+		    && nvram_nmatch("apstawet", "wl%d_mode", i))
+			if (i == 0)
+				return "apcli0";
+			else
+				return "apcli1";
+
+	}
+	return NULL;
+}
+
+#else
+char *getSTA()
+{
+	int c = get_wl_instances();
+	int i;
+
+	for (i = 0; i < c; i++) {
+		if (nvram_nmatch("sta", "wl%d_mode", i)
+		    || nvram_nmatch("apsta", "wl%d_mode", i)) {
+			if (!nvram_nmatch("disabled", "wl%d_net_mode", i))
+				return get_wl_instance_name(i);
+			// else
+			// return nvram_nget ("wl%d_ifname", i);
+		}
+
+	}
+	return NULL;
+}
+
+char *getWET()
+{
+	int c = get_wl_instances();
+	int i;
+
+	for (i = 0; i < c; i++) {
+		if (nvram_nmatch("wet", "wl%d_mode", i)
+		    || nvram_nmatch("apstawet", "wl%d_mode", i)) {
+			if (!nvram_nmatch("disabled", "wl%d_net_mode", i))
+				return get_wl_instance_name(i);
+			// else
+			// return nvram_nget ("wl%d_ifname", i);
+
+		}
+
+	}
+	return NULL;
+}
+
+#endif
+
+
+struct wl_assoc_mac *get_wl_assoc_mac(int instance, int *c)
+{
+	FILE *fp;
+	struct wl_assoc_mac *wlmac = NULL;
+	int count;
+	char line[80];
+	char list[2][20];
+	char checkif[12];
+	char assoccmd[32];
+
+	wlmac = NULL;
+	count = *c = 0;
+
+	int ifcnt = 4;
+	int i;
+	int gotit = 0;
+
+	// fprintf(stderr,"assoclist\n");
+
+	for (i = 0; i < ifcnt; i++) {
+		if (i == 0)
+			strcpy(checkif, get_wl_instance_name(instance));
+		else
+			sprintf(checkif, "wl%d.%d", instance, i);
+		if (!ifexists(checkif))
+			break;
+		char *buf = malloc(8192);
+		struct maclist *maclist = (struct maclist *)buf;
+		int cnt = getassoclist(buf,checkif);
+		if (cnt > 0) {
+				gotit=1;
+				wlmac = realloc(wlmac, sizeof(struct wl_assoc_mac) * (count + cnt));
+				int a;
+				for (a=0;a<cnt;a++) {
+				    bzero(&wlmac[count+a], sizeof(struct wl_assoc_mac));
+				    unsigned char *m = (unsigned char*)&maclist->ea[a];
+				    sprintf(wlmac[count+a].mac,"%02X:%02X:%02X:%02X:%02X:%02X",m[0]&0xff,m[1]&0xff,m[2]&0xff,m[3]&0xff,m[4]&0xff,m[5]&0xff);
+				}
+				count+=cnt;
+		}
+		free(buf);
+	}
+
+	if (gotit) {
+		// cprintf("Count of wl assoclist mac is %d\n", count);
+		*c = count;
+		return wlmac;
+	} else
+		return NULL;
+}
+
+char *get_wan_face(void)
+{
+	static char localwanface[IFNAMSIZ];
+	if (nvram_match("wan_proto", "disabled"))
+		return "br0";
+
+	/*
+	 * if (nvram_match ("pptpd_client_enable", "1")) { strncpy (localwanface, 
+	 * "ppp0", IFNAMSIZ); return localwanface; }
+	 */
+	if (nvram_match("wan_proto", "pptp")
+#ifdef HAVE_L2TP
+	    || nvram_match("wan_proto", "l2tp")
+#endif
+#ifdef HAVE_PPPOATM
+	    || nvram_match("wan_proto", "pppoa")
+#endif
+#ifdef HAVE_PPPOEDUAL
+	    || nvram_match("wan_proto", "pppoe_dual")
+#endif
+	    || nvram_match("wan_proto", "pppoe")) {
+		if (nvram_match("pppd_pppifname", ""))
+			strncpy(localwanface, "ppp0", IFNAMSIZ);
+		else
+			strncpy(localwanface, nvram_safe_get("pppd_pppifname"), IFNAMSIZ);
+	}
+#ifdef HAVE_3G
+	else if (nvram_match("wan_proto", "3g")) {
+		if (nvram_match("3gdata", "qmi")) {
+			strncpy(localwanface, "wwan0", IFNAMSIZ);
+		} else {
+			if (nvram_match("pppd_pppifname", ""))
+				strncpy(localwanface, "ppp0", IFNAMSIZ);
+			else
+				strncpy(localwanface, nvram_safe_get("pppd_pppifname"), IFNAMSIZ);
+		}
+
+	}
+#endif
+#ifndef HAVE_MADWIFI
+	else if (getSTA()) {
+		strcpy(localwanface, getSTA());
+	}
+#else
+	else if (getSTA()) {
+		if (nvram_matchi("wifi_bonding", 1))
+			strcpy(localwanface, "bond0");
+		else
+			strcpy(localwanface, getSTA());
+	}
+#endif
+#ifdef HAVE_IPETH
+	else if (nvram_match("wan_proto", "iphone")) {
+		strncpy(localwanface, "iph0", IFNAMSIZ);
+	}
+#endif
+	else
+		strncpy(localwanface, nvram_safe_get("wan_ifname"), IFNAMSIZ);
+
+	return localwanface;
+}

@@ -40,7 +40,7 @@ INITCFLAGS = $(call cc-option,-ffunction-sections -fdata-sections,)
 
 #LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-OBJS := rc.o event.o ntp.o
+OBJS := rc.o ntp.o
 #http.o stats.o
 
 #ifdef $(CONFIG_DIST)
@@ -711,8 +711,6 @@ ifeq ($(CONFIG_JJAP93),y)
 CFLAGS += -DHAVE_JJAP93
 endif
 ifeq ($(CONFIG_WIVIZ),y)
-OBJS += run_wiviz.o
-OBJS += autokill_wiviz.o
 CFLAGS += -DHAVE_WIVIZ
 endif
 ifeq ($(CONFIG_OPENVPN),y)
@@ -1145,7 +1143,7 @@ rc: $(OBJS)
 
 	$(CC) $(CFLAGS) -o wland wland.c $(LDFLAGS) -lwireless -lshutils
 ifeq ($(CONFIG_NORTHSTAR),y)
-	$(CC) $(CFLAGS) -I$(LINUXDIR)/brcm/arm/include  -o et et.c   $(LDFLAGS) -lshutils
+	$(CC) $(CFLAGS) -I$(LINUXDIR)/brcm/arm/include  -o et et.c
 endif
 	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lshutils 
 
