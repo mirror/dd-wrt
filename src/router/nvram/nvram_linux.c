@@ -53,23 +53,7 @@ static char *nvram_buf = NULL;
 #ifndef HAVE_MICRO
 #include <pthread.h>
 static pthread_mutex_t nv_mutex;
-//char *lastlock;
-//char *lastunlock;
 #define mutex_init() pthread_mutex_init(&nv_mutex,NULL);
-/*#define lock() { \
-		    int m_result; \
-		    int m_cnt=0; \
-		while ((m_result=pthread_mutex_trylock(&nv_mutex)) ==EBUSY) { \
-			m_cnt++; \
-			usleep(100 * 1000); \
-			if (m_cnt==10) { \
-			    fprintf(stderr, "lock failed at %s, lastlock = %s lastunlock = %s\n",__func__,lastlock?lastlock:"none", lastunlock?lastunlock:"none"); \
-			    break; \
-			} \
-		} \
-		lastlock = __func__; \
-}*/
-
 #define lock() pthread_mutex_lock(&nv_mutex);
 #define unlock() pthread_mutex_unlock(&nv_mutex);
 #else
@@ -82,7 +66,6 @@ static void lock(void)
 		fclose(in);
 		lockwait++;
 		if (lockwait == 30) {
-			fprintf(stderr, "removing lockfile\n");
 			unlink("/tmp/.nvlock");	//something crashed, we fix it
 			break;
 		}
