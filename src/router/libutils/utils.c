@@ -85,7 +85,7 @@ struct mii_ioctl_data {
 #define TRX_MAGIC_F7D4302			0x20091006	/* Belkin Play; router's birthday ? */
 
 #ifdef HAVE_FONERA
-static void inline getBoardMAC(char *mac)
+static void getBoardMAC(char *mac)
 {
 	// 102
 	int i;

@@ -149,7 +149,7 @@ static int dhcp6c_state_main(int argc, char **argv)
 /* 
  * Call when keepalive mode
  */
-int redial_main(int argc, char **argv)
+static int redial_main(int argc, char **argv)
 {
 	int need_redial = 0;
 	int status;
@@ -314,44 +314,13 @@ int get_nfmark(int argc, char **argv)
 	return 0;
 }
 
-int gratarp(int argc, char **argv)
-{
-
-	signal(SIGCHLD, SIG_IGN);
-
-	pid_t pid;
-
-	if (argc < 2) {
-		fprintf(stderr, "usage: gratarp <interface>\n");
-		return 1;
-	}
-
-	pid = fork();
-	switch (pid) {
-	case -1:
-		perror("fork failed");
-		exit(1);
-		break;
-	case 0:
-		gratarp_main(argv[1]);
-		return 0;
-		break;
-	default:
-		//waitpid(pid, &status, 0);
-		// dprintf("parent\n");
-		break;
-	}
-
-	return 0;
-}
-
 struct MAIN {
 	char *callname;
 	char *execname;
 	int (*exec) (int argc, char **argv);
 };
 extern char *getSoftwareRevision(void);
-int softwarerevision_main(int argc, char **argv)
+static int softwarerevision_main(int argc, char **argv)
 {
 	fprintf(stdout, "%s\n", getSoftwareRevision());
 	return 0;
@@ -452,7 +421,7 @@ static struct MAIN maincalls[] = {
 #ifdef HAVE_REGISTER
 	{"regshell", NULL, &reg_main},
 #endif
-	{"gratarp", NULL, &gratarp},
+	{"gratarp", NULL, &gratarp_main},
 	{"get_nfmark", NULL, &get_nfmark},
 #ifdef HAVE_IPV6
 	{"dhcp6c-state", NULL, &dhcp6c_state_main},

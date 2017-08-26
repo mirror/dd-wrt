@@ -19,7 +19,7 @@
 #include <code_pattern.h>
 #include <rc.h>
 
-int pptpd_main(int argc, char **argv)
+static int pptpd_main(int argc, char **argv)
 {
 
 	if (!argv[1]) {
