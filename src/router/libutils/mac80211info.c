@@ -107,7 +107,6 @@ static char *lastunlock;
 #define lock() pthread_mutex_lock(&mutex_unl)
 #define unlock() pthread_mutex_unlock(&mutex_unl)
 
-
 /*#define unlock() { \
 	pthread_mutex_unlock(&mutex_unl); \
 	lastunlock = __func__; \

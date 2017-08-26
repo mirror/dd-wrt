@@ -1766,9 +1766,9 @@ int get_radiostate(char *ifname)
 }
 
 static int iw_get_ext(int skfd,	/* Socket to the kernel */
-			     const char *ifname,	/* Device name */
-			     int request,	/* WE ID */
-			     struct iwreq *pwrq)
+		      const char *ifname,	/* Device name */
+		      int request,	/* WE ID */
+		      struct iwreq *pwrq)
 {				/* Fixed part of the
 				 * request */
 	/*
@@ -2974,7 +2974,6 @@ int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned 
 	return table[vhtmcs];
 }
 
-
 void setRegulationDomain(char *reg)
 {
 
@@ -3096,9 +3095,6 @@ void setRegulationDomain(char *reg)
 	}
 
 }
-
-
-
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 
@@ -3474,7 +3470,6 @@ int get_maxbssid(char *name)
 
 #ifdef HAVE_MADWIFI
 
-
 #elif defined(HAVE_RT2880) || defined(HAVE_RT61)
 
 char *getSTA()
@@ -3569,7 +3564,6 @@ char *getWET()
 
 #endif
 
-
 struct wl_assoc_mac *get_wl_assoc_mac(int instance, int *c)
 {
 	FILE *fp;
@@ -3598,17 +3592,17 @@ struct wl_assoc_mac *get_wl_assoc_mac(int instance, int *c)
 			break;
 		char *buf = malloc(8192);
 		struct maclist *maclist = (struct maclist *)buf;
-		int cnt = getassoclist(buf,checkif);
+		int cnt = getassoclist(buf, checkif);
 		if (cnt > 0) {
-				gotit=1;
-				wlmac = realloc(wlmac, sizeof(struct wl_assoc_mac) * (count + cnt));
-				int a;
-				for (a=0;a<cnt;a++) {
-				    bzero(&wlmac[count+a], sizeof(struct wl_assoc_mac));
-				    unsigned char *m = (unsigned char*)&maclist->ea[a];
-				    sprintf(wlmac[count+a].mac,"%02X:%02X:%02X:%02X:%02X:%02X",m[0]&0xff,m[1]&0xff,m[2]&0xff,m[3]&0xff,m[4]&0xff,m[5]&0xff);
-				}
-				count+=cnt;
+			gotit = 1;
+			wlmac = realloc(wlmac, sizeof(struct wl_assoc_mac) * (count + cnt));
+			int a;
+			for (a = 0; a < cnt; a++) {
+				bzero(&wlmac[count + a], sizeof(struct wl_assoc_mac));
+				unsigned char *m = (unsigned char *)&maclist->ea[a];
+				sprintf(wlmac[count + a].mac, "%02X:%02X:%02X:%02X:%02X:%02X", m[0] & 0xff, m[1] & 0xff, m[2] & 0xff, m[3] & 0xff, m[4] & 0xff, m[5] & 0xff);
+			}
+			count += cnt;
 		}
 		free(buf);
 	}
@@ -3686,7 +3680,6 @@ char *get_wan_face(void)
 
 	return localwanface;
 }
-
 
 int getdevicecount(void)
 {

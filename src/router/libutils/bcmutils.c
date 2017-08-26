@@ -372,7 +372,6 @@ int weekday(int month, int day, int year)
 
 }
 
-
 char *get_mac_from_ip(char *mac, char *ip)
 {
 	FILE *fp;
