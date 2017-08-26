@@ -81,7 +81,6 @@ static void setup_garp_reply(struct arph *arp, char *hw_addr, char *paddr)
 	memcpy(arp->dest_ip, paddr, IP_ALEN);
 }
 
-
 /*
  * send_garp 
  *
