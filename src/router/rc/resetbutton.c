@@ -40,6 +40,7 @@
 #else
 #define DEBUG(format, args...)
 #endif
+static int brand;
 
 #ifdef HAVE_MAGICBOX
 #include <sys/mman.h>
@@ -57,7 +58,6 @@
 
 static unsigned int *page;
 static int fd;
-static int brand;
 
 static void init_gpio()
 {
