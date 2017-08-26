@@ -458,6 +458,15 @@ char *get_tcfmark(uint32 mark)
 	return tcfmark;
 }
 #endif
+static void add_tc_class(char *dev, int pref, int handle, int classid)
+{
+	sysprintf("tc filter add dev %s protocol ip pref %d handle 0x%x fw classid 1:%d", dev, pref, handle, classid);
+}
+
+static void add_tc_mark(char *dev, char *mark, int flow)
+{
+	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", dev, mark, flow);
+}
 
 #ifdef HAVE_AQOS
 void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate, unsigned int level)
@@ -615,47 +624,48 @@ void add_client_classes(unsigned int base, unsigned int level)
 		}
 
 	}
-
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 	// filter rules
-	sysprintf("tc filter add dev %s protocol ip pref 1 handle 0x%x fw classid 1:%d", wan_dev, base, base + 1);
-	sysprintf("tc filter add dev %s protocol ip pref 3 handle 0x%x fw classid 1:%d", wan_dev, base + 1, base + 2);
-	sysprintf("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d", wan_dev, base + 2, base + 3);
-	sysprintf("tc filter add dev %s protocol ip pref 8 handle 0x%x fw classid 1:%d", wan_dev, base + 3, base + 4);
-	sysprintf("tc filter add dev %s protocol ip pref 9 handle 0x%x fw classid 1:%d", wan_dev, base + 4, base + 5);
+	add_tc_class(wan_dev, 1, base, base + 1);
+	add_tc_class(wan_dev, 3, base + 1, base + 2);
+	add_tc_class(wan_dev, 5, base + 2, base + 3);
+	add_tc_class(wan_dev, 8, base + 3, base + 4);
+	add_tc_class(wan_dev, 9, base + 4, base + 5);
 
-	sysprintf("tc filter add dev %s protocol ip pref 1 handle 0x%x fw classid 1:%d", "imq0", base, base + 1);
-	sysprintf("tc filter add dev %s protocol ip pref 3 handle 0x%x fw classid 1:%d", "imq0", base + 1, base + 2);
-	sysprintf("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d", "imq0", base + 2, base + 3);
-	sysprintf("tc filter add dev %s protocol ip pref 8 handle 0x%x fw classid 1:%d", "imq0", base + 3, base + 4);
-	sysprintf("tc filter add dev %s protocol ip pref 9 handle 0x%x fw classid 1:%d", "imq0", base + 4, base + 5);
+	add_tc_class("imq1", 1, base, base + 1);
+	add_tc_class("imq1", 3, base + 1, base + 2);
+	add_tc_class("imq1", 5, base + 2, base + 3);
+	add_tc_class("imq1", 8, base + 3, base + 4);
+	add_tc_class("imq1", 9, base + 4, base + 5);
 
 	if (nvram_match("wshaper_dev", "LAN")) {
-		sysprintf("tc filter add dev %s protocol ip pref 1 handle 0x%x fw classid 1:%d", "imq1", base, base + 1);
-		sysprintf("tc filter add dev %s protocol ip pref 3 handle 0x%x fw classid 1:%d", "imq1", base + 1, base + 2);
-		sysprintf("tc filter add dev %s protocol ip pref 5 handle 0x%x fw classid 1:%d", "imq1", base + 2, base + 3);
-		sysprintf("tc filter add dev %s protocol ip pref 8 handle 0x%x fw classid 1:%d", "imq1", base + 3, base + 4);
-		sysprintf("tc filter add dev %s protocol ip pref 9 handle 0x%x‚	 fw classid 1:%d", "imq1", base + 4, base + 5);
+
+		add_tc_class("imq0", 1, base, base + 1);
+		add_tc_class("imq0", 3, base + 1, base + 2);
+		add_tc_class("imq0", 5, base + 2, base + 3);
+		add_tc_class("imq0", 8, base + 3, base + 4);
+		add_tc_class("imq0", 9, base + 4, base + 5);
+
 	}
 #else
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", wan_dev, get_tcfmark(base), base + 1);
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", wan_dev, get_tcfmark(base + 1), base + 2);
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", wan_dev, get_tcfmark(base + 2), base + 3);
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", wan_dev, get_tcfmark(base + 3), base + 4);
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", wan_dev, get_tcfmark(base + 4), base + 5);
+	add_tc_mark(wan_dev, get_tcfmark(base), base + 1);
+	add_tc_mark(wan_dev, get_tcfmark(base + 1), base + 2);
+	add_tc_mark(wan_dev, get_tcfmark(base + 2), base + 3);
+	add_tc_mark(wan_dev, get_tcfmark(base + 3), base + 4);
+	add_tc_mark(wan_dev, get_tcfmark(base + 4), base + 5);
 
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq0", get_tcfmark(base), base + 1);
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq0", get_tcfmark(base + 1), base + 2);
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq0", get_tcfmark(base + 2), base + 3);
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq0", get_tcfmark(base + 3), base + 4);
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq0", get_tcfmark(base + 4), base + 5);
+	add_tc_mark("imq0", get_tcfmark(base), base + 1);
+	add_tc_mark("imq0", get_tcfmark(base + 1), base + 2);
+	add_tc_mark("imq0", get_tcfmark(base + 2), base + 3);
+	add_tc_mark("imq0", get_tcfmark(base + 3), base + 4);
+	add_tc_mark("imq0", get_tcfmark(base + 4), base + 5);
 
 	if (nvram_match("wshaper_dev", "LAN")) {
-		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq1", get_tcfmark(base), base + 1);
-		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq1", get_tcfmark(base + 1), base + 2);
-		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq1", get_tcfmark(base + 2), base + 3);
-		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq1", get_tcfmark(base + 3), base + 4);
-		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq1", get_tcfmark(base + 4), base + 5);
+		add_tc_mark("imq1", get_tcfmark(base), base + 1);
+		add_tc_mark("imq1", get_tcfmark(base + 1), base + 2);
+		add_tc_mark("imq1", get_tcfmark(base + 2), base + 3);
+		add_tc_mark("imq1", get_tcfmark(base + 3), base + 4);
+		add_tc_mark("imq1", get_tcfmark(base + 4), base + 5);
 	}
 #endif
 
