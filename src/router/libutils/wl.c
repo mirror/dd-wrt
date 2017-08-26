@@ -13,7 +13,6 @@
  */
 #include <string.h>
 #include <unistd.h>
-#include <net/if.h>
 
 #include <typedefs.h>
 #include <bcmutils.h>
@@ -3474,96 +3473,7 @@ int get_maxbssid(char *name)
 #endif
 
 #ifdef HAVE_MADWIFI
-static char *stalist[] = {
-	"ath0", "ath1", "ath2", "ath3", "ath4", "ath5", "ath6", "ath8", "ath9"
-};
 
-
-char *getWifi(char *ifname)
-{
-#ifdef HAVE_MVEBU
-	if (!strncmp(ifname, "ath0", 4))
-		return "wlan0";
-	if (!strncmp(ifname, "ath1", 4))
-		return "wlan1";
-	if (!strncmp(ifname, "ath2", 4))
-		return "wlan2";
-	if (!strncmp(ifname, "ath3", 4))
-		return "wlan3";
-	return NULL;
-#else
-	if (!strncmp(ifname, "ath0", 4))
-		return "wifi0";
-	if (!strncmp(ifname, "ath1", 4))
-		return "wifi1";
-	if (!strncmp(ifname, "ath2", 4))
-		return "wifi2";
-	if (!strncmp(ifname, "ath3", 4))
-		return "wifi3";
-	return NULL;
-#endif
-}
-
-
-char *getWDSSTA(void)
-{
-
-	int c = getdevicecount();
-	int i;
-
-	for (i = 0; i < c; i++) {
-		char mode[32];
-		char netmode[32];
-
-		sprintf(mode, "ath%d_mode", i);
-		sprintf(netmode, "ath%d_net_mode", i);
-		if (nvram_match(mode, "wdssta")
-		    && !nvram_match(netmode, "disabled")) {
-			return stalist[i];
-		}
-
-	}
-	return NULL;
-}
-
-char *getSTA(void)
-{
-
-#ifdef HAVE_WAVESAT
-	if (nvram_match("ofdm_mode", "sta"))
-		return "ofdm";
-#endif
-	int c = getdevicecount();
-	int i;
-
-	for (i = 0; i < c; i++) {
-		if (nvram_nmatch("sta", "ath%d_mode", i)
-		    && !nvram_nmatch("disabled", "ath%d_net_mode", i)) {
-			return stalist[i];
-		}
-
-	}
-	return NULL;
-}
-
-char *getWET(void)
-{
-#ifdef HAVE_WAVESAT
-	if (nvram_match("ofdm_mode", "bridge"))
-		return "ofdm";
-#endif
-	int c = getdevicecount();
-	int i;
-
-	for (i = 0; i < c; i++) {
-		if (nvram_nmatch("wet", "ath%d_mode", i)
-		    && !nvram_nmatch("disabled", "ath%d_net_mode", i)) {
-			return stalist[i];
-		}
-
-	}
-	return NULL;
-}
 
 #elif defined(HAVE_RT2880) || defined(HAVE_RT61)
 
@@ -3710,6 +3620,10 @@ struct wl_assoc_mac *get_wl_assoc_mac(int instance, int *c)
 	} else
 		return NULL;
 }
+
+#ifndef IFNAMSIZ
+#include <net/if.h>
+#endif
 
 char *get_wan_face(void)
 {
