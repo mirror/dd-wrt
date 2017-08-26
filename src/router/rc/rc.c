@@ -74,6 +74,9 @@
 #ifdef HAVE_PPTPD
 #include "pptpd.c"
 #endif
+#ifdef HAVE_QTN
+#include "qtn_monitor.c"
+#endif
 
 #if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
 static void check_qmi(void)
@@ -447,6 +450,9 @@ static struct MAIN maincalls[] = {
 	{"get_nfmark", NULL, &get_nfmark},
 #ifdef HAVE_IPV6
 	{"dhcp6c-state", NULL, &dhcp6c_state_main},
+#endif
+#ifdef HAVE_QTN
+	{"qtn_monitor", NULL, &qtn_monitor_main},
 #endif
 };
 
