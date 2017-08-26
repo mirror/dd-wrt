@@ -1470,16 +1470,21 @@ libshutils.so: timezones.o shutils.o $(SHOBJS)
 mchillispot.o: $(TOP)/private/telkom/mchillispot.c
 	$(CC) -DNEED_PRINTF -I$(TOP)/jansson/src $(ATH9KCFLAGS) $(MIPS16_OPT) -c -o $@ $^
 
-libwireless.so: $(WOBJS)
+madwififiles:
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 	$(CC) -shared -c $(NCFLAGS) $(MIPS16_OPT) $(NFILES)
 endif
+	@true
+	
+ath9kfiles:
 ifeq ($(CONFIG_ATH9K),y)
 	$(CC) -shared -c $(ATH9KCFLAGS) $(MIPS16_OPT) $(ATH9KFILES) 
 endif
-	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $^ $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram -L. -lshutils $(WLDFLAGS) $(ATH9KLDFLAGS)
-#	$(CC) -shared -c $(ATH9KCFLAGS) $(MIPS16_OPT) $(ATH9KFILES) -DTEST
-#	$(CC) -DTEST $(CFLAGS) $(LDFLAGS)  -o testlib $^ $(NOBJS) $(ATH9KOBJS) -L../nvram -L. -lnvram -lutils  $(WLDFLAGS) $(ATH9KLDFLAGS)
+	@true
+
+
+libwireless.so: $(WOBJS) madwififiles ath9kfiles
+	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $(WOBJS) $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram -L. -lshutils $(WLDFLAGS) $(ATH9KLDFLAGS)
 
 
 libutils.a: $(OBJS)
