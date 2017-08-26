@@ -458,14 +458,43 @@ char *get_tcfmark(uint32 mark)
 	return tcfmark;
 }
 #endif
+#if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 static void add_tc_class(char *dev, int pref, int handle, int classid)
 {
 	sysprintf("tc filter add dev %s protocol ip pref %d handle 0x%x fw classid 1:%d", dev, pref, handle, classid);
 }
-
+#else
 static void add_tc_mark(char *dev, char *mark, int flow)
 {
 	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", dev, mark, flow);
+}
+#endif
+static void add_tc_sfq(char *dev, int parent, int handle, int quantum)
+{
+	sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", dev, parent, handle, quantum);
+}
+
+#if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL)
+
+static void add_tc_codel(char *dev, int parent, int handle, char *aqd, char *target)
+{
+	if (target)
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s %s", dev, parent, handle, aqd, target);
+	else
+		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", dev, parent, handle, aqd);
+}
+#endif
+static void add_tc_htb(char *dev, int parent, int class, int rate, int ceil, int quantum, int prio)
+{
+	if (prio > -1)
+		sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 0", dev, parent, class, rate, ceil, quantum, prio);
+	else
+		sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d", dev, parent, class, rate, ceil, quantum);
+}
+
+static void add_tc_hfsc(char *dev, int parent, int class, int uprate, int uplimit)
+{
+	sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", dev, parent, class, uprate, uplimit);
 }
 
 #ifdef HAVE_AQOS
@@ -564,63 +593,86 @@ void add_client_classes(unsigned int base, unsigned int level)
 	if (nvram_matchi("qos_type", 0)) {
 		// HTB
 		// internal
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d", wan_dev, parent, base, uprate, uplimit, quantum);
+		add_tc_htb(wan_dev, parent, base, uprate, uplimit, quantum, -1);
 		// maximum
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 0", wan_dev, base, base + 1, uprate * 75 / 100, uplimit, quantum);
+		add_tc_htb(wan_dev, base, base + 1, uprate * 75 / 100, uplimit, quantum, 0);
 		// premium
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio %d", wan_dev, base, base + 2, uprate * 50 / 100, uplimit, quantum, prio);
+		add_tc_htb(wan_dev, base, base + 2, uprate * 50 / 100, uplimit, quantum, prio);
 		// express
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio %d", wan_dev, base, base + 3, uprate * 25 / 100, uplimit, quantum, prio + 1);
+		add_tc_htb(wan_dev, base, base + 3, uprate * 25 / 100, uplimit, quantum, prio + 1);
 		// standard
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio %d", wan_dev, base, base + 4, uprate * 15 / 100, uplimit, quantum, prio + 1);
+		add_tc_htb(wan_dev, base, base + 4, uprate * 15 / 100, uplimit, quantum, prio + 1);
 		// bulk
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 7", wan_dev, base, base + 5, uprate * 5 / 100, uplimit, quantum);
+		add_tc_htb(wan_dev, base, base + 5, uprate * 5 / 100, uplimit, quantum, 7);
 
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d", "imq0", parent, base, downrate, downlimit, quantum);
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 0", "imq0", base, base + 1, downrate * 75 / 100, downlimit, quantum);
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio %d", "imq0", base, base + 2, downrate * 50 / 100, downlimit, quantum, prio);
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio %d", "imq0", base, base + 3, downrate * 25 / 100, downlimit, quantum, prio + 1);
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio %d", "imq0", base, base + 4, downrate * 15 / 100, downlimit, quantum, prio + 1);
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 7", "imq0", base, base + 5, downrate * 5 / 100, downlimit, quantum);
+		// internal
+		add_tc_htb("imq0", parent, base, uprate, uplimit, quantum, -1);
+		// maximum
+		add_tc_htb("imq0", base, base + 1, uprate * 75 / 100, uplimit, quantum, 0);
+		// premium
+		add_tc_htb("imq0", base, base + 2, uprate * 50 / 100, uplimit, quantum, prio);
+		// express
+		add_tc_htb("imq0", base, base + 3, uprate * 25 / 100, uplimit, quantum, prio + 1);
+		// standard
+		add_tc_htb("imq0", base, base + 4, uprate * 15 / 100, uplimit, quantum, prio + 1);
+		// bulk
+		add_tc_htb("imq0", base, base + 5, uprate * 5 / 100, uplimit, quantum, 7);
 
 		if (nvram_match("wshaper_dev", "LAN")) {
-			sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d", "imq1", parent, base, lanrate, lanlimit, quantum);
-			sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 0", "imq1", base, base + 1, lanrate * 75 / 100, lanlimit, quantum);
-			sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio %d", "imq1", base, base + 2, lanrate * 50 / 100, lanlimit, quantum, prio);
-			sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio %d", "imq1", base, base + 3, lanrate * 25 / 100, lanlimit, quantum, prio + 1);
-			sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio %d", "imq1", base, base + 4, lanrate * 15 / 100, lanlimit, quantum, prio + 1);
-			sysprintf("tc class add dev %s parent 1:%d classid 1:%d htb rate %dkbit ceil %dkbit quantum %d prio 7", "imq1", base, base + 5, lanrate * 5 / 100, lanlimit, quantum);
+			// internal
+			add_tc_htb("imq1", parent, base, uprate, uplimit, quantum, -1);
+			// maximum
+			add_tc_htb("imq1", base, base + 1, uprate * 75 / 100, uplimit, quantum, 0);
+			// premium
+			add_tc_htb("imq1", base, base + 2, uprate * 50 / 100, uplimit, quantum, prio);
+			// express
+			add_tc_htb("imq1", base, base + 3, uprate * 25 / 100, uplimit, quantum, prio + 1);
+			// standard
+			add_tc_htb("imq1", base, base + 4, uprate * 15 / 100, uplimit, quantum, prio + 1);
+			// bulk
+			add_tc_htb("imq1", base, base + 5, uprate * 5 / 100, uplimit, quantum, 7);
 		}
 
 	} else {
 		// HFSC
 		// internal
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", wan_dev, 1, base, uprate, uplimit);
+		add_tc_hfsc(wan_dev, 1, base, uprate, uplimit);
 		// maximum
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", wan_dev, base, base + 1, uprate * 75 / 100, uplimit);
+		add_tc_hfsc(wan_dev, base, base + 1, uprate * 75 / 100, uplimit);
 		// premium
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", wan_dev, base, base + 2, uprate * 50 / 100, uplimit);
+		add_tc_hfsc(wan_dev, base, base + 2, uprate * 50 / 100, uplimit);
 		// express
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", wan_dev, base, base + 3, uprate * 25 / 100, uplimit);
+		add_tc_hfsc(wan_dev, base, base + 3, uprate * 25 / 100, uplimit);
 		// standard
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", wan_dev, base, base + 4, uprate * 15 / 100, uplimit);
+		add_tc_hfsc(wan_dev, base, base + 4, uprate * 15 / 100, uplimit);
 		// bulk
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", wan_dev, base, base + 5, uprate * 5 / 100, uplimit);
+		add_tc_hfsc(wan_dev, base, base + 5, uprate * 5 / 100, uplimit);
 
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq0", 1, base, uprate, downlimit);
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq0", base, base + 1, uprate * 75 / 100, downlimit);
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq0", base, base + 2, uprate * 50 / 100, downlimit);
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq0", base, base + 3, uprate * 25 / 100, downlimit);
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq0", base, base + 4, uprate * 15 / 100, downlimit);
-		sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq0", base, base + 5, uprate * 5 / 100, downlimit);
+		add_tc_hfsc("imq0", 1, base, uprate, uplimit);
+		// maximum
+		add_tc_hfsc("imq0", base, base + 1, uprate * 75 / 100, uplimit);
+		// premium
+		add_tc_hfsc("imq0", base, base + 2, uprate * 50 / 100, uplimit);
+		// express
+		add_tc_hfsc("imq0", base, base + 3, uprate * 25 / 100, uplimit);
+		// standard
+		add_tc_hfsc("imq0", base, base + 4, uprate * 15 / 100, uplimit);
+		// bulk
+		add_tc_hfsc("imq0", base, base + 5, uprate * 5 / 100, uplimit);
 
 		if (nvram_match("wshaper_dev", "LAN")) {
-			sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq1", 1, base, uprate, lanlimit);
-			sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq1", base, base + 1, uprate * 75 / 100, lanlimit);
-			sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq1", base, base + 2, uprate * 50 / 100, lanlimit);
-			sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq1", base, base + 3, uprate * 25 / 100, lanlimit);
-			sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq1", base, base + 4, uprate * 15 / 100, lanlimit);
-			sysprintf("tc class add dev %s parent 1:%d classid 1:%d hfsc sc rate %dkbit ul rate %dkbit", "imq1", base, base + 5, uprate * 5 / 100, lanlimit);
+
+			add_tc_hfsc("imq1", 1, base, uprate, uplimit);
+			// maximum
+			add_tc_hfsc("imq1", base, base + 1, uprate * 75 / 100, uplimit);
+			// premium
+			add_tc_hfsc("imq1", base, base + 2, uprate * 50 / 100, uplimit);
+			// express
+			add_tc_hfsc("imq1", base, base + 3, uprate * 25 / 100, uplimit);
+			// standard
+			add_tc_hfsc("imq1", base, base + 4, uprate * 15 / 100, uplimit);
+			// bulk
+			add_tc_hfsc("imq1", base, base + 5, uprate * 5 / 100, uplimit);
 		}
 
 	}
@@ -671,48 +723,48 @@ void add_client_classes(unsigned int base, unsigned int level)
 
 	// leaf qdiscs
 	if (!strcmp(aqd, "sfq")) {
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", wan_dev, base + 1, base + 1, quantum);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", wan_dev, base + 2, base + 2, quantum);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", wan_dev, base + 3, base + 3, quantum);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", wan_dev, base + 4, base + 4, quantum);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", wan_dev, base + 5, base + 5, quantum);
+		add_tc_sfq(wan_dev, base + 1, base + 1, quantum);
+		add_tc_sfq(wan_dev, base + 2, base + 2, quantum);
+		add_tc_sfq(wan_dev, base + 3, base + 3, quantum);
+		add_tc_sfq(wan_dev, base + 4, base + 4, quantum);
+		add_tc_sfq(wan_dev, base + 5, base + 5, quantum);
 
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq0", base + 1, base + 1, quantum);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq0", base + 2, base + 2, quantum);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq0", base + 3, base + 3, quantum);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq0", base + 4, base + 4, quantum);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq0", base + 5, base + 5, quantum);
+		add_tc_sfq("imq0", base + 1, base + 1, quantum);
+		add_tc_sfq("imq0", base + 2, base + 2, quantum);
+		add_tc_sfq("imq0", base + 3, base + 3, quantum);
+		add_tc_sfq("imq0", base + 4, base + 4, quantum);
+		add_tc_sfq("imq0", base + 5, base + 5, quantum);
 
 		if (nvram_match("wshaper_dev", "LAN")) {
-			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq1", base + 1, base + 1, quantum);
-			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq1", base + 2, base + 2, quantum);
-			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq1", base + 3, base + 3, quantum);
-			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq1", base + 4, base + 4, quantum);
-			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: sfq quantum %d perturb 10", "imq1", base + 5, base + 5, quantum);
+			add_tc_sfq("imq1", base + 1, base + 1, quantum);
+			add_tc_sfq("imq1", base + 2, base + 2, quantum);
+			add_tc_sfq("imq1", base + 3, base + 3, quantum);
+			add_tc_sfq("imq1", base + 4, base + 4, quantum);
+			add_tc_sfq("imq1", base + 5, base + 5, quantum);
 		}
 	}
 #if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL)
 	if (!strcmp(aqd, "codel")
 	    || !strcmp(aqd, "fq_codel")
 	    || !strcmp(aqd, "pie")) {
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s %s", wan_dev, base + 1, base + 1, aqd, target);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s %s", wan_dev, base + 2, base + 2, aqd, target);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s %s", wan_dev, base + 3, base + 3, aqd, target);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s %s", wan_dev, base + 4, base + 4, aqd, target);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s %s", wan_dev, base + 5, base + 5, aqd, target);
+		add_tc_codel(wan_dev, base + 1, base + 1, aqd, target);
+		add_tc_codel(wan_dev, base + 2, base + 2, aqd, target);
+		add_tc_codel(wan_dev, base + 3, base + 3, aqd, target);
+		add_tc_codel(wan_dev, base + 4, base + 4, aqd, target);
+		add_tc_codel(wan_dev, base + 5, base + 5, aqd, target);
 
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq0", base + 1, base + 1, aqd);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq0", base + 2, base + 2, aqd);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq0", base + 3, base + 3, aqd);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq0", base + 4, base + 4, aqd);
-		sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq0", base + 5, base + 5, aqd);
+		add_tc_codel("imq0", base + 1, base + 1, aqd, NULL);
+		add_tc_codel("imq0", base + 2, base + 2, aqd, NULL);
+		add_tc_codel("imq0", base + 3, base + 3, aqd, NULL);
+		add_tc_codel("imq0", base + 4, base + 4, aqd, NULL);
+		add_tc_codel("imq0", base + 5, base + 5, aqd, NULL);
 
 		if (nvram_match("wshaper_dev", "LAN")) {
-			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq1", base + 1, base + 1, aqd);
-			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq1", base + 2, base + 2, aqd);
-			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq1", base + 3, base + 3, aqd);
-			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq1", base + 4, base + 4, aqd);
-			sysprintf("tc qdisc add dev %s parent 1:%d handle %d: %s", "imq1", base + 5, base + 5, aqd);
+			add_tc_codel("imq1", base + 1, base + 1, aqd, NULL);
+			add_tc_codel("imq1", base + 2, base + 2, aqd, NULL);
+			add_tc_codel("imq1", base + 3, base + 3, aqd, NULL);
+			add_tc_codel("imq1", base + 4, base + 4, aqd, NULL);
+			add_tc_codel("imq1", base + 5, base + 5, aqd, NULL);
 		}
 	}
 #endif
