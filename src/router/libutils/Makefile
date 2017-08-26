@@ -1436,7 +1436,7 @@ CFLAGS += -DHAVE_MATRIXSSL
 endif
 HFLAGS := $(CFLAGS)
 CFLAGS += $(COPTS)
-all: libshutils.so libutils.so libwireless.so
+all: libshutils.so libutils.so libwireless.so libqos.so
 
 install: all
 ifeq ($(CONFIG_XSCALE),y)
@@ -1444,11 +1444,13 @@ ifeq ($(CONFIG_XSCALE),y)
 	install -m 755 libutils.so $(INSTALLDIR)/libutils/lib
 	install -m 755 libwireless.so $(INSTALLDIR)/libutils/lib
 	install -m 755 libshutils.so $(INSTALLDIR)/libutils/lib
+	install -m 755 libqos.so $(INSTALLDIR)/libutils/lib
 else
 	install -d $(INSTALLDIR)/libutils/usr/lib
 	install -m 755 libutils.so $(INSTALLDIR)/libutils/usr/lib
 	install -m 755 libwireless.so $(INSTALLDIR)/libutils/usr/lib
 	install -m 755 libshutils.so $(INSTALLDIR)/libutils/usr/lib
+	install -m 755 libqos.so $(INSTALLDIR)/libutils/usr/lib
 endif
 
 clean:
@@ -1471,13 +1473,14 @@ ifeq ($(CONFIG_ATH9K),y)
 endif
 	@true
 
+libqos.so: qos.o
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils -lwireless $(QTNFLAGS)
 
 libwireless.so: $(WOBJS) madwififiles ath9kfiles
 	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $(WOBJS) $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram -L. -lshutils $(WLDFLAGS) $(ATH9KLDFLAGS)
 
-
-libutils.so: $(OBJS) libwireless.so
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils -lwireless $(QTNFLAGS)
+libutils.so: $(OBJS)
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils $(QTNFLAGS)
 
 libshutils.so: $(SHOBJS)
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram
