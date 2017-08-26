@@ -3660,7 +3660,7 @@ char *get_wan_face(void)
 #endif
 #ifndef HAVE_MADWIFI
 	else if (getSTA()) {
-		strcpy(localwanface, getSTA());
+		strcpy(localwanface, getSTA()); // todo. get_wan_face doesnt belong to here, but requires getSTA which belongs to libwireless.so, we need to find a clean way to move it back without any dependency
 	}
 #else
 	else if (getSTA()) {
