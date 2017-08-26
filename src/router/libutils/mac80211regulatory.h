@@ -143,7 +143,7 @@ struct regdb_file_reg_country {
 #define CHECK_STRUCT(name, size) \
 	ERROR_ON(sizeof(struct name) != size)
 
-static inline void check_db_binary_structs(void)
+static void check_db_binary_structs(void)
 {
 	CHECK_STRUCT(regdb_file_header, 20);
 	CHECK_STRUCT(regdb_file_freq_range, 12);
@@ -181,21 +181,21 @@ struct ieee80211_regdomain {
 	struct ieee80211_reg_rule reg_rules[];
 };
 
-static inline int is_world_regdom(const char *alpha2)
+static int is_world_regdom(const char *alpha2)
 {
 	if (alpha2[0] == '0' && alpha2[1] == '0')
 		return 1;
 	return 0;
 }
 
-static inline int isalpha_upper(char letter)
+static int isalpha_upper(char letter)
 {
 	if (letter >= 'A' && letter <= 'Z')
 		return 1;
 	return 0;
 }
 
-static inline int is_alpha2(const char *alpha2)
+static int is_alpha2(const char *alpha2)
 {
 	if (isalpha_upper(alpha2[0]) && isalpha_upper(alpha2[1]))
 		return 1;
@@ -203,7 +203,7 @@ static inline int is_alpha2(const char *alpha2)
 }
 
 /* Avoid stdlib */
-static inline int is_len_2(const char *alpha2)
+static int is_len_2(const char *alpha2)
 {
 	if (alpha2[0] == '\0' || (alpha2[1] == '\0'))
 		return 0;
@@ -212,7 +212,7 @@ static inline int is_len_2(const char *alpha2)
 	return 0;
 }
 
-static inline int is_valid_regdom(const char *alpha2)
+static int is_valid_regdom(const char *alpha2)
 {
 	if (!is_len_2(alpha2))
 		return 0;
@@ -223,12 +223,12 @@ static inline int is_valid_regdom(const char *alpha2)
 	return 1;
 }
 
-static inline __u32 max(__u32 a, __u32 b)
+static __u32 max(__u32 a, __u32 b)
 {
 	return (a > b) ? a : b;
 }
 
-static inline __u32 min(__u32 a, __u32 b)
+static __u32 min(__u32 a, __u32 b)
 {
 	return (a > b) ? b : a;
 }

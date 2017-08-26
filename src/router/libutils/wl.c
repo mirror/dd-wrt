@@ -1766,7 +1766,7 @@ int get_radiostate(char *ifname)
 	return 0;
 }
 
-static inline int iw_get_ext(int skfd,	/* Socket to the kernel */
+static int iw_get_ext(int skfd,	/* Socket to the kernel */
 			     const char *ifname,	/* Device name */
 			     int request,	/* WE ID */
 			     struct iwreq *pwrq)
