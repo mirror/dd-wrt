@@ -1046,7 +1046,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc event
 	cd $(INSTALLDIR)/sbin && ln -sf rc hotplug
 	cd $(INSTALLDIR)/sbin && ln -sf rc filter
-	cd $(INSTALLDIR)/sbin && ln -sf rc resetbutton
+#	cd $(INSTALLDIR)/sbin && ln -sf rc resetbutton
 	cd $(INSTALLDIR)/sbin && ln -sf rc filtersync
 	cd $(INSTALLDIR)/sbin && ln -sf rc ntpd
 	cd $(INSTALLDIR)/sbin && ln -sf rc getbridge
@@ -1141,7 +1141,8 @@ endif
 rc: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless -lshutils
 
-	$(CC) $(CFLAGS) -o wland wland.c $(LDFLAGS) -lwireless -lshutils
+	$(CC) $(CFLAGS) -o wland wland.c $(LDFLAGS) -lwireless -lshutils -lqos
+	$(CC) $(CFLAGS) -o resetbutton resetbutton.c $(LDFLAGS) -lshutils
 ifeq ($(CONFIG_NORTHSTAR),y)
 	$(CC) $(CFLAGS) -I$(LINUXDIR)/brcm/arm/include  -o et et.c
 endif
