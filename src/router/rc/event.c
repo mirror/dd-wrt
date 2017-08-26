@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <shutils.h>
 
-int event_main(int argc, char **argv)
+static int event_main(int argc, char **argv)
 {
 	pid_t pid;
 

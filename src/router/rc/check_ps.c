@@ -287,7 +287,7 @@ static int do_mon(void)
 	return 1;
 }
 
-int check_ps_main(int argc, char **argv)
+static int check_ps_main(int argc, char **argv)
 {
 	pid_t pid;
 

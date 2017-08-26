@@ -74,9 +74,15 @@
 #ifdef HAVE_PPTPD
 #include "pptpd.c"
 #endif
+#ifdef HAVE_WIVIZ
+#include "autokill_wiviz.c"
+#include "run_wiviz.c"
+#endif
 #ifdef HAVE_QTN
 #include "qtn_monitor.c"
 #endif
+#include "event.c"
+#include "gratarp.c"
 
 #if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
 static void check_qmi(void)
@@ -103,7 +109,7 @@ static void check_qmi(void)
 #endif
 
 #ifdef HAVE_IPV6
-int dhcp6c_state_main(int argc, char **argv)
+static int dhcp6c_state_main(int argc, char **argv)
 {
 	char prefix[INET6_ADDRSTRLEN];
 	struct in6_addr addr;
