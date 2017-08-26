@@ -50,7 +50,7 @@
 #include "mtd_main.c"
 #include "ledtool.c"
 #include "check_ps.c"
-#include "resetbutton.c"
+//#include "resetbutton.c"
 #include "process_monitor.c"
 #include "listen.c"
 #include "radio_timer.c"
@@ -339,7 +339,7 @@ static struct MAIN maincalls[] = {
 	{"ttraff", NULL, ttraff_main},
 	{"ledtool", NULL, ledtool_main},
 	{"check_ps", NULL, check_ps_main},
-	{"resetbutton", NULL, resetbutton_main},
+//	{"resetbutton", NULL, resetbutton_main},
 	{"process_monitor", NULL, process_monitor_main},
 	{"listen", NULL, listen_main},
 	{"radio_timer", NULL, radio_timer_main},

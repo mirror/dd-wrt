@@ -1633,7 +1633,7 @@ static void resetbtn_period_check(int sig)
 	}
 }
 
-static int resetbutton_main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 	brand = getRouterBrand();
 #ifndef HAVE_MI424WR
