@@ -1012,10 +1012,10 @@ CFLAGS += $(DD_CFLAGS)
 
 vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
 
-all: rc
+all: rc init resetbutton wland et
 
 clean:
-	rm -f *.o rc
+	rm -f *.o rc resetbutton wland et
 	rm -f *.c~
 
 install: all
@@ -1138,15 +1138,23 @@ ifeq ($(CONFIG_WOL),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc wol
 endif
 
+wland: wland.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless -lshutils -lqos
 
-rc: $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless -lshutils
 
-	$(CC) $(CFLAGS) -o wland wland.c $(LDFLAGS) -lwireless -lshutils -lqos
-	$(CC) $(CFLAGS) -o resetbutton resetbutton.c $(LDFLAGS) -lshutils
+resetbutton: resetbutton.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lshutils
+
+init:
+	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lshutils 
+
+et:
 ifeq ($(CONFIG_NORTHSTAR),y)
 	$(CC) $(CFLAGS) -I$(LINUXDIR)/brcm/arm/include  -o et et.c
 endif
-	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lshutils 
+	@true
+
+rc: $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless -lshutils -lqos
 
 $(OBJS): $(CY_DEPS)
