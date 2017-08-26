@@ -133,6 +133,7 @@ OBJS += $(TOP)/register/register_regulatory.o
 endif
 ifeq ($(CONFIG_MADWIFI),y)
 SHOBJS += $(TOP)/register/register_check.o
+WOBJS += $(TOP)/register/register_wifi.o
 OBJS += $(TOP)/register/register_regulatory.o
 endif
 ifeq ($(CONFIG_IPV6),y)
@@ -1456,6 +1457,7 @@ endif
 clean:
 #	rm -f countrycode/countrycode_$(ARCH).o
 	rm -f *.o *.so
+	rm -f $(TOP)/register/*.o
 	rm -f *.a
 	rm -f *.h~
 	rm -f *.c~

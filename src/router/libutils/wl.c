@@ -3686,3 +3686,28 @@ char *get_wan_face(void)
 
 	return localwanface;
 }
+
+
+int getdevicecount(void)
+{
+	int count = 0;
+#ifdef HAVE_ATH9K
+	count += getath9kdevicecount();
+#endif
+	count += getifcount("wifi");
+
+	return count;
+}
+
+int haswifi(void)
+{
+	int count = 0;
+#ifdef HAVE_NOWIFI
+	return 0;
+#elif defined(HAVE_ATH9K) || defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO)
+	count += getdevicecount();
+	return (count);
+#else
+	return 1;
+#endif
+}
