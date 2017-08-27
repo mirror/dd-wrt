@@ -88,49 +88,13 @@ char *qos_nfmark(uint32 x)
 	return get_NFServiceMark("QOS", x);
 }
 
-char
+static char
 *get_wshaper_dev(void)
 {
 	if (nvram_match("wshaper_dev", "WAN"))
 		return get_wan_face();
 	else
 		return "br0";
-}
-
-static char *my_getBridgeMTU(const char *ifname, char *word)
-{
-	char *next, *wordlist;
-
-	wordlist = nvram_safe_get("bridges");
-	foreach(word, wordlist, next) {
-		char *stp = word;
-		char *bridge = strsep(&stp, ">");
-		char *mtu = stp;
-		char *prio = strsep(&mtu, ">");
-
-		if (prio)
-			strsep(&mtu, ">");
-
-		if (!bridge || !stp)
-			break;
-		if (!strcmp(bridge, ifname)) {
-			if (!prio || !mtu)
-				return "1500";
-			else
-				return mtu;
-		}
-	}
-	return "1500";
-}
-
-static char *my_getMTU(char *ifname)
-{
-	if (!ifname)
-		return "1500";
-	char *mtu = nvram_nget("%s_mtu", ifname);
-	if (!mtu || strlen(mtu) == 0)
-		return "1500";
-	return mtu;
 }
 
 char
@@ -141,11 +105,11 @@ char
 		return nvram_safe_get("wan_mtu");
 	else if (nvram_match("wshaper_dev", "WAN")) {
 		if (nvram_matchi("wan_mtu", 1500))
-			return my_getMTU(get_wshaper_dev());
+			return getMTU(get_wshaper_dev());
 		else
 			return nvram_safe_get("wan_mtu");
 	} else
-		return my_getBridgeMTU(get_wshaper_dev(), buf);
+		return getBridgeMTU(get_wshaper_dev(), buf);
 }
 
 void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, int base, char *chain)
@@ -588,182 +552,88 @@ void add_client_classes(unsigned int base, unsigned int level)
 		parent = 1;
 		break;
 	}
-
+	unsigned int uprates[5] = { uprate * 75 / 100, uprate * 50 / 100, uprate * 25 / 100, uprate * 15 / 100, uprate * 5 / 100 };
 	if (nvram_matchi("qos_type", 0)) {
-		// HTB
-		// internal
+		char prios[5] = { 0, prio, prio + 1, prio + 1, 7 };
+
 		add_tc_htb(wan_dev, parent, base, uprate, uplimit, quantum, -1);
-		// maximum
-		add_tc_htb(wan_dev, base, base + 1, uprate * 75 / 100, uplimit, quantum, 0);
-		// premium
-		add_tc_htb(wan_dev, base, base + 2, uprate * 50 / 100, uplimit, quantum, prio);
-		// express
-		add_tc_htb(wan_dev, base, base + 3, uprate * 25 / 100, uplimit, quantum, prio + 1);
-		// standard
-		add_tc_htb(wan_dev, base, base + 4, uprate * 15 / 100, uplimit, quantum, prio + 1);
-		// bulk
-		add_tc_htb(wan_dev, base, base + 5, uprate * 5 / 100, uplimit, quantum, 7);
-
-		// internal
 		add_tc_htb("imq0", parent, base, uprate, uplimit, quantum, -1);
-		// maximum
-		add_tc_htb("imq0", base, base + 1, uprate * 75 / 100, uplimit, quantum, 0);
-		// premium
-		add_tc_htb("imq0", base, base + 2, uprate * 50 / 100, uplimit, quantum, prio);
-		// express
-		add_tc_htb("imq0", base, base + 3, uprate * 25 / 100, uplimit, quantum, prio + 1);
-		// standard
-		add_tc_htb("imq0", base, base + 4, uprate * 15 / 100, uplimit, quantum, prio + 1);
-		// bulk
-		add_tc_htb("imq0", base, base + 5, uprate * 5 / 100, uplimit, quantum, 7);
-
 		if (nvram_match("wshaper_dev", "LAN")) {
-			// internal
 			add_tc_htb("imq1", parent, base, uprate, uplimit, quantum, -1);
-			// maximum
-			add_tc_htb("imq1", base, base + 1, uprate * 75 / 100, uplimit, quantum, 0);
-			// premium
-			add_tc_htb("imq1", base, base + 2, uprate * 50 / 100, uplimit, quantum, prio);
-			// express
-			add_tc_htb("imq1", base, base + 3, uprate * 25 / 100, uplimit, quantum, prio + 1);
-			// standard
-			add_tc_htb("imq1", base, base + 4, uprate * 15 / 100, uplimit, quantum, prio + 1);
-			// bulk
-			add_tc_htb("imq1", base, base + 5, uprate * 5 / 100, uplimit, quantum, 7);
+		}
+		int i;
+		for (i = 0; i < 5; i++) {
+			add_tc_htb(wan_dev, base, base + 1 + i, uprates[i], uplimit, quantum, prios[i]);
+			add_tc_htb("imq0", base, base + 1 + i, uprates[i], uplimit, quantum, prios[i]);
+			if (nvram_match("wshaper_dev", "LAN")) {
+				add_tc_htb("imq1", base, base + 1 + i, uprates[i], uplimit, quantum, prios[i]);
+			}
 		}
 
 	} else {
-		// HFSC
-		// internal
 		add_tc_hfsc(wan_dev, 1, base, uprate, uplimit);
-		// maximum
-		add_tc_hfsc(wan_dev, base, base + 1, uprate * 75 / 100, uplimit);
-		// premium
-		add_tc_hfsc(wan_dev, base, base + 2, uprate * 50 / 100, uplimit);
-		// express
-		add_tc_hfsc(wan_dev, base, base + 3, uprate * 25 / 100, uplimit);
-		// standard
-		add_tc_hfsc(wan_dev, base, base + 4, uprate * 15 / 100, uplimit);
-		// bulk
-		add_tc_hfsc(wan_dev, base, base + 5, uprate * 5 / 100, uplimit);
-
 		add_tc_hfsc("imq0", 1, base, uprate, uplimit);
-		// maximum
-		add_tc_hfsc("imq0", base, base + 1, uprate * 75 / 100, uplimit);
-		// premium
-		add_tc_hfsc("imq0", base, base + 2, uprate * 50 / 100, uplimit);
-		// express
-		add_tc_hfsc("imq0", base, base + 3, uprate * 25 / 100, uplimit);
-		// standard
-		add_tc_hfsc("imq0", base, base + 4, uprate * 15 / 100, uplimit);
-		// bulk
-		add_tc_hfsc("imq0", base, base + 5, uprate * 5 / 100, uplimit);
-
-		if (nvram_match("wshaper_dev", "LAN")) {
-
-			add_tc_hfsc("imq1", 1, base, uprate, uplimit);
-			// maximum
-			add_tc_hfsc("imq1", base, base + 1, uprate * 75 / 100, uplimit);
-			// premium
-			add_tc_hfsc("imq1", base, base + 2, uprate * 50 / 100, uplimit);
-			// express
-			add_tc_hfsc("imq1", base, base + 3, uprate * 25 / 100, uplimit);
-			// standard
-			add_tc_hfsc("imq1", base, base + 4, uprate * 15 / 100, uplimit);
-			// bulk
-			add_tc_hfsc("imq1", base, base + 5, uprate * 5 / 100, uplimit);
+		add_tc_hfsc("imq1", 1, base, uprate, uplimit);
+		int i;
+		for (i = 0; i < 5; i++) {
+			add_tc_hfsc(wan_dev, base, base + 1 + i, uprates[i], uplimit);
+			add_tc_hfsc("imq0", base, base + 1 + i, uprates[i], uplimit);
+			if (nvram_match("wshaper_dev", "LAN")) {
+				add_tc_hfsc("imq1", base, base + 1 + i, uprates[i], uplimit);
+			}
 		}
 
 	}
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 	// filter rules
-	add_tc_class(wan_dev, 1, base, base + 1);
-	add_tc_class(wan_dev, 3, base + 1, base + 2);
-	add_tc_class(wan_dev, 5, base + 2, base + 3);
-	add_tc_class(wan_dev, 8, base + 3, base + 4);
-	add_tc_class(wan_dev, 9, base + 4, base + 5);
+	int i;
+	char priorities[5] = { 1, 3, 5, 8, 9 };
+	for (i = 0; i < 5; i++) {
+		add_tc_class(wan_dev, priorities[i], base + i, base + 1 + i);
+		add_tc_class("imq1", priorities[i], base + i, base + 1 + i);
 
-	add_tc_class("imq1", 1, base, base + 1);
-	add_tc_class("imq1", 3, base + 1, base + 2);
-	add_tc_class("imq1", 5, base + 2, base + 3);
-	add_tc_class("imq1", 8, base + 3, base + 4);
-	add_tc_class("imq1", 9, base + 4, base + 5);
-
-	if (nvram_match("wshaper_dev", "LAN")) {
-
-		add_tc_class("imq0", 1, base, base + 1);
-		add_tc_class("imq0", 3, base + 1, base + 2);
-		add_tc_class("imq0", 5, base + 2, base + 3);
-		add_tc_class("imq0", 8, base + 3, base + 4);
-		add_tc_class("imq0", 9, base + 4, base + 5);
-
+		if (nvram_match("wshaper_dev", "LAN")) {
+			add_tc_class("imq0", priorities[i], base + i, base + 1 + i);
+		}
 	}
 #else
-	add_tc_mark(wan_dev, get_tcfmark(base), base + 1);
-	add_tc_mark(wan_dev, get_tcfmark(base + 1), base + 2);
-	add_tc_mark(wan_dev, get_tcfmark(base + 2), base + 3);
-	add_tc_mark(wan_dev, get_tcfmark(base + 3), base + 4);
-	add_tc_mark(wan_dev, get_tcfmark(base + 4), base + 5);
+	int i;
+	for (i = 0; i < 5; i++) {
 
-	add_tc_mark("imq0", get_tcfmark(base), base + 1);
-	add_tc_mark("imq0", get_tcfmark(base + 1), base + 2);
-	add_tc_mark("imq0", get_tcfmark(base + 2), base + 3);
-	add_tc_mark("imq0", get_tcfmark(base + 3), base + 4);
-	add_tc_mark("imq0", get_tcfmark(base + 4), base + 5);
+		add_tc_mark(wan_dev, get_tcfmark(base + i), base + 1 + i);
 
-	if (nvram_match("wshaper_dev", "LAN")) {
-		add_tc_mark("imq1", get_tcfmark(base), base + 1);
-		add_tc_mark("imq1", get_tcfmark(base + 1), base + 2);
-		add_tc_mark("imq1", get_tcfmark(base + 2), base + 3);
-		add_tc_mark("imq1", get_tcfmark(base + 3), base + 4);
-		add_tc_mark("imq1", get_tcfmark(base + 4), base + 5);
+		add_tc_mark("imq0", get_tcfmark(base + i), base + 1 + i);
+
+		if (nvram_match("wshaper_dev", "LAN")) {
+			add_tc_mark("imq1", get_tcfmark(base + i), base + 1 + i);
+		}
 	}
 #endif
 
 	// leaf qdiscs
 	if (!strcmp(aqd, "sfq")) {
-		add_tc_sfq(wan_dev, base + 1, base + 1, quantum);
-		add_tc_sfq(wan_dev, base + 2, base + 2, quantum);
-		add_tc_sfq(wan_dev, base + 3, base + 3, quantum);
-		add_tc_sfq(wan_dev, base + 4, base + 4, quantum);
-		add_tc_sfq(wan_dev, base + 5, base + 5, quantum);
-
-		add_tc_sfq("imq0", base + 1, base + 1, quantum);
-		add_tc_sfq("imq0", base + 2, base + 2, quantum);
-		add_tc_sfq("imq0", base + 3, base + 3, quantum);
-		add_tc_sfq("imq0", base + 4, base + 4, quantum);
-		add_tc_sfq("imq0", base + 5, base + 5, quantum);
-
-		if (nvram_match("wshaper_dev", "LAN")) {
-			add_tc_sfq("imq1", base + 1, base + 1, quantum);
-			add_tc_sfq("imq1", base + 2, base + 2, quantum);
-			add_tc_sfq("imq1", base + 3, base + 3, quantum);
-			add_tc_sfq("imq1", base + 4, base + 4, quantum);
-			add_tc_sfq("imq1", base + 5, base + 5, quantum);
+		int i;
+		for (i = 1; i < 6; i++) {
+			add_tc_sfq(wan_dev, base + i, base + i, quantum);
+			add_tc_sfq("imq0", base + i, base + i, quantum);
+			if (nvram_match("wshaper_dev", "LAN")) {
+				add_tc_sfq("imq1", base + i, base + i, quantum);
+			}
 		}
+
 	}
 #if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL)
 	if (!strcmp(aqd, "codel")
 	    || !strcmp(aqd, "fq_codel")
 	    || !strcmp(aqd, "pie")) {
-		add_tc_codel(wan_dev, base + 1, base + 1, aqd, target);
-		add_tc_codel(wan_dev, base + 2, base + 2, aqd, target);
-		add_tc_codel(wan_dev, base + 3, base + 3, aqd, target);
-		add_tc_codel(wan_dev, base + 4, base + 4, aqd, target);
-		add_tc_codel(wan_dev, base + 5, base + 5, aqd, target);
 
-		add_tc_codel("imq0", base + 1, base + 1, aqd, NULL);
-		add_tc_codel("imq0", base + 2, base + 2, aqd, NULL);
-		add_tc_codel("imq0", base + 3, base + 3, aqd, NULL);
-		add_tc_codel("imq0", base + 4, base + 4, aqd, NULL);
-		add_tc_codel("imq0", base + 5, base + 5, aqd, NULL);
-
-		if (nvram_match("wshaper_dev", "LAN")) {
-			add_tc_codel("imq1", base + 1, base + 1, aqd, NULL);
-			add_tc_codel("imq1", base + 2, base + 2, aqd, NULL);
-			add_tc_codel("imq1", base + 3, base + 3, aqd, NULL);
-			add_tc_codel("imq1", base + 4, base + 4, aqd, NULL);
-			add_tc_codel("imq1", base + 5, base + 5, aqd, NULL);
+		int i;
+		for (i = 1; i < 6; i++) {
+			add_tc_codel(wan_dev, base + i, base + i, aqd, target);
+			add_tc_codel("imq0", base + i, base + i, aqd, NULL);
+			if (nvram_match("wshaper_dev", "LAN")) {
+				add_tc_codel("imq1", base + i, base + i, aqd, NULL);
+			}
 		}
 	}
 #endif
