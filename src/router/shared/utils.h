@@ -1027,7 +1027,6 @@ char *qos_nfmark(uint32 x);
 extern char *get_tcfmark(uint32 mark);
 #endif
 
-extern char *get_wshaper_dev(void);
 extern char *get_mtu_val(char *buf);
 extern void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, int base, char *chain);
 extern void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
