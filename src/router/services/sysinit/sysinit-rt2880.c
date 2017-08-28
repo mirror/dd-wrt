@@ -52,7 +52,6 @@
 #include <shutils.h>
 #include <utils.h>
 
-
 #define sys_reboot() eval("sync"); eval("/bin/umount","-a","-r"); eval("event","3","1","15")
 
 void start_sysinit(void)
