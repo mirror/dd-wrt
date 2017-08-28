@@ -43,7 +43,6 @@
 #include <shutils.h>
 #include <utils.h>
 
-
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if.h>
