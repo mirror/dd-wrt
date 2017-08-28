@@ -112,6 +112,20 @@ char
 		return getBridgeMTU(get_wshaper_dev(), buf);
 }
 
+struct namemaps {
+	char *from;
+	char *to;
+};
+static struct namemaps NM[] = {
+	{"applejuice", "apple"},
+	{"bearshare", "gnu"},
+	{"bittorrent", "bit"},
+	{"directconnect", "dc"},
+	{"edonkey", "edk"},
+	{"gnutella", "gnu"},
+	{"soulseek", "soul"}
+};
+
 void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, int base, char *chain)
 {
 	int idx = atoi(level) / 10;
@@ -144,35 +158,12 @@ void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, i
 #endif
 
 	if (strstr(type, "p2p")) {
-		char *proto = NULL;
-		char *realname = name;
-
-		if (!strcasecmp(realname, "applejuice"))
-			proto = "apple";
-		else if (!strcasecmp(realname, "ares"))
-			proto = "ares";
-		else if (!strcasecmp(realname, "bearshare"))
-			proto = "gnu";
-		else if (!strcasecmp(realname, "bittorrent"))
-			proto = "bit";
-		else if (!strcasecmp(realname, "directconnect"))
-			proto = "dc";
-		else if (!strcasecmp(realname, "edonkey"))
-			proto = "edk";
-		else if (!strcasecmp(realname, "gnutella"))
-			proto = "gnu";
-		else if (!strcasecmp(realname, "kazaa"))
-			proto = "kazaa";
-		else if (!strcasecmp(realname, "mute"))
-			proto = "mute";
-		else if (!strcasecmp(realname, "soulseek"))
-			proto = "soul";
-		else if (!strcasecmp(realname, "waste"))
-			proto = "waste";
-		else if (!strcasecmp(realname, "winmx"))
-			proto = "winmx";
-		else if (!strcasecmp(realname, "xdcc"))
-			proto = "xdcc";
+		char *proto = name;
+		int i;
+		for (i = 0; i < sizeof(NM) / sizeof(struct namemaps); i++) {
+			if (!strcasecmp(NM[i].from, name))
+				proto = NM[i].to;
+		}
 		if (proto) {
 			insmod("ipt_ipp2p");
 			char ipp2p[32];
@@ -226,35 +217,12 @@ void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, i
 #endif
 
 	if (strstr(type, "p2p")) {
-		char *proto = NULL;
-		char *realname = name;
-
-		if (!strcasecmp(realname, "applejuice"))
-			proto = "apple";
-		else if (!strcasecmp(realname, "ares"))
-			proto = "ares";
-		else if (!strcasecmp(realname, "bearshare"))
-			proto = "gnu";
-		else if (!strcasecmp(realname, "bittorrent"))
-			proto = "bit";
-		else if (!strcasecmp(realname, "directconnect"))
-			proto = "dc";
-		else if (!strcasecmp(realname, "edonkey"))
-			proto = "edk";
-		else if (!strcasecmp(realname, "gnutella"))
-			proto = "gnu";
-		else if (!strcasecmp(realname, "kazaa"))
-			proto = "kazaa";
-		else if (!strcasecmp(realname, "mute"))
-			proto = "mute";
-		else if (!strcasecmp(realname, "soulseek"))
-			proto = "soul";
-		else if (!strcasecmp(realname, "waste"))
-			proto = "waste";
-		else if (!strcasecmp(realname, "winmx"))
-			proto = "winmx";
-		else if (!strcasecmp(realname, "xdcc"))
-			proto = "xdcc";
+		char *proto = name;
+		int i;
+		for (i = 0; i < sizeof(NM) / sizeof(struct namemaps); i++) {
+			if (!strcasecmp(NM[i].from, name))
+				proto = NM[i].to;
+		}
 		if (proto) {
 			insmod("ipt_ipp2p");
 			char ipp2p[32];
@@ -332,35 +300,12 @@ void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, in
 #endif
 
 	if (strstr(type, "p2p")) {
-		char *proto = NULL;
-		char *realname = name;
-
-		if (!strcasecmp(realname, "applejuice"))
-			proto = "apple";
-		else if (!strcasecmp(realname, "ares"))
-			proto = "ares";
-		else if (!strcasecmp(realname, "bearshare"))
-			proto = "gnu";
-		else if (!strcasecmp(realname, "bittorrent"))
-			proto = "bit";
-		else if (!strcasecmp(realname, "directconnect"))
-			proto = "dc";
-		else if (!strcasecmp(realname, "edonkey"))
-			proto = "edk";
-		else if (!strcasecmp(realname, "gnutella"))
-			proto = "gnu";
-		else if (!strcasecmp(realname, "kazaa"))
-			proto = "kazaa";
-		else if (!strcasecmp(realname, "mute"))
-			proto = "mute";
-		else if (!strcasecmp(realname, "soulseek"))
-			proto = "soul";
-		else if (!strcasecmp(realname, "waste"))
-			proto = "waste";
-		else if (!strcasecmp(realname, "winmx"))
-			proto = "winmx";
-		else if (!strcasecmp(realname, "xdcc"))
-			proto = "xdcc";
+		char *proto = name;
+		int i;
+		for (i = 0; i < sizeof(NM) / sizeof(struct namemaps); i++) {
+			if (!strcasecmp(NM[i].from, name))
+				proto = NM[i].to;
+		}
 		if (proto) {
 			insmod("ipt_ipp2p");
 			char ipp2p[32];
