@@ -1,5 +1,5 @@
 /*
- * proftp.c
+ * samba3.c
  *
  * Copyright (C) 2008 dd-wrt
  *
@@ -36,6 +36,30 @@
 #include <services.h>
 #include <samba3.h>
 #include <fcntl.h>
+
+static int has_sambauser(struct samba3_shareuser *csu, struct samba3_user *samba3users)
+{
+	struct samba3_user *cu, *cunext;
+	int hasuser = 0;
+	for (cu = samba3users; cu; cu = cunext) {
+		if (!strcmp(csu->username, cu->username)
+		    && (cu->sharetype & SHARETYPE_SAMBA))
+			hasuser = 1;
+		cunext = cu->next;
+		free(cu);
+	}
+	return hasuser;
+}
+
+static void free_users(struct samba3_share *cs)
+{
+	struct samba3_shareuser *csu, *csunext;
+	for (csu = cs->users; csu; csu = csunext) {
+		csunext = csu->next;
+		free(csu);
+	}
+
+}
 
 void start_samba3(void)
 {
@@ -125,25 +149,14 @@ void start_samba3(void)
 
 		samba3shares = getsamba3shares();
 		for (cs = samba3shares; cs; cs = csnext) {
-			int hasuser = 0;
 			if (!cs->public) {
-
+				int hasuser = 0;
 				for (csu = cs->users; csu; csu = csunext) {
-					samba3users = getsamba3users();
-					for (cu = samba3users; cu; cu = cunext) {
-						if (!strcmp(csu->username, cu->username)
-						    && (cu->sharetype & SHARETYPE_SAMBA))
-							hasuser = 1;
-						cunext = cu->next;
-						free(cu);
-					}
+					hasuser = has_sambauser(csu, getsamba3users());
 					csunext = csu->next;
 				}
 				if (!hasuser) {
-					for (csu = cs->users; csu; csu = csunext) {
-						csunext = csu->next;
-						free(csu);
-					}
+					free_users(cs);
 					goto nextshare;
 				}
 			}
@@ -157,18 +170,8 @@ void start_samba3(void)
 					fprintf(fp, "valid users =");
 					int first = 0;
 					for (csu = cs->users; csu; csu = csunext) {
-						hasuser = 0;
-						samba3users = getsamba3users();
-						for (cu = samba3users; cu; cu = cunext) {
-							if (!strcmp(csu->username, cu->username)
-							    && (cu->sharetype & SHARETYPE_SAMBA))
-								hasuser = 1;
-							cunext = cu->next;
-							free(cu);
-						}
-						if (!hasuser)
+						if (!has_sambauser(csu, getsamba3users()))
 							goto nextuser;
-
 						if (first)
 							fprintf(fp, ",");
 						first = 1;
@@ -178,18 +181,12 @@ void start_samba3(void)
 						free(csu);
 					}
 				} else {
-					for (csu = cs->users; csu; csu = csunext) {
-						csunext = csu->next;
-						free(csu);
-					}
+					free_users(cs);
 				}
 				fprintf(fp, "\n");
 				fprintf(fp, "force user = root\n");
 			} else {
-				for (csu = cs->users; csu; csu = csunext) {
-					csunext = csu->next;
-					free(csu);
-				}
+				free_users(cs);
 			}
 		      nextshare:;
 			csnext = cs->next;
