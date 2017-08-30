@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3564 | brainslayer | 2017-08-30 08:10:54 +0200 (Wed, 30 Aug 2017) | 1 line
+
+revert some small change in mwlwifi to be consistent with official version
+------------------------------------------------------------------------
 r3563 | brainslayer | 2017-08-26 16:06:59 +0200 (Sat, 26 Aug 2017) | 1 line
 
 fix
