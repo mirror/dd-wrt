@@ -842,9 +842,10 @@ static void fill_header(char *buf, int len)
 	hdr->hw_id = HOST_TO_BE32(board->hw_id);
 	hdr->hw_rev = HOST_TO_BE32(board->hw_rev);
 	hdr->area_code = HOST_TO_BE32(board->area_code);
+	if (signature) { // only for eu models
 	strcpy(hdr->sig1,"00000000;45550000;");
 	memcpy(hdr->sig2,"45550000",8);
-	
+	}
     	if (area_code)
 	    hdr->area_code = HOST_TO_BE32(area_code);
 	
