@@ -790,7 +790,6 @@ void reply_query(int fd, int family, time_t now)
   /* Note: if we send extra options in the EDNS0 header, we can't recreate
      the query from the reply. */
   if (RCODE(header) == REFUSED &&
-      !option_bool(OPT_ORDER) &&
       forward->forwardall == 0 &&
       !(forward->flags & FREC_HAS_EXTRADATA))
     /* for broken servers, attempt to send to another one. */
@@ -1409,6 +1408,8 @@ void receive_query(struct listener *listen, time_t now)
 	 defaults to 512 */
       if (udp_size > daemon->edns_pktsz)
 	udp_size = daemon->edns_pktsz;
+      if (udp_size < 512)
+	udp_size = 512; /* RFC 6891 6.2.3 */
     }
 
 #ifdef HAVE_AUTH
