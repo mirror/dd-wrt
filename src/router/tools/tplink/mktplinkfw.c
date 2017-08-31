@@ -963,7 +963,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "B:V:N:uck:r:o:v:h:t::");
+		c = getopt(argc, argv, "B:V:N:usck:r:o:v:h:t::");
 		if (c == -1)
 			break;
 
