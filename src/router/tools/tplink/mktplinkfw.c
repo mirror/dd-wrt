@@ -124,7 +124,10 @@ struct fw_header {
 	uint16_t	ver_hi;
 	uint16_t	ver_mid;
 	uint16_t	ver_lo;
-	uint8_t		pad[354];
+	uint8_t		pad[130];
+	uint8_t		sig1[32];
+	uint8_t		sig2[8];
+	uint8_t		pad2[184];
 } __attribute__ ((packed));
 
 struct board_info {
@@ -826,7 +829,7 @@ static int check_options(void)
 }
 static int trunkfile=0;
 unsigned int area_code = 0;
-
+unsigned int signature = 0;
 static void fill_header(char *buf, int len)
 {
 	struct fw_header *hdr = (struct fw_header *)buf;
@@ -839,7 +842,10 @@ static void fill_header(char *buf, int len)
 	hdr->hw_id = HOST_TO_BE32(board->hw_id);
 	hdr->hw_rev = HOST_TO_BE32(board->hw_rev);
 	hdr->area_code = HOST_TO_BE32(board->area_code);
-	if (area_code)
+	strcpy(hdr->sig1,"00000000;45550000;");
+	memcpy(hdr->sig2,"45550000",8);
+	
+    	if (area_code)
 	    hdr->area_code = HOST_TO_BE32(area_code);
 	
 	if (boot_info.file_size == 0)
@@ -985,6 +991,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'u':
 			area_code = 1;
+			break;
+		case 's':
+			signature = 1;
 			break;
 		case 'v':
 			fw_ver = optarg;
