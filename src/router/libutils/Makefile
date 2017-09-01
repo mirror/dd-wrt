@@ -85,17 +85,17 @@ endif
 CFLAGS += $(MIPS16_OPT)
 
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
+CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Iinclude
 #  -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 CFLAGS	+= -fPIC
 LDFLAGS += -L. -ldl
-OBJS := utils.o 
+OBJS := libutils/utils.o 
 ifeq ($(CONFIG_RT2880),y)
-OBJS += utils.o crypt.save des.save md5.save
+OBJS += libutils/utils.o libutils/crypt.save libutils/des.save libutils/md5.save
 endif
-OBJS += linux_timer.o gpio.o md5c.o crc.o nvparse.o bcmutils.o linux_osl.o airbag.o
-SHOBJS =  timezones.o shutils.o sha1.o
-WOBJS := wl.o wl_basic.o wl_linux.o country.o wl_macfuncs.o
+OBJS += libutils/linux_timer.o libutils/gpio.o libutils/md5c.o libutils/crc.o libutils/nvparse.o libutils/bcmutils.o libutils/linux_osl.o libutils/airbag.o
+SHOBJS =  libshutils/timezones.o libshutils/shutils.o libshutils/sha1.o
+WOBJS := libwireless/wl.o libwireless/wl_basic.o libwireless/wl_linux.o libwireless/country.o libwireless/wl_macfuncs.o
 
 #defaults.o
 ifeq ($(CONFIG_MAGICBOX),y)
@@ -137,7 +137,7 @@ WOBJS += $(TOP)/register/register_wifi.o
 OBJS += $(TOP)/register/register_regulatory.o
 endif
 ifeq ($(CONFIG_IPV6),y)
-OBJS += getifaddrs.o
+OBJS += libutils/getifaddrs.o
 CFLAGS += -DHAVE_IPV6
 endif
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
@@ -161,13 +161,13 @@ NCFLAGS += $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -DHAVE_MADWIFI -DHAVE_MADWIFI_MI
 NCFLAGS	+= -fPIC
 NCFLAGS	+= -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
 NOBJS += wl_11n.o
-NFILES += wl_11n.c
+NFILES += libwireless/wl_11n.c
 endif
 ifeq ($(CONFIG_ATH9K),y)
 ATH9KCFLAGS+= $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -DHAVE_ATH9K -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
 ATH9KCFLAGS	+= -fPIC
 ATH9KOBJS += wl_ath9k.o list_sort.o mac80211info.o mac80211regulatory.o mac80211autochannel.o
-ATH9KFILES += wl_ath9k.c list_sort.c mac80211info.c mac80211regulatory.c mac80211autochannel.c
+ATH9KFILES += libwireless/wl_ath9k.c libwireless/list_sort.c libwireless/mac80211info.c libwireless/mac80211regulatory.c libwireless/mac80211autochannel.c
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 ifeq ($(CONFIG_SYSLOG),y)
 ATH9KCFLAGS += -DHAVE_SYSLOG
@@ -258,7 +258,7 @@ ifeq ($(CONFIG_SAMBA),y)
 endif
 ifeq ($(CONFIG_QTN),y)
   CFLAGS += -DHAVE_QTN -DRPCOVERRIDE
-  OBJS += qtnapi.o 
+  WOBJS += libwireless/qtnapi.o 
   CFLAGS +=  -I$(TOP)/qtn/libqcsapi_client -I$(TOP)/qtn/libqcsapi_client/librpc 
   QTNFLAGS =  -L$(TOP)/qtn/libqcsapi_client -lqcsapi_client   -L$(TOP)/qtn/libqcsapi_client/librpc -lrpc
 endif
@@ -573,7 +573,7 @@ ifeq ($(CONFIG_X86),y)
 endif
 ifeq ($(CONFIG_3G),y)
   CFLAGS += -DHAVE_3G
-  OBJS += lib3g.o
+  OBJS += libutils/lib3g.o
 endif
 ifeq ($(CONFIG_LIBQMI),y)
   CFLAGS += -DHAVE_LIBQMI
@@ -601,11 +601,11 @@ ifeq ($(CONFIG_RB1000),y)
 endif
 ifeq ($(CONFIG_FREERADIUS),y)
   CFLAGS += -DHAVE_FREERADIUS
-  OBJS += radius.o
+  OBJS += libutils/radius.o
 endif
 ifeq ($(CONFIG_POKER),y)
   CFLAGS += -DHAVE_POKER
-  OBJS += poker.o
+  OBJS += libutils/poker.o
 endif
 ifeq ($(CONFIG_HOBBIT),y)
   CFLAGS += -DHAVE_HOBBIT
@@ -1421,19 +1421,19 @@ CFLAGS += -DHAVE_MATRIXSSL
 endif
 
 ifeq ($(CONFIG_SAMBA3),y)
-  SHARETOOLSOBJS += samba3.o 
+  SHARETOOLSOBJS += libsharetools/samba3.o 
   SFLAGS += -I$(TOP)/jansson/src
   CFLAGS += -DHAVE_SAMBA3
   CFLAGS += -DHAVE_SAMBA_SERVER
   ADDLIB = libsharetools.so
 endif
 ifeq ($(CONFIG_FTP),y)
-  SHARETOOLSOBJS += samba3.o 
+  SHARETOOLSOBJS += libsharetools/samba3.o 
   CFLAGS += -I$(TOP)/jansson/src
   ADDLIB = libsharetools.so
 endif
 ifeq ($(CONFIG_MINIDLNA),y)
-  SHARETOOLSOBJS +=  dlna.o
+  SHARETOOLSOBJS += libsharetools/dlna.o
   CFLAGS += -I$(TOP)/jansson/src 
   CFLAGS += -DHAVE_MINIDLNA
   ADDLIB = libsharetools.so
@@ -1457,22 +1457,22 @@ endif
 
 clean:
 #	rm -f countrycode/countrycode_$(ARCH).o
-	rm -f *.o *.so
+	rm -f libutils/*.o libqos/*.o libwireless/*.o libshutils/*.o libsharetools/*.o *.o *.so
 	rm -f $(TOP)/register/*.o
 	rm -f *.a
-	rm -f *.h~
-	rm -f *.c~
+	rm -f include/*.h~
+	rm -f libqos/*.c~ libwireless/*.c~ libshutils/*.c~ libsharetools/*.c~
 	rm -f $(TOP)/private/telkom/*.o
 
 madwififiles:
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
-	$(CC) -shared -c $(NCFLAGS) $(MIPS16_OPT) $(NFILES)
+	$(CC) -shared -c -Iinclude $(NCFLAGS) $(MIPS16_OPT) $(NFILES)
 endif
 	@true
 	
 ath9kfiles:
 ifeq ($(CONFIG_ATH9K),y)
-	$(CC) -shared -c $(ATH9KCFLAGS) $(MIPS16_OPT) $(ATH9KFILES) 
+	$(CC) -shared -c -Iinclude $(ATH9KCFLAGS) $(MIPS16_OPT) $(ATH9KFILES) 
 endif
 	@true
 
@@ -1481,7 +1481,7 @@ endif
 libsharetools.so: $(SHARETOOLSOBJS)
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram -L. -lshutils -L$(TOP)/jansson/src/.libs -ljansson -lm
 
-libqos.so: qos.o
+libqos.so: libqos/qos.o
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils $(QTNFLAGS)
 
 libwireless.so: $(WOBJS) madwififiles ath9kfiles
