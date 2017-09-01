@@ -27,36 +27,6 @@ CFLAGS += -DHAVE_600
 endif
 CFLAGS += $(MIPS16_OPT)
 LDFLAGS += $(MIPS16_OPT)
-ifeq ($(CONFIG_TIEXTRA1),y)
-ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
-ifeq ($(ARCHITECTURE),openrisc)
-ADDLIBS +=-L$(TOP)/jansson/src/.libs -ljansson
-endif
-endif
-ifeq ($(CONFIG_TIEXTRA2),y)
-ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
-ifeq ($(ARCHITECTURE),openrisc)
-ADDLIBS +=-L$(TOP)/jansson/src/.libs -ljansson
-endif
-endif
-ifeq ($(CONFIG_SAMBA3),y)
-ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
-ifeq ($(ARCHITECTURE),openrisc)
-ADDLIBS +=-L$(TOP)/jansson/src/.libs -ljansson
-endif
-endif
-ifeq ($(CONFIG_MINIDLNA),y)
-ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
-ifeq ($(ARCHITECTURE),openrisc)
-ADDLIBS +=-L$(TOP)/jansson/src/.libs -ljansson
-endif
-endif
-ifeq ($(CONFIG_FTP),y)
-ADDLIBS =  -Wl,-rpath,$(TOP)/jansson/src/.libs
-ifeq ($(ARCHITECTURE),openrisc)
-ADDLIBS +=-L$(TOP)/jansson/src/.libs -ljansson
-endif
-endif
 ifeq ($(CONFIG_QTN),y)
 ADDLIBS += -Wl,-rpath,$(TOP)/qtn/libqcsapi_client 
 endif
