@@ -38,7 +38,7 @@ vpath %.h $(VPATH.h)
 ifeq ($(DEBUG),1)
 CFLAGS += -g -DDEBUG -UNDEBUG -DBCMDBG
 else
-CFLAGS += -Os -DNDEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += $(COPTS) -DNDEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 CFLAGS += -I$(subst :, -I,$(VPATH.h))
 CFLAGS += -Wall -Wunused 
@@ -74,10 +74,8 @@ SOURCES.OBJ := $(patsubst %.c,$(OBJDIR)/%.o,$(SOURCES.OBJ))
 
 TARGET = upnp
 LIBS = -L$(UPNPBASE) -L$(TOP)/netconf -L$(TOP)/libutils -L$(TOP)/iptables/libiptc \
-	-L$(TOP)/nvram -L$(TOP)/shared -lupnp -lnetconf -lutils -lshutils -lnvram -lwireless -liptc $(ADDLIBS)
-ifeq ($(CONFIG_ATH9K),y)
-LIBS += -L$(TOP)/libnl-tiny -lnl-tiny
-endif
+	-L$(TOP)/nvram -L$(TOP)/shared -lupnp -lnetconf -lutils -lshutils -lnvram -liptc $(ADDLIBS)
+	
 all : $(OBJDIR) $(TARGET)
 
 $(OBJDIR):
