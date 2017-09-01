@@ -2633,7 +2633,7 @@ void start_lan(void)
 #ifdef HAVE_WAVESAT
 	configure_wimax();
 #endif
-
+	nvram_set("sta_ifname",getSTA());	
 	reset_hwaddr(lan_ifname);
 	ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 #ifdef HAVE_QTN

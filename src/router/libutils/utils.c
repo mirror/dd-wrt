@@ -6672,3 +6672,70 @@ int buf_to_file(char *path, char *buf)
 
 	return 0;
 }
+
+
+#ifndef IFNAMSIZ
+#include <net/if.h>
+#endif
+
+char *get_wan_face(void)
+{
+	static char localwanface[IFNAMSIZ];
+	if (nvram_match("wan_proto", "disabled"))
+		return "br0";
+
+	/*
+	 * if (nvram_match ("pptpd_client_enable", "1")) { strncpy (localwanface, 
+	 * "ppp0", IFNAMSIZ); return localwanface; }
+	 */
+	if (nvram_match("wan_proto", "pptp")
+#ifdef HAVE_L2TP
+	    || nvram_match("wan_proto", "l2tp")
+#endif
+#ifdef HAVE_PPPOATM
+	    || nvram_match("wan_proto", "pppoa")
+#endif
+#ifdef HAVE_PPPOEDUAL
+	    || nvram_match("wan_proto", "pppoe_dual")
+#endif
+	    || nvram_match("wan_proto", "pppoe")) {
+		if (nvram_match("pppd_pppifname", ""))
+			strncpy(localwanface, "ppp0", IFNAMSIZ);
+		else
+			strncpy(localwanface, nvram_safe_get("pppd_pppifname"), IFNAMSIZ);
+	}
+#ifdef HAVE_3G
+	else if (nvram_match("wan_proto", "3g")) {
+		if (nvram_match("3gdata", "qmi")) {
+			strncpy(localwanface, "wwan0", IFNAMSIZ);
+		} else {
+			if (nvram_match("pppd_pppifname", ""))
+				strncpy(localwanface, "ppp0", IFNAMSIZ);
+			else
+				strncpy(localwanface, nvram_safe_get("pppd_pppifname"), IFNAMSIZ);
+		}
+
+	}
+#endif
+#ifndef HAVE_MADWIFI
+	else if (nvram_invmatch("sta_ifname","")) {
+		strcpy(localwanface, nvram_safe_get("sta_ifname"));
+	}
+#else
+	else if (nvram_invmatch("sta_ifname","")) {
+		if (nvram_matchi("wifi_bonding", 1))
+			strcpy(localwanface, "bond0");
+		else
+			strcpy(localwanface, nvram_safe_get("sta_ifname"));
+	}
+#endif
+#ifdef HAVE_IPETH
+	else if (nvram_match("wan_proto", "iphone")) {
+		strncpy(localwanface, "iph0", IFNAMSIZ);
+	}
+#endif
+	else
+		strncpy(localwanface, nvram_safe_get("wan_ifname"), IFNAMSIZ);
+
+	return localwanface;
+}
