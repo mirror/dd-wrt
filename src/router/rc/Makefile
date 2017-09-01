@@ -40,7 +40,7 @@ INITCFLAGS = $(call cc-option,-ffunction-sections -fdata-sections,)
 
 #LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-OBJS := rc.o ntp.o
+OBJS := rc.o ntp.o 
 #http.o stats.o
 
 #ifdef $(CONFIG_DIST)
