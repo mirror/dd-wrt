@@ -47,39 +47,6 @@ endif
 ifeq ($(CONFIG_80211AC),y)
 CCOPTS+=-DHAVE_80211AC
 endif
-ifeq ($(CONFIG_TIEXTRA1),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-ifeq ($(ARCHITECTURE),openrisc)
-LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
-endif
-endif
-ifeq ($(CONFIG_TIEXTRA2),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-ifeq ($(ARCHITECTURE),openrisc)
-LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
-endif
-endif
-ifeq ($(CONFIG_SAMBA3),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-ifeq ($(ARCHITECTURE),openrisc)
-LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
-endif
-endif
-ifeq ($(CONFIG_QTN),y)
-  CFLAGS += -DHAVE_QTN
-endif
-ifeq ($(CONFIG_FTP),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-ifeq ($(ARCHITECTURE),openrisc)
-LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
-endif
-endif
-ifeq ($(CONFIG_MINIDLNA),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-ifeq ($(ARCHITECTURE),openrisc)
-LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
-endif
-endif
 
 wiviz: clean ${OBJS}
 	${CC} ${CCOPTS} -I${INCLUDE} -o ${TARGET} ${OBJS} ${LIBS} ${LDFLAGS}
