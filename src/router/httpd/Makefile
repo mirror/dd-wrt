@@ -815,20 +815,20 @@ endif
 
 ifeq ($(CONFIG_FTP),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
+LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson  -lsharetools
 CFLAGS += -DHAVE_NAS_SERVER
 endif
 
 ifeq ($(CONFIG_SAMBA3),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs 
-LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
+LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson -lsharetools
 CFLAGS += -DHAVE_NAS_SERVER
 CFLAGS += -DHAVE_SAMBA_SERVER
 endif
 
 ifeq ($(CONFIG_MINIDLNA),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
+LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson -lsharetools
 CFLAGS += -DHAVE_MINIDLNA
 endif
 
