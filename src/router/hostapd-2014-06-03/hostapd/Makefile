@@ -11,22 +11,6 @@ CFLAGS += -I$(abspath ../src/utils)
 -include .config
 -include $(if $(MULTICALL), ../wpa_supplicant/.config)
 
-ifeq ($(CONFIG_TIEXTRA1),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-ifeq ($(CONFIG_TIEXTRA2),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-ifeq ($(CONFIG_SAMBA3),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-ifeq ($(CONFIG_FTP),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-ifeq ($(CONFIG_MINIDLNA),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-
 ifdef CONFIG_TESTING_OPTIONS
 CFLAGS += -DCONFIG_TESTING_OPTIONS
 CONFIG_WPS_TESTING=y
