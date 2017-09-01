@@ -893,6 +893,7 @@ endif
 ifeq ($(CONFIG_MINIDLNA),y)
   CFLAGS_EXTRA += -DHAVE_MINIDLNA
 OBJS += minidlna.o
+LDFLAGS += -lsharetools
 endif
 ifeq ($(CONFIG_MEDIASERVER),y)
 CFLAGS_EXTRA += -DHAVE_MEDIASERVER
@@ -997,12 +998,14 @@ endif
 ifeq ($(CONFIG_FTP),y)
 CFLAGS_EXTRA += -I$(TOP)/jansson/src
 CFLAGS_EXTRA += -DHAVE_FTP
+LDFLAGS += -lsharetools
 OBJS += proftp.o
 endif
 ifeq ($(CONFIG_SAMBA3),y)
 CFLAGS_EXTRA += -I$(TOP)/jansson/src
 CFLAGS_EXTRA += -DHAVE_SAMBA3
 OBJS += samba3.o
+LDFLAGS += -lsharetools
 endif
 ifeq ($(CONFIG_RB500),y)
 CFLAGS_EXTRA += -DHAVE_RB500
