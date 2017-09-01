@@ -145,8 +145,6 @@ extern int filtersync_main(void);
 extern int filter_add(int seq);
 extern int filter_del(int seq);
 
-// extern int ntp_main(int argc, char **argv);
-void ntp_main(timer_t t, int arg);
 extern int ipupdate_main(int argc, char **argv);
 extern int gpio_main(int argc, char **argv);
 

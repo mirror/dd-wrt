@@ -25,16 +25,16 @@
 #include <cy_conf.h>
 #include <utils.h>
 
-#define NTP_M_TIMER "3600"
-#define NTP_N_TIMER "30"
+//#define NTP_M_TIMER 3600
+//#define NTP_N_TIMER 30
 
 extern void dd_timer_cancel(timer_t timerid);
-int isRunning(char *name)
+static int isRunning(char *name)
 {
 	return eval("pidof", name) == 0 ? 1 : 0;
 }
 
-void check_udhcpd(timer_t t, int arg)
+static void check_udhcpd(timer_t t, int arg)
 {
 	if (nvram_invmatchi("router_disable", 1)
 	    || nvram_match("lan_proto", "dhcp")) {
@@ -76,7 +76,7 @@ void check_udhcpd(timer_t t, int arg)
 }
 
 // <<tofu
-int do_ntp(void)		// called from ntp_main and
+static int do_ntp(void)		// called from ntp_main and
 				// process_monitor_main; (now really) called every hour!
 {
 	char *servers;
@@ -119,7 +119,7 @@ int do_ntp(void)		// called from ntp_main and
  * && (day == dend)) { printf("***"); } } } printf("\n"); } 
  */
 
-void ntp_main(timer_t t, int arg)
+static void ntp_main(timer_t t, int arg)
 {
 	if (check_action() != ACT_IDLE)
 		return;		// don't execute while upgrading
@@ -132,9 +132,9 @@ void ntp_main(timer_t t, int arg)
 		if (arg == FIRST)
 			dd_timer_cancel(t);
 		eval("filtersync");
-		nvram_set("timer_interval", NTP_M_TIMER);	// are these used??
+		nvram_seti("timer_interval", NTP_M_TIMER);	// are these used??
 	} else {
-		nvram_set("timer_interval", NTP_N_TIMER);
+		nvram_seti("timer_interval", NTP_N_TIMER);
 	}
 
 }
