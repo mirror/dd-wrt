@@ -18,7 +18,6 @@ extern "C" {
 #define CRC32_INIT_VALUE 0xffffffff	/* Initial CRC32 checksum value */
 #define CRC32_GOOD_VALUE 0xdebb20e3	/* Good final CRC32 checksum value */
 
-	uint32 crc32(void *, uint, uint32);
 
 	/*
 	 * macros for common usage 
