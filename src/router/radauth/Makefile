@@ -32,21 +32,6 @@ endif
 ifeq ($(CONFIG_RT61),y)
   CFLAGS += -DHAVE_RT2880 
 endif
-ifeq ($(CONFIG_TIEXTRA1),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-ifeq ($(CONFIG_TIEXTRA2),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-ifeq ($(CONFIG_SAMBA3),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-ifeq ($(CONFIG_FTP),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-ifeq ($(CONFIG_MINIDLNA),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
 
 CFLAGS += -DNEED_PRINTF -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(LINUXDIR)/brcm/shared/bcmwifi/include
 LDFLAGS += -L -ffunction-sections -fdata-sections -Wl,--gc-sections
