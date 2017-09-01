@@ -262,22 +262,6 @@ ifeq ($(CONFIG_QTN),y)
   CFLAGS +=  -I$(TOP)/qtn/libqcsapi_client -I$(TOP)/qtn/libqcsapi_client/librpc 
   QTNFLAGS =  -L$(TOP)/qtn/libqcsapi_client -lqcsapi_client   -L$(TOP)/qtn/libqcsapi_client/librpc -lrpc
 endif
-ifeq ($(CONFIG_SAMBA3),y)
-  OBJS += samba3.o 
-  CFLAGS += -I$(TOP)/jansson/src -L$(TOP)/jansson/src/.libs -ljansson -lm
-  CFLAGS += -DHAVE_SAMBA3
-  CFLAGS += -DHAVE_SAMBA_SERVER
-endif
-ifeq ($(CONFIG_FTP),y)
-  OBJS += samba3.o 
-  CFLAGS += -I$(TOP)/jansson/src -L$(TOP)/jansson/src/.libs -ljansson -lm
-endif
-ifeq ($(CONFIG_MINIDLNA),y)
-  OBJS +=  dlna.o
-  CFLAGS += -I$(TOP)/jansson/src -L$(TOP)/jansson/src/.libs -ljansson -lm
-  CFLAGS += -DHAVE_MINIDLNA
-endif
-
 ifeq ($(CONFIG_TIEXTRA1),y)
   OBJS += $(TOP)/private/telkom/mchillispot.o
   CFLAGS += -I$(TOP)/jansson/src -I$(TOP)/private/telkom -L$(TOP)/jansson/src/.libs -ljansson -lm
@@ -1435,23 +1419,40 @@ ifeq ($(CONFIG_MATRIXSSL),y)
 #LDFLAGS += -L$(TOP)/matrixssl/src -lmatrixssl
 CFLAGS += -DHAVE_MATRIXSSL
 endif
+
+ifeq ($(CONFIG_SAMBA3),y)
+  SHARETOOLSOBJS += samba3.o 
+  SFLAGS += -I$(TOP)/jansson/src
+  CFLAGS += -DHAVE_SAMBA3
+  CFLAGS += -DHAVE_SAMBA_SERVER
+  ADDLIB = libsharetools.so
+endif
+ifeq ($(CONFIG_FTP),y)
+  SHARETOOLSOBJS += samba3.o 
+  CFLAGS += -I$(TOP)/jansson/src
+  ADDLIB = libsharetools.so
+endif
+ifeq ($(CONFIG_MINIDLNA),y)
+  SHARETOOLSOBJS +=  dlna.o
+  CFLAGS += -I$(TOP)/jansson/src 
+  CFLAGS += -DHAVE_MINIDLNA
+  ADDLIB = libsharetools.so
+endif
+
+
+
+
 HFLAGS := $(CFLAGS)
 CFLAGS += $(COPTS)
-all: libshutils.so libutils.so libwireless.so libqos.so
+all: libshutils.so libutils.so libwireless.so libqos.so $(ADDLIB)
 
 install: all
 ifeq ($(CONFIG_XSCALE),y)
 	install -d $(INSTALLDIR)/libutils/lib
-	install -m 755 libutils.so $(INSTALLDIR)/libutils/lib
-	install -m 755 libwireless.so $(INSTALLDIR)/libutils/lib
-	install -m 755 libshutils.so $(INSTALLDIR)/libutils/lib
-	install -m 755 libqos.so $(INSTALLDIR)/libutils/lib
+	cp *.so $(INSTALLDIR)/libutils/lib
 else
 	install -d $(INSTALLDIR)/libutils/usr/lib
-	install -m 755 libutils.so $(INSTALLDIR)/libutils/usr/lib
-	install -m 755 libwireless.so $(INSTALLDIR)/libutils/usr/lib
-	install -m 755 libshutils.so $(INSTALLDIR)/libutils/usr/lib
-	install -m 755 libqos.so $(INSTALLDIR)/libutils/usr/lib
+	cp *.so $(INSTALLDIR)/libutils/usr/lib
 endif
 
 clean:
@@ -1475,8 +1476,13 @@ ifeq ($(CONFIG_ATH9K),y)
 endif
 	@true
 
+
+
+libsharetools.so: $(SHARETOOLSOBJS)
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram -L. -lshutils -L$(TOP)/jansson/src/.libs -ljansson -lm
+
 libqos.so: qos.o
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils -lwireless $(QTNFLAGS)
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils $(QTNFLAGS)
 
 libwireless.so: $(WOBJS) madwififiles ath9kfiles
 	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $(WOBJS) $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram -L. -lshutils $(WLDFLAGS) $(ATH9KLDFLAGS)
