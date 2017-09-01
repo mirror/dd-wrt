@@ -16,8 +16,6 @@ CFLAGS += -I. -I$(TOP)/shared -Wall
 CFLAGS += $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF
 
 LDFLAGS	+= -L$(TOP)/nvram -L$(TOP)/nvram -lnvram -L$(TOP)/libutils -lshutils
-#ifeq ($(ARCHITECTURE),openrisc)
-#LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
 LDFLAGS += $(EXTRA_LDFLAGS)
 LDFLAGS	+= -lpthread -lm
 
