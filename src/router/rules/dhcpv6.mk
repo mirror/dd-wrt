@@ -4,7 +4,7 @@ dhcpv6:
 	CFLAGS="$(COPTS)  $(MIPS16_OPT) $(JFLAGS) -DNEED_PRINTF -D_GNU_SOURCE -I$(TOP)/shared -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) $(JFLAGS) -DNEED_PRINTF -D_GNU_SOURCE -I$(TOP)/shared  -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CXXFLAGS="$(COPTS) $(MIPS16_OPT) $(JFLAGS) -DNEED_PRINTF -D_GNU_SOURCE -I$(TOP)/shared  -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) $(JFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections  $(TOP)/libutils/getifaddrs.o -L$(TOP)/libutils/ -lutils -lshutils -L$(TOP)/nvram -lnvram -Wl,-rpath,$(TOP)/jansson/src/.libs" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT) $(JFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections  $(TOP)/libutils/getifaddrs.o -L$(TOP)/libutils/ -lutils -lshutils -L$(TOP)/nvram -lnvram" \
 	$(MAKE) -C dhcpv6 all
 	
 dhcpv6-install:
@@ -14,7 +14,7 @@ dhcpv6-install:
 dhcpv6-clean:
 	$(MAKE) -C dhcpv6 clean
 
-dhcpv6-configure: jansson
+dhcpv6-configure:
 	cd dhcpv6 && ./configure --prefix= --with-localdbdir=/var --with-sysconfdir=/etc \
 			--target=$(ARCH)-linux \
 			--host=$(ARCH) \
@@ -22,4 +22,4 @@ dhcpv6-configure: jansson
 			CC="$(CC)" \
 			CXXFLAGS="$(COPTS) $(MIPS16_OPT) $(JFLAGS) -I$(TOP)/shared -DNEED_PRINTF -D_GNU_SOURCE -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
 			CFLAGS="$(COPTS) $(MIPS16_OPT) $(JFLAGS) -I$(TOP)/shared -DNEED_PRINTF -D_GNU_SOURCE  -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-			LDFLAGS="$(COPTS) $(MIPS16_OPT) $(JFLAGS) -I$(TOP)/shared -ffunction-sections -fdata-sections -Wl,--gc-sections $(TOP)/libutils/getifaddrs.o -L$(TOP)/libutils/ -lutils -lshutils -L$(TOP)/nvram -lnvram -Wl,-rpath,$(TOP)/jansson/src/.libs"
+			LDFLAGS="$(COPTS) $(MIPS16_OPT) $(JFLAGS) -I$(TOP)/shared -ffunction-sections -fdata-sections -Wl,--gc-sections $(TOP)/libutils/getifaddrs.o -L$(TOP)/libutils/ -lutils -lshutils -L$(TOP)/nvram -lnvram"
