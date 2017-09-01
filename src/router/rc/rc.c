@@ -42,6 +42,7 @@
 
 #include <revision.h>
 #include <airbag.h>
+#include "crc.c"
 #include "servicemanager.c"
 #include "services.c"
 #include "mtd.c"
@@ -83,6 +84,7 @@
 #endif
 #include "event.c"
 #include "gratarp.c"
+#include "ntp.c"
 
 #if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
 static void check_qmi(void)
