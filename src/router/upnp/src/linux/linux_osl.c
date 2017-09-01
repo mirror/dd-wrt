@@ -30,7 +30,7 @@
 #include <arpa/inet.h>
 #include <net/if_arp.h>
 
-//#define __KERNEL__
+#define __KERNEL__
 #include <asm/types.h>
 #include <linux/sockios.h>
 #include <linux/ethtool.h>
