@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3592 | brainslayer | 2017-09-04 01:24:48 +0200 (Mon, 04 Sep 2017) | 1 line
+
+exclude duplicated symbol
+------------------------------------------------------------------------
 r3591 | brainslayer | 2017-09-04 01:12:37 +0200 (Mon, 04 Sep 2017) | 1 line
 
 revert mwifiex, current version is unstable
