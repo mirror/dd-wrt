@@ -1422,7 +1422,7 @@ endif
 
 ifeq ($(CONFIG_SAMBA3),y)
   SHARETOOLSOBJS += libsharetools/samba3.o 
-  SFLAGS += -I$(TOP)/jansson/src
+  CFLAGS += -I$(TOP)/jansson/src
   CFLAGS += -DHAVE_SAMBA3
   CFLAGS += -DHAVE_SAMBA_SERVER
   ADDLIB = libsharetools.so
