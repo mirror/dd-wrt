@@ -5,9 +5,9 @@
 CXX=ccache $(ARCH)-linux-uclibc-g++
 CXXFLAGS=$(COPTS) $(MIPS16_OPT)
 LIBFLAGS=-fPIC
-DEFINES=-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -DRAR_SMP -DNEED_PRINTF
+DEFINES=-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -DRAR_SMP -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections
 #STRIP=strip
-LDFLAGS=-pthread
+LDFLAGS=-pthread -ffunction-sections -fdata-sections -Wl,--gc-sections
 DESTDIR=$(INSTALLDIR)/usr
 
 # Linux using LCC
