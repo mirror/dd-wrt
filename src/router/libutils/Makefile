@@ -1460,6 +1460,7 @@ clean:
 	rm -f libutils/*.o libqos/*.o libwireless/*.o libshutils/*.o libsharetools/*.o *.o *.so
 	rm -f $(TOP)/register/*.o
 	rm -f *.a
+	rm -f *.o
 	rm -f include/*.h~
 	rm -f libqos/*.c~ libwireless/*.c~ libshutils/*.c~ libsharetools/*.c~
 	rm -f $(TOP)/private/telkom/*.o
