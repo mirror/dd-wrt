@@ -27,7 +27,7 @@ bool WideToChar(const wchar *Src,char *Dest,size_t DestSize)
     RetCode=false;
 
 // wcstombs is broken in Android NDK r9.
-#elif defined(_APPLE) || defined(_ANDROID)
+#elif defined(_APPLE)
   WideToUtf(Src,Dest,DestSize);
 
 #elif defined(MBFUNCTIONS)
@@ -74,7 +74,7 @@ bool CharToWide(const char *Src,wchar *Dest,size_t DestSize)
     RetCode=false;
 
 // mbstowcs is broken in Android NDK r9.
-#elif defined(_APPLE) || defined(_ANDROID)
+#elif defined(_APPLE)
   UtfToWide(Src,Dest,DestSize);
 
 #elif defined(MBFUNCTIONS)
@@ -110,7 +110,7 @@ bool CharToWide(const char *Src,wchar *Dest,size_t DestSize)
 }
 
 
-#if defined(_UNIX) && defined(MBFUNCTIONS) && !defined(_ANDROID)
+#if defined(_UNIX) && defined(MBFUNCTIONS)
 // Convert and restore mapped inconvertible Unicode characters. 
 // We use it for extended ASCII names in Unix.
 bool WideToCharMap(const wchar *Src,char *Dest,size_t DestSize,bool &Success)
@@ -155,7 +155,7 @@ bool WideToCharMap(const wchar *Src,char *Dest,size_t DestSize,bool &Success)
 #endif
 
 
-#if defined(_UNIX) && defined(MBFUNCTIONS) && !defined(_ANDROID)
+#if defined(_UNIX) && defined(MBFUNCTIONS)
 // Convert and map inconvertible Unicode characters. 
 // We use it for extended ASCII names in Unix.
 void CharToWideMap(const char *Src,wchar *Dest,size_t DestSize,bool &Success)
@@ -377,10 +377,17 @@ bool UtfToWide(const char *Src,wchar *Dest,size_t DestSize)
 }
 
 
+// Source data can be both with and without UTF-8 BOM.
+bool IsTextUtf8(const char *Src)
+{
+  return UtfToWide(Src,NULL,0);
+}
+
+
 int wcsicomp(const wchar *s1,const wchar *s2)
 {
 #ifdef _WIN_ALL
-  return CompareString(LOCALE_USER_DEFAULT,NORM_IGNORECASE|SORT_STRINGSORT,s1,-1,s2,-1)-2;
+  return CompareStringW(LOCALE_USER_DEFAULT,NORM_IGNORECASE|SORT_STRINGSORT,s1,-1,s2,-1)-2;
 #else
   while (true)
   {
@@ -472,7 +479,7 @@ wchar* wcsupper(wchar *s)
 
 int toupperw(int ch)
 {
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL)
   // CharUpper is more reliable than towupper in Windows, which seems to be
   // C locale dependent even in Unicode version. For example, towupper failed
   // to convert lowercase Russian characters.
@@ -485,7 +492,7 @@ int toupperw(int ch)
 
 int tolowerw(int ch)
 {
-#ifdef _WIN_ALL
+#if defined(_WIN_ALL)
   // CharLower is more reliable than towlower in Windows.
   // See comment for towupper above.
   return (int)(INT_PTR)CharLower((wchar *)(INT_PTR)ch);
@@ -503,19 +510,23 @@ int atoiw(const wchar *s)
 
 int64 atoilw(const wchar *s)
 {
-  int sign=1;
+  bool sign=false;
   if (*s=='-')
   {
     s++;
-    sign=-1;
+    sign=true;
   }
-  int64 n=0;
+  // Use unsigned type here, since long string can overflow the variable
+  // and signed integer overflow is undefined behavior in C++.
+  uint64 n=0;
   while (*s>='0' && *s<='9')
   {
     n=n*10+(*s-'0');
     s++;
   }
-  return sign*n;
+  // Check int64(n)>=0 to avoid the signed overflow with undefined behavior
+  // when negating 0x8000000000000000.
+  return sign && int64(n)>=0 ? -int64(n) : int64(n);
 }
 
 
