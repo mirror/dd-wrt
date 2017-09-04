@@ -1,9 +1,7 @@
 #ifndef _RAR_FILE_
 #define _RAR_FILE_
 
-#ifdef _ANDROID // Need lseek64 to handle >2 GB files in Android.
 #define FILE_USE_OPEN
-#endif
 
 #ifdef _WIN_ALL
   typedef HANDLE FileHandle;
@@ -40,6 +38,9 @@ enum FILE_MODE_FLAGS {
 
   // Provide read access to created file for other programs.
   FMF_SHAREREAD=16,
+
+  // Use standard NTFS names without trailing dots and spaces.
+  FMF_STANDARDNAMES=32,
 
   // Mode flags are not defined yet.
   FMF_UNDEFINED=256
