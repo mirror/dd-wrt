@@ -139,8 +139,22 @@ int cpu_plltype(void)
 	fclose(fp);
 	if (chipid == 53573)
 		return 11;
-	else
-		return 9;
+	if (packageoption == 2) {
+		if (chipid == 53030)
+			return 10; // 600 / 800 / 1000
+		else
+			return 9; // 600 / 800
+		
+	}
+	if (packageoption == 0)
+		if (chipid == 53030)
+			return 8; // 600 / 800 / 1000 / 1200 / 1400
+		else
+			return 7; // 600 / 800 / 1000
+	
+	
+	}
+	return 9;
 #endif
 #if defined(HAVE_BUFFALO) || defined(BUFFALO_JP)
 	if (nvram_match("DD_BOARD", "Buffalo WHR-G54S") ||	//
