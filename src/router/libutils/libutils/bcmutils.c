@@ -146,7 +146,7 @@ int cpu_plltype(void)
 			return 9; // 600 / 800
 		
 	}
-	if (packageoption == 0)
+	if (packageoption == 0) {
 		if (chipid == 53030)
 			return 8; // 600 / 800 / 1000 / 1200 / 1400
 		else
