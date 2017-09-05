@@ -101,11 +101,6 @@ void show_ipnetmask(webs_t wp, char *var)
 	websWrite(wp, "</div>\n");
 
 }
-static unsigned int ns_type11_clocks[4] = { 600, 800, 900, 0 };
-static unsigned int ns_type10_clocks[4] = { 600, 800, 1000, 0 };
-static unsigned int ns_type9_clocks[3] = { 600, 800, 0 };
-static unsigned int ns_type8_clocks[6] = { 600, 800, 1000, 1200, 1400, 0 };
-static unsigned int ns_type7_clocks[4] = { 600, 800, 1000, 0 };
 
 #ifdef HAVE_OVERCLOCKING
 void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
