@@ -281,7 +281,7 @@ static struct CPUFEATURES cpufeatures[] = {
 	{"flags", "avx", "AVX"},
 	{"flags", "avx2", "AVX2"},
 	{"flags", "aes", "AES-NI"},
-	{"flags", "ht", "HYPERTHREADING"},
+	{"flags", "ht", "HT"},
 	{"flags", "nx", "NX"},
 
 // ARM
