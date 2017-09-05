@@ -132,22 +132,22 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 #else
 	switch (rev) {
 	case 2:
-		c = ns_type2_clocks;
+		c = type2_clocks;
 		break;
 	case 3:
-		c = ns_type3_clocks;
+		c = type3_clocks;
 		break;
 	case 4:
-		c = ns_type4_clocks;
+		c = type4_clocks;
 		break;
 	case 7:
-		c = ns_type7_clocks;
+		c = type7_clocks;
 		break;
 	case 8:
-		c = ns_type8_clocks;
+		c = type8_clocks;
 		break;
 	case 10:
-		c = ns_type10_clocks;
+		c = type10_clocks;
 		break;
 	default:
 		websWrite(wp, "<script type=\"text/javascript\">Capture(management.clock_support)</script>\n</div>\n");
