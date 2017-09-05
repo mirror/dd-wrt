@@ -1,7 +1,7 @@
 /*
  * ADM6996 switch driver
  *
- * Copyright (c) 2008 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (c) 2008 Felix Fietkau <nbd@nbd.name>
  * Copyright (c) 2010,2011 Peter Lebbing <peter@digitalbrains.com>
  *
  * This program is free software; you can redistribute  it and/or modify it
@@ -46,9 +46,20 @@ enum admreg {
 	ADM_EEPROM_EXT_BASE	= 0x40,
 #define ADM_VLAN_FILT_L(n) (ADM_EEPROM_EXT_BASE + 2 * (n))
 #define ADM_VLAN_FILT_H(n) (ADM_EEPROM_EXT_BASE + 1 + 2 * (n))
+#define ADM_VLAN_MAP(n) (ADM_EEPROM_BASE + 0x13 + n)
 	ADM_COUNTER_BASE	= 0xa0,
 		ADM_SIG0		= ADM_COUNTER_BASE + 0,
 		ADM_SIG1		= ADM_COUNTER_BASE + 1,
+		ADM_PS0		= ADM_COUNTER_BASE + 2,
+		ADM_PS1		= ADM_COUNTER_BASE + 3,
+		ADM_PS2		= ADM_COUNTER_BASE + 4,
+		ADM_CL0		= ADM_COUNTER_BASE + 8, /* RxPacket */
+		ADM_CL6		= ADM_COUNTER_BASE + 0x1a, /* RxByte */
+		ADM_CL12		= ADM_COUNTER_BASE + 0x2c, /* TxPacket */
+		ADM_CL18		= ADM_COUNTER_BASE + 0x3e, /* TxByte */
+		ADM_CL24		= ADM_COUNTER_BASE + 0x50, /* Coll */
+		ADM_CL30		= ADM_COUNTER_BASE + 0x62, /* Err */
+#define ADM_OFFSET_PORT(n) ((n * 4) - (n / 4) * 2 - (n / 5) * 2)
 	ADM_PHY_BASE		= 0x200,
 #define ADM_PHY_PORT(n) (ADM_PHY_BASE + (0x20 * n))
 };
@@ -132,7 +143,8 @@ enum {
 };
 
 /* Tag Based VLAN in ADM_SYSC3 */
-#define ADM_TBV (1 << 5)
+#define ADM_MAC_CLONE	BIT(4)
+#define ADM_TBV		BIT(5)
 
 static const u8 adm_portcfg[] = {
 	[0] = ADM_P0_CFG,
@@ -152,6 +164,18 @@ static const u8 adm_portcfg[] = {
 #define ADM_VLAN_FILT_VALID (1 << 15)
 #define ADM_VLAN_FILT_VID(n) (((n) & 0xfff) << 0)
 
+/* Convert ports to a form for ADM6996L VLAN map */
+#define ADM_VLAN_FILT(ports) ((ports & 0x01) | ((ports & 0x02) << 1) | \
+			((ports & 0x04) << 2) | ((ports & 0x08) << 3) | \
+			((ports & 0x10) << 3) | ((ports & 0x20) << 3))
+
+/* Port status register */
+enum {
+	ADM_PS_LS = (1 << 0),	/* Link status */
+	ADM_PS_SS = (1 << 1),	/* Speed status */
+	ADM_PS_DS = (1 << 2),	/* Duplex status */
+	ADM_PS_FCS = (1 << 3)	/* Flow control status */
+};
 
 /*
  * Split the register address in phy id and register
