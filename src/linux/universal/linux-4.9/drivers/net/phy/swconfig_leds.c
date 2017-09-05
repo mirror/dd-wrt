@@ -48,7 +48,7 @@ struct swconfig_trig_data {
 	u32 port_mask;
 
 	bool prev_link;
-	unsigned long prev_traffic;
+	unsigned long long prev_traffic;
 	enum led_brightness prev_brightness;
 	u8 speed_mask;
 };
@@ -264,7 +264,7 @@ swconfig_trig_led_event(struct switch_led_trigger *sw_trig,
 		if (link != trig_data->prev_link)
 			swconfig_trig_set_brightness(trig_data, LED_OFF);
 	} else {
-		unsigned long traffic;
+		unsigned long long traffic;
 		int speedok;	/* link speed flag */
 		int i;
 
