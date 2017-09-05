@@ -6673,7 +6673,6 @@ int buf_to_file(char *path, char *buf)
 	return 0;
 }
 
-
 #ifndef IFNAMSIZ
 #include <net/if.h>
 #endif
@@ -6718,11 +6717,11 @@ char *get_wan_face(void)
 	}
 #endif
 #ifndef HAVE_MADWIFI
-	else if (nvram_invmatch("sta_ifname","")) {
+	else if (nvram_invmatch("sta_ifname", "")) {
 		strcpy(localwanface, nvram_safe_get("sta_ifname"));
 	}
 #else
-	else if (nvram_invmatch("sta_ifname","")) {
+	else if (nvram_invmatch("sta_ifname", "")) {
 		if (nvram_matchi("wifi_bonding", 1))
 			strcpy(localwanface, "bond0");
 		else

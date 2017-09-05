@@ -57,11 +57,15 @@ static unsigned int type4_clocks[10] = { 192, 200, 216, 228, 240, 252, 264, 280,
 static unsigned int type7_clocks[10] = { 183, 187, 198, 200, 216, 225, 233, 237, 250, 0 };
 static unsigned int type8_clocks[9] = { 200, 300, 400, 500, 600, 632, 650, 662, 0 };
 
-static unsigned int type9_clocks[7] =	// 1200 seem to be the last value which works stable
-{ 600, 800, 1000, 1200, 1400, 1600, 0 };
 static unsigned int type10_clocks[9] = { 200, 266, 300, 333, 400, 480, 500, 533, 0 };
-static unsigned int type11_clocks[4] = { 600, 800, 900, 0 };
 
+#ifdef HAVE_NORTHSTAR
+static unsigned int ns_type11_clocks[4] = { 600, 800, 900, 0 };
+static unsigned int ns_type10_clocks[4] = { 600, 800, 1000, 0 };
+static unsigned int ns_type9_clocks[3] = { 600, 800, 0 };
+static unsigned int ns_type8_clocks[6] = { 600, 800, 1000, 1200, 1400, 0 };
+static unsigned int ns_type7_clocks[4] = { 600, 800, 1000, 0 };
+#endif
 #endif
 
 #ifdef HAVE_RT2880
@@ -97,6 +101,11 @@ void show_ipnetmask(webs_t wp, char *var)
 	websWrite(wp, "</div>\n");
 
 }
+static unsigned int ns_type11_clocks[4] = { 600, 800, 900, 0 };
+static unsigned int ns_type10_clocks[4] = { 600, 800, 1000, 0 };
+static unsigned int ns_type9_clocks[3] = { 600, 800, 0 };
+static unsigned int ns_type8_clocks[6] = { 600, 800, 1000, 1200, 1400, 0 };
+static unsigned int ns_type7_clocks[4] = { 600, 800, 1000, 0 };
 
 #ifdef HAVE_OVERCLOCKING
 void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
@@ -104,26 +113,52 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 	int rev = cpu_plltype();
 	unsigned int *c;
 
-	if (rev == 2)
-		c = type2_clocks;
-	else if (rev == 3)
-		c = type3_clocks;
-	else if (rev == 4)
-		c = type4_clocks;
-	else if (rev == 7)
-		c = type7_clocks;
-	else if (rev == 8)
-		c = type8_clocks;
-	else if (rev == 9)
-		c = type9_clocks;
-	else if (rev == 10)
-		c = type10_clocks;
-	else if (rev == 11)
-		c = type11_clocks;
-	else {
+#ifdef HAVE_NORTHSTAR
+	switch (rev) {
+	case 11:
+		c = ns_type11_clocks;
+		break;
+	case 10:
+		c = ns_type10_clocks;
+		break;
+	case 9:
+		c = ns_type9_clocks;
+		break;
+	case 8:
+		c = ns_type8_clocks;
+		break;
+	case 7:
+		c = ns_type7_clocks;
+		break;
+	default:
 		websWrite(wp, "<script type=\"text/javascript\">Capture(management.clock_support)</script>\n</div>\n");
 		return;
 	}
+#else
+	switch (rev) {
+	case 2:
+		c = ns_type2_clocks;
+		break;
+	case 3:
+		c = ns_type3_clocks;
+		break;
+	case 4:
+		c = ns_type4_clocks;
+		break;
+	case 7:
+		c = ns_type7_clocks;
+		break;
+	case 8:
+		c = ns_type8_clocks;
+		break;
+	case 10:
+		c = ns_type10_clocks;
+		break;
+	default:
+		websWrite(wp, "<script type=\"text/javascript\">Capture(management.clock_support)</script>\n</div>\n");
+		return;
+	}
+#endif
 
 	char *oclk = nvram_safe_get("overclocking");
 
