@@ -89,11 +89,7 @@ CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Iinclude
 #  -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 CFLAGS	+= -fPIC
 LDFLAGS += -L. -ldl
-OBJS := libutils/utils.o 
-ifeq ($(CONFIG_RT2880),y)
-OBJS += libutils/utils.o libutils/crypt.save libutils/des.save libutils/md5.save
-endif
-OBJS += libutils/linux_timer.o libutils/gpio.o libutils/md5c.o libutils/nvparse.o libutils/bcmutils.o libutils/linux_osl.o libutils/airbag.o
+OBJS := libutils/utils.o libutils/linux_timer.o libutils/gpio.o libutils/md5c.o libutils/nvparse.o libutils/bcmutils.o libutils/linux_osl.o libutils/airbag.o
 SHOBJS =  libshutils/timezones.o libshutils/shutils.o libshutils/sha1.o
 WOBJS := libwireless/wl.o libwireless/wl_basic.o libwireless/wl_linux.o libwireless/country.o libwireless/wl_macfuncs.o
 
