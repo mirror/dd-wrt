@@ -299,7 +299,7 @@ void gen_cert(char *name, int type, char *common, char *pass)
 	fprintf(fp, "default_days		= %s\n", nvram_default_get("radius_expiration", "365"));
 	fprintf(fp,
 		"default_crl_days	= 30\n"
-		"default_md		= md5\n"
+		"default_md		= sha256\n"
 		"preserve		= no\n"
 		"policy			= policy_match\n"
 		"\n" "[ policy_match ]\n"
