@@ -562,6 +562,12 @@ int internal_getRouterBrand()
 		return ROUTER_LINKSYS_EA6500V2;
 	}
 
+	if ((nvram_match("boardtype", "0xd72F") || nvram_match("boardtype", "0xA72F")) && nvram_match("boardrev", "0x1100")) {
+		setRouter("Linksys EA9500");
+
+		return ROUTER_LINKSYS_EA9500;
+	}
+
 	if (nvram_match("productid", "RT-AC56U")) {
 		setRouter("Asus RT-AC56U");
 		return ROUTER_ASUS_AC56U;
