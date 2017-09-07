@@ -213,7 +213,7 @@ void start_sysinit(void)
 		if (fp) {
 			fseek(fp, 0, SEEK_END);
 			long seek = ftell(fp);
-			fprintf(stderr, "length = %lX\n",seek);
+			fprintf(stderr, "length = %lX\n", seek);
 			if (seek == 0x200000) {
 				char *temp = malloc(65536);
 				fseek(fp, seek - 0x10000, SEEK_SET);
@@ -5173,7 +5173,6 @@ void start_sysinit(void)
 				{"eu_edthresh2g", "255"},
 				{"femctrl", "2"},
 				{"gainctrlsph", "0"},
-				{"macaddr", "60:38:E0:6E:4B:28"},
 				{"maxp2ga0", "0x64"},
 				{"maxp2ga1", "0x64"},
 				{"maxp2ga2", "0x64"},
@@ -5314,7 +5313,6 @@ void start_sysinit(void)
 				{"eu_edthresh5g", "255"},
 				{"femctrl", "2"},
 				{"gainctrlsph", "0"},
-				{"macaddr", "60:38:E0:6E:4B:29"},
 				{"maxp5gb0a0", "0x5C"},
 				{"maxp5gb0a1", "0x5C"},
 				{"maxp5gb0a2", "0x5C"},
@@ -5571,7 +5569,6 @@ void start_sysinit(void)
 				{"eu_edthresh5g", "255"},
 				{"femctrl", "2"},
 				{"gainctrlsph", "0"},
-				{"macaddr", "60:38:E0:6E:4B:2A"},
 				{"maxp5gb0a0", "0x5C"},
 				{"maxp5gb0a1", "0x5C"},
 				{"maxp5gb0a2", "0x5C"},
@@ -5825,15 +5822,28 @@ void start_sysinit(void)
 				nvram_nset(t->value, "3:%s", t->name);
 				t++;
 			}
-			nvram_set("vlan1hwname","et2");
-			nvram_set("vlan2hwname","et2");
-
 			nvram_seti("acs_2g_ch_no_ovlp", 1);
 			nvram_seti("acs_2g_ch_no_restrict", 1);
 			nvram_set("devpath1", "pci/1/4/");
 			nvram_set("devpath2", "pci/1/3/");
 			nvram_set("devpath3", "pci/2/1/");
 			change = 1;
+		}
+		if (!strlen(nvram_safe_get("et2macaddr"))) {
+			if (!strlen(nvram_safe_get("et0macaddr")))
+				nvram_set("et2macaddr", nvram_safe_get("0:macaddr"));
+			else
+				nvram_set("et2macaddr", nvram_safe_get("et0macaddr"));
+			nvram_set("et2mdcport", nvram_safe_get("et0mdcport"));
+			nvram_set("et2phyaddr", nvram_safe_get("et0phyaddr"));
+			nvram_seti("et_txq_thresh", 1024);
+			nvram_set("vlan1ports", "0 1 2 3 5 7 8*");
+			nvram_set("vlan2ports", "4 8u");
+			nvram_set("vlan1hwname", "et2");
+			nvram_set("vlan2hwname", "et2");
+			nvram_unset("et0macaddr");
+			nvram_unset("et1macaddr");
+			nvram_commit();
 		}
 		if (nvram_get("partialboots"))
 			change = 1;
@@ -6149,7 +6159,7 @@ void start_overclocking(void)
 			break;
 		}
 	}
-	if (rev == 11){
+	if (rev == 11) {
 		switch (clk) {
 		case 600:
 		case 800:
