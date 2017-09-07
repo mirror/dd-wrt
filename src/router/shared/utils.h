@@ -759,6 +759,8 @@
 
 #define ROUTER_BOARD_NS5MXW 0x10310c	//nanostation 5mxw
 
+#define ROUTER_LINKSYS_EA9500 0x10410f
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
