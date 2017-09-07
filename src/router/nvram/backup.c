@@ -305,6 +305,7 @@ static char *filter[] = {
 	"color",
 	"PA",
 	"nocountrysel",
+	"nvram_min_ver",
 	NULL
 };
 
