@@ -125,6 +125,7 @@ static char *filter[] = {
 	"devpath0",
 	"devpath1",
 	"devpath2",
+	"devpath3",
 	"et0macaddr",
 	"et0macaddr_safe",
 	"et0mdcport",
@@ -321,7 +322,7 @@ int nvram_critical(char *name)
 			return 1;
 		}
 	}
-	if (strncmp(name, "sb/", 3) && strncmp(name, "pci/", 4) && strncmp(name, "pcie/", 5) && strncmp(name, "0:", 2) && strncmp(name, "1:", 2) && strncmp(name, "2:", 2) && !strstr(name, "_hwaddr"))
+	if (strncmp(name, "sb/", 3) && strncmp(name, "pci/", 4) && strncmp(name, "pcie/", 5) && strncmp(name, "0:", 2) && strncmp(name, "1:", 2) && strncmp(name, "2:", 2) && strncmp(name, "3:", 2) && !strstr(name, "_hwaddr"))
 		return 0;
 	else
 		return 1;
