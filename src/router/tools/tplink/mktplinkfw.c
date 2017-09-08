@@ -830,6 +830,7 @@ static int check_options(void)
 static int trunkfile=0;
 unsigned int area_code = 0;
 unsigned int signature = 0;
+unsigned int signature2 = 0;
 static void fill_header(char *buf, int len)
 {
 	struct fw_header *hdr = (struct fw_header *)buf;
@@ -845,6 +846,10 @@ static void fill_header(char *buf, int len)
 	if (signature) { // only for eu models
 	strcpy(hdr->sig1,"00000000;45550000;");
 	memcpy(hdr->sig2,"45550000",8);
+	}
+	if (signature2) { // only for eu models
+	strcpy(hdr->sig1,"00000000;45550000;");
+//	memcpy(hdr->sig2,"45550000",8);
 	}
     	if (area_code)
 	    hdr->area_code = HOST_TO_BE32(area_code);
@@ -964,7 +969,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "B:V:N:usck:r:o:v:h:t::");
+		c = getopt(argc, argv, "B:V:N:usxck:r:o:v:h:t::");
 		if (c == -1)
 			break;
 
@@ -995,6 +1000,9 @@ int main(int argc, char *argv[])
 			break;
 		case 's':
 			signature = 1;
+			break;
+		case 'x':
+			signature2 = 1;
 			break;
 		case 'v':
 			fw_ver = optarg;
