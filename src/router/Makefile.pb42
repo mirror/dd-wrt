@@ -19,7 +19,7 @@ endif
 
 CONFIG_WPE72_SIZE?=0x3d0000
 CONFIG_MUSL=y
-CONFIG_NOOPT=y
+#CONFIG_NOOPT=y
 
 #
 # Paths
@@ -728,6 +728,8 @@ wndr:
 	./tools/wndr3700/mkdniimg -B WNDR3700v4 -v 1.1.4.68 -r "" -i $(ARCH)-uclibc/aligned.wndr3700v4 -o $(ARCH)-uclibc/wndr3700v4-factory.img -H "29763948+128+128"
 	./tools/wndr3700/mkdniimg -B WNDR4300 -v 1.1.4.68 -r "" -i $(ARCH)-uclibc/aligned.wndr3700v4 -o $(ARCH)-uclibc/wndr4300-factory.img -H "29763948+0+128+128+2x2+3x3"
 	./tools/trx_n  -m 40000000 -o$(ARCH)-uclibc/wndr3700v4-webflash.bin  $(ARCH)-uclibc/aligned.wndr3700v4 
+	-$(MAKE) -f Makefile.pb42 validate MAXIMUM_SIZE=26214400 EX_PATH=$(ARCH)-uclibc/wndr3700v4-factory.img
+	-$(MAKE) -f Makefile.pb42 validate MAXIMUM_SIZE=26214400 EX_PATH=$(ARCH)-uclibc/wndr4300-factory.img
 
 
 realclean: $(obj-clean)
@@ -1389,8 +1391,10 @@ endif
 
 ifeq ($(CONFIG_UBNTXW),y)
 	-tools/ubnt/src/mkfwimage -v XW.ar934x.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntxw-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
-#	-tools/ubnt/src/mkfwimage -v BZ.qca9342.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntbz2-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
-	-tools/ubnt/src/mkfwimage2 -f 0x9f000000 -v BZ.qca9342.v6.0.0.133900.2000 -p kernel:0x50000:0xf60000:0:0:mips-uclibc/aligned.uimage -o $(ARCH)-uclibc/ubntbz2-dd-wrt.bin 
+	-tools/ubnt/src/mkfwimage -v BZ.qca9342.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntbz2-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
+#	-tools/ubnt/src/mkfwimage2 -f 0x9f000000 -v BZ.qca9342.v6.0.0.133900.2000 -p kernel:0x50000:0x760000:0:0:mips-uclibc/aligned.uimage -o $(ARCH)-uclibc/ubntbz2-dd-wrt.bin 
+#	-tools/ubnt/src/mkfwimage -v BZ.ar7240.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntbz-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
+	cd ubnt_mtd && make clean && make
 endif
 ifeq ($(CONFIG_DAP3410),y)
 	tools/dap3410/makedap $(ARCH)-uclibc/root.uimage $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dap3410.bin DAP3410
@@ -1888,10 +1892,10 @@ ifeq ($(CONFIG_WR841V9),y)
 	-./tools/tplink/mktplinkfw -B TL-WR841NDv11 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv11-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv11-firmware.bin mips-uclibc/tplink-WR841NDv11-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR841NDv11 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv11-firmwareUS.bin
+	-./tools/tplink/mktplinkfw -x -B TL-WR841NDv11 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv11-firmwareUS.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv11-firmwareUS.bin mips-uclibc/tplink-WR841NDv11-firmwareUS.bin
 	
-	-./tools/tplink/mktplinkfw -B TL-WR841NDv12 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv12-firmware.bin
+	-./tools/tplink/mktplinkfw -x -B TL-WR841NDv12 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv12-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv12-firmware.bin mips-uclibc/tplink-WR841NDv12-firmware.bin
 
 	-./tools/tplink/mktplinkfw -B TL-WR841NDv12 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv12-firmwareUS.bin
@@ -1944,16 +1948,16 @@ ifeq ($(CONFIG_WR1043V2),y)
 	-./tools/tplink/mktplinkfw -B ARCHER-C7v1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v1-firmware.bin mips-uclibc/tplink-ARCHER-C7v1-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B ARCHER-C7v2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v2-firmware.bin
+	-./tools/tplink/mktplinkfw -B ARCHER-C7v2 -s -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v2-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v2-firmware.bin mips-uclibc/tplink-ARCHER-C7v2-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B ARCHER-C7v2Israel -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v2-firmwareIL.bin
+	-./tools/tplink/mktplinkfw -B ARCHER-C7v2Israel -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v2-firmwareIL.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v2-firmwareIL.bin mips-uclibc/tplink-ARCHER-C7v2-firmwareIL.bin
 
 	-./tools/tplink/mktplinkfw -B ARCHER-C7v1 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v1-firmwareUS.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v1-firmwareUS.bin mips-uclibc/tplink-ARCHER-C7v1-firmwareUS.bin
 
-	-./tools/tplink/mktplinkfw -B ARCHER-C7v2 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v2-firmwareUS.bin
+	-./tools/tplink/mktplinkfw -B ARCHER-C7v2 -u -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v2-firmwareUS.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v2-firmwareUS.bin mips-uclibc/tplink-ARCHER-C7v2-firmwareUS.bin
 
 	-./tools/tplink/mktplinkfw -B ARCHER-C5v1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C5v1-firmware.bin
