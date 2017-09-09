@@ -1196,7 +1196,6 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	struct gozila_action *act;
 
 	wp->gozila_action = 1;
-	wp->my_next_page[0] = '\0';
 	submit_button = websGetVar(wp, "submit_button", NULL);	/* every html 
 								 * must have
 								 * the name */
@@ -1239,15 +1238,11 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		sys_restart();
 	}
 
-	if (wp->my_next_page[0] != '\0') {
-		sprintf(path, "%s", wp->my_next_page);
-	} else {
-		next_page = websGetVar(wp, "next_page", NULL);
-		if (next_page)
-			sprintf(path, "%s", next_page);
-		else
-			sprintf(path, "%s.asp", submit_button);
-	}
+	next_page = websGetVar(wp, "next_page", NULL);
+	if (next_page)
+		sprintf(path, "%s", next_page);
+	else
+		sprintf(path, "%s.asp", submit_button);
 	if (!strncmp(path, "WL_FilterTable", 14))
 		do_filtertable(METHOD_GET, NULL, path, wp);	// refresh
 #ifdef HAVE_FREERADIUS
@@ -1585,15 +1580,11 @@ footer:
 	}
 
 	if (action != REBOOT) {
-		if (wp->my_next_page[0] != '\0')
-			sprintf(path, "%s", wp->my_next_page);
-		else {
-			next_page = websGetVar(wp, "next_page", NULL);
-			if (next_page)
-				sprintf(path, "%s", next_page);
-			else
-				sprintf(path, "%s.asp", submit_button);
-		}
+		next_page = websGetVar(wp, "next_page", NULL);
+		if (next_page)
+			sprintf(path, "%s", next_page);
+		else
+			sprintf(path, "%s.asp", submit_button);
 
 		if (!strncmp(path, "WL_FilterTable", 14))
 			do_filtertable(METHOD_GET, NULL, path, wp);	// refresh
@@ -1693,7 +1684,7 @@ char ezc_version[128];
 
 // #endif
 
-void			// support GET and POST 2003-08-22
+void				// support GET and POST 2003-08-22
 do_apply_post(char *url, webs_t stream, int len, char *boundary)
 {
 	int count;
