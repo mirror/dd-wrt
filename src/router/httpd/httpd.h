@@ -82,7 +82,6 @@ typedef struct {
 	int s_filecount;
 	int s_filelen;
 	char label[64];
-	char my_next_page[30];
 	int upgrade_ret;
 	int restore_ret;
 	int gozila_action;
