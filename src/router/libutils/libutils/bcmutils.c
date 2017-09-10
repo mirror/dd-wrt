@@ -65,10 +65,9 @@ int getcpurev(void)
 			cnt++;
 		if (cnt == 1) {
 			getc(fp);
-			char cpumodel[32];
-			int i = 0;
-
-			for (i = 0; i < 32; i++) {
+			char cpumodel[65];
+			int i = 0;    
+			for (i = 0; i < 64; i++) {
 				cpumodel[i] = getc(fp);
 				if (cpumodel[i] == '\n')
 					break;
