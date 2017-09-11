@@ -84,7 +84,7 @@ int getcpurev(void)
 		}
 		if (cnt == 3) {
 			getc(fp);
-			char cpurev[32];
+			char cpurev[33];
 			int i = 0;
 
 			for (i = 0; i < 32; i++) {
