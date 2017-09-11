@@ -208,7 +208,10 @@ size_t add_pseudoheader(struct dns_header *header, size_t plen, unsigned char *l
 	  free(buff);
 	  p += rdlen;
 	}
-      header->arcount = htons(ntohs(header->arcount) + 1);
+      
+      /* Only bump arcount if RR is going to fit */ 
+      if (((ssize_t)optlen) <= (limit - (p + 4)))
+	header->arcount = htons(ntohs(header->arcount) + 1);
     }
   
   if (((ssize_t)optlen) > (limit - (p + 4)))

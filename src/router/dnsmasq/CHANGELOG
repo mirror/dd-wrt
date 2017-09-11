@@ -121,6 +121,13 @@ version 2.77
 	    to include either -DHAVE_IDN or -DHAVE_LIBIDN2 for
 	    IDN support.
 
+	Fix regression in 2.77, ironically added as a security
+	improvement, which resulted in a crash when a DNS
+	query exceeded 512 bytes (or the EDNS0 packet size,
+	if different.) Thanks to Christian Kujau, Arne Woerner
+	Juan Manuel Fernandez and Kevin Darbyshire-Bryant for
+	chasing this one down.  CVE-2017-13704 applies.
+
 	
 version 2.76
 	    Include 0.0.0.0/8 in DNS rebind checks. This range 
