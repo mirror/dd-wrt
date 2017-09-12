@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3624 | brainslayer | 2017-09-12 11:49:58 +0200 (Tue, 12 Sep 2017) | 1 line
+
+add length check in ie parser for broadcom driver
+------------------------------------------------------------------------
 r3623 | brainslayer | 2017-09-11 23:00:25 +0200 (Mon, 11 Sep 2017) | 1 line
 
 Revert "ath10k: disable wake_tx_queue for older devices"
