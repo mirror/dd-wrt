@@ -306,6 +306,7 @@ igmp_print(netdissect_options *ndo,
         ND_TCHECK2(bp[4], 4);
         ND_PRINT((ndo, "igmp leave %s", ipaddr_string(ndo, &bp[4])));
         break;
+#ifndef TCPDUMP_MINI
     case 0x13:
         ND_PRINT((ndo, "igmp dvmrp"));
         if (len < 8)
@@ -317,6 +318,7 @@ igmp_print(netdissect_options *ndo,
         ND_PRINT((ndo, "igmp pimv1"));
         pimv1_print(ndo, bp, len);
         break;
+#endif
     case 0x1e:
         print_mresp(ndo, bp, len);
         break;

@@ -72,6 +72,80 @@ DEPENDENCY_CFLAG = @DEPENDENCY_CFLAG@
 
 CSRC =	setsignal.c tcpdump.c
 
+ifdef TCPDUMP_MINI
+
+LIBNETDISSECT_SRC=\
+	netdissect.c \
+	addrtoname.c \
+	addrtostr.c \
+	af.c \
+	ascii_strcasecmp.c \
+	checksum.c \
+	cpack.c \
+	gmpls.c \
+	gmt2local.c \
+	in_cksum.c \
+	ipproto.c \
+	l2vpn.c \
+	machdep.c \
+	nlpid.c \
+	oui.c \
+	parsenfsfh.c \
+	print.c \
+	print-802_11.c \
+	print-aodv.c \
+	print-arp.c \
+	print-ascii.c \
+	print-bootp.c \
+	print-dhcp6.c \
+	print-domain.c \
+	print-eap.c \
+	print-ether.c \
+	print-ftp.c \
+	print-gre.c \
+	print-http.c \
+	print-icmp.c \
+	print-icmp6.c \
+	print-igmp.c \
+	print-ip.c \
+	print-ip6.c \
+	print-ip6opts.c \
+	print-ipnet.c \
+	print-l2tp.c \
+	print-llc.c \
+	print-lldp.c \
+	print-loopback.c \
+	print-nfs.c \
+	print-ntp.c \
+	print-null.c \
+	print-olsr.c \
+	print-ospf.c \
+	print-ospf6.c \
+	print-ppp.c \
+	print-pppoe.c \
+	print-pptp.c \
+	print-radius.c \
+	print-raw.c \
+	print-rsvp.c \
+	print-rt6.c \
+	print-rtsp.c \
+	print-sip.c \
+	print-sll.c \
+	print-smtp.c \
+	print-snmp.c \
+	print-stp.c \
+	print-sunrpc.c \
+	print-syslog.c \
+	print-tcp.c \
+	print-telnet.c \
+	print-tftp.c \
+	print-udp.c \
+	signature.c \
+	strtoaddr.c \
+	util-print.c
+
+else
+
 LIBNETDISSECT_SRC=\
 	addrtoname.c \
 	addrtostr.c \
@@ -236,6 +310,8 @@ LIBNETDISSECT_SRC=\
 	signature.c \
 	strtoaddr.c \
 	util-print.c
+
+endif
 
 LOCALSRC = @LOCALSRC@
 GENSRC = version.c

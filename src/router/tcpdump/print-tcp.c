@@ -589,12 +589,14 @@ tcp_print(netdissect_options *ndo,
                                 ND_PRINT((ndo, " %u", utoval));
                                 break;
 
+#ifndef TCPDUMP_MINI
                         case TCPOPT_MPTCP:
                                 datalen = len - 2;
                                 LENCHECK(datalen);
                                 if (!mptcp_print(ndo, cp-2, len, flags))
                                         goto bad;
                                 break;
+#endif
 
                         case TCPOPT_FASTOPEN:
                                 datalen = len - 2;
@@ -670,6 +672,7 @@ tcp_print(netdissect_options *ndo,
                 return;
         }
 
+#ifndef TCPDUMP_MINI
         if (ndo->ndo_packettype) {
                 switch (ndo->ndo_packettype) {
                 case PT_ZMTP1:
@@ -681,28 +684,36 @@ tcp_print(netdissect_options *ndo,
                 }
                 return;
         }
+#endif
 
         if (IS_SRC_OR_DST_PORT(TELNET_PORT)) {
                 telnet_print(ndo, bp, length);
         } else if (IS_SRC_OR_DST_PORT(SMTP_PORT)) {
                 ND_PRINT((ndo, ": "));
                 smtp_print(ndo, bp, length);
-        } else if (IS_SRC_OR_DST_PORT(BGP_PORT))
+        }
+#ifndef TCPDUMP_MINI
+        else if (IS_SRC_OR_DST_PORT(BGP_PORT))
                 bgp_print(ndo, bp, length);
+#endif
         else if (IS_SRC_OR_DST_PORT(PPTP_PORT))
                 pptp_print(ndo, bp);
+#ifndef TCPDUMP_MINI
         else if (IS_SRC_OR_DST_PORT(REDIS_PORT))
                 resp_print(ndo, bp, length);
+#endif
 #ifdef ENABLE_SMB
         else if (IS_SRC_OR_DST_PORT(NETBIOS_SSN_PORT))
                 nbt_tcp_print(ndo, bp, length);
 	else if (IS_SRC_OR_DST_PORT(SMB_PORT))
 		smb_tcp_print(ndo, bp, length);
 #endif
+#ifndef TCPDUMP_MINI
         else if (IS_SRC_OR_DST_PORT(BEEP_PORT))
                 beep_print(ndo, bp, length);
         else if (IS_SRC_OR_DST_PORT(OPENFLOW_PORT_OLD) || IS_SRC_OR_DST_PORT(OPENFLOW_PORT_IANA))
                 openflow_print(ndo, bp, length);
+#endif
         else if (IS_SRC_OR_DST_PORT(FTP_PORT)) {
                 ND_PRINT((ndo, ": "));
                 ftp_print(ndo, bp, length);
@@ -719,6 +730,7 @@ tcp_print(netdissect_options *ndo,
                  * XXX packet could be unaligned, it can go strange
                  */
                 ns_print(ndo, bp + 2, length - 2, 0);
+#ifndef TCPDUMP_MINI
         } else if (IS_SRC_OR_DST_PORT(MSDP_PORT)) {
                 msdp_print(ndo, bp, length);
         } else if (IS_SRC_OR_DST_PORT(RPKI_RTR_PORT)) {
@@ -726,6 +738,7 @@ tcp_print(netdissect_options *ndo,
         }
         else if (length > 0 && (IS_SRC_OR_DST_PORT(LDP_PORT))) {
                 ldp_print(ndo, bp, length);
+#endif
         }
         else if ((IS_SRC_OR_DST_PORT(NFS_PORT)) &&
                  length >= 4 && ND_TTEST2(*bp, 4)) {

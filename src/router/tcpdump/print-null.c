@@ -116,6 +116,7 @@ null_if_print(netdissect_options *ndo, const struct pcap_pkthdr *h, const u_char
 		ip6_print(ndo, p, length);
 		break;
 
+#ifndef TCPDUMP_MINI
 	case BSD_AFNUM_ISO:
 		isoclns_print(ndo, p, length);
 		break;
@@ -127,6 +128,7 @@ null_if_print(netdissect_options *ndo, const struct pcap_pkthdr *h, const u_char
 	case BSD_AFNUM_IPX:
 		ipx_print(ndo, p, length);
 		break;
+#endif
 
 	default:
 		/* unknown AF_ value */

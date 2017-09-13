@@ -238,12 +238,14 @@ recurse:
 		 */
 		switch (ether_type) {
 
+#ifndef TCPDUMP_MINI
 		case LINUX_SLL_P_802_3:
 			/*
 			 * Ethernet_802.3 IPX frame.
 			 */
 			ipx_print(ndo, p, length);
 			break;
+#endif
 
 		case LINUX_SLL_P_802_2:
 			/*
