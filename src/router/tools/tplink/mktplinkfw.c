@@ -125,8 +125,8 @@ struct fw_header {
 	uint16_t	ver_mid;
 	uint16_t	ver_lo;
 	uint8_t		pad[130];
-	uint8_t		sig1[32];
-	uint8_t		sig2[8];
+	uint8_t		supportlist[32];
+	uint8_t		specialid[8];
 	uint8_t		pad2[184];
 } __attribute__ ((packed));
 
@@ -829,8 +829,8 @@ static int check_options(void)
 }
 static int trunkfile=0;
 unsigned int area_code = 0;
-unsigned int signature = 0;
-unsigned int signature2 = 0;
+char *specialid = NULL;
+char *supportlist = NULL;
 static void fill_header(char *buf, int len)
 {
 	struct fw_header *hdr = (struct fw_header *)buf;
@@ -843,14 +843,11 @@ static void fill_header(char *buf, int len)
 	hdr->hw_id = HOST_TO_BE32(board->hw_id);
 	hdr->hw_rev = HOST_TO_BE32(board->hw_rev);
 	hdr->area_code = HOST_TO_BE32(board->area_code);
-	if (signature) { // only for eu models
-	strcpy(hdr->sig1,"00000000;45550000;");
-	memcpy(hdr->sig2,"45550000",8);
-	}
-	if (signature2) { // only for eu models
-	strcpy(hdr->sig1,"00000000;45550000;");
-//	memcpy(hdr->sig2,"45550000",8);
-	}
+	if (supportlist)
+		strncpy(hdr->supportlist,supportlist,32);
+	if (specialid)
+		strncpy(hdr->specialid,specialid,8);
+	
     	if (area_code)
 	    hdr->area_code = HOST_TO_BE32(area_code);
 	
@@ -969,7 +966,7 @@ int main(int argc, char *argv[])
 	while ( 1 ) {
 		int c;
 
-		c = getopt(argc, argv, "B:V:N:usxck:r:o:v:h:t::");
+		c = getopt(argc, argv, "B:V:N:us:x:ck:r:o:v:h:t::");
 		if (c == -1)
 			break;
 
@@ -999,10 +996,10 @@ int main(int argc, char *argv[])
 			area_code = 1;
 			break;
 		case 's':
-			signature = 1;
+			supportlist = optarg;
 			break;
 		case 'x':
-			signature2 = 1;
+			specialid = optarg;
 			break;
 		case 'v':
 			fw_ver = optarg;
