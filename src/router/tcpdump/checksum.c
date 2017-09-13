@@ -14,27 +14,21 @@
  *
  * miscellaneous checksumming routines
  *
- * Original code by Hannes Gredler (hannes@juniper.net)
+ * Original code by Hannes Gredler (hannes@gredler.at)
  */
-
-#ifndef lint
-static const char rcsid[] _U_ =
-    "@(#) $Header: /tcpdump/master/tcpdump/checksum.c,v 1.4 2006-09-25 09:23:32 hannes Exp $";
-#endif
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#include <tcpdump-stdinc.h>
+#include <netdissect-stdinc.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define assert(a)
-//#include <assert.h>
+#include <assert.h>
 
-#include "interface.h"
+#include "netdissect.h"
 
 /*
  * CRC-10 table generated using the following Python snippet:
