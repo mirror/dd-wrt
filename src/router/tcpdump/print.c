@@ -48,6 +48,7 @@ static const struct printer printers[] = {
 #ifdef DLT_IPNET
 	{ ipnet_if_print,	DLT_IPNET },
 #endif
+#ifndef TCPDUMP_MINI
 #ifdef DLT_IEEE802_15_4
 	{ ieee802_15_4_if_print, DLT_IEEE802_15_4 },
 #endif
@@ -57,12 +58,14 @@ static const struct printer printers[] = {
 #ifdef DLT_PPI
 	{ ppi_if_print,		DLT_PPI },
 #endif
+#endif
 #ifdef DLT_NETANALYZER
 	{ netanalyzer_if_print, DLT_NETANALYZER },
 #endif
 #ifdef DLT_NETANALYZER_TRANSPARENT
 	{ netanalyzer_transparent_if_print, DLT_NETANALYZER_TRANSPARENT },
 #endif
+#ifndef TCPDUMP_MINI
 #if defined(DLT_NFLOG) && defined(HAVE_PCAP_NFLOG_H)
 	{ nflog_if_print,	DLT_NFLOG},
 #endif
@@ -75,10 +78,12 @@ static const struct printer printers[] = {
 #ifdef DLT_IP_OVER_FC
 	{ ipfc_if_print,	DLT_IP_OVER_FC },
 #endif
+#endif
 	{ null_if_print,	DLT_NULL },
 #ifdef DLT_LOOP
 	{ null_if_print,	DLT_LOOP },
 #endif
+#ifndef TCPDUMP_MINI
 #ifdef DLT_APPLE_IP_OVER_IEEE1394
 	{ ap1394_if_print,	DLT_APPLE_IP_OVER_IEEE1394 },
 #endif
@@ -92,7 +97,9 @@ static const struct printer printers[] = {
 #ifdef DLT_ARCNET_LINUX
 	{ arcnet_linux_if_print, DLT_ARCNET_LINUX },
 #endif
+#endif
 	{ raw_if_print,		DLT_RAW },
+#ifndef TCPDUMP_MINI
 #ifdef DLT_IPV4
 	{ raw_if_print,		DLT_IPV4 },
 #endif
@@ -116,17 +123,21 @@ static const struct printer printers[] = {
 #ifdef DLT_HDLC
 	{ chdlc_if_print,	DLT_HDLC },
 #endif
+#endif
 #ifdef DLT_PPP_ETHER
 	{ pppoe_if_print,	DLT_PPP_ETHER },
 #endif
+#ifndef TCPDUMP_MINI
 #if defined(DLT_PFLOG) && defined(HAVE_NET_IF_PFLOG_H)
 	{ pflog_if_print,	DLT_PFLOG },
 #endif
 	{ token_if_print,	DLT_IEEE802 },
 	{ fddi_if_print,	DLT_FDDI },
+#endif
 #ifdef DLT_LINUX_SLL
 	{ sll_if_print,		DLT_LINUX_SLL },
 #endif
+#ifndef TCPDUMP_MINI
 #ifdef DLT_FR
 	{ fr_if_print,		DLT_FR },
 #endif
@@ -198,6 +209,7 @@ static const struct printer printers[] = {
 #ifdef DLT_PKTAP
 	{ pktap_if_print,	DLT_PKTAP },
 #endif
+#endif
 #ifdef DLT_IEEE802_11_RADIO
 	{ ieee802_11_radio_if_print,	DLT_IEEE802_11_RADIO },
 #endif
@@ -214,11 +226,13 @@ static const struct printer printers[] = {
 #ifdef DLT_PPP_WITHDIRECTION
 	{ ppp_if_print,		DLT_PPP_WITHDIRECTION },
 #endif
+#ifndef TCPDUMP_MINI
 #ifdef DLT_PPP_BSDOS
 	{ ppp_bsdos_if_print,	DLT_PPP_BSDOS },
 #endif
 #ifdef DLT_PPP_SERIAL
 	{ ppp_hdlc_if_print,	DLT_PPP_SERIAL },
+#endif
 #endif
 	{ NULL,			0 },
 };

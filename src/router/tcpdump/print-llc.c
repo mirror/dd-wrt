@@ -206,6 +206,7 @@ llc_print(netdissect_options *ndo, const u_char *p, u_int length, u_int caplen,
 		hdrlen = 4;	/* DSAP, SSAP, 2-byte control field */
 	}
 
+#ifndef TCPDUMP_MINI
 	if (ssap_field == LLCSAP_GLOBAL && dsap_field == LLCSAP_GLOBAL) {
 		/*
 		 * This is an Ethernet_802.3 IPX frame; it has an
@@ -228,6 +229,7 @@ llc_print(netdissect_options *ndo, const u_char *p, u_int length, u_int caplen,
             ipx_print(ndo, p, length);
             return (0);		/* no LLC header */
 	}
+#endif
 
 	dsap = dsap_field & ~LLC_IG;
 	ssap = ssap_field & ~LLC_GSAP;
@@ -291,6 +293,7 @@ llc_print(netdissect_options *ndo, const u_char *p, u_int length, u_int caplen,
 		return (hdrlen);
 	}
 
+#ifndef TCPDUMP_MINI
 	if (ssap == LLCSAP_IPX && dsap == LLCSAP_IPX &&
 	    control == LLC_UI) {
 		/*
@@ -304,6 +307,7 @@ llc_print(netdissect_options *ndo, const u_char *p, u_int length, u_int caplen,
 		ipx_print(ndo, p, length);
 		return (hdrlen);
 	}
+#endif
 
 #ifdef ENABLE_SMB
 	if (ssap == LLCSAP_NETBEUI && dsap == LLCSAP_NETBEUI
@@ -322,12 +326,13 @@ llc_print(netdissect_options *ndo, const u_char *p, u_int length, u_int caplen,
 		return (hdrlen);
 	}
 #endif
+#ifndef TCPDUMP_MINI
 	if (ssap == LLCSAP_ISONS && dsap == LLCSAP_ISONS
 	    && control == LLC_UI) {
 		isoclns_print(ndo, p, length);
 		return (hdrlen);
 	}
-
+#endif
 	if (!ndo->ndo_eflag) {
 		if (ssap == dsap) {
 			if (src == NULL || dst == NULL)
@@ -480,6 +485,7 @@ snap_print(netdissect_options *ndo, const u_char *p, u_int length, u_int caplen,
 
 	case OUI_CISCO:
                 switch (et) {
+#ifndef TCPDUMP_MINI
                 case PID_CISCO_CDP:
                         cdp_print(ndo, p, length, caplen);
                         return (1);
@@ -492,6 +498,7 @@ snap_print(netdissect_options *ndo, const u_char *p, u_int length, u_int caplen,
                 case PID_CISCO_VTP:
                         vtp_print(ndo, p, length);
                         return (1);
+#endif
                 case PID_CISCO_PVST:
                 case PID_CISCO_VLANBRIDGE:
                         stp_print(ndo, p, length);
@@ -504,6 +511,7 @@ snap_print(netdissect_options *ndo, const u_char *p, u_int length, u_int caplen,
 	case OUI_RFC2684:
 		switch (et) {
 
+#ifndef TCPDUMP_MINI
 		case PID_RFC2684_ETH_FCS:
 		case PID_RFC2684_ETH_NOFCS:
 			/*
@@ -565,6 +573,7 @@ snap_print(netdissect_options *ndo, const u_char *p, u_int length, u_int caplen,
 			 */
 			fddi_print(ndo, p, length, caplen);
 			return (1);
+#endif
 
 		case PID_RFC2684_BPDU:
 			stp_print(ndo, p, length);
