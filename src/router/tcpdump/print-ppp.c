@@ -1367,6 +1367,7 @@ trunc:
 	return 0;
 }
 
+#ifndef TCPDUMP_MINI
 static void
 ppp_hdlc(netdissect_options *ndo,
          const u_char *p, int length)
@@ -1445,6 +1446,7 @@ trunc:
 	free(b);
 	ND_PRINT((ndo, "[|ppp]"));
 }
+#endif
 
 
 /* PPP */
@@ -1452,10 +1454,12 @@ static void
 handle_ppp(netdissect_options *ndo,
            u_int proto, const u_char *p, int length)
 {
+#ifndef TCPDUMP_MINI
 	if ((proto & 0xff00) == 0x7e00) { /* is this an escape code ? */
 		ppp_hdlc(ndo, p - 1, length);
 		return;
 	}
+#endif
 
 	switch (proto) {
 	case PPP_LCP: /* fall through */
@@ -1488,6 +1492,7 @@ handle_ppp(netdissect_options *ndo,
 	case PPP_IPV6:
 		ip6_print(ndo, p, length);
 		break;
+#ifndef TCPDUMP_MINI
 	case ETHERTYPE_IPX:	/*XXX*/
 	case PPP_IPX:
 		ipx_print(ndo, p, length);
@@ -1499,6 +1504,7 @@ handle_ppp(netdissect_options *ndo,
 	case PPP_MPLS_MCAST:
 		mpls_print(ndo, p, length);
 		break;
+#endif
 	case PPP_COMP:
 		ND_PRINT((ndo, "compressed PPP data"));
 		break;
@@ -1639,6 +1645,7 @@ ppp_if_print(netdissect_options *ndo,
 	return (0);
 }
 
+#ifndef TCPDUMP_MINI
 /*
  * PPP I/F printer to use if we know that RFC 1662-style PPP in HDLC-like
  * framing, or Cisco PPP with HDLC framing as per section 4.3.1 of RFC 1547,
@@ -1866,6 +1873,7 @@ printx:
 #endif /* __bsdi__ */
 	return (hdrlength);
 }
+#endif
 
 
 /*

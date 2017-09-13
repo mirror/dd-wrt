@@ -305,6 +305,7 @@ ip6_print(netdissect_options *ndo, const u_char *bp, u_int length)
 				return;
 			nh = *cp;
 			break;
+#ifndef TCPDUMP_MINI
 		case IPPROTO_FRAGMENT:
 			advance = frag6_print(ndo, cp, (const u_char *)ip6);
 			if (advance < 0 || ndo->ndo_snapend <= cp + advance)
@@ -328,6 +329,7 @@ ip6_print(netdissect_options *ndo, const u_char *bp, u_int length)
 				return;
 			nh = *cp;
 			return;
+#endif
 		case IPPROTO_ROUTING:
 			ND_TCHECK(*cp);
 			advance = rt6_print(ndo, cp, (const u_char *)ip6);
@@ -335,12 +337,14 @@ ip6_print(netdissect_options *ndo, const u_char *bp, u_int length)
 				return;
 			nh = *cp;
 			break;
+#ifndef TCPDUMP_MINI
 		case IPPROTO_SCTP:
 			sctp_print(ndo, cp, (const u_char *)ip6, len);
 			return;
 		case IPPROTO_DCCP:
 			dccp_print(ndo, cp, (const u_char *)ip6, len);
 			return;
+#endif
 		case IPPROTO_TCP:
 			tcp_print(ndo, cp, len, (const u_char *)ip6, fragmented);
 			return;
@@ -350,6 +354,7 @@ ip6_print(netdissect_options *ndo, const u_char *bp, u_int length)
 		case IPPROTO_ICMPV6:
 			icmp6_print(ndo, cp, len, (const u_char *)ip6, fragmented);
 			return;
+#ifndef TCPDUMP_MINI
 		case IPPROTO_AH:
 			advance = ah_print(ndo, cp);
 			if (advance < 0)
@@ -382,6 +387,7 @@ ip6_print(netdissect_options *ndo, const u_char *bp, u_int length)
 		case IPPROTO_PIM:
 			pim_print(ndo, cp, len, (const u_char *)ip6);
 			return;
+#endif
 
 		case IPPROTO_OSPF:
 			ospf6_print(ndo, cp, len);
@@ -395,9 +401,11 @@ ip6_print(netdissect_options *ndo, const u_char *bp, u_int length)
 		        ip_print(ndo, cp, len);
 			return;
 
+#ifndef TCPDUMP_MINI
                 case IPPROTO_PGM:
                         pgm_print(ndo, cp, len, (const u_char *)ip6);
                         return;
+#endif
 
 		case IPPROTO_GRE:
 			gre_print(ndo, cp, len);
