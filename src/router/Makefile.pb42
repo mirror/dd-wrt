@@ -1759,7 +1759,7 @@ ifeq ($(CONFIG_WR1043),y)
 	make -C lzma-loader/pb42 clean
 	make -C lzma-loader/pb42
 	cp lzma-loader/pb42/loader.bin.gz $(ARCH)-uclibc/vmlinus.gzip
-	./tools/tplink/mktplinkfw -B TL-WR1043NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-firmware.bin
+	./tools/tplink/mktplinkfw -B TL-WR1043NDv1 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-firmware.bin
 	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ap83-firmware.bin mips-uclibc/tplink-firmware.bin
 endif
 
@@ -1768,13 +1768,13 @@ ifeq ($(CONFIG_WR941),y)
 	make -C lzma-loader/pb42 clean
 	make -C lzma-loader/pb42
 	cp lzma-loader/pb42/loader.bin.gz $(ARCH)-uclibc/vmlinus.gzip
-	-./tools/tplink/mktplinkfw -B TL-WR941NDv2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR941NDv2-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR941NDv2 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR941NDv2-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR941NDv2-firmware.bin mips-uclibc/tplink-WR941NDv2-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR841NDv3 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv3-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR841NDv3 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv3-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv3-firmware.bin mips-uclibc/tplink-WR841NDv3-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WA901NDv2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA901NDv2-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WA901NDv2 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA901NDv2-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WA901NDv2-firmware.bin mips-uclibc/tplink-WA901NDv2-firmware.bin
 
 endif
@@ -1782,194 +1782,194 @@ ifeq ($(CONFIG_WR741),y)
 	make -C lzma-loader/pb42 clean
 	make -C lzma-loader/pb42
 	cp lzma-loader/pb42/loader.bin.gz $(ARCH)-uclibc/vmlinus.gzip
-	-./tools/tplink/mktplinkfw -B TL-WR741NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR741NDv1-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR741NDv1 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR741NDv1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR741NDv1-firmware.bin mips-uclibc/tplink-WR741NDv1-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B AIP-W411 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/alfa-AIP-W411-firmware.bin
+	-./tools/tplink/mktplinkfw -B AIP-W411 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/alfa-AIP-W411-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/AIP-W411-firmware.bin mips-uclibc/alfa-AIP-W411-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR741NDv4 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR741NDv4-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR741NDv4 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR741NDv4-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR741NDv4-firmware.bin mips-uclibc/tplink-WR741NDv4-firmware.bin
 
 	-./tools/tplink/mktplinkfw -B TL-MR3220v2 DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-MR3220v2-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/MR3220v2-firmware.bin mips-uclibc/tplink-MR3220v2-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR743NDv2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR743NDv2-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR743NDv2 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR743NDv2-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR743NDv2-firmware.bin mips-uclibc/tplink-WR743NDv2-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR740NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR740NDv1-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR740NDv1 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR740NDv1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR740NDv1-firmware.bin mips-uclibc/tplink-WR740NDv1-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR740NDv4 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR740NDv4-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR740NDv4 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR740NDv4-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR740NDv4-firmware.bin mips-uclibc/tplink-WR740NDv4-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR740NDv5 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR740NDv5-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR740NDv5 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR740NDv5-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR740NDv5-firmware.bin mips-uclibc/tplink-WR740NDv5-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR842NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR842NDv1-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR842NDv1 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR842NDv1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR842NDv1-firmware.bin mips-uclibc/tplink-WR842NDv1-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR703Nv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR703Nv1-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR703Nv1 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR703Nv1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR703Nv1-firmware.bin mips-uclibc/tplink-WR703Nv1-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WA701NDv2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA701NDv2-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WA701NDv2 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA701NDv2-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WA701NDv2-firmware.bin mips-uclibc/tplink-WA701NDv2-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR710Nv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR710Nv1-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR710Nv1 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR710Nv1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR710Nv1-firmware.bin mips-uclibc/tplink-WR710Nv1-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR710Nv1 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR710Nv1US-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR710Nv1 -u -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR710Nv1US-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR710Nv1US-firmware.bin mips-uclibc/tplink-WR710Nv1US-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR710Nv2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR710Nv2-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR710Nv2 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR710Nv2-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR710Nv2-firmware.bin mips-uclibc/tplink-WR710Nv2-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR710Nv2.1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR710Nv2.1-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR710Nv2.1 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR710Nv2.1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR710Nv2.1-firmware.bin mips-uclibc/tplink-WR710Nv2.1-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-MR3020 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-MR3020-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-MR3020 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-MR3020-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/MR3020-firmware.bin mips-uclibc/tplink-MR3020-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR740NDv3 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR740NDv3-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR740NDv3 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR740NDv3-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR740NDv3-firmware.bin mips-uclibc/tplink-WR740NDv3-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR740NDv3WW -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR740NDv3ww-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR740NDv3WW -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR740NDv3ww-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR740NDv3ww-firmware.bin mips-uclibc/tplink-WR740NDv3ww-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR743NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR743NDv1-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR743NDv1 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR743NDv1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR743NDv1-firmware.bin mips-uclibc/tplink-WR743NDv1-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR841NDv5 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv5-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR841NDv5 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv5-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv5-firmware.bin mips-uclibc/tplink-WR841NDv5-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR841NDv7 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv7-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR841NDv7 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv7-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv7-firmware.bin mips-uclibc/tplink-WR841NDv7-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B WNRT627V1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/planex-WNRT627V1-firmware.bin
+	-./tools/tplink/mktplinkfw -B WNRT627V1 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/planex-WNRT627V1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WNRT627V1-firmware.bin mips-uclibc/planex-WNRT627V1-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-MR3420 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-MR3420-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-MR3420 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-MR3420-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/MR3420-firmware.bin mips-uclibc/tplink-MR3420-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-MR3220 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-MR3220-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-MR3220 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-MR3220-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/MR3220-firmware.bin mips-uclibc/tplink-MR3220-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B RNX-N300RT -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/rosewill-RNX-N300RT-firmware.bin
+	-./tools/tplink/mktplinkfw -B RNX-N300RT -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/rosewill-RNX-N300RT-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/RNX-N300RT-firmware.bin mips-uclibc/rosewill-RNX-N300RT-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B RNX-N150RT -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/rosewill-RNX-N150RT-firmware.bin
+	-./tools/tplink/mktplinkfw -B RNX-N150RT -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/rosewill-RNX-N150RT-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/RNX-N150RT-firmware.bin mips-uclibc/rosewill-RNX-N150RT-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR840Nv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR840Nv1-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR840Nv1 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR840Nv1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR840Nv1-firmware.bin mips-uclibc/tplink-WR840Nv1-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR941NDv4 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR941NDv4-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR941NDv4 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR941NDv4-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR941NDv4-firmware.bin mips-uclibc/tplink-WR941NDv4-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WA901NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA901NDv1-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WA901NDv1 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA901NDv1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WA901NDv1-firmware.bin mips-uclibc/tplink-WA901NDv1-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WA801NDv1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA801NDv1-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WA801NDv1 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA801NDv1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WA801NDv1-firmware.bin mips-uclibc/tplink-WA801NDv1-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WA7510N -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA7510N-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WA7510N -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA7510N-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WA7510N-firmware.bin mips-uclibc/tplink-WA7510N-firmware.bin
 endif
 ifeq ($(CONFIG_WR841V8),y)
-	-./tools/tplink/mktplinkfw -B TL-WR841NDv8 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv8-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR841NDv8 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv8-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv8-firmware.bin mips-uclibc/tplink-WR841NDv8-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WA901NDv3 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA901NDv3-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WA901NDv3 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA901NDv3-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WA901NDv3-firmware.bin mips-uclibc/tplink-WA901NDv3-firmware.bin
 endif
 ifeq ($(CONFIG_WR841V9),y)
-	-./tools/tplink/mktplinkfw -B TL-WR841NDv9 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv9-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR841NDv9 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv9-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv9-firmware.bin mips-uclibc/tplink-WR841NDv9-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR841NDv10 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv10-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR841NDv10 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv10-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv10-firmware.bin mips-uclibc/tplink-WR841NDv10-firmware.bin
 
-	-./tools/tplink/mktplinkfw -x -B TL-WR841NDv11 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv11-firmware.bin
+	-./tools/tplink/mktplinkfw -s "00000000;45550000;" -B TL-WR841NDv11 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv11-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv11-firmware.bin mips-uclibc/tplink-WR841NDv11-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR841NDv11 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv11-firmwareUS.bin
+	-./tools/tplink/mktplinkfw -B TL-WR841NDv11 -u -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv11-firmwareUS.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv11-firmwareUS.bin mips-uclibc/tplink-WR841NDv11-firmwareUS.bin
 	
-	-./tools/tplink/mktplinkfw -x -B TL-WR841NDv12 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv12-firmware.bin
+	-./tools/tplink/mktplinkfw -s "00000000;45550000;" -B TL-WR841NDv12 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv12-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv12-firmware.bin mips-uclibc/tplink-WR841NDv12-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR841NDv12 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv12-firmwareUS.bin
+	-./tools/tplink/mktplinkfw -B TL-WR841NDv12 -u -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv12-firmwareUS.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv12-firmwareUS.bin mips-uclibc/tplink-WR841NDv12-firmwareUS.bin
 
 endif
 ifeq ($(CONFIG_WR941V6),y)
-	-./tools/tplink/mktplinkfw -B TL-WR941NDv6 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR941NDv6-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR941NDv6 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR941NDv6-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR941NDv6-firmware.bin mips-uclibc/tplink-WR941NDv6-firmware.bin
 endif
 ifeq ($(CONFIG_WR842V2),y)
-	-./tools/tplink/mktplinkfw -B TL-WR842NDv2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR842NDv2-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR842NDv2 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR842NDv2-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR842NDv2-firmware.bin mips-uclibc/tplink-WR842NDv2-firmware.bin
 endif
 ifeq ($(CONFIG_WDR2543),y)
-	-./tools/tplink/mktplinkfw -B TL-WDR2543 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR2543-firmware.bin -v 3.13.99
+	-./tools/tplink/mktplinkfw -B TL-WDR2543 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR2543-firmware.bin -v 3.13.99
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR2543-firmware.bin mips-uclibc/tplink-TL-WDR2543-firmware.bin
 endif
 ifeq ($(CONFIG_WDR4300),y)
-	-./tools/tplink/mktplinkfw -B TL-WDR4300 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4300-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WDR4300 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4300-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR4300-firmware.bin mips-uclibc/tplink-TL-WDR4300-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WDR4300 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4300_US-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WDR4300 -u -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4300_US-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR4300_US-firmware.bin mips-uclibc/tplink-TL-WDR4300_US-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WDR4310 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4310-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WDR4310 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4310-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR4310-firmware.bin mips-uclibc/tplink-TL-WDR4310-firmware.bin
-	-./tools/tplink/mktplinkfw -B TL-WDR3600 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR3600-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WDR3600 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR3600-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR3600-firmware.bin mips-uclibc/tplink-TL-WDR3600-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WDR3600 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR3600_US-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WDR3600 -u -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR3600_US-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR3600_US-firmware.bin mips-uclibc/tplink-TL-WDR3600_US-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WDR3500 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR3500-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WDR3500 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR3500-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR3500-firmware.bin mips-uclibc/tplink-TL-WDR3500-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WDR3500 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR3500_US-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WDR3500 -u -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR3500_US-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR3500_US-firmware.bin mips-uclibc/tplink-TL-WDR3500_US-firmware.bin
 endif
 ifeq ($(CONFIG_WR1043V2),y)
-	-./tools/tplink/mktplinkfw -B TL-WR1043NDv2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WR1043V2-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR1043NDv2 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WR1043V2-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WR1043V2-firmware.bin mips-uclibc/tplink-TL-WR1043V2-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR1043NDv3 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WR1043V3-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WR1043NDv3 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WR1043V3-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WR1043V3-firmware.bin mips-uclibc/tplink-TL-WR1043V3-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WR1043NDv3 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WR1043V3-firmwareUS.bin
+	-./tools/tplink/mktplinkfw -B TL-WR1043NDv3 -u -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WR1043V3-firmwareUS.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WR1043V3-firmwareUS.bin mips-uclibc/tplink-TL-WR1043V3-firmwareUS.bin
 
-	-./tools/tplink/mktplinkfw -B ARCHER-C7v1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v1-firmware.bin
+	-./tools/tplink/mktplinkfw -B ARCHER-C7v1 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v1-firmware.bin mips-uclibc/tplink-ARCHER-C7v1-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B ARCHER-C7v2 -s -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v2-firmware.bin
+	-./tools/tplink/mktplinkfw -B ARCHER-C7v2 -s "00000000;45550000;" -x "45550000" -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v2-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v2-firmware.bin mips-uclibc/tplink-ARCHER-C7v2-firmware.bin
 
 	-./tools/tplink/mktplinkfw -B ARCHER-C7v2Israel -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v2-firmwareIL.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v2-firmwareIL.bin mips-uclibc/tplink-ARCHER-C7v2-firmwareIL.bin
 
-	-./tools/tplink/mktplinkfw -B ARCHER-C7v1 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v1-firmwareUS.bin
+	-./tools/tplink/mktplinkfw -B ARCHER-C7v1 -u -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v1-firmwareUS.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v1-firmwareUS.bin mips-uclibc/tplink-ARCHER-C7v1-firmwareUS.bin
 
 	-./tools/tplink/mktplinkfw -B ARCHER-C7v2 -u -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v2-firmwareUS.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v2-firmwareUS.bin mips-uclibc/tplink-ARCHER-C7v2-firmwareUS.bin
 
-	-./tools/tplink/mktplinkfw -B ARCHER-C5v1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C5v1-firmware.bin
+	-./tools/tplink/mktplinkfw -B ARCHER-C5v1 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C5v1-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C5v1-firmware.bin mips-uclibc/tplink-ARCHER-C5v1-firmware.bin
 
-	-./tools/tplink/mktplinkfw -B ARCHER-C5v1 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C5v1-firmwareUS.bin
+	-./tools/tplink/mktplinkfw -B ARCHER-C5v1 -u -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C5v1-firmwareUS.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C5v1-firmwareUS.bin mips-uclibc/tplink-ARCHER-C5v1-firmwareUS.bin
 
-	-./tools/tplink/mktplinkfw -B ARCHER-C5v1Israel -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C5v1-firmwareIL.bin
+	-./tools/tplink/mktplinkfw -B ARCHER-C5v1Israel -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C5v1-firmwareIL.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C5v1-firmwareIL.bin mips-uclibc/tplink-ARCHER-C5v1-firmwareIL.bin
 
-	-./tools/tplink/mktplinkfw -B TL-WDR4900v2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4900v2-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WDR4900v2 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4900v2-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR4900v2-firmware.bin mips-uclibc/tplink-TL-WDR4900v2-firmware.bin
 endif
 ifeq ($(CONFIG_WRT400),y)
