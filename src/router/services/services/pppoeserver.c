@@ -244,8 +244,7 @@ static void do_pppoeconfig(FILE * fp)
 //              }
 //      }
 
-	if (dns_list)
-		free(dns_list);
+	free_dns_list(dns_list);
 
 }
 

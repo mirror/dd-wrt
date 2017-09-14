@@ -181,6 +181,7 @@ int mk_nocat_conf(void)
 		} else {
 			fprintf(fp, "DNSAddr \t%s %s %s\n", dns_list->dns_server[0], dns_list->dns_server[1], dns_list->dns_server[2]);
 		}
+		free_dns_list(dns_list);
 	}
 	fprintf(fp, "HomePage\t%s\n", nvram_safe_get("NC_HomePage"));
 	fprintf(fp, "ForcedRedirect\t%s\n", nvram_safe_get("NC_ForcedRedirect"));
