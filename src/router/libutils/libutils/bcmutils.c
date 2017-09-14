@@ -66,7 +66,7 @@ int getcpurev(void)
 		if (cnt == 1) {
 			getc(fp);
 			char cpumodel[65];
-			int i = 0;    
+			int i = 0;
 			for (i = 0; i < 64; i++) {
 				cpumodel[i] = getc(fp);
 				if (cpumodel[i] == '\n')
@@ -140,18 +140,17 @@ int cpu_plltype(void)
 		return 11;
 	if (packageoption == 2) {
 		if (chipid == 53030)
-			return 10; // 600 / 800 / 1000
+			return 10;	// 600 / 800 / 1000
 		else
-			return 9; // 600 / 800
-		
+			return 9;	// 600 / 800
+
 	}
 	if (packageoption == 0) {
 		if (chipid == 53030)
-			return 8; // 600 / 800 / 1000 / 1200 / 1400
+			return 8;	// 600 / 800 / 1000 / 1200 / 1400
 		else
-			return 7; // 600 / 800 / 1000
-	
-	
+			return 7;	// 600 / 800 / 1000
+
 	}
 	return 9;
 #endif
@@ -419,56 +418,41 @@ char *get_mac_from_ip(char *mac, char *ip)
 	return NULL;
 }
 
+static void add_dnslist(struct dns_lists *dns_list, char *dns)
+{
+	int i;
+	if (strcmp(dns, "0.0.0.0") && strcmp(dns, "")) {
+		int match = 0;
+		for (i = 0; i < dns_list->num_servers; i++) {	// Skip same DNS
+			if (!strcmp(dns_list->dns_server[i], dns))
+				match = 1;
+		}
+		if (!match) {
+			snprintf(dns_list->dns_server[dns_list->num_servers], sizeof(dns_list->dns_server[dns_list->num_servers]), "%s", dns);
+			dns_list->num_servers++;
+		}
+	}
+}
+
 struct dns_lists *get_dns_list(void)
 {
-	char *list;
-	char *next, *word;
 	struct dns_lists *dns_list = NULL;
-	int i, match = 0, altdns_index = 1;
+	int altdns_index = 1;
 
-	dns_list = (struct dns_lists *)calloc(sizeof(struct dns_lists), 1);
-
-	dns_list->num_servers = 0;
-	list = calloc(256, 1);
+	dns_list = (struct dns_lists *)malloc(sizeof(struct dns_lists));
+	bzero(dns_list, sizeof(struct dns_lists));
 	char *sv_localdns = nvram_safe_get("sv_localdns");
 	char *wan_dns = nvram_safe_get("wan_dns");
 	char *wan_get_dns = nvram_safe_get("wan_get_dns");
+
 	if (strlen(sv_localdns))
-		snprintf(list, 256, "%s", sv_localdns);
+		add_dnslist(dns_list, sv_localdns);
 	if (strlen(wan_dns)) {
-		if (strlen(list)) {
-			strcat(list, " ");
-			strcat(list, wan_dns);
-		} else
-			snprintf(list, 256, "%s", wan_dns);
+		add_dnslist(dns_list, wan_dns);
 	}
-
 	if (strlen(wan_get_dns)) {
-		if (strlen(list)) {
-			strcat(list, " ");
-			strcat(list, wan_get_dns);
-		} else
-			snprintf(list, 256, "%s", wan_get_dns);
+		add_dnslist(dns_list, wan_get_dns);
 	}
-
-	word = malloc(32);
-	foreach(word, list, next) {
-		if (strcmp(word, "0.0.0.0") && strcmp(word, "")) {
-			match = 0;
-			for (i = 0; i < dns_list->num_servers; i++) {	// Skip same DNS
-				if (!strcmp(dns_list->dns_server[i], word))
-					match = 1;
-			}
-			if (!match) {
-				snprintf(dns_list->dns_server[dns_list->num_servers], sizeof(dns_list->dns_server[dns_list->num_servers]), "%s", word);
-				dns_list->num_servers++;
-			}
-		}
-		if (dns_list->num_servers == 3)
-			break;	// We only need 3 DNS entries
-	}
-	free(word);
-	free(list);
 	/*
 	 * if < 3 DNS servers found, try to insert alternates 
 	 */
@@ -480,8 +464,7 @@ struct dns_lists *get_dns_list(void)
 		snprintf(altdnsvar, 31, "altdns%d", altdns_index);
 
 		if (strlen(nvram_safe_get(altdnsvar)) > 0) {
-			snprintf(dns_list->dns_server[dns_list->num_servers], sizeof(dns_list->dns_server[dns_list->num_servers]), "%s", nvram_safe_get(altdnsvar));
-			dns_list->num_servers++;
+			add_dnslist(dns_list, nvram_safe_get(altdnsvar));
 		}
 		altdns_index++;
 	}
