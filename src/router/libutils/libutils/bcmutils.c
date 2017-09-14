@@ -428,10 +428,25 @@ static void add_dnslist(struct dns_lists *dns_list, char *dns)
 				match = 1;
 		}
 		if (!match) {
-			snprintf(dns_list->dns_server[dns_list->num_servers], sizeof(dns_list->dns_server[dns_list->num_servers]), "%s", dns);
+			dns_lists->dns_server = (struct dns_lists **)realloc(dns_lists->dns_server, sizeof(char *) * (dns_list->num_servers + 1));
+			dns_lists->dns_server[dns_list->num_servers] = strdup(dns);
 			dns_list->num_servers++;
 		}
 	}
+}
+
+void free_dns_list(struct dns_lists *dns_list)
+{
+	int i;
+	if (!dns_list)
+		return;
+	for (i = 0; i < dns_list->num_servers; i++) {
+		free(dns_list->dns_server[i]);
+	}
+	if (dns_lists->dns_server)
+		free(dns_lists->dns_server);
+	free(dns_list);
+
 }
 
 struct dns_lists *get_dns_list(void)
@@ -456,7 +471,7 @@ struct dns_lists *get_dns_list(void)
 	/*
 	 * if < 3 DNS servers found, try to insert alternates 
 	 */
-	while (dns_list->num_servers < 3 && altdns_index <= 3) {
+	while (altdns_index <= 3) {
 		char altdnsvar[32] = {
 			0
 		};
@@ -527,8 +542,7 @@ int dns_to_resolv(void)
 		fprintf(fp_w, "nameserver 1.1.1.1\n");
 
 	fclose(fp_w);
-	if (dns_list)
-		free(dns_list);
+	free_dns_list(dns_list);
 
 	eval("touch", "/tmp/hosts");
 

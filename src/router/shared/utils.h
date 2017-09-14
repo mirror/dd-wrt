@@ -807,6 +807,7 @@ extern int C_led(int i);
 extern int get_single_ip(char *ipaddr, int which);
 extern char *get_mac_from_ip(char *mac, char *ip);
 extern struct dns_lists *get_dns_list(void);
+extern void free_dns_list(struct dns_lists *list);
 extern int dns_to_resolv(void);
 extern char *get_wan_face(void);
 
@@ -916,7 +917,7 @@ enum { SYSLOG_LOG = 1, SYSLOG_DEBUG, CONSOLE_ONLY, LOG_CONSOLE, DEBUG_CONSOLE };
 
 struct dns_lists {
 	int num_servers;
-	char dns_server[4][20];
+	char **dns_server;
 };
 
 #define NOT_USING	0

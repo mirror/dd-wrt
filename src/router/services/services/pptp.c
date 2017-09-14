@@ -133,8 +133,7 @@ void start_pptpd(void)
 				fprintf(fp, "ms-dns  %s\n", dns_list->dns_server[2]);
 		}
 	}
-	if (dns_list)
-		free(dns_list);
+	free_dns_list(dns_list);
 	if (strlen(nvram_safe_get("pptpd_dns1"))) {
 		fprintf(fp, "ms-dns %s\n", nvram_safe_get("pptpd_dns1"));
 	}
