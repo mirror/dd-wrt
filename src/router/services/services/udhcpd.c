@@ -251,8 +251,7 @@ void start_udhcpd(void)
 		}
 	}
 
-	if (dns_list)
-		free(dns_list);
+	free_dns_list(dns_list);
 
 	/*
 	 * DHCP Domain 

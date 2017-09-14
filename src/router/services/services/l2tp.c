@@ -95,7 +95,7 @@ void start_l2tp(int status)
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
 				route_del(wan_ifname, 0, dns_list->dns_server[i], nvram_safe_get("l2tp_wan_gateway"), "255.255.255.255");
-			free(dns_list);
+			free_dns_list(dns_list);
 		}
 
 		nvram_set("l2tp_server_ip", pptpip);

@@ -127,7 +127,7 @@ void start_pppoe_dual(int status)
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
 				route_del(wan_ifname, 0, dns_list->dns_server[i], nvram_safe_get("l2tp_wan_gateway"), "255.255.255.255");
-			free(dns_list);
+			free_dns_list(dns_list);
 		}
 */
 //      }

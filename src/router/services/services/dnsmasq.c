@@ -308,8 +308,7 @@ void start_dnsmasq(void)
 				fprintf(fp, "\n");
 			}
 
-			if (dns_list)
-				free(dns_list);
+			free_dns_list(dns_list);
 		} else {
 #ifdef HAVE_UNBOUND
 			if (nvram_matchi("recursive_dns", 1)) {

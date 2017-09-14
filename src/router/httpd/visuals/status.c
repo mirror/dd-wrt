@@ -243,8 +243,8 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%s", hidden2);
 	else if (!strcmp(type, "wan_3g_signal"))
 		websWrite(wp, "-40 DBm");
-	if (dns_list)
-		free(dns_list);
+	
+	free_dns_list(dns_list);
 
 	return;
 }
