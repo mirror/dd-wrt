@@ -428,8 +428,8 @@ static void add_dnslist(struct dns_lists *dns_list, char *dns)
 				match = 1;
 		}
 		if (!match) {
-			dns_lists->dns_server = (struct dns_lists **)realloc(dns_lists->dns_server, sizeof(char *) * (dns_list->num_servers + 1));
-			dns_lists->dns_server[dns_list->num_servers] = strdup(dns);
+			dns_list->dns_server = (char **)realloc(dns_list->dns_server, sizeof(char *) * (dns_list->num_servers + 1));
+			dns_list->dns_server[dns_list->num_servers] = strdup(dns);
 			dns_list->num_servers++;
 		}
 	}
@@ -443,8 +443,8 @@ void free_dns_list(struct dns_lists *dns_list)
 	for (i = 0; i < dns_list->num_servers; i++) {
 		free(dns_list->dns_server[i]);
 	}
-	if (dns_lists->dns_server)
-		free(dns_lists->dns_server);
+	if (dns_list->dns_server)
+		free(dns_list->dns_server);
 	free(dns_list);
 
 }
