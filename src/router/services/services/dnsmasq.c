@@ -292,22 +292,13 @@ void start_dnsmasq(void)
 		if (nvram_matchi("dns_dnsmasq", 0)) {
 			dns_list = get_dns_list();
 
-			if (dns_list && (strlen(dns_list->dns_server[0]) > 0 || strlen(dns_list->dns_server[1]) > 0 || strlen(dns_list->dns_server[2]) > 0)) {
+			if (dns_list && dns_list->num_servers > 0) {
 
 				fprintf(fp, "dhcp-option=6");
-
-				if (strlen(dns_list->dns_server[0]))
-					fprintf(fp, ",%s", dns_list->dns_server[0]);
-
-				if (strlen(dns_list->dns_server[1]))
-					fprintf(fp, ",%s", dns_list->dns_server[1]);
-
-				if (strlen(dns_list->dns_server[2]))
-					fprintf(fp, ",%s", dns_list->dns_server[2]);
-
+				for (i = 0; i < dns_list->num_servers; i++)
+					fprintf(fp, ",%s", dns_list->dns_server[i]);
 				fprintf(fp, "\n");
 			}
-
 			free_dns_list(dns_list);
 		} else {
 #ifdef HAVE_UNBOUND
