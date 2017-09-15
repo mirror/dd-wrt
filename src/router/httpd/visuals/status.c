@@ -220,14 +220,11 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 	else if (!strcmp(type, "wan_gateway"))
 		websWrite(wp, "%s", wan_gateway);
 	else if (!strcmp(type, "wan_dns0")) {
-		if (dns_list)
-			websWrite(wp, "%s", dns_list->dns_server[0]);
+		websWrite(wp, "%s", get_dns_entry(dns_list,0));
 	} else if (!strcmp(type, "wan_dns1")) {
-		if (dns_list)
-			websWrite(wp, "%s", dns_list->dns_server[1]);
+		websWrite(wp, "%s", get_dns_entry(dns_list,1));
 	} else if (!strcmp(type, "wan_dns2")) {
-		if (dns_list)
-			websWrite(wp, "%s", dns_list->dns_server[2]);
+		websWrite(wp, "%s", get_dns_entry(dns_list,1));
 	} else if (!strcmp(type, "status1"))
 		websWrite(wp, "%s", live_translate(status1));
 	else if (!strcmp(type, "status2"))
