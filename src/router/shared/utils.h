@@ -806,9 +806,6 @@ extern int diag_led(int type, int act);
 extern int C_led(int i);
 extern int get_single_ip(char *ipaddr, int which);
 extern char *get_mac_from_ip(char *mac, char *ip);
-extern char *get_dns_entry(struct dns_lists *list, int idx);
-extern struct dns_lists *get_dns_list(void);
-extern void free_dns_list(struct dns_lists *list);
 extern int dns_to_resolv(void);
 extern char *get_wan_face(void);
 
@@ -920,6 +917,10 @@ struct dns_lists {
 	int num_servers;
 	char **dns_server;
 };
+
+extern char *get_dns_entry(struct dns_lists *dns_list, int idx);
+extern struct dns_lists *get_dns_list(void);
+extern void free_dns_list(struct dns_lists *list);
 
 #define NOT_USING	0
 #define USING		1

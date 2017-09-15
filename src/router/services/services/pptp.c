@@ -36,6 +36,7 @@ void start_pptpd(void)
 {
 	char *lpTemp;
 	FILE *fp;
+	int i;
 
 	if (!nvram_invmatchi("pptpd_enable", 0)) {
 		return;
@@ -111,26 +112,21 @@ void start_pptpd(void)
 		if (nvram_invmatch("lan_ipaddr", ""))
 			fprintf(fp, "ms-dns %s\n", nvram_safe_get("lan_ipaddr"));
 	} else if (nvram_matchi("local_dns", 1)) {
-		if (dns_list && (nvram_invmatch("lan_ipaddr", "")
-				 || strlen(dns_list->dns_server[0]) > 0 || strlen(dns_list->dns_server[1]) > 0 || strlen(dns_list->dns_server[2]) > 0)) {
+		if (nvram_invmatch("lan_ipaddr", "")
+		    || dns_list) {
 
 			if (nvram_invmatch("lan_ipaddr", ""))
 				fprintf(fp, "ms-dns %s\n", nvram_safe_get("lan_ipaddr"));
-			if (strlen(dns_list->dns_server[0]))
-				fprintf(fp, "ms-dns %s\n", dns_list->dns_server[0]);
-			if (strlen(dns_list->dns_server[1]))
-				fprintf(fp, "ms-dns %s\n", dns_list->dns_server[1]);
-			if (strlen(dns_list->dns_server[2]))
-				fprintf(fp, "ms-dns %s\n", dns_list->dns_server[2]);
+
+			for (i = 0; i < dns_list->num_servers; i++)
+				fprintf(fp, "ms-dns %s\n", dns_list->dns_server[i]);
+
 		}
 	} else {
-		if (dns_list && (strlen(dns_list->dns_server[0]) > 0 || strlen(dns_list->dns_server[1]) > 0 || strlen(dns_list->dns_server[2]) > 0)) {
-			if (strlen(dns_list->dns_server[0]))
-				fprintf(fp, "ms-dns  %s\n", dns_list->dns_server[0]);
-			if (strlen(dns_list->dns_server[1]))
-				fprintf(fp, "ms-dns  %s\n", dns_list->dns_server[1]);
-			if (strlen(dns_list->dns_server[2]))
-				fprintf(fp, "ms-dns  %s\n", dns_list->dns_server[2]);
+		if (dns_list) {
+			for (i = 0; i < dns_list->num_servers; i++)
+				fprintf(fp, "ms-dns %s\n", dns_list->dns_server[i]);
+
 		}
 	}
 	free_dns_list(dns_list);

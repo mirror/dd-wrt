@@ -155,6 +155,7 @@ static void makeipup(void)
 static void do_pppoeconfig(FILE * fp)
 {
 	int nowins = 0;
+	int i;
 
 	if (nvram_default_match("wan_wins", "0.0.0.0", "0.0.0.0")) {
 		nowins = 1;
@@ -205,44 +206,10 @@ static void do_pppoeconfig(FILE * fp)
 	}
 	struct dns_lists *dns_list = get_dns_list();
 
-/*	if (nvram_matchi("dnsmasq_enable",1)) {
-		if (strcmp(getifip(), "")) {
-			fprintf(fp, "ms-dns %s\n", getifip());
-			fprintf(fp, "ms-dns %s\n",
-					dns_list->dns_server[0]);
-		}
-	} else if (nvram_matchi("local_dns",1)) {
-		if (dns_list && (strcmp(getifip(), "")
-				 || strlen(dns_list->dns_server[0]) > 0
-				 || strlen(dns_list->dns_server[1]) > 0
-				 || strlen(dns_list->dns_server[2]) > 0)) {
-
-			if (strcmp(getifip(), ""))
-				fprintf(fp, "ms-dns %s\n", getifip());
-			if (strlen(dns_list->dns_server[0]) > 0)
-				fprintf(fp, "ms-dns %s\n",
-					dns_list->dns_server[0]);
-			if (strlen(dns_list->dns_server[1]) > 0)
-				fprintf(fp, "ms-dns %s\n",
-					dns_list->dns_server[1]);
-			if (strlen(dns_list->dns_server[2]) > 0)
-				fprintf(fp, "ms-dns %s\n",
-					dns_list->dns_server[2]);
-		}
-	} else {
-		if (dns_list
-		    && (strlen(dns_list->dns_server[0]) > 0
-			|| strlen(dns_list->dns_server[1]) > 0
-			|| strlen(dns_list->dns_server[2]) > 0)) {	*/
-	if (strlen(dns_list->dns_server[0]))
-		fprintf(fp, "ms-dns %s\n", dns_list->dns_server[0]);
-	if (strlen(dns_list->dns_server[1]))
-		fprintf(fp, "ms-dns %s\n", dns_list->dns_server[1]);
-	if (strlen(dns_list->dns_server[2]))
-		fprintf(fp, "ms-dns %s\n", dns_list->dns_server[2]);
-
-//              }
-//      }
+	if (dns_list) {
+		for (i = 0; i < dns_list->num_servers; i++)
+			fprintf(fp, "ms-dns %s\n", dns_list->dns_server[i]);
+	}
 
 	free_dns_list(dns_list);
 

@@ -179,7 +179,10 @@ int mk_nocat_conf(void)
 		if (!dns_list || dns_list->num_servers == 0) {
 			fprintf(fp, "DNSAddr \t%s\n", nvram_safe_get("lan_ipaddr"));
 		} else {
-			fprintf(fp, "DNSAddr \t%s %s %s\n", dns_list->dns_server[0], dns_list->dns_server[1], dns_list->dns_server[2]);
+			fprintf(fp, "DNSAddr \t");
+			for (i = 0; i < dns_list->num_servers; i++)
+				fprintf(fp, "%s ", dns_list->dns_server[i]);
+			fprintf(fp, "\n");
 		}
 		free_dns_list(dns_list);
 	}
