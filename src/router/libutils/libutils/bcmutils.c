@@ -449,6 +449,13 @@ void free_dns_list(struct dns_lists *dns_list)
 
 }
 
+char *get_dns_entry(struct dns_lists *dns_list, int idx) // helper for NULL checks
+{
+	if (!dns_list || idx > (dns_list->num_servers - 1))
+	    return "";
+	return dns_list->dns_server[idx];
+}
+
 struct dns_lists *get_dns_list(void)
 {
 	struct dns_lists *dns_list = NULL;
