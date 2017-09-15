@@ -78,6 +78,7 @@ static char *_get_network(char *ipaddr, char *snmask, char *network)
 int mk_nocat_conf(void)
 {
 	FILE *fp;
+	int i;
 
 	/*
 	 * BPsmythe: Write out a nocat.conf file 
