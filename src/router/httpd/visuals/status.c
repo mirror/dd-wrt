@@ -224,7 +224,7 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 	} else if (!strcmp(type, "wan_dns1")) {
 		websWrite(wp, "%s", get_dns_entry(dns_list,1));
 	} else if (!strcmp(type, "wan_dns2")) {
-		websWrite(wp, "%s", get_dns_entry(dns_list,1));
+		websWrite(wp, "%s", get_dns_entry(dns_list,2));
 	} else if (!strcmp(type, "status1"))
 		websWrite(wp, "%s", live_translate(status1));
 	else if (!strcmp(type, "status2"))
