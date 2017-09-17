@@ -418,7 +418,7 @@ char *get_mac_from_ip(char *mac, char *ip)
 	return NULL;
 }
 
-static void add_dnslist(struct dns_lists *dns_list, char *dns)
+static void add_dnslist_internal(struct dns_lists *dns_list, char *dns)
 {
 	int i;
 	if (strcmp(dns, "0.0.0.0") && strcmp(dns, "")) {
@@ -429,10 +429,19 @@ static void add_dnslist(struct dns_lists *dns_list, char *dns)
 		}
 		if (!match) {
 			dns_list->dns_server = (char **)realloc(dns_list->dns_server, sizeof(char *) * (dns_list->num_servers + 1));
-			dns_list->dns_server[dns_list->num_servers] = malloc(strlen(dns)+1);
-			strcpy(dns_list->dns_server[dns_list->num_servers],dns);
+			dns_list->dns_server[dns_list->num_servers] = strdup(dns);
 			dns_list->num_servers++;
 		}
+	}
+}
+
+static void add_dnslist(struct dns_lists *dns_list, char *dns)
+{
+	char *next, word[32];
+	if (!dns)
+		return 0;
+	foreach(word, dns, next) {
+		add_dnslist_internal(dns_list, dns);
 	}
 }
 
@@ -453,7 +462,7 @@ void free_dns_list(struct dns_lists *dns_list)
 char *get_dns_entry(struct dns_lists *dns_list, int idx)
 {
 	if (!dns_list || idx > (dns_list->num_servers - 1))
-	    return "";
+		return "";
 	return dns_list->dns_server[idx];
 }
 
