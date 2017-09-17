@@ -429,7 +429,8 @@ static void add_dnslist(struct dns_lists *dns_list, char *dns)
 		}
 		if (!match) {
 			dns_list->dns_server = (char **)realloc(dns_list->dns_server, sizeof(char *) * (dns_list->num_servers + 1));
-			dns_list->dns_server[dns_list->num_servers] = strdup(dns);
+			dns_list->dns_server[dns_list->num_servers] = malloc(strlen(dns)+1);
+			strcpy(dns_list->dns_server[dns_list->num_servers],dns);
 			dns_list->num_servers++;
 		}
 	}
