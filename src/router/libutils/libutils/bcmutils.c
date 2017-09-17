@@ -441,7 +441,7 @@ static void add_dnslist(struct dns_lists *dns_list, char *dns)
 	if (!dns)
 		return 0;
 	foreach(word, dns, next) {
-		add_dnslist_internal(dns_list, dns);
+		add_dnslist_internal(dns_list, word);
 	}
 }
 
