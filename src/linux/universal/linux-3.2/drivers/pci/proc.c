@@ -249,23 +249,35 @@ static int proc_bus_pci_mmap(struct file *file, struct vm_area_struct *vma)
 	const struct proc_dir_entry *dp = PDE(inode);
 	struct pci_dev *dev = dp->data;
 	struct pci_filp_private *fpriv = file->private_data;
-	int i, ret;
+	int i, ret, write_combine = 0, res_bit;
 
 	if (!capable(CAP_SYS_RAWIO))
 		return -EPERM;
 
+	if (fpriv->mmap_state == pci_mmap_io)
+		res_bit = IORESOURCE_IO;
+	else
+		res_bit = IORESOURCE_MEM;
+
 	/* Make sure the caller is mapping a real resource for this device */
 	for (i = 0; i < PCI_ROM_RESOURCE; i++) {
-		if (pci_mmap_fits(dev, i, vma,  PCI_MMAP_PROCFS))
+		if (dev->resource[i].flags & res_bit &&
+		    pci_mmap_fits(dev, i, vma,  PCI_MMAP_PROCFS))
 			break;
 	}
 
 	if (i >= PCI_ROM_RESOURCE)
 		return -ENODEV;
 
+	if (fpriv->mmap_state == pci_mmap_mem &&
+	    fpriv->write_combine) {
+		if (dev->resource[i].flags & IORESOURCE_PREFETCH)
+			write_combine = 1;
+		else
+			return -EINVAL;
+	}
 	ret = pci_mmap_page_range(dev, vma,
-				  fpriv->mmap_state,
-				  fpriv->write_combine);
+				  fpriv->mmap_state, write_combine);
 	if (ret < 0)
 		return ret;
 
