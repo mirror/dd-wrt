@@ -466,13 +466,13 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 			return;
 		if (strncmp(uuid, "u=", 2))
 			return;
-		syslog(LOG_INFO, "UUID: %s", uuid);
+		//syslog(LOG_INFO, "UUID: %s", uuid);
 		uuid += strlen(parameter2);
 		idx = strchr(uuid, '&');
 		if (idx) {
 			idx[0] = 0;
 		}
-		syslog(LOG_INFO, "UUIX: %s", uuid);
+		//syslog(LOG_INFO, "UUIX: %s", uuid);
 		if (strlen(uuid) == 36) {
 			if (!nvram_match("speedchecker_uuid2", uuid)) {
 				return;
