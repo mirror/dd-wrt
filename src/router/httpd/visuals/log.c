@@ -43,7 +43,7 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 
 	time_t tm;
 	char *verdict, *src, *dst, *proto, *spt, *dpt, *in, *out;
-	char src_old[10] = "", dpt_old[10] = "", dst_old[10] = "", proto_old[10] = "";
+	char src_old[32] = "", dpt_old[32] = "", dst_old[32] = "", proto_old[32] = "";
 
 	int _dport, _sport;
 	char *_proto = NULL;
@@ -133,9 +133,9 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 				    && !strcmp(proto, proto_old)) {
 					continue;	// skip same record
 				} else {
-					strcpy(src_old, src);
-					strcpy(dpt_old, dpt);
-					strcpy(proto_old, proto);
+					strncpy(src_old, src, sizeof(src_old) - 1);
+					strncpy(dpt_old, dpt, sizeof(dpt_old) - 1);
+					strncpy(proto_old, proto, sizeof(proto_old) - 1);
 				}
 
 				websWrite(wp, "<tr height=\"1\">\n<td>%s</td>\n<td align=\"center\">%s</td>\n<td align=\"center\">%s</td>\n<td align=\"center\">%s</td>\n</tr>\n", src, proto, servp ? servp->s_name : dpt,
@@ -155,10 +155,10 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 				    && !strcmp(dpt, dpt_old)) {
 					continue;	// skip same record
 				} else {
-					strcpy(src_old, src);
-					strcpy(dst_old, dst);
-					strcpy(proto_old, proto);
-					strcpy(dpt_old, dpt);
+					strncpy(src_old, src, sizeof(src_old) - 1);
+					strncpy(dst_old, dst, sizeof(dst_old) - 1);
+					strncpy(proto_old, proto, sizeof(proto_old) - 1);
+					strncpy(dpt_old, dpt, sizeof(dpt_old) - 1);
 				}
 
 				websWrite(wp, "<tr height=\"1\">\n<td>%s</td>\n<td>%s</td>\n<td align=\"center\">%s</td>\n<td>%s</td>\n<td align=\"center\">%s</td>\n</tr>\n", src, dst, proto, servp ? servp->s_name : dpt,
@@ -182,9 +182,9 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 			    && !strcmp(dst, dst_old)) {
 				continue;	// skip same record
 			} else {
-				strcpy(src_old, src);
-				strcpy(dpt_old, dpt);
-				strcpy(dst_old, dst);
+				strncpy(src_old, src, sizeof(src_old) - 1);
+				strncpy(dpt_old, dpt, sizeof(dpt_old) - 1);
+				strncpy(dst_old, dst, sizeof(dst_old) - 1);
 			}
 
 			websWrite(wp, "%c'%s','%s','%s','%s','%d'\n", count ? ',' : ' ', proto, src, dst, servp ? servp->s_name : dpt, dir);
