@@ -867,13 +867,6 @@ CFLAGS += -DHAVE_SUPERCHANNEL
 REGOBJS = $(TOP)/register/register.c
 REGOBJS2 = $(TOP)/register/register_vis.o
 endif
-#ifeq ($(HTTPS_SUPPORT),1)
-#CFLAGS += -I$(TOP)/openssl/include  -I$(TOP)/openssl/include/openssl
-#LDFLAGS += -L$(TOP)/openssl -L../openssl -lcrypto -lssl
-#endif
-#ifeq ($(BACKUP_RESTORE_SUPPORT),1)
-#OBJS  += $(SRCBASE)/../tools/src/code_header.o backup_restore.o
-#endif
 
 ifeq ($(CONFIG_MASKMAC),y)
 CFLAGS += -DMASKMAC
@@ -1298,6 +1291,14 @@ CFLAGS += -DHAVE_HTTPS
 endif
 
 ifneq ($(CONFIG_MATRIXSSL),y)
+ifeq ($(CONFIG_WOLFSSL),y)
+CFLAGS += -I$(TOP)/wolfssl/wolfssl/openssl/    -I$(TOP)/wolfssl -I$(TOP)/wolfssl/wolfssl 
+SSLLDFLAGS += -L$(TOP)/wolfssl/src/.libs -lwolfssl
+CFLAGS += -DHAVE_OPENSSL
+CFLAGS += -DHAVE_HTTPS
+CFLAGS += -DHAVE_WOLFSSL
+
+else
 ifeq ($(CONFIG_OPENSSL),y)
 CFLAGS += -I$(TOP)/openssl/include  -I$(TOP)/openssl/include/openssl
 SSLLDFLAGS += -L$(TOP)/openssl -L$(TOP)/openssl -L$(TOP)/zlib -lssl -lcrypto
@@ -1305,6 +1306,9 @@ CFLAGS += -DHAVE_OPENSSL
 CFLAGS += -DHAVE_HTTPS
 endif
 endif
+endif
+
+
 
 
 ifeq ($(CONFIG_MATRIXSSL),y)
