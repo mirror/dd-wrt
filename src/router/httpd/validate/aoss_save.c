@@ -28,7 +28,6 @@
 #include <sys/klog.h>
 #include <sys/wait.h>
 #include <cyutils.h>
-#include <support.h>
 #include <cy_conf.h>
 // #ifdef EZC_SUPPORT
 #include <ezc.h>
