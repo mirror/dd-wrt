@@ -294,6 +294,7 @@ include rules/f2fs-tools.mk
 include rules/speedchecker.mk
 include rules/shownf.mk
 include rules/lsof.mk
+include rules/wolfssl.mk
 
 #
 # Generic rules
