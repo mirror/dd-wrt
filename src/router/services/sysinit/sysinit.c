@@ -921,6 +921,11 @@ void stop_run_rc_shutdown(void)
 
 void start_run_rc_shutdown(void)
 {
+	/* 
+	 * Blink led before reboot 
+	 */
+	diag_led(DIAG, START_LED);
+	led_control(LED_DIAG, LED_ON);
 	runStartup("/opt/etc/init.d", "K**");	// if available; run K** shutdown scripts
 	create_rc_file(RC_SHUTDOWN);
 	if (f_exists("/tmp/.rc_shutdown"))
