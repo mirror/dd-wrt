@@ -1422,6 +1422,10 @@ int internal_getRouterBrand()
 		setRouter("Linksys WRT3200ACM");
 		return ROUTER_WRT_3200ACM;
 	}
+	if (!strcmp(modelstr, "WRT32X")) {
+		setRouter("Linksys WRT32X");
+		return ROUTER_WRT_3200ACM;
+	}
 	setRouter("Linksys WRTXXXXACM");
 	return ROUTER_WRT_3200ACM;
 #elif HAVE_R9000
