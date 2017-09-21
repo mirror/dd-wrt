@@ -29,7 +29,6 @@
 #include <netdb.h>
 
 #include <broadcom.h>
-#include <support.h>
 
 #define LOG_BUF	16384		// max buf, total have 64 entries
 

@@ -35,7 +35,6 @@
 #include <time.h>
 
 #include <broadcom.h>
-#include <support.h>
 
 void ej_sputnik_apd_status(webs_t wp, int argc, char_t ** argv)
 {
