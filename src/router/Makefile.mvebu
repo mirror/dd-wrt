@@ -528,10 +528,11 @@ endif
 	./tools/trx_n -m 64000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt3200acm.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-rango-squashfs-factory.img
 	./tools/trx_n -m 64000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt32X.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-venom-squashfs-factory.img
 	
+	rm -rf $(ARCH)-uclibc/venom/sysupgrade-armada-385-linksys-venom
 	mkdir -p $(ARCH)-uclibc/venom/sysupgrade-armada-385-linksys-venom
 	echo BOARD=armada-385-linksys-venom > $(ARCH)-uclibc/venom/sysupgrade-armada-385-linksys-venom/CONTROL
 	cp $(ARCH)-uclibc/zImage-armada-385-linksys-venom $(ARCH)-uclibc/venom/sysupgrade-armada-385-linksys-venom/kernel
-	cp $(ARCH)-uclibc/root.squashfs $(ARCH)-uclibc/venom/sysupgrade-armada-385-linksys-venom/rootfs
+	cp $(ARCH)-uclibc/root.squashfs $(ARCH)-uclibc/venom/sysupgrade-armada-385-linksys-venom/root
 	cd $(ARCH)-uclibc/venom && tar -cvf venom.tar *
 
 include rules/all.mk
