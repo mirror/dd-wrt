@@ -95,7 +95,7 @@ export TARGETDIR := $(PLATFORMDIR)/target
 #
 CONFIG_IPTABLES=y
 CONFIG_MUSL=y
-CONFIG_NOOPT=y
+#CONFIG_NOOPT=y
 
 include rules/configs.mk
 
@@ -488,12 +488,17 @@ endif
 	cat $(LINUXDIR)/arch/arm/boot/dts/armada-385-linksys-rango.dtb >> $(ARCH)-uclibc/zImage-armada-385-linksys-rango;
 	mkimage -A arm -O linux -T kernel -a 0x00008000 -C none -e 0x00008000 -n 'DD-WRT' -d $(ARCH)-uclibc/zImage-armada-385-linksys-rango $(ARCH)-uclibc/uImage-armada-385-linksys-rango;
 
+	cp $(ARCH)-uclibc/zImage $(ARCH)-uclibc/zImage-armada-385-linksys-venom;
+	cat $(LINUXDIR)/arch/arm/boot/dts/armada-385-linksys-venom.dtb >> $(ARCH)-uclibc/zImage-armada-385-linksys-venom;
+	mkimage -A arm -O linux -T kernel -a 0x00008000 -C none -e 0x00008000 -n 'DD-WRT' -d $(ARCH)-uclibc/zImage-armada-385-linksys-venom $(ARCH)-uclibc/uImage-armada-385-linksys-venom;
+
 
 	cp $(ARCH)-uclibc/uImage-armada-xp-linksys-mamba $(ARCH)-uclibc/mvebu/ddwrt-mvebu-uImage-armada-xp-linksys-mamba;
 	cp $(ARCH)-uclibc/uImage-armada-385-linksys-caiman $(ARCH)-uclibc/mvebu/ddwrt-mvebu-uImage-armada-385-linksys-caiman;
 	cp $(ARCH)-uclibc/uImage-armada-385-linksys-cobra $(ARCH)-uclibc/mvebu/ddwrt-mvebu-uImage-armada-385-linksys-cobra;
 	cp $(ARCH)-uclibc/uImage-armada-385-linksys-shelby $(ARCH)-uclibc/mvebu/ddwrt-mvebu-uImage-armada-385-linksys-shelby;
 	cp $(ARCH)-uclibc/uImage-armada-385-linksys-rango $(ARCH)-uclibc/mvebu/ddwrt-mvebu-uImage-armada-385-linksys-rango;
+	cp $(ARCH)-uclibc/uImage-armada-385-linksys-venom $(ARCH)-uclibc/mvebu/ddwrt-mvebu-uImage-armada-385-linksys-venom;
 	
 	#tools/wrt1900ac/mksquashfs4 $(TARGETDIR) $(ARCH)-uclibc/root.squashfs -nopad -noappend -root-owned -comp xz -Xpreset 9 -Xe -Xlc 0 -Xlp 2 -Xpb 2 -Xbcj arm -b 256k -p '/dev d 755 0 0' -p '/dev/console c 600 0 0 5 1' -processors 1
 	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -comp xz -nopad  -root-owned -noappend -Xbcj arm
@@ -514,16 +519,20 @@ endif
 	( dd if=$(ARCH)-uclibc/uImage-armada-385-linksys-cobra bs=3072k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-385-cobra-squashfs-factory.img
 	( dd if=$(ARCH)-uclibc/uImage-armada-385-linksys-shelby bs=3072k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-385-shelby-squashfs-factory.img
 	( dd if=$(ARCH)-uclibc/uImage-armada-385-linksys-rango bs=6144k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-385-rango-squashfs-factory.img
+	( dd if=$(ARCH)-uclibc/uImage-armada-385-linksys-venom bs=6144k conv=sync; dd if=$(ARCH)-uclibc/root.squashfs.ubi bs=2048 conv=sync; ) > $(ARCH)-uclibc/ddwrt-mvebu-armada-385-venom-squashfs-factory.img
 
 	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1900ac.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-xp-mamba-squashfs-factory.img
 	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1900acv2.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-cobra-squashfs-factory.img
 	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1200ac.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-caiman-squashfs-factory.img
 	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt1900acs.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-shelby-squashfs-factory.img
 	./tools/trx_n -m 64000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt3200acm.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-rango-squashfs-factory.img
+	./tools/trx_n -m 64000000 -o $(ARCH)-uclibc/ddwrt-linksys-wrt32X.bin $(ARCH)-uclibc/ddwrt-mvebu-armada-385-venom-squashfs-factory.img
 	
-
-
-
+	mkdir -p $(ARCH)-uclibc/venom/sysupgrade-armada-385-linksys-venom
+	echo BOARD=armada-385-linksys-venom > $(ARCH)-uclibc/venom/sysupgrade-armada-385-linksys-venom/CONTROL
+	cp $(ARCH)-uclibc/zImage-armada-385-linksys-venom $(ARCH)-uclibc/venom/sysupgrade-armada-385-linksys-venom/kernel
+	cp $(ARCH)-uclibc/root.squashfs $(ARCH)-uclibc/venom/sysupgrade-armada-385-linksys-venom/rootfs
+	cd $(ARCH)-uclibc/venom && tar -cvf venom.tar *
 
 include rules/all.mk
 
