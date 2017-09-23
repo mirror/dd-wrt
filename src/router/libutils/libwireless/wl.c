@@ -2706,6 +2706,8 @@ char *getWifiDeviceName(char *prefix)
 int has_gcmp(char *prefix)
 {
 	char *n = getWifiDeviceName(prefix);
+	if (!n)
+		return 0;
 	if (!strcmp(n, "QCA9984 802.11ac"))
 		return 1;
 	if (!strcmp(n, "QCA99X0 802.11ac"))
