@@ -32,7 +32,6 @@
 #include <broadcom.h>
 #include <wlutils.h>
 
-
 void sas_show_wep(webs_t wp, char *prefix);
 void sas_show_preshared(webs_t wp, char *prefix);
 void sas_show_radius(webs_t wp, char *prefix, int showmacformat, int backup);

@@ -183,7 +183,7 @@ static int svqos_set_ports(void)
 		for (loop = 1; loop < 5; loop++) {
 			snprintf(nvram_var, 31, "svqos_port%dbw", loop);
 
-			if (!nvram_matchi(nvram_var,0))
+			if (!nvram_matchi(nvram_var, 0))
 				writevaproc(nvram_safe_get(nvram_var), "/proc/switch/eth0/port/%d/bandwidth", loop);
 			else
 				writevaproc("0", "/proc/switch/eth0/port/%d/enable", loop);

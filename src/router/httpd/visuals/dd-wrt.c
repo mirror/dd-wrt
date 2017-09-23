@@ -4458,9 +4458,16 @@ void show_preshared(webs_t wp, char *prefix)
 	if (has_ad(prefix)) {
 		websWrite(wp, "<option value=\"gcmp\" %s>GCMP</option>\n", selmatch(var, "gcmp", "selected=\"selected\""));
 	} else {
+
 		websWrite(wp, "<option value=\"aes\" %s>AES</option>\n", selmatch(var, "aes", "selected=\"selected\""));
 		websWrite(wp, "<option value=\"tkip+aes\" %s>TKIP+AES</option>\n", selmatch(var, "tkip+aes", "selected=\"selected\""));
 		websWrite(wp, "<option value=\"tkip\" %s>TKIP</option>\n", selmatch(var, "tkip", "selected=\"selected\""));
+		if (has_gcmp(prefix)) {
+			websWrite(wp, "<option value=\"ccmp256\" %s>CCMP-256</option>\n", selmatch(var, "ccmp256", "selected=\"selected\""));
+			websWrite(wp, "<option value=\"gcmp\" %s>GCMP</option>\n", selmatch(var, "gcmp", "selected=\"selected\""));
+			websWrite(wp, "<option value=\"gcmp256\" %s>GCMP-256</option>\n", selmatch(var, "gcmp256", "selected=\"selected\""));
+		}
+
 	}
 
 	websWrite(wp, "</select>\n");

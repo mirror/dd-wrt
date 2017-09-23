@@ -31,7 +31,6 @@
 
 #include <broadcom.h>
 
-
 #if !defined(HAVE_IAS) && !defined(HAVE_BUFFALO)
 char *nvram_selget(webs_t wp, char *name)
 {

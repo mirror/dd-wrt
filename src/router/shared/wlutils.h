@@ -108,8 +108,8 @@ extern int has_ad(char *prefix);
 #else
 #define has_ad(prefix) (0)
 #endif
+extern int has_gcmp(char *prefix);
 extern int has_qtn(char *prefix);
-
 extern int has_athmask(int devnum, int mask);
 extern int has_2ghz(char *prefix);
 extern int is_wrt3200(void);

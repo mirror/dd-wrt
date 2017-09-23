@@ -2703,6 +2703,16 @@ char *getWifiDeviceName(char *prefix)
 
 }
 
+int has_gcmp(char *prefix)
+{
+	char *n = getWifiDeviceName(prefix);
+	if (!strcmp(n, "QCA9984 802.11ac"))
+		return 1;
+	if (!strcmp(n, "QCA99X0 802.11ac"))
+		return 1;
+	return 0;
+}
+
 #ifdef HAVE_ATH9K
 int getath9kdevicecount(void)
 {
