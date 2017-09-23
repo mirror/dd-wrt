@@ -4550,4 +4550,3 @@ void nintendo_save(webs_t wp)
 	applytake(value);
 }
 #endif
-
