@@ -31,7 +31,6 @@
 
 #include <broadcom.h>
 
-
 #ifdef HAVE_UNIWIP
 void ej_gps_status(webs_t wp, int argc, char_t ** argv)
 {

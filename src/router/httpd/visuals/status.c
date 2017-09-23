@@ -220,11 +220,11 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 	else if (!strcmp(type, "wan_gateway"))
 		websWrite(wp, "%s", wan_gateway);
 	else if (!strcmp(type, "wan_dns0")) {
-		websWrite(wp, "%s", get_dns_entry(dns_list,0));
+		websWrite(wp, "%s", get_dns_entry(dns_list, 0));
 	} else if (!strcmp(type, "wan_dns1")) {
-		websWrite(wp, "%s", get_dns_entry(dns_list,1));
+		websWrite(wp, "%s", get_dns_entry(dns_list, 1));
 	} else if (!strcmp(type, "wan_dns2")) {
-		websWrite(wp, "%s", get_dns_entry(dns_list,2));
+		websWrite(wp, "%s", get_dns_entry(dns_list, 2));
 	} else if (!strcmp(type, "status1"))
 		websWrite(wp, "%s", live_translate(status1));
 	else if (!strcmp(type, "status2"))
@@ -240,7 +240,7 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%s", hidden2);
 	else if (!strcmp(type, "wan_3g_signal"))
 		websWrite(wp, "-40 DBm");
-	
+
 	free_dns_list(dns_list);
 
 	return;

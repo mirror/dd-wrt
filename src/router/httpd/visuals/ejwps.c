@@ -31,7 +31,6 @@
 
 #include <broadcom.h>
 
-
 void ej_get_wpsstatus(webs_t wp, int argc, char_t ** argv)
 {
 	if (nvram_matchi("wps_status", 0))

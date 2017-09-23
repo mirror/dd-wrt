@@ -28,7 +28,6 @@
 
 #include <broadcom.h>
 
-
 void ej_show_index_setting(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
