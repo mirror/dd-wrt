@@ -948,6 +948,34 @@ static void print_cipher(const uint8_t * data)
 			printf("AES-128-CMAC");
 			fillENC("AES-128-CMAC", " ");
 			break;
+		case 7:
+			printf("NO-GROUP");
+			fillENC("NO-GROUP", " ");
+			break;
+		case 8:
+			printf("GCMP-128");
+			fillENC("GCMP-128", " ");
+			break;
+		case 9:
+			printf("GCMP-256");
+			fillENC("GCMP-256", " ");
+			break;
+		case 10:
+			printf("CCMP-256");
+			fillENC("CCMP-256", " ");
+			break;
+		case 11:
+			printf("AES-128-GMAC");
+			fillENC("AES-128-GMAC", " ");
+			break;
+		case 12:
+			printf("AES-256-GMAC");
+			fillENC("AES-256-GMAC", " ");
+			break;
+		case 13:
+			printf("AES-256-CMAC");
+			fillENC("AES-256-CMAC", " ");
+			break;
 		default:
 			printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
 			break;
@@ -997,6 +1025,10 @@ static void print_auth(const uint8_t * data)
 		case 6:
 			printf("PSK/SHA-256");
 			fillENC("PSK/SHA-256", " ");
+			break;
+		case 7:
+			printf("TDLS/TPK");
+			fillENC("TDLS/TPK", " ");
 			break;
 		default:
 			printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
