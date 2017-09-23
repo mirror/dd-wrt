@@ -1319,9 +1319,9 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 			fprintf(fp, "\tpairwise=TKIP\n");
 			fprintf(fp, "\tgroup=TKIP\n");
 		}
-		if (nvram_match(psk, "ccmp")) {
-			fprintf(fp, "\tpairwise=CCMP\n");
-			fprintf(fp, "\tgroup=CCMP\n");
+		if (nvram_match(psk, "ccmp-256")) {
+			fprintf(fp, "\tpairwise=CCMP-256\n");
+			fprintf(fp, "\tgroup=CCMP-256\n");
 		}
 		if (nvram_match(psk, "gcmp")) {
 			fprintf(fp, "\tpairwise=GCMP\n");
