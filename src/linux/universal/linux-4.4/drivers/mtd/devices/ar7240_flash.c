@@ -164,6 +164,10 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			printk(KERN_EMERG "tplink uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
+		if (ofs[i] == 0x01000000 && ofs[i+1] == 0x54502D4C) {
+			printk(KERN_EMERG "tplink uboot detected\n");
+			return i * 4;	// uboot, lzma image
+		}
 		if (ofs[i + 15] == 0x27051956) {
 			printk(KERN_EMERG "WRT160NL uboot detected\n");
 			return i * 4;	// uboot, lzma image
