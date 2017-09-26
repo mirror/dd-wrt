@@ -498,33 +498,35 @@ void add_client_classes(unsigned int base, unsigned int level)
 		break;
 	}
 	unsigned int uprates[5] = { uprate * 75 / 100, uprate * 50 / 100, uprate * 25 / 100, uprate * 15 / 100, uprate * 5 / 100 };
+	unsigned int downrates[5] = { downrate * 75 / 100, downrate * 50 / 100, downrate * 25 / 100, downrate * 15 / 100, downrate * 5 / 100 };
+	unsigned int lanrates[5] = { lanrate * 75 / 100, lanrate * 50 / 100, lanrate * 25 / 100, lanrate * 15 / 100, lanrate * 5 / 100 };
 	if (nvram_matchi("qos_type", 0)) {
 		char prios[5] = { 0, prio, prio + 1, prio + 1, 7 };
 
 		add_tc_htb(wan_dev, parent, base, uprate, uplimit, quantum, -1);
-		add_tc_htb("imq0", parent, base, uprate, uplimit, quantum, -1);
+		add_tc_htb("imq0", parent, base, downrate, downlimit, quantum, -1);
 		if (nvram_match("wshaper_dev", "LAN")) {
-			add_tc_htb("imq1", parent, base, uprate, uplimit, quantum, -1);
+			add_tc_htb("imq1", parent, base, lanrate, lanlimit, quantum, -1);
 		}
 		int i;
 		for (i = 0; i < 5; i++) {
 			add_tc_htb(wan_dev, base, base + 1 + i, uprates[i], uplimit, quantum, prios[i]);
-			add_tc_htb("imq0", base, base + 1 + i, uprates[i], uplimit, quantum, prios[i]);
+			add_tc_htb("imq0", base, base + 1 + i, downrates[i], downlimit, quantum, prios[i]);
 			if (nvram_match("wshaper_dev", "LAN")) {
-				add_tc_htb("imq1", base, base + 1 + i, uprates[i], uplimit, quantum, prios[i]);
+				add_tc_htb("imq1", base, base + 1 + i, lanrates[i], uplimit, quantum, prios[i]);
 			}
 		}
 
 	} else {
 		add_tc_hfsc(wan_dev, 1, base, uprate, uplimit);
-		add_tc_hfsc("imq0", 1, base, uprate, uplimit);
-		add_tc_hfsc("imq1", 1, base, uprate, uplimit);
+		add_tc_hfsc("imq0", 1, base, downrate, downlimit);
+		add_tc_hfsc("imq1", 1, base, lanrate, lanlimit);
 		int i;
 		for (i = 0; i < 5; i++) {
 			add_tc_hfsc(wan_dev, base, base + 1 + i, uprates[i], uplimit);
-			add_tc_hfsc("imq0", base, base + 1 + i, uprates[i], uplimit);
+			add_tc_hfsc("imq0", base, base + 1 + i, downrates[i], downlimit);
 			if (nvram_match("wshaper_dev", "LAN")) {
-				add_tc_hfsc("imq1", base, base + 1 + i, uprates[i], uplimit);
+				add_tc_hfsc("imq1", base, base + 1 + i, lanrates[i], lanlimit);
 			}
 		}
 
