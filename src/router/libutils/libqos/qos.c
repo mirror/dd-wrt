@@ -513,7 +513,7 @@ void add_client_classes(unsigned int base, unsigned int level)
 			add_tc_htb(wan_dev, base, base + 1 + i, uprates[i], uplimit, quantum, prios[i]);
 			add_tc_htb("imq0", base, base + 1 + i, downrates[i], downlimit, quantum, prios[i]);
 			if (nvram_match("wshaper_dev", "LAN")) {
-				add_tc_htb("imq1", base, base + 1 + i, lanrates[i], uplimit, quantum, prios[i]);
+				add_tc_htb("imq1", base, base + 1 + i, lanrates[i], lanlimit, quantum, prios[i]);
 			}
 		}
 
