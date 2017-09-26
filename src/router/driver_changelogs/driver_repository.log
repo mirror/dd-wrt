@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3638 | brainslayer | 2017-09-26 23:34:26 +0200 (Tue, 26 Sep 2017) | 1 line
+
+allow to change powersettings in mwlwifi. works at least for wrt1900acv1 and other devices without preprogrammed powerdata
+------------------------------------------------------------------------
 r3637 | brainslayer | 2017-09-26 23:10:40 +0200 (Tue, 26 Sep 2017) | 1 line
 
 once again backport fix
