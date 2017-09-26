@@ -138,7 +138,7 @@ static void watchdog(void)
 			if (tempfp) {
 				fscanf(tempfp, "%d", &cpu);
 				fclose(tempfp);
-				int target = cpu - ((nvram_geti("hwmon_temp_max") + 10) * 1000);
+				int target = cpu - (nvram_geti("hwmon_temp_max") * 1000);
 				if (target < 0)
 					target = 0;
 				if (target > 10000)
