@@ -84,8 +84,8 @@ void start_post_sysinit(void)
 	led_control(LED_CONNECTED, LED_OFF);
 	led_control(LED_USB, LED_OFF);
 	led_control(LED_USB1, LED_OFF);
-	led_control(USB_POWER, LED_OFF);
-	led_control(USB_POWER1, LED_OFF);
+	//led_control(USB_POWER, LED_OFF);
+	//led_control(USB_POWER1, LED_OFF);
 	led_control(LED_DMZ, LED_OFF);
 	led_control(LED_VPN, LED_OFF);
 	led_control(LED_SEC0, LED_OFF);
