@@ -6354,15 +6354,15 @@ int writeproc(char *path, char *value)
 
 int writeprocsysnet(char *path, char *value)
 {
-	char syspath[64];
-	snprintf(syspath, 64, "/proc/sys/net/%s", path);
+	char syspath[128];
+	snprintf(syspath,sizeof(syspath),"/proc/sys/net/%s",path);
 	return writeproc(syspath, value);
 }
 
 int writeprocsys(char *path, char *value)
 {
-	char syspath[64];
-	snprintf(syspath, 64, "/proc/sys/%s", path);
+	char syspath[128];
+	snprintf(syspath,sizeof(syspath),"/proc/sys/%s",path);
 	return writeproc(syspath, value);
 }
 
