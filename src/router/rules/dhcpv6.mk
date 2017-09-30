@@ -22,4 +22,4 @@ dhcpv6-configure:
 			CC="$(CC)" \
 			CXXFLAGS="$(COPTS) $(MIPS16_OPT) $(JFLAGS) -I$(TOP)/shared -DNEED_PRINTF -D_GNU_SOURCE -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections"  \
 			CFLAGS="$(COPTS) $(MIPS16_OPT) $(JFLAGS) -I$(TOP)/shared -DNEED_PRINTF -D_GNU_SOURCE  -DUSE_DHCP6SRV -DNOCONFIG_DEBUG -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-			LDFLAGS="$(COPTS) $(MIPS16_OPT) $(JFLAGS) -I$(TOP)/shared -ffunction-sections -fdata-sections -Wl,--gc-sections $(TOP)/libutils/getifaddrs.o -L$(TOP)/libutils/ -lutils -lshutils -L$(TOP)/nvram -lnvram"
+			LDFLAGS="$(COPTS) $(MIPS16_OPT) $(JFLAGS) -I$(TOP)/shared -ffunction-sections -fdata-sections -Wl,--gc-sections $(TOP)/libutils/libutils/getifaddrs.o -L$(TOP)/libutils/ -lutils -lshutils -L$(TOP)/nvram -lnvram"
