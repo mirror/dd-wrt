@@ -1479,7 +1479,7 @@ libsharetools.so: $(SHARETOOLSOBJS)
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram -L. -lshutils -L$(TOP)/jansson/src/.libs -ljansson -lm
 
 libqos.so: libqos/qos.o
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils $
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils
 
 libwireless.so: $(WOBJS) madwififiles ath9kfiles
 	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $(WOBJS) $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram -L. -lshutils $(WLDFLAGS) $(ATH9KLDFLAGS) $(QTNFLAGS)
