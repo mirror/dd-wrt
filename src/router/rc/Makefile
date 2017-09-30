@@ -991,7 +991,7 @@ vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
 all: rc init resetbutton wland et
 
 clean:
-	rm -f *.o rc resetbutton wland et
+	rm -f *.o rc init resetbutton wland et
 	rm -f *.c~
 
 install: all
