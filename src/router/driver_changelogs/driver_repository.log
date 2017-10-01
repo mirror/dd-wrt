@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3639 | brainslayer | 2017-10-01 16:07:53 +0200 (Sun, 01 Oct 2017) | 1 line
+
+enable only powersave if supported
+------------------------------------------------------------------------
 r3638 | brainslayer | 2017-09-26 23:34:26 +0200 (Tue, 26 Sep 2017) | 1 line
 
 allow to change powersettings in mwlwifi. works at least for wrt1900acv1 and other devices without preprogrammed powerdata
