@@ -59,6 +59,48 @@
 #include <linux/sockios.h>
 #include <broadcom.h>
 
+#ifdef HAVE_IPV6
+#include <ifaddrs.h>
+#endif
+#ifndef IP_ALEN
+#define IP_ALEN 4
+#endif
+
+#ifndef unlikely
+#define unlikely(x)     __builtin_expect((x),0)
+#endif
+
+#define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
+#define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
+
+struct mii_ioctl_data {
+	unsigned short phy_id;
+	unsigned short reg_num;
+	unsigned short val_in;
+	unsigned short val_out;
+};
+
+
+#ifdef HAVE_FONERA
+static void getBoardMAC(char *mac)
+{
+	// 102
+	int i;
+	char op[32];
+	unsigned char data[256];
+	FILE *in;
+
+	sprintf(op, "/dev/mtdblock/%d", getMTD("board_config"));
+	in = fopen(op, "rb");
+	if (in == NULL)
+		return;
+	fread(data, 256, 1, in);
+	fclose(in);
+	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", data[102] & 0xff, data[103] & 0xff, data[104] & 0xff, data[105] & 0xff, data[106] & 0xff, data[107] & 0xff);
+}
+#endif
+
+
 void setRouter(char *name)
 {
 #ifdef HAVE_POWERNOC_WORT54G
