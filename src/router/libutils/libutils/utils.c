@@ -84,24 +84,6 @@ struct mii_ioctl_data {
 #define TRX_MAGIC_F7D3302			0x20090928	/* Belkin Share; router's birthday ? */
 #define TRX_MAGIC_F7D4302			0x20091006	/* Belkin Play; router's birthday ? */
 
-#ifdef HAVE_FONERA
-static void getBoardMAC(char *mac)
-{
-	// 102
-	int i;
-	char op[32];
-	unsigned char data[256];
-	FILE *in;
-
-	sprintf(op, "/dev/mtdblock/%d", getMTD("board_config"));
-	in = fopen(op, "rb");
-	if (in == NULL)
-		return;
-	fread(data, 256, 1, in);
-	fclose(in);
-	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", data[102] & 0xff, data[103] & 0xff, data[104] & 0xff, data[105] & 0xff, data[106] & 0xff, data[107] & 0xff);
-}
-#endif
 
 int count_processes(char *pidName)
 {
