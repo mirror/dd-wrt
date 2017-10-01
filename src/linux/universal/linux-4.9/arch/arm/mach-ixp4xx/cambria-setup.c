@@ -170,29 +170,36 @@ static struct resource cambria_usb1_resources[] = {
 
 static u64 ehci_dma_mask = ~(u32)0;
 
+static struct usb_ehci_pdata cambria_usb_pdata = {
+	.big_endian_desc = 1,
+	.big_endian_mmio = 1,
+	.has_tt = 1,
+	.caps_offset = 0x100,
+};
+
 static struct platform_device cambria_usb0_device =  {
-	.name		= "ixp4xx-ehci",
+	.name		= "ehci-platform",
 	.id		= 0,
 	.resource	= cambria_usb0_resources,
 	.num_resources	= ARRAY_SIZE(cambria_usb0_resources),
 	.dev = {
 		.dma_mask		= &ehci_dma_mask,
 		.coherent_dma_mask	= 0xffffffff,
+		.platform_data = &cambria_usb_pdata,
 	},
 };
 
 static struct platform_device cambria_usb1_device = {
-	.name		= "ixp4xx-ehci",
+	.name		= "ehci-platform",
 	.id		= 1,
 	.resource	= cambria_usb1_resources,
 	.num_resources	= ARRAY_SIZE(cambria_usb1_resources),
 	.dev = {
 		.dma_mask		= &ehci_dma_mask,
 		.coherent_dma_mask	= 0xffffffff,
+		.platform_data = &cambria_usb_pdata,
 	},
 };
-
-
 
 
 static struct platform_device *cambria_devices[] __initdata = {
