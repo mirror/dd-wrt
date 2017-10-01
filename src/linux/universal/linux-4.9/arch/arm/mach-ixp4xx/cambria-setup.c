@@ -35,6 +35,7 @@
 #include <linux/irq.h>
 #include <linux/gpio.h>
 #include <linux/leds.h>
+#include <linux/usb/ehci_pdriver.h>
 
 
 static struct flash_platform_data cambria_flash_data = {
