@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -74,7 +74,6 @@ static void count_usable_descriptors(int *num_present,
                                      int *num_usable,
                                      smartlist_t *descs_out,
                                      const networkstatus_t *consensus,
-                                     const or_options_t *options,
                                      time_t now,
                                      routerset_t *in_set,
                                      usable_descriptor_t exit_only);
@@ -1011,16 +1010,6 @@ node_get_platform(const node_t *node)
     return NULL;
 }
 
-/** Return <b>node</b>'s time of publication, or 0 if we don't have one. */
-time_t
-node_get_published_on(const node_t *node)
-{
-  if (node->ri)
-    return node->ri->cache_info.published_on;
-  else
-    return 0;
-}
-
 /** Return true iff <b>node</b> is one representing this router. */
 int
 node_is_me(const node_t *node)
@@ -1690,7 +1679,7 @@ static void
 count_usable_descriptors(int *num_present, int *num_usable,
                          smartlist_t *descs_out,
                          const networkstatus_t *consensus,
-                         const or_options_t *options, time_t now,
+                         time_t now,
                          routerset_t *in_set,
                          usable_descriptor_t exit_only)
 {
@@ -1707,7 +1696,7 @@ count_usable_descriptors(int *num_present, int *num_usable,
          continue;
        if (in_set && ! routerset_contains_routerstatus(in_set, rs, -1))
          continue;
-       if (client_would_use_router(rs, now, options)) {
+       if (client_would_use_router(rs, now)) {
          const char * const digest = rs->descriptor_digest;
          int present;
          ++*num_usable; /* the consensus says we want it. */
@@ -1761,10 +1750,10 @@ compute_frac_paths_available(const networkstatus_t *consensus,
   const int authdir = authdir_mode_v3(options);
 
   count_usable_descriptors(num_present_out, num_usable_out,
-                           mid, consensus, options, now, NULL,
+                           mid, consensus, now, NULL,
                            USABLE_DESCRIPTOR_ALL);
   if (options->EntryNodes) {
-    count_usable_descriptors(&np, &nu, guards, consensus, options, now,
+    count_usable_descriptors(&np, &nu, guards, consensus, now,
                              options->EntryNodes, USABLE_DESCRIPTOR_ALL);
   } else {
     SMARTLIST_FOREACH(mid, const node_t *, node, {
@@ -1785,7 +1774,7 @@ compute_frac_paths_available(const networkstatus_t *consensus,
    * an unavoidable feature of forcing authorities to declare
    * certain nodes as exits.
    */
-  count_usable_descriptors(&np, &nu, exits, consensus, options, now,
+  count_usable_descriptors(&np, &nu, exits, consensus, now,
                            NULL, USABLE_DESCRIPTOR_EXIT_ONLY);
   log_debug(LD_NET,
             "%s: %d present, %d usable",
@@ -1834,7 +1823,7 @@ compute_frac_paths_available(const networkstatus_t *consensus,
     smartlist_t *myexits_unflagged = smartlist_new();
 
     /* All nodes with exit flag in ExitNodes option */
-    count_usable_descriptors(&np, &nu, myexits, consensus, options, now,
+    count_usable_descriptors(&np, &nu, myexits, consensus, now,
                              options->ExitNodes, USABLE_DESCRIPTOR_EXIT_ONLY);
     log_debug(LD_NET,
               "%s: %d present, %d usable",
@@ -1845,7 +1834,7 @@ compute_frac_paths_available(const networkstatus_t *consensus,
     /* Now compute the nodes in the ExitNodes option where which we don't know
      * what their exit policy is, or we know it permits something. */
     count_usable_descriptors(&np, &nu, myexits_unflagged,
-                             consensus, options, now,
+                             consensus, now,
                              options->ExitNodes, USABLE_DESCRIPTOR_ALL);
     log_debug(LD_NET,
               "%s: %d present, %d usable",

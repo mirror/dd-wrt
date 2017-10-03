@@ -1,4 +1,4 @@
-/* Copyright (c) 2016, The Tor Project, Inc. */
+/* Copyright (c) 2016-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #ifndef TOR_TIMERS_H
@@ -21,6 +21,10 @@ void timer_free(tor_timer_t *t);
 
 void timers_initialize(void);
 void timers_shutdown(void);
+
+#ifdef TOR_TIMERS_PRIVATE
+STATIC void timers_run_pending(void);
+#endif
 
 #endif
 

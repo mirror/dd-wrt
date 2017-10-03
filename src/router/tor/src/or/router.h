@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -27,10 +27,13 @@ crypto_pk_t *get_my_v3_authority_signing_key(void);
 authority_cert_t *get_my_v3_legacy_cert(void);
 crypto_pk_t *get_my_v3_legacy_signing_key(void);
 void dup_onion_keys(crypto_pk_t **key, crypto_pk_t **last);
+void expire_old_onion_keys(void);
 void rotate_onion_key(void);
 crypto_pk_t *init_key_from_file(const char *fname, int generate,
                                     int severity, int log_greeting);
 void v3_authority_check_key_expiry(void);
+int get_onion_key_lifetime(void);
+int get_onion_key_grace_period(void);
 
 di_digest256_map_t *construct_ntor_key_map(void);
 void ntor_key_map_free(di_digest256_map_t *map);

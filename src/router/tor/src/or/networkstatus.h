@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -16,6 +16,7 @@
 
 void networkstatus_reset_warnings(void);
 void networkstatus_reset_download_failures(void);
+char *networkstatus_read_cached_consensus(const char *flavorname);
 int router_reload_consensus_networkstatus(void);
 void routerstatus_free(routerstatus_t *rs);
 void networkstatus_vote_free(networkstatus_t *ns);
@@ -75,14 +76,15 @@ int should_delay_dir_fetches(const or_options_t *options,const char **msg_out);
 void update_networkstatus_downloads(time_t now);
 void update_certificate_downloads(time_t now);
 int consensus_is_waiting_for_certs(void);
-int client_would_use_router(const routerstatus_t *rs, time_t now,
-                            const or_options_t *options);
+int client_would_use_router(const routerstatus_t *rs, time_t now);
 MOCK_DECL(networkstatus_t *,networkstatus_get_latest_consensus,(void));
 MOCK_DECL(networkstatus_t *,networkstatus_get_latest_consensus_by_flavor,
           (consensus_flavor_t f));
 MOCK_DECL(networkstatus_t *, networkstatus_get_live_consensus,(time_t now));
-int networkstatus_consensus_reasonably_live(networkstatus_t *consensus,
+int networkstatus_consensus_reasonably_live(const networkstatus_t *consensus,
                                             time_t now);
+int networkstatus_valid_until_is_reasonably_live(time_t valid_until,
+                                                 time_t now);
 networkstatus_t *networkstatus_get_reasonably_live_consensus(time_t now,
                                                              int flavor);
 MOCK_DECL(int, networkstatus_consensus_is_bootstrapping,(time_t now));
@@ -138,7 +140,9 @@ void vote_routerstatus_free(vote_routerstatus_t *rs);
 #ifdef TOR_UNIT_TESTS
 STATIC int networkstatus_set_current_consensus_from_ns(networkstatus_t *c,
                                                 const char *flavor);
-#endif // TOR_UNIT_TESTS
+extern networkstatus_t *current_ns_consensus;
+extern networkstatus_t *current_md_consensus;
+#endif
 #endif
 
 #endif

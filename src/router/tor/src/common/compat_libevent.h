@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2016, The Tor Project, Inc. */
+/* Copyright (c) 2009-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #ifndef TOR_COMPAT_LIBEVENT_H
@@ -54,6 +54,7 @@ void tor_gettimeofday_cached(struct timeval *tv);
 void tor_gettimeofday_cache_clear(void);
 #ifdef TOR_UNIT_TESTS
 void tor_gettimeofday_cache_set(const struct timeval *tv);
+void tor_libevent_postfork(void);
 #endif
 
 #ifdef COMPAT_LIBEVENT_PRIVATE

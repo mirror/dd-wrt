@@ -1,6 +1,6 @@
 /* Copyright (c) 2003, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -17,6 +17,7 @@
 #include "orconfig.h"
 
 #define TORTLS_PRIVATE
+#define TORTLS_OPENSSL_PRIVATE
 
 #include <assert.h>
 #ifdef _WIN32 /*wrkard for dtls1.h >= 0.9.8m of "#include <winsock.h>"*/
@@ -459,11 +460,11 @@ tor_x509_name_new(const char *cname)
  * Return a certificate on success, NULL on failure.
  */
 MOCK_IMPL(STATIC X509 *,
-          tor_tls_create_certificate,(crypto_pk_t *rsa,
-                                      crypto_pk_t *rsa_sign,
-                                      const char *cname,
-                                      const char *cname_sign,
-                                      unsigned int cert_lifetime))
+tor_tls_create_certificate,(crypto_pk_t *rsa,
+                            crypto_pk_t *rsa_sign,
+                            const char *cname,
+                            const char *cname_sign,
+                            unsigned int cert_lifetime))
 {
   /* OpenSSL generates self-signed certificates with random 64-bit serial
    * numbers, so let's do that too. */
@@ -661,7 +662,7 @@ tor_x509_cert_free(tor_x509_cert_t *cert)
  * Steals a reference to x509_cert.
  */
 MOCK_IMPL(STATIC tor_x509_cert_t *,
-          tor_x509_cert_new,(X509 *x509_cert))
+tor_x509_cert_new,(X509 *x509_cert))
 {
   tor_x509_cert_t *cert;
   EVP_PKEY *pkey;
@@ -675,12 +676,7 @@ MOCK_IMPL(STATIC tor_x509_cert_t *,
   length = i2d_X509(x509_cert, &buf);
   cert = tor_malloc_zero(sizeof(tor_x509_cert_t));
   if (length <= 0 || buf == NULL) {
-    /* LCOV_EXCL_START for the same reason as the exclusion above */
-    tor_free(cert);
-    log_err(LD_CRYPTO, "Couldn't get length of encoded x509 certificate");
-    X509_free(x509_cert);
-    return NULL;
-    /* LCOV_EXCL_STOP */
+    goto err;
   }
   cert->encoded_len = (size_t) length;
   cert->encoded = tor_malloc(length);
@@ -695,13 +691,25 @@ MOCK_IMPL(STATIC tor_x509_cert_t *,
   if ((pkey = X509_get_pubkey(x509_cert)) &&
       (rsa = EVP_PKEY_get1_RSA(pkey))) {
     crypto_pk_t *pk = crypto_new_pk_from_rsa_(rsa);
-    crypto_pk_get_common_digests(pk, &cert->pkey_digests);
+    if (crypto_pk_get_common_digests(pk, &cert->pkey_digests) < 0) {
+      crypto_pk_free(pk);
+      EVP_PKEY_free(pkey);
+      goto err;
+    }
+
     cert->pkey_digests_set = 1;
     crypto_pk_free(pk);
     EVP_PKEY_free(pkey);
   }
 
   return cert;
+ err:
+  /* LCOV_EXCL_START for the same reason as the exclusion above */
+  tor_free(cert);
+  log_err(LD_CRYPTO, "Couldn't wrap encoded X509 certificate.");
+  X509_free(x509_cert);
+  return NULL;
+  /* LCOV_EXCL_STOP */
 }
 
 /** Return a new copy of <b>cert</b>. */
@@ -2283,6 +2291,24 @@ check_cert_lifetime_internal(int severity, const X509 *cert,
 
   return 0;
 }
+
+#ifdef TOR_UNIT_TESTS
+/* Testing only: return a new x509 cert with the same contents as <b>inp</b>,
+   but with the expiration time <b>new_expiration_time</b>, signed with
+   <b>signing_key</b>. */
+STATIC tor_x509_cert_t *
+tor_x509_cert_replace_expiration(const tor_x509_cert_t *inp,
+                                 time_t new_expiration_time,
+                                 crypto_pk_t *signing_key)
+{
+  X509 *newc = X509_dup(inp->cert);
+  X509_time_adj(X509_get_notAfter(newc), 0, &new_expiration_time);
+  EVP_PKEY *pk = crypto_pk_get_evp_pkey_(signing_key, 1);
+  tor_assert(X509_sign(newc, pk, EVP_sha256()));
+  EVP_PKEY_free(pk);
+  return tor_x509_cert_new(newc);
+}
+#endif
 
 /** Return the number of bytes available for reading from <b>tls</b>.
  */

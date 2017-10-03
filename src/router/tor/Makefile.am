@@ -1,6 +1,6 @@
 # Copyright (c) 2001-2004, Roger Dingledine
 # Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson
-# Copyright (c) 2007-2015, The Tor Project, Inc.
+# Copyright (c) 2007-2017, The Tor Project, Inc.
 # See LICENSE for licensing information
 
 ACLOCAL_AMFLAGS = -I m4
@@ -16,13 +16,19 @@ noinst_PROGRAMS=
 DISTCLEANFILES=
 bin_SCRIPTS=
 AM_CPPFLAGS=
-AM_CFLAGS=@TOR_SYSTEMD_CFLAGS@ @CFLAGS_BUGTRAP@
+AM_CFLAGS=@TOR_SYSTEMD_CFLAGS@ @CFLAGS_BUGTRAP@ @TOR_LZMA_CFLAGS@ @TOR_ZSTD_CFLAGS@
 SHELL=@SHELL@
 
 if COVERAGE_ENABLED
 TESTING_TOR_BINARY=$(top_builddir)/src/or/tor-cov$(EXEEXT)
 else
 TESTING_TOR_BINARY=$(top_builddir)/src/or/tor$(EXEEXT)
+endif
+
+if USE_RUST
+rust_ldadd=$(top_builddir)/src/rust/target/release/libtor_util.a
+else
+rust_ldadd=
 endif
 
 include src/include.am
@@ -230,3 +236,7 @@ mostlyclean-local:
 	rm -rf $(HTML_COVER_DIR)
 	rm -rf $(top_builddir)/doc/doxygen
 	rm -rf $(TEST_NETWORK_ALL_LOG_DIR)
+
+clean-local:
+	rm -rf $(top_builddir)/src/rust/target
+	rm -rf $(top_builddir)/src/rust/.cargo/registry

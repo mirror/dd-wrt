@@ -1,6 +1,6 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
@@ -2242,114 +2242,220 @@ test_util_pow2(void *arg)
   ;
 }
 
-/** Run unit tests for compression functions */
 static void
-test_util_gzip(void *arg)
+test_util_compress_impl(compress_method_t method)
 {
-  char *buf1=NULL, *buf2=NULL, *buf3=NULL, *cp1, *cp2;
-  const char *ccp2;
+  char *buf1=NULL, *buf2=NULL, *buf3=NULL;
   size_t len1, len2;
-  tor_zlib_state_t *state = NULL;
 
-  (void)arg;
+  tt_assert(tor_compress_supports_method(method));
+
+  if (method != NO_METHOD) {
+    tt_assert(tor_compress_version_str(method) != NULL);
+    tt_assert(tor_compress_header_version_str(method) != NULL);
+  }
+
   buf1 = tor_strdup("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAZAAAAAAAAAAAAAAAAAAAZ");
   tt_assert(detect_compression_method(buf1, strlen(buf1)) == UNKNOWN_METHOD);
 
-  tt_assert(!tor_gzip_compress(&buf2, &len1, buf1, strlen(buf1)+1,
-                               GZIP_METHOD));
-  tt_assert(buf2);
-  tt_assert(len1 < strlen(buf1));
-  tt_assert(detect_compression_method(buf2, len1) == GZIP_METHOD);
+  tt_assert(!tor_compress(&buf2, &len1, buf1, strlen(buf1)+1, method));
+  tt_assert(buf2 != NULL);
+  if (method == NO_METHOD) {
+    // The identity transform doesn't actually compress, and it isn't
+    // detectable as "the identity transform."
+    tt_int_op(len1, OP_EQ, strlen(buf1)+1);
+    tt_int_op(detect_compression_method(buf2, len1), OP_EQ, UNKNOWN_METHOD);
+  } else {
+    tt_int_op(len1, OP_LT, strlen(buf1));
+    tt_int_op(detect_compression_method(buf2, len1), OP_EQ, method);
+  }
 
-  tt_assert(!tor_gzip_uncompress(&buf3, &len2, buf2, len1,
-                                 GZIP_METHOD, 1, LOG_INFO));
-  tt_assert(buf3);
-  tt_int_op(strlen(buf1) + 1,OP_EQ, len2);
-  tt_str_op(buf1,OP_EQ, buf3);
-
-  tor_free(buf2);
-  tor_free(buf3);
-
-  tt_assert(!tor_gzip_compress(&buf2, &len1, buf1, strlen(buf1)+1,
-                                 ZLIB_METHOD));
-  tt_assert(buf2);
-  tt_assert(detect_compression_method(buf2, len1) == ZLIB_METHOD);
-
-  tt_assert(!tor_gzip_uncompress(&buf3, &len2, buf2, len1,
-                                   ZLIB_METHOD, 1, LOG_INFO));
-  tt_assert(buf3);
-  tt_int_op(strlen(buf1) + 1,OP_EQ, len2);
-  tt_str_op(buf1,OP_EQ, buf3);
+  tt_assert(!tor_uncompress(&buf3, &len2, buf2, len1, method, 1, LOG_INFO));
+  tt_assert(buf3 != NULL);
+  tt_int_op(strlen(buf1) + 1, OP_EQ, len2);
+  tt_str_op(buf1, OP_EQ, buf3);
+  tt_int_op(buf3[len2], OP_EQ, 0);
 
   /* Check whether we can uncompress concatenated, compressed strings. */
   tor_free(buf3);
   buf2 = tor_reallocarray(buf2, len1, 2);
   memcpy(buf2+len1, buf2, len1);
-  tt_assert(!tor_gzip_uncompress(&buf3, &len2, buf2, len1*2,
-                                   ZLIB_METHOD, 1, LOG_INFO));
-  tt_int_op((strlen(buf1)+1)*2,OP_EQ, len2);
-  tt_mem_op(buf3,OP_EQ,
+  tt_assert(!tor_uncompress(&buf3, &len2, buf2, len1*2, method, 1, LOG_INFO));
+  tt_int_op((strlen(buf1)+1)*2, OP_EQ, len2);
+  tt_mem_op(buf3, OP_EQ,
              "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAZAAAAAAAAAAAAAAAAAAAZ\0"
              "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAZAAAAAAAAAAAAAAAAAAAZ\0",
              (strlen(buf1)+1)*2);
+  tt_int_op(buf3[len2], OP_EQ, 0);
+
+  /* Check whether we can uncompress partial strings */
 
   tor_free(buf1);
   tor_free(buf2);
   tor_free(buf3);
 
-  /* Check whether we can uncompress partial strings. */
-  buf1 =
-    tor_strdup("String with low redundancy that won't be compressed much.");
-  tt_assert(!tor_gzip_compress(&buf2, &len1, buf1, strlen(buf1)+1,
-                                 ZLIB_METHOD));
-  tt_assert(len1>16);
-  /* when we allow an incomplete string, we should succeed.*/
-  tt_assert(!tor_gzip_uncompress(&buf3, &len2, buf2, len1-16,
-                                  ZLIB_METHOD, 0, LOG_INFO));
-  tt_assert(len2 > 5);
-  buf3[len2]='\0';
-  tt_assert(!strcmpstart(buf1, buf3));
+  size_t b1len = 1<<10;
+  if (method == ZSTD_METHOD) {
+    // zstd needs a big input before it starts generating output that it
+    // can partially decompress.
+    b1len = 1<<18;
+  }
+  buf1 = tor_malloc(b1len);
+  crypto_rand(buf1, b1len);
+  tt_assert(!tor_compress(&buf2, &len1, buf1, b1len, method));
+  tt_int_op(len1, OP_GT, 16);
+  /* when we allow an incomplete output we should succeed.*/
+  tt_assert(!tor_uncompress(&buf3, &len2, buf2, len1-16,
+                            method, 0, LOG_INFO));
+  tt_int_op(len2, OP_GT, 5);
+  tt_int_op(len2, OP_LE, len1);
+  tt_assert(fast_memeq(buf1, buf3, len2));
+  tt_int_op(buf3[len2], OP_EQ, 0);
 
-  /* when we demand a complete string, this must fail. */
+  /* when we demand a complete output from a real compression method, this
+   * must fail. */
   tor_free(buf3);
-  tt_assert(tor_gzip_uncompress(&buf3, &len2, buf2, len1-16,
-                                 ZLIB_METHOD, 1, LOG_INFO));
-  tt_assert(!buf3);
+  if (method != NO_METHOD) {
+    tt_assert(tor_uncompress(&buf3, &len2, buf2, len1-16,
+                             method, 1, LOG_INFO));
+    tt_assert(buf3 == NULL);
+  }
 
-  /* Now, try streaming compression. */
+ done:
   tor_free(buf1);
   tor_free(buf2);
   tor_free(buf3);
-  state = tor_zlib_new(1, ZLIB_METHOD, HIGH_COMPRESSION);
+}
+
+static void
+test_util_compress_stream_impl(compress_method_t method,
+                               compression_level_t level)
+{
+  char *buf1=NULL, *buf2=NULL, *buf3=NULL, *cp1, *cp2;
+  const char *ccp2;
+  size_t len1, len2;
+
+  tor_compress_state_t *state = NULL;
+  state = tor_compress_new(1, method, level);
   tt_assert(state);
   cp1 = buf1 = tor_malloc(1024);
   len1 = 1024;
   ccp2 = "ABCDEFGHIJABCDEFGHIJ";
   len2 = 21;
-  tt_assert(tor_zlib_process(state, &cp1, &len1, &ccp2, &len2, 0)
-              == TOR_ZLIB_OK);
-  tt_int_op(0,OP_EQ, len2); /* Make sure we compressed it all. */
+  tt_int_op(tor_compress_process(state, &cp1, &len1, &ccp2, &len2, 0),
+            OP_EQ, TOR_COMPRESS_OK);
+  tt_int_op(0, OP_EQ, len2); /* Make sure we compressed it all. */
   tt_assert(cp1 > buf1);
 
   len2 = 0;
   cp2 = cp1;
-  tt_assert(tor_zlib_process(state, &cp1, &len1, &ccp2, &len2, 1)
-              == TOR_ZLIB_DONE);
-  tt_int_op(0,OP_EQ, len2);
-  tt_assert(cp1 > cp2); /* Make sure we really added something. */
+  tt_int_op(tor_compress_process(state, &cp1, &len1, &ccp2, &len2, 1),
+            OP_EQ, TOR_COMPRESS_DONE);
+  tt_int_op(0, OP_EQ, len2);
+  if (method == NO_METHOD) {
+    tt_ptr_op(cp1, OP_EQ, cp2);
+  } else {
+    tt_assert(cp1 > cp2); /* Make sure we really added something. */
+  }
 
-  tt_assert(!tor_gzip_uncompress(&buf3, &len2, buf1, 1024-len1,
-                                  ZLIB_METHOD, 1, LOG_WARN));
+  tt_int_op(tor_compress_state_size(state), OP_GT, 0);
+
+  tt_assert(!tor_uncompress(&buf3, &len2, buf1, 1024-len1,
+                            method, 1, LOG_WARN));
   /* Make sure it compressed right. */
   tt_str_op(buf3, OP_EQ, "ABCDEFGHIJABCDEFGHIJ");
-  tt_int_op(21,OP_EQ, len2);
+  tt_int_op(21, OP_EQ, len2);
 
  done:
   if (state)
-    tor_zlib_free(state);
+    tor_compress_free(state);
+  tor_free(buf1);
   tor_free(buf2);
   tor_free(buf3);
-  tor_free(buf1);
+}
+
+/** Run unit tests for compression functions */
+static void
+test_util_compress(void *arg)
+{
+  const char *methodname = arg;
+  tt_assert(methodname);
+
+  compress_method_t method = compression_method_get_by_name(methodname);
+  tt_int_op(method, OP_NE, UNKNOWN_METHOD);
+
+  if (! tor_compress_supports_method(method)) {
+    tt_skip();
+  }
+
+  compression_level_t levels[] = {
+    BEST_COMPRESSION,
+    HIGH_COMPRESSION,
+    MEDIUM_COMPRESSION,
+    LOW_COMPRESSION
+  };
+
+  test_util_compress_impl(method);
+
+  for (unsigned l = 0; l < ARRAY_LENGTH(levels); ++l) {
+    compression_level_t level = levels[l];
+    test_util_compress_stream_impl(method, level);
+  }
+ done:
+  ;
+}
+
+static void
+test_util_decompress_concatenated_impl(compress_method_t method)
+{
+  char input[4096];
+  char *c1 = NULL, *c2 = NULL, *c3 = NULL;
+  char *result = NULL;
+  size_t sz1, sz2, sz3, szr;
+  int r;
+
+  crypto_rand(input, sizeof(input));
+
+  /* Compress the input in two chunks. */
+  r = tor_compress(&c1, &sz1, input, 2048, method);
+  tt_int_op(r, OP_EQ, 0);
+  r = tor_compress(&c2, &sz2, input+2048, 2048, method);
+  tt_int_op(r, OP_EQ, 0);
+
+  /* concatenate the chunks. */
+  sz3 = sz1 + sz2;
+  c3 = tor_malloc(sz3);
+  memcpy(c3, c1, sz1);
+  memcpy(c3+sz1, c2, sz2);
+
+  /* decompress the concatenated result */
+  r = tor_uncompress(&result, &szr, c3, sz3, method, 0, LOG_WARN);
+  tt_int_op(r, OP_EQ, 0);
+  tt_int_op(szr, OP_EQ, sizeof(input));
+  tt_mem_op(result, OP_EQ, input, sizeof(input));
+
+ done:
+  tor_free(c1);
+  tor_free(c2);
+  tor_free(c3);
+  tor_free(result);
+}
+
+static void
+test_util_decompress_concatenated(void *arg)
+{
+  const char *methodname = arg;
+  tt_assert(methodname);
+
+  compress_method_t method = compression_method_get_by_name(methodname);
+  tt_int_op(method, OP_NE, UNKNOWN_METHOD);
+  if (! tor_compress_supports_method(method)) {
+    tt_skip();
+  }
+
+  test_util_decompress_concatenated_impl(method);
+ done:
+  ;
 }
 
 static void
@@ -2364,44 +2470,44 @@ test_util_gzip_compression_bomb(void *arg)
   char *one_mb = tor_malloc_zero(one_million);
   char *result = NULL;
   size_t result_len = 0;
-  tor_zlib_state_t *state = NULL;
+  tor_compress_state_t *state = NULL;
 
   /* Make sure we can't produce a compression bomb */
   setup_full_capture_of_logs(LOG_WARN);
-  tt_int_op(-1, OP_EQ, tor_gzip_compress(&result, &result_len,
-                                         one_mb, one_million,
-                                         ZLIB_METHOD));
+  tt_int_op(-1, OP_EQ, tor_compress(&result, &result_len,
+                                    one_mb, one_million,
+                                    ZLIB_METHOD));
   expect_single_log_msg_containing(
          "We compressed something and got an insanely high "
          "compression factor; other Tors would think this "
-         "was a zlib bomb.");
+         "was a compression bomb.");
   teardown_capture_of_logs();
 
   /* Here's a compression bomb that we made manually. */
   const char compression_bomb[1039] =
     { 0x78, 0xDA, 0xED, 0xC1, 0x31, 0x01, 0x00, 0x00, 0x00, 0xC2,
       0xA0, 0xF5, 0x4F, 0x6D, 0x08, 0x5F, 0xA0 /* .... */ };
-  tt_int_op(-1, OP_EQ, tor_gzip_uncompress(&result, &result_len,
-                                           compression_bomb, 1039,
-                                           ZLIB_METHOD, 0, LOG_WARN));
+  tt_int_op(-1, OP_EQ, tor_uncompress(&result, &result_len,
+                                      compression_bomb, 1039,
+                                      ZLIB_METHOD, 0, LOG_WARN));
 
   /* Now try streaming that. */
-  state = tor_zlib_new(0, ZLIB_METHOD, HIGH_COMPRESSION);
-  tor_zlib_output_t r;
+  state = tor_compress_new(0, ZLIB_METHOD, HIGH_COMPRESSION);
+  tor_compress_output_t r;
   const char *inp = compression_bomb;
   size_t inlen = 1039;
   do {
     char *outp = one_mb;
     size_t outleft = 4096; /* small on purpose */
-    r = tor_zlib_process(state, &outp, &outleft, &inp, &inlen, 0);
+    r = tor_compress_process(state, &outp, &outleft, &inp, &inlen, 0);
     tt_int_op(inlen, OP_NE, 0);
-  } while (r == TOR_ZLIB_BUF_FULL);
+  } while (r == TOR_COMPRESS_BUFFER_FULL);
 
-  tt_int_op(r, OP_EQ, TOR_ZLIB_ERR);
+  tt_int_op(r, OP_EQ, TOR_COMPRESS_ERROR);
 
  done:
   tor_free(one_mb);
-  tor_zlib_free(state);
+  tor_compress_free(state);
 }
 
 /** Run unit tests for mmap() wrapper functionality. */
@@ -2518,7 +2624,7 @@ test_util_sscanf(void *arg)
 {
   unsigned u1, u2, u3;
   unsigned long ulng;
-  char s1[20], s2[10], s3[10], ch;
+  char s1[20], s2[10], s3[10], ch, *huge = NULL;
   int r;
   long lng1,lng2;
   int int1, int2;
@@ -2530,7 +2636,13 @@ test_util_sscanf(void *arg)
   tt_int_op(-1,OP_EQ,
             tor_sscanf("wrong", "%5c", s1)); /* %c cannot have a number. */
   tt_int_op(-1,OP_EQ, tor_sscanf("hello", "%s", s1)); /* %s needs a number. */
-  tt_int_op(-1,OP_EQ, tor_sscanf("prettylongstring", "%999999s", s1));
+  /* this will fail because we don't allow widths longer than 9999 */
+  {
+    huge = tor_malloc(1000000);
+    r = tor_sscanf("prettylongstring", "%99999s", huge);
+    tor_free(huge);
+    tt_int_op(-1,OP_EQ, r);
+  }
 #if 0
   /* GCC thinks these two are illegal. */
   test_eq(-1, tor_sscanf("prettylongstring", "%0s", s1));
@@ -2636,8 +2748,13 @@ test_util_sscanf(void *arg)
   tt_int_op(2,OP_EQ, tor_sscanf("76trombones", "%6u%9s", &u1, s1)); /* %u%s */
   tt_int_op(76,OP_EQ, u1);
   tt_str_op(s1,OP_EQ, "trombones");
-  tt_int_op(1,OP_EQ, tor_sscanf("prettylongstring", "%999s", s1));
-  tt_str_op(s1,OP_EQ, "prettylongstring");
+  {
+    huge = tor_malloc(1000);
+    r = tor_sscanf("prettylongstring", "%999s", huge);
+    tt_int_op(1,OP_EQ, r);
+    tt_str_op(huge,OP_EQ, "prettylongstring");
+    tor_free(huge);
+  }
   /* %s doesn't eat spaces */
   tt_int_op(2,OP_EQ, tor_sscanf("hello world", "%9s %9s", s1, s2));
   tt_str_op(s1,OP_EQ, "hello");
@@ -2861,7 +2978,7 @@ test_util_sscanf(void *arg)
   test_feq(d4, 3.2);
 
  done:
-  ;
+  tor_free(huge);
 }
 
 #define tt_char_op(a,op,b) tt_assert_op_type(a,op,b,char,"%c")
@@ -3339,6 +3456,13 @@ test_util_memarea(void *arg)
   char *p1, *p2, *p3, *p1_orig;
   void *malloced_ptr = NULL;
   int i;
+
+#ifdef DISABLE_MEMORY_SENTINELS
+  /* If memory sentinels are disabled, this whole module is just an alias for
+     malloc(), which is free to lay out memory most any way it wants. */
+  if (1)
+    tt_skip();
+#endif
 
   (void)arg;
   tt_assert(area);
@@ -3933,17 +4057,13 @@ test_util_exit_status(void *ptr)
 #endif
 
 #ifndef _WIN32
-/* Check that fgets with a non-blocking pipe returns partial lines and sets
- * EAGAIN, returns full lines and sets no error, and returns NULL on EOF and
- * sets no error */
 static void
-test_util_fgets_eagain(void *ptr)
+test_util_string_from_pipe(void *ptr)
 {
   int test_pipe[2] = {-1, -1};
-  int retval;
+  int retval = 0;
+  enum stream_status status = IO_STREAM_TERM;
   ssize_t retlen;
-  char *retptr;
-  FILE *test_stream = NULL;
   char buf[4] = { 0 };
 
   (void)ptr;
@@ -3954,91 +4074,115 @@ test_util_fgets_eagain(void *ptr)
   retval = pipe(test_pipe);
   tt_int_op(retval, OP_EQ, 0);
 
-  /* Set up the read-end to be non-blocking */
-  retval = fcntl(test_pipe[0], F_SETFL, O_NONBLOCK);
-  tt_int_op(retval, OP_EQ, 0);
-
-  /* Open it as a stdio stream */
-  test_stream = fdopen(test_pipe[0], "r");
-  tt_ptr_op(test_stream, OP_NE, NULL);
-
-  /* Send in a partial line */
-  retlen = write(test_pipe[1], "A", 1);
-  tt_int_op(retlen, OP_EQ, 1);
-  retptr = fgets(buf, sizeof(buf), test_stream);
-  tt_int_op(errno, OP_EQ, EAGAIN);
-  tt_ptr_op(retptr, OP_EQ, buf);
-  tt_str_op(buf, OP_EQ, "A");
-  errno = 0;
-
-  /* Send in the rest */
-  retlen = write(test_pipe[1], "B\n", 2);
-  tt_int_op(retlen, OP_EQ, 2);
-  retptr = fgets(buf, sizeof(buf), test_stream);
-  tt_int_op(errno, OP_EQ, 0);
-  tt_ptr_op(retptr, OP_EQ, buf);
-  tt_str_op(buf, OP_EQ, "B\n");
-  errno = 0;
-
-  /* Send in a full line */
-  retlen = write(test_pipe[1], "CD\n", 3);
+  /* Send in a string. */
+  retlen = write(test_pipe[1], "ABC", 3);
   tt_int_op(retlen, OP_EQ, 3);
-  retptr = fgets(buf, sizeof(buf), test_stream);
+
+  status = get_string_from_pipe(test_pipe[0], buf, sizeof(buf)-1);
   tt_int_op(errno, OP_EQ, 0);
-  tt_ptr_op(retptr, OP_EQ, buf);
-  tt_str_op(buf, OP_EQ, "CD\n");
+  tt_int_op(status, OP_EQ, IO_STREAM_OKAY);
+  tt_str_op(buf, OP_EQ, "ABC");
   errno = 0;
 
-  /* Send in a partial line */
-  retlen = write(test_pipe[1], "E", 1);
+  /* Send in a string that contains a nul. */
+  retlen = write(test_pipe[1], "AB\0", 3);
+  tt_int_op(retlen, OP_EQ, 3);
+
+  status = get_string_from_pipe(test_pipe[0], buf, sizeof(buf)-1);
+  tt_int_op(errno, OP_EQ, 0);
+  tt_int_op(status, OP_EQ, IO_STREAM_OKAY);
+  tt_str_op(buf, OP_EQ, "AB");
+  errno = 0;
+
+  /* Send in a string that contains a nul only. */
+  retlen = write(test_pipe[1], "\0", 1);
   tt_int_op(retlen, OP_EQ, 1);
-  retptr = fgets(buf, sizeof(buf), test_stream);
-  tt_int_op(errno, OP_EQ, EAGAIN);
-  tt_ptr_op(retptr, OP_EQ, buf);
-  tt_str_op(buf, OP_EQ, "E");
-  errno = 0;
 
-  /* Send in the rest */
-  retlen = write(test_pipe[1], "F\n", 2);
-  tt_int_op(retlen, OP_EQ, 2);
-  retptr = fgets(buf, sizeof(buf), test_stream);
+  status = get_string_from_pipe(test_pipe[0], buf, sizeof(buf)-1);
   tt_int_op(errno, OP_EQ, 0);
-  tt_ptr_op(retptr, OP_EQ, buf);
-  tt_str_op(buf, OP_EQ, "F\n");
+  tt_int_op(status, OP_EQ, IO_STREAM_OKAY);
+  tt_str_op(buf, OP_EQ, "");
   errno = 0;
 
-  /* Send in a full line and close */
-  retlen = write(test_pipe[1], "GH", 2);
+  /* Send in a string that contains a trailing newline. */
+  retlen = write(test_pipe[1], "AB\n", 3);
+  tt_int_op(retlen, OP_EQ, 3);
+
+  status = get_string_from_pipe(test_pipe[0], buf, sizeof(buf)-1);
+  tt_int_op(errno, OP_EQ, 0);
+  tt_int_op(status, OP_EQ, IO_STREAM_OKAY);
+  tt_str_op(buf, OP_EQ, "AB");
+  errno = 0;
+
+  /* Send in a string that contains a newline only. */
+  retlen = write(test_pipe[1], "\n", 1);
+  tt_int_op(retlen, OP_EQ, 1);
+
+  status = get_string_from_pipe(test_pipe[0], buf, sizeof(buf)-1);
+  tt_int_op(errno, OP_EQ, 0);
+  tt_int_op(status, OP_EQ, IO_STREAM_OKAY);
+  tt_str_op(buf, OP_EQ, "");
+  errno = 0;
+
+  /* Send in a string and check that we nul terminate return values. */
+  retlen = write(test_pipe[1], "AAA", 3);
+  tt_int_op(retlen, OP_EQ, 3);
+
+  status = get_string_from_pipe(test_pipe[0], buf, sizeof(buf)-1);
+  tt_int_op(errno, OP_EQ, 0);
+  tt_int_op(status, OP_EQ, IO_STREAM_OKAY);
+  tt_str_op(buf, OP_EQ, "AAA");
+  tt_mem_op(buf, OP_EQ, "AAA\0", sizeof(buf));
+  errno = 0;
+
+  retlen = write(test_pipe[1], "B", 1);
+  tt_int_op(retlen, OP_EQ, 1);
+
+  memset(buf, '\xff', sizeof(buf));
+  status = get_string_from_pipe(test_pipe[0], buf, sizeof(buf)-1);
+  tt_int_op(errno, OP_EQ, 0);
+  tt_int_op(status, OP_EQ, IO_STREAM_OKAY);
+  tt_str_op(buf, OP_EQ, "B");
+  tt_mem_op(buf, OP_EQ, "B\0\xff\xff", sizeof(buf));
+  errno = 0;
+
+  /* Send in multiple lines. */
+  retlen = write(test_pipe[1], "A\nB", 3);
+  tt_int_op(retlen, OP_EQ, 3);
+
+  status = get_string_from_pipe(test_pipe[0], buf, sizeof(buf)-1);
+  tt_int_op(errno, OP_EQ, 0);
+  tt_int_op(status, OP_EQ, IO_STREAM_OKAY);
+  tt_str_op(buf, OP_EQ, "A\nB");
+  errno = 0;
+
+  /* Send in a line and close */
+  retlen = write(test_pipe[1], "AB", 2);
   tt_int_op(retlen, OP_EQ, 2);
   retval = close(test_pipe[1]);
   tt_int_op(retval, OP_EQ, 0);
   test_pipe[1] = -1;
-  retptr = fgets(buf, sizeof(buf), test_stream);
+
+  status = get_string_from_pipe(test_pipe[0], buf, sizeof(buf)-1);
   tt_int_op(errno, OP_EQ, 0);
-  tt_ptr_op(retptr, OP_EQ, buf);
-  tt_str_op(buf, OP_EQ, "GH");
+  tt_int_op(status, OP_EQ, IO_STREAM_OKAY);
+  tt_str_op(buf, OP_EQ, "AB");
   errno = 0;
 
   /* Check for EOF */
-  retptr = fgets(buf, sizeof(buf), test_stream);
+  status = get_string_from_pipe(test_pipe[0], buf, sizeof(buf)-1);
   tt_int_op(errno, OP_EQ, 0);
-  tt_ptr_op(retptr, OP_EQ, NULL);
-  retval = feof(test_stream);
-  tt_int_op(retval, OP_NE, 0);
+  tt_int_op(status, OP_EQ, IO_STREAM_CLOSED);
   errno = 0;
 
-  /* Check that buf is unchanged according to C99 and C11 */
-  tt_str_op(buf, OP_EQ, "GH");
-
  done:
-  if (test_stream != NULL)
-    fclose(test_stream);
   if (test_pipe[0] != -1)
     close(test_pipe[0]);
   if (test_pipe[1] != -1)
     close(test_pipe[1]);
 }
-#endif
+
+#endif // _WIN32
 
 /**
  * Test for format_hex_number_sigsafe()
@@ -5658,11 +5802,98 @@ test_util_htonll(void *arg)
   ;
 }
 
+static void
+test_util_get_unquoted_path(void *arg)
+{
+  (void)arg;
+
+  char *r = NULL;
+
+  r = get_unquoted_path("\""); // "
+  tt_ptr_op(r, OP_EQ, NULL);
+  tor_free(r);
+
+  r = get_unquoted_path("\"\"\""); // """
+  tt_ptr_op(r, OP_EQ, NULL);
+  tor_free(r);
+
+  r = get_unquoted_path("\\\""); // \"
+  tt_ptr_op(r, OP_EQ, NULL);
+  tor_free(r);
+
+  r = get_unquoted_path("\\\"\\\""); // \"\"
+  tt_ptr_op(r, OP_EQ, NULL);
+  tor_free(r);
+
+  r = get_unquoted_path("A\\B\\C\""); // A\B\C"
+  tt_ptr_op(r, OP_EQ, NULL);
+  tor_free(r);
+
+  r = get_unquoted_path("\"A\\B\\C"); // "A\B\C
+  tt_ptr_op(r, OP_EQ, NULL);
+  tor_free(r);
+
+  r = get_unquoted_path("\"A\\B\"C\""); // "A\B"C"
+  tt_ptr_op(r, OP_EQ, NULL);
+  tor_free(r);
+
+  r = get_unquoted_path("A\\B\"C"); // A\B"C
+  tt_ptr_op(r, OP_EQ, NULL);
+  tor_free(r);
+
+  r = get_unquoted_path("");
+  tt_str_op(r, OP_EQ, "");
+  tor_free(r);
+
+  r = get_unquoted_path("\"\""); // ""
+  tt_str_op(r, OP_EQ, "");
+  tor_free(r);
+
+  r = get_unquoted_path("A\\B\\C"); // A\B\C
+  tt_str_op(r, OP_EQ, "A\\B\\C"); // A\B\C
+  tor_free(r);
+
+  r = get_unquoted_path("\"A\\B\\C\""); // "A\B\C"
+  tt_str_op(r, OP_EQ, "A\\B\\C"); // A\B\C
+  tor_free(r);
+
+  r = get_unquoted_path("\"\\\""); // "\"
+  tt_str_op(r, OP_EQ, "\\"); // \ /* comment to prevent line continuation */
+  tor_free(r);
+
+  r = get_unquoted_path("\"\\\"\""); // "\""
+  tt_str_op(r, OP_EQ, "\""); // "
+  tor_free(r);
+
+  r = get_unquoted_path("\"A\\B\\C\\\"\""); // "A\B\C\""
+  tt_str_op(r, OP_EQ, "A\\B\\C\""); // A\B\C"
+  tor_free(r);
+
+  r = get_unquoted_path("A\\B\\\"C"); // A\B\"C
+  tt_str_op(r, OP_EQ, "A\\B\"C"); // A\B"C
+  tor_free(r);
+
+  r = get_unquoted_path("\"A\\B\\\"C\""); // "A\B\"C"
+  tt_str_op(r, OP_EQ, "A\\B\"C"); // A\B"C
+
+ done:
+  tor_free(r);
+}
+
 #define UTIL_LEGACY(name)                                               \
   { #name, test_util_ ## name , 0, NULL, NULL }
 
 #define UTIL_TEST(name, flags)                          \
   { #name, test_util_ ## name, flags, NULL, NULL }
+
+#define COMPRESS(name, identifier)              \
+  { "compress/" #name, test_util_compress, 0, &passthrough_setup,       \
+    (char*)(identifier) }
+
+#define COMPRESS_CONCAT(name, identifier)                               \
+  { "compress_concat/" #name, test_util_decompress_concatenated, 0,     \
+    &passthrough_setup,                                                 \
+    (char*)(identifier) }
 
 #ifdef _WIN32
 #define UTIL_TEST_NO_WIN(n, f) { #n, NULL, TT_SKIP, NULL, NULL }
@@ -5688,7 +5919,16 @@ struct testcase_t util_tests[] = {
   UTIL_LEGACY(strmisc),
   UTIL_TEST(parse_integer, 0),
   UTIL_LEGACY(pow2),
-  UTIL_LEGACY(gzip),
+  COMPRESS(zlib, "deflate"),
+  COMPRESS(gzip, "gzip"),
+  COMPRESS(lzma, "x-tor-lzma"),
+  COMPRESS(zstd, "x-zstd"),
+  COMPRESS(none, "identity"),
+  COMPRESS_CONCAT(zlib, "deflate"),
+  COMPRESS_CONCAT(gzip, "gzip"),
+  COMPRESS_CONCAT(lzma, "x-tor-lzma"),
+  COMPRESS_CONCAT(zstd, "x-zstd"),
+  COMPRESS_CONCAT(none, "identity"),
   UTIL_TEST(gzip_compression_bomb, TT_FORK),
   UTIL_LEGACY(datadir),
   UTIL_LEGACY(memarea),
@@ -5712,7 +5952,7 @@ struct testcase_t util_tests[] = {
   UTIL_TEST(num_cpus, 0),
   UTIL_TEST_WIN_ONLY(load_win_lib, 0),
   UTIL_TEST_NO_WIN(exit_status, 0),
-  UTIL_TEST_NO_WIN(fgets_eagain, 0),
+  UTIL_TEST_NO_WIN(string_from_pipe, 0),
   UTIL_TEST(format_hex_number, 0),
   UTIL_TEST(format_dec_number, 0),
   UTIL_TEST(join_win_cmdline, 0),
@@ -5752,6 +5992,7 @@ struct testcase_t util_tests[] = {
   UTIL_TEST(monotonic_time, 0),
   UTIL_TEST(monotonic_time_ratchet, TT_FORK),
   UTIL_TEST(htonll, 0),
+  UTIL_TEST(get_unquoted_path, 0),
   END_OF_TESTCASES
 };
 

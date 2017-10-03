@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -46,6 +46,7 @@
 #include "config.h"
 #include "connection.h"
 #include "connection_or.h"
+#include "consdiffmgr.h"
 #include "control.h"
 #include "directory.h"
 #include "dirserv.h"
@@ -63,6 +64,7 @@
 #include "shared_random.h"
 #include "transports.h"
 #include "torcert.h"
+#include "channelpadding.h"
 
 /** Map from lowercase nickname to identity digest of named server, if any. */
 static strmap_t *named_server_map = NULL;
@@ -72,11 +74,11 @@ static strmap_t *unnamed_server_map = NULL;
 
 /** Most recently received and validated v3 "ns"-flavored consensus network
  * status. */
-static networkstatus_t *current_ns_consensus = NULL;
+STATIC networkstatus_t *current_ns_consensus = NULL;
 
 /** Most recently received and validated v3 "microdec"-flavored consensus
  * network status. */
-static networkstatus_t *current_md_consensus = NULL;
+STATIC networkstatus_t *current_md_consensus = NULL;
 
 /** A v3 consensus networkstatus that we've received, but which we don't
  * have enough certificates to be happy about. */
@@ -178,53 +180,74 @@ networkstatus_reset_download_failures(void)
     download_status_reset(&consensus_bootstrap_dl_status[i]);
 }
 
+/**
+ * Read and and return the cached consensus of type <b>flavorname</b>.  If
+ * <b>unverified</b> is false, get the one we haven't verified. Return NULL if
+ * the file isn't there. */
+static char *
+networkstatus_read_cached_consensus_impl(int flav,
+                                         const char *flavorname,
+                                         int unverified_consensus)
+{
+  char buf[128];
+  const char *prefix;
+  if (unverified_consensus) {
+    prefix = "unverified";
+  } else {
+    prefix = "cached";
+  }
+  if (flav == FLAV_NS) {
+    tor_snprintf(buf, sizeof(buf), "%s-consensus", prefix);
+  } else {
+    tor_snprintf(buf, sizeof(buf), "%s-%s-consensus", prefix, flavorname);
+  }
+
+  char *filename = get_datadir_fname(buf);
+  char *result = read_file_to_str(filename, RFTS_IGNORE_MISSING, NULL);
+  tor_free(filename);
+  return result;
+}
+
+/** Return a new string containing the current cached consensus of flavor
+ * <b>flavorname</b>. */
+char *
+networkstatus_read_cached_consensus(const char *flavorname)
+ {
+  int flav = networkstatus_parse_flavor_name(flavorname);
+  if (flav < 0)
+    return NULL;
+  return networkstatus_read_cached_consensus_impl(flav, flavorname, 0);
+}
+
 /** Read every cached v3 consensus networkstatus from the disk. */
 int
 router_reload_consensus_networkstatus(void)
 {
-  char *filename;
-  char *s;
   const unsigned int flags = NSSET_FROM_CACHE | NSSET_DONT_DOWNLOAD_CERTS;
   int flav;
 
   /* FFFF Suppress warnings if cached consensus is bad? */
   for (flav = 0; flav < N_CONSENSUS_FLAVORS; ++flav) {
-    char buf[128];
     const char *flavor = networkstatus_get_flavor_name(flav);
-    if (flav == FLAV_NS) {
-      filename = get_datadir_fname("cached-consensus");
-    } else {
-      tor_snprintf(buf, sizeof(buf), "cached-%s-consensus", flavor);
-      filename = get_datadir_fname(buf);
-    }
-    s = read_file_to_str(filename, RFTS_IGNORE_MISSING, NULL);
+    char *s = networkstatus_read_cached_consensus_impl(flav, flavor, 0);
     if (s) {
       if (networkstatus_set_current_consensus(s, flavor, flags, NULL) < -1) {
-        log_warn(LD_FS, "Couldn't load consensus %s networkstatus from \"%s\"",
-                 flavor, filename);
+        log_warn(LD_FS, "Couldn't load consensus %s networkstatus from cache",
+                 flavor);
       }
       tor_free(s);
     }
-    tor_free(filename);
 
-    if (flav == FLAV_NS) {
-      filename = get_datadir_fname("unverified-consensus");
-    } else {
-      tor_snprintf(buf, sizeof(buf), "unverified-%s-consensus", flavor);
-      filename = get_datadir_fname(buf);
-    }
-
-    s = read_file_to_str(filename, RFTS_IGNORE_MISSING, NULL);
+    s = networkstatus_read_cached_consensus_impl(flav, flavor, 1);
     if (s) {
       if (networkstatus_set_current_consensus(s, flavor,
                                      flags|NSSET_WAS_WAITING_FOR_CERTS,
                                      NULL)) {
-      log_info(LD_FS, "Couldn't load consensus %s networkstatus from \"%s\"",
-               flavor, filename);
-    }
+        log_info(LD_FS, "Couldn't load unverified consensus %s networkstatus "
+                 "from cache", flavor);
+      }
       tor_free(s);
     }
-    tor_free(filename);
   }
 
   if (!networkstatus_get_latest_consensus()) {
@@ -1384,16 +1407,24 @@ networkstatus_get_live_consensus,(time_t now))
  * Return 1 if the consensus is reasonably live, or 0 if it is too old.
  */
 int
-networkstatus_consensus_reasonably_live(networkstatus_t *consensus, time_t now)
+networkstatus_consensus_reasonably_live(const networkstatus_t *consensus,
+                                        time_t now)
 {
-#define REASONABLY_LIVE_TIME (24*60*60)
   if (BUG(!consensus))
     return 0;
 
-  if (now <= consensus->valid_until + REASONABLY_LIVE_TIME)
-    return 1;
+  return networkstatus_valid_until_is_reasonably_live(consensus->valid_until,
+                                                      now);
+}
 
-  return 0;
+/** As networkstatus_consensus_reasonably_live, but takes a valid_until
+ * time rather than an entire consensus. */
+int
+networkstatus_valid_until_is_reasonably_live(time_t valid_until,
+                                             time_t now)
+{
+#define REASONABLY_LIVE_TIME (24*60*60)
+  return (now <= valid_until + REASONABLY_LIVE_TIME);
 }
 
 /* XXXX remove this in favor of get_live_consensus. But actually,
@@ -1966,6 +1997,7 @@ networkstatus_set_current_consensus(const char *consensus,
 
     circuit_build_times_new_consensus_params(
                                get_circuit_build_times_mutable(), c);
+    channelpadding_new_consensus_params(c);
   }
 
   /* Reset the failure count only if this consensus is actually valid. */
@@ -1980,7 +2012,11 @@ networkstatus_set_current_consensus(const char *consensus,
     dirserv_set_cached_consensus_networkstatus(consensus,
                                                flavor,
                                                &c->digests,
+                                               c->digest_sha3_as_signed,
                                                c->valid_after);
+    if (dir_server_mode(get_options())) {
+      consdiffmgr_add_consensus(consensus, c);
+    }
   }
 
   if (!from_cache) {
@@ -2272,13 +2308,23 @@ networkstatus_dump_bridge_status_to_file(time_t now)
   char *thresholds = NULL;
   char *published_thresholds_and_status = NULL;
   char published[ISO_TIME_LEN+1];
+  const routerinfo_t *me = router_get_my_routerinfo();
+  char fingerprint[FINGERPRINT_LEN+1];
+  char *fingerprint_line = NULL;
 
+  if (me && crypto_pk_get_fingerprint(me->identity_pkey,
+                                      fingerprint, 0) >= 0) {
+    tor_asprintf(&fingerprint_line, "fingerprint %s\n", fingerprint);
+  } else {
+    log_warn(LD_BUG, "Error computing fingerprint for bridge status.");
+  }
   format_iso_time(published, now);
   dirserv_compute_bridge_flag_thresholds();
   thresholds = dirserv_get_flag_thresholds_line();
   tor_asprintf(&published_thresholds_and_status,
-               "published %s\nflag-thresholds %s\n%s",
-               published, thresholds, status);
+               "published %s\nflag-thresholds %s\n%s%s",
+               published, thresholds, fingerprint_line ? fingerprint_line : "",
+               status);
   tor_asprintf(&fname, "%s"PATH_SEPARATOR"networkstatus-bridges",
                options->DataDirectory);
   write_str_to_file(fname,published_thresholds_and_status,0);
@@ -2286,6 +2332,7 @@ networkstatus_dump_bridge_status_to_file(time_t now)
   tor_free(published_thresholds_and_status);
   tor_free(fname);
   tor_free(status);
+  tor_free(fingerprint_line);
 }
 
 /* DOCDOC get_net_param_from_list */
@@ -2441,10 +2488,8 @@ networkstatus_parse_flavor_name(const char *flavname)
  * running, or otherwise not a descriptor that we would make any
  * use of even if we had it. Else return 1. */
 int
-client_would_use_router(const routerstatus_t *rs, time_t now,
-                        const or_options_t *options)
+client_would_use_router(const routerstatus_t *rs, time_t now)
 {
-  (void) options; /* unused */
   if (!rs->is_flagged_running) {
     /* If we had this router descriptor, we wouldn't even bother using it.
      * (Fetching and storing depends on by we_want_to_fetch_flavor().) */

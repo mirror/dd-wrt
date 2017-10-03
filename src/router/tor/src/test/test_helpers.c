@@ -1,4 +1,4 @@
-/* Copyright (c) 2014-2016, The Tor Project, Inc. */
+/* Copyright (c) 2014-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -98,9 +98,9 @@ helper_setup_fake_routerlist(void)
 
 void
 connection_write_to_buf_mock(const char *string, size_t len,
-                             connection_t *conn, int zlib)
+                             connection_t *conn, int compressed)
 {
-  (void) zlib;
+  (void) compressed;
 
   tor_assert(string);
   tor_assert(conn);

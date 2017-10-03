@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -326,10 +326,19 @@ command_process_create_cell(cell_t *cell, channel_t *chan)
     return;
   }
 
+  if (connection_or_digest_is_known_relay(chan->identity_digest)) {
+    rep_hist_note_circuit_handshake_requested(create_cell->handshake_type);
+    // Needed for chutney: Sometimes relays aren't in the consensus yet, and
+    // get marked as clients. This resets their channels once they appear.
+    // Probably useful for normal operation wrt relay flapping, too.
+    chan->is_client = 0;
+  } else {
+    channel_mark_client(chan);
+  }
+
   if (create_cell->handshake_type != ONION_HANDSHAKE_TYPE_FAST) {
     /* hand it off to the cpuworkers, and then return. */
-    if (connection_or_digest_is_known_relay(chan->identity_digest))
-      rep_hist_note_circuit_handshake_requested(create_cell->handshake_type);
+
     if (assign_onionskin_to_cpuworker(circ, create_cell) < 0) {
       log_debug(LD_GENERAL,"Failed to hand off onionskin. Closing.");
       circuit_mark_for_close(TO_CIRCUIT(circ), END_CIRC_REASON_RESOURCELIMIT);
@@ -344,8 +353,14 @@ command_process_create_cell(cell_t *cell, channel_t *chan)
     int len;
     created_cell_t created_cell;
 
-    /* Make sure we never try to use the OR connection on which we
-     * received this cell to satisfy an EXTEND request,  */
+    /* If the client used CREATE_FAST, it's probably a tor client or bridge
+     * relay, and we must not use it for EXTEND requests (in most cases, we
+     * won't have an authenticated peer ID for the extend).
+     * Public relays on 0.2.9 and later will use CREATE_FAST if they have no
+     * ntor onion key for this relay, but that should be a rare occurrence.
+     * Clients on 0.3.1 and later avoid using CREATE_FAST as much as they can,
+     * even during bootstrap, so the CREATE_FAST check is most accurate for
+     * earlier tor client versions. */
     channel_mark_client(chan);
 
     memset(&created_cell, 0, sizeof(created_cell));

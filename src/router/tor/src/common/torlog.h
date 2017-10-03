@@ -1,7 +1,7 @@
 /* Copyright (c) 2001, Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -101,8 +101,10 @@
 #define LD_SCHED     (1u<<22)
 /** Guard nodes */
 #define LD_GUARD     (1u<<23)
+/** Generation and application of consensus diffs. */
+#define LD_CONSDIFF  (1u<<24)
 /** Number of logging domains in the code. */
-#define N_LOGGING_DOMAINS 24
+#define N_LOGGING_DOMAINS 25
 
 /** This log message is not safe to send to a callback-based logger
  * immediately.  Used as a flag, not a log domain. */

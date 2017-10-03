@@ -1,6 +1,6 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
@@ -284,13 +284,13 @@ test_pt_get_extrainfo_string(void *arg)
 }
 
 #ifdef _WIN32
-#define STDIN_HANDLE HANDLE
+#define STDIN_HANDLE HANDLE*
 #else
-#define STDIN_HANDLE FILE
+#define STDIN_HANDLE int
 #endif
 
 static smartlist_t *
-tor_get_lines_from_handle_replacement(STDIN_HANDLE *handle,
+tor_get_lines_from_handle_replacement(STDIN_HANDLE handle,
                                       enum stream_status *stream_status_out)
 {
   static int times_called = 0;

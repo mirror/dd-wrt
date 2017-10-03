@@ -1,4 +1,4 @@
-/* Copyright (c) 2016, The Tor Project, Inc. */
+/* Copyright (c) 2016-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 #define CRYPTO_ED25519_PRIVATE
 #include "orconfig.h"
@@ -96,6 +96,7 @@ static void
 global_init(void)
 {
   tor_threads_init();
+  tor_compress_init();
   {
     struct sipkey sipkey = { 1337, 7331 };
     siphash_set_global_key(&sipkey);

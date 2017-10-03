@@ -1,4 +1,4 @@
-/* Copyright (c) 2014-2016, The Tor Project, Inc. */
+/* Copyright (c) 2014-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -690,6 +690,10 @@ load_ed_keys(const or_options_t *options, time_t now)
   tor_cert_t *auth_cert = NULL;
   int signing_key_changed = 0;
 
+  // It is later than 1972, since otherwise there would be no C compilers.
+  // (Try to diagnose #22466.)
+  tor_assert_nonfatal(now >= 2 * 365 * 86400);
+
 #define FAIL(msg) do {                          \
     log_warn(LD_OR, (msg));                     \
     goto err;                                   \
@@ -1232,7 +1236,9 @@ make_tap_onion_key_crosscert(const crypto_pk_t *onion_key,
   uint8_t signed_data[DIGEST_LEN + ED25519_PUBKEY_LEN];
 
   *len_out = 0;
-  crypto_pk_get_digest(rsa_id_key, (char*)signed_data);
+  if (crypto_pk_get_digest(rsa_id_key, (char*)signed_data) < 0) {
+    return NULL;
+  }
   memcpy(signed_data + DIGEST_LEN, master_id_key->pubkey, ED25519_PUBKEY_LEN);
 
   int r = crypto_pk_private_sign(onion_key,

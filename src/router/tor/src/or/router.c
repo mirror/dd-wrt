@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #define ROUTER_PRIVATE
@@ -148,6 +148,51 @@ dup_onion_keys(crypto_pk_t **key, crypto_pk_t **last)
   tor_mutex_release(key_lock);
 }
 
+/** Expire our old set of onion keys. This is done by setting
+ * last_curve25519_onion_key and lastonionkey to all zero's and NULL
+ * respectively.
+ *
+ * This function does not perform any grace period checks for the old onion
+ * keys.
+ */
+void
+expire_old_onion_keys(void)
+{
+  char *fname = NULL;
+
+  tor_mutex_acquire(key_lock);
+
+  /* Free lastonionkey and set it to NULL. */
+  if (lastonionkey) {
+    crypto_pk_free(lastonionkey);
+    lastonionkey = NULL;
+  }
+
+  /* We zero out the keypair. See the tor_mem_is_zero() check made in
+   * construct_ntor_key_map() below. */
+  memset(&last_curve25519_onion_key, 0, sizeof(last_curve25519_onion_key));
+
+  tor_mutex_release(key_lock);
+
+  fname = get_datadir_fname2("keys", "secret_onion_key.old");
+  if (file_status(fname) == FN_FILE) {
+    if (tor_unlink(fname) != 0) {
+      log_warn(LD_FS, "Couldn't unlink old onion key file %s: %s",
+               fname, strerror(errno));
+    }
+  }
+  tor_free(fname);
+
+  fname = get_datadir_fname2("keys", "secret_onion_key_ntor.old");
+  if (file_status(fname) == FN_FILE) {
+    if (tor_unlink(fname) != 0) {
+      log_warn(LD_FS, "Couldn't unlink old ntor onion key file %s: %s",
+               fname, strerror(errno));
+    }
+  }
+  tor_free(fname);
+}
+
 /** Return the current secret onion key for the ntor handshake. Must only
  * be called from the main thread. */
 static const curve25519_keypair_t *
@@ -212,7 +257,11 @@ set_server_identity_key(crypto_pk_t *k)
 {
   crypto_pk_free(server_identitykey);
   server_identitykey = k;
-  crypto_pk_get_digest(server_identitykey, server_identitykey_digest);
+  if (crypto_pk_get_digest(server_identitykey,
+                           server_identitykey_digest) < 0) {
+    log_err(LD_BUG, "Couldn't compute our own identity key digest.");
+    tor_assert(0);
+  }
 }
 
 /** Make sure that we have set up our identity keys to match or not match as
@@ -683,6 +732,47 @@ v3_authority_check_key_expiry(void)
   last_warned = now;
 }
 
+/** Get the lifetime of an onion key in days. This value is defined by the
+ * network consesus parameter "onion-key-rotation-days". Always returns a value
+ * between <b>MIN_ONION_KEY_LIFETIME_DAYS</b> and
+ * <b>MAX_ONION_KEY_LIFETIME_DAYS</b>.
+ */
+static int
+get_onion_key_rotation_days_(void)
+{
+  return networkstatus_get_param(NULL,
+                                 "onion-key-rotation-days",
+                                 DEFAULT_ONION_KEY_LIFETIME_DAYS,
+                                 MIN_ONION_KEY_LIFETIME_DAYS,
+                                 MAX_ONION_KEY_LIFETIME_DAYS);
+}
+
+/** Get the current lifetime of an onion key in seconds. This value is defined
+ * by the network consesus parameter "onion-key-rotation-days", but the value
+ * is converted to seconds.
+ */
+int
+get_onion_key_lifetime(void)
+{
+  return get_onion_key_rotation_days_()*24*60*60;
+}
+
+/** Get the grace period of an onion key in seconds. This value is defined by
+ * the network consesus parameter "onion-key-grace-period-days", but the value
+ * is converted to seconds.
+ */
+int
+get_onion_key_grace_period(void)
+{
+  int grace_period;
+  grace_period = networkstatus_get_param(NULL,
+                                         "onion-key-grace-period-days",
+                                         DEFAULT_ONION_KEY_GRACE_PERIOD_DAYS,
+                                         MIN_ONION_KEY_GRACE_PERIOD_DAYS,
+                                         get_onion_key_rotation_days_());
+  return grace_period*24*60*60;
+}
+
 /** Set up Tor's TLS contexts, based on our configuration and keys. Return 0
  * on success, and -1 on failure. */
 int
@@ -693,12 +783,6 @@ router_initialize_tls_context(void)
   int lifetime = options->SSLKeyLifetime;
   if (public_server_mode(options))
     flags |= TOR_TLS_CTX_IS_PUBLIC_SERVER;
-  if (options->TLSECGroup) {
-    if (!strcasecmp(options->TLSECGroup, "P256"))
-      flags |= TOR_TLS_CTX_USE_ECDHE_P256;
-    else if (!strcasecmp(options->TLSECGroup, "P224"))
-      flags |= TOR_TLS_CTX_USE_ECDHE_P224;
-  }
   if (!lifetime) { /* we should guess a good ssl cert lifetime */
 
     /* choose between 5 and 365 days, and round to the day */
@@ -876,8 +960,12 @@ init_keys(void)
     }
     cert = get_my_v3_authority_cert();
     if (cert) {
-      crypto_pk_get_digest(get_my_v3_authority_cert()->identity_key,
-                           v3_digest);
+      if (crypto_pk_get_digest(get_my_v3_authority_cert()->identity_key,
+                               v3_digest) < 0) {
+        log_err(LD_BUG, "Couldn't compute my v3 authority identity key "
+                "digest.");
+        return -1;
+      }
       v3_digest_set = 1;
     }
   }
@@ -929,7 +1017,7 @@ init_keys(void)
       /* We have no LastRotatedOnionKey set; either we just created the key
        * or it's a holdover from 0.1.2.4-alpha-dev or earlier.  In either case,
        * start the clock ticking now so that we will eventually rotate it even
-       * if we don't stay up for a full MIN_ONION_KEY_LIFETIME. */
+       * if we don't stay up for the full lifetime of an onion key. */
       state->LastRotatedOnionKey = onionkey_set_at = now;
       or_state_mark_dirty(state, options->AvoidDiskWrites ?
                                    time(NULL)+3600 : 0);
@@ -1385,14 +1473,23 @@ consider_testing_reachability(int test_or, int test_dir)
       !connection_get_by_type_addr_port_purpose(
                 CONN_TYPE_DIR, &addr, me->dir_port,
                 DIR_PURPOSE_FETCH_SERVERDESC)) {
+    tor_addr_port_t my_orport, my_dirport;
+    memcpy(&my_orport.addr, &addr, sizeof(addr));
+    memcpy(&my_dirport.addr, &addr, sizeof(addr));
+    my_orport.port = me->or_port;
+    my_dirport.port = me->dir_port;
     /* ask myself, via tor, for my server descriptor. */
-    directory_initiate_command(&addr, me->or_port,
-                               &addr, me->dir_port,
-                               me->cache_info.identity_digest,
-                               DIR_PURPOSE_FETCH_SERVERDESC,
-                               ROUTER_PURPOSE_GENERAL,
-                               DIRIND_ANON_DIRPORT, "authority.z",
-                               NULL, 0, 0, NULL);
+    directory_request_t *req =
+      directory_request_new(DIR_PURPOSE_FETCH_SERVERDESC);
+    directory_request_set_or_addr_port(req, &my_orport);
+    directory_request_set_dir_addr_port(req, &my_dirport);
+    directory_request_set_directory_id_digest(req,
+                                              me->cache_info.identity_digest);
+    // ask via an anon circuit, connecting to our dirport.
+    directory_request_set_indirection(req, DIRIND_ANON_DIRPORT);
+    directory_request_set_resource(req, "authority.z");
+    directory_initiate_request(req);
+    directory_request_free(req);
   }
 }
 
@@ -1569,8 +1666,7 @@ MOCK_IMPL(int,
 server_mode,(const or_options_t *options))
 {
   if (options->ClientOnly) return 0;
-  /* XXXX I believe we can kill off ORListenAddress here.*/
-  return (options->ORPort_set || options->ORListenAddress);
+  return (options->ORPort_set);
 }
 
 /** Return true iff we are trying to be a non-bridge server.
@@ -2194,17 +2290,15 @@ router_build_fresh_descriptor(routerinfo_t **r, extrainfo_t **e)
   }
 
   if (options->MyFamily && ! options->BridgeRelay) {
-    smartlist_t *family;
     if (!warned_nonexistent_family)
       warned_nonexistent_family = smartlist_new();
-    family = smartlist_new();
     ri->declared_family = smartlist_new();
-    smartlist_split_string(family, options->MyFamily, ",",
-      SPLIT_SKIP_SPACE|SPLIT_IGNORE_BLANK|SPLIT_STRIP_SPACE, 0);
-    SMARTLIST_FOREACH_BEGIN(family, char *, name) {
+    config_line_t *family;
+    for (family = options->MyFamily; family; family = family->next) {
+       char *name = family->value;
        const node_t *member;
        if (!strcasecmp(name, options->Nickname))
-         goto skip; /* Don't list ourself, that's redundant */
+         continue; /* Don't list ourself, that's redundant */
        else
          member = node_get_by_nickname(name, 1);
        if (!member) {
@@ -2223,8 +2317,7 @@ router_build_fresh_descriptor(routerinfo_t **r, extrainfo_t **e)
            smartlist_add_strdup(warned_nonexistent_family, name);
          }
          if (is_legal) {
-           smartlist_add(ri->declared_family, name);
-           name = NULL;
+           smartlist_add_strdup(ri->declared_family, name);
          }
        } else if (router_digest_is_me(member->identity)) {
          /* Don't list ourself in our own family; that's redundant */
@@ -2238,15 +2331,11 @@ router_build_fresh_descriptor(routerinfo_t **r, extrainfo_t **e)
          if (smartlist_contains_string(warned_nonexistent_family, name))
            smartlist_string_remove(warned_nonexistent_family, name);
        }
-    skip:
-       tor_free(name);
-    } SMARTLIST_FOREACH_END(name);
+    }
 
     /* remove duplicates from the list */
     smartlist_sort_strings(ri->declared_family);
     smartlist_uniq_strings(ri->declared_family);
-
-    smartlist_free(family);
   }
 
   /* Now generate the extrainfo. */
@@ -2762,7 +2851,7 @@ router_dump_router_to_string(routerinfo_t *router,
       make_ntor_onion_key_crosscert(ntor_keypair,
                          &router->cache_info.signing_key_cert->signing_key,
                          router->cache_info.published_on,
-                         MIN_ONION_KEY_LIFETIME, &sign);
+                         get_onion_key_lifetime(), &sign);
     if (!cert) {
       log_warn(LD_BUG,"make_ntor_onion_key_crosscert failed!");
       goto err;
@@ -2848,7 +2937,7 @@ router_dump_router_to_string(routerinfo_t *router,
                     "onion-key\n%s"
                     "signing-key\n%s"
                     "%s%s"
-                    "%s%s%s%s",
+                    "%s%s%s",
     router->nickname,
     address,
     router->or_port,
@@ -2871,8 +2960,7 @@ router_dump_router_to_string(routerinfo_t *router,
     ntor_cc_line ? ntor_cc_line : "",
     family_line,
     we_are_hibernating() ? "hibernating 1\n" : "",
-    "hidden-service-dir\n",
-    options->AllowSingleHopExits ? "allow-single-hop-exits\n" : "");
+    "hidden-service-dir\n");
 
   if (options->ContactInfo && strlen(options->ContactInfo)) {
     const char *ci = options->ContactInfo;
@@ -3199,6 +3287,12 @@ extrainfo_dump_to_string(char **s_out, extrainfo_t *extrainfo,
                         "conn-bi-direct", now, &contents) > 0) {
       smartlist_add(chunks, contents);
     }
+  }
+
+  if (options->PaddingStatistics) {
+    contents = rep_hist_get_padding_count_lines();
+    if (contents)
+      smartlist_add(chunks, contents);
   }
 
   /* Add information about the pluggable transports we support. */

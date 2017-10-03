@@ -1,7 +1,7 @@
  /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -19,8 +19,14 @@
 #define _LARGEFILE64_SOURCE
 #endif
 
-/** Malloc mprotect limit in bytes. */
-#define MALLOC_MP_LIM 1048576
+/** Malloc mprotect limit in bytes.
+ *
+ * 28/06/2017: This value was increased from 16 MB to 20 MB after we introduced
+ * LZMA support in Tor (0.3.1.1-alpha). We limit our LZMA coder to 16 MB, but
+ * liblzma have a small overhead that we need to compensate for to avoid being
+ * killed by the sandbox.
+ */
+#define MALLOC_MP_LIM (20*1024*1024)
 
 #include <stdio.h>
 #include <string.h>

@@ -1,6 +1,6 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -44,13 +44,13 @@ double fabs(double x);
 #include "buffers.h"
 #include "circuitlist.h"
 #include "circuitstats.h"
+#include "compress.h"
 #include "config.h"
 #include "connection_edge.h"
 #include "geoip.h"
 #include "rendcommon.h"
 #include "rendcache.h"
 #include "test.h"
-#include "torgzip.h"
 #include "main.h"
 #include "memarea.h"
 #include "onion.h"
@@ -1186,18 +1186,24 @@ struct testgroup_t testgroups[] = {
   { "cellfmt/", cell_format_tests },
   { "cellqueue/", cell_queue_tests },
   { "channel/", channel_tests },
+  { "channelpadding/", channelpadding_tests },
   { "channeltls/", channeltls_tests },
   { "checkdir/", checkdir_tests },
+  { "circuitbuild/", circuitbuild_tests },
   { "circuitlist/", circuitlist_tests },
   { "circuitmux/", circuitmux_tests },
   { "circuituse/", circuituse_tests },
   { "compat/libevent/", compat_libevent_tests },
   { "config/", config_tests },
   { "connection/", connection_tests },
+  { "conscache/", conscache_tests },
+  { "consdiff/", consdiff_tests },
+  { "consdiffmgr/", consdiffmgr_tests },
   { "container/", container_tests },
   { "control/", controller_tests },
   { "control/event/", controller_event_tests },
   { "crypto/", crypto_tests },
+  { "crypto/openssl/", crypto_openssl_tests },
   { "dir/", dir_tests },
   { "dir_handle_get/", dir_handle_get_tests },
   { "dir/md/", microdesc_tests },
@@ -1228,10 +1234,12 @@ struct testgroup_t testgroups[] = {
   { "routerkeys/", routerkeys_tests },
   { "routerlist/", routerlist_tests },
   { "routerset/" , routerset_tests },
+  { "rust/", rust_tests },
   { "scheduler/", scheduler_tests },
   { "socks/", socks_tests },
   { "shared-random/", sr_tests },
   { "status/" , status_tests },
+  { "storagedir/", storagedir_tests },
   { "tortls/", tortls_tests },
   { "util/", util_tests },
   { "util/format/", util_format_tests },

@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2004, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -163,9 +163,9 @@ int64_t clamp_double_to_int64(double number);
 void simplify_fraction64(uint64_t *numer, uint64_t *denom);
 
 /* Compute the CEIL of <b>a</b> divided by <b>b</b>, for nonnegative <b>a</b>
- * and positive <b>b</b>.  Works on integer types only. Not defined if a+b can
- * overflow. */
-#define CEIL_DIV(a,b) (((a)+(b)-1)/(b))
+ * and positive <b>b</b>.  Works on integer types only. Not defined if a+(b-1)
+ * can overflow. */
+#define CEIL_DIV(a,b) (((a)+((b)-1))/(b))
 
 /* Return <b>v</b> if it's between <b>min</b> and <b>max</b>.  Otherwise
  * return <b>min</b> if <b>v</b> is smaller than <b>min</b>, or <b>max</b> if
@@ -322,7 +322,7 @@ enum stream_status {
 
 const char *stream_status_to_string(enum stream_status stream_status);
 
-enum stream_status get_string_from_pipe(FILE *stream, char *buf, size_t count);
+enum stream_status get_string_from_pipe(int fd, char *buf, size_t count);
 
 MOCK_DECL(int,tor_unlink,(const char *pathname));
 
@@ -389,9 +389,7 @@ char *read_file_to_str_until_eof(int fd, size_t max_bytes_to_read,
                                  size_t *sz_out)
   ATTR_MALLOC;
 const char *unescape_string(const char *s, char **result, size_t *size_out);
-const char *parse_config_line_from_str_verbose(const char *line,
-                                       char **key_out, char **value_out,
-                                       const char **err_out);
+char *get_unquoted_path(const char *path);
 char *expand_filename(const char *filename);
 MOCK_DECL(struct smartlist_t *, tor_listdir, (const char *dirname));
 int path_is_relative(const char *filename);
@@ -463,9 +461,6 @@ struct process_handle_t {
   int stdin_pipe;
   int stdout_pipe;
   int stderr_pipe;
-  FILE *stdin_handle;
-  FILE *stdout_handle;
-  FILE *stderr_handle;
   pid_t pid;
   /** If the process has not given us a SIGCHLD yet, this has the
    * waitpid_callback_t that gets invoked once it has. Otherwise this
@@ -488,7 +483,7 @@ int tor_split_lines(struct smartlist_t *sl, char *buf, int len);
 ssize_t tor_read_all_handle(HANDLE h, char *buf, size_t count,
                             const process_handle_t *process);
 #else
-ssize_t tor_read_all_handle(FILE *h, char *buf, size_t count,
+ssize_t tor_read_all_handle(int fd, char *buf, size_t count,
                             const process_handle_t *process,
                             int *eof);
 #endif
@@ -502,7 +497,7 @@ int tor_process_get_pid(process_handle_t *process_handle);
 #ifdef _WIN32
 HANDLE tor_process_get_stdout_pipe(process_handle_t *process_handle);
 #else
-FILE *tor_process_get_stdout_pipe(process_handle_t *process_handle);
+int tor_process_get_stdout_pipe(process_handle_t *process_handle);
 #endif
 
 #ifdef _WIN32
@@ -511,7 +506,7 @@ tor_get_lines_from_handle,(HANDLE *handle,
                            enum stream_status *stream_status));
 #else
 MOCK_DECL(struct smartlist_t *,
-tor_get_lines_from_handle,(FILE *handle,
+tor_get_lines_from_handle,(int fd,
                            enum stream_status *stream_status));
 #endif
 

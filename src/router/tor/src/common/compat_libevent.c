@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2016, The Tor Project, Inc. */
+/* Copyright (c) 2009-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -279,6 +279,15 @@ tor_gettimeofday_cache_set(const struct timeval *tv)
 {
   tor_assert(tv);
   memcpy(&cached_time_hires, tv, sizeof(*tv));
+}
+
+/** For testing: called post-fork to make libevent reinitialize
+ * kernel structures. */
+void
+tor_libevent_postfork(void)
+{
+  int r = event_reinit(tor_libevent_get_base());
+  tor_assert(r == 0);
 }
 #endif
 #endif

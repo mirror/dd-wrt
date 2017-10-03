@@ -1,5 +1,5 @@
 /* Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -1462,8 +1462,10 @@ handle_control_saveconf(control_connection_t *conn, uint32_t len,
                         const char *body)
 {
   (void) len;
-  (void) body;
-  if (options_save_current()<0) {
+
+  int force = !strcmpstart(body, "FORCE");
+  const or_options_t *options = get_options();
+  if ((!force && options->IncludeUsed) || options_save_current() < 0) {
     connection_write_str_to_buf(
       "551 Unable to write configuration to disk.\r\n", conn);
   } else {
@@ -1677,6 +1679,8 @@ getinfo_helper_misc(control_connection_t *conn, const char *question,
       *answer = tor_strdup(a);
   } else if (!strcmp(question, "config-text")) {
     *answer = options_dump(get_options(), OPTIONS_DUMP_MINIMAL);
+  } else if (!strcmp(question, "config-can-saveconf")) {
+    *answer = tor_strdup(get_options()->IncludeUsed ? "0" : "1");
   } else if (!strcmp(question, "info/names")) {
     *answer = list_getinfo_options();
   } else if (!strcmp(question, "dormant")) {
@@ -1873,7 +1877,7 @@ getinfo_helper_listeners(control_connection_t *control_conn,
 
 /** Implementation helper for GETINFO: knows the answers for questions about
  * directory information. */
-static int
+STATIC int
 getinfo_helper_dir(control_connection_t *control_conn,
                    const char *question, char **answer,
                    const char **errmsg)
@@ -2047,6 +2051,12 @@ getinfo_helper_dir(control_connection_t *control_conn,
       }
     }
   } else if (!strcmp(question, "network-status")) { /* v1 */
+    static int network_status_warned = 0;
+    if (!network_status_warned) {
+      log_warn(LD_CONTROL, "GETINFO network-status is deprecated; it will "
+               "go away in a future version of Tor.");
+      network_status_warned = 1;
+    }
     routerlist_t *routerlist = router_get_routerlist();
     if (!routerlist || !routerlist->routers ||
         list_server_status_v1(routerlist->routers, answer, 1) < 0) {
@@ -2824,12 +2834,13 @@ getinfo_helper_events(control_connection_t *control_conn,
 
 /** Implementation helper for GETINFO: knows how to enumerate hidden services
  * created via the control port. */
-static int
+STATIC int
 getinfo_helper_onions(control_connection_t *control_conn,
                       const char *question, char **answer,
                       const char **errmsg)
 {
   smartlist_t *onion_list = NULL;
+  (void) errmsg;  /* no errors from this method */
 
   if (control_conn && !strcmp(question, "onions/current")) {
     onion_list = control_conn->ephemeral_onion_services;
@@ -2839,13 +2850,13 @@ getinfo_helper_onions(control_connection_t *control_conn,
     return 0;
   }
   if (!onion_list || smartlist_len(onion_list) == 0) {
-    if (errmsg) {
-        *errmsg = "No onion services of the specified type.";
+    if (answer) {
+      *answer = tor_strdup("");
     }
-    return -1;
-  }
-  if (answer) {
+  } else {
+    if (answer) {
       *answer = smartlist_join_strings(onion_list, "\r\n", 0, NULL);
+    }
   }
 
   return 0;
@@ -2924,6 +2935,8 @@ static const getinfo_item_t getinfo_items[] = {
   ITEM("config-defaults-file", misc, "Current location of the defaults file."),
   ITEM("config-text", misc,
        "Return the string that would be written by a saveconf command."),
+  ITEM("config-can-saveconf", misc,
+       "Is it possible to save the configuration to the \"torrc\" file?"),
   ITEM("accounting/bytes", accounting,
        "Number of bytes read/written so far in the accounting interval."),
   ITEM("accounting/bytes-left", accounting,
@@ -3544,24 +3557,9 @@ handle_control_attachstream(control_connection_t *conn, uint32_t len,
   }
   /* Is this a single hop circuit? */
   if (circ && (circuit_get_cpath_len(circ)<2 || hop==1)) {
-    const node_t *node = NULL;
-    char *exit_digest = NULL;
-    if (circ->build_state &&
-        circ->build_state->chosen_exit &&
-        !tor_digest_is_zero(circ->build_state->chosen_exit->identity_digest)) {
-      exit_digest = circ->build_state->chosen_exit->identity_digest;
-      node = node_get_by_id(exit_digest);
-    }
-    /* Do both the client and relay allow one-hop exit circuits? */
-    if (!node ||
-        !node_allows_single_hop_exits(node) ||
-        !get_options()->AllowSingleHopCircuits) {
-      connection_write_str_to_buf(
-      "551 Can't attach stream to this one-hop circuit.\r\n", conn);
-      return 0;
-    }
-    tor_assert(exit_digest);
-    ap_conn->chosen_exit_name = tor_strdup(hex_str(exit_digest, DIGEST_LEN));
+    connection_write_str_to_buf(
+               "551 Can't attach stream to this one-hop circuit.\r\n", conn);
+    return 0;
   }
 
   if (circ && hop>0) {
@@ -3593,12 +3591,15 @@ handle_control_postdescriptor(control_connection_t *conn, uint32_t len,
   int cache = 0; /* eventually, we may switch this to 1 */
 
   const char *cp = memchr(body, '\n', len);
-  smartlist_t *args = smartlist_new();
-  tor_assert(cp);
+
+  if (cp == NULL) {
+    connection_printf_to_buf(conn, "251 Empty body\r\n");
+    return 0;
+  }
   ++cp;
 
   char *cmdline = tor_memdup_nulterm(body, cp-body);
-
+  smartlist_t *args = smartlist_new();
   smartlist_split_string(args, cmdline, " ",
                          SPLIT_SKIP_SPACE|SPLIT_IGNORE_BLANK, 0);
   SMARTLIST_FOREACH_BEGIN(args, char *, option) {
@@ -4191,13 +4192,18 @@ handle_control_hspost(control_connection_t *conn,
                       const char *body)
 {
   static const char *opt_server = "SERVER=";
-  smartlist_t *args = smartlist_new();
   smartlist_t *hs_dirs = NULL;
   const char *encoded_desc = body;
   size_t encoded_desc_len = len;
 
   char *cp = memchr(body, '\n', len);
+  if (cp == NULL) {
+    connection_printf_to_buf(conn, "251 Empty body\r\n");
+    return 0;
+  }
   char *argline = tor_strndup(body, cp-body);
+
+  smartlist_t *args = smartlist_new();
 
   /* If any SERVER= options were specified, try parse the options line */
   if (!strcasecmpstart(argline, opt_server)) {
@@ -6508,7 +6514,7 @@ monitor_owning_controller_process(const char *process_spec)
             msg);
     owning_controller_process_spec = NULL;
     tor_cleanup();
-    exit(0);
+    exit(1);
   }
 }
 
@@ -6711,8 +6717,8 @@ control_event_bootstrap(bootstrap_status_t status, int progress)
  * is the connection that caused this problem.
  */
 MOCK_IMPL(void,
-          control_event_bootstrap_problem, (const char *warn, int reason,
-                                            or_connection_t *or_conn))
+control_event_bootstrap_problem, (const char *warn, int reason,
+                                  or_connection_t *or_conn))
 {
   int status = bootstrap_percent;
   const char *tag = "", *summary = "";
@@ -6917,6 +6923,11 @@ get_desc_id_from_query(const rend_data_t *rend_data, const char *hsdir_fp)
     goto end;
   }
 
+  /* Without a directory fingerprint at this stage, we can't do much. */
+  if (hsdir_fp == NULL) {
+     goto end;
+  }
+
   /* OK, we have an onion address so now let's find which descriptor ID
    * is the one associated with the HSDir fingerprint. */
   for (replica = 0; replica < REND_NUMBER_OF_NON_CONSECUTIVE_REPLICAS;
@@ -7006,10 +7017,9 @@ control_event_hs_descriptor_receive_end(const char *action,
   char desc_id_base32[REND_DESC_ID_V2_LEN_BASE32 + 1];
   const char *desc_id = NULL;
 
-  if (!action || !id_digest || !rend_data || !onion_address) {
-    log_warn(LD_BUG, "Called with action==%p, id_digest==%p, "
-             "rend_data==%p, onion_address==%p", action, id_digest,
-             rend_data, onion_address);
+  if (!action || !rend_data || !onion_address) {
+    log_warn(LD_BUG, "Called with action==%p, rend_data==%p, "
+                     "onion_address==%p", action, rend_data, onion_address);
     return;
   }
 
@@ -7032,7 +7042,8 @@ control_event_hs_descriptor_receive_end(const char *action,
                      rend_hsaddress_str_or_unknown(onion_address),
                      rend_auth_type_to_string(
                           TO_REND_DATA_V2(rend_data)->auth_type),
-                     node_describe_longname_by_id(id_digest),
+                     id_digest ?
+                        node_describe_longname_by_id(id_digest) : "UNKNOWN",
                      desc_id_field ? desc_id_field : "",
                      reason_field ? reason_field : "");
 
@@ -7112,19 +7123,18 @@ control_event_hs_descriptor_uploaded(const char *id_digest,
                                          id_digest, NULL);
 }
 
-/** Send HS_DESC event to inform controller that query <b>rend_query</b>
- * failed to retrieve hidden service descriptor identified by
- * <b>id_digest</b>. If <b>reason</b> is not NULL, add it to REASON=
- * field.
+/** Send HS_DESC event to inform controller that query <b>rend_data</b>
+ * failed to retrieve hidden service descriptor from directory identified by
+ * <b>id_digest</b>. If NULL, "UNKNOWN" is used. If <b>reason</b> is not NULL,
+ * add it to REASON= field.
  */
 void
 control_event_hs_descriptor_failed(const rend_data_t *rend_data,
                                    const char *id_digest,
                                    const char *reason)
 {
-  if (!rend_data || !id_digest) {
-    log_warn(LD_BUG, "Called with rend_data==%p, id_digest==%p",
-             rend_data, id_digest);
+  if (!rend_data) {
+    log_warn(LD_BUG, "Called with rend_data==%p", rend_data);
     return;
   }
   control_event_hs_descriptor_receive_end("FAILED",
@@ -7132,8 +7142,11 @@ control_event_hs_descriptor_failed(const rend_data_t *rend_data,
                                           rend_data, id_digest, reason);
 }
 
-/** send HS_DESC_CONTENT event after completion of a successful fetch from
- * hs directory. */
+/** Send HS_DESC_CONTENT event after completion of a successful fetch from hs
+ * directory. If <b>hsdir_id_digest</b> is NULL, it is replaced by "UNKNOWN".
+ * If <b>content</b> is NULL, it is replaced by an empty string. The
+ * <b>onion_address</b> or <b>desc_id</b> set to NULL will no trigger the
+ * control event. */
 void
 control_event_hs_descriptor_content(const char *onion_address,
                                     const char *desc_id,
@@ -7143,9 +7156,9 @@ control_event_hs_descriptor_content(const char *onion_address,
   static const char *event_name = "HS_DESC_CONTENT";
   char *esc_content = NULL;
 
-  if (!onion_address || !desc_id || !hsdir_id_digest) {
-    log_warn(LD_BUG, "Called with onion_address==%p, desc_id==%p, "
-             "hsdir_id_digest==%p", onion_address, desc_id, hsdir_id_digest);
+  if (!onion_address || !desc_id) {
+    log_warn(LD_BUG, "Called with onion_address==%p, desc_id==%p, ",
+             onion_address, desc_id);
     return;
   }
 
@@ -7160,7 +7173,9 @@ control_event_hs_descriptor_content(const char *onion_address,
                      event_name,
                      rend_hsaddress_str_or_unknown(onion_address),
                      desc_id,
-                     node_describe_longname_by_id(hsdir_id_digest),
+                     hsdir_id_digest ?
+                        node_describe_longname_by_id(hsdir_id_digest) :
+                        "UNKNOWN",
                      esc_content);
   tor_free(esc_content);
 }
