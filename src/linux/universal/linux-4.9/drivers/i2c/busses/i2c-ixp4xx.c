@@ -123,8 +123,8 @@ static int ixp4xx_i2c_probe(struct platform_device *plat_dev)
 	drv_data->algo_data.setscl = ixp4xx_bit_setscl;
 	drv_data->algo_data.getsda = ixp4xx_bit_getsda;
 	drv_data->algo_data.getscl = ixp4xx_bit_getscl;
-	drv_data->algo_data.udelay = 10;
-	drv_data->algo_data.timeout = 100;
+	drv_data->algo_data.udelay = 5;
+	drv_data->algo_data.timeout = HZ / 10;
 
 #define I2C_HW_B_IXP4XX		0x010017 /* GPIO on IXP4XX systems */
 
