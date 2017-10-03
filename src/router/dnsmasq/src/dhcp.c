@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2016 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2017 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -273,8 +273,8 @@ void dhcp_packet(time_t now, int pxe_fd)
   if ((relay = relay_reply4((struct dhcp_packet *)daemon->dhcp_packet.iov_base, ifr.ifr_name)))
     {
       /* Reply from server, using us as relay. */
-      iface_index = relay->iface_index;
-      if (!indextoname(daemon->dhcpfd, iface_index, ifr.ifr_name))
+      rcvd_iface_index = relay->iface_index;
+      if (!indextoname(daemon->dhcpfd, rcvd_iface_index, ifr.ifr_name))
 	return;
       is_relay_reply = 1; 
       iov.iov_len = sz;
