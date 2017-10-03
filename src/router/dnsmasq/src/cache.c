@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2016 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2017 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -1511,7 +1511,7 @@ void dump_cache(time_t now)
 	    /* ctime includes trailing \n - eat it */
 	    *(p-1) = 0;
 #endif
-	    my_syslog(LOG_INFO, daemon->namebuff);
+	    my_syslog(LOG_INFO, "%s", daemon->namebuff);
 	  }
     }
 }

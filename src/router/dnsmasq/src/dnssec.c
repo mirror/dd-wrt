@@ -1,5 +1,5 @@
 /* dnssec.c is Copyright (c) 2012 Giovanni Bajo <rasky@develer.com>
-           and Copyright (c) 2012-2016 Simon Kelley
+           and Copyright (c) 2012-2017 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -462,24 +462,17 @@ static time_t timestamp_time;
 int setup_timestamp(void)
 {
   struct stat statbuf;
-  time_t now;
-  time_t base = 1420070400; /* 1-1-2015 */
   
   daemon->back_to_the_future = 0;
   
   if (!daemon->timestamp_file)
     return 0;
-
-  now = time(NULL);
-
-  if (!stat("/proc/self/exe", &statbuf) && difftime(statbuf.st_mtime, base) > 0)
-    base = statbuf.st_mtime;
   
   if (stat(daemon->timestamp_file, &statbuf) != -1)
     {
       timestamp_time = statbuf.st_mtime;
     check_and_exit:
-      if (difftime(now, base) >= 0 && difftime(timestamp_time, now) <= 0)
+      if (difftime(timestamp_time, time(0)) <=  0)
 	{
 	  /* time already OK, update timestamp, and do key checking from the start. */
 	  if (utimes(daemon->timestamp_file, NULL) == -1)
@@ -500,7 +493,7 @@ int setup_timestamp(void)
 
 	  close(fd);
 	  
-	  timestamp_time = base; /* 1-1-2015 */
+	  timestamp_time = 1420070400; /* 1-1-2015 */
 	  tv[0].tv_sec = tv[1].tv_sec = timestamp_time;
 	  tv[0].tv_usec = tv[1].tv_usec = 0;
 	  if (utimes(daemon->timestamp_file, tv) == 0)
@@ -2237,7 +2230,7 @@ size_t dnssec_generate_query(struct dns_header *header, unsigned char *end, char
 
   p = (unsigned char *)(header+1);
 	
-  p = do_rfc1035_name(p, name);
+  p = do_rfc1035_name(p, name, NULL);
   *p++ = 0;
   PUTSHORT(type, p);
   PUTSHORT(class, p);

@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2016 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2017 Simon Kelley
  
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,7 +14,13 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define COPYRIGHT "Copyright (c) 2000-2016 Simon Kelley"
+#define COPYRIGHT "Copyright (c) 2000-2017 Simon Kelley"
+
+/* We do defines that influence behavior of stdio.h, so complain
+   if included too early. */
+#ifdef _STDIO_H
+#  error "Header file stdio.h included too early!"
+#endif 
 
 #ifndef NO_LARGEFILE
 /* Ensure we can use files >2GB (log files may grow this big) */
@@ -1130,18 +1136,18 @@ unsigned int extract_request(struct dns_header *header, size_t qlen,
 			       char *name, unsigned short *typep);
 size_t setup_reply(struct dns_header *header, size_t  qlen,
 		   struct all_addr *addrp, unsigned int flags,
-		   unsigned long local_ttl);
-int extract_addresses(struct dns_header *header, size_t qlen, char *namebuff, 
-		      time_t now, char **ipsets, int is_sign, int checkrebind,
-		      int no_cache, int secure, int *doctored);
+		   unsigned long ttl);
+int extract_addresses(struct dns_header *header, size_t qlen, char *name,
+		      time_t now, char **ipsets, int is_sign, int check_rebind,
+		      int no_cache_dnssec, int secure, int *doctored);
 size_t answer_request(struct dns_header *header, char *limit, size_t qlen,  
 		      struct in_addr local_addr, struct in_addr local_netmask, 
 		      time_t now, int ad_reqd, int do_bit, int have_pseudoheader);
 int check_for_bogus_wildcard(struct dns_header *header, size_t qlen, char *name, 
-			     struct bogus_addr *addr, time_t now);
+			     struct bogus_addr *baddr, time_t now);
 int check_for_ignored_address(struct dns_header *header, size_t qlen, struct bogus_addr *baddr);
 int check_for_local_domain(char *name, time_t now);
-unsigned int questions_crc(struct dns_header *header, size_t plen, char *buff);
+unsigned int questions_crc(struct dns_header *header, size_t plen, char *name);
 size_t resize_packet(struct dns_header *header, size_t plen, 
 		  unsigned char *pheader, size_t hlen);
 int add_resource_record(struct dns_header *header, char *limit, int *truncp,
@@ -1163,11 +1169,11 @@ int in_zone(struct auth_zone *zone, char *name, char **cut);
 
 /* dnssec.c */
 size_t dnssec_generate_query(struct dns_header *header, unsigned char *end, char *name, int class, int type, union mysockaddr *addr, int edns_pktsz);
-int dnssec_validate_by_ds(time_t now, struct dns_header *header, size_t n, char *name, char *keyname, int class);
+int dnssec_validate_by_ds(time_t now, struct dns_header *header, size_t plen, char *name, char *keyname, int class);
 int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char *name, char *keyname, int class);
 int dnssec_validate_reply(time_t now, struct dns_header *header, size_t plen, char *name, char *keyname, int *class,
 			  int check_unsigned, int *neganswer, int *nons);
-int dnskey_keytag(int alg, int flags, unsigned char *rdata, int rdlen);
+int dnskey_keytag(int alg, int flags, unsigned char *key, int keylen);
 size_t filter_rrsigs(struct dns_header *header, size_t plen);
 unsigned char* hash_questions(struct dns_header *header, size_t plen, char *name);
 int setup_timestamp(void);
@@ -1177,9 +1183,9 @@ void rand_init(void);
 unsigned short rand16(void);
 u32 rand32(void);
 u64 rand64(void);
-int legal_hostname(char *c);
-char *canonicalise(char *s, int *nomem);
-unsigned char *do_rfc1035_name(unsigned char *p, char *sval);
+int legal_hostname(char *name);
+char *canonicalise(char *in, int *nomem);
+unsigned char *do_rfc1035_name(unsigned char *p, char *sval, char *limit);
 void *safe_malloc(size_t size);
 void safe_pipe(int *fd, int read_noblock);
 void *whine_malloc(size_t size);
@@ -1213,7 +1219,9 @@ int wildcard_matchn(const char* wildcard, const char* match, int num);
 void die(char *message, char *arg1, int exit_code);
 int log_start(struct passwd *ent_pw, int errfd);
 int log_reopen(char *log_file);
+
 void my_syslog(int priority, const char *format, ...);
+
 void set_log_writer(void);
 void check_log_writer(int force);
 void flush_log(void);
@@ -1251,7 +1259,7 @@ struct frec *get_new_frec(time_t now, int *wait, int force);
 int send_from(int fd, int nowild, char *packet, size_t len, 
 	       union mysockaddr *to, struct all_addr *source,
 	       unsigned int iface);
-void resend_query();
+void resend_query(void);
 struct randfd *allocate_rfd(int family);
 void free_rfd(struct randfd *rfd);
 
@@ -1271,12 +1279,12 @@ void add_update_server(int flags,
 void check_servers(void);
 int enumerate_interfaces(int reset);
 void create_wildcard_listeners(void);
-void create_bound_listeners(int die);
+void create_bound_listeners(int dienow);
 void warn_bound_listeners(void);
 void warn_wild_labels(void);
 void warn_int_names(void);
 int is_dad_listeners(void);
-int iface_check(int family, struct all_addr *addr, char *name, int *auth_dns);
+int iface_check(int family, struct all_addr *addr, char *name, int *auth);
 int loopback_exception(int fd, int family, struct all_addr *addr, char *name);
 int label_exception(int index, int family, struct all_addr *addr);
 int fix_fd(int fd);
@@ -1297,7 +1305,7 @@ void newaddress(time_t now);
 void dhcp_init(void);
 void dhcp_packet(time_t now, int pxe_fd);
 struct dhcp_context *address_available(struct dhcp_context *context, 
-				       struct in_addr addr,
+				       struct in_addr taddr,
 				       struct dhcp_netid *netids);
 struct dhcp_context *narrow_context(struct dhcp_context *context, 
 				    struct in_addr taddr,
@@ -1356,7 +1364,7 @@ void lease_add_extradata(struct dhcp_lease *lease, unsigned char *data,
 #ifdef HAVE_DHCP
 size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
 		  size_t sz, time_t now, int unicast_dest, int loopback,
-		  int *is_inform, int pxe_fd, struct in_addr fallback, time_t recvtime);
+		  int *is_inform, int pxe, struct in_addr fallback, time_t recvtime);
 unsigned char *extended_hwaddr(int hwtype, int hwlen, unsigned char *hwaddr, 
 			       int clid_len, unsigned char *clid, int *len_out);
 #endif
@@ -1471,10 +1479,10 @@ unsigned short relay_reply6( struct sockaddr_in6 *peer, ssize_t sz, char *arriva
 #ifdef HAVE_DHCP
 void dhcp_common_init(void);
 ssize_t recv_dhcp_packet(int fd, struct msghdr *msg);
-struct dhcp_netid *run_tag_if(struct dhcp_netid *input);
+struct dhcp_netid *run_tag_if(struct dhcp_netid *tags);
 struct dhcp_netid *option_filter(struct dhcp_netid *tags, struct dhcp_netid *context_tags,
 				 struct dhcp_opt *opts);
-int match_netid(struct dhcp_netid *check, struct dhcp_netid *pool, int negonly);
+int match_netid(struct dhcp_netid *check, struct dhcp_netid *pool, int tagnotneeded);
 char *strip_hostname(char *hostname);
 void log_tags(struct dhcp_netid *netid, u32 xid);
 int match_bytes(struct dhcp_opt *o, unsigned char *p, int len);
@@ -1532,13 +1540,13 @@ void slaac_ping_reply(struct in6_addr *sender, unsigned char *packet, char *inte
 
 /* loop.c */
 #ifdef HAVE_LOOP
-void loop_send_probes();
+void loop_send_probes(void);
 int detect_loop(char *query, int type);
 #endif
 
 /* inotify.c */
 #ifdef HAVE_INOTIFY
-void inotify_dnsmasq_init();
+void inotify_dnsmasq_init(void);
 int inotify_check(time_t now);
 void set_dynamic_inotify(int flag, int total_size, struct crec **rhash, int revhashsz);
 #endif

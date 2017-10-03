@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2016 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2017 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -229,7 +229,7 @@ void lease_update_from_configs(void)
     else if ((name = host_from_dns(lease->addr)))
       lease_set_hostname(lease, name, 1, get_domain(lease->addr), NULL); /* updates auth flag only */
 }
- 
+
 static void ourprintf(int *errp, char *format, ...)
 {
   va_list ap;
