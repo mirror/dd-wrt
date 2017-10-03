@@ -1,6 +1,6 @@
 /* Copyright (c) 2001-2003, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #ifndef TOR_TEST_H
@@ -181,18 +181,24 @@ extern struct testcase_t buffer_tests[];
 extern struct testcase_t cell_format_tests[];
 extern struct testcase_t cell_queue_tests[];
 extern struct testcase_t channel_tests[];
+extern struct testcase_t channelpadding_tests[];
 extern struct testcase_t channeltls_tests[];
 extern struct testcase_t checkdir_tests[];
+extern struct testcase_t circuitbuild_tests[];
 extern struct testcase_t circuitlist_tests[];
 extern struct testcase_t circuitmux_tests[];
 extern struct testcase_t circuituse_tests[];
 extern struct testcase_t compat_libevent_tests[];
 extern struct testcase_t config_tests[];
 extern struct testcase_t connection_tests[];
+extern struct testcase_t conscache_tests[];
+extern struct testcase_t consdiff_tests[];
+extern struct testcase_t consdiffmgr_tests[];
 extern struct testcase_t container_tests[];
 extern struct testcase_t controller_tests[];
 extern struct testcase_t controller_event_tests[];
 extern struct testcase_t crypto_tests[];
+extern struct testcase_t crypto_openssl_tests[];
 extern struct testcase_t dir_tests[];
 extern struct testcase_t dir_handle_get_tests[];
 extern struct testcase_t entryconn_tests[];
@@ -226,7 +232,9 @@ extern struct testcase_t router_tests[];
 extern struct testcase_t routerkeys_tests[];
 extern struct testcase_t routerlist_tests[];
 extern struct testcase_t routerset_tests[];
+extern struct testcase_t rust_tests[];
 extern struct testcase_t scheduler_tests[];
+extern struct testcase_t storagedir_tests[];
 extern struct testcase_t socks_tests[];
 extern struct testcase_t status_tests[];
 extern struct testcase_t thread_tests[];

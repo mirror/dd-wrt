@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2004, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #ifndef TOR_COMPAT_THREADS_H
@@ -146,6 +146,20 @@ void *tor_threadlocal_get(tor_threadlocal_t *threadlocal);
  * been initialized, or has been destroyed.
  */
 void tor_threadlocal_set(tor_threadlocal_t *threadlocal, void *value);
+
+/**
+ * Atomic counter type; holds a size_t value.
+ */
+typedef struct atomic_counter_t {
+  tor_mutex_t mutex;
+  size_t val;
+} atomic_counter_t;
+
+void atomic_counter_init(atomic_counter_t *counter);
+void atomic_counter_destroy(atomic_counter_t *counter);
+void atomic_counter_add(atomic_counter_t *counter, size_t add);
+void atomic_counter_sub(atomic_counter_t *counter, size_t sub);
+size_t atomic_counter_get(atomic_counter_t *counter);
 
 #endif
 

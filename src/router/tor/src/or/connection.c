@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -628,13 +628,13 @@ connection_free_(connection_t *conn)
     dir_connection_t *dir_conn = TO_DIR_CONN(conn);
     tor_free(dir_conn->requested_resource);
 
-    tor_zlib_free(dir_conn->zlib_state);
-    if (dir_conn->fingerprint_stack) {
-      SMARTLIST_FOREACH(dir_conn->fingerprint_stack, char *, cp, tor_free(cp));
-      smartlist_free(dir_conn->fingerprint_stack);
+    tor_compress_free(dir_conn->compress_state);
+    if (dir_conn->spool) {
+      SMARTLIST_FOREACH(dir_conn->spool, spooled_resource_t *, spooled,
+                        spooled_resource_free(spooled));
+      smartlist_free(dir_conn->spool);
     }
 
-    cached_dir_decref(dir_conn->cached_dir);
     rend_data_free(dir_conn->rend_data);
     if (dir_conn->guard_state) {
       /* Cancel before freeing, if it's still there. */
@@ -4038,10 +4038,6 @@ connection_flush(connection_t *conn)
  * its contents compressed or decompressed as they're written.  If zlib is
  * negative, this is the last data to be compressed, and the connection's zlib
  * state should be flushed.
- *
- * If it's a local control connection and a 64k chunk is ready, try to flush
- * it all, so we don't end up with many megabytes of controller info queued at
- * once.
  */
 MOCK_IMPL(void,
 connection_write_to_buf_impl_,(const char *string, size_t len,
@@ -4060,9 +4056,9 @@ connection_write_to_buf_impl_,(const char *string, size_t len,
   if (zlib) {
     dir_connection_t *dir_conn = TO_DIR_CONN(conn);
     int done = zlib < 0;
-    CONN_LOG_PROTECT(conn, r = write_to_buf_zlib(conn->outbuf,
-                                                 dir_conn->zlib_state,
-                                                 string, len, done));
+    CONN_LOG_PROTECT(conn, r = write_to_buf_compress(conn->outbuf,
+                                                     dir_conn->compress_state,
+                                                     string, len, done));
   } else {
     CONN_LOG_PROTECT(conn, r = write_to_buf(string, len, conn->outbuf));
   }

@@ -1,6 +1,6 @@
 /* Copyright (c) 2003, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -1953,7 +1953,7 @@ parse_http_time(const char *date, struct tm *tm)
 
 /** Given an <b>interval</b> in seconds, try to write it to the
  * <b>out_len</b>-byte buffer in <b>out</b> in a human-readable form.
- * Return 0 on success, -1 on failure.
+ * Returns a non-negative integer on success, -1 on failure.
  */
 int
 format_time_interval(char *out, size_t out_len, long interval)
@@ -2118,7 +2118,7 @@ read_all(tor_socket_t fd, char *buf, size_t count, int isSocket)
     return -1;
   }
 
-  while (numread != count) {
+  while (numread < count) {
     if (isSocket)
       result = tor_socket_recv(fd, buf+numread, count-numread, 0);
     else
@@ -3045,135 +3045,39 @@ unescape_string(const char *s, char **result, size_t *size_out)
   }
 }
 
-/** Given a string containing part of a configuration file or similar format,
- * advance past comments and whitespace and try to parse a single line.  If we
- * parse a line successfully, set *<b>key_out</b> to a new string holding the
- * key portion and *<b>value_out</b> to a new string holding the value portion
- * of the line, and return a pointer to the start of the next line.  If we run
- * out of data, return a pointer to the end of the string.  If we encounter an
- * error, return NULL and set *<b>err_out</b> (if provided) to an error
- * message.
- */
-const char *
-parse_config_line_from_str_verbose(const char *line, char **key_out,
-                                   char **value_out,
-                                   const char **err_out)
+/** Removes enclosing quotes from <b>path</b> and unescapes quotes between the
+ * enclosing quotes. Backslashes are not unescaped. Return the unquoted
+ * <b>path</b> on sucess or 0 if <b>path</b> is not quoted correctly. */
+char *
+get_unquoted_path(const char *path)
 {
-  /*
-    See torrc_format.txt for a description of the (silly) format this parses.
-   */
-  const char *key, *val, *cp;
-  int continuation = 0;
+  size_t len = strlen(path);
 
-  tor_assert(key_out);
-  tor_assert(value_out);
-
-  *key_out = *value_out = NULL;
-  key = val = NULL;
-  /* Skip until the first keyword. */
-  while (1) {
-    while (TOR_ISSPACE(*line))
-      ++line;
-    if (*line == '#') {
-      while (*line && *line != '\n')
-        ++line;
-    } else {
-      break;
-    }
+  if (len == 0) {
+    return tor_strdup("");
   }
 
-  if (!*line) { /* End of string? */
-    *key_out = *value_out = NULL;
-    return line;
+  int has_start_quote = (path[0] == '\"');
+  int has_end_quote = (len > 0 && path[len-1] == '\"');
+  if (has_start_quote != has_end_quote || (len == 1 && has_start_quote)) {
+    return NULL;
   }
 
-  /* Skip until the next space or \ followed by newline. */
-  key = line;
-  while (*line && !TOR_ISSPACE(*line) && *line != '#' &&
-         ! (line[0] == '\\' && line[1] == '\n'))
-    ++line;
-  *key_out = tor_strndup(key, line-key);
-
-  /* Skip until the value. */
-  while (*line == ' ' || *line == '\t')
-    ++line;
-
-  val = line;
-
-  /* Find the end of the line. */
-  if (*line == '\"') { // XXX No continuation handling is done here
-    if (!(line = unescape_string(line, value_out, NULL))) {
-      if (err_out)
-        *err_out = "Invalid escape sequence in quoted string";
+  char *unquoted_path = tor_malloc(len - has_start_quote - has_end_quote + 1);
+  char *s = unquoted_path;
+  size_t i;
+  for (i = has_start_quote; i < len - has_end_quote; i++) {
+    if (path[i] == '\"' && (i > 0 && path[i-1] == '\\')) {
+      *(s-1) = path[i];
+    } else if (path[i] != '\"') {
+      *s++ = path[i];
+    } else {  /* unescaped quote */
+      tor_free(unquoted_path);
       return NULL;
     }
-    while (*line == ' ' || *line == '\t')
-      ++line;
-    if (*line == '\r' && *(++line) == '\n')
-      ++line;
-    if (*line && *line != '#' && *line != '\n') {
-      if (err_out)
-        *err_out = "Excess data after quoted string";
-      return NULL;
-    }
-  } else {
-    /* Look for the end of the line. */
-    while (*line && *line != '\n' && (*line != '#' || continuation)) {
-      if (*line == '\\' && line[1] == '\n') {
-        continuation = 1;
-        line += 2;
-      } else if (*line == '#') {
-        do {
-          ++line;
-        } while (*line && *line != '\n');
-        if (*line == '\n')
-          ++line;
-      } else {
-        ++line;
-      }
-    }
-
-    if (*line == '\n') {
-      cp = line++;
-    } else {
-      cp = line;
-    }
-    /* Now back cp up to be the last nonspace character */
-    while (cp>val && TOR_ISSPACE(*(cp-1)))
-      --cp;
-
-    tor_assert(cp >= val);
-
-    /* Now copy out and decode the value. */
-    *value_out = tor_strndup(val, cp-val);
-    if (continuation) {
-      char *v_out, *v_in;
-      v_out = v_in = *value_out;
-      while (*v_in) {
-        if (*v_in == '#') {
-          do {
-            ++v_in;
-          } while (*v_in && *v_in != '\n');
-          if (*v_in == '\n')
-            ++v_in;
-        } else if (v_in[0] == '\\' && v_in[1] == '\n') {
-          v_in += 2;
-        } else {
-          *v_out++ = *v_in++;
-        }
-      }
-      *v_out = '\0';
-    }
   }
-
-  if (*line == '#') {
-    do {
-      ++line;
-    } while (*line && *line != '\n');
-  }
-  while (TOR_ISSPACE(*line)) ++line;
-
-  return line;
+  *s = '\0';
+  return unquoted_path;
 }
 
 /** Expand any homedir prefix on <b>filename</b>; return a newly allocated
@@ -4175,10 +4079,10 @@ tor_process_get_stdout_pipe(process_handle_t *process_handle)
 }
 #else
 /* DOCDOC tor_process_get_stdout_pipe */
-FILE *
+int
 tor_process_get_stdout_pipe(process_handle_t *process_handle)
 {
-  return process_handle->stdout_handle;
+  return process_handle->stdout_pipe;
 }
 #endif
 
@@ -4609,10 +4513,6 @@ tor_spawn_background(const char *const filename, const char **argv,
     log_warn(LD_GENERAL, "Failed to set stderror/stdout/stdin pipes "
              "nonblocking in parent process: %s", strerror(errno));
   }
-  /* Open the buffered IO streams */
-  process_handle->stdout_handle = fdopen(process_handle->stdout_pipe, "r");
-  process_handle->stderr_handle = fdopen(process_handle->stderr_pipe, "r");
-  process_handle->stdin_handle = fdopen(process_handle->stdin_pipe, "r");
 
   *process_handle_out = process_handle;
   return process_handle->status;
@@ -4659,14 +4559,9 @@ tor_process_handle_destroy,(process_handle_t *process_handle,
   if (process_handle->stdin_pipe)
     CloseHandle(process_handle->stdin_pipe);
 #else
-  if (process_handle->stdout_handle)
-    fclose(process_handle->stdout_handle);
-
-  if (process_handle->stderr_handle)
-    fclose(process_handle->stderr_handle);
-
-  if (process_handle->stdin_handle)
-    fclose(process_handle->stdin_handle);
+  close(process_handle->stdout_pipe);
+  close(process_handle->stderr_pipe);
+  close(process_handle->stdin_pipe);
 
   clear_waitpid_callback(process_handle->waitpid_cb);
 #endif
@@ -4952,7 +4847,7 @@ tor_read_all_handle(HANDLE h, char *buf, size_t count,
   if (count > SIZE_T_CEILING || count > SSIZE_MAX)
     return -1;
 
-  while (numread != count) {
+  while (numread < count) {
     /* Check if there is anything to read */
     retval = PeekNamedPipe(h, NULL, 0, NULL, &byte_count, NULL);
     if (!retval) {
@@ -4998,19 +4893,19 @@ tor_read_all_handle(HANDLE h, char *buf, size_t count,
   return (ssize_t)numread;
 }
 #else
-/** Read from a handle <b>h</b> into <b>buf</b>, up to <b>count</b> bytes.  If
+/** Read from a handle <b>fd</b> into <b>buf</b>, up to <b>count</b> bytes.  If
  * <b>process</b> is NULL, the function will return immediately if there is
  * nothing more to read. Otherwise data will be read until end of file, or
  * <b>count</b> bytes are read.  Returns the number of bytes read, or -1 on
  * error. Sets <b>eof</b> to true if <b>eof</b> is not NULL and the end of the
  * file has been reached. */
 ssize_t
-tor_read_all_handle(FILE *h, char *buf, size_t count,
+tor_read_all_handle(int fd, char *buf, size_t count,
                     const process_handle_t *process,
                     int *eof)
 {
   size_t numread = 0;
-  char *retval;
+  ssize_t result;
 
   if (eof)
     *eof = 0;
@@ -5018,34 +4913,28 @@ tor_read_all_handle(FILE *h, char *buf, size_t count,
   if (count > SIZE_T_CEILING || count > SSIZE_MAX)
     return -1;
 
-  while (numread != count) {
-    /* Use fgets because that is what we use in log_from_pipe() */
-    retval = fgets(buf+numread, (int)(count-numread), h);
-    if (NULL == retval) {
-      if (feof(h)) {
-        log_debug(LD_GENERAL, "fgets() reached end of file");
-        if (eof)
-          *eof = 1;
+  while (numread < count) {
+    result = read(fd, buf+numread, count-numread);
+
+    if (result == 0) {
+      log_debug(LD_GENERAL, "read() reached end of file");
+      if (eof)
+        *eof = 1;
+      break;
+    } else if (result < 0 && errno == EAGAIN) {
+      if (process)
+        continue;
+      else
         break;
-      } else {
-        if (EAGAIN == errno) {
-          if (process)
-            continue;
-          else
-            break;
-        } else {
-          log_warn(LD_GENERAL, "fgets() from handle failed: %s",
-                   strerror(errno));
-          return -1;
-        }
-      }
+    } else if (result < 0) {
+      log_warn(LD_GENERAL, "read() failed: %s", strerror(errno));
+      return -1;
     }
-    tor_assert(retval != NULL);
-    tor_assert(strlen(retval) + numread <= count);
-    numread += strlen(retval);
+
+    numread += result;
   }
 
-  log_debug(LD_GENERAL, "fgets() read %d bytes from handle", (int)numread);
+  log_debug(LD_GENERAL, "read() read %d bytes from handle", (int)numread);
   return (ssize_t)numread;
 }
 #endif
@@ -5059,7 +4948,7 @@ tor_read_all_from_process_stdout(const process_handle_t *process_handle,
   return tor_read_all_handle(process_handle->stdout_pipe, buf, count,
                              process_handle);
 #else
-  return tor_read_all_handle(process_handle->stdout_handle, buf, count,
+  return tor_read_all_handle(process_handle->stdout_pipe, buf, count,
                              process_handle, NULL);
 #endif
 }
@@ -5073,7 +4962,7 @@ tor_read_all_from_process_stderr(const process_handle_t *process_handle,
   return tor_read_all_handle(process_handle->stderr_pipe, buf, count,
                              process_handle);
 #else
-  return tor_read_all_handle(process_handle->stderr_handle, buf, count,
+  return tor_read_all_handle(process_handle->stderr_pipe, buf, count,
                              process_handle, NULL);
 #endif
 }
@@ -5267,11 +5156,10 @@ log_from_handle(HANDLE *pipe, int severity)
 #else
 
 /** Return a smartlist containing lines outputted from
- *  <b>handle</b>. Return NULL on error, and set
+ *  <b>fd</b>. Return NULL on error, and set
  *  <b>stream_status_out</b> appropriately. */
 MOCK_IMPL(smartlist_t *,
-tor_get_lines_from_handle, (FILE *handle,
-                            enum stream_status *stream_status_out))
+tor_get_lines_from_handle, (int fd, enum stream_status *stream_status_out))
 {
   enum stream_status stream_status;
   char stdout_buf[400];
@@ -5280,13 +5168,13 @@ tor_get_lines_from_handle, (FILE *handle,
   while (1) {
     memset(stdout_buf, 0, sizeof(stdout_buf));
 
-    stream_status = get_string_from_pipe(handle,
+    stream_status = get_string_from_pipe(fd,
                                          stdout_buf, sizeof(stdout_buf) - 1);
     if (stream_status != IO_STREAM_OKAY)
       goto done;
 
     if (!lines) lines = smartlist_new();
-    smartlist_add_strdup(lines, stdout_buf);
+    smartlist_split_string(lines, stdout_buf, "\n", 0, 0);
   }
 
  done:
@@ -5294,20 +5182,20 @@ tor_get_lines_from_handle, (FILE *handle,
   return lines;
 }
 
-/** Read from stream, and send lines to log at the specified log level.
+/** Read from fd, and send lines to log at the specified log level.
  * Returns 1 if stream is closed normally, -1 if there is a error reading, and
  * 0 otherwise. Handles lines from tor-fw-helper and
  * tor_spawn_background() specially.
  */
 static int
-log_from_pipe(FILE *stream, int severity, const char *executable,
+log_from_pipe(int fd, int severity, const char *executable,
               int *child_status)
 {
   char buf[256];
   enum stream_status r;
 
   for (;;) {
-    r = get_string_from_pipe(stream, buf, sizeof(buf) - 1);
+    r = get_string_from_pipe(fd, buf, sizeof(buf) - 1);
 
     if (r == IO_STREAM_CLOSED) {
       return 1;
@@ -5332,7 +5220,7 @@ log_from_pipe(FILE *stream, int severity, const char *executable,
 }
 #endif
 
-/** Reads from <b>stream</b> and stores input in <b>buf_out</b> making
+/** Reads from <b>fd</b> and stores input in <b>buf_out</b> making
  *  sure it's below <b>count</b> bytes.
  *  If the string has a trailing newline, we strip it off.
  *
@@ -5348,52 +5236,28 @@ log_from_pipe(FILE *stream, int severity, const char *executable,
  * IO_STREAM_OKAY: If everything went okay and we got a string
  *  in <b>buf_out</b>. */
 enum stream_status
-get_string_from_pipe(FILE *stream, char *buf_out, size_t count)
+get_string_from_pipe(int fd, char *buf_out, size_t count)
 {
-  char *retval;
-  size_t len;
+  ssize_t ret;
 
   tor_assert(count <= INT_MAX);
 
-  retval = fgets(buf_out, (int)count, stream);
+  ret = read(fd, buf_out, count);
 
-  if (!retval) {
-    if (feof(stream)) {
-      /* Program has closed stream (probably it exited) */
-      /* TODO: check error */
-      return IO_STREAM_CLOSED;
-    } else {
-      if (EAGAIN == errno) {
-        /* Nothing more to read, try again next time */
-        return IO_STREAM_EAGAIN;
-      } else {
-        /* There was a problem, abandon this child process */
-        return IO_STREAM_TERM;
-      }
-    }
-  } else {
-    len = strlen(buf_out);
-    if (len == 0) {
-      /* this probably means we got a NUL at the start of the string. */
-      return IO_STREAM_EAGAIN;
-    }
+  if (ret == 0)
+    return IO_STREAM_CLOSED;
+  else if (ret < 0 && errno == EAGAIN)
+    return IO_STREAM_EAGAIN;
+  else if (ret < 0)
+    return IO_STREAM_TERM;
 
-    if (buf_out[len - 1] == '\n') {
-      /* Remove the trailing newline */
-      buf_out[len - 1] = '\0';
-    } else {
-      /* No newline; check whether we overflowed the buffer */
-      if (!feof(stream))
-        log_info(LD_GENERAL,
-                 "Line from stream was truncated: %s", buf_out);
-      /* TODO: What to do with this error? */
-    }
+  if (buf_out[ret - 1] == '\n') {
+    /* Remove the trailing newline */
+    buf_out[ret - 1] = '\0';
+  } else
+    buf_out[ret] = '\0';
 
-    return IO_STREAM_OKAY;
-  }
-
-  /* We should never get here */
-  return IO_STREAM_TERM;
+  return IO_STREAM_OKAY;
 }
 
 /** Parse a <b>line</b> from tor-fw-helper and issue an appropriate
@@ -5630,7 +5494,7 @@ tor_check_port_forwarding(const char *filename,
 #ifdef _WIN32
     stderr_status = log_from_handle(child_handle->stderr_pipe, LOG_INFO);
 #else
-    stderr_status = log_from_pipe(child_handle->stderr_handle,
+    stderr_status = log_from_pipe(child_handle->stderr_pipe,
                                   LOG_INFO, filename, &retval);
 #endif
     if (handle_fw_helper_output(filename, child_handle) < 0) {

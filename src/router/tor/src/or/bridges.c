@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -571,15 +571,23 @@ launch_direct_bridge_descriptor_fetch(bridge_info_t *bridge)
     return;
   }
 
+  tor_addr_port_t bridge_addrport;
+  memcpy(&bridge_addrport.addr, &bridge->addr, sizeof(tor_addr_t));
+  bridge_addrport.port = bridge->port;
+
   guard_state = get_guard_state_for_bridge_desc_fetch(bridge->identity);
 
-  directory_initiate_command(&bridge->addr, bridge->port,
-                             NULL, 0, /*no dirport*/
-                             bridge->identity,
-                             DIR_PURPOSE_FETCH_SERVERDESC,
-                             ROUTER_PURPOSE_BRIDGE,
-                             DIRIND_ONEHOP, "authority.z", NULL, 0, 0,
-                             guard_state);
+  directory_request_t *req =
+    directory_request_new(DIR_PURPOSE_FETCH_SERVERDESC);
+  directory_request_set_or_addr_port(req, &bridge_addrport);
+  directory_request_set_directory_id_digest(req, bridge->identity);
+  directory_request_set_router_purpose(req, ROUTER_PURPOSE_BRIDGE);
+  directory_request_set_resource(req, "authority.z");
+  if (guard_state) {
+    directory_request_set_guard_state(req, guard_state);
+  }
+  directory_initiate_request(req);
+  directory_request_free(req);
 }
 
 /** Fetching the bridge descriptor from the bridge authority returned a

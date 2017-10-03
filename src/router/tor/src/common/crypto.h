@@ -1,7 +1,7 @@
 /* Copyright (c) 2001, Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -131,6 +131,10 @@ int crypto_early_init(void) ATTR_WUR;
 int crypto_global_init(int hardwareAccel,
                        const char *accelName,
                        const char *accelPath) ATTR_WUR;
+#ifdef USE_DMALLOC
+int crypto_use_tor_alloc_functions(void);
+#endif
+
 void crypto_thread_cleanup(void);
 int crypto_global_cleanup(void);
 

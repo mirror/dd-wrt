@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2004, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #ifndef TOR_COMPAT_H
@@ -414,10 +414,10 @@ struct tm *tor_gmtime_r(const time_t *timep, struct tm *result);
 #endif
 
 #ifndef timercmp
-/** Replacement for timersub on platforms that do not have it: returns true
+/** Replacement for timercmp on platforms that do not have it: returns true
  * iff the relational operator "op" makes the expression tv1 op tv2 true.
  *
- * Note that while this definition should work for all boolean opeators, some
+ * Note that while this definition should work for all boolean operators, some
  * platforms' native timercmp definitions do not support >=, <=, or ==.  So
  * don't use those.
  */

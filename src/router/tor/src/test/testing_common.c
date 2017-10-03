@@ -1,6 +1,6 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 extern const char tor_git_revision[];
@@ -21,6 +21,7 @@ const char tor_git_revision[] = "";
 #include "rephist.h"
 #include "backtrace.h"
 #include "test.h"
+#include "channelpadding.h"
 
 #include <stdio.h>
 #ifdef HAVE_FCNTL_H
@@ -38,7 +39,6 @@ const char tor_git_revision[] = "";
 
 #ifdef USE_DMALLOC
 #include <dmalloc.h>
-#include <openssl/crypto.h>
 #include "main.h"
 #endif
 
@@ -238,14 +238,15 @@ main(int c, const char **v)
 
 #ifdef USE_DMALLOC
   {
-    int r = CRYPTO_set_mem_ex_functions(tor_malloc_, tor_realloc_, tor_free_);
-    tor_assert(r);
+    int r = crypto_use_tor_alloc_functions();
+    tor_assert(r == 0);
   }
 #endif
 
   update_approx_time(time(NULL));
   options = options_new();
   tor_threads_init();
+  tor_compress_init();
 
   network_init();
 
@@ -304,9 +305,14 @@ main(int c, const char **v)
     tor_free(errmsg);
     return 1;
   }
+
   tor_set_failed_assertion_callback(an_assertion_failed);
 
   init_pregenerated_keys();
+
+  channelpadding_new_consensus_params(NULL);
+
+  predicted_ports_init();
 
   atexit(remove_directory);
 

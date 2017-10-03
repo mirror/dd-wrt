@@ -1,9 +1,55 @@
-/* Copyright (c) 2016, The Tor Project, Inc. */
+/* Copyright (c) 2016-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
  * \file hs_descriptor.c
  * \brief Handle hidden service descriptor encoding/decoding.
+ *
+ * \details
+ * Here is a graphical depiction of an HS descriptor and its layers:
+ *
+ *      +------------------------------------------------------+
+ *      |DESCRIPTOR HEADER:                                    |
+ *      |  hs-descriptor 3                                     |
+ *      |  descriptor-lifetime 180                             |
+ *      |  ...                                                 |
+ *      |  superencrypted                                      |
+ *      |+---------------------------------------------------+ |
+ *      ||SUPERENCRYPTED LAYER (aka OUTER ENCRYPTED LAYER):  | |
+ *      ||  desc-auth-type x25519                            | |
+ *      ||  desc-auth-ephemeral-key                          | |
+ *      ||  auth-client                                      | |
+ *      ||  auth-client                                      | |
+ *      ||  ...                                              | |
+ *      ||  encrypted                                        | |
+ *      ||+-------------------------------------------------+| |
+ *      |||ENCRYPTED LAYER (aka INNER ENCRYPTED LAYER):     || |
+ *      |||  create2-formats                                || |
+ *      |||  intro-auth-required                            || |
+ *      |||  introduction-point                             || |
+ *      |||  introduction-point                             || |
+ *      |||  ...                                            || |
+ *      ||+-------------------------------------------------+| |
+ *      |+---------------------------------------------------+ |
+ *      +------------------------------------------------------+
+ *
+ * The DESCRIPTOR HEADER section is completely unencrypted and contains generic
+ * descriptor metadata.
+ *
+ * The SUPERENCRYPTED LAYER section is the first layer of encryption, and it's
+ * encrypted using the blinded public key of the hidden service to protect
+ * against entities who don't know its onion address. The clients of the hidden
+ * service know its onion address and blinded public key, whereas third-parties
+ * (like HSDirs) don't know it (except if it's a public hidden service).
+ *
+ * The ENCRYPTED LAYER section is the second layer of encryption, and it's
+ * encrypted using the client authorization key material (if those exist). When
+ * client authorization is enabled, this second layer of encryption protects
+ * the descriptor content from unauthorized entities. If client authorization
+ * is disabled, this second layer of encryption does not provide any extra
+ * security but is still present. The plaintext of this layer contains all the
+ * information required to connect to the hidden service like its list of
+ * introduction points.
  **/
 
 /* For unit tests.*/
@@ -23,29 +69,36 @@
 #define str_desc_cert "descriptor-signing-key-cert"
 #define str_rev_counter "revision-counter"
 #define str_superencrypted "superencrypted"
+#define str_encrypted "encrypted"
 #define str_signature "signature"
 #define str_lifetime "descriptor-lifetime"
 /* Constant string value for the encrypted part of the descriptor. */
 #define str_create2_formats "create2-formats"
-#define str_auth_required "authentication-required"
+#define str_intro_auth_required "intro-auth-required"
 #define str_single_onion "single-onion-service"
 #define str_intro_point "introduction-point"
 #define str_ip_auth_key "auth-key"
 #define str_ip_enc_key "enc-key"
-#define str_ip_enc_key_cert "enc-key-certification"
+#define str_ip_enc_key_cert "enc-key-cert"
+#define str_ip_legacy_key "legacy-key"
+#define str_ip_legacy_key_cert "legacy-key-cert"
 #define str_intro_point_start "\n" str_intro_point " "
 /* Constant string value for the construction to encrypt the encrypted data
  * section. */
-#define str_enc_hsdir_data "hsdir-superencrypted-data"
+#define str_enc_const_superencryption "hsdir-superencrypted-data"
+#define str_enc_const_encryption "hsdir-encrypted-data"
 /* Prefix required to compute/verify HS desc signatures */
 #define str_desc_sig_prefix "Tor onion service descriptor sig v3"
+#define str_desc_auth_type "desc-auth-type"
+#define str_desc_auth_key "desc-auth-ephemeral-key"
+#define str_desc_auth_client "auth-client"
+#define str_encrypted "encrypted"
 
 /* Authentication supported types. */
 static const struct {
   hs_desc_auth_type_t type;
   const char *identifier;
-} auth_types[] = {
-  { HS_DESC_AUTH_PASSWORD, "password" },
+} intro_auth_types[] = {
   { HS_DESC_AUTH_ED25519, "ed25519" },
   /* Indicate end of array. */
   { 0, NULL }
@@ -62,10 +115,19 @@ static token_rule_t hs_desc_v3_token_table[] = {
   END_OF_TABLE
 };
 
+/* Descriptor ruleset for the superencrypted section. */
+static token_rule_t hs_desc_superencrypted_v3_token_table[] = {
+  T1_START(str_desc_auth_type, R3_DESC_AUTH_TYPE, GE(1), NO_OBJ),
+  T1(str_desc_auth_key, R3_DESC_AUTH_KEY, GE(1), NO_OBJ),
+  T1N(str_desc_auth_client, R3_DESC_AUTH_CLIENT, GE(3), NO_OBJ),
+  T1(str_encrypted, R3_ENCRYPTED, NO_ARGS, NEED_OBJ),
+  END_OF_TABLE
+};
+
 /* Descriptor ruleset for the encrypted section. */
 static token_rule_t hs_desc_encrypted_v3_token_table[] = {
   T1_START(str_create2_formats, R3_CREATE2_FORMATS, CONCAT_ARGS, NO_OBJ),
-  T01(str_auth_required, R3_AUTHENTICATION_REQUIRED, ARGS, NO_OBJ),
+  T01(str_intro_auth_required, R3_INTRO_AUTH_REQUIRED, ARGS, NO_OBJ),
   T01(str_single_onion, R3_SINGLE_ONION_SERVICE, ARGS, NO_OBJ),
   END_OF_TABLE
 };
@@ -74,9 +136,10 @@ static token_rule_t hs_desc_encrypted_v3_token_table[] = {
 static token_rule_t hs_desc_intro_point_v3_token_table[] = {
   T1_START(str_intro_point, R3_INTRODUCTION_POINT, EQ(1), NO_OBJ),
   T1(str_ip_auth_key, R3_INTRO_AUTH_KEY, NO_ARGS, NEED_OBJ),
-  T1(str_ip_enc_key, R3_INTRO_ENC_KEY, ARGS, OBJ_OK),
-  T1_END(str_ip_enc_key_cert, R3_INTRO_ENC_KEY_CERTIFICATION,
-         NO_ARGS, NEED_OBJ),
+  T1(str_ip_enc_key, R3_INTRO_ENC_KEY, GE(2), OBJ_OK),
+  T1(str_ip_enc_key_cert, R3_INTRO_ENC_KEY_CERT, ARGS, OBJ_OK),
+  T01(str_ip_legacy_key, R3_INTRO_LEGACY_KEY, ARGS, NEED_KEY_1024),
+  T01(str_ip_legacy_key_cert, R3_INTRO_LEGACY_KEY_CERT, ARGS, OBJ_OK),
   END_OF_TABLE
 };
 
@@ -93,22 +156,26 @@ desc_intro_point_free(hs_desc_intro_point_t *ip)
     smartlist_free(ip->link_specifiers);
   }
   tor_cert_free(ip->auth_key_cert);
-  if (ip->enc_key_type == HS_DESC_KEY_TYPE_LEGACY) {
-    crypto_pk_free(ip->enc_key.legacy);
+  tor_cert_free(ip->enc_key_cert);
+  if (ip->legacy.key) {
+    crypto_pk_free(ip->legacy.key);
+  }
+  if (ip->legacy.cert.encoded) {
+    tor_free(ip->legacy.cert.encoded);
   }
   tor_free(ip);
 }
 
 /* Free the content of the plaintext section of a descriptor. */
-static void
+STATIC void
 desc_plaintext_data_free_contents(hs_desc_plaintext_data_t *desc)
 {
   if (!desc) {
     return;
   }
 
-  if (desc->encrypted_blob) {
-    tor_free(desc->encrypted_blob);
+  if (desc->superencrypted_blob) {
+    tor_free(desc->superencrypted_blob);
   }
   tor_cert_free(desc->signing_key_cert);
 
@@ -123,9 +190,9 @@ desc_encrypted_data_free_contents(hs_desc_encrypted_data_t *desc)
     return;
   }
 
-  if (desc->auth_types) {
-    SMARTLIST_FOREACH(desc->auth_types, char *, a, tor_free(a));
-    smartlist_free(desc->auth_types);
+  if (desc->intro_auth_types) {
+    SMARTLIST_FOREACH(desc->intro_auth_types, char *, a, tor_free(a));
+    smartlist_free(desc->intro_auth_types);
   }
   if (desc->intro_points) {
     SMARTLIST_FOREACH(desc->intro_points, hs_desc_intro_point_t *, ip,
@@ -133,6 +200,135 @@ desc_encrypted_data_free_contents(hs_desc_encrypted_data_t *desc)
     smartlist_free(desc->intro_points);
   }
   memwipe(desc, 0, sizeof(*desc));
+}
+
+/* Using a key, salt and encrypted payload, build a MAC and put it in mac_out.
+ * We use SHA3-256 for the MAC computation.
+ * This function can't fail. */
+static void
+build_mac(const uint8_t *mac_key, size_t mac_key_len,
+          const uint8_t *salt, size_t salt_len,
+          const uint8_t *encrypted, size_t encrypted_len,
+          uint8_t *mac_out, size_t mac_len)
+{
+  crypto_digest_t *digest;
+
+  const uint64_t mac_len_netorder = tor_htonll(mac_key_len);
+  const uint64_t salt_len_netorder = tor_htonll(salt_len);
+
+  tor_assert(mac_key);
+  tor_assert(salt);
+  tor_assert(encrypted);
+  tor_assert(mac_out);
+
+  digest = crypto_digest256_new(DIGEST_SHA3_256);
+  /* As specified in section 2.5 of proposal 224, first add the mac key
+   * then add the salt first and then the encrypted section. */
+
+  crypto_digest_add_bytes(digest, (const char *) &mac_len_netorder, 8);
+  crypto_digest_add_bytes(digest, (const char *) mac_key, mac_key_len);
+  crypto_digest_add_bytes(digest, (const char *) &salt_len_netorder, 8);
+  crypto_digest_add_bytes(digest, (const char *) salt, salt_len);
+  crypto_digest_add_bytes(digest, (const char *) encrypted, encrypted_len);
+  crypto_digest_get_digest(digest, (char *) mac_out, mac_len);
+  crypto_digest_free(digest);
+}
+
+/* Using a given decriptor object, build the secret input needed for the
+ * KDF and put it in the dst pointer which is an already allocated buffer
+ * of size dstlen. */
+static void
+build_secret_input(const hs_descriptor_t *desc, uint8_t *dst, size_t dstlen)
+{
+  size_t offset = 0;
+
+  tor_assert(desc);
+  tor_assert(dst);
+  tor_assert(HS_DESC_ENCRYPTED_SECRET_INPUT_LEN <= dstlen);
+
+  /* XXX use the destination length as the memcpy length */
+  /* Copy blinded public key. */
+  memcpy(dst, desc->plaintext_data.blinded_pubkey.pubkey,
+         sizeof(desc->plaintext_data.blinded_pubkey.pubkey));
+  offset += sizeof(desc->plaintext_data.blinded_pubkey.pubkey);
+  /* Copy subcredential. */
+  memcpy(dst + offset, desc->subcredential, sizeof(desc->subcredential));
+  offset += sizeof(desc->subcredential);
+  /* Copy revision counter value. */
+  set_uint64(dst + offset, tor_ntohll(desc->plaintext_data.revision_counter));
+  offset += sizeof(uint64_t);
+  tor_assert(HS_DESC_ENCRYPTED_SECRET_INPUT_LEN == offset);
+}
+
+/* Do the KDF construction and put the resulting data in key_out which is of
+ * key_out_len length. It uses SHAKE-256 as specified in the spec. */
+static void
+build_kdf_key(const hs_descriptor_t *desc,
+              const uint8_t *salt, size_t salt_len,
+              uint8_t *key_out, size_t key_out_len,
+              int is_superencrypted_layer)
+{
+  uint8_t secret_input[HS_DESC_ENCRYPTED_SECRET_INPUT_LEN];
+  crypto_xof_t *xof;
+
+  tor_assert(desc);
+  tor_assert(salt);
+  tor_assert(key_out);
+
+  /* Build the secret input for the KDF computation. */
+  build_secret_input(desc, secret_input, sizeof(secret_input));
+
+  xof = crypto_xof_new();
+  /* Feed our KDF. [SHAKE it like a polaroid picture --Yawning]. */
+  crypto_xof_add_bytes(xof, secret_input, sizeof(secret_input));
+  crypto_xof_add_bytes(xof, salt, salt_len);
+
+  /* Feed in the right string constant based on the desc layer */
+  if (is_superencrypted_layer) {
+    crypto_xof_add_bytes(xof, (const uint8_t *) str_enc_const_superencryption,
+                         strlen(str_enc_const_superencryption));
+  } else {
+    crypto_xof_add_bytes(xof, (const uint8_t *) str_enc_const_encryption,
+                         strlen(str_enc_const_encryption));
+  }
+
+  /* Eat from our KDF. */
+  crypto_xof_squeeze_bytes(xof, key_out, key_out_len);
+  crypto_xof_free(xof);
+  memwipe(secret_input,  0, sizeof(secret_input));
+}
+
+/* Using the given descriptor and salt, run it through our KDF function and
+ * then extract a secret key in key_out, the IV in iv_out and MAC in mac_out.
+ * This function can't fail. */
+static void
+build_secret_key_iv_mac(const hs_descriptor_t *desc,
+                        const uint8_t *salt, size_t salt_len,
+                        uint8_t *key_out, size_t key_len,
+                        uint8_t *iv_out, size_t iv_len,
+                        uint8_t *mac_out, size_t mac_len,
+                        int is_superencrypted_layer)
+{
+  size_t offset = 0;
+  uint8_t kdf_key[HS_DESC_ENCRYPTED_KDF_OUTPUT_LEN];
+
+  tor_assert(desc);
+  tor_assert(salt);
+  tor_assert(key_out);
+  tor_assert(iv_out);
+  tor_assert(mac_out);
+
+  build_kdf_key(desc, salt, salt_len, kdf_key, sizeof(kdf_key),
+                is_superencrypted_layer);
+  /* Copy the bytes we need for both the secret key and IV. */
+  memcpy(key_out, kdf_key, key_len);
+  offset += key_len;
+  memcpy(iv_out, kdf_key + offset, iv_len);
+  offset += iv_len;
+  memcpy(mac_out, kdf_key + offset, mac_len);
+  /* Extra precaution to make sure we are not out of bound. */
+  tor_assert((offset + mac_len) == sizeof(kdf_key));
+  memwipe(kdf_key, 0, sizeof(kdf_key));
 }
 
 /* === ENCODING === */
@@ -217,101 +413,68 @@ encode_link_specifiers(const smartlist_t *specs)
   return encoded_b64;
 }
 
-/* Encode an introduction point encryption key and return a newly allocated
- * string with it. On failure, return NULL. */
+/* Encode an introduction point legacy key and certificate. Return a newly
+ * allocated string with it. On failure, return NULL. */
 static char *
-encode_enc_key(const ed25519_public_key_t *sig_key,
-               const hs_desc_intro_point_t *ip)
+encode_legacy_key(const hs_desc_intro_point_t *ip)
 {
-  char *encoded = NULL;
-  time_t now = time(NULL);
+  char *key_str, b64_cert[256], *encoded = NULL;
+  size_t key_str_len;
 
-  tor_assert(sig_key);
   tor_assert(ip);
 
-  switch (ip->enc_key_type) {
-  case HS_DESC_KEY_TYPE_LEGACY:
-  {
-    char *key_str, b64_cert[256];
-    ssize_t cert_len;
-    size_t key_str_len;
-    uint8_t *cert_data = NULL;
-
-    /* Create cross certification cert. */
-    cert_len = tor_make_rsa_ed25519_crosscert(sig_key, ip->enc_key.legacy,
-                                              now + HS_DESC_CERT_LIFETIME,
-                                              &cert_data);
-    if (cert_len < 0) {
-      log_warn(LD_REND, "Unable to create legacy crosscert.");
-      goto err;
-    }
-    /* Encode cross cert. */
-    if (base64_encode(b64_cert, sizeof(b64_cert), (const char *) cert_data,
-                      cert_len, BASE64_ENCODE_MULTILINE) < 0) {
-      tor_free(cert_data);
-      log_warn(LD_REND, "Unable to encode legacy crosscert.");
-      goto err;
-    }
-    tor_free(cert_data);
-    /* Convert the encryption key to a string. */
-    if (crypto_pk_write_public_key_to_string(ip->enc_key.legacy, &key_str,
-                                             &key_str_len) < 0) {
-      log_warn(LD_REND, "Unable to encode legacy encryption key.");
-      goto err;
-    }
-    tor_asprintf(&encoded,
-                 "%s legacy\n%s"  /* Newline is added by the call above. */
-                 "%s\n"
-                 "-----BEGIN CROSSCERT-----\n"
-                 "%s"
-                 "-----END CROSSCERT-----",
-                 str_ip_enc_key, key_str,
-                 str_ip_enc_key_cert, b64_cert);
-    tor_free(key_str);
-    break;
+  /* Encode cross cert. */
+  if (base64_encode(b64_cert, sizeof(b64_cert),
+                    (const char *) ip->legacy.cert.encoded,
+                    ip->legacy.cert.len, BASE64_ENCODE_MULTILINE) < 0) {
+    log_warn(LD_REND, "Unable to encode legacy crosscert.");
+    goto done;
   }
-  case HS_DESC_KEY_TYPE_CURVE25519:
-  {
-    int signbit, ret;
-    char *encoded_cert, key_fp_b64[CURVE25519_BASE64_PADDED_LEN + 1];
-    ed25519_keypair_t curve_kp;
-
-    if (ed25519_keypair_from_curve25519_keypair(&curve_kp, &signbit,
-                                                &ip->enc_key.curve25519)) {
-      goto err;
-    }
-    tor_cert_t *cross_cert = tor_cert_create(&curve_kp,
-                                             CERT_TYPE_CROSS_HS_IP_KEYS,
-                                             sig_key, now,
-                                             HS_DESC_CERT_LIFETIME,
-                                             CERT_FLAG_INCLUDE_SIGNING_KEY);
-    memwipe(&curve_kp, 0, sizeof(curve_kp));
-    if (!cross_cert) {
-      goto err;
-    }
-    ret = tor_cert_encode_ed22519(cross_cert, &encoded_cert);
-    tor_cert_free(cross_cert);
-    if (ret) {
-      goto err;
-    }
-    if (curve25519_public_to_base64(key_fp_b64,
-                                    &ip->enc_key.curve25519.pubkey) < 0) {
-      tor_free(encoded_cert);
-      goto err;
-    }
-    tor_asprintf(&encoded,
-                 "%s ntor %s\n"
-                 "%s\n%s",
-                 str_ip_enc_key, key_fp_b64,
-                 str_ip_enc_key_cert, encoded_cert);
-    tor_free(encoded_cert);
-    break;
+  /* Convert the encryption key to PEM format NUL terminated. */
+  if (crypto_pk_write_public_key_to_string(ip->legacy.key, &key_str,
+                                           &key_str_len) < 0) {
+    log_warn(LD_REND, "Unable to encode legacy encryption key.");
+    goto done;
   }
-  default:
-    tor_assert(0);
-  }
+  tor_asprintf(&encoded,
+               "%s \n%s"  /* Newline is added by the call above. */
+               "%s\n"
+               "-----BEGIN CROSSCERT-----\n"
+               "%s"
+               "-----END CROSSCERT-----",
+               str_ip_legacy_key, key_str,
+               str_ip_legacy_key_cert, b64_cert);
+  tor_free(key_str);
 
- err:
+ done:
+  return encoded;
+}
+
+/* Encode an introduction point encryption key and certificate. Return a newly
+ * allocated string with it. On failure, return NULL. */
+static char *
+encode_enc_key(const hs_desc_intro_point_t *ip)
+{
+  char *encoded = NULL, *encoded_cert;
+  char key_b64[CURVE25519_BASE64_PADDED_LEN + 1];
+
+  tor_assert(ip);
+
+  /* Base64 encode the encryption key for the "enc-key" field. */
+  if (curve25519_public_to_base64(key_b64, &ip->enc_key) < 0) {
+    goto done;
+  }
+  if (tor_cert_encode_ed22519(ip->enc_key_cert, &encoded_cert) < 0) {
+    goto done;
+  }
+  tor_asprintf(&encoded,
+               "%s ntor %s\n"
+               "%s\n%s",
+               str_ip_enc_key, key_b64,
+               str_ip_enc_key_cert, encoded_cert);
+  tor_free(encoded_cert);
+
+ done:
   return encoded;
 }
 
@@ -346,12 +509,24 @@ encode_intro_point(const ed25519_public_key_t *sig_key,
 
   /* Encryption key encoding. */
   {
-    char *encoded_enc_key = encode_enc_key(sig_key, ip);
+    char *encoded_enc_key = encode_enc_key(ip);
     if (encoded_enc_key == NULL) {
       goto err;
     }
     smartlist_add_asprintf(lines, "%s", encoded_enc_key);
     tor_free(encoded_enc_key);
+  }
+
+  /* Legacy key if any. */
+  if (ip->legacy.key != NULL) {
+    /* Strong requirement else the IP creation was badly done. */
+    tor_assert(ip->legacy.cert.encoded);
+    char *encoded_legacy_key = encode_legacy_key(ip);
+    if (encoded_legacy_key == NULL) {
+      goto err;
+    }
+    smartlist_add_asprintf(lines, "%s", encoded_legacy_key);
+    tor_free(encoded_legacy_key);
   }
 
   /* Join them all in one blob of text. */
@@ -363,142 +538,23 @@ encode_intro_point(const ed25519_public_key_t *sig_key,
   return encoded_ip;
 }
 
-/* Using a given decriptor object, build the secret input needed for the
- * KDF and put it in the dst pointer which is an already allocated buffer
- * of size dstlen. */
-static void
-build_secret_input(const hs_descriptor_t *desc, uint8_t *dst, size_t dstlen)
-{
-  size_t offset = 0;
-
-  tor_assert(desc);
-  tor_assert(dst);
-  tor_assert(HS_DESC_ENCRYPTED_SECRET_INPUT_LEN <= dstlen);
-
-  /* XXX use the destination length as the memcpy length */
-  /* Copy blinded public key. */
-  memcpy(dst, desc->plaintext_data.blinded_pubkey.pubkey,
-         sizeof(desc->plaintext_data.blinded_pubkey.pubkey));
-  offset += sizeof(desc->plaintext_data.blinded_pubkey.pubkey);
-  /* Copy subcredential. */
-  memcpy(dst + offset, desc->subcredential, sizeof(desc->subcredential));
-  offset += sizeof(desc->subcredential);
-  /* Copy revision counter value. */
-  set_uint64(dst + offset, tor_ntohll(desc->plaintext_data.revision_counter));
-  offset += sizeof(uint64_t);
-  tor_assert(HS_DESC_ENCRYPTED_SECRET_INPUT_LEN == offset);
-}
-
-/* Do the KDF construction and put the resulting data in key_out which is of
- * key_out_len length. It uses SHAKE-256 as specified in the spec. */
-static void
-build_kdf_key(const hs_descriptor_t *desc,
-              const uint8_t *salt, size_t salt_len,
-              uint8_t *key_out, size_t key_out_len)
-{
-  uint8_t secret_input[HS_DESC_ENCRYPTED_SECRET_INPUT_LEN];
-  crypto_xof_t *xof;
-
-  tor_assert(desc);
-  tor_assert(salt);
-  tor_assert(key_out);
-
-  /* Build the secret input for the KDF computation. */
-  build_secret_input(desc, secret_input, sizeof(secret_input));
-
-  xof = crypto_xof_new();
-  /* Feed our KDF. [SHAKE it like a polaroid picture --Yawning]. */
-  crypto_xof_add_bytes(xof, secret_input, sizeof(secret_input));
-  crypto_xof_add_bytes(xof, salt, salt_len);
-  crypto_xof_add_bytes(xof, (const uint8_t *) str_enc_hsdir_data,
-                       strlen(str_enc_hsdir_data));
-  /* Eat from our KDF. */
-  crypto_xof_squeeze_bytes(xof, key_out, key_out_len);
-  crypto_xof_free(xof);
-  memwipe(secret_input,  0, sizeof(secret_input));
-}
-
-/* Using the given descriptor and salt, run it through our KDF function and
- * then extract a secret key in key_out, the IV in iv_out and MAC in mac_out.
- * This function can't fail. */
-static void
-build_secret_key_iv_mac(const hs_descriptor_t *desc,
-                        const uint8_t *salt, size_t salt_len,
-                        uint8_t *key_out, size_t key_len,
-                        uint8_t *iv_out, size_t iv_len,
-                        uint8_t *mac_out, size_t mac_len)
-{
-  size_t offset = 0;
-  uint8_t kdf_key[HS_DESC_ENCRYPTED_KDF_OUTPUT_LEN];
-
-  tor_assert(desc);
-  tor_assert(salt);
-  tor_assert(key_out);
-  tor_assert(iv_out);
-  tor_assert(mac_out);
-
-  build_kdf_key(desc, salt, salt_len, kdf_key, sizeof(kdf_key));
-  /* Copy the bytes we need for both the secret key and IV. */
-  memcpy(key_out, kdf_key, key_len);
-  offset += key_len;
-  memcpy(iv_out, kdf_key + offset, iv_len);
-  offset += iv_len;
-  memcpy(mac_out, kdf_key + offset, mac_len);
-  /* Extra precaution to make sure we are not out of bound. */
-  tor_assert((offset + mac_len) == sizeof(kdf_key));
-  memwipe(kdf_key, 0, sizeof(kdf_key));
-}
-
-/* Using a key, salt and encrypted payload, build a MAC and put it in mac_out.
- * We use SHA3-256 for the MAC computation.
- * This function can't fail. */
-static void
-build_mac(const uint8_t *mac_key, size_t mac_key_len,
-          const uint8_t *salt, size_t salt_len,
-          const uint8_t *encrypted, size_t encrypted_len,
-          uint8_t *mac_out, size_t mac_len)
-{
-  crypto_digest_t *digest;
-
-  const uint64_t mac_len_netorder = tor_htonll(mac_key_len);
-  const uint64_t salt_len_netorder = tor_htonll(salt_len);
-
-  tor_assert(mac_key);
-  tor_assert(salt);
-  tor_assert(encrypted);
-  tor_assert(mac_out);
-
-  digest = crypto_digest256_new(DIGEST_SHA3_256);
-  /* As specified in section 2.5 of proposal 224, first add the mac key
-   * then add the salt first and then the encrypted section. */
-
-  crypto_digest_add_bytes(digest, (const char *) &mac_len_netorder, 8);
-  crypto_digest_add_bytes(digest, (const char *) mac_key, mac_key_len);
-  crypto_digest_add_bytes(digest, (const char *) &salt_len_netorder, 8);
-  crypto_digest_add_bytes(digest, (const char *) salt, salt_len);
-  crypto_digest_add_bytes(digest, (const char *) encrypted, encrypted_len);
-  crypto_digest_get_digest(digest, (char *) mac_out, mac_len);
-  crypto_digest_free(digest);
-}
-
 /* Given a source length, return the new size including padding for the
  * plaintext encryption. */
 static size_t
 compute_padded_plaintext_length(size_t plaintext_len)
 {
   size_t plaintext_padded_len;
+  const int padding_block_length = HS_DESC_SUPERENC_PLAINTEXT_PAD_MULTIPLE;
 
   /* Make sure we won't overflow. */
-  tor_assert(plaintext_len <=
-             (SIZE_T_CEILING - HS_DESC_PLAINTEXT_PADDING_MULTIPLE));
+  tor_assert(plaintext_len <= (SIZE_T_CEILING - padding_block_length));
 
-  /* Get the extra length we need to add. For example, if srclen is 234 bytes,
-   * this will expand to (2 * 128) == 256 thus an extra 22 bytes. */
-  plaintext_padded_len = CEIL_DIV(plaintext_len,
-                                  HS_DESC_PLAINTEXT_PADDING_MULTIPLE) *
-                         HS_DESC_PLAINTEXT_PADDING_MULTIPLE;
+  /* Get the extra length we need to add. For example, if srclen is 10200
+   * bytes, this will expand to (2 * 10k) == 20k thus an extra 9800 bytes. */
+  plaintext_padded_len = CEIL_DIV(plaintext_len, padding_block_length) *
+                         padding_block_length;
   /* Can never be extra careful. Make sure we are _really_ padded. */
-  tor_assert(!(plaintext_padded_len % HS_DESC_PLAINTEXT_PADDING_MULTIPLE));
+  tor_assert(!(plaintext_padded_len % padding_block_length));
   return plaintext_padded_len;
 }
 
@@ -530,7 +586,8 @@ build_plaintext_padding(const char *plaintext, size_t plaintext_len,
  * data. Return size of the encrypted data buffer. */
 static size_t
 build_encrypted(const uint8_t *key, const uint8_t *iv, const char *plaintext,
-                size_t plaintext_len, uint8_t **encrypted_out)
+                size_t plaintext_len, uint8_t **encrypted_out,
+                int is_superencrypted_layer)
 {
   size_t encrypted_len;
   uint8_t *padded_plaintext, *encrypted;
@@ -541,15 +598,21 @@ build_encrypted(const uint8_t *key, const uint8_t *iv, const char *plaintext,
   tor_assert(plaintext);
   tor_assert(encrypted_out);
 
+  /* If we are encrypting the middle layer of the descriptor, we need to first
+     pad the plaintext */
+  if (is_superencrypted_layer) {
+    encrypted_len = build_plaintext_padding(plaintext, plaintext_len,
+                                            &padded_plaintext);
+    /* Extra precautions that we have a valid padding length. */
+    tor_assert(!(encrypted_len % HS_DESC_SUPERENC_PLAINTEXT_PAD_MULTIPLE));
+  } else { /* No padding required for inner layers */
+    padded_plaintext = tor_memdup(plaintext, plaintext_len);
+    encrypted_len = plaintext_len;
+  }
+
   /* This creates a cipher for AES. It can't fail. */
   cipher = crypto_cipher_new_with_iv_and_bits(key, iv,
                                               HS_DESC_ENCRYPTED_BIT_SIZE);
-  /* This can't fail. */
-  encrypted_len = build_plaintext_padding(plaintext, plaintext_len,
-                                          &padded_plaintext);
-  /* Extra precautions that we have a valie padding length. */
-  tor_assert(encrypted_len <= HS_DESC_PADDED_PLAINTEXT_MAX_LEN);
-  tor_assert(!(encrypted_len % HS_DESC_PLAINTEXT_PADDING_MULTIPLE));
   /* We use a stream cipher so the encrypted length will be the same as the
    * plaintext padded length. */
   encrypted = tor_malloc_zero(encrypted_len);
@@ -563,12 +626,13 @@ build_encrypted(const uint8_t *key, const uint8_t *iv, const char *plaintext,
   return encrypted_len;
 }
 
-/* Encrypt the given plaintext buffer and using the descriptor to get the
+/* Encrypt the given <b>plaintext</b> buffer using <b>desc</b> to get the
  * keys. Set encrypted_out with the encrypted data and return the length of
- * it. */
+ * it. <b>is_superencrypted_layer</b> is set if this is the outer encrypted
+ * layer of the descriptor. */
 static size_t
 encrypt_descriptor_data(const hs_descriptor_t *desc, const char *plaintext,
-             char **encrypted_out)
+                        char **encrypted_out, int is_superencrypted_layer)
 {
   char *final_blob;
   size_t encrypted_len, final_blob_len, offset = 0;
@@ -589,11 +653,13 @@ encrypt_descriptor_data(const hs_descriptor_t *desc, const char *plaintext,
   build_secret_key_iv_mac(desc, salt, sizeof(salt),
                           secret_key, sizeof(secret_key),
                           secret_iv, sizeof(secret_iv),
-                          mac_key, sizeof(mac_key));
+                          mac_key, sizeof(mac_key),
+                          is_superencrypted_layer);
 
   /* Build the encrypted part that is do the actual encryption. */
   encrypted_len = build_encrypted(secret_key, secret_iv, plaintext,
-                                  strlen(plaintext), &encrypted);
+                                  strlen(plaintext), &encrypted,
+                                  is_superencrypted_layer);
   memwipe(secret_key, 0, sizeof(secret_key));
   memwipe(secret_iv, 0, sizeof(secret_iv));
   /* This construction is specified in section 2.5 of proposal 224. */
@@ -625,20 +691,89 @@ encrypt_descriptor_data(const hs_descriptor_t *desc, const char *plaintext,
   return final_blob_len;
 }
 
-/* Take care of encoding the encrypted data section and then encrypting it
- * with the descriptor's key. A newly allocated NUL terminated string pointer
- * containing the encrypted encoded blob is put in encrypted_blob_out. Return
- * 0 on success else a negative value. */
-static int
-encode_encrypted_data(const hs_descriptor_t *desc,
-                      char **encrypted_blob_out)
+/* Create and return a string containing a fake client-auth entry. It's the
+ * responsibility of the caller to free the returned string. This function will
+ * never fail. */
+static char *
+get_fake_auth_client_str(void)
 {
-  int ret = -1;
-  char *encoded_str, *encrypted_blob;
-  smartlist_t *lines = smartlist_new();
+  char *auth_client_str = NULL;
+  /* We are gonna fill these arrays with fake base64 data. They are all double
+   * the size of their binary representation to fit the base64 overhead. */
+  char client_id_b64[8*2];
+  char iv_b64[16*2];
+  char encrypted_cookie_b64[16*2];
+  int retval;
 
-  tor_assert(desc);
-  tor_assert(encrypted_blob_out);
+  /* This is a macro to fill a field with random data and then base64 it. */
+#define FILL_WITH_FAKE_DATA_AND_BASE64(field) STMT_BEGIN         \
+  crypto_rand((char *)field, sizeof(field));                     \
+  retval = base64_encode_nopad(field##_b64, sizeof(field##_b64), \
+                               field, sizeof(field));            \
+  tor_assert(retval > 0);                                        \
+  STMT_END
+
+  { /* Get those fakes! */
+    uint8_t client_id[8]; /* fake client-id */
+    uint8_t iv[16]; /* fake IV (initialization vector) */
+    uint8_t encrypted_cookie[16]; /* fake encrypted cookie */
+
+    FILL_WITH_FAKE_DATA_AND_BASE64(client_id);
+    FILL_WITH_FAKE_DATA_AND_BASE64(iv);
+    FILL_WITH_FAKE_DATA_AND_BASE64(encrypted_cookie);
+  }
+
+  /* Build the final string */
+  tor_asprintf(&auth_client_str, "%s %s %s %s", str_desc_auth_client,
+               client_id_b64, iv_b64, encrypted_cookie_b64);
+
+#undef FILL_WITH_FAKE_DATA_AND_BASE64
+
+  return auth_client_str;
+}
+
+/** How many lines of "client-auth" we want in our descriptors; fake or not. */
+#define CLIENT_AUTH_ENTRIES_BLOCK_SIZE 16
+
+/** Create the "client-auth" part of the descriptor and return a
+ *  newly-allocated string with it. It's the responsibility of the caller to
+ *  free the returned string. */
+static char *
+get_fake_auth_client_lines(void)
+{
+  /* XXX: Client authorization is still not implemented, so all this function
+     does is make fake clients */
+  int i = 0;
+  smartlist_t *auth_client_lines = smartlist_new();
+  char *auth_client_lines_str = NULL;
+
+  /* Make a line for each fake client */
+  const int num_fake_clients = CLIENT_AUTH_ENTRIES_BLOCK_SIZE;
+  for (i = 0; i < num_fake_clients; i++) {
+    char *auth_client_str = get_fake_auth_client_str();
+    tor_assert(auth_client_str);
+    smartlist_add(auth_client_lines, auth_client_str);
+  }
+
+  /* Join all lines together to form final string */
+  auth_client_lines_str = smartlist_join_strings(auth_client_lines,
+                                                 "\n", 1, NULL);
+  /* Cleanup the mess */
+  SMARTLIST_FOREACH(auth_client_lines, char *, a, tor_free(a));
+  smartlist_free(auth_client_lines);
+
+  return auth_client_lines_str;
+}
+
+/* Create the inner layer of the descriptor (which includes the intro points,
+ * etc.). Return a newly-allocated string with the layer plaintext, or NULL if
+ * an error occured. It's the responsibility of the caller to free the returned
+ * string. */
+static char *
+get_inner_encrypted_layer_plaintext(const hs_descriptor_t *desc)
+{
+  char *encoded_str = NULL;
+  smartlist_t *lines = smartlist_new();
 
   /* Build the start of the section prior to the introduction points. */
   {
@@ -649,12 +784,12 @@ encode_encrypted_data(const hs_descriptor_t *desc,
     smartlist_add_asprintf(lines, "%s %d\n", str_create2_formats,
                            ONION_HANDSHAKE_TYPE_NTOR);
 
-    if (desc->encrypted_data.auth_types &&
-        smartlist_len(desc->encrypted_data.auth_types)) {
+    if (desc->encrypted_data.intro_auth_types &&
+        smartlist_len(desc->encrypted_data.intro_auth_types)) {
       /* Put the authentication-required line. */
-      char *buf = smartlist_join_strings(desc->encrypted_data.auth_types, " ",
-                                         0, NULL);
-      smartlist_add_asprintf(lines, "%s %s\n", str_auth_required, buf);
+      char *buf = smartlist_join_strings(desc->encrypted_data.intro_auth_types,
+                                         " ", 0, NULL);
+      smartlist_add_asprintf(lines, "%s %s\n", str_intro_auth_required, buf);
       tor_free(buf);
     }
 
@@ -679,31 +814,159 @@ encode_encrypted_data(const hs_descriptor_t *desc,
    * then encrypt it. */
   encoded_str = smartlist_join_strings(lines, "", 0, NULL);
 
-  /* Encrypt the section into an encrypted blob that we'll base64 encode
-   * before returning it. */
-  {
-    char *enc_b64;
-    ssize_t enc_b64_len, ret_len, enc_len;
+ err:
+  SMARTLIST_FOREACH(lines, char *, l, tor_free(l));
+  smartlist_free(lines);
 
-    enc_len = encrypt_descriptor_data(desc, encoded_str, &encrypted_blob);
-    tor_free(encoded_str);
-    /* Get the encoded size plus a NUL terminating byte. */
-    enc_b64_len = base64_encode_size(enc_len, BASE64_ENCODE_MULTILINE) + 1;
-    enc_b64 = tor_malloc_zero(enc_b64_len);
-    /* Base64 the encrypted blob before returning it. */
-    ret_len = base64_encode(enc_b64, enc_b64_len, encrypted_blob, enc_len,
-                            BASE64_ENCODE_MULTILINE);
-    /* Return length doesn't count the NUL byte. */
-    tor_assert(ret_len == (enc_b64_len - 1));
-    tor_free(encrypted_blob);
-    *encrypted_blob_out = enc_b64;
+  return encoded_str;
+}
+
+/* Create the middle layer of the descriptor, which includes the client auth
+ * data and the encrypted inner layer (provided as a base64 string at
+ * <b>layer2_b64_ciphertext</b>). Return a newly-allocated string with the
+ * layer plaintext, or NULL if an error occured. It's the responsibility of the
+ * caller to free the returned string. */
+static char *
+get_outer_encrypted_layer_plaintext(const hs_descriptor_t *desc,
+                                    const char *layer2_b64_ciphertext)
+{
+  char *layer1_str = NULL;
+  smartlist_t *lines = smartlist_new();
+
+  /* XXX: Disclaimer: This function generates only _fake_ client auth
+   * data. Real client auth is not yet implemented, but client auth data MUST
+   * always be present in descriptors. In the future this function will be
+   * refactored to use real client auth data if they exist (#20700). */
+  (void) *desc;
+
+  /* Specify auth type */
+  smartlist_add_asprintf(lines, "%s %s\n", str_desc_auth_type, "x25519");
+
+  {  /* Create fake ephemeral x25519 key */
+    char fake_key_base64[CURVE25519_BASE64_PADDED_LEN + 1];
+    curve25519_keypair_t fake_x25519_keypair;
+    if (curve25519_keypair_generate(&fake_x25519_keypair, 0) < 0) {
+      goto done;
+    }
+    if (curve25519_public_to_base64(fake_key_base64,
+                                    &fake_x25519_keypair.pubkey) < 0) {
+      goto done;
+    }
+    smartlist_add_asprintf(lines, "%s %s\n",
+                           str_desc_auth_key, fake_key_base64);
+    /* No need to memwipe any of these fake keys. They will go unused. */
   }
+
+  {  /* Create fake auth-client lines. */
+    char *auth_client_lines = get_fake_auth_client_lines();
+    tor_assert(auth_client_lines);
+    smartlist_add(lines, auth_client_lines);
+  }
+
+  /* create encrypted section */
+  {
+    smartlist_add_asprintf(lines,
+                           "%s\n"
+                           "-----BEGIN MESSAGE-----\n"
+                           "%s"
+                           "-----END MESSAGE-----",
+                           str_encrypted, layer2_b64_ciphertext);
+  }
+
+  layer1_str = smartlist_join_strings(lines, "", 0, NULL);
+
+ done:
+  SMARTLIST_FOREACH(lines, char *, a, tor_free(a));
+  smartlist_free(lines);
+
+  return layer1_str;
+}
+
+/* Encrypt <b>encoded_str</b> into an encrypted blob and then base64 it before
+ * returning it. <b>desc</b> is provided to derive the encryption
+ * keys. <b>is_superencrypted_layer</b> is set if <b>encoded_str</b> is the
+ * middle (superencrypted) layer of the descriptor. It's the responsibility of
+ * the caller to free the returned string. */
+static char *
+encrypt_desc_data_and_base64(const hs_descriptor_t *desc,
+                             const char *encoded_str,
+                             int is_superencrypted_layer)
+{
+  char *enc_b64;
+  ssize_t enc_b64_len, ret_len, enc_len;
+  char *encrypted_blob = NULL;
+
+  enc_len = encrypt_descriptor_data(desc, encoded_str, &encrypted_blob,
+                                    is_superencrypted_layer);
+  /* Get the encoded size plus a NUL terminating byte. */
+  enc_b64_len = base64_encode_size(enc_len, BASE64_ENCODE_MULTILINE) + 1;
+  enc_b64 = tor_malloc_zero(enc_b64_len);
+  /* Base64 the encrypted blob before returning it. */
+  ret_len = base64_encode(enc_b64, enc_b64_len, encrypted_blob, enc_len,
+                          BASE64_ENCODE_MULTILINE);
+  /* Return length doesn't count the NUL byte. */
+  tor_assert(ret_len == (enc_b64_len - 1));
+  tor_free(encrypted_blob);
+
+  return enc_b64;
+}
+
+/* Generate and encode the superencrypted portion of <b>desc</b>. This also
+ * involves generating the encrypted portion of the descriptor, and performing
+ * the superencryption. A newly allocated NUL-terminated string pointer
+ * containing the encrypted encoded blob is put in encrypted_blob_out. Return 0
+ * on success else a negative value. */
+static int
+encode_superencrypted_data(const hs_descriptor_t *desc,
+                           char **encrypted_blob_out)
+{
+  int ret = -1;
+  char *layer2_str = NULL;
+  char *layer2_b64_ciphertext = NULL;
+  char *layer1_str = NULL;
+  char *layer1_b64_ciphertext = NULL;
+
+  tor_assert(desc);
+  tor_assert(encrypted_blob_out);
+
+  /* Func logic: We first create the inner layer of the descriptor (layer2).
+   * We then encrypt it and use it to create the middle layer of the descriptor
+   * (layer1).  Finally we superencrypt the middle layer and return it to our
+   * caller. */
+
+  /* Create inner descriptor layer */
+  layer2_str = get_inner_encrypted_layer_plaintext(desc);
+  if (!layer2_str) {
+    goto err;
+  }
+
+  /* Encrypt and b64 the inner layer */
+  layer2_b64_ciphertext = encrypt_desc_data_and_base64(desc, layer2_str, 0);
+  if (!layer2_b64_ciphertext) {
+    goto err;
+  }
+
+  /* Now create middle descriptor layer given the inner layer */
+  layer1_str = get_outer_encrypted_layer_plaintext(desc,layer2_b64_ciphertext);
+  if (!layer1_str) {
+    goto err;
+  }
+
+  /* Encrypt and base64 the middle layer */
+  layer1_b64_ciphertext = encrypt_desc_data_and_base64(desc, layer1_str, 1);
+  if (!layer1_b64_ciphertext) {
+    goto err;
+  }
+
   /* Success! */
   ret = 0;
 
  err:
-  SMARTLIST_FOREACH(lines, char *, l, tor_free(l));
-  smartlist_free(lines);
+  tor_free(layer1_str);
+  tor_free(layer2_str);
+  tor_free(layer2_b64_ciphertext);
+
+  *encrypted_blob_out = layer1_b64_ciphertext;
   return ret;
 }
 
@@ -756,7 +1019,7 @@ desc_encode_v3(const hs_descriptor_t *desc,
   /* Build the superencrypted data section. */
   {
     char *enc_b64_blob=NULL;
-    if (encode_encrypted_data(desc, &enc_b64_blob) < 0) {
+    if (encode_superencrypted_data(desc, &enc_b64_blob) < 0) {
       goto err;
     }
     smartlist_add_asprintf(lines,
@@ -795,6 +1058,13 @@ desc_encode_v3(const hs_descriptor_t *desc,
   tor_free(encoded_str);
   encoded_str = smartlist_join_strings(lines, "\n", 1, NULL);
   *encoded_out = encoded_str;
+
+  if (strlen(encoded_str) >= hs_cache_get_max_descriptor_size()) {
+    log_warn(LD_GENERAL, "We just made an HS descriptor that's too big (%d)."
+             "Failing.", (int)strlen(encoded_str));
+    tor_free(encoded_str);
+    goto err;
+  }
 
   /* XXX: Trigger a control port event. */
 
@@ -894,14 +1164,14 @@ decode_auth_type(hs_desc_encrypted_data_t *desc, const char *list)
   tor_assert(desc);
   tor_assert(list);
 
-  desc->auth_types = smartlist_new();
-  smartlist_split_string(desc->auth_types, list, " ", 0, 0);
+  desc->intro_auth_types = smartlist_new();
+  smartlist_split_string(desc->intro_auth_types, list, " ", 0, 0);
 
   /* Validate the types that we at least know about one. */
-  SMARTLIST_FOREACH_BEGIN(desc->auth_types, const char *, auth) {
-    for (int idx = 0; auth_types[idx].identifier; idx++) {
-      if (!strncmp(auth, auth_types[idx].identifier,
-                   strlen(auth_types[idx].identifier))) {
+  SMARTLIST_FOREACH_BEGIN(desc->intro_auth_types, const char *, auth) {
+    for (int idx = 0; intro_auth_types[idx].identifier; idx++) {
+      if (!strncmp(auth, intro_auth_types[idx].identifier,
+                   strlen(intro_auth_types[idx].identifier))) {
         match = 1;
         break;
       }
@@ -971,7 +1241,7 @@ cert_is_valid(tor_cert_t *cert, uint8_t type, const char *log_obj_type)
   }
   /* The following will not only check if the signature matches but also the
    * expiration date and overall validity. */
-  if (tor_cert_checksig(cert, &cert->signing_key, time(NULL)) < 0) {
+  if (tor_cert_checksig(cert, &cert->signing_key, approx_time()) < 0) {
     log_warn(LD_REND, "Invalid signature for %s.", log_obj_type);
     goto err;
   }
@@ -1024,7 +1294,7 @@ STATIC int
 encrypted_data_length_is_valid(size_t len)
 {
   /* Make sure there is enough data for the salt and the mac. The equality is
-   * there to ensure that there is at least one byte of encrypted data. */
+     there to ensure that there is at least one byte of encrypted data. */
   if (len <= HS_DESC_ENCRYPTED_SALT_LEN + DIGEST256_LEN) {
     log_warn(LD_REND, "Length of descriptor's encrypted data is too small. "
                       "Got %lu but minimum value is %d",
@@ -1037,12 +1307,17 @@ encrypted_data_length_is_valid(size_t len)
   return 0;
 }
 
-/* Decrypt the encrypted section of the descriptor using the given descriptor
- * object desc. A newly allocated NUL terminated string is put in
- * decrypted_out. Return the length of decrypted_out on success else 0 is
- * returned and decrypted_out is set to NULL. */
+/** Decrypt an encrypted descriptor layer at <b>encrypted_blob</b> of size
+ *  <b>encrypted_blob_size</b>. Use the descriptor object <b>desc</b> to
+ *  generate the right decryption keys; set <b>decrypted_out</b> to the
+ *  plaintext. If <b>is_superencrypted_layer</b> is set, this is the outter
+ *  encrypted layer of the descriptor. */
 static size_t
-desc_decrypt_data_v3(const hs_descriptor_t *desc, char **decrypted_out)
+decrypt_desc_layer(const hs_descriptor_t *desc,
+                   const uint8_t *encrypted_blob,
+                   size_t encrypted_blob_size,
+                   int is_superencrypted_layer,
+                   char **decrypted_out)
 {
   uint8_t *decrypted = NULL;
   uint8_t secret_key[HS_DESC_ENCRYPTED_KEY_LEN], secret_iv[CIPHER_IV_LEN];
@@ -1052,41 +1327,33 @@ desc_decrypt_data_v3(const hs_descriptor_t *desc, char **decrypted_out)
 
   tor_assert(decrypted_out);
   tor_assert(desc);
-  tor_assert(desc->plaintext_data.encrypted_blob);
+  tor_assert(encrypted_blob);
 
-  /* Construction is as follow: SALT | ENCRYPTED_DATA | MAC */
-  if (!encrypted_data_length_is_valid(
-                desc->plaintext_data.encrypted_blob_size)) {
+  /* Construction is as follow: SALT | ENCRYPTED_DATA | MAC .
+   * Make sure we have enough space for all these things. */
+  if (!encrypted_data_length_is_valid(encrypted_blob_size)) {
     goto err;
   }
 
   /* Start of the blob thus the salt. */
-  salt = desc->plaintext_data.encrypted_blob;
-  /* Next is the encrypted data. */
-  encrypted = desc->plaintext_data.encrypted_blob +
-    HS_DESC_ENCRYPTED_SALT_LEN;
-  encrypted_len = desc->plaintext_data.encrypted_blob_size -
-    (HS_DESC_ENCRYPTED_SALT_LEN + DIGEST256_LEN);
+  salt = encrypted_blob;
 
-  /* At the very end is the MAC. Make sure it's of the right size. */
-  {
-    desc_mac = encrypted + encrypted_len;
-    size_t desc_mac_size = desc->plaintext_data.encrypted_blob_size -
-                           (desc_mac - desc->plaintext_data.encrypted_blob);
-    if (desc_mac_size != DIGEST256_LEN) {
-      log_warn(LD_REND, "Service descriptor MAC length of encrypted data "
-                        "is invalid (%lu, expected %u)",
-               (unsigned long) desc_mac_size, DIGEST256_LEN);
-      goto err;
-    }
-  }
+  /* Next is the encrypted data. */
+  encrypted = encrypted_blob + HS_DESC_ENCRYPTED_SALT_LEN;
+  encrypted_len = encrypted_blob_size -
+    (HS_DESC_ENCRYPTED_SALT_LEN + DIGEST256_LEN);
+  tor_assert(encrypted_len > 0); /* guaranteed by the check above */
+
+  /* And last comes the MAC. */
+  desc_mac = encrypted_blob + encrypted_blob_size - DIGEST256_LEN;
 
   /* KDF construction resulting in a key from which the secret key, IV and MAC
    * key are extracted which is what we need for the decryption. */
   build_secret_key_iv_mac(desc, salt, HS_DESC_ENCRYPTED_SALT_LEN,
                           secret_key, sizeof(secret_key),
                           secret_iv, sizeof(secret_iv),
-                          mac_key, sizeof(mac_key));
+                          mac_key, sizeof(mac_key),
+                          is_superencrypted_layer);
 
   /* Build MAC. */
   build_mac(mac_key, sizeof(mac_key), salt, HS_DESC_ENCRYPTED_SALT_LEN,
@@ -1116,7 +1383,7 @@ desc_decrypt_data_v3(const hs_descriptor_t *desc, char **decrypted_out)
   }
 
   {
-    /* Adjust length to remove NULL padding bytes */
+    /* Adjust length to remove NUL padding bytes */
     uint8_t *end = memchr(decrypted, 0, encrypted_len);
     result_len = encrypted_len;
     if (end) {
@@ -1142,6 +1409,222 @@ desc_decrypt_data_v3(const hs_descriptor_t *desc, char **decrypted_out)
   return result_len;
 }
 
+/* Basic validation that the superencrypted client auth portion of the
+ * descriptor is well-formed and recognized. Return True if so, otherwise
+ * return False. */
+static int
+superencrypted_auth_data_is_valid(smartlist_t *tokens)
+{
+  /* XXX: This is just basic validation for now. When we implement client auth,
+     we can refactor this function so that it actually parses and saves the
+     data. */
+
+  { /* verify desc auth type */
+    const directory_token_t *tok;
+    tok = find_by_keyword(tokens, R3_DESC_AUTH_TYPE);
+    tor_assert(tok->n_args >= 1);
+    if (strcmp(tok->args[0], "x25519")) {
+      log_warn(LD_DIR, "Unrecognized desc auth type");
+      return 0;
+    }
+  }
+
+  { /* verify desc auth key */
+    const directory_token_t *tok;
+    curve25519_public_key_t k;
+    tok = find_by_keyword(tokens, R3_DESC_AUTH_KEY);
+    tor_assert(tok->n_args >= 1);
+    if (curve25519_public_from_base64(&k, tok->args[0]) < 0) {
+      log_warn(LD_DIR, "Bogus desc auth key in HS desc");
+      return 0;
+    }
+  }
+
+  /* verify desc auth client items */
+  SMARTLIST_FOREACH_BEGIN(tokens, const directory_token_t *, tok) {
+    if (tok->tp == R3_DESC_AUTH_CLIENT) {
+      tor_assert(tok->n_args >= 3);
+    }
+  } SMARTLIST_FOREACH_END(tok);
+
+  return 1;
+}
+
+/* Parse <b>message</b>, the plaintext of the superencrypted portion of an HS
+ * descriptor. Set <b>encrypted_out</b> to the encrypted blob, and return its
+ * size */
+STATIC size_t
+decode_superencrypted(const char *message, size_t message_len,
+                     uint8_t **encrypted_out)
+{
+  int retval = 0;
+  memarea_t *area = NULL;
+  smartlist_t *tokens = NULL;
+
+  area = memarea_new();
+  tokens = smartlist_new();
+  if (tokenize_string(area, message, message + message_len, tokens,
+                      hs_desc_superencrypted_v3_token_table, 0) < 0) {
+    log_warn(LD_REND, "Superencrypted portion is not parseable");
+    goto err;
+  }
+
+  /* Do some rudimentary validation of the authentication data */
+  if (!superencrypted_auth_data_is_valid(tokens)) {
+    log_warn(LD_REND, "Invalid auth data");
+    goto err;
+  }
+
+  /* Extract the encrypted data section. */
+  {
+    const directory_token_t *tok;
+    tok = find_by_keyword(tokens, R3_ENCRYPTED);
+    tor_assert(tok->object_body);
+    if (strcmp(tok->object_type, "MESSAGE") != 0) {
+      log_warn(LD_REND, "Desc superencrypted data section is invalid");
+      goto err;
+    }
+    /* Make sure the length of the encrypted blob is valid. */
+    if (!encrypted_data_length_is_valid(tok->object_size)) {
+      goto err;
+    }
+
+    /* Copy the encrypted blob to the descriptor object so we can handle it
+     * latter if needed. */
+    tor_assert(tok->object_size <= INT_MAX);
+    *encrypted_out = tor_memdup(tok->object_body, tok->object_size);
+    retval = (int) tok->object_size;
+  }
+
+ err:
+  SMARTLIST_FOREACH(tokens, directory_token_t *, t, token_clear(t));
+  smartlist_free(tokens);
+  if (area) {
+    memarea_drop_all(area);
+  }
+
+  return retval;
+}
+
+/* Decrypt both the superencrypted and the encrypted section of the descriptor
+ * using the given descriptor object <b>desc</b>. A newly allocated NUL
+ * terminated string is put in decrypted_out which contains the inner encrypted
+ * layer of the descriptor. Return the length of decrypted_out on success else
+ * 0 is returned and decrypted_out is set to NULL. */
+static size_t
+desc_decrypt_all(const hs_descriptor_t *desc, char **decrypted_out)
+{
+  size_t  decrypted_len = 0;
+  size_t encrypted_len = 0;
+  size_t superencrypted_len = 0;
+  char *superencrypted_plaintext = NULL;
+  uint8_t *encrypted_blob = NULL;
+
+  /** Function logic: This function takes us from the descriptor header to the
+   *  inner encrypted layer, by decrypting and decoding the middle descriptor
+   *  layer. In the end we return the contents of the inner encrypted layer to
+   *  our caller. */
+
+  /* 1. Decrypt middle layer of descriptor */
+  superencrypted_len = decrypt_desc_layer(desc,
+                                 desc->plaintext_data.superencrypted_blob,
+                                 desc->plaintext_data.superencrypted_blob_size,
+                                 1,
+                                 &superencrypted_plaintext);
+  if (!superencrypted_len) {
+    log_warn(LD_REND, "Decrypting superencrypted desc failed.");
+    goto err;
+  }
+  tor_assert(superencrypted_plaintext);
+
+  /* 2. Parse "superencrypted" */
+  encrypted_len = decode_superencrypted(superencrypted_plaintext,
+                                        superencrypted_len,
+                                        &encrypted_blob);
+  if (!encrypted_len) {
+    log_warn(LD_REND, "Decrypting encrypted desc failed.");
+    goto err;
+  }
+  tor_assert(encrypted_blob);
+
+  /* 3. Decrypt "encrypted" and set decrypted_out */
+  char *decrypted_desc;
+  decrypted_len = decrypt_desc_layer(desc,
+                                     encrypted_blob, encrypted_len,
+                                     0, &decrypted_desc);
+  if (!decrypted_len) {
+    log_warn(LD_REND, "Decrypting encrypted desc failed.");
+    goto err;
+  }
+  tor_assert(decrypted_desc);
+
+  *decrypted_out = decrypted_desc;
+
+ err:
+  tor_free(superencrypted_plaintext);
+  tor_free(encrypted_blob);
+
+  return decrypted_len;
+}
+
+/* Given the token tok for an intro point legacy key, the list of tokens, the
+ * introduction point ip being decoded and the descriptor desc from which it
+ * comes from, decode the legacy key and set the intro point object. Return 0
+ * on success else -1 on failure. */
+static int
+decode_intro_legacy_key(const directory_token_t *tok,
+                        smartlist_t *tokens,
+                        hs_desc_intro_point_t *ip,
+                        const hs_descriptor_t *desc)
+{
+  tor_assert(tok);
+  tor_assert(tokens);
+  tor_assert(ip);
+  tor_assert(desc);
+
+  if (!crypto_pk_public_exponent_ok(tok->key)) {
+    log_warn(LD_REND, "Introduction point legacy key is invalid");
+    goto err;
+  }
+  ip->legacy.key = crypto_pk_dup_key(tok->key);
+  /* Extract the legacy cross certification cert which MUST be present if we
+   * have a legacy key. */
+  tok = find_opt_by_keyword(tokens, R3_INTRO_LEGACY_KEY_CERT);
+  if (!tok) {
+    log_warn(LD_REND, "Introduction point legacy key cert is missing");
+    goto err;
+  }
+  tor_assert(tok->object_body);
+  if (strcmp(tok->object_type, "CROSSCERT")) {
+    /* Info level because this might be an unknown field that we should
+     * ignore. */
+    log_info(LD_REND, "Introduction point legacy encryption key "
+                      "cross-certification has an unknown format.");
+    goto err;
+  }
+  /* Keep a copy of the certificate. */
+  ip->legacy.cert.encoded = tor_memdup(tok->object_body, tok->object_size);
+  ip->legacy.cert.len = tok->object_size;
+  /* The check on the expiration date is for the entire lifetime of a
+   * certificate which is 24 hours. However, a descriptor has a maximum
+   * lifetime of 12 hours meaning we have a 12h difference between the two
+   * which ultimately accomodate the clock skewed client. */
+  if (rsa_ed25519_crosscert_check(ip->legacy.cert.encoded,
+                                  ip->legacy.cert.len, ip->legacy.key,
+                                  &desc->plaintext_data.signing_pubkey,
+                                  approx_time() - HS_DESC_CERT_LIFETIME)) {
+    log_warn(LD_REND, "Unable to check cross-certification on the "
+                      "introduction point legacy encryption key.");
+    ip->cross_certified = 0;
+    goto err;
+  }
+
+  /* Success. */
+  return 0;
+ err:
+  return -1;
+}
+
 /* Given the start of a section and the end of it, decode a single
  * introduction point from that section. Return a newly allocated introduction
  * point object containing the decoded data. Return NULL if the section can't
@@ -1152,7 +1635,6 @@ decode_introduction_point(const hs_descriptor_t *desc, const char *start)
   hs_desc_intro_point_t *ip = NULL;
   memarea_t *area = NULL;
   smartlist_t *tokens = NULL;
-  tor_cert_t *cross_cert = NULL;
   const directory_token_t *tok;
 
   tor_assert(desc);
@@ -1186,84 +1668,67 @@ decode_introduction_point(const hs_descriptor_t *desc, const char *start)
     log_warn(LD_REND, "Unexpected object type for introduction auth key");
     goto err;
   }
-
   /* Parse cert and do some validation. */
   if (cert_parse_and_validate(&ip->auth_key_cert, tok->object_body,
                               tok->object_size, CERT_TYPE_AUTH_HS_IP_KEY,
                               "introduction point auth-key") < 0) {
     goto err;
   }
+  /* Validate authentication certificate with descriptor signing key. */
+  if (tor_cert_checksig(ip->auth_key_cert,
+                        &desc->plaintext_data.signing_pubkey, 0) < 0) {
+    log_warn(LD_REND, "Invalid authentication key signature");
+    goto err;
+  }
 
-  /* Exactly one "enc-key" ... */
+  /* Exactly one "enc-key" SP "ntor" SP key NL */
   tok = find_by_keyword(tokens, R3_INTRO_ENC_KEY);
   if (!strcmp(tok->args[0], "ntor")) {
-    /* "enc-key" SP "ntor" SP key NL */
-    if (tok->n_args != 2 || tok->object_body) {
-      log_warn(LD_REND, "Introduction point ntor encryption key is invalid");
-      goto err;
-    }
+    /* This field is using GE(2) so for possible forward compatibility, we
+     * accept more fields but must be at least 2. */
+    tor_assert(tok->n_args >= 2);
 
-    if (curve25519_public_from_base64(&ip->enc_key.curve25519.pubkey,
-                                      tok->args[1]) < 0) {
-      log_warn(LD_REND, "Introduction point ntor encryption key is invalid");
+    if (curve25519_public_from_base64(&ip->enc_key, tok->args[1]) < 0) {
+      log_warn(LD_REND, "Introduction point ntor enc-key is invalid");
       goto err;
     }
-    ip->enc_key_type = HS_DESC_KEY_TYPE_CURVE25519;
-  } else if (!strcmp(tok->args[0], "legacy")) {
-    /* "enc-key" SP "legacy" NL key NL */
-    if (!tok->key) {
-      log_warn(LD_REND, "Introduction point legacy encryption key is "
-               "invalid");
-      goto err;
-    }
-    ip->enc_key.legacy = crypto_pk_dup_key(tok->key);
-    ip->enc_key_type = HS_DESC_KEY_TYPE_LEGACY;
   } else {
     /* Unknown key type so we can't use that introduction point. */
     log_warn(LD_REND, "Introduction point encryption key is unrecognized.");
     goto err;
   }
 
-  /* "enc-key-certification" NL certificate NL */
-  tok = find_by_keyword(tokens, R3_INTRO_ENC_KEY_CERTIFICATION);
+  /* Exactly once "enc-key-cert" NL certificate NL */
+  tok = find_by_keyword(tokens, R3_INTRO_ENC_KEY_CERT);
   tor_assert(tok->object_body);
   /* Do the cross certification. */
-  switch (ip->enc_key_type) {
-  case HS_DESC_KEY_TYPE_CURVE25519:
-  {
-    if (strcmp(tok->object_type, "ED25519 CERT")) {
+  if (strcmp(tok->object_type, "ED25519 CERT")) {
       log_warn(LD_REND, "Introduction point ntor encryption key "
                         "cross-certification has an unknown format.");
       goto err;
-    }
-    if (cert_parse_and_validate(&cross_cert, tok->object_body,
-                       tok->object_size, CERT_TYPE_CROSS_HS_IP_KEYS,
-                       "introduction point enc-key-certification") < 0) {
-      goto err;
-    }
-    break;
   }
-  case HS_DESC_KEY_TYPE_LEGACY:
-    if (strcmp(tok->object_type, "CROSSCERT")) {
-      log_warn(LD_REND, "Introduction point legacy encryption key "
-                        "cross-certification has an unknown format.");
-      goto err;
-    }
-    if (rsa_ed25519_crosscert_check((const uint8_t *) tok->object_body,
-          tok->object_size, ip->enc_key.legacy,
-          &desc->plaintext_data.signing_key_cert->signed_key,
-          approx_time()-86400)) {
-      log_warn(LD_REND, "Unable to check cross-certification on the "
-                        "introduction point legacy encryption key.");
-      goto err;
-    }
-    break;
-  default:
-    tor_assert(0);
-    break;
+  if (cert_parse_and_validate(&ip->enc_key_cert, tok->object_body,
+                              tok->object_size, CERT_TYPE_CROSS_HS_IP_KEYS,
+                              "introduction point enc-key-cert") < 0) {
+    goto err;
+  }
+  if (tor_cert_checksig(ip->enc_key_cert,
+                        &desc->plaintext_data.signing_pubkey, 0) < 0) {
+    log_warn(LD_REND, "Invalid encryption key signature");
+    goto err;
   }
   /* It is successfully cross certified. Flag the object. */
   ip->cross_certified = 1;
+
+  /* Do we have a "legacy-key" SP key NL ?*/
+  tok = find_opt_by_keyword(tokens, R3_INTRO_LEGACY_KEY);
+  if (tok) {
+    if (decode_intro_legacy_key(tok, tokens, ip, desc) < 0) {
+      goto err;
+    }
+  }
+
+  /* Introduction point has been parsed successfully. */
   goto done;
 
  err:
@@ -1271,10 +1736,11 @@ decode_introduction_point(const hs_descriptor_t *desc, const char *start)
   ip = NULL;
 
  done:
-  tor_cert_free(cross_cert);
   SMARTLIST_FOREACH(tokens, directory_token_t *, t, token_clear(t));
   smartlist_free(tokens);
-  memarea_drop_all(area);
+  if (area) {
+    memarea_drop_all(area);
+  }
 
   return ip;
 }
@@ -1386,7 +1852,8 @@ desc_sig_is_valid(const char *b64_sig,
   sig_start = tor_memstr(encoded_desc, encoded_len, "\n" str_signature);
   /* Getting here means the token parsing worked for the signature so if we
    * can't find the start of the signature, we have a code flow issue. */
-  if (BUG(!sig_start)) {
+  if (!sig_start) {
+    log_warn(LD_GENERAL, "Malformed signature line. Rejecting.");
     goto err;
   }
   /* Skip newline, it has to go in the signature check. */
@@ -1493,8 +1960,8 @@ desc_decode_plaintext_v3(smartlist_t *tokens,
 
   /* Copy the encrypted blob to the descriptor object so we can handle it
    * latter if needed. */
-  desc->encrypted_blob = tor_memdup(tok->object_body, tok->object_size);
-  desc->encrypted_blob_size = tok->object_size;
+  desc->superencrypted_blob = tor_memdup(tok->object_body, tok->object_size);
+  desc->superencrypted_blob_size = tok->object_size;
 
   /* Extract signature and verify it. */
   tok = find_by_keyword(tokens, R3_SIGNATURE);
@@ -1528,10 +1995,9 @@ desc_decode_encrypted_v3(const hs_descriptor_t *desc,
   tor_assert(desc);
   tor_assert(desc_encrypted_out);
 
-  /* Decrypt the encrypted data that is located in the plaintext section in
-   * the descriptor as a blob of bytes. The following functions will use the
-   * keys found in the same section. */
-  message_len = desc_decrypt_data_v3(desc, &message);
+  /* Decrypt the superencrypted data that is located in the plaintext section
+   * in the descriptor as a blob of bytes. */
+  message_len = desc_decrypt_all(desc, &message);
   if (!message_len) {
     log_warn(LD_REND, "Service descriptor decryption failed.");
     goto err;
@@ -1557,7 +2023,7 @@ desc_decode_encrypted_v3(const hs_descriptor_t *desc,
   }
 
   /* Authentication type. It's optional but only once. */
-  tok = find_opt_by_keyword(tokens, R3_AUTHENTICATION_REQUIRED);
+  tok = find_opt_by_keyword(tokens, R3_INTRO_AUTH_REQUIRED);
   if (tok) {
     if (!decode_auth_type(desc_encrypted_out, tok->args[0])) {
       log_warn(LD_REND, "Service descriptor authentication type has "
@@ -1639,7 +2105,7 @@ hs_desc_decode_encrypted(const hs_descriptor_t *desc,
   /* Calling this function without an encrypted blob to parse is a code flow
    * error. The plaintext parsing should never succeed in the first place
    * without an encrypted section. */
-  tor_assert(desc->plaintext_data.encrypted_blob);
+  tor_assert(desc->plaintext_data.superencrypted_blob);
   /* Let's make sure we have a supported version as well. By correctly parsing
    * the plaintext, this should not fail. */
   if (BUG(!hs_desc_is_supported_version(version))) {
@@ -1891,6 +2357,6 @@ hs_desc_plaintext_obj_size(const hs_desc_plaintext_data_t *data)
 {
   tor_assert(data);
   return (sizeof(*data) + sizeof(*data->signing_key_cert) +
-          data->encrypted_blob_size);
+          data->superencrypted_blob_size);
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (c) 2010-2016, The Tor Project, Inc. */
+/* Copyright (c) 2010-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
@@ -13,12 +13,6 @@
 #include "torcert.h"
 
 #include "test.h"
-
-DISABLE_GCC_WARNING(redundant-decls)
-#include <openssl/rsa.h>
-#include <openssl/bn.h>
-#include <openssl/pem.h>
-ENABLE_GCC_WARNING(redundant-decls)
 
 #ifdef _WIN32
 /* For mkdir() */

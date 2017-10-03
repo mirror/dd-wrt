@@ -1,5 +1,5 @@
 /* Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -265,6 +265,11 @@ rend_client_send_introduction(origin_circuit_t *introcirc,
     klen = crypto_pk_asn1_encode(extend_info->onion_key,
                                  tmp+v3_shift+7+DIGEST_LEN+2,
                                  sizeof(tmp)-(v3_shift+7+DIGEST_LEN+2));
+    if (klen < 0) {
+      log_warn(LD_BUG,"Internal error: can't encode public key.");
+      status = -2;
+      goto perm_err;
+    }
     set_uint16(tmp+v3_shift+7+DIGEST_LEN, htons(klen));
     memcpy(tmp+v3_shift+7+DIGEST_LEN+2+klen, rendcirc->rend_data->rend_cookie,
            REND_COOKIE_LEN);
@@ -724,6 +729,9 @@ directory_get_from_hs_dir(const char *desc_id,
     hs_dir = pick_hsdir(desc_id, desc_id_base32);
     if (!hs_dir) {
       /* No suitable hs dir can be found, stop right now. */
+      control_event_hs_descriptor_failed(rend_query, NULL, "QUERY_NO_HSDIR");
+      control_event_hs_descriptor_content(rend_data_get_address(rend_query),
+                                          desc_id_base32, NULL, NULL);
       return 0;
     }
   }
@@ -744,6 +752,9 @@ directory_get_from_hs_dir(const char *desc_id,
                       REND_DESC_COOKIE_LEN,
                       0)<0) {
       log_warn(LD_BUG, "Could not base64-encode descriptor cookie.");
+      control_event_hs_descriptor_failed(rend_query, hsdir_fp, "BAD_DESC");
+      control_event_hs_descriptor_content(rend_data_get_address(rend_query),
+                                          desc_id_base32, hsdir_fp, NULL);
       return 0;
     }
     /* Remove == signs. */
@@ -756,13 +767,15 @@ directory_get_from_hs_dir(const char *desc_id,
   /* Send fetch request. (Pass query and possibly descriptor cookie so that
    * they can be written to the directory connection and be referred to when
    * the response arrives. */
-  directory_initiate_command_routerstatus_rend(hs_dir,
-                                          DIR_PURPOSE_FETCH_RENDDESC_V2,
-                                          ROUTER_PURPOSE_GENERAL,
-                                          how_to_fetch,
-                                          desc_id_base32,
-                                          NULL, 0, 0,
-                                          rend_query, NULL);
+  directory_request_t *req =
+    directory_request_new(DIR_PURPOSE_FETCH_RENDDESC_V2);
+  directory_request_set_routerstatus(req, hs_dir);
+  directory_request_set_indirection(req, how_to_fetch);
+  directory_request_set_resource(req, desc_id_base32);
+  directory_request_set_rend_query(req, rend_query);
+  directory_initiate_request(req);
+  directory_request_free(req);
+
   log_info(LD_REND, "Sending fetch request for v2 descriptor for "
                     "service '%s' with descriptor ID '%s', auth type %d, "
                     "and descriptor cookie '%s' to hidden service "

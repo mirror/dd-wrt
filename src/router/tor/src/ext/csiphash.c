@@ -35,41 +35,7 @@
 #include "util.h"
 /* for memcpy */
 #include <string.h>
-
-#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && \
-	__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#  define _le64toh(x) ((uint64_t)(x))
-#elif defined(_WIN32)
-/* Windows is always little endian, unless you're on xbox360
-   http://msdn.microsoft.com/en-us/library/b0084kay(v=vs.80).aspx */
-#  define _le64toh(x) ((uint64_t)(x))
-#elif defined(__APPLE__)
-#  include <libkern/OSByteOrder.h>
-#  define _le64toh(x) OSSwapLittleToHostInt64(x)
-#elif defined(sun) || defined(__sun)
-#  include <sys/byteorder.h>
-#  define _le64toh(x) LE_64(x)
-
-#else
-
-/* See: http://sourceforge.net/p/predef/wiki/Endianness/ */
-#  if defined(__FreeBSD__) || defined(__NetBSD__) || defined(OpenBSD)
-#    include <sys/endian.h>
-#  else
-#    include <endian.h>
-#  endif
-#  if defined(__BYTE_ORDER) && defined(__LITTLE_ENDIAN) && \
-	__BYTE_ORDER == __LITTLE_ENDIAN
-#    define _le64toh(x) ((uint64_t)(x))
-#  else
-#    if defined(OpenBSD)
-#      define _le64toh(x) letoh64(x)
-#    else
-#      define _le64toh(x) le64toh(x)
-#    endif
-#  endif
-
-#endif
+#include "byteorder.h"
 
 #define ROTATE(x, b) (uint64_t)( ((x) << (b)) | ( (x) >> (64 - (b))) )
 
@@ -122,13 +88,13 @@ uint64_t siphash24(const void *src, unsigned long src_sz, const struct sipkey *k
 	}
 
 	switch (src_sz - blocks) {
-		case 7: last7 |= (uint64_t)m[i + 6] << 48;
-		case 6: last7 |= (uint64_t)m[i + 5] << 40;
-		case 5: last7 |= (uint64_t)m[i + 4] << 32;
-		case 4: last7 |= (uint64_t)m[i + 3] << 24;
-		case 3: last7 |= (uint64_t)m[i + 2] << 16;
-		case 2: last7 |= (uint64_t)m[i + 1] <<  8;
-		case 1: last7 |= (uint64_t)m[i + 0]      ;
+		case 7: last7 |= (uint64_t)m[i + 6] << 48; /* Falls through. */
+		case 6: last7 |= (uint64_t)m[i + 5] << 40; /* Falls through. */
+		case 5:	last7 |= (uint64_t)m[i + 4] << 32; /* Falls through. */
+		case 4: last7 |= (uint64_t)m[i + 3] << 24; /* Falls through. */
+		case 3:	last7 |= (uint64_t)m[i + 2] << 16; /* Falls through. */
+		case 2:	last7 |= (uint64_t)m[i + 1] <<  8; /* Falls through. */
+		case 1: last7 |= (uint64_t)m[i + 0]      ; /* Falls through. */
 		case 0:
 		default:;
 	}

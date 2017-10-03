@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -92,6 +92,9 @@ STATIC void init_connection_lists(void);
 STATIC void close_closeable_connections(void);
 STATIC void initialize_periodic_events(void);
 STATIC void teardown_periodic_events(void);
+#ifdef TOR_UNIT_TESTS
+extern smartlist_t *connection_array;
+#endif
 #endif
 
 #endif

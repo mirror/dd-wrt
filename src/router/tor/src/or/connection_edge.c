@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -29,7 +29,7 @@
  *   <li>DNS lookup streams, created on the exit side in response to
  *     a RELAY_RESOLVE cell from a client.
  *   <li>Tunneled directory streams, created on the directory cache side
- *     in response to a RELAY_BEGINDIR cell.  These streams attach directly
+ *     in response to a RELAY_BEGIN_DIR cell.  These streams attach directly
  *     to a dir_connection_t object without ever using TCP.
  *   </ul>
  *
@@ -261,6 +261,7 @@ connection_edge_process_inbuf(edge_connection_t *conn, int package_partial)
       }
       /* Fall through if the connection is on a circuit without optimistic
        * data support. */
+      /* Falls through. */
     case EXIT_CONN_STATE_CONNECTING:
     case AP_CONN_STATE_RENDDESC_WAIT:
     case AP_CONN_STATE_CIRCUIT_WAIT:
@@ -1762,7 +1763,7 @@ connection_ap_handshake_rewrite_and_attach(entry_connection_t *conn,
         conn->entry_cfg.ipv6_traffic = 0;
 
       /* Still handling CONNECT. Now, check for exit enclaves.  (Which we
-       * don't do on BEGINDIR, or when there is a chosen exit.)
+       * don't do on BEGIN_DIR, or when there is a chosen exit.)
        *
        * TODO: Should we remove this?  Exit enclaves are nutty and don't
        * work very well
@@ -2527,7 +2528,7 @@ connection_ap_handshake_send_begin(entry_connection_t *ap_conn)
     /* Sensitive directory connections must have an anonymous path length.
      * Otherwise, directory connections are typically one-hop.
      * This matches the earlier check for directory connection path anonymity
-     * in directory_initiate_command_rend(). */
+     * in directory_initiate_request(). */
     if (purpose_needs_anonymity(linked_dir_conn_base->purpose,
                     TO_DIR_CONN(linked_dir_conn_base)->router_purpose,
                     TO_DIR_CONN(linked_dir_conn_base)->requested_resource)) {
@@ -3001,7 +3002,7 @@ connection_ap_handshake_socks_reply(entry_connection_t *conn, char *reply,
   return;
 }
 
-/** Read a RELAY_BEGIN or RELAY_BEGINDIR cell from <b>cell</b>, decode it, and
+/** Read a RELAY_BEGIN or RELAY_BEGIN_DIR cell from <b>cell</b>, decode it, and
  * place the result in <b>bcell</b>.  On success return 0; on failure return
  * <0 and set *<b>end_reason_out</b> to the end reason we should send back to
  * the client.
@@ -3140,15 +3141,13 @@ connection_exit_begin_conn(cell_t *cell, circuit_t *circ)
     port = bcell.port;
 
     if (or_circ && or_circ->p_chan) {
-      if (!options->AllowSingleHopExits &&
-           (or_circ->is_first_hop ||
-            (!connection_or_digest_is_known_relay(
+      if ((or_circ->is_first_hop ||
+           (!connection_or_digest_is_known_relay(
                 or_circ->p_chan->identity_digest) &&
           should_refuse_unknown_exits(options)))) {
-        /* Don't let clients use us as a single-hop proxy, unless the user
-         * has explicitly allowed that in the config. It attracts attackers
-         * and users who'd be better off with, well, single-hop proxies.
-         */
+        /* Don't let clients use us as a single-hop proxy. It attracts
+         * attackers and users who'd be better off with, well, single-hop
+         * proxies. */
         log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
                "Attempt by %s to open a stream %s. Closing.",
                safe_str(channel_get_canonical_remote_descr(or_circ->p_chan)),

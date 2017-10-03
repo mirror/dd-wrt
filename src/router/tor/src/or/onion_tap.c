@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -159,7 +159,7 @@ onion_skin_TAP_server_handshake(
      * big. That should be impossible. */
     log_info(LD_GENERAL, "crypto_dh_get_public failed.");
     goto err;
-    /* LCOV_EXCP_STOP */
+    /* LCOV_EXCL_STOP */
   }
 
   key_material_len = DIGEST_LEN+key_out_len;

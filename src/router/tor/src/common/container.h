@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2004, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #ifndef TOR_CONTAINER_H
@@ -224,6 +224,7 @@ char *smartlist_join_strings2(smartlist_t *sl, const char *join,
 
 #define SMARTLIST_FOREACH_END(var)              \
     var = NULL;                                 \
+    (void) var ## _sl_idx;                      \
   } STMT_END
 
 /**

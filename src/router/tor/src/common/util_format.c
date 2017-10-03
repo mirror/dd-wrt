@@ -1,7 +1,7 @@
 /* Copyright (c) 2001, Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -22,13 +22,16 @@
 #include <stdlib.h>
 
 /* Return the base32 encoded size in bytes using the source length srclen.
- * The NUL terminated byte is added as well since every base32 encoding
- * requires enough space for it. */
+ *
+ * (WATCH OUT: This API counts the terminating NUL byte, but
+ * base64_encode_size does not.)
+ */
 size_t
 base32_encoded_size(size_t srclen)
 {
   size_t enclen;
-  enclen = CEIL_DIV(srclen*8, 5) + 1;
+  tor_assert(srclen < SIZE_T_CEILING / 8);
+  enclen = BASE32_NOPAD_BUFSIZE(srclen);
   tor_assert(enclen < INT_MAX && enclen > srclen);
   return enclen;
 }
@@ -41,7 +44,6 @@ base32_encode(char *dest, size_t destlen, const char *src, size_t srclen)
   size_t nbits = srclen * 8;
   size_t bit;
 
-  tor_assert(srclen < SIZE_T_CEILING/8);
   /* We need enough space for the encoded data and the extra NUL byte. */
   tor_assert(base32_encoded_size(srclen) <= destlen);
   tor_assert(destlen < SIZE_T_CEILING);
@@ -134,6 +136,9 @@ base32_decode(char *dest, size_t destlen, const char *src, size_t srclen)
 /** Return the Base64 encoded size of <b>srclen</b> bytes of data in
  * bytes.
  *
+ * (WATCH OUT: This API <em>does not</em> count the terminating NUL byte,
+ * but base32_encoded_size does.)
+ *
  * If <b>flags</b>&amp;BASE64_ENCODE_MULTILINE is true, return the size
  * of the encoded output as multiline output (64 character, `\n' terminated
  * lines).
@@ -142,19 +147,16 @@ size_t
 base64_encode_size(size_t srclen, int flags)
 {
   size_t enclen;
+
+  /* Use INT_MAX for overflow checking because base64_encode() returns int. */
   tor_assert(srclen < INT_MAX);
+  tor_assert(CEIL_DIV(srclen, 3) < INT_MAX / 4);
 
-  if (srclen == 0)
-    return 0;
+  enclen = BASE64_LEN(srclen);
+  if (flags & BASE64_ENCODE_MULTILINE)
+    enclen += CEIL_DIV(enclen, BASE64_OPENSSL_LINELEN);
 
-  enclen = ((srclen - 1) / 3) * 4 + 4;
-  if (flags & BASE64_ENCODE_MULTILINE) {
-    size_t remainder = enclen % BASE64_OPENSSL_LINELEN;
-    enclen += enclen / BASE64_OPENSSL_LINELEN;
-    if (remainder)
-      enclen++;
-  }
-  tor_assert(enclen < INT_MAX && enclen > srclen);
+  tor_assert(enclen < INT_MAX && (enclen == 0 || enclen > srclen));
   return enclen;
 }
 
@@ -311,39 +313,6 @@ base64_encode_nopad(char *dest, size_t destlen,
   return (int)(out - dest);
 }
 
-/** As base64_decode, but do not require any padding on the input */
-int
-base64_decode_nopad(uint8_t *dest, size_t destlen,
-                    const char *src, size_t srclen)
-{
-  if (srclen > SIZE_T_CEILING - 4)
-    return -1;
-  char *buf = tor_malloc(srclen + 4);
-  memcpy(buf, src, srclen+1);
-  size_t buflen;
-  switch (srclen % 4)
-    {
-    case 0:
-    default:
-      buflen = srclen;
-      break;
-    case 1:
-      tor_free(buf);
-      return -1;
-    case 2:
-      memcpy(buf+srclen, "==", 3);
-      buflen = srclen + 2;
-      break;
-    case 3:
-      memcpy(buf+srclen, "=", 2);
-      buflen = srclen + 1;
-      break;
-  }
-  int n = base64_decode((char*)dest, destlen, buf, buflen);
-  tor_free(buf);
-  return n;
-}
-
 #undef BASE64_OPENSSL_LINELEN
 
 /** @{ */
@@ -393,15 +362,9 @@ base64_decode(char *dest, size_t destlen, const char *src, size_t srclen)
   const char *eos = src+srclen;
   uint32_t n=0;
   int n_idx=0;
-  char *dest_orig = dest;
+  size_t di = 0;
 
-  /* Max number of bits == srclen*6.
-   * Number of bytes required to hold all bits == (srclen*6)/8.
-   * Yes, we want to round down: anything that hangs over the end of a
-   * byte is padding. */
-  if (!size_mul_check(srclen, 3) || destlen < (srclen*3)/4)
-    return -1;
-  if (destlen > SIZE_T_CEILING)
+  if (destlen > INT_MAX)
     return -1;
 
   /* Make sure we leave no uninitialized data in the destination buffer. */
@@ -429,9 +392,11 @@ base64_decode(char *dest, size_t destlen, const char *src, size_t srclen)
         n = (n<<6) | v;
         if ((++n_idx) == 4) {
           /* We've accumulated 24 bits in n. Flush them. */
-          *dest++ = (n>>16);
-          *dest++ = (n>>8) & 0xff;
-          *dest++ = (n) & 0xff;
+          if (destlen < 3 || di > destlen - 3)
+            return -1;
+          dest[di++] = (n>>16);
+          dest[di++] = (n>>8) & 0xff;
+          dest[di++] = (n) & 0xff;
           n_idx = 0;
           n = 0;
         }
@@ -449,18 +414,21 @@ base64_decode(char *dest, size_t destlen, const char *src, size_t srclen)
       return -1;
     case 2:
       /* 12 leftover bits: The last 4 are padding and the first 8 are data. */
-      *dest++ = n >> 4;
+      if (destlen < 1 || di > destlen - 1)
+        return -1;
+      dest[di++] = n >> 4;
       break;
     case 3:
       /* 18 leftover bits: The last 2 are padding and the first 16 are data. */
-      *dest++ = n >> 10;
-      *dest++ = n >> 2;
+      if (destlen < 2 || di > destlen - 2)
+        return -1;
+      dest[di++] = n >> 10;
+      dest[di++] = n >> 2;
   }
 
-  tor_assert((dest-dest_orig) <= (ssize_t)destlen);
-  tor_assert((dest-dest_orig) <= INT_MAX);
+  tor_assert(di <= destlen);
 
-  return (int)(dest-dest_orig);
+  return (int)di;
 }
 #undef X
 #undef SP
@@ -476,7 +444,8 @@ base16_encode(char *dest, size_t destlen, const char *src, size_t srclen)
   const char *end;
   char *cp;
 
-  tor_assert(destlen >= srclen*2+1);
+  tor_assert(srclen < SIZE_T_CEILING / 2 - 1);
+  tor_assert(destlen >= BASE16_BUFSIZE(srclen));
   tor_assert(destlen < SIZE_T_CEILING);
 
   /* Make sure we leave no uninitialized data in the destination buffer. */

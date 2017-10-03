@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2004, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -1732,19 +1732,24 @@ set_max_file_descriptors(rlim_t limit, int *max_out)
   if (setrlimit(RLIMIT_NOFILE, &rlim) != 0) {
     int bad = 1;
 #ifdef OPEN_MAX
-    if (errno == EINVAL && OPEN_MAX < rlim.rlim_cur) {
+    uint64_t try_limit = OPEN_MAX - ULIMIT_BUFFER;
+    if (errno == EINVAL && try_limit < (uint64_t) rlim.rlim_cur) {
       /* On some platforms, OPEN_MAX is the real limit, and getrlimit() is
        * full of nasty lies.  I'm looking at you, OSX 10.5.... */
-      rlim.rlim_cur = OPEN_MAX;
+      rlim.rlim_cur = try_limit;
       if (setrlimit(RLIMIT_NOFILE, &rlim) == 0) {
         if (rlim.rlim_cur < (rlim_t)limit) {
           log_warn(LD_CONFIG, "We are limited to %lu file descriptors by "
-                 "OPEN_MAX, and ConnLimit is %lu.  Changing ConnLimit; sorry.",
-                   (unsigned long)OPEN_MAX, (unsigned long)limit);
+                   "OPEN_MAX (%lu), and ConnLimit is %lu.  Changing "
+                   "ConnLimit; sorry.",
+                   (unsigned long)try_limit, (unsigned long)OPEN_MAX,
+                   (unsigned long)limit);
         } else {
-          log_info(LD_CONFIG, "Dropped connection limit to OPEN_MAX (%lu); "
-                   "Apparently, %lu was too high and rlimit lied to us.",
-                   (unsigned long)OPEN_MAX, (unsigned long)rlim.rlim_max);
+          log_info(LD_CONFIG, "Dropped connection limit to %lu based on "
+                   "OPEN_MAX (%lu); Apparently, %lu was too high and rlimit "
+                   "lied to us.",
+                   (unsigned long)try_limit, (unsigned long)OPEN_MAX,
+                   (unsigned long)rlim.rlim_max);
         }
         bad = 0;
       }
@@ -2682,7 +2687,8 @@ static int uname_result_is_set = 0;
 
 /** Return a pointer to a description of our platform.
  */
-MOCK_IMPL(const char *, get_uname, (void))
+MOCK_IMPL(const char *,
+get_uname,(void))
 {
 #ifdef HAVE_UNAME
   struct utsname u;
@@ -3255,7 +3261,7 @@ format_win32_error(DWORD err)
                  FORMAT_MESSAGE_FROM_SYSTEM |
                  FORMAT_MESSAGE_IGNORE_INSERTS,
                  NULL, err,
-                 MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                 MAKELANGID(LANG_ENGLISH, SUBLANG_DEFAULT),
                  (LPVOID)&str,
                  0, NULL);
 

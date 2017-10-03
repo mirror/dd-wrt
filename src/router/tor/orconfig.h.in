@@ -9,6 +9,9 @@
 /* tor's configuration directory */
 #undef CONFDIR
 
+/* Defined if we're turning off memory safety code to look for bugs */
+#undef DISABLE_MEMORY_SENTINELS
+
 /* Defined if we're not going to look for a torrc in SYSCONF */
 #undef DISABLE_SYSTEM_TORRC
 
@@ -229,6 +232,9 @@
 /* Define to 1 if you have the `lround' function. */
 #undef HAVE_LROUND
 
+/* Have LZMA */
+#undef HAVE_LZMA
+
 /* Define to 1 if you have the <machine/limits.h> header file. */
 #undef HAVE_MACHINE_LIMITS_H
 
@@ -319,6 +325,9 @@
 
 /* Define to 1 if you have the `RtlSecureZeroMemory' function. */
 #undef HAVE_RTLSECUREZEROMEMORY
+
+/* have Rust */
+#undef HAVE_RUST
 
 /* Define to 1 if the system has the type `sa_family_t'. */
 #undef HAVE_SA_FAMILY_T
@@ -540,6 +549,9 @@
 /* Define to 1 if you have the `vasprintf' function. */
 #undef HAVE_VASPRINTF
 
+/* Have Zstd */
+#undef HAVE_ZSTD
+
 /* Define to 1 if you have the `_NSGetEnviron' function. */
 #undef HAVE__NSGETENVIRON
 
@@ -651,6 +663,9 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
+/* Compile the event tracing instrumentation */
+#undef TOR_EVENT_TRACING_ENABLED
+
 /* Defined if we should use an internal curve25519_donna{,_c64} implementation
    */
 #undef USE_CURVE25519_DONNA
@@ -660,6 +675,9 @@
 
 /* Debug memory allocation library */
 #undef USE_DMALLOC
+
+/* Tracing framework to log debug */
+#undef USE_EVENT_TRACING_DEBUG
 
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE

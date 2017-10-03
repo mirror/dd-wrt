@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -109,6 +109,8 @@ void var_cell_free(var_cell_t *cell);
 
 /* DOCDOC */
 #define MIN_LINK_PROTO_FOR_WIDE_CIRC_IDS 4
+#define MIN_LINK_PROTO_FOR_CHANNEL_PADDING 5
+#define MAX_LINK_PROTO MIN_LINK_PROTO_FOR_CHANNEL_PADDING
 
 void connection_or_group_set_badness_(smartlist_t *group, int force);
 
