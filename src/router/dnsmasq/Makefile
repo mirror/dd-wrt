@@ -159,7 +159,7 @@ $(objs): $(copts_conf) $(hdrs)
 	$(CC) $(CFLAGS) $(COPTS) $(i18n) $(build_cflags) $(RPM_OPT_FLAGS) -c $<	
 
 dnsmasq : $(objs)
-	$(CC)  -o $@ $(objs) $(build_libs) $(LIBS) $(LDFLAGS)
+	$(CC) $(LDFLAGS) -o $@ $(objs) $(build_libs) $(LIBS) 
 
 dnsmasq.pot : $(objs:.o=.c) $(hdrs)
 	$(XGETTEXT) -d dnsmasq --foreign-user --omit-header --keyword=_ -o $@ -i $(objs:.o=.c)

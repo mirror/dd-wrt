@@ -296,8 +296,8 @@ option requires non-standard networking APIs and it is only available
 under Linux. On other platforms it falls-back to --bind-interfaces mode.
 .TP
 .B \-y, --localise-queries
-Return answers to DNS queries from /etc/hosts which depend on the interface over which the query was
-received. If a name in /etc/hosts has more than one address associated with
+Return answers to DNS queries from /etc/hosts and --interface-name which depend on the interface over which the query was
+received. If a name has more than one address associated with
 it, and at least one of those addresses is on the same subnet as the
 interface to which the query was sent, then return only the
 address(es) on that subnet. This allows for a server  to have multiple
@@ -612,7 +612,7 @@ given by the hex data, which may be of the form 01:23:45 or 01 23 45 or
 012345 or any mixture of these.
 .TP
 .B --interface-name=<name>,<interface>[/4|/6]
-Return a DNS record associating the name with the primary address on
+Return DNS records associating the name with the address(es) of
 the given interface. This flag specifies an A or AAAA record for the given
 name in the same way as an /etc/hosts line, except that the address is
 not constant, but taken from the given interface. The interface may be
@@ -622,7 +622,8 @@ down, not configured or non-existent, an empty record is returned. The
 matching PTR record is also created, mapping the interface address to
 the name. More than one name may be associated with an interface
 address by repeating the flag; in that case the first instance is used
-for the reverse address-to-name mapping.
+for the reverse address-to-name mapping. Note that a name used in 
+--interface-name may not appear in /etc/hosts.
 .TP
 .B --synth-domain=<domain>,<address range>[,<prefix>]
 Create artificial A/AAAA and PTR records for an address range. The
@@ -2047,7 +2048,7 @@ include set:<tag>, including one from the
 .B dhcp-range
 used to allocate the address, one from any matching 
 .B dhcp-host
-(and "known" if a dhcp-host matches) 
+(and "known" or "known-othernet" if a dhcp-host matches) 
 The tag "bootp" is set for BOOTP requests, and a tag whose name is the 
 name of the interface on which the request arrived is also set.
 

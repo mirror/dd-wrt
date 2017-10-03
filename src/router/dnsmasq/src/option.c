@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2016 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2017 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -882,7 +882,7 @@ static struct server *add_rev4(struct in_addr addr, int msize)
   switch (msize)
     {
     case 32:
-      p += sprintf(p, "%d.", a & 0xff);
+      p += sprintf(p, "%u.", a & 0xff);
       /* fall through */
     case 24:
       p += sprintf(p, "%d.", (a >> 8) & 0xff);
@@ -1415,7 +1415,7 @@ static int parse_dhcp_opt(char *errstr, char *arg, int flags)
 		    }
 		  
 		  p = newp;
-		  end = do_rfc1035_name(p + len, dom);
+		  end = do_rfc1035_name(p + len, dom, NULL);
 		  *end++ = 0;
 		  len = end - p;
 		  free(dom);

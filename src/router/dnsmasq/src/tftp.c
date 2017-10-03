@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2016 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2017 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
 
 static struct tftp_file *check_tftp_fileperm(ssize_t *len, char *prefix);
 static void free_transfer(struct tftp_transfer *transfer);
-static ssize_t tftp_err(int err, char *packet, char *mess, char *file);
+static ssize_t tftp_err(int err, char *packet, char *message, char *file);
 static ssize_t tftp_err_oops(char *packet, char *file);
 static ssize_t get_block(char *packet, struct tftp_transfer *transfer);
 static char *next(char **p, char *end);
@@ -734,7 +734,7 @@ static ssize_t get_block(char *packet, struct tftp_transfer *transfer)
       if (transfer->opt_blocksize)
 	{
 	  p += (sprintf(p, "blksize") + 1);
-	  p += (sprintf(p, "%d", transfer->blocksize) + 1);
+	  p += (sprintf(p, "%u", transfer->blocksize) + 1);
 	}
       if (transfer->opt_transize)
 	{
