@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -41,46 +41,53 @@ typedef enum {
 
 int directory_must_use_begindir(const or_options_t *options);
 
-MOCK_DECL(void, directory_initiate_command_routerstatus,
-                (const routerstatus_t *status,
-                 uint8_t dir_purpose,
-                 uint8_t router_purpose,
-                 dir_indirection_t indirection,
-                 const char *resource,
-                 const char *payload,
-                 size_t payload_len,
-                 time_t if_modified_since,
-                 struct circuit_guard_state_t *guard_state));
+/**
+ * A directory_request_t describes the information about a directory request
+ * at the client side.  It describes what we're going to ask for, which
+ * directory we're going to ask for it, how we're going to contact that
+ * directory, and (in some cases) what to do with it when we're done.
+ */
+typedef struct directory_request_t directory_request_t;
+directory_request_t *directory_request_new(uint8_t dir_purpose);
+void directory_request_free(directory_request_t *req);
+void directory_request_set_or_addr_port(directory_request_t *req,
+                                        const tor_addr_port_t *p);
+void directory_request_set_dir_addr_port(directory_request_t *req,
+                                         const tor_addr_port_t *p);
+void directory_request_set_directory_id_digest(directory_request_t *req,
+                                               const char *digest);
+void directory_request_set_guard_state(directory_request_t *req,
+                                       struct circuit_guard_state_t *state);
+void directory_request_set_router_purpose(directory_request_t *req,
+                                          uint8_t router_purpose);
+void directory_request_set_indirection(directory_request_t *req,
+                                       dir_indirection_t indirection);
+void directory_request_set_resource(directory_request_t *req,
+                                    const char *resource);
+void directory_request_set_payload(directory_request_t *req,
+                                   const char *payload,
+                                   size_t payload_len);
+void directory_request_set_if_modified_since(directory_request_t *req,
+                                             time_t if_modified_since);
+void directory_request_set_rend_query(directory_request_t *req,
+                                      const rend_data_t *query);
 
-void directory_initiate_command_routerstatus_rend(const routerstatus_t *status,
-                                                  uint8_t dir_purpose,
-                                                  uint8_t router_purpose,
-                                                 dir_indirection_t indirection,
-                                                  const char *resource,
-                                                  const char *payload,
-                                                  size_t payload_len,
-                                                  time_t if_modified_since,
-                                    const rend_data_t *rend_query,
-                                    struct circuit_guard_state_t *guard_state);
+void directory_request_set_routerstatus(directory_request_t *req,
+                                        const routerstatus_t *rs);
+void directory_request_add_header(directory_request_t *req,
+                                  const char *key,
+                                  const char *val);
+MOCK_DECL(void, directory_initiate_request, (directory_request_t *request));
 
 int parse_http_response(const char *headers, int *code, time_t *date,
                         compress_method_t *compression, char **response);
 
-int connection_dir_is_encrypted(dir_connection_t *conn);
+int connection_dir_is_encrypted(const dir_connection_t *conn);
 int connection_dir_reached_eof(dir_connection_t *conn);
 int connection_dir_process_inbuf(dir_connection_t *conn);
 int connection_dir_finished_flushing(dir_connection_t *conn);
 int connection_dir_finished_connecting(dir_connection_t *conn);
 void connection_dir_about_to_close(dir_connection_t *dir_conn);
-void directory_initiate_command(const tor_addr_t *or_addr, uint16_t or_port,
-                                const tor_addr_t *dir_addr, uint16_t dir_port,
-                                const char *digest,
-                                uint8_t dir_purpose, uint8_t router_purpose,
-                                dir_indirection_t indirection,
-                                const char *resource,
-                                const char *payload, size_t payload_len,
-                                time_t if_modified_since,
-                                struct circuit_guard_state_t *guard_state);
 
 #define DSR_HEX       (1<<0)
 #define DSR_BASE64    (1<<1)
@@ -89,7 +96,12 @@ void directory_initiate_command(const tor_addr_t *or_addr, uint16_t or_port,
 int dir_split_resource_into_fingerprints(const char *resource,
                                      smartlist_t *fp_out, int *compressed_out,
                                      int flags);
-
+enum dir_spool_source_t;
+int dir_split_resource_into_spoolable(const char *resource,
+                                      enum dir_spool_source_t source,
+                                      smartlist_t *spool_out,
+                                      int *compressed_out,
+                                      int flags);
 int dir_split_resource_into_fingerprint_pairs(const char *res,
                                               smartlist_t *pairs_out);
 char *directory_dump_request_log(void);
@@ -150,6 +162,9 @@ struct get_handler_args_t;
 STATIC int handle_get_hs_descriptor_v3(dir_connection_t *conn,
                                        const struct get_handler_args_t *args);
 STATIC int directory_handle_command(dir_connection_t *conn);
+STATIC char *accept_encoding_header(void);
+STATIC int allowed_anonymous_connection_compression_method(compress_method_t);
+STATIC void warn_disallowed_anonymous_compression_method(compress_method_t);
 
 #endif
 
@@ -177,7 +192,7 @@ STATIC int handle_post_hs_descriptor(const char *url, const char *body);
 STATIC char* authdir_type_to_string(dirinfo_type_t auth);
 STATIC const char * dir_conn_purpose_to_string(int purpose);
 STATIC int should_use_directory_guards(const or_options_t *options);
-STATIC zlib_compression_level_t choose_compression_level(ssize_t n_bytes);
+STATIC compression_level_t choose_compression_level(ssize_t n_bytes);
 STATIC const smartlist_t *find_dl_schedule(download_status_t *dls,
                                            const or_options_t *options);
 STATIC void find_dl_min_and_max_delay(download_status_t *dls,
@@ -188,6 +203,7 @@ STATIC int next_random_exponential_delay(int delay, int max_delay);
 STATIC int parse_hs_version_from_post(const char *url, const char *prefix,
                                       const char **end_pos);
 
+STATIC unsigned parse_accept_encoding_header(const char *h);
 #endif
 
 #endif

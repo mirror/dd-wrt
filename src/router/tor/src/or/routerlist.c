@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -426,8 +426,8 @@ list_sk_digests_for_authority_id, (const char *digest))
  * download_status_t or NULL if none exists. */
 
 MOCK_IMPL(download_status_t *,
-  download_status_for_authority_id_and_sk,
-  (const char *id_digest, const char *sk_digest))
+download_status_for_authority_id_and_sk,(const char *id_digest,
+                                         const char *sk_digest))
 {
   download_status_t *dl = NULL;
   cert_list_t *cl = NULL;
@@ -947,6 +947,7 @@ authority_certs_fetch_resource_impl(const char *resource,
   const dir_indirection_t indirection = get_via_tor ? DIRIND_ANONYMOUS
                                                     : DIRIND_ONEHOP;
 
+  directory_request_t *req = NULL;
   /* If we've just downloaded a consensus from a bridge, re-use that
    * bridge */
   if (options->UseBridges && node && node->ri && !get_via_tor) {
@@ -955,23 +956,25 @@ authority_certs_fetch_resource_impl(const char *resource,
     /* we are willing to use a non-preferred address if we need to */
     fascist_firewall_choose_address_node(node, FIREWALL_OR_CONNECTION, 0,
                                          &or_ap);
-    directory_initiate_command(&or_ap.addr, or_ap.port,
-                               NULL, 0, /*no dirport*/
-                               dir_hint,
-                               DIR_PURPOSE_FETCH_CERTIFICATE,
-                               0,
-                               indirection,
-                               resource, NULL, 0, 0, NULL);
-    return;
+
+    req = directory_request_new(DIR_PURPOSE_FETCH_CERTIFICATE);
+    directory_request_set_or_addr_port(req, &or_ap);
+    if (dir_hint)
+      directory_request_set_directory_id_digest(req, dir_hint);
+  } else if (rs) {
+    /* And if we've just downloaded a consensus from a directory, re-use that
+     * directory */
+    req = directory_request_new(DIR_PURPOSE_FETCH_CERTIFICATE);
+    directory_request_set_routerstatus(req, rs);
   }
 
-  if (rs) {
-    /* If we've just downloaded a consensus from a directory, re-use that
-     * directory */
-    directory_initiate_command_routerstatus(rs,
-                                            DIR_PURPOSE_FETCH_CERTIFICATE,
-                                            0, indirection, resource, NULL,
-                                            0, 0, NULL);
+  if (req) {
+    /* We've set up a request object -- fill in the other request fields, and
+     * send the request.  */
+    directory_request_set_indirection(req, indirection);
+    directory_request_set_resource(req, resource);
+    directory_initiate_request(req);
+    directory_request_free(req);
     return;
   }
 
@@ -2317,17 +2320,16 @@ routerlist_add_node_and_family(smartlist_t *sl, const routerinfo_t *router)
  * we can pick a node for a circuit.
  */
 void
-router_add_running_nodes_to_smartlist(smartlist_t *sl, int allow_invalid,
-                                      int need_uptime, int need_capacity,
-                                      int need_guard, int need_desc,
-                                      int pref_addr, int direct_conn)
+router_add_running_nodes_to_smartlist(smartlist_t *sl, int need_uptime,
+                                      int need_capacity, int need_guard,
+                                      int need_desc, int pref_addr,
+                                      int direct_conn)
 {
   const int check_reach = !router_skip_or_reachability(get_options(),
                                                        pref_addr);
   /* XXXX MOVE */
   SMARTLIST_FOREACH_BEGIN(nodelist_get_list(), const node_t *, node) {
-    if (!node->is_running ||
-        (!node->is_valid && !allow_invalid))
+    if (!node->is_running || !node->is_valid)
       continue;
     if (need_desc && !(node->ri || (node->rs && node->md)))
       continue;
@@ -2773,8 +2775,6 @@ node_sl_choose_by_bandwidth(const smartlist_t *sl,
  * a minimum uptime, return one of those.
  * If <b>CRN_NEED_CAPACITY</b> is set in flags, weight your choice by the
  * advertised capacity of each router.
- * If <b>CRN_ALLOW_INVALID</b> is not set in flags, consider only Valid
- * routers.
  * If <b>CRN_NEED_GUARD</b> is set in flags, consider only Guard routers.
  * If <b>CRN_WEIGHT_AS_EXIT</b> is set in flags, we weight bandwidths as if
  * picking an exit node, otherwise we weight bandwidths for picking a relay
@@ -2795,7 +2795,6 @@ router_choose_random_node(smartlist_t *excludedsmartlist,
   const int need_uptime = (flags & CRN_NEED_UPTIME) != 0;
   const int need_capacity = (flags & CRN_NEED_CAPACITY) != 0;
   const int need_guard = (flags & CRN_NEED_GUARD) != 0;
-  const int allow_invalid = (flags & CRN_ALLOW_INVALID) != 0;
   const int weight_for_exit = (flags & CRN_WEIGHT_AS_EXIT) != 0;
   const int need_desc = (flags & CRN_NEED_DESC) != 0;
   const int pref_addr = (flags & CRN_PREF_ADDR) != 0;
@@ -2811,20 +2810,17 @@ router_choose_random_node(smartlist_t *excludedsmartlist,
   rule = weight_for_exit ? WEIGHT_FOR_EXIT :
     (need_guard ? WEIGHT_FOR_GUARD : WEIGHT_FOR_MID);
 
-  /* Exclude relays that allow single hop exit circuits, if the user
-   * wants to (such relays might be risky) */
-  if (get_options()->ExcludeSingleHopRelays) {
-    SMARTLIST_FOREACH(nodelist_get_list(), node_t *, node,
-      if (node_allows_single_hop_exits(node)) {
-        smartlist_add(excludednodes, node);
-      });
-  }
+  /* Exclude relays that allow single hop exit circuits. This is an obsolete
+   * option since 0.2.9.2-alpha and done by default in 0.3.1.0-alpha. */
+  SMARTLIST_FOREACH(nodelist_get_list(), node_t *, node,
+    if (node_allows_single_hop_exits(node)) {
+      smartlist_add(excludednodes, node);
+    });
 
   if ((r = routerlist_find_my_routerinfo()))
     routerlist_add_node_and_family(excludednodes, r);
 
-  router_add_running_nodes_to_smartlist(sl, allow_invalid,
-                                        need_uptime, need_capacity,
+  router_add_running_nodes_to_smartlist(sl, need_uptime, need_capacity,
                                         need_guard, need_desc, pref_addr,
                                         direct_conn);
   log_debug(LD_CIRC,
@@ -3045,8 +3041,8 @@ router_get_by_extrainfo_digest,(const char *digest))
 /** Return the signed descriptor for the extrainfo_t in our routerlist whose
  * extra-info-digest is <b>digest</b>. Return NULL if no such extra-info
  * document is known. */
-signed_descriptor_t *
-extrainfo_get_by_descriptor_digest(const char *digest)
+MOCK_IMPL(signed_descriptor_t *,
+extrainfo_get_by_descriptor_digest,(const char *digest))
 {
   extrainfo_t *ei;
   tor_assert(digest);
@@ -4878,9 +4874,10 @@ list_pending_fpsk_downloads(fp_pair_map_t *result)
  * range.)  If <b>source</b> is given, download from <b>source</b>;
  * otherwise, download from an appropriate random directory server.
  */
-MOCK_IMPL(STATIC void, initiate_descriptor_downloads,
-          (const routerstatus_t *source, int purpose, smartlist_t *digests,
-           int lo, int hi, int pds_flags))
+MOCK_IMPL(STATIC void,
+initiate_descriptor_downloads,(const routerstatus_t *source,
+                               int purpose, smartlist_t *digests,
+                               int lo, int hi, int pds_flags))
 {
   char *resource, *cp;
   int digest_len, enc_digest_len;
@@ -4932,10 +4929,11 @@ MOCK_IMPL(STATIC void, initiate_descriptor_downloads,
 
   if (source) {
     /* We know which authority or directory mirror we want. */
-    directory_initiate_command_routerstatus(source, purpose,
-                                            ROUTER_PURPOSE_GENERAL,
-                                            DIRIND_ONEHOP,
-                                            resource, NULL, 0, 0, NULL);
+    directory_request_t *req = directory_request_new(purpose);
+    directory_request_set_routerstatus(req, source);
+    directory_request_set_resource(req, resource);
+    directory_initiate_request(req);
+    directory_request_free(req);
   } else {
     directory_get_from_dirserver(purpose, ROUTER_PURPOSE_GENERAL, resource,
                                  pds_flags, DL_WANT_ANY_DIRSERVER);
@@ -5145,7 +5143,7 @@ update_consensus_router_descriptor_downloads(time_t now, int is_vote,
         continue; /* We would throw it out immediately. */
       }
       if (!we_want_to_fetch_flavor(options, consensus->flavor) &&
-          !client_would_use_router(rs, now, options)) {
+          !client_would_use_router(rs, now)) {
         ++n_wouldnt_use;
         continue; /* We would never use it ourself. */
       }

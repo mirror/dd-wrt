@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -262,6 +262,11 @@ STATIC crypto_pk_t *add_onion_helper_keyarg(const char *arg, int discard_pk,
 STATIC rend_authorized_client_t *
 add_onion_helper_clientauth(const char *arg, int *created, char **err_msg_out);
 
+STATIC int getinfo_helper_onions(
+    control_connection_t *control_conn,
+    const char *question,
+    char **answer,
+    const char **errmsg);
 STATIC void getinfo_helper_downloads_networkstatus(
     const char *flavor,
     download_status_t **dl_to_emit,
@@ -282,6 +287,10 @@ STATIC void getinfo_helper_downloads_bridge(
     smartlist_t **digest_list,
     const char **errmsg);
 STATIC int getinfo_helper_downloads(
+    control_connection_t *control_conn,
+    const char *question, char **answer,
+    const char **errmsg);
+STATIC int getinfo_helper_dir(
     control_connection_t *control_conn,
     const char *question, char **answer,
     const char **errmsg);

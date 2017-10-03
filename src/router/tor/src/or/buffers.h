@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -36,8 +36,8 @@ int flush_buf(tor_socket_t s, buf_t *buf, size_t sz, size_t *buf_flushlen);
 int flush_buf_tls(tor_tls_t *tls, buf_t *buf, size_t sz, size_t *buf_flushlen);
 
 int write_to_buf(const char *string, size_t string_len, buf_t *buf);
-int write_to_buf_zlib(buf_t *buf, tor_zlib_state_t *state,
-                      const char *data, size_t data_len, int done);
+int write_to_buf_compress(buf_t *buf, tor_compress_state_t *state,
+                          const char *data, size_t data_len, int done);
 int move_buf_to_buf(buf_t *buf_out, buf_t *buf_in, size_t *buf_flushlen);
 int fetch_from_buf(char *string, size_t string_len, buf_t *buf);
 int fetch_var_cell_from_buf(buf_t *buf, var_cell_t **out, int linkproto);

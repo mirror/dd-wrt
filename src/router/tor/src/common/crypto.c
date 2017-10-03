@@ -1,7 +1,7 @@
 /* Copyright (c) 2001, Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -467,7 +467,7 @@ crypto_new_pk_from_rsa_(RSA *rsa)
   return env;
 }
 
-/** Helper, used by tor-checkkey.c and tor-gencert.c.  Return the RSA from a
+/** Helper, used by tor-gencert.c.  Return the RSA from a
  * crypto_pk_t. */
 RSA *
 crypto_pk_get_rsa_(crypto_pk_t *env)
@@ -479,7 +479,7 @@ crypto_pk_get_rsa_(crypto_pk_t *env)
  * private is set, include the private-key portion of the key. Return a valid
  * pointer on success, and NULL on failure. */
 MOCK_IMPL(EVP_PKEY *,
-          crypto_pk_get_evp_pkey_,(crypto_pk_t *env, int private))
+crypto_pk_get_evp_pkey_,(crypto_pk_t *env, int private))
 {
   RSA *key = NULL;
   EVP_PKEY *pkey = NULL;
@@ -516,7 +516,7 @@ crypto_dh_get_dh_(crypto_dh_t *dh)
  * be set.
  */
 MOCK_IMPL(crypto_pk_t *,
-          crypto_pk_new,(void))
+crypto_pk_new,(void))
 {
   RSA *rsa;
 
@@ -606,7 +606,7 @@ crypto_cipher_free(crypto_cipher_t *env)
  * Return 0 on success, -1 on failure.
  */
 MOCK_IMPL(int,
-          crypto_pk_generate_key_with_bits,(crypto_pk_t *env, int bits))
+crypto_pk_generate_key_with_bits,(crypto_pk_t *env, int bits))
 {
   tor_assert(env);
 
@@ -3458,4 +3458,16 @@ crypto_global_cleanup(void)
 }
 
 /** @} */
+
+#ifdef USE_DMALLOC
+/** Tell the crypto library to use Tor's allocation functions rather than
+ * calling libc's allocation functions directly. Return 0 on success, -1
+ * on failure. */
+int
+crypto_use_tor_alloc_functions(void)
+{
+  int r = CRYPTO_set_mem_ex_functions(tor_malloc_, tor_realloc_, tor_free_);
+  return r ? 0 : -1;
+}
+#endif
 

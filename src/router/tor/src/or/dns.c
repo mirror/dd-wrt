@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -160,8 +160,9 @@ evdns_log_cb(int warn, const char *msg)
   }
   if (!strcmpstart(msg, "Nameserver ") && (cp=strstr(msg, " has failed: "))) {
     char *ns = tor_strndup(msg+11, cp-(msg+11));
-    const char *err = strchr(cp, ':')+2;
-    tor_assert(err);
+    const char *colon = strchr(cp, ':');
+    tor_assert(colon);
+    const char *err = colon+2;
     /* Don't warn about a single failed nameserver; we'll warn with 'all
      * nameservers have failed' if we're completely out of nameservers;
      * otherwise, the situation is tolerable. */
@@ -522,6 +523,7 @@ send_resolved_cell,(edge_connection_t *conn, uint8_t answer_type,
         answer_type = RESOLVED_TYPE_ERROR;
         /* fall through. */
       }
+      /* Falls through. */
     case RESOLVED_TYPE_ERROR_TRANSIENT:
     case RESOLVED_TYPE_ERROR:
       {
@@ -2085,8 +2087,8 @@ assert_cache_ok_(void)
 
 #endif
 
-cached_resolve_t
-*dns_get_cache_entry(cached_resolve_t *query)
+cached_resolve_t *
+dns_get_cache_entry(cached_resolve_t *query)
 {
   return HT_FIND(cache_map, &cache_root, query);
 }

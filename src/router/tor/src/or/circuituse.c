@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -705,18 +705,15 @@ circuit_expire_building(void)
       }
     }
 
-    /* If this is a hidden service client circuit which is far enough
-     * along in connecting to its destination, and we haven't already
-     * flagged it as 'timed out', and the user has not told us to
-     * close such circs immediately on timeout, flag it as 'timed out'
-     * so we'll launch another intro or rend circ, but don't mark it
-     * for close yet.
+    /* If this is a hidden service client circuit which is far enough along in
+     * connecting to its destination, and we haven't already flagged it as
+     * 'timed out', flag it so we'll launch another intro or rend circ, but
+     * don't mark it for close yet.
      *
      * (Circs flagged as 'timed out' are given a much longer timeout
      * period above, so we won't close them in the next call to
      * circuit_expire_building.) */
-    if (!(options->CloseHSClientCircuitsImmediatelyOnTimeout) &&
-        !(TO_ORIGIN_CIRCUIT(victim)->hs_circ_has_timed_out)) {
+    if (!(TO_ORIGIN_CIRCUIT(victim)->hs_circ_has_timed_out)) {
       switch (victim->purpose) {
       case CIRCUIT_PURPOSE_C_REND_READY:
         /* We only want to spare a rend circ if it has been specified in
@@ -750,8 +747,7 @@ circuit_expire_building(void)
     /* If this is a service-side rendezvous circuit which is far
      * enough along in connecting to its destination, consider sparing
      * it. */
-    if (!(options->CloseHSServiceRendCircuitsImmediatelyOnTimeout) &&
-        !(TO_ORIGIN_CIRCUIT(victim)->hs_circ_has_timed_out) &&
+    if (!(TO_ORIGIN_CIRCUIT(victim)->hs_circ_has_timed_out) &&
         victim->purpose == CIRCUIT_PURPOSE_S_CONNECT_REND) {
       log_info(LD_CIRC,"Marking circ %u (state %d:%s, purpose %d) "
                "as timed-out HS circ; relaunching rendezvous attempt.",
@@ -1240,8 +1236,8 @@ circuit_predict_and_launch_new(void)
 /** Build a new test circuit every 5 minutes */
 #define TESTING_CIRCUIT_INTERVAL 300
 
-/** This function is called once a second, if router_have_min_dir_info() is
- * true. Its job is to make sure all services we offer have enough circuits
+/** This function is called once a second, if router_have_minimum_dir_info()
+ * is true. Its job is to make sure all services we offer have enough circuits
  * available. Some services just want enough circuits for current tasks,
  * whereas others want a minimum set of idle circuits hanging around.
  */
@@ -1383,11 +1379,6 @@ circuit_detach_stream(circuit_t *circ, edge_connection_t *conn)
   tor_fragile_assert();
 }
 
-/** If we haven't yet decided on a good timeout value for circuit
- * building, we close idles circuits aggressively so we can get more
- * data points. */
-#define IDLE_TIMEOUT_WHILE_LEARNING (10*60)
-
 /** Find each circuit that has been unused for too long, or dirty
  * for too long and has no streams on it: mark it for close.
  */
@@ -1397,21 +1388,15 @@ circuit_expire_old_circuits_clientside(void)
   struct timeval cutoff, now;
 
   tor_gettimeofday(&now);
-  cutoff = now;
   last_expired_clientside_circuits = now.tv_sec;
-
-  if (! circuit_build_times_disabled(get_options()) &&
-      circuit_build_times_needs_circuits(get_circuit_build_times())) {
-    /* Circuits should be shorter lived if we need more of them
-     * for learning a good build timeout */
-    cutoff.tv_sec -= IDLE_TIMEOUT_WHILE_LEARNING;
-  } else {
-    cutoff.tv_sec -= get_options()->CircuitIdleTimeout;
-  }
 
   SMARTLIST_FOREACH_BEGIN(circuit_get_global_list(), circuit_t *, circ) {
     if (circ->marked_for_close || !CIRCUIT_IS_ORIGIN(circ))
       continue;
+
+    cutoff = now;
+    cutoff.tv_sec -= TO_ORIGIN_CIRCUIT(circ)->circuit_idle_timeout;
+
     /* If the circuit has been dirty for too long, and there are no streams
      * on it, mark it for close.
      */
@@ -1437,8 +1422,10 @@ circuit_expire_old_circuits_clientside(void)
                 (circ->purpose >= CIRCUIT_PURPOSE_C_INTRODUCING &&
                 circ->purpose <= CIRCUIT_PURPOSE_C_REND_READY_INTRO_ACKED) ||
                 circ->purpose == CIRCUIT_PURPOSE_S_CONNECT_REND) {
-          log_debug(LD_CIRC,
-                    "Closing circuit that has been unused for %ld msec.",
+          log_info(LD_CIRC,
+                    "Closing circuit "U64_FORMAT
+                    " that has been unused for %ld msec.",
+                    U64_PRINTF_ARG(TO_ORIGIN_CIRCUIT(circ)->global_identifier),
                     tv_mdiff(&circ->timestamp_began, &now));
           circuit_mark_for_close(circ, END_CIRC_REASON_FINISHED);
         } else if (!TO_ORIGIN_CIRCUIT(circ)->is_ancient) {

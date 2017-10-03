@@ -1,5 +1,5 @@
 /* Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -477,7 +477,10 @@ rend_encode_v2_descriptors(smartlist_t *descs_out,
     tor_assert(descriptor_cookie);
   }
   /* Obtain service_id from public key. */
-  crypto_pk_get_digest(service_key, service_id);
+  if (crypto_pk_get_digest(service_key, service_id) < 0) {
+    log_warn(LD_BUG, "Couldn't compute service key digest.");
+    return -1;
+  }
   /* Calculate current time-period. */
   time_period = get_time_period(now, period, service_id);
   /* Determine how many seconds the descriptor will be valid. */

@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2016, The Tor Project, Inc. */
+/* Copyright (c) 2009-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -802,18 +802,6 @@ microdesc_cache_lookup_by_digest256(microdesc_cache_t *cache, const char *d)
   memcpy(search.digest, d, DIGEST256_LEN);
   md = HT_FIND(microdesc_map, &cache->map, &search);
   return md;
-}
-
-/** Return the mean size of decriptors added to <b>cache</b> since it was last
- * cleared.  Used to estimate the size of large downloads. */
-size_t
-microdesc_average_size(microdesc_cache_t *cache)
-{
-  if (!cache)
-    cache = get_microdesc_cache();
-  if (!cache->n_seen)
-    return 512;
-  return (size_t)(cache->total_len_seen / cache->n_seen);
 }
 
 /** Return a smartlist of all the sha256 digest of the microdescriptors that

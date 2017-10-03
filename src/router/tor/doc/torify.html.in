@@ -751,26 +751,24 @@ torify(1) Manual Page
 <div class="sect1">
 <h2 id="_description">DESCRIPTION</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><strong>torify</strong> is a simple wrapper that attempts to find the best underlying Tor
-wrapper available on a system. It calls torsocks with a tor specific
-configuration file.<br /></p></div>
-<div class="paragraph"><p>torsocks is an improved wrapper that explicitly rejects UDP, safely resolves DNS
-lookups and properly socksifies your TCP connections.<br /></p></div>
-<div class="paragraph"><p>Please note that since both method use LD_PRELOAD, torify cannot be applied to
-suid binaries.</p></div>
+<div class="paragraph"><p><strong>torify</strong> is a simple wrapper that calls torsocks with a tor-specific
+configuration file.</p></div>
+<div class="paragraph"><p>It is provided for backward compatibility; instead you should use torsocks.</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_warning">WARNING</h2>
 <div class="sectionbody">
-<div class="paragraph"><p>When used with torsocks, torify should not leak DNS requests or UDP data.<br /></p></div>
-<div class="paragraph"><p>Both will leak ICMP data.</p></div>
+<div class="paragraph"><p>When used with torsocks, torify should not leak DNS requests or UDP data.</p></div>
+<div class="paragraph"><p>torify can leak ICMP data.</p></div>
+<div class="paragraph"><p>torify will not ensure that different requests are processed on
+different circuits.</p></div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_see_also">SEE ALSO</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><strong>tor</strong>(1), <strong>tor-resolve</strong>(1), <strong>torsocks</strong>(1)</p></div>
+<div class="paragraph"><p><strong>tor</strong>(1), <strong>torsocks</strong>(1)</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -783,7 +781,7 @@ suid binaries.</p></div>
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-03-05 00:44:57 UTC
+Last updated 2017-06-19 15:56:51 UTC
 </div>
 </div>
 </body>

@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -69,10 +69,12 @@
 #include "circuitmux.h"
 #include "circuitmux_ewma.h"
 #include "circuitstats.h"
+#include "compress.h"
 #include "config.h"
 #include "connection.h"
 #include "connection_edge.h"
 #include "connection_or.h"
+#include "consdiffmgr.h"
 #include "control.h"
 #include "confparse.h"
 #include "cpuworker.h"
@@ -99,7 +101,6 @@
 #include "statefile.h"
 #include "transports.h"
 #include "ext_orport.h"
-#include "torgzip.h"
 #ifdef _WIN32
 #include <shlobj.h>
 #endif
@@ -205,10 +206,10 @@ static config_var_t option_vars_[] = {
   V(AccountingStart,             STRING,   NULL),
   V(Address,                     STRING,   NULL),
   V(AllowDotExit,                BOOL,     "0"),
-  V(AllowInvalidNodes,           CSV,      "middle,rendezvous"),
+  OBSOLETE("AllowInvalidNodes"),
   V(AllowNonRFC953Hostnames,     BOOL,     "0"),
-  V(AllowSingleHopCircuits,      BOOL,     "0"),
-  V(AllowSingleHopExits,         BOOL,     "0"),
+  OBSOLETE("AllowSingleHopCircuits"),
+  OBSOLETE("AllowSingleHopExits"),
   V(AlternateBridgeAuthority,    LINELIST, NULL),
   V(AlternateDirAuthority,       LINELIST, NULL),
   OBSOLETE("AlternateHSAuthority"),
@@ -242,9 +243,11 @@ static config_var_t option_vars_[] = {
   V(BridgeRecordUsageByCountry,  BOOL,     "1"),
   V(BridgeRelay,                 BOOL,     "0"),
   V(CellStatistics,              BOOL,     "0"),
+  V(PaddingStatistics,           BOOL,     "1"),
   V(LearnCircuitBuildTimeout,    BOOL,     "1"),
   V(CircuitBuildTimeout,         INTERVAL, "0"),
-  V(CircuitIdleTimeout,          INTERVAL, "1 hour"),
+  OBSOLETE("CircuitIdleTimeout"),
+  V(CircuitsAvailableTimeout,    INTERVAL, "0"),
   V(CircuitStreamTimeout,        INTERVAL, "0"),
   V(CircuitPriorityHalflife,     DOUBLE,  "-100.0"), /*negative:'Use default'*/
   V(ClientDNSRejectInternalAddresses, BOOL,"1"),
@@ -261,7 +264,7 @@ static config_var_t option_vars_[] = {
   V(ConstrainedSockets,          BOOL,     "0"),
   V(ConstrainedSockSize,         MEMUNIT,  "8192"),
   V(ContactInfo,                 STRING,   NULL),
-  V(ControlListenAddress,        LINELIST, NULL),
+  OBSOLETE("ControlListenAddress"),
   VPORT(ControlPort),
   V(ControlPortFileGroupReadable,BOOL,     "0"),
   V(ControlPortWriteToFile,      FILENAME, NULL),
@@ -278,7 +281,7 @@ static config_var_t option_vars_[] = {
   V(DisableNetwork,              BOOL,     "0"),
   V(DirAllowPrivateAddresses,    BOOL,     "0"),
   V(TestingAuthDirTimeToLearnReachability, INTERVAL, "30 minutes"),
-  V(DirListenAddress,            LINELIST, NULL),
+  OBSOLETE("DirListenAddress"),
   V(DirPolicy,                   LINELIST, NULL),
   VPORT(DirPort),
   V(DirPortFrontPage,            FILENAME, NULL),
@@ -292,7 +295,7 @@ static config_var_t option_vars_[] = {
   OBSOLETE("DisableV2DirectoryInfo_"),
   OBSOLETE("DynamicDHGroups"),
   VPORT(DNSPort),
-  V(DNSListenAddress,            LINELIST, NULL),
+  OBSOLETE("DNSListenAddress"),
   V(DownloadExtraInfo,           BOOL,     "0"),
   V(TestingEnableConnBwEvent,    BOOL,     "0"),
   V(TestingEnableCellStatsEvent, BOOL,     "0"),
@@ -303,7 +306,7 @@ static config_var_t option_vars_[] = {
   V(TestingEstimatedDescriptorPropagationTime, INTERVAL, "10 minutes"),
   V(ExcludeNodes,                ROUTERSET, NULL),
   V(ExcludeExitNodes,            ROUTERSET, NULL),
-  V(ExcludeSingleHopRelays,      BOOL,     "1"),
+  OBSOLETE("ExcludeSingleHopRelays"),
   V(ExitNodes,                   ROUTERSET, NULL),
   V(ExitPolicy,                  LINELIST, NULL),
   V(ExitPolicyRejectPrivate,     BOOL,     "1"),
@@ -323,7 +326,7 @@ static config_var_t option_vars_[] = {
   OBSOLETE("FallbackNetworkstatusFile"),
   V(FascistFirewall,             BOOL,     "0"),
   V(FirewallPorts,               CSV,      ""),
-  V(FastFirstHopPK,              AUTOBOOL, "auto"),
+  OBSOLETE("FastFirstHopPK"),
   V(FetchDirInfoEarly,           BOOL,     "0"),
   V(FetchDirInfoExtraEarly,      BOOL,     "0"),
   V(FetchServerDescriptors,      BOOL,     "1"),
@@ -360,8 +363,8 @@ static config_var_t option_vars_[] = {
   VAR("HiddenServiceNumIntroductionPoints", LINELIST_S, RendConfigLines, NULL),
   VAR("HiddenServiceStatistics", BOOL, HiddenServiceStatistics_option, "1"),
   V(HidServAuth,                 LINELIST, NULL),
-  V(CloseHSClientCircuitsImmediatelyOnTimeout, BOOL, "0"),
-  V(CloseHSServiceRendCircuitsImmediatelyOnTimeout, BOOL, "0"),
+  OBSOLETE("CloseHSClientCircuitsImmediatelyOnTimeout"),
+  OBSOLETE("CloseHSServiceRendCircuitsImmediatelyOnTimeout"),
   V(HiddenServiceSingleHopMode,  BOOL,     "0"),
   V(HiddenServiceNonAnonymousMode,BOOL,    "0"),
   V(HTTPProxy,                   STRING,   NULL),
@@ -390,25 +393,26 @@ static config_var_t option_vars_[] = {
   V(MaxAdvertisedBandwidth,      MEMUNIT,  "1 GB"),
   V(MaxCircuitDirtiness,         INTERVAL, "10 minutes"),
   V(MaxClientCircuitsPending,    UINT,     "32"),
+  V(MaxConsensusAgeForDiffs,     INTERVAL, "0 seconds"),
   VAR("MaxMemInQueues",          MEMUNIT,   MaxMemInQueues_raw, "0"),
   OBSOLETE("MaxOnionsPending"),
   V(MaxOnionQueueDelay,          MSEC_INTERVAL, "1750 msec"),
   V(MaxUnparseableDescSizeToLog, MEMUNIT, "10 MB"),
   V(MinMeasuredBWsForAuthToIgnoreAdvertised, INT, "500"),
-  V(MyFamily,                    STRING,   NULL),
+  VAR("MyFamily",                LINELIST, MyFamily_lines,       NULL),
   V(NewCircuitPeriod,            INTERVAL, "30 seconds"),
   OBSOLETE("NamingAuthoritativeDirectory"),
-  V(NATDListenAddress,           LINELIST, NULL),
+  OBSOLETE("NATDListenAddress"),
   VPORT(NATDPort),
   V(Nickname,                    STRING,   NULL),
-  V(PredictedPortsRelevanceTime,  INTERVAL, "1 hour"),
-  V(WarnUnsafeSocks,              BOOL,     "1"),
+  OBSOLETE("PredictedPortsRelevanceTime"),
+  OBSOLETE("WarnUnsafeSocks"),
   VAR("NodeFamily",              LINELIST, NodeFamilies,         NULL),
   V(NumCPUs,                     UINT,     "0"),
   V(NumDirectoryGuards,          UINT,     "0"),
   V(NumEntryGuards,              UINT,     "0"),
   V(OfflineMasterKey,            BOOL,     "0"),
-  V(ORListenAddress,             LINELIST, NULL),
+  OBSOLETE("ORListenAddress"),
   VPORT(ORPort),
   V(OutboundBindAddress,         LINELIST,   NULL),
   V(OutboundBindAddressOR,       LINELIST,   NULL),
@@ -458,6 +462,8 @@ static config_var_t option_vars_[] = {
   V(RecommendedClientVersions,   LINELIST, NULL),
   V(RecommendedServerVersions,   LINELIST, NULL),
   V(RecommendedPackages,         LINELIST, NULL),
+  V(ReducedConnectionPadding,    BOOL,     "0"),
+  V(ConnectionPadding,           AUTOBOOL, "auto"),
   V(RefuseUnknownExits,          AUTOBOOL, "auto"),
   V(RejectPlaintextPorts,        CSV,      ""),
   V(RelayBandwidthBurst,         MEMUNIT,  "0"),
@@ -481,7 +487,7 @@ static config_var_t option_vars_[] = {
   V(SchedulerHighWaterMark__,    MEMUNIT,  "101 MB"),
   V(SchedulerMaxFlushCells__,    UINT,     "1000"),
   V(ShutdownWaitLength,          INTERVAL, "30 seconds"),
-  V(SocksListenAddress,          LINELIST, NULL),
+  OBSOLETE("SocksListenAddress"),
   V(SocksPolicy,                 LINELIST, NULL),
   VPORT(SocksPort),
   V(SocksTimeout,                INTERVAL, "2 minutes"),
@@ -494,10 +500,10 @@ static config_var_t option_vars_[] = {
   V(TokenBucketRefillInterval,   MSEC_INTERVAL, "100 msec"),
   V(Tor2webMode,                 BOOL,     "0"),
   V(Tor2webRendezvousPoints,      ROUTERSET, NULL),
-  V(TLSECGroup,                  STRING,   NULL),
+  OBSOLETE("TLSECGroup"),
   V(TrackHostExits,              CSV,      NULL),
   V(TrackHostExitsExpire,        INTERVAL, "30 minutes"),
-  V(TransListenAddress,          LINELIST, NULL),
+  OBSOLETE("TransListenAddress"),
   VPORT(TransPort),
   V(TransProxyType,              STRING,   "default"),
   OBSOLETE("TunnelDirConns"),
@@ -553,11 +559,13 @@ static config_var_t option_vars_[] = {
                                  "10800, 21600, 43200"),
   /* With the ClientBootstrapConsensus*Download* below:
    * Clients with only authorities will try:
-   *  - 3 authorities over 10 seconds, then wait 60 minutes.
+   *  - at least 3 authorities over 10 seconds, then exponentially backoff,
+   *    with the next attempt 3-21 seconds later,
    * Clients with authorities and fallbacks will try:
-   *  - 2 authorities and 4 fallbacks over 21 seconds, then wait 60 minutes.
+   *  - at least 2 authorities and 4 fallbacks over 21 seconds, then
+   *    exponentially backoff, with the next attempts 4-33 seconds later,
    * Clients will also retry when an application request arrives.
-   * After a number of failed reqests, clients retry every 3 days + 1 hour.
+   * After a number of failed requests, clients retry every 3 days + 1 hour.
    *
    * Clients used to try 2 authorities over 10 seconds, then wait for
    * 60 minutes or an application request.
@@ -662,35 +670,8 @@ static const config_deprecation_t option_deprecation_notes_[] = {
   /* Deprecated since 0.2.9.2-alpha... */
   { "AllowDotExit", "Unrestricted use of the .exit notation can be used for "
     "a wide variety of application-level attacks." },
-  { "AllowInvalidNodes", "There is no reason to enable this option; at best "
-    "it will make you easier to track." },
-  { "AllowSingleHopCircuits", "Almost no relays actually allow single-hop "
-    "exits, making this option pointless." },
-  { "AllowSingleHopExits", "Turning this on will make your relay easier "
-    "to abuse." },
   { "ClientDNSRejectInternalAddresses", "Turning this on makes your client "
     "easier to fingerprint, and may open you to esoteric attacks." },
-  { "ExcludeSingleHopRelays", "Turning it on makes your client easier to "
-    "fingerprint." },
-  { "FastFirstHopPK", "Changing this option does not make your client more "
-    "secure, but does make it easier to fingerprint." },
-  { "CloseHSClientCircuitsImmediatelyOnTimeout", "This option makes your "
-    "client easier to fingerprint." },
-  { "CloseHSServiceRendCircuitsImmediatelyOnTimeout", "This option makes "
-    "your hidden services easier to fingerprint." },
-  { "WarnUnsafeSocks", "Changing this option makes it easier for you "
-    "to accidentally lose your anonymity by leaking DNS information" },
-  { "TLSECGroup", "The default is a nice secure choice; the other option "
-    "is less secure." },
-  { "ControlListenAddress", "Use ControlPort instead." },
-  { "DirListenAddress", "Use DirPort instead, possibly with the "
-    "NoAdvertise sub-option" },
-  { "DNSListenAddress", "Use DNSPort instead." },
-  { "SocksListenAddress", "Use SocksPort instead." },
-  { "TransListenAddress", "Use TransPort instead." },
-  { "NATDListenAddress", "Use NATDPort instead." },
-  { "ORListenAddress", "Use ORPort instead, possibly with the "
-    "NoAdvertise sub-option" },
   /* End of options deprecated since 0.2.9.2-alpha. */
 
   { NULL, NULL }
@@ -707,7 +688,9 @@ static int options_transition_affects_workers(
       const or_options_t *old_options, const or_options_t *new_options);
 static int options_transition_affects_descriptor(
       const or_options_t *old_options, const or_options_t *new_options);
-static int check_nickname_list(char **lst, const char *name, char **msg);
+static int normalize_nickname_list(config_line_t **normalized_out,
+                                   const config_line_t *lst, const char *name,
+                                   char **msg);
 static char *get_bindaddr_from_transport_listen_line(const char *line,
                                                      const char *transport);
 static int parse_ports(or_options_t *options, int validate_only,
@@ -915,6 +898,7 @@ or_options_free(or_options_t *options)
   tor_free(options->BridgePassword_AuthDigest_);
   tor_free(options->command_arg);
   tor_free(options->master_key_fname);
+  config_free_lines(options->MyFamily);
   config_free(&options_format, options);
 }
 
@@ -1553,23 +1537,6 @@ get_effective_bwburst(const or_options_t *options)
   return (uint32_t)bw;
 }
 
-/** Return True if any changes from <b>old_options</b> to
- * <b>new_options</b> needs us to refresh our TLS context. */
-static int
-options_transition_requires_fresh_tls_context(const or_options_t *old_options,
-                                              const or_options_t *new_options)
-{
-  tor_assert(new_options);
-
-  if (!old_options)
-    return 0;
-
-  if (!opt_streq(old_options->TLSECGroup, new_options->TLSECGroup))
-    return 1;
-
-  return 0;
-}
-
 /**
  * Return true if changing the configuration from <b>old</b> to <b>new</b>
  * affects the guard susbsystem.
@@ -1788,13 +1755,6 @@ options_act(const or_options_t *old_options)
       log_warn(LD_BUG,"Error initializing keys; exiting");
       return -1;
     }
-  } else if (old_options &&
-             options_transition_requires_fresh_tls_context(old_options,
-                                                           options)) {
-    if (router_initialize_tls_context() < 0) {
-      log_warn(LD_BUG,"Error initializing TLS context.");
-      return -1;
-    }
   }
 
   /* Write our PID to the PID file. If we do not have write permissions we
@@ -1813,6 +1773,15 @@ options_act(const or_options_t *old_options)
     /* This should be impossible, but let's be sure. */
     log_warn(LD_BUG,"Error parsing already-validated policy options.");
     return -1;
+  }
+
+  if (server_mode(options)) {
+    static int cdm_initialized = 0;
+    if (cdm_initialized == 0) {
+      cdm_initialized = 1;
+      consdiffmgr_configure(NULL);
+      consdiffmgr_validate();
+    }
   }
 
   if (init_control_cookie_authentication(options->CookieAuthentication) < 0) {
@@ -2347,7 +2316,7 @@ print_usage(void)
   printf(
 "Copyright (c) 2001-2004, Roger Dingledine\n"
 "Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson\n"
-"Copyright (c) 2007-2016, The Tor Project, Inc.\n\n"
+"Copyright (c) 2007-2017, The Tor Project, Inc.\n\n"
 "tor -f <torrc> [args]\n"
 "See man page for options, or https://www.torproject.org/ for "
 "documentation.\n");
@@ -2809,13 +2778,13 @@ compute_publishserverdescriptor(or_options_t *options)
 #define MIN_REND_POST_PERIOD (10*60)
 #define MIN_REND_POST_PERIOD_TESTING (5)
 
-/** Highest allowable value for PredictedPortsRelevanceTime; if this is
- * too high, our selection of exits will decrease for an extended
- * period of time to an uncomfortable level .*/
-#define MAX_PREDICTED_CIRCS_RELEVANCE (60*60)
+/** Highest allowable value for CircuitsAvailableTimeout.
+ * If this is too large, client connections will stay open for too long,
+ * incurring extra padding overhead. */
+#define MAX_CIRCS_AVAILABLE_TIME (24*60*60)
 
 /** Highest allowable value for RendPostPeriod. */
-#define MAX_DIR_PERIOD (MIN_ONION_KEY_LIFETIME/2)
+#define MAX_DIR_PERIOD ((7*24*60*60)/2)
 
 /** Lowest allowable value for MaxCircuitDirtiness; if this is too low, Tor
  * will generate too many circuits and potentially overload the network. */
@@ -2998,6 +2967,10 @@ options_validate(or_options_t *old_options, or_options_t *options,
   tor_assert(msg);
   *msg = NULL;
 
+  if (parse_ports(options, 1, msg, &n_ports,
+                  &world_writable_control_socket) < 0)
+    return -1;
+
   /* Set UseEntryGuards from the configured value, before we check it below.
    * We change UseEntryGuards when it's incompatible with other options,
    * but leave UseEntryGuards_option with the original value.
@@ -3015,10 +2988,6 @@ options_validate(or_options_t *old_options, or_options_t *options,
         "https://www.torproject.org/docs/faq.html#BestOSForRelay "
         "for details.", uname);
   }
-
-  if (parse_ports(options, 1, msg, &n_ports,
-                  &world_writable_control_socket) < 0)
-    return -1;
 
   if (parse_outbound_addresses(options, 1, msg) < 0)
     return -1;
@@ -3112,14 +3081,12 @@ options_validate(or_options_t *old_options, or_options_t *options,
 
     if (strcasecmp(options->TransProxyType, "default") &&
         !options->TransPort_set) {
-      REJECT("Cannot use TransProxyType without any valid TransPort or "
-             "TransListenAddress.");
+      REJECT("Cannot use TransProxyType without any valid TransPort.");
     }
   }
 #else
   if (options->TransPort_set)
-    REJECT("TransPort and TransListenAddress are disabled "
-           "in this build.");
+    REJECT("TransPort is disabled in this build.");
 #endif
 
   if (options->TokenBucketRefillInterval <= 0
@@ -3154,15 +3121,6 @@ options_validate(or_options_t *old_options, or_options_t *options,
         routerset_free(rs);
       }
     }
-  }
-
-  if (options->TLSECGroup && (strcasecmp(options->TLSECGroup, "P256") &&
-                              strcasecmp(options->TLSECGroup, "P224"))) {
-    COMPLAIN("Unrecognized TLSECGroup: Falling back to the default.");
-    tor_free(options->TLSECGroup);
-  }
-  if (!evaluate_ecgroup_for_tls(options->TLSECGroup)) {
-    REJECT("Unsupported TLSECGroup.");
   }
 
   if (options->ExcludeNodes && options->StrictNodes) {
@@ -3372,28 +3330,6 @@ options_validate(or_options_t *old_options, or_options_t *options,
                                    server_mode(options));
   options->MaxMemInQueues_low_threshold = (options->MaxMemInQueues / 4) * 3;
 
-  options->AllowInvalid_ = 0;
-
-  if (options->AllowInvalidNodes) {
-    SMARTLIST_FOREACH_BEGIN(options->AllowInvalidNodes, const char *, cp) {
-        if (!strcasecmp(cp, "entry"))
-          options->AllowInvalid_ |= ALLOW_INVALID_ENTRY;
-        else if (!strcasecmp(cp, "exit"))
-          options->AllowInvalid_ |= ALLOW_INVALID_EXIT;
-        else if (!strcasecmp(cp, "middle"))
-          options->AllowInvalid_ |= ALLOW_INVALID_MIDDLE;
-        else if (!strcasecmp(cp, "introduction"))
-          options->AllowInvalid_ |= ALLOW_INVALID_INTRODUCTION;
-        else if (!strcasecmp(cp, "rendezvous"))
-          options->AllowInvalid_ |= ALLOW_INVALID_RENDEZVOUS;
-        else {
-          tor_asprintf(msg,
-              "Unrecognized value '%s' in AllowInvalidNodes", cp);
-          return -1;
-        }
-    } SMARTLIST_FOREACH_END(cp);
-  }
-
   if (!options->SafeLogging ||
       !strcasecmp(options->SafeLogging, "0")) {
     options->SafeLogging_ = SAFELOG_SCRUB_NONE;
@@ -3429,6 +3365,14 @@ options_validate(or_options_t *old_options, or_options_t *options,
     options->DirPort_set = 0;
   }
 
+  if (server_mode(options) && options->ConnectionPadding != -1) {
+    REJECT("Relays must use 'auto' for the ConnectionPadding setting.");
+  }
+
+  if (server_mode(options) && options->ReducedConnectionPadding != 0) {
+    REJECT("Relays cannot set ReducedConnectionPadding. ");
+  }
+
   if (options->MinUptimeHidServDirectoryV2 < 0) {
     log_warn(LD_CONFIG, "MinUptimeHidServDirectoryV2 option must be at "
                         "least 0 seconds. Changing to 0.");
@@ -3450,16 +3394,16 @@ options_validate(or_options_t *old_options, or_options_t *options,
     options->RendPostPeriod = MAX_DIR_PERIOD;
   }
 
-  if (options->PredictedPortsRelevanceTime >
-      MAX_PREDICTED_CIRCS_RELEVANCE) {
-    log_warn(LD_CONFIG, "PredictedPortsRelevanceTime is too large; "
-             "clipping to %ds.", MAX_PREDICTED_CIRCS_RELEVANCE);
-    options->PredictedPortsRelevanceTime = MAX_PREDICTED_CIRCS_RELEVANCE;
-  }
-
   /* Check the Single Onion Service options */
   if (options_validate_single_onion(options, msg) < 0)
     return -1;
+
+  if (options->CircuitsAvailableTimeout > MAX_CIRCS_AVAILABLE_TIME) {
+    // options_t is immutable for new code (the above code is older),
+    // so just make the user fix the value themselves rather than
+    // silently keep a shadow value lower than what they asked for.
+    REJECT("CircuitsAvailableTimeout is too large. Max is 24 hours.");
+  }
 
 #ifdef ENABLE_TOR2WEB_MODE
   if (options->Tor2webMode && options->UseEntryGuards) {
@@ -3508,6 +3452,20 @@ options_validate(or_options_t *old_options, or_options_t *options,
              "For this reason, the use of one EntryNodes with an hidden "
              "service is prohibited until a better solution is found.");
     return -1;
+  }
+
+  /* Inform the hidden service operator that pinning EntryNodes can possibly
+   * be harmful for the service anonymity. */
+  if (options->EntryNodes &&
+      routerset_is_list(options->EntryNodes) &&
+      (options->RendConfigLines != NULL)) {
+    log_warn(LD_CONFIG,
+             "EntryNodes is set with multiple entries and at least one "
+             "hidden service is configured. Pinning entry nodes can possibly "
+             "be harmful to the service anonymity. Because of this, we "
+             "recommend you either don't do that or make sure you know what "
+             "you are doing. For more details, please look at "
+             "https://trac.torproject.org/projects/tor/ticket/21155.");
   }
 
   /* Single Onion Services: non-anonymous hidden services */
@@ -3865,13 +3823,14 @@ options_validate(or_options_t *old_options, or_options_t *options,
              "have it group-readable.");
   }
 
-  if (options->MyFamily && options->BridgeRelay) {
+  if (options->MyFamily_lines && options->BridgeRelay) {
     log_warn(LD_CONFIG, "Listing a family for a bridge relay is not "
              "supported: it can reveal bridge fingerprints to censors. "
              "You should also make sure you aren't listing this bridge's "
              "fingerprint in any other MyFamily.");
   }
-  if (check_nickname_list(&options->MyFamily, "MyFamily", msg))
+  if (normalize_nickname_list(&options->MyFamily,
+                              options->MyFamily_lines, "MyFamily", msg))
     return -1;
   for (cl = options->NodeFamilies; cl; cl = cl->next) {
     routerset_t *rs = routerset_new();
@@ -4066,13 +4025,6 @@ options_validate(or_options_t *old_options, or_options_t *options,
     REJECT("TestingTorNetwork may only be configured in combination with "
            "a non-default set of DirAuthority or both of "
            "AlternateDirAuthority and AlternateBridgeAuthority configured.");
-  }
-
-  if (options->AllowSingleHopExits && !options->DirAuthorities) {
-    COMPLAIN("You have set AllowSingleHopExits; now your relay will allow "
-             "others to make one-hop exits. However, since by default most "
-             "clients avoid relays that set this option, most clients will "
-             "ignore you.");
   }
 
 #define CHECK_DEFAULT(arg)                                              \
@@ -4579,7 +4531,7 @@ options_transition_affects_descriptor(const or_options_t *old_options,
       get_effective_bwburst(old_options) !=
         get_effective_bwburst(new_options) ||
       !opt_streq(old_options->ContactInfo, new_options->ContactInfo) ||
-      !opt_streq(old_options->MyFamily, new_options->MyFamily) ||
+      !config_lines_eq(old_options->MyFamily, new_options->MyFamily) ||
       !opt_streq(old_options->AccountingStart, new_options->AccountingStart) ||
       old_options->AccountingMax != new_options->AccountingMax ||
       old_options->AccountingRule != new_options->AccountingRule ||
@@ -4675,27 +4627,36 @@ get_default_conf_file(int defaults_file)
 #endif
 }
 
-/** Verify whether lst is a string containing valid-looking comma-separated
- * nicknames, or NULL. Will normalise <b>lst</b> to prefix '$' to any nickname
- * or fingerprint that needs it. Return 0 on success.
+/** Verify whether lst is a list of strings containing valid-looking
+ * comma-separated nicknames, or NULL. Will normalise <b>lst</b> to prefix '$'
+ * to any nickname or fingerprint that needs it. Also splits comma-separated
+ * list elements into multiple elements. Return 0 on success.
  * Warn and return -1 on failure.
  */
 static int
-check_nickname_list(char **lst, const char *name, char **msg)
+normalize_nickname_list(config_line_t **normalized_out,
+                        const config_line_t *lst, const char *name,
+                        char **msg)
 {
-  int r = 0;
-  smartlist_t *sl;
-  int changes = 0;
-
-  if (!*lst)
+  if (!lst)
     return 0;
-  sl = smartlist_new();
 
-  smartlist_split_string(sl, *lst, ",",
-    SPLIT_SKIP_SPACE|SPLIT_IGNORE_BLANK|SPLIT_STRIP_SPACE, 0);
+  config_line_t *new_nicknames = NULL;
+  config_line_t **new_nicknames_next = &new_nicknames;
 
-  SMARTLIST_FOREACH_BEGIN(sl, char *, s)
+  const config_line_t *cl;
+  for (cl = lst; cl; cl = cl->next) {
+    const char *line = cl->value;
+    if (!line)
+      continue;
+
+    int valid_line = 1;
+    smartlist_t *sl = smartlist_new();
+    smartlist_split_string(sl, line, ",",
+      SPLIT_SKIP_SPACE|SPLIT_IGNORE_BLANK|SPLIT_STRIP_SPACE, 0);
+    SMARTLIST_FOREACH_BEGIN(sl, char *, s)
     {
+      char *normalized = NULL;
       if (!is_legal_nickname_or_hexdigest(s)) {
         // check if first char is dollar
         if (s[0] != '$') {
@@ -4704,36 +4665,45 @@ check_nickname_list(char **lst, const char *name, char **msg)
           tor_asprintf(&prepended, "$%s", s);
 
           if (is_legal_nickname_or_hexdigest(prepended)) {
-            // The nickname is valid when it's prepended, swap the current
-            // version with a prepended one
-            tor_free(s);
-            SMARTLIST_REPLACE_CURRENT(sl, s, prepended);
-            changes = 1;
-            continue;
+            // The nickname is valid when it's prepended, set it as the
+            // normalized version
+            normalized = prepended;
+          } else {
+            // Still not valid, free and fallback to error message
+            tor_free(prepended);
           }
-
-          // Still not valid, free and fallback to error message
-          tor_free(prepended);
         }
 
-        tor_asprintf(msg, "Invalid nickname '%s' in %s line", s, name);
-        r = -1;
-        break;
+        if (!normalized) {
+          tor_asprintf(msg, "Invalid nickname '%s' in %s line", s, name);
+          valid_line = 0;
+          break;
+        }
+      } else {
+        normalized = tor_strdup(s);
       }
-    }
-  SMARTLIST_FOREACH_END(s);
 
-  // Replace the caller's nickname list with a fixed one
-  if (changes && r == 0) {
-    char *newNicknames = smartlist_join_strings(sl, ", ", 0, NULL);
-    tor_free(*lst);
-    *lst = newNicknames;
+      config_line_t *next = tor_malloc_zero(sizeof(*next));
+      next->key = tor_strdup(cl->key);
+      next->value = normalized;
+      next->next = NULL;
+
+      *new_nicknames_next = next;
+      new_nicknames_next = &next->next;
+    } SMARTLIST_FOREACH_END(s);
+
+    SMARTLIST_FOREACH(sl, char *, s, tor_free(s));
+    smartlist_free(sl);
+
+    if (!valid_line) {
+      config_free_lines(new_nicknames);
+      return -1;
+    }
   }
 
-  SMARTLIST_FOREACH(sl, char *, s, tor_free(s));
-  smartlist_free(sl);
+  *normalized_out = new_nicknames;
 
-  return r;
+  return 0;
 }
 
 /** Learn config file name from command line arguments, or use the default.
@@ -4935,9 +4905,21 @@ options_init_from_torrc(int argc, char **argv)
     printf("OpenSSL \t\t%-15s\t\t%s\n",
                       crypto_openssl_get_header_version_str(),
                       crypto_openssl_get_version_str());
-    printf("Zlib    \t\t%-15s\t\t%s\n",
-                      tor_zlib_get_header_version_str(),
-                      tor_zlib_get_version_str());
+    if (tor_compress_supports_method(ZLIB_METHOD)) {
+      printf("Zlib    \t\t%-15s\t\t%s\n",
+                        tor_compress_version_str(ZLIB_METHOD),
+                        tor_compress_header_version_str(ZLIB_METHOD));
+    }
+    if (tor_compress_supports_method(LZMA_METHOD)) {
+      printf("Liblzma \t\t%-15s\t\t%s\n",
+                        tor_compress_version_str(LZMA_METHOD),
+                        tor_compress_header_version_str(LZMA_METHOD));
+    }
+    if (tor_compress_supports_method(ZSTD_METHOD)) {
+      printf("Libzstd \t\t%-15s\t\t%s\n",
+                        tor_compress_version_str(ZSTD_METHOD),
+                        tor_compress_header_version_str(ZSTD_METHOD));
+    }
     //TODO: Hex versions?
     exit(0);
   }
@@ -5077,6 +5059,7 @@ options_init_from_string(const char *cf_defaults, const char *cf,
   config_line_t *cl;
   int retval;
   setopt_err_t err = SETOPT_ERR_MISC;
+  int cf_has_include = 0;
   tor_assert(msg);
 
   oldoptions = global_options; /* get_options unfortunately asserts if
@@ -5093,7 +5076,8 @@ options_init_from_string(const char *cf_defaults, const char *cf,
     if (!body)
       continue;
     /* get config lines, assign them */
-    retval = config_get_lines(body, &cl, 1);
+    retval = config_get_lines_include(body, &cl, 1,
+                                      body == cf ? &cf_has_include : NULL);
     if (retval < 0) {
       err = SETOPT_ERR_PARSE;
       goto err;
@@ -5120,6 +5104,8 @@ options_init_from_string(const char *cf_defaults, const char *cf,
     err = SETOPT_ERR_PARSE;
     goto err;
   }
+
+  newoptions->IncludeUsed = cf_has_include;
 
   /* If this is a testing network configuration, change defaults
    * for a list of dependent config options, re-initialize newoptions
@@ -5164,7 +5150,8 @@ options_init_from_string(const char *cf_defaults, const char *cf,
       if (!body)
         continue;
       /* get config lines, assign them */
-      retval = config_get_lines(body, &cl, 1);
+      retval = config_get_lines_include(body, &cl, 1,
+                                        body == cf ? &cf_has_include : NULL);
       if (retval < 0) {
         err = SETOPT_ERR_PARSE;
         goto err;
@@ -5186,6 +5173,8 @@ options_init_from_string(const char *cf_defaults, const char *cf,
       goto err;
     }
   }
+
+  newoptions->IncludeUsed = cf_has_include;
 
   /* Validate newoptions */
   if (options_validate(oldoptions, newoptions, newdefaultoptions,
@@ -6423,14 +6412,9 @@ warn_client_dns_cache(const char *option, int disabling)
 /**
  * Parse port configuration for a single port type.
  *
- * Read entries of the "FooPort" type from the list <b>ports</b>, and
- * entries of the "FooListenAddress" type from the list
- * <b>listenaddrs</b>.  Two syntaxes are supported: a legacy syntax
- * where FooPort is at most a single entry containing a port number and
- * where FooListenAddress has any number of address:port combinations;
- * and a new syntax where there are no FooListenAddress entries and
- * where FooPort can have any number of entries of the format
- * "[Address:][Port] IsolationOptions".
+ * Read entries of the "FooPort" type from the list <b>ports</b>.  Syntax is
+ * that FooPort can have any number of entries of the format
+ *  "[Address:][Port] IsolationOptions".
  *
  * In log messages, describe the port type as <b>portname</b>.
  *
@@ -6443,9 +6427,6 @@ warn_client_dns_cache(const char *option, int disabling)
  * If CL_PORT_WARN_NONLOCAL is set in <b>flags</b>, warn if any of the
  * ports are not on a local address.  If CL_PORT_FORBID_NONLOCAL is set,
  * this is a control port with no password set: don't even allow it.
- *
- * Unless CL_PORT_ALLOW_EXTRA_LISTENADDR is set in <b>flags</b>, warn
- * if FooListenAddress is set but FooPort is 0.
  *
  * If CL_PORT_SERVER_OPTIONS is set in <b>flags</b>, do not allow stream
  * isolation options in the FooPort entries; instead allow the
@@ -6461,7 +6442,6 @@ warn_client_dns_cache(const char *option, int disabling)
 STATIC int
 parse_port_config(smartlist_t *out,
                   const config_line_t *ports,
-                  const config_line_t *listenaddrs,
                   const char *portname,
                   int listener_type,
                   const char *defaultaddr,
@@ -6478,90 +6458,12 @@ parse_port_config(smartlist_t *out,
   const unsigned forbid_nonlocal = flags & CL_PORT_FORBID_NONLOCAL;
   const unsigned default_to_group_writable =
     flags & CL_PORT_DFLT_GROUP_WRITABLE;
-  const unsigned allow_spurious_listenaddr =
-    flags & CL_PORT_ALLOW_EXTRA_LISTENADDR;
   const unsigned takes_hostnames = flags & CL_PORT_TAKES_HOSTNAMES;
   const unsigned is_unix_socket = flags & CL_PORT_IS_UNIXSOCKET;
   int got_zero_port=0, got_nonzero_port=0;
   char *unix_socket_path = NULL;
 
-  /* FooListenAddress is deprecated; let's make it work like it used to work,
-   * though. */
-  if (listenaddrs) {
-    int mainport = defaultport;
-
-    if (ports && ports->next) {
-      log_warn(LD_CONFIG, "%sListenAddress can't be used when there are "
-               "multiple %sPort lines", portname, portname);
-      return -1;
-    } else if (ports) {
-      if (!strcmp(ports->value, "auto")) {
-        mainport = CFG_AUTO_PORT;
-      } else {
-        int ok;
-        mainport = (int)tor_parse_long(ports->value, 10, 0, 65535, &ok, NULL);
-        if (!ok) {
-          log_warn(LD_CONFIG, "%sListenAddress can only be used with a single "
-                   "%sPort with value \"auto\" or 1-65535 and no options set.",
-                   portname, portname);
-          return -1;
-        }
-      }
-    }
-
-    if (mainport == 0) {
-      if (allow_spurious_listenaddr)
-        return 1; /*DOCDOC*/
-      log_warn(LD_CONFIG, "%sPort must be defined if %sListenAddress is used",
-               portname, portname);
-      return -1;
-    }
-
-    if (use_server_options && out) {
-      /* Add a no_listen port. */
-      port_cfg_t *cfg = port_cfg_new(0);
-      cfg->type = listener_type;
-      cfg->port = mainport;
-      tor_addr_make_unspec(&cfg->addr); /* Server ports default to 0.0.0.0 */
-      cfg->server_cfg.no_listen = 1;
-      cfg->server_cfg.bind_ipv4_only = 1;
-      /* cfg->entry_cfg defaults are already set by port_cfg_new */
-      smartlist_add(out, cfg);
-    }
-
-    for (; listenaddrs; listenaddrs = listenaddrs->next) {
-      tor_addr_t addr;
-      uint16_t port = 0;
-      if (tor_addr_port_lookup(listenaddrs->value, &addr, &port) < 0) {
-        log_warn(LD_CONFIG, "Unable to parse %sListenAddress '%s'",
-                 portname, listenaddrs->value);
-        return -1;
-      }
-      if (out) {
-        port_cfg_t *cfg = port_cfg_new(0);
-        cfg->type = listener_type;
-        cfg->port = port ? port : mainport;
-        tor_addr_copy(&cfg->addr, &addr);
-        cfg->entry_cfg.session_group = SESSION_GROUP_UNSET;
-        cfg->entry_cfg.isolation_flags = ISO_DEFAULT;
-        cfg->server_cfg.no_advertise = 1;
-        smartlist_add(out, cfg);
-      }
-    }
-
-    if (warn_nonlocal && out) {
-      if (is_control)
-        warn_nonlocal_controller_ports(out, forbid_nonlocal);
-      else if (is_ext_orport)
-        warn_nonlocal_ext_orports(out, portname);
-      else
-        warn_nonlocal_client_ports(out, portname, listener_type);
-    }
-    return 0;
-  } /* end if (listenaddrs) */
-
-  /* No ListenAddress lines. If there's no FooPort, then maybe make a default
-   * one. */
+  /* If there's no FooPort, then maybe make a default one. */
   if (! ports) {
     if (defaultport && defaultaddr && out) {
       port_cfg_t *cfg = port_cfg_new(is_unix_socket ? strlen(defaultaddr) : 0);
@@ -6962,6 +6864,7 @@ parse_port_config(smartlist_t *out,
     SMARTLIST_FOREACH(elts, char *, cp, tor_free(cp));
     smartlist_clear(elts);
     tor_free(addrport);
+    tor_free(unix_socket_path);
   }
 
   if (warn_nonlocal && out) {
@@ -7032,36 +6935,35 @@ parse_ports(or_options_t *options, int validate_only,
   const unsigned gw_flag = options->SocksSocketsGroupWritable ?
     CL_PORT_DFLT_GROUP_WRITABLE : 0;
   if (parse_port_config(ports,
-             options->SocksPort_lines, options->SocksListenAddress,
+             options->SocksPort_lines,
              "Socks", CONN_TYPE_AP_LISTENER,
              "127.0.0.1", 9050,
-             CL_PORT_WARN_NONLOCAL|CL_PORT_ALLOW_EXTRA_LISTENADDR|
-             CL_PORT_TAKES_HOSTNAMES|gw_flag) < 0) {
-    *msg = tor_strdup("Invalid SocksPort/SocksListenAddress configuration");
+             CL_PORT_WARN_NONLOCAL|CL_PORT_TAKES_HOSTNAMES|gw_flag) < 0) {
+    *msg = tor_strdup("Invalid SocksPort configuration");
     goto err;
   }
   if (parse_port_config(ports,
-                        options->DNSPort_lines, options->DNSListenAddress,
+                        options->DNSPort_lines,
                         "DNS", CONN_TYPE_AP_DNS_LISTENER,
                         "127.0.0.1", 0,
                         CL_PORT_WARN_NONLOCAL|CL_PORT_TAKES_HOSTNAMES) < 0) {
-    *msg = tor_strdup("Invalid DNSPort/DNSListenAddress configuration");
+    *msg = tor_strdup("Invalid DNSPort configuration");
     goto err;
   }
   if (parse_port_config(ports,
-                        options->TransPort_lines, options->TransListenAddress,
+                        options->TransPort_lines,
                         "Trans", CONN_TYPE_AP_TRANS_LISTENER,
                         "127.0.0.1", 0,
                         CL_PORT_WARN_NONLOCAL) < 0) {
-    *msg = tor_strdup("Invalid TransPort/TransListenAddress configuration");
+    *msg = tor_strdup("Invalid TransPort configuration");
     goto err;
   }
   if (parse_port_config(ports,
-                        options->NATDPort_lines, options->NATDListenAddress,
+                        options->NATDPort_lines,
                         "NATD", CONN_TYPE_AP_NATD_LISTENER,
                         "127.0.0.1", 0,
                         CL_PORT_WARN_NONLOCAL) < 0) {
-    *msg = tor_strdup("Invalid NatdPort/NatdListenAddress configuration");
+    *msg = tor_strdup("Invalid NatdPort configuration");
     goto err;
   }
   {
@@ -7077,16 +6979,14 @@ parse_ports(or_options_t *options, int validate_only,
 
     if (parse_port_config(ports,
                           options->ControlPort_lines,
-                          options->ControlListenAddress,
                           "Control", CONN_TYPE_CONTROL_LISTENER,
                           "127.0.0.1", 0,
                           control_port_flags) < 0) {
-      *msg = tor_strdup("Invalid ControlPort/ControlListenAddress "
-                        "configuration");
+      *msg = tor_strdup("Invalid ControlPort configuration");
       goto err;
     }
 
-    if (parse_port_config(ports, options->ControlSocket, NULL,
+    if (parse_port_config(ports, options->ControlSocket,
                           "ControlSocket",
                           CONN_TYPE_CONTROL_LISTENER, NULL, 0,
                           control_port_flags | CL_PORT_IS_UNIXSOCKET) < 0) {
@@ -7096,15 +6996,15 @@ parse_ports(or_options_t *options, int validate_only,
   }
   if (! options->ClientOnly) {
     if (parse_port_config(ports,
-                          options->ORPort_lines, options->ORListenAddress,
+                          options->ORPort_lines,
                           "OR", CONN_TYPE_OR_LISTENER,
                           "0.0.0.0", 0,
                           CL_PORT_SERVER_OPTIONS) < 0) {
-      *msg = tor_strdup("Invalid ORPort/ORListenAddress configuration");
+      *msg = tor_strdup("Invalid ORPort configuration");
       goto err;
     }
     if (parse_port_config(ports,
-                          options->ExtORPort_lines, NULL,
+                          options->ExtORPort_lines,
                           "ExtOR", CONN_TYPE_EXT_OR_LISTENER,
                           "127.0.0.1", 0,
                           CL_PORT_SERVER_OPTIONS|CL_PORT_WARN_NONLOCAL) < 0) {
@@ -7112,11 +7012,11 @@ parse_ports(or_options_t *options, int validate_only,
       goto err;
     }
     if (parse_port_config(ports,
-                          options->DirPort_lines, options->DirListenAddress,
+                          options->DirPort_lines,
                           "Dir", CONN_TYPE_DIR_LISTENER,
                           "0.0.0.0", 0,
                           CL_PORT_SERVER_OPTIONS) < 0) {
-      *msg = tor_strdup("Invalid DirPort/DirListenAddress configuration");
+      *msg = tor_strdup("Invalid DirPort configuration");
       goto err;
     }
   }

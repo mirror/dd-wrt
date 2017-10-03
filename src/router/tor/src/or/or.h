@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -71,10 +71,11 @@
 #include "tortls.h"
 #include "torlog.h"
 #include "container.h"
-#include "torgzip.h"
+#include "compress.h"
 #include "address.h"
 #include "compat_libevent.h"
 #include "ht.h"
+#include "confline.h"
 #include "replaycache.h"
 #include "crypto_curve25519.h"
 #include "crypto_ed25519.h"
@@ -147,8 +148,27 @@
 /** Maximum size of a single extrainfo document, as above. */
 #define MAX_EXTRAINFO_UPLOAD_SIZE 50000
 
-/** How often do we rotate onion keys? */
-#define MIN_ONION_KEY_LIFETIME (7*24*60*60)
+/** Minimum lifetime for an onion key in days. */
+#define MIN_ONION_KEY_LIFETIME_DAYS (1)
+
+/** Maximum lifetime for an onion key in days. */
+#define MAX_ONION_KEY_LIFETIME_DAYS (90)
+
+/** Default lifetime for an onion key in days. */
+#define DEFAULT_ONION_KEY_LIFETIME_DAYS (28)
+
+/** Minimum grace period for acceptance of an onion key in days.
+ * The maximum value is defined in proposal #274 as being the current network
+ * consensus parameter for "onion-key-rotation-days". */
+#define MIN_ONION_KEY_GRACE_PERIOD_DAYS (1)
+
+/** Default grace period for acceptance of an onion key in days. */
+#define DEFAULT_ONION_KEY_GRACE_PERIOD_DAYS (7)
+
+/** How often we should check the network consensus if it is time to rotate or
+ * expire onion keys. */
+#define ONION_KEY_CONSENSUS_CHECK_INTERVAL (60*60)
+
 /** How often do we rotate TLS contexts? */
 #define MAX_SSL_KEY_LIFETIME_INTERNAL (2*60*60)
 
@@ -403,12 +423,13 @@ typedef enum {
 #define DIR_PURPOSE_FETCH_MICRODESC 19
 #define DIR_PURPOSE_MAX_ 19
 
-/** True iff <b>p</b> is a purpose corresponding to uploading data to a
- * directory server. */
+/** True iff <b>p</b> is a purpose corresponding to uploading
+ * data to a directory server. */
 #define DIR_PURPOSE_IS_UPLOAD(p)                \
   ((p)==DIR_PURPOSE_UPLOAD_DIR ||               \
    (p)==DIR_PURPOSE_UPLOAD_VOTE ||              \
-   (p)==DIR_PURPOSE_UPLOAD_SIGNATURES)
+   (p)==DIR_PURPOSE_UPLOAD_SIGNATURES || \
+   (p)==DIR_PURPOSE_UPLOAD_RENDDESC_V2)
 
 #define EXIT_PURPOSE_MIN_ 1
 /** This exit stream wants to do an ordinary connect. */
@@ -875,6 +896,7 @@ typedef enum {
 #define CELL_RELAY_EARLY 9
 #define CELL_CREATE2 10
 #define CELL_CREATED2 11
+#define CELL_PADDING_NEGOTIATE 12
 
 #define CELL_VPADDING 128
 #define CELL_CERTS 129
@@ -1549,10 +1571,6 @@ typedef struct or_connection_t {
    * NETINFO cell listed the address we're connected to as recognized. */
   unsigned int is_canonical:1;
 
-  /** True iff we have decided that the other end of this connection
-   * is a client.  Connections with this flag set should never be used
-   * to satisfy an EXTEND request.  */
-  unsigned int is_connection_with_client:1;
   /** True iff this is an outgoing connection. */
   unsigned int is_outgoing:1;
   unsigned int proxy_type:2; /**< One of PROXY_NONE...PROXY_SOCKS5 */
@@ -1738,14 +1756,6 @@ typedef struct entry_connection_t {
   unsigned int is_socks_socket:1;
 } entry_connection_t;
 
-typedef enum {
-    DIR_SPOOL_NONE=0, DIR_SPOOL_SERVER_BY_DIGEST, DIR_SPOOL_SERVER_BY_FP,
-    DIR_SPOOL_EXTRA_BY_DIGEST, DIR_SPOOL_EXTRA_BY_FP,
-    DIR_SPOOL_CACHED_DIR, DIR_SPOOL_NETWORKSTATUS,
-    DIR_SPOOL_MICRODESC, /* NOTE: if we add another entry, add another bit. */
-} dir_spool_source_t;
-#define dir_spool_source_bitfield_t ENUM_BF(dir_spool_source_t)
-
 /** Subtype of connection_t for an "directory connection" -- that is, an HTTP
  * connection to retrieve or serve directory material. */
 typedef struct dir_connection_t {
@@ -1760,23 +1770,15 @@ typedef struct dir_connection_t {
   char *requested_resource;
   unsigned int dirconn_direct:1; /**< Is this dirconn direct, or via Tor? */
 
-  /* Used only for server sides of some dir connections, to implement
-   * "spooling" of directory material to the outbuf.  Otherwise, we'd have
-   * to append everything to the outbuf in one enormous chunk. */
-  /** What exactly are we spooling right now? */
-  dir_spool_source_bitfield_t  dir_spool_src : 3;
-
   /** If we're fetching descriptors, what router purpose shall we assign
    * to them? */
   uint8_t router_purpose;
-  /** List of fingerprints for networkstatuses or descriptors to be spooled. */
-  smartlist_t *fingerprint_stack;
-  /** A cached_dir_t object that we're currently spooling out */
-  struct cached_dir_t *cached_dir;
-  /** The current offset into cached_dir. */
-  off_t cached_dir_offset;
-  /** The zlib object doing on-the-fly compression for spooled data. */
-  tor_zlib_state_t *zlib_state;
+
+  /** List of spooled_resource_t for objects that we're spooling. We use
+   * it from back to front. */
+  smartlist_t *spool;
+  /** The compression object doing on-the-fly compression for spooled data. */
+  tor_compress_state_t *compress_state;
 
   /** What rendezvous service are we querying for? */
   rend_data_t *rend_data;
@@ -1792,6 +1794,14 @@ typedef struct dir_connection_t {
    * that's going away and being used on channels instead.  The dirserver still
    * needs this for the incoming side, so it's moved here. */
   uint64_t dirreq_id;
+
+#ifdef MEASUREMENTS_21206
+  /** Number of RELAY_DATA cells received. */
+  uint32_t data_cells_received;
+
+  /** Number of RELAY_DATA cells sent. */
+  uint32_t data_cells_sent;
+#endif
 } dir_connection_t;
 
 /** Subtype of connection_t for an connection to a controller. */
@@ -1930,11 +1940,13 @@ typedef struct addr_policy_t {
  * compressed form. */
 typedef struct cached_dir_t {
   char *dir; /**< Contents of this object, NUL-terminated. */
-  char *dir_z; /**< Compressed contents of this object. */
+  char *dir_compressed; /**< Compressed contents of this object. */
   size_t dir_len; /**< Length of <b>dir</b> (not counting its NUL). */
-  size_t dir_z_len; /**< Length of <b>dir_z</b>. */
+  size_t dir_compressed_len; /**< Length of <b>dir_compressed</b>. */
   time_t published; /**< When was this object published. */
   common_digests_t digests; /**< Digests of this object (networkstatus only) */
+  /** Sha3 digest (also ns only) */
+  uint8_t digest_sha3_as_signed[DIGEST256_LEN];
   int refcnt; /**< Reference count for this cached_dir_t. */
 } cached_dir_t;
 
@@ -2271,6 +2283,16 @@ typedef struct routerstatus_t {
   /** True iff this router has a protocol list that allows it to negotiate
    * ed25519 identity keys on a link handshake. */
   unsigned int supports_ed25519_link_handshake:1;
+
+  /** True iff this router has a protocol list that allows it to be an
+   * introduction point supporting ed25519 authentication key which is part of
+   * the v3 protocol detailed in proposal 224. This requires HSIntro=4. */
+  unsigned int supports_ed25519_hs_intro : 1;
+
+  /** True iff this router has a protocol list that allows it to be an hidden
+   * service directory supporting version 3 as seen in proposal 224. This
+   * requires HSDir=2. */
+  unsigned int supports_v3_hsdir : 1;
 
   unsigned int has_bandwidth:1; /**< The vote/consensus had bw info */
   unsigned int has_exitsummary:1; /**< The vote/consensus had exit summaries */
@@ -2625,6 +2647,9 @@ typedef struct networkstatus_t {
 
   /** Digests of this document, as signed. */
   common_digests_t digests;
+  /** A SHA3-256 digest of the document, not including signatures: used for
+   * consensus diffs */
+  uint8_t digest_sha3_as_signed[DIGEST256_LEN];
 
   /** List of router statuses, sorted by identity digest.  For a vote,
    * the elements are vote_routerstatus_t; for a consensus, the elements
@@ -3058,6 +3083,13 @@ typedef struct circuit_t {
    * circuit's queues; used only if CELL_STATS events are enabled and
    * cleared after being sent to control port. */
   smartlist_t *testing_cell_stats;
+
+  /** If set, points to an HS token that this circuit might be carrying.
+   *  Used by the HS circuitmap.  */
+  hs_token_t *hs_token;
+  /** Hashtable node: used to look up the circuit by its HS token using the HS
+      circuitmap. */
+  HT_ENTRY(circuit_t) hs_circuitmap_node;
 } circuit_t;
 
 /** Largest number of relay_early cells that we can send on a given
@@ -3306,6 +3338,13 @@ typedef struct origin_circuit_t {
    * adjust_exit_policy_from_exitpolicy_failure.
    */
   smartlist_t *prepend_policy;
+
+  /** How long do we wait before closing this circuit if it remains
+   * completely idle after it was built, in seconds? This value
+   * is randomized on a per-circuit basis from CircuitsAvailableTimoeut
+   * to 2*CircuitsAvailableTimoeut. */
+  int circuit_idle_timeout;
+
 } origin_circuit_t;
 
 struct onion_queue_t;
@@ -3366,13 +3405,6 @@ typedef struct or_circuit_t {
   /** Points to spliced circuit if purpose is REND_ESTABLISHED, and circuit
    * is not marked for close. */
   struct or_circuit_t *rend_splice;
-
-  /** If set, points to an HS token that this circuit might be carrying.
-   *  Used by the HS circuitmap.  */
-  hs_token_t *hs_token;
-  /** Hashtable node: used to look up the circuit by its HS token using the HS
-      circuitmap. */
-  HT_ENTRY(or_circuit_t) hs_circuitmap_node;
 
   /** Stores KH for the handshake. */
   char rend_circ_nonce[DIGEST_LEN];/* KH in tor-spec.txt */
@@ -3454,15 +3486,6 @@ static inline const origin_circuit_t *CONST_TO_ORIGIN_CIRCUIT(
   return DOWNCAST(origin_circuit_t, x);
 }
 
-/** Bitfield type: things that we're willing to use invalid routers for. */
-typedef enum invalid_router_usage_t {
-  ALLOW_INVALID_ENTRY       =1,
-  ALLOW_INVALID_EXIT        =2,
-  ALLOW_INVALID_MIDDLE      =4,
-  ALLOW_INVALID_RENDEZVOUS  =8,
-  ALLOW_INVALID_INTRODUCTION=16,
-} invalid_router_usage_t;
-
 /* limits for TCP send and recv buffer size used for constrained sockets */
 #define MIN_CONSTRAINED_TCP_BUFFER 2048
 #define MAX_CONSTRAINED_TCP_BUFFER 262144  /* 256k */
@@ -3523,27 +3546,6 @@ typedef struct port_cfg_t {
   /** Path for an AF_UNIX address */
   char unix_addr[FLEXIBLE_ARRAY_MEMBER];
 } port_cfg_t;
-
-/** Ordinary configuration line. */
-#define CONFIG_LINE_NORMAL 0
-/** Appends to previous configuration for the same option, even if we
- * would ordinary replace it. */
-#define CONFIG_LINE_APPEND 1
-/* Removes all previous configuration for an option. */
-#define CONFIG_LINE_CLEAR 2
-
-/** A linked list of lines in a config file. */
-typedef struct config_line_t {
-  char *key;
-  char *value;
-  struct config_line_t *next;
-  /** What special treatment (if any) does this line require? */
-  unsigned int command:2;
-  /** If true, subsequent assignments to this linelist should replace
-   * it, not extend it.  Set only on the first item in a linelist in an
-   * or_options_t. */
-  unsigned int fragile:1;
-} config_line_t;
 
 typedef struct routerset_t routerset_t;
 
@@ -3609,10 +3611,6 @@ typedef struct {
   int DisableAllSwap; /**< Boolean: Attempt to call mlockall() on our
                        * process for all current and future memory. */
 
-  /** List of "entry", "middle", "exit", "introduction", "rendezvous". */
-  smartlist_t *AllowInvalidNodes;
-  /** Bitmask; derived from AllowInvalidNodes. */
-  invalid_router_usage_t AllowInvalid_;
   config_line_t *ExitPolicy; /**< Lists of exit policy components. */
   int ExitPolicyRejectPrivate; /**< Should we not exit to reserved private
                                 * addresses, and our own published addresses?
@@ -3623,21 +3621,6 @@ typedef struct {
                                         * configured ports. */
   config_line_t *SocksPolicy; /**< Lists of socks policy components */
   config_line_t *DirPolicy; /**< Lists of dir policy components */
-  /** Addresses to bind for listening for SOCKS connections. */
-  config_line_t *SocksListenAddress;
-  /** Addresses to bind for listening for transparent pf/netfilter
-   * connections. */
-  config_line_t *TransListenAddress;
-  /** Addresses to bind for listening for transparent natd connections */
-  config_line_t *NATDListenAddress;
-  /** Addresses to bind for listening for SOCKS connections. */
-  config_line_t *DNSListenAddress;
-  /** Addresses to bind for listening for OR connections. */
-  config_line_t *ORListenAddress;
-  /** Addresses to bind for listening for directory connections. */
-  config_line_t *DirListenAddress;
-  /** Addresses to bind for listening for control connections. */
-  config_line_t *ControlListenAddress;
   /** Local address to bind outbound sockets */
   config_line_t *OutboundBindAddress;
   /** Local address to bind outbound relay sockets */
@@ -3659,7 +3642,6 @@ typedef struct {
   /** Whether routers accept EXTEND cells to routers with private IPs. */
   int ExtendAllowPrivateAddresses;
   char *User; /**< Name of user to run Tor as. */
-  char *Group; /**< Name of group to run Tor as. */
   config_line_t *ORPort_lines; /**< Ports to listen on for OR connections. */
   /** Ports to listen on for extended OR connections. */
   config_line_t *ExtORPort_lines;
@@ -3762,6 +3744,15 @@ typedef struct {
   int AvoidDiskWrites; /**< Boolean: should we never cache things to disk?
                         * Not used yet. */
   int ClientOnly; /**< Boolean: should we never evolve into a server role? */
+
+  int ReducedConnectionPadding; /**< Boolean: Should we try to keep connections
+                                  open shorter and pad them less against
+                                  connection-level traffic analysis? */
+  /** Autobool: if auto, then connection padding will be negotiated by client
+   * and server. If 0, it will be fully disabled. If 1, the client will still
+   * pad to the server regardless of server support. */
+  int ConnectionPadding;
+
   /** To what authority types do we publish our descriptor? Choices are
    * "v1", "v2", "v3", "bridge", or "". */
   smartlist_t *PublishServerDescriptor;
@@ -3786,15 +3777,6 @@ typedef struct {
 
   /** A routerset that should be used when picking RPs for HS circuits. */
   routerset_t *Tor2webRendezvousPoints;
-
-  /** Close hidden service client circuits immediately when they reach
-   * the normal circuit-build timeout, even if they have already sent
-   * an INTRODUCE1 cell on its way to the service. */
-  int CloseHSClientCircuitsImmediatelyOnTimeout;
-
-  /** Close hidden-service-side rendezvous circuits immediately when
-   * they reach the normal circuit-build timeout. */
-  int CloseHSServiceRendCircuitsImmediatelyOnTimeout;
 
   /** Onion Services in HiddenServiceSingleHopMode make one-hop (direct)
    * circuits between the onion service server, and the introduction and
@@ -3876,8 +3858,8 @@ typedef struct {
   int CircuitBuildTimeout; /**< Cull non-open circuits that were born at
                             * least this many seconds ago. Used until
                             * adaptive algorithm learns a new value. */
-  int CircuitIdleTimeout; /**< Cull open clean circuits that were born
-                           * at least this many seconds ago. */
+  int CircuitsAvailableTimeout; /**< Try to have an open circuit for at
+                                     least this long after last activity */
   int CircuitStreamTimeout; /**< If non-zero, detach streams from circuits
                              * and try a new circuit if the stream has been
                              * waiting for this many seconds. If zero, use
@@ -3887,10 +3869,6 @@ typedef struct {
                          * a new one? */
   int MaxCircuitDirtiness; /**< Never use circs that were first used more than
                                 this interval ago. */
-  int PredictedPortsRelevanceTime; /** How long after we've requested a
-                                    * connection for a given port, do we want
-                                    * to continue to pick exits that support
-                                    * that port?  */
   uint64_t BandwidthRate; /**< How much bandwidth, on average, are we willing
                            * to use in a second? */
   uint64_t BandwidthBurst; /**< How much bandwidth, at maximum, are we willing
@@ -3904,8 +3882,6 @@ typedef struct {
   uint64_t PerConnBWRate; /**< Long-term bw on a single TLS conn, if set. */
   uint64_t PerConnBWBurst; /**< Allowed burst on a single TLS conn, if set. */
   int NumCPUs; /**< How many CPUs should we try to use? */
-//int RunTesting; /**< If true, create testing circuits to measure how well the
-//                 * other ORs are running. */
   config_line_t *RendConfigLines; /**< List of configuration lines
                                           * for rendezvous services. */
   config_line_t *HidServAuth; /**< List of configuration lines for client-side
@@ -3956,7 +3932,8 @@ typedef struct {
   /** If set, use these bridge authorities and not the default one. */
   config_line_t *AlternateBridgeAuthority;
 
-  char *MyFamily; /**< Declared family for this OR. */
+  config_line_t *MyFamily_lines; /**< Declared family for this OR. */
+  config_line_t *MyFamily; /**< Declared family for this OR, normalized */
   config_line_t *NodeFamilies; /**< List of config lines for
                                 * node families */
   smartlist_t *NodeFamilySets; /**< List of parsed NodeFamilies values. */
@@ -4075,8 +4052,6 @@ typedef struct {
   int NumDirectoryGuards; /**< How many dir guards do we try to establish?
                            * If 0, use value from NumEntryGuards. */
   int RephistTrackTime; /**< How many seconds do we keep rephist info? */
-  int FastFirstHopPK; /**< If Tor believes it is safe, should we save a third
-                       * of our PK time by sending CREATE_FAST cells? */
   /** Should we always fetch our dir info on the mirror schedule (which
    * means directly from the authorities) no matter our other config? */
   int FetchDirInfoEarly;
@@ -4132,26 +4107,12 @@ typedef struct {
    * if we are a cache).  For authorities, this is always true. */
   int DownloadExtraInfo;
 
-  /** If true, and we are acting as a relay, allow exit circuits even when
-   * we are the first hop of a circuit. */
-  int AllowSingleHopExits;
-  /** If true, don't allow relays with AllowSingleHopExits=1 to be used in
-   * circuits that we build. */
-  int ExcludeSingleHopRelays;
-  /** If true, and the controller tells us to use a one-hop circuit, and the
-   * exit allows it, we use it. */
-  int AllowSingleHopCircuits;
-
   /** If true, we convert "www.google.com.foo.exit" addresses on the
    * socks/trans/natd ports into "www.google.com" addresses that
    * exit from the node "foo". Disabled by default since attacking
    * websites and exit relays can use it to manipulate your path
    * selection. */
   int AllowDotExit;
-
-  /** If true, we will warn if a user gives us only an IP address
-   * instead of a hostname. */
-  int WarnUnsafeSocks;
 
   /** If true, we're configured to collect statistics on clients
    * requesting network statuses from us as directory. */
@@ -4168,6 +4129,9 @@ typedef struct {
 
   /** If true, the user wants us to collect cell statistics. */
   int CellStatistics;
+
+  /** If true, the user wants us to collect padding statistics. */
+  int PaddingStatistics;
 
   /** If true, the user wants us to collect statistics as entry node. */
   int EntryStatistics;
@@ -4376,8 +4340,7 @@ typedef struct {
   int TestingDirAuthVoteGuardIsStrict;
 
   /** Relays in a testing network which should be voted HSDir
-   * regardless of uptime and DirPort.
-   * Respects VoteOnHidServDirectoriesV2. */
+   * regardless of uptime and DirPort. */
   routerset_t *TestingDirAuthVoteHSDir;
   int TestingDirAuthVoteHSDirIsStrict;
 
@@ -4509,8 +4472,6 @@ typedef struct {
 
   int IPv6Exit; /**< Do we support exiting to IPv6 addresses? */
 
-  char *TLSECGroup; /**< One of "P256", "P224", or nil for auto */
-
   /** Fraction: */
   double PathsNeededToBuildCircuits;
 
@@ -4594,6 +4555,14 @@ typedef struct {
    * do we enforce Ed25519 identity match? */
   /* NOTE: remove this option someday. */
   int AuthDirTestEd25519LinkKeys;
+
+  /** Bool (default: 0): Tells if a %include was used on torrc */
+  int IncludeUsed;
+
+  /** The seconds after expiration which we as a relay should keep old
+   * consensuses around so that we can generate diffs from them.  If 0,
+   * use the default. */
+  int MaxConsensusAgeForDiffs;
 } or_options_t;
 
 /** Persistent state for an onion router, as saved to disk. */
@@ -4819,7 +4788,7 @@ typedef uint32_t build_time_t;
 double circuit_build_times_quantile_cutoff(void);
 
 /** How often in seconds should we build a test circuit */
-#define CBT_DEFAULT_TEST_FREQUENCY 60
+#define CBT_DEFAULT_TEST_FREQUENCY 10
 #define CBT_MIN_TEST_FREQUENCY 1
 #define CBT_MAX_TEST_FREQUENCY INT32_MAX
 
@@ -5308,7 +5277,8 @@ typedef struct dir_server_t {
                            * address information from published? */
 
   routerstatus_t fake_status; /**< Used when we need to pass this trusted
-                               * dir_server_t to directory_initiate_command_*
+                               * dir_server_t to
+                               * directory_request_set_routerstatus.
                                * as a routerstatus_t.  Not updated by the
                                * router-status management code!
                                **/
@@ -5361,7 +5331,6 @@ typedef enum {
   CRN_NEED_UPTIME = 1<<0,
   CRN_NEED_CAPACITY = 1<<1,
   CRN_NEED_GUARD = 1<<2,
-  CRN_ALLOW_INVALID = 1<<3,
   /* XXXX not used, apparently. */
   CRN_WEIGHT_AS_EXIT = 1<<5,
   CRN_NEED_DESC = 1<<6,
@@ -5376,8 +5345,6 @@ typedef enum {
 typedef enum was_router_added_t {
   /* Router was added successfully. */
   ROUTER_ADDED_SUCCESSFULLY = 1,
-  /* Router descriptor was added with warnings to submitter. */
-  ROUTER_ADDED_NOTIFY_GENERATOR = 0,
   /* Extrainfo document was rejected because no corresponding router
    * descriptor was found OR router descriptor was rejected because
    * it was incompatible with its extrainfo document. */

@@ -1,5 +1,5 @@
 /* Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -587,7 +587,10 @@ accounting_set_wakeup_time(void)
     char buf[ISO_TIME_LEN+1];
     format_iso_time(buf, interval_start_time);
 
-    crypto_pk_get_digest(get_server_identity_key(), digest);
+    if (crypto_pk_get_digest(get_server_identity_key(), digest) < 0) {
+      log_err(LD_BUG, "Error getting our key's digest.");
+      tor_assert(0);
+    }
 
     d_env = crypto_digest_new();
     crypto_digest_add_bytes(d_env, buf, ISO_TIME_LEN);

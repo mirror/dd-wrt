@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -83,7 +83,11 @@ static int parse_socks_client(const uint8_t *data, size_t datalen,
 #define CHUNK_HEADER_LEN STRUCT_OFFSET(chunk_t, mem[0])
 
 /* We leave this many NUL bytes at the end of the buffer. */
+#ifdef DISABLE_MEMORY_SENTINELS
+#define SENTINEL_LEN 0
+#else
 #define SENTINEL_LEN 4
+#endif
 
 /* Header size plus NUL bytes at the end */
 #define CHUNK_OVERHEAD (CHUNK_HEADER_LEN + SENTINEL_LEN)
@@ -97,18 +101,22 @@ static int parse_socks_client(const uint8_t *data, size_t datalen,
 
 #define DEBUG_SENTINEL
 
-#ifdef DEBUG_SENTINEL
+#if defined(DEBUG_SENTINEL) && !defined(DISABLE_MEMORY_SENTINELS)
 #define DBG_S(s) s
 #else
 #define DBG_S(s) (void)0
 #endif
 
+#ifdef DISABLE_MEMORY_SENTINELS
+#define CHUNK_SET_SENTINEL(chunk, alloclen) STMT_NIL
+#else
 #define CHUNK_SET_SENTINEL(chunk, alloclen) do {                        \
     uint8_t *a = (uint8_t*) &(chunk)->mem[(chunk)->memlen];             \
     DBG_S(uint8_t *b = &((uint8_t*)(chunk))[(alloclen)-SENTINEL_LEN]);  \
     DBG_S(tor_assert(a == b));                                          \
     memset(a,0,SENTINEL_LEN);                                           \
   } while (0)
+#endif
 
 /** Return the next character in <b>chunk</b> onto which data can be appended.
  * If the chunk is full, this might be off the end of chunk->mem. */
@@ -1311,7 +1319,7 @@ fetch_from_buf_http(buf_t *buf,
 
 /**
  * Wait this many seconds before warning the user about using SOCKS unsafely
- * again (requires that WarnUnsafeSocks is turned on). */
+ * again. */
 #define SOCKS_WARN_INTERVAL 5
 
 /** Warn that the user application has made an unsafe socks request using
@@ -1323,9 +1331,6 @@ log_unsafe_socks_warning(int socks_protocol, const char *address,
 {
   static ratelim_t socks_ratelim = RATELIM_INIT(SOCKS_WARN_INTERVAL);
 
-  const or_options_t *options = get_options();
-  if (! options->WarnUnsafeSocks)
-    return;
   if (safe_socks) {
     log_fn_ratelim(&socks_ratelim, LOG_WARN, LD_APP,
              "Your application (using socks%d to port %d) is giving "
@@ -1710,6 +1715,7 @@ parse_socks(const char *data, size_t datalen, socks_request_t *req,
           return -1;
       }
       tor_assert(0);
+      break;
     case 4: { /* socks4 */
       enum {socks4, socks4a} socks4_prot = socks4a;
       const char *authstart, *authend;
@@ -2080,13 +2086,13 @@ fetch_from_buf_line(buf_t *buf, char *data_out, size_t *data_len)
 }
 
 /** Compress on uncompress the <b>data_len</b> bytes in <b>data</b> using the
- * zlib state <b>state</b>, appending the result to <b>buf</b>.  If
+ * compression state <b>state</b>, appending the result to <b>buf</b>.  If
  * <b>done</b> is true, flush the data in the state and finish the
  * compression/uncompression.  Return -1 on failure, 0 on success. */
 int
-write_to_buf_zlib(buf_t *buf, tor_zlib_state_t *state,
-                  const char *data, size_t data_len,
-                  int done)
+write_to_buf_compress(buf_t *buf, tor_compress_state_t *state,
+                      const char *data, size_t data_len,
+                      const int done)
 {
   char *next;
   size_t old_avail, avail;
@@ -2100,21 +2106,30 @@ write_to_buf_zlib(buf_t *buf, tor_zlib_state_t *state,
     }
     next = CHUNK_WRITE_PTR(buf->tail);
     avail = old_avail = CHUNK_REMAINING_CAPACITY(buf->tail);
-    switch (tor_zlib_process(state, &next, &avail, &data, &data_len, done)) {
-      case TOR_ZLIB_DONE:
+    switch (tor_compress_process(state, &next, &avail,
+                                 &data, &data_len, done)) {
+      case TOR_COMPRESS_DONE:
         over = 1;
         break;
-      case TOR_ZLIB_ERR:
+      case TOR_COMPRESS_ERROR:
         return -1;
-      case TOR_ZLIB_OK:
-        if (data_len == 0)
+      case TOR_COMPRESS_OK:
+        if (data_len == 0) {
+          tor_assert_nonfatal(!done);
           over = 1;
+        }
         break;
-      case TOR_ZLIB_BUF_FULL:
+      case TOR_COMPRESS_BUFFER_FULL:
         if (avail) {
-          /* Zlib says we need more room (ZLIB_BUF_FULL).  Start a new chunk
-           * automatically, whether were going to or not. */
+          /* The compression module says we need more room
+           * (TOR_COMPRESS_BUFFER_FULL).  Start a new chunk automatically,
+           * whether were going to or not. */
           need_new_chunk = 1;
+        }
+        if (data_len == 0 && !done) {
+          /* We've consumed all the input data, though, so there's no
+           * point in forging ahead right now. */
+          over = 1;
         }
         break;
     }

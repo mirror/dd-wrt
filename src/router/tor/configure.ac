@@ -1,10 +1,10 @@
 dnl Copyright (c) 2001-2004, Roger Dingledine
 dnl Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson
-dnl Copyright (c) 2007-2015, The Tor Project, Inc.
+dnl Copyright (c) 2007-2017, The Tor Project, Inc.
 dnl See LICENSE for licensing information
 
 AC_PREREQ([2.63])
-AC_INIT([tor],[0.3.0.10])
+AC_INIT([tor],[0.3.1.7])
 AC_CONFIG_SRCDIR([src/or/main.c])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -53,6 +53,12 @@ AC_ARG_ENABLE(libfuzzer,
    AS_HELP_STRING(--enable-libfuzzer, [build extra fuzzers based on 'libfuzzer']))
 AC_ARG_ENABLE(oss-fuzz,
    AS_HELP_STRING(--enable-oss-fuzz, [build extra fuzzers based on 'oss-fuzz' environment]))
+AC_ARG_ENABLE(memory-sentinels,
+   AS_HELP_STRING(--disable-memory-sentinels, [disable code that tries to prevent some kinds of memory access bugs. For fuzzing only.]))
+AC_ARG_ENABLE(rust,
+   AS_HELP_STRING(--enable-rust, [enable rust integration]))
+AC_ARG_ENABLE(cargo-online-mode,
+   AS_HELP_STRING(--enable-cargo-online-mode, [Allow cargo to make network requests to fetch crates. For builds with rust only.]))
 
 if test "x$enable_coverage" != "xyes" -a "x$enable_asserts_in_tests" = "xno" ; then
     AC_MSG_ERROR([Can't disable assertions outside of coverage build])
@@ -63,6 +69,7 @@ AM_CONDITIONAL(COVERAGE_ENABLED, test "x$enable_coverage" = "xyes")
 AM_CONDITIONAL(DISABLE_ASSERTS_IN_UNIT_TESTS, test "x$enable_asserts_in_tests" = "xno")
 AM_CONDITIONAL(LIBFUZZER_ENABLED, test "x$enable_libfuzzer" = "xyes")
 AM_CONDITIONAL(OSS_FUZZ_ENABLED, test "x$enable_oss_fuzz" = "xyes")
+AM_CONDITIONAL(USE_RUST, test "x$enable_rust" = "xyes")
 
 if test "$enable_static_tor" = "yes"; then
   enable_static_libevent="yes";
@@ -74,6 +81,11 @@ fi
 if test "$enable_system_torrc" = "no"; then
   AC_DEFINE(DISABLE_SYSTEM_TORRC, 1,
             [Defined if we're not going to look for a torrc in SYSCONF])
+fi
+
+if test "$enable_memory_sentinels" = "no"; then
+  AC_DEFINE(DISABLE_MEMORY_SENTINELS, 1,
+           [Defined if we're turning off memory safety code to look for bugs])
 fi
 
 AM_CONDITIONAL(USE_OPENBSD_MALLOC, test "x$enable_openbsd_malloc" = "xyes")
@@ -182,6 +194,16 @@ AC_ARG_ENABLE(seccomp,
 AC_ARG_ENABLE(libscrypt,
      AS_HELP_STRING(--disable-libscrypt, [do not attempt to use libscrypt]))
 
+dnl Enable event tracing which are transformed to debug log statement.
+AC_ARG_ENABLE(event-tracing-debug,
+     AS_HELP_STRING(--enable-event-tracing-debug, [build with event tracing to debug log]))
+AM_CONDITIONAL([USE_EVENT_TRACING_DEBUG], [test "x$enable_event_tracing_debug" = "xyes"])
+
+if test x$enable_event_tracing_debug = xyes; then
+  AC_DEFINE([USE_EVENT_TRACING_DEBUG], [1], [Tracing framework to log debug])
+  AC_DEFINE([TOR_EVENT_TRACING_ENABLED], [1], [Compile the event tracing instrumentation])
+fi
+
 dnl check for the correct "ar" when cross-compiling.
 dnl   (AM_PROG_AR was new in automake 1.11.2, which we do not yet require,
 dnl    so kludge up a replacement for the case where it isn't there yet.)
@@ -231,6 +253,68 @@ if test "x$PYTHON" = "x"; then
   AC_MSG_WARN([Python unavailable; some tests will not be run.])
 fi
 AM_CONDITIONAL(USEPYTHON, [test "x$PYTHON" != "x"])
+
+dnl List all external rust crates we depend on here. Include the version
+rust_crates="libc-0.2.22"
+AC_SUBST(rust_crates)
+
+if test "x$enable_rust" = "xyes"; then
+  AC_ARG_VAR([RUSTC], [path to the rustc binary])
+  AC_CHECK_PROG([RUSTC], [rustc], [rustc],[no])
+  if test "x$RUSTC" = "xno"; then
+    AC_MSG_ERROR([rustc unavailable but rust integration requested.])
+  fi
+
+  AC_ARG_VAR([CARGO], [path to the cargo binary])
+  AC_CHECK_PROG([CARGO], [cargo], [cargo],[no])
+  if test "x$CARGO" = "xno"; then
+    AC_MSG_ERROR([cargo unavailable but rust integration requested.])
+  fi
+
+  AC_DEFINE([HAVE_RUST], 1, [have Rust])
+  if test "x$enable_cargo_online_mode" = "xyes"; then
+    CARGO_ONLINE=
+    RUST_DL=#
+  else
+    CARGO_ONLINE=--frozen
+    RUST_DL=
+
+    dnl When we're not allowed to touch the network, we need crate dependencies
+    dnl locally available.
+    AC_MSG_CHECKING([rust crate dependencies])
+    AC_ARG_VAR([RUST_DEPENDENCIES], [path to directory with local crate mirror])
+    if test "x$RUST_DEPENDENCIES" = "x"; then
+      RUST_DEPENDENCIES="$srcdir/src/ext/rust/"
+      NEED_MOD=1
+    fi
+    if test ! -d "$RUST_DEPENDENCIES"; then
+      AC_MSG_ERROR([Rust dependency directory $RUST_DEPENDENCIES does not exist. Specify a dependency directory using the RUST_DEPENDENCIES variable or allow cargo to fetch crates using --enable-cargo-online-mode.])
+    fi
+    for dep in $rust_crates; do
+      if test ! -d "$RUST_DEPENDENCIES"/"$dep"; then
+        AC_MSG_ERROR([Failure to find rust dependency $RUST_DEPENDENCIES/$dep. Specify a dependency directory using the RUST_DEPENDENCIES variable or allow cargo to fetch crates using --enable-cargo-online-mode.])
+      fi
+    done
+    if test "x$NEED_MOD" = "x1"; then
+      dnl When looking for dependencies from cargo, pick right directory
+      RUST_DEPENDENCIES="../../src/ext/rust"
+    fi
+  fi
+
+  AC_SUBST(CARGO_ONLINE)
+  AC_SUBST(RUST_DL)
+
+dnl Let's check the rustc version, too
+  AC_MSG_CHECKING([rust version])
+  RUSTC_VERSION_MAJOR=`$RUSTC --version | cut -d ' ' -f 2 | cut -d '.' -f 1`
+  RUSTC_VERSION_MINOR=`$RUSTC --version | cut -d ' ' -f 2 | cut -d '.' -f 2`
+  if test "x$RUSTC_VERSION_MAJOR" = "x" -o "x$RUSTC_VERSION_MINOR" = "x"; then
+    AC_MSG_ERROR([rustc version couldn't be identified])
+  fi
+  if test "$RUSTC_VERSION_MAJOR" -lt 2 -a "$RUSTC_VERSION_MINOR" -lt 14; then
+    AC_MSG_ERROR([rustc must be at least version 1.14])
+  fi
+fi
 
 ifdef([AC_C_FLEXIBLE_ARRAY_MEMBER], [
 AC_C_FLEXIBLE_ARRAY_MEMBER
@@ -724,6 +808,70 @@ else
      TOR_ZLIB_LIBS="-lz"
 fi
 AC_SUBST(TOR_ZLIB_LIBS)
+
+dnl ------------------------------------------------------
+dnl Where we do we find lzma?
+
+AC_ARG_ENABLE(lzma,
+      AS_HELP_STRING(--enable-lzma, [enable support for the LZMA compression scheme.]),
+      [case "${enableval}" in
+        "yes") lzma=true ;;
+        "no")  lzma=false ;;
+        * ) AC_MSG_ERROR(bad value for --enable-lzma) ;;
+      esac], [lzma=auto])
+
+if test "x$enable_lzma" = "xno"; then
+    have_lzma=no;
+else
+    PKG_CHECK_MODULES([LZMA],
+                      [liblzma],
+                      have_lzma=yes,
+                      have_lzma=no)
+
+    if test "x$have_lzma" = "xno" ; then
+        AC_MSG_WARN([Unable to find liblzma.])
+    fi
+fi
+
+if test "x$have_lzma" = "xyes"; then
+    AC_DEFINE(HAVE_LZMA,1,[Have LZMA])
+    TOR_LZMA_CFLAGS="${LZMA_CFLAGS}"
+    TOR_LZMA_LIBS="${LZMA_LIBS}"
+fi
+AC_SUBST(TOR_LZMA_CFLAGS)
+AC_SUBST(TOR_LZMA_LIBS)
+
+dnl ------------------------------------------------------
+dnl Where we do we find zstd?
+
+AC_ARG_ENABLE(zstd,
+      AS_HELP_STRING(--enable-zstd, [enable support for the Zstandard compression scheme.]),
+      [case "${enableval}" in
+        "yes") zstd=true ;;
+        "no")  zstd=false ;;
+        * ) AC_MSG_ERROR(bad value for --enable-zstd) ;;
+      esac], [zstd=auto])
+
+if test "x$enable_zstd" = "xno"; then
+    have_zstd=no;
+else
+    PKG_CHECK_MODULES([ZSTD],
+                      [libzstd >= 1.1],
+                      have_zstd=yes,
+                      have_zstd=no)
+
+    if test "x$have_zstd" = "xno" ; then
+        AC_MSG_WARN([Unable to find libzstd.])
+    fi
+fi
+
+if test "x$have_zstd" = "xyes"; then
+    AC_DEFINE(HAVE_ZSTD,1,[Have Zstd])
+    TOR_ZSTD_CFLAGS="${ZSTD_CFLAGS}"
+    TOR_ZSTD_LIBS="${ZSTD_LIBS}"
+fi
+AC_SUBST(TOR_ZSTD_CFLAGS)
+AC_SUBST(TOR_ZSTD_LIBS)
 
 dnl ----------------------------------------------------------------------
 dnl Check if libcap is available for capabilities.
@@ -1945,6 +2093,7 @@ AC_CONFIG_FILES([
         contrib/dist/tor.service
         src/config/torrc.sample
         src/config/torrc.minimal
+        src/rust/.cargo/config
         scripts/maint/checkOptionDocs.pl
         scripts/maint/updateVersions.pl
 ])

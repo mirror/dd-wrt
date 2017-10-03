@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -141,17 +141,17 @@ MOCK_DECL(void, connection_write_to_buf_impl_,
 /* DOCDOC connection_write_to_buf */
 static void connection_write_to_buf(const char *string, size_t len,
                                     connection_t *conn);
-/* DOCDOC connection_write_to_buf_zlib */
-static void connection_write_to_buf_zlib(const char *string, size_t len,
-                                         dir_connection_t *conn, int done);
+/* DOCDOC connection_write_to_buf_compress */
+static void connection_write_to_buf_compress(const char *string, size_t len,
+                                             dir_connection_t *conn, int done);
 static inline void
 connection_write_to_buf(const char *string, size_t len, connection_t *conn)
 {
   connection_write_to_buf_impl_(string, len, conn, 0);
 }
 static inline void
-connection_write_to_buf_zlib(const char *string, size_t len,
-                             dir_connection_t *conn, int done)
+connection_write_to_buf_compress(const char *string, size_t len,
+                                 dir_connection_t *conn, int done)
 {
   connection_write_to_buf_impl_(string, len, TO_CONN(conn), done ? -1 : 1);
 }

@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2004, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2016, The Tor Project, Inc. */
+ * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -564,8 +564,8 @@ tor_addr_parse_PTR_name(tor_addr_t *result, const char *address,
 
 /** Convert <b>addr</b> to an in-addr.arpa name or a .ip6.arpa name,
  * and store the result in the <b>outlen</b>-byte buffer at
- * <b>out</b>.  Return the number of chars written to <b>out</b>, not
- * including the trailing \0, on success. Returns -1 on failure. */
+ * <b>out</b>.  Returns a non-negative integer on success.
+ * Returns -1 on failure. */
 int
 tor_addr_to_PTR_name(char *out, size_t outlen,
                      const tor_addr_t *addr)
@@ -1198,7 +1198,7 @@ tor_addr_hash(const tor_addr_t *addr)
     /* LCOV_EXCL_START */
     tor_fragile_assert();
     return 0;
-    /* LCOV_EXCL_END */
+    /* LCOV_EXCL_STOP */
   }
 }
 
@@ -1781,9 +1781,10 @@ free_interface_address6_list(smartlist_t *addrs)
  * Returns NULL on failure.
  * Use free_interface_address6_list to free the returned list.
  */
-MOCK_IMPL(smartlist_t *,get_interface_address6_list,(int severity,
-                                                     sa_family_t family,
-                                                     int include_internal))
+MOCK_IMPL(smartlist_t *,
+get_interface_address6_list,(int severity,
+                             sa_family_t family,
+                             int include_internal))
 {
   smartlist_t *addrs;
   tor_addr_t addr;
@@ -2051,7 +2052,8 @@ parse_port_range(const char *port, uint16_t *port_min_out,
 
 /** Given an IPv4 in_addr struct *<b>in</b> (in network order, as usual),
  *  write it as a string into the <b>buf_len</b>-byte buffer in
- *  <b>buf</b>.
+ *  <b>buf</b>. Returns a non-negative integer on success.
+ *  Returns -1 on failure.
  */
 int
 tor_inet_ntoa(const struct in_addr *in, char *buf, size_t buf_len)
