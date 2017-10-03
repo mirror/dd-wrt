@@ -500,6 +500,7 @@ static ssize_t at24_eeprom_write_i2c(struct at24_data *at24, const char *buf,
 
 static int at24_read(void *priv, unsigned int off, void *val, size_t count)
 {
+	int retval = 0;
 	struct at24_data *at24 = priv;
 	char *buf = val;
 
@@ -516,22 +517,25 @@ static int at24_read(void *priv, unsigned int off, void *val, size_t count)
 		int	status;
 
 		status = at24->read_func(at24, buf, off, count);
-		if (status < 0) {
-			mutex_unlock(&at24->lock);
-			return status;
+		if (status <= 0) {
+			if (retval == 0)
+				retval = status;
+			break;
 		}
 		buf += status;
 		off += status;
 		count -= status;
+		retval += status;
 	}
 
 	mutex_unlock(&at24->lock);
 
-	return 0;
+	return retval;
 }
 
 static int at24_write(void *priv, unsigned int off, void *val, size_t count)
 {
+	int retval = 0;
 	struct at24_data *at24 = priv;
 	char *buf = val;
 
@@ -548,18 +552,21 @@ static int at24_write(void *priv, unsigned int off, void *val, size_t count)
 		int status;
 
 		status = at24->write_func(at24, buf, off, count);
-		if (status < 0) {
-			mutex_unlock(&at24->lock);
-			return status;
+		if (status <= 0) {
+			if (retval == 0)
+				retval = status;
+			break;
 		}
+
 		buf += status;
 		off += status;
 		count -= status;
+		retval += status;
 	}
 
 	mutex_unlock(&at24->lock);
 
-	return 0;
+	return retval;
 }
 
 #ifdef CONFIG_OF
@@ -751,7 +758,7 @@ static int at24_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	 * chip is functional.
 	 */
 	err = at24_read(at24, 0, &test_byte, 1);
-	if (err) {
+	if (err < 0) {
 		err = -ENODEV;
 		goto err_clients;
 	}
@@ -777,12 +784,12 @@ static int at24_probe(struct i2c_client *client, const struct i2c_device_id *id)
 		goto err_clients;
 	}
 
-	dev_info(&client->dev, "%u byte %s EEPROM, %s, %u bytes/write\n",
+	printk(KERN_INFO "%u byte %s EEPROM, %s, %u bytes/write\n",
 		chip.byte_len, client->name,
 		writable ? "writable" : "read-only", at24->write_max);
 	if (use_smbus == I2C_SMBUS_WORD_DATA ||
 	    use_smbus == I2C_SMBUS_BYTE_DATA) {
-		dev_notice(&client->dev, "Falling back to %s reads, "
+		printk(KERN_INFO "Falling back to %s reads, "
 			   "performance will suffer\n", use_smbus ==
 			   I2C_SMBUS_WORD_DATA ? "word" : "byte");
 	}
