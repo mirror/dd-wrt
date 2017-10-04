@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # run OpenVPN client against ``test reference'' server
 # - check that ping, http, ... via tunnel works
@@ -133,12 +133,12 @@ fail()
 get_ifconfig_route()
 {
     # linux / iproute2? (-> if configure got a path)
-    if [ -n "" ]
+    if [ -n "/bin/ip" ]
     then
 	echo "-- linux iproute2 --"
-	 addr show     | grep -v valid_lft
-	 route show
-	 -o -6 route show | grep -v ' cache' | sed -E -e 's/ expires [0-9]*sec//' -e 's/ (mtu|hoplimit|cwnd|ssthresh) [0-9]+//g' -e 's/ (rtt|rttvar) [0-9]+ms//g'
+	/bin/ip addr show     | grep -v valid_lft
+	/bin/ip route show
+	/bin/ip -o -6 route show | grep -v ' cache' | sed -E -e 's/ expires [0-9]*sec//' -e 's/ (mtu|hoplimit|cwnd|ssthresh) [0-9]+//g' -e 's/ (rtt|rttvar) [0-9]+ms//g'
 	return
     fi
 
