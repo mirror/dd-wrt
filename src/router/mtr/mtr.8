@@ -1,4 +1,4 @@
-.TH MTR 8 "July 12, 2014" "mtr" "mtr"
+.TH MTR 8 "0.87.203-0e5e" "mtr" "System Administration"
 .SH NAME
 mtr \- a network diagnostic tool
 .SH SYNOPSIS
@@ -93,6 +93,9 @@ mtr \- a network diagnostic tool
 ]
 [\c
 .B \-\-tcp\c
+]
+[\c
+.BI \-\-sctp\c
 ]
 [\c
 .BI \-P \ PORT\c
@@ -190,6 +193,16 @@ Use this option to force
 .B mtr 
 to use the curses based terminal
 interface (if available).
+In case the list of hops exceeds the 
+height of your terminal, you can use the 
+.B +
+and
+.B -
+keys to scroll up and down half a page.
+
+.B Ctrl\fR-\fPL
+clears spurious error messages that may overwrite other parts of the display.
+
 .TP
 .B -\-displaymode \fIMODE
 Use this option to select the initial display mode: 0 (default)
@@ -204,7 +217,8 @@ to use the GTK+ based X11 window interface (if available).
 GTK+ must have been available on the system when 
 .B mtr 
 was built for this to work.  See the GTK+ web page at 
-.B http://www.gtk.org/
+.UR http://\:www.\:gtk.\:org/
+.UE
 for more information about GTK+.
 .TP
 .B \-l\fR, \fB\-\-raw
@@ -349,7 +363,7 @@ Specifies bit pattern to use in payload.  Should be within range 0 - 255.  If
 .I NUM
 is greater than 255, a random pattern is used.
 .TP
-.B \-G \fISECONDS\fR, \fB\-\-graceperiod \fISECONDS
+.B \-G \fISECONDS\fR, \fB\-\-gracetime \fISECONDS
 Use this option to specify the positive number of seconds to wait for responses
 after the final request. The default value is five seconds.
 .TP
@@ -389,6 +403,9 @@ Use TCP SYN packets instead of ICMP ECHO.
 .I PACKETSIZE
 is ignored, since SYN packets can not contain data.
 .TP
+.B \-S\fR, \fB\-\-sctp
+Use Stream Control Transmission Protocol packets instead of ICMP ECHO.
+.TP
 .B \-P \fIPORT\fR, \fB\-\-port \fIPORT
 The target port number for TCP/SCTP/UDP traces.
 .TP
@@ -396,13 +413,17 @@ The target port number for TCP/SCTP/UDP traces.
 The source port number for UDP traces.
 .TP
 .B \-Z \fISECONDS\fR, \fB\-\-timeout \fISECONDS
-The number of seconds to keep the TCP socket open before giving up on
-the connection.  This will only affect the final hop.  Using large values
-for this, especially combined with a short interval, will use up a lot
-of file descriptors.
+The number of seconds to keep probe sockets open before giving up on
+the connection.  Using large values for this, especially combined with
+a short interval, will use up a lot of file descriptors.
 .TP
 .B \-M \fIMARK\fR, \fB\-\-mark \fIMARK
-MISSING
+Set the mark for each packet sent through this socket similar to the
+netfilter MARK target but socket-based.
+.I MARK
+is 32 unsigned integer.  See
+.BR socket (7)
+for full description of this socket option.
 .SH ENVIRONMENT
 .B mtr
 recognizes a few environment variables.
@@ -432,8 +453,19 @@ passed in
 .B MTR_OPTIONS\c
 ).
 .TP
+.B MTR_PACKET
+A path to the
+.I mtr-packet
+executable, to be used for sending and receiving network probes.  If
+.B MTR_PACKET
+is unset, the
+.B PATH
+will be used to search for an
+.I mtr-packet
+executable.
+.TP
 .B DISPLAY
-Used for the GTK+ frontend.
+Specifies an X11 server for the GTK+ frontend.
 .SH BUGS
 Some modern routers give a lower priority to ICMP ECHO packets than 
 to other network traffic.  Consequently, the reliability of these
@@ -444,14 +476,16 @@ these routers.
 .SH CONTACT INFORMATION
 .PP
 For the latest version, see the mtr web page at 
-.BR http://www.bitwizard.nl/mtr/ .
-.PP
-The mtr mailinglist was little used and is no longer active. 
+.UR http://\:www.\:bitwizard.\:nl/\:mtr/
+.UE
 .PP
 For patches, bug reports, or feature requests, please open an issue on
 GitHub at:
-.BR https://github.com/traviscross/mtr .
+.UR https://\:github\:.com/\:traviscross/\:mtr
+.UE .
 .SH "SEE ALSO"
-traceroute(8),
-ping(8),
+.BR mtr-packet (8),
+.BR traceroute (8),
+.BR ping (8),
+.BR socket (7),
 TCP/IP Illustrated (Stevens, ISBN 0201633469).
