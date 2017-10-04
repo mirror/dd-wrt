@@ -16,5 +16,5 @@
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-#define MTR_VERSION "@VERSION@"
-
+extern void select_loop(
+    struct mtr_ctl *ctl);
