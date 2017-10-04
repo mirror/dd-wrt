@@ -24,9 +24,6 @@
 /* Enable client capability only */
 #undef ENABLE_CLIENT_ONLY
 
-/* Enable client/server capability */
-#undef ENABLE_CLIENT_SERVER
-
 /* Enable compression stub capability */
 #undef ENABLE_COMP_STUB
 
@@ -202,6 +199,9 @@
 /* Define to 1 if you have the `dup2' function. */
 #undef HAVE_DUP2
 
+/* Define to 1 if you have the `EC_GROUP_order_bits' function. */
+#undef HAVE_EC_GROUP_ORDER_BITS
+
 /* Define to 1 if you have the `ENGINE_cleanup' function. */
 #undef HAVE_ENGINE_CLEANUP
 
@@ -223,12 +223,6 @@
 /* Define to 1 if you have the `EVP_aes_256_gcm' function. */
 #undef HAVE_EVP_AES_256_GCM
 
-/* Define to 1 if you have the `EVP_CIPHER_CTX_free' function. */
-#undef HAVE_EVP_CIPHER_CTX_FREE
-
-/* Define to 1 if you have the `EVP_CIPHER_CTX_new' function. */
-#undef HAVE_EVP_CIPHER_CTX_NEW
-
 /* Define to 1 if you have the `EVP_CIPHER_CTX_set_key_length' function. */
 #undef HAVE_EVP_CIPHER_CTX_SET_KEY_LENGTH
 
@@ -243,6 +237,9 @@
 
 /* Define to 1 if you have the `EVP_PKEY_get0_DSA' function. */
 #undef HAVE_EVP_PKEY_GET0_DSA
+
+/* Define to 1 if you have the `EVP_PKEY_get0_EC_KEY' function. */
+#undef HAVE_EVP_PKEY_GET0_EC_KEY
 
 /* Define to 1 if you have the `EVP_PKEY_get0_RSA' function. */
 #undef HAVE_EVP_PKEY_GET0_RSA
@@ -300,9 +297,6 @@
 
 /* Define to 1 if you have the `HMAC_CTX_free' function. */
 #undef HAVE_HMAC_CTX_FREE
-
-/* Define to 1 if you have the `HMAC_CTX_init' function. */
-#undef HAVE_HMAC_CTX_INIT
 
 /* Define to 1 if you have the `HMAC_CTX_new' function. */
 #undef HAVE_HMAC_CTX_NEW
@@ -563,9 +557,6 @@
 /* Define to 1 if you have the `strdup' function. */
 #undef HAVE_STRDUP
 
-/* Define to 1 if you have the `strerror' function. */
-#undef HAVE_STRERROR
-
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
@@ -701,7 +692,8 @@
 /* Path to iproute tool */
 #undef IPROUTE_PATH
 
-/* Define to the sub-directory where libtool stores uninstalled libraries. */
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
 #undef LT_OBJDIR
 
 /* use copy of LZ4 source in compat/ */
