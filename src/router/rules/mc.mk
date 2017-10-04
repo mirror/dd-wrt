@@ -32,7 +32,7 @@ mc-configure: ncurses
 	make -C mc2/slang
 
 	cd mc2 && ./configure --host=$(ARCH)-uclibc-linux AWK="awk" CC="ccache $(CC)" \
-		CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -DSTAT_STATVFS -I$(TOP)/mc2/slang/src" \
+		CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -DSTAT_STATVFS -I$(TOP)/mc2/slang/src -I$(TOP)/ncurses/include" \
 		LDFLAGS="-L$(TOP)/ncurses/lib -L$(TOP)/mc2/slang/src/elf$(ARCH)objs -lncurses" \
 		GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -L$(INSTALLDIR)/util-linux/usr/lib" \
 		GLIB_LIBS="-L$(TOP)/glib20/libglib/glib/.libs -lglib-2.0" \
@@ -40,6 +40,7 @@ mc-configure: ncurses
 		GMODULE_LIBS="-pthread -L$(TOP)/glib20/libglib/gmodule/.libs -L$(TOP)/glib20/libglib/glib/.libs -lrt -lglib-2.0" \
 	--with-included-gettext \
 	--with-ncurses \
+	--with-screen=ncurses \
 	--without-sco \
 	--without-sunos-curses \
 	--without-osf1-curses \
@@ -59,6 +60,10 @@ mc-configure: ncurses
 	--without-tk \
 	--without-xview \
 	--disable-glibtest \
+	--disable-tests \
+	--disable-doxygen-doc \
+	--enable-silent-rules \
+	--with-homedir=/tmp/mc \
 	--disable-vfs-sftp \
 	--prefix=/usr \
 	--libdir=/usr/lib \
