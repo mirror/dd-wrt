@@ -1580,14 +1580,14 @@ int __init ar7240_platform_init(void)
 	mdiobus_register_board_info(ap152_mdio0_info,ARRAY_SIZE(ap152_mdio0_info));
 
 //	ar71x_init_mac(ar71x_eth0_data.mac_addr, art + AP152_MAC0_OFFSET, 0);
-	ar71x_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
-	ar71x_eth0_data.speed = SPEED_1000;
-	ar71x_eth0_data.duplex = DUPLEX_FULL;
-	ar71x_eth0_data.phy_mask = BIT(0);
-	ar71x_eth0_data.force_link = 1;
-	ar71x_eth0_data.mii_bus_dev = &ar71x_mdio0_device.dev;
-	ar71x_eth0_pll_data.pll_1000 = 0x06000000;
-	ar71x_add_device_eth(0);
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
+	ar71xx_eth0_data.speed = SPEED_1000;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	ar71xx_eth0_data.phy_mask = BIT(0);
+	ar71xx_eth0_data.force_link = 1;
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
+	ar71xx_add_device_eth(0);
 
 	
 	#else
