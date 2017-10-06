@@ -235,6 +235,33 @@ static void qca956x_usb_setup(void)
 			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
 }
 
+static void __init ath79_gpio_output_select(unsigned gpio, u8 val)
+{
+	void __iomem *base = ar71xx_gpio_base;
+	unsigned long flags;
+	unsigned int reg;
+	u32 t, s;
+
+
+	if (gpio >= AR934X_GPIO_COUNT)
+		return;
+
+	reg = AR934X_GPIO_REG_OUT_FUNC0 + 4 * (gpio / 4);
+	s = 8 * (gpio % 4);
+
+//	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
+
+	t = __raw_readl(base + reg);
+	t &= ~(0xff << s);
+	t |= val << s;
+	__raw_writel(t, base + reg);
+
+	/* flush write */
+	(void) __raw_readl(base + reg);
+
+//	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
+}
+
 static void __init qca953x_usb_setup(void)
 {
 	u32 bootstrap;
@@ -439,6 +466,20 @@ static struct mdio_board_info ap136_mdio0_info[] = {
 		.platform_data = &ap136_ar8327_data,
 	},
 };
+
+
+#define AP152_GPIO_MDC			3
+#define AP152_GPIO_MDIO			4
+
+static void __init ap152_mdio_setup(void)
+{
+	ath79_gpio_output_select(AP152_GPIO_MDC, QCA956X_GPIO_OUT_MUX_GE0_MDC);
+	ath79_gpio_output_select(AP152_GPIO_MDIO, QCA956X_GPIO_OUT_MUX_GE0_MDO);
+
+	ar71xx_add_device_mdio(0, 0x0);
+}
+
+
 
 static struct at803x_platform_data rb922gs_at803x_data = {
 	.disable_smarteee = 1,
@@ -689,6 +730,7 @@ static struct mdio_board_info ap152_mdio0_info[] = {
 	},
 };
 
+
 static struct ar8327_pad_cfg wpj344_ar8327_pad0_cfg = {
 	.mac06_exchange_dis = true,
 	.mode = AR8327_PAD_MAC_RGMII,
@@ -886,32 +928,6 @@ void __init ath79_init_mac(unsigned char *dst, const unsigned char *src, int off
 
 #define AR934X_GPIO_REG_OUT_FUNC0	0x2c
 
-static void __init ath79_gpio_output_select(unsigned gpio, u8 val)
-{
-	void __iomem *base = ar71xx_gpio_base;
-	unsigned long flags;
-	unsigned int reg;
-	u32 t, s;
-
-
-	if (gpio >= AR934X_GPIO_COUNT)
-		return;
-
-	reg = AR934X_GPIO_REG_OUT_FUNC0 + 4 * (gpio / 4);
-	s = 8 * (gpio % 4);
-
-//	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
-
-	t = __raw_readl(base + reg);
-	t &= ~(0xff << s);
-	t |= val << s;
-	__raw_writel(t, base + reg);
-
-	/* flush write */
-	(void) __raw_readl(base + reg);
-
-//	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
-}
 
 
 
@@ -1251,7 +1267,7 @@ int __init ar7240_platform_init(void)
 	iounmap(base);
     #else
 	#ifdef CONFIG_AP135
-	#if !defined(CONFIG_MMS344) || defined(CONFIG_DIR862)
+	#if !defined(CONFIG_MMS344) && !defined(CONFIG_ARCHERC7V4) || defined(CONFIG_DIR862)
 	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN);
 	#endif
 	#else
@@ -1559,6 +1575,22 @@ int __init ar7240_platform_init(void)
 	ar71xx_add_device_eth(1);
     #else
 	#ifdef CONFIG_AP135
+	#ifdef CONFIG_ARCHERC7V4
+	ap152_mdio_setup();
+	mdiobus_register_board_info(ap152_mdio0_info,ARRAY_SIZE(ap152_mdio0_info));
+
+//	ar71x_init_mac(ar71x_eth0_data.mac_addr, art + AP152_MAC0_OFFSET, 0);
+	ar71x_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
+	ar71x_eth0_data.speed = SPEED_1000;
+	ar71x_eth0_data.duplex = DUPLEX_FULL;
+	ar71x_eth0_data.phy_mask = BIT(0);
+	ar71x_eth0_data.force_link = 1;
+	ar71x_eth0_data.mii_bus_dev = &ar71x_mdio0_device.dev;
+	ar71x_eth0_pll_data.pll_1000 = 0x06000000;
+	ar71x_add_device_eth(0);
+
+	
+	#else
 	#ifdef CONFIG_DAP2330
 	mdiobus_register_board_info(dap2330_mdio0_info,
 				    ARRAY_SIZE(dap2330_mdio0_info));
@@ -1657,12 +1689,13 @@ int __init ar7240_platform_init(void)
 	ar71xx_add_device_eth(1);
 	
 	#endif
-
+	#endif
 	    
 
 	    #ifdef CONFIG_DIR862
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 1);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
+	    #elif CONFIG_ARCHERC7V4
 	    #elif CONFIG_WR1043V2
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 1);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 0);

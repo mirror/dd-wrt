@@ -364,6 +364,9 @@ config WR1043V2
 config ARCHERC7
 	bool "support for ARCHER C7"
 	depends on WR1043V2
+config ARCHERC7V4
+	bool "support for ARCHER C7 V4"
+	depends on WR1043V2
 config DAP3662
 	bool "support for DAP3662"
 	depends on WR1043V2
