@@ -43,16 +43,6 @@
 
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
-/* obsolete
-static char *get_wshaper_dev(void)
-{
-	if (nvram_match("wshaper_dev", "WAN"))
-		return get_wan_face();
-	else
-		return "br0";
-}
-*/
-
 static int do_ap_watchdog(void)
 {
 

@@ -242,6 +242,9 @@ endif
 ifeq ($(CONFIG_ALPINE),y)
 CFLAGS += -DHAVE_ALPINE
 endif
+ifeq ($(CONFIG_ARCHERC7V4),y)
+CFLAGS += -DHAVE_ARCHERC7V4
+endif
 ifeq ($(CONFIG_WDR2543),y)
 CFLAGS += -DHAVE_WDR2543
 endif

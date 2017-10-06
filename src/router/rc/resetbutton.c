@@ -226,6 +226,11 @@ static int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_ARCHERC7V4)
+static int getbuttonstate()
+{
+	return !get_gpio(5);
+}
 #elif defined(HAVE_WR1043V2)
 static int getbuttonstate()
 {
