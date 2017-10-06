@@ -1,12 +1,4 @@
 ------------------------------------------------------------------------
-r3646 | brainslayer | 2017-10-06 03:06:10 +0200 (Fri, 06 Oct 2017) | 1 line
-
-update toolchain
-------------------------------------------------------------------------
-r3645 | brainslayer | 2017-10-05 22:16:16 +0200 (Thu, 05 Oct 2017) | 1 line
-
-compat fixes for very old kernels
-------------------------------------------------------------------------
 r3644 | brainslayer | 2017-10-03 20:14:53 +0200 (Tue, 03 Oct 2017) | 1 line
 
 remove acpi shit from ath10k wich breaks compiling on powerpc
