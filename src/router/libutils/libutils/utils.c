@@ -1849,6 +1849,19 @@ int led_control(int type, int act)
 	case ROUTER_BOARD_WHRHPGN:
 		diag_gpio = 0x10e;
 		break;
+#elif HAVE_ARCHERC7V4
+	case ROUTER_BOARD_WHRHPGN:
+		diag_gpio = 0x106;
+//		ses_gpio = 0x10f;
+//		sec0_gpio = 0x10f;
+
+//		usb_power = 0x016;
+		usb_gpio = 0x107;
+
+//		usb_power1 = 0x015;
+		usb_gpio1 = 0x108;
+
+		break;
 #elif HAVE_ARCHERC7
 	case ROUTER_BOARD_WHRHPGN:
 		diag_gpio = 0x10e;
@@ -1861,7 +1874,6 @@ int led_control(int type, int act)
 		usb_power1 = 0x015;
 		usb_gpio1 = 0x113;
 
-		usb_gpio = 0x10f;
 		break;
 #elif HAVE_WR1043V2
 	case ROUTER_BOARD_WHRHPGN:
