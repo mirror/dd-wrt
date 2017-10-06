@@ -401,7 +401,9 @@ void start_sysinit(void)
 #ifdef HAVE_WDR4900V2
 	setWirelessLed(1, 17);
 #endif
-#ifdef HAVE_ARCHERC7
+#ifdef HAVE_ARCHERC7V4
+	setWirelessLed(1, 9);
+#elif defined(HAVE_ARCHERC7)
 	setWirelessLed(1, 17);
 #endif
 #elif  HAVE_WZR450HP2

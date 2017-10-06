@@ -443,6 +443,11 @@ ifeq ($(CONFIG_ARCHERC7),y)
 else
 	echo "# CONFIG_ARCHERC7 is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_ARCHERC7V4),y)
+	echo CONFIG_ARCHERC7V4=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_ARCHERC7V4 is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_DAP3662),y)
 	echo CONFIG_DAP3662=y >> $(LINUXDIR)/.config
 else
@@ -1968,6 +1973,11 @@ ifeq ($(CONFIG_WR1043V2),y)
 
 	-./tools/tplink/mktplinkfw -B ARCHER-C5v1Israel -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C5v1-firmwareIL.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C5v1-firmwareIL.bin mips-uclibc/tplink-ARCHER-C5v1-firmwareIL.bin
+
+	-./tools/safeloader/tplink-safeloader -B ARCHER-C7-V4 -V 1 -k $(ARCH)-uclibc/root.uimage -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7-v4-firmware.bin
+	-./tools/safeloader/tplink-safeloader -B ARCHER-C7-V4 -V 1 -S -k $(ARCH)-uclibc/root.uimage -r $(ARCH)-uclibc/root.fs -o mips-uclibc/archerC7v4_tp_recovery.bin
+#	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C5v1-firmwareIL.bin mips-uclibc/tplink-ARCHER-C5v1-firmwareIL.bin
+
 
 	-./tools/tplink/mktplinkfw -B TL-WDR4900v2 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4900v2-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR4900v2-firmware.bin mips-uclibc/tplink-TL-WDR4900v2-firmware.bin
