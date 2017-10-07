@@ -184,6 +184,11 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
+#elif defined (HAVE_ARCHERC7V4)
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
 #elif defined (HAVE_ARCHERC7)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
@@ -252,7 +257,7 @@ void start_sysinit(void)
 #if !defined(HAVE_WR650AC) && !defined(HAVE_E355AC) && !defined(HAVE_E325N) && !defined(HAVE_E380AC) && !defined(HAVE_WR615N)  && !defined(HAVE_AP120C) && !defined(HAVE_WILLY)
 #ifndef HAVE_JWAP606
 	eval("ifconfig", "eth0", "up");
-#if (defined(HAVE_MMS344) || defined(HAVE_XD3200)) && !defined(HAVE_DIR862)
+#if (defined(HAVE_MMS344) || defined(HAVE_XD3200) || defined(HAVE_ARCHERC7V4)) && !defined(HAVE_DIR862)
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
@@ -402,6 +407,7 @@ void start_sysinit(void)
 	setWirelessLed(1, 17);
 #endif
 #ifdef HAVE_ARCHERC7V4
+	setWirelessLed(0, 24);
 	setWirelessLed(1, 9);
 #elif defined(HAVE_ARCHERC7)
 	setWirelessLed(1, 17);

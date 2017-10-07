@@ -473,6 +473,13 @@ void set_gpio(int gpio, int value)
 			return;
 		}
 #endif
+#ifdef HAVE_ARCHERC7V4
+	if (gpio >= 24) {
+		sysprintf("echo %d > /sys/devices/platform/leds-gpio/leds/generic_%d/brightness",value,gpio);
+//		set_linux_gpio(gpio, value);
+		return;
+	}
+#endif
 		sprintf(buf, "/proc/gpio/%d_dir", gpio);
 		if (writestr(buf, "1"))
 			return;

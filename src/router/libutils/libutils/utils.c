@@ -1851,7 +1851,9 @@ int led_control(int type, int act)
 		break;
 #elif HAVE_ARCHERC7V4
 	case ROUTER_BOARD_WHRHPGN:
-		diag_gpio = 0x106;
+		diag_gpio = 0x006;
+		connected_gpio = 0x11a;
+		disconnected_gpio = 0x119;
 //		ses_gpio = 0x10f;
 //		sec0_gpio = 0x10f;
 
@@ -1864,7 +1866,7 @@ int led_control(int type, int act)
 		break;
 #elif HAVE_ARCHERC7
 	case ROUTER_BOARD_WHRHPGN:
-		diag_gpio = 0x10e;
+		diag_gpio = 0x010e;
 		ses_gpio = 0x10f;
 		sec0_gpio = 0x10f;
 
