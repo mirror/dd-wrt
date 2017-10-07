@@ -2081,6 +2081,7 @@ ar8xxx_phy_config_init(struct phy_device *phydev)
 
 	return 0;
 }
+void shift_register_set(u_int32_t index, u_int32_t val2);
 
 static bool
 ar8xxx_check_link_states(struct ar8xxx_priv *priv)
@@ -2102,6 +2103,13 @@ ar8xxx_check_link_states(struct ar8xxx_priv *priv)
 		/* flush ARL entries for this port if it went down*/
 		if (!link_new)
 			priv->chip->atu_flush_port(priv, i);
+		
+		#ifdef CONFIG_ARCHERC7V4
+		    if (i > 1) {
+		    shift_register_set(1 + i, !link_new);
+		    }
+		#endif
+
 		dev_info(&priv->phy->dev, "Port %d is %s\n",
 			 i, link_new ? "up" : "down");
 	}
