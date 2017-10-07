@@ -96,6 +96,7 @@ static ssize_t gpio_proc_info_read(struct file *file, char __user * buffer, size
 
 }
 
+
 static ssize_t gpio_proc_write(struct file *file, const char __user * buffer, size_t count, loff_t * ppos)
 {
 	u32 reg = 0;
@@ -393,7 +394,7 @@ static __init int register_proc(void)
 
 	proc_gpio = proc_create("info", S_IRUGO, gpio_dir, &fops_info);
 
-	printk(KERN_NOTICE "gpio_proc: module loaded and /proc/gpio/ created\n");
+	printk(KERN_NOTICE "gpio_proc: module loaded and /proc/gpio/ created (cool)\n");
 	ar71xx_gpio_init();
 	return 0;
 

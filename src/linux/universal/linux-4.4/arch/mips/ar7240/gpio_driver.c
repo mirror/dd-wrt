@@ -17,6 +17,7 @@
 #include <linux/io.h>
 #include <linux/ioport.h>
 #include <linux/gpio.h>
+#include <linux/delay.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 #include "dev-leds-gpio.h"
@@ -31,6 +32,9 @@ void set_wl1_gpio(int gpio, int val);
 unsigned long ar71xx_gpio_count;
 EXPORT_SYMBOL(ar71xx_gpio_count);
 
+void shift_register_set(u_int32_t index, u_int32_t val);
+
+
 void __ar71xx_gpio_set_value(unsigned gpio, int value)
 {
 	void __iomem *base = ar71xx_gpio_base;
@@ -44,6 +48,12 @@ void __ar71xx_gpio_set_value(unsigned gpio, int value)
 		set_wl0_gpio(gpio - 32, value);
 		return;
 	}
+#ifdef CONFIG_ARCHERC7V4
+	if (gpio >= 24) {
+		shift_register_set(gpio-24, value);
+		return;
+	}
+#endif
 	if (value)
 		__raw_writel(1 << gpio, base + AR71XX_GPIO_REG_SET);
 	else
@@ -70,6 +80,10 @@ static void ar71xx_gpio_set_value(struct gpio_chip *chip, unsigned offset, int v
 {
 	__ar71xx_gpio_set_value(offset, value);
 }
+
+
+
+
 
 static int ar71xx_gpio_direction_input(struct gpio_chip *chip, unsigned offset)
 {
@@ -100,6 +114,13 @@ static int ar71xx_gpio_direction_output(struct gpio_chip *chip, unsigned offset,
 		return 0;
 	}
 
+#ifdef CONFIG_ARCHERC7V4
+	if (offset >= 24) {
+		shift_register_set(offset-24, value);
+		return;
+	}
+#endif
+
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
 	if (value)
@@ -116,6 +137,59 @@ static int ar71xx_gpio_direction_output(struct gpio_chip *chip, unsigned offset,
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 
 	return 0;
+}
+
+
+enum SHIFT_REGISTER_OUTPUT {
+    Q7_2G_WIFI_LED = 0,
+    Q6_WAN_OLED,
+    Q5_WAN_GLED,
+    Q4_LAN1_LED,
+    Q3_LAN2_LED,
+    Q2_LAN3_LED,
+    Q1_LAN4_LED,
+    Q0_WPS_LED,
+    SHIFT_REGISTER_OUTPUT_NUM
+};
+
+
+#define AP152_GPIO_SHIFT_OE     1
+#define AP152_GPIO_SHIFT_SER    14
+#define AP152_GPIO_SHIFT_SRCLK  15
+#define AP152_GPIO_SHIFT_RCLK   16
+#define AP152_GPIO_SHIFT_SRCLR  21
+
+#define SHIFT_REG_TW_FACTOR	                120
+#define SHIFT_REG_SER_SRCLK_DELAY_FACTOR	150
+#define SHIFT_REG_SRCLR_RCLK_DELAY_FACTOR	80
+
+
+
+void shift_register_set(u_int32_t index, u_int32_t val2) 
+{
+	static u_int32_t val = 255;
+	u_int32_t value;
+
+	__ar71xx_gpio_set_value(AP152_GPIO_SHIFT_RCLK, 0);
+
+	if (val2)
+	    val|=(1<<index);
+	else
+	    val&=~(1<<index);
+//	printk(KERN_NOTICE "set %d=%d == %X\n",index,val2,val);
+	for(index = 0; index < SHIFT_REGISTER_OUTPUT_NUM; index++)
+	{
+		value = (val >> index) & 0x1;
+        __ar71xx_gpio_set_value(AP152_GPIO_SHIFT_SER, value);
+        ndelay(SHIFT_REG_SER_SRCLK_DELAY_FACTOR);
+		__ar71xx_gpio_set_value(AP152_GPIO_SHIFT_SRCLK, 1);
+		ndelay(SHIFT_REG_TW_FACTOR);
+		__ar71xx_gpio_set_value(AP152_GPIO_SHIFT_SRCLK, 0);
+	}
+	__ar71xx_gpio_set_value(AP152_GPIO_SHIFT_RCLK, 1);
+    ndelay(SHIFT_REG_TW_FACTOR);
+	__ar71xx_gpio_set_value(AP152_GPIO_SHIFT_RCLK, 0);
+	ndelay(SHIFT_REG_TW_FACTOR);
 }
 
 static struct gpio_chip ar71xx_gpio_chip = {
@@ -721,10 +795,13 @@ void __init ar71xx_gpio_init(void)
 {
 	int err;
 	u32 t, rddata;
-
+	printk(KERN_NOTICE "init %s",__func__);
 	if (!request_mem_region(AR71XX_GPIO_BASE, AR71XX_GPIO_SIZE, "AR71xx GPIO controller"))
 		panic("cannot allocate AR71xx GPIO registers page");
 
+#ifdef CONFIG_ARCHERC7V4
+	__ar71xx_gpio_set_value(AP152_GPIO_SHIFT_OE, 0);
+#endif
 #ifdef CONFIG_MACH_HORNET
 	ar71xx_gpio_chip.ngpio = 32;
 #else
