@@ -541,24 +541,23 @@ static int __init ar7240_flash_init(void)
 					len += mtd->erasesize;
 				dir_parts[2].size = (len & 0x1ffffff) - dir_parts[2].offset;
 				
-				dir_parts[3].offset =
-				    dir_parts[2].offset + dir_parts[2].size;
+				dir_parts[3].offset = dir_parts[2].offset + dir_parts[2].size;
 
 				dir_parts[5].offset = mtd->size - mtd->erasesize;	//fis config
 				dir_parts[5].size = mtd->erasesize;
-				#if (defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR4300) && !defined(CONFIG_WR1043V2) && !defined(CONFIG_WR841V8) && !defined(CONFIG_UBNTXW)) || defined(CONFIG_DIR862)
+				#ifdef CONFIG_ARCHERC7V4
+				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize*16);	//nvram
+				dir_parts[4].size = mtd->erasesize;				
+				#elif (defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR4300) && !defined(CONFIG_WR1043V2) && !defined(CONFIG_WR841V8) && !defined(CONFIG_UBNTXW)) || defined(CONFIG_DIR862)
 				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize*2);	//nvram
 				dir_parts[4].size = mtd->erasesize;
 				#else
 				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize - (nocalibration * mtd->erasesize));	//nvram
 				dir_parts[4].size = mtd->erasesize;
 				#endif
-				dir_parts[3].size =
-				    dir_parts[4].offset - dir_parts[3].offset;
+				dir_parts[3].size = dir_parts[4].offset - dir_parts[3].offset;
 				rootsize = dir_parts[4].offset - offset;	//size of rootfs aligned to nvram offset
-				dir_parts[1].size =
-				    (dir_parts[2].offset -
-				     dir_parts[1].offset) + rootsize;
+				dir_parts[1].size = (dir_parts[2].offset - dir_parts[1].offset) + rootsize;
 				//now scan for linux offset
 				break;
 			}
