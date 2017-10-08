@@ -92,12 +92,12 @@ int64_t
 GetFolderMetadata(const char *name, const char *path, const char *artist, const char *genre, int64_t album_art);
 
 int64_t
-GetAudioMetadata(const char *path, char *name);
+GetAudioMetadata(const char *path, const char *name);
 
 int64_t
-GetImageMetadata(const char *path, char *name);
+GetImageMetadata(const char *path, const char *name);
 
 int64_t
-GetVideoMetadata(const char *path, char *name);
+GetVideoMetadata(const char *path, const char *name);
 
 #endif

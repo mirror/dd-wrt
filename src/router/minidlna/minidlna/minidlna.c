@@ -255,6 +255,18 @@ getfriendlyname(char *buf, int len)
 #endif
 }
 
+static time_t
+_get_dbtime(void)
+{
+	char path[PATH_MAX];
+	struct stat st;
+
+	snprintf(path, sizeof(path), "%s/files.db", db_path);
+	if (stat(path, &st) != 0)
+		return 0;
+	return st.st_mtime;
+}
+
 static int
 open_db(sqlite3 **sq3)
 {
@@ -295,7 +307,8 @@ check_db(sqlite3 *db, int new_db, pid_t *scanner_pid)
 		media_path = media_dirs;
 		while (media_path)
 		{
-			ret = sql_get_int_field(db, "SELECT TIMESTAMP from DETAILS where PATH = %Q", media_path->path);
+			ret = sql_get_int_field(db, "SELECT TIMESTAMP as TYPE from DETAILS where PATH = %Q",
+						media_path->path);
 			if (ret != media_path->types)
 			{
 				ret = 1;
@@ -328,7 +341,7 @@ check_db(sqlite3 *db, int new_db, pid_t *scanner_pid)
 	if (ret != 0)
 	{
 rescan:
-		rescan_db = 0;
+		CLEARFLAG(RESCAN_MASK);
 		if (ret < 0)
 			DPRINTF(E_WARN, L_GENERAL, "Creating new database at %s/files.db\n", db_path);
 		else if (ret == 1)
@@ -348,10 +361,10 @@ rescan:
 		if (CreateDatabase() != 0)
 			DPRINTF(E_FATAL, L_GENERAL, "ERROR: Failed to create sqlite database!  Exiting...\n");
 	}
-	if (ret || rescan_db)
+	if (ret || GETFLAG(RESCAN_MASK))
 	{
 #if USE_FORK
-		scanning = 1;
+		SETFLAG(SCANNING_MASK);
 		sqlite3_close(db);
 		*scanner_pid = fork();
 		open_db(&db);
@@ -593,7 +606,7 @@ init(int argc, char **argv)
 					else if (*path == 'V' || *path == 'v')
 						types |= TYPE_VIDEO;
 					else if (*path == 'P' || *path == 'p')
-						types |= TYPE_IMAGES;
+						types |= TYPE_IMAGE;
 					else
 						DPRINTF(E_FATAL, L_GENERAL, "Media directory entry not understood [%s]\n",
 							ary_options[i].value);
@@ -839,7 +852,7 @@ init(int argc, char **argv)
 			runtime_vars.port = -1; // triggers help display
 			break;
 		case 'r':
-			rescan_db = 1;
+			SETFLAG(RESCAN_MASK);
 			break;
 		case 'R':
 			snprintf(buf, sizeof(buf), "rm -rf %s/files.db %s/art_cache", db_path, db_path);
@@ -1012,7 +1025,7 @@ main(int argc, char **argv)
 	fd_set readset;	/* for select() */
 	fd_set writeset;
 	struct timeval timeout, timeofday, lastnotifytime = {0, 0};
-	time_t lastupdatetime = 0;
+	time_t lastupdatetime = 0, lastdbtime = 0;
 	int max_fd = -1;
 	int last_changecnt = 0;
 	pid_t scanner_pid = 0;
@@ -1048,6 +1061,7 @@ main(int argc, char **argv)
 			ret = -1;
 	}
 	check_db(db, ret, &scanner_pid);
+	lastdbtime = _get_dbtime();
 #ifdef HAVE_INOTIFY
 	if( GETFLAG(INOTIFY_MASK) )
 	{
@@ -1165,12 +1179,13 @@ main(int argc, char **argv)
 #endif
 		}
 
-		if (scanning)
+		if (GETFLAG(SCANNING_MASK))
 		{
 			if (!scanner_pid || kill(scanner_pid, 0) != 0)
 			{
-				scanning = 0;
-				updateID++;
+				CLEARFLAG(SCANNING_MASK);
+				if (_get_dbtime() != lastdbtime)
+					updateID++;
 			}
 		}
 
@@ -1244,7 +1259,16 @@ main(int argc, char **argv)
 		 * and if there is an active HTTP connection, at most once every 2 seconds */
 		if (i && (timeofday.tv_sec >= (lastupdatetime + 2)))
 		{
-			if (scanning || sqlite3_total_changes(db) != last_changecnt)
+			if (GETFLAG(SCANNING_MASK))
+			{
+				time_t dbtime = _get_dbtime();
+				if (dbtime != lastdbtime)
+				{
+					lastdbtime = dbtime;
+					last_changecnt = -1;
+				}
+			}
+			if (sqlite3_total_changes(db) != last_changecnt)
 			{
 				updateID++;
 				last_changecnt = sqlite3_total_changes(db);
@@ -1308,7 +1332,7 @@ main(int argc, char **argv)
 
 shutdown:
 	/* kill the scanner */
-	if (scanning && scanner_pid)
+	if (GETFLAG(SCANNING_MASK) && scanner_pid)
 		kill(scanner_pid, SIGKILL);
 
 	/* close out open sockets */
@@ -1336,7 +1360,10 @@ shutdown:
 	}
 
 	if (inotify_thread)
+	{
+		pthread_kill(inotify_thread, SIGCHLD);
 		pthread_join(inotify_thread, NULL);
+	}
 
 	/* kill other child processes */
 	process_reap_children();
