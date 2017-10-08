@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.9.40 Kernel Configuration
+# Linux/i386 4.9.54 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -3963,6 +3963,7 @@ CONFIG_DEFAULT_IO_DELAY_TYPE=0
 #
 CONFIG_KEYS=y
 # CONFIG_PERSISTENT_KEYRINGS is not set
+# CONFIG_BIG_KEYS is not set
 # CONFIG_ENCRYPTED_KEYS is not set
 # CONFIG_KEY_DH_OPERATIONS is not set
 # CONFIG_SECURITY_DMESG_RESTRICT is not set
