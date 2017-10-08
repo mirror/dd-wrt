@@ -1,4 +1,4 @@
-/*
+/**
  * VP8 NEON optimisations
  *
  * Copyright (c) 2010 Rob Clark <rob@ti.com>
@@ -21,8 +21,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavutil/arm/asm.S"
-#include "neon.S"
+#include "asm.S"
 
 function ff_vp8_luma_dc_wht_neon, export=1
         vld1.16         {q0-q1},  [r1,:128]
@@ -74,6 +73,18 @@ function ff_vp8_luma_dc_wht_neon, export=1
         vst1.16         {d2[3]},  [r0,:16], r3
         vst1.16         {d3[3]},  [r0,:16], r3
 
+        bx              lr
+endfunc
+
+function ff_vp8_luma_dc_wht_dc_neon, export=1
+        ldrsh           r2,  [r1]
+        mov             r3,  #0
+        add             r2,  r2,  #3
+        strh            r3,  [r1]
+        asr             r2,  r2,  #3
+    .rept 16
+        strh            r2,  [r0], #32
+    .endr
         bx              lr
 endfunc
 
@@ -322,7 +333,7 @@ endfunc
 
         vmov.i16        q12, #3
         vsubl.s8        q10, d8,  d6            @ QS0 - PS0
-        vsubl.s8        q11, d9,  d7            @   (widened to 16 bits)
+        vsubl.s8        q11, d9,  d7            @   (widened to 16bit)
         veor            q2,  q2,  q13           @ PS1 = P1 ^ 0x80
         veor            q5,  q5,  q13           @ QS1 = Q1 ^ 0x80
         vmul.i16        q10, q10, q12           @ w = 3 * (QS0 - PS0)
@@ -441,6 +452,23 @@ endfunc
         veor            q1,  q1,  q13           @ P2 = PS2 ^ 0x80
         veor            q6,  q6,  q13           @ Q2 = QS2 ^ 0x80
     .endif
+.endm
+
+.macro transpose8x16matrix
+        vtrn.32         q0,   q4
+        vtrn.32         q1,   q5
+        vtrn.32         q2,   q6
+        vtrn.32         q3,   q7
+
+        vtrn.16         q0,   q2
+        vtrn.16         q1,   q3
+        vtrn.16         q4,   q6
+        vtrn.16         q5,   q7
+
+        vtrn.8          q0,   q1
+        vtrn.8          q2,   q3
+        vtrn.8          q4,   q5
+        vtrn.8          q6,   q7
 .endm
 
 .macro  vp8_v_loop_filter16 name, inner=0, simple=0
@@ -577,7 +605,7 @@ function ff_vp8_h_loop_filter16\name\()_neon, export=1
         vld1.8          {d13},    [r0], r1
         vld1.8          {d15},    [r0], r1
 
-        transpose_8x8   q0,  q1,  q2,  q3,  q4,  q5,  q6,  q7
+        transpose8x16matrix
 
         vdup.8          q14, r2                 @ flim_E
     .if !\simple
@@ -588,7 +616,7 @@ function ff_vp8_h_loop_filter16\name\()_neon, export=1
 
         sub             r0,  r0,  r1, lsl #4    @ backup 16 rows
 
-        transpose_8x8   q0,  q1,  q2,  q3,  q4,  q5,  q6,  q7
+        transpose8x16matrix
 
         @ Store pixels:
         vst1.8          {d0},     [r0],     r1
@@ -642,7 +670,7 @@ function ff_vp8_h_loop_filter8uv\name\()_neon, export=1
         vld1.8          {d14},    [r0], r2
         vld1.8          {d15},    [r1], r2
 
-        transpose_8x8   q0,  q1,  q2,  q3,  q4,  q5,  q6,  q7
+        transpose8x16matrix
 
         vdup.8          q14, r3                 @ flim_E
         vdup.8          q15, r12                @ flim_I
@@ -653,7 +681,7 @@ function ff_vp8_h_loop_filter8uv\name\()_neon, export=1
         sub             r0,  r0,  r2, lsl #3    @ backup u 8 rows
         sub             r1,  r1,  r2, lsl #3    @ backup v 8 rows
 
-        transpose_8x8   q0,  q1,  q2,  q3,  q4,  q5,  q6,  q7
+        transpose8x16matrix
 
         @ Store pixels:
         vst1.8          {d0},     [r0], r2
@@ -711,6 +739,23 @@ function ff_put_vp8_pixels8_neon, export=1
         vst1.8          {d3},     [r0,:64], r1
         bgt             1b
         bx              lr
+endfunc
+
+function ff_put_vp8_pixels4_neon, export=1
+        ldr             r12, [sp, #0]           @ h
+        push            {r4-r6,lr}
+1:
+        subs            r12, r12, #4
+        ldr             r4,       [r2], r3
+        ldr             r5,       [r2], r3
+        ldr             r6,       [r2], r3
+        ldr             lr,       [r2], r3
+        str             r4,       [r0], r1
+        str             r5,       [r0], r1
+        str             r6,       [r0], r1
+        str             lr,       [r0], r1
+        bgt             1b
+        pop             {r4-r6,pc}
 endfunc
 
 /* 4/6-tap 8th-pel MC */
@@ -1562,7 +1607,7 @@ function ff_put_vp8_epel4_h4v4_neon, export=1
 endfunc
 
 @ note: worst case sum of all 6-tap filter values * 255 is 0x7f80 so 16 bit
-@ arithmetic can be used to apply filters
+@ arithmatic can be used to apply filters
 const   subpel_filters, align=4
         .short     0,   6, 123,  12,   1,   0,   0,   0
         .short     2,  11, 108,  36,   8,   1,   0,   0
@@ -1576,18 +1621,18 @@ endconst
 /* Bilinear MC */
 
 function ff_put_vp8_bilin16_h_neon, export=1
-        ldr             r12, [sp, #4]           @ mx
-        vdup.8          d0,  r12
-        rsb             r12, r12, #8
+        ldr             r3,  [sp, #4]           @ mx
+        rsb             r12, r3,  #8
+        vdup.8          d0,  r3
         vdup.8          d1,  r12
         ldr             r12, [sp]               @ h
 1:
         subs            r12, r12, #2
-        vld1.8          {d2-d4},  [r2], r3
+        vld1.8          {d2-d4},  [r2], r1
         vext.8          q2,  q1,  q2,  #1
         vmull.u8        q8,  d2,  d1
         vmlal.u8        q8,  d4,  d0
-        vld1.8          {d18-d20},[r2], r3
+        vld1.8          {d18-d20},[r2], r1
         vmull.u8        q3,  d3,  d1
         vmlal.u8        q3,  d5,  d0
         vext.8          q10, q9,  q10, #1
@@ -1607,20 +1652,20 @@ function ff_put_vp8_bilin16_h_neon, export=1
 endfunc
 
 function ff_put_vp8_bilin16_v_neon, export=1
-        ldr             r12, [sp, #8]           @ my
-        vdup.8          d0,  r12
-        rsb             r12, r12, #8
+        ldr             r3,  [sp, #8]           @ my
+        rsb             r12, r3,  #8
+        vdup.8          d0,  r3
         vdup.8          d1,  r12
         ldr             r12, [sp]               @ h
-        vld1.8          {q1},     [r2], r3
+        vld1.8          {q1},     [r2], r1
 1:
         subs            r12, r12, #2
-        vld1.8          {q2},     [r2], r3
+        vld1.8          {q2},     [r2], r1
         vmull.u8        q3,  d2,  d1
         vmlal.u8        q3,  d4,  d0
         vmull.u8        q8,  d3,  d1
         vmlal.u8        q8,  d5,  d0
-        vld1.8          {q1},     [r2], r3
+        vld1.8          {q1},     [r2], r1
         vmull.u8        q9,  d4,  d1
         vmlal.u8        q9,  d2,  d0
         vmull.u8        q10, d5,  d1
@@ -1637,17 +1682,17 @@ function ff_put_vp8_bilin16_v_neon, export=1
 endfunc
 
 function ff_put_vp8_bilin16_hv_neon, export=1
-        ldr             r12, [sp, #4]           @ mx
-        vdup.8          d0,  r12
-        rsb             r12, r12, #8
+        ldr             r3,  [sp, #4]           @ mx
+        rsb             r12, r3,  #8
+        vdup.8          d0,  r3
         vdup.8          d1,  r12
-        ldr             r12, [sp, #8]           @ my
-        vdup.8          d2,  r12
-        rsb             r12, r12, #8
+        ldr             r3,  [sp, #8]           @ my
+        rsb             r12, r3,  #8
+        vdup.8          d2,  r3
         vdup.8          d3,  r12
         ldr             r12, [sp]               @ h
 
-        vld1.8          {d4-d6},  [r2], r3
+        vld1.8          {d4-d6},  [r2], r1
         vext.8          q3,  q2,  q3,  #1
         vmull.u8        q8,  d4,  d1
         vmlal.u8        q8,  d6,  d0
@@ -1657,11 +1702,11 @@ function ff_put_vp8_bilin16_hv_neon, export=1
         vrshrn.u16      d5,  q9,  #3
 1:
         subs            r12, r12, #2
-        vld1.8          {d18-d20},[r2], r3
+        vld1.8          {d18-d20},[r2], r1
         vext.8          q10, q9,  q10, #1
         vmull.u8        q11, d18, d1
         vmlal.u8        q11, d20, d0
-        vld1.8          {d26-d28},[r2], r3
+        vld1.8          {d26-d28},[r2], r1
         vmull.u8        q12, d19, d1
         vmlal.u8        q12, d21, d0
         vext.8          q14, q13, q14, #1
@@ -1693,18 +1738,18 @@ function ff_put_vp8_bilin16_hv_neon, export=1
 endfunc
 
 function ff_put_vp8_bilin8_h_neon, export=1
-        ldr             r12, [sp, #4]           @ mx
-        vdup.8          d0,  r12
-        rsb             r12, r12, #8
+        ldr             r3,  [sp, #4]           @ mx
+        rsb             r12, r3,  #8
+        vdup.8          d0,  r3
         vdup.8          d1,  r12
         ldr             r12, [sp]               @ h
 1:
         subs            r12, r12, #2
-        vld1.8          {q1},     [r2], r3
+        vld1.8          {q1},     [r2], r1
         vext.8          d3,  d2,  d3,  #1
         vmull.u8        q2,  d2,  d1
         vmlal.u8        q2,  d3,  d0
-        vld1.8          {q3},     [r2], r3
+        vld1.8          {q3},     [r2], r1
         vext.8          d7,  d6,  d7,  #1
         vmull.u8        q8,  d6,  d1
         vmlal.u8        q8,  d7,  d0
@@ -1718,18 +1763,18 @@ function ff_put_vp8_bilin8_h_neon, export=1
 endfunc
 
 function ff_put_vp8_bilin8_v_neon, export=1
-        ldr             r12, [sp, #8]           @ my
-        vdup.8          d0,  r12
-        rsb             r12, r12,  #8
+        ldr             r3,  [sp, #8]           @ my
+        rsb             r12, r3,  #8
+        vdup.8          d0,  r3
         vdup.8          d1,  r12
         ldr             r12, [sp]               @ h
-        vld1.8          {d2},     [r2], r3
+        vld1.8          {d2},     [r2], r1
 1:
         subs            r12, r12, #2
-        vld1.8          {d3},     [r2], r3
+        vld1.8          {d3},     [r2], r1
         vmull.u8        q2,  d2,  d1
         vmlal.u8        q2,  d3,  d0
-        vld1.8          {d2},     [r2], r3
+        vld1.8          {d2},     [r2], r1
         vmull.u8        q3,  d3,  d1
         vmlal.u8        q3,  d2,  d0
         vrshrn.u16      d4,  q2,  #3
@@ -1742,28 +1787,28 @@ function ff_put_vp8_bilin8_v_neon, export=1
 endfunc
 
 function ff_put_vp8_bilin8_hv_neon, export=1
-        ldr             r12, [sp, #4]           @ mx
-        vdup.8          d0,  r12
-        rsb             r12, r12, #8
+        ldr             r3,  [sp, #4]           @ mx
+        rsb             r12, r3,  #8
+        vdup.8          d0,  r3
         vdup.8          d1,  r12
-        ldr             r12, [sp, #8]           @ my
-        vdup.8          d2,  r12
-        rsb             r12, r12, #8
+        ldr             r3,  [sp, #8]           @ my
+        rsb             r12, r3,  #8
+        vdup.8          d2,  r3
         vdup.8          d3,  r12
         ldr             r12, [sp]               @ h
 
-        vld1.8          {q2},     [r2], r3
+        vld1.8          {q2},     [r2], r1
         vext.8          d5,  d4,  d5,  #1
         vmull.u8        q9,  d4,  d1
         vmlal.u8        q9,  d5,  d0
         vrshrn.u16      d22, q9,  #3
 1:
         subs            r12, r12, #2
-        vld1.8          {q3},     [r2], r3
+        vld1.8          {q3},     [r2], r1
         vext.8          d7,  d6,  d7,  #1
         vmull.u8        q8,  d6,  d1
         vmlal.u8        q8,  d7,  d0
-        vld1.8          {q2},     [r2], r3
+        vld1.8          {q2},     [r2], r1
         vext.8          d5,  d4,  d5,  #1
         vmull.u8        q9,  d4,  d1
         vmlal.u8        q9,  d5,  d0
@@ -1783,16 +1828,16 @@ function ff_put_vp8_bilin8_hv_neon, export=1
 endfunc
 
 function ff_put_vp8_bilin4_h_neon, export=1
-        ldr             r12, [sp, #4]           @ mx
-        vdup.8          d0,  r12
-        rsb             r12, r12, #8
+        ldr             r3,  [sp, #4]           @ mx
+        rsb             r12, r3,  #8
+        vdup.8          d0,  r3
         vdup.8          d1,  r12
         ldr             r12, [sp]               @ h
 1:
         subs            r12, r12, #2
-        vld1.8          {d2},     [r2], r3
+        vld1.8          {d2},     [r2], r1
         vext.8          d3,  d2,  d3,  #1
-        vld1.8          {d6},     [r2], r3
+        vld1.8          {d6},     [r2], r1
         vext.8          d7,  d6,  d7,  #1
         vtrn.32         q1,  q3
         vmull.u8        q2,  d2,  d1
@@ -1806,16 +1851,16 @@ function ff_put_vp8_bilin4_h_neon, export=1
 endfunc
 
 function ff_put_vp8_bilin4_v_neon, export=1
-        ldr             r12, [sp, #8]           @ my
-        vdup.8          d0,  r12
-        rsb             r12, r12, #8
+        ldr             r3,  [sp, #8]           @ my
+        rsb             r12, r3,  #8
+        vdup.8          d0,  r3
         vdup.8          d1,  r12
         ldr             r12, [sp]               @ h
-        vld1.32         {d2[]},   [r2], r3
+        vld1.32         {d2[]},   [r2], r1
 1:
         vld1.32         {d3[]},   [r2]
-        vld1.32         {d2[1]},  [r2], r3
-        vld1.32         {d3[1]},  [r2], r3
+        vld1.32         {d2[1]},  [r2], r1
+        vld1.32         {d3[1]},  [r2], r1
         vmull.u8        q2,  d2,  d1
         vmlal.u8        q2,  d3,  d0
         vtrn.32         d3,  d2
@@ -1829,26 +1874,26 @@ function ff_put_vp8_bilin4_v_neon, export=1
 endfunc
 
 function ff_put_vp8_bilin4_hv_neon, export=1
-        ldr             r12, [sp, #4]           @ mx
-        vdup.8          d0,  r12
-        rsb             r12, r12, #8
+        ldr             r3,  [sp, #4]           @ mx
+        rsb             r12, r3,  #8
+        vdup.8          d0,  r3
         vdup.8          d1,  r12
-        ldr             r12, [sp, #8]           @ my
-        vdup.8          d2,  r12
-        rsb             r12, r12, #8
+        ldr             r3,  [sp, #8]           @ my
+        rsb             r12, r3,  #8
+        vdup.8          d2,  r3
         vdup.8          d3,  r12
         ldr             r12, [sp]               @ h
 
-        vld1.8          {d4},     [r2], r3
+        vld1.8          {d4},     [r2], r1
         vext.8          d5,  d4,  d4,  #1
         vmull.u8        q9,  d4,  d1
         vmlal.u8        q9,  d5,  d0
         vrshrn.u16      d22, q9,  #3
 1:
         subs            r12, r12, #2
-        vld1.8          {d6},     [r2], r3
+        vld1.8          {d6},     [r2], r1
         vext.8          d7,  d6,  d6,  #1
-        vld1.8          {d4},     [r2], r3
+        vld1.8          {d4},     [r2], r1
         vext.8          d5,  d4,  d4,  #1
         vtrn.32         q3,  q2
         vmull.u8        q8,  d6,  d1

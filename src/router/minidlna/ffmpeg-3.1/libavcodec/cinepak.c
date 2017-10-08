@@ -1,6 +1,6 @@
 /*
  * Cinepak Video Decoder
- * Copyright (C) 2003 The FFmpeg project
+ * Copyright (C) 2003 the ffmpeg project
  *
  * This file is part of FFmpeg.
  *
@@ -22,32 +22,29 @@
 /**
  * @file
  * Cinepak video decoder
- * @author Ewald Snel <ewald@rambo.its.tudelft.nl>
- *
- * @see For more information on the Cinepak algorithm, visit:
+ * by Ewald Snel <ewald@rambo.its.tudelft.nl>
+ * For more information on the Cinepak algorithm, visit:
  *   http://www.csse.monash.edu.au/~timf/
- * @see For more information on the quirky data inside Sega FILM/CPK files, visit:
+ * For more information on the quirky data inside Sega FILM/CPK files, visit:
  *   http://wiki.multimedia.cx/index.php?title=Sega_FILM
- *
- * Cinepak colorspace support (c) 2013 Rl, Aetey Global Technologies AB
- * @author Cinepak colorspace, Rl, Aetey Global Technologies AB
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "libavutil/common.h"
 #include "libavutil/intreadwrite.h"
 #include "avcodec.h"
-#include "internal.h"
 
 
-typedef uint8_t cvid_codebook[12];
+typedef struct {
+    uint8_t  y0, y1, y2, y3;
+    uint8_t  u, v;
+} cvid_codebook;
 
 #define MAX_STRIPS      32
 
-typedef struct cvid_strip {
+typedef struct {
     uint16_t          id;
     uint16_t          x1, y1;
     uint16_t          x2, y2;
@@ -58,7 +55,7 @@ typedef struct cvid_strip {
 typedef struct CinepakContext {
 
     AVCodecContext *avctx;
-    AVFrame *frame;
+    AVFrame frame;
 
     const unsigned char *data;
     int size;
@@ -70,7 +67,6 @@ typedef struct CinepakContext {
 
     int sega_film_skip_bytes;
 
-    uint32_t pal[256];
 } CinepakContext;
 
 static void cinepak_decode_codebook (cvid_codebook *codebook,
@@ -79,14 +75,12 @@ static void cinepak_decode_codebook (cvid_codebook *codebook,
     const uint8_t *eod = (data + size);
     uint32_t flag, mask;
     int      i, n;
-    uint8_t *p;
 
     /* check if this chunk contains 4- or 6-element vectors */
     n    = (chunk_id & 0x04) ? 4 : 6;
     flag = 0;
     mask = 0;
 
-    p = codebook[0];
     for (i=0; i < 256; i++) {
         if ((chunk_id & 0x01) && !(mask >>= 1)) {
             if ((data + 4) > eod)
@@ -98,33 +92,28 @@ static void cinepak_decode_codebook (cvid_codebook *codebook,
         }
 
         if (!(chunk_id & 0x01) || (flag & mask)) {
-            int k, kk;
-
             if ((data + n) > eod)
                 break;
 
-            for (k = 0; k < 4; ++k) {
-                int r = *data++;
-                for (kk = 0; kk < 3; ++kk)
-                    *p++ = r;
-            }
             if (n == 6) {
-                int r, g, b, u, v;
-                u = *(int8_t *)data++;
-                v = *(int8_t *)data++;
-                p -= 12;
-                for(k=0; k<4; ++k) {
-                    r = *p++ + v*2;
-                    g = *p++ - (u/2) - v;
-                    b = *p   + u*2;
-                    p -= 2;
-                    *p++ = av_clip_uint8(r);
-                    *p++ = av_clip_uint8(g);
-                    *p++ = av_clip_uint8(b);
-                }
+                codebook[i].y0 = *data++;
+                codebook[i].y1 = *data++;
+                codebook[i].y2 = *data++;
+                codebook[i].y3 = *data++;
+                codebook[i].u  = 128 + *data++;
+                codebook[i].v  = 128 + *data++;
+            } else {
+                /* this codebook type indicates either greyscale or
+                 * palettized video; if palettized, U & V components will
+                 * not be used so it is safe to set them to 128 for the
+                 * benefit of greyscale rendering in YUV420P */
+                codebook[i].y0 = *data++;
+                codebook[i].y1 = *data++;
+                codebook[i].y2 = *data++;
+                codebook[i].y3 = *data++;
+                codebook[i].u  = 128;
+                codebook[i].v  = 128;
             }
-        } else {
-            p += 12;
         }
     }
 }
@@ -134,36 +123,30 @@ static int cinepak_decode_vectors (CinepakContext *s, cvid_strip *strip,
 {
     const uint8_t   *eod = (data + size);
     uint32_t         flag, mask;
-    uint8_t         *cb0, *cb1, *cb2, *cb3;
-    int             x, y;
-    char            *ip0, *ip1, *ip2, *ip3;
+    cvid_codebook   *codebook;
+    unsigned int     x, y;
+    uint32_t         iy[4];
+    uint32_t         iu[2];
+    uint32_t         iv[2];
 
     flag = 0;
     mask = 0;
 
     for (y=strip->y1; y < strip->y2; y+=4) {
 
-/* take care of y dimension not being multiple of 4, such streams exist */
-        ip0 = ip1 = ip2 = ip3 = s->frame->data[0] +
-          (s->palette_video?strip->x1:strip->x1*3) + (y * s->frame->linesize[0]);
-        if(s->avctx->height - y > 1) {
-            ip1 = ip0 + s->frame->linesize[0];
-            if(s->avctx->height - y > 2) {
-                ip2 = ip1 + s->frame->linesize[0];
-                if(s->avctx->height - y > 3) {
-                    ip3 = ip2 + s->frame->linesize[0];
-                }
-            }
-        }
-/* to get the correct picture for not-multiple-of-4 cases let us fill each
- * block from the bottom up, thus possibly overwriting the bottommost line
- * more than once but ending with the correct data in place
- * (instead of in-loop checking) */
+        iy[0] = strip->x1 + (y * s->frame.linesize[0]);
+        iy[1] = iy[0] + s->frame.linesize[0];
+        iy[2] = iy[1] + s->frame.linesize[0];
+        iy[3] = iy[2] + s->frame.linesize[0];
+        iu[0] = (strip->x1/2) + ((y/2) * s->frame.linesize[1]);
+        iu[1] = iu[0] + s->frame.linesize[1];
+        iv[0] = (strip->x1/2) + ((y/2) * s->frame.linesize[2]);
+        iv[1] = iv[0] + s->frame.linesize[2];
 
         for (x=strip->x1; x < strip->x2; x+=4) {
             if ((chunk_id & 0x01) && !(mask >>= 1)) {
                 if ((data + 4) > eod)
-                    return AVERROR_INVALIDDATA;
+                    return -1;
 
                 flag  = AV_RB32 (data);
                 data += 4;
@@ -173,7 +156,7 @@ static int cinepak_decode_vectors (CinepakContext *s, cvid_strip *strip,
             if (!(chunk_id & 0x01) || (flag & mask)) {
                 if (!(chunk_id & 0x02) && !(mask >>= 1)) {
                     if ((data + 4) > eod)
-                        return AVERROR_INVALIDDATA;
+                        return -1;
 
                     flag  = AV_RB32 (data);
                     data += 4;
@@ -181,82 +164,97 @@ static int cinepak_decode_vectors (CinepakContext *s, cvid_strip *strip,
                 }
 
                 if ((chunk_id & 0x02) || (~flag & mask)) {
-                    uint8_t *p;
                     if (data >= eod)
-                        return AVERROR_INVALIDDATA;
+                        return -1;
 
-                    p = strip->v1_codebook[*data++];
-                    if (s->palette_video) {
-                        ip3[0] = ip3[1] = ip2[0] = ip2[1] = p[6];
-                        ip3[2] = ip3[3] = ip2[2] = ip2[3] = p[9];
-                        ip1[0] = ip1[1] = ip0[0] = ip0[1] = p[0];
-                        ip1[2] = ip1[3] = ip0[2] = ip0[3] = p[3];
-                    } else {
-                        p += 6;
-                        memcpy(ip3 + 0, p, 3); memcpy(ip3 + 3, p, 3);
-                        memcpy(ip2 + 0, p, 3); memcpy(ip2 + 3, p, 3);
-                        p += 3; /* ... + 9 */
-                        memcpy(ip3 + 6, p, 3); memcpy(ip3 + 9, p, 3);
-                        memcpy(ip2 + 6, p, 3); memcpy(ip2 + 9, p, 3);
-                        p -= 9; /* ... + 0 */
-                        memcpy(ip1 + 0, p, 3); memcpy(ip1 + 3, p, 3);
-                        memcpy(ip0 + 0, p, 3); memcpy(ip0 + 3, p, 3);
-                        p += 3; /* ... + 3 */
-                        memcpy(ip1 + 6, p, 3); memcpy(ip1 + 9, p, 3);
-                        memcpy(ip0 + 6, p, 3); memcpy(ip0 + 9, p, 3);
+                    codebook = &strip->v1_codebook[*data++];
+                    s->frame.data[0][iy[0] + 0] = codebook->y0;
+                    s->frame.data[0][iy[0] + 1] = codebook->y0;
+                    s->frame.data[0][iy[1] + 0] = codebook->y0;
+                    s->frame.data[0][iy[1] + 1] = codebook->y0;
+                    if (!s->palette_video) {
+                        s->frame.data[1][iu[0]] = codebook->u;
+                        s->frame.data[2][iv[0]] = codebook->v;
+                    }
+
+                    s->frame.data[0][iy[0] + 2] = codebook->y1;
+                    s->frame.data[0][iy[0] + 3] = codebook->y1;
+                    s->frame.data[0][iy[1] + 2] = codebook->y1;
+                    s->frame.data[0][iy[1] + 3] = codebook->y1;
+                    if (!s->palette_video) {
+                        s->frame.data[1][iu[0] + 1] = codebook->u;
+                        s->frame.data[2][iv[0] + 1] = codebook->v;
+                    }
+
+                    s->frame.data[0][iy[2] + 0] = codebook->y2;
+                    s->frame.data[0][iy[2] + 1] = codebook->y2;
+                    s->frame.data[0][iy[3] + 0] = codebook->y2;
+                    s->frame.data[0][iy[3] + 1] = codebook->y2;
+                    if (!s->palette_video) {
+                        s->frame.data[1][iu[1]] = codebook->u;
+                        s->frame.data[2][iv[1]] = codebook->v;
+                    }
+
+                    s->frame.data[0][iy[2] + 2] = codebook->y3;
+                    s->frame.data[0][iy[2] + 3] = codebook->y3;
+                    s->frame.data[0][iy[3] + 2] = codebook->y3;
+                    s->frame.data[0][iy[3] + 3] = codebook->y3;
+                    if (!s->palette_video) {
+                        s->frame.data[1][iu[1] + 1] = codebook->u;
+                        s->frame.data[2][iv[1] + 1] = codebook->v;
                     }
 
                 } else if (flag & mask) {
                     if ((data + 4) > eod)
-                        return AVERROR_INVALIDDATA;
+                        return -1;
 
-                    cb0 = strip->v4_codebook[*data++];
-                    cb1 = strip->v4_codebook[*data++];
-                    cb2 = strip->v4_codebook[*data++];
-                    cb3 = strip->v4_codebook[*data++];
-                    if (s->palette_video) {
-                        uint8_t *p;
-                        p = ip3;
-                        *p++ = cb2[6];
-                        *p++ = cb2[9];
-                        *p++ = cb3[6];
-                        *p   = cb3[9];
-                        p = ip2;
-                        *p++ = cb2[0];
-                        *p++ = cb2[3];
-                        *p++ = cb3[0];
-                        *p   = cb3[3];
-                        p = ip1;
-                        *p++ = cb0[6];
-                        *p++ = cb0[9];
-                        *p++ = cb1[6];
-                        *p   = cb1[9];
-                        p = ip0;
-                        *p++ = cb0[0];
-                        *p++ = cb0[3];
-                        *p++ = cb1[0];
-                        *p   = cb1[3];
-                    } else {
-                        memcpy(ip3 + 0, cb2 + 6, 6);
-                        memcpy(ip3 + 6, cb3 + 6, 6);
-                        memcpy(ip2 + 0, cb2 + 0, 6);
-                        memcpy(ip2 + 6, cb3 + 0, 6);
-                        memcpy(ip1 + 0, cb0 + 6, 6);
-                        memcpy(ip1 + 6, cb1 + 6, 6);
-                        memcpy(ip0 + 0, cb0 + 0, 6);
-                        memcpy(ip0 + 6, cb1 + 0, 6);
+                    codebook = &strip->v4_codebook[*data++];
+                    s->frame.data[0][iy[0] + 0] = codebook->y0;
+                    s->frame.data[0][iy[0] + 1] = codebook->y1;
+                    s->frame.data[0][iy[1] + 0] = codebook->y2;
+                    s->frame.data[0][iy[1] + 1] = codebook->y3;
+                    if (!s->palette_video) {
+                        s->frame.data[1][iu[0]] = codebook->u;
+                        s->frame.data[2][iv[0]] = codebook->v;
+                    }
+
+                    codebook = &strip->v4_codebook[*data++];
+                    s->frame.data[0][iy[0] + 2] = codebook->y0;
+                    s->frame.data[0][iy[0] + 3] = codebook->y1;
+                    s->frame.data[0][iy[1] + 2] = codebook->y2;
+                    s->frame.data[0][iy[1] + 3] = codebook->y3;
+                    if (!s->palette_video) {
+                        s->frame.data[1][iu[0] + 1] = codebook->u;
+                        s->frame.data[2][iv[0] + 1] = codebook->v;
+                    }
+
+                    codebook = &strip->v4_codebook[*data++];
+                    s->frame.data[0][iy[2] + 0] = codebook->y0;
+                    s->frame.data[0][iy[2] + 1] = codebook->y1;
+                    s->frame.data[0][iy[3] + 0] = codebook->y2;
+                    s->frame.data[0][iy[3] + 1] = codebook->y3;
+                    if (!s->palette_video) {
+                        s->frame.data[1][iu[1]] = codebook->u;
+                        s->frame.data[2][iv[1]] = codebook->v;
+                    }
+
+                    codebook = &strip->v4_codebook[*data++];
+                    s->frame.data[0][iy[2] + 2] = codebook->y0;
+                    s->frame.data[0][iy[2] + 3] = codebook->y1;
+                    s->frame.data[0][iy[3] + 2] = codebook->y2;
+                    s->frame.data[0][iy[3] + 3] = codebook->y3;
+                    if (!s->palette_video) {
+                        s->frame.data[1][iu[1] + 1] = codebook->u;
+                        s->frame.data[2][iv[1] + 1] = codebook->v;
                     }
 
                 }
             }
 
-            if (s->palette_video) {
-                ip0 += 4;  ip1 += 4;
-                ip2 += 4;  ip3 += 4;
-            } else {
-                ip0 += 12;  ip1 += 12;
-                ip2 += 12;  ip3 += 12;
-            }
+            iy[0] += 4;  iy[1] += 4;
+            iy[2] += 4;  iy[3] += 4;
+            iu[0] += 2;  iu[1] += 2;
+            iv[0] += 2;  iv[1] += 2;
         }
     }
 
@@ -270,16 +268,16 @@ static int cinepak_decode_strip (CinepakContext *s,
     int      chunk_id, chunk_size;
 
     /* coordinate sanity checks */
-    if (strip->x2 > s->width   ||
-        strip->y2 > s->height  ||
+    if (strip->x1 >= s->width  || strip->x2 > s->width  ||
+        strip->y1 >= s->height || strip->y2 > s->height ||
         strip->x1 >= strip->x2 || strip->y1 >= strip->y2)
-        return AVERROR_INVALIDDATA;
+        return -1;
 
     while ((data + 4) <= eod) {
         chunk_id   = data[0];
         chunk_size = AV_RB24 (&data[1]) - 4;
         if(chunk_size < 0)
-            return AVERROR_INVALIDDATA;
+            return -1;
 
         data      += 4;
         chunk_size = ((data + chunk_size) > eod) ? (eod - data) : chunk_size;
@@ -312,7 +310,7 @@ static int cinepak_decode_strip (CinepakContext *s,
         data += chunk_size;
     }
 
-    return AVERROR_INVALIDDATA;
+    return -1;
 }
 
 static int cinepak_decode (CinepakContext *s)
@@ -322,23 +320,21 @@ static int cinepak_decode (CinepakContext *s)
     int           y0 = 0;
     int           encoded_buf_size;
 
+    if (s->size < 10)
+        return -1;
+
     frame_flags = s->data[0];
     num_strips  = AV_RB16 (&s->data[8]);
-    encoded_buf_size = AV_RB24(&s->data[1]);
+    encoded_buf_size = ((s->data[1] << 16) | AV_RB16 (&s->data[2]));
 
     /* if this is the first frame, check for deviant Sega FILM data */
     if (s->sega_film_skip_bytes == -1) {
-        if (!encoded_buf_size) {
-            avpriv_request_sample(s->avctx, "encoded_buf_size 0");
-            return AVERROR_PATCHWELCOME;
-        }
-        if (encoded_buf_size != s->size && (s->size % encoded_buf_size) != 0) {
+        if (encoded_buf_size != s->size) {
             /* If the encoded frame size differs from the frame size as indicated
              * by the container file, this data likely comes from a Sega FILM/CPK file.
              * If the frame header is followed by the bytes FE 00 00 06 00 00 then
              * this is probably one of the two known files that have 6 extra bytes
-             * after the frame header. Else, assume 2 extra bytes. The container
-             * size also cannot be a multiple of the encoded size. */
+             * after the frame header. Else, assume 2 extra bytes. */
             if (s->size >= 16 &&
                 (s->data[10] == 0xFE) &&
                 (s->data[11] == 0x00) &&
@@ -355,29 +351,22 @@ static int cinepak_decode (CinepakContext *s)
 
     s->data += 10 + s->sega_film_skip_bytes;
 
-    num_strips = FFMIN(num_strips, MAX_STRIPS);
-
-    s->frame->key_frame = 0;
+    if (num_strips > MAX_STRIPS)
+        num_strips = MAX_STRIPS;
 
     for (i=0; i < num_strips; i++) {
         if ((s->data + 12) > eod)
-            return AVERROR_INVALIDDATA;
+            return -1;
 
         s->strips[i].id = s->data[0];
-/* zero y1 means "relative to the previous stripe" */
-        if (!(s->strips[i].y1 = AV_RB16 (&s->data[4])))
-            s->strips[i].y2 = (s->strips[i].y1 = y0) + AV_RB16 (&s->data[8]);
-        else
-            s->strips[i].y2 = AV_RB16 (&s->data[8]);
-        s->strips[i].x1 = AV_RB16 (&s->data[6]);
-        s->strips[i].x2 = AV_RB16 (&s->data[10]);
-
-        if (s->strips[i].id == 0x10)
-            s->frame->key_frame = 1;
+        s->strips[i].y1 = y0;
+        s->strips[i].x1 = 0;
+        s->strips[i].y2 = y0 + AV_RB16 (&s->data[8]);
+        s->strips[i].x2 = s->avctx->width;
 
         strip_size = AV_RB24 (&s->data[1]) - 12;
-        if (strip_size < 0)
-            return AVERROR_INVALIDDATA;
+        if(strip_size < 0)
+            return -1;
         s->data   += 12;
         strip_size = ((s->data + strip_size) > eod) ? (eod - s->data) : strip_size;
 
@@ -406,64 +395,55 @@ static av_cold int cinepak_decode_init(AVCodecContext *avctx)
     s->avctx = avctx;
     s->width = (avctx->width + 3) & ~3;
     s->height = (avctx->height + 3) & ~3;
-
     s->sega_film_skip_bytes = -1;  /* uninitialized state */
 
     // check for paletted data
-    if (avctx->bits_per_coded_sample != 8) {
+    if ((avctx->palctrl == NULL) || (avctx->bits_per_coded_sample == 40)) {
         s->palette_video = 0;
-        avctx->pix_fmt = AV_PIX_FMT_RGB24;
+        avctx->pix_fmt = PIX_FMT_YUV420P;
     } else {
         s->palette_video = 1;
-        avctx->pix_fmt = AV_PIX_FMT_PAL8;
+        avctx->pix_fmt = PIX_FMT_PAL8;
     }
 
-    s->frame = av_frame_alloc();
-    if (!s->frame)
-        return AVERROR(ENOMEM);
+    avcodec_get_frame_defaults(&s->frame);
+    s->frame.data[0] = NULL;
 
     return 0;
 }
 
 static int cinepak_decode_frame(AVCodecContext *avctx,
-                                void *data, int *got_frame,
+                                void *data, int *data_size,
                                 AVPacket *avpkt)
 {
     const uint8_t *buf = avpkt->data;
-    int ret = 0, buf_size = avpkt->size;
+    int buf_size = avpkt->size;
     CinepakContext *s = avctx->priv_data;
 
     s->data = buf;
     s->size = buf_size;
 
-    if (s->size < 10)
-        return AVERROR_INVALIDDATA;
+    s->frame.reference = 1;
+    s->frame.buffer_hints = FF_BUFFER_HINTS_VALID | FF_BUFFER_HINTS_PRESERVE |
+                            FF_BUFFER_HINTS_REUSABLE;
+    if (avctx->reget_buffer(avctx, &s->frame)) {
+        av_log(avctx, AV_LOG_ERROR, "reget_buffer() failed\n");
+        return -1;
+    }
 
-    if ((ret = ff_reget_buffer(avctx, s->frame)) < 0)
-        return ret;
+    cinepak_decode(s);
 
     if (s->palette_video) {
-        int size;
-        const uint8_t *pal = av_packet_get_side_data(avpkt, AV_PKT_DATA_PALETTE, &size);
-        if (pal && size == AVPALETTE_SIZE) {
-            s->frame->palette_has_changed = 1;
-            memcpy(s->pal, pal, AVPALETTE_SIZE);
-        } else if (pal) {
-            av_log(avctx, AV_LOG_ERROR, "Palette size %d is wrong\n", size);
-        }
+        memcpy (s->frame.data[1], avctx->palctrl->palette, AVPALETTE_SIZE);
+        if (avctx->palctrl->palette_changed) {
+            s->frame.palette_has_changed = 1;
+            avctx->palctrl->palette_changed = 0;
+        } else
+            s->frame.palette_has_changed = 0;
     }
 
-    if ((ret = cinepak_decode(s)) < 0) {
-        av_log(avctx, AV_LOG_ERROR, "cinepak_decode failed\n");
-    }
-
-    if (s->palette_video)
-        memcpy (s->frame->data[1], s->pal, AVPALETTE_SIZE);
-
-    if ((ret = av_frame_ref(data, s->frame)) < 0)
-        return ret;
-
-    *got_frame = 1;
+    *data_size = sizeof(AVFrame);
+    *(AVFrame*)data = s->frame;
 
     /* report that the buffer was completely consumed */
     return buf_size;
@@ -473,19 +453,21 @@ static av_cold int cinepak_decode_end(AVCodecContext *avctx)
 {
     CinepakContext *s = avctx->priv_data;
 
-    av_frame_free(&s->frame);
+    if (s->frame.data[0])
+        avctx->release_buffer(avctx, &s->frame);
 
     return 0;
 }
 
 AVCodec ff_cinepak_decoder = {
-    .name           = "cinepak",
-    .long_name      = NULL_IF_CONFIG_SMALL("Cinepak"),
-    .type           = AVMEDIA_TYPE_VIDEO,
-    .id             = AV_CODEC_ID_CINEPAK,
-    .priv_data_size = sizeof(CinepakContext),
-    .init           = cinepak_decode_init,
-    .close          = cinepak_decode_end,
-    .decode         = cinepak_decode_frame,
-    .capabilities   = AV_CODEC_CAP_DR1,
+    "cinepak",
+    AVMEDIA_TYPE_VIDEO,
+    CODEC_ID_CINEPAK,
+    sizeof(CinepakContext),
+    cinepak_decode_init,
+    NULL,
+    cinepak_decode_end,
+    cinepak_decode_frame,
+    CODEC_CAP_DR1,
+    .long_name = NULL_IF_CONFIG_SMALL("Cinepak"),
 };

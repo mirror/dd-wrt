@@ -20,19 +20,19 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavutil/channel_layout.h"
 #include "libavutil/intreadwrite.h"
 #include "avformat.h"
 #include "internal.h"
 #include "pcm.h"
+#include "riff.h"
 #include "rso.h"
 
-static int rso_read_header(AVFormatContext *s)
+static int rso_read_header(AVFormatContext *s, AVFormatParameters *ap)
 {
     AVIOContext *pb = s->pb;
     int id, rate, bps;
     unsigned int size;
-    enum AVCodecID codec;
+    enum CodecID codec;
     AVStream *st;
 
     id   = avio_rb16(pb);
@@ -42,42 +42,61 @@ static int rso_read_header(AVFormatContext *s)
 
     codec = ff_codec_get_id(ff_codec_rso_tags, id);
 
-    if (codec == AV_CODEC_ID_ADPCM_IMA_WAV) {
-        avpriv_report_missing_feature(s, "ADPCM in RSO");
+    if (codec == CODEC_ID_ADPCM_IMA_WAV) {
+        av_log(s, AV_LOG_ERROR, "ADPCM in RSO not implemented\n");
         return AVERROR_PATCHWELCOME;
     }
 
     bps = av_get_bits_per_sample(codec);
     if (!bps) {
-        avpriv_request_sample(s, "Unknown bits per sample");
-        return AVERROR_PATCHWELCOME;
+        av_log_ask_for_sample(s, "could not determine bits per sample\n");
+        return AVERROR_INVALIDDATA;
     }
 
     /* now we are ready: build format streams */
-    st = avformat_new_stream(s, NULL);
+    st = av_new_stream(s, 0);
     if (!st)
         return AVERROR(ENOMEM);
 
     st->duration            = (size * 8) / bps;
-    st->codecpar->codec_type   = AVMEDIA_TYPE_AUDIO;
-    st->codecpar->codec_tag    = id;
-    st->codecpar->codec_id     = codec;
-    st->codecpar->channels     = 1;
-    st->codecpar->channel_layout = AV_CH_LAYOUT_MONO;
-    st->codecpar->sample_rate  = rate;
-    st->codecpar->block_align  = 1;
+    st->codec->codec_type   = AVMEDIA_TYPE_AUDIO;
+    st->codec->codec_tag    = id;
+    st->codec->codec_id     = codec;
+    st->codec->channels     = 1;
+    st->codec->sample_rate  = rate;
 
-    avpriv_set_pts_info(st, 64, 1, rate);
+    av_set_pts_info(st, 64, 1, rate);
+
+    return 0;
+}
+
+#define BLOCK_SIZE 1024 /* in samples */
+
+static int rso_read_packet(AVFormatContext *s, AVPacket *pkt)
+{
+    int bps = av_get_bits_per_sample(s->streams[0]->codec->codec_id);
+    int ret = av_get_packet(s->pb, pkt, BLOCK_SIZE * bps >> 3);
+
+    if (ret < 0)
+        return ret;
+
+    pkt->stream_index = 0;
+
+    /* note: we need to modify the packet size here to handle the last packet */
+    pkt->size = ret;
 
     return 0;
 }
 
 AVInputFormat ff_rso_demuxer = {
     .name           =   "rso",
-    .long_name      =   NULL_IF_CONFIG_SMALL("Lego Mindstorms RSO"),
+    .long_name      =   NULL_IF_CONFIG_SMALL("Lego Mindstorms RSO format"),
     .extensions     =   "rso",
+    .priv_data_size =   0,
+    .read_probe     =   NULL, /* no magic value in this format */
     .read_header    =   rso_read_header,
-    .read_packet    =   ff_pcm_read_packet,
-    .read_seek      =   ff_pcm_read_seek,
+    .read_packet    =   rso_read_packet,
+    .read_close     =   NULL,
+    .read_seek      =   pcm_read_seek,
     .codec_tag      =   (const AVCodecTag* const []){ff_codec_rso_tags, 0},
 };

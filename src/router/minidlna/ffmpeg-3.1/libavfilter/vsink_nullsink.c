@@ -17,30 +17,29 @@
  */
 
 #include "avfilter.h"
-#include "internal.h"
-#include "libavutil/internal.h"
 
-static int filter_frame(AVFilterLink *link, AVFrame *frame)
+static void start_frame(AVFilterLink *link, AVFilterBufferRef *picref)
 {
-    av_frame_free(&frame);
-    return 0;
 }
 
-static const AVFilterPad avfilter_vsink_nullsink_inputs[] = {
-    {
-        .name        = "default",
-        .type        = AVMEDIA_TYPE_VIDEO,
-        .filter_frame = filter_frame,
-    },
-    { NULL },
-};
+static void end_frame(AVFilterLink *link)
+{
+}
 
-AVFilter ff_vsink_nullsink = {
+AVFilter avfilter_vsink_nullsink = {
     .name        = "nullsink",
     .description = NULL_IF_CONFIG_SMALL("Do absolutely nothing with the input video."),
 
     .priv_size = 0,
 
-    .inputs    = avfilter_vsink_nullsink_inputs,
-    .outputs   = NULL,
+    .inputs    = (AVFilterPad[]) {
+        {
+            .name            = "default",
+            .type            = AVMEDIA_TYPE_VIDEO,
+            .start_frame     = start_frame,
+            .end_frame       = end_frame,
+        },
+        { .name = NULL},
+    },
+    .outputs   = (AVFilterPad[]) {{ .name = NULL }},
 };

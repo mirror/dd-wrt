@@ -32,14 +32,11 @@
 #include <stdint.h>
 #include "fft.h"
 #include "aacps.h"
-#include "sbrdsp.h"
-
-typedef struct AACContext AACContext;
 
 /**
  * Spectral Band Replication header - spectrum parameters that invoke a reset if they differ from the previous header.
  */
-typedef struct SpectrumParameters {
+typedef struct {
     uint8_t bs_start_freq;
     uint8_t bs_stop_freq;
     uint8_t bs_xover_band;
@@ -59,16 +56,16 @@ typedef struct SpectrumParameters {
 /**
  * Spectral Band Replication per channel data
  */
-typedef struct SBRData {
+typedef struct {
     /**
      * @name Main bitstream data variables
      * @{
      */
     unsigned           bs_frame_class;
     unsigned           bs_add_harmonic_flag;
-    AAC_SIGNE          bs_num_env;
+    unsigned           bs_num_env;
     uint8_t            bs_freq_res[7];
-    AAC_SIGNE          bs_num_noise;
+    unsigned           bs_num_noise;
     uint8_t            bs_df_env[5];
     uint8_t            bs_df_noise[2];
     uint8_t            bs_invf_mode[2][5];
@@ -80,27 +77,24 @@ typedef struct SBRData {
      * @name State variables
      * @{
      */
-    DECLARE_ALIGNED(32, INTFLOAT, synthesis_filterbank_samples)[SBR_SYNTHESIS_BUF_SIZE];
-    DECLARE_ALIGNED(32, INTFLOAT, analysis_filterbank_samples) [1312];
+    DECLARE_ALIGNED(16, float, synthesis_filterbank_samples)[SBR_SYNTHESIS_BUF_SIZE];
+    DECLARE_ALIGNED(16, float, analysis_filterbank_samples) [1312];
     int                synthesis_filterbank_samples_offset;
     ///l_APrev and l_A
     int                e_a[2];
     ///Chirp factors
-    INTFLOAT              bw_array[5];
+    float              bw_array[5];
     ///QMF values of the original signal
-    INTFLOAT              W[2][32][32][2];
+    float              W[2][32][32][2];
     ///QMF output of the HF adjustor
-    int                Ypos;
-    DECLARE_ALIGNED(16, INTFLOAT, Y)[2][38][64][2];
-    DECLARE_ALIGNED(16, AAC_FLOAT, g_temp)[42][48];
-    AAC_FLOAT          q_temp[42][48];
+    float              Y[2][38][64][2];
+    float              g_temp[42][48];
+    float              q_temp[42][48];
     uint8_t            s_indexmapped[8][48];
     ///Envelope scalefactors
-    uint8_t            env_facs_q[6][48];
-    AAC_FLOAT          env_facs[6][48];
+    float              env_facs[6][48];
     ///Noise scalefactors
-    uint8_t            noise_facs_q[3][5];
-    AAC_FLOAT          noise_facs[3][5];
+    float              noise_facs[3][5];
     ///Envelope time borders
     uint8_t            t_env[8];
     ///Envelope time border of the last envelope of the previous frame
@@ -112,35 +106,12 @@ typedef struct SBRData {
     /** @} */
 } SBRData;
 
-typedef struct SpectralBandReplication SpectralBandReplication;
-
-/**
- * aacsbr functions pointers
- */
-typedef struct AACSBRContext {
-    int (*sbr_lf_gen)(AACContext *ac, SpectralBandReplication *sbr,
-                      INTFLOAT X_low[32][40][2], const INTFLOAT W[2][32][32][2],
-                      int buf_idx);
-    void (*sbr_hf_assemble)(INTFLOAT Y1[38][64][2],
-                            const INTFLOAT X_high[64][40][2],
-                            SpectralBandReplication *sbr, SBRData *ch_data,
-                            const int e_a[2]);
-    int (*sbr_x_gen)(SpectralBandReplication *sbr, INTFLOAT X[2][38][64],
-                     const INTFLOAT Y0[38][64][2], const INTFLOAT Y1[38][64][2],
-                     const INTFLOAT X_low[32][40][2], int ch);
-    void (*sbr_hf_inverse_filter)(SBRDSPContext *dsp,
-                                  INTFLOAT (*alpha0)[2], INTFLOAT (*alpha1)[2],
-                                  const INTFLOAT X_low[32][40][2], int k0);
-} AACSBRContext;
-
 /**
  * Spectral Band Replication
  */
-struct SpectralBandReplication {
+typedef struct {
     int                sample_rate;
     int                start;
-    int                ready_for_dequant;
-    int                id_aac;
     int                reset;
     SpectrumParameters spectrum_params;
     int                bs_amp_res_header;
@@ -154,23 +125,22 @@ struct SpectralBandReplication {
     unsigned           bs_smoothing_mode;
     /** @} */
     unsigned           bs_coupling;
-    AAC_SIGNE          k[5]; ///< k0, k1, k2
+    unsigned           k[5]; ///< k0, k1, k2
     ///kx', and kx respectively, kx is the first QMF subband where SBR is used.
     ///kx' is its value from the previous frame
-    AAC_SIGNE          kx[2];
+    unsigned           kx[2];
     ///M' and M respectively, M is the number of QMF subbands that use SBR.
-    AAC_SIGNE          m[2];
-    unsigned           kx_and_m_pushed;
+    unsigned           m[2];
     ///The number of frequency bands in f_master
-    AAC_SIGNE          n_master;
+    unsigned           n_master;
     SBRData            data[2];
     PSContext          ps;
     ///N_Low and N_High respectively, the number of frequency bands for low and high resolution
-    AAC_SIGNE          n[2];
+    unsigned           n[2];
     ///Number of noise floor bands
-    AAC_SIGNE          n_q;
+    unsigned           n_q;
     ///Number of limiter bands
-    AAC_SIGNE          n_lim;
+    unsigned           n_lim;
     ///The master QMF frequency grouping
     uint16_t           f_master[49];
     ///Frequency borders for low resolution SBR
@@ -180,38 +150,36 @@ struct SpectralBandReplication {
     ///Frequency borders for noise floors
     uint16_t           f_tablenoise[6];
     ///Frequency borders for the limiter
-    uint16_t           f_tablelim[30];
-    AAC_SIGNE          num_patches;
+    uint16_t           f_tablelim[29];
+    unsigned           num_patches;
     uint8_t            patch_num_subbands[6];
     uint8_t            patch_start_subband[6];
     ///QMF low frequency input to the HF generator
-    DECLARE_ALIGNED(16, INTFLOAT, X_low)[32][40][2];
+    float              X_low[32][40][2];
     ///QMF output of the HF generator
-    DECLARE_ALIGNED(16, INTFLOAT, X_high)[64][40][2];
+    float              X_high[64][40][2];
     ///QMF values of the reconstructed signal
-    DECLARE_ALIGNED(16, INTFLOAT, X)[2][2][38][64];
+    DECLARE_ALIGNED(16, float, X)[2][2][38][64];
     ///Zeroth coefficient used to filter the subband signals
-    DECLARE_ALIGNED(16, INTFLOAT, alpha0)[64][2];
+    float              alpha0[64][2];
     ///First coefficient used to filter the subband signals
-    DECLARE_ALIGNED(16, INTFLOAT, alpha1)[64][2];
+    float              alpha1[64][2];
     ///Dequantized envelope scalefactors, remapped
-    AAC_FLOAT          e_origmapped[7][48];
+    float              e_origmapped[7][48];
     ///Dequantized noise scalefactors, remapped
-    AAC_FLOAT          q_mapped[7][48];
+    float              q_mapped[7][48];
     ///Sinusoidal presence, remapped
     uint8_t            s_mapped[7][48];
     ///Estimated envelope
-    AAC_FLOAT          e_curr[7][48];
+    float              e_curr[7][48];
     ///Amplitude adjusted noise scalefactors
-    AAC_FLOAT          q_m[7][48];
+    float              q_m[7][48];
     ///Sinusoidal levels
-    AAC_FLOAT          s_m[7][48];
-    AAC_FLOAT          gain[7][48];
-    DECLARE_ALIGNED(32, INTFLOAT, qmf_filter_scratch)[5][64];
+    float              s_m[7][48];
+    float              gain[7][48];
+    DECLARE_ALIGNED(16, float, qmf_filter_scratch)[5][64];
     FFTContext         mdct_ana;
     FFTContext         mdct;
-    SBRDSPContext      dsp;
-    AACSBRContext      c;
-};
+} SpectralBandReplication;
 
 #endif /* AVCODEC_SBR_H */

@@ -16,26 +16,18 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "config.h"
 #include "file.h"
-#include "internal.h"
-#include "log.h"
-#include "mem.h"
 #include <fcntl.h>
 #include <sys/stat.h>
-#if HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-#if HAVE_IO_H
-#include <io.h>
-#endif
 #if HAVE_MMAP
 #include <sys/mman.h>
 #elif HAVE_MAPVIEWOFFILE
+#include <io.h>
 #include <windows.h>
 #endif
 
-typedef struct FileLogContext {
+typedef struct {
     const AVClass *class;
     int   log_offset;
     void *log_ctx;
@@ -50,11 +42,12 @@ int av_file_map(const char *filename, uint8_t **bufptr, size_t *size,
                 int log_offset, void *log_ctx)
 {
     FileLogContext file_log_ctx = { &file_log_ctx_class, log_offset, log_ctx };
-    int err, fd = avpriv_open(filename, O_RDONLY);
+    int err, fd = open(filename, O_RDONLY);
     struct stat st;
     av_unused void *ptr;
     off_t off_size;
     char errbuf[128];
+    size_t max_size = HAVE_MMAP ? SIZE_MAX : FF_INTERNAL_MEM_TYPE_MAX_VALUE;
     *bufptr = NULL;
 
     if (fd < 0) {
@@ -73,7 +66,7 @@ int av_file_map(const char *filename, uint8_t **bufptr, size_t *size,
     }
 
     off_size = st.st_size;
-    if (off_size > SIZE_MAX) {
+    if (off_size > max_size) {
         av_log(&file_log_ctx, AV_LOG_ERROR,
                "File size for file '%s' is too big\n", filename);
         close(fd);
@@ -137,6 +130,20 @@ void av_file_unmap(uint8_t *bufptr, size_t size)
 #endif
 }
 
-int av_tempfile(const char *prefix, char **filename, int log_offset, void *log_ctx) {
-    return avpriv_tempfile(prefix, filename, log_offset, log_ctx);
+#ifdef TEST
+
+#undef printf
+
+int main(void)
+{
+    uint8_t *buf;
+    size_t size;
+    if (av_file_map("file.c", &buf, &size, 0, NULL) < 0)
+        return 1;
+
+    buf[0] = 's';
+    printf("%s", buf);
+    av_file_unmap(buf, size);
+    return 0;
 }
+#endif

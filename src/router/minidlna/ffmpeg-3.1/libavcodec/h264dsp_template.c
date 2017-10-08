@@ -21,24 +21,22 @@
 
 /**
  * @file
- * H.264 / AVC / MPEG-4 part10 DSP functions.
+ * H.264 / AVC / MPEG4 part10 DSP functions.
  * @author Michael Niedermayer <michaelni@gmx.at>
  */
 
-#include "bit_depth_template.c"
+#include "high_bit_depth.h"
 
 #define op_scale1(x)  block[x] = av_clip_pixel( (block[x]*weight + offset) >> log2_denom )
 #define op_scale2(x)  dst[x] = av_clip_pixel( (src[x]*weights + dst[x]*weightd + offset) >> (log2_denom+1))
-#define H264_WEIGHT(W) \
-static void FUNCC(weight_h264_pixels ## W)(uint8_t *_block, ptrdiff_t stride, int height, \
-                                           int log2_denom, int weight, int offset) \
-{ \
+#define H264_WEIGHT(W,H) \
+static void FUNCC(weight_h264_pixels ## W ## x ## H)(uint8_t *p_block, int stride, int log2_denom, int weight, int offset){ \
     int y; \
-    pixel *block = (pixel*)_block; \
+    pixel *block = (pixel*)p_block; \
     stride >>= sizeof(pixel)-1; \
-    offset = (unsigned)offset << (log2_denom + (BIT_DEPTH-8)); \
+    offset <<= (log2_denom + (BIT_DEPTH-8)); \
     if(log2_denom) offset += 1<<(log2_denom-1); \
-    for (y = 0; y < height; y++, block += stride) { \
+    for(y=0; y<H; y++, block += stride){ \
         op_scale1(0); \
         op_scale1(1); \
         if(W==2) continue; \
@@ -60,16 +58,14 @@ static void FUNCC(weight_h264_pixels ## W)(uint8_t *_block, ptrdiff_t stride, in
         op_scale1(15); \
     } \
 } \
-static void FUNCC(biweight_h264_pixels ## W)(uint8_t *_dst, uint8_t *_src, ptrdiff_t stride, int height, \
-                                             int log2_denom, int weightd, int weights, int offset) \
-{ \
+static void FUNCC(biweight_h264_pixels ## W ## x ## H)(uint8_t *_dst, uint8_t *_src, int stride, int log2_denom, int weightd, int weights, int offset){ \
     int y; \
     pixel *dst = (pixel*)_dst; \
     pixel *src = (pixel*)_src; \
     stride >>= sizeof(pixel)-1; \
-    offset = (unsigned)offset << (BIT_DEPTH-8); \
-    offset = (unsigned)((offset + 1) | 1) << log2_denom; \
-    for (y = 0; y < height; y++, dst += stride, src += stride) { \
+    offset <<= (BIT_DEPTH-8); \
+    offset = ((offset + 1) | 1) << log2_denom; \
+    for(y=0; y<H; y++, dst += stride, src += stride){ \
         op_scale2(0); \
         op_scale2(1); \
         if(W==2) continue; \
@@ -92,10 +88,16 @@ static void FUNCC(biweight_h264_pixels ## W)(uint8_t *_dst, uint8_t *_src, ptrdi
     } \
 }
 
-H264_WEIGHT(16)
-H264_WEIGHT(8)
-H264_WEIGHT(4)
-H264_WEIGHT(2)
+H264_WEIGHT(16,16)
+H264_WEIGHT(16,8)
+H264_WEIGHT(8,16)
+H264_WEIGHT(8,8)
+H264_WEIGHT(8,4)
+H264_WEIGHT(4,8)
+H264_WEIGHT(4,4)
+H264_WEIGHT(4,2)
+H264_WEIGHT(2,4)
+H264_WEIGHT(2,2)
 
 #undef op_scale1
 #undef op_scale2
@@ -110,7 +112,7 @@ static av_always_inline av_flatten void FUNCC(h264_loop_filter_luma)(uint8_t *p_
     alpha <<= BIT_DEPTH - 8;
     beta  <<= BIT_DEPTH - 8;
     for( i = 0; i < 4; i++ ) {
-        const int tc_orig = tc0[i] * (1 << (BIT_DEPTH - 8));
+        const int tc_orig = tc0[i] << (BIT_DEPTH - 8);
         if( tc_orig < 0 ) {
             pix += inner_iters*ystride;
             continue;
@@ -141,7 +143,7 @@ static av_always_inline av_flatten void FUNCC(h264_loop_filter_luma)(uint8_t *p_
                     tc++;
                 }
 
-                i_delta = av_clip( (((q0 - p0 ) * 4) + (p1 - q1) + 4) >> 3, -tc, tc );
+                i_delta = av_clip( (((q0 - p0 ) << 2) + (p1 - q1) + 4) >> 3, -tc, tc );
                 pix[-xstride] = av_clip_pixel( p0 + i_delta );    /* p0' */
                 pix[0]        = av_clip_pixel( q0 - i_delta );    /* q0' */
             }
@@ -237,7 +239,7 @@ static av_always_inline av_flatten void FUNCC(h264_loop_filter_chroma)(uint8_t *
     xstride >>= sizeof(pixel)-1;
     ystride >>= sizeof(pixel)-1;
     for( i = 0; i < 4; i++ ) {
-        const int tc = ((tc0[i] - 1U) << (BIT_DEPTH - 8)) + 1;
+        const int tc = ((tc0[i] - 1) << (BIT_DEPTH - 8)) + 1;
         if( tc <= 0 ) {
             pix += inner_iters*ystride;
             continue;
@@ -252,7 +254,7 @@ static av_always_inline av_flatten void FUNCC(h264_loop_filter_chroma)(uint8_t *
                 FFABS( p1 - p0 ) < beta &&
                 FFABS( q1 - q0 ) < beta ) {
 
-                int delta = av_clip( ((q0 - p0) * 4 + (p1 - q1) + 4) >> 3, -tc, tc );
+                int delta = av_clip( (((q0 - p0 ) << 2) + (p1 - q1) + 4) >> 3, -tc, tc );
 
                 pix[-xstride] = av_clip_pixel( p0 + delta );    /* p0' */
                 pix[0]        = av_clip_pixel( q0 - delta );    /* q0' */
@@ -272,14 +274,6 @@ static void FUNCC(h264_h_loop_filter_chroma)(uint8_t *pix, int stride, int alpha
 static void FUNCC(h264_h_loop_filter_chroma_mbaff)(uint8_t *pix, int stride, int alpha, int beta, int8_t *tc0)
 {
     FUNCC(h264_loop_filter_chroma)(pix, sizeof(pixel), stride, 1, alpha, beta, tc0);
-}
-static void FUNCC(h264_h_loop_filter_chroma422)(uint8_t *pix, int stride, int alpha, int beta, int8_t *tc0)
-{
-    FUNCC(h264_loop_filter_chroma)(pix, sizeof(pixel), stride, 4, alpha, beta, tc0);
-}
-static void FUNCC(h264_h_loop_filter_chroma422_mbaff)(uint8_t *pix, int stride, int alpha, int beta, int8_t *tc0)
-{
-    FUNCC(h264_loop_filter_chroma)(pix, sizeof(pixel), stride, 2, alpha, beta, tc0);
 }
 
 static av_always_inline av_flatten void FUNCC(h264_loop_filter_chroma_intra)(uint8_t *p_pix, int xstride, int ystride, int inner_iters, int alpha, int beta)
@@ -317,12 +311,4 @@ static void FUNCC(h264_h_loop_filter_chroma_intra)(uint8_t *pix, int stride, int
 static void FUNCC(h264_h_loop_filter_chroma_mbaff_intra)(uint8_t *pix, int stride, int alpha, int beta)
 {
     FUNCC(h264_loop_filter_chroma_intra)(pix, sizeof(pixel), stride, 1, alpha, beta);
-}
-static void FUNCC(h264_h_loop_filter_chroma422_intra)(uint8_t *pix, int stride, int alpha, int beta)
-{
-    FUNCC(h264_loop_filter_chroma_intra)(pix, sizeof(pixel), stride, 4, alpha, beta);
-}
-static void FUNCC(h264_h_loop_filter_chroma422_mbaff_intra)(uint8_t *pix, int stride, int alpha, int beta)
-{
-    FUNCC(h264_loop_filter_chroma_intra)(pix, sizeof(pixel), stride, 2, alpha, beta);
 }

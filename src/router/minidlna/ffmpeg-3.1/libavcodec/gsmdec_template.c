@@ -25,23 +25,20 @@
  */
 
 #include "get_bits.h"
-#include "gsm.h"
 #include "gsmdec_data.h"
 
-static void apcm_dequant_add(GetBitContext *gb, int16_t *dst, const int *frame_bits)
+static void apcm_dequant_add(GetBitContext *gb, int16_t *dst)
 {
-    int i, val;
+    int i;
     int maxidx = get_bits(gb, 6);
     const int16_t *tab = ff_gsm_dequant_tab[maxidx];
-    for (i = 0; i < 13; i++) {
-        val = get_bits(gb, frame_bits[i]);
-        dst[3 * i] += tab[ff_gsm_requant_tab[frame_bits[i]][val]];
-    }
+    for (i = 0; i < 13; i++)
+        dst[3*i] += tab[get_bits(gb, 3)];
 }
 
 static inline int gsm_mult(int a, int b)
 {
-    return (int)(a * (SUINT)b + (1 << 14)) >> 15;
+    return (a * b + (1 << 14)) >> 15;
 }
 
 static void long_term_synth(int16_t *dst, int lag, int gain_idx)
@@ -57,7 +54,7 @@ static inline int decode_log_area(int coded, int factor, int offset)
 {
     coded <<= 10;
     coded -= offset;
-    return gsm_mult(coded, factor) * 2;
+    return gsm_mult(coded, factor) << 1;
 }
 
 static av_noinline int get_rrp(int filtered)
@@ -114,13 +111,13 @@ static int postprocess(int16_t *data, int msr)
     int i;
     for (i = 0; i < 160; i++) {
         msr = av_clip_int16(data[i] + gsm_mult(msr, 28180));
-        data[i] = av_clip_int16(msr * 2) & ~7;
+        data[i] = av_clip_int16(msr << 1) & ~7;
     }
     return msr;
 }
 
 static int gsm_decode_block(AVCodecContext *avctx, int16_t *samples,
-                            GetBitContext *gb, int mode)
+                            GetBitContext *gb)
 {
     GSMContext *ctx = avctx->priv_data;
     int i;
@@ -141,7 +138,7 @@ static int gsm_decode_block(AVCodecContext *avctx, int16_t *samples,
         int offset   = get_bits(gb, 2);
         lag = av_clip(lag, 40, 120);
         long_term_synth(ref_dst, lag, gain_idx);
-        apcm_dequant_add(gb, ref_dst + offset, ff_gsm_apcm_bits[mode][i]);
+        apcm_dequant_add(gb, ref_dst + offset);
         ref_dst += 40;
     }
     memcpy(ctx->ref_buf, ctx->ref_buf + 160, 120 * sizeof(*ctx->ref_buf));

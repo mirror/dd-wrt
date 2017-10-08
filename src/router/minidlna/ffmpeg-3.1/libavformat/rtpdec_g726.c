@@ -18,37 +18,77 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavutil/attributes.h"
 #include "avformat.h"
 #include "rtpdec_formats.h"
 
-#define RTP_G726_HANDLER(bitrate) \
-static av_cold int g726_ ## bitrate ##_init(AVFormatContext *s, int st_index, \
-                                            PayloadContext *data) \
-{ \
-    AVStream *stream = s->streams[st_index]; \
-    AVCodecParameters *par = stream->codecpar; \
-\
-    par->bits_per_coded_sample = bitrate/8; \
-    par->bit_rate = par->bits_per_coded_sample * par->sample_rate; \
-\
-    return 0; \
-} \
-\
-RTPDynamicProtocolHandler ff_g726_ ## bitrate ## _dynamic_handler = { \
-    .enc_name   = "AAL2-G726-" #bitrate, \
-    .codec_type = AVMEDIA_TYPE_AUDIO, \
-    .codec_id   = AV_CODEC_ID_ADPCM_G726, \
-    .init       = g726_ ## bitrate ## _init, \
-}; \
-RTPDynamicProtocolHandler ff_g726le_ ## bitrate ## _dynamic_handler = { \
-    .enc_name   = "G726-" #bitrate, \
-    .codec_type = AVMEDIA_TYPE_AUDIO, \
-    .codec_id   = AV_CODEC_ID_ADPCM_G726LE, \
-    .init       = g726_ ## bitrate ## _init, \
+static int g726_16_parse_sdp_line(AVFormatContext *s, int st_index,
+                              PayloadContext *data, const char *line)
+{
+    AVStream *stream = s->streams[st_index];
+    AVCodecContext *codec = stream->codec;
+
+    codec->bit_rate = 16000;
+
+    return 0;
 }
 
-RTP_G726_HANDLER(16);
-RTP_G726_HANDLER(24);
-RTP_G726_HANDLER(32);
-RTP_G726_HANDLER(40);
+static int g726_24_parse_sdp_line(AVFormatContext *s, int st_index,
+                              PayloadContext *data, const char *line)
+{
+    AVStream *stream = s->streams[st_index];
+    AVCodecContext *codec = stream->codec;
+
+    codec->bit_rate = 24000;
+
+    return 0;
+}
+
+static int g726_32_parse_sdp_line(AVFormatContext *s, int st_index,
+                              PayloadContext *data, const char *line)
+{
+    AVStream *stream = s->streams[st_index];
+    AVCodecContext *codec = stream->codec;
+
+    codec->bit_rate = 32000;
+
+    return 0;
+}
+
+static int g726_40_parse_sdp_line(AVFormatContext *s, int st_index,
+                              PayloadContext *data, const char *line)
+{
+    AVStream *stream = s->streams[st_index];
+    AVCodecContext *codec = stream->codec;
+
+    codec->bit_rate = 40000;
+
+    return 0;
+}
+
+RTPDynamicProtocolHandler ff_g726_16_dynamic_handler = {
+    .enc_name         = "G726-16",
+    .codec_type       = AVMEDIA_TYPE_AUDIO,
+    .codec_id         = CODEC_ID_ADPCM_G726,
+    .parse_sdp_a_line = g726_16_parse_sdp_line,
+};
+
+RTPDynamicProtocolHandler ff_g726_24_dynamic_handler = {
+    .enc_name         = "G726-24",
+    .codec_type       = AVMEDIA_TYPE_AUDIO,
+    .codec_id         = CODEC_ID_ADPCM_G726,
+    .parse_sdp_a_line = g726_24_parse_sdp_line,
+};
+
+RTPDynamicProtocolHandler ff_g726_32_dynamic_handler = {
+    .enc_name         = "G726-32",
+    .codec_type       = AVMEDIA_TYPE_AUDIO,
+    .codec_id         = CODEC_ID_ADPCM_G726,
+    .parse_sdp_a_line = g726_32_parse_sdp_line,
+};
+
+RTPDynamicProtocolHandler ff_g726_40_dynamic_handler = {
+    .enc_name         = "G726-40",
+    .codec_type       = AVMEDIA_TYPE_AUDIO,
+    .codec_id         = CODEC_ID_ADPCM_G726,
+    .parse_sdp_a_line = g726_40_parse_sdp_line,
+};

@@ -19,7 +19,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavutil/arm/asm.S"
+#include "asm.S"
+
+        preserve8
+
+        .text
 
 #define ff_fft_calc_neon X(ff_fft_calc_neon)
 
@@ -129,7 +133,7 @@ function ff_imdct_calc_neon, export=1
         lsl             r4,  r4,  r3
         add             r1,  r1,  r4
 
-        bl              X(ff_imdct_half_neon)
+        bl              ff_imdct_half_neon
 
         add             r0,  r5,  r4,  lsl #2
         add             r1,  r5,  r4,  lsl #1
@@ -187,9 +191,7 @@ function ff_mdct_calc_neon, export=1
         vadd.f32        d17, d17, d3            @ in2u+in1d     -I
 1:
         vmul.f32        d7,  d0,  d21           @  I*s
-A       ldr             r10, [r3, lr, lsr #1]
-T       lsr             r10, lr,  #1
-T       ldr             r10, [r3, r10]
+        ldr             r10, [r3, lr, lsr #1]
         vmul.f32        d6,  d1,  d20           @ -R*c
         ldr             r6,  [r3, #4]!
         vmul.f32        d4,  d1,  d21           @ -R*s

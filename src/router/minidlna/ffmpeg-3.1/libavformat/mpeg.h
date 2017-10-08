@@ -1,5 +1,5 @@
 /*
- * MPEG-1/2 muxer and demuxer common defines
+ * MPEG1/2 muxer and demuxer common defines
  * Copyright (c) 2000, 2001, 2002 Fabrice Bellard
  *
  * This file is part of FFmpeg.
@@ -40,9 +40,8 @@
 
 #define AUDIO_ID 0xc0
 #define VIDEO_ID 0xe0
-#define H264_ID  0xe2
 #define AC3_ID   0x80
-#define DTS_ID   0x88
+#define DTS_ID   0x8a
 #define LPCM_ID  0xa0
 #define SUB_ID   0x20
 
@@ -55,9 +54,9 @@
 #define STREAM_TYPE_AUDIO_AAC       0x0f
 #define STREAM_TYPE_VIDEO_MPEG4     0x10
 #define STREAM_TYPE_VIDEO_H264      0x1b
-#define STREAM_TYPE_VIDEO_CAVS      0x42
 
 #define STREAM_TYPE_AUDIO_AC3       0x81
+#define STREAM_TYPE_AUDIO_DTS       0x8a
 
 static const int lpcm_freq_tab[4] = { 48000, 96000, 44100, 32000 };
 

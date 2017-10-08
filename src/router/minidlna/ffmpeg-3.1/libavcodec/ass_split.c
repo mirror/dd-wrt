@@ -44,7 +44,7 @@ typedef struct {
     int         size;
     int         offset;
     int         offset_count;
-    ASSFields   fields[24];
+    ASSFields   fields[10];
 } ASSSection;
 
 static const ASSSection ass_sections[] = {
@@ -64,29 +64,15 @@ static const ASSSection ass_sections[] = {
       .size          = sizeof(ASSStyle),
       .offset        = offsetof(ASS, styles),
       .offset_count  = offsetof(ASS, styles_count),
-      .fields = {{"Name",            ASS_STR,   offsetof(ASSStyle, name)           },
-                 {"Fontname",        ASS_STR,   offsetof(ASSStyle, font_name)      },
-                 {"Fontsize",        ASS_INT,   offsetof(ASSStyle, font_size)      },
-                 {"PrimaryColour",   ASS_COLOR, offsetof(ASSStyle, primary_color)  },
-                 {"SecondaryColour", ASS_COLOR, offsetof(ASSStyle, secondary_color)},
-                 {"OutlineColour",   ASS_COLOR, offsetof(ASSStyle, outline_color)  },
-                 {"BackColour",      ASS_COLOR, offsetof(ASSStyle, back_color)     },
-                 {"Bold",            ASS_INT,   offsetof(ASSStyle, bold)           },
-                 {"Italic",          ASS_INT,   offsetof(ASSStyle, italic)         },
-                 {"Underline",       ASS_INT,   offsetof(ASSStyle, underline)      },
-                 {"StrikeOut",       ASS_INT,   offsetof(ASSStyle, strikeout)      },
-                 {"ScaleX",          ASS_FLT,   offsetof(ASSStyle, scalex)         },
-                 {"ScaleY",          ASS_FLT,   offsetof(ASSStyle, scaley)         },
-                 {"Spacing",         ASS_FLT,   offsetof(ASSStyle, spacing)        },
-                 {"Angle",           ASS_FLT,   offsetof(ASSStyle, angle)          },
-                 {"BorderStyle",     ASS_INT,   offsetof(ASSStyle, border_style)   },
-                 {"Outline",         ASS_FLT,   offsetof(ASSStyle, outline)        },
-                 {"Shadow",          ASS_FLT,   offsetof(ASSStyle, shadow)         },
-                 {"Alignment",       ASS_INT,   offsetof(ASSStyle, alignment)      },
-                 {"MarginL",         ASS_INT,   offsetof(ASSStyle, margin_l)       },
-                 {"MarginR",         ASS_INT,   offsetof(ASSStyle, margin_r)       },
-                 {"MarginV",         ASS_INT,   offsetof(ASSStyle, margin_v)       },
-                 {"Encoding",        ASS_INT,   offsetof(ASSStyle, encoding)       },
+      .fields = {{"Name",         ASS_STR,  offsetof(ASSStyle, name)         },
+                 {"Fontname",     ASS_STR,  offsetof(ASSStyle, font_name)    },
+                 {"Fontsize",     ASS_INT,  offsetof(ASSStyle, font_size)    },
+                 {"PrimaryColour",ASS_COLOR,offsetof(ASSStyle, primary_color)},
+                 {"BackColour",   ASS_COLOR,offsetof(ASSStyle, back_color)   },
+                 {"Bold",         ASS_INT,  offsetof(ASSStyle, bold)         },
+                 {"Italic",       ASS_INT,  offsetof(ASSStyle, italic)       },
+                 {"Underline",    ASS_INT,  offsetof(ASSStyle, underline)    },
+                 {"Alignment",    ASS_INT,  offsetof(ASSStyle, alignment)    },
                  {0},
         }
     },
@@ -96,24 +82,14 @@ static const ASSSection ass_sections[] = {
       .size          = sizeof(ASSStyle),
       .offset        = offsetof(ASS, styles),
       .offset_count  = offsetof(ASS, styles_count),
-      .fields = {{"Name",            ASS_STR,   offsetof(ASSStyle, name)           },
-                 {"Fontname",        ASS_STR,   offsetof(ASSStyle, font_name)      },
-                 {"Fontsize",        ASS_INT,   offsetof(ASSStyle, font_size)      },
-                 {"PrimaryColour",   ASS_COLOR, offsetof(ASSStyle, primary_color)  },
-                 {"SecondaryColour", ASS_COLOR, offsetof(ASSStyle, secondary_color)},
-                 {"TertiaryColour",  ASS_COLOR, offsetof(ASSStyle, outline_color)  },
-                 {"BackColour",      ASS_COLOR, offsetof(ASSStyle, back_color)     },
-                 {"Bold",            ASS_INT,   offsetof(ASSStyle, bold)           },
-                 {"Italic",          ASS_INT,   offsetof(ASSStyle, italic)         },
-                 {"BorderStyle",     ASS_INT,   offsetof(ASSStyle, border_style)   },
-                 {"Outline",         ASS_FLT,   offsetof(ASSStyle, outline)        },
-                 {"Shadow",          ASS_FLT,   offsetof(ASSStyle, shadow)         },
-                 {"Alignment",       ASS_ALGN,  offsetof(ASSStyle, alignment)      },
-                 {"MarginL",         ASS_INT,   offsetof(ASSStyle, margin_l)       },
-                 {"MarginR",         ASS_INT,   offsetof(ASSStyle, margin_r)       },
-                 {"MarginV",         ASS_INT,   offsetof(ASSStyle, margin_v)       },
-                 {"AlphaLevel",      ASS_INT,   offsetof(ASSStyle, alpha_level)    },
-                 {"Encoding",        ASS_INT,   offsetof(ASSStyle, encoding)       },
+      .fields = {{"Name",         ASS_STR,  offsetof(ASSStyle, name)         },
+                 {"Fontname",     ASS_STR,  offsetof(ASSStyle, font_name)    },
+                 {"Fontsize",     ASS_INT,  offsetof(ASSStyle, font_size)    },
+                 {"PrimaryColour",ASS_COLOR,offsetof(ASSStyle, primary_color)},
+                 {"BackColour",   ASS_COLOR,offsetof(ASSStyle, back_color)   },
+                 {"Bold",         ASS_INT,  offsetof(ASSStyle, bold)         },
+                 {"Italic",       ASS_INT,  offsetof(ASSStyle, italic)       },
+                 {"Alignment",    ASS_ALGN, offsetof(ASSStyle, alignment)    },
                  {0},
         }
     },
@@ -123,16 +99,11 @@ static const ASSSection ass_sections[] = {
       .size          = sizeof(ASSDialog),
       .offset        = offsetof(ASS, dialogs),
       .offset_count  = offsetof(ASS, dialogs_count),
-      .fields = {{"Layer",   ASS_INT,        offsetof(ASSDialog, layer)   },
-                 {"Start",   ASS_TIMESTAMP,  offsetof(ASSDialog, start)   },
-                 {"End",     ASS_TIMESTAMP,  offsetof(ASSDialog, end)     },
-                 {"Style",   ASS_STR,        offsetof(ASSDialog, style)   },
-                 {"Name",    ASS_STR,        offsetof(ASSDialog, name)    },
-                 {"MarginL", ASS_INT,        offsetof(ASSDialog, margin_l)},
-                 {"MarginR", ASS_INT,        offsetof(ASSDialog, margin_r)},
-                 {"MarginV", ASS_INT,        offsetof(ASSDialog, margin_v)},
-                 {"Effect",  ASS_STR,        offsetof(ASSDialog, effect)  },
-                 {"Text",    ASS_STR,        offsetof(ASSDialog, text)    },
+      .fields = {{"Layer",  ASS_INT,        offsetof(ASSDialog, layer)       },
+                 {"Start",  ASS_TIMESTAMP,  offsetof(ASSDialog, start)       },
+                 {"End",    ASS_TIMESTAMP,  offsetof(ASSDialog, end)         },
+                 {"Style",  ASS_STR,        offsetof(ASSDialog, style)       },
+                 {"Text",   ASS_STR,        offsetof(ASSDialog, text)        },
                  {0},
         }
     },
@@ -207,7 +178,7 @@ static uint8_t *realloc_section_array(ASSSplitContext *ctx)
     const ASSSection *section = &ass_sections[ctx->current_section];
     int *count = (int *)((uint8_t *)&ctx->ass + section->offset_count);
     void **section_ptr = (void **)((uint8_t *)&ctx->ass + section->offset);
-    uint8_t *tmp = av_realloc_array(*section_ptr, (*count+1), section->size);
+    uint8_t *tmp = av_realloc(*section_ptr, (*count+1)*section->size);
     if (!tmp)
         return NULL;
     *section_ptr = tmp;
@@ -229,21 +200,6 @@ static inline const char *skip_space(const char *buf)
     return buf;
 }
 
-static int *get_default_field_orders(const ASSSection *section, int *number)
-{
-    int i;
-    int *order = av_malloc_array(FF_ARRAY_ELEMS(section->fields), sizeof(*order));
-
-    if (!order)
-        return NULL;
-    for (i = 0; section->fields[i].name; i++)
-        order[i] = i;
-    *number = i;
-    while (i < FF_ARRAY_ELEMS(section->fields))
-        order[i++] = -1;
-    return order;
-}
-
 static const char *ass_split_section(ASSSplitContext *ctx, const char *buf)
 {
     const ASSSection *section = &ass_sections[ctx->current_section];
@@ -256,60 +212,34 @@ static const char *ass_split_section(ASSSplitContext *ctx, const char *buf)
             ctx->current_section = -1;
             break;
         }
-        if (buf[0] == ';' || (buf[0] == '!' && buf[1] == ':'))
-            goto next_line; // skip comments
-
-        len = strcspn(buf, ":\r\n");
-        if (buf[len] == ':' &&
-            (!section->fields_header || strncmp(buf, section->fields_header, len))) {
-            for (i = 0; i < FF_ARRAY_ELEMS(ass_sections); i++) {
-                if (ass_sections[i].fields_header &&
-                    !strncmp(buf, ass_sections[i].fields_header, len)) {
-                    ctx->current_section = i;
-                    section = &ass_sections[ctx->current_section];
-                    number = &ctx->field_number[ctx->current_section];
-                    order = ctx->field_order[ctx->current_section];
-                    break;
-                }
-            }
-        }
-        if (section->format_header && !order) {
+        if (buf[0] == ';' || (buf[0] == '!' && buf[1] == ':')) {
+            /* skip comments */
+        } else if (section->format_header && !order) {
             len = strlen(section->format_header);
-            if (!strncmp(buf, section->format_header, len) && buf[len] == ':') {
-                buf += len + 1;
-                while (!is_eol(*buf)) {
-                    buf = skip_space(buf);
-                    len = strcspn(buf, ", \r\n");
-                    if (!(tmp = av_realloc_array(order, (*number + 1), sizeof(*order))))
-                        return NULL;
-                    order = tmp;
-                    order[*number] = -1;
-                    for (i=0; section->fields[i].name; i++)
-                        if (!strncmp(buf, section->fields[i].name, len)) {
-                            order[*number] = i;
-                            break;
-                        }
-                    (*number)++;
-                    buf = skip_space(buf + len + (buf[len] == ','));
-                }
-                ctx->field_order[ctx->current_section] = order;
-                goto next_line;
+            if (strncmp(buf, section->format_header, len) || buf[len] != ':')
+                return NULL;
+            buf += len + 1;
+            while (!is_eol(*buf)) {
+                buf = skip_space(buf);
+                len = strcspn(buf, ", \r\n");
+                if (!(tmp = av_realloc(order, (*number + 1) * sizeof(*order))))
+                    return NULL;
+                order = tmp;
+                order[*number] = -1;
+                for (i=0; section->fields[i].name; i++)
+                    if (!strncmp(buf, section->fields[i].name, len)) {
+                        order[*number] = i;
+                        break;
+                    }
+                (*number)++;
+                buf = skip_space(buf + len + 1);
             }
-        }
-        if (section->fields_header) {
+            ctx->field_order[ctx->current_section] = order;
+        } else if (section->fields_header) {
             len = strlen(section->fields_header);
             if (!strncmp(buf, section->fields_header, len) && buf[len] == ':') {
                 uint8_t *ptr, *struct_ptr = realloc_section_array(ctx);
                 if (!struct_ptr)  return NULL;
-
-                /* No format header line found so far, assume default */
-                if (!order) {
-                    order = get_default_field_orders(section, number);
-                    if (!order)
-                        return NULL;
-                    ctx->field_order[ctx->current_section] = order;
-                }
-
                 buf += len + 1;
                 for (i=0; !is_eol(*buf) && i < *number; i++) {
                     int last = i == *number - 1;
@@ -320,9 +250,7 @@ static const char *ass_split_section(ASSSplitContext *ctx, const char *buf)
                         ptr = struct_ptr + section->fields[order[i]].offset;
                         convert_func[type](ptr, buf, len);
                     }
-                    buf += len;
-                    if (!last && *buf) buf++;
-                    buf = skip_space(buf);
+                    buf = skip_space(buf + len + !last);
                 }
             }
         } else {
@@ -339,9 +267,7 @@ static const char *ass_split_section(ASSSplitContext *ctx, const char *buf)
                     }
             }
         }
-next_line:
-        buf += strcspn(buf, "\n");
-        buf += !!*buf;
+        buf += strcspn(buf, "\n") + 1;
     }
     return buf;
 }
@@ -356,17 +282,14 @@ static int ass_split(ASSSplitContext *ctx, const char *buf)
 
     while (buf && *buf) {
         if (sscanf(buf, "[%15[0-9A-Za-z+ ]]%c", section, &c) == 2) {
-            buf += strcspn(buf, "\n");
-            buf += !!*buf;
+            buf += strcspn(buf, "\n") + 1;
             for (i=0; i<FF_ARRAY_ELEMS(ass_sections); i++)
                 if (!strcmp(section, ass_sections[i].section)) {
                     ctx->current_section = i;
                     buf = ass_split_section(ctx, buf);
                 }
-        } else {
-            buf += strcspn(buf, "\n");
-            buf += !!*buf;
-        }
+        } else
+            buf += strcspn(buf, "\n") + 1;
     }
     return buf ? 0 : AVERROR_INVALIDDATA;
 }
@@ -374,8 +297,6 @@ static int ass_split(ASSSplitContext *ctx, const char *buf)
 ASSSplitContext *ff_ass_split(const char *buf)
 {
     ASSSplitContext *ctx = av_mallocz(sizeof(*ctx));
-    if (!ctx)
-        return NULL;
     ctx->current_section = -1;
     if (ass_split(ctx, buf) < 0) {
         ff_ass_split_free(ctx);
@@ -427,63 +348,12 @@ ASSDialog *ff_ass_split_dialog(ASSSplitContext *ctx, const char *buf,
     return dialog;
 }
 
-void ff_ass_free_dialog(ASSDialog **dialogp)
-{
-    ASSDialog *dialog = *dialogp;
-    if (!dialog)
-        return;
-    av_freep(&dialog->style);
-    av_freep(&dialog->name);
-    av_freep(&dialog->effect);
-    av_freep(&dialog->text);
-    av_freep(dialogp);
-}
-
-ASSDialog *ff_ass_split_dialog2(ASSSplitContext *ctx, const char *buf)
-{
-    int i;
-    static const ASSFields fields[] = {
-        {"ReadOrder", ASS_INT, offsetof(ASSDialog, readorder)},
-        {"Layer",     ASS_INT, offsetof(ASSDialog, layer)    },
-        {"Style",     ASS_STR, offsetof(ASSDialog, style)    },
-        {"Name",      ASS_STR, offsetof(ASSDialog, name)     },
-        {"MarginL",   ASS_INT, offsetof(ASSDialog, margin_l) },
-        {"MarginR",   ASS_INT, offsetof(ASSDialog, margin_r) },
-        {"MarginV",   ASS_INT, offsetof(ASSDialog, margin_v) },
-        {"Effect",    ASS_STR, offsetof(ASSDialog, effect)   },
-        {"Text",      ASS_STR, offsetof(ASSDialog, text)     },
-    };
-
-    ASSDialog *dialog = av_mallocz(sizeof(*dialog));
-    if (!dialog)
-        return NULL;
-
-    for (i = 0; i < FF_ARRAY_ELEMS(fields); i++) {
-        size_t len;
-        const int last = i == FF_ARRAY_ELEMS(fields) - 1;
-        const ASSFieldType type = fields[i].type;
-        uint8_t *ptr = (uint8_t *)dialog + fields[i].offset;
-        buf = skip_space(buf);
-        len = last ? strlen(buf) : strcspn(buf, ",");
-        if (len >= INT_MAX) {
-            ff_ass_free_dialog(&dialog);
-            return NULL;
-        }
-        convert_func[type](ptr, buf, len);
-        buf += len;
-        if (*buf) buf++;
-    }
-    return dialog;
-}
-
 void ff_ass_split_free(ASSSplitContext *ctx)
 {
     if (ctx) {
         int i;
-        for (i=0; i<FF_ARRAY_ELEMS(ass_sections); i++) {
+        for (i=0; i<FF_ARRAY_ELEMS(ass_sections); i++)
             free_section(ctx, &ass_sections[i]);
-            av_freep(&(ctx->field_order[i]));
-        }
         av_free(ctx);
     }
 }
@@ -584,7 +454,7 @@ int ff_ass_split_override_codes(const ASSCodesCallbacks *callbacks, void *priv,
     return 0;
 }
 
-ASSStyle *ff_ass_style_get(ASSSplitContext *ctx, const char *style)
+ASSStyle *ass_style_get(ASSSplitContext *ctx, const char *style)
 {
     ASS *ass = &ctx->ass;
     int i;
@@ -592,7 +462,7 @@ ASSStyle *ff_ass_style_get(ASSSplitContext *ctx, const char *style)
     if (!style || !*style)
         style = "Default";
     for (i=0; i<ass->styles_count; i++)
-        if (ass->styles[i].name && !strcmp(ass->styles[i].name, style))
+        if (!strcmp(ass->styles[i].name, style))
             return ass->styles + i;
     return NULL;
 }

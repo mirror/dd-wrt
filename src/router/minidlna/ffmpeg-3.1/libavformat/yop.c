@@ -1,4 +1,5 @@
-/*
+/**
+ * @file
  * Psygnosis YOP demuxer
  *
  * Copyright (C) 2010 Mohamed Naufal Basheer <naufal11@gmail.com>
@@ -22,10 +23,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavutil/channel_layout.h"
 #include "libavutil/intreadwrite.h"
 #include "avformat.h"
-#include "internal.h"
 
 typedef struct yop_dec_context {
     AVPacket video_packet;
@@ -39,69 +38,64 @@ typedef struct yop_dec_context {
 static int yop_probe(AVProbeData *probe_packet)
 {
     if (AV_RB16(probe_packet->buf) == AV_RB16("YO")  &&
-        probe_packet->buf[2]<10                      &&
-        probe_packet->buf[3]<10                      &&
         probe_packet->buf[6]                         &&
         probe_packet->buf[7]                         &&
         !(probe_packet->buf[8] & 1)                  &&
-        !(probe_packet->buf[10] & 1)                 &&
-        AV_RL16(probe_packet->buf + 12 + 6) >= 920    &&
-        AV_RL16(probe_packet->buf + 12 + 6) < probe_packet->buf[12] * 3 + 4 + probe_packet->buf[7] * 2048
-    )
+        !(probe_packet->buf[10] & 1))
         return AVPROBE_SCORE_MAX * 3 / 4;
 
     return 0;
 }
 
-static int yop_read_header(AVFormatContext *s)
+static int yop_read_header(AVFormatContext *s, AVFormatParameters *ap)
 {
     YopDecContext *yop = s->priv_data;
     AVIOContext *pb  = s->pb;
 
-    AVCodecParameters *audio_par, *video_par;
+    AVCodecContext *audio_dec, *video_dec;
     AVStream *audio_stream, *video_stream;
 
     int frame_rate, ret;
 
-    audio_stream = avformat_new_stream(s, NULL);
-    video_stream = avformat_new_stream(s, NULL);
-    if (!audio_stream || !video_stream)
-        return AVERROR(ENOMEM);
+    audio_stream = av_new_stream(s, 0);
+    video_stream = av_new_stream(s, 1);
 
     // Extra data that will be passed to the decoder
-    if (ff_alloc_extradata(video_stream->codecpar, 8))
+    video_stream->codec->extradata_size = 8;
+
+    video_stream->codec->extradata = av_mallocz(video_stream->codec->extradata_size +
+                                                FF_INPUT_BUFFER_PADDING_SIZE);
+
+    if (!video_stream->codec->extradata)
         return AVERROR(ENOMEM);
 
     // Audio
-    audio_par                 = audio_stream->codecpar;
-    audio_par->codec_type     = AVMEDIA_TYPE_AUDIO;
-    audio_par->codec_id       = AV_CODEC_ID_ADPCM_IMA_APC;
-    audio_par->channels       = 1;
-    audio_par->channel_layout = AV_CH_LAYOUT_MONO;
-    audio_par->sample_rate    = 22050;
+    audio_dec               = audio_stream->codec;
+    audio_dec->codec_type   = AVMEDIA_TYPE_AUDIO;
+    audio_dec->codec_id     = CODEC_ID_ADPCM_IMA_WS;
+    audio_dec->channels     = 1;
+    audio_dec->sample_rate  = 22050;
 
     // Video
-    video_par               = video_stream->codecpar;
-    video_par->codec_type   = AVMEDIA_TYPE_VIDEO;
-    video_par->codec_id     = AV_CODEC_ID_YOP;
+    video_dec               = video_stream->codec;
+    video_dec->codec_type   = AVMEDIA_TYPE_VIDEO;
+    video_dec->codec_id     = CODEC_ID_YOP;
 
     avio_skip(pb, 6);
 
     frame_rate              = avio_r8(pb);
     yop->frame_size         = avio_r8(pb) * 2048;
-    video_par->width        = avio_rl16(pb);
-    video_par->height       = avio_rl16(pb);
+    video_dec->width        = avio_rl16(pb);
+    video_dec->height       = avio_rl16(pb);
 
     video_stream->sample_aspect_ratio = (AVRational){1, 2};
 
-    ret = avio_read(pb, video_par->extradata, 8);
+    ret = avio_read(pb, video_dec->extradata, 8);
     if (ret < 8)
         return ret < 0 ? ret : AVERROR_EOF;
 
-    yop->palette_size       = video_par->extradata[0] * 3 + 4;
-    yop->audio_block_length = AV_RL16(video_par->extradata + 6);
-
-    video_par->bit_rate     = 8 * (yop->frame_size - yop->audio_block_length) * frame_rate;
+    yop->palette_size       = video_dec->extradata[0] * 3 + 4;
+    yop->audio_block_length = AV_RL16(video_dec->extradata + 6);
 
     // 1840 samples per frame, 1 nibble per sample; hence 1840/2 = 920
     if (yop->audio_block_length < 920 ||
@@ -112,7 +106,7 @@ static int yop_read_header(AVFormatContext *s)
 
     avio_seek(pb, 2048, SEEK_SET);
 
-    avpriv_set_pts_info(video_stream, 32, 1, frame_rate);
+    av_set_pts_info(video_stream, 32, 1, frame_rate);
 
     return 0;
 }
@@ -131,7 +125,6 @@ static int yop_read_packet(AVFormatContext *s, AVPacket *pkt)
     if (yop->video_packet.data) {
         *pkt                   =  yop->video_packet;
         yop->video_packet.data =  NULL;
-        yop->video_packet.buf  =  NULL;
         yop->video_packet.size =  0;
         pkt->data[0]           =  yop->odd_frame;
         pkt->flags             |= AV_PKT_FLAG_KEY;
@@ -173,14 +166,14 @@ static int yop_read_packet(AVFormatContext *s, AVPacket *pkt)
     return yop->audio_block_length;
 
 err_out:
-    av_packet_unref(&yop->video_packet);
+    av_free_packet(&yop->video_packet);
     return ret;
 }
 
 static int yop_read_close(AVFormatContext *s)
 {
     YopDecContext *yop = s->priv_data;
-    av_packet_unref(&yop->video_packet);
+    av_free_packet(&yop->video_packet);
     return 0;
 }
 
@@ -191,35 +184,33 @@ static int yop_read_seek(AVFormatContext *s, int stream_index,
     int64_t frame_pos, pos_min, pos_max;
     int frame_count;
 
+    av_free_packet(&yop->video_packet);
+
     if (!stream_index)
         return -1;
 
-    pos_min        = s->internal->data_offset;
+    pos_min        = s->data_offset;
     pos_max        = avio_size(s->pb) - yop->frame_size;
     frame_count    = (pos_max - pos_min) / yop->frame_size;
 
     timestamp      = FFMAX(0, FFMIN(frame_count, timestamp));
 
     frame_pos      = timestamp * yop->frame_size + pos_min;
-
-    if (avio_seek(s->pb, frame_pos, SEEK_SET) < 0)
-        return -1;
-
-    av_packet_unref(&yop->video_packet);
     yop->odd_frame = timestamp & 1;
 
+    avio_seek(s->pb, frame_pos, SEEK_SET);
     return 0;
 }
 
 AVInputFormat ff_yop_demuxer = {
-    .name           = "yop",
-    .long_name      = NULL_IF_CONFIG_SMALL("Psygnosis YOP"),
-    .priv_data_size = sizeof(YopDecContext),
-    .read_probe     = yop_probe,
-    .read_header    = yop_read_header,
-    .read_packet    = yop_read_packet,
-    .read_close     = yop_read_close,
-    .read_seek      = yop_read_seek,
-    .extensions     = "yop",
-    .flags          = AVFMT_GENERIC_INDEX,
+    "yop",
+    NULL_IF_CONFIG_SMALL("Psygnosis YOP Format"),
+    sizeof(YopDecContext),
+    yop_probe,
+    yop_read_header,
+    yop_read_packet,
+    yop_read_close,
+    yop_read_seek,
+    .extensions = "yop",
+    .flags = AVFMT_GENERIC_INDEX,
 };

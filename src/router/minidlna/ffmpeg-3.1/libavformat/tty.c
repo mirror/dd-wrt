@@ -31,15 +31,14 @@
 #include "libavutil/opt.h"
 #include "libavutil/parseutils.h"
 #include "avformat.h"
-#include "internal.h"
 #include "sauce.h"
 
-typedef struct TtyDemuxContext {
+typedef struct {
     AVClass *class;
     int chars_per_frame;
     uint64_t fsize;  /**< file size less metadata buffer */
-    int width, height; /**< Set by a private option. */
-    AVRational framerate; /**< Set by a private option. */
+    char *video_size;/**< A string describing video size, set by a private option. */
+    char *framerate; /**< Set by a private option. */
 } TtyDemuxContext;
 
 /**
@@ -72,29 +71,50 @@ static int efi_read(AVFormatContext *avctx, uint64_t start_pos)
     return 0;
 }
 
-static int read_header(AVFormatContext *avctx)
+static int read_header(AVFormatContext *avctx,
+                       AVFormatParameters *ap)
 {
     TtyDemuxContext *s = avctx->priv_data;
-    int ret = 0;
-    AVStream *st = avformat_new_stream(avctx, NULL);
+    int width = 0, height = 0, ret = 0;
+    AVStream *st = av_new_stream(avctx, 0);
+    AVRational framerate;
 
     if (!st) {
         ret = AVERROR(ENOMEM);
         goto fail;
     }
-    st->codecpar->codec_tag   = 0;
-    st->codecpar->codec_type  = AVMEDIA_TYPE_VIDEO;
-    st->codecpar->codec_id    = AV_CODEC_ID_ANSI;
+    st->codec->codec_tag   = 0;
+    st->codec->codec_type  = AVMEDIA_TYPE_VIDEO;
+    st->codec->codec_id    = CODEC_ID_ANSI;
 
-    st->codecpar->width  = s->width;
-    st->codecpar->height = s->height;
-    avpriv_set_pts_info(st, 60, s->framerate.den, s->framerate.num);
-    st->avg_frame_rate = s->framerate;
+    if (s->video_size && (ret = av_parse_video_size(&width, &height, s->video_size)) < 0) {
+        av_log (avctx, AV_LOG_ERROR, "Couldn't parse video size.\n");
+        goto fail;
+    }
+    if ((ret = av_parse_video_rate(&framerate, s->framerate)) < 0) {
+        av_log(avctx, AV_LOG_ERROR, "Could not parse framerate: %s.\n", s->framerate);
+        goto fail;
+    }
+#if FF_API_FORMAT_PARAMETERS
+    if (ap->width > 0)
+        width = ap->width;
+    if (ap->height > 0)
+        height = ap->height;
+    if (ap->time_base.num)
+        framerate = (AVRational){ap->time_base.den, ap->time_base.num};
+#endif
+    st->codec->width  = width;
+    st->codec->height = height;
+    av_set_pts_info(st, 60, framerate.den, framerate.num);
 
     /* simulate tty display speed */
+#if FF_API_FORMAT_PARAMETERS
+    if (ap->sample_rate)
+        s->chars_per_frame = ap->sample_rate;
+#endif
     s->chars_per_frame = FFMAX(av_q2d(st->time_base)*s->chars_per_frame, 1);
 
-    if (avctx->pb->seekable & AVIO_SEEKABLE_NORMAL) {
+    if (avctx->pb->seekable) {
         s->fsize = avio_size(avctx->pb);
         st->duration = (s->fsize + s->chars_per_frame - 1) / s->chars_per_frame;
 
@@ -113,22 +133,20 @@ static int read_packet(AVFormatContext *avctx, AVPacket *pkt)
     TtyDemuxContext *s = avctx->priv_data;
     int n;
 
-    if (avio_feof(avctx->pb))
+    if (url_feof(avctx->pb))
         return AVERROR_EOF;
 
     n = s->chars_per_frame;
     if (s->fsize) {
         // ignore metadata buffer
         uint64_t p = avio_tell(avctx->pb);
-        if (p == s->fsize)
-            return AVERROR_EOF;
         if (p + s->chars_per_frame > s->fsize)
             n = s->fsize - p;
     }
 
     pkt->size = av_get_packet(avctx->pb, pkt, n);
-    if (pkt->size < 0)
-        return pkt->size;
+    if (pkt->size <= 0)
+        return AVERROR(EIO);
     pkt->flags |= AV_PKT_FLAG_KEY;
     return 0;
 }
@@ -136,9 +154,9 @@ static int read_packet(AVFormatContext *avctx, AVPacket *pkt)
 #define OFFSET(x) offsetof(TtyDemuxContext, x)
 #define DEC AV_OPT_FLAG_DECODING_PARAM
 static const AVOption options[] = {
-    { "chars_per_frame", "", offsetof(TtyDemuxContext, chars_per_frame), AV_OPT_TYPE_INT, {.i64 = 6000}, 1, INT_MAX, AV_OPT_FLAG_DECODING_PARAM},
-    { "video_size", "A string describing frame size, such as 640x480 or hd720.", OFFSET(width), AV_OPT_TYPE_IMAGE_SIZE, {.str = NULL}, 0, 0, DEC },
-    { "framerate", "", OFFSET(framerate), AV_OPT_TYPE_VIDEO_RATE, {.str = "25"}, 0, INT_MAX, DEC },
+    { "chars_per_frame", "", offsetof(TtyDemuxContext, chars_per_frame), FF_OPT_TYPE_INT, {.dbl = 6000}, 1, INT_MAX, AV_OPT_FLAG_DECODING_PARAM},
+    { "video_size", "A string describing frame size, such as 640x480 or hd720.", OFFSET(video_size), FF_OPT_TYPE_STRING, {.str = NULL}, 0, 0, DEC },
+    { "framerate", "", OFFSET(framerate), FF_OPT_TYPE_STRING, {.str = "25"}, 0, 0, DEC },
     { NULL },
 };
 

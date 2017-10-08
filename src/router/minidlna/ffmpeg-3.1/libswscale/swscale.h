@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001-2011 Michael Niedermayer <michaelni@gmx.at>
+ * Copyright (C) 2001-2003 Michael Niedermayer <michaelni@gmx.at>
  *
  * This file is part of FFmpeg.
  *
@@ -23,34 +23,52 @@
 
 /**
  * @file
- * @ingroup libsws
- * external API header
+ * @brief
+ *     external api for the swscale stuff
  */
 
-#include <stdint.h>
-
 #include "libavutil/avutil.h"
-#include "libavutil/log.h"
-#include "libavutil/pixfmt.h"
-#include "version.h"
+
+#define LIBSWSCALE_VERSION_MAJOR 0
+#define LIBSWSCALE_VERSION_MINOR 14
+#define LIBSWSCALE_VERSION_MICRO 1
+
+#define LIBSWSCALE_VERSION_INT  AV_VERSION_INT(LIBSWSCALE_VERSION_MAJOR, \
+                                               LIBSWSCALE_VERSION_MINOR, \
+                                               LIBSWSCALE_VERSION_MICRO)
+#define LIBSWSCALE_VERSION      AV_VERSION(LIBSWSCALE_VERSION_MAJOR, \
+                                           LIBSWSCALE_VERSION_MINOR, \
+                                           LIBSWSCALE_VERSION_MICRO)
+#define LIBSWSCALE_BUILD        LIBSWSCALE_VERSION_INT
+
+#define LIBSWSCALE_IDENT        "SwS" AV_STRINGIFY(LIBSWSCALE_VERSION)
 
 /**
- * @defgroup libsws libswscale
- * Color conversion and scaling library.
- *
- * @{
- *
- * Return the LIBSWSCALE_VERSION_INT constant.
+ * Those FF_API_* defines are not part of public API.
+ * They may change, break or disappear at any time.
+ */
+#ifndef FF_API_SWS_GETCONTEXT
+#define FF_API_SWS_GETCONTEXT  (LIBSWSCALE_VERSION_MAJOR < 3)
+#endif
+#ifndef FF_API_SWS_CPU_CAPS
+#define FF_API_SWS_CPU_CAPS    (LIBSWSCALE_VERSION_MAJOR < 3)
+#endif
+#ifndef FF_API_SWS_FORMAT_NAME
+#define FF_API_SWS_FORMAT_NAME  (LIBSWSCALE_VERSION_MAJOR < 3)
+#endif
+
+/**
+ * Returns the LIBSWSCALE_VERSION_INT constant.
  */
 unsigned swscale_version(void);
 
 /**
- * Return the libswscale build-time configuration.
+ * Returns the libswscale build-time configuration.
  */
 const char *swscale_configuration(void);
 
 /**
- * Return the libswscale license.
+ * Returns the libswscale license.
  */
 const char *swscale_license(void);
 
@@ -75,14 +93,26 @@ const char *swscale_license(void);
 #define SWS_PRINT_INFO              0x1000
 
 //the following 3 flags are not completely implemented
-//internal chrominance subsampling info
+//internal chrominace subsampling info
 #define SWS_FULL_CHR_H_INT    0x2000
 //input subsampling info
 #define SWS_FULL_CHR_H_INP    0x4000
 #define SWS_DIRECT_BGR        0x8000
 #define SWS_ACCURATE_RND      0x40000
 #define SWS_BITEXACT          0x80000
-#define SWS_ERROR_DIFFUSION  0x800000
+
+#if FF_API_SWS_CPU_CAPS
+/**
+ * CPU caps are autodetected now, those flags
+ * are only provided for API compatibility.
+ */
+#define SWS_CPU_CAPS_MMX      0x80000000
+#define SWS_CPU_CAPS_MMX2     0x20000000
+#define SWS_CPU_CAPS_3DNOW    0x40000000
+#define SWS_CPU_CAPS_ALTIVEC  0x10000000
+#define SWS_CPU_CAPS_BFIN     0x01000000
+#define SWS_CPU_CAPS_SSE2     0x02000000
+#endif
 
 #define SWS_MAX_REDUCE_CUTOFF 0.002
 
@@ -93,10 +123,9 @@ const char *swscale_license(void);
 #define SWS_CS_SMPTE170M      5
 #define SWS_CS_SMPTE240M      7
 #define SWS_CS_DEFAULT        5
-#define SWS_CS_BT2020         9
 
 /**
- * Return a pointer to yuv<->rgb coefficients for the given colorspace
+ * Returns a pointer to yuv<->rgb coefficients for the given colorspace
  * suitable for sws_setColorspaceDetails().
  *
  * @param colorspace One of the SWS_CS_* macros. If invalid,
@@ -104,15 +133,16 @@ const char *swscale_license(void);
  */
 const int *sws_getCoefficients(int colorspace);
 
+
 // when used for filters they must have an odd number of elements
 // coeffs cannot be shared between vectors
-typedef struct SwsVector {
+typedef struct {
     double *coeff;              ///< pointer to the list of coefficients
     int length;                 ///< number of coefficients in the vector
 } SwsVector;
 
 // vectors can be shared
-typedef struct SwsFilter {
+typedef struct {
     SwsVector *lumH;
     SwsVector *lumV;
     SwsVector *chrH;
@@ -122,48 +152,41 @@ typedef struct SwsFilter {
 struct SwsContext;
 
 /**
- * Return a positive value if pix_fmt is a supported input format, 0
+ * Returns a positive value if pix_fmt is a supported input format, 0
  * otherwise.
  */
-int sws_isSupportedInput(enum AVPixelFormat pix_fmt);
+int sws_isSupportedInput(enum PixelFormat pix_fmt);
 
 /**
- * Return a positive value if pix_fmt is a supported output format, 0
+ * Returns a positive value if pix_fmt is a supported output format, 0
  * otherwise.
  */
-int sws_isSupportedOutput(enum AVPixelFormat pix_fmt);
+int sws_isSupportedOutput(enum PixelFormat pix_fmt);
 
 /**
- * @param[in]  pix_fmt the pixel format
- * @return a positive value if an endianness conversion for pix_fmt is
- * supported, 0 otherwise.
- */
-int sws_isSupportedEndiannessConversion(enum AVPixelFormat pix_fmt);
-
-/**
- * Allocate an empty SwsContext. This must be filled and passed to
+ * Allocates an empty SwsContext. This must be filled and passed to
  * sws_init_context(). For filling see AVOptions, options.c and
  * sws_setColorspaceDetails().
  */
 struct SwsContext *sws_alloc_context(void);
 
 /**
- * Initialize the swscaler context sws_context.
+ * Initializes the swscaler context sws_context.
  *
  * @return zero or positive value on success, a negative value on
  * error
  */
-av_warn_unused_result
 int sws_init_context(struct SwsContext *sws_context, SwsFilter *srcFilter, SwsFilter *dstFilter);
 
 /**
- * Free the swscaler context swsContext.
+ * Frees the swscaler context swsContext.
  * If swsContext is NULL, then does nothing.
  */
 void sws_freeContext(struct SwsContext *swsContext);
 
+#if FF_API_SWS_GETCONTEXT
 /**
- * Allocate and return an SwsContext. You need it to perform
+ * Allocates and returns a SwsContext. You need it to perform
  * scaling/conversion operations using sws_scale().
  *
  * @param srcW the width of the source image
@@ -173,23 +196,19 @@ void sws_freeContext(struct SwsContext *swsContext);
  * @param dstH the height of the destination image
  * @param dstFormat the destination image format
  * @param flags specify which algorithm and options to use for rescaling
- * @param param extra parameters to tune the used scaler
- *              For SWS_BICUBIC param[0] and [1] tune the shape of the basis
- *              function, param[0] tunes f(1) and param[1] f´(1)
- *              For SWS_GAUSS param[0] tunes the exponent and thus cutoff
- *              frequency
- *              For SWS_LANCZOS param[0] tunes the width of the window function
  * @return a pointer to an allocated context, or NULL in case of error
  * @note this function is to be removed after a saner alternative is
  *       written
+ * @deprecated Use sws_getCachedContext() instead.
  */
-struct SwsContext *sws_getContext(int srcW, int srcH, enum AVPixelFormat srcFormat,
-                                  int dstW, int dstH, enum AVPixelFormat dstFormat,
+struct SwsContext *sws_getContext(int srcW, int srcH, enum PixelFormat srcFormat,
+                                  int dstW, int dstH, enum PixelFormat dstFormat,
                                   int flags, SwsFilter *srcFilter,
                                   SwsFilter *dstFilter, const double *param);
+#endif
 
 /**
- * Scale the image slice in srcSlice and put the resulting scaled
+ * Scales the image slice in srcSlice and puts the resulting scaled
  * slice in the image in dst. A slice is a sequence of consecutive
  * rows in an image.
  *
@@ -197,7 +216,7 @@ struct SwsContext *sws_getContext(int srcW, int srcH, enum AVPixelFormat srcForm
  * top-bottom or bottom-top order. If slices are provided in
  * non-sequential order the behavior of the function is undefined.
  *
- * @param c         the scaling context previously created with
+ * @param context   the scaling context previously created with
  *                  sws_getContext()
  * @param srcSlice  the array containing the pointers to the planes of
  *                  the source slice
@@ -214,18 +233,20 @@ struct SwsContext *sws_getContext(int srcW, int srcH, enum AVPixelFormat srcForm
  *                  the destination image
  * @return          the height of the output slice
  */
-int sws_scale(struct SwsContext *c, const uint8_t *const srcSlice[],
-              const int srcStride[], int srcSliceY, int srcSliceH,
-              uint8_t *const dst[], const int dstStride[]);
+int sws_scale(struct SwsContext *context, const uint8_t* const srcSlice[], const int srcStride[],
+              int srcSliceY, int srcSliceH, uint8_t* const dst[], const int dstStride[]);
+
+#if LIBSWSCALE_VERSION_MAJOR < 1
+/**
+ * @deprecated Use sws_scale() instead.
+ */
+int sws_scale_ordered(struct SwsContext *context, const uint8_t* const src[],
+                      int srcStride[], int srcSliceY, int srcSliceH,
+                      uint8_t* dst[], int dstStride[]) attribute_deprecated;
+#endif
 
 /**
- * @param dstRange flag indicating the while-black range of the output (1=jpeg / 0=mpeg)
- * @param srcRange flag indicating the while-black range of the input (1=jpeg / 0=mpeg)
- * @param table the yuv2rgb coefficients describing the output yuv space, normally ff_yuv2rgb_coeffs[x]
- * @param inv_table the yuv2rgb coefficients describing the input yuv space, normally ff_yuv2rgb_coeffs[x]
- * @param brightness 16.16 fixed point brightness correction
- * @param contrast 16.16 fixed point contrast correction
- * @param saturation 16.16 fixed point saturation correction
+ * @param inv_table the yuv2rgb coefficients, normally ff_yuv2rgb_coeffs[x]
  * @return -1 if not supported
  */
 int sws_setColorspaceDetails(struct SwsContext *c, const int inv_table[4],
@@ -240,36 +261,60 @@ int sws_getColorspaceDetails(struct SwsContext *c, int **inv_table,
                              int *brightness, int *contrast, int *saturation);
 
 /**
- * Allocate and return an uninitialized vector with length coefficients.
+ * Allocates and returns an uninitialized vector with length coefficients.
  */
 SwsVector *sws_allocVec(int length);
 
 /**
- * Return a normalized Gaussian curve used to filter stuff
- * quality = 3 is high quality, lower is lower quality.
+ * Returns a normalized Gaussian curve used to filter stuff
+ * quality=3 is high quality, lower is lower quality.
  */
 SwsVector *sws_getGaussianVec(double variance, double quality);
 
 /**
- * Scale all the coefficients of a by the scalar value.
+ * Allocates and returns a vector with length coefficients, all
+ * with the same value c.
+ */
+SwsVector *sws_getConstVec(double c, int length);
+
+/**
+ * Allocates and returns a vector with just one coefficient, with
+ * value 1.0.
+ */
+SwsVector *sws_getIdentityVec(void);
+
+/**
+ * Scales all the coefficients of a by the scalar value.
  */
 void sws_scaleVec(SwsVector *a, double scalar);
 
 /**
- * Scale all the coefficients of a so that their sum equals height.
+ * Scales all the coefficients of a so that their sum equals height.
  */
 void sws_normalizeVec(SwsVector *a, double height);
+void sws_convVec(SwsVector *a, SwsVector *b);
+void sws_addVec(SwsVector *a, SwsVector *b);
+void sws_subVec(SwsVector *a, SwsVector *b);
+void sws_shiftVec(SwsVector *a, int shift);
 
-#if FF_API_SWS_VECTOR
-attribute_deprecated SwsVector *sws_getConstVec(double c, int length);
-attribute_deprecated SwsVector *sws_getIdentityVec(void);
-attribute_deprecated void sws_convVec(SwsVector *a, SwsVector *b);
-attribute_deprecated void sws_addVec(SwsVector *a, SwsVector *b);
-attribute_deprecated void sws_subVec(SwsVector *a, SwsVector *b);
-attribute_deprecated void sws_shiftVec(SwsVector *a, int shift);
-attribute_deprecated SwsVector *sws_cloneVec(SwsVector *a);
-attribute_deprecated void sws_printVec2(SwsVector *a, AVClass *log_ctx, int log_level);
+/**
+ * Allocates and returns a clone of the vector a, that is a vector
+ * with the same coefficients as a.
+ */
+SwsVector *sws_cloneVec(SwsVector *a);
+
+#if LIBSWSCALE_VERSION_MAJOR < 1
+/**
+ * @deprecated Use sws_printVec2() instead.
+ */
+attribute_deprecated void sws_printVec(SwsVector *a);
 #endif
+
+/**
+ * Prints with av_log() a textual representation of the vector a
+ * if log_level <= av_log_level.
+ */
+void sws_printVec2(SwsVector *a, AVClass *log_ctx, int log_level);
 
 void sws_freeVec(SwsVector *a);
 
@@ -280,7 +325,8 @@ SwsFilter *sws_getDefaultFilter(float lumaGBlur, float chromaGBlur,
 void sws_freeFilter(SwsFilter *filter);
 
 /**
- * Check if context can be reused, otherwise reallocate a new one.
+ * Checks if context can be reused, otherwise reallocates a new
+ * one.
  *
  * If context is NULL, just calls sws_getContext() to get a new
  * context. Otherwise, checks if the parameters are the ones already
@@ -292,13 +338,13 @@ void sws_freeFilter(SwsFilter *filter);
  * are assumed to remain the same.
  */
 struct SwsContext *sws_getCachedContext(struct SwsContext *context,
-                                        int srcW, int srcH, enum AVPixelFormat srcFormat,
-                                        int dstW, int dstH, enum AVPixelFormat dstFormat,
+                                        int srcW, int srcH, enum PixelFormat srcFormat,
+                                        int dstW, int dstH, enum PixelFormat dstFormat,
                                         int flags, SwsFilter *srcFilter,
                                         SwsFilter *dstFilter, const double *param);
 
 /**
- * Convert an 8-bit paletted frame into a frame with a color depth of 32 bits.
+ * Converts an 8bit paletted frame into a frame with a color depth of 32-bits.
  *
  * The output frame will have the same packed format as the palette.
  *
@@ -307,10 +353,10 @@ struct SwsContext *sws_getCachedContext(struct SwsContext *context,
  * @param num_pixels number of pixels to convert
  * @param palette    array with [256] entries, which must match color arrangement (RGB or BGR) of src
  */
-void sws_convertPalette8ToPacked32(const uint8_t *src, uint8_t *dst, int num_pixels, const uint8_t *palette);
+void sws_convertPalette8ToPacked32(const uint8_t *src, uint8_t *dst, long num_pixels, const uint8_t *palette);
 
 /**
- * Convert an 8-bit paletted frame into a frame with a color depth of 24 bits.
+ * Converts an 8bit paletted frame into a frame with a color depth of 24 bits.
  *
  * With the palette format "ABCD", the destination frame ends up with the format "ABC".
  *
@@ -319,18 +365,7 @@ void sws_convertPalette8ToPacked32(const uint8_t *src, uint8_t *dst, int num_pix
  * @param num_pixels number of pixels to convert
  * @param palette    array with [256] entries, which must match color arrangement (RGB or BGR) of src
  */
-void sws_convertPalette8ToPacked24(const uint8_t *src, uint8_t *dst, int num_pixels, const uint8_t *palette);
+void sws_convertPalette8ToPacked24(const uint8_t *src, uint8_t *dst, long num_pixels, const uint8_t *palette);
 
-/**
- * Get the AVClass for swsContext. It can be used in combination with
- * AV_OPT_SEARCH_FAKE_OBJ for examining options.
- *
- * @see av_opt_find().
- */
-const AVClass *sws_get_class(void);
-
-/**
- * @}
- */
 
 #endif /* SWSCALE_SWSCALE_H */

@@ -1,5 +1,5 @@
 /*
- * SSA/ASS common functions
+ * SSA/ASS common funtions
  * Copyright (c) 2010  Aurelien Jacobs <aurel@gnuage.org>
  *
  * This file is part of FFmpeg.
@@ -23,10 +23,6 @@
 #define AVCODEC_ASS_H
 
 #include "avcodec.h"
-#include "libavutil/bprint.h"
-
-#define ASS_DEFAULT_PLAYRESX 384
-#define ASS_DEFAULT_PLAYRESY 288
 
 /**
  * @name Default values for ASS style
@@ -40,12 +36,7 @@
 #define ASS_DEFAULT_ITALIC      0
 #define ASS_DEFAULT_UNDERLINE   0
 #define ASS_DEFAULT_ALIGNMENT   2
-#define ASS_DEFAULT_BORDERSTYLE 1
 /** @} */
-
-typedef struct FFASSDecoderContext {
-    int readorder;
-} FFASSDecoderContext;
 
 /**
  * Generate a suitable AVCodecContext.subtitle_header for SUBTITLE_ASS.
@@ -66,7 +57,7 @@ int ff_ass_subtitle_header(AVCodecContext *avctx,
                            const char *font, int font_size,
                            int color, int back_color,
                            int bold, int italic, int underline,
-                           int border_style, int alignment);
+                           int alignment);
 
 /**
  * Generate a suitable AVCodecContext.subtitle_header for SUBTITLE_ASS
@@ -78,34 +69,22 @@ int ff_ass_subtitle_header(AVCodecContext *avctx,
 int ff_ass_subtitle_header_default(AVCodecContext *avctx);
 
 /**
- * Craft an ASS dialog string.
- */
-char *ff_ass_get_dialog(int readorder, int layer, const char *style,
-                        const char *speaker, const char *text);
-
-/**
- * Add an ASS dialog to a subtitle.
+ * Add an ASS dialog line to an AVSubtitle as a new AVSubtitleRect.
+ *
+ * @param sub pointer to the AVSubtitle
+ * @param dialog ASS dialog to add to sub
+ * @param ts_start start timestamp for this dialog (in 1/100 second unit)
+ * @param ts_end end timestamp for this dialog (in 1/100 second unit)
+ * @param raw when set to 1, it indicates that dialog contains a whole ASS
+ *                           dialog line which should be copied as is.
+ *            when set to 0, it indicates that dialog contains only the Text
+ *                           part of the ASS dialog line, the rest of the line
+ *                           will be generated.
+ * @return number of characters read from dialog. It can be less than the whole
+ *         length of dialog, if dialog contains several lines of text.
+ *         A negative value indicates an error.
  */
 int ff_ass_add_rect(AVSubtitle *sub, const char *dialog,
-                    int readorder, int layer, const char *style,
-                    const char *speaker);
+                    int ts_start, int ts_end, int raw);
 
-/**
- * Helper to flush a text subtitles decoder making use of the
- * FFASSDecoderContext.
- */
-void ff_ass_decoder_flush(AVCodecContext *avctx);
-
-/**
- * Escape a text subtitle using ASS syntax into an AVBPrint buffer.
- * Newline characters will be escaped to \N.
- *
- * @param buf pointer to an initialized AVBPrint buffer
- * @param p source text
- * @param size size of the source text
- * @param linebreaks additional newline chars, which will be escaped to \N
- * @param keep_ass_markup braces and backslash will not be escaped if set
- */
-void ff_ass_bprint_text_event(AVBPrint *buf, const char *p, int size,
-                             const char *linebreaks, int keep_ass_markup);
 #endif /* AVCODEC_ASS_H */

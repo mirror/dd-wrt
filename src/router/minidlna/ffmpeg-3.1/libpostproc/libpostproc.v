@@ -1,7 +1,4 @@
-LIBPOSTPROC_MAJOR {
-    global:
-        postproc_*;
-        pp_*;
-    local:
-        *;
+LIBPOSTPROC_$MAJOR {
+        global: postproc_*; pp_*;
+        local: *;
 };

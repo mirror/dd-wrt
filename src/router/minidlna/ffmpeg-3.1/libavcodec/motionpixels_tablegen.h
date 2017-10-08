@@ -1,5 +1,5 @@
 /*
- * Header file for hardcoded motion pixels RGB to YUV table
+ * Header file for hardcoded motionpixels RGB to YUV table
  *
  * Copyright (c) 2009 Reimar Döffinger <Reimar.Doeffinger@gmx.de>
  *
@@ -24,14 +24,13 @@
 #define AVCODEC_MOTIONPIXELS_TABLEGEN_H
 
 #include <stdint.h>
-#include "libavutil/attributes.h"
 
 typedef struct YuvPixel {
     int8_t y, v, u;
 } YuvPixel;
 
 static int mp_yuv_to_rgb(int y, int v, int u, int clip_rgb) {
-    const uint8_t *cm = ff_crop_tab + MAX_NEG_CROP;
+    static const uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
     int r, g, b;
 
     r = (1000 * y + 701 * v) / 1000;
@@ -50,7 +49,7 @@ static int mp_yuv_to_rgb(int y, int v, int u, int clip_rgb) {
 #else
 static YuvPixel mp_rgb_yuv_table[1 << 15];
 
-static av_cold void mp_set_zero_yuv(YuvPixel *p)
+static void mp_set_zero_yuv(YuvPixel *p)
 {
     int i, j;
 
@@ -64,7 +63,7 @@ static av_cold void mp_set_zero_yuv(YuvPixel *p)
     }
 }
 
-static av_cold void mp_build_rgb_yuv_table(YuvPixel *p)
+static void mp_build_rgb_yuv_table(YuvPixel *p)
 {
     int y, v, u, i;
 
@@ -82,7 +81,7 @@ static av_cold void mp_build_rgb_yuv_table(YuvPixel *p)
         mp_set_zero_yuv(p + i * 32);
 }
 
-static av_cold void motionpixels_tableinit(void)
+static void motionpixels_tableinit(void)
 {
     if (!mp_rgb_yuv_table[0].u)
         mp_build_rgb_yuv_table(mp_rgb_yuv_table);

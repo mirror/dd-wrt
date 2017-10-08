@@ -175,8 +175,7 @@
          if(status.dropped_frames > 0) {
               reset_dv1394();
          } else {
-              int i;
-              for (i = 0; i < status.n_clear_frames; i++) {
+              for(int i = 0; i < status.n_clear_frames; i++) {
                   copy_DV_frame();
               }
          }
@@ -186,7 +185,7 @@
    where copy_DV_frame() reads or writes on the dv1394 file descriptor
    (read/write mode) or copies data to/from the mmap ringbuffer and
    then calls ioctl(DV1394_SUBMIT_FRAMES) to notify dv1394 that new
-   frames are available (mmap mode).
+   frames are availble (mmap mode).
 
    reset_dv1394() is called in the event of a buffer
    underflow/overflow or a halt in the DV stream (e.g. due to a 1394

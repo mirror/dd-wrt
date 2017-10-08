@@ -1,7 +1,4 @@
-LIBSWSCALE_MAJOR {
-    global:
-        swscale_*;
-        sws_*;
-    local:
-        *;
+LIBSWSCALE_$MAJOR {
+        global: swscale_*; sws_*; ff_*;
+        local: *;
 };

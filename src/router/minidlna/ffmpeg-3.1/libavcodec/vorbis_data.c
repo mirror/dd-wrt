@@ -18,9 +18,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavutil/channel_layout.h"
-#include "libavutil/mem.h"
+#include "dsputil.h"
 #include "vorbis.h"
+#include "libavutil/audioconvert.h"
 
 const uint8_t ff_vorbis_channel_layout_offsets[8][8] = {
     { 0 },
@@ -44,7 +44,7 @@ const uint8_t ff_vorbis_encoding_channel_layout_offsets[8][8] = {
     { 0, 2, 1, 6, 7, 4, 5, 3 },
 };
 
-const uint64_t ff_vorbis_channel_layouts[9] = {
+const int64_t ff_vorbis_channel_layouts[9] = {
     AV_CH_LAYOUT_MONO,
     AV_CH_LAYOUT_STEREO,
     AV_CH_LAYOUT_SURROUND,

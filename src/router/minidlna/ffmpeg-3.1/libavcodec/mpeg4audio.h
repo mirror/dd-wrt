@@ -26,44 +26,30 @@
 #include "get_bits.h"
 #include "put_bits.h"
 
-typedef struct MPEG4AudioConfig {
+typedef struct {
     int object_type;
     int sampling_index;
     int sample_rate;
     int chan_config;
-    int sbr; ///< -1 implicit, 1 presence
+    int sbr; //< -1 implicit, 1 presence
     int ext_object_type;
     int ext_sampling_index;
     int ext_sample_rate;
     int ext_chan_config;
     int channels;
-    int ps;  ///< -1 implicit, 1 presence
-    int frame_length_short;
+    int ps;  //< -1 implicit, 1 presence
 } MPEG4AudioConfig;
 
-extern av_export const int avpriv_mpeg4audio_sample_rates[16];
+extern const int ff_mpeg4audio_sample_rates[16];
 extern const uint8_t ff_mpeg4audio_channels[8];
-
 /**
- * Parse MPEG-4 systems extradata from a potentially unaligned GetBitContext to retrieve audio configuration.
- * @param[in] c        MPEG4AudioConfig structure to fill.
- * @param[in] gb       Extradata from container.
- * @param[in] sync_extension look for a sync extension after config if true.
- * @return On error -1 is returned, on success AudioSpecificConfig bit index in extradata.
- */
-int ff_mpeg4audio_get_config_gb(MPEG4AudioConfig *c, GetBitContext *gb,
-                                int sync_extension);
-
-/**
- * Parse MPEG-4 systems extradata from a raw buffer to retrieve audio configuration.
+ * Parse MPEG-4 systems extradata to retrieve audio configuration.
  * @param[in] c        MPEG4AudioConfig structure to fill.
  * @param[in] buf      Extradata from container.
- * @param[in] bit_size Extradata size in bits.
- * @param[in] sync_extension look for a sync extension after config if true.
+ * @param[in] buf_size Extradata size.
  * @return On error -1 is returned, on success AudioSpecificConfig bit index in extradata.
  */
-int avpriv_mpeg4audio_get_config(MPEG4AudioConfig *c, const uint8_t *buf,
-                                 int bit_size, int sync_extension);
+int ff_mpeg4audio_get_config(MPEG4AudioConfig *c, const uint8_t *buf, int buf_size);
 
 enum AudioObjectType {
     AOT_NULL,
@@ -112,9 +98,9 @@ enum AudioObjectType {
     AOT_USAC,                  ///< N                       Unified Speech and Audio Coding
 };
 
-#define MAX_PCE_SIZE 320 ///<Maximum size of a PCE including the 3-bit ID_PCE
+#define MAX_PCE_SIZE 304 ///<Maximum size of a PCE including the 3-bit ID_PCE
                          ///<marker and the comment
 
-int avpriv_copy_pce_data(PutBitContext *pb, GetBitContext *gb);
+int ff_copy_pce_data(PutBitContext *pb, GetBitContext *gb);
 
 #endif /* AVCODEC_MPEG4AUDIO_H */

@@ -1,24 +1,24 @@
 /*
  * Copyright (c) 2011 Mans Rullgard <mans@mansr.com>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavutil/arm/asm.S"
+#include "asm.S"
 
 .macro  bflies          d0,  d1,  r0,  r1
         vrev64.32       \r0, \d1                @ t5, t6, t1, t2
@@ -75,9 +75,9 @@
 .endm
 
 function fft4_neon
-        vld1.16         {d0-d1},  [r0]
+        vld1.16         {d0-d1},  [r0,:128]
         fft4            d0,  d1,  d2,  d3
-        vst1.16         {d0-d1},  [r0]
+        vst1.16         {d0-d1},  [r0,:128]
         bx              lr
 endfunc
 
@@ -122,7 +122,7 @@ endfunc
 
 function fft_pass_neon
         push            {r4,lr}
-        movrel          lr,  coefs + 24
+        movrel          lr,  coefs+24
         vld1.16         {d30},    [lr,:64]
         lsl             r12, r2,  #3
         vmov            d31, d30
@@ -214,7 +214,7 @@ function fft\n\()_neon
         bl              fft\n4\()_neon
         mov             r0,  r4
         pop             {r4, lr}
-        movrelx         r1,  X(ff_cos_\n\()_fixed)
+        movrel          r1,  X(ff_cos_\n\()_fixed)
         mov             r2,  #\n4/2
         b               fft_pass_neon
 endfunc
@@ -242,7 +242,7 @@ function ff_fft_fixed_calc_neon, export=1
         bx              r3
 endfunc
 
-const   fft_fixed_tab_neon, relocate=1
+const   fft_fixed_tab_neon
         .word fft4_neon
         .word fft8_neon
         .word fft16_neon

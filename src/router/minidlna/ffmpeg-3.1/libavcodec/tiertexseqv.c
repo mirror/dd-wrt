@@ -24,15 +24,14 @@
  * Tiertex Limited SEQ video decoder
  */
 
-#define BITSTREAM_READER_LE
 #include "avcodec.h"
+#define ALT_BITSTREAM_READER_LE
 #include "get_bits.h"
-#include "internal.h"
 
 
 typedef struct SeqVideoContext {
     AVCodecContext *avctx;
-    AVFrame *frame;
+    AVFrame frame;
 } SeqVideoContext;
 
 
@@ -93,14 +92,14 @@ static const unsigned char *seq_decode_op1(SeqVideoContext *seq,
             src = seq_unpack_rle_block(src, src_end, block, sizeof(block));
             for (b = 0; b < 8; b++) {
                 memcpy(dst, &block[b * 8], 8);
-                dst += seq->frame->linesize[0];
+                dst += seq->frame.linesize[0];
             }
             break;
         case 2:
             src = seq_unpack_rle_block(src, src_end, block, sizeof(block));
             for (i = 0; i < 8; i++) {
                 for (b = 0; b < 8; b++)
-                    dst[b * seq->frame->linesize[0]] = block[i * 8 + b];
+                    dst[b * seq->frame.linesize[0]] = block[i * 8 + b];
                 ++dst;
             }
             break;
@@ -117,7 +116,7 @@ static const unsigned char *seq_decode_op1(SeqVideoContext *seq,
         for (b = 0; b < 8; b++) {
             for (i = 0; i < 8; i++)
                 dst[i] = color_table[get_bits(&gb, bits)];
-            dst += seq->frame->linesize[0];
+            dst += seq->frame.linesize[0];
         }
     }
 
@@ -137,7 +136,7 @@ static const unsigned char *seq_decode_op2(SeqVideoContext *seq,
     for (i = 0; i < 8; i++) {
         memcpy(dst, src, 8);
         src += 8;
-        dst += seq->frame->linesize[0];
+        dst += seq->frame.linesize[0];
     }
 
     return src;
@@ -154,7 +153,7 @@ static const unsigned char *seq_decode_op3(SeqVideoContext *seq,
         if (src_end - src < 2)
             return NULL;
         pos = *src++;
-        offset = ((pos >> 3) & 7) * seq->frame->linesize[0] + (pos & 7);
+        offset = ((pos >> 3) & 7) * seq->frame.linesize[0] + (pos & 7);
         dst[offset] = *src++;
     } while (!(pos & 0x80));
 
@@ -173,15 +172,15 @@ static int seqvideo_decode(SeqVideoContext *seq, const unsigned char *data, int 
     flags = *data++;
 
     if (flags & 1) {
-        palette = (uint32_t *)seq->frame->data[1];
+        palette = (uint32_t *)seq->frame.data[1];
         if (data_end - data < 256 * 3)
             return AVERROR_INVALIDDATA;
         for (i = 0; i < 256; i++) {
             for (j = 0; j < 3; j++, data++)
                 c[j] = (*data << 2) | (*data >> 4);
-            palette[i] = 0xFFU << 24 | AV_RB24(c);
+            palette[i] = AV_RB24(c);
         }
-        seq->frame->palette_has_changed = 1;
+        seq->frame.palette_has_changed = 1;
     }
 
     if (flags & 2) {
@@ -190,7 +189,7 @@ static int seqvideo_decode(SeqVideoContext *seq, const unsigned char *data, int 
         init_get_bits(&gb, data, 128 * 8); data += 128;
         for (y = 0; y < 128; y += 8)
             for (x = 0; x < 256; x += 8) {
-                dst = &seq->frame->data[0][y * seq->frame->linesize[0] + x];
+                dst = &seq->frame.data[0][y * seq->frame.linesize[0] + x];
                 op = get_bits(&gb, 2);
                 switch (op) {
                 case 1:
@@ -213,41 +212,37 @@ static int seqvideo_decode(SeqVideoContext *seq, const unsigned char *data, int 
 static av_cold int seqvideo_decode_init(AVCodecContext *avctx)
 {
     SeqVideoContext *seq = avctx->priv_data;
-    int ret;
 
     seq->avctx = avctx;
-    avctx->pix_fmt = AV_PIX_FMT_PAL8;
+    avctx->pix_fmt = PIX_FMT_PAL8;
 
-    ret = ff_set_dimensions(avctx, 256, 128);
-    if (ret < 0)
-        return ret;
-
-    seq->frame = av_frame_alloc();
-    if (!seq->frame)
-        return AVERROR(ENOMEM);
+    avcodec_get_frame_defaults(&seq->frame);
+    seq->frame.data[0] = NULL;
 
     return 0;
 }
 
 static int seqvideo_decode_frame(AVCodecContext *avctx,
-                                 void *data, int *got_frame,
+                                 void *data, int *data_size,
                                  AVPacket *avpkt)
 {
     const uint8_t *buf = avpkt->data;
     int buf_size = avpkt->size;
-    int ret;
 
     SeqVideoContext *seq = avctx->priv_data;
 
-    if ((ret = ff_reget_buffer(avctx, seq->frame)) < 0)
-        return ret;
+    seq->frame.reference = 1;
+    seq->frame.buffer_hints = FF_BUFFER_HINTS_VALID | FF_BUFFER_HINTS_PRESERVE | FF_BUFFER_HINTS_REUSABLE;
+    if (avctx->reget_buffer(avctx, &seq->frame)) {
+        av_log(seq->avctx, AV_LOG_ERROR, "tiertexseqvideo: reget_buffer() failed\n");
+        return -1;
+    }
 
     if (seqvideo_decode(seq, buf, buf_size))
         return AVERROR_INVALIDDATA;
 
-    if ((ret = av_frame_ref(data, seq->frame)) < 0)
-        return ret;
-    *got_frame       = 1;
+    *data_size = sizeof(AVFrame);
+    *(AVFrame *)data = seq->frame;
 
     return buf_size;
 }
@@ -256,19 +251,21 @@ static av_cold int seqvideo_decode_end(AVCodecContext *avctx)
 {
     SeqVideoContext *seq = avctx->priv_data;
 
-    av_frame_free(&seq->frame);
+    if (seq->frame.data[0])
+        avctx->release_buffer(avctx, &seq->frame);
 
     return 0;
 }
 
 AVCodec ff_tiertexseqvideo_decoder = {
-    .name           = "tiertexseqvideo",
-    .long_name      = NULL_IF_CONFIG_SMALL("Tiertex Limited SEQ video"),
-    .type           = AVMEDIA_TYPE_VIDEO,
-    .id             = AV_CODEC_ID_TIERTEXSEQVIDEO,
-    .priv_data_size = sizeof(SeqVideoContext),
-    .init           = seqvideo_decode_init,
-    .close          = seqvideo_decode_end,
-    .decode         = seqvideo_decode_frame,
-    .capabilities   = AV_CODEC_CAP_DR1,
+    "tiertexseqvideo",
+    AVMEDIA_TYPE_VIDEO,
+    CODEC_ID_TIERTEXSEQVIDEO,
+    sizeof(SeqVideoContext),
+    seqvideo_decode_init,
+    NULL,
+    seqvideo_decode_end,
+    seqvideo_decode_frame,
+    CODEC_CAP_DR1,
+    .long_name = NULL_IF_CONFIG_SMALL("Tiertex Limited SEQ video"),
 };

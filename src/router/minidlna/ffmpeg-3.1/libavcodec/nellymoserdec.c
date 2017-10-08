@@ -31,31 +31,49 @@
  * implementors. The original code is available from http://code.google.com/p/nelly2pcm/
  */
 
-#include "libavutil/channel_layout.h"
-#include "libavutil/float_dsp.h"
+#include "nellymoser.h"
 #include "libavutil/lfg.h"
 #include "libavutil/random_seed.h"
-
-#define BITSTREAM_READER_LE
+#include "libavutil/audioconvert.h"
 #include "avcodec.h"
+#include "dsputil.h"
 #include "fft.h"
-#include "get_bits.h"
-#include "internal.h"
-#include "nellymoser.h"
+#include "fmtconvert.h"
 #include "sinewin.h"
+
+#define ALT_BITSTREAM_READER_LE
+#include "get_bits.h"
 
 
 typedef struct NellyMoserDecodeContext {
     AVCodecContext* avctx;
+    DECLARE_ALIGNED(32, float, float_buf)[NELLY_SAMPLES];
+    float           state[128];
     AVLFG           random_state;
     GetBitContext   gb;
     float           scale_bias;
-    AVFloatDSPContext *fdsp;
+    DSPContext      dsp;
     FFTContext      imdct_ctx;
-    DECLARE_ALIGNED(32, float, imdct_buf)[2][NELLY_BUF_LEN];
-    float          *imdct_out;
-    float          *imdct_prev;
+    FmtConvertContext fmt_conv;
+    DECLARE_ALIGNED(32, float, imdct_out)[NELLY_BUF_LEN * 2];
 } NellyMoserDecodeContext;
+
+static void overlap_and_window(NellyMoserDecodeContext *s, float *state, float *audio, float *a_in)
+{
+    int bot, top;
+
+    bot = 0;
+    top = NELLY_BUF_LEN-1;
+
+    while (bot < NELLY_BUF_LEN) {
+        audio[bot] = a_in [bot]*ff_sine_128[bot]
+                    +state[bot]*ff_sine_128[top];
+
+        bot++;
+        top--;
+    }
+    memcpy(state, a_in + NELLY_BUF_LEN, sizeof(float)*NELLY_BUF_LEN);
+}
 
 static void nelly_decode_block(NellyMoserDecodeContext *s,
                                const unsigned char block[NELLY_BLOCK_LEN],
@@ -75,7 +93,7 @@ static void nelly_decode_block(NellyMoserDecodeContext *s,
     for (i=0 ; i<NELLY_BANDS ; i++) {
         if (i > 0)
             val += ff_nelly_delta_table[get_bits(&s->gb, 5)];
-        pval = -exp2(val/2048) * s->scale_bias;
+        pval = -pow(2, val/2048) * s->scale_bias;
         for (j = 0; j < ff_nelly_band_sizes_table[i]; j++) {
             *bptr++ = val;
             *pptr++ = pval;
@@ -104,11 +122,10 @@ static void nelly_decode_block(NellyMoserDecodeContext *s,
         memset(&aptr[NELLY_FILL_LEN], 0,
                (NELLY_BUF_LEN - NELLY_FILL_LEN) * sizeof(float));
 
-        s->imdct_ctx.imdct_half(&s->imdct_ctx, s->imdct_out, aptr);
-        s->fdsp->vector_fmul_window(aptr, s->imdct_prev + NELLY_BUF_LEN / 2,
-                                   s->imdct_out, ff_sine_128,
-                                   NELLY_BUF_LEN / 2);
-        FFSWAP(float *, s->imdct_out, s->imdct_prev);
+        s->imdct_ctx.imdct_calc(&s->imdct_ctx, s->imdct_out, aptr);
+        /* XXX: overlapping and windowing should be part of a more
+           generic imdct function */
+        overlap_and_window(s, s->state, aptr, s->imdct_out);
     }
 }
 
@@ -116,49 +133,49 @@ static av_cold int decode_init(AVCodecContext * avctx) {
     NellyMoserDecodeContext *s = avctx->priv_data;
 
     s->avctx = avctx;
-    s->imdct_out = s->imdct_buf[0];
-    s->imdct_prev = s->imdct_buf[1];
     av_lfg_init(&s->random_state, 0);
     ff_mdct_init(&s->imdct_ctx, 8, 1, 1.0);
 
-    s->fdsp = avpriv_float_dsp_alloc(avctx->flags & AV_CODEC_FLAG_BITEXACT);
-    if (!s->fdsp)
-        return AVERROR(ENOMEM);
+    dsputil_init(&s->dsp, avctx);
+    ff_fmt_convert_init(&s->fmt_conv, avctx);
 
-    s->scale_bias = 1.0/(32768*8);
-    avctx->sample_fmt = AV_SAMPLE_FMT_FLT;
+    s->scale_bias = 1.0/(1*8);
 
     /* Generate overlap window */
     if (!ff_sine_128[127])
         ff_init_ff_sine_windows(7);
 
-    avctx->channels       = 1;
+    avctx->sample_fmt = AV_SAMPLE_FMT_S16;
     avctx->channel_layout = AV_CH_LAYOUT_MONO;
-
     return 0;
 }
 
-static int decode_tag(AVCodecContext *avctx, void *data,
-                      int *got_frame_ptr, AVPacket *avpkt)
-{
-    AVFrame *frame     = data;
+static int decode_tag(AVCodecContext * avctx,
+                      void *data, int *data_size,
+                      AVPacket *avpkt) {
     const uint8_t *buf = avpkt->data;
-    const uint8_t *side=av_packet_get_side_data(avpkt, 'F', NULL);
     int buf_size = avpkt->size;
     NellyMoserDecodeContext *s = avctx->priv_data;
-    int blocks, i, ret;
-    float   *samples_flt;
+    int data_max = *data_size;
+    int blocks, i, block_size;
+    int16_t* samples;
+    samples = (int16_t*)data;
 
-    blocks     = buf_size / NELLY_BLOCK_LEN;
-
-    if (blocks <= 0) {
-        av_log(avctx, AV_LOG_ERROR, "Packet is too small\n");
-        return AVERROR_INVALIDDATA;
+    if (buf_size < avctx->block_align) {
+        *data_size = 0;
+        return buf_size;
     }
 
-    if (buf_size % NELLY_BLOCK_LEN) {
-        av_log(avctx, AV_LOG_WARNING, "Leftover bytes: %d.\n",
-               buf_size % NELLY_BLOCK_LEN);
+    if (buf_size % 64) {
+        av_log(avctx, AV_LOG_ERROR, "Tag size %d.\n", buf_size);
+        *data_size = 0;
+        return buf_size;
+    }
+    block_size = NELLY_SAMPLES * av_get_bytes_per_sample(avctx->sample_fmt);
+    blocks     = FFMIN(buf_size / 64, *data_size / block_size);
+    if (blocks <= 0) {
+        av_log(avctx, AV_LOG_ERROR, "Output buffer is too small\n");
+        return AVERROR(EINVAL);
     }
     /* Normal numbers of blocks for sample rates:
      *  8000 Hz - 1
@@ -167,22 +184,14 @@ static int decode_tag(AVCodecContext *avctx, void *data,
      * 22050 Hz - 4
      * 44100 Hz - 8
      */
-    if(side && blocks>1 && avctx->sample_rate%11025==0 && (1<<((side[0]>>2)&3)) == blocks)
-        avctx->sample_rate= 11025*(blocks/2);
-
-    /* get output buffer */
-    frame->nb_samples = NELLY_SAMPLES * blocks;
-    if ((ret = ff_get_buffer(avctx, frame, 0)) < 0)
-        return ret;
-    samples_flt = (float *)frame->data[0];
 
     for (i=0 ; i<blocks ; i++) {
-        nelly_decode_block(s, buf, samples_flt);
-        samples_flt += NELLY_SAMPLES;
-        buf += NELLY_BLOCK_LEN;
+        if ((i + 1) * NELLY_SAMPLES * sizeof(int16_t) > data_max)
+            return i > 0 ? i * NELLY_BLOCK_LEN : -1;
+        nelly_decode_block(s, &buf[i*NELLY_BLOCK_LEN], s->float_buf);
+        s->fmt_conv.float_to_int16(&samples[i*NELLY_SAMPLES], s->float_buf, NELLY_SAMPLES);
     }
-
-    *got_frame_ptr = 1;
+    *data_size = blocks * block_size;
 
     return buf_size;
 }
@@ -191,21 +200,18 @@ static av_cold int decode_end(AVCodecContext * avctx) {
     NellyMoserDecodeContext *s = avctx->priv_data;
 
     ff_mdct_end(&s->imdct_ctx);
-    av_freep(&s->fdsp);
-
     return 0;
 }
 
 AVCodec ff_nellymoser_decoder = {
-    .name           = "nellymoser",
-    .long_name      = NULL_IF_CONFIG_SMALL("Nellymoser Asao"),
-    .type           = AVMEDIA_TYPE_AUDIO,
-    .id             = AV_CODEC_ID_NELLYMOSER,
-    .priv_data_size = sizeof(NellyMoserDecodeContext),
-    .init           = decode_init,
-    .close          = decode_end,
-    .decode         = decode_tag,
-    .capabilities   = AV_CODEC_CAP_DR1 | AV_CODEC_CAP_PARAM_CHANGE,
-    .sample_fmts    = (const enum AVSampleFormat[]) { AV_SAMPLE_FMT_FLT,
-                                                      AV_SAMPLE_FMT_NONE },
+    "nellymoser",
+    AVMEDIA_TYPE_AUDIO,
+    CODEC_ID_NELLYMOSER,
+    sizeof(NellyMoserDecodeContext),
+    decode_init,
+    NULL,
+    decode_end,
+    decode_tag,
+    .long_name = NULL_IF_CONFIG_SMALL("Nellymoser Asao"),
 };
+

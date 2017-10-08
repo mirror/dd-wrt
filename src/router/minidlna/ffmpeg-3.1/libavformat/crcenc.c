@@ -19,8 +19,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include <inttypes.h>
-
 #include "libavutil/adler32.h"
 #include "avformat.h"
 
@@ -50,20 +48,21 @@ static int crc_write_trailer(struct AVFormatContext *s)
     CRCState *crc = s->priv_data;
     char buf[64];
 
-    snprintf(buf, sizeof(buf), "CRC=0x%08"PRIx32"\n", crc->crcval);
+    snprintf(buf, sizeof(buf), "CRC=0x%08x\n", crc->crcval);
     avio_write(s->pb, buf, strlen(buf));
-
+    avio_flush(s->pb);
     return 0;
 }
 
 AVOutputFormat ff_crc_muxer = {
-    .name              = "crc",
-    .long_name         = NULL_IF_CONFIG_SMALL("CRC testing"),
-    .priv_data_size    = sizeof(CRCState),
-    .audio_codec       = AV_CODEC_ID_PCM_S16LE,
-    .video_codec       = AV_CODEC_ID_RAWVIDEO,
-    .write_header      = crc_write_header,
-    .write_packet      = crc_write_packet,
-    .write_trailer     = crc_write_trailer,
-    .flags             = AVFMT_NOTIMESTAMPS,
+    "crc",
+    NULL_IF_CONFIG_SMALL("CRC testing format"),
+    NULL,
+    "",
+    sizeof(CRCState),
+    CODEC_ID_PCM_S16LE,
+    CODEC_ID_RAWVIDEO,
+    crc_write_header,
+    crc_write_packet,
+    crc_write_trailer,
 };

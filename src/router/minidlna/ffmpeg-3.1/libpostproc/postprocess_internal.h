@@ -20,7 +20,7 @@
 
 /**
  * @file
- * internal API header.
+ * internal api header.
  */
 
 #ifndef POSTPROC_POSTPROCESS_INTERNAL_H
@@ -28,8 +28,6 @@
 
 #include <string.h>
 #include "libavutil/avutil.h"
-#include "libavutil/intmath.h"
-#include "libavutil/log.h"
 #include "postprocess.h"
 
 #define V_DEBLOCK       0x01
@@ -54,7 +52,7 @@
 #define H_X1_FILTER     0x2000                  // 8192
 #define H_A_DEBLOCK     0x4000
 
-/// select between full y range (255-0) or standard one (234-16)
+/// select between full y range (255-0) or standart one (234-16)
 #define FULL_Y_RANGE    0x8000                  // 32768
 
 //Deinterlacing Filters
@@ -68,8 +66,6 @@
 
 #define TEMP_NOISE_FILTER               0x100000
 #define FORCE_QUANT                     0x200000
-#define BITEXACT                        0x1000000
-#define VISUALIZE                       0x2000000
 
 //use if you want a faster postprocessing code
 //cannot differentiate between chroma & luma filters (both on or both off)
@@ -77,8 +73,12 @@
 //filters on
 //#define COMPILE_TIME_MODE 0x77
 
+static inline int CLIP(int a){
+    if(a&256) return ((a)>>31)^(-1);
+    else      return a;
+}
 /**
- * Postprocessing filter.
+ * Postprocessng filter.
  */
 struct PPFilter{
     const char *shortName;
@@ -90,16 +90,16 @@ struct PPFilter{
 };
 
 /**
- * Postprocessing mode.
+ * Postprocessng mode.
  */
 typedef struct PPMode{
-    int lumMode;                    ///< activates filters for luminance
-    int chromMode;                  ///< activates filters for chrominance
+    int lumMode;                    ///< acivates filters for luminance
+    int chromMode;                  ///< acivates filters for chrominance
     int error;                      ///< non zero on error
 
-    int minAllowedY;                ///< for brightness correction
-    int maxAllowedY;                ///< for brightness correction
-    AVRational maxClippedThreshold; ///< amount of "black" you are willing to lose to get a brightness-corrected picture
+    int minAllowedY;                ///< for brigtness correction
+    int maxAllowedY;                ///< for brihtness correction
+    float maxClippedThreshold;      ///< amount of "black" u r willing to loose to get a brightness corrected picture
 
     int maxTmpNoise[3];             ///< for Temporal Noise Reducing filter (Maximal sum of abs differences)
 
@@ -143,11 +143,8 @@ typedef struct PPContext{
     DECLARE_ALIGNED(8, uint64_t, pQPb);
     DECLARE_ALIGNED(8, uint64_t, pQPb2);
 
-    DECLARE_ALIGNED(32, uint64_t, pQPb_block)[4];
-    DECLARE_ALIGNED(32, uint64_t, pQPb2_block)[4];
-
-    DECLARE_ALIGNED(32, uint64_t, mmxDcOffset)[64];
-    DECLARE_ALIGNED(32, uint64_t, mmxDcThreshold)[64];
+    DECLARE_ALIGNED(8, uint64_t, mmxDcOffset)[64];
+    DECLARE_ALIGNED(8, uint64_t, mmxDcThreshold)[64];
 
     QP_STORE_T *stdQPTable;       ///< used to fix MPEG2 style qscale
     QP_STORE_T *nonBQPTable;
@@ -155,9 +152,6 @@ typedef struct PPContext{
 
     int QP;
     int nonBQP;
-
-    DECLARE_ALIGNED(32, int, QP_block)[4];
-    DECLARE_ALIGNED(32, int, nonBQP_block)[4];
 
     int frameNum;
 

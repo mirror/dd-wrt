@@ -20,17 +20,16 @@
  */
 
 #include "avformat.h"
-#include "internal.h"
 #include "voc.h"
 #include "libavutil/intreadwrite.h"
 
-typedef struct C93BlockRecord {
+typedef struct {
     uint16_t index;
     uint8_t length;
     uint8_t frames;
 } C93BlockRecord;
 
-typedef struct C93DemuxContext {
+typedef struct {
     VocDecContext voc;
 
     C93BlockRecord block_records[512];
@@ -57,7 +56,8 @@ static int probe(AVProbeData *p)
     return AVPROBE_SCORE_MAX;
 }
 
-static int read_header(AVFormatContext *s)
+static int read_header(AVFormatContext *s,
+                           AVFormatParameters *ap)
 {
     AVStream *video;
     AVIOContext *pb = s->pb;
@@ -79,17 +79,17 @@ static int read_header(AVFormatContext *s)
     /* Audio streams are added if audio packets are found */
     s->ctx_flags |= AVFMTCTX_NOHEADER;
 
-    video = avformat_new_stream(s, NULL);
+    video = av_new_stream(s, 0);
     if (!video)
         return AVERROR(ENOMEM);
 
-    video->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
-    video->codecpar->codec_id = AV_CODEC_ID_C93;
-    video->codecpar->width = 320;
-    video->codecpar->height = 192;
+    video->codec->codec_type = AVMEDIA_TYPE_VIDEO;
+    video->codec->codec_id = CODEC_ID_C93;
+    video->codec->width = 320;
+    video->codec->height = 192;
     /* 4:3 320x200 with 8 empty lines */
     video->sample_aspect_ratio = (AVRational) { 5, 6 };
-    avpriv_set_pts_info(video, 64, 2, 25);
+    av_set_pts_info(video, 64, 2, 25);
     video->nb_frames = framecount;
     video->duration = framecount;
     video->start_time = 0;
@@ -117,13 +117,13 @@ static int read_packet(AVFormatContext *s, AVPacket *pkt)
         datasize = avio_rl16(pb);
         if (datasize > 42) {
             if (!c93->audio) {
-                c93->audio = avformat_new_stream(s, NULL);
+                c93->audio = av_new_stream(s, 1);
                 if (!c93->audio)
                     return AVERROR(ENOMEM);
-                c93->audio->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
+                c93->audio->codec->codec_type = AVMEDIA_TYPE_AUDIO;
             }
             avio_skip(pb, 26); /* VOC header */
-            ret = ff_voc_get_packet(s, pkt, c93->audio, datasize - 26);
+            ret = voc_get_packet(s, pkt, c93->audio, datasize - 26);
             if (ret > 0) {
                 pkt->stream_index = 1;
                 pkt->flags |= AV_PKT_FLAG_KEY;
@@ -133,7 +133,7 @@ static int read_packet(AVFormatContext *s, AVPacket *pkt)
     }
     if (c93->current_frame >= br->frames) {
         if (c93->current_block >= 511 || !br[1].length)
-            return AVERROR_EOF;
+            return AVERROR(EIO);
         br++;
         c93->current_block++;
         c93->current_frame = 0;
@@ -188,15 +188,15 @@ static int read_packet(AVFormatContext *s, AVPacket *pkt)
     return 0;
 
     fail:
-    av_packet_unref(pkt);
+    av_free_packet(pkt);
     return ret;
 }
 
 AVInputFormat ff_c93_demuxer = {
-    .name           = "c93",
-    .long_name      = NULL_IF_CONFIG_SMALL("Interplay C93"),
-    .priv_data_size = sizeof(C93DemuxContext),
-    .read_probe     = probe,
-    .read_header    = read_header,
-    .read_packet    = read_packet,
+    "c93",
+    NULL_IF_CONFIG_SMALL("Interplay C93"),
+    sizeof(C93DemuxContext),
+    probe,
+    read_header,
+    read_packet,
 };

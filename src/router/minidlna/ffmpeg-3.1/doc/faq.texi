@@ -1,5 +1,4 @@
 \input texinfo @c -*- texinfo -*-
-@documentencoding UTF-8
 
 @settitle FFmpeg FAQ
 @titlepage
@@ -11,6 +10,22 @@
 @contents
 
 @chapter General Questions
+
+@section When will the next FFmpeg version be released? / Why are FFmpeg releases so few and far between?
+
+Like most open source projects FFmpeg suffers from a certain lack of
+manpower. For this reason the developers have to prioritize the work
+they do and putting out releases is not at the top of the list, fixing
+bugs and reviewing patches takes precedence. Please don't complain or
+request more timely and/or frequent releases unless you are willing to
+help out creating them.
+
+@section I have a problem with an old version of FFmpeg; where should I report it?
+Nowhere. We do not support old FFmpeg versions in any way, we simply lack
+the time, motivation and manpower to do so. If you have a problem with an
+old version of FFmpeg, upgrade to the latest git snapshot. If you
+still experience the problem, then you can report it according to the
+guidelines in @url{http://ffmpeg.org/bugreports.html}.
 
 @section Why doesn't FFmpeg support feature [xyz]?
 
@@ -24,6 +39,30 @@ it implemented is to undertake the task yourself or sponsor a developer.
 No. Windows DLLs are not portable, bloated and often slow.
 Moreover FFmpeg strives to support all codecs natively.
 A DLL loader is not conducive to that goal.
+
+@section My bug report/mail to ffmpeg-devel/user has not received any replies.
+
+Likely reasons
+@itemize
+@item We are busy and haven't had time yet to read your report or
+investigate the issue.
+@item You didn't follow @url{http://ffmpeg.org/bugreports.html}.
+@item You didn't use git HEAD.
+@item You reported a segmentation fault without gdb output.
+@item You describe a problem but not how to reproduce it.
+@item It's unclear if you use ffmpeg as command line tool or use
+libav* from another application.
+@item You speak about a video having problems on playback but
+not what you use to play it.
+@item We have no faint clue what you are talking about besides
+that it is related to FFmpeg.
+@end itemize
+
+@section Is there a forum for FFmpeg? I do not like mailing lists.
+
+You may view our mailing lists with a more forum-alike look here:
+@url{http://dir.gmane.org/gmane.comp.video.ffmpeg.user},
+but, if you post, please remember that our mailing list rules still apply there.
 
 @section I cannot read this file although this format seems to be supported by ffmpeg.
 
@@ -80,74 +119,12 @@ not a bug they should fix:
 Then again, some of them do not know the difference between an undecidable
 problem and an NP-hard problem...
 
-@section I have installed this library with my distro's package manager. Why does @command{configure} not see it?
-
-Distributions usually split libraries in several packages. The main package
-contains the files necessary to run programs using the library. The
-development package contains the files necessary to build programs using the
-library. Sometimes, docs and/or data are in a separate package too.
-
-To build FFmpeg, you need to install the development package. It is usually
-called @file{libfoo-dev} or @file{libfoo-devel}. You can remove it after the
-build is finished, but be sure to keep the main package.
-
-@section How do I make @command{pkg-config} find my libraries?
-
-Somewhere along with your libraries, there is a @file{.pc} file (or several)
-in a @file{pkgconfig} directory. You need to set environment variables to
-point @command{pkg-config} to these files.
-
-If you need to @emph{add} directories to @command{pkg-config}'s search list
-(typical use case: library installed separately), add it to
-@code{$PKG_CONFIG_PATH}:
-
-@example
-export PKG_CONFIG_PATH=/opt/x264/lib/pkgconfig:/opt/opus/lib/pkgconfig
-@end example
-
-If you need to @emph{replace} @command{pkg-config}'s search list
-(typical use case: cross-compiling), set it in
-@code{$PKG_CONFIG_LIBDIR}:
-
-@example
-export PKG_CONFIG_LIBDIR=/home/me/cross/usr/lib/pkgconfig:/home/me/cross/usr/local/lib/pkgconfig
-@end example
-
-If you need to know the library's internal dependencies (typical use: static
-linking), add the @code{--static} option to @command{pkg-config}:
-
-@example
-./configure --pkg-config-flags=--static
-@end example
-
-@section How do I use @command{pkg-config} when cross-compiling?
-
-The best way is to install @command{pkg-config} in your cross-compilation
-environment. It will automatically use the cross-compilation libraries.
-
-You can also use @command{pkg-config} from the host environment by
-specifying explicitly @code{--pkg-config=pkg-config} to @command{configure}.
-In that case, you must point @command{pkg-config} to the correct directories
-using the @code{PKG_CONFIG_LIBDIR}, as explained in the previous entry.
-
-As an intermediate solution, you can place in your cross-compilation
-environment a script that calls the host @command{pkg-config} with
-@code{PKG_CONFIG_LIBDIR} set. That script can look like that:
-
-@example
-#!/bin/sh
-PKG_CONFIG_LIBDIR=/path/to/cross/lib/pkgconfig
-export PKG_CONFIG_LIBDIR
-exec /usr/bin/pkg-config "$@@"
-@end example
-
 @chapter Usage
 
 @section ffmpeg does not work; what is wrong?
 
-Try a @code{make distclean} in the ffmpeg source directory before the build.
-If this does not help see
-(@url{https://ffmpeg.org/bugreports.html}).
+Try a @code{make distclean} in the ffmpeg source directory before the build. If this does not help see
+(@url{http://ffmpeg.org/bugreports.html}).
 
 @section How do I encode single pictures into movies?
 
@@ -156,21 +133,12 @@ For example, img1.jpg, img2.jpg, img3.jpg,...
 Then you may run:
 
 @example
-ffmpeg -f image2 -i img%d.jpg /tmp/a.mpg
+  ffmpeg -f image2 -i img%d.jpg /tmp/a.mpg
 @end example
 
 Notice that @samp{%d} is replaced by the image number.
 
-@file{img%03d.jpg} means the sequence @file{img001.jpg}, @file{img002.jpg}, etc.
-
-Use the @option{-start_number} option to declare a starting number for
-the sequence. This is useful if your sequence does not start with
-@file{img001.jpg} but is still in a numerical order. The following
-example will start with @file{img100.jpg}:
-
-@example
-ffmpeg -f image2 -start_number 100 -i img%d.jpg /tmp/a.mpg
-@end example
+@file{img%03d.jpg} means the sequence @file{img001.jpg}, @file{img002.jpg}, etc...
 
 If you have large number of pictures to rename, you can use the
 following command to ease the burden. The command, using the bourne
@@ -179,7 +147,7 @@ that match @code{*jpg} to the @file{/tmp} directory in the sequence of
 @file{img001.jpg}, @file{img002.jpg} and so on.
 
 @example
-x=1; for i in *jpg; do counter=$(printf %03d $x); ln -s "$i" /tmp/img"$counter".jpg; x=$(($x+1)); done
+  x=1; for i in *jpg; do counter=$(printf %03d $x); ln -s "$i" /tmp/img"$counter".jpg; x=$(($x+1)); done
 @end example
 
 If you want to sequence them by oldest modified first, substitute
@@ -188,23 +156,17 @@ If you want to sequence them by oldest modified first, substitute
 Then run:
 
 @example
-ffmpeg -f image2 -i /tmp/img%03d.jpg /tmp/a.mpg
+  ffmpeg -f image2 -i /tmp/img%03d.jpg /tmp/a.mpg
 @end example
 
 The same logic is used for any image format that ffmpeg reads.
-
-You can also use @command{cat} to pipe images to ffmpeg:
-
-@example
-cat *.jpg | ffmpeg -f image2pipe -c:v mjpeg -i - output.mpg
-@end example
 
 @section How do I encode movie to single pictures?
 
 Use:
 
 @example
-ffmpeg -i movie.mpg movie%d.jpg
+  ffmpeg -i movie.mpg movie%d.jpg
 @end example
 
 The @file{movie.mpg} used as input will be converted to
@@ -212,15 +174,15 @@ The @file{movie.mpg} used as input will be converted to
 
 Instead of relying on file format self-recognition, you may also use
 @table @option
-@item -c:v ppm
-@item -c:v png
-@item -c:v mjpeg
+@item -vcodec ppm
+@item -vcodec png
+@item -vcodec mjpeg
 @end table
 to force the encoding.
 
 Applying that to the previous example:
 @example
-ffmpeg -i movie.mpg -f image2 -c:v mjpeg menu%d.jpg
+  ffmpeg -i movie.mpg -f image2 -vcodec mjpeg menu%d.jpg
 @end example
 
 Beware that there is no "jpeg" codec. Use "mjpeg" instead.
@@ -239,20 +201,58 @@ Use @file{-} as file name.
 
 Try '-f image2 test%d.jpg'.
 
-@section Why can I not change the frame rate?
+@section Why can I not change the framerate?
 
-Some codecs, like MPEG-1/2, only allow a small number of fixed frame rates.
-Choose a different codec with the -c:v command line option.
+Some codecs, like MPEG-1/2, only allow a small number of fixed framerates.
+Choose a different codec with the -vcodec command line option.
 
 @section How do I encode Xvid or DivX video with ffmpeg?
 
 Both Xvid and DivX (version 4+) are implementations of the ISO MPEG-4
 standard (note that there are many other coding formats that use this
-same standard). Thus, use '-c:v mpeg4' to encode in these formats. The
+same standard). Thus, use '-vcodec mpeg4' to encode in these formats. The
 default fourcc stored in an MPEG-4-coded file will be 'FMP4'. If you want
 a different fourcc, use the '-vtag' option. E.g., '-vtag xvid' will
 force the fourcc 'xvid' to be stored as the video fourcc rather than the
 default.
+
+@section How do I encode videos which play on the iPod?
+
+@table @option
+@item needed stuff
+-acodec libfaac -vcodec mpeg4 width<=320 height<=240
+@item working stuff
+mv4, title
+@item non-working stuff
+B-frames
+@item example command line
+ffmpeg -i input -acodec libfaac -ab 128k -vcodec mpeg4 -b 1200k -mbd 2 -flags +mv4+aic -trellis 2 -cmp 2 -subcmp 2 -s 320x180 -metadata title=X output.mp4
+@end table
+
+@section How do I encode videos which play on the PSP?
+
+@table @option
+@item needed stuff
+-acodec libfaac -vcodec mpeg4 width*height<=76800 width%16=0 height%16=0 -ar 24000 -r 30000/1001 or 15000/1001 -f psp
+@item working stuff
+mv4, title
+@item non-working stuff
+B-frames
+@item example command line
+ffmpeg -i input -acodec libfaac -ab 128k -vcodec mpeg4 -b 1200k -ar 24000 -mbd 2 -flags +mv4+aic -trellis 2 -cmp 2 -subcmp 2 -s 368x192 -r 30000/1001 -metadata title=X -f psp output.mp4
+@item needed stuff for H.264
+-acodec libfaac -vcodec libx264 width*height<=76800 width%16=0? height%16=0? -ar 48000 -coder 1 -r 30000/1001 or 15000/1001 -f psp
+@item working stuff for H.264
+title, loop filter
+@item non-working stuff for H.264
+CAVLC
+@item example command line
+ffmpeg -i input -acodec libfaac -ab 128k -vcodec libx264 -b 1200k -ar 48000 -mbd 2 -coder 1 -cmp 2 -subcmp 2 -s 368x192 -r 30000/1001 -metadata title=X -f psp -flags loop -trellis 2 -partitions parti4x4+parti8x8+partp4x4+partp8x8+partb8x8 output.mp4
+@item higher resolution for newer PSP firmwares, width<=480, height<=272
+-vcodec libx264 -level 21 -coder 1 -f psp
+@item example command line
+ffmpeg -i input -acodec libfaac -ab 128k -ac 2 -ar 48000 -vcodec libx264 -level 21 -b 640k -coder 1 -f psp -flags +loop -trellis 2 -partitions +parti4x4+parti8x8+partp4x4+partp8x8+partb8x8 -g 250 -s 480x272 output.mp4
+@end table
 
 @section Which are good parameters for encoding high quality MPEG-4?
 
@@ -278,79 +278,19 @@ then you may use any file that DirectShow can read as input.
 
 Just create an "input.avs" text file with this single line ...
 @example
-DirectShowSource("C:\path to your file\yourfile.asf")
+  DirectShowSource("C:\path to your file\yourfile.asf")
 @end example
 ... and then feed that text file to ffmpeg:
 @example
-ffmpeg -i input.avs
+  ffmpeg -i input.avs
 @end example
 
-For ANY other help on AviSynth, please visit the
-@uref{http://www.avisynth.org/, AviSynth homepage}.
+For ANY other help on Avisynth, please visit @url{http://www.avisynth.org/}.
 
 @section How can I join video files?
 
-To "join" video files is quite ambiguous. The following list explains the
-different kinds of "joining" and points out how those are addressed in
-FFmpeg. To join video files may mean:
-
-@itemize
-
-@item
-To put them one after the other: this is called to @emph{concatenate} them
-(in short: concat) and is addressed
-@ref{How can I concatenate video files, in this very faq}.
-
-@item
-To put them together in the same file, to let the user choose between the
-different versions (example: different audio languages): this is called to
-@emph{multiplex} them together (in short: mux), and is done by simply
-invoking ffmpeg with several @option{-i} options.
-
-@item
-For audio, to put all channels together in a single stream (example: two
-mono streams into one stereo stream): this is sometimes called to
-@emph{merge} them, and can be done using the
-@url{ffmpeg-filters.html#amerge, @code{amerge}} filter.
-
-@item
-For audio, to play one on top of the other: this is called to @emph{mix}
-them, and can be done by first merging them into a single stream and then
-using the @url{ffmpeg-filters.html#pan, @code{pan}} filter to mix
-the channels at will.
-
-@item
-For video, to display both together, side by side or one on top of a part of
-the other; it can be done using the
-@url{ffmpeg-filters.html#overlay, @code{overlay}} video filter.
-
-@end itemize
-
-@anchor{How can I concatenate video files}
-@section How can I concatenate video files?
-
-There are several solutions, depending on the exact circumstances.
-
-@subsection Concatenating using the concat @emph{filter}
-
-FFmpeg has a @url{ffmpeg-filters.html#concat,
-@code{concat}} filter designed specifically for that, with examples in the
-documentation. This operation is recommended if you need to re-encode.
-
-@subsection Concatenating using the concat @emph{demuxer}
-
-FFmpeg has a @url{ffmpeg-formats.html#concat,
-@code{concat}} demuxer which you can use when you want to avoid a re-encode and
-your format doesn't support file level concatenation.
-
-@subsection Concatenating using the concat @emph{protocol} (file level)
-
-FFmpeg has a @url{ffmpeg-protocols.html#concat,
-@code{concat}} protocol designed specifically for that, with examples in the
-documentation.
-
-A few multimedia containers (MPEG-1, MPEG-2 PS, DV) allow one to concatenate
-video by merely concatenating the files containing them.
+A few multimedia containers (MPEG-1, MPEG-2 PS, DV) allow to join video files by
+merely concatenating them.
 
 Hence you may concatenate your multimedia files by first transcoding them to
 these privileged formats, then using the humble @code{cat} command (or the
@@ -358,37 +298,27 @@ equally humble @code{copy} under Windows), and finally transcoding back to your
 format of choice.
 
 @example
-ffmpeg -i input1.avi -qscale:v 1 intermediate1.mpg
-ffmpeg -i input2.avi -qscale:v 1 intermediate2.mpg
+ffmpeg -i input1.avi -sameq intermediate1.mpg
+ffmpeg -i input2.avi -sameq intermediate2.mpg
 cat intermediate1.mpg intermediate2.mpg > intermediate_all.mpg
-ffmpeg -i intermediate_all.mpg -qscale:v 2 output.avi
+ffmpeg -i intermediate_all.mpg -sameq output.avi
 @end example
 
-Additionally, you can use the @code{concat} protocol instead of @code{cat} or
-@code{copy} which will avoid creation of a potentially huge intermediate file.
+Notice that you should either use @code{-sameq} or set a reasonably high
+bitrate for your intermediate and output files, if you want to preserve
+video quality.
 
-@example
-ffmpeg -i input1.avi -qscale:v 1 intermediate1.mpg
-ffmpeg -i input2.avi -qscale:v 1 intermediate2.mpg
-ffmpeg -i concat:"intermediate1.mpg|intermediate2.mpg" -c copy intermediate_all.mpg
-ffmpeg -i intermediate_all.mpg -qscale:v 2 output.avi
-@end example
-
-Note that you may need to escape the character "|" which is special for many
-shells.
-
-Another option is usage of named pipes, should your platform support it:
+Also notice that you may avoid the huge intermediate files by taking advantage
+of named pipes, should your platform support it:
 
 @example
 mkfifo intermediate1.mpg
 mkfifo intermediate2.mpg
-ffmpeg -i input1.avi -qscale:v 1 -y intermediate1.mpg < /dev/null &
-ffmpeg -i input2.avi -qscale:v 1 -y intermediate2.mpg < /dev/null &
+ffmpeg -i input1.avi -sameq -y intermediate1.mpg < /dev/null &
+ffmpeg -i input2.avi -sameq -y intermediate2.mpg < /dev/null &
 cat intermediate1.mpg intermediate2.mpg |\
-ffmpeg -f mpeg -i - -c:v mpeg4 -acodec libmp3lame output.avi
+ffmpeg -f mpeg -i - -sameq -vcodec mpeg4 -acodec libmp3lame output.avi
 @end example
-
-@subsection Concatenating using raw audio and video
 
 Similarly, the yuv4mpegpipe format, and the raw video, raw audio codecs also
 allow concatenation, and the transcoding step is almost lossless.
@@ -397,8 +327,7 @@ from all but the first stream. This can be accomplished by piping through
 @code{tail} as seen below. Note that when piping through @code{tail} you
 must use command grouping, @code{@{  ;@}}, to background properly.
 
-For example, let's say we want to concatenate two FLV files into an
-output.flv file:
+For example, let's say we want to join two FLV files into an output.flv file:
 
 @example
 mkfifo temp1.a
@@ -415,104 +344,33 @@ cat temp1.a temp2.a > all.a &
 cat temp1.v temp2.v > all.v &
 ffmpeg -f u16le -acodec pcm_s16le -ac 2 -ar 44100 -i all.a \
        -f yuv4mpegpipe -i all.v \
-       -y output.flv
+       -sameq -y output.flv
 rm temp[12].[av] all.[av]
 @end example
 
-@section Using @option{-f lavfi}, audio becomes mono for no apparent reason.
+@section The ffmpeg program does not respect the -maxrate setting, some frames are bigger than maxrate/fps.
 
-Use @option{-dumpgraph -} to find out exactly where the channel layout is
-lost.
+Read the MPEG spec about video buffer verifier.
 
-Most likely, it is through @code{auto-inserted aresample}. Try to understand
-why the converting filter was needed at that place.
+@section I want CBR, but no matter what I do frame sizes differ.
 
-Just before the output is a likely place, as @option{-f lavfi} currently
-only support packed S16.
+You do not understand what CBR is, please read the MPEG spec.
+Read about video buffer verifier and constant bitrate.
+The one sentence summary is that there is a buffer and the input rate is
+constant, the output can vary as needed.
 
-Then insert the correct @code{aformat} explicitly in the filtergraph,
-specifying the exact format.
+@section How do I check if a stream is CBR?
 
-@example
-aformat=sample_fmts=s16:channel_layouts=stereo
-@end example
+To quote the MPEG-2 spec:
+"There is no way to tell that a bitstream is constant bitrate without
+examining all of the vbv_delay values and making complicated computations."
 
-@section Why does FFmpeg not see the subtitles in my VOB file?
-
-VOB and a few other formats do not have a global header that describes
-everything present in the file. Instead, applications are supposed to scan
-the file to see what it contains. Since VOB files are frequently large, only
-the beginning is scanned. If the subtitles happen only later in the file,
-they will not be initially detected.
-
-Some applications, including the @code{ffmpeg} command-line tool, can only
-work with streams that were detected during the initial scan; streams that
-are detected later are ignored.
-
-The size of the initial scan is controlled by two options: @code{probesize}
-(default ~5 Mo) and @code{analyzeduration} (default 5,000,000 µs = 5 s). For
-the subtitle stream to be detected, both values must be large enough.
-
-@section Why was the @command{ffmpeg} @option{-sameq} option removed? What to use instead?
-
-The @option{-sameq} option meant "same quantizer", and made sense only in a
-very limited set of cases. Unfortunately, a lot of people mistook it for
-"same quality" and used it in places where it did not make sense: it had
-roughly the expected visible effect, but achieved it in a very inefficient
-way.
-
-Each encoder has its own set of options to set the quality-vs-size balance,
-use the options for the encoder you are using to set the quality level to a
-point acceptable for your tastes. The most common options to do that are
-@option{-qscale} and @option{-qmax}, but you should peruse the documentation
-of the encoder you chose.
-
-@section I have a stretched video, why does scaling does not fix it?
-
-A lot of video codecs and formats can store the @emph{aspect ratio} of the
-video: this is the ratio between the width and the height of either the full
-image (DAR, display aspect ratio) or individual pixels (SAR, sample aspect
-ratio). For example, EGA screens at resolution 640×350 had 4:3 DAR and 35:48
-SAR.
-
-Most still image processing work with square pixels, i.e. 1:1 SAR, but a lot
-of video standards, especially from the analogic-numeric transition era, use
-non-square pixels.
-
-Most processing filters in FFmpeg handle the aspect ratio to avoid
-stretching the image: cropping adjusts the DAR to keep the SAR constant,
-scaling adjusts the SAR to keep the DAR constant.
-
-If you want to stretch, or “unstretch”, the image, you need to override the
-information with the
-@url{ffmpeg-filters.html#setdar_002c-setsar, @code{setdar or setsar filters}}.
-
-Do not forget to examine carefully the original video to check whether the
-stretching comes from the image or from the aspect ratio information.
-
-For example, to fix a badly encoded EGA capture, use the following commands,
-either the first one to upscale to square pixels or the second one to set
-the correct aspect ratio or the third one to avoid transcoding (may not work
-depending on the format / codec / player / phase of the moon):
-
-@example
-ffmpeg -i ega_screen.nut -vf scale=640:480,setsar=1 ega_screen_scaled.nut
-ffmpeg -i ega_screen.nut -vf setdar=4/3 ega_screen_anamorphic.nut
-ffmpeg -i ega_screen.nut -aspect 4/3 -c copy ega_screen_overridden.nut
-@end example
 
 @chapter Development
 
 @section Are there examples illustrating how to use the FFmpeg libraries, particularly libavcodec and libavformat?
 
-Yes. Check the @file{doc/examples} directory in the source
-repository, also available online at:
-@url{https://github.com/FFmpeg/FFmpeg/tree/master/doc/examples}.
-
-Examples are also installed by default, usually in
-@code{$PREFIX/share/ffmpeg/examples}.
-
-Also you may read the Developers Guide of the FFmpeg documentation. Alternatively,
+Yes. Read the Developers Guide of the FFmpeg documentation. Alternatively,
 examine the source code for one of the many open source projects that
 already incorporate FFmpeg at (@url{projects.html}).
 
@@ -524,52 +382,64 @@ with @code{#ifdef}s related to the compiler.
 
 @section Is Microsoft Visual C++ supported?
 
-Yes. Please see the @uref{platform.html, Microsoft Visual C++}
-section in the FFmpeg documentation.
+No. Microsoft Visual C++ is not compliant to the C99 standard and does
+not - among other things - support the inline assembly used in FFmpeg.
+If you wish to use MSVC++ for your
+project then you can link the MSVC++ code with libav* as long as
+you compile the latter with a working C compiler. For more information, see
+the @emph{Microsoft Visual C++ compatibility} section in the FFmpeg
+documentation.
+
+There have been efforts to make FFmpeg compatible with MSVC++ in the
+past. However, they have all been rejected as too intrusive, especially
+since MinGW does the job adequately. None of the core developers
+work with MSVC++ and thus this item is low priority. Should you find
+the silver bullet that solves this problem, feel free to shoot it at us.
+
+We strongly recommend you to move over from MSVC++ to MinGW tools.
+
+@section Can I use FFmpeg or libavcodec under Windows?
+
+Yes, but the Cygwin or MinGW tools @emph{must} be used to compile FFmpeg.
+Read the @emph{Windows} section in the FFmpeg documentation to find more
+information.
+
+To get help and instructions for building FFmpeg under Windows, check out
+the FFmpeg Windows Help Forum at
+@url{http://ffmpeg.arrozcru.org/}.
 
 @section Can you add automake, libtool or autoconf support?
 
 No. These tools are too bloated and they complicate the build.
 
-@section Why not rewrite FFmpeg in object-oriented C++?
+@section Why not rewrite ffmpeg in object-oriented C++?
 
 FFmpeg is already organized in a highly modular manner and does not need to
 be rewritten in a formal object language. Further, many of the developers
 favor straight C; it works for them. For more arguments on this matter,
-read @uref{http://www.tux.org/lkml/#s15, "Programming Religion"}.
+read "Programming Religion" at (@url{http://www.tux.org/lkml/#s15}).
 
 @section Why are the ffmpeg programs devoid of debugging symbols?
 
-The build process creates @command{ffmpeg_g}, @command{ffplay_g}, etc. which
-contain full debug information. Those binaries are stripped to create
-@command{ffmpeg}, @command{ffplay}, etc. If you need the debug information, use
-the *_g versions.
+The build process creates ffmpeg_g, ffplay_g, etc. which contain full debug
+information. Those binaries are stripped to create ffmpeg, ffplay, etc. If
+you need the debug information, use the *_g versions.
 
 @section I do not like the LGPL, can I contribute code under the GPL instead?
 
 Yes, as long as the code is optional and can easily and cleanly be placed
-under #if CONFIG_GPL without breaking anything. So, for example, a new codec
+under #if CONFIG_GPL without breaking anything. So for example a new codec
 or filter would be OK under GPL while a bug fix to LGPL code would not.
 
-@section I'm using FFmpeg from within my C application but the linker complains about missing symbols from the libraries themselves.
+@section I want to compile xyz.c alone but my compiler produced many errors.
 
-FFmpeg builds static libraries by default. In static libraries, dependencies
-are not handled. That has two consequences. First, you must specify the
-libraries in dependency order: @code{-lavdevice} must come before
-@code{-lavformat}, @code{-lavutil} must come after everything else, etc.
-Second, external libraries that are used in FFmpeg have to be specified too.
+Common code is in its own files in libav* and is used by the individual
+codecs. They will not work without the common parts, you have to compile
+the whole libav*. If you wish, disable some parts with configure switches.
+You can also try to hack it and remove more, but if you had problems fixing
+the compilation failure then you are probably not qualified for this.
 
-An easy way to get the full list of required libraries in dependency order
-is to use @code{pkg-config}.
-
-@example
-c99 -o program program.c $(pkg-config --cflags --libs libavformat libavcodec)
-@end example
-
-See @file{doc/example/Makefile} and @file{doc/example/pc-uninstalled} for
-more details.
-
-@section I'm using FFmpeg from within my C++ application but the linker complains about missing symbols which seem to be available.
+@section I'm using libavcodec from within my C++ application but the linker complains about missing symbols which seem to be available.
 
 FFmpeg is a pure C project, so to use the libraries within your C++ application
 you need to explicitly state that you are using a C library. You can do this by
@@ -579,17 +449,29 @@ See @url{http://www.parashift.com/c++-faq-lite/mixing-c-and-cpp.html#faq-32.3}
 
 @section I'm using libavutil from within my C++ application but the compiler complains about 'UINT64_C' was not declared in this scope
 
-FFmpeg is a pure C project using C99 math features, in order to enable C++
+Libav is a pure C project using C99 math features, in order to enable C++
 to use them you have to append -D__STDC_CONSTANT_MACROS to your CXXFLAGS
 
 @section I have a file in memory / a API different from *open/*read/ libc how do I use it with libavformat?
 
-You have to create a custom AVIOContext using @code{avio_alloc_context},
-see @file{libavformat/aviobuf.c} in FFmpeg and @file{libmpdemux/demux_lavf.c} in MPlayer or MPlayer2 sources.
+You have to implement a URLProtocol, see @file{libavformat/file.c} in
+FFmpeg and @file{libmpdemux/demux_lavf.c} in MPlayer sources.
+
+@section I get "No compatible shell script interpreter found." in MSys.
+
+The standard MSys bash (2.04) is broken. You need to install 2.05 or later.
+
+@section I get "./configure: line <xxx>: pr: command not found" in MSys.
+
+The standard MSys install doesn't come with pr. You need to get it from the coreutils package.
+
+@section Where can I find libav* headers for Pascal/Delphi?
+
+see @url{http://www.iversenit.dk/dev/ffmpeg-headers/}
 
 @section Where is the documentation about ffv1, msmpeg4, asv1, 4xm?
 
-see @url{https://www.ffmpeg.org/~michael/}
+see @url{http://www.ffmpeg.org/~michael/}
 
 @section How do I feed H.263-RTP (and other codecs in RTP) to libavcodec?
 
@@ -597,25 +479,12 @@ Even if peculiar since it is network oriented, RTP is a container like any
 other. You have to @emph{demux} RTP before feeding the payload to libavcodec.
 In this specific case please look at RFC 4629 to see how it should be done.
 
-@section AVStream.r_frame_rate is wrong, it is much larger than the frame rate.
+@section AVStream.r_frame_rate is wrong, it is much larger than the framerate.
 
-@code{r_frame_rate} is NOT the average frame rate, it is the smallest frame rate
+r_frame_rate is NOT the average framerate, it is the smallest framerate
 that can accurately represent all timestamps. So no, it is not
 wrong if it is larger than the average!
-For example, if you have mixed 25 and 30 fps content, then @code{r_frame_rate}
-will be 150 (it is the least common multiple).
-If you are looking for the average frame rate, see @code{AVStream.avg_frame_rate}.
-
-@section Why is @code{make fate} not running all tests?
-
-Make sure you have the fate-suite samples and the @code{SAMPLES} Make variable
-or @code{FATE_SAMPLES} environment variable or the @code{--samples}
-@command{configure} option is set to the right path.
-
-@section Why is @code{make fate} not finding the samples?
-
-Do you happen to have a @code{~} character in the samples path to indicate a
-home directory? The value is used in ways where the shell cannot expand it,
-causing FATE to not find files. Just replace @code{~} by the full path.
+For example, if you have mixed 25 and 30 fps content, then r_frame_rate
+will be 150.
 
 @bye

@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#! /usr/bin/perl -w
 
 #   Copyright (C) 1999, 2000, 2001 Free Software Foundation, Inc.
 
@@ -23,13 +23,11 @@
 # markup to Perl POD format.  It's intended to be used to extract
 # something suitable for a manpage from a Texinfo document.
 
-use warnings;
-
 $output = 0;
 $skipping = 0;
-%chapters = ();
-@chapters_sequence = ();
-$chapter = "";
+%sects = ();
+@sects_sequence = ();
+$section = "";
 @icstack = ();
 @endwstack = ();
 @skstack = ();
@@ -38,7 +36,7 @@ $shift = "";
 %defs = ();
 $fnno = 1;
 $inf = "";
-@ibase = ();
+$ibase = "";
 
 while ($_ = shift) {
     if (/^-D(.*)$/) {
@@ -54,8 +52,6 @@ while ($_ = shift) {
         die "flags may only contain letters, digits, hyphens, dashes and underscores\n"
             unless $flag =~ /^[a-zA-Z0-9_-]+$/;
         $defs{$flag} = $value;
-    } elsif (/^-I(.*)$/) {
-        push @ibase, $1 ne "" ? $1 : shift;
     } elsif (/^-/) {
         usage();
     } else {
@@ -65,12 +61,10 @@ while ($_ = shift) {
     }
 }
 
-push @ibase, ".";
-
 if (defined $in) {
     $inf = gensym();
     open($inf, "<$in") or die "opening \"$in\": $!\n";
-    push @ibase, $1 if $in =~ m|^(.+)/[^/]+$|;
+    $ibase = $1 if $in =~ m|^(.+)/[^/]+$|;
 } else {
     $inf = \*STDIN;
 }
@@ -80,7 +74,7 @@ if (defined $out) {
 }
 
 while(defined $inf) {
-INF: while(<$inf>) {
+while(<$inf>) {
     # Certain commands are discarded without further processing.
     /^\@(?:
          [a-z]+index            # @*index: useful only in complete manual
@@ -110,28 +104,23 @@ INF: while(<$inf>) {
         push @instack, $inf;
         $inf = gensym();
 
-        for (@ibase) {
-            open($inf, "<" . $_ . "/" . $1) and next INF;
-        }
-        die "cannot open $1: $!\n";
-    };
-
-    /^\@chapter\s+([A-Za-z ]+)/ and do {
-        # close old chapter
-        $chapters{$chapter_name} .= postprocess($chapter) if ($chapter_name);
-
-        # start new chapter
-        $chapter_name = $1, push (@chapters_sequence, $chapter_name) unless $skipping;
-        $chapters{$chapter_name} = "" unless exists $chapters{$chapter_name};
-        $chapter = "";
-        $output = 1;
+        # Try cwd and $ibase.
+        open($inf, "<" . $1)
+            or open($inf, "<" . $ibase . "/" . $1)
+                or die "cannot open $1 or $ibase/$1: $!\n";
         next;
     };
 
-    /^\@bye/ and do {
-        # close old chapter
-        $chapters{$chapter_name} .= postprocess($chapter) if ($chapter_name);
-        last INF;
+    # Look for blocks surrounded by @c man begin SECTION ... @c man end.
+    # This really oughta be @ifman ... @end ifman and the like, but such
+    # would require rev'ing all other Texinfo translators.
+    /^\@c\s+man\s+begin\s+([A-Za-z ]+)/ and $sect = $1, push (@sects_sequence, $sect), $output = 1, next;
+    /^\@c\s+man\s+end/ and do {
+        $sects{$sect} = "" unless exists $sects{$sect};
+        $sects{$sect} .= postprocess($section);
+        $section = "";
+        $output = 0;
+        next;
     };
 
     # handle variables
@@ -156,20 +145,20 @@ INF: while(<$inf>) {
         # Ignore @end foo, where foo is not an operation which may
         # cause us to skip, if we are presently skipping.
         my $ended = $1;
-        next if $skipping && $ended !~ /^(?:ifset|ifclear|ignore|menu|iftex|ifhtml|ifnothtml)$/;
+        next if $skipping && $ended !~ /^(?:ifset|ifclear|ignore|menu|iftex)$/;
 
         die "\@end $ended without \@$ended at line $.\n" unless defined $endw;
         die "\@$endw ended by \@end $ended at line $.\n" unless $ended eq $endw;
 
         $endw = pop @endwstack;
 
-        if ($ended =~ /^(?:ifset|ifclear|ignore|menu|iftex|ifhtml|ifnothtml)$/) {
+        if ($ended =~ /^(?:ifset|ifclear|ignore|menu|iftex)$/) {
             $skipping = pop @skstack;
             next;
-        } elsif ($ended =~ /^(?:example|smallexample|verbatim|display)$/) {
+        } elsif ($ended =~ /^(?:example|smallexample|display)$/) {
             $shift = "";
             $_ = "";        # need a paragraph break
-        } elsif ($ended =~ /^(?:itemize|enumerate|(?:multi|[fv])?table)$/) {
+        } elsif ($ended =~ /^(?:itemize|enumerate|[fv]?table)$/) {
             $_ = "\n=back\n";
             $ic = pop @icstack;
         } else {
@@ -196,11 +185,11 @@ INF: while(<$inf>) {
         next;
     };
 
-    /^\@(ignore|menu|iftex|ifhtml|ifnothtml)\b/ and do {
+    /^\@(ignore|menu|iftex)\b/ and do {
         push @endwstack, $endw;
         push @skstack, $skipping;
         $endw = $1;
-        $skipping = $endw !~ /ifnothtml/;
+        $skipping = 1;
         next;
     };
 
@@ -217,6 +206,7 @@ INF: while(<$inf>) {
     s/\@TeX\{\}/TeX/g;
     s/\@pounds\{\}/\#/g;
     s/\@minus(?:\{\})?/-/g;
+    s/\\,/,/g;
 
     # Now the ones that have to be replaced by special escapes
     # (which will be turned back into text by unmunge())
@@ -269,47 +259,23 @@ INF: while(<$inf>) {
         $endw = "enumerate";
     };
 
-    /^\@((?:multi|[fv])?table)\s+(\@[a-z]+)/ and do {
+    /^\@([fv]?table)\s+(\@[a-z]+)/ and do {
         push @endwstack, $endw;
         push @icstack, $ic;
         $endw = $1;
         $ic = $2;
-        $ic =~ s/\@(?:samp|strong|key|gcctabopt|option|env|command)/B/;
+        $ic =~ s/\@(?:samp|strong|key|gcctabopt|option|env)/B/;
         $ic =~ s/\@(?:code|kbd)/C/;
         $ic =~ s/\@(?:dfn|var|emph|cite|i)/I/;
         $ic =~ s/\@(?:file)/F/;
-        $ic =~ s/\@(?:columnfractions)//;
         $_ = "\n=over 4\n";
     };
 
-    /^\@(multitable)\s+{.*/ and do {
-        push @endwstack, $endw;
-        push @icstack, $ic;
-        $endw = $1;
-        $ic = "";
-        $_ = "\n=over 4\n";
-    };
-
-    /^\@((?:small)?example|verbatim|display)/ and do {
+    /^\@((?:small)?example|display)/ and do {
         push @endwstack, $endw;
         $endw = $1;
         $shift = "\t";
         $_ = "";        # need a paragraph break
-    };
-
-    /^\@item\s+(.*\S)\s*$/ and $endw eq "multitable" and do {
-        my $columns = $1;
-        $columns =~ s/\@tab/ : /;
-
-        $_ = "\n=item B&LT;". $columns ."&GT;\n";
-    };
-
-    /^\@tab\s+(.*\S)\s*$/ and $endw eq "multitable" and do {
-        my $columns = $1;
-        $columns =~ s/\@tab//;
-
-        $_ = $columns;
-        $chapter =~ s/$//;
     };
 
     /^\@itemx?\s*(.+)?$/ and do {
@@ -323,7 +289,7 @@ INF: while(<$inf>) {
         }
     };
 
-    $chapter .= $shift.$_."\n";
+    $section .= $shift.$_."\n";
 }
 # End of current file.
 close($inf);
@@ -332,18 +298,16 @@ $inf = pop @instack;
 
 die "No filename or title\n" unless defined $fn && defined $tl;
 
-# always use utf8
-print "=encoding utf8\n\n";
+$sects{NAME} = "$fn \- $tl\n";
+$sects{FOOTNOTES} .= "=back\n" if exists $sects{FOOTNOTES};
 
-$chapters{NAME} = "$fn \- $tl\n";
-$chapters{FOOTNOTES} .= "=back\n" if exists $chapters{FOOTNOTES};
-
-unshift @chapters_sequence, "NAME";
-for $chapter (@chapters_sequence) {
-    if (exists $chapters{$chapter}) {
-        $head = uc($chapter);
+unshift @sects_sequence, "NAME";
+for $sect (@sects_sequence) {
+    if(exists $sects{$sect}) {
+        $head = $sect;
+        $head =~ s/SEEALSO/SEE ALSO/;
         print "=head1 $head\n\n";
-        print scalar unmunge ($chapters{$chapter});
+        print scalar unmunge ($sects{$sect});
         print "\n";
     }
 }
@@ -384,12 +348,10 @@ sub postprocess
     # @* is also impossible in .pod; we discard it and any newline that
     # follows it.  Similarly, our macro @gol must be discarded.
 
-    s/\@anchor\{(?:[^\}]*)\}//g;
+    s/\@anchor{(?:[^\}]*)\}//g;
     s/\(?\@xref\{(?:[^\}]*)\}(?:[^.<]|(?:<[^<>]*>))*\.\)?//g;
     s/\s+\(\@pxref\{(?:[^\}]*)\}\)//g;
     s/;\s+\@pxref\{(?:[^\}]*)\}//g;
-    s/\@ref\{(?:[^,\}]*,)(?:[^,\}]*,)([^,\}]*).*\}/B<$1>/g;
-    s/\@ref\{([^\}]*)\}/B<$1>/g;
     s/\@noindent\s*//g;
     s/\@refill//g;
     s/\@gol//g;
@@ -398,7 +360,7 @@ sub postprocess
     # @uref can take one, two, or three arguments, with different
     # semantics each time.  @url and @email are just like @uref with
     # one argument, for our purposes.
-    s/\@(?:uref|url|email)\{([^\},]*),?[^\}]*\}/&lt;B<$1>&gt;/g;
+    s/\@(?:uref|url|email)\{([^\},]*)\}/&lt;B<$1>&gt;/g;
     s/\@uref\{([^\},]*),([^\},]*)\}/$2 (C<$1>)/g;
     s/\@uref\{([^\},]*),([^\},]*),([^\},]*)\}/$3/g;
 
@@ -442,13 +404,13 @@ sub unmunge
 
 sub add_footnote
 {
-    unless (exists $chapters{FOOTNOTES}) {
-        $chapters{FOOTNOTES} = "\n=over 4\n\n";
+    unless (exists $sects{FOOTNOTES}) {
+        $sects{FOOTNOTES} = "\n=over 4\n\n";
     }
 
-    $chapters{FOOTNOTES} .= "=item $fnno.\n\n"; $fnno++;
-    $chapters{FOOTNOTES} .= $_[0];
-    $chapters{FOOTNOTES} .= "\n\n";
+    $sects{FOOTNOTES} .= "=item $fnno.\n\n"; $fnno++;
+    $sects{FOOTNOTES} .= $_[0];
+    $sects{FOOTNOTES} .= "\n\n";
 }
 
 # stolen from Symbol.pm

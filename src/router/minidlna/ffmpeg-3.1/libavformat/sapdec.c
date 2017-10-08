@@ -20,7 +20,6 @@
  */
 
 #include "avformat.h"
-#include "libavutil/avassert.h"
 #include "libavutil/avstring.h"
 #include "libavutil/intreadwrite.h"
 #include "network.h"
@@ -28,10 +27,10 @@
 #include "internal.h"
 #include "avio_internal.h"
 #include "url.h"
-#include "rtpdec.h"
 #if HAVE_POLL_H
 #include <poll.h>
 #endif
+#include <sys/time.h>
 
 struct SAPState {
     URLContext *ann_fd;
@@ -53,7 +52,7 @@ static int sap_read_close(AVFormatContext *s)
 {
     struct SAPState *sap = s->priv_data;
     if (sap->sdp_ctx)
-        avformat_close_input(&sap->sdp_ctx);
+        av_close_input_file(sap->sdp_ctx);
     if (sap->ann_fd)
         ffurl_close(sap->ann_fd);
     av_freep(&sap->sdp);
@@ -61,11 +60,12 @@ static int sap_read_close(AVFormatContext *s)
     return 0;
 }
 
-static int sap_read_header(AVFormatContext *s)
+static int sap_read_header(AVFormatContext *s,
+                           AVFormatParameters *ap)
 {
     struct SAPState *sap = s->priv_data;
     char host[1024], path[1024], url[1024];
-    uint8_t recvbuf[RTP_MAX_PACKET_LENGTH];
+    uint8_t recvbuf[1500];
     int port;
     int ret, i;
     AVInputFormat* infmt;
@@ -85,9 +85,7 @@ static int sap_read_header(AVFormatContext *s)
 
     ff_url_join(url, sizeof(url), "udp", NULL, host, port, "?localport=%d",
                 port);
-    ret = ffurl_open_whitelist(&sap->ann_fd, url, AVIO_FLAG_READ,
-                               &s->interrupt_callback, NULL,
-                               s->protocol_whitelist, s->protocol_blacklist, NULL);
+    ret = ffurl_open(&sap->ann_fd, url, AVIO_RDONLY);
     if (ret)
         goto fail;
 
@@ -159,24 +157,18 @@ static int sap_read_header(AVFormatContext *s)
     }
     sap->sdp_ctx->max_delay = s->max_delay;
     sap->sdp_ctx->pb        = &sap->sdp_pb;
-    sap->sdp_ctx->interrupt_callback = s->interrupt_callback;
-
-    if ((ret = ff_copy_whiteblacklists(sap->sdp_ctx, s)) < 0)
-        goto fail;
-
     ret = avformat_open_input(&sap->sdp_ctx, "temp.sdp", infmt, NULL);
     if (ret < 0)
         goto fail;
     if (sap->sdp_ctx->ctx_flags & AVFMTCTX_NOHEADER)
         s->ctx_flags |= AVFMTCTX_NOHEADER;
     for (i = 0; i < sap->sdp_ctx->nb_streams; i++) {
-        AVStream *st = avformat_new_stream(s, NULL);
+        AVStream *st = av_new_stream(s, i);
         if (!st) {
             ret = AVERROR(ENOMEM);
             goto fail;
         }
-        st->id = i;
-        avcodec_parameters_copy(st->codecpar, sap->sdp_ctx->streams[i]->codecpar);
+        avcodec_copy_context(st->codec, sap->sdp_ctx->streams[i]->codec);
         st->time_base = sap->sdp_ctx->streams[i]->time_base;
     }
 
@@ -193,7 +185,7 @@ static int sap_fetch_packet(AVFormatContext *s, AVPacket *pkt)
     int fd = ffurl_get_file_handle(sap->ann_fd);
     int n, ret;
     struct pollfd p = {fd, POLLIN, 0};
-    uint8_t recvbuf[RTP_MAX_PACKET_LENGTH];
+    uint8_t recvbuf[1500];
 
     if (sap->eof)
         return AVERROR_EOF;
@@ -219,13 +211,12 @@ static int sap_fetch_packet(AVFormatContext *s, AVPacket *pkt)
     if (s->ctx_flags & AVFMTCTX_NOHEADER) {
         while (sap->sdp_ctx->nb_streams > s->nb_streams) {
             int i = s->nb_streams;
-            AVStream *st = avformat_new_stream(s, NULL);
+            AVStream *st = av_new_stream(s, i);
             if (!st) {
-                av_packet_unref(pkt);
+                av_free_packet(pkt);
                 return AVERROR(ENOMEM);
             }
-            st->id = i;
-            avcodec_parameters_copy(st->codecpar, sap->sdp_ctx->streams[i]->codecpar);
+            avcodec_copy_context(st->codec, sap->sdp_ctx->streams[i]->codec);
             st->time_base = sap->sdp_ctx->streams[i]->time_base;
         }
     }
@@ -233,12 +224,13 @@ static int sap_fetch_packet(AVFormatContext *s, AVPacket *pkt)
 }
 
 AVInputFormat ff_sap_demuxer = {
-    .name           = "sap",
-    .long_name      = NULL_IF_CONFIG_SMALL("SAP input"),
-    .priv_data_size = sizeof(struct SAPState),
-    .read_probe     = sap_probe,
-    .read_header    = sap_read_header,
-    .read_packet    = sap_fetch_packet,
-    .read_close     = sap_read_close,
-    .flags          = AVFMT_NOFILE,
+    "sap",
+    NULL_IF_CONFIG_SMALL("SAP input format"),
+    sizeof(struct SAPState),
+    sap_probe,
+    sap_read_header,
+    sap_fetch_packet,
+    sap_read_close,
+    .flags = AVFMT_NOFILE,
 };
+
