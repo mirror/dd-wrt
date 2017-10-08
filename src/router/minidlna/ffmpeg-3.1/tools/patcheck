@@ -15,11 +15,11 @@ OPT="-nH"
 #FILES=$($GREP '^+++' $* | sed 's/+++ //g')
 
 echo patCHeck 1e10.0
-echo This tool is intended to help a human check/review patches. It is very far from
-echo being free of false positives and negatives, and its output are just hints of what
+echo This tool is intended to help a human check/review patches it is very far from
+echo being free of false positives and negatives, its output are just hints of what
 echo may or may not be bad. When you use it and it misses something or detects
-echo something wrong, fix it and send a patch to the ffmpeg-devel mailing list.
-echo License: GPL, Author: Michael Niedermayer
+echo something wrong, fix it and send a patch to the ffmpeg-dev mailing list.
+echo License:GPL Autor: Michael Niedermayer
 
 ERE_PRITYP='(unsigned *|)(char|short|long|int|long *int|short *int|void|float|double|(u|)int(8|16|32|64)_t)'
 ERE_TYPES='(const|static|av_cold|inline| *)*('$ERE_PRITYP'|[a-zA-Z][a-zA-Z0-9_]*)[* ]{1,}[a-zA-Z][a-zA-Z0-9_]*'
@@ -42,7 +42,6 @@ hiegrep2(){
     cat $TMP
 }
 
-hiegrep 'static[^(]*\*[a-zA-Z_]*\[' 'pointer array is not const' $*
 hiegrep '[[:space:]]$'    'trailing whitespace' $*
 hiegrep "$(echo x | tr 'x' '\t')"         'tabs' $*
 #hiegrep ':\+$'          'Empty lines' $*
@@ -51,12 +50,11 @@ hiegrep2 '\b_[a-zA-Z0-9_]{1,}' '__(asm|attribute)([^a-zA-Z0-9]|$)' 'reserved ide
 hiegrep '//[-/<\* ]*$'    'empty comment' $*
 hiegrep '/\*[-<\* ]*\*/'  'empty comment' $*
 hiegrep 'for *\( *'"$ERE_PRITYP"' '  'not gcc 2.95 compatible' $*
-hiegrep '(static|inline|const) *\1[^_a-zA-Z]'  'duplicate word' $*
+hiegrep '(static|inline|const) *\1'  'duplicate word' $*
 hiegrep 'INIT_VLC_USE_STATIC' 'forbidden ancient vlc type' $*
 hiegrep '=[-+\*\&] ' 'looks like compound assignment' $*
 hiegrep2 '/\*\* *[a-zA-Z0-9].*' '\*/' 'Inconsistently formatted doxygen comment' $*
 hiegrep '; */\*\*[^<]' 'Misformatted doxygen comment' $*
-hiegrep '//!|/\*!' 'inconsistent doxygen syntax' $*
 
 hiegrep2 '(int|unsigned|static|void)[a-zA-Z0-9 _]*(init|end)[a-zA-Z0-9 _]*\(.*[^;]$' '(av_cold|:\+[^a-zA-Z_])' 'These functions may need av_cold, please review the whole patch for similar functions needing av_cold' $*
 
@@ -68,7 +66,7 @@ $EGREP $OPT '^\+ *(const *|)static' $*| $EGREP --color=always '[^=]= *(0|NULL)[^
 cat $TMP
 hiegrep '# *ifdef * (HAVE|CONFIG)_' 'ifdefs that should be #if' $*
 
-hiegrep '\b(awnser|cant|dont|wont|doesnt|usefull|successfull|occured|teh|alot|wether|skiped|skiping|heigth|informations|colums|loosy|loosing|ouput|seperate|preceed|upto|paket|posible|unkown|inpossible|dimention|acheive|funtions|overriden|outputing|seperation|initalize|compatibilty|bistream|knwon|unknwon|choosen|additonal|gurantee|availble|wich|begining|milisecond|missmatch)\b' 'common typos' $*
+hiegrep '\b(awnser|cant|dont|quantised|quantisation|teh|wont)\b' 'common typos' $*
 
 hiegrep 'av_log\( *NULL' 'Missing context in av_log' $*
 hiegrep '[^sn]printf' 'Please use av_log' $*
@@ -143,7 +141,7 @@ fi
 
 $GREP '^+++ .*Changelog' $* >/dev/null || printf "\nMissing changelog entry (ignore if minor change)\n"
 
-cat $* | $GREP -v '^-' | tr '\n' '@' | $EGREP --color=always -o '(fprintf|av_log|printf)\([^)]*\)[+ ;@]*\1'  >$TMP && printf "\nMergeable calls\n"
+cat $* | tr '\n' '@' | $EGREP --color=always -o '(fprintf|av_log|printf)\([^)]*\)[+ ;@]*\1'  >$TMP && printf "\nMergeable calls\n"
 cat $TMP | tr '@' '\n'
 
 cat $* | tr '\n' '@' | $EGREP --color=always -o '\+ *if *\( *([A-Za-z0-9_]*) *[<>]=? *[0-9]* *\) * \1 *= *[0-9]* *;[ @\\+]*else *if *\( *\1 *[<>]=? *[0-9]* *\) *\1 *= *[0-9]* *;'  >$TMP && printf "\nav_clip / av_clip_uint8 / av_clip_int16 / ...\n"
@@ -159,7 +157,7 @@ cat $* | tr '\n' '@' | $EGREP --color=always -o '[^a-zA-Z0-9_]([a-zA-Z0-9_]*) *=
 cat $TMP | tr '@' '\n'
 
 
-# does not work
+# doesnt work
 #cat $* | tr '\n' '@' | $EGREP -o '[^a-zA-Z_0-9]([a-zA-Z][a-zA-Z_0-9]*) *=[^=].*\1' | $EGREP -o '[^a-zA-Z_0-9]([a-zA-Z][a-zA-Z_0-9]*) *=[^=].*\1 *=[^=]'  >$TMP && printf "\nPossibly written 2x before read\n"
 #cat $TMP | tr '@' '\n'
 
@@ -174,7 +172,7 @@ vertical align =
 /* and * align
 arrays fitting in smaller types
 variables written to twice with no interspaced read
-memset(block, 0, 6*64*sizeof(int16_t)); -> clear_blocks
+memset(block, 0, 6*64*sizeof(DCTELEM)); -> clear_blocks
 check existence of long_name in AVCodec
 check that the patch does not touch codec & (de)muxer layer at the same time ->split
 

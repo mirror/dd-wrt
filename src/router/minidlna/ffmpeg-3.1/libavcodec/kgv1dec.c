@@ -24,79 +24,74 @@
  * Kega Game Video decoder
  */
 
-#include "libavutil/common.h"
 #include "libavutil/intreadwrite.h"
 #include "libavutil/imgutils.h"
 #include "avcodec.h"
-#include "internal.h"
 
-typedef struct KgvContext {
-    uint16_t *frame_buffer;
-    uint16_t *last_frame_buffer;
+typedef struct {
+    AVCodecContext *avctx;
+    AVFrame prev, cur;
 } KgvContext;
 
 static void decode_flush(AVCodecContext *avctx)
 {
     KgvContext * const c = avctx->priv_data;
 
-    av_freep(&c->frame_buffer);
-    av_freep(&c->last_frame_buffer);
+    if (c->prev.data[0])
+        avctx->release_buffer(avctx, &c->prev);
 }
 
-static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame,
-                        AVPacket *avpkt)
+static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPacket *avpkt)
 {
-    AVFrame *frame = data;
     const uint8_t *buf = avpkt->data;
     const uint8_t *buf_end = buf + avpkt->size;
     KgvContext * const c = avctx->priv_data;
     int offsets[8];
-    uint8_t *out, *prev;
+    uint16_t *out, *prev;
     int outcnt = 0, maxcnt;
     int w, h, i, res;
 
     if (avpkt->size < 2)
-        return AVERROR_INVALIDDATA;
+        return -1;
 
     w = (buf[0] + 1) * 8;
     h = (buf[1] + 1) * 8;
     buf += 2;
 
-    if (w != avctx->width || h != avctx->height) {
-        av_freep(&c->frame_buffer);
-        av_freep(&c->last_frame_buffer);
-        if ((res = ff_set_dimensions(avctx, w, h)) < 0)
-            return res;
-    }
+    if (av_image_check_size(w, h, 0, avctx))
+        return -1;
 
-    if (!c->frame_buffer) {
-        c->frame_buffer      = av_mallocz(avctx->width * avctx->height * 2);
-        c->last_frame_buffer = av_mallocz(avctx->width * avctx->height * 2);
-        if (!c->frame_buffer || !c->last_frame_buffer) {
-            decode_flush(avctx);
-            return AVERROR(ENOMEM);
-        }
+    if (w != avctx->width || h != avctx->height) {
+        if (c->prev.data[0])
+            avctx->release_buffer(avctx, &c->prev);
+        avcodec_set_dimensions(avctx, w, h);
     }
 
     maxcnt = w * h;
 
-    if ((res = ff_get_buffer(avctx, frame, 0)) < 0)
+    c->cur.reference = 3;
+    if ((res = avctx->get_buffer(avctx, &c->cur)) < 0)
         return res;
-    out  = (uint8_t*)c->frame_buffer;
-    prev = (uint8_t*)c->last_frame_buffer;
+    out  = (uint16_t *) c->cur.data[0];
+    if (c->prev.data[0]) {
+        prev = (uint16_t *) c->prev.data[0];
+    } else {
+        prev = NULL;
+    }
 
     for (i = 0; i < 8; i++)
         offsets[i] = -1;
 
-    while (outcnt < maxcnt && buf_end - 2 >= buf) {
+    while (outcnt < maxcnt && buf_end - 2 > buf) {
         int code = AV_RL16(buf);
         buf += 2;
 
         if (!(code & 0x8000)) {
-            AV_WN16A(&out[2 * outcnt], code); // rgb555 pixel coded directly
-            outcnt++;
+            out[outcnt++] = code; // rgb555 pixel coded directly
         } else {
             int count;
+            int inp_off;
+            uint16_t *inp;
 
             if ((code & 0x6000) == 0x6000) {
                 // copy from previous frame
@@ -114,7 +109,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame,
 
                 start = (outcnt + offsets[oidx]) % maxcnt;
 
-                if (maxcnt - start < count || maxcnt - outcnt < count)
+                if (maxcnt - start < count)
                     break;
 
                 if (!prev) {
@@ -123,7 +118,8 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame,
                     break;
                 }
 
-                memcpy(out + 2 * outcnt, prev + 2 * start, 2 * count);
+                inp = prev;
+                inp_off = start;
             } else {
                 // copy from earlier in this frame
                 int offset = (code & 0x1FFF) + 1;
@@ -138,31 +134,42 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame,
                     count = 4 + *buf++;
                 }
 
-                if (outcnt < offset || maxcnt - outcnt < count)
+                if (outcnt < offset)
                     break;
 
-                av_memcpy_backptr(out + 2 * outcnt, 2 * offset, 2 * count);
+                inp = out;
+                inp_off = outcnt - offset;
             }
-            outcnt += count;
+
+            if (maxcnt - outcnt < count)
+                break;
+
+            for (i = inp_off; i < count + inp_off; i++) {
+                out[outcnt++] = inp[i];
+            }
         }
     }
 
     if (outcnt - maxcnt)
         av_log(avctx, AV_LOG_DEBUG, "frame finished with %d diff\n", outcnt - maxcnt);
 
-    av_image_copy_plane(frame->data[0], frame->linesize[0],
-                        (const uint8_t*)c->frame_buffer,  avctx->width * 2,
-                        avctx->width * 2, avctx->height);
-    FFSWAP(uint16_t *, c->frame_buffer, c->last_frame_buffer);
+    *data_size = sizeof(AVFrame);
+    *(AVFrame*)data = c->cur;
 
-    *got_frame = 1;
+    if (c->prev.data[0])
+        avctx->release_buffer(avctx, &c->prev);
+    FFSWAP(AVFrame, c->cur, c->prev);
 
     return avpkt->size;
 }
 
 static av_cold int decode_init(AVCodecContext *avctx)
 {
-    avctx->pix_fmt = AV_PIX_FMT_RGB555;
+    KgvContext * const c = avctx->priv_data;
+
+    c->avctx = avctx;
+    avctx->pix_fmt = PIX_FMT_RGB555;
+    avctx->flags  |= CODEC_FLAG_EMU_EDGE;
 
     return 0;
 }
@@ -175,13 +182,12 @@ static av_cold int decode_end(AVCodecContext *avctx)
 
 AVCodec ff_kgv1_decoder = {
     .name           = "kgv1",
-    .long_name      = NULL_IF_CONFIG_SMALL("Kega Game Video"),
     .type           = AVMEDIA_TYPE_VIDEO,
-    .id             = AV_CODEC_ID_KGV1,
+    .id             = CODEC_ID_KGV1,
     .priv_data_size = sizeof(KgvContext),
     .init           = decode_init,
     .close          = decode_end,
     .decode         = decode_frame,
     .flush          = decode_flush,
-    .capabilities   = AV_CODEC_CAP_DR1,
+    .long_name = NULL_IF_CONFIG_SMALL("Kega Game Video"),
 };

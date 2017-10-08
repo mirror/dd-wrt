@@ -26,8 +26,10 @@
 #include <poll.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/time.h>
+#include <time.h>
+#include <strings.h>
 
-#include "libavutil/internal.h"
 #include "libavutil/log.h"
 #include "libavutil/opt.h"
 #include "avdevice.h"
@@ -80,16 +82,28 @@ static int dv1394_start(struct dv1394_data *dv)
     return 0;
 }
 
-static int dv1394_read_header(AVFormatContext * context)
+static int dv1394_read_header(AVFormatContext * context, AVFormatParameters * ap)
 {
     struct dv1394_data *dv = context->priv_data;
 
-    dv->dv_demux = avpriv_dv_init_demux(context);
+    dv->dv_demux = dv_init_demux(context);
     if (!dv->dv_demux)
         goto failed;
 
+#if FF_API_FORMAT_PARAMETERS
+    if (ap->standard) {
+       if (!strcasecmp(ap->standard, "pal"))
+           dv->format = DV1394_PAL;
+       else
+           dv->format = DV1394_NTSC;
+    }
+
+    if (ap->channel)
+        dv->channel = ap->channel;
+#endif
+
     /* Open and initialize DV1394 device */
-    dv->fd = avpriv_open(context->filename, O_RDONLY);
+    dv->fd = open(context->filename, O_RDONLY);
     if (dv->fd < 0) {
         av_log(context, AV_LOG_ERROR, "Failed to open DV interface: %s\n", strerror(errno));
         goto failed;
@@ -122,7 +136,7 @@ static int dv1394_read_packet(AVFormatContext *context, AVPacket *pkt)
     struct dv1394_data *dv = context->priv_data;
     int size;
 
-    size = avpriv_dv_get_packet(dv->dv_demux, pkt);
+    size = dv_get_packet(dv->dv_demux, pkt);
     if (size > 0)
         return size;
 
@@ -137,7 +151,7 @@ static int dv1394_read_packet(AVFormatContext *context, AVPacket *pkt)
                  * We have to reset :(.
                  */
 
-                av_log(context, AV_LOG_ERROR, "DV1394: Ring buffer overflow. Resetting ..\n");
+                av_log(context, AV_LOG_ERROR, "DV1394: Ring buffer overflow. Reseting ..\n");
 
                 dv1394_reset(dv);
                 dv1394_start(dv);
@@ -160,7 +174,7 @@ restart_poll:
             av_log(context, AV_LOG_ERROR, "Failed to get status: %s\n", strerror(errno));
             return AVERROR(EIO);
         }
-        av_log(context, AV_LOG_TRACE, "DV1394: status\n"
+        av_dlog(context, "DV1394: status\n"
                 "\tactive_frame\t%d\n"
                 "\tfirst_clear_frame\t%d\n"
                 "\tn_clear_frames\t%d\n"
@@ -173,7 +187,7 @@ restart_poll:
         dv->done  = 0;
 
         if (s.dropped_frames) {
-            av_log(context, AV_LOG_ERROR, "DV1394: Frame drop detected (%d). Resetting ..\n",
+            av_log(context, AV_LOG_ERROR, "DV1394: Frame drop detected (%d). Reseting ..\n",
                     s.dropped_frames);
 
             dv1394_reset(dv);
@@ -181,10 +195,10 @@ restart_poll:
         }
     }
 
-    av_log(context, AV_LOG_TRACE, "index %d, avail %d, done %d\n", dv->index, dv->avail,
+    av_dlog(context, "index %d, avail %d, done %d\n", dv->index, dv->avail,
             dv->done);
 
-    size = avpriv_dv_produce_packet(dv->dv_demux, pkt,
+    size = dv_produce_packet(dv->dv_demux, pkt,
                              dv->ring + (dv->index * DV1394_PAL_FRAME_SIZE),
                              DV1394_PAL_FRAME_SIZE, -1);
     dv->index = (dv->index + 1) % DV1394_RING_FRAMES;
@@ -206,16 +220,16 @@ static int dv1394_close(AVFormatContext * context)
         av_log(context, AV_LOG_ERROR, "Failed to munmap DV1394 ring buffer: %s\n", strerror(errno));
 
     close(dv->fd);
-    av_freep(&dv->dv_demux);
+    av_free(dv->dv_demux);
 
     return 0;
 }
 
 static const AVOption options[] = {
-    { "standard", "", offsetof(struct dv1394_data, format), AV_OPT_TYPE_INT, {.i64 = DV1394_NTSC}, DV1394_NTSC, DV1394_PAL, AV_OPT_FLAG_DECODING_PARAM, "standard" },
-    { "PAL",      "", 0, AV_OPT_TYPE_CONST, {.i64 = DV1394_PAL},   0, 0, AV_OPT_FLAG_DECODING_PARAM, "standard" },
-    { "NTSC",     "", 0, AV_OPT_TYPE_CONST, {.i64 = DV1394_NTSC},  0, 0, AV_OPT_FLAG_DECODING_PARAM, "standard" },
-    { "channel",  "", offsetof(struct dv1394_data, channel), AV_OPT_TYPE_INT, {.i64 = DV1394_DEFAULT_CHANNEL}, 0, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
+    { "standard", "", offsetof(struct dv1394_data, format), FF_OPT_TYPE_INT, {.dbl = DV1394_NTSC}, DV1394_PAL, DV1394_NTSC, AV_OPT_FLAG_DECODING_PARAM, "standard" },
+    { "PAL",      "", 0, FF_OPT_TYPE_CONST, {.dbl = DV1394_PAL},   0, 0, AV_OPT_FLAG_DECODING_PARAM, "standard" },
+    { "NTSC",     "", 0, FF_OPT_TYPE_CONST, {.dbl = DV1394_NTSC},  0, 0, AV_OPT_FLAG_DECODING_PARAM, "standard" },
+    { "channel",  "", offsetof(struct dv1394_data, channel), FF_OPT_TYPE_INT, {.dbl = DV1394_DEFAULT_CHANNEL}, 0, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
     { NULL },
 };
 
@@ -224,7 +238,6 @@ static const AVClass dv1394_class = {
     .item_name  = av_default_item_name,
     .option     = options,
     .version    = LIBAVUTIL_VERSION_INT,
-    .category   = AV_CLASS_CATEGORY_DEVICE_VIDEO_INPUT,
 };
 
 AVInputFormat ff_dv1394_demuxer = {

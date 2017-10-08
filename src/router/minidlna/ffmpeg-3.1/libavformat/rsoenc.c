@@ -28,36 +28,36 @@
 static int rso_write_header(AVFormatContext *s)
 {
     AVIOContext  *pb  = s->pb;
-    AVCodecParameters *par = s->streams[0]->codecpar;
+    AVCodecContext *enc = s->streams[0]->codec;
 
-    if (!par->codec_tag)
+    if (!enc->codec_tag)
         return AVERROR_INVALIDDATA;
 
-    if (par->channels != 1) {
+    if (enc->channels != 1) {
         av_log(s, AV_LOG_ERROR, "RSO only supports mono\n");
         return AVERROR_INVALIDDATA;
     }
 
-    if (!(s->pb->seekable & AVIO_SEEKABLE_NORMAL)) {
+    if (!s->pb->seekable) {
         av_log(s, AV_LOG_ERROR, "muxer does not support non seekable output\n");
         return AVERROR_INVALIDDATA;
     }
 
     /* XXX: find legal sample rates (if any) */
-    if (par->sample_rate >= 1u<<16) {
+    if (enc->sample_rate >= 1u<<16) {
         av_log(s, AV_LOG_ERROR, "Sample rate must be < 65536\n");
         return AVERROR_INVALIDDATA;
     }
 
-    if (par->codec_id == AV_CODEC_ID_ADPCM_IMA_WAV) {
-        avpriv_report_missing_feature(s, "ADPCM in RSO");
+    if (enc->codec_id == CODEC_ID_ADPCM_IMA_WAV) {
+        av_log(s, AV_LOG_ERROR, "ADPCM in RSO not implemented\n");
         return AVERROR_PATCHWELCOME;
     }
 
     /* format header */
-    avio_wb16(pb, par->codec_tag);   /* codec ID */
+    avio_wb16(pb, enc->codec_tag);   /* codec ID */
     avio_wb16(pb, 0);                /* data size, will be written at EOF */
-    avio_wb16(pb, par->sample_rate);
+    avio_wb16(pb, enc->sample_rate);
     avio_wb16(pb, 0x0000);           /* play mode ? (0x0000 = don't loop) */
 
     avio_flush(pb);
@@ -95,18 +95,20 @@ static int rso_write_trailer(AVFormatContext *s)
     avio_wb16(pb, coded_file_size);
     avio_seek(pb, file_size, SEEK_SET);
 
+    avio_flush(pb);
+
     return 0;
 }
 
 AVOutputFormat ff_rso_muxer = {
     .name           =   "rso",
-    .long_name      =   NULL_IF_CONFIG_SMALL("Lego Mindstorms RSO"),
+    .long_name      =   NULL_IF_CONFIG_SMALL("Lego Mindstorms RSO format"),
     .extensions     =   "rso",
-    .audio_codec    =   AV_CODEC_ID_PCM_U8,
-    .video_codec    =   AV_CODEC_ID_NONE,
+    .priv_data_size =   0,
+    .audio_codec    =   CODEC_ID_PCM_U8,
+    .video_codec    =   CODEC_ID_NONE,
     .write_header   =   rso_write_header,
     .write_packet   =   rso_write_packet,
     .write_trailer  =   rso_write_trailer,
     .codec_tag      =   (const AVCodecTag* const []){ff_codec_rso_tags, 0},
-    .flags          =   AVFMT_NOTIMESTAMPS,
 };

@@ -28,44 +28,27 @@
 
 #include "parser.h"
 
-typedef struct MJPEGParserContext{
-    ParseContext pc;
-    int size;
-}MJPEGParserContext;
 
 /**
- * Find the end of the current frame in the bitstream.
+ * finds the end of the current frame in the bitstream.
  * @return the position of the first byte of the next frame, or -1
  */
-static int find_frame_end(MJPEGParserContext *m, const uint8_t *buf, int buf_size){
-    ParseContext *pc= &m->pc;
+static int find_frame_end(ParseContext *pc, const uint8_t *buf, int buf_size){
     int vop_found, i;
-    uint32_t state;
+    uint16_t state;
 
     vop_found= pc->frame_start_found;
     state= pc->state;
 
     i=0;
     if(!vop_found){
-        for(i=0; i<buf_size;){
+        for(i=0; i<buf_size; i++){
             state= (state<<8) | buf[i];
-            if(state>=0xFFC00000 && state<=0xFFFEFFFF){
-                if(state>=0xFFD80000 && state<=0xFFD8FFFF){
-                    i++;
-                    vop_found=1;
-                    break;
-                }else if(state<0xFFD00000 || state>0xFFD9FFFF){
-                    m->size= (state&0xFFFF)-1;
-                }
-            }
-            if(m->size>0){
-                int size= FFMIN(buf_size-i, m->size);
-                i+=size;
-                m->size-=size;
-                state=0;
-                continue;
-            }else
+            if(state == 0xFFD8){
                 i++;
+                vop_found=1;
+                break;
+            }
         }
     }
 
@@ -73,25 +56,13 @@ static int find_frame_end(MJPEGParserContext *m, const uint8_t *buf, int buf_siz
         /* EOF considered as end of frame */
         if (buf_size == 0)
             return 0;
-        for(; i<buf_size;){
+        for(; i<buf_size; i++){
             state= (state<<8) | buf[i];
-            if(state>=0xFFC00000 && state<=0xFFFEFFFF){
-                if(state>=0xFFD80000 && state<=0xFFD8FFFF){
-                    pc->frame_start_found=0;
-                    pc->state=0;
-                    return i-3;
-                } else if(state<0xFFD00000 || state>0xFFD9FFFF){
-                    m->size= (state&0xFFFF)-1;
-                }
+            if(state == 0xFFD8){
+                pc->frame_start_found=0;
+                pc->state=0;
+                return i-1;
             }
-            if(m->size>0){
-                int size= FFMIN(buf_size-i, m->size);
-                i+=size;
-                m->size-=size;
-                state=0;
-                continue;
-            }else
-                i++;
         }
     }
     pc->frame_start_found= vop_found;
@@ -104,14 +75,13 @@ static int jpeg_parse(AVCodecParserContext *s,
                       const uint8_t **poutbuf, int *poutbuf_size,
                       const uint8_t *buf, int buf_size)
 {
-    MJPEGParserContext *m = s->priv_data;
-    ParseContext *pc = &m->pc;
+    ParseContext *pc = s->priv_data;
     int next;
 
     if(s->flags & PARSER_FLAG_COMPLETE_FRAMES){
         next= buf_size;
     }else{
-        next= find_frame_end(m, buf, buf_size);
+        next= find_frame_end(pc, buf, buf_size);
 
         if (ff_combine_frame(pc, next, &buf, &buf_size) < 0) {
             *poutbuf = NULL;
@@ -127,8 +97,9 @@ static int jpeg_parse(AVCodecParserContext *s,
 
 
 AVCodecParser ff_mjpeg_parser = {
-    .codec_ids      = { AV_CODEC_ID_MJPEG, AV_CODEC_ID_JPEGLS },
-    .priv_data_size = sizeof(MJPEGParserContext),
-    .parser_parse   = jpeg_parse,
-    .parser_close   = ff_parse_close,
+    { CODEC_ID_MJPEG },
+    sizeof(ParseContext),
+    NULL,
+    jpeg_parse,
+    ff_parse_close,
 };

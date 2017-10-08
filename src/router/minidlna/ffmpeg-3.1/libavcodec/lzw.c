@@ -24,13 +24,11 @@
  * @file
  * @brief LZW decoding routines
  * @author Fabrice Bellard
- * @author modified for use in TIFF by Konstantin Shishkov
+ * Modified for use in TIFF by Konstantin Shishkov
  */
 
 #include "avcodec.h"
-#include "bytestream.h"
 #include "lzw.h"
-#include "libavutil/mem.h"
 
 #define LZW_MAXBITS                 12
 #define LZW_SIZTABLE                (1<<LZW_MAXBITS)
@@ -44,7 +42,7 @@ static const uint16_t mask[17] =
 };
 
 struct LZWState {
-    GetByteContext gb;
+    const uint8_t *pbuf, *ebuf;
     int bbits;
     unsigned int bbuf;
 
@@ -74,9 +72,9 @@ static int lzw_get_code(struct LZWState * s)
     if(s->mode == FF_LZW_GIF) {
         while (s->bbits < s->cursize) {
             if (!s->bs) {
-                s->bs = bytestream2_get_byte(&s->gb);
+                s->bs = *s->pbuf++;
             }
-            s->bbuf |= bytestream2_get_byte(&s->gb) << s->bbits;
+            s->bbuf |= (*s->pbuf++) << s->bbits;
             s->bbits += 8;
             s->bs--;
         }
@@ -84,7 +82,7 @@ static int lzw_get_code(struct LZWState * s)
         s->bbuf >>= s->cursize;
     } else { // TIFF
         while (s->bbits < s->cursize) {
-            s->bbuf = (s->bbuf << 8) | bytestream2_get_byte(&s->gb);
+            s->bbuf = (s->bbuf << 8) | (*s->pbuf++);
             s->bbits += 8;
         }
         c = s->bbuf >> (s->bbits - s->cursize);
@@ -93,18 +91,22 @@ static int lzw_get_code(struct LZWState * s)
     return c & s->curmask;
 }
 
-int ff_lzw_decode_tail(LZWState *p)
+const uint8_t* ff_lzw_cur_ptr(LZWState *p)
+{
+    return ((struct LZWState*)p)->pbuf;
+}
+
+void ff_lzw_decode_tail(LZWState *p)
 {
     struct LZWState *s = (struct LZWState *)p;
 
     if(s->mode == FF_LZW_GIF) {
-        while (s->bs > 0 && bytestream2_get_bytes_left(&s->gb)) {
-            bytestream2_skip(&s->gb, s->bs);
-            s->bs = bytestream2_get_byte(&s->gb);
+        while(s->pbuf < s->ebuf && s->bs>0){
+            s->pbuf += s->bs;
+            s->bs = *s->pbuf++;
         }
     }else
-        bytestream2_skip(&s->gb, bytestream2_get_bytes_left(&s->gb));
-    return bytestream2_tell(&s->gb);
+        s->pbuf= s->ebuf;
 }
 
 av_cold void ff_lzw_decode_open(LZWState **p)
@@ -132,7 +134,8 @@ int ff_lzw_decode_init(LZWState *p, int csize, const uint8_t *buf, int buf_size,
     if(csize < 1 || csize >= LZW_MAXBITS)
         return -1;
     /* read buffer */
-    bytestream2_init(&s->gb, buf, buf_size);
+    s->pbuf = buf;
+    s->ebuf = s->pbuf + buf_size;
     s->bbuf = 0;
     s->bbits = 0;
     s->bs = 0;

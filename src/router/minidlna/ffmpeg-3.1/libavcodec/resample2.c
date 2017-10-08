@@ -25,18 +25,15 @@
  * @author Michael Niedermayer <michaelni@gmx.at>
  */
 
-#include "libavutil/avassert.h"
 #include "avcodec.h"
-#include "libavutil/common.h"
-
-#if FF_API_AVCODEC_RESAMPLE
+#include "dsputil.h"
 
 #ifndef CONFIG_RESAMPLE_HP
 #define FILTER_SHIFT 15
 
-typedef int16_t FELEM;
-typedef int32_t FELEM2;
-typedef int64_t FELEML;
+#define FELEM int16_t
+#define FELEM2 int32_t
+#define FELEML int64_t
 #define FELEM_MAX INT16_MAX
 #define FELEM_MIN INT16_MIN
 #define WINDOW_TYPE 9
@@ -52,9 +49,9 @@ typedef int64_t FELEML;
 #else
 #define FILTER_SHIFT 0
 
-typedef double FELEM;
-typedef double FELEM2;
-typedef double FELEML;
+#define FELEM double
+#define FELEM2 double
+#define FELEML double
 #define WINDOW_TYPE 24
 #endif
 
@@ -93,7 +90,7 @@ static double bessel(double x){
 }
 
 /**
- * Build a polyphase filterbank.
+ * builds a polyphase filterbank.
  * @param factor resampling factor
  * @param scale wanted sum of coefficients for each filter
  * @param type 0->cubic, 1->blackman nuttall windowed sinc, 2..16->kaiser windowed sinc beta=2..16
@@ -102,7 +99,7 @@ static double bessel(double x){
 static int build_filter(FELEM *filter, double factor, int tap_count, int phase_count, int scale, int type){
     int ph, i;
     double x, y, w;
-    double *tab = av_malloc_array(tap_count, sizeof(*tab));
+    double *tab = av_malloc(tap_count * sizeof(*tab));
     const int center= (tap_count-1)/2;
 
     if (!tab)
@@ -202,7 +199,7 @@ AVResampleContext *av_resample_init(int out_rate, int in_rate, int filter_size, 
     c->linear= linear;
 
     c->filter_length= FFMAX((int)ceil(filter_size/factor), 1);
-    c->filter_bank= av_mallocz_array(c->filter_length, (phase_count+1)*sizeof(FELEM));
+    c->filter_bank= av_mallocz(c->filter_length*(phase_count+1)*sizeof(FELEM));
     if (!c->filter_bank)
         goto error;
     if (build_filter(c->filter_bank, factor, c->filter_length, phase_count, 1<<FILTER_SHIFT, WINDOW_TYPE))
@@ -304,7 +301,7 @@ int av_resample(AVResampleContext *c, short *dst, short *src, int *consumed, int
 
     if(compensation_distance){
         compensation_distance -= dst_index;
-        av_assert2(compensation_distance > 0);
+        assert(compensation_distance > 0);
     }
     if(update_ctx){
         c->frac= frac;
@@ -312,8 +309,13 @@ int av_resample(AVResampleContext *c, short *dst, short *src, int *consumed, int
         c->dst_incr= dst_incr_frac + c->src_incr*dst_incr;
         c->compensation_distance= compensation_distance;
     }
+#if 0
+    if(update_ctx && !c->compensation_distance){
+#undef rand
+        av_resample_compensate(c, rand() % (8000*2) - 8000, 8000*2);
+av_log(NULL, AV_LOG_DEBUG, "%d %d %d\n", c->dst_incr, c->ideal_dst_incr, c->compensation_distance);
+    }
+#endif
 
     return dst_index;
 }
-
-#endif

@@ -22,22 +22,26 @@
 #include <stdint.h>
 #include <sndio.h>
 
-#include "libavutil/internal.h"
-#include "libavutil/opt.h"
-#include "libavutil/time.h"
-
 #include "libavformat/avformat.h"
-#include "libavformat/internal.h"
+#include "libavutil/opt.h"
 
-#include "libavdevice/sndio.h"
+#include "sndio_common.h"
 
-static av_cold int audio_read_header(AVFormatContext *s1)
+static av_cold int audio_read_header(AVFormatContext *s1,
+                                     AVFormatParameters *ap)
 {
     SndioData *s = s1->priv_data;
     AVStream *st;
     int ret;
 
-    st = avformat_new_stream(s1, NULL);
+#if FF_API_FORMAT_PARAMETERS
+    if (ap->sample_rate > 0)
+        s->sample_rate = ap->sample_rate;
+    if (ap->channels > 0)
+        s->channels = ap->channels;
+#endif
+
+    st = av_new_stream(s1, 0);
     if (!st)
         return AVERROR(ENOMEM);
 
@@ -46,12 +50,12 @@ static av_cold int audio_read_header(AVFormatContext *s1)
         return ret;
 
     /* take real parameters */
-    st->codecpar->codec_type  = AVMEDIA_TYPE_AUDIO;
-    st->codecpar->codec_id    = s->codec_id;
-    st->codecpar->sample_rate = s->sample_rate;
-    st->codecpar->channels    = s->channels;
+    st->codec->codec_type  = AVMEDIA_TYPE_AUDIO;
+    st->codec->codec_id    = s->codec_id;
+    st->codec->sample_rate = s->sample_rate;
+    st->codec->channels    = s->channels;
 
-    avpriv_set_pts_info(st, 64, 1, 1000000);  /* 64 bits pts in us */
+    av_set_pts_info(st, 64, 1, 1000000);  /* 64 bits pts in us */
 
     return 0;
 }
@@ -67,7 +71,7 @@ static int audio_read_packet(AVFormatContext *s1, AVPacket *pkt)
 
     ret = sio_read(s->hdl, pkt->data, pkt->size);
     if (ret == 0 || sio_eof(s->hdl)) {
-        av_packet_unref(pkt);
+        av_free_packet(pkt);
         return AVERROR_EOF;
     }
 
@@ -96,8 +100,8 @@ static av_cold int audio_read_close(AVFormatContext *s1)
 }
 
 static const AVOption options[] = {
-    { "sample_rate", "", offsetof(SndioData, sample_rate), AV_OPT_TYPE_INT, {.i64 = 48000}, 1, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
-    { "channels",    "", offsetof(SndioData, channels),    AV_OPT_TYPE_INT, {.i64 = 2},     1, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
+    { "sample_rate", "", offsetof(SndioData, sample_rate), FF_OPT_TYPE_INT, {.dbl = 48000}, 1, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
+    { "channels",    "", offsetof(SndioData, channels),    FF_OPT_TYPE_INT, {.dbl = 2},     1, INT_MAX, AV_OPT_FLAG_DECODING_PARAM },
     { NULL },
 };
 
@@ -106,7 +110,6 @@ static const AVClass sndio_demuxer_class = {
     .item_name      = av_default_item_name,
     .option         = options,
     .version        = LIBAVUTIL_VERSION_INT,
-    .category       = AV_CLASS_CATEGORY_DEVICE_AUDIO_INPUT,
 };
 
 AVInputFormat ff_sndio_demuxer = {

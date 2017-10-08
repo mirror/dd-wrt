@@ -21,7 +21,6 @@
 
 #include "avformat.h"
 #include "rawdec.h"
-#include "libavcodec/internal.h"
 
 #define CAVS_SEQ_START_CODE       0x000001b0
 #define CAVS_PIC_I_START_CODE     0x000001b3
@@ -34,10 +33,10 @@ static int cavsvideo_probe(AVProbeData *p)
 {
     uint32_t code= -1;
     int pic=0, seq=0, slice_pos = 0;
-    const uint8_t *ptr = p->buf, *end = p->buf + p->buf_size;
+    int i;
 
-    while (ptr < end) {
-        ptr = avpriv_find_start_code(ptr, end, &code);
+    for(i=0; i<p->buf_size; i++){
+        code = (code<<8) + p->buf[i];
         if ((code & 0xffffff00) == 0x100) {
             if(code < CAVS_SEQ_START_CODE) {
                 /* slices have to be consecutive */
@@ -50,7 +49,7 @@ static int cavsvideo_probe(AVProbeData *p)
             if (code == CAVS_SEQ_START_CODE) {
                 seq++;
                 /* check for the only currently supported profile */
-                if (*ptr != CAVS_PROFILE_JIZHUN)
+                if(p->buf[i+1] != CAVS_PROFILE_JIZHUN)
                     return 0;
             } else if ((code == CAVS_PIC_I_START_CODE) ||
                        (code == CAVS_PIC_PB_START_CODE)) {
@@ -62,8 +61,8 @@ static int cavsvideo_probe(AVProbeData *p)
         }
     }
     if(seq && seq*9<=pic*10)
-        return AVPROBE_SCORE_EXTENSION+1;
+        return AVPROBE_SCORE_MAX/2;
     return 0;
 }
 
-FF_DEF_RAWVIDEO_DEMUXER(cavsvideo, "raw Chinese AVS (Audio Video Standard)", cavsvideo_probe, NULL, AV_CODEC_ID_CAVS)
+FF_DEF_RAWVIDEO_DEMUXER(cavsvideo, "raw Chinese AVS video", cavsvideo_probe, NULL, CODEC_ID_CAVS)

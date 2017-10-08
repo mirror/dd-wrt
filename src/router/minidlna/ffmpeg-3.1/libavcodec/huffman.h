@@ -1,4 +1,6 @@
-/*
+/**
+ * @file
+ * huffman tree builder and VLC generator
  * Copyright (C) 2007  Aurelien Jacobs <aurel@gnuage.org>
  *
  * This file is part of FFmpeg.
@@ -18,18 +20,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-/**
- * @file
- * huffman tree builder and VLC generator
- */
-
 #ifndef AVCODEC_HUFFMAN_H
 #define AVCODEC_HUFFMAN_H
 
 #include "avcodec.h"
-#include "vlc.h"
+#include "get_bits.h"
 
-typedef struct Node {
+typedef struct {
     int16_t  sym;
     int16_t  n0;
     uint32_t count;
@@ -37,12 +34,9 @@ typedef struct Node {
 
 #define FF_HUFFMAN_FLAG_HNODE_FIRST 0x01
 #define FF_HUFFMAN_FLAG_ZERO_COUNT  0x02
-#define FF_HUFFMAN_BITS 10
 
 typedef int (*HuffCmp)(const void *va, const void *vb);
-int ff_huff_build_tree(AVCodecContext *avctx, VLC *vlc, int nb_codes, int nb_bits,
+int ff_huff_build_tree(AVCodecContext *avctx, VLC *vlc, int nb_codes,
                        Node *nodes, HuffCmp cmp, int flags);
-
-int ff_huff_gen_len_table(uint8_t *dst, const uint64_t *stats, int n, int skip0);
 
 #endif /* AVCODEC_HUFFMAN_H */

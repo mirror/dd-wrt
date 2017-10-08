@@ -23,11 +23,10 @@
 #define AVFORMAT_VOC_H
 
 #include "avformat.h"
-#include "internal.h"
+#include "riff.h"    /* for CodecTag */
 
 typedef struct voc_dec_context {
     int64_t remaining_size;
-    int64_t pts;
 } VocDecContext;
 
 typedef enum voc_type {
@@ -46,7 +45,7 @@ typedef enum voc_type {
 extern const unsigned char ff_voc_magic[21];
 extern const AVCodecTag ff_voc_codec_tags[];
 
-int ff_voc_get_packet(AVFormatContext *s, AVPacket *pkt,
-                      AVStream *st, int max_size);
+int voc_get_packet(AVFormatContext *s, AVPacket *pkt,
+                   AVStream *st, int max_size);
 
 #endif /* AVFORMAT_VOC_H */

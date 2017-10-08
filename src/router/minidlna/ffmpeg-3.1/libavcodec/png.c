@@ -19,7 +19,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avcodec.h"
+#include "bytestream.h"
 #include "png.h"
+
+const uint8_t ff_pngsig[8] = {137, 80, 78, 71, 13, 10, 26, 10};
+const uint8_t ff_mngsig[8] = {138, 77, 78, 71, 13, 10, 26, 10};
 
 /* Mask to determine which y pixels are valid in a pass */
 const uint8_t ff_png_pass_ymask[NB_PASSES] = {
@@ -36,9 +40,16 @@ static const uint8_t ff_png_pass_xshift[NB_PASSES] = {
     3, 3, 2, 2, 1, 1, 0
 };
 
+/* Mask to determine which pixels are valid in a pass */
+const uint8_t ff_png_pass_mask[NB_PASSES] = {
+    0x80, 0x08, 0x88, 0x22, 0xaa, 0x55, 0xff
+};
+
 void *ff_png_zalloc(void *opaque, unsigned int items, unsigned int size)
 {
-    return av_mallocz_array(items, size);
+    if(items >= UINT_MAX / size)
+        return NULL;
+    return av_malloc(items * size);
 }
 
 void ff_png_zfree(void *opaque, void *ptr)
@@ -66,7 +77,7 @@ int ff_png_pass_row_size(int pass, int bits_per_pixel, int width)
     xmin = ff_png_pass_xmin[pass];
     if (width <= xmin)
         return 0;
-    shift      = ff_png_pass_xshift[pass];
+    shift = ff_png_pass_xshift[pass];
     pass_width = (width - xmin + (1 << shift) - 1) >> shift;
     return (pass_width * bits_per_pixel + 7) >> 3;
 }

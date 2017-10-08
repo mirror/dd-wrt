@@ -31,10 +31,18 @@
 #include "avformat.h"
 #include "libavutil/dict.h"
 
-typedef struct AVMetadataConv {
+struct AVMetadataConv{
     const char *native;
     const char *generic;
-} AVMetadataConv;
+};
+#if !FF_API_OLD_METADATA2
+typedef struct AVMetadataConv AVMetadataConv;
+#endif
+
+#if FF_API_OLD_METADATA
+void ff_metadata_demux_compat(AVFormatContext *s);
+void ff_metadata_mux_compat(AVFormatContext *s);
+#endif
 
 void ff_metadata_conv(AVDictionary **pm, const AVMetadataConv *d_conv,
                                        const AVMetadataConv *s_conv);

@@ -23,17 +23,17 @@
 
 #include "url.h"
 
-typedef struct MMSStream {
+typedef struct {
     int id;
 }MMSStream;
 
-typedef struct MMSContext {
+typedef struct {
     URLContext *mms_hd;                  ///< TCP connection handle
     MMSStream *streams;
 
     /** Buffer for outgoing packets. */
     /*@{*/
-    uint8_t *write_out_ptr;              ///< Pointer for writing the buffer.
+    uint8_t *write_out_ptr;              ///< Pointer for writting the buffer.
     uint8_t out_buffer[512];            ///< Buffer for outgoing packet.
     /*@}*/
 

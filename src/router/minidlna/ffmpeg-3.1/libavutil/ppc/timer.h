@@ -23,8 +23,6 @@
 
 #include <stdint.h>
 
-#include "config.h"
-
 #define AV_READ_TIME read_time
 
 static inline uint64_t read_time(void)
@@ -33,11 +31,12 @@ static inline uint64_t read_time(void)
 
      /* from section 2.2.1 of the 32-bit PowerPC PEM */
      __asm__ volatile(
+         "1:\n"
          "mftbu  %2\n"
          "mftb   %0\n"
          "mftbu  %1\n"
          "cmpw   %2,%1\n"
-         "bne    $-0x10\n"
+         "bne    1b\n"
      : "=r"(tbl), "=r"(tbu), "=r"(temp)
      :
      : "cc");

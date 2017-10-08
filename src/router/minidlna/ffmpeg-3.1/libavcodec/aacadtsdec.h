@@ -28,7 +28,7 @@
 
 #define AAC_ADTS_HEADER_SIZE 7
 
-typedef struct AACADTSHeaderInfo {
+typedef struct {
     uint32_t sample_rate;
     uint32_t samples;
     uint32_t bit_rate;
@@ -49,6 +49,6 @@ typedef struct AACADTSHeaderInfo {
  * -2 if the version element is invalid, -3 if the sample rate
  * element is invalid, or -4 if the bit rate element is invalid.
  */
-int avpriv_aac_parse_header(GetBitContext *gbc, AACADTSHeaderInfo *hdr);
+int ff_aac_parse_header(GetBitContext *gbc, AACADTSHeaderInfo *hdr);
 
 #endif /* AVCODEC_AACADTSDEC_H */

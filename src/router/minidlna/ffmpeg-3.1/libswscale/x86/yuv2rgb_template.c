@@ -21,16 +21,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include <stdint.h>
-
-#include "libavutil/x86/asm.h"
-#include "libswscale/swscale_internal.h"
-
 #undef MOVNTQ
 #undef EMMS
 #undef SFENCE
 
-#if COMPILE_TEMPLATE_MMXEXT
+#if COMPILE_TEMPLATE_MMX2
 #define MOVNTQ "movntq"
 #define SFENCE "sfence"
 #else
@@ -48,7 +43,7 @@
     if (h_size * depth > FFABS(dstStride[0]))                        \
         h_size -= 8;                                                 \
                                                                      \
-    vshift = c->srcFormat != AV_PIX_FMT_YUV422P;                        \
+    vshift = c->srcFormat != PIX_FMT_YUV422P;                        \
                                                                      \
     __asm__ volatile ("pxor %mm4, %mm4\n\t");                        \
     for (y = 0; y < srcSliceH; y++) {                                \
@@ -139,21 +134,10 @@
     "add  $4, %0\n\t"                            \
     "js   1b\n\t"                                \
 
-#if COMPILE_TEMPLATE_MMXEXT
-#undef RGB_PACK24_B_OPERANDS
-#define RGB_PACK24_B_OPERANDS NAMED_CONSTRAINTS_ARRAY_ADD(mask1101,mask0110,mask0100,mask0010,mask1001)
-#else
-#undef RGB_PACK24_B_OPERANDS
-#define RGB_PACK24_B_OPERANDS
-#endif
-
 #define YUV2RGB_OPERANDS                                          \
         : "+r" (index), "+r" (image)                              \
         : "r" (pu - index), "r" (pv - index), "r"(&c->redDither), \
           "r" (py - 2*index)                                      \
-          NAMED_CONSTRAINTS_ADD(mmx_00ffw,pb_03,pb_07,mmx_redmask,pb_e0) \
-          RGB_PACK24_B_OPERANDS                                   \
-        : "memory"                                                \
         );                                                        \
     }                                                             \
 
@@ -161,8 +145,6 @@
         : "+r" (index), "+r" (image)                              \
         : "r" (pu - index), "r" (pv - index), "r"(&c->redDither), \
           "r" (py - 2*index), "r" (pa - 2*index)                  \
-          NAMED_CONSTRAINTS_ADD(mmx_00ffw)                        \
-        : "memory"                                                \
         );                                                        \
     }                                                             \
 
@@ -197,7 +179,7 @@
     "paddusb "GREEN_DITHER"(%4), %%mm2\n\t"      \
     "paddusb "RED_DITHER"(%4),   %%mm1\n\t"      \
 
-#if !COMPILE_TEMPLATE_MMXEXT
+#if !COMPILE_TEMPLATE_MMX2
 static inline int RENAME(yuv420_rgb15)(SwsContext *c, const uint8_t *src[],
                                        int srcStride[],
                                        int srcSliceY, int srcSliceH,
@@ -253,7 +235,7 @@ static inline int RENAME(yuv420_rgb16)(SwsContext *c, const uint8_t *src[],
     YUV2RGB_OPERANDS
     YUV2RGB_ENDFUNC
 }
-#endif /* !COMPILE_TEMPLATE_MMXEXT */
+#endif /* !COMPILE_TEMPLATE_MMX2 */
 
 #define RGB_PACK24(blue, red)\
     "packuswb  %%mm3,      %%mm0 \n" /* R0 R2 R4 R6 R1 R3 R5 R7 */\
@@ -270,7 +252,7 @@ static inline int RENAME(yuv420_rgb16)(SwsContext *c, const uint8_t *src[],
     "punpckhwd %%mm6,      %%mm5 \n" /* R4 G4 B4 R5 R6 G6 B6 R7 */\
     RGB_PACK24_B
 
-#if COMPILE_TEMPLATE_MMXEXT
+#if COMPILE_TEMPLATE_MMX2
 DECLARE_ASM_CONST(8, int16_t, mask1101[4]) = {-1,-1, 0,-1};
 DECLARE_ASM_CONST(8, int16_t, mask0010[4]) = { 0, 0,-1, 0};
 DECLARE_ASM_CONST(8, int16_t, mask0110[4]) = { 0,-1,-1, 0};
@@ -377,7 +359,7 @@ static inline int RENAME(yuv420_bgr24)(SwsContext *c, const uint8_t *src[],
     MOVNTQ "   %%mm5,       16(%1)\n\t"      \
     MOVNTQ "   %%mm"alpha", 24(%1)\n\t"      \
 
-#if !COMPILE_TEMPLATE_MMXEXT
+#if !COMPILE_TEMPLATE_MMX2
 static inline int RENAME(yuv420_rgb32)(SwsContext *c, const uint8_t *src[],
                                        int srcStride[],
                                        int srcSliceY, int srcSliceH,
@@ -464,4 +446,4 @@ static inline int RENAME(yuva420_bgr32)(SwsContext *c, const uint8_t *src[],
 }
 #endif
 
-#endif /* !COMPILE_TEMPLATE_MMXEXT */
+#endif /* !COMPILE_TEMPLATE_MMX2 */

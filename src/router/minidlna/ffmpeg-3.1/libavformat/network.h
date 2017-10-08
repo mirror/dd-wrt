@@ -22,39 +22,31 @@
 #define AVFORMAT_NETWORK_H
 
 #include <errno.h>
-#include <stdint.h>
 
 #include "config.h"
 #include "libavutil/error.h"
 #include "os_support.h"
-#include "avio.h"
-#include "url.h"
-
-#if HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
 #if HAVE_WINSOCK2_H
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-#ifndef EPROTONOSUPPORT
 #define EPROTONOSUPPORT WSAEPROTONOSUPPORT
-#endif
-#ifndef ETIMEDOUT
 #define ETIMEDOUT       WSAETIMEDOUT
-#endif
-#ifndef ECONNREFUSED
 #define ECONNREFUSED    WSAECONNREFUSED
-#endif
-#ifndef EINPROGRESS
 #define EINPROGRESS     WSAEINPROGRESS
-#endif
 
-#define getsockopt(a, b, c, d, e) getsockopt(a, b, c, (char*) d, e)
-#define setsockopt(a, b, c, d, e) setsockopt(a, b, c, (const char*) d, e)
-
-int ff_neterrno(void);
+static inline int ff_neterrno(void)
+{
+    int err = WSAGetLastError();
+    switch (err) {
+    case WSAEWOULDBLOCK:
+        return AVERROR(EAGAIN);
+    case WSAEINTR:
+        return AVERROR(EINTR);
+    }
+    return -err;
+}
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -62,7 +54,7 @@ int ff_neterrno(void);
 #include <netdb.h>
 
 #define ff_neterrno() AVERROR(errno)
-#endif /* HAVE_WINSOCK2_H */
+#endif
 
 #if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
@@ -74,26 +66,31 @@ int ff_neterrno(void);
 
 int ff_socket_nonblock(int socket, int enable);
 
-extern int ff_network_inited_globally;
-int ff_network_init(void);
-void ff_network_close(void);
+static inline int ff_network_init(void)
+{
+#if HAVE_WINSOCK2_H
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(1,1), &wsaData))
+        return 0;
+#endif
+    return 1;
+}
 
-int ff_tls_init(void);
-void ff_tls_deinit(void);
+static inline int ff_network_wait_fd(int fd, int write)
+{
+    int ev = write ? POLLOUT : POLLIN;
+    struct pollfd p = { .fd = fd, .events = ev, .revents = 0 };
+    int ret;
+    ret = poll(&p, 1, 100);
+    return ret < 0 ? ff_neterrno() : p.revents & (ev | POLLERR | POLLHUP) ? 0 : AVERROR(EAGAIN);
+}
 
-int ff_network_wait_fd(int fd, int write);
-
-/**
- * This works similarly to ff_network_wait_fd, but waits up to 'timeout' microseconds
- * Uses ff_network_wait_fd in a loop
- *
- * @fd Socket descriptor
- * @write Set 1 to wait for socket able to be read, 0 to be written
- * @timeout Timeout interval, in microseconds. Actual precision is 100000 mcs, due to ff_network_wait_fd usage
- * @param int_cb Interrupt callback, is checked before each ff_network_wait_fd call
- * @return 0 if data can be read/written, AVERROR(ETIMEDOUT) if timeout expired, or negative error code
- */
-int ff_network_wait_fd_timeout(int fd, int write, int64_t timeout, AVIOInterruptCB *int_cb);
+static inline void ff_network_close(void)
+{
+#if HAVE_WINSOCK2_H
+    WSACleanup();
+#endif
+}
 
 int ff_inet_aton (const char * str, struct in_addr * add);
 
@@ -104,23 +101,11 @@ struct sockaddr_storage {
     uint8_t ss_family;
 #else
     uint16_t ss_family;
-#endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
+#endif
     char ss_pad1[6];
     int64_t ss_align;
     char ss_pad2[112];
 };
-#endif /* !HAVE_STRUCT_SOCKADDR_STORAGE */
-
-typedef union sockaddr_union {
-    struct sockaddr_storage storage;
-    struct sockaddr_in in;
-#if HAVE_STRUCT_SOCKADDR_IN6
-    struct sockaddr_in6 in6;
-#endif
-} sockaddr_union;
-
-#ifndef MSG_NOSIGNAL
-#define MSG_NOSIGNAL 0
 #endif
 
 #if !HAVE_STRUCT_ADDRINFO
@@ -134,35 +119,19 @@ struct addrinfo {
     char *ai_canonname;
     struct addrinfo *ai_next;
 };
-#endif /* !HAVE_STRUCT_ADDRINFO */
+#endif
 
 /* getaddrinfo constants */
-#ifndef EAI_AGAIN
-#define EAI_AGAIN 2
-#endif
-#ifndef EAI_BADFLAGS
-#define EAI_BADFLAGS 3
-#endif
 #ifndef EAI_FAIL
 #define EAI_FAIL 4
 #endif
+
 #ifndef EAI_FAMILY
 #define EAI_FAMILY 5
 #endif
-#ifndef EAI_MEMORY
-#define EAI_MEMORY 6
-#endif
-#ifndef EAI_NODATA
-#define EAI_NODATA 7
-#endif
+
 #ifndef EAI_NONAME
 #define EAI_NONAME 8
-#endif
-#ifndef EAI_SERVICE
-#define EAI_SERVICE 9
-#endif
-#ifndef EAI_SOCKTYPE
-#define EAI_SOCKTYPE 10
 #endif
 
 #ifndef AI_PASSIVE
@@ -204,23 +173,11 @@ void ff_freeaddrinfo(struct addrinfo *res);
 int ff_getnameinfo(const struct sockaddr *sa, int salen,
                    char *host, int hostlen,
                    char *serv, int servlen, int flags);
+const char *ff_gai_strerror(int ecode);
 #define getaddrinfo ff_getaddrinfo
 #define freeaddrinfo ff_freeaddrinfo
 #define getnameinfo ff_getnameinfo
-#endif /* !HAVE_GETADDRINFO */
-
-#if !HAVE_GETADDRINFO || HAVE_WINSOCK2_H
-const char *ff_gai_strerror(int ecode);
-#undef gai_strerror
 #define gai_strerror ff_gai_strerror
-#endif /* !HAVE_GETADDRINFO || HAVE_WINSOCK2_H */
-
-#ifndef INADDR_LOOPBACK
-#define INADDR_LOOPBACK 0x7f000001
-#endif
-
-#ifndef INET_ADDRSTRLEN
-#define INET_ADDRSTRLEN 16
 #endif
 
 #ifndef INET6_ADDRSTRLEN
@@ -234,67 +191,18 @@ const char *ff_gai_strerror(int ecode);
 #define IN6_IS_ADDR_MULTICAST(a) (((uint8_t *) (a))[0] == 0xff)
 #endif
 
-int ff_is_multicast_address(struct sockaddr *addr);
+static inline int ff_is_multicast_address(struct sockaddr *addr)
+{
+    if (addr->sa_family == AF_INET) {
+        return IN_MULTICAST(ntohl(((struct sockaddr_in *)addr)->sin_addr.s_addr));
+    }
+#if HAVE_STRUCT_SOCKADDR_IN6
+    if (addr->sa_family == AF_INET6) {
+        return IN6_IS_ADDR_MULTICAST(&((struct sockaddr_in6 *)addr)->sin6_addr);
+    }
+#endif
 
-#define POLLING_TIME 100 /// Time in milliseconds between interrupt check
-
-/**
- * Bind to a file descriptor and poll for a connection.
- *
- * @param fd      First argument of bind().
- * @param addr    Second argument of bind().
- * @param addrlen Third argument of bind().
- * @param timeout Polling timeout in milliseconds.
- * @param h       URLContext providing interrupt check
- *                callback and logging context.
- * @return        A non-blocking file descriptor on success
- *                or an AVERROR on failure.
- */
-int ff_listen_bind(int fd, const struct sockaddr *addr,
-                   socklen_t addrlen, int timeout,
-                   URLContext *h);
-
-/**
- * Bind to a file descriptor to an address without accepting connections.
- * @param fd      First argument of bind().
- * @param addr    Second argument of bind().
- * @param addrlen Third argument of bind().
- * @return        0 on success or an AVERROR on failure.
- */
-int ff_listen(int fd, const struct sockaddr *addr, socklen_t addrlen);
-
-/**
- * Poll for a single connection on the passed file descriptor.
- * @param fd      The listening socket file descriptor.
- * @param timeout Polling timeout in milliseconds.
- * @param h       URLContext providing interrupt check
- *                callback and logging context.
- * @return        A non-blocking file descriptor on success
- *                or an AVERROR on failure.
- */
-int ff_accept(int fd, int timeout, URLContext *h);
-
-/**
- * Connect to a file descriptor and poll for result.
- *
- * @param fd       First argument of connect(),
- *                 will be set as non-blocking.
- * @param addr     Second argument of connect().
- * @param addrlen  Third argument of connect().
- * @param timeout  Polling timeout in milliseconds.
- * @param h        URLContext providing interrupt check
- *                 callback and logging context.
- * @param will_try_next Whether the caller will try to connect to another
- *                 address for the same host name, affecting the form of
- *                 logged errors.
- * @return         0 on success, AVERROR on failure.
- */
-int ff_listen_connect(int fd, const struct sockaddr *addr,
-                      socklen_t addrlen, int timeout,
-                      URLContext *h, int will_try_next);
-
-int ff_http_match_no_proxy(const char *no_proxy, const char *hostname);
-
-int ff_socket(int domain, int type, int protocol);
+    return 0;
+}
 
 #endif /* AVFORMAT_NETWORK_H */

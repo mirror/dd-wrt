@@ -21,65 +21,20 @@
  * copy video filter
  */
 
-#include "libavutil/imgutils.h"
-#include "libavutil/internal.h"
 #include "avfilter.h"
-#include "internal.h"
-#include "video.h"
 
-static int query_formats(AVFilterContext *ctx)
-{
-    AVFilterFormats *formats = NULL;
-    int fmt;
-
-    for (fmt = 0; av_pix_fmt_desc_get(fmt); fmt++) {
-        const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(fmt);
-        int ret;
-        if (desc->flags & AV_PIX_FMT_FLAG_HWACCEL)
-            continue;
-        if ((ret = ff_add_format(&formats, fmt)) < 0)
-            return ret;
-    }
-
-    return ff_set_common_formats(ctx, formats);
-}
-
-static int filter_frame(AVFilterLink *inlink, AVFrame *in)
-{
-    AVFilterLink *outlink = inlink->dst->outputs[0];
-    AVFrame *out = ff_get_video_buffer(outlink, in->width, in->height);
-
-    if (!out) {
-        av_frame_free(&in);
-        return AVERROR(ENOMEM);
-    }
-    av_frame_copy_props(out, in);
-    av_frame_copy(out, in);
-    av_frame_free(&in);
-    return ff_filter_frame(outlink, out);
-}
-
-static const AVFilterPad avfilter_vf_copy_inputs[] = {
-    {
-        .name         = "default",
-        .type         = AVMEDIA_TYPE_VIDEO,
-        .filter_frame = filter_frame,
-    },
-    { NULL }
-};
-
-static const AVFilterPad avfilter_vf_copy_outputs[] = {
-    {
-        .name = "default",
-        .type = AVMEDIA_TYPE_VIDEO,
-    },
-    { NULL }
-};
-
-AVFilter ff_vf_copy = {
-    .name        = "copy",
+AVFilter avfilter_vf_copy = {
+    .name      = "copy",
     .description = NULL_IF_CONFIG_SMALL("Copy the input video unchanged to the output."),
-    .inputs      = avfilter_vf_copy_inputs,
-    .outputs     = avfilter_vf_copy_outputs,
-    .query_formats = query_formats,
+
+    .inputs    = (AVFilterPad[]) {{ .name             = "default",
+                                    .type             = AVMEDIA_TYPE_VIDEO,
+                                    .get_video_buffer = avfilter_null_get_video_buffer,
+                                    .start_frame      = avfilter_null_start_frame,
+                                    .end_frame        = avfilter_null_end_frame,
+                                    .rej_perms        = ~0 },
+                                  { .name = NULL}},
+    .outputs   = (AVFilterPad[]) {{ .name             = "default",
+                                    .type             = AVMEDIA_TYPE_VIDEO, },
+                                  { .name = NULL}},
 };

@@ -19,12 +19,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVCODEC_AACPS_H
-#define AVCODEC_AACPS_H
+#ifndef AVCODEC_PS_H
+#define AVCODEC_PS_H
 
 #include <stdint.h>
 
-#include "aacpsdsp.h"
 #include "avcodec.h"
 #include "get_bits.h"
 
@@ -38,7 +37,7 @@
 #define PS_AP_LINKS 3
 #define PS_MAX_AP_DELAY 5
 
-typedef struct PSContext {
+typedef struct {
     int    start;
     int    enable_iid;
     int    iid_quant;
@@ -53,34 +52,31 @@ typedef struct PSContext {
     int    num_env;
     int    enable_ipdopd;
     int    border_position[PS_MAX_NUM_ENV+1];
-    int8_t iid_par[PS_MAX_NUM_ENV][PS_MAX_NR_IIDICC]; ///< Inter-channel Intensity Difference Parameters
-    int8_t icc_par[PS_MAX_NUM_ENV][PS_MAX_NR_IIDICC]; ///< Inter-Channel Coherence Parameters
+    int8_t iid_par[PS_MAX_NUM_ENV][PS_MAX_NR_IIDICC]; //<Inter-channel Intensity Difference Parameters
+    int8_t icc_par[PS_MAX_NUM_ENV][PS_MAX_NR_IIDICC]; //<Inter-Channel Coherence Parameters
     /* ipd/opd is iid/icc sized so that the same functions can handle both */
-    int8_t ipd_par[PS_MAX_NUM_ENV][PS_MAX_NR_IIDICC]; ///< Inter-channel Phase Difference Parameters
-    int8_t opd_par[PS_MAX_NUM_ENV][PS_MAX_NR_IIDICC]; ///< Overall Phase Difference Parameters
+    int8_t ipd_par[PS_MAX_NUM_ENV][PS_MAX_NR_IIDICC]; //<Inter-channel Phase Difference Parameters
+    int8_t opd_par[PS_MAX_NUM_ENV][PS_MAX_NR_IIDICC]; //<Overall Phase Difference Parameters
     int    is34bands;
     int    is34bands_old;
 
-    DECLARE_ALIGNED(16, INTFLOAT, in_buf)[5][44][2];
-    DECLARE_ALIGNED(16, INTFLOAT, delay)[PS_MAX_SSB][PS_QMF_TIME_SLOTS + PS_MAX_DELAY][2];
-    DECLARE_ALIGNED(16, INTFLOAT, ap_delay)[PS_MAX_AP_BANDS][PS_AP_LINKS][PS_QMF_TIME_SLOTS + PS_MAX_AP_DELAY][2];
-    DECLARE_ALIGNED(16, INTFLOAT, peak_decay_nrg)[34];
-    DECLARE_ALIGNED(16, INTFLOAT, power_smooth)[34];
-    DECLARE_ALIGNED(16, INTFLOAT, peak_decay_diff_smooth)[34];
-    DECLARE_ALIGNED(16, INTFLOAT, H11)[2][PS_MAX_NUM_ENV+1][PS_MAX_NR_IIDICC];
-    DECLARE_ALIGNED(16, INTFLOAT, H12)[2][PS_MAX_NUM_ENV+1][PS_MAX_NR_IIDICC];
-    DECLARE_ALIGNED(16, INTFLOAT, H21)[2][PS_MAX_NUM_ENV+1][PS_MAX_NR_IIDICC];
-    DECLARE_ALIGNED(16, INTFLOAT, H22)[2][PS_MAX_NUM_ENV+1][PS_MAX_NR_IIDICC];
-    DECLARE_ALIGNED(16, INTFLOAT, Lbuf)[91][32][2];
-    DECLARE_ALIGNED(16, INTFLOAT, Rbuf)[91][32][2];
+    float  in_buf[5][44][2];
+    float  delay[PS_MAX_SSB][PS_QMF_TIME_SLOTS + PS_MAX_DELAY][2];
+    float  ap_delay[PS_MAX_AP_BANDS][PS_AP_LINKS][PS_QMF_TIME_SLOTS + PS_MAX_AP_DELAY][2];
+    float  peak_decay_nrg[34];
+    float  power_smooth[34];
+    float  peak_decay_diff_smooth[34];
+    float  H11[2][PS_MAX_NUM_ENV+1][PS_MAX_NR_IIDICC];
+    float  H12[2][PS_MAX_NUM_ENV+1][PS_MAX_NR_IIDICC];
+    float  H21[2][PS_MAX_NUM_ENV+1][PS_MAX_NR_IIDICC];
+    float  H22[2][PS_MAX_NUM_ENV+1][PS_MAX_NR_IIDICC];
     int8_t opd_hist[PS_MAX_NR_IIDICC];
     int8_t ipd_hist[PS_MAX_NR_IIDICC];
-    PSDSPContext dsp;
 } PSContext;
 
-void AAC_RENAME(ff_ps_init)(void);
-void AAC_RENAME(ff_ps_ctx_init)(PSContext *ps);
-int AAC_RENAME(ff_ps_read_data)(AVCodecContext *avctx, GetBitContext *gb, PSContext *ps, int bits_left);
-int AAC_RENAME(ff_ps_apply)(AVCodecContext *avctx, PSContext *ps, INTFLOAT L[2][38][64], INTFLOAT R[2][38][64], int top);
+void ff_ps_init(void);
+void ff_ps_ctx_init(PSContext *ps);
+int ff_ps_read_data(AVCodecContext *avctx, GetBitContext *gb, PSContext *ps, int bits_left);
+int ff_ps_apply(AVCodecContext *avctx, PSContext *ps, float L[2][38][64], float R[2][38][64], int top);
 
-#endif /* AVCODEC_AACPS_H */
+#endif /* AVCODEC_PS_H */

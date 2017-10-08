@@ -25,15 +25,14 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "libavutil/channel_layout.h"
-#include "libavutil/float_dsp.h"
 #include "libavutil/mathematics.h"
-
-#define BITSTREAM_READER_LE
 #include "avcodec.h"
+#define ALT_BITSTREAM_READER_LE
 #include "get_bits.h"
-#include "internal.h"
+#include "dsputil.h"
+
 #include "lsp.h"
+#include "celp_math.h"
 #include "acelp_vectors.h"
 #include "acelp_pitch_delay.h"
 #include "acelp_filters.h"
@@ -44,7 +43,7 @@
 #include "sipr.h"
 #include "siprdata.h"
 
-typedef struct SiprModeParam {
+typedef struct {
     const char *mode_name;
     uint16_t bits_per_frame;
     uint8_t subframe_count;
@@ -139,7 +138,7 @@ const float ff_pow_0_5[] = {
     1.0/(1 << 13), 1.0/(1 << 14), 1.0/(1 << 15), 1.0/(1 << 16)
 };
 
-static void dequant(float *out, const int *idx, const float * const cbs[])
+static void dequant(float *out, const int *idx, const float *cbs[])
 {
     int i;
     int stride  = 2;
@@ -240,7 +239,7 @@ static void eval_ir(const float *Az, int pitch_lag, float *freq,
     float tmp1[SUBFR_SIZE+1], tmp2[LP_FILTER_ORDER+1];
     int i;
 
-    tmp1[0] = 1.0;
+    tmp1[0] = 1.;
     for (i = 0; i < LP_FILTER_ORDER; i++) {
         tmp1[i+1] = Az[i] * ff_pow_0_55[i];
         tmp2[i  ] = Az[i] * ff_pow_0_7 [i];
@@ -411,10 +410,9 @@ static void decode_frame(SiprContext *ctx, SiprParameters *params,
         convolute_with_sparse(fixed_vector, &fixed_cb, impulse_response,
                               SUBFR_SIZE);
 
-        avg_energy = (0.01 + avpriv_scalarproduct_float_c(fixed_vector,
-                                                          fixed_vector,
-                                                          SUBFR_SIZE)) /
-                     SUBFR_SIZE;
+        avg_energy =
+            (0.01 + ff_dot_productf(fixed_vector, fixed_vector, SUBFR_SIZE))/
+                SUBFR_SIZE;
 
         ctx->past_pitch_gain = pitch_gain = gain_cb[params->gc_index[i]][0];
 
@@ -455,9 +453,9 @@ static void decode_frame(SiprContext *ctx, SiprParameters *params,
 
     if (ctx->mode == MODE_5k0) {
         for (i = 0; i < subframe_count; i++) {
-            float energy = avpriv_scalarproduct_float_c(ctx->postfilter_syn5k0 + LP_FILTER_ORDER + i * SUBFR_SIZE,
-                                                        ctx->postfilter_syn5k0 + LP_FILTER_ORDER + i * SUBFR_SIZE,
-                                                        SUBFR_SIZE);
+            float energy = ff_dot_productf(ctx->postfilter_syn5k0 + LP_FILTER_ORDER + i*SUBFR_SIZE,
+                                           ctx->postfilter_syn5k0 + LP_FILTER_ORDER + i*SUBFR_SIZE,
+                                           SUBFR_SIZE);
             ff_adaptive_gain_control(&synth[i * SUBFR_SIZE],
                                      &synth[i * SUBFR_SIZE], energy,
                                      SUBFR_SIZE, 0.9, &ctx->postfilter_agc);
@@ -482,29 +480,15 @@ static av_cold int sipr_decoder_init(AVCodecContext * avctx)
     SiprContext *ctx = avctx->priv_data;
     int i;
 
-    switch (avctx->block_align) {
-    case 20: ctx->mode = MODE_16k; break;
-    case 19: ctx->mode = MODE_8k5; break;
-    case 29: ctx->mode = MODE_6k5; break;
-    case 37: ctx->mode = MODE_5k0; break;
-    default:
-        if      (avctx->bit_rate > 12200) ctx->mode = MODE_16k;
-        else if (avctx->bit_rate > 7500 ) ctx->mode = MODE_8k5;
-        else if (avctx->bit_rate > 5750 ) ctx->mode = MODE_6k5;
-        else                              ctx->mode = MODE_5k0;
-        av_log(avctx, AV_LOG_WARNING,
-               "Invalid block_align: %d. Mode %s guessed based on bitrate: %"PRId64"\n",
-               avctx->block_align, modes[ctx->mode].mode_name, (int64_t)avctx->bit_rate);
-    }
+    if      (avctx->bit_rate > 12200) ctx->mode = MODE_16k;
+    else if (avctx->bit_rate > 7500 ) ctx->mode = MODE_8k5;
+    else if (avctx->bit_rate > 5750 ) ctx->mode = MODE_6k5;
+    else                              ctx->mode = MODE_5k0;
 
     av_log(avctx, AV_LOG_DEBUG, "Mode: %s\n", modes[ctx->mode].mode_name);
 
-    if (ctx->mode == MODE_16k) {
+    if (ctx->mode == MODE_16k)
         ff_sipr_init_16k(ctx);
-        ctx->decode_frame = ff_sipr_decode_frame_16k;
-    } else {
-        ctx->decode_frame = decode_frame;
-    }
 
     for (i = 0; i < LP_FILTER_ORDER; i++)
         ctx->lsp_history[i] = cos((i+1) * M_PI / (LP_FILTER_ORDER + 1));
@@ -512,63 +496,71 @@ static av_cold int sipr_decoder_init(AVCodecContext * avctx)
     for (i = 0; i < 4; i++)
         ctx->energy_history[i] = -14;
 
-    avctx->channels       = 1;
-    avctx->channel_layout = AV_CH_LAYOUT_MONO;
-    avctx->sample_fmt     = AV_SAMPLE_FMT_FLT;
+    avctx->sample_fmt = AV_SAMPLE_FMT_FLT;
 
     return 0;
 }
 
-static int sipr_decode_frame(AVCodecContext *avctx, void *data,
-                             int *got_frame_ptr, AVPacket *avpkt)
+static int sipr_decode_frame(AVCodecContext *avctx, void *datap,
+                             int *data_size, AVPacket *avpkt)
 {
     SiprContext *ctx = avctx->priv_data;
-    AVFrame *frame   = data;
     const uint8_t *buf=avpkt->data;
     SiprParameters parm;
     const SiprModeParam *mode_par = &modes[ctx->mode];
     GetBitContext gb;
-    float *samples;
+    float *data = datap;
     int subframe_size = ctx->mode == MODE_16k ? L_SUBFR_16k : SUBFR_SIZE;
-    int i, ret;
+    int i, out_size;
 
     ctx->avctx = avctx;
     if (avpkt->size < (mode_par->bits_per_frame >> 3)) {
         av_log(avctx, AV_LOG_ERROR,
                "Error processing packet: packet size (%d) too small\n",
                avpkt->size);
-        return AVERROR_INVALIDDATA;
+
+        *data_size = 0;
+        return -1;
     }
 
-    /* get output buffer */
-    frame->nb_samples = mode_par->frames_per_packet * subframe_size *
-                        mode_par->subframe_count;
-    if ((ret = ff_get_buffer(avctx, frame, 0)) < 0)
-        return ret;
-    samples = (float *)frame->data[0];
+    out_size = mode_par->frames_per_packet * subframe_size *
+               mode_par->subframe_count *
+               av_get_bytes_per_sample(avctx->sample_fmt);
+    if (*data_size < out_size) {
+        av_log(avctx, AV_LOG_ERROR,
+               "Error processing packet: output buffer (%d) too small\n",
+               *data_size);
+
+        *data_size = 0;
+        return -1;
+    }
 
     init_get_bits(&gb, buf, mode_par->bits_per_frame);
 
     for (i = 0; i < mode_par->frames_per_packet; i++) {
         decode_parameters(&parm, &gb, mode_par);
 
-        ctx->decode_frame(ctx, &parm, samples);
+        if (ctx->mode == MODE_16k)
+            ff_sipr_decode_frame_16k(ctx, &parm, data);
+        else
+            decode_frame(ctx, &parm, data);
 
-        samples += subframe_size * mode_par->subframe_count;
+        data += subframe_size * mode_par->subframe_count;
     }
 
-    *got_frame_ptr = 1;
+    *data_size = out_size;
 
     return mode_par->bits_per_frame >> 3;
 }
 
 AVCodec ff_sipr_decoder = {
-    .name           = "sipr",
-    .long_name      = NULL_IF_CONFIG_SMALL("RealAudio SIPR / ACELP.NET"),
-    .type           = AVMEDIA_TYPE_AUDIO,
-    .id             = AV_CODEC_ID_SIPR,
-    .priv_data_size = sizeof(SiprContext),
-    .init           = sipr_decoder_init,
-    .decode         = sipr_decode_frame,
-    .capabilities   = AV_CODEC_CAP_DR1,
+    "sipr",
+    AVMEDIA_TYPE_AUDIO,
+    CODEC_ID_SIPR,
+    sizeof(SiprContext),
+    sipr_decoder_init,
+    NULL,
+    NULL,
+    sipr_decode_frame,
+    .long_name = NULL_IF_CONFIG_SMALL("RealAudio SIPR / ACELP.NET"),
 };

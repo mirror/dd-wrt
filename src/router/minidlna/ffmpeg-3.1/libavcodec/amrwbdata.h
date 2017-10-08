@@ -38,7 +38,7 @@
 
 #define MIN_ISF_SPACING     (128.0 / 32768.0) ///< minimum isf gap
 #define PRED_FACTOR         (1.0 / 3.0)
-#define MIN_ENERGY         -14.0              ///< initial innovation energy (dB)
+#define MIN_ENERGY         -14.0              ///< initial innnovation energy (dB)
 #define ENERGY_MEAN         30.0              ///< mean innovation energy (dB) in all modes
 #define PREEMPH_FAC         0.68              ///< factor used to de-emphasize synthesis
 
@@ -66,7 +66,7 @@ enum Mode {
 
 /* All decoded parameters in these structs must be 2 bytes long
  * because of the direct indexing at the frame parsing */
-typedef struct AMRWBSubFrame {
+typedef struct {
     uint16_t adap;                         ///< adaptive codebook index
     uint16_t ltp;                          ///< ltp-filtering flag
     uint16_t vq_gain;                      ///< VQ adaptive and innovative gains
@@ -75,14 +75,14 @@ typedef struct AMRWBSubFrame {
     uint16_t pul_il[4];                    ///< LSBs part of codebook index
 } AMRWBSubFrame;
 
-typedef struct AMRWBFrame {
+typedef struct {
     uint16_t vad;                          ///< voice activity detection flag
     uint16_t isp_id[7];                    ///< index of ISP subvectors
     AMRWBSubFrame subframe[4];             ///< data for subframes
 } AMRWBFrame;
 
 /** The index of a frame parameter */
-#define AMR_BIT(field)                  (offsetof(AMRWBFrame, field))
+#define AMR_BIT(field)                  (offsetof(AMRWBFrame, field) >> 1)
 /** The index of a subframe-specific parameter */
 #define AMR_OF(frame_num, variable)     AMR_BIT(subframe[frame_num].variable)
 
@@ -1805,7 +1805,7 @@ static const float ir_filter_mid[64] = {
     -7.501221e-02,  2.920532e-02,  1.660156e-02,  7.751465e-02
 };
 
-static const float * const ir_filters_lookup[2] = {
+static const float *ir_filters_lookup[2] = {
     ir_filter_str, ir_filter_mid
 };
 

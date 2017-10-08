@@ -25,8 +25,8 @@
 #define AVCODEC_SIPR_H
 
 #include "avcodec.h"
+#include "dsputil.h"
 #include "acelp_pitch_delay.h"
-#include "libavutil/mem.h"
 
 #define LP_FILTER_ORDER_16k  16
 #define L_SUBFR_16k          80
@@ -53,16 +53,7 @@ typedef enum {
     MODE_COUNT
 } SiprMode;
 
-typedef struct SiprParameters {
-    int ma_pred_switch;        ///< switched moving average predictor
-    int vq_indexes[5];
-    int pitch_delay[5];        ///< pitch delay
-    int gp_index[5];           ///< adaptive-codebook gain indexes
-    int16_t fc_indexes[5][10]; ///< fixed-codebook indexes
-    int gc_index[5];           ///< fixed-codebook gain indexes
-} SiprParameters;
-
-typedef struct SiprContext {
+typedef struct {
     AVCodecContext *avctx;
 
     SiprMode mode;
@@ -94,10 +85,16 @@ typedef struct SiprContext {
     float mem_preemph[LP_FILTER_ORDER_16k];
     float synth[LP_FILTER_ORDER_16k];
     double lsp_history_16k[16];
-
-    void (*decode_frame)(struct SiprContext *ctx, SiprParameters *params,
-                         float *out_data);
 } SiprContext;
+
+typedef struct {
+    int ma_pred_switch;        ///< switched moving average predictor
+    int vq_indexes[5];
+    int pitch_delay[5];        ///< pitch delay
+    int gp_index[5];           ///< adaptive-codebook gain indexes
+    int16_t fc_indexes[5][10]; ///< fixed-codebook indexes
+    int gc_index[5];           ///< fixed-codebook gain indexes
+} SiprParameters;
 
 extern const float ff_pow_0_5[16];
 

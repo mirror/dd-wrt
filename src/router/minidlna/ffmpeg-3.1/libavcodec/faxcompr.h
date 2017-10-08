@@ -20,8 +20,8 @@
  */
 
 /**
- * @file
  * CCITT Fax Group 3 and 4 decompression
+ * @file
  * @author Konstantin Shishkov
  */
 #ifndef AVCODEC_FAXCOMPR_H
@@ -31,7 +31,7 @@
 #include "tiff.h"
 
 /**
- * initialize unpacker code
+ * initialize upacker code
  */
 void ff_ccitt_unpack_init(void);
 

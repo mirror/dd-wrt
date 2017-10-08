@@ -26,15 +26,16 @@
  * divided into 32 subbands.
  */
 
-#include "libavutil/attributes.h"
 #include "avcodec.h"
+#include "get_bits.h"
+#include "dsputil.h"
 #include "mpegaudiodsp.h"
 #include "mpegaudio.h"
 
 #include "mpc.h"
 #include "mpcdata.h"
 
-av_cold void ff_mpc_init(void)
+void ff_mpc_init(void)
 {
     ff_mpa_synth_init_fixed(ff_mpa_synth_window_fixed);
 }
@@ -42,24 +43,28 @@ av_cold void ff_mpc_init(void)
 /**
  * Process decoded Musepack data and produce PCM
  */
-static void mpc_synth(MPCContext *c, int16_t **out, int channels)
+static void mpc_synth(MPCContext *c, int16_t *out, int channels)
 {
     int dither_state = 0;
     int i, ch;
+    OUT_INT samples[MPA_MAX_CHANNELS * MPA_FRAME_SIZE], *samples_ptr;
 
     for(ch = 0;  ch < channels; ch++){
+        samples_ptr = samples + ch;
         for(i = 0; i < SAMPLES_PER_BAND; i++) {
             ff_mpa_synth_filter_fixed(&c->mpadsp,
                                 c->synth_buf[ch], &(c->synth_buf_offset[ch]),
                                 ff_mpa_synth_window_fixed, &dither_state,
-                                out[ch] + 32 * i, 1,
+                                samples_ptr, channels,
                                 c->sb_samples[ch][i]);
+            samples_ptr += 32 * channels;
         }
     }
+    for(i = 0; i < MPC_FRAME_SIZE*channels; i++)
+        *out++=samples[i];
 }
 
-void ff_mpc_dequantize_and_synth(MPCContext * c, int maxband, int16_t **out,
-                                 int channels)
+void ff_mpc_dequantize_and_synth(MPCContext * c, int maxband, void *data, int channels)
 {
     int i, j, ch;
     Band *bands = c->bands;
@@ -73,13 +78,13 @@ void ff_mpc_dequantize_and_synth(MPCContext * c, int maxband, int16_t **out,
         for(ch = 0; ch < 2; ch++){
             if(bands[i].res[ch]){
                 j = 0;
-                mul = (mpc_CC+1)[bands[i].res[ch]] * mpc_SCF[bands[i].scf_idx[ch][0] & 0xFF];
+                mul = mpc_CC[bands[i].res[ch]] * mpc_SCF[bands[i].scf_idx[ch][0]];
                 for(; j < 12; j++)
                     c->sb_samples[ch][j][i] = mul * c->Q[ch][j + off];
-                mul = (mpc_CC+1)[bands[i].res[ch]] * mpc_SCF[bands[i].scf_idx[ch][1] & 0xFF];
+                mul = mpc_CC[bands[i].res[ch]] * mpc_SCF[bands[i].scf_idx[ch][1]];
                 for(; j < 24; j++)
                     c->sb_samples[ch][j][i] = mul * c->Q[ch][j + off];
-                mul = (mpc_CC+1)[bands[i].res[ch]] * mpc_SCF[bands[i].scf_idx[ch][2] & 0xFF];
+                mul = mpc_CC[bands[i].res[ch]] * mpc_SCF[bands[i].scf_idx[ch][2]];
                 for(; j < 36; j++)
                     c->sb_samples[ch][j][i] = mul * c->Q[ch][j + off];
             }
@@ -95,5 +100,5 @@ void ff_mpc_dequantize_and_synth(MPCContext * c, int maxband, int16_t **out,
         }
     }
 
-    mpc_synth(c, out, channels);
+    mpc_synth(c, data, channels);
 }

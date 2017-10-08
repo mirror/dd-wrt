@@ -18,16 +18,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavutil/arm/asm.S"
+#include "asm.S"
+
+        preserve8
+        .text
 
 function ff_h264_idct_add_neon, export=1
         vld1.64         {d0-d3},  [r1,:128]
-        vmov.i16        q15, #0
 
         vswp            d1,  d2
-        vst1.16         {q15},    [r1,:128]!
         vadd.i16        d4,  d0,  d1
-        vst1.16         {q15},    [r1,:128]!
         vshr.s16        q8,  q1,  #1
         vsub.i16        d5,  d0,  d1
         vadd.i16        d6,  d2,  d17
@@ -68,14 +68,11 @@ function ff_h264_idct_add_neon, export=1
         vst1.32         {d0[1]},  [r0,:32], r2
         vst1.32         {d1[0]},  [r0,:32], r2
 
-        sub             r1,  r1,  #32
         bx              lr
 endfunc
 
 function ff_h264_idct_dc_add_neon, export=1
-        mov             r3,       #0
         vld1.16         {d2[],d3[]}, [r1,:16]
-        strh            r3,       [r1]
         vrshr.s16       q1,  q1,  #6
         vld1.32         {d0[0]},  [r0,:32], r2
         vld1.32         {d0[1]},  [r0,:32], r2
@@ -109,12 +106,10 @@ function ff_h264_idct_add16_neon, export=1
         blt             2f
         ldrsh           lr,  [r1]
         add             r0,  r0,  r4
-        it              ne
         movne           lr,  #0
         cmp             lr,  #0
-        ite             ne
-        adrne           lr,  X(ff_h264_idct_dc_add_neon) + CONFIG_THUMB
-        adreq           lr,  X(ff_h264_idct_add_neon)    + CONFIG_THUMB
+        adrne           lr,  ff_h264_idct_dc_add_neon
+        adreq           lr,  ff_h264_idct_add_neon
         blx             lr
 2:      subs            ip,  ip,  #1
         add             r1,  r1,  #32
@@ -137,9 +132,8 @@ function ff_h264_idct_add16intra_neon, export=1
         add             r0,  r0,  r4
         cmp             r8,  #0
         ldrsh           r8,  [r1]
-        iteet           ne
-        adrne           lr,  X(ff_h264_idct_add_neon)    + CONFIG_THUMB
-        adreq           lr,  X(ff_h264_idct_dc_add_neon) + CONFIG_THUMB
+        adrne           lr,  ff_h264_idct_add_neon
+        adreq           lr,  ff_h264_idct_dc_add_neon
         cmpeq           r8,  #0
         blxne           lr
         subs            ip,  ip,  #1
@@ -154,7 +148,7 @@ function ff_h264_idct_add8_neon, export=1
         add             r5,  r1,  #16*4
         add             r1,  r2,  #16*32
         mov             r2,  r3
-        mov             r10, r1
+        mov             r3,  r1
         ldr             r6,  [sp, #32]
         movrel          r7,  scan8+16
         mov             r12, #0
@@ -162,17 +156,15 @@ function ff_h264_idct_add8_neon, export=1
         ldr             r0,  [r5, r12, lsl #2]
         ldrb            r8,  [r6, r8]
         add             r0,  r0,  r4
-        add             r1,  r10, r12, lsl #5
+        add             r1,  r3,  r12, lsl #5
         cmp             r8,  #0
         ldrsh           r8,  [r1]
-        iteet           ne
-        adrne           lr,  X(ff_h264_idct_add_neon)    + CONFIG_THUMB
-        adreq           lr,  X(ff_h264_idct_dc_add_neon) + CONFIG_THUMB
+        adrne           lr,  ff_h264_idct_add_neon
+        adreq           lr,  ff_h264_idct_dc_add_neon
         cmpeq           r8,  #0
         blxne           lr
         add             r12, r12, #1
         cmp             r12, #4
-        itt             eq
         moveq           r12, #16
         moveq           r4,  r9
         cmp             r12, #20
@@ -186,9 +178,7 @@ endfunc
         qb      .req    q14
         vshr.s16        q2,  q10, #1
         vadd.i16        q0,  q8,  q12
-        vld1.16         {q14-q15},[r1,:128]
-        vst1.16         {q3},     [r1,:128]!
-        vst1.16         {q3},     [r1,:128]!
+        vld1.16         {q14-q15},[r1,:128]!
         vsub.i16        q1,  q8,  q12
         vshr.s16        q3,  q14, #1
         vsub.i16        q2,  q2,  q14
@@ -267,16 +257,9 @@ endfunc
 .endm
 
 function ff_h264_idct8_add_neon, export=1
-        vmov.i16        q3,       #0
-        vld1.16         {q8-q9},  [r1,:128]
-        vst1.16         {q3},     [r1,:128]!
-        vst1.16         {q3},     [r1,:128]!
-        vld1.16         {q10-q11},[r1,:128]
-        vst1.16         {q3},     [r1,:128]!
-        vst1.16         {q3},     [r1,:128]!
-        vld1.16         {q12-q13},[r1,:128]
-        vst1.16         {q3},     [r1,:128]!
-        vst1.16         {q3},     [r1,:128]!
+        vld1.16         {q8-q9},  [r1,:128]!
+        vld1.16         {q10-q11},[r1,:128]!
+        vld1.16         {q12-q13},[r1,:128]!
 
         idct8x8_cols    0
         idct8x8_cols    1
@@ -328,9 +311,7 @@ function ff_h264_idct8_add_neon, export=1
 endfunc
 
 function ff_h264_idct8_dc_add_neon, export=1
-        mov             r3,       #0
         vld1.16         {d30[],d31[]},[r1,:16]
-        strh            r3,       [r1]
         vld1.32         {d0},     [r0,:64], r2
         vrshr.s16       q15, q15, #6
         vld1.32         {d1},     [r0,:64], r2
@@ -384,12 +365,10 @@ function ff_h264_idct8_add4_neon, export=1
         blt             2f
         ldrsh           lr,  [r1]
         add             r0,  r0,  r4
-        it              ne
         movne           lr,  #0
         cmp             lr,  #0
-        ite             ne
-        adrne           lr,  X(ff_h264_idct8_dc_add_neon) + CONFIG_THUMB
-        adreq           lr,  X(ff_h264_idct8_add_neon)    + CONFIG_THUMB
+        adrne           lr,  ff_h264_idct8_dc_add_neon
+        adreq           lr,  ff_h264_idct8_add_neon
         blx             lr
 2:      subs            r12, r12, #4
         add             r1,  r1,  #128
@@ -397,8 +376,8 @@ function ff_h264_idct8_add4_neon, export=1
         pop             {r4-r8,pc}
 endfunc
 
-const   scan8
-        .byte           4+ 1*8, 5+ 1*8, 4+ 2*8, 5+ 2*8
+        .section .rodata
+scan8:  .byte           4+ 1*8, 5+ 1*8, 4+ 2*8, 5+ 2*8
         .byte           6+ 1*8, 7+ 1*8, 6+ 2*8, 7+ 2*8
         .byte           4+ 3*8, 5+ 3*8, 4+ 4*8, 5+ 4*8
         .byte           6+ 3*8, 7+ 3*8, 6+ 4*8, 7+ 4*8
@@ -410,4 +389,3 @@ const   scan8
         .byte           6+11*8, 7+11*8, 6+12*8, 7+12*8
         .byte           4+13*8, 5+13*8, 4+14*8, 5+14*8
         .byte           6+13*8, 7+13*8, 6+14*8, 7+14*8
-endconst

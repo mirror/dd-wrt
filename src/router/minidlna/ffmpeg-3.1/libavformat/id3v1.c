@@ -23,7 +23,6 @@
 #include "libavcodec/avcodec.h"
 #include "libavutil/dict.h"
 
-/* See Genre List at http://id3.org/id3v2.3.0 */
 const char * const ff_id3v1_genre_str[ID3v1_GENRE_MAX + 1] = {
       [0] = "Blues",
       [1] = "Classic Rock",
@@ -92,7 +91,7 @@ const char * const ff_id3v1_genre_str[ID3v1_GENRE_MAX + 1] = {
      [64] = "Native American",
      [65] = "Cabaret",
      [66] = "New Wave",
-     [67] = "Psychadelic", /* sic, the misspelling is used in the specification */
+     [67] = "Psychadelic",
      [68] = "Rave",
      [69] = "Showtunes",
      [70] = "Trailer",
@@ -179,7 +178,7 @@ static void get_string(AVFormatContext *s, const char *key,
                        const uint8_t *buf, int buf_size)
 {
     int i, c;
-    char *q, str[512], *first_free_space = NULL;
+    char *q, str[512];
 
     q = str;
     for(i = 0; i < buf_size; i++) {
@@ -188,18 +187,9 @@ static void get_string(AVFormatContext *s, const char *key,
             break;
         if ((q - str) >= sizeof(str) - 1)
             break;
-        if (c == ' ') {
-            if (!first_free_space)
-                first_free_space = q;
-        } else {
-            first_free_space = NULL;
-        }
         *q++ = c;
     }
     *q = '\0';
-
-    if (first_free_space)
-        *first_free_space = '\0';
 
     if (*str)
         av_dict_set(&s->metadata, key, str, 0);
@@ -212,6 +202,7 @@ static void get_string(AVFormatContext *s, const char *key,
  */
 static int parse_tag(AVFormatContext *s, const uint8_t *buf)
 {
+    char str[5];
     int genre;
 
     if (!(buf[0] == 'T' &&
@@ -224,7 +215,8 @@ static int parse_tag(AVFormatContext *s, const uint8_t *buf)
     get_string(s, "date",    buf + 93,  4);
     get_string(s, "comment", buf + 97, 30);
     if (buf[125] == 0 && buf[126] != 0) {
-        av_dict_set_int(&s->metadata, "track", buf[126], 0);
+        snprintf(str, sizeof(str), "%d", buf[126]);
+        av_dict_set(&s->metadata, "track", str, 0);
     }
     genre = buf[127];
     if (genre <= ID3v1_GENRE_MAX)
@@ -238,7 +230,7 @@ void ff_id3v1_read(AVFormatContext *s)
     uint8_t buf[ID3v1_TAG_SIZE];
     int64_t filesize, position = avio_tell(s->pb);
 
-    if (s->pb->seekable & AVIO_SEEKABLE_NORMAL) {
+    if (s->pb->seekable) {
         /* XXX: change that */
         filesize = avio_size(s->pb);
         if (filesize > 128) {

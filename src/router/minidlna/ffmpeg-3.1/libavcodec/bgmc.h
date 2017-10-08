@@ -1,6 +1,6 @@
 /*
  * Block Gilbert-Moore decoder
- * Copyright (c) 2010 Thilo Borgmann <thilo.borgmann _at_ mail.de>
+ * Copyright (c) 2010 Thilo Borgmann <thilo.borgmann _at_ googlemail.com>
  *
  * This file is part of FFmpeg.
  *
@@ -22,7 +22,7 @@
 /**
  * @file
  * Block Gilbert-Moore decoder header
- * @author Thilo Borgmann <thilo.borgmann _at_ mail.de>
+ * @author Thilo Borgmann <thilo.borgmann _at_ googlemail.com>
  */
 
 

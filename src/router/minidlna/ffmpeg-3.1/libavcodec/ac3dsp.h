@@ -1,5 +1,5 @@
 /*
- * AC-3 DSP functions
+ * AC-3 DSP utils
  * Copyright (c) 2011 Justin Ruggles
  *
  * This file is part of FFmpeg.
@@ -125,43 +125,10 @@ typedef struct AC3DSPContext {
     int (*compute_mantissa_size)(uint16_t mant_cnt[6][16]);
 
     void (*extract_exponents)(uint8_t *exp, int32_t *coef, int nb_coefs);
-
-    void (*sum_square_butterfly_int32)(int64_t sum[4], const int32_t *coef0,
-                                       const int32_t *coef1, int len);
-
-    void (*sum_square_butterfly_float)(float sum[4], const float *coef0,
-                                       const float *coef1, int len);
-
-    int out_channels;
-    int in_channels;
-    void (*downmix)(float **samples, float **matrix, int len);
-    void (*downmix_fixed)(int32_t **samples, int16_t **matrix, int len);
-
-    /**
-     * Apply symmetric window in 16-bit fixed-point.
-     * @param output destination array
-     *               constraints: 16-byte aligned
-     * @param input  source array
-     *               constraints: 16-byte aligned
-     * @param window window array
-     *               constraints: 16-byte aligned, at least len/2 elements
-     * @param len    full window length
-     *               constraints: multiple of ? greater than zero
-     */
-    void (*apply_window_int16)(int16_t *output, const int16_t *input,
-                               const int16_t *window, unsigned int len);
 } AC3DSPContext;
 
 void ff_ac3dsp_init    (AC3DSPContext *c, int bit_exact);
 void ff_ac3dsp_init_arm(AC3DSPContext *c, int bit_exact);
 void ff_ac3dsp_init_x86(AC3DSPContext *c, int bit_exact);
-void ff_ac3dsp_init_mips(AC3DSPContext *c, int bit_exact);
-
-void ff_ac3dsp_downmix(AC3DSPContext *c, float **samples, float **matrix,
-                       int out_ch, int in_ch, int len);
-void ff_ac3dsp_downmix_fixed(AC3DSPContext *c, int32_t **samples, int16_t **matrix,
-                             int out_ch, int in_ch, int len);
-
-void ff_ac3dsp_set_downmix_x86(AC3DSPContext *c);
 
 #endif /* AVCODEC_AC3DSP_H */

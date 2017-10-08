@@ -28,7 +28,7 @@
 #include "network.h"
 #include "url.h"
 
-typedef struct GopherContext {
+typedef struct {
     URLContext *hd;
 } GopherContext;
 
@@ -50,7 +50,7 @@ static int gopher_connect(URLContext *h, const char *path)
             if (!path) return AVERROR(EINVAL);
             break;
         default:
-            av_log(h, AV_LOG_WARNING,
+            av_log(NULL, AV_LOG_WARNING,
                    "Gopher protocol type '%c' not supported yet!\n",
                    *path);
             return AVERROR(EINVAL);
@@ -72,16 +72,23 @@ static int gopher_close(URLContext *h)
         ffurl_close(s->hd);
         s->hd = NULL;
     }
+    av_freep(&h->priv_data);
     return 0;
 }
 
 static int gopher_open(URLContext *h, const char *uri, int flags)
 {
-    GopherContext *s = h->priv_data;
+    GopherContext *s;
     char hostname[1024], auth[1024], path[1024], buf[1024];
     int port, err;
 
     h->is_streamed = 1;
+
+    s = av_malloc(sizeof(GopherContext));
+    if (!s) {
+        return AVERROR(ENOMEM);
+    }
+    h->priv_data = s;
 
     /* needed in any case to build the host string */
     av_url_split(NULL, 0, auth, sizeof(auth), hostname, sizeof(hostname), &port,
@@ -93,8 +100,7 @@ static int gopher_open(URLContext *h, const char *uri, int flags)
     ff_url_join(buf, sizeof(buf), "tcp", NULL, hostname, port, NULL);
 
     s->hd = NULL;
-    err = ffurl_open_whitelist(&s->hd, buf, AVIO_FLAG_READ_WRITE,
-                               &h->interrupt_callback, NULL, h->protocol_whitelist, h->protocol_blacklist, h);
+    err = ffurl_open(&s->hd, buf, AVIO_RDWR);
     if (err < 0)
         goto fail;
 
@@ -114,12 +120,10 @@ static int gopher_read(URLContext *h, uint8_t *buf, int size)
 }
 
 
-const URLProtocol ff_gopher_protocol = {
-    .name           = "gopher",
-    .url_open       = gopher_open,
-    .url_read       = gopher_read,
-    .url_write      = gopher_write,
-    .url_close      = gopher_close,
-    .priv_data_size = sizeof(GopherContext),
-    .flags          = URL_PROTOCOL_FLAG_NETWORK,
+URLProtocol ff_gopher_protocol = {
+    .name      = "gopher",
+    .url_open  = gopher_open,
+    .url_read  = gopher_read,
+    .url_write = gopher_write,
+    .url_close = gopher_close,
 };
