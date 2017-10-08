@@ -29,9 +29,8 @@
  */
 
 #include "avformat.h"
-#include "internal.h"
 
-typedef struct CdataDemuxContext {
+typedef struct {
   unsigned int channels;
   unsigned int audio_pts;
 } CdataDemuxContext;
@@ -45,7 +44,7 @@ static int cdata_probe(AVProbeData *p)
     return 0;
 }
 
-static int cdata_read_header(AVFormatContext *s)
+static int cdata_read_header(AVFormatContext *s, AVFormatParameters *ap)
 {
     CdataDemuxContext *cdata = s->priv_data;
     AVIOContext *pb = s->pb;
@@ -67,16 +66,17 @@ static int cdata_read_header(AVFormatContext *s)
     sample_rate = avio_rb16(pb);
     avio_skip(pb, (avio_r8(pb) & 0x20) ? 15 : 11);
 
-    st = avformat_new_stream(s, NULL);
+    st = av_new_stream(s, 0);
     if (!st)
         return AVERROR(ENOMEM);
-    st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
-    st->codecpar->codec_tag = 0; /* no fourcc */
-    st->codecpar->codec_id = AV_CODEC_ID_ADPCM_EA_XAS;
-    st->codecpar->channels = cdata->channels;
-    st->codecpar->channel_layout = channel_layout;
-    st->codecpar->sample_rate = sample_rate;
-    avpriv_set_pts_info(st, 64, 1, sample_rate);
+    st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
+    st->codec->codec_tag = 0; /* no fourcc */
+    st->codec->codec_id = CODEC_ID_ADPCM_EA_XAS;
+    st->codec->channels = cdata->channels;
+    st->codec->channel_layout = channel_layout;
+    st->codec->sample_rate = sample_rate;
+    st->codec->sample_fmt = AV_SAMPLE_FMT_S16;
+    av_set_pts_info(st, 64, 1, sample_rate);
 
     cdata->audio_pts = 0;
     return 0;
@@ -95,11 +95,11 @@ static int cdata_read_packet(AVFormatContext *s, AVPacket *pkt)
 }
 
 AVInputFormat ff_ea_cdata_demuxer = {
-    .name           = "ea_cdata",
-    .long_name      = NULL_IF_CONFIG_SMALL("Electronic Arts cdata"),
-    .priv_data_size = sizeof(CdataDemuxContext),
-    .read_probe     = cdata_probe,
-    .read_header    = cdata_read_header,
-    .read_packet    = cdata_read_packet,
+    "ea_cdata",
+    NULL_IF_CONFIG_SMALL("Electronic Arts cdata"),
+    sizeof(CdataDemuxContext),
+    cdata_probe,
+    cdata_read_header,
+    cdata_read_packet,
     .extensions = "cdata",
 };

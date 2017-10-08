@@ -29,8 +29,6 @@
 
 #include "avcodec.h"
 #include "bytestream.h"
-#include "internal.h"
-#include "libavutil/common.h"
 
 #define KMVC_KEYFRAME 0x80
 #define KMVC_PALETTE  0x40
@@ -42,13 +40,13 @@
  */
 typedef struct KmvcContext {
     AVCodecContext *avctx;
+    AVFrame pic;
 
     int setpal;
     int palsize;
     uint32_t pal[MAX_PALSIZE];
     uint8_t *cur, *prev;
-    uint8_t frm0[320 * 200], frm1[320 * 200];
-    GetByteContext g;
+    uint8_t *frm0, *frm1;
 } KmvcContext;
 
 typedef struct BitBuf {
@@ -56,21 +54,25 @@ typedef struct BitBuf {
     int bitbuf;
 } BitBuf;
 
-#define BLK(data, x, y)  data[av_clip((x) + (y) * 320, 0, 320 * 200 -1)]
+#define BLK(data, x, y)  data[(x) + (y) * 320]
 
-#define kmvc_init_getbits(bb, g)  bb.bits = 7; bb.bitbuf = bytestream2_get_byte(g);
+#define kmvc_init_getbits(bb, src)  bb.bits = 7; bb.bitbuf = *src++;
 
-#define kmvc_getbit(bb, g, res) {\
+#define kmvc_getbit(bb, src, src_end, res) {\
     res = 0; \
     if (bb.bitbuf & (1 << bb.bits)) res = 1; \
     bb.bits--; \
     if(bb.bits == -1) { \
-        bb.bitbuf = bytestream2_get_byte(g); \
+        if (src >= src_end) { \
+            av_log(ctx->avctx, AV_LOG_ERROR, "Data overrun\n"); \
+            return AVERROR_INVALIDDATA; \
+        } \
+        bb.bitbuf = *src++; \
         bb.bits = 7; \
     } \
 }
 
-static int kmvc_decode_intra_8x8(KmvcContext * ctx, int w, int h)
+static int kmvc_decode_intra_8x8(KmvcContext * ctx, const uint8_t * src, int src_size, int w, int h)
 {
     BitBuf bb;
     int res, val;
@@ -78,39 +80,44 @@ static int kmvc_decode_intra_8x8(KmvcContext * ctx, int w, int h)
     int bx, by;
     int l0x, l1x, l0y, l1y;
     int mx, my;
+    const uint8_t *src_end = src + src_size;
 
-    kmvc_init_getbits(bb, &ctx->g);
+    kmvc_init_getbits(bb, src);
 
     for (by = 0; by < h; by += 8)
         for (bx = 0; bx < w; bx += 8) {
-            if (!bytestream2_get_bytes_left(&ctx->g)) {
-                av_log(ctx->avctx, AV_LOG_ERROR, "Data overrun\n");
-                return AVERROR_INVALIDDATA;
-            }
-            kmvc_getbit(bb, &ctx->g, res);
+            kmvc_getbit(bb, src, src_end, res);
             if (!res) {         // fill whole 8x8 block
-                val = bytestream2_get_byte(&ctx->g);
+                if (src >= src_end) {
+                    av_log(ctx->avctx, AV_LOG_ERROR, "Data overrun\n");
+                    return AVERROR_INVALIDDATA;
+                }
+                val = *src++;
                 for (i = 0; i < 64; i++)
                     BLK(ctx->cur, bx + (i & 0x7), by + (i >> 3)) = val;
             } else {            // handle four 4x4 subblocks
                 for (i = 0; i < 4; i++) {
                     l0x = bx + (i & 1) * 4;
                     l0y = by + (i & 2) * 2;
-                    kmvc_getbit(bb, &ctx->g, res);
+                    kmvc_getbit(bb, src, src_end, res);
                     if (!res) {
-                        kmvc_getbit(bb, &ctx->g, res);
+                        kmvc_getbit(bb, src, src_end, res);
                         if (!res) {     // fill whole 4x4 block
-                            val = bytestream2_get_byte(&ctx->g);
+                            if (src >= src_end) {
+                                av_log(ctx->avctx, AV_LOG_ERROR, "Data overrun\n");
+                                return AVERROR_INVALIDDATA;
+                            }
+                            val = *src++;
                             for (j = 0; j < 16; j++)
                                 BLK(ctx->cur, l0x + (j & 3), l0y + (j >> 2)) = val;
                         } else {        // copy block from already decoded place
-                            val = bytestream2_get_byte(&ctx->g);
-                            mx = val & 0xF;
-                            my = val >> 4;
-                            if ((l0x-mx) + 320*(l0y-my) < 0 || (l0x-mx) + 320*(l0y-my) > 320*197 - 4) {
-                                av_log(ctx->avctx, AV_LOG_ERROR, "Invalid MV\n");
+                            if (src >= src_end) {
+                                av_log(ctx->avctx, AV_LOG_ERROR, "Data overrun\n");
                                 return AVERROR_INVALIDDATA;
                             }
+                            val = *src++;
+                            mx = val & 0xF;
+                            my = val >> 4;
                             for (j = 0; j < 16; j++)
                                 BLK(ctx->cur, l0x + (j & 3), l0y + (j >> 2)) =
                                     BLK(ctx->cur, l0x + (j & 3) - mx, l0y + (j >> 2) - my);
@@ -119,23 +126,27 @@ static int kmvc_decode_intra_8x8(KmvcContext * ctx, int w, int h)
                         for (j = 0; j < 4; j++) {
                             l1x = l0x + (j & 1) * 2;
                             l1y = l0y + (j & 2);
-                            kmvc_getbit(bb, &ctx->g, res);
+                            kmvc_getbit(bb, src, src_end, res);
                             if (!res) {
-                                kmvc_getbit(bb, &ctx->g, res);
+                                kmvc_getbit(bb, src, src_end, res);
                                 if (!res) {     // fill whole 2x2 block
-                                    val = bytestream2_get_byte(&ctx->g);
+                                    if (src >= src_end) {
+                                        av_log(ctx->avctx, AV_LOG_ERROR, "Data overrun\n");
+                                        return AVERROR_INVALIDDATA;
+                                    }
+                                    val = *src++;
                                     BLK(ctx->cur, l1x, l1y) = val;
                                     BLK(ctx->cur, l1x + 1, l1y) = val;
                                     BLK(ctx->cur, l1x, l1y + 1) = val;
                                     BLK(ctx->cur, l1x + 1, l1y + 1) = val;
                                 } else {        // copy block from already decoded place
-                                    val = bytestream2_get_byte(&ctx->g);
-                                    mx = val & 0xF;
-                                    my = val >> 4;
-                                    if ((l1x-mx) + 320*(l1y-my) < 0 || (l1x-mx) + 320*(l1y-my) > 320*199 - 2) {
-                                        av_log(ctx->avctx, AV_LOG_ERROR, "Invalid MV\n");
+                                    if (src >= src_end) {
+                                        av_log(ctx->avctx, AV_LOG_ERROR, "Data overrun\n");
                                         return AVERROR_INVALIDDATA;
                                     }
+                                    val = *src++;
+                                    mx = val & 0xF;
+                                    my = val >> 4;
                                     BLK(ctx->cur, l1x, l1y) = BLK(ctx->cur, l1x - mx, l1y - my);
                                     BLK(ctx->cur, l1x + 1, l1y) =
                                         BLK(ctx->cur, l1x + 1 - mx, l1y - my);
@@ -145,10 +156,10 @@ static int kmvc_decode_intra_8x8(KmvcContext * ctx, int w, int h)
                                         BLK(ctx->cur, l1x + 1 - mx, l1y + 1 - my);
                                 }
                             } else {    // read values for block
-                                BLK(ctx->cur, l1x, l1y) = bytestream2_get_byte(&ctx->g);
-                                BLK(ctx->cur, l1x + 1, l1y) = bytestream2_get_byte(&ctx->g);
-                                BLK(ctx->cur, l1x, l1y + 1) = bytestream2_get_byte(&ctx->g);
-                                BLK(ctx->cur, l1x + 1, l1y + 1) = bytestream2_get_byte(&ctx->g);
+                                BLK(ctx->cur, l1x, l1y) = *src++;
+                                BLK(ctx->cur, l1x + 1, l1y) = *src++;
+                                BLK(ctx->cur, l1x, l1y + 1) = *src++;
+                                BLK(ctx->cur, l1x + 1, l1y + 1) = *src++;
                             }
                         }
                     }
@@ -159,7 +170,7 @@ static int kmvc_decode_intra_8x8(KmvcContext * ctx, int w, int h)
     return 0;
 }
 
-static int kmvc_decode_inter_8x8(KmvcContext * ctx, int w, int h)
+static int kmvc_decode_inter_8x8(KmvcContext * ctx, const uint8_t * src, int src_size, int w, int h)
 {
     BitBuf bb;
     int res, val;
@@ -167,20 +178,21 @@ static int kmvc_decode_inter_8x8(KmvcContext * ctx, int w, int h)
     int bx, by;
     int l0x, l1x, l0y, l1y;
     int mx, my;
+    const uint8_t *src_end = src + src_size;
 
-    kmvc_init_getbits(bb, &ctx->g);
+    kmvc_init_getbits(bb, src);
 
     for (by = 0; by < h; by += 8)
         for (bx = 0; bx < w; bx += 8) {
-            kmvc_getbit(bb, &ctx->g, res);
+            kmvc_getbit(bb, src, src_end, res);
             if (!res) {
-                kmvc_getbit(bb, &ctx->g, res);
+                kmvc_getbit(bb, src, src_end, res);
                 if (!res) {     // fill whole 8x8 block
-                    if (!bytestream2_get_bytes_left(&ctx->g)) {
+                    if (src >= src_end) {
                         av_log(ctx->avctx, AV_LOG_ERROR, "Data overrun\n");
                         return AVERROR_INVALIDDATA;
                     }
-                    val = bytestream2_get_byte(&ctx->g);
+                    val = *src++;
                     for (i = 0; i < 64; i++)
                         BLK(ctx->cur, bx + (i & 0x7), by + (i >> 3)) = val;
                 } else {        // copy block from previous frame
@@ -189,28 +201,28 @@ static int kmvc_decode_inter_8x8(KmvcContext * ctx, int w, int h)
                             BLK(ctx->prev, bx + (i & 0x7), by + (i >> 3));
                 }
             } else {            // handle four 4x4 subblocks
-                if (!bytestream2_get_bytes_left(&ctx->g)) {
-                    av_log(ctx->avctx, AV_LOG_ERROR, "Data overrun\n");
-                    return AVERROR_INVALIDDATA;
-                }
                 for (i = 0; i < 4; i++) {
                     l0x = bx + (i & 1) * 4;
                     l0y = by + (i & 2) * 2;
-                    kmvc_getbit(bb, &ctx->g, res);
+                    kmvc_getbit(bb, src, src_end, res);
                     if (!res) {
-                        kmvc_getbit(bb, &ctx->g, res);
+                        kmvc_getbit(bb, src, src_end, res);
                         if (!res) {     // fill whole 4x4 block
-                            val = bytestream2_get_byte(&ctx->g);
+                            if (src >= src_end) {
+                                av_log(ctx->avctx, AV_LOG_ERROR, "Data overrun\n");
+                                return AVERROR_INVALIDDATA;
+                            }
+                            val = *src++;
                             for (j = 0; j < 16; j++)
                                 BLK(ctx->cur, l0x + (j & 3), l0y + (j >> 2)) = val;
                         } else {        // copy block
-                            val = bytestream2_get_byte(&ctx->g);
-                            mx = (val & 0xF) - 8;
-                            my = (val >> 4) - 8;
-                            if ((l0x+mx) + 320*(l0y+my) < 0 || (l0x+mx) + 320*(l0y+my) > 320*197 - 4) {
-                                av_log(ctx->avctx, AV_LOG_ERROR, "Invalid MV\n");
+                            if (src >= src_end) {
+                                av_log(ctx->avctx, AV_LOG_ERROR, "Data overrun\n");
                                 return AVERROR_INVALIDDATA;
                             }
+                            val = *src++;
+                            mx = (val & 0xF) - 8;
+                            my = (val >> 4) - 8;
                             for (j = 0; j < 16; j++)
                                 BLK(ctx->cur, l0x + (j & 3), l0y + (j >> 2)) =
                                     BLK(ctx->prev, l0x + (j & 3) + mx, l0y + (j >> 2) + my);
@@ -219,23 +231,27 @@ static int kmvc_decode_inter_8x8(KmvcContext * ctx, int w, int h)
                         for (j = 0; j < 4; j++) {
                             l1x = l0x + (j & 1) * 2;
                             l1y = l0y + (j & 2);
-                            kmvc_getbit(bb, &ctx->g, res);
+                            kmvc_getbit(bb, src, src_end, res);
                             if (!res) {
-                                kmvc_getbit(bb, &ctx->g, res);
+                                kmvc_getbit(bb, src, src_end, res);
                                 if (!res) {     // fill whole 2x2 block
-                                    val = bytestream2_get_byte(&ctx->g);
+                                    if (src >= src_end) {
+                                        av_log(ctx->avctx, AV_LOG_ERROR, "Data overrun\n");
+                                        return AVERROR_INVALIDDATA;
+                                    }
+                                    val = *src++;
                                     BLK(ctx->cur, l1x, l1y) = val;
                                     BLK(ctx->cur, l1x + 1, l1y) = val;
                                     BLK(ctx->cur, l1x, l1y + 1) = val;
                                     BLK(ctx->cur, l1x + 1, l1y + 1) = val;
                                 } else {        // copy block
-                                    val = bytestream2_get_byte(&ctx->g);
-                                    mx = (val & 0xF) - 8;
-                                    my = (val >> 4) - 8;
-                                    if ((l1x+mx) + 320*(l1y+my) < 0 || (l1x+mx) + 320*(l1y+my) > 320*199 - 2) {
-                                        av_log(ctx->avctx, AV_LOG_ERROR, "Invalid MV\n");
+                                    if (src >= src_end) {
+                                        av_log(ctx->avctx, AV_LOG_ERROR, "Data overrun\n");
                                         return AVERROR_INVALIDDATA;
                                     }
+                                    val = *src++;
+                                    mx = (val & 0xF) - 8;
+                                    my = (val >> 4) - 8;
                                     BLK(ctx->cur, l1x, l1y) = BLK(ctx->prev, l1x + mx, l1y + my);
                                     BLK(ctx->cur, l1x + 1, l1y) =
                                         BLK(ctx->prev, l1x + 1 + mx, l1y + my);
@@ -245,10 +261,10 @@ static int kmvc_decode_inter_8x8(KmvcContext * ctx, int w, int h)
                                         BLK(ctx->prev, l1x + 1 + mx, l1y + 1 + my);
                                 }
                             } else {    // read values for block
-                                BLK(ctx->cur, l1x, l1y) = bytestream2_get_byte(&ctx->g);
-                                BLK(ctx->cur, l1x + 1, l1y) = bytestream2_get_byte(&ctx->g);
-                                BLK(ctx->cur, l1x, l1y + 1) = bytestream2_get_byte(&ctx->g);
-                                BLK(ctx->cur, l1x + 1, l1y + 1) = bytestream2_get_byte(&ctx->g);
+                                BLK(ctx->cur, l1x, l1y) = *src++;
+                                BLK(ctx->cur, l1x + 1, l1y) = *src++;
+                                BLK(ctx->cur, l1x, l1y + 1) = *src++;
+                                BLK(ctx->cur, l1x + 1, l1y + 1) = *src++;
                             }
                         }
                     }
@@ -259,71 +275,74 @@ static int kmvc_decode_inter_8x8(KmvcContext * ctx, int w, int h)
     return 0;
 }
 
-static int decode_frame(AVCodecContext * avctx, void *data, int *got_frame,
-                        AVPacket *avpkt)
+static int decode_frame(AVCodecContext * avctx, void *data, int *data_size, AVPacket *avpkt)
 {
+    const uint8_t *buf = avpkt->data;
+    int buf_size = avpkt->size;
     KmvcContext *const ctx = avctx->priv_data;
-    AVFrame *frame = data;
     uint8_t *out, *src;
-    int i, ret;
+    int i;
     int header;
     int blocksize;
-    int pal_size;
-    const uint8_t *pal = av_packet_get_side_data(avpkt, AV_PKT_DATA_PALETTE, &pal_size);
 
-    bytestream2_init(&ctx->g, avpkt->data, avpkt->size);
+    if (ctx->pic.data[0])
+        avctx->release_buffer(avctx, &ctx->pic);
 
-    if ((ret = ff_get_buffer(avctx, frame, 0)) < 0)
-        return ret;
+    ctx->pic.reference = 1;
+    ctx->pic.buffer_hints = FF_BUFFER_HINTS_VALID;
+    if (avctx->get_buffer(avctx, &ctx->pic) < 0) {
+        av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
+        return -1;
+    }
 
-    header = bytestream2_get_byte(&ctx->g);
+    header = *buf++;
 
     /* blocksize 127 is really palette change event */
-    if (bytestream2_peek_byte(&ctx->g) == 127) {
-        bytestream2_skip(&ctx->g, 3);
+    if (buf[0] == 127) {
+        buf += 3;
         for (i = 0; i < 127; i++) {
-            ctx->pal[i + (header & 0x81)] = 0xFFU << 24 | bytestream2_get_be24(&ctx->g);
-            bytestream2_skip(&ctx->g, 1);
+            ctx->pal[i + (header & 0x81)] = AV_RB24(buf);
+            buf += 4;
         }
-        bytestream2_seek(&ctx->g, -127 * 4 - 3, SEEK_CUR);
+        buf -= 127 * 4 + 3;
     }
 
     if (header & KMVC_KEYFRAME) {
-        frame->key_frame = 1;
-        frame->pict_type = AV_PICTURE_TYPE_I;
+        ctx->pic.key_frame = 1;
+        ctx->pic.pict_type = AV_PICTURE_TYPE_I;
     } else {
-        frame->key_frame = 0;
-        frame->pict_type = AV_PICTURE_TYPE_P;
+        ctx->pic.key_frame = 0;
+        ctx->pic.pict_type = AV_PICTURE_TYPE_P;
+    }
+
+    /* if palette has been changed, copy it from palctrl */
+    if (ctx->avctx->palctrl && ctx->avctx->palctrl->palette_changed) {
+        memcpy(ctx->pal, ctx->avctx->palctrl->palette, AVPALETTE_SIZE);
+        ctx->setpal = 1;
+        ctx->avctx->palctrl->palette_changed = 0;
     }
 
     if (header & KMVC_PALETTE) {
-        frame->palette_has_changed = 1;
+        ctx->pic.palette_has_changed = 1;
         // palette starts from index 1 and has 127 entries
         for (i = 1; i <= ctx->palsize; i++) {
-            ctx->pal[i] = 0xFFU << 24 | bytestream2_get_be24(&ctx->g);
+            ctx->pal[i] = bytestream_get_be24(&buf);
         }
-    }
-
-    if (pal && pal_size == AVPALETTE_SIZE) {
-        frame->palette_has_changed = 1;
-        memcpy(ctx->pal, pal, AVPALETTE_SIZE);
-    } else if (pal) {
-        av_log(avctx, AV_LOG_ERROR, "Palette size %d is wrong\n", pal_size);
     }
 
     if (ctx->setpal) {
         ctx->setpal = 0;
-        frame->palette_has_changed = 1;
+        ctx->pic.palette_has_changed = 1;
     }
 
     /* make the palette available on the way out */
-    memcpy(frame->data[1], ctx->pal, 1024);
+    memcpy(ctx->pic.data[1], ctx->pal, 1024);
 
-    blocksize = bytestream2_get_byte(&ctx->g);
+    blocksize = *buf++;
 
     if (blocksize != 8 && blocksize != 127) {
         av_log(avctx, AV_LOG_ERROR, "Block size = %i\n", blocksize);
-        return AVERROR_INVALIDDATA;
+        return -1;
     }
     memset(ctx->cur, 0, 320 * 200);
     switch (header & KMVC_METHOD) {
@@ -332,22 +351,22 @@ static int decode_frame(AVCodecContext * avctx, void *data, int *got_frame,
         memcpy(ctx->cur, ctx->prev, 320 * 200);
         break;
     case 3:
-        kmvc_decode_intra_8x8(ctx, avctx->width, avctx->height);
+        kmvc_decode_intra_8x8(ctx, buf, buf_size, avctx->width, avctx->height);
         break;
     case 4:
-        kmvc_decode_inter_8x8(ctx, avctx->width, avctx->height);
+        kmvc_decode_inter_8x8(ctx, buf, buf_size, avctx->width, avctx->height);
         break;
     default:
         av_log(avctx, AV_LOG_ERROR, "Unknown compression method %i\n", header & KMVC_METHOD);
-        return AVERROR_INVALIDDATA;
+        return -1;
     }
 
-    out = frame->data[0];
+    out = ctx->pic.data[0];
     src = ctx->cur;
     for (i = 0; i < avctx->height; i++) {
         memcpy(out, src, avctx->width);
         src += 320;
-        out += frame->linesize[0];
+        out += ctx->pic.linesize[0];
     }
 
     /* flip buffers */
@@ -359,10 +378,11 @@ static int decode_frame(AVCodecContext * avctx, void *data, int *got_frame,
         ctx->prev = ctx->frm1;
     }
 
-    *got_frame = 1;
+    *data_size = sizeof(AVFrame);
+    *(AVFrame *) data = ctx->pic;
 
     /* always report that the buffer was completely consumed */
-    return avpkt->size;
+    return buf_size;
 }
 
 
@@ -379,24 +399,24 @@ static av_cold int decode_init(AVCodecContext * avctx)
 
     if (avctx->width > 320 || avctx->height > 200) {
         av_log(avctx, AV_LOG_ERROR, "KMVC supports frames <= 320x200\n");
-        return AVERROR(EINVAL);
+        return -1;
     }
 
+    c->frm0 = av_mallocz(320 * 200);
+    c->frm1 = av_mallocz(320 * 200);
     c->cur = c->frm0;
     c->prev = c->frm1;
 
     for (i = 0; i < 256; i++) {
-        c->pal[i] = 0xFFU << 24 | i * 0x10101;
+        c->pal[i] = i * 0x10101;
     }
 
     if (avctx->extradata_size < 12) {
-        av_log(avctx, AV_LOG_WARNING,
-               "Extradata missing, decoding may not work properly...\n");
+        av_log(NULL, 0, "Extradata missing, decoding may not work properly...\n");
         c->palsize = 127;
     } else {
         c->palsize = AV_RL16(avctx->extradata + 10);
-        if (c->palsize >= (unsigned)MAX_PALSIZE) {
-            c->palsize = 127;
+        if (c->palsize >= MAX_PALSIZE) {
             av_log(avctx, AV_LOG_ERROR, "KMVC palette too large\n");
             return AVERROR_INVALIDDATA;
         }
@@ -409,20 +429,43 @@ static av_cold int decode_init(AVCodecContext * avctx)
             src += 4;
         }
         c->setpal = 1;
+        if (c->avctx->palctrl) {
+            c->avctx->palctrl->palette_changed = 0;
+        }
     }
 
-    avctx->pix_fmt = AV_PIX_FMT_PAL8;
+    avcodec_get_frame_defaults(&c->pic);
+    avctx->pix_fmt = PIX_FMT_PAL8;
+
+    return 0;
+}
+
+
+
+/*
+ * Uninit kmvc decoder
+ */
+static av_cold int decode_end(AVCodecContext * avctx)
+{
+    KmvcContext *const c = avctx->priv_data;
+
+    av_freep(&c->frm0);
+    av_freep(&c->frm1);
+    if (c->pic.data[0])
+        avctx->release_buffer(avctx, &c->pic);
 
     return 0;
 }
 
 AVCodec ff_kmvc_decoder = {
-    .name           = "kmvc",
-    .long_name      = NULL_IF_CONFIG_SMALL("Karl Morton's video codec"),
-    .type           = AVMEDIA_TYPE_VIDEO,
-    .id             = AV_CODEC_ID_KMVC,
-    .priv_data_size = sizeof(KmvcContext),
-    .init           = decode_init,
-    .decode         = decode_frame,
-    .capabilities   = AV_CODEC_CAP_DR1,
+    "kmvc",
+    AVMEDIA_TYPE_VIDEO,
+    CODEC_ID_KMVC,
+    sizeof(KmvcContext),
+    decode_init,
+    NULL,
+    decode_end,
+    decode_frame,
+    CODEC_CAP_DR1,
+    .long_name = NULL_IF_CONFIG_SMALL("Karl Morton's video codec"),
 };

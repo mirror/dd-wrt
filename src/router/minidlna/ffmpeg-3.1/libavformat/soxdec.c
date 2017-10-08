@@ -23,17 +23,15 @@
  */
 
 /**
- * @file
  * SoX native format demuxer
+ * @file
  * @author Daniel Verkamp
- * @see http://wiki.multimedia.cx/index.php?title=SoX_native_intermediate_format
+ * @sa http://wiki.multimedia.cx/index.php?title=SoX_native_intermediate_format
  */
 
 #include "libavutil/intreadwrite.h"
-#include "libavutil/intfloat.h"
 #include "libavutil/dict.h"
 #include "avformat.h"
-#include "internal.h"
 #include "pcm.h"
 #include "sox.h"
 
@@ -44,43 +42,44 @@ static int sox_probe(AVProbeData *p)
     return 0;
 }
 
-static int sox_read_header(AVFormatContext *s)
+static int sox_read_header(AVFormatContext *s,
+                           AVFormatParameters *ap)
 {
     AVIOContext *pb = s->pb;
     unsigned header_size, comment_size;
     double sample_rate, sample_rate_frac;
     AVStream *st;
 
-    st = avformat_new_stream(s, NULL);
+    st = av_new_stream(s, 0);
     if (!st)
         return AVERROR(ENOMEM);
 
-    st->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
+    st->codec->codec_type = AVMEDIA_TYPE_AUDIO;
 
     if (avio_rl32(pb) == SOX_TAG) {
-        st->codecpar->codec_id = AV_CODEC_ID_PCM_S32LE;
+        st->codec->codec_id = CODEC_ID_PCM_S32LE;
         header_size         = avio_rl32(pb);
         avio_skip(pb, 8); /* sample count */
-        sample_rate         = av_int2double(avio_rl64(pb));
-        st->codecpar->channels = avio_rl32(pb);
+        sample_rate         = av_int2dbl(avio_rl64(pb));
+        st->codec->channels = avio_rl32(pb);
         comment_size        = avio_rl32(pb);
     } else {
-        st->codecpar->codec_id = AV_CODEC_ID_PCM_S32BE;
+        st->codec->codec_id = CODEC_ID_PCM_S32BE;
         header_size         = avio_rb32(pb);
         avio_skip(pb, 8); /* sample count */
-        sample_rate         = av_int2double(avio_rb64(pb));
-        st->codecpar->channels = avio_rb32(pb);
+        sample_rate         = av_int2dbl(avio_rb64(pb));
+        st->codec->channels = avio_rb32(pb);
         comment_size        = avio_rb32(pb);
     }
 
     if (comment_size > 0xFFFFFFFFU - SOX_FIXED_HDR - 4U) {
         av_log(s, AV_LOG_ERROR, "invalid comment size (%u)\n", comment_size);
-        return AVERROR_INVALIDDATA;
+        return -1;
     }
 
     if (sample_rate <= 0 || sample_rate > INT_MAX) {
         av_log(s, AV_LOG_ERROR, "invalid sample rate (%f)\n", sample_rate);
-        return AVERROR_INVALIDDATA;
+        return -1;
     }
 
     sample_rate_frac = sample_rate - floor(sample_rate);
@@ -90,15 +89,13 @@ static int sox_read_header(AVFormatContext *s)
                sample_rate_frac);
 
     if ((header_size + 4) & 7 || header_size < SOX_FIXED_HDR + comment_size
-        || st->codecpar->channels > 65535) /* Reserve top 16 bits */ {
+        || st->codec->channels > 65535) /* Reserve top 16 bits */ {
         av_log(s, AV_LOG_ERROR, "invalid header\n");
-        return AVERROR_INVALIDDATA;
+        return -1;
     }
 
     if (comment_size && comment_size < UINT_MAX) {
         char *comment = av_malloc(comment_size+1);
-        if(!comment)
-            return AVERROR(ENOMEM);
         if (avio_read(pb, comment, comment_size) != comment_size) {
             av_freep(&comment);
             return AVERROR(EIO);
@@ -111,24 +108,46 @@ static int sox_read_header(AVFormatContext *s)
 
     avio_skip(pb, header_size - SOX_FIXED_HDR - comment_size);
 
-    st->codecpar->sample_rate           = sample_rate;
-    st->codecpar->bits_per_coded_sample = 32;
-    st->codecpar->bit_rate              = (int64_t)st->codecpar->sample_rate *
-                                          st->codecpar->bits_per_coded_sample *
-                                          st->codecpar->channels;
-    st->codecpar->block_align           = st->codecpar->bits_per_coded_sample *
-                                          st->codecpar->channels / 8;
+    st->codec->sample_rate           = sample_rate;
+    st->codec->bits_per_coded_sample = 32;
+    st->codec->bit_rate              = st->codec->sample_rate *
+                                       st->codec->bits_per_coded_sample *
+                                       st->codec->channels;
+    st->codec->block_align           = st->codec->bits_per_coded_sample *
+                                       st->codec->channels / 8;
 
-    avpriv_set_pts_info(st, 64, 1, st->codecpar->sample_rate);
+    av_set_pts_info(st, 64, 1, st->codec->sample_rate);
+
+    return 0;
+}
+
+#define SOX_SAMPLES 1024
+
+static int sox_read_packet(AVFormatContext *s,
+                           AVPacket *pkt)
+{
+    int ret, size;
+
+    if (url_feof(s->pb))
+        return AVERROR_EOF;
+
+    size = SOX_SAMPLES*s->streams[0]->codec->block_align;
+    ret = av_get_packet(s->pb, pkt, size);
+    if (ret < 0)
+        return AVERROR(EIO);
+    pkt->stream_index = 0;
+    pkt->size = ret;
 
     return 0;
 }
 
 AVInputFormat ff_sox_demuxer = {
-    .name           = "sox",
-    .long_name      = NULL_IF_CONFIG_SMALL("SoX native"),
-    .read_probe     = sox_probe,
-    .read_header    = sox_read_header,
-    .read_packet    = ff_pcm_read_packet,
-    .read_seek      = ff_pcm_read_seek,
+    "sox",
+    NULL_IF_CONFIG_SMALL("SoX native format"),
+    0,
+    sox_probe,
+    sox_read_header,
+    sox_read_packet,
+    NULL,
+    pcm_read_seek,
 };

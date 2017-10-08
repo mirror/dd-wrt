@@ -20,103 +20,15 @@
 
 /**
 * @file
-* function definitions common to libschroedinger decoder and encoder
+* function definitions common to libschroedingerdec.c and libschroedingerenc.c
 */
 
-#include "libavutil/attributes.h"
-#include "libavutil/mem.h"
+#include "libdirac_libschro.h"
 #include "libschroedinger.h"
-#include "internal.h"
-
-static const SchroVideoFormatInfo ff_schro_video_format_info[] = {
-    { 640,  480,  24000, 1001},
-    { 176,  120,  15000, 1001},
-    { 176,  144,  25,    2   },
-    { 352,  240,  15000, 1001},
-    { 352,  288,  25,    2   },
-    { 704,  480,  15000, 1001},
-    { 704,  576,  25,    2   },
-    { 720,  480,  30000, 1001},
-    { 720,  576,  25,    1   },
-    { 1280, 720,  60000, 1001},
-    { 1280, 720,  50,    1   },
-    { 1920, 1080, 30000, 1001},
-    { 1920, 1080, 25,    1   },
-    { 1920, 1080, 60000, 1001},
-    { 1920, 1080, 50,    1   },
-    { 2048, 1080, 24,    1   },
-    { 4096, 2160, 24,    1   },
-};
-
-static unsigned int get_video_format_idx(AVCodecContext *avctx)
-{
-    unsigned int ret_idx = 0;
-    unsigned int idx;
-    unsigned int num_formats = sizeof(ff_schro_video_format_info) /
-                               sizeof(ff_schro_video_format_info[0]);
-
-    for (idx = 1; idx < num_formats; ++idx) {
-        const SchroVideoFormatInfo *vf = &ff_schro_video_format_info[idx];
-        if (avctx->width  == vf->width &&
-            avctx->height == vf->height) {
-            ret_idx = idx;
-            if (avctx->time_base.den == vf->frame_rate_num &&
-                avctx->time_base.num == vf->frame_rate_denom)
-                return idx;
-        }
-    }
-    return ret_idx;
-}
-
-av_cold void ff_schro_queue_init(FFSchroQueue *queue)
-{
-    queue->p_head = queue->p_tail = NULL;
-    queue->size = 0;
-}
-
-void ff_schro_queue_free(FFSchroQueue *queue, void (*free_func)(void *))
-{
-    while (queue->p_head)
-        free_func(ff_schro_queue_pop(queue));
-}
-
-int ff_schro_queue_push_back(FFSchroQueue *queue, void *p_data)
-{
-    FFSchroQueueElement *p_new = av_mallocz(sizeof(FFSchroQueueElement));
-
-    if (!p_new)
-        return -1;
-
-    p_new->data = p_data;
-
-    if (!queue->p_head)
-        queue->p_head = p_new;
-    else
-        queue->p_tail->next = p_new;
-    queue->p_tail = p_new;
-
-    ++queue->size;
-    return 0;
-}
-
-void *ff_schro_queue_pop(FFSchroQueue *queue)
-{
-    FFSchroQueueElement *top = queue->p_head;
-
-    if (top) {
-        void *data = top->data;
-        queue->p_head = queue->p_head->next;
-        --queue->size;
-        av_freep(&top);
-        return data;
-    }
-
-    return NULL;
-}
 
 /**
 * Schroedinger video preset table. Ensure that this tables matches up correctly
-* with the ff_schro_video_format_info table.
+* with the ff_dirac_schro_video_format_info table in libdirac_libschro.c.
 */
 static const SchroVideoFormatEnum ff_schro_video_formats[]={
     SCHRO_VIDEO_FORMAT_CUSTOM     ,
@@ -138,12 +50,12 @@ static const SchroVideoFormatEnum ff_schro_video_formats[]={
     SCHRO_VIDEO_FORMAT_DC4K_24    ,
 };
 
-SchroVideoFormatEnum ff_get_schro_video_format_preset(AVCodecContext *avctx)
+SchroVideoFormatEnum ff_get_schro_video_format_preset(AVCodecContext *avccontext)
 {
     unsigned int num_formats = sizeof(ff_schro_video_formats) /
                                sizeof(ff_schro_video_formats[0]);
 
-    unsigned int idx = get_video_format_idx(avctx);
+    unsigned int idx = ff_dirac_schro_get_video_format_idx (avccontext);
 
     return (idx < num_formats) ? ff_schro_video_formats[idx] :
                                  SCHRO_VIDEO_FORMAT_CUSTOM;
@@ -152,54 +64,53 @@ SchroVideoFormatEnum ff_get_schro_video_format_preset(AVCodecContext *avctx)
 int ff_get_schro_frame_format (SchroChromaFormat schro_pix_fmt,
                                SchroFrameFormat  *schro_frame_fmt)
 {
-    unsigned int num_formats = sizeof(schro_pixel_format_map) /
-                               sizeof(schro_pixel_format_map[0]);
+    unsigned int num_formats = sizeof(ffmpeg_schro_pixel_format_map) /
+                               sizeof(ffmpeg_schro_pixel_format_map[0]);
 
     int idx;
 
     for (idx = 0; idx < num_formats; ++idx) {
-        if (schro_pixel_format_map[idx].schro_pix_fmt == schro_pix_fmt) {
-            *schro_frame_fmt = schro_pixel_format_map[idx].schro_frame_fmt;
+        if (ffmpeg_schro_pixel_format_map[idx].schro_pix_fmt == schro_pix_fmt) {
+            *schro_frame_fmt = ffmpeg_schro_pixel_format_map[idx].schro_frame_fmt;
             return 0;
         }
     }
     return -1;
 }
 
-static void free_schro_frame(SchroFrame *frame, void *priv)
+static void FreeSchroFrame(SchroFrame *frame, void *priv)
 {
-    AVFrame *p_pic = priv;
-    av_frame_free(&p_pic);
+    AVPicture *p_pic = priv;
+
+    if (!p_pic)
+        return;
+
+    avpicture_free(p_pic);
+    av_freep(&p_pic);
 }
 
-SchroFrame *ff_create_schro_frame(AVCodecContext *avctx,
+SchroFrame *ff_create_schro_frame(AVCodecContext *avccontext,
                                   SchroFrameFormat schro_frame_fmt)
 {
-    AVFrame *p_pic;
+    AVPicture *p_pic;
     SchroFrame *p_frame;
     int y_width, uv_width;
     int y_height, uv_height;
     int i;
 
-    y_width   = avctx->width;
-    y_height  = avctx->height;
+    y_width   = avccontext->width;
+    y_height  = avccontext->height;
     uv_width  = y_width  >> (SCHRO_FRAME_FORMAT_H_SHIFT(schro_frame_fmt));
     uv_height = y_height >> (SCHRO_FRAME_FORMAT_V_SHIFT(schro_frame_fmt));
 
-    p_pic = av_frame_alloc();
-    if (!p_pic)
-        return NULL;
-
-    if (ff_get_buffer(avctx, p_pic, AV_GET_BUFFER_FLAG_REF) < 0) {
-        av_frame_free(&p_pic);
-        return NULL;
-    }
+    p_pic = av_mallocz(sizeof(AVPicture));
+    avpicture_alloc(p_pic, avccontext->pix_fmt, y_width, y_height);
 
     p_frame         = schro_frame_new();
     p_frame->format = schro_frame_fmt;
     p_frame->width  = y_width;
     p_frame->height = y_height;
-    schro_frame_set_free_callback(p_frame, free_schro_frame, p_pic);
+    schro_frame_set_free_callback(p_frame, FreeSchroFrame, (void *)p_pic);
 
     for (i = 0; i < 3; ++i) {
         p_frame->components[i].width  = i ? uv_width : y_width;

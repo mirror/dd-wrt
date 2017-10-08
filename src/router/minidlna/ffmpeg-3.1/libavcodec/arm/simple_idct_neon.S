@@ -23,7 +23,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavutil/arm/asm.S"
+#include "asm.S"
 
 #define W1  22725  //cos(i*M_PI/16)*sqrt(2)*(1<<14) + 0.5
 #define W2  21407  //cos(i*M_PI/16)*sqrt(2)*(1<<14) + 0.5
@@ -71,7 +71,7 @@ function idct_row4_pld_neon
         add             r3,  r0,  r1,  lsl #2
         pld             [r0, r1]
         pld             [r0, r1, lsl #1]
-A       pld             [r3, -r1]
+        pld             [r3, -r1]
         pld             [r3]
         pld             [r3, r1]
         add             r3,  r3,  r1,  lsl #1
@@ -159,12 +159,11 @@ function idct_col4_neon
         vmull.s16       q15, d30, w4 /* q15 = W4*(col[0]+(1<<COL_SHIFT-1)/W4)*/
         vld1.64         {d8}, [r2,:64], ip /* d5 = col[3] */
 
-        ldrd            r4,  r5,  [r2]
-        ldrd            r6,  r7,  [r2, #16]
+        ldrd            r4,  [r2]
+        ldrd            r6,  [r2, #16]
         orrs            r4,  r4,  r5
 
         idct_col4_top
-        it              eq
         addeq           r2,  r2,  #16
         beq             1f
 
@@ -176,8 +175,7 @@ function idct_col4_neon
         vadd.i32        q14, q14, q7
 
 1:      orrs            r6,  r6,  r7
-        ldrd            r4,  r5,  [r2, #16]
-        it              eq
+        ldrd            r4,  [r2, #16]
         addeq           r2,  r2,  #16
         beq             2f
 
@@ -188,8 +186,7 @@ function idct_col4_neon
         vmlal.s16       q6,  d5,  w3    /* q6  += W3 * col[5] */
 
 2:      orrs            r4,  r4,  r5
-        ldrd            r4,  r5,  [r2, #16]
-        it              eq
+        ldrd            r4,  [r2, #16]
         addeq           r2,  r2,  #16
         beq             3f
 
@@ -202,7 +199,6 @@ function idct_col4_neon
         vadd.i32        q13, q13, q8
 
 3:      orrs            r4,  r4,  r5
-        it              eq
         addeq           r2,  r2,  #16
         beq             4f
 
@@ -243,9 +239,10 @@ function idct_col4_st8_neon
         bx              lr
 endfunc
 
-const   idct_coeff_neon, align=4
+        .section .rodata
+        .align 4
+idct_coeff_neon:
         .short W1, W2, W3, W4, W5, W6, W7, W4c
-endconst
 
         .macro idct_start data
         push            {r4-r7, lr}
@@ -261,7 +258,7 @@ endconst
         pop             {r4-r7, pc}
         .endm
 
-/* void ff_simple_idct_put_neon(uint8_t *dst, ptrdiff_t line_size, int16_t *data); */
+/* void ff_simple_idct_put_neon(uint8_t *dst, int line_size, DCTELEM *data); */
 function ff_simple_idct_put_neon, export=1
         idct_start      r2
 
@@ -316,7 +313,7 @@ function idct_col4_add8_neon
         bx              lr
 endfunc
 
-/* void ff_simple_idct_add_neon(uint8_t *dst, ptrdiff_t line_size, int16_t *data); */
+/* void ff_simple_idct_add_neon(uint8_t *dst, int line_size, DCTELEM *data); */
 function ff_simple_idct_add_neon, export=1
         idct_start      r2
 
@@ -355,7 +352,7 @@ function idct_col4_st16_neon
         bx              lr
 endfunc
 
-/* void ff_simple_idct_neon(int16_t *data); */
+/* void ff_simple_idct_neon(DCTELEM *data); */
 function ff_simple_idct_neon, export=1
         idct_start      r0
 

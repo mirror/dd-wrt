@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "dshow_capture.h"
+#include "dshow.h"
 
 DECLARE_QUERYINTERFACE(libAVFilter,
     { {&IID_IUnknown,0}, {&IID_IBaseFilter,0} })
@@ -157,7 +157,9 @@ libAVFilter_QueryVendorInfo(libAVFilter *this, wchar_t **info)
 
     if (!info)
         return E_POINTER;
-    return E_NOTIMPL; /* don't have to do anything here */
+    *info = wcsdup(L"libAV");
+
+    return S_OK;
 }
 
 static int
@@ -189,12 +191,6 @@ libAVFilter_Setup(libAVFilter *this, void *priv_data, void *callback,
 
     return 1;
 }
-static int
-libAVFilter_Cleanup(libAVFilter *this)
-{
-    libAVPin_Release(this->pin);
-    return 1;
-}
 DECLARE_CREATE(libAVFilter, libAVFilter_Setup(this, priv_data, callback, type),
                void *priv_data, void *callback, enum dshowDeviceType type)
-DECLARE_DESTROY(libAVFilter, libAVFilter_Cleanup)
+DECLARE_DESTROY(libAVFilter, nothing)

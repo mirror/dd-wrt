@@ -19,31 +19,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavutil/mathematics.h"
 #include "avformat.h"
-#include "internal.h"
 #include "pcm.h"
 
-#define RAW_SAMPLES     1024
-
-int ff_pcm_read_packet(AVFormatContext *s, AVPacket *pkt)
-{
-    int ret, size;
-
-    size= RAW_SAMPLES*s->streams[0]->codecpar->block_align;
-    if (size <= 0)
-        return AVERROR(EINVAL);
-
-    ret= av_get_packet(s->pb, pkt, size);
-
-    pkt->flags &= ~AV_PKT_FLAG_CORRUPT;
-    pkt->stream_index = 0;
-
-    return ret;
-}
-
-int ff_pcm_read_seek(AVFormatContext *s,
-                     int stream_index, int64_t timestamp, int flags)
+int pcm_read_seek(AVFormatContext *s,
+                  int stream_index, int64_t timestamp, int flags)
 {
     AVStream *st;
     int block_align, byte_rate;
@@ -51,10 +31,10 @@ int ff_pcm_read_seek(AVFormatContext *s,
 
     st = s->streams[0];
 
-    block_align = st->codecpar->block_align ? st->codecpar->block_align :
-        (av_get_bits_per_sample(st->codecpar->codec_id) * st->codecpar->channels) >> 3;
-    byte_rate = st->codecpar->bit_rate ? st->codecpar->bit_rate >> 3 :
-        block_align * st->codecpar->sample_rate;
+    block_align = st->codec->block_align ? st->codec->block_align :
+        (av_get_bits_per_sample(st->codec->codec_id) * st->codec->channels) >> 3;
+    byte_rate = st->codec->bit_rate ? st->codec->bit_rate >> 3 :
+        block_align * st->codec->sample_rate;
 
     if (block_align <= 0 || byte_rate <= 0)
         return -1;
@@ -69,7 +49,7 @@ int ff_pcm_read_seek(AVFormatContext *s,
 
     /* recompute exact position */
     st->cur_dts = av_rescale(pos, st->time_base.den, byte_rate * (int64_t)st->time_base.num);
-    if ((ret = avio_seek(s->pb, pos + s->internal->data_offset, SEEK_SET)) < 0)
+    if ((ret = avio_seek(s->pb, pos + s->data_offset, SEEK_SET)) < 0)
         return ret;
     return 0;
 }

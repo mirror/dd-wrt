@@ -32,21 +32,25 @@
  *  then this coded picture is packed with ZLib
  *
  * Supports: BGR8,BGR555,BGR24 - only BGR8 and BGR555 tested
+ *
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "avcodec.h"
-#include "internal.h"
 #include "msrledec.h"
 
 #include <zlib.h>
 
+
+/*
+ * Decoder context
+ */
 typedef struct TsccContext {
 
     AVCodecContext *avctx;
-    AVFrame *frame;
+    AVFrame pic;
 
     // Bits per pixel
     int bpp;
@@ -54,70 +58,77 @@ typedef struct TsccContext {
     unsigned int decomp_size;
     // Decompression buffer
     unsigned char* decomp_buf;
-    GetByteContext gb;
     int height;
     z_stream zstream;
-
-    uint32_t pal[256];
 } CamtasiaContext;
 
-static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame,
-                        AVPacket *avpkt)
+/*
+ *
+ * Decode a frame
+ *
+ */
+static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, AVPacket *avpkt)
 {
     const uint8_t *buf = avpkt->data;
     int buf_size = avpkt->size;
     CamtasiaContext * const c = avctx->priv_data;
-    AVFrame *frame = c->frame;
-    int ret;
+    const unsigned char *encoded = buf;
+    int zret; // Zlib return code
+    int len = buf_size;
 
-    if ((ret = ff_reget_buffer(avctx, frame)) < 0)
-        return ret;
+    if(c->pic.data[0])
+            avctx->release_buffer(avctx, &c->pic);
 
-    ret = inflateReset(&c->zstream);
-    if (ret != Z_OK) {
-        av_log(avctx, AV_LOG_ERROR, "Inflate reset error: %d\n", ret);
-        return AVERROR_UNKNOWN;
+    c->pic.reference = 1;
+    c->pic.buffer_hints = FF_BUFFER_HINTS_VALID;
+    if(avctx->get_buffer(avctx, &c->pic) < 0){
+        av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
+        return -1;
     }
-    c->zstream.next_in   = buf;
-    c->zstream.avail_in  = buf_size;
+
+    zret = inflateReset(&(c->zstream));
+    if (zret != Z_OK) {
+        av_log(avctx, AV_LOG_ERROR, "Inflate reset error: %d\n", zret);
+        return -1;
+    }
+    c->zstream.next_in = encoded;
+    c->zstream.avail_in = len;
     c->zstream.next_out = c->decomp_buf;
     c->zstream.avail_out = c->decomp_size;
-    ret = inflate(&c->zstream, Z_FINISH);
+    zret = inflate(&(c->zstream), Z_FINISH);
     // Z_DATA_ERROR means empty picture
-    if ((ret != Z_OK) && (ret != Z_STREAM_END) && (ret != Z_DATA_ERROR)) {
-        av_log(avctx, AV_LOG_ERROR, "Inflate error: %d\n", ret);
-        return AVERROR_UNKNOWN;
+    if ((zret != Z_OK) && (zret != Z_STREAM_END) && (zret != Z_DATA_ERROR)) {
+        av_log(avctx, AV_LOG_ERROR, "Inflate error: %d\n", zret);
+        return -1;
     }
 
 
-    if (ret != Z_DATA_ERROR) {
-        bytestream2_init(&c->gb, c->decomp_buf,
-                         c->decomp_size - c->zstream.avail_out);
-        ff_msrle_decode(avctx, frame, c->bpp, &c->gb);
-    }
+    if(zret != Z_DATA_ERROR)
+        ff_msrle_decode(avctx, (AVPicture*)&c->pic, c->bpp, c->decomp_buf, c->decomp_size - c->zstream.avail_out);
 
     /* make the palette available on the way out */
-    if (c->avctx->pix_fmt == AV_PIX_FMT_PAL8) {
-        int size;
-        const uint8_t *pal = av_packet_get_side_data(avpkt, AV_PKT_DATA_PALETTE, &size);
-
-        if (pal && size == AVPALETTE_SIZE) {
-            frame->palette_has_changed = 1;
-            memcpy(c->pal, pal, AVPALETTE_SIZE);
-        } else if (pal) {
-            av_log(avctx, AV_LOG_ERROR, "Palette size %d is wrong\n", size);
+    if (c->avctx->pix_fmt == PIX_FMT_PAL8) {
+        memcpy(c->pic.data[1], c->avctx->palctrl->palette, AVPALETTE_SIZE);
+        if (c->avctx->palctrl->palette_changed) {
+            c->pic.palette_has_changed = 1;
+            c->avctx->palctrl->palette_changed = 0;
         }
-        memcpy(frame->data[1], c->pal, AVPALETTE_SIZE);
     }
 
-    if ((ret = av_frame_ref(data, frame)) < 0)
-        return ret;
-    *got_frame      = 1;
+    *data_size = sizeof(AVFrame);
+    *(AVFrame*)data = c->pic;
 
     /* always report that the buffer was completely consumed */
     return buf_size;
 }
 
+
+
+/*
+ *
+ * Init tscc decoder
+ *
+ */
 static av_cold int decode_init(AVCodecContext *avctx)
 {
     CamtasiaContext * const c = avctx->priv_data;
@@ -127,64 +138,73 @@ static av_cold int decode_init(AVCodecContext *avctx)
 
     c->height = avctx->height;
 
+    avcodec_get_frame_defaults(&c->pic);
     // Needed if zlib unused or init aborted before inflateInit
-    memset(&c->zstream, 0, sizeof(z_stream));
+    memset(&(c->zstream), 0, sizeof(z_stream));
     switch(avctx->bits_per_coded_sample){
-    case  8: avctx->pix_fmt = AV_PIX_FMT_PAL8; break;
-    case 16: avctx->pix_fmt = AV_PIX_FMT_RGB555; break;
+    case  8: avctx->pix_fmt = PIX_FMT_PAL8; break;
+    case 16: avctx->pix_fmt = PIX_FMT_RGB555; break;
     case 24:
-             avctx->pix_fmt = AV_PIX_FMT_BGR24;
+             avctx->pix_fmt = PIX_FMT_BGR24;
              break;
-    case 32: avctx->pix_fmt = AV_PIX_FMT_0RGB32; break;
+    case 32: avctx->pix_fmt = PIX_FMT_RGB32; break;
     default: av_log(avctx, AV_LOG_ERROR, "Camtasia error: unknown depth %i bpp\n", avctx->bits_per_coded_sample);
-             return AVERROR_PATCHWELCOME;
+             return -1;
     }
     c->bpp = avctx->bits_per_coded_sample;
-    // buffer size for RLE 'best' case when 2-byte code precedes each pixel and there may be padding after it too
+    // buffer size for RLE 'best' case when 2-byte code preceeds each pixel and there may be padding after it too
     c->decomp_size = (((avctx->width * c->bpp + 7) >> 3) + 3 * avctx->width + 2) * avctx->height + 2;
 
     /* Allocate decompression buffer */
     if (c->decomp_size) {
-        if (!(c->decomp_buf = av_malloc(c->decomp_size))) {
+        if ((c->decomp_buf = av_malloc(c->decomp_size)) == NULL) {
             av_log(avctx, AV_LOG_ERROR, "Can't allocate decompression buffer.\n");
-            return AVERROR(ENOMEM);
+            return 1;
         }
     }
 
     c->zstream.zalloc = Z_NULL;
     c->zstream.zfree = Z_NULL;
     c->zstream.opaque = Z_NULL;
-    zret = inflateInit(&c->zstream);
+    zret = inflateInit(&(c->zstream));
     if (zret != Z_OK) {
         av_log(avctx, AV_LOG_ERROR, "Inflate init error: %d\n", zret);
-        return AVERROR_UNKNOWN;
+        return 1;
     }
-
-    c->frame = av_frame_alloc();
 
     return 0;
 }
 
+
+
+/*
+ *
+ * Uninit tscc decoder
+ *
+ */
 static av_cold int decode_end(AVCodecContext *avctx)
 {
     CamtasiaContext * const c = avctx->priv_data;
 
     av_freep(&c->decomp_buf);
-    av_frame_free(&c->frame);
 
-    inflateEnd(&c->zstream);
+    if (c->pic.data[0])
+        avctx->release_buffer(avctx, &c->pic);
+    inflateEnd(&(c->zstream));
 
     return 0;
 }
 
 AVCodec ff_tscc_decoder = {
-    .name           = "camtasia",
-    .long_name      = NULL_IF_CONFIG_SMALL("TechSmith Screen Capture Codec"),
-    .type           = AVMEDIA_TYPE_VIDEO,
-    .id             = AV_CODEC_ID_TSCC,
-    .priv_data_size = sizeof(CamtasiaContext),
-    .init           = decode_init,
-    .close          = decode_end,
-    .decode         = decode_frame,
-    .capabilities   = AV_CODEC_CAP_DR1,
+        "camtasia",
+        AVMEDIA_TYPE_VIDEO,
+        CODEC_ID_TSCC,
+        sizeof(CamtasiaContext),
+        decode_init,
+        NULL,
+        decode_end,
+        decode_frame,
+        CODEC_CAP_DR1,
+        .long_name = NULL_IF_CONFIG_SMALL("TechSmith Screen Capture Codec"),
 };
+

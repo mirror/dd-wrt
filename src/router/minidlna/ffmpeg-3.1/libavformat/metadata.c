@@ -18,10 +18,48 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include <strings.h>
 #include "avformat.h"
 #include "metadata.h"
 #include "libavutil/dict.h"
-#include "libavutil/avstring.h"
+
+#if FF_API_OLD_METADATA2
+AVDictionaryEntry *
+av_metadata_get(AVDictionary *m, const char *key, const AVDictionaryEntry *prev, int flags)
+{
+    return av_dict_get(m, key, prev, flags);
+}
+
+int av_metadata_set2(AVDictionary **pm, const char *key, const char *value, int flags)
+{
+    return av_dict_set(pm, key, value, flags);
+}
+#endif
+#if FF_API_OLD_METADATA
+int av_metadata_set(AVMetadata **pm, const char *key, const char *value)
+{
+    return av_metadata_set2(pm, key, value, 0);
+}
+#endif
+
+#if FF_API_OLD_METADATA2
+
+void av_metadata_conv(AVFormatContext *ctx, const AVMetadataConv *d_conv,
+                                            const AVMetadataConv *s_conv)
+{
+    return;
+}
+
+void av_metadata_free(AVDictionary **pm)
+{
+    av_dict_free(pm);
+}
+
+void av_metadata_copy(AVDictionary **dst, AVDictionary *src, int flags)
+{
+    av_dict_copy(dst, src, flags);
+}
+#endif
 
 void ff_metadata_conv(AVDictionary **pm, const AVMetadataConv *d_conv,
                                        const AVMetadataConv *s_conv)
@@ -33,20 +71,20 @@ void ff_metadata_conv(AVDictionary **pm, const AVMetadataConv *d_conv,
     AVDictionary *dst = NULL;
     const char *key;
 
-    if (d_conv == s_conv || !pm)
+    if (d_conv == s_conv)
         return;
 
     while ((mtag = av_dict_get(*pm, "", mtag, AV_DICT_IGNORE_SUFFIX))) {
         key = mtag->key;
         if (s_conv)
             for (sc=s_conv; sc->native; sc++)
-                if (!av_strcasecmp(key, sc->native)) {
+                if (!strcasecmp(key, sc->native)) {
                     key = sc->generic;
                     break;
                 }
         if (d_conv)
             for (dc=d_conv; dc->native; dc++)
-                if (!av_strcasecmp(key, dc->generic)) {
+                if (!strcasecmp(key, dc->generic)) {
                     key = dc->native;
                     break;
                 }
@@ -68,3 +106,4 @@ void ff_metadata_conv_ctx(AVFormatContext *ctx, const AVMetadataConv *d_conv,
     for (i=0; i<ctx->nb_programs; i++)
         ff_metadata_conv(&ctx->programs[i]->metadata, d_conv, s_conv);
 }
+

@@ -24,9 +24,7 @@
  * tables taken directly from the AC-3 spec.
  */
 
-#include "libavutil/channel_layout.h"
-#include "libavutil/mem.h"
-
+#include "libavutil/audioconvert.h"
 #include "avcodec.h"
 #include "ac3tab.h"
 
@@ -86,7 +84,7 @@ const uint8_t ff_ac3_channels_tab[8] = {
 /**
  * Map audio coding mode (acmod) to channel layout mask.
  */
-const uint16_t avpriv_ac3_channel_layout_tab[8] = {
+const uint16_t ff_ac3_channel_layout_tab[8] = {
     AV_CH_LAYOUT_STEREO,
     AV_CH_LAYOUT_MONO,
     AV_CH_LAYOUT_STEREO,
@@ -116,7 +114,7 @@ const uint8_t ff_ac3_enc_channel_map[8][2][6] = {
 };
 
 /**
- * Table to remap channels from AC-3 order to SMPTE order.
+ * Table to remap channels from from AC-3 order to SMPTE order.
  * [channel_mode][lfe][ch]
  */
 const uint8_t ff_ac3_dec_channel_map[8][2][6] = {

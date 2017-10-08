@@ -1,4 +1,4 @@
-/*
+/**
  * RTP Depacketization of MP4A-LATM, RFC 3016
  * Copyright (c) 2010 Martin Storsjo
  *
@@ -19,11 +19,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "avio_internal.h"
 #include "rtpdec_formats.h"
 #include "internal.h"
 #include "libavutil/avstring.h"
 #include "libavcodec/get_bits.h"
+#include <strings.h>
 
 struct PayloadContext {
     AVIOContext *dyn_buf;
@@ -32,23 +32,37 @@ struct PayloadContext {
     uint32_t timestamp;
 };
 
-static void latm_close_context(PayloadContext *data)
+static PayloadContext *latm_new_context(void)
 {
-    ffio_free_dyn_buf(&data->dyn_buf);
-    av_freep(&data->buf);
+    return av_mallocz(sizeof(PayloadContext));
+}
+
+static void latm_free_context(PayloadContext *data)
+{
+    if (!data)
+        return;
+    if (data->dyn_buf) {
+        uint8_t *p;
+        avio_close_dyn_buf(data->dyn_buf, &p);
+        av_free(p);
+    }
+    av_free(data->buf);
+    av_free(data);
 }
 
 static int latm_parse_packet(AVFormatContext *ctx, PayloadContext *data,
                              AVStream *st, AVPacket *pkt, uint32_t *timestamp,
-                             const uint8_t *buf, int len, uint16_t seq,
-                             int flags)
+                             const uint8_t *buf, int len, int flags)
 {
     int ret, cur_len;
 
     if (buf) {
         if (!data->dyn_buf || data->timestamp != *timestamp) {
             av_freep(&data->buf);
-            ffio_free_dyn_buf(&data->dyn_buf);
+            if (data->dyn_buf)
+                avio_close_dyn_buf(data->dyn_buf, &data->buf);
+            data->dyn_buf = NULL;
+            av_freep(&data->buf);
 
             data->timestamp = *timestamp;
             if ((ret = avio_open_dyn_buf(&data->dyn_buf)) < 0)
@@ -58,7 +72,7 @@ static int latm_parse_packet(AVFormatContext *ctx, PayloadContext *data,
 
         if (!(flags & RTP_FLAG_MARKER))
             return AVERROR(EAGAIN);
-        av_freep(&data->buf);
+        av_free(data->buf);
         data->len = avio_close_dyn_buf(data->dyn_buf, &data->buf);
         data->dyn_buf = NULL;
         data->pos = 0;
@@ -89,7 +103,7 @@ static int latm_parse_packet(AVFormatContext *ctx, PayloadContext *data,
     return data->pos < data->len;
 }
 
-static int parse_fmtp_config(AVStream *st, const char *value)
+static int parse_fmtp_config(AVStream *st, char *value)
 {
     int len = ff_hex_to_data(NULL, value), i, ret = 0;
     GetBitContext gb;
@@ -97,7 +111,7 @@ static int parse_fmtp_config(AVStream *st, const char *value)
     int audio_mux_version, same_time_framing, num_programs, num_layers;
 
     /* Pad this buffer, too, to avoid out of bounds reads with get_bits below */
-    config = av_mallocz(len + AV_INPUT_BUFFER_PADDING_SIZE);
+    config = av_mallocz(len + FF_INPUT_BUFFER_PADDING_SIZE);
     if (!config)
         return AVERROR(ENOMEM);
     ff_hex_to_data(config, value);
@@ -109,28 +123,30 @@ static int parse_fmtp_config(AVStream *st, const char *value)
     num_layers        = get_bits(&gb, 3);
     if (audio_mux_version != 0 || same_time_framing != 1 || num_programs != 0 ||
         num_layers != 0) {
-        avpriv_report_missing_feature(NULL, "LATM config (%d,%d,%d,%d)",
-                                      audio_mux_version, same_time_framing,
-                                      num_programs, num_layers);
+        av_log(NULL, AV_LOG_WARNING, "Unsupported LATM config (%d,%d,%d,%d)\n",
+                                     audio_mux_version, same_time_framing,
+                                     num_programs, num_layers);
         ret = AVERROR_PATCHWELCOME;
         goto end;
     }
-    av_freep(&st->codecpar->extradata);
-    if (ff_alloc_extradata(st->codecpar, (get_bits_left(&gb) + 7)/8)) {
+    av_freep(&st->codec->extradata);
+    st->codec->extradata_size = (get_bits_left(&gb) + 7)/8;
+    st->codec->extradata = av_mallocz(st->codec->extradata_size +
+                                      FF_INPUT_BUFFER_PADDING_SIZE);
+    if (!st->codec->extradata) {
         ret = AVERROR(ENOMEM);
         goto end;
     }
-    for (i = 0; i < st->codecpar->extradata_size; i++)
-        st->codecpar->extradata[i] = get_bits(&gb, 8);
+    for (i = 0; i < st->codec->extradata_size; i++)
+        st->codec->extradata[i] = get_bits(&gb, 8);
 
 end:
     av_free(config);
     return ret;
 }
 
-static int parse_fmtp(AVFormatContext *s,
-                      AVStream *stream, PayloadContext *data,
-                      const char *attr, const char *value)
+static int parse_fmtp(AVStream *stream, PayloadContext *data,
+                      char *attr, char *value)
 {
     int res;
 
@@ -141,8 +157,8 @@ static int parse_fmtp(AVFormatContext *s,
     } else if (!strcmp(attr, "cpresent")) {
         int cpresent = atoi(value);
         if (cpresent != 0)
-            avpriv_request_sample(s,
-                                  "RTP MP4A-LATM with in-band configuration");
+            av_log_missing_feature(NULL, "RTP MP4A-LATM with in-band "
+                                         "configuration", 1);
     }
 
     return 0;
@@ -153,11 +169,8 @@ static int latm_parse_sdp_line(AVFormatContext *s, int st_index,
 {
     const char *p;
 
-    if (st_index < 0)
-        return 0;
-
     if (av_strstart(line, "fmtp:", &p))
-        return ff_parse_fmtp(s, s->streams[st_index], data, p, parse_fmtp);
+        return ff_parse_fmtp(s->streams[st_index], data, p, parse_fmtp);
 
     return 0;
 }
@@ -165,9 +178,9 @@ static int latm_parse_sdp_line(AVFormatContext *s, int st_index,
 RTPDynamicProtocolHandler ff_mp4a_latm_dynamic_handler = {
     .enc_name           = "MP4A-LATM",
     .codec_type         = AVMEDIA_TYPE_AUDIO,
-    .codec_id           = AV_CODEC_ID_AAC,
-    .priv_data_size     = sizeof(PayloadContext),
+    .codec_id           = CODEC_ID_AAC,
     .parse_sdp_a_line   = latm_parse_sdp_line,
-    .close              = latm_close_context,
-    .parse_packet       = latm_parse_packet,
+    .alloc              = latm_new_context,
+    .free               = latm_free_context,
+    .parse_packet       = latm_parse_packet
 };

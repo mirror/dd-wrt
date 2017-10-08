@@ -23,7 +23,6 @@
 #define AVFORMAT_SPDIF_H
 
 #include <stdint.h>
-#include "avformat.h"
 
 #define SYNCWORD1 0xF872
 #define SYNCWORD2 0x4E1F
@@ -41,9 +40,9 @@ enum IEC61937DataType {
     IEC61937_DTS1               = 0x0B,          ///< DTS type I   (512 samples)
     IEC61937_DTS2               = 0x0C,          ///< DTS type II  (1024 samples)
     IEC61937_DTS3               = 0x0D,          ///< DTS type III (2048 samples)
-    IEC61937_ATRAC              = 0x0E,          ///< ATRAC data
-    IEC61937_ATRAC3             = 0x0F,          ///< ATRAC3 data
-    IEC61937_ATRACX             = 0x10,          ///< ATRAC3+ data
+    IEC61937_ATRAC              = 0x0E,          ///< Atrac data
+    IEC61937_ATRAC3             = 0x0F,          ///< Atrac 3 data
+    IEC61937_ATRACX             = 0x10,          ///< Atrac 3 plus data
     IEC61937_DTSHD              = 0x11,          ///< DTS HD data
     IEC61937_WMAPRO             = 0x12,          ///< WMA 9 Professional data
     IEC61937_MPEG2_AAC_LSF_2048 = 0x13,          ///< MPEG-2 AAC ADTS half-rate low sampling frequency
@@ -54,12 +53,10 @@ enum IEC61937DataType {
 
 static const uint16_t spdif_mpeg_pkt_offset[2][3] = {
     //LAYER1  LAYER2  LAYER3
-    { 3072,    9216,   4608 }, // MPEG-2 LSF
-    { 1536,    4608,   4608 }, // MPEG-1
+    { 3072,    9216,   4608 }, // MPEG2 LSF
+    { 1536,    4608,   4608 }, // MPEG1
 };
 
 void ff_spdif_bswap_buf16(uint16_t *dst, const uint16_t *src, int w);
-int ff_spdif_read_packet(AVFormatContext *s, AVPacket *pkt);
-int ff_spdif_probe(const uint8_t *p_buf, int buf_size, enum AVCodecID *codec);
 
 #endif /* AVFORMAT_SPDIF_H */

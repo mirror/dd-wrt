@@ -23,7 +23,7 @@
 
 #include "config.h"
 
-#if HAVE_NEON_INLINE
+#if HAVE_NEON && HAVE_INLINE_ASM
 
 #define VMUL2 VMUL2
 static inline float *VMUL2(float *dst, const float *v, unsigned idx,
@@ -114,15 +114,12 @@ static inline float *VMUL4S(float *dst, const float *v, unsigned idx,
              "vmov     d1,  %2,  %3          \n\t"
              "lsls     %6,  %6,  #1          \n\t"
              "and      %0,  %5,  #1<<31      \n\t"
-             "it       cs                    \n\t"
              "lslcs    %5,  %5,  #1          \n\t"
              "lsls     %6,  %6,  #1          \n\t"
              "and      %1,  %5,  #1<<31      \n\t"
-             "it       cs                    \n\t"
              "lslcs    %5,  %5,  #1          \n\t"
              "lsls     %6,  %6,  #1          \n\t"
              "and      %2,  %5,  #1<<31      \n\t"
-             "it       cs                    \n\t"
              "lslcs    %5,  %5,  #1          \n\t"
              "vmov     d4,  %0,  %1          \n\t"
              "and      %3,  %5,  #1<<31      \n\t"
@@ -138,6 +135,6 @@ static inline float *VMUL4S(float *dst, const float *v, unsigned idx,
     return dst;
 }
 
-#endif /* HAVE_NEON_INLINE */
+#endif /* HAVE_NEON && HAVE_INLINE_ASM */
 
 #endif /* AVCODEC_ARM_AAC_H */

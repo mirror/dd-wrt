@@ -1,24 +1,24 @@
 /*
  * Copyright (c) 2011 Mans Rullgard <mans@mansr.com>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavutil/arm/asm.S"
+#include "asm.S"
 
 function ff_ac3_bit_alloc_calc_bap_armv6, export=1
         ldr             r12, [sp]
@@ -26,31 +26,30 @@ function ff_ac3_bit_alloc_calc_bap_armv6, export=1
         beq             4f
         push            {r4-r11,lr}
         add             r5,  sp,  #40
-        movrelx         r4,  X(ff_ac3_bin_to_band_tab), r11
-        movrelx         lr,  X(ff_ac3_band_start_tab)
+        movrel          r4,  X(ff_ac3_bin_to_band_tab)
+        movrel          lr,  X(ff_ac3_band_start_tab)
         ldm             r5,  {r5-r7}
         ldrb            r4,  [r4, r2]
         add             r1,  r1,  r2,  lsl #1           @ psd + start
         add             r0,  r0,  r4,  lsl #1           @ mask + band
-        add             r4,  r4,  lr
+        add             r4,  lr,  r4
         add             r7,  r7,  r2                    @ bap + start
+        ldrb            r10, [r4], #1
 1:
         ldrsh           r9,  [r0], #2                   @ mask[band]
-        mov             r8,  #0xff0
+        ldr             r8,  =0x1fe0
         sub             r9,  r9,  r12                   @   - snr_offset
-        ldrb            r10, [r4, #1]!                  @ band_start_tab[++band]
+        mov             r11, r10
+        ldrb            r10, [r4], #1                   @ band_start_tab[band++]
         subs            r9,  r9,  r5                    @   - floor
-        it              lt
         movlt           r9,  #0
         cmp             r10, r3                         @   - end
-        and             r9,  r9,  r8, lsl #1            @   & 0x1fe0
-        ite             gt
-        subgt           r8,  r3,  r2
-        suble           r8,  r10, r2
-        mov             r2,  r10
+        and             r9,  r9,  r8                    @   & 0x1fe0
+        subgt           r8,  r3,  r11
+        suble           r8,  r10, r11
         add             r9,  r9,  r5                    @   + floor => m
         tst             r8,  #1
-        add             r11, r7,  r8
+        add             r2,  r7,  r8
         bne             3f
         b               5f
 2:
@@ -64,9 +63,9 @@ function ff_ac3_bit_alloc_calc_bap_armv6, export=1
         ldrb            lr,  [r6, lr]
         strb            r8,  [r7], #1                   @ bap[bin]
         strb            lr,  [r7], #1
-5:      cmp             r7,  r11
+5:      cmp             r7,  r2
         blo             2b
-        cmp             r3,  r10
+        cmp             r3,  r11
         bgt             1b
         pop             {r4-r11,pc}
 3:

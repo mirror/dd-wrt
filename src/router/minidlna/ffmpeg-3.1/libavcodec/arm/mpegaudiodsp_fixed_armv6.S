@@ -1,24 +1,24 @@
 /*
  * Copyright (c) 2011 Mans Rullgard <mans@mansr.com>
  *
- * This file is part of FFmpeg.
+ * This file is part of Libav.
  *
- * FFmpeg is free software; you can redistribute it and/or
+ * Libav is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * FFmpeg is distributed in the hope that it will be useful,
+ * Libav is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * License along with Libav; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavutil/arm/asm.S"
+#include "asm.S"
 
 .macro  skip            args:vararg
 .endm
@@ -75,7 +75,7 @@ function ff_mpadsp_apply_window_fixed_armv6, export=1
         sum8            r8,  r9,  r1,  r0,  r10, r11, r12, lr
         sum8            r8,  r9,  r1,  r2,  r10, r11, r12, lr, rsb, 32
         round           r10, r8,  r9
-        strh_post       r10, r3,  r4
+        strh            r10, [r3], r4
 
         mov             lr,  #15
 1:
@@ -127,10 +127,10 @@ function ff_mpadsp_apply_window_fixed_armv6, export=1
         round           r10, r8,  r9
         adds            r8,  r8,  r4
         adc             r9,  r9,  r7
-        strh_post       r10, r3,  r12
+        strh            r10, [r3], r12
         round           r11, r8,  r9
         subs            lr,  lr,  #1
-        strh_dpost      r11, r5, r12
+        strh            r11, [r5], -r12
         bgt             1b
 
         sum8            r8,  r9,  r1,  r0,  r10, r11, r12, lr, rsb, 33

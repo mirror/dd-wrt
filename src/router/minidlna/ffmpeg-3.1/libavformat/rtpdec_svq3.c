@@ -22,14 +22,12 @@
 /**
  * @file
  * @brief RTP support for the SV3V (SVQ3) payload
+ * (http://wiki.multimedia.cx/index.php?title=Sorenson_Video_3#Packetization)
  * @author Ronald S. Bultje <rbultje@ronald.bitfreak.net>
- * @see http://wiki.multimedia.cx/index.php?title=Sorenson_Video_3#Packetization
  */
 
 #include <string.h>
 #include "libavutil/intreadwrite.h"
-#include "avio_internal.h"
-#include "internal.h"
 #include "rtp.h"
 #include "rtpdec.h"
 #include "rtpdec_formats.h"
@@ -43,8 +41,7 @@ struct PayloadContext {
 static int svq3_parse_packet (AVFormatContext *s, PayloadContext *sv,
                               AVStream *st, AVPacket *pkt,
                               uint32_t *timestamp,
-                              const uint8_t *buf, int len, uint16_t seq,
-                              int flags)
+                              const uint8_t *buf, int len, int flags)
 {
     int config_packet, start_packet, end_packet;
 
@@ -59,22 +56,24 @@ static int svq3_parse_packet (AVFormatContext *s, PayloadContext *sv,
 
     if (config_packet) {
 
-        av_freep(&st->codecpar->extradata);
-        st->codecpar->extradata_size = 0;
+        av_freep(&st->codec->extradata);
+        st->codec->extradata_size = 0;
 
-        if (len < 2 || ff_alloc_extradata(st->codecpar, len + 8))
+        if (len < 2 || !(st->codec->extradata =
+                         av_malloc(len + 8 + FF_INPUT_BUFFER_PADDING_SIZE)))
             return AVERROR_INVALIDDATA;
 
-        memcpy(st->codecpar->extradata, "SEQH", 4);
-        AV_WB32(st->codecpar->extradata + 4, len);
-        memcpy(st->codecpar->extradata + 8, buf, len);
+        st->codec->extradata_size = len + 8;
+        memcpy(st->codec->extradata, "SEQH", 4);
+        AV_WB32(st->codec->extradata + 4, len);
+        memcpy(st->codec->extradata + 8, buf, len);
 
-        /* We set codec_id to AV_CODEC_ID_NONE initially to
+        /* We set codec_id to CODEC_ID_NONE initially to
          * delay decoder initialization since extradata is
          * carried within the RTP stream, not SDP. Here,
-         * by setting codec_id to AV_CODEC_ID_SVQ3, we are signalling
+         * by setting codec_id to CODEC_ID_SVQ3, we are signalling
          * to the decoder that it is OK to initialize. */
-        st->codecpar->codec_id = AV_CODEC_ID_SVQ3;
+        st->codec->codec_id = CODEC_ID_SVQ3;
 
         return AVERROR(EAGAIN);
     }
@@ -82,7 +81,11 @@ static int svq3_parse_packet (AVFormatContext *s, PayloadContext *sv,
     if (start_packet) {
         int res;
 
-        ffio_free_dyn_buf(&sv->pktbuf);
+        if (sv->pktbuf) {
+            uint8_t *tmp;
+            avio_close_dyn_buf(sv->pktbuf, &tmp);
+            av_free(tmp);
+        }
         if ((res = avio_open_dyn_buf(&sv->pktbuf)) < 0)
             return res;
         sv->timestamp   = *timestamp;
@@ -94,27 +97,38 @@ static int svq3_parse_packet (AVFormatContext *s, PayloadContext *sv,
     avio_write(sv->pktbuf, buf, len);
 
     if (end_packet) {
-        int ret = ff_rtp_finalize_packet(pkt, &sv->pktbuf, st->index);
-        if (ret < 0)
-            return ret;
-
+        av_init_packet(pkt);
+        pkt->stream_index = st->index;
         *timestamp        = sv->timestamp;
+        pkt->size         = avio_close_dyn_buf(sv->pktbuf, &pkt->data);
+        pkt->destruct     = av_destruct_packet;
+        sv->pktbuf        = NULL;
         return 0;
     }
 
     return AVERROR(EAGAIN);
 }
 
-static void svq3_close_context(PayloadContext *sv)
+static PayloadContext *svq3_extradata_new(void)
 {
-    ffio_free_dyn_buf(&sv->pktbuf);
+    return av_mallocz(sizeof(PayloadContext));
+}
+
+static void svq3_extradata_free(PayloadContext *sv)
+{
+    if (sv->pktbuf) {
+        uint8_t *buf;
+        avio_close_dyn_buf(sv->pktbuf, &buf);
+        av_free(buf);
+    }
+    av_free(sv);
 }
 
 RTPDynamicProtocolHandler ff_svq3_dynamic_handler = {
     .enc_name         = "X-SV3V-ES",
     .codec_type       = AVMEDIA_TYPE_VIDEO,
-    .codec_id         = AV_CODEC_ID_NONE,      // see if (config_packet) above
-    .priv_data_size   = sizeof(PayloadContext),
-    .close            = svq3_close_context,
+    .codec_id         = CODEC_ID_NONE,      // see if (config_packet) above
+    .alloc            = svq3_extradata_new,
+    .free             = svq3_extradata_free,
     .parse_packet     = svq3_parse_packet,
 };

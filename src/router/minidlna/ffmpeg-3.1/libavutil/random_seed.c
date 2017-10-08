@@ -18,37 +18,16 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "config.h"
-
-#if HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-#if HAVE_IO_H
-#include <io.h>
-#endif
-#if HAVE_CRYPTGENRANDOM
-#include <windows.h>
-#include <wincrypt.h>
-#endif
 #include <fcntl.h>
-#include <math.h>
-#include <time.h>
-#include <string.h>
-#include "avassert.h"
-#include "internal.h"
-#include "intreadwrite.h"
 #include "timer.h"
+#include "time.h"
 #include "random_seed.h"
-#include "sha.h"
-
-#ifndef TEST
-#define TEST 0
-#endif
+#include "avutil.h"
 
 static int read_random(uint32_t *dst, const char *file)
 {
-#if HAVE_UNISTD_H
-    int fd = avpriv_open(file, O_RDONLY);
+    int fd = open(file, O_RDONLY);
     int err = -1;
 
     if (fd == -1)
@@ -57,84 +36,43 @@ static int read_random(uint32_t *dst, const char *file)
     close(fd);
 
     return err;
-#else
-    return -1;
-#endif
 }
 
 static uint32_t get_generic_seed(void)
 {
-    uint64_t tmp[120/8];
-    struct AVSHA *sha = (void*)tmp;
-    clock_t last_t  = 0;
-    clock_t last_td = 0;
-    clock_t init_t = 0;
-    static uint64_t i = 0;
-    static uint32_t buffer[512] = { 0 };
-    unsigned char digest[20];
-    uint64_t last_i = i;
+    clock_t last_t=0;
+    int bits=0;
+    uint64_t random=0;
+    unsigned i;
+    float s=0.000000000001;
 
-    av_assert0(sizeof(tmp) >= av_sha_size);
-
-    if(TEST){
-        memset(buffer, 0, sizeof(buffer));
-        last_i = i = 0;
-    }else{
-#ifdef AV_READ_TIME
-        buffer[13] ^= AV_READ_TIME();
-        buffer[41] ^= AV_READ_TIME()>>32;
-#endif
-    }
-
-    for (;;) {
-        clock_t t = clock();
-        if (last_t + 2*last_td + (CLOCKS_PER_SEC > 1000) >= t) {
-            last_td = t - last_t;
-            buffer[i & 511] = 1664525*buffer[i & 511] + 1013904223 + (last_td % 3294638521U);
-        } else {
-            last_td = t - last_t;
-            buffer[++i & 511] += last_td % 3294638521U;
-            if ((t - init_t) >= CLOCKS_PER_SEC>>5)
-                if (last_i && i - last_i > 4 || i - last_i > 64 || TEST && i - last_i > 8)
-                    break;
+    for(i=0;bits<64;i++){
+        clock_t t= clock();
+        if(last_t && fabs(t-last_t)>s || t==(clock_t)-1){
+            if(i<10000 && s<(1<<24)){
+                s+=s;
+                i=t=0;
+            }else{
+                random= 2*random + (i&1);
+                bits++;
+            }
         }
-        last_t = t;
-        if (!init_t)
-            init_t = t;
+        last_t= t;
     }
-
-    if(TEST) {
-        buffer[0] = buffer[1] = 0;
-    } else {
 #ifdef AV_READ_TIME
-        buffer[111] += AV_READ_TIME();
+    random ^= AV_READ_TIME();
+#else
+    random ^= clock();
 #endif
-    }
 
-    av_sha_init(sha, 160);
-    av_sha_update(sha, (const uint8_t *)buffer, sizeof(buffer));
-    av_sha_final(sha, digest);
-    return AV_RB32(digest) + AV_RB32(digest + 16);
+    random += random>>32;
+
+    return random;
 }
 
 uint32_t av_get_random_seed(void)
 {
     uint32_t seed;
-
-#if HAVE_CRYPTGENRANDOM
-    HCRYPTPROV provider;
-    if (CryptAcquireContext(&provider, NULL, NULL, PROV_RSA_FULL,
-                            CRYPT_VERIFYCONTEXT | CRYPT_SILENT)) {
-        BOOL ret = CryptGenRandom(provider, sizeof(seed), (PBYTE) &seed);
-        CryptReleaseContext(provider, 0);
-        if (ret)
-            return seed;
-    }
-#endif
-
-#if HAVE_ARC4RANDOM
-    return arc4random();
-#endif
 
     if (read_random(&seed, "/dev/urandom") == sizeof(seed))
         return seed;
@@ -142,3 +80,11 @@ uint32_t av_get_random_seed(void)
         return seed;
     return get_generic_seed();
 }
+
+#if LIBAVUTIL_VERSION_MAJOR < 51
+attribute_deprecated uint32_t ff_random_get_seed(void);
+uint32_t ff_random_get_seed(void)
+{
+    return av_get_random_seed();
+}
+#endif

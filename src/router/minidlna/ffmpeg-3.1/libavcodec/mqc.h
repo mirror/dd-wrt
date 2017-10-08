@@ -1,5 +1,5 @@
 /*
- * MQ-coder: structures, common and decoder functions
+ * MQ-coder
  * Copyright (c) 2007 Kamil Nowosad
  *
  * This file is part of FFmpeg.
@@ -28,22 +28,21 @@
  * @author Kamil Nowosad
  */
 
-#include <stdint.h>
+#include "avcodec.h"
 
 #define MQC_CX_UNI 17
 #define MQC_CX_RL  18
 
-extern uint16_t ff_mqc_qe[2 * 47];
-extern uint8_t  ff_mqc_nlps[2 * 47];
-extern uint8_t  ff_mqc_nmps[2 * 47];
+extern uint16_t  ff_mqc_qe[2*47];
+extern uint8_t ff_mqc_nlps[2*47];
+extern uint8_t ff_mqc_nmps[2*47];
 
-typedef struct MqcState {
+typedef struct {
     uint8_t *bp, *bpstart;
     unsigned int a;
     unsigned int c;
     unsigned int ct;
     uint8_t cx_states[19];
-    int raw;
 } MqcState;
 
 /* encoder */
@@ -59,38 +58,18 @@ int ff_mqc_length(MqcState *mqc);
 
 /** flush the encoder [returns number of bytes encoded] */
 int ff_mqc_flush(MqcState *mqc);
-int ff_mqc_flush_to(MqcState *mqc, uint8_t *dst, int *dst_len);
 
 /* decoder */
 
-/**
- * Initialize MQ-decoder.
- * @param mqc   MQ decoder state
- * @param bp    byte pointer
- * @param raw   raw mode
- * @param reset reset states
- */
-void ff_mqc_initdec(MqcState *mqc, uint8_t *bp, int raw, int reset);
+/** initialize the decoder */
+void ff_mqc_initdec(MqcState *mqc, uint8_t *bp);
 
-/**
- * MQ decoder.
- * @param mqc       MQ decoder state
- * @param cxstate   Context
- * @return          Decision (0 to 1)
- */
+/** returns decoded bit with context cx */
 int ff_mqc_decode(MqcState *mqc, uint8_t *cxstate);
 
 /* common */
 
-/**
- * MQ-coder Initialize context tables (QE, NLPS, NMPS)
- */
-void ff_mqc_init_context_tables(void);
-
-/**
- * MQ-coder context initialisations.
- * @param mqc       MQ-coder context
- */
+/** initialize the contexts */
 void ff_mqc_init_contexts(MqcState *mqc);
 
 #endif /* AVCODEC_MQC_H */

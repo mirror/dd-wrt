@@ -19,7 +19,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "libavutil/mathematics.h"
 #include "avformat.h"
 #include "ffmeta.h"
 #include "internal.h"
@@ -50,7 +49,7 @@ static void get_line(AVIOContext *s, uint8_t *buf, int size)
                 buf[i++] = c;
         }
         buf[i] = 0;
-    } while (!avio_feof(s) && (buf[0] == ';' || buf[0] == '#' || buf[0] == 0));
+    } while (!url_feof(s) && (buf[0] == ';' || buf[0] == '#' || buf[0] == 0));
 }
 
 static AVChapter *read_chapter(AVFormatContext *s)
@@ -75,14 +74,13 @@ static AVChapter *read_chapter(AVFormatContext *s)
         end = AV_NOPTS_VALUE;
     }
 
-    return avpriv_new_chapter(s, s->nb_chapters, tb, start, end, NULL);
+    return ff_new_chapter(s, s->nb_chapters, tb, start, end, NULL);
 }
 
-static uint8_t *unescape(const uint8_t *buf, int size)
+static uint8_t *unescape(uint8_t *buf, int size)
 {
     uint8_t *ret = av_malloc(size + 1);
-    uint8_t *p1  = ret;
-    const uint8_t *p2 = buf;
+    uint8_t *p1  = ret, *p2 = buf;
 
     if (!ret)
         return NULL;
@@ -96,10 +94,9 @@ static uint8_t *unescape(const uint8_t *buf, int size)
     return ret;
 }
 
-static int read_tag(const uint8_t *line, AVDictionary **m)
+static int read_tag(uint8_t *line, AVDictionary **m)
 {
-    uint8_t *key, *value;
-    const uint8_t *p = line;
+    uint8_t *key, *value, *p = line;
 
     /* find first not escaped '=' */
     while (1) {
@@ -125,29 +122,29 @@ static int read_tag(const uint8_t *line, AVDictionary **m)
     return 0;
 }
 
-static int read_header(AVFormatContext *s)
+static int read_header(AVFormatContext *s, AVFormatParameters *ap)
 {
     AVDictionary **m = &s->metadata;
     uint8_t line[1024];
 
-    while(!avio_feof(s->pb)) {
+    while(!url_feof(s->pb)) {
         get_line(s->pb, line, sizeof(line));
 
         if (!memcmp(line, ID_STREAM, strlen(ID_STREAM))) {
-            AVStream *st = avformat_new_stream(s, NULL);
+            AVStream *st = av_new_stream(s, 0);
 
             if (!st)
-                return AVERROR(ENOMEM);
+                return -1;
 
-            st->codecpar->codec_type = AVMEDIA_TYPE_DATA;
-            st->codecpar->codec_id   = AV_CODEC_ID_FFMETADATA;
+            st->codec->codec_type = AVMEDIA_TYPE_DATA;
+            st->codec->codec_id   = CODEC_ID_FFMETADATA;
 
             m = &st->metadata;
         } else if (!memcmp(line, ID_CHAPTER, strlen(ID_CHAPTER))) {
             AVChapter *ch = read_chapter(s);
 
             if (!ch)
-                return AVERROR(ENOMEM);
+                return -1;
 
             m = &ch->metadata;
         } else
@@ -170,7 +167,7 @@ static int read_packet(AVFormatContext *s, AVPacket *pkt)
 
 AVInputFormat ff_ffmetadata_demuxer = {
     .name        = "ffmetadata",
-    .long_name   = NULL_IF_CONFIG_SMALL("FFmpeg metadata in text"),
+    .long_name   = NULL_IF_CONFIG_SMALL("FFmpeg metadata in text format"),
     .read_probe  = probe,
     .read_header = read_header,
     .read_packet = read_packet,

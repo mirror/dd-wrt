@@ -20,35 +20,30 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVCODEC_AACPS_TABLEGEN_H
-#define AVCODEC_AACPS_TABLEGEN_H
+#ifndef AACPS_TABLEGEN_H
+#define AACPS_TABLEGEN_H
 
-#include <math.h>
 #include <stdint.h>
 
 #if CONFIG_HARDCODED_TABLES
 #define ps_tableinit()
-#define TABLE_CONST const
 #include "libavcodec/aacps_tables.h"
 #else
 #include "libavutil/common.h"
-#include "libavutil/libm.h"
 #include "libavutil/mathematics.h"
-#include "libavutil/mem.h"
 #define NR_ALLPASS_BANDS20 30
 #define NR_ALLPASS_BANDS34 50
 #define PS_AP_LINKS 3
-#define TABLE_CONST
 static float pd_re_smooth[8*8*8];
 static float pd_im_smooth[8*8*8];
 static float HA[46][8][4];
 static float HB[46][8][4];
-static DECLARE_ALIGNED(16, float, f20_0_8) [ 8][8][2];
-static DECLARE_ALIGNED(16, float, f34_0_12)[12][8][2];
-static DECLARE_ALIGNED(16, float, f34_1_8) [ 8][8][2];
-static DECLARE_ALIGNED(16, float, f34_2_4) [ 4][8][2];
-static TABLE_CONST DECLARE_ALIGNED(16, float, Q_fract_allpass)[2][50][3][2];
-static DECLARE_ALIGNED(16, float, phi_fract)[2][50][2];
+static float f20_0_8 [ 8][7][2];
+static float f34_0_12[12][7][2];
+static float f34_1_8 [ 8][7][2];
+static float f34_2_4 [ 4][7][2];
+static float Q_fract_allpass[2][50][3][2];
+static float phi_fract[2][50][2];
 
 static const float g0_Q8[] = {
     0.00746082949812f, 0.02270420949825f, 0.04546865930473f, 0.07266113929591f,
@@ -70,7 +65,7 @@ static const float g2_Q4[] = {
      0.16486303567403f,  0.23279856662996f, 0.25f
 };
 
-static av_cold void make_filters_from_proto(float (*filter)[8][2], const float *proto, int bands)
+static void make_filters_from_proto(float (*filter)[7][2], const float *proto, int bands)
 {
     int q, n;
     for (q = 0; q < bands; q++) {
@@ -82,7 +77,7 @@ static av_cold void make_filters_from_proto(float (*filter)[8][2], const float *
     }
 }
 
-static av_cold void ps_tableinit(void)
+static void ps_tableinit(void)
 {
     static const float ipdopd_sin[] = { 0, M_SQRT1_2, 1,  M_SQRT1_2,  0, -M_SQRT1_2, -1, -M_SQRT1_2 };
     static const float ipdopd_cos[] = { 1, M_SQRT1_2, 0, -M_SQRT1_2, -1, -M_SQRT1_2,  0,  M_SQRT1_2 };
@@ -136,7 +131,7 @@ static av_cold void ps_tableinit(void)
                 float pd2_im = ipdopd_sin[pd2];
                 float re_smooth = 0.25f * pd0_re + 0.5f * pd1_re + pd2_re;
                 float im_smooth = 0.25f * pd0_im + 0.5f * pd1_im + pd2_im;
-                float pd_mag = 1 / hypot(im_smooth, re_smooth);
+                float pd_mag = 1 / sqrt(im_smooth * im_smooth + re_smooth * re_smooth);
                 pd_re_smooth[pd0*64+pd1*8+pd2] = re_smooth * pd_mag;
                 pd_im_smooth[pd0*64+pd1*8+pd2] = im_smooth * pd_mag;
             }
@@ -144,7 +139,7 @@ static av_cold void ps_tableinit(void)
     }
 
     for (iid = 0; iid < 46; iid++) {
-        float c = iid_par_dequant[iid]; ///< Linear Inter-channel Intensity Difference
+        float c = iid_par_dequant[iid]; //<Linear Inter-channel Intensity Difference
         float c1 = (float)M_SQRT2 / sqrtf(1.0f + c*c);
         float c2 = c * c1;
         for (icc = 0; icc < 8; icc++) {
@@ -194,7 +189,7 @@ static av_cold void ps_tableinit(void)
     for (k = 0; k < NR_ALLPASS_BANDS34; k++) {
         double f_center, theta;
         if (k < FF_ARRAY_ELEMS(f_center_34))
-            f_center = f_center_34[k] / 24.0;
+            f_center = f_center_34[k] / 24.;
         else
             f_center = k - 26.5f;
         for (m = 0; m < PS_AP_LINKS; m++) {
@@ -214,4 +209,4 @@ static av_cold void ps_tableinit(void)
 }
 #endif /* CONFIG_HARDCODED_TABLES */
 
-#endif /* AVCODEC_AACPS_TABLEGEN_H */
+#endif /* AACPS_TABLEGEN_H */

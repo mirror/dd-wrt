@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "dshow_capture.h"
+#include "dshow.h"
 
 DECLARE_QUERYINTERFACE(libAVEnumPins,
     { {&IID_IUnknown,0}, {&IID_IEnumPins,0} })
@@ -94,12 +94,6 @@ libAVEnumPins_Setup(libAVEnumPins *this, libAVPin *pin, libAVFilter *filter)
 
     return 1;
 }
-static int
-libAVEnumPins_Cleanup(libAVEnumPins *this)
-{
-    libAVFilter_Release(this->filter);
-    return 1;
-}
 DECLARE_CREATE(libAVEnumPins, libAVEnumPins_Setup(this, pin, filter),
                libAVPin *pin, libAVFilter *filter)
-DECLARE_DESTROY(libAVEnumPins, libAVEnumPins_Cleanup)
+DECLARE_DESTROY(libAVEnumPins, nothing)

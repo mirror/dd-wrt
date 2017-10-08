@@ -22,19 +22,15 @@
 #ifndef AVCODEC_FFT_H
 #define AVCODEC_FFT_H
 
-#ifndef FFT_FLOAT
-#define FFT_FLOAT 1
-#endif
-
-#ifndef FFT_FIXED_32
-#define FFT_FIXED_32 0
+#ifndef CONFIG_FFT_FLOAT
+#define CONFIG_FFT_FLOAT 1
 #endif
 
 #include <stdint.h>
 #include "config.h"
 #include "libavutil/mem.h"
 
-#if FFT_FLOAT
+#if CONFIG_FFT_FLOAT
 
 #include "avfft.h"
 
@@ -44,46 +40,24 @@ typedef float FFTDouble;
 
 #else
 
-#if FFT_FIXED_32
-
-#define Q31(x) (int)((x)*2147483648.0 + 0.5)
-#define FFT_NAME(x) x ## _fixed_32
-
-typedef int32_t FFTSample;
-
-#else /* FFT_FIXED_32 */
-
 #define FFT_NAME(x) x ## _fixed
 
 typedef int16_t FFTSample;
-
-#endif /* FFT_FIXED_32 */
+typedef int     FFTDouble;
 
 typedef struct FFTComplex {
-    FFTSample re, im;
+    int16_t re, im;
 } FFTComplex;
 
-typedef int    FFTDouble;
 typedef struct FFTContext FFTContext;
 
-#endif /* FFT_FLOAT */
+#endif /* CONFIG_FFT_FLOAT */
 
 typedef struct FFTDComplex {
     FFTDouble re, im;
 } FFTDComplex;
 
 /* FFT computation */
-
-enum fft_permutation_type {
-    FF_FFT_PERM_DEFAULT,
-    FF_FFT_PERM_SWAP_LSBS,
-    FF_FFT_PERM_AVX,
-};
-
-enum mdct_permutation_type {
-    FF_MDCT_PERM_NONE,
-    FF_MDCT_PERM_INTERLEAVE,
-};
 
 struct FFTContext {
     int nbits;
@@ -108,9 +82,13 @@ struct FFTContext {
     void (*imdct_half)(struct FFTContext *s, FFTSample *output, const FFTSample *input);
     void (*mdct_calc)(struct FFTContext *s, FFTSample *output, const FFTSample *input);
     void (*mdct_calcw)(struct FFTContext *s, FFTDouble *output, const FFTSample *input);
-    enum fft_permutation_type fft_permutation;
-    enum mdct_permutation_type mdct_permutation;
-    uint32_t *revtab32;
+    int fft_permutation;
+#define FF_FFT_PERM_DEFAULT   0
+#define FF_FFT_PERM_SWAP_LSBS 1
+#define FF_FFT_PERM_AVX       2
+    int mdct_permutation;
+#define FF_MDCT_PERM_NONE       0
+#define FF_MDCT_PERM_INTERLEAVE 1
 };
 
 #if CONFIG_HARDCODED_TABLES
@@ -135,14 +113,13 @@ extern COSTABLE(8192);
 extern COSTABLE(16384);
 extern COSTABLE(32768);
 extern COSTABLE(65536);
-extern COSTABLE(131072);
-extern COSTABLE_CONST FFTSample* const FFT_NAME(ff_cos_tabs)[18];
+extern COSTABLE_CONST FFTSample* const FFT_NAME(ff_cos_tabs)[17];
 
 #define ff_init_ff_cos_tabs FFT_NAME(ff_init_ff_cos_tabs)
 
 /**
  * Initialize the cosine table in ff_cos_tabs[index]
- * @param index index in ff_cos_tabs array of the table to initialize
+ * \param index index in ff_cos_tabs array of the table to initialize
  */
 void ff_init_ff_cos_tabs(int index);
 
@@ -156,13 +133,13 @@ void ff_init_ff_cos_tabs(int index);
  */
 int ff_fft_init(FFTContext *s, int nbits, int inverse);
 
-void ff_fft_init_aarch64(FFTContext *s);
-void ff_fft_init_x86(FFTContext *s);
+#if CONFIG_FFT_FLOAT
+void ff_fft_init_altivec(FFTContext *s);
+void ff_fft_init_mmx(FFTContext *s);
 void ff_fft_init_arm(FFTContext *s);
-void ff_fft_init_mips(FFTContext *s);
-void ff_fft_init_ppc(FFTContext *s);
-
+#else
 void ff_fft_fixed_init_arm(FFTContext *s);
+#endif
 
 void ff_fft_end(FFTContext *s);
 

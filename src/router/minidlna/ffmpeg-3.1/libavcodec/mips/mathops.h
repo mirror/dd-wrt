@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2009 Mans Rullgard <mans@mansr.com>
- * Copyright (c) 2015 Zhou Xiaoyong <zhouxiaoyong@loongson.cn>
  *
  * This file is part of FFmpeg.
  *
@@ -28,39 +27,53 @@
 
 #if HAVE_INLINE_ASM
 
-#if HAVE_LOONGSON3
+#if HAVE_LOONGSON
 
-#define MULH MULH
-static inline av_const int MULH(int a, int b)
+static inline av_const int64_t MAC64(int64_t d, int a, int b)
 {
-    int c;
-    __asm__ ("dmult %1, %2      \n\t"
-             "mflo %0           \n\t"
-             "dsrl %0, %0, 32   \n\t"
-             : "=r"(c)
-             : "r"(a),"r"(b)
-             : "hi", "lo");
-    return c;
+    int64_t m;
+    __asm__ ("dmult.g %1, %2, %3 \n\t"
+             "daddu   %0, %0, %1 \n\t"
+             : "+r"(d), "=&r"(m) : "r"(a), "r"(b));
+    return d;
 }
+#define MAC64(d, a, b) ((d) = MAC64(d, a, b))
 
-#define mid_pred mid_pred
-static inline av_const int mid_pred(int a, int b, int c)
+static inline av_const int64_t MLS64(int64_t d, int a, int b)
 {
-    int t = b;
-    __asm__ ("sgt $8, %1, %2    \n\t"
-             "movn %0, %1, $8   \n\t"
-             "movn %1, %2, $8   \n\t"
-             "sgt $8, %1, %3    \n\t"
-             "movz %1, %3, $8   \n\t"
-             "sgt $8, %0, %1    \n\t"
-             "movn %0, %1, $8   \n\t"
-             : "+&r"(t),"+&r"(a)
-             : "r"(b),"r"(c)
-             : "$8");
-    return t;
+    int64_t m;
+    __asm__ ("dmult.g %1, %2, %3 \n\t"
+             "dsubu   %0, %0, %1 \n\t"
+             : "+r"(d), "=&r"(m) : "r"(a), "r"(b));
+    return d;
 }
+#define MLS64(d, a, b) ((d) = MLS64(d, a, b))
 
-#endif /* HAVE_LOONGSON3 */
+#elif ARCH_MIPS64
+
+static inline av_const int64_t MAC64(int64_t d, int a, int b)
+{
+    int64_t m;
+    __asm__ ("dmult %2, %3     \n\t"
+             "mflo  %1         \n\t"
+             "daddu %0, %0, %1 \n\t"
+             : "+r"(d), "=&r"(m) : "r"(a), "r"(b));
+    return d;
+}
+#define MAC64(d, a, b) ((d) = MAC64(d, a, b))
+
+static inline av_const int64_t MLS64(int64_t d, int a, int b)
+{
+    int64_t m;
+    __asm__ ("dmult %2, %3     \n\t"
+             "mflo  %1         \n\t"
+             "dsubu %0, %0, %1 \n\t"
+             : "+r"(d), "=&r"(m) : "r"(a), "r"(b));
+    return d;
+}
+#define MLS64(d, a, b) ((d) = MLS64(d, a, b))
+
+#endif
 
 #endif /* HAVE_INLINE_ASM */
 

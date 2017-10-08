@@ -1,5 +1,5 @@
 /*
- * Xiph CELT decoder using libcelt
+ * Xiph CELT / Opus decoder using libcelt
  * Copyright (c) 2011 Nicolas George
  *
  * This file is part of FFmpeg.
@@ -22,25 +22,25 @@
 #include <celt/celt.h>
 #include <celt/celt_header.h>
 #include "avcodec.h"
-#include "internal.h"
 #include "libavutil/intreadwrite.h"
 
 struct libcelt_context {
     CELTMode *mode;
     CELTDecoder *dec;
+    int frame_bytes;
     int discard;
 };
 
 static int ff_celt_error_to_averror(int err)
 {
-    switch (err) {
+    switch(err) {
         case CELT_BAD_ARG:          return AVERROR(EINVAL);
 #ifdef CELT_BUFFER_TOO_SMALL
         case CELT_BUFFER_TOO_SMALL: return AVERROR(ENOBUFS);
 #endif
         case CELT_INTERNAL_ERROR:   return AVERROR(EFAULT);
         case CELT_CORRUPTED_DATA:   return AVERROR_INVALIDDATA;
-        case CELT_UNIMPLEMENTED:    return AVERROR(ENOSYS);
+        case CELT_UNIMPLEMENTED:    return AVERROR(ENOTSUP);
 #ifdef ENOTRECOVERABLE
         case CELT_INVALID_STATE:    return AVERROR(ENOTRECOVERABLE);
 #endif
@@ -64,6 +64,7 @@ static av_cold int libcelt_dec_init(AVCodecContext *c)
     if (!c->channels || !c->frame_size ||
         c->frame_size > INT_MAX / sizeof(int16_t) / c->channels)
         return AVERROR(EINVAL);
+    celt->frame_bytes = c->frame_size * c->channels * sizeof(int16_t);
     celt->mode = celt_mode_create(c->sample_rate, c->frame_size, &err);
     if (!celt->mode)
         return ff_celt_error_to_averror(err);
@@ -79,8 +80,9 @@ static av_cold int libcelt_dec_init(AVCodecContext *c)
                    "Invalid overlap (%d), ignored.\n", celt->discard);
             celt->discard = 0;
         }
+        celt->discard *= c->channels * sizeof(int16_t);
     }
-    if (c->extradata_size >= 8) {
+    if(c->extradata_size >= 8) {
         unsigned version = AV_RL32(c->extradata + 4);
         unsigned lib_version = ff_celt_bitstream_version_hack(celt->mode);
         if (version != lib_version)
@@ -89,7 +91,6 @@ static av_cold int libcelt_dec_init(AVCodecContext *c)
                    "improperly decoded by libcelt for version 0x%x.\n",
                    version, lib_version);
     }
-    c->sample_fmt = AV_SAMPLE_FMT_S16;
     return 0;
 }
 
@@ -102,39 +103,34 @@ static av_cold int libcelt_dec_close(AVCodecContext *c)
     return 0;
 }
 
-static int libcelt_dec_decode(AVCodecContext *c, void *data,
-                              int *got_frame_ptr, AVPacket *pkt)
+static int libcelt_dec_decode(AVCodecContext *c, void *pcm, int *pcm_size,
+                              AVPacket *pkt)
 {
     struct libcelt_context *celt = c->priv_data;
-    AVFrame *frame = data;
     int err;
-    int16_t *pcm;
 
-    frame->nb_samples = c->frame_size;
-    if ((err = ff_get_buffer(c, frame, 0)) < 0)
-        return err;
-    pcm = (int16_t *)frame->data[0];
+    if (*pcm_size < celt->frame_bytes)
+        return AVERROR(ENOBUFS);
     err = celt_decode(celt->dec, pkt->data, pkt->size, pcm, c->frame_size);
     if (err < 0)
         return ff_celt_error_to_averror(err);
+    *pcm_size = celt->frame_bytes;
     if (celt->discard) {
-        frame->nb_samples -= celt->discard;
-        memmove(pcm, pcm + celt->discard * c->channels,
-                frame->nb_samples * c->channels * sizeof(int16_t));
+        *pcm_size = celt->frame_bytes - celt->discard;
+        memmove(pcm, (char *)pcm + celt->discard, *pcm_size);
         celt->discard = 0;
     }
-    *got_frame_ptr = 1;
     return pkt->size;
 }
 
 AVCodec ff_libcelt_decoder = {
     .name           = "libcelt",
-    .long_name      = NULL_IF_CONFIG_SMALL("Xiph CELT decoder using libcelt"),
     .type           = AVMEDIA_TYPE_AUDIO,
-    .id             = AV_CODEC_ID_CELT,
+    .id             = CODEC_ID_CELT,
     .priv_data_size = sizeof(struct libcelt_context),
     .init           = libcelt_dec_init,
     .close          = libcelt_dec_close,
     .decode         = libcelt_dec_decode,
-    .capabilities   = AV_CODEC_CAP_DR1,
+    .capabilities   = 0,
+    .long_name = NULL_IF_CONFIG_SMALL("Xiph CELT/Opus decoder using libcelt"),
 };

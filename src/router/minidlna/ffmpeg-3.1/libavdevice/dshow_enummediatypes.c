@@ -19,10 +19,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "dshow_capture.h"
+#include "dshow.h"
 
 DECLARE_QUERYINTERFACE(libAVEnumMediaTypes,
-    { {&IID_IUnknown,0}, {&IID_IEnumMediaTypes,0} })
+    { {&IID_IUnknown,0}, {&IID_IEnumPins,0} })
 DECLARE_ADDREF(libAVEnumMediaTypes)
 DECLARE_RELEASE(libAVEnumMediaTypes)
 
@@ -37,8 +37,6 @@ libAVEnumMediaTypes_Next(libAVEnumMediaTypes *this, unsigned long n,
     if (!this->pos && n == 1) {
         if (!IsEqualGUID(&this->type.majortype, &GUID_NULL)) {
             AM_MEDIA_TYPE *type = av_malloc(sizeof(AM_MEDIA_TYPE));
-            if (!type)
-                return E_OUTOFMEMORY;
             ff_copy_dshow_media_type(type, &this->type);
             *types = type;
             count = 1;
@@ -84,7 +82,7 @@ libAVEnumMediaTypes_Clone(libAVEnumMediaTypes *this, libAVEnumMediaTypes **enums
 static int
 libAVEnumMediaTypes_Setup(libAVEnumMediaTypes *this, const AM_MEDIA_TYPE *type)
 {
-    IEnumMediaTypesVtbl *vtbl = this->vtbl;
+    IEnumPinsVtbl *vtbl = this->vtbl;
     SETVTBL(vtbl, libAVEnumMediaTypes, QueryInterface);
     SETVTBL(vtbl, libAVEnumMediaTypes, AddRef);
     SETVTBL(vtbl, libAVEnumMediaTypes, Release);

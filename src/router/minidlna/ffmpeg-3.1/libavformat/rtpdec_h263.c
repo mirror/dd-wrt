@@ -21,12 +21,15 @@
 
 #include "avformat.h"
 #include "rtpdec_formats.h"
-#include "libavutil/attributes.h"
 #include "libavutil/intreadwrite.h"
 
-int ff_h263_handle_packet(AVFormatContext *ctx, PayloadContext *data,
-                          AVStream *st, AVPacket *pkt, uint32_t *timestamp,
-                          const uint8_t *buf, int len, uint16_t seq, int flags)
+static int h263_handle_packet(AVFormatContext *ctx,
+                              PayloadContext *data,
+                              AVStream *st,
+                              AVPacket * pkt,
+                              uint32_t * timestamp,
+                              const uint8_t * buf,
+                              int len, int flags)
 {
     uint8_t *ptr;
     uint16_t header;
@@ -92,15 +95,14 @@ int ff_h263_handle_packet(AVFormatContext *ctx, PayloadContext *data,
 RTPDynamicProtocolHandler ff_h263_1998_dynamic_handler = {
     .enc_name         = "H263-1998",
     .codec_type       = AVMEDIA_TYPE_VIDEO,
-    .codec_id         = AV_CODEC_ID_H263,
-    .need_parsing     = AVSTREAM_PARSE_FULL,
-    .parse_packet     = ff_h263_handle_packet,
+    .codec_id         = CODEC_ID_H263,
+    .parse_packet     = h263_handle_packet,
 };
 
 RTPDynamicProtocolHandler ff_h263_2000_dynamic_handler = {
     .enc_name         = "H263-2000",
     .codec_type       = AVMEDIA_TYPE_VIDEO,
-    .codec_id         = AV_CODEC_ID_H263,
-    .need_parsing     = AVSTREAM_PARSE_FULL,
-    .parse_packet     = ff_h263_handle_packet,
+    .codec_id         = CODEC_ID_H263,
+    .parse_packet     = h263_handle_packet,
 };
+

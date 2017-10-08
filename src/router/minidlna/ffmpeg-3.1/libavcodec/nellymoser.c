@@ -31,10 +31,12 @@
  * implementors. The original code is available from http://code.google.com/p/nelly2pcm/
  */
 
-#include "libavutil/common.h"
-
-#include "avcodec.h"
 #include "nellymoser.h"
+#include "avcodec.h"
+#include "dsputil.h"
+
+#define ALT_BITSTREAM_READER_LE
+#include "get_bits.h"
 
 const float ff_nelly_dequantization_table[127] = {
  0.0000000000,
@@ -84,7 +86,7 @@ const int16_t ff_nelly_delta_table[32] = {
 
 static inline int signed_shift(int i, int shift) {
     if (shift > 0)
-        return (unsigned)i << shift;
+        return i << shift;
     return i >> -shift;
 }
 
@@ -108,7 +110,7 @@ static int headroom(int *la)
         return 31;
     }
     l = 30 - av_log2(FFABS(*la));
-    *la *= 1<<l;
+    *la <<= l;
     return l;
 }
 
@@ -221,3 +223,4 @@ void ff_nelly_get_sample_bits(const float *buf, int *bits)
             bits[i] = 0;
     }
 }
+

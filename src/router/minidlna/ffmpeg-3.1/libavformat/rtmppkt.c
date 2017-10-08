@@ -1,6 +1,6 @@
 /*
  * RTMP input format
- * Copyright (c) 2009 Konstantin Shishkov
+ * Copyright (c) 2009 Kostya Shishkov
  *
  * This file is part of FFmpeg.
  *
@@ -21,7 +21,6 @@
 
 #include "libavcodec/bytestream.h"
 #include "libavutil/avstring.h"
-#include "libavutil/intfloat.h"
 #include "avformat.h"
 
 #include "rtmppkt.h"
@@ -37,7 +36,7 @@ void ff_amf_write_bool(uint8_t **dst, int val)
 void ff_amf_write_number(uint8_t **dst, double val)
 {
     bytestream_put_byte(dst, AMF_DATA_TYPE_NUMBER);
-    bytestream_put_be64(dst, av_double2int(val));
+    bytestream_put_be64(dst, av_dbl2int(val));
 }
 
 void ff_amf_write_string(uint8_t **dst, const char *str)
@@ -45,19 +44,6 @@ void ff_amf_write_string(uint8_t **dst, const char *str)
     bytestream_put_byte(dst, AMF_DATA_TYPE_STRING);
     bytestream_put_be16(dst, strlen(str));
     bytestream_put_buffer(dst, str, strlen(str));
-}
-
-void ff_amf_write_string2(uint8_t **dst, const char *str1, const char *str2)
-{
-    int len1 = 0, len2 = 0;
-    if (str1)
-        len1 = strlen(str1);
-    if (str2)
-        len2 = strlen(str2);
-    bytestream_put_byte(dst, AMF_DATA_TYPE_STRING);
-    bytestream_put_be16(dst, len1 + len2);
-    bytestream_put_buffer(dst, str1, len1);
-    bytestream_put_buffer(dst, str2, len2);
 }
 
 void ff_amf_write_null(uint8_t **dst)
@@ -84,270 +70,110 @@ void ff_amf_write_object_end(uint8_t **dst)
     bytestream_put_be24(dst, AMF_DATA_TYPE_OBJECT_END);
 }
 
-int ff_amf_read_bool(GetByteContext *bc, int *val)
-{
-    if (bytestream2_get_byte(bc) != AMF_DATA_TYPE_BOOL)
-        return AVERROR_INVALIDDATA;
-    *val = bytestream2_get_byte(bc);
-    return 0;
-}
-
-int ff_amf_read_number(GetByteContext *bc, double *val)
-{
-    uint64_t read;
-    if (bytestream2_get_byte(bc) != AMF_DATA_TYPE_NUMBER)
-        return AVERROR_INVALIDDATA;
-    read = bytestream2_get_be64(bc);
-    *val = av_int2double(read);
-    return 0;
-}
-
-int ff_amf_get_string(GetByteContext *bc, uint8_t *str,
-                      int strsize, int *length)
-{
-    int stringlen = 0;
-    int readsize;
-    stringlen = bytestream2_get_be16(bc);
-    if (stringlen + 1 > strsize)
-        return AVERROR(EINVAL);
-    readsize = bytestream2_get_buffer(bc, str, stringlen);
-    if (readsize != stringlen) {
-        av_log(NULL, AV_LOG_WARNING,
-               "Unable to read as many bytes as AMF string signaled\n");
-    }
-    str[readsize] = '\0';
-    *length = FFMIN(stringlen, readsize);
-    return 0;
-}
-
-int ff_amf_read_string(GetByteContext *bc, uint8_t *str,
-                       int strsize, int *length)
-{
-    if (bytestream2_get_byte(bc) != AMF_DATA_TYPE_STRING)
-        return AVERROR_INVALIDDATA;
-    return ff_amf_get_string(bc, str, strsize, length);
-}
-
-int ff_amf_read_null(GetByteContext *bc)
-{
-    if (bytestream2_get_byte(bc) != AMF_DATA_TYPE_NULL)
-        return AVERROR_INVALIDDATA;
-    return 0;
-}
-
-int ff_rtmp_check_alloc_array(RTMPPacket **prev_pkt, int *nb_prev_pkt,
-                              int channel)
-{
-    int nb_alloc;
-    RTMPPacket *ptr;
-    if (channel < *nb_prev_pkt)
-        return 0;
-
-    nb_alloc = channel + 16;
-    // This can't use the av_reallocp family of functions, since we
-    // would need to free each element in the array before the array
-    // itself is freed.
-    ptr = av_realloc_array(*prev_pkt, nb_alloc, sizeof(**prev_pkt));
-    if (!ptr)
-        return AVERROR(ENOMEM);
-    memset(ptr + *nb_prev_pkt, 0, (nb_alloc - *nb_prev_pkt) * sizeof(*ptr));
-    *prev_pkt = ptr;
-    *nb_prev_pkt = nb_alloc;
-    return 0;
-}
-
 int ff_rtmp_packet_read(URLContext *h, RTMPPacket *p,
-                        int chunk_size, RTMPPacket **prev_pkt, int *nb_prev_pkt)
+                        int chunk_size, RTMPPacket *prev_pkt)
 {
-    uint8_t hdr;
+    uint8_t hdr, t, buf[16];
+    int channel_id, timestamp, data_size, offset = 0;
+    uint32_t extra = 0;
+    enum RTMPPacketType type;
+    int size = 0;
 
     if (ffurl_read(h, &hdr, 1) != 1)
         return AVERROR(EIO);
-
-    return ff_rtmp_packet_read_internal(h, p, chunk_size, prev_pkt,
-                                        nb_prev_pkt, hdr);
-}
-
-static int rtmp_packet_read_one_chunk(URLContext *h, RTMPPacket *p,
-                                      int chunk_size, RTMPPacket **prev_pkt_ptr,
-                                      int *nb_prev_pkt, uint8_t hdr)
-{
-
-    uint8_t buf[16];
-    int channel_id, timestamp, size;
-    uint32_t ts_field; // non-extended timestamp or delta field
-    uint32_t extra = 0;
-    enum RTMPPacketType type;
-    int written = 0;
-    int ret, toread;
-    RTMPPacket *prev_pkt;
-
-    written++;
+    size++;
     channel_id = hdr & 0x3F;
 
     if (channel_id < 2) { //special case for channel number >= 64
         buf[1] = 0;
         if (ffurl_read_complete(h, buf, channel_id + 1) != channel_id + 1)
             return AVERROR(EIO);
-        written += channel_id + 1;
+        size += channel_id + 1;
         channel_id = AV_RL16(buf) + 64;
     }
-    if ((ret = ff_rtmp_check_alloc_array(prev_pkt_ptr, nb_prev_pkt,
-                                         channel_id)) < 0)
-        return ret;
-    prev_pkt = *prev_pkt_ptr;
-    size  = prev_pkt[channel_id].size;
-    type  = prev_pkt[channel_id].type;
-    extra = prev_pkt[channel_id].extra;
+    data_size = prev_pkt[channel_id].data_size;
+    type      = prev_pkt[channel_id].type;
+    extra     = prev_pkt[channel_id].extra;
 
-    hdr >>= 6; // header size indicator
+    hdr >>= 6;
     if (hdr == RTMP_PS_ONEBYTE) {
-        ts_field = prev_pkt[channel_id].ts_field;
+        timestamp = prev_pkt[channel_id].ts_delta;
     } else {
         if (ffurl_read_complete(h, buf, 3) != 3)
             return AVERROR(EIO);
-        written += 3;
-        ts_field = AV_RB24(buf);
+        size += 3;
+        timestamp = AV_RB24(buf);
         if (hdr != RTMP_PS_FOURBYTES) {
             if (ffurl_read_complete(h, buf, 3) != 3)
                 return AVERROR(EIO);
-            written += 3;
-            size = AV_RB24(buf);
+            size += 3;
+            data_size = AV_RB24(buf);
             if (ffurl_read_complete(h, buf, 1) != 1)
                 return AVERROR(EIO);
-            written++;
+            size++;
             type = buf[0];
             if (hdr == RTMP_PS_TWELVEBYTES) {
                 if (ffurl_read_complete(h, buf, 4) != 4)
                     return AVERROR(EIO);
-                written += 4;
+                size += 4;
                 extra = AV_RL32(buf);
             }
         }
-    }
-    if (ts_field == 0xFFFFFF) {
-        if (ffurl_read_complete(h, buf, 4) != 4)
-            return AVERROR(EIO);
-        timestamp = AV_RB32(buf);
-    } else {
-        timestamp = ts_field;
+        if (timestamp == 0xFFFFFF) {
+            if (ffurl_read_complete(h, buf, 4) != 4)
+                return AVERROR(EIO);
+            timestamp = AV_RB32(buf);
+        }
     }
     if (hdr != RTMP_PS_TWELVEBYTES)
         timestamp += prev_pkt[channel_id].timestamp;
 
-    if (prev_pkt[channel_id].read && size != prev_pkt[channel_id].size) {
-        av_log(NULL, AV_LOG_ERROR, "RTMP packet size mismatch %d != %d\n",
-                size,
-                prev_pkt[channel_id].size);
-        ff_rtmp_packet_destroy(&prev_pkt[channel_id]);
-        prev_pkt[channel_id].read = 0;
-    }
-
-    if (!prev_pkt[channel_id].read) {
-        if ((ret = ff_rtmp_packet_create(p, channel_id, type, timestamp,
-                                         size)) < 0)
-            return ret;
-        p->read = written;
-        p->offset = 0;
-        prev_pkt[channel_id].ts_field   = ts_field;
-        prev_pkt[channel_id].timestamp  = timestamp;
-    } else {
-        // previous packet in this channel hasn't completed reading
-        RTMPPacket *prev = &prev_pkt[channel_id];
-        p->data          = prev->data;
-        p->size          = prev->size;
-        p->channel_id    = prev->channel_id;
-        p->type          = prev->type;
-        p->ts_field      = prev->ts_field;
-        p->extra         = prev->extra;
-        p->offset        = prev->offset;
-        p->read          = prev->read + written;
-        p->timestamp     = prev->timestamp;
-        prev->data       = NULL;
-    }
+    if (ff_rtmp_packet_create(p, channel_id, type, timestamp, data_size))
+        return -1;
     p->extra = extra;
     // save history
     prev_pkt[channel_id].channel_id = channel_id;
     prev_pkt[channel_id].type       = type;
-    prev_pkt[channel_id].size       = size;
+    prev_pkt[channel_id].data_size  = data_size;
+    prev_pkt[channel_id].ts_delta   = timestamp - prev_pkt[channel_id].timestamp;
+    prev_pkt[channel_id].timestamp  = timestamp;
     prev_pkt[channel_id].extra      = extra;
-    size = size - p->offset;
-
-    toread = FFMIN(size, chunk_size);
-    if (ffurl_read_complete(h, p->data + p->offset, toread) != toread) {
-        ff_rtmp_packet_destroy(p);
-        return AVERROR(EIO);
-    }
-    size      -= toread;
-    p->read   += toread;
-    p->offset += toread;
-
-    if (size > 0) {
-       RTMPPacket *prev = &prev_pkt[channel_id];
-       prev->data = p->data;
-       prev->read = p->read;
-       prev->offset = p->offset;
-       p->data      = NULL;
-       return AVERROR(EAGAIN);
-    }
-
-    prev_pkt[channel_id].read = 0; // read complete; reset if needed
-    return p->read;
-}
-
-int ff_rtmp_packet_read_internal(URLContext *h, RTMPPacket *p, int chunk_size,
-                                 RTMPPacket **prev_pkt, int *nb_prev_pkt,
-                                 uint8_t hdr)
-{
-    while (1) {
-        int ret = rtmp_packet_read_one_chunk(h, p, chunk_size, prev_pkt,
-                                             nb_prev_pkt, hdr);
-        if (ret > 0 || ret != AVERROR(EAGAIN))
-            return ret;
-
-        if (ffurl_read(h, &hdr, 1) != 1)
+    while (data_size > 0) {
+        int toread = FFMIN(data_size, chunk_size);
+        if (ffurl_read_complete(h, p->data + offset, toread) != toread) {
+            ff_rtmp_packet_destroy(p);
             return AVERROR(EIO);
+        }
+        data_size -= chunk_size;
+        offset    += chunk_size;
+        size      += chunk_size;
+        if (data_size > 0) {
+            ffurl_read_complete(h, &t, 1); //marker
+            size++;
+            if (t != (0xC0 + channel_id))
+                return -1;
+        }
     }
+    return size;
 }
 
 int ff_rtmp_packet_write(URLContext *h, RTMPPacket *pkt,
-                         int chunk_size, RTMPPacket **prev_pkt_ptr,
-                         int *nb_prev_pkt)
+                         int chunk_size, RTMPPacket *prev_pkt)
 {
     uint8_t pkt_hdr[16], *p = pkt_hdr;
     int mode = RTMP_PS_TWELVEBYTES;
     int off = 0;
-    int written = 0;
-    int ret;
-    RTMPPacket *prev_pkt;
-    int use_delta; // flag if using timestamp delta, not RTMP_PS_TWELVEBYTES
-    uint32_t timestamp; // full 32-bit timestamp or delta value
+    int size = 0;
 
-    if ((ret = ff_rtmp_check_alloc_array(prev_pkt_ptr, nb_prev_pkt,
-                                         pkt->channel_id)) < 0)
-        return ret;
-    prev_pkt = *prev_pkt_ptr;
+    pkt->ts_delta = pkt->timestamp - prev_pkt[pkt->channel_id].timestamp;
 
     //if channel_id = 0, this is first presentation of prev_pkt, send full hdr.
-    use_delta = prev_pkt[pkt->channel_id].channel_id &&
-        pkt->extra == prev_pkt[pkt->channel_id].extra &&
-        pkt->timestamp >= prev_pkt[pkt->channel_id].timestamp;
-
-    timestamp = pkt->timestamp;
-    if (use_delta) {
-        timestamp -= prev_pkt[pkt->channel_id].timestamp;
-    }
-    if (timestamp >= 0xFFFFFF) {
-        pkt->ts_field = 0xFFFFFF;
-    } else {
-        pkt->ts_field = timestamp;
-    }
-
-    if (use_delta) {
+    if (prev_pkt[pkt->channel_id].channel_id &&
+        pkt->extra == prev_pkt[pkt->channel_id].extra) {
         if (pkt->type == prev_pkt[pkt->channel_id].type &&
-            pkt->size == prev_pkt[pkt->channel_id].size) {
+            pkt->data_size == prev_pkt[pkt->channel_id].data_size) {
             mode = RTMP_PS_FOURBYTES;
-            if (pkt->ts_field == prev_pkt[pkt->channel_id].ts_field)
+            if (pkt->ts_delta == prev_pkt[pkt->channel_id].ts_delta)
                 mode = RTMP_PS_ONEBYTE;
         } else {
             mode = RTMP_PS_EIGHTBYTES;
@@ -364,63 +190,60 @@ int ff_rtmp_packet_write(URLContext *h, RTMPPacket *pkt,
         bytestream_put_le16(&p, pkt->channel_id - 64);
     }
     if (mode != RTMP_PS_ONEBYTE) {
-        bytestream_put_be24(&p, pkt->ts_field);
+        uint32_t timestamp = pkt->timestamp;
+        if (mode != RTMP_PS_TWELVEBYTES)
+            timestamp = pkt->ts_delta;
+        bytestream_put_be24(&p, timestamp >= 0xFFFFFF ? 0xFFFFFF : timestamp);
         if (mode != RTMP_PS_FOURBYTES) {
-            bytestream_put_be24(&p, pkt->size);
+            bytestream_put_be24(&p, pkt->data_size);
             bytestream_put_byte(&p, pkt->type);
             if (mode == RTMP_PS_TWELVEBYTES)
                 bytestream_put_le32(&p, pkt->extra);
         }
+        if (timestamp >= 0xFFFFFF)
+            bytestream_put_be32(&p, timestamp);
     }
-    if (pkt->ts_field == 0xFFFFFF)
-        bytestream_put_be32(&p, timestamp);
     // save history
     prev_pkt[pkt->channel_id].channel_id = pkt->channel_id;
     prev_pkt[pkt->channel_id].type       = pkt->type;
-    prev_pkt[pkt->channel_id].size       = pkt->size;
+    prev_pkt[pkt->channel_id].data_size  = pkt->data_size;
     prev_pkt[pkt->channel_id].timestamp  = pkt->timestamp;
-    prev_pkt[pkt->channel_id].ts_field   = pkt->ts_field;
+    if (mode != RTMP_PS_TWELVEBYTES) {
+        prev_pkt[pkt->channel_id].ts_delta   = pkt->ts_delta;
+    } else {
+        prev_pkt[pkt->channel_id].ts_delta   = pkt->timestamp;
+    }
     prev_pkt[pkt->channel_id].extra      = pkt->extra;
 
-    if ((ret = ffurl_write(h, pkt_hdr, p - pkt_hdr)) < 0)
-        return ret;
-    written = p - pkt_hdr + pkt->size;
-    while (off < pkt->size) {
-        int towrite = FFMIN(chunk_size, pkt->size - off);
-        if ((ret = ffurl_write(h, pkt->data + off, towrite)) < 0)
-            return ret;
+    ffurl_write(h, pkt_hdr, p-pkt_hdr);
+    size = p - pkt_hdr + pkt->data_size;
+    while (off < pkt->data_size) {
+        int towrite = FFMIN(chunk_size, pkt->data_size - off);
+        ffurl_write(h, pkt->data + off, towrite);
         off += towrite;
-        if (off < pkt->size) {
+        if (off < pkt->data_size) {
             uint8_t marker = 0xC0 | pkt->channel_id;
-            if ((ret = ffurl_write(h, &marker, 1)) < 0)
-                return ret;
-            written++;
-            if (pkt->ts_field == 0xFFFFFF) {
-                uint8_t ts_header[4];
-                AV_WB32(ts_header, timestamp);
-                if ((ret = ffurl_write(h, ts_header, 4)) < 0)
-                    return ret;
-                written += 4;
-            }
+            ffurl_write(h, &marker, 1);
+            size++;
         }
     }
-    return written;
+    return size;
 }
 
 int ff_rtmp_packet_create(RTMPPacket *pkt, int channel_id, RTMPPacketType type,
                           int timestamp, int size)
 {
     if (size) {
-        pkt->data = av_realloc(NULL, size);
+        pkt->data = av_malloc(size);
         if (!pkt->data)
             return AVERROR(ENOMEM);
     }
-    pkt->size       = size;
+    pkt->data_size  = size;
     pkt->channel_id = channel_id;
     pkt->type       = type;
     pkt->timestamp  = timestamp;
     pkt->extra      = 0;
-    pkt->ts_field   = 0;
+    pkt->ts_delta   = 0;
 
     return 0;
 }
@@ -430,42 +253,34 @@ void ff_rtmp_packet_destroy(RTMPPacket *pkt)
     if (!pkt)
         return;
     av_freep(&pkt->data);
-    pkt->size = 0;
+    pkt->data_size = 0;
 }
 
 int ff_amf_tag_size(const uint8_t *data, const uint8_t *data_end)
 {
     const uint8_t *base = data;
-    AMFDataType type;
-    unsigned nb   = -1;
-    int parse_key = 1;
 
     if (data >= data_end)
         return -1;
-    switch ((type = *data++)) {
+    switch (*data++) {
     case AMF_DATA_TYPE_NUMBER:      return 9;
     case AMF_DATA_TYPE_BOOL:        return 2;
     case AMF_DATA_TYPE_STRING:      return 3 + AV_RB16(data);
     case AMF_DATA_TYPE_LONG_STRING: return 5 + AV_RB32(data);
     case AMF_DATA_TYPE_NULL:        return 1;
-    case AMF_DATA_TYPE_DATE:        return 11;
     case AMF_DATA_TYPE_ARRAY:
-        parse_key = 0;
-    case AMF_DATA_TYPE_MIXEDARRAY:
-        nb = bytestream_get_be32(&data);
+        data += 4;
     case AMF_DATA_TYPE_OBJECT:
-        while (nb-- > 0 || type != AMF_DATA_TYPE_ARRAY) {
+        for (;;) {
+            int size = bytestream_get_be16(&data);
             int t;
-            if (parse_key) {
-                int size = bytestream_get_be16(&data);
-                if (!size) {
-                    data++;
-                    break;
-                }
-                if (size < 0 || size >= data_end - data)
-                    return -1;
-                data += size;
+            if (!size) {
+                data++;
+                break;
             }
+            if (size < 0 || size >= data_end - data)
+                return -1;
+            data += size;
             t = ff_amf_tag_size(data, data_end);
             if (t < 0 || t >= data_end - data)
                 return -1;
@@ -502,7 +317,7 @@ int ff_amf_get_field_value(const uint8_t *data, const uint8_t *data_end,
         if (size == namelen && !memcmp(data-size, name, namelen)) {
             switch (*data++) {
             case AMF_DATA_TYPE_NUMBER:
-                snprintf(dst, dst_size, "%g", av_int2double(AV_RB64(data)));
+                snprintf(dst, dst_size, "%g", av_int2dbl(AV_RB64(data)));
                 break;
             case AMF_DATA_TYPE_BOOL:
                 snprintf(dst, dst_size, "%s", *data ? "true" : "false");
@@ -545,26 +360,23 @@ static const char* rtmp_packet_type(int type)
     }
 }
 
-static void amf_tag_contents(void *ctx, const uint8_t *data,
-                             const uint8_t *data_end)
+static void ff_amf_tag_contents(void *ctx, const uint8_t *data, const uint8_t *data_end)
 {
-    unsigned int size, nb = -1;
+    unsigned int size;
     char buf[1024];
-    AMFDataType type;
-    int parse_key = 1;
 
     if (data >= data_end)
         return;
-    switch ((type = *data++)) {
+    switch (*data++) {
     case AMF_DATA_TYPE_NUMBER:
-        av_log(ctx, AV_LOG_DEBUG, " number %g\n", av_int2double(AV_RB64(data)));
+        av_log(ctx, AV_LOG_DEBUG, " number %g\n", av_int2dbl(AV_RB64(data)));
         return;
     case AMF_DATA_TYPE_BOOL:
         av_log(ctx, AV_LOG_DEBUG, " bool %d\n", *data);
         return;
     case AMF_DATA_TYPE_STRING:
     case AMF_DATA_TYPE_LONG_STRING:
-        if (type == AMF_DATA_TYPE_STRING) {
+        if (data[-1] == AMF_DATA_TYPE_STRING) {
             size = bytestream_get_be16(&data);
         } else {
             size = bytestream_get_be32(&data);
@@ -578,29 +390,23 @@ static void amf_tag_contents(void *ctx, const uint8_t *data,
         av_log(ctx, AV_LOG_DEBUG, " NULL\n");
         return;
     case AMF_DATA_TYPE_ARRAY:
-        parse_key = 0;
-    case AMF_DATA_TYPE_MIXEDARRAY:
-        nb = bytestream_get_be32(&data);
+        data += 4;
     case AMF_DATA_TYPE_OBJECT:
         av_log(ctx, AV_LOG_DEBUG, " {\n");
-        while (nb-- > 0 || type != AMF_DATA_TYPE_ARRAY) {
+        for (;;) {
             int t;
-            if (parse_key) {
-                size = bytestream_get_be16(&data);
-                size = FFMIN(size, sizeof(buf) - 1);
-                if (!size) {
-                    av_log(ctx, AV_LOG_DEBUG, " }\n");
-                    data++;
-                    break;
-                }
-                memcpy(buf, data, size);
-                buf[size] = 0;
-                if (size >= data_end - data)
-                    return;
-                data += size;
-                av_log(ctx, AV_LOG_DEBUG, "  %s: ", buf);
+            size = bytestream_get_be16(&data);
+            av_strlcpy(buf, data, FFMIN(sizeof(buf), size + 1));
+            if (!size) {
+                av_log(ctx, AV_LOG_DEBUG, " }\n");
+                data++;
+                break;
             }
-            amf_tag_contents(ctx, data, data_end);
+            if (size >= data_end - data)
+                return;
+            data += size;
+            av_log(ctx, AV_LOG_DEBUG, "  %s: ", buf);
+            ff_amf_tag_contents(ctx, data, data_end);
             t = ff_amf_tag_size(data, data_end);
             if (t < 0 || t >= data_end - data)
                 return;
@@ -618,12 +424,12 @@ static void amf_tag_contents(void *ctx, const uint8_t *data,
 void ff_rtmp_packet_dump(void *ctx, RTMPPacket *p)
 {
     av_log(ctx, AV_LOG_DEBUG, "RTMP packet type '%s'(%d) for channel %d, timestamp %d, extra field %d size %d\n",
-           rtmp_packet_type(p->type), p->type, p->channel_id, p->timestamp, p->extra, p->size);
+           rtmp_packet_type(p->type), p->type, p->channel_id, p->timestamp, p->extra, p->data_size);
     if (p->type == RTMP_PT_INVOKE || p->type == RTMP_PT_NOTIFY) {
-        uint8_t *src = p->data, *src_end = p->data + p->size;
+        uint8_t *src = p->data, *src_end = p->data + p->data_size;
         while (src < src_end) {
             int sz;
-            amf_tag_contents(ctx, src, src_end);
+            ff_amf_tag_contents(ctx, src, src_end);
             sz = ff_amf_tag_size(src, src_end);
             if (sz < 0)
                 break;
@@ -635,41 +441,8 @@ void ff_rtmp_packet_dump(void *ctx, RTMPPacket *p)
         av_log(ctx, AV_LOG_DEBUG, "Client BW = %d\n", AV_RB32(p->data));
     } else if (p->type != RTMP_PT_AUDIO && p->type != RTMP_PT_VIDEO && p->type != RTMP_PT_METADATA) {
         int i;
-        for (i = 0; i < p->size; i++)
+        for (i = 0; i < p->data_size; i++)
             av_log(ctx, AV_LOG_DEBUG, " %02X", p->data[i]);
         av_log(ctx, AV_LOG_DEBUG, "\n");
     }
-}
-
-int ff_amf_match_string(const uint8_t *data, int size, const char *str)
-{
-    int len = strlen(str);
-    int amf_len, type;
-
-    if (size < 1)
-        return 0;
-
-    type = *data++;
-
-    if (type != AMF_DATA_TYPE_LONG_STRING &&
-        type != AMF_DATA_TYPE_STRING)
-        return 0;
-
-    if (type == AMF_DATA_TYPE_LONG_STRING) {
-        if ((size -= 4 + 1) < 0)
-            return 0;
-        amf_len = bytestream_get_be32(&data);
-    } else {
-        if ((size -= 2 + 1) < 0)
-            return 0;
-        amf_len = bytestream_get_be16(&data);
-    }
-
-    if (amf_len > size)
-        return 0;
-
-    if (amf_len != len)
-        return 0;
-
-    return !memcmp(data, str, len);
 }

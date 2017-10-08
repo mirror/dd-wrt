@@ -26,12 +26,12 @@
 #include "get_bits.h"
 #include "mpeg4audio.h"
 
-int avpriv_aac_parse_header(GetBitContext *gbc, AACADTSHeaderInfo *hdr)
+int ff_aac_parse_header(GetBitContext *gbc, AACADTSHeaderInfo *hdr)
 {
     int size, rdb, ch, sr;
     int aot, crc_abs;
 
-    if (get_bits(gbc, 12) != 0xfff)
+    if(get_bits(gbc, 12) != 0xfff)
         return AAC_AC3_PARSE_ERROR_SYNC;
 
     skip_bits1(gbc);             /* id */
@@ -39,10 +39,10 @@ int avpriv_aac_parse_header(GetBitContext *gbc, AACADTSHeaderInfo *hdr)
     crc_abs = get_bits1(gbc);    /* protection_absent */
     aot     = get_bits(gbc, 2);  /* profile_objecttype */
     sr      = get_bits(gbc, 4);  /* sample_frequency_index */
-    if (!avpriv_mpeg4audio_sample_rates[sr])
+    if(!ff_mpeg4audio_sample_rates[sr])
         return AAC_AC3_PARSE_ERROR_SAMPLE_RATE;
     skip_bits1(gbc);             /* private_bit */
-    ch = get_bits(gbc, 3);       /* channel_configuration */
+    ch      = get_bits(gbc, 3);  /* channel_configuration */
 
     skip_bits1(gbc);             /* original/copy */
     skip_bits1(gbc);             /* home */
@@ -50,8 +50,8 @@ int avpriv_aac_parse_header(GetBitContext *gbc, AACADTSHeaderInfo *hdr)
     /* adts_variable_header */
     skip_bits1(gbc);             /* copyright_identification_bit */
     skip_bits1(gbc);             /* copyright_identification_start */
-    size = get_bits(gbc, 13);    /* aac_frame_length */
-    if (size < AAC_ADTS_HEADER_SIZE)
+    size    = get_bits(gbc, 13); /* aac_frame_length */
+    if(size < AAC_ADTS_HEADER_SIZE)
         return AAC_AC3_PARSE_ERROR_FRAME_SIZE;
 
     skip_bits(gbc, 11);          /* adts_buffer_fullness */
@@ -62,7 +62,7 @@ int avpriv_aac_parse_header(GetBitContext *gbc, AACADTSHeaderInfo *hdr)
     hdr->crc_absent     = crc_abs;
     hdr->num_aac_frames = rdb + 1;
     hdr->sampling_index = sr;
-    hdr->sample_rate    = avpriv_mpeg4audio_sample_rates[sr];
+    hdr->sample_rate    = ff_mpeg4audio_sample_rates[sr];
     hdr->samples        = (rdb + 1) * 1024;
     hdr->bit_rate       = size * 8 * hdr->sample_rate / hdr->samples;
 

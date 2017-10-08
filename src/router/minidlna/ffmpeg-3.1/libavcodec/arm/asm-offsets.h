@@ -21,12 +21,19 @@
 #ifndef AVCODEC_ARM_ASM_OFFSETS_H
 #define AVCODEC_ARM_ASM_OFFSETS_H
 
+#ifndef __ASSEMBLER__
+#include <stddef.h>
+#define CHK_OFFS(s, m, o) struct check_##o {    \
+        int x_##o[offsetof(s, m) == o? 1: -1];  \
+    }
+#endif
+
 /* MpegEncContext */
-#define Y_DC_SCALE               0x04
-#define C_DC_SCALE               0x08
-#define AC_PRED                  0x0c
-#define BLOCK_LAST_INDEX         0x10
-#define H263_AIC                 0x40
-#define INTER_SCANTAB_RASTER_END 0x88
+#define Y_DC_SCALE               0xb4
+#define C_DC_SCALE               0xb8
+#define AC_PRED                  0xbc
+#define BLOCK_LAST_INDEX         0xc0
+#define H263_AIC                 0xf0
+#define INTER_SCANTAB_RASTER_END 0x138
 
 #endif /* AVCODEC_ARM_ASM_OFFSETS_H */
