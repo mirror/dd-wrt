@@ -327,110 +327,88 @@ monitor_remove_file(const char * path)
 	return 0;
 }
 
-int
-monitor_insert_file(char * name, const char * path)
+static char *
+check_nfo(const char *path)
+{
+	char file[PATH_MAX];
+
+	strncpyt(file, path, sizeof(file));
+	strip_ext(file);
+
+	return sql_get_text_field(db, "SELECT PATH from DETAILS where (PATH > '%q.' and PATH <= '%q.z')"
+				      " and MIME glob 'video/*' limit 1", file, file);
+}
+
+static int
+monitor_insert_file(const char *name, const char *path)
 {
 	int len;
-	char * last_dir;
-	char * path_buf;
-	char * base_name;
-	char * base_copy;
-	char * parent_buf = NULL;
-	char * id = NULL;
+	char *last_dir;
+	char *path_buf;
+	char *base_name;
+	char *base_copy;
+	char *parent_buf = NULL;
+	char *id = NULL;
+	char video[PATH_MAX];
+	const char *tbl = "DETAILS";
 	int depth = 1;
 	int ts;
-	media_types types = ALL_MEDIA;
-	struct media_dir_s * media_path = media_dirs;
+	media_types dir_types;
+	media_types mtype = get_media_type(path);
 	struct stat st;
 
 	/* Is it cover art for another file? */
-	if( is_image(path) )
+	if (mtype == TYPE_IMAGE)
 		update_if_album_art(path);
-	else if( is_caption(path) )
+	else if (mtype == TYPE_CAPTION)
 		check_for_captions(path, 0);
+	else if (mtype == TYPE_PLAYLIST)
+		tbl = "PLAYLISTS";
+	else if (mtype == TYPE_NFO)
+	{
+		char *vpath = check_nfo(path);
+		if (!vpath)
+			return -1;
+		strncpyt(video, vpath, sizeof(video));
+		sqlite3_free(vpath);
+		DPRINTF(E_DEBUG, L_INOTIFY, "Found modified nfo %s\n", video);
+		monitor_remove_file(video);
+		name = strrchr(video, '/');
+		if (!name)
+			return -1;
+		name++;
+		path = video;
+		mtype = TYPE_VIDEO;
+	}
 
 	/* Check if we're supposed to be scanning for this file type in this directory */
-	while( media_path )
-	{
-		if( strncmp(path, media_path->path, strlen(media_path->path)) == 0 )
-		{
-			types = media_path->types;
-			break;
-		}
-		media_path = media_path->next;
-	}
-	switch( types )
-	{
-		case ALL_MEDIA:
-			if( !is_image(path) &&
-			    !is_audio(path) &&
-			    !is_video(path) &&
-			    !is_playlist(path) )
-				return -1;
-			break;
-		case TYPE_AUDIO:
-			if( !is_audio(path) &&
-			    !is_playlist(path) )
-				return -1;
-			break;
-		case TYPE_AUDIO|TYPE_VIDEO:
-			if( !is_audio(path) &&
-			    !is_video(path) &&
-			    !is_playlist(path) )
-				return -1;
-			break;
-		case TYPE_AUDIO|TYPE_IMAGES:
-			if( !is_image(path) &&
-			    !is_audio(path) &&
-			    !is_playlist(path) )
-				return -1;
-			break;
-		case TYPE_VIDEO:
-			if( !is_video(path) )
-				return -1;
-			break;
-		case TYPE_VIDEO|TYPE_IMAGES:
-			if( !is_image(path) &&
-			    !is_video(path) )
-				return -1;
-			break;
-		case TYPE_IMAGES:
-			if( !is_image(path) )
-				return -1;
-			break;
-		default:
-			return -1;
-	}
+	dir_types = valid_media_types(path);
+	if (!(mtype & dir_types))
+		return -1;
 	
 	/* If it's already in the database and hasn't been modified, skip it. */
 	if( stat(path, &st) != 0 )
 		return -1;
 
-	ts = sql_get_int_field(db, "SELECT TIMESTAMP from DETAILS where PATH = '%q'", path);
-	if( !ts && is_playlist(path) && (sql_get_int_field(db, "SELECT ID from PLAYLISTS where PATH = '%q'", path) > 0) )
-	{
-		DPRINTF(E_DEBUG, L_INOTIFY, "Re-reading modified playlist (%s).\n", path);
-		monitor_remove_file(path);
-		next_pl_fill = 1;
-	}
-	else if( !ts )
+	ts = sql_get_int_field(db, "SELECT TIMESTAMP from %s where PATH = '%q'", tbl, path);
+	if( !ts )
 	{
 		DPRINTF(E_DEBUG, L_INOTIFY, "Adding: %s\n", path);
 	}
 	else if( ts != st.st_mtime )
 	{
 		DPRINTF(E_DEBUG, L_INOTIFY, "%s is %s than the last db entry.\n",
-			path, (ts < st.st_mtime) ? "older" : "newer");
+			path, (ts > st.st_mtime) ? "older" : "newer");
 		monitor_remove_file(path);
 	}
 	else
 	{
-		if( ts == st.st_mtime )
+		if( ts == st.st_mtime && !GETFLAG(RESCAN_MASK) )
 			DPRINTF(E_DEBUG, L_INOTIFY, "%s already exists\n", path);
 		return 0;
 	}
 
-	/* Find the parentID.  If it's not found, create all necessary parents. */
+	/* Find the parentID. If it's not found, create all necessary parents. */
 	len = strlen(path)+1;
 	if( !(path_buf = malloc(len)) ||
 	    !(last_dir = malloc(len)) ||
@@ -481,13 +459,13 @@ monitor_insert_file(char * name, const char * path)
 	if( !depth )
 	{
 		//DEBUG DPRINTF(E_DEBUG, L_INOTIFY, "Inserting %s\n", name);
-		insert_file(name, path, id+2, get_next_available_id("OBJECTS", id), types);
-		sqlite3_free(id);
-		if( (is_audio(path) || is_playlist(path)) && next_pl_fill != 1 )
+		int ret = insert_file(name, path, id+2, get_next_available_id("OBJECTS", id), dir_types);
+		if (ret == 1 && (mtype & TYPE_PLAYLIST))
 		{
 			next_pl_fill = time(NULL) + 120; // Schedule a playlist scan for 2 minutes from now.
-			//DEBUG DPRINTF(E_WARN, L_INOTIFY,  "Playlist scan scheduled for %s", ctime(&next_pl_fill));
+			//DEBUG DPRINTF(E_MAXDEBUG, L_INOTIFY,  "Playlist scan scheduled for %s", ctime(&next_pl_fill));
 		}
+		sqlite3_free(id);
 	}
 	return depth;
 }
@@ -500,8 +478,7 @@ monitor_insert_directory(int fd, char *name, const char * path)
 	char *id, *parent_buf, *esc_name;
 	char path_buf[PATH_MAX];
 	enum file_types type = TYPE_UNKNOWN;
-	media_types dir_types = ALL_MEDIA;
-	struct media_dir_s* media_path;
+	media_types dir_types;
 	struct stat st;
 
 	if( access(path, R_OK|X_OK) != 0 )
@@ -512,7 +489,8 @@ monitor_insert_directory(int fd, char *name, const char * path)
 	if( sql_get_int_field(db, "SELECT ID from DETAILS where PATH = '%q'", path) > 0 )
 	{
 		fd = 0;
-		DPRINTF(E_DEBUG, L_INOTIFY, "%s already exists\n", path);
+		if (!GETFLAG(RESCAN_MASK))
+			DPRINTF(E_DEBUG, L_INOTIFY, "%s already exists\n", path);
 	}
 	else
 	{
@@ -541,16 +519,7 @@ monitor_insert_directory(int fd, char *name, const char * path)
 		#endif
 	}
 
-	media_path = media_dirs;
-	while( media_path )
-	{
-		if( strncmp(path, media_path->path, strlen(media_path->path)) == 0 )
-		{
-			dir_types = media_path->types;
-			break;
-		}
-		media_path = media_path->next;
-	}
+	dir_types = valid_media_types(path);
 
 	ds = opendir(path);
 	if( !ds )
@@ -636,7 +605,6 @@ void *
 start_inotify(void)
 {
 	struct pollfd pollfds[1];
-	int timeout = 1000;
 	char buffer[BUF_LEN];
 	char path_buf[PATH_MAX];
 	int length, i = 0;
@@ -645,6 +613,7 @@ start_inotify(void)
 	sigset_t set;
 
 	sigfillset(&set);
+	sigdelset(&set, SIGCHLD);
 	pthread_sigmask(SIG_BLOCK, &set, NULL);
 
 	pollfds[0].fd = inotify_init();
@@ -653,7 +622,7 @@ start_inotify(void)
 	if ( pollfds[0].fd < 0 )
 		DPRINTF(E_ERROR, L_INOTIFY, "inotify_init() failed!\n");
 
-	while( scanning )
+	while( GETFLAG(SCANNING_MASK) )
 	{
 		if( quitting )
 			goto quitting;
@@ -667,6 +636,15 @@ start_inotify(void)
 
 	while( !quitting )
 	{
+		int timeout = -1;
+		if (next_pl_fill)
+		{
+			time_t diff = next_pl_fill - time(NULL);
+			if (diff < 0)
+				timeout = 0;
+			else
+				timeout = diff * 1000;
+		}
 		length = poll(pollfds, 1, timeout);
 		if( !length )
 		{

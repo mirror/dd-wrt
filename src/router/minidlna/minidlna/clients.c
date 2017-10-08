@@ -254,6 +254,13 @@ struct client_type_s client_types[] =
 	  EUserAgent
 	},
 
+	{ EMovian,
+	  FLAG_CAPTION_RES,
+	  "Movian",
+	  "Movian",
+	  EUserAgent
+	},
+
 	{ EKodi,
 	  FLAG_DLNA | FLAG_MIME_AVI_AVI | FLAG_CAPTION_RES,
 	  "Kodi",
@@ -265,6 +272,13 @@ struct client_type_s client_types[] =
 	  FLAG_DLNA | FLAG_MIME_AVI_AVI,
 	  "Windows",
 	  "FDSSDP",
+	  EUserAgent
+	},
+
+	{ 0,
+	  0,
+	  "TiVo",
+	  "TvHttpClient",
 	  EUserAgent
 	},
 
