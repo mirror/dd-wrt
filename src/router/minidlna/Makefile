@@ -45,6 +45,22 @@ CROSS_COMPILE=$(ARCH)-linux-uclibc-
 #CROSS=mipsel-linux-uclibc
 # comments ended, by Michael Jiang.
 
+FFMPEG_FILTER_CONFIG= $(foreach c, $(2), --$(1)="$(c)")
+
+FFMPEG_DECODERS:=aac ac3 atrac3 h264 jpegls mp3 mpeg1video mpeg2video mpeg4 mpeg4aac mpegvideo png wmav1 wmav2 svq3
+FFMPEG_CONFIGURE_DECODERS:=$(call FFMPEG_FILTER_CONFIG,enable-decoder,$(FFMPEG_DECODERS))
+
+FFMPEG_PARSERS:=aac ac3 h264 mpeg4video mpegaudio mpegvideo
+FFMPEG_CONFIGURE_PARSERS:=$(call FFMPEG_FILTER_CONFIG,enable-parser,$(FFMPEG_PARSERS))
+
+FFMPEG_PROTOCOLS:=file
+FFMPEG_CONFIGURE_PROTOCOLS:=$(call FFMPEG_FILTER_CONFIG,enable-protocol,$(FFMPEG_PROTOCOLS))
+
+FFMPEG_DISABLED_DEMUXERS:=amr apc ape ass bethsoftvid bfi c93 daud dnxhd dsicin dxa ffm gsm gxf idcin iff image2 image2pipe ingenient ipmovie lmlm4 mm mmf msnwc_tcp mtv mxf nsv nut oma pva rawvideo rl2 roq rpl segafilm shorten siff smacker sol str thp tiertexseq tta txd vmd voc wc3 wsaud wsvqa xa yuv4mpegpipe
+FFMPEG_CONFIGURE_DEMUXERS:=$(call FFMPEG_FILTER_CONFIG,disable-demuxer,$(FFMPEG_DISABLED_DEMUXERS))
+
+
+
 all: ffmpeg libogg libexif sqlite3 libvorbis flac libid3tag libjpeg
 	for i in $(SUBDIRS); do \
 		(cd $$i && make TOOL_CHAIN_PATH=$(TOOL_CHAIN_PATH) \
@@ -61,80 +77,24 @@ all: ffmpeg libogg libexif sqlite3 libvorbis flac libid3tag libjpeg
 	#make install
 
 ffmpeg:
-	if [ ! -f ./ffmpeg-$(FFMPEG_VER)/config.mak ];then \
-	cd ffmpeg-$(FFMPEG_VER) && (./configure --enable-shared --enable-gpl --target-os=linux  --arch=$(ARCH) --extra-ldflags="-L$(TOP)/zlib" --extra-cflags="$(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib -L$(TOP)/zlib -D_GNU_SOURCE  -ffunction-sections -fdata-sections -Wl,--gc-sections " --cc="ccache $(ARCH)-linux-uclibc-gcc" --enable-cross-compile --disable-muxers --disable-encoders --disable-avfilter --disable-filters --enable-small --disable-postproc --disable-network \
-	--enable-shared \
-	--disable-mipsfpu \
-	--disable-mipsdspr2 \
-	--enable-static \
-	--disable-debug \
-	--disable-doc \
-	--disable-dxva2 \
-	--enable-pthreads \
-	--enable-small \
-	--disable-stripping \
-	--enable-zlib \
-	--disable-ffmpeg \
-	--disable-asm \
-	--disable-ffplay \
-	--disable-ffprobe \
-	--disable-ffserver \
-	--disable-outdevs \
-	--disable-avfilter \
-	--disable-postproc \
-	--disable-swscale \
-	--disable-everything \
-	--enable-decoder=aac \
-	--enable-decoder=ac3 \
-	--enable-decoder=flac \
-	--enable-decoder=flv \
-	--enable-decoder=h264 \
-	--enable-decoder=h264_crystalhd \
-	--enable-decoder=h264_vda \
-	--enable-decoder=h264_vdpau \
-	--enable-decoder=jpegls \
-	--enable-decoder=mp3 \
-	--enable-decoder=mpeg1video \
-	--enable-decoder=mpeg2video \
-	--enable-decoder=msmpeg4_crystalhd \
-	--enable-decoder=msmpeg4v1 \
-	--enable-decoder=msmpeg4v2 \
-	--enable-decoder=msmpeg4v3 \
-	--enable-decoder=mpeg4 \
-	--enable-decoder=mpeg4_crystalhd \
-	--enable-decoder=mpeg4_vdpau \
-	--enable-decoder=mpegvideo \
-	--enable-decoder=mwav1 \
-	--enable-decoder=mwav2 \
-	--enable-decoder=vc1 \
-	--enable-decoder=vc1_crystalhd \
-	--enable-decoder=vc1_vdpau \
-	--enable-decoder=png \
-	--enable-decoder=wmv1 \
-	--enable-decoder=wmv2 \
-	--enable-decoder=wmv3 \
-	--enable-decoder=wmv3_crystalhd \
-	--enable-decoder=wmv3_vdpau \
-	--enable-decoder=truehd \
-	--enable-demuxer=aac \
-	--enable-demuxer=vc1 \
-	--enable-demuxer=vc1t \
-	--enable-demuxer=ac3 \
-	--enable-demuxer=avi \
-	--enable-demuxer=avisynth \
-	--enable-demuxer=dts \
-	--enable-demuxer=dtshd \
-	--enable-demuxer=flac \
-	--enable-demuxer=h264 \
-	--enable-demuxer=matroska \
-	--enable-demuxer=mov \
-	--enable-demuxer=mp3 \
-	--enable-demuxer=m4v \
-	--enable-demuxer=mpegts \
-	--enable-demuxer=mpegps \
-	--enable-demuxer=ogg \
-	--enable-demuxer=mpegvideo \
-	--enable-protocol=file); \
+	if [ ! -f ./ffmpeg-$(FFMPEG_VER)/config.mak ]; then \
+	cd ffmpeg-$(FFMPEG_VER) && (symver_asm_label=no symver_gnu_asm=no symver=no CC="$(CC)" \
+		./configure --enable-cross-compile --arch=$(ARCH) --target_os=linux \
+		--cross-prefix=$(CROSS_COMPILE) --enable-shared --enable-gpl --disable-doc \
+		--enable-pthreads --enable-small --disable-encoders --disable-filters \
+		--disable-muxers --disable-devices --disable-ffmpeg --disable-ffplay \
+		--disable-ffserver --disable-ffprobe --disable-avdevice --disable-swscale \
+		--disable-hwaccels --disable-network --disable-bsfs \
+		--enable-demuxers $(FFMPEG_CONFIGURE_DEMUXERS) \
+		--disable-decoders $(FFMPEG_CONFIGURE_DECODERS) \
+		--disable-parsers $(FFMPEG_CONFIGURE_PARSERS) \
+		--disable-protocols $(FFMPEG_CONFIGURE_PROTOCOLS) \
+		--disable-asm \
+		--disable-postproc --disable-avfilter \
+		--extra-cflags="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -fPIC -D_GNU_SOURCE -I$(TOP)/zlib" \
+		--extra-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC" \
+		--extra-libs="-L$(TOP)/zlib -lz" \
+		--enable-zlib --disable-debug --prefix=''); \
 	fi
 
 libogg:
@@ -200,7 +160,7 @@ clean:
 	-rm ./lib/libogg.a
 	-rm ./lib/libexif.a
 	-rm ./lib/libavutil.a
-	-rm ./lib/libavdevice.a
+#	-rm ./lib/libavdevice.a
 	-rm ./lib/libavformat.a
 	-rm ./lib/libavcodec.a
 	-rm ./lib/libsqlite3.a
@@ -213,7 +173,7 @@ copy:
 	cp ./libexif-0.6.19/libexif/.libs/libexif.a 		./lib/libexif.a  && \
 	cp ./libogg-1.3.0/src/.libs/libogg.a		./lib/libogg.a && \
 	cp ./ffmpeg-$(FFMPEG_VER)/libavutil/libavutil.a		./lib/libavutil.a && \
-	cp ./ffmpeg-$(FFMPEG_VER)/libavdevice/libavdevice.a		./lib/libavdevice.a && \
+#	cp ./ffmpeg-$(FFMPEG_VER)/libavdevice/libavdevice.a		./lib/libavdevice.a && \
 	cp ./ffmpeg-$(FFMPEG_VER)/libavformat/libavformat.a		./lib/libavformat.a && \
 	cp ./ffmpeg-$(FFMPEG_VER)/libavcodec/libavcodec.a		./lib/libavcodec.a && \
 	cp ./sqlite-3.6.22/.libs/libsqlite3.a 		./lib/libsqlite3.a && \
