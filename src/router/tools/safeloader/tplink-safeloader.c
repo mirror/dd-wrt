@@ -677,6 +677,8 @@ static struct device_info boards[] = {
 		.vendor = "",
 		.support_list =
 			"SupportList:\n"
+			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:00000000}\n"
+			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:52550000}\n"
 			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:45550000}\n"
 			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:55530000}\n"
 			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:43410000}\n"
