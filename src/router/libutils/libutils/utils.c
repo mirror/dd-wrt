@@ -1854,8 +1854,8 @@ int led_control(int type, int act)
 		diag_gpio = 0x006;
 		connected_gpio = 0x11a;
 		disconnected_gpio = 0x119;
-//		ses_gpio = 0x10f;
-//		sec0_gpio = 0x10f;
+		ses_gpio = 0x11f;
+		sec0_gpio = 0x11f;
 
 //		usb_power = 0x016;
 		usb_gpio = 0x107;
