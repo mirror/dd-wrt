@@ -139,6 +139,7 @@ static int ar71xx_gpio_direction_output(struct gpio_chip *chip, unsigned offset,
 	return 0;
 }
 
+#ifdef CONFIG_ARCHERC7V4
 
 enum SHIFT_REGISTER_OUTPUT {
     Q7_2G_WIFI_LED = 0,
@@ -191,7 +192,7 @@ void shift_register_set(u_int32_t index, u_int32_t val2)
 	__ar71xx_gpio_set_value(AP152_GPIO_SHIFT_RCLK, 0);
 	ndelay(SHIFT_REG_TW_FACTOR);
 }
-
+#endif
 static struct gpio_chip ar71xx_gpio_chip = {
 	.label = "ar71xx",
 	.get = ar71xx_gpio_get_value,
@@ -795,7 +796,6 @@ void __init ar71xx_gpio_init(void)
 {
 	int err;
 	u32 t, rddata;
-	printk(KERN_NOTICE "init %s",__func__);
 	if (!request_mem_region(AR71XX_GPIO_BASE, AR71XX_GPIO_SIZE, "AR71xx GPIO controller"))
 		panic("cannot allocate AR71xx GPIO registers page");
 
