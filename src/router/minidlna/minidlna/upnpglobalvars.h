@@ -57,7 +57,7 @@
 
 #include <sqlite3.h>
 
-#define MINIDLNA_VERSION "1.2.0"
+#define MINIDLNA_VERSION "1.2.1"
 
 #ifdef NETGEAR
 # define SERVER_NAME "ReadyDLNA"
@@ -66,7 +66,7 @@
 #endif
 
 #define USE_FORK 1
-#define DB_VERSION 10
+#define DB_VERSION 11
 
 #ifdef ENABLE_NLS
 #define _(string) gettext(string)
@@ -193,6 +193,8 @@ extern uint32_t runtime_flags;
 #else
 #define TIVO_BONJOUR_MASK     0x0000
 #endif
+#define SCANNING_MASK         0x0100
+#define RESCAN_MASK           0x0200
 
 #define SETFLAG(mask)	runtime_flags |= mask
 #define GETFLAG(mask)	(runtime_flags & mask)
@@ -229,10 +231,8 @@ extern char db_path[];
 extern char log_path[];
 extern struct media_dir_s *media_dirs;
 extern struct album_art_name_s *album_art_names;
-extern short int scanning;
 extern volatile short int quitting;
 extern volatile uint32_t updateID;
 extern const char *force_sort_criteria;
-extern short int rescan_db;
 
 #endif
