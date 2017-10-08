@@ -193,6 +193,7 @@ distclean:
 	-cd ./minidlna/		&& make clean
 	-rm ./lib/*.so.*
 	-rm ./lib/minidlna
+	-rm ./ffmpeg-$(FFMPEG_VER)/config.mak
 
 install:
 	mkdir -p $(TARGETDIR)/usr/lib
