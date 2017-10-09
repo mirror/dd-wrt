@@ -722,7 +722,7 @@ static int eth_poll(struct napi_struct *napi, int budget)
 
 	rx_ring->cur_index = i;
 	if (!received) {
-		napi_complete(napi);
+		napi_complete_done(napi);
 		enable_irq(sw->rx_irq);
 		budget = 0;
 
