@@ -281,7 +281,7 @@ static int alx_poll(struct napi_struct *napi, int budget)
 	if (!tx_complete || work == budget)
 		return budget;
 
-	napi_complete(&alx->napi);
+	napi_complete_done(&alx->napi, work);
 
 	/* enable interrupt */
 	spin_lock_irqsave(&alx->irq_lock, flags);
