@@ -80,6 +80,11 @@ struct mii_ioctl_data {
 	unsigned short val_out;
 };
 
+#define TRX_MAGIC_F7D3301			0x20100322	/* Belkin Share Max; router's birthday ? */
+#define TRX_MAGIC_F7D3302			0x20090928	/* Belkin Share; router's birthday ? */
+#define TRX_MAGIC_F7D4302			0x20091006	/* Belkin Play; router's birthday ? */
+
+
 
 #ifdef HAVE_FONERA
 static void getBoardMAC(char *mac)
