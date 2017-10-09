@@ -1,6 +1,6 @@
 /* LzmaDec.c -- LZMA Decoder
 2009-09-20 : Igor Pavlov : Public domain */
-
+#include <linux/module.h>
 #include "LzmaDec.h"
 
 #include <string.h>
@@ -923,3 +923,4 @@ SRes LzmaDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen,
   LzmaDec_FreeProbs(&p, alloc);
   return res;
 }
+EXPORT_SYMBOL(LzmaDecode);
