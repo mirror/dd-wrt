@@ -1272,7 +1272,7 @@ static int bgmac_poll(struct napi_struct *napi, int weight)
 		return weight;
 
 	if (handled < weight) {
-		napi_complete(napi);
+		napi_complete_done(napi, handled);
 		bgmac_chip_intrs_on(bgmac);
 	}
 
