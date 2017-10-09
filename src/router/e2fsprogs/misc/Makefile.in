@@ -35,11 +35,11 @@ INSTALL = @INSTALL@
 SPROGS=		mke2fs badblocks tune2fs dumpe2fs $(BLKID_PROG) logsave \
 			$(E2IMAGE_PROG) @FSCK_PROG@ e2undo
 USPROGS=	mklost+found filefrag e2freefrag $(UUIDD_PROG) \
-			$(E4DEFRAG_PROG) $(E4CRYPT_PROG) $(FUSE_PROG)
+			$(E4CRYPT_PROG) $(FUSE_PROG)
 SMANPAGES=	tune2fs.8 mklost+found.8 mke2fs.8 dumpe2fs.8 badblocks.8 \
 			e2label.8 $(FINDFS_MAN) $(BLKID_MAN) $(E2IMAGE_MAN) \
 			logsave.8 filefrag.8 e2freefrag.8 e2undo.8 \
-			$(UUIDD_MAN) $(E4DEFRAG_MAN) $(E4CRYPT_MAN) @FSCK_MAN@
+			$(UUIDD_MAN) $(E4CRYPT_MAN) @FSCK_MAN@
 FMANPAGES=	mke2fs.conf.5 ext4.5
 
 UPROGS=		chattr lsattr @UUID_CMT@ uuidgen
@@ -131,7 +131,7 @@ DEPEND_CFLAGS = -I$(top_srcdir)/e2fsck
 @PROFILE_CMT@	$(Q) $(CC) $(ALL_CFLAGS) -g -pg -o profiled/$*.o -c $<
 
 all:: profiled $(SPROGS) $(UPROGS) $(USPROGS) $(SMANPAGES) $(UMANPAGES) \
-	$(FMANPAGES) $(LPROGS) $(E4DEFRAG_PROG) $(E4CRYPT_PROGS) e2fuzz
+	$(FMANPAGES) $(LPROGS) $(E4CRYPT_PROGS) e2fuzz
 
 @PROFILE_CMT@all:: tune2fs.profiled blkid.profiled e2image.profiled \
 	e2undo.profiled mke2fs.profiled dumpe2fs.profiled fsck.profiled \
