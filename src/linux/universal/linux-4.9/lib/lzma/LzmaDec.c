@@ -1,6 +1,5 @@
 /* LzmaDec.c -- LZMA Decoder
 2009-09-20 : Igor Pavlov : Public domain */
-#include <linux/module.h>
 
 #include "LzmaDec.h"
 
@@ -683,7 +682,7 @@ static void LzmaDec_InitRc(CLzmaDec *p, const Byte *data)
   p->needFlush = 0;
 }
 
-void LzmaDec_InitDicAndState(CLzmaDec *p, Bool initDic, Bool initState)
+static void LzmaDec_InitDicAndState(CLzmaDec *p, Bool initDic, Bool initState)
 {
   p->needFlush = 1;
   p->remainLen = 0;
@@ -699,7 +698,7 @@ void LzmaDec_InitDicAndState(CLzmaDec *p, Bool initDic, Bool initState)
     p->needInitState = 1;
 }
 
-void LzmaDec_Init(CLzmaDec *p)
+static void LzmaDec_Init(CLzmaDec *p)
 {
   p->dicPos = 0;
   LzmaDec_InitDicAndState(p, True, True);
@@ -717,7 +716,7 @@ static void LzmaDec_InitStateReal(CLzmaDec *p)
   p->needInitState = 0;
 }
 
-SRes LzmaDec_DecodeToDic(CLzmaDec *p, SizeT dicLimit, const Byte *src, SizeT *srcLen,
+static SRes LzmaDec_DecodeToDic(CLzmaDec *p, SizeT dicLimit, const Byte *src, SizeT *srcLen,
     ELzmaFinishMode finishMode, ELzmaStatus *status)
 {
   SizeT inSize = *srcLen;
@@ -838,65 +837,13 @@ SRes LzmaDec_DecodeToDic(CLzmaDec *p, SizeT dicLimit, const Byte *src, SizeT *sr
   return (p->code == 0) ? SZ_OK : SZ_ERROR_DATA;
 }
 
-SRes LzmaDec_DecodeToBuf(CLzmaDec *p, Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen, ELzmaFinishMode finishMode, ELzmaStatus *status)
-{
-  SizeT outSize = *destLen;
-  SizeT inSize = *srcLen;
-  *srcLen = *destLen = 0;
-  for (;;)
-  {
-    SizeT inSizeCur = inSize, outSizeCur, dicPos;
-    ELzmaFinishMode curFinishMode;
-    SRes res;
-    if (p->dicPos == p->dicBufSize)
-      p->dicPos = 0;
-    dicPos = p->dicPos;
-    if (outSize > p->dicBufSize - dicPos)
-    {
-      outSizeCur = p->dicBufSize;
-      curFinishMode = LZMA_FINISH_ANY;
-    }
-    else
-    {
-      outSizeCur = dicPos + outSize;
-      curFinishMode = finishMode;
-    }
-
-    res = LzmaDec_DecodeToDic(p, outSizeCur, src, &inSizeCur, curFinishMode, status);
-    src += inSizeCur;
-    inSize -= inSizeCur;
-    *srcLen += inSizeCur;
-    outSizeCur = p->dicPos - dicPos;
-    memcpy(dest, p->dic + dicPos, outSizeCur);
-    dest += outSizeCur;
-    outSize -= outSizeCur;
-    *destLen += outSizeCur;
-    if (res != 0)
-      return res;
-    if (outSizeCur == 0 || outSize == 0)
-      return SZ_OK;
-  }
-}
-
-void LzmaDec_FreeProbs(CLzmaDec *p, ISzAlloc *alloc)
+static void LzmaDec_FreeProbs(CLzmaDec *p, ISzAlloc *alloc)
 {
   alloc->Free(alloc, p->probs);
   p->probs = 0;
 }
 
-static void LzmaDec_FreeDict(CLzmaDec *p, ISzAlloc *alloc)
-{
-  alloc->Free(alloc, p->dic);
-  p->dic = 0;
-}
-
-void LzmaDec_Free(CLzmaDec *p, ISzAlloc *alloc)
-{
-  LzmaDec_FreeProbs(p, alloc);
-  LzmaDec_FreeDict(p, alloc);
-}
-
-SRes LzmaProps_Decode(CLzmaProps *p, const Byte *data, unsigned size)
+static SRes LzmaProps_Decode(CLzmaProps *p, const Byte *data, unsigned size)
 {
   UInt32 dicSize;
   Byte d;
@@ -936,33 +883,11 @@ static SRes LzmaDec_AllocateProbs2(CLzmaDec *p, const CLzmaProps *propNew, ISzAl
   return SZ_OK;
 }
 
-SRes LzmaDec_AllocateProbs(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc)
+static SRes LzmaDec_AllocateProbs(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc)
 {
   CLzmaProps propNew;
   RINOK(LzmaProps_Decode(&propNew, props, propsSize));
   RINOK(LzmaDec_AllocateProbs2(p, &propNew, alloc));
-  p->prop = propNew;
-  return SZ_OK;
-}
-
-SRes LzmaDec_Allocate(CLzmaDec *p, const Byte *props, unsigned propsSize, ISzAlloc *alloc)
-{
-  CLzmaProps propNew;
-  SizeT dicBufSize;
-  RINOK(LzmaProps_Decode(&propNew, props, propsSize));
-  RINOK(LzmaDec_AllocateProbs2(p, &propNew, alloc));
-  dicBufSize = propNew.dicSize;
-  if (p->dic == 0 || dicBufSize != p->dicBufSize)
-  {
-    LzmaDec_FreeDict(p, alloc);
-    p->dic = (Byte *)alloc->Alloc(alloc, dicBufSize);
-    if (p->dic == 0)
-    {
-      LzmaDec_FreeProbs(p, alloc);
-      return SZ_ERROR_MEM;
-    }
-  }
-  p->dicBufSize = dicBufSize;
   p->prop = propNew;
   return SZ_OK;
 }
@@ -998,4 +923,3 @@ SRes LzmaDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen,
   LzmaDec_FreeProbs(&p, alloc);
   return res;
 }
-EXPORT_SYMBOL(LzmaDecode);

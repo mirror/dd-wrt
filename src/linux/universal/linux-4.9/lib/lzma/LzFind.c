@@ -14,9 +14,15 @@
 
 #define kStartMaxLen 3
 
+#if 0
+#define DIRECT_INPUT	p->directInput
+#else
+#define DIRECT_INPUT	1
+#endif
+
 static void LzInWindow_Free(CMatchFinder *p, ISzAlloc *alloc)
 {
-  if (!p->directInput)
+  if (!DIRECT_INPUT)
   {
     alloc->Free(alloc, p->bufferBase);
     p->bufferBase = 0;
@@ -28,7 +34,7 @@ static void LzInWindow_Free(CMatchFinder *p, ISzAlloc *alloc)
 static int LzInWindow_Create(CMatchFinder *p, UInt32 keepSizeReserv, ISzAlloc *alloc)
 {
   UInt32 blockSize = p->keepSizeBefore + p->keepSizeAfter + keepSizeReserv;
-  if (p->directInput)
+  if (DIRECT_INPUT)
   {
     p->blockSize = blockSize;
     return 1;
@@ -58,7 +64,7 @@ static void MatchFinder_ReadBlock(CMatchFinder *p)
 {
   if (p->streamEndWasReached || p->result != SZ_OK)
     return;
-  if (p->directInput)
+  if (DIRECT_INPUT)
   {
     UInt32 curSize = 0xFFFFFFFF - p->streamPos;
     if (curSize > p->directInputRem)
@@ -89,7 +95,7 @@ static void MatchFinder_ReadBlock(CMatchFinder *p)
   }
 }
 
-void MatchFinder_MoveBlock(CMatchFinder *p)
+static void MatchFinder_MoveBlock(CMatchFinder *p)
 {
   memmove(p->bufferBase,
     p->buffer - p->keepSizeBefore,
@@ -97,20 +103,12 @@ void MatchFinder_MoveBlock(CMatchFinder *p)
   p->buffer = p->bufferBase + p->keepSizeBefore;
 }
 
-int MatchFinder_NeedMove(CMatchFinder *p)
+static int MatchFinder_NeedMove(CMatchFinder *p)
 {
-  if (p->directInput)
+  if (DIRECT_INPUT)
     return 0;
   /* if (p->streamEndWasReached) return 0; */
   return ((size_t)(p->bufferBase + p->blockSize - p->buffer) <= p->keepSizeAfter);
-}
-
-void MatchFinder_ReadIfRequired(CMatchFinder *p)
-{
-  if (p->streamEndWasReached)
-    return;
-  if (p->keepSizeAfter >= p->streamPos - p->pos)
-    MatchFinder_ReadBlock(p);
 }
 
 static void MatchFinder_CheckAndMoveAndRead(CMatchFinder *p)
@@ -319,37 +317,6 @@ static void MatchFinder_CheckLimits(CMatchFinder *p)
   MatchFinder_SetLimits(p);
 }
 
-static UInt32 * Hc_GetMatchesSpec(UInt32 lenLimit, UInt32 curMatch, UInt32 pos, const Byte *cur, CLzRef *son,
-    UInt32 _cyclicBufferPos, UInt32 _cyclicBufferSize, UInt32 cutValue,
-    UInt32 *distances, UInt32 maxLen)
-{
-  son[_cyclicBufferPos] = curMatch;
-  for (;;)
-  {
-    UInt32 delta = pos - curMatch;
-    if (cutValue-- == 0 || delta >= _cyclicBufferSize)
-      return distances;
-    {
-      const Byte *pb = cur - delta;
-      curMatch = son[_cyclicBufferPos - delta + ((delta > _cyclicBufferPos) ? _cyclicBufferSize : 0)];
-      if (pb[maxLen] == cur[maxLen] && *pb == *cur)
-      {
-        UInt32 len = 0;
-        while (++len != lenLimit)
-          if (pb[len] != cur[len])
-            break;
-        if (maxLen < len)
-        {
-          *distances++ = maxLen = len;
-          *distances++ = delta - 1;
-          if (len == lenLimit)
-            return distances;
-        }
-      }
-    }
-  }
-}
-
 static UInt32 * GetMatchesSpec1(UInt32 lenLimit, UInt32 curMatch, UInt32 pos, const Byte *cur, CLzRef *son,
     UInt32 _cyclicBufferPos, UInt32 _cyclicBufferSize, UInt32 cutValue,
     UInt32 *distances, UInt32 maxLen)
@@ -460,9 +427,9 @@ static void SkipMatchesSpec(UInt32 lenLimit, UInt32 curMatch, UInt32 pos, const 
   p->buffer++; \
   if (++p->pos == p->posLimit) MatchFinder_CheckLimits(p);
 
-#define MOVE_POS_RET MOVE_POS return offset;
-
 static void MatchFinder_MovePos(CMatchFinder *p) { MOVE_POS; }
+
+#define MOVE_POS_RET MatchFinder_MovePos(p); return offset;
 
 #define GET_MATCHES_HEADER2(minLen, ret_op) \
   UInt32 lenLimit; UInt32 hashValue; const Byte *cur; UInt32 curMatch; \
@@ -479,62 +446,7 @@ static void MatchFinder_MovePos(CMatchFinder *p) { MOVE_POS; }
   distances + offset, maxLen) - distances); MOVE_POS_RET;
 
 #define SKIP_FOOTER \
-  SkipMatchesSpec(lenLimit, curMatch, MF_PARAMS(p)); MOVE_POS;
-
-static UInt32 Bt2_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances)
-{
-  UInt32 offset;
-  GET_MATCHES_HEADER(2)
-  HASH2_CALC;
-  curMatch = p->hash[hashValue];
-  p->hash[hashValue] = p->pos;
-  offset = 0;
-  GET_MATCHES_FOOTER(offset, 1)
-}
-
-static __maybe_unused UInt32 Bt3Zip_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances)
-{
-  UInt32 offset;
-  GET_MATCHES_HEADER(3)
-  HASH_ZIP_CALC;
-  curMatch = p->hash[hashValue];
-  p->hash[hashValue] = p->pos;
-  offset = 0;
-  GET_MATCHES_FOOTER(offset, 2)
-}
-
-static UInt32 Bt3_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances)
-{
-  UInt32 hash2Value, delta2, maxLen, offset;
-  GET_MATCHES_HEADER(3)
-
-  HASH3_CALC;
-
-  delta2 = p->pos - p->hash[hash2Value];
-  curMatch = p->hash[kFix3HashSize + hashValue];
-  
-  p->hash[hash2Value] =
-  p->hash[kFix3HashSize + hashValue] = p->pos;
-
-
-  maxLen = 2;
-  offset = 0;
-  if (delta2 < p->cyclicBufferSize && *(cur - delta2) == *cur)
-  {
-    for (; maxLen != lenLimit; maxLen++)
-      if (cur[(ptrdiff_t)maxLen - delta2] != cur[maxLen])
-        break;
-    distances[0] = maxLen;
-    distances[1] = delta2 - 1;
-    offset = 2;
-    if (maxLen == lenLimit)
-    {
-      SkipMatchesSpec(lenLimit, curMatch, MF_PARAMS(p));
-      MOVE_POS_RET;
-    }
-  }
-  GET_MATCHES_FOOTER(offset, maxLen)
-}
+  SkipMatchesSpec(lenLimit, curMatch, MF_PARAMS(p)); MatchFinder_MovePos(p);
 
 static UInt32 Bt4_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances)
 {
@@ -583,108 +495,6 @@ static UInt32 Bt4_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances)
   GET_MATCHES_FOOTER(offset, maxLen)
 }
 
-static UInt32 Hc4_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances)
-{
-  UInt32 hash2Value, hash3Value, delta2, delta3, maxLen, offset;
-  GET_MATCHES_HEADER(4)
-
-  HASH4_CALC;
-
-  delta2 = p->pos - p->hash[                hash2Value];
-  delta3 = p->pos - p->hash[kFix3HashSize + hash3Value];
-  curMatch = p->hash[kFix4HashSize + hashValue];
-
-  p->hash[                hash2Value] =
-  p->hash[kFix3HashSize + hash3Value] =
-  p->hash[kFix4HashSize + hashValue] = p->pos;
-
-  maxLen = 1;
-  offset = 0;
-  if (delta2 < p->cyclicBufferSize && *(cur - delta2) == *cur)
-  {
-    distances[0] = maxLen = 2;
-    distances[1] = delta2 - 1;
-    offset = 2;
-  }
-  if (delta2 != delta3 && delta3 < p->cyclicBufferSize && *(cur - delta3) == *cur)
-  {
-    maxLen = 3;
-    distances[offset + 1] = delta3 - 1;
-    offset += 2;
-    delta2 = delta3;
-  }
-  if (offset != 0)
-  {
-    for (; maxLen != lenLimit; maxLen++)
-      if (cur[(ptrdiff_t)maxLen - delta2] != cur[maxLen])
-        break;
-    distances[offset - 2] = maxLen;
-    if (maxLen == lenLimit)
-    {
-      p->son[p->cyclicBufferPos] = curMatch;
-      MOVE_POS_RET;
-    }
-  }
-  if (maxLen < 3)
-    maxLen = 3;
-  offset = (UInt32)(Hc_GetMatchesSpec(lenLimit, curMatch, MF_PARAMS(p),
-    distances + offset, maxLen) - (distances));
-  MOVE_POS_RET
-}
-
-static __maybe_unused UInt32 Hc3Zip_MatchFinder_GetMatches(CMatchFinder *p, UInt32 *distances)
-{
-  UInt32 offset;
-  GET_MATCHES_HEADER(3)
-  HASH_ZIP_CALC;
-  curMatch = p->hash[hashValue];
-  p->hash[hashValue] = p->pos;
-  offset = (UInt32)(Hc_GetMatchesSpec(lenLimit, curMatch, MF_PARAMS(p),
-    distances, 2) - (distances));
-  MOVE_POS_RET
-}
-
-static void Bt2_MatchFinder_Skip(CMatchFinder *p, UInt32 num)
-{
-  do
-  {
-    SKIP_HEADER(2)
-    HASH2_CALC;
-    curMatch = p->hash[hashValue];
-    p->hash[hashValue] = p->pos;
-    SKIP_FOOTER
-  }
-  while (--num != 0);
-}
-
-static __maybe_unused void Bt3Zip_MatchFinder_Skip(CMatchFinder *p, UInt32 num)
-{
-  do
-  {
-    SKIP_HEADER(3)
-    HASH_ZIP_CALC;
-    curMatch = p->hash[hashValue];
-    p->hash[hashValue] = p->pos;
-    SKIP_FOOTER
-  }
-  while (--num != 0);
-}
-
-static void Bt3_MatchFinder_Skip(CMatchFinder *p, UInt32 num)
-{
-  do
-  {
-    UInt32 hash2Value;
-    SKIP_HEADER(3)
-    HASH3_CALC;
-    curMatch = p->hash[kFix3HashSize + hashValue];
-    p->hash[hash2Value] =
-    p->hash[kFix3HashSize + hashValue] = p->pos;
-    SKIP_FOOTER
-  }
-  while (--num != 0);
-}
-
 static void Bt4_MatchFinder_Skip(CMatchFinder *p, UInt32 num)
 {
   do
@@ -701,61 +511,12 @@ static void Bt4_MatchFinder_Skip(CMatchFinder *p, UInt32 num)
   while (--num != 0);
 }
 
-static void Hc4_MatchFinder_Skip(CMatchFinder *p, UInt32 num)
-{
-  do
-  {
-    UInt32 hash2Value, hash3Value;
-    SKIP_HEADER(4)
-    HASH4_CALC;
-    curMatch = p->hash[kFix4HashSize + hashValue];
-    p->hash[                hash2Value] =
-    p->hash[kFix3HashSize + hash3Value] =
-    p->hash[kFix4HashSize + hashValue] = p->pos;
-    p->son[p->cyclicBufferPos] = curMatch;
-    MOVE_POS
-  }
-  while (--num != 0);
-}
-
-static __maybe_unused void Hc3Zip_MatchFinder_Skip(CMatchFinder *p, UInt32 num)
-{
-  do
-  {
-    SKIP_HEADER(3)
-    HASH_ZIP_CALC;
-    curMatch = p->hash[hashValue];
-    p->hash[hashValue] = p->pos;
-    p->son[p->cyclicBufferPos] = curMatch;
-    MOVE_POS
-  }
-  while (--num != 0);
-}
-
 void MatchFinder_CreateVTable(CMatchFinder *p, IMatchFinder *vTable)
 {
   vTable->Init = (Mf_Init_Func)MatchFinder_Init;
   vTable->GetIndexByte = (Mf_GetIndexByte_Func)MatchFinder_GetIndexByte;
   vTable->GetNumAvailableBytes = (Mf_GetNumAvailableBytes_Func)MatchFinder_GetNumAvailableBytes;
   vTable->GetPointerToCurrentPos = (Mf_GetPointerToCurrentPos_Func)MatchFinder_GetPointerToCurrentPos;
-  if (!p->btMode)
-  {
-    vTable->GetMatches = (Mf_GetMatches_Func)Hc4_MatchFinder_GetMatches;
-    vTable->Skip = (Mf_Skip_Func)Hc4_MatchFinder_Skip;
-  }
-  else if (p->numHashBytes == 2)
-  {
-    vTable->GetMatches = (Mf_GetMatches_Func)Bt2_MatchFinder_GetMatches;
-    vTable->Skip = (Mf_Skip_Func)Bt2_MatchFinder_Skip;
-  }
-  else if (p->numHashBytes == 3)
-  {
-    vTable->GetMatches = (Mf_GetMatches_Func)Bt3_MatchFinder_GetMatches;
-    vTable->Skip = (Mf_Skip_Func)Bt3_MatchFinder_Skip;
-  }
-  else
-  {
-    vTable->GetMatches = (Mf_GetMatches_Func)Bt4_MatchFinder_GetMatches;
-    vTable->Skip = (Mf_Skip_Func)Bt4_MatchFinder_Skip;
-  }
+  vTable->GetMatches = (Mf_GetMatches_Func)Bt4_MatchFinder_GetMatches;
+  vTable->Skip = (Mf_Skip_Func)Bt4_MatchFinder_Skip;
 }
