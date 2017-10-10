@@ -489,7 +489,7 @@ static struct device_info boards[] = {
 
 	/** Firmware layout for the C9 */
 	{
-		.id = "ARCHERC9",
+		.id = "ARCHER-C9",
 		.vendor = "",
 		.support_list =
 			"SupportList:\n"
@@ -513,6 +513,90 @@ static struct device_info boards[] = {
 			{"default-config", 0xe80000, 0x10000},
 			{"user-config", 0xe90000, 0x50000},
 			{"log", 0xee0000, 0x100000},
+			{"radio_bk", 0xfe0000, 0x10000},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
+	{
+		.id = "ARCHER-C9-V2",
+		.vendor = "",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:ArcherC9,"
+			"product_ver:2.0.0,"
+			"special_id:00000000}\n",
+		.support_trail = '\x00',
+		.soft_ver = NULL,
+
+		.partitions = {
+			{"fs-uboot", 0x00000, 0x40000},
+			{"os-image", 0x40000, 0x200000},
+			{"file-system", 0x240000, 0xc00000},
+			{"default-mac", 0xe40000, 0x00200},
+			{"pin", 0xe40200, 0x00200},
+			{"product-info", 0xe40400, 0x00200},
+			{"partition-table", 0xe50000, 0x10000},
+			{"soft-version", 0xe60000, 0x00200},
+			{"support-list", 0xe61000, 0x0f000},
+			{"profile", 0xe70000, 0x10000},
+			{"default-config", 0xe80000, 0x10000},
+			{"user-config", 0xe90000, 0x50000},
+			{"log", 0xee0000, 0x100000},
+			{"radio_bk", 0xfe0000, 0x10000},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
+
+	{
+		.id     = "ARCHER-C9-V3",
+		.vendor = "",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:00000000}\n" // UNIVERSAL
+			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:55530000}\n" //US 
+			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:45550000}\n" //EU
+			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:4B520000}\n" //KR
+			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:42520000}\n" //BR
+			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:4A500000}\n" //JP
+			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:43410000}\n" //CA
+			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:41550000}\n" //AU
+			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:52550000}\n" //RU
+			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:54570000}\n", // TW
+		.support_trail = '\x00',
+		.soft_ver = "soft_ver:3.0.0\n",
+
+		/**
+		    We use a bigger os-image partition than the stock images (and thus
+		    smaller file-system), as our kernel doesn't fit in the stock firmware's
+		    1MB os-image.
+		*/
+		
+		.partitions = {
+			{"factory-boot", 0x00000, 0x40000},
+			{"fs-uboot", 0x40000, 0x40000},
+			{"os-image", 0x80000, 0x200000},	/* Stock: base 0x30000 size 0x100000 */
+			{"file-system", 0x280000, 0xc80000},	/* Stock: base 0x130000 size 0x6a0000 */
+			{"default-mac", 0xf00000, 0x00200},
+			{"pin", 0xf00200, 0x00100},
+			{"device-id", 0xf00300, 0x00100},
+			{"product-info", 0xf10000, 0x06000},
+			{"soft-version", 0xf16000, 0x01000},
+			{"extra-para", 0xf17000, 0x01000},
+			{"support-list", 0xf18000, 0x08000},
+			{"profile", 0xf20000, 0x03000},
+			{"default-config", 0xf23000, 0x0d000},
+			{"user-config", 0xf30000, 0x40000},
+			{"qos-db", 0xf70000, 0x40000},
+			{"partition-table", 0xfb0000, 0x10000},
+			{"log", 0xfc0000, 0x20000},
 			{"radio_bk", 0xfe0000, 0x10000},
 			{"radio", 0xff0000, 0x10000},
 			{NULL, 0, 0}
