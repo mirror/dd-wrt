@@ -743,9 +743,16 @@ static void tcp_tsq_handler(struct sock *sk)
 {
 	if ((1 << sk->sk_state) &
 	    (TCPF_ESTABLISHED | TCPF_FIN_WAIT1 | TCPF_CLOSING |
-	     TCPF_CLOSE_WAIT  | TCPF_LAST_ACK))
-		tcp_write_xmit(sk, tcp_current_mss(sk), tcp_sk(sk)->nonagle,
+	     TCPF_CLOSE_WAIT  | TCPF_LAST_ACK)) {
+		struct tcp_sock *tp = tcp_sk(sk);
+
+		if (tp->lost_out > tp->retrans_out &&
+		    tp->snd_cwnd > tcp_packets_in_flight(tp))
+			tcp_xmit_retransmit_queue(sk);
+
+		tcp_write_xmit(sk, tcp_current_mss(sk), tp->nonagle,
 			       0, GFP_ATOMIC);
+	}
 }
 /*
  * One tasklet per cpu tries to send more skbs.
@@ -2842,6 +2849,9 @@ begin_fwd:
 
 		if (sacked & (TCPCB_SACKED_ACKED|TCPCB_SACKED_RETRANS))
 			continue;
+
+		if (tcp_small_queue_check(sk, skb, 1))
+			return;
 
 		if (tcp_retransmit_skb(sk, skb))
 			return;
