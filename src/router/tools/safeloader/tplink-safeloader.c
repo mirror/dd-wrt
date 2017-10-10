@@ -560,16 +560,16 @@ static struct device_info boards[] = {
 		.vendor = "",
 		.support_list =
 			"SupportList:\n"
-			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:00000000}\n" // UNIVERSAL
-			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:55530000}\n" //US 
-			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:45550000}\n" //EU
-			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:4B520000}\n" //KR
-			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:42520000}\n" //BR
-			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:4A500000}\n" //JP
-			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:43410000}\n" //CA
-			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:41550000}\n" //AU
-			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:52550000}\n" //RU
-			"{product_name:ARCHER C7,product_ver:4.0.0,special_id:54570000}\n", // TW
+			"{product_name:ARCHER C9,product_ver:3.0.0,special_id:00000000}\n" // UNIVERSAL
+			"{product_name:ARCHER C9,product_ver:3.0.0,special_id:55530000}\n" //US 
+			"{product_name:ARCHER C9,product_ver:3.0.0,special_id:45550000}\n" //EU
+			"{product_name:ARCHER C9,product_ver:3.0.0,special_id:4B520000}\n" //KR
+			"{product_name:ARCHER C9,product_ver:3.0.0,special_id:42520000}\n" //BR
+			"{product_name:ARCHER C9,product_ver:3.0.0,special_id:4A500000}\n" //JP
+			"{product_name:ARCHER C9,product_ver:3.0.0,special_id:43410000}\n" //CA
+			"{product_name:ARCHER C9,product_ver:3.0.0,special_id:41550000}\n" //AU
+			"{product_name:ARCHER C9,product_ver:3.0.0,special_id:52550000}\n" //RU
+			"{product_name:ARCHER C9,product_ver:3.0.0,special_id:54570000}\n", // TW
 		.support_trail = '\x00',
 		.soft_ver = "soft_ver:3.0.0\n",
 
