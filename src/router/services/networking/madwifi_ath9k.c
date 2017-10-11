@@ -103,9 +103,11 @@ void configure_single_ath9k(int count)
 	int phy_idx = get_ath9k_phy_idx(count);
 	char mtikie[32];
 	char wl[16];
+	char bw[32];
 	char channel[16];
 	char ssid[16];
 	char net[16];
+	char atf[16];
 	char wifivifs[16];
 	char broadcast[16];
 	char sens[32];
@@ -145,10 +147,12 @@ void configure_single_ath9k(int count)
 	char *netmode = nvram_default_get(net, "mixed");
 	if (!strcmp(netmode, "disabled"))
 		return;
-	char bw[32];
 
+	if (has_airtime_fairness(dev)) {
+		sprintf(atf, "%s_atf", dev);
+		sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/ath9k/airtime_flags", wif, nvram_default_match(atf, "1", "1") ? 7 : 0);
+	}
 	// set channelbw ht40 is also 20!
-
 	sprintf(bw, "%s_channelbw", dev);
 	if (isath5k) {
 		if (nvram_matchi(bw, 5))
