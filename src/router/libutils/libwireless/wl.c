@@ -2827,6 +2827,7 @@ int has_spectralscanning(const char *prefix)
 int has_airtime_fairness(char *prefix)
 {
 	int devnum;
+	char *globstring;
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1)
 		return 0;
