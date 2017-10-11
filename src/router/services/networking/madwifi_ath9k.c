@@ -150,7 +150,12 @@ void configure_single_ath9k(int count)
 
 	if (has_airtime_fairness(dev)) {
 		sprintf(atf, "%s_atf", dev);
-		sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/ath9k/airtime_flags", nvram_default_match(atf, "1", "1") ? 7 : 0, wif);
+#ifdef HAVE_ATH10K
+		if (has_ath10k(dev))
+			sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/ath10k/atf", nvram_default_match(atf, "1", "0") ? 1 : 0, wif);
+		else
+#endif
+			sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/ath9k/airtime_flags", nvram_default_match(atf, "1", "1") ? 7 : 0, wif);
 	}
 	// set channelbw ht40 is also 20!
 	sprintf(bw, "%s_channelbw", dev);
@@ -1759,7 +1764,6 @@ void ath9k_start_supplicant(int count)
 			}
 		}
 	}
-	int newpower = nvram_default_geti(power, 16);
-	sysprintf("iw phy %s set txpower fixed %d", wif, newpower * 100);
+	sysprintf("iw phy %s set txpower fixed %d", wif, nvram_default_geti(power, 16) * 100);
 }
 #endif
