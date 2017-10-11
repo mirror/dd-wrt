@@ -821,11 +821,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	sprintf(bcn, "%s_bcn", prefix);
 	fprintf(fp, "beacon_int=%s\n", nvram_default_get(bcn, "100"));
 	fprintf(fp, "\n");
-
-	char dtim[32];
-	sprintf(dtim, "%s_dtim", prefix);
-	fprintf(fp, "dtim_period=%s\n", nvram_default_get(dtim, "2"));
-	fprintf(fp, "\n");
 }
 
 static void setMacFilter(FILE * fp, char *iface)
@@ -983,6 +978,11 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "ignore_broadcast_ssid=0\n");
 	sprintf(maxassoc, "%s_maxassoc", ifname);
 	fprintf(fp, "max_num_sta=%s\n", nvram_default_get(maxassoc, "256"));
+
+	char dtim[32];
+	sprintf(dtim, "%s_dtim", prefix);
+	fprintf(fp, "dtim_period=%s\n", nvram_default_get(dtim, "2"));
+
 	if (aoss) {
 		if (!strncmp(ifname, "aossa", 5))
 			ssid = "ESSID-AOSS-1";
