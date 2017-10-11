@@ -2396,7 +2396,16 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #ifdef HAVE_ATH9K
 		}
 #endif
+
+char dtim[32];
+sprintf(dtim, "%s_dtim", var);
+websWrite(wp, "<div class=\"setting\">\n");
+websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label7)</script></div>\n");
+websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,255,wl_adv.label7)\" value=\"%s\" />\n", dtim, nvram_default_get(dtim, "2"));
+websWrite(wp, "</div>\n");
+
 #endif
+
 #ifdef HAVE_RT2880
 		showbridgesettings(wp, getRADev(var), 1, 0);
 #else
@@ -4262,6 +4271,7 @@ if (!strcmp(prefix, "wl2"))
 #ifdef HAVE_ATH9K
 	}
 #endif
+
 	showbridgesettings(wp, prefix, 1, 1);
 #elif HAVE_RT2880
 	showbridgesettings(wp, getRADev(prefix), 1, 1);
