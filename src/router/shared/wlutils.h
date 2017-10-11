@@ -185,6 +185,7 @@ extern void set_ath10kdistance(char *ifname, unsigned int distance);
 extern unsigned int get_ath10kack(char *ifname);
 extern unsigned int get_ath10kdistance(char *ifname);
 #endif
+extern int has_airtime_fairness(char *prefix);
 extern int mac80211_check_band(char *interface, int checkband);
 struct wifi_channels *mac80211_get_channels(char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband);
 #define AUTO_FORCEHT40 1
