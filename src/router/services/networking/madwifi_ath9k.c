@@ -150,7 +150,7 @@ void configure_single_ath9k(int count)
 
 	if (has_airtime_fairness(dev)) {
 		sprintf(atf, "%s_atf", dev);
-		sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/ath9k/airtime_flags", wif, nvram_default_match(atf, "1", "1") ? 7 : 0);
+		sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/ath9k/airtime_flags", nvram_default_match(atf, "1", "1") ? 7 : 0, wif);
 	}
 	// set channelbw ht40 is also 20!
 	sprintf(bw, "%s_channelbw", dev);
