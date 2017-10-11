@@ -980,7 +980,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	fprintf(fp, "max_num_sta=%s\n", nvram_default_get(maxassoc, "256"));
 
 	char dtim[32];
-	sprintf(dtim, "%s_dtim", prefix);
+	sprintf(dtim, "%s_dtim", ifname);
 	fprintf(fp, "dtim_period=%s\n", nvram_default_get(dtim, "2"));
 
 	if (aoss) {
