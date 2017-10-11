@@ -2397,12 +2397,12 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		}
 #endif
 
-char dtim[32];
-sprintf(dtim, "%s_dtim", var);
-websWrite(wp, "<div class=\"setting\">\n");
-websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label7)</script></div>\n");
-websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,255,wl_adv.label7)\" value=\"%s\" />\n", dtim, nvram_default_get(dtim, "2"));
-websWrite(wp, "</div>\n");
+		char dtim[32];
+		sprintf(dtim, "%s_dtim", var);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label7)</script></div>\n");
+		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,255,wl_adv.label7)\" value=\"%s\" />\n", dtim, nvram_default_get(dtim, "2"));
+		websWrite(wp, "</div>\n");
 
 #endif
 
@@ -3205,7 +3205,13 @@ websWrite(wp, "<div class=\"setting\">\n");
 websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label7)</script></div>\n");
 websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,255,wl_adv.label7)\" value=\"%s\" />\n", dtim, nvram_default_get(dtim, "2"));
 websWrite(wp, "</div>\n");
-
+#ifdef HAVE_ATH9K
+if (has_airtime_fairness(prefix)) {
+	char wl_atf[16];
+	sprintf(wl_atf, "%s_atf", prefix);
+	showRadioDefaultOn(wp, "wl_basic.atf", wl_atf);
+}
+#endif
 sprintf(wmm, "%s_wmm", prefix);
 #ifdef HAVE_ATH9K
 if (is_ath9k(prefix))
@@ -4200,17 +4206,24 @@ if (!strcmp(prefix, "wl2"))
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label7)</script></div>\n");
 	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,255,wl_adv.label7)\" value=\"%s\" />\n", dtim, nvram_default_get(dtim, "2"));
 	websWrite(wp, "</div>\n");
+#ifdef HAVE_ATH9K
+	if (has_airtime_fairness(prefix)) {
+		char wl_atf[16];
+		sprintf(wl_atf, "%s_atf", prefix);
+		showRadioDefaultOn(wp, "wl_basic.atf", wl_atf);
+	}
+#endif
 
 // wmm
-	{
-		sprintf(wmm, "%s_wmm", prefix);
+
+	sprintf(wmm, "%s_wmm", prefix);
 #ifdef HAVE_ATH9K
-		if (is_ath9k(prefix))
-			showRadioDefaultOn(wp, "wl_adv.label18", wmm);
-		else
+	if (is_ath9k(prefix))
+		showRadioDefaultOn(wp, "wl_adv.label18", wmm);
+	else
 #endif
-			showRadio(wp, "wl_adv.label18", wmm);
-	}
+		showRadio(wp, "wl_adv.label18", wmm);
+
 #endif
 
 // radar detection
