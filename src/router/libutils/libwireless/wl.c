@@ -2823,6 +2823,23 @@ int has_spectralscanning(const char *prefix)
 }
 #endif
 
+#ifdef HAVE_ATH9K
+int has_airtime_fairness(char *prefix)
+{
+	int devnum;
+	devnum = get_ath9k_phy_ifname(prefix);
+	if (devnum == -1)
+		return 0;
+	asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/airtime_flags", devnum);
+	FILE *fp = fopen(globstring, "rb");
+	free(globstring);
+	if (!fp)
+		return 0;
+	fclose(fp);
+	return 1;
+}
+
+#endif
 static int devicecountbydriver(const char *prefix, char *drivername)
 {
 	glob_t globbuf;
