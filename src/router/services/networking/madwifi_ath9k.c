@@ -151,7 +151,7 @@ void configure_single_ath9k(int count)
 	if (has_airtime_fairness(dev)) {
 		sprintf(atf, "%s_atf", dev);
 #ifdef HAVE_ATH10K
-		if (has_ath10k(dev))
+		if (is_ath10k(dev))
 			sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/ath10k/atf", nvram_default_match(atf, "1", "0") ? 1 : 0, wif);
 		else
 #endif
