@@ -2838,9 +2838,8 @@ int has_airtime_fairness(char *prefix)
 	if (!fp)
 		return mask |= 1;
 	fclose(fp);
-
 	asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath10k/atf", devnum);
-	FILE *fp = fopen(globstring, "rb");
+	fp = fopen(globstring, "rb");
 	free(globstring);
 	if (!fp)
 		return mask |= 1;
