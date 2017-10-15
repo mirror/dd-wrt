@@ -331,10 +331,7 @@ const char
 	default:
 		chip = "724x";
 	}
-	if (tp)
-		sprintf(str, "%s %s%s ver %u rev 1.%u (0x%04x)",qca ? "Qualcomm Atheros" : "Atheros", "TP", chip, ver, rev, id);
-	else 
-		sprintf(str, "%s %s%s ver %u rev 1.%u (0x%04x)",qca ? "Qualcomm Atheros" : "Atheros", qca ? "QCA" : "AR",chip, ver, rev, id);
+	sprintf(str, "%s %s%s ver %u rev 1.%u (0x%04x)",qca ? "Qualcomm Atheros" : "Atheros", tp ? "TP" : qca ? "QCA" : "AR",chip, ver, rev, id);
 	return str;
 }
 
