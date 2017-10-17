@@ -383,17 +383,7 @@ enum hostapd_logger_level {
 void wpa_debug_open_syslog(void);
 void wpa_debug_close_syslog(void);
 
-#else /* CONFIG_DEBUG_SYSLOG */
-
-static inline void wpa_debug_open_syslog(void)
-{
-}
-
-static inline void wpa_debug_close_syslog(void)
-{
-}
-
-#endif /* CONFIG_DEBUG_SYSLOG */
+#endif
 
 #ifdef CONFIG_DEBUG_LINUX_TRACING
 
