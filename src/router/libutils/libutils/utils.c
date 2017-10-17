@@ -80,7 +80,6 @@ struct mii_ioctl_data {
 	unsigned short val_out;
 };
 
-
 int count_processes(char *pidName)
 {
 	FILE *fp;
@@ -1853,10 +1852,10 @@ int led_control(int type, int act)
 		ses_gpio = 0x11f;
 		sec0_gpio = 0x11f;
 
-//		usb_power = 0x016;
+//              usb_power = 0x016;
 		usb_gpio = 0x107;
 
-//		usb_power1 = 0x015;
+//              usb_power1 = 0x015;
 		usb_gpio1 = 0x108;
 
 		break;
@@ -3201,14 +3200,14 @@ int writeproc(char *path, char *value)
 int writeprocsysnet(char *path, char *value)
 {
 	char syspath[128];
-	snprintf(syspath,sizeof(syspath),"/proc/sys/net/%s",path);
+	snprintf(syspath, sizeof(syspath), "/proc/sys/net/%s", path);
 	return writeproc(syspath, value);
 }
 
 int writeprocsys(char *path, char *value)
 {
 	char syspath[128];
-	snprintf(syspath,sizeof(syspath),"/proc/sys/%s",path);
+	snprintf(syspath, sizeof(syspath), "/proc/sys/%s", path);
 	return writeproc(syspath, value);
 }
 

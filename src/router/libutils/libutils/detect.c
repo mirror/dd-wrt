@@ -84,8 +84,6 @@ struct mii_ioctl_data {
 #define TRX_MAGIC_F7D3302			0x20090928	/* Belkin Share; router's birthday ? */
 #define TRX_MAGIC_F7D4302			0x20091006	/* Belkin Play; router's birthday ? */
 
-
-
 #ifdef HAVE_FONERA
 static void getBoardMAC(char *mac)
 {
@@ -104,7 +102,6 @@ static void getBoardMAC(char *mac)
 	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", data[102] & 0xff, data[103] & 0xff, data[104] & 0xff, data[105] & 0xff, data[106] & 0xff, data[107] & 0xff);
 }
 #endif
-
 
 void setRouter(char *name)
 {
@@ -3258,4 +3255,3 @@ int getRouterBrand()
 		router_type = internal_getRouterBrand();
 	return router_type;
 }
-
