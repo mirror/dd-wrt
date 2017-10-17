@@ -4526,12 +4526,17 @@ void show_preshared(webs_t wp, char *prefix)
 #endif
 		websWrite(wp, "</div>\n");
 
+#ifdef HAVE_MADWIFI
+		//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
 		char eap_key_retries[32];
 		sprintf(eap_key_retries, "%s_disable_eapol_key_retries",prefix);
-		showRadio(wp, "wpa.eapol_key_retries", eap_key_retries);	
+		showRadio(wp, "wpa.eapol_key_retries", eap_key_retries);
+#endif
 	}
 	websWrite(wp, "</div>\n");
+#ifdef HAVE_MADWIFI
 	show_addconfig(wp, prefix);
+#endif
 }
 
 void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
@@ -4968,6 +4973,12 @@ void show_wparadius(webs_t wp, char *prefix)
 	websWrite(wp, "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />", prefix, nvram_default_get(var, "3600"));
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "</div>\n");
+#ifdef HAVE_MADWIFI
+		//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
+		char eap_key_retries[32];
+		sprintf(eap_key_retries, "%s_disable_eapol_key_retries",prefix);
+		showRadio(wp, "wpa.eapol_key_retries", eap_key_retries);
+#endif
 #ifdef HAVE_MADWIFI
 	show_addconfig(wp, prefix);
 #endif
