@@ -22,7 +22,7 @@
 
 static void ntp_main(timer_t t, int arg);
 extern void do_redial(timer_t t, int arg);
-static  int do_ntp(void);
+static int do_ntp(void);
 static void check_udhcpd(timer_t t, int arg);
 extern void init_event_queue(int n);
 extern int timer_connect(timer_t timerid, void (*routine) (timer_t, int), int arg);

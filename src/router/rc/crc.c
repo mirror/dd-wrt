@@ -94,8 +94,8 @@ static uint32 crc32_table[256] = {
     (c) = ((c) >> 8) ^ crc##n##_table[((c) ^ (x)) & 0xff]
 
 static uint32 crc32(void *vdata,	/* pointer to array of data to process */
-	     uint nbytes,	/* number of input data bytes to process */
-	     uint32 crc		/* either CRC32_INIT_VALUE or previous return 
+		    uint nbytes,	/* number of input data bytes to process */
+		    uint32 crc	/* either CRC32_INIT_VALUE or previous return 
 				 * value */
     )
 {
