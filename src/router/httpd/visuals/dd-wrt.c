@@ -4525,6 +4525,10 @@ void show_preshared(webs_t wp, char *prefix)
 			  "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 3600, \" + share.range + \": 1 - 99999)\");\n//]]>\n</script></span>\n");
 #endif
 		websWrite(wp, "</div>\n");
+
+		char eap_key_retries[32];
+		sprintf(eap_key_retries, "%s_disable_eapol_key_retries",prefix);
+		showRadio(wp, "wpa.eapol_key_retries", eap_key_retries);	
 	}
 	websWrite(wp, "</div>\n");
 	show_addconfig(wp, prefix);
