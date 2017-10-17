@@ -2328,6 +2328,7 @@ wpa.radius_port="RADIUS Server Port";
 wpa.radius_key="RADIUS Key";
 wpa.algorithms="WPA Algorithms";
 wpa.shared_key="WPA Shared Key";
+wpa.eapol_key_retries="Disable EAPOL Key Retries";
 
 var aoss=new Object();
 aoss.titl="AOSS Security";
