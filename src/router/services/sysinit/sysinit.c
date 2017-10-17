@@ -2664,7 +2664,7 @@ void start_restore_defaults(void)
 		}
 		break;
 	case ROUTER_LINKSYS_EA9500:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "") || nvram_match("vlan1ports","0 1 2 3 5*")
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "") || nvram_match("vlan1ports", "0 1 2 3 5*")
 		    || !nvram_get("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "2 1 3 0 5 7 8*");
