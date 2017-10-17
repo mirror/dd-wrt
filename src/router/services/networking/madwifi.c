@@ -1026,8 +1026,8 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		fprintf(fp, "eapol_key_index_workaround=0\n");
 		char eap_key_retries[32];
 		sprintf(eap_key_retries, "%s_wpa_disable_eapol_key_retries",prefix);
-		if (nvram_default_match(eap_key_retries,"1","0") {
-			fprintf(fp,"wpa_disable_eapol_key_retries=1\m");
+		if (nvram_default_match(eap_key_retries,"1","0")) {
+			fprintf(fp,"wpa_disable_eapol_key_retries=1\n");
 		}
 		if (nvram_match(akm, "psk") || nvram_match(akm, "wpa"))
 			fprintf(fp, "wpa=1\n");
