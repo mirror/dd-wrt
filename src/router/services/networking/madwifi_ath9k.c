@@ -1084,8 +1084,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "eapol_key_index_workaround=0\n");
 		char eap_key_retries[32];
 		sprintf(eap_key_retries, "%s_disable_eapol_key_retries",ifname);
-		if (nvram_default_match(eap_key_retries,"1","0") {
-			fprintf(fp,"wpa_disable_eapol_key_retries=1\m");
+		if (nvram_default_match(eap_key_retries,"1","0")) {
+			fprintf(fp,"wpa_disable_eapol_key_retries=1\n");
 		}
 		if (nvram_match(akm, "psk") || nvram_match(akm, "wpa"))
 			fprintf(fp, "wpa=1\n");
