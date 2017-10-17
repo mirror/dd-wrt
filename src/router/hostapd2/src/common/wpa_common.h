@@ -168,6 +168,7 @@ struct wpa_ptk {
 			u8 rx_mic_key[8];
 		} auth;
 	} u;
+	int installed; /* 1 if key has already been installed to driver */
 } STRUCT_PACKED;
 
 
@@ -223,6 +224,17 @@ struct rsn_ie_hdr {
 	u8 version[2]; /* little endian */
 } STRUCT_PACKED;
 
+struct wpa_gtk {
+	u8 gtk[WPA_GTK_MAX_LEN];
+	size_t gtk_len;
+};
+
+#ifdef CONFIG_IEEE80211W
+struct wpa_igtk {
+	u8 igtk[WPA_IGTK_MAX_LEN];
+	size_t igtk_len;
+};
+#endif /* CONFIG_IEEE80211W */
 
 #ifdef CONFIG_PEERKEY
 enum {
