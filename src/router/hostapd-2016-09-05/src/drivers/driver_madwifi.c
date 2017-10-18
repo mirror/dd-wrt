@@ -14,6 +14,7 @@
 
 #include "includes.h"
 #include <sys/ioctl.h>
+#include <asm-generic/posix_types.h>
 
 #include "common.h"
 #include "driver.h"
@@ -374,7 +375,7 @@ madwifi_set_sta_authorized(void *priv, const u8 *addr, int authorized)
 
 static int
 madwifi_sta_set_flags(void *priv, const u8 *addr,
-		      int total_flags, int flags_or, int flags_and)
+		      unsigned int total_flags, unsigned int flags_or, unsigned int flags_and)
 {
 	/* For now, only support setting Authorized flag */
 	if (flags_or & WPA_STA_AUTHORIZED)

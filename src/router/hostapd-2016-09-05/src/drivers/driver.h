@@ -4962,6 +4962,9 @@ extern const struct wpa_driver_ops wpa_driver_nl80211_ops;
 #ifdef CONFIG_DRIVER_HOSTAP
 extern const struct wpa_driver_ops wpa_driver_hostap_ops; /* driver_hostap.c */
 #endif /* CONFIG_DRIVER_HOSTAP */
+#ifdef CONFIG_DRIVER_MADWIFI
+extern const struct wpa_driver_ops wpa_driver_madwifi_ops; /* driver_madwifi.c */
+#endif /* CONFIG_DRIVER_MADWIFI */
 #ifdef CONFIG_DRIVER_BSD
 extern const struct wpa_driver_ops wpa_driver_bsd_ops; /* driver_bsd.c */
 #endif /* CONFIG_DRIVER_BSD */
