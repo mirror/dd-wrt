@@ -2,9 +2,9 @@ ifndef CC
 CC=gcc
 endif
 
-ifndef CFLAGS
-CFLAGS = -MMD -O2 -Wall -g
-endif
+CFLAGS+ = -MMD  $(MIPS16_OPT) $(COPTS) -Wall 
+LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += -I. -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 ifdef LIBS
 # If LIBS is set with some global build system defaults, clone those for
@@ -364,9 +364,7 @@ endif
 ifdef CONFIG_IBSS_RSN
 NEED_RSN_AUTHENTICATOR=y
 CFLAGS += -DCONFIG_IBSS_RSN
-ifndef MULTICALL
 CFLAGS += -DCONFIG_NO_VLAN
-endif
 OBJS += ibss_rsn.o
 endif
 

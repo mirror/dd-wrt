@@ -1672,6 +1672,46 @@ ieee802_1x_search_radius_identifier(struct hostapd_data *hapd, u8 identifier)
 	return id_search.sm;
 }
 
+#ifdef HAVE_AQOS
+extern void add_usermac( char *mac, int idx, char *upstream,
+			 char *downstream, char *lanstream );
+extern char *nvram_safe_get(const char *name);
+
+int addrule(char *mac, char *upstream, char *downstream)
+{
+	char *qos_mac = nvram_safe_get( "svqos_macs" );
+	char *newqos;
+	int ret = 0;
+	int len = strlen(qos_mac);
+
+	newqos = malloc(len + 128);
+	memset(newqos, 0, len + 128);
+
+	char level[32], level2[32], level3[32], data[32], type[32], prio[32];
+	strcpy(level3, "0");
+	if (len > 0) {
+		do {
+			if(sscanf( qos_mac, "%31s %31s %31s %31s %31s %31s |", data, level, level2, type, level3, prio) < 6)
+				break;
+			if (!strcasecmp(data,mac)) {
+				sprintf(newqos,"%s %s %s %s %s %s %s |",newqos,data,upstream,downstream,"hostapd",level3,prio);
+				if (!strcmp(level,upstream) && !strcmp(level2,downstream))
+					ret = 1;
+				else
+					ret = 2;
+			} else
+				sprintf(newqos,"%s %s %s %s %s %s %s |",newqos,data,level,level2,type,level3,prio);
+		} while( ( qos_mac = strpbrk( ++qos_mac, "|" ) ) && qos_mac++ );
+	}
+
+	if (!ret)
+		sprintf(newqos,"%s %s %s %s %s %s %s |",newqos,mac,upstream,downstream,"hostapd",level3,prio);
+
+	nvram_set("svqos_macs",newqos);
+	free(newqos);
+}
+
+#endif
 
 /**
  * ieee802_1x_receive_auth - Process RADIUS frames from Authentication Server
@@ -1700,6 +1740,8 @@ ieee802_1x_receive_auth(struct radius_msg *msg, struct radius_msg *req,
 #endif /* CONFIG_NO_VLAN */
 
 	os_memset(&vlan_desc, 0, sizeof(vlan_desc));
+ 
+	static int qosidx=3910;
 
 	sm = ieee802_1x_search_radius_identifier(hapd, hdr->identifier);
 	if (sm == NULL) {
@@ -1763,6 +1805,50 @@ ieee802_1x_receive_auth(struct radius_msg *msg, struct radius_msg *req,
 
 	switch (hdr->code) {
 	case RADIUS_CODE_ACCESS_ACCEPT:
+#ifdef HAVE_AQOS
+		wpa_printf(MSG_DEBUG, "check user bandwith shaping\n");
+		u32 *down,*up;
+		size_t len;
+		if ((down=(u32*)radius_msg_get_vendor_attr(msg,RADIUS_VENDOR_ID_WISPR, RADIUS_ATTR_WISPR_BANDWIDTH_MAX_DOWN ,&len)) == NULL) {
+		    wpa_printf(MSG_DEBUG, "no downstream level found\n");
+		}else
+		{
+		if ((up=(u32*)radius_msg_get_vendor_attr(msg,RADIUS_VENDOR_ID_WISPR, RADIUS_ATTR_WISPR_BANDWIDTH_MAX_UP ,&len)) == NULL) {
+		    wpa_printf(MSG_DEBUG, "no up level found\n");
+		    os_free(down);
+		    }else{
+		    *down=ntohl(*down);
+		    *up=ntohl(*up);
+		    wpa_printf(MSG_DEBUG, "downstream %d kbits, upstream %d kbits level found\n",*down,*up);
+		    char mac[64];
+		    sprintf(mac, MACSTR, MAC2STR(sta->addr));
+		    char uplevel[64];
+		    char downlevel[64];
+		    sprintf(uplevel,"%d",*up/1000);
+		    sprintf(downlevel,"%d",*down/1000);
+		    int ret = addrule(mac,uplevel,downlevel);
+		    //case 0 = does not exists, should just be added, no restart
+		    //case 1 = no change required, already added
+		    //case 2 = change required, exists, but new settings
+		    //case 3 = change required, exists, new setting 
+		    if (!ret)
+			{
+			qosidx+=10;
+			if (qosidx>6400)
+			    qosidx=0;
+			wpa_printf(MSG_DEBUG, "bandwidth rule is new, no flush required!\n");			
+			add_usermac(mac, qosidx, uplevel,downlevel,"0");
+			}else if (ret>1)
+			{
+			wpa_printf(MSG_DEBUG, "bandwidth rule change detected, flush table and reset it to new values! (status %d)\n",ret);			
+			system("startstop_f wshaper");
+			}	    
+		    os_free(up);
+		    os_free(down);
+		    }
+		
+		}
+#endif
 #ifndef CONFIG_NO_VLAN
 		if (hapd->conf->ssid.dynamic_vlan != DYNAMIC_VLAN_DISABLED) {
 			notempty = &vlan_desc.notempty;

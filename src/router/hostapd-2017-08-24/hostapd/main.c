@@ -552,6 +552,11 @@ static int hostapd_get_ctrl_iface_group(struct hapd_interfaces *interfaces,
 	return 0;
 }
 
+void hostapd_wpa_event(void *ctx, enum wpa_event_type event,
+                       union wpa_event_data *data);
+
+void hostapd_wpa_event_global(void *ctx, enum wpa_event_type event,
+ 				 union wpa_event_data *data);
 
 static int hostapd_get_interface_names(char ***if_names,
 				       size_t *if_names_size,
@@ -589,11 +594,6 @@ fail:
 	return -1;
 }
 
-void hostapd_wpa_event(void *ctx, enum wpa_event_type event,
-                       union wpa_event_data *data);
-
-void hostapd_wpa_event_global(void *ctx, enum wpa_event_type event,
- 				 union wpa_event_data *data);
 
 #ifdef CONFIG_WPS
 static int gen_uuid(const char *txt_addr)

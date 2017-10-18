@@ -59,6 +59,7 @@ typedef u8 macaddr[ETH_ALEN];
 struct mac_acl_entry {
 	macaddr addr;
 	struct vlan_description vlan_id;
+	int mask;
 };
 
 struct hostapd_radius_servers;
@@ -419,6 +420,7 @@ struct hostapd_bss_config {
 #ifdef CONFIG_WPS
 	int wps_independent;
 	int ap_setup_locked;
+	int dualband;
 	u8 uuid[16];
 	char *wps_pin_requests;
 	char *device_name;
@@ -675,6 +677,8 @@ struct hostapd_config {
 	int fragm_threshold;
 	u8 send_probe_response;
 	u8 channel;
+	u16 frequency;
+	int *chanlist;
 	u8 acs;
 	struct wpa_freq_range_list acs_ch_list;
 	int acs_exclude_dfs;
@@ -736,11 +740,11 @@ struct hostapd_config {
 	int ht_op_mode_fixed;
 	u16 ht_capab;
 	int noscan;
-	int no_ht_coex;
 	int ieee80211n;
 	int secondary_channel;
 	int no_pri_sec_switch;
 	int require_ht;
+	int dynamic_ht40;
 	int obss_interval;
 	u32 vht_capab;
 	int ieee80211ac;

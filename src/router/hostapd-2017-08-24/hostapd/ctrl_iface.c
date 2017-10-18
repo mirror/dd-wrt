@@ -57,10 +57,11 @@
 #include "config_file.h"
 #include "ctrl_iface.h"
 #include "config_file.h"
+#include "utils/wpa_debug.h"
 
 
 #define HOSTAPD_CLI_DUP_VALUE_MAX_LEN 256
-
+ 
 #ifdef CONFIG_CTRL_IFACE_UDP
 #define COOKIE_LEN 8
 static unsigned char cookie[COOKIE_LEN];
@@ -71,11 +72,12 @@ static unsigned char gcookie[COOKIE_LEN];
 #define HOSTAPD_GLOBAL_CTRL_IFACE_PORT_LIMIT	50
 #endif /* CONFIG_CTRL_IFACE_UDP */
 
+static char *reload_opts = NULL;
+
 static void hostapd_ctrl_iface_send(struct hostapd_data *hapd, int level,
 				    enum wpa_msg_type type,
 				    const char *buf, size_t len);
 
-static char *reload_opts = NULL;
 
 static int hostapd_ctrl_iface_attach(struct hostapd_data *hapd,
 				     struct sockaddr_storage *from,
@@ -127,6 +129,13 @@ static int hostapd_ctrl_iface_new_sta(struct hostapd_data *hapd,
 	return 0;
 }
 
+static int hostapd_ctrl_iface_set_down(struct hostapd_data *hapd)
+{
+	if (hapd->driver->stop_ap)
+		hapd->driver->stop_ap(hapd->drv_priv);
+	return 0;
+}
+
 static char *get_option(char *opt, char *str)
 {
 	int len = strlen(str);
@@ -150,15 +159,38 @@ static struct hostapd_config *hostapd_ctrl_iface_config_read(const char *fname)
 	     opt;
 		 opt = strtok(NULL, " ")) {
 
-		if ((val = get_option(opt, "channel=")))
+		if ((val = get_option(opt, "channel="))) {
 			conf->channel = atoi(val);
+			if (conf->vht_oper_chwidth == 2) {
+			if (conf->channel < 100)			
+				conf->vht_oper_centr_freq_seg0_idx = 50;
+			    else
+				conf->vht_oper_centr_freq_seg0_idx = 114;
+			} else {			
+			if (conf->secondary_channel==1)			
+				conf->vht_oper_centr_freq_seg0_idx = conf->channel + 6;
+			if (conf->secondary_channel==-1)			
+				conf->vht_oper_centr_freq_seg0_idx = conf->channel - 6;
+			}
+		} else if ((val = get_option(opt, "frequency=")))
+			conf->frequency = atoi(val);
 		else if ((val = get_option(opt, "ht_capab=")))
 			conf->ht_capab = atoi(val);
 		else if ((val = get_option(opt, "ht_capab_mask=")))
 			conf->ht_capab &= atoi(val);
-		else if ((val = get_option(opt, "sec_chan=")))
+		else if ((val = get_option(opt, "chwidth=")))
+			conf->vht_oper_chwidth = atoi(val);
+		else if ((val = get_option(opt, "sec_chan="))) {
 			conf->secondary_channel = atoi(val);
-		else if ((val = get_option(opt, "hw_mode=")))
+			if (conf->secondary_channel==1)			
+				conf->vht_oper_centr_freq_seg0_idx = conf->channel + 6;
+			if (conf->secondary_channel==-1)			
+				conf->vht_oper_centr_freq_seg0_idx = conf->channel - 6;
+		} else if ((val = get_option(opt, "sec_idx0="))) {
+			conf->vht_oper_centr_freq_seg0_idx = atoi(val);
+		} else if ((val = get_option(opt, "sec_idx1="))) {
+			conf->vht_oper_centr_freq_seg1_idx = atoi(val);
+		} else if ((val = get_option(opt, "hw_mode=")))
 			conf->hw_mode = atoi(val);
 		else if ((val = get_option(opt, "ieee80211n=")))
 			conf->ieee80211n = atoi(val);
@@ -206,6 +238,9 @@ static int hostapd_ctrl_iface_sa_query(struct hostapd_data *hapd,
 
 
 #ifdef CONFIG_WPS
+extern int sysprintf(const char *fmt, ...);
+
+
 static int hostapd_ctrl_iface_wps_pin(struct hostapd_data *hapd, char *txt)
 {
 	char *pin = os_strchr(txt, ' ');
@@ -230,7 +265,10 @@ static int hostapd_ctrl_iface_wps_pin(struct hostapd_data *hapd, char *txt)
 		}
 	} else
 		timeout = 0;
-
+	sysprintf("killall wpswatcher");
+	sysprintf("wpswatcher %d",timeout);
+	sysprintf("killall ledtool");
+	sysprintf("ledtool %d 2",timeout);
 	return hostapd_wps_add_pin(hapd, addr, txt, pin, timeout);
 }
 
@@ -502,6 +540,9 @@ static int hostapd_ctrl_iface_wps_ap_pin(struct hostapd_data *hapd, char *txt,
 	char *pos;
 	const char *pin_txt;
 
+	if (!hapd->wps)
+		return -1;
+
 	pos = os_strchr(txt, ' ');
 	if (pos)
 		*pos++ = '\0';
@@ -539,6 +580,10 @@ static int hostapd_ctrl_iface_wps_ap_pin(struct hostapd_data *hapd, char *txt,
 		}
 		if (os_strlen(pin) > buflen)
 			return -1;
+		sysprintf("killall wpswatcher");
+		sysprintf("wpswatcher %d",timeout);
+		sysprintf("killall ledtool");
+		sysprintf("ledtool %d 2",timeout);
 		if (hostapd_wps_ap_pin_set(hapd, pin, timeout) < 0)
 			return -1;
 		return os_snprintf(buf, buflen, "%s", pin);
