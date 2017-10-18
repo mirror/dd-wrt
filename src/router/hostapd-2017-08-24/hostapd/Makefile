@@ -161,11 +161,6 @@ OBJS += ../src/common/hw_features_common.o
 
 OBJS += ../src/eapol_auth/eapol_auth_sm.o
 
-ifdef CONFIG_UBUS
-CFLAGS += -DUBUS_SUPPORT
-OBJS += ../src/ap/ubus.o
-LIBS += -lubox -lubus
-endif
 
 ifdef CONFIG_CODE_COVERAGE
 CFLAGS += -O0 -fprofile-arcs -ftest-coverage
