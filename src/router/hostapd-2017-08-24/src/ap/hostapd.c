@@ -27,6 +27,7 @@
 #include "beacon.h"
 #include "iapp.h"
 #include "ieee802_1x.h"
+#include "ieee802_11.h"
 #include "ieee802_11_auth.h"
 #include "vlan_init.h"
 #include "wpa_auth.h"
@@ -106,6 +107,14 @@ static void hostapd_reload_bss(struct hostapd_data *hapd)
 		}
 	}
 
+	if (hapd->iface->current_mode) {
+		if (hostapd_prepare_rates(hapd->iface, hapd->iface->current_mode)) {
+                      wpa_printf(MSG_ERROR, "Failed to prepare rates table.");
+                      hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IEEE80211,HOSTAPD_LEVEL_WARNING,
+                                     "Failed to prepare rates table.");
+              }
+        }
+
 	if (!ssid->wpa_psk_set && ssid->wpa_psk && !ssid->wpa_psk->next &&
 	    ssid->wpa_passphrase_set && ssid->wpa_passphrase) {
 		/*
@@ -160,6 +169,8 @@ static void hostapd_reload_bss(struct hostapd_data *hapd)
 static void hostapd_clear_old(struct hostapd_iface *iface)
 {
 	size_t j;
+	int i;
+
 
 	/*
 	 * Deauthenticate all stations since the new configuration may not
@@ -213,6 +224,14 @@ int hostapd_reload_config(struct hostapd_iface *iface)
 			break;
 		}
 	}
+
+      for (i = 0; i < iface->num_hw_features; i++) {
+	              struct hostapd_hw_modes *mode = &iface->hw_features[i];
+	              if (mode->mode == iface->conf->hw_mode) {
+		                      iface->current_mode = mode;
+		                      break;
+		              }
+	      }
 
 	if (iface->conf->channel)
 		iface->freq = hostapd_hw_get_freq(hapd, iface->conf->channel);
@@ -1720,8 +1739,11 @@ static int hostapd_setup_interface_complete_sync(struct hostapd_iface *iface,
 #ifdef NEED_AP_MLME
 		int res;
 #endif /* NEED_AP_MLME */
+		if (hapd->iconf->frequency)
+			iface->freq = iface->conf->frequency;
+		else
+			iface->freq = hostapd_hw_get_freq(hapd, iface->conf->channel);
 
-		iface->freq = hostapd_hw_get_freq(hapd, iface->conf->channel);
 		wpa_printf(MSG_DEBUG, "Mode: %s  Channel: %d  "
 			   "Frequency: %d MHz",
 			   hostapd_hw_mode_txt(iface->conf->hw_mode),

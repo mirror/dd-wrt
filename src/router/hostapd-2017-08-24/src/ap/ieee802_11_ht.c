@@ -14,9 +14,11 @@
 #include "common/ieee802_11_defs.h"
 #include "hostapd.h"
 #include "ap_config.h"
+#include "ap_drv_ops.h"
 #include "sta_info.h"
 #include "beacon.h"
 #include "ieee802_11.h"
+#include "utils/eloop.h"
 #include "hw_features.h"
 #include "ap_drv_ops.h"
 
@@ -95,6 +97,7 @@ u8 * hostapd_eid_ht_operation(struct hostapd_data *hapd, u8 *eid)
 
 	oper->primary_chan = hapd->iconf->channel;
 	oper->operation_mode = host_to_le16(hapd->iface->ht_op_mode);
+
 	if (hapd->iconf->secondary_channel == 1)
 		oper->ht_param |= HT_INFO_HT_PARAM_SECONDARY_CHNL_ABOVE |
 			HT_INFO_HT_PARAM_STA_CHNL_WIDTH;
@@ -241,10 +244,13 @@ void hostapd_2040_coex_action(struct hostapd_data *hapd,
 		       HOSTAPD_LEVEL_DEBUG, "hostapd_public_action - action=%d",
 		       mgmt->u.action.u.public_action.action);
 
+	if (!iface->conf->dynamic_ht40)
+		return;
+
 	if (!(iface->conf->ht_capab & HT_CAP_INFO_SUPP_CHANNEL_WIDTH_SET))
 		return;
 
-	if (iface->conf->noscan || iface->conf->no_ht_coex)
+	if (iface->conf->noscan)
 		return;
 
 	if (len < IEEE80211_HDRLEN + 2 + sizeof(*bc_ie))
@@ -371,7 +377,7 @@ void ht40_intolerant_add(struct hostapd_iface *iface, struct sta_info *sta)
 	if (iface->current_mode->mode != HOSTAPD_MODE_IEEE80211G)
 		return;
 
-	if (iface->conf->noscan || iface->conf->no_ht_coex)
+	if (iface->conf->noscan)
 		return;
 
 	wpa_printf(MSG_INFO, "HT: Forty MHz Intolerant is set by STA " MACSTR
@@ -443,7 +449,7 @@ static void update_sta_ht(struct hostapd_data *hapd, struct sta_info *sta)
 			   hapd->iface->num_sta_ht_20mhz);
 	}
 
-	if (ht_capab & HT_CAP_INFO_40MHZ_INTOLERANT)
+	if ((ht_capab & HT_CAP_INFO_40MHZ_INTOLERANT) && hapd->iface->conf->dynamic_ht40)
 		ht40_intolerant_add(hapd->iface, sta);
 }
 

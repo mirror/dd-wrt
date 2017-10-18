@@ -340,7 +340,8 @@ struct l2_packet_data * l2_packet_init_bridge(
 
 	l2 = l2_packet_init(br_ifname, own_addr, protocol, rx_callback,
 			    rx_callback_ctx, l2_hdr);
-	return l2;
+	if (!l2)
+		return NULL;
 
 #ifndef CONFIG_NO_LINUX_PACKET_SOCKET_WAR
 	/*

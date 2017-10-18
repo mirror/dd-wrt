@@ -211,6 +211,19 @@ static inline void wpa_hexdump_ascii_key(int level, const char *title,
 #define wpa_msg_global_only(args...) do { } while (0)
 #define wpa_msg_register_cb(f) do { } while (0)
 #define wpa_msg_register_ifname_cb(f) do { } while (0)
+enum wpa_msg_type {
+	WPA_MSG_PER_INTERFACE,
+	WPA_MSG_GLOBAL,
+	WPA_MSG_NO_GLOBAL,
+	WPA_MSG_ONLY_GLOBAL,
+};
+static inline void wpa_debug_open_syslog(void)
+{
+}
+
+static inline void wpa_debug_close_syslog(void)
+{
+}
 #else /* CONFIG_NO_WPA_MSG */
 /**
  * wpa_msg - Conditional printf for default target and ctrl_iface monitors
@@ -373,17 +386,7 @@ enum hostapd_logger_level {
 void wpa_debug_open_syslog(void);
 void wpa_debug_close_syslog(void);
 
-#else /* CONFIG_DEBUG_SYSLOG */
-
-static inline void wpa_debug_open_syslog(void)
-{
-}
-
-static inline void wpa_debug_close_syslog(void)
-{
-}
-
-#endif /* CONFIG_DEBUG_SYSLOG */
+#endif
 
 #ifdef CONFIG_DEBUG_LINUX_TRACING
 
