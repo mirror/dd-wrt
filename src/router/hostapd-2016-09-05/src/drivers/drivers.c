@@ -26,6 +26,9 @@ const struct wpa_driver_ops *const wpa_drivers[] =
 #ifdef CONFIG_DRIVER_HOSTAP
 	&wpa_driver_hostap_ops,
 #endif /* CONFIG_DRIVER_HOSTAP */
+#ifdef CONFIG_DRIVER_MADWIFI
+	&wpa_driver_madwifi_ops,
+#endif /* CONFIG_DRIVER_MADWIFI */
 #ifdef CONFIG_DRIVER_BSD
 	&wpa_driver_bsd_ops,
 #endif /* CONFIG_DRIVER_BSD */
