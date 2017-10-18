@@ -404,7 +404,6 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 			       HOSTAPD_LEVEL_INFO, "deauthenticated due to "
 			       "local deauth request");
 		ap_free_sta(hapd, sta);
-		hostapd_ubus_notify(hapd, "local-deauth", sta->addr);
 		return;
 	}
 
@@ -552,7 +551,6 @@ skip_poll:
 			hapd, sta,
 			WLAN_REASON_PREV_AUTH_NOT_VALID);
 		ap_free_sta(hapd, sta);
-		hostapd_ubus_notify(hapd, "inactive-deauth", sta->addr);
 		break;
 	}
 }

@@ -116,10 +116,6 @@ int hostapd_notif_assoc(struct hostapd_data *hapd, const u8 *addr,
 	u16 reason = WLAN_REASON_UNSPECIFIED;
 	u16 status = WLAN_STATUS_SUCCESS;
 	const u8 *p2p_dev_addr = NULL;
-	struct hostapd_ubus_request req = {
-		.type = HOSTAPD_UBUS_ASSOC_REQ,
-		.addr = addr,
-	};
 
 	if (addr == NULL) {
 		/*
@@ -196,12 +192,6 @@ int hostapd_notif_assoc(struct hostapd_data *hapd, const u8 *addr,
 		wpa_printf(MSG_INFO, "STA " MACSTR " not allowed to connect",
 			   MAC2STR(addr));
 		reason = WLAN_REASON_UNSPECIFIED;
-		goto fail;
-	}
-
-	if (hostapd_ubus_handle_event(hapd, &req)) {
-		wpa_printf(MSG_DEBUG, "Station " MACSTR " assoc rejected by ubus handler.\n",
-			   MAC2STR(req.addr));
 		goto fail;
 	}
 
