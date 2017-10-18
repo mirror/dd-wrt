@@ -106,6 +106,12 @@ int wpa_eapol_key_mic(const u8 *key, size_t key_len, int akmp, int ver,
 		return -1;
 	}
 
+	if (key_len == 0) {
+		wpa_printf(MSG_DEBUG,
+			   "WPA: KCK not set - cannot calculate MIC");
+		return -1;
+	}
+
 	switch (ver) {
 #ifndef CONFIG_FIPS
 	case WPA_KEY_INFO_TYPE_HMAC_MD5_RC4:
@@ -230,6 +236,11 @@ int wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 	u8 data[2 * ETH_ALEN + 2 * WPA_NONCE_LEN];
 	u8 tmp[WPA_KCK_MAX_LEN + WPA_KEK_MAX_LEN + WPA_TK_MAX_LEN];
 	size_t ptk_len;
+
+	if (pmk_len == 0) {
+		wpa_printf(MSG_ERROR, "WPA: No PMK set for PT derivation");
+		return -1;
+	}
 
 	if (pmk_len == 0) {
 		wpa_printf(MSG_ERROR, "WPA: No PMK set for PT derivation");
@@ -1641,6 +1652,31 @@ const char * wpa_key_mgmt_txt(int key_mgmt, int proto)
 }
 
 
+static void wpa_fixup_wpa_ie_rsn(u8 *assoc_ie, const u8 *wpa_msg_ie,
+				 size_t rsn_ie_len)
+{
+	int pos, count;
+
+	pos = sizeof(struct rsn_ie_hdr) + RSN_SELECTOR_LEN;
+	if (rsn_ie_len < pos + 2)
+		return;
+
+	count = WPA_GET_LE16(wpa_msg_ie + pos);
+	pos += 2 + count * RSN_SELECTOR_LEN;
+	if (rsn_ie_len < pos + 2)
+		return;
+
+	count = WPA_GET_LE16(wpa_msg_ie + pos);
+	pos += 2 + count * RSN_SELECTOR_LEN;
+	if (rsn_ie_len < pos + 2)
+		return;
+
+	if (!assoc_ie[pos] && !assoc_ie[pos + 1] &&
+	    (wpa_msg_ie[pos] || wpa_msg_ie[pos + 1]))
+		memcpy(&assoc_ie[pos], &wpa_msg_ie[pos], 2);
+}
+
+
 u32 wpa_akm_to_suite(int akm)
 {
 	if (akm & WPA_KEY_MGMT_FT_IEEE8021X)
@@ -1672,31 +1708,6 @@ u32 wpa_akm_to_suite(int akm)
 	if (akm & WPA_KEY_MGMT_FT_FILS_SHA384)
 		return RSN_AUTH_KEY_MGMT_FT_FILS_SHA384;
 	return 0;
-}
-
-
-static void wpa_fixup_wpa_ie_rsn(u8 *assoc_ie, const u8 *wpa_msg_ie,
-				 size_t rsn_ie_len)
-{
-	int pos, count;
-
-	pos = sizeof(struct rsn_ie_hdr) + RSN_SELECTOR_LEN;
-	if (rsn_ie_len < pos + 2)
-		return;
-
-	count = WPA_GET_LE16(wpa_msg_ie + pos);
-	pos += 2 + count * RSN_SELECTOR_LEN;
-	if (rsn_ie_len < pos + 2)
-		return;
-
-	count = WPA_GET_LE16(wpa_msg_ie + pos);
-	pos += 2 + count * RSN_SELECTOR_LEN;
-	if (rsn_ie_len < pos + 2)
-		return;
-
-	if (!assoc_ie[pos] && !assoc_ie[pos + 1] &&
-	    (wpa_msg_ie[pos] || wpa_msg_ie[pos + 1]))
-		memcpy(&assoc_ie[pos], &wpa_msg_ie[pos], 2);
 }
 
 

@@ -1,10 +1,9 @@
-ifndef CC
-CC=gcc
-endif
+CFLAGS+ = -MMD $(MIPS16_OPT) $(COPTS) -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-ifndef CFLAGS
-CFLAGS = -MMD -O2 -Wall -g
-endif
+CFLAGS += $(EXTRA_CFLAGS)
+CFLAGS += -I$(abspath ../src)
+CFLAGS += -I$(abspath ../src/utils)
 
 ifdef LIBS
 # If LIBS is set with some global build system defaults, clone those for
@@ -21,14 +20,11 @@ LIBS_n := $(LIBS)
 endif
 endif
 
-CFLAGS += $(EXTRA_CFLAGS)
-CFLAGS += -I$(abspath ../src)
-CFLAGS += -I$(abspath ../src/utils)
-
 export BINDIR ?= /usr/local/bin/
 
 -include .config
 -include $(if $(MULTICALL), ../wpa_supplicant/.config)
+
 
 ifndef CONFIG_NO_GITVER
 # Add VERSION_STR postfix for builds from a git repository
@@ -204,8 +200,7 @@ endif
 
 ifdef CONFIG_NO_VLAN
 CFLAGS += -DCONFIG_NO_VLAN
-endif
-ifneq ($(findstring CONFIG_NO_VLAN,$(CFLAGS)), CONFIG_NO_VLAN)
+else
 OBJS += ../src/ap/vlan_init.o
 OBJS += ../src/ap/vlan_ifconfig.o
 OBJS += ../src/ap/vlan.o
@@ -225,9 +220,6 @@ endif
 ifdef CONFIG_NO_CTRL_IFACE
 CFLAGS += -DCONFIG_NO_CTRL_IFACE
 else
-ifdef CONFIG_CTRL_IFACE_MIB
-CFLAGS += -DCONFIG_CTRL_IFACE_MIB
-endif
 ifeq ($(CONFIG_CTRL_IFACE), udp)
 CFLAGS += -DCONFIG_CTRL_IFACE_UDP
 else
@@ -249,6 +241,9 @@ endif
 endif
 endif
 endif
+ifdef CONFIG_CTRL_IFACE_MIB
+CFLAGS += -DCONFIG_CTRL_IFACE_MIB
+endif
 OBJS += ../src/common/ctrl_iface_common.o
 OBJS += ctrl_iface.o
 OBJS += ../src/ap/ctrl_iface_ap.o
@@ -256,6 +251,9 @@ endif
 
 ifndef CONFIG_NO_CTRL_IFACE
 CFLAGS += -DCONFIG_CTRL_IFACE
+endif
+ifdef CONFIG_CTRL_IFACE_MIB
+CFLAGS += -DCONFIG_CTRL_IFACE_MIB
 endif
 
 ifdef CONFIG_IAPP
@@ -359,13 +357,13 @@ CFLAGS += -DCONFIG_IEEE80211AX
 OBJS += ../src/ap/ieee802_11_he.o
 endif
 
+ifndef MULTICALL
+CFLAGS += -DNO_SUPPLICANT
+endif
+
 ifdef CONFIG_MBO
 CFLAGS += -DCONFIG_MBO
 OBJS += ../src/ap/mbo_ap.o
-endif
-
-ifndef MULTICALL
-CFLAGS += -DNO_SUPPLICANT
 endif
 
 include ../src/drivers/drivers.mak
@@ -1136,6 +1134,9 @@ endif
 
 ifdef CONFIG_NO_STDOUT_DEBUG
 CFLAGS += -DCONFIG_NO_STDOUT_DEBUG
+#ifndef CONFIG_CTRL_IFACE
+CFLAGS += -DCONFIG_NO_WPA_MSG
+#endif
 endif
 
 ifdef CONFIG_DEBUG_SYSLOG

@@ -153,10 +153,25 @@ static int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 	}
 
 	hw_mode = ieee80211_freq_to_chan(bss->freq, &channel);
-	if (asprintf(&cmd, "UPDATE channel=%d sec_chan=%d hw_mode=%d",
-		     channel, sec_chan, hw_mode) < 0)
+	if (bss->has_vht) {
+		if (asprintf(&cmd, "UPDATE channel=%d frequency=%d chwidth=%d sec_chan=%d sec_idx0=%d sec_idx1=%d hw_mode=%d ieee80211n=%d", 
+		    channel, 
+		    bss->freq,bss->vht_oper.vht_op_info_chwidth, 
+		    sec_chan, 
+		    bss->vht_oper.vht_op_info_chan_center_freq_seg0_idx, 
+		    bss->vht_oper.vht_op_info_chan_center_freq_seg1_idx, 
+		    hw_mode, !!bss->ht_capab) < 0)
 		return -1;
-
+	} else { 
+		if (asprintf(&cmd, "UPDATE channel=%d frequency=%d sec_chan=%d hw_mode=%d ieee80211n=%d",
+		     channel, bss->freq, sec_chan, hw_mode, !!bss->ht_capab) < 0)
+		return -1;
+	}
+	fprintf(stderr,"send command %s\n",cmd);
+//	char log[256];
+//	sprintf(log,"echo \"send command %s\n\" >> /tmp/send.log\n",cmd);
+//	system(log);
+//	wpa_printf(MSG_DEBUG, "\nsend command %s\n",cmd);
 	ret = wpa_ctrl_request(wpa_s->hostapd, cmd, os_strlen(cmd), buf, &len, NULL);
 	free(cmd);
 
@@ -2102,7 +2117,7 @@ void ibss_mesh_setup_freq(struct wpa_supplicant *wpa_s,
 		if (sec_chan->chan == channel + ht40 * 4)
 			break;
 		sec_chan = NULL;
-	}
+ 	}
 	if (!sec_chan)
 		return;
 
@@ -2113,12 +2128,12 @@ void ibss_mesh_setup_freq(struct wpa_supplicant *wpa_s,
 	freq->channel = pri_chan->chan;
 
 	if (ht40 == -1) {
-		if (!(pri_chan->flag & HOSTAPD_CHAN_HT40MINUS))
-			return;
+ 		if (!(pri_chan->flag & HOSTAPD_CHAN_HT40MINUS))
+ 			return;
 	} else {
-		if (!(pri_chan->flag & HOSTAPD_CHAN_HT40PLUS))
-			return;
-	}
+ 		if (!(pri_chan->flag & HOSTAPD_CHAN_HT40PLUS))
+ 			return;
+ 	}
 	freq->sec_channel_offset = ht40;
 
 	if (obss_scan) {
@@ -5507,7 +5522,6 @@ static void wpa_supplicant_deinit_iface(struct wpa_supplicant *wpa_s,
 	os_free(wpa_s);
 }
 
-
 #ifdef CONFIG_MATCH_IFACE
 
 /**
@@ -5537,6 +5551,7 @@ struct wpa_interface * wpa_supplicant_match_iface(struct wpa_global *global,
 
 	return NULL;
 }
+
 
 /**
  * wpa_supplicant_match_existing - Match existing interfaces
@@ -5579,6 +5594,8 @@ extern void supplicant_event(void *ctx, enum wpa_event_type event,
 
 extern void supplicant_event_global(void *ctx, enum wpa_event_type event,
  				 union wpa_event_data *data);
+
+
 
 /**
  * wpa_supplicant_add_iface - Add a new network interface
@@ -5835,9 +5852,9 @@ struct wpa_global * wpa_supplicant_init(struct wpa_params *params)
 #ifndef CONFIG_NO_WPA_MSG
 	wpa_msg_register_ifname_cb(wpa_supplicant_msg_ifname_cb);
 #endif /* CONFIG_NO_WPA_MSG */
+
 	wpa_supplicant_event = supplicant_event;
 	wpa_supplicant_event_global = supplicant_event_global;
-
 	if (params->wpa_debug_file_path)
 		wpa_debug_open_file(params->wpa_debug_file_path);
 	else

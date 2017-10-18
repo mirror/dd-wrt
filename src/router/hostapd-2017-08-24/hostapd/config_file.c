@@ -116,6 +116,10 @@ static int hostapd_acl_comp(const void *a, const void *b)
 {
 	const struct mac_acl_entry *aa = a;
 	const struct mac_acl_entry *bb = b;
+
+	if (!!aa->mask != !!bb->mask)
+		return !!aa->mask - !!bb->mask;
+
 	return os_memcmp(aa->addr, bb->addr, sizeof(macaddr));
 }
 
@@ -124,11 +128,12 @@ static int hostapd_config_read_maclist(const char *fname,
 				       struct mac_acl_entry **acl, int *num)
 {
 	FILE *f;
-	char buf[128], *pos;
+	char buf[128], *pos, *macpos, *sep;
 	int line = 0;
 	u8 addr[ETH_ALEN];
 	struct mac_acl_entry *newacl;
-	int vlan_id;
+	int vlan_id, mask;
+	int i;
 
 	f = fopen(fname, "r");
 	if (!f) {
@@ -158,8 +163,27 @@ static int hostapd_config_read_maclist(const char *fname,
 			rem = 1;
 			pos++;
 		}
+		pos = buf;	
+		macpos = buf;
+		while (*pos != '\0' && *pos != ' ' && *pos != '\t')
+			pos++;
 
-		if (hwaddr_aton(pos, addr)) {
+		sep = strchr(buf, '/');
+		if (sep && sep < pos) {
+			*(sep++) = 0;
+			mask = strtoul(sep, &pos, 10);
+			if (mask >= 8 * ETH_ALEN) {
+				wpa_printf(MSG_ERROR, "Invalid MAC address mask '%d'\n",
+					   mask);
+				fclose(f);
+				return -1;
+			}
+		}
+		else {
+			mask = 0;
+		}
+
+		if (hwaddr_aton(macpos, addr)) {
 			wpa_printf(MSG_ERROR, "Invalid MAC address '%s' at "
 				   "line %d in '%s'", pos, line, fname);
 			fclose(f);
@@ -201,6 +225,7 @@ static int hostapd_config_read_maclist(const char *fname,
 			  sizeof((*acl)[*num].vlan_id));
 		(*acl)[*num].vlan_id.untagged = vlan_id;
 		(*acl)[*num].vlan_id.notempty = !!vlan_id;
+		(*acl)[*num].mask = mask;
 		(*num)++;
 	}
 
@@ -1231,6 +1256,8 @@ static int hostapd_config_vht_capab(struct hostapd_config *conf,
 		conf->vht_capab |= (3 << VHT_CAP_SOUNDING_DIMENSION_OFFSET);
 	if (os_strstr(capab, "[MU-BEAMFORMER]"))
 		conf->vht_capab |= VHT_CAP_MU_BEAMFORMER_CAPABLE;
+	if (os_strstr(capab, "[MU-BEAMFORMEE]"))
+		conf->vht_capab |= VHT_CAP_MU_BEAMFORMEE_CAPABLE;
 	if (os_strstr(capab, "[VHT-TXOP-PS]"))
 		conf->vht_capab |= VHT_CAP_VHT_TXOP_PS;
 	if (os_strstr(capab, "[HTC-VHT]"))
@@ -2768,6 +2795,9 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 			conf->channel = atoi(pos);
 			conf->acs = conf->channel == 0;
 		}
+	} else if (os_strcmp(buf, "frequency") == 0) {
+		conf->frequency = atoi(pos);
+		conf->acs = conf->frequency == 0;
 	} else if (os_strcmp(buf, "chanlist") == 0) {
 		if (hostapd_parse_chanlist(conf, pos)) {
 			wpa_printf(MSG_ERROR, "Line %d: invalid channel list",
@@ -3018,8 +3048,6 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 #ifdef CONFIG_IEEE80211N
 	} else if (os_strcmp(buf, "noscan") == 0) {
 		conf->noscan = atoi(pos);
-	} else if (os_strcmp(buf, "ht_coex") == 0) {
-		conf->no_ht_coex = !atoi(pos);
 	} else if (os_strcmp(buf, "ieee80211n") == 0) {
 		conf->ieee80211n = atoi(pos);
 	} else if (os_strcmp(buf, "ht_capab") == 0) {
@@ -3028,6 +3056,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 				   line);
 			return 1;
 		}
+	} else if (os_strcmp(buf, "dynamic_ht40") == 0) {
+		conf->dynamic_ht40 = atoi(pos);
 	} else if (os_strcmp(buf, "require_ht") == 0) {
 		conf->require_ht = atoi(pos);
 	} else if (os_strcmp(buf, "obss_interval") == 0) {
@@ -3091,6 +3121,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		bss->wps_independent = atoi(pos);
 	} else if (os_strcmp(buf, "ap_setup_locked") == 0) {
 		bss->ap_setup_locked = atoi(pos);
+	} else if (os_strcmp(buf, "dualband") == 0) {
+		bss->dualband = atoi(pos);
 	} else if (os_strcmp(buf, "uuid") == 0) {
 		if (uuid_str2bin(pos, bss->uuid)) {
 			wpa_printf(MSG_ERROR, "Line %d: invalid UUID", line);

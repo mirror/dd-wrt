@@ -227,16 +227,66 @@ int hostapd_prepare_rates(struct hostapd_iface *iface,
 #ifdef CONFIG_IEEE80211N
 static int ieee80211n_allowed_ht40_channel_pair(struct hostapd_iface *iface)
 {
-	int pri_chan, sec_chan;
+	int sec_chan, ok, j, first;
+	int allowed[] = { 36, 44, 52, 60, 100, 108, 116, 124, 132, 149, 157,
+			  184, 192 };
+	size_t k;
 
 	if (!iface->conf->secondary_channel)
 		return 1; /* HT40 not used */
 
-	pri_chan = iface->conf->channel;
-	sec_chan = pri_chan + iface->conf->secondary_channel * 4;
+	sec_chan = iface->conf->channel + iface->conf->secondary_channel * 4;
+	wpa_printf(MSG_DEBUG, "HT40: control channel: %d  "
+		   "secondary channel: %d",
+		   iface->conf->channel, sec_chan);
 
-	return allowed_ht40_channel_pair(iface->current_mode, pri_chan,
-					 sec_chan);
+	/* Verify that HT40 secondary channel is an allowed 20 MHz
+	 * channel */
+	ok = 0;
+	for (j = 0; j < iface->current_mode->num_channels; j++) {
+		struct hostapd_channel_data *chan =
+			&iface->current_mode->channels[j];
+		if (!(chan->flag & HOSTAPD_CHAN_DISABLED) &&
+		    chan->chan == sec_chan) {
+			ok = 1;
+			break;
+		}
+	}
+	if (!ok) {
+		wpa_printf(MSG_ERROR, "HT40 secondary channel %d not allowed",
+			   sec_chan);
+		return 0;
+	}
+
+	/*
+	 * Verify that HT40 primary,secondary channel pair is allowed per
+	 * IEEE 802.11n Annex J. This is only needed for 5 GHz band since
+	 * 2.4 GHz rules allow all cases where the secondary channel fits into
+	 * the list of allowed channels (already checked above).
+	 */
+//	if (1 || iface->current_mode->mode != HOSTAPD_MODE_IEEE80211A)
+		return 1;
+
+	if (iface->conf->secondary_channel > 0)
+		first = iface->conf->channel;
+	else
+		first = sec_chan;
+
+	ok = 0;
+	for (k = 0; k < ARRAY_SIZE(allowed); k++) {
+		if (first == allowed[k]) {
+			ok = 1;
+			break;
+		}
+	}
+	if (!ok) {
+		wpa_printf(MSG_ERROR, "HT40 channel pair (%d, %d) not allowed",
+			   iface->conf->channel,
+			   iface->conf->secondary_channel);
+		return 0;
+	}
+
+	return 1;
 }
 
 
@@ -244,9 +294,11 @@ static void ieee80211n_switch_pri_sec(struct hostapd_iface *iface)
 {
 	if (iface->conf->secondary_channel > 0) {
 		iface->conf->channel += 4;
+		iface->conf->frequency += 20;
 		iface->conf->secondary_channel = -1;
 	} else {
 		iface->conf->channel -= 4;
+		iface->conf->frequency -= 20;
 		iface->conf->secondary_channel = 1;
 	}
 }
@@ -313,7 +365,7 @@ static void ieee80211n_check_scan(struct hostapd_iface *iface)
 	wpa_scan_results_free(scan_res);
 
 	iface->secondary_ch = iface->conf->secondary_channel;
-	if (!oper40) {
+	if (!oper40 && iface->conf->dynamic_ht40) {
 		wpa_printf(MSG_INFO, "20/40 MHz operation not permitted on "
 			   "channel pri=%d sec=%d based on overlapping BSSes",
 			   iface->conf->channel,
@@ -480,8 +532,7 @@ static int ieee80211n_check_40mhz(struct hostapd_iface *iface)
 	int ret;
 
 	/* Check that HT40 is used and PRI / SEC switch is allowed */
-	if (!iface->conf->secondary_channel || iface->conf->no_pri_sec_switch ||
-		iface->conf->noscan)
+	if (!iface->conf->secondary_channel || iface->conf->no_pri_sec_switch || iface->conf->noscan)
 		return 0;
 
 	hostapd_set_state(iface, HAPD_IFACE_HT_SCAN);
