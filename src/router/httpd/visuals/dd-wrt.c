@@ -4528,7 +4528,7 @@ void show_preshared(webs_t wp, char *prefix)
 
 #ifdef HAVE_MADWIFI
 		//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
-		char eap_key_retries[32];
+		char eap_key_retries[64];
 		sprintf(eap_key_retries, "%s_disable_eapol_key_retries", prefix);
 		showRadio(wp, "wpa.eapol_key_retries", eap_key_retries);
 #endif
@@ -4975,7 +4975,7 @@ void show_wparadius(webs_t wp, char *prefix)
 	websWrite(wp, "</div>\n");
 #ifdef HAVE_MADWIFI
 	//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
-	char eap_key_retries[32];
+	char eap_key_retries[64];
 	sprintf(eap_key_retries, "%s_disable_eapol_key_retries", prefix);
 	showRadio(wp, "wpa.eapol_key_retries", eap_key_retries);
 #endif
