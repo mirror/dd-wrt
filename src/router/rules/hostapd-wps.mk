@@ -14,9 +14,11 @@ endif
 #endif
 #ifeq ($(CONFIG_ATH10K),y)
 #HOSTAPDVERSION=2014-10-25
-HOSTAPDVERSION=2016-09-05
+HOSTAPDVERSION=2017-08-24
 #endif
-ATH9K_CFLAGS += $(MIPS16_OPT) 
+
+ATH9K_CFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
+ATH9K_LDCFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 hostapd2: $(TINY)
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/hostapd clean
