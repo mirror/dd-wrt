@@ -16,7 +16,7 @@
 #ifndef _FILE_H
 #define _FILE_H
 
-#define STRLEN 80               /* Length of a string */
+#define STRLEN 100              /* Length of a string */
 
 /* Definition of a keyword */
 struct keyword
@@ -81,6 +81,7 @@ struct lns
     char entname[STRLEN];       /* Name of this entry */
     struct iprange *lacs;       /* Hosts permitted to connect */
     struct iprange *range;      /* Range of IP's we provide */
+    struct iprange *localrange; /* Range of local IP's we provide */
     int assign_ip;              /* Do we actually provide IP addresses? */
     int passwdauth;             /* Authenticate by passwd file? (or PAM) */
     int pap_require;            /* Require PAP auth for PPP */
@@ -151,6 +152,7 @@ struct global
     char pidfile[STRLEN];       /* File containing the pid number*/
     char controlfile[STRLEN];   /* Control file name (named pipe) */
     int daemon;                 /* Use daemon mode? */
+    int syslog;                 /* Use syslog for logging? */
     int accesscontrol;          /* Use access control? */
     int forceuserspace;         /* Force userspace? */
     int packet_dump;		/* Dump (print) all packets? */
@@ -176,4 +178,5 @@ extern int init_config ();      /* Read in the config file */
 extern int parse_one_option (char *word, char *value, int context, void *item);
 /* Allocate memory and filled up new lac */
 extern struct lac *new_lac ();
+extern struct lns *new_lns ();
 #endif
