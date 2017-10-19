@@ -33,6 +33,7 @@ struct global gconfig;
 #ifdef NEED_PRINTF
 char filerr[STRLEN];
 #endif
+
 int parse_config (FILE *);
 struct keyword words[];
 
@@ -75,9 +76,6 @@ int init_config ()
     returnedValue = parse_config (f);
     fclose (f);
     return (returnedValue);
-#ifdef NEED_PRINTF
-    filerr[0] = 0;
-#endif
 }
 
 struct lns *new_lns ()
@@ -106,6 +104,7 @@ struct lns *new_lns ()
     tmp->hostname[0] = 0;
     tmp->entname[0] = 0;
     tmp->range = NULL;
+    tmp->localrange = NULL;
     tmp->assign_ip = 1;                /* default to 'yes' */
     tmp->lacs = NULL;
     tmp->passwdauth = 0;
@@ -213,6 +212,7 @@ int set_int (char *word, char *value, int *ptr)
 #ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "%s must be a number\n", word);
 #endif
+
         return -1;
     }
     *ptr = val;
@@ -755,10 +755,8 @@ int set_papchap (char *word, char *value, int context, void *item)
             n->chap_require = result;
         break;
     default:
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
-#endif
         return -1;
     }
     return 0;
@@ -773,10 +771,8 @@ int set_redial (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
-#endif
         return -1;
     }
     return 0;
@@ -792,10 +788,8 @@ int set_accesscontrol (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
-#endif
         return -1;
     }
     return 0;
@@ -811,10 +805,8 @@ int set_userspace (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
-#endif
         return -1;
     }
     return 0;
@@ -830,10 +822,8 @@ int set_debugavp (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
-#endif
         return -1;
     }
     return 0;
@@ -849,10 +839,8 @@ int set_debugnetwork (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
-#endif
         return -1;
     }
     return 0;
@@ -868,10 +856,8 @@ int set_debugpacket (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
-#endif
         return -1;
     }
     return 0;
@@ -887,10 +873,8 @@ int set_debugtunnel (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
-#endif
         return -1;
     }
     return 0;
@@ -906,10 +890,8 @@ int set_debugstate (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
-#endif
         return -1;
     }
     return 0;
@@ -924,10 +906,8 @@ int set_assignip (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
-#endif
         return -1;
     }
     return 0;
@@ -951,20 +931,16 @@ struct iprange *set_range (char *word, char *value, struct iprange *in)
     }
     if (!strlen (value) || (c && !strlen (d)))
     {
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr),
                   "format is '%s <host or ip> - <host or ip>'\n", word);
-#endif
         return NULL;
     }
-    ipr = (struct iprange *) malloc (sizeof (struct iprange));
+    ipr = malloc (sizeof (struct iprange));
     ipr->next = NULL;
     hp = gethostbyname (value);
     if (!hp)
     {
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "Unknown host %s\n", value);
-#endif
         free (ipr);
         return NULL;
     }
@@ -996,9 +972,7 @@ struct iprange *set_range (char *word, char *value, struct iprange *in)
         hp = gethostbyname (d);
         if (!hp)
         {
-#ifdef NEED_PRINTF
             snprintf (filerr, sizeof (filerr), "Unknown host %s\n", d);
-#endif
             free (ipr);
             return NULL;
         }
@@ -1008,9 +982,7 @@ struct iprange *set_range (char *word, char *value, struct iprange *in)
         ipr->end = ipr->start;
     if (ntohl (ipr->start) > ntohl (ipr->end))
     {
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "start is greater than end!\n");
-#endif
         free (ipr);
         return NULL;
     }
@@ -1038,14 +1010,40 @@ int set_iprange (char *word, char *value, int context, void *item)
     case CONTEXT_LNS:
         break;
     default:
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
-#endif
         return -1;
     }
     lns->range = set_range (word, value, lns->range);
     if (!lns->range)
+        return -1;
+#ifdef DEBUG_FILE
+    l2tp_log (LOG_DEBUG, "range start = %x, end = %x, sense=%ud\n",
+         ntohl (lns->range->start), ntohl (lns->range->end), lns->range->sense);
+#endif
+    return 0;
+}
+
+int set_localiprange (char *word, char *value, int context, void *item)
+{
+    struct lns *lns = (struct lns *) item;
+    switch (context & ~CONTEXT_DEFAULT)
+    {
+    case CONTEXT_LNS:
+        break;
+    default:
+        snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
+                  word);
+        return -1;
+    }
+
+    if (lns->localaddr) {
+        snprintf (filerr, sizeof (filerr), "'local ip range' and 'local ip' are mutually exclusive\n");
+	return -1;
+    }
+
+    lns->localrange = set_range (word, value, lns->localrange);
+    if (!lns->localrange)
         return -1;
 #ifdef DEBUG_FILE
     l2tp_log (LOG_DEBUG, "range start = %x, end = %x, sense=%ud\n",
@@ -1062,10 +1060,8 @@ int set_lac (char *word, char *value, int context, void *item)
     case CONTEXT_LNS:
         break;
     default:
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
-#endif
         return -1;
     }
     lns->lacs = set_range (word, value, lns->lacs);
@@ -1087,10 +1083,8 @@ int set_exclusive (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
-#endif
         return -1;
     }
     return 0;
@@ -1102,10 +1096,8 @@ int set_ip (char *word, char *value, unsigned int *addr)
     hp = gethostbyname (value);
     if (!hp)
     {
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "%s: host '%s' not found\n",
                   __FUNCTION__, value);
-#endif
         return -1;
     }
     bcopy (hp->h_addr, addr, sizeof (unsigned int));
@@ -1125,10 +1117,8 @@ int set_listenaddr (char *word, char *value, int context, void *item)
 		return -1;
 	break;
     default:
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
-#endif
         return -1;
     }
     return 0;
@@ -1145,12 +1135,15 @@ int set_localaddr (char *word, char *value, int context, void *item)
         return set_ip (word, value, &(l->localaddr));
     case CONTEXT_LNS:
         n = (struct lns *) item;
+        if (n->localrange) {
+            snprintf (filerr, sizeof (filerr),
+                    "'local ip range' and 'local ip' are mutually exclusive\n");
+            return -1;
+        }
         return set_ip (word, value, &(n->localaddr));
     default:
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
-#endif
         return -1;
     }
     return 0;
@@ -1165,10 +1158,8 @@ int set_remoteaddr (char *word, char *value, int context, void *item)
         l = (struct lac *) item;
         return set_ip (word, value, &(l->remoteaddr));
     default:
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
-#endif
         return -1;
     }
     return 0;
@@ -1200,9 +1191,7 @@ int set_lns (char *word, char *value, int context, void *item)
         hp = gethostbyname (value);
         if (!hp)
         {
-#ifdef NEED_PRINTF
             snprintf (filerr, sizeof (filerr), "no such host '%s'\n", value);
-#endif
             return -1;
         }
 #endif
@@ -1226,10 +1215,8 @@ int set_lns (char *word, char *value, int context, void *item)
             ipr->port = UDP_LISTEN_PORT;
         break;
     default:
-#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
-#endif
         return -1;
     }
     return 0;
@@ -1261,10 +1248,8 @@ int set_ipsec_saref (char *word, char *value, int context, void *item)
 	    }
 	    break;
     default:
-#ifdef NEED_PRINTF
 	    snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
 		      word);
-#endif
 	    return -1;
     }
     return 0;
@@ -1279,9 +1264,7 @@ int set_saref_num (char *word, char *value, int context, void *item)
 		set_int (word, value, &(((struct global *) item)->sarefnum));
 		break;
 	default:
-#ifdef NEED_PRINTF
 		snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n", word);
-#endif
 		return -1;
 	}
     return 0;
@@ -1330,9 +1313,7 @@ int set_rand_source (char *word, char *value, int context, void *item)
     /* WORKING HERE */
     if (strlen(value) == 0)
     {
-#ifdef NEED_PRINTF
         snprintf(filerr, sizeof (filerr), "no randomness source specified\n");
-#endif
         return -1;
     }
     if (strncmp(value, "egd", 3) == 0)
@@ -1554,7 +1535,7 @@ int parse_config (FILE * f)
 #ifdef DEBUG_FILE
             l2tp_log (LOG_DEBUG, "parse_config: field is %s, value is %s\n", s, t);
 #endif
-            /* Okay, bit twidling is done.  Let's handle this */
+            /* Okay, bit twiddling is done.  Let's handle this */
             
             switch (parse_one_option (s, t, context | def, data))
             {
@@ -1620,6 +1601,7 @@ struct keyword words[] = {
     {"no lac", &set_lac},
     {"assign ip", &set_assignip},
     {"local ip", &set_localaddr},
+    {"local ip range", &set_localiprange},
     {"remote ip", &set_remoteaddr},
     {"defaultroute", &set_defaultroute},
     {"length bit", &set_lbit},

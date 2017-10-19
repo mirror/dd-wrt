@@ -1,0 +1,103 @@
+.TH "xl2tpd-control" "8" "" "Alexander Dorokhov" ""
+.SH "NAME"
+xl2tpd\-control \- Layer 2 Tunnelling Protocol Daemon Contorl Utility
+.SH "DESCRIPTION"
+A Layer 2 Tunneling Protocol Daemon Control Utility for Linux.
+
+Currently maintained by Xelerance
+  http://www.xelerance.com/software/xl2tpd/
+
+.SH "SYNOPSIS"
+.HP \w'\fBipsec\fR\ 'u
+\fBxl2tpd-control\fR [\fI-c\fR <PATH>] \fI<command>\fR \fI<tunnel name>\fR [\fI<COMMAND OPTIONS>\fR]
+
+
+.SH "OPTIONS"
+.TP
+.B -c
+This option specifies xl2tpd control file
+
+.TP
+.B -d
+This option specify xl2tpd-control to run in debug mode
+
+.SH "COMMANDS"
+.TP
+.B add
+Adds new or modify existing lac configuration. Configuration must be
+specified as command options in <key>=<value> pairs format. See available
+options in xl2tpd.conf(5)
+
+.TP
+.B connect
+Tries to activate the tunnel. Username and secret for the tunnel can be
+passed as command options.
+
+.TP
+.B disconnect
+Disconnects the tunnel.
+
+.TP
+.B remove
+
+.TP
+.B add-lac
+Adds new or modify existing lac configuration.
+
+.TP
+.B connect-lac
+
+.TP
+.B disconnect-lac
+
+.TP
+.B remove-lac
+
+.TP
+.B add-lns
+Adds new or modify existing lns configuration.
+
+.TP
+.B remove-lns
+
+.TP
+.B status
+
+.TP
+.B status-lns
+
+.TP
+.B available
+
+.SH "BUGS"
+
+Please address bugs and comment to xl2tpd@lists.xelerance.com
+.SH "SEE ALSO"
+
+\fB\fRxl2tpd.conf(5)
+.SH "AUTHORS"
+Forked from l2tpd by Xelerance (http://www.xelerance.com/software/xl2tpd/
+
+Michael Richardson <mcr@xelerance.com>
+Paul Wouters <paul@xelerance.com>
+Samir Hussain <shussain@xelerance.com>
+
+Many thanks to Jacco de Leeuw <jacco2@dds.nl> for maintaining l2tpd.
+
+Patched contributed by:
+Alexander Dorokhov <alex.dorokhov@gmail.com>
+
+Previous development was hosted at sourceforge
+(http://www.sourceforge.net/projects/l2tpd) by:
+.P
+Scott Balmos <sbalmos@iglou.com>
+.br
+David Stipp <dstipp@one.net>
+.br
+Jeff McAdams <jeffm@iglou.com>
+
+Based off of l2tpd version 0.60
+.br
+Copyright (C)1998 Adtran, Inc.
+.br
+Mark Spencer <markster@marko.net>
