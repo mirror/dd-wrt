@@ -43,7 +43,7 @@ int init_network (void)
     unsigned int length = sizeof (server);
     gethostname (hostname, sizeof (hostname));
     server.sin_family = AF_INET;
-    server.sin_addr.s_addr = gconfig.listenaddr; 
+    server.sin_addr.s_addr = gconfig.listenaddr;
     server.sin_port = htons (gconfig.port);
     int flags;
     if ((server_socket = socket (PF_INET, SOCK_DGRAM, 0)) < 0)
@@ -85,7 +85,7 @@ int init_network (void)
 
 	    gconfig.ipsecsaref=0;
     }
-    
+
     arg=1;
     if(setsockopt(server_socket, IPPROTO_IP, IP_PKTINFO, (char*)&arg, sizeof(arg)) != 0) {
 	    l2tp_log(LOG_CRIT, "setsockopt IP_PKTINFO: %s\n", strerror(errno));
@@ -97,14 +97,6 @@ int init_network (void)
 
 #endif
 
-    /* turn off UDP checksums */
-    arg=1;
-#ifdef SO_NO_CHECK
-    if (setsockopt(server_socket, SOL_SOCKET, SO_NO_CHECK , (void*)&arg,
-                   sizeof(arg)) ==-1) {
-      l2tp_log(LOG_INFO, "unable to turn off UDP checksums");
-    }
-#endif
 #ifdef USE_KERNEL
     if (gconfig.forceuserspace)
     {
@@ -139,7 +131,7 @@ int init_network (void)
 static inline void extract (void *buf, int *tunnel, int *call)
 {
     /*
-     * Extract the tunnel and call #'s, and fix the order of the 
+     * Extract the tunnel and call #'s, and fix the order of the
      * version
      */
 
@@ -190,11 +182,11 @@ void dethrottle (void *call)
 /*	struct call *c = (struct call *)call; */
 /*	if (c->throttle) {
 #ifdef DEBUG_FLOW
-		log(LOG_DEBUG, "%s: dethrottling call %d, and setting R-bit\n",__FUNCTION__,c->ourcid); 
+		log(LOG_DEBUG, "%s: dethrottling call %d, and setting R-bit\n",__FUNCTION__,c->ourcid);
 #endif 		c->rbit = RBIT;
 		c->throttle = 0;
 	} else {
-		log(LOG_DEBUG, "%s:  call %d already dethrottled?\n",__FUNCTION__,c->ourcid); 	
+		log(LOG_DEBUG, "%s:  call %d already dethrottled?\n",__FUNCTION__,c->ourcid);
 	} */
 }
 
@@ -265,9 +257,9 @@ void control_xmit (void *b)
     else
     {
         /*
-           * FIXME:  How about adaptive timeouts?
+           * Adaptive timeout with exponential backoff
          */
-        tv.tv_sec = 1;
+        tv.tv_sec = 1LL << (buf->retries-1);
         tv.tv_usec = 0;
         schedule (tv, control_xmit, buf);
 #ifdef DEBUG_CONTROL_XMIT
@@ -280,24 +272,20 @@ void control_xmit (void *b)
 
 void udp_xmit (struct buffer *buf, struct tunnel *t)
 {
-    struct cmsghdr *cmsg;
+    struct cmsghdr *cmsg = NULL;
     char cbuf[CMSG_SPACE(sizeof (unsigned int) + sizeof (struct in_pktinfo))];
     unsigned int *refp;
     struct msghdr msgh;
     int err;
     struct iovec iov;
-    struct in_pktinfo *pktinfo;
-    int finallen;
-    
+    int finallen = 0;
+
     /*
      * OKAY, now send a packet with the right SAref values.
      */
     memset(&msgh, 0, sizeof(struct msghdr));
-
-    cmsg = NULL;
     msgh.msg_control = cbuf;
     msgh.msg_controllen = sizeof(cbuf);
-    finallen = 0;
 
     if (gconfig.ipsecsaref && t->refhim != IPSEC_SAREF_NULL) {
 	cmsg = CMSG_FIRSTHDR(&msgh);
@@ -310,38 +298,49 @@ void udp_xmit (struct buffer *buf, struct tunnel *t)
 	}
 	refp = (unsigned int *)CMSG_DATA(cmsg);
 	*refp = t->refhim;
-	
+
 	finallen = cmsg->cmsg_len;
     }
-    
+
+#ifdef LINUX
     if (t->my_addr.ipi_addr.s_addr){
+	struct in_pktinfo *pktinfo;
 
 	if ( ! cmsg) {
-		cmsg = CMSG_FIRSTHDR(&msgh);		
+		cmsg = CMSG_FIRSTHDR(&msgh);
 	}
 	else {
 		cmsg = CMSG_NXTHDR(&msgh, cmsg);
 	}
-	
+
 	cmsg->cmsg_level = IPPROTO_IP;
 	cmsg->cmsg_type = IP_PKTINFO;
 	cmsg->cmsg_len = CMSG_LEN(sizeof(struct in_pktinfo));
 
 	pktinfo = (struct in_pktinfo*) CMSG_DATA(cmsg);
 	*pktinfo = t->my_addr;
-	
+
 	finallen += cmsg->cmsg_len;
     }
-    
+#endif
+
+    /*
+     * Some OS don't like assigned buffer with zero length (e.g. OpenBSD),
+     * some OS don't like empty buffer with non-zero length (e.g. Linux).
+     * So make them all happy by assigning control buffer only if we really
+     * have something there and zero both fields otherwise.
+     */
     msgh.msg_controllen = finallen;
-    
+    if (!finallen)
+        msgh.msg_control = NULL;
+
     iov.iov_base = buf->start;
     iov.iov_len  = buf->len;
 
     /* return packet from whence it came */
     msgh.msg_name    = &buf->peer;
     msgh.msg_namelen = sizeof(buf->peer);
-    
+
     msgh.msg_iov  = &iov;
     msgh.msg_iovlen = 1;
     msgh.msg_flags = 0;
@@ -484,7 +483,8 @@ void network_thread ()
         server_socket_processed = 0;
         currentfd = NULL;
         st = tunnels.head;
-        while (st || !server_socket_processed) {
+        while (st || !server_socket_processed)
+		{
             if (st && (st->udp_fd == -1)) {
                 st=st->next;
                 continue;
@@ -508,9 +508,9 @@ void network_thread ()
 
 	    memset(&from, 0, sizeof(from));
 	    memset(&to,   0, sizeof(to));
-	    
+
 	    fromlen = sizeof(from);
-	    
+
 	    memset(&msgh, 0, sizeof(struct msghdr));
 	    iov.iov_base = buf->start;
 	    iov.iov_len  = buf->len;
@@ -521,7 +521,7 @@ void network_thread ()
 	    msgh.msg_iov  = &iov;
 	    msgh.msg_iovlen = 1;
 	    msgh.msg_flags = 0;
-	    
+
 	    /* Receive one packet. */
 	    recvsize = recvmsg(*currentfd, &msgh, 0);
 
@@ -546,6 +546,7 @@ void network_thread ()
                     l2tp_log (LOG_WARNING, "%s: received too small a packet\n",
                          __FUNCTION__);
                 }
+		if (st) st=st->next;
 		continue;
             }
 
@@ -558,16 +559,18 @@ void network_thread ()
 		for (cmsg = CMSG_FIRSTHDR(&msgh);
 			cmsg != NULL;
 			cmsg = CMSG_NXTHDR(&msgh,cmsg)) {
+#ifdef LINUX
 			/* extract destination(our) addr */
 			if (cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_PKTINFO) {
 				struct in_pktinfo* pktInfo = ((struct in_pktinfo*)CMSG_DATA(cmsg));
 				to = *pktInfo;
-			}
+			} else
+#endif
 			/* extract IPsec info out */
-			else if (gconfig.ipsecsaref && cmsg->cmsg_level == IPPROTO_IP
+			if (gconfig.ipsecsaref && cmsg->cmsg_level == IPPROTO_IP
 			&& cmsg->cmsg_type == gconfig.sarefnum) {
 				unsigned int *refp;
-				
+
 				refp = (unsigned int *)CMSG_DATA(cmsg);
 				refme =refp[0];
 				refhim=refp[1];
@@ -595,59 +598,55 @@ void network_thread ()
 	    {
 		do_packet_dump (buf);
 	    }
-	    if (!
-		(c = get_call (tunnel, call, from.sin_addr,
-			       from.sin_port, refme, refhim)))
-	    {
-		if ((c =
-		     get_tunnel (tunnel, from.sin_addr.s_addr,
-				 from.sin_port)))
-		{
-		    /*
-		     * It is theoretically possible that we could be sent
-		     * a control message (say a StopCCN) on a call that we
-		     * have already closed or some such nonsense.  To
-		     * prevent this from closing the tunnel, if we get a
-		     * call on a valid tunnel, but not with a valid CID,
-		     * we'll just send a ZLB to ack receiving the packet.
-		     */
-		    if (gconfig.debug_tunnel)
-			l2tp_log (LOG_DEBUG,
-				  "%s: no such call %d on tunnel %d.  Sending special ZLB\n",
-				  __FUNCTION__);
-		    handle_special (buf, c, call);
 
-		    /* get a new buffer */
-		    buf = new_buf (MAX_RECV_SIZE);
-		}
-		else
-		    l2tp_log (LOG_DEBUG,
-			      "%s: unable to find call or tunnel to handle packet.  call = %d, tunnel = %d Dumping.\n",
-			      __FUNCTION__, call, tunnel);
-		
-	    }
-	    else
-	    {
-		if (c->container) {
-			c->container->my_addr = to;
-		}
+        if (!(c = get_call (tunnel, call, from.sin_addr,
+                from.sin_port, refme, refhim)))
+        {
+            if ((c = get_tunnel (tunnel, from.sin_addr.s_addr, from.sin_port)))
+            {
+                /*
+                * It is theoretically possible that we could be sent
+                * a control message (say a StopCCN) on a call that we
+                * have already closed or some such nonsense.  To
+                * prevent this from closing the tunnel, if we get a
+                * call on a valid tunnel, but not with a valid CID,
+                * we'll just send a ZLB to ACK receiving the packet.
+                */
+                if (gconfig.debug_tunnel)
+                l2tp_log (LOG_DEBUG,
+                    "%s: no such call %d on tunnel %d.  Sending special ZLB\n",
+                    __FUNCTION__);
+                if(1==handle_special (buf, c, call)) {
+                    buf = new_buf (MAX_RECV_SIZE);
+                }
+            }
+            else
+                l2tp_log (LOG_DEBUG,
+                    "%s: unable to find call or tunnel to handle packet.  call = %d, tunnel = %d Dumping.\n",
+                    __FUNCTION__, call, tunnel);
+        }
+        else
+        {
+            if (c->container) {
+                c->container->my_addr = to;
+            }
 
-		buf->peer = from;
-		/* Handle the packet */
-		c->container->chal_us.vector = NULL;
-		if (handle_packet (buf, c->container, c))
-		{
-		    if (gconfig.debug_tunnel)
-			l2tp_log (LOG_DEBUG, "%s: bad packet\n", __FUNCTION__);
-		};
-		if (c->cnu)
-		{
-		    /* Send Zero Byte Packet */
-		    control_zlb (buf, c->container, c);
-		    c->cnu = 0;
-		}
-	    };
-	}
+            buf->peer = from;
+            /* Handle the packet */
+            c->container->chal_us.vector = NULL;
+            if (handle_packet (buf, c->container, c))
+            {
+                if (gconfig.debug_tunnel)
+                l2tp_log (LOG_DEBUG, "%s: bad packet\n", __FUNCTION__);
+            }
+            if (c->cnu)
+            {
+                /* Send Zero Byte Packet */
+                control_zlb (buf, c->container, c);
+                c->cnu = 0;
+            }
+        }
+    }
 	if (st) st=st->next;
 	}
 
@@ -664,34 +663,13 @@ void network_thread ()
                 {
                     /* Got some payload to send */
                     int result;
-                    recycle_payload (buf, sc->container->peer);
-/*
-#ifdef DEBUG_FLOW_MORE
-                    l2tp_log (LOG_DEBUG, "%s: rws = %d, pSs = %d, pLr = %d\n",
-                         __FUNCTION__, sc->rws, sc->pSs, sc->pLr);
-#endif
-		    if ((sc->rws>0) && (sc->pSs > sc->pLr + sc->rws) && !sc->rbit) {
-#ifdef DEBUG_FLOW
-						log(LOG_DEBUG, "%s: throttling payload (call = %d, tunnel = %d, Lr = %d, Ss = %d, rws = %d)!\n",__FUNCTION__,
-								 sc->cid, sc->container->tid, sc->pLr, sc->pSs, sc->rws); 
-#endif
-						sc->throttle = -1;
-						We unthrottle in handle_packet if we get a payload packet, 
-						valid or ZLB, but we also schedule a dethrottle in which
-						case the R-bit will be set
-						FIXME: Rate Adaptive timeout? 						
-						tv.tv_sec = 2;
-						tv.tv_usec = 0;
-						sc->dethrottle = schedule(tv, dethrottle, sc); 					
-					} else */
-/*					while ((result=read_packet(buf,sc->fd,sc->frame & SYNC_FRAMING))>0) { */
-                    while ((result =
-                            read_packet (buf, sc->fd, SYNC_FRAMING)) > 0)
+
+                    while ((result = read_packet (sc)) > 0)
                     {
-                        add_payload_hdr (sc->container, sc, buf);
+                        add_payload_hdr (sc->container, sc, sc->ppp_buf);
                         if (gconfig.packet_dump)
                         {
-                            do_packet_dump (buf);
+                            do_packet_dump (sc->ppp_buf);
                         }
 
 
@@ -701,10 +679,10 @@ void network_thread ()
                             deschedule (sc->zlb_xmit);
                             sc->zlb_xmit = NULL;
                         }
-                        sc->tx_bytes += buf->len;
+                        sc->tx_bytes += sc->ppp_buf->len;
                         sc->tx_pkts++;
-                        udp_xmit (buf, st);
-                        recycle_payload (buf, sc->container->peer);
+                        udp_xmit (sc->ppp_buf, st);
+                        recycle_payload (sc->ppp_buf, sc->container->peer);
                     }
                     if (result != 0)
                     {
@@ -731,6 +709,8 @@ int connect_pppol2tp(struct tunnel *t) {
             struct sockaddr_pppol2tp sax;
 
             struct sockaddr_in server;
+
+            memset(&server, 0, sizeof(struct sockaddr_in));
             server.sin_family = AF_INET;
             server.sin_addr.s_addr = gconfig.listenaddr;
             server.sin_port = htons (gconfig.port);
@@ -764,6 +744,7 @@ int connect_pppol2tp(struct tunnel *t) {
             if (connect (ufd, (struct sockaddr *) &server, sizeof(server)) < 0) {
                 l2tp_log (LOG_CRIT, "%s: Unable to connect UDP peer. Terminating.\n",
                  __FUNCTION__);
+                close(ufd);
                 return -EINVAL;
             }
 
@@ -779,6 +760,7 @@ int connect_pppol2tp(struct tunnel *t) {
             if (flags == -1 || fcntl(fd2, F_SETFL, flags | O_NONBLOCK) == -1) {
                 l2tp_log (LOG_WARNING, "%s: Unable to set PPPoL2TP socket nonblock.\n",
                      __FUNCTION__);
+                close(fd2);
                 return -EINVAL;
             }
             memset(&sax, 0, sizeof(sax));

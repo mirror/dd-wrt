@@ -44,11 +44,7 @@ struct ppp_opts
 
 #define IPADDY(a) inet_ntoa(*((struct in_addr *)&(a)))
 
-#ifdef NEED_PRINTF
 #define DEBUG c ? c->debug || t->debug : t->debug
-#else
-#define DEBUG 0
-#endif
 
 #ifdef USE_SWAPS_INSTEAD
 #define SWAPS(a) ((((a) & 0xFF) << 8 ) | (((a) >> 8) & 0xFF))
@@ -65,11 +61,10 @@ struct ppp_opts
 #define halt() printf("Halted.\n") ; for(;;)
 
 extern char hostname[];
-
 #ifdef NEED_PRINTF
 extern void l2tp_log (int level, const char *fmt, ...);
 #else
-#define l2tp_log(level,fmt,...) while(0) {}
+#define l2tp_log(level,fmt,...) do { } while(0)
 #endif
 static inline void swaps (void *buf_v, int len)
 {
@@ -78,7 +73,7 @@ static inline void swaps (void *buf_v, int len)
        to make things work out easier */
     int x;
     unsigned char t1;
-    unsigned char *tmp = (_u16 *) buf_v;
+    unsigned char *tmp = (unsigned short *) buf_v;
     for (x = 0; x < len; x += 2)
     {
         t1 = tmp[x];

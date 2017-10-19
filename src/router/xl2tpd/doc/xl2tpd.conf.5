@@ -5,25 +5,25 @@ xl2tpd.conf \- L2TPD configuration file
 The xl2tpd.conf file contains configuration information for xl2tpd, the implementation of l2tp protocol.
 
 The configuration file is composed of sections and parameters. Each section
-has a given name which will be used when using the configuration FIFO 
-(normaly /var/run/l2tp\-control). See xl2tpd.8  for more details.
+has a given name which will be used when using the configuration FIFO
+(normally /var/run/xl2tpd/l2tp\-control). See xl2tpd.8  for more details.
 
 The specific given name 
 .B default
-will specify parameters applicables for all the following sections.
+will specify parameters applicable for all the following sections.
 .SH "GLOBAL SECTION"
 .TP 
 .B auth file
 Specify where to find the authentication file used to authenticate
-l2tp tunnels. The default is /etc/l2tpd/l2tp\-secrets.
+l2tp tunnels. The default is /etc/xl2tpd/l2tp\-secrets.
 
 .TP 
 .B ipsec saref
-Use IPsec Security Association trackinng. When this is enabled, packets
+Use IPsec Security Association tracking. When this is enabled, packets
 received by xl2tpd should have to extra fields (refme and refhim) which
 allows tracking of multiple clients using the same internal NATed IP
 address, and allows tracking of multiple clients behind the same
-NAT router. This neds to be supported by the kernel. Currently, this
+NAT router. This needs to be supported by the kernel. Currently, this
 only works with Openswan KLIPS in "mast" mode. (see http://www.openswan.org/)
 
 Set this to yes and the system will provide proper SAref values in the
@@ -120,6 +120,19 @@ more information about hidden AVP's and AVP in general, refer to rfc2661
 .B local ip
 Use the following IP as xl2tpd's own ip address.
 
+.TP
+.B local ip range
+Specify the range of addresses the LNS will assign as the local address
+to connecting LAC PPP tunnels.  This option is mutually exclusive with
+the
+.B local ip
+option and is useful in cases where it is desirable to have a unique IP
+address for each tunnel.  Specify the range value exactly like the
+.B ip range
+option.  Note that the
+.B assign ip
+option has no effect on this option.
+
 .TP 
 .B length bit
 If set to yes, the length bit present in the l2tp packet payload
@@ -145,7 +158,7 @@ If set to yes, /etc/passwd will be used for remote peer ppp authentication.
 
 .TP 
 .B hostname
-Will report this as the xl2tpd hostname in negociation.
+Will report this as the xl2tpd hostname in negotiation.
 
 .TP 
 .B ppp debug
@@ -194,18 +207,22 @@ If set, the transmit bandwidth maximum will be set to this value
 .SH "LAC SECTION"
 The following are LAC specific configuration flags. Most of those
 described in the LNS section may be used in a LAC context, where
-it make common sense (essentially l2tp procotols tuning flags and
+it makes common sense (essentially l2tp protocols tuning flags and
 authentication / ppp related ones).
 
 .TP 
 .B lns
 Set the dns name or ip address of the LNS to connect to.
 
+.TP
+.B autodial
+If set to yes, xl2tpd will automatically dial the LAC during startup.
+
 .TP 
 .B redial
-If set to yes, xl2tpd will attempts to redial if the call get
-disconected.  Note that, if enabled, xl2tpd will keep passwords in
-memory: a potental security risk.
+If set to yes, xl2tpd will attempt to redial if the call get
+disconnected.  Note that, if enabled, xl2tpd will keep passwords in
+memory: a potential security risk.
 
 .TP 
 .B redial timeout
@@ -213,7 +230,7 @@ Wait X seconds before redial. The redial option must be set to yes
 to use this option.  Defaults to 30 seconds.
 
 .TP 
-.B max redial 
+.B max redials 
 Will give up redial tries after X attempts.
 
 .SH "FILES"
@@ -227,7 +244,7 @@ Please address bugs and comment to xl2tpdv@lists.xelerance.com
 
 \fB\fRxl2tpd(8)
 .SH "AUTHORS"
-Forked from xl2tpd by Xelerance (http://www.xelerance.com/software/xl2tpd/
+Forked from xl2tpd by Xelerance (https://www.xelerance.com/software/xl2tpd/)
 
 Michael Richardson <mcr@xelerance.com>
 Paul Wouters <paul@xelerance.com>
