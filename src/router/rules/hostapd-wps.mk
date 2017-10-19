@@ -14,8 +14,9 @@ endif
 #endif
 #ifeq ($(CONFIG_ATH10K),y)
 #HOSTAPDVERSION=2014-10-25
+ifndef $(HOSTAPDVERSION)
 HOSTAPDVERSION=2017-08-24
-#endif
+endif
 
 ATH9K_CFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 ATH9K_LDCFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
