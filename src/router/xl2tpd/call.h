@@ -107,7 +107,7 @@ extern struct call *get_call (int tunnel, int call, struct in_addr addr,
 extern struct call *get_tunnel (int, unsigned int, int);
 extern void destroy_call (struct call *);
 extern struct call *new_call (struct tunnel *);
-#if 1 //def NEED_PRINTF
+#ifdef NEED_PRINTF
  extern void set_error (struct call *, int, const char *, ...);
 #else
 #define set_error(a,b, fmt,...) while(0) {}
