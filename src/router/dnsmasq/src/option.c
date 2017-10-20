@@ -3862,7 +3862,7 @@ err:
 	    new->target = target;
 	    new->ttl = ttl;
 
-	    arg += strlen(arg)+1;
+	    for (arg += strlen(arg)+1; *arg == ' '; arg++);
 	  }
       
 	break;
