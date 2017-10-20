@@ -400,31 +400,21 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
       struct server *firstsentto = start;
       int subnet, forwarded = 0;
       size_t edns0_len;
+      unsigned char *oph = find_pseudoheader(header, plen, NULL, NULL, NULL, NULL);
 
       /* If a query is retried, use the log_id for the retry when logging the answer. */
       forward->log_id = daemon->log_id;
       
-      edns0_len  = add_edns0_config(header, plen, ((unsigned char *)header) + PACKETSZ, &forward->source, now, &subnet);
+      plen = add_edns0_config(header, plen, ((unsigned char *)header) + PACKETSZ, &forward->source, now, &subnet);
       
-      if (edns0_len != plen)
-	{
-	  plen = edns0_len;
-	  forward->flags |= FREC_ADDED_PHEADER;
-	  
-	  if (subnet)
-	    forward->flags |= FREC_HAS_SUBNET;
-	}
+      if (subnet)
+	forward->flags |= FREC_HAS_SUBNET;
       
 #ifdef HAVE_DNSSEC
       if (option_bool(OPT_DNSSEC_VALID) && do_dnssec)
 	{
-	  size_t new = add_do_bit(header, plen, ((unsigned char *) header) + PACKETSZ);
-	 
-	  if (new != plen)
-	    forward->flags |= FREC_ADDED_PHEADER;
-
-	  plen = new;
-	      
+	  plen = add_do_bit(header, plen, ((unsigned char *) header) + PACKETSZ);
+	 	      
 	  /* For debugging, set Checking Disabled, otherwise, have the upstream check too,
 	     this allows it to select auth servers when one is returning bad data. */
 	  if (option_bool(OPT_DNSSEC_DEBUG))
@@ -433,9 +423,16 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
 	}
 #endif
 
-      /* If we're sending an EDNS0 with any options, we can't recreate the query from a reply. */
-      if (find_pseudoheader(header, plen, &edns0_len, NULL, NULL, NULL) && edns0_len > 11)
-	forward->flags |= FREC_HAS_EXTRADATA;
+      if (find_pseudoheader(header, plen, &edns0_len, NULL, NULL, NULL))
+	{
+	  /* If there wasn't a PH before, and there is now, we added it. */
+	  if (!oph)
+	    forward->flags |= FREC_ADDED_PHEADER;
+
+	  /* If we're sending an EDNS0 with any options, we can't recreate the query from a reply. */
+	  if (edns0_len > 11)
+	    forward->flags |= FREC_HAS_EXTRADATA;
+	}
       
       while (1)
 	{ 
@@ -1095,7 +1092,7 @@ void reply_query(int fd, int family, time_t now)
 	  header->hb4 |= HB4_RA; /* recursion if available */
 #ifdef HAVE_DNSSEC
 	  /* We added an EDNSO header for the purpose of getting DNSSEC RRs, and set the value of the UDP payload size
-	     greater than the no-EDNS0-implied 512 to have if space for the RRSIGS. If, having stripped them and the EDNS0
+	     greater than the no-EDNS0-implied 512 to have space for the RRSIGS. If, having stripped them and the EDNS0
              header, the answer is still bigger than 512, truncate it and mark it so. The client then retries with TCP. */
 	  if (option_bool(OPT_DNSSEC_VALID) && (forward->flags & FREC_ADDED_PHEADER) && (nn > PACKETSZ))
 	    {
@@ -1551,7 +1548,7 @@ static int tcp_key_recurse(time_t now, int status, struct dns_header *header, si
 		  setsockopt(server->tcpfd, SOL_SOCKET, SO_MARK, &mark, sizeof(unsigned int));
 #endif	
 		
-		if (!local_bind(server->tcpfd,  &server->source_addr, server->interface, 1) ||
+		if (!local_bind(server->tcpfd,  &server->source_addr, server->interface, 0, 1) ||
 		    connect(server->tcpfd, &server->addr.sa, sa_len(&server->addr)) == -1)
 		  {
 		    close(server->tcpfd);
@@ -1783,17 +1780,30 @@ unsigned char *tcp_request(int confd, time_t now,
 	      struct all_addr *addrp = NULL;
 	      int type = SERV_DO_DNSSEC;
 	      char *domain = NULL;
-	      size_t new_size = add_edns0_config(header, size, ((unsigned char *) header) + 65536, &peer_addr, now, &check_subnet);
+	      unsigned char *oph = find_pseudoheader(header, size, NULL, NULL, NULL, NULL);
 
-	      if (size != new_size)
-		{
-		  added_pheader = 1;
-		  size = new_size;
-		}
-	      
+	      size = add_edns0_config(header, size, ((unsigned char *) header) + 65536, &peer_addr, now, &check_subnet);
+
 	      if (gotname)
 		flags = search_servers(now, &addrp, gotname, daemon->namebuff, &type, &domain, &norebind);
-	      
+
+#ifdef HAVE_DNSSEC
+	      if (option_bool(OPT_DNSSEC_VALID) && (type & SERV_DO_DNSSEC))
+		{
+		  size = add_do_bit(header, size, ((unsigned char *) header) + 65536);
+		  
+		  /* For debugging, set Checking Disabled, otherwise, have the upstream check too,
+		     this allows it to select auth servers when one is returning bad data. */
+		  if (option_bool(OPT_DNSSEC_DEBUG))
+		    header->hb4 |= HB4_CD;
+		}
+#endif
+
+	      /* Check if we added a pheader on forwarding - may need to
+		 strip it from the reply. */
+	      if (!oph && find_pseudoheader(header, size, NULL, NULL, NULL, NULL))
+		added_pheader = 1;
+
 	      type &= ~SERV_DO_DNSSEC;
 	      
 	      if (type != 0  || option_bool(OPT_ORDER) || !daemon->last_server)
@@ -1847,7 +1857,7 @@ unsigned char *tcp_request(int confd, time_t now,
 			    setsockopt(last_server->tcpfd, SOL_SOCKET, SO_MARK, &mark, sizeof(unsigned int));
 #endif	
 		      
-			  if ((!local_bind(last_server->tcpfd,  &last_server->source_addr, last_server->interface, 1) ||
+			  if ((!local_bind(last_server->tcpfd,  &last_server->source_addr, last_server->interface, 0, 1) ||
 			       connect(last_server->tcpfd, &last_server->addr.sa, sa_len(&last_server->addr)) == -1))
 			    {
 			      close(last_server->tcpfd);
@@ -1858,24 +1868,6 @@ unsigned char *tcp_request(int confd, time_t now,
 			  last_server->flags &= ~SERV_GOT_TCP;
 			}
 		      
-#ifdef HAVE_DNSSEC
-		      if (option_bool(OPT_DNSSEC_VALID) && (last_server->flags & SERV_DO_DNSSEC))
-			{
-			  new_size = add_do_bit(header, size, ((unsigned char *) header) + 65536);
-			  
-			  if (size != new_size)
-			    {
-			      added_pheader = 1;
-			      size = new_size;
-			    }
-			  
-			  /* For debugging, set Checking Disabled, otherwise, have the upstream check too,
-			     this allows it to select auth servers when one is returning bad data. */
-			  if (option_bool(OPT_DNSSEC_DEBUG))
-			    header->hb4 |= HB4_CD;
-			}
-#endif
-					      
 		      *length = htons(size);
 
 		      /* get query name again for logging - may have been overwritten */
