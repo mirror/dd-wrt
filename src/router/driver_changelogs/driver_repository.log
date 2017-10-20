@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r3657 | brainslayer | 2017-10-20 22:04:32 +0200 (Fri, 20 Oct 2017) | 1 line
+
+gcmp / ccmp256 decap support
+------------------------------------------------------------------------
+r3656 | brainslayer | 2017-10-20 21:32:20 +0200 (Fri, 20 Oct 2017) | 1 line
+
+ath10k:  rebuild crypto header in RX data frames. this is required to handle the krackattack problem in ath10k
+------------------------------------------------------------------------
 r3655 | brainslayer | 2017-10-20 10:55:12 +0200 (Fri, 20 Oct 2017) | 1 line
 
 update Kazakhstan
