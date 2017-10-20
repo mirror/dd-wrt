@@ -2,6 +2,10 @@ version 2.79
 	Fix parsing of CNAME arguments, which are confused by extra spaces.
 	Thanks to Diego Aguirre for spotting the bug.
 
+	Where available, use IP_UNICAST_IF or IPV6_UNICAST_IF to bind
+	upstream servers to an interface, rather than SO_BINDTODEVICE.
+	Thanks to Beniamino Galvani for the patch.
+
 
 version 2.78
         Fix logic of appending ".<layer>" to PXE basename. Thanks to Chris

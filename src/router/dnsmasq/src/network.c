@@ -1187,7 +1187,7 @@ int random_sock(int family)
 }
   
 
-int local_bind(int fd, union mysockaddr *addr, char *intname, int is_tcp)
+int local_bind(int fd, union mysockaddr *addr, char *intname, unsigned int ifindex, int is_tcp)
 {
   union mysockaddr addr_copy = *addr;
 
@@ -1204,7 +1204,25 @@ int local_bind(int fd, union mysockaddr *addr, char *intname, int is_tcp)
   
   if (bind(fd, (struct sockaddr *)&addr_copy, sa_len(&addr_copy)) == -1)
     return 0;
-    
+
+  if (!is_tcp && ifindex > 0)
+    {
+#if defined(IP_UNICAST_IF)
+      if (addr_copy.sa.sa_family == AF_INET)
+        {
+          uint32_t ifindex_opt = htonl(ifindex);
+          return setsockopt(fd, IPPROTO_IP, IP_UNICAST_IF, &ifindex_opt, sizeof(ifindex_opt)) == 0;
+        }
+#endif
+#if defined(HAVE_IPV6) && defined (IPV6_UNICAST_IF)
+      if (addr_copy.sa.sa_family == AF_INET6)
+        {
+          uint32_t ifindex_opt = htonl(ifindex);
+          return setsockopt(fd, IPPROTO_IPV6, IPV6_UNICAST_IF, &ifindex_opt, sizeof(ifindex_opt)) == 0;
+        }
+#endif
+    }
+
 #if defined(SO_BINDTODEVICE)
   if (intname[0] != 0 &&
       setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, intname, IF_NAMESIZE) == -1)
@@ -1260,7 +1278,7 @@ static struct serverfd *allocate_sfd(union mysockaddr *addr, char *intname)
       return NULL;
     }
   
-  if (!local_bind(sfd->fd, addr, intname, 0) || !fix_fd(sfd->fd))
+  if (!local_bind(sfd->fd, addr, intname, ifindex, 0) || !fix_fd(sfd->fd))
     { 
       errsave = errno; /* save error from bind. */
       close(sfd->fd);
