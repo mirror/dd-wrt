@@ -65,7 +65,6 @@ void l2tp_log (int level, const char *fmt, ...)
 	fprintf(stderr, "xl2tpd[%d]: %s", getpid(), buf);
     }
 }
-#endif
 
 void set_error (struct call *c, int error, const char *fmt, ...)
 {
@@ -79,6 +78,7 @@ void set_error (struct call *c, int error, const char *fmt, ...)
         c->errormsg[strlen (c->errormsg) - 1] = 0;
     va_end (args);
 }
+#endif
 
 struct buffer *new_buf (int size)
 {
