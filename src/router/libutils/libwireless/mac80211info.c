@@ -33,6 +33,7 @@
 
 #include "wlutils.h"
 #include <utils.h>
+#include <channelcache.h>
 
 // some defenitions from hostapd
 typedef uint16_t u16;
@@ -1139,50 +1140,6 @@ static struct wifi_channels ghz60channels[] = {
 	{.channel = -1,.freq = -1,.max_eirp = -1,.hw_eirp = -1},
 };
 
-struct channellist_cache {
-	struct wifi_channels *list;
-	char *ifname;
-	char *country;
-};
-
-static struct channellist_cache *cache = NULL;
-static int cachecount = 0;
-static void addcache(char *ifname, const char *country, struct wifi_channels *list)
-{
-	if (cache) {
-		int cnt = 0;
-		for (cnt = 0; cnt < cachecount; cnt++) {
-			if (!strcmp(cache[cnt].ifname, ifname) && !strcmp(cache[cnt].country, country))
-				return;
-			if (!strcmp(cache[cnt].ifname, ifname)) {
-				free(cache[cnt].list);
-				cache[cnt].list = list;
-				free(cache[cnt].country);
-				cache[cnt].country = strdup(country);
-				return;
-			}
-		}
-	}
-	cache = realloc(cache, sizeof(struct channellist_cache) * (cachecount + 1));
-	cache[cachecount].ifname = strdup(ifname);
-	cache[cachecount].country = strdup(country);
-	cache[cachecount].list = list;
-	cachecount++;
-}
-
-static struct wifi_channels *getcache(char *ifname, const char *country)
-{
-
-	if (cache) {
-		int cnt = 0;
-		for (cnt = 0; cnt < cachecount; cnt++) {
-			if (!strcmp(cache[cnt].ifname, ifname) && !strcmp(cache[cnt].country, country))
-				return cache[cnt].list;
-		}
-	}
-	return NULL;
-}
-
 struct wifi_channels *mac80211_get_channels(char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
@@ -1229,7 +1186,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, const char *country
 	// for now just leave 
 	if (rd == NULL) {
 		unlock();
-		return list;
+		return NULL;
 	}
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
@@ -1491,15 +1448,13 @@ int has_ht40(char *interface)
 	sprintf(regdomain, "%s_regdomain", interface);
 	country = nvram_default_get(regdomain, "UNITED_STATES");
 	chan = mac80211_get_channels(interface, getIsoName(country), 40, 0xff);
-	if (chan != NULL) {
+	if (chan) {
 		while (chan[i].freq != -1) {
 			if (chan[i].luu || chan[i].ull) {
-				free(chan);
 				return 1;
 			}
 			i++;
 		}
-		free(chan);
 	}
 	return 0;
 }
@@ -1510,15 +1465,13 @@ int mac80211_check_valid_frequency(char *interface, char *country, int freq)
 	int found = 0;
 	int i = 0;
 	chan = mac80211_get_channels(interface, country, 40, 0xff);
-	if (chan != NULL) {
+	if (chan) {
 		while (chan[i].freq != -1) {
 			if (freq == chan[i].freq) {
-				free(chan);
 				return freq;
 			}
 			i++;
 		}
-		free(chan);
 	}
 	return (0);
 }
@@ -1956,6 +1909,7 @@ nla_put_failure:
 void main(int argc, char *argv[])
 {
 	mac80211_get_channels("ath0", "US", 20, 255);
+	mac80211_get_channels("ath1", "US", 20, 255);
 	fprintf(stderr, "phy0 %d %d %d %d\n", mac80211_get_avail_tx_antenna(0), mac80211_get_avail_rx_antenna(0), mac80211_get_configured_tx_antenna(0), mac80211_get_configured_rx_antenna(0));
 	fprintf(stderr, "phy1 %d %d %d %d\n", mac80211_get_avail_tx_antenna(1), mac80211_get_avail_rx_antenna(1), mac80211_get_configured_tx_antenna(1), mac80211_get_configured_rx_antenna(1));
 }
