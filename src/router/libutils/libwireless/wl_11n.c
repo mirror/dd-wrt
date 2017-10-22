@@ -33,6 +33,7 @@
 #include <ctype.h>
 #include <getopt.h>
 #include <err.h>
+#include <channelcache.h>
 
 #include "wireless.h"
 #undef WPA_OUI
@@ -47,6 +48,9 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 	struct ieee80211req_chaninfo achans;
 	const struct ieee80211_channel *c;
 	int i;
+	struct wifi_channels *list = getcache(ifname, nvram_nget("%s_regdomain", ifname));
+	if (list)
+		return list;
 
 	fprintf(stderr, "list channels for %s\n", ifname);
 	if (do80211priv(ifname, IEEE80211_IOCTL_GETCHANINFO, &chans, sizeof(chans)) < 0) {
@@ -69,7 +73,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 	} else
 		achans = chans;
 
-	struct wifi_channels *list = (struct wifi_channels *)calloc(sizeof(struct wifi_channels) * (achans.ic_nchans + 1), 1);
+	list = (struct wifi_channels *)calloc(sizeof(struct wifi_channels) * (achans.ic_nchans + 1), 1);
 
 	char wl_mode[16];
 	char wl_turbo[16];
@@ -148,6 +152,8 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 	}
 
 	list[l].freq = -1;
+	addcache(ifname, nvram_nget("%s_regdomain", ifname), list);
+
 	return list;
 }
 

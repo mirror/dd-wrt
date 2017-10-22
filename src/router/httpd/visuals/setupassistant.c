@@ -976,7 +976,7 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 			if (chan == NULL)
 				chan = list_channels(dev);
 		}
-		if (chan != NULL) {
+		if (chan) {
 			// int cnt = getchannelcount ();
 			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n", nvram_selmatch(wp, wl_channel, "0") ? "selected=\\\"selected\\\"" : "");
 			int i = 0;
@@ -998,7 +998,6 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 				// free (chan[i].freq);
 				i++;
 			}
-			free(chan);
 		}
 #else
 
