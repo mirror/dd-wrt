@@ -980,7 +980,7 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 			// int cnt = getchannelcount ();
 			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n", nvram_selmatch(wp, wl_channel, "0") ? "selected=\\\"selected\\\"" : "");
 			int i = 0;
-
+			int offset = get_freqoffset(prefix);
 			while (chan[i].freq != -1) {
 				cprintf("%d\n", chan[i].channel);
 				cprintf("%d\n", chan[i].freq);
@@ -991,9 +991,9 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 					i++;
 					continue;	// do not show channels where bandwidth is not available
 				}
-				int freq = get_wififreq(prefix, chan[i].freq);
+				int freq = chan[i].freq;
 				if (freq != -1) {
-					websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n", fr, nvram_selmatch(wp, wl_channel, fr) ? "selected=\\\"selected\\\"" : "", cn, (freq));
+					websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n", fr, nvram_selmatch(wp, wl_channel, fr) ? "selected=\\\"selected\\\"" : "", cn, (freq + offset));
 				}
 				// free (chan[i].freq);
 				i++;

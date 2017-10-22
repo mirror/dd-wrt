@@ -37,6 +37,7 @@
 #include <sys/socket.h>
 #include <sys/statfs.h>
 #include <sys/sysinfo.h>
+#include <sys/time.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <broadcom.h>
@@ -72,6 +73,25 @@ static unsigned int ns_type7_clocks[4] = { 600, 800, 1000, 0 };
 #define IFMAP(a) getRADev(a)
 #else
 #define IFMAP(a) (a)
+#endif
+
+#if 0
+static struct timeval before, after, r;
+
+static void START(void)
+{
+	gettimeofday(&before, NULL);
+}
+
+static void s_END(char *service, int line)
+{
+	gettimeofday(&after, NULL);
+	timersub(&after, &before, &r);
+	fprintf(stderr, "DEBUG: %s:%d duration %ld.%06ld\n", service, line, (long int)r.tv_sec, (long int)r.tv_usec);
+	START();
+}
+
+#define END() s_END(__func__,__LINE__);
 #endif
 
 void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type)
@@ -1469,12 +1489,15 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			if (chan == NULL)
 				chan = list_channels(dev);
 		}
-
 		if (chan) {
+			char *wlc = nvram_safe_get(wl_channel);
+			int offset = get_freqoffset(prefix);
 			// int cnt = getchannelcount ();
-			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n", nvram_matchi(wl_channel, 0) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n", !strcmp(wlc, "0") ? "selected=\\\"selected\\\"" : "");
 			int i = 0;
-
+#ifdef HAVE_ATH9K
+			int isath9k = is_ath9k(prefix);
+#endif
 			while (chan[i].freq != -1) {
 #ifdef HAVE_BUFFALO
 				if (chan[i].dfs == 1) {
@@ -1505,9 +1528,6 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 					i++;
 					continue;	// do not show channels where bandwidth is not available
 				}
-				cprintf("%d\n", chan[i].channel);
-				cprintf("%d\n", chan[i].freq);
-
 #ifdef HAVE_ATH9K
 
 				sprintf(cn, "%d", chan[i].channel);
@@ -1515,21 +1535,20 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				sprintf(cn, "%d", chan[i].channel);
 #endif
 				sprintf(fr, "%d", chan[i].freq);
-				int freq = get_wififreq(prefix, chan[i].freq);
+				int freq = chan[i].freq;
 				if (freq != -1) {
 #ifdef HAVE_ATH9K
 
-					if (is_ath9k(prefix)) {
+					if (isath9k) {
 						websWrite(wp,
 							  "document.write(\"<option value=\\\"%s\\\" rel=\\\'{\\\"lll\\\":%d,\\\"llu\\\":%d,\\\"lul\\\":%d,\\\"luu\\\":%d,\\\"ull\\\":%d,\\\"ulu\\\":%d,\\\"uul\\\":%d,\\\"uuu\\\":%d}\\\'%s>%s - %d \"+wl_basic.mhz+\"</option>\");\n",
-							  fr, chan[i].lll, chan[i].llu, chan[i].lul, chan[i].luu, chan[i].ull, chan[i].ulu, chan[i].uul, chan[i].uuu, nvram_match(wl_channel,
-																						  fr) ? " selected=\\\"selected\\\"" : "",
-							  cn, (freq));
+							  fr, chan[i].lll, chan[i].llu, chan[i].lul, chan[i].luu, chan[i].ull, chan[i].ulu, chan[i].uul, chan[i].uuu, !strcmp(wlc, fr) ? " selected=\\\"selected\\\"" : "",
+							  cn, (freq + offset));
 					} else
 #endif
 					{
-						websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s>%s - %d \"+wl_basic.mhz+\"</option>\");\n", fr, nvram_match(wl_channel, fr) ? "selected=\\\"selected\\\"" : "",
-							  cn, (freq));
+						websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s>%s - %d \"+wl_basic.mhz+\"</option>\");\n", fr, !strcmp(wlc, fr) ? "selected=\\\"selected\\\"" : "",
+							  cn, (freq + offset));
 					}
 				}
 				i++;
@@ -1836,7 +1855,6 @@ static void show_netmode(webs_t wp, char *prefix)
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"disabled\\\" %s>\" + share.disabled + \"</option>\");\n", nvram_match(wl_net_mode, "disabled") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"mixed\\\" %s>\" + wl_basic.mixed + \"</option>\");\n", nvram_match(wl_net_mode, "mixed") ? "selected=\\\"selected\\\"" : "");
-
 	if (has_mimo(prefix) && has_2ghz(prefix)) {
 		websWrite(wp, "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n", nvram_match(wl_net_mode, "bg-mixed") ? "selected=\\\"selected\\\"" : "");
 	}
@@ -2560,8 +2578,9 @@ int inline issuperchannel(void)
 	return 0;
 #endif
 }
+#else
+#define issuperchannel() wp->issuperchannel
 #endif
-
 void ej_show_countrylist(webs_t wp, int argc, char_t ** argv)
 {
 	if (argc < 1) {
@@ -2602,7 +2621,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	} else {
 		frequencies[0] = 0;
 	}
-
 	// wireless mode
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script> %s%s</h2>\n", prefix, frequencies);
 	websWrite(wp, "<fieldset>\n");
