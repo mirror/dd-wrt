@@ -21,7 +21,7 @@ struct channellist_cache {
 
 static struct channellist_cache *cache = NULL;
 static int cachecount = 0;
-static void addcache(char *ifname, const char *country, struct wifi_channels *list)
+static void addcache(const char *ifname, const char *country, struct wifi_channels *list)
 {
 	if (cache) {
 		int cnt = 0;
@@ -44,7 +44,7 @@ static void addcache(char *ifname, const char *country, struct wifi_channels *li
 	cachecount++;
 }
 
-static struct wifi_channels *getcache(char *ifname, const char *country)
+static struct wifi_channels *getcache(const char *ifname, const char *country)
 {
 
 	if (cache) {
