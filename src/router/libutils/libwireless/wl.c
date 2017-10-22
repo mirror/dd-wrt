@@ -80,59 +80,42 @@ int is_wrt3200()
 #ifdef HAVE_MADWIFI
 int has_2ghz(char *prefix)
 {
-	static char devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-	int devnum, ret;
-	sscanf(prefix, "ath%d", &devnum);
-	if (devnum > 7 || devs[devnum] == -1) {
+	INITVALUECACHE();
 #ifdef HAVE_MVEBU
-		if (is_wrt3200() && is_mvebu(prefix) && !strncmp(prefix, "ath0", 4)) {
-			ret = 0;
-			goto out;
-		}
+	if (is_wrt3200() && is_mvebu(prefix) && !strncmp(prefix, "ath0", 4)) {
+		ret = 0;
+		goto out;
+	}
 #endif
 #ifdef HAVE_ATH9K
-		if (is_ath9k(prefix)) {
-			ret = mac80211_check_band(prefix, 2);
-			goto out;
-		}
+	if (is_ath9k(prefix)) {
+		ret = mac80211_check_band(prefix, 2);
+		goto out;
+	}
 #endif
 
-		ret = has_athmask(devnum, 0x8);
-	} else {
-		return devs[devnum];
+	ret = has_athmask(dn, 0x8);
+	EXITVALUECACHE();
 
-	}
-      out:;
-	if (devnum < 8)
-		devs[devnum] = ret;
 	return ret;
 }
 
 int has_5ghz(char *prefix)
 {
-	static char devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-	int devnum, ret;
-	sscanf(prefix, "ath%d", &devnum);
-	if (devnum > 7 || devs[devnum] == -1) {
-		if (has_ad(prefix)) {
-			ret = 0;
-			goto out;
-		}
+	INITVALUECACHE();
+	if (has_ad(prefix)) {
+		ret = 0;
+		goto out;
+	}
 #ifdef HAVE_ATH9K
-		if (is_ath9k(prefix)) {
-			ret = mac80211_check_band(prefix, 5);
-			goto out;
-		}
+	if (is_ath9k(prefix)) {
+		ret = mac80211_check_band(prefix, 5);
+		goto out;
+	}
 #endif
 
-		ret = has_athmask(devnum, 0x1);
-	} else {
-		return devs[devnum];
-
-	}
-      out:;
-	if (devnum < 8)
-		devs[devnum] = ret;
+	ret = has_athmask(dn, 0x1);
+	EXITVALUECACHE();
 	return ret;
 
 }
@@ -2794,40 +2777,33 @@ int is_ath9k(const char *prefix)
 #ifdef HAVE_MVEBU
 	return 1;
 #endif
-	static char devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-	int dn, ret;
-	sscanf(prefix, "ath%d", &dn);
-	if (dn > 7 || devs[dn] == -1) {
-		glob_t globbuf;
-		char *globstring;
-		int globresult;
-		int devnum;
-		// get legacy interface count
+	INITVALUECACHE();
+	glob_t globbuf;
+	char *globstring;
+	int globresult;
+	int devnum;
+	// get legacy interface count
 #ifdef HAVE_MADWIFI_MIMO
-		if (!nvram_match("mimo_driver", "ath9k")) {
-			ret = 0;
-			goto out;
-		}
-#endif
-		// correct index if there are legacy cards arround
-		devnum = get_ath9k_phy_ifname(prefix);
-		if (devnum == -1) {
-			ret = 0;
-			goto out;
-		}
-		asprintf(&globstring, "/sys/class/ieee80211/phy%d", devnum);
-		globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
-		free(globstring);
-		if (globresult == 0) {
-			ret = (int)globbuf.gl_pathc;
-		}
-		globfree(&globbuf);
-	} else {
-		return devs[dn];
+	if (!nvram_match("mimo_driver", "ath9k")) {
+		ret = 0;
+		goto out;
 	}
-      out:;
-	if (dn < 8)
-		devs[dn] = ret;
+#endif
+	// correct index if there are legacy cards arround
+	devnum = get_ath9k_phy_ifname(prefix);
+	if (devnum == -1) {
+		ret = 0;
+		goto out;
+	}
+	asprintf(&globstring, "/sys/class/ieee80211/phy%d", devnum);
+	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+	free(globstring);
+	if (globresult == 0) {
+		ret = (int)globbuf.gl_pathc;
+	} else
+		ret = 0;
+	globfree(&globbuf);
+	EXITVALUECACHE();
 	return ret;
 }
 

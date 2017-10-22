@@ -1,5 +1,6 @@
 /*
- * channelcache.c 
+ * channelcache.h
+ * 
  * Copyright (C) 2017 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -58,3 +59,17 @@ static struct wifi_channels *getcache(const char *ifname, const char *country)
 	}
 	return NULL;
 }
+
+#define INITVALUECACHE() \
+	static char devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 }; \
+	int dn, ret; \
+	sscanf(prefix, "ath%d", &dn); \
+	if (dn > 7 || devs[dn] == -1) {
+
+#define EXITVALUECACHE() \
+	} else { \
+		return devs[dn]; \
+	} \
+      out:; \
+	if (dn < 8) \
+		devs[dn] = ret;
