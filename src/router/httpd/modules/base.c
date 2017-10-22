@@ -2452,7 +2452,6 @@ static void do_language(unsigned char method, struct mime_handler *handler, char
 	return;
 }
 #endif
-extern int issuperchannel(void);
 
 static char no_cache[] = "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "Expires: 0";
 static char do_cache[] = "Cache-Control: private, max-age=600\r\n";

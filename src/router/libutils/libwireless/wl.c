@@ -80,32 +80,61 @@ int is_wrt3200()
 #ifdef HAVE_MADWIFI
 int has_2ghz(char *prefix)
 {
-	int devnum;
+	static char devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+	int devnum, ret;
 	sscanf(prefix, "ath%d", &devnum);
+	if (devnum > 7 || devs[devnum] == -1) {
 #ifdef HAVE_MVEBU
-	if (is_wrt3200() && is_mvebu(prefix) && !strncmp(prefix, "ath0", 4))
-		return 0;
+		if (is_wrt3200() && is_mvebu(prefix) && !strncmp(prefix, "ath0", 4)) {
+			ret = 0;
+			goto out;
+		}
 #endif
 #ifdef HAVE_ATH9K
-	if (is_ath9k(prefix))
-		return mac80211_check_band(prefix, 2);
+		if (is_ath9k(prefix)) {
+			ret = mac80211_check_band(prefix, 2);
+			goto out;
+		}
 #endif
 
-	return has_athmask(devnum, 0x8);
+		ret = has_athmask(devnum, 0x8);
+	} else {
+		return devs[devnum];
+
+	}
+      out:;
+	if (devnum < 8)
+		devs[devnum] = ret;
+	return ret;
 }
 
 int has_5ghz(char *prefix)
 {
-	int devnum;
+	static char devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+	int devnum, ret;
 	sscanf(prefix, "ath%d", &devnum);
-	if (has_ad(prefix))
-		return 0;
+	if (devnum > 7 || devs[devnum] == -1) {
+		if (has_ad(prefix)) {
+			ret = 0;
+			goto out;
+		}
 #ifdef HAVE_ATH9K
-	if (is_ath9k(prefix))
-		return mac80211_check_band(prefix, 5);
+		if (is_ath9k(prefix)) {
+			ret = mac80211_check_band(prefix, 5);
+			goto out;
+		}
 #endif
 
-	return has_athmask(devnum, 0x1);
+		ret = has_athmask(devnum, 0x1);
+	} else {
+		return devs[devnum];
+
+	}
+      out:;
+	if (devnum < 8)
+		devs[devnum] = ret;
+	return ret;
+
 }
 
 #endif
@@ -1596,7 +1625,7 @@ int wifi_gettxpoweroffset(char *ifname)
 	return poweroffset;
 }
 
-int get_wififreq(char *ifname, int freq)
+int get_freqoffset(char *ifname)
 {
 #ifdef HAVE_NS3
 	return -2000;
@@ -1604,23 +1633,19 @@ int get_wififreq(char *ifname, int freq)
 
 	if (isEMP(ifname)) {
 		if (nvram_nmatch("4", "%s_cardtype", ifname))
-			return freq - 2400;
+			return -2400;
 	}
 
 	if (isDL4600(ifname))
-		return freq - 705;
+		return -705;
 
 #ifdef HAVE_ATH9K
 	if (isFXXN_PRO(ifname) == 1) {
 		if (nvram_nmatch("1", "%s_cardtype", ifname)) {
-			if (freq < 5180 || freq > 5580)
-				return -1;
-			return freq - 1830;
+			return -1830;
 		}
 		if (nvram_nmatch("2", "%s_cardtype", ifname)) {
-			if (freq < 5180 || freq > 5730)
-				return -1;
-			return freq + 720;
+			return 720;
 		}
 	}
 #endif
@@ -1632,7 +1657,7 @@ int get_wififreq(char *ifname, int freq)
 		var = nvram_get(localvar);
 	}
 	if (var) {
-		return freq + atoi(var);
+		return atoi(var);
 	}
 	int vendor;
 	int devcount;
@@ -1650,40 +1675,39 @@ int get_wififreq(char *ifname, int freq)
 	}
 	switch (vendor) {
 	case 9:		// ubnt xr9
-		if (freq < 2427 || freq > 2442)
-			return -1;
-		return freq - (2427 - 907);
+		return -(2427 - 907);
 		break;
 	case 4:		// ubnt sr9
-		if (freq < 2422 || freq > 2437)
-			return -1;
-		return (2422 + 922) - freq;
+		return -(2422 - 922);
 		break;
 	case 13:
-		return freq - (5540 - 3540);	// xr3 general 3,5 ghz
+		return -(5540 - 3540);	// xr3 general 3,5 ghz
 	case 1328:
-		return freq - (5540 - 2840);	// xr3 special 2.8 ghz
+		return -(5540 - 2840);	// xr3 special 2.8 ghz
 	case 1336:
 		if (nvram_nmatch("2", "%s_cardtype", ifname))
-			return freq - (5765 - 3658);	// xr3 3.7 ghz
+			return -(5765 - 3658);	// xr3 3.7 ghz
 		else
-			return freq - (5540 - 3340);	// xr3 special 3.3/3.6 ghz
+			return -(5540 - 3340);	// xr3 special 3.3/3.6 ghz
 	case 7:
-		if (freq < 2427 || freq > 2442)
-			return -1;
-		return freq - (2427 - 763);	// xr7 
+		return -(2427 - 763);	// xr7 
 	case 14:
-		return freq - (5540 - 4516);	// xr4 
+		return -(5540 - 4516);	// xr4 
 		// case 24:
 		// return -(5540-4540); //sr4 
 	case 23:		// reserved for XR2.3 until spec is known
 	case 26:		// reserved for XR2.6 until spec is known
 
 	default:
-		return freq;
+		return 0;
 		break;
 	}
-	return freq;
+	return 0;
+}
+
+int get_wififreq(char *ifname, int freq)
+{
+	return freq + get_freqoffset(ifname);
 }
 
 struct wifi_interface *wifi_getfreq(char *ifname)
@@ -2770,27 +2794,41 @@ int is_ath9k(const char *prefix)
 #ifdef HAVE_MVEBU
 	return 1;
 #endif
-	glob_t globbuf;
-	int count = 0;
-	char *globstring;
-	int globresult;
-	int devnum;
-	// get legacy interface count
+	static char devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
+	int dn, ret;
+	sscanf(prefix, "ath%d", &dn);
+	if (dn > 7 || devs[dn] == -1) {
+		glob_t globbuf;
+		char *globstring;
+		int globresult;
+		int devnum;
+		// get legacy interface count
 #ifdef HAVE_MADWIFI_MIMO
-	if (!nvram_match("mimo_driver", "ath9k"))
-		return (0);
+		if (!nvram_match("mimo_driver", "ath9k")) {
+			ret = 0;
+			goto out;
+		}
 #endif
-	// correct index if there are legacy cards arround
-	devnum = get_ath9k_phy_ifname(prefix);
-	if (devnum == -1)
-		return 0;
-	asprintf(&globstring, "/sys/class/ieee80211/phy%d", devnum);
-	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
-	free(globstring);
-	if (globresult == 0)
-		count = (int)globbuf.gl_pathc;
-	globfree(&globbuf);
-	return (count);
+		// correct index if there are legacy cards arround
+		devnum = get_ath9k_phy_ifname(prefix);
+		if (devnum == -1) {
+			ret = 0;
+			goto out;
+		}
+		asprintf(&globstring, "/sys/class/ieee80211/phy%d", devnum);
+		globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+		free(globstring);
+		if (globresult == 0) {
+			ret = (int)globbuf.gl_pathc;
+		}
+		globfree(&globbuf);
+	} else {
+		return devs[dn];
+	}
+      out:;
+	if (dn < 8)
+		devs[dn] = ret;
+	return ret;
 }
 
 int has_spectralscanning(const char *prefix)

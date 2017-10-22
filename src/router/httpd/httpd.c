@@ -156,6 +156,10 @@ char *dhm_G = "4";
 static int registered = -1;
 static int registered_real = -1;
 #endif
+#ifdef HAVE_SUPERCHANNEL
+static int superchannel = -1;
+#endif
+
 #define DEFAULT_HTTP_PORT 80
 int server_port;
 char pid_file[80];
@@ -724,11 +728,17 @@ static void *handle_request(void *arg)
 	conn_fp->isregistered = registered;
 	conn_fp->isregistered_real = registered_real;
 #endif
+#ifdef HAVE_SUPERCHANNEL
+	conn_fp->issuperchannel = superchannel;
+#endif
 	pthread_mutex_unlock(&httpd_mutex);
 #else
 #ifdef HAVE_REGISTER
 	conn_fp->isregistered = registered;
 	conn_fp->isregistered_real = registered_real;
+#endif
+#ifdef HAVE_SUPERCHANNEL
+	conn_fp->issuperchannel = superchannel;
 #endif
 
 #endif
@@ -975,6 +985,10 @@ static void *handle_request(void *arg)
 	else
 		conn_fp->isregistered = conn_fp->isregistered_real;
 #endif
+#ifdef HAVE_SUPERCHANNEL
+	if (!conn_fp->issuperchannel == -1)
+	    conn_fp->issuperchannel = issuperchannel();
+#endif
 
 	// save the originally requested url
 	conn_fp->request_url = strdup(file);
@@ -1212,11 +1226,17 @@ static void *handle_request(void *arg)
 	registered = conn_fp->isregistered;
 	registered_real = conn_fp->isregistered_real;
 #endif
+#ifdef HAVE_ISSUPERCHANNEL
+	superchannel = conn_fp->issuperchannel;
+#endif
 	pthread_mutex_unlock(&httpd_mutex);
 #else
 #ifdef HAVE_REGISTER
 	registered = conn_fp->isregistered;
 	registered_real = conn_fp->isregistered_real;
+#endif
+#ifdef HAVE_ISSUPERCHANNEL
+	superchannel = conn_fp->issuperchannel;
 #endif
 #endif
 
