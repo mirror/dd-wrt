@@ -1167,8 +1167,10 @@ struct wifi_channels *mac80211_get_channels(char *interface, const char *country
 	}
 	lock();
 	list = getcache(interface, country);
-	if (list)
+	if (list) {
+		unlock();
 		return list;
+	}
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1) {
 		unlock();
@@ -1909,7 +1911,9 @@ nla_put_failure:
 void main(int argc, char *argv[])
 {
 	mac80211_get_channels("ath0", "US", 20, 255);
-	mac80211_get_channels("ath1", "US", 20, 255);
+	mac80211_get_channels("ath1", "DE", 20, 255);
+	mac80211_get_channels("ath1", "DE", 20, 255);
+	mac80211_get_channels("ath0", "US", 20, 255);
 	fprintf(stderr, "phy0 %d %d %d %d\n", mac80211_get_avail_tx_antenna(0), mac80211_get_avail_rx_antenna(0), mac80211_get_configured_tx_antenna(0), mac80211_get_configured_rx_antenna(0));
 	fprintf(stderr, "phy1 %d %d %d %d\n", mac80211_get_avail_tx_antenna(1), mac80211_get_avail_rx_antenna(1), mac80211_get_configured_tx_antenna(1), mac80211_get_configured_rx_antenna(1));
 }
