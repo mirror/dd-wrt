@@ -803,7 +803,7 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 			 , (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) ? "[SU-BEAMFORMER]" : "")
 			 , (((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf) ? "[MU-BEAMFORMER]" : "")
 			 , (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) ? "[SU-BEAMFORMEE]" : "")
-//			 , (((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf) ? "[MU-BEAMFORMEE]" : "")
+//                       , (((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf) ? "[MU-BEAMFORMEE]" : "")
 			 , (cap & VHT_CAP_VHT_TXOP_PS ? "[VHT-TXOP-PS]" : "")
 			 , (cap & VHT_CAP_HTC_VHT ? "[HTC-VHT]" : "")
 			 , (cap & VHT_CAP_RX_ANTENNA_PATTERN ? "[RX-ANTENNA-PATTERN]" : "")
@@ -1009,23 +1009,14 @@ nla_put_failure:
 static int isinlist(struct wifi_channels *list, int base, int freq, int bw)
 {
 	int i = 0;
-//      fprintf(stderr, "check for base %d freq %d present:", base , freq);
-	while (1) {
-		struct wifi_channels *chan = &list[i++];
-		if (chan->freq == -1)
-			break;
-		if (bw == 40 && !chan->ht40)
-			continue;
-		if (bw == 80 && !chan->vht80)
-			continue;
-		if (bw == 160 && !chan->vht160)
+	struct wifi_channels *chan;
+	while ((chan = &list[i++])->freq > 0) {
+		if ((bw == 40 && !chan->ht40) || (bw == 80 && !chan->vht80) || (bw == 160 && !chan->vht160))
 			continue;
 		if (chan->freq == freq) {
-//                      fprintf(stderr,"true\n");
 			return 1;
 		}
 	}
-//      fprintf(stderr,"nope\n");
 	return 0;
 }
 
@@ -1148,6 +1139,50 @@ static struct wifi_channels ghz60channels[] = {
 	{.channel = -1,.freq = -1,.max_eirp = -1,.hw_eirp = -1},
 };
 
+struct channellist_cache {
+	struct wifi_channels *list;
+	char *ifname;
+	char *country;
+};
+
+static struct channellist_cache *cache = NULL;
+static int cachecount = 0;
+static void addcache(char *ifname, const char *country, struct wifi_channels *list)
+{
+	if (cache) {
+		int cnt = 0;
+		for (cnt = 0; cnt < cachecount; cnt++) {
+			if (!strcmp(cache[cnt].ifname, ifname) && !strcmp(cache[cnt].country, country))
+				return;
+			if (!strcmp(cache[cnt].ifname, ifname)) {
+				free(cache[cnt].list);
+				cache[cnt].list = list;
+				free(cache[cnt].country);
+				cache[cnt].country = strdup(country);
+				return;
+			}
+		}
+	}
+	cache = realloc(cache, sizeof(struct channellist_cache) * (cachecount + 1));
+	cache[cachecount].ifname = strdup(ifname);
+	cache[cachecount].country = strdup(country);
+	cache[cachecount].list = list;
+	cachecount++;
+}
+
+static struct wifi_channels *getcache(char *ifname, const char *country)
+{
+
+	if (cache) {
+		int cnt = 0;
+		for (cnt = 0; cnt < cachecount; cnt++) {
+			if (!strcmp(cache[cnt].ifname, ifname) && !strcmp(cache[cnt].country, country))
+				return cache[cnt].list;
+		}
+	}
+	return NULL;
+}
+
 struct wifi_channels *mac80211_get_channels(char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
@@ -1174,6 +1209,9 @@ struct wifi_channels *mac80211_get_channels(char *interface, const char *country
 		return ghz60channels;
 	}
 	lock();
+	list = getcache(interface, country);
+	if (list)
+		return list;
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1) {
 		unlock();
@@ -1431,6 +1469,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, const char *country
 		free(rd);
 	nlmsg_free(msg);
 	check_validchannels(list, max_bandwidth_khz);
+	addcache(interface, country, list);
 	unlock();
 	return list;
 out:
