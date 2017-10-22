@@ -86,7 +86,7 @@ typedef uint32_t u32;
 #define VHT_CAP_RX_ANTENNA_PATTERN                  ((u32) BIT(28))
 #define VHT_CAP_TX_ANTENNA_PATTERN                  ((u32) BIT(29))
 
-#ifndef HAVE_MICRO
+#if 0				//ndef HAVE_MICRO
 static pthread_mutex_t mutex_unl;
 static char *lastlock;
 static char *lastunlock;

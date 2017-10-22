@@ -92,6 +92,9 @@ typedef struct {
 	int isregistered;
 	int isregistered_real;
 #endif
+#ifdef HAVE_SUPERCHANNEL
+	int issuperchannel;
+#endif
 	persistent_vars *p;
 /* CGI hash table */
 	struct hsearch_data htab;

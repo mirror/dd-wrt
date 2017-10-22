@@ -1670,7 +1670,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// build
 					j++;
 #else
-				if (!strcmp(m->menu[i][j], "SuperChannel.asp") && (issuperchannel() || !wifi))	// jump 
+				if (!strcmp(m->menu[i][j], "SuperChannel.asp") && (wp->issuperchannel || !wifi))	// jump 
 					// over 
 					// PPTP 
 					// in 
