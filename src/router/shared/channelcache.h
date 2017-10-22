@@ -26,8 +26,9 @@ static void addcache(const char *ifname, const char *country, struct wifi_channe
 	if (cache) {
 		int cnt = 0;
 		for (cnt = 0; cnt < cachecount; cnt++) {
-			if (!strcmp(cache[cnt].ifname, ifname) && !strcmp(cache[cnt].country, country))
+			if (!strcmp(cache[cnt].ifname, ifname) && !strcmp(cache[cnt].country, country)) {
 				return;
+			}
 			if (!strcmp(cache[cnt].ifname, ifname)) {
 				free(cache[cnt].list);
 				cache[cnt].list = list;
@@ -50,8 +51,9 @@ static struct wifi_channels *getcache(const char *ifname, const char *country)
 	if (cache) {
 		int cnt = 0;
 		for (cnt = 0; cnt < cachecount; cnt++) {
-			if (!strcmp(cache[cnt].ifname, ifname) && !strcmp(cache[cnt].country, country))
+			if (!strcmp(cache[cnt].ifname, ifname) && !strcmp(cache[cnt].country, country)) {
 				return cache[cnt].list;
+			}
 		}
 	}
 	return NULL;
