@@ -76,7 +76,6 @@ extern void do_vsp_info_page(unsigned char method, struct mime_handler *handler,
 #define MAC_LEN 17
 #define TMP_PASSWD "d6nw5v1x2pc7st9m"
 
-
 /*
  * struct variable { char *name; char *longname; void (*validate)(webs_t wp,
  * char *value, struct variable *v); char **argv; int nullok; }; 
@@ -590,7 +589,7 @@ extern void ej_show_meminfo(webs_t wp, int argc, char_t ** argv);
 extern void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv);
 extern void ej_dump_wiviz_data(webs_t wp, int argc, char_t ** argv);
 extern void ej_get_url(webs_t wp, int argc, char_t ** argv);
-extern char *getNetworkLabel(webs_t wp,char *var);
+extern char *getNetworkLabel(webs_t wp, char *var);
 
 #ifdef FBNFW
 extern void ej_list_fbn(webs_t wp, int argc, char_t ** argv);
@@ -716,7 +715,6 @@ extern char *(*UwebsGetVar) (webs_t wp, char *var, char *d);
 
 extern int (*UwebsGetVari) (webs_t wp, char *var, int d);
 #define websGetVari UwebsGetVari
-
 
 extern int (*UwebsWrite) (webs_t wp, char *fmt, ...);
 

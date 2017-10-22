@@ -755,7 +755,7 @@
 
 #define ROUTER_WRT_3200ACM 0x101101
 
-#define ROUTER_DIR882 0x10210f  // 15 reset button, 7 outer button 18. mid button
+#define ROUTER_DIR882 0x10210f	// 15 reset button, 7 outer button 18. mid button
 
 #define ROUTER_BOARD_NS5MXW 0x10310c	//nanostation 5mxw
 
@@ -885,7 +885,7 @@ enum { WL = 0,
 enum { START_LED, STOP_LED, MALFUNCTION_LED };
 
 typedef enum { ACT_IDLE,
-//	ACT_TFTP_UPGRADE,
+//      ACT_TFTP_UPGRADE,
 	ACT_WEB_UPGRADE,
 #ifdef HAVE_HTTPS
 	ACT_WEBS_UPGRADE,
@@ -1064,7 +1064,7 @@ extern int pidof(const char *name);
 extern int killall(const char *name, int sig);
 extern int getifcount(const char *ifprefix);
 extern int getIfList(char *buffer, const char *ifprefix);
-extern int getIfListB(char *buffer, const char *ifprefix, int bridgesonly,int nosort);
+extern int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort);
 extern void getIfLists(char *eths, int size);
 extern int ifexists(const char *ifname);
 extern void getinterfacelist(const char *ifprefix, char *buffer);
@@ -1143,7 +1143,6 @@ int writestr(char *path, char *a);
 
 int nvram_backup(char *filename);
 
-
 int nvram_restore(char *filename);
 
 void nvram_clear(void);
@@ -1213,7 +1212,6 @@ struct arph {
 #define ARP_HLEN	sizeof(struct arph) + ETH_HLEN
 #define BCAST		"\xff\xff\xff\xff\xff\xff"
 
-
 int writeproc(char *path, char *value);
 int writeprocsysnet(char *path, char *value);
 int writeprocsys(char *path, char *value);
@@ -1221,7 +1219,6 @@ int writeprocsys(char *path, char *value);
 void set_smp_affinity(int irq, int cpu);
 
 int writevaproc(char *value, char *fmt, ...);
-
 
 void MAC_ADD(char *mac);
 void MAC_SUB(char *mac);
