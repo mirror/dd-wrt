@@ -321,7 +321,6 @@ void configure_single_ath9k(int count)
 
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss)
 {
-	struct wifi_channels *chan;
 	int channel = 0;
 	int freq = 0;
 	char nfreq[16];
@@ -508,7 +507,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	char regdomain[16];
 	sprintf(regdomain, "%s_regdomain", prefix);
 
-	chan = mac80211_get_channels(prefix, country, usebw, 0xff);
 	if (isrepeater) {
 		// for ht40- take second channel otherwise hostapd is unhappy (and does not start)
 		if (has_2ghz(prefix)) {
@@ -589,6 +587,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_ALL);
 				}
 				if (acs != NULL) {
+					struct wifi_channels *chan = mac80211_get_channels(prefix, country, usebw, 0xff);
 					freq = acs->freq;
 					channel = ieee80211_mhz2ieee(freq);
 					fprintf(stderr, "mac80211autochannel interface: %s frequency: %d\n", prefix, freq);
@@ -804,8 +803,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	}
 #endif
 
-	if (chan)
-		free(chan);
 	if (has_ad(prefix)) {
 		fprintf(fp, "hw_mode=ad\n");
 	} else if (freq < 4000) {

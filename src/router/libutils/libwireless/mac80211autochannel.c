@@ -488,7 +488,6 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	}
 
 out:
-	free(wifi_channels);
 	return acs;
 }
 

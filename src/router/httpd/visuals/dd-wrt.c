@@ -1470,7 +1470,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				chan = list_channels(dev);
 		}
 
-		if (chan != NULL) {
+		if (chan) {
 			// int cnt = getchannelcount ();
 			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n", nvram_matchi(wl_channel, 0) ? "selected=\\\"selected\\\"" : "");
 			int i = 0;
@@ -1534,7 +1534,6 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				}
 				i++;
 			}
-			free(chan);
 		}
 #else
 		int instance = 0;
