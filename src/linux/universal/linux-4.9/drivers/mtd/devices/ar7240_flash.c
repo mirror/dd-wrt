@@ -230,24 +230,14 @@ ar7240_spi_flash_unblock(void)
 Before we claim the SPI driver we need to clean up any work in progress we have
 pre-empted from user-space SPI or other SPI device drivers.
 */
-static void
+static int
 ar7424_flash_spi_reset(void) {
 	/* Enable SPI writes and retrieved flash JEDEC ID */
+	u_int32_t mfrid = 0;
 	ar7240_reg_wr_nf(AR7240_SPI_FS, 1);
 	ar7240_spi_poll();
 	ar7240_reg_wr_nf(AR7240_SPI_WRITE, AR7240_SPI_CS_DIS);
-	ar7240_reg_wr(AR7240_SPI_FS, 0);
-}
-
-
-
-
-static void
-ar7424_flash_spi_reset_rw(void) {
- 
-	/* Enable SPI writes and retrieved flash JEDEC ID */
-	u_int32_t mfrid = 0;
-	ar7424_flash_spi_reset();
+#ifdef CONFIG_UBNTFIX
 	ar7240_spi_bit_banger(AR7240_SPI_CMD_RDID);
 	ar7240_spi_bit_banger(0x0);
 	ar7240_spi_bit_banger(0x0);
@@ -266,15 +256,10 @@ ar7424_flash_spi_reset_rw(void) {
 	if(mfrid == MXIC_JEDEC_ID || mfrid == ATMEL_JEDEC_ID || mfrid == WINB_JEDEC_ID || mfrid == INTEL_JEDEC_ID || mfrid == SST_JEDEC_ID) {
 		    ar7240_spi_flash_unblock(); // required to unblock software protection mode by ubiquiti (consider that gpl did not release this in theires gpl sources. likelly to fuck up developers)
 	}
+#endif
 	ar7240_reg_wr(AR7240_SPI_FS, 0);
 }
 
-
-static int ar7240_flash_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
-{
-
-ar7424_flash_spi_reset_rw();
-}
 
 static int ar7240_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
@@ -324,11 +309,13 @@ ar7240_flash_read(struct mtd_info *mtd, loff_t from, size_t len,
 {
 	uint32_t addr = from | 0xbf000000;
 
+//      printk(KERN_EMERG "read block %X:%X\n",from,len);
 	if (!len)
 		return (0);
 	if (from + len > mtd->size)
 		return (-EINVAL);
 
+//      ar7240_flash_spi_down();
 	preempt_disable();
 	ar7424_flash_spi_reset();
 
@@ -336,6 +323,8 @@ ar7240_flash_read(struct mtd_info *mtd, loff_t from, size_t len,
 	*retlen = len;
 
 	preempt_enable();
+//      ar7240_flash_spi_up();
+//      printk(KERN_EMERG "read block %X:%X done\n",from,len);
 
 	return 0;
 }
@@ -347,6 +336,7 @@ ar7240_flash_write(struct mtd_info *mtd, loff_t dst, size_t len,
 {
 	uint32_t val;
 
+	//printk("write len: %lu dst: 0x%x src: %p\n", len, dst, src);
 
 	*retlen = len;
 
@@ -462,8 +452,6 @@ static int __init ar7240_flash_init(void)
 	size_t len;
 	int fsize;
 	int inc=0;
-	int guess;
-	size_t origlen;
 	init_MUTEX(&ar7240_flash_sem);
 
 
@@ -476,8 +464,6 @@ static int __init ar7240_flash_init(void)
 	ar7240_reg_wr_nf(AR7240_SPI_CLOCK, 0x43);
 #endif
 #endif
-
-	ar7424_flash_spi_reset_rw();
 	buf = (char *)0xbf000000;
 	fsize = guessflashsize(buf);
 	for (i = 0; i < AR7240_FLASH_MAX_BANKS; i++) {
@@ -508,12 +494,12 @@ static int __init ar7240_flash_init(void)
 		mtd->_erase = ar7240_flash_erase;
 		mtd->_read = ar7240_flash_read;
 		mtd->_write = ar7240_flash_write;
-		mtd->_unlock =  ar7240_flash_unlock;
+
 		printk(KERN_EMERG "scanning for root partition\n");
 
 		offset = 0;
 
-		guess = guessbootsize(buf, mtd->size);
+		int guess = guessbootsize(buf, mtd->size);
 		if (guess > 0) {
 			printk(KERN_EMERG "guessed bootloader size = %X\n",
 			       guess);
@@ -547,7 +533,7 @@ static int __init ar7240_flash_init(void)
 
 				
 				dir_parts[2].size = le64_to_cpu(sb->bytes_used);
-				origlen = dir_parts[2].offset + dir_parts[2].size;
+				size_t origlen = dir_parts[2].offset + dir_parts[2].size;
 				
 				len = dir_parts[2].offset + dir_parts[2].size;
 				len += (mtd->erasesize - 1);
