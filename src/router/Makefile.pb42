@@ -448,6 +448,11 @@ ifeq ($(CONFIG_ARCHERC7V4),y)
 else
 	echo "# CONFIG_ARCHERC7V4 is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_UBNTM),y)
+	echo CONFIG_UBNTFIX=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_UBNTFIX is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_DAP3662),y)
 	echo CONFIG_DAP3662=y >> $(LINUXDIR)/.config
 else
