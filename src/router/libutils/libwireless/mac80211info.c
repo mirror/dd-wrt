@@ -838,7 +838,7 @@ nla_put_failure:
 int has_vht160(char *interface)
 {
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
-	INITVALUECACHE();
+	INITVALUECACHEi(interface);
 	ret = 0;
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "VHT160")) {
@@ -860,7 +860,7 @@ int has_vht160(char *interface)
 int has_greenfield(char *interface)
 {
 
-	INITVALUECACHE();
+	INITVALUECACHEi(interface);
 	ret = 0;
 	char *htcaps = mac80211_get_caps(interface, 1, 1);
 	if (strstr(htcaps, "[GF]")) {
@@ -875,7 +875,7 @@ int has_greenfield(char *interface)
 int has_vht80(char *interface)
 {
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
-	INITVALUECACHE();
+	INITVALUECACHEi(interface);
 	ret = 0;
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "SHORT-GI-80")) {
@@ -907,7 +907,7 @@ int has_ad(char *prefix)
 int has_vht80plus80(char *interface)
 {
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
-	INITVALUECACHE();
+	INITVALUECACHEi(interface);
 	ret = 0;
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "VHT160-80PLUS80")) {
@@ -924,7 +924,7 @@ int has_vht80plus80(char *interface)
 int has_subeamforming(char *interface)
 {
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
-	INITVALUECACHE();
+	INITVALUECACHEi(interface);
 	ret = 0;
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "SU-BEAMFORMER") || strstr(vhtcaps, "SU-BEAMFORMEE")) {
@@ -941,7 +941,7 @@ int has_subeamforming(char *interface)
 int has_mubeamforming(char *interface)
 {
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
-	INITVALUECACHE();
+	INITVALUECACHEi(interface);
 	ret = 0;
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "MU-BEAMFORMER") || strstr(vhtcaps, "MU-BEAMFORMEE")) {
@@ -957,7 +957,7 @@ int has_mubeamforming(char *interface)
 
 int has_shortgi(char *interface)
 {
-	INITVALUECACHE();
+	INITVALUECACHEi(interface);
 	ret = 0;
 	char *htcaps = mac80211_get_caps(interface, 1, 1);
 	if (strstr(htcaps, "SHORT-GI")) {
