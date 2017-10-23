@@ -270,6 +270,12 @@ ar7424_flash_spi_reset_rw(void) {
 }
 
 
+static int ar7240_flash_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
+{
+
+ar7424_flash_spi_reset_rw();
+}
+
 static int ar7240_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
 	int nsect, s_curr, s_last;
@@ -502,7 +508,7 @@ static int __init ar7240_flash_init(void)
 		mtd->_erase = ar7240_flash_erase;
 		mtd->_read = ar7240_flash_read;
 		mtd->_write = ar7240_flash_write;
-
+		mtd->_unlock =  ar7240_flash_unlock;
 		printk(KERN_EMERG "scanning for root partition\n");
 
 		offset = 0;
