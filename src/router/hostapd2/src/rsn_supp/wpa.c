@@ -420,7 +420,8 @@ static void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
 	/* Calculate PTK which will be stored as a temporary PTK until it has
 	 * been verified when processing message 3/4. */
 	ptk = &sm->tptk;
-	wpa_derive_ptk(sm, src_addr, key, ptk);
+	if (wpa_derive_ptk(sm, src_addr, key, ptk) < 0)
+		goto failed;
 	/* Supplicant: swap tx/rx Mic keys */
 	os_memcpy(buf, ptk->u.auth.tx_mic_key, 8);
 	os_memcpy(ptk->u.auth.tx_mic_key, ptk->u.auth.rx_mic_key, 8);
@@ -1279,6 +1280,14 @@ static int wpa_supplicant_verify_eapol_key_mic(struct wpa_sm *sm,
 			sm->tptk_set = 0;
 			sm->ptk_set = 1;
 			os_memcpy(&sm->ptk, &sm->tptk, sizeof(sm->ptk));
+			/*
+			 * This assures the same TPTK in sm->tptk can never be
+			 * copied twice to sm->pkt as the new PTK. In
+			 * combination with the installed flag in the wpa_ptk
+			 * struct, this assures the same PTK is only installed
+			 * once.
+			 */
+			sm->renew_snonce = 1;
 		}
 	}
 
@@ -1951,6 +1960,8 @@ void wpa_sm_notify_disassoc(struct wpa_sm *sm)
 	rsn_preauth_deinit(sm);
 	if (wpa_sm_get_state(sm) == WPA_4WAY_HANDSHAKE)
 		sm->dot11RSNA4WayHandshakeFailures++;
+	os_memset(sm->bssid, 0, ETH_ALEN);
+
 }
 
 
@@ -1994,8 +2005,8 @@ void wpa_sm_set_pmk_from_pmksa(struct wpa_sm *sm)
 		sm->pmk_len = sm->cur_pmksa->pmk_len;
 		os_memcpy(sm->pmk, sm->cur_pmksa->pmk, sm->pmk_len);
 	} else {
-		sm->pmk_len = PMK_LEN;
-		os_memset(sm->pmk, 0, PMK_LEN);
+		sm->pmk_len = 0;
+		os_memset(sm->pmk, 0, PMK_LEN_MAX);
 	}
 }
 

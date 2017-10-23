@@ -96,6 +96,12 @@ void wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 {
 	u8 data[2 * ETH_ALEN + 2 * WPA_NONCE_LEN];
 
+	if (pmk_len == 0) {
+		wpa_printf(MSG_ERROR, "WPA: No PMK set for PT derivation");
+		return -1;
+	}
+
+
 	if (os_memcmp(addr1, addr2, ETH_ALEN) < 0) {
 		os_memcpy(data, addr1, ETH_ALEN);
 		os_memcpy(data + ETH_ALEN, addr2, ETH_ALEN);
