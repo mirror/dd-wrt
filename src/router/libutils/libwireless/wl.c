@@ -2852,13 +2852,15 @@ int has_airtime_fairness(char *prefix)
 	free(globstring);
 	if (!fp)
 		mask |= 1;
-	fclose(fp);
+	else
+		fclose(fp);
 	asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath10k/atf", devnum);
 	fp = fopen(globstring, "rb");
 	free(globstring);
 	if (!fp)
 		mask |= 1;
-	fclose(fp);
+	else
+    		fclose(fp);
 	RETURNVALUE(!mask);
 	EXITVALUECACHE();
 	return ret;
