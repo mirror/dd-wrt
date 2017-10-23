@@ -83,18 +83,16 @@ int has_2ghz(char *prefix)
 	INITVALUECACHE();
 #ifdef HAVE_MVEBU
 	if (is_wrt3200() && is_mvebu(prefix) && !strncmp(prefix, "ath0", 4)) {
-		ret = 0;
-		goto out;
+		RETURNVALUE(0);
 	}
 #endif
 #ifdef HAVE_ATH9K
 	if (is_ath9k(prefix)) {
-		ret = mac80211_check_band(prefix, 2);
-		goto out;
+		RETURNVALUE(mac80211_check_band(prefix, 2));
 	}
 #endif
 
-	ret = has_athmask(dn, 0x8);
+	RETURNVALUE(has_athmask(dn, 0x8));
 	EXITVALUECACHE();
 
 	return ret;
@@ -104,17 +102,15 @@ int has_5ghz(char *prefix)
 {
 	INITVALUECACHE();
 	if (has_ad(prefix)) {
-		ret = 0;
-		goto out;
+		RETURNVALUE(0);
 	}
 #ifdef HAVE_ATH9K
 	if (is_ath9k(prefix)) {
-		ret = mac80211_check_band(prefix, 5);
-		goto out;
+		RETURNVALUE(mac80211_check_band(prefix, 5));
 	}
 #endif
 
-	ret = has_athmask(dn, 0x1);
+	RETURNVALUE(has_athmask(dn, 0x1));
 	EXITVALUECACHE();
 	return ret;
 
@@ -2785,23 +2781,21 @@ int is_ath9k(const char *prefix)
 	// get legacy interface count
 #ifdef HAVE_MADWIFI_MIMO
 	if (!nvram_match("mimo_driver", "ath9k")) {
-		ret = 0;
-		goto out;
+		RETURNVALUE(0);
 	}
 #endif
 	// correct index if there are legacy cards arround
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1) {
-		ret = 0;
-		goto out;
+		RETURNVALUE(0);
 	}
 	asprintf(&globstring, "/sys/class/ieee80211/phy%d", devnum);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	free(globstring);
 	if (globresult == 0) {
-		ret = (int)globbuf.gl_pathc;
+		RETURNVALUE((int)globbuf.gl_pathc);
 	} else
-		ret = 0;
+		RETURNVALUE(0);
 	globfree(&globbuf);
 	EXITVALUECACHE();
 	return ret;
@@ -2811,21 +2805,21 @@ int has_spectralscanning(const char *prefix)
 {
 #ifdef HAVE_MVEBU
 	return 0;
-#endif
+#else
+	INITVALUECACHE();
 	glob_t globbuf;
-	int count = 0;
 	char *globstring;
 	int globresult;
 	int devnum;
 	// get legacy interface count
 #ifdef HAVE_MADWIFI_MIMO
 	if (!nvram_match("mimo_driver", "ath9k"))
-		return (0);
+		RETURNVALUE(0);
 #endif
 	// correct index if there are legacy cards arround
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1)
-		return 0;
+		RETURNVALUE(0);
 #ifdef HAVE_ATH10K
 	if (is_ath10k(prefix))
 		asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath10k/spectral_count", devnum);
@@ -2835,55 +2829,61 @@ int has_spectralscanning(const char *prefix)
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	free(globstring);
 	if (globresult == 0)
-		count = (int)globbuf.gl_pathc;
+		ret = (int)globbuf.gl_pathc;
 	globfree(&globbuf);
-	return (count);
+	EXITVALUECACHE();
+	return ret;
+#endif
 }
 #endif
 
 #ifdef HAVE_ATH9K
 int has_airtime_fairness(char *prefix)
 {
+	INITVALUECACHE();
 	int mask = 0;
 	int devnum;
 	char *globstring;
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1)
-		return 0;
+		RETURNVALUE(0);
 	asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/airtime_flags", devnum);
 	FILE *fp = fopen(globstring, "rb");
 	free(globstring);
 	if (!fp)
-		return mask |= 1;
+		mask |= 1;
 	fclose(fp);
 	asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath10k/atf", devnum);
 	fp = fopen(globstring, "rb");
 	free(globstring);
 	if (!fp)
-		return mask |= 1;
+		mask |= 1;
 	fclose(fp);
-	return !mask;
+	RETURNVALUE(!mask);
+	EXITVALUECACHE();
+	return ret;
 }
 
 #endif
 static int devicecountbydriver(const char *prefix, char *drivername)
 {
+	INITVALUECACHE();
 	glob_t globbuf;
-	int count = 0;
 	char *globstring;
 	int globresult;
 	int devnum;
 	// correct index if there are legacy cards arround... should not...
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1)
-		return 0;
+		RETURNVALUE(0);
 	asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/pci:%s", devnum, drivername);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	free(globstring);
 	if (globresult == 0)
-		count = (int)globbuf.gl_pathc;
+		ret = (int)globbuf.gl_pathc;
 	globfree(&globbuf);
-	return (count);
+	EXITVALUECACHE();
+	return ret;
 
 }
 
