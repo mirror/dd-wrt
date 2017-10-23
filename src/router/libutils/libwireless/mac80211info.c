@@ -838,50 +838,64 @@ nla_put_failure:
 int has_vht160(char *interface)
 {
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
+	INITVALUECACHE();
+	ret = 0;
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "VHT160")) {
 		free(vhtcaps);
-		return 1;
+		ret = 1;
+		goto out;
 	}
 	if (strstr(vhtcaps, "VHT160-80PLUS80")) {
-		free(vhtcaps);
-		return 1;
+		ret = 1;
 	}
 	free(vhtcaps);
-#endif
+	EXITVALUECACHE();
+	return ret;
+#else
 	return 0;
+#endif
 }
 
 int has_greenfield(char *interface)
 {
 
+	INITVALUECACHE();
+	ret = 0;
 	char *htcaps = mac80211_get_caps(interface, 1, 1);
 	if (strstr(htcaps, "[GF]")) {
-		free(htcaps);
-		return 1;
+		ret = 0;
 	}
 	free(htcaps);
-	return 0;
+	EXITVALUECACHE();
+	return ret;
 
 }
 
 int has_vht80(char *interface)
 {
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
+	INITVALUECACHE();
+	ret = 0;
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "SHORT-GI-80")) {
-		free(vhtcaps);
-		return 1;
+		ret = 1;
 	}
 	free(vhtcaps);
-#endif
+	EXITVALUECACHE();
+	return ret;
+#else
 	return 0;
+#endif
 }
 
 #ifdef HAVE_ATH10K
 int has_ac(char *prefix)
 {
-	return (is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix));
+	INITVALUECACHE();
+	ret = (is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix));
+	EXITVALUECACHE();
+	return ret;
 }
 #endif
 #ifdef HAVE_WIL6210
@@ -893,59 +907,74 @@ int has_ad(char *prefix)
 int has_vht80plus80(char *interface)
 {
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
+	INITVALUECACHE();
+	ret = 0;
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "VHT160-80PLUS80")) {
-		free(vhtcaps);
-		return 1;
+		ret = 1;
 	}
 	free(vhtcaps);
-#endif
+	EXITVALUECACHE();
+	return ret;
+#else
 	return 0;
+#endif
 }
 
 int has_subeamforming(char *interface)
 {
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
+	INITVALUECACHE();
+	ret = 0;
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "SU-BEAMFORMER") || strstr(vhtcaps, "SU-BEAMFORMEE")) {
-		free(vhtcaps);
-		return 1;
+		ret = 1;
 	}
 	free(vhtcaps);
-#endif
+	EXITVALUECACHE();
+	return ret;
+#else
 	return 0;
+#endif
 }
 
 int has_mubeamforming(char *interface)
 {
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
+	INITVALUECACHE();
+	ret = 0;
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "MU-BEAMFORMER") || strstr(vhtcaps, "MU-BEAMFORMEE")) {
-		free(vhtcaps);
-		return 1;
+		ret = 1;
 	}
 	free(vhtcaps);
-#endif
+	EXITVALUECACHE();
+	return ret;
+#else
 	return 0;
+#endif
 }
 
 int has_shortgi(char *interface)
 {
+	INITVALUECACHE();
+	ret = 0;
 	char *htcaps = mac80211_get_caps(interface, 1, 1);
 	if (strstr(htcaps, "SHORT-GI")) {
 		free(htcaps);
-		return 1;
+		ret = 1;
+		goto out;
 	}
 	free(htcaps);
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "SHORT-GI")) {
-		free(vhtcaps);
-		return 1;
+		ret = 1;
 	}
 	free(vhtcaps);
 #endif
-	return 0;
+	EXITVALUECACHE();
+	return ret;
 }
 
 static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
