@@ -474,6 +474,8 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_ATH9K
 		if (is_ath9k(prefix)) {
 			switch (interface->width) {
+			case 10:
+			case 5:
 			case 2:
 				websWrite(wp, " NOHT");
 				break;
