@@ -211,26 +211,26 @@ struct wifi_channels {
 	int noise;
 	int max_eirp;
 	int hw_eirp;
-	unsigned char no_outdoor, 
-			no_indoor, 
-			no_ofdm, 
-			no_cck, 
-			ptp_only, 
-			ptmp_only, 
-			passive_scan, 
-			no_ibss, 
-			lll, 
-			llu, 
-			lul, 
-			luu, 
-			ull, 
-			ulu, 
-			uul, 
-			uuu, 
-			ht40,
-			vht80,
-			vht160,
-			dfs;
+	unsigned int no_outdoor:1,
+			no_indoor:1,
+			no_ofdm:1,
+			no_cck:1,
+			ptp_only:1,
+			ptmp_only:1, 
+			passive_scan:1, 
+			no_ibss:1, 
+			lll:1, 
+			llu:1, 
+			lul:1, 
+			luu:1, 
+			ull:1, 
+			ulu:1, 
+			uul:1, 
+			uuu:1, 
+			ht40:1,
+			vht80:1,
+			vht160:1,
+			dfs:1;
 };
 
 struct mac80211_info {

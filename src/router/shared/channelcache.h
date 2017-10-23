@@ -66,7 +66,6 @@ static struct wifi_channels *getcache(const char *ifname, const char *country)
 	sscanf(prefix, "ath%d", &dn); \
 	if (dn > 7 || devs[dn] == -1) {
 
-
 #define INITVALUECACHE() \
 	static char devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 }; \
 	int dn, ret; \
@@ -77,6 +76,10 @@ static struct wifi_channels *getcache(const char *ifname, const char *country)
 	} else { \
 		return devs[dn]; \
 	} \
-      out:; \
+      out_cache:; \
 	if (dn < 8) \
 		devs[dn] = ret;
+
+#define RETURNVALUE(val) \
+	ret = val; \
+	goto out_cache:;
