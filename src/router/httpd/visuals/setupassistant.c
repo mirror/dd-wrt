@@ -993,7 +993,8 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 				}
 				int freq = chan[i].freq;
 				if (freq != -1) {
-					websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n", fr, nvram_selmatch(wp, wl_channel, fr) ? "selected=\\\"selected\\\"" : "", cn, (freq + offset));
+					websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n", fr, nvram_selmatch(wp, wl_channel, fr) ? "selected=\\\"selected\\\"" : "", cn,
+						  (freq + offset));
 				}
 				// free (chan[i].freq);
 				i++;
