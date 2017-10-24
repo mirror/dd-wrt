@@ -21,6 +21,7 @@
 #define PMKID_LEN 16
 #define PMK_LEN 32
 #define WPA_REPLAY_COUNTER_LEN 8
+#define PMK_LEN_MAX 64
 #define WPA_NONCE_LEN 32
 #define WPA_KEY_RSC_LEN 8
 #define WPA_GMK_LEN 32
