@@ -1780,7 +1780,10 @@ void start_lan(void)
 	}
 
 	if (vlan) {
-		nvram_setz(lan_ifnames, "vlan1 vlan2 ath0");
+		if (brand == ROUTER_BOARD_NS5MXW)
+			nvram_setz(lan_ifnames, "vlan1 ath0");
+		else
+			nvram_setz(lan_ifnames, "vlan1 vlan2 ath0");
 	} else if (devnum == 2)
 		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
 	else
