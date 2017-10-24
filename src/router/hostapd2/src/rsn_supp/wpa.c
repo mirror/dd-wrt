@@ -421,7 +421,7 @@ static void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
 	 * been verified when processing message 3/4. */
 	ptk = &sm->tptk;
 	if (wpa_derive_ptk(sm, src_addr, key, ptk) < 0)
-		goto failed;
+		return;
 	/* Supplicant: swap tx/rx Mic keys */
 	os_memcpy(buf, ptk->u.auth.tx_mic_key, 8);
 	os_memcpy(ptk->u.auth.tx_mic_key, ptk->u.auth.rx_mic_key, 8);
