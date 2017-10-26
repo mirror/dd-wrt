@@ -224,6 +224,8 @@ struct nvram_param srouter_defaults[] = {
 	{"lan_ipaddr", "192.168.222.1"},	/* LAN ip address */
 	{"ath0_regdomain", "UNITED_STATES"},
 	{"ath1_regdomain", "UNITED_STATES"},
+#elif HAVE_ENEO
+	{"ath0_regdomain", "GERMANY"},
 #elif HAVE_BUFFALO
 #ifdef BUFFALO_EU
 	{"ath0_regdomain", "GERMANY"},	/* LAN IP address */
