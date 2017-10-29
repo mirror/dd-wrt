@@ -114,7 +114,7 @@ struct ieee80211_regdomain *mac80211_get_regdomain(const char *varcountry)
 	__u8 *db;
 	struct regdb_file_header *header;
 	struct regdb_file_reg_country *countries;
-	int dblen, siglen, num_countries, i, j;
+	int dblen = 0, siglen = 0, num_countries = 0, i, j;
 	char alpha2[2];
 	int found_country = 0;
 
