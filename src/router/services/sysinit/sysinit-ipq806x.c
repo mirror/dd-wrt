@@ -554,6 +554,14 @@ void start_sysinit(void)
 	eval("ifconfig", "eth0", "up");
 
 	detect_wireless_devices();
+	
+	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
+	writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
+	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
+	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
+	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
+	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold_any_cpu_load", "50");
+	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold_multi_core", "50");
 
 	int s;
 	struct ifreq ifr;
