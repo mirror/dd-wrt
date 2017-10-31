@@ -7,6 +7,9 @@ all: mikrotik_btest
 	
 mikrotik_btest: main.o parse_opt.o tcptest_thread.o tcptest.o messages.o md5.o utils.o
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+	
+btest: btest.o timing_mach.c
+	$(CC) $(LDFLAGS) -o $@ $^ -lpthread
 
 main.o: main.c
 	$(CC) $(CFLAGS) -c -o $@ $<
