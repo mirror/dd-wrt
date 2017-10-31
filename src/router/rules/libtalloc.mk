@@ -44,9 +44,9 @@ libtalloc-configure:
 	(cd libtalloc; \
 		echo -e >cache.txt $(TALLOCCROSS) " \
 			\nChecking uname machine type: \"$(ARCH)\" \
-			\nChecking uname release type: \"$(LINUX_UNAME_VERSION)\" \
+			\nChecking uname release type: \"3.9.0\" \
 			\nChecking uname sysname type: \"Linux\" \
-			\nChecking uname version type: \"$(LINUX_UNAME_VERSION)\" \
+			\nChecking uname version type: \"3.9.0\" \
 		\n" ; CFLAGS="$(COPTS) $(MIPS16_OPT)" CC="ccache $(ARCH)-linux-uclibc-gcc" \
 		./buildtools/bin/waf configure \
 			--prefix=/usr \
