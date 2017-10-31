@@ -110,7 +110,7 @@ endif
 
 
 openvpn-clean:
-	if test -e "$(OVPN)/Makefile"; then make -C $(OVPN) clean; fi
+	-make -C $(OVPN) clean
 
 
 
