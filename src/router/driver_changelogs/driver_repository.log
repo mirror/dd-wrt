@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r3674 | brainslayer | 2017-10-31 18:45:58 +0100 (Tue, 31 Oct 2017) | 1 line
+
+toolchain update
+------------------------------------------------------------------------
+r3673 | brainslayer | 2017-10-31 16:08:16 +0100 (Tue, 31 Oct 2017) | 1 line
+
+revert own decap patch and apply official version
+------------------------------------------------------------------------
+r3672 | kong | 2017-10-31 00:57:48 +0100 (Tue, 31 Oct 2017) | 1 line
+
+revert use previously known good fw
+------------------------------------------------------------------------
 r3671 | brainslayer | 2017-10-30 08:41:37 +0100 (Mon, 30 Oct 2017) | 1 line
 
 use really the latest which is beta 10 and not beta 9
