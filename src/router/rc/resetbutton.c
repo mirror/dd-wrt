@@ -805,7 +805,9 @@ static void handle_reset(void)
 
 		// nvram_set ("sv_restore_defaults", "1");
 		// nvram_commit ();
-
+		
+		setWifiPass();
+	
 		kill(1, SIGTERM);
 #endif
 	}
@@ -1305,7 +1307,7 @@ static void resetbtn_period_check(int sig)
 	int pushses;
 	int pushwifi24;
 	int pushwifi5;
-	int sesgpio;
+	int sesgpio = 0xfff;
 	int wifi24gpio = 0xfff;
 	int wifi5gpio = 0xfff;
 
