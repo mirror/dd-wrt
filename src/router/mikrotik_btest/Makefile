@@ -3,7 +3,7 @@ CFLAGS = $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -DNEED_PRINT
 LDFLAGS = $(COPTS) $(MIPS16_OPT) -Wl,--gc-sections
 LDLIBS += -lpthread -lrt
 
-all: mikrotik_btest
+all: mikrotik_btest btest
 	
 mikrotik_btest: main.o parse_opt.o tcptest_thread.o tcptest.o messages.o md5.o utils.o
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
@@ -37,3 +37,4 @@ clean:
 
 install:
 	install -D mikrotik_btest $(INSTALLDIR)/usr/sbin/mikrotik_btest
+	install -D btest $(INSTALLDIR)/usr/sbin/btest
