@@ -729,11 +729,11 @@
 
 #define ROUTER_NETGEAR_R7500 0xf50e
 
-#define ROUTER_NETGEAR_R7500V2 0xf50f
-
 #define ROUTER_LINKSYS_EA8500 0xf60e
 
 #define ROUTER_TRENDNET_TEW827 0xf701
+
+#define ROUTER_NETGEAR_R7500V2 0xf70e
 
 #define ROUTER_NETGEAR_R8500 0xf81a
 
@@ -776,6 +776,7 @@ typedef struct {
 extern void update_timezone(void);
 extern TIMEZONE_TO_TZSTRING allTimezones[];
 
+extern void setWifiPass();
 extern char *getBridge(char *ifname, char *word);
 extern char *getRealBridge(char *ifname, char *word);
 extern char *getWDSSTA(void);
