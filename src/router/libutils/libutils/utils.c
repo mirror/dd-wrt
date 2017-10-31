@@ -80,6 +80,114 @@ struct mii_ioctl_data {
 	unsigned short val_out;
 };
 
+void setWifiPass()
+{
+	//In case of a reset use burned in wifi pass
+	int mtd,type;
+	int offset = 0;;
+	char mtdpath[64] = {0};
+	char cmd[64] = {0};
+	char line[256] = {0};
+	char var[32] = {0};
+	char pass[32]= {0};
+	FILE *fp;
+	
+	int brand = getRouterBrand();
+
+	switch (brand) {
+		case ROUTER_NETGEAR_R7500V2:
+			mtd = getMTD("art");
+			offset = 0x0073;
+			break;
+		case ROUTER_NETGEAR_R7800:
+			mtd = getMTD("art");
+			offset = 0x007B;
+		case ROUTER_NETGEAR_R9000:
+			mtd = getMTD("ART");
+			offset = 0x007B;
+			break;
+		case ROUTER_NETGEAR_AC1450:
+		case ROUTER_NETGEAR_EX6200:
+		case ROUTER_NETGEAR_R6250:
+		case ROUTER_NETGEAR_R6300:
+		case ROUTER_NETGEAR_R6300V2:
+//		case ROUTER_NETGEAR_R6400:
+		case ROUTER_NETGEAR_R7000:
+		case ROUTER_NETGEAR_R8000:
+		case ROUTER_NETGEAR_R8500:
+			mtd = getMTD("board_data");
+			offset = 0x801A;
+			break;
+		case ROUTER_LINKSYS_EA8500:
+			mtd = getMTD("devinfo");
+			strcpy(var, "default_passphrase");
+			break;
+		default:
+			mtd = getMTD("board_data");
+			break;
+	}
+		
+	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
+	
+	if(offset !=0){
+		
+		fp = fopen(mtdpath, "rb");
+		
+		if(fp){
+			fseek(fp, offset, SEEK_SET);
+			fread(pass, 16, 1, fp);
+			fclose(fp);
+		}
+	} else {
+		
+		sprintf(cmd, "strings /dev/mtdblock/%d | grep %s", mtd, var);
+		fp = popen(cmd, "r");
+		
+		if (fp != NULL) {
+			while (fgets(line, sizeof(line) - 1, fp) != NULL) {
+				if (strstr(line, var)) {
+					char *tok,*val;
+					tok = strtok(line, "=");
+					val = strtok(NULL, "=");
+					strcpy(pass, val);
+				}
+			}
+			pclose(fp);
+		}
+	}
+	
+	if(strlen(pass) > 1){
+		fprintf(stderr, "Restoring Factory WIFI Pass: %s\n", pass);
+#ifdef HAVE_BCMMODERN
+		nvram_set("wl0_security_mode", "psk2");
+		nvram_set("wl0_crypto", "aes");
+		nvram_set("wl0_wpa_psk", pass);
+		nvram_set("wl0_akm", "psk2");
+		nvram_set("wl1_security_mode", "psk2");
+		nvram_set("wl1_crypto", "aes");
+		nvram_set("wl1_wpa_psk", pass);
+		nvram_set("wl1_akm", "psk2");
+#ifdef HAVE_DHDAP
+		nvram_set("wl2_security_mode", "psk2");
+		nvram_set("wl2_crypto", "aes");
+		nvram_set("wl2_wpa_psk", pass);
+		nvram_set("wl2_akm", "psk2");
+#endif
+#else
+		nvram_set("ath0_security_mode", "psk2");
+		nvram_set("ath0_crypto", "aes");
+		nvram_set("ath0_wpa_psk", pass);
+		nvram_set("ath0_akm", "psk2");
+		nvram_set("ath1_security_mode", "psk2");
+		nvram_set("ath1_crypto", "aes");
+		nvram_set("ath1_wpa_psk", pass);
+		nvram_set("ath1_akm", "psk2");
+#endif
+	}
+	
+	
+}
+
 int count_processes(char *pidName)
 {
 	FILE *fp;
