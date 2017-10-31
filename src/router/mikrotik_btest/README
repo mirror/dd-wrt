@@ -1,0 +1,15 @@
+This is a bandwidth test client compatible with Mikrotik RouterOS.
+
+Usage: mikrotik_btest [options] HOST[:PORT]
+
+Options:
+	-h, --help 				 show this help message and exit.
+	-t DURATION, --time=DURATION 		 test duration in seconds. Default 8 seconds.
+	-m MTU, --mtu=MTU 			 MTU in bytes for the test. Default 1500 bytes.
+	-d DIRECTION, --direction=DIRECTION 	 Test direction (receive, send, both). Default receive.
+	-u USER, --user=USER
+	-p PASSWORD, --password=PASSWORD
+
+	
+This software is licensed under the terms of GPLv3 as defined by the
+Free Software Foundation, details can be read in the COPYING file.
