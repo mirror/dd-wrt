@@ -52,7 +52,7 @@ endif
 
 quagga-clean:
 ifeq ($(CONFIG_QUAGGA_STABLE),y)
-	if test -e "quagga-stable/Makefile"; then $(MAKE) -C quagga-stable clean; fi
+	-if test -e "quagga-stable/Makefile"; then $(MAKE) -C quagga-stable clean; fi
 else
-	if test -e "quagga/Makefile"; then $(MAKE) -C quagga clean; fi
+	-if test -e "quagga/Makefile"; then $(MAKE) -C quagga clean; fi
 endif
