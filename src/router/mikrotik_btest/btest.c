@@ -191,7 +191,7 @@ int client() {
 	char bwmult;
 	int ret;
 
-	cmd.proto=CMD_PROTO_UDP;
+	cmd.proto=!opt_udpmode;
 	cmd.direction=opt_transmit ? CMD_DIR_RX : 0;
 	cmd.direction+=opt_receive ? CMD_DIR_TX : 0;
 	cmd.random=0;
@@ -350,6 +350,7 @@ int server_conn(int cmdsock, char *remoteIP) {
 	if (cmd.proto == CMD_PROTO_UDP) {
 		test_udp(cmd, cmdsock, remoteIP);
 	} else {
+		
 		test_tcp(cmd, cmdsock);
 	}
 	/*
@@ -411,7 +412,7 @@ struct cmdStruct unpackCmdStr(unsigned char *cmdStr) {
 	struct cmdStruct cmd;
 	int i;
 
-	dumpBuffer("Cmd buffer: ", cmdStr, 16);
+//	dumpBuffer("Cmd buffer: ", cmdStr, 16);
 
 	cmd.proto=cmdStr[0];
 	cmd.direction=cmdStr[1];
@@ -443,7 +444,7 @@ void packCmdStr(struct cmdStruct *pcmd, unsigned char *buf) {
 	packLongLE(&buf[8], pcmd->remote_tx_speed);
 	packLongLE(&buf[12], pcmd->local_tx_speed);
 
-	dumpBuffer("Packed Buffer: ", buf, 16);
+//	dumpBuffer("Packed Buffer: ", buf, 16);
 
 	return;
 }
@@ -544,14 +545,14 @@ void *test_udp_tx(void *arg) {
 		interval.tv_nsec=0;
 		interval.tv_sec=0;
 	}
-	timespec_dump("Interval: ", &interval);
+//	timespec_dump("Interval: ", &interval);
 	buf=(unsigned char *) malloc(pcmd->tx_size-28);
 	printf("Calling test_udp_tx(more)\n");
 	bzero(buf, pcmd->tx_size-28);
 
 	/* Get current time and add the interval to it */
 	clock_gettime(CLOCK_REALTIME, &nextPacketTime);
-	timespec_dump("gettime: ", &nextPacketTime);
+//	timespec_dump("gettime: ", &nextPacketTime);
 	while(1) {
 		nextPacketTime.tv_sec += interval.tv_sec;
 		nextPacketTime.tv_nsec += interval.tv_nsec;
@@ -689,7 +690,7 @@ int test_udp(struct cmdStruct cmd, int cmdsock, char *remoteIP) {
 			fprintf(stderr, "Did not recieve remote port number\n");
 			return(-1);
 		}
-		dumpBuffer("Socket number buffer: ", socknumbuf, 2);
+//		dumpBuffer("Socket number buffer: ", socknumbuf, 2);
 		udpport=(socknumbuf[0] << 8) + socknumbuf[1];
 	}
 	printf("Calling test_udp(udpport=%d)\n", udpport);
@@ -816,10 +817,10 @@ int test_tcp(struct cmdStruct cmd, int cmdsock) {
 
 	printf("Listening on TCP cmdsock\n");
 	while(nBytes=recv(cmdsock,buffer,1024,0)){
-		for (i=0;i<nBytes-1;i++){
+/*		for (i=0;i<nBytes-1;i++){
 			printf("%02x", buffer[i]);
 		}
-		printf("\n");
+		printf("\n");*/
         }
 }
 
