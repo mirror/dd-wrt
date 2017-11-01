@@ -2,12 +2,12 @@
 .\"     Title: tor
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 07/31/2017
+.\"      Date: 10/24/2017
 .\"    Manual: Tor Manual
 .\"    Source: Tor
 .\"  Language: English
 .\"
-.TH "TOR" "1" "07/31/2017" "Tor" "Tor Manual"
+.TH "TOR" "1" "10/24/2017" "Tor" "Tor Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
