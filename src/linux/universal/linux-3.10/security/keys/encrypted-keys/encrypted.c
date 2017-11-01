@@ -315,6 +315,13 @@ static struct key *request_user_key(const char *master_desc, u8 **master_key,
 
 	down_read(&ukey->sem);
 	upayload = ukey->payload.data;
+	if (!upayload) {
+		/* key was revoked before we acquired its semaphore */
+		up_read(&ukey->sem);
+		key_put(ukey);
+		ukey = ERR_PTR(-EKEYREVOKED);
+		goto error;
+	}
 	*master_key = upayload->data;
 	*master_keylen = upayload->datalen;
 error:
@@ -428,7 +435,7 @@ static int init_blkcipher_desc(struct blkcipher_desc *desc, const u8 *key,
 static struct key *request_master_key(struct encrypted_key_payload *epayload,
 				      u8 **master_key, size_t *master_keylen)
 {
-	struct key *mkey = NULL;
+	struct key *mkey = ERR_PTR(-EINVAL);
 
 	if (!strncmp(epayload->master_desc, KEY_TRUSTED_PREFIX,
 		     KEY_TRUSTED_PREFIX_LEN)) {
