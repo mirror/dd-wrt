@@ -521,10 +521,10 @@ void *test_udp_tx(void *arg) {
 	struct timespec nextPacketTime;
 	unsigned long tx_speed;
 
-	printf("Calling test_udp_tx()\n");
+//	printf("Calling test_udp_tx()\n");
 	// sleep(1);
 	pcmd = (struct cmdStruct *)arg;
-	printf("Calling test_udp_tx(%d)\n", pcmd->tx_size);
+//	printf("Calling test_udp_tx(%d)\n", pcmd->tx_size);
 	if (opt_server) {
 		tx_speed=pcmd->remote_tx_speed;
 	} else {
@@ -547,7 +547,7 @@ void *test_udp_tx(void *arg) {
 	}
 //	timespec_dump("Interval: ", &interval);
 	buf=(unsigned char *) malloc(pcmd->tx_size-28);
-	printf("Calling test_udp_tx(more)\n");
+//	printf("Calling test_udp_tx(more)\n");
 	bzero(buf, pcmd->tx_size-28);
 
 	/* Get current time and add the interval to it */
@@ -607,7 +607,7 @@ void *test_udp_rx(void *arg) {
 	recvStats.minInterval=0;
 	recvStats.lostPackets=0;
 	pcmd = (struct cmdStruct *)arg;
-	printf("Calling test_udp_rx(tx_size=%d)\n", pcmd->tx_size);
+//	printf("Calling test_udp_rx(tx_size=%d)\n", pcmd->tx_size);
 	buf=(unsigned char *) malloc(pcmd->tx_size);
 	last.tv_sec=0;
 	last.tv_nsec=0;
@@ -678,7 +678,7 @@ int test_udp(struct cmdStruct cmd, int cmdsock, char *remoteIP) {
 	struct timespec timeout;
 	struct timespec now;
 
-	printf("Calling test_udp()\n");
+//	printf("Calling test_udp()\n");
 	if (opt_server) {
 		/* Send server socket number */
 		udpport++;
@@ -693,7 +693,7 @@ int test_udp(struct cmdStruct cmd, int cmdsock, char *remoteIP) {
 //		dumpBuffer("Socket number buffer: ", socknumbuf, 2);
 		udpport=(socknumbuf[0] << 8) + socknumbuf[1];
 	}
-	printf("Calling test_udp(udpport=%d)\n", udpport);
+//	printf("Calling test_udp(udpport=%d)\n", udpport);
 
 	addr_size = sizeof(clientAddr);
 
@@ -791,7 +791,7 @@ void *test_tcp_tx(void *arg) {
 	unsigned char *buf;
 	int ret;
 
-	printf("Calling test_tcp_tx()\n");
+//	printf("Calling test_tcp_tx()\n");
 	sleep(1);
 	pcmd = (struct cmdStruct *)arg;
 	buf=(unsigned char *) malloc(pcmd->tx_size);
@@ -809,7 +809,7 @@ int test_tcp(struct cmdStruct cmd, int cmdsock) {
 	int nBytes, i;
 	unsigned char buffer[1024];
 
-	printf("Calling test_tcp()\n");
+//	printf("Calling test_tcp()\n");
 	tcpSocket=cmdsock;
 	if (cmd.direction == CMD_DIR_TX) {
 		pthread_create(&pth_tx,NULL,test_tcp_tx,(void *)&cmd);
