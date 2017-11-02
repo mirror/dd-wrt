@@ -505,22 +505,25 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 		send_headers(stream, 200, "Ok", extra, handler->mime_type, filesize, "bigfile.bin", 1);
 	}
 	// send body in 64kb chunks based on random values
-	char *test = malloc(65536);
-	srand(time(NULL));
-	for (i = 0; i < 65536; i++)
-		test[i] = rand() % 255;
+	FILE *fp;
 	long long i64;
 	long long sz = filesize / 65536;
-	FILE *fp = fopen("/tmp/bigmem.bin","wb");
-	fwrite(test,1,65536,fp);
-	fclose(fp);
-	fp = fopen("/tmp/bigmem.bin", "rb");
+	if (!f_exists("/tmp/bigfilemem.bin")) {
+		char *test = malloc(65536);
+		srand(time(NULL));
+		for (i = 0; i < 65536; i++) 
+			test[i] = rand() % 255;
+		fp = fopen("/tmp/bigfilemem.bin","wb");
+		fwrite(test,1,65536,fp);
+		fclose(fp);
+		free(test);
+	}
+	fp = fopen("/tmp/bigfilemem.bin", "rb");
 	for (i64 = 0; i64 < sz; i64++) {
 		wfsendfile(fileno(fp), 0, 65536, stream);
 	}
 	wfsendfile(fileno(fp), 0, filesize % 65536, stream);
 	fclose(fp);
-	free(test);
 
       ret:;
 	free(extra);
