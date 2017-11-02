@@ -511,7 +511,10 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 		test[i] = rand() % 255;
 	long long i64;
 	long long sz = filesize / 65536;
-	FILE *fp = fmemopen(test, 65536, "rb");
+	FILE *fp = fopen("/tmp/bigmem.bin","wb");
+	fwrite(test,1,65536,fp);
+	fclose(fp);
+	fp = fopen("/tmp/bigmem.bin", "rb");
 	for (i64 = 0; i64 < sz; i64++) {
 		wfsendfile(fileno(fp), 0, 65536, stream);
 	}
