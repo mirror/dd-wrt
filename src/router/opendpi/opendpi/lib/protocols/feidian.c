@@ -45,7 +45,7 @@ static void ndpi_search_feidian(struct ndpi_detection_module_struct *ndpi_struct
 			return;
 		} else if (packet->payload_packet_len > 50 && memcmp(packet->payload, "GET /", 5) == 0) {
 			ndpi_parse_packet_line_info(ndpi_struct, flow);
-			if (packet->host_line.offs != 0xffff && packet->host_line.len == 18 && memcmp(packet_hdr(host_line), "config.feidian.com", 18) == 0) {
+			if (packet->host_line.ptr != NULL && packet->host_line.len == 18 && memcmp(packet_hdr(host_line), "config.feidian.com", 18) == 0) {
 				ndpi_int_feidian_add_connection(ndpi_struct, flow);
 				return;
 			}

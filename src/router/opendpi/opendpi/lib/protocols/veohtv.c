@@ -49,7 +49,7 @@ static void ndpi_search_veohtv_tcp(struct ndpi_detection_module_struct *ndpi_str
 #ifdef NDPI_CONTENT_FLASH
 			ndpi_parse_packet_line_info(ndpi_struct, flow);
 			if (packet->detected_protocol_stack[0] == NDPI_CONTENT_FLASH &&
-			    packet->server_line.offs != 0xffff && packet->server_line.len > NDPI_STATICSTRING_LEN("Veoh-") && memcmp(packet_hdr(server_line), "Veoh-", NDPI_STATICSTRING_LEN("Veoh-")) == 0) {
+			    packet->server_line.ptr != NULL && packet->server_line.len > NDPI_STATICSTRING_LEN("Veoh-") && memcmp(packet_hdr(server_line), "Veoh-", NDPI_STATICSTRING_LEN("Veoh-")) == 0) {
 				NDPI_LOG(NDPI_PROTOCOL_HTTP_APPLICATION_VEOHTV, ndpi_struct, NDPI_LOG_DEBUG, "VeohTV detected.\n");
 				ndpi_int_veohtv_add_connection(ndpi_struct, flow);
 				return;

@@ -27,6 +27,11 @@
 
 #define BT_ANNOUNCE
 
+#define PACK_ON
+#define PACK_OFF  __attribute__((packed))
+
+typedef struct cache *cache_t;
+
 typedef enum {
 	NDPI_LOG_ERROR,
 	NDPI_LOG_TRACE,
@@ -137,6 +142,18 @@ struct bt_announce {		// 192 bytes
 	u_int16_t port;
 	u_int8_t name_len, name[192 - 4 * 10 - 2 - 1];	// 149 bytes
 };
+#endif
+
+#ifdef NDPI_PROTOCOL_TINC
+
+#define TINC_CACHE_MAX_SIZE 10
+
+PACK_ON struct tinc_cache_entry {
+  u_int32_t src_address;
+  u_int32_t dst_address;
+  u_int16_t dst_port;
+} PACK_OFF;
+
 #endif
 
 typedef enum {
@@ -429,6 +446,9 @@ struct ndpi_flow_tcp_struct {
 	u_int32_t ftp_codes_seen:5;
 	u_int32_t ftp_client_direction:1;
 #endif
+#ifdef NDPI_PROTOCOL_PPSTREAM
+	u_int32_t ppstream_stage:3;
+#endif
 }
 #if !defined(WIN32)
 __attribute__((__packed__))
@@ -494,7 +514,7 @@ __attribute__((__packed__))
 /* ************************************************** */
 
 typedef struct ndpi_int_one_line_struct {
-	u_int16_t offs;
+ const u_int8_t *ptr;
 	u_int16_t len;
 } ndpi_int_one_line_struct_t;
 
@@ -539,6 +559,7 @@ typedef struct ndpi_packet_struct {
 	struct ndpi_int_one_line_struct server_line;
 	struct ndpi_int_one_line_struct http_method;
 	struct ndpi_int_one_line_struct http_response;
+  u_int8_t http_num_headers; /* number of found (valid) header lines in HTTP request or response */
 
 	u_int16_t l3_packet_len;
 	u_int16_t l4_packet_len;
@@ -555,9 +576,9 @@ typedef struct ndpi_packet_struct {
 	u_int8_t packet_lines_parsed_complete:1, packet_direction:1, empty_line_position_set:1;
 } ndpi_packet_struct_t;
 
-#define packet_line(l) (packet->payload + packet->line[l].offs)
-#define packet_hdr_c(l) (packet->l.offs != 0xffff ? packet->payload + packet->l.offs:NULL)
-#define packet_hdr(l) (packet->payload + packet->l.offs)
+#define packet_line(l) (packet->line[l].ptr)
+#define packet_hdr_c(l) (packet->l.ptr != NULL ? packet->l.ptr:NULL)
+#define packet_hdr(l) (packet->l.ptr)
 
 struct ndpi_detection_module_struct;
 struct ndpi_flow_struct;
@@ -748,6 +769,9 @@ typedef struct ndpi_detection_module_struct {
 	int bt_ann_len;
 #endif
 #endif
+#ifdef NDPI_PROTOCOL_TINC
+  cache_t tinc_cache;
+#endif
 
 	ndpi_proto_defaults_t proto_defaults[NDPI_MAX_SUPPORTED_PROTOCOLS + NDPI_MAX_NUM_CUSTOM_PROTOCOLS];
 
@@ -796,10 +820,13 @@ typedef struct ndpi_flow_struct {
 	   when to use it or not. Thus we leave it outside for the
 	   time being.
 	 */
-	struct {
-		ndpi_http_method method;
-		char *url, *content_type;
-	} http;
+  struct {
+    ndpi_http_method method;
+    char *url, *content_type;
+    u_int8_t  num_request_headers, num_response_headers;
+    u_int8_t  request_version; /* 0=1.0 and 1=1.1. Create an enum for this? */
+    u_char response_status_code[5]; /* 200, 404, etc. */
+  } http;
 
 	union {
 		struct {
@@ -815,6 +842,17 @@ typedef struct ndpi_flow_struct {
 		struct {
 			char client_certificate[48], server_certificate[48];
 		} ssl;
+
+    struct {
+      char version[96];
+    } ubntac2;
+
+    struct {
+      /* Via HTTP User-Agent */
+      u_char detected_os[32];
+      /* Via HTTP X-Forwarded-For */
+      u_char nat_ip[24];
+    } http;
 
 		struct {
     		    char fingerprint[48];
@@ -904,6 +942,18 @@ typedef struct ndpi_flow_struct {
 #endif
 #ifdef NDPI_PROTOCOL_STARCRAFT
 	u_int32_t starcraft_udp_stage:3;	// 0-7
+#endif
+#ifdef NDPI_PROTOCOL_TINC
+  u_int8_t tinc_state;
+  struct tinc_cache_entry tinc_cache_entry;
+#endif
+#ifdef NDPI_PROTOCOL_CSGO
+  u_int8_t csgo_strid[18],csgo_state,csgo_s2;
+  u_int32_t csgo_id2;
+#endif
+
+#if defined(NDPI_PROTOCOL_1KXUN) || defined(NDPI_PROTOCOL_IQIYI)
+  u_int16_t kxun_counter, iqiyi_counter;
 #endif
 
 	/* internal structures to save functions calls */

@@ -122,8 +122,8 @@ static void ndpi_search_gnutella(struct ndpi_detection_module_struct *ndpi_struc
 		}
 		if (packet->payload_packet_len > 50 && ((memcmp(packet->payload, "GET / HTTP", 9) == 0))) {
 			ndpi_parse_packet_line_info(ndpi_struct, flow);
-			if ((packet->user_agent_line.offs != 0xffff && packet->user_agent_line.len > 15 && memcmp(packet_hdr(user_agent_line), "BearShare Lite ", 15) == 0)
-			    || (packet->accept_line.offs != 0xffff && packet->accept_line.len > 24 && memcmp(packet_hdr(accept_line), "application n/x-gnutella", 24) == 0)) {
+			if ((packet->user_agent_line.ptr != NULL && packet->user_agent_line.len > 15 && memcmp(packet_hdr(user_agent_line), "BearShare Lite ", 15) == 0)
+			    || (packet->accept_line.ptr != NULL && packet->accept_line.len > 24 && memcmp(packet_hdr(accept_line), "application n/x-gnutella", 24) == 0)) {
 				NDPI_LOG(NDPI_PROTOCOL_GNUTELLA, ndpi_struct, NDPI_LOG_DEBUG, "DETECTED GNUTELLA GET.\n");
 				ndpi_int_gnutella_add_connection(ndpi_struct, flow);
 			}

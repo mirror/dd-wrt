@@ -520,7 +520,7 @@ void ndpi_search_qq_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct
 		}
 		ndpi_parse_packet_line_info(ndpi_struct, flow);
 
-		if (packet->user_agent_line.offs != 0xffff && (packet->user_agent_line.len > 7 && memcmp(packet_hdr(user_agent_line), "QQClient", 8) == 0)) {
+		if (packet->user_agent_line.ptr != NULL && (packet->user_agent_line.len > 7 && memcmp(packet_hdr(user_agent_line), "QQClient", 8) == 0)) {
 			NDPI_LOG(NDPI_PROTOCOL_QQ, ndpi_struct, NDPI_LOG_DEBUG, "found qq over tcp GET...QQClient\n");
 			ndpi_int_qq_add_connection(ndpi_struct, flow);
 			return;
@@ -532,7 +532,7 @@ void ndpi_search_qq_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct
 				return;
 			}
 		}
-		if (packet->host_line.offs != 0xffff) {
+		if (packet->host_line.ptr != NULL) {
 			NDPI_LOG(NDPI_PROTOCOL_QQ, ndpi_struct, NDPI_LOG_DEBUG, "host line ptr\n");
 			if (packet->host_line.len > 11 && memcmp(packet_hdr(host_line), "www.qq.co.za", 12) == 0) {
 				NDPI_LOG(NDPI_PROTOCOL_QQ, ndpi_struct, NDPI_LOG_DEBUG, "found qq over tcp Host: www.qq.co.za\n");

@@ -311,8 +311,14 @@
 #define NDPI_PROTOCOL_GOOGLE_DRIVE          256
 #define NDPI_PROTOCOL_OOKLA                 257
 
+#define NDPI_PROTOCOL_HANGOUT               258
+#define NDPI_PROTOCOL_BJNP                  259
+#define NDPI_PROTOCOL_SMPP                  260 /* Damir Franusic <df@release14.org> */
+#define NDPI_PROTOCOL_TINC                  261 /* William Guglielmo <william@deselmo.com> */
+#define NDPI_PROTOCOL_AMQP                  262
+
 /* UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE (NDPI_PROTOCOL_PANDORA) */
-#define NDPI_LAST_IMPLEMENTED_PROTOCOL			257
+#define NDPI_LAST_IMPLEMENTED_PROTOCOL			262
 
 #define NDPI_MAX_SUPPORTED_PROTOCOLS (NDPI_LAST_IMPLEMENTED_PROTOCOL + 1)
 #define NDPI_MAX_NUM_CUSTOM_PROTOCOLS                   (NDPI_NUM_BITS-NDPI_LAST_IMPLEMENTED_PROTOCOL)

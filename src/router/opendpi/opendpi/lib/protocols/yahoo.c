@@ -170,7 +170,7 @@ static void ndpi_search_yahoo_tcp(struct ndpi_detection_module_struct *ndpi_stru
 				return;
 			}
 
-			if (packet->host_line.offs != 0xffff && packet->host_line.len >= 26 && memcmp(packet_hdr(host_line), "filetransfer.msg.yahoo.com", 26) == 0) {
+			if (packet->host_line.ptr != NULL && packet->host_line.len >= 26 && memcmp(packet_hdr(host_line), "filetransfer.msg.yahoo.com", 26) == 0) {
 				NDPI_LOG(NDPI_PROTOCOL_YAHOO, ndpi_struct, NDPI_LOG_TRACE, "YAHOO HTTP POST FILETRANSFER FOUND\n");
 				NDPI_LOG(NDPI_PROTOCOL_YAHOO, ndpi_struct, NDPI_LOG_DEBUG, "found YAHOO");
 				ndpi_int_yahoo_add_connection(ndpi_struct, flow);
@@ -208,14 +208,14 @@ static void ndpi_search_yahoo_tcp(struct ndpi_detection_module_struct *ndpi_stru
 
 		if ((memcmp(packet->payload, "GET /", 5) == 0)) {
 			ndpi_parse_packet_line_info(ndpi_struct, flow);
-			if ((packet->user_agent_line.offs != 0xffff && packet->user_agent_line.len >= NDPI_STATICSTRING_LEN("YahooMobileMessenger/")
+			if ((packet->user_agent_line.ptr != NULL && packet->user_agent_line.len >= NDPI_STATICSTRING_LEN("YahooMobileMessenger/")
 			     && memcmp(packet_hdr(user_agent_line), "YahooMobileMessenger/", NDPI_STATICSTRING_LEN("YahooMobileMessenger/")) == 0)
 			    || (packet->user_agent_line.len >= 15 && (memcmp(packet_hdr(user_agent_line), "Y!%20Messenger/", 15) == 0))) {
 				NDPI_LOG(NDPI_PROTOCOL_YAHOO, ndpi_struct, NDPI_LOG_DEBUG, "found YAHOO(Mobile)");
 				ndpi_int_yahoo_add_connection(ndpi_struct, flow);
 				return;
 			}
-			if (packet->host_line.offs != 0xffff && packet->host_line.len >= NDPI_STATICSTRING_LEN("msg.yahoo.com") &&
+			if (packet->host_line.ptr != NULL && packet->host_line.len >= NDPI_STATICSTRING_LEN("msg.yahoo.com") &&
 			    memcmp(&packet_hdr(host_line)[packet->host_line.len - NDPI_STATICSTRING_LEN("msg.yahoo.com")], "msg.yahoo.com", NDPI_STATICSTRING_LEN("msg.yahoo.com")) == 0) {
 				NDPI_LOG(NDPI_PROTOCOL_YAHOO, ndpi_struct, NDPI_LOG_DEBUG, "found YAHOO");
 				ndpi_int_yahoo_add_connection(ndpi_struct, flow);
