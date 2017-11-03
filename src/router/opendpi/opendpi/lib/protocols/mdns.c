@@ -120,7 +120,7 @@ static void ndpi_search_mdns(struct ndpi_detection_module_struct *ndpi_struct, s
 			}
 #ifdef NDPI_DETECTION_SUPPORT_IPV6
 			if (packet->iphv6 != NULL) {
-				const u_int32_t *daddr = packet->iphv6->ip6_dst.u6_addr.u6_addr32;
+				const u_int32_t *daddr = packet->iphv6->daddr.ndpi_v6_u.u6_addr32;
 				if (daddr[0] == htonl(0xff020000) /* && daddr[1] == 0 && daddr[2] == 0 && daddr[3] == htonl(0xfb) */ ) {
 
 					NDPI_LOG(NDPI_PROTOCOL_MDNS, ndpi_struct, NDPI_LOG_DEBUG, "found MDNS with destination address ff02::fb\n");
