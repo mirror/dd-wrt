@@ -53,8 +53,8 @@ u_int8_t ndpi_int_zattoo_user_agent_set(struct ndpi_detection_module_struct *ndp
 {
 	ndpi_int_one_line_struct_t *pu = &flow->packet.user_agent_line;
 
-	if (pu->offs != 0xffff && pu->len == 111) {
-		if (memcmp(flow->packet.payload + pu->offs + pu->len - 25, "Zattoo/4", sizeof("Zattoo/4") - 1) == 0) {
+	if (pu->ptr != NULL && pu->len == 111) {
+		if (memcmp(pu->ptr + pu->len - 25, "Zattoo/4", sizeof("Zattoo/4") - 1) == 0) {
 			NDPI_LOG(NDPI_PROTOCOL_ZATTOO, ndpi_struct, NDPI_LOG_DEBUG, "found zattoo useragent\n");
 			return 1;
 		}
@@ -115,7 +115,7 @@ static void ndpi_search_zattoo(struct ndpi_detection_module_struct *ndpi_struct,
 		} else if (packet->payload_packet_len > 50 && memcmp(packet->payload, "POST http://", 12) == 0) {
 			ndpi_parse_packet_line_info(ndpi_struct, flow);
 			// test for unique character of the zattoo header
-			if (packet->parsed_lines == 4 && packet->host_line.offs != 0xffff) {
+			if (packet->parsed_lines == 4 && packet->host_line.ptr != NULL) {
 				u_int32_t ip;
 				u_int16_t bytes_read = 0;
 

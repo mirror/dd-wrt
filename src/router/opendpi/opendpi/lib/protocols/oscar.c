@@ -752,7 +752,7 @@ static void ndpi_search_oscar_tcp_connect(struct ndpi_detection_module_struct
 	if (packet->payload_packet_len >= 18) {
 		if ((packet->payload[0] == 'P') && (memcmp(packet->payload, "POST /photo/upload", 18) == 0)) {
 			NDPI_PARSE_PACKET_LINE_INFO(ndpi_struct, flow, packet);
-			if (packet->host_line.len >= 18 && packet->host_line.offs != 0xffff) {
+			if (packet->host_line.len >= 18 && packet->host_line.ptr != NULL) {
 				if (memcmp(packet_hdr(host_line), "lifestream.aol.com", 18) == 0) {
 					NDPI_LOG(NDPI_PROTOCOL_OSCAR, ndpi_struct, NDPI_LOG_DEBUG, "OSCAR over HTTP found, POST method\n");
 					ndpi_int_oscar_add_connection(ndpi_struct, flow);
@@ -785,7 +785,7 @@ static void ndpi_search_oscar_tcp_connect(struct ndpi_detection_module_struct
 				}
 			}
 			NDPI_PARSE_PACKET_LINE_INFO(ndpi_struct, flow, packet);
-			if (packet->referer_line.offs != 0xffff && packet->referer_line.len >= 22) {
+			if (packet->referer_line.ptr != NULL && packet->referer_line.len >= 22) {
 				const char *pu = packet_hdr(referer_line);
 
 				if (memcmp(&pu[packet->referer_line.len - NDPI_STATICSTRING_LEN("WidgetMain.swf")], "WidgetMain.swf", NDPI_STATICSTRING_LEN("WidgetMain.swf")) == 0) {

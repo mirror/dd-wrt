@@ -512,9 +512,9 @@ static void ndpi_search_irc_tcp(struct ndpi_detection_module_struct *ndpi_struct
 					http_content_ptr_len = packet->payload_packet_len - http_header_len;
 				}
 				if ((ndpi_check_for_IRC_traces(packet_line(0), packet->line[0].len))
-				    || ((packet->http_url_name.offs != 0xffff)
+				    || ((packet->http_url_name.ptr != NULL)
 					&& (ndpi_check_for_IRC_traces(packet_hdr(http_url_name), packet->http_url_name.len)))
-				    || ((packet->referer_line.offs != 0xffff)
+				    || ((packet->referer_line.ptr != NULL)
 					&& (ndpi_check_for_IRC_traces(packet_hdr(referer_line), packet->referer_line.len)))) {
 					NDPI_LOG(NDPI_PROTOCOL_IRC, ndpi_struct, NDPI_LOG_TRACE, "IRC detected from the Http URL/ Referer header ");
 					flow->l4.tcp.irc_stage = 1;

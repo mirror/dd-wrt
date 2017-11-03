@@ -55,9 +55,9 @@ static void ndpi_search_crossfire_tcp_udp(struct ndpi_detection_module_struct *n
 		if (packet->payload_packet_len > 4 && memcmp(packet->payload, "GET /", 5) == 0) {
 			ndpi_parse_packet_line_info(ndpi_struct, flow);
 			if (packet->parsed_lines == 8
-			    && (packet->line[0].offs != 0xffff && packet->line[0].len >= 30 && (memcmp(&packet->payload[5], "notice/login_big", 16) == 0 || memcmp(&packet->payload[5], "notice/login_small", 18) == 0))
+			    && (packet->line[0].ptr != NULL && packet->line[0].len >= 30 && (memcmp(&packet->payload[5], "notice/login_big", 16) == 0 || memcmp(&packet->payload[5], "notice/login_small", 18) == 0))
 			    && memcmp(&packet->payload[packet->line[0].len - 19], "/index.asp HTTP/1.", 18) == 0
-			    && (packet->host_line.offs != 0xffff && packet->host_line.len >= 13 && (memcmp(packet_hdr(host_line), "crossfire", 9) == 0 || memcmp(packet_hdr(host_line), "www.crossfire", 13) == 0))
+			    && (packet->host_line.ptr != NULL && packet->host_line.len >= 13 && (memcmp(packet_hdr(host_line), "crossfire", 9) == 0 || memcmp(packet_hdr(host_line), "www.crossfire", 13) == 0))
 			    ) {
 				NDPI_LOG(NDPI_PROTOCOL_CROSSFIRE, ndpi_struct, NDPI_LOG_DEBUG, "Crossfire: found HTTP request.\n");
 				ndpi_int_crossfire_add_connection(ndpi_struct, flow);
