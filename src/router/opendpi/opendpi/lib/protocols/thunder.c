@@ -51,8 +51,8 @@ void ndpi_int_search_thunder_udp(struct ndpi_detection_module_struct
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 
-//      struct ndpi_id_struct         *src=ndpi_struct->src;
-//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
+	//      struct ndpi_id_struct         *src=ndpi_struct->src;
+	//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	if (packet->payload_packet_len > 8 && packet->payload[0] >= 0x30 && packet->payload[0] < 0x40 && packet->payload[1] == 0 && packet->payload[2] == 0 && packet->payload[3] == 0) {
 		if (flow->thunder_stage == 3) {
@@ -81,8 +81,8 @@ void ndpi_int_search_thunder_tcp(struct ndpi_detection_module_struct
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 
-//      struct ndpi_id_struct         *src=ndpi_struct->src;
-//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
+	//      struct ndpi_id_struct         *src=ndpi_struct->src;
+	//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	if (packet->payload_packet_len > 8 && packet->payload[0] >= 0x30 && packet->payload[0] < 0x40 && packet->payload[1] == 0 && packet->payload[2] == 0 && packet->payload[3] == 0) {
 		if (flow->thunder_stage == 3) {
@@ -104,7 +104,7 @@ void ndpi_int_search_thunder_tcp(struct ndpi_detection_module_struct
 
 		if (packet->empty_line_position_set != 0 &&
 		    packet->content_line.ptr != NULL &&
-		    packet->content_line.len == 24 && memcmp(packet_hdr(content_line), "application/octet-stream", 24) == 0 && packet->empty_line_position_set < (packet->payload_packet_len - 8)
+		    packet->content_line.len == 24 && memcmp(packet->content_line.ptr, "application/octet-stream", 24) == 0 && packet->empty_line_position_set < (packet->payload_packet_len - 8)
 		    && packet->payload[packet->empty_line_position + 2] >= 0x30
 		    && packet->payload[packet->empty_line_position + 2] < 0x40
 		    && packet->payload[packet->empty_line_position + 3] == 0x00 && packet->payload[packet->empty_line_position + 4] == 0x00 && packet->payload[packet->empty_line_position + 5] == 0x00) {
@@ -149,16 +149,17 @@ void ndpi_int_search_thunder_http(struct ndpi_detection_module_struct
 
 		if (packet->parsed_lines > 7
 		    && packet->parsed_lines < 11
-		    && packet->line[1].len > 10 && memcmp(packet_line(1), "Accept: */*", 11) == 0
+		    && packet->line[1].len > 10
+		    && memcmp(packet->line[1].ptr, "Accept: */*", 11) == 0
 		    && packet->line[2].len > 22
-		    && memcmp(packet_line(2), "Cache-Control: no-cache", 23) == 0
-		    && packet->line[3].len > 16
-		    && memcmp(packet_line(3), "Connection: close", 17) == 0
+		    && memcmp(packet->line[2].ptr, "Cache-Control: no-cache",
+			      23) == 0 && packet->line[3].len > 16
+		    && memcmp(packet->line[3].ptr, "Connection: close", 17) == 0
 		    && packet->line[4].len > 6
-		    && memcmp(packet_line(4), "Host: ", 6) == 0
+		    && memcmp(packet->line[4].ptr, "Host: ", 6) == 0
 		    && packet->line[5].len > 15
-		    && memcmp(packet_line(5), "Pragma: no-cache", 16) == 0
-		    && packet->user_agent_line.ptr != NULL && packet->user_agent_line.len > 49 && memcmp(packet_hdr(user_agent_line), "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)", 50) == 0) {
+		    && memcmp(packet->line[5].ptr, "Pragma: no-cache", 16) == 0
+		    && packet->user_agent_line.ptr != NULL && packet->user_agent_line.len > 49 && memcmp(packet->user_agent_line.ptr, "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)", 50) == 0) {
 			NDPI_LOG(NDPI_PROTOCOL_THUNDER, ndpi_struct, NDPI_LOG_DEBUG, "Thunder HTTP download detected, adding flow.\n");
 			ndpi_int_thunder_add_connection(ndpi_struct, flow);
 		}

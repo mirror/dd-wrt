@@ -43,7 +43,7 @@ static void ndpi_search_icecast_tcp(struct ndpi_detection_module_struct *ndpi_st
 		ndpi_parse_packet_line_info_any(ndpi_struct, flow);
 		NDPI_LOG(NDPI_PROTOCOL_ICECAST, ndpi_struct, NDPI_LOG_DEBUG, "Icecast lines=%d\n", packet->parsed_lines);
 		for (i = 0; i < packet->parsed_lines; i++) {
-			if (packet->line[i].ptr != NULL && packet->line[i].len > 4 && memcmp(packet_line(i), "ice-", 4) == 0) {
+			if (packet->line[i].ptr != NULL && packet->line[i].len > 4 && memcmp(packet->line[i].ptr, "ice-", 4) == 0) {
 				NDPI_LOG(NDPI_PROTOCOL_ICECAST, ndpi_struct, NDPI_LOG_DEBUG, "Icecast detected.\n");
 				ndpi_int_icecast_add_connection(ndpi_struct, flow);
 				return;
@@ -70,7 +70,7 @@ static void ndpi_search_icecast_tcp(struct ndpi_detection_module_struct *ndpi_st
 
 		ndpi_parse_packet_line_info(ndpi_struct, flow);
 
-		if (packet->server_line.ptr != NULL && packet->server_line.len > NDPI_STATICSTRING_LEN("Icecast") && memcmp(packet_hdr(server_line), "Icecast", NDPI_STATICSTRING_LEN("Icecast")) == 0) {
+		if (packet->server_line.ptr != NULL && packet->server_line.len > NDPI_STATICSTRING_LEN("Icecast") && memcmp(packet->server_line.ptr, "Icecast", NDPI_STATICSTRING_LEN("Icecast")) == 0) {
 			NDPI_LOG(NDPI_PROTOCOL_ICECAST, ndpi_struct, NDPI_LOG_DEBUG, "Icecast detected.\n");
 			/* TODO maybe store the previous protocol type as subtype?
 			 *      e.g. ogg or mpeg

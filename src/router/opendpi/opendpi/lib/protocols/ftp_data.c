@@ -1,8 +1,7 @@
 /*
  * ftp_data.c
  *
- * Copyright (C) 2014 Tomasz Bujlow <tomasz@skatnet.dk>
- * Copyright (C) 2014 - ntop.org
+ * Copyright (C) 2016 - ntop.org
  * 
  * The signature is based on the Libprotoident library.
  *
@@ -36,12 +35,13 @@ static int ndpi_match_ftp_data_port(struct ndpi_detection_module_struct *ndpi_st
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 
-	if (packet->tcp->dest == htons(20) || packet->tcp->source == htons(20)) {
-		return 1;
+	/* Check connection over TCP */
+	if (packet->tcp) {
+		if (packet->tcp->dest == htons(20) || packet->tcp->source == htons(20)) {
+			return 1;
+		}
 	}
-
 	return 0;
-
 }
 
 static int ndpi_match_ftp_data_directory(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
@@ -66,7 +66,7 @@ static int ndpi_match_file_header(struct ndpi_detection_module_struct *ndpi_stru
 	struct ndpi_packet_struct *packet = &flow->packet;
 	u_int32_t payload_len = packet->payload_packet_len;
 
-	/* A FTP packet is pretty long so 256 is a bit consrvative but it should be OK */
+	/* A FTP packet is pretty long so 256 is a bit conservative but it should be OK */
 	if (packet->payload_packet_len < 256)
 		return 0;
 
@@ -236,7 +236,6 @@ static void ndpi_check_ftp_data(struct ndpi_detection_module_struct *ndpi_struct
 
 static void ndpi_search_ftp_data(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-	struct ndpi_packet_struct *packet = &flow->packet;
 
 	/* Break after 20 packets. */
 	if (flow->packet_counter > 20) {

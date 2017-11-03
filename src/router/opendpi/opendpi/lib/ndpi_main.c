@@ -948,7 +948,7 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 				ndpi_build_default_ports(ports_b, 194, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_AYIYA, no_master, no_master, "Ayiya", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 5072, 0, 0, 0, 0) /* UDP */ );
-	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_UNENCRYPED_JABBER, no_master, no_master, "Unencryped_Jabber", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_UNENCRYPTED_JABBER, no_master, no_master, "Unencryped_Jabber", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_OSCAR, no_master, no_master, "Oscar", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
@@ -2953,7 +2953,7 @@ static ndpi_protocol ndpi_detection_giveup(struct ndpi_detection_module_struct *
 	return (ret);
 }
 
-void ndpi_process_extra_packet(struct ndpi_detection_module_struct *ndpi_struct,
+static void ndpi_process_extra_packet(struct ndpi_detection_module_struct *ndpi_struct,
 			       struct ndpi_flow_struct *flow,
 			       const unsigned char *packet,
 			       const unsigned short packetlen,

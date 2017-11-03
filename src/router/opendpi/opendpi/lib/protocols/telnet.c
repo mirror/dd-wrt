@@ -69,7 +69,7 @@ u_int8_t search_iac(struct ndpi_detection_module_struct *ndpi_struct, struct ndp
 
 /* this detection also works asymmetrically */
 static void ndpi_search_telnet_tcp(struct ndpi_detection_module_struct
-				   *ndpi_struct, struct ndpi_flow_struct *flow)
+			    *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	//  struct ndpi_packet_struct *packet = &flow->packet;
 

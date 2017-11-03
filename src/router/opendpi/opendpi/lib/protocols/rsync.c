@@ -2,6 +2,7 @@
  * rsync.c
  *
  * Copyright (C) 2013 Remy Mudingay <mudingay@ill.fr>
+ * Copyright (C) 2016 ntop.org
  *
  * This module is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -33,10 +34,10 @@ static void ndpi_search_rsync(struct ndpi_detection_module_struct *ndpi_struct, 
 
 	NDPI_LOG(NDPI_PROTOCOL_RSYNC, ndpi_struct, NDPI_LOG_DEBUG, "search for RSYNC.\n");
 
-	if (packet->tcp != NULL) {
+	if (packet->tcp) {
 		NDPI_LOG(NDPI_PROTOCOL_RSYNC, ndpi_struct, NDPI_LOG_DEBUG, "calculating RSYNC over tcp.\n");
 		/*
-		 * Should match: memcmp(packet->payload, "@RSYN NCD: 28", 14) == 0)
+		 * Should match: memcmp(packet->payload, "@RSYNCD: 28", 14) == 0)
 		 */
 		if (packet->payload_packet_len == 12 && packet->payload[0] == 0x40 &&
 		    packet->payload[1] == 0x52 && packet->payload[2] == 0x53 &&
