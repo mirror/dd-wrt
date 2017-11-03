@@ -280,6 +280,20 @@
 #define NDPI_PROTOCOL_HTTP_DOWNLOAD 			                231	/* RX: RPC protocol used by AFS */
 #define NDPI_PROTOCOL_COAP 			                232	/* RX: RPC protocol used by AFS */
 
+#define NDPI_PROTOCOL_APPLESTORE            233
+#define NDPI_PROTOCOL_OPENDNS               234
+#define NDPI_PROTOCOL_GIT                   235
+#define NDPI_PROTOCOL_DRDA                  236
+#define NDPI_PROTOCOL_PLAYSTORE             237
+#define NDPI_PROTOCOL_SOMEIP                238
+#define NDPI_PROTOCOL_FIX                   239
+#define NDPI_PROTOCOL_PLAYSTATION           240
+#define NDPI_PROTOCOL_PASTEBIN              241 /* Paulo Angelo <pa@pauloangelo.com> */
+#define NDPI_PROTOCOL_LINKEDIN              242 /* Paulo Angelo <pa@pauloangelo.com> */
+#define NDPI_PROTOCOL_SOUNDCLOUD            243
+#define NDPI_PROTOCOL_CSGO                  244 /* Counter-Strike Global Offensive, Dota 2 */
+#define NDPI_PROTOCOL_LISP	            245
+
 /* UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE (NDPI_SERVICE_PANDORA) */
 #define NDPI_LAST_IMPLEMENTED_PROTOCOL			232
 

@@ -149,3 +149,4 @@
 #include "protocols/coap.c"
 #include "protocols/mqtt.c"
 #include "protocols/rx.c"
+#include "protocols/lisp.c"
