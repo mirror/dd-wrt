@@ -84,10 +84,10 @@ struct xt_ndpi_tginfo {
 "gadugadu", "i23v5", "secondlife", "whatsapp_voice", "eaq", "timmeu", "torcedor", "kakaotalk", \
 "kakaotalk_voice" , "twitch", "quickplay", "tim", "mpegts", "snapchat", "simet","opensignal", \
 "99taxi","easytaxi","globotv","timsomdechamada","timmenu","timportasabertas","timrecarga",\
-"timbeta","deezer","instagram","microsoft","battlenet","starcraft", "teredo", "hotspot-shield", "hep", "ubntac2", "ocs", "office_365", "cloudflare", "ms_one_drive", "mqtt", "rx", "http_download", "coap"
+"timbeta","deezer","instagram","microsoft","battlenet","starcraft", "teredo", "hotspot-shield", "hep", "ubntac2", "ocs", "office_365", "cloudflare", "ms_one_drive", "mqtt", "rx", "http_download", \
+"coap", "applestore", "opendns", "git", "drda", "playstore", "someip", "fix", "playstation", "pastebin", "linkedin", "soundcloud", "csgo", "lisp" \
 
-
-#define NDPI_PROTOCOL_MAXNUM 232
+#define NDPI_PROTOCOL_MAXNUM 245
 #endif
 
 #endif /* _LINUX_NETFILTER_XT_NDPI_H */
