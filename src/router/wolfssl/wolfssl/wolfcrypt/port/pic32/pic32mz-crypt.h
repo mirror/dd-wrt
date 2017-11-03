@@ -1,6 +1,6 @@
 /* pic32mz-crypt.h
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -45,6 +45,10 @@
         #undef WOLFSSL_PIC32MZ_CRYPT
     #endif
 #endif
+
+/* Enables support for large hashing */
+/* requires exclusive access to crypto hardware done at application layer */
+#define WOLFSSL_PIC32MZ_LARGE_HASH
 
 
 #include <xc.h>
@@ -112,6 +116,9 @@ typedef struct hashUpdCache {
     unsigned int    bufLen;
     unsigned int    updLen;
     int             isCopy;
+#ifdef WOLFSSL_PIC32MZ_LARGE_HASH
+    unsigned int    finalLen;
+#endif
 } hashUpdCache;
 
 

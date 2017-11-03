@@ -1,6 +1,6 @@
 /* ssl.h
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -215,7 +215,7 @@ typedef WOLFSSL_X509_STORE_CTX X509_STORE_CTX;
 #define SSL_SESSION_get_master_key        wolfSSL_SESSION_get_master_key
 #define SSL_SESSION_get_master_key_length wolfSSL_SESSION_get_master_key_length
 
-#define SSL_X509_NAME_get_text_by_NID wolfSSL_X509_NAME_get_text_by_NID
+#define X509_NAME_get_text_by_NID wolfSSL_X509_NAME_get_text_by_NID
 #define X509_get_ext_d2i wolfSSL_X509_get_ext_d2i
 #define X509_digest wolfSSL_X509_digest
 #define X509_free wolfSSL_X509_free
@@ -286,10 +286,10 @@ typedef WOLFSSL_X509_STORE_CTX X509_STORE_CTX;
 #define CRYPTO_num_locks wolfSSL_num_locks
 
 
-#  define CRYPTO_LOCK             1
-#  define CRYPTO_UNLOCK           2
-#  define CRYPTO_READ             4
-#  define CRYPTO_WRITE            8
+#define CRYPTO_LOCK             1
+#define CRYPTO_UNLOCK           2
+#define CRYPTO_READ             4
+#define CRYPTO_WRITE            8
 
 #define X509_STORE_CTX_get_current_cert wolfSSL_X509_STORE_CTX_get_current_cert
 #define X509_STORE_add_cert             wolfSSL_X509_STORE_add_cert
@@ -477,7 +477,7 @@ typedef WOLFSSL_X509_STORE_CTX X509_STORE_CTX;
 
 #if defined(HAVE_LIGHTY)  || defined(WOLFSSL_MYSQL_COMPATIBLE) || \
     defined(HAVE_STUNNEL) || defined(WOLFSSL_NGINX) || \
-    defined(HAVE_POCO_LIB) || defined(WOLFSSL_HAPROXY) 
+    defined(HAVE_POCO_LIB) || defined(WOLFSSL_HAPROXY)
 typedef WOLFSSL_X509_NAME_ENTRY X509_NAME_ENTRY;
 
 #define X509_NAME_free wolfSSL_X509_NAME_free
@@ -629,6 +629,8 @@ typedef WOLFSSL_X509_NAME_ENTRY X509_NAME_ENTRY;
 #define ASN1_STRFLGS_ESC_MSB             4
 #define X509_V_ERR_CERT_REJECTED         28
 
+#define SSL_MAX_MASTER_KEY_LENGTH        WOLFSSL_MAX_MASTER_KEY_LENGTH
+
 #define SSL_alert_desc_string_long       wolfSSL_alert_desc_string_long
 #define SSL_alert_type_string_long       wolfSSL_alert_type_string_long
 #define SSL_CIPHER_get_bits              wolfSSL_CIPHER_get_bits
@@ -721,7 +723,8 @@ typedef WOLFSSL_ASN1_BIT_STRING    ASN1_BIT_STRING;
 #define NID_tlsfeature                92  /* id-pe 24 */
 
 
-#if defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY)
+#if defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY) || \
+    defined(WOLFSSL_MYSQL_COMPATIBLE)
 
 #include <wolfssl/error-ssl.h>
 
@@ -800,7 +803,7 @@ typedef WOLFSSL_ASN1_BIT_STRING    ASN1_BIT_STRING;
 #define SSL_is_server                     wolfSSL_is_server
 #define SSL_CTX_set1_curves_list          wolfSSL_CTX_set1_curves_list
 
-#endif
+#endif /* WOLFSSL_NGINX || WOLFSSL_HAPROXY */
 
 #ifdef __cplusplus
     } /* extern "C" */

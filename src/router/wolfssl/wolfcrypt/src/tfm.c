@@ -1,6 +1,6 @@
 /* tfm.c
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -1698,12 +1698,8 @@ void fp_montgomery_calc_normalization(fp_int *a, fp_int *b)
 #ifdef HAVE_INTEL_MULX
 static INLINE void innermul8_mulx(fp_digit *c_mulx, fp_digit *cy_mulx, fp_digit *tmpm, fp_digit mu)
 {
-    fp_digit _c0, _c1, _c2, _c3, _c4, _c5, _c6, _c7, cy ;
-
-    cy = *cy_mulx ;
-    _c0=c_mulx[0]; _c1=c_mulx[1]; _c2=c_mulx[2]; _c3=c_mulx[3]; _c4=c_mulx[4]; _c5=c_mulx[5]; _c6=c_mulx[6]; _c7=c_mulx[7];
+    fp_digit cy = *cy_mulx ;
     INNERMUL8_MULX ;
-    c_mulx[0]=_c0; c_mulx[1]=_c1; c_mulx[2]=_c2; c_mulx[3]=_c3; c_mulx[4]=_c4; c_mulx[5]=_c5; c_mulx[6]=_c6; c_mulx[7]=_c7;
     *cy_mulx = cy ;
 }
 
@@ -1932,11 +1928,29 @@ void fp_read_unsigned_bin(fp_int *a, const unsigned char *b, int c)
 
 int fp_to_unsigned_bin_at_pos(int x, fp_int *t, unsigned char *b)
 {
+#if DIGIT_BIT == 64 || DIGIT_BIT == 32
+   int i, j;
+   fp_digit n;
+
+   for (j=0,i=0; i<t->used-1; ) {
+       b[x++] = t->dp[i] >> j;
+       j += 8;
+       i += j == DIGIT_BIT;
+       j &= DIGIT_BIT - 1;
+   }
+   n = t->dp[i];
+   while (n != 0) {
+       b[x++] = n;
+       n >>= 8;
+   }
+   return x;
+#else
    while (fp_iszero (t) == FP_NO) {
       b[x++] = (unsigned char) (t->dp[0] & 255);
       fp_div_2d (t, 8, t, NULL);
   }
   return x;
+#endif
 }
 
 void fp_to_unsigned_bin(fp_int *a, unsigned char *b)
@@ -3071,6 +3085,51 @@ static const char *fp_s_rmap = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ\
 #endif
 
 #ifdef HAVE_ECC
+#if DIGIT_BIT == 64 || DIGIT_BIT == 32
+static int fp_read_radix_16(fp_int *a, const char *str)
+{
+  int     i, j, k, neg;
+  char    ch;
+
+  /* if the leading digit is a
+   * minus set the sign to negative.
+   */
+  if (*str == '-') {
+    ++str;
+    neg = FP_NEG;
+  } else {
+    neg = FP_ZPOS;
+  }
+
+  j = 0;
+  k = 0;
+  for (i = (int)(XSTRLEN(str) - 1); i >= 0; i--) {
+      ch = str[i];
+      if (ch >= '0' && ch <= '9')
+          ch -= '0';
+      else if (ch >= 'A' && ch <= 'F')
+          ch -= 'A' - 10;
+      else if (ch >= 'a' && ch <= 'f')
+          ch -= 'a' - 10;
+      else
+          return FP_VAL;
+
+      a->dp[k] |= ((fp_digit)ch) << j;
+      j += 4;
+      k += j == DIGIT_BIT;
+      j &= DIGIT_BIT - 1;
+  }
+
+  a->used = k + 1;
+  fp_clamp(a);
+  /* set the sign only if a != 0 */
+  if (fp_iszero(a) != FP_YES) {
+     a->sign = neg;
+  }
+  return FP_OKAY;
+}
+#endif
+
 static int fp_read_radix(fp_int *a, const char *str, int radix)
 {
   int     y, neg;
@@ -3078,6 +3137,11 @@ static int fp_read_radix(fp_int *a, const char *str, int radix)
 
   /* set the integer to the default of zero */
   fp_zero (a);
+
+#if DIGIT_BIT == 64 || DIGIT_BIT == 32
+  if (radix == 16)
+      return fp_read_radix_16(a, str);
+#endif
 
   /* make sure the radix is ok */
   if (radix < 2 || radix > 64) {

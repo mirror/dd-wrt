@@ -1,6 +1,6 @@
 /* sha512.c
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -33,7 +33,7 @@
 
 /* fips wrapper calls, user can call direct */
 #ifdef HAVE_FIPS
-    int wc_InitSha512(Sha512* sha)
+    int wc_InitSha512(wc_Sha512* sha)
     {
         if (sha == NULL) {
             return BAD_FUNC_ARG;
@@ -41,7 +41,7 @@
 
         return InitSha512_fips(sha);
     }
-    int wc_InitSha512_ex(Sha512* sha, void* heap, int devId)
+    int wc_InitSha512_ex(wc_Sha512* sha, void* heap, int devId)
     {
         (void)heap;
         (void)devId;
@@ -50,7 +50,7 @@
         }
         return InitSha512_fips(sha);
     }
-    int wc_Sha512Update(Sha512* sha, const byte* data, word32 len)
+    int wc_Sha512Update(wc_Sha512* sha, const byte* data, word32 len)
     {
         if (sha == NULL || (data == NULL && len > 0)) {
             return BAD_FUNC_ARG;
@@ -58,7 +58,7 @@
 
         return Sha512Update_fips(sha, data, len);
     }
-    int wc_Sha512Final(Sha512* sha, byte* out)
+    int wc_Sha512Final(wc_Sha512* sha, byte* out)
     {
         if (sha == NULL || out == NULL) {
             return BAD_FUNC_ARG;
@@ -66,21 +66,21 @@
 
         return Sha512Final_fips(sha, out);
     }
-    void wc_Sha512Free(Sha512* sha)
+    void wc_Sha512Free(wc_Sha512* sha)
     {
         (void)sha;
         /* Not supported in FIPS */
     }
 
     #if defined(WOLFSSL_SHA384) || defined(HAVE_AESGCM)
-        int wc_InitSha384(Sha384* sha)
+        int wc_InitSha384(wc_Sha384* sha)
         {
             if (sha == NULL) {
                 return BAD_FUNC_ARG;
             }
             return InitSha384_fips(sha);
         }
-        int wc_InitSha384_ex(Sha384* sha, void* heap, int devId)
+        int wc_InitSha384_ex(wc_Sha384* sha, void* heap, int devId)
         {
             (void)heap;
             (void)devId;
@@ -89,21 +89,21 @@
             }
             return InitSha384_fips(sha);
         }
-        int wc_Sha384Update(Sha384* sha, const byte* data, word32 len)
+        int wc_Sha384Update(wc_Sha384* sha, const byte* data, word32 len)
         {
             if (sha == NULL || (data == NULL && len > 0)) {
                 return BAD_FUNC_ARG;
             }
             return Sha384Update_fips(sha, data, len);
         }
-        int wc_Sha384Final(Sha384* sha, byte* out)
+        int wc_Sha384Final(wc_Sha384* sha, byte* out)
         {
             if (sha == NULL || out == NULL) {
                 return BAD_FUNC_ARG;
             }
             return Sha384Final_fips(sha, out);
         }
-        void wc_Sha384Free(Sha384* sha)
+        void wc_Sha384Free(wc_Sha384* sha)
         {
             (void)sha;
             /* Not supported in FIPS */
@@ -140,7 +140,7 @@
 #if defined(HAVE_INTEL_RORX)
     #define ROTR(func, bits, x) \
     word64 func(word64 x) {  word64 ret ;\
-        __asm__ ("rorx $"#bits", %1, %0\n\t":"=r"(ret):"r"(x):) ;\
+        __asm__ ("rorx $"#bits", %1, %0\n\t":"=r"(ret):"r"(x)) ;\
         return ret ;\
     }
 
@@ -166,7 +166,7 @@
         }
 #endif
 
-static int InitSha512(Sha512* sha512)
+static int InitSha512(wc_Sha512* sha512)
 {
     if (sha512 == NULL)
         return BAD_FUNC_ARG;
@@ -199,7 +199,7 @@ static int InitSha512(Sha512* sha512)
         #define HAVE_INTEL_AVX2
     #endif
 
-    int InitSha512(Sha512* sha512) {
+    int InitSha512(wc_Sha512* sha512) {
          Save/Recover XMM, YMM
          ...
 
@@ -261,16 +261,16 @@ static int InitSha512(Sha512* sha512)
      */
 
     #if defined(HAVE_INTEL_AVX1)
-        static int Transform_AVX1(Sha512 *sha512);
+        static int Transform_AVX1(wc_Sha512 *sha512);
     #endif
     #if defined(HAVE_INTEL_AVX2)
-        static int Transform_AVX2(Sha512 *sha512);
+        static int Transform_AVX2(wc_Sha512 *sha512);
         #if defined(HAVE_INTEL_AVX1) && defined(HAVE_INTEL_AVX2) && defined(HAVE_INTEL_RORX)
-            static int Transform_AVX1_RORX(Sha512 *sha512);
+            static int Transform_AVX1_RORX(wc_Sha512 *sha512);
         #endif
     #endif
-    static int _Transform(Sha512 *sha512);
-    static int (*Transform_p)(Sha512* sha512) = _Transform;
+    static int _Transform(wc_Sha512 *sha512);
+    static int (*Transform_p)(wc_Sha512* sha512) = _Transform;
     static int transform_check = 0;
     static int intel_flags;
     #define Transform(sha512) (*Transform_p)(sha512)
@@ -314,7 +314,7 @@ static int InitSha512(Sha512* sha512)
         transform_check = 1;
     }
 
-    int wc_InitSha512_ex(Sha512* sha512, void* heap, int devId)
+    int wc_InitSha512_ex(wc_Sha512* sha512, void* heap, int devId)
     {
         int ret = InitSha512(sha512);
 
@@ -329,7 +329,7 @@ static int InitSha512(Sha512* sha512)
 #else
     #define Transform(sha512) _Transform(sha512)
 
-    int wc_InitSha512_ex(Sha512* sha512, void* heap, int devId)
+    int wc_InitSha512_ex(wc_Sha512* sha512, void* heap, int devId)
     {
         int ret = 0;
 
@@ -427,7 +427,7 @@ static const word64 K512[80] = {
 #define R(i) h(i)+=S1(e(i))+Ch(e(i),f(i),g(i))+K[i+j]+(j?blk2(i):blk0(i));\
     d(i)+=h(i);h(i)+=S0(a(i))+Maj(a(i),b(i),c(i))
 
-static int _Transform(Sha512* sha512)
+static int _Transform(wc_Sha512* sha512)
 {
     const word64* K = K512;
 
@@ -489,48 +489,48 @@ static int _Transform(Sha512* sha512)
 }
 
 
-static INLINE void AddLength(Sha512* sha512, word32 len)
+static INLINE void AddLength(wc_Sha512* sha512, word32 len)
 {
     word64 tmp = sha512->loLen;
     if ( (sha512->loLen += len) < tmp)
         sha512->hiLen++;                       /* carry low to high */
 }
 
-static INLINE int Sha512Update(Sha512* sha512, const byte* data, word32 len)
+static INLINE int Sha512Update(wc_Sha512* sha512, const byte* data, word32 len)
 {
     int ret = 0;
     /* do block size increments */
     byte* local = (byte*)sha512->buffer;
 
     /* check that internal buffLen is valid */
-    if (sha512->buffLen >= SHA512_BLOCK_SIZE)
+    if (sha512->buffLen >= WC_SHA512_BLOCK_SIZE)
         return BUFFER_E;
 
     SAVE_XMM_YMM; /* for Intel AVX */
 
     while (len) {
-        word32 add = min(len, SHA512_BLOCK_SIZE - sha512->buffLen);
+        word32 add = min(len, WC_SHA512_BLOCK_SIZE - sha512->buffLen);
         XMEMCPY(&local[sha512->buffLen], data, add);
 
         sha512->buffLen += add;
         data            += add;
         len             -= add;
 
-        if (sha512->buffLen == SHA512_BLOCK_SIZE) {
+        if (sha512->buffLen == WC_SHA512_BLOCK_SIZE) {
     #if defined(LITTLE_ENDIAN_ORDER)
         #if defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2)
             if (!IS_INTEL_AVX1(intel_flags) && !IS_INTEL_AVX2(intel_flags))
         #endif
             {
                 ByteReverseWords64(sha512->buffer, sha512->buffer,
-                                                             SHA512_BLOCK_SIZE);
+                                                             WC_SHA512_BLOCK_SIZE);
             }
     #endif
             ret = Transform(sha512);
             if (ret != 0)
                 break;
 
-            AddLength(sha512, SHA512_BLOCK_SIZE);
+            AddLength(sha512, WC_SHA512_BLOCK_SIZE);
             sha512->buffLen = 0;
         }
     }
@@ -538,7 +538,7 @@ static INLINE int Sha512Update(Sha512* sha512, const byte* data, word32 len)
     return ret;
 }
 
-int wc_Sha512Update(Sha512* sha512, const byte* data, word32 len)
+int wc_Sha512Update(wc_Sha512* sha512, const byte* data, word32 len)
 {
     if (sha512 == NULL || (data == NULL && len > 0)) {
         return BAD_FUNC_ARG;
@@ -556,7 +556,7 @@ int wc_Sha512Update(Sha512* sha512, const byte* data, word32 len)
 }
 
 
-static INLINE int Sha512Final(Sha512* sha512)
+static INLINE int Sha512Final(wc_Sha512* sha512)
 {
     byte* local = (byte*)sha512->buffer;
     int ret;
@@ -571,16 +571,16 @@ static INLINE int Sha512Final(Sha512* sha512)
     local[sha512->buffLen++] = 0x80;  /* add 1 */
 
     /* pad with zeros */
-    if (sha512->buffLen > SHA512_PAD_SIZE) {
-        XMEMSET(&local[sha512->buffLen], 0, SHA512_BLOCK_SIZE - sha512->buffLen);
-        sha512->buffLen += SHA512_BLOCK_SIZE - sha512->buffLen;
+    if (sha512->buffLen > WC_SHA512_PAD_SIZE) {
+        XMEMSET(&local[sha512->buffLen], 0, WC_SHA512_BLOCK_SIZE - sha512->buffLen);
+        sha512->buffLen += WC_SHA512_BLOCK_SIZE - sha512->buffLen;
 #if defined(LITTLE_ENDIAN_ORDER)
     #if defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2)
         if (!IS_INTEL_AVX1(intel_flags) && !IS_INTEL_AVX2(intel_flags))
     #endif
         {
             ByteReverseWords64(sha512->buffer,sha512->buffer,
-                                                             SHA512_BLOCK_SIZE);
+                                                             WC_SHA512_BLOCK_SIZE);
         }
 #endif /* LITTLE_ENDIAN_ORDER */
         ret = Transform(sha512);
@@ -589,7 +589,7 @@ static INLINE int Sha512Final(Sha512* sha512)
 
         sha512->buffLen = 0;
     }
-    XMEMSET(&local[sha512->buffLen], 0, SHA512_PAD_SIZE - sha512->buffLen);
+    XMEMSET(&local[sha512->buffLen], 0, WC_SHA512_PAD_SIZE - sha512->buffLen);
 
     /* put lengths in bits */
     sha512->hiLen = (sha512->loLen >> (8 * sizeof(sha512->loLen) - 3)) +
@@ -601,30 +601,30 @@ static INLINE int Sha512Final(Sha512* sha512)
     #if defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2)
         if (!IS_INTEL_AVX1(intel_flags) && !IS_INTEL_AVX2(intel_flags))
     #endif
-            ByteReverseWords64(sha512->buffer, sha512->buffer, SHA512_PAD_SIZE);
+            ByteReverseWords64(sha512->buffer, sha512->buffer, WC_SHA512_PAD_SIZE);
 #endif
     /* ! length ordering dependent on digest endian type ! */
 
-    sha512->buffer[SHA512_BLOCK_SIZE / sizeof(word64) - 2] = sha512->hiLen;
-    sha512->buffer[SHA512_BLOCK_SIZE / sizeof(word64) - 1] = sha512->loLen;
+    sha512->buffer[WC_SHA512_BLOCK_SIZE / sizeof(word64) - 2] = sha512->hiLen;
+    sha512->buffer[WC_SHA512_BLOCK_SIZE / sizeof(word64) - 1] = sha512->loLen;
 #if defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2)
     if (IS_INTEL_AVX1(intel_flags) || IS_INTEL_AVX2(intel_flags))
-        ByteReverseWords64(&(sha512->buffer[SHA512_BLOCK_SIZE / sizeof(word64) - 2]),
-                           &(sha512->buffer[SHA512_BLOCK_SIZE / sizeof(word64) - 2]),
-                           SHA512_BLOCK_SIZE - SHA512_PAD_SIZE);
+        ByteReverseWords64(&(sha512->buffer[WC_SHA512_BLOCK_SIZE / sizeof(word64) - 2]),
+                           &(sha512->buffer[WC_SHA512_BLOCK_SIZE / sizeof(word64) - 2]),
+                           WC_SHA512_BLOCK_SIZE - WC_SHA512_PAD_SIZE);
 #endif
     ret = Transform(sha512);
     if (ret != 0)
         return ret;
 
     #ifdef LITTLE_ENDIAN_ORDER
-        ByteReverseWords64(sha512->digest, sha512->digest, SHA512_DIGEST_SIZE);
+        ByteReverseWords64(sha512->digest, sha512->digest, WC_SHA512_DIGEST_SIZE);
     #endif
 
     return 0;
 }
 
-int wc_Sha512Final(Sha512* sha512, byte* hash)
+int wc_Sha512Final(wc_Sha512* sha512, byte* hash)
 {
     int ret;
 
@@ -636,7 +636,7 @@ int wc_Sha512Final(Sha512* sha512, byte* hash)
     if (sha512->asyncDev.marker == WOLFSSL_ASYNC_MARKER_SHA512) {
     #if defined(HAVE_INTEL_QA)
         return IntelQaSymSha512(&sha512->asyncDev, hash, NULL,
-                                            SHA512_DIGEST_SIZE);
+                                            WC_SHA512_DIGEST_SIZE);
     #endif
     }
 #endif /* WOLFSSL_ASYNC_CRYPT */
@@ -645,18 +645,18 @@ int wc_Sha512Final(Sha512* sha512, byte* hash)
     if (ret != 0)
         return ret;
 
-    XMEMCPY(hash, sha512->digest, SHA512_DIGEST_SIZE);
+    XMEMCPY(hash, sha512->digest, WC_SHA512_DIGEST_SIZE);
 
     return InitSha512(sha512);  /* reset state */
 }
 
 
-int wc_InitSha512(Sha512* sha512)
+int wc_InitSha512(wc_Sha512* sha512)
 {
     return wc_InitSha512_ex(sha512, NULL, INVALID_DEVID);
 }
 
-void wc_Sha512Free(Sha512* sha512)
+void wc_Sha512Free(wc_Sha512* sha512)
 {
     if (sha512 == NULL)
         return;
@@ -691,15 +691,15 @@ void wc_Sha512Free(Sha512* sha512)
 /* INLINE Assember for Intel AVX1 instructions */
 #if defined(HAVE_INTEL_AVX1)
 #if defined(DEBUG_XMM)
-    #define SAVE_REG(i)     __asm__ volatile("vmovdqu %%xmm"#i", %0 \n\t":"=m"(reg[i][0])::XMM_REGs);
-    #define RECV_REG(i)     __asm__ volatile("vmovdqu %0, %%xmm"#i" \n\t"::"m"(reg[i][0]):XMM_REGs);
+    #define SAVE_REG(i)     __asm__ volatile("vmovdqu %%xmm"#i", %0 \n\t":"=m"(reg[i][0]):);
+    #define RECV_REG(i)     __asm__ volatile("vmovdqu %0, %%xmm"#i" \n\t"::"m"(reg[i][0]));
 
     #define _DUMP_REG(REG, name)\
         { word64 buf[16];word64 reg[16][2];int k;\
           SAVE_REG(0); SAVE_REG(1); SAVE_REG(2);  SAVE_REG(3);  SAVE_REG(4);  \
           SAVE_REG(5);   SAVE_REG(6); SAVE_REG(7);SAVE_REG(8); SAVE_REG(9); SAVE_REG(10);\
            SAVE_REG(11); SAVE_REG(12); SAVE_REG(13); SAVE_REG(14); SAVE_REG(15); \
-          __asm__ volatile("vmovdqu %%"#REG", %0 \n\t":"=m"(buf[0])::XMM_REGs);\
+          __asm__ volatile("vmovdqu %%"#REG", %0 \n\t":"=m"(buf[0]):);\
           printf(" "#name":\t"); for(k=0; k<2; k++) printf("%016lx.", (word64)(buf[k])); printf("\n"); \
           RECV_REG(0); RECV_REG(1); RECV_REG(2);  RECV_REG(3);  RECV_REG(4);\
           RECV_REG(5);   RECV_REG(6); RECV_REG(7); RECV_REG(8); RECV_REG(9);\
@@ -714,25 +714,25 @@ void wc_Sha512Free(Sha512* sha512)
 #endif /* DEBUG_XMM */
 
 #define _MOVE_to_REG(xymm, mem)       __asm__ volatile("vmovdqu %0, %%"#xymm" "\
-        :: "m"(mem):XMM_REGs);
+        :: "m"(mem));
 #define _MOVE_to_MEM(mem,i, xymm)     __asm__ volatile("vmovdqu %%"#xymm", %0" :\
-         "=m"(mem[i]),"=m"(mem[i+1]),"=m"(mem[i+2]),"=m"(mem[i+3])::XMM_REGs);
+         "=m"(mem[i]),"=m"(mem[i+1]),"=m"(mem[i+2]),"=m"(mem[i+3]):);
 #define _MOVE(dest, src)              __asm__ volatile("vmovdqu %%"#src",  %%"\
-        #dest" ":::XMM_REGs);
+        #dest" "::);
 
 #define _S_TEMP(dest, src, bits, temp)  __asm__ volatile("vpsrlq  $"#bits", %%"\
         #src", %%"#dest"\n\tvpsllq  $64-"#bits", %%"#src", %%"#temp"\n\tvpor %%"\
-        #temp",%%"#dest", %%"#dest" ":::XMM_REGs);
+        #temp",%%"#dest", %%"#dest" "::);
 #define _AVX1_R(dest, src, bits)      __asm__ volatile("vpsrlq  $"#bits", %%"\
-        #src", %%"#dest" ":::XMM_REGs);
+        #src", %%"#dest" "::);
 #define _XOR(dest, src1, src2)        __asm__ volatile("vpxor   %%"#src1", %%"\
-        #src2", %%"#dest" ":::XMM_REGs);
+        #src2", %%"#dest" "::);
 #define _OR(dest, src1, src2)         __asm__ volatile("vpor    %%"#src1", %%"\
-        #src2", %%"#dest" ":::XMM_REGs);
+        #src2", %%"#dest" "::);
 #define _ADD(dest, src1, src2)        __asm__ volatile("vpaddq   %%"#src1", %%"\
-        #src2", %%"#dest" ":::XMM_REGs);
+        #src2", %%"#dest" "::);
 #define _ADD_MEM(dest, src1, mem)     __asm__ volatile("vpaddq   %0, %%"#src1", %%"\
-        #dest" "::"m"(mem):XMM_REGs);
+        #dest" "::"m"(mem));
 
 #define MOVE_to_REG(xymm, mem)      _MOVE_to_REG(xymm, mem)
 #define MOVE_to_MEM(mem, i, xymm)   _MOVE_to_MEM(mem, i, xymm)
@@ -787,8 +787,6 @@ static word64 mBYTE_FLIP_MASK[] =  { 0x0001020304050607, 0x08090a0b0c0d0e0f };
 #define W_10    xmm7
 #define W_12    xmm8
 #define W_14    xmm9
-
-#define XMM_REGs
 
 #define s0_1(dest, src)      AVX1_S(dest, src, 1);
 #define s0_2(dest, src)      AVX1_S(G_TEMP, src, 8); XOR(dest, G_TEMP, dest);
@@ -909,29 +907,29 @@ static const unsigned long mBYTE_FLIP_MASK_Y[] =
 
 #define W_from_buff_Y(buff)\
     { /* X0..3(ymm9..12), W_X[0..15] = sha512->buffer[0.15];  */\
-     __asm__ volatile("vmovdqu %0, %%ymm8\n\t"::"m"(mBYTE_FLIP_MASK_Y[0]):YMM_REGs);\
+     __asm__ volatile("vmovdqu %0, %%ymm8\n\t"::"m"(mBYTE_FLIP_MASK_Y[0]));\
      __asm__ volatile("vmovdqu %0, %%ymm12\n\t"\
                       "vmovdqu %1, %%ymm4\n\t"\
                       "vpshufb %%ymm8, %%ymm12, %%ymm12\n\t"\
                       "vpshufb %%ymm8, %%ymm4, %%ymm4\n\t"\
-                      :: "m"(buff[0]),  "m"(buff[4]):YMM_REGs);\
+                      :: "m"(buff[0]),  "m"(buff[4]));\
      __asm__ volatile("vmovdqu %0, %%ymm5\n\t"\
                       "vmovdqu %1, %%ymm6\n\t"\
                       "vpshufb %%ymm8, %%ymm5, %%ymm5\n\t"\
                       "vpshufb %%ymm8, %%ymm6, %%ymm6\n\t"\
-                      :: "m"(buff[8]),  "m"(buff[12]):YMM_REGs);\
+                      :: "m"(buff[8]),  "m"(buff[12]));\
     }
 
 #if defined(DEBUG_YMM)
-    #define SAVE_REG_Y(i) __asm__ volatile("vmovdqu %%ymm"#i", %0 \n\t":"=m"(reg[i-4][0])::YMM_REGs);
-    #define RECV_REG_Y(i) __asm__ volatile("vmovdqu %0, %%ymm"#i" \n\t"::"m"(reg[i-4][0]):YMM_REGs);
+    #define SAVE_REG_Y(i) __asm__ volatile("vmovdqu %%ymm"#i", %0 \n\t":"=m"(reg[i-4][0]):);
+    #define RECV_REG_Y(i) __asm__ volatile("vmovdqu %0, %%ymm"#i" \n\t"::"m"(reg[i-4][0]));
 
     #define _DUMP_REG_Y(REG, name)\
         { word64 buf[16];word64 reg[16][2];int k;\
           SAVE_REG_Y(4);  SAVE_REG_Y(5);   SAVE_REG_Y(6); SAVE_REG_Y(7); \
           SAVE_REG_Y(8); SAVE_REG_Y(9); SAVE_REG_Y(10); SAVE_REG_Y(11); SAVE_REG_Y(12);\
           SAVE_REG_Y(13); SAVE_REG_Y(14); SAVE_REG_Y(15); \
-          __asm__ volatile("vmovdqu %%"#REG", %0 \n\t":"=m"(buf[0])::YMM_REGs);\
+          __asm__ volatile("vmovdqu %%"#REG", %0 \n\t":"=m"(buf[0]):);\
           printf(" "#name":\t"); for(k=0; k<4; k++) printf("%016lx.", (word64)buf[k]); printf("\n"); \
           RECV_REG_Y(4);  RECV_REG_Y(5);   RECV_REG_Y(6); RECV_REG_Y(7); \
           RECV_REG_Y(8); RECV_REG_Y(9); RECV_REG_Y(10); RECV_REG_Y(11); RECV_REG_Y(12); \
@@ -948,26 +946,26 @@ static const unsigned long mBYTE_FLIP_MASK_Y[] =
 #endif /* DEBUG_YMM */
 
 #define _MOVE_to_REGy(ymm, mem)         __asm__ volatile("vmovdqu %0, %%"#ymm" "\
-                                        :: "m"(mem):YMM_REGs);
+                                        :: "m"(mem));
 #define _MOVE_to_MEMy(mem,i, ymm)       __asm__ volatile("vmovdqu %%"#ymm", %0" \
-        : "=m"(mem[i]),"=m"(mem[i+1]),"=m"(mem[i+2]),"=m"(mem[i+3])::YMM_REGs);
+        : "=m"(mem[i]),"=m"(mem[i+1]),"=m"(mem[i+2]),"=m"(mem[i+3]):);
 #define _MOVE_128y(ymm0, ymm1, ymm2, map)  __asm__ volatile("vperm2i128  $"\
-        #map", %%"#ymm2", %%"#ymm1", %%"#ymm0" ":::YMM_REGs);
+        #map", %%"#ymm2", %%"#ymm1", %%"#ymm0" "::);
 #define _S_TEMPy(dest, src, bits, temp) \
          __asm__ volatile("vpsrlq  $"#bits", %%"#src", %%"#dest"\n\tvpsllq  $64-"#bits\
-        ", %%"#src", %%"#temp"\n\tvpor %%"#temp",%%"#dest", %%"#dest" ":::YMM_REGs);
+        ", %%"#src", %%"#temp"\n\tvpor %%"#temp",%%"#dest", %%"#dest" "::);
 #define _AVX2_R(dest, src, bits)        __asm__ volatile("vpsrlq  $"#bits", %%"\
-         #src", %%"#dest" ":::YMM_REGs);
+         #src", %%"#dest" "::);
 #define _XORy(dest, src1, src2)         __asm__ volatile("vpxor   %%"#src1", %%"\
-         #src2", %%"#dest" ":::YMM_REGs);
+         #src2", %%"#dest" "::);
 #define _ADDy(dest, src1, src2)         __asm__ volatile("vpaddq   %%"#src1", %%"\
-         #src2", %%"#dest" ":::YMM_REGs);
+         #src2", %%"#dest" "::);
 #define _BLENDy(map, dest, src1, src2)  __asm__ volatile("vpblendd    $"#map", %%"\
-         #src1",   %%"#src2", %%"#dest" ":::YMM_REGs);
+         #src1",   %%"#src2", %%"#dest" "::);
 #define _BLENDQy(map, dest, src1, src2) __asm__ volatile("vblendpd   $"#map", %%"\
-         #src1",   %%"#src2", %%"#dest" ":::YMM_REGs);
+         #src1",   %%"#src2", %%"#dest" "::);
 #define _PERMQy(map, dest, src)         __asm__ volatile("vpermq  $"#map", %%"\
-         #src", %%"#dest" ":::YMM_REGs);
+         #src", %%"#dest" "::);
 
 #define MOVE_to_REGy(ymm, mem)      _MOVE_to_REGy(ymm, mem)
 #define MOVE_to_MEMy(mem, i, ymm)   _MOVE_to_MEMy(mem, i, ymm)
@@ -1013,35 +1011,32 @@ static const unsigned long mBYTE_FLIP_MASK_Y[] =
 #define W_8y     ymm5
 #define W_12y    ymm6
 
-#define YMM_REGs
-/* Registers are saved in Sha512Update/Final */
-                 /* "%ymm7","%ymm8","%ymm9","%ymm10","%ymm11","%ymm12","%ymm13","%ymm14","%ymm15"*/
 
 #define MOVE_15_to_16(w_i_16, w_i_15, w_i_7)\
-    __asm__ volatile("vperm2i128  $0x01, %%"#w_i_15", %%"#w_i_15", %%"#w_i_15" ":::YMM_REGs);\
-    __asm__ volatile("vpblendd    $0x08, %%"#w_i_15", %%"#w_i_7", %%"#w_i_16" ":::YMM_REGs);\
-    __asm__ volatile("vperm2i128 $0x01,  %%"#w_i_7",  %%"#w_i_7", %%"#w_i_15" ":::YMM_REGs);\
-    __asm__ volatile("vpblendd    $0x80, %%"#w_i_15", %%"#w_i_16", %%"#w_i_16" ":::YMM_REGs);\
-    __asm__ volatile("vpshufd    $0x93,  %%"#w_i_16", %%"#w_i_16" ":::YMM_REGs);\
+    __asm__ volatile("vperm2i128  $0x01, %%"#w_i_15", %%"#w_i_15", %%"#w_i_15" "::);\
+    __asm__ volatile("vpblendd    $0x08, %%"#w_i_15", %%"#w_i_7", %%"#w_i_16" "::);\
+    __asm__ volatile("vperm2i128 $0x01,  %%"#w_i_7",  %%"#w_i_7", %%"#w_i_15" "::);\
+    __asm__ volatile("vpblendd    $0x80, %%"#w_i_15", %%"#w_i_16", %%"#w_i_16" "::);\
+    __asm__ volatile("vpshufd    $0x93,  %%"#w_i_16", %%"#w_i_16" "::);\
 
 #define MOVE_7_to_15(w_i_15, w_i_7)\
-    __asm__ volatile("vmovdqu                 %%"#w_i_7",  %%"#w_i_15" ":::YMM_REGs);\
+    __asm__ volatile("vmovdqu                 %%"#w_i_7",  %%"#w_i_15" "::);\
 
 #define MOVE_I_to_7(w_i_7, w_i)\
-    __asm__ volatile("vperm2i128 $0x01,       %%"#w_i",   %%"#w_i",   %%"#w_i_7" ":::YMM_REGs);\
-    __asm__ volatile("vpblendd    $0x01,       %%"#w_i_7",   %%"#w_i", %%"#w_i_7" ":::YMM_REGs);\
-    __asm__ volatile("vpshufd    $0x39, %%"#w_i_7", %%"#w_i_7" ":::YMM_REGs);\
+    __asm__ volatile("vperm2i128 $0x01,       %%"#w_i",   %%"#w_i",   %%"#w_i_7" "::);\
+    __asm__ volatile("vpblendd    $0x01,       %%"#w_i_7",   %%"#w_i", %%"#w_i_7" "::);\
+    __asm__ volatile("vpshufd    $0x39, %%"#w_i_7", %%"#w_i_7" "::);\
 
 #define MOVE_I_to_2(w_i_2, w_i)\
-    __asm__ volatile("vperm2i128 $0x01,       %%"#w_i", %%"#w_i", %%"#w_i_2" ":::YMM_REGs);\
-    __asm__ volatile("vpshufd    $0x0e, %%"#w_i_2", %%"#w_i_2" ":::YMM_REGs);\
+    __asm__ volatile("vperm2i128 $0x01,       %%"#w_i", %%"#w_i", %%"#w_i_2" "::);\
+    __asm__ volatile("vpshufd    $0x0e, %%"#w_i_2", %%"#w_i_2" "::);\
 
 #endif /* HAVE_INTEL_AVX2 */
 
 
 /***  Transform Body ***/
 #if defined(HAVE_INTEL_AVX1)
-static int Transform_AVX1(Sha512* sha512)
+static int Transform_AVX1(wc_Sha512* sha512)
 {
     const word64* K = K512;
     word64 W_X[16+4] = {0};
@@ -1095,7 +1090,7 @@ static int Transform_AVX1(Sha512* sha512)
 #endif /* HAVE_INTEL_AVX1 */
 
 #if defined(HAVE_INTEL_AVX2) && defined(HAVE_INTEL_AVX1) && defined(HAVE_INTEL_RORX)
-static int Transform_AVX1_RORX(Sha512* sha512)
+static int Transform_AVX1_RORX(wc_Sha512* sha512)
 {
     const word64* K = K512;
     word64 W_X[16+4] = {0};
@@ -1274,7 +1269,7 @@ static INLINE void Block_Y_12_11(void) { Block_Y_xx_11(12, W_12y, W_0y, W_4y, W_
 static INLINE void Block_Y_12_12(word64 *w) { Block_Y_xx_12(12, W_12y, W_0y, W_4y, W_8y); }
 
 
-static int Transform_AVX2(Sha512* sha512)
+static int Transform_AVX2(wc_Sha512* sha512)
 {
     const word64* K = K512;
     word64 w[4];
@@ -1350,7 +1345,7 @@ static int Transform_AVX2(Sha512* sha512)
 /* SHA384 */
 /* -------------------------------------------------------------------------- */
 #ifdef WOLFSSL_SHA384
-static int InitSha384(Sha384* sha384)
+static int InitSha384(wc_Sha384* sha384)
 {
     if (sha384 == NULL) {
         return BAD_FUNC_ARG;
@@ -1372,7 +1367,7 @@ static int InitSha384(Sha384* sha384)
     return 0;
 }
 
-int wc_Sha384Update(Sha384* sha384, const byte* data, word32 len)
+int wc_Sha384Update(wc_Sha384* sha384, const byte* data, word32 len)
 {
     if (sha384 == NULL || (data == NULL && len > 0)) {
         return BAD_FUNC_ARG;
@@ -1386,11 +1381,11 @@ int wc_Sha384Update(Sha384* sha384, const byte* data, word32 len)
     }
 #endif /* WOLFSSL_ASYNC_CRYPT */
 
-    return Sha512Update((Sha512*)sha384, data, len);
+    return Sha512Update((wc_Sha512*)sha384, data, len);
 }
 
 
-int wc_Sha384Final(Sha384* sha384, byte* hash)
+int wc_Sha384Final(wc_Sha384* sha384, byte* hash)
 {
     int ret;
 
@@ -1402,16 +1397,16 @@ int wc_Sha384Final(Sha384* sha384, byte* hash)
     if (sha384->asyncDev.marker == WOLFSSL_ASYNC_MARKER_SHA384) {
     #if defined(HAVE_INTEL_QA)
         return IntelQaSymSha384(&sha384->asyncDev, hash, NULL,
-                                            SHA384_DIGEST_SIZE);
+                                            WC_SHA384_DIGEST_SIZE);
     #endif
     }
 #endif /* WOLFSSL_ASYNC_CRYPT */
 
-    ret = Sha512Final((Sha512*)sha384);
+    ret = Sha512Final((wc_Sha512*)sha384);
     if (ret != 0)
         return ret;
 
-    XMEMCPY(hash, sha384->digest, SHA384_DIGEST_SIZE);
+    XMEMCPY(hash, sha384->digest, WC_SHA384_DIGEST_SIZE);
 
     return InitSha384(sha384);  /* reset state */
 }
@@ -1419,7 +1414,7 @@ int wc_Sha384Final(Sha384* sha384, byte* hash)
 
 /* Hardware Acceleration */
 #if defined(HAVE_INTEL_AVX1) || defined(HAVE_INTEL_AVX2)
-    int wc_InitSha384_ex(Sha384* sha384, void* heap, int devId)
+    int wc_InitSha384_ex(wc_Sha384* sha384, void* heap, int devId)
     {
         int ret = InitSha384(sha384);
 
@@ -1431,7 +1426,7 @@ int wc_Sha384Final(Sha384* sha384, byte* hash)
         return ret;
     }
 #else
-int wc_InitSha384_ex(Sha384* sha384, void* heap, int devId)
+int wc_InitSha384_ex(wc_Sha384* sha384, void* heap, int devId)
 {
     int ret;
 
@@ -1455,12 +1450,12 @@ int wc_InitSha384_ex(Sha384* sha384, void* heap, int devId)
 }
 #endif
 
-int wc_InitSha384(Sha384* sha384)
+int wc_InitSha384(wc_Sha384* sha384)
 {
     return wc_InitSha384_ex(sha384, NULL, INVALID_DEVID);
 }
 
-void wc_Sha384Free(Sha384* sha384)
+void wc_Sha384Free(wc_Sha384* sha384)
 {
     if (sha384 == NULL)
         return;
@@ -1475,10 +1470,10 @@ void wc_Sha384Free(Sha384* sha384)
 #endif /* HAVE_FIPS */
 
 
-int wc_Sha512GetHash(Sha512* sha512, byte* hash)
+int wc_Sha512GetHash(wc_Sha512* sha512, byte* hash)
 {
     int ret;
-    Sha512 tmpSha512;
+    wc_Sha512 tmpSha512;
 
     if (sha512 == NULL || hash == NULL)
         return BAD_FUNC_ARG;
@@ -1490,14 +1485,14 @@ int wc_Sha512GetHash(Sha512* sha512, byte* hash)
     return ret;
 }
 
-int wc_Sha512Copy(Sha512* src, Sha512* dst)
+int wc_Sha512Copy(wc_Sha512* src, wc_Sha512* dst)
 {
     int ret = 0;
 
     if (src == NULL || dst == NULL)
         return BAD_FUNC_ARG;
 
-    XMEMCPY(dst, src, sizeof(Sha512));
+    XMEMCPY(dst, src, sizeof(wc_Sha512));
 
 #ifdef WOLFSSL_ASYNC_CRYPT
     ret = wolfAsync_DevCopy(&src->asyncDev, &dst->asyncDev);
@@ -1507,10 +1502,10 @@ int wc_Sha512Copy(Sha512* src, Sha512* dst)
 }
 
 #ifdef WOLFSSL_SHA384
-int wc_Sha384GetHash(Sha384* sha384, byte* hash)
+int wc_Sha384GetHash(wc_Sha384* sha384, byte* hash)
 {
     int ret;
-    Sha384 tmpSha384;
+    wc_Sha384 tmpSha384;
 
     if (sha384 == NULL || hash == NULL)
         return BAD_FUNC_ARG;
@@ -1521,14 +1516,14 @@ int wc_Sha384GetHash(Sha384* sha384, byte* hash)
     }
     return ret;
 }
-int wc_Sha384Copy(Sha384* src, Sha384* dst)
+int wc_Sha384Copy(wc_Sha384* src, wc_Sha384* dst)
 {
     int ret = 0;
 
     if (src == NULL || dst == NULL)
         return BAD_FUNC_ARG;
 
-    XMEMCPY(dst, src, sizeof(Sha384));
+    XMEMCPY(dst, src, sizeof(wc_Sha384));
 
 #ifdef WOLFSSL_ASYNC_CRYPT
     ret = wolfAsync_DevCopy(&src->asyncDev, &dst->asyncDev);

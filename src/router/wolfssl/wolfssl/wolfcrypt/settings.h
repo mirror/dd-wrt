@@ -1,6 +1,6 @@
 /* settings.h
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -37,7 +37,7 @@
 /* Uncomment next line if using ThreadX */
 /* #define THREADX */
 
-/* Uncomment next line if using Micrium ucOS */
+/* Uncomment next line if using Micrium uC/OS-III */
 /* #define MICRIUM */
 
 /* Uncomment next line if using Mbed */
@@ -90,6 +90,12 @@
 
 /* Uncomment next line if using STM32F2 */
 /* #define WOLFSSL_STM32F2 */
+
+/* Uncomment next line if using STM32F4 */
+/* #define WOLFSSL_STM32F4 */
+
+/* Uncomment next line if using STM32F7 */
+/* #define WOLFSSL_STM32F7 */
 
 /* Uncomment next line if using QL SEP settings */
 /* #define WOLFSSL_QL */
@@ -170,6 +176,17 @@
     #undef WC_RSA_BLINDING
 #endif
 
+
+#if defined(_WIN32) && !defined(_M_X64) && \
+    defined(HAVE_AESGCM) && defined(WOLFSSL_AESNI)
+
+/* The _M_X64 macro is what's used in the headers for MSC to tell if it
+ * has the 64-bit versions of the 128-bit integers available. If one is
+ * building on 32-bit Windows with AES-NI, turn off the AES-GCMloop
+ * unrolling. */
+
+    #define AES_GCM_AESNI_NO_UNROLL
+#endif
 
 #ifdef IPHONE
     #define SIZEOF_LONG_LONG 8
@@ -960,33 +977,9 @@ extern void uITRON4_free(void *p) ;
     #define GCM_TABLE
 #endif
 
-#ifdef WOLFSSL_STM32F2
-    #define SIZEOF_LONG_LONG 8
-    #define NO_DEV_RANDOM
-    #define NO_WOLFSSL_DIR
-    #undef  NO_RABBIT
-    #define NO_RABBIT
-    #undef  NO_64BIT
-    #define NO_64BIT
-    #define STM32F2_RNG
-    #define STM32F2_CRYPTO
-    #if !defined(__GNUC__) && !defined(__ICCARM__)
-        #define KEIL_INTRINSICS
-    #endif
-    #define NO_OLD_RNGNAME
-    #ifdef WOLFSSL_STM32_CUBEMX
-        #include "stm32f2xx_hal.h"
-        #ifndef STM32_HAL_TIMEOUT
-            #define STM32_HAL_TIMEOUT   0xFF
-        #endif
-    #else
-        #include "stm32f2xx.h"
-        #include "stm32f2xx_cryp.h"
-        #include "stm32f2xx_hash.h"
-    #endif /* WOLFSSL_STM32_CUBEMX */
-#endif
+#if defined(WOLFSSL_STM32F2) || defined(WOLFSSL_STM32F4) || \
+    defined(WOLFSSL_STM32F7)
 
-#ifdef WOLFSSL_STM32F4
     #define SIZEOF_LONG_LONG 8
     #define NO_DEV_RANDOM
     #define NO_WOLFSSL_DIR
@@ -994,47 +987,99 @@ extern void uITRON4_free(void *p) ;
     #define NO_RABBIT
     #undef  NO_64BIT
     #define NO_64BIT
-    #define STM32F4_RNG
-    #define STM32F4_CRYPTO
-    #define NO_OLD_RNGNAME
+    #ifndef NO_STM32_RNG
+        #undef  STM32_RNG
+        #define STM32_RNG
+    #endif
+    #ifndef NO_STM32_CRYPTO
+        #undef  STM32_CRYPTO
+        #define STM32_CRYPTO
+    #endif
+    #ifndef NO_STM32_HASH
+        #undef  STM32_HASH
+        #define STM32_HASH
+    #endif
     #if !defined(__GNUC__) && !defined(__ICCARM__)
         #define KEIL_INTRINSICS
     #endif
+    #define NO_OLD_RNGNAME
     #ifdef WOLFSSL_STM32_CUBEMX
-        #include "stm32f4xx_hal.h"
+        #if defined(WOLFSSL_STM32F2)
+            #include "stm32f2xx_hal.h"
+        #elif defined(WOLFSSL_STM32F4)
+            #include "stm32f4xx_hal.h"
+        #elif defined(WOLFSSL_STM32F7)
+            #include "stm32f7xx_hal.h"
+        #endif
+
         #ifndef STM32_HAL_TIMEOUT
             #define STM32_HAL_TIMEOUT   0xFF
         #endif
     #else
-        #include "stm32f4xx.h"
-        #include "stm32f4xx_cryp.h"
-        #include "stm32f4xx_hash.h"
+        #if defined(WOLFSSL_STM32F2)
+            #include "stm32f2xx.h"
+            #ifdef STM32_CRYPTO
+                #include "stm32f2xx_cryp.h"
+            #endif
+            #ifdef STM32_HASH
+                #include "stm32f2xx_hash.h"
+            #endif
+        #elif defined(WOLFSSL_STM32F4)
+            #include "stm32f4xx.h"
+            #ifdef STM32_CRYPTO
+                #include "stm32f4xx_cryp.h"
+            #endif
+            #ifdef STM32_HASH
+                #include "stm32f4xx_hash.h"
+            #endif
+        #elif defined(WOLFSSL_STM32F7)
+            #include "stm32f7xx.h"
+        #endif
     #endif /* WOLFSSL_STM32_CUBEMX */
-#endif
+#endif /* WOLFSSL_STM32F2 || WOLFSSL_STM32F4 || WOLFSSL_STM32F7 */
 
 #ifdef MICRIUM
+    #include <stdlib.h>
+    #include <os.h>
+    #include <net_cfg.h>
+    #include <net_sock.h>
+    #include <net_err.h>
+    #include <lib_mem.h>
+    #include <lib_math.h>
 
-    #include "stdlib.h"
-    #include "net_cfg.h"
-    #include "ssl_cfg.h"
-    #include "net_secure_os.h"
+    #define USE_FAST_MATH
+    #define TFM_TIMING_RESISTANT
+    #define ECC_TIMING_RESISTANT
+    #define WC_RSA_BLINDING
+    #define HAVE_HASHDRBG
+
+    #define HAVE_ECC
+    #define ALT_ECC_SIZE
+    #define TFM_ECC192
+    #define TFM_ECC224
+    #define TFM_ECC256
+    #define TFM_ECC384
+    #define TFM_ECC521
+
+    #define NO_RC4
+    #define HAVE_TLS_EXTENSIONS
+    #define HAVE_SUPPORTED_CURVES
+    #define HAVE_EXTENDED_MASTER
+
+    #define NO_WOLFSSL_DIR
+    #define NO_WRITEV
+
+    #ifndef CUSTOM_RAND_GENERATE
+        #define CUSTOM_RAND_TYPE     RAND_NBR
+        #define CUSTOM_RAND_GENERATE Math_Rand
+    #endif
 
     #define WOLFSSL_TYPES
-
     typedef CPU_INT08U byte;
     typedef CPU_INT16U word16;
     typedef CPU_INT32U word32;
 
-    #if (NET_SECURE_MGR_CFG_WORD_SIZE == CPU_WORD_SIZE_32)
-        #define SIZEOF_LONG        4
-        #undef  SIZEOF_LONG_LONG
-    #else
-        #undef  SIZEOF_LONG
-        #define SIZEOF_LONG_LONG   8
-    #endif
-
     #define STRING_USER
-
     #define XSTRLEN(pstr) ((CPU_SIZE_T)Str_Len((CPU_CHAR *)(pstr)))
     #define XSTRNCPY(pstr_dest, pstr_src, len_max) \
                     ((CPU_CHAR *)Str_Copy_N((CPU_CHAR *)(pstr_dest), \
@@ -1042,9 +1087,18 @@ extern void uITRON4_free(void *p) ;
     #define XSTRNCMP(pstr_1, pstr_2, len_max) \
                     ((CPU_INT16S)Str_Cmp_N((CPU_CHAR *)(pstr_1), \
                      (CPU_CHAR *)(pstr_2), (CPU_SIZE_T)(len_max)))
+    #define XSTRNCASECMP(pstr_1, pstr_2, len_max) \
+                    ((CPU_INT16S)Str_CmpIgnoreCase_N((CPU_CHAR *)(pstr_1), \
+                     (CPU_CHAR *)(pstr_2), (CPU_SIZE_T)(len_max)))
     #define XSTRSTR(pstr, pstr_srch) \
                     ((CPU_CHAR *)Str_Str((CPU_CHAR *)(pstr), \
                      (CPU_CHAR *)(pstr_srch)))
+    #define XSTRNSTR(pstr, pstr_srch, len_max) \
+                    ((CPU_CHAR *)Str_Str_N((CPU_CHAR *)(pstr), \
+                     (CPU_CHAR *)(pstr_srch),(CPU_SIZE_T)(len_max)))
+    #define XSTRNCAT(pstr_dest, pstr_cat, len_max) \
+                    ((CPU_CHAR *)Str_Cat_N((CPU_CHAR *)(pstr_dest), \
+                     (const CPU_CHAR *)(pstr_cat),(CPU_SIZE_T)(len_max)))
     #define XMEMSET(pmem, data_val, size) \
                     ((void)Mem_Set((void *)(pmem), (CPU_INT08U) (data_val), \
                     (CPU_SIZE_T)(size)))
@@ -1055,85 +1109,8 @@ extern void uITRON4_free(void *p) ;
                      (CPU_SIZE_T)(size))) ? DEF_NO : DEF_YES)
     #define XMEMMOVE XMEMCPY
 
-#if (NET_SECURE_MGR_CFG_EN == DEF_ENABLED)
-    #define MICRIUM_MALLOC
-    #define XMALLOC(s, h, type) ((void *)NetSecure_BlkGet((CPU_INT08U)(type), \
-                                 (CPU_SIZE_T)(s), (void *)0))
-    #define XFREE(p, h, type)   (NetSecure_BlkFree((CPU_INT08U)(type), \
-                                 (p), (void *)0))
-    #define XREALLOC(p, n, h, t) realloc((p), (n))
-#endif
-
-    #if (NET_SECURE_MGR_CFG_FS_EN == DEF_ENABLED)
-        #undef  NO_FILESYSTEM
-    #else
-        #define NO_FILESYSTEM
-    #endif
-
-    #if (SSL_CFG_TRACE_LEVEL == WOLFSSL_TRACE_LEVEL_DBG)
-        #define DEBUG_WOLFSSL
-    #else
-        #undef  DEBUG_WOLFSSL
-    #endif
-
-    #if (SSL_CFG_OPENSSL_EN == DEF_ENABLED)
-        #define OPENSSL_EXTRA
-    #else
-        #undef  OPENSSL_EXTRA
-    #endif
-
-    #if (SSL_CFG_MULTI_THREAD_EN == DEF_ENABLED)
-        #undef  SINGLE_THREADED
-    #else
+    #if (OS_CFG_MUTEX_EN == DEF_DISABLED)
         #define SINGLE_THREADED
-    #endif
-
-    #if (SSL_CFG_DH_EN == DEF_ENABLED)
-        #undef  NO_DH
-    #else
-        #define NO_DH
-    #endif
-
-    #if (SSL_CFG_DSA_EN == DEF_ENABLED)
-        #undef  NO_DSA
-    #else
-        #define NO_DSA
-    #endif
-
-    #if (SSL_CFG_PSK_EN == DEF_ENABLED)
-        #undef  NO_PSK
-    #else
-        #define NO_PSK
-    #endif
-
-    #if (SSL_CFG_3DES_EN == DEF_ENABLED)
-        #undef  NO_DES
-    #else
-        #define NO_DES
-    #endif
-
-    #if (SSL_CFG_AES_EN == DEF_ENABLED)
-        #undef  NO_AES
-    #else
-        #define NO_AES
-    #endif
-
-    #if (SSL_CFG_RC4_EN == DEF_ENABLED)
-        #undef  NO_RC4
-    #else
-        #define NO_RC4
-    #endif
-
-    #if (SSL_CFG_RABBIT_EN == DEF_ENABLED)
-        #undef  NO_RABBIT
-    #else
-        #define NO_RABBIT
-    #endif
-
-    #if (SSL_CFG_HC128_EN == DEF_ENABLED)
-        #undef  NO_HC128
-    #else
-        #define NO_HC128
     #endif
 
     #if (CPU_CFG_ENDIAN_TYPE == CPU_ENDIAN_TYPE_BIG)
@@ -1142,69 +1119,6 @@ extern void uITRON4_free(void *p) ;
         #undef  BIG_ENDIAN_ORDER
         #define LITTLE_ENDIAN_ORDER
     #endif
-
-    #if (SSL_CFG_MD4_EN == DEF_ENABLED)
-        #undef  NO_MD4
-    #else
-        #define NO_MD4
-    #endif
-
-    #if (SSL_CFG_WRITEV_EN == DEF_ENABLED)
-        #undef  NO_WRITEV
-    #else
-        #define NO_WRITEV
-    #endif
-
-    #if (SSL_CFG_USER_RNG_SEED_EN == DEF_ENABLED)
-        #define NO_DEV_RANDOM
-    #else
-        #undef  NO_DEV_RANDOM
-    #endif
-
-    #if (SSL_CFG_USER_IO_EN == DEF_ENABLED)
-        #define WOLFSSL_USER_IO
-    #else
-        #undef  WOLFSSL_USER_IO
-    #endif
-
-    #if (SSL_CFG_DYNAMIC_BUFFERS_EN == DEF_ENABLED)
-        #undef  LARGE_STATIC_BUFFERS
-        #undef  STATIC_CHUNKS_ONLY
-    #else
-        #define LARGE_STATIC_BUFFERS
-        #define STATIC_CHUNKS_ONLY
-    #endif
-
-    #if (SSL_CFG_DER_LOAD_EN == DEF_ENABLED)
-        #define  WOLFSSL_DER_LOAD
-    #else
-        #undef   WOLFSSL_DER_LOAD
-    #endif
-
-    #if (SSL_CFG_DTLS_EN == DEF_ENABLED)
-        #define  WOLFSSL_DTLS
-    #else
-        #undef   WOLFSSL_DTLS
-    #endif
-
-    #if (SSL_CFG_CALLBACKS_EN == DEF_ENABLED)
-         #define WOLFSSL_CALLBACKS
-    #else
-         #undef  WOLFSSL_CALLBACKS
-    #endif
-
-    #if (SSL_CFG_FAST_MATH_EN == DEF_ENABLED)
-         #define USE_FAST_MATH
-    #else
-         #undef  USE_FAST_MATH
-    #endif
-
-    #if (SSL_CFG_TFM_TIMING_RESISTANT_EN == DEF_ENABLED)
-         #define TFM_TIMING_RESISTANT
-    #else
-         #undef  TFM_TIMING_RESISTANT
-    #endif
-
 #endif /* MICRIUM */
 
 
@@ -1454,6 +1368,12 @@ extern void uITRON4_free(void *p) ;
     #else
         #ifndef WOLFCRYPT_ONLY
             #error "AES CBC is required for TLS and can only be disabled for WOLFCRYPT_ONLY builds"
+        #endif
+    #endif
+    #ifdef WOLFSSL_AES_XTS
+        /* AES-XTS makes calls to AES direct functions */
+        #ifndef WOLFSSL_AES_DIRECT
+        #define WOLFSSL_AES_DIRECT
         #endif
     #endif
 #endif

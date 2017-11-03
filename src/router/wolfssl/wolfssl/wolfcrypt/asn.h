@@ -1,6 +1,6 @@
 /* asn.h
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -136,9 +136,9 @@ enum Misc_ASN {
     ASN_ECC_HEADER_SZ   =   2,     /* String type + 1 byte len */
     ASN_ECC_CONTEXT_SZ  =   2,     /* Content specific type + 1 byte len */
 #ifdef NO_SHA
-    KEYID_SIZE          = SHA256_DIGEST_SIZE,
+    KEYID_SIZE          = WC_SHA256_DIGEST_SIZE,
 #else
-    KEYID_SIZE          = SHA_DIGEST_SIZE,
+    KEYID_SIZE          = WC_SHA_DIGEST_SIZE,
 #endif
     RSA_INTS            =   8,     /* RSA ints in private key */
     DSA_INTS            =   5,     /* DSA ints in private key */
@@ -179,6 +179,8 @@ enum Misc_ASN {
 #ifdef WOLFSSL_CERT_EXT
     MAX_KID_SZ			= 45,	   /* Max encoded KID length (SHA-256 case) */
     MAX_KEYUSAGE_SZ     = 18,      /* Max encoded Key Usage length */
+    MAX_EXTKEYUSAGE_SZ  = 12 + (6 * (8 + 2)), /* Max encoded ExtKeyUsage
+                        (SEQ/LEN + OBJID + OCTSTR/LEN + SEQ + (6 * (SEQ + OID))) */
     MAX_OID_SZ          = 32,      /* Max DER length of OID*/
     MAX_OID_STRING_SZ   = 64,      /* Max string length representation of OID*/
     MAX_CERTPOL_NB      = CTC_MAX_CERTPOL_NB,/* Max number of Cert Policy */
@@ -194,7 +196,7 @@ enum Misc_ASN {
     TRAILING_ZERO       = 1,       /* Used for size of zero pad */
     MIN_VERSION_SZ      = 3,       /* Min bytes needed for GetMyVersion */
 #if defined(WOLFSSL_MYSQL_COMPATIBLE) || defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY)
-    MAX_TIME_STRING_SZ  = 21,      /* Max length of formatted time string */
+    MAX_TIME_STRING_SZ  = 25,      /* Max length of formatted time string */
 #endif
 };
 
@@ -338,7 +340,10 @@ enum ExtKeyUsage_Sum { /* From RFC 5280 */
     EKU_ANY_OID         = 151, /* 2.5.29.37.0, anyExtendedKeyUsage         */
     EKU_SERVER_AUTH_OID = 71,  /* 1.3.6.1.5.5.7.3.1, id-kp-serverAuth      */
     EKU_CLIENT_AUTH_OID = 72,  /* 1.3.6.1.5.5.7.3.2, id-kp-clientAuth      */
-    EKU_OCSP_SIGN_OID   = 79   /* 1.3.6.1.5.5.7.3.9, OCSPSigning           */
+    EKU_CODESIGNING_OID = 73,  /* 1.3.6.1.5.5.7.3.3, id-kp-codeSigning     */
+    EKU_EMAILPROTECT_OID = 74, /* 1.3.6.1.5.5.7.3.4, id-kp-emailProtection */
+    EKU_TIMESTAMP_OID   = 78,  /* 1.3.6.1.5.5.7.3.8, id-kp-timeStamping    */
+    EKU_OCSP_SIGN_OID   = 79   /* 1.3.6.1.5.5.7.3.9, id-kp-OCSPSigning     */
 };
 
 
@@ -356,7 +361,7 @@ enum KeyIdType {
 };
 #endif
 
-/* Key usage extension bits */
+/* Key usage extension bits (based on RFC 5280) */
 #define KEYUSE_DIGITAL_SIG    0x0080
 #define KEYUSE_CONTENT_COMMIT 0x0040
 #define KEYUSE_KEY_ENCIPHER   0x0020
@@ -367,10 +372,14 @@ enum KeyIdType {
 #define KEYUSE_ENCIPHER_ONLY  0x0001
 #define KEYUSE_DECIPHER_ONLY  0x8000
 
-#define EXTKEYUSE_ANY         0x08
-#define EXTKEYUSE_OCSP_SIGN   0x04
-#define EXTKEYUSE_CLIENT_AUTH 0x02
-#define EXTKEYUSE_SERVER_AUTH 0x01
+/* Extended Key Usage bits (internal mapping only) */
+#define EXTKEYUSE_OCSP_SIGN   0x40
+#define EXTKEYUSE_TIMESTAMP   0x20
+#define EXTKEYUSE_EMAILPROT   0x10
+#define EXTKEYUSE_CODESIGN    0x08
+#define EXTKEYUSE_CLIENT_AUTH 0x04
+#define EXTKEYUSE_SERVER_AUTH 0x02
+#define EXTKEYUSE_ANY         0x01
 
 typedef struct DNS_entry   DNS_entry;
 
@@ -453,6 +462,7 @@ struct SignatureCtx {
     word32 keyOID;
 #ifdef WOLFSSL_ASYNC_CRYPT
     WC_ASYNC_DEV* asyncDev;
+    void* asyncCtx;
 #endif
 };
 
@@ -664,9 +674,9 @@ extern const char* BEGIN_EDDSA_PRIV;
 extern const char* END_EDDSA_PRIV;
 
 #ifdef NO_SHA
-    #define SIGNER_DIGEST_SIZE SHA256_DIGEST_SIZE
+    #define SIGNER_DIGEST_SIZE WC_SHA256_DIGEST_SIZE
 #else
-    #define SIGNER_DIGEST_SIZE SHA_DIGEST_SIZE
+    #define SIGNER_DIGEST_SIZE WC_SHA_DIGEST_SIZE
 #endif
 
 /* CA Signers */
@@ -794,7 +804,8 @@ WOLFSSL_LOCAL word32 SetExplicit(byte number, word32 len, byte* output);
 WOLFSSL_LOCAL word32 SetSet(word32 len, byte* output);
 WOLFSSL_LOCAL word32 SetAlgoID(int algoOID,byte* output,int type,int curveSz);
 WOLFSSL_LOCAL int SetMyVersion(word32 version, byte* output, int header);
-WOLFSSL_LOCAL int SetSerialNumber(const byte* sn, word32 snSz, byte* output);
+WOLFSSL_LOCAL int SetSerialNumber(const byte* sn, word32 snSz, byte* output,
+    int maxSnSz);
 WOLFSSL_LOCAL int GetSerialNumber(const byte* input, word32* inOutIdx,
     byte* serial, int* serialSz, word32 maxIdx);
 WOLFSSL_LOCAL int GetNameHash(const byte* source, word32* idx, byte* hash,
@@ -932,10 +943,7 @@ struct OcspRequest {
     byte   nonce[MAX_OCSP_NONCE_SZ];
     int    nonceSz;
     void*  heap;
-
-#if defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY)
     void*  ssl;
-#endif
 };
 
 

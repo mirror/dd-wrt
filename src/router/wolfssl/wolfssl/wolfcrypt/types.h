@@ -1,6 +1,6 @@
 /* types.h
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -46,6 +46,7 @@
 	    #endif
 	    typedef unsigned short word16;
 	    typedef unsigned int   word32;
+	    typedef byte           word24[3];
 	#endif
 
 
@@ -53,7 +54,9 @@
 	#if !defined(_MSC_VER) && !defined(__BCPLUSPLUS__)
 	    #if !defined(SIZEOF_LONG_LONG) && !defined(SIZEOF_LONG)
 	        #if (defined(__alpha__) || defined(__ia64__) || defined(_ARCH_PPC64) \
-	                || defined(__mips64)  || defined(__x86_64__))
+	                || defined(__mips64)  || defined(__x86_64__) || \
+                    ((defined(sun) || defined(__sun)) && \
+                     (defined(LP64) || defined(_LP64))))
 	            /* long should be 64bit */
 	            #define SIZEOF_LONG 8
 	        #elif defined(__i386__) || defined(__CORTEX_M3__)
@@ -257,7 +260,7 @@
             VAR_TYPE* VAR_NAME = (VAR_TYPE*)XMALLOC(sizeof(VAR_TYPE) * VAR_SIZE, HEAP, DYNAMIC_TYPE_WOLF_BIGINT);
         #define DECLARE_VAR_INIT(VAR_NAME, VAR_TYPE, VAR_SIZE, INIT_VALUE, HEAP) \
             VAR_TYPE* VAR_NAME = ({ \
-                VAR_TYPE* ptr = XMALLOC(sizeof(VAR_TYPE) * VAR_SIZE, HEAP, DYNAMIC_TYPE_WOLF_BIGINT); \
+                VAR_TYPE* ptr = (VAR_TYPE*)XMALLOC(sizeof(VAR_TYPE) * VAR_SIZE, HEAP, DYNAMIC_TYPE_WOLF_BIGINT); \
                 if (ptr && INIT_VALUE) { \
                     XMEMCPY(ptr, INIT_VALUE, sizeof(VAR_TYPE) * VAR_SIZE); \
                 } \
@@ -326,15 +329,14 @@
             /* use only Thread Safe version of strtok */
             #if !defined(USE_WINDOWS_API) && !defined(INTIME_RTOS)
                 #define XSTRTOK strtok_r
+            #elif defined(__MINGW32__) || defined(WOLFSSL_TIRTOS) || \
+                    defined(USE_WOLF_STRTOK)
+                #ifndef USE_WOLF_STRTOK
+                    #define USE_WOLF_STRTOK
+                #endif
+                #define XSTRTOK wc_strtok
             #else
                 #define XSTRTOK strtok_s
-
-                #ifdef __MINGW32__
-                    #pragma GCC diagnostic push
-                    #pragma GCC diagnostic warning "-Wcpp"
-                    #warning "MinGW may be missing strtok_s. You can find a public domain implementation here: https://github.com/fletcher/MultiMarkdown-4/blob/master/strtok.c"
-                    #pragma GCC diagnostic pop
-                #endif
             #endif
         #endif
 	#endif

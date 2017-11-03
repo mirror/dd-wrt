@@ -1,6 +1,6 @@
 /* logging.c
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -120,6 +120,8 @@ void wolfSSL_Debugging_OFF(void)
 #elif defined(WOLFSSL_SGX)
     /* Declare sprintf for ocall */
     int sprintf(char* buf, const char *fmt, ...);
+#elif defined(MICRIUM)
+    #include <bsp_ser.h>
 #else
     #include <stdio.h>   /* for default printf stuff */
 #endif
@@ -137,9 +139,7 @@ static void wolfssl_log(const int logLevel, const char *const logMessage)
 #if defined(THREADX) && !defined(THREADX_NO_DC_PRINTF)
             dc_log_printf("%s\n", logMessage);
 #elif defined(MICRIUM)
-        #if (NET_SECURE_MGR_CFG_EN == DEF_ENABLED)
-            NetSecure_TraceOut((CPU_CHAR *)logMessage);
-        #endif
+            BSP_Ser_Printf("%s\r\n", logMessage);
 #elif defined(WOLFSSL_MDK_ARM)
             fflush(stdout) ;
             printf("%s\n", logMessage);
@@ -303,7 +303,8 @@ int wc_LoggingCleanup(void)
 }
 
 
-#if defined(DEBUG_WOLFSSL) || defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY)
+#if defined(DEBUG_WOLFSSL) || defined(WOLFSSL_NGINX) || \
+    defined(WOLFSSL_HAPROXY) || defined(WOLFSSL_MYSQL_COMPATIBLE)
 /* peek at an error node
  *
  * idx : if -1 then the most recent node is looked at, otherwise search
