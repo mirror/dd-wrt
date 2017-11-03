@@ -2209,6 +2209,8 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 	/* BITTORRENT */
 	init_bittorrent_dissector(ndpi_struct, &a, detection_bitmask);
 
+       /* LISP */
+       init_lisp_dissector(ndpi_struct, &a, detection_bitmask);
 
 	/* ----------------------------------------------------------------- */
 
@@ -3696,7 +3698,7 @@ static ndpi_protocol ndpi_guess_undetected_protocol(struct ndpi_detection_module
 	ndpi_protocol ret = { NDPI_PROTOCOL_UNKNOWN, NDPI_PROTOCOL_UNKNOWN };
 
 	if ((proto == IPPROTO_TCP) || (proto == IPPROTO_UDP)) {
-		rc = ndpi_search_tcp_or_udp_raw(ndpi_struct, proto, shost, dhost, sport, dport);
+		rc = ndpi_search_tcp_or_udp_raw(ndpi_struct, NULL, proto, shost, dhost, sport, dport);
 		if (rc != NDPI_PROTOCOL_UNKNOWN) {
 			ret.protocol = rc, ret.master_protocol = ndpi_guess_protocol_id(ndpi_struct, proto, sport, dport);
 
