@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3698 | brainslayer | 2017-11-03 02:11:44 +0100 (Fri, 03 Nov 2017) | 1 line
+
+ath10k firmware tools for decoding and encoding firmware images from official qca vendor images
+------------------------------------------------------------------------
 r3697 | brainslayer | 2017-11-02 10:21:23 +0100 (Thu, 02 Nov 2017) | 1 line
 
 update wil6210 firmware
