@@ -149,9 +149,9 @@ struct bt_announce {		// 192 bytes
 #define TINC_CACHE_MAX_SIZE 10
 
 PACK_ON struct tinc_cache_entry {
-  u_int32_t src_address;
-  u_int32_t dst_address;
-  u_int16_t dst_port;
+	u_int32_t src_address;
+	u_int32_t dst_address;
+	u_int16_t dst_port;
 } PACK_OFF;
 
 #endif
@@ -416,9 +416,8 @@ struct ndpi_flow_tcp_struct {
 	u_int32_t mail_pop_stage:2;
 #endif
 #ifdef NDPI_PROTOCOL_MAIL_IMAP
-	u_int32_t mail_imap_stage:3;
+	u_int32_t mail_imap_stage:3, mail_imap_starttls:2;
 #endif
-
 #ifdef NDPI_PROTOCOL_SKYPE
 	u_int8_t skype_packet_id;
 #endif
@@ -514,7 +513,7 @@ __attribute__((__packed__))
 /* ************************************************** */
 
 typedef struct ndpi_int_one_line_struct {
- const u_int8_t *ptr;
+	const u_int8_t *ptr;
 	u_int16_t len;
 } ndpi_int_one_line_struct_t;
 
@@ -559,7 +558,7 @@ typedef struct ndpi_packet_struct {
 	struct ndpi_int_one_line_struct server_line;
 	struct ndpi_int_one_line_struct http_method;
 	struct ndpi_int_one_line_struct http_response;
-  u_int8_t http_num_headers; /* number of found (valid) header lines in HTTP request or response */
+	u_int8_t http_num_headers;	/* number of found (valid) header lines in HTTP request or response */
 
 	u_int16_t l3_packet_len;
 	u_int16_t l4_packet_len;
@@ -612,38 +611,38 @@ typedef enum {
 
 /* Abstract categories to group the protocols. */
 typedef enum {
-  NDPI_PROTOCOL_CATEGORY_UNSPECIFIED = 0,   /* For general services and unknown protocols */
-  NDPI_PROTOCOL_CATEGORY_MEDIA,             /* Multimedia and streaming */
-  NDPI_PROTOCOL_CATEGORY_VPN,               /* Virtual Private Networks */
-  NDPI_PROTOCOL_CATEGORY_MAIL,              /* Protocols to send/receive/sync emails */
-  NDPI_PROTOCOL_CATEGORY_DATA_TRANSFER,     /* AFS/NFS and similar protocols */
-  NDPI_PROTOCOL_CATEGORY_WEB,               /* Web protocols and services */
-  NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK,    /* Social networks */
-  NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT,       /* Download, FTP, file transfer/sharing */
-  NDPI_PROTOCOL_CATEGORY_GAME,              /* Online games */
-  NDPI_PROTOCOL_CATEGORY_CHAT,              /* Instant messaging */
-  NDPI_PROTOCOL_CATEGORY_VOIP,              /* Real-time communications and conferencing */
-  NDPI_PROTOCOL_CATEGORY_DATABASE,          /* Protocols for database communication */
-  NDPI_PROTOCOL_CATEGORY_REMOTE_ACCESS,     /* Remote access and control */
-  NDPI_PROTOCOL_CATEGORY_CLOUD,             /* Online cloud services */
-  NDPI_PROTOCOL_CATEGORY_NETWORK,           /* Network infrastructure protocols */
-  NDPI_PROTOCOL_CATEGORY_COLLABORATIVE,     /* Software for collaborative development, including Webmail */
-  NDPI_PROTOCOL_CATEGORY_RPC,               /* High level network communication protocols */
-  NDPI_PROTOCOL_CATEGORY_NETWORK_TOOL,      /* Network administration and monitor protocols */
-  NDPI_PROTOCOL_CATEGORY_SYSTEM_OS,         /* System/Operating System level applications */
-  NDPI_PROTOCOL_CATEGORY_SW_UPDATE,         /* Software update */
-  /* See #define NUM_CUSTOM_CATEGORIES */
-  NDPI_PROTOCOL_CATEGORY_CUSTOM_1,          /* User custom category 1 */
-  NDPI_PROTOCOL_CATEGORY_CUSTOM_2,          /* User custom category 2 */
-  NDPI_PROTOCOL_CATEGORY_CUSTOM_3,          /* User custom category 3 */
-  NDPI_PROTOCOL_CATEGORY_CUSTOM_4,          /* User custom category 4 */
-  NDPI_PROTOCOL_CATEGORY_CUSTOM_5,          /* User custom category 5 */
+	NDPI_PROTOCOL_CATEGORY_UNSPECIFIED = 0,	/* For general services and unknown protocols */
+	NDPI_PROTOCOL_CATEGORY_MEDIA,	/* Multimedia and streaming */
+	NDPI_PROTOCOL_CATEGORY_VPN,	/* Virtual Private Networks */
+	NDPI_PROTOCOL_CATEGORY_MAIL,	/* Protocols to send/receive/sync emails */
+	NDPI_PROTOCOL_CATEGORY_DATA_TRANSFER,	/* AFS/NFS and similar protocols */
+	NDPI_PROTOCOL_CATEGORY_WEB,	/* Web protocols and services */
+	NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK,	/* Social networks */
+	NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT,	/* Download, FTP, file transfer/sharing */
+	NDPI_PROTOCOL_CATEGORY_GAME,	/* Online games */
+	NDPI_PROTOCOL_CATEGORY_CHAT,	/* Instant messaging */
+	NDPI_PROTOCOL_CATEGORY_VOIP,	/* Real-time communications and conferencing */
+	NDPI_PROTOCOL_CATEGORY_DATABASE,	/* Protocols for database communication */
+	NDPI_PROTOCOL_CATEGORY_REMOTE_ACCESS,	/* Remote access and control */
+	NDPI_PROTOCOL_CATEGORY_CLOUD,	/* Online cloud services */
+	NDPI_PROTOCOL_CATEGORY_NETWORK,	/* Network infrastructure protocols */
+	NDPI_PROTOCOL_CATEGORY_COLLABORATIVE,	/* Software for collaborative development, including Webmail */
+	NDPI_PROTOCOL_CATEGORY_RPC,	/* High level network communication protocols */
+	NDPI_PROTOCOL_CATEGORY_NETWORK_TOOL,	/* Network administration and monitor protocols */
+	NDPI_PROTOCOL_CATEGORY_SYSTEM_OS,	/* System/Operating System level applications */
+	NDPI_PROTOCOL_CATEGORY_SW_UPDATE,	/* Software update */
+	/* See #define NUM_CUSTOM_CATEGORIES */
+	NDPI_PROTOCOL_CATEGORY_CUSTOM_1,	/* User custom category 1 */
+	NDPI_PROTOCOL_CATEGORY_CUSTOM_2,	/* User custom category 2 */
+	NDPI_PROTOCOL_CATEGORY_CUSTOM_3,	/* User custom category 3 */
+	NDPI_PROTOCOL_CATEGORY_CUSTOM_4,	/* User custom category 4 */
+	NDPI_PROTOCOL_CATEGORY_CUSTOM_5,	/* User custom category 5 */
 
-  NDPI_PROTOCOL_NUM_CATEGORIES /*
-				  NOTE: Keep this as last member
-				  Unused as value but useful to getting the number of elements
-				  in this datastructure
-			       */
+	NDPI_PROTOCOL_NUM_CATEGORIES	/*
+					   NOTE: Keep this as last member
+					   Unused as value but useful to getting the number of elements
+					   in this datastructure
+					 */
 } ndpi_protocol_category_t;
 
 /* ntop extensions */
@@ -770,7 +769,7 @@ typedef struct ndpi_detection_module_struct {
 #endif
 #endif
 #ifdef NDPI_PROTOCOL_TINC
-  cache_t tinc_cache;
+	cache_t tinc_cache;
 #endif
 
 	ndpi_proto_defaults_t proto_defaults[NDPI_MAX_SUPPORTED_PROTOCOLS + NDPI_MAX_NUM_CUSTOM_PROTOCOLS];
@@ -789,10 +788,15 @@ typedef struct ndpi_flow_struct {
 	/* init parameter, internal used to set up timestamp,... */
 	u_int16_t guessed_protocol_id, guessed_host_protocol_id;
 
-	u_int8_t protocol_id_already_guessed:1, host_already_guessed:1, init_finished:1, setup_packet_direction:1, packet_direction:1;
+	u_int8_t protocol_id_already_guessed:1, host_already_guessed:1, init_finished:1, setup_packet_direction:1, packet_direction:1, check_extra_packets:1;
+
 	/* if ndpi_struct->direction_detect_disable == 1 */
 	/* tcp sequence number connection tracking */
 	u_int32_t next_tcp_seq_nr[2];
+
+	u_int8_t max_extra_packets_to_check;
+	u_int8_t num_extra_packets_checked;
+	int (*extra_packets_func) (struct ndpi_detection_module_struct *, struct ndpi_flow_struct * flow);
 
 	/* the tcp / udp / other l4 value union
 	 * this is used to reduce the number of bytes for tcp or udp protocol states
@@ -820,13 +824,13 @@ typedef struct ndpi_flow_struct {
 	   when to use it or not. Thus we leave it outside for the
 	   time being.
 	 */
-  struct {
-    ndpi_http_method method;
-    char *url, *content_type;
-    u_int8_t  num_request_headers, num_response_headers;
-    u_int8_t  request_version; /* 0=1.0 and 1=1.1. Create an enum for this? */
-    u_char response_status_code[5]; /* 200, 404, etc. */
-  } http;
+	struct {
+		ndpi_http_method method;
+		char *url, *content_type;
+		u_int8_t num_request_headers, num_response_headers;
+		u_int8_t request_version;	/* 0=1.0 and 1=1.1. Create an enum for this? */
+		u_char response_status_code[5];	/* 200, 404, etc. */
+	} http;
 
 	union {
 		struct {
@@ -843,21 +847,28 @@ typedef struct ndpi_flow_struct {
 			char client_certificate[48], server_certificate[48];
 		} ssl;
 
-    struct {
-      char version[96];
-    } ubntac2;
-
-    struct {
-      /* Via HTTP User-Agent */
-      u_char detected_os[32];
-      /* Via HTTP X-Forwarded-For */
-      u_char nat_ip[24];
-    } http;
+		struct {
+			char client_signature[48], server_signature[48];
+		} ssh;
 
 		struct {
-    		    char fingerprint[48];
-      char class_ident[48];
-    } dhcp;
+			char answer[96];
+		} mdns;
+		struct {
+			char version[96];
+		} ubntac2;
+
+		struct {
+			/* Via HTTP User-Agent */
+			u_char detected_os[32];
+			/* Via HTTP X-Forwarded-For */
+			u_char nat_ip[24];
+		} http;
+
+		struct {
+			char fingerprint[48];
+			char class_ident[48];
+		} dhcp;
 	} protos;
 	/* ALL protocol specific 64 bit variables here */
 
@@ -944,16 +955,16 @@ typedef struct ndpi_flow_struct {
 	u_int32_t starcraft_udp_stage:3;	// 0-7
 #endif
 #ifdef NDPI_PROTOCOL_TINC
-  u_int8_t tinc_state;
-  struct tinc_cache_entry tinc_cache_entry;
+	u_int8_t tinc_state;
+	struct tinc_cache_entry tinc_cache_entry;
 #endif
 #ifdef NDPI_PROTOCOL_CSGO
-  u_int8_t csgo_strid[18],csgo_state,csgo_s2;
-  u_int32_t csgo_id2;
+	u_int8_t csgo_strid[18], csgo_state, csgo_s2;
+	u_int32_t csgo_id2;
 #endif
 
 #if defined(NDPI_PROTOCOL_1KXUN) || defined(NDPI_PROTOCOL_IQIYI)
-  u_int16_t kxun_counter, iqiyi_counter;
+	u_int16_t kxun_counter, iqiyi_counter;
 #endif
 
 	/* internal structures to save functions calls */
@@ -967,10 +978,10 @@ typedef struct ndpi_flow_struct {
 } ndpi_flow_struct_t;
 
 typedef struct {
-  char *string_to_match, *proto_name;
-  int protocol_id;
-  ndpi_protocol_category_t proto_category;
-  ndpi_protocol_breed_t protocol_breed;
+	char *string_to_match, *proto_name;
+	int protocol_id;
+	ndpi_protocol_category_t proto_category;
+	ndpi_protocol_breed_t protocol_breed;
 } ndpi_protocol_match;
 
 typedef struct {
