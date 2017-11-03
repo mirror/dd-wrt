@@ -33,13 +33,13 @@
 #endif
 
 struct xt_ndpi_mtinfo {
-        NDPI_PROTOCOL_BITMASK flags;
-	unsigned short int    invert;
+	NDPI_PROTOCOL_BITMASK flags;
+	unsigned short int invert;
 };
 
 struct xt_ndpi_tginfo {
-       __u32 mark, mask;
-       __u16 proto_id:1,t_accept:1,t_mark:1,t_clsf:1;
+	__u32 mark, mask;
+	__u16 proto_id:1, t_accept:1, t_mark:1, t_clsf:1;
 };
 
 #ifndef NDPI_PROTOCOL_SHORT_STRING
@@ -92,4 +92,4 @@ struct xt_ndpi_tginfo {
 #define NDPI_PROTOCOL_MAXNUM 262
 #endif
 
-#endif /* _LINUX_NETFILTER_XT_NDPI_H */
+#endif				/* _LINUX_NETFILTER_XT_NDPI_H */

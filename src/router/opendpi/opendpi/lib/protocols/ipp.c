@@ -92,7 +92,7 @@ search_for_next_pattern:
 
 	if (packet->payload_packet_len > 3 && memcmp(packet->payload, "POST", 4) == 0) {
 		ndpi_parse_packet_line_info(ndpi_struct, flow);
-		if (packet->content_line.ptr != NULL && packet->content_line.len > 14 && memcmp(packet_hdr(content_line), "application/ipp", 15) == 0) {
+		if (packet->content_line.ptr != NULL && packet->content_line.len > 14 && memcmp(packet->content_line.ptr, "application/ipp", 15) == 0) {
 			NDPI_LOG(NDPI_PROTOCOL_IPP, ndpi_struct, NDPI_LOG_DEBUG, "found ipp via POST ... application/ipp.\n");
 			ndpi_int_ipp_add_connection(ndpi_struct, flow);
 			return;

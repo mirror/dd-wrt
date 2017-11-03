@@ -55,14 +55,14 @@ static void ndpi_search_maplestory(struct ndpi_detection_module_struct *ndpi_str
 			    && packet->host_line.len > NDPI_STATICSTRING_LEN("patch.")
 			    && memcmp(&packet->payload[NDPI_STATICSTRING_LEN("GET /maple/")], "patch",
 				      NDPI_STATICSTRING_LEN("patch")) == 0
-			    && memcmp(packet_hdr(user_agent_line), "Patcher", NDPI_STATICSTRING_LEN("Patcher")) == 0 && memcmp(packet_hdr(host_line), "patch.", NDPI_STATICSTRING_LEN("patch.")) == 0) {
+			    && memcmp(packet->user_agent_line.ptr, "Patcher", NDPI_STATICSTRING_LEN("Patcher")) == 0 && memcmp(packet->host_line.ptr, "patch.", NDPI_STATICSTRING_LEN("patch.")) == 0) {
 				NDPI_LOG(NDPI_PROTOCOL_MAPLESTORY, ndpi_struct, NDPI_LOG_DEBUG, "found maplestory update.\n");
 				ndpi_int_maplestory_add_connection(ndpi_struct, flow);
 				return;
 			}
 		} else if (packet->user_agent_line.ptr != NULL && packet->user_agent_line.len == NDPI_STATICSTRING_LEN("AspINet")
 			   && memcmp(&packet->payload[NDPI_STATICSTRING_LEN("GET /maple")], "story/",
-				     NDPI_STATICSTRING_LEN("story/")) == 0 && memcmp(packet_hdr(user_agent_line), "AspINet", NDPI_STATICSTRING_LEN("AspINet")) == 0) {
+				     NDPI_STATICSTRING_LEN("story/")) == 0 && memcmp(packet->user_agent_line.ptr, "AspINet", NDPI_STATICSTRING_LEN("AspINet")) == 0) {
 			NDPI_LOG(NDPI_PROTOCOL_MAPLESTORY, ndpi_struct, NDPI_LOG_DEBUG, "found maplestory update.\n");
 			ndpi_int_maplestory_add_connection(ndpi_struct, flow);
 			return;

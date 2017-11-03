@@ -1,11 +1,10 @@
 /*
  * tor.c
  *
- * Copyright (C) 2015 ntop.org
+ * Copyright (C) 2016 ntop.org
  * Copyright (C) 2013 Remy Mudingay <mudingay@ill.fr>
  *
  */
-
 #include "ndpi_api.h"
 
 #ifdef NDPI_PROTOCOL_TOR
@@ -16,14 +15,15 @@ static void ndpi_int_tor_add_connection(struct ndpi_detection_module_struct
 	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_TOR, NDPI_PROTOCOL_UNKNOWN);
 }
 
-static int ndpi_is_ssl_tor(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, char *certificate)
+int ndpi_is_ssl_tor(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, char *certificate)
 {
+
 	int prev_num = 0, numbers_found = 0, num_found = 0, i, len;
 	char dummy[48], *dot, *name;
 
 	if ((certificate == NULL)
 	    || (strlen(certificate) < 6)
-	    || !(strncmp(certificate, "www.", 4)))
+	    || (strncmp(certificate, "www.", 4)))
 		return (0);
 
 	// printf("***** [SSL] %s(): %s\n", __FUNCTION__, certificate);
@@ -40,10 +40,11 @@ static int ndpi_is_ssl_tor(struct ndpi_detection_module_struct *ndpi_struct, str
 
 	len = strlen(name);
 
-	if (len > 6) {
+	if (len >= 5) {
 		for (i = 0; name[i + 1] != '\0'; i++) {
-			if ((name[i] >= '0') && (name[i] <= '9')) {
+			// printf("***** [SSL] %s(): [%d][%c]", __FUNCTION__, i, name[i]);
 
+			if ((name[i] >= '0') && (name[i] <= '9')) {
 				if (prev_num != 1) {
 					numbers_found++;
 
@@ -70,7 +71,7 @@ static int ndpi_is_ssl_tor(struct ndpi_detection_module_struct *ndpi_struct, str
 			ndpi_int_tor_add_connection(ndpi_struct, flow);
 			return (1);
 		} else {
-#ifdef PENDANTIC_TOR_CHECK
+#ifdef PEDANTIC_TOR_CHECK
 			if (gethostbyname(certificate) == NULL) {
 				ndpi_int_tor_add_connection(ndpi_struct, flow);
 				return (1);
