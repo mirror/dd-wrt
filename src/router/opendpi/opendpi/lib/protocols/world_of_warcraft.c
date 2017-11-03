@@ -76,7 +76,7 @@ static void ndpi_search_worldofwarcraft(struct ndpi_detection_module_struct
 		if (packet->payload_packet_len > NDPI_STATICSTRING_LEN("GET /")
 		    && memcmp(packet->payload, "GET /", NDPI_STATICSTRING_LEN("GET /")) == 0) {
 			ndpi_parse_packet_line_info(ndpi_struct, flow);
-			if (packet->user_agent_line.offs != 0xffff && packet->host_line.offs != 0xffff && packet->user_agent_line.len > NDPI_STATICSTRING_LEN("Blizzard Downloader")
+			if (packet->user_agent_line.ptr != NULL && packet->host_line.ptr != NULL && packet->user_agent_line.len > NDPI_STATICSTRING_LEN("Blizzard Downloader")
 			    && packet->host_line.len > NDPI_STATICSTRING_LEN("worldofwarcraft.com")
 			    && memcmp(packet_hdr(user_agent_line), "Blizzard Downloader",
 				      NDPI_STATICSTRING_LEN("Blizzard Downloader")) == 0

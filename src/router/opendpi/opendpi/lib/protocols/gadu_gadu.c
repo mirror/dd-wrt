@@ -116,7 +116,7 @@ static u_int8_t check_for_http(struct ndpi_detection_module_struct *ndpi_struct,
 		if (packet->parsed_lines <= 1) {
 			return 0;
 		}
-		if (packet->host_line.offs == 0xffff) {
+		if (packet->host_line.ptr == NULL) {
 			return 0;
 		}
 		if (!(packet->host_line.len >= 19 && memcmp(packet_hdr(host_line), "appmsg.gadu-gadu.pl", 19) == 0)) {
@@ -134,7 +134,7 @@ static u_int8_t check_for_http(struct ndpi_detection_module_struct *ndpi_struct,
 		if (packet->parsed_lines <= 1) {
 			return 0;
 		}
-		if (packet->host_line.offs == 0xffff) {
+		if (packet->host_line.ptr == NULL) {
 			return 0;
 		}
 		if (!(packet->host_line.len >= 17 && memcmp(packet_hdr(host_line), "life.gadu-gadu.pl", 17) == 0)) {
@@ -152,7 +152,7 @@ static u_int8_t check_for_http(struct ndpi_detection_module_struct *ndpi_struct,
 		if (packet->parsed_lines <= 1) {
 			return 0;
 		}
-		if (packet->host_line.offs == 0xffff) {
+		if (packet->host_line.ptr == NULL) {
 			return 0;
 		}
 		if (!(packet->host_line.len >= 13 && memcmp(packet_hdr(host_line), "sms.orange.pl", 13) == 0)) {
@@ -165,7 +165,7 @@ static u_int8_t check_for_http(struct ndpi_detection_module_struct *ndpi_struct,
 	} else if ((memcmp(packet->payload, "GET /nowosci.xml", NDPI_STATICSTRING_LEN("GET /nowosci.xml")) == 0) ||
 		   (memcmp(packet->payload, "GET /gadu-gadu.xml", NDPI_STATICSTRING_LEN("GET /gadu-gadu.xml")) == 0) || (memcmp(packet->payload, "POST /access_token", NDPI_STATICSTRING_LEN("POST /access_token")) == 0)) {
 		ndpi_parse_packet_line_info(ndpi_struct, flow);
-		if (packet->user_agent_line.offs == 0xffff) {
+		if (packet->user_agent_line.ptr == NULL) {
 			return 0;
 		}
 		if (!(packet->user_agent_line.len >= NDPI_STATICSTRING_LEN("Gadu-Gadu Client") && memcmp(packet_hdr(user_agent_line), "Gadu-Gadu Client", NDPI_STATICSTRING_LEN("Gadu-Gadu Client")) == 0)) {

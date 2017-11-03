@@ -81,32 +81,32 @@ static void ndpi_search_meebo(struct ndpi_detection_module_struct
 		u_int8_t host_or_referer_match = 0;
 
 		ndpi_parse_packet_line_info(ndpi_struct, flow);
-		if (packet->host_line.offs != 0xffff && packet->host_line.len >= 9 && memcmp(&packet_hdr(host_line)[packet->host_line.len - 9], "meebo.com", 9) == 0) {
+		if (packet->host_line.ptr != NULL && packet->host_line.len >= 9 && memcmp(&packet_hdr(host_line)[packet->host_line.len - 9], "meebo.com", 9) == 0) {
 
 			NDPI_LOG(NDPI_PROTOCOL_MEEBO, ndpi_struct, NDPI_LOG_DEBUG, "Found Meebo host\n");
 			host_or_referer_match = 1;
-		} else if (packet->host_line.offs != 0xffff && packet->host_line.len >= 10 && memcmp(&packet_hdr(host_line)[packet->host_line.len - 10], "tokbox.com", 10) == 0) {
+		} else if (packet->host_line.ptr != NULL && packet->host_line.len >= 10 && memcmp(&packet_hdr(host_line)[packet->host_line.len - 10], "tokbox.com", 10) == 0) {
 
 			NDPI_LOG(NDPI_PROTOCOL_MEEBO, ndpi_struct, NDPI_LOG_DEBUG, "Found tokbox host\n");
 			/* set it to 2 to avoid having plain tokbox traffic detected as meebo */
 			host_or_referer_match = 2;
-		} else if (packet->host_line.offs != 0xffff && packet->host_line.len >= NDPI_STATICSTRING_LEN("74.114.28.110")
+		} else if (packet->host_line.ptr != NULL && packet->host_line.len >= NDPI_STATICSTRING_LEN("74.114.28.110")
 			   && memcmp(&packet_hdr(host_line)[packet->host_line.len - NDPI_STATICSTRING_LEN("74.114.28.110")], "74.114.28.110", NDPI_STATICSTRING_LEN("74.114.28.110")) == 0) {
 
 			NDPI_LOG(NDPI_PROTOCOL_MEEBO, ndpi_struct, NDPI_LOG_DEBUG, "Found meebo IP\n");
 			host_or_referer_match = 1;
-		} else if (packet->referer_line.offs != 0xffff &&
+		} else if (packet->referer_line.ptr != NULL &&
 			   packet->referer_line.len >= NDPI_STATICSTRING_LEN("http://www.meebo.com/") && memcmp(packet_hdr(referer_line), "http://www.meebo.com/", NDPI_STATICSTRING_LEN("http://www.meebo.com/")) == 0) {
 
 			NDPI_LOG(NDPI_PROTOCOL_MEEBO, ndpi_struct, NDPI_LOG_DEBUG, "Found meebo referer\n");
 			host_or_referer_match = 1;
-		} else if (packet->referer_line.offs != 0xffff &&
+		} else if (packet->referer_line.ptr != NULL &&
 			   packet->referer_line.len >= NDPI_STATICSTRING_LEN("http://mee.tokbox.com/") &&
 			   memcmp(packet_hdr(referer_line), "http://mee.tokbox.com/", NDPI_STATICSTRING_LEN("http://mee.tokbox.com/")) == 0) {
 
 			NDPI_LOG(NDPI_PROTOCOL_MEEBO, ndpi_struct, NDPI_LOG_DEBUG, "Found tokbox referer\n");
 			host_or_referer_match = 1;
-		} else if (packet->referer_line.offs != 0xffff &&
+		} else if (packet->referer_line.ptr != NULL &&
 			   packet->referer_line.len >= NDPI_STATICSTRING_LEN("http://74.114.28.110/") && memcmp(packet_hdr(referer_line), "http://74.114.28.110/", NDPI_STATICSTRING_LEN("http://74.114.28.110/")) == 0) {
 
 			NDPI_LOG(NDPI_PROTOCOL_MEEBO, ndpi_struct, NDPI_LOG_DEBUG, "Found meebo IP referer\n");

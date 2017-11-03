@@ -40,7 +40,7 @@ static u_int8_t ndpi_int_find_xmsn(struct ndpi_detection_module_struct *ndpi_str
 	if (packet->parsed_lines > 3) {
 		u_int16_t i;
 		for (i = 2; i < packet->parsed_lines; i++) {
-			if (packet->line[i].offs != 0xffff && packet->line[i].len > NDPI_STATICSTRING_LEN("X-MSN") && memcmp(packet_line(i), "X-MSN", NDPI_STATICSTRING_LEN("X-MSN")) == 0) {
+			if (packet->line[i].ptr != NULL && packet->line[i].len > NDPI_STATICSTRING_LEN("X-MSN") && memcmp(packet_line(i), "X-MSN", NDPI_STATICSTRING_LEN("X-MSN")) == 0) {
 				return 1;
 			}
 		}
@@ -142,7 +142,7 @@ static void ndpi_search_msn_tcp(struct ndpi_detection_module_struct *ndpi_struct
 #endif
 			   ndpi_match_strprefix(packet->payload, packet->payload_packet_len, "GET ") || ndpi_match_strprefix(packet->payload, packet->payload_packet_len, "POST ")) {
 			ndpi_parse_packet_line_info(ndpi_struct, flow);
-			if (packet->user_agent_line.offs != 0xffff &&
+			if (packet->user_agent_line.ptr != NULL &&
 			    packet->user_agent_line.len > NDPI_STATICSTRING_LEN("Messenger/") && memcmp(packet_hdr(user_agent_line), "Messenger/", NDPI_STATICSTRING_LEN("Messenger/")) == 0) {
 				ndpi_int_msn_add_connection(ndpi_struct, flow);
 				return;
@@ -164,7 +164,7 @@ static void ndpi_search_msn_tcp(struct ndpi_detection_module_struct *ndpi_struct
 				/* scan packet if not already done... */
 				ndpi_parse_packet_line_info(ndpi_struct, flow);
 
-				if (packet->content_line.offs != 0xffff &&
+				if (packet->content_line.ptr != NULL &&
 				    ((packet->content_line.len == NDPI_STATICSTRING_LEN("application/x-msn-messenger") &&
 				      memcmp(packet_hdr(content_line), "application/x-msn-messenger",
 					     NDPI_STATICSTRING_LEN("application/x-msn-messenger")) == 0) ||
@@ -210,7 +210,7 @@ static void ndpi_search_msn_tcp(struct ndpi_detection_module_struct *ndpi_struct
 
 				ndpi_parse_packet_line_info(ndpi_struct, flow);
 
-				if (packet->content_line.offs != 0xffff && ((packet->content_line.len == 23 && memcmp(packet_hdr(content_line), "text/xml; charset=utf-8", 23) == 0)
+				if (packet->content_line.ptr != NULL && ((packet->content_line.len == 23 && memcmp(packet_hdr(content_line), "text/xml; charset=utf-8", 23) == 0)
 									    || (packet->content_line.len == 24 && memcmp(packet_hdr(content_line), "text/html; charset=utf-8", 24) == 0)
 									    || (packet->content_line.len == 33 && memcmp(packet_hdr(content_line), "application/x-www-form-urlencoded", 33) == 0)
 				    )) {
@@ -326,7 +326,7 @@ static void ndpi_search_msn_tcp(struct ndpi_detection_module_struct *ndpi_struct
 
 			ndpi_parse_packet_line_info(ndpi_struct, flow);
 
-			if (packet->content_line.offs != 0xffff &&
+			if (packet->content_line.ptr != NULL &&
 			    ((packet->content_line.len == NDPI_STATICSTRING_LEN("application/x-msn-messenger") &&
 			      memcmp(packet_hdr(content_line), "application/x-msn-messenger",
 				     NDPI_STATICSTRING_LEN("application/x-msn-messenger")) == 0) ||

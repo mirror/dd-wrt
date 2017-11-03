@@ -103,7 +103,7 @@ void ndpi_int_search_thunder_tcp(struct ndpi_detection_module_struct
 			 "maybe thunder http POST packet detected, parsed packet lines: %u, empty line set %u (at: %u)\n", packet->parsed_lines, packet->empty_line_position_set, packet->empty_line_position);
 
 		if (packet->empty_line_position_set != 0 &&
-		    packet->content_line.offs != 0xffff &&
+		    packet->content_line.ptr != NULL &&
 		    packet->content_line.len == 24 && memcmp(packet_hdr(content_line), "application/octet-stream", 24) == 0 && packet->empty_line_position_set < (packet->payload_packet_len - 8)
 		    && packet->payload[packet->empty_line_position + 2] >= 0x30
 		    && packet->payload[packet->empty_line_position + 2] < 0x40
@@ -158,7 +158,7 @@ void ndpi_int_search_thunder_http(struct ndpi_detection_module_struct
 		    && memcmp(packet_line(4), "Host: ", 6) == 0
 		    && packet->line[5].len > 15
 		    && memcmp(packet_line(5), "Pragma: no-cache", 16) == 0
-		    && packet->user_agent_line.offs != 0xffff && packet->user_agent_line.len > 49 && memcmp(packet_hdr(user_agent_line), "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)", 50) == 0) {
+		    && packet->user_agent_line.ptr != NULL && packet->user_agent_line.len > 49 && memcmp(packet_hdr(user_agent_line), "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)", 50) == 0) {
 			NDPI_LOG(NDPI_PROTOCOL_THUNDER, ndpi_struct, NDPI_LOG_DEBUG, "Thunder HTTP download detected, adding flow.\n");
 			ndpi_int_thunder_add_connection(ndpi_struct, flow);
 		}

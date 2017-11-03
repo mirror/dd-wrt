@@ -72,7 +72,7 @@ static u_int8_t search_ddl_domains(struct ndpi_detection_module_struct *ndpi_str
 	// parse packet
 	ndpi_parse_packet_line_info(ndpi_struct, flow);
 
-	if (packet->host_line.offs == 0xffff) {
+	if (packet->host_line.ptr == NULL) {
 		NDPI_LOG(NDPI_PROTOCOL_DIRECT_DOWNLOAD_LINK, ndpi_struct, NDPI_LOG_DEBUG, "DDL: NO HOST FOUND\n");
 		goto end_ddl_nothing_found;
 	}
