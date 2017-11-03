@@ -2953,6 +2953,47 @@ static ndpi_protocol ndpi_detection_giveup(struct ndpi_detection_module_struct *
 	return (ret);
 }
 
+void ndpi_process_extra_packet(struct ndpi_detection_module_struct *ndpi_struct,
+			       struct ndpi_flow_struct *flow,
+			       const unsigned char *packet,
+			       const unsigned short packetlen,
+			       const u_int64_t current_tick_l,
+			       struct ndpi_id_struct *src,
+			       struct ndpi_id_struct *dst) {
+  if(flow == NULL)
+    return;
+
+  if(flow->server_id == NULL) flow->server_id = dst; /* Default */
+
+  /* need at least 20 bytes for ip header */
+  if(packetlen < 20) {
+    return;
+  }
+
+  flow->packet.tick_timestamp_l = current_tick_l;
+  flow->packet.tick_timestamp = (u_int32_t)current_tick_l/1000;
+
+  /* parse packet */
+  flow->packet.iph = (struct ndpi_iphdr *)packet;
+  /* we are interested in ipv4 packet */
+
+  /* set up the packet headers for the extra packet function to use if it wants */
+  if(ndpi_init_packet_header(ndpi_struct, flow, packetlen) != 0)
+    return;
+
+  /* detect traffic for tcp or udp only */
+  flow->src = src, flow->dst = dst;
+  ndpi_connection_tracking(ndpi_struct, flow);
+
+  /* call the extra packet function (which may add more data/info to flow) */
+  if (flow->extra_packets_func) {
+    if ((flow->extra_packets_func(ndpi_struct, flow)) == 0)
+      flow->check_extra_packets = 0;
+  }
+
+  flow->num_extra_packets_checked++;
+}
+
 static ndpi_protocol ndpi_detection_process_packet(struct ndpi_detection_module_struct *ndpi_struct,
 						   struct ndpi_flow_struct *flow,
 						   const unsigned char *packet, const unsigned short packetlen, const u_int64_t current_tick_l, struct ndpi_id_struct *src, struct ndpi_id_struct *dst, int direction)

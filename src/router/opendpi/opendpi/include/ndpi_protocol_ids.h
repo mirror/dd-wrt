@@ -103,8 +103,6 @@
 #define	NDPI_CONTENT_WINDOWSMEDIA			45
 #define	NDPI_CONTENT_MMS				46
 
-
-
 #define	NDPI_PROTOCOL_XBOX					47
 #define	NDPI_PROTOCOL_QQ					48
 #define	NDPI_PROTOCOL_MOVE					49
@@ -233,10 +231,6 @@
 #define NDPI_PROTOCOL_PANDORA     			187
 #define NDPI_PROTOCOL_QUIC				        188	/* Andrea Buscarinu <andrea.buscarinu@gmail.com> - Michele Campus <michelecampus5@gmail.com> */
 
-
-
-
-
 #define NDPI_PROTOCOL_POPO				189
 #define NDPI_PROTOCOL_MANOLITO				190
 #define NDPI_PROTOCOL_FEIDIAN				191
@@ -292,10 +286,10 @@
 #define NDPI_PROTOCOL_SOMEIP                238
 #define NDPI_PROTOCOL_FIX                   239
 #define NDPI_PROTOCOL_PLAYSTATION           240
-#define NDPI_PROTOCOL_PASTEBIN              241 /* Paulo Angelo <pa@pauloangelo.com> */
-#define NDPI_PROTOCOL_LINKEDIN              242 /* Paulo Angelo <pa@pauloangelo.com> */
+#define NDPI_PROTOCOL_PASTEBIN              241	/* Paulo Angelo <pa@pauloangelo.com> */
+#define NDPI_PROTOCOL_LINKEDIN              242	/* Paulo Angelo <pa@pauloangelo.com> */
 #define NDPI_PROTOCOL_SOUNDCLOUD            243
-#define NDPI_PROTOCOL_CSGO                  244 /* Counter-Strike Global Offensive, Dota 2 */
+#define NDPI_PROTOCOL_CSGO                  244	/* Counter-Strike Global Offensive, Dota 2 */
 #define NDPI_PROTOCOL_LISP	            245
 
 #define NDPI_PROTOCOL_NINTENDO              246
@@ -306,15 +300,15 @@
 #define NDPI_PROTOCOL_GITHUB                251
 #define NDPI_PROTOCOL_SINA                  252
 #define NDPI_PROTOCOL_SLACK                 253
-#define NDPI_PROTOCOL_IFLIX                 254 /* www.vizuamatix.com R&D team & M.Mallawaarachchie <manoj_ws@yahoo.com> */
+#define NDPI_PROTOCOL_IFLIX                 254	/* www.vizuamatix.com R&D team & M.Mallawaarachchie <manoj_ws@yahoo.com> */
 #define NDPI_PROTOCOL_HOTMAIL               255
 #define NDPI_PROTOCOL_GOOGLE_DRIVE          256
 #define NDPI_PROTOCOL_OOKLA                 257
 
 #define NDPI_PROTOCOL_HANGOUT               258
 #define NDPI_PROTOCOL_BJNP                  259
-#define NDPI_PROTOCOL_SMPP                  260 /* Damir Franusic <df@release14.org> */
-#define NDPI_PROTOCOL_TINC                  261 /* William Guglielmo <william@deselmo.com> */
+#define NDPI_PROTOCOL_SMPP                  260	/* Damir Franusic <df@release14.org> */
+#define NDPI_PROTOCOL_TINC                  261	/* William Guglielmo <william@deselmo.com> */
 #define NDPI_PROTOCOL_AMQP                  262
 
 /* UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE (NDPI_PROTOCOL_PANDORA) */
