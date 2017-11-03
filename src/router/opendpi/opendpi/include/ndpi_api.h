@@ -58,7 +58,7 @@ extern "C" {
   /**
    * This function returns the nDPI protocol id for IP-based protocol detection
    */
-	static u_int16_t ndpi_network_ptree_match(struct ndpi_detection_module_struct *ndpi_struct, struct in_addr *pin);
+	static u_int32_t ndpi_network_ptree_match(struct ndpi_detection_module_struct *ndpi_struct, struct in_addr *pin);
 
   /**
    * Same as ndpi_network_ptree_match

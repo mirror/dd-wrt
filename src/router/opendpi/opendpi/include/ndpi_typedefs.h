@@ -589,6 +589,42 @@ typedef enum {
 
 #define NUM_BREEDS (NDPI_PROTOCOL_UNRATED+1)
 
+/* Abstract categories to group the protocols. */
+typedef enum {
+  NDPI_PROTOCOL_CATEGORY_UNSPECIFIED = 0,   /* For general services and unknown protocols */
+  NDPI_PROTOCOL_CATEGORY_MEDIA,             /* Multimedia and streaming */
+  NDPI_PROTOCOL_CATEGORY_VPN,               /* Virtual Private Networks */
+  NDPI_PROTOCOL_CATEGORY_MAIL,              /* Protocols to send/receive/sync emails */
+  NDPI_PROTOCOL_CATEGORY_DATA_TRANSFER,     /* AFS/NFS and similar protocols */
+  NDPI_PROTOCOL_CATEGORY_WEB,               /* Web protocols and services */
+  NDPI_PROTOCOL_CATEGORY_SOCIAL_NETWORK,    /* Social networks */
+  NDPI_PROTOCOL_CATEGORY_DOWNLOAD_FT,       /* Download, FTP, file transfer/sharing */
+  NDPI_PROTOCOL_CATEGORY_GAME,              /* Online games */
+  NDPI_PROTOCOL_CATEGORY_CHAT,              /* Instant messaging */
+  NDPI_PROTOCOL_CATEGORY_VOIP,              /* Real-time communications and conferencing */
+  NDPI_PROTOCOL_CATEGORY_DATABASE,          /* Protocols for database communication */
+  NDPI_PROTOCOL_CATEGORY_REMOTE_ACCESS,     /* Remote access and control */
+  NDPI_PROTOCOL_CATEGORY_CLOUD,             /* Online cloud services */
+  NDPI_PROTOCOL_CATEGORY_NETWORK,           /* Network infrastructure protocols */
+  NDPI_PROTOCOL_CATEGORY_COLLABORATIVE,     /* Software for collaborative development, including Webmail */
+  NDPI_PROTOCOL_CATEGORY_RPC,               /* High level network communication protocols */
+  NDPI_PROTOCOL_CATEGORY_NETWORK_TOOL,      /* Network administration and monitor protocols */
+  NDPI_PROTOCOL_CATEGORY_SYSTEM_OS,         /* System/Operating System level applications */
+  NDPI_PROTOCOL_CATEGORY_SW_UPDATE,         /* Software update */
+  /* See #define NUM_CUSTOM_CATEGORIES */
+  NDPI_PROTOCOL_CATEGORY_CUSTOM_1,          /* User custom category 1 */
+  NDPI_PROTOCOL_CATEGORY_CUSTOM_2,          /* User custom category 2 */
+  NDPI_PROTOCOL_CATEGORY_CUSTOM_3,          /* User custom category 3 */
+  NDPI_PROTOCOL_CATEGORY_CUSTOM_4,          /* User custom category 4 */
+  NDPI_PROTOCOL_CATEGORY_CUSTOM_5,          /* User custom category 5 */
+
+  NDPI_PROTOCOL_NUM_CATEGORIES /*
+				  NOTE: Keep this as last member
+				  Unused as value but useful to getting the number of elements
+				  in this datastructure
+			       */
+} ndpi_protocol_category_t;
+
 /* ntop extensions */
 typedef struct ndpi_proto_defaults {
 	char *protoName;
@@ -880,18 +916,17 @@ typedef struct ndpi_flow_struct {
 	u_int32_t detected_protocol;
 } ndpi_flow_struct_t;
 
-
-
 typedef struct {
-	char *string_to_match, *proto_name;
-	int protocol_id;
-	ndpi_protocol_breed_t protocol_breed;
+  char *string_to_match, *proto_name;
+  int protocol_id;
+  ndpi_protocol_category_t proto_category;
+  ndpi_protocol_breed_t protocol_breed;
 } ndpi_protocol_match;
 
 typedef struct {
 	u_int32_t network;
 	u_int8_t cidr;
-	u_int8_t value;
+	u_int32_t value;
 } ndpi_network;
 
 #endif				/* __NDPI_TYPEDEFS_FILE__ */
