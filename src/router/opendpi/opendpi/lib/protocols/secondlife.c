@@ -54,8 +54,7 @@ static void ndpi_search_secondlife(struct ndpi_detection_module_struct
 		    && memcmp(packet->payload, "GET /", NDPI_STATICSTRING_LEN("GET /")) == 0) {
 			NDPI_LOG(NDPI_PROTOCOL_SECONDLIFE, ndpi_struct, NDPI_LOG_DEBUG, "Second Life HTTP 'GET /'' found.\n");
 			ndpi_parse_packet_line_info(ndpi_struct, flow);
-			if (packet->user_agent_line.ptr != NULL
-			    && packet->user_agent_line.len > NDPI_STATICSTRING_LEN("Mozilla/5.0 (Windows; U; Windows NT 6.1; de-DE) AppleWebKit/532.4 (KHTML, like Gecko) SecondLife/")
+			if (packet->user_agent_line.ptr != NULL && packet->user_agent_line.len > NDPI_STATICSTRING_LEN("Mozilla/5.0 (Windows; U; Windows NT 6.1; de-DE) AppleWebKit/532.4 (KHTML, like Gecko) SecondLife/")
 			    && memcmp(&packet_hdr(user_agent_line)[NDPI_STATICSTRING_LEN
 								   ("Mozilla/5.0 (Windows; U; Windows NT 6.1; de-DE) AppleWebKit/532.4 (KHTML, like Gecko) ")], "SecondLife/", NDPI_STATICSTRING_LEN("SecondLife/")) == 0) {
 				NDPI_LOG(NDPI_PROTOCOL_SECONDLIFE, ndpi_struct, NDPI_LOG_DEBUG, "Second Life TCP HTTP User Agent detected.\n");

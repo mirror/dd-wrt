@@ -89,7 +89,6 @@ static void ndpi_search_i23v5(struct ndpi_detection_module_struct *ndpi_struct, 
 	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_I23V5);
 }
 
-
 static void init_i23v5_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
 {
 	ndpi_set_bitmask_protocol_detection("I23V5", ndpi_struct, detection_bitmask, *id,
@@ -98,6 +97,5 @@ static void init_i23v5_dissector(struct ndpi_detection_module_struct *ndpi_struc
 
 	*id += 1;
 }
-
 
 #endif

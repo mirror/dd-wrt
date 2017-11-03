@@ -230,6 +230,7 @@ static inline u_int32_t hash_calc6(ndpi_ip_addr_t * ip, u_int16_t port, u_int32_
 	key = ((key * M) + ipp[0] * M) + ipp[1];
 	return key % (size - 1);
 }
+
 static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 
 static void init_bittorrent_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
@@ -615,7 +616,8 @@ static int bdecode(const u_int8_t *b, size_t l, struct ndpi_detection_module_str
 	return r >= 0;
 }
 
-static void ndpi_add_connection_as_bittorrent(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, int bt_offset, int check_hash, const u_int8_t save_detection, const u_int8_t encrypted_connection)
+static void ndpi_add_connection_as_bittorrent(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, int bt_offset, int check_hash, const u_int8_t save_detection,
+					      const u_int8_t encrypted_connection)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 	struct ndpi_id_struct *src = flow->src;
@@ -1007,8 +1009,8 @@ static u_int8_t ndpi_int_search_bittorrent_tcp_zero(struct ndpi_detection_module
 		ndpi_parse_packet_line_info(ndpi_struct, flow);
 		/* answer to this pattern is HTTP....Server: hypertracker */
 		if (packet->user_agent_line.ptr != NULL && ((packet->user_agent_line.len > 8 && memcmp(packet_hdr(user_agent_line), "Azureus ", 8) == 0)
-							       || (packet->user_agent_line.len >= 10 && memcmp(packet_hdr(user_agent_line), "BitTorrent", 10) == 0)
-							       || (packet->user_agent_line.len >= 11 && memcmp(packet_hdr(user_agent_line), "BTWebClient", 11) == 0))) {
+							    || (packet->user_agent_line.len >= 10 && memcmp(packet_hdr(user_agent_line), "BitTorrent", 10) == 0)
+							    || (packet->user_agent_line.len >= 11 && memcmp(packet_hdr(user_agent_line), "BTWebClient", 11) == 0))) {
 			NDPI_LOG(NDPI_PROTOCOL_BITTORRENT, ndpi_struct, NDPI_LOG_TRACE, "Azureus /Bittorrent user agent line detected\n");
 			ndpi_add_connection_as_bittorrent(ndpi_struct, flow, -1, 1, NDPI_PROTOCOL_SAFE_DETECTION, NDPI_PROTOCOL_WEBSEED_DETECTION);
 			return 1;
@@ -1318,10 +1320,10 @@ static void ndpi_search_bittorrent(struct ndpi_detection_module_struct *ndpi_str
 				    || (bt_proto = ndpi_strnstr((const char *)packet->payload, "BitTorrent protocol", packet->payload_packet_len))
 				    ) {
 				      bittorrent_found:
-						if (bt_proto && (packet->payload_packet_len > 47))
-							memcpy(flow->bittorent_hash, &bt_proto[27], 20);
+					if (bt_proto && (packet->payload_packet_len > 47))
+						memcpy(flow->bittorent_hash, &bt_proto[27], 20);
 					NDPI_LOG(NDPI_PROTOCOL_BITTORRENT, ndpi_struct, NDPI_LOG_TRACE, "BT: plain BitTorrent protocol detected\n");
-						ndpi_add_connection_as_bittorrent(ndpi_struct, flow, -1, 0, NDPI_PROTOCOL_SAFE_DETECTION, NDPI_PROTOCOL_PLAIN_DETECTION);
+					ndpi_add_connection_as_bittorrent(ndpi_struct, flow, -1, 0, NDPI_PROTOCOL_SAFE_DETECTION, NDPI_PROTOCOL_PLAIN_DETECTION);
 					return;
 				}
 			}

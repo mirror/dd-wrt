@@ -211,8 +211,8 @@ static void ndpi_search_msn_tcp(struct ndpi_detection_module_struct *ndpi_struct
 				ndpi_parse_packet_line_info(ndpi_struct, flow);
 
 				if (packet->content_line.ptr != NULL && ((packet->content_line.len == 23 && memcmp(packet_hdr(content_line), "text/xml; charset=utf-8", 23) == 0)
-									    || (packet->content_line.len == 24 && memcmp(packet_hdr(content_line), "text/html; charset=utf-8", 24) == 0)
-									    || (packet->content_line.len == 33 && memcmp(packet_hdr(content_line), "application/x-www-form-urlencoded", 33) == 0)
+									 || (packet->content_line.len == 24 && memcmp(packet_hdr(content_line), "text/html; charset=utf-8", 24) == 0)
+									 || (packet->content_line.len == 33 && memcmp(packet_hdr(content_line), "application/x-www-form-urlencoded", 33) == 0)
 				    )) {
 					if ((src != NULL && NDPI_COMPARE_PROTOCOL_TO_BITMASK(src->detected_protocol_bitmask, NDPI_PROTOCOL_MSN)
 					     != 0) || (dst != NULL && NDPI_COMPARE_PROTOCOL_TO_BITMASK(dst->detected_protocol_bitmask, NDPI_PROTOCOL_MSN)
