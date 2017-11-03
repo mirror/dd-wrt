@@ -175,7 +175,7 @@ static void parseHttpSubprotocol(struct ndpi_detection_module_struct *ndpi_struc
 		 */
 		if (((ntohl(packet->iph->saddr) & 0xFFFFFC00 /* 255.255.252.0 */ ) == 0xC73B9400 /* 199.59.148.0 */ )
 		    || ((ntohl(packet->iph->daddr) & 0xFFFFFC00 /* 255.255.252.0 */ ) == 0xC73B9400 /* 199.59.148.0 */ )) {
-			packet->detected_protocol_stack[0] = NDPI_SERVICE_TWITTER, packet->detected_protocol_stack[1] = NDPI_PROTOCOL_HTTP;
+			packet->detected_protocol_stack[0] = NDPI_PROTOCOL_TWITTER, packet->detected_protocol_stack[1] = NDPI_PROTOCOL_HTTP;
 			return;
 		}
 
@@ -186,7 +186,7 @@ static void parseHttpSubprotocol(struct ndpi_detection_module_struct *ndpi_struc
 		 */
 		if (((ntohl(packet->iph->saddr) & 0xFFFFE000 /* 255.255.224.0 */ ) == 0x4535E000 /* 69.53.224.0 */ )
 		    || ((ntohl(packet->iph->daddr) & 0xFFFFE000 /* 255.255.224.0 */ ) == 0x4535E000 /* 69.53.224.0 */ )) {
-			packet->detected_protocol_stack[0] = NDPI_SERVICE_NETFLIX, packet->detected_protocol_stack[1] = NDPI_PROTOCOL_HTTP;
+			packet->detected_protocol_stack[0] = NDPI_PROTOCOL_NETFLIX, packet->detected_protocol_stack[1] = NDPI_PROTOCOL_HTTP;
 			return;
 		}
 	}

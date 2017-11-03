@@ -93,6 +93,18 @@
 #define NDPI_PROTOCOL_EDONKEY					36	/* Tomasz Bujlow <tomasz@skatnet.dk> */
 #define NDPI_PROTOCOL_BITTORRENT				37
 #define NDPI_PROTOCOL_EPP					38
+
+#define NDPI_CONTENT_AVI				39
+#define NDPI_CONTENT_FLASH				40
+#define NDPI_CONTENT_OGG				41
+#define	NDPI_CONTENT_MPEG				42
+#define	NDPI_CONTENT_QUICKTIME				43
+#define	NDPI_CONTENT_REALMEDIA				44
+#define	NDPI_CONTENT_WINDOWSMEDIA			45
+#define	NDPI_CONTENT_MMS				46
+
+
+
 #define	NDPI_PROTOCOL_XBOX					47
 #define	NDPI_PROTOCOL_QQ					48
 #define	NDPI_PROTOCOL_MOVE					49
@@ -151,21 +163,38 @@
 #define NDPI_PROTOCOL_WARCRAFT3				        116
 #define NDPI_PROTOCOL_WORLD_OF_KUNG_FU			        117
 #define NDPI_PROTOCOL_MEEBO					118
+#define NDPI_PROTOCOL_FACEBOOK				119
+#define NDPI_PROTOCOL_TWITTER				120
 #define NDPI_PROTOCOL_DROPBOX					121
+#define NDPI_PROTOCOL_GMAIL				122
+#define NDPI_PROTOCOL_GOOGLE_MAPS			123
+#define NDPI_PROTOCOL_YOUTUBE			        124
 #define NDPI_PROTOCOL_SKYPE					125
+#define NDPI_PROTOCOL_GOOGLE				126
 #define NDPI_PROTOCOL_DCERPC					127
 #define NDPI_PROTOCOL_NETFLOW					128
 #define NDPI_PROTOCOL_SFLOW					129
 #define NDPI_PROTOCOL_CITRIX					132
+#define NDPI_PROTOCOL_NETFLIX				133
+#define NDPI_PROTOCOL_LASTFM				134
+#define NDPI_PROTOCOL_WAZE        			135
+
 #define NDPI_PROTOCOL_SKYFILE_PREPAID				136
 #define NDPI_PROTOCOL_SKYFILE_RUDICS				137
 #define NDPI_PROTOCOL_SKYFILE_POSTPAID			        138
 #define NDPI_PROTOCOL_CITRIX_ONLINE				139
+#define NDPI_PROTOCOL_APPLE				140
 #define NDPI_PROTOCOL_WEBEX					141
+#define NDPI_PROTOCOL_WHATSAPP				142
+#define NDPI_PROTOCOL_APPLE_ICLOUD			143
+
 #define NDPI_PROTOCOL_VIBER					144
+#define NDPI_PROTOCOL_APPLE_ITUNES			145
+
 #define NDPI_PROTOCOL_RADIUS					146
-#define NDPI_SERVICE_WINDOWS_UPDATE				147
+#define NDPI_PROTOCOL_WINDOWS_UPDATE				147
 #define NDPI_PROTOCOL_TEAMVIEWER				148	/* xplico.org */
+#define NDPI_PROTOCOL_TUENTI				149
 #define NDPI_PROTOCOL_LOTUS_NOTES				150
 #define NDPI_PROTOCOL_SAP					151
 #define NDPI_PROTOCOL_GTP					152
@@ -173,6 +202,7 @@
 #define NDPI_PROTOCOL_LLMNR					154
 #define NDPI_PROTOCOL_REMOTE_SCAN				155
 #define NDPI_PROTOCOL_SPOTIFY					156
+#define NDPI_CONTENT_WEBM				157
 #define NDPI_PROTOCOL_H323					158	/* Remy Mudingay <mudingay@ill.fr> */
 #define NDPI_PROTOCOL_OPENVPN					159	/* Remy Mudingay <mudingay@ill.fr> */
 #define NDPI_PROTOCOL_NOE					160	/* Remy Mudingay <mudingay@ill.fr> */
@@ -189,49 +219,23 @@
 #define NDPI_PROTOCOL_COLLECTD				        171
 #define NDPI_PROTOCOL_RTMP					174	/* Tomasz Bujlow <tomasz@skatnet.dk> */
 #define NDPI_PROTOCOL_FTP_DATA				        175	/* Tomasz Bujlow <tomasz@skatnet.dk> */
+#define NDPI_PROTOCOL_WIKIPEDIA				176	/* Tomasz Bujlow <tomasz@skatnet.dk> */
 #define NDPI_PROTOCOL_ZMQ                                       177
+#define NDPI_PROTOCOL_AMAZON					178	/* Tomasz Bujlow <tomasz@skatnet.dk> */
+#define NDPI_PROTOCOL_EBAY					179	/* Tomasz Bujlow <tomasz@skatnet.dk> */
+#define NDPI_PROTOCOL_CNN					180	/* Tomasz Bujlow <tomasz@skatnet.dk> */
 #define NDPI_PROTOCOL_MEGACO    				181	/* Gianluca Costa <g.costa@xplico.org> */
 #define NDPI_PROTOCOL_REDIS                                     182
 #define NDPI_PROTOCOL_PANDO					183	/* Tomasz Bujlow <tomasz@skatnet.dk> */
 #define NDPI_PROTOCOL_VHUA                                      184
 #define NDPI_PROTOCOL_TELEGRAM				        185	/* Gianluca Costa <g.costa@xplico.org> */
+#define NDPI_PROTOCOL_VEVO			        186
+#define NDPI_PROTOCOL_PANDORA     			187
 #define NDPI_PROTOCOL_QUIC				        188	/* Andrea Buscarinu <andrea.buscarinu@gmail.com> - Michele Campus <michelecampus5@gmail.com> */
 
-#define NDPI_CONTENT_AVI				39
-#define NDPI_CONTENT_FLASH				40
-#define NDPI_CONTENT_OGG				41
-#define	NDPI_CONTENT_MPEG				42
-#define	NDPI_CONTENT_QUICKTIME				43
-#define	NDPI_CONTENT_REALMEDIA				44
-#define	NDPI_CONTENT_WINDOWSMEDIA			45
-#define	NDPI_CONTENT_MMS				46
-#define NDPI_CONTENT_WEBM				157
 
-#define NDPI_SERVICE_FACEBOOK				119
-#define NDPI_SERVICE_TWITTER				120
-#define NDPI_SERVICE_GMAIL				122
-#define NDPI_SERVICE_GOOGLE_MAPS			123
-#define NDPI_SERVICE_YOUTUBE			        124
-#define NDPI_SERVICE_VEVO			        186
-#define NDPI_SERVICE_GOOGLE				126
-#define NDPI_SERVICE_NETFLIX				133
-#define NDPI_SERVICE_LASTFM				134
-#define NDPI_SERVICE_WAZE        			135
-#define NDPI_SERVICE_APPLE				140
-#define NDPI_SERVICE_WHATSAPP				142
-#define NDPI_SERVICE_APPLE_ICLOUD			143
-#define NDPI_SERVICE_APPLE_ITUNES			145
-#define NDPI_SERVICE_TUENTI				149
-#define NDPI_SERVICE_WIKIPEDIA				176	/* Tomasz Bujlow <tomasz@skatnet.dk> */
-#define NDPI_SERVICE_MSN				NDPI_PROTOCOL_MSN	/* Tomasz Bujlow <tomasz@skatnet.dk> */
-#define NDPI_SERVICE_AMAZON				178	/* Tomasz Bujlow <tomasz@skatnet.dk> */
-#define NDPI_SERVICE_EBAY				179	/* Tomasz Bujlow <tomasz@skatnet.dk> */
-#define NDPI_SERVICE_CNN				180	/* Tomasz Bujlow <tomasz@skatnet.dk> */
-#define NDPI_SERVICE_DROPBOX				NDPI_PROTOCOL_DROPBOX	/* Tomasz Bujlow <tomasz@skatnet.dk> */
-#define NDPI_SERVICE_SKYPE				NDPI_PROTOCOL_SKYPE	/* Tomasz Bujlow <tomasz@skatnet.dk> */
-#define NDPI_SERVICE_VIBER				NDPI_PROTOCOL_VIBER	/* Tomasz Bujlow <tomasz@skatnet.dk> */
-#define NDPI_SERVICE_YAHOO				NDPI_PROTOCOL_YAHOO	/* Tomasz Bujlow <tomasz@skatnet.dk> */
-#define NDPI_SERVICE_PANDORA     			187
+
+
 
 #define NDPI_PROTOCOL_POPO				189
 #define NDPI_PROTOCOL_MANOLITO				190
@@ -241,40 +245,40 @@
 #define NDPI_PROTOCOL_SECONDLIFE			194
 #define NDPI_PROTOCOL_WHATSAPP_VOICE			195
 #define NDPI_PROTOCOL_EAQ				196
-#define NDPI_SERVICE_TIMMEU        			197
-#define NDPI_SERVICE_TORCEDOR        			198
-#define NDPI_SERVICE_KAKAOTALK        			199	/* KakaoTalk Chat (no voice call) */
-#define NDPI_SERVICE_KAKAOTALK_VOICE  			200	/* KakaoTalk Voice */
-#define NDPI_SERVICE_TWITCH                             201	/* Edoardo Dominici <edoaramis@gmail.com>  */
-#define NDPI_SERVICE_QUICKPLAY                          202	/* Streaming service used by various services such as hooq.tv  */
-#define NDPI_SERVICE_TIM                                203	/* Traffic for tim.com.br and tim.it */
+#define NDPI_PROTOCOL_TIMMEU        			197
+#define NDPI_PROTOCOL_TORCEDOR        			198
+#define NDPI_PROTOCOL_KAKAOTALK        			199	/* KakaoTalk Chat (no voice call) */
+#define NDPI_PROTOCOL_KAKAOTALK_VOICE  			200	/* KakaoTalk Voice */
+#define NDPI_PROTOCOL_TWITCH                             201	/* Edoardo Dominici <edoaramis@gmail.com>  */
+#define NDPI_PROTOCOL_QUICKPLAY                          202	/* Streaming service used by various services such as hooq.tv  */
+#define NDPI_PROTOCOL_TIM                                203	/* Traffic for tim.com.br and tim.it */
 #define NDPI_PROTOCOL_MPEGTS        			204
-#define NDPI_SERVICE_SNAPCHAT                           205
+#define NDPI_PROTOCOL_SNAPCHAT                           205
 
-#define NDPI_SERVICE_SIMET                              206
-#define NDPI_SERVICE_OPENSIGNAL                         207
-#define NDPI_SERVICE_99TAXI                             208
-#define NDPI_SERVICE_EASYTAXI                           209
-#define NDPI_SERVICE_GLOBOTV                            210
-#define NDPI_SERVICE_TIMSOMDECHAMADA                    211
-#define NDPI_SERVICE_TIMMENU                            212
-#define NDPI_SERVICE_TIMPORTASABERTAS                   213
-#define NDPI_SERVICE_TIMRECARGA                         214
-#define NDPI_SERVICE_TIMBETA                            215
-#define NDPI_SERVICE_DEEZER                             216
-#define NDPI_SERVICE_INSTAGRAM                          217	/* Andrea Buscarinu <andrea.buscarinu@gmail.com> */
-#define NDPI_SERVICE_MICROSOFT                          218
-#define NDPI_SERVICE_BATTLENET                          219	/* Matteo Bracci <matteobracci1@gmail.com> */
+#define NDPI_PROTOCOL_SIMET                              206
+#define NDPI_PROTOCOL_OPENSIGNAL                         207
+#define NDPI_PROTOCOL_99TAXI                             208
+#define NDPI_PROTOCOL_EASYTAXI                           209
+#define NDPI_PROTOCOL_GLOBOTV                            210
+#define NDPI_PROTOCOL_TIMSOMDECHAMADA                    211
+#define NDPI_PROTOCOL_TIMMENU                            212
+#define NDPI_PROTOCOL_TIMPORTASABERTAS                   213
+#define NDPI_PROTOCOL_TIMRECARGA                         214
+#define NDPI_PROTOCOL_TIMBETA                            215
+#define NDPI_PROTOCOL_DEEZER                             216
+#define NDPI_PROTOCOL_INSTAGRAM                          217	/* Andrea Buscarinu <andrea.buscarinu@gmail.com> */
+#define NDPI_PROTOCOL_MICROSOFT                          218
+#define NDPI_PROTOCOL_BATTLENET                          219	/* Matteo Bracci <matteobracci1@gmail.com> */
 #define NDPI_PROTOCOL_STARCRAFT 			220	/* Matteo Bracci <matteobracci1@gmail.com> */
 #define NDPI_PROTOCOL_TEREDO 			        221
-#define NDPI_SERVICE_HOTSPOT_SHIELD                     222
+#define NDPI_PROTOCOL_HOTSPOT_SHIELD                     222
 #define NDPI_PROTOCOL_HEP 			        223	/* Sipcapture.org QXIP BV */
 #define NDPI_PROTOCOL_UBNTAC2				224	/* Ubiquity UBNT AirControl 2 - Thomas Fjellstrom <thomas+ndpi@fjellstrom.ca> */
 #define NDPI_PROTOCOL_MS_LYNC 			        173
-#define NDPI_SERVICE_OCS                                225
-#define NDPI_SERVICE_OFFICE_365                         226
-#define NDPI_SERVICE_CLOUDFLARE                         227
-#define NDPI_SERVICE_MS_ONE_DRIVE                       228
+#define NDPI_PROTOCOL_OCS                                225
+#define NDPI_PROTOCOL_OFFICE_365                         226
+#define NDPI_PROTOCOL_CLOUDFLARE                         227
+#define NDPI_PROTOCOL_MS_ONE_DRIVE                       228
 #define NDPI_PROTOCOL_MQTT								229
 #define NDPI_PROTOCOL_RX 			                230	/* RX: RPC protocol used by AFS */
 #define NDPI_PROTOCOL_HTTP_DOWNLOAD 			                231	/* RX: RPC protocol used by AFS */
@@ -294,8 +298,21 @@
 #define NDPI_PROTOCOL_CSGO                  244 /* Counter-Strike Global Offensive, Dota 2 */
 #define NDPI_PROTOCOL_LISP	            245
 
-/* UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE (NDPI_SERVICE_PANDORA) */
-#define NDPI_LAST_IMPLEMENTED_PROTOCOL			232
+#define NDPI_PROTOCOL_NINTENDO              246
+#define NDPI_PROTOCOL_DNSCRYPT              247
+#define NDPI_PROTOCOL_1KXUN                 248
+#define NDPI_PROTOCOL_IQIYI                 249
+#define NDPI_PROTOCOL_WECHAT                250
+#define NDPI_PROTOCOL_GITHUB                251
+#define NDPI_PROTOCOL_SINA                  252
+#define NDPI_PROTOCOL_SLACK                 253
+#define NDPI_PROTOCOL_IFLIX                 254 /* www.vizuamatix.com R&D team & M.Mallawaarachchie <manoj_ws@yahoo.com> */
+#define NDPI_PROTOCOL_HOTMAIL               255
+#define NDPI_PROTOCOL_GOOGLE_DRIVE          256
+#define NDPI_PROTOCOL_OOKLA                 257
+
+/* UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE UPDATE (NDPI_PROTOCOL_PANDORA) */
+#define NDPI_LAST_IMPLEMENTED_PROTOCOL			257
 
 #define NDPI_MAX_SUPPORTED_PROTOCOLS (NDPI_LAST_IMPLEMENTED_PROTOCOL + 1)
 #define NDPI_MAX_NUM_CUSTOM_PROTOCOLS                   (NDPI_NUM_BITS-NDPI_LAST_IMPLEMENTED_PROTOCOL)
