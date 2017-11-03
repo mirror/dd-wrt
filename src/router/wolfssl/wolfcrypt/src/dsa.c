@@ -1,6 +1,6 @@
 /* dsa.c
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -366,7 +366,13 @@ int wc_DsaSign(const byte* digest, byte* out, DsaKey* key, WC_RNG* rng)
     mp_int k, kInv, r, s, H;
     int    ret, sz;
     byte   buffer[DSA_HALF_SIZE];
-    byte*  tmp = out;  /* initial output pointer */
+    byte*  tmp;  /* initial output pointer */
+
+    if (digest == NULL || out == NULL || key == NULL || rng == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
+    tmp = out;
 
     sz = min((int)sizeof(buffer), mp_unsigned_bin_size(&key->q));
 
@@ -404,7 +410,7 @@ int wc_DsaSign(const byte* digest, byte* out, DsaKey* key, WC_RNG* rng)
         ret = MP_MOD_E;
 
     /* generate H from sha digest */
-    if (ret == 0 && mp_read_unsigned_bin(&H, digest,SHA_DIGEST_SIZE) != MP_OKAY)
+    if (ret == 0 && mp_read_unsigned_bin(&H, digest,WC_SHA_DIGEST_SIZE) != MP_OKAY)
         ret = MP_READ_E;
 
     /* generate s, s = (kInv * (H + x*r)) % q */
@@ -456,6 +462,10 @@ int wc_DsaVerify(const byte* digest, const byte* sig, DsaKey* key, int* answer)
     mp_int w, u1, u2, v, r, s;
     int    ret = 0;
 
+    if (digest == NULL || sig == NULL || key == NULL || answer == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
     if (mp_init_multi(&w, &u1, &u2, &v, &r, &s) != MP_OKAY)
         return MP_INIT_E;
 
@@ -473,7 +483,7 @@ int wc_DsaVerify(const byte* digest, const byte* sig, DsaKey* key, int* answer)
     }
 
     /* put H into u1 from sha digest */
-    if (ret == 0 && mp_read_unsigned_bin(&u1,digest,SHA_DIGEST_SIZE) != MP_OKAY)
+    if (ret == 0 && mp_read_unsigned_bin(&u1,digest,WC_SHA_DIGEST_SIZE) != MP_OKAY)
         ret = MP_READ_E;
 
     /* w = s invmod q */

@@ -1,6 +1,6 @@
 /* srp.c SRP unit tests
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -430,20 +430,20 @@ static void test_SrpGetProofAndVerify(void)
 
 static int sha512_key_gen(Srp* srp, byte* secret, word32 size)
 {
-    Sha512 hash;
+    wc_Sha512 hash;
     int r;
 
-    srp->key = (byte*)XMALLOC(SHA512_DIGEST_SIZE, NULL, DYNAMIC_TYPE_SRP);
+    srp->key = (byte*)XMALLOC(WC_SHA512_DIGEST_SIZE, NULL, DYNAMIC_TYPE_SRP);
     if (srp->key == NULL)
         return MEMORY_E;
 
-    srp->keySz = SHA512_DIGEST_SIZE;
+    srp->keySz = WC_SHA512_DIGEST_SIZE;
 
     r = wc_InitSha512(&hash);
     if (!r) r = wc_Sha512Update(&hash, secret, size);
     if (!r) r = wc_Sha512Final(&hash, srp->key);
 
-    XMEMSET(&hash, 0, sizeof(Sha512));
+    XMEMSET(&hash, 0, sizeof(wc_Sha512));
 
     return r;
 }

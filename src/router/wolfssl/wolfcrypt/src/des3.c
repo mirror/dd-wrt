@@ -1,6 +1,6 @@
 /* des3.c
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -124,7 +124,7 @@
 
 
 /* Hardware Acceleration */
-#if defined(STM32F2_CRYPTO) || defined(STM32F4_CRYPTO)
+#if defined(STM32_CRYPTO)
 
     /*
      * STM32F2/F4 hardware DES/3DES support through the standard
@@ -1582,9 +1582,8 @@
             return IntelQaSymDes3CbcEncrypt(&des->asyncDev, out, in, sz,
                 des->key_raw, DES3_KEYLEN, (byte*)des->iv_raw, DES3_IVLEN);
         #else /* WOLFSSL_ASYNC_CRYPT_TEST */
-            WC_ASYNC_TEST* testDev = &des->asyncDev.test;
-            if (testDev->type == ASYNC_TEST_NONE) {
-                testDev->type = ASYNC_TEST_DES3_CBC_ENCRYPT;
+            if (wc_AsyncTestInit(&des->asyncDev, ASYNC_TEST_DES3_CBC_ENCRYPT)) {
+                WC_ASYNC_TEST* testDev = &des->asyncDev.test;
                 testDev->des.des = des;
                 testDev->des.out = out;
                 testDev->des.in = in;
@@ -1625,9 +1624,8 @@
             return IntelQaSymDes3CbcDecrypt(&des->asyncDev, out, in, sz,
                 des->key_raw, DES3_KEYLEN, (byte*)des->iv_raw, DES3_IVLEN);
         #else /* WOLFSSL_ASYNC_CRYPT_TEST */
-            WC_ASYNC_TEST* testDev = &des->asyncDev.test;
-            if (testDev->type == ASYNC_TEST_NONE) {
-                testDev->type = ASYNC_TEST_DES3_CBC_DECRYPT;
+            if (wc_AsyncTestInit(&des->asyncDev, ASYNC_TEST_DES3_CBC_DECRYPT)) {
+                WC_ASYNC_TEST* testDev = &des->asyncDev.test;
                 testDev->des.des = des;
                 testDev->des.out = out;
                 testDev->des.in = in;

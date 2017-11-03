@@ -1,6 +1,6 @@
 /* ssl.h
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -226,7 +226,7 @@
 #define CyaSSL_CTX_get_ex_new_index wolfSSL_CTX_get_ex_new_index
 
 
-/* io.c */
+/* wolfio.c */
 #define CYASSL_CBIO_ERR_ISR        WOLFSSL_CBIO_ERR_ISR
 #define CYASSL_CBIO_ERR_TIMEOUT    WOLFSSL_CBIO_ERR_TIMEOUT
 #define CYASSL_CBIO_ERR_GENERAL    WOLFSSL_CBIO_ERR_GENERAL
@@ -493,9 +493,9 @@
 
 /* Callbacks */
 
-/* 
+/*
  * Empty commment denotes not listed in CyaSSL Manual
- * (soon to be wolfSSL Manual) 
+ * (soon to be wolfSSL Manual)
  */
 
 #define CyaSSL_accept_ex              wolfSSL_accept_ex
@@ -567,9 +567,9 @@
 
 /* OCSP and CRL */
 
-/* 
+/*
  * Empty commment denotes not listed in CyaSSL Manual
- * (soon to be wolfSSL Manual) 
+ * (soon to be wolfSSL Manual)
  */
 
 #define CYASSL_CRL_MONITOR               WOLFSSL_CRL_MONITOR               /**/

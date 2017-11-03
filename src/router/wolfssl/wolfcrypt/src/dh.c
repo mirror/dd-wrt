@@ -1,6 +1,6 @@
 /* dh.c
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -31,6 +31,10 @@
 #include <wolfssl/wolfcrypt/dh.h>
 #include <wolfssl/wolfcrypt/error-crypt.h>
 #include <wolfssl/wolfcrypt/logging.h>
+
+#ifdef WOLFSSL_HAVE_SP_DH
+#include <wolfssl/wolfcrypt/sp.h>
+#endif
 
 #ifdef NO_INLINE
     #include <wolfssl/wolfcrypt/misc.h>
@@ -611,6 +615,17 @@ static int GeneratePublicDh(DhKey* key, byte* priv, word32 privSz,
     mp_int x;
     mp_int y;
 
+#ifdef WOLFSSL_HAVE_SP_DH
+#ifndef WOLFSSL_SP_NO_2048
+    if (mp_count_bits(&key->p) == 2048)
+        return sp_DhExp_2048(&key->g, priv, privSz, &key->p, pub, pubSz);
+#endif
+#ifndef WOLFSSL_SP_NO_3072
+    if (mp_count_bits(&key->p) == 3072)
+        return sp_DhExp_3072(&key->g, priv, privSz, &key->p, pub, pubSz);
+#endif
+#endif
+
     if (mp_init_multi(&x, &y, 0, 0, 0, 0) != MP_OKAY)
         return MP_INIT_E;
 
@@ -687,9 +702,8 @@ static int wc_DhGenerateKeyPair_Async(DhKey* key, WC_RNG* rng,
     /* TODO: Not implemented - use software for now */
 
 #else /* WOLFSSL_ASYNC_CRYPT_TEST */
-    WC_ASYNC_TEST* testDev = &key->asyncDev.test;
-    if (testDev->type == ASYNC_TEST_NONE) {
-        testDev->type = ASYNC_TEST_DH_GEN;
+    if (wc_AsyncTestInit(&key->asyncDev, ASYNC_TEST_DH_GEN)) {
+        WC_ASYNC_TEST* testDev = &key->asyncDev.test;
         testDev->dhGen.key = key;
         testDev->dhGen.rng = rng;
         testDev->dhGen.priv = priv;
@@ -795,6 +809,39 @@ static int wc_DhAgree_Sync(DhKey* key, byte* agree, word32* agreeSz,
         return DH_CHECK_PUB_E;
     }
 
+#ifdef WOLFSSL_HAVE_SP_DH
+#ifndef WOLFSSL_SP_NO_2048
+    if (mp_count_bits(&key->p) == 2048) {
+        if (mp_init(&y) != MP_OKAY)
+            return MP_INIT_E;
+
+        if (ret == 0 && mp_read_unsigned_bin(&y, otherPub, pubSz) != MP_OKAY)
+            ret = MP_READ_E;
+
+        if (ret == 0)
+            ret = sp_DhExp_2048(&y, priv, privSz, &key->p, agree, agreeSz);
+
+        mp_clear(&y);
+        return ret;
+    }
+#endif
+#ifndef WOLFSSL_SP_NO_3072
+    if (mp_count_bits(&key->p) == 3072) {
+        if (mp_init(&y) != MP_OKAY)
+            return MP_INIT_E;
+
+        if (ret == 0 && mp_read_unsigned_bin(&y, otherPub, pubSz) != MP_OKAY)
+            ret = MP_READ_E;
+
+        if (ret == 0)
+            ret = sp_DhExp_3072(&y, priv, privSz, &key->p, agree, agreeSz);
+
+        mp_clear(&y);
+        return ret;
+    }
+#endif
+#endif
+
     if (mp_init_multi(&x, &y, &z, 0, 0, 0) != MP_OKAY)
         return MP_INIT_E;
 
@@ -836,9 +883,8 @@ static int wc_DhAgree_Async(DhKey* key, byte* agree, word32* agreeSz,
         ret = IntelQaDhAgree(&key->asyncDev, &key->p.raw,
             agree, agreeSz, priv, privSz, otherPub, pubSz);
 #else /* WOLFSSL_ASYNC_CRYPT_TEST */
-    WC_ASYNC_TEST* testDev = &key->asyncDev.test;
-    if (testDev->type == ASYNC_TEST_NONE) {
-        testDev->type = ASYNC_TEST_DH_AGREE;
+    if (wc_AsyncTestInit(&key->asyncDev, ASYNC_TEST_DH_AGREE)) {
+        WC_ASYNC_TEST* testDev = &key->asyncDev.test;
         testDev->dhAgree.key = key;
         testDev->dhAgree.agree = agree;
         testDev->dhAgree.agreeSz = agreeSz;

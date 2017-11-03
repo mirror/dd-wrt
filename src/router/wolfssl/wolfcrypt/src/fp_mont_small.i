@@ -1,6 +1,6 @@
 /* fp_mont_small.i
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -29,7 +29,7 @@ void fp_montgomery_reduce_small(fp_int *a, fp_int *m, fp_digit mp)
    int      oldused, x, y, pa;
 
    /* now zero the buff */
-   XMEMSET(c, 0, sizeof c);
+   XMEMSET(c, 0, sizeof(c));
 
    pa = m->used;
 

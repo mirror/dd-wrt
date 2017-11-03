@@ -1,6 +1,6 @@
 /* pkcs7.c
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -993,7 +993,7 @@ int wc_PKCS7_EncodeSignedData(PKCS7* pkcs7, byte* output, word32 outputSz)
                                     esd->contentInfoSeq);
 
     esd->issuerSnSz = SetSerialNumber(pkcs7->issuerSn, pkcs7->issuerSnSz,
-                                     esd->issuerSn);
+                                     esd->issuerSn, MAX_SN_SZ);
     signerInfoSz += esd->issuerSnSz;
     esd->issuerNameSz = SetSequence(pkcs7->issuerSz, esd->issuerName);
     signerInfoSz += esd->issuerNameSz + pkcs7->issuerSz;
@@ -2576,7 +2576,7 @@ static int wc_CreateRecipientInfo(const byte* cert, word32 certSz,
 #endif
         return -1;
     }
-    snSz = SetSerialNumber(decoded->serial, decoded->serialSz, serial);
+    snSz = SetSerialNumber(decoded->serial, decoded->serialSz, serial, MAX_SN_SZ);
 
     issuerSerialSeqSz = SetSequence(issuerSeqSz + issuerSz + snSz,
                                     issuerSerialSeq);
@@ -3217,7 +3217,7 @@ static int wc_PKCS7_DecodeKtri(PKCS7* pkcs7, byte* pkiMsg, word32 pkiMsgSz,
     int keySz;
     word32 encOID;
     word32 keyIdx;
-    byte   issuerHash[SHA_DIGEST_SIZE];
+    byte   issuerHash[WC_SHA_DIGEST_SIZE];
     byte*  outKey = NULL;
 
 #ifdef WC_RSA_BLINDING
@@ -3245,7 +3245,7 @@ static int wc_PKCS7_DecodeKtri(PKCS7* pkcs7, byte* pkiMsg, word32 pkiMsgSz,
         return ASN_PARSE_E;
 
     /* if we found correct recipient, issuer hashes will match */
-    if (XMEMCMP(issuerHash, pkcs7->issuerHash, SHA_DIGEST_SIZE) == 0) {
+    if (XMEMCMP(issuerHash, pkcs7->issuerHash, WC_SHA_DIGEST_SIZE) == 0) {
         *recipFound = 1;
     }
 

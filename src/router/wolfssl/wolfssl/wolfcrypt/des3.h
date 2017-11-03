@@ -1,6 +1,6 @@
 /* des3.h
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -58,7 +58,7 @@ enum {
 #define DES3_KEYLEN 24
 
 
-#if defined(STM32F2_CRYPTO) || defined(STM32F4_CRYPTO)
+#if defined(STM32_CRYPTO)
 enum {
     DES_CBC = 0,
     DES_ECB = 1

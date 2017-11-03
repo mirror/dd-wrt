@@ -1,6 +1,6 @@
 /* wolfcrypt/benchmark/benchmark.h
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -50,6 +50,8 @@ void bench_chacha20_poly1305_aead(void);
 void bench_aescbc(int);
 void bench_aesgcm(int);
 void bench_aesccm(void);
+void bench_aesecb(int);
+void bench_aesxts(void);
 void bench_aesctr(void);
 void bench_poly1305(void);
 void bench_camellia(void);
@@ -66,6 +68,12 @@ void bench_sha3_512(int);
 int  bench_ripemd(void);
 void bench_cmac(void);
 void bench_scrypt(void);
+void bench_hmac_md5(int);
+void bench_hmac_sha(int);
+void bench_hmac_sha224(int);
+void bench_hmac_sha256(int);
+void bench_hmac_sha384(int);
+void bench_hmac_sha512(int);
 void bench_rsaKeyGen(int);
 void bench_rsa(int);
 void bench_dh(int);
@@ -81,7 +89,7 @@ void bench_ntruKeyGen(void);
 void bench_rng(void);
 void bench_blake2(void);
 
-		
+
 #ifdef __cplusplus
     }  /* extern "C" */
 #endif
