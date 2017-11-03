@@ -1,8 +1,7 @@
 /*
  * ssl.c
  *
- * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-15 - ntop.org
+ * Copyright (C) 2016 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -24,13 +23,55 @@
 
 #include "ndpi_api.h"
 
-/* #define CERTIFICATE_DEBUG 1 */
-
 #ifdef NDPI_PROTOCOL_SSL
 
+/* #define CERTIFICATE_DEBUG 1 */
 #define NDPI_MAX_SSL_REQUEST_SIZE 10000
 
 /* Skype.c */
+extern u_int8_t is_skype_flow(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
+
+static u_int32_t ndpi_ssl_refine_master_protocol(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, u_int32_t protocol)
+{
+	struct ndpi_packet_struct *packet = &flow->packet;
+
+	if ((flow->protos.ssl.client_certificate[0] != '\0')
+	    || (flow->protos.ssl.server_certificate[0] != '\0')
+	    || (flow->host_server_name[0] != '\0'))
+		protocol = NDPI_PROTOCOL_SSL;
+	else
+		protocol = NDPI_PROTOCOL_SSL_NO_CERT;
+
+	if (packet->tcp != NULL) {
+		switch (protocol) {
+
+		case NDPI_PROTOCOL_SSL:
+		case NDPI_PROTOCOL_SSL_NO_CERT:
+			{
+				/*
+				   In case of SSL there are probably sub-protocols
+				   such as IMAPS that can be otherwise detected
+				 */
+				u_int16_t sport = ntohs(packet->tcp->source);
+				u_int16_t dport = ntohs(packet->tcp->dest);
+
+				if ((sport == 465) || (dport == 465))
+					protocol = NDPI_PROTOCOL_MAIL_SMTPS;
+				else if ((sport == 993) || (dport == 993)
+#ifdef NDPI_PROTOCOL_MAIL_IMAP
+					 || (flow->l4.tcp.mail_imap_starttls)
+#endif
+				    )
+					protocol = NDPI_PROTOCOL_MAIL_IMAPS;
+				else if ((sport == 995) || (dport == 995))
+					protocol = NDPI_PROTOCOL_MAIL_POPS;
+			}
+			break;
+		}
+	}
+
+	return protocol;
+}
 
 static void ndpi_int_ssl_add_connection(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, u_int32_t protocol)
 {
@@ -38,43 +79,7 @@ static void ndpi_int_ssl_add_connection(struct ndpi_detection_module_struct *ndp
 	    && (protocol != NDPI_PROTOCOL_SSL_NO_CERT)) {
 		ndpi_set_detected_protocol(ndpi_struct, flow, protocol, NDPI_PROTOCOL_UNKNOWN);
 	} else {
-		struct ndpi_packet_struct *packet = &flow->packet;
-
-		if ((flow->protos.ssl.client_certificate[0] != '\0')
-		    || (flow->protos.ssl.server_certificate[0] != '\0')
-		    || (flow->host_server_name[0] != '\0'))
-			protocol = NDPI_PROTOCOL_SSL;
-		else
-			protocol = NDPI_PROTOCOL_SSL_NO_CERT;
-
-		if (packet->tcp != NULL) {
-			switch (protocol) {
-			case NDPI_PROTOCOL_SSL:
-			case NDPI_PROTOCOL_SSL_NO_CERT:
-				{
-					/*
-					   In case of SSL there are probably sub-protocols
-					   such as IMAPS that can be otherwise detected
-					 */
-					u_int16_t sport = ntohs(packet->tcp->source);
-					u_int16_t dport = ntohs(packet->tcp->dest);
-
-					if ((sport == 465) || (dport == 465))
-						protocol = NDPI_PROTOCOL_MAIL_SMTPS;
-					else if ((sport == 993) || (dport == 993))
-						protocol = NDPI_PROTOCOL_MAIL_IMAPS;
-					else if ((sport == 995) || (dport == 995))
-						protocol = NDPI_PROTOCOL_MAIL_POPS;
-				}
-				break;
-			}
-
-			if ((protocol == NDPI_PROTOCOL_SSL_NO_CERT)
-			    && is_skype_flow(ndpi_struct, flow)) {
-				protocol = NDPI_PROTOCOL_SKYPE;
-			}
-		}
-
+		protocol = ndpi_ssl_refine_master_protocol(ndpi_struct, flow, protocol);
 		ndpi_set_detected_protocol(ndpi_struct, flow, protocol, NDPI_PROTOCOL_UNKNOWN);
 	}
 }
@@ -85,10 +90,10 @@ static void ndpi_int_ssl_add_connection(struct ndpi_detection_module_struct *ndp
 #define ndpi_isdigit(ch) ((ch) >= '0' && (ch) <= '9')
 #define ndpi_isspace(ch) (((ch) >= '\t' && (ch) <= '\r') || ((ch) == ' '))
 #define ndpi_isprint(ch) ((ch) >= 0x20 && (ch) <= 0x7e)
-#define ndpi_ispunct(ch) (((ch) >= '!' && (ch) <= '/') || \
-                     ((ch) >= ':' && (ch) <= '@') || \
-                     ((ch) >= '[' && (ch) <= '`') || \
-                     ((ch) >= '{' && (ch) <= '~'))
+#define ndpi_ispunct(ch) (((ch) >= '!' && (ch) <= '/') ||	\
+			  ((ch) >= ':' && (ch) <= '@') ||	\
+			  ((ch) >= '[' && (ch) <= '`') ||	\
+			  ((ch) >= '{' && (ch) <= '~'))
 
 static void stripCertificateTrailer(char *buffer, int buffer_len)
 {
@@ -102,6 +107,7 @@ static void stripCertificateTrailer(char *buffer, int buffer_len)
 
 		if ((buffer[i] != '.')
 		    && (buffer[i] != '-')
+		    && (buffer[i] != '_')
 		    && (buffer[i] != '*')
 		    && (!ndpi_isalpha(buffer[i]))
 		    && (!ndpi_isdigit(buffer[i]))) {
@@ -177,6 +183,7 @@ static int getSSLcertificate(struct ndpi_detection_module_struct *ndpi_struct, s
 				/* Check after handshake protocol header (5 bytes) and message header (4 bytes) */
 				for (i = 9; i < packet->payload_packet_len - 3; i++) {
 					if (((packet->payload[i] == 0x04) && (packet->payload[i + 1] == 0x03) && (packet->payload[i + 2] == 0x0c))
+					    || ((packet->payload[i] == 0x04) && (packet->payload[i + 1] == 0x03) && (packet->payload[i + 2] == 0x13))
 					    || ((packet->payload[i] == 0x55) && (packet->payload[i + 1] == 0x04) && (packet->payload[i + 2] == 0x03))) {
 						u_int8_t server_len = packet->payload[i + 3];
 
@@ -245,7 +252,9 @@ static int getSSLcertificate(struct ndpi_detection_module_struct *ndpi_struct, s
 								extensions_len = packet->payload[offset];
 
 								if ((extensions_len + offset) < total_len) {
-									u_int16_t extension_offset = 1;	/* Move to the first extension */
+									/* Move to the first extension
+									   Type is u_int to avoid possible overflow on extension_len addition */
+									u_int extension_offset = 1;
 
 									while (extension_offset < extensions_len) {
 										u_int16_t extension_id, extension_len;
@@ -296,6 +305,47 @@ static int getSSLcertificate(struct ndpi_detection_module_struct *ndpi_struct, s
 	return (0);		/* Not found */
 }
 
+static int sslTryAndRetrieveServerCertificate(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+{
+	struct ndpi_packet_struct *packet = &flow->packet;
+
+	/* consider only specific SSL packets (handshake) */
+	if ((packet->payload_packet_len > 9) && (packet->payload[0] == 0x16)) {
+		char certificate[64];
+		int rc;
+		certificate[0] = '\0';
+		rc = getSSLcertificate(ndpi_struct, flow, certificate, sizeof(certificate));
+		packet->ssl_certificate_num_checks++;
+		if (rc > 0) {
+			packet->ssl_certificate_detected++;
+			if (flow->protos.ssl.server_certificate[0] != '\0')
+				/* 0 means we're done processing extra packets (since we found what we wanted) */
+				return 0;
+		}
+		/* Client hello, Server Hello, and certificate packets probably all checked in this case */
+		if ((packet->ssl_certificate_num_checks >= 3)
+		    && (flow->l4.tcp.seen_syn)
+		    && (flow->l4.tcp.seen_syn_ack)
+		    && (flow->l4.tcp.seen_ack) /* We have seen the 3-way handshake */ ) {
+			/* We're done processing extra packets since we've probably checked all possible cert packets */
+			return 0;
+		}
+	}
+	/* 1 means keep looking for more packets */
+	return 1;
+}
+
+static void sslInitExtraPacketProcessing(int caseNum, struct ndpi_flow_struct *flow)
+{
+	flow->check_extra_packets = 1;
+	/* 0 is the case for waiting for the server certificate */
+	if (caseNum == 0) {
+		/* At most 7 packets should almost always be enough to find the server certificate if it's there */
+		flow->max_extra_packets_to_check = 7;
+		flow->extra_packets_func = sslTryAndRetrieveServerCertificate;
+	}
+}
+
 static int sslDetectProtocolFromCertificate(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
@@ -316,10 +366,18 @@ static int sslDetectProtocolFromCertificate(struct ndpi_detection_module_struct 
 #ifdef CERTIFICATE_DEBUG
 				printf("***** [SSL] %s\n", certificate);
 #endif
-
-				if (ndpi_match_host_subprotocol(ndpi_struct, flow, certificate, strlen(certificate), NDPI_PROTOCOL_SSL) != NDPI_PROTOCOL_UNKNOWN)
+				u_int32_t subproto = ndpi_match_host_subprotocol(ndpi_struct, flow, certificate,
+										 strlen(certificate), NDPI_PROTOCOL_SSL);
+				if (subproto != NDPI_PROTOCOL_UNKNOWN) {
+					/* If we've detected the subprotocol from client certificate but haven't had a chance
+					 * to see the server certificate yet, set up extra packet processing to wait
+					 * a few more packets. */
+					if ((flow->protos.ssl.client_certificate[0] != '\0') && (flow->protos.ssl.server_certificate[0] == '\0')) {
+						sslInitExtraPacketProcessing(0, flow);
+					}
+					ndpi_set_detected_protocol(ndpi_struct, flow, subproto, ndpi_ssl_refine_master_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SSL));
 					return (rc);	/* Fix courtesy of Gianluca Costa <g.costa@xplico.org> */
-
+				}
 #ifdef NDPI_PROTOCOL_TOR
 				if (ndpi_is_ssl_tor(ndpi_struct, flow, certificate) != 0)
 					return (rc);
@@ -329,12 +387,12 @@ static int sslDetectProtocolFromCertificate(struct ndpi_detection_module_struct 
 			if (((packet->ssl_certificate_num_checks >= 2)
 			     && flow->l4.tcp.seen_syn && flow->l4.tcp.seen_syn_ack && flow->l4.tcp.seen_ack /* We have seen the 3-way handshake */ )
 			    || (flow->protos.ssl.server_certificate[0] != '\0')
-			    || (flow->protos.ssl.client_certificate[0] != '\0')
-			    )
+			    /* || (flow->protos.ssl.client_certificate[0] != '\0') */
+			    ) {
 				ndpi_int_ssl_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_SSL);
+			}
 		}
 	}
-
 	return (0);
 }
 
@@ -342,14 +400,14 @@ static void ssl_mark_and_payload_search_for_other_protocols(struct
 							    ndpi_detection_module_struct
 							    *ndpi_struct, struct ndpi_flow_struct *flow)
 {
-#if defined(NDPI_PROTOCOL_MEEBO)|| defined(NDPI_PROTOCOL_TOR) || defined(NDPI_PROTOCOL_VPN_X) || defined(NDPI_PROTOCOL_UNENCRYPED_JABBER) || defined (NDPI_PROTOCOL_OSCAR) || defined (NDPI_PROTOCOL_ITUNES) || defined (NDPI_PROTOCOL_GMAIL)
+#if defined(NDPI_PROTOCOL_TOR) || defined(NDPI_PROTOCOL_VPN_X) || defined(NDPI_PROTOCOL_UNENCRYPTED_JABBER) || defined (NDPI_PROTOCOL_OSCAR) || defined (NDPI_PROTOCOL_ITUNES) || defined (NDPI_PROTOCOL_GMAIL)
 	struct ndpi_packet_struct *packet = &flow->packet;
 	//      struct ndpi_id_struct         *src=flow->src;
 	//      struct ndpi_id_struct         *dst=flow->dst;
 	u_int32_t a;
 	u_int32_t end;
-#if defined(NDPI_PROTOCOL_UNENCRYPED_JABBER)
-	if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(ndpi_struct->detection_bitmask, NDPI_PROTOCOL_UNENCRYPED_JABBER) != 0)
+#if defined(NDPI_PROTOCOL_UNENCRYPTED_JABBER)
+	if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(ndpi_struct->detection_bitmask, NDPI_PROTOCOL_UNENCRYPTED_JABBER) != 0)
 		goto check_for_ssl_payload;
 #endif
 #if defined(NDPI_PROTOCOL_OSCAR)
@@ -361,12 +419,12 @@ static void ssl_mark_and_payload_search_for_other_protocols(struct
 check_for_ssl_payload:
 	end = packet->payload_packet_len - 20;
 	for (a = 5; a < end; a++) {
-#ifdef NDPI_PROTOCOL_UNENCRYPED_JABBER
+#ifdef NDPI_PROTOCOL_UNENCRYPTED_JABBER
 		if (packet->payload[a] == 't') {
 			if (memcmp(&packet->payload[a], "talk.google.com", 15) == 0) {
-				NDPI_LOG(NDPI_PROTOCOL_UNENCRYPED_JABBER, ndpi_struct, NDPI_LOG_DEBUG, "ssl jabber packet match\n");
-				if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(ndpi_struct->detection_bitmask, NDPI_PROTOCOL_UNENCRYPED_JABBER) != 0) {
-					ndpi_int_ssl_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_UNENCRYPED_JABBER);
+				NDPI_LOG(NDPI_PROTOCOL_UNENCRYPTED_JABBER, ndpi_struct, NDPI_LOG_DEBUG, "ssl jabber packet match\n");
+				if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(ndpi_struct->detection_bitmask, NDPI_PROTOCOL_UNENCRYPTED_JABBER) != 0) {
+					ndpi_int_ssl_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_UNENCRYPTED_JABBER);
 					return;
 				}
 			}
@@ -556,6 +614,11 @@ static void ndpi_search_ssl_tcp(struct ndpi_detection_module_struct *ndpi_struct
 			&& (packet->payload[4] == 0)
 			&& (packet->payload[2] <= 9)
 			&& (packet->payload[3] <= 9))) {
+			ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_WHATSAPP, NDPI_PROTOCOL_UNKNOWN);
+			return;
+		} else if ((packet->payload_packet_len == 4)
+			   && (packet->payload[0] == 'W')
+			   && (packet->payload[1] == 'A')) {
 			ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_WHATSAPP, NDPI_PROTOCOL_UNKNOWN);
 			return;
 		} else {
