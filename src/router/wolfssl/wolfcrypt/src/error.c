@@ -1,6 +1,6 @@
 /* error.c
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -369,7 +369,10 @@ const char* wc_GetErrorString(int error)
         return "Setting Authority Key Identifier error";
 
     case KEYUSAGE_E:
-        return "Bad Key Usage value error";
+        return "Key Usage value error";
+
+    case EXTKEYUSAGE_E:
+        return "Extended Key Usage value error";
 
     case CERTPOLICIES_E:
         return "Setting Certificate Policies error";
@@ -427,6 +430,9 @@ const char* wc_GetErrorString(int error)
 
     case BAD_OCSP_RESPONDER:
         return "Invalid OCSP Responder, missing specific key usage extensions";
+
+    case ECC_PRIVATEONLY_E:
+        return "Invalid use of private only ECC key";
 
     default:
         return "unknown error number";

@@ -1,6 +1,6 @@
 /* rsa.h
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -82,7 +82,12 @@ enum {
 
     RSA_MIN_PAD_SZ   = 11,     /* separator + 0 + pad value + 8 pads */
 
-    RSA_PSS_PAD_SZ = 8
+    RSA_PSS_PAD_SZ = 8,
+
+#ifdef OPENSSL_EXTRA
+    RSA_PKCS1_PADDING_SIZE = 11,
+    RSA_PKCS1_OAEP_PADDING_SIZE = 42 /* (2 * hashlen(SHA-1)) + 2 */
+  #endif
 };
 
 

@@ -1,6 +1,6 @@
 /* random.h
  *
- * Copyright (C) 2006-2016 wolfSSL Inc.
+ * Copyright (C) 2006-2017 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -50,7 +50,7 @@
 #endif
 
 
-#if defined(CUSTOM_RAND_GENERATE) && !defined(CUSTOM_RAND_TYPE)
+#if !defined(CUSTOM_RAND_TYPE)
     /* To maintain compatibility the default is byte */
     #define CUSTOM_RAND_TYPE    byte
 #endif
@@ -60,6 +60,9 @@
 #if !defined(WC_NO_HASHDRBG) || !defined(CUSTOM_RAND_GENERATE_BLOCK)
     #undef  HAVE_HASHDRBG
     #define HAVE_HASHDRBG
+    #ifndef WC_RESEED_INTERVAL
+        #define WC_RESEED_INTERVAL (1000000)
+    #endif
 #endif
 
 

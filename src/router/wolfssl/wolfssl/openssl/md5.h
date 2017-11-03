@@ -8,6 +8,8 @@
 
 #ifndef NO_MD5
 
+#include <wolfssl/wolfcrypt/hash.h>
+
 #ifdef WOLFSSL_PREFIX
 #include "prefix_md5.h"
 #endif
@@ -21,9 +23,9 @@ typedef struct WOLFSSL_MD5_CTX {
     int holder[28 + (WC_ASYNC_DEV_SIZE / sizeof(int))];   /* big enough to hold wolfcrypt md5, but check on init */
 } WOLFSSL_MD5_CTX;
 
-WOLFSSL_API void wolfSSL_MD5_Init(WOLFSSL_MD5_CTX*);
-WOLFSSL_API void wolfSSL_MD5_Update(WOLFSSL_MD5_CTX*, const void*, unsigned long);
-WOLFSSL_API void wolfSSL_MD5_Final(unsigned char*, WOLFSSL_MD5_CTX*);
+WOLFSSL_API int wolfSSL_MD5_Init(WOLFSSL_MD5_CTX*);
+WOLFSSL_API int wolfSSL_MD5_Update(WOLFSSL_MD5_CTX*, const void*, unsigned long);
+WOLFSSL_API int wolfSSL_MD5_Final(unsigned char*, WOLFSSL_MD5_CTX*);
 
 
 typedef WOLFSSL_MD5_CTX MD5_CTX;
@@ -37,6 +39,12 @@ typedef WOLFSSL_MD5_CTX MD5_CTX;
     #define MD5Update wolfSSL_MD5_Update
     #define MD5Final wolfSSL_MD5_Final
 #endif
+
+#ifndef MD5
+#define MD5(d, n, md) wc_Md5Hash((d), (n), (md))
+#endif
+
+#define MD5_DIGEST_LENGTH MD5_DIGEST_SIZE
 
 #ifdef __cplusplus
     }  /* extern "C" */
