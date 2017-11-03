@@ -77,5 +77,4 @@ static void init_feidian_dissector(struct ndpi_detection_module_struct *ndpi_str
 	*id += 1;
 }
 
-
 #endif
