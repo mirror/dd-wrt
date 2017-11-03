@@ -24,7 +24,7 @@
 static u_int8_t ndpi_is_tor_flow(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow);
 
 static u_int ndpi_search_tcp_or_udp_raw(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, u_int8_t protocol, u_int32_t saddr, u_int32_t daddr,	/* host endianess */
-				 u_int16_t sport, u_int16_t dport)
+					u_int16_t sport, u_int16_t dport)
 {				/* host endianess */
 	u_int16_t rc;
 	struct in_addr host;

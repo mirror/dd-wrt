@@ -852,7 +852,7 @@ static void ndpi_search_http_tcp(struct ndpi_detection_module_struct *ndpi_struc
 
 /* ********************************* */
 
-static ndpi_http_method ndpi_get_http_method(struct ndpi_detection_module_struct * ndpi_mod, struct ndpi_flow_struct * flow)
+static ndpi_http_method ndpi_get_http_method(struct ndpi_detection_module_struct *ndpi_mod, struct ndpi_flow_struct *flow)
 {
 	if (!flow)
 		return (HTTP_METHOD_UNKNOWN);

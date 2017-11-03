@@ -424,6 +424,4 @@ static void init_gadugadu_dissector(struct ndpi_detection_module_struct *ndpi_st
 	*id += 1;
 }
 
-
-
 #endif
