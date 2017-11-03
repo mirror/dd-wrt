@@ -86,10 +86,10 @@ static void cache_touch_entry(cache_t cache, cache_entry entry) {
 }
 
 
-static cache_entry cache_entry_new() {
+static cache_entry cache_entry_new(void) {
   return (cache_entry) kzalloc(sizeof(struct cache_entry), GFP_KERNEL);
 }
-static cache_entry_map cache_entry_map_new() {
+static cache_entry_map cache_entry_map_new(void) {
   return (cache_entry_map) kzalloc(sizeof(struct cache_entry_map), GFP_KERNEL);
 }
 
