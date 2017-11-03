@@ -46,7 +46,7 @@ u_int8_t ndpi_int_is_wow_port(const u_int16_t port)
 }
 
 static void ndpi_search_worldofwarcraft(struct ndpi_detection_module_struct
-					*ndpi_struct, struct ndpi_flow_struct *flow)
+				 *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 
@@ -78,9 +78,9 @@ static void ndpi_search_worldofwarcraft(struct ndpi_detection_module_struct
 			ndpi_parse_packet_line_info(ndpi_struct, flow);
 			if (packet->user_agent_line.ptr != NULL && packet->host_line.ptr != NULL && packet->user_agent_line.len > NDPI_STATICSTRING_LEN("Blizzard Downloader")
 			    && packet->host_line.len > NDPI_STATICSTRING_LEN("worldofwarcraft.com")
-			    && memcmp(packet_hdr(user_agent_line), "Blizzard Downloader",
+			    && memcmp(packet->user_agent_line.ptr, "Blizzard Downloader",
 				      NDPI_STATICSTRING_LEN("Blizzard Downloader")) == 0
-			    && memcmp(&packet_hdr(host_line)[packet->host_line.len - NDPI_STATICSTRING_LEN("worldofwarcraft.com")], "worldofwarcraft.com", NDPI_STATICSTRING_LEN("worldofwarcraft.com")) == 0) {
+			    && memcmp(&packet->host_line.ptr[packet->host_line.len - NDPI_STATICSTRING_LEN("worldofwarcraft.com")], "worldofwarcraft.com", NDPI_STATICSTRING_LEN("worldofwarcraft.com")) == 0) {
 				ndpi_int_worldofwarcraft_add_connection(ndpi_struct, flow);
 				NDPI_LOG(NDPI_PROTOCOL_WORLDOFWARCRAFT, ndpi_struct, NDPI_LOG_DEBUG, "World of Warcraft: Web Client found\n");
 				return;

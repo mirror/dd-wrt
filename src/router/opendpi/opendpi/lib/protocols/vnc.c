@@ -1,8 +1,7 @@
 /*
  * vnc.c
  *
- * Copyright (C) 2009-2011 by ipoque GmbH
- * Copyright (C) 2011-15 - ntop.org
+ * Copyright (C) 2016 - ntop.org
  *
  * This file is part of nDPI, an open source deep packet inspection
  * library based on the OpenDPI and PACE technology by ipoque GmbH
@@ -21,44 +20,42 @@
  * along with nDPI.  If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 #include "ndpi_protocols.h"
 
 #ifdef NDPI_PROTOCOL_VNC
-
-static void ndpi_int_vnc_add_connection(struct ndpi_detection_module_struct
-					*ndpi_struct, struct ndpi_flow_struct *flow)
-{
-	ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_VNC, NDPI_PROTOCOL_UNKNOWN);
-}
-
-/*
-  return 0 if nothing has been detected
-  return 1 if it is a http packet
-*/
 
 static void ndpi_search_vnc_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 
-	//      struct ndpi_id_struct         *src=ndpi_struct->src;
-	//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
+	/* search over TCP */
+	if (packet->tcp) {
 
-	if (flow->l4.tcp.vnc_stage == 0) {
-		if (packet->payload_packet_len == 12 && memcmp(packet->payload, "RFB 003.00", 10) == 0 && packet->payload[11] == 0x0a) {
-			NDPI_LOG(NDPI_PROTOCOL_VNC, ndpi_struct, NDPI_LOG_DEBUG, "reached vnc stage one\n");
-			flow->l4.tcp.vnc_stage = 1 + packet->packet_direction;
-			return;
-		}
-	} else if (flow->l4.tcp.vnc_stage == 2 - packet->packet_direction) {
-		if (packet->payload_packet_len == 12 && memcmp(packet->payload, "RFB 003.00", 10) == 0 && packet->payload[11] == 0x0a) {
-			NDPI_LOG(NDPI_PROTOCOL_VNC, ndpi_struct, NDPI_LOG_DEBUG, "found vnc\n");
-			ndpi_int_vnc_add_connection(ndpi_struct, flow);
-			return;
+		if (flow->l4.tcp.vnc_stage == 0) {
+
+			if ((packet->payload_packet_len == 12) &&
+			    ((memcmp(packet->payload, "RFB 003.003", 11) == 0 && packet->payload[11] == 0x0a) ||
+			     (memcmp(packet->payload, "RFB 003.007", 11) == 0 && packet->payload[11] == 0x0a) ||
+			     (memcmp(packet->payload, "RFB 003.008", 11) == 0 && packet->payload[11] == 0x0a) || (memcmp(packet->payload, "RFB 004.001", 11) == 0 && packet->payload[11] == 0x0a))) {
+				NDPI_LOG(NDPI_PROTOCOL_VNC, ndpi_struct, NDPI_LOG_DEBUG, "reached vnc stage one\n");
+				flow->l4.tcp.vnc_stage = 1 + packet->packet_direction;
+				return;
+			}
+		} else if (flow->l4.tcp.vnc_stage == 2 - packet->packet_direction) {
+
+			if ((packet->payload_packet_len == 12) &&
+			    ((memcmp(packet->payload, "RFB 003.003", 11) == 0 && packet->payload[11] == 0x0a) ||
+			     (memcmp(packet->payload, "RFB 003.007", 11) == 0 && packet->payload[11] == 0x0a) ||
+			     (memcmp(packet->payload, "RFB 003.008", 11) == 0 && packet->payload[11] == 0x0a) || (memcmp(packet->payload, "RFB 004.001", 11) == 0 && packet->payload[11] == 0x0a))) {
+
+				NDPI_LOG(NDPI_PROTOCOL_VNC, ndpi_struct, NDPI_LOG_DEBUG, "found vnc\n");
+				ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_VNC, NDPI_PROTOCOL_UNKNOWN);
+				return;
+			}
 		}
 	}
+	/* exclude VNC */
 	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_VNC);
-
 }
 
 static void init_vnc_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)

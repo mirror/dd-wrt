@@ -18,11 +18,11 @@
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with nDPI.  If not, see <http://www.gnu.org/licenses/>.
+ * along with nDPI. If not, see <http://www.gnu.org/licenses/>.
  *
  */
-
 #include "ndpi_protocols.h"
+
 #ifdef NDPI_PROTOCOL_STUN
 
 #define MAX_NUM_STUN_PKTS     10
@@ -44,10 +44,11 @@ typedef enum {
 } ndpi_int_stun_t;
 
 static ndpi_int_stun_t ndpi_int_check_stun(struct ndpi_detection_module_struct *ndpi_struct,
-					   struct ndpi_flow_struct *flow, const u_int8_t *payload, const u_int16_t payload_length, u_int8_t *is_whatsapp, u_int8_t *is_lync)
+					   struct ndpi_flow_struct *flow, const u_int8_t *payload, const u_int16_t payload_length, u_int8_t *is_whatsapp, u_int8_t *is_skype)
 {
 	u_int16_t msg_type, msg_len;
 	struct stun_packet_header *h = (struct stun_packet_header *)payload;
+	u_int8_t can_this_be_whatsapp_voice = 1;
 
 	if (payload_length < sizeof(struct stun_packet_header)) {
 		if (flow->num_stun_udp_pkts > 0) {
@@ -68,30 +69,41 @@ static ndpi_int_stun_t ndpi_int_check_stun(struct ndpi_detection_module_struct *
 	if ((payload[0] != 0x80) && ((msg_len + 20) > payload_length))
 		return (NDPI_IS_NOT_STUN);
 
-	/* printf("msg_type=%04X, msg_len=%u\n", msg_type, msg_len); */
-
 	if ((payload_length == (msg_len + 20))
 	    && ((msg_type <= 0x000b) /* http://www.3cx.com/blog/voip-howto/stun-details/ */ )) {
 		u_int offset = 20;
 
 		/*
 		   This can either be the standard RTCP or Ms Lync RTCP that
-		   later will becomg Ms Lync RTP. In this case we need to
+		   later will become Ms Lync RTP. In this case we need to
 		   be careful before deciding about the protocol before dissecting the packet
+
+		   MS Lync = Skype
+		   https://en.wikipedia.org/wiki/Skype_for_Business
 		 */
 
 		while (offset < payload_length) {
 			u_int16_t attribute = ntohs(*((u_int16_t *)&payload[offset]));
 			u_int16_t len = ntohs(*((u_int16_t *)&payload[offset + 2]));
+			u_int16_t x = (len + 4) % 4;
+
+			if (x != 0)
+				len += 4 - x;
 
 			switch (attribute) {
+			case 0x0008:	/* Message Integrity */
+			case 0x0020:	/* XOR-MAPPED-ADDRESSES */
+			case 0x4002:
+				/* These are the only messages apparently whatsapp voice can use */
+				break;
+
 			case 0x8054:	/* Candidate Identifier */
 				if ((len == 4)
-				    && (payload[offset + 4] == 0x31)
 				    && (payload[offset + 5] == 0x00)
 				    && (payload[offset + 6] == 0x00)
 				    && (payload[offset + 7] == 0x00)) {
-					*is_lync = 1;
+					/* Either skype for business or "normal" skype with multiparty call */
+					*is_skype = 1;
 					return (NDPI_IS_STUN);
 				}
 				break;
@@ -101,15 +113,21 @@ static ndpi_int_stun_t ndpi_int_check_stun(struct ndpi_detection_module_struct *
 				    && (payload[offset + 4] == 0x00)
 				    && (payload[offset + 5] == 0x00)
 				    && (payload[offset + 6] == 0x00)
-				    && (payload[offset + 7] == 0x02)) {
-					*is_lync = 1;
+				    && ((payload[offset + 7] == 0x02) || (payload[offset + 7] == 0x03))
+				    ) {
+					*is_skype = 1;
 					return (NDPI_IS_STUN);
 				}
 				break;
+
+			default:
+				/* This means this STUN packet cannot be confused with whatsapp voice */
+				can_this_be_whatsapp_voice = 0;
+				break;
 			}
+
 			offset += len + 4;
 		}
-
 		goto udp_stun_found;
 	}
 #ifdef ORIGINAL_CODE
@@ -210,7 +228,8 @@ static ndpi_int_stun_t ndpi_int_check_stun(struct ndpi_detection_module_struct *
 		return NDPI_IS_NOT_STUN;
 
 udp_stun_found:
-	flow->num_stun_udp_pkts++;
+	if (can_this_be_whatsapp_voice)
+		flow->num_stun_udp_pkts++;
 
 	return ((flow->num_stun_udp_pkts < MAX_NUM_STUN_PKTS) ? NDPI_IS_NOT_STUN : NDPI_IS_STUN);
 }
@@ -218,30 +237,34 @@ udp_stun_found:
 static void ndpi_search_stun(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
-	u_int8_t is_whatsapp = 0, is_lync = 0;
+	u_int8_t is_whatsapp = 0, is_skype = 0;
 
 	NDPI_LOG(NDPI_PROTOCOL_STUN, ndpi_struct, NDPI_LOG_DEBUG, "search stun.\n");
 
 	if (packet->tcp) {
 		/* STUN may be encapsulated in TCP packets */
-
 		if (packet->payload_packet_len >= 2 + 20 && ntohs(get_u_int16_t(packet->payload, 0)) + 2 == packet->payload_packet_len) {
 
 			/* TODO there could be several STUN packets in a single TCP packet so maybe the detection could be
 			 * improved by checking only the STUN packet of given length */
 
-			if (ndpi_int_check_stun(ndpi_struct, flow, packet->payload + 2, packet->payload_packet_len - 2, &is_whatsapp, &is_lync) == NDPI_IS_STUN) {
-				NDPI_LOG(NDPI_PROTOCOL_STUN, ndpi_struct, NDPI_LOG_DEBUG, "found TCP stun.\n");
-				ndpi_int_stun_add_connection(ndpi_struct, NDPI_PROTOCOL_STUN, flow);
+			if (ndpi_int_check_stun(ndpi_struct, flow, packet->payload + 2, packet->payload_packet_len - 2, &is_whatsapp, &is_skype) == NDPI_IS_STUN) {
+				if (is_skype) {
+					NDPI_LOG(NDPI_PROTOCOL_SKYPE, ndpi_struct, NDPI_LOG_DEBUG, "Found Skype\n");
+					ndpi_int_stun_add_connection(ndpi_struct, NDPI_PROTOCOL_SKYPE, flow);
+				} else {
+					NDPI_LOG(NDPI_PROTOCOL_STUN, ndpi_struct, NDPI_LOG_DEBUG, "found UDP stun.\n");
+					ndpi_int_stun_add_connection(ndpi_struct, is_whatsapp ? NDPI_PROTOCOL_WHATSAPP_VOICE : NDPI_PROTOCOL_STUN, flow);
+				}
 				return;
 			}
 		}
 	}
 
-	if (ndpi_int_check_stun(ndpi_struct, flow, packet->payload, packet->payload_packet_len, &is_whatsapp, &is_lync) == NDPI_IS_STUN) {
-		if (is_lync) {
-			NDPI_LOG(NDPI_PROTOCOL_STUN, ndpi_struct, NDPI_LOG_DEBUG, "Found MS Lync\n");
-			ndpi_int_stun_add_connection(ndpi_struct, NDPI_PROTOCOL_MS_LYNC, flow);
+	if (ndpi_int_check_stun(ndpi_struct, flow, packet->payload, packet->payload_packet_len, &is_whatsapp, &is_skype) == NDPI_IS_STUN) {
+		if (is_skype) {
+			NDPI_LOG(NDPI_PROTOCOL_STUN, ndpi_struct, NDPI_LOG_DEBUG, "Found Skype\n");
+			ndpi_int_stun_add_connection(ndpi_struct, NDPI_PROTOCOL_SKYPE, flow);
 		} else {
 			NDPI_LOG(NDPI_PROTOCOL_STUN, ndpi_struct, NDPI_LOG_DEBUG, "found UDP stun.\n");
 			ndpi_int_stun_add_connection(ndpi_struct, is_whatsapp ? NDPI_PROTOCOL_WHATSAPP_VOICE : NDPI_PROTOCOL_STUN, flow);
@@ -258,7 +281,7 @@ static void ndpi_search_stun(struct ndpi_detection_module_struct *ndpi_struct, s
 static void init_stun_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
 {
 	ndpi_set_bitmask_protocol_detection("STUN", ndpi_struct, detection_bitmask, *id,
-					    NDPI_PROTOCOL_STUN, ndpi_search_stun, NDPI_SELECTION_BITMASK_PROTOCOL_UDP_WITH_PAYLOAD, SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
+					    NDPI_PROTOCOL_STUN, ndpi_search_stun, NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD, SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
 
 	*id += 1;
 }

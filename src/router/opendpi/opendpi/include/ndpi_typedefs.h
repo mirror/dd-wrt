@@ -220,7 +220,7 @@ typedef struct ndpi_id_struct {
 #ifdef NDPI_PROTOCOL_ZATTOO
 	u_int32_t zattoo_ts;
 #endif
-#ifdef NDPI_PROTOCOL_UNENCRYPED_JABBER
+#ifdef NDPI_PROTOCOL_UNENCRYPTED_JABBER
 	u_int32_t jabber_stun_or_ft_ts;
 #endif
 #ifdef NDPI_PROTOCOL_DIRECTCONNECT
@@ -239,7 +239,7 @@ typedef struct ndpi_id_struct {
 	u_int16_t bt_port_t[NDPI_BT_PORTS];
 	u_int16_t bt_port_u[NDPI_BT_PORTS];
 #endif
-#ifdef NDPI_PROTOCOL_UNENCRYPED_JABBER
+#ifdef NDPI_PROTOCOL_UNENCRYPTED_JABBER
 #define JABBER_MAX_STUN_PORTS 6
 	u_int16_t jabber_voice_stun_port[JABBER_MAX_STUN_PORTS];
 	u_int16_t jabber_file_transfer_port[2];
@@ -264,7 +264,7 @@ typedef struct ndpi_id_struct {
 	u_int8_t gg_call_id[2][7];
 	u_int8_t gg_fmnumber[8];
 #endif
-#ifdef NDPI_PROTOCOL_UNENCRYPED_JABBER
+#ifdef NDPI_PROTOCOL_UNENCRYPTED_JABBER
 	u_int8_t jabber_voice_stun_used_ports;
 #endif
 #ifdef NDPI_PROTOCOL_SIP
@@ -774,8 +774,8 @@ typedef struct ndpi_detection_module_struct {
 
 	ndpi_proto_defaults_t proto_defaults[NDPI_MAX_SUPPORTED_PROTOCOLS + NDPI_MAX_NUM_CUSTOM_PROTOCOLS];
 
-	u_int8_t http_dont_dissect_response:1;
-	u_int8_t direction_detect_disable:1;	/* disable internal detection of packet direction */
+        u_int8_t http_dont_dissect_response:1, dns_dissect_response:1,
+	direction_detect_disable:1;	/* disable internal detection of packet direction */
 } ndpi_detection_module_struct_t;
 
 typedef struct ndpi_flow_struct {
@@ -833,10 +833,10 @@ typedef struct ndpi_flow_struct {
 	} http;
 
 	union {
-		struct {
-			u_int8_t num_answers, ret_code;
-			u_int16_t query_type;
-		} dns;
+    struct {
+      u_int8_t num_queries, num_answers, reply_code;
+      u_int16_t query_type, query_class, rsp_type;
+    } dns;
 
 		struct {
 			u_int8_t request_code;
@@ -953,6 +953,10 @@ typedef struct ndpi_flow_struct {
 #endif
 #ifdef NDPI_PROTOCOL_STARCRAFT
 	u_int32_t starcraft_udp_stage:3;	// 0-7
+#endif
+#ifdef NDPI_PROTOCOL_OPENVPN
+  u_int8_t ovpn_session_id[8];
+  u_int8_t ovpn_counter;
 #endif
 #ifdef NDPI_PROTOCOL_TINC
 	u_int8_t tinc_state;

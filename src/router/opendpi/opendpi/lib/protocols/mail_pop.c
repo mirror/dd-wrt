@@ -125,7 +125,7 @@ static int ndpi_int_mail_pop_check_for_client_commands(struct ndpi_detection_mod
 }
 
 static void ndpi_search_mail_pop_tcp(struct ndpi_detection_module_struct
-				     *ndpi_struct, struct ndpi_flow_struct *flow)
+			      *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 
