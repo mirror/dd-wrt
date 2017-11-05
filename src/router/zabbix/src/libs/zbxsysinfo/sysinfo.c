@@ -24,6 +24,7 @@
 #include "cfg.h"
 #include "alias.h"
 #include "threads.h"
+#include "sighandler.h"
 
 #ifdef WITH_AGENT_METRICS
 #	include "agent/agent.h"
@@ -250,14 +251,7 @@ static void	zbx_log_init(zbx_log_t *log)
 
 void	init_result(AGENT_RESULT *result)
 {
-	result->type = 0;
-
-	result->ui64 = 0;
-	result->dbl = 0;
-	result->str = NULL;
-	result->text = NULL;
-	result->log = NULL;
-	result->msg = NULL;
+	memset(result, 0, sizeof(AGENT_RESULT));
 }
 
 static void	zbx_log_clean(zbx_log_t *log)
@@ -503,7 +497,7 @@ static int	zbx_check_user_parameter(const char *param, char *error, int max_erro
 	return SUCCEED;
 }
 
-static int	replace_param(const char *cmd, AGENT_REQUEST *request, char **out, char *error, int max_error_len)
+static int	replace_param(const char *cmd, const AGENT_REQUEST *request, char **out, char *error, int max_error_len)
 {
 	const char	*pl = cmd, *pr, *tmp;
 	size_t		out_alloc = 0, out_offset = 0;
@@ -545,6 +539,8 @@ static int	replace_param(const char *cmd, AGENT_REQUEST *request, char **out, ch
 
 	if (SUCCEED == ret)
 		zbx_strcpy_alloc(out, &out_alloc, &out_offset, pl);
+	else
+		zbx_free(*out);
 
 	return ret;
 }
@@ -666,10 +662,9 @@ static void	add_log_result(AGENT_RESULT *result, const char *value)
 	result->type |= AR_LOG;
 }
 
-int	set_result_type(AGENT_RESULT *result, int value_type, int data_type, char *c)
+int	set_result_type(AGENT_RESULT *result, int value_type, char *c)
 {
 	zbx_uint64_t	value_uint64;
-	double		value_double;
 	int		ret = FAIL;
 
 	assert(result);
@@ -681,61 +676,21 @@ int	set_result_type(AGENT_RESULT *result, int value_type, int data_type, char *c
 			zbx_ltrim(c, " \"+");
 			del_zeroes(c);
 
-			switch (data_type)
+			if (SUCCEED == is_uint64(c, &value_uint64))
 			{
-				case ITEM_DATA_TYPE_BOOLEAN:
-					if (SUCCEED == is_boolean(c, &value_uint64))
-					{
-						SET_UI64_RESULT(result, value_uint64);
-						ret = SUCCEED;
-					}
-					break;
-				case ITEM_DATA_TYPE_OCTAL:
-					if (SUCCEED == is_uoct(c))
-					{
-						ZBX_OCT2UINT64(value_uint64, c);
-						SET_UI64_RESULT(result, value_uint64);
-						ret = SUCCEED;
-					}
-					break;
-				case ITEM_DATA_TYPE_DECIMAL:
-					if (SUCCEED == is_uint64(c, &value_uint64))
-					{
-						SET_UI64_RESULT(result, value_uint64);
-						ret = SUCCEED;
-					}
-					break;
-				case ITEM_DATA_TYPE_HEXADECIMAL:
-					if (SUCCEED == is_uhex(c))
-					{
-						ZBX_HEX2UINT64(value_uint64, c);
-						SET_UI64_RESULT(result, value_uint64);
-						ret = SUCCEED;
-					}
-					else if (SUCCEED == is_hex_string(c))
-					{
-						zbx_remove_whitespace(c);
-						ZBX_HEX2UINT64(value_uint64, c);
-						SET_UI64_RESULT(result, value_uint64);
-						ret = SUCCEED;
-					}
-					break;
-				default:
-					THIS_SHOULD_NEVER_HAPPEN;
-					break;
+				SET_UI64_RESULT(result, value_uint64);
+				ret = SUCCEED;
 			}
 			break;
 		case ITEM_VALUE_TYPE_FLOAT:
 			zbx_rtrim(c, " \"");
 			zbx_ltrim(c, " \"+");
 
-			if (SUCCEED != is_double(c))
-				break;
-
-			value_double = atof(c);
-
-			SET_DBL_RESULT(result, value_double);
-			ret = SUCCEED;
+			if (SUCCEED == is_double(c))
+			{
+				SET_DBL_RESULT(result, atof(c));
+				ret = SUCCEED;
+			}
 			break;
 		case ITEM_VALUE_TYPE_STR:
 			zbx_replace_invalid_utf8(c);
@@ -752,26 +707,6 @@ int	set_result_type(AGENT_RESULT *result, int value_type, int data_type, char *c
 			add_log_result(result, c);
 			ret = SUCCEED;
 			break;
-	}
-
-	if (SUCCEED != ret)
-	{
-		char	*error = NULL;
-
-		zbx_remove_chars(c, "\r\n");
-		zbx_replace_invalid_utf8(c);
-
-		if (ITEM_VALUE_TYPE_UINT64 == value_type)
-			error = zbx_dsprintf(error,
-					"Received value [%s] is not suitable for value type [%s] and data type [%s]",
-					c, zbx_item_value_type_string(value_type),
-					zbx_item_data_type_string(data_type));
-		else
-			error = zbx_dsprintf(error,
-					"Received value [%s] is not suitable for value type [%s]",
-					c, zbx_item_value_type_string(value_type));
-
-		SET_MSG_RESULT(result, error);
 	}
 
 	return ret;
@@ -1234,16 +1169,16 @@ static int	deserialize_agent_result(char *data, AGENT_RESULT *result)
 	switch (type)
 	{
 		case 't':
-			ret = set_result_type(result, ITEM_VALUE_TYPE_TEXT, 0, data);
+			ret = set_result_type(result, ITEM_VALUE_TYPE_TEXT, data);
 			break;
 		case 's':
-			ret = set_result_type(result, ITEM_VALUE_TYPE_STR, 0, data);
+			ret = set_result_type(result, ITEM_VALUE_TYPE_STR, data);
 			break;
 		case 'u':
-			ret = set_result_type(result, ITEM_VALUE_TYPE_UINT64, ITEM_DATA_TYPE_DECIMAL, data);
+			ret = set_result_type(result, ITEM_VALUE_TYPE_UINT64, data);
 			break;
 		case 'd':
-			ret = set_result_type(result, ITEM_VALUE_TYPE_FLOAT, 0, data);
+			ret = set_result_type(result, ITEM_VALUE_TYPE_FLOAT, data);
 			break;
 		default:
 			ret = SUCCEED;
@@ -1334,10 +1269,7 @@ int	zbx_execute_threaded_metric(zbx_metric_func_t metric_func, AGENT_REQUEST *re
 	{
 		zabbix_log(LOG_LEVEL_DEBUG, "executing in data process for key:'%s'", request->key);
 
-		signal(SIGILL, SIG_DFL);
-		signal(SIGFPE, SIG_DFL);
-		signal(SIGSEGV, SIG_DFL);
-		signal(SIGBUS, SIG_DFL);
+		zbx_set_metric_thread_signal_handler();
 
 		close(fds[0]);
 
@@ -1413,8 +1345,8 @@ int	zbx_execute_threaded_metric(zbx_metric_func_t metric_func, AGENT_REQUEST *re
 
 	zbx_free(data);
 out:
-	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%d '%s'", __function_name, ret, ISSET_MSG(result) ? result->msg : "");
-
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s '%s'", __function_name, zbx_sysinfo_ret_string(ret),
+			ISSET_MSG(result) ? result->msg : "");
 	return ret;
 }
 #else
@@ -1496,10 +1428,9 @@ int	zbx_execute_threaded_metric(zbx_metric_func_t metric_func, AGENT_REQUEST *re
 
 	CloseHandle(thread);
 
-	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%d '%s'", __function_name, metric_args.agent_ret,
-			ISSET_MSG(result) ? result->msg : "");
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s '%s'", __function_name,
+			zbx_sysinfo_ret_string(metric_args.agent_ret), ISSET_MSG(result) ? result->msg : "");
 
 	return metric_args.agent_ret;
 }
-
 #endif

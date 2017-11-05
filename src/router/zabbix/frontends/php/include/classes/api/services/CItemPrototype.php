@@ -43,8 +43,6 @@ class CItemPrototype extends CItemGeneral {
 	 */
 	public function get($options = []) {
 		$result = [];
-		$userType = self::$userData['type'];
-		$userid = self::$userData['userid'];
 
 		$sqlParts = [
 			'select'	=> ['items' => 'i.itemid'],
@@ -66,14 +64,14 @@ class CItemPrototype extends CItemGeneral {
 			'inherited'						=> null,
 			'templated'						=> null,
 			'monitored'						=> null,
-			'editable'						=> null,
+			'editable'						=> false,
 			'nopermissions'					=> null,
 			// filter
 			'filter'						=> null,
 			'search'						=> null,
 			'searchByAny'					=> null,
-			'startSearch'					=> null,
-			'excludeSearch'					=> null,
+			'startSearch'					=> false,
+			'excludeSearch'					=> false,
 			'searchWildcardsEnabled'		=> null,
 			// output
 			'output'						=> API_OUTPUT_EXTEND,
@@ -83,9 +81,10 @@ class CItemPrototype extends CItemGeneral {
 			'selectTriggers'				=> null,
 			'selectGraphs'					=> null,
 			'selectDiscoveryRule'			=> null,
-			'countOutput'					=> null,
-			'groupCount'					=> null,
-			'preservekeys'					=> null,
+			'selectPreprocessing'			=> null,
+			'countOutput'					=> false,
+			'groupCount'					=> false,
+			'preservekeys'					=> false,
 			'sortfield'						=> '',
 			'sortorder'						=> '',
 			'limit'							=> null,
@@ -94,10 +93,9 @@ class CItemPrototype extends CItemGeneral {
 		$options = zbx_array_merge($defOptions, $options);
 
 		// editable + PERMISSION CHECK
-		if ($userType != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
-			$permission = $options['editable']?PERM_READ_WRITE:PERM_READ;
-
-			$userGroups = getUserGroupsByUserId($userid);
+		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
+			$permission = $options['editable'] ? PERM_READ_WRITE : PERM_READ;
+			$userGroups = getUserGroupsByUserId(self::$userData['userid']);
 
 			$sqlParts['where'][] = 'EXISTS ('.
 					'SELECT NULL'.
@@ -131,7 +129,7 @@ class CItemPrototype extends CItemGeneral {
 
 			$sqlParts['where']['hostid'] = dbConditionInt('i.hostid', $options['hostids']);
 
-			if (!is_null($options['groupCount'])) {
+			if ($options['groupCount']) {
 				$sqlParts['group']['i'] = 'i.hostid';
 			}
 		}
@@ -151,7 +149,7 @@ class CItemPrototype extends CItemGeneral {
 			$sqlParts['where'][] = dbConditionInt('id.parent_itemid', $options['discoveryids']);
 			$sqlParts['where']['idi'] = 'i.itemid=id.itemid';
 
-			if (!is_null($options['groupCount'])) {
+			if ($options['groupCount']) {
 				$sqlParts['group']['id'] = 'id.parent_itemid';
 			}
 		}
@@ -214,6 +212,19 @@ class CItemPrototype extends CItemGeneral {
 
 // --- FILTER ---
 		if (is_array($options['filter'])) {
+			if (array_key_exists('delay', $options['filter']) && $options['filter']['delay'] !== null) {
+				$sqlParts['where'][] = makeUpdateIntervalFilter('i.delay', $options['filter']['delay']);
+				unset($options['filter']['delay']);
+			}
+
+			if (array_key_exists('history', $options['filter']) && $options['filter']['history'] !== null) {
+				$options['filter']['history'] = getTimeUnitFilters($options['filter']['history']);
+			}
+
+			if (array_key_exists('trends', $options['filter']) && $options['filter']['trends'] !== null) {
+				$options['filter']['trends'] = getTimeUnitFilters($options['filter']['trends']);
+			}
+
 			$this->dbFilter('items i', $options, $sqlParts);
 
 			if (isset($options['filter']['host'])) {
@@ -235,8 +246,8 @@ class CItemPrototype extends CItemGeneral {
 		$sqlParts = $this->applyQuerySortOptions($this->tableName(), $this->tableAlias(), $options, $sqlParts);
 		$res = DBselect($this->createSelectQueryFromParts($sqlParts), $sqlParts['limit']);
 		while ($item = DBfetch($res)) {
-			if (!is_null($options['countOutput'])) {
-				if (!is_null($options['groupCount']))
+			if ($options['countOutput']) {
+				if ($options['groupCount'])
 					$result[] = $item;
 				else
 					$result = $item['rowscount'];
@@ -246,7 +257,7 @@ class CItemPrototype extends CItemGeneral {
 			}
 		}
 
-		if (!is_null($options['countOutput'])) {
+		if ($options['countOutput']) {
 			return $result;
 		}
 
@@ -256,7 +267,7 @@ class CItemPrototype extends CItemGeneral {
 			$result = $this->unsetExtraFields($result, ['hostid'], $options['output']);
 		}
 
-		if (is_null($options['preservekeys'])) {
+		if (!$options['preservekeys']) {
 			$result = zbx_cleanHashes($result);
 		}
 
@@ -277,11 +288,6 @@ class CItemPrototype extends CItemGeneral {
 		// set proper flags to divide normal and discovered items in future processing
 		foreach ($items as &$item) {
 			$item['flags'] = ZBX_FLAG_DISCOVERY_PROTOTYPE;
-
-			// set default formula value
-			if (!$update && !isset($item['formula'])) {
-				$item['formula'] = '1';
-			}
 
 			if (array_key_exists('applicationPrototypes', $item) && is_array($item['applicationPrototypes'])
 					&& $item['applicationPrototypes']) {
@@ -331,6 +337,12 @@ class CItemPrototype extends CItemGeneral {
 	public function create($items) {
 		$items = zbx_toArray($items);
 		$this->checkInput($items);
+
+		foreach ($items as &$item) {
+			unset($item['itemid']);
+		}
+		$this->validateDependentItems($items, API::ItemPrototype());
+
 		$this->createReal($items);
 		$this->inherit($items);
 
@@ -338,6 +350,12 @@ class CItemPrototype extends CItemGeneral {
 	}
 
 	protected function createReal(&$items) {
+		foreach ($items as &$item) {
+			if ($item['type'] != ITEM_TYPE_DEPENDENT) {
+				$item['master_itemid'] = null;
+			}
+		}
+		unset($item);
 		$itemids = DB::insert('items', $items);
 
 		$itemApplications = $insertItemDiscovery = [];
@@ -419,6 +437,8 @@ class CItemPrototype extends CItemGeneral {
 		if ($item_application_prototypes) {
 			DB::insert('item_application_prototype', $item_application_prototypes);
 		}
+
+		$this->createItemPreprocessing($items);
 
 // TODO: REMOVE info
 		$itemHosts = $this->get([
@@ -660,6 +680,8 @@ class CItemPrototype extends CItemGeneral {
 			$this->deleteApplicationPrototypes(array_keys($application_prototypes_to_remove));
 		}
 
+		$this->updateItemPreprocessing($items);
+
 // TODO: REMOVE info
 		$itemHosts = $this->get([
 			'itemids' => $itemids,
@@ -683,7 +705,29 @@ class CItemPrototype extends CItemGeneral {
 	 */
 	public function update($items) {
 		$items = zbx_toArray($items);
+
 		$this->checkInput($items, true);
+		$this->validateDependentItems($items, API::ItemPrototype());
+
+		$dbItems = $this->get([
+			'output' => ['type', 'master_itemid'],
+			'itemids' => zbx_objectValues($items, 'itemid'),
+			'editable' => true,
+			'preservekeys' => true
+		]);
+
+		$items = $this->extendFromObjects(zbx_toHash($items, 'itemid'), $dbItems, ['type']);
+
+		foreach ($items as &$item) {
+			if ($item['type'] != ITEM_TYPE_DEPENDENT && $dbItems[$item['itemid']]['master_itemid']) {
+				$item['master_itemid'] = null;
+			}
+			elseif (!array_key_exists('master_itemid', $item)) {
+				$item['master_itemid'] = $dbItems[$item['itemid']]['master_itemid'];
+			}
+		}
+		unset($item);
+
 		$this->updateReal($items);
 		$this->inherit($items);
 
@@ -738,6 +782,22 @@ class CItemPrototype extends CItemGeneral {
 			}
 		} while ($parentItemids);
 
+		$db_dependent_items = $delItemPrototypes + $childPrototypeids;
+		$dependent_itemprototypes = [];
+		// Master item deletion will remove dependent items on database level.
+		while ($db_dependent_items) {
+			$db_dependent_items = $this->get([
+				'output' => ['itemid', 'name'],
+				'filter' => ['type' => ITEM_TYPE_DEPENDENT, 'master_itemid' => array_keys($db_dependent_items)],
+				'selectHosts' => ['name'],
+				'preservekeys' => true
+			]);
+			$db_dependent_items = array_diff_key($db_dependent_items, $dependent_itemprototypes);
+			$dependent_itemprototypes += $db_dependent_items;
+		};
+		$dependent_itemprototypeids = array_keys($dependent_itemprototypes);
+		$childPrototypeids += array_combine($dependent_itemprototypeids, $dependent_itemprototypeids);
+
 		$options = [
 			'output' => API_OUTPUT_EXTEND,
 			'itemids' => $childPrototypeids,
@@ -750,15 +810,27 @@ class CItemPrototype extends CItemGeneral {
 		$delItemPrototypes = array_merge($delItemPrototypes, $delItemPrototypesChildren);
 		$prototypeids = array_merge($prototypeids, $childPrototypeids);
 
-		// delete graphs with this item prototype
-		$delGraphPrototypes = API::GraphPrototype()->get([
-			'output' => [],
-			'itemids' => $prototypeids,
-			'nopermissions' => true,
-			'preservekeys' => true
-		]);
-		if ($delGraphPrototypes) {
-			API::GraphPrototype()->delete(array_keys($delGraphPrototypes), true);
+		// Delete graphs or leave them if graphs still have at least one item prototype.
+		$del_graph_prototypes = [];
+		$db_graph_prototypes = DBselect(
+			'SELECT gi.graphid'.
+			' FROM graphs_items gi'.
+			' WHERE '.dbConditionInt('gi.itemid', $prototypeids).
+				' AND NOT EXISTS ('.
+					'SELECT NULL'.
+					' FROM graphs_items gii,items i'.
+					' WHERE gi.graphid=gii.graphid'.
+						' AND gii.itemid=i.itemid'.
+						' AND '.dbConditionInt('i.itemid', $prototypeids, true).
+						' AND '.dbConditionInt('i.flags', [ZBX_FLAG_DISCOVERY_PROTOTYPE]).
+				')'
+		);
+		while ($db_graph_prototype = DBfetch($db_graph_prototypes)) {
+			$del_graph_prototypes[] = $db_graph_prototype['graphid'];
+		}
+
+		if ($del_graph_prototypes) {
+			API::GraphPrototype()->delete($del_graph_prototypes, true);
 		}
 
 		// check if any graphs are referencing this item
@@ -818,10 +890,12 @@ class CItemPrototype extends CItemGeneral {
 
 
 // TODO: remove info from API
+		$delItemPrototypes = zbx_toHash($delItemPrototypes, 'itemid') + $dependent_itemprototypes;
 		foreach ($delItemPrototypes as $item) {
 			$host = reset($item['hosts']);
 			info(_s('Deleted: Item prototype "%1$s" on "%2$s".', $item['name'], $host['name']));
 		}
+		$prototypeids = array_map('strval', $prototypeids);
 
 		return ['prototypeids' => $prototypeids];
 	}
@@ -852,9 +926,15 @@ class CItemPrototype extends CItemGeneral {
 				' WHERE '.dbConditionInt('ad.application_prototypeid', $application_prototypeids)
 			));
 
-			DB::delete('application_prototype', [
-				'application_prototypeid' => zbx_objectValues($db_application_prototypes, 'application_prototypeid')
+			$db_application_prototypeids = zbx_objectValues($db_application_prototypes, 'application_prototypeid');
+
+			// unlink templated application prototype
+			DB::update('application_prototype', [
+				'values' => ['templateid' => null],
+				'where' => ['templateid' => $db_application_prototypeids]
 			]);
+
+			DB::delete('application_prototype', ['application_prototypeid' => $db_application_prototypeids]);
 
 			/*
 			 * Deleting an application prototype will automatically delete the link in 'item_application_prototype',
@@ -896,6 +976,7 @@ class CItemPrototype extends CItemGeneral {
 			'output' => $selectFields,
 			'selectApplications' => ['applicationid'],
 			'selectApplicationPrototypes' => ['name'],
+			'selectPreprocessing' => ['type', 'params'],
 			'hostids' => $data['templateids'],
 			'preservekeys' => true
 		]);
@@ -907,6 +988,36 @@ class CItemPrototype extends CItemGeneral {
 		$this->inherit($items, $data['hostids']);
 
 		return true;
+	}
+
+	/**
+	 * Check item prototype specific fields:
+	 *		- validate history and trends using simple interval parser, user macro parser and lld macro parser;
+	 *		- validate item preprocessing.
+	 *
+	 * @param array  $item    An array of single item data.
+	 * @param string $method  A string of "create" or "update" method.
+	 *
+	 * @throws APIException if the input is invalid.
+	 */
+	protected function checkSpecificFields(array $item, $method) {
+		if (array_key_exists('history', $item)
+				&& !validateTimeUnit($item['history'], SEC_PER_HOUR, 25 * SEC_PER_YEAR, true, $error,
+					['usermacros' => true, 'lldmacros' => true])) {
+			self::exception(ZBX_API_ERROR_PARAMETERS,
+				_s('Incorrect value for field "%1$s": %2$s.', 'history', $error)
+			);
+		}
+
+		if (array_key_exists('trends', $item)
+				&& !validateTimeUnit($item['trends'], SEC_PER_DAY, 25 * SEC_PER_YEAR, true, $error,
+					['usermacros' => true, 'lldmacros' => true])) {
+			self::exception(ZBX_API_ERROR_PARAMETERS,
+				_s('Incorrect value for field "%1$s": %2$s.', 'trends', $error)
+			);
+		}
+
+		$this->validateItemPreprocessing($item, $method);
 	}
 
 	protected function inherit(array $items, array $hostids = null) {
@@ -959,6 +1070,9 @@ class CItemPrototype extends CItemGeneral {
 			$this->updateReal($updateItems);
 		}
 
+		// Update master_itemid for inserted or updated inherited dependent items.
+		$this->inheritDependentItems(array_merge($updateItems, $insertItems));
+
 		// propagate the inheritance to the children
 		$this->inherit(array_merge($insertItems, $updateItems));
 	}
@@ -966,7 +1080,7 @@ class CItemPrototype extends CItemGeneral {
 	protected function applyQueryOutputOptions($tableName, $tableAlias, array $options, array $sqlParts) {
 		$sqlParts = parent::applyQueryOutputOptions($tableName, $tableAlias, $options, $sqlParts);
 
-		if ($options['countOutput'] === null) {
+		if (!$options['countOutput']) {
 			if ($options['selectHosts'] !== null) {
 				$sqlParts = $this->addQuerySelect('i.hostid', $sqlParts);
 			}
@@ -1105,6 +1219,29 @@ class CItemPrototype extends CItemGeneral {
 				'preservekeys' => true
 			]);
 			$result = $relationMap->mapOne($result, $discoveryRules, 'discoveryRule');
+		}
+
+		if ($options['selectPreprocessing'] !== null && $options['selectPreprocessing'] != API_OUTPUT_COUNT) {
+			$db_item_preproc = API::getApiService()->select('item_preproc', [
+				'output' => $this->outputExtend($options['selectPreprocessing'], ['itemid', 'step']),
+				'filter' => ['itemid' => array_keys($result)],
+			]);
+
+			CArrayHelper::sort($db_item_preproc, ['step']);
+
+			foreach ($result as &$item) {
+				$item['preprocessing'] = [];
+			}
+			unset($item);
+
+			foreach ($db_item_preproc as $step) {
+				$itemid = $step['itemid'];
+				unset($step['item_preprocid'], $step['itemid'], $step['step']);
+
+				if (array_key_exists($itemid, $result)) {
+					$result[$itemid]['preprocessing'][] = $step;
+				}
+			}
 		}
 
 		return $result;

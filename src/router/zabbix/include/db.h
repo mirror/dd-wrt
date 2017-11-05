@@ -73,7 +73,6 @@ struct	_DC_TRIGGER;
 #define TRIGGER_DESCRIPTION_LEN		255
 #define TRIGGER_EXPRESSION_LEN		2048
 #define TRIGGER_EXPRESSION_LEN_MAX	(TRIGGER_EXPRESSION_LEN + 1)
-#define TRIGGER_ERROR_LEN		128
 #if defined(HAVE_IBM_DB2) || defined(HAVE_ORACLE)
 #	define TRIGGER_COMMENTS_LEN	2048
 #else
@@ -105,10 +104,13 @@ struct	_DC_TRIGGER;
 
 #define ITEM_NAME_LEN			255
 #define ITEM_KEY_LEN			255
+#define ITEM_DELAY_LEN			1024
+#define ITEM_HISTORY_LEN		255
+#define ITEM_TRENDS_LEN			255
 #define ITEM_UNITS_LEN			255
 #define ITEM_SNMP_COMMUNITY_LEN		64
 #define ITEM_SNMP_COMMUNITY_LEN_MAX	(ITEM_SNMP_COMMUNITY_LEN + 1)
-#define ITEM_SNMP_OID_LEN		255
+#define ITEM_SNMP_OID_LEN		512
 #define ITEM_SNMP_OID_LEN_MAX		(ITEM_SNMP_OID_LEN + 1)
 #define ITEM_ERROR_LEN			2048
 #define ITEM_ERROR_LEN_MAX		(ITEM_ERROR_LEN + 1)
@@ -124,8 +126,6 @@ struct	_DC_TRIGGER;
 #define ITEM_SNMPV3_CONTEXTNAME_LEN_MAX		(ITEM_SNMPV3_CONTEXTNAME_LEN + 1)
 #define ITEM_LOGTIMEFMT_LEN		64
 #define ITEM_LOGTIMEFMT_LEN_MAX		(ITEM_LOGTIMEFMT_LEN + 1)
-#define ITEM_DELAY_FLEX_LEN		255
-#define ITEM_DELAY_FLEX_LEN_MAX		(ITEM_DELAY_FLEX_LEN + 1)
 #define ITEM_IPMI_SENSOR_LEN		128
 #define ITEM_IPMI_SENSOR_LEN_MAX	(ITEM_IPMI_SENSOR_LEN + 1)
 #define ITEM_USERNAME_LEN		64
@@ -136,6 +136,8 @@ struct	_DC_TRIGGER;
 #define ITEM_PUBLICKEY_LEN_MAX		(ITEM_PUBLICKEY_LEN + 1)
 #define ITEM_PRIVATEKEY_LEN		64
 #define ITEM_PRIVATEKEY_LEN_MAX		(ITEM_PRIVATEKEY_LEN + 1)
+#define ITEM_JMX_ENDPOINT_LEN		255
+#define ITEM_JMX_ENDPOINT_LEN_MAX	(ITEM_JMX_ENDPOINT_LEN + 1)
 #if defined(HAVE_IBM_DB2) || defined(HAVE_ORACLE)
 #	define ITEM_PARAM_LEN		2048
 #	define ITEM_DESCRIPTION_LEN	2048
@@ -156,7 +158,7 @@ struct	_DC_TRIGGER;
 #define HISTORY_LOG_SOURCE_LEN		64
 #define HISTORY_LOG_SOURCE_LEN_MAX	(HISTORY_LOG_SOURCE_LEN + 1)
 
-#define ALERT_ERROR_LEN			128
+#define ALERT_ERROR_LEN			2048
 #define ALERT_ERROR_LEN_MAX		(ALERT_ERROR_LEN + 1)
 
 #define GRAPH_NAME_LEN			128
@@ -164,14 +166,14 @@ struct	_DC_TRIGGER;
 #define GRAPH_ITEM_COLOR_LEN		6
 #define GRAPH_ITEM_COLOR_LEN_MAX	(GRAPH_ITEM_COLOR_LEN + 1)
 
-#define DSERVICE_KEY_LEN		255
 #define DSERVICE_VALUE_LEN		255
 
 #define HTTPTEST_HTTP_USER_LEN		64
 #define HTTPTEST_HTTP_PASSWORD_LEN	64
 
-#define PROXY_DHISTORY_KEY_LEN		255
 #define PROXY_DHISTORY_VALUE_LEN	255
+
+#define ITEM_PREPROC_PARAMS_LEN		255
 
 #define ZBX_SQL_ITEM_FIELDS	"i.itemid,i.key_,h.host,i.type,i.history,i.hostid,i.value_type,i.delta,"	\
 				"i.units,i.multiplier,i.formula,i.state,i.valuemapid,i.trends,i.data_type"
@@ -206,8 +208,6 @@ struct	_DC_TRIGGER;
 						uint = 0;			\
 					else					\
 						is_uint64(row, &uint)
-
-#define ZBX_MAX_SQL_LEN		65535
 
 #define ZBX_DB_MAX_ID	(zbx_uint64_t)__UINT64_C(0x7fffffffffffffff)
 
@@ -265,6 +265,7 @@ typedef struct
 	char		*url;
 	char		*comments;
 	char		*correlation_tag;
+	unsigned char	value;
 	unsigned char	priority;
 	unsigned char	type;
 	unsigned char	recovery_mode;
@@ -274,8 +275,8 @@ DB_TRIGGER;
 
 typedef struct
 {
-	DB_TRIGGER		trigger;
 	zbx_uint64_t		eventid;
+	DB_TRIGGER		trigger;
 	zbx_uint64_t		objectid;
 	int			source;
 	int			object;
@@ -289,7 +290,7 @@ typedef struct
 #define ZBX_FLAGS_DB_EVENT_UNSET		0x0000
 #define ZBX_FLAGS_DB_EVENT_CREATE		0x0001
 #define ZBX_FLAGS_DB_EVENT_NO_ACTION		0x0002
-#define ZBX_FLAGS_DB_EVENT_LINKED	0x0004
+#define ZBX_FLAGS_DB_EVENT_LINKED		0x0004
 	zbx_uint64_t		flags;
 }
 DB_EVENT;
@@ -321,6 +322,7 @@ typedef struct
 	zbx_uint64_t	actionid;
 	char		*value;
 	char		*value2;
+	int		condition_result;
 	unsigned char	conditiontype;
 	unsigned char	operator;
 }
@@ -353,8 +355,6 @@ typedef struct
 {
 	zbx_uint64_t	httptestid;
 	char		*name;
-	char		*variables;
-	char		*headers;
 	char		*agent;
 	char		*http_user;
 	char		*http_password;
@@ -362,6 +362,7 @@ typedef struct
 	char		*ssl_cert_file;
 	char		*ssl_key_file;
 	char		*ssl_key_password;
+	char		*delay;
 	int		authentication;
 	int		retries;
 	int		verify_peer;
@@ -380,10 +381,9 @@ typedef struct
 	char		*status_codes;
 	int		no;
 	int		timeout;
-	char		*variables;
 	int		follow_redirects;
 	int		retrieve_mode;
-	char		*headers;
+	int		post_type;
 }
 DB_HTTPSTEP;
 
@@ -395,14 +395,44 @@ typedef struct
 	zbx_uint64_t		itemid;
 	zbx_uint64_t		eventid;
 	zbx_uint64_t		r_eventid;
+	zbx_uint64_t		acknowledgeid;
 	int			nextcheck;
 	int			esc_step;
 	zbx_escalation_status_t	status;
 }
 DB_ESCALATION;
 
+typedef struct
+{
+	zbx_uint64_t	actionid;
+	char		*name;
+	char		*shortdata;
+	char		*longdata;
+	char		*r_shortdata;
+	char		*r_longdata;
+	char		*ack_shortdata;
+	char		*ack_longdata;
+	int		esc_period;
+	unsigned char	eventsource;
+	unsigned char	maintenance_mode;
+	unsigned char	recovery;
+	unsigned char	status;
+}
+DB_ACTION;
+
+typedef struct
+{
+	zbx_uint64_t	acknowledgeid;
+	zbx_uint64_t	userid;
+	char		*message;
+	int		clock;
+}
+DB_ACKNOWLEDGE;
+
+int	DBinit(char **error);
+void	DBdeinit(void);
+
 int	DBconnect(int flag);
-void	DBinit(void);
 void	DBclose(void);
 
 #ifdef HAVE_ORACLE
@@ -411,10 +441,13 @@ int	DBstatement_execute();
 #endif
 #ifdef HAVE___VA_ARGS__
 #	define DBexecute(fmt, ...) __zbx_DBexecute(ZBX_CONST_STRING(fmt), ##__VA_ARGS__)
+#	define DBexecute_once(fmt, ...) __zbx_DBexecute_once(ZBX_CONST_STRING(fmt), ##__VA_ARGS__)
 #else
 #	define DBexecute __zbx_DBexecute
+#	define DBexecute_once __zbx_DBexecute_once
 #endif
 int	__zbx_DBexecute(const char *fmt, ...);
+int	__zbx_DBexecute_once(const char *fmt, ...);
 
 #ifdef HAVE___VA_ARGS__
 #	define DBselect_once(fmt, ...)	__zbx_DBselect_once(ZBX_CONST_STRING(fmt), ##__VA_ARGS__)
@@ -520,16 +553,18 @@ void	DBdelete_graphs(zbx_vector_uint64_t *graphids);
 void	DBdelete_hosts(zbx_vector_uint64_t *hostids);
 void	DBdelete_hosts_with_prototypes(zbx_vector_uint64_t *hostids);
 
-int	DBupdate_itservices(zbx_vector_ptr_t *trigger_diff);
+int	DBupdate_itservices(const zbx_vector_ptr_t *trigger_diff);
 int	DBremove_triggers_from_itservices(zbx_uint64_t *triggerids, int triggerids_num);
 
-void	zbx_create_itservices_lock();
-void	zbx_destroy_itservices_lock();
+int	zbx_create_itservices_lock(char **error);
+void	zbx_destroy_itservices_lock(void);
 
 void	DBadd_condition_alloc(char **sql, size_t *sql_alloc, size_t *sql_offset, const char *fieldname,
 		const zbx_uint64_t *values, const int num);
 void	DBadd_str_condition_alloc(char **sql, size_t *sql_alloc, size_t *sql_offset, const char *fieldname,
 		const char **values, const int num);
+
+int	zbx_check_user_permissions(const zbx_uint64_t *userid, const zbx_uint64_t *recipient_userid);
 
 const char	*zbx_host_string(zbx_uint64_t hostid);
 const char	*zbx_host_key_string(zbx_uint64_t itemid);
@@ -564,7 +599,7 @@ int	DBtxn_ongoing(void);
 int	DBtable_exists(const char *table_name);
 int	DBfield_exists(const char *table_name, const char *field_name);
 
-void	DBexecute_multiple_query(const char *query, const char *field_name, zbx_vector_uint64_t *ids);
+int	DBexecute_multiple_query(const char *query, const char *field_name, zbx_vector_uint64_t *ids);
 int	DBlock_record(const char *table, zbx_uint64_t id, const char *add_field, zbx_uint64_t add_id);
 int	DBlock_records(const char *table, const zbx_vector_uint64_t *ids);
 
@@ -646,5 +681,29 @@ zbx_host_availability_t;
 
 int	zbx_sql_add_host_availability(char **sql, size_t *sql_alloc, size_t *sql_offset,
 		const zbx_host_availability_t *ha);
+int	DBget_user_by_active_session(const char *sessionid, zbx_user_t *user);
+
+typedef struct
+{
+	zbx_uint64_t	itemid;
+	zbx_uint64_t	lastlogsize;
+	unsigned char	state;
+	int		mtime;
+	int		lastclock;
+	const char	*error;
+
+	zbx_uint64_t	flags;
+#define ZBX_FLAGS_ITEM_DIFF_UNSET			0x0000
+#define ZBX_FLAGS_ITEM_DIFF_UPDATE_STATE		0x0001
+#define ZBX_FLAGS_ITEM_DIFF_UPDATE_ERROR		0x0002
+#define ZBX_FLAGS_ITEM_DIFF_UPDATE_MTIME		0x0004
+#define ZBX_FLAGS_ITEM_DIFF_UPDATE_LASTLOGSIZE		0x0008
+#define ZBX_FLAGS_ITEM_DIFF_UPDATE_LASTCLOCK		0x1000
+#define ZBX_FLAGS_ITEM_DIFF_UPDATE_DB			\
+	(ZBX_FLAGS_ITEM_DIFF_UPDATE_STATE | ZBX_FLAGS_ITEM_DIFF_UPDATE_ERROR |\
+	ZBX_FLAGS_ITEM_DIFF_UPDATE_MTIME | ZBX_FLAGS_ITEM_DIFF_UPDATE_LASTLOGSIZE)
+#define ZBX_FLAGS_ITEM_DIFF_UPDATE	(ZBX_FLAGS_ITEM_DIFF_UPDATE_DB | ZBX_FLAGS_ITEM_DIFF_UPDATE_LASTCLOCK)
+}
+zbx_item_diff_t;
 
 #endif

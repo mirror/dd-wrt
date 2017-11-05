@@ -164,7 +164,7 @@ function get_hosts_by_graphid($graphid) {
  */
 function get_min_itemclock_by_graphid($graphid) {
 	$items = DBfetchArray(DBselect(
-		'SELECT DISTINCT i.itemid,i.value_type,i.history,i.trends'.
+		'SELECT DISTINCT i.itemid,i.value_type,i.history,i.trends,i.hostid'.
 		' FROM items i,graphs_items gi'.
 		' WHERE i.itemid=gi.itemid'.
 			' AND gi.graphid='.zbx_dbstr($graphid)
@@ -178,6 +178,7 @@ function get_min_itemclock_by_graphid($graphid) {
  *
  * @param array $items
  * @param array $items[]['itemid']
+ * @param array $items[]['hostid']
  * @param array $items[]['value_type']
  * @param array $items[]['history']
  * @param array $items[]['trends']
@@ -195,12 +196,23 @@ function get_min_itemclock_by_itemid($items) {
 
 	$max = ['history' => 0, 'trends' => 0];
 
+	$items = CMacrosResolverHelper::resolveTimeUnitMacros($items, ['history', 'trends']);
+
+	$simple_interval_parser = new CSimpleIntervalParser();
+
 	foreach ($items as $item) {
 		$item_types[$item['value_type']][] = $item['itemid'];
 
 		if ($item['value_type'] == ITEM_VALUE_TYPE_FLOAT || $item['value_type'] == ITEM_VALUE_TYPE_UINT64) {
-			$max['history'] = max($max['history'], (int) $item['history']);
-			$max['trends'] = max($max['trends'], (int) $item['trends']);
+			if ($simple_interval_parser->parse($item['history']) == CParser::PARSE_SUCCESS) {
+				$item['history'] = (int) timeUnitToSeconds($item['history']);
+				$max['history'] = max($max['history'], $item['history']);
+			}
+
+			if ($simple_interval_parser->parse($item['trends']) == CParser::PARSE_SUCCESS) {
+				$item['trends'] = (int) timeUnitToSeconds($item['trends']);
+				$max['trends'] = max($max['trends'], $item['trends']);
+			}
 		}
 	}
 
@@ -245,7 +257,7 @@ function get_min_itemclock_by_itemid($items) {
 	// in case DB clock column is corrupted having negative numbers, return min clock from max possible history storage
 	if ($min_clock == 0) {
 		if ($item_types[ITEM_VALUE_TYPE_FLOAT] || $item_types[ITEM_VALUE_TYPE_UINT64]) {
-			$min_clock = time() - SEC_PER_DAY * max($max['history'], $max['trends']);
+			$min_clock = time() - max($max['history'], $max['trends']);
 
 			/*
 			 * In case history storage exceeds the maximum time difference between current year and minimum 1970
@@ -374,51 +386,6 @@ function copyGraphToHost($graphid, $hostid) {
 	}
 
 	return API::Graph()->create($graph);
-}
-
-function navigation_bar_calc($idx = null, $idx2 = 0, $update = false) {
-	if (!empty($idx)) {
-		if ($update) {
-			if (!empty($_REQUEST['period']) && $_REQUEST['period'] >= ZBX_MIN_PERIOD) {
-				CProfile::update($idx.'.period', $_REQUEST['period'], PROFILE_TYPE_INT, $idx2);
-			}
-			if (!empty($_REQUEST['stime'])) {
-				CProfile::update($idx.'.stime', $_REQUEST['stime'], PROFILE_TYPE_STR, $idx2);
-			}
-		}
-		$_REQUEST['period'] = getRequest('period', CProfile::get($idx.'.period', ZBX_PERIOD_DEFAULT, $idx2));
-		$_REQUEST['stime'] = getRequest('stime', CProfile::get($idx.'.stime', null, $idx2));
-	}
-
-	$_REQUEST['period'] = getRequest('period', ZBX_PERIOD_DEFAULT);
-	$_REQUEST['stime'] = getRequest('stime');
-
-	if ($_REQUEST['period'] < ZBX_MIN_PERIOD) {
-		show_error_message(_n('Minimum time period to display is %1$s minute.',
-			'Minimum time period to display is %1$s minutes.',
-			(int) ZBX_MIN_PERIOD / SEC_PER_MIN
-		));
-		$_REQUEST['period'] = ZBX_MIN_PERIOD;
-	}
-	elseif ($_REQUEST['period'] > ZBX_MAX_PERIOD) {
-		show_error_message(_n('Maximum time period to display is %1$s day.',
-			'Maximum time period to display is %1$s days.',
-			(int) ZBX_MAX_PERIOD / SEC_PER_DAY
-		));
-		$_REQUEST['period'] = ZBX_MAX_PERIOD;
-	}
-
-	if (!empty($_REQUEST['stime'])) {
-		$time = zbxDateToTime($_REQUEST['stime']);
-		if (($time + $_REQUEST['period']) > time()) {
-			$_REQUEST['stime'] = date(TIMESTAMP_FORMAT, time() - $_REQUEST['period']);
-		}
-	}
-	else {
-		$_REQUEST['stime'] = date(TIMESTAMP_FORMAT, time() - $_REQUEST['period']);
-	}
-
-	return $_REQUEST['period'];
 }
 
 function get_next_color($palettetype = 0) {

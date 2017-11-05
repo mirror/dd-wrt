@@ -26,9 +26,10 @@
 #include "snmptrapper.h"
 #include "zbxserver.h"
 #include "zbxregexp.h"
+#include "preproc.h"
 
 static int	trap_fd = -1;
-static int	trap_lastsize;
+static off_t	trap_lastsize;
 static ino_t	trap_ino = 0;
 static char	*buffer = NULL;
 static int	offset = 0;
@@ -52,7 +53,7 @@ static void	DBget_lastsize()
 		trap_lastsize = 0;
 	}
 	else
-		trap_lastsize = atoi(row[0]);
+		ZBX_STR2UINT64(trap_lastsize, row[0]);
 
 	DBfree_result(result);
 
@@ -62,7 +63,7 @@ static void	DBget_lastsize()
 static void	DBupdate_lastsize()
 {
 	DBbegin();
-	DBexecute("update globalvars set snmp_lastsize=%d", trap_lastsize);
+	DBexecute("update globalvars set snmp_lastsize=" ZBX_FS_UI64, trap_lastsize);
 	DBcommit();
 }
 
@@ -84,7 +85,7 @@ static int	process_trap_for_interface(zbx_uint64_t interfaceid, char *trap, zbx_
 	const char		*regex;
 	char			error[ITEM_ERROR_LEN_MAX];
 	size_t			num, i;
-	int			ret = FAIL, fb = -1, *lastclocks = NULL, *errcodes = NULL;
+	int			ret = FAIL, fb = -1, *lastclocks = NULL, *errcodes = NULL, value_type;
 	zbx_uint64_t		*itemids = NULL;
 	unsigned char		*states = NULL;
 	AGENT_RESULT		*results = NULL;
@@ -151,10 +152,9 @@ static int	process_trap_for_interface(zbx_uint64_t interfaceid, char *trap, zbx_
 				goto next;
 		}
 
-		if (SUCCEED == set_result_type(&results[i], items[i].value_type, items[i].data_type, trap))
-			errcodes[i] = SUCCEED;
-		else
-			errcodes[i] = NOTSUPPORTED;
+		value_type = (ITEM_VALUE_TYPE_LOG == items[i].value_type ? ITEM_VALUE_TYPE_LOG : ITEM_VALUE_TYPE_TEXT);
+		set_result_type(&results[i], value_type, trap);
+		errcodes[i] = SUCCEED;
 		ret = SUCCEED;
 next:
 		free_request(&request);
@@ -162,10 +162,9 @@ next:
 
 	if (FAIL == ret && -1 != fb)
 	{
-		if (SUCCEED == set_result_type(&results[fb], items[fb].value_type, items[fb].data_type, trap))
-			errcodes[fb] = SUCCEED;
-		else
-			errcodes[fb] = NOTSUPPORTED;
+		value_type = (ITEM_VALUE_TYPE_LOG == items[fb].value_type ? ITEM_VALUE_TYPE_LOG : ITEM_VALUE_TYPE_TEXT);
+		set_result_type(&results[fb], value_type, trap);
+		errcodes[fb] = SUCCEED;
 		ret = SUCCEED;
 	}
 
@@ -181,8 +180,8 @@ next:
 				}
 
 				items[i].state = ITEM_STATE_NORMAL;
-				dc_add_history(items[i].itemid, items[i].value_type, items[i].flags, &results[i],
-						ts, items[i].state, NULL);
+				zbx_preprocess_item_value(items[i].itemid, items[i].flags, &results[i], ts,
+						items[i].state, NULL);
 
 				itemids[i] = items[i].itemid;
 				states[i] = items[i].state;
@@ -190,8 +189,8 @@ next:
 				break;
 			case NOTSUPPORTED:
 				items[i].state = ITEM_STATE_NOTSUPPORTED;
-				dc_add_history(items[i].itemid, items[i].value_type, items[i].flags, NULL,
-						ts, items[i].state, results[i].msg);
+				zbx_preprocess_item_value(items[i].itemid, items[i].flags, NULL, ts, items[i].state,
+						results[i].msg);
 
 				itemids[i] = items[i].itemid;
 				states[i] = items[i].state;
@@ -205,7 +204,7 @@ next:
 
 	zbx_free(results);
 
-	DCrequeue_items(itemids, states, lastclocks, NULL, NULL, errcodes, num);
+	DCrequeue_items(itemids, states, lastclocks, errcodes, num);
 
 	zbx_free(errcodes);
 	zbx_free(lastclocks);
@@ -218,7 +217,7 @@ next:
 	zbx_regexp_clean_expressions(&regexps);
 	zbx_vector_ptr_destroy(&regexps);
 
-	dc_flush_history();
+	zbx_preprocessor_flush();
 
 	return ret;
 }
@@ -424,11 +423,11 @@ static int	read_traps()
 	int		nbytes = 0;
 	char		*error = NULL;
 
-	zabbix_log(LOG_LEVEL_DEBUG, "In %s() lastsize:%d", __function_name, trap_lastsize);
+	zabbix_log(LOG_LEVEL_DEBUG, "In %s() lastsize:" ZBX_FS_I64, __function_name, trap_lastsize);
 
-	if ((off_t)-1 == lseek(trap_fd, (off_t)trap_lastsize, SEEK_SET))
+	if (-1 == lseek(trap_fd, trap_lastsize, SEEK_SET))
 	{
-		error = zbx_dsprintf(error, "cannot set position to %d for \"%s\": %s", trap_lastsize,
+		error = zbx_dsprintf(error, "cannot set position to " ZBX_FS_I64 " for \"%s\": %s", trap_lastsize,
 				CONFIG_SNMPTRAP_FILE, zbx_strerror(errno));
 		delay_trap_logs(error, LOG_LEVEL_WARNING);
 		goto out;
@@ -444,12 +443,6 @@ static int	read_traps()
 
 	if (0 < nbytes)
 	{
-		if (ZBX_SNMP_TRAPFILE_MAX_SIZE <= (zbx_uint64_t)trap_lastsize + nbytes)
-		{
-			nbytes = 0;
-			goto out;
-		}
-
 		buffer[nbytes + offset] = '\0';
 		trap_lastsize += nbytes;
 		DBupdate_lastsize();
@@ -508,14 +501,6 @@ static int	open_trap_file()
 		goto out;
 	}
 
-	if (ZBX_SNMP_TRAPFILE_MAX_SIZE <= (zbx_uint64_t)file_buf.st_size)
-	{
-		error = zbx_dsprintf(error, "cannot process SNMP trapper file \"%s\": %s", CONFIG_SNMPTRAP_FILE,
-				"file size exceeds the maximum supported size of 2 GB");
-		delay_trap_logs(error, LOG_LEVEL_CRIT);
-		goto out;
-	}
-
 	if (-1 == (trap_fd = open(CONFIG_SNMPTRAP_FILE, O_RDONLY)))
 	{
 		if (ENOENT != errno)	/* file exists but cannot be opened */
@@ -569,10 +554,6 @@ static int	get_latest_data()
 			if (0 != offset)
 				parse_traps(1);
 
-			close_trap_file();
-		}
-		else if (ZBX_SNMP_TRAPFILE_MAX_SIZE <= (zbx_uint64_t)file_buf.st_size)
-		{
 			close_trap_file();
 		}
 		else if (file_buf.st_ino != trap_ino || file_buf.st_size < trap_lastsize)
@@ -664,6 +645,10 @@ ZBX_THREAD_ENTRY(snmptrapper_thread, args)
 				get_process_type_string(process_type), sec);
 
 		zbx_sleep_loop(1);
+
+#if !defined(_WINDOWS) && defined(HAVE_RESOLV_H)
+		zbx_update_resolver_conf();	/* handle /etc/resolv.conf update */
+#endif
 	}
 
 	zbx_free(buffer);

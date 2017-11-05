@@ -88,11 +88,12 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_ibm_db2.m4 \
 	$(top_srcdir)/m4/ax_lib_postgresql.m4 \
 	$(top_srcdir)/m4/ax_lib_sqlite3.m4 $(top_srcdir)/m4/iconv.m4 \
 	$(top_srcdir)/m4/jabber.m4 $(top_srcdir)/m4/ldap.m4 \
-	$(top_srcdir)/m4/libcurl.m4 $(top_srcdir)/m4/libgnutls.m4 \
-	$(top_srcdir)/m4/libmbedtls.m4 $(top_srcdir)/m4/libopenssl.m4 \
-	$(top_srcdir)/m4/libssh2.m4 $(top_srcdir)/m4/libunixodbc.m4 \
-	$(top_srcdir)/m4/libxml2.m4 $(top_srcdir)/m4/netsnmp.m4 \
-	$(top_srcdir)/m4/openipmi.m4 $(top_srcdir)/m4/resolv.m4 \
+	$(top_srcdir)/m4/libcurl.m4 $(top_srcdir)/m4/libevent.m4 \
+	$(top_srcdir)/m4/libgnutls.m4 $(top_srcdir)/m4/libmbedtls.m4 \
+	$(top_srcdir)/m4/libopenssl.m4 $(top_srcdir)/m4/libssh2.m4 \
+	$(top_srcdir)/m4/libunixodbc.m4 $(top_srcdir)/m4/libxml2.m4 \
+	$(top_srcdir)/m4/netsnmp.m4 $(top_srcdir)/m4/openipmi.m4 \
+	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/resolv.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -117,7 +118,6 @@ am_libzbxpoller_a_OBJECTS = libzbxpoller_a-checks_agent.$(OBJEXT) \
 	libzbxpoller_a-checks_db.$(OBJEXT) \
 	libzbxpoller_a-checks_aggregate.$(OBJEXT) \
 	libzbxpoller_a-checks_external.$(OBJEXT) \
-	libzbxpoller_a-checks_ipmi.$(OBJEXT) \
 	libzbxpoller_a-checks_ssh.$(OBJEXT) \
 	libzbxpoller_a-checks_telnet.$(OBJEXT) \
 	libzbxpoller_a-checks_java.$(OBJEXT) \
@@ -234,7 +234,13 @@ LDFLAGS = @LDFLAGS@
 LIBCURL_CFLAGS = @LIBCURL_CFLAGS@
 LIBCURL_LDFLAGS = @LIBCURL_LDFLAGS@
 LIBCURL_LIBS = @LIBCURL_LIBS@
+LIBEVENT_CFLAGS = @LIBEVENT_CFLAGS@
+LIBEVENT_LDFLAGS = @LIBEVENT_LDFLAGS@
+LIBEVENT_LIBS = @LIBEVENT_LIBS@
 LIBOBJS = @LIBOBJS@
+LIBPCRE_CFLAGS = @LIBPCRE_CFLAGS@
+LIBPCRE_LDFLAGS = @LIBPCRE_LDFLAGS@
+LIBPCRE_LIBS = @LIBPCRE_LIBS@
 LIBS = @LIBS@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_CONFIG = @LIBXML2_CONFIG@
@@ -370,7 +376,6 @@ libzbxpoller_a_SOURCES = \
 	checks_db.c checks_db.h \
 	checks_aggregate.c checks_aggregate.h \
 	checks_external.c checks_external.h \
-	checks_ipmi.c checks_ipmi.h \
 	checks_ssh.c checks_ssh.h \
 	checks_telnet.c checks_telnet.h \
 	checks_java.c checks_java.h \
@@ -433,7 +438,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxpoller_a-checks_db.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxpoller_a-checks_external.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxpoller_a-checks_internal.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxpoller_a-checks_ipmi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxpoller_a-checks_java.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxpoller_a-checks_simple.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxpoller_a-checks_simple_vmware.Po@am__quote@
@@ -443,15 +447,17 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxpoller_a-poller.Po@am__quote@
 
 .c.o:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
@@ -567,20 +573,6 @@ libzbxpoller_a-checks_external.obj: checks_external.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='checks_external.c' object='libzbxpoller_a-checks_external.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxpoller_a_CFLAGS) $(CFLAGS) -c -o libzbxpoller_a-checks_external.obj `if test -f 'checks_external.c'; then $(CYGPATH_W) 'checks_external.c'; else $(CYGPATH_W) '$(srcdir)/checks_external.c'; fi`
-
-libzbxpoller_a-checks_ipmi.o: checks_ipmi.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxpoller_a_CFLAGS) $(CFLAGS) -MT libzbxpoller_a-checks_ipmi.o -MD -MP -MF $(DEPDIR)/libzbxpoller_a-checks_ipmi.Tpo -c -o libzbxpoller_a-checks_ipmi.o `test -f 'checks_ipmi.c' || echo '$(srcdir)/'`checks_ipmi.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxpoller_a-checks_ipmi.Tpo $(DEPDIR)/libzbxpoller_a-checks_ipmi.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='checks_ipmi.c' object='libzbxpoller_a-checks_ipmi.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxpoller_a_CFLAGS) $(CFLAGS) -c -o libzbxpoller_a-checks_ipmi.o `test -f 'checks_ipmi.c' || echo '$(srcdir)/'`checks_ipmi.c
-
-libzbxpoller_a-checks_ipmi.obj: checks_ipmi.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxpoller_a_CFLAGS) $(CFLAGS) -MT libzbxpoller_a-checks_ipmi.obj -MD -MP -MF $(DEPDIR)/libzbxpoller_a-checks_ipmi.Tpo -c -o libzbxpoller_a-checks_ipmi.obj `if test -f 'checks_ipmi.c'; then $(CYGPATH_W) 'checks_ipmi.c'; else $(CYGPATH_W) '$(srcdir)/checks_ipmi.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxpoller_a-checks_ipmi.Tpo $(DEPDIR)/libzbxpoller_a-checks_ipmi.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='checks_ipmi.c' object='libzbxpoller_a-checks_ipmi.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxpoller_a_CFLAGS) $(CFLAGS) -c -o libzbxpoller_a-checks_ipmi.obj `if test -f 'checks_ipmi.c'; then $(CYGPATH_W) 'checks_ipmi.c'; else $(CYGPATH_W) '$(srcdir)/checks_ipmi.c'; fi`
 
 libzbxpoller_a-checks_ssh.o: checks_ssh.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxpoller_a_CFLAGS) $(CFLAGS) -MT libzbxpoller_a-checks_ssh.o -MD -MP -MF $(DEPDIR)/libzbxpoller_a-checks_ssh.Tpo -c -o libzbxpoller_a-checks_ssh.o `test -f 'checks_ssh.c' || echo '$(srcdir)/'`checks_ssh.c

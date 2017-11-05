@@ -187,7 +187,7 @@ static int	lld_filter_load(lld_filter_t *filter, zbx_uint64_t lld_ruleid, char *
 		}
 		else
 		{
-			substitute_simple_macros(NULL, NULL, NULL, NULL, NULL, NULL, &item, NULL,
+			substitute_simple_macros(NULL, NULL, NULL, NULL, NULL, NULL, &item, NULL, NULL,
 					&condition->regexp, MACRO_TYPE_LLD_FILTER, NULL, 0);
 		}
 	}
@@ -532,7 +532,7 @@ void	lld_process_discovery_rule(zbx_uint64_t lld_ruleid, const char *value, cons
 	zbx_uint64_t		hostid;
 	char			*discovery_key = NULL, *error = NULL, *db_error = NULL, *error_esc;
 	unsigned char		state;
-	unsigned short		lifetime;
+	int			lifetime;
 	zbx_vector_ptr_t	lld_rows;
 	char			*sql = NULL;
 	size_t			sql_alloc = 128, sql_offset = 0;
@@ -541,6 +541,13 @@ void	lld_process_discovery_rule(zbx_uint64_t lld_ruleid, const char *value, cons
 	time_t			now;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() itemid:" ZBX_FS_UI64, __function_name, lld_ruleid);
+
+	if (FAIL == DCconfig_lock_lld_rule(lld_ruleid))
+	{
+		zabbix_log(LOG_LEVEL_WARNING, "cannot process discovery rule \"%s\": another value is being processed",
+				zbx_host_key_string(lld_ruleid));
+		goto out;
+	}
 
 	zbx_vector_ptr_create(&lld_rows);
 
@@ -566,15 +573,17 @@ void	lld_process_discovery_rule(zbx_uint64_t lld_ruleid, const char *value, cons
 		db_error = zbx_strdup(db_error, row[5]);
 
 		lifetime_str = zbx_strdup(NULL, row[6]);
-		substitute_simple_macros(NULL, NULL, NULL, NULL, &hostid, NULL, NULL, NULL,
+		substitute_simple_macros(NULL, NULL, NULL, NULL, &hostid, NULL, NULL, NULL, NULL,
 				&lifetime_str, MACRO_TYPE_COMMON, NULL, 0);
-		if (SUCCEED != is_ushort(lifetime_str, &lifetime))
+
+		if (SUCCEED != is_time_suffix(lifetime_str, &lifetime, ZBX_LENGTH_UNLIMITED))
 		{
 			zabbix_log(LOG_LEVEL_WARNING, "cannot process lost resources for the discovery rule \"%s:%s\":"
 					" \"%s\" is not a valid value",
 					zbx_host_string(hostid), discovery_key, lifetime_str);
-			lifetime = 3650;	/* max value for the field */
+			lifetime = 25 * SEC_PER_YEAR;	/* max value for the field */
 		}
+
 		zbx_free(lifetime_str);
 	}
 	DBfree_result(result);
@@ -622,11 +631,10 @@ void	lld_process_discovery_rule(zbx_uint64_t lld_ruleid, const char *value, cons
 
 	if (ITEM_STATE_NOTSUPPORTED == state)
 	{
-		zabbix_log(LOG_LEVEL_WARNING,  "discovery rule [" ZBX_FS_UI64 "][%s] became supported",
-				lld_ruleid, zbx_host_key_string(lld_ruleid));
+		zabbix_log(LOG_LEVEL_WARNING, "discovery rule \"%s\" became supported", zbx_host_key_string(lld_ruleid));
 
 		add_event(EVENT_SOURCE_INTERNAL, EVENT_OBJECT_LLDRULE, lld_ruleid, ts, ITEM_STATE_NORMAL,
-				NULL, NULL, NULL, 0, 0, NULL, 0, NULL);
+				NULL, NULL, NULL, 0, 0, NULL, 0, NULL, 0);
 		process_events();
 
 		zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset, "%sstate=%d", sql_start, ITEM_STATE_NORMAL);
@@ -654,6 +662,8 @@ error:
 		DBcommit();
 	}
 clean:
+	DCconfig_unlock_lld_rule(lld_ruleid);
+
 	zbx_free(error);
 	zbx_free(db_error);
 	zbx_free(discovery_key);
@@ -664,5 +674,6 @@ clean:
 	zbx_vector_ptr_clear_ext(&lld_rows, (zbx_clean_func_t)lld_row_free);
 	zbx_vector_ptr_destroy(&lld_rows);
 
+out:
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __function_name);
 }

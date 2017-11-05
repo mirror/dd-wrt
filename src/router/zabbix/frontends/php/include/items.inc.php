@@ -99,7 +99,8 @@ function item_type2str($type = null) {
 		ITEM_TYPE_TELNET => _('TELNET agent'),
 		ITEM_TYPE_JMX => _('JMX agent'),
 		ITEM_TYPE_CALCULATED => _('Calculated'),
-		ITEM_TYPE_HTTPTEST => _('Web monitoring')
+		ITEM_TYPE_HTTPTEST => _('Web monitoring'),
+		ITEM_TYPE_DEPENDENT => _('Dependent item')
 	];
 	if (is_null($type)) {
 		return $types;
@@ -133,24 +134,6 @@ function itemValueTypeString($valueType) {
 			return _('Text');
 	}
 	return _('Unknown');
-}
-
-function item_data_type2str($type = null) {
-	$types = [
-		ITEM_DATA_TYPE_BOOLEAN => _('Boolean'),
-		ITEM_DATA_TYPE_OCTAL => _('Octal'),
-		ITEM_DATA_TYPE_DECIMAL => _('Decimal'),
-		ITEM_DATA_TYPE_HEXADECIMAL => _('Hexadecimal')
-	];
-	if (is_null($type)) {
-		return $types;
-	}
-	elseif (isset($types[$type])) {
-		return $types[$type];
-	}
-	else {
-		return _('Unknown');
-	}
 }
 
 function item_status2str($type = null) {
@@ -222,6 +205,101 @@ function itemIndicatorStyle($status, $state = null) {
 	}
 
 	return ZBX_STYLE_RED;
+}
+
+/**
+ * Order items by keep history.
+ *
+ * @param array  $items
+ * @param string $items['history']
+ * @param string $sortorder
+ */
+function orderItemsByHistory(array &$items, $sortorder){
+	$simple_interval_parser = new CSimpleIntervalParser();
+
+	foreach ($items as &$item) {
+		$item['history_sort'] = ($simple_interval_parser->parse($item['history']) == CParser::PARSE_SUCCESS)
+			? timeUnitToSeconds($item['history'])
+			: $item['history'];
+	}
+	unset($item);
+
+	order_result($items, 'history_sort', $sortorder);
+
+	foreach ($items as &$item) {
+		unset($item['history_sort']);
+	}
+	unset($item);
+}
+
+/**
+ * Order items by keep trends.
+ *
+ * @param array  $items
+ * @param int    $items['value_type']
+ * @param string $items['trends']
+ * @param string $sortorder
+ */
+function orderItemsByTrends(array &$items, $sortorder){
+	$simple_interval_parser = new CSimpleIntervalParser();
+
+	foreach ($items as &$item) {
+		if (in_array($item['value_type'], [ITEM_VALUE_TYPE_STR, ITEM_VALUE_TYPE_LOG, ITEM_VALUE_TYPE_TEXT])) {
+			$item['trends_sort'] = '';
+		}
+		else {
+			$item['trends_sort'] = ($simple_interval_parser->parse($item['trends']) == CParser::PARSE_SUCCESS)
+				? timeUnitToSeconds($item['trends'])
+				: $item['trends'];
+		}
+	}
+	unset($item);
+
+	order_result($items, 'trends_sort', $sortorder);
+
+	foreach ($items as &$item) {
+		unset($item['trends_sort']);
+	}
+	unset($item);
+}
+
+/**
+ * Order items by update interval.
+ *
+ * @param array  $items
+ * @param int    $items['type']
+ * @param string $items['delay']
+ * @param string $sortorder
+ * @param array  $options
+ * @param bool   $options['usermacros']
+ * @param bool   $options['lldmacros']
+ */
+function orderItemsByDelay(array &$items, $sortorder, array $options){
+	$update_interval_parser = new CUpdateIntervalParser($options);
+
+	foreach ($items as &$item) {
+		if (in_array($item['type'], [ITEM_TYPE_TRAPPER, ITEM_TYPE_SNMPTRAP, ITEM_TYPE_DEPENDENT])) {
+			$item['delay_sort'] = '';
+		}
+		elseif ($update_interval_parser->parse($item['delay']) == CParser::PARSE_SUCCESS) {
+			$item['delay_sort'] = $update_interval_parser->getDelay();
+
+			if ($item['delay_sort'][0] !== '{') {
+				$item['delay_sort'] = timeUnitToSeconds($item['delay_sort']);
+			}
+		}
+		else {
+			$item['delay_sort'] = $item['delay'];
+		}
+	}
+	unset($item);
+
+	order_result($items, 'delay_sort', $sortorder);
+
+	foreach ($items as &$item) {
+		unset($item['delay_sort']);
+	}
+	unset($item);
 }
 
 /**
@@ -302,6 +380,93 @@ function itemTypeInterface($type = null) {
 }
 
 /**
+ * Finds master item in input array which dependent items not present in input array. If master is found it name
+ * will be returned or false otherwise.
+ *
+ * @param array                $items            Associative array of item arrays to search, where itemid is array key.
+ * @param string               $items[]['name']
+ * @param string               $items[]['master_itemid']
+ * @param CItem|CItemPrototype $data_provider    Service, is used to get dependent items.
+ *
+ * @return bool|string
+ */
+function findMasterWithMissingDependentItem($items, $data_provider) {
+	$master_itemname = false;
+	$not_selected = [];
+	$db_dependent_items = $items;
+
+	while ($db_dependent_items) {
+		$db_dependent_items = $data_provider->get([
+			'output'		=> ['master_itemid', 'templateid'],
+			'filter'		=> ['type' => ITEM_TYPE_DEPENDENT, 'master_itemid' => array_keys($db_dependent_items)],
+			'preservekeys'	=> true
+		]);
+		$not_selected = array_diff_key($db_dependent_items, $items);
+
+		if ($not_selected) {
+			$dependent_item = reset($not_selected);
+			$master_item = array_key_exists($dependent_item['master_itemid'], $items)
+				? $items[$dependent_item['master_itemid']]
+				: $items[$dependent_item['templateid']];
+			$master_itemname = $master_item['name'];
+			break;
+		}
+	};
+
+	return $master_itemname;
+}
+
+/**
+ * Finds dependent item in input array which master item not present in input array. If dependent is found it name
+ * will be returned or false otherwise.
+ *
+ * @param array                $items            Associative array of item arrays to search, where itemid is array key.
+ * @param string               $items[]['name']
+ * @param string               $items[]['master_itemid']
+ * @param string               $items[]['type']
+ * @param CItem|CItemPrototype $data_provider    Service, is used to get dependent items.
+ *
+ * @return bool|string
+ */
+function findDependentWithMissingMasterItem($items, $data_provider) {
+	$dependent_itemname = false;
+	$not_selected = [];
+	$db_master_items = $items;
+
+	do {
+		$db_master_itemids = [];
+
+		foreach ($db_master_items as $dm_master_itemid => $db_master_item) {
+			if ($db_master_item['type'] == ITEM_TYPE_DEPENDENT) {
+				$db_master_itemids[$dm_master_itemid] = $db_master_item['master_itemid'];
+			}
+		}
+
+		if ($db_master_itemids) {
+			$db_master_items = $data_provider->get([
+				'output'		=> ['master_itemid', 'templateid', 'type'],
+				'itemids'		=> array_keys(array_flip($db_master_itemids)),
+				'preservekeys'	=> true
+			]);
+		}
+		else {
+			$db_master_items = [];
+		}
+
+		$not_selected = array_diff_key($db_master_items, $items);
+
+		if ($not_selected) {
+			$master_item = reset($not_selected);
+			$dependent_itemid = array_search(key($not_selected), $db_master_itemids);
+			$dependent_itemname = $items[$dependent_itemid]['name'];
+			break;
+		}
+	} while ($db_master_items);
+
+	return $dependent_itemname;
+}
+
+/**
  * Copies the given items to the given hosts or templates.
  *
  * @param array $src_itemids		Items which will be copied to $dst_hostids
@@ -311,17 +476,39 @@ function itemTypeInterface($type = null) {
  */
 function copyItemsToHosts($src_itemids, $dst_hostids) {
 	$items = API::Item()->get([
-		'output' => [
-			'type', 'snmp_community', 'snmp_oid', 'name', 'key_', 'delay', 'history', 'trends', 'status', 'value_type',
-			'trapper_hosts', 'units', 'multiplier', 'delta', 'snmpv3_contextname', 'snmpv3_securityname',
-			'snmpv3_securitylevel', 'snmpv3_authprotocol', 'snmpv3_authpassphrase', 'snmpv3_privprotocol',
-			'snmpv3_privpassphrase', 'formula', 'logtimefmt', 'valuemapid', 'delay_flex', 'params', 'ipmi_sensor',
-			'data_type', 'authtype', 'username', 'password', 'publickey', 'privatekey', 'flags', 'port',
-			'description', 'inventory_link'
+		'output' => ['type', 'snmp_community', 'snmp_oid', 'name', 'key_', 'delay', 'history', 'trends', 'status',
+			'value_type', 'trapper_hosts', 'units', 'snmpv3_contextname', 'snmpv3_securityname', 'snmpv3_securitylevel',
+			'snmpv3_authprotocol', 'snmpv3_authpassphrase', 'snmpv3_privprotocol', 'snmpv3_privpassphrase',
+			'logtimefmt', 'valuemapid', 'params', 'ipmi_sensor', 'authtype', 'username', 'password', 'publickey',
+			'privatekey', 'flags', 'port', 'description', 'inventory_link', 'jmx_endpoint', 'master_itemid'
 		],
 		'selectApplications' => ['applicationid'],
-		'itemids' => $src_itemids
+		'selectPreprocessing' => ['type', 'params'],
+		'itemids' => $src_itemids,
+		'preservekeys' => true
 	]);
+
+	$master_name = findDependentWithMissingMasterItem($items, API::Item());
+	if ($master_name !== false) {
+		error(_s('Item "%1$s" have master item and cannot be copied.', $master_name));
+		return false;
+	}
+
+	$create_order = [];
+	$src_itemid_to_key = [];
+	foreach ($items as $itemid => $item) {
+		$dependency_level = 0;
+		$master_item = $item;
+		$src_itemid_to_key[$itemid] = $item['key_'];
+
+		while ($master_item['type'] == ITEM_TYPE_DEPENDENT) {
+			$master_item = $items[$master_item['master_itemid']];
+			++$dependency_level;
+		}
+
+		$create_order[$itemid] = $dependency_level;
+	}
+	asort($create_order);
 
 	$dstHosts = API::Host()->get([
 		'output' => ['hostid', 'host', 'status'],
@@ -339,7 +526,30 @@ function copyItemsToHosts($src_itemids, $dst_hostids) {
 				$interfaceids[$interface['type']] = $interface['interfaceid'];
 			}
 		}
-		foreach ($items as &$item) {
+
+		$itemkey_to_id = [];
+		$create_items = [];
+		$current_dependency = reset($create_order);
+
+		foreach ($create_order as $itemid => $dependency_level) {
+			if ($current_dependency != $dependency_level) {
+				$current_dependency = $dependency_level;
+				$created_itemids = API::Item()->create($create_items);
+
+				if (!$created_itemids) {
+					return false;
+				}
+				$created_itemids = $created_itemids['itemids'];
+
+				foreach ($create_items as $index => $created_item) {
+					$itemkey_to_id[$created_item['key_']] = $created_itemids[$index];
+				}
+
+				$create_items = [];
+			}
+
+			$item = $items[$itemid];
+
 			if ($dstHost['status'] != HOST_STATUS_TEMPLATE) {
 				$type = itemTypeInterface($item['type']);
 
@@ -367,10 +577,18 @@ function copyItemsToHosts($src_itemids, $dst_hostids) {
 				zbx_objectValues($item['applications'], 'applicationid'),
 				$dstHost['hostid']
 			);
-		}
-		unset($item);
 
-		if (!API::Item()->create($items)) {
+			if ($item['type'] == ITEM_TYPE_DEPENDENT) {
+				$src_item_key = $src_itemid_to_key[$item['master_itemid']];
+				$item['master_itemid'] = $itemkey_to_id[$src_item_key];
+			}
+			else {
+				unset($item['master_itemid']);
+			}
+			$create_items[] = $item;
+		}
+
+		if ($create_items && !API::Item()->create($create_items)) {
 			return false;
 		}
 	}
@@ -380,18 +598,18 @@ function copyItemsToHosts($src_itemids, $dst_hostids) {
 
 function copyItems($srcHostId, $dstHostId) {
 	$srcItems = API::Item()->get([
-		'hostids' => $srcHostId,
-		'output' => [
-			'type', 'snmp_community', 'snmp_oid', 'name', 'key_', 'delay', 'history', 'trends', 'status', 'value_type',
-			'trapper_hosts', 'units', 'multiplier', 'delta', 'snmpv3_contextname', 'snmpv3_securityname',
-			'snmpv3_securitylevel', 'snmpv3_authprotocol', 'snmpv3_authpassphrase', 'snmpv3_privprotocol',
-			'snmpv3_privpassphrase', 'formula', 'logtimefmt', 'valuemapid', 'delay_flex', 'params', 'ipmi_sensor',
-			'data_type', 'authtype', 'username', 'password', 'publickey', 'privatekey', 'flags', 'port',
-			'description', 'inventory_link'
+		'output' => ['type', 'snmp_community', 'snmp_oid', 'name', 'key_', 'delay', 'history', 'trends', 'status',
+			'value_type', 'trapper_hosts', 'units', 'snmpv3_contextname', 'snmpv3_securityname', 'snmpv3_securitylevel',
+			'snmpv3_authprotocol', 'snmpv3_authpassphrase', 'snmpv3_privprotocol', 'snmpv3_privpassphrase',
+			'logtimefmt', 'valuemapid', 'params', 'ipmi_sensor', 'authtype', 'username', 'password', 'publickey',
+			'privatekey', 'flags', 'port', 'description', 'inventory_link', 'jmx_endpoint', 'master_itemid',
+			'templateid'
 		],
-		'inherited' => false,
+		'selectApplications' => ['applicationid'],
+		'selectPreprocessing' => ['type', 'params'],
+		'hostids' => $srcHostId,
 		'filter' => ['flags' => ZBX_FLAG_DISCOVERY_NORMAL],
-		'selectApplications' => ['applicationid']
+		'preservekeys' => true
 	]);
 	$dstHosts = API::Host()->get([
 		'output' => ['hostid', 'host', 'status'],
@@ -403,7 +621,55 @@ function copyItems($srcHostId, $dstHostId) {
 	]);
 	$dstHost = reset($dstHosts);
 
-	foreach ($srcItems as &$srcItem) {
+	$create_order = [];
+	$src_itemid_to_key = [];
+	foreach ($srcItems as $itemid => $item) {
+		$dependency_level = 0;
+		$master_item = $item;
+		$src_itemid_to_key[$itemid] = $item['key_'];
+
+		while ($master_item['type'] == ITEM_TYPE_DEPENDENT) {
+			$master_item = $srcItems[$master_item['master_itemid']];
+			++$dependency_level;
+		}
+
+		$create_order[$itemid] = $dependency_level;
+	}
+	asort($create_order);
+
+	$itemkey_to_id = [];
+	$create_items = [];
+	$current_dependency = reset($create_order);
+
+	foreach ($create_order as $itemid => $dependency_level) {
+		if ($current_dependency != $dependency_level && $create_items) {
+			$current_dependency = $dependency_level;
+			$created_itemids = API::Item()->create($create_items);
+
+			if (!$created_itemids) {
+				return false;
+			}
+			$created_itemids = $created_itemids['itemids'];
+
+			foreach ($create_items as $index => $created_item) {
+				$itemkey_to_id[$created_item['key_']] = $created_itemids[$index];
+			}
+
+			$create_items = [];
+		}
+
+		$srcItem = $srcItems[$itemid];
+
+		if ($srcItem['templateid']) {
+			$srcItem = get_same_item_for_host($srcItem, $dstHost['hostid']);
+
+			if (!$srcItem) {
+				return false;
+			}
+			$itemkey_to_id[$srcItem['key_']] = $srcItem['itemid'];
+			continue;
+		}
+
 		if ($dstHost['status'] != HOST_STATUS_TEMPLATE) {
 			// find a matching interface
 			$interface = CItem::findInterfaceForItem($srcItem, $dstHost['interfaces']);
@@ -419,10 +685,26 @@ function copyItems($srcHostId, $dstHostId) {
 		unset($srcItem['templateid']);
 		$srcItem['hostid'] = $dstHostId;
 		$srcItem['applications'] = get_same_applications_for_host(zbx_objectValues($srcItem['applications'], 'applicationid'), $dstHostId);
-	}
-	unset($srcItem);
 
-	return API::Item()->create($srcItems);
+		if (!$srcItem['preprocessing']) {
+			unset($srcItem['preprocessing']);
+		}
+
+		if ($srcItem['type'] == ITEM_TYPE_DEPENDENT) {
+			$src_item_key = $src_itemid_to_key[$srcItem['master_itemid']];
+			$srcItem['master_itemid'] = $itemkey_to_id[$src_item_key];
+		}
+		else {
+			unset($srcItem['master_itemid']);
+		}
+		$create_items[] = $srcItem;
+	}
+
+	if ($create_items && !API::Item()->create($create_items)) {
+		return false;
+	}
+
+	return true;
 }
 
 /**
@@ -466,11 +748,11 @@ function get_item_by_itemid($itemid) {
 function get_item_by_itemid_limited($itemid) {
 	$row = DBfetch(DBselect(
 		'SELECT i.itemid,i.interfaceid,i.name,i.key_,i.hostid,i.delay,i.history,i.status,i.type,i.lifetime,'.
-			'i.snmp_community,i.snmp_oid,i.value_type,i.data_type,i.trapper_hosts,i.port,i.units,i.multiplier,'.
-			'i.delta,i.snmpv3_contextname,i.snmpv3_securityname,i.snmpv3_securitylevel,i.snmpv3_authprotocol,'.
-			'i.snmpv3_authpassphrase,i.snmpv3_privprotocol,i.snmpv3_privpassphrase,i.formula,i.trends,i.logtimefmt,'.
-			'i.valuemapid,i.delay_flex,i.params,i.ipmi_sensor,i.templateid,i.authtype,i.username,i.password,'.
-			'i.publickey,i.privatekey,i.flags,i.description,i.inventory_link'.
+			'i.snmp_community,i.snmp_oid,i.value_type,i.trapper_hosts,i.port,i.units,i.snmpv3_contextname,'.
+			'i.snmpv3_securityname,i.snmpv3_securitylevel,i.snmpv3_authprotocol,i.snmpv3_authpassphrase,'.
+			'i.snmpv3_privprotocol,i.snmpv3_privpassphrase,i.trends,i.logtimefmt,i.valuemapid,i.params,i.ipmi_sensor,'.
+			'i.templateid,i.authtype,i.username,i.password,i.publickey,i.privatekey,i.flags,i.description,'.
+			'i.inventory_link'.
 		' FROM items i'.
 		' WHERE i.itemid='.zbx_dbstr($itemid)));
 	if ($row) {
@@ -567,50 +849,82 @@ function get_realrule_by_itemid_and_hostid($itemid, $hostid) {
 /**
  * Retrieve overview table object for items.
  *
- * @param array  		$hostIds
- * @param array|null	$applicationIds		IDs of applications to filter items by
- * @param int    		$viewMode
+ * @param array|null $groupids
+ * @param string     $application  IDs of applications to filter items by
+ * @param int        $viewMode
  *
  * @return CTableInfo
  */
-function getItemsDataOverview($hostIds, array $applicationIds = null, $viewMode) {
-	$sqlFrom = '';
-	$sqlWhere = '';
-
-	if ($applicationIds !== null) {
-		$sqlFrom = 'items_applications ia,';
-		$sqlWhere = ' AND i.itemid=ia.itemid AND '.dbConditionInt('ia.applicationid', $applicationIds);
+function getItemsDataOverview(array $groupids, $application, $viewMode) {
+	// application filter
+	if ($application !== '') {
+		$applicationids = array_keys(API::Application()->get([
+			'output' => [],
+			'groupids' => $groupids ? $groupids : null,
+			'search' => ['name' => $application],
+			'preservekeys' => true
+		]));
+		$groupids = [];
+	}
+	else {
+		$applicationids = null;
 	}
 
-	$dbItems = DBfetchArray(DBselect(
-		'SELECT DISTINCT h.hostid,h.name AS hostname,i.itemid,i.key_,i.value_type,i.units,'.
-			'i.name,t.priority,i.valuemapid,t.value AS tr_value,t.triggerid'.
-		' FROM hosts h,'.$sqlFrom.'items i'.
-			' LEFT JOIN functions f ON f.itemid=i.itemid'.
-			' LEFT JOIN triggers t ON t.triggerid=f.triggerid AND t.status='.TRIGGER_STATUS_ENABLED.
-		' WHERE '.dbConditionInt('h.hostid', $hostIds).
-			' AND h.status='.HOST_STATUS_MONITORED.
-			' AND h.hostid=i.hostid'.
-			' AND i.status='.ITEM_STATUS_ACTIVE.
-			' AND '.dbConditionInt('i.flags', [ZBX_FLAG_DISCOVERY_NORMAL, ZBX_FLAG_DISCOVERY_CREATED]).
-				$sqlWhere
-	));
+	$db_items = API::Item()->get([
+		'output' => ['itemid', 'hostid', 'key_', 'name', 'value_type', 'units', 'valuemapid'],
+		'selectHosts' => ['name'],
+		'groupids' => $groupids ? $groupids : null,
+		'applicationids' => $applicationids,
+		'monitored' => true,
+		'webitems' => true,
+		'preservekeys' => true
+	]);
 
-	$dbItems = CMacrosResolverHelper::resolveItemNames($dbItems);
+	$db_triggers = API::Trigger()->get([
+		'output' => ['triggerid', 'priority', 'value'],
+		'selectItems' => ['itemid'],
+		'groupids' => $groupids ? $groupids : null,
+		'applicationids' => $applicationids,
+		'monitored' => true
+	]);
 
-	CArrayHelper::sort($dbItems, [
+	foreach ($db_triggers as $db_trigger) {
+		foreach ($db_trigger['items'] as $item) {
+			if (array_key_exists($item['itemid'], $db_items)) {
+				$db_item = &$db_items[$item['itemid']];
+
+				// a little tricky check for attempt to overwrite active trigger (value=1) with
+				// inactive or active trigger with lower priority.
+				if (!array_key_exists('triggerid', $db_item)
+						|| ($db_item['value'] == TRIGGER_VALUE_FALSE && $db_trigger['value'] == TRIGGER_VALUE_TRUE)
+						|| (($db_item['value'] == TRIGGER_VALUE_FALSE || $db_trigger['value'] == TRIGGER_VALUE_TRUE)
+							&& $db_item['priority'] < $db_trigger['priority'])) {
+					$db_item['triggerid'] = $db_trigger['triggerid'];
+					$db_item['priority'] = $db_trigger['priority'];
+					$db_item['value'] = $db_trigger['value'];
+				}
+
+				unset($db_item);
+			}
+		}
+	}
+
+	$db_items = CMacrosResolverHelper::resolveItemNames($db_items);
+
+	CArrayHelper::sort($db_items, [
 		['field' => 'name_expanded', 'order' => ZBX_SORT_UP],
 		['field' => 'itemid', 'order' => ZBX_SORT_UP]
 	]);
 
 	// fetch latest values
-	$history = Manager::History()->getLast(zbx_toHash($dbItems, 'itemid'), 1, ZBX_HISTORY_PERIOD);
+	$history = Manager::History()->getLast(zbx_toHash($db_items, 'itemid'), 1, ZBX_HISTORY_PERIOD);
 
 	// fetch data for the host JS menu
 	$hosts = API::Host()->get([
 		'output' => ['name', 'hostid', 'status'],
 		'monitored_hosts' => true,
-		'hostids' => $hostIds,
+		'groupids' => $groupids ? $groupids : null,
+		'applicationids' => $applicationids,
 		'with_monitored_items' => true,
 		'preservekeys' => true,
 		'selectGraphs' => API_OUTPUT_COUNT,
@@ -620,10 +934,10 @@ function getItemsDataOverview($hostIds, array $applicationIds = null, $viewMode)
 	$items = [];
 	$item_counter = [];
 	$host_items = [];
-	foreach ($dbItems as $dbItem) {
-		$item_name = $dbItem['name_expanded'];
-		$host_name = $dbItem['hostname'];
-		$hostNames[$dbItem['hostid']] = $host_name;
+	foreach ($db_items as $db_item) {
+		$item_name = $db_item['name_expanded'];
+		$host_name = $db_item['hosts'][0]['name'];
+		$hostNames[$db_item['hostid']] = $host_name;
 
 		if (!array_key_exists($host_name, $item_counter)) {
 			$item_counter[$host_name] = [];
@@ -637,34 +951,42 @@ function getItemsDataOverview($hostIds, array $applicationIds = null, $viewMode)
 			$host_items[$item_name][$host_name] = [];
 		}
 
-		// a little tricky check for attempt to overwrite active trigger (value=1) with
-		// inactive or active trigger with lower priority.
-		if (!array_key_exists($dbItem['itemid'], $host_items[$item_name][$host_name])
-			|| (($host_items[$item_name][$host_name][$dbItem['itemid']]['tr_value'] == TRIGGER_VALUE_FALSE && $dbItem['tr_value'] == TRIGGER_VALUE_TRUE)
-				|| (($host_items[$item_name][$host_name][$dbItem['itemid']]['tr_value'] == TRIGGER_VALUE_FALSE || $dbItem['tr_value'] == TRIGGER_VALUE_TRUE)
-					&& $dbItem['priority'] > $host_items[$item_name][$host_name][$dbItem['itemid']]['severity']))) {
-
-			if (array_key_exists($dbItem['itemid'], $host_items[$item_name][$host_name])) {
-				$item_place = $host_items[$item_name][$host_name][$dbItem['itemid']]['item_place'];
+		if (!array_key_exists($db_item['itemid'], $host_items[$item_name][$host_name])) {
+			if (array_key_exists($db_item['itemid'], $host_items[$item_name][$host_name])) {
+				$item_place = $host_items[$item_name][$host_name][$db_item['itemid']]['item_place'];
 			}
 			else {
 				$item_place = $item_counter[$host_name][$item_name];
 				$item_counter[$host_name][$item_name]++;
 			}
 
-			$items[$item_name][$item_place][$host_name] = [
-				'itemid' => $dbItem['itemid'],
-				'value_type' => $dbItem['value_type'],
-				'value' => isset($history[$dbItem['itemid']]) ? $history[$dbItem['itemid']][0]['value'] : null,
-				'units' => $dbItem['units'],
-				'valuemapid' => $dbItem['valuemapid'],
-				'severity' => $dbItem['priority'],
-				'tr_value' => $dbItem['tr_value'],
-				'triggerid' => $dbItem['triggerid'],
+			$item = [
+				'itemid' => $db_item['itemid'],
+				'value_type' => $db_item['value_type'],
+				'value' => isset($history[$db_item['itemid']]) ? $history[$db_item['itemid']][0]['value'] : null,
+				'units' => $db_item['units'],
+				'valuemapid' => $db_item['valuemapid'],
 				'item_place' => $item_place
 			];
 
-			$host_items[$item_name][$host_name][$dbItem['itemid']] = $items[$item_name][$item_place][$host_name];
+			if (array_key_exists('triggerid', $db_item)) {
+				$item += [
+					'triggerid' => $db_item['triggerid'],
+					'severity' => $db_item['priority'],
+					'tr_value' => $db_item['value']
+				];
+			}
+			else {
+				$item += [
+					'triggerid' => null,
+					'severity' => null,
+					'tr_value' => null
+				];
+			}
+
+			$items[$item_name][$item_place][$host_name] = $item;
+
+			$host_items[$item_name][$host_name][$db_item['itemid']] = $items[$item_name][$item_place][$host_name];
 		}
 	}
 
@@ -1055,6 +1377,8 @@ function checkTimePeriod($period, $now) {
  * @return string
  */
 function getItemDelay($delay, array $flexible_intervals) {
+	$delay = timeUnitToSeconds($delay);
+
 	if ($delay != 0 || !$flexible_intervals) {
 		return $delay;
 	}
@@ -1063,7 +1387,7 @@ function getItemDelay($delay, array $flexible_intervals) {
 
 	foreach ($flexible_intervals as $flexible_interval) {
 		$flexible_interval_parts = explode('/', $flexible_interval);
-		$flexible_delay = (int) $flexible_interval_parts[0];
+		$flexible_delay = timeUnitToSeconds($flexible_interval_parts[0]);
 
 		$min_delay = min($min_delay, $flexible_delay);
 	}
@@ -1299,6 +1623,97 @@ function getParamFieldLabelByType($itemType) {
 	}
 }
 
+/**
+ * Get either one or all item preprocessing types. If grouped set to true, returns group labels. Returns empty string if
+ * no specific type is found.
+ *
+ * Usage examples:
+ *    - get_preprocessing_types()              Returns array as defined.
+ *    - get_preprocessing_types(4)             Returns string: 'Trim'.
+ *    - get_preprocessing_types(<wrong type>)  Returns an empty string: ''.
+ *    - get_preprocessing_types(null, false)   Returns subarrays in one array maintaining index:
+ *                                               [5] => Regular expression
+ *                                               [4] => Trim
+ *                                               [2] => Right trim
+ *                                               [3] => Left trim
+ *                                               [11] => XML XPath
+ *                                               [12] => JSON Path
+ *                                               [1] => Custom multiplier
+ *                                               [9] => Simple change
+ *                                               [10] => Speed per second
+ *                                               [6] => Boolean to decimal
+ *                                               [7] => Octal to decimal
+ *                                               [8] => Hexadecimal to decimal
+ *
+ * @param int  $type     Item preprocessing type.
+ * @param bool $grouped  Group label flag.
+ *
+ * @return mixed
+ */
+function get_preprocessing_types($type = null, $grouped = true) {
+	$groups = [
+		[
+			'label' => _('Text'),
+			'types' => [
+				ZBX_PREPROC_REGSUB => _('Regular expression'),
+				ZBX_PREPROC_TRIM => _('Trim'),
+				ZBX_PREPROC_RTRIM => _('Right trim'),
+				ZBX_PREPROC_LTRIM => _('Left trim')
+			]
+		],
+		[
+			'label' => _('Structured data'),
+			'types' => [
+				ZBX_PREPROC_XPATH => _('XML XPath'),
+				ZBX_PREPROC_JSONPATH => _('JSON Path')
+			]
+		],
+		[
+			'label' => _('Arithmetic'),
+			'types' => [
+				ZBX_PREPROC_MULTIPLIER => _('Custom multiplier')
+			]
+		],
+		[
+			'label' => _x('Change', 'noun'),
+			'types' => [
+				ZBX_PREPROC_DELTA_VALUE => _('Simple change'),
+				ZBX_PREPROC_DELTA_SPEED => _('Change per second')
+			]
+		],
+		[
+			'label' => _('Numeral systems'),
+			'types' => [
+				ZBX_PREPROC_BOOL2DEC => _('Boolean to decimal'),
+				ZBX_PREPROC_OCT2DEC => _('Octal to decimal'),
+				ZBX_PREPROC_HEX2DEC => _('Hexadecimal to decimal')
+			]
+		]
+	];
+
+	if ($type !== null) {
+		foreach ($groups as $group) {
+			if (array_key_exists($type, $group['types'])) {
+				return $group['types'][$type];
+			}
+		}
+
+		return '';
+	}
+	elseif ($grouped) {
+		return $groups;
+	}
+	else {
+		$types = [];
+
+		foreach ($groups as $group) {
+			$types += $group['types'];
+		}
+
+		return $types;
+	}
+}
+
 /*
  * Quoting $param if it contain special characters.
  *
@@ -1315,4 +1730,52 @@ function quoteItemKeyParam($param, $forced = false) {
 	}
 
 	return '"'.str_replace('"', '\\"', $param).'"';
+}
+
+/**
+ * Expands items name and for dependent items master item name.
+ *
+ * @param array                 Array of items.
+ * @param CItem|CItemPrototype  Object capable to provide data for master items.
+ *
+ * @return array
+ */
+function expandItemNamesWithMasterItems($items, $data_provider) {
+	$items = CMacrosResolverHelper::resolveItemNames($items);
+	$itemids = [];
+	$master_itemids = [];
+
+	foreach ($items as $item_index => $item) {
+		if ($item['type'] == ITEM_TYPE_DEPENDENT) {
+			$master_itemids[$item['master_itemid']] = true;
+		}
+		$itemids[$item_index] = $item['itemid'];
+	}
+	$master_itemids = array_diff(array_keys($master_itemids), $itemids);
+
+	if ($master_itemids) {
+		$master_items = $data_provider->get([
+			'output'		=> ['itemid', 'type', 'hostid', 'name', 'key_'],
+			'itemids'		=> $master_itemids,
+			'editable'		=> true,
+			'preservekeys'	=> true
+		]);
+		$master_items = CMacrosResolverHelper::resolveItemNames($master_items);
+	}
+
+	foreach ($items as &$item) {
+		if ($item['type'] == ITEM_TYPE_DEPENDENT) {
+			$master_itemid = $item['master_itemid'];
+			$items_index = array_search($master_itemid, $itemids);
+			$item['master_item'] = [
+				'itemid'		=> $master_itemid,
+				'name_expanded'	=> ($items_index === false)
+									? $master_items[$master_itemid]['name_expanded']
+									: $items[$items_index]['name_expanded']
+			];
+		}
+	}
+	unset($item);
+
+	return $items;
 }

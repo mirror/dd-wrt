@@ -373,7 +373,7 @@ function zbx_num2bitstr($num, $rev = false) {
 	$strbin = '';
 
 	$len = 32;
-	if ($num > 2147483647) {
+	if (bccomp($num, ZBX_MAX_INT32) > 0) {
 		$len = 64;
 	}
 
@@ -401,14 +401,15 @@ function zbx_num2bitstr($num, $rev = false) {
 function str2mem($val) {
 	$val = trim($val);
 	$last = strtolower(substr($val, -1));
+	$val = (int) $val;
 
 	switch ($last) {
 		case 'g':
 			$val *= 1024;
-			/* falls through */
+			// break; is not missing here
 		case 'm':
 			$val *= 1024;
-			/* falls through */
+			// break; is not missing here
 		case 'k':
 			$val *= 1024;
 	}
@@ -619,10 +620,12 @@ function convert_units($options = []) {
 
 	if (in_array($options['units'], $blackList) || (zbx_empty($options['units'])
 			&& ($options['convert'] == ITEM_CONVERT_WITH_UNITS))) {
-		if (abs($options['value']) >= ZBX_UNITS_ROUNDOFF_THRESHOLD) {
-			$options['value'] = round($options['value'], ZBX_UNITS_ROUNDOFF_UPPER_LIMIT);
+		if (preg_match('/^\-?\d+\.\d+$/', $options['value'])) {
+			if (abs($options['value']) >= ZBX_UNITS_ROUNDOFF_THRESHOLD) {
+				$options['value'] = round($options['value'], ZBX_UNITS_ROUNDOFF_UPPER_LIMIT);
+			}
+			$options['value'] = sprintf('%.'.ZBX_UNITS_ROUNDOFF_LOWER_LIMIT.'f', $options['value']);
 		}
-		$options['value'] = sprintf('%.'.ZBX_UNITS_ROUNDOFF_LOWER_LIMIT.'f', $options['value']);
 		$options['value'] = preg_replace('/^([\-0-9]+)(\.)([0-9]*)[0]+$/U', '$1$2$3', $options['value']);
 		$options['value'] = rtrim($options['value'], '.');
 
@@ -736,6 +739,48 @@ function convert_units($options = []) {
 	return trim(sprintf('%s %s%s', $options['length']
 		? sprintf('%.'.$options['length'].'f',$options['value'])
 		: $options['value'], $desc, $options['units']));
+}
+
+/**
+ * Convert time format with suffixes to seconds.
+ * Examples:
+ *		10m = 600
+ *		3d = 10800
+ *
+ * @param string $time
+ *
+ * @return int
+ */
+function timeUnitToSeconds($time) {
+	preg_match('/^((\d)+)(['.ZBX_TIME_SUFFIXES.'])?$/', $time, $matches);
+
+	if (array_key_exists(3, $matches)) {
+		$suffix = $matches[3];
+		$time = $matches[1];
+
+		switch ($suffix) {
+			case 's':
+				$sec = $time;
+				break;
+			case 'm':
+				$sec = bcmul($time, SEC_PER_MIN);
+				break;
+			case 'h':
+				$sec = bcmul($time, SEC_PER_HOUR);
+				break;
+			case 'd':
+				$sec = bcmul($time, SEC_PER_DAY);
+				break;
+			case 'w':
+				$sec = bcmul($time, SEC_PER_WEEK);
+				break;
+		}
+	}
+	else {
+		$sec = $matches[0];
+	}
+
+	return $sec;
 }
 
 /**
@@ -1816,8 +1861,26 @@ function show_messages($good = false, $okmsg = null, $errmsg = null) {
 
 	$title = $good ? $okmsg : $errmsg;
 	$messages = isset($ZBX_MESSAGES) ? $ZBX_MESSAGES : [];
-
 	$ZBX_MESSAGES = [];
+
+	if (!ZBX_SHOW_SQL_ERRORS && CWebUser::getType() != USER_TYPE_SUPER_ADMIN && !CWebUser::getDebugMode()) {
+		$filtered_messages = [];
+		$generic_exists = false;
+
+		foreach ($messages as $message) {
+			if (array_key_exists('sql_error', $message) && $message['sql_error'] === true) {
+				if (!$generic_exists) {
+					$message['message'] = _('SQL error. Please contact Zabbix administrator.');
+					$filtered_messages[] = $message;
+					$generic_exists = true;
+				}
+			}
+			else {
+				$filtered_messages[] = $message;
+			}
+		}
+		$messages = $filtered_messages;
+	}
 
 	switch ($page['type']) {
 		case PAGE_TYPE_IMAGE:
@@ -1929,6 +1992,34 @@ function error($msgs) {
 	}
 }
 
+/**
+ * Add multiple errors under single header.
+ *
+ * @param array  $data
+ * @param string $data['header']  common header for all error messages
+ * @param array  $data['msgs']    array of error messages
+ */
+function error_group($data) {
+	foreach (zbx_toArray($data['msgs']) as $msg) {
+		error($data['header'] . ' ' . $msg);
+	}
+}
+
+/**
+ * Add SQL error message to global messages array.
+ *
+ * @param string $msg		Error message text.
+ */
+function sqlError($msg) {
+	global $ZBX_MESSAGES;
+
+	if (!isset($ZBX_MESSAGES)) {
+		$ZBX_MESSAGES = [];
+	}
+
+	$ZBX_MESSAGES[] = ['type' => 'error', 'message' => $msg, 'sql_error' => true];
+}
+
 function clear_messages($count = null) {
 	global $ZBX_MESSAGES;
 
@@ -1955,25 +2046,30 @@ function fatal_error($msg) {
 
 function parse_period($str) {
 	$out = null;
-	$str = trim($str, ';');
-	$periods = explode(';', $str);
-	foreach ($periods as $period) {
-		if (!preg_match('/^([1-7])-([1-7]),([0-9]{1,2}):([0-9]{1,2})-([0-9]{1,2}):([0-9]{1,2})$/', $period, $arr)) {
+	$time_periods_parser = new CTimePeriodsParser();
+
+	if ($time_periods_parser->parse($str) != CParser::PARSE_SUCCESS) {
+		return null;
+	}
+
+	foreach ($time_periods_parser->getPeriods() as $period) {
+		if (!preg_match('/^([1-7])-([1-7]),([0-9]{1,2}):([0-9]{1,2})-([0-9]{1,2}):([0-9]{1,2})$/', $period, $matches)) {
 			return null;
 		}
 
-		for ($i = $arr[1]; $i <= $arr[2]; $i++) {
+		for ($i = $matches[1]; $i <= $matches[2]; $i++) {
 			if (!isset($out[$i])) {
 				$out[$i] = [];
 			}
 			array_push($out[$i], [
-				'start_h' => $arr[3],
-				'start_m' => $arr[4],
-				'end_h' => $arr[5],
-				'end_m' => $arr[6]
+				'start_h' => $matches[3],
+				'start_m' => $matches[4],
+				'end_h' => $matches[5],
+				'end_m' => $matches[6]
 			]);
 		}
 	}
+
 	return $out;
 }
 
@@ -1981,158 +2077,155 @@ function get_status() {
 	global $ZBX_SERVER, $ZBX_SERVER_PORT;
 
 	$status = [
-		'triggers_count' => 0,
-		'triggers_count_enabled' => 0,
+		'is_running' => false,
+		'has_status' => false
+	];
+
+	$server = new CZabbixServer($ZBX_SERVER, $ZBX_SERVER_PORT, ZBX_SOCKET_TIMEOUT, ZBX_SOCKET_BYTES_LIMIT);
+	$status['is_running'] = $server->isRunning(get_cookie('zbx_sessionid'));
+
+	if ($status['is_running'] === false) {
+		return $status;
+	}
+
+	$server = new CZabbixServer($ZBX_SERVER, $ZBX_SERVER_PORT, 15, ZBX_SOCKET_BYTES_LIMIT);
+	$server_status = $server->getStatus(get_cookie('zbx_sessionid'));
+	$status['has_status'] = (bool) $server_status;
+
+	if ($server_status === false) {
+		error($server->getError());
+		return $status;
+	}
+
+	$status += [
 		'triggers_count_disabled' => 0,
 		'triggers_count_off' => 0,
 		'triggers_count_on' => 0,
-		'items_count' => 0,
 		'items_count_monitored' => 0,
 		'items_count_disabled' => 0,
 		'items_count_not_supported' => 0,
-		'hosts_count' => 0,
 		'hosts_count_monitored' => 0,
 		'hosts_count_not_monitored' => 0,
 		'hosts_count_template' => 0,
-		'users_online' => 0,
-		'qps_total' => 0
+		'users_count' => 0,
+		'users_online' => 0
 	];
 
-	// server
-	$zabbixServer = new CZabbixServer($ZBX_SERVER, $ZBX_SERVER_PORT, ZBX_SOCKET_TIMEOUT, 0);
-	$status['zabbix_server'] = $zabbixServer->isRunning() ? _('Yes') : _('No');
+	// hosts
+	foreach ($server_status['template stats'] as $stats) {
+		$status['hosts_count_template'] += $stats['count'];
+	}
+
+	foreach ($server_status['host stats'] as $stats) {
+		if ($stats['attributes']['proxyid'] == 0) {
+			switch ($stats['attributes']['status']) {
+				case HOST_STATUS_MONITORED:
+					$status['hosts_count_monitored'] += $stats['count'];
+					break;
+
+				case HOST_STATUS_NOT_MONITORED:
+					$status['hosts_count_not_monitored'] += $stats['count'];
+					break;
+			}
+		}
+	}
+	$status['hosts_count'] = $status['hosts_count_monitored'] + $status['hosts_count_not_monitored']
+			+ $status['hosts_count_template'];
+
+	// items
+	foreach ($server_status['item stats'] as $stats) {
+		if ($stats['attributes']['proxyid'] == 0) {
+			switch ($stats['attributes']['status']) {
+				case ITEM_STATUS_ACTIVE:
+					if (array_key_exists('state', $stats['attributes'])) {
+						switch ($stats['attributes']['state']) {
+							case ITEM_STATE_NORMAL:
+								$status['items_count_monitored'] += $stats['count'];
+								break;
+
+							case ITEM_STATE_NOTSUPPORTED:
+								$status['items_count_not_supported'] += $stats['count'];
+								break;
+						}
+					}
+					break;
+
+				case ITEM_STATUS_DISABLED:
+					$status['items_count_disabled'] += $stats['count'];
+					break;
+			}
+		}
+	}
+	$status['items_count'] = $status['items_count_monitored'] + $status['items_count_disabled']
+			+ $status['items_count_not_supported'];
 
 	// triggers
-	$dbTriggers = DBselect(
-		'SELECT COUNT(DISTINCT t.triggerid) AS cnt,t.status,t.value'.
-			' FROM triggers t'.
-			' WHERE NOT EXISTS ('.
-				'SELECT f.functionid FROM functions f'.
-					' JOIN items i ON f.itemid=i.itemid'.
-					' JOIN hosts h ON i.hostid=h.hostid'.
-					' WHERE f.triggerid=t.triggerid AND (i.status<>'.ITEM_STATUS_ACTIVE.' OR h.status<>'.HOST_STATUS_MONITORED.')'.
-				')'.
-			' AND t.flags IN ('.ZBX_FLAG_DISCOVERY_NORMAL.','.ZBX_FLAG_DISCOVERY_CREATED.')'.
-			' GROUP BY t.status,t.value'
-		);
-	while ($dbTrigger = DBfetch($dbTriggers)) {
-		switch ($dbTrigger['status']) {
+	foreach ($server_status['trigger stats'] as $stats) {
+		switch ($stats['attributes']['status']) {
 			case TRIGGER_STATUS_ENABLED:
-				switch ($dbTrigger['value']) {
-					case TRIGGER_VALUE_FALSE:
-						$status['triggers_count_off'] = $dbTrigger['cnt'];
-						break;
-					case TRIGGER_VALUE_TRUE:
-						$status['triggers_count_on'] = $dbTrigger['cnt'];
-						break;
+				if (array_key_exists('value', $stats['attributes'])) {
+					switch ($stats['attributes']['value']) {
+						case TRIGGER_VALUE_FALSE:
+							$status['triggers_count_off'] += $stats['count'];
+							break;
+
+						case TRIGGER_VALUE_TRUE:
+							$status['triggers_count_on'] += $stats['count'];
+							break;
+					}
 				}
 				break;
+
 			case TRIGGER_STATUS_DISABLED:
-				$status['triggers_count_disabled'] += $dbTrigger['cnt'];
+				$status['triggers_count_disabled'] += $stats['count'];
 				break;
 		}
 	}
 	$status['triggers_count_enabled'] = $status['triggers_count_off'] + $status['triggers_count_on'];
 	$status['triggers_count'] = $status['triggers_count_enabled'] + $status['triggers_count_disabled'];
 
-	// items
-	$dbItems = DBselect(
-		'SELECT COUNT(i.itemid) AS cnt,i.status,i.state'.
-				' FROM items i'.
-				' INNER JOIN hosts h ON i.hostid=h.hostid'.
-				' WHERE h.status='.HOST_STATUS_MONITORED.
-					' AND i.flags IN ('.ZBX_FLAG_DISCOVERY_NORMAL.','.ZBX_FLAG_DISCOVERY_CREATED.')'.
-					' AND i.type<>'.ITEM_TYPE_HTTPTEST.
-				' GROUP BY i.status,i.state');
-	while ($dbItem = DBfetch($dbItems)) {
-		if ($dbItem['status'] == ITEM_STATUS_ACTIVE) {
-			if ($dbItem['state'] == ITEM_STATE_NORMAL) {
-				$status['items_count_monitored'] = $dbItem['cnt'];
-			}
-			else {
-				$status['items_count_not_supported'] = $dbItem['cnt'];
-			}
-		}
-		elseif ($dbItem['status'] == ITEM_STATUS_DISABLED) {
-			$status['items_count_disabled'] += $dbItem['cnt'];
-		}
-	}
-	$status['items_count'] = $status['items_count_monitored'] + $status['items_count_disabled']
-			+ $status['items_count_not_supported'];
-
-	// hosts
-	$dbHosts = DBselect(
-		'SELECT COUNT(*) AS cnt,h.status'.
-		' FROM hosts h'.
-		' WHERE '.dbConditionInt('h.status', [
-				HOST_STATUS_MONITORED, HOST_STATUS_NOT_MONITORED, HOST_STATUS_TEMPLATE
-			]).
-			' AND '.dbConditionInt('h.flags', [ZBX_FLAG_DISCOVERY_NORMAL, ZBX_FLAG_DISCOVERY_CREATED]).
-		' GROUP BY h.status');
-	while ($dbHost = DBfetch($dbHosts)) {
-		switch ($dbHost['status']) {
-			case HOST_STATUS_MONITORED:
-				$status['hosts_count_monitored'] = $dbHost['cnt'];
-				break;
-			case HOST_STATUS_NOT_MONITORED:
-				$status['hosts_count_not_monitored'] = $dbHost['cnt'];
-				break;
-			case HOST_STATUS_TEMPLATE:
-				$status['hosts_count_template'] = $dbHost['cnt'];
-				break;
-		}
-	}
-	$status['hosts_count'] = $status['hosts_count_monitored'] + $status['hosts_count_not_monitored']
-			+ $status['hosts_count_template'];
-
 	// users
-	$row = DBfetch(DBselect('SELECT COUNT(*) AS usr_cnt FROM users u'));
+	foreach ($server_status['user stats'] as $stats) {
+		switch ($stats['attributes']['status']) {
+			case ZBX_SESSION_ACTIVE:
+				$status['users_online'] += $stats['count'];
+				break;
 
-	$status['users_count'] = $row['usr_cnt'];
-	$status['users_online'] = 0;
-
-	$db_sessions = DBselect(
-		'SELECT s.userid,s.status,MAX(s.lastaccess) AS lastaccess'.
-		' FROM sessions s'.
-		' WHERE s.status='.ZBX_SESSION_ACTIVE.
-		' GROUP BY s.userid,s.status'
-	);
-	while ($session = DBfetch($db_sessions)) {
-		if (($session['lastaccess'] + ZBX_USER_ONLINE_TIME) >= time()) {
-			$status['users_online']++;
+			case ZBX_SESSION_PASSIVE:
+				$status['users_count'] += $stats['count'];
+				break;
 		}
 	}
+	$status['users_count'] += $status['users_online'];
 
-	// comments: !!! Don't forget sync code with C !!!
-	$row = DBfetch(DBselect(
-		'SELECT SUM(CAST(1.0/i.delay AS DECIMAL(20,10))) AS qps'.
-		' FROM items i,hosts h'.
-		' WHERE i.status='.ITEM_STATUS_ACTIVE.
-		' AND i.hostid=h.hostid'.
-		' AND h.status='.HOST_STATUS_MONITORED.
-		' AND i.delay<>0'.
-		' AND i.flags<>'.ZBX_FLAG_DISCOVERY_PROTOTYPE
-	));
-	$status['qps_total'] = round($row['qps'], 2);
+	// performance
+	if (array_key_exists('required performance', $server_status)) {
+		$status['vps_total'] = 0;
+
+		foreach ($server_status['required performance'] as $stats) {
+			if ($stats['attributes']['proxyid'] == 0) {
+				$status['vps_total'] += $stats['count'];
+			}
+		}
+	}
 
 	return $status;
 }
 
-function set_image_header($format = null) {
+function set_image_header() {
 	global $IMAGE_FORMAT_DEFAULT;
 
-	if (is_null($format)) {
-		$format = $IMAGE_FORMAT_DEFAULT;
-	}
+	switch ($IMAGE_FORMAT_DEFAULT) {
+		case IMAGE_FORMAT_JPEG:
+			header('Content-type: image/jpeg');
+			break;
 
-	if (IMAGE_FORMAT_JPEG == $format) {
-		header('Content-type: image/jpeg');
-	}
-	if (IMAGE_FORMAT_TEXT == $format) {
-		header('Content-type: text/html');
-	}
-	else {
-		header('Content-type: image/png');
+		case IMAGE_FORMAT_TEXT:
+			header('Content-type: text/html');
+			break;
+
+		default:
+			header('Content-type: image/png');
 	}
 
 	header('Expires: Mon, 17 Aug 1998 12:51:50 GMT');
@@ -2198,6 +2291,23 @@ function hasErrorMesssages() {
 }
 
 /**
+ * Get all messages as array.
+ *
+ * @return array
+ */
+function getMessagesAsArray() {
+	global $ZBX_MESSAGES;
+
+	$result = [];
+	if (isset($ZBX_MESSAGES)) {
+		foreach ($ZBX_MESSAGES as $message) {
+			$result[] = $message['message'];
+		}
+	}
+	return $result;
+}
+
+/**
  * Clears table rows selection's cookies.
  *
  * @param string $cookieId		parent ID, is used as cookie suffix
@@ -2209,69 +2319,51 @@ function uncheckTableRows($cookieId = null) {
 }
 
 /**
+ * Trim each element of the script path. For example, " a / b / c d " => "a/b/c d"
+ *
+ * @param string $name
+ *
+ * @return string
+ */
+function trimPath($name) {
+	$path = splitPath($name);
+	$path = array_map('trim', $path);
+	$path = str_replace(['\\', '/'], ['\\\\', '\\/'], $path);
+	return implode('/', $path);
+}
+
+/**
  * Splitting string using slashes with escape backslash support and non-pair backslash cleanup.
  *
- * @param string $path					String path to parse.
- * @param bool   $stripSlashes			Remove escaped slashes from the path pieces.
- * @param bool   $cleanupBackslashes	Cleanup invalid backslash combinations.
+ * @param string $path
  *
  * @return array
  */
-function splitPath($path, $stripSlashes = true, $cleanupBackslashes = false) {
-	$position = 0;
-	$escapeCharacters = '';
-	$pathItemsArray = [];
-	$pathItemString = '';
+function splitPath($path) {
+	$path_items = [];
+	$path_item = '';
 
-	for ($stringLength = strlen($path); $position < $stringLength; ++$position) {
-		// Determine how many escape characters we already have in the backlog.
-		$escapeCharacterCount = strlen($escapeCharacters);
+	for ($i = 0; isset($path[$i]); $i++) {
+		switch ($path[$i]) {
+			case '/':
+				$path_items[] = $path_item;
+				$path_item = '';
+				break;
 
-		if ($path[$position] === '/') {
-			// If we have no escape chars previously - save item into the array and move on.
-			if ($escapeCharacterCount == 0) {
-				$pathItemsArray[] = $pathItemString;
-				$escapeCharacters = '';
-				$pathItemString = '';
-				continue;
-			}
+			case '\\':
+				if (isset($path[++$i])) {
+					$path_item .= $path[$i];
+				}
+				break;
 
-			// We have a backslash before the / - keep it as part of the item and clean escape char buffer.
-			$pathItemString .= $escapeCharacters.$path[$position];
-			$escapeCharacters = '';
-		}
-		elseif ($cleanupBackslashes && $path[$position] === '\\') {
-
-			/*
-			 * If we had a backslash before - this is an escaped backslash, keep it and empty char backlog. This way
-			 * we save only paired backslashes.
-			 */
-			if ($escapeCharacterCount == 1) {
-				$pathItemString .= $escapeCharacters.$path[$position];
-				$escapeCharacters = '';
-			}
-			else {
-				// It is a first backslash - add it to the backlog.
-				$escapeCharacters .= $path[$position];
-			}
-		}
-		else {
-			// A regular character - save it and move on. If previous char was a backslash - it is dropped.
-			$pathItemString .= $path[$position];
-			$escapeCharacters = '';
+			default:
+				$path_item .= $path[$i];
 		}
 	}
 
-	// Save the path tail.
-	if (strlen($pathItemString) != 0) {
-		$pathItemsArray[] = $pathItemString;
-	}
+	$path_items[] = $path_item;
 
-	if ($stripSlashes) {
-		$pathItemsArray = array_map('stripslashes', $pathItemsArray);
-	}
-
-	return $pathItemsArray;
+	return $path_items;
 }
 
 /**
@@ -2295,6 +2387,35 @@ function get_color($image, $color, $alpha = 0) {
 }
 
 /**
+ * Get graphic theme based on user configuration.
+ *
+ * @return array
+ */
+function getUserGraphTheme() {
+	$themes = DB::find('graph_theme', [
+		'theme' => getUserTheme(CWebUser::$data)
+	]);
+
+	if ($themes) {
+		return $themes[0];
+	}
+
+	return [
+		'theme' => 'blue-theme',
+		'textcolor' => '1F2C33',
+		'highlightcolor' => 'E33734',
+		'backgroundcolor' => 'FFFFFF',
+		'graphcolor' => 'FFFFFF',
+		'gridcolor' => 'CCD5D9',
+		'maingridcolor' => 'ACBBC2',
+		'gridbordercolor' => 'ACBBC2',
+		'nonworktimecolor' => 'EBEBEB',
+		'leftpercentilecolor' => '429E47',
+		'righttpercentilecolor' => 'E33734'
+	];
+}
+
+/**
  * Custom error handler for PHP errors.
  *
  * @param int     $errno Level of the error raised.
@@ -2310,4 +2431,198 @@ function zbx_err_handler($errno, $errstr, $errfile, $errline) {
 
 	// Don't show the call to this handler function.
 	error($errstr.' ['.CProfiler::getInstance()->formatCallStack().']');
+}
+
+/**
+ * Creates an array with all possible variations of time units.
+ * For example: '14d' => ['1209600', '1209600s', '20160m', '336h', '14d', '2w']
+ *
+ * @param string|array $values
+ *
+ * @return array
+ */
+function getTimeUnitFilters($values) {
+	if (is_array($values)) {
+		$res = [];
+
+		foreach ($values as $value) {
+			$res = array_merge($res, getTimeUnitFilters($value));
+		}
+
+		return array_unique($res, SORT_STRING);
+	}
+
+	$simple_interval_parser = new CSimpleIntervalParser();
+
+	if ($simple_interval_parser->parse($values) != CParser::PARSE_SUCCESS) {
+		return [$values];
+	}
+
+	$sec = timeUnitToSeconds($values);
+
+	$res = [$sec, $sec.'s'];
+
+	if (bcmod($sec, SEC_PER_MIN) == 0) {
+		$res[] = bcdiv($sec, SEC_PER_MIN, 0).'m';
+	}
+
+	if (bcmod($sec, SEC_PER_HOUR) == 0) {
+		$res[] = bcdiv($sec, SEC_PER_HOUR, 0).'h';
+	}
+
+	if (bcmod($sec, SEC_PER_DAY) == 0) {
+		$res[] = bcdiv($sec, SEC_PER_DAY, 0).'d';
+	}
+
+	if (bcmod($sec, SEC_PER_WEEK) == 0) {
+		$res[] = bcdiv($sec, SEC_PER_WEEK, 0).'w';
+	}
+
+	return $res;
+}
+
+/**
+ * Creates SQL filter to search all possible variations of time units.
+ *
+ * @param string       $field_name
+ * @param string|array $values
+ *
+ * @return string
+ */
+function makeUpdateIntervalFilter($field_name, $values) {
+	$filters = [];
+
+	foreach (getTimeUnitFilters($values) as $filter) {
+		$filter = str_replace("!", "!!", $filter);
+		$filter = str_replace("%", "!%", $filter);
+		$filter = str_replace("_", "!_", $filter);
+
+		$filters[] = $field_name.' LIKE '.zbx_dbstr($filter).' ESCAPE '.zbx_dbstr('!');
+		$filters[] = $field_name.' LIKE '.zbx_dbstr($filter.';%').' ESCAPE '.zbx_dbstr('!');
+	}
+
+	$res = $filters ? implode(' OR ', $filters) : '';
+
+	if (count($filters) > 1) {
+		$res = '('.$res.')';
+	}
+
+	return $res;
+}
+
+/**
+ * Calculate timeline data
+ *
+ * @param array		$options
+ * @param string	$options['profileIdx']
+ * @param int		$options['profileIdx2']
+ * @param boolean	$options['updateProfile']
+ * @param int		$options['period']
+ * @param string	$options['stime']
+ * @param int		$options['isNow']
+ *
+ * @return array
+ */
+function calculateTime(array $options = []) {
+	$defOptions = [
+		'updateProfile' => false,
+		'profileIdx' => null,
+		'profileIdx2' => 0,
+		'period' => null,
+		'stime' => null,
+		'isNow' => null
+	];
+	$options = zbx_array_merge($defOptions, $options);
+
+	if ($options['profileIdx'] === '') {
+		$options['profileIdx'] = $defOptions['profileIdx'];
+	}
+	if ($options['profileIdx2'] === null || $options['profileIdx2'] === '') {
+		$options['profileIdx2'] = $defOptions['profileIdx2'];
+	}
+	if ($options['stime'] === '') {
+		$options['stime'] = $defOptions['stime'];
+	}
+
+	if ($options['profileIdx'] === null) {
+		$options['updateProfile'] = false;
+	}
+
+	// period
+	if ($options['period'] === null) {
+		$options['period'] = ($options['profileIdx'] !== null)
+			? CProfile::get($options['profileIdx'].'.period', ZBX_PERIOD_DEFAULT, $options['profileIdx2'])
+			: ZBX_PERIOD_DEFAULT;
+	}
+	else {
+		if ($options['period'] < ZBX_MIN_PERIOD) {
+			error(_n('Minimum time period to display is %1$s minute.',
+				'Minimum time period to display is %1$s minutes.',
+				(int) ZBX_MIN_PERIOD / SEC_PER_MIN
+			));
+			$options['period'] = ZBX_MIN_PERIOD;
+		}
+		elseif ($options['period'] > ZBX_MAX_PERIOD) {
+			error(_n('Maximum time period to display is %1$s day.',
+				'Maximum time period to display is %1$s days.',
+				(int) ZBX_MAX_PERIOD / SEC_PER_DAY
+			));
+			$options['period'] = ZBX_MAX_PERIOD;
+		}
+	}
+
+	$time = time();
+	$usertime = null;
+
+	// isNow
+	if ($options['isNow'] === null) {
+		$options['isNow'] = ($options['stime'] !== null)
+			? 0
+			: ($options['profileIdx'] !== null)
+				? CProfile::get($options['profileIdx'].'.isnow', 1, $options['profileIdx2'])
+				: 1;
+	}
+
+	// stime
+	if ($options['isNow'] == 1) {
+		$options['stime'] = date(TIMESTAMP_FORMAT, $time - $options['period']);
+		$usertime = date(TIMESTAMP_FORMAT, $time);
+	}
+	else {
+		if ($options['stime'] === null) {
+			$options['stime'] = CProfile::get($options['profileIdx'].'.stime', null, $options['profileIdx2']);
+
+			if ($options['stime'] === null) {
+				$options['isNow'] = 1;
+				$options['stime'] = date(TIMESTAMP_FORMAT, $time - $options['period']);
+			}
+		}
+
+		$stimeUnix = zbxDateToTime($options['stime']);
+
+		if (zbxAddSecondsToUnixtime($options['period'], $stimeUnix) >= $time) {
+			$options['isNow'] = 1;
+			$options['stime'] = date(TIMESTAMP_FORMAT, $time - $options['period']);
+			$usertime = date(TIMESTAMP_FORMAT, $time);
+		}
+		else {
+			$usertime = date(TIMESTAMP_FORMAT, zbxAddSecondsToUnixtime($options['period'], $stimeUnix));
+		}
+	}
+
+	if ($options['updateProfile']) {
+		CProfile::update($options['profileIdx'].'.period', $options['period'], PROFILE_TYPE_INT,
+			$options['profileIdx2']
+		);
+		CProfile::update($options['profileIdx'].'.stime', $options['stime'], PROFILE_TYPE_STR, $options['profileIdx2']);
+		CProfile::update($options['profileIdx'].'.isnow', $options['isNow'], PROFILE_TYPE_INT, $options['profileIdx2']);
+	}
+
+	return [
+		'period' => $options['period'],
+		'stime' => date(TIMESTAMP_FORMAT, zbxDateToTime($options['stime'])),
+		'starttime' => date(TIMESTAMP_FORMAT, $time - ZBX_MAX_PERIOD),
+		'usertime' => $usertime,
+		'isNow' => $options['isNow']
+	];
 }

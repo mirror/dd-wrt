@@ -46,10 +46,10 @@ $fields = [
 	'lang' =>				[T_ZBX_STR, O_OPT, null, null, null],
 	'theme' =>				[T_ZBX_STR, O_OPT, null, IN('"'.implode('","', $themes).'"'), 'isset({update})'],
 	'autologin' =>			[T_ZBX_INT, O_OPT, null, IN('1'), null],
-	'autologout' =>	[T_ZBX_INT, O_OPT, null, BETWEEN(90, 10000), null, _('Auto-logout (min 90 seconds)')],
+	'autologout' =>			[T_ZBX_STR, O_OPT, null, null, null, _('Auto-logout')],
 	'autologout_visible' =>	[T_ZBX_STR, O_OPT, null, IN('1'), null],
 	'url' =>				[T_ZBX_STR, O_OPT, null, null, 'isset({update})'],
-	'refresh' => [T_ZBX_INT, O_OPT, null, BETWEEN(0, SEC_PER_HOUR), 'isset({update})', _('Refresh (in seconds)')],
+	'refresh' =>			[T_ZBX_STR, O_OPT, null, null, 'isset({update})', _('Refresh')],
 	'rows_per_page' => [T_ZBX_INT, O_OPT, null, BETWEEN(1, 999999), 'isset({update})', _('Rows per page')],
 	'change_password' =>	[T_ZBX_STR, O_OPT, null, null, null],
 	'user_medias' =>		[T_ZBX_STR, O_OPT, null, NOT_EMPTY, null],
@@ -119,18 +119,33 @@ elseif (hasRequest('update')) {
 		show_error_message(_('Password should not be empty'));
 	}
 	else {
-		$user = [];
-		$user['userid'] = CWebUser::$data['userid'];
-		$user['alias'] = CWebUser::$data['alias'];
-		$user['passwd'] = getRequest('password1');
-		$user['url'] = getRequest('url');
-		$user['autologin'] = getRequest('autologin', 0);
-		$user['autologout'] = hasRequest('autologout_visible') ? getRequest('autologout') : 0;
-		$user['theme'] = getRequest('theme');
-		$user['refresh'] = getRequest('refresh');
-		$user['rows_per_page'] = getRequest('rows_per_page');
-		$user['user_groups'] = null;
-		$user['user_medias'] = getRequest('user_medias', []);
+		$user = [
+			'userid' => CWebUser::$data['userid'],
+			'url' => getRequest('url'),
+			'autologin' => getRequest('autologin', 0),
+			'autologout' => hasRequest('autologout_visible') ? getRequest('autologout') : '0',
+			'theme' => getRequest('theme'),
+			'refresh' => getRequest('refresh'),
+			'rows_per_page' => getRequest('rows_per_page')
+		];
+
+		if (hasRequest('password1')) {
+			$user['passwd'] = getRequest('password1');
+		}
+
+		if (CWebUser::$data['type'] > USER_TYPE_ZABBIX_USER) {
+			$user['user_medias'] = [];
+
+			foreach (getRequest('user_medias', []) as $media) {
+				$user['user_medias'][] = [
+					'mediatypeid' => $media['mediatypeid'],
+					'sendto' => $media['sendto'],
+					'active' => $media['active'],
+					'severity' => $media['severity'],
+					'period' => $media['period']
+				];
+			}
+		}
 
 		if (hasRequest('lang')) {
 			$user['lang'] = getRequest('lang');
@@ -148,29 +163,13 @@ elseif (hasRequest('update')) {
 		}
 
 		DBstart();
-		updateMessageSettings($messages);
+		$result = updateMessageSettings($messages);
 
-		$result = API::User()->updateProfile($user);
-
-		if ($result && CwebUser::$data['type'] > USER_TYPE_ZABBIX_USER) {
-			$result = API::User()->updateMedia([
-				'users' => $user,
-				'medias' => $user['user_medias']
-			]);
-		}
+		$result = $result && (bool) API::User()->update($user);
 
 		$result = DBend($result);
-		if (!$result) {
-			error(API::User()->resetErrors());
-		}
 
 		if ($result) {
-			DBstart();
-			add_audit(AUDIT_ACTION_UPDATE, AUDIT_RESOURCE_USER,
-				'User alias ['.CWebUser::$data['alias'].'] Name ['.CWebUser::$data['name'].']'.
-				' Surname ['.CWebUser::$data['surname'].'] profile id ['.CWebUser::$data['userid'].']'
-			);
-			DBend(true);
 			ob_end_clean();
 
 			redirect(ZBX_DEFAULT_URL);
@@ -195,7 +194,6 @@ $data['surname'] = CWebUser::$data['surname'];
 $data['alias'] = CWebUser::$data['alias'];
 $data['form'] = getRequest('form');
 $data['form_refresh'] = getRequest('form_refresh', 0);
-$data['autologout'] = getRequest('autologout');
 
 // render view
 $usersView = new CView('administration.users.edit', $data);

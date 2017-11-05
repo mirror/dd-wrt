@@ -19,13 +19,21 @@
 **/
 
 
-$table = make_system_status($data['filter'], 'zabbix.php?action=dashboard.view');
+$backurl = (new CUrl('zabbix.php'))
+	->setArgument('action', 'dashboard.view')
+	->setArgument('fullscreen', $data['fullscreen'] ? '1' : null);
+
+$table = makeSystemStatus($data['filter'], $data['data'], $data['config'], $backurl->getUrl(), $data['fullscreen']);
 
 $output = [
-	'header' => _('System status'),
-	'body' => (new CDiv([getMessages(), $table]))->toString(),
-	'footer' => (new CListItem(_s('Updated: %s', zbx_date2str(TIME_FORMAT_SECONDS))))->toString()
+	'header' => $data['name'],
+	'body' => $table->toString(),
+	'footer' => (new CList([_s('Updated: %s', zbx_date2str(TIME_FORMAT_SECONDS))]))->toString()
 ];
+
+if (($messages = getMessages()) !== null) {
+	$output['messages'] = $messages->toString();
+}
 
 if ($data['user']['debug_mode'] == GROUP_DEBUG_MODE_ENABLED) {
 	CProfiler::getInstance()->stop();

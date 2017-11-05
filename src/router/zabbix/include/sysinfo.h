@@ -86,6 +86,7 @@ do									\
 	if ((res)->type & AR_LOG)					\
 	{								\
 		zbx_log_free((res)->log);				\
+		(res)->log = NULL;					\
 		(res)->type &= ~AR_LOG;					\
 	}								\
 }									\
@@ -160,6 +161,8 @@ extern int	CONFIG_UNSAFE_USER_PARAMETERS;
 #define ZBX_PROC_STAT_RUN	1
 #define ZBX_PROC_STAT_SLEEP	2
 #define ZBX_PROC_STAT_ZOMB	3
+#define ZBX_PROC_STAT_DISK	4
+#define ZBX_PROC_STAT_TRACE	5
 
 #define ZBX_DO_SUM		0
 #define ZBX_DO_MAX		1
@@ -212,7 +215,7 @@ int	parse_item_key(const char *itemkey, AGENT_REQUEST *request);
 void	unquote_key_param(char *param);
 int	quote_key_param(char **param, int forced);
 
-int	set_result_type(AGENT_RESULT *result, int value_type, int data_type, char *c);
+int	set_result_type(AGENT_RESULT *result, int value_type, char *c);
 void	set_result_meta(AGENT_RESULT *result, zbx_uint64_t lastlogsize, int mtime);
 
 #ifdef HAVE_KSTAT_H

@@ -107,9 +107,7 @@ static int	calcitem_parse_expression(DC_ITEM *dc_item, expression_t *exp, char *
 
 		/* extract the first function parameter and <host:>key reference from it */
 
-		e[par_r] = '\0';
 		zbx_function_param_parse(e + par_l + 1, &param_pos, &param_len, &sep_pos);
-		e[par_r] = ')';
 
 		zbx_free(buf);
 		buf = zbx_function_param_unquote_dyn(e + par_l + 1 + param_pos, param_len, &quoted);
@@ -152,8 +150,8 @@ static int	calcitem_parse_expression(DC_ITEM *dc_item, expression_t *exp, char *
 
 	zabbix_log(LOG_LEVEL_DEBUG, "%s() expression:'%s'", __function_name, exp->exp);
 
-	if (SUCCEED == substitute_simple_macros(NULL, NULL, NULL, NULL, NULL, &dc_item->host, NULL, NULL, &exp->exp,
-			MACRO_TYPE_ITEM_EXPRESSION, error, max_error_len))
+	if (SUCCEED == substitute_simple_macros(NULL, NULL, NULL, NULL, NULL, &dc_item->host, NULL, NULL, NULL,
+			&exp->exp, MACRO_TYPE_ITEM_EXPRESSION, error, max_error_len))
 	{
 		ret = SUCCEED;
 	}

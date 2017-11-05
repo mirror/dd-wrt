@@ -50,7 +50,10 @@ if (!$service) {
 /*
  * Display
  */
-$start_time = microtime(true);
+$debug_mode = CWebUser::getDebugMode();
+if ($debug_mode) {
+	$start_time = microtime(true);
+}
 
 $sizeX = 900;
 $sizeY = 300;
@@ -66,26 +69,7 @@ else {
 	$im = imagecreate($sizeX + $shiftX + 61, $sizeY + $shiftYup + $shiftYdown + 10);
 }
 
-$graphtheme = [
-	'theme' => 'blue-theme',
-	'textcolor' => '1F2C33',
-	'highlightcolor' => 'E33734',
-	'backgroundcolor' => 'FFFFFF',
-	'graphcolor' => 'FFFFFF',
-	'gridcolor' => 'CCD5D9',
-	'maingridcolor' => 'ACBBC2',
-	'gridbordercolor' => 'ACBBC2',
-	'nonworktimecolor' => 'EBEBEB',
-	'leftpercentilecolor' => '429E47',
-	'righttpercentilecolor' => 'E33734'
-];
-
-$themes = DB::find('graph_theme', [
-	'theme' => getUserTheme(CWebUser::$data)
-]);
-if ($themes) {
-	$graphtheme = $themes[0];
-}
+$graphtheme = getUserGraphTheme();
 
 $black = get_color($im, '000000');
 $green = get_color($im, '34AF67');
@@ -214,12 +198,13 @@ imagefilledrectangle($im, $x, $y + 15 * 2, $x + 10, $y + 10 + 15 * 2, $red);
 imagerectangle($im, $x, $y + 15 * 2, $x + 10, $y + 10 + 15 * 2, $black);
 imageText($im, 8, 0, $x + 14, $y + 10 + 15 * 2, $textcolor, _('PROBLEM').' (%)');
 
-imagestringup($im, 1, imagesx($im) - 10, imagesy($im) - 50, ZABBIX_HOMEPAGE, $grey);
+if ($debug_mode) {
+	$str = sprintf('%0.2f', microtime(true) - $start_time);
+	$str = _s('Generated in %s sec', $str);
+	$str_size = imageTextSize(6, 0, $str);
+	imageText($im, 6, 0, imagesx($im) - $str_size['width'] - 5, imagesy($im) - 5, $grey, $str);
+}
 
-$str = sprintf('%0.2f', microtime(true) - $start_time);
-$str = _s('Generated in %s sec', $str);
-$strSize = imageTextSize(6, 0, $str);
-imageText($im, 6, 0, imagesx($im) - $strSize['width'] - 5, imagesy($im) - 5, $grey, $str);
 imageOut($im);
 imagedestroy($im);
 

@@ -58,7 +58,7 @@ class CTag extends CObject {
 	}
 
 	// do not put new line symbol (\n) before or after html tags, it adds spaces in unwanted places
-	public function startToString() {
+	protected function startToString() {
 		$res = '<'.$this->tagname;
 		foreach ($this->attributes as $key => $value) {
 			if ($value === null) {
@@ -76,11 +76,11 @@ class CTag extends CObject {
 		return $res;
 	}
 
-	public function bodyToString() {
+	protected function bodyToString() {
 		return parent::toString(false);
 	}
 
-	public function endToString() {
+	protected function endToString() {
 		$res = ($this->paired) ? '</'.$this->tagname.'>' : '';
 
 		return $res;
@@ -169,21 +169,19 @@ class CTag extends CObject {
 	 * @return CTag
 	 */
 	public function setHint($text, $span_class = '', $freeze_on_click = true, $styles = '') {
-		$id = uniqid('hintbox_');
-
 		$this->addItem(
 			(new CSpan(
-				(new CSpan($text))->setId($id)
+				(new CSpan($text))->addClass('hint-box')
 			))->setAttribute('style', 'display: none;')
 		);
 
 		$this->onMouseover(
-			'hintBox.HintWraper(event, this, jQuery("#'.$id.'").html(), "'.$span_class.'", "'.$styles.'");'
+			'hintBox.HintWrapper(event, this, "'.$span_class.'", "'.$styles.'");'
 		);
 
 		if ($freeze_on_click) {
 			$this->onClick(
-				'hintBox.showStaticHint(event, this, jQuery("#'.$id.'").html(), "'.$span_class.'", false, "'.$styles.'");'
+				'hintBox.showStaticHint(event, this, "'.$span_class.'", false, "'.$styles.'");'
 			);
 		}
 

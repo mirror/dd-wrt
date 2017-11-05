@@ -45,9 +45,9 @@ const ZBX_TABLE	tables[] = {
 		{"passwd",	"",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"url",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"autologin",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"autologout",	"900",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"autologout",	"15m",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"lang",	"en_GB",	NULL,	NULL,	5,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"refresh",	"30",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"refresh",	"30s",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"type",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"theme",	"default",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"attempt_failed",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
@@ -81,7 +81,7 @@ const ZBX_TABLE	tables[] = {
 		{"available",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"errors_from",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"lastaccess",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"ipmi_authtype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"ipmi_authtype",	"-1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"ipmi_privilege",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"ipmi_username",	"",	NULL,	NULL,	16,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"ipmi_password",	"",	NULL,	NULL,	20,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
@@ -209,7 +209,7 @@ const ZBX_TABLE	tables[] = {
 		{
 		{"slideshowid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
 		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"delay",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"delay",	"30s",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
 		{"private",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{0}
@@ -242,7 +242,7 @@ const ZBX_TABLE	tables[] = {
 		{"slideshowid",	NULL,	"slideshows",	"slideshowid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
 		{"screenid",	NULL,	"screens",	"screenid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
 		{"step",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"delay",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"delay",	"0",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{0}
 		},
 		NULL
@@ -253,7 +253,7 @@ const ZBX_TABLE	tables[] = {
 		{"proxy_hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	0,	0},
 		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"iprange",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"delay",	"3600",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"delay",	"1h",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"nextcheck",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{0}
@@ -265,7 +265,7 @@ const ZBX_TABLE	tables[] = {
 		{"dcheckid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
 		{"druleid",	NULL,	"drules",	"druleid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	ZBX_FK_CASCADE_DELETE},
 		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"key_",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"key_",	"",	NULL,	NULL,	512,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"snmp_community",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"ports",	"0",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"snmpv3_securityname",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
@@ -296,9 +296,8 @@ const ZBX_TABLE	tables[] = {
 		{"name",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"applicationid",	NULL,	"applications",	"applicationid",	0,	ZBX_TYPE_ID,	0,	0},
 		{"nextcheck",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"delay",	"60",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"delay",	"1m",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"variables",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"agent",	"Zabbix",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"authentication",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"http_user",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
@@ -312,7 +311,6 @@ const ZBX_TABLE	tables[] = {
 		{"ssl_key_password",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"verify_peer",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"verify_host",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"headers",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{0}
 		},
 		"hostid,name"
@@ -324,14 +322,13 @@ const ZBX_TABLE	tables[] = {
 		{"name",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"no",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"url",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"timeout",	"15",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"timeout",	"15s",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"posts",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"required",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"status_codes",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"variables",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"follow_redirects",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"retrieve_mode",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"headers",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"post_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{0}
 		},
 		NULL
@@ -364,19 +361,17 @@ const ZBX_TABLE	tables[] = {
 		{"itemid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
 		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"snmp_community",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"snmp_oid",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"snmp_oid",	"",	NULL,	NULL,	512,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	ZBX_FK_CASCADE_DELETE},
 		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"key_",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"delay",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"history",	"90",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"trends",	"365",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"delay",	"0",	NULL,	NULL,	1024,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"history",	"90d",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"trends",	"365d",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"value_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"trapper_hosts",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"units",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"multiplier",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"delta",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"snmpv3_securityname",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"snmpv3_securitylevel",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"snmpv3_authpassphrase",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
@@ -387,10 +382,8 @@ const ZBX_TABLE	tables[] = {
 		{"logtimefmt",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"templateid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
 		{"valuemapid",	NULL,	"valuemaps",	"valuemapid",	0,	ZBX_TYPE_ID,	0,	0},
-		{"delay_flex",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"params",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"ipmi_sensor",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"data_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"authtype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"username",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"password",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
@@ -402,12 +395,14 @@ const ZBX_TABLE	tables[] = {
 		{"port",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"description",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
 		{"inventory_link",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"lifetime",	"30",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"lifetime",	"30d",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"snmpv3_authprotocol",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"snmpv3_privprotocol",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"state",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"snmpv3_contextname",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"evaltype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"jmx_endpoint",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"master_itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
 		{0}
 		},
 		"hostid,key_"
@@ -451,6 +446,9 @@ const ZBX_TABLE	tables[] = {
 		{"smtp_verify_host",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"smtp_authentication",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"exec_params",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"maxsessions",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"maxattempts",	"3",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"attempt_interval",	"10s",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{0}
 		},
 		"description"
@@ -486,7 +484,7 @@ const ZBX_TABLE	tables[] = {
 		{"description",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
 		{"confirmation",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"execute_on",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"execute_on",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{0}
 		},
 		"name"
@@ -498,13 +496,15 @@ const ZBX_TABLE	tables[] = {
 		{"eventsource",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"evaltype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"esc_period",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"esc_period",	"1h",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"def_shortdata",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"def_longdata",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
 		{"r_shortdata",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"r_longdata",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
 		{"formula",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"maintenance_mode",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"ack_shortdata",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"ack_longdata",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
 		{0}
 		},
 		"name"
@@ -514,7 +514,7 @@ const ZBX_TABLE	tables[] = {
 		{"operationid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
 		{"actionid",	NULL,	"actions",	"actionid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
 		{"operationtype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"esc_period",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"esc_period",	"0",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"esc_step_from",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"esc_step_to",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"evaltype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
@@ -631,11 +631,11 @@ const ZBX_TABLE	tables[] = {
 	{"config",	"configid",	0,
 		{
 		{"configid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"refresh_unsupported",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
-		{"work_period",	"1-5,00:00-24:00",	NULL,	NULL,	100,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"refresh_unsupported",	"10m",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"work_period",	"1-5,09:00-18:00",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"alert_usrgrpid",	NULL,	"usrgrp",	"usrgrpid",	0,	ZBX_TYPE_ID,	0,	0},
 		{"event_ack_enable",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"event_expire",	"7",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"event_expire",	"1w",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"event_show_max",	"100",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"default_theme",	"blue-theme",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"authentication_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
@@ -662,8 +662,8 @@ const ZBX_TABLE	tables[] = {
 		{"severity_name_3",	"Average",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"severity_name_4",	"High",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"severity_name_5",	"Disaster",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
-		{"ok_period",	"1800",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"blink_period",	"1800",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"ok_period",	"30m",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"blink_period",	"30m",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"problem_unack_color",	"DC0000",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"problem_ack_color",	"DC0000",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"ok_unack_color",	"00AA00",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
@@ -675,22 +675,22 @@ const ZBX_TABLE	tables[] = {
 		{"snmptrap_logging",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
 		{"server_check_interval",	"10",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"hk_events_mode",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"hk_events_trigger",	"365",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"hk_events_internal",	"365",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"hk_events_discovery",	"365",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"hk_events_autoreg",	"365",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"hk_events_trigger",	"365d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"hk_events_internal",	"1d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"hk_events_discovery",	"1d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"hk_events_autoreg",	"1d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"hk_services_mode",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"hk_services",	"365",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"hk_services",	"365d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"hk_audit_mode",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"hk_audit",	"365",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"hk_audit",	"365d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"hk_sessions_mode",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"hk_sessions",	"365",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"hk_sessions",	"365d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"hk_history_mode",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"hk_history_global",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"hk_history",	"90",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"hk_history",	"90d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"hk_trends_mode",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"hk_trends_global",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"hk_trends",	"365",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"hk_trends",	"365d",	NULL,	NULL,	32,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"default_inventory_mode",	"-1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{0}
 		},
@@ -707,7 +707,7 @@ const ZBX_TABLE	tables[] = {
 		{"priority",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"lastchange",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"comments",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
-		{"error",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"error",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"templateid",	NULL,	"triggers",	"triggerid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
 		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"state",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
@@ -863,7 +863,7 @@ const ZBX_TABLE	tables[] = {
 		{"sendto",	"",	NULL,	NULL,	100,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"active",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"severity",	"63",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"period",	"1-7,00:00-24:00",	NULL,	NULL,	100,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"period",	"1-7,00:00-24:00",	NULL,	NULL,	1024,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{0}
 		},
 		NULL
@@ -1146,9 +1146,11 @@ const ZBX_TABLE	tables[] = {
 		{"message",	"",	NULL,	NULL,	ZBX_TYPE_TEXT_LEN,	ZBX_TYPE_TEXT,	ZBX_NOTNULL,	0},
 		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"retries",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"error",	"",	NULL,	NULL,	128,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"error",	"",	NULL,	NULL,	2048,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"esc_step",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"alerttype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"p_eventid",	NULL,	"events",	"eventid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
+		{"acknowledgeid",	NULL,	"acknowledges",	"acknowledgeid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
 		{0}
 		},
 		NULL
@@ -1231,10 +1233,8 @@ const ZBX_TABLE	tables[] = {
 		{"id",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_UINT,	ZBX_NOTNULL,	0},
 		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"druleid",	NULL,	"drules",	"druleid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"ip",	"",	NULL,	NULL,	39,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"port",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"key_",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"dcheckid",	NULL,	"dchecks",	"dcheckid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
@@ -1371,8 +1371,6 @@ const ZBX_TABLE	tables[] = {
 		{
 		{"dserviceid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
 		{"dhostid",	NULL,	"dhosts",	"dhostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
-		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
-		{"key_",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"value",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{"port",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
@@ -1383,7 +1381,7 @@ const ZBX_TABLE	tables[] = {
 		{"dns",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
 		{0}
 		},
-		"dcheckid,type,key_,ip,port"
+		"dcheckid,ip,port"
 	},
 	{"escalations",	"escalationid",	0,
 		{
@@ -1396,6 +1394,7 @@ const ZBX_TABLE	tables[] = {
 		{"esc_step",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
 		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
+		{"acknowledgeid",	NULL,	"acknowledges",	"acknowledgeid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
 		{0}
 		},
 		"actionid,triggerid,itemid,escalationid"
@@ -1403,7 +1402,7 @@ const ZBX_TABLE	tables[] = {
 	{"globalvars",	"globalvarid",	0,
 		{
 		{"globalvarid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
-		{"snmp_lastsize",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"snmp_lastsize",	"0",	NULL,	NULL,	0,	ZBX_TYPE_UINT,	ZBX_NOTNULL,	0},
 		{0}
 		},
 		NULL
@@ -1766,6 +1765,10 @@ const ZBX_TABLE	tables[] = {
 		{
 		{"taskid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
 		{"type",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"clock",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"ttl",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"proxy_hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
 		{0}
 		},
 		NULL
@@ -1774,6 +1777,170 @@ const ZBX_TABLE	tables[] = {
 		{
 		{"taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
 		{"acknowledgeid",	NULL,	"acknowledges",	"acknowledgeid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{0}
+		},
+		NULL
+	},
+	{"item_preproc",	"item_preprocid",	0,
+		{
+		{"item_preprocid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
+		{"itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{"step",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"params",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{0}
+		},
+		NULL
+	},
+	{"task_remote_command",	"taskid",	0,
+		{
+		{"taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{"command_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"execute_on",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"port",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"authtype",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"username",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"password",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"publickey",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"privatekey",	"",	NULL,	NULL,	64,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"command",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
+		{"alertid",	NULL,	"alerts",	"alertid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
+		{"parent_taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{"hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{0}
+		},
+		NULL
+	},
+	{"task_remote_command_result",	"taskid",	0,
+		{
+		{"taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{"status",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"parent_taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{"info",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
+		{0}
+		},
+		NULL
+	},
+	{"task_acknowledge",	"taskid",	0,
+		{
+		{"taskid",	NULL,	"task",	"taskid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{"acknowledgeid",	NULL,	"acknowledges",	"acknowledgeid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{0}
+		},
+		NULL
+	},
+	{"sysmap_shape",	"sysmap_shapeid",	0,
+		{
+		{"sysmap_shapeid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
+		{"sysmapid",	NULL,	"sysmaps",	"sysmapid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"x",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"y",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"width",	"200",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"height",	"200",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"text",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL,	0},
+		{"font",	"9",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"font_size",	"11",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"font_color",	"000000",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"text_halign",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"text_valign",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"border_type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"border_width",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"border_color",	"000000",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"background_color",	"",	NULL,	NULL,	6,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"zindex",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{0}
+		},
+		NULL
+	},
+	{"sysmap_element_trigger",	"selement_triggerid",	0,
+		{
+		{"selement_triggerid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
+		{"selementid",	NULL,	"sysmaps_elements",	"selementid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{"triggerid",	NULL,	"triggers",	"triggerid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{0}
+		},
+		"selementid,triggerid"
+	},
+	{"httptest_field",	"httptest_fieldid",	0,
+		{
+		{"httptest_fieldid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
+		{"httptestid",	NULL,	"httptest",	"httptestid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	ZBX_FK_CASCADE_DELETE},
+		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"value",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{0}
+		},
+		NULL
+	},
+	{"httpstep_field",	"httpstep_fieldid",	0,
+		{
+		{"httpstep_fieldid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
+		{"httpstepid",	NULL,	"httpstep",	"httpstepid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL | ZBX_PROXY,	ZBX_FK_CASCADE_DELETE},
+		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{"value",	"",	NULL,	NULL,	ZBX_TYPE_SHORTTEXT_LEN,	ZBX_TYPE_SHORTTEXT,	ZBX_NOTNULL | ZBX_PROXY,	0},
+		{0}
+		},
+		NULL
+	},
+	{"dashboard",	"dashboardid",	0,
+		{
+		{"dashboardid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
+		{"name",	NULL,	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
+		{"private",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{0}
+		},
+		NULL
+	},
+	{"dashboard_user",	"dashboard_userid",	0,
+		{
+		{"dashboard_userid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
+		{"dashboardid",	NULL,	"dashboard",	"dashboardid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{"userid",	NULL,	"users",	"userid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{"permission",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{0}
+		},
+		"dashboardid,userid"
+	},
+	{"dashboard_usrgrp",	"dashboard_usrgrpid",	0,
+		{
+		{"dashboard_usrgrpid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
+		{"dashboardid",	NULL,	"dashboard",	"dashboardid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{"usrgrpid",	NULL,	"usrgrp",	"usrgrpid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{"permission",	"2",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{0}
+		},
+		"dashboardid,usrgrpid"
+	},
+	{"widget",	"widgetid",	0,
+		{
+		{"widgetid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
+		{"dashboardid",	NULL,	"dashboard",	"dashboardid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{"type",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"x",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"y",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"width",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"height",	"1",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{0}
+		},
+		NULL
+	},
+	{"widget_field",	"widget_fieldid",	0,
+		{
+		{"widget_fieldid",	NULL,	NULL,	NULL,	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	0},
+		{"widgetid",	NULL,	"widget",	"widgetid",	0,	ZBX_TYPE_ID,	ZBX_NOTNULL,	ZBX_FK_CASCADE_DELETE},
+		{"type",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"name",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"value_int",	"0",	NULL,	NULL,	0,	ZBX_TYPE_INT,	ZBX_NOTNULL,	0},
+		{"value_str",	"",	NULL,	NULL,	255,	ZBX_TYPE_CHAR,	ZBX_NOTNULL,	0},
+		{"value_groupid",	NULL,	"groups",	"groupid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
+		{"value_hostid",	NULL,	"hosts",	"hostid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
+		{"value_itemid",	NULL,	"items",	"itemid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
+		{"value_graphid",	NULL,	"graphs",	"graphid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
+		{"value_sysmapid",	NULL,	"sysmaps",	"sysmapid",	0,	ZBX_TYPE_ID,	0,	ZBX_FK_CASCADE_DELETE},
 		{0}
 		},
 		NULL
@@ -1802,9 +1969,9 @@ surname varchar(100) DEFAULT '' NOT NULL,\n\
 passwd char(32) DEFAULT '' NOT NULL,\n\
 url varchar(255) DEFAULT '' NOT NULL,\n\
 autologin integer DEFAULT '0' NOT NULL,\n\
-autologout integer DEFAULT '900' NOT NULL,\n\
+autologout varchar(32) DEFAULT '15m' NOT NULL,\n\
 lang varchar(5) DEFAULT 'en_GB' NOT NULL,\n\
-refresh integer DEFAULT '30' NOT NULL,\n\
+refresh varchar(32) DEFAULT '30s' NOT NULL,\n\
 type integer DEFAULT '1' NOT NULL,\n\
 theme varchar(128) DEFAULT 'default' NOT NULL,\n\
 attempt_failed integer DEFAULT 0 NOT NULL,\n\
@@ -1835,7 +2002,7 @@ error varchar(2048) DEFAULT '' NOT NULL,\n\
 available integer DEFAULT '0' NOT NULL,\n\
 errors_from integer DEFAULT '0' NOT NULL,\n\
 lastaccess integer DEFAULT '0' NOT NULL,\n\
-ipmi_authtype integer DEFAULT '0' NOT NULL,\n\
+ipmi_authtype integer DEFAULT '-1' NOT NULL,\n\
 ipmi_privilege integer DEFAULT '2' NOT NULL,\n\
 ipmi_username varchar(16) DEFAULT '' NOT NULL,\n\
 ipmi_password varchar(20) DEFAULT '' NOT NULL,\n\
@@ -1950,7 +2117,7 @@ CREATE UNIQUE INDEX screen_usrgrp_1 ON screen_usrgrp (screenid,usrgrpid);\n\
 CREATE TABLE slideshows (\n\
 slideshowid bigint  NOT NULL,\n\
 name varchar(255) DEFAULT '' NOT NULL,\n\
-delay integer DEFAULT '0' NOT NULL,\n\
+delay varchar(32) DEFAULT '30s' NOT NULL,\n\
 userid bigint  NOT NULL REFERENCES users (userid),\n\
 private integer DEFAULT '1' NOT NULL,\n\
 PRIMARY KEY (slideshowid)\n\
@@ -1977,7 +2144,7 @@ slideid bigint  NOT NULL,\n\
 slideshowid bigint  NOT NULL REFERENCES slideshows (slideshowid) ON DELETE CASCADE,\n\
 screenid bigint  NOT NULL REFERENCES screens (screenid) ON DELETE CASCADE,\n\
 step integer DEFAULT '0' NOT NULL,\n\
-delay integer DEFAULT '0' NOT NULL,\n\
+delay varchar(32) DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (slideid)\n\
 );\n\
 CREATE INDEX slides_1 ON slides (slideshowid);\n\
@@ -1987,7 +2154,7 @@ druleid bigint  NOT NULL,\n\
 proxy_hostid bigint  NULL REFERENCES hosts (hostid),\n\
 name varchar(255) DEFAULT '' NOT NULL,\n\
 iprange varchar(2048) DEFAULT '' NOT NULL,\n\
-delay integer DEFAULT '3600' NOT NULL,\n\
+delay varchar(255) DEFAULT '1h' NOT NULL,\n\
 nextcheck integer DEFAULT '0' NOT NULL,\n\
 status integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (druleid)\n\
@@ -1998,7 +2165,7 @@ CREATE TABLE dchecks (\n\
 dcheckid bigint  NOT NULL,\n\
 druleid bigint  NOT NULL REFERENCES drules (druleid) ON DELETE CASCADE,\n\
 type integer DEFAULT '0' NOT NULL,\n\
-key_ varchar(255) DEFAULT '' NOT NULL,\n\
+key_ varchar(512) DEFAULT '' NOT NULL,\n\
 snmp_community varchar(255) DEFAULT '' NOT NULL,\n\
 ports varchar(255) DEFAULT '0' NOT NULL,\n\
 snmpv3_securityname varchar(64) DEFAULT '' NOT NULL,\n\
@@ -2025,9 +2192,8 @@ httptestid bigint  NOT NULL,\n\
 name varchar(64) DEFAULT '' NOT NULL,\n\
 applicationid bigint  NULL REFERENCES applications (applicationid),\n\
 nextcheck integer DEFAULT '0' NOT NULL,\n\
-delay integer DEFAULT '60' NOT NULL,\n\
+delay varchar(255) DEFAULT '1m' NOT NULL,\n\
 status integer DEFAULT '0' NOT NULL,\n\
-variables text DEFAULT '' NOT NULL,\n\
 agent varchar(255) DEFAULT 'Zabbix' NOT NULL,\n\
 authentication integer DEFAULT '0' NOT NULL,\n\
 http_user varchar(64) DEFAULT '' NOT NULL,\n\
@@ -2041,7 +2207,6 @@ ssl_key_file varchar(255) DEFAULT '' NOT NULL,\n\
 ssl_key_password varchar(64) DEFAULT '' NOT NULL,\n\
 verify_peer integer DEFAULT '0' NOT NULL,\n\
 verify_host integer DEFAULT '0' NOT NULL,\n\
-headers text DEFAULT '' NOT NULL,\n\
 PRIMARY KEY (httptestid)\n\
 );\n\
 CREATE INDEX httptest_1 ON httptest (applicationid);\n\
@@ -2054,14 +2219,13 @@ httptestid bigint  NOT NULL REFERENCES httptest (httptestid) ON DELETE CASCADE,\
 name varchar(64) DEFAULT '' NOT NULL,\n\
 no integer DEFAULT '0' NOT NULL,\n\
 url varchar(2048) DEFAULT '' NOT NULL,\n\
-timeout integer DEFAULT '15' NOT NULL,\n\
+timeout varchar(255) DEFAULT '15s' NOT NULL,\n\
 posts text DEFAULT '' NOT NULL,\n\
 required varchar(255) DEFAULT '' NOT NULL,\n\
 status_codes varchar(255) DEFAULT '' NOT NULL,\n\
-variables text DEFAULT '' NOT NULL,\n\
 follow_redirects integer DEFAULT '1' NOT NULL,\n\
 retrieve_mode integer DEFAULT '0' NOT NULL,\n\
-headers text DEFAULT '' NOT NULL,\n\
+post_type integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (httpstepid)\n\
 );\n\
 CREATE INDEX httpstep_1 ON httpstep (httptestid);\n\
@@ -2089,19 +2253,17 @@ CREATE TABLE items (\n\
 itemid bigint  NOT NULL,\n\
 type integer DEFAULT '0' NOT NULL,\n\
 snmp_community varchar(64) DEFAULT '' NOT NULL,\n\
-snmp_oid varchar(255) DEFAULT '' NOT NULL,\n\
+snmp_oid varchar(512) DEFAULT '' NOT NULL,\n\
 hostid bigint  NOT NULL REFERENCES hosts (hostid) ON DELETE CASCADE,\n\
 name varchar(255) DEFAULT '' NOT NULL,\n\
 key_ varchar(255) DEFAULT '' NOT NULL,\n\
-delay integer DEFAULT '0' NOT NULL,\n\
-history integer DEFAULT '90' NOT NULL,\n\
-trends integer DEFAULT '365' NOT NULL,\n\
+delay varchar(1024) DEFAULT '0' NOT NULL,\n\
+history varchar(255) DEFAULT '90d' NOT NULL,\n\
+trends varchar(255) DEFAULT '365d' NOT NULL,\n\
 status integer DEFAULT '0' NOT NULL,\n\
 value_type integer DEFAULT '0' NOT NULL,\n\
 trapper_hosts varchar(255) DEFAULT '' NOT NULL,\n\
 units varchar(255) DEFAULT '' NOT NULL,\n\
-multiplier integer DEFAULT '0' NOT NULL,\n\
-delta integer DEFAULT '0' NOT NULL,\n\
 snmpv3_securityname varchar(64) DEFAULT '' NOT NULL,\n\
 snmpv3_securitylevel integer DEFAULT '0' NOT NULL,\n\
 snmpv3_authpassphrase varchar(64) DEFAULT '' NOT NULL,\n\
@@ -2112,10 +2274,8 @@ lastlogsize bigint DEFAULT '0' NOT NULL,\n\
 logtimefmt varchar(64) DEFAULT '' NOT NULL,\n\
 templateid bigint  NULL REFERENCES items (itemid) ON DELETE CASCADE,\n\
 valuemapid bigint  NULL REFERENCES valuemaps (valuemapid),\n\
-delay_flex varchar(255) DEFAULT '' NOT NULL,\n\
 params text DEFAULT '' NOT NULL,\n\
 ipmi_sensor varchar(128) DEFAULT '' NOT NULL,\n\
-data_type integer DEFAULT '0' NOT NULL,\n\
 authtype integer DEFAULT '0' NOT NULL,\n\
 username varchar(64) DEFAULT '' NOT NULL,\n\
 password varchar(64) DEFAULT '' NOT NULL,\n\
@@ -2127,12 +2287,14 @@ interfaceid bigint  NULL REFERENCES interface (interfaceid),\n\
 port varchar(64) DEFAULT '' NOT NULL,\n\
 description text DEFAULT '' NOT NULL,\n\
 inventory_link integer DEFAULT '0' NOT NULL,\n\
-lifetime varchar(64) DEFAULT '30' NOT NULL,\n\
+lifetime varchar(255) DEFAULT '30d' NOT NULL,\n\
 snmpv3_authprotocol integer DEFAULT '0' NOT NULL,\n\
 snmpv3_privprotocol integer DEFAULT '0' NOT NULL,\n\
 state integer DEFAULT '0' NOT NULL,\n\
 snmpv3_contextname varchar(255) DEFAULT '' NOT NULL,\n\
 evaltype integer DEFAULT '0' NOT NULL,\n\
+jmx_endpoint varchar(255) DEFAULT '' NOT NULL,\n\
+master_itemid bigint  NULL REFERENCES items (itemid) ON DELETE CASCADE,\n\
 PRIMARY KEY (itemid)\n\
 );\n\
 CREATE UNIQUE INDEX items_1 ON items (hostid,key_);\n\
@@ -2140,6 +2302,7 @@ CREATE INDEX items_3 ON items (status);\n\
 CREATE INDEX items_4 ON items (templateid);\n\
 CREATE INDEX items_5 ON items (valuemapid);\n\
 CREATE INDEX items_6 ON items (interfaceid);\n\
+CREATE INDEX items_7 ON items (master_itemid);\n\
 CREATE TABLE httpstepitem (\n\
 httpstepitemid bigint  NOT NULL,\n\
 httpstepid bigint  NOT NULL REFERENCES httpstep (httpstepid) ON DELETE CASCADE,\n\
@@ -2176,6 +2339,9 @@ smtp_verify_peer integer DEFAULT '0' NOT NULL,\n\
 smtp_verify_host integer DEFAULT '0' NOT NULL,\n\
 smtp_authentication integer DEFAULT '0' NOT NULL,\n\
 exec_params varchar(255) DEFAULT '' NOT NULL,\n\
+maxsessions integer DEFAULT '1' NOT NULL,\n\
+maxattempts integer DEFAULT '3' NOT NULL,\n\
+attempt_interval varchar(32) DEFAULT '10s' NOT NULL,\n\
 PRIMARY KEY (mediatypeid)\n\
 );\n\
 CREATE UNIQUE INDEX media_type_1 ON media_type (description);\n\
@@ -2206,7 +2372,7 @@ groupid bigint  NULL REFERENCES groups (groupid),\n\
 description text DEFAULT '' NOT NULL,\n\
 confirmation varchar(255) DEFAULT '' NOT NULL,\n\
 type integer DEFAULT '0' NOT NULL,\n\
-execute_on integer DEFAULT '1' NOT NULL,\n\
+execute_on integer DEFAULT '2' NOT NULL,\n\
 PRIMARY KEY (scriptid)\n\
 );\n\
 CREATE INDEX scripts_1 ON scripts (usrgrpid);\n\
@@ -2218,13 +2384,15 @@ name varchar(255) DEFAULT '' NOT NULL,\n\
 eventsource integer DEFAULT '0' NOT NULL,\n\
 evaltype integer DEFAULT '0' NOT NULL,\n\
 status integer DEFAULT '0' NOT NULL,\n\
-esc_period integer DEFAULT '0' NOT NULL,\n\
+esc_period varchar(255) DEFAULT '1h' NOT NULL,\n\
 def_shortdata varchar(255) DEFAULT '' NOT NULL,\n\
 def_longdata text DEFAULT '' NOT NULL,\n\
 r_shortdata varchar(255) DEFAULT '' NOT NULL,\n\
 r_longdata text DEFAULT '' NOT NULL,\n\
 formula varchar(255) DEFAULT '' NOT NULL,\n\
 maintenance_mode integer DEFAULT '1' NOT NULL,\n\
+ack_shortdata varchar(255) DEFAULT '' NOT NULL,\n\
+ack_longdata text DEFAULT '' NOT NULL,\n\
 PRIMARY KEY (actionid)\n\
 );\n\
 CREATE INDEX actions_1 ON actions (eventsource,status);\n\
@@ -2233,7 +2401,7 @@ CREATE TABLE operations (\n\
 operationid bigint  NOT NULL,\n\
 actionid bigint  NOT NULL REFERENCES actions (actionid) ON DELETE CASCADE,\n\
 operationtype integer DEFAULT '0' NOT NULL,\n\
-esc_period integer DEFAULT '0' NOT NULL,\n\
+esc_period varchar(255) DEFAULT '0' NOT NULL,\n\
 esc_step_from integer DEFAULT '1' NOT NULL,\n\
 esc_step_to integer DEFAULT '1' NOT NULL,\n\
 evaltype integer DEFAULT '0' NOT NULL,\n\
@@ -2334,11 +2502,11 @@ PRIMARY KEY (conditionid)\n\
 CREATE INDEX conditions_1 ON conditions (actionid);\n\
 CREATE TABLE config (\n\
 configid bigint  NOT NULL,\n\
-refresh_unsupported integer DEFAULT '0' NOT NULL,\n\
-work_period varchar(100) DEFAULT '1-5,00:00-24:00' NOT NULL,\n\
+refresh_unsupported varchar(32) DEFAULT '10m' NOT NULL,\n\
+work_period varchar(255) DEFAULT '1-5,09:00-18:00' NOT NULL,\n\
 alert_usrgrpid bigint  NULL REFERENCES usrgrp (usrgrpid),\n\
 event_ack_enable integer DEFAULT '1' NOT NULL,\n\
-event_expire integer DEFAULT '7' NOT NULL,\n\
+event_expire varchar(32) DEFAULT '1w' NOT NULL,\n\
 event_show_max integer DEFAULT '100' NOT NULL,\n\
 default_theme varchar(128) DEFAULT 'blue-theme' NOT NULL,\n\
 authentication_type integer DEFAULT '0' NOT NULL,\n\
@@ -2365,8 +2533,8 @@ severity_name_2 varchar(32) DEFAULT 'Warning' NOT NULL,\n\
 severity_name_3 varchar(32) DEFAULT 'Average' NOT NULL,\n\
 severity_name_4 varchar(32) DEFAULT 'High' NOT NULL,\n\
 severity_name_5 varchar(32) DEFAULT 'Disaster' NOT NULL,\n\
-ok_period integer DEFAULT '1800' NOT NULL,\n\
-blink_period integer DEFAULT '1800' NOT NULL,\n\
+ok_period varchar(32) DEFAULT '30m' NOT NULL,\n\
+blink_period varchar(32) DEFAULT '30m' NOT NULL,\n\
 problem_unack_color varchar(6) DEFAULT 'DC0000' NOT NULL,\n\
 problem_ack_color varchar(6) DEFAULT 'DC0000' NOT NULL,\n\
 ok_unack_color varchar(6) DEFAULT '00AA00' NOT NULL,\n\
@@ -2378,22 +2546,22 @@ ok_ack_style integer DEFAULT '1' NOT NULL,\n\
 snmptrap_logging integer DEFAULT '1' NOT NULL,\n\
 server_check_interval integer DEFAULT '10' NOT NULL,\n\
 hk_events_mode integer DEFAULT '1' NOT NULL,\n\
-hk_events_trigger integer DEFAULT '365' NOT NULL,\n\
-hk_events_internal integer DEFAULT '365' NOT NULL,\n\
-hk_events_discovery integer DEFAULT '365' NOT NULL,\n\
-hk_events_autoreg integer DEFAULT '365' NOT NULL,\n\
+hk_events_trigger varchar(32) DEFAULT '365d' NOT NULL,\n\
+hk_events_internal varchar(32) DEFAULT '1d' NOT NULL,\n\
+hk_events_discovery varchar(32) DEFAULT '1d' NOT NULL,\n\
+hk_events_autoreg varchar(32) DEFAULT '1d' NOT NULL,\n\
 hk_services_mode integer DEFAULT '1' NOT NULL,\n\
-hk_services integer DEFAULT '365' NOT NULL,\n\
+hk_services varchar(32) DEFAULT '365d' NOT NULL,\n\
 hk_audit_mode integer DEFAULT '1' NOT NULL,\n\
-hk_audit integer DEFAULT '365' NOT NULL,\n\
+hk_audit varchar(32) DEFAULT '365d' NOT NULL,\n\
 hk_sessions_mode integer DEFAULT '1' NOT NULL,\n\
-hk_sessions integer DEFAULT '365' NOT NULL,\n\
+hk_sessions varchar(32) DEFAULT '365d' NOT NULL,\n\
 hk_history_mode integer DEFAULT '1' NOT NULL,\n\
 hk_history_global integer DEFAULT '0' NOT NULL,\n\
-hk_history integer DEFAULT '90' NOT NULL,\n\
+hk_history varchar(32) DEFAULT '90d' NOT NULL,\n\
 hk_trends_mode integer DEFAULT '1' NOT NULL,\n\
 hk_trends_global integer DEFAULT '0' NOT NULL,\n\
-hk_trends integer DEFAULT '365' NOT NULL,\n\
+hk_trends varchar(32) DEFAULT '365d' NOT NULL,\n\
 default_inventory_mode integer DEFAULT '-1' NOT NULL,\n\
 PRIMARY KEY (configid)\n\
 );\n\
@@ -2409,7 +2577,7 @@ value integer DEFAULT '0' NOT NULL,\n\
 priority integer DEFAULT '0' NOT NULL,\n\
 lastchange integer DEFAULT '0' NOT NULL,\n\
 comments text DEFAULT '' NOT NULL,\n\
-error varchar(128) DEFAULT '' NOT NULL,\n\
+error varchar(2048) DEFAULT '' NOT NULL,\n\
 templateid bigint  NULL REFERENCES triggers (triggerid) ON DELETE CASCADE,\n\
 type integer DEFAULT '0' NOT NULL,\n\
 state integer DEFAULT '0' NOT NULL,\n\
@@ -2552,7 +2720,7 @@ mediatypeid bigint  NOT NULL REFERENCES media_type (mediatypeid) ON DELETE CASCA
 sendto varchar(100) DEFAULT '' NOT NULL,\n\
 active integer DEFAULT '0' NOT NULL,\n\
 severity integer DEFAULT '63' NOT NULL,\n\
-period varchar(100) DEFAULT '1-7,00:00-24:00' NOT NULL,\n\
+period varchar(1024) DEFAULT '1-7,00:00-24:00' NOT NULL,\n\
 PRIMARY KEY (mediaid)\n\
 );\n\
 CREATE INDEX media_1 ON media (userid);\n\
@@ -2806,17 +2974,20 @@ subject varchar(255) DEFAULT '' NOT NULL,\n\
 message text DEFAULT '' NOT NULL,\n\
 status integer DEFAULT '0' NOT NULL,\n\
 retries integer DEFAULT '0' NOT NULL,\n\
-error varchar(128) DEFAULT '' NOT NULL,\n\
+error varchar(2048) DEFAULT '' NOT NULL,\n\
 esc_step integer DEFAULT '0' NOT NULL,\n\
 alerttype integer DEFAULT '0' NOT NULL,\n\
+p_eventid bigint  NULL REFERENCES events (eventid) ON DELETE CASCADE,\n\
+acknowledgeid bigint  NULL REFERENCES acknowledges (acknowledgeid) ON DELETE CASCADE,\n\
 PRIMARY KEY (alertid)\n\
 );\n\
 CREATE INDEX alerts_1 ON alerts (actionid);\n\
 CREATE INDEX alerts_2 ON alerts (clock);\n\
 CREATE INDEX alerts_3 ON alerts (eventid);\n\
-CREATE INDEX alerts_4 ON alerts (status,retries);\n\
+CREATE INDEX alerts_4 ON alerts (status);\n\
 CREATE INDEX alerts_5 ON alerts (mediatypeid);\n\
 CREATE INDEX alerts_6 ON alerts (userid);\n\
+CREATE INDEX alerts_7 ON alerts (p_eventid);\n\
 CREATE TABLE history (\n\
 itemid bigint  NOT NULL,\n\
 clock integer DEFAULT '0' NOT NULL,\n\
@@ -2876,10 +3047,8 @@ CREATE TABLE proxy_dhistory (\n\
 id integer  NOT NULL PRIMARY KEY AUTOINCREMENT,\n\
 clock integer DEFAULT '0' NOT NULL,\n\
 druleid bigint  NOT NULL,\n\
-type integer DEFAULT '0' NOT NULL,\n\
 ip varchar(39) DEFAULT '' NOT NULL,\n\
 port integer DEFAULT '0' NOT NULL,\n\
-key_ varchar(255) DEFAULT '' NOT NULL,\n\
 value varchar(255) DEFAULT '' NOT NULL,\n\
 status integer DEFAULT '0' NOT NULL,\n\
 dcheckid bigint  NULL,\n\
@@ -2995,8 +3164,6 @@ CREATE INDEX dhosts_1 ON dhosts (druleid);\n\
 CREATE TABLE dservices (\n\
 dserviceid bigint  NOT NULL,\n\
 dhostid bigint  NOT NULL REFERENCES dhosts (dhostid) ON DELETE CASCADE,\n\
-type integer DEFAULT '0' NOT NULL,\n\
-key_ varchar(255) DEFAULT '' NOT NULL,\n\
 value varchar(255) DEFAULT '' NOT NULL,\n\
 port integer DEFAULT '0' NOT NULL,\n\
 status integer DEFAULT '0' NOT NULL,\n\
@@ -3007,7 +3174,7 @@ ip varchar(39) DEFAULT '' NOT NULL,\n\
 dns varchar(64) DEFAULT '' NOT NULL,\n\
 PRIMARY KEY (dserviceid)\n\
 );\n\
-CREATE UNIQUE INDEX dservices_1 ON dservices (dcheckid,type,key_,ip,port);\n\
+CREATE UNIQUE INDEX dservices_1 ON dservices (dcheckid,ip,port);\n\
 CREATE INDEX dservices_2 ON dservices (dhostid);\n\
 CREATE TABLE escalations (\n\
 escalationid bigint  NOT NULL,\n\
@@ -3019,12 +3186,13 @@ nextcheck integer DEFAULT '0' NOT NULL,\n\
 esc_step integer DEFAULT '0' NOT NULL,\n\
 status integer DEFAULT '0' NOT NULL,\n\
 itemid bigint  NULL,\n\
+acknowledgeid bigint  NULL,\n\
 PRIMARY KEY (escalationid)\n\
 );\n\
 CREATE UNIQUE INDEX escalations_1 ON escalations (actionid,triggerid,itemid,escalationid);\n\
 CREATE TABLE globalvars (\n\
 globalvarid bigint  NOT NULL,\n\
-snmp_lastsize integer DEFAULT '0' NOT NULL,\n\
+snmp_lastsize bigint DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (globalvarid)\n\
 );\n\
 CREATE TABLE graph_discovery (\n\
@@ -3169,7 +3337,7 @@ lastaccess integer DEFAULT '0' NOT NULL,\n\
 status integer DEFAULT '0' NOT NULL,\n\
 PRIMARY KEY (sessionid)\n\
 );\n\
-CREATE INDEX sessions_1 ON sessions (userid,status);\n\
+CREATE INDEX sessions_1 ON sessions (userid,status,lastaccess);\n\
 CREATE TABLE trigger_discovery (\n\
 triggerid bigint  NOT NULL REFERENCES triggers (triggerid) ON DELETE CASCADE,\n\
 parent_triggerid bigint  NOT NULL REFERENCES triggers (triggerid),\n\
@@ -3330,18 +3498,162 @@ CREATE INDEX corr_operation_1 ON corr_operation (correlationid);\n\
 CREATE TABLE task (\n\
 taskid bigint  NOT NULL,\n\
 type integer  NOT NULL,\n\
+status integer DEFAULT '0' NOT NULL,\n\
+clock integer DEFAULT '0' NOT NULL,\n\
+ttl integer DEFAULT '0' NOT NULL,\n\
+proxy_hostid bigint  NULL REFERENCES hosts (hostid) ON DELETE CASCADE,\n\
 PRIMARY KEY (taskid)\n\
 );\n\
+CREATE INDEX task_1 ON task (status,proxy_hostid);\n\
 CREATE TABLE task_close_problem (\n\
 taskid bigint  NOT NULL REFERENCES task (taskid) ON DELETE CASCADE,\n\
 acknowledgeid bigint  NOT NULL,\n\
 PRIMARY KEY (taskid)\n\
 );\n\
+CREATE TABLE item_preproc (\n\
+item_preprocid bigint  NOT NULL,\n\
+itemid bigint  NOT NULL REFERENCES items (itemid) ON DELETE CASCADE,\n\
+step integer DEFAULT '0' NOT NULL,\n\
+type integer DEFAULT '0' NOT NULL,\n\
+params varchar(255) DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (item_preprocid)\n\
+);\n\
+CREATE INDEX item_preproc_1 ON item_preproc (itemid,step);\n\
+CREATE TABLE task_remote_command (\n\
+taskid bigint  NOT NULL REFERENCES task (taskid) ON DELETE CASCADE,\n\
+command_type integer DEFAULT '0' NOT NULL,\n\
+execute_on integer DEFAULT '0' NOT NULL,\n\
+port integer DEFAULT '0' NOT NULL,\n\
+authtype integer DEFAULT '0' NOT NULL,\n\
+username varchar(64) DEFAULT '' NOT NULL,\n\
+password varchar(64) DEFAULT '' NOT NULL,\n\
+publickey varchar(64) DEFAULT '' NOT NULL,\n\
+privatekey varchar(64) DEFAULT '' NOT NULL,\n\
+command text DEFAULT '' NOT NULL,\n\
+alertid bigint  NULL,\n\
+parent_taskid bigint  NOT NULL,\n\
+hostid bigint  NOT NULL,\n\
+PRIMARY KEY (taskid)\n\
+);\n\
+CREATE TABLE task_remote_command_result (\n\
+taskid bigint  NOT NULL REFERENCES task (taskid) ON DELETE CASCADE,\n\
+status integer DEFAULT '0' NOT NULL,\n\
+parent_taskid bigint  NOT NULL,\n\
+info text DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (taskid)\n\
+);\n\
+CREATE TABLE task_acknowledge (\n\
+taskid bigint  NOT NULL REFERENCES task (taskid) ON DELETE CASCADE,\n\
+acknowledgeid bigint  NOT NULL,\n\
+PRIMARY KEY (taskid)\n\
+);\n\
+CREATE TABLE sysmap_shape (\n\
+sysmap_shapeid bigint  NOT NULL,\n\
+sysmapid bigint  NOT NULL REFERENCES sysmaps (sysmapid) ON DELETE CASCADE,\n\
+type integer DEFAULT '0' NOT NULL,\n\
+x integer DEFAULT '0' NOT NULL,\n\
+y integer DEFAULT '0' NOT NULL,\n\
+width integer DEFAULT '200' NOT NULL,\n\
+height integer DEFAULT '200' NOT NULL,\n\
+text text DEFAULT '' NOT NULL,\n\
+font integer DEFAULT '9' NOT NULL,\n\
+font_size integer DEFAULT '11' NOT NULL,\n\
+font_color varchar(6) DEFAULT '000000' NOT NULL,\n\
+text_halign integer DEFAULT '0' NOT NULL,\n\
+text_valign integer DEFAULT '0' NOT NULL,\n\
+border_type integer DEFAULT '0' NOT NULL,\n\
+border_width integer DEFAULT '1' NOT NULL,\n\
+border_color varchar(6) DEFAULT '000000' NOT NULL,\n\
+background_color varchar(6) DEFAULT '' NOT NULL,\n\
+zindex integer DEFAULT '0' NOT NULL,\n\
+PRIMARY KEY (sysmap_shapeid)\n\
+);\n\
+CREATE INDEX sysmap_shape_1 ON sysmap_shape (sysmapid);\n\
+CREATE TABLE sysmap_element_trigger (\n\
+selement_triggerid bigint  NOT NULL,\n\
+selementid bigint  NOT NULL REFERENCES sysmaps_elements (selementid) ON DELETE CASCADE,\n\
+triggerid bigint  NOT NULL REFERENCES triggers (triggerid) ON DELETE CASCADE,\n\
+PRIMARY KEY (selement_triggerid)\n\
+);\n\
+CREATE UNIQUE INDEX sysmap_element_trigger_1 ON sysmap_element_trigger (selementid,triggerid);\n\
+CREATE TABLE httptest_field (\n\
+httptest_fieldid bigint  NOT NULL,\n\
+httptestid bigint  NOT NULL REFERENCES httptest (httptestid) ON DELETE CASCADE,\n\
+type integer DEFAULT '0' NOT NULL,\n\
+name varchar(255) DEFAULT '' NOT NULL,\n\
+value text DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (httptest_fieldid)\n\
+);\n\
+CREATE INDEX httptest_field_1 ON httptest_field (httptestid);\n\
+CREATE TABLE httpstep_field (\n\
+httpstep_fieldid bigint  NOT NULL,\n\
+httpstepid bigint  NOT NULL REFERENCES httpstep (httpstepid) ON DELETE CASCADE,\n\
+type integer DEFAULT '0' NOT NULL,\n\
+name varchar(255) DEFAULT '' NOT NULL,\n\
+value text DEFAULT '' NOT NULL,\n\
+PRIMARY KEY (httpstep_fieldid)\n\
+);\n\
+CREATE INDEX httpstep_field_1 ON httpstep_field (httpstepid);\n\
+CREATE TABLE dashboard (\n\
+dashboardid bigint  NOT NULL,\n\
+name varchar(255)  NOT NULL,\n\
+userid bigint  NOT NULL REFERENCES users (userid),\n\
+private integer DEFAULT '1' NOT NULL,\n\
+PRIMARY KEY (dashboardid)\n\
+);\n\
+CREATE TABLE dashboard_user (\n\
+dashboard_userid bigint  NOT NULL,\n\
+dashboardid bigint  NOT NULL REFERENCES dashboard (dashboardid) ON DELETE CASCADE,\n\
+userid bigint  NOT NULL REFERENCES users (userid) ON DELETE CASCADE,\n\
+permission integer DEFAULT '2' NOT NULL,\n\
+PRIMARY KEY (dashboard_userid)\n\
+);\n\
+CREATE UNIQUE INDEX dashboard_user_1 ON dashboard_user (dashboardid,userid);\n\
+CREATE TABLE dashboard_usrgrp (\n\
+dashboard_usrgrpid bigint  NOT NULL,\n\
+dashboardid bigint  NOT NULL REFERENCES dashboard (dashboardid) ON DELETE CASCADE,\n\
+usrgrpid bigint  NOT NULL REFERENCES usrgrp (usrgrpid) ON DELETE CASCADE,\n\
+permission integer DEFAULT '2' NOT NULL,\n\
+PRIMARY KEY (dashboard_usrgrpid)\n\
+);\n\
+CREATE UNIQUE INDEX dashboard_usrgrp_1 ON dashboard_usrgrp (dashboardid,usrgrpid);\n\
+CREATE TABLE widget (\n\
+widgetid bigint  NOT NULL,\n\
+dashboardid bigint  NOT NULL REFERENCES dashboard (dashboardid) ON DELETE CASCADE,\n\
+type varchar(255) DEFAULT '' NOT NULL,\n\
+name varchar(255) DEFAULT '' NOT NULL,\n\
+x integer DEFAULT '0' NOT NULL,\n\
+y integer DEFAULT '0' NOT NULL,\n\
+width integer DEFAULT '1' NOT NULL,\n\
+height integer DEFAULT '1' NOT NULL,\n\
+PRIMARY KEY (widgetid)\n\
+);\n\
+CREATE INDEX widget_1 ON widget (dashboardid);\n\
+CREATE TABLE widget_field (\n\
+widget_fieldid bigint  NOT NULL,\n\
+widgetid bigint  NOT NULL REFERENCES widget (widgetid) ON DELETE CASCADE,\n\
+type integer DEFAULT '0' NOT NULL,\n\
+name varchar(255) DEFAULT '' NOT NULL,\n\
+value_int integer DEFAULT '0' NOT NULL,\n\
+value_str varchar(255) DEFAULT '' NOT NULL,\n\
+value_groupid bigint  NULL REFERENCES groups (groupid) ON DELETE CASCADE,\n\
+value_hostid bigint  NULL REFERENCES hosts (hostid) ON DELETE CASCADE,\n\
+value_itemid bigint  NULL REFERENCES items (itemid) ON DELETE CASCADE,\n\
+value_graphid bigint  NULL REFERENCES graphs (graphid) ON DELETE CASCADE,\n\
+value_sysmapid bigint  NULL REFERENCES sysmaps (sysmapid) ON DELETE CASCADE,\n\
+PRIMARY KEY (widget_fieldid)\n\
+);\n\
+CREATE INDEX widget_field_1 ON widget_field (widgetid);\n\
+CREATE INDEX widget_field_2 ON widget_field (value_groupid);\n\
+CREATE INDEX widget_field_3 ON widget_field (value_hostid);\n\
+CREATE INDEX widget_field_4 ON widget_field (value_itemid);\n\
+CREATE INDEX widget_field_5 ON widget_field (value_graphid);\n\
+CREATE INDEX widget_field_6 ON widget_field (value_sysmapid);\n\
 CREATE TABLE dbversion (\n\
 mandatory integer DEFAULT '0' NOT NULL,\n\
 optional integer DEFAULT '0' NOT NULL\n\
 );\n\
-INSERT INTO dbversion VALUES ('3020000','3020000');\n\
+INSERT INTO dbversion VALUES ('3040000','3040005');\n\
 ";
 const char	*const db_schema_fkeys[] = {
 	NULL

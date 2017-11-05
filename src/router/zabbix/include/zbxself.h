@@ -20,9 +20,9 @@
 #ifndef ZABBIX_ZBXSELF_H
 #define ZABBIX_ZBXSELF_H
 
-#define ZBX_PROCESS_STATE_IDLE		0
-#define ZBX_PROCESS_STATE_BUSY		1
-#define ZBX_PROCESS_STATE_COUNT		2	/* number of process states */
+#define ZBX_PROCESS_STATE_IDLE			0
+#define ZBX_PROCESS_STATE_BUSY			1
+#define ZBX_PROCESS_STATE_COUNT			2	/* number of process states */
 
 #define ZBX_PROCESS_TYPE_POLLER		0
 #define ZBX_PROCESS_TYPE_UNREACHABLE	1
@@ -39,17 +39,20 @@
 #define ZBX_PROCESS_TYPE_ALERTER	12
 #define ZBX_PROCESS_TYPE_TIMER		13
 #define ZBX_PROCESS_TYPE_HOUSEKEEPER	14
-#define ZBX_PROCESS_TYPE_WATCHDOG	15
-#define ZBX_PROCESS_TYPE_DATASENDER	16
-#define ZBX_PROCESS_TYPE_CONFSYNCER	17
-#define ZBX_PROCESS_TYPE_HEARTBEAT	18
-#define ZBX_PROCESS_TYPE_SELFMON	19
-#define ZBX_PROCESS_TYPE_VMWARE		20
-#define ZBX_PROCESS_TYPE_COLLECTOR	21
-#define ZBX_PROCESS_TYPE_LISTENER	22
-#define ZBX_PROCESS_TYPE_ACTIVE_CHECKS	23
-#define ZBX_PROCESS_TYPE_TASKMANAGER	24
-#define ZBX_PROCESS_TYPE_COUNT		25	/* number of process types */
+#define ZBX_PROCESS_TYPE_DATASENDER	15
+#define ZBX_PROCESS_TYPE_CONFSYNCER	16
+#define ZBX_PROCESS_TYPE_HEARTBEAT	17
+#define ZBX_PROCESS_TYPE_SELFMON	18
+#define ZBX_PROCESS_TYPE_VMWARE		19
+#define ZBX_PROCESS_TYPE_COLLECTOR	20
+#define ZBX_PROCESS_TYPE_LISTENER	21
+#define ZBX_PROCESS_TYPE_ACTIVE_CHECKS	22
+#define ZBX_PROCESS_TYPE_TASKMANAGER	23
+#define ZBX_PROCESS_TYPE_IPMIMANAGER	24
+#define ZBX_PROCESS_TYPE_ALERTMANAGER	25
+#define ZBX_PROCESS_TYPE_PREPROCMAN	26
+#define ZBX_PROCESS_TYPE_PREPROCESSOR	27
+#define ZBX_PROCESS_TYPE_COUNT		28	/* number of process types */
 #define ZBX_PROCESS_TYPE_UNKNOWN	255
 
 #define ZBX_RTC_LOG_SCOPE_FLAG		0x80
@@ -61,12 +64,14 @@
 #define ZBX_AGGR_FUNC_MAX		2
 #define ZBX_AGGR_FUNC_MIN		3
 
+#define ZBX_SELFMON_DELAY		1
+
 int		get_process_type_by_name(const char *proc_type_str);
 int		get_process_type_forks(unsigned char process_type);
 const char	*get_process_type_string(unsigned char process_type);
 
 #ifndef _WINDOWS
-void		init_selfmon_collector(void);
+int		init_selfmon_collector(char **error);
 void		free_selfmon_collector(void);
 void		update_selfmon_counter(unsigned char state);
 void		collect_selfmon_stats(void);

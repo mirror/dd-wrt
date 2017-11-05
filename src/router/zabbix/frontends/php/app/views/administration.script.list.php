@@ -20,7 +20,7 @@
 
 
 if ($data['uncheck']) {
-	uncheckTableRows();
+	uncheckTableRows('script');
 }
 
 $widget = (new CWidget())
@@ -73,6 +73,9 @@ foreach ($data['scripts'] as $script) {
 				break;
 			case ZBX_SCRIPT_EXECUTE_ON_SERVER:
 				$scriptExecuteOn = _('Server');
+				break;
+			case ZBX_SCRIPT_EXECUTE_ON_PROXY:
+				$scriptExecuteOn = _('Server (proxy)');
 				break;
 		}
 	}

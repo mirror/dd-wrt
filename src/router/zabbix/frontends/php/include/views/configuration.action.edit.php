@@ -374,9 +374,7 @@ $operation_tab = new CFormList('operationlist');
 
 if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS || $data['eventsource'] == EVENT_SOURCE_INTERNAL) {
 	$operation_tab->addRow(_('Default operation step duration'), [
-		(new CNumericBox('esc_period', $data['action']['esc_period'], 6))
-			->setWidth(ZBX_TEXTAREA_NUMERIC_STANDARD_WIDTH),
-		' ('._('minimum 60 seconds').')'
+		(new CTextBox('esc_period', $data['action']['esc_period']))->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)
 	]);
 }
 
@@ -398,8 +396,8 @@ if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS) {
 // create operation table
 $operationsTable = (new CTable())->setAttribute('style', 'width: 100%;');
 if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS || $data['eventsource'] == EVENT_SOURCE_INTERNAL) {
-	$operationsTable->setHeader([_('Steps'), _('Details'), _('Start in'), _('Duration (sec)'), _('Action')]);
-	$delay = count_operations_delay($data['action']['operations'], $data['action']['esc_period']);
+	$operationsTable->setHeader([_('Steps'), _('Details'), _('Start in'), _('Duration'), _('Action')]);
+	$delays = count_operations_delay($data['action']['operations'], $data['action']['esc_period']);
 }
 else {
 	$operationsTable->setHeader([_('Details'), _('Action')]);
@@ -415,6 +413,8 @@ if ($data['action']['operations']) {
 
 	$action_operation_hints = getActionOperationHints($data['action']['operations'], $default_message);
 
+	$simple_interval_parser = new CSimpleIntervalParser();
+
 	foreach ($data['action']['operations'] as $operationid => $operation) {
 		if (!str_in_array($operation['operationtype'], $data['allowedOperations'][ACTION_OPERATION])) {
 			continue;
@@ -426,8 +426,11 @@ if ($data['action']['operations']) {
 			$operation['mediatypeid'] = 0;
 		}
 
-		$details = (new CSpan($actionOperationDescriptions[0][$operationid]))
-			->setHint($action_operation_hints[$operationid]);
+		$details = new CSpan($actionOperationDescriptions[0][$operationid]);
+
+		if (array_key_exists($operationid, $action_operation_hints) && $action_operation_hints[$operationid]) {
+			$details->setHint($action_operation_hints[$operationid]);
+		}
 
 		if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS || $data['eventsource'] == EVENT_SOURCE_INTERNAL) {
 			$esc_steps_txt = null;
@@ -445,10 +448,17 @@ if ($data['action']['operations']) {
 				? $operation['esc_step_from']
 				: $operation['esc_step_from'].' - '.$operation['esc_step_to'];
 
-			$esc_period_txt = $operation['esc_period'] ? $operation['esc_period'] : _('Default');
-			$esc_delay_txt = $delay[$operation['esc_step_from']]
-				? convert_units(['value' => $delay[$operation['esc_step_from']], 'units' => 'uptime'])
-				: _('Immediately');
+			$esc_period_txt = ($simple_interval_parser->parse($operation['esc_period']) == CParser::PARSE_SUCCESS
+					&& timeUnitToSeconds($operation['esc_period']) == 0)
+				? _('Default')
+				: $operation['esc_period'];
+
+			$esc_delay_txt = ($delays[$operation['esc_step_from']] === null)
+				? _('Unknown')
+				: ($delays[$operation['esc_step_from']] != 0
+					? convert_units(['value' => $delays[$operation['esc_step_from']], 'units' => 'uptime'])
+					: _('Immediately')
+				);
 
 			$operationRow = [
 				$esc_steps_txt,
@@ -554,10 +564,10 @@ if (!empty($data['new_operation'])) {
 		]);
 
 		$new_operation_formlist->addRow(_('Step duration'), [
-			(new CNumericBox('new_operation[esc_period]', $data['new_operation']['esc_period'], 6))
-				->setWidth(ZBX_TEXTAREA_NUMERIC_STANDARD_WIDTH),
+			(new CTextBox('new_operation[esc_period]', $data['new_operation']['esc_period']))
+				->setWidth(ZBX_TEXTAREA_SMALL_WIDTH),
 			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
-			_('(minimum 60 seconds, 0 - use action default)')
+			_('(0 - use action default)')
 		]);
 	}
 
@@ -580,14 +590,28 @@ if (!empty($data['new_operation'])) {
 	}
 
 	switch ($data['new_operation']['operationtype']) {
+		case OPERATION_TYPE_ACK_MESSAGE:
+			if (!array_key_exists('opmessage', $data['new_operation'])) {
+				$data['new_operation']['opmessage'] = [
+					'default_msg'	=> 1,
+					'mediatypeid'	=> 0,
+					'subject'		=> ACTION_DEFAULT_SUBJ_ACKNOWLEDGE,
+					'message'		=> ACTION_DEFAULT_MSG_ACKNOWLEDGE
+				];
+			}
+			elseif (!array_key_exists('default_msg', $data['new_operation']['opmessage'])) {
+				$data['new_operation']['opmessage']['default_msg'] = 0;
+			}
+			break;
+
 		case OPERATION_TYPE_MESSAGE:
 			if (!isset($data['new_operation']['opmessage'])) {
 				$data['new_operation']['opmessage_usr'] = [];
 				$data['new_operation']['opmessage'] = ['default_msg' => 1, 'mediatypeid' => 0];
 
 				if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS) {
-					$data['new_operation']['opmessage']['subject'] = ACTION_DEFAULT_SUBJ_TRIGGER;
-					$data['new_operation']['opmessage']['message'] = ACTION_DEFAULT_MSG_TRIGGER;
+					$data['new_operation']['opmessage']['subject'] = ACTION_DEFAULT_SUBJ_PROBLEM;
+					$data['new_operation']['opmessage']['message'] = ACTION_DEFAULT_MSG_PROBLEM;
 				}
 				elseif ($data['eventsource'] == EVENT_SOURCE_DISCOVERY) {
 					$data['new_operation']['opmessage']['subject'] = ACTION_DEFAULT_SUBJ_DISCOVERY;
@@ -855,6 +879,7 @@ if (!empty($data['new_operation'])) {
 					(int) $data['new_operation']['opcommand']['execute_on']
 				))
 					->addValue(_('Zabbix agent'), ZBX_SCRIPT_EXECUTE_ON_AGENT)
+					->addValue(_('Zabbix server (proxy)'), ZBX_SCRIPT_EXECUTE_ON_PROXY)
 					->addValue(_('Zabbix server'), ZBX_SCRIPT_EXECUTE_ON_SERVER)
 					->setModern(true)
 			);
@@ -1181,8 +1206,11 @@ if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS || $data['eventsource'] == EVE
 				$operation['mediatypeid'] = 0;
 			}
 
-			$details = (new CSpan($actionOperationDescriptions[0][$operationid]))
-				->setHint($action_operation_hints[$operationid]);
+			$details = new CSpan($actionOperationDescriptions[0][$operationid]);
+
+			if (array_key_exists($operationid, $action_operation_hints) && $action_operation_hints[$operationid]) {
+				$details->setHint($action_operation_hints[$operationid]);
+			}
 
 			$operationRow = [
 				$details,
@@ -1278,8 +1306,8 @@ if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS || $data['eventsource'] == EVE
 					$data['new_recovery_operation']['opmessage'] = ['default_msg' => 1, 'mediatypeid' => 0];
 
 					if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS) {
-						$data['new_recovery_operation']['opmessage']['subject'] = ACTION_DEFAULT_SUBJ_TRIGGER;
-						$data['new_recovery_operation']['opmessage']['message'] = ACTION_DEFAULT_MSG_TRIGGER;
+						$data['new_recovery_operation']['opmessage']['subject'] = ACTION_DEFAULT_SUBJ_RECOVERY;
+						$data['new_recovery_operation']['opmessage']['message'] = ACTION_DEFAULT_MSG_RECOVERY;
 					}
 					else {
 						$data['new_recovery_operation']['opmessage']['subject'] = '';
@@ -1559,7 +1587,7 @@ if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS || $data['eventsource'] == EVE
 				];
 
 				$new_operation_formlist->addRow(_('Type'), $typeComboBox);
-				$new_operation_formlist->addRow(_('Script name'), $userScript);
+				$new_operation_formlist->addRow(_('Script name'), (new CDiv($userScript))->addClass(ZBX_STYLE_NOWRAP));
 
 				// script
 				$new_operation_formlist->addRow(_('Execute on'),
@@ -1567,6 +1595,7 @@ if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS || $data['eventsource'] == EVE
 						(int) $data['new_recovery_operation']['opcommand']['execute_on']
 					))
 						->addValue(_('Zabbix agent'), ZBX_SCRIPT_EXECUTE_ON_AGENT)
+						->addValue(_('Zabbix server (proxy)'), ZBX_SCRIPT_EXECUTE_ON_PROXY)
 						->addValue(_('Zabbix server'), ZBX_SCRIPT_EXECUTE_ON_SERVER)
 						->setModern(true)
 				);
@@ -1638,8 +1667,8 @@ if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS || $data['eventsource'] == EVE
 					$data['new_recovery_operation']['opmessage'] = ['default_msg' => 1];
 
 					if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS) {
-						$data['new_recovery_operation']['opmessage']['subject'] = ACTION_DEFAULT_SUBJ_TRIGGER;
-						$data['new_recovery_operation']['opmessage']['message'] = ACTION_DEFAULT_MSG_TRIGGER;
+						$data['new_recovery_operation']['opmessage']['subject'] = ACTION_DEFAULT_SUBJ_RECOVERY;
+						$data['new_recovery_operation']['opmessage']['message'] = ACTION_DEFAULT_MSG_RECOVERY;
 					}
 					else {
 						$data['new_recovery_operation']['opmessage']['subject'] = '';
@@ -1692,6 +1721,451 @@ if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS || $data['eventsource'] == EVE
 	}
 
 	$action_tabs->addTab('recoveryOperationTab', _('Recovery operations'), $recovery_tab);
+}
+
+// Acknowledge operations
+if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS) {
+	$action_formname = $actionForm->getName();
+
+	$acknowledge_tab = (new CFormList('operationlist'))
+		->addRow(_('Default subject'),
+			(new CTextBox('ack_shortdata', $data['action']['ack_shortdata']))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+		)
+		->addRow(_('Default message'),
+			(new CTextArea('ack_longdata', $data['action']['ack_longdata']))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+		);
+
+	$operations_table = (new CTable())->setAttribute('style', 'width: 100%;');
+	$operations_table->setHeader([_('Details'), _('Action')]);
+
+	if ($data['action']['ack_operations']) {
+		$operation_descriptions = getActionOperationDescriptions([$data['action']], ACTION_ACKNOWLEDGE_OPERATION);
+
+		$default_message = [
+			'subject' => $data['action']['ack_shortdata'],
+			'message' => $data['action']['ack_longdata']
+		];
+
+		$operation_hints = getActionOperationHints($data['action']['ack_operations'], $default_message);
+
+		foreach ($data['action']['ack_operations'] as $operationid => $operation) {
+			if (!str_in_array($operation['operationtype'], $data['allowedOperations'][ACTION_ACKNOWLEDGE_OPERATION])) {
+				continue;
+			}
+			$operation += [
+				'opconditions'	=> [],
+				'mediatypeid'	=> 0
+			];
+
+			$details = new CSpan($operation_descriptions[0][$operationid]);
+
+			if (array_key_exists($operationid, $operation_hints) && $operation_hints[$operationid]) {
+				$details->setHint($operation_hints[$operationid]);
+			}
+
+			$operations_table->addRow([
+				$details,
+				(new CCol(
+					new CHorList([
+						(new CSimpleButton(_('Edit')))
+							->onClick('javascript: submitFormWithParam('.
+								'"'.$action_formname.'", "edit_ack_operationid['.$operationid.']", "1");'
+							)
+							->addClass(ZBX_STYLE_BTN_LINK),
+						[
+							(new CButton('remove', _('Remove')))
+								->onClick('javascript: removeOperation('.$operationid.', '.ACTION_ACKNOWLEDGE_OPERATION.
+									');'
+								)
+								->addClass(ZBX_STYLE_BTN_LINK),
+							new CVar('ack_operations['.$operationid.']', $operation)
+						]
+					])
+				))->addClass(ZBX_STYLE_NOWRAP)
+			], null, 'ack_operations_'.$operationid);
+
+			$convert_to_hash = [
+				'opmessage_grp' => 'usrgrpid',
+				'opmessage_usr' => 'userid',
+				'opcommand_grp' => 'groupid',
+				'opcommand_hst' => 'hostid'
+			];
+
+			foreach ($convert_to_hash as $operation_key => $hash_key) {
+				$operation[$operation_key] = array_key_exists($operation_key, $operation)
+					? zbx_toHash($operation[$operation_key], $hash_key)
+					: null;
+			}
+		}
+	}
+
+	if ($data['new_ack_operation']) {
+		$new_operation_formlist = (new CFormList())->addStyle('width: 100%;');
+		$new_ack_operation_vars = [];
+
+		foreach (['id', 'operationid', 'actionid'] as $field) {
+			if (array_key_exists($field, $data['new_ack_operation'])) {
+				$new_ack_operation_vars[] = new CVar('new_ack_operation['.$field.']',
+					$data['new_ack_operation'][$field]
+				);
+			}
+		}
+
+		$operationtype = new CComboBox('new_ack_operation[operationtype]', $data['new_ack_operation']['operationtype'],
+			'submit()'
+		);
+
+		foreach ($data['allowedOperations'][ACTION_ACKNOWLEDGE_OPERATION] as $operation) {
+			$operationtype->addItem($operation, operation_type2str($operation));
+		}
+
+		$new_operation_formlist->addRow(_('Operation type'), $operationtype);
+
+		$usrgrp_list = null;
+		$user_list = null;
+
+		if ($data['new_ack_operation']['operationtype'] == OPERATION_TYPE_MESSAGE) {
+			$usrgrp_list = (new CTable())
+				->addStyle('width: 100%;')
+				->setHeader([_('User group'), _('Action')])
+				->addRow(
+					(new CRow(
+						(new CCol(
+							(new CButton(null, _('Add')))
+								->onClick('return PopUp('.
+									'"popup.php?dstfrm=action.edit&srctbl=usrgrp&srcfld1=usrgrpid&srcfld2=name'.
+									'&multiselect=1&dstfld1=ackOpmsgUsrgrpListFooter")'
+								)
+								->addClass(ZBX_STYLE_BTN_LINK)
+						))->setColSpan(2)
+					))->setId('ackOpmsgUsrgrpListFooter')
+				);
+
+			$user_list = (new CTable())
+				->addStyle('width: 100%;')
+				->setHeader([_('User'), _('Action')])
+				->addRow(
+					(new CRow(
+						(new CCol(
+							(new CButton(null, _('Add')))
+								->onClick('return PopUp('.
+									'"popup.php?dstfrm=action.edit&srctbl=users&srcfld1=userid&srcfld2=fullname'.
+									'&multiselect=1&dstfld1=ackOpmsgUserListFooter")'
+								)
+								->addClass(ZBX_STYLE_BTN_LINK)
+						))->setColSpan(2)
+					))->setId('ackOpmsgUserListFooter')
+				);
+
+			$usrgrpids = array_key_exists('opmessage_grp', $data['new_ack_operation'])
+				? zbx_objectValues($data['new_ack_operation']['opmessage_grp'], 'usrgrpid')
+				: [];
+
+			$userids = array_key_exists('opmessage_usr', $data['new_ack_operation'])
+				? zbx_objectValues($data['new_ack_operation']['opmessage_usr'], 'userid')
+				: [];
+
+			$usrgrps = API::UserGroup()->get([
+				'output' => ['name'],
+				'usrgrpids' => $usrgrpids
+			]);
+			order_result($usrgrps, 'name');
+
+			$users = API::User()->get([
+				'output' => ['userid', 'alias', 'name', 'surname'],
+				'userids' => $userids
+			]);
+			order_result($users, 'alias');
+
+			foreach ($users as &$user) {
+				$user['id'] = $user['userid'];
+				$user['name'] = getUserFullname($user);
+			}
+			unset($user);
+
+			$js_insert = 'addPopupValues('.zbx_jsvalue(['object' => 'usrgrpid', 'values' => $usrgrps,
+				'parentId' => 'ackOpmsgUsrgrpListFooter']).
+			');';
+			$js_insert .= 'addPopupValues('.zbx_jsvalue(['object' => 'userid', 'values' => $users,
+				'parentId' => 'ackOpmsgUserListFooter']).
+			');';
+			zbx_add_post_js($js_insert);
+		}
+		elseif ($data['new_ack_operation']['operationtype'] == OPERATION_TYPE_COMMAND) {
+			if (!array_key_exists('opcommand', $data['new_ack_operation'])) {
+				$data['new_ack_operation']['opcommand'] = [];
+			}
+
+			$data['new_ack_operation'] += [
+				'opcommand_grp'	=> [],
+				'opcommand_hst' => []
+			];
+			$data['new_ack_operation']['opcommand'] += [
+				'type'			=> ZBX_SCRIPT_TYPE_CUSTOM_SCRIPT,
+				'scriptid'		=> '',
+				'execute_on'	=> ZBX_SCRIPT_EXECUTE_ON_AGENT,
+				'publickey'		=> '',
+				'privatekey'	=> '',
+				'authtype'		=> ITEM_AUTHTYPE_PASSWORD,
+				'username'		=> '',
+				'password'		=> '',
+				'port'			=> '',
+				'command'		=> ''
+			];
+			$script_name = '';
+
+			if ($data['new_ack_operation']['opcommand']['scriptid']) {
+				$user_scripts = API::Script()->get([
+					'output' => ['name'],
+					'scriptids' => $data['new_ack_operation']['opcommand']['scriptid']
+				]);
+
+				if ($user_scripts) {
+					$user_script = reset($user_scripts);
+					$script_name = $user_script['name'];
+				}
+			}
+			$data['new_ack_operation']['opcommand']['script'] = $script_name;
+
+			$hosts = API::Host()->get([
+				'output' => ['hostid', 'name'],
+				'hostids' => zbx_objectValues($data['new_ack_operation']['opcommand_hst'], 'hostid'),
+				'preservekeys' => true,
+				'editable' => true
+			]);
+
+			$data['new_ack_operation']['opcommand_hst'] = array_values($data['new_ack_operation']['opcommand_hst']);
+
+			foreach ($data['new_ack_operation']['opcommand_hst'] as $ohnum => $cmd) {
+				$data['new_ack_operation']['opcommand_hst'][$ohnum]['name'] = ($cmd['hostid'] > 0)
+					? $hosts[$cmd['hostid']]['name']
+					: '';
+			}
+			order_result($data['new_ack_operation']['opcommand_hst'], 'name');
+
+			$groups = API::HostGroup()->get([
+				'output' => ['groupid', 'name'],
+				'groupids' => zbx_objectValues($data['new_ack_operation']['opcommand_grp'], 'groupid'),
+				'preservekeys' => true,
+				'editable' => true
+			]);
+
+			$data['new_ack_operation']['opcommand_grp'] = array_values(
+				$data['new_ack_operation']['opcommand_grp']
+			);
+
+			foreach ($data['new_ack_operation']['opcommand_grp'] as $ognum => $cmd) {
+				$data['new_ack_operation']['opcommand_grp'][$ognum]['name'] = $groups[$cmd['groupid']]['name'];
+			}
+			order_result($data['new_ack_operation']['opcommand_grp'], 'name');
+
+			// js add commands
+			$host_values = zbx_jsvalue([
+				'object' => 'hostid',
+				'values' => $data['new_ack_operation']['opcommand_hst'],
+				'parentId' => 'ackOpCmdListFooter'
+			]);
+
+			$js_insert = 'addPopupValues('.$host_values.');';
+
+			$group_values = zbx_jsvalue([
+				'object' => 'groupid',
+				'values' => $data['new_ack_operation']['opcommand_grp'],
+				'parentId' => 'ackOpCmdListFooter'
+			]);
+
+			$js_insert .= 'addPopupValues('.$group_values.');';
+			zbx_add_post_js($js_insert);
+
+			$new_operation_formlist->addRow(_('Target list'),
+					(new CDiv(
+						(new CTable())
+							->addStyle('width: 100%;')
+							->setHeader([_('Target'), _('Action')])
+							->addRow(
+								(new CRow(
+									(new CCol(
+										(new CButton('add', _('New')))
+											->onClick('javascript: showOpCmdForm(0, '.ACTION_ACKNOWLEDGE_OPERATION.');')
+											->addClass(ZBX_STYLE_BTN_LINK)
+									))->setColSpan(3)
+								))->setId('ackOpCmdListFooter')
+							)
+					))
+					->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR)
+					->addStyle('min-width: '.ZBX_TEXTAREA_STANDARD_WIDTH.'px;')
+					->setId('ackOpCmdList')
+				)
+				->addRow(_('Type'),
+					new CComboBox('new_ack_operation[opcommand][type]', $data['new_ack_operation']['opcommand']['type'],
+						'showOpTypeForm('.ACTION_ACKNOWLEDGE_OPERATION.')', [
+							ZBX_SCRIPT_TYPE_IPMI => _('IPMI'),
+							ZBX_SCRIPT_TYPE_CUSTOM_SCRIPT => _('Custom script'),
+							ZBX_SCRIPT_TYPE_SSH => _('SSH'),
+							ZBX_SCRIPT_TYPE_TELNET => _('Telnet'),
+							ZBX_SCRIPT_TYPE_GLOBAL_SCRIPT => _('Global script')
+					])
+				)
+				->addRow(_('Script name'), (new CDiv([
+						new CVar('new_ack_operation[opcommand][scriptid]',
+							$data['new_ack_operation']['opcommand']['scriptid']
+						),
+						(new CTextBox('new_ack_operation[opcommand][script]',
+							$data['new_ack_operation']['opcommand']['script'], true
+						))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH),
+						(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+						(new CButton('select_ack_operation_opcommand_script', _('Select')))
+							->addClass(ZBX_STYLE_BTN_GREY)
+					]))->addClass(ZBX_STYLE_NOWRAP)
+				)
+				->addRow(_('Execute on'),
+					(new CRadioButtonList('new_ack_operation[opcommand][execute_on]',
+						(int) $data['new_ack_operation']['opcommand']['execute_on']
+					))
+						->addValue(_('Zabbix agent'), ZBX_SCRIPT_EXECUTE_ON_AGENT)
+						->addValue(_('Zabbix server (proxy)'), ZBX_SCRIPT_EXECUTE_ON_PROXY)
+						->addValue(_('Zabbix server'), ZBX_SCRIPT_EXECUTE_ON_SERVER)
+						->setModern(true)
+				)
+				->addRow(_('Authentication method'),
+					new CComboBox('new_ack_operation[opcommand][authtype]',
+						$data['new_ack_operation']['opcommand']['authtype'],
+						'showOpTypeAuth('.ACTION_ACKNOWLEDGE_OPERATION.')', [
+							ITEM_AUTHTYPE_PASSWORD => _('Password'),
+							ITEM_AUTHTYPE_PUBLICKEY => _('Public key')
+					])
+				)
+				->addRow(_('User name'),
+					(new CTextBox('new_ack_operation[opcommand][username]',
+						$data['new_ack_operation']['opcommand']['username']
+					))->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)
+				)
+				->addRow(_('Public key file'),
+					(new CTextBox('new_ack_operation[opcommand][publickey]',
+						$data['new_ack_operation']['opcommand']['publickey']
+					))->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)
+				)
+				->addRow(_('Private key file'),
+					(new CTextBox('new_ack_operation[opcommand][privatekey]',
+						$data['new_ack_operation']['opcommand']['privatekey']
+					))->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)
+				)
+				->addRow(_('Password'),
+					(new CTextBox('new_ack_operation[opcommand][password]',
+						$data['new_ack_operation']['opcommand']['password']
+					))->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)
+				)
+				->addRow(_('Key passphrase'),
+					(new CTextBox('new_ack_operation[opcommand][password]',
+						$data['new_ack_operation']['opcommand']['password']
+					))->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)
+						->setId('new_ack_operation_opcommand_passphrase')
+				)
+				->addRow(_('Port'),
+					(new CTextBox('new_ack_operation[opcommand][port]',
+						$data['new_ack_operation']['opcommand']['port']
+					))->setWidth(ZBX_TEXTAREA_SMALL_WIDTH)
+				)
+				->addRow(_('Commands'),
+					(new CTextArea('new_ack_operation[opcommand][command]',
+						$data['new_ack_operation']['opcommand']['command']
+					))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+				)
+				->addRow(_('Commands'),
+					(new CTextBox('new_ack_operation[opcommand][command]',
+						$data['new_ack_operation']['opcommand']['command']
+					))
+						->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+						->setId('new_ack_operation_opcommand_command_ipmi')
+				);
+		}
+
+		if ($usrgrp_list) {
+			$new_operation_formlist->addRow(_('Send to User groups'),
+				(new CDiv($usrgrp_list))
+					->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR)
+					->addStyle('min-width: '.ZBX_TEXTAREA_STANDARD_WIDTH.'px;')
+			);
+		}
+
+		if ($user_list) {
+			$new_operation_formlist->addRow(_('Send to Users'),
+				(new CDiv($user_list))
+					->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR)
+					->addStyle('min-width: '.ZBX_TEXTAREA_STANDARD_WIDTH.'px;')
+			);
+		}
+
+		if (array_key_exists('opmessage', $data['new_ack_operation'])
+				&& $data['new_ack_operation']['operationtype'] != OPERATION_TYPE_COMMAND) {
+			$mediatype_cbox = (new CComboBox('new_ack_operation[opmessage][mediatypeid]',
+				$data['new_ack_operation']['opmessage']['mediatypeid'])
+			)->addItem(0, '- '._('All').' -');
+
+			foreach ($data['available_mediatypes'] as $mediatype) {
+				$mediatype_cbox->addItem($mediatype['mediatypeid'], $mediatype['description']);
+			}
+			$is_default_msg = (array_key_exists('default_msg', $data['new_ack_operation']['opmessage'])
+				&& $data['new_ack_operation']['opmessage']['default_msg'] == 1);
+
+			if ($data['new_ack_operation']['operationtype'] == OPERATION_TYPE_ACK_MESSAGE) {
+				$new_operation_formlist->addRow(_('Default media type'), $mediatype_cbox);
+			}
+			else {
+				$new_operation_formlist->addRow(_('Send only to'), $mediatype_cbox);
+			}
+
+			$new_operation_formlist
+				->addRow(_('Default message'),
+					(new CCheckBox('new_ack_operation[opmessage][default_msg]'))
+						->setChecked($is_default_msg)
+				)
+				->addRow(_('Subject'),
+					(new CTextBox('new_ack_operation[opmessage][subject]',
+						$data['new_ack_operation']['opmessage']['subject']
+					))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+				)
+				->addRow(_('Message'),
+					(new CTextArea('new_ack_operation[opmessage][message]',
+						$data['new_ack_operation']['opmessage']['message']
+					))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+				);
+		}
+
+		$acknowledge_tab->addRow(_('Operations'),
+			(new CDiv([$new_ack_operation_vars, $operations_table]))
+				->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR)
+				->addStyle('min-width: '.ZBX_TEXTAREA_BIG_WIDTH.'px;')
+		);
+
+		$acknowledge_tab->addRow(_('Operation details'),
+			(new CDiv([$new_operation_formlist,
+				new CHorList([
+					(new CSimpleButton(array_key_exists('id', $data['new_ack_operation']) ? _('Update') : _('Add')))
+						->onClick('javascript: submitFormWithParam("'.$action_formname.'", "add_ack_operation", "1");')
+						->addClass(ZBX_STYLE_BTN_LINK),
+					(new CSimpleButton(_('Cancel')))
+						->onClick('javascript: submitFormWithParam("'.$action_formname.'", "cancel_new_ack_operation", "1");')
+						->addClass(ZBX_STYLE_BTN_LINK)
+				])
+			]))
+				->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR)
+				->addStyle('min-width: '.ZBX_TEXTAREA_BIG_WIDTH.'px;')
+		);
+	}
+	else {
+		$acknowledge_tab->addRow(_('Operations'),
+			(new CDiv([$operations_table,
+				(new CSimpleButton(_('New')))
+					->onClick('javascript: submitFormWithParam("'.$action_formname.'", "new_ack_operation", "1");')
+					->addClass(ZBX_STYLE_BTN_LINK)
+			]))
+				->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR)
+				->addStyle('min-width: '.ZBX_TEXTAREA_BIG_WIDTH.'px;')
+		);
+	}
+
+	$action_tabs->addTab('acknowledgeTab', _('Acknowledgement operations'), $acknowledge_tab);
 }
 
 if (!hasRequest('form_refresh')) {

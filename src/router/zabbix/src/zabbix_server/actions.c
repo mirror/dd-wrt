@@ -304,7 +304,7 @@ static int	check_trigger_condition(const DB_EVENT *event, DB_CONDITION *conditio
 	{
 		tmp_str = zbx_strdup(tmp_str, event->trigger.description);
 
-		substitute_simple_macros(NULL, event, NULL, NULL, NULL, NULL, NULL, NULL,
+		substitute_simple_macros(NULL, event, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
 				&tmp_str, MACRO_TYPE_TRIGGER_DESCRIPTION, NULL, 0);
 
 		switch (condition->operator)
@@ -350,19 +350,36 @@ static int	check_trigger_condition(const DB_EVENT *event, DB_CONDITION *conditio
 	}
 	else if (CONDITION_TYPE_TIME_PERIOD == condition->conditiontype)
 	{
-		switch (condition->operator)
+		char	*period;
+		int	res;
+
+		period = zbx_strdup(NULL, condition->value);
+		substitute_simple_macros(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &period,
+				MACRO_TYPE_COMMON, NULL, 0);
+
+		if (SUCCEED == zbx_check_time_period(period, (time_t)event->clock, &res))
 		{
-			case CONDITION_OPERATOR_IN:
-				if (SUCCEED == check_time_period(condition->value, (time_t)event->clock))
-					ret = SUCCEED;
-				break;
-			case CONDITION_OPERATOR_NOT_IN:
-				if (FAIL == check_time_period(condition->value, (time_t)event->clock))
-					ret = SUCCEED;
-				break;
-			default:
-				ret = NOTSUPPORTED;
+			switch (condition->operator)
+			{
+				case CONDITION_OPERATOR_IN:
+					if (SUCCEED == res)
+						ret = SUCCEED;
+					break;
+				case CONDITION_OPERATOR_NOT_IN:
+					if (FAIL == res)
+						ret = SUCCEED;
+					break;
+				default:
+					ret = NOTSUPPORTED;
+			}
 		}
+		else
+		{
+			zabbix_log(LOG_LEVEL_WARNING, "Invalid time period \"%s\" for condition id [" ZBX_FS_UI64 "]",
+					period, condition->conditionid);
+		}
+
+		zbx_free(period);
 	}
 	else if (CONDITION_TYPE_MAINTENANCE == condition->conditiontype)
 	{
@@ -742,9 +759,10 @@ static int	check_discovery_condition(const DB_EVENT *event, DB_CONDITION *condit
 			int	condition_value_i = atoi(condition->value);
 
 			result = DBselect(
-					"select type"
-					" from dservices"
-					" where dserviceid=" ZBX_FS_UI64,
+					"select dc.type"
+					" from dservices ds,dchecks dc"
+					" where ds.dcheckid=dc.dcheckid"
+						" and ds.dserviceid=" ZBX_FS_UI64,
 					event->objectid);
 
 			if (NULL != (row = DBfetch(result)))
@@ -1359,15 +1377,14 @@ int	check_action_condition(const DB_EVENT *event, DB_CONDITION *condition)
  * Purpose: check if actions have to be processed for the event               *
  *          (check all conditions of the action)                              *
  *                                                                            *
- * Parameters: event - event to check                                         *
- *             actionid - action ID for matching                              *
+ * Parameters: actionid - action ID for matching                              *
  *                                                                            *
  * Return value: SUCCEED - matches, FAIL - otherwise                          *
  *                                                                            *
  * Author: Alexei Vladishev                                                   *
  *                                                                            *
  ******************************************************************************/
-static int	check_action_conditions(const DB_EVENT *event, zbx_action_eval_t *action)
+static int	check_action_conditions(zbx_action_eval_t *action)
 {
 	const char	*__function_name = "check_action_conditions";
 
@@ -1392,7 +1409,7 @@ static int	check_action_conditions(const DB_EVENT *event, zbx_action_eval_t *act
 			continue;	/* short-circuit true OR condition block to the next AND condition */
 		}
 
-		condition_result = check_action_condition(event, condition);
+		condition_result = condition->condition_result;
 
 		switch (action->evaltype)
 		{
@@ -1645,6 +1662,90 @@ int	is_recovery_event(const DB_EVENT *event)
 
 /******************************************************************************
  *                                                                            *
+ * Function: uniq_conditions_compare_func                                     *
+ *                                                                            *
+ * Purpose: compare to find equal conditions                                  *
+ *                                                                            *
+ * Parameters: d1 - [IN] condition structure to compare to d2                 *
+ *             d2 - [IN] condition structure to compare to d1                 *
+ *                                                                            *
+ * Return value: 0 - equal                                                    *
+ *               not 0 - otherwise                                            *
+ *                                                                            *
+ ******************************************************************************/
+static int	uniq_conditions_compare_func(const void *d1, const void *d2)
+{
+	const DB_CONDITION	*condition1 = d1, *condition2 = d2;
+	int			ret;
+
+	ZBX_RETURN_IF_NOT_EQUAL(condition1->conditiontype, condition2->conditiontype);
+	ZBX_RETURN_IF_NOT_EQUAL(condition1->operator, condition2->operator);
+
+	if (0 != (ret = strcmp(condition1->value, condition2->value)))
+		return ret;
+
+	if (0 != (ret = strcmp(condition1->value2, condition2->value2)))
+		return ret;
+
+	return 0;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: uniq_conditions_hash_func                                        *
+ *                                                                            *
+ * Purpose: generate hash based on condition values                           *
+ *                                                                            *
+ * Parameters: data - [IN] condition structure                                *
+ *                                                                            *
+ *                                                                            *
+ * Return value: hash is generated                                            *
+ *                                                                            *
+ ******************************************************************************/
+static zbx_hash_t	uniq_conditions_hash_func(const void *data)
+{
+	const DB_CONDITION	*condition = data;
+	zbx_hash_t		hash;
+
+	hash = ZBX_DEFAULT_STRING_HASH_ALGO(condition->value, strlen(condition->value), ZBX_DEFAULT_HASH_SEED);
+	hash = ZBX_DEFAULT_STRING_HASH_ALGO(condition->value2, strlen(condition->value2), hash);
+	hash = ZBX_DEFAULT_STRING_HASH_ALGO((char *)&condition->conditiontype, 1, hash);
+	hash = ZBX_DEFAULT_STRING_HASH_ALGO((char *)&condition->operator, 1, hash);
+
+	return hash;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: check_event_conditions                                           *
+ *                                                                            *
+ * Purpose: check all unique conditions for given event and source            *
+ *                                                                            *
+ * Parameters: event           - [IN]     event that need conditions checking *
+ *             uniq_conditions - [IN/OUT] conditions that will be checked and *
+ *                                        updated with result                 *
+ *                                                                            *
+ * Return value: SICCESS if valid event source, otherwise FAIL                *
+ *                                                                            *
+ ******************************************************************************/
+static int	check_event_conditions(const DB_EVENT *event, zbx_hashset_t *uniq_conditions)
+{
+	zbx_hashset_iter_t	iter;
+	DB_CONDITION		*condition;
+
+	if (EVENT_SOURCE_COUNT <= (unsigned char)event->source)
+		return FAIL;
+
+	zbx_hashset_iter_reset(&uniq_conditions[event->source], &iter);
+
+	while (NULL != (condition = (DB_CONDITION *)zbx_hashset_iter_next(&iter)))
+		condition->condition_result = check_action_condition(event, condition);
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
  * Function: process_actions                                                  *
  *                                                                            *
  * Purpose: process all actions of each event in a list                       *
@@ -1663,15 +1764,18 @@ void	process_actions(const DB_EVENT *events, size_t events_num, zbx_vector_uint6
 	zbx_vector_ptr_t		actions;
 	zbx_vector_ptr_t 		new_escalations;
 	zbx_hashset_t			rec_escalations;
+	zbx_hashset_t			uniq_conditions[EVENT_SOURCE_COUNT];
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() events_num:" ZBX_FS_SIZE_T, __function_name, (zbx_fs_size_t)events_num);
 
 	zbx_vector_ptr_create(&new_escalations);
-	zbx_hashset_create(&rec_escalations, events_num, ZBX_DEFAULT_UINT64_HASH_FUNC,
-			ZBX_DEFAULT_UINT64_COMPARE_FUNC);
+	zbx_hashset_create(&rec_escalations, events_num, ZBX_DEFAULT_UINT64_HASH_FUNC, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
+
+	for (i = 0; i < EVENT_SOURCE_COUNT; i++)
+		zbx_hashset_create(&uniq_conditions[i], 0, uniq_conditions_hash_func, uniq_conditions_compare_func);
 
 	zbx_vector_ptr_create(&actions);
-	zbx_dc_get_actions_eval(&actions);
+	zbx_dc_get_actions_eval(&actions, uniq_conditions, ZBX_ACTION_OPCLASS_NORMAL | ZBX_ACTION_OPCLASS_RECOVERY);
 
 	/* 1. All event sources: match PROBLEM events to action conditions, add them to 'new_escalations' list.      */
 	/* 2. EVENT_SOURCE_DISCOVERY, EVENT_SOURCE_AUTO_REGISTRATION: execute operations (except command and message */
@@ -1693,31 +1797,40 @@ void	process_actions(const DB_EVENT *events, size_t events_num, zbx_vector_uint6
 			continue;
 		}
 
-		for (j = 0; j < actions.values_num; j++)
+		if (SUCCEED == check_event_conditions(event, uniq_conditions))
 		{
-			zbx_action_eval_t	*action = (zbx_action_eval_t *)actions.values[j];
-
-			if (action->eventsource != event->source)
-				continue;
-
-			if (SUCCEED == check_action_conditions(event, action))
+			for (j = 0; j < actions.values_num; j++)
 			{
-				zbx_escalation_new_t	*new_escalation;
+				zbx_action_eval_t	*action = (zbx_action_eval_t *)actions.values[j];
 
-				/* command and message operations handled by escalators even for    */
-				/* EVENT_SOURCE_DISCOVERY and EVENT_SOURCE_AUTO_REGISTRATION events */
-				new_escalation = zbx_malloc(NULL, sizeof(zbx_escalation_new_t));
-				new_escalation->actionid = action->actionid;
-				new_escalation->event = event;
-				zbx_vector_ptr_append(&new_escalations, new_escalation);
+				if (action->eventsource != event->source)
+					continue;
 
-				if (EVENT_SOURCE_DISCOVERY == event->source ||
-						EVENT_SOURCE_AUTO_REGISTRATION == event->source)
+				if (SUCCEED == check_action_conditions(action))
 				{
-					execute_operations(event, action->actionid);
+					zbx_escalation_new_t	*new_escalation;
+
+					/* command and message operations handled by escalators even for    */
+					/* EVENT_SOURCE_DISCOVERY and EVENT_SOURCE_AUTO_REGISTRATION events */
+					new_escalation = zbx_malloc(NULL, sizeof(zbx_escalation_new_t));
+					new_escalation->actionid = action->actionid;
+					new_escalation->event = event;
+					zbx_vector_ptr_append(&new_escalations, new_escalation);
+
+					if (EVENT_SOURCE_DISCOVERY == event->source ||
+							EVENT_SOURCE_AUTO_REGISTRATION == event->source)
+					{
+						execute_operations(event, action->actionid);
+					}
 				}
 			}
 		}
+	}
+
+	for (i = 0; i < EVENT_SOURCE_COUNT; i++)
+	{
+		zbx_conditions_eval_clean(&uniq_conditions[i]);
+		zbx_hashset_destroy(&uniq_conditions[i]);
 	}
 
 	zbx_vector_ptr_clear_ext(&actions, (zbx_clean_func_t)zbx_action_eval_free);
@@ -1797,7 +1910,7 @@ void	process_actions(const DB_EVENT *events, size_t events_num, zbx_vector_uint6
 		int		i;
 
 		zbx_db_insert_prepare(&db_insert, "escalations", "escalationid", "actionid", "status", "triggerid",
-					"itemid", "eventid", "r_eventid", NULL);
+					"itemid", "eventid", "r_eventid", "acknowledgeid", NULL);
 
 		for (i = 0; i < new_escalations.values_num; i++)
 		{
@@ -1819,7 +1932,7 @@ void	process_actions(const DB_EVENT *events, size_t events_num, zbx_vector_uint6
 
 			zbx_db_insert_add_values(&db_insert, __UINT64_C(0), new_escalation->actionid,
 					(int)ESCALATION_STATUS_ACTIVE, triggerid, itemid,
-					new_escalation->event->eventid, __UINT64_C(0));
+					new_escalation->event->eventid, __UINT64_C(0), __UINT64_C(0));
 
 			zbx_free(new_escalation);
 		}
@@ -1867,4 +1980,242 @@ void	process_actions(const DB_EVENT *events, size_t events_num, zbx_vector_uint6
 	zbx_vector_ptr_destroy(&new_escalations);
 
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __function_name);
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: process_actions_by_acknowledgments                               *
+ *                                                                            *
+ * Purpose: process actions for each acknowledgment in the array              *
+ *                                                                            *
+ * Parameters: event_ack        - [IN] vector for eventid/ackid pairs         *
+ *                                                                            *
+ ******************************************************************************/
+int	process_actions_by_acknowledgments(const zbx_vector_ptr_t *ack_tasks)
+{
+	const char		*__function_name = "process_actions_by_acknowledgments";
+
+	zbx_vector_ptr_t	actions;
+	zbx_hashset_t		uniq_conditions[EVENT_SOURCE_COUNT];
+	int			i, j, k, processed_num = 0, knext = 0;
+	zbx_vector_uint64_t	eventids;
+	zbx_ack_task_t		*ack_task;
+	zbx_vector_ptr_t	ack_escalations, events;
+	zbx_ack_escalation_t	*ack_escalation;
+
+	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
+
+	zbx_vector_ptr_create(&ack_escalations);
+
+	for (i = 0; i < EVENT_SOURCE_COUNT; i++)
+		zbx_hashset_create(&uniq_conditions[i], 0, uniq_conditions_hash_func, uniq_conditions_compare_func);
+
+	zbx_vector_ptr_create(&actions);
+	zbx_dc_get_actions_eval(&actions, uniq_conditions, ZBX_ACTION_OPCLASS_ACKNOWLEDGE);
+
+	if (0 == actions.values_num)
+		goto out;
+
+	zbx_vector_uint64_create(&eventids);
+
+	for (i = 0; i < ack_tasks->values_num; i++)
+	{
+		ack_task = (zbx_ack_task_t *)ack_tasks->values[i];
+		zbx_vector_uint64_append(&eventids, ack_task->eventid);
+	}
+
+	zbx_vector_uint64_sort(&eventids, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
+	zbx_vector_uint64_uniq(&eventids, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
+
+	zbx_vector_ptr_create(&events);
+
+	get_db_events_info(&eventids, &events);
+
+	for (i = 0; i < eventids.values_num; i++)
+	{
+		int 		kcurr = knext;
+		DB_EVENT	*event = (DB_EVENT *)events.values[i];
+
+		while (knext < ack_tasks->values_num)
+		{
+			ack_task = (zbx_ack_task_t *)ack_tasks->values[knext];
+			if (ack_task->eventid != event->eventid)
+				break;
+			knext++;
+		}
+
+		if (0 == event->eventid || 0 == event->trigger.triggerid)
+			continue;
+
+		if (SUCCEED != check_event_conditions(event, uniq_conditions))
+			continue;
+
+		for (j = 0; j < actions.values_num; j++)
+		{
+			zbx_action_eval_t	*action = (zbx_action_eval_t *)actions.values[j];
+
+			if (action->eventsource != event->source)
+				continue;
+
+			if (SUCCEED != check_action_conditions(action))
+				continue;
+
+			for (k = kcurr; k < knext; k++)
+			{
+				ack_task = (zbx_ack_task_t *)ack_tasks->values[k];
+
+				ack_escalation = (zbx_ack_escalation_t *)zbx_malloc(NULL, sizeof(zbx_ack_escalation_t));
+				ack_escalation->taskid = ack_task->taskid;
+				ack_escalation->acknowledgeid = ack_task->acknowledgeid;
+				ack_escalation->actionid = action->actionid;
+				ack_escalation->eventid = event->eventid;
+				ack_escalation->triggerid = event->trigger.triggerid;
+				zbx_vector_ptr_append(&ack_escalations, ack_escalation);
+			}
+		}
+	}
+
+	if (0 != ack_escalations.values_num)
+	{
+		zbx_db_insert_t	db_insert;
+
+		zbx_db_insert_prepare(&db_insert, "escalations", "escalationid", "actionid", "status", "triggerid",
+						"itemid", "eventid", "r_eventid", "acknowledgeid", NULL);
+
+		zbx_vector_ptr_sort(&ack_escalations, ZBX_DEFAULT_UINT64_PTR_COMPARE_FUNC);
+
+		for (i = 0; i < ack_escalations.values_num; i++)
+		{
+			ack_escalation = (zbx_ack_escalation_t *)ack_escalations.values[i];
+
+			zbx_db_insert_add_values(&db_insert, __UINT64_C(0), ack_escalation->actionid,
+				(int)ESCALATION_STATUS_ACTIVE, ack_escalation->triggerid, __UINT64_C(0),
+				ack_escalation->eventid, __UINT64_C(0), ack_escalation->acknowledgeid);
+		}
+
+		zbx_db_insert_autoincrement(&db_insert, "escalationid");
+		zbx_db_insert_execute(&db_insert);
+		zbx_db_insert_clean(&db_insert);
+
+		processed_num = ack_escalations.values_num;
+	}
+
+	zbx_vector_ptr_clear_ext(&events, (zbx_clean_func_t)free_db_event);
+	zbx_vector_ptr_destroy(&events);
+
+	zbx_vector_uint64_destroy(&eventids);
+out:
+	for (i = 0; i < EVENT_SOURCE_COUNT; i++)
+	{
+		zbx_conditions_eval_clean(&uniq_conditions[i]);
+		zbx_hashset_destroy(&uniq_conditions[i]);
+	}
+
+	zbx_vector_ptr_clear_ext(&actions, (zbx_clean_func_t)zbx_action_eval_free);
+	zbx_vector_ptr_destroy(&actions);
+
+	zbx_vector_ptr_clear_ext(&ack_escalations, zbx_ptr_free);
+	zbx_vector_ptr_destroy(&ack_escalations);
+
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s() processed_num:%d", __function_name, processed_num);
+
+	return processed_num;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: get_actions_info                                                 *
+ *                                                                            *
+ * Purpose: reads actions from database                                       *
+ *                                                                            *
+ * Parameters: actionids - [IN] requested action ids                          *
+ *             actions   - [OUT] the array of actions                         *
+ *                                                                            *
+ * Comments: use 'free_db_action' function to release allocated memory        *
+ *                                                                            *
+ ******************************************************************************/
+void	get_db_actions_info(zbx_vector_uint64_t *actionids, zbx_vector_ptr_t *actions)
+{
+	DB_RESULT	result;
+	DB_ROW		row;
+	char		*filter = NULL;
+	size_t		filter_alloc = 0, filter_offset = 0;
+	DB_ACTION	*action;
+
+	zbx_vector_uint64_sort(actionids, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
+	zbx_vector_uint64_uniq(actionids, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
+
+	DBadd_condition_alloc(&filter, &filter_alloc, &filter_offset, "actionid", actionids->values,
+			actionids->values_num);
+
+	result = DBselect("select actionid,name,status,eventsource,esc_period,def_shortdata,def_longdata,r_shortdata,"
+				"r_longdata,maintenance_mode,ack_shortdata,ack_longdata"
+				" from actions"
+				" where%s order by actionid", filter);
+
+	while (NULL != (row = DBfetch(result)))
+	{
+		char	*tmp;
+
+		action = (DB_ACTION *)zbx_malloc(NULL, sizeof(DB_ACTION));
+		ZBX_STR2UINT64(action->actionid, row[0]);
+		ZBX_STR2UCHAR(action->status, row[2]);
+		ZBX_STR2UCHAR(action->eventsource, row[3]);
+
+		tmp = zbx_strdup(NULL, row[4]);
+		substitute_simple_macros(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &tmp, MACRO_TYPE_COMMON,
+				NULL, 0);
+		if (SUCCEED != is_time_suffix(tmp, &action->esc_period, ZBX_LENGTH_UNLIMITED))
+		{
+			zabbix_log(LOG_LEVEL_WARNING, "Invalid default operation step duration \"%s\" for action"
+					" \"%s\", using default value of 1 hour", tmp, row[1]);
+			action->esc_period = SEC_PER_HOUR;
+		}
+		zbx_free(tmp);
+
+		action->shortdata = zbx_strdup(NULL, row[5]);
+		action->longdata = zbx_strdup(NULL, row[6]);
+		action->r_shortdata = zbx_strdup(NULL, row[7]);
+		action->r_longdata = zbx_strdup(NULL, row[8]);
+		ZBX_STR2UCHAR(action->maintenance_mode, row[9]);
+		action->ack_shortdata = zbx_strdup(NULL, row[10]);
+		action->ack_longdata = zbx_strdup(NULL, row[11]);
+		action->name = zbx_strdup(NULL, row[1]);
+		action->recovery = ZBX_ACTION_RECOVERY_NONE;
+
+		zbx_vector_ptr_append(actions, action);
+	}
+	DBfree_result(result);
+
+	result = DBselect("select actionid from operations where recovery=%d and%s",
+			ZBX_OPERATION_MODE_RECOVERY, filter);
+
+	while (NULL != (row = DBfetch(result)))
+	{
+		zbx_uint64_t	actionid;
+		int		index;
+
+		ZBX_STR2UINT64(actionid, row[0]);
+		if (FAIL != (index = zbx_vector_ptr_bsearch(actions, &actionid, ZBX_DEFAULT_UINT64_PTR_COMPARE_FUNC)))
+		{
+			action = (DB_ACTION *)actions->values[index];
+			action->recovery = ZBX_ACTION_RECOVERY_OPERATIONS;
+		}
+	}
+	DBfree_result(result);
+
+	zbx_free(filter);
+}
+
+void	free_db_action(DB_ACTION *action)
+{
+	zbx_free(action->shortdata);
+	zbx_free(action->longdata);
+	zbx_free(action->r_shortdata);
+	zbx_free(action->r_longdata);
+	zbx_free(action->ack_shortdata);
+	zbx_free(action->ack_longdata);
+	zbx_free(action->name);
+
+	zbx_free(action);
 }

@@ -26,8 +26,6 @@
 #include "dbcache.h"
 #include "zbxalgo.h"
 
-#define ZBX_DB_WAIT_DOWN	10
-
 typedef struct
 {
 	zbx_uint64_t	autoreg_hostid;
@@ -107,9 +105,14 @@ int	DBconnect(int flag)
  * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
-void	DBinit(void)
+int	DBinit(char **error)
 {
-	zbx_db_init(CONFIG_DBNAME, db_schema);
+	return zbx_db_init(CONFIG_DBNAME, db_schema, error);
+}
+
+void	DBdeinit(void)
+{
+	zbx_db_deinit();
 }
 
 /******************************************************************************
@@ -267,6 +270,29 @@ int	__zbx_DBexecute(const char *fmt, ...)
 			sleep(ZBX_DB_WAIT_DOWN);
 		}
 	}
+
+	va_end(args);
+
+	return rc;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: __zbx_DBexecute_once                                             *
+ *                                                                            *
+ * Purpose: execute a non-select statement                                    *
+ *                                                                            *
+ * Comments: don't retry if DB is down                                        *
+ *                                                                            *
+ ******************************************************************************/
+int	__zbx_DBexecute_once(const char *fmt, ...)
+{
+	va_list	args;
+	int	rc;
+
+	va_start(args, fmt);
+
+	rc = zbx_db_vexecute(fmt, args);
 
 	va_end(args);
 
@@ -682,7 +708,9 @@ zbx_uint64_t	DBget_maxid_num(const char *tablename, int num)
 			0 == strcmp(tablename, "dhosts") ||
 			0 == strcmp(tablename, "alerts") ||
 			0 == strcmp(tablename, "escalations") ||
-			0 == strcmp(tablename, "autoreg_host"))
+			0 == strcmp(tablename, "autoreg_host") ||
+			0 == strcmp(tablename, "task_remote_command") ||
+			0 == strcmp(tablename, "task_remote_command_result"))
 		return DCget_nextid(tablename, num);
 
 	return DBget_nextid(tablename, num);
@@ -1040,6 +1068,76 @@ const char	*zbx_host_key_string(zbx_uint64_t itemid)
 
 /******************************************************************************
  *                                                                            *
+ * Function: zbx_check_user_permissions                                       *
+ *                                                                            *
+ * Purpose: check if user has access rights to information - full name, alias,*
+ *          Email, SMS, Jabber, etc                                           *
+ *                                                                            *
+ * Parameters: userid           - [IN] user who owns the information          *
+ *             recipient_userid - [IN] user who will receive the information  *
+ *                                     can be NULL for remote command         *
+ *                                                                            *
+ * Return value: SUCCEED - if information receiving user has access rights    *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ * Comments: Users has access rights or can view personal information only    *
+ *           about themselves and other user who belong to their group.       *
+ *           "Zabbix Super Admin" can view and has access rights to           *
+ *           information about any user.                                      *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_check_user_permissions(const zbx_uint64_t *userid, const zbx_uint64_t *recipient_userid)
+{
+	const char	*__function_name = "zbx_check_user_permissions";
+
+	DB_RESULT	result;
+	DB_ROW		row;
+	int		user_type = -1, ret = SUCCEED;
+
+	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
+
+	if (NULL == recipient_userid || *userid == *recipient_userid)
+		goto out;
+
+	result = DBselect("select type from users where userid=" ZBX_FS_UI64, *recipient_userid);
+
+	if (NULL != (row = DBfetch(result)) && FAIL == DBis_null(row[0]))
+		user_type = atoi(row[0]);
+	DBfree_result(result);
+
+	if (-1 == user_type)
+	{
+		zabbix_log(LOG_LEVEL_DEBUG, "%s() cannot check permissions", __function_name);
+		ret = FAIL;
+		goto out;
+	}
+
+	if (USER_TYPE_SUPER_ADMIN != user_type)
+	{
+		/* check if users are from the same user group */
+		result = DBselect(
+				"select null"
+				" from users_groups ug1"
+				" where ug1.userid=" ZBX_FS_UI64
+					" and exists (select null"
+						" from users_groups ug2"
+						" where ug1.usrgrpid=ug2.usrgrpid"
+							" and ug2.userid=" ZBX_FS_UI64
+					")",
+				*userid, *recipient_userid);
+
+		if (NULL == DBfetch(result))
+			ret = FAIL;
+		DBfree_result(result);
+	}
+out:
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __function_name, zbx_result_string(ret));
+
+	return ret;
+}
+
+/******************************************************************************
+ *                                                                            *
  * Function: zbx_user_string                                                  *
  *                                                                            *
  * Return value: "Name Surname (Alias)" or "unknown" if user not found        *
@@ -1052,8 +1150,7 @@ const char	*zbx_user_string(zbx_uint64_t userid)
 	DB_RESULT	result;
 	DB_ROW		row;
 
-	result = DBselect("select name,surname,alias from users where userid=" ZBX_FS_UI64,
-			userid);
+	result = DBselect("select name,surname,alias from users where userid=" ZBX_FS_UI64, userid);
 
 	if (NULL != (row = DBfetch(result)))
 		zbx_snprintf(buf_string, sizeof(buf_string), "%s %s (%s)", row[0], row[1], row[2]);
@@ -1362,7 +1459,7 @@ void	DBregister_host_flush(zbx_vector_ptr_t *autoreg_hosts, zbx_uint64_t proxy_h
 		ts.sec = autoreg_host->now;
 
 		add_event(EVENT_SOURCE_AUTO_REGISTRATION, EVENT_OBJECT_ZABBIX_ACTIVE, autoreg_host->autoreg_hostid,
-				&ts, TRIGGER_VALUE_PROBLEM, NULL, NULL, NULL, 0, 0, NULL, 0, NULL);
+				&ts, TRIGGER_VALUE_PROBLEM, NULL, NULL, NULL, 0, 0, NULL, 0, NULL, 0);
 	}
 
 	if (0 != new)
@@ -1831,12 +1928,12 @@ void	DBselect_uint64(const char *sql, zbx_vector_uint64_t *ids)
 	zbx_vector_uint64_sort(ids, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
 }
 
-void	DBexecute_multiple_query(const char *query, const char *field_name, zbx_vector_uint64_t *ids)
+int	DBexecute_multiple_query(const char *query, const char *field_name, zbx_vector_uint64_t *ids)
 {
 #define ZBX_MAX_IDS	950
 	char	*sql = NULL;
 	size_t	sql_alloc = ZBX_KIBIBYTE, sql_offset = 0;
-	int	i;
+	int	i, ret = SUCCEED;
 
 	sql = zbx_malloc(sql, sql_alloc);
 
@@ -1849,17 +1946,21 @@ void	DBexecute_multiple_query(const char *query, const char *field_name, zbx_vec
 				&ids->values[i], MIN(ZBX_MAX_IDS, ids->values_num - i));
 		zbx_strcpy_alloc(&sql, &sql_alloc, &sql_offset, ";\n");
 
-		DBexecute_overflowed_sql(&sql, &sql_alloc, &sql_offset);
+		if (SUCCEED != (ret = DBexecute_overflowed_sql(&sql, &sql_alloc, &sql_offset)))
+			break;
 	}
 
-	if (sql_offset > 16)	/* in ORACLE always present begin..end; */
+	if (SUCCEED == ret && sql_offset > 16)	/* in ORACLE always present begin..end; */
 	{
 		DBend_multiple_update(&sql, &sql_alloc, &sql_offset);
 
-		DBexecute("%s", sql);
+		if (ZBX_DB_OK > DBexecute("%s", sql))
+			ret = FAIL;
 	}
 
 	zbx_free(sql);
+
+	return ret;
 }
 
 #ifdef HAVE_ORACLE
@@ -2044,6 +2145,8 @@ void	zbx_db_insert_prepare(zbx_db_insert_t *self, const char *table, ...)
 	{
 		if (NULL == (pfield = DBget_field(ptable, field)))
 		{
+			zabbix_log(LOG_LEVEL_ERR, "Cannot locate table \"%s\" field \"%s\" in database schema",
+					table, field);
 			THIS_SHOULD_NEVER_HAPPEN;
 			exit(EXIT_FAILURE);
 		}
@@ -2332,7 +2435,7 @@ retry_oracle:
 		goto retry_oracle;
 	}
 
-	ret = (ZBX_DB_OK == rc ? SUCCEED : FAIL);
+	ret = (ZBX_DB_OK <= rc ? SUCCEED : FAIL);
 
 #else
 	DBbegin_multiple_update(&sql, &sql_alloc, &sql_offset);
@@ -2687,4 +2790,56 @@ int	zbx_sql_add_host_availability(char **sql, size_t *sql_alloc, size_t *sql_off
 	zbx_snprintf_alloc(sql, sql_alloc, sql_offset, " where hostid=" ZBX_FS_UI64, ha->hostid);
 
 	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: DBget_user_by_active_session                                     *
+ *                                                                            *
+ * Purpose: validate that session is active and get associated user data      *
+ *                                                                            *
+ * Parameters: sessionid - [IN] the session id to validate                    *
+ *             user      - [OUT] user information                             *
+ *                                                                            *
+ * Return value:  SUCCEED - session is active and user data was retrieved     *
+ *                FAIL    - otherwise                                         *
+ *                                                                            *
+ ******************************************************************************/
+int	DBget_user_by_active_session(const char *sessionid, zbx_user_t *user)
+{
+	const char	*__function_name = "DBget_user_by_active_session";
+	char		*sessionid_esc;
+	int		ret = FAIL;
+	DB_RESULT	result;
+	DB_ROW		row;
+
+	zabbix_log(LOG_LEVEL_DEBUG, "In %s() sessionid:%s", __function_name, sessionid);
+
+	sessionid_esc = DBdyn_escape_string(sessionid);
+
+	if (NULL == (result = DBselect(
+			"select u.userid,u.type"
+				" from sessions s,users u"
+			" where s.userid=u.userid"
+				" and s.sessionid='%s'"
+				" and s.status=%d",
+			sessionid_esc, ZBX_SESSION_ACTIVE)))
+	{
+		goto out;
+	}
+
+	if (NULL == (row = DBfetch(result)))
+		goto out;
+
+	ZBX_STR2UINT64(user->userid, row[0]);
+	user->type = atoi(row[1]);
+
+	ret = SUCCEED;
+out:
+	DBfree_result(result);
+	zbx_free(sessionid_esc);
+
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __function_name, zbx_result_string(ret));
+
+	return ret;
 }

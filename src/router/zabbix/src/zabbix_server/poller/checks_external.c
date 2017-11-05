@@ -80,14 +80,14 @@ int	get_value_external(DC_ITEM *item, AGENT_RESULT *result)
 		zbx_free(param_esc);
 	}
 
-	if (SUCCEED == zbx_execute(cmd, &buf, error, sizeof(error), CONFIG_TIMEOUT))
+	if (SUCCEED == zbx_execute(cmd, &buf, error, sizeof(error), CONFIG_TIMEOUT, ZBX_EXIT_CODE_CHECKS_DISABLED))
 	{
 		zbx_rtrim(buf, ZBX_WHITESPACE);
 
-		if (SUCCEED == set_result_type(result, item->value_type, item->data_type, buf))
-			ret = SUCCEED;
-
+		set_result_type(result, ITEM_VALUE_TYPE_TEXT, buf);
 		zbx_free(buf);
+
+		ret = SUCCEED;
 	}
 	else
 		SET_MSG_RESULT(result, zbx_strdup(NULL, error));

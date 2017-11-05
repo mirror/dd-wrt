@@ -56,6 +56,8 @@ zbx_db_version_t;
 #	define ZBX_DB_SET_TYPE		""
 #endif
 
+/* NOTE: Do not forget to sync changes in ZBX_TYPE_*_STR defines for Oracle with zbx_oracle_column_type()! */
+
 #if defined(HAVE_IBM_DB2) || defined(HAVE_POSTGRESQL)
 #	define ZBX_TYPE_ID_STR		"bigint"
 #elif defined(HAVE_MYSQL)
@@ -138,6 +140,51 @@ static void	DBfield_type_string(char **sql, size_t *sql_alloc, size_t *sql_offse
 	}
 }
 
+#ifdef HAVE_ORACLE
+typedef enum
+{
+	ZBX_ORACLE_COLUMN_TYPE_NUMERIC,
+	ZBX_ORACLE_COLUMN_TYPE_CHARACTER,
+	ZBX_ORACLE_COLUMN_TYPE_UNKNOWN
+}
+zbx_oracle_column_type_t;
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_oracle_column_type                                           *
+ *                                                                            *
+ * Purpose: determine whether column type is character or numeric             *
+ *                                                                            *
+ * Parameters: field_type - [IN] column type in Zabbix definitions            *
+ *                                                                            *
+ * Return value: column type (character/raw, numeric) in Oracle definitions   *
+ *                                                                            *
+ * Comments: The size of a character or raw column or the precision of a      *
+ *           numeric column can be changed, whether or not all the rows       *
+ *           contain nulls. Otherwise in order to change the datatype of a    *
+ *           column all rows of the column must contain nulls.                *
+ *                                                                            *
+ ******************************************************************************/
+static zbx_oracle_column_type_t	zbx_oracle_column_type(unsigned char field_type)
+{
+	switch (field_type)
+	{
+		case ZBX_TYPE_ID:
+		case ZBX_TYPE_INT:
+		case ZBX_TYPE_FLOAT:
+		case ZBX_TYPE_UINT:
+			return ZBX_ORACLE_COLUMN_TYPE_NUMERIC;
+		case ZBX_TYPE_CHAR:
+		case ZBX_TYPE_SHORTTEXT:
+		case ZBX_TYPE_TEXT:
+			return ZBX_ORACLE_COLUMN_TYPE_CHARACTER;
+		default:
+			THIS_SHOULD_NEVER_HAPPEN;
+			return ZBX_ORACLE_COLUMN_TYPE_UNKNOWN;
+	}
+}
+#endif
+
 static void	DBfield_definition_string(char **sql, size_t *sql_alloc, size_t *sql_offset, const ZBX_FIELD *field)
 {
 	zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "%s ", field->name);
@@ -209,6 +256,20 @@ static void	DBdrop_table_sql(char **sql, size_t *sql_alloc, size_t *sql_offset, 
 	zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "drop table %s", table_name);
 }
 
+static void	DBset_default_sql(char **sql, size_t *sql_alloc, size_t *sql_offset,
+		const char *table_name, const ZBX_FIELD *field)
+{
+	zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "alter table %s" ZBX_DB_ALTER_COLUMN " ", table_name);
+
+#if defined(HAVE_MYSQL)
+	DBfield_definition_string(sql, sql_alloc, sql_offset, field);
+#elif defined(HAVE_ORACLE)
+	zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "%s default '%s'", field->name, field->default_value);
+#else
+	zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "%s set default '%s'", field->name, field->default_value);
+#endif
+}
+
 static void	DBmodify_field_type_sql(char **sql, size_t *sql_alloc, size_t *sql_offset,
 		const char *table_name, const ZBX_FIELD *field)
 {
@@ -219,6 +280,13 @@ static void	DBmodify_field_type_sql(char **sql, size_t *sql_alloc, size_t *sql_o
 #else
 	zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "%s" ZBX_DB_SET_TYPE " ", field->name);
 	DBfield_type_string(sql, sql_alloc, sql_offset, field);
+#ifdef HAVE_POSTGRESQL
+	if (NULL != field->default_value)
+	{
+		zbx_strcpy_alloc(sql, sql_alloc, sql_offset, ";\n");
+		DBset_default_sql(sql, sql_alloc, sql_offset, table_name, field);
+	}
+#endif
 #endif
 }
 
@@ -247,20 +315,6 @@ static void	DBset_not_null_sql(char **sql, size_t *sql_alloc, size_t *sql_offset
 	zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "%s not null", field->name);
 #else
 	zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "%s set not null", field->name);
-#endif
-}
-
-static void	DBset_default_sql(char **sql, size_t *sql_alloc, size_t *sql_offset,
-		const char *table_name, const ZBX_FIELD *field)
-{
-	zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "alter table %s" ZBX_DB_ALTER_COLUMN " ", table_name);
-
-#if defined(HAVE_MYSQL)
-	DBfield_definition_string(sql, sql_alloc, sql_offset, field);
-#elif defined(HAVE_ORACLE)
-	zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "%s default '%s'", field->name, field->default_value);
-#else
-	zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "%s set default '%s'", field->name, field->default_value);
 #endif
 }
 
@@ -305,6 +359,8 @@ static void	DBdrop_index_sql(char **sql, size_t *sql_alloc, size_t *sql_offset,
 	zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "drop index %s", index_name);
 #ifdef HAVE_MYSQL
 	zbx_snprintf_alloc(sql, sql_alloc, sql_offset, " on %s", table_name);
+#else
+	ZBX_UNUSED(table_name);
 #endif
 }
 
@@ -312,6 +368,9 @@ static void	DBrename_index_sql(char **sql, size_t *sql_alloc, size_t *sql_offset
 		const char *old_name, const char *new_name, const char *fields, int unique)
 {
 #if defined(HAVE_IBM_DB2)
+	ZBX_UNUSED(table_name);
+	ZBX_UNUSED(fields);
+	ZBX_UNUSED(unique);
 	zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "rename index %s to %s", old_name, new_name);
 #elif defined(HAVE_MYSQL)
 	DBcreate_index_sql(sql, sql_alloc, sql_offset, table_name, new_name, fields, unique);
@@ -319,6 +378,9 @@ static void	DBrename_index_sql(char **sql, size_t *sql_alloc, size_t *sql_offset
 	DBdrop_index_sql(sql, sql_alloc, sql_offset, table_name, old_name);
 	zbx_strcpy_alloc(sql, sql_alloc, sql_offset, ";\n");
 #elif defined(HAVE_ORACLE) || defined(HAVE_POSTGRESQL)
+	ZBX_UNUSED(table_name);
+	ZBX_UNUSED(fields);
+	ZBX_UNUSED(unique);
 	zbx_snprintf_alloc(sql, sql_alloc, sql_offset, "alter index %s rename to %s", old_name, new_name);
 #endif
 }
@@ -417,12 +479,58 @@ int	DBrename_field(const char *table_name, const char *field_name, const ZBX_FIE
 	return ret;
 }
 
-int	DBmodify_field_type(const char *table_name, const ZBX_FIELD *field)
+#ifdef HAVE_ORACLE
+static int	DBmodify_field_type_with_copy(const char *table_name, const ZBX_FIELD *field)
+{
+#define ZBX_OLD_FIELD	"zbx_old_tmp"
+
+	char	*sql = NULL;
+	size_t	sql_alloc = 0, sql_offset = 0;
+	int	ret = FAIL;
+
+	zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset, "alter table %s rename column %s to " ZBX_OLD_FIELD,
+			table_name, field->name);
+
+	if (ZBX_DB_OK > DBexecute("%s", sql))
+		goto out;
+
+	if (ZBX_DB_OK > DBadd_field(table_name, field))
+		goto out;
+
+	sql_offset = 0;
+	zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset, "update %s set %s=" ZBX_OLD_FIELD, table_name,
+			field->name);
+
+	if (ZBX_DB_OK > DBexecute("%s", sql))
+		goto out;
+
+	ret = DBdrop_field(table_name, ZBX_OLD_FIELD);
+out:
+	zbx_free(sql);
+
+	return ret;
+
+#undef ZBX_OLD_FIELD
+}
+#endif
+
+int	DBmodify_field_type(const char *table_name, const ZBX_FIELD *field, const ZBX_FIELD *old_field)
 {
 	char	*sql = NULL;
 	size_t	sql_alloc = 0, sql_offset = 0;
 	int	ret = FAIL;
 
+#ifndef HAVE_ORACLE
+	ZBX_UNUSED(old_field);
+#else
+	/* Oracle cannot change column type in a general case if column contents are not null. Conversions like   */
+	/* number -> nvarchar2 need special processing. New column is created with desired datatype and data from */
+	/* old column is copied there. Then old column is dropped. This method does not preserve column order.    */
+	/* NOTE: Existing column indexes and constraints are not respected by the current implementation!         */
+
+	if (NULL != old_field && zbx_oracle_column_type(old_field->type) != zbx_oracle_column_type(field->type))
+		return DBmodify_field_type_with_copy(table_name, field);
+#endif
 	DBmodify_field_type_sql(&sql, &sql_alloc, &sql_offset, table_name, field);
 
 	if (ZBX_DB_OK <= DBexecute("%s", sql))
@@ -586,7 +694,8 @@ static int	DBcreate_dbversion_table(void)
 					{"mandatory", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
 					{"optional", "0", NULL, NULL, 0, ZBX_TYPE_INT, ZBX_NOTNULL, 0},
 					{NULL}
-				}
+				},
+				NULL
 			};
 	int		ret;
 
@@ -630,6 +739,8 @@ extern zbx_dbpatch_t	DBPATCH_VERSION(2050)[];
 extern zbx_dbpatch_t	DBPATCH_VERSION(3000)[];
 extern zbx_dbpatch_t	DBPATCH_VERSION(3010)[];
 extern zbx_dbpatch_t	DBPATCH_VERSION(3020)[];
+extern zbx_dbpatch_t	DBPATCH_VERSION(3030)[];
+extern zbx_dbpatch_t	DBPATCH_VERSION(3040)[];
 
 static zbx_db_version_t dbversions[] = {
 	{DBPATCH_VERSION(2010), "2.2 development"},
@@ -640,6 +751,8 @@ static zbx_db_version_t dbversions[] = {
 	{DBPATCH_VERSION(3000), "3.0 maintenance"},
 	{DBPATCH_VERSION(3010), "3.2 development"},
 	{DBPATCH_VERSION(3020), "3.2 maintenance"},
+	{DBPATCH_VERSION(3030), "3.4 development"},
+	{DBPATCH_VERSION(3040), "3.4 maintenance"},
 	{NULL}
 };
 

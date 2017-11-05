@@ -21,6 +21,7 @@
 
 require_once dirname(__FILE__).'/include/config.inc.php';
 require_once dirname(__FILE__).'/include/hosts.inc.php';
+require_once dirname(__FILE__).'/include/hostgroups.inc.php';
 
 $page['title'] = _('Configuration of host groups');
 $page['file'] = 'hostgroups.php';
@@ -36,6 +37,7 @@ $fields = [
 	'groupid' =>		[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		'isset({form}) && {form} == "update"'],
 	'name' =>			[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,	'isset({add}) || isset({update})', _('Group name')],
 	'twb_groupid' =>	[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
+	'subgroups' =>		[T_ZBX_INT, O_OPT, null,	IN([1]),	null],
 	// actions
 	'action' =>			[T_ZBX_STR, O_OPT, P_SYS|P_ACT,
 							IN('"hostgroup.massdelete","hostgroup.massdisable","hostgroup.massenable"'),
@@ -174,10 +176,9 @@ if (hasRequest('form')) {
 					$result &= (bool) API::HostGroup()->massRemove($massRemove);
 				}
 
-				if ($result) {
-					add_audit_ext(AUDIT_ACTION_UPDATE, AUDIT_RESOURCE_HOST_GROUP, $groupId, $name, 'groups',
-						['name' => $oldGroup['name']], ['name' => $name]
-					);
+				// Apply permissions to all subgroups.
+				if (getRequest('subgroups', 0) == 1 && CWebUser::getType() == USER_TYPE_SUPER_ADMIN) {
+					inheritPermissions($groupId, $name);
 				}
 			}
 		}
@@ -206,10 +207,6 @@ if (hasRequest('form')) {
 					'hosts' => $hosts,
 					'templates' => $templates
 				]);
-
-				if ($result) {
-					add_audit_ext(AUDIT_ACTION_ADD, AUDIT_RESOURCE_HOST_GROUP, $groupId, $name, null, null, null);
-				}
 			}
 		}
 
@@ -317,7 +314,8 @@ if (hasRequest('form')) {
 		'name' => getRequest('name', ''),
 		'hosts' => getRequest('hosts', []),
 		'twb_groupid' => getRequest('twb_groupid', -1),
-		'r_hosts' => []
+		'r_hosts' => [],
+		'subgroups' => getRequest('subgroups', 0)
 	];
 
 	if ($data['groupid'] != 0) {

@@ -19,193 +19,165 @@
 **/
 
 
-$this->addJsFile('class.pmaster.js');
+if (array_key_exists('error', $data)) {
+	show_error_message($data['error']);
+}
+else {
+	$this->addJsFile('flickerfreescreen.js');
+	$this->addJsFile('gtlc.js');
+	$this->addJsFile('dashboard.grid.js');
+	$this->addJsFile('class.calendar.js');
 
-/*
- * Dashboard grid
- */
-$dashboardGrid = [[], [], []];
-$widgetRefreshParams = [];
+	$this->includeJSfile('app/views/monitoring.dashboard.view.js.php');
 
-$widgets = [
-	WIDGET_FAVOURITE_GRAPHS => [
-		'id' => 'favouriteGraphs',
-		'menu_popup' => ['CMenuPopupHelper', 'getFavouriteGraphs'],
-		'data' => $data['favourite_graphs'],
-		'header' => _('Favourite graphs'),
-		'links' => [
-			['name' => _('Graphs'), 'url' => 'charts.php']
-		],
-		'defaults' => ['col' => 0, 'row' => 0]
-	],
-	WIDGET_FAVOURITE_SCREENS => [
-		'id' => 'favouriteScreens',
-		'menu_popup' => ['CMenuPopupHelper', 'getFavouriteScreens'],
-		'data' => $data['favourite_screens'],
-		'header' => _('Favourite screens'),
-		'links' => [
-			['name' => _('Screens'), 'url' => 'screens.php'],
-			['name' => _('Slide shows'), 'url' => 'slides.php']
-		],
-		'defaults' => ['col' => 0, 'row' => 1]
-	],
-	WIDGET_FAVOURITE_MAPS => [
-		'id' => 'favouriteMaps',
-		'menu_popup' => ['CMenuPopupHelper', 'getFavouriteMaps'],
-		'data' => $data['favourite_maps'],
-		'header' => _('Favourite maps'),
-		'links' => [
-			['name' => _('Maps'), 'url' => 'zabbix.php?action=map.view']
-		],
-		'defaults' => ['col' => 0, 'row' => 2]
-	]
-];
+	$sharing_form = include 'monitoring.dashboard.sharing_form.php';
+	$edit_form = include 'monitoring.dashboard.edit_form.php';
+	$breadcrumbs = include 'monitoring.dashboard.breadcrumbs.php';
 
-foreach ($widgets as $widgetid => $widget) {
-	$icon = (new CButton(null))
-		->addClass(ZBX_STYLE_BTN_WIDGET_ACTION)
-		->setTitle(_('Action'))
-		->setId($widget['id'])
-		->setMenuPopup(call_user_func($widget['menu_popup']));
+	$item_groupid = null;
+	$item_hostid = null;
 
-	$footer = new CList();
-	foreach ($widget['links'] as $link) {
-		$footer->addItem(new CLink($link['name'], $link['url']));
+	if ($data['dynamic']['has_dynamic_widgets']) {
+		$item_groupid = [
+			new CLabel(_('Group'), 'groupid'),
+			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+			$data['pageFilter']->getGroupsCB()
+		];
+		$item_hostid = [
+			new CLabel(_('Host'), 'hostid'),
+			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+			$data['pageFilter']->getHostsCB()
+		];
 	}
 
-	$col = CProfile::get('web.dashboard.widget.'.$widgetid.'.col', $widget['defaults']['col']);
-	$row = CProfile::get('web.dashboard.widget.'.$widgetid.'.row', $widget['defaults']['row']);
+	$url_create = (new CUrl('zabbix.php'))
+		->setArgument('action', 'dashboard.view')
+		->setArgument('new', '1')
+		->setArgument('fullscreen', $data['fullscreen'] ? '1' : null);
+	$url_clone = (new CUrl('zabbix.php'))
+		->setArgument('action', 'dashboard.view')
+		->setArgument('source_dashboardid', $data['dashboard']['dashboardid'])
+		->setArgument('fullscreen', $data['fullscreen'] ? '1' : null);
 
-	$dashboardGrid[$col][$row] = (new CCollapsibleUiWidget($widgetid, $widget['data']))
-		->setExpanded((bool) CProfile::get('web.dashboard.widget.'.$widgetid.'.state', true))
-		->setHeader($widget['header'], [$icon], true, 'zabbix.php?action=dashboard.widget')
-		->setFooter($footer);
-}
+	if ($data['dashboard']['editable']) {
+		$url_delete = (new CUrl('zabbix.php'))
+			->setArgument('action', 'dashboard.delete')
+			->setArgument('dashboardids', [$data['dashboard']['dashboardid']])
+			->setArgument('fullscreen', $data['fullscreen'] ? '1' : null)
+			->setArgumentSID();
+	}
 
-$widgets = [
-	WIDGET_SYSTEM_STATUS => [
-		'action' => 'widget.system.view',
-		'header' => _('System status'),
-		'defaults' => ['col' => 1, 'row' => 1]
-	],
-	WIDGET_HOST_STATUS => [
-		'action' => 'widget.hosts.view',
-		'header' => _('Host status'),
-		'defaults' => ['col' => 1, 'row' => 2]
-	],
-	WIDGET_LAST_ISSUES => [
-		'action' => 'widget.issues.view',
-		'header' => _n('Last %1$d issue', 'Last %1$d issues', DEFAULT_LATEST_ISSUES_CNT),
-		'defaults' => ['col' => 1, 'row' => 3]
-	],
-	WIDGET_WEB_OVERVIEW => [
-		'action' => 'widget.web.view',
-		'header' => _('Web monitoring'),
-		'defaults' => ['col' => 1, 'row' => 4]
-	],
-];
-
-if ($data['show_status_widget']) {
-	$widgets[WIDGET_ZABBIX_STATUS] = [
-		'action' => 'widget.status.view',
-		'header' => _('Status of Zabbix'),
-		'defaults' => ['col' => 1, 'row' => 0]
-	];
-}
-if ($data['show_discovery_widget']) {
-	$widgets[WIDGET_DISCOVERY_STATUS] = [
-		'action' => 'widget.discovery.view',
-		'header' => _('Discovery status'),
-		'defaults' => ['col' => 1, 'row' => 5]
-	];
-}
-
-foreach ($widgets as $widgetid => $widget) {
-	$profile = 'web.dashboard.widget.'.$widgetid;
-
-	$rate = CProfile::get($profile.'.rf_rate', 60);
-	$expanded = (bool) CProfile::get($profile.'.state', true);
-	$col = CProfile::get($profile.'.col', $widget['defaults']['col']);
-	$row = CProfile::get($profile.'.row', $widget['defaults']['row']);
-
-	$icon = (new CButton(null))
-		->addClass(ZBX_STYLE_BTN_WIDGET_ACTION)
-		->setTitle(_('Action'))
-		->setMenuPopup(CMenuPopupHelper::getRefresh($widgetid, $rate));
-
-	$dashboardGrid[$col][$row] = (new CCollapsibleUiWidget($widgetid, (new CDiv())->addClass(ZBX_STYLE_PRELOADER)))
-		->setExpanded($expanded)
-		->setHeader($widget['header'], [$icon], true, 'zabbix.php?action=dashboard.widget')
-		->setFooter((new CList())->setId($widgetid.'_footer'));
-
-	$widgetRefreshParams[$widgetid] = [
-		'frequency' => $rate,
-		'url' => 'zabbix.php?action='.$widget['action'],
-		'counter' => 0,
-		'darken' => 0,
-		'params' => ['widgetRefresh' => $widgetid]
-	];
-}
-
-// sort dashboard grid
-foreach ($dashboardGrid as $key => $val) {
-	ksort($dashboardGrid[$key]);
-}
-
-(new CWidget())
-	->setTitle(_('Dashboard'))
-	->setControls((new CForm())
-		->cleanItems()
-		->addItem((new CList())
-			->addItem(get_icon('dashconf', ['enabled' => $data['filter_enabled']]))
-			->addItem(get_icon('fullscreen', ['fullscreen' => $data['fullscreen']]))
+	(new CWidget())
+		->setTitle($data['dashboard']['name'])
+		->setControls((new CForm('get'))
+			->cleanItems()
+			->addVar('action', 'dashboard.view')
+			->addVar('fullscreen', $data['fullscreen'] ? '1' : null)
+			->addItem((new CList())
+				// $item_groupid and $item_hostid will be hidden, when 'Edit Dashboard' will be clicked.
+				->addItem($item_groupid)
+				->addItem($item_hostid)
+				/*
+				 * 'Edit dashboard' should be first one in list, because it will be visually replaced by last item of
+				 * new list, when clicked.
+				 */
+				->addItem((new CButton('dashbrd-edit', _('Edit dashboard')))->setEnabled($data['dashboard']['editable']))
+				->addItem((new CButton(SPACE))
+					->addClass(ZBX_STYLE_BTN_ACTION)
+					->setId('dashbrd-actions')
+					->setTitle(_('Actions'))
+					->setMenuPopup([
+						'type' => 'dashboard',
+						'label' => _('Actions'),
+						'items' => [
+							'sharing' => [
+								'label' => _('Sharing'),
+								'form_data' => [
+									'dashboardid' => $data['dashboard']['dashboardid']
+								],
+								'disabled' => !$data['dashboard']['editable']
+							],
+							'create' => [
+								'label' => _('Create new'),
+								'url' => $url_create->getUrl()
+							],
+							'clone' => [
+								'label' => _('Clone'),
+								'url' => $url_clone->getUrl()
+							],
+							'delete' => [
+								'label' => _('Delete'),
+								'confirmation' => _('Delete dashboard?'),
+								'url' => 'javascript:void(0)',
+								'redirect' => $data['dashboard']['editable']
+									? $url_delete->getUrl()
+									: null,
+								'disabled' => !$data['dashboard']['editable']
+							]
+						]
+					])
+				)
+				->addItem(get_icon('fullscreen', ['fullscreen' => $data['fullscreen']]))
+			)
 		)
-	)
-	->addItem(
-		(new CDiv(
-			(new CDiv([
-				(new CDiv($dashboardGrid[0]))->addClass(ZBX_STYLE_CELL),
-				(new CDiv($dashboardGrid[1]))->addClass(ZBX_STYLE_CELL),
-				(new CDiv($dashboardGrid[2]))->addClass(ZBX_STYLE_CELL)
-			]))
-				->addClass(ZBX_STYLE_ROW)
-		))
-			->addClass(ZBX_STYLE_TABLE)
-			->addClass('widget-placeholder')
-	)
-	->show();
+		->addItem((new CList())
+			->addItem($breadcrumbs)
+			->addClass(ZBX_STYLE_OBJECT_GROUP)
+		)
+		->addItem(($data['show_timeline']) ? (new CFilter('web.dashbrd.filter.state'))->addNavigator() : null)
+		->addItem((new CDiv())->addClass(ZBX_STYLE_DASHBRD_GRID_WIDGET_CONTAINER))
+		->addItem($edit_form)
+		->addItem($sharing_form)
+		->show();
 
-/*
- * Javascript
- */
-// start refresh process
-$this->addPostJS('initPMaster("dashboard", '.CJs::encodeJson($widgetRefreshParams).');');
-
-// activating blinking
-$this->addPostJS('jqBlink.blink();');
-
-?>
-
-<script type="text/javascript">
-	/**
-	 * @see init.js add.popup event
+	/*
+	 * Javascript
 	 */
-	function addPopupValues(list) {
-		var favourites = {graphid: 1, itemid: 1, screenid: 1, slideshowid: 1, sysmapid: 1};
+	// Activate blinking.
+	$this->addPostJS('jqBlink.blink();');
 
-		if (isset(list.object, favourites)) {
-			var favouriteIds = [];
+	$dashboard_data = [
+		// Name is required for new dashboard creation.
+		'name'		=> $data['dashboard']['name'],
+		'userid'	=> $data['dashboard']['owner']['id'],
+		'dynamic'	=> $data['dynamic']
+	];
 
-			for (var i = 0; i < list.values.length; i++) {
-				favouriteIds.push(list.values[i][list.object]);
-			}
-
-			sendAjaxData('zabbix.php?action=dashboard.favourite&operation=create', {
-				data: {
-					object: list.object,
-					'objectids[]': favouriteIds
-				}
-			});
-		}
+	if (array_key_exists('sharing', $data['dashboard'])) {
+		$dashboard_data['sharing'] = $data['dashboard']['sharing'];
 	}
-</script>
+
+	$dashboard_options = [
+		'fullscreen' => $data['fullscreen'],
+		'max-rows' => DASHBOARD_MAX_ROWS,
+		'max-columns' => DASHBOARD_MAX_COLUMNS,
+		'editable' => $data['dashboard']['editable']
+	];
+	if ($data['dashboard']['dashboardid'] != 0) {
+		$dashboard_data['id'] = $data['dashboard']['dashboardid'];
+	}
+	else {
+		$dashboard_options['updated'] = true;
+	}
+
+	// must be done before adding widgets, because it causes dashboard to resize.
+	if ($data['show_timeline']) {
+		$this->addPostJS(
+			'timeControl.useTimeRefresh('.CWebUser::getRefresh().');'.
+			'timeControl.addObject("scrollbar", '.CJs::encodeJson($data['timeline']).', '.
+				CJs::encodeJson($data['timeControlData']).
+			');'.
+			'timeControl.processObjects();'
+		);
+	}
+
+	// Initialize dashboard grid.
+	$this->addPostJS(
+		'jQuery(".'.ZBX_STYLE_DASHBRD_GRID_WIDGET_CONTAINER.'")'.
+			'.dashboardGrid('.CJs::encodeJson($dashboard_options).')'.
+			'.dashboardGrid("setDashboardData", '.CJs::encodeJson($dashboard_data).')'.
+			'.dashboardGrid("setWidgetDefaults", '.CJs::encodeJson($data['widget_defaults']).')'.
+			'.dashboardGrid("addWidgets", '.CJs::encodeJson($data['grid_widgets']).
+		');'
+	);
+}

@@ -54,6 +54,7 @@ abstract class CItemGeneral extends CApiService {
 			'name'					=> ['template' => 1],
 			'description'			=> [],
 			'key_'					=> ['template' => 1],
+			'master_itemid'			=> ['template' => 1],
 			'delay'					=> [],
 			'history'				=> [],
 			'trends'				=> [],
@@ -61,8 +62,6 @@ abstract class CItemGeneral extends CApiService {
 			'value_type'			=> ['template' => 1],
 			'trapper_hosts'			=> [],
 			'units'					=> ['template' => 1],
-			'multiplier'			=> ['template' => 1],
-			'delta'					=> ['template' => 1],
 			'snmpv3_contextname'	=> [],
 			'snmpv3_securityname'	=> [],
 			'snmpv3_securitylevel'	=> [],
@@ -76,10 +75,8 @@ abstract class CItemGeneral extends CApiService {
 			'logtimefmt'			=> [],
 			'templateid'			=> ['system' => 1],
 			'valuemapid'			=> ['template' => 1],
-			'delay_flex'			=> [],
 			'params'				=> [],
 			'ipmi_sensor'			=> ['template' => 1],
-			'data_type'				=> ['template' => 1],
 			'authtype'				=> [],
 			'username'				=> [],
 			'password'				=> [],
@@ -91,7 +88,10 @@ abstract class CItemGeneral extends CApiService {
 			'interfaceid'			=> ['host' => 1],
 			'port'					=> [],
 			'inventory_link'		=> [],
-			'lifetime'				=> []
+			'lifetime'				=> [],
+			'preprocessing'			=> ['template' => 1],
+			'jmx_endpoint'			=> [],
+			'master_itemid'			=> ['template' => 1]
 		];
 
 		$this->errorMessages = array_merge($this->errorMessages, [
@@ -143,8 +143,7 @@ abstract class CItemGeneral extends CApiService {
 				'hostid' => null,
 				'type' => null,
 				'value_type' => null,
-				'delay' => '0',
-				'delay_flex' => ''
+				'delay' => null
 			];
 
 			$dbHosts = API::Host()->get([
@@ -177,6 +176,12 @@ abstract class CItemGeneral extends CApiService {
 						_('No permissions to referred object or it does not exist!'));
 				}
 
+				if (array_key_exists('hostid', $item) && $dbItems[$item['itemid']]['hostid'] != $item['hostid']) {
+					self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.', 'hostid',
+						_('cannot be changed')
+					));
+				}
+
 				$dbItem = $dbItems[$item['itemid']];
 
 				$itemName = isset($item['name']) ? $item['name'] : $dbItem['name'];
@@ -190,6 +195,11 @@ abstract class CItemGeneral extends CApiService {
 		}
 
 		$item_key_parser = new CItemKey();
+		$ip_range_parser = new CIPRangeParser(['v6' => ZBX_HAVE_IPV6, 'ranges' => false, 'usermacros' => true]);
+		$update_interval_parser = new CUpdateIntervalParser([
+			'usermacros' => true,
+			'lldmacros' => (get_class($this) === 'CItemPrototype')
+		]);
 
 		foreach ($items as $inum => &$item) {
 			$item = $this->clearValues($item);
@@ -255,21 +265,60 @@ abstract class CItemGeneral extends CApiService {
 
 			$host = $dbHosts[$fullItem['hostid']];
 
-			if ($fullItem['type'] == ITEM_TYPE_ZABBIX_ACTIVE) {
-				$item['delay_flex'] = '';
-				$fullItem['delay_flex'] = '';
-			}
-			if ($fullItem['value_type'] == ITEM_VALUE_TYPE_STR) {
-				$item['delta'] = 0;
-			}
-			if ($fullItem['value_type'] != ITEM_VALUE_TYPE_UINT64) {
-				$item['data_type'] = 0;
+			// Validate update interval.
+			if (!in_array($fullItem['type'], [ITEM_TYPE_TRAPPER, ITEM_TYPE_SNMPTRAP, ITEM_TYPE_DEPENDENT])) {
+				if ($update_interval_parser->parse($fullItem['delay']) != CParser::PARSE_SUCCESS) {
+					self::exception(ZBX_API_ERROR_PARAMETERS,
+						_s('Incorrect value for field "%1$s": %2$s.', 'delay', _('invalid delay'))
+					);
+				}
+
+				$delay = $update_interval_parser->getDelay();
+
+				// Check if not macros. If delay is a macro, skip this step, otherwise check if delay is valid.
+				if ($delay[0] !== '{') {
+					$delay_sec = timeUnitToSeconds($delay);
+					$intervals = $update_interval_parser->getIntervals();
+					$flexible_intervals = $update_interval_parser->getIntervals(ITEM_DELAY_FLEXIBLE);
+					$has_scheduling_intervals = (bool) $update_interval_parser->getIntervals(ITEM_DELAY_SCHEDULING);
+					$has_macros = false;
+
+					foreach ($intervals as $interval) {
+						if (strpos($interval['interval'], '{') !== false) {
+							$has_macros = true;
+							break;
+						}
+					}
+
+					// If delay is 0, there must be at least one either flexible or scheduling interval.
+					if ($delay_sec < 0 || $delay_sec > SEC_PER_DAY || ($delay_sec == 0 && !$intervals)) {
+						self::exception(ZBX_API_ERROR_PARAMETERS,
+							_('Item will not be refreshed. Please enter a correct update interval.')
+						);
+					}
+
+					if ($fullItem['type'] == ITEM_TYPE_ZABBIX_ACTIVE) {
+						// Remove flexible and scheduling intervals and leave only the delay part.
+						$item['delay'] = $delay;
+					}
+					// If there are scheduling intervals or intervals with macros, skip the next check calculation.
+					elseif (!$has_macros && !$has_scheduling_intervals && $flexible_intervals
+							&& calculateItemNextCheck(0, $delay_sec, $flexible_intervals, time()) == ZBX_JAN_2038) {
+						self::exception(ZBX_API_ERROR_PARAMETERS,
+							_('Item will not be refreshed. Please enter a correct update interval.')
+						);
+					}
+				}
+				elseif ($fullItem['type'] == ITEM_TYPE_ZABBIX_ACTIVE) {
+					// Remove flexible and scheduling intervals and leave only the delay part.
+					$item['delay'] = $delay;
+				}
 			}
 
 			// For non-numeric types, whichever value was entered in trends field, is overwritten to zero.
 			if ($fullItem['value_type'] == ITEM_VALUE_TYPE_STR || $fullItem['value_type'] == ITEM_VALUE_TYPE_LOG
 					|| $fullItem['value_type'] == ITEM_VALUE_TYPE_TEXT) {
-				$item['trends'] = 0;
+				$item['trends'] = '0';
 			}
 
 			// check if the item requires an interface
@@ -308,8 +357,7 @@ abstract class CItemGeneral extends CApiService {
 				}
 			}
 			elseif (($fullItem['type'] == ITEM_TYPE_SSH && strcmp($fullItem['key_'], ZBX_DEFAULT_KEY_SSH) == 0)
-					|| ($fullItem['type'] == ITEM_TYPE_TELNET && strcmp($fullItem['key_'], ZBX_DEFAULT_KEY_TELNET) == 0)
-					|| ($fullItem['type'] == ITEM_TYPE_JMX && strcmp($fullItem['key_'], ZBX_DEFAULT_KEY_JMX) == 0)) {
+					|| ($fullItem['type'] == ITEM_TYPE_TELNET && strcmp($fullItem['key_'], ZBX_DEFAULT_KEY_TELNET) == 0)) {
 				self::exception(ZBX_API_ERROR_PARAMETERS, _('Check the key, please. Default example was passed.'));
 			}
 
@@ -343,55 +391,67 @@ abstract class CItemGeneral extends CApiService {
 						_('Type of information must be "Numeric (unsigned)" or "Numeric (float)" for aggregate items.'));
 			}
 
-			// update interval
-			if ($fullItem['type'] != ITEM_TYPE_TRAPPER && $fullItem['type'] != ITEM_TYPE_SNMPTRAP) {
-				// delay must be between 0 and 86400, if delay is 0, delay_flex interval must be set.
-				if ($fullItem['delay'] < 0 || $fullItem['delay'] > SEC_PER_DAY
-					|| ($fullItem['delay'] == 0 && $fullItem['delay_flex'] === '')) {
+			if ($fullItem['type'] == ITEM_TYPE_TRAPPER) {
+				if ($fullItem['trapper_hosts'] !== '' && !$ip_range_parser->parse($fullItem['trapper_hosts'])) {
 					self::exception(ZBX_API_ERROR_PARAMETERS,
-						_('Item will not be refreshed. Please enter a correct update interval.')
+						_s('Incorrect value for field "%1$s": %2$s.', 'trapper_hosts', $ip_range_parser->getError())
 					);
 				}
+			}
 
-				// Don't parse empty strings, they will not be valid.
-				if ($fullItem['delay_flex'] !== '') {
-					// Validate item delay_flex string. First check syntax with parser, then validate time ranges.
-					$item_delay_flex_parser = new CItemDelayFlexParser($fullItem['delay_flex']);
+			// jmx
+			if ($fullItem['type'] == ITEM_TYPE_JMX) {
+				if (!array_key_exists('jmx_endpoint', $fullItem) && !$update) {
+					$item['jmx_endpoint'] = ZBX_DEFAULT_JMX_ENDPOINT;
+				}
+				if (array_key_exists('jmx_endpoint', $fullItem) && $fullItem['jmx_endpoint'] === '') {
+					self::exception(ZBX_API_ERROR_PARAMETERS,
+						_s('Incorrect value for field "%1$s": %2$s.', 'jmx_endpoint', _('cannot be empty'))
+					);
+				}
+			}
+			else {
+				if (array_key_exists('jmx_endpoint', $item) && $item['jmx_endpoint'] !== '') {
+					self::exception(ZBX_API_ERROR_PARAMETERS,
+						_s('Incorrect value for field "%1$s": %2$s.', 'jmx_endpoint', _('should be empty'))
+					);
+				}
+				elseif (array_key_exists('jmx_endpoint', $fullItem) && $fullItem['jmx_endpoint'] !== '') {
+					$item['jmx_endpoint'] = '';
+				}
+			}
 
-					if ($item_delay_flex_parser->isValid()) {
-						$delay_flex_validator = new CItemDelayFlexValidator();
-
-						if ($delay_flex_validator->validate($item_delay_flex_parser->getIntervals())) {
-							// Some valid intervals exist at this point.
-							$flexible_intervals = $item_delay_flex_parser->getFlexibleIntervals();
-
-							// If there are no flexible intervals, skip the next check calculation.
-							if (!$flexible_intervals) {
-								continue;
-							}
-
-							$nextCheck = calculateItemNextCheck(0, $fullItem['delay'],
-								$item_delay_flex_parser->getFlexibleIntervals($flexible_intervals),
-								time()
-							);
-
-							if ($nextCheck == ZBX_JAN_2038) {
-								self::exception(ZBX_API_ERROR_PARAMETERS,
-									_('Item will not be refreshed. Please enter a correct update interval.')
-								);
-							}
-						}
-						else {
-							self::exception(ZBX_API_ERROR_PARAMETERS, $delay_flex_validator->getError());
-						}
+			// Dependent item.
+			if ($fullItem['type'] == ITEM_TYPE_DEPENDENT) {
+				if ($update) {
+					if (array_key_exists('master_itemid', $item) && !$item['master_itemid']) {
+						self::exception(ZBX_API_ERROR_PERMISSIONS, _s('Incorrect value for field "%1$s": %2$s.',
+							'master_itemid', _('cannot be empty')
+						));
 					}
-					else {
-						self::exception(ZBX_API_ERROR_PARAMETERS, _s('Invalid interval "%1$s": %2$s.',
-							$fullItem['delay_flex'],
-							$item_delay_flex_parser->getError())
-						);
+					if ($dbItems[$fullItem['itemid']]['type'] != ITEM_TYPE_DEPENDENT
+							&& !array_key_exists('master_itemid', $item)) {
+						self::exception(ZBX_API_ERROR_PERMISSIONS, _s('Incorrect value for field "%1$s": %2$s.',
+							'master_itemid', _('cannot be empty')
+						));
 					}
 				}
+				elseif (!array_key_exists('master_itemid', $item) || !$item['master_itemid']) {
+					self::exception(ZBX_API_ERROR_PERMISSIONS, _s('Incorrect value for field "%1$s": %2$s.',
+						'master_itemid', _('cannot be empty')
+					));
+				}
+				if (array_key_exists('master_itemid', $item) && !is_int($item['master_itemid'])
+						&& !(is_string($item['master_itemid']) && ctype_digit($item['master_itemid']))) {
+					self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value "%1$s" for "%2$s" field.',
+						$item['master_itemid'], 'master_itemid'
+					));
+				}
+			}
+			elseif (array_key_exists('master_itemid', $item) && $item['master_itemid']) {
+				self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.', 'master_itemid',
+					_('should be empty')
+				));
 			}
 
 			// ssh, telnet
@@ -477,14 +537,70 @@ abstract class CItemGeneral extends CApiService {
 				}
 			}
 
-			$this->checkSpecificFields($fullItem);
+			$this->checkSpecificFields($fullItem, $update ? 'update' : 'create');
 		}
 		unset($item);
 
 		$this->checkExistingItems($items);
+
+		// Validate inherited dependent items linkage.
+		$templateids = [];
+
+		foreach ($dbHosts as $db_host) {
+			if ($db_host['status'] == HOST_STATUS_TEMPLATE) {
+				$templateids[] = $db_host['hostid'];
+			}
+		}
+
+		$templateids = array_keys(array_flip($templateids));
+		$templates = API::Template()->get([
+			'output' => ['templateid'],
+			'templateids' => $templateids,
+			'selectHosts' => ['hostid']
+		]);
+
+		foreach ($templates as $template) {
+			if (!$template['hosts']) {
+				continue;
+			}
+
+			$hostids = zbx_objectValues($template['hosts'], 'hostid');
+			$hostids = array_keys(array_flip($hostids));
+			$all_hostids = array_merge($hostids, [$template['templateid']]);
+
+			$host_items = $this->get([
+				'output' => ['itemid', 'type', 'key_', 'master_itemid', 'hostid'],
+				'filter' => ['hostid' => $all_hostids],
+				'preservekeys' => true
+			]);
+
+			foreach ($items as $item) {
+				if ($update) {
+					$item += $dbItems[$item['itemid']];
+				}
+
+				if ($item['hostid'] == $template['templateid']
+						|| ($item['type'] == ITEM_TYPE_DEPENDENT
+						&& array_key_exists($item['master_itemid'], $host_items))) {
+					$item_index = array_key_exists('itemid', $item) ? $item['itemid'] : $item['key_'];
+					$host_items[$item_index] = $item;
+				}
+			}
+
+			$this->validateDependentItemsIntersection($host_items, $hostids);
+		}
 	}
 
-	protected function checkSpecificFields(array $item) {
+	/**
+	 * Check item specific fields. Each API like Item, Itemprototype and Discovery rule may inherit different fields
+	 * to validate.
+	 *
+	 * @param array  $item    An array of single item data.
+	 * @param string $method  A string of "create" or "update" method.
+	 *
+	 * @return bool
+	 */
+	protected function checkSpecificFields(array $item, $method) {
 		return true;
 	}
 
@@ -496,11 +612,9 @@ abstract class CItemGeneral extends CApiService {
 			}
 		}
 
-		if (isset($item['lifetime']) && $item['lifetime'] != '') {
-			$item['lifetime'] = ltrim($item['lifetime'], '0');
-			if ($item['lifetime'] == '') {
-				$item['lifetime'] = 0;
-			}
+		if (array_key_exists('type', $item) &&
+				($item['type'] == ITEM_TYPE_DEPENDENT || $item['type'] == ITEM_TYPE_TRAPPER)) {
+			$item['delay'] = 0;
 		}
 
 		return $item;
@@ -573,43 +687,6 @@ abstract class CItemGeneral extends CApiService {
 		}
 
 		return $matchingInterface;
-	}
-
-	public function isReadable($ids) {
-		if (!is_array($ids)) {
-			return false;
-		}
-		if (empty($ids)) {
-			return true;
-		}
-
-		$ids = array_unique($ids);
-
-		$count = $this->get([
-			'itemids' => $ids,
-			'countOutput' => true
-		]);
-
-		return (count($ids) == $count);
-	}
-
-	public function isWritable($ids) {
-		if (!is_array($ids)) {
-			return false;
-		}
-		if (empty($ids)) {
-			return true;
-		}
-
-		$ids = array_unique($ids);
-
-		$count = $this->get([
-			'itemids' => $ids,
-			'editable' => true,
-			'countOutput' => true
-		]);
-
-		return (count($ids) == $count);
 	}
 
 	/**
@@ -728,7 +805,7 @@ abstract class CItemGeneral extends CApiService {
 
 			// check existing items to decide insert or update
 			$exItems = API::Item()->get([
-				'output' => ['itemid', 'type', 'key_', 'flags', 'templateid'],
+				'output' => ['itemid', 'type', 'key_', 'flags', 'templateid', 'master_itemid'],
 				'hostids' => $hostId,
 				'preservekeys' => true,
 				'nopermissions' => true,
@@ -829,6 +906,17 @@ abstract class CItemGeneral extends CApiService {
 					$newItem['applications'] = get_same_applications_for_host($parentItem['applications'], $host['hostid']);
 				}
 
+				if (array_key_exists('preprocessing', $newItem)) {
+					foreach ($newItem['preprocessing'] as $preprocessing) {
+						if ($exItem) {
+							$preprocessing['itemid'] = $exItem['itemid'];
+						}
+						else {
+							unset($preprocessing['itemid']);
+						}
+					}
+				}
+
 				if ($parentItem['flags'] == ZBX_FLAG_DISCOVERY_PROTOTYPE
 						&& array_key_exists('applicationPrototypes', $parentItem)) {
 
@@ -874,6 +962,234 @@ abstract class CItemGeneral extends CApiService {
 		}
 
 		return $newItems;
+	}
+
+	/**
+	 * Validate item pre-processing.
+	 *
+	 * @param array  $item									An array of single item data.
+	 * @param array  $item['preprocessing']					An array of item pre-processing data.
+	 * @param string $item['preprocessing'][]['type']		The preprocessing option type. Possible values:
+	 *															1 - ZBX_PREPROC_MULTIPLIER;
+	 *															2 - ZBX_PREPROC_RTRIM;
+	 *															3 - ZBX_PREPROC_LTRIM;
+	 *															4 - ZBX_PREPROC_TRIM;
+	 *															5 - ZBX_PREPROC_REGSUB;
+	 *															6 - ZBX_PREPROC_BOOL2DEC;
+	 *															7 - ZBX_PREPROC_OCT2DEC;
+	 *															8 - ZBX_PREPROC_HEX2DEC;
+	 *															9 - ZBX_PREPROC_DELTA_VALUE;
+	 *															10 - ZBX_PREPROC_DELTA_SPEED;
+	 *															11 - ZBX_PREPROC_XPATH;
+	 *															12 - ZBX_PREPROC_JSONPATH.
+	 * @param string $item['preprocessing'][]['params']		Additional parameters used by preprocessing option. In case
+	 *														of regular expression (ZBX_PREPROC_REGSUB), multiple
+	 *														parameters are separated by LF (\n)character.
+	 * @param string $method								A string of "create" or "update" method.
+	 */
+	protected function validateItemPreprocessing(array $item, $method) {
+		if (array_key_exists('preprocessing', $item)) {
+			if (!is_array($item['preprocessing'])) {
+				self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect arguments passed to function.'));
+			}
+
+			$type_validator = new CLimitedSetValidator(['values' => array_keys(get_preprocessing_types(null, false))]);
+
+			$required_fields = ['type', 'params'];
+			$delta = false;
+
+			foreach ($item['preprocessing'] as $preprocessing) {
+				$missing_keys = array_diff($required_fields, array_keys($preprocessing));
+
+				if ($missing_keys) {
+					self::exception(ZBX_API_ERROR_PARAMETERS,
+						_s('Item pre-processing is missing parameters: %1$s', implode(', ', $missing_keys))
+					);
+				}
+
+				if (is_array($preprocessing['type'])) {
+					self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect arguments passed to function.'));
+				}
+				elseif ($preprocessing['type'] === '' || $preprocessing['type'] === null
+						|| $preprocessing['type'] === false) {
+					self::exception(ZBX_API_ERROR_PARAMETERS,
+						_s('Incorrect value for field "%1$s": %2$s.', 'type', _('cannot be empty'))
+					);
+				}
+
+				if (!$type_validator->validate($preprocessing['type'])) {
+					self::exception(ZBX_API_ERROR_PARAMETERS,
+						_s('Incorrect value for field "%1$s": %2$s.', 'type',
+							_s('unexpected value "%1$s"', $preprocessing['type'])
+						)
+					);
+				}
+				switch ($preprocessing['type']) {
+					case ZBX_PREPROC_MULTIPLIER:
+						// Check if custom multiplier is a valid number.
+						if (is_array($preprocessing['params'])) {
+							self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect arguments passed to function.'));
+						}
+						elseif ($preprocessing['params'] === '' || $preprocessing['params'] === null
+								|| $preprocessing['params'] === false) {
+							self::exception(ZBX_API_ERROR_PARAMETERS,
+								_s('Incorrect value for field "%1$s": %2$s.', 'params', _('cannot be empty'))
+							);
+						}
+
+						if (!is_numeric($preprocessing['params'])) {
+							self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.',
+								'params', _('a numeric value is expected')
+							));
+						}
+						break;
+
+					case ZBX_PREPROC_RTRIM:
+					case ZBX_PREPROC_LTRIM:
+					case ZBX_PREPROC_TRIM:
+					case ZBX_PREPROC_XPATH:
+					case ZBX_PREPROC_JSONPATH:
+						// Check 'params' if not empty.
+						if (is_array($preprocessing['params'])) {
+							self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect arguments passed to function.'));
+						}
+						elseif ($preprocessing['params'] === '' || $preprocessing['params'] === null
+								|| $preprocessing['params'] === false) {
+							self::exception(ZBX_API_ERROR_PARAMETERS,
+								_s('Incorrect value for field "%1$s": %2$s.', 'params', _('cannot be empty'))
+							);
+						}
+						break;
+
+					case ZBX_PREPROC_REGSUB:
+						// Check if 'params' are not empty and if second parameter contains (after \n) is not empty.
+						if (is_array($preprocessing['params'])) {
+							self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect arguments passed to function.'));
+						}
+						elseif ($preprocessing['params'] === '' || $preprocessing['params'] === null
+								|| $preprocessing['params'] === false) {
+							self::exception(ZBX_API_ERROR_PARAMETERS,
+								_s('Incorrect value for field "%1$s": %2$s.', 'params', _('cannot be empty'))
+							);
+						}
+
+						$params = explode("\n", $preprocessing['params']);
+
+						if ($params[0] === '') {
+							self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.',
+								'params', _('first parameter is expected')
+							));
+						}
+
+						if (!array_key_exists(1, $params) || $params[1] === '') {
+							self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.',
+								'params', _('second parameter is expected')
+							));
+						}
+						break;
+
+					case ZBX_PREPROC_BOOL2DEC:
+					case ZBX_PREPROC_OCT2DEC:
+					case ZBX_PREPROC_HEX2DEC:
+						// Check if 'params' is empty, because it must be empty.
+						if (is_array($preprocessing['params'])) {
+							self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect arguments passed to function.'));
+						}
+						elseif ($preprocessing['params'] !== '' && $preprocessing['params'] !== null
+								&& $preprocessing['params'] !== false) {
+							self::exception(ZBX_API_ERROR_PARAMETERS,
+								_s('Incorrect value for field "%1$s": %2$s.', 'params', _('should be empty'))
+							);
+						}
+						break;
+
+					case ZBX_PREPROC_DELTA_VALUE:
+					case ZBX_PREPROC_DELTA_SPEED:
+						// Check if 'params' is empty, because it must be empty.
+						if (is_array($preprocessing['params'])) {
+							self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect arguments passed to function.'));
+						}
+						elseif ($preprocessing['params'] !== '' && $preprocessing['params'] !== null
+								&& $preprocessing['params'] !== false) {
+							self::exception(ZBX_API_ERROR_PARAMETERS,
+								_s('Incorrect value for field "%1$s": %2$s.', 'params', _('should be empty'))
+							);
+						}
+
+						// Check if one of the deltas (Delta per second or Delta value) already exists.
+						if ($delta) {
+							self::exception(ZBX_API_ERROR_PARAMETERS, _('Only one change step is allowed.'));
+						}
+						else {
+							$delta = true;
+						}
+						break;
+				}
+			}
+		}
+	}
+
+	/**
+	 * Insert item pre-processing data into DB.
+	 *
+	 * @param array $items							An array of items.
+	 * @param array $items[]['preprocessing']		An array of item pre-processing data.
+	 */
+	protected function createItemPreprocessing(array $items) {
+		$item_preproc = [];
+		$step = 1;
+
+		foreach ($items as $item) {
+			if (array_key_exists('preprocessing', $item)) {
+				foreach ($item['preprocessing'] as $preprocessing) {
+					$item_preproc[] = [
+						'itemid' => $item['itemid'],
+						'step' => $step++,
+						'type' => $preprocessing['type'],
+						'params' => $preprocessing['params']
+					];
+				}
+			}
+		}
+
+		if ($item_preproc) {
+			DB::insert('item_preproc', $item_preproc);
+		}
+	}
+
+	/**
+	 * Update item pre-processing data in DB. Delete old records and create new ones.
+	 *
+	 * @param array $items							An array of items.
+	 * @param array $items[]['preprocessing']		An array of item pre-processing data.
+	 */
+	protected function updateItemPreprocessing(array $items) {
+		$item_preproc = [];
+		$item_preprocids = [];
+		$step = 1;
+
+		foreach ($items as $item) {
+			if (array_key_exists('preprocessing', $item)) {
+				$item_preprocids[] = $item['itemid'];
+
+				foreach ($item['preprocessing'] as $preprocessing) {
+					$item_preproc[] = [
+						'itemid' => $item['itemid'],
+						'step' => $step++,
+						'type' => $preprocessing['type'],
+						'params' => $preprocessing['params']
+					];
+				}
+			}
+		}
+
+		if ($item_preprocids) {
+			DB::delete('item_preproc', ['itemid' => $item_preprocids]);
+		}
+
+		if ($item_preproc) {
+			DB::insert('item_preproc', $item_preproc);
+		}
 	}
 
 	/**
@@ -937,5 +1253,323 @@ abstract class CItemGeneral extends CApiService {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Validate items with type ITEM_TYPE_DEPENDENT for create or update operation.
+	 *
+	 * @param array                 $items          Array of items.
+	 * @param CItem|CItemPrototype  $data_provider  Item data provider.
+	 *
+	 * @throws APIException for invalid data.
+	 */
+	protected function validateDependentItems($items, $data_provider) {
+		$items_cache = zbx_toHash($items, 'itemid');
+		$root_items = [];
+		$items_added = [];
+		$items_moved = [];
+		$items_created = [];
+		$db_items = [];
+
+		$processed_items = [];
+		$unresolved_master_itemids = [];
+		$has_unresolved_masters = false;
+
+		if ($items_cache) {
+			$db_items = $data_provider->get([
+				'output' => ['itemid', 'type', 'name', 'hostid', 'master_itemid'],
+				'itemids' => array_keys($items_cache),
+				'preservekeys' => true
+			]);
+
+			foreach ($db_items as $db_itemid => $db_item) {
+				$items_cache[$db_itemid] = $items_cache[$db_itemid] + $db_item;
+			}
+		}
+
+		do {
+			if ($has_unresolved_masters) {
+				$db_masters = $data_provider->get([
+					'output' => ['type', 'name', 'hostid', 'master_itemid'],
+					'itemids' => array_keys($unresolved_master_itemids)
+				]);
+
+				foreach ($db_masters as $db_master) {
+					$items_cache[$db_master['itemid']] = $db_master;
+					unset($unresolved_master_itemids[$db_master['itemid']]);
+				}
+
+				if ($unresolved_master_itemids) {
+					reset($unresolved_master_itemids);
+					self::exception(ZBX_API_ERROR_PERMISSIONS, _s('Incorrect value for field "%1$s": %2$s.',
+						'master_itemid', _s('Item "%1$s" does not exist or you have no access to this item',
+							key($unresolved_master_itemids)
+					)));
+				}
+				$has_unresolved_masters = false;
+			}
+
+			foreach ($items as $item_index => $item) {
+				if (array_key_exists($item_index, $processed_items)) {
+					// Do not validate already checked items.
+					continue;
+				}
+
+				if (array_key_exists('itemid', $item) && array_key_exists($item['itemid'], $items_cache)) {
+					$item = $item + $items_cache[$item['itemid']];
+				}
+
+				if ($item['type'] != ITEM_TYPE_DEPENDENT) {
+					continue;
+				}
+
+				$dependency_level = 0;
+				$item_masters = [];
+				$master_item = $item;
+				$hostid = $master_item['hostid'];
+
+				if (array_key_exists('itemid', $item)) {
+					$item_masters[$item['itemid']] = true;
+				}
+
+				// Traversing up to root item, if next parent should be requested from database store it itemid,
+				// missing parents will be requested in bulk request on next $items scan.
+				while ($master_item && $master_item['type'] == ITEM_TYPE_DEPENDENT) {
+					$master_itemid = $master_item['master_itemid'];
+
+					if (array_key_exists('itemid', $master_item) && $master_itemid == $master_item['itemid']) {
+						self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.',
+							'master_itemid', _('circular item dependency is not allowed')
+						));
+					}
+
+					if ($item_masters && array_key_exists($master_itemid, $item_masters)) {
+						self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.',
+							'master_itemid', _('circular item dependency is not allowed')
+						));
+					}
+
+					if (array_key_exists($master_itemid, $items_cache)) {
+						$master_item = $items_cache[$master_itemid];
+						$item_masters[$master_itemid] = true;
+						$dependency_level++;
+					}
+					else {
+						$unresolved_master_itemids[$master_itemid] = true;
+						$has_unresolved_masters = true;
+						break;
+					}
+
+					if ($hostid != $master_item['hostid']) {
+						self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.',
+							'master_itemid', _('hostid of dependent item and master item should match')
+						));
+					}
+
+					if ($dependency_level > ZBX_DEPENDENT_ITEM_MAX_LEVELS) {
+						self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.',
+							'master_itemid', _('maximum number of dependency levels reached')
+						));
+					}
+				}
+
+				// Dependency tree root item is resolved successfully.
+				if ($dependency_level > 0 && $master_item && $master_item['type'] != ITEM_TYPE_DEPENDENT) {
+					$processed_items[$item_index] = true;
+					$master_itemid = $master_item['itemid'];
+					$root_items[$master_itemid] = true;
+
+					if (array_key_exists('itemid', $item) &&
+							$item['type'] == ITEM_TYPE_DEPENDENT &&
+							$item['master_itemid'] != $db_items[$item['itemid']]['master_itemid']) {
+						$itemid = $item['itemid'];
+						$old_master_itemid = $db_items[$itemid]['master_itemid'];
+						$dependency_level;
+
+						if (!array_key_exists($master_itemid, $items_added)) {
+							$items_added[$master_itemid] = [$dependency_level => []];
+						}
+						elseif (!array_key_exists($dependency_level, $items_added[$master_itemid])) {
+							$items_added[$master_itemid][$dependency_level] = [];
+						}
+						$items_added[$master_itemid][$dependency_level][$itemid] = $itemid;
+
+						if (!array_key_exists($old_master_itemid, $items_moved)) {
+							$items_moved[$old_master_itemid] = [];
+						}
+						$items_moved[$old_master_itemid][$itemid] = $itemid;
+					}
+					elseif (!array_key_exists('itemid', $item)) {
+						$items_created[$master_itemid] = array_key_exists($master_itemid, $items_created)
+							? $items_created[$master_itemid] + 1
+							: 1;
+					}
+				}
+			}
+		} while ($has_unresolved_masters);
+
+		// Validate every root mater items childrens count.
+		foreach (array_keys($root_items) as $root_itemid) {
+			$dependency_level = 0;
+			$find_itemids = [$root_itemid => $dependency_level];
+			$items_count = array_key_exists($root_itemid, $items_created)
+				? $items_created[$root_itemid]
+				: 0;
+			$counted_masters = [];
+
+			while (($find_itemids || (array_key_exists($root_itemid, $items_added)
+						&& array_key_exists($dependency_level, $items_added[$root_itemid])))
+						&& $dependency_level <= ZBX_DEPENDENT_ITEM_MAX_LEVELS) {
+				// If item was moved to another master item, do not count moved item (and its dependent items)
+				// in old master dependent items count calculation.
+				if (array_key_exists($root_itemid, $items_moved)) {
+					$ignoreids = array_intersect_key($find_itemids, $items_moved[$root_itemid]);
+					$find_itemids = array_diff_key($find_itemids, $ignoreids);
+				}
+				if (array_key_exists($root_itemid, $items_added)
+						&& array_key_exists($dependency_level, $items_added[$root_itemid])) {
+					$find_itemids += $items_added[$root_itemid][$dependency_level];
+				}
+				$find_itemids = $data_provider->get([
+					'output' => ['itemid'],
+					'filter' => ['master_itemid' => array_keys($find_itemids)],
+					'preservekeys' => true
+				]);
+
+				$find_itemids = array_diff_key($find_itemids, $counted_masters);
+				$items_count = $items_count + count($find_itemids);
+				$counted_masters += $find_itemids;
+				++$dependency_level;
+
+				if ($items_count > ZBX_DEPENDENT_ITEM_MAX_COUNT) {
+					self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.',
+						'master_itemid', _('maximum dependent items count reached')
+					));
+				}
+			};
+
+			if (($find_itemids || (array_key_exists($root_itemid, $items_added)
+					&& array_key_exists($dependency_level, $items_added[$root_itemid])))
+					&& $dependency_level > ZBX_DEPENDENT_ITEM_MAX_LEVELS) {
+				self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.',
+					'master_itemid', _('maximum number of dependency levels reached')
+				));
+			}
+		}
+	}
+
+	/**
+	 * Synchronize dependent item to master item relation for inherited items.
+	 *
+	 * @param array $items  Array of inherited items.
+	 */
+	protected function inheritDependentItems($items) {
+		$master_itemids = [];
+
+		foreach ($items as $item) {
+			if ($item['type'] == ITEM_TYPE_DEPENDENT) {
+				$master_itemids[$item['master_itemid']] = true;
+			}
+		}
+
+		if ($master_itemids) {
+			$master_items = DB::select('items', [
+				'output' => ['key_', 'hostid'],
+				'filter' => ['itemid' => array_keys($master_itemids)],
+				'preservekeys' => true
+			]);
+			$data = [];
+			$host_master_items = [];
+
+			foreach ($items as $item) {
+				if ($item['type'] != ITEM_TYPE_DEPENDENT) {
+					continue;
+				}
+				$master_item = $master_items[$item['master_itemid']];
+
+				if (!array_key_exists($item['hostid'], $host_master_items)) {
+					$host_master_items[$item['hostid']] = [];
+				}
+				if ($master_item['hostid'] != $item['hostid']) {
+					if (!array_key_exists($master_item['key_'], $host_master_items[$item['hostid']])) {
+						$inherited_master_items = DB::select('items', [
+							'output' => ['itemid'],
+							'filter' => ['hostid' => $item['hostid'], 'key_' => $master_item['key_']]
+						]);
+						$host_master_items[$item['hostid']][$master_item['key_']] = reset($inherited_master_items);
+					}
+					$inherited_master_item = $host_master_items[$item['hostid']][$master_item['key_']];
+					$data[] = [
+						'values' => ['master_itemid' => $inherited_master_item['itemid']],
+						'where' => ['itemid' => $item['itemid']]
+					];
+				}
+			}
+			if ($data) {
+				DB::update('items', $data);
+			}
+		}
+	}
+
+	/**
+	 * Validate merge of template dependent items and every host dependent items, host dependent item will be overwritten
+	 * by template dependent items.
+	 * Return false if intersection of host dependent items and template dependent items create dependent items
+	 * with dependency level greater than ZBX_DEPENDENT_ITEM_MAX_LEVELS.
+	 *
+	 * @param array $items
+	 * @param array $hostids
+	 *
+	 * @throws APIException if intersection of template items and host items creates dependent items tree with
+	 *                      dependent item level more than ZBX_DEPENDENT_ITEM_MAX_LEVELS or master item recursion.
+	 */
+	protected function validateDependentItemsIntersection($db_items, $hostids, $errorService = null) {
+		$hosts_items = [];
+		$tmpl_items = [];
+
+		foreach ($db_items as $db_item) {
+			$master_key = ($db_item['type'] == ITEM_TYPE_DEPENDENT)
+				? $db_items[$db_item['master_itemid']]['key_']
+				: '';
+
+			if (in_array($db_item['hostid'], $hostids)) {
+				$hosts_items[$db_item['hostid']][$db_item['key_']] = $master_key;
+			}
+			elseif (!array_key_exists($db_item['key_'], $tmpl_items) || !$tmpl_items[$db_item['key_']]) {
+				$tmpl_items[$db_item['key_']] = $master_key;
+			}
+		}
+
+		foreach ($hosts_items as $hostid => $items) {
+			$linked_items = $items;
+
+			// Merge host items dependency tree with template items dependency tree.
+			$linked_items = array_merge($linked_items, $tmpl_items);
+
+			// Check dependency level for every dependent item.
+			foreach ($linked_items as $linked_item => $linked_master_key) {
+				$master_key = $linked_master_key;
+				$dependency_level = 0;
+				$traversing_path = [];
+
+				while ($master_key && $dependency_level <= ZBX_DEPENDENT_ITEM_MAX_LEVELS) {
+					$traversing_path[] = $master_key;
+					$master_key = $linked_items[$master_key];
+					++$dependency_level;
+
+					if (in_array($master_key, $traversing_path)) {
+						self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.',
+							'master_itemid', _('circular item dependency is not allowed')
+						));
+					}
+				}
+
+				if ($dependency_level > ZBX_DEPENDENT_ITEM_MAX_LEVELS) {
+					self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.',
+						'master_itemid', _('maximum number of dependency levels reached')
+					));
+				}
+			}
+		}
 	}
 }

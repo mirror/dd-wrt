@@ -30,7 +30,6 @@ class CActionCondValidator extends CValidator {
 	 */
 	public function validate($condition) {
 		// build validators
-		$timePeriodValidator = new CTimePeriodValidator();
 		$discoveryCheckTypeValidator = new CLimitedSetValidator([
 			'values' => array_keys(discovery_check_type2str())
 		]);
@@ -112,18 +111,20 @@ class CActionCondValidator extends CValidator {
 				break;
 
 			case CONDITION_TYPE_TIME_PERIOD:
-				if (!$timePeriodValidator->validate($conditionValue)) {
-					$this->setError($timePeriodValidator->getError());
+				$time_period_parser = new CTimePeriodsParser(['usermacros' => true]);
+
+				if ($time_period_parser->parse($conditionValue) != CParser::PARSE_SUCCESS) {
+					$this->setError(_('Invalid time period.'));
 				}
 				break;
 
 			case CONDITION_TYPE_DHOST_IP:
-				$ipRangeValidator = new CIPRangeValidator();
+				$ip_range_parser = new CIPRangeParser(['v6' => ZBX_HAVE_IPV6, 'dns' => false, 'max_ipv4_cidr' => 30]);
 				if (zbx_empty($conditionValue)) {
 					$this->setError(_('Empty action condition.'));
 				}
-				elseif (!$ipRangeValidator->validate($conditionValue)) {
-					$this->setError($ipRangeValidator->getError());
+				elseif (!$ip_range_parser->parse($conditionValue)) {
+					$this->setError(_s('Invalid action condition: %1$s.', $ip_range_parser->getError()));
 				}
 				break;
 

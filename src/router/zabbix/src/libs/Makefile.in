@@ -86,11 +86,12 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_ibm_db2.m4 \
 	$(top_srcdir)/m4/ax_lib_postgresql.m4 \
 	$(top_srcdir)/m4/ax_lib_sqlite3.m4 $(top_srcdir)/m4/iconv.m4 \
 	$(top_srcdir)/m4/jabber.m4 $(top_srcdir)/m4/ldap.m4 \
-	$(top_srcdir)/m4/libcurl.m4 $(top_srcdir)/m4/libgnutls.m4 \
-	$(top_srcdir)/m4/libmbedtls.m4 $(top_srcdir)/m4/libopenssl.m4 \
-	$(top_srcdir)/m4/libssh2.m4 $(top_srcdir)/m4/libunixodbc.m4 \
-	$(top_srcdir)/m4/libxml2.m4 $(top_srcdir)/m4/netsnmp.m4 \
-	$(top_srcdir)/m4/openipmi.m4 $(top_srcdir)/m4/resolv.m4 \
+	$(top_srcdir)/m4/libcurl.m4 $(top_srcdir)/m4/libevent.m4 \
+	$(top_srcdir)/m4/libgnutls.m4 $(top_srcdir)/m4/libmbedtls.m4 \
+	$(top_srcdir)/m4/libopenssl.m4 $(top_srcdir)/m4/libssh2.m4 \
+	$(top_srcdir)/m4/libunixodbc.m4 $(top_srcdir)/m4/libxml2.m4 \
+	$(top_srcdir)/m4/netsnmp.m4 $(top_srcdir)/m4/openipmi.m4 \
+	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/resolv.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -229,7 +230,13 @@ LDFLAGS = @LDFLAGS@
 LIBCURL_CFLAGS = @LIBCURL_CFLAGS@
 LIBCURL_LDFLAGS = @LIBCURL_LDFLAGS@
 LIBCURL_LIBS = @LIBCURL_LIBS@
+LIBEVENT_CFLAGS = @LIBEVENT_CFLAGS@
+LIBEVENT_LDFLAGS = @LIBEVENT_LDFLAGS@
+LIBEVENT_LIBS = @LIBEVENT_LIBS@
 LIBOBJS = @LIBOBJS@
+LIBPCRE_CFLAGS = @LIBPCRE_CFLAGS@
+LIBPCRE_LDFLAGS = @LIBPCRE_LDFLAGS@
+LIBPCRE_LIBS = @LIBPCRE_LIBS@
 LIBS = @LIBS@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_CONFIG = @LIBXML2_CONFIG@
@@ -378,7 +385,10 @@ DIST_SUBDIRS = \
 	zbxexec \
 	zbxself \
 	zbxmodules \
-	zbxregexp
+	zbxregexp \
+	zbxtasks \
+	zbxhttp \
+	zbxipcservice
 
 @SERVER_TRUE@SERVER_SUBDIRS = \
 @SERVER_TRUE@	zbxcommshigh \
@@ -386,11 +396,13 @@ DIST_SUBDIRS = \
 @SERVER_TRUE@	zbxdbupgrade \
 @SERVER_TRUE@	zbxdbcache \
 @SERVER_TRUE@	zbxdbhigh \
+@SERVER_TRUE@	zbxhttp \
 @SERVER_TRUE@	zbxmemory \
 @SERVER_TRUE@	zbxserver \
 @SERVER_TRUE@	zbxicmpping \
 @SERVER_TRUE@	zbxmedia \
-@SERVER_TRUE@	zbxself
+@SERVER_TRUE@	zbxself \
+@SERVER_TRUE@	zbxtasks
 
 @PROXY_TRUE@@SERVER_FALSE@PROXY_SUBDIRS = \
 @PROXY_TRUE@@SERVER_FALSE@	zbxcommshigh \
@@ -398,10 +410,12 @@ DIST_SUBDIRS = \
 @PROXY_TRUE@@SERVER_FALSE@	zbxdbupgrade \
 @PROXY_TRUE@@SERVER_FALSE@	zbxdbcache \
 @PROXY_TRUE@@SERVER_FALSE@	zbxdbhigh \
+@PROXY_TRUE@@SERVER_FALSE@	zbxhttp \
 @PROXY_TRUE@@SERVER_FALSE@	zbxmemory \
 @PROXY_TRUE@@SERVER_FALSE@	zbxserver \
 @PROXY_TRUE@@SERVER_FALSE@	zbxicmpping \
-@PROXY_TRUE@@SERVER_FALSE@	zbxself
+@PROXY_TRUE@@SERVER_FALSE@	zbxself \
+@PROXY_TRUE@@SERVER_FALSE@	zbxtasks
 
 @AGENT_TRUE@@PROXY_FALSE@@SERVER_FALSE@AGENT_SUBDIRS = \
 @AGENT_TRUE@@PROXY_FALSE@@SERVER_FALSE@	zbxself
@@ -413,6 +427,7 @@ SUBDIRS = \
 	zbxalgo \
 	zbxnix \
 	zbxconf \
+	zbxhttp \
 	zbxsysinfo \
 	zbxsys \
 	zbxcomms \
@@ -420,6 +435,7 @@ SUBDIRS = \
 	zbxexec \
 	zbxmodules \
 	zbxregexp \
+	zbxipcservice \
 	$(PROXY_SUBDIRS) \
 	$(SERVER_SUBDIRS) \
 	$(AGENT_SUBDIRS)

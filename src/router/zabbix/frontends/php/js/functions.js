@@ -515,41 +515,46 @@ function overlayDialogueDestroy() {
 }
 
 /**
- * Display modal window
+ * Display modal window.
  *
- * @param string title					modal window title
- * @param object content				window content
- * @param array  buttons				window buttons
- * @param string buttons[]['title']
- * @param string buttons[]['class']
- * @param bool	 buttons[]['cancel']	(optional) it means what this button has cancel action
- * @param bool	 buttons[]['focused']
- * @param bool   buttons[]['enabled']
- * @param object buttons[]['click']
+ * @param {object} params                        Modal window params.
+ * @param {string} params.title                  Modal window title.
+ * @param {object} params.content                Window content.
+ * @param {array}  params.buttons                Window buttons.
+ * @param {string} params.buttons[]['title']     Text on the button.
+ * @param {object} params.buttons[]['action']    Function object that will be called on click.
+ * @param {string} params.buttons[]['class']     (optional) Button class.
+ * @param {bool}   params.buttons[]['cancel']    (optional) It means what this button has cancel action.
+ * @param {bool}   params.buttons[]['focused']   (optional) Focus this button.
+ * @param {bool}   params.buttons[]['enabled']   (optional) Should the button be enabled? Default: true.
+ * @param {bool}   params.buttons[]['keepOpen']  (optional) Prevent dialogue closing, if button action returned false.
+ *
+ * @return {bool}
  */
 function overlayDialogue(params) {
-	var overlay_bg = jQuery('<div>', {
+	jQuery('<div>', {
 		id: 'overlay_bg',
-		class: 'overlay-bg',
-		css: {
-			'display': 'none'
-		}
-	});
-
-	var overlay_dialogue_footer = jQuery('<div>', {
-		class: 'overlay-dialogue-footer'
-	});
+		class: 'overlay-bg'
+	})
+		.appendTo('body');
 
 	var button_focused = null,
-		cancel_action = null;
+		cancel_action = null,
+		overlay_dialogue_footer = jQuery('<div>', {
+			class: 'overlay-dialogue-footer'
+		});
 
 	jQuery.each(params.buttons, function(index, obj) {
 		var button = jQuery('<button>', {
 			type: 'button',
 			text: obj.title
 		}).click(function() {
-			obj.action();
-			overlayDialogueDestroy();
+			var res = obj.action();
+
+			if (res !== false && (!('keepOpen' in obj) || obj.keepOpen === false)) {
+				overlayDialogueDestroy();
+			}
+
 			return false;
 		});
 
@@ -572,15 +577,9 @@ function overlayDialogue(params) {
 		overlay_dialogue_footer.append(button);
 	});
 
-	overlay_dialogue = jQuery('<div>', {
+	var overlay_dialogue = jQuery('<div>', {
 		id: 'overlay_dialogue',
-		class: 'overlay-dialogue',
-		css: {
-			'position': 'fixed',
-			'top': '40%',
-			'left': '50%',
-			'display': 'none'
-		}
+		class: 'overlay-dialogue modal'
 	})
 		.append(
 			jQuery('<button>', {
@@ -591,6 +590,7 @@ function overlayDialogue(params) {
 						cancel_action();
 					}
 					overlayDialogueDestroy();
+
 					return false;
 				})
 		)
@@ -601,30 +601,22 @@ function overlayDialogue(params) {
 		)
 		.append(
 			jQuery('<div>', {
-				class: 'overlay-dialogue-body'
+				class: 'overlay-dialogue-body',
 			}).append(params.content)
 		)
 		.append(overlay_dialogue_footer)
-		.on('keypress keydown', function(e) {
-			if (e.which == 27) { // ESC
+		.on('keydown', function(e) {
+			// ESC
+			if (e.which == 27) {
 				if (cancel_action !== null) {
 					cancel_action();
 				}
 				overlayDialogueDestroy();
+
 				return false;
 			}
-		});
-
-	overlay_bg
-		.appendTo('body')
-		.show();
-	overlay_dialogue
-		.appendTo('body')
-		.css({
-			'margin-top': '-' + (overlay_dialogue.outerHeight() / 2) + 'px',
-			'margin-left': '-' + (overlay_dialogue.outerWidth() / 2) + 'px'
 		})
-		.show();
+		.appendTo('body');
 
 	var focusable = jQuery(':focusable', overlay_dialogue);
 
@@ -633,15 +625,19 @@ function overlayDialogue(params) {
 			last_focusable = focusable.filter(':last');
 
 		first_focusable.on('keydown', function(e) {
+			// TAB and SHIFT
 			if (e.keyCode == 9 && e.shiftKey) {
 				last_focusable.focus();
+
 				return false;
 			}
 		});
 
 		last_focusable.on('keydown', function(e) {
+			// TAB and not SHIFT
 			if (e.keyCode == 9 && !e.shiftKey) {
 				first_focusable.focus();
+
 				return false;
 			}
 		});
@@ -651,6 +647,21 @@ function overlayDialogue(params) {
 
 	if (button_focused !== null) {
 		button_focused.focus();
+	}
+
+	// Don't focus element in overlay, if the button is already focused.
+	overlayDialogueOnLoad(!button_focused);
+}
+
+/**
+ * Actions to perform, when dialogue is created, as well as, when data in dialogue changed,
+ * and this is forced from outside.
+ *
+ * @param {bool} focus  Focus first focusable element in overlay.
+ */
+function overlayDialogueOnLoad(focus) {
+	if (focus) {
+		jQuery('[autofocus=autofocus]:focusable', jQuery('#overlay_dialogue')).first().focus();
 	}
 }
 
@@ -695,4 +706,74 @@ function executeScript(hostid, scriptid, confirmation) {
 	else {
 		execute();
 	}
+}
+
+(function($) {
+	$.fn.serializeJSON = function() {
+		var json = {};
+
+		jQuery.map($(this).serializeArray(), function(n) {
+			var	l = n['name'].indexOf('['),
+				r = n['name'].indexOf(']'),
+				curr_json = json;
+
+			if (l != -1 && r != -1 && r > l) {
+				var	key = n['name'].substr(0, l);
+
+				if (l + 1 == r) {
+					if (typeof curr_json[key] === 'undefined') {
+						curr_json[key] = [];
+					}
+
+					curr_json[key].push(n['value']);
+				}
+				else {
+					if (typeof curr_json[key] === 'undefined') {
+						curr_json[key] = {};
+					}
+					curr_json = curr_json[key];
+
+					do {
+						key = n['name'].substr(l + 1, r - l - 1);
+						l = n['name'].indexOf('[', r + 1);
+						r = n['name'].indexOf(']', r + 1);
+
+						if (l == -1 || r == -1 || r <= l) {
+							curr_json[key] = n['value']
+							break;
+						}
+
+						if (typeof curr_json[key] === 'undefined') {
+							curr_json[key] = {};
+						}
+						curr_json = curr_json[key];
+					} while (l != -1 && r != -1 && r > l);
+				}
+			}
+			else {
+				json[n['name']] = n['value'];
+			}
+		});
+
+		return json;
+	};
+})(jQuery);
+
+function makeErrorMessageBox(errors, elementId) {
+	var div = jQuery('<div>').addClass('msg-bad').attr('id', elementId);
+	var details = jQuery('<div>').addClass('msg-details'),
+		ul = jQuery('<ul>');
+
+	errors.each(function (error) {
+		// split long messages
+		var msg = '';
+		error.match(/[\s\S]{1,120}/g).each(function (error_part) {
+			msg = msg + jQuery.escapeHtml(error_part) + "\n";
+		});
+		ul.append(jQuery('<li>').append(msg));
+	});
+	details.append(ul);
+	div.append(details);
+
+	return div;
 }

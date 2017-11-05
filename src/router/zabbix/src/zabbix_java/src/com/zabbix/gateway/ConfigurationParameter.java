@@ -24,9 +24,9 @@ import java.net.InetAddress;
 
 class ConfigurationParameter
 {
-	public static final int TYPE_INTEGER = 0;
-	public static final int TYPE_INETADDRESS = 1;
-	public static final int TYPE_FILE = 2;
+	static final int TYPE_INTEGER = 0;
+	static final int TYPE_INETADDRESS = 1;
+	static final int TYPE_FILE = 2;
 
 	private String name;
 	private int type;
@@ -34,7 +34,7 @@ class ConfigurationParameter
 	private InputValidator validator;
 	private PostInputValidator postValidator;
 
-	public ConfigurationParameter(String name, int type, Object defaultValue, InputValidator validator, PostInputValidator postValidator)
+	ConfigurationParameter(String name, int type, Object defaultValue, InputValidator validator, PostInputValidator postValidator)
 	{
 		this.name = name;
 		this.type = type;
@@ -43,22 +43,22 @@ class ConfigurationParameter
 		this.postValidator = postValidator;
 	}
 
-	public String getName()
+	String getName()
 	{
 		return name;
 	}
 
-	public int getType()
+	int getType()
 	{
 		return type;
 	}
 
-	public Object getValue()
+	Object getValue()
 	{
 		return value;
 	}
 
-	public void setValue(String text)
+	void setValue(String text)
 	{
 		Object userValue = null;
 
@@ -75,6 +75,8 @@ class ConfigurationParameter
 				case TYPE_FILE:
 					userValue = new File(text);
 					break;
+				default:
+					throw new IllegalArgumentException(String.format("unknown type %d", type));
 			}
 		}
 		catch (Exception e)
@@ -83,7 +85,7 @@ class ConfigurationParameter
 		}
 
 		if (null != validator && !validator.validate(userValue))
-			throw new IllegalArgumentException("bad value for " + name + " parameter: '" + text + "'");
+			throw new IllegalArgumentException(String.format("bad value for %s parameter: '%s'", name, text));
 
 		if (null != postValidator)
 			postValidator.execute(userValue);
