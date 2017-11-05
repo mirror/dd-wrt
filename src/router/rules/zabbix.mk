@@ -28,7 +28,7 @@ zabbix-clean:
 
 zabbix-configure:
 	cd zabbix && rm -rf config.{cache,status} \
-	&& aclocal && autoheader && autoconf && automake -a \
+	&& autoheader && autoconf \
 	&& ./configure ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --host=$(ARCH) CC=$(ARCH)-linux-uclibc-gcc \
 	--disable-server --disable-proxy --disable-java --enable-agent --without-iconv \
 	--with-libpcre-include="$(TOP)/pcre" \
