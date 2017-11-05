@@ -51,7 +51,7 @@ AC_CHECK_HEADERS(stdio.h stdlib.h string.h unistd.h netdb.h signal.h \
   syslog.h time.h errno.h sys/types.h sys/stat.h netinet/in.h \
   math.h sys/socket.h dirent.h ctype.h \
   mtent.h fcntl.h sys/param.h arpa/inet.h \
-  sys/vfs.h sys/pstat.h sys/statvfs.h sys/statfs.h \
+  sys/vfs.h sys/pstat.h sys/sysinfo.h sys/statvfs.h sys/statfs.h \
   sys/socket.h sys/loadavg.h arpa/inet.h \
   sys/vmmeter.h strings.h vm/vm_param.h \
   sys/time.h kstat.h sys/syscall.h sys/sysmacros.h \
@@ -63,11 +63,6 @@ AC_CHECK_HEADERS(stdio.h stdlib.h string.h unistd.h netdb.h signal.h \
   Winber.h lber.h ws2tcpip.h inttypes.h sys/file.h grp.h \
   execinfo.h libperfstat.h sys/systemcfg.h sys/mnttab.h mntent.h sys/times.h \
   dlfcn.h sys/utsname.h sys/un.h event.h)
-AC_CHECK_HEADERS(sys/sysinfo.h, [], [], [
-#ifdef HAVE_LINUX_KERNEL_H
-#  include <linux/kernel.h>
-#endif
-])
 AC_CHECK_HEADERS(resolv.h, [], [], [
 #ifdef HAVE_SYS_TYPES_H
 #  include <sys/types.h>
@@ -160,12 +155,12 @@ AC_CHECK_LIB(m, main)
 AC_CHECK_LIB(kvm, main)
 
 dnl check for DNS lookup functions
-found_resolv="yes"
-LIBS="${LIBS} -lresolv"
-AC_SEARCH_LIBS([res_mkquery], [], [AC_DEFINE([HAVE_RES_MKQUERY], 1, [Define if res_mkquery exists])])
-AC_SEARCH_LIBS([__res_mkquery], [], [AC_DEFINE([HAVE_RES_MKQUERY], 1, [Define if res_mkquery exists])])
-AC_SEARCH_LIBS([res_send], [], [AC_DEFINE([HAVE_RES_SEND], 1, [Define if res_send exists])])
-AC_SEARCH_LIBS([__res_send], [], [AC_DEFINE([HAVE_RES_SEND], 1, [Define if res_send exists])]) 
+found_resolv="no"
+LIBRESOLV_CHECK_CONFIG([no])
+if test "x$found_resolv" != "xyes"; then
+	AC_MSG_ERROR([Unable to do DNS lookups (libresolv check failed)])
+fi
+LIBS="${LIBS} ${RESOLV_LIBS}"
 
 dnl *****************************************************************
 dnl *                                                               *

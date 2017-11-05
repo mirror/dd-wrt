@@ -722,7 +722,6 @@ SERVER_FALSE
 SERVER_TRUE
 ARCH
 LIBOBJS
-RESOLV_LIBS
 EGREP
 GREP
 CPP
@@ -797,6 +796,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -909,6 +909,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1161,6 +1162,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1298,7 +1308,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1451,6 +1461,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -4797,7 +4808,7 @@ for ac_header in stdio.h stdlib.h string.h unistd.h netdb.h signal.h \
   syslog.h time.h errno.h sys/types.h sys/stat.h netinet/in.h \
   math.h sys/socket.h dirent.h ctype.h \
   mtent.h fcntl.h sys/param.h arpa/inet.h \
-  sys/vfs.h sys/pstat.h sys/sysinfo.h sys/statvfs.h sys/statfs.h \
+  sys/vfs.h sys/pstat.h sys/statvfs.h sys/statfs.h \
   sys/socket.h sys/loadavg.h arpa/inet.h \
   sys/vmmeter.h strings.h vm/vm_param.h \
   sys/time.h kstat.h sys/syscall.h sys/sysmacros.h \
@@ -4815,6 +4826,23 @@ ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_include
 if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+
+done
+
+for ac_header in sys/sysinfo.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "sys/sysinfo.h" "ac_cv_header_sys_sysinfo_h" "
+#ifdef HAVE_LINUX_KERNEL_H
+#  include <linux/kernel.h>
+#endif
+
+"
+if test "x$ac_cv_header_sys_sysinfo_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_SYS_SYSINFO_H 1
 _ACEOF
 
 fi
@@ -5583,221 +5611,240 @@ _ACEOF
 fi
 
 
-found_resolv="no"
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for DNS lookup functions" >&5
-$as_echo_n "checking for DNS lookup functions... " >&6; }
-
-
-am_save_LIBS="$LIBS"
-LIBS="$LIBS "
+found_resolv="yes"
+LIBS="${LIBS} -lresolv"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing res_mkquery" >&5
+$as_echo_n "checking for library containing res_mkquery... " >&6; }
+if ${ac_cv_search_res_mkquery+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#ifdef HAVE_SYS_TYPES_H
-#	include <sys/types.h>
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
 #endif
-#ifdef HAVE_NETINET_IN_H
-#	include <netinet/in.h>
-#endif
-#ifdef HAVE_ARPA_NAMESER_H
-#	include <arpa/nameser.h>
-#endif
-#ifdef HAVE_RESOLV_H
-#	include <resolv.h>
-#endif
-#ifndef C_IN
-#	define C_IN	ns_c_in
-#endif	/* C_IN */
-#ifndef T_SOA
-#	define T_SOA	ns_t_soa
-#endif	/* T_SOA */
-
+char res_mkquery ();
 int
 main ()
 {
-
-	char	*buf;
-
-	res_init();
-	res_query("", C_IN, T_SOA, buf, 0);
-
+return res_mkquery ();
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  found_resolv="yes"
-RESOLV_LIBS=""
+for ac_lib in '' ; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_res_mkquery=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS="$am_save_LIBS"
+    conftest$ac_exeext
+  if ${ac_cv_search_res_mkquery+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_res_mkquery+:} false; then :
 
+else
+  ac_cv_search_res_mkquery=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_res_mkquery" >&5
+$as_echo "$ac_cv_search_res_mkquery" >&6; }
+ac_res=$ac_cv_search_res_mkquery
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
-	if test "x$found_resolv" != "xyes"; then
+$as_echo "#define HAVE_RES_MKQUERY 1" >>confdefs.h
 
-am_save_LIBS="$LIBS"
-LIBS="$LIBS -lresolv"
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing __res_mkquery" >&5
+$as_echo_n "checking for library containing __res_mkquery... " >&6; }
+if ${ac_cv_search___res_mkquery+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#ifdef HAVE_SYS_TYPES_H
-#	include <sys/types.h>
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
 #endif
-#ifdef HAVE_NETINET_IN_H
-#	include <netinet/in.h>
-#endif
-#ifdef HAVE_ARPA_NAMESER_H
-#	include <arpa/nameser.h>
-#endif
-#ifdef HAVE_RESOLV_H
-#	include <resolv.h>
-#endif
-#ifndef C_IN
-#	define C_IN	ns_c_in
-#endif	/* C_IN */
-#ifndef T_SOA
-#	define T_SOA	ns_t_soa
-#endif	/* T_SOA */
-
+char __res_mkquery ();
 int
 main ()
 {
-
-	char	*buf;
-
-	res_init();
-	res_query("", C_IN, T_SOA, buf, 0);
-
+return __res_mkquery ();
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  found_resolv="yes"
-RESOLV_LIBS="-lresolv"
+for ac_lib in '' ; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search___res_mkquery=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS="$am_save_LIBS"
+    conftest$ac_exeext
+  if ${ac_cv_search___res_mkquery+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search___res_mkquery+:} false; then :
 
-	fi
-	if test "x$found_resolv" != "xyes"; then
+else
+  ac_cv_search___res_mkquery=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search___res_mkquery" >&5
+$as_echo "$ac_cv_search___res_mkquery" >&6; }
+ac_res=$ac_cv_search___res_mkquery
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
-am_save_LIBS="$LIBS"
-LIBS="$LIBS -lbind"
+$as_echo "#define HAVE_RES_MKQUERY 1" >>confdefs.h
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing res_send" >&5
+$as_echo_n "checking for library containing res_send... " >&6; }
+if ${ac_cv_search_res_send+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#ifdef HAVE_SYS_TYPES_H
-#	include <sys/types.h>
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
 #endif
-#ifdef HAVE_NETINET_IN_H
-#	include <netinet/in.h>
-#endif
-#ifdef HAVE_ARPA_NAMESER_H
-#	include <arpa/nameser.h>
-#endif
-#ifdef HAVE_RESOLV_H
-#	include <resolv.h>
-#endif
-#ifndef C_IN
-#	define C_IN	ns_c_in
-#endif	/* C_IN */
-#ifndef T_SOA
-#	define T_SOA	ns_t_soa
-#endif	/* T_SOA */
-
+char res_send ();
 int
 main ()
 {
-
-	char	*buf;
-
-	res_init();
-	res_query("", C_IN, T_SOA, buf, 0);
-
+return res_send ();
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  found_resolv="yes"
-RESOLV_LIBS="-lbind"
+for ac_lib in '' ; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_res_send=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS="$am_save_LIBS"
+    conftest$ac_exeext
+  if ${ac_cv_search_res_send+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_res_send+:} false; then :
 
-	fi
-	if test "x$found_resolv" != "xyes"; then
+else
+  ac_cv_search_res_send=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_res_send" >&5
+$as_echo "$ac_cv_search_res_send" >&6; }
+ac_res=$ac_cv_search_res_send
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
 
-am_save_LIBS="$LIBS"
-LIBS="$LIBS -lsocket"
+$as_echo "#define HAVE_RES_SEND 1" >>confdefs.h
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing __res_send" >&5
+$as_echo_n "checking for library containing __res_send... " >&6; }
+if ${ac_cv_search___res_send+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#ifdef HAVE_SYS_TYPES_H
-#	include <sys/types.h>
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
 #endif
-#ifdef HAVE_NETINET_IN_H
-#	include <netinet/in.h>
-#endif
-#ifdef HAVE_ARPA_NAMESER_H
-#	include <arpa/nameser.h>
-#endif
-#ifdef HAVE_RESOLV_H
-#	include <resolv.h>
-#endif
-#ifndef C_IN
-#	define C_IN	ns_c_in
-#endif	/* C_IN */
-#ifndef T_SOA
-#	define T_SOA	ns_t_soa
-#endif	/* T_SOA */
-
+char __res_send ();
 int
 main ()
 {
-
-	char	*buf;
-
-	res_init();
-	res_query("", C_IN, T_SOA, buf, 0);
-
+return __res_send ();
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  found_resolv="yes"
-RESOLV_LIBS="-lsocket"
+for ac_lib in '' ; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search___res_send=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS="$am_save_LIBS"
-
-	fi
-
-	if test "x$found_resolv" = "xyes"; then
-
-$as_echo "#define HAVE_RES_QUERY 1" >>confdefs.h
-
-	else
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-	fi
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $found_resolv" >&5
-$as_echo "$found_resolv" >&6; }
-
-
-
-if test "x$found_resolv" != "xyes"; then
-	as_fn_error $? "Unable to do DNS lookups (libresolv check failed)" "$LINENO" 5
+    conftest$ac_exeext
+  if ${ac_cv_search___res_send+:} false; then :
+  break
 fi
-LIBS="${LIBS} ${RESOLV_LIBS}"
+done
+if ${ac_cv_search___res_send+:} false; then :
+
+else
+  ac_cv_search___res_send=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search___res_send" >&5
+$as_echo "$ac_cv_search___res_send" >&6; }
+ac_res=$ac_cv_search___res_send
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+$as_echo "#define HAVE_RES_SEND 1" >>confdefs.h
+
+fi
+
 
 
 largefile=yes
