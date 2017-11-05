@@ -241,6 +241,9 @@ static int wddx_stack_destroy(wddx_stack *stack)
 		}
 		efree(stack->elements);
 	}
+	if (stack->varname) {
+		efree(stack->varname);
+	}
 	return SUCCESS;
 }
 /* }}} */
@@ -417,11 +420,15 @@ static void php_wddx_serialize_string(wddx_packet *packet, zval *var)
  */
 static void php_wddx_serialize_number(wddx_packet *packet, zval *var)
 {
-	char tmp_buf[WDDX_BUF_LEN];
+	char tmp_buf[WDDX_BUF_LEN], *dec_point;
 	zend_string *str = zval_get_string(var);
 	snprintf(tmp_buf, sizeof(tmp_buf), WDDX_NUMBER, ZSTR_VAL(str));
 	zend_string_release(str);
 
+	dec_point = strchr(tmp_buf, ',');
+	if (dec_point) {
+		*dec_point = '.';
+	}
 	php_wddx_add_chunk(packet, tmp_buf);
 }
 /* }}} */
@@ -758,19 +765,16 @@ static void php_wddx_push_element(void *user_data, const XML_Char *name, const X
 	} else if (!strcmp((char *)name, EL_BOOLEAN)) {
 		int i;
 
+		ent.type = ST_BOOLEAN;
+		SET_STACK_VARNAME;
 		if (atts) for (i = 0; atts[i]; i++) {
 			if (!strcmp((char *)atts[i], EL_VALUE) && atts[i+1] && atts[i+1][0]) {
-				ent.type = ST_BOOLEAN;
-				SET_STACK_VARNAME;
-
 				ZVAL_TRUE(&ent.data);
 				wddx_stack_push((wddx_stack *)stack, &ent, sizeof(st_entry));
 				php_wddx_process_data(user_data, atts[i+1], strlen((char *)atts[i+1]));
 				break;
 			}
 		} else {
-			ent.type = ST_BOOLEAN;
-			SET_STACK_VARNAME;
 			ZVAL_FALSE(&ent.data);
 			wddx_stack_push((wddx_stack *)stack, &ent, sizeof(st_entry));
 		}

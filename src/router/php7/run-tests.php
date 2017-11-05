@@ -24,7 +24,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 1991b56a087a4b6df1d9a65676d24112078512a1 $ */
+/* $Id: 4f0c793260dc4e841e513fb2fefaecfbf6feed75 $ */
 
 /* Sanity check to ensure that pcre extension needed by this script is available.
  * In the event it is not, print a nice error message indicating that this script will
@@ -671,7 +671,7 @@ if (isset($argc) && $argc > 1) {
 					$html_output = is_resource($html_file);
 					break;
 				case '--version':
-					echo '$Id: 1991b56a087a4b6df1d9a65676d24112078512a1 $' . "\n";
+					echo '$Id: 4f0c793260dc4e841e513fb2fefaecfbf6feed75 $' . "\n";
 					exit(1);
 
 				default:
@@ -1504,15 +1504,19 @@ TEST $file
 
 	// Additional required extensions
 	if (array_key_exists('EXTENSIONS', $section_text)) {
-		$ext_dir=`$php -r 'echo ini_get("extension_dir");'`;
+		$ext_params = array();
+		settings2array($ini_overwrites, $ext_params);
+		settings2params($ext_params);
+		$ext_dir=`$php $pass_options $ext_params -d display_errors=0 -r "echo ini_get('extension_dir');"`;
 		$extensions = preg_split("/[\n\r]+/", trim($section_text['EXTENSIONS']));
-		$loaded = explode(",", `$php -n -r 'echo join(",", get_loaded_extensions());'`);
+		$loaded = explode(",", `$php $pass_options $ext_params -d display_errors=0 -r "echo implode(',', get_loaded_extensions());"`);
+		$ext_prefix = substr(PHP_OS, 0, 3) === "WIN" ? "php_" : "";
 		foreach ($extensions as $req_ext) {
 			if (!in_array($req_ext, $loaded)) {
 				if ($req_ext == 'opcache') {
-					$ini_settings['zend_extension'][] = $ext_dir . DIRECTORY_SEPARATOR . $req_ext . '.' . PHP_SHLIB_SUFFIX;
+					$ini_settings['zend_extension'][] = $ext_dir . DIRECTORY_SEPARATOR . $ext_prefix . $req_ext . '.' . PHP_SHLIB_SUFFIX;
 				} else {
-					$ini_settings['extension'][] = $ext_dir . DIRECTORY_SEPARATOR . $req_ext . '.' . PHP_SHLIB_SUFFIX;
+					$ini_settings['extension'][] = $ext_dir . DIRECTORY_SEPARATOR . $ext_prefix . $req_ext . '.' . PHP_SHLIB_SUFFIX;
 				}
 			}
 		}

@@ -12,7 +12,7 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Authors: Stig Sæther Bakken <ssb@php.net>                            |
+   | Authors: Stig SÃ¦ther Bakken <ssb@php.net>                            |
    |          Thies C. Arntzen <thies@thieso.net>                         |
    |                                                                      |
    | Collection support by Andy Sautins <asautins@veripost.net>           |
@@ -209,7 +209,7 @@ typedef struct {
 
 /* {{{ php_oci_define */
 typedef struct { 
-	zval		*zval;			/* zval used in define */
+	zval		 val;			/* zval used in define */
 	text		*name;			/* placeholder's name */
 	ub4			 name_len;		/* placeholder's name length */
 	ub4			 type;			/* define type */
@@ -244,8 +244,7 @@ typedef struct {
 /* {{{ php_oci_bind */
 typedef struct { 
 	OCIBind				*bind;					/* bind handle */
-	zval				*zval;					/* value */
-	zval				parameter;				/* a copy of bound variable used for oci_bind_by_name */
+	zval				val;					/* value */
 	dvoid				*descriptor;			/* used for binding of LOBS etc */
 	OCIStmt				*statement;				/* used for binding REFCURSORs */
 	php_oci_statement	*parent_statement;		/* pointer to the parent statement */
@@ -536,7 +535,7 @@ ZEND_END_MODULE_GLOBALS(oci) /* }}} */
 /* {{{ transparent failover related prototypes */
 
 int php_oci_register_taf_callback(php_oci_connection *connection, zval *callback);
-int php_oci_disable_taf_callback(php_oci_connection *connection);
+int php_oci_unregister_taf_callback(php_oci_connection *connection);
 
 /* }}} */
 

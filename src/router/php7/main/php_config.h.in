@@ -1647,6 +1647,9 @@
 /* */
 #undef HAVE_SQLITE3
 
+/* have sqlite3_errstr function */
+#undef HAVE_SQLITE3_ERRSTR
+
 /* have commercial sqlite3 with crypto support */
 #undef HAVE_SQLITE3_KEY
 

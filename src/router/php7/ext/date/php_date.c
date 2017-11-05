@@ -658,6 +658,7 @@ static HashTable *date_object_get_gc_timezone(zval *object, zval **table, int *n
 
 zval *date_interval_read_property(zval *object, zval *member, int type, void **cache_slot, zval *rv);
 void date_interval_write_property(zval *object, zval *member, zval *value, void **cache_slot);
+static zval *date_interval_get_property_ptr_ptr(zval *object, zval *member, int type, void **cache_slot);
 static zval *date_period_read_property(zval *object, zval *member, int type, void **cache_slot, zval *rv);
 static void date_period_write_property(zval *object, zval *member, zval *value, void **cache_slot);
 
@@ -921,6 +922,7 @@ PHP_MINFO_FUNCTION(date)
 
 	php_info_print_table_start();
 	php_info_print_table_row(2, "date/time support", "enabled");
+	php_info_print_table_row(2, "timelib version", TIMELIB_ASCII_VERSION);
 	php_info_print_table_row(2, "\"Olson\" Timezone Database Version", tzdb->version);
 	php_info_print_table_row(2, "Timezone Database", php_date_global_timezone_db_enabled ? "external" : "internal");
 	php_info_print_table_row(2, "Default timezone", guess_timezone(tzdb));
@@ -1961,6 +1963,10 @@ static void date_period_it_rewind(zend_object_iterator *iter)
 	if (iterator->object->current) {
 		timelib_time_dtor(iterator->object->current);
 	}
+	if (!iterator->object->start) {
+		zend_throw_error(NULL, "DatePeriod has not been initialized correctly");
+		return;
+	}
 	iterator->object->current = timelib_time_clone(iterator->object->start);
 	date_period_it_invalidate_current(iter);
 }
@@ -2015,7 +2021,7 @@ static int date_interval_has_property(zval *object, zval *member, int type, void
 	zval *prop;
 	int retval = 0;
 
-	if (Z_TYPE_P(member) != IS_STRING) {
+	if (UNEXPECTED(Z_TYPE_P(member) != IS_STRING)) {
 		ZVAL_COPY(&tmp_member, member);
 		convert_to_string(&tmp_member);
 		member = &tmp_member;
@@ -2031,10 +2037,10 @@ static int date_interval_has_property(zval *object, zval *member, int type, void
 		}
 		return retval;
 	}
-
-	prop = date_interval_read_property(object, member, type, cache_slot, &rv);
-
-	if (prop != NULL) {
+	
+	prop = date_interval_read_property(object, member, BP_VAR_IS, cache_slot, &rv);
+	
+	if (prop != &EG(uninitialized_zval)) {
 		if (type == 2) {
 			retval = 1;
 		} else if (type == 1) {
@@ -2141,7 +2147,7 @@ static void date_register_classes(void) /* {{{ */
 	date_object_handlers_interval.read_property = date_interval_read_property;
 	date_object_handlers_interval.write_property = date_interval_write_property;
 	date_object_handlers_interval.get_properties = date_object_get_properties_interval;
-	date_object_handlers_interval.get_property_ptr_ptr = NULL;
+	date_object_handlers_interval.get_property_ptr_ptr = date_interval_get_property_ptr_ptr;
 	date_object_handlers_interval.get_gc = date_object_get_gc_interval;
 
 	INIT_CLASS_ENTRY(ce_period, "DatePeriod", date_funcs_period);
@@ -4227,6 +4233,40 @@ void date_interval_write_property(zval *object, zval *member, zval *value, void 
 }
 /* }}} */
 
+/* {{{ date_interval_get_property_ptr_ptr */
+static zval *date_interval_get_property_ptr_ptr(zval *object, zval *member, int type, void **cache_slot)
+{
+	zval tmp_member, *ret;
+
+	if (Z_TYPE_P(member) != IS_STRING) {
+		tmp_member = *member;
+		zval_copy_ctor(&tmp_member);
+		convert_to_string(&tmp_member);
+		member = &tmp_member;
+		cache_slot = NULL;
+	}
+
+	if(zend_binary_strcmp("y", sizeof("y") - 1, Z_STRVAL_P(member), Z_STRLEN_P(member)) == 0 ||
+		zend_binary_strcmp("m", sizeof("m") - 1, Z_STRVAL_P(member), Z_STRLEN_P(member)) == 0 ||
+		zend_binary_strcmp("d", sizeof("d") - 1, Z_STRVAL_P(member), Z_STRLEN_P(member)) == 0 ||
+		zend_binary_strcmp("h", sizeof("h") - 1, Z_STRVAL_P(member), Z_STRLEN_P(member)) == 0 ||
+		zend_binary_strcmp("i", sizeof("i") - 1, Z_STRVAL_P(member), Z_STRLEN_P(member)) == 0 ||
+		zend_binary_strcmp("s", sizeof("s") - 1, Z_STRVAL_P(member), Z_STRLEN_P(member)) == 0 ||
+		zend_binary_strcmp("days", sizeof("days") - 1, Z_STRVAL_P(member), Z_STRLEN_P(member)) == 0 ||
+		zend_binary_strcmp("invert", sizeof("invert") - 1, Z_STRVAL_P(member), Z_STRLEN_P(member)) == 0) {
+		/* Fallback to read_property. */
+		ret = NULL;
+	} else {
+		ret = (zend_get_std_object_handlers())->get_property_ptr_ptr(object, member, type, cache_slot);
+	}
+
+	if (member == &tmp_member) {
+		zval_dtor(member);
+	}
+
+	return ret;
+}
+/* }}} */
 
 /* {{{ proto DateInterval::__construct([string interval_spec])
    Creates new DateInterval object.
