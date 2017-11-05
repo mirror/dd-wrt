@@ -142,41 +142,6 @@ mc_shell_get_from_env (void)
 static void
 mc_shell_recognize_real_path (mc_shell_t * mc_shell)
 {
-    if (strstr (mc_shell->path, "/zsh") != NULL || strstr (mc_shell->real_path, "/zsh") != NULL
-        || getenv ("ZSH_VERSION") != NULL)
-    {
-        /* Also detects ksh symlinked to zsh */
-        mc_shell->type = SHELL_ZSH;
-        mc_shell->name = "zsh";
-    }
-    else if (strstr (mc_shell->path, "/tcsh") != NULL
-             || strstr (mc_shell->real_path, "/tcsh") != NULL)
-    {
-        /* Also detects csh symlinked to tcsh */
-        mc_shell->type = SHELL_TCSH;
-        mc_shell->name = "tcsh";
-    }
-    else if (strstr (mc_shell->path, "/csh") != NULL
-             || strstr (mc_shell->real_path, "/csh") != NULL)
-    {
-        mc_shell->type = SHELL_TCSH;
-        mc_shell->name = "csh";
-    }
-    else if (strstr (mc_shell->path, "/fish") != NULL
-             || strstr (mc_shell->real_path, "/fish") != NULL)
-    {
-        mc_shell->type = SHELL_FISH;
-        mc_shell->name = "fish";
-    }
-    else if (strstr (mc_shell->path, "/dash") != NULL
-             || strstr (mc_shell->real_path, "/dash") != NULL)
-    {
-        /* Debian ash (also found if symlinked to by ash/sh) */
-        mc_shell->type = SHELL_DASH;
-        mc_shell->name = "dash";
-    }
-    else if (strstr (mc_shell->real_path, "/busybox") != NULL)
-    {
         /* If shell is symlinked to busybox, assume it is an ash, even though theoretically
          * it could also be a hush (a mini shell for non-MMU systems deactivated by default).
          * For simplicity's sake we assume that busybox always contains an ash, not a hush.
@@ -186,9 +151,6 @@ mc_shell_recognize_real_path (mc_shell_t * mc_shell)
          * in order to avoid that case. */
         mc_shell->type = SHELL_ASH_BUSYBOX;
         mc_shell->name = mc_shell->path;
-    }
-    else
-        mc_shell->type = SHELL_NONE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -196,24 +158,8 @@ mc_shell_recognize_real_path (mc_shell_t * mc_shell)
 static void
 mc_shell_recognize_path (mc_shell_t * mc_shell)
 {
-    /* If shell is not symlinked to busybox, it is safe to assume it is a real shell */
-    if (strstr (mc_shell->path, "/bash") != NULL || getenv ("BASH") != NULL)
-    {
-        mc_shell->type = SHELL_BASH;
-        mc_shell->name = "bash";
-    }
-    else if (strstr (mc_shell->path, "/sh") != NULL || getenv ("SH") != NULL)
-    {
-        mc_shell->type = SHELL_SH;
-        mc_shell->name = "sh";
-    }
-    else if (strstr (mc_shell->path, "/ash") != NULL || getenv ("ASH") != NULL)
-    {
         mc_shell->type = SHELL_ASH_BUSYBOX;
         mc_shell->name = "ash";
-    }
-    else
-        mc_shell->type = SHELL_NONE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
