@@ -40,7 +40,7 @@
 
 #ifndef HAVE_NO_PCI
 extern "C" {
-#include <pci/pci.h>
+#include <pci.h>
 }
 #endif
 
