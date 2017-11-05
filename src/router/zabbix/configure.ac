@@ -160,12 +160,8 @@ AC_CHECK_LIB(m, main)
 AC_CHECK_LIB(kvm, main)
 
 dnl check for DNS lookup functions
-found_resolv="no"
-LIBRESOLV_CHECK_CONFIG([no])
-if test "x$found_resolv" != "xyes"; then
-	AC_MSG_ERROR([Unable to do DNS lookups (libresolv check failed)])
-fi
-LIBS="${LIBS} ${RESOLV_LIBS}"
+found_resolv="yes"
+LIBS="${LIBS} -lresolv"
 AC_SEARCH_LIBS([res_mkquery], [], [AC_DEFINE([HAVE_RES_MKQUERY], 1, [Define if res_mkquery exists])])
 AC_SEARCH_LIBS([__res_mkquery], [], [AC_DEFINE([HAVE_RES_MKQUERY], 1, [Define if res_mkquery exists])])
 AC_SEARCH_LIBS([res_send], [], [AC_DEFINE([HAVE_RES_SEND], 1, [Define if res_send exists])])
