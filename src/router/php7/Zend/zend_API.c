@@ -2024,17 +2024,19 @@ ZEND_API zend_module_entry* zend_register_module_ex(zend_module_entry *module) /
 		zend_string_release(lcname);
 		return NULL;
 	}
-	zend_string_release(lcname);
 	module = module_ptr;
 	EG(current_module) = module;
 
 	if (module->functions && zend_register_functions(NULL, module->functions, NULL, module->type)==FAILURE) {
+		zend_hash_del(&module_registry, lcname);
+		zend_string_release(lcname);
 		EG(current_module) = NULL;
 		zend_error(E_CORE_WARNING,"%s: Unable to register functions, unable to load", module->name);
 		return NULL;
 	}
 
 	EG(current_module) = NULL;
+	zend_string_release(lcname);
 	return module;
 }
 /* }}} */
@@ -3066,7 +3068,8 @@ get_function_via_handler:
 					    (!fcc->function_handler->common.scope ||
 					     !instanceof_function(ce_org, fcc->function_handler->common.scope))) {
 						if (fcc->function_handler->common.fn_flags & ZEND_ACC_CALL_VIA_TRAMPOLINE) {
-							if (fcc->function_handler->type != ZEND_OVERLOADED_FUNCTION) {
+							if (fcc->function_handler->type != ZEND_OVERLOADED_FUNCTION && 
+								fcc->function_handler->common.function_name) {
 								zend_string_release(fcc->function_handler->common.function_name);
 							}
 							zend_free_trampoline(fcc->function_handler);
@@ -3238,7 +3241,8 @@ again:
 				((fcc->function_handler->common.fn_flags & ZEND_ACC_CALL_VIA_TRAMPOLINE) ||
 			     fcc->function_handler->type == ZEND_OVERLOADED_FUNCTION_TEMPORARY ||
 			     fcc->function_handler->type == ZEND_OVERLOADED_FUNCTION)) {
-				if (fcc->function_handler->type != ZEND_OVERLOADED_FUNCTION) {
+				if (fcc->function_handler->type != ZEND_OVERLOADED_FUNCTION && 
+					fcc->function_handler->common.function_name) {
 					zend_string_release(fcc->function_handler->common.function_name);
 				}
 				zend_free_trampoline(fcc->function_handler);
@@ -3325,7 +3329,8 @@ again:
 						((fcc->function_handler->common.fn_flags & ZEND_ACC_CALL_VIA_TRAMPOLINE) ||
 					     fcc->function_handler->type == ZEND_OVERLOADED_FUNCTION_TEMPORARY ||
 					     fcc->function_handler->type == ZEND_OVERLOADED_FUNCTION)) {
-						if (fcc->function_handler->type != ZEND_OVERLOADED_FUNCTION) {
+						if (fcc->function_handler->type != ZEND_OVERLOADED_FUNCTION && 
+							fcc->function_handler->common.function_name) {
 							zend_string_release(fcc->function_handler->common.function_name);
 						}
 						zend_free_trampoline(fcc->function_handler);

@@ -12,7 +12,7 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Authors: Stig Sæther Bakken <ssb@php.net>                            |
+   | Authors: Stig SÃ¦ther Bakken <ssb@php.net>                            |
    |          Thies C. Arntzen <thies@thieso.net>                         |
    |                                                                      |
    | Collection support by Andy Sautins <asautins@veripost.net>           |
@@ -56,18 +56,47 @@ PHP_FUNCTION(oci_register_taf_callback)
 	}
 
 	if (callback) {
+#if PHP_MAJOR_VERSION > 7 || (PHP_MAJOR_VERSION == 7 && PHP_MINOR_VERSION >= 2)    
+		if (!zend_is_callable(callback, 0, 0)) {
+			callback_name = zend_get_callable_name(callback);
+			php_error_docref(NULL, E_WARNING, "function '%s' is not callable", ZSTR_VAL(callback_name));
+			zend_string_release(callback_name);
+			RETURN_FALSE;
+		}
+#else
 		if (!zend_is_callable(callback, 0, &callback_name)) {
 			php_error_docref(NULL, E_WARNING, "function '%s' is not callable", ZSTR_VAL(callback_name));
 			zend_string_release(callback_name);
 			RETURN_FALSE;
 		}
-
 		zend_string_release(callback_name);
+#endif
 	}
 
 	PHP_OCI_ZVAL_TO_CONNECTION(z_connection, connection);
 
 	if (php_oci_register_taf_callback(connection, callback) == 0) {
+		RETURN_TRUE;
+	} else {
+		RETURN_FALSE;
+	}
+}
+/* }}} */
+
+/* {{{ proto bool oci_unregister_taf_callback( resource connection )
+ *    Unregister a callback function for Oracle Transparent Application Failover (TAF) */
+PHP_FUNCTION(oci_unregister_taf_callback)
+{
+	zval *z_connection;
+	php_oci_connection *connection;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "r", &z_connection) == FAILURE) {
+		return;
+	}
+
+	PHP_OCI_ZVAL_TO_CONNECTION(z_connection, connection);
+
+	if (php_oci_unregister_taf_callback(connection) == 0) {
 		RETURN_TRUE;
 	} else {
 		RETURN_FALSE;
@@ -88,7 +117,7 @@ PHP_FUNCTION(oci_define_by_name)
 	php_oci_define *define;
 	zend_string *zvtmp;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "rsz/|l", &stmt, &name, &name_len, &var, &type) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "rsz|l", &stmt, &name, &name_len, &var, &type) == FAILURE) {
 		return;
 	}
 
@@ -124,7 +153,8 @@ PHP_FUNCTION(oci_define_by_name)
 	define->name[name_len] = '\0';
 	define->name_len = (ub4) name_len;
 	define->type = (ub4) type;
-	define->zval = var;
+	ZEND_ASSERT(Z_ISREF_P(var));
+	ZVAL_COPY(&define->val, var);
 
 	RETURN_TRUE;
 }
@@ -173,7 +203,7 @@ PHP_FUNCTION(oci_bind_array_by_name)
 	zval *bind_var = NULL;
 	php_oci_statement *statement;
 	
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "rsz/l|ll", &z_statement, &name, &name_len, &bind_var, &max_array_len, &max_item_len, &type) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "rszl|ll", &z_statement, &name, &name_len, &bind_var, &max_array_len, &max_item_len, &type) == FAILURE) {
 		return;
 	}
 
@@ -1410,7 +1440,7 @@ PHP_FUNCTION(oci_fetch_all)
 
 	PHP_OCI_ZVAL_TO_STATEMENT(z_statement, statement);
 
-	zval_dtor(array);
+	zval_ptr_dtor(array);
 
 	while (skip--) {
 		if (php_oci_statement_fetch(statement, nrows)) {
@@ -1587,8 +1617,8 @@ PHP_FUNCTION(oci_close)
 											 RefCount value by 1 */
 		zend_list_close(connection->id);
 	
-	/* Disable Oracle TAF */
-	php_oci_disable_taf_callback(connection);
+	/* Unregister Oracle TAF */
+	php_oci_unregister_taf_callback(connection);
 
 	/* ZVAL_NULL(z_connection); */
 	
