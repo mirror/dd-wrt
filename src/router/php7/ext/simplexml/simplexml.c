@@ -18,7 +18,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: 7e5516dcdf2fe6ded7970eaeb6abd8d07df39a2a $ */
+/* $Id: 50413b12ac745b94b27ffbdd5454e6e0d7809909 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -2321,16 +2321,16 @@ SXE_METHOD(__construct)
 	}
 
 	if (ZEND_SIZE_T_INT_OVFL(data_len)) {
-		php_error_docref(NULL, E_WARNING, "Data is too long");
-		RETURN_FALSE;
+		zend_throw_exception(zend_ce_exception, "Data is too long", 0);
+		return;
 	}
 	if (ZEND_SIZE_T_INT_OVFL(ns_len)) {
-		php_error_docref(NULL, E_WARNING, "Namespace is too long");
-		RETURN_FALSE;
+		zend_throw_exception(zend_ce_exception, "Namespace is too long", 0);
+		return;
 	}
 	if (ZEND_LONG_EXCEEDS_INT(options)) {
-		php_error_docref(NULL, E_WARNING, "Invalid options");
-		RETURN_FALSE;
+		zend_throw_exception(zend_ce_exception, "Invalid options", 0);
+		return;
 	}
 
 	docp = is_url ? xmlReadFile(data, NULL, (int)options) : xmlReadMemory(data, (int)data_len, NULL, NULL, (int)options);
@@ -2766,7 +2766,7 @@ PHP_MINFO_FUNCTION(simplexml)
 {
 	php_info_print_table_start();
 	php_info_print_table_header(2, "Simplexml support", "enabled");
-	php_info_print_table_row(2, "Revision", "$Id: 7e5516dcdf2fe6ded7970eaeb6abd8d07df39a2a $");
+	php_info_print_table_row(2, "Revision", "$Id: 50413b12ac745b94b27ffbdd5454e6e0d7809909 $");
 	php_info_print_table_row(2, "Schema support",
 #ifdef LIBXML_SCHEMAS_ENABLED
 		"enabled");

@@ -1708,6 +1708,10 @@ static int zend_infer_ranges(const zend_op_array *op_array, zend_ssa *ssa) /* {{
 			for (j = scc_var[scc]; j >= 0; j = next_scc_var[j]) {
 				if (!ssa->var_info[j].has_range) {
 					zend_inference_init_range(op_array, ssa, j, 1, ZEND_LONG_MIN, ZEND_LONG_MAX, 1);
+				} else if (ssa->vars[j].definition_phi &&
+				           ssa->vars[j].definition_phi->pi < 0) {
+					/* narrowing Phi functions first */
+					zend_ssa_range_narrowing(op_array, ssa, j, scc);
 				}
 				zend_bitset_incl(worklist, j);
 			}
@@ -1753,8 +1757,11 @@ static int zend_infer_ranges(const zend_op_array *op_array, zend_ssa *ssa) /* {{
 				}                                                       \
 			}															\
 			if (ssa_var_info[__var].type != __type) { 					\
-				check_type_narrowing(op_array, ssa, worklist,			\
-					__var, ssa_var_info[__var].type, __type);			\
+				if (ssa_var_info[__var].type & ~__type) {				\
+					handle_type_narrowing(op_array, ssa, worklist,		\
+						__var, ssa_var_info[__var].type, __type);		\
+					return FAILURE;										\
+				}														\
 				ssa_var_info[__var].type = __type;						\
 				add_usages(op_array, ssa, worklist, __var);				\
 			}															\
@@ -1891,15 +1898,17 @@ static void reset_dependent_vars(const zend_op_array *op_array, zend_ssa *ssa, z
 #endif
 }
 
-static void check_type_narrowing(const zend_op_array *op_array, zend_ssa *ssa, zend_bitset worklist, int var, uint32_t old_type, uint32_t new_type)
+static void handle_type_narrowing(const zend_op_array *op_array, zend_ssa *ssa, zend_bitset worklist, int var, uint32_t old_type, uint32_t new_type)
 {
-	/* if new_type set resets some bits from old_type set
-	 * We have completely recalculate types of some dependent SSA variables
-	 * (this may occurs mainly because of incremental inter-precudure
-	 * type inference)
-	 */
-	if (old_type & ~new_type) {
-		ZEND_ASSERT(0); /* Currently this should never happen */
+	if (1) {
+		/* Right now, this is always a bug */
+		zend_error(E_WARNING, "Narrowing occurred during type inference. Please file a bug report on bugs.php.net");
+	} else {
+		/* if new_type set resets some bits from old_type set
+		 * We have completely recalculate types of some dependent SSA variables
+		 * (this may occurs mainly because of incremental inter-precudure
+		 * type inference)
+		 */
 		reset_dependent_vars(op_array, ssa, worklist, var);
 	}
 }
@@ -2125,7 +2134,7 @@ static uint32_t zend_fetch_arg_info(const zend_script *script, zend_arg_info *ar
 	return tmp;
 }
 
-static void zend_update_type_info(const zend_op_array *op_array,
+static int zend_update_type_info(const zend_op_array *op_array,
                                   zend_ssa            *ssa,
                                   const zend_script   *script,
                                   zend_bitset          worklist,
@@ -2326,12 +2335,14 @@ static void zend_update_type_info(const zend_op_array *op_array,
 				}
 			} else if (opline->extended_value == ZEND_ASSIGN_OBJ) {
 				if (opline->op1_type == IS_CV) {
-					if (orig & (MAY_BE_UNDEF|MAY_BE_NULL|MAY_BE_FALSE)) {
-						orig &= (MAY_BE_UNDEF|MAY_BE_NULL|MAY_BE_FALSE);
-						orig |= MAY_BE_OBJECT | MAY_BE_RC1 | MAY_BE_RCN;
-					}
-					if (orig & MAY_BE_OBJECT) {
-						orig |= (MAY_BE_RC1|MAY_BE_RCN);
+					if (!(orig & MAY_BE_REF)) {
+						if (orig & (MAY_BE_UNDEF|MAY_BE_NULL|MAY_BE_FALSE)) {
+							orig &= ~(MAY_BE_UNDEF|MAY_BE_NULL|MAY_BE_FALSE);
+							orig |= MAY_BE_OBJECT | MAY_BE_RC1 | MAY_BE_RCN;
+						}
+						if (orig & MAY_BE_OBJECT) {
+							orig |= (MAY_BE_RC1|MAY_BE_RCN);
+						}
 					}
 					UPDATE_SSA_TYPE(orig, ssa_ops[i].op1_def);
 					COPY_SSA_OBJ_TYPE(ssa_ops[i].op1_use, ssa_ops[i].op1_def);
@@ -3104,7 +3115,7 @@ static void zend_update_type_info(const zend_op_array *op_array,
 				    opline->opcode == ZEND_FETCH_OBJ_RW ||
 				    opline->opcode == ZEND_FETCH_OBJ_FUNC_ARG) {
 					if (opline->opcode != ZEND_FETCH_DIM_FUNC_ARG) {
-						if (t1 & (MAY_BE_UNDEF|MAY_BE_NULL|MAY_BE_NULL)) {
+						if (t1 & (MAY_BE_UNDEF|MAY_BE_NULL|MAY_BE_FALSE)) {
 							tmp &= ~(MAY_BE_UNDEF|MAY_BE_NULL|MAY_BE_FALSE);
 							tmp |= MAY_BE_OBJECT | MAY_BE_RC1 | MAY_BE_RCN;
 						}
@@ -3219,6 +3230,8 @@ unknown_opcode:
 			}
 			break;
 	}
+
+	return SUCCESS;
 }
 
 static uint32_t get_class_entry_rank(zend_class_entry *ce) {
@@ -3272,9 +3285,11 @@ int zend_infer_types_ex(const zend_op_array *op_array, const zend_script *script
 	zend_ssa_var_info *ssa_var_info = ssa->var_info;
 	int ssa_vars_count = ssa->vars_count;
 	int i, j;
-	uint32_t tmp;
+	uint32_t tmp, worklist_len = zend_bitset_len(ssa_vars_count);
 
-	WHILE_WORKLIST(worklist, zend_bitset_len(ssa_vars_count), j) {
+	while (!zend_bitset_empty(worklist, worklist_len)) {
+		j = zend_bitset_first(worklist, worklist_len);
+		zend_bitset_excl(worklist, j);
 		if (ssa_vars[j].definition_phi) {
 			zend_ssa_phi *p = ssa_vars[j].definition_phi;
 			if (p->pi >= 0) {
@@ -3329,9 +3344,11 @@ int zend_infer_types_ex(const zend_op_array *op_array, const zend_script *script
 			}
 		} else if (ssa_vars[j].definition >= 0) {
 			i = ssa_vars[j].definition;
-			zend_update_type_info(op_array, ssa, script, worklist, i);
+			if (zend_update_type_info(op_array, ssa, script, worklist, i) == FAILURE) {
+				return FAILURE;
+			}
 		}
-	} WHILE_WORKLIST_END();
+	}
 	return SUCCESS;
 }
 
