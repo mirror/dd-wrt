@@ -295,6 +295,7 @@ include rules/speedchecker.mk
 include rules/shownf.mk
 include rules/lsof.mk
 include rules/wolfssl.mk
+include rules/powertop.mk
 
 #
 # Generic rules

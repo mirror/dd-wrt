@@ -90,6 +90,7 @@ obj-$(CONFIG_OPENSER) += openser
 obj-$(CONFIG_MILKFISH) += milkfish
 obj-$(CONFIG_MC) += libffi glib20 unrar mc util-linux
 obj-$(CONFIG_NOCAT) += nocat
+obj-$(CONFIG_POWERTOP) += ncurses powertop
 obj-$(CONFIG_RTPPROXY) += rtpproxy
 obj-$(CONFIG_ZABBIX) += pcre zabbix
 obj-$(CONFIG_SAMBA) += samba
