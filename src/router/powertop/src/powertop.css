@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<title>PowerTOP report</title>
+<meta http-equiv='content-type' content='text/html;charset=utf-8'>
+
+<script type='text/javascript'>
+
+var powertop = {
+ blocks: {
+  summary: 'Summary',
+  cpuidle: 'CPU Idle',
+  cpufreq: 'CPU Frequency',
+  software: 'Software Info',
+  devinfo: 'Device Info',
+  tuning: 'Tuning',
+  ahci: 'AHCI'
+ },
+ cadd: function(idx, c){
+   var el = document.getElementById(idx);
+   if (el) {
+      var cn = el.className;
+      if (cn.indexOf(c) != -1)
+         return;
+      cn += ' ' + c;
+      el.className = cn;
+   }
+ },
+ crm: function(id, c){
+   var el = document.getElementById(id);
+   if (el) {
+      var cn = el.className
+      while (cn.indexOf(' ' + c) != -1)
+         cn = cn.replace(' ' + c,'');
+      el.className = cn;
+   }
+ },
+ newbutton: function(id, txt) {
+  var x = document.createElement('div');
+  x.id = id + '_button';
+  x.className = 'nav_button';
+  x.textContent = txt;
+  x.innerText = txt;
+  x.onclick = function() { powertop.toggle(id); };
+  return x;
+ },
+ setupbuttons: function() {
+   var t = document.getElementById('main_menu');
+   if (t) {
+     for (var b in powertop.blocks) {
+       t.appendChild(powertop.newbutton(b, powertop.blocks[b]));
+     }
+    t.appendChild(powertop.newbutton('all', 'All'));
+   }
+ },
+ toggle: function(b) {
+   powertop.baseall();
+   if (b == 'all') {
+      for (var c in powertop.blocks) {
+        powertop.crm(c, 'hide');
+      }
+   } else {
+      powertop.crm(b, 'hide');
+   }
+   powertop.cadd(b + '_button', 'pressed');
+ },
+ baseall: function() {
+   for (var b in powertop.blocks) {
+     powertop.cadd(b, 'hide');
+     powertop.crm(b + '_button', 'pressed');
+   }
+   powertop.cadd('all', 'hide');
+   powertop.crm('all_button', 'pressed');
+ },
+ onload: function() {
+   powertop.setupbuttons();
+   powertop.toggle('summary');
+ }
+}
+</script>
+
+<style type='text/css'>
+/* General CSS */
+*{
+	margin:0px;
+	padding:0px;
+	width: auto;
+}
+
+body {
+	background-color: #eee; /* Background color */
+	color: #222;            /* Font color */
+	font-family: Helvetica;
+	font-size: 14px;
+}
+
+#main_container{
+	margin: 2px auto;
+}
+
+/* Top logo & system table css */
+#main_header{
+	min-width: 960px;
+}
+
+img.pwtop_logo{
+	float:left;
+	height:40%;
+	width: 40%;
+	padding:20px;
+}
+
+.sys_info
+{
+	float: right;
+	height:116px;
+	width:450px;
+	font-size: 12px;
+	text-align: left;
+}
+
+th{
+	text-align: left;
+}
+
+/* CSS Main Content */
+
+.content_title
+{
+	color: #296629;
+	padding:0px;
+	margin:2px;
+}
+
+#chart_div{
+	float: left;
+}
+
+.small
+{
+	font-size: 10px;
+}
+
+table.emphasis2
+{
+	font-size: 13px;
+	max-width:95%;
+}
+
+
+th.emph_title {
+	padding:5px;
+}
+
+tr.emph1:nth-child(odd) {
+	background: #ffffff;
+}
+
+tr.emph1:nth-child(even) {
+	background: #ebebeb;
+}
+
+tr.tune:nth-child(odd) {
+	background: #fffcfc;
+}
+tr.tune:nth-child(even) {
+	background: #fff0f0;
+}
+
+td.no_wrap:first-child {
+	white-space:nowrap;
+}
+
+.side_by_side_left{
+	float:left;
+}
+.side_by_side_right{
+	float:right;
+}
+
+#device{
+	display: inline-block;
+}
+.clear_block{
+	clear:both;
+}
+
+td.package{
+	background-color: #e0ddfa; /*purple*/
+}
+
+td.core{
+	background-color: #d1ddff; /*ccebff; /*blue*/
+}
+
+td.cpu{
+	background-color: #ffffeb; /* yellow */
+}
+
+th.title{
+	text-align: center;
+	/*border-bottom: 1px solid #666;*/
+}
+
+
+li.summary_list
+{
+	display: inline;
+	padding: 5px;
+	background-color: #f6f6f9;
+	font-size: 12px;
+}
+
+
+
+/* main menu css*/
+#main_menu {
+	clear:both;
+	font-weight: bold;
+	padding: 5px 0;
+	text-align: left;
+	background-image: -webkit-gradient(linear, left top, left bottom,
+		from(#aaa), to(#eee));
+	background: -moz-linear-gradient(top,  #aaa,  #eee);
+}
+
+
+#main_menu div {
+	font-size: 12px;
+	font-weight: bold;
+	color: white;
+}
+
+#main_menu div.nav_button {
+	margin: 0 0.2em;
+	display: inline;
+	cursor: pointer;
+	color: #223232;
+	font-size: 13px;
+	font-weight: bold;
+	padding: 5px;
+	text-align: center;
+	text-decoration: none;
+}
+
+div.pressed {
+	border: -webkit-gradient(linear, left top, left bottom,
+		from(#b2ffb2), to(#e0ffe0));
+	border-width:0px 8px 0px 8px;
+	background: #999;
+	background-image: -webkit-gradient(linear, left top, left bottom,
+		from(#b2ffb2), to(#e0ffe0));
+	background: -moz-linear-gradient(top,  #b2ffb2,  #e0ffe0);
+}
+
+div.hide {
+	display: none;
+}
+</style>
+</head>
+
+<body onload='powertop.onload();'>
+<div id=\"main_container\">
