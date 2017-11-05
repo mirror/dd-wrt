@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3699 | brainslayer | 2017-11-05 10:26:26 +0100 (Sun, 05 Nov 2017) | 1 line
+
+mcs rates higher than 9 are likelly possible, so lets try it out
+------------------------------------------------------------------------
 r3698 | brainslayer | 2017-11-03 02:11:44 +0100 (Fri, 03 Nov 2017) | 1 line
 
 ath10k firmware tools for decoding and encoding firmware images from official qca vendor images
