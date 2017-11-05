@@ -759,7 +759,6 @@ out:
 	 */
 	if (sdio->boundary) {
 		ret = dio_send_cur_page(dio, sdio, map_bh);
-		dio_bio_submit(dio, sdio);
 		if (sdio->bio)
 			dio_bio_submit(dio, sdio);
 		page_cache_release(sdio->cur_page);
