@@ -1,0 +1,21 @@
+Needed for 2.2
+----------------------------------
+
+* more translations / strings
+* more end user documentation
+* audio calibration? Need appropriate sample
+* reporting for workload mode 
+* Add GPU stats to reports [csv,html]
+
+
+Nice to Have
+----------------------------------
+NCURSES STUB (anyone who may care to do this)
+        PowerTOP is intended to be run with ncurses. As such if there is any
+	distribution that can't or won't support ncurses, they need to supply 
+	a separate stub to handle there issues.  
+
+DONE for 2.2
+----------------------------------
+* interactive mode scrolling 
+* In tunables suggest writing min_power to all SATA ports 
