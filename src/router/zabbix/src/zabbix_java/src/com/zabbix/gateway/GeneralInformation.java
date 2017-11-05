@@ -21,13 +21,13 @@ package com.zabbix.gateway;
 
 class GeneralInformation
 {
-	public static final String APPLICATION_NAME = "Zabbix Java Gateway";
-	public static final String REVISION_DATE = "4 May 2017";
-	public static final String REVISION = "67849";
-	public static final String VERSION = "3.2.6";
+	static final String APPLICATION_NAME = "Zabbix Java Gateway";
+	static final String REVISION_DATE = "17 October 2017";
+	static final String REVISION = "73588";
+	static final String VERSION = "3.4.3";
 
-	public static void printVersion()
+	static void printVersion()
 	{
-		System.out.printf("%s v%s (revision %s) (%s)\n", APPLICATION_NAME, VERSION, REVISION, REVISION_DATE);
+		System.out.println(String.format("%s v%s (revision %s) (%s)", APPLICATION_NAME, VERSION, REVISION, REVISION_DATE));
 	}
 }

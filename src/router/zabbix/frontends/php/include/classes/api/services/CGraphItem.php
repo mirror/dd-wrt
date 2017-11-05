@@ -36,8 +36,6 @@ class CGraphItem extends CApiService {
 	 */
 	public function get($options = []) {
 		$result = [];
-		$userType = self::$userData['type'];
-		$userid = self::$userData['userid'];
 
 		$sqlParts = [
 			'select'	=> ['gitems' => 'gi.gitemid'],
@@ -51,13 +49,13 @@ class CGraphItem extends CApiService {
 			'graphids'		=> null,
 			'itemids'		=> null,
 			'type'			=> null,
-			'editable'		=> null,
+			'editable'		=> false,
 			'nopermissions'	=> null,
 			// output
 			'selectGraphs'	=> null,
 			'output'		=> API_OUTPUT_EXTEND,
-			'countOutput'	=> null,
-			'preservekeys'	=> null,
+			'countOutput'	=> false,
+			'preservekeys'	=> false,
 			'sortfield'		=> '',
 			'sortorder'		=> '',
 			'limit'			=> null
@@ -65,10 +63,9 @@ class CGraphItem extends CApiService {
 		$options = zbx_array_merge($defOptions, $options);
 
 		// editable + PERMISSION CHECK
-		if ($userType != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
+		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
 			$permission = $options['editable'] ? PERM_READ_WRITE : PERM_READ;
-
-			$userGroups = getUserGroupsByUserId($userid);
+			$userGroups = getUserGroupsByUserId(self::$userData['userid']);
 
 			$sqlParts['where'][] = 'EXISTS ('.
 					'SELECT NULL'.
@@ -114,7 +111,7 @@ class CGraphItem extends CApiService {
 		$sqlParts = $this->applyQuerySortOptions($this->tableName(), $this->tableAlias(), $options, $sqlParts);
 		$dbRes = DBselect($this->createSelectQueryFromParts($sqlParts), $sqlParts['limit']);
 		while ($gitem = DBfetch($dbRes)) {
-			if (!is_null($options['countOutput'])) {
+			if ($options['countOutput']) {
 				$result = $gitem['rowscount'];
 			}
 			else {
@@ -122,7 +119,7 @@ class CGraphItem extends CApiService {
 			}
 		}
 
-		if (!is_null($options['countOutput'])) {
+		if ($options['countOutput']) {
 			return $result;
 		}
 
@@ -132,7 +129,7 @@ class CGraphItem extends CApiService {
 		}
 
 		// removing keys (hash -> array)
-		if (is_null($options['preservekeys'])) {
+		if (!$options['preservekeys']) {
 			$result = zbx_cleanHashes($result);
 		}
 		return $result;

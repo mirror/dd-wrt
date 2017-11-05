@@ -38,7 +38,7 @@ class CHostPrototype extends CHostBase {
 			'selectParentHost'		=> null,
 			'selectTemplates' 		=> null,
 			'selectInventory' 		=> null,
-			'editable'				=> null,
+			'editable'				=> false,
 			'nopermissions'			=> null,
 			'sortfield'    			=> '',
 			'sortorder'     		=> ''
@@ -64,13 +64,13 @@ class CHostPrototype extends CHostBase {
 		$result = [];
 		while ($row = DBfetch($res)) {
 			// a count query, return a single result
-			if ($options['countOutput'] !== null) {
-			if ($options['groupCount'] !== null) {
-				$result[] = $row;
-			}
-			else {
-				$result = $row['rowscount'];
-			}
+			if ($options['countOutput']) {
+				if ($options['groupCount']) {
+					$result[] = $row;
+				}
+				else {
+					$result = $row['rowscount'];
+				}
 			}
 			// a normal select query
 			else {
@@ -78,7 +78,7 @@ class CHostPrototype extends CHostBase {
 			}
 		}
 
-		if ($options['countOutput'] !== null) {
+		if ($options['countOutput']) {
 			return $result;
 		}
 
@@ -87,7 +87,7 @@ class CHostPrototype extends CHostBase {
 			$result = $this->unsetExtraFields($result, ['triggerid'], $options['output']);
 		}
 
-		if ($options['preservekeys'] === null) {
+		if (!$options['preservekeys']) {
 			$result = zbx_cleanHashes($result);
 		}
 
@@ -667,8 +667,26 @@ class CHostPrototype extends CHostBase {
 			$updateHostPrototypes = $this->updateReal($updateHostPrototypes);
 		}
 
+		$host_prototypes = array_merge($updateHostPrototypes, $insertHostPrototypes);
+
+		if ($host_prototypes) {
+			$sql = 'SELECT hd.hostid'.
+					' FROM host_discovery hd,items i,hosts h'.
+					' WHERE hd.parent_itemid=i.itemid'.
+						' AND i.hostid=h.hostid'.
+						' AND h.status='.HOST_STATUS_TEMPLATE.
+						' AND '.dbConditionInt('hd.hostid', zbx_objectValues($host_prototypes, 'hostid'));
+			$valid_prototypes = DBfetchArrayAssoc(DBselect($sql), 'hostid');
+
+			foreach ($host_prototypes as $key => $host_prototype) {
+				if (!array_key_exists($host_prototype['hostid'], $valid_prototypes)) {
+					unset($host_prototypes[$key]);
+				}
+			}
+		}
+
 		// propagate the inheritance to the children
-		return $this->inherit(array_merge($updateHostPrototypes, $insertHostPrototypes));
+		return $this->inherit($host_prototypes);
 	}
 
 
@@ -981,51 +999,8 @@ class CHostPrototype extends CHostBase {
 		return ['hostids' => $hostPrototypeIds];
 	}
 
-	/**
-	 * Returns true if all of the given objects are available for reading.
-	 *
-	 * @param $ids
-	 *
-	 * @return bool
-	 */
-	public function isReadable(array $ids) {
-		if (empty($ids)) {
-			return true;
-		}
-		$ids = array_unique($ids);
-
-		$count = $this->get([
-			'hostids' => $ids,
-			'countOutput' => true
-		]);
-		return count($ids) == $count;
-	}
-
-	/**
-	 * Returns true if all of the given objects are available for writing.
-	 *
-	 * @param $ids
-	 *
-	 * @return bool
-	 */
-	public function isWritable(array $ids) {
-		if (empty($ids)) {
-			return true;
-		}
-		$ids = array_unique($ids);
-
-		$count = $this->get([
-			'hostids' => $ids,
-			'editable' => true,
-			'countOutput' => true
-		]);
-		return count($ids) == $count;
-	}
-
 	protected function link(array $templateids, array $targetids) {
-		if (!$this->isWritable($targetids)) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS, _('No permissions to referred object or it does not exist!'));
-		}
+		$this->checkHostPrototypePermissions($targetids);
 
 		$links = parent::link($templateids, $targetids);
 
@@ -1070,8 +1045,20 @@ class CHostPrototype extends CHostBase {
 	 * @param array $discoveryRuleIds
 	 */
 	protected function checkDiscoveryRulePermissions(array $discoveryRuleIds) {
-		if (!API::DiscoveryRule()->isWritable($discoveryRuleIds)) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS, _('No permissions to referred object or it does not exist!'));
+		if ($discoveryRuleIds) {
+			$discoveryRuleIds = array_unique($discoveryRuleIds);
+
+			$count = API::DiscoveryRule()->get([
+				'countOutput' => true,
+				'itemids' => $discoveryRuleIds,
+				'editable' => true
+			]);
+
+			if ($count != count($discoveryRuleIds)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS,
+					_('No permissions to referred object or it does not exist!')
+				);
+			}
 		}
 	}
 
@@ -1080,11 +1067,21 @@ class CHostPrototype extends CHostBase {
 	 *
 	 * @throws APIException if the user doesn't have write permissions for the given host groups
 	 *
-	 * @param array $hostGroupIds
+	 * @param array $groupids
 	 */
-	protected function checkHostGroupsPermissions(array $hostGroupIds) {
-		if (!API::HostGroup()->isWritable($hostGroupIds)) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS, _('No permissions to referred object or it does not exist!'));
+	protected function checkHostGroupsPermissions(array $groupids) {
+		if ($groupids) {
+			$count = API::HostGroup()->get([
+				'countOutput' => true,
+				'groupids' => $groupids,
+				'editable' => true
+			]);
+
+			if ($count != count($groupids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS,
+					_('No permissions to referred object or it does not exist!')
+				);
+			}
 		}
 	}
 
@@ -1096,8 +1093,20 @@ class CHostPrototype extends CHostBase {
 	 * @param array $hostPrototypeIds
 	 */
 	protected function checkHostPrototypePermissions(array $hostPrototypeIds) {
-		if (!$this->isWritable($hostPrototypeIds)) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS, _('No permissions to referred object or it does not exist!'));
+		if ($hostPrototypeIds) {
+			$hostPrototypeIds = array_unique($hostPrototypeIds);
+
+			$count = $this->get([
+				'countOutput' => true,
+				'hostids' => $hostPrototypeIds,
+				'editable' => true
+			]);
+
+			if ($count != count($hostPrototypeIds)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS,
+					_('No permissions to referred object or it does not exist!')
+				);
+			}
 		}
 	}
 
@@ -1203,7 +1212,7 @@ class CHostPrototype extends CHostBase {
 		$sqlParts['where'][] = 'i.hostid=ph.hostid';
 		$sqlParts['where'][] = 'ph.flags='.ZBX_FLAG_DISCOVERY_NORMAL;
 
-		if (CWebUser::getType() != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
+		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
 			$permission = $options['editable'] ? PERM_READ_WRITE : PERM_READ;
 
 			$sqlParts['where'][] = 'EXISTS ('.
@@ -1226,7 +1235,7 @@ class CHostPrototype extends CHostBase {
 		if ($options['discoveryids'] !== null) {
 			$sqlParts['where'][] = dbConditionInt('hd.parent_itemid', (array) $options['discoveryids']);
 
-			if ($options['groupCount'] !== null) {
+			if ($options['groupCount']) {
 				$sqlParts['group']['hd'] = 'hd.parent_itemid';
 			}
 		}

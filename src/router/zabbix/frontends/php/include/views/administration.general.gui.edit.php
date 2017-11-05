@@ -36,10 +36,9 @@ $guiTab = (new CFormList())
 			ZBX_DROPDOWN_FIRST_ALL => _('All')
 		]),
 		(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
-		new CLabel([
-			(new CCheckBox('dropdown_first_remember'))->setChecked($data['dropdown_first_remember'] == 1),
-			_('remember selected')
-		], 'dropdown_first_remember')
+		(new CCheckBox('dropdown_first_remember'))
+			->setLabel(_('remember selected'))
+			->setChecked($data['dropdown_first_remember'] == 1)
 	])
 	->addRow(_('Limit for search and filter results'),
 		(new CNumericBox('search_limit', $data['search_limit'], 6))->setWidth(ZBX_TEXTAREA_NUMERIC_STANDARD_WIDTH)
@@ -50,7 +49,7 @@ $guiTab = (new CFormList())
 	->addRow(_('Enable event acknowledgement'),
 		(new CCheckBox('event_ack_enable'))->setChecked($data['event_ack_enable'] == 1)
 	)
-	->addRow(_('Show events not older than (in days)'),
+	->addRow(_('Show events not older than'),
 		(new CTextBox('event_expire', $data['event_expire']))->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
 	)
 	->addRow(_('Max count of events per trigger to show'),

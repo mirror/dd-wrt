@@ -90,13 +90,18 @@ ZBX_THREAD_ENTRY(dbconfig_thread, args)
 				get_process_type_string(process_type), sec);
 
 		sec = zbx_time();
-		DCsync_configuration();
+		DCsync_configuration(ZBX_DBSYNC_UPDATE);
 		DCupdate_hosts_availability();
+		dc_flush_history();	/* misconfigured items generate pseudo-historic values to become notsupported */
 		sec = zbx_time() - sec;
 
 		zbx_setproctitle("%s [synced configuration in " ZBX_FS_DBL " sec, idle %d sec]",
 				get_process_type_string(process_type), sec, CONFIG_CONFSYNCER_FREQUENCY);
 
 		zbx_sleep_loop(CONFIG_CONFSYNCER_FREQUENCY);
+
+#if !defined(_WINDOWS) && defined(HAVE_RESOLV_H)
+		zbx_update_resolver_conf();	/* handle /etc/resolv.conf update */
+#endif
 	}
 }

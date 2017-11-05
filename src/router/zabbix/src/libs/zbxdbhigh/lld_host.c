@@ -585,7 +585,7 @@ static zbx_lld_host_t	*lld_host_make(zbx_vector_ptr_t *hosts, const char *host_p
 			continue;
 
 		buffer = zbx_strdup(buffer, host->host_proto);
-		substitute_lld_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
+		substitute_lld_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, 0);
 		zbx_lrtrim(buffer, ZBX_WHITESPACE);
 
 		if (0 == strcmp(host->host, buffer))
@@ -602,10 +602,10 @@ static zbx_lld_host_t	*lld_host_make(zbx_vector_ptr_t *hosts, const char *host_p
 		host->ts_delete = 0;
 		host->host = zbx_strdup(NULL, host_proto);
 		host->host_orig = NULL;
-		substitute_lld_macros(&host->host, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
+		substitute_lld_macros(&host->host, jp_row, ZBX_MACRO_ANY, NULL, 0);
 		zbx_lrtrim(host->host, ZBX_WHITESPACE);
 		host->name = zbx_strdup(NULL, name_proto);
-		substitute_lld_macros(&host->name, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
+		substitute_lld_macros(&host->name, jp_row, ZBX_MACRO_ANY, NULL, 0);
 		zbx_lrtrim(host->name, ZBX_WHITESPACE);
 		host->name_orig = NULL;
 		zbx_vector_uint64_create(&host->new_groupids);
@@ -624,14 +624,14 @@ static zbx_lld_host_t	*lld_host_make(zbx_vector_ptr_t *hosts, const char *host_p
 		{
 			host->host_orig = host->host;
 			host->host = zbx_strdup(NULL, host_proto);
-			substitute_lld_macros(&host->host, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
+			substitute_lld_macros(&host->host, jp_row, ZBX_MACRO_ANY, NULL, 0);
 			zbx_lrtrim(host->host, ZBX_WHITESPACE);
 			host->flags |= ZBX_FLAG_LLD_HOST_UPDATE_HOST;
 		}
 
 		/* host visible name */
 		buffer = zbx_strdup(buffer, name_proto);
-		substitute_lld_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
+		substitute_lld_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, 0);
 		zbx_lrtrim(buffer, ZBX_WHITESPACE);
 		if (0 != strcmp(host->name, buffer))
 		{
@@ -918,7 +918,7 @@ static zbx_lld_group_t	*lld_group_make(zbx_vector_ptr_t *groups, zbx_uint64_t gr
 			continue;
 
 		buffer = zbx_strdup(buffer, group->name_proto);
-		substitute_lld_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
+		substitute_lld_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, 0);
 		zbx_lrtrim(buffer, ZBX_WHITESPACE);
 
 		if (0 == strcmp(group->name, buffer))
@@ -930,7 +930,7 @@ static zbx_lld_group_t	*lld_group_make(zbx_vector_ptr_t *groups, zbx_uint64_t gr
 		/* trying to find an already existing group */
 
 		buffer = zbx_strdup(buffer, name_proto);
-		substitute_lld_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
+		substitute_lld_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, 0);
 		zbx_lrtrim(buffer, ZBX_WHITESPACE);
 
 		for (i = 0; i < groups->values_num; i++)
@@ -956,7 +956,7 @@ static zbx_lld_group_t	*lld_group_make(zbx_vector_ptr_t *groups, zbx_uint64_t gr
 		zbx_vector_ptr_create(&group->hosts);
 		group->name_proto = NULL;
 		group->name = zbx_strdup(NULL, name_proto);
-		substitute_lld_macros(&group->name, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
+		substitute_lld_macros(&group->name, jp_row, ZBX_MACRO_ANY, NULL, 0);
 		zbx_lrtrim(group->name, ZBX_WHITESPACE);
 		group->name_orig = NULL;
 		group->lastcheck = 0;
@@ -972,7 +972,7 @@ static zbx_lld_group_t	*lld_group_make(zbx_vector_ptr_t *groups, zbx_uint64_t gr
 
 		/* group name */
 		buffer = zbx_strdup(buffer, name_proto);
-		substitute_lld_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, NULL, 0);
+		substitute_lld_macros(&buffer, jp_row, ZBX_MACRO_ANY, NULL, 0);
 		zbx_lrtrim(buffer, ZBX_WHITESPACE);
 		if (0 != strcmp(group->name, buffer))
 		{
@@ -2397,18 +2397,16 @@ static void	lld_templates_link(const zbx_vector_ptr_t *hosts)
  *          fields; removes lost resources                                    *
  *                                                                            *
  ******************************************************************************/
-static void	lld_hosts_remove(const zbx_vector_ptr_t *hosts, unsigned short lifetime, int lastcheck)
+static void	lld_hosts_remove(const zbx_vector_ptr_t *hosts, int lifetime, int lastcheck)
 {
 	char			*sql = NULL;
 	size_t			sql_alloc = 0, sql_offset = 0;
 	const zbx_lld_host_t	*host;
 	zbx_vector_uint64_t	del_hostids, lc_hostids, ts_hostids;
-	int			i, lifetime_sec;
+	int			i;
 
 	if (0 == hosts->values_num)
 		return;
-
-	lifetime_sec = lifetime * SEC_PER_DAY;
 
 	zbx_vector_uint64_create(&del_hostids);
 	zbx_vector_uint64_create(&lc_hostids);
@@ -2425,17 +2423,19 @@ static void	lld_hosts_remove(const zbx_vector_ptr_t *hosts, unsigned short lifet
 
 		if (0 == (host->flags & ZBX_FLAG_LLD_HOST_DISCOVERED))
 		{
-			if (host->lastcheck < lastcheck - lifetime_sec)
+			int	ts_delete = lld_end_of_life(host->lastcheck, lifetime);
+
+			if (lastcheck > ts_delete)
 			{
 				zbx_vector_uint64_append(&del_hostids, host->hostid);
 			}
-			else if (host->ts_delete != host->lastcheck + lifetime_sec)
+			else if (host->ts_delete != ts_delete)
 			{
 				zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset,
 						"update host_discovery"
 						" set ts_delete=%d"
 						" where hostid=" ZBX_FS_UI64 ";\n",
-						host->lastcheck + lifetime_sec, host->hostid);
+						ts_delete, host->hostid);
 			}
 		}
 		else
@@ -2500,18 +2500,16 @@ static void	lld_hosts_remove(const zbx_vector_ptr_t *hosts, unsigned short lifet
  *          fields; removes lost resources                                    *
  *                                                                            *
  ******************************************************************************/
-static void	lld_groups_remove(const zbx_vector_ptr_t *groups, unsigned short lifetime, int lastcheck)
+static void	lld_groups_remove(const zbx_vector_ptr_t *groups, int lifetime, int lastcheck)
 {
 	char			*sql = NULL;
 	size_t			sql_alloc = 0, sql_offset = 0;
 	const zbx_lld_group_t	*group;
 	zbx_vector_uint64_t	del_groupids, lc_groupids, ts_groupids;
-	int			i, lifetime_sec;
+	int			i;
 
 	if (0 == groups->values_num)
 		return;
-
-	lifetime_sec = lifetime * SEC_PER_DAY;
 
 	zbx_vector_uint64_create(&del_groupids);
 	zbx_vector_uint64_create(&lc_groupids);
@@ -2528,17 +2526,19 @@ static void	lld_groups_remove(const zbx_vector_ptr_t *groups, unsigned short lif
 
 		if (0 == (group->flags & ZBX_FLAG_LLD_GROUP_DISCOVERED))
 		{
-			if (group->lastcheck < lastcheck - lifetime_sec)
+			int	ts_delete = lld_end_of_life(group->lastcheck, lifetime);
+
+			if (lastcheck > ts_delete)
 			{
 				zbx_vector_uint64_append(&del_groupids, group->groupid);
 			}
-			else if (group->ts_delete != group->lastcheck + lifetime_sec)
+			else if (group->ts_delete != ts_delete)
 			{
 				zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset,
 						"update group_discovery"
 						" set ts_delete=%d"
 						" where groupid=" ZBX_FS_UI64 ";\n",
-						group->lastcheck + lifetime_sec, group->groupid);
+						ts_delete, group->groupid);
 			}
 		}
 		else
@@ -3028,8 +3028,8 @@ static void	lld_interfaces_validate(zbx_vector_ptr_t *hosts, char **error)
  * Purpose: add or update low-level discovered hosts                          *
  *                                                                            *
  ******************************************************************************/
-void	lld_update_hosts(zbx_uint64_t lld_ruleid, const zbx_vector_ptr_t *lld_rows, char **error,
-		unsigned short lifetime, int lastcheck)
+void	lld_update_hosts(zbx_uint64_t lld_ruleid, const zbx_vector_ptr_t *lld_rows, char **error, int lifetime,
+		int lastcheck)
 {
 	const char		*__function_name = "lld_update_hosts";
 

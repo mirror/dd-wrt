@@ -154,7 +154,7 @@ class CHelpItems {
 				],
 				[
 					'key' => 'proc_info[process,<attribute>,<type>]',
-					'description' => _('Different information about specific process(es). Returns float')
+					'description' => _('Various information about specific process(es). Returns float')
 				],
 				[
 					'key' => 'sensor[device,sensor,<mode>]',
@@ -267,6 +267,10 @@ class CHelpItems {
 				[
 					'key' => 'vfs.dev.write[<device>,<type>,<mode>]',
 					'description' => _('Disk write statistics. Returns integer with type in sectors, operations, bytes; float with type in sps, ops, bps')
+				],
+				[
+					'key' => 'vfs.dir.size[dir,<regex_incl>,<regex_excl>,<mode>,<max_depth>]',
+					'description' => _('Directory size (in bytes), dir - absolute path to directory, <regex_incl> - regex describing the file name pattern for inclusion, <regex_excl> - regex describing the file name pattern for exclusion, <mode> - mode used to get directory size ("apparent" or "disk"), <max_depth> - maximal traversal depth for directories. Returns integer.')
 				],
 				[
 					'key' => 'vfs.file.cksum[file]',
@@ -448,7 +452,7 @@ class CHelpItems {
 				],
 				[
 					'key' => 'proc_info[process,<attribute>,<type>]',
-					'description' => _('Different information about specific process(es). Returns float')
+					'description' => _('Various information about specific process(es). Returns float')
 				],
 				[
 					'key' => 'sensor[device,sensor,<mode>]',
@@ -915,6 +919,10 @@ class CHelpItems {
 					'description' => _('Returns current maintenance status of the host.')
 				],
 				[
+					'key' => 'zabbix[host,discovery,interfaces]',
+					'description' => _('Returns a JSON object describing the host network interfaces configured in Zabbix. Can be used for LLD.')
+				],
+				[
 					'key' => 'zabbix[host,<type>,available]',
 					'description' => _('Returns availability of a particular type of checks on the host. Value of this item corresponds to availability icons in the host list. Valid types are: agent, snmp, ipmi, jmx.')
 				],
@@ -999,6 +1007,16 @@ class CHelpItems {
 				[
 					'key' => 'db.odbc.discovery[<unique short description>,<dsn>]',
 					'description' => _('Transform SQL query result into a JSON object for low-level discovery.')
+				]
+			],
+			ITEM_TYPE_JMX => [
+				[
+					'key' => 'jmx[object_name,attribute_name]',
+					'description' => _('Return value of an attribute of MBean object.')
+				],
+				[
+					'key' => 'jmx.discovery[<discovery mode>,<object name>]',
+					'description' => _('Return a JSON object describing the MBean objects or their attributes. Can be used for LLD.')
 				]
 			]
 		];

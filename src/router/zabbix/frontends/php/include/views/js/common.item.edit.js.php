@@ -1,7 +1,7 @@
 <script type="text/x-jquery-tmpl" id="delayFlexRow">
 	<tr class="form_row">
 		<td>
-			<ul class="radio-segmented" id="delay_flex_#{rowNum}_type">
+			<ul class="<?= ZBX_STYLE_RADIO_SEGMENTED ?>" id="delay_flex_#{rowNum}_type">
 				<li>
 					<input type="radio" id="delay_flex_#{rowNum}_type_0" name="delay_flex[#{rowNum}][type]" value="0" checked="checked">
 					<label for="delay_flex_#{rowNum}_type_0"><?= _('Flexible') ?></label>
@@ -12,8 +12,8 @@
 			</ul>
 		</td>
 		<td>
-			<input type="text" id="delay_flex_#{rowNum}_delay" name="delay_flex[#{rowNum}][delay]" maxlength="5" onchange="validateNumericBox(this, true, false);" placeholder="50" style="text-align: right;">
-			<input type="text" id="delay_flex_#{rowNum}_schedule" name="delay_flex[#{rowNum}][schedule]" maxlength="255" placeholder="wd1-5h9-18" style="display: none;">
+			<input type="text" id="delay_flex_#{rowNum}_delay" name="delay_flex[#{rowNum}][delay]" maxlength="255" placeholder="<?= ZBX_ITEM_FLEXIBLE_DELAY_DEFAULT ?>">
+			<input type="text" id="delay_flex_#{rowNum}_schedule" name="delay_flex[#{rowNum}][schedule]" maxlength="255" placeholder="<?= ZBX_ITEM_SCHEDULING_DEFAULT ?>" style="display: none;">
 		</td>
 		<td>
 			<input type="text" id="delay_flex_#{rowNum}_period" name="delay_flex[#{rowNum}][period]" maxlength="255" placeholder="<?= ZBX_DEFAULT_INTERVAL ?>">
@@ -23,12 +23,45 @@
 		</td>
 	</tr>
 </script>
+<?php if (!$data['is_discovery_rule']) : ?>
+	<script type="text/x-jquery-tmpl" id="preprocessing_steps_row">
+	<?php
+		$preproc_types_cbbox = new CComboBox('preprocessing[#{rowNum}][type]', '');
+
+		foreach (get_preprocessing_types() as $group) {
+			$cb_group = new COptGroup($group['label']);
+
+			foreach ($group['types'] as $type => $label) {
+				$cb_group->addItem(new CComboItem($type, $label));
+			}
+
+			$preproc_types_cbbox->addItem($cb_group);
+		}
+
+		echo (new CRow([
+			$readonly
+				? null
+				: (new CCol(
+					(new CDiv())->addClass(ZBX_STYLE_DRAG_ICON)
+				))->addClass(ZBX_STYLE_TD_DRAG_ICON),
+				$preproc_types_cbbox,
+				(new CTextBox('preprocessing[#{rowNum}][params][0]', ''))->setAttribute('placeholder', _('pattern')),
+				(new CTextBox('preprocessing[#{rowNum}][params][1]', ''))->setAttribute('placeholder', _('output')),
+				(new CButton('preprocessing[#{rowNum}][remove]', _('Remove')))
+					->addClass(ZBX_STYLE_BTN_LINK)
+					->addClass('element-table-remove')
+		]))
+			->addClass('sortable')
+			->toString()
+	?>
+	</script>
+<?php endif ?>
 <script type="text/javascript">
 	jQuery(function($) {
 		$('#delayFlexTable').on('click', 'input[type="radio"]', function() {
 			var rowNum = $(this).attr('id').split('_')[2];
 
-			if ($(this).val() == <?= ITEM_DELAY_FLEX_TYPE_FLEXIBLE; ?>) {
+			if ($(this).val() == <?= ITEM_DELAY_FLEXIBLE; ?>) {
 				$('#delay_flex_' + rowNum + '_schedule').hide();
 				$('#delay_flex_' + rowNum + '_delay').show();
 				$('#delay_flex_' + rowNum + '_period').show();
@@ -43,6 +76,97 @@
 		$('#delayFlexTable').dynamicRows({
 			template: '#delayFlexRow'
 		});
+
+		<?php if (!$data['is_discovery_rule']) : ?>
+			var preproc_row_tpl = new Template($('#preprocessing_steps_row').html()),
+				preprocessing = $('#preprocessing');
+
+			preprocessing.sortable({
+				disabled: (preprocessing.find('tr.sortable').length < 2),
+				items: 'tr.sortable',
+				axis: 'y',
+				cursor: 'move',
+				containment: 'parent',
+				handle: 'div.<?= ZBX_STYLE_DRAG_ICON ?>',
+				tolerance: 'pointer',
+				opacity: 0.6,
+				helper: function(e, ui) {
+					ui.children().each(function() {
+						var td = $(this);
+
+						td.width(td.width());
+					});
+
+					return ui;
+				},
+				start: function(e, ui) {
+					$(ui.placeholder).height($(ui.helper).height());
+				}
+			});
+
+			preprocessing
+				.on('click', '.element-table-add', function() {
+					var row = $(this).parent().parent();
+					row.before(preproc_row_tpl.evaluate({rowNum: preprocessing.find('tr.sortable').length}));
+
+					if (preprocessing.find('tr.sortable').length > 1) {
+						preprocessing.sortable('enable');
+					}
+				})
+				.on('click', '.element-table-remove', function() {
+					var row = $(this).parent().parent();
+					row.remove();
+
+					if (preprocessing.find('tr.sortable').length < 2) {
+						preprocessing.sortable('disable');
+					}
+				})
+				.on('change', 'select[name*="type"]', function() {
+					var inputs = $(this).parent().parent().find('[name*="params"]');
+
+					switch ($(this).val()) {
+						case '<?= ZBX_PREPROC_MULTIPLIER ?>':
+							$(inputs[0])
+								.show()
+								.attr('placeholder', <?= CJs::encodeJson(_('number')) ?>);
+							$(inputs[1]).hide();
+							break;
+
+						case '<?= ZBX_PREPROC_RTRIM ?>':
+						case '<?= ZBX_PREPROC_LTRIM ?>':
+						case '<?= ZBX_PREPROC_TRIM ?>':
+							$(inputs[0])
+								.show()
+								.attr('placeholder', <?= CJs::encodeJson(_('list of characters')) ?>);
+							$(inputs[1]).hide();
+							break;
+
+						case '<?= ZBX_PREPROC_XPATH ?>':
+						case '<?= ZBX_PREPROC_JSONPATH ?>':
+							$(inputs[0])
+								.show()
+								.attr('placeholder', <?= CJs::encodeJson(_('path')) ?>);
+							$(inputs[1]).hide();
+							break;
+
+						case '<?= ZBX_PREPROC_REGSUB ?>':
+							$(inputs[0])
+								.show()
+								.attr('placeholder', <?= CJs::encodeJson(_('pattern')) ?>);
+							$(inputs[1]).show();
+							break;
+
+						case '<?= ZBX_PREPROC_BOOL2DEC ?>':
+						case '<?= ZBX_PREPROC_OCT2DEC ?>':
+						case '<?= ZBX_PREPROC_HEX2DEC ?>':
+						case '<?= ZBX_PREPROC_DELTA_VALUE ?>':
+						case '<?= ZBX_PREPROC_DELTA_SPEED ?>':
+							$(inputs[0]).hide();
+							$(inputs[1]).hide();
+							break;
+					}
+				});
+		<?php endif ?>
 	});
 </script>
 <?php
@@ -52,22 +176,24 @@
  */
 $this->data['typeVisibility'] = [];
 $i = 0;
+
 foreach ($this->data['delay_flex'] as $delayFlex) {
 	if (!isset($delayFlex['delay']) && !isset($delayFlex['period'])) {
 		continue;
 	}
+
 	foreach ($this->data['types'] as $type => $label) {
-		if ($type == ITEM_TYPE_TRAPPER || $type == ITEM_TYPE_ZABBIX_ACTIVE || $type == ITEM_TYPE_SNMPTRAP) {
+		if ($type == ITEM_TYPE_TRAPPER || $type == ITEM_TYPE_ZABBIX_ACTIVE || $type == ITEM_TYPE_SNMPTRAP
+				|| $type == ITEM_TYPE_DEPENDENT) {
 			continue;
 		}
 		zbx_subarray_push($this->data['typeVisibility'], $type, 'delay_flex['.$i.'][delay]');
 		zbx_subarray_push($this->data['typeVisibility'], $type, 'delay_flex['.$i.'][period]');
 	}
+
 	$i++;
-	if ($i == 7) {
-		break;
-	}
 }
+
 if (!empty($this->data['interfaces'])) {
 	zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_ZABBIX, 'interface_row');
 	zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_ZABBIX, 'interfaceid');
@@ -130,6 +256,8 @@ zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_DB_MONITOR, 'username
 zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_DB_MONITOR, 'row_username');
 zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_JMX, 'username');
 zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_JMX, 'row_username');
+zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_JMX, 'jmx_endpoint');
+zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_JMX, 'row_jmx_endpoint');
 zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_SSH, 'password');
 zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_SSH, 'row_password');
 zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_TELNET, 'password');
@@ -152,6 +280,7 @@ zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_CALCULATED, 'params_c
 zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_CALCULATED, 'row_params');
 zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_TRAPPER, 'trapper_hosts');
 zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_TRAPPER, 'row_trapper_hosts');
+zbx_subarray_push($this->data['typeVisibility'], ITEM_TYPE_DEPENDENT, 'row_master_item');
 foreach ($this->data['types'] as $type => $label) {
 	switch ($type) {
 		case ITEM_TYPE_DB_MONITOR:
@@ -172,17 +301,13 @@ foreach ($this->data['types'] as $type => $label) {
 				['id' => 'key', 'defaultValue' => ZBX_DEFAULT_KEY_TELNET]
 			);
 			break;
-		case ITEM_TYPE_JMX:
-			zbx_subarray_push($this->data['typeVisibility'], $type,
-				['id' => 'key', 'defaultValue' => ZBX_DEFAULT_KEY_JMX]
-			);
-			break;
 		default:
 			zbx_subarray_push($this->data['typeVisibility'], $type, ['id' => 'key', 'defaultValue' => '']);
 	}
 }
 foreach ($this->data['types'] as $type => $label) {
-	if ($type == ITEM_TYPE_TRAPPER || $type == ITEM_TYPE_ZABBIX_ACTIVE || $type == ITEM_TYPE_SNMPTRAP) {
+	if ($type == ITEM_TYPE_TRAPPER || $type == ITEM_TYPE_ZABBIX_ACTIVE || $type == ITEM_TYPE_SNMPTRAP
+			|| $type == ITEM_TYPE_DEPENDENT) {
 		continue;
 	}
 	zbx_subarray_push($this->data['typeVisibility'], $type, 'row_flex_intervals');
@@ -192,7 +317,7 @@ foreach ($this->data['types'] as $type => $label) {
 	zbx_subarray_push($this->data['typeVisibility'], $type, 'add_delay_flex');
 }
 foreach ($this->data['types'] as $type => $label) {
-	if ($type == ITEM_TYPE_TRAPPER || $type == ITEM_TYPE_SNMPTRAP) {
+	if ($type == ITEM_TYPE_TRAPPER || $type == ITEM_TYPE_SNMPTRAP || $type == ITEM_TYPE_DEPENDENT) {
 		continue;
 	}
 	zbx_subarray_push($this->data['typeVisibility'], $type, 'delay');
@@ -203,9 +328,6 @@ foreach ($this->data['types'] as $type => $label) {
 foreach ([ITEM_TYPE_CALCULATED, ITEM_TYPE_AGGREGATE] as $type) {
 	// set to disable character, log and text items in value type
 	zbx_subarray_push($this->data['typeDisable'], $type, [ITEM_VALUE_TYPE_STR, ITEM_VALUE_TYPE_LOG, ITEM_VALUE_TYPE_TEXT], 'value_type');
-
-	// disable octal, hexadecimal and boolean items in data_type; Necessary for Numeric (unsigned) value type only
-	zbx_subarray_push($this->data['typeDisable'], $type, [ITEM_DATA_TYPE_OCTAL, ITEM_DATA_TYPE_HEXADECIMAL, ITEM_DATA_TYPE_BOOLEAN], 'data_type');
 }
 
 $this->data['securityLevelVisibility'] = [];
@@ -227,9 +349,7 @@ zbx_subarray_push($this->data['authTypeVisibility'], ITEM_AUTHTYPE_PUBLICKEY, 'p
 zbx_subarray_push($this->data['authTypeVisibility'], ITEM_AUTHTYPE_PUBLICKEY, 'row_publickey');
 zbx_subarray_push($this->data['authTypeVisibility'], ITEM_AUTHTYPE_PUBLICKEY, 'privatekey');
 zbx_subarray_push($this->data['authTypeVisibility'], ITEM_AUTHTYPE_PUBLICKEY, 'row_privatekey');
-
 ?>
-
 <script type="text/javascript">
 	function setAuthTypeLabel() {
 		if (jQuery('#authtype').val() == <?php echo CJs::encodeJson(ITEM_AUTHTYPE_PUBLICKEY); ?>

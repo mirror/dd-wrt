@@ -46,9 +46,15 @@ $hostList = new CFormList('hostlist');
 if ($hostPrototype['templateid'] && $data['parents']) {
 	$parents = [];
 	foreach (array_reverse($data['parents']) as $parent) {
-		$parents[] = new CLink($parent['parentHost']['name'],
-			'?form=update&hostid='.$parent['hostid'].'&parent_discoveryid='.$parent['discoveryRule']['itemid']
-		);
+		if (array_key_exists($parent['parentHost']['hostid'], $hostPrototype['writable_templates'])) {
+			$parents[] = new CLink($parent['parentHost']['name'],
+				'?form=update&hostid='.$parent['hostid'].'&parent_discoveryid='.$parent['discoveryRule']['itemid']
+			);
+		}
+		else {
+			$parents[] = new CSpan($parent['parentHost']['name']);
+		}
+
 		$parents[] = SPACE.'&rArr;'.SPACE;
 	}
 	array_pop($parents);
@@ -229,10 +235,17 @@ if ($hostPrototype['templateid']) {
 
 	foreach ($hostPrototype['templates'] as $template) {
 		$tmplList->addVar('templates['.$template['templateid'].']', $template['templateid']);
-		$templateLink = (new CLink($template['name'], 'templates.php?form=update&templateid='.$template['templateid']))
-			->setTarget('_blank');
 
-		$linkedTemplateTable->addRow([$templateLink]);
+		if (array_key_exists($template['templateid'], $hostPrototype['writable_templates'])) {
+			$template_link = (new CLink($template['name'],
+				'templates.php?form=update&templateid='.$template['templateid']
+			))->setTarget('_blank');
+		}
+		else {
+			$template_link = new CSpan($template['name']);
+		}
+
+		$linkedTemplateTable->addRow([$template_link]);
 	}
 
 	$tmplList->addRow(_('Linked templates'),
@@ -250,11 +263,18 @@ else {
 
 	foreach ($hostPrototype['templates'] as $template) {
 		$tmplList->addVar('templates['.$template['templateid'].']', $template['templateid']);
-		$templateLink = (new CLink($template['name'], 'templates.php?form=update&templateid='.$template['templateid']))
-			->setTarget('_blank');
+
+		if (array_key_exists($template['templateid'], $hostPrototype['writable_templates'])) {
+			$template_link = (new CLink($template['name'],
+				'templates.php?form=update&templateid='.$template['templateid']
+			))->setTarget('_blank');
+		}
+		else {
+			$template_link = new CSpan($template['name']);
+		}
 
 		$linkedTemplateTable->addRow([
-			$templateLink,
+			$template_link,
 			(new CCol(
 				(new CSimpleButton(_('Unlink')))
 					->onClick('javascript: submitFormWithParam('.
@@ -363,13 +383,22 @@ $encryption_form_list = (new CFormList('encryption'))
 			->setModern(true)
 			->setEnabled(false)
 	)
-	->addRow(_('Connections from host'), [
-		new CLabel([(new CCheckBox('tls_in_none'))->setAttribute('disabled', 'disabled'), _('No encryption')]),
-		BR(),
-		new CLabel([(new CCheckBox('tls_in_psk'))->setAttribute('disabled', 'disabled'), _('PSK')]),
-		BR(),
-		new CLabel([(new CCheckBox('tls_in_cert'))->setAttribute('disabled', 'disabled'), _('Certificate')])
-	])
+	->addRow(_('Connections from host'),
+		(new CList())
+			->addClass(ZBX_STYLE_LIST_CHECK_RADIO)
+			->addItem((new CCheckBox('tls_in_none'))
+				->setLabel(_('No encryption'))
+				->setAttribute('disabled', 'disabled')
+			)
+			->addItem((new CCheckBox('tls_in_psk'))
+				->setLabel(_('PSK'))
+				->setAttribute('disabled', 'disabled')
+			)
+			->addItem((new CCheckBox('tls_in_cert'))
+				->setLabel(_('Certificate'))
+				->setAttribute('disabled', 'disabled')
+			)
+	)
 	->addRow(_('PSK identity'),
 		(new CTextBox('tls_psk_identity', $parentHost['tls_psk_identity'], false, 128))
 			->setWidth(ZBX_TEXTAREA_BIG_WIDTH)

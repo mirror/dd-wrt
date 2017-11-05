@@ -27,44 +27,23 @@ class CScreenMap extends CScreenBase {
 	 * @return CDiv (screen inside container)
 	 */
 	public function get() {
-		$image = (new CImg('map.php?noedit=1&sysmapid='.$this->screenitem['resourceid'].
-			'&width='.$this->screenitem['width'].'&height='.$this->screenitem['height'].'&curtime='.time()))
-			->setId('map_'.$this->screenitem['screenitemid']);
+		$map_options = [];
 
-		if ($this->mode == SCREEN_MODE_PREVIEW) {
-			$sysmap = API::Map()->get([
-				'sysmapids' => $this->screenitem['resourceid'],
-				'output' => API_OUTPUT_EXTEND,
-				'selectSelements' => API_OUTPUT_EXTEND,
-				'selectLinks' => API_OUTPUT_EXTEND,
-				'expandUrls' => true,
-				'nopermissions' => true,
-				'preservekeys' => true
-			]);
-			$sysmap = reset($sysmap);
-
-			if (array_key_exists('severity_min', $this->screenitem)) {
-				$sysmap['severity_min'] = $this->screenitem['severity_min'];
-			}
-
-			$image->setSrc($image->getAttribute('src').'&severity_min='.$sysmap['severity_min']);
-
-			$action_map = getActionMapBySysmap($sysmap, [
-				'severity_min' => $sysmap['severity_min'],
-				'fullscreen' => array_key_exists('fullscreen', $this->screenitem) ? $this->screenitem['fullscreen'] : 0
-			]);
-			$image->setMap($action_map->getName());
-
-			$output = [$action_map, $image];
-		}
-		elseif ($this->mode == SCREEN_MODE_EDIT) {
-			$output = [$image, BR(), new CLink(_('Change'), $this->action)];
-		}
-		else {
-			$output = [$image];
+		if (array_key_exists('severity_min', $this->screenitem)) {
+			$map_options['severity_min'] = $this->screenitem['severity_min'];
 		}
 
-		$this->insertFlickerfreeJs();
+		$map_data = CMapHelper::get($this->screenitem['resourceid'], $map_options);
+		$map_data['container'] = '#map_'.$this->screenitem['screenitemid'];
+		$this->insertFlickerfreeJs($map_data);
+
+		$output = [
+			(new CDiv())->setId('map_'.$this->screenitem['screenitemid'])
+		];
+
+		if ($this->mode == SCREEN_MODE_EDIT) {
+			$output += [BR(), new CLink(_x('Change', 'verb'), $this->action)];
+		}
 
 		$div = (new CDiv($output))
 			->addClass('map-container')
@@ -72,6 +51,9 @@ class CScreenMap extends CScreenBase {
 			->setId($this->getScreenId())
 			->setAttribute('data-timestamp', $this->timestamp)
 			->addStyle('position: relative;');
+
+		// Add map to additional wrapper to enable horizontal scrolling.
+		$div = (new CDiv($div))->addClass('sysmap-scroll-container');
 
 		return $div;
 	}

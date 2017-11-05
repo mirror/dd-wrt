@@ -42,9 +42,8 @@ function zbx_construct_menu(&$main_menu, &$sub_menus, &$page, $action = null) {
 				[
 					'url' => 'zabbix.php',
 					'action' => 'dashboard.view',
-					'active_if' => ['dashboard.view'],
+					'active_if' => ['dashboard.list', 'dashboard.view'],
 					'label' => _('Dashboard'),
-					'sub_pages' => ['dashconf.php']
 				],
 				[
 					'url' => 'zabbix.php',
@@ -108,7 +107,7 @@ function zbx_construct_menu(&$main_menu, &$sub_menus, &$page, $action = null) {
 				[
 					'url' => 'srv_status.php',
 					'active_if' => ['report.services'],
-					'label' => _('IT services'),
+					'label' => _('Services'),
 					'sub_pages' => ['chart5.php']
 				],
 				[
@@ -238,7 +237,7 @@ function zbx_construct_menu(&$main_menu, &$sub_menus, &$page, $action = null) {
 				],
 				[
 					'url' => 'services.php',
-					'label' => _('IT services')
+					'label' => _('Services')
 				]
 			]
 		],
@@ -279,10 +278,7 @@ function zbx_construct_menu(&$main_menu, &$sub_menus, &$page, $action = null) {
 				],
 				[
 					'url' => 'users.php',
-					'label' => _('Users'),
-					'sub_pages' => [
-						'popup_usrgrp.php'
-					]
+					'label' => _('Users')
 				],
 				[
 					'url' => 'zabbix.php',

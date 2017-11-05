@@ -18,7 +18,7 @@
  **/
 
 
-jQuery(function($) {
+(function($) {
 
 	window.flickerfreeScreen = {
 
@@ -37,6 +37,11 @@ jQuery(function($) {
 			this.screens[screen.id].isRefreshing = false;
 			this.screens[screen.id].isReRefreshRequire = false;
 			this.screens[screen.id].error = 0;
+
+			// SCREEN_RESOURCE_MAP
+			if (screen.resourcetype == 2) {
+				this.screens[screen.id].data = new SVGMap(this.screens[screen.id].data);
+			}
 
 			// init refresh plan
 			if (screen.isFlickerfree && screen.interval > 0) {
@@ -102,8 +107,14 @@ jQuery(function($) {
 			// timeline params
 			// SCREEN_RESOURCE_HTTPTEST_DETAILS, SCREEN_RESOURCE_DISCOVERY, SCREEN_RESOURCE_HTTPTEST
 			if (jQuery.inArray(screen.resourcetype, [21, 22, 23]) === -1) {
-				ajaxUrl.setArgument('period', empty(screen.timeline.period) ? null : screen.timeline.period);
+				if (!empty(timeControl.timeline)) {
+					timeControl.timeline.refreshEndtime();
+				}
+				ajaxUrl.setArgument('period', empty(screen.timeline.period) ? null : this.getCalculatedPeriod(screen));
 				ajaxUrl.setArgument('stime', this.getCalculatedSTime(screen));
+				if (typeof screen.timeline.isNow !== 'undefined') {
+					ajaxUrl.setArgument('isNow', + screen.timeline.isNow);
+				}
 			}
 
 			// SCREEN_RESOURCE_GRAPH or SCREEN_RESOURCE_SIMPLE_GRAPH
@@ -114,8 +125,14 @@ jQuery(function($) {
 							var obj = $(this),
 								url = new Curl(obj.attr('href'));
 
-							url.setArgument('period', empty(screen.timeline.period) ? null : screen.timeline.period);
+							url.setArgument('period', empty(screen.timeline.period)
+								? null
+								: window.flickerfreeScreen.getCalculatedPeriod(screen)
+							);
 							url.setArgument('stime', window.flickerfreeScreen.getCalculatedSTime(screen));
+							if (typeof screen.timeline.isNow !== 'undefined') {
+								url.setArgument('isNow', + screen.timeline.isNow);
+							}
 							obj.attr('href', url.getUrl());
 						});
 					});
@@ -124,7 +141,7 @@ jQuery(function($) {
 
 			// SCREEN_RESOURCE_MAP
 			else if (screen.resourcetype == 2) {
-				this.refreshImg(id);
+				this.refreshMap(id);
 			}
 
 			// SCREEN_RESOURCE_CHART
@@ -244,16 +261,28 @@ jQuery(function($) {
 					data: {},
 					dataType: 'html',
 					success: function(html) {
-						// get timestamp from html
-						var htmlTimestamp = null;
+						// Get timestamp and error message from HTML.
+						var htmlTimestamp = null,
+							msg_bad = null;
 
 						$(html).each(function() {
 							var obj = $(this);
 
-							if (obj.prop('nodeName') == 'DIV') {
+							if (obj.hasClass('msg-bad')) {
+								msg_bad = obj;
+							}
+							else if (obj.prop('nodeName') === 'DIV') {
 								htmlTimestamp = obj.data('timestamp');
 							}
 						});
+
+						$('.msg-bad').remove();
+
+						// set message
+						if (msg_bad) {
+							$(msg_bad).insertBefore('.article > :first-child');
+							html = $(html).not('.msg-bad');
+						}
 
 						// set html
 						if ($('#flickerfreescreen_' + id).data('timestamp') < htmlTimestamp) {
@@ -266,6 +295,10 @@ jQuery(function($) {
 							window.flickerfreeScreenShadow.fadeSpeed(id, 0);
 							window.flickerfreeScreenShadow.validate(id);
 						}
+						else if (!html.length) {
+							$('#flickerfreescreen_' + id).remove();
+						}
+
 						chkbxRange.init();
 					},
 					error: function() {
@@ -278,6 +311,39 @@ jQuery(function($) {
 						screen.isReRefreshRequire = false;
 						window.flickerfreeScreen.refresh(id, true);
 					}
+				});
+			}
+		},
+
+		refreshMap: function(id) {
+			var screen = this.screens[id];
+
+			if (screen.isRefreshing) {
+				this.calculateReRefresh(id);
+			}
+			else {
+				screen.isRefreshing = true;
+				screen.error = 0;
+				screen.timestampResponsiveness = new CDate().getTime();
+
+				window.flickerfreeScreenShadow.start(id);
+
+				var url = new Curl(screen.data.options.refresh);
+				url.setArgument('curtime', new CDate().getTime());
+
+				jQuery.ajax( {
+					'url': url.getUrl()
+				})
+				.error(function() {
+					screen.error++;
+					window.flickerfreeScreen.calculateReRefresh(id);
+				})
+				.done(function(data) {
+					data.show_timestamp = screen.data.options.show_timestamp;
+					screen.isRefreshing = false;
+					screen.data.update(data);
+					screen.timestamp = screen.timestampActual;
+					window.flickerfreeScreenShadow.end(id);
 				});
 			}
 		},
@@ -297,76 +363,110 @@ jQuery(function($) {
 
 				$('#flickerfreescreen_' + id + ' img').each(function() {
 					var domImg = $(this),
-						url = new Curl(domImg.attr('src'));
+						url = new Curl(domImg.attr('src')),
+						on_dashboard = timeControl.objectList[id].onDashboard;
 
 					url.setArgument('screenid', empty(screen.screenid) ? null : screen.screenid);
-					url.setArgument('updateProfile', (typeof screen.updateProfile === 'undefined')
-						? null : + screen.updateProfile);
-					url.setArgument('period', empty(screen.timeline.period) ? null : screen.timeline.period);
+					if (typeof screen.updateProfile === 'undefined') {
+						url.setArgument('updateProfile', + screen.updateProfile);
+					}
+					url.setArgument('period', empty(screen.timeline.period)
+						? null
+						: window.flickerfreeScreen.getCalculatedPeriod(screen)
+					);
 					url.setArgument('stime', window.flickerfreeScreen.getCalculatedSTime(screen));
+					if (typeof screen.timeline.isNow !== 'undefined') {
+						url.setArgument('isNow', + screen.timeline.isNow);
+					}
 					url.setArgument('curtime', new CDate().getTime());
 
-					// create temp image in buffer
-					$('<img>', {
-						'class': domImg.attr('class'),
-						'data-timestamp': new CDate().getTime(),
-						id: domImg.attr('id') + '_tmp',
-						name: domImg.attr('name'),
-						border: domImg.attr('border'),
-						usemap: domImg.attr('usemap'),
-						alt: domImg.attr('alt'),
-						src: url.getUrl(),
-						css: {
-							position: 'relative',
-							zIndex: 2
-						}
-					})
-					.error(function() {
-						screen.error++;
-						window.flickerfreeScreen.calculateReRefresh(id);
-					})
-					.load(function() {
-						if (screen.error > 0) {
-							return;
-						}
-
-						screen.isRefreshing = false;
-
-						// re-refresh image
-						var bufferImg = $(this);
-
-						if (bufferImg.data('timestamp') > screen.timestamp) {
-							screen.timestamp = bufferImg.data('timestamp');
-
-							// set id
-							bufferImg.attr('id', bufferImg.attr('id').substring(0, bufferImg.attr('id').indexOf('_tmp')));
-
-							// set opacity state
-							if (window.flickerfreeScreenShadow.isShadowed(id)) {
-								bufferImg.fadeTo(0, 0.6);
+					// Create temp image in buffer.
+					var img = $('<img>', {
+							'class': domImg.attr('class'),
+							'data-timestamp': new CDate().getTime(),
+							id: domImg.attr('id') + '_tmp',
+							name: domImg.attr('name'),
+							border: domImg.attr('border'),
+							usemap: domImg.attr('usemap'),
+							alt: domImg.attr('alt'),
+							css: {
+								position: 'relative',
+								zIndex: 2
+							}
+						})
+						.error(function() {
+							screen.error++;
+							window.flickerfreeScreen.calculateReRefresh(id);
+						})
+						.on('load', function() {
+							if (screen.error > 0) {
+								return;
 							}
 
-							// set loaded image from buffer to dom
-							domImg.replaceWith(bufferImg);
+							screen.isRefreshing = false;
 
-							// callback function on success
-							if (!empty(successAction)) {
-								successAction();
+							// Re-refresh image.
+							var bufferImg = $(this);
+
+							if (bufferImg.data('timestamp') > screen.timestamp) {
+								screen.timestamp = bufferImg.data('timestamp');
+
+								// Set id.
+								bufferImg.attr('id', bufferImg.attr('id').substring(0, bufferImg.attr('id').indexOf('_tmp')));
+
+								// Set opacity state.
+								if (window.flickerfreeScreenShadow.isShadowed(id)) {
+									bufferImg.fadeTo(0, 0.6);
+								}
+
+								if (!empty(bufferImg.data('height'))) {
+									timeControl.changeSBoxHeight(id, bufferImg.data('height'));
+								}
+
+								// Set loaded image from buffer to dom.
+								domImg.replaceWith(bufferImg);
+
+								// Callback function on success.
+								if (!empty(successAction)) {
+									successAction();
+								}
+
+								// Rebuild timeControl sbox listeners.
+								if (!empty(ZBX_SBOX[id])) {
+									ZBX_SBOX[id].addListeners();
+								}
+
+								window.flickerfreeScreenShadow.end(id);
 							}
 
-							// rebuild timeControl sbox listeners
-							if (!empty(ZBX_SBOX[id])) {
-								ZBX_SBOX[id].addListeners();
+							if (screen.isReRefreshRequire) {
+								screen.isReRefreshRequire = false;
+								window.flickerfreeScreen.refresh(id, true);
 							}
 
-							window.flickerfreeScreenShadow.end(id);
-						}
+							if (on_dashboard) {
+								timeControl.updateDashboardFooter(id);
+							}
+						});
 
-						if (screen.isReRefreshRequire) {
-							screen.isReRefreshRequire = false;
-							window.flickerfreeScreen.refresh(id, true);
-						}
-					});
+					if (['chart.php', 'chart2.php', 'chart3.php'].indexOf(url.getPath()) > -1
+							&& url.getArgument('outer') === '1') {
+						// Getting height of graph inside image. Only for line graphs on dashboard.
+						var heightUrl = new Curl(url.getUrl());
+						heightUrl.setArgument('onlyHeight', '1');
+
+						$.ajax({
+							url: heightUrl.getUrl(),
+							success: function(response, status, xhr) {
+								// 'src' should be added only here to trigger load event after new height is received.
+								img.data('height', +xhr.getResponseHeader('X-ZBX-SBOX-HEIGHT'));
+								img.attr('src', url.getUrl());
+							}
+						});
+					}
+					else {
+						img.attr('src', url.getUrl());
+					}
 				});
 			}
 		},
@@ -426,31 +526,22 @@ jQuery(function($) {
 		},
 
 		getCalculatedSTime: function(screen) {
-			if (!empty(timeControl.timeline) && screen.timeline.period > timeControl.timeline.maxperiod) {
-				return new CDate(timeControl.timeline.starttime() * 1000).getZBXDate();
+			if (timeControl.timeline && timeControl.timeline.is_selectall_period) {
+				return timeControl.timeline.usertime();
 			}
 
-			return (screen.timeline.isNow || screen.timeline.isNow == 1)
-				// 31536000 = 86400 * 365 = 1 year
-				? new CDate((new CDate().setZBXDate(screen.timeline.stime) / 1000 + 31536000) * 1000).getZBXDate()
-				: screen.timeline.stime;
+			return screen.timeline.stime;
 		},
 
-		submitForm: function(formName) {
-			var period = '',
-				stime = '';
-
-			for (var id in this.screens) {
-				if (!empty(this.screens[id])) {
-					period = this.screens[id].timeline.period;
-					stime = this.getCalculatedSTime(this.screens[id]);
-					break;
-				}
-			}
-
-			$('form[name=' + formName + ']').append('<input type="hidden" name="period" value="' + period + '" />');
-			$('form[name=' + formName + ']').append('<input type="hidden" name="stime" value="' + stime + '" />');
-			$('form[name=' + formName + ']').submit();
+		/**
+		 * Return period in seconds for requesting data. Automatically calculates period when 'All' period is selected.
+		 *
+		 * @property {Object} screen screen object
+		 *
+		 * @return {int}
+		 */
+		getCalculatedPeriod: function (screen) {
+			return !empty(timeControl.timeline) ? timeControl.timeline.period() : screen.timeline.period;
 		},
 
 		cleanAll: function() {
@@ -515,7 +606,9 @@ jQuery(function($) {
 		end: function(id) {
 			var screen = window.flickerfreeScreen.screens[id];
 
-			if (!empty(screen) && (screen.timestamp + this.timeout) >= screen.timestampActual) {
+			if (typeof this.timers[id] !== 'undefined' && !empty(screen)
+					&& (screen.timestamp + this.timeout) >= screen.timestampActual
+			) {
 				var timer = this.timers[id];
 				timer.inUpdate = false;
 
@@ -728,4 +821,4 @@ jQuery(function($) {
 	$(window).resize(function() {
 		window.flickerfreeScreenShadow.moveShadows();
 	});
-});
+}(jQuery));

@@ -69,7 +69,7 @@ int	tcp_expect(const char *host, unsigned short port, int timeout, const char *r
 	}
 
 	if (NULL != sendtoclose && SUCCEED == net && ZBX_TCP_EXPECT_OK == val)
-		zbx_tcp_send_raw(&s, sendtoclose);
+		(void)zbx_tcp_send_raw(&s, sendtoclose);
 
 	if (SUCCEED == net && ZBX_TCP_EXPECT_OK == val)
 		*value_int = 1;
@@ -86,7 +86,7 @@ int	NET_TCP_PORT(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
 	unsigned short	port;
 	int		value_int, ret;
-	char		*ip_str, ip[64], *port_str;
+	char		*ip_str, ip[MAX_ZBX_DNSNAME_LEN + 1], *port_str;
 
 	if (2 < request->nparam)
 	{

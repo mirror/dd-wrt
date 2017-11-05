@@ -286,6 +286,7 @@ int	zbx_db_connect(char *host, char *user, char *password, char *dbname, char *d
 #elif defined(HAVE_ORACLE)
 	char		*connect = NULL;
 	sword		err = OCI_SUCCESS;
+	static ub2	csid = 0;
 #elif defined(HAVE_POSTGRESQL)
 	int		rc;
 	char		*cport = NULL;
@@ -295,6 +296,9 @@ int	zbx_db_connect(char *host, char *user, char *password, char *dbname, char *d
 	char		*p, *path = NULL;
 #endif
 
+#ifndef HAVE_MYSQL
+	ZBX_UNUSED(dbsocket);
+#endif
 	/* Allow executing statements during a connection initialization. Make sure to mark transaction as failed. */
 	if (0 != txn_level)
 		txn_error = 1;
@@ -407,11 +411,11 @@ int	zbx_db_connect(char *host, char *user, char *password, char *dbname, char *d
 	/* set to prior to the connection. MySQL allows changing connection	*/
 	/* options on an open connection, so setting it here is safe.		*/
 
-	if (0 != mysql_options(conn, MYSQL_OPT_RECONNECT, &mysql_reconnect))
+	if (ZBX_DB_OK == ret && 0 != mysql_options(conn, MYSQL_OPT_RECONNECT, &mysql_reconnect))
 		zabbix_log(LOG_LEVEL_WARNING, "Cannot set MySQL reconnect option.");
 
 	/* in contrast to "set names utf8" results of this call will survive auto-reconnects */
-	if (0 != mysql_set_character_set(conn, "utf8"))
+	if (ZBX_DB_OK == ret && 0 != mysql_set_character_set(conn, "utf8"))
 		zabbix_log(LOG_LEVEL_WARNING, "cannot set MySQL character set to \"utf8\"");
 
 	if (ZBX_DB_OK == ret && 0 != mysql_autocommit(conn, 1))
@@ -432,10 +436,6 @@ int	zbx_db_connect(char *host, char *user, char *password, char *dbname, char *d
 #elif defined(HAVE_ORACLE)
 	ZBX_UNUSED(dbschema);
 
-#if defined(HAVE_GETENV) && defined(HAVE_PUTENV)
-	if (NULL == getenv("NLS_LANG"))
-		putenv("NLS_LANG=.UTF8");
-#endif
 	memset(&oracle, 0, sizeof(oracle));
 
 	zbx_vector_ptr_create(&oracle.db_results);
@@ -453,15 +453,29 @@ int	zbx_db_connect(char *host, char *user, char *password, char *dbname, char *d
 	else
 		ret = ZBX_DB_FAIL;
 
-	if (ZBX_DB_OK == ret)
+	while (ZBX_DB_OK == ret)
 	{
 		/* initialize environment */
-		err = OCIEnvCreate((OCIEnv **)&oracle.envhp, (ub4)OCI_DEFAULT,
-				(dvoid *)0, (dvoid * (*)(dvoid *,size_t))0,
-				(dvoid * (*)(dvoid *, dvoid *, size_t))0,
-				(void (*)(dvoid *, dvoid *))0, (size_t)0, (dvoid **)0);
+		if (OCI_SUCCESS == (err = OCIEnvNlsCreate((OCIEnv **)&oracle.envhp, (ub4)OCI_DEFAULT, (dvoid *)0,
+				(dvoid * (*)(dvoid *,size_t))0, (dvoid * (*)(dvoid *, dvoid *, size_t))0,
+				(void (*)(dvoid *, dvoid *))0, (size_t)0, (dvoid **)0, csid, csid)))
+		{
+			if (0 != csid)
+				break;	/* environment with UTF8 character set successfully created */
 
-		if (OCI_SUCCESS != err)
+			/* try to find out the id of UTF8 character set */
+			if (0 == (csid = OCINlsCharSetNameToId(oracle.envhp, (const oratext *)"UTF8")))
+			{
+				zabbix_log(LOG_LEVEL_WARNING, "Cannot find out the ID of \"UTF8\" character set."
+						" Relying on current \"NLS_LANG\" settings.");
+				break;	/* use default environment with character set derived from NLS_LANG */
+			}
+
+			/* get rid of this environment to create a better one on the next iteration */
+			OCIHandleFree((dvoid *)oracle.envhp, OCI_HTYPE_ENV);
+			oracle.envhp = NULL;
+		}
+		else
 		{
 			zabbix_errlog(ERR_Z3001, connect, err, zbx_oci_error(err, NULL));
 			ret = ZBX_DB_FAIL;
@@ -481,10 +495,14 @@ int	zbx_db_connect(char *host, char *user, char *password, char *dbname, char *d
 				(text *)connect, (ub4)strlen(connect),
 				OCI_DEFAULT);
 
-		if (OCI_SUCCESS == err)
+		switch (err)
 		{
-			err = OCIAttrGet((void *)oracle.svchp, OCI_HTYPE_SVCCTX, (void *)&oracle.srvhp, (ub4 *)0,
-					OCI_ATTR_SERVER, oracle.errhp);
+			case OCI_SUCCESS_WITH_INFO:
+				zabbix_log(LOG_LEVEL_WARNING, "%s", zbx_oci_error(err, NULL));
+				/* break; is not missing here */
+			case OCI_SUCCESS:
+				err = OCIAttrGet((void *)oracle.svchp, OCI_HTYPE_SVCCTX, (void *)&oracle.srvhp,
+						(ub4 *)0, OCI_ATTR_SERVER, oracle.errhp);
 		}
 
 		if (OCI_SUCCESS != err)
@@ -585,8 +603,11 @@ int	zbx_db_connect(char *host, char *user, char *password, char *dbname, char *d
 	}
 out:
 #elif defined(HAVE_SQLITE3)
+	ZBX_UNUSED(host);
+	ZBX_UNUSED(user);
+	ZBX_UNUSED(password);
 	ZBX_UNUSED(dbschema);
-
+	ZBX_UNUSED(port);
 #ifdef HAVE_FUNCTION_SQLITE3_OPEN_V2
 	if (SQLITE_OK != sqlite3_open_v2(dbname, &conn, SQLITE_OPEN_READWRITE, NULL))
 #else
@@ -635,25 +656,9 @@ out:
 	return ret;
 }
 
-#if defined(HAVE_SQLITE3)
-void	zbx_create_sqlite3_mutex(void)
+int	zbx_db_init(const char *dbname, const char *const db_schema, char **error)
 {
-	if (FAIL == zbx_mutex_create_force(&sqlite_access, ZBX_MUTEX_SQLITE3))
-	{
-		zbx_error("cannot create mutex for SQLite3");
-		exit(EXIT_FAILURE);
-	}
-}
-
-void	zbx_remove_sqlite3_mutex(void)
-{
-	zbx_mutex_destroy(&sqlite_access);
-}
-#endif	/* HAVE_SQLITE3 */
-
-void	zbx_db_init(const char *dbname, const char *const db_schema)
-{
-#if defined(HAVE_SQLITE3)
+#ifdef HAVE_SQLITE3
 	zbx_stat_t	buf;
 
 	if (0 != zbx_stat(dbname, &buf))
@@ -664,20 +669,33 @@ void	zbx_db_init(const char *dbname, const char *const db_schema)
 		if (SQLITE_OK != sqlite3_open(dbname, &conn))
 		{
 			zabbix_errlog(ERR_Z3002, dbname, 0, sqlite3_errmsg(conn));
-			exit(EXIT_FAILURE);
+			*error = zbx_strdup(*error, "cannot open database");
+			return FAIL;
 		}
 
-		zbx_create_sqlite3_mutex();
+		if (SUCCEED != zbx_mutex_create(&sqlite_access, ZBX_MUTEX_SQLITE3, error))
+			return FAIL;
 
 		zbx_db_execute("%s", db_schema);
 		zbx_db_close();
+		return SUCCEED;
 	}
-	else
-		zbx_create_sqlite3_mutex();
+
+	return zbx_mutex_create(&sqlite_access, ZBX_MUTEX_SQLITE3, error);
 #else	/* not HAVE_SQLITE3 */
 	ZBX_UNUSED(dbname);
 	ZBX_UNUSED(db_schema);
+	ZBX_UNUSED(error);
+
+	return SUCCEED;
 #endif	/* HAVE_SQLITE3 */
+}
+
+void	zbx_db_deinit(void)
+{
+#ifdef HAVE_SQLITE3
+	zbx_mutex_destroy(&sqlite_access);
+#endif
 }
 
 void	zbx_db_close(void)
@@ -1014,6 +1032,9 @@ static sb4 db_bind_dynamic_cb(dvoid *ctxp, OCIBind *bindp, ub4 iter, ub4 index, 
 		dvoid **indpp)
 {
 	zbx_db_bind_context_t	*context = (zbx_db_bind_context_t *)ctxp;
+
+	ZBX_UNUSED(bindp);
+	ZBX_UNUSED(index);
 
 	switch (context->type)
 	{
@@ -1532,15 +1553,13 @@ error:
 	}
 	else
 	{
-		if (0 != mysql_query(conn, sql))
+		if (0 != mysql_query(conn, sql) || NULL == (result->result = mysql_store_result(conn)))
 		{
 			zabbix_errlog(ERR_Z3005, mysql_errno(conn), mysql_error(conn), sql);
 
 			DBfree_result(result);
 			result = (SUCCEED == is_recoverable_mysql_error() ? (DB_RESULT)ZBX_DB_DOWN : NULL);
 		}
-		else
-			result->result = mysql_store_result(conn);
 	}
 #elif defined(HAVE_ORACLE)
 	result = zbx_malloc(NULL, sizeof(struct zbx_db_result));
@@ -1998,7 +2017,7 @@ int	zbx_db_is_null(const char *field)
 	return FAIL;
 }
 
-#if defined(HAVE_ORACLE)
+#ifdef HAVE_ORACLE
 static void	OCI_DBclean_result(DB_RESULT result)
 {
 	if (NULL == result)
@@ -2107,7 +2126,7 @@ void	DBfree_result(DB_RESULT result)
 #endif	/* HAVE_SQLITE3 */
 }
 
-#if defined(HAVE_IBM_DB2)
+#ifdef HAVE_IBM_DB2
 /* server status: SQL_CD_TRUE or SQL_CD_FALSE */
 static int	IBM_DB2server_status()
 {
@@ -2158,7 +2177,9 @@ static void	zbx_ibm_db2_log_errors(SQLSMALLINT htype, SQLHANDLE hndl, zbx_err_co
 		}
 	}
 }
-#elif defined(HAVE_ORACLE)
+#endif
+
+#ifdef HAVE_ORACLE
 /* server status: OCI_SERVER_NORMAL or OCI_SERVER_NOT_CONNECTED */
 static ub4	OCI_DBserver_status()
 {

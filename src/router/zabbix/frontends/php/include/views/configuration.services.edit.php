@@ -23,7 +23,7 @@ include('include/views/js/configuration.services.edit.js.php');
 
 $service = $this->data['service'];
 
-$widget = (new CWidget())->setTitle(_('IT services'));
+$widget = (new CWidget())->setTitle(_('Services'));
 
 // create form
 $servicesForm = (new CForm())
@@ -48,11 +48,11 @@ $servicesFormList = (new CFormList('servicesFormList'))
 $servicesFormList->addRow(_('Parent service'), [
 	(new CTextBox('parent_name', $this->data['parentname'], true, 128))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH),
 	(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
-	(new CButton('select_parent', _('Change')))
+	(new CButton('select_parent', _x('Change', 'verb')))
 		->addClass(ZBX_STYLE_BTN_GREY)
-		->onClick(
-			"javascript: openWinCentered('services.php?pservices=1".url_param('serviceid')."', ".
-				"'ZBX_Services_List', 740, 420, 'scrollbars=1, toolbar=0, menubar=0, resizable=1, dialog=0');")
+		->onClick('return PopUp("services.php?pservices=1'.url_param('serviceid').
+			'&parentid="+this.form.parentid.value);'
+		)
 ]);
 
 // append algorithm to form list
@@ -126,7 +126,9 @@ $servicesDependenciesFormList->addRow(
 	(new CDiv([
 		$servicesChildTable,
 		(new CButton('add_child_service', _('Add')))
-			->onClick("javascript: openWinCentered('services.php?cservices=1".url_param('serviceid')."', 'ZBX_Services_List', 640, 520, 'scrollbars=1, toolbar=0, menubar=0, resizable=0');")
+			->onClick('return PopUp("services.php?cservices=1'.url_param('serviceid').
+				'&parentid="+this.form.parentid.value);'
+			)
 			->addClass(ZBX_STYLE_BTN_LINK)
 	]))
 		->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR)

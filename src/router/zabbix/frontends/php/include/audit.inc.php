@@ -36,7 +36,7 @@ function audit_resource2str($resource_type = null) {
 		AUDIT_RESOURCE_ITEM => _('Item'),
 		AUDIT_RESOURCE_IMAGE => _('Image'),
 		AUDIT_RESOURCE_VALUE_MAP => _('Value map'),
-		AUDIT_RESOURCE_IT_SERVICE => _('IT service'),
+		AUDIT_RESOURCE_IT_SERVICE => _('Service'),
 		AUDIT_RESOURCE_MAP => _('Map'),
 		AUDIT_RESOURCE_SCREEN => _('Screen'),
 		AUDIT_RESOURCE_SCENARIO => _('Web scenario'),
@@ -47,7 +47,8 @@ function audit_resource2str($resource_type = null) {
 		AUDIT_RESOURCE_MAINTENANCE => _('Maintenance'),
 		AUDIT_RESOURCE_SCRIPT => _('Script'),
 		AUDIT_RESOURCE_MACRO => _('Macro'),
-		AUDIT_RESOURCE_TEMPLATE => _('Template')
+		AUDIT_RESOURCE_TEMPLATE => _('Template'),
+		AUDIT_RESOURCE_ICON_MAP => _('Icon mapping')
 	];
 
 	if (is_null($resource_type)) {
@@ -105,9 +106,12 @@ function add_audit_ext($action, $resourcetype, $resourceid, $resourcename, $tabl
 		$resourcename = mb_substr($resourcename, 0, 252).'...';
 	}
 
+	// CWebUser is not initianized in CUser->login() method.
+	$userid = ($action == AUDIT_ACTION_LOGIN) ? $resourceid : CWebUser::$data['userid'];
+
 	$ip = !empty($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : $_SERVER['REMOTE_ADDR'];
 	$values = [
-		'userid' => CWebUser::$data['userid'],
+		'userid' => $userid,
 		'clock' => time(),
 		'ip' => substr($ip, 0, 39),
 		'action' => $action,

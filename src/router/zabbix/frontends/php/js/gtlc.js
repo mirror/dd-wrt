@@ -32,7 +32,8 @@ var timeControl = {
 	timeRefreshTimeoutHandler: null,
 
 	addObject: function(id, time, objData) {
-		if (typeof this.objectList[id] === 'undefined') {
+		if (typeof this.objectList[id] === 'undefined'
+				|| (typeof(objData['reloadOnAdd']) !== 'undefined' && objData['reloadOnAdd'] === 1)) {
 			this.objectList[id] = {
 				id: id,
 				containerid: null,
@@ -47,7 +48,12 @@ var timeControl = {
 				loadImage: 0,
 				loadScroll: 0,
 				mainObject: 0, // object on changing will reflect on all others
-				sliderMaximumTimePeriod: null // max period in seconds
+				onDashboard: 0, // object is on dashboard
+				sliderMaximumTimePeriod: null, // max period in seconds
+				profile: { // if values are not null, will save timeline and fixedperiod state here, on change
+					idx: null,
+					idx2: null
+				}
 			};
 
 			for (var key in this.objectList[id]) {
@@ -56,7 +62,33 @@ var timeControl = {
 				}
 			}
 
+			if (isset('isNow', time) && time.isNow == 0) {
+				time.isNow = false;
+			}
 			this.objectList[id].time = time;
+		}
+	},
+
+	/**
+	 * Changes height of sbox for given image
+	 *
+	 * @param {string} id       image HTML element id attribute
+	 * @param {int}    height   new height for sbox
+	 */
+	changeSBoxHeight: function(id, height) {
+		var obj = this.objectList[id],
+			img = $(id);
+
+		obj['objDims']['graphHeight'] = height;
+
+		if (!empty(ZBX_SBOX[id])) {
+			ZBX_SBOX[id].updateHeightBoxContainer(height);
+		}
+
+		if (obj.loadSBox && empty(obj.sbox_listener)) {
+			obj.sbox_listener = this.addSBox.bindAsEventListener(this, id);
+			addListener(img, 'load', obj.sbox_listener);
+			addListener(img, 'load', sboxGlobalMove);
 		}
 	},
 
@@ -86,7 +118,7 @@ var timeControl = {
 					? obj.time.endtime - 3 * ((obj.time.period < 86400) ? 86400 : obj.time.period)
 					: nowDate.setZBXDate(obj.time.starttime) / 1000;
 
-				obj.time.usertime = (!isset('usertime', obj.time))
+				obj.time.usertime = (!isset('usertime', obj.time) || obj.time.isNow)
 					? obj.time.endtime
 					: nowDate.setZBXDate(obj.time.usertime) / 1000;
 
@@ -109,7 +141,7 @@ var timeControl = {
 					width = 600;
 				}
 
-				this.scrollbar = new CScrollBar(width, obj.periodFixed, obj.sliderMaximumTimePeriod);
+				this.scrollbar = new CScrollBar(width, obj.periodFixed, obj.sliderMaximumTimePeriod, obj.profile);
 				this.scrollbar.onchange = this.objectUpdate.bind(this);
 			}
 		}
@@ -161,17 +193,36 @@ var timeControl = {
 
 	addImage: function(id, rebuildListeners) {
 		var obj = this.objectList[id],
-			img = $(id);
+			img = $(id),
+			heightUrl = new Curl(obj.src);
 
 		if (empty(img)) {
 			img = document.createElement('img');
 			img.setAttribute('id', id);
-			img.setAttribute('src', obj.src);
 			$(obj.containerid).appendChild(img);
+
+			if (['chart.php', 'chart2.php', 'chart3.php'].indexOf(heightUrl.getPath()) > -1
+					&& heightUrl.getArgument('outer') === '1') {
+				// Getting height of graph inside image. Only for line graphs on dashboard.
+				heightUrl.setArgument('onlyHeight', '1');
+
+				jQuery.ajax({
+					url: heightUrl.getUrl(),
+					success: function(response, status, xhr) {
+						timeControl.changeSBoxHeight(id, +xhr.getResponseHeader('X-ZBX-SBOX-HEIGHT'));
+
+						// 'src' should be added only here to trigger load event after new height is received.
+						img.setAttribute('src', obj.src);
+					}
+				});
+			}
+			else {
+				img.setAttribute('src', obj.src);
+			}
 		}
 
-		// apply sbox events to image
-		if (obj.loadSBox && empty(obj.sbox_listener)) {
+		// Apply sbox events to image.
+		if (obj.loadSBox && empty(obj.sbox_listener) && img.hasAttribute('src')) {
 			obj.sbox_listener = this.addSBox.bindAsEventListener(this, id);
 			addListener(img, 'load', obj.sbox_listener);
 			addListener(img, 'load', sboxGlobalMove);
@@ -181,27 +232,90 @@ var timeControl = {
 	refreshImage: function(id) {
 		var obj = this.objectList[id],
 			period = this.timeline.period(),
-			stime = new CDate((this.timeline.usertime() - this.timeline.period()) * 1000).getZBXDate();
+			stime = new CDate((this.timeline.usertime() - this.timeline.period()) * 1000).getZBXDate(),
+			isNow = this.timeline.isNow();
 
 		// image
 		var imgUrl = new Curl(obj.src);
 		imgUrl.setArgument('period', period);
 		imgUrl.setArgument('stime', stime);
+		imgUrl.setArgument('isNow', + isNow);
 
-		jQuery('<img />', {id: id + '_tmp', src: imgUrl.getUrl()}).load(function() {
-			var imgId = jQuery(this).attr('id').substring(0, jQuery(this).attr('id').indexOf('_tmp'));
+		var img = jQuery('<img />', {id: id + '_tmp'})
+			.on('load', function() {
+				var imgId = jQuery(this).attr('id').substring(0, jQuery(this).attr('id').indexOf('_tmp'));
 
-			jQuery('#' + imgId).replaceWith(jQuery(this));
-			jQuery(this).attr('id', imgId);
-		});
+				jQuery(this).unbind('load');
+				if (!empty(jQuery(this).data('height'))) {
+					timeControl.changeSBoxHeight(id, jQuery(this).data('height'));
+				}
+				jQuery('#' + imgId).replaceWith(jQuery(this));
+				jQuery(this).attr('id', imgId);
+
+				// Update dashboard widget footer.
+				if (obj.onDashboard) {
+					timeControl.updateDashboardFooter(id);
+				}
+			});
+
+		if (['chart.php', 'chart2.php', 'chart3.php'].indexOf(imgUrl.getPath()) > -1
+				&& imgUrl.getArgument('outer') === '1') {
+			// Getting height of graph inside image. Only for line graphs on dashboard.
+			var heightUrl = new Curl(imgUrl.getUrl());
+			heightUrl.setArgument('onlyHeight', '1');
+
+			jQuery.ajax({
+				url: heightUrl.getUrl(),
+				success: function(response, status, xhr) {
+					// 'src' should be added only here to trigger load event after new height is received.
+					img.data('height', +xhr.getResponseHeader('X-ZBX-SBOX-HEIGHT'));
+					img.attr('src', imgUrl.getUrl());
+				}
+			});
+		}
+		else {
+			img.attr('src', imgUrl.getUrl());
+		}
 
 		// link
 		var graphUrl = new Curl(jQuery('#' + obj.containerid).attr('href'));
 		graphUrl.setArgument('width', obj.objDims.width);
 		graphUrl.setArgument('period', period);
 		graphUrl.setArgument('stime', stime);
+		graphUrl.setArgument('isNow', + isNow);
 
 		jQuery('#' + obj.containerid).attr('href', graphUrl.getUrl());
+	},
+
+	/**
+	 * Updates dashboard widget footer for specified graph
+	 *
+	 * @param {string} id  Id of img tag with graph.
+	 */
+	updateDashboardFooter: function (id) {
+		var widgets = jQuery(".dashbrd-grid-widget-container")
+				.dashboardGrid("getWidgetsBy", "uniqueid", id.replace('graph_', ''));
+
+		if (widgets.length !== 1) {
+			return;
+		}
+
+		var widget = widgets[0],
+			url = new Curl('zabbix.php');
+
+		url.setArgument('action', 'widget.graph.view');
+		jQuery.ajax({
+			url: url.getUrl(),
+			method: 'POST',
+			data: {
+				uniqueid: widget['uniqueid'],
+				only_footer: 1
+			},
+			dataType: 'json',
+			success: function(resp) {
+				widget['content_footer'].html(resp.footer);
+			}
+		});
 	},
 
 	refreshObject: function(id) {
@@ -247,7 +361,8 @@ var timeControl = {
 
 	objectUpdate: function() {
 		var usertime = this.timeline.usertime(),
-			period = this.timeline.period();
+			period = this.timeline.period(),
+			isNow = (this.timeline.now() || this.timeline.isNow());
 
 		// secure browser from fast user operations
 		if (isNaN(usertime) || isNaN(period)) {
@@ -260,16 +375,14 @@ var timeControl = {
 			return;
 		}
 
-		if (this.timeline.now() || this.timeline.isNow()) {
-			usertime += 31536000; // 31536000 = 86400 * 365 = 1 year
-		}
-
-		var date = new CDate((usertime - period) * 1000);
+		var date = new CDate((usertime - period) * 1000),
+			stime = date.getZBXDate();
 
 		if (this.refreshPage) {
 			var url = new Curl(location.href);
 			url.setArgument('period', period);
-			url.setArgument('stime', date.getZBXDate());
+			url.setArgument('stime', stime);
+			url.setArgument('isNow', + isNow);
 			url.unsetArgument('output');
 
 			location.href = url.getUrl();
@@ -283,7 +396,20 @@ var timeControl = {
 			this.scrollbar.setBarPosition();
 			this.scrollbar.setGhostByBar();
 
-			flickerfreeScreen.refreshAll(period, date.getZBXDate(), this.timeline.isNow());
+			var url = new Curl('zabbix.php');
+			url.setArgument('action', 'timeline.update');
+
+			sendAjaxData(url.getUrl(), {
+				data: {
+					idx: this.scrollbar.profile.idx,
+					idx2: this.scrollbar.profile.idx2,
+					period: period,
+					stime: stime,
+					isNow: + isNow
+				}
+			});
+
+			flickerfreeScreen.refreshAll(period, stime, isNow);
 		}
 	},
 
@@ -314,6 +440,22 @@ var timeControl = {
 	addSBox: function(e, id) {
 		var sbox = sbox_init(id);
 		sbox.onchange = this.objectUpdate.bind(this);
+	},
+
+	// Remove SBox from all objects in objectList.
+	removeAllSBox: function() {
+		for (var id in this.objectList) {
+			if (!empty(this.objectList[id]) && this.objectList[id]['loadSBox'] == 1) {
+				var obj = this.objectList[id],
+					img = $(id);
+
+				obj['loadSBox'] = 0;
+				removeListener(img, 'load', obj.sbox_listener);
+				removeListener(img, 'load', sboxGlobalMove);
+				delete obj.sbox_listener;
+				jQuery(".box_on").remove();
+			}
+		}
 	}
 };
 
@@ -328,6 +470,7 @@ var CTimeLine = Class.create({
 	_isNow:		false,	// state if time is set to NOW (for outside usage)
 	minperiod:	60,		// minimal allowed period
 	maxperiod:	null,	// max period in seconds
+	is_selectall_period: false, // Will be set to true if period 'All' is selected.
 
 	initialize: function(period, starttime, usertime, endtime, maximumPeriod, isNow) {
 		if ((endtime - starttime) < (3 * this.minperiod)) {
@@ -365,16 +508,28 @@ var CTimeLine = Class.create({
 		this._endtime = end;
 		this._usertime = end;
 		this._now = true;
+
+		if (this.is_selectall_period && this._isNow) {
+			this._period = Math.min(this._endtime - this._starttime, this.maxperiod);
+			this._usertime = this._endtime;
+		}
 	},
 
 	refreshEndtime: function() {
 		this._endtime = parseInt(new CDate().getTime() / 1000);
+
+		if (this.is_selectall_period && this._isNow) {
+			this._period = Math.min(this._endtime - this._starttime, this.maxperiod);
+			this._usertime = this._endtime;
+		}
 	},
 
 	period: function(period) {
 		if (empty(period)) {
 			return this._period;
 		}
+
+		this.is_selectall_period = (period == this.maxperiod);
 
 		if ((this._usertime - period) < this._starttime) {
 			period = this._usertime - this._starttime;
@@ -430,6 +585,7 @@ var CTimeLine = Class.create({
 var CScrollBar = Class.create({
 
 	ghostBox:		null, // ghost box object
+	profile:		null, // if values are not null, will save fixedperiod state here, on change
 	clndrLeft:		null, // calendar object left
 	clndrRight:		null, // calendar object right
 	px2sec:			null, // seconds in pixel
@@ -485,10 +641,11 @@ var CScrollBar = Class.create({
 	disabled:		1,		// activates/disables scrollbars
 	maxperiod:		null,	// max period in seconds
 
-	initialize: function(width, fixedperiod, maximalPeriod) {
+	initialize: function(width, fixedperiod, maximalPeriod, profile) {
 		try {
 			this.fixedperiod = (fixedperiod == 1) ? 1 : 0;
 			this.maxperiod = maximalPeriod;
+			this.profile = profile;
 
 			// create scrollbar
 			this.scrollCreate(width);
@@ -958,12 +1115,22 @@ var CScrollBar = Class.create({
 
 		this.fixedperiod = (this.fixedperiod == 1) ? 0 : 1;
 
+		var url = new Curl('zabbix.php'),
+			ajax_data = {
+				idx: this.profile.idx + '.timelinefixed',
+				value_int: this.fixedperiod
+			};
+
+		url.setArgument('action', 'profile.update');
+		url = url.getUrl();
+
+		if (isset('idx2', this.profile) && !is_null(this.profile.idx2)) {
+			ajax_data.idx2 = [this.profile.idx2];
+		}
+
 		// sending fixed/dynamic setting to server to save in a profile
-		sendAjaxData(location.href, {
-			data: {
-				favobj: 'timelinefixedperiod',
-				favid: this.fixedperiod
-			}
+		sendAjaxData(url, {
+			data: ajax_data
 		});
 
 		this.dom.period_state.innerHTML = this.fixedperiod ? locale['S_FIXED_SMALL'] : locale['S_DYNAMIC_SMALL'];
@@ -1669,6 +1836,11 @@ var sbox = Class.create({
 		jQuery(this.grphobj).parent().append(this.dom_obj);
 	},
 
+	updateHeightBoxContainer: function(height) {
+		this.areaHeight = height;
+		this.dom_obj.style.height = this.areaHeight + 'px';
+	},
+
 	createBox: function() {
 		if (!jQuery('#selection_box').length) {
 			this.dom_box = document.createElement('div');
@@ -1680,11 +1852,11 @@ var sbox = Class.create({
 
 			var dims = getDimensions(this.dom_obj);
 
-			this.shifts.left = dims.left;
+			this.shifts.left = dims.offsetleft;
 			this.shifts.top = dims.top;
 
 			this.box.top = 0; // we use only x axis
-			this.box.left = this.mouse_event.left - dims.left;
+			this.box.left = this.mouse_event.left - dims.offsetleft;
 			this.box.height = this.areaHeight;
 
 			this.dom_box.setAttribute('id', 'selection_box');
@@ -1752,16 +1924,16 @@ var sbox = Class.create({
 	},
 
 	moveSBoxByObj: function() {
-		var posxy = jQuery('#' + jQuery(this.grphobj).attr('id')).position();
+		var posxy = jQuery(this.grphobj).position();
 		var dims = getDimensions(this.grphobj);
 
-		this.dom_obj.style.top = (posxy.top + this.shiftT) + 'px';
+		this.dom_obj.style.top = this.shiftT + 'px';
 		this.dom_obj.style.left = posxy.left + 'px';
 		if (dims.width > 0) {
 			this.dom_obj.style.width = dims.width + 'px';
 		}
 
-		this.additionShiftL = posxy.left + this.shiftL;
+		this.additionShiftL = dims.offsetleft + this.shiftL;
 	},
 
 	optimizeEvent: function(e) {

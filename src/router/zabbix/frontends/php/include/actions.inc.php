@@ -450,7 +450,11 @@ function getActionOperationDescriptions(array $actions, $type) {
 			}
 		}
 		else {
-			foreach ($action['recovery_operations'] as $j => $operation) {
+			$operations_key = ($type == ACTION_RECOVERY_OPERATION)
+				? 'recovery_operations'
+				: 'ack_operations';
+
+			foreach ($action[$operations_key] as $j => $operation) {
 				$result[$i][$j] = [];
 
 				switch ($operation['operationtype']) {
@@ -716,7 +720,11 @@ function getActionOperationDescriptions(array $actions, $type) {
 			}
 		}
 		else {
-			foreach ($action['recovery_operations'] as $j => $operation) {
+			$operations_key = ($type == ACTION_RECOVERY_OPERATION)
+				? 'recovery_operations'
+				: 'ack_operations';
+
+			foreach ($action[$operations_key] as $j => $operation) {
 				switch ($operation['operationtype']) {
 					case OPERATION_TYPE_MESSAGE:
 						$media_type = _('all media');
@@ -804,9 +812,8 @@ function getActionOperationDescriptions(array $actions, $type) {
 						break;
 
 					case OPERATION_TYPE_RECOVERY_MESSAGE:
-						$result[$i][$j][] = bold(
-							_('Notify all who received any messages regarding the problem before')
-						);
+					case OPERATION_TYPE_ACK_MESSAGE:
+						$result[$i][$j][] = bold(_('Notify all involved'));
 						break;
 				}
 			}
@@ -867,7 +874,19 @@ function getActionOperationHints(array $operations, array $defaultMessage) {
 					? $defaultMessage['message']
 					: $operation['opmessage']['message'];
 
-				$result[$key][] = [bold($subject), BR(), BR(), zbx_nl2br($message)];
+				$result_hint = [];
+
+				if (trim($subject)) {
+					$result_hint = [bold($subject), BR(), BR()];
+				}
+
+				if (trim($message)) {
+					$result_hint[] = zbx_nl2br($message);
+				}
+
+				if ($result_hint) {
+					$result[$key][] = $result_hint;
+				}
 				break;
 
 			case OPERATION_TYPE_COMMAND:
@@ -892,13 +911,18 @@ function getActionOperationHints(array $operations, array $defaultMessage) {
 
 					case ZBX_SCRIPT_TYPE_CUSTOM_SCRIPT:
 						if ($operation['opcommand']['execute_on'] == ZBX_SCRIPT_EXECUTE_ON_AGENT) {
-							$result[$key][] = [bold(_('Run custom commands on Zabbix agent').': '), BR(),
-								italic(zbx_nl2br($operation['opcommand']['command']))
+							$result[$key][] = [bold(_s('Run custom commands on %1$s', _('Zabbix agent')).': '),
+								BR(), italic(zbx_nl2br($operation['opcommand']['command']))
+							];
+						}
+						elseif ($operation['opcommand']['execute_on'] == ZBX_SCRIPT_EXECUTE_ON_PROXY) {
+							$result[$key][] = [bold(_s('Run custom commands on %1$s', _('Zabbix server (proxy)')).': '),
+								BR(), italic(zbx_nl2br($operation['opcommand']['command']))
 							];
 						}
 						else {
-							$result[$key][] = [bold(_('Run custom commands on Zabbix server').': '), BR(),
-								italic(zbx_nl2br($operation['opcommand']['command']))
+							$result[$key][] = [bold(_s('Run custom commands on %1$s', _('Zabbix server')).': '),
+								BR(), italic(zbx_nl2br($operation['opcommand']['command']))
 							];
 						}
 						break;
@@ -918,6 +942,28 @@ function getActionOperationHints(array $operations, array $defaultMessage) {
 							italic(zbx_nl2br($operation['opcommand']['command']))
 						];
 				}
+				break;
+
+			case OPERATION_TYPE_ACK_MESSAGE:
+			case OPERATION_TYPE_RECOVERY_MESSAGE:
+				$result_hint = [];
+				$message = (array_key_exists('default_msg', $operation['opmessage'])
+					&& $operation['opmessage']['default_msg'])
+					? $defaultMessage
+					: $operation['opmessage'];
+
+				if (trim($message['subject'])) {
+					$result_hint = [bold($message['subject']), BR(), BR()];
+				}
+
+				if (trim($message['message'])) {
+					$result_hint[] = zbx_nl2br($message['message']);
+				}
+
+				if ($result_hint) {
+					$result[$key][] = $result_hint;
+				}
+				break;
 		}
 	}
 
@@ -1006,6 +1052,11 @@ function getAllowedOperations($eventsource) {
 				OPERATION_TYPE_MESSAGE,
 				OPERATION_TYPE_COMMAND,
 				OPERATION_TYPE_RECOVERY_MESSAGE
+			],
+			ACTION_ACKNOWLEDGE_OPERATION => [
+				OPERATION_TYPE_MESSAGE,
+				OPERATION_TYPE_COMMAND,
+				OPERATION_TYPE_ACK_MESSAGE
 			]
 		];
 	}
@@ -1051,7 +1102,15 @@ function getAllowedOperations($eventsource) {
 	return $operations;
 }
 
-function operation_type2str($type = null) {
+/**
+ * Get operation type text label according $type value. If $type is equal null array of all available operation types
+ * will be returned.
+ *
+ * @param int|null $type  Operation type, one of OPERATION_TYPE_* constant or null.
+ *
+ * @return string|array
+ */
+function operation_type2str($type) {
 	$types = [
 		OPERATION_TYPE_MESSAGE => _('Send message'),
 		OPERATION_TYPE_COMMAND => _('Remote command'),
@@ -1064,7 +1123,8 @@ function operation_type2str($type = null) {
 		OPERATION_TYPE_TEMPLATE_ADD => _('Link to template'),
 		OPERATION_TYPE_TEMPLATE_REMOVE => _('Unlink from template'),
 		OPERATION_TYPE_HOST_INVENTORY => _('Set host inventory mode'),
-		OPERATION_TYPE_RECOVERY_MESSAGE => _('Send recovery message')
+		OPERATION_TYPE_RECOVERY_MESSAGE => _('Notify all involved'),
+		OPERATION_TYPE_ACK_MESSAGE => _('Notify all involved')
 	];
 
 	if (is_null($type)) {
@@ -1085,10 +1145,16 @@ function sortOperations($eventsource, &$operations) {
 		$esc_period = [];
 		$operationTypes = [];
 
+		$simple_interval_parser = new CSimpleIntervalParser();
+
 		foreach ($operations as $key => $operation) {
 			$esc_step_from[$key] = $operation['esc_step_from'];
 			$esc_step_to[$key] = $operation['esc_step_to'];
-			$esc_period[$key] = $operation['esc_period'];
+			// Try to sort by "esc_period" in seconds, otherwise sort as string in case it's a macro or something invalid.
+			$esc_period[$key] = ($simple_interval_parser->parse($operation['esc_period']) == CParser::PARSE_SUCCESS)
+				? timeUnitToSeconds($operation['esc_period'])
+				: $operation['esc_period'];
+
 			$operationTypes[$key] = $operation['operationtype'];
 		}
 		array_multisort($esc_step_from, SORT_ASC, $esc_step_to, SORT_ASC, $esc_period, SORT_ASC, $operationTypes, SORT_ASC, $operations);
@@ -1221,29 +1287,45 @@ function get_operators_by_conditiontype($conditiontype) {
 	return [];
 }
 
-function count_operations_delay($operations, $def_period = 0) {
+function count_operations_delay($operations, $def_period) {
 	$delays = [1 => 0];
 	$periods = [];
 	$max_step = 0;
 
+	$simple_interval_parser = new CSimpleIntervalParser();
+
+	$def_period = CMacrosResolverHelper::resolveTimeUnitMacros(
+		[['def_period' => $def_period]], ['def_period']
+	)[0]['def_period'];
+
+	$def_period = ($simple_interval_parser->parse($def_period) == CParser::PARSE_SUCCESS)
+		? timeUnitToSeconds($def_period)
+		: null;
+
+	$operations = CMacrosResolverHelper::resolveTimeUnitMacros($operations, ['esc_period']);
+
 	foreach ($operations as $operation) {
-		$step_to = $operation['esc_step_to'] ? $operation['esc_step_to'] : 9999;
-		$esc_period = $operation['esc_period'] ? $operation['esc_period'] : $def_period;
+		$esc_period = ($simple_interval_parser->parse($operation['esc_period']) == CParser::PARSE_SUCCESS)
+			? timeUnitToSeconds($operation['esc_period'])
+			: null;
+
+		$esc_period = ($esc_period === null || $esc_period != 0) ? $esc_period : $def_period;
+		$step_to = ($operation['esc_step_to'] != 0) ? $operation['esc_step_to'] : 9999;
 
 		if ($max_step < $operation['esc_step_from']) {
 			$max_step = $operation['esc_step_from'];
 		}
 
 		for ($i = $operation['esc_step_from']; $i <= $step_to; $i++) {
-			if (!isset($periods[$i]) || $periods[$i] > $esc_period) {
+			if (!array_key_exists($i, $periods) || $esc_period === null || $periods[$i] > $esc_period) {
 				$periods[$i] = $esc_period;
 			}
 		}
 	}
 
 	for ($i = 1; $i <= $max_step; $i++) {
-		$esc_period = isset($periods[$i]) ? $periods[$i] : $def_period;
-		$delays[$i+1] = $delays[$i] + $esc_period;
+		$esc_period = array_key_exists($i, $periods) ? $periods[$i] : $def_period;
+		$delays[$i + 1] = ($esc_period !== null && $delays[$i] !== null) ? $delays[$i] + $esc_period : null;
 	}
 
 	return $delays;
@@ -1310,9 +1392,10 @@ function getActionMessages(array $alerts, array $r_alerts) {
 					$retries = '';
 					break;
 
+				case ALERT_STATUS_NEW:
 				case ALERT_STATUS_NOT_SENT:
 					$status = (new CSpan(_('In progress')))->addClass(ZBX_STYLE_YELLOW);
-					$retries = (new CSpan(ALERT_MAX_RETRIES - $alert['retries']))->addClass(ZBX_STYLE_YELLOW);
+					$retries = (new CSpan($mediaType['maxattempts'] - $alert['retries']))->addClass(ZBX_STYLE_YELLOW);
 					break;
 
 				default:
@@ -1327,7 +1410,8 @@ function getActionMessages(array $alerts, array $r_alerts) {
 				: $alert['sendto'];
 
 			$info_icons = [];
-			if ($alert['error'] !== '') {
+			if ($alert['error'] !== ''
+					&& !($alert['status'] == ALERT_STATUS_NEW || $alert['status'] == ALERT_STATUS_NOT_SENT)) {
 				$info_icons[] = makeErrorIcon($alert['error']);
 			}
 
@@ -1400,11 +1484,10 @@ function getActionCommands(array $alerts, array $r_alerts) {
 				case ALERT_STATUS_SENT:
 					$status = (new CSpan(_('Executed')))->addClass(ZBX_STYLE_GREEN);
 					break;
-
+				case ALERT_STATUS_NEW:
 				case ALERT_STATUS_NOT_SENT:
 					$status = (new CSpan(_('In progress')))->addClass(ZBX_STYLE_YELLOW);
 					break;
-
 				default:
 					$status = (new CSpan(_('Failed')))->addClass(ZBX_STYLE_RED);
 					break;
@@ -1422,12 +1505,18 @@ function getActionCommands(array $alerts, array $r_alerts) {
 				$show_header = false;
 			}
 
+			$error_span = '';
+			if ($alert['error']
+					&& !($alert['status'] == ALERT_STATUS_NEW || $alert['status'] == ALERT_STATUS_NOT_SENT)) {
+				$error_span = (new CSpan($alert['error']))->addClass(ZBX_STYLE_RED);
+			}
+
 			$table->addRow([
 				$alert['esc_step'],
 				zbx_date2str(DATE_TIME_FORMAT_SECONDS, $alert['clock']),
 				$status,
 				zbx_nl2br($alert['message']),
-				$alert['error'] ? (new CSpan($alert['error']))->addClass(ZBX_STYLE_RED) : ''
+				$error_span
 			]);
 		}
 
@@ -1449,16 +1538,15 @@ function makeActionHints($alerts, $r_alerts, $mediatypes, $users, $display_recov
 		foreach ($alerts_data as $alert) {
 			switch ($alert['status']) {
 				case ALERT_STATUS_SENT:
-					$status_str = (new CSpan($alert['alerttype'] == ALERT_TYPE_COMMAND ? _('Executed') : _('Sent')))
+					$status = (new CSpan(($alert['alerttype'] == ALERT_TYPE_COMMAND) ? _('Executed') : _('Sent')))
 						->addClass(ZBX_STYLE_GREEN);
 					break;
-
+				case ALERT_STATUS_NEW:
 				case ALERT_STATUS_NOT_SENT:
-					$status_str = (new CSpan(_('In progress')))->addClass(ZBX_STYLE_YELLOW);
+					$status = (new CSpan(_('In progress')))->addClass(ZBX_STYLE_YELLOW);
 					break;
-
 				default:
-					$status_str = (new CSpan(_('Failed')))->addClass(ZBX_STYLE_RED);
+					$status = (new CSpan(_('Failed')))->addClass(ZBX_STYLE_RED);
 			}
 
 			switch ($alert['alerttype']) {
@@ -1471,17 +1559,20 @@ function makeActionHints($alerts, $r_alerts, $mediatypes, $users, $display_recov
 						? $mediatypes[$alert['mediatypeid']]['description']
 						: '';
 					break;
+
 				case ALERT_TYPE_COMMAND:
 					$user = '';
 					$message = _('Remote command');
 					break;
+
 				default:
 					$user = '';
 					$message = '';
 			}
 
 			$info_icons = [];
-			if ($alert['error'] !== '') {
+			if ($alert['error'] !== ''
+					&& !($alert['status'] == ALERT_STATUS_NEW || $alert['status'] == ALERT_STATUS_NOT_SENT)) {
 				$info_icons[] = makeErrorIcon($alert['error']);
 			}
 
@@ -1501,7 +1592,7 @@ function makeActionHints($alerts, $r_alerts, $mediatypes, $users, $display_recov
 				zbx_date2str(DATE_TIME_FORMAT_SECONDS, $alert['clock']),
 				$user,
 				$message,
-				$status_str,
+				$status,
 				makeInformationList($info_icons)
 			]);
 
@@ -1552,10 +1643,11 @@ function makeEventsActions(array $problems, $display_recovery_alerts = false, $h
 	}
 
 	$result = DBselect(
-		'SELECT a.eventid,a.mediatypeid,a.userid,a.esc_step,a.clock,a.status,a.alerttype,a.error'.
+		'SELECT a.eventid,a.p_eventid,a.mediatypeid,a.userid,a.esc_step,a.clock,a.status,a.alerttype,a.error'.
 		' FROM alerts a'.
 		' WHERE '.dbConditionInt('a.eventid', array_keys($eventids)).
 			' AND a.alerttype IN ('.ALERT_TYPE_MESSAGE.','.ALERT_TYPE_COMMAND.')'.
+			' AND a.acknowledgeid IS NULL'.
 		' ORDER BY a.alertid DESC'
 	);
 
@@ -1571,7 +1663,8 @@ function makeEventsActions(array $problems, $display_recovery_alerts = false, $h
 			'clock' => $row['clock'],
 			'status' => $row['status'],
 			'alerttype' => $row['alerttype'],
-			'error' => $row['error']
+			'error' => $row['error'],
+			'p_eventid' => $row['p_eventid']
 		];
 
 		if ($alert['alerttype'] == ALERT_TYPE_MESSAGE) {
@@ -1587,10 +1680,7 @@ function makeEventsActions(array $problems, $display_recovery_alerts = false, $h
 			}
 		}
 
-		if (!array_key_exists($row['eventid'], $alerts)) {
-			$alerts[$row['eventid']] = [];
-		}
-		$alerts[$row['eventid']][] = $alert;
+		$alerts[$row['eventid']][$row['p_eventid']][] = $alert;
 	}
 
 	if ($mediatypeids) {
@@ -1610,16 +1700,19 @@ function makeEventsActions(array $problems, $display_recovery_alerts = false, $h
 	}
 
 	foreach ($problems as $index => $problem) {
-		$event_alerts = array_key_exists($problem['eventid'], $alerts) ? $alerts[$problem['eventid']] : [];
-		$r_event_alerts = (array_key_exists('r_eventid', $problem) && $problem['r_eventid'] != 0)
-			? (array_key_exists($problem['r_eventid'], $alerts) ? $alerts[$problem['r_eventid']] : [])
-			: [];
+		$event_alerts = array_key_exists($problem['eventid'], $alerts) ? $alerts[$problem['eventid']][0] : [];
+		$r_event_alerts = [];
+		if (array_key_exists('r_eventid', $problem) && $problem['r_eventid'] != 0
+				&& array_key_exists($problem['r_eventid'], $alerts)
+				&& array_key_exists($problem['eventid'], $alerts[$problem['r_eventid']])) {
+			$r_event_alerts = $alerts[$problem['r_eventid']][$problem['eventid']];
+		}
 
 		if ($event_alerts || $r_event_alerts) {
 			$status = ALERT_STATUS_SENT;
 			foreach ([$event_alerts, $r_event_alerts] as $alerts_data) {
 				foreach ($alerts_data as $alert) {
-					if ($alert['status'] == ALERT_STATUS_NOT_SENT) {
+					if ($alert['status'] == ALERT_STATUS_NOT_SENT || $alert['status'] == ALERT_STATUS_NEW) {
 						$status = ALERT_STATUS_NOT_SENT;
 					}
 					elseif ($alert['status'] == ALERT_STATUS_FAILED && $status != ALERT_STATUS_NOT_SENT) {

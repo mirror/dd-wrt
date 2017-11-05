@@ -74,7 +74,7 @@ if (!$triggers) {
 $trigger = reset($triggers);
 
 $alert_options = ['alertid', 'alerttype', 'mediatypes', 'status', 'retries', 'userid', 'sendto', 'error', 'esc_step',
-	'clock', 'subject', 'message'
+	'clock', 'subject', 'message', 'p_eventid', 'acknowledgeid'
 ];
 $options = [
 	'output' => ['eventid', 'r_eventid', 'clock', 'ns', 'objectid', 'value'],
@@ -102,7 +102,7 @@ $r_alerts = [];
 
 if ($event['alerts']) {
 	$alerts = $event['alerts'];
-	CArrayHelper::sort($event['alerts'], [['field' => 'alertid', 'order' => SORT_DESC]]);
+	CArrayHelper::sort($alerts, [['field' => 'alertid', 'order' => ZBX_SORT_DOWN]]);
 }
 
 if ($event['r_eventid'] != 0) {
@@ -122,12 +122,27 @@ if ($event['r_eventid'] != 0) {
 		$event['userid'] = $r_event['userid'];
 
 		if ($r_event['alerts']) {
-			$r_alerts = $r_event['alerts'];
-			CArrayHelper::sort($r_alerts, [['field' => 'alertid', 'order' => SORT_DESC]]);
+			CArrayHelper::sort($r_alerts, [['field' => 'alertid', 'order' => ZBX_SORT_DOWN]]);
+			foreach ($r_event['alerts'] as $alert) {
+				if ($alert['p_eventid'] == $event['eventid']) {
+					$r_alerts[] = $alert;
+				}
+			}
 		}
 	}
 }
 
+// Filter out acknowledgment notification messages.
+$all_alerts = [&$alerts, &$r_alerts];
+
+foreach ($all_alerts as &$alerts_data) {
+	foreach ($alerts_data as $index => $alert) {
+		if ($alert['acknowledgeid'] > 0) {
+			unset($alerts_data[$index]);
+		}
+	}
+}
+unset($alerts_data);
 /*
  * Display
  */

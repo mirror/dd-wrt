@@ -105,9 +105,8 @@ $slideshow_tab
 			->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 			->setAttribute('autofocus', 'autofocus')
 	)
-	->addRow(_('Default delay (in seconds)'),
-		(new CNumericBox('delay', $data['slideshow']['delay'], 5, false, false, false))
-			->setWidth(ZBX_TEXTAREA_NUMERIC_STANDARD_WIDTH)
+	->addRow(_('Default delay'),
+		(new CTextBox('delay', $data['slideshow']['delay']))->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
 	);
 
 // append slide table
@@ -125,18 +124,18 @@ $slideTable = (new CTable())
 $i = 1;
 
 foreach ($data['slideshow']['slides'] as $key => $slides) {
-	$delay = (new CNumericBox('slides['.$key.'][delay]', !empty($slides['delay']) ? $slides['delay'] : '', 5, false, true, false))
-		->setWidth(ZBX_TEXTAREA_NUMERIC_STANDARD_WIDTH)
-		->setAttribute('placeholder', _('default'));
-
 	$slideTable->addRow(
 		(new CRow([
 			(new CCol(
 				(new CDiv())->addClass(ZBX_STYLE_DRAG_ICON)
 			))->addClass(ZBX_STYLE_TD_DRAG_ICON),
-			(new CSpan($i++.':'))->addClass('rowNum')->setId('current_slide_'.$key),
+			(new CSpan($i++.':'))
+				->addClass('rowNum')
+				->setId('current_slide_'.$key),
 			$data['slideshow']['screens'][$slides['screenid']]['name'],
-			$delay,
+			(new CTextBox('slides['.$key.'][delay]', $slides['delay']))
+				->setWidth(ZBX_TEXTAREA_TINY_WIDTH)
+				->setAttribute('placeholder', _('default')),
 			(new CCol(
 				(new CButton('remove_'.$key, _('Remove')))
 					->onClick('javascript: removeSlide(this);')

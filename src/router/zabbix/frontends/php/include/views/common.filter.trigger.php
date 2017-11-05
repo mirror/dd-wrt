@@ -29,12 +29,13 @@ $filterForm = (new CFilter($filter['filterid']))
 	->addVar('groupid', $filter['groupId'])
 	->addVar('hostid', $filter['hostId']);
 
+// show
 $column1 = (new CFormList())
-	->addRow(_('Trigger status'),
+	->addRow(_('Show'),
 		(new CRadioButtonList('show_triggers', (int) $filter['showTriggers']))
-			->addValue(_('Any'), TRIGGERS_OPTION_ALL)
 			->addValue(_('Recent problems'), TRIGGERS_OPTION_RECENT_PROBLEM)
 			->addValue(_('Problems'), TRIGGERS_OPTION_IN_PROBLEM)
+			->addValue(_('Any'), TRIGGERS_OPTION_ALL)
 			->setModern(true)
 	);
 
@@ -51,14 +52,14 @@ if ($config['event_ack_enable']) {
 
 // events
 if (!$overview) {
+	$config['event_expire'] = convertUnitsS(timeUnitToSeconds($config['event_expire']));
+
 	$eventsComboBox = new CComboBox('show_events', $filter['showEvents'], null, [
 		EVENTS_OPTION_NOEVENT => _('Hide all'),
-		EVENTS_OPTION_ALL => _n('Show all (%1$s day)', 'Show all (%1$s days)', $config['event_expire'])
+		EVENTS_OPTION_ALL => _s('Show all (%1$s)', $config['event_expire'])
 	]);
 	if ($config['event_ack_enable']) {
-		$eventsComboBox->addItem(EVENTS_OPTION_NOT_ACK,
-			_n('Show unacknowledged (%1$s day)', 'Show unacknowledged (%1$s days)', $config['event_expire'])
-		);
+		$eventsComboBox->addItem(EVENTS_OPTION_NOT_ACK, _s('Show unacknowledged (%1$s)', $config['event_expire']));
 	}
 	$column1->addRow(_('Events'), $eventsComboBox);
 }

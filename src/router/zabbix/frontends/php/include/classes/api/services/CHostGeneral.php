@@ -25,6 +25,41 @@
 abstract class CHostGeneral extends CHostBase {
 
 	/**
+	 * Checks if the current user has access to the given hosts and templates. Assumes the "hostid" field is valid.
+	 *
+	 * @param array $hostids    an array of host or template IDs
+	 *
+	 * @throws APIException if the user doesn't have write permissions for the given hosts.
+	 */
+	private function checkHostPermissions(array $hostids) {
+		if ($hostids) {
+			$hostids = array_unique($hostids);
+
+			$count = API::Host()->get([
+				'countOutput' => true,
+				'hostids' => $hostids,
+				'editable' => true
+			]);
+
+			if ($count == count($hostids)) {
+				return;
+			}
+
+			$count += API::Template()->get([
+				'countOutput' => true,
+				'templateids' => $hostids,
+				'editable' => true
+			]);
+
+			if ($count != count($hostids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS,
+					_('No permissions to referred object or it does not exist!')
+				);
+			}
+		}
+	}
+
+	/**
 	 * Allows to:
 	 * - add hosts to groups;
 	 * - link templates to hosts;
@@ -58,11 +93,9 @@ abstract class CHostGeneral extends CHostBase {
 
 		// link templates
 		if (!empty($data['templates_link'])) {
-			if (!API::Host()->isWritable($allHostIds)) {
-				self::exception(ZBX_API_ERROR_PERMISSIONS,
-					_('No permissions to referred object or it does not exist!')
-				);
-			}
+			$this->checkHostPermissions($allHostIds);
+
+			$this->validateDependentItemsLinkage($allHostIds, zbx_objectValues(zbx_toArray($data['templates_link']), 'templateid'));
 
 			$this->link(zbx_objectValues(zbx_toArray($data['templates_link']), 'templateid'), $allHostIds);
 		}
@@ -108,11 +141,7 @@ abstract class CHostGeneral extends CHostBase {
 	public function massRemove(array $data) {
 		$allHostIds = array_merge($data['hostids'], $data['templateids']);
 
-		if (!API::Host()->isWritable($allHostIds)) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS,
-				_('No permissions to referred object or it does not exist!')
-			);
-		}
+		$this->checkHostPermissions($allHostIds);
 
 		if (!empty($data['templateids_link'])) {
 			$this->unlink(zbx_toArray($data['templateids_link']), $allHostIds);
@@ -242,81 +271,72 @@ abstract class CHostGeneral extends CHostBase {
 			);
 		}
 
-		$sqlFrom = ' triggers t,hosts h';
-		$sqlWhere = ' EXISTS ('.
-			'SELECT ff.triggerid'.
-			' FROM functions ff,items ii'.
-			' WHERE ff.triggerid=t.templateid'.
-			' AND ii.itemid=ff.itemid'.
-			' AND '.dbConditionInt('ii.hostid', $templateids).')'.
-			' AND '.dbConditionInt('t.flags', $flags);
+		$templ_triggerids = [];
 
+		$db_triggers = DBselect(
+			'SELECT DISTINCT f.triggerid'.
+			' FROM functions f,items i'.
+			' WHERE f.itemid=i.itemid'.
+				' AND '.dbConditionInt('i.hostid', $templateids)
+		);
 
-		if (!is_null($targetids)) {
-			$sqlFrom = ' triggers t,functions f,items i,hosts h';
-			$sqlWhere .= ' AND '.dbConditionInt('i.hostid', $targetids).
-				' AND f.itemid=i.itemid'.
-				' AND t.triggerid=f.triggerid'.
-				' AND h.hostid=i.hostid';
+		while ($db_trigger = DBfetch($db_triggers)) {
+			$templ_triggerids[] = $db_trigger['triggerid'];
 		}
-		$sql = 'SELECT DISTINCT t.triggerid,t.description,t.flags,t.expression,h.name as host'.
-			' FROM '.$sqlFrom.
-			' WHERE '.$sqlWhere;
-		$dbTriggers = DBSelect($sql);
-		$triggers = [
-			ZBX_FLAG_DISCOVERY_NORMAL => [],
-			ZBX_FLAG_DISCOVERY_PROTOTYPE => []
-		];
-		$triggerids = [];
-		while ($trigger = DBfetch($dbTriggers)) {
-			$triggers[$trigger['flags']][$trigger['triggerid']] = [
-				'description' => $trigger['description'],
-				'expression' => $trigger['expression'],
-				'triggerid' => $trigger['triggerid'],
-				'host' => $trigger['host']
-			];
-			if (!in_array($trigger['triggerid'], $triggerids)) {
-				array_push($triggerids, $trigger['triggerid']);
+
+		$triggerids = [ZBX_FLAG_DISCOVERY_NORMAL => [], ZBX_FLAG_DISCOVERY_PROTOTYPE => []];
+
+		if ($templ_triggerids) {
+			$sql_distinct = ($targetids !== null) ? ' DISTINCT' : '';
+			$sql_from = ($targetids !== null) ? ',functions f,items i' : '';
+			$sql_where = ($targetids !== null)
+				? ' AND t.triggerid=f.triggerid'.
+					' AND f.itemid=i.itemid'.
+					' AND '.dbConditionInt('i.hostid', $targetids)
+				: '';
+
+			$db_triggers = DBSelect(
+				'SELECT'.$sql_distinct.' t.triggerid,t.flags'.
+				' FROM triggers t'.$sql_from.
+				' WHERE '.dbConditionInt('t.templateid', $templ_triggerids).
+					' AND '.dbConditionInt('t.flags', $flags).
+					$sql_where
+			);
+
+			while ($db_trigger = DBfetch($db_triggers)) {
+				$triggerids[$db_trigger['flags']][] = $db_trigger['triggerid'];
 			}
 		}
 
-		if (!empty($triggers[ZBX_FLAG_DISCOVERY_NORMAL])) {
-			$triggers[ZBX_FLAG_DISCOVERY_NORMAL] =
-				CMacrosResolverHelper::resolveTriggerExpressions($triggers[ZBX_FLAG_DISCOVERY_NORMAL]);
-
+		if ($triggerids[ZBX_FLAG_DISCOVERY_NORMAL]) {
 			if ($clear) {
-				$result = API::Trigger()->delete(array_keys($triggers[ZBX_FLAG_DISCOVERY_NORMAL]), true);
-				if (!$result) self::exception(ZBX_API_ERROR_INTERNAL, _('Cannot unlink and clear triggers'));
-			}
-			else{
-				DB::update('triggers', [
-					'values' => ['templateid' => 0],
-					'where' => ['triggerid' => array_keys($triggers[ZBX_FLAG_DISCOVERY_NORMAL])]
-				]);
+				$result = API::Trigger()->delete($triggerids[ZBX_FLAG_DISCOVERY_NORMAL], true);
 
-				foreach ($triggers[ZBX_FLAG_DISCOVERY_NORMAL] as $trigger) {
-					info(_s('Unlinked: Trigger "%1$s" on "%2$s".', $trigger['description'], $trigger['host']));
+				if (!$result) {
+					self::exception(ZBX_API_ERROR_INTERNAL, _('Cannot unlink and clear triggers'));
 				}
 			}
-		}
-
-		if (!empty($triggers[ZBX_FLAG_DISCOVERY_PROTOTYPE])) {
-			$triggers[ZBX_FLAG_DISCOVERY_PROTOTYPE] =
-				CMacrosResolverHelper::resolveTriggerExpressions($triggers[ZBX_FLAG_DISCOVERY_PROTOTYPE]);
-
-			if ($clear) {
-				$result = API::TriggerPrototype()->delete(array_keys($triggers[ZBX_FLAG_DISCOVERY_PROTOTYPE]), true);
-				if (!$result) self::exception(ZBX_API_ERROR_INTERNAL, _('Cannot unlink and clear triggers'));
-			}
-			else{
+			else {
 				DB::update('triggers', [
 					'values' => ['templateid' => 0],
-					'where' => ['triggerid' => array_keys($triggers[ZBX_FLAG_DISCOVERY_PROTOTYPE])]
+					'where' => ['triggerid' => $triggerids[ZBX_FLAG_DISCOVERY_NORMAL]]
 				]);
+			}
+		}
 
-				foreach ($triggers[ZBX_FLAG_DISCOVERY_PROTOTYPE] as $trigger) {
-					info(_s('Unlinked: Trigger prototype "%1$s" on "%2$s".', $trigger['description'], $trigger['host']));
+		if ($triggerids[ZBX_FLAG_DISCOVERY_PROTOTYPE]) {
+			if ($clear) {
+				$result = API::TriggerPrototype()->delete($triggerids[ZBX_FLAG_DISCOVERY_PROTOTYPE], true);
+
+				if (!$result) {
+					self::exception(ZBX_API_ERROR_INTERNAL, _('Cannot unlink and clear triggers'));
 				}
+			}
+			else {
+				DB::update('triggers', [
+					'values' => ['templateid' => 0],
+					'where' => ['triggerid' => $triggerids[ZBX_FLAG_DISCOVERY_PROTOTYPE]]
+				]);
 			}
 		}
 
@@ -610,9 +630,11 @@ abstract class CHostGeneral extends CHostBase {
 							' WHERE '.dbConditionInt('ia.applicationid', $applicationids).
 						')'
 				));
-				$result = API::Application()->delete(zbx_objectValues($applications, 'applicationid'), true);
-				if (!$result) {
-					self::exception(ZBX_API_ERROR_INTERNAL, _('Cannot unlink and clear applications.'));
+				if ($applications) {
+					$result = API::Application()->delete(zbx_objectValues($applications, 'applicationid'), true);
+					if (!$result) {
+						self::exception(ZBX_API_ERROR_INTERNAL, _('Cannot unlink and clear applications.'));
+					}
 				}
 			}
 			else {
@@ -931,5 +953,95 @@ abstract class CHostGeneral extends CHostBase {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Validates dependent items trees intersection between host items and template items.
+	 *
+	 * @param array $hostids        Array of hosts to validate.
+	 * @param array $templateids    Array of added templates.
+	 *
+	 * @throws APIException if intersection of template items and host items creates dependent items tree with
+	 *                      dependent item level more than ZBX_DEPENDENT_ITEM_MAX_LEVELS.
+	 */
+	protected function validateDependentItemsLinkage($hostids, $templateids) {
+		$db_items = API::Item()->get([
+			'output' => ['itemid', 'type', 'key_', 'master_itemid', 'hostid'],
+			'hostids' => array_merge($hostids, $templateids),
+			'filter' => ['flags' => ZBX_FLAG_DISCOVERY_NORMAL],
+			'preservekeys' => true
+		]);
+
+		$this->validateDependentItemsIntersection($db_items, $hostids);
+
+		$db_itemprototypes = API::ItemPrototype()->get([
+			'output' => ['itemid', 'type', 'key_', 'master_itemid', 'hostid'],
+			'hostids' => array_merge($hostids, $templateids),
+			'preservekeys' => true
+		]);
+
+		$this->validateDependentItemsIntersection($db_itemprototypes, $hostids);
+	}
+
+	/**
+	 * Validate merge of template dependent items and every host dependent items, host dependent item will be overwritten
+	 * by template dependent items.
+	 * Return false if intersection of host dependent items and template dependent items create dependent items
+	 * with dependency level greater than ZBX_DEPENDENT_ITEM_MAX_LEVELS.
+	 *
+	 * @param array $items
+	 * @param array $hostids
+	 *
+	 * @throws APIException if intersection of template items and host items creates dependent items tree with
+	 *                      dependent item level more than ZBX_DEPENDENT_ITEM_MAX_LEVELS or master item recursion.
+	 */
+	protected function validateDependentItemsIntersection($db_items, $hostids, $errorService = null) {
+		$hosts_items = [];
+		$tmpl_items = [];
+
+		foreach ($db_items as $db_item) {
+			$master_key = ($db_item['type'] == ITEM_TYPE_DEPENDENT)
+				? $db_items[$db_item['master_itemid']]['key_']
+				: '';
+
+			if (in_array($db_item['hostid'], $hostids)) {
+				$hosts_items[$db_item['hostid']][$db_item['key_']] = $master_key;
+			}
+			elseif (!array_key_exists($db_item['key_'], $tmpl_items) || !$tmpl_items[$db_item['key_']]) {
+				$tmpl_items[$db_item['key_']] = $master_key;
+			}
+		}
+
+		foreach ($hosts_items as $hostid => $items) {
+			$linked_items = $items;
+
+			// Merge host items dependency tree with template items dependency tree.
+			$linked_items = array_merge($linked_items, $tmpl_items);
+
+			// Check dependency level for every dependent item.
+			foreach ($linked_items as $linked_item => $linked_master_key) {
+				$master_key = $linked_master_key;
+				$dependency_level = 0;
+				$traversing_path = [];
+
+				while ($master_key && $dependency_level <= ZBX_DEPENDENT_ITEM_MAX_LEVELS) {
+					$traversing_path[] = $master_key;
+					$master_key = $linked_items[$master_key];
+					++$dependency_level;
+
+					if (in_array($master_key, $traversing_path)) {
+						self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.',
+							'master_itemid', _('circular item dependency is not allowed')
+						));
+					}
+				}
+
+				if ($dependency_level > ZBX_DEPENDENT_ITEM_MAX_LEVELS) {
+					self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.',
+						'master_itemid', _('maximum number of dependency levels reached')
+					));
+				}
+			}
+		}
 	}
 }

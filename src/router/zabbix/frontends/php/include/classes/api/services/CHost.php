@@ -29,40 +29,38 @@ class CHost extends CHostGeneral {
 	/**
 	 * Get host data.
 	 *
-	 * @param array         $options
-	 * @param array         $options['groupids']                 HostGroup IDs
-	 * @param array         $options['hostids']                  Host IDs
-	 * @param boolean       $options['monitored_hosts']          only monitored Hosts
-	 * @param boolean       $options['templated_hosts']          include templates in result
-	 * @param boolean       $options['with_items']               only with items
-	 * @param boolean       $options['with_monitored_items']     only with monitored items
-	 * @param boolean       $options['with_triggers']            only with triggers
-	 * @param boolean       $options['with_monitored_triggers']  only with monitored triggers
-	 * @param boolean       $options['with_httptests']           only with http tests
-	 * @param boolean       $options['with_monitored_httptests'] only with monitored http tests
-	 * @param boolean       $options['with_graphs']              only with graphs
-	 * @param boolean       $options['editable']                 only with read-write permission. Ignored for SuperAdmins
-	 * @param boolean       $options['selectGroups']             select HostGroups
-	 * @param boolean       $options['selectItems']              select Items
-	 * @param boolean       $options['selectTriggers']           select Triggers
-	 * @param boolean       $options['selectGraphs']             select Graphs
-	 * @param boolean       $options['selectApplications']       select Applications
-	 * @param boolean       $options['selectMacros']             select Macros
-	 * @param boolean|array $options['selectInventory']          select Inventory
-	 * @param boolean       $options['withInventory']            select only hosts with inventory
-	 * @param int           $options['count']                    count Hosts, returned column name is rowscount
-	 * @param string        $options['pattern']                  search hosts by pattern in Host name
-	 * @param string        $options['extendPattern']            search hosts by pattern in Host name, ip and DNS
-	 * @param int           $options['limit']                    limit selection
-	 * @param string        $options['sortfield']                field to sort by
-	 * @param string        $options['sortorder']                sort order
+	 * @param array      $options
+	 * @param array      $options['groupids']                  HostGroup IDs
+	 * @param array      $options['hostids']                   Host IDs
+	 * @param bool       $options['monitored_hosts']           only monitored Hosts
+	 * @param bool       $options['templated_hosts']           include templates in result
+	 * @param bool       $options['with_items']                only with items
+	 * @param bool       $options['with_monitored_items']      only with monitored items
+	 * @param bool       $options['with_triggers']             only with triggers
+	 * @param bool       $options['with_monitored_triggers']   only with monitored triggers
+	 * @param bool       $options['with_httptests']            only with http tests
+	 * @param bool       $options['with_monitored_httptests']  only with monitored http tests
+	 * @param bool       $options['with_graphs']               only with graphs
+	 * @param bool       $options['editable']                  only with read-write permission. Ignored for SuperAdmins
+	 * @param bool       $options['selectGroups']              select HostGroups
+	 * @param bool       $options['selectItems']               select Items
+	 * @param bool       $options['selectTriggers']            select Triggers
+	 * @param bool       $options['selectGraphs']              select Graphs
+	 * @param bool       $options['selectApplications']        select Applications
+	 * @param bool       $options['selectMacros']              select Macros
+	 * @param bool|array $options['selectInventory']           select Inventory
+	 * @param bool       $options['withInventory']             select only hosts with inventory
+	 * @param int        $options['count']                     count Hosts, returned column name is rowscount
+	 * @param string     $options['pattern']                   search hosts by pattern in Host name
+	 * @param string     $options['extendPattern']             search hosts by pattern in Host name, ip and DNS
+	 * @param int        $options['limit']                     limit selection
+	 * @param string     $options['sortfield']                 field to sort by
+	 * @param string     $options['sortorder']                 sort order
 	 *
 	 * @return array|boolean Host data as array or false if error
 	 */
 	public function get($options = []) {
 		$result = [];
-		$userType = self::$userData['type'];
-		$userid = self::$userData['userid'];
 
 		$sqlParts = [
 			'select'	=> ['hosts' => 'h.hostid'],
@@ -99,16 +97,16 @@ class CHost extends CHostGeneral {
 			'with_graphs'				=> null,
 			'with_applications'			=> null,
 			'withInventory'				=> null,
-			'editable'					=> null,
+			'editable'					=> false,
 			'nopermissions'				=> null,
 			// filter
 			'filter'					=> null,
 			'search'					=> null,
 			'searchInventory'			=> null,
 			'searchByAny'				=> null,
-			'startSearch'				=> null,
-			'excludeSearch'				=> null,
-			'searchWildcardsEnabled'	=> null,
+			'startSearch'				=> false,
+			'excludeSearch'				=> false,
+			'searchWildcardsEnabled'	=> false,
 			// output
 			'output'					=> API_OUTPUT_EXTEND,
 			'selectGroups'				=> null,
@@ -125,9 +123,9 @@ class CHost extends CHostGeneral {
 			'selectHttpTests'           => null,
 			'selectDiscoveryRule'		=> null,
 			'selectHostDiscovery'		=> null,
-			'countOutput'				=> null,
-			'groupCount'				=> null,
-			'preservekeys'				=> null,
+			'countOutput'				=> false,
+			'groupCount'				=> false,
+			'preservekeys'				=> false,
 			'sortfield'					=> '',
 			'sortorder'					=> '',
 			'limit'						=> null,
@@ -136,10 +134,9 @@ class CHost extends CHostGeneral {
 		$options = zbx_array_merge($defOptions, $options);
 
 		// editable + PERMISSION CHECK
-		if ($userType != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
+		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
 			$permission = $options['editable'] ? PERM_READ_WRITE : PERM_READ;
-
-			$userGroups = getUserGroupsByUserId($userid);
+			$userGroups = getUserGroupsByUserId(self::$userData['userid']);
 
 			$sqlParts['where'][] = 'EXISTS ('.
 					'SELECT NULL'.
@@ -168,7 +165,7 @@ class CHost extends CHostGeneral {
 			$sqlParts['where'][] = dbConditionInt('hg.groupid', $options['groupids']);
 			$sqlParts['where']['hgh'] = 'hg.hostid=h.hostid';
 
-			if (!is_null($options['groupCount'])) {
+			if ($options['groupCount']) {
 				$sqlParts['group']['groupid'] = 'hg.groupid';
 			}
 		}
@@ -188,7 +185,7 @@ class CHost extends CHostGeneral {
 			$sqlParts['where'][] = dbConditionInt('ht.templateid', $options['templateids']);
 			$sqlParts['where']['hht'] = 'h.hostid=ht.hostid';
 
-			if (!is_null($options['groupCount'])) {
+			if ($options['groupCount']) {
 				$sqlParts['group']['templateid'] = 'ht.templateid';
 			}
 		}
@@ -261,7 +258,7 @@ class CHost extends CHostGeneral {
 			$sqlParts['where']['dsh'] = 'ds.ip=i.ip';
 			$sqlParts['where']['hi'] = 'h.hostid=i.hostid';
 
-			if (!is_null($options['groupCount'])) {
+			if ($options['groupCount']) {
 				$sqlParts['group']['dserviceid'] = 'ds.dserviceid';
 			}
 		}
@@ -274,7 +271,7 @@ class CHost extends CHostGeneral {
 			$sqlParts['where'][] = dbConditionInt('mh.maintenanceid', $options['maintenanceids']);
 			$sqlParts['where']['hmh'] = 'h.hostid=mh.hostid';
 
-			if (!is_null($options['groupCount'])) {
+			if ($options['groupCount']) {
 				$sqlParts['group']['maintenanceid'] = 'mh.maintenanceid';
 			}
 		}
@@ -431,8 +428,8 @@ class CHost extends CHostGeneral {
 		$sqlParts = $this->applyQuerySortOptions($this->tableName(), $this->tableAlias(), $options, $sqlParts);
 		$res = DBselect($this->createSelectQueryFromParts($sqlParts), $sqlParts['limit']);
 		while ($host = DBfetch($res)) {
-			if (!is_null($options['countOutput'])) {
-				if (!is_null($options['groupCount'])) {
+			if ($options['countOutput']) {
+				if ($options['groupCount']) {
 					$result[] = $host;
 				}
 				else {
@@ -444,7 +441,7 @@ class CHost extends CHostGeneral {
 			}
 		}
 
-		if (!is_null($options['countOutput'])) {
+		if ($options['countOutput']) {
 			return $result;
 		}
 
@@ -453,7 +450,7 @@ class CHost extends CHostGeneral {
 		}
 
 		// removing keys (hash -> array)
-		if (is_null($options['preservekeys'])) {
+		if (!$options['preservekeys']) {
 			$result = zbx_cleanHashes($result);
 		}
 
@@ -700,10 +697,7 @@ class CHost extends CHostGeneral {
 		$hosts = isset($data['hosts']) ? zbx_toArray($data['hosts']) : [];
 		$hostIds = zbx_objectValues($hosts, 'hostid');
 
-		// check permissions
-		if (!$this->isWritable($hostIds)) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS, _('You do not have permission to perform this operation.'));
-		}
+		$this->checkPermissions($hostIds, _('You do not have permission to perform this operation.'));
 
 		// add new interfaces
 		if (!empty($data['interfaces'])) {
@@ -1110,7 +1104,7 @@ class CHost extends CHostGeneral {
 	public function massRemove(array $data) {
 		$hostids = zbx_toArray($data['hostids']);
 
-		$this->checkPermissions($hostids);
+		$this->checkPermissions($hostids, _('No permissions to referred object or it does not exist!'));
 
 		if (isset($data['interfaces'])) {
 			$options = [
@@ -1145,7 +1139,7 @@ class CHost extends CHostGeneral {
 		}
 
 		if (!$nopermissions) {
-			$this->checkPermissions($hostIds);
+			$this->checkPermissions($hostIds, _('No permissions to referred object or it does not exist!'));
 		}
 	}
 
@@ -1303,59 +1297,6 @@ class CHost extends CHostGeneral {
 		return ['hostids' => $hostIds];
 	}
 
-	/**
-	 * Check if user has read permissions for host.
-	 *
-	 * @param array $ids
-	 *
-	 * @return bool
-	 */
-	public function isReadable(array $ids) {
-		if (!is_array($ids)) {
-			return false;
-		}
-		if (empty($ids)) {
-			return true;
-		}
-
-		$ids = array_unique($ids);
-
-		$count = $this->get([
-			'hostids' => $ids,
-			'templated_hosts' => true,
-			'countOutput' => true
-		]);
-
-		return (count($ids) == $count);
-	}
-
-	/**
-	 * Check if user has write permissions for host.
-	 *
-	 * @param array $ids
-	 *
-	 * @return bool
-	 */
-	public function isWritable(array $ids) {
-		if (!is_array($ids)) {
-			return false;
-		}
-		if (empty($ids)) {
-			return true;
-		}
-
-		$ids = array_unique($ids);
-
-		$count = $this->get([
-			'hostids' => $ids,
-			'editable' => true,
-			'templated_hosts' => true,
-			'countOutput' => true
-		]);
-
-		return (count($ids) == $count);
-	}
-
 	protected function addRelatedObjects(array $options, array $result) {
 		$result = parent::addRelatedObjects($options, $result);
 
@@ -1482,11 +1423,22 @@ class CHost extends CHostGeneral {
 	 *
 	 * @throws APIException     if a host is not writable or does not exist
 	 *
-	 * @param array $hostIds
+	 * @param array  $hostids
+	 * @param string $error
 	 */
-	protected function checkPermissions(array $hostIds) {
-		if (!$this->isWritable($hostIds)) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS, _('No permissions to referred object or it does not exist!'));
+	protected function checkPermissions(array $hostids, $error) {
+		if ($hostids) {
+			$hostids = array_unique($hostids);
+
+			$count = $this->get([
+				'countOutput' => true,
+				'hostids' => $hostids,
+				'editable' => true
+			]);
+
+			if ($count != count($hostids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS, $error);
+			}
 		}
 	}
 

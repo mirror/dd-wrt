@@ -20,6 +20,7 @@
 #include "common.h"
 #include "log.h"
 #include "valuecache.h"
+#include "dbcache.h"
 
 #include "checks_aggregate.h"
 
@@ -339,7 +340,9 @@ static int	aggregate_get_items(zbx_vector_uint64_t *itemids, const char *groups,
 
 	if (0 == groupids.values_num)
 	{
-		zbx_strcpy_alloc(error, &error_alloc, &error_offset, "No groups in list ");
+		zbx_strcpy_alloc(error, &error_alloc, &error_offset, "None of the groups in list ");
+		aggregate_quote_groups(error, &error_alloc, &error_offset, groups);
+		zbx_strcpy_alloc(error, &error_alloc, &error_offset, " is correct.");
 		goto out;
 	}
 
@@ -373,7 +376,9 @@ static int	aggregate_get_items(zbx_vector_uint64_t *itemids, const char *groups,
 
 	if (0 == itemids->values_num)
 	{
-		zbx_strcpy_alloc(error, &error_alloc, &error_offset, "No items for key \"%s\" in group(s) ");
+		zbx_snprintf_alloc(error, &error_alloc, &error_offset, "No items for key \"%s\" in group(s) ", itemkey);
+		aggregate_quote_groups(error, &error_alloc, &error_offset, groups);
+		zbx_chrcpy_alloc(error, &error_alloc, &error_offset, '.');
 		goto out;
 	}
 
@@ -382,12 +387,6 @@ static int	aggregate_get_items(zbx_vector_uint64_t *itemids, const char *groups,
 	ret = SUCCEED;
 
 out:
-	if (FAIL == ret)
-	{
-		aggregate_quote_groups(error, &error_alloc, &error_offset, groups);
-		zbx_chrcpy_alloc(error, &error_alloc, &error_offset, '.');
-	}
-
 	zbx_vector_uint64_destroy(&groupids);
 
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __function_name);
@@ -449,7 +448,7 @@ static int	evaluate_aggregate(DC_ITEM *item, AGENT_RESULT *res, int grp_func, co
 	}
 	else
 	{
-		if (FAIL == is_time_suffix(param, &seconds))
+		if (FAIL == is_time_suffix(param, &seconds, ZBX_LENGTH_UNLIMITED))
 		{
 			SET_MSG_RESULT(res, zbx_strdup(NULL, "Invalid fourth parameter."));
 			goto clean2;

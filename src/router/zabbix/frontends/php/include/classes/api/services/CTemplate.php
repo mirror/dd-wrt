@@ -47,8 +47,6 @@ class CTemplate extends CHostGeneral {
 	 */
 	public function get($options = []) {
 		$result = [];
-		$userType = self::$userData['type'];
-		$userid = self::$userData['userid'];
 
 		$sqlParts = [
 			'select'	=> ['templates' => 'h.hostid'],
@@ -71,14 +69,14 @@ class CTemplate extends CHostGeneral {
 			'with_triggers'				=> null,
 			'with_graphs'				=> null,
 			'with_httptests'			=> null,
-			'editable'					=> null,
+			'editable'					=> false,
 			'nopermissions'				=> null,
 			// filter
 			'filter'					=> null,
 			'search'					=> '',
 			'searchByAny'				=> null,
-			'startSearch'				=> null,
-			'excludeSearch'				=> null,
+			'startSearch'				=> false,
+			'excludeSearch'				=> false,
 			'searchWildcardsEnabled'	=> null,
 			// output
 			'output'					=> API_OUTPUT_EXTEND,
@@ -94,9 +92,9 @@ class CTemplate extends CHostGeneral {
 			'selectMacros'				=> null,
 			'selectScreens'				=> null,
 			'selectHttpTests'			=> null,
-			'countOutput'				=> null,
-			'groupCount'				=> null,
-			'preservekeys'				=> null,
+			'countOutput'				=> false,
+			'groupCount'				=> false,
+			'preservekeys'				=> false,
 			'sortfield'					=> '',
 			'sortorder'					=> '',
 			'limit'						=> null,
@@ -105,10 +103,9 @@ class CTemplate extends CHostGeneral {
 		$options = zbx_array_merge($defOptions, $options);
 
 		// editable + PERMISSION CHECK
-		if ($userType != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
+		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
 			$permission = $options['editable'] ? PERM_READ_WRITE : PERM_READ;
-
-			$userGroups = getUserGroupsByUserId($userid);
+			$userGroups = getUserGroupsByUserId(self::$userData['userid']);
 
 			$sqlParts['where'][] = 'EXISTS ('.
 					'SELECT NULL'.
@@ -131,7 +128,7 @@ class CTemplate extends CHostGeneral {
 			$sqlParts['where'][] = dbConditionInt('hg.groupid', $options['groupids']);
 			$sqlParts['where']['hgh'] = 'hg.hostid=h.hostid';
 
-			if (!is_null($options['groupCount'])) {
+			if ($options['groupCount']) {
 				$sqlParts['group']['hg'] = 'hg.groupid';
 			}
 		}
@@ -151,7 +148,7 @@ class CTemplate extends CHostGeneral {
 			$sqlParts['where'][] = dbConditionInt('ht.templateid', $options['parentTemplateids']);
 			$sqlParts['where']['hht'] = 'h.hostid=ht.hostid';
 
-			if (!is_null($options['groupCount'])) {
+			if ($options['groupCount']) {
 				$sqlParts['group']['templateid'] = 'ht.templateid';
 			}
 		}
@@ -164,7 +161,7 @@ class CTemplate extends CHostGeneral {
 			$sqlParts['where'][] = dbConditionInt('ht.hostid', $options['hostids']);
 			$sqlParts['where']['hht'] = 'h.hostid=ht.templateid';
 
-			if (!is_null($options['groupCount'])) {
+			if ($options['groupCount']) {
 				$sqlParts['group']['ht'] = 'ht.hostid';
 			}
 		}
@@ -258,11 +255,13 @@ class CTemplate extends CHostGeneral {
 		$sqlParts = $this->applyQuerySortOptions($this->tableName(), $this->tableAlias(), $options, $sqlParts);
 		$res = DBselect($this->createSelectQueryFromParts($sqlParts), $sqlParts['limit']);
 		while ($template = DBfetch($res)) {
-			if (!is_null($options['countOutput'])) {
-				if (!is_null($options['groupCount']))
+			if ($options['countOutput']) {
+				if ($options['groupCount']) {
 					$result[] = $template;
-				else
+				}
+				else {
 					$result = $template['rowscount'];
+				}
 			}
 			else{
 				$template['templateid'] = $template['hostid'];
@@ -273,7 +272,7 @@ class CTemplate extends CHostGeneral {
 
 		}
 
-		if (!is_null($options['countOutput'])) {
+		if ($options['countOutput']) {
 			return $result;
 		}
 
@@ -282,7 +281,7 @@ class CTemplate extends CHostGeneral {
 		}
 
 		// removing keys (hash -> array)
-		if (is_null($options['preservekeys'])) {
+		if (!$options['preservekeys']) {
 			$result = zbx_cleanHashes($result);
 		}
 
@@ -651,7 +650,7 @@ class CTemplate extends CHostGeneral {
 			'templateids' => $templateids,
 			'output' => ['httptestid'],
 			'nopermissions' => 1,
-			'preservekeys' => 1
+			'preservekeys' => true
 		]);
 		if (!empty($delHttpTests)) {
 			API::HttpTest()->delete(array_keys($delHttpTests), true);
@@ -662,7 +661,7 @@ class CTemplate extends CHostGeneral {
 			'templateids' => $templateids,
 			'output' => ['applicationid'],
 			'nopermissions' => 1,
-			'preservekeys' => 1
+			'preservekeys' => true
 		]);
 		if (!empty($delApplications)) {
 			API::Application()->delete(array_keys($delApplications), true);
@@ -677,6 +676,43 @@ class CTemplate extends CHostGeneral {
 		}
 
 		return ['templateids' => $templateids];
+	}
+
+	/**
+	 * Checks if the current user has access to the given hosts and templates. Assumes the "hostid" field is valid.
+	 *
+	 * @param array $hostids    an array of host or template IDs
+	 *
+	 * @throws APIException if the user doesn't have write permissions for the given hosts.
+	 *
+	 * @return void
+	 */
+	protected function checkHostPermissions(array $hostids) {
+		if ($hostids) {
+			$hostids = array_unique($hostids);
+
+			$count = API::Host()->get([
+				'countOutput' => true,
+				'hostids' => $hostids,
+				'editable' => true
+			]);
+
+			if ($count == count($hostids)) {
+				return;
+			}
+
+			$count += $this->get([
+				'countOutput' => true,
+				'templateids' => $hostids,
+				'editable' => true
+			]);
+
+			if ($count != count($hostids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS,
+					_('No permissions to referred object or it does not exist!')
+				);
+			}
+		}
 	}
 
 	/**
@@ -695,25 +731,20 @@ class CTemplate extends CHostGeneral {
 		$templates = isset($data['templates']) ? zbx_toArray($data['templates']) : [];
 		$templateIds = zbx_objectValues($templates, 'templateid');
 
-		// check permissions
-		if (!$this->isWritable($templateIds)) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS, _('No permissions to referred object or it does not exist!'));
-		}
+		$this->checkPermissions($templateIds, _('No permissions to referred object or it does not exist!'));
 
 		// link hosts to the given templates
 		if (isset($data['hosts']) && !empty($data['hosts'])) {
 			$hostIds = zbx_objectValues($data['hosts'], 'hostid');
 
-			if (!API::Host()->isWritable($hostIds)) {
-				self::exception(ZBX_API_ERROR_PERMISSIONS,
-					_('No permissions to referred object or it does not exist!')
-				);
-			}
+			$this->checkHostPermissions($hostIds);
 
 			// check if any of the hosts are discovered
 			$this->checkValidator($hostIds, new CHostNormalValidator([
 				'message' => _('Cannot update templates on discovered host "%1$s".')
 			]));
+
+			$this->validateDependentItemsLinkage($hostIds, $templateIds);
 
 			$this->link($templateIds, $hostIds);
 		}
@@ -1041,10 +1072,7 @@ class CTemplate extends CHostGeneral {
 	public function massRemove(array $data) {
 		$templateids = zbx_toArray($data['templateids']);
 
-		// check permissions
-		if (!$this->isWritable($templateids)) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS, _('You do not have permission to perform this operation.'));
-		}
+		$this->checkPermissions($templateids, _('You do not have permission to perform this operation.'));
 
 		if (isset($data['hostids'])) {
 			// check if any of the hosts are discovered
@@ -1061,54 +1089,27 @@ class CTemplate extends CHostGeneral {
 	}
 
 	/**
-	 * Check if user has read permissions for templates.
-	 *
-	 * @param array $ids
-	 *
-	 * @return bool
-	 */
-	public function isReadable(array $ids) {
-		if (!is_array($ids)) {
-			return false;
-		}
-		if (empty($ids)) {
-			return true;
-		}
-
-		$ids = array_unique($ids);
-
-		$count = $this->get([
-			'templateids' => $ids,
-			'countOutput' => true
-		]);
-
-		return (count($ids) == $count);
-	}
-
-	/**
 	 * Check if user has write permissions for templates.
 	 *
-	 * @param array $ids
+	 * @param array  $templateids
+	 * @param string $error
 	 *
 	 * @return bool
 	 */
-	public function isWritable(array $ids) {
-		if (!is_array($ids)) {
-			return false;
+	private function checkPermissions(array $templateids, $error) {
+		if ($templateids) {
+			$templateids = array_unique($templateids);
+
+			$count = $this->get([
+				'countOutput' => true,
+				'templateids' => $templateids,
+				'editable' => true
+			]);
+
+			if ($count != count($templateids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS, $error);
+			}
 		}
-		if (empty($ids)) {
-			return true;
-		}
-
-		$ids = array_unique($ids);
-
-		$count = $this->get([
-			'templateids' => $ids,
-			'editable' => true,
-			'countOutput' => true
-		]);
-
-		return (count($ids) == $count);
 	}
 
 	protected function addRelatedObjects(array $options, array $result) {

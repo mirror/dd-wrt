@@ -48,8 +48,6 @@ class CMaintenance extends CApiService {
 	 */
 	public function get(array $options = []) {
 		$result = [];
-		$userType = self::$userData['type'];
-		$userid = self::$userData['userid'];
 
 		$sqlParts = [
 			'select'	=> ['maintenance' => 'm.maintenanceid'],
@@ -64,14 +62,14 @@ class CMaintenance extends CApiService {
 			'groupids'					=> null,
 			'hostids'					=> null,
 			'maintenanceids'			=> null,
-			'editable'					=> null,
+			'editable'					=> false,
 			'nopermissions'				=> null,
 			// filter
 			'filter'					=> null,
 			'search'					=> null,
 			'searchByAny'				=> null,
-			'startSearch'				=> null,
-			'excludeSearch'				=> null,
+			'startSearch'				=> false,
+			'excludeSearch'				=> false,
 			'filter'					=> null,
 			'searchWildcardsEnabled'	=> null,
 			// output
@@ -79,9 +77,9 @@ class CMaintenance extends CApiService {
 			'selectGroups'				=> null,
 			'selectHosts'				=> null,
 			'selectTimeperiods'			=> null,
-			'countOutput'				=> null,
-			'groupCount'				=> null,
-			'preservekeys'				=> null,
+			'countOutput'				=> false,
+			'groupCount'				=> false,
+			'preservekeys'				=> false,
 			'sortfield'					=> '',
 			'sortorder'					=> '',
 			'limit'						=> null
@@ -90,7 +88,7 @@ class CMaintenance extends CApiService {
 
 		// editable + PERMISSION CHECK
 		$maintenanceids = [];
-		if ($userType == USER_TYPE_SUPER_ADMIN || $options['nopermissions']) {
+		if (self::$userData['type'] == USER_TYPE_SUPER_ADMIN || $options['nopermissions']) {
 			if (!is_null($options['groupids']) || !is_null($options['hostids'])) {
 				if (!is_null($options['groupids'])) {
 					zbx_value2array($options['groupids']);
@@ -126,8 +124,7 @@ class CMaintenance extends CApiService {
 		}
 		else {
 			$permission = $options['editable'] ? PERM_READ_WRITE : PERM_READ;
-
-			$userGroups = getUserGroupsByUserId($userid);
+			$userGroups = getUserGroupsByUserId(self::$userData['userid']);
 
 			$sql = 'SELECT m.maintenanceid'.
 					' FROM maintenances m'.
@@ -224,8 +221,8 @@ class CMaintenance extends CApiService {
 		$sqlParts = $this->applyQuerySortOptions($this->tableName(), $this->tableAlias(), $options, $sqlParts);
 		$res = DBselect($this->createSelectQueryFromParts($sqlParts), $sqlParts['limit']);
 		while ($maintenance = DBfetch($res)) {
-			if (!is_null($options['countOutput'])) {
-				if (!is_null($options['groupCount'])) {
+			if ($options['countOutput']) {
+				if ($options['groupCount']) {
 					$result[] = $maintenance;
 				}
 				else {
@@ -237,7 +234,7 @@ class CMaintenance extends CApiService {
 			}
 		}
 
-		if (!is_null($options['countOutput'])) {
+		if ($options['countOutput']) {
 			return $result;
 		}
 
@@ -245,7 +242,7 @@ class CMaintenance extends CApiService {
 			$result = $this->addRelatedObjects($options, $result);
 		}
 
-		if (is_null($options['preservekeys'])) {
+		if (!$options['preservekeys']) {
 			$result = zbx_cleanHashes($result);
 		}
 		return $result;

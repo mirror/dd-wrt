@@ -51,21 +51,21 @@ class CDRule extends CApiService {
 			'druleids'					=> null,
 			'dhostids'					=> null,
 			'dserviceids'				=> null,
-			'editable'					=> null,
+			'editable'					=> false,
 			'selectDHosts'				=> null,
 			'selectDChecks'				=> null,
 			// filter
 			'filter'					=> null,
 			'search'					=> null,
 			'searchByAny'				=> null,
-			'startSearch'				=> null,
-			'excludeSearch'				=> null,
+			'startSearch'				=> false,
+			'excludeSearch'				=> false,
 			'searchWildcardsEnabled'	=> null,
 			// output
 			'output'					=> API_OUTPUT_EXTEND,
-			'countOutput'				=> null,
-			'groupCount'				=> null,
-			'preservekeys'				=> null,
+			'countOutput'				=> false,
+			'groupCount'				=> false,
+			'preservekeys'				=> false,
 			'sortfield'					=> '',
 			'sortorder'					=> '',
 			'limit'						=> null,
@@ -73,7 +73,7 @@ class CDRule extends CApiService {
 		];
 		$options = zbx_array_merge($defOptions, $options);
 
-		if (CWebUser::getType() < USER_TYPE_ZABBIX_ADMIN) {
+		if (self::$userData['type'] < USER_TYPE_ZABBIX_ADMIN) {
 			return [];
 		}
 
@@ -91,7 +91,7 @@ class CDRule extends CApiService {
 			$sqlParts['where']['dhostid'] = dbConditionInt('dh.dhostid', $options['dhostids']);
 			$sqlParts['where']['dhdr'] = 'dh.druleid=dr.druleid';
 
-			if (!is_null($options['groupCount'])) {
+			if ($options['groupCount']) {
 				$sqlParts['group']['dhostid'] = 'dh.dhostid';
 			}
 		}
@@ -107,7 +107,7 @@ class CDRule extends CApiService {
 			$sqlParts['where']['dhdr'] = 'dh.druleid=dr.druleid';
 			$sqlParts['where']['dhds'] = 'dh.dhostid=ds.dhostid';
 
-			if (!is_null($options['groupCount'])) {
+			if ($options['groupCount']) {
 				$sqlParts['group']['dserviceid'] = 'ds.dserviceid';
 			}
 		}
@@ -119,6 +119,10 @@ class CDRule extends CApiService {
 
 // filter
 		if (is_array($options['filter'])) {
+			if (array_key_exists('delay', $options['filter']) && $options['filter']['delay'] !== null) {
+				$options['filter']['delay'] = getTimeUnitFilters($options['filter']['delay']);
+			}
+
 			$this->dbFilter('drules dr', $options, $sqlParts);
 		}
 
@@ -137,18 +141,20 @@ class CDRule extends CApiService {
 		$sqlParts = $this->applyQuerySortOptions($this->tableName(), $this->tableAlias(), $options, $sqlParts);
 		$dbRes = DBselect($this->createSelectQueryFromParts($sqlParts), $sqlParts['limit']);
 		while ($drule = DBfetch($dbRes)) {
-			if (!is_null($options['countOutput'])) {
-				if (!is_null($options['groupCount']))
+			if ($options['countOutput']) {
+				if ($options['groupCount']) {
 					$result[] = $drule;
-				else
+				}
+				else {
 					$result = $drule['rowscount'];
+				}
 			}
 			else {
 				$result[$drule['druleid']] = $drule;
 			}
 		}
 
-		if (!is_null($options['countOutput'])) {
+		if ($options['countOutput']) {
 			return $result;
 		}
 
@@ -157,7 +163,7 @@ class CDRule extends CApiService {
 		}
 
 // removing keys (hash -> array)
-		if (is_null($options['preservekeys'])) {
+		if (!$options['preservekeys']) {
 			$result = zbx_cleanHashes($result);
 		}
 
@@ -183,7 +189,7 @@ class CDRule extends CApiService {
 
 		$proxy_hostids = [];
 
-		$ip_range_validator = new CIPRangeValidator(['ipRangeLimit' => ZBX_DISCOVERER_IPRANGE_LIMIT]);
+		$ip_range_parser = new CIPRangeParser(['v6' => ZBX_HAVE_IPV6, 'dns' => false, 'max_ipv4_cidr' => 30]);
 
 		foreach ($drules as $drule) {
 			if (!array_key_exists('name', $drule)) {
@@ -198,24 +204,31 @@ class CDRule extends CApiService {
 				);
 			}
 
-			if (!array_key_exists('iprange', $drule)) {
+			if (!array_key_exists('iprange', $drule) || $drule['iprange'] === '') {
 				self::exception(ZBX_API_ERROR_PARAMETERS,
 					_s('Incorrect value for field "%1$s": %2$s.', 'iprange', _('cannot be empty'))
 				);
 			}
-			elseif (!$ip_range_validator->validate($drule['iprange'])) {
-				self::exception(ZBX_API_ERROR_PARAMETERS, $ip_range_validator->getError());
+			elseif (!$ip_range_parser->parse($drule['iprange'])) {
+				self::exception(ZBX_API_ERROR_PARAMETERS,
+					_s('Incorrect value for field "%1$s": %2$s.', 'iprange', $ip_range_parser->getError())
+				);
+			}
+			elseif (bccomp($ip_range_parser->getMaxIPCount(), ZBX_DISCOVERER_IPRANGE_LIMIT) > 0) {
+				self::exception(ZBX_API_ERROR_PARAMETERS,
+					_s('Incorrect value for field "%1$s": %2$s.', 'iprange',
+						_s('IP range "%1$s" exceeds "%2$s" address limit', $ip_range_parser->getMaxIPRange(),
+							ZBX_DISCOVERER_IPRANGE_LIMIT
+						)
+					)
+				);
 			}
 
-			if (array_key_exists('delay', $drule)) {
-				if (!zbx_is_int($drule['delay'])) {
-					self::exception(ZBX_API_ERROR_PARAMETERS, _s('Field "%1$s" is not integer.', 'delay'));
-				}
-				elseif ($drule['delay'] < 1 || $drule['delay'] > SEC_PER_WEEK) {
-					self::exception(ZBX_API_ERROR_PARAMETERS,
-						_s('Incorrect value "%1$s" for "%2$s" field.', $drule['delay'], 'delay')
-					);
-				}
+			if (array_key_exists('delay', $drule)
+					&& !validateTimeUnit($drule['delay'], 1, SEC_PER_WEEK, false, $error, ['usermacros' => true])) {
+				self::exception(ZBX_API_ERROR_PARAMETERS,
+					_s('Incorrect value for field "%1$s": %2$s.', 'delay', $error)
+				);
 			}
 
 			if (array_key_exists('status', $drule) && $drule['status'] != DRULE_STATUS_DISABLED
@@ -316,7 +329,7 @@ class CDRule extends CApiService {
 		$drule_names_changed = [];
 		$proxy_hostids = [];
 
-		$ip_range_validator = new CIPRangeValidator(['ipRangeLimit' => ZBX_DISCOVERER_IPRANGE_LIMIT]);
+		$ip_range_parser = new CIPRangeParser(['v6' => ZBX_HAVE_IPV6, 'dns' => false, 'max_ipv4_cidr' => 30]);
 
 		foreach ($drules as $drule) {
 			if (!array_key_exists($drule['druleid'], $db_drules)) {
@@ -338,19 +351,33 @@ class CDRule extends CApiService {
 				}
 			}
 
-			if (array_key_exists('iprange', $drule) && !$ip_range_validator->validate($drule['iprange'])) {
-				self::exception(ZBX_API_ERROR_PARAMETERS, $ip_range_validator->getError());
-			}
-
-			if (array_key_exists('delay', $drule)) {
-				if (!zbx_is_int($drule['delay'])) {
-					self::exception(ZBX_API_ERROR_PARAMETERS, _s('Field "%1$s" is not integer.', 'delay'));
-				}
-				elseif ($drule['delay'] < 1 || $drule['delay'] > SEC_PER_WEEK) {
+			if (array_key_exists('iprange', $drule)) {
+				if ($drule['iprange'] === '') {
 					self::exception(ZBX_API_ERROR_PARAMETERS,
-						_s('Incorrect value "%1$s" for "%2$s" field.', $drule['delay'], 'delay')
+						_s('Incorrect value for field "%1$s": %2$s.', 'iprange', _('cannot be empty'))
 					);
 				}
+				elseif (!$ip_range_parser->parse($drule['iprange'])) {
+					self::exception(ZBX_API_ERROR_PARAMETERS,
+						_s('Incorrect value for field "%1$s": %2$s.', 'iprange', $ip_range_parser->getError())
+					);
+				}
+				elseif (bccomp($ip_range_parser->getMaxIPCount(), ZBX_DISCOVERER_IPRANGE_LIMIT) > 0) {
+					self::exception(ZBX_API_ERROR_PARAMETERS,
+						_s('Incorrect value for field "%1$s": %2$s.', 'iprange',
+							_s('IP range "%1$s" exceeds "%2$s" address limit', $ip_range_parser->getMaxIPRange(),
+								ZBX_DISCOVERER_IPRANGE_LIMIT
+							)
+						)
+					);
+				}
+			}
+
+			if (array_key_exists('delay', $drule)
+					&& !validateTimeUnit($drule['delay'], 1, SEC_PER_WEEK, false, $error, ['usermacros' => true])) {
+				self::exception(ZBX_API_ERROR_PARAMETERS,
+					_s('Incorrect value for field "%1$s": %2$s.', 'delay', $error)
+				);
 			}
 
 			if (array_key_exists('status', $drule) && $drule['status'] != DRULE_STATUS_DISABLED
@@ -422,6 +449,11 @@ class CDRule extends CApiService {
 		}
 	}
 
+	/**
+	 * Validate discovery checks.
+	 *
+	 * @param array $dchecks
+	 */
 	protected function validateDChecks(array $dchecks) {
 		$uniq = 0;
 		$item_key_parser = new CItemKey();
@@ -465,11 +497,29 @@ class CDRule extends CApiService {
 					_s('Incorrect value "%1$s" for "%2$s" field.', $dcheck['type'], 'type')
 				);
 			}
-
 			switch ($dcheck['type']) {
 				case SVC_AGENT:
-					if (!array_key_exists('key_', $dcheck) || $dcheck['key_'] === null) {
-						self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect key.'));
+					if (!array_key_exists('key_', $dcheck)) {
+						self::exception(ZBX_API_ERROR_PARAMETERS, _s('Field "%1$s" is mandatory.', 'key_'));
+					}
+
+					if (is_array($dcheck['key_'])) {
+						self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect arguments passed to function.'));
+					}
+
+					if ($dcheck['key_'] === '' || $dcheck['key_'] === null || $dcheck['key_'] === false) {
+						self::exception(ZBX_API_ERROR_PARAMETERS,
+							_s('Incorrect value for field "%1$s": %2$s.', 'key_', _('cannot be empty'))
+						);
+					}
+
+					$length = mb_strlen($dcheck['key_']);
+					if ($length > 255) {
+						self::exception(ZBX_API_ERROR_PARAMETERS,
+							_s('Incorrect value for field "%1$s": %2$s.', 'key_',
+								_s('%1$d characters exceeds maximum length of %2$d characters', $length, 255)
+							)
+						);
 					}
 
 					if ($item_key_parser->parse($dcheck['key_']) != CParser::PARSE_SUCCESS) {
@@ -480,11 +530,13 @@ class CDRule extends CApiService {
 					break;
 
 				case SVC_SNMPv1:
+					// break; is not missing here
 				case SVC_SNMPv2c:
 					if (!array_key_exists('snmp_community', $dcheck) || $dcheck['snmp_community'] === null
 							|| $dcheck['snmp_community'] === false || $dcheck['snmp_community'] === '') {
 						self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect SNMP community.'));
 					}
+					// break; is not missing here
 				case SVC_SNMPv3:
 					if (!array_key_exists('key_', $dcheck) || $dcheck['key_'] === null || $dcheck['key_'] === false
 							|| $dcheck['key_'] === '') {
@@ -655,7 +707,7 @@ class CDRule extends CApiService {
 		$this->validateUpdate($drules);
 
 		$db_drules = API::DRule()->get([
-			'output' => ['druleid', 'proxy_hostid', 'name', 'iprange', 'delay', 'nextcheck', 'status'],
+			'output' => ['druleid', 'proxy_hostid', 'name', 'iprange', 'delay', 'status'],
 			'selectDChecks' => ['dcheckid', 'druleid', 'type', 'key_', 'snmp_community', 'ports', 'snmpv3_securityname',
 				'snmpv3_securitylevel', 'snmpv3_authpassphrase', 'snmpv3_privpassphrase', 'uniq', 'snmpv3_authprotocol',
 				'snmpv3_privprotocol', 'snmpv3_contextname'
@@ -670,14 +722,20 @@ class CDRule extends CApiService {
 		$upd_drules = [];
 
 		foreach ($drules as $drule) {
+			$db_drule = $db_drules[$drule['druleid']];
+
 			// Update drule if it's modified.
-			if (DB::recordModified('drules', $db_drules[$drule['druleid']], $drule)) {
+			if (DB::recordModified('drules', $db_drule, $drule)) {
+				if (array_key_exists('delay', $drule) && $db_drule['delay'] != $drule['delay']) {
+					$drule['nextcheck'] = 0;
+				}
+
 				DB::updateByPk('drules', $drule['druleid'], $drule);
 			}
 
 			if (array_key_exists('dchecks', $drule)) {
 				// Update dchecks.
-				$db_dchecks = $db_drules[$drule['druleid']]['dchecks'];
+				$db_dchecks = $db_drule['dchecks'];
 
 				$new_dchecks = [];
 				$old_dchecks = [];
@@ -812,51 +870,6 @@ class CDRule extends CApiService {
 		}
 	}
 
-	/**
-	 * Check if user has read permissions for discovery rule.
-	 *
-	 * @param array $ids
-	 *
-	 * @return bool
-	 */
-	public function isReadable(array $ids) {
-		if (empty($ids)) {
-			return true;
-		}
-
-		$ids = array_unique($ids);
-
-		$count = $this->get([
-			'druleids' => $ids,
-			'countOutput' => true
-		]);
-
-		return (count($ids) == $count);
-	}
-
-	/**
-	 * Check if user has write permissions for discovery rule.
-	 *
-	 * @param array $ids
-	 *
-	 * @return bool
-	 */
-	public function isWritable(array $ids) {
-		if (empty($ids)) {
-			return true;
-		}
-
-		$ids = array_unique($ids);
-
-		$count = $this->get([
-			'druleids' => $ids,
-			'editable' => true,
-			'countOutput' => true
-		]);
-
-		return (count($ids) == $count);
-	}
-
 	protected function addRelatedObjects(array $options, array $result) {
 		$result = parent::addRelatedObjects($options, $result);
 
@@ -932,11 +945,23 @@ class CDRule extends CApiService {
 	 *
 	 * @throws APIException if the user doesn't have write permissions for discovery rules.
 	 *
-	 * @param array $druleIds
+	 * @param array $druleids
 	 */
-	protected function checkDrulePermissions(array $druleIds) {
-		if (!$this->isWritable($druleIds)) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS, _('No permissions to referred object or it does not exist!'));
+	protected function checkDrulePermissions(array $druleids) {
+		if ($druleids) {
+			$druleids = array_unique($druleids);
+
+			$count = $this->get([
+				'countOutput' => true,
+				'druleids' => $druleids,
+				'editable' => true
+			]);
+
+			if ($count != count($druleids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS,
+					_('No permissions to referred object or it does not exist!')
+				);
+			}
 		}
 	}
 }

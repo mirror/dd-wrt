@@ -41,7 +41,6 @@ abstract class CGraphDraw {
 		$this->colorsrgb = null;
 		$this->im = null;
 		$this->period = SEC_PER_HOUR;
-		$this->from = 0;
 		$this->sizeX = 900; // default graph size X
 		$this->sizeY = 200; // default graph size Y
 		$this->shiftXleft = 100;
@@ -51,21 +50,7 @@ abstract class CGraphDraw {
 		$this->num = 0;
 		$this->type = $type; // graph type
 		$this->drawLegend = 1;
-		$this->axis_valuetype = []; // overal items type (int/float)
-		$this->graphtheme = [
-			'theme' => 'blue-theme',
-			'textcolor' => '1F2C33',
-			'highlightcolor' => 'E33734',
-			'backgroundcolor' => 'FFFFFF',
-			'graphcolor' => 'FFFFFF',
-			'gridcolor' => 'CCD5D9',
-			'maingridcolor' => 'ACBBC2',
-			'gridbordercolor' => 'ACBBC2',
-			'nonworktimecolor' => 'EBEBEB',
-			'leftpercentilecolor' => '429E47',
-			'righttpercentilecolor' => 'E33734'
-		];
-		$this->applyGraphTheme();
+		$this->graphtheme = getUserGraphTheme();
 	}
 
 	public function initColors() {
@@ -109,18 +94,6 @@ abstract class CGraphDraw {
 		}
 	}
 
-	/**
-	 * Load the graph theme from the database.
-	 */
-	public function applyGraphTheme() {
-		$themes = DB::find('graph_theme', [
-			'theme' => getUserTheme(CWebUser::$data)
-		]);
-		if ($themes) {
-			$this->graphtheme = $themes[0];
-		}
-	}
-
 	public function showLegend($type = true) {
 		$this->drawLegend = $type;
 	}
@@ -136,10 +109,6 @@ abstract class CGraphDraw {
 		else {
 			$this->stime = $stime;
 		}
-	}
-
-	public function setFrom($from) {
-		$this->from = $from;
 	}
 
 	public function setWidth($value = null) {
@@ -161,6 +130,14 @@ abstract class CGraphDraw {
 			$value = 900;
 		}
 		$this->sizeY = $value;
+	}
+
+	public function getWidth() {
+		return $this->sizeX;
+	}
+
+	public function getHeight() {
+		return $this->sizeY;
 	}
 
 	public function getLastValue($num) {
@@ -231,15 +208,6 @@ abstract class CGraphDraw {
 
 	public function setHeader($header) {
 		$this->header = $header;
-	}
-
-	public function drawLogo() {
-		imagestringup($this->im, 1,
-			$this->fullSizeX - 10,
-			$this->fullSizeY - 50,
-			ZABBIX_HOMEPAGE,
-			$this->getColor('Gray')
-		);
 	}
 
 	public function getColor($color, $alfa = 50) {

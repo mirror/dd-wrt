@@ -20,6 +20,7 @@
 #include "common.h"
 #include "threads.h"
 #include "log.h"
+#include "zbxexec.h"
 
 /* the size of temporary buffer used to read from output stream */
 #define PIPE_BUFFER_SIZE	4096
@@ -138,7 +139,7 @@ static int	zbx_read_from_pipe(HANDLE hRead, char **buf, size_t *buf_size, size_t
 static int	zbx_popen(pid_t *pid, const char *command)
 {
 	const char	*__function_name = "zbx_popen";
-	int		fd[2];
+	int		fd[2], stdout_orig, stderr_orig;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() command:'%s'", __function_name, command);
 
@@ -162,26 +163,46 @@ static int	zbx_popen(pid_t *pid, const char *command)
 	}
 
 	/* child process */
+
 	close(fd[0]);
-	dup2(fd[1], STDOUT_FILENO);
-	dup2(fd[1], STDERR_FILENO);
-	close(fd[1]);
 
 	/* set the child as the process group leader, otherwise orphans may be left after timeout */
 	if (-1 == setpgid(0, 0))
 	{
 		zabbix_log(LOG_LEVEL_ERR, "%s(): failed to create a process group: %s",
 				__function_name, zbx_strerror(errno));
-		exit(EXIT_SUCCESS);
+		exit(EXIT_FAILURE);
 	}
 
 	zabbix_log(LOG_LEVEL_DEBUG, "%s(): executing script", __function_name);
 
+	/* preserve stdout and stderr to restore them in case execl() fails */
+
+	stdout_orig = dup(STDOUT_FILENO);
+	stderr_orig = dup(STDERR_FILENO);
+	fcntl(stdout_orig, F_SETFD, FD_CLOEXEC);
+	fcntl(stderr_orig, F_SETFD, FD_CLOEXEC);
+
+	/* redirect output right before script execution after all logging is done */
+
+	dup2(fd[1], STDOUT_FILENO);
+	dup2(fd[1], STDERR_FILENO);
+	close(fd[1]);
+
 	execl("/bin/sh", "sh", "-c", command, NULL);
 
-	/* execl() returns only when an error occurs */
+	/* restore original stdout and stderr, because we don't want our output to be confused with script's output */
+
+	dup2(stdout_orig, STDOUT_FILENO);
+	dup2(stderr_orig, STDERR_FILENO);
+	close(stdout_orig);
+	close(stderr_orig);
+
+	/* this message may end up in stdout or stderr, that's why we needed to save and restore them */
 	zabbix_log(LOG_LEVEL_WARNING, "execl() failed for [%s]: %s", command, zbx_strerror(errno));
-	exit(EXIT_SUCCESS);
+
+	/* execl() returns only when an error occurs, let parent process know about it */
+	exit(EXIT_FAILURE);
 }
 
 /******************************************************************************
@@ -191,6 +212,7 @@ static int	zbx_popen(pid_t *pid, const char *command)
  * Purpose: this function waits for process to change state                   *
  *                                                                            *
  * Parameters: pid     - [IN] child process PID                               *
+ *             status  - [OUT] process status
  *                                                                            *
  * Return value: on success, PID is returned. On error,                       *
  *               -1 is returned, and errno is set appropriately               *
@@ -198,10 +220,10 @@ static int	zbx_popen(pid_t *pid, const char *command)
  * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
-static int	zbx_waitpid(pid_t pid)
+static int	zbx_waitpid(pid_t pid, int *status)
 {
 	const char	*__function_name = "zbx_waitpid";
-	int		rc, status;
+	int		rc, result;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
@@ -210,7 +232,7 @@ static int	zbx_waitpid(pid_t pid)
 #ifdef WCONTINUED
 		static int	wcontinued = WCONTINUED;
 retry:
-		if (-1 == (rc = waitpid(pid, &status, WUNTRACED | wcontinued)))
+		if (-1 == (rc = waitpid(pid, &result, WUNTRACED | wcontinued)))
 		{
 			if (EINVAL == errno && 0 != wcontinued)
 			{
@@ -218,26 +240,29 @@ retry:
 				goto retry;
 			}
 #else
-		if (-1 == (rc = waitpid(pid, &status, WUNTRACED)))
+		if (-1 == (rc = waitpid(pid, &result, WUNTRACED)))
 		{
 #endif
 			zabbix_log(LOG_LEVEL_DEBUG, "%s() waitpid failure: %s", __function_name, zbx_strerror(errno));
 			goto exit;
 		}
 
-		if (WIFEXITED(status))
-			zabbix_log(LOG_LEVEL_DEBUG, "%s() exited, status:%d", __function_name, WEXITSTATUS(status));
-		else if (WIFSIGNALED(status))
-			zabbix_log(LOG_LEVEL_DEBUG, "%s() killed by signal %d", __function_name, WTERMSIG(status));
-		else if (WIFSTOPPED(status))
-			zabbix_log(LOG_LEVEL_DEBUG, "%s() stopped by signal %d", __function_name, WSTOPSIG(status));
+		if (WIFEXITED(result))
+			zabbix_log(LOG_LEVEL_DEBUG, "%s() exited, status:%d", __function_name, WEXITSTATUS(result));
+		else if (WIFSIGNALED(result))
+			zabbix_log(LOG_LEVEL_DEBUG, "%s() killed by signal %d", __function_name, WTERMSIG(result));
+		else if (WIFSTOPPED(result))
+			zabbix_log(LOG_LEVEL_DEBUG, "%s() stopped by signal %d", __function_name, WSTOPSIG(result));
 #ifdef WIFCONTINUED
-		else if (WIFCONTINUED(status))
+		else if (WIFCONTINUED(result))
 			zabbix_log(LOG_LEVEL_DEBUG, "%s() continued", __function_name);
 #endif
 	}
-	while (!WIFEXITED(status) && !WIFSIGNALED(status));
+	while (!WIFEXITED(result) && !WIFSIGNALED(result));
 exit:
+	if (NULL != status)
+		*status = result;
+
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%d", __function_name, rc);
 
 	return rc;
@@ -252,9 +277,11 @@ exit:
  * Purpose: this function executes a script and returns result from stdout    *
  *                                                                            *
  * Parameters: command       - [IN] command for execution                     *
- *             buffer        - [OUT] buffer for output, if NULL - ignored     *
+ *             output        - [OUT] buffer for output, if NULL - ignored     *
  *             error         - [OUT] error string if function fails           *
  *             max_error_len - [IN] length of error buffer                    *
+ *             timeout       - [IN] execution timeout                         *
+ *             flag          - [IN] indicates if exit code must be checked    *
  *                                                                            *
  * Return value: SUCCEED if processed successfully, TIMEOUT_ERROR if          *
  *               timeout occurred or FAIL otherwise                           *
@@ -262,10 +289,12 @@ exit:
  * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
-int	zbx_execute(const char *command, char **buffer, char *error, size_t max_error_len, int timeout)
+int	zbx_execute(const char *command, char **output, char *error, size_t max_error_len, int timeout,
+		unsigned char flag)
 {
 	size_t			buf_size = PIPE_BUFFER_SIZE, offset = 0;
 	int			ret = FAIL;
+	char			*buffer = NULL;
 #ifdef _WINDOWS
 	STARTUPINFO		si;
 	PROCESS_INFORMATION	pi;
@@ -274,6 +303,7 @@ int	zbx_execute(const char *command, char **buffer, char *error, size_t max_erro
 	char			*cmd = NULL;
 	wchar_t			*wcmd = NULL;
 	struct _timeb		start_time, current_time;
+	DWORD			code;
 #else
 	pid_t			pid;
 	int			fd;
@@ -281,11 +311,11 @@ int	zbx_execute(const char *command, char **buffer, char *error, size_t max_erro
 
 	*error = '\0';
 
-	if (NULL != buffer)
-	{
-		*buffer = zbx_realloc(*buffer, buf_size);
-		**buffer = '\0';
-	}
+	if (NULL != output)
+		zbx_free(*output);
+
+	buffer = zbx_malloc(buffer, buf_size);
+	*buffer = '\0';
 
 #ifdef _WINDOWS
 
@@ -356,7 +386,7 @@ int	zbx_execute(const char *command, char **buffer, char *error, size_t max_erro
 	_ftime(&start_time);
 	timeout *= 1000;
 
-	ret = zbx_read_from_pipe(hRead, buffer, &buf_size, &offset, timeout);
+	ret = zbx_read_from_pipe(hRead, &buffer, &buf_size, &offset, timeout);
 
 	if (TIMEOUT_ERROR != ret)
 	{
@@ -365,6 +395,25 @@ int	zbx_execute(const char *command, char **buffer, char *error, size_t max_erro
 				WAIT_TIMEOUT == WaitForSingleObject(pi.hProcess, timeout))
 		{
 			ret = TIMEOUT_ERROR;
+		}
+		else if (WAIT_OBJECT_0 != WaitForSingleObject(pi.hProcess, 0) ||
+				0 == GetExitCodeProcess(pi.hProcess, &code))
+		{
+			if ('\0' != *buffer)
+				zbx_strlcpy(error, buffer, max_error_len);
+			else
+				zbx_strlcpy(error, "Process terminated unexpectedly.", max_error_len);
+
+			ret = FAIL;
+		}
+		else if (ZBX_EXIT_CODE_CHECKS_ENABLED == flag && 0 != code)
+		{
+			if ('\0' != *buffer)
+				zbx_strlcpy(error, buffer, max_error_len);
+			else
+				zbx_snprintf(error, max_error_len, "Process exited with code: %d.", code);
+
+			ret = FAIL;
 		}
 	}
 
@@ -394,21 +443,18 @@ close:
 
 	if (-1 != (fd = zbx_popen(&pid, command)))
 	{
-		int	rc;
+		int	rc, status;
 		char	tmp_buf[PIPE_BUFFER_SIZE];
 
 		while (0 < (rc = read(fd, tmp_buf, sizeof(tmp_buf) - 1)) && MAX_EXECUTE_OUTPUT_LEN > offset + rc)
 		{
-			if (NULL != buffer)
-			{
-				tmp_buf[rc] = '\0';
-				zbx_strcpy_alloc(buffer, &buf_size, &offset, tmp_buf);
-			}
+			tmp_buf[rc] = '\0';
+			zbx_strcpy_alloc(&buffer, &buf_size, &offset, tmp_buf);
 		}
 
 		close(fd);
 
-		if (-1 == rc || -1 == zbx_waitpid(pid))
+		if (-1 == rc || -1 == zbx_waitpid(pid, &status))
 		{
 			if (EINTR == errno)
 				ret = TIMEOUT_ERROR;
@@ -419,12 +465,32 @@ close:
 			if (-1 == kill(-pid, SIGTERM))
 				zabbix_log(LOG_LEVEL_ERR, "failed to kill [%s]: %s", command, zbx_strerror(errno));
 
-			zbx_waitpid(pid);
+			zbx_waitpid(pid, NULL);
 		}
 		else if (MAX_EXECUTE_OUTPUT_LEN <= offset + rc)
 		{
 			zabbix_log(LOG_LEVEL_ERR, "command output exceeded limit of %d KB",
 					MAX_EXECUTE_OUTPUT_LEN / ZBX_KIBIBYTE);
+		}
+		else if (0 == WIFEXITED(status) || (ZBX_EXIT_CODE_CHECKS_ENABLED == flag && 0 != WEXITSTATUS(status)))
+		{
+			if ('\0' == *buffer)
+			{
+				if (WIFEXITED(status))
+				{
+					zbx_snprintf(error, max_error_len, "Process exited with code: %d.",
+							WEXITSTATUS(status));
+				}
+				else if (WIFSIGNALED(status))
+				{
+					zbx_snprintf(error, max_error_len, "Process killed by signal: %d.",
+							WTERMSIG(status));
+				}
+				else
+					zbx_strlcpy(error, "Process terminated unexpectedly.", max_error_len);
+			}
+			else
+				zbx_strlcpy(error, buffer, max_error_len);
 		}
 		else
 			ret = SUCCEED;
@@ -441,8 +507,11 @@ close:
 	else if ('\0' != *error)
 		zabbix_log(LOG_LEVEL_WARNING, "%s", error);
 
-	if (SUCCEED != ret && NULL != buffer)
-		zbx_free(*buffer);
+	if (SUCCEED != ret || NULL == output)
+		zbx_free(buffer);
+
+	if (NULL != output)
+		*output = buffer;
 
 	return ret;
 }

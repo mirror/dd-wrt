@@ -561,6 +561,10 @@ jQuery(function($) {
 					'class': 'multiselect-button'
 				}).append(popupButton));
 			}
+
+			if ('postInitEvent' in options) {
+				jQuery(document).trigger(options.postInitEvent);
+			}
 		});
 	};
 
@@ -731,6 +735,7 @@ jQuery(function($) {
 			}
 
 			var li = $('<li>', {
+				'data-name': item.name,
 				'data-id': item.id
 			}).append(
 				$('<span>', {
@@ -741,6 +746,10 @@ jQuery(function($) {
 					}))
 					.append(close_btn)
 			);
+
+			if (typeof(item.inaccessible) !== 'undefined' && item.inaccessible) {
+				li.addClass('inaccessible');
+			}
 
 			$('.selected ul', obj).append(li);
 

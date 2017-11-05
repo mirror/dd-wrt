@@ -45,8 +45,6 @@ class CProxy extends CApiService {
 	public function get($options = []) {
 		$result = [];
 
-		$userType = self::$userData['type'];
-
 		$sqlParts = [
 			'select'	=> ['hostid' => 'h.hostid'],
 			'from'		=> ['hosts' => 'hosts h'],
@@ -57,19 +55,19 @@ class CProxy extends CApiService {
 
 		$defOptions = [
 			'proxyids'					=> null,
-			'editable'					=> null,
+			'editable'					=> false,
 			'nopermissions'				=> null,
 			// filter
 			'filter'					=> null,
 			'search'					=> null,
 			'searchByAny'				=> null,
-			'startSearch'				=> null,
-			'excludeSearch'				=> null,
+			'startSearch'				=> false,
+			'excludeSearch'				=> false,
 			'searchWildcardsEnabled'	=> null,
 			// output
 			'output'					=> API_OUTPUT_EXTEND,
-			'countOutput'				=> null,
-			'preservekeys'				=> null,
+			'countOutput'				=> false,
+			'preservekeys'				=> false,
 			'selectHosts'				=> null,
 			'selectInterface'			=> null,
 			'sortfield'					=> '',
@@ -79,7 +77,7 @@ class CProxy extends CApiService {
 		$options = zbx_array_merge($defOptions, $options);
 
 		// editable + PERMISSION CHECK
-		if ($userType != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
+		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
 			$permission = $options['editable'] ? PERM_READ_WRITE : PERM_READ;
 			if ($permission == PERM_READ_WRITE) {
 				return [];
@@ -111,7 +109,7 @@ class CProxy extends CApiService {
 		}
 
 		// countOutput
-		if (!is_null($options['countOutput'])) {
+		if ($options['countOutput']) {
 			$options['sortfield'] = '';
 			$sqlParts['select'] = ['COUNT(DISTINCT h.hostid) AS rowscount'];
 		}
@@ -136,7 +134,7 @@ class CProxy extends CApiService {
 			}
 		}
 
-		if (!is_null($options['countOutput'])) {
+		if ($options['countOutput']) {
 			return $result;
 		}
 
@@ -146,7 +144,7 @@ class CProxy extends CApiService {
 		}
 
 		// removing keys (hash -> array)
-		if (is_null($options['preservekeys'])) {
+		if (!$options['preservekeys']) {
 			$result = zbx_cleanHashes($result);
 		}
 
@@ -166,8 +164,6 @@ class CProxy extends CApiService {
 		}
 
 		$proxies = zbx_toArray($proxies);
-
-		$proxies = $this->convertDeprecatedValues($proxies);
 
 		$this->validateCreate($proxies);
 
@@ -258,8 +254,6 @@ class CProxy extends CApiService {
 		}
 
 		$proxies = zbx_toArray($proxies);
-
-		$proxies = $this->convertDeprecatedValues($proxies);
 
 		$proxyids = zbx_objectValues($proxies, 'proxyid');
 
@@ -439,74 +433,29 @@ class CProxy extends CApiService {
 	 *  - cannot delete proxy if it is used to monitor host
 	 *  - cannot delete proxy if it is used in discovery rule
 	 *
-	 * @param array $proxyIds
+	 * @param array $proxyids
 	 */
-	protected function validateDelete(array $proxyIds) {
-		if (empty($proxyIds)) {
+	protected function validateDelete(array $proxyids) {
+		if (empty($proxyids)) {
 			self::exception(ZBX_API_ERROR_PARAMETERS, _('Empty input parameter.'));
 		}
 
-		$this->checkPermissions($proxyIds);
-		$this->checkUsedInDiscoveryRule($proxyIds);
-		$this->checkUsedForMonitoring($proxyIds);
-	}
-
-	/**
-	 * Check if user has read permissions for proxy.
-	 *
-	 * @param array $proxyIds
-	 *
-	 * @return bool
-	 */
-	public function isReadable(array $proxyIds) {
-		if (empty($proxyIds)) {
-			return true;
-		}
-
-		$proxyIds = array_unique($proxyIds);
-
-		$count = $this->get([
-			'proxyids' => $proxyIds,
-			'countOutput' => true
+		$db_proxies = $this->get([
+			'output' => [],
+			'proxyids' => $proxyids,
+			'preservekeys' => true
 		]);
 
-		return (count($proxyIds) == $count);
-	}
-
-	/**
-	 * Check if user has write permissions for proxy.
-	 *
-	 * @param array $proxyIds
-	 *
-	 * @return bool
-	 */
-	public function isWritable(array $proxyIds) {
-		if (empty($proxyIds)) {
-			return true;
+		foreach ($proxyids as $proxyid) {
+			if (!array_key_exists($proxyid, $db_proxies)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS,
+					_('No permissions to referred object or it does not exist!')
+				);
+			}
 		}
 
-		$proxyIds = array_unique($proxyIds);
-
-		$count = $this->get([
-			'proxyids' => $proxyIds,
-			'editable' => true,
-			'countOutput' => true
-		]);
-
-		return (count($proxyIds) == $count);
-	}
-
-	/**
-	 * Checks if the given proxies are editable.
-	 *
-	 * @param array $proxyIds	proxy IDs to check
-	 *
-	 * @throws APIException		if the user has no permissions to edit proxies or a proxy does not exist
-	 */
-	protected function checkPermissions(array $proxyIds) {
-		if (!$this->isWritable($proxyIds)) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS, _('No permissions to referred object or it does not exist!'));
-		}
+		$this->checkUsedInDiscoveryRule($proxyids);
+		$this->checkUsedForMonitoring($proxyids);
 	}
 
 	/**
@@ -552,7 +501,7 @@ class CProxy extends CApiService {
 	protected function applyQueryOutputOptions($tableName, $tableAlias, array $options, array $sqlParts) {
 		$sqlParts = parent::applyQueryOutputOptions($tableName, $tableAlias, $options, $sqlParts);
 
-		if ($options['countOutput'] === null && $options['selectInterface'] !== null) {
+		if (!$options['countOutput'] && $options['selectInterface'] !== null) {
 			$sqlParts = $this->addQuerySelect('h.hostid', $sqlParts);
 		}
 
@@ -598,28 +547,6 @@ class CProxy extends CApiService {
 		}
 
 		return $result;
-	}
-
-	/**
-	 * Convert deprecated "interfaces" to "interface".
-	 *
-	 * @param array $proxies
-	 *
-	 * @return array
-	 */
-	protected function convertDeprecatedValues($proxies) {
-		foreach ($proxies as $key => $proxy) {
-			if (isset($proxy['interfaces'])) {
-				$this->deprecated('Array of "interfaces" is deprecated, use single "interface" instead.');
-
-				$proxy['interface'] = reset($proxy['interfaces']);
-				unset($proxy['interfaces']);
-
-				$proxies[$key] = $proxy;
-			}
-		}
-
-		return $proxies;
 	}
 
 	/**

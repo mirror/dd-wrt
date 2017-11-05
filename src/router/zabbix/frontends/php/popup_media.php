@@ -42,7 +42,7 @@ $fields = [
 	'media'=>		[T_ZBX_INT, O_OPT,	P_SYS,	null,			null],
 	'mediatypeid'=>	[T_ZBX_INT, O_OPT,	P_SYS,	DB_ID,			'isset({add})'],
 	'sendto'=>		[T_ZBX_STR, O_OPT,	null,	NOT_EMPTY,		'isset({add})'],
-	'period'=>		[T_ZBX_STR, O_OPT,	null,	NOT_EMPTY,		'isset({add})'],
+	'period' =>		[T_ZBX_TP,  O_OPT,  null,   null,  'isset({add})', _('When active')],
 	'active'=>		[T_ZBX_INT, O_OPT,	null,	IN([MEDIA_STATUS_ACTIVE, MEDIA_STATUS_DISABLED]), null],
 
 	'severity'=>	[T_ZBX_INT, O_OPT,	null,	NOT_EMPTY,	null],
@@ -57,27 +57,21 @@ check_fields($fields);
 insert_js_function('add_media');
 
 if (isset($_REQUEST['add'])) {
-	$validator = new CTimePeriodValidator();
-	if ($validator->validate($_REQUEST['period'])) {
-		$severity = 0;
-		$_REQUEST['severity'] = getRequest('severity', []);
-		foreach ($_REQUEST['severity'] as $id) {
-			$severity |= 1 << $id;
-		}
+	$severity = 0;
+	$_REQUEST['severity'] = getRequest('severity', []);
+	foreach ($_REQUEST['severity'] as $id) {
+		$severity |= 1 << $id;
+	}
 
-		echo '<script type="text/javascript">
-				add_media('.CJs::encodeJson($_REQUEST['dstfrm']).','.
-				CJs::encodeJson($_REQUEST['media']).','.
-				CJs::encodeJson($_REQUEST['mediatypeid']).','.
-				CJs::encodeJson($_REQUEST['sendto']).','.
-				CJs::encodeJson($_REQUEST['period']).','.
-				CJs::encodeJson(getRequest('active', MEDIA_STATUS_DISABLED)).','.
-				$severity.');'.
-				'</script>';
-	}
-	else {
-		error($validator->getError());
-	}
+	echo '<script type="text/javascript">
+			add_media('.CJs::encodeJson($_REQUEST['dstfrm']).','.
+			CJs::encodeJson($_REQUEST['media']).','.
+			CJs::encodeJson($_REQUEST['mediatypeid']).','.
+			CJs::encodeJson($_REQUEST['sendto']).','.
+			CJs::encodeJson($_REQUEST['period']).','.
+			CJs::encodeJson(getRequest('active', MEDIA_STATUS_DISABLED)).','.
+			$severity.');'.
+			'</script>';
 }
 
 $config = select_config();
@@ -118,21 +112,20 @@ foreach ($mediatypes as &$mediatype) {
 }
 unset($mediatype);
 
-$frm_row = [];
+$frm_row = (new CList())->addClass(ZBX_STYLE_LIST_CHECK_RADIO);
 
 for ($severity = TRIGGER_SEVERITY_NOT_CLASSIFIED; $severity < TRIGGER_SEVERITY_COUNT; $severity++) {
-	$frm_row[] = new CLabel([
-		(new CCheckBox('severity['.$severity.']', $severity))->setChecked(str_in_array($severity, $severities)),
-		getSeverityName($severity, $config)
-	], 'severity['.$severity.']');
-	$frm_row[] = BR();
+	$frm_row->addItem(
+		(new CCheckBox('severity['.$severity.']', $severity))
+			->setLabel(getSeverityName($severity, $config))
+			->setChecked(str_in_array($severity, $severities))
+	);
 }
-array_pop($frm_row);
 
 $frmMedia = (new CFormList(_('Media')))
 	->addRow(_('Type'), new CComboBox('mediatypeid', $mediatypeid, null, $mediatypes))
 	->addRow(_('Send to'), (new CTextBox('sendto', $sendto, false, 100))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH))
-	->addRow(_('When active'), (new CTextBox('period', $period, false, 100))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH))
+	->addRow(_('When active'), (new CTextBox('period', $period, false, 1024))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH))
 	->addRow(_('Use if severity'), $frm_row)
 	->addRow(_('Enabled'), (new CCheckBox('active', MEDIA_STATUS_ACTIVE))->setChecked($active == MEDIA_STATUS_ACTIVE));
 

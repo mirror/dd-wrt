@@ -81,14 +81,14 @@ class CApiService {
 			'filter'				=> null,
 			'search'				=> null,
 			'searchByAny'			=> null,
-			'startSearch'			=> null,
-			'excludeSearch'			=> null,
+			'startSearch'			=> false,
+			'excludeSearch'			=> false,
 			'searchWildcardsEnabled'=> null,
 			// output
 			'output'				=> API_OUTPUT_EXTEND,
-			'countOutput'			=> null,
-			'groupCount'			=> null,
-			'preservekeys'			=> null,
+			'countOutput'			=> false,
+			'groupCount'			=> false,
+			'preservekeys'			=> false,
 			'limit'					=> null
 		];
 		$this->getOptions = $this->globalGetOptions;
@@ -349,7 +349,7 @@ class CApiService {
 
 		$objects = DBfetchArray(DBSelect($sql, $limit));
 
-		if (isset($options['preservekeys'])) {
+		if (array_key_exists('preservekeys', $options) && $options['preservekeys']) {
 			$rs = [];
 			foreach ($objects as $object) {
 				$rs[$object[$this->pk($tableName)]] = $object;
@@ -418,17 +418,20 @@ class CApiService {
 	 * @return string			The resulting SQL query
 	 */
 	protected function createSelectQueryFromParts(array $sqlParts) {
-		// build query
-		$sqlSelect = implode(',', array_unique($sqlParts['select']));
-		$sqlFrom = implode(',', array_unique($sqlParts['from']));
-
 		$sql_left_join = '';
 		if (array_key_exists('left_join', $sqlParts)) {
 			foreach ($sqlParts['left_join'] as $join) {
 				$sql_left_join .= ' LEFT JOIN '.$join['from'].' ON '.$join['on'];
 			}
+
+			// Moving a left table to the end.
+			$left_table = $sqlParts['from'][$sqlParts['left_table']];
+			unset($sqlParts['from'][$sqlParts['left_table']]);
+			$sqlParts['from'][$sqlParts['left_table']] = $left_table;
 		}
 
+		$sqlSelect = implode(',', array_unique($sqlParts['select']));
+		$sqlFrom = implode(',', array_unique($sqlParts['from']));
 		$sqlWhere = empty($sqlParts['where']) ? '' : ' WHERE '.implode(' AND ', array_unique($sqlParts['where']));
 		$sqlGroup = empty($sqlParts['group']) ? '' : ' GROUP BY '.implode(',', array_unique($sqlParts['group']));
 		$sqlOrder = empty($sqlParts['order']) ? '' : ' ORDER BY '.implode(',', array_unique($sqlParts['order']));
@@ -455,11 +458,12 @@ class CApiService {
 		$pkFieldId = $this->fieldId($this->pk($tableName), $tableAlias);
 
 		// count
-		if (isset($options['countOutput']) && !$this->requiresPostSqlFiltering($options)) {
+		if (array_key_exists('countOutput', $options) && $options['countOutput']
+				&& !$this->requiresPostSqlFiltering($options)) {
 			$sqlParts['select'] = ['COUNT(DISTINCT '.$pkFieldId.') AS rowscount'];
 
 			// select columns used by group count
-			if (isset($options['groupCount'])) {
+			if (array_key_exists('groupCount', $options) && $options['groupCount']) {
 				foreach ($sqlParts['group'] as $fields) {
 					$sqlParts['select'][] = $fields;
 				}
@@ -711,7 +715,7 @@ class CApiService {
 
 	/**
 	 * For each object in $objects the method copies fields listed in $fields that are not present in the target
-	 * object from from the source object.
+	 * object from the source object.
 	 *
 	 * Matching objects in both arrays must have the same keys.
 	 *
@@ -748,7 +752,7 @@ class CApiService {
 		$fields = array_flip($fields);
 
 		foreach ($objects as &$object) {
-			if (array_key_exists($object[$field_name], $source)) {
+			if (array_key_exists($field_name, $object) && array_key_exists($object[$field_name], $source)) {
 				$object += array_intersect_key($source[$object[$field_name]], $fields);
 			}
 		}
@@ -1076,5 +1080,37 @@ class CApiService {
 		// must be implemented in each API separately
 
 		return $elements;
+	}
+
+	/**
+	 * Add simple audit record.
+	 *
+	 * @param int    $action        AUDIT_ACTION_*
+	 * @param int    $resourcetype  AUDIT_RESOURCE_*
+	 * @param string $details
+	 * @param string $userid
+	 * @param string $ip
+	 */
+	protected function addAuditDetails($action, $resourcetype, $details = '', $userid = null, $ip = null) {
+		if ($userid === null) {
+			$userid = self::$userData['userid'];
+			$ip = self::$userData['userip'];
+		}
+
+		CAudit::addDetails($userid, $ip, $action, $resourcetype, $details);
+	}
+
+	/**
+	 * Add audit records.
+	 *
+	 * @param int    $action        AUDIT_ACTION_*
+	 * @param int    $resourcetype  AUDIT_RESOURCE_*
+	 * @param array  $objects
+	 * @param array  $objects_old
+	 */
+	protected function addAuditBulk($action, $resourcetype, array $objects, array $objects_old = null) {
+		CAudit::addBulk(self::$userData['userid'], self::$userData['userip'], $action, $resourcetype, $objects,
+			$objects_old
+		);
 	}
 }
