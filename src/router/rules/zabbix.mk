@@ -31,5 +31,7 @@ zabbix-configure:
 	&& autoheader && autoconf \
 	&& ./configure ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --host=$(ARCH) CC=$(ARCH)-linux-uclibc-gcc \
 	--disable-server --disable-proxy --disable-java --enable-agent --without-iconv \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -DOLD_LIBC_MODE -ffunction-sections -fdata-sections -Wl,--gc-section"
+	--with-libpcre-include="$(TOP)/pcre" \
+	--with-libpcre="$(TOP)/pcre" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) -DOLD_LIBC_MODE -L$(TOP)/pcre/.libs  -ffunction-sections -fdata-sections -Wl,--gc-section"
 	cd zabbix && touch *
