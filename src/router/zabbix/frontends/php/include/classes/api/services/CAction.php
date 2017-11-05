@@ -38,7 +38,7 @@ class CAction extends CApiService {
 	 * @param array $options['actionids']
 	 * @param array $options['applicationids']
 	 * @param array $options['status']
-	 * @param array $options['editable']
+	 * @param bool  $options['editable']
 	 * @param array $options['extendoutput']
 	 * @param array $options['count']
 	 * @param array $options['pattern']
@@ -49,8 +49,6 @@ class CAction extends CApiService {
 	 */
 	public function get($options = []) {
 		$result = [];
-		$userType = self::$userData['type'];
-		$userId = self::$userData['userid'];
 
 		$sqlParts = [
 			'select'	=> ['actions' => 'a.actionid'],
@@ -61,30 +59,31 @@ class CAction extends CApiService {
 		];
 
 		$defOptions = [
-			'groupids'					=> null,
-			'hostids'					=> null,
-			'actionids'					=> null,
-			'triggerids'				=> null,
-			'mediatypeids'				=> null,
-			'usrgrpids'					=> null,
-			'userids'					=> null,
-			'scriptids'					=> null,
-			'nopermissions'				=> null,
-			'editable'					=> null,
+			'groupids'						=> null,
+			'hostids'						=> null,
+			'actionids'						=> null,
+			'triggerids'					=> null,
+			'mediatypeids'					=> null,
+			'usrgrpids'						=> null,
+			'userids'						=> null,
+			'scriptids'						=> null,
+			'nopermissions'					=> null,
+			'editable'						=> false,
 			// filter
 			'filter'					=> null,
 			'search'					=> null,
 			'searchByAny'				=> null,
-			'startSearch'				=> null,
-			'excludeSearch'				=> null,
+			'startSearch'				=> false,
+			'excludeSearch'				=> false,
 			'searchWildcardsEnabled'	=> null,
 			// output
 			'output'					=> API_OUTPUT_EXTEND,
 			'selectFilter'				=> null,
 			'selectOperations'			=> null,
 			'selectRecoveryOperations'	=> null,
-			'countOutput'				=> null,
-			'preservekeys'				=> null,
+			'selectAcknowledgeOperations'	=> null,
+			'countOutput'				=> false,
+			'preservekeys'				=> false,
 			'sortfield'					=> '',
 			'sortorder'					=> '',
 			'limit'						=> null
@@ -92,11 +91,10 @@ class CAction extends CApiService {
 		$options = zbx_array_merge($defOptions, $options);
 
 		// editable + PERMISSION CHECK
-		if ($userType != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
+		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
 			// conditions are checked here by sql, operations after, by api queries
 			$permission = $options['editable'] ? PERM_READ_WRITE : PERM_READ;
-
-			$userGroups = getUserGroupsByUserId($userId);
+			$userGroups = getUserGroupsByUserId(self::$userData['userid']);
 
 			// condition hostgroup
 			$sqlParts['where'][] = 'NOT EXISTS ('.
@@ -234,6 +232,10 @@ class CAction extends CApiService {
 
 		// filter
 		if (is_array($options['filter'])) {
+			if (array_key_exists('esc_period', $options['filter']) && $options['filter']['esc_period'] !== null) {
+				$options['filter']['esc_period'] = getTimeUnitFilters($options['filter']['esc_period']);
+			}
+
 			$this->dbFilter('actions a', $options, $sqlParts);
 		}
 
@@ -263,7 +265,7 @@ class CAction extends CApiService {
 			}
 		}
 
-		if ($userType != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
+		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
 			// check hosts, templates
 			$hosts = [];
 			$hostIds = [];
@@ -456,7 +458,7 @@ class CAction extends CApiService {
 			}
 		}
 
-		if (!is_null($options['countOutput'])) {
+		if ($options['countOutput']) {
 			return $result;
 		}
 
@@ -489,7 +491,7 @@ class CAction extends CApiService {
 		}
 
 		// removing keys (hash -> array)
-		if (is_null($options['preservekeys'])) {
+		if (!$options['preservekeys']) {
 			$result = zbx_cleanHashes($result);
 		}
 
@@ -521,6 +523,74 @@ class CAction extends CApiService {
 		foreach ($actions as &$action) {
 			if (isset($action['filter'])) {
 				$action['evaltype'] = $action['filter']['evaltype'];
+			}
+			$action += [
+				'r_shortdata' => ACTION_DEFAULT_SUBJ_RECOVERY,
+				'r_longdata' => ACTION_DEFAULT_MSG_RECOVERY,
+				'ack_shortdata' => ACTION_DEFAULT_SUBJ_ACKNOWLEDGE,
+				'ack_longdata' => ACTION_DEFAULT_MSG_ACKNOWLEDGE
+			];
+
+			// Set default values for recovery operations and their messages.
+			if (array_key_exists('recovery_operations', $action)) {
+				foreach ($action['recovery_operations'] as &$operation) {
+					if (array_key_exists('operationid', $operation)) {
+						self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value "%1$s" for "%2$s" field.',
+							$operation['operationid'], 'operationid'
+						));
+					}
+
+					if ($operation['operationtype'] == OPERATION_TYPE_MESSAGE
+							|| $operation['operationtype'] == OPERATION_TYPE_RECOVERY_MESSAGE) {
+						$message = (array_key_exists('opmessage', $operation) && is_array($operation['opmessage']))
+							? $operation['opmessage']
+							: [];
+
+						if (array_key_exists('default_msg', $message) && $message['default_msg'] == 1) {
+							$message['subject'] = $action['r_shortdata'];
+							$message['message'] = $action['r_longdata'];
+						}
+
+						$operation['opmessage'] = $message + [
+							'default_msg' => 0,
+							'mediatypeid' => 0,
+							'subject' => ACTION_DEFAULT_SUBJ_RECOVERY,
+							'message' => ACTION_DEFAULT_MSG_RECOVERY
+						];
+					}
+				}
+				unset($operation);
+			}
+
+			// Set default values for acknowledge operations and their messages.
+			if (array_key_exists('acknowledge_operations', $action)) {
+				foreach ($action['acknowledge_operations'] as &$operation) {
+					if (array_key_exists('operationid', $operation)) {
+						self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value "%1$s" for "%2$s" field.',
+							$operation['operationid'], 'operationid'
+						));
+					}
+
+					if ($operation['operationtype'] == OPERATION_TYPE_MESSAGE
+							|| $operation['operationtype'] == OPERATION_TYPE_ACK_MESSAGE) {
+						$message = (array_key_exists('opmessage', $operation) && is_array($operation['opmessage']))
+							? $operation['opmessage']
+							: [];
+
+						if (array_key_exists('default_msg', $message) && $message['default_msg'] == 1) {
+							$message['subject'] = $action['ack_shortdata'];
+							$message['message'] = $action['ack_longdata'];
+						}
+
+						$operation['opmessage'] = $message + [
+							'default_msg'	=> 0,
+							'mediatypeid'	=> 0,
+							'subject'		=> ACTION_DEFAULT_SUBJ_ACKNOWLEDGE,
+							'message'		=> ACTION_DEFAULT_MSG_ACKNOWLEDGE
+						];
+					}
+				}
+				unset($operation);
 			}
 		}
 		unset($action);
@@ -562,6 +632,15 @@ class CAction extends CApiService {
 					}
 
 					$operations_to_create[] = $recovery_operation;
+				}
+			}
+
+			if (array_key_exists('acknowledge_operations', $action) && $action['acknowledge_operations']) {
+				foreach ($action['acknowledge_operations'] as $ack_operation) {
+					$ack_operation['actionid'] = $actionid;
+					$ack_operation['recovery'] = ACTION_ACKNOWLEDGE_OPERATION;
+					unset($ack_operation['esc_period'], $ack_operation['esc_step_from'], $ack_operation['esc_step_to']);
+					$operations_to_create[] = $ack_operation;
 				}
 			}
 		}
@@ -617,6 +696,9 @@ class CAction extends CApiService {
 			'selectFilter' => ['formula', 'conditions'],
 			'selectOperations' => API_OUTPUT_EXTEND,
 			'selectRecoveryOperations' => API_OUTPUT_EXTEND,
+			'selectAcknowledgeOperations' => ['operationid', 'actionid', 'operationtype', 'opmessage', 'opmessage_grp',
+				'opmessage_usr', 'opcommand', 'opcommand_hst', 'opcommand_grp'
+			],
 			'actionids' => $actionIds,
 			'editable' => true,
 			'preservekeys' => true
@@ -640,6 +722,7 @@ class CAction extends CApiService {
 				$actionUpdateValues['filter'],
 				$actionUpdateValues['operations'],
 				$actionUpdateValues['recovery_operations'],
+				$actionUpdateValues['acknowledge_operations'],
 				$actionUpdateValues['conditions'],
 				$actionUpdateValues['formula'],
 				$actionUpdateValues['evaltype']
@@ -673,6 +756,11 @@ class CAction extends CApiService {
 							$operations_to_update[] = $operation;
 							unset($db_operations[$operationid]);
 						}
+						else {
+							self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value "%1$s" for "%2$s" field.',
+								$operationid, 'operationid'
+							));
+						}
 					}
 				}
 				$operationids_to_delete = array_merge($operationids_to_delete, array_keys($db_operations));
@@ -685,13 +773,13 @@ class CAction extends CApiService {
 					unset($recovery_operation['esc_period'], $recovery_operation['esc_step_from'],
 						$recovery_operation['esc_step_to']
 					);
+					$recovery_operation['actionid'] = $action['actionid'];
 
 					if (!array_key_exists('operationid', $recovery_operation)) {
 						if ($recovery_operation['operationtype'] == OPERATION_TYPE_RECOVERY_MESSAGE) {
 							unset($recovery_operation['opmessage']['mediatypeid']);
 						}
 
-						$recovery_operation['actionid'] = $action['actionid'];
 						$recovery_operation['recovery'] = ACTION_RECOVERY_OPERATION;
 						$operations_to_create[] = $recovery_operation;
 					}
@@ -711,9 +799,80 @@ class CAction extends CApiService {
 							$operations_to_update[] = $recovery_operation;
 							unset($db_recovery_operations[$recovery_operationid]);
 						}
+						else {
+							self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value "%1$s" for "%2$s" field.',
+								$recovery_operationid, 'operationid'
+							));
+						}
 					}
 				}
 				$operationids_to_delete = array_merge($operationids_to_delete, array_keys($db_recovery_operations));
+			}
+
+			if (array_key_exists('acknowledge_operations', $action)) {
+				$db_ack_operations = zbx_toHash($db_action['acknowledgeOperations'], 'operationid');
+
+				foreach ($action['acknowledge_operations'] as $ack_operation) {
+					$ack_operation['recovery'] = ACTION_ACKNOWLEDGE_OPERATION;
+					$opmessage = (array_key_exists('opmessage', $ack_operation) && is_array($ack_operation['opmessage']))
+						? $ack_operation['opmessage']
+						: [];
+					unset($ack_operation['esc_period'], $ack_operation['esc_step_from'], $ack_operation['esc_step_to']);
+					$ack_operation['actionid'] = $action['actionid'];
+
+					if (!array_key_exists('operationid', $ack_operation)) {
+						if ($ack_operation['operationtype'] == OPERATION_TYPE_MESSAGE
+								|| $ack_operation['operationtype'] == OPERATION_TYPE_ACK_MESSAGE) {
+							$opmessage += [
+								'default_msg'	=> 0,
+								'mediatypeid'	=> 0,
+								'subject'		=> ACTION_DEFAULT_SUBJ_ACKNOWLEDGE,
+								'message'		=> ACTION_DEFAULT_MSG_ACKNOWLEDGE
+							];
+
+							if ($opmessage['default_msg'] == 1) {
+								$opmessage['subject'] = array_key_exists('ack_shortdata', $action)
+									? $action['ack_shortdata']
+									: $db_action['ack_shortdata'];
+								$opmessage['message'] = array_key_exists('ack_longdata', $action)
+									? $action['ack_longdata']
+									: $db_action['ack_longdata'];
+							}
+
+							$ack_operation['opmessage'] = $opmessage;
+						}
+
+						$operations_to_create[] = $ack_operation;
+					}
+					elseif (array_key_exists($ack_operation['operationid'], $db_ack_operations)) {
+						if ($ack_operation['operationtype'] == OPERATION_TYPE_MESSAGE
+								|| $ack_operation['operationtype'] == OPERATION_TYPE_ACK_MESSAGE) {
+							$db_opmessage = $db_ack_operations[$ack_operation['operationid']]['opmessage'];
+							$default_msg = array_key_exists('default_msg', $opmessage)
+								? $opmessage['default_msg']
+								: $db_opmessage['default_msg'];
+
+							if ($default_msg == 1) {
+								$opmessage['subject'] = array_key_exists('ack_shortdata', $action)
+									? $action['ack_shortdata']
+									: $db_action['ack_shortdata'];
+								$opmessage['message'] = array_key_exists('ack_longdata', $action)
+									? $action['ack_longdata']
+									: $db_action['ack_longdata'];
+								$ack_operation['opmessage'] = $opmessage;
+							}
+						}
+
+						$operations_to_update[] = $ack_operation;
+						unset($db_ack_operations[$ack_operation['operationid']]);
+					}
+					else {
+						self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value "%1$s" for "%2$s" field.',
+							$ack_operation['operationid'], 'operationid'
+						));
+					}
+				}
+				$operationids_to_delete = array_merge($operationids_to_delete, array_keys($db_ack_operations));
 			}
 
 			if ($actionUpdateValues) {
@@ -838,8 +997,8 @@ class CAction extends CApiService {
 
 		$opMessagesToInsert = [];
 		$opCommandsToInsert = [];
-		$opMessageGrpsToInsert = [];
-		$opMessageUsrsToInsert = [];
+		$msggroups_to_insert = [];
+		$msgusers_to_insert = [];
 		$opCommandHstsToInsert = [];
 		$opCommandGroupInserts = [];
 		$opGroupsToInsert = [];
@@ -856,7 +1015,7 @@ class CAction extends CApiService {
 					}
 					if (isset($operation['opmessage_usr'])) {
 						foreach ($operation['opmessage_usr'] as $user) {
-							$opMessageUsrsToInsert[] = [
+							$msgusers_to_insert[] = [
 								'operationid' => $operationId,
 								'userid' => $user['userid']
 							];
@@ -864,7 +1023,7 @@ class CAction extends CApiService {
 					}
 					if (isset($operation['opmessage_grp'])) {
 						foreach ($operation['opmessage_grp'] as $userGroup) {
-							$opMessageGrpsToInsert[] = [
+							$msggroups_to_insert[] = [
 								'operationid' => $operationId,
 								'usrgrpid' => $userGroup['usrgrpid']
 							];
@@ -922,6 +1081,8 @@ class CAction extends CApiService {
 					];
 					break;
 
+				case OPERATION_TYPE_ACK_MESSAGE:
+					// falls through
 				case OPERATION_TYPE_RECOVERY_MESSAGE:
 					if (array_key_exists('opmessage', $operation) && $operation['opmessage']) {
 						$operation['opmessage']['operationid'] = $operationId;
@@ -936,11 +1097,12 @@ class CAction extends CApiService {
 				}
 			}
 		}
+
+		DB::insert('opmessage_grp', $msggroups_to_insert);
+		DB::insert('opmessage_usr', $msgusers_to_insert);
 		DB::insert('opconditions', $opConditionsToInsert);
 		DB::insert('opmessage', $opMessagesToInsert, false);
 		DB::insert('opcommand', $opCommandsToInsert, false);
-		DB::insert('opmessage_grp', $opMessageGrpsToInsert);
-		DB::insert('opmessage_usr', $opMessageUsrsToInsert);
 		DB::insert('opcommand_hst', $opCommandHstsToInsert);
 		DB::insert('opcommand_grp', $opCommandGroupInserts);
 		DB::insert('opgroup', $opGroupsToInsert);
@@ -993,19 +1155,23 @@ class CAction extends CApiService {
 		$opInventoryToUpdate = [];
 		$opInventoryToDeleteByOpId = [];
 
+		$operation_actions_hashkey = [
+			ACTION_OPERATION				=> 'operations',
+			ACTION_RECOVERY_OPERATION		=> 'recoveryOperations',
+			ACTION_ACKNOWLEDGE_OPERATION	=> 'acknowledgeOperations'
+		];
+
 		foreach ($operations as $operation) {
-			if ($operation['recovery'] == ACTION_OPERATION) {
-				$operationsDb = zbx_toHash($db_actions[$operation['actionid']]['operations'], 'operationid');
-			}
-			else {
-				$operationsDb = zbx_toHash($db_actions[$operation['actionid']]['recoveryOperations'], 'operationid');
-			}
+			$actions_key = $operation_actions_hashkey[$operation['recovery']];
+
+			$operationsDb = zbx_toHash($db_actions[$operation['actionid']][$actions_key], 'operationid');
 
 			$operationDb = $operationsDb[$operation['operationid']];
 
-			$typeChanged = false;
+			$type_changed = false;
+
 			if (isset($operation['operationtype']) && ($operation['operationtype'] != $operationDb['operationtype'])) {
-				$typeChanged = true;
+				$type_changed = true;
 
 				switch ($operationDb['operationtype']) {
 					case OPERATION_TYPE_MESSAGE:
@@ -1046,6 +1212,8 @@ class CAction extends CApiService {
 						$opInventoryToDeleteByOpId[] = $operationDb['operationid'];
 						break;
 
+					case OPERATION_TYPE_ACK_MESSAGE:
+						// falls through
 					case OPERATION_TYPE_RECOVERY_MESSAGE:
 						$opMessagesToDeleteByOpId[] = $operationDb['operationid'];
 						break;
@@ -1079,7 +1247,7 @@ class CAction extends CApiService {
 						$operationDb['opmessage_grp'] = [];
 					}
 
-					if ($typeChanged) {
+					if ($type_changed) {
 						$operation['opmessage']['operationid'] = $operation['operationid'];
 						$opMessagesToInsert[] = $operation['opmessage'];
 
@@ -1087,10 +1255,12 @@ class CAction extends CApiService {
 						$opMessageUsrsToInsert = array_merge($opMessageUsrsToInsert, $operation['opmessage_usr']);
 					}
 					else {
-						$opMessagesToUpdate[] = [
-							'values' => $operation['opmessage'],
-							'where' => ['operationid'=>$operation['operationid']]
-						];
+						if (array_key_exists('opmessage', $operation)) {
+							$opMessagesToUpdate[] = [
+								'values' => $operation['opmessage'],
+								'where' => ['operationid' => $operation['operationid']]
+							];
+						}
 
 						$diff = zbx_array_diff($operation['opmessage_grp'], $operationDb['opmessage_grp'], 'usrgrpid');
 						$opMessageGrpsToInsert = array_merge($opMessageGrpsToInsert, $diff['first']);
@@ -1135,7 +1305,7 @@ class CAction extends CApiService {
 						$operationDb['opcommand_hst'] = [];
 					}
 
-					if ($typeChanged) {
+					if ($type_changed) {
 						$operation['opcommand']['operationid'] = $operation['operationid'];
 						$opCommandsToInsert[] = $operation['opcommand'];
 
@@ -1241,7 +1411,7 @@ class CAction extends CApiService {
 					break;
 
 				case OPERATION_TYPE_HOST_INVENTORY:
-					if ($typeChanged) {
+					if ($type_changed) {
 						$operation['opinventory']['operationid'] = $operation['operationid'];
 						$opInventoryToInsert[] = $operation['opinventory'];
 					}
@@ -1253,15 +1423,17 @@ class CAction extends CApiService {
 					}
 					break;
 
+				case OPERATION_TYPE_ACK_MESSAGE:
+					// falls throught
 				case OPERATION_TYPE_RECOVERY_MESSAGE:
-					if ($typeChanged) {
+					if ($type_changed) {
 						$operation['opmessage']['operationid'] = $operation['operationid'];
 						$opMessagesToInsert[] = $operation['opmessage'];
 					}
-					else {
+					elseif (array_key_exists('opmessage', $operation)) {
 						$opMessagesToUpdate[] = [
 							'values' => $operation['opmessage'],
-							'where' => ['operationid'=>$operation['operationid']]
+							'where' => ['operationid' => $operation['operationid']]
 						];
 					}
 					break;
@@ -1276,7 +1448,8 @@ class CAction extends CApiService {
 
 			self::validateOperationConditions($operation['opconditions']);
 
-			$diff = zbx_array_diff($operation['opconditions'], $operationDb['opconditions'], 'opconditionid');
+			$db_opconditions = array_key_exists('opconditions', $operationDb) ? $operationDb['opconditions'] : [];
+			$diff = zbx_array_diff($operation['opconditions'], $db_opconditions, 'opconditionid');
 			$opConditionsToInsert = array_merge($opConditionsToInsert, $diff['first']);
 
 			$opConditionsIdsToDelete = zbx_objectValues($diff['second'], 'opconditionid');
@@ -1381,9 +1554,9 @@ class CAction extends CApiService {
 	}
 
 	/**
-	 * Validate operation and recovery operation.
+	 * Validate operation, recovery operation, acknowledge operations.
 	 *
-	 * @param array $operations Operation data array.
+	 * @param array $operations		Operation data array.
 	 *
 	 * @return bool
 	 */
@@ -1392,8 +1565,10 @@ class CAction extends CApiService {
 
 		$all_groupids = [];
 		$all_hostids = [];
+		$all_templateids = [];
 		$all_userids = [];
 		$all_usrgrpids = [];
+		$all_mediatypeids = [];
 
 		$valid_operationtypes = [
 			ACTION_OPERATION => [
@@ -1416,11 +1591,29 @@ class CAction extends CApiService {
 					OPERATION_TYPE_RECOVERY_MESSAGE
 				],
 				EVENT_SOURCE_INTERNAL => [OPERATION_TYPE_MESSAGE, OPERATION_TYPE_RECOVERY_MESSAGE]
+			],
+			ACTION_ACKNOWLEDGE_OPERATION => [
+				EVENT_SOURCE_TRIGGERS => [OPERATION_TYPE_MESSAGE, OPERATION_TYPE_COMMAND, OPERATION_TYPE_ACK_MESSAGE]
 			]
 		];
 
+		$required_fields = ['eventsource', 'recovery', 'operationtype'];
+
+		$default_msg_validator = new CLimitedSetValidator([
+			'values' => [0, 1]
+		]);
+
 		foreach ($operations as $operation) {
-			if ($operation['recovery'] == ACTION_OPERATION) {
+			foreach ($required_fields as $field) {
+				if (!array_key_exists($field, $operation)) {
+					self::exception(ZBX_API_ERROR_PARAMETERS, _s('Field "%1$s" is mandatory.', $field));
+				}
+			}
+			$eventsource = $operation['eventsource'];
+			$recovery = $operation['recovery'];
+			$operationtype = $operation['operationtype'];
+
+			if ($recovery == ACTION_OPERATION) {
 				if ((array_key_exists('esc_step_from', $operation) || array_key_exists('esc_step_to', $operation))
 						&& (!array_key_exists('esc_step_from', $operation)
 							|| !array_key_exists('esc_step_to', $operation))) {
@@ -1441,15 +1634,14 @@ class CAction extends CApiService {
 					}
 				}
 
-				if (array_key_exists('esc_period', $operation) && $operation['esc_period'] != 0
-						&& $operation['esc_period'] < SEC_PER_MIN) {
-					self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect action operation step duration.'));
+				if (array_key_exists('esc_period', $operation)
+						&& !validateTimeUnit($operation['esc_period'], SEC_PER_MIN, SEC_PER_WEEK, true, $error,
+							['usermacros' => true])) {
+					self::exception(ZBX_API_ERROR_PARAMETERS,
+						_s('Incorrect value for field "%1$s": %2$s.', 'esc_period', $error)
+					);
 				}
 			}
-
-			$eventsource = $operation['eventsource'];
-			$recovery = $operation['recovery'];
-			$operationtype = $operation['operationtype'];
 
 			if (!array_key_exists($eventsource, $valid_operationtypes[$recovery])
 					|| !in_array($operationtype, $valid_operationtypes[$recovery][$eventsource])) {
@@ -1474,6 +1666,21 @@ class CAction extends CApiService {
 
 					$all_userids = array_merge($all_userids, $userids);
 					$all_usrgrpids = array_merge($all_usrgrpids, $usrgrpids);
+					// falls through
+				case OPERATION_TYPE_ACK_MESSAGE:
+					$message = array_key_exists('opmessage', $operation) ? $operation['opmessage'] : [];
+
+					if (array_key_exists('mediatypeid', $message) && $message['mediatypeid']) {
+						$all_mediatypeids[$message['mediatypeid']] = true;
+					}
+
+					if (array_key_exists('default_msg', $message)
+							&& (!$default_msg_validator->validate($message['default_msg']))) {
+						self::exception(ZBX_API_ERROR_PARAMETERS,
+							_s('Incorrect value "%1$s" for "%2$s" field: must be between %3$s and %4$s.',
+							$message['default_msg'], 'default_msg', 0, 1
+						));
+					}
 					break;
 				case OPERATION_TYPE_COMMAND:
 					if (!isset($operation['opcommand']['type'])) {
@@ -1508,8 +1715,9 @@ class CAction extends CApiService {
 								);
 							}
 
-							if (!isset($operation['opcommand']['username'])
-									|| zbx_empty($operation['opcommand']['username'])) {
+							if (!array_key_exists('username', $operation['opcommand'])
+									|| !is_string($operation['opcommand']['username'])
+									|| $operation['opcommand']['username'] == '') {
 								self::exception(ZBX_API_ERROR_PARAMETERS,
 									_s('No authentication user name specified for action operation command "%s".',
 										$operation['opcommand']['command']
@@ -1535,10 +1743,16 @@ class CAction extends CApiService {
 									);
 								}
 							}
+							elseif ($operation['opcommand']['authtype'] != ITEM_AUTHTYPE_PASSWORD) {
+								self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value "%1$s" for "%2$s" field.',
+									$operation['opcommand']['authtype'], 'authtype'
+								));
+							}
 							break;
 						case ZBX_SCRIPT_TYPE_TELNET:
-							if (!isset($operation['opcommand']['username'])
-									|| zbx_empty($operation['opcommand']['username'])) {
+							if (!array_key_exists('username', $operation['opcommand'])
+									|| !is_string($operation['opcommand']['username'])
+									|| $operation['opcommand']['username'] == '') {
 								self::exception(ZBX_API_ERROR_PARAMETERS,
 									_s('No authentication user name specified for action operation command "%s".',
 										$operation['opcommand']['command']
@@ -1596,6 +1810,12 @@ class CAction extends CApiService {
 					$withoutCurrent = true;
 					if (array_key_exists('opcommand_hst', $operation)) {
 						foreach ($operation['opcommand_hst'] as $hstCommand) {
+							if (!is_array($hstCommand) || !array_key_exists('hostid', $hstCommand)) {
+								self::exception(ZBX_API_ERROR_PARAMETERS,
+									_s('Incorrect value for field "%1$s": %2$s.', 'hostid', _('cannot be empty'))
+								);
+							}
+
 							if ($hstCommand['hostid'] == 0) {
 								$withoutCurrent = false;
 							}
@@ -1645,7 +1865,7 @@ class CAction extends CApiService {
 						self::exception(ZBX_API_ERROR_PARAMETERS, _('Operation has no template to operate.'));
 					}
 
-					$all_hostids = array_merge($all_hostids, $templateids);
+					$all_templateids = array_merge($all_templateids, $templateids);
 					break;
 				case OPERATION_TYPE_HOST_ADD:
 				case OPERATION_TYPE_HOST_REMOVE:
@@ -1668,26 +1888,24 @@ class CAction extends CApiService {
 			}
 		}
 
-		if ($all_groupids && !API::HostGroup()->isWritable($all_groupids)) {
-			self::exception(ZBX_API_ERROR_PARAMETERS, _(
-				'Incorrect action operation host group. Host group does not exist or you have no access to this host group.'
-			));
-		}
-		if ($all_hostids && !API::Host()->isWritable($all_hostids)) {
-			self::exception(ZBX_API_ERROR_PARAMETERS, _(
-				'Incorrect action operation host. Host does not exist or you have no access to this host.'
-			));
-		}
-		if ($all_userids && !API::User()->isReadable($all_userids)) {
-			self::exception(ZBX_API_ERROR_PARAMETERS, _(
-				'Incorrect action operation user. User does not exist or you have no access to this user.'
-			));
-		}
-		if ($all_usrgrpids && !API::UserGroup()->isReadable($all_usrgrpids)) {
-			self::exception(ZBX_API_ERROR_PARAMETERS, _(
-				'Incorrect action operation user group. User group does not exist or you have no access to this user group.'
-			));
-		}
+		$this->checkMediatypesExists($all_mediatypeids, _s('Incorrect value for field "%1$s": %2$s.', 'mediatypeid',
+			_('No permissions to referred object or it does not exist!')
+		));
+		$this->checkHostGroupsPermissions($all_groupids, _(
+			'Incorrect action operation host group. Host group does not exist or you have no access to this host group.'
+		));
+		$this->checkHostsPermissions($all_hostids,
+			_('Incorrect action operation host. Host does not exist or you have no access to this host.')
+		);
+		$this->checkTemplatesPermissions($all_templateids,
+			_('Incorrect action operation template. Template does not exist or you have no access to this template.')
+		);
+		$this->checkUsersPermissions($all_userids,
+			_('Incorrect action operation user. User does not exist or you have no access to this user.')
+		);
+		$this->checkUserGroupsPermissions($all_usrgrpids, _(
+			'Incorrect action operation user group. User group does not exist or you have no access to this user group.'
+		));
 
 		return true;
 	}
@@ -1801,6 +2019,30 @@ class CAction extends CApiService {
 				$action['filter'] = $filters[$action['actionid']];
 			}
 			unset($action);
+		}
+
+		// Acknowledge operations data.
+		if ($options['selectAcknowledgeOperations'] !== null
+				&& $options['selectAcknowledgeOperations'] != API_OUTPUT_COUNT) {
+			$ack_operations = API::getApiService()->select('operations', [
+				'output' => $this->outputExtend($options['selectAcknowledgeOperations'],
+					['operationid', 'actionid', 'operationtype']
+				),
+				'filter' => ['actionid' => $actionIds, 'recovery' => ACTION_ACKNOWLEDGE_OPERATION],
+				'preservekeys' => true
+			]);
+
+			foreach ($result as &$action) {
+				$action['acknowledgeOperations'] = [];
+			}
+
+			$ack_operations = $this->getAcknowledgeOperations($ack_operations, $options['selectAcknowledgeOperations']);
+
+			foreach ($ack_operations as $ack_operation) {
+				$actionid = $ack_operation['actionid'];
+				unset($ack_operation['actionid']);
+				$result[$actionid]['acknowledgeOperations'][] = $ack_operation;
+			}
 		}
 
 		// adding operations
@@ -2189,6 +2431,151 @@ class CAction extends CApiService {
 	}
 
 	/**
+	 * Returns array of acknowledge operations according to requested options.
+	 *
+	 * @param array $ack_operations		Array of acknowledge operation with key set to operationid.
+	 * @param array $ack_options		Array of acknowledge operation options from request.
+	 *
+	 * @return array
+	 */
+	protected function getAcknowledgeOperations($ack_operations, $ack_options) {
+		$opmessages = [];
+		$nonack_messages = [];
+		$opcommands = [];
+
+		foreach ($ack_operations as $ack_operationid => &$ack_operation) {
+			unset($ack_operation['esc_period'], $ack_operation['esc_step_from'], $ack_operation['esc_step_to']);
+
+			switch ($ack_operation['operationtype']) {
+				case OPERATION_TYPE_ACK_MESSAGE:
+					$opmessages[] = $ack_operationid;
+					break;
+				case OPERATION_TYPE_MESSAGE:
+					$opmessages[] = $ack_operationid;
+					$nonack_messages[] = $ack_operationid;
+					break;
+				case OPERATION_TYPE_COMMAND:
+					$opcommands[] = $ack_operationid;
+					break;
+			}
+		}
+		unset($ack_operation);
+
+		if ($opmessages) {
+			if ($this->outputIsRequested('opmessage', $ack_options)) {
+				foreach ($opmessages as $operationid) {
+					$ack_operations[$operationid]['opmessage'] = [];
+				}
+
+				$messages = DB::select('opmessage', [
+					'output' => ['operationid', 'default_msg', 'subject', 'message', 'mediatypeid'],
+					'filter' => ['operationid' => $opmessages]
+				]);
+
+				foreach ($messages as $message) {
+					$operationid = $message['operationid'];
+					unset($message['operationid']);
+					$ack_operations[$operationid]['opmessage'] = $message;
+				}
+			}
+
+			if ($this->outputIsRequested('opmessage_grp', $ack_options) && $nonack_messages) {
+				foreach ($nonack_messages as $operationid) {
+					$ack_operations[$operationid]['opmessage_grp'] = [];
+				}
+
+				$messages_groups = DB::select('opmessage_grp', [
+					'output' => ['operationid', 'usrgrpid'],
+					'filter' => ['operationid' => $nonack_messages]
+				]);
+
+				foreach ($messages_groups as $messages_group) {
+					$operationid = $messages_group['operationid'];
+					unset($messages_group['operationid']);
+					$ack_operations[$operationid]['opmessage_grp'][] = $messages_group;
+				}
+			}
+
+			if ($this->outputIsRequested('opmessage_usr', $ack_options) && $nonack_messages) {
+				foreach ($nonack_messages as $operationid) {
+					$ack_operations[$operationid]['opmessage_usr'] = [];
+				}
+
+				$messages_users = DB::select('opmessage_usr', [
+					'output' => ['operationid', 'userid'],
+					'filter' => ['operationid' => $nonack_messages]
+				]);
+
+				foreach ($messages_users as $messages_user) {
+					$operationid = $messages_user['operationid'];
+					unset($messages_user['operationid']);
+					$ack_operations[$operationid]['opmessage_usr'][] = $messages_user;
+				}
+			}
+		}
+
+		if ($opcommands) {
+			if ($this->outputIsRequested('opcommand', $ack_options)) {
+				foreach ($opcommands as $operationid) {
+					$ack_operations[$operationid]['opcommand'] = [];
+				}
+
+				$commands = DB::select('opcommand', [
+					'output' => ['operationid', 'type', 'scriptid', 'execute_on', 'port', 'authtype', 'username',
+						'password', 'publickey', 'privatekey', 'command'
+					],
+					'filter' => ['operationid' => $opcommands]
+				]);
+
+				foreach ($commands as $command) {
+					$operationid = $command['operationid'];
+					unset($command['operationid']);
+					$ack_operations[$operationid]['opcommand'] = $command;
+				}
+			}
+
+			if ($this->outputIsRequested('opcommand_hst', $ack_options)) {
+				foreach ($opcommands as $operationid) {
+					$ack_operations[$operationid]['opcommand_hst'] = [];
+				}
+
+				$commands_history = DB::select('opcommand_hst', [
+					'output' => ['opcommand_hstid', 'operationid', 'hostid'],
+					'filter' => ['operationid' => $opcommands]
+				]);
+
+				foreach ($commands_history as $command_history) {
+					$operationid = $command_history['operationid'];
+					unset($command_history['operationid']);
+					$ack_operations[$operationid]['opcommand_hst'][] = $command_history;
+				}
+			}
+
+			if ($this->outputIsRequested('opcommand_grp', $ack_options)) {
+				foreach ($opcommands as $operationid) {
+					$ack_operations[$operationid]['opcommand_grp'] = [];
+				}
+
+				$commands_groups = DB::select('opcommand_grp', [
+					'output' => ['opcommand_grpid', 'operationid', 'groupid'],
+					'filter' => ['operationid' => $opcommands]
+				]);
+
+				foreach ($commands_groups as $command_group) {
+					$operationid = $command_group['operationid'];
+					unset($command_group['operationid']);
+					$ack_operations[$operationid]['opcommand_grp'][] = $command_group;
+				}
+			}
+		}
+
+		$ack_operations = $this->unsetExtraFields($ack_operations, ['operationid', 'actionid' ,'operationtype'],
+			$ack_options
+		);
+		return $ack_operations;
+	}
+
+	/**
 	 * Returns the parameters for creating a discovery rule filter validator.
 	 *
 	 * @return array
@@ -2284,7 +2671,7 @@ class CAction extends CApiService {
 	protected function applyQueryOutputOptions($tableName, $tableAlias, array $options, array $sqlParts) {
 		$sqlParts = parent::applyQueryOutputOptions($tableName, $tableAlias, $options, $sqlParts);
 
-		if ($options['countOutput'] === null) {
+		if (!$options['countOutput']) {
 			// add filter fields
 			if ($this->outputIsRequested('formula', $options['selectFilter'])
 				|| $this->outputIsRequested('eval_formula', $options['selectFilter'])
@@ -2331,6 +2718,7 @@ class CAction extends CApiService {
 		];
 
 		$duplicates = [];
+
 		foreach ($actions as $action) {
 			if (!check_db_fields($actionDbFields, $action)) {
 				self::exception(
@@ -2338,19 +2726,16 @@ class CAction extends CApiService {
 					_s('Incorrect parameter for action "%1$s".', $action['name'])
 				);
 			}
-			if (isset($action['esc_period']) && $action['esc_period'] < SEC_PER_MIN
-					&& $action['eventsource'] == EVENT_SOURCE_TRIGGERS) {
 
-				self::exception(ZBX_API_ERROR_PARAMETERS, _s(
-					'Action "%1$s" has incorrect value for "esc_period" (minimum %2$s seconds).',
-					$action['name'], SEC_PER_MIN
-				));
-			}
 			if (isset($duplicates[$action['name']])) {
 				self::exception(ZBX_API_ERROR_PARAMETERS, _s('Action "%1$s" already exists.', $action['name']));
 			}
 			else {
 				$duplicates[$action['name']] = $action['name'];
+			}
+
+			if (array_key_exists('esc_period', $action) && $action['eventsource'] == EVENT_SOURCE_TRIGGERS) {
+				self::validateStepDuration($action['esc_period']);
 			}
 		}
 
@@ -2409,7 +2794,8 @@ class CAction extends CApiService {
 			}
 
 			if ((!array_key_exists('operations', $action) || !$action['operations'])
-					&& (!array_key_exists('recovery_operations', $action) || !$action['recovery_operations'])) {
+					&& (!array_key_exists('recovery_operations', $action) || !$action['recovery_operations'])
+					&& (!array_key_exists('acknowledge_operations', $action) || !$action['acknowledge_operations'])) {
 				self::exception(
 					ZBX_API_ERROR_PARAMETERS,
 					_s('Action "%1$s" no operations defined.', $action['name'])
@@ -2430,6 +2816,14 @@ class CAction extends CApiService {
 					$operations_to_validate[] = $recovery_operation;
 				}
 			}
+
+			if (array_key_exists('acknowledge_operations', $action) && $action['acknowledge_operations']) {
+				foreach ($action['acknowledge_operations'] as $operation) {
+					$operation['recovery'] = ACTION_ACKNOWLEDGE_OPERATION;
+					$operation['eventsource'] = $action['eventsource'];
+					$operations_to_validate[] = $operation;
+				}
+			}
 		}
 
 		// Validate conditions and operations in regard to whats in database now.
@@ -2438,6 +2832,21 @@ class CAction extends CApiService {
 		}
 		if ($operations_to_validate) {
 			$this->validateOperationsIntegrity($operations_to_validate);
+		}
+	}
+
+	/**
+	 * Validate default step duration and operation step duration values.
+	 *
+	 * @param string $esc_period  Step duration.
+	 *
+	 * @throws APIException if the input is invalid.
+	 */
+	private static function validateStepDuration($esc_period) {
+		if (!validateTimeUnit($esc_period, SEC_PER_MIN, SEC_PER_WEEK, false, $error, ['usermacros' => true])) {
+			self::exception(ZBX_API_ERROR_PARAMETERS,
+				_s('Incorrect value for field "%1$s": %2$s.', 'esc_period', $error)
+			);
 		}
 	}
 
@@ -2464,6 +2873,7 @@ class CAction extends CApiService {
 
 		// check fields
 		$duplicates = [];
+
 		foreach ($actions as $action) {
 			$actionName = isset($action['name']) ? $action['name'] : $db_actions[$action['actionid']]['name'];
 
@@ -2474,14 +2884,9 @@ class CAction extends CApiService {
 			}
 
 			// check if user changed esc_period for trigger eventsource
-			if (isset($action['esc_period'])
-					&& $action['esc_period'] < SEC_PER_MIN
+			if (array_key_exists('esc_period', $action)
 					&& $db_actions[$action['actionid']]['eventsource'] == EVENT_SOURCE_TRIGGERS) {
-
-				self::exception(ZBX_API_ERROR_PARAMETERS, _s(
-					'Action "%1$s" has incorrect value for "esc_period" (minimum %2$s seconds).',
-					$actionName, SEC_PER_MIN
-				));
+				self::validateStepDuration($action['esc_period']);
 			}
 
 			$this->checkNoParameters(
@@ -2573,10 +2978,17 @@ class CAction extends CApiService {
 				}
 			}
 
-			if (((array_key_exists('operations', $action) && !$action['operations'])
-					|| (!array_key_exists('operations', $action) && !$db_action['operations']))
-					&& ((array_key_exists('recovery_operations', $action) && !$action['recovery_operations'])
-						|| (!array_key_exists('recovery_operations', $action) && !$db_action['recoveryOperations']))) {
+			$operations_defined = array_key_exists('operations', $action)
+				? (bool) $action['operations']
+				: (bool) $db_action['operations'];
+			$rcv_operations_defined = array_key_exists('recovery_operations', $action)
+				? (bool) $action['recovery_operations']
+				: (bool) $db_action['recoveryOperations'];
+			$ack_operations_defined = array_key_exists('acknowledge_operations', $action)
+				? (bool) $action['acknowledge_operations']
+				: (bool) $db_action['acknowledgeOperations'];
+
+			if (!$operations_defined && !$rcv_operations_defined && !$ack_operations_defined) {
 				self::exception(ZBX_API_ERROR_PARAMETERS, _s('Action "%1$s" no operations defined.', $actionName));
 			}
 
@@ -2609,6 +3021,44 @@ class CAction extends CApiService {
 					}
 					else {
 						self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect action operationid.'));
+					}
+				}
+			}
+
+			if (array_key_exists('acknowledge_operations', $action) && $action['acknowledge_operations']) {
+				$db_ack_operations = zbx_toHash($db_actions[$action['actionid']]['acknowledgeOperations'],
+					'operationid'
+				);
+				foreach ($action['acknowledge_operations'] as $ack_operation) {
+					if (!array_key_exists('operationid', $ack_operation)
+							|| array_key_exists($ack_operation['operationid'], $db_ack_operations)) {
+						$ack_operation['recovery'] = ACTION_ACKNOWLEDGE_OPERATION;
+						$ack_operation['eventsource'] = $db_action['eventsource'];
+
+						if (array_key_exists('operationid', $ack_operation)
+								&& array_key_exists($ack_operation['operationid'], $db_ack_operations)) {
+							$db_ack_operation = $db_ack_operations[$ack_operation['operationid']];
+							$operation_type = array_key_exists('operationtype', $ack_operation)
+								? $ack_operation['operationtype']
+								: $db_ack_operation['operationtype'];
+
+							// Field 'operationtype' is required.
+							unset($db_ack_operation['operationtype']);
+
+							if ($operation_type == OPERATION_TYPE_MESSAGE) {
+								unset($db_ack_operation['opmessage_grp'], $db_ack_operation['opmessage_usr']);
+							}
+							elseif ($operation_type == OPERATION_TYPE_COMMAND) {
+								unset($db_ack_operation['opcommand_grp'], $db_ack_operation['opcommand_hst']);
+							}
+
+							$ack_operation += $db_ack_operation;
+						}
+
+						$operations_to_validate[] = $ack_operation;
+					}
+					else {
+						self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect acknowledgement action operationid.'));
 					}
 				}
 			}
@@ -2668,47 +3118,262 @@ class CAction extends CApiService {
 			}
 		}
 
-		if (!API::HostGroup()->isWritable($hostGroupIdsAll)) {
-			self::exception(
-				ZBX_API_ERROR_PARAMETERS,
-				_('Incorrect action condition host group. Host group does not exist or you have no access to it.')
-			);
+		$this->checkHostGroupsPermissions($hostGroupIdsAll,
+			_('Incorrect action condition host group. Host group does not exist or you have no access to it.')
+		);
+		$this->checkHostsPermissions($hostIdsAll,
+			_('Incorrect action condition host. Host does not exist or you have no access to it.')
+		);
+		$this->checkTemplatesPermissions($templateIdsAll,
+			_('Incorrect action condition template. Template does not exist or you have no access to it.')
+		);
+		$this->checkTriggersPermissions($triggerIdsAll,
+			_('Incorrect action condition trigger. Trigger does not exist or you have no access to it.')
+		);
+		$this->checkDRulesPermissions($discoveryRuleIdsAll,
+			_('Incorrect action condition discovery rule. Discovery rule does not exist or you have no access to it.')
+		);
+		$this->checkDChecksPermissions($discoveryCheckIdsAll,
+			_('Incorrect action condition discovery check. Discovery check does not exist or you have no access to it.')
+		);
+		$this->checkProxiesPermissions($proxyIdsAll,
+			_('Incorrect action condition proxy. Proxy does not exist or you have no access to it.')
+		);
+	}
+
+	/**
+	 * Checks if all given media types are valid.
+	 *
+	 * @param array  $mediatypeids  Array of media type ids where key is checked media type id.
+	 * @param string $error         Error message to throw if invalid media type id was supplied.
+	 *
+	 * @throws APIException if invalid media types given.
+	 */
+	private function checkMediatypesExists(array $mediatypeids, $error) {
+		if ($mediatypeids) {
+			$count = API::MediaType()->get([
+				'countOutput' => true,
+				'mediatypeids' => array_keys($mediatypeids),
+				'editable' => true
+			]);
+
+			if ($count != count($mediatypeids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS, $error);
+			}
 		}
-		if (!API::Host()->isWritable($hostIdsAll)) {
-			self::exception(
-				ZBX_API_ERROR_PARAMETERS,
-				_('Incorrect action condition host. Host does not exist or you have no access to it.')
-			);
+	}
+
+	/**
+	 * Checks if the current user has access to the given host groups.
+	 *
+	 * @throws APIException if the user doesn't have write permissions for the given host groups
+	 *
+	 * @param array $groupids
+	 * @param tring $error
+	 */
+	private function checkHostGroupsPermissions(array $groupids, $error) {
+		if ($groupids) {
+			$groupids = array_unique($groupids);
+
+			$count = API::HostGroup()->get([
+				'countOutput' => true,
+				'groupids' => $groupids,
+				'editable' => true
+			]);
+
+			if ($count != count($groupids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS, $error);
+			}
 		}
-		if (!API::Template()->isWritable($templateIdsAll)) {
-			self::exception(
-				ZBX_API_ERROR_PARAMETERS,
-				_('Incorrect action condition template. Template does not exist or you have no access to it.')
-			);
+	}
+
+	/**
+	 * Checks if the current user has access to the given hosts.
+	 *
+	 * @throws APIException if the user doesn't have write permissions for the given hosts
+	 *
+	 * @param array $hostids
+	 * @param tring $error
+	 */
+	private function checkHostsPermissions(array $hostids, $error) {
+		if ($hostids) {
+			$hostids = array_unique($hostids);
+
+			$count = API::Host()->get([
+				'countOutput' => true,
+				'hostids' => $hostids,
+				'editable' => true
+			]);
+
+			if ($count != count($hostids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS, $error);
+			}
 		}
-		if (!API::Trigger()->isWritable($triggerIdsAll)) {
-			self::exception(
-				ZBX_API_ERROR_PARAMETERS,
-				_('Incorrect action condition trigger. Trigger does not exist or you have no access to it.')
-			);
+	}
+
+	/**
+	 * Checks if the current user has access to the given users.
+	 *
+	 * @throws APIException if the user doesn't have write permissions for the given users
+	 *
+	 * @param array  $userids
+	 * @param string $error
+	 */
+	protected function checkUsersPermissions(array $userids, $error) {
+		if ($userids) {
+			$userids = array_unique($userids);
+
+			$count = API::User()->get([
+				'countOutput' => true,
+				'userids' => $userids
+			]);
+
+			if ($count != count($userids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS, $error);
+			}
 		}
-		if (!API::DRule()->isWritable($discoveryRuleIdsAll)) {
-			self::exception(
-				ZBX_API_ERROR_PARAMETERS,
-				_('Incorrect action condition discovery rule. Discovery rule does not exist or you have no access to it.')
-			);
+	}
+
+	/**
+	 * Checks if the current user has access to the given user groups.
+	 *
+	 * @throws APIException if the user doesn't have write permissions for the given user groups
+	 *
+	 * @param array  $usrgrpids
+	 * @param string $error
+	 */
+	protected function checkUserGroupsPermissions(array $usrgrpids, $error) {
+		if ($usrgrpids) {
+			$usrgrpids = array_unique($usrgrpids);
+
+			$count = API::UserGroup()->get([
+				'countOutput' => true,
+				'usrgrpids' => $usrgrpids
+			]);
+
+			if ($count != count($usrgrpids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS, $error);
+			}
 		}
-		if (!API::DCheck()->isWritable($discoveryCheckIdsAll)) {
-			self::exception(
-				ZBX_API_ERROR_PARAMETERS,
-				_('Incorrect action condition discovery check. Discovery check does not exist or you have no access to it.')
-			);
+	}
+
+	/**
+	 * Checks if the current user has access to the given templates.
+	 *
+	 * @throws APIException if the user doesn't have write permissions for the given templates
+	 *
+	 * @param array  $templateids
+	 * @param string $error
+	 */
+	protected function checkTemplatesPermissions(array $templateids, $error) {
+		if ($templateids) {
+			$templateids = array_unique($templateids);
+
+			$count = API::Template()->get([
+				'countOutput' => true,
+				'templateids' => $templateids,
+				'editable' => true
+			]);
+
+			if ($count != count($templateids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS, $error);
+			}
 		}
-		if (!API::Proxy()->isWritable($proxyIdsAll)) {
-			self::exception(
-				ZBX_API_ERROR_PARAMETERS,
-				_('Incorrect action condition proxy. Proxy does not exist or you have no access to it.')
-			);
+	}
+
+	/**
+	 * Checks if the current user has access to the given triggers.
+	 *
+	 * @throws APIException if the user doesn't have write permissions for the given triggers
+	 *
+	 * @param array  $triggerids
+	 * @param string $error
+	 */
+	protected function checkTriggersPermissions(array $triggerids, $error) {
+		if ($triggerids) {
+			$triggerids = array_unique($triggerids);
+
+			$count = API::Trigger()->get([
+				'countOutput' => true,
+				'triggerids' => $triggerids,
+				'editable' => true
+			]);
+
+			if ($count != count($triggerids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS, $error);
+			}
+		}
+	}
+
+	/**
+	 * Checks if the current user has access to the given discovery rules.
+	 *
+	 * @throws APIException if the user doesn't have write permissions for the given discovery rules
+	 *
+	 * @param array  $druleids
+	 * @param string $error
+	 */
+	protected function checkDRulesPermissions(array $druleids, $error) {
+		if ($druleids) {
+			$druleids = array_unique($druleids);
+
+			$count = API::DRule()->get([
+				'countOutput' => true,
+				'druleids' => $druleids,
+				'editable' => true
+			]);
+
+			if ($count != count($druleids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS, $error);
+			}
+		}
+	}
+
+	/**
+	 * Checks if the current user has access to the given discovery checks.
+	 *
+	 * @throws APIException if the user doesn't have write permissions for the given discovery checks
+	 *
+	 * @param array  $dcheckids
+	 * @param string $error
+	 */
+	protected function checkDChecksPermissions(array $dcheckids, $error) {
+		if ($dcheckids) {
+			$dcheckids = array_unique($dcheckids);
+
+			$count = API::DCheck()->get([
+				'countOutput' => true,
+				'dcheckids' => $dcheckids,
+				'editable' => true
+			]);
+
+			if ($count != count($dcheckids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS, $error);
+			}
+		}
+	}
+
+	/**
+	 * Checks if the current user has access to the given proxies.
+	 *
+	 * @throws APIException if the user doesn't have write permissions for the given proxies
+	 *
+	 * @param array  $proxyids
+	 * @param string $error
+	 */
+	protected function checkProxiesPermissions(array $proxyids, $error) {
+		if ($proxyids) {
+			$proxyids = array_unique($proxyids);
+
+			$count = API::Proxy()->get([
+				'countOutput' => true,
+				'proxyids' => $proxyids,
+				'editable' => true
+			]);
+
+			if ($count != count($proxyids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS, $error);
+			}
 		}
 	}
 }

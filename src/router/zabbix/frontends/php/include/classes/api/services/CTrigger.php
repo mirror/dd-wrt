@@ -38,7 +38,7 @@ class CTrigger extends CTriggerGeneral {
 	 * @param array $options['triggerids']
 	 * @param array $options['applicationids']
 	 * @param array $options['status']
-	 * @param array $options['editable']
+	 * @param bool  $options['editable']
 	 * @param array $options['count']
 	 * @param array $options['pattern']
 	 * @param array $options['limit']
@@ -48,8 +48,6 @@ class CTrigger extends CTriggerGeneral {
 	 */
 	public function get(array $options = []) {
 		$result = [];
-		$userType = self::$userData['type'];
-		$userid = self::$userData['userid'];
 
 		$sqlParts = [
 			'select'	=> ['triggers' => 't.triggerid'],
@@ -78,7 +76,7 @@ class CTrigger extends CTriggerGeneral {
 			'withLastEventUnacknowledged'	=> null,
 			'skipDependent'					=> null,
 			'nopermissions'					=> null,
-			'editable'						=> null,
+			'editable'						=> false,
 			// timing
 			'lastChangeSince'				=> null,
 			'lastChangeTill'				=> null,
@@ -90,8 +88,8 @@ class CTrigger extends CTriggerGeneral {
 			'filter'						=> null,
 			'search'						=> null,
 			'searchByAny'					=> null,
-			'startSearch'					=> null,
-			'excludeSearch'					=> null,
+			'startSearch'					=> false,
+			'excludeSearch'					=> false,
 			'searchWildcardsEnabled'		=> null,
 			// output
 			'expandDescription'				=> null,
@@ -106,9 +104,9 @@ class CTrigger extends CTriggerGeneral {
 			'selectDiscoveryRule'			=> null,
 			'selectLastEvent'				=> null,
 			'selectTags'					=> null,
-			'countOutput'					=> null,
-			'groupCount'					=> null,
-			'preservekeys'					=> null,
+			'countOutput'					=> false,
+			'groupCount'					=> false,
+			'preservekeys'					=> false,
 			'sortfield'						=> '',
 			'sortorder'						=> '',
 			'limit'							=> null,
@@ -117,10 +115,9 @@ class CTrigger extends CTriggerGeneral {
 		$options = zbx_array_merge($defOptions, $options);
 
 		// editable + PERMISSION CHECK
-		if ($userType != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
+		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
 			$permission = $options['editable'] ? PERM_READ_WRITE : PERM_READ;
-
-			$userGroups = getUserGroupsByUserId($userid);
+			$userGroups = getUserGroupsByUserId(self::$userData['userid']);
 
 			$sqlParts['where'][] = 'NOT EXISTS ('.
 				'SELECT NULL'.
@@ -152,7 +149,7 @@ class CTrigger extends CTriggerGeneral {
 			$sqlParts['where']['fi'] = 'f.itemid=i.itemid';
 			$sqlParts['where']['groupid'] = dbConditionInt('hg.groupid', $options['groupids']);
 
-			if (!is_null($options['groupCount'])) {
+			if ($options['groupCount']) {
 				$sqlParts['group']['hg'] = 'hg.groupid';
 			}
 		}
@@ -180,7 +177,7 @@ class CTrigger extends CTriggerGeneral {
 			$sqlParts['where']['ft'] = 'f.triggerid=t.triggerid';
 			$sqlParts['where']['fi'] = 'f.itemid=i.itemid';
 
-			if (!is_null($options['groupCount'])) {
+			if ($options['groupCount']) {
 				$sqlParts['group']['i'] = 'i.hostid';
 			}
 		}
@@ -200,7 +197,7 @@ class CTrigger extends CTriggerGeneral {
 			$sqlParts['where']['itemid'] = dbConditionInt('f.itemid', $options['itemids']);
 			$sqlParts['where']['ft'] = 'f.triggerid=t.triggerid';
 
-			if (!is_null($options['groupCount'])) {
+			if ($options['groupCount']) {
 				$sqlParts['group']['f'] = 'f.itemid';
 			}
 		}
@@ -402,8 +399,10 @@ class CTrigger extends CTriggerGeneral {
 		if (!is_null($options['only_true'])) {
 			$config = select_config();
 			$sqlParts['where']['ot'] = '((t.value='.TRIGGER_VALUE_TRUE.')'.
-					' OR '.
-					'((t.value='.TRIGGER_VALUE_FALSE.') AND (t.lastchange>'.(time() - $config['ok_period']).')))';
+				' OR ((t.value='.TRIGGER_VALUE_FALSE.')'.
+					' AND (t.lastchange>'.(time() - timeUnitToSeconds($config['ok_period'])).
+				'))'.
+			')';
 		}
 
 		// min_severity
@@ -420,10 +419,10 @@ class CTrigger extends CTriggerGeneral {
 		$sqlParts = $this->applyQuerySortOptions($this->tableName(), $this->tableAlias(), $options, $sqlParts);
 
 		// return count or grouped counts via direct SQL count
-		if (!is_null($options['countOutput']) && !$this->requiresPostSqlFiltering($options)) {
+		if ($options['countOutput'] && !$this->requiresPostSqlFiltering($options)) {
 			$dbRes = DBselect($this->createSelectQueryFromParts($sqlParts), $options['limit']);
 			while ($trigger = DBfetch($dbRes)) {
-				if (!is_null($options['groupCount'])) {
+				if ($options['groupCount']) {
 					$result[] = $trigger;
 				}
 				else {
@@ -436,7 +435,7 @@ class CTrigger extends CTriggerGeneral {
 		$result = zbx_toHash($this->customFetch($this->createSelectQueryFromParts($sqlParts), $options), 'triggerid');
 
 		// return count for post SQL filtered result sets
-		if (!is_null($options['countOutput'])) {
+		if ($options['countOutput']) {
 			return count($result);
 		}
 
@@ -472,7 +471,7 @@ class CTrigger extends CTriggerGeneral {
 		}
 
 		// removing keys (hash -> array)
-		if (is_null($options['preservekeys'])) {
+		if (!$options['preservekeys']) {
 			$result = zbx_cleanHashes($result);
 		}
 
@@ -654,11 +653,6 @@ class CTrigger extends CTriggerGeneral {
 	 * @param array $triggerIds
 	 */
 	protected function deleteByIds(array $triggerIds) {
-		DB::delete('sysmaps_elements', [
-			'elementid' => $triggerIds,
-			'elementtype' => SYSMAP_ELEMENT_TYPE_TRIGGER
-		]);
-
 		// disable actions
 		$actionIds = [];
 
@@ -693,6 +687,44 @@ class CTrigger extends CTriggerGeneral {
 
 			updateItServices();
 		}
+
+		// Remove trigger sysmap elements.
+		$selementids = [];
+
+		$db_trigger_elements = DBselect(
+			'SELECT st.selementid'.
+			' FROM sysmap_element_trigger st'.
+			' WHERE '.dbConditionInt('st.triggerid', $triggerIds)
+		);
+
+		while ($db_trigger_element = DBfetch($db_trigger_elements)) {
+			$selementids[$db_trigger_element['selementid']] = true;
+		}
+
+		if ($selementids) {
+			DB::delete('sysmap_element_trigger', ['triggerid' => $triggerIds]);
+
+			$db_not_empty_elements = DBselect(
+				'SELECT st.selementid'.
+				' FROM sysmap_element_trigger st'.
+				' WHERE '.dbConditionInt('st.selementid', array_keys($selementids))
+			);
+			while ($db_not_empty_element = DBfetch($db_not_empty_elements)) {
+				unset($selementids[$db_not_empty_element['selementid']]);
+			}
+
+			DB::delete('sysmaps_elements', ['selementid' => array_keys($selementids)]);
+		}
+
+		$insert = [];
+		foreach ($triggerIds as $triggerId) {
+			$insert[] = [
+				'tablename' => 'events',
+				'field' => 'triggerid',
+				'value' => $triggerId
+			];
+		}
+		DB::insertBatch('housekeeper', $insert);
 
 		parent::deleteByIds($triggerIds);
 	}
@@ -749,8 +781,17 @@ class CTrigger extends CTriggerGeneral {
 			$depTtriggerIds[$dep['dependsOnTriggerid']] = $dep['dependsOnTriggerid'];
 		}
 
-		if (!$this->isReadable($depTtriggerIds)) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS, _('No permissions to referred object or it does not exist!'));
+		if ($depTtriggerIds) {
+			$count = $this->get([
+				'countOutput' => true,
+				'triggerids' => $depTtriggerIds
+			]);
+
+			if ($count != count($depTtriggerIds)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS,
+					_('No permissions to referred object or it does not exist!')
+				);
+			}
 		}
 
 		$this->checkDependencies($triggers);
@@ -1152,53 +1193,10 @@ class CTrigger extends CTriggerGeneral {
 		}
 	}
 
-	/**
-	 * Check if user has read permissions for triggers.
-	 *
-	 * @param $ids
-	 *
-	 * @return bool
-	 */
-	public function isReadable(array $ids) {
-		if (empty($ids)) {
-			return true;
-		}
-		$ids = array_unique($ids);
-
-		$count = $this->get([
-			'triggerids' => $ids,
-			'countOutput' => true
-		]);
-
-		return count($ids) == $count;
-	}
-
-	/**
-	 *  Check if user has write permissions for triggers.
-	 *
-	 * @param $ids
-	 *
-	 * @return bool
-	 */
-	public function isWritable(array $ids) {
-		if (empty($ids)) {
-			return true;
-		}
-		$ids = array_unique($ids);
-
-		$count = $this->get([
-			'triggerids' => $ids,
-			'editable' => true,
-			'countOutput' => true
-		]);
-
-		return count($ids) == $count;
-	}
-
 	protected function applyQueryOutputOptions($tableName, $tableAlias, array $options, array $sqlParts) {
 		$sqlParts = parent::applyQueryOutputOptions($tableName, $tableAlias, $options, $sqlParts);
 
-		if ($options['countOutput'] === null && $options['expandDescription'] !== null) {
+		if (!$options['countOutput'] && $options['expandDescription'] !== null) {
 			$sqlParts = $this->addQuerySelect($this->fieldId('expression'), $sqlParts);
 		}
 
@@ -1362,11 +1360,23 @@ class CTrigger extends CTriggerGeneral {
 	 *
 	 * @throws APIException     if a trigger is not writable or does not exist or is not normal
 	 *
-	 * @param array $triggerIds
+	 * @param array $triggerids
 	 */
-	protected function checkPermissions(array $triggerIds) {
-		if (!$this->isWritable($triggerIds)) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS, _('No permissions to referred object or it does not exist!'));
+	protected function checkPermissions(array $triggerids) {
+		if ($triggerids) {
+			$triggerids = array_unique($triggerids);
+
+			$count = $this->get([
+				'countOutput' => true,
+				'triggerids' => $triggerids,
+				'editable' => true
+			]);
+
+			if ($count != count($triggerids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS,
+					_('No permissions to referred object or it does not exist!')
+				);
+			}
 		}
 	}
 
@@ -1562,7 +1572,7 @@ class CTrigger extends CTriggerGeneral {
 	}
 
 	/**
-	 * Returns true if at least one of the given triggers is used in IT services.
+	 * Returns true if at least one of the given triggers is used in services.
 	 *
 	 * @param array $triggerIds
 	 *

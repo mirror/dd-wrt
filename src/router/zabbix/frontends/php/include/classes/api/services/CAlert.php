@@ -38,7 +38,7 @@ class CAlert extends CApiService {
 	 * @param array $options['alertids']
 	 * @param array $options['applicationids']
 	 * @param array $options['status']
-	 * @param array $options['editable']
+	 * @param bool  $options['editable']
 	 * @param array $options['extendoutput']
 	 * @param array $options['count']
 	 * @param array $options['pattern']
@@ -49,8 +49,6 @@ class CAlert extends CApiService {
 	 */
 	public function get($options = []) {
 		$result = [];
-		$userType = self::$userData['type'];
-		$userid = self::$userData['userid'];
 
 		$sqlParts = [
 			'select'	=> ['alerts' => 'a.alertid'],
@@ -76,8 +74,8 @@ class CAlert extends CApiService {
 			'filter'					=> null,
 			'search'					=> null,
 			'searchByAny'				=> null,
-			'startSearch'				=> null,
-			'excludeSearch'				=> null,
+			'startSearch'				=> false,
+			'excludeSearch'				=> false,
 			'time_from'					=> null,
 			'time_till'					=> null,
 			'searchWildcardsEnabled'	=> null,
@@ -86,9 +84,9 @@ class CAlert extends CApiService {
 			'selectMediatypes'			=> null,
 			'selectUsers'				=> null,
 			'selectHosts'				=> null,
-			'countOutput'				=> null,
-			'preservekeys'				=> null,
-			'editable'					=> null,
+			'countOutput'				=> false,
+			'preservekeys'				=> false,
+			'editable'					=> false,
 			'sortfield'					=> '',
 			'sortorder'					=> '',
 			'limit'						=> null
@@ -98,7 +96,7 @@ class CAlert extends CApiService {
 		$this->validateGet($options);
 
 		// editable + PERMISSION CHECK
-		if ($userType != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
+		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
 			// triggers
 			if ($options['eventobject'] == EVENT_OBJECT_TRIGGER) {
 				$permission = $options['editable'] ? PERM_READ_WRITE : PERM_READ;
@@ -109,7 +107,7 @@ class CAlert extends CApiService {
 					' FROM events e,functions f,items i,hosts_groups hgg'.
 					' JOIN rights r'.
 						' ON r.id=hgg.groupid'.
-						' AND '.dbConditionInt('r.groupid', getUserGroupsByUserId($userid)).
+						' AND '.dbConditionInt('r.groupid', getUserGroupsByUserId(self::$userData['userid'])).
 					' WHERE a.eventid=e.eventid'.
 						' AND e.objectid=f.triggerid'.
 						' AND f.itemid=i.itemid'.
@@ -129,7 +127,7 @@ class CAlert extends CApiService {
 					' FROM events e,items i,hosts_groups hgg'.
 					' JOIN rights r'.
 						' ON r.id=hgg.groupid'.
-						' AND '.dbConditionInt('r.groupid', getUserGroupsByUserId($userid)).
+						' AND '.dbConditionInt('r.groupid', getUserGroupsByUserId(self::$userData['userid'])).
 					' WHERE a.eventid=e.eventid'.
 						' AND e.objectid=i.itemid'.
 						' AND i.hostid=hgg.hostid'.
@@ -314,7 +312,7 @@ class CAlert extends CApiService {
 			}
 		}
 
-		if (!is_null($options['countOutput'])) {
+		if ($options['countOutput']) {
 			return $result;
 		}
 
@@ -324,7 +322,7 @@ class CAlert extends CApiService {
 		}
 
 		// removing keys (hash -> array)
-		if (is_null($options['preservekeys'])) {
+		if (!$options['preservekeys']) {
 			$result = zbx_cleanHashes($result);
 		}
 
@@ -362,7 +360,7 @@ class CAlert extends CApiService {
 	protected function applyQueryOutputOptions($tableName, $tableAlias, array $options, array $sqlParts) {
 		$sqlParts = parent::applyQueryOutputOptions($tableName, $tableAlias, $options, $sqlParts);
 
-		if ($options['countOutput'] === null) {
+		if (!$options['countOutput']) {
 			if ($options['selectUsers'] !== null) {
 				$sqlParts = $this->addQuerySelect($this->fieldId('userid'), $sqlParts);
 			}

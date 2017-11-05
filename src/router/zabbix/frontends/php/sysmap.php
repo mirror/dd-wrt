@@ -25,7 +25,9 @@ require_once dirname(__FILE__).'/include/forms.inc.php';
 
 $page['title'] = _('Configuration of network maps');
 $page['file'] = 'sysmap.php';
-$page['scripts'] = ['class.cmap.js', 'class.cviewswitcher.js', 'multiselect.js'];
+$page['scripts'] = ['class.svg.canvas.js', 'class.svg.map.js', 'class.cmap.js', 'class.cviewswitcher.js',
+	'multiselect.js'
+];
 $page['type'] = detect_page_type();
 
 require_once dirname(__FILE__).'/include/page_header.php';
@@ -34,18 +36,19 @@ require_once dirname(__FILE__).'/include/page_header.php';
 $fields = [
 	'sysmapid' =>	[T_ZBX_INT, O_MAND, P_SYS,	DB_ID,		null],
 	'selementid' =>	[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
-	'sysmap' =>		[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,	'isset({action})'],
+	'sysmap' =>		[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,	'isset({action}) && {action} == "update"'],
 	'selements' =>	[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
 	'links' =>		[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
 	// actions
-	'action' =>		[T_ZBX_STR, O_OPT, P_ACT,	IN('"update"'),	null],
+	'action' =>		[T_ZBX_STR, O_OPT, P_ACT,	IN('"update","expand"'),	null],
 	'delete' =>		[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
 	'cancel' =>		[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
 	'form' =>		[T_ZBX_STR, O_OPT, P_SYS,	null,		null],
 	'form_refresh' => [T_ZBX_INT, O_OPT, null,	null,		null],
 	// ajax
 	'favobj' =>		[T_ZBX_STR, O_OPT, P_ACT,	null,		null],
-	'favid' =>		[T_ZBX_STR, O_OPT, P_ACT,	null,		null]
+	'favid' =>		[T_ZBX_STR, O_OPT, P_ACT,	null,		null],
+	'source' =>		[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,	'isset({action}) && {action} == "expand"'],
 ];
 check_fields($fields);
 
@@ -55,55 +58,95 @@ check_fields($fields);
 if (isset($_REQUEST['favobj'])) {
 	$json = new CJson();
 
-	if (getRequest('favobj') == 'sysmap' && hasRequest('action') && getRequest('action') == 'update') {
-		$sysmapid = getRequest('sysmapid', 0);
+	if (getRequest('favobj') === 'sysmap' && hasRequest('action')) {
+		if (getRequest('action') === 'update') {
+			$sysmapid = getRequest('sysmapid', 0);
 
-		@ob_start();
+			@ob_start();
 
-		try {
-			DBstart();
+			try {
+				DBstart();
 
-			$sysmap = API::Map()->get([
-				'sysmapids' => $sysmapid,
-				'editable' => true,
-				'output' => ['sysmapid']
-			]);
-			$sysmap = reset($sysmap);
+				$sysmap = API::Map()->get([
+					'sysmapids' => $sysmapid,
+					'editable' => true,
+					'output' => ['sysmapid']
+				]);
+				$sysmap = reset($sysmap);
 
-			if ($sysmap === false) {
-				throw new Exception(_('Access denied!'));
+				if ($sysmap === false) {
+					throw new Exception(_('Access denied!'));
+				}
+
+				$sysmapUpdate = $json->decode($_REQUEST['sysmap'], true);
+				$sysmapUpdate['sysmapid'] = $sysmapid;
+				$sysmapUpdate['lines'] = [];
+
+				if (array_key_exists('shapes', $sysmapUpdate)) {
+					foreach ($sysmapUpdate['shapes'] as $key => &$shape) {
+						if (array_key_exists('sysmap_shapeid', $shape) && !is_numeric($shape['sysmap_shapeid'])) {
+							unset($shape['sysmap_shapeid']);
+						}
+
+						if ($shape['type'] == SYSMAP_SHAPE_TYPE_LINE) {
+							$sysmapUpdate['lines'][$key] = CMapHelper::convertShapeToLine($shape);
+							unset($sysmapUpdate['shapes'][$key]);
+						}
+					}
+					unset($shape);
+				}
+
+				$result = API::Map()->update($sysmapUpdate);
+
+				if ($result !== false) {
+					echo 'if (confirm('.CJs::encodeJson(_('Map is updated! Return?')).')) { location.href = "sysmaps.php"; }';
+				}
+				else {
+					throw new Exception(_('Map update failed.'));
+				}
+
+				DBend(true);
+			}
+			catch (Exception $e) {
+				DBend(false);
+				$msg = [$e->getMessage()];
+
+				foreach (clear_messages() as $errMsg) {
+					$msg[] = $errMsg['type'].': '.$errMsg['message'];
+				}
+
+				ob_clean();
+
+				echo 'alert('.zbx_jsvalue(implode("\r\n", $msg)).');';
 			}
 
-			$sysmapUpdate = $json->decode($_REQUEST['sysmap'], true);
-			$sysmapUpdate['sysmapid'] = $sysmapid;
-
-			$result = API::Map()->update($sysmapUpdate);
-
-			if ($result !== false) {
-				echo 'if (confirm('.CJs::encodeJson(_('Map is updated! Return?')).')) { location.href = "sysmaps.php"; }';
-			}
-			else {
-				throw new Exception(_('Map update failed.'));
-			}
-
-			DBend(true);
+			@ob_flush();
+			exit;
 		}
-		catch (Exception $e) {
-			DBend(false);
-			$msg = [$e->getMessage()];
+		elseif (getRequest('action') === 'expand') {
+			$values = [];
+			$sources = json_decode(getRequest('source'), true);
 
-			foreach (clear_messages() as $errMsg) {
-				$msg[] = $errMsg['type'].': '.$errMsg['message'];
+			foreach ($sources as $source) {
+				if (is_array($source) && (array_key_exists('label', $source) || array_key_exists('text', $source))) {
+					if (array_key_exists('elementtype', $source) && array_key_exists('elements', $source)
+							&& is_array($source['elements']) && CMapHelper::checkSelementPermissions([$source])) {
+
+						$values[] = CMacrosResolverHelper::resolveMapLabelMacrosAll($source);
+					}
+					else {
+						$label = array_key_exists('label', $source) ? $source['label'] : $source['text'];
+						$values[] = CMacrosResolverHelper::resolveMapLabelMacros($label);
+					}
+				}
+				else {
+					$values[] = null;
+				}
 			}
 
-			ob_clean();
-
-			echo 'alert('.zbx_jsvalue(implode("\r\n", $msg)).');';
+			echo CJs::encodeJson($values);
+			exit;
 		}
-
-		@ob_flush();
-		exit;
-
 	}
 }
 
@@ -117,16 +160,21 @@ if (PAGE_TYPE_HTML != $page['type']) {
  */
 if (isset($_REQUEST['sysmapid'])) {
 	$sysmap = API::Map()->get([
-		'output' => ['sysmapid', 'expand_macros', 'grid_show', 'grid_align', 'grid_size', 'width', 'height',
-			'iconmapid'
+		'output' => ['sysmapid', 'name', 'expand_macros', 'grid_show', 'grid_align', 'grid_size', 'width', 'height',
+			'iconmapid', 'backgroundid', 'label_location'
 		],
+		'selectShapes' => ['sysmap_shapeid', 'type', 'x', 'y', 'width', 'height', 'text', 'font', 'font_size',
+			'font_color', 'text_halign', 'text_valign', 'border_type', 'border_width', 'border_color',
+			'background_color', 'zindex'
+		],
+		'selectLines' => ['sysmap_shapeid', 'x1', 'y1', 'x2', 'y2', 'line_type', 'line_width', 'line_color', 'zindex'],
 		'selectSelements' => API_OUTPUT_EXTEND,
 		'selectLinks' => API_OUTPUT_EXTEND,
 		'sysmapids' => getRequest('sysmapid'),
 		'editable' => true,
 		'preservekeys' => true
 	]);
-	if (empty($sysmap)) {
+	if (!$sysmap) {
 		access_deny();
 	}
 	else {
@@ -148,8 +196,24 @@ $data = [
 // get selements
 add_elementNames($data['sysmap']['selements']);
 
+foreach ($data['sysmap']['shapes'] as &$shape) {
+	$shape['expanded'] = CMacrosResolverHelper::resolveMapLabelMacros($shape['text']);
+}
+unset($shape);
+
+foreach ($data['sysmap']['lines'] as $line) {
+	$data['sysmap']['shapes'][] = CMapHelper::convertLineToShape($line);
+}
+unset($data['sysmap']['lines']);
+
 $data['sysmap']['selements'] = zbx_toHash($data['sysmap']['selements'], 'selementid');
+$data['sysmap']['shapes'] = zbx_toHash($data['sysmap']['shapes'], 'sysmap_shapeid');
 $data['sysmap']['links'] = zbx_toHash($data['sysmap']['links'], 'linkid');
+
+foreach ($data['sysmap']['selements'] as &$selement) {
+	$selement['expanded'] = CMacrosResolverHelper::resolveMapLabelMacrosAll($selement);
+}
+unset($selement);
 
 // get links
 foreach ($data['sysmap']['links'] as &$link) {
@@ -166,6 +230,8 @@ foreach ($data['sysmap']['links'] as &$link) {
 
 		$link['linktriggers'][$lnum]['desc_exp'] = $host['name'].NAME_DELIMITER.$dbTrigger['description'];
 	}
+
+	$link['expanded'] = CMacrosResolverHelper::resolveMapLabelMacros($link['label']);
 	order_result($link['linktriggers'], 'desc_exp');
 }
 unset($link);
@@ -181,26 +247,33 @@ if ($data['sysmap']['iconmapid']) {
 	$data['defaultAutoIconId'] = $iconMap['default_iconid'];
 }
 
-// get icon list
-$icons = DBselect(
-	'SELECT i.imageid,i.name FROM images i WHERE i.imagetype='.IMAGE_TYPE_ICON
-);
+$images = API::Image()->get([
+	'output' => ['imageid', 'name'],
+	'filter' => ['imagetype' => IMAGE_TYPE_ICON],
+	'select_image' => true
+]);
+foreach ($images as $image) {
+	$image['image'] = base64_decode($image['image']);
+	$ico = imagecreatefromstring($image['image']);
 
-while ($icon = DBfetch($icons)) {
 	$data['iconList'][] = [
-		'imageid' => $icon['imageid'],
-		'name' => $icon['name']
+		'imageid' => $image['imageid'],
+		'name' => $image['name'],
+		'width' => imagesx($ico),
+		'height' => imagesy($ico)
 	];
 
-	if ($icon['name'] == MAP_DEFAULT_ICON || !isset($data['defaultIconId'])) {
-		$data['defaultIconId'] = $icon['imageid'];
-		$data['defaultIconName'] = $icon['name'];
+	if ($image['name'] == MAP_DEFAULT_ICON || !isset($data['defaultIconId'])) {
+		$data['defaultIconId'] = $image['imageid'];
+		$data['defaultIconName'] = $image['name'];
 	}
 }
 if ($data['iconList']) {
 	CArrayHelper::sort($data['iconList'], ['name']);
 	$data['iconList'] = array_values($data['iconList']);
 }
+
+$data['theme'] = getUserGraphTheme();
 
 // render view
 $sysmapView = new CView('monitoring.sysmap.constructor', $data);

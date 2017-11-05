@@ -26,6 +26,7 @@
 #include "proxy.h"
 #include "zbxself.h"
 #include "dbcache.h"
+#include "zbxtasks.h"
 
 #include "datasender.h"
 #include "../servercomms.h"
@@ -34,100 +35,162 @@
 extern unsigned char	process_type, program_type;
 extern int		server_num, process_num;
 
+#define ZBX_DATASENDER_AVAILABILITY		0x0001
+#define ZBX_DATASENDER_HISTORY			0x0002
+#define ZBX_DATASENDER_DISCOVERY		0x0004
+#define ZBX_DATASENDER_AUTOREGISTRATION		0x0008
+#define ZBX_DATASENDER_TASKS			0x0010
+#define ZBX_DATASENDER_TASKS_RECV		0x0020
+#define ZBX_DATASENDER_TASKS_REQUEST		0x8000
+
+#define ZBX_DATASENDER_DB_UPDATE	(ZBX_DATASENDER_AVAILABILITY | ZBX_DATASENDER_HISTORY |		\
+					ZBX_DATASENDER_DISCOVERY | ZBX_DATASENDER_AUTOREGISTRATION |	\
+					ZBX_DATASENDER_TASKS | ZBX_DATASENDER_TASKS_RECV)
+
+
 /******************************************************************************
  *                                                                            *
- * Function: host_availability_sender                                         *
+ * Function: proxy_data_sender                                                *
+ *                                                                            *
+ * Purpose: collects host availability, history, discovery, auto registration *
+ *          data and sends 'proxy data' request                               *
  *                                                                            *
  ******************************************************************************/
-static void	host_availability_sender(struct zbx_json *j)
+static int	proxy_data_sender(int *more, int now)
 {
-	const char	*__function_name = "host_availability_sender";
-	zbx_socket_t	sock;
-	int		ts;
+	const char		*__function_name = "proxy_data_sender";
+
+	static int		data_timestamp = 0, task_timestamp = 0;
+
+	zbx_socket_t		sock;
+	struct zbx_json		j;
+	struct zbx_json_parse	jp, jp_tasks;
+	int			ret = FAIL, availability_ts = 0, history_records = 0, discovery_records = 0,
+				areg_records = 0, more_history = 0, more_discovery = 0, more_areg = 0;
+	zbx_uint64_t		history_lastid = 0, discovery_lastid = 0, areg_lastid = 0, flags = 0;
+	zbx_timespec_t		ts;
+	char			*error = NULL;
+	zbx_vector_ptr_t	tasks;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
-	zbx_json_clean(j);
-	zbx_json_addstring(j, ZBX_PROTO_TAG_REQUEST, ZBX_PROTO_VALUE_HOST_AVAILABILITY, ZBX_JSON_TYPE_STRING);
-	zbx_json_addstring(j, ZBX_PROTO_TAG_HOST, CONFIG_HOSTNAME, ZBX_JSON_TYPE_STRING);
+	*more = ZBX_PROXY_DATA_DONE;
+	zbx_json_init(&j, 16 * ZBX_KIBIBYTE);
 
-	if (SUCCEED == get_host_availability_data(j, &ts))
+	zbx_json_addstring(&j, ZBX_PROTO_TAG_REQUEST, ZBX_PROTO_VALUE_PROXY_DATA, ZBX_JSON_TYPE_STRING);
+	zbx_json_addstring(&j, ZBX_PROTO_TAG_HOST, CONFIG_HOSTNAME, ZBX_JSON_TYPE_STRING);
+
+	if (CONFIG_PROXYDATA_FREQUENCY <= now - data_timestamp)
 	{
-		char	*error = NULL;
+		if (SUCCEED == get_host_availability_data(&j, &availability_ts))
+			flags |= ZBX_DATASENDER_AVAILABILITY;
 
-		connect_to_server(&sock, 600, CONFIG_PROXYDATA_FREQUENCY); /* retry till have a connection */
+		if  (0 != (history_records = proxy_get_hist_data(&j, &history_lastid, &more_history)))
+			flags |= ZBX_DATASENDER_HISTORY;
 
-		if (SUCCEED != put_data_to_server(&sock, j, &error))
+		if  (0 != (discovery_records = proxy_get_dhis_data(&j, &discovery_lastid, &more_discovery)))
+			flags |= ZBX_DATASENDER_DISCOVERY;
+
+		if  (0 != (areg_records = proxy_get_areg_data(&j, &areg_lastid, &more_areg)))
+			flags |= ZBX_DATASENDER_AUTOREGISTRATION;
+
+		if (ZBX_PROXY_DATA_MORE != more_history && ZBX_PROXY_DATA_MORE != more_discovery &&
+						ZBX_PROXY_DATA_MORE != more_areg)
 		{
-			zabbix_log(LOG_LEVEL_WARNING, "cannot send host availability data to server at \"%s\": %s",
-					sock.peer, error);
+			data_timestamp = now;
 		}
-		else
-			zbx_set_availability_diff_ts(ts);
-
-		zbx_free(error);
-		disconnect_server(&sock);
 	}
 
-	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __function_name);
-}
+	zbx_vector_ptr_create(&tasks);
 
-/******************************************************************************
- *                                                                            *
- * Function: history_sender                                                   *
- *                                                                            *
- ******************************************************************************/
-static void	history_sender(struct zbx_json *j, int *records, const char *tag,
-		int (*f_get_data)(), void (*f_set_lastid)())
-{
-	const char	*__function_name = "history_sender";
-
-	zbx_socket_t	sock;
-	zbx_uint64_t	lastid;
-	zbx_timespec_t	ts;
-	int		ret = SUCCEED;
-
-	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
-
-	zbx_json_clean(j);
-	zbx_json_addstring(j, ZBX_PROTO_TAG_REQUEST, tag, ZBX_JSON_TYPE_STRING);
-	zbx_json_addstring(j, ZBX_PROTO_TAG_HOST, CONFIG_HOSTNAME, ZBX_JSON_TYPE_STRING);
-
-	zbx_json_addarray(j, ZBX_PROTO_TAG_DATA);
-
-	*records = f_get_data(j, &lastid);
-
-	zbx_json_close(j);
-
-	if (*records > 0)
+	if (ZBX_TASK_UPDATE_FREQUENCY <= now - task_timestamp)
 	{
-		char	*error = NULL;
+		task_timestamp = now;
+
+		zbx_tm_get_remote_tasks(&tasks, 0);
+
+		if (0 != tasks.values_num)
+		{
+			zbx_tm_json_serialize_tasks(&j, &tasks);
+			flags |= ZBX_DATASENDER_TASKS;
+		}
+
+		flags |= ZBX_DATASENDER_TASKS_REQUEST;
+	}
+
+	if (0 != flags)
+	{
+		if (ZBX_PROXY_DATA_MORE == more_history || ZBX_PROXY_DATA_MORE == more_discovery ||
+				ZBX_PROXY_DATA_MORE == more_areg)
+		{
+			zbx_json_adduint64(&j, ZBX_PROTO_TAG_MORE, ZBX_PROXY_DATA_MORE);
+			*more = ZBX_PROXY_DATA_MORE;
+		}
+
+		zbx_json_addstring(&j, ZBX_PROTO_TAG_VERSION, ZABBIX_VERSION, ZBX_JSON_TYPE_STRING);
 
 		connect_to_server(&sock, 600, CONFIG_PROXYDATA_FREQUENCY); /* retry till have a connection */
 
 		zbx_timespec(&ts);
-		zbx_json_adduint64(j, ZBX_PROTO_TAG_CLOCK, ts.sec);
-		zbx_json_adduint64(j, ZBX_PROTO_TAG_NS, ts.ns);
+		zbx_json_adduint64(&j, ZBX_PROTO_TAG_CLOCK, ts.sec);
+		zbx_json_adduint64(&j, ZBX_PROTO_TAG_NS, ts.ns);
 
-		if (SUCCEED != (ret = put_data_to_server(&sock, j, &error)))
+		if (SUCCEED != (ret = put_data_to_server(&sock, &j, &error)))
 		{
-			*records = 0;
-			zabbix_log(LOG_LEVEL_WARNING, "cannot send history data to server at \"%s\": %s",
+			zabbix_log(LOG_LEVEL_WARNING, "cannot send proxy data to server at \"%s\": %s",
 					sock.peer, error);
+			zbx_free(error);
+		}
+		else
+		{
+			zbx_set_availability_diff_ts(availability_ts);
+
+			if (SUCCEED == zbx_json_open(sock.buffer, &jp))
+			{
+				if (SUCCEED == zbx_json_brackets_by_name(&jp, ZBX_PROTO_TAG_TASKS, &jp_tasks))
+					flags |= ZBX_DATASENDER_TASKS_RECV;
+			}
+
+			if (0 != (flags & ZBX_DATASENDER_DB_UPDATE))
+			{
+				DBbegin();
+
+				if (0 != (flags & ZBX_DATASENDER_TASKS))
+				{
+					zbx_tm_update_task_status(&tasks, ZBX_TM_STATUS_DONE);
+					zbx_vector_ptr_clear_ext(&tasks, (zbx_clean_func_t)zbx_tm_task_free);
+				}
+
+				if (0 != (flags & ZBX_DATASENDER_TASKS_RECV))
+				{
+					zbx_tm_json_deserialize_tasks(&jp_tasks, &tasks);
+					zbx_tm_save_tasks(&tasks);
+				}
+
+				if (0 != (flags & ZBX_DATASENDER_HISTORY))
+					proxy_set_hist_lastid(history_lastid);
+
+				if (0 != (flags & ZBX_DATASENDER_DISCOVERY))
+					proxy_set_dhis_lastid(discovery_lastid);
+
+				if (0 != (flags & ZBX_DATASENDER_AUTOREGISTRATION))
+					proxy_set_areg_lastid(areg_lastid);
+
+				DBcommit();
+			}
 		}
 
-		zbx_free(error);
 		disconnect_server(&sock);
 	}
 
-	if (SUCCEED == ret && 0 != lastid)
-	{
-		DBbegin();
-		f_set_lastid(lastid);
-		DBcommit();
-	}
+	zbx_vector_ptr_clear_ext(&tasks, (zbx_clean_func_t)zbx_tm_task_free);
+	zbx_vector_ptr_destroy(&tasks);
 
-	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __function_name);
+	zbx_json_free(&j);
+
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s more:%d", __function_name, zbx_result_string(ret), *more);
+
+	return history_records + discovery_records + areg_records;
 }
 
 /******************************************************************************
@@ -139,9 +202,8 @@ static void	history_sender(struct zbx_json *j, int *records, const char *tag,
  ******************************************************************************/
 ZBX_THREAD_ENTRY(datasender_thread, args)
 {
-	int		records = 0, r;
-	double		sec = 0.0;
-	struct zbx_json	j;
+	int		records = 0, more;
+	double		time_start, time_diff = 0.0, time_now;
 
 	process_type = ((zbx_thread_args_t *)args)->process_type;
 	server_num = ((zbx_thread_args_t *)args)->server_num;
@@ -157,46 +219,34 @@ ZBX_THREAD_ENTRY(datasender_thread, args)
 
 	DBconnect(ZBX_DB_CONNECT_NORMAL);
 
-	zbx_json_init(&j, 16 * ZBX_KIBIBYTE);
-
 	for (;;)
 	{
 		zbx_handle_log();
 
 		zbx_setproctitle("%s [sent %d values in " ZBX_FS_DBL " sec, sending data]",
-				get_process_type_string(process_type), records, sec);
-
-		sec = zbx_time();
-		host_availability_sender(&j);
+				get_process_type_string(process_type), records, time_diff);
 
 		records = 0;
-retry_history:
-		history_sender(&j, &r, ZBX_PROTO_VALUE_HISTORY_DATA,
-				proxy_get_hist_data, proxy_set_hist_lastid);
-		records += r;
+		time_now = zbx_time();
+		time_start = time_now;
 
-		if (ZBX_MAX_HRECORDS <= r)
-			goto retry_history;
-retry_dhistory:
-		history_sender(&j, &r, ZBX_PROTO_VALUE_DISCOVERY_DATA,
-				proxy_get_dhis_data, proxy_set_dhis_lastid);
-		records += r;
+		do
+		{
+			records += proxy_data_sender(&more, (int)time_now);
 
-		if (ZBX_MAX_HRECORDS <= r)
-			goto retry_dhistory;
-retry_autoreg_host:
-		history_sender(&j, &r, ZBX_PROTO_VALUE_AUTO_REGISTRATION_DATA,
-				proxy_get_areg_data, proxy_set_areg_lastid);
-		records += r;
-
-		if (ZBX_MAX_HRECORDS <= r)
-			goto retry_autoreg_host;
-
-		sec = zbx_time() - sec;
+			time_now = zbx_time();
+			time_diff = time_now - time_start;
+		}
+		while (ZBX_PROXY_DATA_MORE == more && time_diff < SEC_PER_MIN);
 
 		zbx_setproctitle("%s [sent %d values in " ZBX_FS_DBL " sec, idle %d sec]",
-				get_process_type_string(process_type), records, sec, CONFIG_PROXYDATA_FREQUENCY);
+				get_process_type_string(process_type), records, time_diff, CONFIG_PROXYDATA_FREQUENCY);
 
-		zbx_sleep_loop(CONFIG_PROXYDATA_FREQUENCY);
+		if (ZBX_PROXY_DATA_MORE != more)
+			zbx_sleep_loop(ZBX_TASK_UPDATE_FREQUENCY);
+
+#if !defined(_WINDOWS) && defined(HAVE_RESOLV_H)
+		zbx_update_resolver_conf();	/* handle /etc/resolv.conf update */
+#endif
 	}
 }

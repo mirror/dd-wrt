@@ -136,9 +136,15 @@ $map_tab->addRow(_('Icon highlight'),
 $map_tab->addRow(_('Mark elements on trigger status change'),
 	(new CCheckBox('markelements'))->setChecked($data['sysmap']['markelements'] == 1)
 );
-$map_tab->addRow(_('Expand single problem'),
-	(new CCheckBox('expandproblem'))->setChecked($data['sysmap']['expandproblem'] == 1)
+
+$map_tab->addRow(_('Display problems'),
+	(new CRadioButtonList('expandproblem', (int) $data['sysmap']['expandproblem']))
+		->addValue(_('Expand single problem'), SYSMAP_SINGLE_PROBLEM)
+		->addValue(_('Number of problems'), SYSMAP_PROBLEMS_NUMBER)
+		->addValue(_('Number of problems and expand most critical one'), SYSMAP_PROBLEMS_NUMBER_CRITICAL)
+		->setModern(true)
 );
+
 $map_tab->addRow(_('Advanced labels'),
 	(new CCheckBox('label_format'))->setChecked($data['sysmap']['label_format'] == 1)
 );
@@ -369,12 +375,13 @@ $sharing_tab = (new CFormList('sharing_form'))
 $tabs->addTab('sharing_tab', _('Sharing'), $sharing_tab);
 
 // Append buttons to form.
-if (hasRequest('sysmapid') && getRequest('sysmapid') > 0) {
+if (hasRequest('sysmapid') && getRequest('sysmapid') > 0 && getRequest('form') !== 'full_clone') {
 	$tabs->setFooter(makeFormFooter(
 		new CSubmit('update', _('Update')),
 		[
 			new	CButton('clone', _('Clone')),
-			new CButtonDelete(_('Delete selected map?'), url_param('form').url_param('sysmapid')),
+			new CButton('full_clone', _('Full clone')),
+			new CButtonDelete(_('Delete selected map?'), url_params(['form', 'sysmapid'])),
 			new CButtonCancel()
 		]
 	));

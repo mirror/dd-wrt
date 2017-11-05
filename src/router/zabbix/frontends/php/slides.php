@@ -20,13 +20,16 @@
 
 
 require_once dirname(__FILE__).'/include/config.inc.php';
+require_once dirname(__FILE__).'/include/hostgroups.inc.php';
 require_once dirname(__FILE__).'/include/graphs.inc.php';
 require_once dirname(__FILE__).'/include/screens.inc.php';
 require_once dirname(__FILE__).'/include/blocks.inc.php';
 
 $page['title'] = _('Custom slides');
 $page['file'] = 'slides.php';
-$page['scripts'] = ['class.pmaster.js', 'class.calendar.js', 'gtlc.js', 'flickerfreescreen.js'];
+$page['scripts'] = ['class.svg.canvas.js', 'class.svg.map.js', 'class.pmaster.js', 'class.calendar.js', 'gtlc.js',
+	'flickerfreescreen.js'
+];
 $page['type'] = detect_page_type(PAGE_TYPE_HTML);
 
 define('ZBX_PAGE_DO_JS_REFRESH', 1);
@@ -42,13 +45,12 @@ $fields = [
 	'step' =>			[T_ZBX_INT, O_OPT, P_SYS,	BETWEEN(0, 65535), null],
 	'period' =>			[T_ZBX_INT, O_OPT, P_SYS,	null,	null],
 	'stime' =>			[T_ZBX_STR, O_OPT, P_SYS,	null,	null],
+	'isNow' =>			[T_ZBX_INT, O_OPT, P_SYS,	IN('0,1'),	null],
 	'reset' =>			[T_ZBX_STR, O_OPT, P_SYS,	IN('"reset"'), null],
 	'fullscreen' =>		[T_ZBX_INT, O_OPT, P_SYS,	IN('0,1'), null],
 	// ajax
 	'widgetRefresh' =>	[T_ZBX_STR, O_OPT, null,	null,	null],
 	'widgetRefreshRate' => [T_ZBX_STR, O_OPT, P_ACT, null,	null],
-	'favobj' =>			[T_ZBX_STR, O_OPT, P_ACT,	null,	null],
-	'favid' =>			[T_ZBX_INT, O_OPT, P_ACT,	null,	null],
 	'upd_counter' =>	[T_ZBX_INT, O_OPT, P_ACT,	null,	null]
 ];
 check_fields($fields);
@@ -58,8 +60,10 @@ check_fields($fields);
  */
 $data = [];
 
-if (getRequest('groupid') && !API::HostGroup()->isReadable([getRequest('groupid')])
-		|| getRequest('hostid') && !API::Host()->isReadable([getRequest('hostid')])) {
+if (getRequest('groupid') && !isReadableHostGroups([getRequest('groupid')])) {
+	access_deny();
+}
+if (getRequest('hostid') && !isReadableHosts([getRequest('hostid')])) {
 	access_deny();
 }
 if (hasRequest('elementid')) {
@@ -105,7 +109,8 @@ if ((hasRequest('widgetRefresh') || hasRequest('widgetRefreshRate')) && $data['s
 				'profileIdx2' => $elementId,
 				'hostid' => getRequest('hostid'),
 				'period' => getRequest('period'),
-				'stime' => getRequest('stime')
+				'stime' => getRequest('stime'),
+				'isNow' => getRequest('isNow')
 			]);
 
 			CScreenBuilder::insertScreenCleanJs();
@@ -116,7 +121,8 @@ if ((hasRequest('widgetRefresh') || hasRequest('widgetRefreshRate')) && $data['s
 
 			CScreenBuilder::insertScreenStandardJs([
 				'timeline' => $screenBuilder->timeline,
-				'profileIdx' => $screenBuilder->profileIdx
+				'profileIdx' => $screenBuilder->profileIdx,
+				'profileIdx2' => $screenBuilder->profileIdx2
 			]);
 
 			insertPagePostJs();
@@ -134,7 +140,7 @@ if ((hasRequest('widgetRefresh') || hasRequest('widgetRefreshRate')) && $data['s
 			);
 		}
 
-		$delay = ($screen['delay'] > 0) ? $screen['delay'] : $data['screen']['delay'];
+		$delay = timeUnitToSeconds(($screen['delay'] === '0') ? $data['screen']['delay'] : $screen['delay']);
 
 		insert_js(
 			'PMasters["slideshows"].dolls["'.WIDGET_SLIDESHOW.'"].frequency('.
@@ -143,17 +149,6 @@ if ((hasRequest('widgetRefresh') || hasRequest('widgetRefreshRate')) && $data['s
 			"\n".
 			'PMasters["slideshows"].dolls["'.WIDGET_SLIDESHOW.'"].restartDoll();'
 		);
-	}
-}
-
-// filter state
-if (hasRequest('favobj') && hasRequest('favid')) {
-	$favouriteObject = getRequest('favobj');
-	$favouriteId = getRequest('favid');
-
-	// saving fixed/dynamic setting to profile
-	if ($favouriteObject === 'timelinefixedperiod') {
-		CProfile::update('web.slides.timelinefixed', $favouriteId, PROFILE_TYPE_INT);
 	}
 }
 

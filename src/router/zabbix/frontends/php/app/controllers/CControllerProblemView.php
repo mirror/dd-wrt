@@ -19,6 +19,8 @@
 **/
 
 
+require_once dirname(__FILE__).'/../../include/hostgroups.inc.php';
+
 class CControllerProblemView extends CController {
 
 	protected function init() {
@@ -55,7 +57,8 @@ class CControllerProblemView extends CController {
 			'filter_unacknowledged' =>	'in 1',
 			'filter_details' =>			'in 1',
 			'period' =>					'ge '.ZBX_MIN_PERIOD.'|le '.ZBX_MAX_PERIOD,
-			'stime' =>					'time'
+			'stime' =>					'time',
+			'isNow' =>					'in 0,1'
 		];
 
 		$ret = $this->validateInput($fields);
@@ -180,11 +183,7 @@ class CControllerProblemView extends CController {
 		$groups = [];
 
 		if ($filter_groupids) {
-			$groups = CArrayHelper::renameObjectsKeys(API::HostGroup()->get([
-				'output' => ['groupid', 'name'],
-				'groupids' => $filter_groupids,
-				'preservekeys' => true
-			]), ['groupid' => 'id']);
+			$filter_groupids = getSubGroups($filter_groupids, $groups);
 		}
 
 		$filter_triggers = $filter_triggerids
@@ -275,12 +274,12 @@ class CControllerProblemView extends CController {
 		];
 
 		if ($data['filter']['show'] == TRIGGERS_OPTION_ALL) {
-			$data['filter']['period'] = $this->getInput('period',
-				CProfile::get('web.problem.timeline.period', ZBX_PERIOD_DEFAULT)
-			);
-			$data['filter']['stime'] = $this->getInput('stime',
-				CProfile::get('web.problem.timeline.stime', date(TIMESTAMP_FORMAT, time()))
-			);
+			$data['profileIdx'] = 'web.problem.timeline';
+			$data['profileIdx2'] = 0;
+			$data['period'] = $this->hasInput('period') ? $this->getInput('period') : null;
+			$data['stime'] = $this->hasInput('stime') ? $this->getInput('stime') : null;
+			$data['isNow'] = $this->hasInput('isNow') ? $this->getInput('isNow') : null;
+			$data['updateProfile'] = ($data['period'] !== null || $data['stime'] !== null || $data['isNow'] !== null);
 		}
 
 		$response = new CControllerResponseData($data);

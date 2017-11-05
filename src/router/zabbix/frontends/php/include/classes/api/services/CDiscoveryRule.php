@@ -24,9 +24,6 @@
  */
 class CDiscoveryRule extends CItemGeneral {
 
-	const MIN_LIFETIME = 0;
-	const MAX_LIFETIME = 3650;
-
 	protected $tableName = 'items';
 	protected $tableAlias = 'i';
 	protected $sortColumns = ['itemid', 'name', 'key_', 'delay', 'type', 'status'];
@@ -46,8 +43,6 @@ class CDiscoveryRule extends CItemGeneral {
 	 */
 	public function get($options = []) {
 		$result = [];
-		$userType = self::$userData['type'];
-		$userid = self::$userData['userid'];
 
 		$sqlParts = [
 			'select'	=> ['items' => 'i.itemid'],
@@ -67,14 +62,14 @@ class CDiscoveryRule extends CItemGeneral {
 			'inherited'					=> null,
 			'templated'					=> null,
 			'monitored'					=> null,
-			'editable'					=> null,
+			'editable'					=> false,
 			'nopermissions'				=> null,
 			// filter
 			'filter'					=> null,
 			'search'					=> null,
 			'searchByAny'				=> null,
-			'startSearch'				=> null,
-			'excludeSearch'				=> null,
+			'startSearch'				=> false,
+			'excludeSearch'				=> false,
 			'searchWildcardsEnabled'	=> null,
 			// output
 			'output'					=> API_OUTPUT_EXTEND,
@@ -84,9 +79,9 @@ class CDiscoveryRule extends CItemGeneral {
 			'selectGraphs'				=> null,
 			'selectHostPrototypes'		=> null,
 			'selectFilter'				=> null,
-			'countOutput'				=> null,
-			'groupCount'				=> null,
-			'preservekeys'				=> null,
+			'countOutput'				=> false,
+			'groupCount'				=> false,
+			'preservekeys'				=> false,
 			'sortfield'					=> '',
 			'sortorder'					=> '',
 			'limit'						=> null,
@@ -95,10 +90,9 @@ class CDiscoveryRule extends CItemGeneral {
 		$options = zbx_array_merge($defOptions, $options);
 
 		// editable + PERMISSION CHECK
-		if ($userType != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
+		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
 			$permission = $options['editable'] ? PERM_READ_WRITE : PERM_READ;
-
-			$userGroups = getUserGroupsByUserId($userid);
+			$userGroups = getUserGroupsByUserId(self::$userData['userid']);
 
 			$sqlParts['where'][] = 'EXISTS ('.
 				'SELECT NULL'.
@@ -132,7 +126,7 @@ class CDiscoveryRule extends CItemGeneral {
 
 			$sqlParts['where']['hostid'] = dbConditionInt('i.hostid', $options['hostids']);
 
-			if (!is_null($options['groupCount'])) {
+			if ($options['groupCount']) {
 				$sqlParts['group']['i'] = 'i.hostid';
 			}
 		}
@@ -150,7 +144,7 @@ class CDiscoveryRule extends CItemGeneral {
 
 			$sqlParts['where']['interfaceid'] = dbConditionInt('i.interfaceid', $options['interfaceids']);
 
-			if (!is_null($options['groupCount'])) {
+			if ($options['groupCount']) {
 				$sqlParts['group']['i'] = 'i.interfaceid';
 			}
 		}
@@ -199,6 +193,15 @@ class CDiscoveryRule extends CItemGeneral {
 
 		// filter
 		if (is_array($options['filter'])) {
+			if (array_key_exists('delay', $options['filter']) && $options['filter']['delay'] !== null) {
+				$sqlParts['where'][] = makeUpdateIntervalFilter('i.delay', $options['filter']['delay']);
+				unset($options['filter']['delay']);
+			}
+
+			if (array_key_exists('lifetime', $options['filter']) && $options['filter']['lifetime'] !== null) {
+				$options['filter']['lifetime'] = getTimeUnitFilters($options['filter']['lifetime']);
+			}
+
 			$this->dbFilter('items i', $options, $sqlParts);
 
 			if (isset($options['filter']['host'])) {
@@ -219,8 +222,8 @@ class CDiscoveryRule extends CItemGeneral {
 		$sqlParts = $this->applyQuerySortOptions($this->tableName(), $this->tableAlias(), $options, $sqlParts);
 		$res = DBselect($this->createSelectQueryFromParts($sqlParts), $sqlParts['limit']);
 		while ($item = DBfetch($res)) {
-			if (!is_null($options['countOutput'])) {
-				if (!is_null($options['groupCount'])) {
+			if ($options['countOutput']) {
+				if ($options['groupCount']) {
 					$result[] = $item;
 				}
 				else {
@@ -232,7 +235,7 @@ class CDiscoveryRule extends CItemGeneral {
 			}
 		}
 
-		if (!is_null($options['countOutput'])) {
+		if ($options['countOutput']) {
 			return $result;
 		}
 
@@ -263,7 +266,7 @@ class CDiscoveryRule extends CItemGeneral {
 			unset($rule);
 		}
 
-		if (is_null($options['preservekeys'])) {
+		if (!$options['preservekeys']) {
 			$result = zbx_cleanHashes($result);
 		}
 
@@ -414,6 +417,16 @@ class CDiscoveryRule extends CItemGeneral {
 		// delete LLD rules
 		DB::delete('items', ['itemid' => $ruleids]);
 
+		$insert = [];
+		foreach ($ruleids as $ruleid) {
+			$insert[] = [
+				'tablename' => 'events',
+				'field' => 'lldruleid',
+				'value' => $ruleid
+			];
+		}
+		DB::insertBatch('housekeeper', $insert);
+
 		// TODO: remove info from API
 		foreach ($delRules as $item) {
 			$host = reset($item['hosts']);
@@ -421,6 +434,41 @@ class CDiscoveryRule extends CItemGeneral {
 		}
 
 		return ['ruleids' => $ruleids];
+	}
+
+	/**
+	 * Checks if the current user has access to the given hosts and templates. Assumes the "hostid" field is valid.
+	 *
+	 * @param array $hostids    an array of host or template IDs
+	 *
+	 * @throws APIException if the user doesn't have write permissions for the given hosts.
+	 */
+	protected function checkHostPermissions(array $hostids) {
+		if ($hostids) {
+			$hostids = array_unique($hostids);
+
+			$count = API::Host()->get([
+				'countOutput' => true,
+				'hostids' => $hostids,
+				'editable' => true
+			]);
+
+			if ($count == count($hostids)) {
+				return;
+			}
+
+			$count += API::Template()->get([
+				'countOutput' => true,
+				'templateids' => $hostids,
+				'editable' => true
+			]);
+
+			if ($count != count($hostids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS,
+					_('No permissions to referred object or it does not exist!')
+				);
+			}
+		}
 	}
 
 	/**
@@ -444,13 +492,15 @@ class CDiscoveryRule extends CItemGeneral {
 			self::exception(ZBX_API_ERROR_PARAMETERS, _('No host IDs given.'));
 		}
 
-		// check if all hosts exist and are writable
-		if (!API::Host()->isWritable($data['hostids'])) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS, _('No permissions to referred object or it does not exist!'));
-		}
+		$this->checkHostPermissions($data['hostids']);
 
 		// check if the given discovery rules exist
-		if (!$this->isReadable($data['discoveryids'])) {
+		$count = $this->get([
+			'countOutput' => true,
+			'itemids' => $data['discoveryids']
+		]);
+
+		if ($count != count($data['discoveryids'])) {
 			self::exception(ZBX_API_ERROR_PERMISSIONS, _('No permissions to referred object or it does not exist!'));
 		}
 
@@ -485,59 +535,6 @@ class CDiscoveryRule extends CItemGeneral {
 		$this->inherit($items, $data['hostids']);
 
 		return true;
-	}
-
-	/**
-	 * Returns true if the given discovery rules exists and are available for
-	 * reading.
-	 *
-	 * @param array $ids	An array if item IDs
-	 *
-	 * @return bool
-	 */
-	public function isReadable($ids) {
-		if (!is_array($ids)) {
-			return false;
-		}
-		elseif (empty($ids)) {
-			return true;
-		}
-
-		$ids = array_unique($ids);
-
-		$count = $this->get([
-			'itemids' => $ids,
-			'countOutput' => true
-		]);
-
-		return (count($ids) == $count);
-	}
-
-	/**
-	 * Returns true if the given discovery rules exists and are available for
-	 * writing.
-	 *
-	 * @param array $ids	An array if item IDs
-	 *
-	 * @return bool
-	 */
-	public function isWritable($ids) {
-		if (!is_array($ids)) {
-			return false;
-		}
-		elseif (empty($ids)) {
-			return true;
-		}
-
-		$ids = array_unique($ids);
-
-		$count = $this->get([
-			'itemids' => $ids,
-			'editable' => true,
-			'countOutput' => true
-		]);
-
-		return (count($ids) == $count);
 	}
 
 	/**
@@ -908,6 +905,12 @@ class CDiscoveryRule extends CItemGeneral {
 			$item['flags'] = ZBX_FLAG_DISCOVERY_RULE;
 			$item['value_type'] = ITEM_VALUE_TYPE_TEXT;
 
+			if (array_key_exists('type', $item) && $item['type'] == ITEM_TYPE_DEPENDENT) {
+				self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value "%1$s" for "%2$s" field.',
+					ITEM_TYPE_DEPENDENT, 'type'
+				));
+			}
+
 			// unset fields that are updated using the 'filter' parameter
 			unset($item['evaltype']);
 			unset($item['formula']);
@@ -1010,12 +1013,25 @@ class CDiscoveryRule extends CItemGeneral {
 		];
 	}
 
-	protected function checkSpecificFields(array $item) {
-		if (isset($item['lifetime']) && !$this->validateLifetime($item['lifetime'])) {
+	/**
+	 * Check discovery rule specific fields.
+	 *
+	 * @param array  $item    An array of single item data.
+	 * @param string $method  A string of "create" or "update" method.
+	 *
+	 * @throws APIException if the input is invalid.
+	 */
+	protected function checkSpecificFields(array $item, $method) {
+		if (array_key_exists('lifetime', $item)
+				&& !validateTimeUnit($item['lifetime'], SEC_PER_HOUR, 25 * SEC_PER_YEAR, true, $error,
+					['usermacros' => true])) {
 			self::exception(ZBX_API_ERROR_PARAMETERS,
-				_s('Discovery rule "%1$s:%2$s" has incorrect lifetime: "%3$s". (min: %4$d, max: %5$d, user macro allowed)',
-					$item['name'], $item['key_'], $item['lifetime'], self::MIN_LIFETIME, self::MAX_LIFETIME)
+				_s('Incorrect value for field "%1$s": %2$s.', 'lifetime', $error)
 			);
+		}
+
+		if (array_key_exists('preprocessing', $item)) {
+			self::exception(ZBX_API_ERROR_PARAMETERS, _('Item pre-processing is not allowed for discovery rules.'));
 		}
 	}
 
@@ -1065,13 +1081,12 @@ class CDiscoveryRule extends CItemGeneral {
 		// fetch discovery to clone
 		$srcDiscovery = $this->get([
 			'itemids' => $discoveryid,
-			'output' => ['itemid', 'type', 'snmp_community', 'snmp_oid', 'hostid', 'name', 'key_', 'delay',
-				'history', 'trends', 'status', 'value_type', 'trapper_hosts', 'units', 'multiplier', 'delta',
-				'snmpv3_securityname', 'snmpv3_securitylevel', 'snmpv3_authpassphrase', 'snmpv3_privpassphrase',
-				'lastlogsize', 'logtimefmt', 'valuemapid', 'delay_flex', 'params', 'ipmi_sensor', 'data_type',
-				'authtype', 'username', 'password', 'publickey', 'privatekey', 'mtime', 'flags', 'interfaceid', 'port',
-				'description', 'inventory_link', 'lifetime', 'snmpv3_authprotocol', 'snmpv3_privprotocol',
-				'snmpv3_contextname'
+			'output' => ['itemid', 'type', 'snmp_community', 'snmp_oid', 'hostid', 'name', 'key_', 'delay', 'history',
+				'trends', 'status', 'value_type', 'trapper_hosts', 'units', 'snmpv3_securityname',
+				'snmpv3_securitylevel',	'snmpv3_authpassphrase', 'snmpv3_privpassphrase', 'lastlogsize', 'logtimefmt',
+				'valuemapid', 'params', 'ipmi_sensor', 'authtype', 'username', 'password', 'publickey', 'privatekey',
+				'mtime', 'flags', 'interfaceid', 'port', 'description', 'inventory_link', 'lifetime',
+				'snmpv3_authprotocol', 'snmpv3_privprotocol', 'snmpv3_contextname', 'jmx_endpoint'
 			],
 			'selectFilter' => ['evaltype', 'formula', 'conditions'],
 			'preservekeys' => true
@@ -1165,23 +1180,71 @@ class CDiscoveryRule extends CItemGeneral {
 	 */
 	protected function copyItemPrototypes(array $srcDiscovery, array $dstDiscovery, array $dstHost) {
 		$prototypes = API::ItemPrototype()->get([
-			'output' => [
-				'itemid', 'type', 'snmp_community', 'snmp_oid', 'name', 'key_', 'delay', 'history',
-				'trends', 'status', 'value_type', 'trapper_hosts', 'units', 'multiplier', 'delta',
-				'snmpv3_securityname', 'snmpv3_securitylevel', 'snmpv3_authpassphrase', 'snmpv3_privpassphrase',
-				'formula', 'logtimefmt', 'valuemapid', 'delay_flex', 'params', 'ipmi_sensor',
-				'data_type', 'authtype', 'username', 'password', 'publickey', 'privatekey',
-				'interfaceid', 'port', 'description', 'snmpv3_authprotocol', 'snmpv3_privprotocol', 'snmpv3_contextname'
+			'output' => ['itemid', 'type', 'snmp_community', 'snmp_oid', 'name', 'key_', 'delay', 'history', 'trends',
+				'status', 'value_type', 'trapper_hosts', 'units', 'snmpv3_securityname', 'snmpv3_securitylevel',
+				'snmpv3_authpassphrase', 'snmpv3_privpassphrase', 'logtimefmt', 'valuemapid', 'params', 'ipmi_sensor',
+				'authtype', 'username', 'password', 'publickey', 'privatekey', 'interfaceid', 'port', 'description',
+				'snmpv3_authprotocol', 'snmpv3_privprotocol', 'snmpv3_contextname', 'jmx_endpoint', 'master_itemid',
+				'templateid', 'type'
 			],
 			'selectApplications' => ['applicationid'],
 			'selectApplicationPrototypes' => ['name'],
+			'selectPreprocessing' => ['type', 'params'],
 			'discoveryids' => $srcDiscovery['itemid'],
 			'preservekeys' => true
 		]);
 
 		$rs = [];
 		if ($prototypes) {
-			foreach ($prototypes as $key => $prototype) {
+			$create_order = [];
+			$src_itemid_to_key = [];
+			foreach ($prototypes as $itemid => $item) {
+				$dependency_level = 0;
+				$master_item = $item;
+				$src_itemid_to_key[$itemid] = $item['key_'];
+
+				while ($master_item['type'] == ITEM_TYPE_DEPENDENT) {
+					$master_item = $prototypes[$master_item['master_itemid']];
+					++$dependency_level;
+				}
+
+				$create_order[$itemid] = $dependency_level;
+			}
+			asort($create_order);
+
+			$itemkey_to_id = [];
+			$create_items = [];
+			$current_dependency = reset($create_order);
+
+			foreach ($create_order as $key => $dependency_level) {
+				if ($current_dependency != $dependency_level && $create_items) {
+					$current_dependency = $dependency_level;
+					$created_itemids = API::ItemPrototype()->create($create_items);
+
+					if (!$created_itemids) {
+						self::exception(ZBX_API_ERROR_PARAMETERS, _('Cannot clone item prototypes.'));
+					}
+					$created_itemids = $created_itemids['itemids'];
+
+					foreach ($create_items as $index => $created_item) {
+						$itemkey_to_id[$created_item['key_']] = $created_itemids[$index];
+					}
+
+					$create_items = [];
+				}
+
+				$prototype = $prototypes[$key];
+
+				if ($prototype['templateid']) {
+					$prototype = get_same_item_for_host($prototype, $dstHost['hostid']);
+
+					if (!$prototype) {
+						self::exception(ZBX_API_ERROR_PARAMETERS, _('Cannot clone item prototypes.'));
+					}
+					$itemkey_to_id[$srcItem['key_']] = $prototype['itemid'];
+					continue;
+				}
+
 				$prototype['ruleid'] = $dstDiscovery['itemid'];
 				$prototype['hostid'] = $dstDiscovery['hostid'];
 
@@ -1208,16 +1271,28 @@ class CDiscoveryRule extends CItemGeneral {
 					$dstHost['hostid']
 				);
 
-				$prototypes[$key] = $prototype;
+				if (!$prototype['preprocessing']) {
+					unset($prototype['preprocessing']);
+				}
+
+				if ($prototype['type'] == ITEM_TYPE_DEPENDENT) {
+					$src_item_key = $src_itemid_to_key[$prototype['master_itemid']];
+					$prototype['master_itemid'] = $itemkey_to_id[$src_item_key];
+				}
+				else {
+					unset($prototype['master_itemid']);
+				}
+
+				unset($prototype['templateid']);
+				$create_items[] = $prototype;
 			}
 
-			$rs = API::ItemPrototype()->create($prototypes);
-			if (!$rs) {
+			if ($create_items && !API::ItemPrototype()->create($create_items)) {
 				self::exception(ZBX_API_ERROR_PARAMETERS, _('Cannot clone item prototypes.'));
 			}
 		}
 
-		return $rs;
+		return true;
 	}
 
 	/**
@@ -1385,14 +1460,10 @@ class CDiscoveryRule extends CItemGeneral {
 		return $rs;
 	}
 
-	private function validateLifetime($lifetime) {
-		return (validateNumber($lifetime, self::MIN_LIFETIME, self::MAX_LIFETIME) || validateUserMacro($lifetime));
-	}
-
 	protected function applyQueryOutputOptions($tableName, $tableAlias, array $options, array $sqlParts) {
 		$sqlParts = parent::applyQueryOutputOptions($tableName, $tableAlias, $options, $sqlParts);
 
-		if ($options['countOutput'] === null) {
+		if (!$options['countOutput']) {
 			// add filter fields
 			if ($this->outputIsRequested('formula', $options['selectFilter'])
 					|| $this->outputIsRequested('eval_formula', $options['selectFilter'])

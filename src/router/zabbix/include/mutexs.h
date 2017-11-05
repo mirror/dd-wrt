@@ -37,7 +37,6 @@
 
 #	define ZBX_MUTEX_NAME		int
 
-#	define ZBX_NO_MUTEX		-1
 #	define ZBX_MUTEX_LOG		0
 #	define ZBX_MUTEX_CACHE		1
 #	define ZBX_MUTEX_TRENDS		2
@@ -51,21 +50,18 @@
 #	define ZBX_MUTEX_VMWARE		10
 #	define ZBX_MUTEX_SQLITE3	11
 #	define ZBX_MUTEX_PROCSTAT	12
-#	define ZBX_MUTEX_COUNT		13
-
-#	define ZBX_MUTEX_MAX_TRIES	20	/* seconds */
+#	define ZBX_MUTEX_PROXY_HISTORY	13
+#	define ZBX_MUTEX_COUNT		14
 
 #endif	/* _WINDOWS */
 
-#define zbx_mutex_create(mutex, name)		zbx_mutex_create_ext(mutex, name, 0)
-#define zbx_mutex_create_force(mutex, name)	zbx_mutex_create_ext(mutex, name, 1)
 #define zbx_mutex_lock(mutex)			__zbx_mutex_lock(__FILE__, __LINE__, mutex)
 #define zbx_mutex_unlock(mutex)			__zbx_mutex_unlock(__FILE__, __LINE__, mutex)
 
-int	zbx_mutex_create_ext(ZBX_MUTEX *mutex, ZBX_MUTEX_NAME name, unsigned char forced);
+int	zbx_mutex_create(ZBX_MUTEX *mutex, ZBX_MUTEX_NAME name, char **error);
 void	__zbx_mutex_lock(const char *filename, int line, ZBX_MUTEX *mutex);
 void	__zbx_mutex_unlock(const char *filename, int line, ZBX_MUTEX *mutex);
-int	zbx_mutex_destroy(ZBX_MUTEX *mutex);
+void	zbx_mutex_destroy(ZBX_MUTEX *mutex);
 
 #ifdef _WINDOWS
 ZBX_MUTEX_NAME	zbx_mutex_create_per_process_name(const ZBX_MUTEX_NAME prefix);

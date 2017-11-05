@@ -68,36 +68,38 @@ class CMap extends CMapElement {
 		$defOptions = [
 			'sysmapids'					=> null,
 			'userids'					=> null,
-			'editable'					=> null,
+			'editable'					=> false,
 			'nopermissions'				=> null,
 			// filter
 			'filter'					=> null,
 			'search'					=> null,
 			'searchByAny'				=> null,
-			'startSearch'				=> null,
-			'excludeSearch'				=> null,
+			'startSearch'				=> false,
+			'excludeSearch'				=> false,
 			'searchWildcardsEnabled'	=> null,
 			// output
 			'output'					=> API_OUTPUT_EXTEND,
 			'selectSelements'			=> null,
+			'selectShapes'				=> null,
+			'selectLines'				=> null,
 			'selectLinks'				=> null,
 			'selectIconMap'				=> null,
 			'selectUrls'				=> null,
 			'selectUsers'				=> null,
 			'selectUserGroups'			=> null,
-			'countOutput'				=> null,
+			'countOutput'				=> false,
 			'expandUrls' 				=> null,
-			'preservekeys'				=> null,
+			'preservekeys'				=> false,
 			'sortfield'					=> '',
 			'sortorder'					=> '',
 			'limit'						=> null
 		];
 		$options = zbx_array_merge($defOptions, $options);
 
-		if ($options['countOutput'] !== null) {
+		if ($options['countOutput']) {
 			$count_output = true;
-			$options['output'] = array('sysmapid');
-			$options['countOutput'] = null;
+			$options['output'] = ['sysmapid'];
+			$options['countOutput'] = false;
 			$options['limit'] = null;
 		}
 		else {
@@ -172,8 +174,6 @@ class CMap extends CMapElement {
 		$sql_parts = $this->applyQuerySortOptions($this->tableName(), $this->tableAlias(), $options, $sql_parts);
 		$res = DBselect($this->createSelectQueryFromParts($sql_parts), $sql_parts['limit']);
 		while ($sysmap = DBfetch($res)) {
-			$sysmapids[$sysmap['sysmapid']] = $sysmap['sysmapid'];
-
 			// originally we intended not to pass those parameters if advanced labels are off, but they might be useful
 			// leaving this block commented
 			// if (isset($sysmap['label_format']) && ($sysmap['label_format'] == SYSMAP_LABEL_ADVANCED_OFF)) {
@@ -181,155 +181,335 @@ class CMap extends CMapElement {
 			// }
 
 			$result[$sysmap['sysmapid']] = $sysmap;
+			$result[$sysmap['sysmapid']]['permission'] = PERM_READ_WRITE;
+			$result[$sysmap['sysmapid']]['accessible_elements'] = 0;
 		}
 
-		if ($user_data['type'] != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
-			if ($result) {
-				$linkTriggers = [];
+		if ($result) {
+			// If Selements are not required, request only details needed to validate map permissions:
+			$rewritten_options['selectSelements'] = [];
+			$rewritten_options['selectLinks'] = [];
 
-				$dbLinkTriggers = DBselect(
-					'SELECT slt.triggerid,sl.sysmapid'.
-					' FROM sysmaps_link_triggers slt,sysmaps_links sl'.
-					' WHERE '.dbConditionInt('sl.sysmapid', $sysmapids).
-						' AND sl.linkid=slt.linkid'
-				);
-				while ($linkTrigger = DBfetch($dbLinkTriggers)) {
-					$linkTriggers[$linkTrigger['sysmapid']] = $linkTrigger['triggerid'];
-				}
+			if ($options['selectSelements'] !== null && $options['selectSelements'] !== API_OUTPUT_COUNT) {
+				$rewritten_options['selectSelements'] = $options['selectSelements'];
+			}
+			if ($options['selectLinks'] !== null && $options['selectLinks'] !== API_OUTPUT_COUNT) {
+				$rewritten_options['selectLinks'] = $options['selectLinks'];
+			}
 
-				if ($linkTriggers) {
-					$all_triggers = API::Trigger()->get([
-						'output' => ['triggerid'],
-						'triggerids' => $linkTriggers,
-						'preservekeys' => true
-					]);
+			$rewritten_options['selectSelements'] = $this->outputExtend($rewritten_options['selectSelements'],
+				['selementid', 'elements', 'elementtype']);
+			$rewritten_options['selectLinks'] = $this->outputExtend($rewritten_options['selectLinks'],
+				['linkid', 'linktriggers']);
 
-					foreach ($linkTriggers as $id => $triggerid) {
-						if (!array_key_exists($triggerid, $all_triggers)) {
-							unset($result[$id], $sysmapids[$id]);
+			$result = $this->addRelatedObjects(zbx_array_merge($options, $rewritten_options), $result);
+		}
+
+		if ($result && $user_data['type'] != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
+			$hostgroupids_to_check = [];
+			$triggerids_to_check = [];
+			$sysmapids_to_check = [];
+			$hostids_to_check = [];
+			$db_hostgrps_r = [];
+			$db_hostgrps_rw = [];
+			$db_hosts_r = [];
+			$db_hosts_rw = [];
+			$db_triggers_r = [];
+			$db_triggers_rw = [];
+			$db_sysmaps_r = [];
+			$db_sysmaps_rw = [];
+
+			foreach ($result as $sysmapid => &$sysmap) {
+				if ($sysmap['selements']) {
+					foreach ($sysmap['selements'] as &$selement) {
+						switch ($selement['elementtype']) {
+							case SYSMAP_ELEMENT_TYPE_HOST_GROUP:
+								$selement['elmids'] = zbx_objectValues($selement['elements'], 'groupid');
+								$hostgroupids_to_check = array_merge($hostgroupids_to_check, $selement['elmids']);
+								break;
+							case SYSMAP_ELEMENT_TYPE_HOST:
+								$selement['elmids'] = zbx_objectValues($selement['elements'], 'hostid');
+								$hostids_to_check = array_merge($hostids_to_check, $selement['elmids']);
+								break;
+							case SYSMAP_ELEMENT_TYPE_TRIGGER:
+								$selement['elmids'] = zbx_objectValues($selement['elements'], 'triggerid');
+								$triggerids_to_check = array_merge($triggerids_to_check, $selement['elmids']);
+								break;
+							case SYSMAP_ELEMENT_TYPE_MAP:
+								$selement['elmids'] = zbx_objectValues($selement['elements'], 'sysmapid');
+								$sysmapids_to_check = array_merge($sysmapids_to_check, $selement['elmids']);
+								break;
 						}
 					}
+
+					unset($selement);
 				}
 
-				$hostsToCheck = [];
-				$mapsToCheck = [];
-				$triggersToCheck = [];
-				$hostGroupsToCheck = [];
-
-				$selements = [];
-				$dbSelements = DBselect(
-					'SELECT se.*'.
-					' FROM sysmaps_elements se'.
-					' WHERE '.dbConditionInt('se.sysmapid', $sysmapids)
-				);
-
-				while ($selement = DBfetch($dbSelements)) {
-					$selements[$selement['selementid']] = $selement;
-
-					switch ($selement['elementtype']) {
-						case SYSMAP_ELEMENT_TYPE_HOST:
-							$hostsToCheck[$selement['elementid']] = $selement['elementid'];
-							break;
-						case SYSMAP_ELEMENT_TYPE_MAP:
-							$mapsToCheck[$selement['elementid']] = $selement['elementid'];
-							break;
-						case SYSMAP_ELEMENT_TYPE_TRIGGER:
-							$triggersToCheck[$selement['elementid']] = $selement['elementid'];
-							break;
-						case SYSMAP_ELEMENT_TYPE_HOST_GROUP:
-							$hostGroupsToCheck[$selement['elementid']] = $selement['elementid'];
-							break;
+				if (array_key_exists('links', $sysmap) && $sysmap['links']) {
+					foreach ($sysmap['links'] as &$links) {
+						$links['triggerids'] = zbx_objectValues($links['linktriggers'], 'triggerid');
+						$triggerids_to_check = array_merge($triggerids_to_check, $links['triggerids']);
 					}
+
+					unset($links);
 				}
 
-				if ($hostsToCheck) {
-					$allowedHosts = API::Host()->get([
-						'output' => ['hostid'],
-						'hostids' => $hostsToCheck,
-						'preservekeys' => true
-					]);
-
-					foreach ($hostsToCheck as $elementid) {
-						if (!array_key_exists($elementid, $allowedHosts)) {
-							foreach ($selements as $selementid => $selement) {
-								if ($selement['elementtype'] == SYSMAP_ELEMENT_TYPE_HOST
-										&& bccomp($selement['elementid'], $elementid) == 0) {
-									unset($result[$selement['sysmapid']], $selements[$selementid]);
-								}
-							}
-						}
-					}
-				}
-
-				if ($mapsToCheck) {
-					$allowedMaps = $this->get([
-						'output' => ['sysmapid'],
-						'sysmapids' => $mapsToCheck,
-						'preservekeys' => true
-					]);
-
-					foreach ($mapsToCheck as $elementid) {
-						if (!array_key_exists($elementid, $allowedMaps)) {
-							foreach ($selements as $selementid => $selement) {
-								if ($selement['elementtype'] == SYSMAP_ELEMENT_TYPE_MAP
-										&& bccomp($selement['elementid'], $elementid) == 0) {
-									unset($result[$selement['sysmapid']], $selements[$selementid]);
-								}
-							}
-						}
-					}
-				}
-
-				if ($triggersToCheck) {
-					$allowedTriggers = API::Trigger()->get([
-						'triggerids' => $triggersToCheck,
-						'preservekeys' => true,
-						'output' => ['triggerid']
-					]);
-
-					foreach ($triggersToCheck as $elementid) {
-						if (!isset($allowedTriggers[$elementid])) {
-							foreach ($selements as $selementid => $selement) {
-								if ($selement['elementtype'] == SYSMAP_ELEMENT_TYPE_TRIGGER
-										&& bccomp($selement['elementid'], $elementid) == 0) {
-									unset($result[$selement['sysmapid']], $selements[$selementid]);
-								}
-							}
-						}
-					}
-				}
-
-				if ($hostGroupsToCheck) {
-					$allowedHostGroups = API::HostGroup()->get([
-						'output' => ['groupid'],
-						'groupids' => $hostGroupsToCheck,
-						'preservekeys' => true
-					]);
-
-					foreach ($hostGroupsToCheck as $elementid) {
-						if (!array_key_exists($elementid, $allowedHostGroups)) {
-							foreach ($selements as $selementid => $selement) {
-								if ($selement['elementtype'] == SYSMAP_ELEMENT_TYPE_HOST_GROUP
-										&& bccomp($selement['elementid'], $elementid) == 0) {
-									unset($result[$selement['sysmapid']], $selements[$selementid]);
-								}
-							}
-						}
-					}
+				// Grant permissions to access map if map has no elements with possibility to limit permissions.
+				if (!$sysmap['selements'] && (!array_key_exists('links', $sysmap) || !$sysmap['links'])) {
+					$sysmap['accessible_elements'] = 1;
 				}
 			}
+			unset($sysmap);
+
+			if ($hostgroupids_to_check) {
+				$hostgroupids_to_check = array_keys(array_flip($hostgroupids_to_check));
+
+				$db_hostgrps_r = API::HostGroup()->get([
+					'output' => [],
+					'groupids' => $hostgroupids_to_check,
+					'preservekeys' => true
+				]);
+				$db_hostgrps_r = array_keys($db_hostgrps_r);
+
+				$db_hostgrps_rw = API::HostGroup()->get([
+					'output' => [],
+					'groupids' => $hostgroupids_to_check,
+					'preservekeys' => true,
+					'editable' => true
+				]);
+				$db_hostgrps_rw = array_keys($db_hostgrps_rw);
+			}
+
+			if ($hostids_to_check) {
+				$hostids_to_check = array_keys(array_flip($hostids_to_check));
+
+				$db_hosts_r = API::Host()->get([
+					'output' => [],
+					'hostids' => $hostids_to_check,
+					'preservekeys' => true
+				]);
+				$db_hosts_r = array_keys($db_hosts_r);
+
+				$db_hosts_rw = API::Host()->get([
+					'output' => [],
+					'hostids' => $hostids_to_check,
+					'preservekeys' => true,
+					'editable' => true
+				]);
+				$db_hosts_rw = array_keys($db_hosts_rw);
+			}
+
+			if ($triggerids_to_check) {
+				$triggerids_to_check = array_keys(array_flip($triggerids_to_check));
+
+				$db_triggers_r = API::Trigger()->get([
+					'output' => [],
+					'triggerids' => $triggerids_to_check,
+					'preservekeys' => true
+				]);
+				$db_triggers_r = array_keys($db_triggers_r);
+
+				$db_triggers_rw = API::Trigger()->get([
+					'output' => [],
+					'triggerids' => $triggerids_to_check,
+					'preservekeys' => true,
+					'editable' => true
+				]);
+				$db_triggers_rw = array_keys($db_triggers_rw);
+			}
+
+			if ($sysmapids_to_check) {
+				$sysmapids_to_check = array_keys(array_flip($sysmapids_to_check));
+
+				$db_sysmaps_r = $this->get([
+					'output' => [],
+					'sysmapids' => $sysmapids_to_check,
+					'preservekeys' => true
+				]);
+				$db_sysmaps_r = array_keys($db_sysmaps_r);
+
+				$db_sysmaps_rw = $this->get([
+					'output' => [],
+					'sysmapids' => $sysmapids_to_check,
+					'preservekeys' => true,
+					'editable' => true
+				]);
+				$db_sysmaps_rw = array_keys($db_sysmaps_rw);
+			}
+
+			foreach ($result as $sysmapid => &$sysmap) {
+				if ($sysmap['selements']) {
+					foreach ($sysmap['selements'] as &$sel) {
+						$permission = PERM_NONE;
+
+						switch ($sel['elementtype']) {
+							case SYSMAP_ELEMENT_TYPE_HOST_GROUP:
+								if (!array_diff($sel['elmids'], array_intersect($db_hostgrps_rw, $sel['elmids']))) {
+									$permission = PERM_READ_WRITE;
+								}
+								elseif (!array_diff($sel['elmids'], array_intersect($db_hostgrps_r, $sel['elmids']))) {
+									$permission = PERM_READ;
+								}
+								break;
+							case SYSMAP_ELEMENT_TYPE_HOST:
+								if (!array_diff($sel['elmids'], array_intersect($db_hosts_rw, $sel['elmids']))) {
+									$permission = PERM_READ_WRITE;
+								}
+								elseif (!array_diff($sel['elmids'], array_intersect($db_hosts_r, $sel['elmids']))) {
+									$permission = PERM_READ;
+								}
+								break;
+							case SYSMAP_ELEMENT_TYPE_TRIGGER:
+								if (!array_diff($sel['elmids'], array_intersect($db_triggers_rw, $sel['elmids']))) {
+									$permission = PERM_READ_WRITE;
+								}
+								elseif (array_intersect($sel['elmids'], $db_triggers_r) && !$options['editable']) {
+									$permission = PERM_READ;
+								}
+								elseif ($options['editable']
+									&& !array_diff($sel['elmids'], array_intersect($db_triggers_r, $sel['elmids']))) {
+									$permission = PERM_READ;
+								}
+								break;
+							case SYSMAP_ELEMENT_TYPE_MAP:
+								if (!array_diff($sel['elmids'], array_intersect($db_sysmaps_rw, $sel['elmids']))) {
+									$permission = PERM_READ_WRITE;
+								}
+								elseif (!array_diff($sel['elmids'], array_intersect($db_sysmaps_r, $sel['elmids']))) {
+									$permission = PERM_READ;
+								}
+								break;
+							case SYSMAP_ELEMENT_TYPE_IMAGE:
+								$permission = ($user_data['type'] == USER_TYPE_SUPER_ADMIN)
+									? PERM_READ_WRITE
+									: PERM_READ;
+								break;
+						}
+
+						unset($sel['elmids']);
+						$sel['permission'] = $permission;
+
+						if ($permission >= PERM_READ) {
+							$sysmap['accessible_elements']++;
+						}
+
+						if ($sysmap['permission'] > $permission) {
+							$sysmap['permission'] = $permission;
+						}
+					}
+					unset($sel);
+				}
+
+				if (array_key_exists('links', $sysmap) && $sysmap['links']) {
+					foreach ($sysmap['links'] as &$lnk) {
+						$permission = PERM_NONE;
+
+						if (!array_diff($lnk['triggerids'], array_intersect($db_triggers_rw, $lnk['triggerids']))) {
+							$permission = PERM_READ_WRITE;
+						}
+						elseif (array_intersect($lnk['triggerids'], $db_triggers_r) && !$options['editable']) {
+							$permission = PERM_READ;
+						}
+						elseif ($options['editable']
+							&& !array_diff($lnk['triggerids'], array_intersect($db_triggers_r, $lnk['triggerids']))) {
+							$permission = PERM_READ;
+						}
+
+						unset($lnk['triggerids']);
+						$lnk['permission'] = $permission;
+
+						if ($permission >= PERM_READ) {
+							$sysmap['accessible_elements']++;
+						}
+
+						if ($sysmap['permission'] > $permission) {
+							$sysmap['permission'] = $permission;
+						}
+					}
+					unset($lnk);
+				}
+			}
+
+			unset($sysmap);
+		}
+		elseif ($result) {
+			foreach ($result as $sysmapid => &$sysmap) {
+				if (array_key_exists('links', $sysmap)) {
+					foreach ($sysmap['links'] as &$link) {
+						$link['permission'] = PERM_READ_WRITE;
+					}
+				}
+				foreach ($sysmap['selements'] as &$selement) {
+					$selement['permission'] = PERM_READ_WRITE;
+				}
+			}
+			unset($sysmap, $selement, $link);
+		}
+
+		foreach ($result as $sysmap_key => $sysmap) {
+			if ($user_data['type'] != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']
+					&& !$sysmap['accessible_elements']) {
+				unset($result[$sysmap_key]);
+				continue;
+			}
+
+			// Convert selected elements and links in the form they was originaly requested.
+			if ($options['selectSelements'] === null) {
+				unset($result[$sysmap_key]['selements']);
+			}
+			elseif ($options['selectSelements'] === API_OUTPUT_COUNT) {
+				$result[$sysmap_key]['selements'] = count($result[$sysmap_key]['selements']);
+			}
+			elseif (is_array($options['selectSelements'])) {
+				$selements_data_to_return = [];
+				foreach ($result[$sysmap_key]['selements'] as $selement_key => $selement) {
+					foreach ($options['selectSelements'] as $requested_attr) {
+						if (array_key_exists($requested_attr, $selement)) {
+							$selements_data_to_return[$selement_key][$requested_attr] = $selement[$requested_attr];
+						}
+					}
+				}
+
+				$result[$sysmap_key]['selements'] = $selements_data_to_return;
+			}
+
+			if ($options['selectLinks'] === null) {
+				unset($result[$sysmap_key]['links']);
+			}
+			elseif ($options['selectLinks'] === API_OUTPUT_COUNT) {
+				$result[$sysmap_key]['links'] = count($result[$sysmap_key]['links']);
+			}
+			elseif (is_array($options['selectLinks'])) {
+				$links_data_to_return = [];
+				foreach ($result[$sysmap_key]['links'] as $link_key => $link) {
+					foreach ($options['selectLinks'] as $requested_attr) {
+						if (array_key_exists($requested_attr, $link)) {
+							$links_data_to_return[$link_key][$requested_attr] = $link[$requested_attr];
+						}
+					}
+				}
+
+				$result[$sysmap_key]['links'] = $links_data_to_return;
+			}
+
+			/*
+			 * At this point editable means that all elemenets must be at least readable. This does not cancel
+			 * previous conditions.
+			 */
+			if ($options['editable'] && PERM_READ > $sysmap['permission']) {
+				unset($result[$sysmap_key]);
+				continue;
+			}
+
+			unset($result[$sysmap_key]['accessible_elements'], $result[$sysmap_key]['permission']);
 		}
 
 		if ($count_output) {
 			return count($result);
 		}
 
-		if ($result) {
-			$result = $this->addRelatedObjects($options, $result);
-		}
-
 		// removing keys (hash -> array)
-		if (is_null($options['preservekeys'])) {
+		if (!$options['preservekeys']) {
 			$result = zbx_cleanHashes($result);
 		}
 
@@ -420,6 +600,9 @@ class CMap extends CMapElement {
 			'values' => [PERM_READ, PERM_READ_WRITE]
 		]);
 
+		$expandproblem_types = [SYSMAP_PROBLEMS_NUMBER, SYSMAP_SINGLE_PROBLEM, SYSMAP_PROBLEMS_NUMBER_CRITICAL];
+		$expandproblem_validator = new CLimitedSetValidator(['values' => $expandproblem_types]);
+
 		// Continue to check 2 more mandatory fields and other optional fields.
 		foreach ($maps as $map) {
 			// Check mandatory fields "width" and "height".
@@ -453,6 +636,12 @@ class CMap extends CMapElement {
 						_s('Incorrect "private" value "%1$s" for map "%2$s".', $map['private'], $map['name'])
 					);
 				}
+			}
+
+			if (array_key_exists('expandproblem', $map) && !$expandproblem_validator->validate($map['expandproblem'])) {
+				self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.', 'expandproblem',
+					_s('value must be one of %1$s', implode(', ', $expandproblem_types))
+				));
 			}
 
 			$userids = [];
@@ -727,6 +916,10 @@ class CMap extends CMapElement {
 						);
 					}
 
+					if (!CHtmlUrlValidator::validate($url['url'])) {
+						self::exception(ZBX_API_ERROR_PARAMETERS, _('Wrong value for url field.'));
+					}
+
 					unset($url_names[$url['name']]);
 				}
 			}
@@ -842,6 +1035,9 @@ class CMap extends CMapElement {
 			'values' => [PERM_READ, PERM_READ_WRITE]
 		]);
 
+		$expandproblem_types = [SYSMAP_PROBLEMS_NUMBER, SYSMAP_SINGLE_PROBLEM, SYSMAP_PROBLEMS_NUMBER_CRITICAL];
+		$expandproblem_validator = new CLimitedSetValidator(['values' => $expandproblem_types]);
+
 		foreach ($maps as $map) {
 			// Check if owner can be set.
 			if (array_key_exists('userid', $map)) {
@@ -876,6 +1072,12 @@ class CMap extends CMapElement {
 				self::exception(ZBX_API_ERROR_PARAMETERS,
 					_s('Incorrect "private" value "%1$s" for map "%2$s".', $map['private'], $map['name'])
 				);
+			}
+
+			if (array_key_exists('expandproblem', $map) && !$expandproblem_validator->validate($map['expandproblem'])) {
+				self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect value for field "%1$s": %2$s.', 'expandproblem',
+					_s('value must be one of %1$s', implode(', ', $expandproblem_types))
+				));
 			}
 
 			$userids = [];
@@ -1156,6 +1358,10 @@ class CMap extends CMapElement {
 						);
 					}
 
+					if (!CHtmlUrlValidator::validate($url['url'])) {
+						self::exception(ZBX_API_ERROR_PARAMETERS, _('Wrong value for url field.'));
+					}
+
 					unset($urlNames[$url['name']]);
 				}
 			}
@@ -1221,8 +1427,39 @@ class CMap extends CMapElement {
 		$shared_users = [];
 		$shared_user_groups = [];
 		$urls = [];
+		$shapes = [];
 		$selements = [];
 		$links = [];
+		$api_shape_rules = ['type' => API_OBJECTS, 'flags' => API_NORMALIZE, 'fields' => [
+			'type' =>				['type' => API_INT32, 'flags' => API_REQUIRED, 'in' => implode(',', [SYSMAP_SHAPE_TYPE_RECTANGLE, SYSMAP_SHAPE_TYPE_ELLIPSE])],
+			'x' =>					['type' => API_INT32],
+			'y' =>					['type' => API_INT32],
+			'width' =>				['type' => API_INT32],
+			'height' =>				['type' => API_INT32],
+			'font' =>				['type' => API_INT32, 'in' => '0:12'],
+			'font_size' =>			['type' => API_INT32, 'in' => '1:250'],
+			'text_halign' =>		['type' => API_INT32, 'in' => implode(',', [SYSMAP_SHAPE_LABEL_HALIGN_CENTER, SYSMAP_SHAPE_LABEL_HALIGN_LEFT, SYSMAP_SHAPE_LABEL_HALIGN_RIGHT])],
+			'text_valign' =>		['type' => API_INT32, 'in' => implode(',', [SYSMAP_SHAPE_LABEL_VALIGN_MIDDLE, SYSMAP_SHAPE_LABEL_VALIGN_TOP, SYSMAP_SHAPE_LABEL_VALIGN_BOTTOM])],
+			'border_type' =>		['type' => API_INT32, 'in' => implode(',', [SYSMAP_SHAPE_BORDER_TYPE_NONE, SYSMAP_SHAPE_BORDER_TYPE_SOLID, SYSMAP_SHAPE_BORDER_TYPE_DOTTED, SYSMAP_SHAPE_BORDER_TYPE_DASHED])],
+			'border_width' =>		['type' => API_INT32, 'in' => '0:50'],
+			'border_color' =>		['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('sysmap_shape', 'border_color')],
+			'background_color' =>	['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('sysmap_shape', 'background_color')],
+			'font_color' =>			['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('sysmap_shape', 'font_color')],
+			'text' =>				['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('sysmap_shape', 'text')],
+			'zindex' =>				['type' => API_INT32]
+		]];
+		$api_line_rules = ['type' => API_OBJECTS, 'flags' => API_NORMALIZE, 'fields' => [
+			'x1' =>					['type' => API_INT32],
+			'y1' =>					['type' => API_INT32],
+			'x2' =>					['type' => API_INT32],
+			'y2' =>					['type' => API_INT32],
+			'line_type' =>			['type' => API_INT32, 'in' => implode(',', [SYSMAP_SHAPE_BORDER_TYPE_NONE, SYSMAP_SHAPE_BORDER_TYPE_SOLID, SYSMAP_SHAPE_BORDER_TYPE_DOTTED, SYSMAP_SHAPE_BORDER_TYPE_DASHED])],
+			'line_width' =>			['type' => API_INT32, 'in' => '0:50'],
+			'line_color' =>			['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('sysmap_shape', 'border_color')],
+			'zindex' =>				['type' => API_INT32]
+		]];
+		$default_shape_width = DB::getDefault('sysmap_shape', 'width');
+		$default_shape_height = DB::getDefault('sysmap_shape', 'height');
 
 		foreach ($sysmapids as $key => $sysmapid) {
 			// Map user shares.
@@ -1260,6 +1497,54 @@ class CMap extends CMapElement {
 				}
 
 				$selements += $maps[$key]['selements'];
+			}
+
+			if (array_key_exists('shapes', $maps[$key])) {
+				$path = '/'.($key + 1).'/shape';
+				$api_shape_rules['fields']['x']['in'] = '0:'.$maps[$key]['width'];
+				$api_shape_rules['fields']['y']['in'] = '0:'.$maps[$key]['height'];
+				$api_shape_rules['fields']['width']['in'] = '1:'.$maps[$key]['width'];
+				$api_shape_rules['fields']['height']['in'] = '1:'.$maps[$key]['height'];
+
+				foreach ($maps[$key]['shapes'] as &$shape) {
+					$shape['width'] = array_key_exists('width', $shape) ? $shape['width'] : $default_shape_width;
+					$shape['height'] = array_key_exists('height', $shape) ? $shape['height'] : $default_shape_height;
+				}
+				unset($shape);
+
+				if (!CApiInputValidator::validate($api_shape_rules, $maps[$key]['shapes'], $path, $error)) {
+					self::exception(ZBX_API_ERROR_PARAMETERS, $error);
+				}
+
+				foreach ($maps[$key]['shapes'] as $snum => $shape) {
+					$maps[$key]['shapes'][$snum]['sysmapid'] = $sysmapid;
+				}
+
+				$shapes += $maps[$key]['shapes'];
+			}
+
+			if (array_key_exists('lines', $maps[$key])) {
+				$path = '/'.($key + 1).'/line';
+				$api_line_rules['fields']['x1']['in'] = '0:'.$maps[$key]['width'];
+				$api_line_rules['fields']['y1']['in'] = '0:'.$maps[$key]['height'];
+				$api_line_rules['fields']['x2']['in'] = '0:'.$maps[$key]['width'];
+				$api_line_rules['fields']['y2']['in'] = '0:'.$maps[$key]['height'];
+
+				foreach ($maps[$key]['lines'] as &$line) {
+					$line['x2'] = array_key_exists('x2', $line) ? $line['x2'] : $default_shape_width;
+					$line['y2'] = array_key_exists('y2', $line) ? $line['y2'] : $default_shape_height;
+				}
+				unset($line);
+
+				if (!CApiInputValidator::validate($api_line_rules, $maps[$key]['lines'], $path, $error)) {
+					self::exception(ZBX_API_ERROR_PARAMETERS, $error);
+				}
+
+				foreach ($maps[$key]['lines'] as $line) {
+					$shape = CMapHelper::convertLineToShape($line);
+					$shape['sysmapid'] = $sysmapid;
+					$shapes[] = $shape;
+				}
 			}
 
 			if (array_key_exists('links', $maps[$key])) {
@@ -1310,6 +1595,10 @@ class CMap extends CMapElement {
 			}
 		}
 
+		if ($shapes) {
+			$this->createShapes($shapes);
+		}
+
 		return ['sysmapids' => $sysmapids];
 	}
 
@@ -1339,6 +1628,13 @@ class CMap extends CMapElement {
 			'sysmapids' => zbx_objectValues($maps, 'sysmapid'),
 			'selectLinks' => API_OUTPUT_EXTEND,
 			'selectSelements' => API_OUTPUT_EXTEND,
+			'selectShapes' => ['sysmap_shapeid', 'type', 'x', 'y', 'width', 'height', 'text', 'font', 'font_size',
+				'font_color', 'text_halign', 'text_valign', 'border_type', 'border_width', 'border_color',
+				'background_color', 'zindex'
+			],
+			'selectLines' => ['sysmap_shapeid', 'x1', 'y1', 'x2', 'y2', 'line_type', 'line_width', 'line_color',
+				'zindex'
+			],
 			'selectUrls' => ['sysmapid', 'sysmapurlid', 'name', 'url'],
 			'selectUsers' => ['sysmapuserid', 'sysmapid', 'userid', 'permission'],
 			'selectUserGroups' => ['sysmapusrgrpid', 'sysmapid', 'usrgrpid', 'permission'],
@@ -1355,6 +1651,9 @@ class CMap extends CMapElement {
 		$selements_to_delete = [];
 		$selements_to_update = [];
 		$selements_to_add = [];
+		$shapes_to_delete = [];
+		$shapes_to_update = [];
+		$shapes_to_add = [];
 		$links_to_delete = [];
 		$links_to_update = [];
 		$links_to_add = [];
@@ -1364,8 +1663,40 @@ class CMap extends CMapElement {
 		$shared_user_groupids_to_delete = [];
 		$shared_user_groups_to_update = [];
 		$shared_user_groups_to_add = [];
+		$api_shape_rules = ['type' => API_OBJECTS, 'flags' => API_NORMALIZE, 'fields' => [
+			'sysmap_shapeid' =>		['type' => API_ID],
+			'type' =>				['type' => API_INT32, 'in' => implode(',', [SYSMAP_SHAPE_TYPE_RECTANGLE, SYSMAP_SHAPE_TYPE_ELLIPSE])],
+			'x' =>					['type' => API_INT32],
+			'y' =>					['type' => API_INT32],
+			'width' =>				['type' => API_INT32],
+			'height' =>				['type' => API_INT32],
+			'font' =>				['type' => API_INT32, 'in' => '0:12'],
+			'font_size' =>			['type' => API_INT32, 'in' => '1:250'],
+			'text_halign' =>		['type' => API_INT32, 'in' => implode(',', [SYSMAP_SHAPE_LABEL_HALIGN_CENTER, SYSMAP_SHAPE_LABEL_HALIGN_LEFT, SYSMAP_SHAPE_LABEL_HALIGN_RIGHT])],
+			'text_valign' =>		['type' => API_INT32, 'in' => implode(',', [SYSMAP_SHAPE_LABEL_VALIGN_MIDDLE, SYSMAP_SHAPE_LABEL_VALIGN_TOP, SYSMAP_SHAPE_LABEL_VALIGN_BOTTOM])],
+			'border_type' =>		['type' => API_INT32, 'in' => implode(',', [SYSMAP_SHAPE_BORDER_TYPE_NONE, SYSMAP_SHAPE_BORDER_TYPE_SOLID, SYSMAP_SHAPE_BORDER_TYPE_DOTTED, SYSMAP_SHAPE_BORDER_TYPE_DASHED])],
+			'border_width' =>		['type' => API_INT32, 'in' => '0:50'],
+			'border_color' =>		['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('sysmap_shape', 'border_color')],
+			'background_color' =>	['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('sysmap_shape', 'background_color')],
+			'font_color' =>			['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('sysmap_shape', 'font_color')],
+			'text' =>				['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('sysmap_shape', 'text')],
+			'zindex' =>				['type' => API_INT32]
+		]];
+		$api_line_rules = ['type' => API_OBJECTS, 'flags' => API_NORMALIZE, 'fields' => [
+			'sysmap_shapeid' =>		['type' => API_ID],
+			'x1' =>					['type' => API_INT32],
+			'y1' =>					['type' => API_INT32],
+			'x2' =>					['type' => API_INT32],
+			'y2' =>					['type' => API_INT32],
+			'line_type' =>			['type' => API_INT32, 'in' => implode(',', [SYSMAP_SHAPE_BORDER_TYPE_NONE, SYSMAP_SHAPE_BORDER_TYPE_SOLID, SYSMAP_SHAPE_BORDER_TYPE_DOTTED, SYSMAP_SHAPE_BORDER_TYPE_DASHED])],
+			'line_width' =>			['type' => API_INT32, 'in' => '0:50'],
+			'line_color' =>			['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('sysmap_shape', 'border_color')],
+			'zindex' =>				['type' => API_INT32]
+		]];
+		$default_shape_width = DB::getDefault('sysmap_shape', 'width');
+		$default_shape_height = DB::getDefault('sysmap_shape', 'height');
 
-		foreach ($maps as $map) {
+		foreach ($maps as $index => $map) {
 			$update_maps[] = [
 				'values' => $map,
 				'where' => ['sysmapid' => $map['sysmapid']],
@@ -1452,6 +1783,102 @@ class CMap extends CMapElement {
 				$selements_to_delete = array_merge($selements_to_delete, $selement_diff['second']);
 			}
 
+			$map_width = array_key_exists('width', $map) ? $map['width'] : $db_map['width'];
+			$map_height = array_key_exists('height', $map) ? $map['height'] : $db_map['height'];
+
+			// Map shapes.
+			if (array_key_exists('shapes', $map)) {
+				$map['shapes'] = array_values($map['shapes']);
+
+				foreach ($map['shapes'] as &$shape) {
+					$shape['width'] = array_key_exists('width', $shape) ? $shape['width'] : $default_shape_width;
+					$shape['height'] = array_key_exists('height', $shape) ? $shape['height'] : $default_shape_height;
+				}
+				unset($shape);
+
+				$shape_diff = zbx_array_diff($map['shapes'], $db_map['shapes'], 'sysmap_shapeid');
+
+				$path = '/'.($index + 1).'/shape';
+				foreach ($shape_diff['first'] as $new_shape) {
+					if (array_key_exists('sysmap_shapeid', $new_shape)) {
+						self::exception(ZBX_API_ERROR_PARAMETERS,
+							_('No permissions to referred object or it does not exist!')
+						);
+					}
+				}
+
+				unset($api_shape_rules['fields']['sysmap_shapeid']);
+				$api_shape_rules['fields']['type']['flags'] = API_REQUIRED;
+				$api_shape_rules['fields']['x']['in'] = '0:'.$map_width;
+				$api_shape_rules['fields']['y']['in'] = '0:'.$map_height;
+				$api_shape_rules['fields']['width']['in'] = '1:'.$map_width;
+				$api_shape_rules['fields']['height']['in'] = '1:'.$map_height;
+
+				if (!CApiInputValidator::validate($api_shape_rules, $shape_diff['first'], $path, $error)) {
+					self::exception(ZBX_API_ERROR_PARAMETERS, $error);
+				}
+
+				$api_shape_rules['fields']['sysmap_shapeid'] = ['type' => API_ID, 'flags' => API_REQUIRED];
+				$api_shape_rules['fields']['type']['flags'] = 0;
+				if (!CApiInputValidator::validate($api_shape_rules, $shape_diff['both'], $path, $error)) {
+					self::exception(ZBX_API_ERROR_PARAMETERS, $error);
+				}
+
+				$shapes_to_update = array_merge($shapes_to_update, $shape_diff['both']);
+				$shapes_to_delete = array_merge($shapes_to_delete, $shape_diff['second']);
+
+				// We need sysmapid for add operations.
+				foreach ($shape_diff['first'] as $new_shape) {
+					$new_shape['sysmapid'] = $map['sysmapid'];
+					$shapes_to_add[] = $new_shape;
+				}
+			}
+
+			if (array_key_exists('lines', $map)) {
+				$map['lines'] = array_values($map['lines']);
+				$shapes = [];
+
+				$api_line_rules['fields']['x1']['in'] = '0:'.$map_width;
+				$api_line_rules['fields']['y1']['in'] = '0:'.$map_height;
+				$api_line_rules['fields']['x2']['in'] = '0:'.$map_width;
+				$api_line_rules['fields']['y2']['in'] = '0:'.$map_height;
+
+				$path = '/'.($index + 1).'/line';
+
+				foreach ($map['lines'] as &$line) {
+					$line['x2'] = array_key_exists('x2', $line) ? $line['x2'] : $default_shape_width;
+					$line['y2'] = array_key_exists('y2', $line) ? $line['y2'] : $default_shape_height;
+				}
+				unset($line);
+
+				if (!CApiInputValidator::validate($api_line_rules, $map['lines'], $path, $error)) {
+					self::exception(ZBX_API_ERROR_PARAMETERS, $error);
+				}
+
+				foreach ($map['lines'] as $line) {
+					$shapes[] = CMapHelper::convertLineToShape($line);
+				}
+
+				$line_diff = zbx_array_diff($shapes, $db_map['lines'], 'sysmap_shapeid');
+
+				foreach ($line_diff['first'] as $new_line) {
+					if (array_key_exists('sysmap_shapeid', $new_line)) {
+						self::exception(ZBX_API_ERROR_PARAMETERS,
+							_('No permissions to referred object or it does not exist!')
+						);
+					}
+				}
+
+				$shapes_to_update = array_merge($shapes_to_update, $line_diff['both']);
+				$shapes_to_delete = array_merge($shapes_to_delete, $line_diff['second']);
+
+				// We need sysmapid for add operations.
+				foreach ($line_diff['first'] as $new_shape) {
+					$new_shape['sysmapid'] = $map['sysmapid'];
+					$shapes_to_add[] = $new_shape;
+				}
+			}
+
 			// Links.
 			if (array_key_exists('links', $map)) {
 				$link_diff = zbx_array_diff($map['links'], $db_map['links'], 'linkid');
@@ -1506,6 +1933,18 @@ class CMap extends CMapElement {
 
 		if ($selements_to_delete) {
 			$this->deleteSelements($selements_to_delete);
+		}
+
+		if ($shapes_to_add) {
+			$this->createShapes($shapes_to_add);
+		}
+
+		if ($shapes_to_update) {
+			$this->updateShapes($shapes_to_update);
+		}
+
+		if ($shapes_to_delete) {
+			$this->deleteShapes($shapes_to_delete);
 		}
 
 		// Links.
@@ -1675,37 +2114,6 @@ class CMap extends CMapElement {
 		return $url;
 	}
 
-	public function isReadable(array $ids) {
-		if (empty($ids)) {
-			return true;
-		}
-
-		$ids = array_unique($ids);
-
-		$count = $this->get([
-			'sysmapids' => $ids,
-			'countOutput' => true
-		]);
-
-		return (count($ids) == $count);
-	}
-
-	public function isWritable(array $ids) {
-		if (empty($ids)) {
-			return true;
-		}
-
-		$ids = array_unique($ids);
-
-		$count = $this->get([
-			'sysmapids' => $ids,
-			'editable' => true,
-			'countOutput' => true
-		]);
-
-		return (count($ids) == $count);
-	}
-
 	protected function addRelatedObjects(array $options, array $result) {
 		$result = parent::addRelatedObjects($options, $result);
 
@@ -1714,7 +2122,9 @@ class CMap extends CMapElement {
 		// adding elements
 		if ($options['selectSelements'] !== null && $options['selectSelements'] != API_OUTPUT_COUNT) {
 			$selements = API::getApiService()->select('sysmaps_elements', [
-				'output' => $this->outputExtend($options['selectSelements'], ['selementid', 'sysmapid']),
+				'output' => $this->outputExtend($options['selectSelements'], ['selementid', 'sysmapid', 'elementtype',
+					'elementid'
+				]),
 				'filter' => ['sysmapid' => $sysmapIds],
 				'preservekeys' => true
 			]);
@@ -1760,8 +2170,131 @@ class CMap extends CMapElement {
 				}
 			}
 
-			$selements = $this->unsetExtraFields($selements, ['sysmapid', 'selementid'], $options['selectSelements']);
+			if ($this->outputIsRequested('elements', $options['selectSelements']) && $selements) {
+				$selementids = [];
+				foreach ($selements as &$selement) {
+					$selement['elements'] = [];
+				}
+				unset($selement);
+
+				$selement_triggers = API::getApiService()->select('sysmap_element_trigger', [
+					'output' => ['selementid', 'triggerid'],
+					'filter' => ['selementid' => array_keys($selements)]
+				]);
+				foreach ($selement_triggers as $selement_trigger) {
+					$selements[$selement_trigger['selementid']]['elements'][] = [
+						'triggerid' => $selement_trigger['triggerid']
+					];
+				}
+
+				$single_element_types = [SYSMAP_ELEMENT_TYPE_HOST, SYSMAP_ELEMENT_TYPE_MAP,
+					SYSMAP_ELEMENT_TYPE_HOST_GROUP
+				];
+
+				foreach ($selements as &$selement) {
+					if (in_array($selement['elementtype'], $single_element_types)) {
+						switch ($selement['elementtype']) {
+							case SYSMAP_ELEMENT_TYPE_HOST_GROUP:
+								$field = 'groupid';
+								break;
+
+							case SYSMAP_ELEMENT_TYPE_HOST:
+								$field = 'hostid';
+								break;
+
+							case SYSMAP_ELEMENT_TYPE_MAP:
+								$field = 'sysmapid';
+								break;
+						}
+						$selement['elements'][] = [$field => $selement['elementid']];
+					}
+
+					unset($selement['elementid']);
+				}
+				unset($selement);
+			}
+
+			$selements = $this->unsetExtraFields($selements, ['sysmapid', 'selementid', 'elementid', 'elementtype'],
+				$options['selectSelements']
+			);
 			$result = $relation_map->mapMany($result, $selements, 'selements');
+		}
+
+		$shape_types = [];
+		if ($options['selectShapes'] !== null && $options['selectShapes'] != API_OUTPUT_COUNT) {
+			$shape_types = [SYSMAP_SHAPE_TYPE_RECTANGLE, SYSMAP_SHAPE_TYPE_ELLIPSE];
+		}
+
+		if ($options['selectLines'] !== null && $options['selectLines'] != API_OUTPUT_COUNT) {
+			$shape_types[] = SYSMAP_SHAPE_TYPE_LINE;
+		}
+
+		// Adding shapes.
+		if ($shape_types) {
+			$fields = API_OUTPUT_EXTEND;
+
+			if ($options['selectShapes'] != API_OUTPUT_EXTEND && $options['selectLines'] != API_OUTPUT_EXTEND) {
+				$fields = ['sysmap_shapeid', 'sysmapid', 'type'];
+				$mapping = [
+					'x1' => 'x',
+					'y1' => 'y',
+					'x2' => 'width',
+					'y2' =>	'height',
+					'line_type' => 'border_type',
+					'line_width' => 'border_width',
+					'line_color' => 'border_color'
+				];
+
+				if (is_array($options['selectLines'])) {
+					foreach ($mapping as $source_field => $target_field) {
+						if (in_array($source_field, $options['selectLines'])) {
+							$fields[] = $target_field;
+						}
+					}
+				}
+
+				if (is_array($options['selectShapes'])) {
+					$fields = array_merge($fields, $options['selectShapes']);
+				}
+			}
+
+			$db_shapes = API::getApiService()->select('sysmap_shape', [
+				'output' => $fields,
+				'filter' => ['sysmapid' => $sysmapIds, 'type' => $shape_types],
+				'preservekeys' => true
+			]);
+
+			$shapes = [];
+			$lines = [];
+			foreach ($db_shapes as $key => $db_shape) {
+				if ($db_shape['type'] == SYSMAP_SHAPE_TYPE_LINE) {
+					$lines[$key] = CMapHelper::convertShapeToLine($db_shape);
+				}
+				else {
+					$shapes[$key] = $db_shape;
+				}
+			}
+
+			$relation_map = $this->createRelationMap($db_shapes, 'sysmapid', 'sysmap_shapeid');
+
+			if ($options['selectShapes'] !== null && $options['selectShapes'] != API_OUTPUT_COUNT) {
+				$shapes = $this->unsetExtraFields($shapes, ['sysmap_shapeid', 'type', 'x', 'y', 'width', 'height',
+					'text', 'font', 'font_size', 'font_color', 'text_halign', 'text_valign', 'border_type',
+					'border_width', 'border_color', 'background_color', 'zindex'
+				], $options['selectShapes']);
+				$shapes = $this->unsetExtraFields($shapes, ['sysmapid'], null);
+
+				$result = $relation_map->mapMany($result, $shapes, 'shapes');
+			}
+
+			if ($options['selectLines'] !== null && $options['selectLines'] != API_OUTPUT_COUNT) {
+				$lines = $this->unsetExtraFields($lines, ['sysmap_shapeid', 'x1', 'x2', 'y1', 'y2', 'line_type',
+					'line_width', 'line_color', 'zindex'
+				], $options['selectLines']);
+				$lines = $this->unsetExtraFields($lines, ['sysmapid', 'type'], null);
+
+				$result = $relation_map->mapMany($result, $lines, 'lines');
+			}
 		}
 
 		// adding icon maps

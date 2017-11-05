@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include "threads.h"
+#include "module.h"
 
 #ifdef HAVE_ICONV
 #	include <iconv.h>
@@ -777,100 +778,6 @@ int	zbx_check_hostname(const char *hostname, char **error)
 		if (NULL != error)
 			*error = zbx_dsprintf(NULL, "name is too long (max %d characters)", MAX_ZBX_HOSTNAME_LEN);
 		return FAIL;
-	}
-
-	return SUCCEED;
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: get_item_key                                                     *
- *                                                                            *
- * Purpose: return key with parameters (if present)                           *
- *                                                                            *
- *  e.g., system.run[cat /etc/passwd | awk -F: '{ print $1 }']                *
- *                                                                            *
- * Parameters: exp - [IN] pointer to the first char of key                    *
- *             key - [OUT] pointer to the resulted key                        *
- *                                                                            *
- *  e.g., {host:system.run[cat /etc/passwd | awk -F: '{ print $1 }'].last(0)} *
- *              ^                                                             *
- *                                                                            *
- * Return value: return SUCCEED and move exp to the next character after key  *
- *               or FAIL and move exp to incorrect character                  *
- *                                                                            *
- * Notes: implements the functionality of old parse_key() in a safe manner.   *
- *        input pointer is NOT advanced.                                      *
- *                                                                            *
- ******************************************************************************/
-int	get_item_key(char **exp, char **key)
-{
-	char	*p = *exp, c;
-
-	if (SUCCEED != parse_key(&p))
-		return FAIL;
-
-	if ('(' == *p)
-	{
-		for (p--; *exp < p && '.' != *p; p--)
-			;
-
-		if (*exp == p)	/* the key is empty */
-			return FAIL;
-	}
-
-	c = *p;
-	*p = '\0';
-	*key = zbx_strdup(NULL, *exp);
-	*p = c;
-
-	*exp = p;
-
-	return SUCCEED;
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: parse_host                                                       *
- *                                                                            *
- * Purpose: parse hostname                                                    *
- *                                                                            *
- *  e.g., Zabbix server                                                       *
- *                                                                            *
- * Parameters: exp - pointer to the first char of hostname                    *
- *             host - optional pointer to resulted hostname                   *
- *                                                                            *
- *  e.g., {Zabbix server:agent.ping.last(0)}                                  *
- *         ^                                                                  *
- *                                                                            *
- * Return value: return SUCCEED and move exp to the next char after hostname  *
- *               or FAIL and move exp at the failed character                 *
- *                                                                            *
- * Author: Aleksandrs Saveljevs                                               *
- *                                                                            *
- ******************************************************************************/
-int	parse_host(char **exp, char **host)
-{
-	char	*p, *s;
-
-	p = *exp;
-
-	for (s = *exp; SUCCEED == is_hostname_char(*s); s++)
-		;
-
-	*exp = s;
-
-	if (p == s)
-		return FAIL;
-
-	if (NULL != host)
-	{
-		char	c;
-
-		c = *s;
-		*s = '\0';
-		*host = strdup(p);
-		*s = c;
 	}
 
 	return SUCCEED;
@@ -1933,7 +1840,8 @@ char	*zbx_age2str(int age)
 		offset += zbx_snprintf(buffer + offset, sizeof(buffer) - offset, "%dd ", days);
 	if (0 != days || 0 != hours)
 		offset += zbx_snprintf(buffer + offset, sizeof(buffer) - offset, "%dh ", hours);
-	offset += zbx_snprintf(buffer + offset, sizeof(buffer) - offset, "%dm", minutes);
+
+	zbx_snprintf(buffer + offset, sizeof(buffer) - offset, "%dm", minutes);
 
 	return buffer;
 }
@@ -2010,19 +1918,6 @@ char	*zbx_strcasestr(const char *haystack, const char *needle)
 	}
 
 	return NULL;
-}
-
-int	zbx_mismatch(const char *s1, const char *s2)
-{
-	int	i = 0;
-
-	while (s1[i] == s2[i])
-	{
-		if ('\0' == s1[i++])
-			return FAIL;
-	}
-
-	return i;
 }
 
 int	cmp_key_id(const char *key_1, const char *key_2)
@@ -2153,6 +2048,19 @@ const int	INTERFACE_TYPE_PRIORITY[INTERFACE_TYPE_COUNT] =
 	INTERFACE_TYPE_IPMI
 };
 
+const char	*zbx_sysinfo_ret_string(int ret)
+{
+	switch (ret)
+	{
+		case SYSINFO_RET_OK:
+			return "SYSINFO_SUCCEED";
+		case SYSINFO_RET_FAIL:
+			return "SYSINFO_FAIL";
+		default:
+			return "SYSINFO_UNKNOWN";
+	}
+}
+
 const char	*zbx_result_string(int result)
 {
 	switch (result)
@@ -2192,6 +2100,10 @@ const char	*zbx_item_logtype_string(unsigned char logtype)
 			return "Failure Audit";
 		case ITEM_LOGTYPE_SUCCESS_AUDIT:
 			return "Success Audit";
+		case ITEM_LOGTYPE_CRITICAL:
+			return "Critical";
+		case ITEM_LOGTYPE_VERBOSE:
+			return "Verbose";
 		default:
 			return "unknown";
 	}
@@ -2319,7 +2231,17 @@ const char	*zbx_item_state_string(unsigned char state)
 const char	*zbx_event_value_string(unsigned char source, unsigned char object, unsigned char value)
 {
 	if (EVENT_SOURCE_TRIGGERS == source)
-		return zbx_trigger_value_string(value);
+	{
+		switch (value)
+		{
+			case EVENT_STATUS_PROBLEM:
+				return "PROBLEM";
+			case EVENT_STATUS_RESOLVED:
+				return "RESOLVED";
+			default:
+				return "unknown";
+		}
+	}
 
 	if (EVENT_SOURCE_INTERNAL == source)
 	{
@@ -3569,7 +3491,7 @@ static int	function_parse_name(const char *expr, size_t *length)
  *             length    - [OUT] the parameter length including trailing      *
  *                               whitespace for unquoted parameter            *
  *             sep_pos   - [OUT] the parameter separator character            *
- *                               (',' or '\0') position                       *
+ *                               (',' or '\0' or ')') position                *
  *                                                                            *
  ******************************************************************************/
 void	zbx_function_param_parse(const char *expr, size_t *param_pos, size_t *length, size_t *sep_pos)
@@ -3595,7 +3517,7 @@ void	zbx_function_param_parse(const char *expr, size_t *param_pos, size_t *lengt
 	}
 	else	/* unquoted parameter */
 	{
-		for (ptr = expr; '\0' != *ptr && ',' != *ptr; ptr++)
+		for (ptr = expr; '\0' != *ptr && ')' != *ptr && ',' != *ptr; ptr++)
 			;
 
 		*length = ptr - expr - *param_pos;
@@ -3739,21 +3661,23 @@ static size_t	zbx_no_function(const char *expr)
 
 /******************************************************************************
  *                                                                            *
- * Function: function_match_parenthesis                                       *
+ * Function: function_validate_parameters                                     *
  *                                                                            *
- * Purpose: given the position of opening function parenthesis find the       *
- *          position of a closing one                                         *
+ * Purpose: validate parameters and give position of terminator if found and  *
+ *          not quoted                                                        *
  *                                                                            *
- * Parameters: expr     - [IN] string to parse                                *
- *             par_l    - [IN] position of the opening parenthesis            *
- *             par_r    - [OUT] position of the closing parenthesis           *
+ * Parameters: expr       - [IN] string to parse that contains parameters     *
+ *             terminator - [IN] use ')' if parameters end with parenthesis   *
+ *                               or '\0' if ends with NULL terminator         *
+ *             par_r      - [OUT] position of the terminator if found         *
  *                                                                            *
- * Return value: SUCCEED - closing parenthesis was found                      *
- *               FAIL    - string after par_l does not look like a valid      *
- *                         function parameter list                            *
+ * Return value: SUCCEED -  closing parenthesis was found or other custom     *
+ *                          terminator and not quoted                         *
+ *               FAIL    -  does not look like a valid                        *
+ *                          function parameter list                           *
  *                                                                            *
  ******************************************************************************/
-static int	function_match_parenthesis(const char *expr, size_t par_l, size_t *par_r)
+static int	function_validate_parameters(const char *expr, char terminator, size_t *par_r)
 {
 #define ZBX_FUNC_PARAM_NEXT		0
 #define ZBX_FUNC_PARAM_QUOTED		1
@@ -3763,9 +3687,9 @@ static int	function_match_parenthesis(const char *expr, size_t par_l, size_t *pa
 	const char	*ptr;
 	int		state = ZBX_FUNC_PARAM_NEXT;
 
-	for (ptr = expr + par_l + 1; '\0' != *ptr; ptr++)
+	for (ptr = expr; '\0' != *ptr; ptr++)
 	{
-		if (')' == *ptr && ZBX_FUNC_PARAM_QUOTED != state)
+		if (terminator == *ptr && ZBX_FUNC_PARAM_QUOTED != state)
 		{
 			*par_r = ptr - expr;
 			return SUCCEED;
@@ -3798,12 +3722,65 @@ static int	function_match_parenthesis(const char *expr, size_t par_l, size_t *pa
 		}
 	}
 
+	if (terminator == *ptr && ZBX_FUNC_PARAM_QUOTED != state)
+	{
+		*par_r = ptr - expr;
+		return SUCCEED;
+	}
+
 	return FAIL;
 
 #undef ZBX_FUNC_PARAM_NEXT
 #undef ZBX_FUNC_PARAM_QUOTED
 #undef ZBX_FUNC_PARAM_UNQUOTED
 #undef ZBX_FUNC_PARAM_POSTQUOTED
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: function_match_parenthesis                                       *
+ *                                                                            *
+ * Purpose: given the position of opening function parenthesis find the       *
+ *          position of a closing one                                         *
+ *                                                                            *
+ * Parameters: expr     - [IN] string to parse                                *
+ *             par_l    - [IN] position of the opening parenthesis            *
+ *             par_r    - [OUT] position of the closing parenthesis           *
+ *                                                                            *
+ * Return value: SUCCEED - closing parenthesis was found                      *
+ *               FAIL    - string after par_l does not look like a valid      *
+ *                         function parameter list                            *
+ *                                                                            *
+ ******************************************************************************/
+static int	function_match_parenthesis(const char *expr, size_t par_l, size_t *par_r)
+{
+	if (SUCCEED == function_validate_parameters(expr + par_l + 1, ')', par_r))
+	{
+		*par_r += par_l + 1;
+		return SUCCEED;
+	}
+
+	return FAIL;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_function_validate_parameters                                 *
+ *                                                                            *
+ * Purpose: validate parameters that end with '\0'                            *
+ *                                                                            *
+ * Parameters: expr       - [IN] string to parse that contains parameters     *
+ *             length     - [OUT] length of parameters                        *
+ *                                                                            *
+ * Return value: SUCCEED -  null termination encountered when quotes are      *
+ *                          closed and no other error                         *
+ *               FAIL    -  does not look like a valid                        *
+ *                          function parameter list                           *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_function_validate_parameters(const char *expr, size_t *length)
+{
+	return function_validate_parameters(expr, '\0', length);
 }
 
 /******************************************************************************
@@ -3822,7 +3799,7 @@ static int	function_match_parenthesis(const char *expr, size_t par_l, size_t *pa
  *                         characters can be safely skipped                   *
  *                                                                            *
  ******************************************************************************/
-int	zbx_function_validate(const char *expr, size_t *par_l, size_t *par_r)
+static int	zbx_function_validate(const char *expr, size_t *par_l, size_t *par_r)
 {
 	/* try to validate function name */
 	if (SUCCEED != function_parse_name(expr, par_l))
@@ -4151,7 +4128,8 @@ static int	zbx_token_parse_macro(const char *expression, const char *macro, zbx_
  *               FAIL    - func does not point at valid function              *
  *                                                                            *
  ******************************************************************************/
-static int	zbx_token_parse_function(const char *expression, const char *func, zbx_strloc_t *func_loc)
+static int	zbx_token_parse_function(const char *expression, const char *func,
+		zbx_strloc_t *func_loc, zbx_strloc_t *func_param)
 {
 	size_t	par_l, par_r;
 
@@ -4160,6 +4138,9 @@ static int	zbx_token_parse_function(const char *expression, const char *func, zb
 
 	func_loc->l = func - expression;
 	func_loc->r = func_loc->l + par_r;
+
+	func_param->l = func_loc->l + par_l;
+	func_param->r = func_loc->l + par_r;
 
 	return SUCCEED;
 }
@@ -4188,7 +4169,7 @@ static int	zbx_token_parse_function(const char *expression, const char *func, zb
 static int	zbx_token_parse_func_macro(const char *expression, const char *macro, const char *func,
 		zbx_token_t *token)
 {
-	zbx_strloc_t		func_loc;
+	zbx_strloc_t		func_loc, func_param;
 	zbx_token_func_macro_t	*data;
 	const char		*ptr;
 	int			offset;
@@ -4196,7 +4177,7 @@ static int	zbx_token_parse_func_macro(const char *expression, const char *macro,
 	if ('\0' == *func)
 		return FAIL;
 
-	if (SUCCEED != zbx_token_parse_function(expression, func, &func_loc))
+	if (SUCCEED != zbx_token_parse_function(expression, func, &func_loc, &func_param))
 		return FAIL;
 
 	ptr = expression + func_loc.r + 1;
@@ -4222,6 +4203,7 @@ static int	zbx_token_parse_func_macro(const char *expression, const char *macro,
 	data->macro.r = func_loc.l - 2;
 
 	data->func = func_loc;
+	data->func_param = func_param;
 
 	return SUCCEED;
 }
@@ -4256,7 +4238,7 @@ static int	zbx_token_parse_simple_macro_key(const char *expression, const char *
 	int				offset;
 	zbx_token_simple_macro_t	*data;
 	const char			*ptr;
-	zbx_strloc_t			key_loc, func_loc;
+	zbx_strloc_t			key_loc, func_loc, func_param;
 
 	ptr = key;
 
@@ -4282,7 +4264,7 @@ static int	zbx_token_parse_simple_macro_key(const char *expression, const char *
 	if (0 == ptr - key)
 		return FAIL;
 
-	if (SUCCEED != zbx_token_parse_function(expression, ptr + 1, &func_loc))
+	if (SUCCEED != zbx_token_parse_function(expression, ptr + 1, &func_loc, &func_param))
 		return FAIL;
 
 	key_loc.l = key - expression;
@@ -4312,6 +4294,7 @@ static int	zbx_token_parse_simple_macro_key(const char *expression, const char *
 
 	data->key = key_loc;
 	data->func = func_loc;
+	data->func_param = func_param;
 
 	return SUCCEED;
 }
@@ -4420,10 +4403,12 @@ static int	zbx_token_parse_nested_macro(const char *expression, const char *macr
  * Function: zbx_token_find                                                   *
  *                                                                            *
  * Purpose: finds token {} inside expression starting at specified position   *
+ *          also searches for reference if requested                          *
  *                                                                            *
- * Parameters: expression - [IN] the expression                               *
- *             pos        - [IN] the starting position                        *
- *             token      - [OUT] the token data                              *
+ * Parameters: expression   - [IN] the expression                             *
+ *             pos          - [IN] the starting position                      *
+ *             token        - [OUT] the token data                            *
+ *             token_search - [IN] specify if references will be searched     *
  *                                                                            *
  * Return value: SUCCEED - the token was parsed successfully                  *
  *               FAIL    - expression does not contain valid token.           *
@@ -4442,14 +4427,44 @@ static int	zbx_token_parse_nested_macro(const char *expression, const char *macr
  *           }                                                                *
  *                                                                            *
  ******************************************************************************/
-int	zbx_token_find(const char *expression, int pos, zbx_token_t *token)
+int	zbx_token_find(const char *expression, int pos, zbx_token_t *token, zbx_token_search_t token_search)
 {
 	int		ret = FAIL;
-	const char	*ptr = expression + pos;
+	const char	*ptr = expression + pos, *dollar = ptr;
 
 	while (SUCCEED != ret)
 	{
-		if (NULL == (ptr = strchr(ptr, '{')))
+		ptr = strchr(ptr, '{');
+
+		switch (token_search)
+		{
+			case ZBX_TOKEN_SEARCH_BASIC:
+				break;
+			case ZBX_TOKEN_SEARCH_REFERENCES:
+				while (NULL != (dollar = strchr(dollar, '$')) && (NULL == ptr || ptr > dollar))
+				{
+					if (0 == isdigit(dollar[1]))
+					{
+						dollar++;
+						continue;
+					}
+
+					token->data.reference.index = dollar[1] - '0';
+					token->type = ZBX_TOKEN_REFERENCE;
+					token->token.l = dollar - expression;
+					token->token.r = token->token.l + 1;
+					return SUCCEED;
+				}
+
+				if (NULL == dollar)
+					token_search = ZBX_TOKEN_SEARCH_BASIC;
+
+				break;
+			default:
+				THIS_SHOULD_NEVER_HAPPEN;
+		}
+
+		if (NULL == ptr)
 			return FAIL;
 
 		if ('\0' == ptr[1])
@@ -4529,4 +4544,169 @@ int	zbx_strmatch_condition(const char *value, const char *pattern, unsigned char
 	}
 
 	return ret;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_number_parse                                                 *
+ *                                                                            *
+ * Purpose: parse a suffixed number like "12.345K"                            *
+ *                                                                            *
+ * Parameters: number - [IN] start of number                                  *
+ *             len    - [OUT] length of parsed number                         *
+ *                                                                            *
+ * Return value: SUCCEED - the number was parsed successfully                 *
+ *               FAIL    - invalid number                                     *
+ *                                                                            *
+ * Comments: !!! Don't forget to sync the code with PHP !!!                   *
+ *           The token field locations are specified as offsets from the      *
+ *           beginning of the expression.                                     *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_number_parse(const char *number, int *len)
+{
+	int	digits = 0, dots = 0;
+
+	*len = 0;
+
+	while (1)
+	{
+		if (0 != isdigit(number[*len]))
+		{
+			(*len)++;
+			digits++;
+			continue;
+		}
+
+		if ('.' == number[*len])
+		{
+			(*len)++;
+			dots++;
+			continue;
+		}
+
+		if (1 > digits || 1 < dots)
+			return FAIL;
+
+		if (0 != isalpha(number[*len]) && NULL != strchr(ZBX_UNIT_SYMBOLS, number[*len]))
+			(*len)++;
+
+		return SUCCEED;
+	}
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_number_find                                                  *
+ *                                                                            *
+ * Purpose: finds number inside expression starting at specified position     *
+ *                                                                            *
+ * Parameters: str        - [IN] the expression                               *
+ *             pos        - [IN] the starting position                        *
+ *             number_loc - [OUT] the number location                         *
+ *                                                                            *
+ * Return value: SUCCEED - the number was parsed successfully                 *
+ *               FAIL    - expression does not contain number                 *
+ *                                                                            *
+ * Author: Eugene Grigorjev                                                   *
+ *                                                                            *
+ * Comments: !!! Don't forget to sync the code with PHP !!!                   *
+ *           The token field locations are specified as offsets from the      *
+ *           beginning of the expression.                                     *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_number_find(const char *str, size_t pos, zbx_strloc_t *number_loc)
+{
+	const char	*s, *e;
+	int		len;
+
+	for (s = str + pos; '\0' != *s; s++)	/* find start of number */
+	{
+		if (0 == isdigit(*s) && ('.' != *s || 0 == isdigit(s[1])))
+			continue;
+
+		if (s != str && '{' == *(s - 1) && NULL != (e = strchr(s, '}')))
+		{
+			/* skip functions '{65432}' */
+			s = e;
+			continue;
+		}
+
+		if (SUCCEED != zbx_number_parse(s, &len))
+			continue;
+
+		/* number found */
+
+		number_loc->r = s + len - str - 1;
+
+		/* check for minus before number */
+		if (s > str + pos && '-' == *(s - 1))
+		{
+			/* and make sure it's unary */
+			if (s - 1 > str)
+			{
+				e = s - 2;
+
+				if (e > str && NULL != strchr(ZBX_UNIT_SYMBOLS, *e))
+					e--;
+
+				/* check that minus is not preceded by function, parentheses or (suffixed) number */
+				if ('}' != *e && ')' != *e && '.' != *e && 0 == isdigit(*e))
+					s--;
+			}
+			else	/* nothing before minus, it's definitely unary */
+				s--;
+		}
+
+		number_loc->l = s - str;
+
+		return SUCCEED;
+	}
+
+	return FAIL;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_replace_mem_dyn                                              *
+ *                                                                            *
+ * Purpose: to replace memory block and allocate more memory if needed        *
+ *                                                                            *
+ * Parameters: data       - [IN/OUT] allocated memory                         *
+ *             data_alloc - [IN/OUT] allocated memory size                    *
+ *             data_len   - [IN/OUT] used memory size                         *
+ *             offset     - [IN] offset of memory block to be replaced        *
+ *             sz_to      - [IN] size of block that need to be replaced       *
+ *             from       - [IN] what to replace with                         *
+ *             sz_from    - [IN] size of new block                            *
+ *                                                                            *
+ * Return value: once data is replaced offset can become less, bigger or      *
+ *               remain unchanged                                             *
+ ******************************************************************************/
+int	zbx_replace_mem_dyn(char **data, size_t *data_alloc, size_t *data_len, size_t offset, size_t sz_to,
+		const char *from, size_t sz_from)
+{
+	int	sz_changed = sz_from - sz_to;
+
+	if (0 != sz_changed)
+	{
+		char	*to;
+
+		*data_len += sz_changed;
+
+		if (*data_len > *data_alloc)
+		{
+			while (*data_len > *data_alloc)
+				*data_alloc *= 2;
+
+			*data = zbx_realloc(*data, *data_alloc);
+		}
+
+		to = *data + offset;
+		memmove(to + sz_from, to + sz_to, *data_len - (to - *data) - sz_from);
+	}
+
+	memcpy(*data + offset, from, sz_from);
+
+	return sz_changed;
 }

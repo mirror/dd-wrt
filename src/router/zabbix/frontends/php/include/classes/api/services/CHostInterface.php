@@ -31,23 +31,21 @@ class CHostInterface extends CApiService {
 	/**
 	 * Get interface data.
 	 *
-	 * @param array   $options
-	 * @param array   $options['hostids']		Interface IDs
-	 * @param boolean $options['editable']		only with read-write permission. Ignored for SuperAdmins
-	 * @param boolean $options['selectHosts']	select Interface hosts
-	 * @param boolean $options['selectItems']	select Items
-	 * @param int     $options['count']			count Interfaces, returned column name is rowscount
-	 * @param string  $options['pattern']		search hosts by pattern in Interface name
-	 * @param int     $options['limit']			limit selection
-	 * @param string  $options['sortfield']		field to sort by
-	 * @param string  $options['sortorder']		sort order
+	 * @param array  $options
+	 * @param array  $options['hostids']		Interface IDs
+	 * @param bool   $options['editable']		only with read-write permission. Ignored for SuperAdmins
+	 * @param bool   $options['selectHosts']	select Interface hosts
+	 * @param bool   $options['selectItems']	select Items
+	 * @param int    $options['count']			count Interfaces, returned column name is rowscount
+	 * @param string $options['pattern']		search hosts by pattern in Interface name
+	 * @param int    $options['limit']			limit selection
+	 * @param string $options['sortfield']		field to sort by
+	 * @param string $options['sortorder']		sort order
 	 *
 	 * @return array|boolean Interface data as array or false if error
 	 */
 	public function get(array $options = []) {
 		$result = [];
-		$userType = self::$userData['type'];
-		$userId = self::$userData['userid'];
 
 		$sqlParts = [
 			'select'	=> ['interface' => 'hi.interfaceid'],
@@ -64,22 +62,22 @@ class CHostInterface extends CApiService {
 			'interfaceids'				=> null,
 			'itemids'					=> null,
 			'triggerids'				=> null,
-			'editable'					=> null,
+			'editable'					=> false,
 			'nopermissions'				=> null,
 			// filter
 			'filter'					=> null,
 			'search'					=> null,
 			'searchByAny'				=> null,
-			'startSearch'				=> null,
-			'excludeSearch'				=> null,
+			'startSearch'				=> false,
+			'excludeSearch'				=> false,
 			'searchWildcardsEnabled'	=> null,
 			// output
 			'output'					=> API_OUTPUT_EXTEND,
 			'selectHosts'				=> null,
 			'selectItems'				=> null,
-			'countOutput'				=> null,
-			'groupCount'				=> null,
-			'preservekeys'				=> null,
+			'countOutput'				=> false,
+			'groupCount'				=> false,
+			'preservekeys'				=> false,
 			'sortfield'					=> '',
 			'sortorder'					=> '',
 			'limit'						=> null,
@@ -88,10 +86,9 @@ class CHostInterface extends CApiService {
 		$options = zbx_array_merge($defOptions, $options);
 
 		// editable + PERMISSION CHECK
-		if ($userType != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
+		if (self::$userData['type'] != USER_TYPE_SUPER_ADMIN && !$options['nopermissions']) {
 			$permission = $options['editable'] ? PERM_READ_WRITE : PERM_READ;
-
-			$userGroups = getUserGroupsByUserId($userId);
+			$userGroups = getUserGroupsByUserId(self::$userData['userid']);
 
 			$sqlParts['where'][] = 'EXISTS ('.
 				'SELECT NULL'.
@@ -157,8 +154,8 @@ class CHostInterface extends CApiService {
 		$sqlParts = $this->applyQuerySortOptions($this->tableName(), $this->tableAlias(), $options, $sqlParts);
 		$res = DBselect($this->createSelectQueryFromParts($sqlParts), $sqlParts['limit']);
 		while ($interface = DBfetch($res)) {
-			if (!is_null($options['countOutput'])) {
-				if (!is_null($options['groupCount'])) {
+			if ($options['countOutput']) {
+				if ($options['groupCount']) {
 					$result[] = $interface;
 				}
 				else {
@@ -170,7 +167,7 @@ class CHostInterface extends CApiService {
 			}
 		}
 
-		if (!is_null($options['countOutput'])) {
+		if ($options['countOutput']) {
 			return $result;
 		}
 
@@ -180,7 +177,7 @@ class CHostInterface extends CApiService {
 		}
 
 		// removing keys (hash -> array)
-		if (is_null($options['preservekeys'])) {
+		if (!$options['preservekeys']) {
 			$result = zbx_cleanHashes($result);
 		}
 
@@ -363,18 +360,6 @@ class CHostInterface extends CApiService {
 		return ['interfaceids' => zbx_objectValues($interfaces, 'interfaceid')];
 	}
 
-	protected function clearValues(array $interface) {
-		if (isset($interface['port']) && $interface['port'] != '') {
-			$interface['port'] = ltrim($interface['port'], '0');
-
-			if ($interface['port'] == '') {
-				$interface['port'] = 0;
-			}
-		}
-
-		return $interface;
-	}
-
 	/**
 	 * Delete interfaces.
 	 * Interface cannot be deleted if it's main interface and exists other interface of same type on same host.
@@ -506,7 +491,7 @@ class CHostInterface extends CApiService {
 	/**
 	 * Replace existing interfaces with input interfaces.
 	 *
-	 * @param $host
+	 * @param array $host
 	 */
 	public function replaceHostInterfaces(array $host) {
 		if (isset($host['interfaces']) && !is_null($host['interfaces'])) {
@@ -515,8 +500,8 @@ class CHostInterface extends CApiService {
 			$this->checkHostInterfaces($host['interfaces'], $host['hostid']);
 
 			$interfacesToDelete = API::HostInterface()->get([
+				'output' => [],
 				'hostids' => $host['hostid'],
-				'output' => API_OUTPUT_EXTEND,
 				'preservekeys' => true,
 				'nopermissions' => true
 			]);
@@ -551,13 +536,24 @@ class CHostInterface extends CApiService {
 
 			if ($interfacesToAdd) {
 				$this->checkInput($interfacesToAdd, 'create');
-				DB::insert('interface', $interfacesToAdd);
+				$interfaceids = DB::insert('interface', $interfacesToAdd);
+
+				foreach ($host['interfaces'] as &$interface) {
+					if (!array_key_exists('interfaceid', $interface)) {
+						$interface['interfaceid'] = array_shift($interfaceids);
+					}
+				}
+				unset($interface);
 			}
 
 			if ($interfacesToDelete) {
 				$this->delete(zbx_objectValues($interfacesToDelete, 'interfaceid'));
 			}
+
+			return ['interfaceids' => zbx_objectValues($host['interfaces'], 'interfaceid')];
 		}
+
+		return ['interfaceids' => []];
 	}
 
 	/**
@@ -603,9 +599,10 @@ class CHostInterface extends CApiService {
 			return;
 		}
 
-		$ipValidator = new CIPValidator();
-		if (!$ipValidator->validate($interface['ip'])) {
-			self::exception(ZBX_API_ERROR_PARAMETERS, $ipValidator->getError());
+		$ip_parser = new CIPParser(['v6' => ZBX_HAVE_IPV6]);
+
+		if ($ip_parser->parse($interface['ip']) != CParser::PARSE_SUCCESS) {
+			self::exception(ZBX_API_ERROR_PARAMETERS, _s('Invalid IP address "%1$s".', $interface['ip']));
 		}
 	}
 
@@ -633,8 +630,20 @@ class CHostInterface extends CApiService {
 	 * @param array $hostIds	an array of host IDs
 	 */
 	protected function checkHostPermissions(array $hostIds) {
-		if (!API::Host()->isWritable($hostIds)) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS, _('No permissions to referred object or it does not exist!'));
+		if ($hostids) {
+			$hostids = array_unique($hostids);
+
+			$count = API::Host()->get([
+				'countOutput' => true,
+				'hostids' => $hostids,
+				'editable' => true
+			]);
+
+			if ($count != count($hostids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS,
+					_('No permissions to referred object or it does not exist!')
+				);
+			}
 		}
 	}
 
@@ -837,7 +846,7 @@ class CHostInterface extends CApiService {
 	protected function applyQueryOutputOptions($tableName, $tableAlias, array $options, array $sqlParts) {
 		$sqlParts = parent::applyQueryOutputOptions($tableName, $tableAlias, $options, $sqlParts);
 
-		if ($options['countOutput'] === null && $options['selectHosts'] !== null) {
+		if (!$options['countOutput'] && $options['selectHosts'] !== null) {
 			$sqlParts = $this->addQuerySelect('hi.hostid', $sqlParts);
 		}
 

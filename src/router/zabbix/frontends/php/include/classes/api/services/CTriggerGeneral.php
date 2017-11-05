@@ -511,6 +511,10 @@ abstract class CTriggerGeneral extends CApiService {
 				self::exception(ZBX_API_ERROR_PARAMETERS, $error_wrong_fields);
 			}
 
+			if (array_key_exists('url', $trigger) && $trigger['url'] && !CHtmlUrlValidator::validate($trigger['url'])) {
+				self::exception(ZBX_API_ERROR_PARAMETERS, _('Wrong value for url field.'));
+			}
+
 			$this->checkNoParameters($trigger, $read_only_fields, $error_cannot_set, $trigger['description']);
 
 			if (!array_key_exists('recovery_mode', $trigger)) {
@@ -658,6 +662,10 @@ abstract class CTriggerGeneral extends CApiService {
 		foreach ($triggers as $trigger) {
 			if (!check_db_fields($triggerDbFields, $trigger)) {
 				self::exception(ZBX_API_ERROR_PARAMETERS, $error_wrong_fields);
+			}
+
+			if (array_key_exists('url', $trigger) && $trigger['url'] && !CHtmlUrlValidator::validate($trigger['url'])) {
+				self::exception(ZBX_API_ERROR_PARAMETERS, _('Wrong value for url field.'));
 			}
 		}
 
@@ -1146,19 +1154,19 @@ abstract class CTriggerGeneral extends CApiService {
 				$expressionData = new CTriggerExpression(['lldmacros' => false]);
 				$error_wrong_host = _('Incorrect trigger expression. Host "%1$s" does not exist or you have no access to this host.');
 				$error_host_and_template = _('Incorrect trigger expression. Trigger expression elements should not belong to a template and a host simultaneously.');
+				$triggerFunctionValidator = new CFunctionValidator(['lldmacros' => false]);
 				break;
 
 			case 'CTriggerPrototype':
 				$expressionData = new CTriggerExpression();
 				$error_wrong_host = _('Incorrect trigger prototype expression. Host "%1$s" does not exist or you have no access to this host.');
 				$error_host_and_template = _('Incorrect trigger prototype expression. Trigger prototype expression elements should not belong to a template and a host simultaneously.');
+				$triggerFunctionValidator = new CFunctionValidator();
 				break;
 
 			default:
 				self::exception(ZBX_API_ERROR_INTERNAL, _('Internal error.'));
 		}
-
-		$triggerFunctionValidator = new CFunctionValidator();
 
 		/*
 		 * [

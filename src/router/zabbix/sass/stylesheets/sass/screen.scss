@@ -57,6 +57,25 @@ a {
 	}
 }
 
+svg a {
+	fill: $link-color;
+	cursor: pointer;
+
+	&:visited {
+		fill: $link-visited-color;
+	}
+
+	&:hover, &:focus {
+		fill: $link-hover-color;
+		text-decoration: underline;
+	}
+
+	&:active {
+		fill: $link-active-color;
+		text-decoration: underline;
+	}
+}
+
 .link-action {
 	border-bottom: 1px dotted;
 	cursor: pointer;
@@ -492,21 +511,61 @@ ul.top-nav-icons {
 	text-align: right;
 	border-bottom: 1px solid $ui-border-color;
 
+	.cell:first-child {
+		max-width: calc(100vw - 370px);
+	}
+
 	h1 {
 		text-align: left;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		overflow: hidden;
 	}
 
 	form {
-		display: inline-block;
+		display: flex;
+		justify-content: flex-end;
 	}
 
 	ul {
-
 		li {
 			display: inline-block;
 			vertical-align: top;
 			position: relative;
 			padding: 0 0 0 10px;
+		}
+	}
+
+	.dashbrd-edit {
+		position: relative;
+		display: inline-block;
+		background-color: $ui-bg-color;
+		@include box-shadow(0 0 0 4px $ui-bg-color);
+
+		&::after {
+			content: "";
+			position: absolute;
+			min-height: 24px;
+			z-index: -1;
+			top: -5px;
+			right: -5px;
+			bottom: -5px;
+			left: -5px;
+			border: 1px solid $ui-border-color;
+		}
+
+		ul {
+			li {
+				vertical-align: middle;
+
+				&:first-child {
+					padding: 0;
+				}
+
+				.btn-dashbrd-conf {
+					vertical-align: middle;
+				}
+			}
 		}
 	}
 }
@@ -710,6 +769,7 @@ footer {
 
 	td {
 		padding: 6px 5px;
+		position: relative;
 		border-bottom: 1px solid $table-border-color;
 	}
 
@@ -1527,9 +1587,9 @@ footer {
 	}
 
 	label {
-		padding: 0 0 0 16px;
+		padding: 0 0 0 18px;
 		display: inline-block;
-		text-indent: -13px;
+		text-indent: -18px;
 		max-width: 600px;
 
 		input[type="checkbox"] {
@@ -1556,7 +1616,6 @@ footer {
 			margin-right: 0;
 		}
 	}
-
 }
 
 .radio-segmented {
@@ -1587,8 +1646,11 @@ footer {
 	}
 
 	input[type="radio"] {
-		position: absolute;
-		clip: rect(1px, 1px, 1px, 1px);
+		position: absolute !important;
+		top: auto !important;
+		width: 1px !important;
+		height: 1px !important;
+		@include opacity(0);
 
 		+ label {
 			color: $font-color;
@@ -1773,6 +1835,103 @@ select {
 	margin: 0 3px 0 0;
 }
 
+.checkbox-radio {
+	&[type="checkbox"] {
+		+ label span {
+			@include border-radius(2px);
+		}
+
+		&:checked + label span {
+			&::after {
+				content:'';
+				position: absolute;
+				display: block;
+				width: 7px;
+				height: 4px;
+				top: 6px;
+				left: 7px;
+				border-left: 2px solid $btn-bg-color;
+				border-bottom: 2px solid $btn-bg-color;
+				@include transform(translate(-50%, -50%) rotate(-45deg));
+			}
+		}
+
+		&:checked[disabled] + label span {
+			&::after {
+				border-color: $form-border-color !important;
+			}
+		}
+	}
+
+	&[type="radio"] {
+		+ label span {
+			@include border-radius(50%);
+		}
+
+		&:checked + label span {
+			&::after {
+				content: '';
+				position: absolute;
+				display: block;
+				width: 8px;
+				height: 8px;
+				top: 3px;
+				left: 3px;
+				background-color: $btn-bg-color;
+				@include border-radius(50%);
+			}
+		}
+
+		&:checked[disabled] + label span {
+			&::after {
+				background-color: $form-border-color !important;
+			}
+		}
+	}
+
+	position: absolute !important;
+	top: auto !important;
+	width: 16px !important;
+	height: 16px !important;
+	z-index: 1;
+	@include opacity(0);
+
+	+ label span {
+		position: relative;
+		display: inline-block;
+		width: 14px;
+		height: 14px;
+		margin: -4px 4px 0 0;
+		bottom: -3px;
+		border: 1px solid $form-border-color;
+		background-color: $form-bg-color;
+
+		&:active {
+			border-color: $form-border-color;
+		}
+	}
+
+	&:focus + label span {
+		border-color: $form-border-focus-color;
+	}
+
+	&:checked:focus + label span {
+		border-color: $form-border-focus-color;
+	}
+
+	&:checked[disabled] + label span {
+		&::after {
+			border-color: $form-border-color !important;
+		}
+		@include transition(none);
+	}
+
+	&[disabled] + label span {
+		@include transition(none);
+		@extend %form-disabled;
+	}
+}
+
 %form-check-radio-style {
 	margin: 0;
 	padding: 0;
@@ -1845,16 +2004,49 @@ button {
 	color: $btn-alt-font-color;
 	background-color: $btn-alt-bg-color;
 
+	.plus-icon {
+		background-color: $btn-alt-font-color;
+		margin-right: 8px;
+
+		&::after {
+			background-color: $btn-alt-font-color;
+		}
+	}
+
 	&:hover {
 		@include btn-hover-active($btn-font-color, $btn-bg-color);
+
+		.plus-icon {
+			background-color: $btn-font-color;
+
+			&::after {
+				background-color: $btn-font-color;
+			}
+		}
 	}
 
 	&:focus {
 		@include btn-hover-active($btn-font-color, $btn-bg-color);
+
+		.plus-icon {
+			background-color: $btn-font-color;
+
+			&::after {
+				background-color: $btn-font-color;
+			}
+		}
 	}
 
 	&:active {
 		@include btn-hover-active($btn-font-color, $btn-bg-color);
+
+		.plus-icon {
+			background-color: $btn-font-color;
+
+			&::after {
+				background-color: $btn-font-color;
+			}
+		}
 	}
 }
 
@@ -1990,9 +2182,11 @@ $icon-btn: (
 }
 
 $icon-widget-btn: (
-	widget-action: url(../img/icon-sprite.svg) no-repeat -2px -616px,
+	widget-action: url(../img/icon-sprite.svg) no-repeat -4px -616px,
 	widget-collapse: url(../img/icon-sprite.svg) no-repeat -5px -652px,
 	widget-expand: url(../img/icon-sprite.svg) no-repeat -5px -688px,
+	widget-edit: url(../img/icon-sprite.svg) no-repeat -39px -617px,
+	widget-delete: url(../img/icon-sprite.svg) no-repeat -39px -580px,
 	alarm-on: url(../img/icon-sprite.svg) no-repeat -3px -545px,
 	alarm-off: url(../img/icon-sprite.svg) no-repeat -3px -581px,
 	sound-on: url(../img/icon-sprite.svg) no-repeat -3px -473px,
@@ -2006,10 +2200,25 @@ $icon-widget-btn: (
 	}
 }
 
+.btn-dashbrd-conf {
+	background: url(../img/icon-sprite.svg) no-repeat -42px -619px;
+	@extend %btn-dashbrd;
+}
+
 %btn-widget {
-	border: none;
 	width: 30px;
 	height: 28px;
+	@extend %btn-widget-defaults;
+}
+
+%btn-dashbrd {
+	width: 24px;
+	height: 24px;
+	@extend %btn-widget-defaults;
+}
+
+%btn-widget-defaults {
+	border: none;
 	min-height: 0;
 	padding: 0;
 	-webkit-transform-style: preserve-3d;
@@ -2074,6 +2283,12 @@ $icon-widget-btn: (
 		&:active {
 			color: darken($ui-bg-selected-color, 35%);
 		}
+	}
+}
+
+.inaccessible {
+	.subfilter-enabled {
+		color: darken($font-selected-color, 25%);
 	}
 }
 
@@ -2436,6 +2651,355 @@ $form-icon-btn: (
 }
 
 // Dashboard
+.dashbrd-grid-widget-container {
+	position: relative;
+	margin: 0 -.25rem;
+}
+
+.dashbrd-grid-widget-placeholder {
+	border-color: darken($body-bg-color, 6%) !important;
+	background-color: darken($body-bg-color, 6%) !important;
+	position: absolute;
+	z-index: 999;
+}
+
+.dashbrd-grid-empty-placeholder {
+	width: 16%;
+	height: 200px;
+	background-color: $ui-bg-color;
+	border-style: solid;
+	border-width: 1px;
+	border-color: $ui-border-color;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	margin: .25rem;
+	padding: 10px;
+
+	h1 {
+		text-align: center;
+	}
+}
+
+.dashbrd-grid-widget-mask {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	background: transparent;
+	z-index: 80;
+	display: none;
+}
+
+.dashbrd-grid-widget-draggable {
+	border-color: $action-border-color !important;
+	border-bottom-color: darken($action-border-color, 1%) !important;
+	@include box-shadow(0 4px 20px 0 $action-shadow-color);
+	z-index: 1000;
+}
+
+.dashbrd-grid-widget-content {
+	flex: 1;
+	overflow-y: auto;
+	@extend %webkit-scrollbar;
+
+	.list-table {
+		border: none;
+
+		th {
+			@extend %dashbrd-widget-td;
+		}
+
+		td {
+			@extend %dashbrd-widget-td;
+		}
+
+		tbody tr {
+
+			&:last-child td {
+				border-bottom: 1px solid $table-border-color;
+			}
+		}
+	}
+
+	.debug-output {
+		margin: 10px 10px 0 10px;
+		max-height: 300px;
+		border-color: $table-border-color;
+	}
+
+	.msg-good, .msg-bad {
+		margin: 0 10px;
+	}
+}
+
+.dashbrd-grid-widget {
+	display: flex;
+	position: absolute;
+}
+
+.dashbrd-grid-widget-padding {
+	display: flex;
+	flex-grow: 1;
+	flex-direction: column;
+	min-width: 8.33333%;
+	margin: .25rem;
+	background-color: $ui-bg-color;
+	border: 1px solid $ui-border-color;
+}
+
+.dashbrd-grid-widget-head {
+	position: relative;
+	padding: 8px 65px 8px 10px;
+	min-height: 17px;
+
+	h4 {
+		color: h4-widget-color($font-color);
+		font-weight: bold;
+		@extend %overflow-ellipsis;
+	}
+
+	ul {
+		position: absolute;
+		top: 0;
+		right: 0;
+
+		li {
+			display: block;
+			float: left;
+			padding: 0;
+
+			select {
+				margin: 4px 0;
+			}
+		}
+	}
+}
+
+.dashbrd-grid-widget-foot {
+	text-align: right;
+	color: $font-alt-color;
+	padding: 8px 8px 6px 8px;
+
+	ul {
+		display: flex;
+		justify-content: flex-end;
+
+		li {
+			padding: 0 0 0 13px;
+			@extend %overflow-ellipsis;
+		}
+	}
+}
+
+@-webkit-keyframes zoom-in-out {
+	0% {transform: scale(1);}
+	50% {transform: scale(1.05);}
+	100% {transform: scale(1);}
+}
+@-moz-keyframes zoom-in-out {
+	0% {transform: scale(1);}
+	50% {transform: scale(1.05);}
+	100% {transform: scale(1);}
+}
+@-o-keyframes zoom-in-out{
+	0% {transform: scale(1);}
+	50% {transform: scale(1.05);}
+	100% {transform: scale(1);}
+}
+@keyframes zoom-in-out {
+	0% {transform: scale(1);}
+	50% {transform: scale(1.05);}
+	100% {transform: scale(1);}
+}
+@keyframes zoom-in-out {
+	0% {transform: scale(1);}
+	50% {transform: scale(1.05);}
+	100% {transform: scale(1);}
+}
+.new-widget {
+	-webkit-animation: zoom-in-out .2s linear;
+	-moz-animation: zoom-in-out .2s linear;
+	-ms-animation: zoom-in-out .2s linear;
+	-o-animation: zoom-in-out .2s linear;
+	animation: zoom-in-out .2s linear;
+}
+
+.ui-resize-dot {
+	@extend %ui-resize-dot;
+}
+
+.ui-resizable-border-n {
+	border-top: 1px solid $form-border-focus-color;
+	height: 5px;
+	margin: 0 .25rem;
+	flex: 1;
+}
+
+.ui-resizable-border-e {
+	border-right: 1px solid $form-border-focus-color;
+	width: 5px;
+	margin: .25rem 0;
+	flex: 1;
+}
+
+.ui-resizable-border-s {
+	border-bottom: 1px solid $form-border-focus-color;
+	height: 5px;
+	margin: 0 .25rem;
+	flex: 1;
+}
+
+.ui-resizable-border-w {
+	border-left: 1px solid $form-border-focus-color;
+	width: 5px;
+	margin: .25rem 0;
+	flex: 1;
+}
+
+.ui-resizable-n {
+	@extend %ui-resizable;
+	cursor: ns-resize;
+	height: 5px;
+	width: 100%;
+	top: 4px;
+	left: 0;
+
+	.ui-resize-dot {
+		left: 0;
+		right: 0;
+		margin: auto;
+		bottom: 0;
+	}
+}
+
+.ui-resizable-ne {
+	@extend %ui-resize-dot;
+	cursor: nesw-resize;
+	right: 0;
+	top: 0;
+}
+
+.ui-resizable-nw {
+	@extend %ui-resize-dot;
+	cursor: nwse-resize;
+	left: 0;
+	top: 0;
+}
+
+.ui-resizable-e {
+	@extend %ui-resizable;
+	cursor: ew-resize;
+	width: 5px;
+	right: 4px;
+	top: 0;
+	height: 100%;
+
+	.ui-resize-dot {
+		left: 0;
+		top: 50%;
+		@include transform(translateY(-50%));
+	}
+}
+
+.ui-resizable-s {
+	@extend %ui-resizable;
+	cursor: ns-resize;
+	height: 5px;
+	width: 100%;
+	bottom: 5px;
+	left: 0;
+
+	.ui-resize-dot {
+		left: 0;
+		right: 0;
+		margin: auto;
+		bottom: -5px;
+	}
+}
+
+.ui-resizable-se {
+	@extend %ui-resize-dot;
+	cursor: nwse-resize;
+	right: 0;
+	bottom: 0;
+}
+
+.ui-resizable-sw {
+	@extend %ui-resize-dot;
+	cursor: nesw-resize;
+	left: 0;
+	bottom: 0;
+}
+
+.ui-resizable-w {
+	@extend %ui-resizable;
+	cursor: ew-resize;
+	width: 5px;
+	left: 4px;
+	top: 0;
+	height: 100%;
+
+	.ui-resize-dot {
+		right: 0;
+		top: 50%;
+		@include transform(translateY(-50%));
+	}
+}
+
+.ui-inner-handles {
+	.ui-resizable-n {
+		top: 0;
+	}
+
+	.ui-resizable-ne {
+		top: -4px;
+		right: -4px;
+	}
+
+	.ui-resizable-nw {
+		top: -4px;
+		left: -4px;
+	}
+
+	.ui-resizable-e {
+		right: 0;
+	}
+
+	.ui-resizable-s {
+		bottom: 0;
+	}
+
+	.ui-resizable-se {
+		bottom: -4px;
+		right: -4px;
+	}
+
+	.ui-resizable-sw {
+		bottom: -4px;
+		left: -4px;
+	}
+
+	.ui-resizable-w {
+		left: 0;
+	}
+}
+
+%ui-resize-dot {
+	z-index: 90;
+	width: 7px;
+	height: 7px;
+	position: absolute;
+	background-color: $ui-bg-color;
+	border: 1px solid $form-border-focus-color;
+	@include border-radius(100%);
+}
+
+%ui-resizable {
+	z-index: 90;
+	position: absolute;
+	display: flex;
+}
+
 .dashbrd-widget-placeholder {
 	border-color: darken($body-bg-color, 6%) !important;
 	background-color: darken($body-bg-color, 6%) !important;
@@ -2652,6 +3216,7 @@ $form-icon-btn: (
 }
 
 .overlay-dialogue {
+	display: table;
 	position: absolute;
 	z-index: 1000;
 	padding: 15px 10px 10px 10px;
@@ -2659,6 +3224,28 @@ $form-icon-btn: (
 	border: 1px solid $action-border-color;
 	border-bottom-color: darken($action-border-color, 1%);
 	@include box-shadow(0 4px 20px 0 $action-shadow-color);
+
+	&.modal {
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		overflow: hidden;
+		@include transform(translate(-50%, -50%));
+
+		.overlay-dialogue-body {
+			overflow: auto;
+			overflow-x: hidden;
+			max-height: calc(100vh - 190px);
+			max-width: inherit;
+			margin: 0 0 10px 0;
+		}
+		& > .overlay-close-btn {
+			position: relative;
+			float: right;
+			top: -12px;
+			right: -8px;
+		}
+	}
 
 	.list-table {
 		border: none;
@@ -2704,8 +3291,55 @@ $form-icon-btn: (
 	}
 }
 
+// Map widget back to parent button.
+.btn-back-map-container {
+
+	text-align: left;
+	position: absolute;
+	left: -1px;
+
+	.btn-back-map {
+		margin-top: 10px;
+		border-radius: 0px 2px 2px 0px;
+		background-color: $btn-back-map-background-color;
+		padding: 0px 0px 0px 0px;
+		display: inline-block;
+		height: 24px;
+		line-height: 24px;
+		vertical-align: middle;
+		border: $ui-border-color solid 1px;
+		color: $btn-back-text-color;
+		text-decoration: none;
+
+		.btn-back-map-content {
+			display: none;
+		}
+
+		.btn-back-map-icon {
+			margin-left: 5px;
+			display: inline-block;
+			width: 28px;
+			height: 24px;
+			vertical-align: middle;
+			background: url(../img/icon-sprite.svg) no-repeat -85px -691px;
+		}
+
+		&:hover {
+			background-color: $btn-back-background-hover;
+			border: $btn-border-color solid 1px;
+
+			.btn-back-map-content {
+				display: inline-block;
+				line-height: 24px;
+				padding: 0px 6px 0px 0px;
+			}
+		}
+	}
+}
+
 .overlay-dialogue-body {
-	margin: 0 0 50px 0;
+	margin: 0 0 25px 0;
+	white-space: nowrap;
 }
 
 .overlay-dialogue-footer {
@@ -2717,7 +3351,7 @@ $form-icon-btn: (
 }
 
 .overlay-bg {
-	background-color: $white;
+	background-color: $overlay-bg-color;
 	width: 100%;
 	height: 100%;
 	position: fixed;
@@ -3033,19 +3667,19 @@ $form-icon-btn: (
 
 %scroll-vert-shadow {
 	background:
-	// Shadow covers
-	linear-gradient($ui-bg-color 30%, rgba($ui-bg-color, 0)),
-	linear-gradient(rgba($ui-bg-color, 0), $ui-bg-color 70%) 0 100%,
-	// Shadows
-	radial-gradient(50% 0, farthest-side, rgba($action-shadow-color, .4), rgba($action-shadow-color, 0)),
-	radial-gradient(50% 100%,farthest-side, rgba($action-shadow-color, .4), rgba($action-shadow-color, 0)) 0 100%;
+		// Shadow covers
+		linear-gradient($ui-bg-color 30%, rgba($ui-bg-color, 0)),
+		linear-gradient(rgba($ui-bg-color, 0), $ui-bg-color 70%) 0 100%,
+		// Shadows
+		radial-gradient(50% 0, farthest-side, rgba($action-shadow-color, .4), rgba($action-shadow-color, 0)),
+		radial-gradient(50% 100%,farthest-side, rgba($action-shadow-color, .4), rgba($action-shadow-color, 0)) 0 100%;
 	background:
-	// Shadow covers
-	linear-gradient($ui-bg-color 30%, rgba($ui-bg-color, 0)),
-	linear-gradient(rgba($ui-bg-color,0), $ui-bg-color 70%) 0 100%,
-	// Shadows
-	radial-gradient(farthest-side at 50% 0, rgba($action-shadow-color, .4), rgba($action-shadow-color, 0)),
-	radial-gradient(farthest-side at 50% 100%, rgba($action-shadow-color, .4), rgba($action-shadow-color, 0)) 0 100%;
+		// Shadow covers
+		linear-gradient($ui-bg-color 30%, rgba($ui-bg-color, 0)),
+		linear-gradient(rgba($ui-bg-color,0), $ui-bg-color 70%) 0 100%,
+		// Shadows
+		radial-gradient(farthest-side at 50% 0, rgba($action-shadow-color, .4), rgba($action-shadow-color, 0)),
+		radial-gradient(farthest-side at 50% 100%, rgba($action-shadow-color, .4), rgba($action-shadow-color, 0)) 0 100%;
 	background-repeat: no-repeat;
 	background-color: $ui-bg-color;
 	background-size: 100% 40px, 100% 40px, 100% 4px, 100% 4px;
@@ -3110,6 +3744,14 @@ a.grey {
 
 a.blue {
 	@extend .blue;
+}
+
+.teal {
+	color: $teal;
+}
+
+a.teal {
+	@extend .teal;
 }
 
 .progress-bar-container {
@@ -3413,17 +4055,6 @@ td.inactive-bg {
 	background-color: $lighter-yellow;
 }
 
-.active-indic {
-	width: 8px;
-	height: 8px;
-	position: absolute;
-	top: -6px;
-	right: -6px;
-	border: 2px solid $body-bg-color;
-	background-color: darken(desaturate($alt-green, 10%), 16%);
-	@include border-radius(4px);
-}
-
 .msg-good {
 	color: darken(desaturate($green, 10%), 20%);
 	border: 1px solid $light-green;
@@ -3557,6 +4188,28 @@ td.inactive-bg {
 	max-width: 25%;
 }
 
+// Plus/Add icon
+
+.plus-icon {
+	display: inline-block;
+	@extend %plus-icon;
+}
+
+%plus-icon {
+	width: 2px;
+	height: 8px;
+	position: relative;
+
+	&::after {
+		content: "";
+		width: 8px;
+		height: 2px;
+		top: 3px;
+		left: -3px;
+		position: absolute;
+	}
+}
+
 // Close/Remove icon
 
 %close-icon {
@@ -3595,6 +4248,17 @@ td.inactive-bg {
 		text-decoration: none;
 		color: $font-alt-color;
 	}
+}
+
+.remove-btn {
+	position: absolute;
+	top: 5px;
+	right: 5px;
+	min-height: auto;
+	border: none;
+	background-color: $transparent !important;
+	@extend %close-icon;
+	@include border-radius(2px);
 }
 
 .overlay-close-btn {
@@ -3682,15 +4346,23 @@ a.overlay-close-btn {
 }
 
 .preloader-container {
-	border-radius: 50%;
+	z-index: 10;
 	padding: 7px;
 	display: inline-block;
-	margin: 0 auto;
+	width: 24px;
+	height: 24px;
+	top: 50%;
+	left: 0;
+	right: 0;
+	margin: auto;
+	position: absolute;
 	background-color: rgba($ui-bg-color, .8);
+	@include border-radius(50%);
+	@include transform(translateY(-50%));
 }
 
 .preloader {
-	border-radius: 50%;
+	@include border-radius(50%);
 	width: 20px;
 	height: 20px;
 	margin: 0 auto;
@@ -3845,10 +4517,22 @@ tr.cursor-move {
 	text-transform: $font-transform;
 }
 
+.flickerfreescreen {
+	position: relative;
+}
+
 // Analog Clock
 .clock {
-	text-align: center;
-	display: inline-block;
+	padding: 0 10px;
+	height: 99%;
+	width: auto;
+}
+
+.clock-svg {
+	max-height: 100%;
+	max-width: 100%;
+	display: block;
+	margin: 0 auto;
 }
 
 .time-zone {
@@ -3875,6 +4559,317 @@ tr.cursor-move {
 
 .clock-lines {
 	fill: $clock-lines-color;
+}
+
+.sysmap {
+	height: 100%;
+	width: auto;
+	padding: 0 10px;
+	text-align: center;
+}
+
+.sysmap-scroll-container {
+	overflow-x: auto;
+	overflow-y: hidden;
+	position: relative;
+	width: calc(100% - 20px);
+	border: 10px solid $ui-bg-color;
+	background: $ui-bg-color;
+	display: block;
+
+	.map-container {
+		display: table;
+	}
+	.table-forms-container {
+		display: table;
+		margin: 0;
+		padding: 0;
+		border: 0;
+	}
+}
+
+.sysmap-widget-container {
+	overflow: hidden;
+	height: 100%;
+	width: 100%;
+	max-height: 100%;
+	max-width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+@supports (-ms-ime-align:auto) {
+	.navtree .problems {
+		margin-left: 10px;
+		left: -15px;
+	}
+}
+
+.navtree {
+	$max_depth: 10;
+
+	@keyframes fadein {
+		from {opacity: 0;}
+		to   {opacity: 1;}
+	}
+	@-moz-keyframes fadein {
+		from {opacity: 0;}
+		to   {opacity: 1;}
+	}
+	@-webkit-keyframes fadein {
+		from {opacity: 0;}
+		to   {opacity: 1;}
+	}
+	@-ms-keyframes fadein {
+		from {opacity: 0;}
+		to   {opacity: 1;}
+	}
+	@-o-keyframes fadein {
+		from {opacity: 0;}
+		to   {opacity: 1;}
+	}
+
+	.tree {
+		width: 100%;
+		height: 100%;
+
+		.tree-list {
+			list-style: none;
+		}
+
+		.tree-list.root > .tree-item > .tree-row > .content > .margin-lvl {
+			flex: 0 0 15px;
+		}
+
+		.tree-list > .tree-item.ui-sortable-helper .content {
+			padding-left: 5px;
+		}
+
+		@for $i from 0 through $max_depth {
+			.tree-list[data-depth="#{$i}"] > .tree-item {
+				&> .tree-row > .content > .margin-lvl {
+					flex: 0 0 ($i * 15px + 10px);
+				}
+				&.ui-sortable-helper {
+					margin-left: ($i * 15px + 10px);
+
+					& > .tree-row > .content > .margin-lvl {
+						display: none;
+					}
+				}
+			}
+		}
+
+		.tree-list[data-depth] .ui-sortable-helper {
+			> .tree-row > .content > .margin-lvl {
+				flex: 0 0 15px;
+			}
+
+			@for $i from 1 through $max_depth - 1 {
+				$class_tree_list: '.tree-list';
+				@for $j from 1 through $i {
+					@if $j != 1 {
+						$class_tree_list: $class_tree_list + ' .tree-list';
+					}
+				}
+				#{$class_tree_list} > li > .tree-row > .content > .margin-lvl {
+					flex: 0 0 ($i * 15px + 15px);
+				}
+			}
+		}
+
+		.tree-item {
+			> .tree-row {
+				width: 100%;
+				min-width: 320px;
+				border-bottom: 1px solid $ui-border-color;
+				padding: 8px 0;
+
+				&:hover {
+					background-color: $ui-hover-color;
+				}
+
+				> .problems {
+					float: right;
+					position: relative;
+					padding-left:10px;
+					margin-right: 10px;
+					background: inherit;
+					display: flex;
+
+					.problems-per-item {
+						flex: 0 0 7px;
+						-ms-flex: 0 0 auto;
+						background: gray;
+						color: $white;
+						padding: 3px 4px 2px;
+						font-size: 12px;
+						line-height: 1;
+						border-radius: 3px;
+						margin: 0px 5px 0px 0px;
+					}
+				}
+
+				> .tools {
+					float: right;
+					position: relative;
+					padding-left:10px;
+					margin-right: 10px;
+					display: flex;
+					width: 85px;
+
+					.edit-item-btn,
+					.remove-item-btn,
+					.import-items-btn,
+					.add-child-btn {
+						margin-left: 5px;
+						cursor: pointer;
+						border: 0px none;
+						opacity: 0.5;
+						float: left;
+					}
+					.edit-item-btn:hover,
+					.remove-item-btn:hover,
+					.import-items-btn:hover,
+					.add-child-btn:hover {
+						opacity: 1;
+					}
+					.add-child-btn {
+						background: url(../img/icon-sprite.svg) no-repeat -47px -551px;
+						background-color: $transparent !important;
+						height: 15px;
+						width: 14px;
+					}
+					.edit-item-btn {
+						background: url(../img/icon-sprite.svg) no-repeat -47px -478px;
+						background-color: $transparent !important;
+						height: 15px;
+						width: 14px;
+					}
+					.import-items-btn {
+						background: url(../img/icon-sprite.svg) no-repeat -47px -515px;
+						background-color: $transparent !important;
+						height: 15px;
+						width: 14px;
+					}
+					.remove-btn {
+						position: relative;
+						margin-left: 10px;
+						top: 0px;
+					}
+				}
+
+				> .content {
+					display: flex;
+					height: 20px;
+
+					> .arrow {
+						flex: 0 0 15px;
+						text-align: center;
+						margin: 2px 2px 0px -5px;
+
+						> .treeview {
+							display: none;
+						}
+					}
+
+					> .drag-icon {
+						min-width: 24px;
+						cursor: move;
+					}
+
+					> .item-name {
+						flex: 0 1 auto;
+						white-space: nowrap;
+						overflow: hidden;
+						margin-right: 5px;
+						text-overflow: ellipsis;
+						line-height: 1.5;
+					}
+				}
+			}
+
+			&.is-parent {
+				> .tree-row{
+					> .content {
+						> .arrow {
+							> .treeview {
+								display: block;
+							}
+						}
+					}
+				}
+			}
+
+			&.selected {
+				> .tree-row {
+					@extend %found-bg;
+
+					&:hover {
+						@extend %found-bg;
+					}
+				}
+			}
+
+			&.no-map,
+			&.inaccessible {
+				> .tree-row {
+					> .content {
+						> .item-name {
+							color: $form-border-color;
+						}
+					}
+				}
+			}
+
+			&.ui-sortable-helper {
+				background: #f7f7f7;
+				border-color: #d7dadc;
+				border-width: 1px;
+				border-style: solid;
+
+				.tools {
+					display: none;
+				}
+			}
+
+			&.sortable-error {
+				border-color: transparent;
+				background: #fbe3e4;
+			}
+
+			&.opened > ul {
+				display: block;
+			}
+
+			&.closed > ul {
+				display: none;
+			}
+		}
+
+		.highliglted-parent > .tree-row {
+			background: #f9f9f9;
+		}
+
+		.sortable-item-placeholder {
+			background: #f5f5f5;
+			height: 33px;
+		}
+
+		.placeholder {
+			background-color: #ebeef0;
+			-webkit-animation: fadein .5s;
+			-moz-animation: fadein .5s;
+			-ms-animation: fadein .5s;
+			-o-animation: fadein .5s;
+			animation: fadein .5s;
+		}
+
+		.drop-hover > .row {
+			background: #faebd7;
+		}
+	}
 }
 
 /*doc
@@ -4647,7 +5642,7 @@ Main navigation is used to jump between high level sections of the application.
          <li><a href="#">Screens</a></li>
          <li><a href="#">Maps</a></li>
          <li><a href="#">Discovery</a></li>
-         <li><a href="#">IT services</a></li>
+         <li><a href="#">Services</a></li>
       </ul>
       <!--<div class="server-name">This is a loooooooong loooooooong loooooooong loooooooong server name</div>-->
    </div>

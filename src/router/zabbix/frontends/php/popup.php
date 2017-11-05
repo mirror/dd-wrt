@@ -20,6 +20,7 @@
 
 
 require_once dirname(__FILE__).'/include/config.inc.php';
+require_once dirname(__FILE__).'/include/hostgroups.inc.php';
 require_once dirname(__FILE__).'/include/hosts.inc.php';
 require_once dirname(__FILE__).'/include/triggers.inc.php';
 require_once dirname(__FILE__).'/include/items.inc.php';
@@ -83,21 +84,17 @@ switch ($srctbl) {
 		$page['title'] = _('Screens');
 		$min_user_type = USER_TYPE_ZABBIX_USER;
 		break;
-	case 'slides':
-		$page['title'] = _('Slide shows');
-		$min_user_type = USER_TYPE_ZABBIX_USER;
-		break;
 	case 'graphs':
 		$page['title'] = _('Graphs');
 		$min_user_type = USER_TYPE_ZABBIX_USER;
 		break;
 	case 'graph_prototypes':
 		$page['title'] = _('Graph prototypes');
-		$min_user_type = USER_TYPE_ZABBIX_ADMIN;
+		$min_user_type = USER_TYPE_ZABBIX_USER;
 		break;
 	case 'item_prototypes':
 		$page['title'] = _('Item prototypes');
-		$min_user_type = USER_TYPE_ZABBIX_ADMIN;
+		$min_user_type = USER_TYPE_ZABBIX_USER;
 		break;
 	case 'sysmaps':
 		$page['title'] = _('Maps');
@@ -105,7 +102,7 @@ switch ($srctbl) {
 		break;
 	case 'screens2':
 		$page['title'] = _('Screens');
-		$min_user_type = USER_TYPE_ZABBIX_ADMIN;
+		$min_user_type = USER_TYPE_ZABBIX_USER;
 		break;
 	case 'drules':
 		$page['title'] = _('Discovery rules');
@@ -145,12 +142,11 @@ $allowedSrcFields = [
 	'users'					=> '"usergrpid", "alias", "fullname", "userid"',
 	'triggers'				=> '"description", "triggerid", "expression"',
 	'trigger_prototypes'	=> '"description", "triggerid", "expression"',
-	'items'					=> '"itemid", "name"',
+	'items'					=> '"itemid", "name", "master_itemname"',
 	'graphs'				=> '"graphid", "name"',
 	'graph_prototypes'		=> '"graphid", "name"',
-	'item_prototypes'		=> '"itemid", "name", "flags"',
+	'item_prototypes'		=> '"itemid", "name", "flags", "master_itemname"',
 	'sysmaps'				=> '"sysmapid", "name"',
-	'slides'				=> '"slideshowid"',
 	'help_items'			=> '"key"',
 	'screens'				=> '"screenid"',
 	'screens2'				=> '"screenid", "name"',
@@ -202,12 +198,13 @@ $fields = [
 	'noempty' =>					[T_ZBX_STR, O_OPT, null,	null,		null],
 	'select' =>						[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
 	'submitParent' =>				[T_ZBX_INT, O_OPT, null,	IN('0,1'),	null],
-	'templateid' =>					[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null]
+	'templateid' =>					[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
+	'with_webitems' =>				[T_ZBX_INT, O_OPT, null,	IN('0,1'),	null]
 ];
 
 // unset disabled item types
 $allowedItemTypes = [ITEM_TYPE_ZABBIX, ITEM_TYPE_ZABBIX_ACTIVE, ITEM_TYPE_SIMPLE, ITEM_TYPE_INTERNAL,
-	ITEM_TYPE_AGGREGATE, ITEM_TYPE_SNMPTRAP, ITEM_TYPE_DB_MONITOR
+	ITEM_TYPE_AGGREGATE, ITEM_TYPE_SNMPTRAP, ITEM_TYPE_DB_MONITOR, ITEM_TYPE_JMX
 ];
 if (hasRequest('itemtype') && !str_in_array(getRequest('itemtype'), $allowedItemTypes)) {
 	unset($_REQUEST['itemtype']);
@@ -226,18 +223,27 @@ check_fields($fields);
 
 // validate permissions
 if (getRequest('only_hostid')) {
-	if (!API::Host()->isReadable([$_REQUEST['only_hostid']])) {
+	if (!isReadableHostTemplates([getRequest('only_hostid')])) {
 		access_deny();
 	}
 }
 else {
-	if (getRequest('hostid') && !API::Host()->isReadable([$_REQUEST['hostid']]) ||
-			getRequest('groupid') && !API::HostGroup()->isReadable([$_REQUEST['groupid']])) {
+	if (getRequest('hostid') && !isReadableHostTemplates([getRequest('hostid')])) {
+		access_deny();
+	}
+	if (getRequest('groupid') && !isReadableHostGroups([getRequest('groupid')])) {
 		access_deny();
 	}
 }
-if (getRequest('parent_discoveryid') && !API::DiscoveryRule()->isReadable([$_REQUEST['parent_discoveryid']])) {
-	access_deny();
+if (getRequest('parent_discoveryid')) {
+	$lld_rules = API::DiscoveryRule()->get([
+		'output' => [],
+		'itemids' => getRequest('parent_discoveryid')
+	]);
+
+	if (!$lld_rules) {
+		access_deny();
+	}
 }
 
 $dstfrm = getRequest('dstfrm', ''); // destination form
@@ -269,6 +275,7 @@ $host = getRequest('host', '');
 $onlyHostid = getRequest('only_hostid');
 $parentDiscoveryId = getRequest('parent_discoveryid');
 $templateid = getRequest('templateid');
+$with_webitems = (bool) getRequest('with_webitems', true);
 
 if (isset($onlyHostid)) {
 	$_REQUEST['hostid'] = $onlyHostid;
@@ -573,16 +580,16 @@ if ($srctbl == 'usrgrp') {
 	}
 	$userGroups = API::UserGroup()->get($options);
 	order_result($userGroups, 'name');
-
 	$parentid = $dstfld1 ? zbx_jsvalue($dstfld1) : 'null';
+	$data = [];
 
-	foreach ($userGroups as $userGroup) {
+	foreach ($userGroups as &$userGroup) {
 		$name = (new CLink($userGroup['name'], 'javascript:void(0);'))
 			->setId('spanid'.$userGroup['usrgrpid']);
 
 		if ($multiselect) {
-			$js_action = "javascript: addValue(".zbx_jsvalue($reference).', '.zbx_jsvalue($userGroup['usrgrpid']).', '.
-				$parentid.');';
+			$js_action = "javascript: addValue(".zbx_jsvalue($reference).', '.zbx_jsvalue($userGroup['usrgrpid'])
+				.', '.$parentid.');';
 		}
 		else {
 			$values = [
@@ -600,7 +607,10 @@ if ($srctbl == 'usrgrp') {
 				: null,
 			$name,
 		]);
+
+		$userGroup['id'] = $userGroup['usrgrpid'];
 	}
+	unset($userGroup);
 
 	if ($multiselect) {
 		$table->setFooter(
@@ -1255,7 +1265,9 @@ elseif ($srctbl === 'items' || $srctbl === 'item_prototypes') {
 		$items = API::ItemPrototype()->get($options);
 	}
 	else {
-		$options['webitems'] = true;
+		if ($with_webitems) {
+			$options['webitems'] = true;
+		}
 
 		if ($normalOnly !== null) {
 			$options['filter']['flags'] = ZBX_FLAG_DISCOVERY_NORMAL;
@@ -1272,11 +1284,17 @@ elseif ($srctbl === 'items' || $srctbl === 'item_prototypes') {
 	}
 
 	foreach ($items as $item) {
+		if ($excludeids && array_key_exists($item['itemid'], $excludeids)) {
+			// Exclude item from list.
+			continue;
+		}
+
 		$host = reset($item['hosts']);
 		$item['hostname'] = $host['name'];
 
 		$description = new CLink($item['name_expanded'], 'javascript:void(0);');
 		$item['name'] = $item['hostname'].NAME_DELIMITER.$item['name_expanded'];
+		$item['master_itemname'] = $item['name_expanded'].NAME_DELIMITER.$item['key_'];
 
 		if ($multiselect) {
 			$js_action = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($item['itemid']).');';
@@ -1591,74 +1609,6 @@ elseif ($srctbl == 'sysmaps') {
 	$widget->addItem($form)->show();
 }
 /*
- * Slides
- */
-elseif ($srctbl == 'slides') {
-	require_once dirname(__FILE__).'/include/screens.inc.php';
-
-	$form = (new CForm())
-		->setName('slideform')
-		->setId('slides');
-
-	$table = (new CTableInfo())
-		->setHeader([
-			$multiselect
-				? (new CColHeader(
-					(new CCheckBox('all_slides'))
-						->onClick("javascript: checkAll('".$form->getName()."', 'all_slides', 'slides');")
-				))->addClass(ZBX_STYLE_CELL_WIDTH)
-				: null,
-			_('Name')
-		]);
-
-	$slideshows = [];
-
-	$dbSlideshows = DBfetchArray(DBselect('SELECT s.slideshowid,s.name FROM slideshows s'));
-
-	order_result($dbSlideshows, 'name');
-
-	foreach ($dbSlideshows as $dbSlideshow) {
-		if (!slideshow_accessible($dbSlideshow['slideshowid'], PERM_READ)) {
-			continue;
-		}
-		$slideshows[$dbSlideshow['slideshowid']] = $dbSlideshow;
-
-		$name = new CLink($dbSlideshow['name'], 'javascript:void(0);');
-		if ($multiselect) {
-			$js_action = 'javascript: addValue('.zbx_jsvalue($reference).', '.zbx_jsvalue($dbSlideshow['slideshowid']).');';
-		}
-		else {
-			$values = [
-				$dstfld1 => $dbSlideshow[$srcfld1],
-				$dstfld2 => $dbSlideshow[$srcfld2]
-			];
-			$js_action = 'javascript: addValues('.zbx_jsvalue($dstfrm).', '.zbx_jsvalue($values).'); close_window(); return false;';
-		}
-		$name->onClick($js_action.' jQuery(this).removeAttr("onclick");');
-
-		$table->addRow([
-			$multiselect
-				? new CCheckBox('slides['.zbx_jsValue($dbSlideshow[$srcfld1]).']', $dbSlideshow['slideshowid'])
-				: null,
-			$name
-		]);
-	}
-
-	if ($multiselect) {
-		$table->setFooter(
-			new CCol(
-				(new CButton('select', _('Select')))
-					->onClick("javascript: addSelectedValues('slides', ".zbx_jsvalue($reference).');')
-			)
-		);
-
-		insert_js('var popupReference = '.zbx_jsvalue($slideshows, true).';');
-	}
-
-	$form->addItem($table);
-	$widget->addItem($form)->show();
-}
-/*
  * Screens
  */
 elseif ($srctbl == 'screens') {
@@ -1682,7 +1632,7 @@ elseif ($srctbl == 'screens') {
 	$screens = API::Screen()->get([
 		'output' => ['screenid', 'name'],
 		'preservekeys' => true,
-		'editable' => ($writeonly === null) ? null: true
+		'editable' => ($writeonly !== null)
 	]);
 	order_result($screens, 'name');
 
@@ -1731,7 +1681,7 @@ elseif ($srctbl == 'screens2') {
 
 	$screens = API::Screen()->get([
 		'output' => ['screenid', 'name'],
-		'editable' => ($writeonly === null) ? null: true
+		'editable' => ($writeonly !== null)
 	]);
 	order_result($screens, 'name');
 
@@ -1868,6 +1818,9 @@ elseif ($srctbl == 'scripts') {
 					break;
 				case ZBX_SCRIPT_EXECUTE_ON_SERVER:
 					$scriptExecuteOn = _('Server');
+					break;
+				case ZBX_SCRIPT_EXECUTE_ON_PROXY:
+					$scriptExecuteOn = _('Server (proxy)');
 					break;
 			}
 		}

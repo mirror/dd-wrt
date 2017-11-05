@@ -44,13 +44,17 @@ require_once dirname(__FILE__).'/include/page_header.php';
 // VAR	TYPE	OPTIONAL	FLAGS	VALIDATION	EXCEPTION
 $fields = [
 	'maps' =>					[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,			null],
-	'sysmapid' =>				[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,			null],
+	'sysmapid' =>				[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,
+		'isset({form}) && ({form} === "update" || {form} === "full_clone")'
+	],
 	'name' =>					[T_ZBX_STR, O_OPT, null,	NOT_EMPTY, 'isset({add}) || isset({update})', _('Name')],
 	'width' =>					[T_ZBX_INT, O_OPT, null,	BETWEEN(0, 65535), 'isset({add}) || isset({update})', _('Width')],
 	'height' =>					[T_ZBX_INT, O_OPT, null,	BETWEEN(0, 65535), 'isset({add}) || isset({update})', _('Height')],
 	'backgroundid' =>			[T_ZBX_INT, O_OPT, null,	DB_ID,			'isset({add}) || isset({update})'],
 	'iconmapid' =>				[T_ZBX_INT, O_OPT, null,	DB_ID,			'isset({add}) || isset({update})'],
-	'expandproblem' =>			[T_ZBX_INT, O_OPT, null,	BETWEEN(0, 1),	null],
+	'expandproblem' =>			[T_ZBX_INT, O_OPT, null,
+		IN([SYSMAP_PROBLEMS_NUMBER, SYSMAP_SINGLE_PROBLEM, SYSMAP_PROBLEMS_NUMBER_CRITICAL]),	null
+	],
 	'markelements' =>			[T_ZBX_INT, O_OPT, null,	BETWEEN(0, 1),	null],
 	'show_unack' =>				[T_ZBX_INT, O_OPT, null,	BETWEEN(0, 2),	null],
 	'highlight' =>				[T_ZBX_INT, O_OPT, null,	BETWEEN(0, 1),	null],
@@ -143,7 +147,7 @@ if (hasRequest('add') || hasRequest('update')) {
 		'iconmapid' => getRequest('iconmapid'),
 		'highlight' => getRequest('highlight', 0),
 		'markelements' => getRequest('markelements', 0),
-		'expandproblem' => getRequest('expandproblem', 0),
+		'expandproblem' => getRequest('expandproblem', DB::getDefault('sysmaps', 'expandproblem')),
 		'label_format' => getRequest('label_format', 0),
 		'label_type_host' => getRequest('label_type_host', 2),
 		'label_type_hostgroup' => getRequest('label_type_hostgroup', 2),
@@ -201,6 +205,30 @@ if (hasRequest('add') || hasRequest('update')) {
 		$auditAction = AUDIT_ACTION_UPDATE;
 	}
 	else {
+		if (getRequest('form') === 'full_clone') {
+			$maps = API::Map()->get([
+				'output' => [],
+				'selectSelements' => ['selementid', 'elements', 'elementtype', 'iconid_off', 'iconid_on', 'label',
+					'label_location', 'x', 'y', 'iconid_disabled', 'iconid_maintenance', 'elementsubtype', 'areatype',
+					'width', 'height', 'viewtype', 'use_iconmap', 'application', 'urls'
+				],
+				'selectShapes' => ['type', 'x', 'y', 'width', 'height', 'text', 'font', 'font_size', 'font_color',
+					'text_halign', 'text_valign', 'border_type', 'border_width', 'border_color', 'background_color',
+					'zindex'
+				],
+				'selectLines' => ['x1', 'y1', 'x2', 'y2', 'line_type', 'line_width', 'line_color', 'zindex'],
+				'selectLinks' => ['selementid1', 'selementid2', 'drawtype', 'color', 'label', 'linktriggers'],
+				'sysmapids' => $sysmap['sysmapid']
+			]);
+
+			if ($maps) {
+				$map['selements'] = $maps[0]['selements'];
+				$map['shapes'] = $maps[0]['shapes'];
+				$map['lines'] = $maps[0]['lines'];
+				$map['links'] = $maps[0]['links'];
+			}
+		}
+
 		$result = API::Map()->create($map);
 
 		$messageSuccess = _('Network map added');
@@ -321,7 +349,7 @@ if (hasRequest('form')) {
 			'label_location' => getRequest('label_location', 0),
 			'highlight' => getRequest('highlight', 0),
 			'markelements' => getRequest('markelements', 0),
-			'expandproblem' => getRequest('expandproblem', 0),
+			'expandproblem' => getRequest('expandproblem', DB::getDefault('sysmaps', 'expandproblem')),
 			'show_unack' => getRequest('show_unack', 0),
 			'severity_min' => getRequest('severity_min', TRIGGER_SEVERITY_NOT_CLASSIFIED),
 			'urls' => getRequest('urls', []),
@@ -407,7 +435,7 @@ else {
 	]);
 
 	$user_type = CWebUser::getType();
-	if ($user_type != USER_TYPE_SUPER_ADMIN && $user_type != USER_TYPE_ZABBIX_ADMIN) {
+	if ($user_type != USER_TYPE_SUPER_ADMIN) {
 		$editable_maps = API::Map()->get([
 			'output' => [],
 			'sysmapids' => array_keys($data['maps']),

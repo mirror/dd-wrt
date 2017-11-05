@@ -65,11 +65,11 @@ class CScreenItem extends CApiService {
 		$this->getOptions = zbx_array_merge($this->getOptions, [
 			'screenitemids'	=> null,
 			'screenids'		=> null,
-			'editable'		=> null,
+			'editable'		=> false,
 			'sortfield'		=> '',
 			'sortorder'		=> '',
-			'preservekeys'	=> null,
-			'countOutput'	=> null
+			'preservekeys'	=> false,
+			'countOutput'	=> false
 		]);
 	}
 
@@ -95,12 +95,12 @@ class CScreenItem extends CApiService {
 		$result = [];
 		while ($row = DBfetch($res)) {
 			// count query, return a single result
-			if ($options['countOutput'] !== null) {
+			if ($options['countOutput']) {
 				$result = $row['rowscount'];
 			}
 			// normal select query
 			else {
-				if ($options['preservekeys'] !== null) {
+				if ($options['preservekeys']) {
 					$result[$row['screenitemid']] = $row;
 				}
 				else {
@@ -158,6 +158,8 @@ class CScreenItem extends CApiService {
 			$screenItem += $defaults;
 		}
 		unset($screenItem);
+
+		$this->validateItemsURL($screenItems);
 
 		$screenIds = array_keys(array_flip(zbx_objectValues($screenItems, 'screenid')));
 
@@ -269,6 +271,8 @@ class CScreenItem extends CApiService {
 				self::exception(ZBX_API_ERROR_PARAMETERS, _('Invalid method parameters.'));
 			}
 		}
+
+		$this->validateItemsURL($screenItems);
 
 		$screenItems = zbx_toHash($screenItems, 'screenitemid');
 		$screenItemIds = array_keys($screenItems);
@@ -399,57 +403,6 @@ class CScreenItem extends CApiService {
 		]);
 
 		return ['screenitemids' => $screenItemIds];
-	}
-
-	/**
-	 * Returns true if the given screen items exist and are available for reading.
-	 *
-	 * @param array $screenItemIds
-	 *
-	 * @return bool
-	 */
-	public function isReadable(array $screenItemIds) {
-		if (!is_array($screenItemIds)) {
-			return false;
-		}
-		elseif (empty($screenItemIds)) {
-			return true;
-		}
-
-		$screenItemIds = array_unique($screenItemIds);
-
-		$count = $this->get([
-			'screenitemids' => $screenItemIds,
-			'countOutput' => true
-		]);
-
-		return (count($screenItemIds) == $count);
-	}
-
-	/**
-	 * Returns true if the given screen items exist and are available for writing.
-	 *
-	 * @param array $screenItemIds	An array if screen item IDs
-	 *
-	 * @return bool
-	 */
-	public function isWritable(array $screenItemIds) {
-		if (!is_array($screenItemIds)) {
-			return false;
-		}
-		elseif (empty($screenItemIds)) {
-			return true;
-		}
-
-		$screenItemIds = array_unique($screenItemIds);
-
-		$count = $this->get([
-			'screenitemids' => $screenItemIds,
-			'editable' => true,
-			'countOutput' => true
-		]);
-
-		return (count($screenItemIds) == $count);
 	}
 
 	/**
@@ -998,5 +951,21 @@ class CScreenItem extends CApiService {
 	 */
 	protected function isValidMaxColumns($maxColumns) {
 		return ($maxColumns >= SCREEN_SURROGATE_MAX_COLUMNS_MIN && $maxColumns <= SCREEN_SURROGATE_MAX_COLUMNS_MAX);
+	}
+
+	/**
+	 * Validates URL fields for submitted screen items.
+	 *
+	 * @throws APIException for invalid URL
+	 *
+	 * @param array $screen_items	Array of screen items.
+	 */
+	protected function validateItemsURL($screen_items) {
+		foreach ($screen_items as $screen_item) {
+			if ($screen_item['resourcetype'] == SCREEN_RESOURCE_URL && array_key_exists('url', $screen_item)
+					&& !CHtmlUrlValidator::validate($screen_item['url'])) {
+				self::exception(ZBX_API_ERROR_PARAMETERS, _('Wrong value for url field.'));
+			}
+		}
 	}
 }

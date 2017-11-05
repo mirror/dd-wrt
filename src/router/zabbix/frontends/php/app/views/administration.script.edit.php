@@ -46,6 +46,7 @@ $scriptFormList = (new CFormList())
 	->addRow(_('Execute on'),
 		(new CRadioButtonList('execute_on', (int) $data['execute_on']))
 			->addValue(_('Zabbix agent'), ZBX_SCRIPT_EXECUTE_ON_AGENT)
+			->addValue(_('Zabbix server (proxy)'), ZBX_SCRIPT_EXECUTE_ON_PROXY)
 			->addValue(_('Zabbix server'), ZBX_SCRIPT_EXECUTE_ON_SERVER)
 			->setModern(true)
 	)
@@ -89,7 +90,7 @@ $scriptFormList
 			->addValue(_('Write'), PERM_READ_WRITE)
 			->setModern(true)
 	)
-	->addRow(new CLabel(_('Enable confirmation'), 'enable_confirmation'),
+	->addRow(_('Enable confirmation'),
 		(new CCheckBox('enable_confirmation'))->setChecked($data['enable_confirmation'] == 1)
 	);
 

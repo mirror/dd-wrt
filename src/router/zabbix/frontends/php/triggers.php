@@ -20,6 +20,7 @@
 
 
 require_once dirname(__FILE__).'/include/config.inc.php';
+require_once dirname(__FILE__).'/include/hostgroups.inc.php';
 require_once dirname(__FILE__).'/include/hosts.inc.php';
 require_once dirname(__FILE__).'/include/triggers.inc.php';
 require_once dirname(__FILE__).'/include/forms.inc.php';
@@ -140,19 +141,24 @@ if ($triggerId !== null) {
 $triggerIds = getRequest('g_triggerid', []);
 $triggerIds = zbx_toArray($triggerIds);
 
-if ($triggerIds && !API::Trigger()->isWritable($triggerIds)) {
-	access_deny();
+if ($triggerIds) {
+	$triggerIds = array_unique($triggerIds);
+
+	$count = API::Trigger()->get([
+		'countOutput' => true,
+		'triggerids' => $triggerIds,
+		'editable' => true
+	]);
+
+	if ($count != count($triggerIds)) {
+		access_deny();
+	}
 }
 
-// Validate permissions to group.
-$groupId = getRequest('groupid');
-if ($groupId && !API::HostGroup()->isWritable([$groupId])) {
+if (getRequest('groupid') && !isWritableHostGroups([getRequest('groupid')])) {
 	access_deny();
 }
-
-// Validate permissions to host.
-$hostId = getRequest('hostid');
-if ($hostId && !API::Host()->isWritable([$hostId])) {
+if (getRequest('hostid') && !isWritableHostTemplates([getRequest('hostid')])) {
 	access_deny();
 }
 
@@ -736,6 +742,24 @@ else {
 
 	// get real hosts
 	$data['realHosts'] = getParentHostsByTriggers($data['triggers']);
+
+	// Select writable template IDs.
+	$hostids = [];
+
+	foreach ($data['realHosts'] as $realHost) {
+		$hostids = array_merge($hostids, zbx_objectValues($realHost, 'hostid'));
+	}
+
+	$data['writable_templates'] = [];
+
+	if ($hostids) {
+		$data['writable_templates'] = API::Template()->get([
+			'output' => ['templateid'],
+			'templateids' => $hostids,
+			'editable' => true,
+			'preservekeys' => true
+		]);
+	}
 
 	// do not show 'Info' column, if it is a template
 	if ($data['hostid']) {

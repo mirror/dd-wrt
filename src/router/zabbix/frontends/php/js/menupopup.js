@@ -19,160 +19,6 @@
 
 
 /**
- * Get menu popup favourite graphs section data.
- *
- * @param array options['graphs']			graphs as id => label (optional)
- * @param array options['simpleGraphs']		simple graphs as id => label (optional)
- *
- * @return array
- */
-function getMenuPopupFavouriteGraphs(options) {
-	var sections = [];
-
-	if (typeof options.graphs !== 'undefined') {
-		sections[sections.length] = getMenuPopupFavouriteData(
-			t('Favourite graphs'),
-			options.graphs,
-			'graphid',
-			'popup.php?srctbl=graphs&srcfld1=graphid&reference=graphid&multiselect=1&real_hosts=1'
-		);
-	}
-
-	if (typeof options.simpleGraphs !== 'undefined') {
-		sections[sections.length] = getMenuPopupFavouriteData(
-			t('Favourite simple graphs'),
-			options.simpleGraphs,
-			'itemid',
-			'popup.php?srctbl=items&srcfld1=itemid&reference=itemid&multiselect=1&numeric=1'
-				+ '&with_simple_graph_items=1&real_hosts=1'
-		);
-	}
-
-	return sections;
-}
-
-/**
- * Get menu popup favourite maps section data.
- *
- * @param array options['maps']		maps as id => label
- *
- * @return array
- */
-function getMenuPopupFavouriteMaps(options) {
-	return [getMenuPopupFavouriteData(
-		t('Favourite maps'),
-		options.maps,
-		'sysmapid',
-		'popup.php?srctbl=sysmaps&srcfld1=sysmapid&reference=sysmapid&multiselect=1'
-	)];
-}
-
-/**
- * Get menu popup favourite screens section data.
- *
- * @param array options['screens']		screens as id => label (optional)
- * @param array options['slideshows']	slideshows as id => label (optional)
- *
- * @return array
- */
-function getMenuPopupFavouriteScreens(options) {
-	var sections = [];
-
-	if (typeof options.screens !== 'undefined') {
-		sections[sections.length] = getMenuPopupFavouriteData(
-			t('Favourite screens'),
-			options.screens,
-			'screenid',
-			'popup.php?srctbl=screens&srcfld1=screenid&reference=screenid&multiselect=1'
-		);
-	}
-
-	if (typeof options.slideshows !== 'undefined') {
-		sections[sections.length] = getMenuPopupFavouriteData(
-			t('Favourite slide shows'),
-			options.slideshows,
-			'slideshowid',
-			'popup.php?srctbl=slides&srcfld1=slideshowid&reference=slideshowid&multiselect=1'
-		);
-	}
-
-	return sections;
-}
-
-/**
- * Prepare data for favourite section.
- *
- * @param string label			item label
- * @param array  data			item submenu
- * @param string favouriteObj	favourite object name
- * @param string addParams		popup parameters
- *
- * @returns array
- */
-function getMenuPopupFavouriteData(label, data, favouriteObj, addParams) {
-	var removeItems = [];
-
-	if (objectSize(data) > 0) {
-		jQuery.each(data, function(i, item) {
-			removeItems[i] = {
-				label: item.label,
-				clickCallback: function() {
-					var obj = jQuery(this);
-
-					sendAjaxData('zabbix.php?action=dashboard.favourite&operation=delete', {
-						data: {
-							object: favouriteObj,
-							'objectids[]': [item.id]
-						}
-					});
-
-					obj.closest('.action-menu').fadeOut(100);
-					obj.remove();
-				}
-			};
-		});
-	}
-
-	var add = {
-			label: t('Add'),
-			clickCallback: function() {
-				PopUp(addParams);
-
-				jQuery(this).closest('.action-menu').fadeOut(100);
-			}
-		},
-		remove = {
-			label: t('Remove')
-		},
-		remove_all = {
-			label: t('Remove all')
-		};
-
-	if (removeItems.length != 0) {
-		remove.items = removeItems;
-		remove_all.clickCallback = function() {
-			sendAjaxData('zabbix.php?action=dashboard.favourite&operation=delete', {
-				data: {
-					object: favouriteObj,
-					'objectids[]': [0]
-				}
-			});
-
-			jQuery(this).closest('.action-menu').fadeOut(100);
-		};
-	}
-	else {
-		remove.disabled = true;
-		remove_all.disabled = true;
-	}
-
-	return {
-		label: label,
-		items: [add, remove, remove_all]
-	};
-}
-
-/**
  * Get menu popup history section data.
  *
  * @param string options['itemid']				item id
@@ -349,7 +195,9 @@ function getMenuPopupMap(options) {
 			var url = new Curl('hostinventories.php');
 
 			jQuery.each(options.gotos.inventory, function(name, value) {
-				url.setArgument(name, value);
+				if (value !== null) {
+					url.setArgument(name, value);
+				}
 			});
 
 			gotos[gotos.length] = {
@@ -363,7 +211,9 @@ function getMenuPopupMap(options) {
 			var url = new Curl('latest.php?filter_set=1');
 
 			jQuery.each(options.gotos.latestData, function(name, value) {
-				url.setArgument(name, value);
+				if (value !== null) {
+					url.setArgument(name, value);
+				}
 			});
 
 			gotos[gotos.length] = {
@@ -385,7 +235,9 @@ function getMenuPopupMap(options) {
 				var url = new Curl('tr_status.php?filter_set=1&show_maintenance=1');
 
 				jQuery.each(options.gotos.triggerStatus, function(name, value) {
-					url.setArgument(name, value);
+					if (value !== null) {
+						url.setArgument(name, value);
+					}
 				});
 
 				triggers.url = url.getUrl();
@@ -407,7 +259,9 @@ function getMenuPopupMap(options) {
 				var url = new Curl('charts.php');
 
 				jQuery.each(options.gotos.graphs, function(name, value) {
-					url.setArgument(name, value);
+					if (value !== null) {
+						url.setArgument(name, value);
+					}
 				});
 
 				graphs.url = url.getUrl();
@@ -429,7 +283,9 @@ function getMenuPopupMap(options) {
 				var url = new Curl('host_screen.php');
 
 				jQuery.each(options.gotos.screens, function(name, value) {
-					url.setArgument(name, value);
+					if (value !== null) {
+						url.setArgument(name, value);
+					}
 				});
 
 				screens.url = url.getUrl();
@@ -443,8 +299,22 @@ function getMenuPopupMap(options) {
 			var url = new Curl('zabbix.php?action=map.view');
 
 			jQuery.each(options.gotos.submap, function(name, value) {
-				url.setArgument(name, value);
+				if (value !== null) {
+					url.setArgument(name, value);
+				}
 			});
+
+			gotos[gotos.length] = {
+				label: t('Submap'),
+				url: url.getUrl()
+			};
+		}
+		else if (typeof options.navigatetos !== 'undefined'
+			&& typeof options.navigatetos.submap.widget_uniqueid !== 'undefined') {
+				var url = new Curl('javascript: navigateToSubmap('+options.navigatetos.submap.sysmapid+', "'+
+					options.navigatetos.submap.widget_uniqueid+'");');
+
+			url.unsetArgument('sid');
 
 			gotos[gotos.length] = {
 				label: t('Submap'),
@@ -464,9 +334,12 @@ function getMenuPopupMap(options) {
 			else {
 				var url = new Curl('zabbix.php');
 				url.setArgument('action', 'problem.view');
-				url.setArgument('filter_triggerids[]', options.gotos.events.triggerid);
+				url.setArgument('filter_triggerids[]', options.gotos.events.triggerids);
 				url.setArgument('filter_set', '1');
 				url.unsetArgument('sid');
+				if (typeof options.gotos.events.severity_min !== 'undefined') {
+					url.setArgument('filter_severity', options.gotos.events.severity_min);
+				}
 
 				events.url = url.getUrl();
 			}
@@ -494,10 +367,11 @@ function getMenuPopupMap(options) {
 /**
  * Get menu popup refresh section data.
  *
- * @param string options['widgetName']		widget name
- * @param string options['currentRate']		current rate value
- * @param bool   options['multiplier']		multiplier or time mode
- * @param array  options['params']			url parameters (optional)
+ * @param string   options['widgetName']   widget name
+ * @param string   options['currentRate']  current rate value
+ * @param bool     options['multiplier']   multiplier or time mode
+ * @param array    options['params']       (optoinal) url parameters
+ * @param callback options['callback']     (optional) callback function on success
  *
  * @return array
  */
@@ -516,6 +390,7 @@ function getMenuPopupRefresh(options) {
 				'x5': 'x5'
 			}
 			: {
+				0: t('No refresh'),
 				10: t('10 seconds'),
 				30: t('30 seconds'),
 				60: t('1 minute'),
@@ -546,28 +421,45 @@ function getMenuPopupRefresh(options) {
 					});
 				}
 				else {
-					sendAjaxData('zabbix.php?action=dashboard.widget', {
-						data: jQuery.extend({}, params, {
-							widget: options.widgetName,
-							refreshrate: currentRate
-						}),
-						dataType: 'script',
-						success: function(js) { js }
+					var url = new Curl('zabbix.php');
+
+					url.setArgument('action', 'dashbrd.widget.rfrate')
+
+					jQuery.ajax({
+						url: url.getUrl(),
+						method: 'POST',
+						dataType: 'json',
+						data: {
+							widgets: [
+								{
+									'widgetid': options.widgetName,
+									'rf_rate': currentRate
+								}
+							]
+						},
+						success: function(resp) {
+							jQuery('a', obj.closest('.action-menu')).each(function() {
+								var link = jQuery(this);
+
+								if (link.data('value') == currentRate) {
+									link.addClass('selected');
+								}
+								else {
+									link.removeClass('selected');
+								}
+							});
+
+							obj.closest('.action-menu').fadeOut(100);
+
+							jQuery('.dashbrd-grid-widget-container')
+								.dashboardGrid('setWidgetRefreshRate', options.widgetName, parseInt(currentRate));
+						},
+						error: function() {
+							obj.closest('.action-menu').fadeOut(100);
+							// TODO: gentle message about failed saving of widget refresh rate
+						}
 					});
 				}
-
-				jQuery('a').each(function() {
-					var link = jQuery(this);
-
-					if (link.data('value') == currentRate) {
-						link.addClass('selected');
-					}
-					else {
-						link.removeClass('selected');
-					}
-				});
-
-				obj.closest('.action-menu').fadeOut(100);
 			}
 		};
 
@@ -582,6 +474,135 @@ function getMenuPopupRefresh(options) {
 		label: options.multiplier ? t('Refresh time multiplier') : t('Refresh time'),
 		items: items
 	}];
+}
+
+function getMenuPopupDashboard(options) {
+	jQuery.map(options.items, function(item, key) {
+		switch (key) {
+			case 'sharing':
+				if (!item.disabled) {
+					item.clickCallback = function () {
+						var	obj = jQuery(this),
+							url = new Curl('zabbix.php'),
+							error_message = t('Something went wrong. Please try again later!');
+						url.setArgument('action', 'dashboard.get');
+
+						jQuery.ajax({
+							data: {"dashboardid": item.form_data.dashboardid, 'editable': '1'},
+							type: 'GET',
+							url: url.getUrl(),
+							success: function(response) {
+								if (typeof response.data !== 'undefined') {
+									var form = jQuery('form[name="dashboard_sharing_form"]');
+
+									showDialogForm(form, {"title": t('Dashboard sharing'), "action_title": t('Update')},
+										response.data
+									);
+								}
+								else if (typeof response === 'string' && response.indexOf(t('Access denied')) !== -1) {
+									alert(t('You need permission to perform this action!'))
+								}
+								else {
+									alert(error_message);
+								}
+							},
+							error: function() {
+								alert(error_message);
+							}
+						});
+						// hide menu
+						obj.closest('.action-menu').fadeOut(100);
+					}
+				}
+				break;
+
+			case 'delete':
+				if (!item.disabled) {
+					item.clickCallback = function () {
+						var	obj = jQuery(this);
+
+						// hide menu
+						obj.closest('.action-menu').hide();
+
+						if (!confirm(item.confirmation)) {
+							return false;
+						}
+
+						redirect(item.redirect, 'post', 'sid', true);
+					}
+				}
+				break;
+		}
+		return item;
+	});
+	return [{label: options.label, items: options.items}];
+}
+
+function showDialogForm(form, options, formData) {
+	var oldFormParent = form.parent(),
+		errorBlockId = 'dialog-form-error-container';
+
+	// Trick to get outerWidth, outerHeight of "display:none" form.
+	form.css('visibility', 'hidden');
+	form.css('display', 'block');
+
+	if (typeof formData !== 'undefined' && typeof form.fillForm === 'function') {
+		form.fillForm(formData);
+	}
+
+	function removeErrorBlock() {
+		form.find('#' + errorBlockId).remove();
+	}
+
+	overlayDialogue({
+		'title': options.title,
+		'content': form,
+		'buttons': [
+			{
+				'title': options.action_title,
+				'focused': true,
+				'class': 'dialogue-widget-save',
+				'keepOpen': false,
+				'action': function() {
+					removeErrorBlock();
+					form.submit();
+
+					var errors = form.data('errors');
+
+					// output errors
+					if (typeof errors === 'object' && errors.length > 0) {
+						var errorBlock = makeErrorMessageBox(errors, errorBlockId);
+
+						form.prepend(errorBlock);
+
+						// If form has errors dialog overlay not be destroyed.
+						return false;
+					}
+
+					form.css('display', 'none');
+					form.css('visibility', 'hidden');
+					oldFormParent.append(form);
+
+					return true;
+				}
+			},
+			{
+				'title': t('Cancel'),
+				'class': 'btn-alt',
+				'cancel': true,
+				'action': function() {
+					removeErrorBlock();
+					// To not destroy form need to move it to old place.
+					form.css('display', 'none');
+					form.css('visibility', 'hidden');
+					oldFormParent.append(form);
+				}
+			}
+		]
+	});
+
+	form.css('visibility', 'visible');
+	overlayDialogueOnLoad(true);
 }
 
 /**
@@ -624,7 +645,11 @@ function getMenuPopupTrigger(options) {
 
 	// acknowledge
 	if (typeof options.acknowledge !== 'undefined' && objectSize(options.acknowledge) > 0) {
-		var url = new Curl('zabbix.php?action=acknowledge.edit&eventids[]=' + options.acknowledge.eventid + '&backurl=' + options.acknowledge.backurl);
+		var url = new Curl('zabbix.php');
+
+		url.setArgument('action', 'acknowledge.edit');
+		url.setArgument('eventids[]', options.acknowledge.eventid);
+		url.setArgument('backurl', options.acknowledge.backurl);
 
 		items[items.length] = {
 			label: t('Acknowledge'),
@@ -691,7 +716,8 @@ function getMenuPopupTrigger(options) {
  * @return array
  */
 function getMenuPopupTriggerLog(options) {
-	var items = [];
+	var items = [],
+		dependent_items = getMenuPopupDependentItems(options.dependent_items);
 
 	// create
 	items[items.length] = {
@@ -742,9 +768,31 @@ function getMenuPopupTriggerLog(options) {
 
 	items[items.length] = edit_trigger;
 
+	dependent_items = dependent_items.pop();
+	items[items.length] = dependent_items.items.pop();
+
 	return [{
 		label: sprintf(t('Item "%1$s"'), options.itemName),
 		items: items
+	}];
+}
+
+/**
+ * Get menu structure for dependent items.
+ *
+ * @param array options['item_name']    Menu label.
+ * @param array options['add_label']    Add dependent item menu element label
+ * @param array options['add_url']      Add dependent item menu element url
+ *
+ * @return array
+ */
+function getMenuPopupDependentItems(options) {
+	return [{
+		label: sprintf(t('Item "%1$s"'), options.item_name),
+		items: [{
+			label: options.add_label,
+			url: options.add_url
+		}]
 	}];
 }
 

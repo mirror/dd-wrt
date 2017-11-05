@@ -86,11 +86,12 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_ibm_db2.m4 \
 	$(top_srcdir)/m4/ax_lib_postgresql.m4 \
 	$(top_srcdir)/m4/ax_lib_sqlite3.m4 $(top_srcdir)/m4/iconv.m4 \
 	$(top_srcdir)/m4/jabber.m4 $(top_srcdir)/m4/ldap.m4 \
-	$(top_srcdir)/m4/libcurl.m4 $(top_srcdir)/m4/libgnutls.m4 \
-	$(top_srcdir)/m4/libmbedtls.m4 $(top_srcdir)/m4/libopenssl.m4 \
-	$(top_srcdir)/m4/libssh2.m4 $(top_srcdir)/m4/libunixodbc.m4 \
-	$(top_srcdir)/m4/libxml2.m4 $(top_srcdir)/m4/netsnmp.m4 \
-	$(top_srcdir)/m4/openipmi.m4 $(top_srcdir)/m4/resolv.m4 \
+	$(top_srcdir)/m4/libcurl.m4 $(top_srcdir)/m4/libevent.m4 \
+	$(top_srcdir)/m4/libgnutls.m4 $(top_srcdir)/m4/libmbedtls.m4 \
+	$(top_srcdir)/m4/libopenssl.m4 $(top_srcdir)/m4/libssh2.m4 \
+	$(top_srcdir)/m4/libunixodbc.m4 $(top_srcdir)/m4/libxml2.m4 \
+	$(top_srcdir)/m4/netsnmp.m4 $(top_srcdir)/m4/openipmi.m4 \
+	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/resolv.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -229,7 +230,13 @@ LDFLAGS = @LDFLAGS@
 LIBCURL_CFLAGS = @LIBCURL_CFLAGS@
 LIBCURL_LDFLAGS = @LIBCURL_LDFLAGS@
 LIBCURL_LIBS = @LIBCURL_LIBS@
+LIBEVENT_CFLAGS = @LIBEVENT_CFLAGS@
+LIBEVENT_LDFLAGS = @LIBEVENT_LDFLAGS@
+LIBEVENT_LIBS = @LIBEVENT_LIBS@
 LIBOBJS = @LIBOBJS@
+LIBPCRE_CFLAGS = @LIBPCRE_CFLAGS@
+LIBPCRE_LDFLAGS = @LIBPCRE_LDFLAGS@
+LIBPCRE_LIBS = @LIBPCRE_LIBS@
 LIBS = @LIBS@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_CONFIG = @LIBXML2_CONFIG@
@@ -386,6 +393,8 @@ DIST_SUBDIRS = \
 @PROXY_TRUE@@SERVER_FALSE@	zabbix_server/selfmon \
 @PROXY_TRUE@@SERVER_FALSE@	zabbix_server/snmptrapper \
 @PROXY_TRUE@@SERVER_FALSE@	zabbix_server/vmware \
+@PROXY_TRUE@@SERVER_FALSE@	zabbix_server/ipmi \
+@PROXY_TRUE@@SERVER_FALSE@	zabbix_server/scripts \
 @PROXY_TRUE@@SERVER_FALSE@	zabbix_proxy
 
 @PROXY_TRUE@@SERVER_TRUE@PROXY_SUBDIRS = \
@@ -401,6 +410,12 @@ SUBDIRS = \
 	$(PROXY_SUBDIRS) \
 	$(JAVA_SUBDIRS)
 
+TEST_COMMENT = "embedded unit tests - remove before commit"
+TEST_LIBDIR = libs/zbxcunit
+TEST_SUITESFILE = $(TEST_LIBDIR)/cu_modules.h
+TEST_SRCFILES = `grep $(TEST_COMMENT) * -rl | grep "\.c$$"`
+TEST_TESTFILES = `find -name *_test.c`
+TEST_DECLARE = "ZBX_CU_DECLARE" 
 all: all-recursive
 
 .SUFFIXES:
@@ -629,7 +644,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-generic clean-local mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -f Makefile
@@ -696,17 +711,17 @@ uninstall-am:
 .MAKE: $(am__recursive_targets) install-am install-strip
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am check \
-	check-am clean clean-generic cscopelist-am ctags ctags-am \
-	dist-hook distclean distclean-generic distclean-tags distdir \
-	dvi dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-man install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs installdirs-am \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am
+	check-am clean clean-generic clean-local cscopelist-am ctags \
+	ctags-am dist-hook distclean distclean-generic distclean-tags \
+	distdir dvi dvi-am html html-am info info-am install \
+	install-am install-data install-data-am install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-strip installcheck installcheck-am installdirs \
+	installdirs-am maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am tags \
+	tags-am uninstall uninstall-am
 
 
 dist-hook:
@@ -715,6 +730,32 @@ dist-hook:
 	cp $(srcdir)/modules/dummy/*.c $(distdir)/modules/dummy/
 	cp $(srcdir)/modules/dummy/Makefile $(distdir)/modules/dummy/
 	cp $(srcdir)/modules/dummy/README $(distdir)/modules/dummy/
+
+$(TEST_SUITESFILE):
+	echo 'const char *cu_modules[]={' > $(TEST_SUITESFILE)
+	for file in $(TEST_TESTFILES); do								\
+		if [ -f "$${file%_test.c}.c" ]; then							\
+			echo "#include \"$${file##*/}\" //$(TEST_COMMENT)" >> "$${file%_test.c}.c"	;\
+			grep $(TEST_DECLARE) $${file} | while read line; do				\
+				funcname=$${line##*(}							;\
+				echo "\"$${funcname%%)*}\"," >> $(TEST_SUITESFILE)			;\
+			done										;\
+		fi											;\
+	done
+	echo 'NULL};' >> $(TEST_SUITESFILE)
+
+test: $(TEST_SUITESFILE) 
+	$(MAKE) $(AM_MAKEFLAGS) CFLAGS="$(CFLAGS) -rdynamic -DZBX_CUNIT" CUNIT_LDADD="-lcunit"
+
+clean-test:
+	rm -rf $(TEST_SUITESFILE)
+	for file in $(TEST_SRCFILES); do		\
+		sed -i /$(TEST_COMMENT)/d $$file;	\
+	done
+
+clean-local: clean-test
+
+.PHONY: test clean-test
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

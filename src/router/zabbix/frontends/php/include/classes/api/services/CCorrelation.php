@@ -38,7 +38,7 @@ class CCorrelation extends CApiService {
 			'selectFilter'		=> null,
 			'selectOperations'	=> null,
 			'correlationids'	=> null,
-			'editable'			=> null,
+			'editable'			=> false,
 			'sortfield'			=> '',
 			'sortorder'			=> ''
 		]);
@@ -54,28 +54,28 @@ class CCorrelation extends CApiService {
 	public function get($options = []) {
 		$options = zbx_array_merge($this->getOptions, $options);
 
-		if ($options['editable'] !== null && self::$userData['type'] != USER_TYPE_SUPER_ADMIN) {
-			return ($options['countOutput'] !== null && $options['groupCount'] === null) ? 0 : [];
+		if ($options['editable'] && self::$userData['type'] != USER_TYPE_SUPER_ADMIN) {
+			return ($options['countOutput'] && !$options['groupCount']) ? 0 : [];
 		}
 
 		$res = DBselect($this->createSelectQuery($this->tableName(), $options), $options['limit']);
 
 		$result = [];
 		while ($row = DBfetch($res)) {
-			if ($options['countOutput'] === null) {
-				$result[$row[$this->pk()]] = $row;
-			}
-			else {
-				if ($options['groupCount'] === null) {
-					$result = $row['rowscount'];
-				}
-				else {
+			if ($options['countOutput']) {
+				if ($options['groupCount']) {
 					$result[] = $row;
 				}
+				else {
+					$result = $row['rowscount'];
+				}
+			}
+			else {
+				$result[$row[$this->pk()]] = $row;
 			}
 		}
 
-		if ($options['countOutput'] !== null) {
+		if ($options['countOutput']) {
 			return $result;
 		}
 
@@ -108,7 +108,7 @@ class CCorrelation extends CApiService {
 		}
 
 		// removing keys (hash -> array)
-		if ($options['preservekeys'] === null) {
+		if (!$options['preservekeys']) {
 			$result = zbx_cleanHashes($result);
 		}
 
@@ -662,10 +662,17 @@ class CCorrelation extends CApiService {
 		}
 
 		// Validate collected group IDs if at least one of correlation conditions was "New event host group".
-		if ($groupids && !API::HostGroup()->isReadable(array_keys($groupids))) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS,
-				_('No permissions to referred object or it does not exist!')
-			);
+		if ($groupids) {
+			$groups_count = API::HostGroup()->get([
+				'countOutput' => true,
+				'groupids' => array_keys($groupids)
+			]);
+
+			if ($groups_count != count($groupids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS,
+					_('No permissions to referred object or it does not exist!')
+				);
+			}
 		}
 	}
 
@@ -909,10 +916,17 @@ class CCorrelation extends CApiService {
 		}
 
 		// Validate collected group IDs if at least one of correlation conditions was "New event host group".
-		if ($groupids && !API::HostGroup()->isReadable(array_keys($groupids))) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS,
-				_('No permissions to referred object or it does not exist!')
-			);
+		if ($groupids) {
+			$groups_count = API::HostGroup()->get([
+				'countOutput' => true,
+				'groupids' => array_keys($groupids)
+			]);
+
+			if ($groups_count != count($groupids)) {
+				self::exception(ZBX_API_ERROR_PERMISSIONS,
+					_('No permissions to referred object or it does not exist!')
+				);
+			}
 		}
 	}
 
@@ -1373,7 +1387,7 @@ class CCorrelation extends CApiService {
 	protected function applyQueryOutputOptions($table_name, $table_alias, array $options, array $sql_parts) {
 		$sql_parts = parent::applyQueryOutputOptions($table_name, $table_alias, $options, $sql_parts);
 
-		if ($options['countOutput'] === null) {
+		if (!$options['countOutput']) {
 			// Add filter fields.
 			if ($this->outputIsRequested('formula', $options['selectFilter'])
 					|| $this->outputIsRequested('eval_formula', $options['selectFilter'])

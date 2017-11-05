@@ -556,9 +556,7 @@ static int	DBpatch_3010024_validate_action(zbx_uint64_t actionid, int eventsourc
 			/*   there are escalation steps that aren't executed at the escalation start    */
 			/*   there are conditions defined for action operations                         */
 			/*   there are operation to send message and action recovery message is enabled */
-			if (1 != atoi(row[1]) || 1 != atoi(row[1]) ||
-					0 != atoi(row[3]) ||
-					(0 == atoi(row[0]) && 0 != recovery_msg))
+			if (1 != atoi(row[1]) || 0 != atoi(row[3]) || (0 == atoi(row[0]) && 0 != recovery_msg))
 			{
 				ret = ZBX_3010024_ACTION_DISABLE;
 				break;
@@ -1591,14 +1589,14 @@ static int	DBpatch_3010077(void)
 {
 	const ZBX_FIELD	field = {"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
-	return DBmodify_field_type("groups", &field);
+	return DBmodify_field_type("groups", &field, NULL);
 }
 
 static int	DBpatch_3010078(void)
 {
 	const ZBX_FIELD	field = {"name", "", NULL, NULL, 255, ZBX_TYPE_CHAR, ZBX_NOTNULL, 0};
 
-	return DBmodify_field_type("group_prototype", &field);
+	return DBmodify_field_type("group_prototype", &field, NULL);
 }
 
 static int	DBpatch_3010079(void)

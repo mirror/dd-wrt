@@ -88,11 +88,12 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_ibm_db2.m4 \
 	$(top_srcdir)/m4/ax_lib_postgresql.m4 \
 	$(top_srcdir)/m4/ax_lib_sqlite3.m4 $(top_srcdir)/m4/iconv.m4 \
 	$(top_srcdir)/m4/jabber.m4 $(top_srcdir)/m4/ldap.m4 \
-	$(top_srcdir)/m4/libcurl.m4 $(top_srcdir)/m4/libgnutls.m4 \
-	$(top_srcdir)/m4/libmbedtls.m4 $(top_srcdir)/m4/libopenssl.m4 \
-	$(top_srcdir)/m4/libssh2.m4 $(top_srcdir)/m4/libunixodbc.m4 \
-	$(top_srcdir)/m4/libxml2.m4 $(top_srcdir)/m4/netsnmp.m4 \
-	$(top_srcdir)/m4/openipmi.m4 $(top_srcdir)/m4/resolv.m4 \
+	$(top_srcdir)/m4/libcurl.m4 $(top_srcdir)/m4/libevent.m4 \
+	$(top_srcdir)/m4/libgnutls.m4 $(top_srcdir)/m4/libmbedtls.m4 \
+	$(top_srcdir)/m4/libopenssl.m4 $(top_srcdir)/m4/libssh2.m4 \
+	$(top_srcdir)/m4/libunixodbc.m4 $(top_srcdir)/m4/libxml2.m4 \
+	$(top_srcdir)/m4/netsnmp.m4 $(top_srcdir)/m4/openipmi.m4 \
+	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/resolv.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -111,6 +112,7 @@ libcommonsysinfo_a_AR = $(AR) $(ARFLAGS)
 libcommonsysinfo_a_LIBADD =
 am_libcommonsysinfo_a_OBJECTS = libcommonsysinfo_a-common.$(OBJEXT) \
 	libcommonsysinfo_a-file.$(OBJEXT) \
+	libcommonsysinfo_a-dir.$(OBJEXT) \
 	libcommonsysinfo_a-cpu.$(OBJEXT) \
 	libcommonsysinfo_a-http.$(OBJEXT) \
 	libcommonsysinfo_a-net.$(OBJEXT) \
@@ -226,7 +228,13 @@ LDFLAGS = @LDFLAGS@
 LIBCURL_CFLAGS = @LIBCURL_CFLAGS@
 LIBCURL_LDFLAGS = @LIBCURL_LDFLAGS@
 LIBCURL_LIBS = @LIBCURL_LIBS@
+LIBEVENT_CFLAGS = @LIBEVENT_CFLAGS@
+LIBEVENT_LDFLAGS = @LIBEVENT_LDFLAGS@
+LIBEVENT_LIBS = @LIBEVENT_LIBS@
 LIBOBJS = @LIBOBJS@
+LIBPCRE_CFLAGS = @LIBPCRE_CFLAGS@
+LIBPCRE_LDFLAGS = @LIBPCRE_LDFLAGS@
+LIBPCRE_LIBS = @LIBPCRE_LIBS@
 LIBS = @LIBS@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_CONFIG = @LIBXML2_CONFIG@
@@ -357,6 +365,7 @@ libcommonsysinfo_a_CFLAGS = -I@top_srcdir@/src/zabbix_agent/
 libcommonsysinfo_a_SOURCES = \
 	common.c common.h \
 	file.c file.h \
+	dir.c dir.h \
 	cpu.c cpu.h \
 	http.c http.h \
 	net.c net.h \
@@ -413,21 +422,24 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommonsysinfo_a-common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommonsysinfo_a-cpu.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommonsysinfo_a-dir.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommonsysinfo_a-file.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommonsysinfo_a-http.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommonsysinfo_a-net.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommonsysinfo_a-system.Po@am__quote@
 
 .c.o:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
@@ -459,6 +471,20 @@ libcommonsysinfo_a-file.obj: file.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='file.c' object='libcommonsysinfo_a-file.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommonsysinfo_a_CFLAGS) $(CFLAGS) -c -o libcommonsysinfo_a-file.obj `if test -f 'file.c'; then $(CYGPATH_W) 'file.c'; else $(CYGPATH_W) '$(srcdir)/file.c'; fi`
+
+libcommonsysinfo_a-dir.o: dir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommonsysinfo_a_CFLAGS) $(CFLAGS) -MT libcommonsysinfo_a-dir.o -MD -MP -MF $(DEPDIR)/libcommonsysinfo_a-dir.Tpo -c -o libcommonsysinfo_a-dir.o `test -f 'dir.c' || echo '$(srcdir)/'`dir.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcommonsysinfo_a-dir.Tpo $(DEPDIR)/libcommonsysinfo_a-dir.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dir.c' object='libcommonsysinfo_a-dir.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommonsysinfo_a_CFLAGS) $(CFLAGS) -c -o libcommonsysinfo_a-dir.o `test -f 'dir.c' || echo '$(srcdir)/'`dir.c
+
+libcommonsysinfo_a-dir.obj: dir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommonsysinfo_a_CFLAGS) $(CFLAGS) -MT libcommonsysinfo_a-dir.obj -MD -MP -MF $(DEPDIR)/libcommonsysinfo_a-dir.Tpo -c -o libcommonsysinfo_a-dir.obj `if test -f 'dir.c'; then $(CYGPATH_W) 'dir.c'; else $(CYGPATH_W) '$(srcdir)/dir.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libcommonsysinfo_a-dir.Tpo $(DEPDIR)/libcommonsysinfo_a-dir.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dir.c' object='libcommonsysinfo_a-dir.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommonsysinfo_a_CFLAGS) $(CFLAGS) -c -o libcommonsysinfo_a-dir.obj `if test -f 'dir.c'; then $(CYGPATH_W) 'dir.c'; else $(CYGPATH_W) '$(srcdir)/dir.c'; fi`
 
 libcommonsysinfo_a-cpu.o: cpu.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommonsysinfo_a_CFLAGS) $(CFLAGS) -MT libcommonsysinfo_a-cpu.o -MD -MP -MF $(DEPDIR)/libcommonsysinfo_a-cpu.Tpo -c -o libcommonsysinfo_a-cpu.o `test -f 'cpu.c' || echo '$(srcdir)/'`cpu.c

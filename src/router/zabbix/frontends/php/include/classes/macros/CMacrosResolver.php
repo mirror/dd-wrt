@@ -52,12 +52,12 @@ class CMacrosResolver extends CMacrosResolverGeneral {
 			'source' => 'name',
 			'method' => 'resolveGraph'
 		],
-		'screenElementURL' => [
+		'widgetURL' => [
 			'types' => ['host', 'hostId', 'interfaceWithoutPort', 'user'],
 			'source' => 'url',
 			'method' => 'resolveTexts'
 		],
-		'screenElementURLUser' => [
+		'widgetURLUser' => [
 			'types' => ['user'],
 			'source' => 'url',
 			'method' => 'resolveTexts'
@@ -1520,6 +1520,65 @@ class CMacrosResolver extends CMacrosResolverGeneral {
 	}
 
 	/**
+	 * Resolve item delay macros, item history and item trend macros.
+	 *
+	 * @param array  $data
+	 * @param string $data[n]['hostid']
+	 * @param string $data[n][<sources>]  see options['source']
+	 * @param array  $options
+	 * @param array  $options['sources']  an array of the field names
+	 *
+	 * @return array
+	 */
+	public function resolveTimeUnitMacros(array $data, array $options) {
+		$usermacros = [];
+		$macro_values = [];
+
+		$types = [
+			'usermacros' => true
+		];
+
+		// Find macros.
+		foreach ($data as $key => $value) {
+			$texts = [];
+			foreach ($options['sources'] as $source) {
+				$texts[] = $value[$source];
+			}
+
+			$matched_macros = $this->extractMacros($texts, $types);
+
+			if ($matched_macros['usermacros']) {
+				$usermacros[$key] = [
+					'hostids' => array_key_exists('hostid', $value) ? [$value['hostid']] : [],
+					'macros' => $matched_macros['usermacros']
+				];
+			}
+		}
+
+		foreach ($this->getUserMacros($usermacros) as $key => $usermacros_data) {
+			$macro_values[$key] = array_key_exists($key, $macro_values)
+				? array_merge($macro_values[$key], $usermacros_data['macros'])
+				: $usermacros_data['macros'];
+		}
+
+		$types = $this->transformToPositionTypes($types);
+
+		// Replace macros to value.
+		foreach (array_keys($macro_values) as $key) {
+			foreach ($options['sources'] as $source) {
+				$matched_macros = $this->getMacroPositions($data[$key][$source], $types);
+
+				foreach (array_reverse($matched_macros, true) as $pos => $macro) {
+					$data[$key][$source] =
+						substr_replace($data[$key][$source], $macro_values[$key][$macro], $pos, strlen($macro));
+				}
+			}
+		}
+
+		return $data;
+	}
+
+	/**
 	 * Resolve function parameter macros to "parameter_expanded" field.
 	 *
 	 * @param array  $functions
@@ -1577,74 +1636,80 @@ class CMacrosResolver extends CMacrosResolverGeneral {
 	 * @return string
 	 */
 	public function resolveMapLabelMacros($label, $replaceHosts = null) {
-		$functionsPattern = '(last|max|min|avg)\(([0-9]+['.ZBX_TIME_SUFFIXES.']?)?\)';
+		$pattern = '/(?P<macros>{'.
+				'('.ZBX_PREG_HOST_FORMAT.(($replaceHosts !== null)
+						? '|({('.self::PATTERN_HOST_INTERNAL.')'.self::PATTERN_MACRO_PARAM.'})' : '').'):'.
+				ZBX_PREG_ITEM_KEY_FORMAT.'\.'.
+				'(last|max|min|avg)\('.
+				'([0-9]+['.ZBX_TIME_SUFFIXES.']?)?'.
+				'\)}{1})/Uux';
 
-		// Find functional macro pattern.
-		$pattern = ($replaceHosts === null)
-			? '/{'.ZBX_PREG_HOST_FORMAT.':.+\.'.$functionsPattern.'}/Uu'
-			: '/{('.ZBX_PREG_HOST_FORMAT.'|{HOSTNAME[0-9]?}|{HOST\.HOST[0-9]?}):.+\.'.$functionsPattern.'}/Uu';
+		if (preg_match_all($pattern, $label, $matches) != false && array_key_exists('macros', $matches)) {
+			// For each functional macro.
+			foreach ($matches['macros'] as $expr) {
+				$macro = $expr;
 
-		preg_match_all($pattern, $label, $matches);
+				if ($replaceHosts !== null) {
+					// Search for macros with all possible indices.
+					foreach ($replaceHosts as $i => $host) {
+						$macroTmp = $macro;
 
-		// For each functional macro.
-		foreach ($matches[0] as $expr) {
-			$macro = $expr;
+						// Replace only macro in first position.
+						$macro = preg_replace('/{({HOSTNAME'.$i.'}|{HOST\.HOST'.$i.'}):(.*)}/U',
+								'{'.$host['host'].':$2}', $macro
+						);
 
-			if ($replaceHosts !== null) {
-				// Search for macros with all possible indices.
-				foreach ($replaceHosts as $i => $host) {
-					$macroTmp = $macro;
-
-					// Replace only macro in first position.
-					$macro = preg_replace('/{({HOSTNAME'.$i.'}|{HOST\.HOST'.$i.'}):(.*)}/U', '{'.$host['host'].':$2}', $macro);
-
-					// Only one simple macro possible inside functional macro.
-					if ($macro !== $macroTmp) {
-						break;
+						// Only one simple macro possible inside functional macro.
+						if ($macro !== $macroTmp) {
+							break;
+						}
 					}
 				}
-			}
 
-			// Try to create valid expression.
-			$expressionData = new CTriggerExpression();
+				// Try to create valid expression.
+				$expressionData = new CTriggerExpression();
 
-			if (!$expressionData->parse($macro) || !isset($expressionData->expressions[0])) {
-				continue;
-			}
+				if (!$expressionData->parse($macro) || !isset($expressionData->expressions[0])) {
+					continue;
+				}
 
-			// Look in DB for corresponding item.
-			$itemHost = $expressionData->expressions[0]['host'];
-			$key = $expressionData->expressions[0]['item'];
-			$function = $expressionData->expressions[0]['functionName'];
+				// Look in DB for corresponding item.
+				$itemHost = $expressionData->expressions[0]['host'];
+				$key = $expressionData->expressions[0]['item'];
+				$function = $expressionData->expressions[0]['functionName'];
 
-			$item = API::Item()->get([
-				'output' => ['itemid', 'value_type', 'units', 'valuemapid', 'lastvalue', 'lastclock'],
-				'webitems' => true,
-				'filter' => [
-					'host' => $itemHost,
-					'key_' => $key
-				]
-			]);
+				$item = API::Item()->get([
+					'output' => ['itemid', 'value_type', 'units', 'valuemapid', 'lastvalue', 'lastclock'],
+					'webitems' => true,
+					'filter' => [
+						'host' => $itemHost,
+						'key_' => $key
+					]
+				]);
 
-			$item = reset($item);
+				$item = reset($item);
 
-			// If no corresponding item found with functional macro key and host.
-			if (!$item) {
-				$label = str_replace($expr, UNRESOLVED_MACRO_STRING, $label);
+				// If no corresponding item found with functional macro key and host.
+				if (!$item) {
+					$label = str_replace($expr, UNRESOLVED_MACRO_STRING, $label);
 
-				continue;
-			}
+					continue;
+				}
 
-			// Do function type (last, min, max, avg) related actions.
-			if ($function === 'last') {
-				$value = $item['lastclock'] ? formatHistoryValue($item['lastvalue'], $item) : UNRESOLVED_MACRO_STRING;
-			}
-			else {
-				$value = getItemFunctionalValue($item, $function, $expressionData->expressions[0]['functionParamList'][0]);
-			}
+				// Do function type (last, min, max, avg) related actions.
+				if ($function === 'last') {
+					$value = $item['lastclock']
+							? formatHistoryValue($item['lastvalue'], $item) : UNRESOLVED_MACRO_STRING;
+				}
+				else {
+					$value = getItemFunctionalValue($item, $function,
+							$expressionData->expressions[0]['functionParamList'][0]
+					);
+				}
 
-			if (isset($value)) {
-				$label = str_replace($expr, $value, $label);
+				if (isset($value)) {
+					$label = str_replace($expr, $value, $label);
+				}
 			}
 		}
 
@@ -1657,7 +1722,7 @@ class CMacrosResolver extends CMacrosResolverGeneral {
 	 * @param array  $selement
 	 * @param string $selement['label']						label to expand
 	 * @param int    $selement['elementtype']				element type
-	 * @param int    $selement['elementid']					element id
+	 * @param array    $selement['elements']				elements
 	 * @param string $selement['elementExpressionTrigger']	if type is trigger, then trigger expression
 	 *
 	 * @return string
@@ -1689,7 +1754,7 @@ class CMacrosResolver extends CMacrosResolverGeneral {
 					'SELECT hi.ip,hi.dns,hi.useip,h.host,h.name,h.description,hi.type AS interfacetype'.
 					' FROM interface hi,hosts h'.
 					' WHERE hi.hostid=h.hostid'.
-						' AND hi.main=1 AND hi.hostid='.zbx_dbstr($selement['elementid'])
+						' AND hi.main=1 AND hi.hostid='.zbx_dbstr($selement['elements'][0]['hostid'])
 				);
 
 				// Process interface priorities.
@@ -1712,7 +1777,7 @@ class CMacrosResolver extends CMacrosResolverGeneral {
 					' WHERE h.hostid=hi.hostid'.
 						' AND hi.hostid=i.hostid'.
 						' AND i.itemid=f.itemid'.
-						' AND hi.main=1 AND f.triggerid='.zbx_dbstr($selement['elementid']).
+						' AND hi.main=1 AND f.triggerid='.zbx_dbstr($selement['elements'][0]['triggerid']).
 					' ORDER BY f.functionid'
 				);
 
@@ -1732,7 +1797,7 @@ class CMacrosResolver extends CMacrosResolverGeneral {
 				}
 
 				// Get all function ids from expression and link host data against position in expression.
-				preg_match_all('/\{([0-9]+)\}/', $selement['elementExpressionTrigger'], $matches);
+				preg_match_all('/\{([0-9]+)\}/', $selement['elements'][0]['elementExpressionTrigger'], $matches);
 
 				$hostsByNr = [];
 

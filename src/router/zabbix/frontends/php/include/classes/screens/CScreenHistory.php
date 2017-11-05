@@ -109,6 +109,12 @@ class CScreenHistory extends CScreenBase {
 			'preservekeys' => true
 		]);
 
+		if (!$items) {
+			show_error_message(_('No permissions to referred object or it does not exist!'));
+
+			return;
+		}
+
 		$items = CMacrosResolverHelper::resolveItemNames($items);
 
 		$stime = zbxDateToTime($this->timeline['stime']);
@@ -128,6 +134,7 @@ class CScreenHistory extends CScreenBase {
 				'history' => $firstItem['value_type'],
 				'itemids' => $this->itemids,
 				'output' => API_OUTPUT_EXTEND,
+				'sortfield' => ['itemid', 'clock'],
 				'sortorder' => ZBX_SORT_DOWN
 			];
 			if ($this->action == HISTORY_LATEST) {
@@ -170,12 +177,15 @@ class CScreenHistory extends CScreenBase {
 				if ($this->filter !== '' && in_array($this->filterTask, [FILTER_TASK_SHOW, FILTER_TASK_HIDE])) {
 					$options['search'] = ['value' => $this->filter];
 					if ($this->filterTask == FILTER_TASK_HIDE) {
-						$options['excludeSearch'] = 1;
+						$options['excludeSearch'] = true;
 					}
 				}
-				$options['sortfield'] = ['itemid', 'clock'];
 
 				$historyData = API::History()->get($options);
+				CArrayHelper::sort($historyData, [
+					['field' => 'clock', 'order' => ZBX_SORT_DOWN],
+					['field' => 'ns', 'order' => ZBX_SORT_DOWN]
+				]);
 
 				foreach ($historyData as $data) {
 					$data['value'] = rtrim($data['value'], " \t\r\n");
@@ -268,8 +278,11 @@ class CScreenHistory extends CScreenBase {
 					]);
 				}
 
-				$options['sortfield'] = ['itemid', 'clock'];
 				$historyData = API::History()->get($options);
+				CArrayHelper::sort($historyData, [
+					['field' => 'clock', 'order' => ZBX_SORT_DOWN],
+					['field' => 'ns', 'order' => ZBX_SORT_DOWN]
+				]);
 
 				foreach ($historyData as $data) {
 					$item = $items[$data['itemid']];
@@ -309,7 +322,12 @@ class CScreenHistory extends CScreenBase {
 		if (!$this->plaintext && str_in_array($this->action, [HISTORY_VALUES, HISTORY_GRAPH, HISTORY_BATCH_GRAPH])) {
 			$graphDims = getGraphDims();
 
-			$this->timeline['starttime'] = date(TIMESTAMP_FORMAT, get_min_itemclock_by_itemid([$firstItem]));
+			/*
+			 * Interval start value is non-inclusive, therefore should subtract 1 second to be able to show row with
+			 * minimum clock value.
+			 */
+			$this->timeline['starttime']
+				= date(TIMESTAMP_FORMAT, get_min_itemclock_by_itemid([$firstItem]) - 1);
 
 			$this->dataId = 'historyGraph';
 
@@ -376,6 +394,7 @@ class CScreenHistory extends CScreenBase {
 		$url = new CUrl('chart.php');
 		$url->setArgument('period', $this->timeline['period']);
 		$url->setArgument('stime', $this->timeline['stime']);
+		$url->setArgument('isNow', $this->timeline['isNow']);
 		$url->setArgument('itemids', $itemIds);
 		$url->setArgument('type', $this->graphType);
 
