@@ -1976,7 +1976,7 @@ size_t wfwrite(char *buf, int size, int n, webs_t wp)
 int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp)
 {
 	off_t lo = offset;
-
+	wfflush(wp);
 	return sendfile(wp->conn_fd, fd, &lo, nbytes);
 
 }
