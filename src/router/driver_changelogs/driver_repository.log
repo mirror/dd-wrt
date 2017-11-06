@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3700 | brainslayer | 2017-11-06 08:36:33 +0100 (Mon, 06 Nov 2017) | 1 line
+
+new mwlwifi firmware for testing
+------------------------------------------------------------------------
 r3699 | brainslayer | 2017-11-05 10:26:26 +0100 (Sun, 05 Nov 2017) | 1 line
 
 mcs rates higher than 9 are likelly possible, so lets try it out
