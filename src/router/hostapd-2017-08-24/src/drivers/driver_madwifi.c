@@ -716,7 +716,7 @@ madwifi_sta_disassoc(void *priv, const u8 *own_addr, const u8 *addr,
 	return ret;
 }
 
-#if 0 //def CONFIG_WPS
+#ifdef CONFIG_WPS
 #ifdef IEEE80211_IOCTL_FILTERFRAME
 static void madwifi_raw_receive(void *ctx, const u8 *src_addr, const u8 *buf,
 				size_t len)
@@ -728,7 +728,7 @@ static void madwifi_raw_receive(void *ctx, const u8 *src_addr, const u8 *buf,
 
 	/* Send Probe Request information to WPS processing */
 
-	if (len < IEEE80211_HDRLEN + sizeof(mgmt->u.probe_req))
+	if (len < IEEE80211_HDRLEN)
 		return;
 	mgmt = (const struct ieee80211_mgmt *) buf;
 
@@ -741,9 +741,8 @@ static void madwifi_raw_receive(void *ctx, const u8 *src_addr, const u8 *buf,
 	event.rx_probe_req.sa = mgmt->sa;
 	event.rx_probe_req.da = mgmt->da;
 	event.rx_probe_req.bssid = mgmt->bssid;
-	event.rx_probe_req.ie = mgmt->u.probe_req.variable;
-	event.rx_probe_req.ie_len =
-		len - (IEEE80211_HDRLEN + sizeof(mgmt->u.probe_req));
+	event.rx_probe_req.ie = ((const u8 *) mgmt) + IEEE80211_HDRLEN;
+	event.rx_probe_req.ie_len = len - (IEEE80211_HDRLEN);
 	wpa_supplicant_event(drv->hapd, EVENT_RX_PROBE_REQ, &event);
 }
 #endif /* IEEE80211_IOCTL_FILTERFRAME */
@@ -752,7 +751,7 @@ static void madwifi_raw_receive(void *ctx, const u8 *src_addr, const u8 *buf,
 static int madwifi_receive_probe_req(struct madwifi_driver_data *drv)
 {
 	int ret = 0;
-#if 0 //def CONFIG_WPS
+#ifdef CONFIG_WPS
 #ifdef IEEE80211_IOCTL_FILTERFRAME
 	struct ieee80211req_set_filter filt;
 
