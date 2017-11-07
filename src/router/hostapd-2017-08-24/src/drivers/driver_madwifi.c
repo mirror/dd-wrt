@@ -716,7 +716,7 @@ madwifi_sta_disassoc(void *priv, const u8 *own_addr, const u8 *addr,
 	return ret;
 }
 
-#ifdef CONFIG_WPS
+#if 0 //def CONFIG_WPS
 #ifdef IEEE80211_IOCTL_FILTERFRAME
 static void madwifi_raw_receive(void *ctx, const u8 *src_addr, const u8 *buf,
 				size_t len)
@@ -752,7 +752,7 @@ static void madwifi_raw_receive(void *ctx, const u8 *src_addr, const u8 *buf,
 static int madwifi_receive_probe_req(struct madwifi_driver_data *drv)
 {
 	int ret = 0;
-#ifdef CONFIG_WPS
+#if 0 //def CONFIG_WPS
 #ifdef IEEE80211_IOCTL_FILTERFRAME
 	struct ieee80211req_set_filter filt;
 
