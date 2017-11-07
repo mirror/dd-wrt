@@ -821,6 +821,10 @@ struct ieee80211_mgmt {
 		} STRUCT_PACKED beacon;
 		/* probe_req: only variable items: SSID, Supported rates */
 		struct {
+			/* only variable items: SSID, Supported rates */
+			u8 variable[0];
+		} STRUCT_PACKED probe_req;
+		struct {
 			u8 timestamp[8];
 			le16 beacon_int;
 			le16 capab_info;
