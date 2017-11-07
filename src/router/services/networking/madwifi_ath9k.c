@@ -1296,6 +1296,22 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=1\n");
+		char *netmode = nvram_nget("%s_net_mode", prefix);
+		char *channelbw = nvram_nget("%s_channelbw", prefix);
+
+		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "mixed")) {
+
+			fprintf(fp, "disable_vht=1\n");
+			if (strcmp(netmode, "n-only") && strcmp(netmode, "n2-only") && strcmp(netmode, "n5-only") && strcmp(netmode, "na-only") && strcmp(netmode, "ng-only") && strcmp(netmode, "mixed")) {
+				fprintf(fp, "disable_ht=1\n");
+			} else {
+				if (atoi(channelbw) < 40) {
+					fprintf(fp, "disable_ht40=1\n");
+				}
+			}
+
+		}
+
 		// fprintf (fp, "ctrl_interface_group=0\n");
 		// fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
 		fprintf(fp, "network={\n");
