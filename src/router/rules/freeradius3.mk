@@ -161,7 +161,7 @@ freeradius3: libtalloc
 	make -C freeradius3 R="$(INSTALLDIR)/freeradius3" INSTALLSTRIP="" all
 
 freeradius3-clean:
-	make -C freeradius clean
+	make -C freeradius3 clean
 
 freeradius3-install:
 	make -C freeradius3 install R=$(INSTALLDIR)/freeradius3
