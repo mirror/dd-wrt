@@ -38,6 +38,11 @@ extern void writenvram(char *var, char *file);
 #define start_single_service() eval("start_single_service");
 #define stop_services() eval("stopservices");
 #define start_services() eval("startservices");
+static void set_systunes(void)
+{
+	writeprocsys("vm/dirty_writeback_centisecs", "1500");
+
+}
 
 static void set_tcp_params(void)
 {
@@ -112,6 +117,7 @@ void start_post_sysinit(void)
 	nvram_unset("rc_opt_run");
 	set_ip_forward('1');
 	set_tcp_params();
+	set_systunes();
 #ifdef HAVE_JFFS2
 	start_jffs2();
 #endif
