@@ -226,6 +226,7 @@ struct nvram_param srouter_defaults[] = {
 	{"ath1_regdomain", "UNITED_STATES"},
 #elif HAVE_ENEO
 	{"ath0_regdomain", "GERMANY"},
+	{"nocountrysel", "1"},
 #elif HAVE_BUFFALO
 #ifdef BUFFALO_EU
 	{"ath0_regdomain", "GERMANY"},	/* LAN IP address */
