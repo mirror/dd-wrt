@@ -791,6 +791,7 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 		if (!caps)
 			continue;
 		cap = nla_get_u32(caps);
+		fprintf(stderr, "caps %X\n",cap);
 		unsigned int bfantenna = (cap >> 13) & 0x7;
 		unsigned int sodimension = (cap >> 16) & 0x7;
 		if (bfantenna & 4)
