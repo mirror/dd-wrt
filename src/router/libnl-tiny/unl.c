@@ -11,12 +11,10 @@
 
 #include "unl.h"
 
-extern void init_msg_size(void);
 extern void ctrl_init(void);
 
 static int unl_init(struct unl *unl)
 {
-	init_msg_size();
 	ctrl_init();
 	unl->sock = nl_socket_alloc();
 	if (!unl->sock)
