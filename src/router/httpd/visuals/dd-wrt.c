@@ -1489,6 +1489,11 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			if (chan == NULL)
 				chan = list_channels(dev);
 		}
+#ifdef HAVE_ENEO
+		chan = NULL;
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n", !strcmp("0", "0") ? "selected=\\\"selected\\\"" : "");
+	
+#endif
 		if (chan) {
 			char *wlc = nvram_safe_get(wl_channel);
 			int offset = get_freqoffset(prefix);
