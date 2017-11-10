@@ -28,7 +28,7 @@ the package into Python 1.5.2.) ::
           description='Python Distribution Utilities',
           author='Greg Ward',
           author_email='gward@python.net',
-          url='http://www.python.org/sigs/distutils-sig/',
+          url='https://www.python.org/sigs/distutils-sig/',
           packages=['distutils', 'distutils.command'],
          )
 
@@ -201,7 +201,7 @@ The second argument to the :class:`~distutils.core.Extension` constructor is
 a list of source
 files.  Since the Distutils currently only support C, C++, and Objective-C
 extensions, these are normally C/C++/Objective-C source files.  (Be sure to use
-appropriate extensions to distinguish C++\ source files: :file:`.cc` and
+appropriate extensions to distinguish C++ source files: :file:`.cc` and
 :file:`.cpp` seem to be recognized by both Unix and Windows compilers.)
 
 However, you can also include SWIG interface (:file:`.i`) files in the list; the
@@ -446,7 +446,7 @@ command line.  Scripts don't require Distutils to do anything very complicated.
 The only clever feature is that if the first line of the script starts with
 ``#!`` and contains the word "python", the Distutils will adjust the first line
 to refer to the current interpreter location. By default, it is replaced with
-the current interpreter location.  The :option:`--executable` (or :option:`-e`)
+the current interpreter location.  The :option:`!--executable` (or :option:`!-e`)
 option will allow the interpreter path to be explicitly overridden.
 
 The ``scripts`` option simply is a list of files to be handled in this
@@ -609,7 +609,7 @@ Notes:
 (4)
     These fields should not be used if your package is to be compatible with Python
     versions prior to 2.2.3 or 2.3.  The list is available from the `PyPI website
-    <http://pypi.python.org/pypi>`_.
+    <https://pypi.python.org/pypi>`_.
 
 (5)
     The ``long_description`` field is used by PyPI when you are
@@ -628,7 +628,7 @@ Notes:
 
 'long string'
     Multiple lines of plain text in reStructuredText format (see
-    http://docutils.sf.net/).
+    http://docutils.sourceforge.net/).
 
 'list of strings'
     See below.
@@ -670,20 +670,6 @@ information is sometimes used to indicate sub-releases.  These are
               'Topic :: Software Development :: Bug Tracking',
               ],
           )
-
-If you wish to include classifiers in your :file:`setup.py` file and also wish
-to remain backwards-compatible with Python releases prior to 2.2.3, then you can
-include the following code fragment in your :file:`setup.py` before the
-:func:`setup` call. ::
-
-    # patch distutils if it can't cope with the "classifiers" or
-    # "download_url" keywords
-    from sys import version
-    if version < '2.2.3':
-        from distutils.dist import DistributionMetadata
-        DistributionMetadata.classifiers = None
-        DistributionMetadata.download_url = None
-
 
 .. _debug-setup-script:
 

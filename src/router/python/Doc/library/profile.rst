@@ -33,7 +33,7 @@ profiling interface:
 2. :mod:`profile`, a pure Python module whose interface is imitated by
    :mod:`cProfile`, but which adds significant overhead to profiled programs.
    If you're trying to extend the profiler in some way, the task might be easier
-   with this module.
+   with this module.  Originally designed and written by Jim Roskind.
 
 .. note::
 
@@ -85,11 +85,11 @@ next line: ``Ordered by: standard name``, indicates that the text string in the
 far right column was used to sort the output. The column headings include:
 
 ncalls
-   for the number of calls,
+   for the number of calls.
 
 tottime
-    for the total time spent in the given function (and excluding time made in
-    calls to sub-functions)
+   for the total time spent in the given function (and excluding time made in
+   calls to sub-functions)
 
 percall
    is the quotient of ``tottime`` divided by ``ncalls``
@@ -172,7 +172,7 @@ This will sort all the statistics by file name, and then print out statistics
 for only the class init methods (since they are spelled with ``__init__`` in
 them).  As one final example, you could try::
 
-   p.sort_stats('time', 'cum').print_stats(.5, 'init')
+   p.sort_stats('time', 'cumulative').print_stats(.5, 'init')
 
 This line sorts statistics with a primary key of time, and a secondary key of
 cumulative time, and then prints out some of the statistics. To be specific, the
@@ -215,11 +215,11 @@ functions:
 
    and gathers profiling statistics from the execution. If no file name is
    present, then this function automatically creates a :class:`~pstats.Stats`
-   instance and prints a simple profiling report. If the sort value is specified
+   instance and prints a simple profiling report. If the sort value is specified,
    it is passed to this :class:`~pstats.Stats` instance to control how the
    results are sorted.
 
-.. function:: runctx(command, globals, locals, filename=None)
+.. function:: runctx(command, globals, locals, filename=None, sort=-1)
 
    This function is similar to :func:`run`, with added arguments to supply the
    globals and locals dictionaries for the *command* string. This routine
@@ -444,9 +444,10 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       significant entries.  Initially, the list is taken to be the complete set
       of profiled functions.  Each restriction is either an integer (to select a
       count of lines), or a decimal fraction between 0.0 and 1.0 inclusive (to
-      select a percentage of lines), or a regular expression (to pattern match
-      the standard name that is printed.  If several restrictions are provided,
-      then they are applied sequentially.  For example::
+      select a percentage of lines), or a string that will interpreted as a
+      regular expression (to pattern match the standard name that is printed).
+      If several restrictions are provided, then they are applied sequentially.
+      For example::
 
          print_stats(.1, 'foo:')
 
@@ -638,7 +639,7 @@ you are using :class:`profile.Profile` or :class:`cProfile.Profile`,
 
       pr = cProfile.Profile(your_integer_time_func, 0.001)
 
-   As the :mod:`cProfile.Profile` class cannot be calibrated, custom timer
+   As the :class:`cProfile.Profile` class cannot be calibrated, custom timer
    functions should be used with care and should be as fast as possible.  For
    the best results with a custom timer, it might be necessary to hard-code it
    in the C source of the internal :mod:`_lsprof` module.

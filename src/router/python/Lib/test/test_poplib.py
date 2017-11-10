@@ -8,7 +8,6 @@ import asyncore
 import asynchat
 import socket
 import os
-import time
 import errno
 
 from unittest import TestCase, skipUnless
@@ -21,13 +20,10 @@ PORT = 0
 SUPPORTS_SSL = False
 if hasattr(poplib, 'POP3_SSL'):
     import ssl
-    from ssl import HAS_SNI
 
     SUPPORTS_SSL = True
     CERTFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "keycert3.pem")
     CAFILE = os.path.join(os.path.dirname(__file__) or os.curdir, "pycacert.pem")
-else:
-    HAS_SNI = False
 
 requires_ssl = skipUnless(SUPPORTS_SSL, 'SSL not supported')
 
@@ -47,6 +43,7 @@ line3\r\n\
 class DummyPOP3Handler(asynchat.async_chat):
 
     CAPAS = {'UIDL': [], 'IMPLEMENTATION': ['python-testlib-pop-server']}
+    enable_UTF8 = False
 
     def __init__(self, conn):
         asynchat.async_chat.__init__(self, conn)
@@ -145,15 +142,22 @@ class DummyPOP3Handler(asynchat.async_chat):
                 self.push(' '.join(_ln))
         self.push('.')
 
+    def cmd_utf8(self, arg):
+        self.push('+OK I know RFC6856'
+                  if self.enable_UTF8
+                  else '-ERR What is UTF8?!')
+
     if SUPPORTS_SSL:
 
         def cmd_stls(self, arg):
             if self.tls_active is False:
                 self.push('+OK Begin TLS negotiation')
-                tls_sock = ssl.wrap_socket(self.socket, certfile=CERTFILE,
-                                           server_side=True,
-                                           do_handshake_on_connect=False,
-                                           suppress_ragged_eofs=False)
+                context = ssl.SSLContext()
+                context.load_cert_chain(CERTFILE)
+                tls_sock = context.wrap_socket(self.socket,
+                                               server_side=True,
+                                               do_handshake_on_connect=False,
+                                               suppress_ragged_eofs=False)
                 self.del_channel()
                 self.set_socket(tls_sock)
                 self.tls_active = True
@@ -250,6 +254,8 @@ class TestPOP3Class(TestCase):
     def tearDown(self):
         self.client.close()
         self.server.stop()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server = None
 
     def test_getwelcome(self):
         self.assertEqual(self.client.getwelcome(),
@@ -312,6 +318,16 @@ class TestPOP3Class(TestCase):
         self.client.uidl()
         self.client.uidl('foo')
 
+    def test_utf8_raises_if_unsupported(self):
+        self.server.handler.enable_UTF8 = False
+        self.assertRaises(poplib.error_proto, self.client.utf8)
+
+    def test_utf8(self):
+        self.server.handler.enable_UTF8 = True
+        expected = b'+OK I know RFC6856'
+        result = self.client.utf8()
+        self.assertEqual(result, expected)
+
     def test_capa(self):
         capa = self.client.capa()
         self.assertTrue('IMPLEMENTATION' in capa.keys())
@@ -334,7 +350,6 @@ class TestPOP3Class(TestCase):
         self.assertEqual(resp, expected)
 
     @requires_ssl
-    @skipUnless(HAS_SNI, 'No SNI support in ssl module')
     def test_stls_context(self):
         expected = b'+OK Begin TLS negotiation'
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
@@ -349,23 +364,18 @@ class TestPOP3Class(TestCase):
 
 
 if SUPPORTS_SSL:
+    from test.test_ftplib import SSLConnection
 
-    class DummyPOP3_SSLHandler(DummyPOP3Handler):
+    class DummyPOP3_SSLHandler(SSLConnection, DummyPOP3Handler):
 
         def __init__(self, conn):
             asynchat.async_chat.__init__(self, conn)
-            ssl_socket = ssl.wrap_socket(self.socket, certfile=CERTFILE,
-                                          server_side=True,
-                                          do_handshake_on_connect=False)
-            self.del_channel()
-            self.set_socket(ssl_socket)
-            # Must try handshake before calling push()
-            self.tls_active = True
-            self.tls_starting = True
-            self._do_tls_handshake()
+            self.secure_connection()
             self.set_terminator(b"\r\n")
             self.in_buffer = []
             self.push('+OK dummy pop3 server ready. <timestamp>')
+            self.tls_active = True
+            self.tls_starting = False
 
 
 @requires_ssl
@@ -428,6 +438,8 @@ class TestPOP3_TLSClass(TestPOP3Class):
                 # this exception
                 self.client.close()
         self.server.stop()
+        # Explicitly clear the attribute to prevent dangling thread
+        self.server = None
 
     def test_stls(self):
         self.assertRaises(poplib.error_proto, self.client.stls)
@@ -453,10 +465,11 @@ class TestTimeouts(TestCase):
 
     def tearDown(self):
         self.thread.join()
-        del self.thread  # Clear out any dangling Thread objects.
+        # Explicitly clear the attribute to prevent dangling thread
+        self.thread = None
 
     def server(self, evt, serv):
-        serv.listen(5)
+        serv.listen()
         evt.set()
         try:
             conn, addr = serv.accept()
@@ -475,7 +488,7 @@ class TestTimeouts(TestCase):
         finally:
             socket.setdefaulttimeout(None)
         self.assertEqual(pop.sock.gettimeout(), 30)
-        pop.sock.close()
+        pop.close()
 
     def testTimeoutNone(self):
         self.assertIsNone(socket.getdefaulttimeout())
@@ -485,12 +498,12 @@ class TestTimeouts(TestCase):
         finally:
             socket.setdefaulttimeout(None)
         self.assertIsNone(pop.sock.gettimeout())
-        pop.sock.close()
+        pop.close()
 
     def testTimeoutValue(self):
         pop = poplib.POP3(HOST, self.port, timeout=30)
         self.assertEqual(pop.sock.gettimeout(), 30)
-        pop.sock.close()
+        pop.close()
 
 
 def test_main():

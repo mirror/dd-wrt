@@ -4,9 +4,9 @@
 .. module:: fpectl
    :platform: Unix
    :synopsis: Provide control for floating point exception handling.
+
 .. moduleauthor:: Lee Busby <busby1@llnl.gov>
 .. sectionauthor:: Lee Busby <busby1@llnl.gov>
-
 
 .. note::
 
@@ -15,6 +15,8 @@
    :ref:`fpectl-limitations` on limitations for more details.
 
 .. index:: single: IEEE-754
+
+--------------
 
 Most computers carry out floating point operations in conformance with the
 so-called IEEE-754 standard. On any real computer, some floating point
@@ -87,7 +89,7 @@ The following example demonstrates how to start up and test operation of the
    >>> import math
    >>> math.exp(1000)
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    FloatingPointError: in math_1
 
 

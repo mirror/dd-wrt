@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+/* These global variable are defined in pylifecycle.c */
+/* XXX (ncoghlan): move these declarations to pylifecycle.h? */
 PyAPI_DATA(int) Py_DebugFlag;
 PyAPI_DATA(int) Py_VerboseFlag;
 PyAPI_DATA(int) Py_QuietFlag;
@@ -21,6 +23,10 @@ PyAPI_DATA(int) Py_NoUserSiteDirectory;
 PyAPI_DATA(int) Py_UnbufferedStdioFlag;
 PyAPI_DATA(int) Py_HashRandomizationFlag;
 PyAPI_DATA(int) Py_IsolatedFlag;
+
+#ifdef MS_WINDOWS
+PyAPI_DATA(int) Py_LegacyWindowsStdioFlag;
+#endif
 
 /* this is a wrapper around getenv() that pays attention to
    Py_IgnoreEnvironmentFlag.  It should be used for getting variables like

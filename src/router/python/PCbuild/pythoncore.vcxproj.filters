@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Include">
@@ -177,6 +177,9 @@
     <ClInclude Include="..\Include\osdefs.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\osmodule.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\parsetok.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -216,6 +219,9 @@
     <ClInclude Include="..\Include\pygetopt.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\pylifecycle.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\pymath.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -238,6 +244,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\pystrtod.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\pystrhex.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\dtoa.h">
@@ -414,6 +423,9 @@
     <ClInclude Include="..\Python\thread_nt.h">
       <Filter>Python</Filter>
     </ClInclude>
+    <ClInclude Include="..\Python\wordcode_helpers.h">
+      <Filter>Python</Filter>
+    </ClInclude>
     <ClInclude Include="..\Python\condvar.h">
       <Filter>Python</Filter>
     </ClInclude>
@@ -429,9 +441,24 @@
     <ClInclude Include="..\Modules\hashtable.h">
       <Filter>Modules</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\odictobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Modules\_asynciomodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
     <ClCompile Include="..\Modules\_bisectmodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_blake2\blake2module.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_blake2\blake2b_impl.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_blake2\blake2s_impl.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_codecsmodule.c">
@@ -465,6 +492,9 @@
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_randommodule.c">
+      <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_sha3\sha3module.c">
       <Filter>Modules</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_sre.c">
@@ -576,6 +606,9 @@
       <Filter>Modules\_io</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_io\textio.c">
+      <Filter>Modules\_io</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_io\winconsoleio.c">
       <Filter>Modules\_io</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_io\_iomodule.c">
@@ -890,6 +923,9 @@
     <ClCompile Include="..\Python\pyfpe.c">
       <Filter>Python</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\pylifecycle.c">
+      <Filter>Python</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\pymath.c">
       <Filter>Python</Filter>
     </ClCompile>
@@ -900,6 +936,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pystrcmp.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\pystrhex.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pystrtod.c">
@@ -952,6 +991,12 @@
     </ClCompile>
     <ClCompile Include="..\Modules\hashtable.c">
       <Filter>Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PC\invalid_parameter_handler.c">
+      <Filter>PC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\odictobject.c">
+      <Filter>Objects</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

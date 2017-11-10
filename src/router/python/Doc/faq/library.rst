@@ -19,7 +19,7 @@ standard library module.  (Eventually you'll learn what's in the standard
 library and will be able to skip this step.)
 
 For third-party packages, search the `Python Package Index
-<http://pypi.python.org/pypi>`_ or try `Google <http://www.google.com>`_ or
+<https://pypi.python.org/pypi>`_ or try `Google <https://www.google.com>`_ or
 another Web search engine.  Searching for "Python" plus a keyword or two for
 your topic of interest will usually find something helpful.
 
@@ -181,8 +181,8 @@ How do I create documentation from doc strings?
 
 The :mod:`pydoc` module can create HTML from the doc strings in your Python
 source code.  An alternative for creating API documentation purely from
-docstrings is `epydoc <http://epydoc.sf.net/>`_.  `Sphinx
-<http://sphinx.pocoo.org>`_ can also include docstring content.
+docstrings is `epydoc <http://epydoc.sourceforge.net/>`_.  `Sphinx
+<http://sphinx-doc.org>`_ can also include docstring content.
 
 
 How do I get a single keypress at a time?
@@ -257,7 +257,8 @@ all the threads to finish::
    import threading, time
 
    def thread_task(name, n):
-       for i in range(n): print(name, i)
+       for i in range(n):
+           print(name, i)
 
    for i in range(10):
        T = threading.Thread(target=thread_task, args=(str(i), i))
@@ -273,7 +274,8 @@ A simple fix is to add a tiny sleep to the start of the run function::
 
    def thread_task(name, n):
        time.sleep(0.001)  # <--------------------!
-       for i in range(n): print(name, i)
+       for i in range(n):
+           print(name, i)
 
    for i in range(10):
        T = threading.Thread(target=thread_task, args=(str(i), i))
@@ -502,8 +504,8 @@ in big-endian format from a file::
    import struct
 
    with open(filename, "rb") as f:
-      s = f.read(8)
-      x, y, z = struct.unpack(">hhl", s)
+       s = f.read(8)
+       x, y, z = struct.unpack(">hhl", s)
 
 The '>' in the format string forces big-endian data; the letter 'h' reads one
 "short integer" (2 bytes), and 'l' reads one "long integer" (4 bytes) from the
@@ -607,7 +609,7 @@ use ``p.read(n)``.
    "expect" library.  A Python extension that interfaces to expect is called
    "expy" and available from http://expectpy.sourceforge.net.  A pure Python
    solution that works like expect is `pexpect
-   <http://pypi.python.org/pypi/pexpect/>`_.
+   <https://pypi.python.org/pypi/pexpect/>`_.
 
 
 How do I access the serial (RS232) port?
@@ -619,7 +621,7 @@ For Win32, POSIX (Linux, BSD, etc.), Jython:
 
 For Unix, see a Usenet post by Mitch Chapman:
 
-   http://groups.google.com/groups?selm=34A04430.CF9@ohioee.com
+   https://groups.google.com/groups?selm=34A04430.CF9@ohioee.com
 
 
 Why doesn't closing sys.stdout (stdin, stderr) really close it?
@@ -663,7 +665,7 @@ and client-side web systems.
 .. XXX check if wiki page is still up to date
 
 A summary of available frameworks is maintained by Paul Boddie at
-http://wiki.python.org/moin/WebProgramming\ .
+https://wiki.python.org/moin/WebProgramming\ .
 
 Cameron Laird maintains a useful set of pages about Python web technologies at
 http://phaseit.net/claird/comp.lang.python/web_python.
@@ -681,13 +683,14 @@ Yes. Here's a simple example that uses urllib.request::
 
    import urllib.request
 
-   ### build the query string
+   # build the query string
    qs = "First=Josephine&MI=Q&Last=Public"
 
-   ### connect and send the server a path
+   # connect and send the server a path
    req = urllib.request.urlopen('http://www.some-server.out-there'
                                 '/cgi-bin/some-cgi-script', data=qs)
-   msg, hdrs = req.read(), req.info()
+   with req:
+       msg, hdrs = req.read(), req.info()
 
 Note that in general for percent-encoded POST operations, query strings must be
 quoted using :func:`urllib.parse.urlencode`.  For example, to send
@@ -706,7 +709,7 @@ What module should I use to help with generating HTML?
 .. XXX add modern template languages
 
 You can find a collection of useful links on the `Web Programming wiki page
-<http://wiki.python.org/moin/WebProgramming>`_.
+<https://wiki.python.org/moin/WebProgramming>`_.
 
 
 How do I send mail from a Python script?
@@ -739,8 +742,9 @@ varies between systems; sometimes it is ``/usr/lib/sendmail``, sometimes
 ``/usr/sbin/sendmail``.  The sendmail manual page will help you out.  Here's
 some sample code::
 
-   SENDMAIL = "/usr/sbin/sendmail"  # sendmail location
    import os
+
+   SENDMAIL = "/usr/sbin/sendmail"  # sendmail location
    p = os.popen("%s -t -i" % SENDMAIL, "w")
    p.write("To: receiver@example.com\n")
    p.write("Subject: test\n")
@@ -773,7 +777,7 @@ socket to select to check if it's writable.
 .. note::
    The :mod:`asyncore` module presents a framework-like approach to the problem
    of writing non-blocking networking code.
-   The third-party `Twisted <http://twistedmatrix.com/>`_ library is
+   The third-party `Twisted <https://twistedmatrix.com/trac/>`_ library is
    a popular and feature-rich alternative.
 
 
@@ -792,7 +796,7 @@ database.
 
 Support for most relational databases is available.  See the
 `DatabaseProgramming wiki page
-<http://wiki.python.org/moin/DatabaseProgramming>`_ for details.
+<https://wiki.python.org/moin/DatabaseProgramming>`_ for details.
 
 
 How do you implement persistent objects in Python?

@@ -68,25 +68,35 @@ Object Protocol
 .. c:function:: int PyObject_SetAttr(PyObject *o, PyObject *attr_name, PyObject *v)
 
    Set the value of the attribute named *attr_name*, for object *o*, to the value
-   *v*. Returns ``-1`` on failure.  This is the equivalent of the Python statement
+   *v*. Raise an exception and return ``-1`` on failure;
+   return ``0`` on success.  This is the equivalent of the Python statement
    ``o.attr_name = v``.
+
+   If *v* is *NULL*, the attribute is deleted, however this feature is
+   deprecated in favour of using :c:func:`PyObject_DelAttr`.
 
 
 .. c:function:: int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v)
 
    Set the value of the attribute named *attr_name*, for object *o*, to the value
-   *v*. Returns ``-1`` on failure.  This is the equivalent of the Python statement
+   *v*. Raise an exception and return ``-1`` on failure;
+   return ``0`` on success.  This is the equivalent of the Python statement
    ``o.attr_name = v``.
+
+   If *v* is *NULL*, the attribute is deleted, however this feature is
+   deprecated in favour of using :c:func:`PyObject_DelAttrString`.
 
 
 .. c:function:: int PyObject_GenericSetAttr(PyObject *o, PyObject *name, PyObject *value)
 
-   Generic attribute setter function that is meant to be put into a type
-   object's ``tp_setattro`` slot.  It looks for a data descriptor in the
+   Generic attribute setter and deleter function that is meant
+   to be put into a type object's :c:member:`~PyTypeObject.tp_setattro`
+   slot.  It looks for a data descriptor in the
    dictionary of classes in the object's MRO, and if found it takes preference
-   over setting the attribute in the instance dictionary. Otherwise, the
-   attribute is set in the object's :attr:`~object.__dict__` (if present).
-   Otherwise, an :exc:`AttributeError` is raised and ``-1`` is returned.
+   over setting or deleting the attribute in the instance dictionary. Otherwise, the
+   attribute is set or deleted in the object's :attr:`~object.__dict__` (if present).
+   On success, ``0`` is returned, otherwise an :exc:`AttributeError`
+   is raised and ``-1`` is returned.
 
 
 .. c:function:: int PyObject_DelAttr(PyObject *o, PyObject *attr_name)
@@ -101,7 +111,7 @@ Object Protocol
    This is the equivalent of the Python statement ``del o.attr_name``.
 
 
-.. c:function:: PyObject* PyType_GenericGetDict(PyObject *o, void *context)
+.. c:function:: PyObject* PyObject_GenericGetDict(PyObject *o, void *context)
 
    A generic implementation for the getter of a ``__dict__`` descriptor. It
    creates the dictionary if necessary.
@@ -109,7 +119,7 @@ Object Protocol
    .. versionadded:: 3.3
 
 
-.. c:function:: int PyType_GenericSetDict(PyObject *o, void *context)
+.. c:function:: int PyObject_GenericSetDict(PyObject *o, void *context)
 
    A generic implementation for the setter of a ``__dict__`` descriptor. This
    implementation does not allow the dictionary to be deleted.
@@ -187,40 +197,45 @@ Object Protocol
    a TypeError is raised when *o* is an integer instead of a zero-initialized
    bytes object.
 
-.. c:function:: int PyObject_IsInstance(PyObject *inst, PyObject *cls)
-
-   Returns ``1`` if *inst* is an instance of the class *cls* or a subclass of
-   *cls*, or ``0`` if not.  On error, returns ``-1`` and sets an exception.  If
-   *cls* is a type object rather than a class object, :c:func:`PyObject_IsInstance`
-   returns ``1`` if *inst* is of type *cls*.  If *cls* is a tuple, the check will
-   be done against every entry in *cls*. The result will be ``1`` when at least one
-   of the checks returns ``1``, otherwise it will be ``0``. If *inst* is not a
-   class instance and *cls* is neither a type object, nor a class object, nor a
-   tuple, *inst* must have a :attr:`~instance.__class__` attribute --- the
-   class relationship of the value of that attribute with *cls* will be used
-   to determine the result of this function.
-
-
-Subclass determination is done in a fairly straightforward way, but includes a
-wrinkle that implementors of extensions to the class system may want to be aware
-of.  If :class:`A` and :class:`B` are class objects, :class:`B` is a subclass of
-:class:`A` if it inherits from :class:`A` either directly or indirectly.  If
-either is not a class object, a more general mechanism is used to determine the
-class relationship of the two objects.  When testing if *B* is a subclass of
-*A*, if *A* is *B*, :c:func:`PyObject_IsSubclass` returns true.  If *A* and *B*
-are different objects, *B*'s :attr:`~class.__bases__` attribute is searched in
-a depth-first fashion for *A* --- the presence of the :attr:`~class.__bases__`
-attribute is considered sufficient for this determination.
-
 
 .. c:function:: int PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 
-   Returns ``1`` if the class *derived* is identical to or derived from the class
-   *cls*, otherwise returns ``0``.  In case of an error, returns ``-1``. If *cls*
-   is a tuple, the check will be done against every entry in *cls*. The result will
-   be ``1`` when at least one of the checks returns ``1``, otherwise it will be
-   ``0``. If either *derived* or *cls* is not an actual class object (or tuple),
-   this function uses the generic algorithm described above.
+   Return ``1`` if the class *derived* is identical to or derived from the class
+   *cls*, otherwise return ``0``.  In case of an error, return ``-1``.
+
+   If *cls* is a tuple, the check will be done against every entry in *cls*.
+   The result will be ``1`` when at least one of the checks returns ``1``,
+   otherwise it will be ``0``.
+
+   If *cls* has a :meth:`~class.__subclasscheck__` method, it will be called to
+   determine the subclass status as described in :pep:`3119`.  Otherwise,
+   *derived* is a subclass of *cls* if it is a direct or indirect subclass,
+   i.e. contained in ``cls.__mro__``.
+
+   Normally only class objects, i.e. instances of :class:`type` or a derived
+   class, are considered classes.  However, objects can override this by having
+   a :attr:`__bases__` attribute (which must be a tuple of base classes).
+
+
+.. c:function:: int PyObject_IsInstance(PyObject *inst, PyObject *cls)
+
+   Return ``1`` if *inst* is an instance of the class *cls* or a subclass of
+   *cls*, or ``0`` if not.  On error, returns ``-1`` and sets an exception.
+
+   If *cls* is a tuple, the check will be done against every entry in *cls*.
+   The result will be ``1`` when at least one of the checks returns ``1``,
+   otherwise it will be ``0``.
+
+   If *cls* has a :meth:`~class.__instancecheck__` method, it will be called to
+   determine the subclass status as described in :pep:`3119`.  Otherwise, *inst*
+   is an instance of *cls* if its class is a subclass of *cls*.
+
+   An instance *inst* can override what is considered its class by having a
+   :attr:`__class__` attribute.
+
+   An object *cls* can override if it is considered a class, and what its base
+   classes are, by having a :attr:`__bases__` attribute (which must be a tuple
+   of base classes).
 
 
 .. c:function:: int PyCallable_Check(PyObject *o)
@@ -373,7 +388,8 @@ attribute is considered sufficient for this determination.
 
 .. c:function:: int PyObject_SetItem(PyObject *o, PyObject *key, PyObject *v)
 
-   Map the object *key* to the value *v*.  Returns ``-1`` on failure.  This is the
+   Map the object *key* to the value *v*.  Raise an exception and
+   return ``-1`` on failure; return ``0`` on success.  This is the
    equivalent of the Python statement ``o[key] = v``.
 
 

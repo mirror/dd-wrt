@@ -4,9 +4,13 @@
 .. module:: struct
    :synopsis: Interpret bytes as packed binary data.
 
+**Source code:** :source:`Lib/struct.py`
+
 .. index::
    pair: C; structures
    triple: packing; binary; data
+
+--------------
 
 This module performs conversions between Python values and C structs represented
 as Python :class:`bytes` objects.  This can be used in handling binary data
@@ -23,6 +27,14 @@ structs and the intended conversion to/from Python values.
    of the corresponding C struct.  To handle platform-independent data formats
    or omit implicit pad bytes, use ``standard`` size and alignment instead of
    ``native`` size and alignment: see :ref:`struct-alignment` for details.
+
+Several :mod:`struct` functions (and methods of :class:`Struct`) take a *buffer*
+argument.  This refers to objects that implement the :ref:`bufferobjects` and
+provide either a readable or read-writable buffer.  The most common types used
+for that purpose are :class:`bytes` and :class:`bytearray`, but many other types
+that can be viewed as an array of bytes implement the buffer protocol, so that
+they can be read/filled without additional copying from a :class:`bytes` object.
+
 
 Functions and Exceptions
 ------------------------
@@ -47,23 +59,23 @@ The module defines the following exception and functions:
 
    Pack the values *v1*, *v2*, ... according to the format string *fmt* and
    write the packed bytes into the writable buffer *buffer* starting at
-   position *offset*. Note that *offset* is a required argument.
+   position *offset*.  Note that *offset* is a required argument.
 
 
 .. function:: unpack(fmt, buffer)
 
    Unpack from the buffer *buffer* (presumably packed by ``pack(fmt, ...)``)
    according to the format string *fmt*.  The result is a tuple even if it
-   contains exactly one item.  The buffer must contain exactly the amount of
-   data required by the format (``len(bytes)`` must equal ``calcsize(fmt)``).
+   contains exactly one item.  The buffer's size in bytes must match the
+   size required by the format, as reflected by :func:`calcsize`.
 
 
 .. function:: unpack_from(fmt, buffer, offset=0)
 
    Unpack from *buffer* starting at position *offset*, according to the format
    string *fmt*.  The result is a tuple even if it contains exactly one
-   item.  *buffer* must contain at least the amount of data required by the
-   format (``len(buffer[offset:])`` must be at least ``calcsize(fmt)``).
+   item.  The buffer's size in bytes, minus *offset*, must be at least
+   the size required by the format, as reflected by :func:`calcsize`.
 
 
 .. function:: iter_unpack(fmt, buffer)
@@ -71,8 +83,8 @@ The module defines the following exception and functions:
    Iteratively unpack from the buffer *buffer* according to the format
    string *fmt*.  This function returns an iterator which will read
    equally-sized chunks from the buffer until all its contents have been
-   consumed.  The buffer's size in bytes must be a multiple of the amount
-   of data required by the format, as reflected by :func:`calcsize`.
+   consumed.  The buffer's size in bytes must be a multiple of the size
+   required by the format, as reflected by :func:`calcsize`.
 
    Each iteration yields a tuple as specified by the format string.
 
@@ -204,6 +216,8 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``N``  | :c:type:`size_t`         | integer            |                | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
+| ``e``  | \(7)                     | float              | 2              | \(5)       |
++--------+--------------------------+--------------------+----------------+------------+
 | ``f``  | :c:type:`float`          | float              | 4              | \(5)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``d``  | :c:type:`double`         | float              | 8              | \(5)       |
@@ -217,6 +231,10 @@ platform-dependent.
 
 .. versionchanged:: 3.3
    Added support for the ``'n'`` and ``'N'`` formats.
+
+.. versionchanged:: 3.6
+   Added support for the ``'e'`` format.
+
 
 Notes:
 
@@ -245,9 +263,10 @@ Notes:
    fits your application.
 
 (5)
-   For the ``'f'`` and ``'d'`` conversion codes, the packed representation uses
-   the IEEE 754 binary32 (for ``'f'``) or binary64 (for ``'d'``) format,
-   regardless of the floating-point format used by the platform.
+   For the ``'f'``, ``'d'`` and ``'e'`` conversion codes, the packed
+   representation uses the IEEE 754 binary32, binary64 or binary16 format (for
+   ``'f'``, ``'d'`` or ``'e'`` respectively), regardless of the floating-point
+   format used by the platform.
 
 (6)
    The ``'P'`` format character is only available for the native byte ordering
@@ -255,6 +274,16 @@ Notes:
    order character ``'='`` chooses to use little- or big-endian ordering based
    on the host system. The struct module does not interpret this as native
    ordering, so the ``'P'`` format is not available.
+
+(7)
+   The IEEE 754 binary16 "half precision" type was introduced in the 2008
+   revision of the `IEEE 754 standard <ieee 754 standard_>`_. It has a sign
+   bit, a 5-bit exponent and 11-bit precision (with 10 bits explicitly stored),
+   and can represent numbers between approximately ``6.1e-05`` and ``6.5e+04``
+   at full precision. This type is not widely supported by C compilers: on a
+   typical machine, an unsigned short can be used for storage, but not for math
+   operations. See the Wikipedia page on the `half-precision floating-point
+   format <half precision format_>`_ for more information.
 
 
 A format character may be preceded by an integral repeat count.  For example,
@@ -381,7 +410,7 @@ The :mod:`struct` module also defines the following type:
    .. method:: pack(v1, v2, ...)
 
       Identical to the :func:`pack` function, using the compiled format.
-      (``len(result)`` will equal :attr:`self.size`.)
+      (``len(result)`` will equal :attr:`size`.)
 
 
    .. method:: pack_into(buffer, offset, v1, v2, ...)
@@ -392,19 +421,20 @@ The :mod:`struct` module also defines the following type:
    .. method:: unpack(buffer)
 
       Identical to the :func:`unpack` function, using the compiled format.
-      (``len(buffer)`` must equal :attr:`self.size`).
+      The buffer's size in bytes must equal :attr:`size`.
 
 
    .. method:: unpack_from(buffer, offset=0)
 
       Identical to the :func:`unpack_from` function, using the compiled format.
-      (``len(buffer[offset:])`` must be at least :attr:`self.size`).
+      The buffer's size in bytes, minus *offset*, must be at least
+      :attr:`size`.
 
 
    .. method:: iter_unpack(buffer)
 
       Identical to the :func:`iter_unpack` function, using the compiled format.
-      (``len(buffer)`` must be a multiple of :attr:`self.size`).
+      The buffer's size in bytes must be a multiple of :attr:`size`.
 
       .. versionadded:: 3.4
 
@@ -417,3 +447,7 @@ The :mod:`struct` module also defines the following type:
       The calculated size of the struct (and hence of the bytes object produced
       by the :meth:`pack` method) corresponding to :attr:`format`.
 
+
+.. _half precision format: https://en.wikipedia.org/wiki/Half-precision_floating-point_format
+
+.. _ieee 754 standard: https://en.wikipedia.org/wiki/IEEE_floating_point#IEEE_754-2008

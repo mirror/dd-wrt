@@ -3,6 +3,7 @@
 
 .. module:: functools
    :synopsis: Higher-order functions and operations on callable objects.
+
 .. moduleauthor:: Peter Harris <scav@blueyonder.co.uk>
 .. moduleauthor:: Raymond Hettinger <python@rcn.com>
 .. moduleauthor:: Nick Coghlan <ncoghlan@gmail.com>
@@ -21,8 +22,8 @@ The :mod:`functools` module defines the following functions:
 
 .. function:: cmp_to_key(func)
 
-   Transform an old-style comparison function to a key function.  Used with
-   tools that accept key functions (such as :func:`sorted`, :func:`min`,
+   Transform an old-style comparison function to a :term:`key function`.  Used
+   with tools that accept key functions (such as :func:`sorted`, :func:`min`,
    :func:`max`, :func:`heapq.nlargest`, :func:`heapq.nsmallest`,
    :func:`itertools.groupby`).  This function is primarily used as a transition
    tool for programs being converted from Python 2 which supported the use of
@@ -31,12 +32,13 @@ The :mod:`functools` module defines the following functions:
    A comparison function is any callable that accept two arguments, compares them,
    and returns a negative number for less-than, zero for equality, or a positive
    number for greater-than.  A key function is a callable that accepts one
-   argument and returns another value indicating the position in the desired
-   collation sequence.
+   argument and returns another value to be used as the sort key.
 
    Example::
 
        sorted(iterable, key=cmp_to_key(locale.strcoll))  # locale-aware sort order
+
+   For sorting examples and a brief sorting tutorial, see :ref:`sortinghowto`.
 
    .. versionadded:: 3.2
 
@@ -50,11 +52,11 @@ The :mod:`functools` module defines the following functions:
    Since a dictionary is used to cache results, the positional and keyword
    arguments to the function must be hashable.
 
-   If *maxsize* is set to None, the LRU feature is disabled and the cache can
+   If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
    grow without bound.  The LRU feature performs best when *maxsize* is a
    power-of-two.
 
-   If *typed* is set to True, function arguments of different types will be
+   If *typed* is set to true, function arguments of different types will be
    cached separately.  For example, ``f(3)`` and ``f(3.0)`` will be treated
    as distinct calls with distinct results.
 
@@ -72,7 +74,7 @@ The :mod:`functools` module defines the following functions:
    bypassing the cache, or for rewrapping the function with a different cache.
 
    An `LRU (least recently used) cache
-   <http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used>`_ works
+   <https://en.wikipedia.org/wiki/Cache_algorithms#Examples>`_ works
    best when the most recent calls are the best predictors of upcoming calls (for
    example, the most popular articles on a news server tend to change each day).
    The cache's size limit assures that the cache does not grow without bound on
@@ -98,9 +100,9 @@ The :mod:`functools` module defines the following functions:
         CacheInfo(hits=3, misses=8, maxsize=32, currsize=8)
 
    Example of efficiently computing
-   `Fibonacci numbers <http://en.wikipedia.org/wiki/Fibonacci_number>`_
+   `Fibonacci numbers <https://en.wikipedia.org/wiki/Fibonacci_number>`_
    using a cache to implement a
-   `dynamic programming <http://en.wikipedia.org/wiki/Dynamic_programming>`_
+   `dynamic programming <https://en.wikipedia.org/wiki/Dynamic_programming>`_
    technique::
 
         @lru_cache(maxsize=None)
@@ -175,7 +177,7 @@ The :mod:`functools` module defines the following functions:
           def newfunc(*fargs, **fkeywords):
               newkeywords = keywords.copy()
               newkeywords.update(fkeywords)
-              return func(*(args + fargs), **newkeywords)
+              return func(*args, *fargs, **newkeywords)
           newfunc.func = func
           newfunc.args = args
           newfunc.keywords = keywords
@@ -249,7 +251,7 @@ The :mod:`functools` module defines the following functions:
    a default when the sequence is empty.  If *initializer* is not given and
    *sequence* contains only one item, the first item is returned.
 
-   Equivalent to::
+   Roughly equivalent to::
 
       def reduce(function, iterable, initializer=None):
           it = iter(iterable)
@@ -374,10 +376,10 @@ The :mod:`functools` module defines the following functions:
    assigned directly to the matching attributes on the wrapper function and which
    attributes of the wrapper function are updated with the corresponding attributes
    from the original function. The default values for these arguments are the
-   module level constants *WRAPPER_ASSIGNMENTS* (which assigns to the wrapper
-   function's *__name__*, *__module__*, *__annotations__* and *__doc__*, the
-   documentation string) and *WRAPPER_UPDATES* (which updates the wrapper
-   function's *__dict__*, i.e. the instance dictionary).
+   module level constants ``WRAPPER_ASSIGNMENTS`` (which assigns to the wrapper
+   function's ``__module__``, ``__name__``, ``__qualname__``, ``__annotations__``
+   and ``__doc__``, the documentation string) and ``WRAPPER_UPDATES`` (which
+   updates the wrapper function's ``__dict__``, i.e. the instance dictionary).
 
    To allow access to the original function for introspection and other purposes
    (e.g. bypassing a caching decorator such as :func:`lru_cache`), this function
@@ -472,7 +474,7 @@ have three read-only attributes:
 
 :class:`partial` objects are like :class:`function` objects in that they are
 callable, weak referencable, and can have attributes.  There are some important
-differences.  For instance, the :attr:`__name__` and :attr:`__doc__` attributes
+differences.  For instance, the :attr:`~definition.__name__` and :attr:`__doc__` attributes
 are not created automatically.  Also, :class:`partial` objects defined in
 classes behave like static methods and do not transform into bound methods
 during instance attribute look-up.

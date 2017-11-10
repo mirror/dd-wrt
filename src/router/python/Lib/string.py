@@ -14,6 +14,10 @@ printable -- a string containing all ASCII characters considered printable
 
 """
 
+__all__ = ["ascii_letters", "ascii_lowercase", "ascii_uppercase", "capwords",
+           "digits", "hexdigits", "octdigits", "printable", "punctuation",
+           "whitespace", "Formatter", "Template"]
+
 import _string
 
 # Some strings for ctype-style character classification
@@ -24,7 +28,7 @@ ascii_letters = ascii_lowercase + ascii_uppercase
 digits = '0123456789'
 hexdigits = digits + 'abcdef' + 'ABCDEF'
 octdigits = '01234567'
-punctuation = """!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
+punctuation = r"""!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"""
 printable = digits + ascii_letters + punctuation + whitespace
 
 # Functions which aren't available as string methods.
@@ -46,7 +50,7 @@ def capwords(s, sep=None):
 
 ####################################################################
 import re as _re
-from collections import ChainMap
+from collections import ChainMap as _ChainMap
 
 class _TemplateMetaclass(type):
     pattern = r"""
@@ -94,13 +98,17 @@ class Template(metaclass=_TemplateMetaclass):
         raise ValueError('Invalid placeholder in string: line %d, col %d' %
                          (lineno, colno))
 
-    def substitute(self, *args, **kws):
+    def substitute(*args, **kws):
+        if not args:
+            raise TypeError("descriptor 'substitute' of 'Template' object "
+                            "needs an argument")
+        self, *args = args  # allow the "self" keyword be passed
         if len(args) > 1:
             raise TypeError('Too many positional arguments')
         if not args:
             mapping = kws
         elif kws:
-            mapping = ChainMap(kws, args[0])
+            mapping = _ChainMap(kws, args[0])
         else:
             mapping = args[0]
         # Helper function for .sub()
@@ -108,10 +116,7 @@ class Template(metaclass=_TemplateMetaclass):
             # Check the most common path first.
             named = mo.group('named') or mo.group('braced')
             if named is not None:
-                val = mapping[named]
-                # We use this idiom instead of str() because the latter will
-                # fail if val is a Unicode containing non-ASCII characters.
-                return '%s' % (val,)
+                return str(mapping[named])
             if mo.group('escaped') is not None:
                 return self.delimiter
             if mo.group('invalid') is not None:
@@ -120,13 +125,17 @@ class Template(metaclass=_TemplateMetaclass):
                              self.pattern)
         return self.pattern.sub(convert, self.template)
 
-    def safe_substitute(self, *args, **kws):
+    def safe_substitute(*args, **kws):
+        if not args:
+            raise TypeError("descriptor 'safe_substitute' of 'Template' object "
+                            "needs an argument")
+        self, *args = args  # allow the "self" keyword be passed
         if len(args) > 1:
             raise TypeError('Too many positional arguments')
         if not args:
             mapping = kws
         elif kws:
-            mapping = ChainMap(kws, args[0])
+            mapping = _ChainMap(kws, args[0])
         else:
             mapping = args[0]
         # Helper function for .sub()
@@ -134,9 +143,7 @@ class Template(metaclass=_TemplateMetaclass):
             named = mo.group('named') or mo.group('braced')
             if named is not None:
                 try:
-                    # We use this idiom instead of str() because the latter
-                    # will fail if val is a Unicode containing non-ASCII
-                    return '%s' % (mapping[named],)
+                    return str(mapping[named])
                 except KeyError:
                     return mo.group()
             if mo.group('escaped') is not None:
@@ -160,12 +167,27 @@ class Template(metaclass=_TemplateMetaclass):
 # The field name parser is implemented in _string.formatter_field_name_split
 
 class Formatter:
-    def format(self, format_string, *args, **kwargs):
+    def format(*args, **kwargs):
+        if not args:
+            raise TypeError("descriptor 'format' of 'Formatter' object "
+                            "needs an argument")
+        self, *args = args  # allow the "self" keyword be passed
+        try:
+            format_string, *args = args # allow the "format_string" keyword be passed
+        except ValueError:
+            if 'format_string' in kwargs:
+                format_string = kwargs.pop('format_string')
+                import warnings
+                warnings.warn("Passing 'format_string' as keyword argument is "
+                              "deprecated", DeprecationWarning, stacklevel=2)
+            else:
+                raise TypeError("format() missing 1 required positional "
+                                "argument: 'format_string'") from None
         return self.vformat(format_string, args, kwargs)
 
     def vformat(self, format_string, args, kwargs):
         used_args = set()
-        result = self._vformat(format_string, args, kwargs, used_args, 2)
+        result, _ = self._vformat(format_string, args, kwargs, used_args, 2)
         self.check_unused_args(used_args, args, kwargs)
         return result
 
@@ -212,14 +234,15 @@ class Formatter:
                 obj = self.convert_field(obj, conversion)
 
                 # expand the format spec, if needed
-                format_spec = self._vformat(format_spec, args, kwargs,
-                                            used_args, recursion_depth-1,
-                                            auto_arg_index=auto_arg_index)
+                format_spec, auto_arg_index = self._vformat(
+                    format_spec, args, kwargs,
+                    used_args, recursion_depth-1,
+                    auto_arg_index=auto_arg_index)
 
                 # format the object and append to the result
                 result.append(self.format_field(obj, format_spec))
 
-        return ''.join(result)
+        return ''.join(result), auto_arg_index
 
 
     def get_value(self, key, args, kwargs):

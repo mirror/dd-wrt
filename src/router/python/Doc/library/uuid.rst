@@ -6,6 +6,9 @@
 .. moduleauthor:: Ka-Ping Yee <ping@zesty.ca>
 .. sectionauthor:: George Yoshida <quiver@users.sourceforge.net>
 
+**Source code:** :source:`Lib/uuid.py`
+
+--------------
 
 This module provides immutable :class:`UUID` objects (the :class:`UUID` class)
 and the functions :func:`uuid1`, :func:`uuid3`, :func:`uuid4`, :func:`uuid5` for
@@ -42,6 +45,13 @@ random UUID.
    variant and version number set according to RFC 4122, overriding bits in the
    given *hex*, *bytes*, *bytes_le*, *fields*, or *int*.
 
+   Comparison of UUID objects are made by way of comparing their
+   :attr:`UUID.int` attributes.  Comparison with a non-UUID object
+   raises a :exc:`TypeError`.
+
+   ``str(uuid)`` returns a string in the form
+   ``12345678-1234-5678-1234-567812345678`` where the 32 hexadecimal digits
+   represent the UUID.
 
 :class:`UUID` instances have these read-only attributes:
 
@@ -101,7 +111,7 @@ random UUID.
 .. attribute:: UUID.variant
 
    The UUID variant, which determines the internal layout of the UUID. This will be
-   one of the integer constants :const:`RESERVED_NCS`, :const:`RFC_4122`,
+   one of the constants :const:`RESERVED_NCS`, :const:`RFC_4122`,
    :const:`RESERVED_MICROSOFT`, or :const:`RESERVED_FUTURE`.
 
 

@@ -3,6 +3,7 @@
 
 .. module:: xmlrpc.server
    :synopsis: Basic XML-RPC server implementations.
+
 .. moduleauthor:: Brian Quinlan <brianq@activestate.com>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
@@ -18,7 +19,7 @@ servers written in Python.  Servers can either be free standing, using
 
 .. warning::
 
-   The :mod:`xmlrpc.client` module is not secure against maliciously
+   The :mod:`xmlrpc.server` module is not secure against maliciously
    constructed data.  If you need to parse untrusted or unauthenticated data see
    :ref:`xml-vulnerabilities`.
 
@@ -147,29 +148,29 @@ Server code::
        rpc_paths = ('/RPC2',)
 
    # Create server
-   server = SimpleXMLRPCServer(("localhost", 8000),
-                               requestHandler=RequestHandler)
-   server.register_introspection_functions()
+   with SimpleXMLRPCServer(("localhost", 8000),
+                           requestHandler=RequestHandler) as server:
+       server.register_introspection_functions()
 
-   # Register pow() function; this will use the value of
-   # pow.__name__ as the name, which is just 'pow'.
-   server.register_function(pow)
+       # Register pow() function; this will use the value of
+       # pow.__name__ as the name, which is just 'pow'.
+       server.register_function(pow)
 
-   # Register a function under a different name
-   def adder_function(x,y):
-       return x + y
-   server.register_function(adder_function, 'add')
+       # Register a function under a different name
+       def adder_function(x,y):
+           return x + y
+       server.register_function(adder_function, 'add')
 
-   # Register an instance; all the methods of the instance are
-   # published as XML-RPC methods (in this case, just 'mul').
-   class MyFuncs:
-       def mul(self, x, y):
-           return x * y
+       # Register an instance; all the methods of the instance are
+       # published as XML-RPC methods (in this case, just 'mul').
+       class MyFuncs:
+           def mul(self, x, y):
+               return x * y
 
-   server.register_instance(MyFuncs())
+       server.register_instance(MyFuncs())
 
-   # Run the server's main loop
-   server.serve_forever()
+       # Run the server's main loop
+       server.serve_forever()
 
 The following client code will call the methods made available by the preceding
 server::
@@ -184,8 +185,8 @@ server::
    # Print list of available methods
    print(s.system.listMethods())
 
-The following example included in `Lib/xmlrpc/server.py` module shows a server
-allowing dotted names and registering a multicall function.
+The following example included in the :file:`Lib/xmlrpc/server.py` module shows
+a server allowing dotted names and registering a multicall function.
 
 .. warning::
 
@@ -206,18 +207,17 @@ allowing dotted names and registering a multicall function.
             def getCurrentTime():
                 return datetime.datetime.now()
 
-    server = SimpleXMLRPCServer(("localhost", 8000))
-    server.register_function(pow)
-    server.register_function(lambda x,y: x+y, 'add')
-    server.register_instance(ExampleService(), allow_dotted_names=True)
-    server.register_multicall_functions()
-    print('Serving XML-RPC on localhost port 8000')
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        print("\nKeyboard interrupt received, exiting.")
-        server.server_close()
-        sys.exit(0)
+    with SimpleXMLRPCServer(("localhost", 8000)) as server:
+        server.register_function(pow)
+        server.register_function(lambda x,y: x+y, 'add')
+        server.register_instance(ExampleService(), allow_dotted_names=True)
+        server.register_multicall_functions()
+        print('Serving XML-RPC on localhost port 8000')
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            print("\nKeyboard interrupt received, exiting.")
+            sys.exit(0)
 
 This ExampleService demo can be invoked from the command line::
 
@@ -292,7 +292,7 @@ requests sent to Python CGI scripts.
 
 .. method:: CGIXMLRPCRequestHandler.handle_request(request_text=None)
 
-   Handle a XML-RPC request. If *request_text* is given, it  should be the POST
+   Handle an XML-RPC request. If *request_text* is given, it should be the POST
    data provided by the HTTP server,  otherwise the contents of stdin will be used.
 
 Example::

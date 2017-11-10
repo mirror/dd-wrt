@@ -31,7 +31,7 @@ least slightly uneasy when reading (or being required to write) another style.
 Many coding styles place begin/end brackets on a line by themselves.  This makes
 programs considerably longer and wastes valuable screen space, making it harder
 to get a good overview of a program.  Ideally, a function should fit on one
-screen (say, 20-30 lines).  20 lines of Python can do a lot more work than 20
+screen (say, 20--30 lines).  20 lines of Python can do a lot more work than 20
 lines of C.  This is not solely due to the lack of begin/end brackets -- the
 lack of declarations and the high-level data types are also responsible -- but
 the indentation-based syntax certainly helps.
@@ -49,7 +49,7 @@ Why are floating-point calculations so inaccurate?
 Users are often surprised by results like this::
 
     >>> 1.2 - 1.0
-    0.199999999999999996
+    0.19999999999999996
 
 and think it is a bug in Python.  It's not.  This has little to do with Python,
 and much more to do with how the underlying platform handles floating-point
@@ -77,7 +77,7 @@ which is exactly::
 
     1.1999999999999999555910790149937383830547332763671875 (decimal)
 
-The typical precision of 53 bits provides Python floats with 15-16
+The typical precision of 53 bits provides Python floats with 15--16
 decimal digits of accuracy.
 
 For a fuller explanation, please see the :ref:`floating point arithmetic
@@ -158,7 +158,7 @@ where in Python you're forced to write this::
        line = f.readline()
        if not line:
            break
-       ... # do something with line
+       ...  # do something with line
 
 The reason for not allowing assignment in Python expressions is a common,
 hard-to-find bug in those other languages, caused by this construct:
@@ -190,7 +190,7 @@ generally less robust than the "while True" solution::
 
    line = f.readline()
    while line:
-       ... # do something with line...
+       ...  # do something with line...
        line = f.readline()
 
 The problem with this is that if you change your mind about exactly how you get
@@ -203,7 +203,7 @@ objects using the ``for`` statement.  For example, :term:`file objects
 <file object>` support the iterator protocol, so you can write simply::
 
    for line in f:
-       ... # do something with line...
+       ...  # do something with line...
 
 
 
@@ -366,33 +366,11 @@ is exactly the same type of object that a lambda expression yields) is assigned!
 Can Python be compiled to machine code, C or some other language?
 -----------------------------------------------------------------
 
-Practical answer:
-
-`Cython <http://cython.org/>`_ and `Pyrex <http://www.cosc.canterbury.ac.nz/~greg/python/Pyrex/>`_
-compile a modified version of Python with optional annotations into C
-extensions.  `Weave <http://www.scipy.org/Weave>`_ makes it easy to
-intermingle Python and C code in various ways to increase performance.
-`Nuitka <http://www.nuitka.net/>`_ is an up-and-coming compiler of Python
-into C++ code, aiming to support the full Python language.
-
-Theoretical answer:
-
-   .. XXX not sure what to make of this
-
-Not trivially.  Python's high level data types, dynamic typing of objects and
-run-time invocation of the interpreter (using :func:`eval` or :func:`exec`)
-together mean that a naïvely "compiled" Python program would probably consist
-mostly of calls into the Python run-time system, even for seemingly simple
-operations like ``x+1``.
-
-Several projects described in the Python newsgroup or at past `Python
-conferences <http://python.org/community/workshops/>`_ have shown that this
-approach is feasible, although the speedups reached so far are only modest
-(e.g. 2x).  Jython uses the same strategy for compiling to Java bytecode.  (Jim
-Hugunin has demonstrated that in combination with whole-program analysis,
-speedups of 1000x are feasible for small demo programs.  See the proceedings
-from the `1997 Python conference
-<http://python.org/workshops/1997-10/proceedings/>`_ for more information.)
+`Cython <http://cython.org/>`_ compiles a modified version of Python with
+optional annotations into C extensions.  `Nuitka <http://www.nuitka.net/>`_ is
+an up-and-coming compiler of Python into C++ code, aiming to support the full
+Python language. For compiling to Java you can consider
+`VOC <https://voc.readthedocs.io>`_.
 
 
 How does Python manage memory?
@@ -577,8 +555,10 @@ other structure). ::
    class ListWrapper:
        def __init__(self, the_list):
            self.the_list = the_list
+
        def __eq__(self, other):
            return self.the_list == other.the_list
+
        def __hash__(self):
            l = self.the_list
            result = 98767 - len(l)*555
@@ -619,7 +599,7 @@ it and returns it.  For example, here's how to iterate over the keys of a
 dictionary in sorted order::
 
    for key in sorted(mydict):
-       ... # do whatever with mydict[key]...
+       ...  # do whatever with mydict[key]...
 
 
 How do you specify and enforce an interface spec in Python?
@@ -675,11 +655,11 @@ languages.  For example::
    class label(Exception): pass  # declare a label
 
    try:
-        ...
-        if condition: raise label()  # goto label
-        ...
+       ...
+       if condition: raise label()  # goto label
+       ...
    except label:  # where to goto
-        pass
+       pass
    ...
 
 This doesn't allow you to jump into the middle of a loop, but that's usually

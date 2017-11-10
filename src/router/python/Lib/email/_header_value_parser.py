@@ -71,6 +71,7 @@ import re
 import urllib   # For urllib.parse.unquote
 from string import hexdigits
 from collections import OrderedDict
+from operator import itemgetter
 from email import _encoded_words as _ew
 from email import errors
 from email import utils
@@ -319,17 +320,18 @@ class TokenList(list):
         return ''.join(res)
 
     def _fold(self, folded):
+        encoding = 'utf-8' if folded.policy.utf8 else 'ascii'
         for part in self.parts:
             tstr = str(part)
             tlen = len(tstr)
             try:
-                str(part).encode('us-ascii')
+                str(part).encode(encoding)
             except UnicodeEncodeError:
                 if any(isinstance(x, errors.UndecodableBytesDefect)
                         for x in part.all_defects):
                     charset = 'unknown-8bit'
                 else:
-                    # XXX: this should be a policy setting
+                    # XXX: this should be a policy setting when utf8 is False.
                     charset = 'utf-8'
                 tstr = part.cte_encode(charset, folded.policy)
                 tlen = len(tstr)
@@ -339,9 +341,7 @@ class TokenList(list):
             # avoid infinite recursion.
             ws = part.pop_leading_fws()
             if ws is not None:
-                # Peel off the leading whitespace and make it sticky, to
-                # avoid infinite recursion.
-                folded.stickyspace = str(part.pop(0))
+                folded.stickyspace = str(ws)
                 if folded.append_if_fits(part):
                     continue
             if part.has_fws:
@@ -393,11 +393,12 @@ class UnstructuredTokenList(TokenList):
 
     def _fold(self, folded):
         last_ew = None
+        encoding = 'utf-8' if folded.policy.utf8 else 'ascii'
         for part in self.parts:
             tstr = str(part)
             is_ew = False
             try:
-                str(part).encode('us-ascii')
+                str(part).encode(encoding)
             except UnicodeEncodeError:
                 if any(isinstance(x, errors.UndecodableBytesDefect)
                        for x in part.all_defects):
@@ -436,7 +437,7 @@ class UnstructuredTokenList(TokenList):
                 if folded.append_if_fits(part):
                     continue
             if part.has_fws:
-                part.fold(folded)
+                part._fold(folded)
                 continue
             # It can't be split...we just have to put it on its own line.
             folded.append(tstr)
@@ -457,7 +458,7 @@ class UnstructuredTokenList(TokenList):
                     last_ew = len(res)
                 else:
                     tl = get_unstructured(''.join(res[last_ew:] + [spart]))
-                    res.append(tl.as_encoded_word())
+                    res.append(tl.as_encoded_word(charset))
         return ''.join(res)
 
 
@@ -474,12 +475,13 @@ class Phrase(TokenList):
         # comment that becomes a barrier across which we can't compose encoded
         # words.
         last_ew = None
+        encoding = 'utf-8' if folded.policy.utf8 else 'ascii'
         for part in self.parts:
             tstr = str(part)
             tlen = len(tstr)
             has_ew = False
             try:
-                str(part).encode('us-ascii')
+                str(part).encode(encoding)
             except UnicodeEncodeError:
                 if any(isinstance(x, errors.UndecodableBytesDefect)
                         for x in part.all_defects):
@@ -648,8 +650,8 @@ class Comment(WhiteSpaceTokenList):
         if value.token_type == 'comment':
             return str(value)
         return str(value).replace('\\', '\\\\').replace(
-                                  '(', '\(').replace(
-                                  ')', '\)')
+                                  '(', r'\(').replace(
+                                  ')', r'\)')
 
     @property
     def content(self):
@@ -1098,15 +1100,34 @@ class MimeParameters(TokenList):
                 params[name] = []
             params[name].append((token.section_number, token))
         for name, parts in params.items():
-            parts = sorted(parts)
-            # XXX: there might be more recovery we could do here if, for
-            # example, this is really a case of a duplicate attribute name.
+            parts = sorted(parts, key=itemgetter(0))
+            first_param = parts[0][1]
+            charset = first_param.charset
+            # Our arbitrary error recovery is to ignore duplicate parameters,
+            # to use appearance order if there are duplicate rfc 2231 parts,
+            # and to ignore gaps.  This mimics the error recovery of get_param.
+            if not first_param.extended and len(parts) > 1:
+                if parts[1][0] == 0:
+                    parts[1][1].defects.append(errors.InvalidHeaderDefect(
+                        'duplicate parameter name; duplicate(s) ignored'))
+                    parts = parts[:1]
+                # Else assume the *0* was missing...note that this is different
+                # from get_param, but we registered a defect for this earlier.
             value_parts = []
-            charset = parts[0][1].charset
-            for i, (section_number, param) in enumerate(parts):
+            i = 0
+            for section_number, param in parts:
                 if section_number != i:
-                    param.defects.append(errors.InvalidHeaderDefect(
-                        "inconsistent multipart parameter numbering"))
+                    # We could get fancier here and look for a complete
+                    # duplicate extended parameter and ignore the second one
+                    # seen.  But we're not doing that.  The old code didn't.
+                    if not param.extended:
+                        param.defects.append(errors.InvalidHeaderDefect(
+                            'duplicate parameter name; duplicate ignored'))
+                        continue
+                    else:
+                        param.defects.append(errors.InvalidHeaderDefect(
+                            "inconsistent RFC2231 parameter numbering"))
+                i += 1
                 value = param.param_value
                 if param.extended:
                     try:
@@ -1333,15 +1354,15 @@ RouteComponentMarker = ValueTerminal('@', 'route-component-marker')
 
 _wsp_splitter = re.compile(r'([{}]+)'.format(''.join(WSP))).split
 _non_atom_end_matcher = re.compile(r"[^{}]+".format(
-    ''.join(ATOM_ENDS).replace('\\','\\\\').replace(']','\]'))).match
+    ''.join(ATOM_ENDS).replace('\\','\\\\').replace(']',r'\]'))).match
 _non_printable_finder = re.compile(r"[\x00-\x20\x7F]").findall
 _non_token_end_matcher = re.compile(r"[^{}]+".format(
-    ''.join(TOKEN_ENDS).replace('\\','\\\\').replace(']','\]'))).match
+    ''.join(TOKEN_ENDS).replace('\\','\\\\').replace(']',r'\]'))).match
 _non_attribute_end_matcher = re.compile(r"[^{}]+".format(
-    ''.join(ATTRIBUTE_ENDS).replace('\\','\\\\').replace(']','\]'))).match
+    ''.join(ATTRIBUTE_ENDS).replace('\\','\\\\').replace(']',r'\]'))).match
 _non_extended_attribute_end_matcher = re.compile(r"[^{}]+".format(
     ''.join(EXTENDED_ATTRIBUTE_ENDS).replace(
-                                    '\\','\\\\').replace(']','\]'))).match
+                                    '\\','\\\\').replace(']',r'\]'))).match
 
 def _validate_xtext(xtext):
     """If input token contains ASCII non-printables, register a defect."""
@@ -1494,12 +1515,12 @@ def get_unstructured(value):
     return unstructured
 
 def get_qp_ctext(value):
-    """ctext = <printable ascii except \ ( )>
+    r"""ctext = <printable ascii except \ ( )>
 
     This is not the RFC ctext, since we are handling nested comments in comment
     and unquoting quoted-pairs here.  We allow anything except the '()'
     characters, but if we find any ASCII other than the RFC defined printable
-    ASCII an NonPrintableDefect is added to the token's defects list.  Since
+    ASCII, a NonPrintableDefect is added to the token's defects list.  Since
     quoted pairs are converted to their unquoted values, what is returned is
     a 'ptext' token.  In this case it is a WhiteSpaceTerminal, so it's value
     is ' '.
@@ -1514,7 +1535,7 @@ def get_qcontent(value):
     """qcontent = qtext / quoted-pair
 
     We allow anything except the DQUOTE character, but if we find any ASCII
-    other than the RFC defined printable ASCII an NonPrintableDefect is
+    other than the RFC defined printable ASCII, a NonPrintableDefect is
     added to the token's defects list.  Any quoted pairs are converted to their
     unquoted values, so what is returned is a 'ptext' token.  In this case it
     is a ValueTerminal.
@@ -1855,11 +1876,11 @@ def get_obs_local_part(value):
     return obs_local_part, value
 
 def get_dtext(value):
-    """ dtext = <printable ascii except \ [ ]> / obs-dtext
+    r""" dtext = <printable ascii except \ [ ]> / obs-dtext
         obs-dtext = obs-NO-WS-CTL / quoted-pair
 
     We allow anything except the excluded characters, but if we find any
-    ASCII other than the RFC defined printable ASCII an NonPrintableDefect is
+    ASCII other than the RFC defined printable ASCII, a NonPrintableDefect is
     added to the token's defects list.  Quoted pairs are converted to their
     unquoted values, so what is returned is a ptext token, in this case a
     ValueTerminal.  If there were quoted-printables, an ObsoleteHeaderDefect is
@@ -2849,7 +2870,7 @@ def parse_content_type_header(value):
         _find_mime_parameters(ctype, value)
         return ctype
     ctype.append(token)
-    # XXX: If we really want to follow the formal grammer we should make
+    # XXX: If we really want to follow the formal grammar we should make
     # mantype and subtype specialized TokenLists here.  Probably not worth it.
     if not value or value[0] != '/':
         ctype.defects.append(errors.InvalidHeaderDefect(

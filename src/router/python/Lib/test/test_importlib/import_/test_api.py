@@ -1,5 +1,4 @@
 from .. import util
-from . import util as import_util
 
 from importlib import machinery
 import sys
@@ -16,6 +15,10 @@ class BadSpecFinderLoader:
         if fullname == SUBMOD_NAME:
             spec = machinery.ModuleSpec(fullname, cls)
             return spec
+
+    @staticmethod
+    def create_module(spec):
+        return None
 
     @staticmethod
     def exec_module(module):
@@ -39,6 +42,10 @@ class APITest:
 
     """Test API-specific details for __import__ (e.g. raising the right
     exception when passing in an int for the module name)."""
+
+    def test_raises_ModuleNotFoundError(self):
+        with self.assertRaises(ModuleNotFoundError):
+            util.import_importlib('some module that does not exist')
 
     def test_name_requires_rparition(self):
         # Raise TypeError if a non-string is passed in for the module name.
@@ -79,15 +86,19 @@ class APITest:
 class OldAPITests(APITest):
     bad_finder_loader = BadLoaderFinder
 
-Frozen_OldAPITests, Source_OldAPITests = util.test_both(
-        OldAPITests, __import__=import_util.__import__)
+
+(Frozen_OldAPITests,
+ Source_OldAPITests
+ ) = util.test_both(OldAPITests, __import__=util.__import__)
 
 
 class SpecAPITests(APITest):
     bad_finder_loader = BadSpecFinderLoader
 
-Frozen_SpecAPITests, Source_SpecAPITests = util.test_both(
-        SpecAPITests, __import__=import_util.__import__)
+
+(Frozen_SpecAPITests,
+ Source_SpecAPITests
+ ) = util.test_both(SpecAPITests, __import__=util.__import__)
 
 
 if __name__ == '__main__':

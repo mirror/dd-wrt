@@ -3,7 +3,7 @@
 
 .. module:: hmac
    :synopsis: Keyed-Hashing for Message Authentication (HMAC) implementation
-              for Python.
+
 .. moduleauthor:: Gerhard Häring <ghaering@users.sourceforge.net>
 .. sectionauthor:: Gerhard Häring <ghaering@users.sourceforge.net>
 
@@ -111,7 +111,7 @@ This module also provides the following helper function:
 
       If *a* and *b* are of different lengths, or if an error occurs,
       a timing attack could theoretically reveal information about the
-      types and lengths of *a* and *b*--but not their values.
+      types and lengths of *a* and *b*—but not their values.
 
 
    .. versionadded:: 3.3

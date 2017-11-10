@@ -102,9 +102,16 @@ consts: ('None',)
 
 """
 
+import sys
+import threading
 import unittest
 import weakref
-from test.support import run_doctest, run_unittest, cpython_only
+try:
+    import ctypes
+except ImportError:
+    ctypes = None
+from test.support import (run_doctest, run_unittest, cpython_only,
+                          check_impl_detail)
 
 
 def consts(t):
@@ -135,6 +142,57 @@ class CodeTest(unittest.TestCase):
         self.assertEqual(co.co_firstlineno, 15)
 
 
+def isinterned(s):
+    return s is sys.intern(('_' + s + '_')[1:-1])
+
+class CodeConstsTest(unittest.TestCase):
+
+    def find_const(self, consts, value):
+        for v in consts:
+            if v == value:
+                return v
+        self.assertIn(value, consts)  # raises an exception
+        self.fail('Should never be reached')
+
+    def assertIsInterned(self, s):
+        if not isinterned(s):
+            self.fail('String %r is not interned' % (s,))
+
+    def assertIsNotInterned(self, s):
+        if isinterned(s):
+            self.fail('String %r is interned' % (s,))
+
+    @cpython_only
+    def test_interned_string(self):
+        co = compile('res = "str_value"', '?', 'exec')
+        v = self.find_const(co.co_consts, 'str_value')
+        self.assertIsInterned(v)
+
+    @cpython_only
+    def test_interned_string_in_tuple(self):
+        co = compile('res = ("str_value",)', '?', 'exec')
+        v = self.find_const(co.co_consts, ('str_value',))
+        self.assertIsInterned(v[0])
+
+    @cpython_only
+    def test_interned_string_in_frozenset(self):
+        co = compile('res = a in {"str_value"}', '?', 'exec')
+        v = self.find_const(co.co_consts, frozenset(('str_value',)))
+        self.assertIsInterned(tuple(v)[0])
+
+    @cpython_only
+    def test_interned_string_default(self):
+        def f(a='str_value'):
+            return a
+        self.assertIsInterned(f())
+
+    @cpython_only
+    def test_interned_string_with_null(self):
+        co = compile(r'res = "str\0value!"', '?', 'exec')
+        v = self.find_const(co.co_consts, 'str\0value!')
+        self.assertIsNotInterned(v)
+
+
 class CodeWeakRefTest(unittest.TestCase):
 
     def test_basic(self):
@@ -160,11 +218,105 @@ class CodeWeakRefTest(unittest.TestCase):
         self.assertTrue(self.called)
 
 
+if check_impl_detail(cpython=True) and ctypes is not None:
+    py = ctypes.pythonapi
+    freefunc = ctypes.CFUNCTYPE(None,ctypes.c_voidp)
+
+    RequestCodeExtraIndex = py._PyEval_RequestCodeExtraIndex
+    RequestCodeExtraIndex.argtypes = (freefunc,)
+    RequestCodeExtraIndex.restype = ctypes.c_ssize_t
+
+    SetExtra = py._PyCode_SetExtra
+    SetExtra.argtypes = (ctypes.py_object, ctypes.c_ssize_t, ctypes.c_voidp)
+    SetExtra.restype = ctypes.c_int
+
+    GetExtra = py._PyCode_GetExtra
+    GetExtra.argtypes = (ctypes.py_object, ctypes.c_ssize_t, 
+                         ctypes.POINTER(ctypes.c_voidp))
+    GetExtra.restype = ctypes.c_int
+
+    LAST_FREED = None
+    def myfree(ptr):
+        global LAST_FREED
+        LAST_FREED = ptr
+
+    FREE_FUNC = freefunc(myfree)
+    FREE_INDEX = RequestCodeExtraIndex(FREE_FUNC)
+
+    class CoExtra(unittest.TestCase):
+        def get_func(self):
+            # Defining a function causes the containing function to have a
+            # reference to the code object.  We need the code objects to go
+            # away, so we eval a lambda.
+            return eval('lambda:42')
+
+        def test_get_non_code(self):
+            f = self.get_func()
+
+            self.assertRaises(SystemError, SetExtra, 42, FREE_INDEX,
+                              ctypes.c_voidp(100))
+            self.assertRaises(SystemError, GetExtra, 42, FREE_INDEX,
+                              ctypes.c_voidp(100))
+
+        def test_bad_index(self):
+            f = self.get_func()
+            self.assertRaises(SystemError, SetExtra, f.__code__,
+                              FREE_INDEX+100, ctypes.c_voidp(100))
+            self.assertEqual(GetExtra(f.__code__, FREE_INDEX+100,
+                              ctypes.c_voidp(100)), 0)
+
+        def test_free_called(self):
+            # Verify that the provided free function gets invoked
+            # when the code object is cleaned up.
+            f = self.get_func()
+
+            SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(100))
+            del f
+            self.assertEqual(LAST_FREED, 100)
+
+        def test_get_set(self):
+            # Test basic get/set round tripping.
+            f = self.get_func()
+
+            extra = ctypes.c_voidp()
+
+            SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(200))
+            # reset should free...
+            SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(300))
+            self.assertEqual(LAST_FREED, 200)
+
+            extra = ctypes.c_voidp()
+            GetExtra(f.__code__, FREE_INDEX, extra)
+            self.assertEqual(extra.value, 300)
+            del f
+
+        def test_free_different_thread(self):
+            # Freeing a code object on a different thread then
+            # where the co_extra was set should be safe.
+            f = self.get_func()
+            class ThreadTest(threading.Thread):
+                def __init__(self, f, test):
+                    super().__init__()
+                    self.f = f
+                    self.test = test
+                def run(self):
+                    del self.f
+                    self.test.assertEqual(LAST_FREED, 500)
+
+            SetExtra(f.__code__, FREE_INDEX, ctypes.c_voidp(500))
+            tt = ThreadTest(f, self)
+            del f
+            tt.start()
+            tt.join()
+            self.assertEqual(LAST_FREED, 500)
+
 def test_main(verbose=None):
     from test import test_code
     run_doctest(test_code, verbose)
-    run_unittest(CodeTest, CodeWeakRefTest)
-
+    tests = [CodeTest, CodeConstsTest, CodeWeakRefTest]
+    if check_impl_detail(cpython=True) and ctypes is not None:
+        tests.append(CoExtra)
+    run_unittest(*tests)
 
 if __name__ == "__main__":
     test_main()

@@ -34,7 +34,7 @@ Mapping Protocol
    failure.  This is equivalent to the Python statement ``del o[key]``.
 
 
-.. c:function:: int PyMapping_HasKeyString(PyObject *o, char *key)
+.. c:function:: int PyMapping_HasKeyString(PyObject *o, const char *key)
 
    On success, return ``1`` if the mapping object has the key *key* and ``0``
    otherwise.  This is equivalent to the Python expression ``key in o``.
@@ -50,21 +50,20 @@ Mapping Protocol
 
 .. c:function:: PyObject* PyMapping_Keys(PyObject *o)
 
-   On success, return a list of the keys in object *o*.  On failure, return *NULL*.
-   This is equivalent to the Python expression ``list(o.keys())``.
+   On success, return a list or tuple of the keys in object *o*.  On failure,
+   return *NULL*.
 
 
 .. c:function:: PyObject* PyMapping_Values(PyObject *o)
 
-   On success, return a list of the values in object *o*.  On failure, return
-   *NULL*. This is equivalent to the Python expression ``list(o.values())``.
+   On success, return a list or tuple of the values in object *o*.  On failure,
+   return *NULL*.
 
 
 .. c:function:: PyObject* PyMapping_Items(PyObject *o)
 
-   On success, return a list of the items in object *o*, where each item is a tuple
-   containing a key-value pair.  On failure, return *NULL*. This is equivalent to
-   the Python expression ``list(o.items())``.
+   On success, return a list or tuple of the items in object *o*, where each item
+   is a tuple containing a key-value pair.  On failure, return *NULL*.
 
 
 .. c:function:: PyObject* PyMapping_GetItemString(PyObject *o, const char *key)

@@ -1,6 +1,6 @@
 import unittest
 import tkinter
-from tkinter import ttk
+from tkinter import ttk, TclError
 from test.support import requires
 import sys
 
@@ -20,7 +20,7 @@ class StandardTtkOptionsTests(StandardOptionsTests):
         widget = self.create()
         self.assertEqual(widget['class'], '')
         errmsg='attempt to change read-only option'
-        if get_tk_patchlevel() < (8, 6, 0): # actually this was changed in 8.6b3
+        if get_tk_patchlevel() < (8, 6, 0, 'beta', 3):
             errmsg='Attempt to change read-only option'
         self.checkInvalidParam(widget, 'class', 'Foo', errmsg=errmsg)
         widget2 = self.create(class_='Foo')
@@ -187,7 +187,7 @@ class AbstractLabelTest(AbstractWidgetTest):
 @add_standard_options(StandardTtkOptionsTests)
 class LabelTest(AbstractLabelTest, unittest.TestCase):
     OPTIONS = (
-        'anchor', 'background',
+        'anchor', 'background', 'borderwidth',
         'class', 'compound', 'cursor', 'font', 'foreground',
         'image', 'justify', 'padding', 'relief', 'state', 'style',
         'takefocus', 'text', 'textvariable',
@@ -208,7 +208,8 @@ class LabelTest(AbstractLabelTest, unittest.TestCase):
 class ButtonTest(AbstractLabelTest, unittest.TestCase):
     OPTIONS = (
         'class', 'command', 'compound', 'cursor', 'default',
-        'image', 'state', 'style', 'takefocus', 'text', 'textvariable',
+        'image', 'padding', 'state', 'style',
+        'takefocus', 'text', 'textvariable',
         'underline', 'width',
     )
 
@@ -232,7 +233,7 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
         'class', 'command', 'compound', 'cursor',
         'image',
         'offvalue', 'onvalue',
-        'state', 'style',
+        'padding', 'state', 'style',
         'takefocus', 'text', 'textvariable',
         'underline', 'variable', 'width',
     )
@@ -276,136 +277,10 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
 
 
 @add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
-class ComboboxTest(AbstractWidgetTest, unittest.TestCase):
-    OPTIONS = (
-        'class', 'cursor', 'exportselection', 'height',
-        'justify', 'postcommand', 'state', 'style',
-        'takefocus', 'textvariable', 'values', 'width',
-    )
-
-    def setUp(self):
-        super().setUp()
-        self.combo = self.create()
-
-    def create(self, **kwargs):
-        return ttk.Combobox(self.root, **kwargs)
-
-    def test_height(self):
-        widget = self.create()
-        self.checkParams(widget, 'height', 100, 101.2, 102.6, -100, 0, '1i')
-
-    def test_state(self):
-        widget = self.create()
-        self.checkParams(widget, 'state', 'active', 'disabled', 'normal')
-
-    def _show_drop_down_listbox(self):
-        width = self.combo.winfo_width()
-        self.combo.event_generate('<ButtonPress-1>', x=width - 5, y=5)
-        self.combo.event_generate('<ButtonRelease-1>', x=width - 5, y=5)
-        self.combo.update_idletasks()
-
-
-    def test_virtual_event(self):
-        success = []
-
-        self.combo['values'] = [1]
-        self.combo.bind('<<ComboboxSelected>>',
-            lambda evt: success.append(True))
-        self.combo.pack()
-        self.combo.wait_visibility()
-
-        height = self.combo.winfo_height()
-        self._show_drop_down_listbox()
-        self.combo.update()
-        self.combo.event_generate('<Return>')
-        self.combo.update()
-
-        self.assertTrue(success)
-
-
-    def test_postcommand(self):
-        success = []
-
-        self.combo['postcommand'] = lambda: success.append(True)
-        self.combo.pack()
-        self.combo.wait_visibility()
-
-        self._show_drop_down_listbox()
-        self.assertTrue(success)
-
-        # testing postcommand removal
-        self.combo['postcommand'] = ''
-        self._show_drop_down_listbox()
-        self.assertEqual(len(success), 1)
-
-
-    def test_values(self):
-        def check_get_current(getval, currval):
-            self.assertEqual(self.combo.get(), getval)
-            self.assertEqual(self.combo.current(), currval)
-
-        self.assertEqual(self.combo['values'],
-                         () if tcl_version < (8, 5) else '')
-        check_get_current('', -1)
-
-        self.checkParam(self.combo, 'values', 'mon tue wed thur',
-                        expected=('mon', 'tue', 'wed', 'thur'))
-        self.checkParam(self.combo, 'values', ('mon', 'tue', 'wed', 'thur'))
-        self.checkParam(self.combo, 'values', (42, 3.14, '', 'any string'))
-        self.checkParam(self.combo, 'values', '', expected=())
-
-        self.combo['values'] = ['a', 1, 'c']
-
-        self.combo.set('c')
-        check_get_current('c', 2)
-
-        self.combo.current(0)
-        check_get_current('a', 0)
-
-        self.combo.set('d')
-        check_get_current('d', -1)
-
-        # testing values with empty string
-        self.combo.set('')
-        self.combo['values'] = (1, 2, '', 3)
-        check_get_current('', 2)
-
-        # testing values with empty string set through configure
-        self.combo.configure(values=[1, '', 2])
-        self.assertEqual(self.combo['values'],
-                         ('1', '', '2') if self.wantobjects else
-                         '1 {} 2')
-
-        # testing values with spaces
-        self.combo['values'] = ['a b', 'a\tb', 'a\nb']
-        self.assertEqual(self.combo['values'],
-                         ('a b', 'a\tb', 'a\nb') if self.wantobjects else
-                         '{a b} {a\tb} {a\nb}')
-
-        # testing values with special characters
-        self.combo['values'] = [r'a\tb', '"a"', '} {']
-        self.assertEqual(self.combo['values'],
-                         (r'a\tb', '"a"', '} {') if self.wantobjects else
-                         r'a\\tb {"a"} \}\ \{')
-
-        # out of range
-        self.assertRaises(tkinter.TclError, self.combo.current,
-            len(self.combo['values']))
-        # it expects an integer (or something that can be converted to int)
-        self.assertRaises(tkinter.TclError, self.combo.current, '')
-
-        # testing creating combobox with empty string in values
-        combo2 = ttk.Combobox(self.root, values=[1, 2, ''])
-        self.assertEqual(combo2['values'],
-                         ('1', '2', '') if self.wantobjects else '1 2 {}')
-        combo2.destroy()
-
-
-@add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
 class EntryTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'background', 'class', 'cursor',
-        'exportselection', 'font',
+        'exportselection', 'font', 'foreground',
         'invalidcommand', 'justify',
         'show', 'state', 'style', 'takefocus', 'textvariable',
         'validate', 'validatecommand', 'width', 'xscrollcommand',
@@ -534,6 +409,132 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
 
 
 @add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
+class ComboboxTest(EntryTest, unittest.TestCase):
+    OPTIONS = (
+        'background', 'class', 'cursor', 'exportselection',
+        'font', 'foreground', 'height', 'invalidcommand',
+        'justify', 'postcommand', 'show', 'state', 'style',
+        'takefocus', 'textvariable',
+        'validate', 'validatecommand', 'values',
+        'width', 'xscrollcommand',
+    )
+
+    def setUp(self):
+        super().setUp()
+        self.combo = self.create()
+
+    def create(self, **kwargs):
+        return ttk.Combobox(self.root, **kwargs)
+
+    def test_height(self):
+        widget = self.create()
+        self.checkParams(widget, 'height', 100, 101.2, 102.6, -100, 0, '1i')
+
+    def _show_drop_down_listbox(self):
+        width = self.combo.winfo_width()
+        self.combo.event_generate('<ButtonPress-1>', x=width - 5, y=5)
+        self.combo.event_generate('<ButtonRelease-1>', x=width - 5, y=5)
+        self.combo.update_idletasks()
+
+
+    def test_virtual_event(self):
+        success = []
+
+        self.combo['values'] = [1]
+        self.combo.bind('<<ComboboxSelected>>',
+            lambda evt: success.append(True))
+        self.combo.pack()
+        self.combo.wait_visibility()
+
+        height = self.combo.winfo_height()
+        self._show_drop_down_listbox()
+        self.combo.update()
+        self.combo.event_generate('<Return>')
+        self.combo.update()
+
+        self.assertTrue(success)
+
+
+    def test_postcommand(self):
+        success = []
+
+        self.combo['postcommand'] = lambda: success.append(True)
+        self.combo.pack()
+        self.combo.wait_visibility()
+
+        self._show_drop_down_listbox()
+        self.assertTrue(success)
+
+        # testing postcommand removal
+        self.combo['postcommand'] = ''
+        self._show_drop_down_listbox()
+        self.assertEqual(len(success), 1)
+
+
+    def test_values(self):
+        def check_get_current(getval, currval):
+            self.assertEqual(self.combo.get(), getval)
+            self.assertEqual(self.combo.current(), currval)
+
+        self.assertEqual(self.combo['values'],
+                         () if tcl_version < (8, 5) else '')
+        check_get_current('', -1)
+
+        self.checkParam(self.combo, 'values', 'mon tue wed thur',
+                        expected=('mon', 'tue', 'wed', 'thur'))
+        self.checkParam(self.combo, 'values', ('mon', 'tue', 'wed', 'thur'))
+        self.checkParam(self.combo, 'values', (42, 3.14, '', 'any string'))
+        self.checkParam(self.combo, 'values', '',
+                        expected='' if get_tk_patchlevel() < (8, 5, 10) else ())
+
+        self.combo['values'] = ['a', 1, 'c']
+
+        self.combo.set('c')
+        check_get_current('c', 2)
+
+        self.combo.current(0)
+        check_get_current('a', 0)
+
+        self.combo.set('d')
+        check_get_current('d', -1)
+
+        # testing values with empty string
+        self.combo.set('')
+        self.combo['values'] = (1, 2, '', 3)
+        check_get_current('', 2)
+
+        # testing values with empty string set through configure
+        self.combo.configure(values=[1, '', 2])
+        self.assertEqual(self.combo['values'],
+                         ('1', '', '2') if self.wantobjects else
+                         '1 {} 2')
+
+        # testing values with spaces
+        self.combo['values'] = ['a b', 'a\tb', 'a\nb']
+        self.assertEqual(self.combo['values'],
+                         ('a b', 'a\tb', 'a\nb') if self.wantobjects else
+                         '{a b} {a\tb} {a\nb}')
+
+        # testing values with special characters
+        self.combo['values'] = [r'a\tb', '"a"', '} {']
+        self.assertEqual(self.combo['values'],
+                         (r'a\tb', '"a"', '} {') if self.wantobjects else
+                         r'a\\tb {"a"} \}\ \{')
+
+        # out of range
+        self.assertRaises(tkinter.TclError, self.combo.current,
+            len(self.combo['values']))
+        # it expects an integer (or something that can be converted to int)
+        self.assertRaises(tkinter.TclError, self.combo.current, '')
+
+        # testing creating combobox with empty string in values
+        combo2 = ttk.Combobox(self.root, values=[1, 2, ''])
+        self.assertEqual(combo2['values'],
+                         ('1', '2', '') if self.wantobjects else '1 2 {}')
+        combo2.destroy()
+
+
+@add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
 class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'class', 'cursor', 'height',
@@ -551,7 +552,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
         widget = self.create()
         self.assertEqual(str(widget['orient']), 'vertical')
         errmsg='attempt to change read-only option'
-        if get_tk_patchlevel() < (8, 6, 0): # actually this was changed in 8.6b3
+        if get_tk_patchlevel() < (8, 6, 0, 'beta', 3):
             errmsg='Attempt to change read-only option'
         self.checkInvalidParam(widget, 'orient', 'horizontal',
                 errmsg=errmsg)
@@ -673,7 +674,7 @@ class RadiobuttonTest(AbstractLabelTest, unittest.TestCase):
     OPTIONS = (
         'class', 'command', 'compound', 'cursor',
         'image',
-        'state', 'style',
+        'padding', 'state', 'style',
         'takefocus', 'text', 'textvariable',
         'underline', 'value', 'variable', 'width',
     )
@@ -723,7 +724,7 @@ class RadiobuttonTest(AbstractLabelTest, unittest.TestCase):
 class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
     OPTIONS = (
         'class', 'compound', 'cursor', 'direction',
-        'image', 'menu', 'state', 'style',
+        'image', 'menu', 'padding', 'state', 'style',
         'takefocus', 'text', 'textvariable',
         'underline', 'width',
     )
@@ -901,7 +902,7 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
 @add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
 class NotebookTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
-        'class', 'cursor', 'height', 'padding', 'style', 'takefocus',
+        'class', 'cursor', 'height', 'padding', 'style', 'takefocus', 'width',
     )
 
     def setUp(self):
@@ -1125,7 +1126,8 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.checkParam(widget, 'columns', 'a b c',
                         expected=('a', 'b', 'c'))
         self.checkParam(widget, 'columns', ('a', 'b', 'c'))
-        self.checkParam(widget, 'columns', ())
+        self.checkParam(widget, 'columns', (),
+                        expected='' if get_tk_patchlevel() < (8, 5, 10) else ())
 
     def test_displaycolumns(self):
         widget = self.create()
@@ -1484,6 +1486,98 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
             value)
 
 
+    def test_selection(self):
+        self.assertRaises(TypeError, self.tv.selection, 'spam')
+        # item 'none' doesn't exist
+        self.assertRaises(tkinter.TclError, self.tv.selection_set, 'none')
+        self.assertRaises(tkinter.TclError, self.tv.selection_add, 'none')
+        self.assertRaises(tkinter.TclError, self.tv.selection_remove, 'none')
+        self.assertRaises(tkinter.TclError, self.tv.selection_toggle, 'none')
+
+        item1 = self.tv.insert('', 'end')
+        item2 = self.tv.insert('', 'end')
+        c1 = self.tv.insert(item1, 'end')
+        c2 = self.tv.insert(item1, 'end')
+        c3 = self.tv.insert(item1, 'end')
+        self.assertEqual(self.tv.selection(), ())
+
+        self.tv.selection_set(c1, item2)
+        self.assertEqual(self.tv.selection(), (c1, item2))
+        self.tv.selection_set(c2)
+        self.assertEqual(self.tv.selection(), (c2,))
+
+        self.tv.selection_add(c1, item2)
+        self.assertEqual(self.tv.selection(), (c1, c2, item2))
+        self.tv.selection_add(item1)
+        self.assertEqual(self.tv.selection(), (item1, c1, c2, item2))
+        self.tv.selection_add()
+        self.assertEqual(self.tv.selection(), (item1, c1, c2, item2))
+
+        self.tv.selection_remove(item1, c3)
+        self.assertEqual(self.tv.selection(), (c1, c2, item2))
+        self.tv.selection_remove(c2)
+        self.assertEqual(self.tv.selection(), (c1, item2))
+        self.tv.selection_remove()
+        self.assertEqual(self.tv.selection(), (c1, item2))
+
+        self.tv.selection_toggle(c1, c3)
+        self.assertEqual(self.tv.selection(), (c3, item2))
+        self.tv.selection_toggle(item2)
+        self.assertEqual(self.tv.selection(), (c3,))
+        self.tv.selection_toggle()
+        self.assertEqual(self.tv.selection(), (c3,))
+
+        self.tv.insert('', 'end', id='with spaces')
+        self.tv.selection_set('with spaces')
+        self.assertEqual(self.tv.selection(), ('with spaces',))
+
+        self.tv.insert('', 'end', id='{brace')
+        self.tv.selection_set('{brace')
+        self.assertEqual(self.tv.selection(), ('{brace',))
+
+        self.tv.insert('', 'end', id='unicode\u20ac')
+        self.tv.selection_set('unicode\u20ac')
+        self.assertEqual(self.tv.selection(), ('unicode\u20ac',))
+
+        self.tv.insert('', 'end', id=b'bytes\xe2\x82\xac')
+        self.tv.selection_set(b'bytes\xe2\x82\xac')
+        self.assertEqual(self.tv.selection(), ('bytes\xe2\x82\xac',))
+
+        self.tv.selection_set()
+        self.assertEqual(self.tv.selection(), ())
+
+        # Old interface
+        self.tv.selection_set((c1, item2))
+        self.assertEqual(self.tv.selection(), (c1, item2))
+        self.tv.selection_add((c1, item1))
+        self.assertEqual(self.tv.selection(), (item1, c1, item2))
+        self.tv.selection_remove((item1, c3))
+        self.assertEqual(self.tv.selection(), (c1, item2))
+        self.tv.selection_toggle((c1, c3))
+        self.assertEqual(self.tv.selection(), (c3, item2))
+
+        if sys.version_info >= (3, 7):
+            import warnings
+            warnings.warn(
+                'Deprecated API of Treeview.selection() should be removed')
+        self.tv.selection_set()
+        self.assertEqual(self.tv.selection(), ())
+        with self.assertWarns(DeprecationWarning):
+            self.tv.selection('set', (c1, item2))
+        self.assertEqual(self.tv.selection(), (c1, item2))
+        with self.assertWarns(DeprecationWarning):
+            self.tv.selection('add', (c1, item1))
+        self.assertEqual(self.tv.selection(), (item1, c1, item2))
+        with self.assertWarns(DeprecationWarning):
+            self.tv.selection('remove', (item1, c3))
+        self.assertEqual(self.tv.selection(), (c1, item2))
+        with self.assertWarns(DeprecationWarning):
+            self.tv.selection('toggle', (c1, c3))
+        self.assertEqual(self.tv.selection(), (c3, item2))
+        with self.assertWarns(DeprecationWarning):
+            selection = self.tv.selection(None)
+        self.assertEqual(selection, (c3, item2))
+
     def test_set(self):
         self.tv['columns'] = ['A', 'B']
         item = self.tv.insert('', 'end', values=['a', 'b'])
@@ -1562,6 +1656,21 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.assertEqual(str(self.tv.tag_configure('test', foreground=None)),
             'blue')
         self.assertIsInstance(self.tv.tag_configure('test'), dict)
+
+    def test_tag_has(self):
+        item1 = self.tv.insert('', 'end', text='Item 1', tags=['tag1'])
+        item2 = self.tv.insert('', 'end', text='Item 2', tags=['tag2'])
+        self.assertRaises(TypeError, self.tv.tag_has)
+        self.assertRaises(TclError, self.tv.tag_has, 'tag1', 'non-existing')
+        self.assertTrue(self.tv.tag_has('tag1', item1))
+        self.assertFalse(self.tv.tag_has('tag1', item2))
+        self.assertFalse(self.tv.tag_has('tag2', item1))
+        self.assertTrue(self.tv.tag_has('tag2', item2))
+        self.assertFalse(self.tv.tag_has('tag3', item1))
+        self.assertFalse(self.tv.tag_has('tag3', item2))
+        self.assertEqual(self.tv.tag_has('tag1'), (item1,))
+        self.assertEqual(self.tv.tag_has('tag2'), (item2,))
+        self.assertEqual(self.tv.tag_has('tag3'), ())
 
 
 @add_standard_options(StandardTtkOptionsTests)

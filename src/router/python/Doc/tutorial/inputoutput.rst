@@ -25,7 +25,8 @@ first way is to do all the string handling yourself; using string slicing and
 concatenation operations you can create any layout you can imagine.  The
 string type has some methods that perform useful operations for padding
 strings to a given column width; these will be discussed shortly.  The second
-way is to use the :meth:`str.format` method.
+way is to use :ref:`formatted string literals <f-strings>`, or the
+:meth:`str.format` method.
 
 The :mod:`string` module contains a :class:`~string.Template` class which offers
 yet another way to substitute values into strings.
@@ -152,11 +153,11 @@ Positional and keyword arguments can be arbitrarily combined::
 ``'!a'`` (apply :func:`ascii`), ``'!s'`` (apply :func:`str`) and ``'!r'``
 (apply :func:`repr`) can be used to convert the value before it is formatted::
 
-   >>> import math
-   >>> print('The value of PI is approximately {}.'.format(math.pi))
-   The value of PI is approximately 3.14159265359.
-   >>> print('The value of PI is approximately {!r}.'.format(math.pi))
-   The value of PI is approximately 3.141592653589793.
+   >>> contents = 'eels'
+   >>> print('My hovercraft is full of {}.'.format(contents))
+   My hovercraft is full of eels.
+   >>> print('My hovercraft is full of {!r}.'.format(contents))
+   My hovercraft is full of 'eels'.
 
 An optional ``':'`` and format specifier can follow the field name. This allows
 greater control over how the value is formatted.  The following example
@@ -247,8 +248,9 @@ writing. The *mode* argument is optional; ``'r'`` will be assumed if it's
 omitted.
 
 Normally, files are opened in :dfn:`text mode`, that means, you read and write
-strings from and to the file, which are encoded in a specific encoding (the
-default being UTF-8).  ``'b'`` appended to the mode opens the file in
+strings from and to the file, which are encoded in a specific encoding. If
+encoding is not specified, the default is platform dependent (see
+:func:`open`). ``'b'`` appended to the mode opens the file in
 :dfn:`binary mode`: now the data is read and written in the form of bytes
 objects.  This mode should be used for all files that don't contain text.
 
@@ -260,6 +262,35 @@ to file data is fine for text files, but will corrupt binary data like that in
 :file:`JPEG` or :file:`EXE` files.  Be very careful to use binary mode when
 reading and writing such files.
 
+It is good practice to use the :keyword:`with` keyword when dealing
+with file objects.  The advantage is that the file is properly closed
+after its suite finishes, even if an exception is raised at some
+point.  Using :keyword:`with` is also much shorter than writing
+equivalent :keyword:`try`\ -\ :keyword:`finally` blocks::
+
+    >>> with open('workfile') as f:
+    ...     read_data = f.read()
+    >>> f.closed
+    True
+
+If you're not using the :keyword:`with` keyword, then you should call
+``f.close()`` to close the file and immediately free up any system
+resources used by it. If you don't explicitly close a file, Python's
+garbage collector will eventually destroy the object and close the
+open file for you, but the file may stay open for a while.  Another
+risk is that different Python implementations will do this clean-up at
+different times.
+
+After a file object is closed, either by a :keyword:`with` statement
+or by calling ``f.close()``, attempts to use the file object will
+automatically fail. ::
+
+   >>> f.close()
+   >>> f.read()
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   ValueError: I/O operation on closed file
+
 
 .. _tut-filemethods:
 
@@ -270,10 +301,11 @@ The rest of the examples in this section will assume that a file object called
 ``f`` has already been created.
 
 To read a file's contents, call ``f.read(size)``, which reads some quantity of
-data and returns it as a string or bytes object.  *size* is an optional numeric
-argument.  When *size* is omitted or negative, the entire contents of the file
-will be read and returned; it's your problem if the file is twice as large as
-your machine's memory. Otherwise, at most *size* bytes are read and returned.
+data and returns it as a string (in text mode) or bytes object (in binary mode).
+*size* is an optional numeric argument.  When *size* is omitted or negative, the
+entire contents of the file will be read and returned; it's your problem if the
+file is twice as large as your machine's memory. Otherwise, at most *size* bytes
+are read and returned.
 If the end of the file has been reached, ``f.read()`` will return an empty
 string (``''``).  ::
 
@@ -314,17 +346,17 @@ the number of characters written. ::
    >>> f.write('This is a test\n')
    15
 
-To write something other than a string, it needs to be converted to a string
-first::
+Other types of objects need to be converted -- either to a string (in text mode)
+or a bytes object (in binary mode) -- before writing them::
 
    >>> value = ('the answer', 42)
-   >>> s = str(value)
+   >>> s = str(value)  # convert the tuple to string
    >>> f.write(s)
    18
 
 ``f.tell()`` returns an integer giving the file object's current position in the file
-represented as number of bytes from the beginning of the file when in `binary mode` and
-an opaque number when in `text mode`.
+represented as number of bytes from the beginning of the file when in binary mode and
+an opaque number when in text mode.
 
 To change the file object's position, use ``f.seek(offset, from_what)``.  The position is computed
 from adding *offset* to a reference point; the reference point is selected by
@@ -336,11 +368,11 @@ beginning of the file as the reference point. ::
    >>> f = open('workfile', 'rb+')
    >>> f.write(b'0123456789abcdef')
    16
-   >>> f.seek(5)     # Go to the 6th byte in the file
+   >>> f.seek(5)      # Go to the 6th byte in the file
    5
    >>> f.read(1)
    b'5'
-   >>> f.seek(-3, 2) # Go to the 3rd byte before the end
+   >>> f.seek(-3, 2)  # Go to the 3rd byte before the end
    13
    >>> f.read(1)
    b'd'
@@ -350,27 +382,6 @@ relative to the beginning of the file are allowed (the exception being seeking
 to the very file end with ``seek(0, 2)``) and the only valid *offset* values are
 those returned from the ``f.tell()``, or zero. Any other *offset* value produces
 undefined behaviour.
-
-
-When you're done with a file, call ``f.close()`` to close it and free up any
-system resources taken up by the open file.  After calling ``f.close()``,
-attempts to use the file object will automatically fail. ::
-
-   >>> f.close()
-   >>> f.read()
-   Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
-   ValueError: I/O operation on closed file
-
-It is good practice to use the :keyword:`with` keyword when dealing with file
-objects.  This has the advantage that the file is properly closed after its
-suite finishes, even if an exception is raised on the way.  It is also much
-shorter than writing equivalent :keyword:`try`\ -\ :keyword:`finally` blocks::
-
-    >>> with open('workfile', 'r') as f:
-    ...     read_data = f.read()
-    >>> f.closed
-    True
 
 File objects have some additional methods, such as :meth:`~file.isatty` and
 :meth:`~file.truncate` which are less frequently used; consult the Library
@@ -409,6 +420,7 @@ sent over a network connection to some distant machine.
 If you have an object ``x``, you can view its JSON string representation with a
 simple line of code::
 
+   >>> import json
    >>> json.dumps([1, 'simple', 'list'])
    '[1, "simple", "list"]'
 
@@ -437,4 +449,3 @@ The reference for the :mod:`json` module contains an explanation of this.
    written in other languages.  It is also insecure by default:
    deserializing pickle data coming from an untrusted source can execute
    arbitrary code, if the data was crafted by a skilled attacker.
-

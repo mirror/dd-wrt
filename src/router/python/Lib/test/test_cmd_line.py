@@ -8,7 +8,8 @@ import shutil
 import sys
 import subprocess
 import tempfile
-from test.script_helper import (spawn_python, kill_python, assert_python_ok,
+from test.support import script_helper, is_android
+from test.support.script_helper import (spawn_python, kill_python, assert_python_ok,
     assert_python_failure)
 
 
@@ -42,7 +43,7 @@ class CmdLineTest(unittest.TestCase):
 
     def test_version(self):
         version = ('Python %d.%d' % sys.version_info[:2]).encode("ascii")
-        for switch in '-V', '--version':
+        for switch in '-V', '--version', '-VV':
             rc, out, err = assert_python_ok(switch)
             self.assertFalse(err.startswith(version))
             self.assertTrue(out.startswith(version))
@@ -58,7 +59,7 @@ class CmdLineTest(unittest.TestCase):
 
     def test_xoptions(self):
         def get_xoptions(*args):
-            # use subprocess module directly because test.script_helper adds
+            # use subprocess module directly because test.support.script_helper adds
             # "-X faulthandler" to the command line
             args = (sys.executable, '-E') + args
             args += ('-c', 'import sys; print(sys._xoptions)')
@@ -177,15 +178,16 @@ class CmdLineTest(unittest.TestCase):
         if not stdout.startswith(pattern):
             raise AssertionError("%a doesn't start with %a" % (stdout, pattern))
 
-    @unittest.skipUnless(sys.platform == 'darwin', 'test specific to Mac OS X')
-    def test_osx_utf8(self):
+    @unittest.skipUnless((sys.platform == 'darwin' or
+                is_android), 'test specific to Mac OS X and Android')
+    def test_osx_android_utf8(self):
         def check_output(text):
             decoded = text.decode('utf-8', 'surrogateescape')
             expected = ascii(decoded).encode('ascii') + b'\n'
 
             env = os.environ.copy()
             # C locale gives ASCII locale encoding, but Python uses UTF-8
-            # to parse the command line arguments on Mac OS X
+            # to parse the command line arguments on Mac OS X and Android.
             env['LC_ALL'] = 'C'
 
             p = subprocess.Popen(
@@ -270,7 +272,11 @@ class CmdLineTest(unittest.TestCase):
 
     def test_displayhook_unencodable(self):
         for encoding in ('ascii', 'latin-1', 'utf-8'):
-            env = os.environ.copy()
+            # We are testing a PYTHON environment variable here, so we can't
+            # use -E, -I, or script_helper (which uses them).  So instead we do
+            # poor-man's isolation by deleting the PYTHON vars from env.
+            env = {key:value for (key,value) in os.environ.copy().items()
+                   if not key.startswith('PYTHON')}
             env['PYTHONIOENCODING'] = encoding
             p = subprocess.Popen(
                 [sys.executable, '-i'],
@@ -339,11 +345,13 @@ class CmdLineTest(unittest.TestCase):
         # Issue #5319: if stdout.flush() fails at shutdown, an error should
         # be printed out.
         code = """if 1:
-            import os, sys
+            import os, sys, test.support
+            test.support.SuppressCrashReport().__enter__()
             sys.stdout.write('x')
             os.close(sys.stdout.fileno())"""
-        rc, out, err = assert_python_ok('-c', code)
+        rc, out, err = assert_python_failure('-c', code)
         self.assertEqual(b'', out)
+        self.assertEqual(120, rc)
         self.assertRegex(err.decode('ascii', 'ignore'),
                          'Exception ignored in.*\nOSError: .*')
 
@@ -397,12 +405,24 @@ class CmdLineTest(unittest.TestCase):
         # Verify that -R enables hash randomization:
         self.verify_valid_flag('-R')
         hashes = []
-        for i in range(2):
+        if os.environ.get('PYTHONHASHSEED', 'random') != 'random':
+            env = dict(os.environ)  # copy
+            # We need to test that it is enabled by default without
+            # the environment variable enabling it for us.
+            del env['PYTHONHASHSEED']
+            env['__cleanenv'] = '1'  # consumed by assert_python_ok()
+        else:
+            env = {}
+        for i in range(3):
             code = 'print(hash("spam"))'
-            rc, out, err = assert_python_ok('-c', code)
+            rc, out, err = assert_python_ok('-c', code, **env)
             self.assertEqual(rc, 0)
             hashes.append(out)
-        self.assertNotEqual(hashes[0], hashes[1])
+        hashes = sorted(set(hashes))  # uniq
+        # Rare chance of failure due to 3 random seeds honestly being equal.
+        self.assertGreater(len(hashes), 1,
+                           msg='3 runs produced an identical random hash '
+                               ' for "spam": {}'.format(hashes))
 
         # Verify that sys.flags contains hash_randomization
         code = 'import sys; print("random is", sys.flags.hash_randomization)'
@@ -439,14 +459,15 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(err.splitlines().count(b'Unknown option: -a'), 1)
         self.assertEqual(b'', out)
 
-
+    @unittest.skipIf(script_helper.interpreter_requires_environment(),
+                     'Cannot run -I tests when PYTHON env vars are required.')
     def test_isolatedmode(self):
         self.verify_valid_flag('-I')
         self.verify_valid_flag('-IEs')
         rc, out, err = assert_python_ok('-I', '-c',
             'from sys import flags as f; '
             'print(f.no_user_site, f.ignore_environment, f.isolated)',
-            # dummyvar to prevent extranous -E
+            # dummyvar to prevent extraneous -E
             dummyvar="")
         self.assertEqual(out.strip(), b'1 1 1')
         with test.support.temp_cwd() as tmpdir:

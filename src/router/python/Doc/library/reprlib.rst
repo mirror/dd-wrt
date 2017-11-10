@@ -3,6 +3,7 @@
 
 .. module:: reprlib
    :synopsis: Alternate repr() implementation with size limits.
+
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 **Source code:** :source:`Lib/reprlib.py`
@@ -148,12 +149,11 @@ for file objects could be added::
    import sys
 
    class MyRepr(reprlib.Repr):
-       def repr_file(self, obj, level):
-           if obj.name in ['<stdin>', '<stdout>', '<stderr>']:
+
+       def repr_TextIOWrapper(self, obj, level):
+           if obj.name in {'<stdin>', '<stdout>', '<stderr>'}:
                return obj.name
-           else:
-               return repr(obj)
+           return repr(obj)
 
    aRepr = MyRepr()
    print(aRepr.repr(sys.stdin))         # prints '<stdin>'
-

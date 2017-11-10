@@ -1,10 +1,8 @@
 __all__ = ['create_subprocess_exec', 'create_subprocess_shell']
 
-import collections
 import subprocess
 
 from . import events
-from . import futures
 from . import protocols
 from . import streams
 from . import tasks
@@ -25,9 +23,9 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         super().__init__(loop=loop)
         self._limit = limit
         self.stdin = self.stdout = self.stderr = None
-        self.waiter = futures.Future(loop=loop)
-        self._waiters = collections.deque()
         self._transport = None
+        self._process_exited = False
+        self._pipe_fds = []
 
     def __repr__(self):
         info = [self.__class__.__name__]
@@ -41,19 +39,27 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
 
     def connection_made(self, transport):
         self._transport = transport
-        if transport.get_pipe_transport(1):
+
+        stdout_transport = transport.get_pipe_transport(1)
+        if stdout_transport is not None:
             self.stdout = streams.StreamReader(limit=self._limit,
                                                loop=self._loop)
-        if transport.get_pipe_transport(2):
+            self.stdout.set_transport(stdout_transport)
+            self._pipe_fds.append(1)
+
+        stderr_transport = transport.get_pipe_transport(2)
+        if stderr_transport is not None:
             self.stderr = streams.StreamReader(limit=self._limit,
                                                loop=self._loop)
-        stdin = transport.get_pipe_transport(0)
-        if stdin is not None:
-            self.stdin = streams.StreamWriter(stdin,
+            self.stderr.set_transport(stderr_transport)
+            self._pipe_fds.append(2)
+
+        stdin_transport = transport.get_pipe_transport(0)
+        if stdin_transport is not None:
+            self.stdin = streams.StreamWriter(stdin_transport,
                                               protocol=self,
                                               reader=None,
                                               loop=self._loop)
-        self.waiter.set_result(None)
 
     def pipe_data_received(self, fd, data):
         if fd == 1:
@@ -84,12 +90,18 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
             else:
                 reader.set_exception(exc)
 
+        if fd in self._pipe_fds:
+            self._pipe_fds.remove(fd)
+        self._maybe_close_transport()
+
     def process_exited(self):
-        # wake up futures waiting for wait()
-        returncode = self._transport.get_returncode()
-        while self._waiters:
-            waiter = self._waiters.popleft()
-            waiter.set_result(returncode)
+        self._process_exited = True
+        self._maybe_close_transport()
+
+    def _maybe_close_transport(self):
+        if len(self._pipe_fds) == 0 and self._process_exited:
+            self._transport.close()
+            self._transport = None
 
 
 class Process:
@@ -111,30 +123,18 @@ class Process:
 
     @coroutine
     def wait(self):
-        """Wait until the process exit and return the process return code."""
-        returncode = self._transport.get_returncode()
-        if returncode is not None:
-            return returncode
+        """Wait until the process exit and return the process return code.
 
-        waiter = futures.Future(loop=self._loop)
-        self._protocol._waiters.append(waiter)
-        yield from waiter
-        return waiter.result()
-
-    def _check_alive(self):
-        if self._transport.get_returncode() is not None:
-            raise ProcessLookupError()
+        This method is a coroutine."""
+        return (yield from self._transport._wait())
 
     def send_signal(self, signal):
-        self._check_alive()
         self._transport.send_signal(signal)
 
     def terminate(self):
-        self._check_alive()
         self._transport.terminate()
 
     def kill(self):
-        self._check_alive()
         self._transport.kill()
 
     @coroutine
@@ -179,7 +179,7 @@ class Process:
 
     @coroutine
     def communicate(self, input=None):
-        if input:
+        if input is not None:
             stdin = self._feed_stdin(input)
         else:
             stdin = self._noop()
@@ -208,7 +208,6 @@ def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
                                             protocol_factory,
                                             cmd, stdin=stdin, stdout=stdout,
                                             stderr=stderr, **kwds)
-    yield from protocol.waiter
     return Process(transport, protocol, loop)
 
 @coroutine
@@ -224,5 +223,4 @@ def create_subprocess_exec(program, *args, stdin=None, stdout=None,
                                             program, *args,
                                             stdin=stdin, stdout=stdout,
                                             stderr=stderr, **kwds)
-    yield from protocol.waiter
     return Process(transport, protocol, loop)

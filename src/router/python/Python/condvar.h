@@ -1,4 +1,4 @@
-/* 
+/*
  * Portable condition variable support for windows and pthreads.
  * Everything is inline, this header can be included where needed.
  *
@@ -89,7 +89,7 @@ do { /* TODO: add overflow and truncation checks */ \
 
 /* return 0 for success, 1 on timeout, -1 on error */
 Py_LOCAL_INLINE(int)
-PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, PY_LONG_LONG us)
+PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, long long us)
 {
     int r;
     struct timespec ts;
@@ -105,7 +105,7 @@ PyCOND_TIMEDWAIT(PyCOND_T *cond, PyMUTEX_T *mut, PY_LONG_LONG us)
         return 1;
     else if (r)
         return -1;
-    else 
+    else
         return 0;
 }
 
@@ -238,7 +238,7 @@ _PyCOND_WAIT_MS(PyCOND_T *cv, PyMUTEX_T *cs, DWORD ms)
     cv->waiting++;
     PyMUTEX_UNLOCK(cs);
     /* "lost wakeup bug" would occur if the caller were interrupted here,
-     * but we are safe because we are using a semaphore wich has an internal
+     * but we are safe because we are using a semaphore which has an internal
      * count.
      */
     wait = WaitForSingleObjectEx(cv->sem, ms, FALSE);
@@ -255,7 +255,7 @@ _PyCOND_WAIT_MS(PyCOND_T *cv, PyMUTEX_T *cs, DWORD ms)
          * a new thread comes along, it will pass right throuhgh, having
          * adjusted it to (waiting == 0 && sem.count == 0).
          */
-         
+
     if (wait == WAIT_FAILED)
         return -1;
     /* return 0 on success, 1 on timeout */
@@ -270,7 +270,7 @@ PyCOND_WAIT(PyCOND_T *cv, PyMUTEX_T *cs)
 }
 
 Py_LOCAL_INLINE(int)
-PyCOND_TIMEDWAIT(PyCOND_T *cv, PyMUTEX_T *cs, PY_LONG_LONG us)
+PyCOND_TIMEDWAIT(PyCOND_T *cv, PyMUTEX_T *cs, long long us)
 {
     return _PyCOND_WAIT_MS(cv, cs, (DWORD)(us/1000));
 }
@@ -363,7 +363,7 @@ PyCOND_WAIT(PyCOND_T *cv, PyMUTEX_T *cs)
  * 2 to indicate that we don't know.
  */
 Py_LOCAL_INLINE(int)
-PyCOND_TIMEDWAIT(PyCOND_T *cv, PyMUTEX_T *cs, PY_LONG_LONG us)
+PyCOND_TIMEDWAIT(PyCOND_T *cv, PyMUTEX_T *cs, long long us)
 {
     return SleepConditionVariableSRW(cv, cs, (DWORD)(us/1000), 0) ? 2 : -1;
 }

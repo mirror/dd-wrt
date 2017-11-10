@@ -42,14 +42,10 @@ extern "C" {
 */
 
 #if PYLONG_BITS_IN_DIGIT == 30
-#if !(defined HAVE_UINT64_T && defined HAVE_UINT32_T &&          \
-      defined HAVE_INT64_T && defined HAVE_INT32_T)
-#error "30-bit long digits requested, but the necessary types are not available on this platform"
-#endif
-typedef PY_UINT32_T digit;
-typedef PY_INT32_T sdigit; /* signed variant of digit */
-typedef PY_UINT64_T twodigits;
-typedef PY_INT64_T stwodigits; /* signed variant of twodigits */
+typedef uint32_t digit;
+typedef int32_t sdigit; /* signed variant of digit */
+typedef uint64_t twodigits;
+typedef int64_t stwodigits; /* signed variant of twodigits */
 #define PyLong_SHIFT	30
 #define _PyLong_DECIMAL_SHIFT	9 /* max(e such that 10**e fits in a digit) */
 #define _PyLong_DECIMAL_BASE	((digit)1000000000) /* 10 ** DECIMAL_SHIFT */

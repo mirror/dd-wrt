@@ -65,7 +65,7 @@ and full support for mouse and keyboard input.
 The Python curses module
 ------------------------
 
-Thy Python module is a fairly simple wrapper over the C functions provided by
+The Python module is a fairly simple wrapper over the C functions provided by
 curses; if you're already familiar with curses programming in C, it's really
 easy to transfer that knowledge to Python.  The biggest difference is that the
 Python interface makes things simpler by merging different C functions such as
@@ -538,14 +538,14 @@ the Python interface.  Often this isn't because they're difficult to
 implement, but because no one has needed them yet.  Also, Python
 doesn't yet support the menu library associated with ncurses.
 Patches adding support for these would be welcome; see
-`the Python Developer's Guide <http://docs.python.org/devguide/>`_ to
+`the Python Developer's Guide <https://devguide.python.org/>`_ to
 learn more about submitting patches to Python.
 
 * `Writing Programs with NCURSES <http://invisible-island.net/ncurses/ncurses-intro.html>`_:
   a lengthy tutorial for C programmers.
-* `The ncurses man page <http://www.linuxmanpages.com/man3/ncurses.3x.php>`_
+* `The ncurses man page <http://linux.die.net/man/3/ncurses>`_
 * `The ncurses FAQ <http://invisible-island.net/ncurses/ncurses.faq.html>`_
-* `"Use curses... don't swear" <http://www.youtube.com/watch?v=eN1eZtjLEnU>`_:
+* `"Use curses... don't swear" <https://www.youtube.com/watch?v=eN1eZtjLEnU>`_:
   video of a PyCon 2013 talk on controlling terminals using curses or Urwid.
 * `"Console Applications with Urwid" <http://www.pyvideo.org/video/1568/console-applications-with-urwid>`_:
   video of a PyCon CA 2012 talk demonstrating some applications written using

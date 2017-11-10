@@ -5,8 +5,11 @@
    :synopsis: An interface to the curses library, providing portable
               terminal handling.
    :platform: Unix
+
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 .. sectionauthor:: Eric Raymond <esr@thyrsus.com>
+
+--------------
 
 The :mod:`curses` module provides an interface to the curses library, the
 de-facto standard for portable advanced terminal handling.
@@ -287,8 +290,8 @@ The module :mod:`curses` defines the following functions:
 
 .. function:: initscr()
 
-   Initialize the library. Return a :class:`WindowObject` which represents the
-   whole screen.
+   Initialize the library. Return a :ref:`window <curses-window-objects>` object
+   which represents the whole screen.
 
    .. note::
 
@@ -313,7 +316,7 @@ The module :mod:`curses` defines the following functions:
    Return the name of the key numbered *k*.  The name of a key generating printable
    ASCII character is the key's character.  The name of a control-key combination
    is a two-character string consisting of a caret followed by the corresponding
-   printable ASCII character.  The name of an alt-key combination (128-255) is a
+   printable ASCII character.  The name of an alt-key combination (128--255) is a
    string consisting of the prefix 'M-' followed by the name of the corresponding
    ASCII character.
 
@@ -380,8 +383,8 @@ The module :mod:`curses` defines the following functions:
 .. function:: newwin(nlines, ncols)
               newwin(nlines, ncols, begin_y, begin_x)
 
-   Return a new window, whose left-upper corner is at  ``(begin_y, begin_x)``, and
-   whose height/width is  *nlines*/*ncols*.
+   Return a new :ref:`window <curses-window-objects>`, whose left-upper corner
+   is at  ``(begin_y, begin_x)``, and whose height/width is  *nlines*/*ncols*.
 
    By default, the window will extend from the  specified position to the lower
    right corner of the screen.
@@ -597,6 +600,13 @@ The module :mod:`curses` defines the following functions:
    .. note::
 
       Only one *ch* can be pushed before :meth:`getch` is called.
+
+
+.. function:: update_lines_cols()
+
+   Update :envvar:`LINES` and :envvar:`COLS`. Useful for detecting manual screen resize.
+
+   .. versionadded:: 3.5
 
 
 .. function:: unget_wch(ch)
@@ -1261,27 +1271,63 @@ The :mod:`curses` module defines the following data members:
    A string representing the current version of the module.  Also available as
    :const:`__version__`.
 
-Several constants are available to specify character cell attributes:
+Some constants are available to specify character cell attributes.
+The exact constants available are system dependent.
 
 +------------------+-------------------------------+
 | Attribute        | Meaning                       |
 +==================+===============================+
-| ``A_ALTCHARSET`` | Alternate character set mode. |
+| ``A_ALTCHARSET`` | Alternate character set mode  |
 +------------------+-------------------------------+
-| ``A_BLINK``      | Blink mode.                   |
+| ``A_BLINK``      | Blink mode                    |
 +------------------+-------------------------------+
-| ``A_BOLD``       | Bold mode.                    |
+| ``A_BOLD``       | Bold mode                     |
 +------------------+-------------------------------+
-| ``A_DIM``        | Dim mode.                     |
+| ``A_DIM``        | Dim mode                      |
 +------------------+-------------------------------+
-| ``A_NORMAL``     | Normal attribute.             |
+| ``A_INVIS``      | Invisible or blank mode       |
++------------------+-------------------------------+
+| ``A_NORMAL``     | Normal attribute              |
++------------------+-------------------------------+
+| ``A_PROTECT``    | Protected mode                |
 +------------------+-------------------------------+
 | ``A_REVERSE``    | Reverse background and        |
-|                  | foreground colors.            |
+|                  | foreground colors             |
 +------------------+-------------------------------+
-| ``A_STANDOUT``   | Standout mode.                |
+| ``A_STANDOUT``   | Standout mode                 |
 +------------------+-------------------------------+
-| ``A_UNDERLINE``  | Underline mode.               |
+| ``A_UNDERLINE``  | Underline mode                |
++------------------+-------------------------------+
+| ``A_HORIZONTAL`` | Horizontal highlight          |
++------------------+-------------------------------+
+| ``A_LEFT``       | Left highlight                |
++------------------+-------------------------------+
+| ``A_LOW``        | Low highlight                 |
++------------------+-------------------------------+
+| ``A_RIGHT``      | Right highlight               |
++------------------+-------------------------------+
+| ``A_TOP``        | Top highlight                 |
++------------------+-------------------------------+
+| ``A_VERTICAL``   | Vertical highlight            |
++------------------+-------------------------------+
+| ``A_CHARTEXT``   | Bit-mask to extract a         |
+|                  | character                     |
++------------------+-------------------------------+
+
+Several constants are available to extract corresponding attributes returned
+by some methods.
+
++------------------+-------------------------------+
+| Bit-mask         | Meaning                       |
++==================+===============================+
+| ``A_ATTRIBUTES`` | Bit-mask to extract           |
+|                  | attributes                    |
++------------------+-------------------------------+
+| ``A_CHARTEXT``   | Bit-mask to extract a         |
+|                  | character                     |
++------------------+-------------------------------+
+| ``A_COLOR``      | Bit-mask to extract           |
+|                  | color-pair field information  |
 +------------------+-------------------------------+
 
 Keys are referred to by integer constants with names starting with  ``KEY_``.
@@ -1433,7 +1479,7 @@ The exact keycaps available are system dependent.
 +-------------------+--------------------------------------------+
 | ``KEY_SEOL``      | Shifted Clear line                         |
 +-------------------+--------------------------------------------+
-| ``KEY_SEXIT``     | Shifted Dxit                               |
+| ``KEY_SEXIT``     | Shifted Exit                               |
 +-------------------+--------------------------------------------+
 | ``KEY_SFIND``     | Shifted Find                               |
 +-------------------+--------------------------------------------+
@@ -1501,9 +1547,9 @@ keys); also, the following keypad mappings are standard:
 +------------------+-----------+
 | :kbd:`End`       | KEY_END   |
 +------------------+-----------+
-| :kbd:`Page Up`   | KEY_NPAGE |
+| :kbd:`Page Up`   | KEY_PPAGE |
 +------------------+-----------+
-| :kbd:`Page Down` | KEY_PPAGE |
+| :kbd:`Page Down` | KEY_NPAGE |
 +------------------+-----------+
 
 The following table lists characters from the alternate character set. These are
@@ -1669,10 +1715,10 @@ You can instantiate a :class:`Textbox` object as follows:
 .. class:: Textbox(win)
 
    Return a textbox widget object.  The *win* argument should be a curses
-   :class:`WindowObject` in which the textbox is to be contained. The edit cursor
-   of the textbox is initially located at the upper left hand corner of the
-   containing window, with coordinates ``(0, 0)``. The instance's
-   :attr:`stripspaces` flag is initially on.
+   :ref:`window <curses-window-objects>` object in which the textbox is to
+   be contained. The edit cursor of the textbox is initially located at the
+   upper left hand corner of the containing window, with coordinates ``(0, 0)``.
+   The instance's :attr:`stripspaces` flag is initially on.
 
    :class:`Textbox` objects have the following methods:
 

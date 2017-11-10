@@ -3,10 +3,14 @@
 
 .. module:: tkinter.ttk
    :synopsis: Tk themed widget set
+
 .. sectionauthor:: Guilherme Polo <ggpolo@gmail.com>
 
+**Source code:** :source:`Lib/tkinter/ttk.py`
 
 .. index:: single: ttk
+
+--------------
 
 The :mod:`tkinter.ttk` module provides access to the Tk themed widget set,
 introduced in Tk 8.5. If Python has not been compiled against Tk 8.5, this
@@ -22,7 +26,7 @@ appearance.
 
 .. seealso::
 
-   `Tk Widget Styling Support <http://www.tcl.tk/cgi-bin/tct/tip/48>`_
+   `Tk Widget Styling Support <https://www.tcl.tk/cgi-bin/tct/tip/48>`_
       A document introducing theming support for Tk
 
 
@@ -110,8 +114,9 @@ All the :mod:`ttk` Widgets accepts the following options:
    | class     | Specifies the window class. The class is used when querying  |
    |           | the option database for the window's other options, to       |
    |           | determine the default bindtags for the window, and to select |
-   |           | the widget's default layout and style. This is a read-only   |
-   |           | which may only be specified when the window is created       |
+   |           | the widget's default layout and style. This option is        |
+   |           | read-only, and may only be specified when the window is      |
+   |           | created.                                                     |
    +-----------+--------------------------------------------------------------+
    | cursor    | Specifies the mouse cursor to be used for the widget. If set |
    |           | to the empty string (the default), the cursor is inherited   |
@@ -298,7 +303,7 @@ Besides the methods inherited from :class:`Widget`: :meth:`Widget.cget`,
 :meth:`Widget.configure`, :meth:`Widget.identify`, :meth:`Widget.instate`
 and :meth:`Widget.state`, and the following inherited from :class:`Entry`:
 :meth:`Entry.bbox`, :meth:`Entry.delete`, :meth:`Entry.icursor`,
-:meth:`Entry.index`, :meth:`Entry.inset`, :meth:`Entry.selection`,
+:meth:`Entry.index`, :meth:`Entry.insert`, :meth:`Entry.selection`,
 :meth:`Entry.xview`, it has some other methods, described at
 :class:`ttk.Combobox`.
 
@@ -554,9 +559,9 @@ ttk.Notebook
       This will extend the bindings for the toplevel window containing the
       notebook as follows:
 
-      * Control-Tab: selects the tab following the currently selected one.
-      * Shift-Control-Tab: selects the tab preceding the currently selected one.
-      * Alt-K: where K is the mnemonic (underlined) character of any tab, will
+      * :kbd:`Control-Tab`: selects the tab following the currently selected one.
+      * :kbd:`Shift-Control-Tab`: selects the tab preceding the currently selected one.
+      * :kbd:`Alt-K`: where *K* is the mnemonic (underlined) character of any tab, will
         select that tab.
 
       Multiple notebooks in a single toplevel may be enabled for traversal,
@@ -700,7 +705,7 @@ the widget option ``displaycolumns``. The tree widget can also display column
 headings. Columns may be accessed by number or symbolic names listed in the
 widget option columns. See `Column Identifiers`_.
 
-Each item is identified by an unique name. The widget will generate item IDs
+Each item is identified by a unique name. The widget will generate item IDs
 if they are not supplied by the caller. There is a distinguished root item,
 named ``{}``. The root item itself is not displayed; its children appear at the
 top level of the hierarchy.
@@ -1167,7 +1172,7 @@ Ttk Styling
 Each widget in :mod:`ttk` is assigned a style, which specifies the set of
 elements making up the widget and how they are arranged, along with dynamic
 and default settings for element options. By default the style name is the
-same as the widget's class name, but it may be overriden by the widget's style
+same as the widget's class name, but it may be overridden by the widget's style
 option. If you don't know the class name of a widget, use the method
 :meth:`Misc.winfo_class` (somewidget.winfo_class()).
 
@@ -1399,7 +1404,7 @@ option. If you don't know the class name of a widget, use the method
 Layouts
 ^^^^^^^
 
-A layout can be just None, if it takes no options, or a dict of
+A layout can be just ``None``, if it takes no options, or a dict of
 options specifying how to arrange the element. The layout mechanism
 uses a simplified version of the pack geometry manager: given an
 initial cavity, each element is allocated a parcel. Valid

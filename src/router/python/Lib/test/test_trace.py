@@ -1,21 +1,19 @@
 import os
-import io
 import sys
-from test.support import (run_unittest, TESTFN, rmtree, unlink,
-                               captured_stdout)
+from test.support import TESTFN, rmtree, unlink, captured_stdout
+from test.support.script_helper import assert_python_ok, assert_python_failure
 import unittest
 
 import trace
-from trace import CoverageResults, Trace
+from trace import Trace
 
 from test.tracedmodules import testmod
-
 
 #------------------------------- Utilities -----------------------------------#
 
 def fix_ext_py(filename):
-    """Given a .pyc/.pyo filename converts it to the appropriate .py"""
-    if filename.endswith(('.pyc', '.pyo')):
+    """Given a .pyc filename converts it to the appropriate .py"""
+    if filename.endswith('.pyc'):
         filename = filename[:-1]
     return filename
 
@@ -224,6 +222,11 @@ class TestFuncs(unittest.TestCase):
         self.addCleanup(sys.settrace, sys.gettrace())
         self.tracer = Trace(count=0, trace=0, countfuncs=1)
         self.filemod = my_file_and_modname()
+        self._saved_tracefunc = sys.gettrace()
+
+    def tearDown(self):
+        if self._saved_tracefunc is not None:
+            sys.settrace(self._saved_tracefunc)
 
     def test_simple_caller(self):
         self.tracer.runfunc(traced_func_simple_caller, 1)
@@ -297,7 +300,8 @@ class TestCoverage(unittest.TestCase):
         unlink(TESTFN)
 
     def _coverage(self, tracer,
-                  cmd='from test import test_pprint; test_pprint.test_main()'):
+                  cmd='import test.support, test.test_pprint;'
+                      'test.support.run_unittest(test.test_pprint.QueryTestCase)'):
         tracer.run(cmd)
         r = tracer.results()
         r.write_results(show_missing=True, summary=True, coverdir=TESTFN)
@@ -307,11 +311,11 @@ class TestCoverage(unittest.TestCase):
         with captured_stdout() as stdout:
             self._coverage(tracer)
         stdout = stdout.getvalue()
-        self.assertTrue("pprint.py" in stdout)
-        self.assertTrue("case.py" in stdout)   # from unittest
+        self.assertIn("pprint.py", stdout)
+        self.assertIn("case.py", stdout)   # from unittest
         files = os.listdir(TESTFN)
-        self.assertTrue("pprint.cover" in files)
-        self.assertTrue("unittest.case.cover" in files)
+        self.assertIn("pprint.cover", files)
+        self.assertIn("unittest.case.cover", files)
 
     def test_coverage_ignore(self):
         # Ignore all files, nothing should be traced nor printed
@@ -361,55 +365,27 @@ class Test_Ignore(unittest.TestCase):
         # Matched before.
         self.assertTrue(ignore.names(jn('bar', 'baz.py'), 'baz'))
 
+class TestCommandLine(unittest.TestCase):
 
-class TestDeprecatedMethods(unittest.TestCase):
+    def test_failures(self):
+        _errors = (
+            (b'filename is missing: required with the main options', '-l', '-T'),
+            (b'cannot specify both --listfuncs and (--trace or --count)', '-lc'),
+            (b'argument -R/--no-report: not allowed with argument -r/--report', '-rR'),
+            (b'must specify one of --trace, --count, --report, --listfuncs, or --trackcalls', '-g'),
+            (b'-r/--report requires -f/--file', '-r'),
+            (b'--summary can only be used with --count or --report', '-sT'),
+            (b'unrecognized arguments: -y', '-y'))
+        for message, *args in _errors:
+            *_, stderr = assert_python_failure('-m', 'trace', *args)
+            self.assertIn(message, stderr)
 
-    def test_deprecated_usage(self):
-        sio = io.StringIO()
-        with self.assertWarns(DeprecationWarning):
-            trace.usage(sio)
-        self.assertIn('Usage:', sio.getvalue())
-
-    def test_deprecated_Ignore(self):
-        with self.assertWarns(DeprecationWarning):
-            trace.Ignore()
-
-    def test_deprecated_modname(self):
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual("spam", trace.modname("spam"))
-
-    def test_deprecated_fullmodname(self):
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual("spam", trace.fullmodname("spam"))
-
-    def test_deprecated_find_lines_from_code(self):
-        with self.assertWarns(DeprecationWarning):
-            def foo():
-                pass
-            trace.find_lines_from_code(foo.__code__, ["eggs"])
-
-    def test_deprecated_find_lines(self):
-        with self.assertWarns(DeprecationWarning):
-            def foo():
-                pass
-            trace.find_lines(foo.__code__, ["eggs"])
-
-    def test_deprecated_find_strings(self):
+    def test_listfuncs_flag_success(self):
         with open(TESTFN, 'w') as fd:
             self.addCleanup(unlink, TESTFN)
-        with self.assertWarns(DeprecationWarning):
-            trace.find_strings(fd.name)
-
-    def test_deprecated_find_executable_linenos(self):
-        with open(TESTFN, 'w') as fd:
-            self.addCleanup(unlink, TESTFN)
-        with self.assertWarns(DeprecationWarning):
-            trace.find_executable_linenos(fd.name)
-
-
-def test_main():
-    run_unittest(__name__)
-
+            fd.write("a = 1\n")
+            status, stdout, stderr = assert_python_ok('-m', 'trace', '-l', TESTFN)
+            self.assertIn(b'functions called:', stdout)
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

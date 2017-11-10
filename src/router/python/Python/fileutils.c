@@ -3,7 +3,9 @@
 #include <locale.h>
 
 #ifdef MS_WINDOWS
+#  include <malloc.h>
 #  include <windows.h>
+extern int winerror_to_errno(int);
 #endif
 
 #ifdef HAVE_LANGINFO_H
@@ -18,7 +20,7 @@
 #include <fcntl.h>
 #endif /* HAVE_FCNTL_H */
 
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__ANDROID__)
 extern wchar_t* _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size);
 #endif
 
@@ -29,7 +31,8 @@ extern wchar_t* _Py_DecodeUTF8_surrogateescape(const char *s, Py_ssize_t size);
     0: open() ignores O_CLOEXEC flag, ex: Linux kernel older than 2.6.23
     1: open() supports O_CLOEXEC flag, close-on-exec is set
 
-   The flag is used by _Py_open(), io.FileIO and os.open() */
+   The flag is used by _Py_open(), _Py_open_noraise(), io.FileIO
+   and os.open(). */
 int _Py_open_cloexec_works = -1;
 #endif
 
@@ -39,9 +42,13 @@ _Py_device_encoding(int fd)
 #if defined(MS_WINDOWS)
     UINT cp;
 #endif
-    if (!_PyVerify_fd(fd) || !isatty(fd)) {
+    int valid;
+    _Py_BEGIN_SUPPRESS_IPH
+    valid = isatty(fd);
+    _Py_END_SUPPRESS_IPH
+    if (!valid)
         Py_RETURN_NONE;
-    }
+
 #if defined(MS_WINDOWS)
     if (fd == 0)
         cp = GetConsoleCP();
@@ -82,11 +89,11 @@ extern int _Py_normalize_encoding(const char *, char *, size_t);
 
    Values of force_ascii:
 
-       1: the workaround is used: _Py_wchar2char() uses
-          encode_ascii_surrogateescape() and _Py_char2wchar() uses
+       1: the workaround is used: Py_EncodeLocale() uses
+          encode_ascii_surrogateescape() and Py_DecodeLocale() uses
           decode_ascii_surrogateescape()
-       0: the workaround is not used: _Py_wchar2char() uses wcstombs() and
-          _Py_char2wchar() uses mbstowcs()
+       0: the workaround is not used: Py_EncodeLocale() uses wcstombs() and
+          Py_DecodeLocale() uses mbstowcs()
       -1: unknown, need to call check_force_ascii() to get the value
 */
 static int force_ascii = -1;
@@ -97,23 +104,24 @@ check_force_ascii(void)
     char *loc;
 #if defined(HAVE_LANGINFO_H) && defined(CODESET)
     char *codeset, **alias;
-    char encoding[100];
+    char encoding[20];   /* longest name: "iso_646.irv_1991\0" */
     int is_ascii;
     unsigned int i;
     char* ascii_aliases[] = {
         "ascii",
+        /* Aliases from Lib/encodings/aliases.py */
         "646",
-        "ansi-x3.4-1968",
-        "ansi-x3-4-1968",
-        "ansi-x3.4-1986",
+        "ansi_x3.4_1968",
+        "ansi_x3.4_1986",
+        "ansi_x3_4_1968",
         "cp367",
         "csascii",
         "ibm367",
-        "iso646-us",
-        "iso-646.irv-1991",
-        "iso-ir-6",
+        "iso646_us",
+        "iso_646.irv_1991",
+        "iso_ir_6",
         "us",
-        "us-ascii",
+        "us_ascii",
         NULL
     };
 #endif
@@ -169,7 +177,7 @@ check_force_ascii(void)
 #endif
 
 error:
-    /* if an error occured, force the ASCII encoding */
+    /* if an error occurred, force the ASCII encoding */
     return 1;
 }
 
@@ -220,8 +228,11 @@ decode_ascii_surrogateescape(const char *arg, size_t *size)
     wchar_t *res;
     unsigned char *in;
     wchar_t *out;
+    size_t argsize = strlen(arg) + 1;
 
-    res = PyMem_RawMalloc((strlen(arg)+1)*sizeof(wchar_t));
+    if (argsize > PY_SSIZE_T_MAX/sizeof(wchar_t))
+        return NULL;
+    res = PyMem_RawMalloc(argsize*sizeof(wchar_t));
     if (!res)
         return NULL;
 
@@ -241,26 +252,28 @@ decode_ascii_surrogateescape(const char *arg, size_t *size)
 
 
 /* Decode a byte string from the locale encoding with the
-   surrogateescape error handler (undecodable bytes are decoded as characters
-   in range U+DC80..U+DCFF). If a byte sequence can be decoded as a surrogate
+   surrogateescape error handler: undecodable bytes are decoded as characters
+   in range U+DC80..U+DCFF. If a byte sequence can be decoded as a surrogate
    character, escape the bytes using the surrogateescape error handler instead
    of decoding them.
 
-   Use _Py_wchar2char() to encode the character string back to a byte string.
+   Return a pointer to a newly allocated wide character string, use
+   PyMem_RawFree() to free the memory. If size is not NULL, write the number of
+   wide characters excluding the null character into *size
 
-   Return a pointer to a newly allocated wide character string (use
-   PyMem_RawFree() to free the memory) and write the number of written wide
-   characters excluding the null character into *size if size is not NULL, or
-   NULL on error (decoding or memory allocation error). If size is not NULL,
-   *size is set to (size_t)-1 on memory error and (size_t)-2 on decoding
-   error.
+   Return NULL on decoding error or memory allocation error. If *size* is not
+   NULL, *size is set to (size_t)-1 on memory error or set to (size_t)-2 on
+   decoding error.
 
-   Conversion errors should never happen, unless there is a bug in the C
-   library. */
+   Decoding errors should never happen, unless there is a bug in the C
+   library.
+
+   Use the Py_EncodeLocale() function to encode the character string back to a
+   byte string. */
 wchar_t*
-_Py_char2wchar(const char* arg, size_t *size)
+Py_DecodeLocale(const char* arg, size_t *size)
 {
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__ANDROID__)
     wchar_t *wstr;
     wstr = _Py_DecodeUTF8_surrogateescape(arg, strlen(arg));
     if (size != NULL) {
@@ -303,10 +316,15 @@ _Py_char2wchar(const char* arg, size_t *size)
     argsize = mbstowcs(NULL, arg, 0);
 #endif
     if (argsize != (size_t)-1) {
-        res = (wchar_t *)PyMem_RawMalloc((argsize+1)*sizeof(wchar_t));
+        if (argsize == PY_SSIZE_T_MAX)
+            goto oom;
+        argsize += 1;
+        if (argsize > PY_SSIZE_T_MAX/sizeof(wchar_t))
+            goto oom;
+        res = (wchar_t *)PyMem_RawMalloc(argsize*sizeof(wchar_t));
         if (!res)
             goto oom;
-        count = mbstowcs(res, arg, argsize+1);
+        count = mbstowcs(res, arg, argsize);
         if (count != (size_t)-1) {
             wchar_t *tmp;
             /* Only use the result if it contains no
@@ -329,6 +347,8 @@ _Py_char2wchar(const char* arg, size_t *size)
     /* Overallocate; as multi-byte characters are in the argument, the
        actual output could use less memory. */
     argsize = strlen(arg) + 1;
+    if (argsize > PY_SSIZE_T_MAX/sizeof(wchar_t))
+        goto oom;
     res = (wchar_t*)PyMem_RawMalloc(argsize*sizeof(wchar_t));
     if (!res)
         goto oom;
@@ -386,24 +406,25 @@ oom:
     if (size != NULL)
         *size = (size_t)-1;
     return NULL;
-#endif   /* __APPLE__ */
+#endif   /* __APPLE__ or __ANDROID__ */
 }
 
-/* Encode a (wide) character string to the locale encoding with the
-   surrogateescape error handler (characters in range U+DC80..U+DCFF are
-   converted to bytes 0x80..0xFF).
+/* Encode a wide character string to the locale encoding with the
+   surrogateescape error handler: surrogate characters in the range
+   U+DC80..U+DCFF are converted to bytes 0x80..0xFF.
 
-   This function is the reverse of _Py_char2wchar().
+   Return a pointer to a newly allocated byte string, use PyMem_Free() to free
+   the memory. Return NULL on encoding or memory allocation error.
 
-   Return a pointer to a newly allocated byte string (use PyMem_Free() to free
-   the memory), or NULL on encoding or memory allocation error.
+   If error_pos is not NULL, *error_pos is set to the index of the invalid
+   character on encoding error, or set to (size_t)-1 otherwise.
 
-   If error_pos is not NULL: *error_pos is the index of the invalid character
-   on encoding error, or (size_t)-1 otherwise. */
+   Use the Py_DecodeLocale() function to decode the bytes string back to a wide
+   character string. */
 char*
-_Py_wchar2char(const wchar_t *text, size_t *error_pos)
+Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 {
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__ANDROID__)
     Py_ssize_t len;
     PyObject *unicode, *bytes = NULL;
     char *cpath;
@@ -501,37 +522,182 @@ _Py_wchar2char(const wchar_t *text, size_t *error_pos)
         bytes = result;
     }
     return result;
-#endif   /* __APPLE__ */
+#endif   /* __APPLE__ or __ANDROID__ */
 }
 
-/* In principle, this should use HAVE__WSTAT, and _wstat
-   should be detected by autoconf. However, no current
-   POSIX system provides that function, so testing for
-   it is pointless.
-   Not sure whether the MS_WINDOWS guards are necessary:
-   perhaps for cygwin/mingw builds?
-*/
-#if defined(HAVE_STAT) && !defined(MS_WINDOWS)
 
-/* Get file status. Encode the path to the locale encoding. */
+#ifdef MS_WINDOWS
+static __int64 secs_between_epochs = 11644473600; /* Seconds between 1.1.1601 and 1.1.1970 */
 
-int
-_Py_wstat(const wchar_t* path, struct stat *buf)
+static void
+FILE_TIME_to_time_t_nsec(FILETIME *in_ptr, time_t *time_out, int* nsec_out)
 {
-    int err;
-    char *fname;
-    fname = _Py_wchar2char(path, NULL);
-    if (fname == NULL) {
-        errno = EINVAL;
-        return -1;
+    /* XXX endianness. Shouldn't matter, as all Windows implementations are little-endian */
+    /* Cannot simply cast and dereference in_ptr,
+       since it might not be aligned properly */
+    __int64 in;
+    memcpy(&in, in_ptr, sizeof(in));
+    *nsec_out = (int)(in % 10000000) * 100; /* FILETIME is in units of 100 nsec. */
+    *time_out = Py_SAFE_DOWNCAST((in / 10000000) - secs_between_epochs, __int64, time_t);
+}
+
+void
+_Py_time_t_to_FILE_TIME(time_t time_in, int nsec_in, FILETIME *out_ptr)
+{
+    /* XXX endianness */
+    __int64 out;
+    out = time_in + secs_between_epochs;
+    out = out * 10000000 + nsec_in / 100;
+    memcpy(out_ptr, &out, sizeof(out));
+}
+
+/* Below, we *know* that ugo+r is 0444 */
+#if _S_IREAD != 0400
+#error Unsupported C library
+#endif
+static int
+attributes_to_mode(DWORD attr)
+{
+    int m = 0;
+    if (attr & FILE_ATTRIBUTE_DIRECTORY)
+        m |= _S_IFDIR | 0111; /* IFEXEC for user,group,other */
+    else
+        m |= _S_IFREG;
+    if (attr & FILE_ATTRIBUTE_READONLY)
+        m |= 0444;
+    else
+        m |= 0666;
+    return m;
+}
+
+void
+_Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
+                           struct _Py_stat_struct *result)
+{
+    memset(result, 0, sizeof(*result));
+    result->st_mode = attributes_to_mode(info->dwFileAttributes);
+    result->st_size = (((__int64)info->nFileSizeHigh)<<32) + info->nFileSizeLow;
+    result->st_dev = info->dwVolumeSerialNumber;
+    result->st_rdev = result->st_dev;
+    FILE_TIME_to_time_t_nsec(&info->ftCreationTime, &result->st_ctime, &result->st_ctime_nsec);
+    FILE_TIME_to_time_t_nsec(&info->ftLastWriteTime, &result->st_mtime, &result->st_mtime_nsec);
+    FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
+    result->st_nlink = info->nNumberOfLinks;
+    result->st_ino = (((uint64_t)info->nFileIndexHigh) << 32) + info->nFileIndexLow;
+    if (reparse_tag == IO_REPARSE_TAG_SYMLINK) {
+        /* first clear the S_IFMT bits */
+        result->st_mode ^= (result->st_mode & S_IFMT);
+        /* now set the bits that make this a symlink */
+        result->st_mode |= S_IFLNK;
     }
-    err = stat(fname, buf);
-    PyMem_Free(fname);
-    return err;
+    result->st_file_attributes = info->dwFileAttributes;
 }
 #endif
 
-#ifdef HAVE_STAT
+/* Return information about a file.
+
+   On POSIX, use fstat().
+
+   On Windows, use GetFileType() and GetFileInformationByHandle() which support
+   files larger than 2 GB.  fstat() may fail with EOVERFLOW on files larger
+   than 2 GB because the file size type is a signed 32-bit integer: see issue
+   #23152.
+
+   On Windows, set the last Windows error and return nonzero on error. On
+   POSIX, set errno and return nonzero on error. Fill status and return 0 on
+   success. */
+int
+_Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
+{
+#ifdef MS_WINDOWS
+    BY_HANDLE_FILE_INFORMATION info;
+    HANDLE h;
+    int type;
+
+    _Py_BEGIN_SUPPRESS_IPH
+    h = (HANDLE)_get_osfhandle(fd);
+    _Py_END_SUPPRESS_IPH
+
+    if (h == INVALID_HANDLE_VALUE) {
+        /* errno is already set by _get_osfhandle, but we also set
+           the Win32 error for callers who expect that */
+        SetLastError(ERROR_INVALID_HANDLE);
+        return -1;
+    }
+    memset(status, 0, sizeof(*status));
+
+    type = GetFileType(h);
+    if (type == FILE_TYPE_UNKNOWN) {
+        DWORD error = GetLastError();
+        if (error != 0) {
+            errno = winerror_to_errno(error);
+            return -1;
+        }
+        /* else: valid but unknown file */
+    }
+
+    if (type != FILE_TYPE_DISK) {
+        if (type == FILE_TYPE_CHAR)
+            status->st_mode = _S_IFCHR;
+        else if (type == FILE_TYPE_PIPE)
+            status->st_mode = _S_IFIFO;
+        return 0;
+    }
+
+    if (!GetFileInformationByHandle(h, &info)) {
+        /* The Win32 error is already set, but we also set errno for
+           callers who expect it */
+        errno = winerror_to_errno(GetLastError());
+        return -1;
+    }
+
+    _Py_attribute_data_to_stat(&info, 0, status);
+    /* specific to fstat() */
+    status->st_ino = (((uint64_t)info.nFileIndexHigh) << 32) + info.nFileIndexLow;
+    return 0;
+#else
+    return fstat(fd, status);
+#endif
+}
+
+/* Return information about a file.
+
+   On POSIX, use fstat().
+
+   On Windows, use GetFileType() and GetFileInformationByHandle() which support
+   files larger than 2 GB.  fstat() may fail with EOVERFLOW on files larger
+   than 2 GB because the file size type is a signed 32-bit integer: see issue
+   #23152.
+
+   Raise an exception and return -1 on error. On Windows, set the last Windows
+   error on error. On POSIX, set errno on error. Fill status and return 0 on
+   success.
+
+   Release the GIL to call GetFileType() and GetFileInformationByHandle(), or
+   to call fstat(). The caller must hold the GIL. */
+int
+_Py_fstat(int fd, struct _Py_stat_struct *status)
+{
+    int res;
+
+#ifdef WITH_THREAD
+    assert(PyGILState_Check());
+#endif
+
+    Py_BEGIN_ALLOW_THREADS
+    res = _Py_fstat_noraise(fd, status);
+    Py_END_ALLOW_THREADS
+
+    if (res != 0) {
+#ifdef MS_WINDOWS
+        PyErr_SetFromWindowsErr(0);
+#else
+        PyErr_SetFromErrno(PyExc_OSError);
+#endif
+        return -1;
+    }
+    return 0;
+}
 
 /* Call _wstat() on Windows, or encode the path to the filesystem encoding and
    call stat() otherwise. Only fill st_mode attribute on Windows.
@@ -545,27 +711,37 @@ _Py_stat(PyObject *path, struct stat *statbuf)
 #ifdef MS_WINDOWS
     int err;
     struct _stat wstatbuf;
-    wchar_t *wpath;
+    const wchar_t *wpath;
 
-    wpath = PyUnicode_AsUnicode(path);
+    wpath = _PyUnicode_AsUnicode(path);
     if (wpath == NULL)
         return -2;
+
     err = _wstat(wpath, &wstatbuf);
     if (!err)
         statbuf->st_mode = wstatbuf.st_mode;
     return err;
 #else
     int ret;
-    PyObject *bytes = PyUnicode_EncodeFSDefault(path);
+    PyObject *bytes;
+    char *cpath;
+
+    bytes = PyUnicode_EncodeFSDefault(path);
     if (bytes == NULL)
         return -2;
-    ret = stat(PyBytes_AS_STRING(bytes), statbuf);
+
+    /* check for embedded null bytes */
+    if (PyBytes_AsStringAndSize(bytes, &cpath, NULL) == -1) {
+        Py_DECREF(bytes);
+        return -2;
+    }
+
+    ret = stat(cpath, statbuf);
     Py_DECREF(bytes);
     return ret;
 #endif
 }
 
-#endif
 
 static int
 get_inheritable(int fd, int raise)
@@ -574,16 +750,12 @@ get_inheritable(int fd, int raise)
     HANDLE handle;
     DWORD flags;
 
-    if (!_PyVerify_fd(fd)) {
-        if (raise)
-            PyErr_SetFromErrno(PyExc_OSError);
-        return -1;
-    }
-
+    _Py_BEGIN_SUPPRESS_IPH
     handle = (HANDLE)_get_osfhandle(fd);
+    _Py_END_SUPPRESS_IPH
     if (handle == INVALID_HANDLE_VALUE) {
         if (raise)
-            PyErr_SetFromWindowsErr(0);
+            PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }
 
@@ -628,7 +800,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     int request;
     int err;
 #endif
-    int flags;
+    int flags, new_flags;
     int res;
 #endif
 
@@ -638,10 +810,10 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
 
     if (atomic_flag_works != NULL && !inheritable) {
         if (*atomic_flag_works == -1) {
-            int inheritable = get_inheritable(fd, raise);
-            if (inheritable == -1)
+            int isInheritable = get_inheritable(fd, raise);
+            if (isInheritable == -1)
                 return -1;
-            *atomic_flag_works = !inheritable;
+            *atomic_flag_works = !isInheritable;
         }
 
         if (*atomic_flag_works)
@@ -649,16 +821,12 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     }
 
 #ifdef MS_WINDOWS
-    if (!_PyVerify_fd(fd)) {
-        if (raise)
-            PyErr_SetFromErrno(PyExc_OSError);
-        return -1;
-    }
-
+    _Py_BEGIN_SUPPRESS_IPH
     handle = (HANDLE)_get_osfhandle(fd);
+    _Py_END_SUPPRESS_IPH
     if (handle == INVALID_HANDLE_VALUE) {
         if (raise)
-            PyErr_SetFromWindowsErr(0);
+            PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }
 
@@ -688,7 +856,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
             return 0;
         }
 
-        if (errno != ENOTTY) {
+        if (errno != ENOTTY && errno != EACCES) {
             if (raise)
                 PyErr_SetFromErrno(PyExc_OSError);
             return -1;
@@ -697,7 +865,12 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
             /* Issue #22258: Here, ENOTTY means "Inappropriate ioctl for
                device". The ioctl is declared but not supported by the kernel.
                Remember that ioctl() doesn't work. It is the case on
-               Illumos-based OS for example. */
+               Illumos-based OS for example.
+
+               Issue #27057: When SELinux policy disallows ioctl it will fail
+               with EACCES. While FIOCLEX is safe operation it may be
+               unavailable because ioctl was denied altogether.
+               This can be the case on Android. */
             ioctl_works = 0;
         }
         /* fallback to fcntl() if ioctl() does not work */
@@ -712,11 +885,19 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
         return -1;
     }
 
-    if (inheritable)
-        flags &= ~FD_CLOEXEC;
-    else
-        flags |= FD_CLOEXEC;
-    res = fcntl(fd, F_SETFD, flags);
+    if (inheritable) {
+        new_flags = flags & ~FD_CLOEXEC;
+    }
+    else {
+        new_flags = flags | FD_CLOEXEC;
+    }
+
+    if (new_flags == flags) {
+        /* FD_CLOEXEC flag already set/cleared: nothing to do */
+        return 0;
+    }
+
+    res = fcntl(fd, F_SETFD, new_flags);
     if (res < 0) {
         if (raise)
             PyErr_SetFromErrno(PyExc_OSError);
@@ -757,40 +938,92 @@ _Py_set_inheritable(int fd, int inheritable, int *atomic_flag_works)
     return set_inheritable(fd, inheritable, 1, atomic_flag_works);
 }
 
-/* Open a file with the specified flags (wrapper to open() function).
-   The file descriptor is created non-inheritable. */
-int
-_Py_open(const char *pathname, int flags)
+static int
+_Py_open_impl(const char *pathname, int flags, int gil_held)
 {
     int fd;
-#ifdef MS_WINDOWS
-    fd = open(pathname, flags | O_NOINHERIT);
-    if (fd < 0)
-        return fd;
-#else
-
+    int async_err = 0;
+#ifndef MS_WINDOWS
     int *atomic_flag_works;
-#ifdef O_CLOEXEC
+#endif
+
+#ifdef MS_WINDOWS
+    flags |= O_NOINHERIT;
+#elif defined(O_CLOEXEC)
     atomic_flag_works = &_Py_open_cloexec_works;
     flags |= O_CLOEXEC;
 #else
     atomic_flag_works = NULL;
 #endif
-    fd = open(pathname, flags);
-    if (fd < 0)
-        return fd;
 
-    if (set_inheritable(fd, 0, 0, atomic_flag_works) < 0) {
+    if (gil_held) {
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            fd = open(pathname, flags);
+            Py_END_ALLOW_THREADS
+        } while (fd < 0
+                 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+        if (async_err)
+            return -1;
+        if (fd < 0) {
+            PyErr_SetFromErrnoWithFilename(PyExc_OSError, pathname);
+            return -1;
+        }
+    }
+    else {
+        fd = open(pathname, flags);
+        if (fd < 0)
+            return -1;
+    }
+
+#ifndef MS_WINDOWS
+    if (set_inheritable(fd, 0, gil_held, atomic_flag_works) < 0) {
         close(fd);
         return -1;
     }
-#endif   /* !MS_WINDOWS */
+#endif
+
     return fd;
 }
 
+/* Open a file with the specified flags (wrapper to open() function).
+   Return a file descriptor on success. Raise an exception and return -1 on
+   error.
+
+   The file descriptor is created non-inheritable.
+
+   When interrupted by a signal (open() fails with EINTR), retry the syscall,
+   except if the Python signal handler raises an exception.
+
+   Release the GIL to call open(). The caller must hold the GIL. */
+int
+_Py_open(const char *pathname, int flags)
+{
+#ifdef WITH_THREAD
+    /* _Py_open() must be called with the GIL held. */
+    assert(PyGILState_Check());
+#endif
+    return _Py_open_impl(pathname, flags, 1);
+}
+
+/* Open a file with the specified flags (wrapper to open() function).
+   Return a file descriptor on success. Set errno and return -1 on error.
+
+   The file descriptor is created non-inheritable.
+
+   If interrupted by a signal, fail with EINTR. */
+int
+_Py_open_noraise(const char *pathname, int flags)
+{
+    return _Py_open_impl(pathname, flags, 0);
+}
+
 /* Open a file. Use _wfopen() on Windows, encode the path to the locale
-   encoding and use fopen() otherwise. The file descriptor is created
-   non-inheritable. */
+   encoding and use fopen() otherwise.
+
+   The file descriptor is created non-inheritable.
+
+   If interrupted by a signal, fail with EINTR. */
 FILE *
 _Py_wfopen(const wchar_t *path, const wchar_t *mode)
 {
@@ -804,7 +1037,7 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
         errno = EINVAL;
         return NULL;
     }
-    cpath = _Py_wchar2char(path, NULL);
+    cpath = Py_EncodeLocale(path, NULL);
     if (cpath == NULL)
         return NULL;
     f = fopen(cpath, cmode);
@@ -821,7 +1054,11 @@ _Py_wfopen(const wchar_t *path, const wchar_t *mode)
     return f;
 }
 
-/* Wrapper to fopen(). The file descriptor is created non-inheritable. */
+/* Wrapper to fopen().
+
+   The file descriptor is created non-inheritable.
+
+   If interrupted by a signal, fail with EINTR. */
 FILE*
 _Py_fopen(const char *pathname, const char *mode)
 {
@@ -836,19 +1073,31 @@ _Py_fopen(const char *pathname, const char *mode)
 }
 
 /* Open a file. Call _wfopen() on Windows, or encode the path to the filesystem
-   encoding and call fopen() otherwise. The file descriptor is created
-   non-inheritable.
+   encoding and call fopen() otherwise.
 
-   Return the new file object on success, or NULL if the file cannot be open or
-   (if PyErr_Occurred()) on unicode error. */
+   Return the new file object on success. Raise an exception and return NULL
+   on error.
+
+   The file descriptor is created non-inheritable.
+
+   When interrupted by a signal (open() fails with EINTR), retry the syscall,
+   except if the Python signal handler raises an exception.
+
+   Release the GIL to call _wfopen() or fopen(). The caller must hold
+   the GIL. */
 FILE*
 _Py_fopen_obj(PyObject *path, const char *mode)
 {
     FILE *f;
+    int async_err = 0;
 #ifdef MS_WINDOWS
-    wchar_t *wpath;
+    const wchar_t *wpath;
     wchar_t wmode[10];
     int usize;
+
+#ifdef WITH_THREAD
+    assert(PyGILState_Check());
+#endif
 
     if (!PyUnicode_Check(path)) {
         PyErr_Format(PyExc_TypeError,
@@ -856,29 +1105,242 @@ _Py_fopen_obj(PyObject *path, const char *mode)
                      Py_TYPE(path));
         return NULL;
     }
-    wpath = PyUnicode_AsUnicode(path);
+    wpath = _PyUnicode_AsUnicode(path);
     if (wpath == NULL)
         return NULL;
 
     usize = MultiByteToWideChar(CP_ACP, 0, mode, -1, wmode, sizeof(wmode));
-    if (usize == 0)
+    if (usize == 0) {
+        PyErr_SetFromWindowsErr(0);
         return NULL;
+    }
 
-    f = _wfopen(wpath, wmode);
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        f = _wfopen(wpath, wmode);
+        Py_END_ALLOW_THREADS
+    } while (f == NULL
+             && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 #else
     PyObject *bytes;
+    char *path_bytes;
+
+#ifdef WITH_THREAD
+    assert(PyGILState_Check());
+#endif
+
     if (!PyUnicode_FSConverter(path, &bytes))
         return NULL;
-    f = fopen(PyBytes_AS_STRING(bytes), mode);
+    path_bytes = PyBytes_AS_STRING(bytes);
+
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        f = fopen(path_bytes, mode);
+        Py_END_ALLOW_THREADS
+    } while (f == NULL
+             && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+
     Py_DECREF(bytes);
 #endif
-    if (f == NULL)
+    if (async_err)
         return NULL;
-    if (make_non_inheritable(fileno(f)) < 0) {
+
+    if (f == NULL) {
+        PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path);
+        return NULL;
+    }
+
+    if (set_inheritable(fileno(f), 0, 1, NULL) < 0) {
         fclose(f);
         return NULL;
     }
     return f;
+}
+
+/* Read count bytes from fd into buf.
+
+   On success, return the number of read bytes, it can be lower than count.
+   If the current file offset is at or past the end of file, no bytes are read,
+   and read() returns zero.
+
+   On error, raise an exception, set errno and return -1.
+
+   When interrupted by a signal (read() fails with EINTR), retry the syscall.
+   If the Python signal handler raises an exception, the function returns -1
+   (the syscall is not retried).
+
+   Release the GIL to call read(). The caller must hold the GIL. */
+Py_ssize_t
+_Py_read(int fd, void *buf, size_t count)
+{
+    Py_ssize_t n;
+    int err;
+    int async_err = 0;
+
+#ifdef WITH_THREAD
+    assert(PyGILState_Check());
+#endif
+
+    /* _Py_read() must not be called with an exception set, otherwise the
+     * caller may think that read() was interrupted by a signal and the signal
+     * handler raised an exception. */
+    assert(!PyErr_Occurred());
+
+#ifdef MS_WINDOWS
+    if (count > INT_MAX) {
+        /* On Windows, the count parameter of read() is an int */
+        count = INT_MAX;
+    }
+#else
+    if (count > PY_SSIZE_T_MAX) {
+        /* if count is greater than PY_SSIZE_T_MAX,
+         * read() result is undefined */
+        count = PY_SSIZE_T_MAX;
+    }
+#endif
+
+    _Py_BEGIN_SUPPRESS_IPH
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        errno = 0;
+#ifdef MS_WINDOWS
+        n = read(fd, buf, (int)count);
+#else
+        n = read(fd, buf, count);
+#endif
+        /* save/restore errno because PyErr_CheckSignals()
+         * and PyErr_SetFromErrno() can modify it */
+        err = errno;
+        Py_END_ALLOW_THREADS
+    } while (n < 0 && err == EINTR &&
+            !(async_err = PyErr_CheckSignals()));
+    _Py_END_SUPPRESS_IPH
+
+    if (async_err) {
+        /* read() was interrupted by a signal (failed with EINTR)
+         * and the Python signal handler raised an exception */
+        errno = err;
+        assert(errno == EINTR && PyErr_Occurred());
+        return -1;
+    }
+    if (n < 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        errno = err;
+        return -1;
+    }
+
+    return n;
+}
+
+static Py_ssize_t
+_Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
+{
+    Py_ssize_t n;
+    int err;
+    int async_err = 0;
+
+    _Py_BEGIN_SUPPRESS_IPH
+#ifdef MS_WINDOWS
+    if (count > 32767 && isatty(fd)) {
+        /* Issue #11395: the Windows console returns an error (12: not
+           enough space error) on writing into stdout if stdout mode is
+           binary and the length is greater than 66,000 bytes (or less,
+           depending on heap usage). */
+        count = 32767;
+    }
+    else if (count > INT_MAX)
+        count = INT_MAX;
+#else
+    if (count > PY_SSIZE_T_MAX) {
+        /* write() should truncate count to PY_SSIZE_T_MAX, but it's safer
+         * to do it ourself to have a portable behaviour. */
+        count = PY_SSIZE_T_MAX;
+    }
+#endif
+
+    if (gil_held) {
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            errno = 0;
+#ifdef MS_WINDOWS
+            n = write(fd, buf, (int)count);
+#else
+            n = write(fd, buf, count);
+#endif
+            /* save/restore errno because PyErr_CheckSignals()
+             * and PyErr_SetFromErrno() can modify it */
+            err = errno;
+            Py_END_ALLOW_THREADS
+        } while (n < 0 && err == EINTR &&
+                !(async_err = PyErr_CheckSignals()));
+    }
+    else {
+        do {
+            errno = 0;
+#ifdef MS_WINDOWS
+            n = write(fd, buf, (int)count);
+#else
+            n = write(fd, buf, count);
+#endif
+            err = errno;
+        } while (n < 0 && err == EINTR);
+    }
+    _Py_END_SUPPRESS_IPH
+
+    if (async_err) {
+        /* write() was interrupted by a signal (failed with EINTR)
+           and the Python signal handler raised an exception (if gil_held is
+           nonzero). */
+        errno = err;
+        assert(errno == EINTR && (!gil_held || PyErr_Occurred()));
+        return -1;
+    }
+    if (n < 0) {
+        if (gil_held)
+            PyErr_SetFromErrno(PyExc_OSError);
+        errno = err;
+        return -1;
+    }
+
+    return n;
+}
+
+/* Write count bytes of buf into fd.
+
+   On success, return the number of written bytes, it can be lower than count
+   including 0. On error, raise an exception, set errno and return -1.
+
+   When interrupted by a signal (write() fails with EINTR), retry the syscall.
+   If the Python signal handler raises an exception, the function returns -1
+   (the syscall is not retried).
+
+   Release the GIL to call write(). The caller must hold the GIL. */
+Py_ssize_t
+_Py_write(int fd, const void *buf, size_t count)
+{
+#ifdef WITH_THREAD
+    assert(PyGILState_Check());
+#endif
+
+    /* _Py_write() must not be called with an exception set, otherwise the
+     * caller may think that write() was interrupted by a signal and the signal
+     * handler raised an exception. */
+    assert(!PyErr_Occurred());
+
+    return _Py_write_impl(fd, buf, count, 1);
+}
+
+/* Write count bytes of buf into fd.
+ *
+ * On success, return the number of written bytes, it can be lower than count
+ * including 0. On error, set errno and return -1.
+ *
+ * When interrupted by a signal (write() fails with EINTR), retry the syscall
+ * without calling the Python signal handler. */
+Py_ssize_t
+_Py_write_noraise(int fd, const void *buf, size_t count)
+{
+    return _Py_write_impl(fd, buf, count, 0);
 }
 
 #ifdef HAVE_READLINK
@@ -895,7 +1357,7 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
     int res;
     size_t r1;
 
-    cpath = _Py_wchar2char(path, NULL);
+    cpath = Py_EncodeLocale(path, NULL);
     if (cpath == NULL) {
         errno = EINVAL;
         return -1;
@@ -909,7 +1371,7 @@ _Py_wreadlink(const wchar_t *path, wchar_t *buf, size_t bufsiz)
         return -1;
     }
     cbuf[res] = '\0'; /* buf will be null terminated */
-    wbuf = _Py_char2wchar(cbuf, &r1);
+    wbuf = Py_DecodeLocale(cbuf, &r1);
     if (wbuf == NULL) {
         errno = EINVAL;
         return -1;
@@ -940,7 +1402,7 @@ _Py_wrealpath(const wchar_t *path,
     wchar_t *wresolved_path;
     char *res;
     size_t r;
-    cpath = _Py_wchar2char(path, NULL);
+    cpath = Py_EncodeLocale(path, NULL);
     if (cpath == NULL) {
         errno = EINVAL;
         return NULL;
@@ -950,7 +1412,7 @@ _Py_wrealpath(const wchar_t *path,
     if (res == NULL)
         return NULL;
 
-    wresolved_path = _Py_char2wchar(cresolved_path, &r);
+    wresolved_path = Py_DecodeLocale(cresolved_path, &r);
     if (wresolved_path == NULL) {
         errno = EINVAL;
         return NULL;
@@ -983,7 +1445,7 @@ _Py_wgetcwd(wchar_t *buf, size_t size)
 
     if (getcwd(fname, Py_ARRAY_LENGTH(fname)) == NULL)
         return NULL;
-    wname = _Py_char2wchar(fname, &len);
+    wname = Py_DecodeLocale(fname, &len);
     if (wname == NULL)
         return NULL;
     if (size <= len) {
@@ -1009,15 +1471,16 @@ _Py_dup(int fd)
     DWORD ftype;
 #endif
 
-    if (!_PyVerify_fd(fd)) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        return -1;
-    }
+#ifdef WITH_THREAD
+    assert(PyGILState_Check());
+#endif
 
 #ifdef MS_WINDOWS
+    _Py_BEGIN_SUPPRESS_IPH
     handle = (HANDLE)_get_osfhandle(fd);
+    _Py_END_SUPPRESS_IPH
     if (handle == INVALID_HANDLE_VALUE) {
-        PyErr_SetFromWindowsErr(0);
+        PyErr_SetFromErrno(PyExc_OSError);
         return -1;
     }
 
@@ -1025,7 +1488,9 @@ _Py_dup(int fd)
     ftype = GetFileType(handle);
 
     Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     fd = dup(fd);
+    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     if (fd < 0) {
         PyErr_SetFromErrno(PyExc_OSError);
@@ -1035,13 +1500,17 @@ _Py_dup(int fd)
     /* Character files like console cannot be make non-inheritable */
     if (ftype != FILE_TYPE_CHAR) {
         if (_Py_set_inheritable(fd, 0, NULL) < 0) {
+            _Py_BEGIN_SUPPRESS_IPH
             close(fd);
+            _Py_END_SUPPRESS_IPH
             return -1;
         }
     }
 #elif defined(HAVE_FCNTL_H) && defined(F_DUPFD_CLOEXEC)
     Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     fd = fcntl(fd, F_DUPFD_CLOEXEC, 0);
+    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     if (fd < 0) {
         PyErr_SetFromErrno(PyExc_OSError);
@@ -1050,7 +1519,9 @@ _Py_dup(int fd)
 
 #else
     Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     fd = dup(fd);
+    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     if (fd < 0) {
         PyErr_SetFromErrno(PyExc_OSError);
@@ -1058,10 +1529,71 @@ _Py_dup(int fd)
     }
 
     if (_Py_set_inheritable(fd, 0, NULL) < 0) {
+        _Py_BEGIN_SUPPRESS_IPH
         close(fd);
+        _Py_END_SUPPRESS_IPH
         return -1;
     }
 #endif
     return fd;
 }
 
+#ifndef MS_WINDOWS
+/* Get the blocking mode of the file descriptor.
+   Return 0 if the O_NONBLOCK flag is set, 1 if the flag is cleared,
+   raise an exception and return -1 on error. */
+int
+_Py_get_blocking(int fd)
+{
+    int flags;
+    _Py_BEGIN_SUPPRESS_IPH
+    flags = fcntl(fd, F_GETFL, 0);
+    _Py_END_SUPPRESS_IPH
+    if (flags < 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return -1;
+    }
+
+    return !(flags & O_NONBLOCK);
+}
+
+/* Set the blocking mode of the specified file descriptor.
+
+   Set the O_NONBLOCK flag if blocking is False, clear the O_NONBLOCK flag
+   otherwise.
+
+   Return 0 on success, raise an exception and return -1 on error. */
+int
+_Py_set_blocking(int fd, int blocking)
+{
+#if defined(HAVE_SYS_IOCTL_H) && defined(FIONBIO)
+    int arg = !blocking;
+    if (ioctl(fd, FIONBIO, &arg) < 0)
+        goto error;
+#else
+    int flags, res;
+
+    _Py_BEGIN_SUPPRESS_IPH
+    flags = fcntl(fd, F_GETFL, 0);
+    if (flags >= 0) {
+        if (blocking)
+            flags = flags & (~O_NONBLOCK);
+        else
+            flags = flags | O_NONBLOCK;
+
+        res = fcntl(fd, F_SETFL, flags);
+    } else {
+        res = -1;
+    }
+    _Py_END_SUPPRESS_IPH
+
+    if (res < 0)
+        goto error;
+#endif
+    return 0;
+
+error:
+    PyErr_SetFromErrno(PyExc_OSError);
+    return -1;
+}
+#endif

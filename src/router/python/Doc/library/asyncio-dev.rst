@@ -14,30 +14,75 @@ This page lists common traps and explains how to avoid them.
 Debug mode of asyncio
 ---------------------
 
-To enable the debug mode globally, set the environment variable
-:envvar:`PYTHONASYNCIODEBUG` to ``1``. To see debug traces, set the log level
-of the :ref:`asyncio logger <asyncio-logger>` to :py:data:`logging.DEBUG`.  The
-simplest configuration is::
+The implementation of :mod:`asyncio` has been written for performance.
+In order to ease the development of asynchronous code, you may wish to
+enable *debug mode*.
 
-   import logging
-   # ...
-   logging.basicConfig(level=logging.DEBUG)
+To enable all debug checks for an application:
 
-Examples of effects of the debug mode:
+* Enable the asyncio debug mode globally by setting the environment variable
+  :envvar:`PYTHONASYNCIODEBUG` to ``1``, or by calling :meth:`AbstractEventLoop.set_debug`.
+* Set the log level of the :ref:`asyncio logger <asyncio-logger>` to
+  :py:data:`logging.DEBUG`. For example, call
+  ``logging.basicConfig(level=logging.DEBUG)`` at startup.
+* Configure the :mod:`warnings` module to display :exc:`ResourceWarning`
+  warnings. For example, use the ``-Wdefault`` command line option of Python to
+  display them.
+
+Examples debug checks:
 
 * Log :ref:`coroutines defined but never "yielded from"
   <asyncio-coroutine-not-scheduled>`
-* :meth:`~BaseEventLoop.call_soon` and :meth:`~BaseEventLoop.call_at` methods
+* :meth:`~AbstractEventLoop.call_soon` and :meth:`~AbstractEventLoop.call_at` methods
   raise an exception if they are called from the wrong thread.
 * Log the execution time of the selector
 * Log callbacks taking more than 100 ms to be executed. The
-  :attr:`BaseEventLoop.slow_callback_duration` attribute is the minimum
+  :attr:`AbstractEventLoop.slow_callback_duration` attribute is the minimum
   duration in seconds of "slow" callbacks.
+* :exc:`ResourceWarning` warnings are emitted when transports and event loops
+  are :ref:`not closed explicitly <asyncio-close-transports>`.
 
 .. seealso::
 
-   The :meth:`BaseEventLoop.set_debug` method and the :ref:`asyncio logger
+   The :meth:`AbstractEventLoop.set_debug` method and the :ref:`asyncio logger
    <asyncio-logger>`.
+
+
+Cancellation
+------------
+
+Cancellation of tasks is not common in classic programming. In asynchronous
+programming, not only is it something common, but you have to prepare your
+code to handle it.
+
+Futures and tasks can be cancelled explicitly with their :meth:`Future.cancel`
+method. The :func:`wait_for` function cancels the waited task when the timeout
+occurs. There are many other cases where a task can be cancelled indirectly.
+
+Don't call :meth:`~Future.set_result` or :meth:`~Future.set_exception` method
+of :class:`Future` if the future is cancelled: it would fail with an exception.
+For example, write::
+
+    if not fut.cancelled():
+        fut.set_result('done')
+
+Don't schedule directly a call to the :meth:`~Future.set_result` or the
+:meth:`~Future.set_exception` method of a future with
+:meth:`AbstractEventLoop.call_soon`: the future can be cancelled before its method
+is called.
+
+If you wait for a future, you should check early if the future was cancelled to
+avoid useless operations. Example::
+
+    @coroutine
+    def slow_operation(fut):
+        if fut.cancelled():
+            return
+        # ... slow computation ...
+        yield from fut
+        # ...
+
+The :func:`shield` function can also be used to ignore cancellation.
 
 
 .. _asyncio-multithreading:
@@ -51,10 +96,9 @@ the same thread. But when the task uses ``yield from``, the task is suspended
 and the event loop executes the next task.
 
 To schedule a callback from a different thread, the
-:meth:`BaseEventLoop.call_soon_threadsafe` method should be used. Example to
-schedule a coroutine from a different thread::
+:meth:`AbstractEventLoop.call_soon_threadsafe` method should be used. Example::
 
-    loop.call_soon_threadsafe(asyncio.async, coro_func())
+    loop.call_soon_threadsafe(callback, *args)
 
 Most asyncio objects are not thread safe. You should only worry if you access
 objects outside the event loop. For example, to cancel a future, don't call
@@ -65,14 +109,26 @@ directly its :meth:`Future.cancel` method, but::
 To handle signals and to execute subprocesses, the event loop must be run in
 the main thread.
 
-The :meth:`BaseEventLoop.run_in_executor` method can be used with a thread pool
+To schedule a coroutine object from a different thread, the
+:func:`run_coroutine_threadsafe` function should be used. It returns a
+:class:`concurrent.futures.Future` to access the result::
+
+     future = asyncio.run_coroutine_threadsafe(coro_func(), loop)
+     result = future.result(timeout)  # Wait for the result with a timeout
+
+The :meth:`AbstractEventLoop.run_in_executor` method can be used with a thread pool
 executor to execute a callback in different thread to not block the thread of
 the event loop.
 
 .. seealso::
 
-   See the :ref:`Synchronization primitives <asyncio-sync>` section to
-   synchronize tasks.
+   The :ref:`Synchronization primitives <asyncio-sync>` section describes ways
+   to synchronize tasks.
+
+   The :ref:`Subprocess and threads <asyncio-subprocess-threads>` section lists
+   asyncio limitations to run subprocesses from different threads.
+
+
 
 
 .. _asyncio-handle-blocking:
@@ -89,7 +145,7 @@ APIs like :ref:`protocols <asyncio-protocol>`.
 
 An executor can be used to run a task in a different thread or even in a
 different process, to not block the thread of the event loop. See the
-:meth:`BaseEventLoop.run_in_executor` method.
+:meth:`AbstractEventLoop.run_in_executor` method.
 
 .. seealso::
 
@@ -105,6 +161,14 @@ Logging
 The :mod:`asyncio` module logs information with the :mod:`logging` module in
 the logger ``'asyncio'``.
 
+The default log level for the :mod:`asyncio` module is :py:data:`logging.INFO`.
+For those not wanting such verbosity from :mod:`asyncio` the log level can
+be changed.  For example, to change the level to :py:data:`logging.WARNING`:
+
+.. code-block:: none
+
+   logging.getLogger('asyncio').setLevel(logging.WARNING)
+
 
 .. _asyncio-coroutine-not-scheduled:
 
@@ -112,10 +176,10 @@ Detect coroutine objects never scheduled
 ----------------------------------------
 
 When a coroutine function is called and its result is not passed to
-:func:`async` or to the :meth:`BaseEventLoop.create_task` method: the execution
-of the coroutine objet will never be scheduled and it is probably a bug.
-:ref:`Enable the debug mode of asyncio <asyncio-debug-mode>` to :ref:`log a
-warning <asyncio-logger>` to detect it.
+:func:`ensure_future` or to the :meth:`AbstractEventLoop.create_task` method,
+the execution of the coroutine object will never be scheduled which is
+probably a bug.  :ref:`Enable the debug mode of asyncio <asyncio-debug-mode>`
+to :ref:`log a warning <asyncio-logger>` to detect it.
 
 Example with the bug::
 
@@ -134,8 +198,8 @@ Output in debug mode::
       File "test.py", line 7, in <module>
         test()
 
-The fix is to call the :func:`async` function or the
-:meth:`BaseEventLoop.create_task` method with the coroutine object.
+The fix is to call the :func:`ensure_future` function or the
+:meth:`AbstractEventLoop.create_task` method with the coroutine object.
 
 .. seealso::
 
@@ -147,7 +211,7 @@ Detect exceptions never consumed
 
 Python usually calls :func:`sys.displayhook` on unhandled exceptions. If
 :meth:`Future.set_exception` is called, but the exception is never consumed,
-:func:`sys.displayhook` is not called. Instead, a :ref:`a log is emitted
+:func:`sys.displayhook` is not called. Instead, :ref:`a log is emitted
 <asyncio-logger>` when the future is deleted by the garbage collector, with the
 traceback where the exception was raised.
 
@@ -160,33 +224,43 @@ Example of unhandled exception::
         raise Exception("not consumed")
 
     loop = asyncio.get_event_loop()
-    asyncio.async(bug())
+    asyncio.ensure_future(bug())
     loop.run_forever()
+    loop.close()
 
 Output::
 
     Task exception was never retrieved
-    future: <Task finished bug() done at asyncio/coroutines.py:139 exception=Exception('not consumed',)>
-    source_traceback: Object created at (most recent call last):
-      File "test.py", line 10, in <module>
-        asyncio.async(bug())
-      File "asyncio/tasks.py", line 510, in async
-        task = loop.create_task(coro_or_future)
+    future: <Task finished coro=<coro() done, defined at asyncio/coroutines.py:139> exception=Exception('not consumed',)>
     Traceback (most recent call last):
-      File "asyncio/tasks.py", line 244, in _step
+      File "asyncio/tasks.py", line 237, in _step
         result = next(coro)
-      File "coroutines.py", line 78, in __next__
-        return next(self.gen)
       File "asyncio/coroutines.py", line 141, in coro
         res = func(*args, **kw)
-      File "test.py", line 7, in bug
+      File "test.py", line 5, in bug
         raise Exception("not consumed")
     Exception: not consumed
 
 :ref:`Enable the debug mode of asyncio <asyncio-debug-mode>` to get the
-traceback where the task was created.
+traceback where the task was created. Output in debug mode::
 
-There are different options to fix this issue. The first option is to chain to
+    Task exception was never retrieved
+    future: <Task finished coro=<bug() done, defined at test.py:3> exception=Exception('not consumed',) created at test.py:8>
+    source_traceback: Object created at (most recent call last):
+      File "test.py", line 8, in <module>
+        asyncio.ensure_future(bug())
+    Traceback (most recent call last):
+      File "asyncio/tasks.py", line 237, in _step
+        result = next(coro)
+      File "asyncio/coroutines.py", line 79, in __next__
+        return next(self.gen)
+      File "asyncio/coroutines.py", line 141, in coro
+        res = func(*args, **kw)
+      File "test.py", line 5, in bug
+        raise Exception("not consumed")
+    Exception: not consumed
+
+There are different options to fix this issue. The first option is to chain the
 coroutine in another coroutine and use classic try/except::
 
     @asyncio.coroutine
@@ -197,22 +271,25 @@ coroutine in another coroutine and use classic try/except::
             print("exception consumed")
 
     loop = asyncio.get_event_loop()
-    asyncio.async(handle_exception())
+    asyncio.ensure_future(handle_exception())
     loop.run_forever()
+    loop.close()
 
-Another option is to use the :meth:`BaseEventLoop.run_until_complete`
+Another option is to use the :meth:`AbstractEventLoop.run_until_complete`
 function::
 
-    task = asyncio.async(bug())
+    task = asyncio.ensure_future(bug())
     try:
         loop.run_until_complete(task)
     except Exception:
         print("exception consumed")
 
-See also the :meth:`Future.exception` method.
+.. seealso::
+
+   The :meth:`Future.exception` method.
 
 
-Chain correctly coroutines
+Chain coroutines correctly
 --------------------------
 
 When a coroutine function calls other coroutine functions and tasks, they
@@ -240,26 +317,30 @@ operations::
 
     @asyncio.coroutine
     def test():
-        asyncio.async(create())
-        asyncio.async(write())
-        asyncio.async(close())
+        asyncio.ensure_future(create())
+        asyncio.ensure_future(write())
+        asyncio.ensure_future(close())
         yield from asyncio.sleep(2.0)
         loop.stop()
 
     loop = asyncio.get_event_loop()
-    asyncio.async(test())
+    asyncio.ensure_future(test())
     loop.run_forever()
     print("Pending tasks at exit: %s" % asyncio.Task.all_tasks(loop))
     loop.close()
 
-Expected output::
+Expected output:
+
+.. code-block:: none
 
     (1) create file
     (2) write into file
     (3) close file
     Pending tasks at exit: set()
 
-Actual output::
+Actual output:
+
+.. code-block:: none
 
     (3) close file
     (2) write into file
@@ -275,13 +356,13 @@ To fix the example, tasks must be marked with ``yield from``::
 
     @asyncio.coroutine
     def test():
-        yield from asyncio.async(create())
-        yield from asyncio.async(write())
-        yield from asyncio.async(close())
+        yield from asyncio.ensure_future(create())
+        yield from asyncio.ensure_future(write())
+        yield from asyncio.ensure_future(close())
         yield from asyncio.sleep(2.0)
         loop.stop()
 
-Or without ``asyncio.async()``::
+Or without ``asyncio.ensure_future()``::
 
     @asyncio.coroutine
     def test():
@@ -300,20 +381,38 @@ Pending task destroyed
 If a pending task is destroyed, the execution of its wrapped :ref:`coroutine
 <coroutine>` did not complete. It is probably a bug and so a warning is logged.
 
-Example of log::
+Example of log:
+
+.. code-block:: none
+
+    Task was destroyed but it is pending!
+    task: <Task pending coro=<kill_me() done, defined at test.py:5> wait_for=<Future pending cb=[Task._wakeup()]>>
+
+:ref:`Enable the debug mode of asyncio <asyncio-debug-mode>` to get the
+traceback where the task was created. Example of log in debug mode:
+
+.. code-block:: none
 
     Task was destroyed but it is pending!
     source_traceback: Object created at (most recent call last):
-      File "test.py", line 17, in <module>
-        task = asyncio.async(coro, loop=loop)
-      File "asyncio/tasks.py", line 510, in async
-        task = loop.create_task(coro_or_future)
-    task: <Task pending kill_me() done at test.py:5 wait_for=<Future pending cb=[Task._wakeup()]>>
+      File "test.py", line 15, in <module>
+        task = asyncio.ensure_future(coro, loop=loop)
+    task: <Task pending coro=<kill_me() done, defined at test.py:5> wait_for=<Future pending cb=[Task._wakeup()] created at test.py:7> created at test.py:15>
 
-:ref:`Enable the debug mode of asyncio <asyncio-debug-mode>` to get the
-traceback where the task was created.
 
 .. seealso::
 
    :ref:`Detect coroutine objects never scheduled <asyncio-coroutine-not-scheduled>`.
 
+.. _asyncio-close-transports:
+
+Close transports and event loops
+--------------------------------
+
+When a transport is no more needed, call its ``close()`` method to release
+resources. Event loops must also be closed explicitly.
+
+If a transport or an event loop is not closed explicitly, a
+:exc:`ResourceWarning` warning will be emitted in its destructor. By default,
+:exc:`ResourceWarning` warnings are ignored. The :ref:`Debug mode of asyncio
+<asyncio-debug-mode>` section explains how to display them.

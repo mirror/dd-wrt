@@ -35,13 +35,13 @@ Version History:
                 Under Python 3 version 1.1 would use the normal division
                 operator, resulting in some of the operations mistakenly
                 yielding floats. Version 1.2 instead uses floor division
-                making the benchmark a integer benchmark again.
+                making the benchmark an integer benchmark again.
 
 """
 
 LOOPS = 50000
 
-from time import clock
+from time import time
 
 __version__ = "1.2"
 
@@ -93,10 +93,10 @@ def Proc0(loops=LOOPS):
     global PtrGlb
     global PtrGlbNext
 
-    starttime = clock()
+    starttime = time()
     for i in range(loops):
         pass
-    nulltime = clock() - starttime
+    nulltime = time() - starttime
 
     PtrGlbNext = Record()
     PtrGlb = Record()
@@ -108,7 +108,7 @@ def Proc0(loops=LOOPS):
     String1Loc = "DHRYSTONE PROGRAM, 1'ST STRING"
     Array2Glob[8][7] = 10
 
-    starttime = clock()
+    starttime = time()
 
     for i in range(loops):
         Proc5()
@@ -134,7 +134,7 @@ def Proc0(loops=LOOPS):
         IntLoc2 = 7 * (IntLoc3 - IntLoc2) - IntLoc1
         IntLoc1 = Proc2(IntLoc1)
 
-    benchtime = clock() - starttime - nulltime
+    benchtime = time() - starttime - nulltime
     if benchtime == 0.0:
         loopsPerBenchtime = 0.0
     else:

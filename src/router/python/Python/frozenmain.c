@@ -24,11 +24,13 @@ Py_FrozenMain(int argc, char **argv)
     /* We need a second copies, as Python might modify the first one. */
     wchar_t **argv_copy2 = NULL;
 
-    argv_copy = PyMem_RawMalloc(sizeof(wchar_t*) * argc);
-    argv_copy2 = PyMem_RawMalloc(sizeof(wchar_t*) * argc);
-    if (!argv_copy || !argv_copy2) {
-        fprintf(stderr, "out of memory\n");
-        goto error;
+    if (argc > 0) {
+        argv_copy = PyMem_RawMalloc(sizeof(wchar_t*) * argc);
+        argv_copy2 = PyMem_RawMalloc(sizeof(wchar_t*) * argc);
+        if (!argv_copy || !argv_copy2) {
+            fprintf(stderr, "out of memory\n");
+            goto error;
+        }
     }
 
     Py_FrozenFlag = 1; /* Suppress errors from getpath.c */
@@ -52,7 +54,7 @@ Py_FrozenMain(int argc, char **argv)
 
     setlocale(LC_ALL, "");
     for (i = 0; i < argc; i++) {
-        argv_copy[i] = _Py_char2wchar(argv[i], NULL);
+        argv_copy[i] = Py_DecodeLocale(argv[i], NULL);
         argv_copy2[i] = argv_copy[i];
         if (!argv_copy[i]) {
             fprintf(stderr, "Unable to decode the command line argument #%i\n",
@@ -68,7 +70,8 @@ Py_FrozenMain(int argc, char **argv)
 #ifdef MS_WINDOWS
     PyInitFrozenExtensions();
 #endif /* MS_WINDOWS */
-    Py_SetProgramName(argv_copy[0]);
+    if (argc >= 1)
+        Py_SetProgramName(argv_copy[0]);
     Py_Initialize();
 #ifdef MS_WINDOWS
     PyWinFreeze_ExeInit();
@@ -96,7 +99,9 @@ Py_FrozenMain(int argc, char **argv)
 #ifdef MS_WINDOWS
     PyWinFreeze_ExeTerm();
 #endif
-    Py_Finalize();
+    if (Py_FinalizeEx() < 0) {
+        sts = 120;
+    }
 
 error:
     PyMem_RawFree(argv_copy);

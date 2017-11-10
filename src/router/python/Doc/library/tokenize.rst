@@ -3,6 +3,7 @@
 
 .. module:: tokenize
    :synopsis: Lexical scanner for Python source code.
+
 .. moduleauthor:: Ka Ping Yee
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
@@ -15,8 +16,9 @@ implemented in Python.  The scanner in this module returns comments as tokens
 as well, making it useful for implementing "pretty-printers," including
 colorizers for on-screen displays.
 
-To simplify token stream handling, all :ref:`operators` and :ref:`delimiters`
-tokens are returned using the generic :data:`token.OP` token type.  The exact
+To simplify token stream handling, all :ref:`operator <operators>` and
+:ref:`delimiter <delimiters>` tokens and :data:`Ellipsis` are returned using
+the generic :data:`~token.OP` token type.  The exact
 type can be determined by checking the ``exact_type`` property on the
 :term:`named tuple` returned from :func:`tokenize.tokenize`.
 
@@ -27,7 +29,7 @@ The primary entry point is a :term:`generator`:
 
 .. function:: tokenize(readline)
 
-   The :func:`tokenize` generator requires one argument, *readline*, which
+   The :func:`.tokenize` generator requires one argument, *readline*, which
    must be a callable object which provides the same interface as the
    :meth:`io.IOBase.readline` method of file objects.  Each call to the
    function should return one line of input as bytes.
@@ -41,7 +43,7 @@ The primary entry point is a :term:`generator`:
    returned as a :term:`named tuple` with the field names:
    ``type string start end line``.
 
-   The returned :term:`named tuple` has a additional property named
+   The returned :term:`named tuple` has an additional property named
    ``exact_type`` that contains the exact operator type for
    :data:`token.OP` tokens.  For all other token types ``exact_type``
    equals the named tuple ``type`` field.
@@ -52,7 +54,7 @@ The primary entry point is a :term:`generator`:
    .. versionchanged:: 3.3
       Added support for ``exact_type``.
 
-   :func:`tokenize` determines the source encoding of the file by looking for a
+   :func:`.tokenize` determines the source encoding of the file by looking for a
    UTF-8 BOM or encoding cookie, according to :pep:`263`.
 
 
@@ -74,7 +76,7 @@ All constants from the :mod:`token` module are also exported from
 .. data:: ENCODING
 
     Token value that indicates the encoding used to decode the source bytes
-    into text. The first token returned by :func:`tokenize` will always be an
+    into text. The first token returned by :func:`.tokenize` will always be an
     ENCODING token.
 
 
@@ -96,17 +98,17 @@ write back the modified script.
     positions) may change.
 
     It returns bytes, encoded using the ENCODING token, which is the first
-    token sequence output by :func:`tokenize`.
+    token sequence output by :func:`.tokenize`.
 
 
-:func:`tokenize` needs to detect the encoding of source files it tokenizes. The
+:func:`.tokenize` needs to detect the encoding of source files it tokenizes. The
 function it uses to do this is available:
 
 .. function:: detect_encoding(readline)
 
     The :func:`detect_encoding` function is used to detect the encoding that
     should be used to decode a Python source file. It requires one argument,
-    readline, in the same way as the :func:`tokenize` generator.
+    readline, in the same way as the :func:`.tokenize` generator.
 
     It will call readline a maximum of twice, and return the encoding used
     (as a string) and a list of any lines (not decoded from bytes) it has read
@@ -120,7 +122,7 @@ function it uses to do this is available:
     If no encoding is specified, then the default of ``'utf-8'`` will be
     returned.
 
-    Use :func:`open` to open Python source files: it uses
+    Use :func:`.open` to open Python source files: it uses
     :func:`detect_encoding` to detect the file encoding.
 
 
@@ -201,7 +203,7 @@ objects::
         we're only showing 12 digits, and the 13th isn't close to 5, the
         rest of the output should be platform-independent.
 
-        >>> exec(s) #doctest: +ELLIPSIS
+        >>> exec(s)  #doctest: +ELLIPSIS
         -3.21716034272e-0...7
 
         Output from calculations with Decimal should be identical across all
@@ -211,8 +213,8 @@ objects::
         -3.217160342717258261933904529E-7
         """
         result = []
-        g = tokenize(BytesIO(s.encode('utf-8')).readline) # tokenize the string
-        for toknum, tokval, _, _, _  in g:
+        g = tokenize(BytesIO(s.encode('utf-8')).readline)  # tokenize the string
+        for toknum, tokval, _, _, _ in g:
             if toknum == NUMBER and '.' in tokval:  # replace NUMBER tokens
                 result.extend([
                     (NAME, 'Decimal'),

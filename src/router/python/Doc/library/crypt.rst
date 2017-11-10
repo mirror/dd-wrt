@@ -4,14 +4,18 @@
 .. module:: crypt
    :platform: Unix
    :synopsis: The crypt() function used to check Unix passwords.
+
 .. moduleauthor:: Steven D. Majewski <sdm7g@virginia.edu>
 .. sectionauthor:: Steven D. Majewski <sdm7g@virginia.edu>
 .. sectionauthor:: Peter Funk <pf@artcom-gmbh.de>
 
+**Source code:** :source:`Lib/crypt.py`
 
 .. index::
    single: crypt(3)
    pair: cipher; DES
+
+--------------
 
 This module implements an interface to the :manpage:`crypt(3)` routine, which is
 a one-way hash function based upon a modified DES algorithm; see the Unix man
@@ -64,7 +68,7 @@ Module Attributes
 
    A list of available password hashing algorithms, as
    ``crypt.METHOD_*`` objects.  This list is sorted from strongest to
-   weakest, and is guaranteed to have at least ``crypt.METHOD_CRYPT``.
+   weakest.
 
 
 Module Functions
@@ -149,4 +153,4 @@ check it against the original::
 
    hashed = crypt.crypt(plaintext)
    if not compare_hash(hashed, crypt.crypt(plaintext, hashed)):
-      raise ValueError("hashed version doesn't validate against original")
+       raise ValueError("hashed version doesn't validate against original")

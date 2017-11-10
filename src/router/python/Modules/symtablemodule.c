@@ -79,13 +79,11 @@ PyInit__symtable(void)
     PyModule_AddIntMacro(m, DEF_FREE_CLASS);
     PyModule_AddIntMacro(m, DEF_IMPORT);
     PyModule_AddIntMacro(m, DEF_BOUND);
+    PyModule_AddIntMacro(m, DEF_ANNOT);
 
     PyModule_AddIntConstant(m, "TYPE_FUNCTION", FunctionBlock);
     PyModule_AddIntConstant(m, "TYPE_CLASS", ClassBlock);
     PyModule_AddIntConstant(m, "TYPE_MODULE", ModuleBlock);
-
-    PyModule_AddIntMacro(m, OPT_IMPORT_STAR);
-    PyModule_AddIntMacro(m, OPT_TOPLEVEL);
 
     PyModule_AddIntMacro(m, LOCAL);
     PyModule_AddIntMacro(m, GLOBAL_EXPLICIT);

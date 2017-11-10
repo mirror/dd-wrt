@@ -179,7 +179,7 @@ def config_dict(filename):
             continue
         try:
             key, value = line.split("=")
-        except:
+        except ValueError:
             print("Bad line in config-file %s:\n%s" % (filename,line))
             continue
         key = key.strip()
@@ -192,7 +192,7 @@ def config_dict(filename):
                     value = float(value)
                 else:
                     value = int(value)
-            except:
+            except ValueError:
                 pass # value need not be converted
         cfgdict[key] = value
     return cfgdict
@@ -220,7 +220,7 @@ def readconfig(cfgdict):
     try:
         head, tail = split(__file__)
         cfg_file2 = join(head, default_cfg)
-    except:
+    except Exception:
         cfg_file2 = ""
     if isfile(cfg_file2):
         cfgdict2 = config_dict(cfg_file2)
@@ -229,7 +229,7 @@ def readconfig(cfgdict):
 
 try:
     readconfig(_CFG)
-except:
+except Exception:
     print ("No configfile read, reason unknown")
 
 
@@ -653,7 +653,7 @@ class TurtleScreenBase(object):
                     x, y = (self.cv.canvasx(event.x)/self.xscale,
                            -self.cv.canvasy(event.y)/self.yscale)
                     fun(x, y)
-                except:
+                except Exception:
                     pass
             self.cv.tag_bind(item, "<Button%s-Motion>" % num, eventfun, add)
 
@@ -1035,7 +1035,7 @@ class TurtleScreen(TurtleScreenBase):
         """Set turtle-mode ('standard', 'logo' or 'world') and perform reset.
 
         Optional argument:
-        mode -- on of the strings 'standard', 'logo' or 'world'
+        mode -- one of the strings 'standard', 'logo' or 'world'
 
         Mode 'standard' is compatible with turtle.py.
         Mode 'logo' is compatible with most Logo-Turtle-Graphics.
@@ -1158,7 +1158,7 @@ class TurtleScreen(TurtleScreenBase):
                 raise TurtleGraphicsError("bad color string: %s" % str(color))
         try:
             r, g, b = color
-        except:
+        except (TypeError, ValueError):
             raise TurtleGraphicsError("bad color arguments: %s" % str(color))
         if self._colormode == 1.0:
             r, g, b = [round(255.0*x) for x in (r, g, b)]
@@ -1288,7 +1288,7 @@ class TurtleScreen(TurtleScreenBase):
     def _incrementudc(self):
         """Increment update counter."""
         if not TurtleScreen._RUNNING:
-            TurtleScreen._RUNNNING = True
+            TurtleScreen._RUNNING = True
             raise Terminator
         if self._tracing > 0:
             self._updatecounter += 1
@@ -2702,7 +2702,7 @@ class RawTurtle(TPen, TNavigator):
             return args
         try:
             r, g, b = args
-        except:
+        except (TypeError, ValueError):
             raise TurtleGraphicsError("bad color arguments: %s" % str(args))
         if self.screen._colormode == 1.0:
             r, g, b = [round(255.0*x) for x in (r, g, b)]
@@ -3754,7 +3754,7 @@ class _Screen(TurtleScreen):
             Turtle._screen = None
             _Screen._root = None
             _Screen._canvas = None
-        TurtleScreen._RUNNING = True
+        TurtleScreen._RUNNING = False
         root.destroy()
 
     def bye(self):
@@ -3795,7 +3795,6 @@ class _Screen(TurtleScreen):
         except AttributeError:
             exit(0)
 
-
 class Turtle(RawTurtle):
     """RawTurtle auto-creating (scrolled) canvas.
 
@@ -3817,18 +3816,6 @@ class Turtle(RawTurtle):
                            visible=visible)
 
 Pen = Turtle
-
-def _getpen():
-    """Create the 'anonymous' turtle if not already present."""
-    if Turtle._pen is None:
-        Turtle._pen = Turtle()
-    return Turtle._pen
-
-def _getscreen():
-    """Create a TurtleScreen if not already present."""
-    if Turtle._screen is None:
-        Turtle._screen = Screen()
-    return Turtle._screen
 
 def write_docstringdict(filename="turtle_docstringdict"):
     """Create and write docstring-dictionary to file.
@@ -3878,7 +3865,7 @@ def read_docstrings(lang):
         try:
 #            eval(key).im_func.__doc__ = docsdict[key]
             eval(key).__doc__ = docsdict[key]
-        except:
+        except Exception:
             print("Bad docstring-entry: %s" % key)
 
 _LANGUAGE = _CFG["language"]
@@ -3888,7 +3875,7 @@ try:
         read_docstrings(_LANGUAGE)
 except ImportError:
     print("Cannot find docsdict for", _LANGUAGE)
-except:
+except Exception:
     print ("Unknown Error when trying to import %s-docstring-dictionary" %
                                                                   _LANGUAGE)
 
@@ -3952,26 +3939,38 @@ def _screen_docrevise(docstr):
 ## as functions. So we can enhance, change, add, delete methods to these
 ## classes and do not need to change anything here.
 
+__func_body = """\
+def {name}{paramslist}:
+    if {obj} is None:
+        if not TurtleScreen._RUNNING:
+            TurtleScreen._RUNNING = True
+            raise Terminator
+        {obj} = {init}
+    try:
+        return {obj}.{name}{argslist}
+    except TK.TclError:
+        if not TurtleScreen._RUNNING:
+            TurtleScreen._RUNNING = True
+            raise Terminator
+        raise
+"""
 
-for methodname in _tg_screen_functions:
-    pl1, pl2 = getmethparlist(eval('_Screen.' + methodname))
-    if pl1 == "":
-        print(">>>>>>", pl1, pl2)
-        continue
-    defstr = ("def %(key)s%(pl1)s: return _getscreen().%(key)s%(pl2)s" %
-                                   {'key':methodname, 'pl1':pl1, 'pl2':pl2})
-    exec(defstr)
-    eval(methodname).__doc__ = _screen_docrevise(eval('_Screen.'+methodname).__doc__)
+def _make_global_funcs(functions, cls, obj, init, docrevise):
+    for methodname in functions:
+        method = getattr(cls, methodname)
+        pl1, pl2 = getmethparlist(method)
+        if pl1 == "":
+            print(">>>>>>", pl1, pl2)
+            continue
+        defstr = __func_body.format(obj=obj, init=init, name=methodname,
+                                    paramslist=pl1, argslist=pl2)
+        exec(defstr, globals())
+        globals()[methodname].__doc__ = docrevise(method.__doc__)
 
-for methodname in _tg_turtle_functions:
-    pl1, pl2 = getmethparlist(eval('Turtle.' + methodname))
-    if pl1 == "":
-        print(">>>>>>", pl1, pl2)
-        continue
-    defstr = ("def %(key)s%(pl1)s: return _getpen().%(key)s%(pl2)s" %
-                                   {'key':methodname, 'pl1':pl1, 'pl2':pl2})
-    exec(defstr)
-    eval(methodname).__doc__ = _turtle_docrevise(eval('Turtle.'+methodname).__doc__)
+_make_global_funcs(_tg_screen_functions, _Screen,
+                   'Turtle._screen', 'Screen()', _screen_docrevise)
+_make_global_funcs(_tg_turtle_functions, Turtle,
+                   'Turtle._pen', 'Turtle()', _turtle_docrevise)
 
 
 done = mainloop

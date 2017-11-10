@@ -3,6 +3,7 @@
 
 .. module:: colorsys
    :synopsis: Conversion functions between RGB and other color systems.
+
 .. sectionauthor:: David Ascher <da@python.net>
 
 **Source code:** :source:`Lib/colorsys.py`
@@ -21,7 +22,7 @@ spaces, the coordinates are all between 0 and 1.
 
    More information about color spaces can be found at
    http://www.poynton.com/ColorFAQ.html and
-   http://www.cambridgeincolour.com/tutorials/color-spaces.htm.
+   https://www.cambridgeincolour.com/tutorials/color-spaces.htm.
 
 The :mod:`colorsys` module defines the following functions:
 

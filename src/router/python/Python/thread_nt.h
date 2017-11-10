@@ -77,7 +77,7 @@ EnterNonRecursiveMutex(PNRMUTEX mutex, DWORD milliseconds)
         /* wait at least until the target */
         DWORD now, target = GetTickCount() + milliseconds;
         while (mutex->locked) {
-            if (PyCOND_TIMEDWAIT(&mutex->cv, &mutex->cs, (PY_LONG_LONG)milliseconds*1000) < 0) {
+            if (PyCOND_TIMEDWAIT(&mutex->cv, &mutex->cs, (long long)milliseconds*1000) < 0) {
                 result = WAIT_FAILED;
                 break;
             }
@@ -161,11 +161,7 @@ typedef struct {
 
 /* thunker to call adapt between the function type used by the system's
 thread start function and the internally used one. */
-#if defined(MS_WINCE)
-static DWORD WINAPI
-#else
 static unsigned __stdcall
-#endif
 bootstrap(void *call)
 {
     callobj *obj = (callobj*)call;
@@ -193,32 +189,18 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
         return -1;
     obj->func = func;
     obj->arg = arg;
-#if defined(MS_WINCE)
-    hThread = CreateThread(NULL,
-                           Py_SAFE_DOWNCAST(_pythread_stacksize, Py_ssize_t, SIZE_T),
-                           bootstrap, obj, 0, &threadID);
-#else
     hThread = (HANDLE)_beginthreadex(0,
                       Py_SAFE_DOWNCAST(_pythread_stacksize,
                                        Py_ssize_t, unsigned int),
                       bootstrap, obj,
                       0, &threadID);
-#endif
     if (hThread == 0) {
-#if defined(MS_WINCE)
-        /* Save error in variable, to prevent PyThread_get_thread_ident
-           from clobbering it. */
-        unsigned e = GetLastError();
-        dprintf(("%ld: PyThread_start_new_thread failed, win32 error code %u\n",
-                 PyThread_get_thread_ident(), e));
-#else
         /* I've seen errno == EAGAIN here, which means "there are
          * too many threads".
          */
         int e = errno;
         dprintf(("%ld: PyThread_start_new_thread failed, errno %d\n",
                  PyThread_get_thread_ident(), e));
-#endif
         threadID = (unsigned)-1;
         HeapFree(GetProcessHeap(), 0, obj);
     }
@@ -231,7 +213,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 }
 
 /*
- * Return the thread Id instead of an handle. The Id is said to uniquely identify the
+ * Return the thread Id instead of a handle. The Id is said to uniquely identify the
  * thread in the system
  */
 long
@@ -249,11 +231,7 @@ PyThread_exit_thread(void)
     dprintf(("%ld: PyThread_exit_thread called\n", PyThread_get_thread_ident()));
     if (!initialized)
         exit(0);
-#if defined(MS_WINCE)
-    ExitThread(0);
-#else
     _endthreadex(0);
-#endif
 }
 
 /*

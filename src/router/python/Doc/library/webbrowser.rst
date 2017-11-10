@@ -3,6 +3,7 @@
 
 .. module:: webbrowser
    :synopsis: Easy-to-use controller for Web browsers.
+
 .. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
@@ -20,7 +21,7 @@ available.  If text-mode browsers are used, the calling process will block until
 the user exits the browser.
 
 If the environment variable :envvar:`BROWSER` exists, it is interpreted as the
-:data:`os.pathsep`-separated list of browsers to try ahead of the the platform
+:data:`os.pathsep`-separated list of browsers to try ahead of the platform
 defaults.  When the value of a list part contains the string ``%s``, then it is
 interpreted as a literal browser command line to be used with the argument URL
 substituted for ``%s``; if the part does not contain ``%s``, it is simply
@@ -33,7 +34,7 @@ browsers are not available on Unix, the controlling process will launch a new
 browser and wait.
 
 The script :program:`webbrowser` can be used as a command-line interface for the
-module. It accepts an URL as the argument. It accepts the following optional
+module. It accepts a URL as the argument. It accepts the following optional
 parameters: ``-n`` opens the URL in a new browser window, if possible;
 ``-t`` opens the URL in a new browser page ("tab"). The options are,
 naturally, mutually exclusive.  Usage example::

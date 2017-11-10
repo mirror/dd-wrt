@@ -6,7 +6,7 @@
 
 /* Release Number */
 
-static char *PyCursesVersion = "2.1";
+static const char PyCursesVersion[] = "2.1";
 
 /* Includes */
 
@@ -56,7 +56,7 @@ static struct PyModuleDef _curses_panelmodule;
  */
 
 static PyObject *
-PyCursesCheckERR(int code, char *fname)
+PyCursesCheckERR(int code, const char *fname)
 {
     if (code != ERR) {
         Py_INCREF(Py_None);
@@ -220,6 +220,11 @@ PyCursesPanel_New(PANEL *pan, PyCursesWindowObject *wo)
 static void
 PyCursesPanel_Dealloc(PyCursesPanelObject *po)
 {
+    PyObject *obj = (PyObject *) panel_userptr(po->pan);
+    if (obj) {
+        (void)set_panel_userptr(po->pan, NULL);
+        Py_DECREF(obj);
+    }
     (void)del_panel(po->pan);
     if (po->wo != NULL) {
         Py_DECREF(po->wo);
@@ -312,9 +317,8 @@ PyCursesPanel_replace_panel(PyCursesPanelObject *self, PyObject *args)
         PyErr_SetString(_curses_panelstate_global->PyCursesError, "replace_panel() returned ERR");
         return NULL;
     }
-    Py_DECREF(po->wo);
-    po->wo = temp;
-    Py_INCREF(po->wo);
+    Py_INCREF(temp);
+    Py_SETREF(po->wo, temp);
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -507,10 +511,11 @@ PyInit__curses_panel(void)
     d = PyModule_GetDict(m);
 
     /* Initialize object type */
-    _curses_panelstate(m)->PyCursesPanel_Type = \
-        PyType_FromSpec(&PyCursesPanel_Type_spec);
-    if (_curses_panelstate(m)->PyCursesPanel_Type == NULL)
+    v = PyType_FromSpec(&PyCursesPanel_Type_spec);
+    if (v == NULL)
         goto fail;
+    ((PyTypeObject *)v)->tp_new = NULL;
+    _curses_panelstate(m)->PyCursesPanel_Type = v;
 
     import_curses();
     if (PyErr_Occurred())

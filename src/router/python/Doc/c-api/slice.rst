@@ -32,9 +32,9 @@ Slice Objects
    assuming a sequence of length *length*. Treats indices greater than
    *length* as errors.
 
-   Returns 0 on success and -1 on error with no exception set (unless one of
+   Returns ``0`` on success and ``-1`` on error with no exception set (unless one of
    the indices was not :const:`None` and failed to be converted to an integer,
-   in which case -1 is returned with an exception set).
+   in which case ``-1`` is returned with an exception set).
 
    You probably do not want to use this function.
 
@@ -51,8 +51,19 @@ Slice Objects
    of bounds indices are clipped in a manner consistent with the handling of
    normal slices.
 
-   Returns 0 on success and -1 on error with exception set.
+   Returns ``0`` on success and ``-1`` on error with exception set.
 
    .. versionchanged:: 3.2
       The parameter type for the *slice* parameter was ``PySliceObject*``
       before.
+
+
+Ellipsis Object
+---------------
+
+
+.. c:var:: PyObject *Py_Ellipsis
+
+   The Python ``Ellipsis`` object.  This object has no methods.  It needs to be
+   treated just like any other object with respect to reference counts.  Like
+   :c:data:`Py_None` it is a singleton object.
