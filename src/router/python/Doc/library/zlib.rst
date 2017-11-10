@@ -5,6 +5,7 @@
    :synopsis: Low-level interface to compression and decompression routines
               compatible with gzip.
 
+--------------
 
 For applications that require data compression, the functions in this module
 allow compression and decompression, using the zlib library. The zlib library
@@ -30,54 +31,70 @@ The available exception and functions in this module are:
 
 .. function:: adler32(data[, value])
 
-   Computes a Adler-32 checksum of *data*.  (An Adler-32 checksum is almost as
-   reliable as a CRC32 but can be computed much more quickly.)  If *value* is
-   present, it is used as the starting value of the checksum; otherwise, a fixed
-   default value is used.  This allows computing a running checksum over the
+   Computes an Adler-32 checksum of *data*.  (An Adler-32 checksum is almost as
+   reliable as a CRC32 but can be computed much more quickly.)  The result
+   is an unsigned 32-bit integer.  If *value* is present, it is used as
+   the starting value of the checksum; otherwise, a default value of 1
+   is used.  Passing in *value* allows computing a running checksum over the
    concatenation of several inputs.  The algorithm is not cryptographically
    strong, and should not be used for authentication or digital signatures.  Since
    the algorithm is designed for use as a checksum algorithm, it is not suitable
    for use as a general hash algorithm.
 
-   Always returns an unsigned 32-bit integer.
-
-.. note::
-   To generate the same numeric value across all Python versions and
-   platforms use adler32(data) & 0xffffffff.  If you are only using
-   the checksum in packed binary format this is not necessary as the
-   return value is the correct 32bit binary representation
-   regardless of sign.
+   .. versionchanged:: 3.0
+      Always returns an unsigned value.
+      To generate the same numeric value across all Python versions and
+      platforms, use ``adler32(data) & 0xffffffff``.
 
 
-.. function:: compress(data[, level])
+.. function:: compress(data, level=-1)
 
    Compresses the bytes in *data*, returning a bytes object containing compressed data.
-   *level* is an integer from ``0`` to ``9`` controlling the level of compression;
+   *level* is an integer from ``0`` to ``9`` or ``-1`` controlling the level of compression;
    ``1`` is fastest and produces the least compression, ``9`` is slowest and
-   produces the most.  ``0`` is no compression.  The default value is ``6``.
+   produces the most.  ``0`` is no compression.  The default value is ``-1``
+   (Z_DEFAULT_COMPRESSION).  Z_DEFAULT_COMPRESSION represents a default
+   compromise between speed and compression (currently equivalent to level 6).
    Raises the :exc:`error` exception if any error occurs.
 
+   .. versionchanged:: 3.6
+      *level* can now be used as a keyword parameter.
 
-.. function:: compressobj(level=-1, method=DEFLATED, wbits=15, memlevel=8, strategy=Z_DEFAULT_STRATEGY[, zdict])
+
+.. function:: compressobj(level=-1, method=DEFLATED, wbits=15, memLevel=8, strategy=Z_DEFAULT_STRATEGY[, zdict])
 
    Returns a compression object, to be used for compressing data streams that won't
    fit into memory at once.
 
-   *level* is the compression level -- an integer from ``0`` to ``9``. A value
-   of ``1`` is fastest and produces the least compression, while a value of
+   *level* is the compression level -- an integer from ``0`` to ``9`` or ``-1``.
+   A value of ``1`` is fastest and produces the least compression, while a value of
    ``9`` is slowest and produces the most. ``0`` is no compression. The default
-   value is ``6``.
+   value is ``-1`` (Z_DEFAULT_COMPRESSION). Z_DEFAULT_COMPRESSION represents a default
+   compromise between speed and compression (currently equivalent to level 6).
 
    *method* is the compression algorithm. Currently, the only supported value is
    ``DEFLATED``.
 
-   *wbits* is the base two logarithm of the size of the window buffer. This
-   should be an integer from ``8`` to ``15``. Higher values give better
-   compression, but use more memory.
+   The *wbits* argument controls the size of the history buffer (or the
+   "window size") used when compressing data, and whether a header and
+   trailer is included in the output.  It can take several ranges of values:
 
-   *memlevel* controls the amount of memory used for internal compression state.
-   Valid values range from ``1`` to ``9``. Higher values using more memory,
-   but are faster and produce smaller output.
+   * +9 to +15: The base-two logarithm of the window size, which
+     therefore ranges between 512 and 32768.  Larger values produce
+     better compression at the expense of greater memory usage.  The
+     resulting output will include a zlib-specific header and trailer.
+
+   * −9 to −15: Uses the absolute value of *wbits* as the
+     window size logarithm, while producing a raw output stream with no
+     header or trailing checksum.
+
+   * +25 to +31 = 16 + (9 to 15): Uses the low 4 bits of the value as the
+     window size logarithm, while including a basic :program:`gzip` header
+     and trailing checksum in the output.
+
+   The *memLevel* argument controls the amount of memory used for the
+   internal compression state. Valid values range from ``1`` to ``9``.
+   Higher values use more memory, but are faster and produce smaller output.
 
    *strategy* is used to tune the compression algorithm. Possible values are
    ``Z_DEFAULT_STRATEGY``, ``Z_FILTERED``, and ``Z_HUFFMAN_ONLY``.
@@ -97,55 +114,75 @@ The available exception and functions in this module are:
       single: Cyclic Redundancy Check
       single: checksum; Cyclic Redundancy Check
 
-   Computes a CRC (Cyclic Redundancy Check)  checksum of *data*. If *value* is
-   present, it is used as the starting value of the checksum; otherwise, a fixed
-   default value is used.  This allows computing a running checksum over the
+   Computes a CRC (Cyclic Redundancy Check) checksum of *data*. The
+   result is an unsigned 32-bit integer. If *value* is present, it is used
+   as the starting value of the checksum; otherwise, a default value of 0
+   is used.  Passing in *value* allows computing a running checksum over the
    concatenation of several inputs.  The algorithm is not cryptographically
    strong, and should not be used for authentication or digital signatures.  Since
    the algorithm is designed for use as a checksum algorithm, it is not suitable
    for use as a general hash algorithm.
 
-   Always returns an unsigned 32-bit integer.
-
-   .. note::
-
+   .. versionchanged:: 3.0
+      Always returns an unsigned value.
       To generate the same numeric value across all Python versions and
-      platforms, use ``crc32(data) & 0xffffffff``.  If you are only using
-      the checksum in packed binary format this is not necessary as the
-      return value is the correct 32-bit binary representation
-      regardless of sign.
+      platforms, use ``crc32(data) & 0xffffffff``.
 
 
-.. function:: decompress(data[, wbits[, bufsize]])
+.. function:: decompress(data, wbits=MAX_WBITS, bufsize=DEF_BUF_SIZE)
 
    Decompresses the bytes in *data*, returning a bytes object containing the
-   uncompressed data.  The *wbits* parameter controls the size of the window
-   buffer, and is discussed further below.
+   uncompressed data.  The *wbits* parameter depends on
+   the format of *data*, and is discussed further below.
    If *bufsize* is given, it is used as the initial size of the output
    buffer.  Raises the :exc:`error` exception if any error occurs.
 
-   The absolute value of *wbits* is the base two logarithm of the size of the
-   history buffer (the "window size") used when compressing data.  Its absolute
-   value should be between 8 and 15 for the most recent versions of the zlib
-   library, larger values resulting in better compression at the expense of greater
-   memory usage.  When decompressing a stream, *wbits* must not be smaller
+   .. _decompress-wbits:
+
+   The *wbits* parameter controls the size of the history buffer
+   (or "window size"), and what header and trailer format is expected.
+   It is similar to the parameter for :func:`compressobj`, but accepts
+   more ranges of values:
+
+   * +8 to +15: The base-two logarithm of the window size.  The input
+     must include a zlib header and trailer.
+
+   * 0: Automatically determine the window size from the zlib header.
+     Only supported since zlib 1.2.3.5.
+
+   * −8 to −15: Uses the absolute value of *wbits* as the window size
+     logarithm.  The input must be a raw stream with no header or trailer.
+
+   * +24 to +31 = 16 + (8 to 15): Uses the low 4 bits of the value as
+     the window size logarithm.  The input must include a gzip header and
+     trailer.
+
+   * +40 to +47 = 32 + (8 to 15): Uses the low 4 bits of the value as
+     the window size logarithm, and automatically accepts either
+     the zlib or gzip format.
+
+   When decompressing a stream, the window size must not be smaller
    than the size originally used to compress the stream; using a too-small
-   value will result in an exception. The default value is therefore the
-   highest value, 15.  When *wbits* is negative, the standard
-   :program:`gzip` header is suppressed.
+   value may result in an :exc:`error` exception. The default *wbits* value
+   corresponds to the largest window size and requires a zlib header and
+   trailer to be included.
 
    *bufsize* is the initial size of the buffer used to hold decompressed data.  If
    more space is required, the buffer size will be increased as needed, so you
    don't have to get this value exactly right; tuning it will only save a few calls
-   to :c:func:`malloc`.  The default size is 16384.
+   to :c:func:`malloc`.
 
+   .. versionchanged:: 3.6
+      *wbits* and *bufsize* can be used as keyword arguments.
 
 .. function:: decompressobj(wbits=15[, zdict])
 
    Returns a decompression object, to be used for decompressing data streams that
    won't fit into memory at once.
 
-   The *wbits* parameter controls the size of the window buffer.
+   The *wbits* parameter controls the size of the history buffer (or the
+   "window size"), and what header and trailer format is expected.  It has
+   the same meaning as `described for decompress() <#decompress-wbits>`__.
 
    The *zdict* parameter specifies a predefined compression dictionary. If
    provided, this must be the same dictionary as was used by the compressor that
@@ -222,7 +259,7 @@ Decompression objects support the following methods and attributes:
    .. versionadded:: 3.3
 
 
-.. method:: Decompress.decompress(data[, max_length])
+.. method:: Decompress.decompress(data, max_length=0)
 
    Decompress *data*, returning a bytes object containing the uncompressed data
    corresponding to at least part of the data in *string*.  This data should be
@@ -230,13 +267,15 @@ Decompression objects support the following methods and attributes:
    :meth:`decompress` method.  Some of the input data may be preserved in internal
    buffers for later processing.
 
-   If the optional parameter *max_length* is supplied then the return value will be
+   If the optional parameter *max_length* is non-zero then the return value will be
    no longer than *max_length*. This may mean that not all of the compressed input
    can be processed; and unconsumed data will be stored in the attribute
    :attr:`unconsumed_tail`. This bytestring must be passed to a subsequent call to
-   :meth:`decompress` if decompression is to continue.  If *max_length* is not
-   supplied then the whole input is decompressed, and :attr:`unconsumed_tail` is
-   empty.
+   :meth:`decompress` if decompression is to continue.  If *max_length* is zero
+   then the whole input is decompressed, and :attr:`unconsumed_tail` is empty.
+
+   .. versionchanged:: 3.6
+      *max_length* can be used as a keyword argument.
 
 
 .. method:: Decompress.flush([length])

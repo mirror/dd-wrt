@@ -4,10 +4,10 @@
 .. module:: logging
    :synopsis: Flexible event logging system for applications.
 
-
 .. moduleauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
 .. sectionauthor:: Vinay Sajip <vinay_sajip@red-dove.com>
 
+**Source code:** :source:`Lib/logging/__init__.py`
 
 .. index:: pair: Errors; logging
 
@@ -19,9 +19,6 @@
    * :ref:`Basic Tutorial <logging-basic-tutorial>`
    * :ref:`Advanced Tutorial <logging-advanced-tutorial>`
    * :ref:`Logging Cookbook <logging-cookbook>`
-
-
-**Source code:** :source:`Lib/logging/__init__.py`
 
 --------------
 
@@ -159,11 +156,13 @@ is the module's name in the Python package namespace.
    *msg* using the string formatting operator. (Note that this means that you can
    use keywords in the format string, together with a single dictionary argument.)
 
-   There are three keyword arguments in *kwargs* which are inspected: *exc_info*
-   which, if it does not evaluate as false, causes exception information to be
+   There are three keyword arguments in *kwargs* which are inspected:
+   *exc_info*, *stack_info*, and *extra*.
+
+   If *exc_info* does not evaluate as false, it causes exception information to be
    added to the logging message. If an exception tuple (in the format returned by
-   :func:`sys.exc_info`) is provided, it is used; otherwise, :func:`sys.exc_info`
-   is called to get the exception information.
+   :func:`sys.exc_info`) or an exception instance is provided, it is used;
+   otherwise, :func:`sys.exc_info` is called to get the exception information.
 
    The second optional keyword argument is *stack_info*, which defaults to
    ``False``. If true, stack information is added to the logging
@@ -219,6 +218,9 @@ is the module's name in the Python package namespace.
 
    .. versionadded:: 3.2
       The *stack_info* parameter was added.
+
+   .. versionchanged:: 3.5
+      The *exc_info* parameter can now accept exception instances.
 
 
 .. method:: Logger.info(msg, *args, **kwargs)
@@ -294,7 +296,7 @@ is the module's name in the Python package namespace.
 
    Finds the caller's source filename and line number. Returns the filename, line
    number, function name and stack information as a 4-element tuple. The stack
-   information is returned as *None* unless *stack_info* is *True*.
+   information is returned as ``None`` unless *stack_info* is ``True``.
 
 
 .. method:: Logger.handle(record)
@@ -316,7 +318,7 @@ is the module's name in the Python package namespace.
    looking for handlers in this logger and its parents in the logger hierarchy.
    Returns ``True`` if a handler was found, else ``False``. The method stops searching
    up the hierarchy whenever a logger with the 'propagate' attribute set to
-   False is found - that will be the last logger which is checked for the
+   false is found - that will be the last logger which is checked for the
    existence of handlers.
 
    .. versionadded:: 3.2
@@ -481,7 +483,9 @@ Formatter Objects
 responsible for converting a :class:`LogRecord` to (usually) a string which can
 be interpreted by either a human or an external system. The base
 :class:`Formatter` allows a formatting string to be specified. If none is
-supplied, the default value of ``'%(message)s'`` is used.
+supplied, the default value of ``'%(message)s'`` is used, which just includes
+the message in the logging call. To have additional items of information in the
+formatted output (such as a timestamp), keep reading.
 
 A Formatter can be initialized with a format string which makes use of knowledge
 of the :class:`LogRecord` attributes - such as the default value mentioned above
@@ -557,7 +561,7 @@ The useful mapping keys in a :class:`LogRecord` are given in the section on
          handled by a strptime format string (``'%Y-%m-%d %H:%M:%S'``), and the
          part after the comma is a millisecond value. Because strptime does not
          have a format placeholder for milliseconds, the millisecond value is
-         appended using another format string, ``'%s,%03d'`` – and both of these
+         appended using another format string, ``'%s,%03d'`` --- and both of these
          format strings have been hardcoded into this method. With the change,
          these strings are defined as class-level attributes which can be
          overridden at the instance level when desired. The names of the
@@ -668,7 +672,7 @@ wire).
    :param args: Variable data to merge into the *msg* argument to obtain the
                 event description.
    :param exc_info: An exception tuple with the current exception information,
-                    or *None* if no exception information is available.
+                    or ``None`` if no exception information is available.
    :param func: The name of the function or method from which the logging call
                 was invoked.
    :param sinfo: A text string representing stack information from the base of
@@ -736,7 +740,9 @@ the options available to you.
 | Attribute name | Format                  | Description                                   |
 +================+=========================+===============================================+
 | args           | You shouldn't need to   | The tuple of arguments merged into ``msg`` to |
-|                | format this yourself.   | produce ``message``.                          |
+|                | format this yourself.   | produce ``message``, or a dict whose values   |
+|                |                         | are used for the merge (when there is only one|
+|                |                         | argument, and it is a dictionary).            |
 +----------------+-------------------------+-----------------------------------------------+
 | asctime        | ``%(asctime)s``         | Human-readable time when the                  |
 |                |                         | :class:`LogRecord` was created.  By default   |
@@ -748,7 +754,7 @@ the options available to you.
 |                |                         | (as returned by :func:`time.time`).           |
 +----------------+-------------------------+-----------------------------------------------+
 | exc_info       | You shouldn't need to   | Exception tuple (à la ``sys.exc_info``) or,   |
-|                | format this yourself.   | if no exception has occurred, *None*.         |
+|                | format this yourself.   | if no exception has occurred, ``None``.       |
 +----------------+-------------------------+-----------------------------------------------+
 | filename       | ``%(filename)s``        | Filename portion of ``pathname``.             |
 +----------------+-------------------------+-----------------------------------------------+
@@ -1181,7 +1187,7 @@ functions.
       :lno: The line number in the file where the logging call was made.
       :msg: The logging message.
       :args: The arguments for the logging message.
-      :exc_info: An exception tuple, or None.
+      :exc_info: An exception tuple, or ``None``.
       :func: The name of the function or method which invoked the logging
              call.
       :sinfo: A stack traceback such as is provided by
@@ -1237,7 +1243,7 @@ with the :mod:`warnings` module.
       The proposal which described this feature for inclusion in the Python standard
       library.
 
-   `Original Python logging package <http://www.red-dove.com/python_logging.html>`_
+   `Original Python logging package <https://www.red-dove.com/python_logging.html>`_
       This is the original source for the :mod:`logging` package.  The version of the
       package available from this site is suitable for use with Python 1.5.2, 2.1.x
       and 2.2.x, which do not include the :mod:`logging` package in the standard

@@ -1,6 +1,7 @@
 "Test posix functions"
 
 from test import support
+android_not_root = support.android_not_root
 
 # Skip these tests if there is no posix module.
 posix = support.import_module('posix')
@@ -9,10 +10,8 @@ import errno
 import sys
 import time
 import os
-import fcntl
 import platform
 import pwd
-import shutil
 import stat
 import tempfile
 import unittest
@@ -355,7 +354,7 @@ class PosixTester(unittest.TestCase):
     def test_oscloexec(self):
         fd = os.open(support.TESTFN, os.O_RDONLY|os.O_CLOEXEC)
         self.addCleanup(os.close, fd)
-        self.assertTrue(fcntl.fcntl(fd, fcntl.F_GETFD) & fcntl.FD_CLOEXEC)
+        self.assertFalse(os.get_inheritable(fd))
 
     @unittest.skipUnless(hasattr(posix, 'O_EXLOCK'),
                          'test needs posix.O_EXLOCK')
@@ -399,7 +398,7 @@ class PosixTester(unittest.TestCase):
             self.assertTrue(posix.stat(fp.fileno()))
 
             self.assertRaisesRegex(TypeError,
-                    'should be string, bytes or integer, not',
+                    'should be string, bytes, os.PathLike or integer, not',
                     posix.stat, float(fp.fileno()))
         finally:
             fp.close()
@@ -409,19 +408,22 @@ class PosixTester(unittest.TestCase):
     def test_stat(self):
         self.assertTrue(posix.stat(support.TESTFN))
         self.assertTrue(posix.stat(os.fsencode(support.TESTFN)))
-        self.assertTrue(posix.stat(bytearray(os.fsencode(support.TESTFN))))
 
+        self.assertWarnsRegex(DeprecationWarning,
+                'should be string, bytes, os.PathLike or integer, not',
+                posix.stat, bytearray(os.fsencode(support.TESTFN)))
         self.assertRaisesRegex(TypeError,
-                'can\'t specify None for path argument',
+                'should be string, bytes, os.PathLike or integer, not',
                 posix.stat, None)
         self.assertRaisesRegex(TypeError,
-                'should be string, bytes or integer, not',
+                'should be string, bytes, os.PathLike or integer, not',
                 posix.stat, list(support.TESTFN))
         self.assertRaisesRegex(TypeError,
-                'should be string, bytes or integer, not',
+                'should be string, bytes, os.PathLike or integer, not',
                 posix.stat, list(os.fsencode(support.TESTFN)))
 
     @unittest.skipUnless(hasattr(posix, 'mkfifo'), "don't have mkfifo()")
+    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     def test_mkfifo(self):
         support.unlink(support.TESTFN)
         posix.mkfifo(support.TESTFN, stat.S_IRUSR | stat.S_IWUSR)
@@ -429,6 +431,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(posix, 'mknod') and hasattr(stat, 'S_IFIFO'),
                          "don't have mknod()/S_IFIFO")
+    @unittest.skipIf(android_not_root, "mknod not allowed, non root user")
     def test_mknod(self):
         # Test using mknod() to create a FIFO (the only use specified
         # by POSIX).
@@ -442,6 +445,48 @@ class PosixTester(unittest.TestCase):
             self.assertIn(e.errno, (errno.EPERM, errno.EINVAL))
         else:
             self.assertTrue(stat.S_ISFIFO(posix.stat(support.TESTFN).st_mode))
+
+        # Keyword arguments are also supported
+        support.unlink(support.TESTFN)
+        try:
+            posix.mknod(path=support.TESTFN, mode=mode, device=0,
+                dir_fd=None)
+        except OSError as e:
+            self.assertIn(e.errno, (errno.EPERM, errno.EINVAL))
+
+    @unittest.skipUnless(hasattr(posix, 'stat'), 'test needs posix.stat()')
+    @unittest.skipUnless(hasattr(posix, 'makedev'), 'test needs posix.makedev()')
+    def test_makedev(self):
+        st = posix.stat(support.TESTFN)
+        dev = st.st_dev
+        self.assertIsInstance(dev, int)
+        self.assertGreaterEqual(dev, 0)
+
+        major = posix.major(dev)
+        self.assertIsInstance(major, int)
+        self.assertGreaterEqual(major, 0)
+        self.assertEqual(posix.major(dev), major)
+        self.assertRaises(TypeError, posix.major, float(dev))
+        self.assertRaises(TypeError, posix.major)
+        self.assertRaises((ValueError, OverflowError), posix.major, -1)
+
+        minor = posix.minor(dev)
+        self.assertIsInstance(minor, int)
+        self.assertGreaterEqual(minor, 0)
+        self.assertEqual(posix.minor(dev), minor)
+        self.assertRaises(TypeError, posix.minor, float(dev))
+        self.assertRaises(TypeError, posix.minor)
+        self.assertRaises((ValueError, OverflowError), posix.minor, -1)
+
+        if sys.platform.startswith('freebsd') and dev >= 0x1_0000_0000:
+            self.skipTest("bpo-31044: on FreeBSD CURRENT, minor() truncates "
+                          "64-bit dev to 32-bit")
+
+        self.assertEqual(posix.makedev(major, minor), dev)
+        self.assertRaises(TypeError, posix.makedev, float(major), minor)
+        self.assertRaises(TypeError, posix.makedev, major, float(minor))
+        self.assertRaises(TypeError, posix.makedev, major)
+        self.assertRaises(TypeError, posix.makedev)
 
     def _test_all_chown_common(self, chown_func, first_param, stat_func):
         """Common code for chown, fchown and lchown tests."""
@@ -540,17 +585,25 @@ class PosixTester(unittest.TestCase):
         self.assertRaises(OSError, posix.chdir, support.TESTFN)
 
     def test_listdir(self):
-        self.assertTrue(support.TESTFN in posix.listdir(os.curdir))
+        self.assertIn(support.TESTFN, posix.listdir(os.curdir))
 
     def test_listdir_default(self):
         # When listdir is called without argument,
         # it's the same as listdir(os.curdir).
-        self.assertTrue(support.TESTFN in posix.listdir())
+        self.assertIn(support.TESTFN, posix.listdir())
 
     def test_listdir_bytes(self):
         # When listdir is called with a bytes object,
         # the returned strings are of type bytes.
-        self.assertTrue(os.fsencode(support.TESTFN) in posix.listdir(b'.'))
+        self.assertIn(os.fsencode(support.TESTFN), posix.listdir(b'.'))
+
+    def test_listdir_bytes_like(self):
+        for cls in bytearray, memoryview:
+            with self.assertWarns(DeprecationWarning):
+                names = posix.listdir(cls(b'.'))
+            self.assertIn(os.fsencode(support.TESTFN), names)
+            for name in names:
+                self.assertIs(type(name), bytes)
 
     @unittest.skipUnless(posix.listdir in os.supports_fd,
                          "test needs fd support for posix.listdir()")
@@ -605,8 +658,8 @@ class PosixTester(unittest.TestCase):
         self.addCleanup(os.close, w)
         self.assertFalse(os.get_inheritable(r))
         self.assertFalse(os.get_inheritable(w))
-        self.assertTrue(fcntl.fcntl(r, fcntl.F_GETFL) & os.O_NONBLOCK)
-        self.assertTrue(fcntl.fcntl(w, fcntl.F_GETFL) & os.O_NONBLOCK)
+        self.assertFalse(os.get_blocking(r))
+        self.assertFalse(os.get_blocking(w))
         # try reading from an empty pipe: this should fail, not block
         self.assertRaises(OSError, os.read, r, 1)
         # try a write big enough to fill-up the pipe: this should either
@@ -710,6 +763,21 @@ class PosixTester(unittest.TestCase):
             self.assertEqual(type(k), item_type)
             self.assertEqual(type(v), item_type)
 
+    @unittest.skipUnless(hasattr(os, "putenv"), "requires os.putenv()")
+    def test_putenv(self):
+        with self.assertRaises(ValueError):
+            os.putenv('FRUIT\0VEGETABLE', 'cabbage')
+        with self.assertRaises(ValueError):
+            os.putenv(b'FRUIT\0VEGETABLE', b'cabbage')
+        with self.assertRaises(ValueError):
+            os.putenv('FRUIT', 'orange\0VEGETABLE=cabbage')
+        with self.assertRaises(ValueError):
+            os.putenv(b'FRUIT', b'orange\0VEGETABLE=cabbage')
+        with self.assertRaises(ValueError):
+            os.putenv('FRUIT=ORANGE', 'lemon')
+        with self.assertRaises(ValueError):
+            os.putenv(b'FRUIT=ORANGE', b'lemon')
+
     @unittest.skipUnless(hasattr(posix, 'getcwd'), 'test needs posix.getcwd()')
     def test_getcwd_long_pathnames(self):
         dirname = 'getcwd-test-directory-0123456789abcdef-01234567890abcdef'
@@ -761,7 +829,11 @@ class PosixTester(unittest.TestCase):
             groups = idg.read().strip()
             ret = idg.close()
 
-        if ret is not None or not groups:
+        try:
+            idg_groups = set(int(g) for g in groups.split())
+        except ValueError:
+            idg_groups = set()
+        if ret is not None or not idg_groups:
             raise unittest.SkipTest("need working 'id -G'")
 
         # Issues 16698: OS X ABIs prior to 10.6 have limits on getgroups()
@@ -772,12 +844,11 @@ class PosixTester(unittest.TestCase):
                 raise unittest.SkipTest("getgroups(2) is broken prior to 10.6")
 
         # 'id -G' and 'os.getgroups()' should return the same
-        # groups, ignoring order and duplicates.
-        # #10822 - it is implementation defined whether posix.getgroups()
-        # includes the effective gid so we include it anyway, since id -G does
-        self.assertEqual(
-                set([int(x) for x in groups.split()]),
-                set(posix.getgroups() + [posix.getegid()]))
+        # groups, ignoring order, duplicates, and the effective gid.
+        # #10822/#26944 - It is implementation defined whether
+        # posix.getgroups() includes the effective gid.
+        symdiff = idg_groups.symmetric_difference(posix.getgroups())
+        self.assertTrue(not symdiff or symdiff == {posix.getegid()})
 
     # tests for the posix *at functions follow
 
@@ -826,9 +897,9 @@ class PosixTester(unittest.TestCase):
             self.assertEqual(s1, s2)
             s2 = posix.stat(support.TESTFN, dir_fd=None)
             self.assertEqual(s1, s2)
-            self.assertRaisesRegex(TypeError, 'should be integer, not',
+            self.assertRaisesRegex(TypeError, 'should be integer or None, not',
                     posix.stat, support.TESTFN, dir_fd=posix.getcwd())
-            self.assertRaisesRegex(TypeError, 'should be integer, not',
+            self.assertRaisesRegex(TypeError, 'should be integer or None, not',
                     posix.stat, support.TESTFN, dir_fd=float(f))
             self.assertRaises(OverflowError,
                     posix.stat, support.TESTFN, dir_fd=10**20)
@@ -866,6 +937,7 @@ class PosixTester(unittest.TestCase):
             posix.close(f)
 
     @unittest.skipUnless(os.link in os.supports_dir_fd, "test needs dir_fd support in os.link()")
+    @unittest.skipIf(android_not_root, "hard link not allowed, non root user")
     def test_link_dir_fd(self):
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
         try:
@@ -889,6 +961,7 @@ class PosixTester(unittest.TestCase):
 
     @unittest.skipUnless((os.mknod in os.supports_dir_fd) and hasattr(stat, 'S_IFIFO'),
                          "test requires both stat.S_IFIFO and dir_fd support for os.mknod()")
+    @unittest.skipIf(android_not_root, "mknod not allowed, non root user")
     def test_mknod_dir_fd(self):
         # Test using mknodat() to create a FIFO (the only use specified
         # by POSIX).
@@ -972,6 +1045,7 @@ class PosixTester(unittest.TestCase):
             posix.close(f)
 
     @unittest.skipUnless(os.mkfifo in os.supports_dir_fd, "test needs dir_fd support in os.mkfifo()")
+    @unittest.skipIf(android_not_root, "mkfifo not allowed, non root user")
     def test_mkfifo_dir_fd(self):
         support.unlink(support.TESTFN)
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
@@ -1125,18 +1199,55 @@ class PosixTester(unittest.TestCase):
         """
         Test functions that call path_error2(), providing two filenames in their exceptions.
         """
-        for name in ("rename", "replace", "link", "symlink"):
+        for name in ("rename", "replace", "link"):
             function = getattr(os, name, None)
+            if function is None:
+                continue
 
-            if function:
-                for dst in ("noodly2", support.TESTFN):
-                    try:
-                        function('doesnotexistfilename', dst)
-                    except OSError as e:
-                        self.assertIn("'doesnotexistfilename' -> '{}'".format(dst), str(e))
-                        break
-                else:
-                    self.fail("No valid path_error2() test for os." + name)
+            for dst in ("noodly2", support.TESTFN):
+                try:
+                    function('doesnotexistfilename', dst)
+                except OSError as e:
+                    self.assertIn("'doesnotexistfilename' -> '{}'".format(dst), str(e))
+                    break
+            else:
+                self.fail("No valid path_error2() test for os." + name)
+
+    def test_path_with_null_character(self):
+        fn = support.TESTFN
+        fn_with_NUL = fn + '\0'
+        self.addCleanup(support.unlink, fn)
+        support.unlink(fn)
+        fd = None
+        try:
+            with self.assertRaises(ValueError):
+                fd = os.open(fn_with_NUL, os.O_WRONLY | os.O_CREAT) # raises
+        finally:
+            if fd is not None:
+                os.close(fd)
+        self.assertFalse(os.path.exists(fn))
+        self.assertRaises(ValueError, os.mkdir, fn_with_NUL)
+        self.assertFalse(os.path.exists(fn))
+        open(fn, 'wb').close()
+        self.assertRaises(ValueError, os.stat, fn_with_NUL)
+
+    def test_path_with_null_byte(self):
+        fn = os.fsencode(support.TESTFN)
+        fn_with_NUL = fn + b'\0'
+        self.addCleanup(support.unlink, fn)
+        support.unlink(fn)
+        fd = None
+        try:
+            with self.assertRaises(ValueError):
+                fd = os.open(fn_with_NUL, os.O_WRONLY | os.O_CREAT) # raises
+        finally:
+            if fd is not None:
+                os.close(fd)
+        self.assertFalse(os.path.exists(fn))
+        self.assertRaises(ValueError, os.mkdir, fn_with_NUL)
+        self.assertFalse(os.path.exists(fn))
+        open(fn, 'wb').close()
+        self.assertRaises(ValueError, os.stat, fn_with_NUL)
 
 class PosixGroupsTester(unittest.TestCase):
 

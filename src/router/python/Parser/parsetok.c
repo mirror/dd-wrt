@@ -161,10 +161,10 @@ PyParser_ParseFileFlagsEx(FILE *fp, const char *filename,
 
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
 #if 0
-static char with_msg[] =
+static const char with_msg[] =
 "%s:%d: Warning: 'with' will become a reserved keyword in Python 2.6\n";
 
-static char as_msg[] =
+static const char as_msg[] =
 "%s:%d: Warning: 'as' will become a reserved keyword in Python 2.6\n";
 
 static void
@@ -255,7 +255,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 #endif
         if (a >= tok->line_start)
             col_offset = Py_SAFE_DOWNCAST(a - tok->line_start,
-                                          Py_intptr_t, int);
+                                          intptr_t, int);
         else
             col_offset = -1;
 

@@ -210,7 +210,7 @@ You can experiment with the iteration interface manually:
     3
     >>> next(it)
     Traceback (most recent call last):
-      File "<stdin>", line 1, in ?
+      File "<stdin>", line 1, in <module>
     StopIteration
     >>>
 
@@ -332,7 +332,7 @@ substring.
 
 List comprehensions and generator expressions (short form: "listcomps" and
 "genexps") are a concise notation for such operations, borrowed from the
-functional programming language Haskell (http://www.haskell.org/).  You can strip
+functional programming language Haskell (https://www.haskell.org/).  You can strip
 all the whitespace from a stream of strings with the following code::
 
     line_list = ['  line 1\n', 'line 2  \n', ...]
@@ -395,14 +395,14 @@ equivalent to the following Python code::
             continue   # Skip this element
         for expr2 in sequence2:
             if not (condition2):
-                continue    # Skip this element
+                continue   # Skip this element
             ...
             for exprN in sequenceN:
-                 if not (conditionN):
-                     continue   # Skip this element
+                if not (conditionN):
+                    continue   # Skip this element
 
-                 # Output the value of
-                 # the expression.
+                # Output the value of
+                # the expression.
 
 This means that when there are multiple ``for...in`` clauses but no ``if``
 clauses, the length of the resulting output will be equal to the product of the
@@ -474,17 +474,17 @@ Here's a sample usage of the ``generate_ints()`` generator:
     2
     >>> next(gen)
     Traceback (most recent call last):
-      File "stdin", line 1, in ?
+      File "stdin", line 1, in <module>
       File "stdin", line 2, in generate_ints
     StopIteration
 
 You could equally write ``for i in generate_ints(5)``, or ``a,b,c =
 generate_ints(3)``.
 
-Inside a generator function, ``return value`` is semantically equivalent to
-``raise StopIteration(value)``.  If no value is returned or the bottom of the
-function is reached, the procession of values ends and the generator cannot
-return any further values.
+Inside a generator function, ``return value`` causes ``StopIteration(value)``
+to be raised from the :meth:`~generator.__next__` method.  Once this happens, or
+the bottom of the function is reached, the procession of values ends and the
+generator cannot yield any further values.
 
 You could achieve the effect of generators manually by writing your own class
 and storing all the local variables of the generator as instance variables.  For
@@ -577,7 +577,7 @@ And here's an example of changing the counter:
     9
     >>> next(it)  #doctest: +SKIP
     Traceback (most recent call last):
-      File "t.py", line 15, in ?
+      File "t.py", line 15, in <module>
         it.next()
     StopIteration
 
@@ -653,8 +653,9 @@ This can also be written as a list comprehension:
     [0, 2, 4, 6, 8]
 
 
-:func:`enumerate(iter) <enumerate>` counts off the elements in the iterable,
-returning 2-tuples containing the count and each element. ::
+:func:`enumerate(iter, start=0) <enumerate>` counts off the elements in the
+iterable returning 2-tuples containing the count (from *start*) and
+each element. ::
 
     >>> for item in enumerate(['subject', 'verb', 'object']):
     ...     print(item)
@@ -716,7 +717,7 @@ returns them in a tuple::
 It doesn't construct an in-memory list and exhaust all the input iterators
 before returning; instead tuples are constructed and returned only if they're
 requested.  (The technical term for this behaviour is `lazy evaluation
-<http://en.wikipedia.org/wiki/Lazy_evaluation>`__.)
+<https://en.wikipedia.org/wiki/Lazy_evaluation>`__.)
 
 This iterator is intended to be used with iterables that are all of the same
 length.  If the iterables are of different lengths, the resulting stream will be
@@ -747,14 +748,16 @@ The module's functions fall into a few broad classes:
 Creating new iterators
 ----------------------
 
-:func:`itertools.count(n) <itertools.count>` returns an infinite stream of
-integers, increasing by 1 each time.  You can optionally supply the starting
-number, which defaults to 0::
+:func:`itertools.count(start, step) <itertools.count>` returns an infinite
+stream of evenly spaced values.  You can optionally supply the starting number,
+which defaults to 0, and the interval between numbers, which defaults to 1::
 
     itertools.count() =>
       0, 1, 2, 3, 4, 5, 6, 7, 8, 9, ...
     itertools.count(10) =>
       10, 11, 12, 13, 14, 15, 16, 17, 18, 19, ...
+    itertools.count(10, 5) =>
+      10, 15, 20, 25, 30, 35, 40, 45, 50, 55, ...
 
 :func:`itertools.cycle(iter) <itertools.cycle>` saves a copy of the contents of
 a provided iterable and returns a new iterator that returns its elements from
@@ -1040,7 +1043,7 @@ If you use :func:`operator.add` with :func:`functools.reduce`, you'll add up all
 elements of the iterable.  This case is so common that there's a special
 built-in called :func:`sum` to compute it:
 
-    >>> import functools
+    >>> import functools, operator
     >>> functools.reduce(operator.add, [1,2,3,4], 0)
     10
     >>> sum([1,2,3,4])
@@ -1060,10 +1063,10 @@ write the obvious :keyword:`for` loop::
    for i in [1,2,3]:
        product *= i
 
-A related function is `itertools.accumulate(iterable, func=operator.add) <itertools.accumulate`.
-It performs the same calculation, but instead of returning only the
-final result, :func:`accumulate` returns an iterator that also yields
-each partial result::
+A related function is :func:`itertools.accumulate(iterable, func=operator.add)
+<itertools.accumulate>`.  It performs the same calculation, but instead of
+returning only the final result, :func:`accumulate` returns an iterator that
+also yields each partial result::
 
     itertools.accumulate([1,2,3,4,5]) =>
       1, 3, 6, 10, 15
@@ -1199,7 +1202,7 @@ General
 
 **Structure and Interpretation of Computer Programs**, by Harold Abelson and
 Gerald Jay Sussman with Julie Sussman.  Full text at
-http://mitpress.mit.edu/sicp/.  In this classic textbook of computer science,
+https://mitpress.mit.edu/sicp/.  In this classic textbook of computer science,
 chapters 2 and 3 discuss the use of sequences and streams to organize the data
 flow inside a program.  The book uses Scheme for its examples, but many of the
 design approaches described in these chapters are applicable to functional-style
@@ -1208,12 +1211,12 @@ Python code.
 http://www.defmacro.org/ramblings/fp.html: A general introduction to functional
 programming that uses Java examples and has a lengthy historical introduction.
 
-http://en.wikipedia.org/wiki/Functional_programming: General Wikipedia entry
+https://en.wikipedia.org/wiki/Functional_programming: General Wikipedia entry
 describing functional programming.
 
-http://en.wikipedia.org/wiki/Coroutine: Entry for coroutines.
+https://en.wikipedia.org/wiki/Coroutine: Entry for coroutines.
 
-http://en.wikipedia.org/wiki/Currying: Entry for the concept of currying.
+https://en.wikipedia.org/wiki/Currying: Entry for the concept of currying.
 
 Python-specific
 ---------------
@@ -1225,15 +1228,17 @@ Text Processing".
 
 Mertz also wrote a 3-part series of articles on functional programming
 for IBM's DeveloperWorks site; see
-`part 1 <http://www.ibm.com/developerworks/linux/library/l-prog/index.html>`__,
-`part 2 <http://www.ibm.com/developerworks/linux/library/l-prog2/index.html>`__, and
-`part 3 <http://www.ibm.com/developerworks/linux/library/l-prog3/index.html>`__,
+`part 1 <https://www.ibm.com/developerworks/linux/library/l-prog/index.html>`__,
+`part 2 <https://www.ibm.com/developerworks/linux/library/l-prog2/index.html>`__, and
+`part 3 <https://www.ibm.com/developerworks/linux/library/l-prog3/index.html>`__,
 
 
 Python documentation
 --------------------
 
 Documentation for the :mod:`itertools` module.
+
+Documentation for the :mod:`functools` module.
 
 Documentation for the :mod:`operator` module.
 

@@ -1,9 +1,6 @@
 #! /usr/bin/env python
 """Generate C code from an ASDL description."""
 
-# TO DO
-# handle fields that have a type but no name
-
 import os, sys
 
 import asdl
@@ -14,12 +11,8 @@ MAX_COL = 80
 def get_c_type(name):
     """Return a string for the C name of the type.
 
-    This function special cases the default types provided by asdl:
-    identifier, string, int.
+    This function special cases the default types provided by asdl.
     """
-    # XXX ack!  need to figure out where Id is useful and where string
-    if isinstance(name, asdl.Id):
-        name = name.value
     if name in asdl.builtin_types:
         return name
     else:
@@ -144,7 +137,7 @@ class TypeDefVisitor(EmitVisitor):
 
 
 class StructVisitor(EmitVisitor):
-    """Visitor to generate typdefs for AST."""
+    """Visitor to generate typedefs for AST."""
 
     def visitModule(self, mod):
         for dfn in mod.dfns:
@@ -188,9 +181,6 @@ class StructVisitor(EmitVisitor):
                 self.visit(f, depth + 1)
             self.emit("} %s;" % cons.name, depth)
             self.emit("", depth)
-        else:
-            # XXX not sure what I want here, nothing is probably fine
-            pass
 
     def visitField(self, field, depth):
         # XXX need to lookup field.type, because it might be something
@@ -198,7 +188,7 @@ class StructVisitor(EmitVisitor):
         ctype = get_c_type(field.type)
         name = field.name
         if field.seq:
-            if field.type.value in ('cmpop',):
+            if field.type == 'cmpop':
                 self.emit("asdl_int_seq *%(name)s;" % locals(), depth)
             else:
                 self.emit("asdl_seq *%(name)s;" % locals(), depth)
@@ -253,7 +243,7 @@ class PrototypeVisitor(EmitVisitor):
                 name = f.name
             # XXX should extend get_c_type() to handle this
             if f.seq:
-                if f.type.value in ('cmpop',):
+                if f.type == 'cmpop':
                     ctype = "asdl_int_seq *"
                 else:
                     ctype = "asdl_seq *"
@@ -285,7 +275,9 @@ class PrototypeVisitor(EmitVisitor):
 
     def visitProduct(self, prod, name):
         self.emit_function(name, get_c_type(name),
-                           self.get_args(prod.fields), [], union=False)
+                           self.get_args(prod.fields),
+                           self.get_args(prod.attributes),
+                           union=False)
 
 
 class FunctionVisitor(PrototypeVisitor):
@@ -339,7 +331,8 @@ class FunctionVisitor(PrototypeVisitor):
             self.emit(s, depth, reflow)
         for argtype, argname, opt in args:
             emit("p->%s = %s;" % (argname, argname), 1)
-        assert not attrs
+        for argtype, argname, opt in attrs:
+            emit("p->%s = %s;" % (argname, argname), 1)
 
 
 class PickleVisitor(EmitVisitor):
@@ -437,7 +430,7 @@ class Obj2ModVisitor(PickleVisitor):
             self.emit("", 0)
             for f in t.fields:
                 self.visitField(f, t.name, sum=sum, depth=2)
-            args = [f.name.value for f in t.fields] + [a.name.value for a in sum.attributes]
+            args = [f.name for f in t.fields] + [a.name for a in sum.attributes]
             self.emit("*out = %s(%s);" % (t.name, self.buildArgs(args)), 2)
             self.emit("if (*out == NULL) goto failed;", 2)
             self.emit("return 0;", 2)
@@ -462,10 +455,15 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit("PyObject* tmp = NULL;", 1)
         for f in prod.fields:
             self.visitFieldDeclaration(f, name, prod=prod, depth=1)
+        for a in prod.attributes:
+            self.visitFieldDeclaration(a, name, prod=prod, depth=1)
         self.emit("", 0)
         for f in prod.fields:
             self.visitField(f, name, prod=prod, depth=1)
-        args = [f.name.value for f in prod.fields]
+        for a in prod.attributes:
+            self.visitField(a, name, prod=prod, depth=1)
+        args = [f.name for f in prod.fields]
+        args.extend([a.name for a in prod.attributes])
         self.emit("*out = %s(%s);" % (name, self.buildArgs(args)), 1)
         self.emit("return 0;", 1)
         self.emit("failed:", 0)
@@ -487,8 +485,8 @@ class Obj2ModVisitor(PickleVisitor):
 
     def isSimpleSum(self, field):
         # XXX can the members of this list be determined automatically?
-        return field.type.value in ('expr_context', 'boolop', 'operator',
-                                    'unaryop', 'cmpop')
+        return field.type in ('expr_context', 'boolop', 'operator',
+                              'unaryop', 'cmpop')
 
     def isNumeric(self, field):
         return get_c_type(field.type) in ("int", "bool")
@@ -524,11 +522,18 @@ class Obj2ModVisitor(PickleVisitor):
                 self.emit("%s = _Py_asdl_seq_new(len, arena);" % field.name, depth+1)
             self.emit("if (%s == NULL) goto failed;" % field.name, depth+1)
             self.emit("for (i = 0; i < len; i++) {", depth+1)
-            self.emit("%s value;" % ctype, depth+2)
-            self.emit("res = obj2ast_%s(PyList_GET_ITEM(tmp, i), &value, arena);" %
+            self.emit("%s val;" % ctype, depth+2)
+            self.emit("res = obj2ast_%s(PyList_GET_ITEM(tmp, i), &val, arena);" %
                       field.type, depth+2, reflow=False)
             self.emit("if (res != 0) goto failed;", depth+2)
-            self.emit("asdl_seq_SET(%s, i, value);" % field.name, depth+2)
+            self.emit("if (len != PyList_GET_SIZE(tmp)) {", depth+2)
+            self.emit("PyErr_SetString(PyExc_RuntimeError, \"%s field \\\"%s\\\" "
+                      "changed size during iteration\");" %
+                      (name, field.name),
+                      depth+3, reflow=False)
+            self.emit("goto failed;", depth+3)
+            self.emit("}", depth+2)
+            self.emit("asdl_seq_SET(%s, i, val);" % field.name, depth+2)
             self.emit("}", depth+1)
         else:
             self.emit("res = obj2ast_%s(tmp, &%s, arena);" %
@@ -625,6 +630,8 @@ typedef struct {
 static void
 ast_dealloc(AST_object *self)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(self);
     Py_CLEAR(self->dict);
     Py_TYPE(self)->tp_free(self);
 }
@@ -836,6 +843,7 @@ static PyObject* ast2obj_object(void *o)
     return (PyObject*)o;
 }
 #define ast2obj_singleton ast2obj_object
+#define ast2obj_constant ast2obj_object
 #define ast2obj_identifier ast2obj_object
 #define ast2obj_string ast2obj_object
 #define ast2obj_bytes ast2obj_object
@@ -862,6 +870,19 @@ static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
 {
     if (obj == Py_None)
         obj = NULL;
+    if (obj) {
+        if (PyArena_AddPyObject(arena, obj) < 0) {
+            *out = NULL;
+            return -1;
+        }
+        Py_INCREF(obj);
+    }
+    *out = obj;
+    return 0;
+}
+
+static int obj2ast_constant(PyObject* obj, PyObject** out, PyArena* arena)
+{
     if (obj) {
         if (PyArena_AddPyObject(arena, obj) < 0) {
             *out = NULL;
@@ -908,7 +929,7 @@ static int obj2ast_int(PyObject* obj, int* out, PyArena* arena)
         return 1;
     }
 
-    i = (int)PyLong_AsLong(obj);
+    i = _PyLong_AsInt(obj);
     if (i == -1 && PyErr_Occurred())
         return 1;
     *out = i;
@@ -960,7 +981,7 @@ static int exists_not_none(PyObject *obj, _Py_Identifier *id)
 
     def visitProduct(self, prod, name):
         if prod.fields:
-            fields = name.value+"_fields"
+            fields = name+"_fields"
         else:
             fields = "NULL"
         self.emit('%s_type = make_type("%s", &AST_type, %s, %d);' %
@@ -987,7 +1008,7 @@ static int exists_not_none(PyObject *obj, _Py_Identifier *id)
 
     def visitConstructor(self, cons, name, simple):
         if cons.fields:
-            fields = cons.name.value+"_fields"
+            fields = cons.name+"_fields"
         else:
             fields = "NULL"
         self.emit('%s_type = make_type("%s", %s_type, %s, %d);' %
@@ -1170,7 +1191,7 @@ class ObjVisitor(PickleVisitor):
     def set(self, field, value, depth):
         if field.seq:
             # XXX should really check for is_simple, but that requires a symbol table
-            if field.type.value == "cmpop":
+            if field.type == "cmpop":
                 # While the sequence elements are stored as void*,
                 # ast2obj_cmpop expects an enum
                 self.emit("{", depth)
@@ -1249,12 +1270,15 @@ class ChainOfVisitors:
 
 common_msg = "/* File automatically generated by %s. */\n\n"
 
-def main(srcfile):
+def main(srcfile, dump_module=False):
     argv0 = sys.argv[0]
     components = argv0.split(os.sep)
     argv0 = os.sep.join(components[-2:])
     auto_gen_msg = common_msg % argv0
     mod = asdl.parse(srcfile)
+    if dump_module:
+        print('Parsed Module:')
+        print(mod)
     if not asdl.check(mod):
         sys.exit(1)
     if INC_DIR:
@@ -1296,21 +1320,23 @@ def main(srcfile):
         f.close()
 
 if __name__ == "__main__":
-    import sys
     import getopt
 
     INC_DIR = ''
     SRC_DIR = ''
-    opts, args = getopt.getopt(sys.argv[1:], "h:c:")
-    if len(opts) != 1:
-        sys.stdout.write("Must specify exactly one output file\n")
-        sys.exit(1)
+    dump_module = False
+    opts, args = getopt.getopt(sys.argv[1:], "dh:c:")
     for o, v in opts:
         if o == '-h':
             INC_DIR = v
         if o == '-c':
             SRC_DIR = v
-    if len(args) != 1:
-        sys.stdout.write("Must specify single input file\n")
+        if o == '-d':
+            dump_module = True
+    if INC_DIR and SRC_DIR:
+        print('Must specify exactly one output file')
         sys.exit(1)
-    main(args[0])
+    elif len(args) != 1:
+        print('Must specify single input file')
+        sys.exit(1)
+    main(args[0], dump_module)

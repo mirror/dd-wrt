@@ -4,6 +4,7 @@ __all__ = ['Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore']
 
 import collections
 
+from . import compat
 from . import events
 from . import futures
 from .coroutines import coroutine
@@ -39,7 +40,53 @@ class _ContextManager:
             self._lock = None  # Crudely prevent reuse.
 
 
-class Lock:
+class _ContextManagerMixin:
+    def __enter__(self):
+        raise RuntimeError(
+            '"yield from" should be used as context manager expression')
+
+    def __exit__(self, *args):
+        # This must exist because __enter__ exists, even though that
+        # always raises; that's how the with-statement works.
+        pass
+
+    @coroutine
+    def __iter__(self):
+        # This is not a coroutine.  It is meant to enable the idiom:
+        #
+        #     with (yield from lock):
+        #         <block>
+        #
+        # as an alternative to:
+        #
+        #     yield from lock.acquire()
+        #     try:
+        #         <block>
+        #     finally:
+        #         lock.release()
+        yield from self.acquire()
+        return _ContextManager(self)
+
+    if compat.PY35:
+
+        def __await__(self):
+            # To make "with await lock" work.
+            yield from self.acquire()
+            return _ContextManager(self)
+
+        @coroutine
+        def __aenter__(self):
+            yield from self.acquire()
+            # We have no use for the "as ..."  clause in the with
+            # statement for locks.
+            return None
+
+        @coroutine
+        def __aexit__(self, exc_type, exc, tb):
+            self.release()
+
+
+class Lock(_ContextManagerMixin):
     """Primitive lock objects.
 
     A primitive lock is a synchronization primitive that is not owned
@@ -64,7 +111,7 @@ class Lock:
     acquire() is a coroutine and should be called with 'yield from'.
 
     Locks also support the context management protocol.  '(yield from lock)'
-    should be used as context manager expression.
+    should be used as the context manager expression.
 
     Usage:
 
@@ -119,16 +166,20 @@ class Lock:
         This method blocks until the lock is unlocked, then sets it to
         locked and returns True.
         """
-        if not self._waiters and not self._locked:
+        if not self._locked and all(w.cancelled() for w in self._waiters):
             self._locked = True
             return True
 
-        fut = futures.Future(loop=self._loop)
+        fut = self._loop.create_future()
         self._waiters.append(fut)
         try:
             yield from fut
             self._locked = True
             return True
+        except futures.CancelledError:
+            if not self._locked:
+                self._wake_up_first()
+            raise
         finally:
             self._waiters.remove(fut)
 
@@ -145,38 +196,16 @@ class Lock:
         """
         if self._locked:
             self._locked = False
-            # Wake up the first waiter who isn't cancelled.
-            for fut in self._waiters:
-                if not fut.done():
-                    fut.set_result(True)
-                    break
+            self._wake_up_first()
         else:
             raise RuntimeError('Lock is not acquired.')
 
-    def __enter__(self):
-        raise RuntimeError(
-            '"yield from" should be used as context manager expression')
-
-    def __exit__(self, *args):
-        # This must exist because __enter__ exists, even though that
-        # always raises; that's how the with-statement works.
-        pass
-
-    def __iter__(self):
-        # This is not a coroutine.  It is meant to enable the idiom:
-        #
-        #     with (yield from lock):
-        #         <block>
-        #
-        # as an alternative to:
-        #
-        #     yield from lock.acquire()
-        #     try:
-        #         <block>
-        #     finally:
-        #         lock.release()
-        yield from self.acquire()
-        return _ContextManager(self)
+    def _wake_up_first(self):
+        """Wake up the first waiter who isn't cancelled."""
+        for fut in self._waiters:
+            if not fut.done():
+                fut.set_result(True)
+                break
 
 
 class Event:
@@ -236,7 +265,7 @@ class Event:
         if self._value:
             return True
 
-        fut = futures.Future(loop=self._loop)
+        fut = self._loop.create_future()
         self._waiters.append(fut)
         try:
             yield from fut
@@ -245,7 +274,7 @@ class Event:
             self._waiters.remove(fut)
 
 
-class Condition:
+class Condition(_ContextManagerMixin):
     """Asynchronous equivalent to threading.Condition.
 
     This class implements condition variable objects. A condition variable
@@ -298,7 +327,7 @@ class Condition:
 
         self.release()
         try:
-            fut = futures.Future(loop=self._loop)
+            fut = self._loop.create_future()
             self._waiters.append(fut)
             try:
                 yield from fut
@@ -307,7 +336,13 @@ class Condition:
                 self._waiters.remove(fut)
 
         finally:
-            yield from self.acquire()
+            # Must reacquire lock even if wait is cancelled
+            while True:
+                try:
+                    yield from self.acquire()
+                    break
+                except futures.CancelledError:
+                    pass
 
     @coroutine
     def wait_for(self, predicate):
@@ -355,20 +390,8 @@ class Condition:
         """
         self.notify(len(self._waiters))
 
-    def __enter__(self):
-        raise RuntimeError(
-            '"yield from" should be used as context manager expression')
 
-    def __exit__(self, *args):
-        pass
-
-    def __iter__(self):
-        # See comment in Lock.__iter__().
-        yield from self.acquire()
-        return _ContextManager(self)
-
-
-class Semaphore:
+class Semaphore(_ContextManagerMixin):
     """A Semaphore implementation.
 
     A semaphore manages an internal counter which is decremented by each
@@ -401,6 +424,13 @@ class Semaphore:
             extra = '{},waiters:{}'.format(extra, len(self._waiters))
         return '<{} [{}]>'.format(res[1:-1], extra)
 
+    def _wake_up_next(self):
+        while self._waiters:
+            waiter = self._waiters.popleft()
+            if not waiter.done():
+                waiter.set_result(None)
+                return
+
     def locked(self):
         """Returns True if semaphore can not be acquired immediately."""
         return self._value == 0
@@ -415,18 +445,19 @@ class Semaphore:
         called release() to make it larger than 0, and then return
         True.
         """
-        if not self._waiters and self._value > 0:
-            self._value -= 1
-            return True
-
-        fut = futures.Future(loop=self._loop)
-        self._waiters.append(fut)
-        try:
-            yield from fut
-            self._value -= 1
-            return True
-        finally:
-            self._waiters.remove(fut)
+        while self._value <= 0:
+            fut = self._loop.create_future()
+            self._waiters.append(fut)
+            try:
+                yield from fut
+            except:
+                # See the similar code in Queue.get.
+                fut.cancel()
+                if self._value > 0 and not fut.cancelled():
+                    self._wake_up_next()
+                raise
+        self._value -= 1
+        return True
 
     def release(self):
         """Release a semaphore, incrementing the internal counter by one.
@@ -434,22 +465,7 @@ class Semaphore:
         become larger than zero again, wake up that coroutine.
         """
         self._value += 1
-        for waiter in self._waiters:
-            if not waiter.done():
-                waiter.set_result(True)
-                break
-
-    def __enter__(self):
-        raise RuntimeError(
-            '"yield from" should be used as context manager expression')
-
-    def __exit__(self, *args):
-        pass
-
-    def __iter__(self):
-        # See comment in Lock.__iter__().
-        yield from self.acquire()
-        return _ContextManager(self)
+        self._wake_up_next()
 
 
 class BoundedSemaphore(Semaphore):

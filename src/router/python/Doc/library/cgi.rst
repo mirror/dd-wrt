@@ -4,6 +4,7 @@
 .. module:: cgi
    :synopsis: Helpers for running Python scripts via the Common Gateway Interface.
 
+**Source code:** :source:`Lib/cgi.py`
 
 .. index::
    pair: WWW; server
@@ -12,8 +13,6 @@
    pair: MIME; headers
    single: URL
    single: Common Gateway Interface
-
-**Source code:** :source:`Lib/cgi.py`
 
 --------------
 
@@ -157,6 +156,9 @@ return bytes)::
            if not line: break
            linecount = linecount + 1
 
+:class:`FieldStorage` objects also support being used in a :keyword:`with`
+statement, which will automatically close them when done.
+
 If an error is encountered when obtaining the contents of an uploaded file
 (for example, when the user interrupts the form submission by clicking on
 a Back or Cancel button) the :attr:`~FieldStorage.done` attribute of the
@@ -181,6 +183,10 @@ A form submitted via POST that also has a query string will contain both
 .. versionchanged:: 3.4
    The :attr:`~FieldStorage.file` attribute is automatically closed upon the
    garbage collection of the creating :class:`FieldStorage` instance.
+
+.. versionchanged:: 3.5
+   Added support for the context management protocol to the
+   :class:`FieldStorage` class.
 
 
 Higher Level Interface
@@ -285,7 +291,7 @@ algorithms implemented in this module in other circumstances.
 
 .. function:: parse_qsl(qs, keep_blank_values=False, strict_parsing=False)
 
-   This function is deprecated in this module. Use :func:`urllib.parse.parse_qs`
+   This function is deprecated in this module. Use :func:`urllib.parse.parse_qsl`
    instead. It is maintained here only for backward compatibility.
 
 .. function:: parse_multipart(fp, pdict)
@@ -436,7 +442,9 @@ installing a copy of this module file (:file:`cgi.py`) as a CGI script.  When
 invoked as a script, the file will dump its environment and the contents of the
 form in HTML form. Give it the right mode etc, and send it a request.  If it's
 installed in the standard :file:`cgi-bin` directory, it should be possible to
-send it a request by entering a URL into your browser of the form::
+send it a request by entering a URL into your browser of the form:
+
+.. code-block:: none
 
    http://yourhostname/cgi-bin/cgi.py?name=Joe+Blow&addr=At+Home
 
@@ -528,4 +536,3 @@ Common problems and solutions
    order the field values should be supplied in, but knowing whether a request
    was received from a conforming browser, or even from a browser at all, is
    tedious and error-prone.
-

@@ -7,6 +7,19 @@ support.requires('gui')
 
 class MiscTest(AbstractTkTest, unittest.TestCase):
 
+    def test_repr(self):
+        t = tkinter.Toplevel(self.root, name='top')
+        f = tkinter.Frame(t, name='child')
+        self.assertEqual(repr(f), '<tkinter.Frame object .top.child>')
+
+    def test_generated_names(self):
+        t = tkinter.Toplevel(self.root)
+        f = tkinter.Frame(t)
+        f2 = tkinter.Frame(t)
+        b = tkinter.Button(f2)
+        for name in str(b).split('.'):
+            self.assertFalse(name.isidentifier(), msg=repr(name))
+
     def test_tk_setPalette(self):
         root = self.root
         root.tk_setPalette('black')

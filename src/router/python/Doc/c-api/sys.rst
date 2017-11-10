@@ -5,6 +5,17 @@
 Operating System Utilities
 ==========================
 
+.. c:function:: PyObject* PyOS_FSPath(PyObject *path)
+
+   Return the file system representation for *path*. If the object is a
+   :class:`str` or :class:`bytes` object, then its reference count is
+   incremented. If the object implements the :class:`os.PathLike` interface,
+   then :meth:`~os.PathLike.__fspath__` is returned as long as it is a
+   :class:`str` or :class:`bytes` object. Otherwise :exc:`TypeError` is raised
+   and ``NULL`` is returned.
+
+   .. versionadded:: 3.6
+
 
 .. c:function:: int Py_FdIsInteractive(FILE *fp, const char *filename)
 
@@ -47,6 +58,60 @@ Operating System Utilities
    not call those functions directly!  :c:type:`PyOS_sighandler_t` is a typedef
    alias for :c:type:`void (\*)(int)`.
 
+.. c:function:: wchar_t* Py_DecodeLocale(const char* arg, size_t *size)
+
+   Decode a byte string from the locale encoding with the :ref:`surrogateescape
+   error handler <surrogateescape>`: undecodable bytes are decoded as
+   characters in range U+DC80..U+DCFF. If a byte sequence can be decoded as a
+   surrogate character, escape the bytes using the surrogateescape error
+   handler instead of decoding them.
+
+   Return a pointer to a newly allocated wide character string, use
+   :c:func:`PyMem_RawFree` to free the memory. If size is not ``NULL``, write
+   the number of wide characters excluding the null character into ``*size``
+
+   Return ``NULL`` on decoding error or memory allocation error. If *size* is
+   not ``NULL``, ``*size`` is set to ``(size_t)-1`` on memory error or set to
+   ``(size_t)-2`` on decoding error.
+
+   Decoding errors should never happen, unless there is a bug in the C
+   library.
+
+   Use the :c:func:`Py_EncodeLocale` function to encode the character string
+   back to a byte string.
+
+   .. seealso::
+
+      The :c:func:`PyUnicode_DecodeFSDefaultAndSize` and
+      :c:func:`PyUnicode_DecodeLocaleAndSize` functions.
+
+   .. versionadded:: 3.5
+
+
+.. c:function:: char* Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
+
+   Encode a wide character string to the locale encoding with the
+   :ref:`surrogateescape error handler <surrogateescape>`: surrogate characters
+   in the range U+DC80..U+DCFF are converted to bytes 0x80..0xFF.
+
+   Return a pointer to a newly allocated byte string, use :c:func:`PyMem_Free`
+   to free the memory. Return ``NULL`` on encoding error or memory allocation
+   error
+
+   If error_pos is not ``NULL``, ``*error_pos`` is set to the index of the
+   invalid character on encoding error, or set to ``(size_t)-1`` otherwise.
+
+   Use the :c:func:`Py_DecodeLocale` function to decode the bytes string back
+   to a wide character string.
+
+   .. seealso::
+
+      The :c:func:`PyUnicode_EncodeFSDefault` and
+      :c:func:`PyUnicode_EncodeLocale` functions.
+
+   .. versionadded:: 3.5
+
+
 .. _systemfunctions:
 
 System Functions
@@ -56,12 +121,12 @@ These are utility functions that make functionality from the :mod:`sys` module
 accessible to C code.  They all work with the current interpreter thread's
 :mod:`sys` module's dict, which is contained in the internal thread state structure.
 
-.. c:function:: PyObject *PySys_GetObject(char *name)
+.. c:function:: PyObject *PySys_GetObject(const char *name)
 
    Return the object *name* from the :mod:`sys` module or *NULL* if it does
    not exist, without setting an exception.
 
-.. c:function:: int PySys_SetObject(char *name, PyObject *v)
+.. c:function:: int PySys_SetObject(const char *name, PyObject *v)
 
    Set *name* in the :mod:`sys` module to *v* unless *v* is *NULL*, in which
    case *name* is deleted from the sys module. Returns ``0`` on success, ``-1``
@@ -158,20 +223,24 @@ Process Control
 .. c:function:: void Py_Exit(int status)
 
    .. index::
-      single: Py_Finalize()
+      single: Py_FinalizeEx()
       single: exit()
 
-   Exit the current process.  This calls :c:func:`Py_Finalize` and then calls the
-   standard C library function ``exit(status)``.
+   Exit the current process.  This calls :c:func:`Py_FinalizeEx` and then calls the
+   standard C library function ``exit(status)``.  If :c:func:`Py_FinalizeEx`
+   indicates an error, the exit status is set to 120.
+
+   .. versionchanged:: 3.6
+      Errors from finalization no longer ignored.
 
 
 .. c:function:: int Py_AtExit(void (*func) ())
 
    .. index::
-      single: Py_Finalize()
+      single: Py_FinalizeEx()
       single: cleanup functions
 
-   Register a cleanup function to be called by :c:func:`Py_Finalize`.  The cleanup
+   Register a cleanup function to be called by :c:func:`Py_FinalizeEx`.  The cleanup
    function will be called with no arguments and should return no value.  At most
    32 cleanup functions can be registered.  When the registration is successful,
    :c:func:`Py_AtExit` returns ``0``; on failure, it returns ``-1``.  The cleanup

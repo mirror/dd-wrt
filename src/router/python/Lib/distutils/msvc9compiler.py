@@ -51,7 +51,7 @@ else:
 
 # A map keyed by get_platform() return values to values accepted by
 # 'vcvarsall.bat'.  Note a cross-compile may combine these (eg, 'x86_amd64' is
-# the param to cross-compile on x86 targetting amd64.)
+# the param to cross-compile on x86 targeting amd64.)
 PLAT_TO_VCVARS = {
     'win32' : 'x86',
     'win-amd64' : 'amd64',
@@ -179,6 +179,9 @@ def get_build_version():
     i = i + len(prefix)
     s, rest = sys.version[i:].split(" ", 1)
     majorVersion = int(s[:-2]) - 6
+    if majorVersion >= 13:
+        # v13 was skipped and should be v14
+        majorVersion += 1
     minorVersion = int(s[2:3]) / 10.0
     # I don't think paths are affected by minor version in version 6
     if majorVersion == 6:
@@ -413,7 +416,7 @@ class MSVCCompiler(CCompiler) :
         self.ldflags_shared = ['/DLL', '/nologo', '/INCREMENTAL:NO']
         if self.__version >= 7:
             self.ldflags_shared_debug = [
-                '/DLL', '/nologo', '/INCREMENTAL:no', '/DEBUG', '/pdb:None'
+                '/DLL', '/nologo', '/INCREMENTAL:no', '/DEBUG'
                 ]
         self.ldflags_static = [ '/nologo']
 
@@ -713,7 +716,7 @@ class MSVCCompiler(CCompiler) :
                 r"""VC\d{2}\.CRT("|').*?(/>|</assemblyIdentity>)""",
                 re.DOTALL)
             manifest_buf = re.sub(pattern, "", manifest_buf)
-            pattern = "<dependentAssembly>\s*</dependentAssembly>"
+            pattern = r"<dependentAssembly>\s*</dependentAssembly>"
             manifest_buf = re.sub(pattern, "", manifest_buf)
             # Now see if any other assemblies are referenced - if not, we
             # don't want a manifest embedded.

@@ -78,7 +78,7 @@ setup script). Indirectly provides the  :class:`distutils.dist.Distribution` and
    |                    | be built                       | :class:`distutils.core.Extension`                           |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *classifiers*      | A list of categories for the   | a list of strings; valid classifiers are listed on `PyPI    |
-   |                    | package                        | <http://pypi.python.org/pypi?:action=list_classifiers>`_.   |
+   |                    | package                        | <https://pypi.python.org/pypi?:action=list_classifiers>`_.  |
    +--------------------+--------------------------------+-------------------------------------------------------------+
    | *distclass*        | the :class:`Distribution`      | a subclass of                                               |
    |                    | class to use                   | :class:`distutils.core.Distribution`                        |
@@ -166,7 +166,7 @@ the full reference.
 
 .. class:: Extension
 
-   The Extension class describes a single C or C++extension module in a setup
+   The Extension class describes a single C or C++ extension module in a setup
    script. It accepts the following keyword arguments in its constructor:
 
    .. tabularcolumns:: |l|L|l|
@@ -205,7 +205,7 @@ the full reference.
    |                        | to or ``None`` to define it    |                           |
    |                        | without a particular value     |                           |
    |                        | (equivalent of ``#define FOO`` |                           |
-   |                        | in source or :option:`-DFOO`   |                           |
+   |                        | in source or :option:`!-DFOO`  |                           |
    |                        | on Unix C compiler command     |                           |
    |                        | line)                          |                           |
    +------------------------+--------------------------------+---------------------------+
@@ -319,12 +319,12 @@ This module provides the following functions.
 
 .. function:: gen_preprocess_options(macros, include_dirs)
 
-   Generate C pre-processor options (:option:`-D`, :option:`-U`, :option:`-I`) as
+   Generate C pre-processor options (:option:`!-D`, :option:`!-U`, :option:`!-I`) as
    used by at least two types of compilers: the typical Unix compiler and Visual
    C++. *macros* is the usual thing, a list of 1- or 2-tuples, where ``(name,)``
-   means undefine (:option:`-U`) macro *name*, and ``(name, value)`` means define
-   (:option:`-D`) macro *name* to *value*.  *include_dirs* is just a list of
-   directory names to be added to the header file search path (:option:`-I`).
+   means undefine (:option:`!-U`) macro *name*, and ``(name, value)`` means define
+   (:option:`!-D`) macro *name* to *value*.  *include_dirs* is just a list of
+   directory names to be added to the header file search path (:option:`!-I`).
    Returns a list of command-line options suitable for either Unix compilers or
    Visual C++.
 
@@ -359,7 +359,7 @@ This module provides the following functions.
 
 .. function:: show_compilers()
 
-   Print list of available compilers (used by the :option:`--help-compiler` options
+   Print list of available compilers (used by the :option:`!--help-compiler` options
    to :command:`build`, :command:`build_ext`, :command:`build_clib`).
 
 
@@ -521,7 +521,7 @@ This module provides the following functions.
 
    .. method:: CCompiler.library_option(lib)
 
-      Return the compiler option to add *dir* to the list of libraries linked into the
+      Return the compiler option to add *lib* to the list of libraries linked into the
       shared library or executable.
 
 
@@ -789,23 +789,23 @@ This module provides the following functions.
 This module provides the :class:`UnixCCompiler` class, a subclass of
 :class:`CCompiler` that handles the typical Unix-style command-line  C compiler:
 
-* macros defined with :option:`-Dname[=value]`
+* macros defined with :option:`!-Dname[=value]`
 
-* macros undefined with :option:`-Uname`
+* macros undefined with :option:`!-Uname`
 
-* include search directories specified with :option:`-Idir`
+* include search directories specified with :option:`!-Idir`
 
-* libraries specified with :option:`-llib`
+* libraries specified with :option:`!-llib`
 
-* library search directories specified with :option:`-Ldir`
+* library search directories specified with :option:`!-Ldir`
 
-* compile handled by :program:`cc` (or similar) executable with :option:`-c`
+* compile handled by :program:`cc` (or similar) executable with :option:`!-c`
   option: compiles :file:`.c` to :file:`.o`
 
 * link static library handled by :program:`ar` command (possibly with
   :program:`ranlib`)
 
-* link shared library handled by :program:`cc` :option:`-shared`
+* link shared library handled by :program:`cc` :option:`!-shared`
 
 
 :mod:`distutils.msvccompiler` --- Microsoft Compiler
@@ -837,7 +837,7 @@ selection by :class:`MSVCCompiler`.
 .. module:: distutils.bcppcompiler
 
 
-This module provides :class:`BorlandCCompiler`, an subclass of the abstract
+This module provides :class:`BorlandCCompiler`, a subclass of the abstract
 :class:`CCompiler` class for the Borland C++ compiler.
 
 
@@ -868,23 +868,31 @@ tarballs or zipfiles.
 
    Create an archive file (eg. ``zip`` or ``tar``).  *base_name*  is the name of
    the file to create, minus any format-specific extension;  *format* is the
-   archive format: one of ``zip``, ``tar``,  ``ztar``, or ``gztar``. *root_dir* is
-   a directory that will be the root directory of the archive; ie. we typically
-   ``chdir`` into *root_dir* before  creating the archive.  *base_dir* is the
-   directory where we start  archiving from; ie. *base_dir* will be the common
-   prefix of all files and directories in the archive.  *root_dir* and *base_dir*
-   both default to the current directory.  Returns the name of the archive file.
+   archive format: one of ``zip``, ``tar``, ``gztar``, ``bztar``, ``xztar``, or
+   ``ztar``. *root_dir* is a directory that will be the root directory of the
+   archive; ie. we typically ``chdir`` into *root_dir* before  creating the
+   archive.  *base_dir* is the directory where we start  archiving from; ie.
+   *base_dir* will be the common prefix of all files and directories in the
+   archive.  *root_dir* and *base_dir* both default to the current directory.
+   Returns the name of the archive file.
+
+   .. versionchanged:: 3.5
+      Added support for the ``xztar`` format.
 
 
 .. function:: make_tarball(base_name, base_dir[, compress='gzip', verbose=0, dry_run=0])
 
    'Create an (optional compressed) archive as a tar file from all files in and
-   under *base_dir*. *compress* must be ``'gzip'`` (the default),  ``'compress'``,
-   ``'bzip2'``, or ``None``.  Both :program:`tar` and the compression utility named
-   by *compress* must be on the  default program search path, so this is probably
-   Unix-specific.  The  output tar file will be named :file:`base_dir.tar`,
-   possibly plus the appropriate compression extension (:file:`.gz`, :file:`.bz2`
-   or :file:`.Z`).  Return the output filename.
+   under *base_dir*. *compress* must be ``'gzip'`` (the default),
+   ``'bzip2'``, ``'xz'``, ``'compress'``, or ``None``.  For the ``'compress'``
+   method the compression utility named by :program:`compress` must be on the
+   default program search path, so this is probably Unix-specific.  The output
+   tar file will be named :file:`base_dir.tar`, possibly plus the appropriate
+   compression extension (``.gz``, ``.bz2``, ``.xz`` or ``.Z``).  Return the
+   output filename.
+
+   .. versionchanged:: 3.5
+      Added support for the ``xz`` compression.
 
 
 .. function:: make_zipfile(base_name, base_dir[, verbose=0, dry_run=0])
@@ -920,7 +928,7 @@ timestamp dependency analysis.
 
    Walk two filename lists in parallel, testing if each source is newer than its
    corresponding target.  Return a pair of lists (*sources*, *targets*) where
-   source is newer than target, according to the semantics of :func:`newer`
+   source is newer than target, according to the semantics of :func:`newer`.
 
    .. % % equivalent to a listcomp...
 
@@ -964,7 +972,7 @@ directories.
 .. function:: create_tree(base_dir, files[, mode=0o777, verbose=0, dry_run=0])
 
    Create all the empty directories under *base_dir* needed to put *files* there.
-   *base_dir* is just the a name of a directory which doesn't necessarily exist
+   *base_dir* is just the name of a directory which doesn't necessarily exist
    yet; *files* is a list of filenames to be interpreted relative to *base_dir*.
    *base_dir* + the directory portion of every file in *files* will be created if
    it doesn't already exist.  *mode*, *verbose* and *dry_run* flags  are as for
@@ -1099,13 +1107,13 @@ other utility module.
    during the build of Python), not the OS version of the current system.
 
    For universal binary builds on Mac OS X the architecture value reflects
-   the univeral binary status instead of the architecture of the current
+   the universal binary status instead of the architecture of the current
    processor. For 32-bit universal binaries the architecture is ``fat``,
    for 64-bit universal binaries the architecture is ``fat64``, and
    for 4-way universal binaries the architecture is ``universal``. Starting
    from Python 2.7 and Python 3.2 the architecture ``fat3`` is used for
    a 3-way universal build (ppc, i386, x86_64) and ``intel`` is used for
-   a univeral build with the i386 and x86_64 architectures
+   a universal build with the i386 and x86_64 architectures
 
    Examples of returned values on Mac OS X:
 
@@ -1193,12 +1201,12 @@ other utility module.
 
 .. function:: byte_compile(py_files[, optimize=0, force=0, prefix=None, base_dir=None, verbose=1, dry_run=0, direct=None])
 
-   Byte-compile a collection of Python source files to either :file:`.pyc` or
-   :file:`.pyo` files in a :file:`__pycache__` subdirectory (see :pep:`3147`).
+   Byte-compile a collection of Python source files to :file:`.pyc` files in a
+   :file:`__pycache__` subdirectory (see :pep:`3147` and :pep:`488`).
    *py_files* is a list of files to compile; any files that don't end in
    :file:`.py` are silently skipped.  *optimize* must be one of the following:
 
-   * ``0`` - don't optimize (generate :file:`.pyc`)
+   * ``0`` - don't optimize
    * ``1`` - normal optimization (like ``python -O``)
    * ``2`` - extra optimization (like ``python -OO``)
 
@@ -1222,9 +1230,12 @@ other utility module.
    doing, leave it set to ``None``.
 
    .. versionchanged:: 3.2.3
-      Create ``.pyc`` or ``.pyo`` files with an :func:`import magic tag
+      Create ``.pyc`` files with an :func:`import magic tag
       <imp.get_tag>` in their name, in a :file:`__pycache__` subdirectory
       instead of files without tag in the current directory.
+
+   .. versionchanged:: 3.5
+      Create ``.pyc`` files according to :pep:`488`.
 
 
 .. function:: rfc822_escape(header)
@@ -1307,8 +1318,8 @@ provides the following additional features:
 
 * options set attributes of a passed-in object
 
-* boolean options can have "negative aliases" --- eg. if :option:`--quiet` is
-  the "negative alias" of :option:`--verbose`, then :option:`--quiet` on the
+* boolean options can have "negative aliases" --- eg. if :option:`!--quiet` is
+  the "negative alias" of :option:`!--verbose`, then :option:`!--quiet` on the
   command line sets *verbose* to false.
 
 .. function:: fancy_getopt(options, negative_opt, object, args)
@@ -1811,7 +1822,7 @@ Subclasses of :class:`Command` must define the following methods.
 
    Builds a `Windows Installer`_ (.msi) binary package.
 
-   .. _Windows Installer: http://msdn.microsoft.com/en-us/library/cc185688(VS.85).aspx
+   .. _Windows Installer: https://msdn.microsoft.com/en-us/library/cc185688(VS.85).aspx
 
    In most cases, the ``bdist_msi`` installer is a better choice than the
    ``bdist_wininst`` installer, because it provides better support for
@@ -1896,9 +1907,9 @@ Subclasses of :class:`Command` must define the following methods.
    that is designed to run with both Python 2.x and 3.x, add::
 
      try:
-        from distutils.command.build_py import build_py_2to3 as build_py
+         from distutils.command.build_py import build_py_2to3 as build_py
      except ImportError:
-        from distutils.command.build_py import build_py
+         from distutils.command.build_py import build_py
 
    to your setup.py, and later::
 

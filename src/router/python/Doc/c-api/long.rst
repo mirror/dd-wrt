@@ -62,13 +62,13 @@ All integers are implemented as "long" integer objects of arbitrary size.
    *NULL* on failure.
 
 
-.. c:function:: PyObject* PyLong_FromLongLong(PY_LONG_LONG v)
+.. c:function:: PyObject* PyLong_FromLongLong(long long v)
 
    Return a new :c:type:`PyLongObject` object from a C :c:type:`long long`, or *NULL*
    on failure.
 
 
-.. c:function:: PyObject* PyLong_FromUnsignedLongLong(unsigned PY_LONG_LONG v)
+.. c:function:: PyObject* PyLong_FromUnsignedLongLong(unsigned long long v)
 
    Return a new :c:type:`PyLongObject` object from a C :c:type:`unsigned long long`,
    or *NULL* on failure.
@@ -85,13 +85,12 @@ All integers are implemented as "long" integer objects of arbitrary size.
    Return a new :c:type:`PyLongObject` based on the string value in *str*, which
    is interpreted according to the radix in *base*.  If *pend* is non-*NULL*,
    *\*pend* will point to the first character in *str* which follows the
-   representation of the number.  If *base* is ``0``, the radix will be
-   determined based on the leading characters of *str*: if *str* starts with
-   ``'0x'`` or ``'0X'``, radix 16 will be used; if *str* starts with ``'0o'`` or
-   ``'0O'``, radix 8 will be used; if *str* starts with ``'0b'`` or ``'0B'``,
-   radix 2 will be used; otherwise radix 10 will be used.  If *base* is not
-   ``0``, it must be between ``2`` and ``36``, inclusive.  Leading spaces are
-   ignored.  If there are no digits, :exc:`ValueError` will be raised.
+   representation of the number.  If *base* is ``0``, *str* is interpreted using
+   the :ref:`integers` definition; in this case, leading zeros in a
+   non-zero decimal number raises a :exc:`ValueError`. If *base* is not ``0``,
+   it must be between ``2`` and ``36``, inclusive.  Leading spaces and single
+   underscores after a base specifier and between digits are ignored.  If there
+   are no digits, :exc:`ValueError` will be raised.
 
 
 .. c:function:: PyObject* PyLong_FromUnicode(Py_UNICODE *u, Py_ssize_t length, int base)
@@ -148,7 +147,7 @@ All integers are implemented as "long" integer objects of arbitrary size.
    occurs set *\*overflow* to ``0`` and return ``-1`` as usual.
 
 
-.. c:function:: PY_LONG_LONG PyLong_AsLongLong(PyObject *obj)
+.. c:function:: long long PyLong_AsLongLong(PyObject *obj)
 
    .. index::
       single: OverflowError (built-in exception)
@@ -161,7 +160,7 @@ All integers are implemented as "long" integer objects of arbitrary size.
    :c:type:`long`.
 
 
-.. c:function:: PY_LONG_LONG PyLong_AsLongLongAndOverflow(PyObject *obj, int *overflow)
+.. c:function:: long long PyLong_AsLongLongAndOverflow(PyObject *obj, int *overflow)
 
    Return a C :c:type:`long long` representation of *obj*.  If *obj* is not an
    instance of :c:type:`PyLongObject`, first call its :meth:`__int__` method
@@ -210,16 +209,16 @@ All integers are implemented as "long" integer objects of arbitrary size.
    :c:type:`size_t`.
 
 
-.. c:function:: unsigned PY_LONG_LONG PyLong_AsUnsignedLongLong(PyObject *pylong)
+.. c:function:: unsigned long long PyLong_AsUnsignedLongLong(PyObject *pylong)
 
    .. index::
       single: OverflowError (built-in exception)
 
-   Return a C :c:type:`unsigned PY_LONG_LONG` representation of *pylong*.
-   *pylong* must be an instance of :c:type:`PyLongObject`.
+   Return a C :c:type:`unsigned long long` representation of *pylong*.  *pylong*
+   must be an instance of :c:type:`PyLongObject`.
 
    Raise :exc:`OverflowError` if the value of *pylong* is out of range for an
-   :c:type:`unsigned PY_LONG_LONG`.
+   :c:type:`unsigned long long`.
 
    .. versionchanged:: 3.1
       A negative *pylong* now raises :exc:`OverflowError`, not :exc:`TypeError`.
@@ -232,17 +231,17 @@ All integers are implemented as "long" integer objects of arbitrary size.
    method (if present) to convert it to a :c:type:`PyLongObject`.
 
    If the value of *obj* is out of range for an :c:type:`unsigned long`,
-   return the reduction of that value modulo :const:`ULONG_MAX + 1`.
+   return the reduction of that value modulo ``ULONG_MAX + 1``.
 
 
-.. c:function:: unsigned PY_LONG_LONG PyLong_AsUnsignedLongLongMask(PyObject *obj)
+.. c:function:: unsigned long long PyLong_AsUnsignedLongLongMask(PyObject *obj)
 
    Return a C :c:type:`unsigned long long` representation of *obj*.  If *obj*
    is not an instance of :c:type:`PyLongObject`, first call its :meth:`__int__`
    method (if present) to convert it to a :c:type:`PyLongObject`.
 
    If the value of *obj* is out of range for an :c:type:`unsigned long long`,
-   return the reduction of that value modulo :const:`PY_ULLONG_MAX + 1`.
+   return the reduction of that value modulo ``PY_ULLONG_MAX + 1``.
 
 
 .. c:function:: double PyLong_AsDouble(PyObject *pylong)

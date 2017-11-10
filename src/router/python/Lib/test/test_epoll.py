@@ -28,7 +28,6 @@ import socket
 import time
 import unittest
 
-from test import support
 if not hasattr(select, "epoll"):
     raise unittest.SkipTest("test works only on Linux 2.6")
 
@@ -44,7 +43,7 @@ class TestEPoll(unittest.TestCase):
     def setUp(self):
         self.serverSocket = socket.socket()
         self.serverSocket.bind(('127.0.0.1', 0))
-        self.serverSocket.listen(1)
+        self.serverSocket.listen()
         self.connections = [self.serverSocket]
 
     def tearDown(self):
@@ -252,8 +251,5 @@ class TestEPoll(unittest.TestCase):
         self.assertEqual(os.get_inheritable(epoll.fileno()), False)
 
 
-def test_main():
-    support.run_unittest(TestEPoll)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

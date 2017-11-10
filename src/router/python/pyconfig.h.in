@@ -12,6 +12,9 @@
    support for AIX C++ shared extension modules. */
 #undef AIX_GENUINE_CPLUSPLUS
 
+/* The Android API level. */
+#undef ANDROID_API_LEVEL
+
 /* Define if C doubles are 64-bit IEEE 754 binary format, stored in ARM
    mixed-endian order (byte order 45670123) */
 #undef DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754
@@ -101,8 +104,8 @@
 /* Define if `unsetenv` does not return an int. */
 #undef HAVE_BROKEN_UNSETENV
 
-/* Define this if you have the type _Bool. */
-#undef HAVE_C99_BOOL
+/* Has builtin atomics */
+#undef HAVE_BUILTIN_ATOMIC
 
 /* Define to 1 if you have the 'chflags' function. */
 #undef HAVE_CHFLAGS
@@ -121,6 +124,9 @@
 
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
+
+/* Define to 1 if you have the `clock_settime' function. */
+#undef HAVE_CLOCK_SETTIME
 
 /* Define if the C compiler supports computed gotos. */
 #undef HAVE_COMPUTED_GOTOS
@@ -164,6 +170,34 @@
    */
 #undef HAVE_DECL_ISNAN
 
+/* Define to 1 if you have the declaration of `RTLD_DEEPBIND', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_DEEPBIND
+
+/* Define to 1 if you have the declaration of `RTLD_GLOBAL', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_GLOBAL
+
+/* Define to 1 if you have the declaration of `RTLD_LAZY', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_LAZY
+
+/* Define to 1 if you have the declaration of `RTLD_LOCAL', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_LOCAL
+
+/* Define to 1 if you have the declaration of `RTLD_NODELETE', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_NODELETE
+
+/* Define to 1 if you have the declaration of `RTLD_NOLOAD', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_NOLOAD
+
+/* Define to 1 if you have the declaration of `RTLD_NOW', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_NOW
+
 /* Define to 1 if you have the declaration of `tzname', and to 0 if you don't.
    */
 #undef HAVE_DECL_TZNAME
@@ -179,6 +213,9 @@
 
 /* Define to 1 if you have the <direct.h> header file. */
 #undef HAVE_DIRECT_H
+
+/* Define to 1 if the dirent structure has a d_type field */
+#undef HAVE_DIRENT_D_TYPE
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
@@ -313,6 +350,9 @@
 /* Define to 1 if you have the `gamma' function. */
 #undef HAVE_GAMMA
 
+/* Define if we can use gcc inline assembler to get and set mc68881 fpcr */
+#undef HAVE_GCC_ASM_FOR_MC68881
+
 /* Define if we can use x64 gcc inline assembler */
 #undef HAVE_GCC_ASM_FOR_X64
 
@@ -328,6 +368,9 @@
 
 /* Define this if you have flockfile(), getc_unlocked(), and funlockfile() */
 #undef HAVE_GETC_UNLOCKED
+
+/* Define to 1 if you have the `getentropy' function. */
+#undef HAVE_GETENTROPY
 
 /* Define to 1 if you have the `getgrouplist' function. */
 #undef HAVE_GETGROUPLIST
@@ -383,6 +426,12 @@
 /* Define to 1 if you have the `getpwent' function. */
 #undef HAVE_GETPWENT
 
+/* Define to 1 if the getrandom() function is available */
+#undef HAVE_GETRANDOM
+
+/* Define to 1 if the Linux getrandom() syscall is available */
+#undef HAVE_GETRANDOM_SYSCALL
+
 /* Define to 1 if you have the `getresgid' function. */
 #undef HAVE_GETRESGID
 
@@ -423,7 +472,7 @@
 /* Define to 1 if you have the <ieeefp.h> header file. */
 #undef HAVE_IEEEFP_H
 
-/* Define to 1 if you have the `if_nameindex' function. */
+/* Define to 1 if you have the 'if_nameindex' function. */
 #undef HAVE_IF_NAMEINDEX
 
 /* Define if you have the 'inet_aton' function. */
@@ -434,12 +483,6 @@
 
 /* Define to 1 if you have the `initgroups' function. */
 #undef HAVE_INITGROUPS
-
-/* Define if your compiler provides int32_t. */
-#undef HAVE_INT32_T
-
-/* Define if your compiler provides int64_t. */
-#undef HAVE_INT64_T
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -516,16 +559,22 @@
 /* Define to 1 if you have the <linux/can.h> header file. */
 #undef HAVE_LINUX_CAN_H
 
+/* Define if compiling using Linux 3.6 or later. */
+#undef HAVE_LINUX_CAN_RAW_FD_FRAMES
+
 /* Define to 1 if you have the <linux/can/raw.h> header file. */
 #undef HAVE_LINUX_CAN_RAW_H
 
 /* Define to 1 if you have the <linux/netlink.h> header file. */
 #undef HAVE_LINUX_NETLINK_H
 
+/* Define to 1 if you have the <linux/random.h> header file. */
+#undef HAVE_LINUX_RANDOM_H
+
 /* Define to 1 if you have the <linux/tipc.h> header file. */
 #undef HAVE_LINUX_TIPC_H
 
-/* Define to 1 if you have the `lockf' function. */
+/* Define to 1 if you have the 'lockf' function and the F_LOCK macro. */
 #undef HAVE_LOCKF
 
 /* Define to 1 if you have the `log1p' function. */
@@ -536,9 +585,6 @@
 
 /* Define this if you have the type long double. */
 #undef HAVE_LONG_DOUBLE
-
-/* Define this if you have the type long long. */
-#undef HAVE_LONG_LONG
 
 /* Define to 1 if you have the `lstat' function. */
 #undef HAVE_LSTAT
@@ -605,9 +651,6 @@
 
 /* Define to 1 if you have the `openpty' function. */
 #undef HAVE_OPENPTY
-
-/* Define if compiling using MacOS X 10.5 SDK or later. */
-#undef HAVE_OSX105_SDK
 
 /* Define to 1 if you have the `pathconf' function. */
 #undef HAVE_PATHCONF
@@ -687,6 +730,9 @@
 /* Define to 1 if you have the `renameat' function. */
 #undef HAVE_RENAMEAT
 
+/* Define if readline supports append_history */
+#undef HAVE_RL_APPEND_HISTORY
+
 /* Define if you have readline 2.1 */
 #undef HAVE_RL_CALLBACK
 
@@ -707,6 +753,9 @@
 
 /* Define if you have readline 4.0 */
 #undef HAVE_RL_PRE_INPUT_HOOK
+
+/* Define if you have readline 4.0 */
+#undef HAVE_RL_RESIZE_TERMINAL
 
 /* Define to 1 if you have the `round' function. */
 #undef HAVE_ROUND
@@ -831,6 +880,9 @@
 /* Define to 1 if you have the `snprintf' function. */
 #undef HAVE_SNPRINTF
 
+/* struct sockaddr_alg (linux/if_alg.h) */
+#undef HAVE_SOCKADDR_ALG
+
 /* Define if sockaddr has sa_len member */
 #undef HAVE_SOCKADDR_SA_LEN
 
@@ -865,6 +917,9 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
+/* Has stdatomic.h, atomic_int and _Atomic void* types work */
+#undef HAVE_STD_ATOMIC
+
 /* Define to 1 if you have the `strdup' function. */
 #undef HAVE_STRDUP
 
@@ -882,6 +937,12 @@
 
 /* Define to 1 if you have the <stropts.h> header file. */
 #undef HAVE_STROPTS_H
+
+/* Define to 1 if `pw_gecos' is a member of `struct passwd'. */
+#undef HAVE_STRUCT_PASSWD_PW_GECOS
+
+/* Define to 1 if `pw_passwd' is a member of `struct passwd'. */
+#undef HAVE_STRUCT_PASSWD_PW_PASSWD
 
 /* Define to 1 if `st_birthtime' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BIRTHTIME
@@ -903,10 +964,6 @@
 
 /* Define to 1 if `tm_zone' is a member of `struct tm'. */
 #undef HAVE_STRUCT_TM_TM_ZONE
-
-/* Define to 1 if your `struct stat' has `st_blocks'. Deprecated, use
-   `HAVE_STRUCT_STAT_ST_BLOCKS' instead. */
-#undef HAVE_ST_BLOCKS
 
 /* Define if you have the 'symlink' function. */
 #undef HAVE_SYMLINK
@@ -976,6 +1033,9 @@
 /* Define to 1 if you have the <sys/poll.h> header file. */
 #undef HAVE_SYS_POLL_H
 
+/* Define to 1 if you have the <sys/random.h> header file. */
+#undef HAVE_SYS_RANDOM_H
+
 /* Define to 1 if you have the <sys/resource.h> header file. */
 #undef HAVE_SYS_RESOURCE_H
 
@@ -996,6 +1056,9 @@
 
 /* Define to 1 if you have the <sys/syscall.h> header file. */
 #undef HAVE_SYS_SYSCALL_H
+
+/* Define to 1 if you have the <sys/sysmacros.h> header file. */
+#undef HAVE_SYS_SYSMACROS_H
 
 /* Define to 1 if you have the <sys/sys_domain.h> header file. */
 #undef HAVE_SYS_SYS_DOMAIN_H
@@ -1073,15 +1136,6 @@
 
 /* Define this if you have tcl and TCL_UTF_MAX==6 */
 #undef HAVE_UCS4_TCL
-
-/* Define if your compiler provides uint32_t. */
-#undef HAVE_UINT32_T
-
-/* Define if your compiler provides uint64_t. */
-#undef HAVE_UINT64_T
-
-/* Define to 1 if the system has the type `uintptr_t'. */
-#undef HAVE_UINTPTR_T
 
 /* Define to 1 if you have the `uname' function. */
 #undef HAVE_UNAME
@@ -1192,9 +1246,6 @@
 
 /* Define as the preferred size in bits of long digits */
 #undef PYLONG_BITS_IN_DIGIT
-
-/* Define to printf format modifier for long long type */
-#undef PY_FORMAT_LONG_LONG
 
 /* Define to printf format modifier for Py_ssize_t */
 #undef PY_FORMAT_SIZE_T
@@ -1316,9 +1367,6 @@
 #endif
 
 
-/* Define if a va_list is an array of some kind */
-#undef VA_LIST_IS_ARRAY
-
 /* Define if you want SIGFPE handled (see Include/pyfpe.h). */
 #undef WANT_SIGFPE_HANDLER
 
@@ -1327,6 +1375,9 @@
 
 /* Define if you want documentation strings in extension modules */
 #undef WITH_DOC_STRINGS
+
+/* Define if you want to compile in DTrace support */
+#undef WITH_DTRACE
 
 /* Define if you want to use the new-style (Openstep, Rhapsody, MacOS) dynamic
    linker (dyld) instead of the old-style (NextStep) dynamic linker (rld).
@@ -1345,9 +1396,6 @@
 
 /* Define if you want to compile in rudimentary thread support */
 #undef WITH_THREAD
-
-/* Define to profile with the Pentium timestamp counter */
-#undef WITH_TSC
 
 /* Define if you want pymalloc to be disabled when running under valgrind */
 #undef WITH_VALGRIND
@@ -1413,16 +1461,6 @@
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
 
-/* Define for Solaris 2.5.1 so the uint32_t typedef from <sys/synch.h>,
-   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
-   #define below would cause a syntax error. */
-#undef _UINT32_T
-
-/* Define for Solaris 2.5.1 so the uint64_t typedef from <sys/synch.h>,
-   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
-   #define below would cause a syntax error. */
-#undef _UINT64_T
-
 /* Define to the level of X/Open that your system supports */
 #undef _XOPEN_SOURCE
 
@@ -1452,14 +1490,6 @@
 #undef inline
 #endif
 
-/* Define to the type of a signed integer type of width exactly 32 bits if
-   such a type exists and the standard includes do not define it. */
-#undef int32_t
-
-/* Define to the type of a signed integer type of width exactly 64 bits if
-   such a type exists and the standard includes do not define it. */
-#undef int64_t
-
 /* Define to `int' if <sys/types.h> does not define. */
 #undef mode_t
 
@@ -1480,14 +1510,6 @@
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t
-
-/* Define to the type of an unsigned integer type of width exactly 32 bits if
-   such a type exists and the standard includes do not define it. */
-#undef uint32_t
-
-/* Define to the type of an unsigned integer type of width exactly 64 bits if
-   such a type exists and the standard includes do not define it. */
-#undef uint64_t
 
 /* Define to empty if the keyword does not work. */
 #undef volatile

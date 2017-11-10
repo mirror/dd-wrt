@@ -10,6 +10,7 @@ from asyncio import test_utils
 class _QueueTestBase(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
 
 
@@ -171,7 +172,7 @@ class QueueGetTests(_QueueTestBase):
         q.put_nowait(1)
 
         waiter = asyncio.Future(loop=self.loop)
-        q._putters.append((2, waiter))
+        q._putters.append(waiter)
 
         res = self.loop.run_until_complete(q.get())
         self.assertEqual(1, res)
@@ -271,6 +272,29 @@ class QueueGetTests(_QueueTestBase):
         self.assertEqual(self.loop.run_until_complete(q.get()), 'a')
         self.assertEqual(self.loop.run_until_complete(q.get()), 'b')
 
+    def test_why_are_getters_waiting(self):
+        # From issue #268.
+
+        @asyncio.coroutine
+        def consumer(queue, num_expected):
+            for _ in range(num_expected):
+                yield from queue.get()
+
+        @asyncio.coroutine
+        def producer(queue, num_items):
+            for i in range(num_items):
+                yield from queue.put(i)
+
+        queue_size = 1
+        producer_num_items = 5
+        q = asyncio.Queue(queue_size, loop=self.loop)
+
+        self.loop.run_until_complete(
+            asyncio.gather(producer(q, producer_num_items),
+                           consumer(q, producer_num_items),
+                           loop=self.loop),
+            )
+
 
 class QueuePutTests(_QueueTestBase):
 
@@ -321,6 +345,94 @@ class QueuePutTests(_QueueTestBase):
         q = asyncio.Queue(loop=self.loop)
         q.put_nowait(1)
         self.assertEqual(1, q.get_nowait())
+
+    def test_get_cancel_drop_one_pending_reader(self):
+        def gen():
+            yield 0.01
+            yield 0.1
+
+        loop = self.new_test_loop(gen)
+
+        q = asyncio.Queue(loop=loop)
+
+        reader = loop.create_task(q.get())
+
+        loop.run_until_complete(asyncio.sleep(0.01, loop=loop))
+
+        q.put_nowait(1)
+        q.put_nowait(2)
+        reader.cancel()
+
+        try:
+            loop.run_until_complete(reader)
+        except asyncio.CancelledError:
+            # try again
+            reader = loop.create_task(q.get())
+            loop.run_until_complete(reader)
+
+        result = reader.result()
+        # if we get 2, it means 1 got dropped!
+        self.assertEqual(1, result)
+
+    def test_get_cancel_drop_many_pending_readers(self):
+        def gen():
+            yield 0.01
+            yield 0.1
+
+        loop = self.new_test_loop(gen)
+        loop.set_debug(True)
+
+        q = asyncio.Queue(loop=loop)
+
+        reader1 = loop.create_task(q.get())
+        reader2 = loop.create_task(q.get())
+        reader3 = loop.create_task(q.get())
+
+        loop.run_until_complete(asyncio.sleep(0.01, loop=loop))
+
+        q.put_nowait(1)
+        q.put_nowait(2)
+        reader1.cancel()
+
+        try:
+            loop.run_until_complete(reader1)
+        except asyncio.CancelledError:
+            pass
+
+        loop.run_until_complete(reader3)
+
+        # It is undefined in which order concurrent readers receive results.
+        self.assertEqual({reader2.result(), reader3.result()}, {1, 2})
+
+    def test_put_cancel_drop(self):
+
+        def gen():
+            yield 0.01
+            yield 0.1
+
+        loop = self.new_test_loop(gen)
+        q = asyncio.Queue(1, loop=loop)
+
+        q.put_nowait(1)
+
+        # putting a second item in the queue has to block (qsize=1)
+        writer = loop.create_task(q.put(2))
+        loop.run_until_complete(asyncio.sleep(0.01, loop=loop))
+
+        value1 = q.get_nowait()
+        self.assertEqual(value1, 1)
+
+        writer.cancel()
+        try:
+            loop.run_until_complete(writer)
+        except asyncio.CancelledError:
+            # try again
+            writer = loop.create_task(q.put(2))
+            loop.run_until_complete(writer)
+
+        value2 = q.get_nowait()
+        self.assertEqual(value2, 2)
+        self.assertEqual(q.qsize(), 0)
 
     def test_nonblocking_put_exception(self):
         q = asyncio.Queue(maxsize=1, loop=self.loop)
@@ -374,6 +486,7 @@ class QueuePutTests(_QueueTestBase):
         test_utils.run_briefly(self.loop)
         self.assertTrue(put_c.done())
         self.assertEqual(q.get_nowait(), 'a')
+        test_utils.run_briefly(self.loop)
         self.assertEqual(q.get_nowait(), 'b')
 
         self.loop.run_until_complete(put_b)
@@ -384,6 +497,29 @@ class QueuePutTests(_QueueTestBase):
         test_utils.run_briefly(self.loop)
         self.loop.run_until_complete(q.put('a'))
         self.assertEqual(self.loop.run_until_complete(t), 'a')
+
+    def test_why_are_putters_waiting(self):
+        # From issue #265.
+
+        queue = asyncio.Queue(2, loop=self.loop)
+
+        @asyncio.coroutine
+        def putter(item):
+            yield from queue.put(item)
+
+        @asyncio.coroutine
+        def getter():
+            yield
+            num = queue.qsize()
+            for _ in range(num):
+                item = queue.get_nowait()
+
+        t0 = putter(0)
+        t1 = putter(1)
+        t2 = putter(2)
+        t3 = putter(3)
+        self.loop.run_until_complete(
+            asyncio.gather(getter(), t0, t1, t2, t3, loop=self.loop))
 
 
 class LifoQueueTests(_QueueTestBase):
@@ -408,14 +544,16 @@ class PriorityQueueTests(_QueueTestBase):
         self.assertEqual([1, 2, 3], items)
 
 
-class JoinableQueueTests(_QueueTestBase):
+class _QueueJoinTestMixin:
+
+    q_class = None
 
     def test_task_done_underflow(self):
-        q = asyncio.JoinableQueue(loop=self.loop)
+        q = self.q_class(loop=self.loop)
         self.assertRaises(ValueError, q.task_done)
 
     def test_task_done(self):
-        q = asyncio.JoinableQueue(loop=self.loop)
+        q = self.q_class(loop=self.loop)
         for i in range(100):
             q.put_nowait(i)
 
@@ -452,7 +590,7 @@ class JoinableQueueTests(_QueueTestBase):
         self.loop.run_until_complete(asyncio.wait(tasks, loop=self.loop))
 
     def test_join_empty_queue(self):
-        q = asyncio.JoinableQueue(loop=self.loop)
+        q = self.q_class(loop=self.loop)
 
         # Test that a queue join()s successfully, and before anything else
         # (done twice for insurance).
@@ -465,11 +603,23 @@ class JoinableQueueTests(_QueueTestBase):
         self.loop.run_until_complete(join())
 
     def test_format(self):
-        q = asyncio.JoinableQueue(loop=self.loop)
+        q = self.q_class(loop=self.loop)
         self.assertEqual(q._format(), 'maxsize=0')
 
         q._unfinished_tasks = 2
         self.assertEqual(q._format(), 'maxsize=0 tasks=2')
+
+
+class QueueJoinTests(_QueueJoinTestMixin, _QueueTestBase):
+    q_class = asyncio.Queue
+
+
+class LifoQueueJoinTests(_QueueJoinTestMixin, _QueueTestBase):
+    q_class = asyncio.LifoQueue
+
+
+class PriorityQueueJoinTests(_QueueJoinTestMixin, _QueueTestBase):
+    q_class = asyncio.PriorityQueue
 
 
 if __name__ == '__main__':

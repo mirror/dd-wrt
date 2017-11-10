@@ -77,7 +77,7 @@ PyTypeObject PyCThunk_Type = {
 /**************************************************************/
 
 static void
-PrintError(char *msg, ...)
+PrintError(const char *msg, ...)
 {
     char buf[512];
     PyObject *f = PySys_GetObject("stderr");
@@ -91,49 +91,6 @@ PrintError(char *msg, ...)
     PyErr_Print();
 }
 
-
-/* after code that pyrex generates */
-void _ctypes_add_traceback(char *funcname, char *filename, int lineno)
-{
-    PyObject *py_globals = 0;
-    PyCodeObject *py_code = 0;
-    PyFrameObject *py_frame = 0;
-    PyObject *exception, *value, *tb;
-
-    /* (Save and) Clear the current exception. Python functions must not be
-       called with an exception set. Calling Python functions happens when
-       the codec of the filesystem encoding is implemented in pure Python. */
-    PyErr_Fetch(&exception, &value, &tb);
-
-    py_globals = PyDict_New();
-    if (!py_globals)
-        goto bad;
-    py_code = PyCode_NewEmpty(filename, funcname, lineno);
-    if (!py_code)
-        goto bad;
-    py_frame = PyFrame_New(
-        PyThreadState_Get(), /*PyThreadState *tstate,*/
-        py_code,             /*PyCodeObject *code,*/
-        py_globals,          /*PyObject *globals,*/
-        0                    /*PyObject *locals*/
-        );
-    if (!py_frame)
-        goto bad;
-    py_frame->f_lineno = lineno;
-
-    PyErr_Restore(exception, value, tb);
-    PyTraceBack_Here(py_frame);
-
-    Py_DECREF(py_globals);
-    Py_DECREF(py_code);
-    Py_DECREF(py_frame);
-    return;
-
-  bad:
-    Py_XDECREF(py_globals);
-    Py_XDECREF(py_code);
-    Py_XDECREF(py_frame);
-}
 
 #ifdef MS_WIN32
 /*
@@ -254,7 +211,7 @@ static void _CallPythonObject(void *mem,
     }
 
 #define CHECK(what, x) \
-if (x == NULL) _ctypes_add_traceback(what, "_ctypes/callbacks.c", __LINE__ - 1), PyErr_Print()
+if (x == NULL) _PyTraceback_Add(what, "_ctypes/callbacks.c", __LINE__ - 1), PyErr_Print()
 
     if (flags & (FUNCFLAG_USE_ERRNO | FUNCFLAG_USE_LASTERROR)) {
         error_object = _ctypes_get_errobj(&space);
@@ -348,7 +305,7 @@ static void closure_fcn(ffi_cif *cif,
 static CThunkObject* CThunkObject_new(Py_ssize_t nArgs)
 {
     CThunkObject *p;
-    int i;
+    Py_ssize_t i;
 
     p = PyObject_GC_NewVar(CThunkObject, &PyCThunk_Type, nArgs);
     if (p == NULL) {
@@ -356,11 +313,13 @@ static CThunkObject* CThunkObject_new(Py_ssize_t nArgs)
         return NULL;
     }
 
-    p->pcl_exec = NULL;
     p->pcl_write = NULL;
+    p->pcl_exec = NULL;
     memset(&p->cif, 0, sizeof(p->cif));
+    p->flags = 0;
     p->converters = NULL;
     p->callable = NULL;
+    p->restype = NULL;
     p->setfunc = NULL;
     p->ffi_restype = NULL;
 

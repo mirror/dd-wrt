@@ -194,9 +194,9 @@ class TestABC(unittest.TestCase):
         # check that the property's __isabstractmethod__ descriptor does the
         # right thing when presented with a value that fails truth testing:
         class NotBool(object):
-            def __nonzero__(self):
+            def __bool__(self):
                 raise ValueError()
-            __len__ = __nonzero__
+            __len__ = __bool__
         with self.assertRaises(ValueError):
             class F(C):
                 def bar(self):
@@ -402,6 +402,18 @@ class TestABC(unittest.TestCase):
         self.assertEqual(B.counter, 0)
         C()
         self.assertEqual(B.counter, 1)
+
+
+class TestABCWithInitSubclass(unittest.TestCase):
+    def test_works_with_init_subclass(self):
+        saved_kwargs = {}
+        class ReceivesClassKwargs:
+            def __init_subclass__(cls, **kwargs):
+                super().__init_subclass__()
+                saved_kwargs.update(kwargs)
+        class Receiver(ReceivesClassKwargs, abc.ABC, x=1, y=2, z=3):
+            pass
+        self.assertEqual(saved_kwargs, dict(x=1, y=2, z=3))
 
 
 if __name__ == "__main__":

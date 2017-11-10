@@ -137,7 +137,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         new_lasti = -1;
         for (offset = 0; offset < lnotab_len; offset += 2) {
             addr += lnotab[offset];
-            line += lnotab[offset+1];
+            line += (signed char)lnotab[offset+1];
             if (line >= new_lineno) {
                 new_lasti = addr;
                 new_lineno = line;
@@ -189,13 +189,14 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     memset(blockstack, '\0', sizeof(blockstack));
     memset(in_finally, '\0', sizeof(in_finally));
     blockstack_top = 0;
-    for (addr = 0; addr < code_len; addr++) {
+    for (addr = 0; addr < code_len; addr += sizeof(_Py_CODEUNIT)) {
         unsigned char op = code[addr];
         switch (op) {
         case SETUP_LOOP:
         case SETUP_EXCEPT:
         case SETUP_FINALLY:
         case SETUP_WITH:
+        case SETUP_ASYNC_WITH:
             blockstack[blockstack_top++] = addr;
             in_finally[blockstack_top-1] = 0;
             break;
@@ -203,7 +204,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         case POP_BLOCK:
             assert(blockstack_top > 0);
             setup_op = code[blockstack[blockstack_top-1]];
-            if (setup_op == SETUP_FINALLY || setup_op == SETUP_WITH) {
+            if (setup_op == SETUP_FINALLY || setup_op == SETUP_WITH
+                                    || setup_op == SETUP_ASYNC_WITH) {
                 in_finally[blockstack_top-1] = 1;
             }
             else {
@@ -218,7 +220,8 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
              * be seeing such an END_FINALLY.) */
             if (blockstack_top > 0) {
                 setup_op = code[blockstack[blockstack_top-1]];
-                if (setup_op == SETUP_FINALLY || setup_op == SETUP_WITH) {
+                if (setup_op == SETUP_FINALLY || setup_op == SETUP_WITH
+                                    || setup_op == SETUP_ASYNC_WITH) {
                     blockstack_top--;
                 }
             }
@@ -248,10 +251,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
                 }
             }
         }
-
-        if (op >= HAVE_ARGUMENT) {
-            addr += 2;
-        }
     }
 
     /* Verify that the blockstack tracking code didn't get lost. */
@@ -274,13 +273,14 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
      * can tell whether the jump goes into any blocks without coming out
      * again - in that case we raise an exception below. */
     delta_iblock = 0;
-    for (addr = min_addr; addr < max_addr; addr++) {
+    for (addr = min_addr; addr < max_addr; addr += sizeof(_Py_CODEUNIT)) {
         unsigned char op = code[addr];
         switch (op) {
         case SETUP_LOOP:
         case SETUP_EXCEPT:
         case SETUP_FINALLY:
         case SETUP_WITH:
+        case SETUP_ASYNC_WITH:
             delta_iblock++;
             break;
 
@@ -290,10 +290,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         }
 
         min_delta_iblock = Py_MIN(min_delta_iblock, delta_iblock);
-
-        if (op >= HAVE_ARGUMENT) {
-            addr += 2;
-        }
     }
 
     /* Derive the absolute iblock values from the deltas. */
@@ -345,15 +341,13 @@ frame_gettrace(PyFrameObject *f, void *closure)
 static int
 frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
 {
-    PyObject* old_value;
-
     /* We rely on f_lineno being accurate when f_trace is set. */
     f->f_lineno = PyFrame_GetLineNumber(f);
 
-    old_value = f->f_trace;
+    if (v == Py_None)
+        v = NULL;
     Py_XINCREF(v);
-    f->f_trace = v;
-    Py_XDECREF(old_value);
+    Py_XSETREF(f->f_trace, v);
 
     return 0;
 }
@@ -853,8 +847,7 @@ dict_to_map(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
             }
         } else if (values[j] != value) {
             Py_XINCREF(value);
-            Py_XDECREF(values[j]);
-            values[j] = value;
+            Py_XSETREF(values[j], value);
         }
         Py_XDECREF(value);
     }

@@ -1,5 +1,5 @@
 # xml.etree test for cElementTree
-import sys, struct
+import struct
 from test import support
 from test.support import import_fresh_module
 import types
@@ -11,6 +11,7 @@ cET_alias = import_fresh_module('xml.etree.cElementTree',
                                 fresh=['_elementtree', 'xml.etree'])
 
 
+@unittest.skipUnless(cET, 'requires _elementtree')
 class MiscTests(unittest.TestCase):
     # Issue #8651.
     @support.bigmemtest(size=support._2G + 100, memuse=1, dry_run=False)
@@ -21,6 +22,67 @@ class MiscTests(unittest.TestCase):
             self.assertRaises(OverflowError, parser.feed, data)
         finally:
             data = None
+
+    def test_del_attribute(self):
+        element = cET.Element('tag')
+
+        element.tag = 'TAG'
+        with self.assertRaises(AttributeError):
+            del element.tag
+        self.assertEqual(element.tag, 'TAG')
+
+        with self.assertRaises(AttributeError):
+            del element.text
+        self.assertIsNone(element.text)
+        element.text = 'TEXT'
+        with self.assertRaises(AttributeError):
+            del element.text
+        self.assertEqual(element.text, 'TEXT')
+
+        with self.assertRaises(AttributeError):
+            del element.tail
+        self.assertIsNone(element.tail)
+        element.tail = 'TAIL'
+        with self.assertRaises(AttributeError):
+            del element.tail
+        self.assertEqual(element.tail, 'TAIL')
+
+        with self.assertRaises(AttributeError):
+            del element.attrib
+        self.assertEqual(element.attrib, {})
+        element.attrib = {'A': 'B', 'C': 'D'}
+        with self.assertRaises(AttributeError):
+            del element.attrib
+        self.assertEqual(element.attrib, {'A': 'B', 'C': 'D'})
+
+    def test_trashcan(self):
+        # If this test fails, it will most likely die via segfault.
+        e = root = cET.Element('root')
+        for i in range(200000):
+            e = cET.SubElement(e, 'x')
+        del e
+        del root
+        support.gc_collect()
+
+    def test_parser_ref_cycle(self):
+        # bpo-31499: xmlparser_dealloc() crashed with a segmentation fault when
+        # xmlparser_gc_clear() was called previously by the garbage collector,
+        # when the parser was part of a reference cycle.
+
+        def parser_ref_cycle():
+            parser = cET.XMLParser()
+            # Create a reference cycle using an exception to keep the frame
+            # alive, so the parser will be destroyed by the garbage collector
+            try:
+                raise ValueError
+            except ValueError as exc:
+                err = exc
+
+        # Create a parser part of reference cycle
+        parser_ref_cycle()
+        # Trigger an explicit garbage collection to break the reference cycle
+        # and so destroy the parser
+        support.gc_collect()
 
 
 @unittest.skipUnless(cET, 'requires _elementtree')
@@ -55,7 +117,7 @@ class SizeofTest(unittest.TestCase):
     def setUp(self):
         self.elementsize = support.calcobjsize('5P')
         # extra
-        self.extra = struct.calcsize('PiiP4P')
+        self.extra = struct.calcsize('PnnP4P')
 
     check_sizeof = support.check_sizeof
 
@@ -76,7 +138,7 @@ class SizeofTest(unittest.TestCase):
                              struct.calcsize('8P'))
 
 def test_main():
-    from test import test_xml_etree, test_xml_etree_c
+    from test import test_xml_etree
 
     # Run the tests specific to the C implementation
     support.run_unittest(

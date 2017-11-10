@@ -4,12 +4,16 @@
 import os
 import pickle
 import random
+import re
 import subprocess
 import sys
+import sysconfig
+import textwrap
 import time
 import unittest
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
+from test.support.script_helper import assert_python_failure
 try:
     import _posixsubprocess
 except ImportError:
@@ -20,6 +24,9 @@ except ImportError:
     threading = None
 # Skip this test if the _testcapi module isn't available.
 _testcapi = support.import_module('_testcapi')
+
+# Were we compiled --with-pydebug or with #define Py_DEBUG?
+Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 
 
 def testfunction(self):
@@ -91,7 +98,7 @@ class CAPITest(unittest.TestCase):
             def __len__(self):
                 return 1
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
-                          1,Z(),3,[1, 2],5,6,7,8,9,10,11,12,13,14,15,16,17)
+                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17)
         # Issue #15736: overflow in _PySequence_BytesToCharpArray()
         class Z(object):
             def __len__(self):
@@ -99,7 +106,7 @@ class CAPITest(unittest.TestCase):
             def __getitem__(self, i):
                 return b'x'
         self.assertRaises(MemoryError, _posixsubprocess.fork_exec,
-                          1,Z(),3,[1, 2],5,6,7,8,9,10,11,12,13,14,15,16,17)
+                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17)
 
     @unittest.skipUnless(_posixsubprocess, '_posixsubprocess required for this test.')
     def test_subprocess_fork_exec(self):
@@ -109,7 +116,7 @@ class CAPITest(unittest.TestCase):
 
         # Issue #15738: crash in subprocess_fork_exec()
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
-                          Z(),[b'1'],3,[1, 2],5,6,7,8,9,10,11,12,13,14,15,16,17)
+                          Z(),[b'1'],3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17)
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
@@ -118,7 +125,7 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(_testcapi.no_docstring.__doc__, None)
         self.assertEqual(_testcapi.no_docstring.__text_signature__, None)
 
-        self.assertEqual(_testcapi.docstring_empty.__doc__, "")
+        self.assertEqual(_testcapi.docstring_empty.__doc__, None)
         self.assertEqual(_testcapi.docstring_empty.__text_signature__, None)
 
         self.assertEqual(_testcapi.docstring_no_signature.__doc__,
@@ -145,10 +152,94 @@ class CAPITest(unittest.TestCase):
             "This docstring has a valid signature.")
         self.assertEqual(_testcapi.docstring_with_signature.__text_signature__, "($module, /, sig)")
 
+        self.assertEqual(_testcapi.docstring_with_signature_but_no_doc.__doc__, None)
+        self.assertEqual(_testcapi.docstring_with_signature_but_no_doc.__text_signature__,
+            "($module, /, sig)")
+
         self.assertEqual(_testcapi.docstring_with_signature_and_extra_newlines.__doc__,
             "\nThis docstring has a valid signature and some extra newlines.")
         self.assertEqual(_testcapi.docstring_with_signature_and_extra_newlines.__text_signature__,
             "($module, /, parameter)")
+
+    def test_c_type_with_matrix_multiplication(self):
+        M = _testcapi.matmulType
+        m1 = M()
+        m2 = M()
+        self.assertEqual(m1 @ m2, ("matmul", m1, m2))
+        self.assertEqual(m1 @ 42, ("matmul", m1, 42))
+        self.assertEqual(42 @ m1, ("matmul", 42, m1))
+        o = m1
+        o @= m2
+        self.assertEqual(o, ("imatmul", m1, m2))
+        o = m1
+        o @= 42
+        self.assertEqual(o, ("imatmul", m1, 42))
+        o = 42
+        o @= m1
+        self.assertEqual(o, ("matmul", 42, m1))
+
+    def test_return_null_without_error(self):
+        # Issue #23571: A function must not return NULL without setting an
+        # error
+        if Py_DEBUG:
+            code = textwrap.dedent("""
+                import _testcapi
+                from test import support
+
+                with support.SuppressCrashReport():
+                    _testcapi.return_null_without_error()
+            """)
+            rc, out, err = assert_python_failure('-c', code)
+            self.assertRegex(err.replace(b'\r', b''),
+                             br'Fatal Python error: a function returned NULL '
+                                br'without setting an error\n'
+                             br'SystemError: <built-in function '
+                                 br'return_null_without_error> returned NULL '
+                                 br'without setting an error\n'
+                             br'\n'
+                             br'Current thread.*:\n'
+                             br'  File .*", line 6 in <module>')
+        else:
+            with self.assertRaises(SystemError) as cm:
+                _testcapi.return_null_without_error()
+            self.assertRegex(str(cm.exception),
+                             'return_null_without_error.* '
+                             'returned NULL without setting an error')
+
+    def test_return_result_with_error(self):
+        # Issue #23571: A function must not return a result with an error set
+        if Py_DEBUG:
+            code = textwrap.dedent("""
+                import _testcapi
+                from test import support
+
+                with support.SuppressCrashReport():
+                    _testcapi.return_result_with_error()
+            """)
+            rc, out, err = assert_python_failure('-c', code)
+            self.assertRegex(err.replace(b'\r', b''),
+                             br'Fatal Python error: a function returned a '
+                                br'result with an error set\n'
+                             br'ValueError\n'
+                             br'\n'
+                             br'The above exception was the direct cause '
+                                br'of the following exception:\n'
+                             br'\n'
+                             br'SystemError: <built-in '
+                                br'function return_result_with_error> '
+                                br'returned a result with an error set\n'
+                             br'\n'
+                             br'Current thread.*:\n'
+                             br'  File .*, line 6 in <module>')
+        else:
+            with self.assertRaises(SystemError) as cm:
+                _testcapi.return_result_with_error()
+            self.assertRegex(str(cm.exception),
+                             'return_result_with_error.* '
+                             'returned a result with an error set')
+
+    def test_buildvalue_N(self):
+        _testcapi.test_buildvalue_N()
 
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
@@ -202,15 +293,11 @@ class TestPendingCalls(unittest.TestCase):
         context.lock = threading.Lock()
         context.event = threading.Event()
 
-        for i in range(context.nThreads):
-            t = threading.Thread(target=self.pendingcalls_thread, args = (context,))
-            t.start()
-            threads.append(t)
-
-        self.pendingcalls_wait(context.l, n, context)
-
-        for t in threads:
-            t.join()
+        threads = [threading.Thread(target=self.pendingcalls_thread,
+                                    args=(context,))
+                   for i in range(context.nThreads)]
+        with support.start_threads(threads):
+            self.pendingcalls_wait(context.l, n, context)
 
     def pendingcalls_thread(self, context):
         try:
@@ -261,14 +348,15 @@ class Test6012(unittest.TestCase):
 
 class EmbeddingTests(unittest.TestCase):
     def setUp(self):
-        basepath = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        here = os.path.abspath(__file__)
+        basepath = os.path.dirname(os.path.dirname(os.path.dirname(here)))
         exename = "_testembed"
         if sys.platform.startswith("win"):
             ext = ("_d" if "_d" in sys.executable else "") + ".exe"
             exename += ext
             exepath = os.path.dirname(sys.executable)
         else:
-            exepath = os.path.join(basepath, "Modules")
+            exepath = os.path.join(basepath, "Programs")
         self.test_exe = exe = os.path.join(exepath, exename)
         if not os.path.exists(exe):
             self.skipTest("%r doesn't exist" % exe)
@@ -287,12 +375,13 @@ class EmbeddingTests(unittest.TestCase):
         cmd.extend(args)
         p = subprocess.Popen(cmd,
                              stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+                             stderr=subprocess.PIPE,
+                             universal_newlines=True)
         (out, err) = p.communicate()
         self.assertEqual(p.returncode, 0,
                          "bad returncode %d, stderr is %r" %
                          (p.returncode, err))
-        return out.decode("latin1"), err.decode("latin1")
+        return out, err
 
     def test_subinterps(self):
         # This is just a "don't crash" test
@@ -319,37 +408,42 @@ class EmbeddingTests(unittest.TestCase):
             print()
             print(out)
             print(err)
+        expected_errors = sys.__stdout__.errors
         expected_stdin_encoding = sys.__stdin__.encoding
         expected_pipe_encoding = self._get_default_pipe_encoding()
-        expected_output = os.linesep.join([
+        expected_output = '\n'.join([
         "--- Use defaults ---",
         "Expected encoding: default",
         "Expected errors: default",
-        "stdin: {0}:strict",
-        "stdout: {1}:strict",
-        "stderr: {1}:backslashreplace",
+        "stdin: {in_encoding}:{errors}",
+        "stdout: {out_encoding}:{errors}",
+        "stderr: {out_encoding}:backslashreplace",
         "--- Set errors only ---",
         "Expected encoding: default",
-        "Expected errors: surrogateescape",
-        "stdin: {0}:surrogateescape",
-        "stdout: {1}:surrogateescape",
-        "stderr: {1}:backslashreplace",
+        "Expected errors: ignore",
+        "stdin: {in_encoding}:ignore",
+        "stdout: {out_encoding}:ignore",
+        "stderr: {out_encoding}:backslashreplace",
         "--- Set encoding only ---",
         "Expected encoding: latin-1",
         "Expected errors: default",
-        "stdin: latin-1:strict",
-        "stdout: latin-1:strict",
+        "stdin: latin-1:{errors}",
+        "stdout: latin-1:{errors}",
         "stderr: latin-1:backslashreplace",
         "--- Set encoding and errors ---",
         "Expected encoding: latin-1",
-        "Expected errors: surrogateescape",
-        "stdin: latin-1:surrogateescape",
-        "stdout: latin-1:surrogateescape",
-        "stderr: latin-1:backslashreplace"]).format(expected_stdin_encoding,
-                                                    expected_pipe_encoding)
+        "Expected errors: replace",
+        "stdin: latin-1:replace",
+        "stdout: latin-1:replace",
+        "stderr: latin-1:backslashreplace"])
+        expected_output = expected_output.format(
+                                in_encoding=expected_stdin_encoding,
+                                out_encoding=expected_pipe_encoding,
+                                errors=expected_errors)
         # This is useful if we ever trip over odd platform behaviour
         self.maxDiff = None
         self.assertEqual(out.strip(), expected_output)
+
 
 class SkipitemTest(unittest.TestCase):
 
@@ -370,7 +464,7 @@ class SkipitemTest(unittest.TestCase):
         test and not for the other, there's a mismatch, and the test fails.
 
            ** Some format units have special funny semantics and it would
-              be difficult to accomodate them here.  Since these are all
+              be difficult to accommodate them here.  Since these are all
               well-established and properly skipped in skipitem() we can
               get away with not testing them--this test is really intended
               to catch *new* format units.
@@ -396,23 +490,22 @@ class SkipitemTest(unittest.TestCase):
             # test the format unit when not skipped
             format = c + "i"
             try:
-                # (note: the format string must be bytes!)
                 _testcapi.parse_tuple_and_keywords(tuple_1, dict_b,
-                    format.encode("ascii"), keywords)
+                    format, keywords)
                 when_not_skipped = False
-            except TypeError as e:
-                s = "argument 1 must be impossible<bad format char>, not int"
+            except SystemError as e:
+                s = "argument 1 (impossible<bad format char>)"
                 when_not_skipped = (str(e) == s)
-            except RuntimeError as e:
+            except TypeError:
                 when_not_skipped = False
 
             # test the format unit when skipped
             optional_format = "|" + format
             try:
                 _testcapi.parse_tuple_and_keywords(empty_tuple, dict_b,
-                    optional_format.encode("ascii"), keywords)
+                    optional_format, keywords)
                 when_skipped = False
-            except RuntimeError as e:
+            except SystemError as e:
                 s = "impossible<bad format char>: '{}'".format(format)
                 when_skipped = (str(e) == s)
 
@@ -423,15 +516,65 @@ class SkipitemTest(unittest.TestCase):
             self.assertIs(when_skipped, when_not_skipped, message)
 
     def test_parse_tuple_and_keywords(self):
-        # parse_tuple_and_keywords error handling tests
+        # Test handling errors in the parse_tuple_and_keywords helper itself
         self.assertRaises(TypeError, _testcapi.parse_tuple_and_keywords,
                           (), {}, 42, [])
         self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, b'', 42)
+                          (), {}, '', 42)
         self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, b'', [''] * 42)
+                          (), {}, '', [''] * 42)
         self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
-                          (), {}, b'', [42])
+                          (), {}, '', [42])
+
+    def test_bad_use(self):
+        # Test handling invalid format and keywords in
+        # PyArg_ParseTupleAndKeywords()
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (1,), {}, '||O', ['a'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (1, 2), {}, '|O|O', ['a', 'b'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {'a': 1}, '$$O', ['a'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {'a': 1, 'b': 2}, '$O$O', ['a', 'b'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {'a': 1}, '$|O', ['a'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {'a': 1, 'b': 2}, '$O|O', ['a', 'b'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (1,), {}, '|O', ['a', 'b'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (1,), {}, '|OO', ['a'])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {}, '|$O', [''])
+        self.assertRaises(SystemError, _testcapi.parse_tuple_and_keywords,
+                          (), {}, '|OO', ['a', ''])
+
+    def test_positional_only(self):
+        parse = _testcapi.parse_tuple_and_keywords
+
+        parse((1, 2, 3), {}, 'OOO', ['', '', 'a'])
+        parse((1, 2), {'a': 3}, 'OOO', ['', '', 'a'])
+        with self.assertRaisesRegex(TypeError,
+               r'Function takes at least 2 positional arguments \(1 given\)'):
+            parse((1,), {'a': 3}, 'OOO', ['', '', 'a'])
+        parse((1,), {}, 'O|OO', ['', '', 'a'])
+        with self.assertRaisesRegex(TypeError,
+               r'Function takes at least 1 positional arguments \(0 given\)'):
+            parse((), {}, 'O|OO', ['', '', 'a'])
+        parse((1, 2), {'a': 3}, 'OO$O', ['', '', 'a'])
+        with self.assertRaisesRegex(TypeError,
+               r'Function takes exactly 2 positional arguments \(1 given\)'):
+            parse((1,), {'a': 3}, 'OO$O', ['', '', 'a'])
+        parse((1,), {}, 'O|O$O', ['', '', 'a'])
+        with self.assertRaisesRegex(TypeError,
+               r'Function takes at least 1 positional arguments \(0 given\)'):
+            parse((), {}, 'O|O$O', ['', '', 'a'])
+        with self.assertRaisesRegex(SystemError, r'Empty parameter name after \$'):
+            parse((1,), {}, 'O|$OO', ['', '', 'a'])
+        with self.assertRaisesRegex(SystemError, 'Empty keyword'):
+            parse((1,), {}, 'O|OO', ['', 'a', ''])
+
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class TestThreadState(unittest.TestCase):
@@ -457,6 +600,7 @@ class TestThreadState(unittest.TestCase):
         t.start()
         t.join()
 
+
 class Test_testcapi(unittest.TestCase):
     def test__testcapi(self):
         for name in dir(_testcapi):
@@ -464,6 +608,86 @@ class Test_testcapi(unittest.TestCase):
                 with self.subTest("internal", name=name):
                     test = getattr(_testcapi, name)
                     test()
+
+
+class PyMemDebugTests(unittest.TestCase):
+    PYTHONMALLOC = 'debug'
+    # '0x04c06e0' or '04C06E0'
+    PTR_REGEX = r'(?:0x)?[0-9a-fA-F]+'
+
+    def check(self, code):
+        with support.SuppressCrashReport():
+            out = assert_python_failure('-c', code,
+                                        PYTHONMALLOC=self.PYTHONMALLOC)
+        stderr = out.err
+        return stderr.decode('ascii', 'replace')
+
+    def test_buffer_overflow(self):
+        out = self.check('import _testcapi; _testcapi.pymem_buffer_overflow()')
+        regex = (r"Debug memory block at address p={ptr}: API 'm'\n"
+                 r"    16 bytes originally requested\n"
+                 r"    The [0-9] pad bytes at p-[0-9] are FORBIDDENBYTE, as expected.\n"
+                 r"    The [0-9] pad bytes at tail={ptr} are not all FORBIDDENBYTE \(0x[0-9a-f]{{2}}\):\n"
+                 r"        at tail\+0: 0x78 \*\*\* OUCH\n"
+                 r"        at tail\+1: 0xfb\n"
+                 r"        at tail\+2: 0xfb\n"
+                 r"        .*\n"
+                 r"    The block was made by call #[0-9]+ to debug malloc/realloc.\n"
+                 r"    Data at p: cb cb cb .*\n"
+                 r"\n"
+                 r"Fatal Python error: bad trailing pad byte")
+        regex = regex.format(ptr=self.PTR_REGEX)
+        regex = re.compile(regex, flags=re.DOTALL)
+        self.assertRegex(out, regex)
+
+    def test_api_misuse(self):
+        out = self.check('import _testcapi; _testcapi.pymem_api_misuse()')
+        regex = (r"Debug memory block at address p={ptr}: API 'm'\n"
+                 r"    16 bytes originally requested\n"
+                 r"    The [0-9] pad bytes at p-[0-9] are FORBIDDENBYTE, as expected.\n"
+                 r"    The [0-9] pad bytes at tail={ptr} are FORBIDDENBYTE, as expected.\n"
+                 r"    The block was made by call #[0-9]+ to debug malloc/realloc.\n"
+                 r"    Data at p: cb cb cb .*\n"
+                 r"\n"
+                 r"Fatal Python error: bad ID: Allocated using API 'm', verified using API 'r'\n")
+        regex = regex.format(ptr=self.PTR_REGEX)
+        self.assertRegex(out, regex)
+
+    @unittest.skipUnless(threading, 'Test requires a GIL (multithreading)')
+    def check_malloc_without_gil(self, code):
+        out = self.check(code)
+        expected = ('Fatal Python error: Python memory allocator called '
+                    'without holding the GIL')
+        self.assertIn(expected, out)
+
+    def test_pymem_malloc_without_gil(self):
+        # Debug hooks must raise an error if PyMem_Malloc() is called
+        # without holding the GIL
+        code = 'import _testcapi; _testcapi.pymem_malloc_without_gil()'
+        self.check_malloc_without_gil(code)
+
+    def test_pyobject_malloc_without_gil(self):
+        # Debug hooks must raise an error if PyObject_Malloc() is called
+        # without holding the GIL
+        code = 'import _testcapi; _testcapi.pyobject_malloc_without_gil()'
+        self.check_malloc_without_gil(code)
+
+
+class PyMemMallocDebugTests(PyMemDebugTests):
+    PYTHONMALLOC = 'malloc_debug'
+
+
+@unittest.skipUnless(sysconfig.get_config_var('WITH_PYMALLOC') == 1,
+                     'need pymalloc')
+class PyMemPymallocDebugTests(PyMemDebugTests):
+    PYTHONMALLOC = 'pymalloc_debug'
+
+
+@unittest.skipUnless(Py_DEBUG, 'need Py_DEBUG')
+class PyMemDefaultTests(PyMemDebugTests):
+    # test default allocator of Python compiled in debug mode
+    PYTHONMALLOC = ''
+
 
 if __name__ == "__main__":
     unittest.main()

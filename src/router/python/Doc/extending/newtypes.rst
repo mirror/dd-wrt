@@ -52,11 +52,15 @@ The first bit that will be new is::
    } noddy_NoddyObject;
 
 This is what a Noddy object will contain---in this case, nothing more than what
-every Python object contains---a refcount and a pointer to a type object.
-These are the fields the ``PyObject_HEAD`` macro brings in.  The reason for the
-macro is to standardize the layout and to enable special debugging fields in
-debug builds.  Note that there is no semicolon after the ``PyObject_HEAD``
-macro; one is included in the macro definition.  Be wary of adding one by
+every Python object contains---a field called ``ob_base`` of type
+:c:type:`PyObject`.  :c:type:`PyObject` in turn, contains an ``ob_refcnt``
+field and a pointer to a type object.  These can be accessed using the macros
+:c:macro:`Py_REFCNT` and :c:macro:`Py_TYPE` respectively.  These are the fields
+the :c:macro:`PyObject_HEAD` macro brings in.  The reason for the macro is to
+standardize the layout and to enable special debugging fields in debug builds.
+
+Note that there is no semicolon after the :c:macro:`PyObject_HEAD` macro;
+one is included in the macro definition.  Be wary of adding one by
 accident; it's easy to do from habit, and your compiler might not complain,
 but someone else's probably will!  (On Windows, MSVC is known to call this an
 error and refuse to compile the code.)
@@ -80,7 +84,7 @@ Moving on, we come to the crunch --- the type object. ::
        0,                         /* tp_print */
        0,                         /* tp_getattr */
        0,                         /* tp_setattr */
-       0,                         /* tp_reserved */
+       0,                         /* tp_as_async */
        0,                         /* tp_repr */
        0,                         /* tp_as_number */
        0,                         /* tp_as_sequence */
@@ -120,12 +124,14 @@ our objects and in some error messages, for example::
 
    >>> "" + noddy.new_noddy()
    Traceback (most recent call last):
-     File "<stdin>", line 1, in ?
+     File "<stdin>", line 1, in <module>
    TypeError: cannot add type "noddy.Noddy" to string
 
 Note that the name is a dotted name that includes both the module name and the
 name of the type within the module. The module in this case is :mod:`noddy` and
-the type is :class:`Noddy`, so we set the type name to :class:`noddy.Noddy`. ::
+the type is :class:`Noddy`, so we set the type name to :class:`noddy.Noddy`.
+One side effect of using an undotted name is that the pydoc documentation tool
+will not list the new type in the module documentation. ::
 
    sizeof(noddy_NoddyObject),  /* tp_basicsize */
 
@@ -209,7 +215,9 @@ That's it!  All that remains is to build it; put the above code in a file called
    setup(name="noddy", version="1.0",
          ext_modules=[Extension("noddy", ["noddy.c"])])
 
-in a file called :file:`setup.py`; then typing ::
+in a file called :file:`setup.py`; then typing
+
+.. code-block:: shell-session
 
    $ python setup.py build
 
@@ -383,7 +391,8 @@ is used to initialize an object after it's created. Unlike the new method, we
 can't guarantee that the initializer is called.  The initializer isn't called
 when unpickling objects and it can be overridden.  Our initializer accepts
 arguments to provide initial values for our instance. Initializers always accept
-positional and keyword arguments.
+positional and keyword arguments. Initializers should return either 0 on
+success or -1 on error.
 
 Initializers can be called multiple times.  Anyone can call the :meth:`__init__`
 method on our objects.  For this reason, we have to be extra careful when
@@ -719,8 +728,9 @@ functions.  With :c:func:`Py_VISIT`, :c:func:`Noddy_traverse` can be simplified:
    uniformity across these boring implementations.
 
 We also need to provide a method for clearing any subobjects that can
-participate in cycles.  We implement the method and reimplement the deallocator
-to use it::
+participate in cycles.
+
+::
 
    static int
    Noddy_clear(Noddy *self)
@@ -736,13 +746,6 @@ to use it::
        Py_XDECREF(tmp);
 
        return 0;
-   }
-
-   static void
-   Noddy_dealloc(Noddy* self)
-   {
-       Noddy_clear(self);
-       Py_TYPE(self)->tp_free((PyObject*)self);
    }
 
 Notice the use of a temporary variable in :c:func:`Noddy_clear`. We use the
@@ -765,6 +768,23 @@ be simplified::
        Py_CLEAR(self->first);
        Py_CLEAR(self->last);
        return 0;
+   }
+
+Note that :c:func:`Noddy_dealloc` may call arbitrary functions through
+``__del__`` method or weakref callback. It means circular GC can be
+triggered inside the function.  Since GC assumes reference count is not zero,
+we need to untrack the object from GC by calling :c:func:`PyObject_GC_UnTrack`
+before clearing members. Here is reimplemented deallocator which uses
+:c:func:`PyObject_GC_UnTrack` and :c:func:`Noddy_clear`.
+
+::
+
+   static void
+   Noddy_dealloc(Noddy* self)
+   {
+       PyObject_GC_UnTrack(self);
+       Noddy_clear(self);
+       Py_TYPE(self)->tp_free((PyObject*)self);
    }
 
 Finally, we add the :const:`Py_TPFLAGS_HAVE_GC` flag to the class flags::
@@ -892,20 +912,20 @@ fields in the right order!  It's often easiest to find an example that includes
 all the fields you need (even if they're initialized to ``0``) and then change
 the values to suit your new type. ::
 
-   char *tp_name; /* For printing */
+   const char *tp_name; /* For printing */
 
 The name of the type - as mentioned in the last section, this will appear in
 various places, almost entirely for diagnostic purposes. Try to choose something
 that will be helpful in such a situation! ::
 
-   int tp_basicsize, tp_itemsize; /* For allocation */
+   Py_ssize_t tp_basicsize, tp_itemsize; /* For allocation */
 
 These fields tell the runtime how much memory to allocate when new objects of
 this type are created.  Python has some built-in support for variable length
 structures (think: strings, lists) which is where the :c:member:`~PyTypeObject.tp_itemsize` field
 comes in.  This will be dealt with later. ::
 
-   char *tp_doc;
+   const char *tp_doc;
 
 Here you can put a string (or its address) that you want returned when the
 Python script references ``obj.__doc__`` to retrieve the doc string.
@@ -1113,10 +1133,10 @@ If :c:member:`~PyTypeObject.tp_methods` is not *NULL*, it must refer to an array
 structure::
 
    typedef struct PyMethodDef {
-       char        *ml_name;       /* method name */
+       const char  *ml_name;       /* method name */
        PyCFunction  ml_meth;       /* implementation function */
        int          ml_flags;      /* flags */
-       char        *ml_doc;        /* docstring */
+       const char  *ml_doc;        /* docstring */
    } PyMethodDef;
 
 One entry should be defined for each method provided by the type; no entries are
@@ -1205,7 +1225,7 @@ Here is an example::
    {
        if (strcmp(name, "data") == 0)
        {
-           return PyInt_FromLong(obj->data);
+           return PyLong_FromLong(obj->data);
        }
 
        PyErr_Format(PyExc_AttributeError,
@@ -1512,4 +1532,3 @@ might be something like the following::
 .. [#] Even in the third version, we aren't guaranteed to avoid cycles.  Instances of
    string subclasses are allowed and string subclasses could allow cycles even if
    normal strings don't.
-

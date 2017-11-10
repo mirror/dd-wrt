@@ -121,7 +121,7 @@ but when it is set to the correct value, the header does not have to
 be patched up.
 It is best to first set all parameters, perhaps possibly the
 compression type, and then write audio frames using writeframesraw.
-When all frames have been written, either call writeframes('') or
+When all frames have been written, either call writeframes(b'') or
 close() to patch up the sizes in the header.
 Marks can be added anytime.  If there are any marks, you must call
 close() after all frames have been written.
@@ -257,6 +257,15 @@ from collections import namedtuple
 _aifc_params = namedtuple('_aifc_params',
                           'nchannels sampwidth framerate nframes comptype compname')
 
+_aifc_params.nchannels.__doc__ = 'Number of audio channels (1 for mono, 2 for stereo)'
+_aifc_params.sampwidth.__doc__ = 'Sample width in bytes'
+_aifc_params.framerate.__doc__ = 'Sampling frequency'
+_aifc_params.nframes.__doc__ = 'Number of audio frames'
+_aifc_params.comptype.__doc__ = 'Compression type ("NONE" for AIFF files)'
+_aifc_params.compname.__doc__ = ("""\
+A human-readable version of the compression type
+('not compressed' for AIFF files)""")
+
 
 class Aifc_read:
     # Variables used in this class:
@@ -293,6 +302,8 @@ class Aifc_read:
     #       file for readframes()
     # _ssnd_chunk -- instantiation of a chunk class for the SSND chunk
     # _framesize -- size of one frame in the file
+
+    _file = None  # Set here since __del__ checks it
 
     def initfp(self, file):
         self._version = 0
@@ -335,9 +346,15 @@ class Aifc_read:
 
     def __init__(self, f):
         if isinstance(f, str):
-            f = builtins.open(f, 'rb')
-        # else, assume it is an open file object already
-        self.initfp(f)
+            file_object = builtins.open(f, 'rb')
+            try:
+                self.initfp(file_object)
+            except:
+                file_object.close()
+                raise
+        else:
+            # assume it is an open file object already
+            self.initfp(f)
 
     def __enter__(self):
         return self
@@ -356,7 +373,10 @@ class Aifc_read:
         self._soundpos = 0
 
     def close(self):
-        self._file.close()
+        file = self._file
+        if file is not None:
+            self._file = None
+            file.close()
 
     def tell(self):
         return self._soundpos
@@ -529,18 +549,23 @@ class Aifc_write:
     # _datalength -- the size of the audio samples written to the header
     # _datawritten -- the size of the audio samples actually written
 
+    _file = None  # Set here since __del__ checks it
+
     def __init__(self, f):
         if isinstance(f, str):
-            filename = f
-            f = builtins.open(f, 'wb')
+            file_object = builtins.open(f, 'wb')
+            try:
+                self.initfp(file_object)
+            except:
+                file_object.close()
+                raise
+
+            # treat .aiff file extensions as non-compressed audio
+            if f.endswith('.aiff'):
+                self._aifc = 0
         else:
-            # else, assume it is an open file object already
-            filename = '???'
-        self.initfp(f)
-        if filename[-5:] == '.aiff':
-            self._aifc = 0
-        else:
-            self._aifc = 1
+            # assume it is an open file object already
+            self.initfp(f)
 
     def initfp(self, file):
         self._file = file

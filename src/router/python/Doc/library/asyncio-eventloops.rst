@@ -3,6 +3,8 @@
 Event loops
 ===========
 
+**Source code:** :source:`Lib/asyncio/events.py`
+
 Event loop functions
 --------------------
 
@@ -35,31 +37,31 @@ asyncio currently provides two implementations of event loops:
 .. class:: SelectorEventLoop
 
    Event loop based on the :mod:`selectors` module. Subclass of
-   :class:`BaseEventLoop`.
+   :class:`AbstractEventLoop`.
 
    Use the most efficient selector available on the platform.
 
    On Windows, only sockets are supported (ex: pipes are not supported):
    see the `MSDN documentation of select
-   <http://msdn.microsoft.com/en-us/library/windows/desktop/ms740141%28v=vs.85%29.aspx>`_.
+   <https://msdn.microsoft.com/en-us/library/windows/desktop/ms740141%28v=vs.85%29.aspx>`_.
 
 .. class:: ProactorEventLoop
 
    Proactor event loop for Windows using "I/O Completion Ports" aka IOCP.
-   Subclass of :class:`BaseEventLoop`.
+   Subclass of :class:`AbstractEventLoop`.
 
    Availability: Windows.
 
    .. seealso::
 
       `MSDN documentation on I/O Completion Ports
-      <http://msdn.microsoft.com/en-us/library/windows/desktop/aa365198%28v=vs.85%29.aspx>`_.
+      <https://msdn.microsoft.com/en-us/library/windows/desktop/aa365198%28v=vs.85%29.aspx>`_.
 
 Example to use a :class:`ProactorEventLoop` on Windows::
 
-    import asyncio, os
+    import asyncio, sys
 
-    if os.name == 'nt':
+    if sys.platform == 'win32':
         loop = asyncio.ProactorEventLoop()
         asyncio.set_event_loop(loop)
 
@@ -76,40 +78,43 @@ Windows
 
 Common limits of Windows event loops:
 
-- :meth:`~BaseEventLoop.create_unix_server` and
-  :meth:`~BaseEventLoop.create_unix_server` are not supported: the socket
+- :meth:`~AbstractEventLoop.create_unix_connection` and
+  :meth:`~AbstractEventLoop.create_unix_server` are not supported: the socket
   family :data:`socket.AF_UNIX` is specific to UNIX
-- :meth:`~BaseEventLoop.add_signal_handler` and
-  :meth:`~BaseEventLoop.remove_signal_handler` are not supported
+- :meth:`~AbstractEventLoop.add_signal_handler` and
+  :meth:`~AbstractEventLoop.remove_signal_handler` are not supported
 - :meth:`EventLoopPolicy.set_child_watcher` is not supported.
   :class:`ProactorEventLoop` supports subprocesses. It has only one
   implementation to watch child processes, there is no need to configure it.
 
 :class:`SelectorEventLoop` specific limits:
 
-- :class:`~selectors.SelectSelector` is used but it only supports sockets
-- :meth:`~BaseEventLoop.add_reader` and :meth:`~BaseEventLoop.add_writer` only
+- :class:`~selectors.SelectSelector` is used which only supports sockets
+  and is limited to 512 sockets.
+- :meth:`~AbstractEventLoop.add_reader` and :meth:`~AbstractEventLoop.add_writer` only
   accept file descriptors of sockets
 - Pipes are not supported
-  (ex: :meth:`~BaseEventLoop.connect_read_pipe`,
-  :meth:`~BaseEventLoop.connect_write_pipe`)
+  (ex: :meth:`~AbstractEventLoop.connect_read_pipe`,
+  :meth:`~AbstractEventLoop.connect_write_pipe`)
 - :ref:`Subprocesses <asyncio-subprocess>` are not supported
-  (ex: :meth:`~BaseEventLoop.subprocess_exec`,
-  :meth:`~BaseEventLoop.subprocess_shell`)
+  (ex: :meth:`~AbstractEventLoop.subprocess_exec`,
+  :meth:`~AbstractEventLoop.subprocess_shell`)
 
 :class:`ProactorEventLoop` specific limits:
 
-- SSL is not supported: :meth:`~BaseEventLoop.create_connection` and
-  :meth:`~BaseEventLoop.create_server` cannot be used with SSL for example
-- :meth:`~BaseEventLoop.create_datagram_endpoint` (UDP) is not supported
-- :meth:`~BaseEventLoop.add_reader` and :meth:`~BaseEventLoop.add_writer` are
+- :meth:`~AbstractEventLoop.create_datagram_endpoint` (UDP) is not supported
+- :meth:`~AbstractEventLoop.add_reader` and :meth:`~AbstractEventLoop.add_writer` are
   not supported
 
 The resolution of the monotonic clock on Windows is usually around 15.6 msec.
 The best resolution is 0.5 msec. The resolution depends on the hardware
 (availability of `HPET
-<http://fr.wikipedia.org/wiki/High_Precision_Event_Timer>`_) and on the Windows
+<https://en.wikipedia.org/wiki/High_Precision_Event_Timer>`_) and on the Windows
 configuration. See :ref:`asyncio delayed calls <asyncio-delayed-calls>`.
+
+.. versionchanged:: 3.5
+
+   :class:`ProactorEventLoop` now supports SSL.
 
 
 Mac OS X
@@ -150,6 +155,7 @@ loop per thread that interacts with :mod:`asyncio`. The module-level functions
 :func:`get_event_loop` and :func:`set_event_loop` provide convenient access to
 event loops managed by the default policy.
 
+
 Event loop policy interface
 ---------------------------
 
@@ -157,22 +163,31 @@ An event loop policy must implement the following interface:
 
 .. class:: AbstractEventLoopPolicy
 
+   Event loop policy.
+
    .. method:: get_event_loop()
 
-   Get the event loop for the current context. Returns an event loop object
-   implementing the :class:`BaseEventLoop` interface, or raises an exception in case
-   no event loop has been set for the current context and the current policy
-   does not specify to create one. It should never return ``None``.
+      Get the event loop for the current context.
+
+      Returns an event loop object implementing the :class:`AbstractEventLoop`
+      interface.
+
+      Raises an exception in case no event loop has been set for the current
+      context and the current policy does not specify to create one. It must
+      never return ``None``.
 
    .. method:: set_event_loop(loop)
 
-   Set the event loop for the current context to *loop*.
+      Set the event loop for the current context to *loop*.
 
    .. method:: new_event_loop()
 
-   Create and return a new event loop object according to this policy's rules.
-   If there's need to set this loop as the event loop for the current context,
-   :meth:`set_event_loop` must be called explicitly.
+      Create and return a new event loop object according to this policy's
+      rules.
+
+      If there's need to set this loop as the event loop for the current
+      context, :meth:`set_event_loop` must be called explicitly.
+
 
 Access to the global loop policy
 --------------------------------
@@ -185,4 +200,3 @@ Access to the global loop policy
 
    Set the current event loop policy. If *policy* is ``None``, the default
    policy is restored.
-

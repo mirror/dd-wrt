@@ -1,5 +1,6 @@
 import importlib
 import shutil
+import stat
 import sys
 import os
 import unittest
@@ -9,14 +10,9 @@ import errno
 from test import support
 
 TESTFN = support.TESTFN
-TESTDIRN = os.path.basename(tempfile.mkdtemp(dir='.'))
 
 
 class TestSupport(unittest.TestCase):
-    def setUp(self):
-        support.unlink(TESTFN)
-        support.rmtree(TESTDIRN)
-    tearDown = setUp
 
     def test_import_module(self):
         support.import_module("ftplib")
@@ -48,11 +44,28 @@ class TestSupport(unittest.TestCase):
         support.unlink(TESTFN)
 
     def test_rmtree(self):
-        os.mkdir(TESTDIRN)
-        os.mkdir(os.path.join(TESTDIRN, TESTDIRN))
-        support.rmtree(TESTDIRN)
-        self.assertFalse(os.path.exists(TESTDIRN))
-        support.rmtree(TESTDIRN)
+        dirpath = support.TESTFN + 'd'
+        subdirpath = os.path.join(dirpath, 'subdir')
+        os.mkdir(dirpath)
+        os.mkdir(subdirpath)
+        support.rmtree(dirpath)
+        self.assertFalse(os.path.exists(dirpath))
+        with support.swap_attr(support, 'verbose', 0):
+            support.rmtree(dirpath)
+
+        os.mkdir(dirpath)
+        os.mkdir(subdirpath)
+        os.chmod(dirpath, stat.S_IRUSR|stat.S_IXUSR)
+        with support.swap_attr(support, 'verbose', 0):
+            support.rmtree(dirpath)
+        self.assertFalse(os.path.exists(dirpath))
+
+        os.mkdir(dirpath)
+        os.mkdir(subdirpath)
+        os.chmod(dirpath, 0)
+        with support.swap_attr(support, 'verbose', 0):
+            support.rmtree(dirpath)
+        self.assertFalse(os.path.exists(dirpath))
 
     def test_forget(self):
         mod_filename = TESTFN + '.py'
@@ -69,6 +82,7 @@ class TestSupport(unittest.TestCase):
         finally:
             del sys.path[0]
             support.unlink(mod_filename)
+            support.rmtree('__pycache__')
 
     def test_HOST(self):
         s = socket.socket()
@@ -84,7 +98,7 @@ class TestSupport(unittest.TestCase):
     def test_bind_port(self):
         s = socket.socket()
         support.bind_port(s)
-        s.listen(1)
+        s.listen()
         s.close()
 
     # Tests for temp_dir()
@@ -226,8 +240,9 @@ class TestSupport(unittest.TestCase):
         self.assertEqual(cm.exception.errno, errno.EBADF)
 
     def test_check_syntax_error(self):
-        support.check_syntax_error(self, "def class")
-        self.assertRaises(AssertionError, support.check_syntax_error, self, "1")
+        support.check_syntax_error(self, "def class", lineno=1, offset=9)
+        with self.assertRaises(AssertionError):
+            support.check_syntax_error(self, "x=1")
 
     def test_CleanImport(self):
         import importlib
@@ -267,17 +282,88 @@ class TestSupport(unittest.TestCase):
 
     def test_swap_attr(self):
         class Obj:
-            x = 1
+            pass
         obj = Obj()
-        with support.swap_attr(obj, "x", 5):
+        obj.x = 1
+        with support.swap_attr(obj, "x", 5) as x:
             self.assertEqual(obj.x, 5)
+            self.assertEqual(x, 1)
         self.assertEqual(obj.x, 1)
+        with support.swap_attr(obj, "y", 5) as y:
+            self.assertEqual(obj.y, 5)
+            self.assertIsNone(y)
+        self.assertFalse(hasattr(obj, 'y'))
+        with support.swap_attr(obj, "y", 5):
+            del obj.y
+        self.assertFalse(hasattr(obj, 'y'))
 
     def test_swap_item(self):
-        D = {"item":1}
-        with support.swap_item(D, "item", 5):
-            self.assertEqual(D["item"], 5)
-        self.assertEqual(D["item"], 1)
+        D = {"x":1}
+        with support.swap_item(D, "x", 5) as x:
+            self.assertEqual(D["x"], 5)
+            self.assertEqual(x, 1)
+        self.assertEqual(D["x"], 1)
+        with support.swap_item(D, "y", 5) as y:
+            self.assertEqual(D["y"], 5)
+            self.assertIsNone(y)
+        self.assertNotIn("y", D)
+        with support.swap_item(D, "y", 5):
+            del D["y"]
+        self.assertNotIn("y", D)
+
+    class RefClass:
+        attribute1 = None
+        attribute2 = None
+        _hidden_attribute1 = None
+        __magic_1__ = None
+
+    class OtherClass:
+        attribute2 = None
+        attribute3 = None
+        __magic_1__ = None
+        __magic_2__ = None
+
+    def test_detect_api_mismatch(self):
+        missing_items = support.detect_api_mismatch(self.RefClass,
+                                                    self.OtherClass)
+        self.assertEqual({'attribute1'}, missing_items)
+
+        missing_items = support.detect_api_mismatch(self.OtherClass,
+                                                    self.RefClass)
+        self.assertEqual({'attribute3', '__magic_2__'}, missing_items)
+
+    def test_detect_api_mismatch__ignore(self):
+        ignore = ['attribute1', 'attribute3', '__magic_2__', 'not_in_either']
+
+        missing_items = support.detect_api_mismatch(
+                self.RefClass, self.OtherClass, ignore=ignore)
+        self.assertEqual(set(), missing_items)
+
+        missing_items = support.detect_api_mismatch(
+                self.OtherClass, self.RefClass, ignore=ignore)
+        self.assertEqual(set(), missing_items)
+
+    def test_check__all__(self):
+        extra = {'tempdir'}
+        blacklist = {'template'}
+        support.check__all__(self,
+                             tempfile,
+                             extra=extra,
+                             blacklist=blacklist)
+
+        extra = {'TextTestResult', 'installHandler'}
+        blacklist = {'load_tests', "TestProgram", "BaseTestSuite"}
+
+        support.check__all__(self,
+                             unittest,
+                             ("unittest.result", "unittest.case",
+                              "unittest.suite", "unittest.loader",
+                              "unittest.main", "unittest.runner",
+                              "unittest.signals"),
+                             extra=extra,
+                             blacklist=blacklist)
+
+        self.assertRaises(AssertionError, support.check__all__, self, unittest)
 
     # XXX -follows a list of untested API
     # make_legacy_pyc

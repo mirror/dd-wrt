@@ -127,7 +127,7 @@ PyFile_GetLine(PyObject *f, int n)
 int
 PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 {
-    PyObject *writer, *value, *args, *result;
+    PyObject *writer, *value, *result;
     _Py_IDENTIFIER(write);
 
     if (f == NULL) {
@@ -146,14 +146,7 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
         Py_DECREF(writer);
         return -1;
     }
-    args = PyTuple_Pack(1, value);
-    if (args == NULL) {
-        Py_DECREF(value);
-        Py_DECREF(writer);
-        return -1;
-    }
-    result = PyEval_CallObject(writer, args);
-    Py_DECREF(args);
+    result = _PyObject_CallArg1(writer, value);
     Py_DECREF(value);
     Py_DECREF(writer);
     if (result == NULL)
@@ -372,8 +365,11 @@ PyFile_NewStdPrinter(int fd)
 static PyObject *
 stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
 {
-    char *c;
+    PyObject *unicode;
+    PyObject *bytes = NULL;
+    char *str;
     Py_ssize_t n;
+    int err;
 
     if (self->fd < 0) {
         /* fd might be invalid on Windows
@@ -383,26 +379,33 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
         Py_RETURN_NONE;
     }
 
-    if (!PyArg_ParseTuple(args, "s", &c)) {
+    if (!PyArg_ParseTuple(args, "U", &unicode))
         return NULL;
+
+    /* encode Unicode to UTF-8 */
+    str = PyUnicode_AsUTF8AndSize(unicode, &n);
+    if (str == NULL) {
+        PyErr_Clear();
+        bytes = _PyUnicode_AsUTF8String(unicode, "backslashreplace");
+        if (bytes == NULL)
+            return NULL;
+        if (PyBytes_AsStringAndSize(bytes, &str, &n) < 0) {
+            Py_DECREF(bytes);
+            return NULL;
+        }
     }
-    n = strlen(c);
 
-    Py_BEGIN_ALLOW_THREADS
-    errno = 0;
-#ifdef MS_WINDOWS
-    if (n > INT_MAX)
-        n = INT_MAX;
-    n = write(self->fd, c, (int)n);
-#else
-    n = write(self->fd, c, n);
-#endif
-    Py_END_ALLOW_THREADS
+    n = _Py_write(self->fd, str, n);
+    /* save errno, it can be modified indirectly by Py_XDECREF() */
+    err = errno;
 
-    if (n < 0) {
-        if (errno == EAGAIN)
+    Py_XDECREF(bytes);
+
+    if (n == -1) {
+        if (err == EAGAIN) {
+            PyErr_Clear();
             Py_RETURN_NONE;
-        PyErr_SetFromErrno(PyExc_IOError);
+        }
         return NULL;
     }
 
