@@ -5,8 +5,8 @@
 
 /* Support objects whose length is > PY_SSIZE_T_MAX.
 
-   This could be sped up for small PyLongs if they fit in an Py_ssize_t.
-   This only matters on Win64.  Though we could use PY_LONG_LONG which
+   This could be sped up for small PyLongs if they fit in a Py_ssize_t.
+   This only matters on Win64.  Though we could use long long which
    would presumably help perf.
 */
 
@@ -29,17 +29,10 @@ validate_step(PyObject *step)
         return PyLong_FromLong(1);
 
     step = PyNumber_Index(step);
-    if (step) {
-        Py_ssize_t istep = PyNumber_AsSsize_t(step, NULL);
-        if (istep == -1 && PyErr_Occurred()) {
-            /* Ignore OverflowError, we know the value isn't 0. */
-            PyErr_Clear();
-        }
-        else if (istep == 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "range() arg 3 must not be zero");
-            Py_CLEAR(step);
-        }
+    if (step && _PyLong_Sign(step) == 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "range() arg 3 must not be zero");
+        Py_CLEAR(step);
     }
 
     return step;
@@ -129,9 +122,9 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return (PyObject *) obj;
 
     /* Failed to create object, release attributes */
-    Py_XDECREF(start);
-    Py_XDECREF(stop);
-    Py_XDECREF(step);
+    Py_DECREF(start);
+    Py_DECREF(stop);
+    Py_DECREF(step);
     return NULL;
 }
 
@@ -139,7 +132,11 @@ PyDoc_STRVAR(range_doc,
 "range(stop) -> range object\n\
 range(start, stop[, step]) -> range object\n\
 \n\
-Return a virtual sequence of numbers from start to stop by step.");
+Return an object that produces a sequence of integers from start (inclusive)\n\
+to stop (exclusive) by step.  range(i, j) produces i, i+1, i+2, ..., j-1.\n\
+start defaults to 0, and stop is omitted!  range(4) produces 0, 1, 2, 3.\n\
+These are exactly the valid indices for a list of 4 elements.\n\
+When step is given, it specifies the increment (or decrement).");
 
 static void
 range_dealloc(rangeobject *r)
@@ -190,8 +187,11 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
     }
 
     /* if (lo >= hi), return length of 0. */
-    if (PyObject_RichCompareBool(lo, hi, Py_GE) == 1) {
-        Py_XDECREF(step);
+    cmp_result = PyObject_RichCompareBool(lo, hi, Py_GE);
+    if (cmp_result != 0) {
+        Py_DECREF(step);
+        if (cmp_result < 0)
+            return NULL;
         return PyLong_FromLong(0);
     }
 
@@ -218,9 +218,9 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
     return result;
 
   Fail:
+    Py_DECREF(step);
     Py_XDECREF(tmp2);
     Py_XDECREF(diff);
-    Py_XDECREF(step);
     Py_XDECREF(tmp1);
     Py_XDECREF(one);
     return NULL;
@@ -399,7 +399,7 @@ range_contains_long(rangeobject *r, PyObject *ob)
     tmp2 = PyNumber_Remainder(tmp1, r->step);
     if (tmp2 == NULL)
         goto end;
-    /* result = (int(ob) - start % step) == 0 */
+    /* result = ((int(ob) - start) % step) == 0 */
     result = PyObject_RichCompareBool(tmp2, zero, Py_EQ);
   end:
     Py_XDECREF(tmp1);
@@ -668,6 +668,16 @@ static PyMappingMethods range_as_mapping = {
         (objobjargproc)0,            /* mp_ass_subscript */
 };
 
+static int
+range_bool(rangeobject* self)
+{
+    return PyObject_IsTrue(self->length);
+}
+
+static PyNumberMethods range_as_number = {
+    .nb_bool = (inquiry)range_bool,
+};
+
 static PyObject * range_iter(PyObject *seq);
 static PyObject * range_reverse(PyObject *seq);
 
@@ -707,7 +717,7 @@ PyTypeObject PyRange_Type = {
         0,                      /* tp_setattr */
         0,                      /* tp_reserved */
         (reprfunc)range_repr,   /* tp_repr */
-        0,                      /* tp_as_number */
+        &range_as_number,       /* tp_as_number */
         &range_as_sequence,     /* tp_as_sequence */
         &range_as_mapping,      /* tp_as_mapping */
         (hashfunc)range_hash,   /* tp_hash */
@@ -930,12 +940,27 @@ rangeiter_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
     long start, stop, step;
 
-    if (!_PyArg_NoKeywords("rangeiter()", kw))
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "range_iterator(): creating instances of range_iterator "
+                     "by calling range_iterator type is deprecated",
+                     1)) {
         return NULL;
+    }
 
-    if (!PyArg_ParseTuple(args, "lll;rangeiter() requires 3 int arguments",
-                          &start, &stop, &step))
+    if (!_PyArg_NoKeywords("range_iterator()", kw)) {
         return NULL;
+    }
+
+    if (!PyArg_ParseTuple(args,
+                          "lll;range_iterator() requires 3 int arguments",
+                          &start, &stop, &step)) {
+        return NULL;
+    }
+    if (step == 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "range_iterator() arg 3 must not be zero");
+        return NULL;
+    }
 
     return fast_range_iter(start, stop, step);
 }
@@ -987,15 +1012,14 @@ static PyObject *
 longrangeiter_setstate(longrangeiterobject *r, PyObject *state)
 {
     int cmp;
-   
+
     /* clip the value */
     PyObject *zero = PyLong_FromLong(0);
     if (zero == NULL)
         return NULL;
     cmp = PyObject_RichCompareBool(state, zero, Py_LT);
     if (cmp > 0) {
-        Py_CLEAR(r->index);
-        r->index = zero;
+        Py_XSETREF(r->index, zero);
         Py_RETURN_NONE;
     }
     Py_DECREF(zero);
@@ -1007,10 +1031,9 @@ longrangeiter_setstate(longrangeiterobject *r, PyObject *state)
         return NULL;
     if (cmp > 0)
         state = r->len;
-    
-    Py_CLEAR(r->index);
-    r->index = state;
-    Py_INCREF(r->index);
+
+    Py_INCREF(state);
+    Py_XSETREF(r->index, state);
     Py_RETURN_NONE;
 }
 
@@ -1059,8 +1082,7 @@ longrangeiter_next(longrangeiterobject *r)
     result = PyNumber_Add(r->start, product);
     Py_DECREF(product);
     if (result) {
-        Py_DECREF(r->index);
-        r->index = new_index;
+        Py_SETREF(r->index, new_index);
     }
     else {
         Py_DECREF(new_index);

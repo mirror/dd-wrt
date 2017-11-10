@@ -25,7 +25,7 @@ Initializing and finalizing the interpreter
       triple: module; search; path
       single: PySys_SetArgv()
       single: PySys_SetArgvEx()
-      single: Py_Finalize()
+      single: Py_FinalizeEx()
 
    Initialize the Python interpreter.  In an application embedding  Python, this
    should be called before using any other Python/C API functions; with the
@@ -34,33 +34,38 @@ Initializing and finalizing the interpreter
    modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.  It also initializes
    the module search path (``sys.path``). It does not set ``sys.argv``; use
    :c:func:`PySys_SetArgvEx` for that.  This is a no-op when called for a second time
-   (without calling :c:func:`Py_Finalize` first).  There is no return value; it is a
+   (without calling :c:func:`Py_FinalizeEx` first).  There is no return value; it is a
    fatal error if the initialization fails.
+
+   .. note::
+      On Windows, changes the console mode from ``O_TEXT`` to ``O_BINARY``, which will
+      also affect non-Python uses of the console using the C Runtime.
 
 
 .. c:function:: void Py_InitializeEx(int initsigs)
 
-   This function works like :c:func:`Py_Initialize` if *initsigs* is 1. If
-   *initsigs* is 0, it skips initialization registration of signal handlers, which
+   This function works like :c:func:`Py_Initialize` if *initsigs* is ``1``. If
+   *initsigs* is ``0``, it skips initialization registration of signal handlers, which
    might be useful when Python is embedded.
 
 
 .. c:function:: int Py_IsInitialized()
 
    Return true (nonzero) when the Python interpreter has been initialized, false
-   (zero) if not.  After :c:func:`Py_Finalize` is called, this returns false until
+   (zero) if not.  After :c:func:`Py_FinalizeEx` is called, this returns false until
    :c:func:`Py_Initialize` is called again.
 
 
-.. c:function:: void Py_Finalize()
+.. c:function:: int Py_FinalizeEx()
 
    Undo all initializations made by :c:func:`Py_Initialize` and subsequent use of
    Python/C API functions, and destroy all sub-interpreters (see
    :c:func:`Py_NewInterpreter` below) that were created and not yet destroyed since
    the last call to :c:func:`Py_Initialize`.  Ideally, this frees all memory
    allocated by the Python interpreter.  This is a no-op when called for a second
-   time (without calling :c:func:`Py_Initialize` again first).  There is no return
-   value; errors during finalization are ignored.
+   time (without calling :c:func:`Py_Initialize` again first).  Normally the
+   return value is 0.  If there were errors during finalization
+   (flushing buffered data), -1 is returned.
 
    This function is provided for a number of reasons.  An embedding application
    might want to restart Python without having to restart the application itself.
@@ -79,14 +84,22 @@ Initializing and finalizing the interpreter
    freed.  Some memory allocated by extension modules may not be freed.  Some
    extensions may not work properly if their initialization routine is called more
    than once; this can happen if an application calls :c:func:`Py_Initialize` and
-   :c:func:`Py_Finalize` more than once.
+   :c:func:`Py_FinalizeEx` more than once.
+
+   .. versionadded:: 3.6
+
+
+.. c:function:: void Py_Finalize()
+
+   This is a backwards-compatible version of :c:func:`Py_FinalizeEx` that
+   disregards the return value.
 
 
 Process-wide parameters
 =======================
 
 
-.. c:function:: int Py_SetStandardStreamEncoding(char *encoding, char *errors)
+.. c:function:: int Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
 
    .. index::
       single: Py_Initialize()
@@ -107,10 +120,10 @@ Process-wide parameters
    Note that :data:`sys.stderr` always uses the "backslashreplace" error
    handler, regardless of this (or any other) setting.
 
-   If :c:func:`Py_Finalize` is called, this function will need to be called
+   If :c:func:`Py_FinalizeEx` is called, this function will need to be called
    again in order to affect subsequent calls to :c:func:`Py_Initialize`.
 
-   Returns 0 if successful, a nonzero value on error (e.g. calling after the
+   Returns ``0`` if successful, a nonzero value on error (e.g. calling after the
    interpreter has already been initialized).
 
    .. versionadded:: 3.4
@@ -133,6 +146,9 @@ Process-wide parameters
    zero-terminated wide character string in static storage whose contents will not
    change for the duration of the program's execution.  No code in the Python
    interpreter will change the contents of this storage.
+
+   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
+   :c:type:`wchar_*` string.
 
 
 .. c:function:: wchar* Py_GetProgramName()
@@ -236,12 +252,20 @@ Process-wide parameters
    :c:func:`Py_Initialize`, then :c:func:`Py_GetPath` won't attempt to compute a
    default search path but uses the one provided instead.  This is useful if
    Python is embedded by an application that has full knowledge of the location
-   of all modules.  The path components should be separated by semicolons.
+   of all modules.  The path components should be separated by the platform
+   dependent delimiter character, which is ``':'`` on Unix and Mac OS X, ``';'``
+   on Windows.
 
    This also causes :data:`sys.executable` to be set only to the raw program
    name (see :c:func:`Py_SetProgramName`) and for :data:`sys.prefix` and
    :data:`sys.exec_prefix` to be empty.  It is up to the caller to modify these
    if required after calling :c:func:`Py_Initialize`.
+
+   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
+   :c:type:`wchar_*` string.
+
+   The path argument is copied internally, so the caller may free it after the
+   call completes.
 
 
 .. c:function:: const char* Py_GetVersion()
@@ -334,16 +358,19 @@ Process-wide parameters
    - If the name of an existing script is passed in ``argv[0]``, the absolute
      path of the directory where the script is located is prepended to
      :data:`sys.path`.
-   - Otherwise (that is, if *argc* is 0 or ``argv[0]`` doesn't point
+   - Otherwise (that is, if *argc* is ``0`` or ``argv[0]`` doesn't point
      to an existing file name), an empty string is prepended to
      :data:`sys.path`, which is the same as prepending the current working
      directory (``"."``).
 
+   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
+   :c:type:`wchar_*` string.
+
    .. note::
       It is recommended that applications embedding the Python interpreter
-      for purposes other than executing a single script pass 0 as *updatepath*,
+      for purposes other than executing a single script pass ``0`` as *updatepath*,
       and update :data:`sys.path` themselves if desired.
-      See `CVE-2008-5983 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_.
+      See `CVE-2008-5983 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_.
 
       On versions before 3.1.3, you can achieve the same effect by manually
       popping the first :data:`sys.path` element after having called
@@ -353,15 +380,18 @@ Process-wide parameters
 
    .. versionadded:: 3.1.3
 
-   .. XXX impl. doesn't seem consistent in allowing 0/NULL for the params;
+   .. XXX impl. doesn't seem consistent in allowing ``0``/``NULL`` for the params;
       check w/ Guido.
 
 
 .. c:function:: void PySys_SetArgv(int argc, wchar_t **argv)
 
    This function works like :c:func:`PySys_SetArgvEx` with *updatepath* set
-   to 1 unless the :program:`python` interpreter was started with the
+   to ``1`` unless the :program:`python` interpreter was started with the
    :option:`-I`.
+
+   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
+   :c:type:`wchar_*` string.
 
    .. versionchanged:: 3.4 The *updatepath* value depends on :option:`-I`.
 
@@ -376,6 +406,9 @@ Process-wide parameters
    storage whose contents will not change for the duration of the program's
    execution.  No code in the Python interpreter will change the contents of
    this storage.
+
+   Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
+   :c:type:`wchar_*` string.
 
 
 .. c:function:: w_char* Py_GetPythonHome()
@@ -694,10 +727,10 @@ with sub-interpreters:
 
 .. c:function:: int PyGILState_Check()
 
-   Return 1 if the current thread is holding the GIL and 0 otherwise.
+   Return ``1`` if the current thread is holding the GIL and ``0`` otherwise.
    This function can be called from any thread at any time.
    Only if it has had its Python thread state initialized and currently is
-   holding the GIL will it return 1.
+   holding the GIL will it return ``1``.
    This is mainly a helper/diagnostic function.  It can be useful
    for example in callback contexts or memory allocation functions when
    knowing that the GIL is locked can allow the caller to perform sensitive
@@ -853,6 +886,8 @@ been created.
       instead.
 
 
+.. _sub-interpreter-support:
+
 Sub-interpreter support
 =======================
 
@@ -896,7 +931,7 @@ using the following functions:
    entry.)
 
    .. index::
-      single: Py_Finalize()
+      single: Py_FinalizeEx()
       single: Py_Initialize()
 
    Extension modules are shared between (sub-)interpreters as follows: the first
@@ -906,7 +941,7 @@ using the following functions:
    and filled with the contents of this copy; the extension's ``init`` function is
    not called.  Note that this is different from what happens when an extension is
    imported after the interpreter has been completely re-initialized by calling
-   :c:func:`Py_Finalize` and :c:func:`Py_Initialize`; in that case, the extension's
+   :c:func:`Py_FinalizeEx` and :c:func:`Py_Initialize`; in that case, the extension's
    ``initmodule`` function *is* called again.
 
    .. index:: single: close() (in module os)
@@ -914,14 +949,14 @@ using the following functions:
 
 .. c:function:: void Py_EndInterpreter(PyThreadState *tstate)
 
-   .. index:: single: Py_Finalize()
+   .. index:: single: Py_FinalizeEx()
 
    Destroy the (sub-)interpreter represented by the given thread state. The given
    thread state must be the current thread state.  See the discussion of thread
    states below.  When the call returns, the current thread state is *NULL*.  All
    thread states associated with this interpreter are destroyed.  (The global
    interpreter lock must be held before calling this function and is still held
-   when it returns.)  :c:func:`Py_Finalize` will destroy all sub-interpreters that
+   when it returns.)  :c:func:`Py_FinalizeEx` will destroy all sub-interpreters that
    haven't been explicitly destroyed at that point.
 
 
@@ -965,8 +1000,8 @@ pointer and a void pointer argument.
    .. index:: single: Py_AddPendingCall()
 
    Schedule a function to be called from the main interpreter thread.  On
-   success, 0 is returned and *func* is queued for being called in the
-   main thread.  On failure, -1 is returned without setting any exception.
+   success, ``0`` is returned and *func* is queued for being called in the
+   main thread.  On failure, ``-1`` is returned without setting any exception.
 
    When successfully queued, *func* will be *eventually* called from the
    main interpreter thread with the argument *arg*.  It will be called
@@ -977,7 +1012,7 @@ pointer and a void pointer argument.
    * with the main thread holding the :term:`global interpreter lock`
      (*func* can therefore use the full C API).
 
-   *func* must return 0 on success, or -1 on failure with an exception
+   *func* must return ``0`` on success, or ``-1`` on failure with an exception
    set.  *func* won't be interrupted to perform another asynchronous
    notification recursively, but it can still be interrupted to switch
    threads if the global interpreter lock is released.
@@ -1177,7 +1212,7 @@ These functions are only intended to be used by advanced debugging tools.
 
 .. c:function:: PyThreadState * PyInterpreterState_ThreadHead(PyInterpreterState *interp)
 
-   Return the a pointer to the first :c:type:`PyThreadState` object in the list of
+   Return the pointer to the first :c:type:`PyThreadState` object in the list of
    threads associated with the interpreter *interp*.
 
 

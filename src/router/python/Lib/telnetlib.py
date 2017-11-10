@@ -36,10 +36,7 @@ To do:
 import sys
 import socket
 import selectors
-try:
-    from time import monotonic as _time
-except ImportError:
-    from time import time as _time
+from time import monotonic as _time
 
 __all__ = ["Telnet"]
 
@@ -264,12 +261,13 @@ class Telnet:
 
     def close(self):
         """Close the connection."""
-        if self.sock:
-            self.sock.close()
-        self.sock = 0
-        self.eof = 1
+        sock = self.sock
+        self.sock = None
+        self.eof = True
         self.iacseq = b''
         self.sb = 0
+        if sock:
+            sock.close()
 
     def get_socket(self):
         """Return the socket object used internally."""
@@ -639,6 +637,12 @@ class Telnet:
             raise EOFError
         return (-1, None, text)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.close()
+
 
 def test():
     """Test program for telnetlib.
@@ -662,11 +666,10 @@ def test():
             port = int(portstr)
         except ValueError:
             port = socket.getservbyname(portstr, 'tcp')
-    tn = Telnet()
-    tn.set_debuglevel(debuglevel)
-    tn.open(host, port, timeout=0.5)
-    tn.interact()
-    tn.close()
+    with Telnet() as tn:
+        tn.set_debuglevel(debuglevel)
+        tn.open(host, port, timeout=0.5)
+        tn.interact()
 
 if __name__ == '__main__':
     test()

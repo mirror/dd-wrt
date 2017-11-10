@@ -89,7 +89,8 @@ This module defines the following functions:
    Return the thread stack size used when creating new threads.  The optional
    *size* argument specifies the stack size to be used for subsequently created
    threads, and must be 0 (use platform or configured default) or a positive
-   integer value of at least 32,768 (32 KiB). If changing the thread stack size is
+   integer value of at least 32,768 (32 KiB). If *size* is not specified,
+   0 is used.  If changing the thread stack size is
    unsupported, a :exc:`RuntimeError` is raised.  If the specified stack size is
    invalid, a :exc:`ValueError` is raised and the stack size is unmodified.  32 KiB
    is currently the minimum supported stack size value to guarantee sufficient
@@ -255,7 +256,7 @@ since it is impossible to detect the termination of alien threads.
 
       Wait until the thread terminates. This blocks the calling thread until
       the thread whose :meth:`~Thread.join` method is called terminates -- either
-      normally or through an unhandled exception --, or until the optional
+      normally or through an unhandled exception -- or until the optional
       timeout occurs.
 
       When the *timeout* argument is present and not ``None``, it should be a
@@ -370,8 +371,9 @@ All methods are executed atomically.
    lock, subsequent attempts to acquire it block, until it is released; any
    thread may release it.
 
-   .. versionchanged:: 3.3
-      Changed from a factory function to a class.
+   Note that ``Lock`` is actually a factory function which returns an instance
+   of the most efficient version of the concrete Lock class that is supported
+   by the platform.
 
 
    .. method:: acquire(blocking=True, timeout=-1)
@@ -614,7 +616,7 @@ item to the buffer only needs to wake up one consumer thread.
 
    .. method:: wait_for(predicate, timeout=None)
 
-      Wait until a condition evaluates to True.  *predicate* should be a
+      Wait until a condition evaluates to true.  *predicate* should be a
       callable which result will be interpreted as a boolean value.
       A *timeout* may be provided giving the maximum time to wait.
 
@@ -630,7 +632,7 @@ item to the buffer only needs to wake up one consumer thread.
             cv.wait()
 
       Therefore, the same rules apply as with :meth:`wait`: The lock must be
-      held when called and is re-aquired on return.  The predicate is evaluated
+      held when called and is re-acquired on return.  The predicate is evaluated
       with the lock held.
 
       .. versionadded:: 3.2
@@ -713,7 +715,7 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
       without an argument would block, return false immediately; otherwise,
       do the same thing as when called without arguments, and return true.
 
-      When invoked with a *timeout* other than None, it will block for at
+      When invoked with a *timeout* other than ``None``, it will block for at
       most *timeout* seconds.  If acquire does not complete successfully in
       that interval, return false.  Return true otherwise.
 
@@ -846,15 +848,15 @@ For example::
        print("hello, world")
 
    t = Timer(30.0, hello)
-   t.start() # after 30 seconds, "hello, world" will be printed
+   t.start()  # after 30 seconds, "hello, world" will be printed
 
 
 .. class:: Timer(interval, function, args=None, kwargs=None)
 
    Create a timer that will run *function* with arguments *args* and  keyword
    arguments *kwargs*, after *interval* seconds have passed.
-   If *args* is None (the default) then an empty list will be used.
-   If *kwargs* is None (the default) then an empty dict will be used.
+   If *args* is ``None`` (the default) then an empty list will be used.
+   If *kwargs* is ``None`` (the default) then an empty dict will be used.
 
    .. versionchanged:: 3.3
       changed from a factory function to a class.
@@ -873,8 +875,8 @@ Barrier Objects
 This class provides a simple synchronization primitive for use by a fixed number
 of threads that need to wait for each other.  Each of the threads tries to pass
 the barrier by calling the :meth:`~Barrier.wait` method and will block until
-all of the threads have made the call.  At this points, the threads are released
-simultanously.
+all of the threads have made their :meth:`~Barrier.wait` calls. At this point,
+the threads are released simultaneously.
 
 The barrier can be reused any number of times for the same number of threads.
 

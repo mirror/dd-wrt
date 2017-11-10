@@ -1,9 +1,8 @@
 from test.support import findfile, TESTFN, unlink
-import unittest
 import array
 import io
 import pickle
-import sys
+
 
 class UnseekableIO(io.FileIO):
     def tell(self):
@@ -45,8 +44,9 @@ class AudioTests:
         self.assertEqual(params.comptype, comptype)
         self.assertEqual(params.compname, compname)
 
-        dump = pickle.dumps(params)
-        self.assertEqual(pickle.loads(dump), params)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            dump = pickle.dumps(params, proto)
+            self.assertEqual(pickle.loads(dump), params)
 
 
 class AudioWriteTests(AudioTests):

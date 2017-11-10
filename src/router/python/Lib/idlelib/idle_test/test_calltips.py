@@ -1,5 +1,5 @@
 import unittest
-import idlelib.CallTips as ct
+import idlelib.calltips as ct
 import textwrap
 import types
 
@@ -46,17 +46,22 @@ class Get_signatureTest(unittest.TestCase):
 
         # Python class that inherits builtin methods
         class List(list): "List() doc"
+
         # Simulate builtin with no docstring for default tip test
         class SB:  __call__ = None
 
         def gtest(obj, out):
             self.assertEqual(signature(obj), out)
 
-        gtest(List, List.__doc__)
+        if List.__doc__ is not None:
+            gtest(List, List.__doc__)  # This and append_doc changed in 3.7.
         gtest(list.__new__,
-               'Create and return a new object.  See help(type) for accurate signature.')
+               '(*args, **kwargs)\nCreate and return a new object.'
+               '  See help(type) for accurate signature.')
         gtest(list.__init__,
+               '(self, /, *args, **kwargs)' + ct._argument_positional + '\n' +
                'Initialize self.  See help(type(self)) for accurate signature.')
+
         append_doc =  "L.append(object) -> None -- append object to end"
         gtest(list.append, append_doc)
         gtest([].append, append_doc)
@@ -64,9 +69,18 @@ class Get_signatureTest(unittest.TestCase):
 
         gtest(types.MethodType, "method(function, instance)")
         gtest(SB(), default_tip)
+        import re
+        p = re.compile('')
+        gtest(re.sub, '''(pattern, repl, string, count=0, flags=0)\nReturn the string obtained by replacing the leftmost
+non-overlapping occurrences of the pattern in string by the
+replacement repl.  repl can be either a string or a callable;
+if a string, backslash escapes in it are processed.  If it is
+a callable, it's passed the match object and must return''')
+        gtest(p.sub, '''(repl, string, count=0)\nReturn the string obtained by replacing the leftmost non-overlapping occurrences o...''')
 
     def test_signature_wrap(self):
-        self.assertEqual(signature(textwrap.TextWrapper), '''\
+        if textwrap.TextWrapper.__doc__ is not None:
+            self.assertEqual(signature(textwrap.TextWrapper), '''\
 (width=70, initial_indent='', subsequent_indent='', expand_tabs=True,
     replace_whitespace=True, fix_sentence_endings=False, break_long_words=True,
     drop_whitespace=True, break_on_hyphens=True, tabsize=8, *, max_lines=None,
@@ -79,9 +93,9 @@ class Get_signatureTest(unittest.TestCase):
 
     def test_multiline_docstring(self):
         # Test fewer lines than max.
-        self.assertEqual(signature(list),
-                "list() -> new empty list\n"
-                "list(iterable) -> new list initialized from iterable's items")
+        self.assertEqual(signature(range),
+                "range(stop) -> range object\n"
+                "range(start, stop[, step]) -> range object")
 
         # Test max lines
         self.assertEqual(signature(bytes), '''\
@@ -108,30 +122,41 @@ bytes() -> empty bytes object''')
         def t5(a, b=None, *args, **kw): 'doc'
         t5.tip = "(a, b=None, *args, **kw)"
 
+        doc = '\ndoc' if t1.__doc__ is not None else ''
         for func in (t1, t2, t3, t4, t5, TC):
-            self.assertEqual(signature(func), func.tip + '\ndoc')
+            self.assertEqual(signature(func), func.tip + doc)
 
     def test_methods(self):
+        doc = '\ndoc' if TC.__doc__ is not None else ''
         for meth in (TC.t1, TC.t2, TC.t3, TC.t4, TC.t5, TC.t6, TC.__call__):
-            self.assertEqual(signature(meth), meth.tip + "\ndoc")
-        self.assertEqual(signature(TC.cm), "(a)\ndoc")
-        self.assertEqual(signature(TC.sm), "(b)\ndoc")
+            self.assertEqual(signature(meth), meth.tip + doc)
+        self.assertEqual(signature(TC.cm), "(a)" + doc)
+        self.assertEqual(signature(TC.sm), "(b)" + doc)
 
     def test_bound_methods(self):
         # test that first parameter is correctly removed from argspec
+        doc = '\ndoc' if TC.__doc__ is not None else ''
         for meth, mtip  in ((tc.t1, "()"), (tc.t4, "(*args)"), (tc.t6, "(self)"),
                             (tc.__call__, '(ci)'), (tc, '(ci)'), (TC.cm, "(a)"),):
-            self.assertEqual(signature(meth), mtip + "\ndoc")
+            self.assertEqual(signature(meth), mtip + doc)
 
     def test_starred_parameter(self):
         # test that starred first parameter is *not* removed from argspec
         class C:
             def m1(*args): pass
-            def m2(**kwds): pass
         c = C()
-        for meth, mtip  in ((C.m1, '(*args)'), (c.m1, "(*args)"),
-                                      (C.m2, "(**kwds)"), (c.m2, "(**kwds)"),):
+        for meth, mtip  in ((C.m1, '(*args)'), (c.m1, "(*args)"),):
             self.assertEqual(signature(meth), mtip)
+
+    def test_invalid_method_signature(self):
+        class C:
+            def m2(**kwargs): pass
+        class Test:
+            def __call__(*, a): pass
+
+        mtip = ct._invalid_method
+        self.assertEqual(signature(C().m2), mtip)
+        self.assertEqual(signature(Test()), mtip)
 
     def test_non_ascii_name(self):
         # test that re works to delete a first parameter name that
@@ -151,16 +176,22 @@ bytes() -> empty bytes object''')
         class NoCall:
             def __getattr__(self, name):
                 raise BaseException
-        class Call(NoCall):
+        class CallA(NoCall):
+            def __call__(oui, a, b, c):
+                pass
+        class CallB(NoCall):
             def __call__(self, ci):
                 pass
-        for meth, mtip  in ((NoCall, default_tip), (Call, default_tip),
-                            (NoCall(), ''), (Call(), '(ci)')):
+
+        for meth, mtip  in ((NoCall, default_tip), (CallA, default_tip),
+                            (NoCall(), ''), (CallA(), '(a, b, c)'),
+                            (CallB(), '(ci)')):
             self.assertEqual(signature(meth), mtip)
 
     def test_non_callables(self):
         for obj in (0, 0.0, '0', b'0', [], {}):
             self.assertEqual(signature(obj), '')
+
 
 class Get_entityTest(unittest.TestCase):
     def test_bad_entity(self):

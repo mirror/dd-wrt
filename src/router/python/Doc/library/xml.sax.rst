@@ -3,10 +3,14 @@
 
 .. module:: xml.sax
    :synopsis: Package containing SAX2 base classes and convenience functions.
+
 .. moduleauthor:: Lars Marius Garshol <larsga@garshol.priv.no>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 
+**Source code:** :source:`Lib/xml/sax/__init__.py`
+
+--------------
 
 The :mod:`xml.sax` package provides a number of modules which implement the
 Simple API for XML (SAX) interface for Python.  The package itself provides the
@@ -47,7 +51,11 @@ The convenience functions are:
 .. function:: parseString(string, handler, error_handler=handler.ErrorHandler())
 
    Similar to :func:`parse`, but parses from a buffer *string* received as a
-   parameter.
+   parameter.  *string* must be a :class:`str` instance or a
+   :term:`bytes-like object`.
+
+   .. versionchanged:: 3.5
+      Added support of :class:`str` instances.
 
 A typical SAX application uses three kinds of objects: readers, handlers and
 input sources.  "Reader" in this context is another term for parser, i.e. some

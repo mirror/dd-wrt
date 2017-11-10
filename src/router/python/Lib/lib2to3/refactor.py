@@ -8,8 +8,6 @@ recursively descend down directories.  Imported as a module, this
 provides infrastructure to write your own refactoring tool.
 """
 
-from __future__ import with_statement
-
 __author__ = "Guido van Rossum <guido@python.org>"
 
 
@@ -26,7 +24,6 @@ from itertools import chain
 from .pgen2 import driver, tokenize, token
 from .fixer_util import find_root
 from . import pytree, pygram
-from . import btm_utils as bu
 from . import btm_matcher as bm
 
 
@@ -57,7 +54,7 @@ def _get_head_types(pat):
         # Always return leafs
         if pat.type is None:
             raise _EveryNode
-        return set([pat.type])
+        return {pat.type}
 
     if isinstance(pat, pytree.NegatedPattern):
         if pat.content:
@@ -133,7 +130,7 @@ def _detect_future_features(source):
     def advance():
         tok = next(gen)
         return tok[0], tok[1]
-    ignore = frozenset((token.NEWLINE, tokenize.NL, token.COMMENT))
+    ignore = frozenset({token.NEWLINE, tokenize.NL, token.COMMENT})
     features = set()
     try:
         while True:
@@ -184,7 +181,7 @@ class RefactoringTool(object):
 
         Args:
             fixer_names: a list of fixers to import
-            options: an dict with configuration.
+            options: a dict with configuration.
             explicit: a list of fixers to run even if they are explicit.
         """
         self.fixers = fixer_names
@@ -255,7 +252,7 @@ class RefactoringTool(object):
             fixer = fix_class(self.options, self.fixer_log)
             if fixer.explicit and self.explicit is not True and \
                     fix_mod_path not in self.explicit:
-                self.log_message("Skipping implicit fixer: %s", fix_name)
+                self.log_message("Skipping optional fixer: %s", fix_name)
                 continue
 
             self.log_debug("Adding transformation: %s", fix_name)

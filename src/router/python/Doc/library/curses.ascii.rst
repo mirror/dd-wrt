@@ -3,9 +3,11 @@
 
 .. module:: curses.ascii
    :synopsis: Constants and set-membership functions for ASCII characters.
+
 .. moduleauthor:: Eric S. Raymond <esr@thyrsus.com>
 .. sectionauthor:: Eric S. Raymond <esr@thyrsus.com>
 
+--------------
 
 The :mod:`curses.ascii` module supplies name constants for ASCII characters and
 functions to test membership in various ASCII character classes.  The constants
@@ -113,12 +115,12 @@ C library:
 
 .. function:: isblank(c)
 
-   Checks for an ASCII whitespace character.
+   Checks for an ASCII whitespace character; space or horizontal tab.
 
 
 .. function:: iscntrl(c)
 
-   Checks for an ASCII control character (in the range 0x00 to 0x1f).
+   Checks for an ASCII control character (in the range 0x00 to 0x1f or 0x7f).
 
 
 .. function:: isdigit(c)
@@ -211,7 +213,7 @@ it returns a string.
 
    Return a string representation of the ASCII character *c*.  If *c* is printable,
    this string is the character itself.  If the character is a control character
-   (0x00-0x1f) the string consists of a caret (``'^'``) followed by the
+   (0x00--0x1f) the string consists of a caret (``'^'``) followed by the
    corresponding uppercase letter. If the character is an ASCII delete (0x7f) the
    string is ``'^?'``.  If the character has its meta bit (0x80) set, the meta bit
    is stripped, the preceding rules applied, and ``'!'`` prepended to the result.

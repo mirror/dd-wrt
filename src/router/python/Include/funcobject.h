@@ -58,6 +58,20 @@ PyAPI_FUNC(int) PyFunction_SetClosure(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyFunction_GetAnnotations(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetAnnotations(PyObject *, PyObject *);
 
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(PyObject *) _PyFunction_FastCallDict(
+    PyObject *func,
+    PyObject **args,
+    Py_ssize_t nargs,
+    PyObject *kwargs);
+
+PyAPI_FUNC(PyObject *) _PyFunction_FastCallKeywords(
+    PyObject *func,
+    PyObject **stack,
+    Py_ssize_t nargs,
+    PyObject *kwnames);
+#endif
+
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
 #define PyFunction_GET_CODE(func) \

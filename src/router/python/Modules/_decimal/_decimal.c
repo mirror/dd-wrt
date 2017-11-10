@@ -36,7 +36,6 @@
 #include <stdlib.h>
 
 #include "docstrings.h"
-#include "memory.h"
 
 
 #if !defined(MPD_VERSION_HEX) || MPD_VERSION_HEX < 0x02040100
@@ -1890,12 +1889,13 @@ is_space(enum PyUnicode_Kind kind, void *data, Py_ssize_t pos)
 /* Return the ASCII representation of a numeric Unicode string. The numeric
    string may contain ascii characters in the range [1, 127], any Unicode
    space and any unicode digit. If strip_ws is true, leading and trailing
-   whitespace is stripped.
+   whitespace is stripped. If ignore_underscores is true, underscores are
+   ignored.
 
    Return NULL if malloc fails and an empty string if invalid characters
    are found. */
 static char *
-numeric_as_ascii(const PyObject *u, int strip_ws)
+numeric_as_ascii(const PyObject *u, int strip_ws, int ignore_underscores)
 {
     enum PyUnicode_Kind kind;
     void *data;
@@ -1930,6 +1930,9 @@ numeric_as_ascii(const PyObject *u, int strip_ws)
 
     for (; j < len; j++) {
         ch = PyUnicode_READ(kind, data, j);
+        if (ignore_underscores && ch == '_') {
+            continue;
+        }
         if (0 < ch && ch <= 127) {
             *cp++ = ch;
             continue;
@@ -2012,7 +2015,7 @@ PyDecType_FromUnicode(PyTypeObject *type, const PyObject *u,
     PyObject *dec;
     char *s;
 
-    s = numeric_as_ascii(u, 0);
+    s = numeric_as_ascii(u, 0, 0);
     if (s == NULL) {
         return NULL;
     }
@@ -2032,7 +2035,7 @@ PyDecType_FromUnicodeExactWS(PyTypeObject *type, const PyObject *u,
     PyObject *dec;
     char *s;
 
-    s = numeric_as_ascii(u, 1);
+    s = numeric_as_ascii(u, 1, 1);
     if (s == NULL) {
         return NULL;
     }
@@ -2160,13 +2163,17 @@ dec_from_long(PyTypeObject *type, const PyObject *v,
 /* Return a new PyDecObject from a PyLongObject. Use the context for
    conversion. */
 static PyObject *
-PyDecType_FromLong(PyTypeObject *type, const PyObject *pylong,
-                   PyObject *context)
+PyDecType_FromLong(PyTypeObject *type, const PyObject *v, PyObject *context)
 {
     PyObject *dec;
     uint32_t status = 0;
 
-    dec = dec_from_long(type, pylong, CTX(context), &status);
+    if (!PyLong_Check(v)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be an integer");
+        return NULL;
+    }
+
+    dec = dec_from_long(type, v, CTX(context), &status);
     if (dec == NULL) {
         return NULL;
     }
@@ -2182,15 +2189,20 @@ PyDecType_FromLong(PyTypeObject *type, const PyObject *pylong,
 /* Return a new PyDecObject from a PyLongObject. Use a maximum context
    for conversion. If the conversion is not exact, set InvalidOperation. */
 static PyObject *
-PyDecType_FromLongExact(PyTypeObject *type, const PyObject *pylong,
+PyDecType_FromLongExact(PyTypeObject *type, const PyObject *v,
                         PyObject *context)
 {
     PyObject *dec;
     uint32_t status = 0;
     mpd_context_t maxctx;
 
+    if (!PyLong_Check(v)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be an integer");
+        return NULL;
+    }
+
     mpd_maxcontext(&maxctx);
-    dec = dec_from_long(type, pylong, &maxctx, &status);
+    dec = dec_from_long(type, v, &maxctx, &status);
     if (dec == NULL) {
         return NULL;
     }
@@ -2207,6 +2219,14 @@ PyDecType_FromLongExact(PyTypeObject *type, const PyObject *pylong,
 
     return dec;
 }
+
+/* External C-API functions */
+static binaryfunc _py_long_multiply;
+static binaryfunc _py_long_floor_divide;
+static ternaryfunc _py_long_power;
+static unaryfunc _py_float_abs;
+static PyCFunction _py_long_bit_length;
+static PyCFunction _py_float_as_integer_ratio;
 
 /* Return a PyDecObject or a subtype from a PyFloatObject.
    Conversion is exact. */
@@ -2258,13 +2278,13 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     }
 
     /* absolute value of the float */
-    tmp = PyObject_CallMethod(v, "__abs__", NULL);
+    tmp = _py_float_abs(v);
     if (tmp == NULL) {
         return NULL;
     }
 
     /* float as integer ratio: numerator/denominator */
-    n_d = PyObject_CallMethod(tmp, "as_integer_ratio", NULL);
+    n_d = _py_float_as_integer_ratio(tmp, NULL);
     Py_DECREF(tmp);
     if (n_d == NULL) {
         return NULL;
@@ -2272,7 +2292,7 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     n = PyTuple_GET_ITEM(n_d, 0);
     d = PyTuple_GET_ITEM(n_d, 1);
 
-    tmp = PyObject_CallMethod(d, "bit_length", NULL);
+    tmp = _py_long_bit_length(d, NULL);
     if (tmp == NULL) {
         Py_DECREF(n_d);
         return NULL;
@@ -2630,12 +2650,18 @@ PyDecType_FromSequenceExact(PyTypeObject *type, PyObject *v,
 
 /* class method */
 static PyObject *
-dec_from_float(PyObject *dec, PyObject *pyfloat)
+dec_from_float(PyObject *type, PyObject *pyfloat)
 {
     PyObject *context;
+    PyObject *result;
 
     CURRENT_CONTEXT(context);
-    return PyDecType_FromFloatExact((PyTypeObject *)dec, pyfloat, context);
+    result = PyDecType_FromFloatExact(&PyDec_Type, pyfloat, context);
+    if (type != (PyObject *)&PyDec_Type && result != NULL) {
+        Py_SETREF(result, PyObject_CallFunctionObjArgs(type, result, NULL));
+    }
+
+    return result;
 }
 
 /* create_decimal_from_float */
@@ -3378,6 +3404,105 @@ dec_as_long(PyObject *dec, PyObject *context, int round)
 
     mpd_del(x);
     return (PyObject *) pylong;
+}
+
+/* Convert a Decimal to its exact integer ratio representation. */
+static PyObject *
+dec_as_integer_ratio(PyObject *self, PyObject *args UNUSED)
+{
+    PyObject *numerator = NULL;
+    PyObject *denominator = NULL;
+    PyObject *exponent = NULL;
+    PyObject *result = NULL;
+    PyObject *tmp;
+    mpd_ssize_t exp;
+    PyObject *context;
+    uint32_t status = 0;
+
+    if (mpd_isspecial(MPD(self))) {
+        if (mpd_isnan(MPD(self))) {
+            PyErr_SetString(PyExc_ValueError,
+                "cannot convert NaN to integer ratio");
+        }
+        else {
+            PyErr_SetString(PyExc_OverflowError,
+                "cannot convert Infinity to integer ratio");
+        }
+        return NULL;
+    }
+
+    CURRENT_CONTEXT(context);
+
+    tmp = dec_alloc();
+    if (tmp == NULL) {
+        return NULL;
+    }
+
+    if (!mpd_qcopy(MPD(tmp), MPD(self), &status)) {
+        Py_DECREF(tmp);
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    exp = mpd_iszero(MPD(tmp)) ? 0 : MPD(tmp)->exp;
+    MPD(tmp)->exp = 0;
+
+    /* context and rounding are unused here: the conversion is exact */
+    numerator = dec_as_long(tmp, context, MPD_ROUND_FLOOR);
+    Py_DECREF(tmp);
+    if (numerator == NULL) {
+        goto error;
+    }
+
+    exponent = PyLong_FromSsize_t(exp < 0 ? -exp : exp);
+    if (exponent == NULL) {
+        goto error;
+    }
+
+    tmp = PyLong_FromLong(10);
+    if (tmp == NULL) {
+        goto error;
+    }
+
+    Py_SETREF(exponent, _py_long_power(tmp, exponent, Py_None));
+    Py_DECREF(tmp);
+    if (exponent == NULL) {
+        goto error;
+    }
+
+    if (exp >= 0) {
+        Py_SETREF(numerator, _py_long_multiply(numerator, exponent));
+        if (numerator == NULL) {
+            goto error;
+        }
+        denominator = PyLong_FromLong(1);
+        if (denominator == NULL) {
+            goto error;
+        }
+    }
+    else {
+        denominator = exponent;
+        exponent = NULL;
+        tmp = _PyLong_GCD(numerator, denominator);
+        if (tmp == NULL) {
+            goto error;
+        }
+        Py_SETREF(numerator, _py_long_floor_divide(numerator, tmp));
+        Py_SETREF(denominator, _py_long_floor_divide(denominator, tmp));
+        Py_DECREF(tmp);
+        if (numerator == NULL || denominator == NULL) {
+            goto error;
+        }
+    }
+
+    result = PyTuple_Pack(2, numerator, denominator);
+
+
+error:
+    Py_XDECREF(exponent);
+    Py_XDECREF(denominator);
+    Py_XDECREF(numerator);
+    return result;
 }
 
 static PyObject *
@@ -4529,7 +4654,7 @@ dec_sizeof(PyObject *v, PyObject *dummy UNUSED)
 {
     Py_ssize_t res;
 
-    res = sizeof(PyDecObject);
+    res = _PyObject_SIZE(Py_TYPE(v));
     if (mpd_isdynamic_data(MPD(v))) {
         res += MPD(v)->alloc * sizeof(mpd_uint_t);
     }
@@ -4688,6 +4813,7 @@ static PyMethodDef dec_methods [] =
   /* Miscellaneous */
   { "from_float", dec_from_float, METH_O|METH_CLASS, doc_from_float },
   { "as_tuple", PyDec_AsTuple, METH_NOARGS, doc_as_tuple },
+  { "as_integer_ratio", dec_as_integer_ratio, METH_NOARGS, doc_as_integer_ratio },
 
   /* Special methods */
   { "__copy__", dec_copy, METH_NOARGS, NULL },
@@ -5505,6 +5631,32 @@ static struct int_constmap int_constants [] = {
 #define CHECK_PTR(expr) \
     do { if ((expr) == NULL) goto error; } while (0)
 
+
+static PyCFunction
+cfunc_noargs(PyTypeObject *t, const char *name)
+{
+    struct PyMethodDef *m;
+
+    if (t->tp_methods == NULL) {
+        goto error;
+    }
+
+    for (m = t->tp_methods; m->ml_name != NULL; m++) {
+        if (strcmp(name, m->ml_name) == 0) {
+            if (!(m->ml_flags & METH_NOARGS)) {
+                goto error;
+            }
+            return m->ml_meth;
+        }
+    }
+
+error:
+    PyErr_Format(PyExc_RuntimeError,
+        "internal error: could not find method %s", name);
+    return NULL;
+}
+
+
 PyMODINIT_FUNC
 PyInit__decimal(void)
 {
@@ -5527,6 +5679,16 @@ PyInit__decimal(void)
     mpd_callocfunc = mpd_callocfunc_em;
     mpd_free = PyMem_Free;
     mpd_setminalloc(_Py_DEC_MINALLOC);
+
+
+    /* Init external C-API functions */
+    _py_long_multiply = PyLong_Type.tp_as_number->nb_multiply;
+    _py_long_floor_divide = PyLong_Type.tp_as_number->nb_floor_divide;
+    _py_long_power = PyLong_Type.tp_as_number->nb_power;
+    _py_float_abs = PyFloat_Type.tp_as_number->nb_absolute;
+    ASSIGN_PTR(_py_float_as_integer_ratio, cfunc_noargs(&PyFloat_Type,
+                                                        "as_integer_ratio"));
+    ASSIGN_PTR(_py_long_bit_length, cfunc_noargs(&PyLong_Type, "bit_length"));
 
 
     /* Init types */
@@ -5640,7 +5802,7 @@ PyInit__decimal(void)
             goto error; /* GCOV_NOT_REACHED */
         }
 
-        ASSIGN_PTR(cm->ex, PyErr_NewException((char *)cm->fqname, base, NULL));
+        ASSIGN_PTR(cm->ex, PyErr_NewException(cm->fqname, base, NULL));
         Py_DECREF(base);
 
         /* add to module */
@@ -5672,7 +5834,7 @@ PyInit__decimal(void)
             goto error; /* GCOV_NOT_REACHED */
         }
 
-        ASSIGN_PTR(cm->ex, PyErr_NewException((char *)cm->fqname, base, NULL));
+        ASSIGN_PTR(cm->ex, PyErr_NewException(cm->fqname, base, NULL));
         Py_DECREF(base);
 
         Py_INCREF(cm->ex);

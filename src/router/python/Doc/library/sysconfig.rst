@@ -3,15 +3,16 @@
 
 .. module:: sysconfig
    :synopsis: Python's configuration information
+
 .. moduleauthor:: Tarek Ziadé <tarek@ziade.org>
 .. sectionauthor:: Tarek Ziadé <tarek@ziade.org>
-
-.. index::
-   single: configuration information
 
 .. versionadded:: 3.2
 
 **Source code:** :source:`Lib/sysconfig.py`
+
+.. index::
+   single: configuration information
 
 --------------
 
@@ -151,7 +152,7 @@ identifier.  Python currently uses eight paths:
    If *vars* is provided, it must be a dictionary of variables that will
    update the dictionary used to expand the paths.
 
-   If *expand* is set to False, the paths will not be expanded.
+   If *expand* is set to false, the paths will not be expanded.
 
    If *scheme* is not an existing scheme, :func:`get_paths` will raise a
    :exc:`KeyError`.
@@ -163,7 +164,7 @@ Other functions
 .. function:: get_python_version()
 
    Return the ``MAJOR.MINOR`` Python version number as a string.  Similar to
-   ``sys.version[:3]``.
+   ``'%d.%d' % sys.version_info[:2]``.
 
 
 .. function:: get_platform()
@@ -203,7 +204,9 @@ Other functions
 
 .. function:: is_python_build()
 
-   Return ``True`` if the current Python installation was built from source.
+   Return ``True`` if the running Python interpreter was built from source and
+   is being run from its built location, and not from a location resulting from
+   e.g. running ``make install`` or installing via a binary installer.
 
 
 .. function:: parse_config_h(fp[, vars])
@@ -228,7 +231,9 @@ Other functions
 Using :mod:`sysconfig` as a script
 ----------------------------------
 
-You can use :mod:`sysconfig` as a script with Python's *-m* option::
+You can use :mod:`sysconfig` as a script with Python's *-m* option:
+
+.. code-block:: shell-session
 
     $ python -m sysconfig
     Platform: "macosx-10.4-i386"
@@ -250,7 +255,6 @@ You can use :mod:`sysconfig` as a script with Python's *-m* option::
             AIX_GENUINE_CPLUSPLUS = "0"
             AR = "ar"
             ARFLAGS = "rc"
-            ASDLGEN = "./Parser/asdl_c.py"
             ...
 
 This call will print in the standard output the information returned by

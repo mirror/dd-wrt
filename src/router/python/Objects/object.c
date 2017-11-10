@@ -22,16 +22,26 @@ _Py_GetRefTotal(void)
 {
     PyObject *o;
     Py_ssize_t total = _Py_RefTotal;
-    /* ignore the references to the dummy object of the dicts and sets
-       because they are not reliable and not useful (now that the
-       hash table code is well-tested) */
-    o = _PyDict_Dummy();
-    if (o != NULL)
-        total -= o->ob_refcnt;
     o = _PySet_Dummy;
     if (o != NULL)
         total -= o->ob_refcnt;
     return total;
+}
+
+void
+_PyDebug_PrintTotalRefs(void) {
+    PyObject *xoptions, *value;
+    _Py_IDENTIFIER(showrefcount);
+
+    xoptions = PySys_GetXOptions();
+    if (xoptions == NULL)
+        return;
+    value = _PyDict_GetItemId(xoptions, &PyId_showrefcount);
+    if (value == Py_True)
+        fprintf(stderr,
+                "[%" PY_FORMAT_SIZE_T "d refs, "
+                "%" PY_FORMAT_SIZE_T "d blocks]\n",
+                _Py_GetRefTotal(), _Py_GetAllocatedBlocks());
 }
 #endif /* Py_REF_DEBUG */
 
@@ -93,6 +103,15 @@ void
 dump_counts(FILE* f)
 {
     PyTypeObject *tp;
+    PyObject *xoptions, *value;
+    _Py_IDENTIFIER(showalloccount);
+
+    xoptions = PySys_GetXOptions();
+    if (xoptions == NULL)
+        return;
+    value = _PyDict_GetItemId(xoptions, &PyId_showalloccount);
+    if (value != Py_True)
+        return;
 
     for (tp = type_list; tp; tp = tp->tp_next)
         fprintf(f, "%s alloc'd: %" PY_FORMAT_SIZE_T "d, "
@@ -459,7 +478,7 @@ PyObject_Repr(PyObject *v)
 #ifdef Py_DEBUG
     /* PyObject_Repr() must not be called with an exception set,
        because it may clear it (directly or indirectly) and so the
-       caller looses its exception */
+       caller loses its exception */
     assert(!PyErr_Occurred());
 #endif
 
@@ -628,7 +647,7 @@ PyObject_Bytes(PyObject *v)
 /* Map rich comparison operators to their swapped version, e.g. LT <--> GT */
 int _Py_SwappedOp[] = {Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE};
 
-static char *opstrings[] = {"<", "<=", "==", "!=", ">", ">="};
+static const char * const opstrings[] = {"<", "<=", "==", "!=", ">", ">="};
 
 /* Perform a rich comparison, raising TypeError when the requested comparison
    operator is not supported. */
@@ -670,11 +689,10 @@ do_richcompare(PyObject *v, PyObject *w, int op)
         res = (v != w) ? Py_True : Py_False;
         break;
     default:
-        /* XXX Special-case None so it doesn't show as NoneType() */
         PyErr_Format(PyExc_TypeError,
-                     "unorderable types: %.100s() %s %.100s()",
-                     v->ob_type->tp_name,
+                     "'%s' not supported between instances of '%.100s' and '%.100s'",
                      opstrings[op],
+                     v->ob_type->tp_name,
                      w->ob_type->tp_name);
         return NULL;
     }
@@ -872,7 +890,7 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
     if (tp->tp_getattro != NULL)
         return (*tp->tp_getattro)(v, name);
     if (tp->tp_getattr != NULL) {
-        char *name_str = _PyUnicode_AsString(name);
+        char *name_str = PyUnicode_AsUTF8(name);
         if (name_str == NULL)
             return NULL;
         return (*tp->tp_getattr)(v, name_str);
@@ -916,7 +934,7 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
         return err;
     }
     if (tp->tp_setattr != NULL) {
-        char *name_str = _PyUnicode_AsString(name);
+        char *name_str = PyUnicode_AsUTF8(name);
         if (name_str == NULL)
             return -1;
         err = (*tp->tp_setattr)(v, name_str, value);
@@ -1025,8 +1043,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
                      name->ob_type->tp_name);
         return NULL;
     }
-    else
-        Py_INCREF(name);
+    Py_INCREF(name);
 
     if (tp->tp_dict == NULL) {
         if (PyType_Ready(tp) < 0)
@@ -1034,10 +1051,10 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
     }
 
     descr = _PyType_Lookup(tp, name);
-    Py_XINCREF(descr);
 
     f = NULL;
     if (descr != NULL) {
+        Py_INCREF(descr);
         f = descr->ob_type->tp_descr_get;
         if (f != NULL && PyDescr_IsData(descr)) {
             res = f(descr, obj, (PyObject *)obj->ob_type);
@@ -1057,8 +1074,9 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name, PyObject *dict)
                 if (tsize < 0)
                     tsize = -tsize;
                 size = _PyObject_VAR_SIZE(tp, tsize);
+                assert(size <= PY_SSIZE_T_MAX);
 
-                dictoffset += (long)size;
+                dictoffset += (Py_ssize_t)size;
                 assert(dictoffset > 0);
                 assert(dictoffset % SIZEOF_VOID_P == 0);
             }
@@ -1126,12 +1144,11 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     Py_INCREF(name);
 
     descr = _PyType_Lookup(tp, name);
-    Py_XINCREF(descr);
 
-    f = NULL;
     if (descr != NULL) {
+        Py_INCREF(descr);
         f = descr->ob_type->tp_descr_set;
-        if (f != NULL && PyDescr_IsData(descr)) {
+        if (f != NULL) {
             res = f(descr, obj, value);
             goto done;
         }
@@ -1139,40 +1156,32 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
 
     if (dict == NULL) {
         dictptr = _PyObject_GetDictPtr(obj);
-        if (dictptr != NULL) {
-            res = _PyObjectDict_SetItem(Py_TYPE(obj), dictptr, name, value);
-            if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
-                PyErr_SetObject(PyExc_AttributeError, name);
+        if (dictptr == NULL) {
+            if (descr == NULL) {
+                PyErr_Format(PyExc_AttributeError,
+                             "'%.100s' object has no attribute '%U'",
+                             tp->tp_name, name);
+            }
+            else {
+                PyErr_Format(PyExc_AttributeError,
+                             "'%.50s' object attribute '%U' is read-only",
+                             tp->tp_name, name);
+            }
             goto done;
         }
+        res = _PyObjectDict_SetItem(tp, dictptr, name, value);
     }
-    if (dict != NULL) {
+    else {
         Py_INCREF(dict);
         if (value == NULL)
             res = PyDict_DelItem(dict, name);
         else
             res = PyDict_SetItem(dict, name, value);
         Py_DECREF(dict);
-        if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
-            PyErr_SetObject(PyExc_AttributeError, name);
-        goto done;
     }
+    if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
+        PyErr_SetObject(PyExc_AttributeError, name);
 
-    if (f != NULL) {
-        res = f(descr, obj, value);
-        goto done;
-    }
-
-    if (descr == NULL) {
-        PyErr_Format(PyExc_AttributeError,
-                     "'%.100s' object has no attribute '%U'",
-                     tp->tp_name, name);
-        goto done;
-    }
-
-    PyErr_Format(PyExc_AttributeError,
-                 "'%.50s' object attribute '%U' is read-only",
-                 tp->tp_name, name);
   done:
     Py_XDECREF(descr);
     Py_DECREF(name);
@@ -1188,7 +1197,7 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 int
 PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
 {
-    PyObject *dict, **dictptr = _PyObject_GetDictPtr(obj);
+    PyObject **dictptr = _PyObject_GetDictPtr(obj);
     if (dictptr == NULL) {
         PyErr_SetString(PyExc_AttributeError,
                         "This object has no __dict__");
@@ -1204,10 +1213,8 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
                      "not a '%.200s'", Py_TYPE(value)->tp_name);
         return -1;
     }
-    dict = *dictptr;
-    Py_XINCREF(value);
-    *dictptr = value;
-    Py_XDECREF(dict);
+    Py_INCREF(value);
+    Py_XSETREF(*dictptr, value);
     return 0;
 }
 
@@ -1543,6 +1550,9 @@ PyObject _Py_NotImplementedStruct = {
 void
 _Py_ReadyTypes(void)
 {
+    if (PyType_Ready(&PyBaseObject_Type) < 0)
+        Py_FatalError("Can't initialize object type");
+
     if (PyType_Ready(&PyType_Type) < 0)
         Py_FatalError("Can't initialize type type");
 
@@ -1554,6 +1564,9 @@ _Py_ReadyTypes(void)
 
     if (PyType_Ready(&_PyWeakref_ProxyType) < 0)
         Py_FatalError("Can't initialize weakref proxy type");
+
+    if (PyType_Ready(&PyLong_Type) < 0)
+        Py_FatalError("Can't initialize int type");
 
     if (PyType_Ready(&PyBool_Type) < 0)
         Py_FatalError("Can't initialize bool type");
@@ -1579,14 +1592,35 @@ _Py_ReadyTypes(void)
     if (PyType_Ready(&PySuper_Type) < 0)
         Py_FatalError("Can't initialize super type");
 
-    if (PyType_Ready(&PyBaseObject_Type) < 0)
-        Py_FatalError("Can't initialize object type");
-
     if (PyType_Ready(&PyRange_Type) < 0)
         Py_FatalError("Can't initialize range type");
 
     if (PyType_Ready(&PyDict_Type) < 0)
         Py_FatalError("Can't initialize dict type");
+
+    if (PyType_Ready(&PyDictKeys_Type) < 0)
+        Py_FatalError("Can't initialize dict keys type");
+
+    if (PyType_Ready(&PyDictValues_Type) < 0)
+        Py_FatalError("Can't initialize dict values type");
+
+    if (PyType_Ready(&PyDictItems_Type) < 0)
+        Py_FatalError("Can't initialize dict items type");
+
+    if (PyType_Ready(&PyODict_Type) < 0)
+        Py_FatalError("Can't initialize OrderedDict type");
+
+    if (PyType_Ready(&PyODictKeys_Type) < 0)
+        Py_FatalError("Can't initialize odict_keys type");
+
+    if (PyType_Ready(&PyODictItems_Type) < 0)
+        Py_FatalError("Can't initialize odict_items type");
+
+    if (PyType_Ready(&PyODictValues_Type) < 0)
+        Py_FatalError("Can't initialize odict_values type");
+
+    if (PyType_Ready(&PyODictIter_Type) < 0)
+        Py_FatalError("Can't initialize odict_keyiterator type");
 
     if (PyType_Ready(&PySet_Type) < 0)
         Py_FatalError("Can't initialize set type");
@@ -1605,9 +1639,6 @@ _Py_ReadyTypes(void)
 
     if (PyType_Ready(&PyFloat_Type) < 0)
         Py_FatalError("Can't initialize float type");
-
-    if (PyType_Ready(&PyLong_Type) < 0)
-        Py_FatalError("Can't initialize int type");
 
     if (PyType_Ready(&PyFrozenSet_Type) < 0)
         Py_FatalError("Can't initialize frozenset type");
@@ -1695,6 +1726,12 @@ _Py_ReadyTypes(void)
 
     if (PyType_Ready(&PySeqIter_Type) < 0)
         Py_FatalError("Can't initialize sequence iterator type");
+
+    if (PyType_Ready(&PyCoro_Type) < 0)
+        Py_FatalError("Can't initialize coroutine type");
+
+    if (PyType_Ready(&_PyCoroWrapper_Type) < 0)
+        Py_FatalError("Can't initialize coroutine wrapper type");
 }
 
 
@@ -1809,9 +1846,6 @@ _Py_GetObjects(PyObject *self, PyObject *args)
 
 #endif
 
-/* Hack to force loading of pycapsule.o */
-PyTypeObject *_PyCapsule_hack = &PyCapsule_Type;
-
 
 /* Hack to force loading of abstract.o */
 Py_ssize_t (*_Py_abstract_hack)(PyObject *) = PyObject_Size;
@@ -1831,7 +1865,7 @@ _PyObject_DebugTypeStats(FILE *out)
 
 /* These methods are used to control infinite recursion in repr, str, print,
    etc.  Container objects that may recursively contain themselves,
-   e.g. builtin dictionaries and lists, should used Py_ReprEnter() and
+   e.g. builtin dictionaries and lists, should use Py_ReprEnter() and
    Py_ReprLeave() to avoid infinite recursion.
 
    Py_ReprEnter() returns 0 the first time it is called for a particular

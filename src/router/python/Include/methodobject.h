@@ -16,6 +16,8 @@ PyAPI_DATA(PyTypeObject) PyCFunction_Type;
 #define PyCFunction_Check(op) (Py_TYPE(op) == &PyCFunction_Type)
 
 typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
+typedef PyObject *(*_PyCFunctionFast) (PyObject *self, PyObject **args,
+                                       Py_ssize_t nargs, PyObject *kwnames);
 typedef PyObject *(*PyCFunctionWithKeywords)(PyObject *, PyObject *,
                                              PyObject *);
 typedef PyObject *(*PyNoArgsFunction)(PyObject *);
@@ -37,6 +39,18 @@ PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
 #endif
 PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
 
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(PyObject *) _PyCFunction_FastCallDict(PyObject *func,
+    PyObject **args,
+    Py_ssize_t nargs,
+    PyObject *kwargs);
+
+PyAPI_FUNC(PyObject *) _PyCFunction_FastCallKeywords(PyObject *func,
+    PyObject **stack,
+    Py_ssize_t nargs,
+    PyObject *kwnames);
+#endif
+
 struct PyMethodDef {
     const char  *ml_name;   /* The name of the built-in function/method */
     PyCFunction ml_meth;    /* The C function that implements it */
@@ -47,7 +61,7 @@ struct PyMethodDef {
 typedef struct PyMethodDef PyMethodDef;
 
 #define PyCFunction_New(ML, SELF) PyCFunction_NewEx((ML), (SELF), NULL)
-PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *, 
+PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
                                          PyObject *);
 
 /* Flag passed to newmethodobject */
@@ -66,17 +80,20 @@ PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
 
 /* METH_COEXIST allows a method to be entered even though a slot has
    already filled the entry.  When defined, the flag allows a separate
-   method, "__contains__" for example, to coexist with a defined 
+   method, "__contains__" for example, to coexist with a defined
    slot like sq_contains. */
 
 #define METH_COEXIST   0x0040
 
 #ifndef Py_LIMITED_API
+#define METH_FASTCALL  0x0080
+
 typedef struct {
     PyObject_HEAD
     PyMethodDef *m_ml; /* Description of the C function to call */
     PyObject    *m_self; /* Passed as 'self' arg to the C func, can be NULL */
     PyObject    *m_module; /* The __module__ attribute, can be anything */
+    PyObject    *m_weakreflist; /* List of weak references */
 } PyCFunctionObject;
 #endif
 

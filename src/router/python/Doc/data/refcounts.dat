@@ -349,6 +349,11 @@ PyErr_Format:PyObject*:exception:+1:
 PyErr_Format:const char*:format::
 PyErr_Format::...::
 
+PyErr_FormatV:PyObject*::null:
+PyErr_FormatV:PyObject*:exception:+1:
+PyErr_FormatV:const char*:format::
+PyErr_FormatV:va_list:vargs::
+
 PyErr_WarnEx:int:::
 PyErr_WarnEx:PyObject*:category:0:
 PyErr_WarnEx:const char*:message::
@@ -485,6 +490,12 @@ PyFunction_SetDefaults:PyObject*:defaults:+1:
 
 PyGen_New:PyObject*::+1:
 PyGen_New:PyFrameObject*:frame:0:
+
+PyGen_NewWithQualName:PyObject*::+1:
+PyGen_NewWithQualName:PyFrameObject*:frame:0:
+
+PyCoro_New:PyObject*::+1:
+PyCoro_New:PyFrameObject*:frame:0:
 
 Py_InitModule:PyObject*::0:
 Py_InitModule:const char*:name::
@@ -909,6 +920,9 @@ PyNumber_Xor:PyObject*:o2:0:
 
 PyObject_AsFileDescriptor:int:::
 PyObject_AsFileDescriptor:PyObject*:o:0:
+
+PyOS_FSPath:PyObject*::+1:
+PyOS_FSPath:PyObject*:path:0:
 
 PyObject_Call:PyObject*::+1:
 PyObject_Call:PyObject*:callable_object:0:

@@ -36,6 +36,16 @@ static Py_ssize_t count_tracked = 0;
 static void
 show_track(void)
 {
+    PyObject *xoptions, *value;
+    _Py_IDENTIFIER(showalloccount);
+
+    xoptions = PySys_GetXOptions();
+    if (xoptions == NULL)
+        return;
+    value = _PyDict_GetItemId(xoptions, &PyId_showalloccount);
+    if (value != Py_True)
+        return;
+
     fprintf(stderr, "Tuples created: %" PY_FORMAT_SIZE_T "d\n",
         count_tracked + count_untracked);
     fprintf(stderr, "Tuples tracked by the GC: %" PY_FORMAT_SIZE_T
@@ -97,7 +107,7 @@ PyTuple_New(Py_ssize_t size)
 #endif
     {
         /* Check for overflow */
-        if (size > (PY_SSIZE_T_MAX - sizeof(PyTupleObject) -
+        if ((size_t)size > ((size_t)PY_SSIZE_T_MAX - sizeof(PyTupleObject) -
                     sizeof(PyObject *)) / sizeof(PyObject *)) {
             return PyErr_NoMemory();
         }
@@ -149,7 +159,6 @@ PyTuple_GetItem(PyObject *op, Py_ssize_t i)
 int
 PyTuple_SetItem(PyObject *op, Py_ssize_t i, PyObject *newitem)
 {
-    PyObject *olditem;
     PyObject **p;
     if (!PyTuple_Check(op) || op->ob_refcnt != 1) {
         Py_XDECREF(newitem);
@@ -163,9 +172,7 @@ PyTuple_SetItem(PyObject *op, Py_ssize_t i, PyObject *newitem)
         return -1;
     }
     p = ((PyTupleObject *)op) -> ob_item + i;
-    olditem = *p;
-    *p = newitem;
-    Py_XDECREF(olditem);
+    Py_XSETREF(*p, newitem);
     return 0;
 }
 
@@ -446,9 +453,9 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
         return NULL;
     }
 #define b ((PyTupleObject *)bb)
-    size = Py_SIZE(a) + Py_SIZE(b);
-    if (size < 0)
+    if (Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b))
         return PyErr_NoMemory();
+    size = Py_SIZE(a) + Py_SIZE(b);
     np = (PyTupleObject *) PyTuple_New(size);
     if (np == NULL) {
         return NULL;
@@ -515,8 +522,8 @@ tupleindex(PyTupleObject *self, PyObject *args)
     PyObject *v;
 
     if (!PyArg_ParseTuple(args, "O|O&O&:index", &v,
-                                _PyEval_SliceIndex, &start,
-                                _PyEval_SliceIndex, &stop))
+                                _PyEval_SliceIndexNotNone, &start,
+                                _PyEval_SliceIndexNotNone, &stop))
         return NULL;
     if (start < 0) {
         start += Py_SIZE(self);
@@ -713,11 +720,11 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
         PyObject* it;
         PyObject **src, **dest;
 
-        if (PySlice_GetIndicesEx(item,
-                         PyTuple_GET_SIZE(self),
-                         &start, &stop, &step, &slicelength) < 0) {
+        if (PySlice_Unpack(item, &start, &stop, &step) < 0) {
             return NULL;
         }
+        slicelength = PySlice_AdjustIndices(PyTuple_GET_SIZE(self), &start,
+                                            &stop, step);
 
         if (slicelength <= 0) {
             return PyTuple_New(0);
@@ -746,7 +753,7 @@ tuplesubscript(PyTupleObject* self, PyObject* item)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "tuple indices must be integers, not %.200s",
+                     "tuple indices must be integers or slices, not %.200s",
                      Py_TYPE(item)->tp_name);
         return NULL;
     }
@@ -759,27 +766,15 @@ tuple_getnewargs(PyTupleObject *v)
 
 }
 
-static PyObject *
-tuple_sizeof(PyTupleObject *self)
-{
-    Py_ssize_t res;
-
-    res = PyTuple_Type.tp_basicsize + Py_SIZE(self) * sizeof(PyObject *);
-    return PyLong_FromSsize_t(res);
-}
-
 PyDoc_STRVAR(index_doc,
 "T.index(value, [start, [stop]]) -> integer -- return first index of value.\n"
 "Raises ValueError if the value is not present."
 );
 PyDoc_STRVAR(count_doc,
 "T.count(value) -> integer -- return number of occurrences of value");
-PyDoc_STRVAR(sizeof_doc,
-"T.__sizeof__() -- size of T in memory, in bytes");
 
 static PyMethodDef tuple_methods[] = {
     {"__getnewargs__",          (PyCFunction)tuple_getnewargs,  METH_NOARGS},
-    {"__sizeof__",      (PyCFunction)tuple_sizeof, METH_NOARGS, sizeof_doc},
     {"index",           (PyCFunction)tupleindex,  METH_VARARGS, index_doc},
     {"count",           (PyCFunction)tuplecount,  METH_O, count_doc},
     {NULL,              NULL}           /* sentinel */
@@ -976,8 +971,8 @@ tupleiter_next(tupleiterobject *it)
         return item;
     }
 
-    Py_DECREF(seq);
     it->it_seq = NULL;
+    Py_DECREF(seq);
     return NULL;
 }
 

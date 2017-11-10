@@ -3,8 +3,12 @@
 
 .. module:: tkinter
    :synopsis: Interface to Tcl/Tk for graphical user interfaces
+
 .. moduleauthor:: Guido van Rossum <guido@Python.org>
 
+**Source code:** :source:`Lib/tkinter/__init__.py`
+
+--------------
 
 The :mod:`tkinter` package ("Tk interface") is the standard Python interface to
 the Tk GUI toolkit.  Both Tk and :mod:`tkinter` are available on most Unix
@@ -22,22 +26,22 @@ this should open a window demonstrating a simple Tk interface.
    `TKDocs <http://www.tkdocs.com/>`_
       Extensive tutorial plus friendlier widget pages for some of the widgets.
 
-   `Tkinter reference: a GUI for Python <http://infohost.nmt.edu/tcc/help/pubs/tkinter/>`_
+   `Tkinter reference: a GUI for Python <https://infohost.nmt.edu/tcc/help/pubs/tkinter/web/index.html>`_
       On-line reference material.
 
    `Tkinter docs from effbot <http://effbot.org/tkinterbook/>`_
       Online reference for tkinter supported by effbot.org.
 
-   `Tcl/Tk manual <http://www.tcl.tk/man/tcl8.5/>`_
+   `Tcl/Tk manual <https://www.tcl.tk/man/tcl8.5/>`_
       Official manual for the latest tcl/tk version.
 
-   `Programming Python <http://www.amazon.com/Programming-Python-Mark-Lutz/dp/0596158106/>`_
+   `Programming Python <http://learning-python.com/books/about-pp4e.html>`_
       Book by Mark Lutz, has excellent coverage of Tkinter.
 
    `Modern Tkinter for Busy Python Developers <http://www.amazon.com/Modern-Tkinter-Python-Developers-ebook/dp/B0071QDNLO/>`_
       Book by Mark Rozerman about building attractive and modern graphical user interfaces with Python and Tkinter.
 
-   `Python and Tkinter Programming <http://www.amazon.com/exec/obidos/ASIN/1884777813>`_
+   `Python and Tkinter Programming <https://www.manning.com/books/python-and-tkinter-programming>`_
       The book by John Grayson (ISBN 1-884777-81-3).
 
 
@@ -173,7 +177,7 @@ documentation that exists. Here are some hints:
 
 .. seealso::
 
-   `Tcl/Tk 8.6 man pages <http://www.tcl.tk/man/tcl8.6/>`_
+   `Tcl/Tk 8.6 man pages <https://www.tcl.tk/man/tcl8.6/>`_
       The Tcl/Tk manual on www.tcl.tk.
 
    `ActiveState Tcl Home Page <http://tcl.activestate.com/>`_
@@ -182,7 +186,7 @@ documentation that exists. Here are some hints:
    `Tcl and the Tk Toolkit <http://www.amazon.com/exec/obidos/ASIN/020163337X>`_
       The book by John Ousterhout, the inventor of Tcl.
 
-   `Practical Programming in Tcl and Tk <http://www.amazon.com/exec/obidos/ASIN/0130220280>`_
+   `Practical Programming in Tcl and Tk <http://www.beedub.com/book/>`_
       Brent Welch's encyclopedic book.
 
 
@@ -195,19 +199,19 @@ A Simple Hello World Program
 
     class Application(tk.Frame):
         def __init__(self, master=None):
-            tk.Frame.__init__(self, master)
+            super().__init__(master)
             self.pack()
-            self.createWidgets()
+            self.create_widgets()
 
-        def createWidgets(self):
+        def create_widgets(self):
             self.hi_there = tk.Button(self)
             self.hi_there["text"] = "Hello World\n(click me)"
             self.hi_there["command"] = self.say_hi
             self.hi_there.pack(side="top")
 
-            self.QUIT = tk.Button(self, text="QUIT", fg="red",
-                                                command=root.destroy)
-            self.QUIT.pack(side="bottom")
+            self.quit = tk.Button(self, text="QUIT", fg="red",
+                                  command=root.destroy)
+            self.quit.pack(side="bottom")
 
         def say_hi(self):
             print("hi there, everyone!")
@@ -532,7 +536,7 @@ For example::
 
    class App(Frame):
        def __init__(self, master=None):
-           Frame.__init__(self, master)
+           super().__init__(master)
            self.pack()
 
            self.entrythingy = Entry()
@@ -577,12 +581,12 @@ part of the implementation, and not an interface to Tk functionality.
 
 Here are some examples of typical usage::
 
-   from tkinter import *
-   class App(Frame):
-       def __init__(self, master=None):
-           Frame.__init__(self, master)
-           self.pack()
+   import tkinter as tk
 
+   class App(tk.Frame):
+       def __init__(self, master=None):
+           super().__init__(master)
+           self.pack()
 
    # create the application
    myapp = App()
@@ -704,13 +708,13 @@ add
 
 For example::
 
-   def turnRed(self, event):
+   def turn_red(self, event):
        event.widget["activeforeground"] = "red"
 
-   self.button.bind("<Enter>", self.turnRed)
+   self.button.bind("<Enter>", self.turn_red)
 
 Notice how the widget field of the event is being accessed in the
-:meth:`turnRed` callback.  This field contains the widget that caught the X
+``turn_red()`` callback.  This field contains the widget that caught the X
 event.  The following table lists the other event fields you can access, and how
 they are denoted in Tk, which can be useful when referring to the Tk man pages.
 
@@ -794,3 +798,53 @@ some widget (e.g. labels, buttons, menus). In these cases, Tk will not keep a
 reference to the image. When the last Python reference to the image object is
 deleted, the image data is deleted as well, and Tk will display an empty box
 wherever the image was used.
+
+
+.. _tkinter-file-handlers:
+
+File Handlers
+-------------
+
+Tk allows you to register and unregister a callback function which will be
+called from the Tk mainloop when I/O is possible on a file descriptor.
+Only one handler may be registered per file descriptor. Example code::
+
+   import tkinter
+   widget = tkinter.Tk()
+   mask = tkinter.READABLE | tkinter.WRITABLE
+   widget.tk.createfilehandler(file, mask, callback)
+   ...
+   widget.tk.deletefilehandler(file)
+
+This feature is not available on Windows.
+
+Since you don't know how many bytes are available for reading, you may not
+want to use the :class:`~io.BufferedIOBase` or :class:`~io.TextIOBase`
+:meth:`~io.BufferedIOBase.read` or :meth:`~io.IOBase.readline` methods,
+since these will insist on reading a predefined number of bytes.
+For sockets, the :meth:`~socket.socket.recv` or
+:meth:`~socket.socket.recvfrom` methods will work fine; for other files,
+use raw reads or ``os.read(file.fileno(), maxbytecount)``.
+
+
+.. method:: Widget.tk.createfilehandler(file, mask, func)
+
+   Registers the file handler callback function *func*. The *file* argument
+   may either be an object with a :meth:`~io.IOBase.fileno` method (such as
+   a file or socket object), or an integer file descriptor. The *mask*
+   argument is an ORed combination of any of the three constants below.
+   The callback is called as follows::
+
+      callback(file, mask)
+
+
+.. method:: Widget.tk.deletefilehandler(file)
+
+   Unregisters a file handler.
+
+
+.. data:: READABLE
+          WRITABLE
+          EXCEPTION
+
+   Constants used in the *mask* arguments.

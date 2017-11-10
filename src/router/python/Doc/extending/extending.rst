@@ -20,12 +20,17 @@ source file by including the header ``"Python.h"``.
 The compilation of an extension module depends on its intended use as well as on
 your system setup; details are given in later chapters.
 
-Do note that if your use case is calling C library functions or system calls,
-you should consider using the :mod:`ctypes` module rather than writing custom
-C code. Not only does :mod:`ctypes` let you write Python code to interface
-with C code, but it is more portable between implementations of Python than
-writing and compiling an extension module which typically ties you to CPython.
+.. note::
 
+   The C extension interface is specific to CPython, and extension modules do
+   not work on other Python implementations.  In many cases, it is possible to
+   avoid writing C extensions and preserve portability to other implementations.
+   For example, if your use case is calling C library functions or system calls,
+   you should consider using the :mod:`ctypes` module or the `cffi
+   <https://cffi.readthedocs.org>`_ library rather than writing custom C code.
+   These modules let you write Python code to interface with C code and are more
+   portable between implementations of Python than writing and compiling a C
+   extension module.
 
 
 .. _extending-simpleexample:
@@ -328,12 +333,12 @@ function.
 The method table must be referenced in the module definition structure::
 
    static struct PyModuleDef spammodule = {
-      PyModuleDef_HEAD_INIT,
-      "spam",   /* name of module */
-      spam_doc, /* module documentation, may be NULL */
-      -1,       /* size of per-interpreter state of the module,
-                   or -1 if the module keeps state in global variables. */
-      SpamMethods
+       PyModuleDef_HEAD_INIT,
+       "spam",   /* name of module */
+       spam_doc, /* module documentation, may be NULL */
+       -1,       /* size of per-interpreter state of the module,
+                    or -1 if the module keeps state in global variables. */
+       SpamMethods
    };
 
 This structure, in turn, must be passed to the interpreter in the module's
@@ -370,11 +375,17 @@ optionally followed by an import of the module::
    int
    main(int argc, char *argv[])
    {
+       wchar_t *program = Py_DecodeLocale(argv[0], NULL);
+       if (program == NULL) {
+           fprintf(stderr, "Fatal error: cannot decode argv[0]\n");
+           exit(1);
+       }
+
        /* Add a built-in module, before Py_Initialize */
        PyImport_AppendInittab("spam", PyInit_spam);
 
        /* Pass argv[0] to the Python interpreter */
-       Py_SetProgramName(argv[0]);
+       Py_SetProgramName(program);
 
        /* Initialize the Python interpreter.  Required. */
        Py_Initialize();
@@ -385,6 +396,10 @@ optionally followed by an import of the module::
        PyImport_ImportModule("spam");
 
        ...
+
+       PyMem_RawFree(program);
+       return 0;
+   }
 
 .. note::
 
@@ -397,6 +412,13 @@ optionally followed by an import of the module::
 A more substantial example module is included in the Python source distribution
 as :file:`Modules/xxmodule.c`.  This file may be used as a  template or simply
 read as an example.
+
+.. note::
+
+   Unlike our ``spam`` example, ``xxmodule`` uses *multi-phase initialization*
+   (new in Python 3.5), where a PyModuleDef structure is returned from
+   ``PyInit_spam``, and creation of the module is left to the import machinery.
+   For details on multi-phase initialization, see :PEP:`489`.
 
 
 .. _compilation:
@@ -585,7 +607,7 @@ Extracting Parameters in Extension Functions
 
 The :c:func:`PyArg_ParseTuple` function is declared as follows::
 
-   int PyArg_ParseTuple(PyObject *arg, char *format, ...);
+   int PyArg_ParseTuple(PyObject *arg, const char *format, ...);
 
 The *arg* argument must be a tuple object containing an argument list passed
 from Python to a C function.  The *format* argument must be a format string,
@@ -678,7 +700,7 @@ Keyword Parameters for Extension Functions
 The :c:func:`PyArg_ParseTupleAndKeywords` function is declared as follows::
 
    int PyArg_ParseTupleAndKeywords(PyObject *arg, PyObject *kwdict,
-                                   char *format, char *kwlist[], ...);
+                                   const char *format, char *kwlist[], ...);
 
 The *arg* and *format* parameters are identical to those of the
 :c:func:`PyArg_ParseTuple` function.  The *kwdict* parameter is the dictionary of
@@ -755,7 +777,7 @@ Building Arbitrary Values
 This function is the counterpart to :c:func:`PyArg_ParseTuple`.  It is declared
 as follows::
 
-   PyObject *Py_BuildValue(char *format, ...);
+   PyObject *Py_BuildValue(const char *format, ...);
 
 It recognizes a set of format units similar to the ones recognized by
 :c:func:`PyArg_ParseTuple`, but the arguments (which are input to the function,
@@ -770,7 +792,9 @@ the format string is empty, it returns ``None``; if it contains exactly one
 format unit, it returns whatever object is described by that format unit.  To
 force it to return a tuple of size 0 or one, parenthesize the format string.
 
-Examples (to the left the call, to the right the resulting Python value)::
+Examples (to the left the call, to the right the resulting Python value):
+
+.. code-block:: none
 
    Py_BuildValue("")                        None
    Py_BuildValue("i", 123)                  123
@@ -857,15 +881,12 @@ reclaim the memory belonging to any objects in a reference cycle, or referenced
 from the objects in the cycle, even though there are no further references to
 the cycle itself.
 
-The cycle detector is able to detect garbage cycles and can reclaim them so long
-as there are no finalizers implemented in Python (:meth:`__del__` methods).
-When there are such finalizers, the detector exposes the cycles through the
-:mod:`gc` module (specifically, the :attr:`~gc.garbage` variable in that module).
-The :mod:`gc` module also exposes a way to run the detector (the
+The cycle detector is able to detect garbage cycles and can reclaim them.
+The :mod:`gc` module exposes a way to run the detector (the
 :func:`~gc.collect` function), as well as configuration
 interfaces and the ability to disable the detector at runtime.  The cycle
 detector is considered an optional component; though it is included by default,
-it can be disabled at build time using the :option:`--without-cycle-gc` option
+it can be disabled at build time using the :option:`!--without-cycle-gc` option
 to the :program:`configure` script on Unix platforms (including Mac OS X).  If
 the cycle detector is disabled in this way, the :mod:`gc` module will not be
 available.
@@ -1329,4 +1350,3 @@ code distribution).
 
 .. [#] These guarantees don't hold when you use the "old" style calling convention ---
    this is still found in much existing code.
-

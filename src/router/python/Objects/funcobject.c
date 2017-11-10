@@ -127,8 +127,7 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
         PyErr_SetString(PyExc_SystemError, "non-tuple default args");
         return -1;
     }
-    Py_XDECREF(((PyFunctionObject *) op) -> func_defaults);
-    ((PyFunctionObject *) op) -> func_defaults = defaults;
+    Py_XSETREF(((PyFunctionObject *)op)->func_defaults, defaults);
     return 0;
 }
 
@@ -159,8 +158,7 @@ PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
                         "non-dict keyword only default args");
         return -1;
     }
-    Py_XDECREF(((PyFunctionObject *)op) -> func_kwdefaults);
-    ((PyFunctionObject *) op) -> func_kwdefaults = defaults;
+    Py_XSETREF(((PyFunctionObject *)op)->func_kwdefaults, defaults);
     return 0;
 }
 
@@ -192,8 +190,7 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
                      closure->ob_type->tp_name);
         return -1;
     }
-    Py_XDECREF(((PyFunctionObject *) op) -> func_closure);
-    ((PyFunctionObject *) op) -> func_closure = closure;
+    Py_XSETREF(((PyFunctionObject *)op)->func_closure, closure);
     return 0;
 }
 
@@ -224,8 +221,7 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
                         "non-dict annotations");
         return -1;
     }
-    Py_XDECREF(((PyFunctionObject *)op) -> func_annotations);
-    ((PyFunctionObject *) op) -> func_annotations = annotations;
+    Py_XSETREF(((PyFunctionObject *)op)->func_annotations, annotations);
     return 0;
 }
 
@@ -253,7 +249,6 @@ func_get_code(PyFunctionObject *op)
 static int
 func_set_code(PyFunctionObject *op, PyObject *value)
 {
-    PyObject *tmp;
     Py_ssize_t nfree, nclosure;
 
     /* Not legal to del f.func_code or to set it to anything
@@ -274,10 +269,8 @@ func_set_code(PyFunctionObject *op, PyObject *value)
                      nclosure, nfree);
         return -1;
     }
-    tmp = op->func_code;
     Py_INCREF(value);
-    op->func_code = value;
-    Py_DECREF(tmp);
+    Py_XSETREF(op->func_code, value);
     return 0;
 }
 
@@ -291,8 +284,6 @@ func_get_name(PyFunctionObject *op)
 static int
 func_set_name(PyFunctionObject *op, PyObject *value)
 {
-    PyObject *tmp;
-
     /* Not legal to del f.func_name or to set it to anything
      * other than a string object. */
     if (value == NULL || !PyUnicode_Check(value)) {
@@ -300,10 +291,8 @@ func_set_name(PyFunctionObject *op, PyObject *value)
                         "__name__ must be set to a string object");
         return -1;
     }
-    tmp = op->func_name;
     Py_INCREF(value);
-    op->func_name = value;
-    Py_DECREF(tmp);
+    Py_XSETREF(op->func_name, value);
     return 0;
 }
 
@@ -317,8 +306,6 @@ func_get_qualname(PyFunctionObject *op)
 static int
 func_set_qualname(PyFunctionObject *op, PyObject *value)
 {
-    PyObject *tmp;
-
     /* Not legal to del f.__qualname__ or to set it to anything
      * other than a string object. */
     if (value == NULL || !PyUnicode_Check(value)) {
@@ -326,10 +313,8 @@ func_set_qualname(PyFunctionObject *op, PyObject *value)
                         "__qualname__ must be set to a string object");
         return -1;
     }
-    tmp = op->func_qualname;
     Py_INCREF(value);
-    op->func_qualname = value;
-    Py_DECREF(tmp);
+    Py_XSETREF(op->func_qualname, value);
     return 0;
 }
 
@@ -347,8 +332,6 @@ func_get_defaults(PyFunctionObject *op)
 static int
 func_set_defaults(PyFunctionObject *op, PyObject *value)
 {
-    PyObject *tmp;
-
     /* Legal to del f.func_defaults.
      * Can only set func_defaults to NULL or a tuple. */
     if (value == Py_None)
@@ -358,10 +341,8 @@ func_set_defaults(PyFunctionObject *op, PyObject *value)
                         "__defaults__ must be set to a tuple object");
         return -1;
     }
-    tmp = op->func_defaults;
     Py_XINCREF(value);
-    op->func_defaults = value;
-    Py_XDECREF(tmp);
+    Py_XSETREF(op->func_defaults, value);
     return 0;
 }
 
@@ -379,8 +360,6 @@ func_get_kwdefaults(PyFunctionObject *op)
 static int
 func_set_kwdefaults(PyFunctionObject *op, PyObject *value)
 {
-    PyObject *tmp;
-
     if (value == Py_None)
         value = NULL;
     /* Legal to del f.func_kwdefaults.
@@ -390,10 +369,8 @@ func_set_kwdefaults(PyFunctionObject *op, PyObject *value)
             "__kwdefaults__ must be set to a dict object");
         return -1;
     }
-    tmp = op->func_kwdefaults;
     Py_XINCREF(value);
-    op->func_kwdefaults = value;
-    Py_XDECREF(tmp);
+    Py_XSETREF(op->func_kwdefaults, value);
     return 0;
 }
 
@@ -412,8 +389,6 @@ func_get_annotations(PyFunctionObject *op)
 static int
 func_set_annotations(PyFunctionObject *op, PyObject *value)
 {
-    PyObject *tmp;
-
     if (value == Py_None)
         value = NULL;
     /* Legal to del f.func_annotations.
@@ -424,10 +399,8 @@ func_set_annotations(PyFunctionObject *op, PyObject *value)
             "__annotations__ must be set to a dict object");
         return -1;
     }
-    tmp = op->func_annotations;
     Py_XINCREF(value);
-    op->func_annotations = value;
-    Py_XDECREF(tmp);
+    Py_XSETREF(op->func_annotations, value);
     return 0;
 }
 
@@ -531,8 +504,7 @@ func_new(PyTypeObject* type, PyObject* args, PyObject* kw)
 
     if (name != Py_None) {
         Py_INCREF(name);
-        Py_DECREF(newfunc->func_name);
-        newfunc->func_name = name;
+        Py_SETREF(newfunc->func_name, name);
     }
     if (defaults != Py_None) {
         Py_INCREF(defaults);
@@ -702,8 +674,9 @@ PyTypeObject PyFunction_Type = {
    To declare a class method, use this idiom:
 
      class C:
-     def f(cls, arg1, arg2, ...): ...
-     f = classmethod(f)
+         @classmethod
+         def f(cls, arg1, arg2, ...):
+             ...
 
    It can be called either on the class (e.g. C.f()) or on an instance
    (e.g. C().f()); the instance is ignored except for its class.
@@ -813,8 +786,9 @@ just like an instance method receives the instance.\n\
 To declare a class method, use this idiom:\n\
 \n\
   class C:\n\
-      def f(cls, arg1, arg2, ...): ...\n\
-      f = classmethod(f)\n\
+      @classmethod\n\
+      def f(cls, arg1, arg2, ...):\n\
+          ...\n\
 \n\
 It can be called either on the class (e.g. C.f()) or on an instance\n\
 (e.g. C().f()).  The instance is ignored except for its class.\n\
@@ -885,8 +859,9 @@ PyClassMethod_New(PyObject *callable)
    To declare a static method, use this idiom:
 
      class C:
-     def f(arg1, arg2, ...): ...
-     f = staticmethod(f)
+         @staticmethod
+         def f(arg1, arg2, ...):
+             ...
 
    It can be called either on the class (e.g. C.f()) or on an instance
    (e.g. C().f()); the instance is ignored except for its class.
@@ -991,8 +966,9 @@ A static method does not receive an implicit first argument.\n\
 To declare a static method, use this idiom:\n\
 \n\
      class C:\n\
-     def f(arg1, arg2, ...): ...\n\
-     f = staticmethod(f)\n\
+         @staticmethod\n\
+         def f(arg1, arg2, ...):\n\
+             ...\n\
 \n\
 It can be called either on the class (e.g. C.f()) or on an instance\n\
 (e.g. C().f()).  The instance is ignored except for its class.\n\

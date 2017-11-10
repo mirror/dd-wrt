@@ -1,7 +1,7 @@
-.. highlightlang:: none
+.. highlightlang:: sh
 
 .. ATTENTION: You probably should update Misc/python.man, too, if you modify
-.. this file.
+   this file.
 
 .. _using-on-general:
 
@@ -41,7 +41,7 @@ additional methods of invocation:
 
 * When called with standard input connected to a tty device, it prompts for
   commands and executes them until an EOF (an end-of-file character, you can
-  produce that with *Ctrl-D* on UNIX or *Ctrl-Z, Enter* on Windows) is read.
+  produce that with :kbd:`Ctrl-D` on UNIX or :kbd:`Ctrl-Z, Enter` on Windows) is read.
 * When called with a file name argument or with a file as standard input, it
   reads and executes a script from that file.
 * When called with a directory name argument, it reads and executes an
@@ -77,7 +77,7 @@ source.
    the :mod:`__main__` module.
 
    Since the argument is a *module* name, you must not give a file extension
-   (``.py``).  The ``module-name`` should be a valid Python module name, but
+   (``.py``).  The module name should be a valid absolute Python module name, but
    the implementation may not always enforce this (e.g. it may allow you to
    use a name that includes a hyphen).
 
@@ -148,6 +148,10 @@ source.
    added to the start of :data:`sys.path` and the ``__main__.py`` file in
    that location is executed as the :mod:`__main__` module.
 
+   .. seealso::
+      :func:`runpy.run_path`
+         Equivalent functionality directly available to Python code
+
 
 If no interface option is given, :option:`-i` is implied, ``sys.argv[0]`` is
 an empty string (``""``) and the current directory will be added to the
@@ -155,10 +159,10 @@ start of :data:`sys.path`.  Also, tab-completion and history editing is
 automatically enabled, if available on your platform (see
 :ref:`rlcompleter-config`).
 
+.. seealso::  :ref:`tut-invoking`
+
 .. versionchanged:: 3.4
    Automatic enabling of tab-completion and history editing.
-
-.. seealso::  :ref:`tut-invoking`
 
 
 Generic options
@@ -176,8 +180,15 @@ Generic options
 
    Print the Python version number and exit.  Example output could be::
 
-       Python 3.0
+       Python 3.6.0b2+
 
+   When given twice, print more information about the build, like::
+
+       Python 3.6.0b2+ (3.6:84a3c5003510+, Oct 26 2016, 02:33:55)
+       [GCC 6.2.0 20161005]
+
+   .. versionadded:: 3.6
+      The ``-VV`` option.
 
 .. _using-on-misc-options:
 
@@ -186,13 +197,16 @@ Miscellaneous options
 
 .. cmdoption:: -b
 
-   Issue a warning when comparing str and bytes. Issue an error when the
-   option is given twice (:option:`-bb`).
+   Issue a warning when comparing :class:`bytes` or :class:`bytearray` with
+   :class:`str` or :class:`bytes` with :class:`int`.  Issue an error when the
+   option is given twice (:option:`!-bb`).
 
+   .. versionchanged:: 3.5
+      Affects comparisons of :class:`bytes` with :class:`int`.
 
 .. cmdoption:: -B
 
-   If given, Python won't try to write ``.pyc`` or ``.pyo`` files on the
+   If given, Python won't try to write ``.pyc`` files on the
    import of source modules.  See also :envvar:`PYTHONDONTWRITEBYTECODE`.
 
 
@@ -232,9 +246,7 @@ Miscellaneous options
 
 .. cmdoption:: -O
 
-   Turn on basic optimizations.  This changes the filename extension for
-   compiled (:term:`bytecode`) files from ``.pyc`` to ``.pyo``.  See also
-   :envvar:`PYTHONOPTIMIZE`.
+   Turn on basic optimizations.  See also :envvar:`PYTHONOPTIMIZE`.
 
 
 .. cmdoption:: -OO
@@ -303,11 +315,12 @@ Miscellaneous options
 
    Print a message each time a module is initialized, showing the place
    (filename or built-in module) from which it is loaded.  When given twice
-   (:option:`-vv`), print a message for each file that is checked for when
+   (:option:`!-vv`), print a message for each file that is checked for when
    searching for a module.  Also provides information on module cleanup at exit.
    See also :envvar:`PYTHONVERBOSE`.
 
 
+.. _using-on-warnings:
 .. cmdoption:: -W arg
 
    Warning control.  Python's warning machinery by default prints warning
@@ -383,25 +396,32 @@ Miscellaneous options
    defines the following possible values:
 
    * ``-X faulthandler`` to enable :mod:`faulthandler`;
-   * ``-X showrefcount`` to enable the output of the total reference count
-     and memory blocks (only works on debug builds);
+   * ``-X showrefcount`` to output the total reference count and number of used
+     memory blocks when the program finishes or after each statement in the
+     interactive interpreter. This only works on debug builds.
    * ``-X tracemalloc`` to start tracing Python memory allocations using the
      :mod:`tracemalloc` module. By default, only the most recent frame is
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
      tracing with a traceback limit of *NFRAME* frames. See the
      :func:`tracemalloc.start` for more information.
+   * ``-X showalloccount`` to output the total count of allocated objects for
+     each type when the program finishes. This only works when Python was built with
+     ``COUNT_ALLOCS`` defined.
 
-   It also allows to pass arbitrary values and retrieve them through the
+   It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
 
    .. versionchanged:: 3.2
-      It is now allowed to pass :option:`-X` with CPython.
+      The :option:`-X` option was added.
 
    .. versionadded:: 3.3
       The ``-X faulthandler`` option.
 
    .. versionadded:: 3.4
       The ``-X showrefcount`` and ``-X tracemalloc`` options.
+
+   .. versionadded:: 3.6
+      The ``-X showalloccount`` option.
 
 
 Options you shouldn't use
@@ -411,7 +431,7 @@ Options you shouldn't use
 
    Reserved for use by Jython_.
 
-.. _Jython: http://jython.org
+.. _Jython: http://www.jython.org/
 
 
 .. _using-on-envvars:
@@ -468,14 +488,6 @@ conflict.
    :data:`sys.ps2` and the hook :data:`sys.__interactivehook__` in this file.
 
 
-.. envvar:: PYTHONY2K
-
-   Set this to a non-empty string to cause the :mod:`time` module to require
-   dates specified as strings to include 4-digit years, otherwise 2-digit years
-   are converted based on rules described in the :mod:`time` module
-   documentation.
-
-
 .. envvar:: PYTHONOPTIMIZE
 
    If this is set to a non-empty string it is equivalent to specifying the
@@ -520,8 +532,8 @@ conflict.
 
 .. envvar:: PYTHONDONTWRITEBYTECODE
 
-   If this is set to a non-empty string, Python won't try to write ``.pyc`` or
-   ``.pyo`` files on the import of source modules.  This is equivalent to
+   If this is set to a non-empty string, Python won't try to write ``.pyc``
+   files on the import of source modules.  This is equivalent to
    specifying the :option:`-B` option.
 
 
@@ -557,6 +569,10 @@ conflict.
    .. versionchanged:: 3.4
       The ``encodingname`` part is now optional.
 
+   .. versionchanged:: 3.6
+      On Windows, the encoding specified by this variable is ignored for interactive
+      console buffers unless :envvar:`PYTHONLEGACYWINDOWSSTDIO` is also specified.
+      Files and pipes redirected through the standard streams are not affected.
 
 .. envvar:: PYTHONNOUSERSITE
 
@@ -622,6 +638,81 @@ conflict.
    .. versionadded:: 3.4
 
 
+.. envvar:: PYTHONMALLOC
+
+   Set the Python memory allocators and/or install debug hooks.
+
+   Set the family of memory allocators used by Python:
+
+   * ``malloc``: use the :c:func:`malloc` function of the C library
+     for all domains (:c:data:`PYMEM_DOMAIN_RAW`, :c:data:`PYMEM_DOMAIN_MEM`,
+     :c:data:`PYMEM_DOMAIN_OBJ`).
+   * ``pymalloc``: use the :ref:`pymalloc allocator <pymalloc>` for
+     :c:data:`PYMEM_DOMAIN_MEM` and :c:data:`PYMEM_DOMAIN_OBJ` domains and use
+     the :c:func:`malloc` function for the :c:data:`PYMEM_DOMAIN_RAW` domain.
+
+   Install debug hooks:
+
+   * ``debug``: install debug hooks on top of the default memory allocator
+   * ``malloc_debug``: same as ``malloc`` but also install debug hooks
+   * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks
+
+   When Python is compiled in release mode, the default is ``pymalloc``. When
+   compiled in debug mode, the default is ``pymalloc_debug`` and the debug hooks
+   are used automatically.
+
+   If Python is configured without ``pymalloc`` support, ``pymalloc`` and
+   ``pymalloc_debug`` are not available, the default is ``malloc`` in release
+   mode and ``malloc_debug`` in debug mode.
+
+   See the :c:func:`PyMem_SetupDebugHooks` function for debug hooks on Python
+   memory allocators.
+
+   .. versionadded:: 3.6
+
+
+.. envvar:: PYTHONMALLOCSTATS
+
+   If set to a non-empty string, Python will print statistics of the
+   :ref:`pymalloc memory allocator <pymalloc>` every time a new pymalloc object
+   arena is created, and on shutdown.
+
+   This variable is ignored if the :envvar:`PYTHONMALLOC` environment variable
+   is used to force the :c:func:`malloc` allocator of the C library, or if
+   Python is configured without ``pymalloc`` support.
+
+   .. versionchanged:: 3.6
+      This variable can now also be used on Python compiled in release mode.
+      It now has no effect if set to an empty string.
+
+
+.. envvar:: PYTHONLEGACYWINDOWSFSENCODING
+
+   If set to a non-empty string, the default filesystem encoding and errors mode
+   will revert to their pre-3.6 values of 'mbcs' and 'replace', respectively.
+   Otherwise, the new defaults 'utf-8' and 'surrogatepass' are used.
+
+   This may also be enabled at runtime with
+   :func:`sys._enablelegacywindowsfsencoding()`.
+
+   Availability: Windows
+
+   .. versionadded:: 3.6
+      See :pep:`529` for more details.
+
+.. envvar:: PYTHONLEGACYWINDOWSSTDIO
+
+   If set to a non-empty string, does not use the new console reader and
+   writer. This means that Unicode characters will be encoded according to
+   the active console code page, rather than using utf-8.
+
+   This variable is ignored if the standard streams are redirected (to files
+   or pipes) rather than referring to console buffers.
+
+   Availability: Windows
+
+   .. versionadded:: 3.6
+
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -637,9 +728,3 @@ if Python was configured with the ``--with-pydebug`` build option.
 
    If set, Python will dump objects and reference counts still alive after
    shutting down the interpreter.
-
-
-.. envvar:: PYTHONMALLOCSTATS
-
-   If set, Python will print memory allocation statistics every time a new
-   object arena is created, and on shutdown.

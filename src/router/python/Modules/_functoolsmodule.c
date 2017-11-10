@@ -25,7 +25,7 @@ static PyTypeObject partial_type;
 static PyObject *
 partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
-    PyObject *func;
+    PyObject *func, *pargs, *nargs, *pkw;
     partialobject *pto;
 
     if (PyTuple_GET_SIZE(args) < 1) {
@@ -34,7 +34,18 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
+    pargs = pkw = NULL;
     func = PyTuple_GET_ITEM(args, 0);
+    if (Py_TYPE(func) == &partial_type && type == &partial_type) {
+        partialobject *part = (partialobject *)func;
+        if (part->dict == NULL) {
+            pargs = part->args;
+            pkw = part->kw;
+            func = part->fn;
+            assert(PyTuple_Check(pargs));
+            assert(PyDict_Check(pkw));
+        }
+    }
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
                         "the first argument must be callable");
@@ -48,25 +59,56 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     pto->fn = func;
     Py_INCREF(func);
-    pto->args = PyTuple_GetSlice(args, 1, PY_SSIZE_T_MAX);
-    if (pto->args == NULL) {
-        pto->kw = NULL;
+
+    nargs = PyTuple_GetSlice(args, 1, PY_SSIZE_T_MAX);
+    if (nargs == NULL) {
         Py_DECREF(pto);
         return NULL;
     }
-    if (kw != NULL) {
-        pto->kw = PyDict_Copy(kw);
-        if (pto->kw == NULL) {
+    if (pargs == NULL || PyTuple_GET_SIZE(pargs) == 0) {
+        pto->args = nargs;
+        Py_INCREF(nargs);
+    }
+    else if (PyTuple_GET_SIZE(nargs) == 0) {
+        pto->args = pargs;
+        Py_INCREF(pargs);
+    }
+    else {
+        pto->args = PySequence_Concat(pargs, nargs);
+        if (pto->args == NULL) {
+            Py_DECREF(nargs);
             Py_DECREF(pto);
             return NULL;
         }
-    } else {
-        pto->kw = Py_None;
-        Py_INCREF(Py_None);
+        assert(PyTuple_Check(pto->args));
     }
+    Py_DECREF(nargs);
 
-    pto->weakreflist = NULL;
-    pto->dict = NULL;
+    if (pkw == NULL || PyDict_Size(pkw) == 0) {
+        if (kw == NULL) {
+            pto->kw = PyDict_New();
+        }
+        else if (Py_REFCNT(kw) == 1) {
+            Py_INCREF(kw);
+            pto->kw = kw;
+        }
+        else {
+            pto->kw = PyDict_Copy(kw);
+        }
+    }
+    else {
+        pto->kw = PyDict_Copy(pkw);
+        if (kw != NULL && pto->kw != NULL) {
+            if (PyDict_Merge(pto->kw, kw, 1) != 0) {
+                Py_DECREF(pto);
+                return NULL;
+            }
+        }
+    }
+    if (pto->kw == NULL) {
+        Py_DECREF(pto);
+        return NULL;
+    }
 
     return (PyObject *)pto;
 }
@@ -74,6 +116,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 static void
 partial_dealloc(partialobject *pto)
 {
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(pto);
     if (pto->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) pto);
@@ -88,44 +131,61 @@ static PyObject *
 partial_call(partialobject *pto, PyObject *args, PyObject *kw)
 {
     PyObject *ret;
-    PyObject *argappl = NULL, *kwappl = NULL;
+    PyObject *argappl, *kwappl;
+    PyObject **stack;
+    Py_ssize_t nargs;
 
     assert (PyCallable_Check(pto->fn));
     assert (PyTuple_Check(pto->args));
-    assert (pto->kw == Py_None  ||  PyDict_Check(pto->kw));
+    assert (PyDict_Check(pto->kw));
 
     if (PyTuple_GET_SIZE(pto->args) == 0) {
-        argappl = args;
-        Py_INCREF(args);
-    } else if (PyTuple_GET_SIZE(args) == 0) {
-        argappl = pto->args;
-        Py_INCREF(pto->args);
-    } else {
-        argappl = PySequence_Concat(pto->args, args);
-        if (argappl == NULL)
-            return NULL;
+        stack = &PyTuple_GET_ITEM(args, 0);
+        nargs = PyTuple_GET_SIZE(args);
+        argappl = NULL;
     }
-
-    if (pto->kw == Py_None) {
-        kwappl = kw;
-        Py_XINCREF(kw);
-    } else {
-        kwappl = PyDict_Copy(pto->kw);
-        if (kwappl == NULL) {
-            Py_DECREF(argappl);
+    else if (PyTuple_GET_SIZE(args) == 0) {
+        stack = &PyTuple_GET_ITEM(pto->args, 0);
+        nargs = PyTuple_GET_SIZE(pto->args);
+        argappl = NULL;
+    }
+    else {
+        stack = NULL;
+        argappl = PySequence_Concat(pto->args, args);
+        if (argappl == NULL) {
             return NULL;
         }
+
+        assert(PyTuple_Check(argappl));
+    }
+
+    if (PyDict_Size(pto->kw) == 0) {
+        kwappl = kw;
+        Py_XINCREF(kwappl);
+    }
+    else {
+        kwappl = PyDict_Copy(pto->kw);
+        if (kwappl == NULL) {
+            Py_XDECREF(argappl);
+            return NULL;
+        }
+
         if (kw != NULL) {
             if (PyDict_Merge(kwappl, kw, 1) != 0) {
-                Py_DECREF(argappl);
+                Py_XDECREF(argappl);
                 Py_DECREF(kwappl);
                 return NULL;
             }
         }
     }
 
-    ret = PyObject_Call(pto->fn, argappl, kwappl);
-    Py_DECREF(argappl);
+    if (stack) {
+        ret = _PyObject_FastCallDict(pto->fn, stack, nargs, kwappl);
+    }
+    else {
+        ret = PyObject_Call(pto->fn, argappl, kwappl);
+        Py_DECREF(argappl);
+    }
     Py_XDECREF(kwappl);
     return ret;
 }
@@ -163,42 +223,48 @@ static PyGetSetDef partial_getsetlist[] = {
 static PyObject *
 partial_repr(partialobject *pto)
 {
-    PyObject *result;
+    PyObject *result = NULL;
     PyObject *arglist;
-    PyObject *tmp;
     Py_ssize_t i, n;
+    PyObject *key, *value;
+    int status;
+
+    status = Py_ReprEnter((PyObject *)pto);
+    if (status != 0) {
+        if (status < 0)
+            return NULL;
+        return PyUnicode_FromString("...");
+    }
 
     arglist = PyUnicode_FromString("");
-    if (arglist == NULL) {
-        return NULL;
-    }
+    if (arglist == NULL)
+        goto done;
     /* Pack positional arguments */
     assert (PyTuple_Check(pto->args));
     n = PyTuple_GET_SIZE(pto->args);
     for (i = 0; i < n; i++) {
-        tmp = PyUnicode_FromFormat("%U, %R", arglist,
-                                   PyTuple_GET_ITEM(pto->args, i));
-        Py_DECREF(arglist);
-        if (tmp == NULL)
-            return NULL;
-        arglist = tmp;
+        Py_SETREF(arglist, PyUnicode_FromFormat("%U, %R", arglist,
+                                        PyTuple_GET_ITEM(pto->args, i)));
+        if (arglist == NULL)
+            goto done;
     }
     /* Pack keyword arguments */
-    assert (pto->kw == Py_None  ||  PyDict_Check(pto->kw));
-    if (pto->kw != Py_None) {
-        PyObject *key, *value;
-        for (i = 0; PyDict_Next(pto->kw, &i, &key, &value);) {
-            tmp = PyUnicode_FromFormat("%U, %U=%R", arglist,
-                                       key, value);
-            Py_DECREF(arglist);
-            if (tmp == NULL)
-                return NULL;
-            arglist = tmp;
-        }
+    assert (PyDict_Check(pto->kw));
+    for (i = 0; PyDict_Next(pto->kw, &i, &key, &value);) {
+        /* Prevent key.__str__ from deleting the value. */
+        Py_INCREF(value);
+        Py_SETREF(arglist, PyUnicode_FromFormat("%U, %S=%R", arglist,
+                                                key, value));
+        Py_DECREF(value);
+        if (arglist == NULL)
+            goto done;
     }
     result = PyUnicode_FromFormat("%s(%R%U)", Py_TYPE(pto)->tp_name,
                                   pto->fn, arglist);
     Py_DECREF(arglist);
+
+ done:
+    Py_ReprLeave((PyObject *)pto);
     return result;
 }
 
@@ -221,25 +287,45 @@ static PyObject *
 partial_setstate(partialobject *pto, PyObject *state)
 {
     PyObject *fn, *fnargs, *kw, *dict;
-    if (!PyArg_ParseTuple(state, "OOOO",
-                          &fn, &fnargs, &kw, &dict))
+
+    if (!PyTuple_Check(state) ||
+        !PyArg_ParseTuple(state, "OOOO", &fn, &fnargs, &kw, &dict) ||
+        !PyCallable_Check(fn) ||
+        !PyTuple_Check(fnargs) ||
+        (kw != Py_None && !PyDict_Check(kw)))
+    {
+        PyErr_SetString(PyExc_TypeError, "invalid partial state");
         return NULL;
-    Py_XDECREF(pto->fn);
-    Py_XDECREF(pto->args);
-    Py_XDECREF(pto->kw);
-    Py_XDECREF(pto->dict);
-    pto->fn = fn;
-    pto->args = fnargs;
-    pto->kw = kw;
-    if (dict != Py_None) {
-      pto->dict = dict;
-      Py_INCREF(dict);
-    } else {
-      pto->dict = NULL;
     }
+
+    if(!PyTuple_CheckExact(fnargs))
+        fnargs = PySequence_Tuple(fnargs);
+    else
+        Py_INCREF(fnargs);
+    if (fnargs == NULL)
+        return NULL;
+
+    if (kw == Py_None)
+        kw = PyDict_New();
+    else if(!PyDict_CheckExact(kw))
+        kw = PyDict_Copy(kw);
+    else
+        Py_INCREF(kw);
+    if (kw == NULL) {
+        Py_DECREF(fnargs);
+        return NULL;
+    }
+
     Py_INCREF(fn);
-    Py_INCREF(fnargs);
-    Py_INCREF(kw);
+    if (dict == Py_None)
+        dict = NULL;
+    else
+        Py_INCREF(dict);
+
+    Py_SETREF(pto->fn, fn);
+    Py_SETREF(pto->args, fnargs);
+    Py_SETREF(pto->kw, kw);
+    Py_XSETREF(pto->dict, dict);
     Py_RETURN_NONE;
 }
 
@@ -398,12 +484,12 @@ static PyObject *
 keyobject_richcompare(PyObject *ko, PyObject *other, int op)
 {
     PyObject *res;
-    PyObject *args;
     PyObject *x;
     PyObject *y;
     PyObject *compare;
     PyObject *answer;
     static PyObject *zero;
+    PyObject* stack[2];
 
     if (zero == NULL) {
         zero = PyLong_FromLong(0);
@@ -427,17 +513,13 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
     /* Call the user's comparison function and translate the 3-way
      * result into true or false (or error).
      */
-    args = PyTuple_New(2);
-    if (args == NULL)
+    stack[0] = x;
+    stack[1] = y;
+    res = _PyObject_FastCall(compare, stack, 2);
+    if (res == NULL) {
         return NULL;
-    Py_INCREF(x);
-    Py_INCREF(y);
-    PyTuple_SET_ITEM(args, 0, x);
-    PyTuple_SET_ITEM(args, 1, y);
-    res = PyObject_Call(compare, args, NULL);
-    Py_DECREF(args);
-    if (res == NULL)
-        return NULL;
+    }
+
     answer = PyObject_RichCompare(res, zero, op);
     Py_DECREF(res);
     return answer;
@@ -540,6 +622,596 @@ For example, reduce(lambda x, y: x+y, [1, 2, 3, 4, 5]) calculates\n\
 of the sequence in the calculation, and serves as a default when the\n\
 sequence is empty.");
 
+/* lru_cache object **********************************************************/
+
+/* this object is used delimit args and keywords in the cache keys */
+static PyObject *kwd_mark = NULL;
+
+struct lru_list_elem;
+struct lru_cache_object;
+
+typedef struct lru_list_elem {
+    PyObject_HEAD
+    struct lru_list_elem *prev, *next;  /* borrowed links */
+    Py_hash_t hash;
+    PyObject *key, *result;
+} lru_list_elem;
+
+static void
+lru_list_elem_dealloc(lru_list_elem *link)
+{
+    _PyObject_GC_UNTRACK(link);
+    Py_XDECREF(link->key);
+    Py_XDECREF(link->result);
+    PyObject_GC_Del(link);
+}
+
+static int
+lru_list_elem_traverse(lru_list_elem *link, visitproc visit, void *arg)
+{
+    Py_VISIT(link->key);
+    Py_VISIT(link->result);
+    return 0;
+}
+
+static int
+lru_list_elem_clear(lru_list_elem *link)
+{
+    Py_CLEAR(link->key);
+    Py_CLEAR(link->result);
+    return 0;
+}
+
+static PyTypeObject lru_list_elem_type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "functools._lru_list_elem",         /* tp_name */
+    sizeof(lru_list_elem),              /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)lru_list_elem_dealloc,  /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    0,                                  /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,  /* tp_flags */
+    0,                                  /* tp_doc */
+    (traverseproc)lru_list_elem_traverse,  /* tp_traverse */
+    (inquiry)lru_list_elem_clear,       /* tp_clear */
+};
+
+
+typedef PyObject *(*lru_cache_ternaryfunc)(struct lru_cache_object *, PyObject *, PyObject *);
+
+typedef struct lru_cache_object {
+    lru_list_elem root;  /* includes PyObject_HEAD */
+    Py_ssize_t maxsize;
+    PyObject *maxsize_O;
+    PyObject *func;
+    lru_cache_ternaryfunc wrapper;
+    PyObject *cache;
+    PyObject *cache_info_type;
+    Py_ssize_t misses, hits;
+    int typed;
+    PyObject *dict;
+    int full;
+} lru_cache_object;
+
+static PyTypeObject lru_cache_type;
+
+static PyObject *
+lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
+{
+    PyObject *key, *keyword, *value;
+    Py_ssize_t key_size, pos, key_pos, kwds_size;
+
+    /* short path, key will match args anyway, which is a tuple */
+    if (!typed && !kwds) {
+        Py_INCREF(args);
+        return args;
+    }
+
+    kwds_size = kwds ? PyDict_Size(kwds) : 0;
+    assert(kwds_size >= 0);
+
+    key_size = PyTuple_GET_SIZE(args);
+    if (kwds_size)
+        key_size += kwds_size * 2 + 1;
+    if (typed)
+        key_size += PyTuple_GET_SIZE(args) + kwds_size;
+
+    key = PyTuple_New(key_size);
+    if (key == NULL)
+        return NULL;
+
+    key_pos = 0;
+    for (pos = 0; pos < PyTuple_GET_SIZE(args); ++pos) {
+        PyObject *item = PyTuple_GET_ITEM(args, pos);
+        Py_INCREF(item);
+        PyTuple_SET_ITEM(key, key_pos++, item);
+    }
+    if (kwds_size) {
+        Py_INCREF(kwd_mark);
+        PyTuple_SET_ITEM(key, key_pos++, kwd_mark);
+        for (pos = 0; PyDict_Next(kwds, &pos, &keyword, &value);) {
+            Py_INCREF(keyword);
+            PyTuple_SET_ITEM(key, key_pos++, keyword);
+            Py_INCREF(value);
+            PyTuple_SET_ITEM(key, key_pos++, value);
+        }
+        assert(key_pos == PyTuple_GET_SIZE(args) + kwds_size * 2 + 1);
+    }
+    if (typed) {
+        for (pos = 0; pos < PyTuple_GET_SIZE(args); ++pos) {
+            PyObject *item = (PyObject *)Py_TYPE(PyTuple_GET_ITEM(args, pos));
+            Py_INCREF(item);
+            PyTuple_SET_ITEM(key, key_pos++, item);
+        }
+        if (kwds_size) {
+            for (pos = 0; PyDict_Next(kwds, &pos, &keyword, &value);) {
+                PyObject *item = (PyObject *)Py_TYPE(value);
+                Py_INCREF(item);
+                PyTuple_SET_ITEM(key, key_pos++, item);
+            }
+        }
+    }
+    assert(key_pos == key_size);
+    return key;
+}
+
+static PyObject *
+uncached_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *result = PyObject_Call(self->func, args, kwds);
+    if (!result)
+        return NULL;
+    self->misses++;
+    return result;
+}
+
+static PyObject *
+infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds)
+{
+    PyObject *result;
+    Py_hash_t hash;
+    PyObject *key = lru_cache_make_key(args, kwds, self->typed);
+    if (!key)
+        return NULL;
+    hash = PyObject_Hash(key);
+    if (hash == -1) {
+        Py_DECREF(key);
+        return NULL;
+    }
+    result = _PyDict_GetItem_KnownHash(self->cache, key, hash);
+    if (result) {
+        Py_INCREF(result);
+        self->hits++;
+        Py_DECREF(key);
+        return result;
+    }
+    if (PyErr_Occurred()) {
+        Py_DECREF(key);
+        return NULL;
+    }
+    result = PyObject_Call(self->func, args, kwds);
+    if (!result) {
+        Py_DECREF(key);
+        return NULL;
+    }
+    if (_PyDict_SetItem_KnownHash(self->cache, key, result, hash) < 0) {
+        Py_DECREF(result);
+        Py_DECREF(key);
+        return NULL;
+    }
+    Py_DECREF(key);
+    self->misses++;
+    return result;
+}
+
+static void
+lru_cache_extricate_link(lru_list_elem *link)
+{
+    link->prev->next = link->next;
+    link->next->prev = link->prev;
+}
+
+static void
+lru_cache_append_link(lru_cache_object *self, lru_list_elem *link)
+{
+    lru_list_elem *root = &self->root;
+    lru_list_elem *last = root->prev;
+    last->next = root->prev = link;
+    link->prev = last;
+    link->next = root;
+}
+
+static PyObject *
+bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds)
+{
+    lru_list_elem *link;
+    PyObject *key, *result;
+    Py_hash_t hash;
+
+    key = lru_cache_make_key(args, kwds, self->typed);
+    if (!key)
+        return NULL;
+    hash = PyObject_Hash(key);
+    if (hash == -1) {
+        Py_DECREF(key);
+        return NULL;
+    }
+    link  = (lru_list_elem *)_PyDict_GetItem_KnownHash(self->cache, key, hash);
+    if (link) {
+        lru_cache_extricate_link(link);
+        lru_cache_append_link(self, link);
+        self->hits++;
+        result = link->result;
+        Py_INCREF(result);
+        Py_DECREF(key);
+        return result;
+    }
+    if (PyErr_Occurred()) {
+        Py_DECREF(key);
+        return NULL;
+    }
+    result = PyObject_Call(self->func, args, kwds);
+    if (!result) {
+        Py_DECREF(key);
+        return NULL;
+    }
+    if (self->full && self->root.next != &self->root) {
+        /* Use the oldest item to store the new key and result. */
+        PyObject *oldkey, *oldresult, *popresult;
+        /* Extricate the oldest item. */
+        link = self->root.next;
+        lru_cache_extricate_link(link);
+        /* Remove it from the cache.
+           The cache dict holds one reference to the link,
+           and the linked list holds yet one reference to it. */
+        popresult = _PyDict_Pop_KnownHash(self->cache,
+                                          link->key, link->hash,
+                                          Py_None);
+        if (popresult == Py_None) {
+            /* Getting here means that this same key was added to the
+               cache while the lock was released.  Since the link
+               update is already done, we need only return the
+               computed result and update the count of misses. */
+            Py_DECREF(popresult);
+            Py_DECREF(link);
+            Py_DECREF(key);
+        }
+        else if (popresult == NULL) {
+            lru_cache_append_link(self, link);
+            Py_DECREF(key);
+            Py_DECREF(result);
+            return NULL;
+        }
+        else {
+            Py_DECREF(popresult);
+            /* Keep a reference to the old key and old result to
+               prevent their ref counts from going to zero during the
+               update. That will prevent potentially arbitrary object
+               clean-up code (i.e. __del__) from running while we're
+               still adjusting the links. */
+            oldkey = link->key;
+            oldresult = link->result;
+
+            link->hash = hash;
+            link->key = key;
+            link->result = result;
+            if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
+                                          hash) < 0) {
+                Py_DECREF(link);
+                Py_DECREF(oldkey);
+                Py_DECREF(oldresult);
+                return NULL;
+            }
+            lru_cache_append_link(self, link);
+            Py_INCREF(result); /* for return */
+            Py_DECREF(oldkey);
+            Py_DECREF(oldresult);
+        }
+    } else {
+        /* Put result in a new link at the front of the queue. */
+        link = (lru_list_elem *)PyObject_GC_New(lru_list_elem,
+                                                &lru_list_elem_type);
+        if (link == NULL) {
+            Py_DECREF(key);
+            Py_DECREF(result);
+            return NULL;
+        }
+
+        link->hash = hash;
+        link->key = key;
+        link->result = result;
+        _PyObject_GC_TRACK(link);
+        if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
+                                      hash) < 0) {
+            Py_DECREF(link);
+            return NULL;
+        }
+        lru_cache_append_link(self, link);
+        Py_INCREF(result); /* for return */
+        self->full = (PyDict_Size(self->cache) >= self->maxsize);
+    }
+    self->misses++;
+    return result;
+}
+
+static PyObject *
+lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
+{
+    PyObject *func, *maxsize_O, *cache_info_type, *cachedict;
+    int typed;
+    lru_cache_object *obj;
+    Py_ssize_t maxsize;
+    PyObject *(*wrapper)(lru_cache_object *, PyObject *, PyObject *);
+    static char *keywords[] = {"user_function", "maxsize", "typed",
+                               "cache_info_type", NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "OOpO:lru_cache", keywords,
+                                     &func, &maxsize_O, &typed,
+                                     &cache_info_type)) {
+        return NULL;
+    }
+
+    if (!PyCallable_Check(func)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "the first argument must be callable");
+        return NULL;
+    }
+
+    /* select the caching function, and make/inc maxsize_O */
+    if (maxsize_O == Py_None) {
+        wrapper = infinite_lru_cache_wrapper;
+        /* use this only to initialize lru_cache_object attribute maxsize */
+        maxsize = -1;
+    } else if (PyIndex_Check(maxsize_O)) {
+        maxsize = PyNumber_AsSsize_t(maxsize_O, PyExc_OverflowError);
+        if (maxsize == -1 && PyErr_Occurred())
+            return NULL;
+        if (maxsize == 0)
+            wrapper = uncached_lru_cache_wrapper;
+        else
+            wrapper = bounded_lru_cache_wrapper;
+    } else {
+        PyErr_SetString(PyExc_TypeError, "maxsize should be integer or None");
+        return NULL;
+    }
+
+    if (!(cachedict = PyDict_New()))
+        return NULL;
+
+    obj = (lru_cache_object *)type->tp_alloc(type, 0);
+    if (obj == NULL) {
+        Py_DECREF(cachedict);
+        return NULL;
+    }
+
+    obj->cache = cachedict;
+    obj->root.prev = &obj->root;
+    obj->root.next = &obj->root;
+    obj->maxsize = maxsize;
+    Py_INCREF(maxsize_O);
+    obj->maxsize_O = maxsize_O;
+    Py_INCREF(func);
+    obj->func = func;
+    obj->wrapper = wrapper;
+    obj->misses = obj->hits = 0;
+    obj->typed = typed;
+    Py_INCREF(cache_info_type);
+    obj->cache_info_type = cache_info_type;
+
+    return (PyObject *)obj;
+}
+
+static lru_list_elem *
+lru_cache_unlink_list(lru_cache_object *self)
+{
+    lru_list_elem *root = &self->root;
+    lru_list_elem *link = root->next;
+    if (link == root)
+        return NULL;
+    root->prev->next = NULL;
+    root->next = root->prev = root;
+    return link;
+}
+
+static void
+lru_cache_clear_list(lru_list_elem *link)
+{
+    while (link != NULL) {
+        lru_list_elem *next = link->next;
+        Py_DECREF(link);
+        link = next;
+    }
+}
+
+static void
+lru_cache_dealloc(lru_cache_object *obj)
+{
+    lru_list_elem *list;
+    /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyObject_GC_UnTrack(obj);
+
+    list = lru_cache_unlink_list(obj);
+    Py_XDECREF(obj->maxsize_O);
+    Py_XDECREF(obj->func);
+    Py_XDECREF(obj->cache);
+    Py_XDECREF(obj->dict);
+    Py_XDECREF(obj->cache_info_type);
+    lru_cache_clear_list(list);
+    Py_TYPE(obj)->tp_free(obj);
+}
+
+static PyObject *
+lru_cache_call(lru_cache_object *self, PyObject *args, PyObject *kwds)
+{
+    return self->wrapper(self, args, kwds);
+}
+
+static PyObject *
+lru_cache_descr_get(PyObject *self, PyObject *obj, PyObject *type)
+{
+    if (obj == Py_None || obj == NULL) {
+        Py_INCREF(self);
+        return self;
+    }
+    return PyMethod_New(self, obj);
+}
+
+static PyObject *
+lru_cache_cache_info(lru_cache_object *self, PyObject *unused)
+{
+    return PyObject_CallFunction(self->cache_info_type, "nnOn",
+                                 self->hits, self->misses, self->maxsize_O,
+                                 PyDict_Size(self->cache));
+}
+
+static PyObject *
+lru_cache_cache_clear(lru_cache_object *self, PyObject *unused)
+{
+    lru_list_elem *list = lru_cache_unlink_list(self);
+    self->hits = self->misses = 0;
+    self->full = 0;
+    PyDict_Clear(self->cache);
+    lru_cache_clear_list(list);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+lru_cache_reduce(PyObject *self, PyObject *unused)
+{
+    return PyObject_GetAttrString(self, "__qualname__");
+}
+
+static PyObject *
+lru_cache_copy(PyObject *self, PyObject *unused)
+{
+    Py_INCREF(self);
+    return self;
+}
+
+static PyObject *
+lru_cache_deepcopy(PyObject *self, PyObject *unused)
+{
+    Py_INCREF(self);
+    return self;
+}
+
+static int
+lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
+{
+    lru_list_elem *link = self->root.next;
+    while (link != &self->root) {
+        lru_list_elem *next = link->next;
+        Py_VISIT(link);
+        link = next;
+    }
+    Py_VISIT(self->maxsize_O);
+    Py_VISIT(self->func);
+    Py_VISIT(self->cache);
+    Py_VISIT(self->cache_info_type);
+    Py_VISIT(self->dict);
+    return 0;
+}
+
+static int
+lru_cache_tp_clear(lru_cache_object *self)
+{
+    lru_list_elem *list = lru_cache_unlink_list(self);
+    Py_CLEAR(self->maxsize_O);
+    Py_CLEAR(self->func);
+    Py_CLEAR(self->cache);
+    Py_CLEAR(self->cache_info_type);
+    Py_CLEAR(self->dict);
+    lru_cache_clear_list(list);
+    return 0;
+}
+
+
+PyDoc_STRVAR(lru_cache_doc,
+"Create a cached callable that wraps another function.\n\
+\n\
+user_function:      the function being cached\n\
+\n\
+maxsize:  0         for no caching\n\
+          None      for unlimited cache size\n\
+          n         for a bounded cache\n\
+\n\
+typed:    False     cache f(3) and f(3.0) as identical calls\n\
+          True      cache f(3) and f(3.0) as distinct calls\n\
+\n\
+cache_info_type:    namedtuple class with the fields:\n\
+                        hits misses currsize maxsize\n"
+);
+
+static PyMethodDef lru_cache_methods[] = {
+    {"cache_info", (PyCFunction)lru_cache_cache_info, METH_NOARGS},
+    {"cache_clear", (PyCFunction)lru_cache_cache_clear, METH_NOARGS},
+    {"__reduce__", (PyCFunction)lru_cache_reduce, METH_NOARGS},
+    {"__copy__", (PyCFunction)lru_cache_copy, METH_VARARGS},
+    {"__deepcopy__", (PyCFunction)lru_cache_deepcopy, METH_VARARGS},
+    {NULL}
+};
+
+static PyGetSetDef lru_cache_getsetlist[] = {
+    {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
+    {NULL}
+};
+
+static PyTypeObject lru_cache_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "functools._lru_cache_wrapper",     /* tp_name */
+    sizeof(lru_cache_object),           /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)lru_cache_dealloc,      /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    (ternaryfunc)lru_cache_call,        /* tp_call */
+    0,                                  /* tp_str */
+    0,                                  /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC,
+                                        /* tp_flags */
+    lru_cache_doc,                      /* tp_doc */
+    (traverseproc)lru_cache_tp_traverse,/* tp_traverse */
+    (inquiry)lru_cache_tp_clear,        /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    0,                                  /* tp_iter */
+    0,                                  /* tp_iternext */
+    lru_cache_methods,                  /* tp_methods */
+    0,                                  /* tp_members */
+    lru_cache_getsetlist,               /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    lru_cache_descr_get,                /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    offsetof(lru_cache_object, dict),   /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    lru_cache_new,                      /* tp_new */
+};
+
 /* module level code ********************************************************/
 
 PyDoc_STRVAR(module_doc,
@@ -552,6 +1224,11 @@ static PyMethodDef module_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+static void
+module_free(void *m)
+{
+    Py_CLEAR(kwd_mark);
+}
 
 static struct PyModuleDef _functoolsmodule = {
     PyModuleDef_HEAD_INIT,
@@ -562,7 +1239,7 @@ static struct PyModuleDef _functoolsmodule = {
     NULL,
     NULL,
     NULL,
-    NULL
+    module_free,
 };
 
 PyMODINIT_FUNC
@@ -573,12 +1250,19 @@ PyInit__functools(void)
     char *name;
     PyTypeObject *typelist[] = {
         &partial_type,
+        &lru_cache_type,
         NULL
     };
 
     m = PyModule_Create(&_functoolsmodule);
     if (m == NULL)
         return NULL;
+
+    kwd_mark = PyObject_CallObject((PyObject *)&PyBaseObject_Type, NULL);
+    if (!kwd_mark) {
+        Py_DECREF(m);
+        return NULL;
+    }
 
     for (i=0 ; typelist[i] != NULL ; i++) {
         if (PyType_Ready(typelist[i]) < 0) {

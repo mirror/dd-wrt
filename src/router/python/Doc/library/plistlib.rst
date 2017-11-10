@@ -3,15 +3,16 @@
 
 .. module:: plistlib
    :synopsis: Generate and parse Mac OS X plist files.
+
 .. moduleauthor:: Jack Jansen
 .. sectionauthor:: Georg Brandl <georg@python.org>
 .. (harvested from docstrings in the original file)
 
+**Source code:** :source:`Lib/plistlib.py`
+
 .. index::
    pair: plist; file
    single: property list
-
-**Source code:** :source:`Lib/plistlib.py`
 
 --------------
 
@@ -37,7 +38,7 @@ or :class:`datetime.datetime` objects.
 
 .. seealso::
 
-   `PList manual page <http://developer.apple.com/documentation/Darwin/Reference/ManPages/man5/plist.5.html>`_
+   `PList manual page <https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man5/plist.5.html>`_
       Apple's documentation of the file format.
 
 
@@ -129,7 +130,7 @@ The following functions are deprecated:
    and binary) file object. Returns the unpacked root object (which usually
    is a dictionary).
 
-   This function calls :func:`load` to do the actual work, the the documentation
+   This function calls :func:`load` to do the actual work, see the documentation
    of :func:`that function <load>` for an explanation of the keyword arguments.
 
    .. note::
@@ -194,7 +195,7 @@ The following classes are available:
    It has one attribute, :attr:`data`, that can be used to retrieve the Python
    bytes object stored in it.
 
-   .. deprecated:: 3.4 Use a :class:`bytes` object instead
+   .. deprecated:: 3.4 Use a :class:`bytes` object instead.
 
 
 The following constants are available:

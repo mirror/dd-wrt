@@ -4,9 +4,9 @@
 #include "Python.h"
 #include "structmember.h"
 
-static char visible_length_key[] = "n_sequence_fields";
-static char real_length_key[] = "n_fields";
-static char unnamed_fields_key[] = "n_unnamed_fields";
+static const char visible_length_key[] = "n_sequence_fields";
+static const char real_length_key[] = "n_fields";
+static const char unnamed_fields_key[] = "n_unnamed_fields";
 
 /* Fields with this name have only a field index, not a field name.
    They are only allowed for indices < n_visible_fields. */
@@ -16,14 +16,14 @@ _Py_IDENTIFIER(n_fields);
 _Py_IDENTIFIER(n_unnamed_fields);
 
 #define VISIBLE_SIZE(op) Py_SIZE(op)
-#define VISIBLE_SIZE_TP(tp) PyLong_AsLong( \
+#define VISIBLE_SIZE_TP(tp) PyLong_AsSsize_t( \
                       _PyDict_GetItemId((tp)->tp_dict, &PyId_n_sequence_fields))
 
-#define REAL_SIZE_TP(tp) PyLong_AsLong( \
+#define REAL_SIZE_TP(tp) PyLong_AsSsize_t( \
                       _PyDict_GetItemId((tp)->tp_dict, &PyId_n_fields))
 #define REAL_SIZE(op) REAL_SIZE_TP(Py_TYPE(op))
 
-#define UNNAMED_FIELDS_TP(tp) PyLong_AsLong( \
+#define UNNAMED_FIELDS_TP(tp) PyLong_AsSsize_t( \
                       _PyDict_GetItemId((tp)->tp_dict, &PyId_n_unnamed_fields))
 #define UNNAMED_FIELDS(op) UNNAMED_FIELDS_TP(Py_TYPE(op))
 
@@ -164,7 +164,8 @@ structseq_repr(PyStructSequence *obj)
 #define TYPE_MAXSIZE 100
 
     PyTypeObject *typ = Py_TYPE(obj);
-    int i, removelast = 0;
+    Py_ssize_t i;
+    int removelast = 0;
     Py_ssize_t len;
     char buf[REPR_BUFFER_SIZE];
     char *endofbuf, *pbuf = buf;
@@ -193,7 +194,7 @@ structseq_repr(PyStructSequence *obj)
         repr = PyObject_Repr(val);
         if (repr == NULL)
             return NULL;
-        crepr = _PyUnicode_AsString(repr);
+        crepr = PyUnicode_AsUTF8(repr);
         if (crepr == NULL) {
             Py_DECREF(repr);
             return NULL;
@@ -236,8 +237,7 @@ structseq_reduce(PyStructSequence* self)
     PyObject* tup = NULL;
     PyObject* dict = NULL;
     PyObject* result;
-    Py_ssize_t n_fields, n_visible_fields, n_unnamed_fields;
-    int i;
+    Py_ssize_t n_fields, n_visible_fields, n_unnamed_fields, i;
 
     n_fields = REAL_SIZE(self);
     n_visible_fields = VISIBLE_SIZE(self);
@@ -325,7 +325,7 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
 {
     PyObject *dict;
     PyMemberDef* members;
-    int n_members, n_unnamed_members, i, k;
+    Py_ssize_t n_members, n_unnamed_members, i, k;
     PyObject *v;
 
 #ifdef Py_TRACE_REFS
@@ -373,9 +373,9 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
     Py_INCREF(type);
 
     dict = type->tp_dict;
-#define SET_DICT_FROM_INT(key, value)                           \
+#define SET_DICT_FROM_SIZE(key, value)                          \
     do {                                                        \
-        v = PyLong_FromLong((long) value);                      \
+        v = PyLong_FromSsize_t(value);                          \
         if (v == NULL)                                          \
             return -1;                                          \
         if (PyDict_SetItemString(dict, key, v) < 0) {           \
@@ -385,9 +385,9 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
         Py_DECREF(v);                                           \
     } while (0)
 
-    SET_DICT_FROM_INT(visible_length_key, desc->n_in_sequence);
-    SET_DICT_FROM_INT(real_length_key, n_members);
-    SET_DICT_FROM_INT(unnamed_fields_key, n_unnamed_members);
+    SET_DICT_FROM_SIZE(visible_length_key, desc->n_in_sequence);
+    SET_DICT_FROM_SIZE(real_length_key, n_members);
+    SET_DICT_FROM_SIZE(unnamed_fields_key, n_unnamed_members);
 
     return 0;
 }

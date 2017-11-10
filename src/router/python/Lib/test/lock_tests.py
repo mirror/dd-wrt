@@ -7,6 +7,7 @@ import time
 from _thread import start_new_thread, TIMEOUT_MAX
 import threading
 import unittest
+import weakref
 
 from test import support
 
@@ -39,8 +40,12 @@ class Bunch(object):
                 self.finished.append(tid)
                 while not self._can_exit:
                     _wait()
-        for i in range(n):
-            start_new_thread(task, ())
+        try:
+            for i in range(n):
+                start_new_thread(task, ())
+        except:
+            self._can_exit = True
+            raise
 
     def wait_for_started(self):
         while len(self.started) < self.n:
@@ -82,7 +87,13 @@ class BaseLockTests(BaseTestCase):
 
     def test_repr(self):
         lock = self.locktype()
-        repr(lock)
+        self.assertRegex(repr(lock), "<unlocked .* object (.*)?at .*>")
+        del lock
+
+    def test_locked_repr(self):
+        lock = self.locktype()
+        lock.acquire()
+        self.assertRegex(repr(lock), "<locked .* object (.*)?at .*>")
         del lock
 
     def test_acquire_destroy(self):
@@ -187,6 +198,17 @@ class BaseLockTests(BaseTestCase):
         Bunch(f, 1).wait_for_finished()
         self.assertFalse(results[0])
         self.assertTimeout(results[1], 0.5)
+
+    def test_weakref_exists(self):
+        lock = self.locktype()
+        ref = weakref.ref(lock)
+        self.assertIsNotNone(ref())
+
+    def test_weakref_deleted(self):
+        lock = self.locktype()
+        ref = weakref.ref(lock)
+        del lock
+        self.assertIsNone(ref())
 
 
 class LockTests(BaseLockTests):
@@ -384,6 +406,15 @@ class EventTests(BaseTestCase):
         b.wait_for_finished()
         self.assertEqual(results, [True] * N)
 
+    def test_reset_internal_locks(self):
+        # ensure that condition is still using a Lock after reset
+        evt = self.eventtype()
+        with evt._cond:
+            self.assertFalse(evt._cond.acquire(False))
+        evt._reset_internal_locks()
+        with evt._cond:
+            self.assertFalse(evt._cond.acquire(False))
+
 
 class ConditionTests(BaseTestCase):
     """
@@ -430,21 +461,28 @@ class ConditionTests(BaseTestCase):
         # construct.  In particular, it is possible that this can no longer
         # be conveniently guaranteed should their implementation ever change.
         N = 5
+        ready = []
         results1 = []
         results2 = []
         phase_num = 0
         def f():
             cond.acquire()
+            ready.append(phase_num)
             result = cond.wait()
             cond.release()
             results1.append((result, phase_num))
             cond.acquire()
+            ready.append(phase_num)
             result = cond.wait()
             cond.release()
             results2.append((result, phase_num))
         b = Bunch(f, N)
         b.wait_for_started()
-        _wait()
+        # first wait, to ensure all workers settle into cond.wait() before
+        # we continue. See issues #8799 and #30727.
+        while len(ready) < 5:
+            _wait()
+        ready.clear()
         self.assertEqual(results1, [])
         # Notify 3 threads at first
         cond.acquire()
@@ -456,9 +494,9 @@ class ConditionTests(BaseTestCase):
             _wait()
         self.assertEqual(results1, [(True, 1)] * 3)
         self.assertEqual(results2, [])
-        # first wait, to ensure all workers settle into cond.wait() before
-        # we continue. See issue #8799
-        _wait()
+        # make sure all awaken workers settle into cond.wait()
+        while len(ready) < 3:
+            _wait()
         # Notify 5 threads: they might be in their first or second wait
         cond.acquire()
         cond.notify(5)
@@ -469,7 +507,9 @@ class ConditionTests(BaseTestCase):
             _wait()
         self.assertEqual(results1, [(True, 1)] * 3 + [(True, 2)] * 2)
         self.assertEqual(results2, [(True, 2)] * 3)
-        _wait() # make sure all workers settle into cond.wait()
+        # make sure all workers settle into cond.wait()
+        while len(ready) < 5:
+            _wait()
         # Notify all threads: they are all in their second wait
         cond.acquire()
         cond.notify_all()

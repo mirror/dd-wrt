@@ -4,6 +4,7 @@
 .. module:: time
    :synopsis: Time access and conversions.
 
+--------------
 
 This module provides various time-related functions. For related
 functionality, see also the :mod:`datetime` and :mod:`calendar` modules.
@@ -16,11 +17,23 @@ semantics of these functions varies among platforms.
 
 An explanation of some terminology and conventions is in order.
 
+.. _epoch:
+
 .. index:: single: epoch
 
-* The :dfn:`epoch` is the point where the time starts.  On January 1st of that
-  year, at 0 hours, the "time since the epoch" is zero.  For Unix, the epoch is
-  1970.  To find out what the epoch is, look at ``gmtime(0)``.
+* The :dfn:`epoch` is the point where the time starts, and is platform
+  dependent.  For Unix, the epoch is January 1, 1970, 00:00:00 (UTC).
+  To find out what the epoch is on a given platform, look at
+  ``time.gmtime(0)``.
+
+.. _leap seconds: https://en.wikipedia.org/wiki/Leap_second
+
+.. index:: seconds since the epoch
+
+* The term :dfn:`seconds since the epoch` refers to the total number
+  of elapsed seconds since the epoch, typically excluding
+  `leap seconds`_.  Leap seconds are excluded from this total on all
+  POSIX-compliant platforms.
 
 .. index:: single: Year 2038
 
@@ -82,6 +95,10 @@ An explanation of some terminology and conventions is in order.
      and :attr:`tm_zone` attributes when platform supports corresponding
      ``struct tm`` members.
 
+  .. versionchanged:: 3.6
+     The :class:`struct_time` attributes :attr:`tm_gmtoff` and :attr:`tm_zone`
+     are now available on all platforms.
+
 * Use the following functions to convert between time representations:
 
   +-------------------------+-------------------------+-------------------------+
@@ -133,8 +150,7 @@ The module defines the following functions and data items:
 
    On Unix, return the current processor time as a floating point number expressed
    in seconds.  The precision, and in fact the very definition of the meaning of
-   "processor time", depends on that of the C function of the same name, but in any
-   case, this is the function to use for benchmarking Python or timing algorithms.
+   "processor time", depends on that of the C function of the same name.
 
    On Windows, this function returns wall-clock seconds elapsed since the first
    call to this function, as a floating point number, based on the Win32 function
@@ -315,9 +331,9 @@ The module defines the following functions and data items:
    processes running for more than 49 days. On more recent versions of Windows
    and on other operating systems, :func:`monotonic` is system-wide.
 
-   Availability: Windows, Mac OS X, Linux, FreeBSD, OpenBSD, Solaris.
-
    .. versionadded:: 3.3
+   .. versionchanged:: 3.5
+      The function is now always available.
 
 
 .. function:: perf_counter()
@@ -343,12 +359,18 @@ The module defines the following functions and data items:
 
 .. function:: sleep(secs)
 
-   Suspend execution for the given number of seconds.  The argument may be a
-   floating point number to indicate a more precise sleep time. The actual
-   suspension time may be less than that requested because any caught signal will
-   terminate the :func:`sleep` following execution of that signal's catching
-   routine.  Also, the suspension time may be longer than requested by an arbitrary
-   amount because of the scheduling of other activity in the system.
+   Suspend execution of the calling thread for the given number of seconds.
+   The argument may be a floating point number to indicate a more precise sleep
+   time. The actual suspension time may be less than that requested because any
+   caught signal will terminate the :func:`sleep` following execution of that
+   signal's catching routine.  Also, the suspension time may be longer than
+   requested by an arbitrary amount because of the scheduling of other activity
+   in the system.
+
+   .. versionchanged:: 3.5
+      The function now sleeps at least *secs* even if the sleep is interrupted
+      by a signal, except if the signal handler raises an exception (see
+      :pep:`475` for the rationale).
 
 
 .. function:: strftime(format[, t])
@@ -457,7 +479,7 @@ The module defines the following functions and data items:
 
    (2)
       The range really is ``0`` to ``61``; value ``60`` is valid in
-      timestamps representing leap seconds and value ``61`` is supported
+      timestamps representing `leap seconds`_ and value ``61`` is supported
       for historical reasons.
 
    (3)
@@ -550,26 +572,40 @@ The module defines the following functions and data items:
    +-------+-------------------+---------------------------------+
 
    Note that unlike the C structure, the month value is a range of [1, 12], not
-   [0, 11].  A ``-1`` argument as the daylight
-   savings flag, passed to :func:`mktime` will usually result in the correct
-   daylight savings state to be filled in.
+   [0, 11].
+
+   In calls to :func:`mktime`, :attr:`tm_isdst` may be set to 1 when daylight
+   savings time is in effect, and 0 when it is not.  A value of -1 indicates that
+   this is not known, and will usually result in the correct state being filled in.
 
    When a tuple with an incorrect length is passed to a function expecting a
    :class:`struct_time`, or having elements of the wrong type, a
    :exc:`TypeError` is raised.
 
-  .. versionchanged:: 3.3
-     :attr:`tm_gmtoff` and :attr:`tm_zone` attributes are available on platforms
-     with C library supporting the corresponding fields in ``struct tm``.
-
 .. function:: time()
 
-   Return the time in seconds since the epoch as a floating point number.
+   Return the time in seconds since the epoch_ as a floating point
+   number. The specific date of the epoch and the handling of
+   `leap seconds`_ is platform dependent.
+   On Windows and most Unix systems, the epoch is January 1, 1970,
+   00:00:00 (UTC) and leap seconds are not counted towards the time
+   in seconds since the epoch. This is commonly referred to as
+   `Unix time <https://en.wikipedia.org/wiki/Unix_time>`_.
+   To find out what the epoch is on a given platform, look at
+   ``gmtime(0)``.
+
    Note that even though the time is always returned as a floating point
    number, not all systems provide time with a better precision than 1 second.
    While this function normally returns non-decreasing values, it can return a
-   lower value than a previous call if the system clock has been set back between
-   the two calls.
+   lower value than a previous call if the system clock has been set back
+   between the two calls.
+
+   The number returned by :func:`.time` may be converted into a more common
+   time format (i.e. year, month, day, hour, etc...) in UTC by passing it to
+   :func:`gmtime` function or in local time by passing it to the
+   :func:`localtime` function. In both cases a
+   :class:`struct_time` object is returned, from which the components
+   of the calendar date may be accessed as attributes.
 
 .. data:: timezone
 
@@ -629,11 +665,11 @@ The module defines the following functions and data items:
          it is possible to refer to February 29.
 
       :samp:`M{m}.{n}.{d}`
-         The *d*'th day (0 <= *d* <= 6) or week *n* of month *m* of the year (1
+         The *d*'th day (0 <= *d* <= 6) of week *n* of month *m* of the year (1
          <= *n* <= 5, 1 <= *m* <= 12, where week 5 means "the last *d* day in
          month *m*" which may occur in either the fourth or the fifth
          week). Week 1 is the first week in which the *d*'th day occurs. Day
-         zero is Sunday.
+         zero is a Sunday.
 
       ``time`` has the same format as ``offset`` except that no leading sign
       ('-' or '+') is allowed. The default, if time is not given, is 02:00:00.

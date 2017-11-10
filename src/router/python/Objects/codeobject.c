@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #include "Python.h"
 #include "code.h"
 #include "structmember.h"
@@ -5,27 +7,32 @@
 #define NAME_CHARS \
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
 
+/* Holder for co_extra information */
+typedef struct {
+    Py_ssize_t ce_size;
+    void **ce_extras;
+} _PyCodeObjectExtra;
+
 /* all_name_chars(s): true iff all chars in s are valid NAME_CHARS */
 
 static int
 all_name_chars(PyObject *o)
 {
     static char ok_name_char[256];
-    static unsigned char *name_chars = (unsigned char *)NAME_CHARS;
-    PyUnicodeObject *u = (PyUnicodeObject *)o;
-    const unsigned char *s;
+    static const unsigned char *name_chars = (unsigned char *)NAME_CHARS;
+    const unsigned char *s, *e;
 
-    if (!PyUnicode_Check(o) || PyUnicode_READY(u) == -1 ||
-        PyUnicode_MAX_CHAR_VALUE(u) >= 128)
+    if (!PyUnicode_IS_ASCII(o))
         return 0;
 
     if (ok_name_char[*name_chars] == 0) {
-        unsigned char *p;
+        const unsigned char *p;
         for (p = name_chars; *p; p++)
             ok_name_char[*p] = 1;
     }
-    s = PyUnicode_1BYTE_DATA(u);
-    while (*s) {
+    s = PyUnicode_1BYTE_DATA(o);
+    e = s + PyUnicode_GET_LENGTH(o);
+    while (s != e) {
         if (ok_name_char[*s++] == 0)
             return 0;
     }
@@ -44,6 +51,56 @@ intern_strings(PyObject *tuple)
         }
         PyUnicode_InternInPlace(&PyTuple_GET_ITEM(tuple, i));
     }
+}
+
+/* Intern selected string constants */
+static int
+intern_string_constants(PyObject *tuple)
+{
+    int modified = 0;
+    Py_ssize_t i;
+
+    for (i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
+        PyObject *v = PyTuple_GET_ITEM(tuple, i);
+        if (PyUnicode_CheckExact(v)) {
+            if (PyUnicode_READY(v) == -1) {
+                PyErr_Clear();
+                continue;
+            }
+            if (all_name_chars(v)) {
+                PyObject *w = v;
+                PyUnicode_InternInPlace(&v);
+                if (w != v) {
+                    PyTuple_SET_ITEM(tuple, i, v);
+                    modified = 1;
+                }
+            }
+        }
+        else if (PyTuple_CheckExact(v)) {
+            intern_string_constants(v);
+        }
+        else if (PyFrozenSet_CheckExact(v)) {
+            PyObject *w = v;
+            PyObject *tmp = PySequence_Tuple(v);
+            if (tmp == NULL) {
+                PyErr_Clear();
+                continue;
+            }
+            if (intern_string_constants(tmp)) {
+                v = PyFrozenSet_New(tmp);
+                if (v == NULL) {
+                    PyErr_Clear();
+                }
+                else {
+                    PyTuple_SET_ITEM(tuple, i, v);
+                    Py_DECREF(w);
+                    modified = 1;
+                }
+            }
+            Py_DECREF(tmp);
+        }
+    }
+    return modified;
 }
 
 
@@ -84,19 +141,13 @@ PyCode_New(int argcount, int kwonlyargcount,
     intern_strings(varnames);
     intern_strings(freevars);
     intern_strings(cellvars);
-    /* Intern selected string constants */
-    for (i = PyTuple_GET_SIZE(consts); --i >= 0; ) {
-        PyObject *v = PyTuple_GetItem(consts, i);
-        if (!all_name_chars(v))
-            continue;
-        PyUnicode_InternInPlace(&PyTuple_GET_ITEM(consts, i));
-    }
+    intern_string_constants(consts);
     /* Create mapping between cells and arguments if needed. */
     if (n_cellvars) {
         Py_ssize_t total_args = argcount + kwonlyargcount +
             ((flags & CO_VARARGS) != 0) + ((flags & CO_VARKEYWORDS) != 0);
         Py_ssize_t alloc_size = sizeof(unsigned char) * n_cellvars;
-        int used_cell2arg = 0;
+        bool used_cell2arg = false;
         cell2arg = PyMem_MALLOC(alloc_size);
         if (cell2arg == NULL)
             return NULL;
@@ -109,7 +160,7 @@ PyCode_New(int argcount, int kwonlyargcount,
                 PyObject *arg = PyTuple_GET_ITEM(varnames, j);
                 if (!PyUnicode_Compare(cell, arg)) {
                     cell2arg[i] = j;
-                    used_cell2arg = 1;
+                    used_cell2arg = true;
                     break;
                 }
             }
@@ -152,6 +203,7 @@ PyCode_New(int argcount, int kwonlyargcount,
     co->co_lnotab = lnotab;
     co->co_zombieframe = NULL;
     co->co_weakreflist = NULL;
+    co->co_extra = NULL;
     return co;
 }
 
@@ -361,6 +413,22 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 static void
 code_dealloc(PyCodeObject *co)
 {
+    if (co->co_extra != NULL) {
+        __PyCodeExtraState *state = __PyCodeExtraState_Get();
+        _PyCodeObjectExtra *co_extra = co->co_extra;
+
+        for (Py_ssize_t i = 0; i < co_extra->ce_size; i++) {
+            freefunc free_extra = state->co_extra_freefuncs[i];
+
+            if (free_extra != NULL) {
+                free_extra(co_extra->ce_extras[i]);
+            }
+        }
+
+        PyMem_Free(co_extra->ce_extras);
+        PyMem_Free(co_extra);
+    }
+
     Py_XDECREF(co->co_code);
     Py_XDECREF(co->co_consts);
     Py_XDECREF(co->co_names);
@@ -382,11 +450,15 @@ code_dealloc(PyCodeObject *co)
 static PyObject *
 code_sizeof(PyCodeObject *co, void *unused)
 {
-    Py_ssize_t res;
+    Py_ssize_t res = _PyObject_SIZE(Py_TYPE(co));
+    _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra*) co->co_extra;
 
-    res = sizeof(PyCodeObject);
     if (co->co_cell2arg != NULL && co->co_cellvars != NULL)
-        res += PyTuple_GET_SIZE(co->co_cellvars) * sizeof(unsigned char);
+        res += PyTuple_GET_SIZE(co->co_cellvars) * sizeof(Py_ssize_t);
+
+    if (co_extra != NULL)
+        res += co_extra->ce_size * sizeof(co_extra->ce_extras[0]);
+
     return PyLong_FromSsize_t(res);
 }
 
@@ -409,11 +481,135 @@ code_repr(PyCodeObject *co)
     }
 }
 
+PyObject*
+_PyCode_ConstantKey(PyObject *op)
+{
+    PyObject *key;
+
+    /* Py_None and Py_Ellipsis are singleton */
+    if (op == Py_None || op == Py_Ellipsis
+       || PyLong_CheckExact(op)
+       || PyBool_Check(op)
+       || PyBytes_CheckExact(op)
+       || PyUnicode_CheckExact(op)
+          /* code_richcompare() uses _PyCode_ConstantKey() internally */
+       || PyCode_Check(op)) {
+        key = PyTuple_Pack(2, Py_TYPE(op), op);
+    }
+    else if (PyFloat_CheckExact(op)) {
+        double d = PyFloat_AS_DOUBLE(op);
+        /* all we need is to make the tuple different in either the 0.0
+         * or -0.0 case from all others, just to avoid the "coercion".
+         */
+        if (d == 0.0 && copysign(1.0, d) < 0.0)
+            key = PyTuple_Pack(3, Py_TYPE(op), op, Py_None);
+        else
+            key = PyTuple_Pack(2, Py_TYPE(op), op);
+    }
+    else if (PyComplex_CheckExact(op)) {
+        Py_complex z;
+        int real_negzero, imag_negzero;
+        /* For the complex case we must make complex(x, 0.)
+           different from complex(x, -0.) and complex(0., y)
+           different from complex(-0., y), for any x and y.
+           All four complex zeros must be distinguished.*/
+        z = PyComplex_AsCComplex(op);
+        real_negzero = z.real == 0.0 && copysign(1.0, z.real) < 0.0;
+        imag_negzero = z.imag == 0.0 && copysign(1.0, z.imag) < 0.0;
+        /* use True, False and None singleton as tags for the real and imag
+         * sign, to make tuples different */
+        if (real_negzero && imag_negzero) {
+            key = PyTuple_Pack(3, Py_TYPE(op), op, Py_True);
+        }
+        else if (imag_negzero) {
+            key = PyTuple_Pack(3, Py_TYPE(op), op, Py_False);
+        }
+        else if (real_negzero) {
+            key = PyTuple_Pack(3, Py_TYPE(op), op, Py_None);
+        }
+        else {
+            key = PyTuple_Pack(2, Py_TYPE(op), op);
+        }
+    }
+    else if (PyTuple_CheckExact(op)) {
+        Py_ssize_t i, len;
+        PyObject *tuple;
+
+        len = PyTuple_GET_SIZE(op);
+        tuple = PyTuple_New(len);
+        if (tuple == NULL)
+            return NULL;
+
+        for (i=0; i < len; i++) {
+            PyObject *item, *item_key;
+
+            item = PyTuple_GET_ITEM(op, i);
+            item_key = _PyCode_ConstantKey(item);
+            if (item_key == NULL) {
+                Py_DECREF(tuple);
+                return NULL;
+            }
+
+            PyTuple_SET_ITEM(tuple, i, item_key);
+        }
+
+        key = PyTuple_Pack(2, tuple, op);
+        Py_DECREF(tuple);
+    }
+    else if (PyFrozenSet_CheckExact(op)) {
+        Py_ssize_t pos = 0;
+        PyObject *item;
+        Py_hash_t hash;
+        Py_ssize_t i, len;
+        PyObject *tuple, *set;
+
+        len = PySet_GET_SIZE(op);
+        tuple = PyTuple_New(len);
+        if (tuple == NULL)
+            return NULL;
+
+        i = 0;
+        while (_PySet_NextEntry(op, &pos, &item, &hash)) {
+            PyObject *item_key;
+
+            item_key = _PyCode_ConstantKey(item);
+            if (item_key == NULL) {
+                Py_DECREF(tuple);
+                return NULL;
+            }
+
+            assert(i < len);
+            PyTuple_SET_ITEM(tuple, i, item_key);
+            i++;
+        }
+        set = PyFrozenSet_New(tuple);
+        Py_DECREF(tuple);
+        if (set == NULL)
+            return NULL;
+
+        key = PyTuple_Pack(2, set, op);
+        Py_DECREF(set);
+        return key;
+    }
+    else {
+        /* for other types, use the object identifier as a unique identifier
+         * to ensure that they are seen as unequal. */
+        PyObject *obj_id = PyLong_FromVoidPtr(op);
+        if (obj_id == NULL)
+            return NULL;
+
+        key = PyTuple_Pack(2, obj_id, op);
+        Py_DECREF(obj_id);
+    }
+    return key;
+}
+
 static PyObject *
 code_richcompare(PyObject *self, PyObject *other, int op)
 {
     PyCodeObject *co, *cp;
     int eq;
+    PyObject *consts1, *consts2;
     PyObject *res;
 
     if ((op != Py_EQ && op != Py_NE) ||
@@ -439,8 +635,21 @@ code_richcompare(PyObject *self, PyObject *other, int op)
     if (!eq) goto unequal;
     eq = PyObject_RichCompareBool(co->co_code, cp->co_code, Py_EQ);
     if (eq <= 0) goto unequal;
-    eq = PyObject_RichCompareBool(co->co_consts, cp->co_consts, Py_EQ);
+
+    /* compare constants */
+    consts1 = _PyCode_ConstantKey(co->co_consts);
+    if (!consts1)
+        return NULL;
+    consts2 = _PyCode_ConstantKey(cp->co_consts);
+    if (!consts2) {
+        Py_DECREF(consts1);
+        return NULL;
+    }
+    eq = PyObject_RichCompareBool(consts1, consts2, Py_EQ);
+    Py_DECREF(consts1);
+    Py_DECREF(consts2);
     if (eq <= 0) goto unequal;
+
     eq = PyObject_RichCompareBool(co->co_names, cp->co_names, Py_EQ);
     if (eq <= 0) goto unequal;
     eq = PyObject_RichCompareBool(co->co_varnames, cp->co_varnames, Py_EQ);
@@ -557,7 +766,8 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
         addr += *p++;
         if (addr > addrq)
             break;
-        line += *p++;
+        line += (signed char)*p;
+        p++;
     }
     return line;
 }
@@ -581,7 +791,7 @@ _PyCode_CheckLineNumber(PyCodeObject* co, int lasti, PyAddrPair *bounds)
     /* possible optimization: if f->f_lasti == instr_ub
        (likely to be a common case) then we already know
        instr_lb -- if we stored the matching value of p
-       somwhere we could skip the first while loop. */
+       somewhere we could skip the first while loop. */
 
     /* See lnotab_notes.txt for the description of
        co_lnotab.  A point to remember: increments to p
@@ -592,17 +802,19 @@ _PyCode_CheckLineNumber(PyCodeObject* co, int lasti, PyAddrPair *bounds)
         if (addr + *p > lasti)
             break;
         addr += *p++;
-        if (*p)
+        if ((signed char)*p)
             bounds->ap_lower = addr;
-        line += *p++;
+        line += (signed char)*p;
+        p++;
         --size;
     }
 
     if (size > 0) {
         while (--size >= 0) {
             addr += *p++;
-            if (*p++)
+            if ((signed char)*p)
                 break;
+            p++;
         }
         bounds->ap_upper = addr;
     }
@@ -611,4 +823,91 @@ _PyCode_CheckLineNumber(PyCodeObject* co, int lasti, PyAddrPair *bounds)
     }
 
     return line;
+}
+
+
+int
+_PyCode_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
+{
+    if (!PyCode_Check(code)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+
+    PyCodeObject *o = (PyCodeObject*) code;
+    _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra*) o->co_extra;
+
+
+    if (co_extra == NULL || co_extra->ce_size <= index) {
+        *extra = NULL;
+        return 0;
+    }
+
+    *extra = co_extra->ce_extras[index];
+    return 0;
+}
+
+
+int
+_PyCode_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
+{
+    __PyCodeExtraState *state = __PyCodeExtraState_Get();
+
+    if (!PyCode_Check(code) || index < 0 ||
+            index >= state->co_extra_user_count) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+
+    PyCodeObject *o = (PyCodeObject*) code;
+    _PyCodeObjectExtra *co_extra = (_PyCodeObjectExtra *) o->co_extra;
+
+    if (co_extra == NULL) {
+        co_extra = PyMem_Malloc(sizeof(_PyCodeObjectExtra));
+        if (co_extra == NULL) {
+            return -1;
+        }
+
+        co_extra->ce_extras = PyMem_Malloc(
+            state->co_extra_user_count * sizeof(void*));
+        if (co_extra->ce_extras == NULL) {
+            PyMem_Free(co_extra);
+            return -1;
+        }
+
+        co_extra->ce_size = state->co_extra_user_count;
+
+        for (Py_ssize_t i = 0; i < co_extra->ce_size; i++) {
+            co_extra->ce_extras[i] = NULL;
+        }
+
+        o->co_extra = co_extra;
+    }
+    else if (co_extra->ce_size <= index) {
+        void** ce_extras = PyMem_Realloc(
+            co_extra->ce_extras, state->co_extra_user_count * sizeof(void*));
+
+        if (ce_extras == NULL) {
+            return -1;
+        }
+
+        for (Py_ssize_t i = co_extra->ce_size;
+             i < state->co_extra_user_count;
+             i++) {
+            ce_extras[i] = NULL;
+        }
+
+        co_extra->ce_extras = ce_extras;
+        co_extra->ce_size = state->co_extra_user_count;
+    }
+
+    if (co_extra->ce_extras[index] != NULL) {
+        freefunc free = state->co_extra_freefuncs[index];
+        if (free != NULL) {
+            free(co_extra->ce_extras[index]);
+        }
+    }
+
+    co_extra->ce_extras[index] = extra;
+    return 0;
 }

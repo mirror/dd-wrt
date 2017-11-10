@@ -8,14 +8,21 @@
 extern "C" {
 #endif
 
+/* This limitation is for performance and simplicity. If needed it can be
+removed (with effort). */
+#define MAX_CO_EXTRA_USERS 255
+
 /* State shared between threads */
 
 struct _ts; /* Forward */
 struct _is; /* Forward */
+struct _frame; /* Forward declaration for PyFrameObject. */
 
 #ifdef Py_LIMITED_API
 typedef struct _is PyInterpreterState;
 #else
+typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
+
 typedef struct _is {
 
     struct _is *next;
@@ -36,18 +43,26 @@ typedef struct _is {
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif
-#ifdef WITH_TSC
-    int tscdump;
-#endif
 
     PyObject *builtins_copy;
+    PyObject *import_func;
+    /* Initialized to PyEval_EvalFrameDefault(). */
+    _PyFrameEvalFunction eval_frame;
 } PyInterpreterState;
 #endif
 
+typedef struct _co_extra_state {
+    struct _co_extra_state *next;
+    PyInterpreterState* interp;
+
+    Py_ssize_t co_extra_user_count;
+    freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];
+} __PyCodeExtraState;
+
+/* This is temporary for backwards compat in 3.6 and will be removed in 3.7 */
+__PyCodeExtraState* __PyCodeExtraState_Get(void);
 
 /* State unique per thread */
-
-struct _frame; /* Avoid including frameobject.h */
 
 #ifndef Py_LIMITED_API
 /* Py_tracefunc return -1 when raising an exception, or 0 for success. */
@@ -134,6 +149,17 @@ typedef struct _ts {
     void (*on_delete)(void *);
     void *on_delete_data;
 
+    PyObject *coroutine_wrapper;
+    int in_coroutine_wrapper;
+
+    /* Now used from PyInterpreterState, kept here for ABI
+       compatibility with PyThreadState */
+    Py_ssize_t _preserve_36_ABI_1;
+    freefunc _preserve_36_ABI_2[MAX_CO_EXTRA_USERS];
+
+    PyObject *async_gen_firstiter;
+    PyObject *async_gen_finalizer;
+
     /* XXX signal handlers should also be here */
 
 } PyThreadState;
@@ -143,7 +169,9 @@ typedef struct _ts {
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_New(void);
 PyAPI_FUNC(void) PyInterpreterState_Clear(PyInterpreterState *);
 PyAPI_FUNC(void) PyInterpreterState_Delete(PyInterpreterState *);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _PyState_AddModule(PyObject*, struct PyModuleDef*);
+#endif /* !Py_LIMITED_API */
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 /* New in 3.3 */
 PyAPI_FUNC(int) PyState_AddModule(PyObject*, struct PyModuleDef*);
@@ -155,17 +183,33 @@ PyAPI_FUNC(void) _PyState_ClearModules(void);
 #endif
 
 PyAPI_FUNC(PyThreadState *) PyThreadState_New(PyInterpreterState *);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
 PyAPI_FUNC(void) _PyThreadState_Init(PyThreadState *);
+#endif /* !Py_LIMITED_API */
 PyAPI_FUNC(void) PyThreadState_Clear(PyThreadState *);
 PyAPI_FUNC(void) PyThreadState_Delete(PyThreadState *);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
+#endif /* !Py_LIMITED_API */
 #ifdef WITH_THREAD
 PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
+#ifndef Py_LIMITED_API
 PyAPI_FUNC(void) _PyGILState_Reinit(void);
+#endif /* !Py_LIMITED_API */
 #endif
 
+/* Return the current thread state. The global interpreter lock must be held.
+ * When the current thread state is NULL, this issues a fatal error (so that
+ * the caller needn't check for NULL). */
 PyAPI_FUNC(PyThreadState *) PyThreadState_Get(void);
+
+#ifndef Py_LIMITED_API
+/* Similar to PyThreadState_Get(), but don't issue a fatal error
+ * if it is NULL. */
+PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
+#endif /* !Py_LIMITED_API */
+
 PyAPI_FUNC(PyThreadState *) PyThreadState_Swap(PyThreadState *);
 PyAPI_FUNC(PyObject *) PyThreadState_GetDict(void);
 PyAPI_FUNC(int) PyThreadState_SetAsyncExc(long, PyObject *);
@@ -175,15 +219,12 @@ PyAPI_FUNC(int) PyThreadState_SetAsyncExc(long, PyObject *);
 
 /* Assuming the current thread holds the GIL, this is the
    PyThreadState for the current thread. */
-#ifndef Py_LIMITED_API
+#ifdef Py_BUILD_CORE
 PyAPI_DATA(_Py_atomic_address) _PyThreadState_Current;
-#endif
-
-#if defined(Py_DEBUG) || defined(Py_LIMITED_API)
-#define PyThreadState_GET() PyThreadState_Get()
+#  define PyThreadState_GET() \
+             ((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
 #else
-#define PyThreadState_GET() \
-    ((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
+#  define PyThreadState_GET() PyThreadState_Get()
 #endif
 
 typedef
@@ -233,11 +274,23 @@ PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
 */
 PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
-/* Helper/diagnostic function - return 1 if the current thread
- * currently holds the GIL, 0 otherwise
- */
 #ifndef Py_LIMITED_API
+/* Issue #26558: Flag to disable PyGILState_Check().
+   If set to non-zero, PyGILState_Check() always return 1. */
+PyAPI_DATA(int) _PyGILState_check_enabled;
+
+/* Helper/diagnostic function - return 1 if the current thread
+   currently holds the GIL, 0 otherwise.
+
+   The function returns 1 if _PyGILState_check_enabled is non-zero. */
 PyAPI_FUNC(int) PyGILState_Check(void);
+
+/* Unsafe function to get the single PyInterpreterState used by this process'
+   GILState implementation.
+
+   Return NULL before _PyGILState_Init() is called and after _PyGILState_Fini()
+   is called. */
+PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
 #endif
 
 #endif   /* #ifdef WITH_THREAD */

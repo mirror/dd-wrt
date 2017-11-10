@@ -64,9 +64,10 @@ The header files are typically installed with Python.  On Unix, these  are
 located in the directories :file:`{prefix}/include/pythonversion/` and
 :file:`{exec_prefix}/include/pythonversion/`, where :envvar:`prefix` and
 :envvar:`exec_prefix` are defined by the corresponding parameters to Python's
-:program:`configure` script and *version* is ``sys.version[:3]``.  On Windows,
-the headers are installed in :file:`{prefix}/include`, where :envvar:`prefix` is
-the installation directory specified to the installer.
+:program:`configure` script and *version* is
+``'%d.%d' % sys.version_info[:2]``.  On Windows, the headers are installed
+in :file:`{prefix}/include`, where :envvar:`prefix` is the installation
+directory specified to the installer.
 
 To include the headers, place both directories (if different) on your compiler's
 search path for includes.  Do *not* place the parent directories on the search
@@ -578,9 +579,9 @@ Sometimes, it is desirable to "uninitialize" Python.  For instance,  the
 application may want to start over (make another call to
 :c:func:`Py_Initialize`) or the application is simply done with its  use of
 Python and wants to free memory allocated by Python.  This can be accomplished
-by calling :c:func:`Py_Finalize`.  The function :c:func:`Py_IsInitialized` returns
+by calling :c:func:`Py_FinalizeEx`.  The function :c:func:`Py_IsInitialized` returns
 true if Python is currently in the initialized state.  More information about
-these functions is given in a later chapter. Notice that :c:func:`Py_Finalize`
+these functions is given in a later chapter. Notice that :c:func:`Py_FinalizeEx`
 does *not* free all memory allocated by the Python interpreter, e.g. memory
 allocated by extension modules currently cannot be released.
 

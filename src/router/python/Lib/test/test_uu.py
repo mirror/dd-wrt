@@ -8,7 +8,6 @@ from test import support
 
 import sys, os
 import uu
-from io import BytesIO
 import io
 
 plaintext = b"The smooth-scaled python crept over the sleeping dog\n"
@@ -92,6 +91,28 @@ class UUTest(unittest.TestCase):
             self.fail("No exception raised")
         except uu.Error as e:
             self.assertEqual(str(e), "No valid begin line found in input file")
+
+    def test_garbage_padding(self):
+        # Issue #22406
+        encodedtext = (
+            b"begin 644 file\n"
+            # length 1; bits 001100 111111 111111 111111
+            b"\x21\x2C\x5F\x5F\x5F\n"
+            b"\x20\n"
+            b"end\n"
+        )
+        plaintext = b"\x33"  # 00110011
+
+        with self.subTest("uu.decode()"):
+            inp = io.BytesIO(encodedtext)
+            out = io.BytesIO()
+            uu.decode(inp, out, quiet=True)
+            self.assertEqual(out.getvalue(), plaintext)
+
+        with self.subTest("uu_codec"):
+            import codecs
+            decoded = codecs.decode(encodedtext, "uu_codec")
+            self.assertEqual(decoded, plaintext)
 
 class UUStdIOTest(unittest.TestCase):
 

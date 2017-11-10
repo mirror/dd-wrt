@@ -1,11 +1,10 @@
 """Tests for unix_events.py."""
 
 import collections
-import gc
 import errno
 import io
 import os
-import pprint
+import pathlib
 import signal
 import socket
 import stat
@@ -13,6 +12,7 @@ import sys
 import tempfile
 import threading
 import unittest
+import warnings
 from unittest import mock
 
 if sys.platform == 'win32':
@@ -28,10 +28,20 @@ from asyncio import unix_events
 MOCK_ANY = mock.ANY
 
 
+def close_pipe_transport(transport):
+    # Don't call transport.close() because the event loop and the selector
+    # are mocked
+    if transport._pipe is None:
+        return
+    transport._pipe.close()
+    transport._pipe = None
+
+
 @unittest.skipUnless(signal, 'Signals are not supported')
 class SelectorEventLoopSignalTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = asyncio.SelectorEventLoop()
         self.set_event_loop(self.loop)
 
@@ -62,6 +72,24 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
             RuntimeError,
             self.loop.add_signal_handler,
             signal.SIGINT, lambda: True)
+
+    @mock.patch('asyncio.unix_events.signal')
+    def test_add_signal_handler_coroutine_error(self, m_signal):
+        m_signal.NSIG = signal.NSIG
+
+        @asyncio.coroutine
+        def simple_coroutine():
+            yield from []
+
+        # callback must not be a coroutine function
+        coro_func = simple_coroutine
+        coro_obj = coro_func()
+        self.addCleanup(coro_obj.close)
+        for func in (coro_func, coro_obj):
+            self.assertRaisesRegex(
+                TypeError, 'coroutines cannot be used with add_signal_handler',
+                self.loop.add_signal_handler,
+                signal.SIGINT, func)
 
     @mock.patch('asyncio.unix_events.signal')
     def test_add_signal_handler(self, m_signal):
@@ -208,6 +236,7 @@ class SelectorEventLoopSignalTests(test_utils.TestCase):
 class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = asyncio.SelectorEventLoop()
         self.set_event_loop(self.loop)
 
@@ -215,11 +244,22 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
         with test_utils.unix_socket_path() as path:
             sock = socket.socket(socket.AF_UNIX)
             sock.bind(path)
-            with sock:
-                coro = self.loop.create_unix_server(lambda: None, path)
-                with self.assertRaisesRegex(OSError,
-                                            'Address.*is already in use'):
-                    self.loop.run_until_complete(coro)
+            sock.listen(1)
+            sock.close()
+
+            coro = self.loop.create_unix_server(lambda: None, path)
+            srv = self.loop.run_until_complete(coro)
+            srv.close()
+            self.loop.run_until_complete(srv.wait_closed())
+
+    @unittest.skipUnless(hasattr(os, 'fspath'), 'no os.fspath')
+    def test_create_unix_server_pathlib(self):
+        with test_utils.unix_socket_path() as path:
+            path = pathlib.Path(path)
+            srv_coro = self.loop.create_unix_server(lambda: None, path)
+            srv = self.loop.run_until_complete(srv_coro)
+            srv.close()
+            self.loop.run_until_complete(srv.wait_closed())
 
     def test_create_unix_server_existing_path_nonsock(self):
         with tempfile.NamedTemporaryFile() as file:
@@ -247,7 +287,43 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
             coro = self.loop.create_unix_server(lambda: None, path=None,
                                                 sock=sock)
             with self.assertRaisesRegex(ValueError,
-                                        'A UNIX Domain Socket was expected'):
+                                        'A UNIX Domain Stream.*was expected'):
+                self.loop.run_until_complete(coro)
+
+    def test_create_unix_server_path_dgram(self):
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        with sock:
+            coro = self.loop.create_unix_server(lambda: None, path=None,
+                                                sock=sock)
+            with self.assertRaisesRegex(ValueError,
+                                        'A UNIX Domain Stream.*was expected'):
+                self.loop.run_until_complete(coro)
+
+    @unittest.skipUnless(hasattr(socket, 'SOCK_NONBLOCK'),
+                         'no socket.SOCK_NONBLOCK (linux only)')
+    def test_create_unix_server_path_stream_bittype(self):
+        sock = socket.socket(
+            socket.AF_UNIX, socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
+        with tempfile.NamedTemporaryFile() as file:
+            fn = file.name
+        try:
+            with sock:
+                sock.bind(fn)
+                coro = self.loop.create_unix_server(lambda: None, path=None,
+                                                    sock=sock)
+                srv = self.loop.run_until_complete(coro)
+                srv.close()
+                self.loop.run_until_complete(srv.wait_closed())
+        finally:
+            os.unlink(fn)
+
+    def test_create_unix_connection_path_inetsock(self):
+        sock = socket.socket()
+        with sock:
+            coro = self.loop.create_unix_connection(lambda: None, path=None,
+                                                    sock=sock)
+            with self.assertRaisesRegex(ValueError,
+                                        'A UNIX Domain Stream.*was expected'):
                 self.loop.run_until_complete(coro)
 
     @mock.patch('asyncio.unix_events.socket')
@@ -270,7 +346,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 
     def test_create_unix_connection_path_sock(self):
         coro = self.loop.create_unix_connection(
-            lambda: None, '/dev/null', sock=object())
+            lambda: None, os.devnull, sock=object())
         with self.assertRaisesRegex(ValueError, 'path and sock can not be'):
             self.loop.run_until_complete(coro)
 
@@ -283,14 +359,14 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 
     def test_create_unix_connection_nossl_serverhost(self):
         coro = self.loop.create_unix_connection(
-            lambda: None, '/dev/null', server_hostname='spam')
+            lambda: None, os.devnull, server_hostname='spam')
         with self.assertRaisesRegex(ValueError,
                                     'server_hostname is only meaningful'):
             self.loop.run_until_complete(coro)
 
     def test_create_unix_connection_ssl_noserverhost(self):
         coro = self.loop.create_unix_connection(
-            lambda: None, '/dev/null', ssl=True)
+            lambda: None, os.devnull, ssl=True)
 
         with self.assertRaisesRegex(
             ValueError, 'you have to pass server_hostname when using ssl'):
@@ -301,6 +377,7 @@ class SelectorEventLoopUnixSocketTests(test_utils.TestCase):
 class UnixReadPipeTransportTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
         self.protocol = test_utils.make_test_protocol(asyncio.Protocol)
         self.pipe = mock.Mock(spec_set=io.RawIOBase)
@@ -317,24 +394,25 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
         m_fstat.return_value = st
         self.addCleanup(fstat_patcher.stop)
 
-    def test_ctor(self):
-        tr = unix_events._UnixReadPipeTransport(
-            self.loop, self.pipe, self.protocol)
-        self.loop.assert_reader(5, tr._read_ready)
-        test_utils.run_briefly(self.loop)
-        self.protocol.connection_made.assert_called_with(tr)
+    def read_pipe_transport(self, waiter=None):
+        transport = unix_events._UnixReadPipeTransport(self.loop, self.pipe,
+                                                       self.protocol,
+                                                       waiter=waiter)
+        self.addCleanup(close_pipe_transport, transport)
+        return transport
 
-    def test_ctor_with_waiter(self):
-        fut = asyncio.Future(loop=self.loop)
-        unix_events._UnixReadPipeTransport(
-            self.loop, self.pipe, self.protocol, fut)
-        test_utils.run_briefly(self.loop)
-        self.assertIsNone(fut.result())
+    def test_ctor(self):
+        waiter = asyncio.Future(loop=self.loop)
+        tr = self.read_pipe_transport(waiter=waiter)
+        self.loop.run_until_complete(waiter)
+
+        self.protocol.connection_made.assert_called_with(tr)
+        self.loop.assert_reader(5, tr._read_ready)
+        self.assertIsNone(waiter.result())
 
     @mock.patch('os.read')
     def test__read_ready(self, m_read):
-        tr = unix_events._UnixReadPipeTransport(
-            self.loop, self.pipe, self.protocol)
+        tr = self.read_pipe_transport()
         m_read.return_value = b'data'
         tr._read_ready()
 
@@ -343,8 +421,7 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
 
     @mock.patch('os.read')
     def test__read_ready_eof(self, m_read):
-        tr = unix_events._UnixReadPipeTransport(
-            self.loop, self.pipe, self.protocol)
+        tr = self.read_pipe_transport()
         m_read.return_value = b''
         tr._read_ready()
 
@@ -356,8 +433,7 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
 
     @mock.patch('os.read')
     def test__read_ready_blocked(self, m_read):
-        tr = unix_events._UnixReadPipeTransport(
-            self.loop, self.pipe, self.protocol)
+        tr = self.read_pipe_transport()
         m_read.side_effect = BlockingIOError
         tr._read_ready()
 
@@ -368,8 +444,7 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
     @mock.patch('asyncio.log.logger.error')
     @mock.patch('os.read')
     def test__read_ready_error(self, m_read, m_logexc):
-        tr = unix_events._UnixReadPipeTransport(
-            self.loop, self.pipe, self.protocol)
+        tr = self.read_pipe_transport()
         err = OSError()
         m_read.side_effect = err
         tr._close = mock.Mock()
@@ -385,9 +460,7 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
 
     @mock.patch('os.read')
     def test_pause_reading(self, m_read):
-        tr = unix_events._UnixReadPipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.read_pipe_transport()
         m = mock.Mock()
         self.loop.add_reader(5, m)
         tr.pause_reading()
@@ -395,26 +468,20 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
 
     @mock.patch('os.read')
     def test_resume_reading(self, m_read):
-        tr = unix_events._UnixReadPipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.read_pipe_transport()
         tr.resume_reading()
         self.loop.assert_reader(5, tr._read_ready)
 
     @mock.patch('os.read')
     def test_close(self, m_read):
-        tr = unix_events._UnixReadPipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.read_pipe_transport()
         tr._close = mock.Mock()
         tr.close()
         tr._close.assert_called_with(None)
 
     @mock.patch('os.read')
     def test_close_already_closing(self, m_read):
-        tr = unix_events._UnixReadPipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.read_pipe_transport()
         tr._closing = True
         tr._close = mock.Mock()
         tr.close()
@@ -422,19 +489,16 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
 
     @mock.patch('os.read')
     def test__close(self, m_read):
-        tr = unix_events._UnixReadPipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.read_pipe_transport()
         err = object()
         tr._close(err)
-        self.assertTrue(tr._closing)
+        self.assertTrue(tr.is_closing())
         self.assertFalse(self.loop.readers)
         test_utils.run_briefly(self.loop)
         self.protocol.connection_lost.assert_called_with(err)
 
     def test__call_connection_lost(self):
-        tr = unix_events._UnixReadPipeTransport(
-            self.loop, self.pipe, self.protocol)
+        tr = self.read_pipe_transport()
         self.assertIsNotNone(tr._protocol)
         self.assertIsNotNone(tr._loop)
 
@@ -447,8 +511,7 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
         self.assertIsNone(tr._loop)
 
     def test__call_connection_lost_with_err(self):
-        tr = unix_events._UnixReadPipeTransport(
-            self.loop, self.pipe, self.protocol)
+        tr = self.read_pipe_transport()
         self.assertIsNotNone(tr._protocol)
         self.assertIsNotNone(tr._loop)
 
@@ -464,6 +527,7 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
 class UnixWritePipeTransportTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
         self.protocol = test_utils.make_test_protocol(asyncio.BaseProtocol)
         self.pipe = mock.Mock(spec_set=io.RawIOBase)
@@ -480,94 +544,81 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         m_fstat.return_value = st
         self.addCleanup(fstat_patcher.stop)
 
-    def test_ctor(self):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
-        self.loop.assert_reader(5, tr._read_ready)
-        test_utils.run_briefly(self.loop)
-        self.protocol.connection_made.assert_called_with(tr)
+    def write_pipe_transport(self, waiter=None):
+        transport = unix_events._UnixWritePipeTransport(self.loop, self.pipe,
+                                                        self.protocol,
+                                                        waiter=waiter)
+        self.addCleanup(close_pipe_transport, transport)
+        return transport
 
-    def test_ctor_with_waiter(self):
-        fut = asyncio.Future(loop=self.loop)
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol, fut)
+    def test_ctor(self):
+        waiter = asyncio.Future(loop=self.loop)
+        tr = self.write_pipe_transport(waiter=waiter)
+        self.loop.run_until_complete(waiter)
+
+        self.protocol.connection_made.assert_called_with(tr)
         self.loop.assert_reader(5, tr._read_ready)
-        test_utils.run_briefly(self.loop)
-        self.assertEqual(None, fut.result())
+        self.assertEqual(None, waiter.result())
 
     def test_can_write_eof(self):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
+        tr = self.write_pipe_transport()
         self.assertTrue(tr.can_write_eof())
 
     @mock.patch('os.write')
     def test_write(self, m_write):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.write_pipe_transport()
         m_write.return_value = 4
         tr.write(b'data')
         m_write.assert_called_with(5, b'data')
         self.assertFalse(self.loop.writers)
-        self.assertEqual([], tr._buffer)
+        self.assertEqual(bytearray(), tr._buffer)
 
     @mock.patch('os.write')
     def test_write_no_data(self, m_write):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.write_pipe_transport()
         tr.write(b'')
         self.assertFalse(m_write.called)
         self.assertFalse(self.loop.writers)
-        self.assertEqual([], tr._buffer)
+        self.assertEqual(bytearray(b''), tr._buffer)
 
     @mock.patch('os.write')
     def test_write_partial(self, m_write):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.write_pipe_transport()
         m_write.return_value = 2
         tr.write(b'data')
-        m_write.assert_called_with(5, b'data')
         self.loop.assert_writer(5, tr._write_ready)
-        self.assertEqual([b'ta'], tr._buffer)
+        self.assertEqual(bytearray(b'ta'), tr._buffer)
 
     @mock.patch('os.write')
     def test_write_buffer(self, m_write):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.write_pipe_transport()
         self.loop.add_writer(5, tr._write_ready)
-        tr._buffer = [b'previous']
+        tr._buffer = bytearray(b'previous')
         tr.write(b'data')
         self.assertFalse(m_write.called)
         self.loop.assert_writer(5, tr._write_ready)
-        self.assertEqual([b'previous', b'data'], tr._buffer)
+        self.assertEqual(bytearray(b'previousdata'), tr._buffer)
 
     @mock.patch('os.write')
     def test_write_again(self, m_write):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.write_pipe_transport()
         m_write.side_effect = BlockingIOError()
         tr.write(b'data')
-        m_write.assert_called_with(5, b'data')
+        m_write.assert_called_with(5, bytearray(b'data'))
         self.loop.assert_writer(5, tr._write_ready)
-        self.assertEqual([b'data'], tr._buffer)
+        self.assertEqual(bytearray(b'data'), tr._buffer)
 
     @mock.patch('asyncio.unix_events.logger')
     @mock.patch('os.write')
     def test_write_err(self, m_write, m_log):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.write_pipe_transport()
         err = OSError()
         m_write.side_effect = err
         tr._fatal_error = mock.Mock()
         tr.write(b'data')
         m_write.assert_called_with(5, b'data')
         self.assertFalse(self.loop.writers)
-        self.assertEqual([], tr._buffer)
+        self.assertEqual(bytearray(), tr._buffer)
         tr._fatal_error.assert_called_with(
                             err,
                             'Fatal write error on pipe transport')
@@ -582,11 +633,11 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         # This is a bit overspecified. :-(
         m_log.warning.assert_called_with(
             'pipe closed by peer or os.write(pipe, data) raised exception.')
+        tr.close()
 
     @mock.patch('os.write')
     def test_write_close(self, m_write):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
+        tr = self.write_pipe_transport()
         tr._read_ready()  # pipe was closed by peer
 
         tr.write(b'data')
@@ -595,81 +646,68 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         self.assertEqual(tr._conn_lost, 2)
 
     def test__read_ready(self):
-        tr = unix_events._UnixWritePipeTransport(self.loop, self.pipe,
-                                                 self.protocol)
+        tr = self.write_pipe_transport()
         tr._read_ready()
         self.assertFalse(self.loop.readers)
         self.assertFalse(self.loop.writers)
-        self.assertTrue(tr._closing)
+        self.assertTrue(tr.is_closing())
         test_utils.run_briefly(self.loop)
         self.protocol.connection_lost.assert_called_with(None)
 
     @mock.patch('os.write')
     def test__write_ready(self, m_write):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
+        tr = self.write_pipe_transport()
         self.loop.add_writer(5, tr._write_ready)
-        tr._buffer = [b'da', b'ta']
+        tr._buffer = bytearray(b'data')
         m_write.return_value = 4
         tr._write_ready()
-        m_write.assert_called_with(5, b'data')
         self.assertFalse(self.loop.writers)
-        self.assertEqual([], tr._buffer)
+        self.assertEqual(bytearray(), tr._buffer)
 
     @mock.patch('os.write')
     def test__write_ready_partial(self, m_write):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.write_pipe_transport()
         self.loop.add_writer(5, tr._write_ready)
-        tr._buffer = [b'da', b'ta']
+        tr._buffer = bytearray(b'data')
         m_write.return_value = 3
         tr._write_ready()
-        m_write.assert_called_with(5, b'data')
         self.loop.assert_writer(5, tr._write_ready)
-        self.assertEqual([b'a'], tr._buffer)
+        self.assertEqual(bytearray(b'a'), tr._buffer)
 
     @mock.patch('os.write')
     def test__write_ready_again(self, m_write):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.write_pipe_transport()
         self.loop.add_writer(5, tr._write_ready)
-        tr._buffer = [b'da', b'ta']
+        tr._buffer = bytearray(b'data')
         m_write.side_effect = BlockingIOError()
         tr._write_ready()
-        m_write.assert_called_with(5, b'data')
+        m_write.assert_called_with(5, bytearray(b'data'))
         self.loop.assert_writer(5, tr._write_ready)
-        self.assertEqual([b'data'], tr._buffer)
+        self.assertEqual(bytearray(b'data'), tr._buffer)
 
     @mock.patch('os.write')
     def test__write_ready_empty(self, m_write):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.write_pipe_transport()
         self.loop.add_writer(5, tr._write_ready)
-        tr._buffer = [b'da', b'ta']
+        tr._buffer = bytearray(b'data')
         m_write.return_value = 0
         tr._write_ready()
-        m_write.assert_called_with(5, b'data')
+        m_write.assert_called_with(5, bytearray(b'data'))
         self.loop.assert_writer(5, tr._write_ready)
-        self.assertEqual([b'data'], tr._buffer)
+        self.assertEqual(bytearray(b'data'), tr._buffer)
 
     @mock.patch('asyncio.log.logger.error')
     @mock.patch('os.write')
     def test__write_ready_err(self, m_write, m_logexc):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.write_pipe_transport()
         self.loop.add_writer(5, tr._write_ready)
-        tr._buffer = [b'da', b'ta']
+        tr._buffer = bytearray(b'data')
         m_write.side_effect = err = OSError()
         tr._write_ready()
-        m_write.assert_called_with(5, b'data')
         self.assertFalse(self.loop.writers)
         self.assertFalse(self.loop.readers)
-        self.assertEqual([], tr._buffer)
-        self.assertTrue(tr._closing)
+        self.assertEqual(bytearray(), tr._buffer)
+        self.assertTrue(tr.is_closing())
         m_logexc.assert_called_with(
             test_utils.MockPattern(
                 'Fatal write error on pipe transport'
@@ -681,26 +719,21 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
 
     @mock.patch('os.write')
     def test__write_ready_closing(self, m_write):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.write_pipe_transport()
         self.loop.add_writer(5, tr._write_ready)
         tr._closing = True
-        tr._buffer = [b'da', b'ta']
+        tr._buffer = bytearray(b'data')
         m_write.return_value = 4
         tr._write_ready()
-        m_write.assert_called_with(5, b'data')
         self.assertFalse(self.loop.writers)
         self.assertFalse(self.loop.readers)
-        self.assertEqual([], tr._buffer)
+        self.assertEqual(bytearray(), tr._buffer)
         self.protocol.connection_lost.assert_called_with(None)
         self.pipe.close.assert_called_with()
 
     @mock.patch('os.write')
     def test_abort(self, m_write):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.write_pipe_transport()
         self.loop.add_writer(5, tr._write_ready)
         self.loop.add_reader(5, tr._read_ready)
         tr._buffer = [b'da', b'ta']
@@ -709,13 +742,12 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         self.assertFalse(self.loop.readers)
         self.assertFalse(self.loop.writers)
         self.assertEqual([], tr._buffer)
-        self.assertTrue(tr._closing)
+        self.assertTrue(tr.is_closing())
         test_utils.run_briefly(self.loop)
         self.protocol.connection_lost.assert_called_with(None)
 
     def test__call_connection_lost(self):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
+        tr = self.write_pipe_transport()
         self.assertIsNotNone(tr._protocol)
         self.assertIsNotNone(tr._loop)
 
@@ -728,8 +760,7 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         self.assertIsNone(tr._loop)
 
     def test__call_connection_lost_with_err(self):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
+        tr = self.write_pipe_transport()
         self.assertIsNotNone(tr._protocol)
         self.assertIsNotNone(tr._loop)
 
@@ -742,38 +773,34 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         self.assertIsNone(tr._loop)
 
     def test_close(self):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.write_pipe_transport()
         tr.write_eof = mock.Mock()
         tr.close()
         tr.write_eof.assert_called_with()
 
-    def test_close_closing(self):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
+        # closing the transport twice must not fail
+        tr.close()
 
+    def test_close_closing(self):
+        tr = self.write_pipe_transport()
         tr.write_eof = mock.Mock()
         tr._closing = True
         tr.close()
         self.assertFalse(tr.write_eof.called)
 
     def test_write_eof(self):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
-
+        tr = self.write_pipe_transport()
         tr.write_eof()
-        self.assertTrue(tr._closing)
+        self.assertTrue(tr.is_closing())
         self.assertFalse(self.loop.readers)
         test_utils.run_briefly(self.loop)
         self.protocol.connection_lost.assert_called_with(None)
 
     def test_write_eof_pending(self):
-        tr = unix_events._UnixWritePipeTransport(
-            self.loop, self.pipe, self.protocol)
+        tr = self.write_pipe_transport()
         tr._buffer = [b'data']
         tr.write_eof()
-        self.assertTrue(tr._closing)
+        self.assertTrue(tr.is_closing())
         self.assertFalse(self.protocol.connection_lost.called)
 
 
@@ -819,6 +846,7 @@ class ChildWatcherTestsMixin:
     ignore_warnings = mock.patch.object(log.logger, "warning")
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
         self.running = False
         self.zombies = {}
@@ -1417,7 +1445,9 @@ class ChildWatcherTestsMixin:
         with mock.patch.object(
                 old_loop, "remove_signal_handler") as m_remove_signal_handler:
 
-            self.watcher.attach_loop(None)
+            with self.assertWarnsRegex(
+                    RuntimeWarning, 'A loop is being detached'):
+                self.watcher.attach_loop(None)
 
             m_remove_signal_handler.assert_called_once_with(
                 signal.SIGCHLD)
@@ -1488,6 +1518,15 @@ class ChildWatcherTestsMixin:
                 self.assertFalse(self.watcher._callbacks)
                 if isinstance(self.watcher, asyncio.FastChildWatcher):
                     self.assertFalse(self.watcher._zombies)
+
+    @waitpid_mocks
+    def test_add_child_handler_with_no_loop_attached(self, m):
+        callback = mock.Mock()
+        with self.create_watcher() as watcher:
+            with self.assertRaisesRegex(
+                    RuntimeError,
+                    'the child watcher does not have a loop attached'):
+                watcher.add_child_handler(100, callback)
 
 
 class SafeChildWatcherTests (ChildWatcherTestsMixin, test_utils.TestCase):

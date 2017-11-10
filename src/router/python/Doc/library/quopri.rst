@@ -4,12 +4,11 @@
 .. module:: quopri
    :synopsis: Encode and decode files using the MIME quoted-printable encoding.
 
+**Source code:** :source:`Lib/quopri.py`
 
 .. index::
    pair: quoted-printable; encoding
    single: MIME; quoted-printable encoding
-
-**Source code:** :source:`Lib/quopri.py`
 
 --------------
 
@@ -33,8 +32,8 @@ sending a graphics file.
 
 .. function:: encode(input, output, quotetabs, header=False)
 
-   Encode the contents of the *input* file and write the resulting quoted-
-   printable data to the *output* file. *input* and *output* must be
+   Encode the contents of the *input* file and write the resulting quoted-printable
+   data to the *output* file. *input* and *output* must be
    :term:`binary file objects <file object>`. *quotetabs*, a flag which controls
    whether to encode embedded spaces and tabs must be provideda and when true it
    encodes such embedded whitespace, and when false it leaves them unencoded.
@@ -53,7 +52,7 @@ sending a graphics file.
 
    Like :func:`encode`, except that it accepts a source :class:`bytes` and
    returns the corresponding encoded :class:`bytes`. By default, it sends a
-   False value to *quotetabs* parameter of the :func:`encode` function.
+   ``False`` value to *quotetabs* parameter of the :func:`encode` function.
 
 
 

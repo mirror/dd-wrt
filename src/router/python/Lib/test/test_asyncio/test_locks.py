@@ -7,7 +7,6 @@ import re
 import asyncio
 from asyncio import test_utils
 
-
 STR_RGX_REPR = (
     r'^<(?P<class>.*?) object at (?P<address>.*?)'
     r'\[(?P<extras>'
@@ -20,6 +19,7 @@ RGX_REPR = re.compile(STR_RGX_REPR)
 class LockTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
 
     def test_ctor_loop(self):
@@ -131,8 +131,8 @@ class LockTests(test_utils.TestCase):
     def test_cancel_race(self):
         # Several tasks:
         # - A acquires the lock
-        # - B is blocked in aqcuire()
-        # - C is blocked in aqcuire()
+        # - B is blocked in acquire()
+        # - C is blocked in acquire()
         #
         # Now, concurrently:
         # - B is cancelled
@@ -175,6 +175,28 @@ class LockTests(test_utils.TestCase):
         self.assertTrue(ta.done())
         self.assertTrue(tb.cancelled())
         self.assertTrue(tc.done())
+
+    def test_finished_waiter_cancelled(self):
+        lock = asyncio.Lock(loop=self.loop)
+
+        ta = asyncio.Task(lock.acquire(), loop=self.loop)
+        test_utils.run_briefly(self.loop)
+        self.assertTrue(lock.locked())
+
+        tb = asyncio.Task(lock.acquire(), loop=self.loop)
+        test_utils.run_briefly(self.loop)
+        self.assertEqual(len(lock._waiters), 1)
+
+        # Create a second waiter, wake up the first, and cancel it.
+        # Without the fix, the second was not woken up.
+        tc = asyncio.Task(lock.acquire(), loop=self.loop)
+        lock.release()
+        tb.cancel()
+        test_utils.run_briefly(self.loop)
+
+        self.assertTrue(lock.locked())
+        self.assertTrue(ta.done())
+        self.assertTrue(tb.cancelled())
 
     def test_release_not_acquired(self):
         lock = asyncio.Lock(loop=self.loop)
@@ -236,6 +258,7 @@ class LockTests(test_utils.TestCase):
 class EventTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
 
     def test_ctor_loop(self):
@@ -365,6 +388,7 @@ class EventTests(test_utils.TestCase):
 class ConditionTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
 
     def test_ctor_loop(self):
@@ -456,6 +480,31 @@ class ConditionTests(test_utils.TestCase):
             asyncio.CancelledError,
             self.loop.run_until_complete, wait)
         self.assertFalse(cond._waiters)
+        self.assertTrue(cond.locked())
+
+    def test_wait_cancel_contested(self):
+        cond = asyncio.Condition(loop=self.loop)
+
+        self.loop.run_until_complete(cond.acquire())
+        self.assertTrue(cond.locked())
+
+        wait_task = asyncio.Task(cond.wait(), loop=self.loop)
+        test_utils.run_briefly(self.loop)
+        self.assertFalse(cond.locked())
+
+        # Notify, but contest the lock before cancelling
+        self.loop.run_until_complete(cond.acquire())
+        self.assertTrue(cond.locked())
+        cond.notify()
+        self.loop.call_soon(wait_task.cancel)
+        self.loop.call_soon(cond.release)
+
+        try:
+            self.loop.run_until_complete(wait_task)
+        except asyncio.CancelledError:
+            # Should not happen, since no cancellation points
+            pass
+
         self.assertTrue(cond.locked())
 
     def test_wait_unacquired(self):
@@ -675,6 +724,7 @@ class ConditionTests(test_utils.TestCase):
 class SemaphoreTests(test_utils.TestCase):
 
     def setUp(self):
+        super().setUp()
         self.loop = self.new_test_loop()
 
     def test_ctor_loop(self):
@@ -783,22 +833,20 @@ class SemaphoreTests(test_utils.TestCase):
 
         test_utils.run_briefly(self.loop)
         self.assertEqual(0, sem._value)
-        self.assertEqual([1, 2, 3], result)
+        self.assertEqual(3, len(result))
         self.assertTrue(sem.locked())
         self.assertEqual(1, len(sem._waiters))
         self.assertEqual(0, sem._value)
 
         self.assertTrue(t1.done())
         self.assertTrue(t1.result())
-        self.assertTrue(t2.done())
-        self.assertTrue(t2.result())
-        self.assertTrue(t3.done())
-        self.assertTrue(t3.result())
-        self.assertFalse(t4.done())
+        race_tasks = [t2, t3, t4]
+        done_tasks = [t for t in race_tasks if t.done() and t.result()]
+        self.assertTrue(2, len(done_tasks))
 
         # cleanup locked semaphore
         sem.release()
-        self.loop.run_until_complete(t4)
+        self.loop.run_until_complete(asyncio.gather(*race_tasks))
 
     def test_acquire_cancel(self):
         sem = asyncio.Semaphore(loop=self.loop)
@@ -809,7 +857,44 @@ class SemaphoreTests(test_utils.TestCase):
         self.assertRaises(
             asyncio.CancelledError,
             self.loop.run_until_complete, acquire)
-        self.assertFalse(sem._waiters)
+        self.assertTrue((not sem._waiters) or
+                        all(waiter.done() for waiter in sem._waiters))
+
+    def test_acquire_cancel_before_awoken(self):
+        sem = asyncio.Semaphore(value=0, loop=self.loop)
+
+        t1 = asyncio.Task(sem.acquire(), loop=self.loop)
+        t2 = asyncio.Task(sem.acquire(), loop=self.loop)
+        t3 = asyncio.Task(sem.acquire(), loop=self.loop)
+        t4 = asyncio.Task(sem.acquire(), loop=self.loop)
+
+        test_utils.run_briefly(self.loop)
+
+        sem.release()
+        t1.cancel()
+        t2.cancel()
+
+        test_utils.run_briefly(self.loop)
+        num_done = sum(t.done() for t in [t3, t4])
+        self.assertEqual(num_done, 1)
+
+        t3.cancel()
+        t4.cancel()
+        test_utils.run_briefly(self.loop)
+
+    def test_acquire_hang(self):
+        sem = asyncio.Semaphore(value=0, loop=self.loop)
+
+        t1 = asyncio.Task(sem.acquire(), loop=self.loop)
+        t2 = asyncio.Task(sem.acquire(), loop=self.loop)
+
+        test_utils.run_briefly(self.loop)
+
+        sem.release()
+        t1.cancel()
+
+        test_utils.run_briefly(self.loop)
+        self.assertTrue(sem.locked())
 
     def test_release_not_acquired(self):
         sem = asyncio.BoundedSemaphore(loop=self.loop)

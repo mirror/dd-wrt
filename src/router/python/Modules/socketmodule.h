@@ -14,6 +14,13 @@
 
 #else /* MS_WINDOWS */
 # include <winsock2.h>
+/* Windows 'supports' CMSG_LEN, but does not follow the POSIX standard
+ * interface at all, so there is no point including the code that
+ * attempts to use it.
+ */
+# ifdef PySocket_BUILDING_SOCKET
+#  undef CMSG_LEN
+# endif
 # include <ws2tcpip.h>
 /* VC6 is shipped with old platform headers, and does not have MSTcpIP.h
  * Separate SDKs have all the functions we want, but older ones don't have
@@ -91,6 +98,37 @@ typedef int socklen_t;
 #include <sys/kern_control.h>
 #endif
 
+#ifdef HAVE_SOCKADDR_ALG
+#include <linux/if_alg.h>
+#ifndef AF_ALG
+#define AF_ALG 38
+#endif
+#ifndef SOL_ALG
+#define SOL_ALG 279
+#endif
+
+/* Linux 3.19 */
+#ifndef ALG_SET_AEAD_ASSOCLEN
+#define ALG_SET_AEAD_ASSOCLEN           4
+#endif
+#ifndef ALG_SET_AEAD_AUTHSIZE
+#define ALG_SET_AEAD_AUTHSIZE           5
+#endif
+/* Linux 4.8 */
+#ifndef ALG_SET_PUBKEY
+#define ALG_SET_PUBKEY                  6
+#endif
+
+#ifndef ALG_OP_SIGN
+#define ALG_OP_SIGN                     2
+#endif
+#ifndef ALG_OP_VERIFY
+#define ALG_OP_VERIFY                   3
+#endif
+
+#endif /* HAVE_SOCKADDR_ALG */
+
+
 #ifndef Py__SOCKET_H
 #define Py__SOCKET_H
 #ifdef __cplusplus
@@ -152,6 +190,9 @@ typedef union sock_addr {
 #ifdef HAVE_SYS_KERN_CONTROL_H
     struct sockaddr_ctl ctl;
 #endif
+#ifdef HAVE_SOCKADDR_ALG
+    struct sockaddr_alg alg;
+#endif
 } sock_addr_t;
 
 /* The object holding a socket.  It holds some extra information,
@@ -167,7 +208,7 @@ typedef struct {
     PyObject *(*errorhandler)(void); /* Error handler; checks
                                         errno, returns NULL and
                                         sets a Python exception */
-    double sock_timeout;                 /* Operation timeout in seconds;
+    _PyTime_t sock_timeout;     /* Operation timeout in seconds;
                                         0.0 means non-blocking */
 } PySocketSockObject;
 

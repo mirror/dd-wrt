@@ -3,6 +3,7 @@
 
 .. module:: ipaddress
    :synopsis: IPv4/IPv6 manipulation library.
+
 .. moduleauthor:: Peter Moody
 
 **Source code:** :source:`Lib/ipaddress.py`
@@ -18,11 +19,15 @@ hosts are on the same subnet, iterating over all hosts in a particular
 subnet, checking whether or not a string represents a valid IP address or
 network definition, and so on.
 
-This is the full module API reference - for an overview and introduction,
-see :ref:`ipaddress-howto`.
+This is the full module API reference—for an overview and introduction, see
+:ref:`ipaddress-howto`.
 
 .. versionadded:: 3.3
 
+.. testsetup::
+   >>> import ipaddress
+   >>> from ipaddress import (ip_network, IPv4Address, IPv4Interface,
+   ...                        IPv4Network)
 
 Convenience factory functions
 -----------------------------
@@ -37,13 +42,6 @@ IP addresses, networks and interfaces:
    supplied; integers less than 2**32 will be considered to be IPv4 by default.
    A :exc:`ValueError` is raised if *address* does not represent a valid IPv4
    or IPv6 address.
-
-.. testsetup::
-   >>> import ipaddress
-   >>> from ipaddress import (ip_network, IPv4Address, IPv4Interface,
-   ...                        IPv4Network)
-
-::
 
    >>> ipaddress.ip_address('192.168.0.1')
    IPv4Address('192.168.0.1')
@@ -101,9 +99,9 @@ write code that handles both IP versions correctly.
    The following constitutes a valid IPv4 address:
 
    1. A string in decimal-dot notation, consisting of four decimal integers in
-      the inclusive range 0-255, separated by dots (e.g. ``192.168.0.1``). Each
+      the inclusive range 0--255, separated by dots (e.g. ``192.168.0.1``). Each
       integer represents an octet (byte) in the address. Leading zeroes are
-      tolerated only for values less then 8 (as there is no ambiguity
+      tolerated only for values less than 8 (as there is no ambiguity
       between the decimal and octal interpretations of such strings).
    2. An integer that fits into 32 bits.
    3. An integer packed into a :class:`bytes` object of length 4 (most
@@ -146,6 +144,20 @@ write code that handles both IP versions correctly.
       the appropriate length (most significant octet first). This is 4 bytes
       for IPv4 and 16 bytes for IPv6.
 
+   .. attribute:: reverse_pointer
+
+      The name of the reverse DNS PTR record for the IP address, e.g.::
+
+          >>> ipaddress.ip_address("127.0.0.1").reverse_pointer
+          '1.0.0.127.in-addr.arpa'
+          >>> ipaddress.ip_address("2001:db8::1").reverse_pointer
+          '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa'
+
+      This is the name that could be used for performing a PTR lookup, not the
+      resolved hostname itself.
+
+      .. versionadded:: 3.5
+
    .. attribute:: is_multicast
 
       ``True`` if the address is reserved for multicast use.  See
@@ -184,8 +196,8 @@ write code that handles both IP versions correctly.
       ``True`` if the address is reserved for link-local usage.  See
       :RFC:`3927`.
 
-.. _iana-ipv4-special-registry: http://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
-.. _iana-ipv6-special-registry: http://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
+.. _iana-ipv4-special-registry: https://www.iana.org/assignments/iana-ipv4-special-registry/iana-ipv4-special-registry.xhtml
+.. _iana-ipv6-special-registry: https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
 
 
 .. class:: IPv6Address(address)
@@ -226,6 +238,7 @@ write code that handles both IP versions correctly.
    :class:`IPv4Address` class:
 
    .. attribute:: packed
+   .. attribute:: reverse_pointer
    .. attribute:: version
    .. attribute:: max_prefixlen
    .. attribute:: is_multicast
@@ -377,6 +390,12 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    3. An integer packed into a :class:`bytes` object of length 4, big-endian.
       The interpretation is similar to an integer *address*.
 
+   4. A two-tuple of an address description and a netmask, where the address
+      description is either a string, a 32-bits integer, a 4-bytes packed
+      integer, or an existing IPv4Address object; and the netmask is either
+      an integer representing the prefix length (e.g. ``24``) or a string
+      representing the prefix mask (e.g. ``255.255.255.0``).
+
    An :exc:`AddressValueError` is raised if *address* is not a valid IPv4
    address.  A :exc:`NetmaskValueError` is raised if the mask is not valid for
    an IPv4 address.
@@ -388,6 +407,10 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    Unless stated otherwise, all network methods accepting other network/address
    objects will raise :exc:`TypeError` if the argument's IP version is
    incompatible to ``self``
+
+   .. versionchanged:: 3.5
+
+      Added the two-tuple form for the *address* constructor parameter.
 
    .. attribute:: version
    .. attribute:: max_prefixlen
@@ -550,8 +573,13 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
       single-address network, with the network address being *address* and
       the mask being ``/128``.
 
-   3. An integer packed into a :class:`bytes` object of length 16, bit-endian.
+   3. An integer packed into a :class:`bytes` object of length 16, big-endian.
       The interpretation is similar to an integer *address*.
+
+   4. A two-tuple of an address description and a netmask, where the address
+      description is either a string, a 128-bits integer, a 16-bytes packed
+      integer, or an existing IPv6Address object; and the netmask is an
+      integer representing the prefix length.
 
    An :exc:`AddressValueError` is raised if *address* is not a valid IPv6
    address.  A :exc:`NetmaskValueError` is raised if the mask is not valid for
@@ -560,6 +588,10 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
    If *strict* is ``True`` and host bits are set in the supplied address,
    then :exc:`ValueError` is raised.  Otherwise, the host bits are masked out
    to determine the appropriate network address.
+
+   .. versionchanged:: 3.5
+
+      Added the two-tuple form for the *address* constructor parameter.
 
    .. attribute:: version
    .. attribute:: max_prefixlen
@@ -619,7 +651,7 @@ network.  For iteration, *all* hosts are returned, including unusable hosts
 example::
 
    >>> for addr in IPv4Network('192.0.2.0/28'):
-   ...   addr
+   ...     addr
    ...
    IPv4Address('192.0.2.0')
    IPv4Address('192.0.2.1')

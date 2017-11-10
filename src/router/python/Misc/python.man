@@ -1,4 +1,4 @@
-.TH PYTHON "1" "$Date$"
+.TH PYTHON "1"
 
 .\" To view this file while editing, run it through groff:
 .\"   groff -Tascii -man python.man | less
@@ -87,8 +87,7 @@ python \- an interpreted, interactive, object-oriented programming language
 .SH DESCRIPTION
 Python is an interpreted, interactive, object-oriented programming
 language that combines remarkable power with very clear syntax.
-For an introduction to programming in Python you are referred to the
-Python Tutorial.
+For an introduction to programming in Python, see the Python Tutorial.
 The Python Library Reference documents built-in and standard types,
 constants, functions and modules.
 Finally, the Python Reference Manual describes the syntax and
@@ -104,15 +103,15 @@ Python is also adaptable as an extension language for existing
 applications.
 See the internal documentation for hints.
 .PP
-Documentation for installed Python modules and packages can be 
-viewed by running the 
+Documentation for installed Python modules and packages can be
+viewed by running the
 .B pydoc
-program.  
+program.
 .SH COMMAND LINE OPTIONS
 .TP
 .B \-B
 Don't write
-.I .py[co]
+.I .pyc
 files on import. See also PYTHONDONTWRITEBYTECODE.
 .TP
 .B \-b
@@ -143,30 +142,27 @@ useful to inspect global variables or a stack trace when a script
 raises an exception.
 .TP
 .B \-I
-Run Python in isolated mode. This also implies \fB\-E\fP and \fB\-S\fP. In
-isolated mode sys.path contains neither the script’s directory nor the user’s
+Run Python in isolated mode. This also implies \fB\-E\fP and \fB\-s\fP. In
+isolated mode sys.path contains neither the script's directory nor the user's
 site-packages directory. All PYTHON* environment variables are ignored, too.
 Further restrictions may be imposed to prevent the user from injecting
 malicious code.
 .TP
 .BI "\-m " module-name
-Searches 
-.I sys.path 
-for the named module and runs the corresponding 
-.I .py 
+Searches
+.I sys.path
+for the named module and runs the corresponding
+.I .py
 file as a script.
 .TP
 .B \-O
-Turn on basic optimizations.  This changes the filename extension for
-compiled (bytecode) files from
-.I .pyc
-to \fI.pyo\fP.  Given twice, causes docstrings to be discarded.
+Turn on basic optimizations.  Given twice, causes docstrings to be discarded.
 .TP
 .B \-OO
 Discard docstrings in addition to the \fB-O\fP optimizations.
 .TP
 .B \-q
-Do not print the version and copyright messages. These messages are 
+Do not print the version and copyright messages. These messages are
 also suppressed in non-interactive mode.
 .TP
 .B \-s
@@ -193,12 +189,13 @@ The text I/O layer will still be line-buffered.
 .B \-v
 Print a message each time a module is initialized, showing the place
 (filename or built-in module) from which it is loaded.  When given
-twice, print a message for each file that is checked for when 
+twice, print a message for each file that is checked for when
 searching for a module.  Also provides information on module cleanup
 at exit.
 .TP
 .B \-V ", " \-\-version
-Prints the Python version number of the executable and exits.
+Prints the Python version number of the executable and exits.  When given
+twice, print more information about the build.
 .TP
 .BI "\-W " argument
 Warning control.  Python sometimes prints warning message to
@@ -384,11 +381,6 @@ You can also change the prompts
 and
 .I sys.ps2
 in this file.
-.IP PYTHONY2K
-Set this to a non-empty string to cause the \fItime\fP module to
-require dates specified as strings to include 4-digit years, otherwise
-2-digit years are converted based on rules described in the \fItime\fP
-module documentation.
 .IP PYTHONOPTIMIZE
 If this is set to a non-empty string it is equivalent to specifying
 the \fB\-O\fP option. If set to an integer, it is equivalent to
@@ -400,7 +392,7 @@ specifying \fB\-d\fP multiple times.
 .IP PYTHONDONTWRITEBYTECODE
 If this is set to a non-empty string it is equivalent to specifying
 the \fB\-B\fP option (don't try to write
-.I .py[co]
+.I .pyc
 files).
 .IP PYTHONINSPECT
 If this is set to a non-empty string it is equivalent to specifying
@@ -423,7 +415,7 @@ the \fB\-u\fP option.
 .IP PYTHONVERBOSE
 If this is set to a non-empty string it is equivalent to specifying
 the \fB\-v\fP option. If set to an integer, it is equivalent to
-specifying \fB\-v\fP multiple times. 
+specifying \fB\-v\fP multiple times.
 .IP PYTHONWARNINGS
 If this is set to a comma-separated string it is equivalent to
 specifying the \fB\-W\fP option for each separate value.
@@ -440,17 +432,17 @@ values.
 The integer must be a decimal number in the range [0,4294967295].  Specifying
 the value 0 will disable hash randomization.
 .SH AUTHOR
-The Python Software Foundation: http://www.python.org/psf
+The Python Software Foundation: https://www.python.org/psf/
 .SH INTERNET RESOURCES
-Main website:  http://www.python.org/
+Main website:  https://www.python.org/
 .br
-Documentation:  http://docs.python.org/py3k/
+Documentation:  https://docs.python.org/
 .br
-Developer resources:  http://docs.python.org/devguide/
+Developer resources:  https://devguide.python.org/
 .br
-Downloads:  http://python.org/download/
+Downloads:  https://www.python.org/downloads/
 .br
-Module repository:  http://pypi.python.org/
+Module repository:  https://pypi.python.org/
 .br
 Newsgroups:  comp.lang.python, comp.lang.python.announce
 .SH LICENSING

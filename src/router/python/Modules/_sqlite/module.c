@@ -139,8 +139,7 @@ static PyObject* module_enable_shared_cache(PyObject* self, PyObject* args, PyOb
         PyErr_SetString(pysqlite_OperationalError, "Changing the shared_cache flag failed");
         return NULL;
     } else {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 }
 
@@ -172,8 +171,7 @@ static PyObject* module_register_adapter(PyObject* self, PyObject* args)
     if (rc == -1)
         return NULL;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(module_register_adapter_doc,
@@ -194,7 +192,7 @@ static PyObject* module_register_converter(PyObject* self, PyObject* args)
     }
 
     /* convert the name to upper case */
-    name = _PyObject_CallMethodId(orig_name, &PyId_upper, "");
+    name = _PyObject_CallMethodId(orig_name, &PyId_upper, NULL);
     if (!name) {
         goto error;
     }
@@ -221,8 +219,7 @@ static PyObject* enable_callback_tracebacks(PyObject* self, PyObject* args)
         return NULL;
     }
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(enable_callback_tracebacks_doc,
@@ -261,13 +258,13 @@ static PyMethodDef module_methods[] = {
 };
 
 struct _IntConstantPair {
-    char* constant_name;
+    const char *constant_name;
     int constant_value;
 };
 
 typedef struct _IntConstantPair IntConstantPair;
 
-static IntConstantPair _int_constants[] = {
+static const IntConstantPair _int_constants[] = {
     {"PARSE_DECLTYPES", PARSE_DECLTYPES},
     {"PARSE_COLNAMES", PARSE_COLNAMES},
 

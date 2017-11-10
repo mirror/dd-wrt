@@ -4,6 +4,7 @@
 .. module:: sys
    :synopsis: Access system-specific parameters and functions.
 
+--------------
 
 This module provides access to some variables used or maintained by the
 interpreter and to functions that interact strongly with the interpreter. It is
@@ -167,7 +168,7 @@ always available.
 
 .. data:: dont_write_bytecode
 
-   If this is true, Python won't try to write ``.pyc`` or ``.pyo`` files on the
+   If this is true, Python won't try to write ``.pyc`` files on the
    import of source modules.  This value is initially set to ``True`` or
    ``False`` depending on the :option:`-B` command line option and the
    :envvar:`PYTHONDONTWRITEBYTECODE` environment variable, but you can set it
@@ -255,7 +256,7 @@ always available.
    (defaulting to zero), or another type of object.  If it is an integer, zero
    is considered "successful termination" and any nonzero value is considered
    "abnormal termination" by shells and the like.  Most systems require it to be
-   in the range 0-127, and produce undefined results otherwise.  Some systems
+   in the range 0--127, and produce undefined results otherwise.  Some systems
    have a convention for assigning specific meanings to specific exit codes, but
    these are generally underdeveloped; Unix programs generally use 2 for command
    line syntax errors and 1 for all other kind of errors.  If another type of
@@ -267,6 +268,11 @@ always available.
    Since :func:`exit` ultimately "only" raises an exception, it will only exit
    the process when called from the main thread, and the exception is not
    intercepted.
+
+   .. versionchanged:: 3.6
+      If an error occurs in the cleanup after the Python interpreter
+      has caught :exc:`SystemExit` (such as an error flushing buffered data
+      in the standard streams), the exit status is changed to 120.
 
 
 .. data:: flags
@@ -422,25 +428,42 @@ always available.
 
 .. function:: getfilesystemencoding()
 
-   Return the name of the encoding used to convert Unicode filenames into
-   system file names. The result value depends on the operating system:
+   Return the name of the encoding used to convert between Unicode
+   filenames and bytes filenames. For best compatibility, str should be
+   used for filenames in all cases, although representing filenames as bytes
+   is also supported. Functions accepting or returning filenames should support
+   either str or bytes and internally convert to the system's preferred
+   representation.
+
+   This encoding is always ASCII-compatible.
+
+   :func:`os.fsencode` and :func:`os.fsdecode` should be used to ensure that
+   the correct encoding and errors mode are used.
 
    * On Mac OS X, the encoding is ``'utf-8'``.
 
-   * On Unix, the encoding is the user's preference according to the result of
-     nl_langinfo(CODESET).
+   * On Unix, the encoding is the locale encoding.
 
-   * On Windows NT+, file names are Unicode natively, so no conversion is
-     performed. :func:`getfilesystemencoding` still returns ``'mbcs'``, as
-     this is the encoding that applications should use when they explicitly
-     want to convert Unicode strings to byte strings that are equivalent when
-     used as file names.
-
-   * On Windows 9x, the encoding is ``'mbcs'``.
+   * On Windows, the encoding may be ``'utf-8'`` or ``'mbcs'``, depending
+     on user configuration.
 
    .. versionchanged:: 3.2
       :func:`getfilesystemencoding` result cannot be ``None`` anymore.
 
+   .. versionchanged:: 3.6
+      Windows is no longer guaranteed to return ``'mbcs'``. See :pep:`529`
+      and :func:`_enablelegacywindowsfsencoding` for more information.
+
+.. function:: getfilesystemencodeerrors()
+
+   Return the name of the error mode used to convert between Unicode filenames
+   and bytes filenames. The encoding name is returned from
+   :func:`getfilesystemencoding`.
+
+   :func:`os.fsencode` and :func:`os.fsdecode` should be used to ensure that
+   the correct encoding and errors mode are used.
+
+   .. versionadded:: 3.6
 
 .. function:: getrefcount(object)
 
@@ -474,7 +497,7 @@ always available.
    additional garbage collector overhead if the object is managed by the garbage
    collector.
 
-   See `recursive sizeof recipe <http://code.activestate.com/recipes/577504>`_
+   See `recursive sizeof recipe <https://code.activestate.com/recipes/577504>`_
    for an example of using :func:`getsizeof` recursively to find the size of
    containers and all their contents.
 
@@ -529,26 +552,15 @@ always available.
    Return a named tuple describing the Windows version
    currently running.  The named elements are *major*, *minor*,
    *build*, *platform*, *service_pack*, *service_pack_minor*,
-   *service_pack_major*, *suite_mask*, and *product_type*.
-   *service_pack* contains a string while all other values are
+   *service_pack_major*, *suite_mask*, *product_type* and
+   *platform_version*. *service_pack* contains a string,
+   *platform_version* a 3-tuple and all other values are
    integers. The components can also be accessed by name, so
    ``sys.getwindowsversion()[0]`` is equivalent to
    ``sys.getwindowsversion().major``. For compatibility with prior
    versions, only the first 5 elements are retrievable by indexing.
 
-   *platform* may be one of the following values:
-
-   +-----------------------------------------+-------------------------+
-   | Constant                                | Platform                |
-   +=========================================+=========================+
-   | :const:`0 (VER_PLATFORM_WIN32s)`        | Win32s on Windows 3.1   |
-   +-----------------------------------------+-------------------------+
-   | :const:`1 (VER_PLATFORM_WIN32_WINDOWS)` | Windows 95/98/ME        |
-   +-----------------------------------------+-------------------------+
-   | :const:`2 (VER_PLATFORM_WIN32_NT)`      | Windows NT/2000/XP/x64  |
-   +-----------------------------------------+-------------------------+
-   | :const:`3 (VER_PLATFORM_WIN32_CE)`      | Windows CE              |
-   +-----------------------------------------+-------------------------+
+   *platform* will be :const:`2 (VER_PLATFORM_WIN32_NT)`.
 
    *product_type* may be one of the following values:
 
@@ -564,16 +576,52 @@ always available.
    |                                       | a domain controller.            |
    +---------------------------------------+---------------------------------+
 
-
    This function wraps the Win32 :c:func:`GetVersionEx` function; see the
    Microsoft documentation on :c:func:`OSVERSIONINFOEX` for more information
    about these fields.
+
+   *platform_version* returns the accurate major version, minor version and
+   build number of the current operating system, rather than the version that
+   is being emulated for the process. It is intended for use in logging rather
+   than for feature detection.
 
    Availability: Windows.
 
    .. versionchanged:: 3.2
       Changed to a named tuple and added *service_pack_minor*,
       *service_pack_major*, *suite_mask*, and *product_type*.
+
+   .. versionchanged:: 3.6
+      Added *platform_version*
+
+
+.. function:: get_asyncgen_hooks()
+
+   Returns an *asyncgen_hooks* object, which is similar to a
+   :class:`~collections.namedtuple` of the form `(firstiter, finalizer)`,
+   where *firstiter* and *finalizer* are expected to be either ``None`` or
+   functions which take an :term:`asynchronous generator iterator` as an
+   argument, and are used to schedule finalization of an asychronous
+   generator by an event loop.
+
+   .. versionadded:: 3.6
+      See :pep:`525` for more details.
+
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)
+
+
+.. function:: get_coroutine_wrapper()
+
+   Returns ``None``, or a wrapper set by :func:`set_coroutine_wrapper`.
+
+   .. versionadded:: 3.5
+      See :pep:`492` for more details.
+
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)  Use it only for debugging purposes.
 
 
 .. data:: hash_info
@@ -629,7 +677,7 @@ always available.
    :term:`struct sequence`  :data:`sys.version_info` may be used for a more
    human-friendly encoding of the same information.
 
-   More details of ``hexversion`` can be found at :ref:`apiabiversion`
+   More details of ``hexversion`` can be found at :ref:`apiabiversion`.
 
 
 .. data:: implementation
@@ -667,7 +715,7 @@ always available.
    an underscore, and are not described here.  Regardless of its contents,
    :data:`sys.implementation` will not change during a run of the interpreter,
    nor between implementation versions.  (It may change between Python
-   language versions, however.)  See `PEP 421` for more information.
+   language versions, however.)  See :pep:`421` for more information.
 
    .. versionadded:: 3.3
 
@@ -718,6 +766,14 @@ always available.
    value of :func:`intern` around to benefit from it.
 
 
+.. function:: is_finalizing()
+
+   Return :const:`True` if the Python interpreter is
+   :term:`shutting down <interpreter shutdown>`, :const:`False` otherwise.
+
+   .. versionadded:: 3.5
+
+
 .. data:: last_type
           last_value
           last_traceback
@@ -754,19 +810,32 @@ always available.
 
 .. data:: meta_path
 
-    A list of :term:`finder` objects that have their :meth:`find_module`
-    methods called to see if one of the objects can find the module to be
-    imported. The :meth:`find_module` method is called at least with the
-    absolute name of the module being imported. If the module to be imported is
-    contained in package then the parent package's :attr:`__path__` attribute
-    is passed in as a second argument. The method returns ``None`` if
-    the module cannot be found, else returns a :term:`loader`.
+    A list of :term:`meta path finder` objects that have their
+    :meth:`~importlib.abc.MetaPathFinder.find_spec` methods called to see if one
+    of the objects can find the module to be imported. The
+    :meth:`~importlib.abc.MetaPathFinder.find_spec` method is called with at
+    least the absolute name of the module being imported. If the module to be
+    imported is contained in a package, then the parent package's :attr:`__path__`
+    attribute is passed in as a second argument. The method returns a
+    :term:`module spec`, or ``None`` if the module cannot be found.
 
-    :data:`sys.meta_path` is searched before any implicit default finders or
-    :data:`sys.path`.
+    .. seealso::
 
-    See :pep:`302` for the original specification.
+        :class:`importlib.abc.MetaPathFinder`
+          The abstract base class defining the interface of finder objects on
+          :data:`meta_path`.
+        :class:`importlib.machinery.ModuleSpec`
+          The concrete class which
+          :meth:`~importlib.abc.MetaPathFinder.find_spec` should return
+          instances of.
 
+    .. versionchanged:: 3.4
+
+        :term:`Module specs <module spec>` were introduced in Python 3.4, by
+        :pep:`451`. Earlier versions of Python looked for a method called
+        :meth:`~importlib.abc.MetaPathFinder.find_module`.
+        This is still called as a fallback if a :data:`meta_path` entry doesn't
+        have a :meth:`~importlib.abc.MetaPathFinder.find_spec` method.
 
 .. data:: modules
 
@@ -955,6 +1024,13 @@ always available.
    that supports a higher limit.  This should be done with care, because a too-high
    limit can lead to a crash.
 
+   If the new limit is too low at the current recursion depth, a
+   :exc:`RecursionError` exception is raised.
+
+   .. versionchanged:: 3.5.1
+      A :exc:`RecursionError` exception is now raised if the new limit is too
+      low at the current recursion depth.
+
 
 .. function:: setswitchinterval(interval)
 
@@ -1040,18 +1116,76 @@ always available.
       implementation platform, rather than part of the language definition, and
       thus may not be available in all Python implementations.
 
+.. function:: set_asyncgen_hooks(firstiter, finalizer)
 
-.. function:: settscdump(on_flag)
+   Accepts two optional keyword arguments which are callables that accept an
+   :term:`asynchronous generator iterator` as an argument. The *firstiter*
+   callable will be called when an asynchronous generator is iterated for the
+   first time. The *finalizer* will be called when an asynchronous generator
+   is about to be garbage collected.
 
-   Activate dumping of VM measurements using the Pentium timestamp counter, if
-   *on_flag* is true. Deactivate these dumps if *on_flag* is off. The function is
-   available only if Python was compiled with ``--with-tsc``. To understand
-   the output of this dump, read :file:`Python/ceval.c` in the Python sources.
+   .. versionadded:: 3.6
+      See :pep:`525` for more details, and for a reference example of a
+      *finalizer* method see the implementation of
+      ``asyncio.Loop.shutdown_asyncgens`` in
+      :source:`Lib/asyncio/base_events.py`
 
-   .. impl-detail::
-      This function is intimately bound to CPython implementation details and
-      thus not likely to be implemented elsewhere.
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)
 
+
+.. function:: set_coroutine_wrapper(wrapper)
+
+   Allows intercepting creation of :term:`coroutine` objects (only ones that
+   are created by an :keyword:`async def` function; generators decorated with
+   :func:`types.coroutine` or :func:`asyncio.coroutine` will not be
+   intercepted).
+
+   The *wrapper* argument must be either:
+
+   * a callable that accepts one argument (a coroutine object);
+   * ``None``, to reset the wrapper.
+
+   If called twice, the new wrapper replaces the previous one.  The function
+   is thread-specific.
+
+   The *wrapper* callable cannot define new coroutines directly or indirectly::
+
+        def wrapper(coro):
+            async def wrap(coro):
+                return await coro
+            return wrap(coro)
+        sys.set_coroutine_wrapper(wrapper)
+
+        async def foo():
+            pass
+
+        # The following line will fail with a RuntimeError, because
+        # ``wrapper`` creates a ``wrap(coro)`` coroutine:
+        foo()
+
+   See also :func:`get_coroutine_wrapper`.
+
+   .. versionadded:: 3.5
+      See :pep:`492` for more details.
+
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)  Use it only for debugging purposes.
+
+.. function:: _enablelegacywindowsfsencoding()
+
+   Changes the default filesystem encoding and errors mode to 'mbcs' and
+   'replace' respectively, for consistency with versions of Python prior to 3.6.
+
+   This is equivalent to defining the :envvar:`PYTHONLEGACYWINDOWSFSENCODING`
+   environment variable before launching Python.
+
+   Availability: Windows
+
+   .. versionadded:: 3.6
+      See :pep:`529` for more details.
 
 .. data:: stdin
           stdout
@@ -1111,7 +1245,7 @@ always available.
    .. note::
        Under some conditions ``stdin``, ``stdout`` and ``stderr`` as well as the
        original values ``__stdin__``, ``__stdout__`` and ``__stderr__`` can be
-       None. It is usually the case for Windows GUI apps that aren't connected
+       ``None``. It is usually the case for Windows GUI apps that aren't connected
        to a console and Python apps started with :program:`pythonw`.
 
 
@@ -1201,7 +1335,9 @@ always available.
 
    A dictionary of the various implementation-specific flags passed through
    the :option:`-X` command-line option.  Option names are either mapped to
-   their values, if given explicitly, or to :const:`True`.  Example::
+   their values, if given explicitly, or to :const:`True`.  Example:
+
+   .. code-block:: shell-session
 
       $ ./python -Xa=b -Xc
       Python 3.2a3+ (py3k, Oct 16 2010, 20:14:50)
@@ -1223,4 +1359,3 @@ always available.
 .. rubric:: Citations
 
 .. [C99] ISO/IEC 9899:1999.  "Programming languages -- C."  A public draft of this standard is available at http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1256.pdf\ .
-
