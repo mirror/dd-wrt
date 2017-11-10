@@ -74,8 +74,6 @@ typedef uint32_t u32;
 #define VHT_CAP_RXSTBC_4                            ((u32) BIT(10))
 #define VHT_CAP_SU_BEAMFORMER_CAPABLE               ((u32) BIT(11))
 #define VHT_CAP_SU_BEAMFORMEE_CAPABLE               ((u32) BIT(12))
-#define VHT_CAP_BEAMFORMER_ANTENNAS_MAX             ((u32) BIT(13) | BIT(14))
-#define VHT_CAP_SOUNDING_DIMENTION_MAX              ((u32) BIT(16) | BIT(17))
 #define VHT_CAP_MU_BEAMFORMER_CAPABLE               ((u32) BIT(19))
 #define VHT_CAP_MU_BEAMFORMEE_CAPABLE               ((u32) BIT(20))
 #define VHT_CAP_VHT_TXOP_PS                         ((u32) BIT(21))
@@ -816,12 +814,12 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 			 , ((cap & VHT_CAP_HTC_VHT) ? ((cap & VHT_CAP_VHT_LINK_ADAPTATION_VHT_UNSOL_MFB) ? "[VHT-LINK-ADAPT2]" : "") : "")
 			 , ((cap & VHT_CAP_HTC_VHT) ? ((cap & VHT_CAP_VHT_LINK_ADAPTATION_VHT_MRQ_MFB) ? "[VHT-LINK-ADAPT3]" : "") : "")
 			 , ((cap >> 23) & 7)
-			 , ((((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE)) && su_bf) ? ((((cap >> 13) & 1)) ? "[BF-ANTENNA-2]" : "") : "")
-			 , ((((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE)) && su_bf) ? ((((cap >> 16) & 1)) ? "[SOUNDING-DIMENSION-2]" : "") : "")
-			 , ((((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE)) && su_bf) ? ((((cap >> 13) & 2)) ? "[BF-ANTENNA-3]" : "") : "")
-			 , ((((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE)) && su_bf) ? ((((cap >> 16) & 2)) ? "[SOUNDING-DIMENSION-3]" : "") : "")
-			 , ((((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE)) && su_bf) ? ((((cap >> 13) & 4)) ? "[BF-ANTENNA-4]" : "") : "")
-			 , ((((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE)) && su_bf) ? ((((cap >> 16) & 4)) ? "[SOUNDING-DIMENSION-4]" : "") : "")
+			 , ((((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE)) && su_bf) ? ((cap & (1 << 13)) ? "[BF-ANTENNA-2]" : "") : "")
+			 , ((((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE)) && su_bf) ? ((cap & (1 << 16)) ? "[SOUNDING-DIMENSION-2]" : "") : "")
+			 , ((((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE)) && su_bf) ? ((cap & (1 << 14)) ? "[BF-ANTENNA-3]" : "") : "")
+			 , ((((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE)) && su_bf) ? ((cap & (1 << 17)) ? "[SOUNDING-DIMENSION-3]" : "") : "")
+			 , ((((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE)) && su_bf) ? ((cap & (1 << 15)) ? "[BF-ANTENNA-4]" : "") : "")
+			 , ((((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE)) && su_bf) ? ((cap & (1 << 18)) ? "[SOUNDING-DIMENSION-4]" : "") : "")
 
 		    );
 	}
