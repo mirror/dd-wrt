@@ -1,8 +1,9 @@
 python-configure: libffi-configure libffi libffi-install
-	cd python && ./configure --host=$(ARCH)-linux --build=$(ARCH) --sysconfdir=/etc \
+	cd python && ./configure  --host=$(ARCH)-linux --build=$(ARCH) --sysconfdir=/etc \
 		--enable-shared \
 		--enable-static \
 		--prefix=/usr \
+		--enable-optimizations \
 		--without-cxx-main \
 		--with-system-ffi="$(INSTALLDIR)/libffi/usr" \
 		--with-threads \
@@ -14,7 +15,9 @@ python-configure: libffi-configure libffi libffi-install
 		CFLAGS="$(COPTS) -I$(TOP)/openssl/include -I$(TOP)/zlib" \
 		CXXFLAGS="$(COPTS) -I$(TOP)/openssl/include -I$(TOP)/zlib" \
 		CC="$(ARCH)-linux-uclibc-gcc $(COPTS)" \
-		LIBFFI_INCLUDEDIR="$(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1/include"
+		LIBFFI_INCLUDEDIR="$(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1/include" \
+		ac_cv_file__dev_ptmx=yes \
+		ac_cv_file__dev_ptc=no
 
 
 
