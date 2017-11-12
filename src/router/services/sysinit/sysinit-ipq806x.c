@@ -554,7 +554,7 @@ void start_sysinit(void)
 	eval("ifconfig", "eth0", "up");
 
 	detect_wireless_devices();
-	
+
 	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
 	writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
