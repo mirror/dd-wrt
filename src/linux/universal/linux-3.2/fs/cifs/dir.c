@@ -520,6 +520,14 @@ cifs_lookup(struct inode *parent_dir_inode, struct dentry *direntry,
 
 	oplock = pTcon->ses->server->oplocks ? REQ_OPLOCK : 0;
 
+	/* Don't allow path components longer than the server max. */
+	if (unlikely(pTcon->fsAttrInfo.MaxPathNameComponentLength &&
+		     direntry->d_name.len >
+		     le32_to_cpu(pTcon->fsAttrInfo.MaxPathNameComponentLength))) {
+		rc = -ENAMETOOLONG;
+		goto lookup_out;
+	}
+
 	/*
 	 * Don't allow the separator character in a path component.
 	 * The VFS will not allow "/", but "\" is allowed by posix.
