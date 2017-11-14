@@ -794,14 +794,14 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 		unsigned int bfantenna = (cap >> 13) & 0x7;
 		unsigned int sodimension = (cap >> 16) & 0x7;
 		if (bfantenna & 4)
-		    bfantenna &= 4; 
+			bfantenna &= 4;
 		if (bfantenna & 2)
-		    bfantenna &= 2; 
+			bfantenna &= 2;
 
 		if (sodimension & 4)
-		    sodimension &= 4; 
+			sodimension &= 4;
 		if (sodimension & 2)
-		    sodimension &= 2; 
+			sodimension &= 2;
 		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s[MAX-A-MPDU-LEN-EXP%d]%s%s%s%s%s%s", (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : "")
 			 , (((cap & VHT_CAP_SHORT_GI_80) && shortgi && has5ghz && vht80) ? "[SHORT-GI-80]" : "")
 			 , (((cap & VHT_CAP_SHORT_GI_160) && shortgi && has5ghz && vht160) ? "[SHORT-GI-160]" : "")
@@ -825,12 +825,12 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 			 , ((cap & VHT_CAP_HTC_VHT) ? ((cap & VHT_CAP_VHT_LINK_ADAPTATION_VHT_UNSOL_MFB) ? "[VHT-LINK-ADAPT2]" : "") : "")
 			 , ((cap & VHT_CAP_HTC_VHT) ? ((cap & VHT_CAP_VHT_LINK_ADAPTATION_VHT_MRQ_MFB) ? "[VHT-LINK-ADAPT3]" : "") : "")
 			 , ((cap >> 23) & 7)
-			 , (((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE) && mu_bf) ? ((bfantenna & 1) ? "[BF-ANTENNA-2]" : "") : "")
-			 , (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf) ? ((sodimension & 1) ? "[SOUNDING-DIMENSION-2]" : "") : "")
-			 , (((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE) && mu_bf) ? ((bfantenna & 2) ? "[BF-ANTENNA-3]" : "") : "")
-			 , (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf) ? ((sodimension & 2) ? "[SOUNDING-DIMENSION-3]" : "") : "")
-			 , (((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE) && mu_bf) ? ((bfantenna & 4) ? "[BF-ANTENNA-4]" : "") : "")
-			 , (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf) ? ((sodimension & 4) ? "[SOUNDING-DIMENSION-4]" : "") : "")
+			 , (((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE) && mu_bf) && (bfantenna & 1) ? "[BF-ANTENNA-2]" : "")
+			 , (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf) && (sodimension & 1) ? "[SOUNDING-DIMENSION-2]" : "")
+			 , (((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE) && mu_bf) && (bfantenna & 2) ? "[BF-ANTENNA-3]" : "")
+			 , (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf) && (sodimension & 2) ? "[SOUNDING-DIMENSION-3]" : "")
+			 , (((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE) && mu_bf) && (bfantenna & 4) ? "[BF-ANTENNA-4]" : "")
+			 , (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) || ((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf) && (sodimension & 4) ? "[SOUNDING-DIMENSION-4]" : "")
 
 		    );
 	}
@@ -1537,7 +1537,7 @@ static int get_max_mcs_index(const __u8 *mcs)
 		unsigned int mcs_octet = mcs_bit / 8;
 		unsigned int MCS_RATE_BIT = 1 << mcs_bit % 8;
 		bool mcs_rate_idx_set;
-		mcs_rate_idx_set = !!(mcs[mcs_octet] & MCS_RATE_BIT);
+		mcs_rate_idx_set = ! !(mcs[mcs_octet] & MCS_RATE_BIT);
 		if (!mcs_rate_idx_set)
 			continue;
 		if (prev_bit != mcs_bit - 1) {
@@ -1560,10 +1560,10 @@ static int get_ht_mcs(const __u8 *mcs)
 	unsigned int tx_max_num_spatial_streams, max_rx_supp_data_rate;
 	bool tx_mcs_set_defined, tx_mcs_set_equal, tx_unequal_modulation;
 	max_rx_supp_data_rate = ((mcs[10] >> 8) & ((mcs[11] & 0x3) << 8));
-	tx_mcs_set_defined = !!(mcs[12] & (1 << 0));
+	tx_mcs_set_defined = ! !(mcs[12] & (1 << 0));
 	tx_mcs_set_equal = !(mcs[12] & (1 << 1));
 	tx_max_num_spatial_streams = ((mcs[12] >> 2) & 3) + 1;
-	tx_unequal_modulation = !!(mcs[12] & (1 << 4));
+	tx_unequal_modulation = ! !(mcs[12] & (1 << 4));
 	/* XXX: else see 9.6.0e.5.3 how to get this I think */
 	if (tx_mcs_set_defined) {
 		if (tx_mcs_set_equal) {
