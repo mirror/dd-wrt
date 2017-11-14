@@ -39,8 +39,12 @@
 EXPORT_SYMBOL(memset);
 EXPORT_SYMBOL(memcpy);
 EXPORT_SYMBOL(memmove);
+EXPORT_SYMBOL(__strncpy_user);
+EXPORT_SYMBOL(clear_page);
+EXPORT_SYMBOL(copy_page);
 
 EXPORT_SYMBOL(kernel_thread);
+EXPORT_SYMBOL(empty_zero_page);
 
 /*
  * gcc internal math functions
@@ -69,12 +73,11 @@ EXPORT_SYMBOL(__umodsi3);
 EXPORT_SYMBOL(__udivdi3);
 EXPORT_SYMBOL(__umoddi3);
 
-#ifdef CONFIG_NET
 /*
  * Networking support
  */
+EXPORT_SYMBOL(csum_partial);
 EXPORT_SYMBOL(csum_partial_copy_generic);
-#endif /* CONFIG_NET */
 
 /*
  * Architecture-specific symbols
