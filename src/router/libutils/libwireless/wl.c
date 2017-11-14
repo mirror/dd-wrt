@@ -2906,12 +2906,6 @@ int is_mvebu(const char *prefix)
 #ifdef HAVE_ATH10K
 int is_ath10k(const char *prefix)
 {
-#ifdef HAVE_WIL6210
-	if (!strcmp(prefix, "giwifi"))
-		return 0;
-	if (!strcmp(prefix, "ath2"))
-		return 0;
-#endif
 	// get legacy interface count
 #ifdef HAVE_MADWIFI_MIMO
 	if (!nvram_match("mimo_driver", "ath9k"))
