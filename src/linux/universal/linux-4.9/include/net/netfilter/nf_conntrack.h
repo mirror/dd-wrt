@@ -17,6 +17,7 @@
 #include <linux/bitops.h>
 #include <linux/compiler.h>
 #include <linux/atomic.h>
+#include <linux/rhashtable.h>
 
 #include <linux/netfilter/nf_conntrack_tcp.h>
 #include <linux/netfilter/nf_conntrack_dccp.h>
@@ -100,7 +101,7 @@ struct nf_conn {
 	possible_net_t ct_net;
 
 #if IS_ENABLED(CONFIG_NF_NAT)
-	struct hlist_node	nat_bysource;
+	struct rhlist_head nat_bysource;
 #endif
 	/* all members below initialized via memset */
 	u8 __nfct_init_offset[0];
