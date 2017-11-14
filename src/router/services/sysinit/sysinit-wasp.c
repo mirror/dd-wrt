@@ -120,6 +120,7 @@ void start_sysinit(void)
 	time_t tm = 0;
 	struct ifreq ifr;
 	int s;
+	char mac[32];
 
 	if (!nvram_matchi("disable_watchdog", 1))
 		eval("watchdog");
@@ -214,7 +215,6 @@ void start_sysinit(void)
 		unsigned char buf2[256];
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
-		char mac[32];
 		unsigned int copy[256];
 		int i;
 		for (i = 0; i < 256; i++)
@@ -238,7 +238,6 @@ void start_sysinit(void)
 		if ((!memcmp(buf2, "\xff\xff\xff\xff\xff\xff", 6)
 		     || !memcmp(buf2, "\x00\x00\x00\x00\x00\x00", 6)))
 			goto out;
-		char mac[32];
 		unsigned int copy[256];
 		int i;
 		for (i = 0; i < 256; i++)
@@ -363,7 +362,6 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 6; i++)
 			putc(getc(fp), out);
-		char mac[6];
 		char eabuf[32];
 		char macaddr[32];
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
@@ -394,13 +392,13 @@ void start_sysinit(void)
 		int i;
 		for (i = 0; i < 6; i++)
 			putc(getc(fp), out);
-		char *mac = "\x00\x01\x02\x03\x04\x05";
+		memcpy(mac, "\x00\x01\x02\x03\x04\x05", 6);
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 			char eabuf[32];
 
 			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 			ioctl(s, SIOCGIFHWADDR, &ifr);
-			mac = (char *)ifr.ifr_hwaddr.sa_data;
+			memcpy(mac, ifr.ifr_hwaddr.sa_data, 6);
 			close(s);
 		}
 		for (i = 0; i < 6; i++)
