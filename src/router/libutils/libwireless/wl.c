@@ -2906,7 +2906,6 @@ int is_mvebu(const char *prefix)
 #ifdef HAVE_ATH10K
 int is_ath10k(const char *prefix)
 {
-	fprintf(stderr,"is ath10k %s\n",prefix);
 #ifdef HAVE_WIL6210
 	if (!strcmp(prefix, "giwifi"))
 		return 0;
