@@ -330,7 +330,7 @@ static int armada_xp_set_affinity(struct irq_data *d,
 	writel(reg, main_int_base + ARMADA_370_XP_INT_SOURCE_CTL(hwirq));
 	raw_spin_unlock(&irq_controller_lock);
 
-	cpumask_copy(irq_data_get_affinity_mask(d), mask_val);
+	cpumask_copy(irq_data_get_affinity_mask(d), cpumask_of(cpu));
 
 	return IRQ_SET_MASK_OK;
 }
