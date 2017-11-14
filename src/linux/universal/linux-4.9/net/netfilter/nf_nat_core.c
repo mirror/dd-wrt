@@ -678,16 +678,11 @@ EXPORT_SYMBOL_GPL(nf_nat_l3proto_unregister);
 /* No one using conntrack by the time this called. */
 static void nf_nat_cleanup_conntrack(struct nf_conn *ct)
 {
-	struct nf_conn_nat *nat = nf_ct_ext_find(ct, NF_CT_EXT_NAT);
-
-	if (!nat)
-		return;
-
-	NF_CT_ASSERT(ct->status & IPS_SRC_NAT_DONE);
-
-	spin_lock_bh(&nf_nat_lock);
-	hlist_del_rcu(&ct->nat_bysource);
-	spin_unlock_bh(&nf_nat_lock);
+	if (ct->status & IPS_SRC_NAT_DONE) {
+		spin_lock_bh(&nf_nat_lock);
+		hlist_del_rcu(&ct->nat_bysource);
+		spin_unlock_bh(&nf_nat_lock);
+	}
 }
 
 static struct nf_ct_ext_type nat_extend __read_mostly = {
