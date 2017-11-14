@@ -870,7 +870,7 @@ int has_greenfield(char *interface)
 	INITVALUECACHEi(interface);
 	char *htcaps = mac80211_get_caps(interface, 1, 1);
 	if (strstr(htcaps, "[GF]")) {
-		ret = 0;
+		ret = 1;
 	}
 	free(htcaps);
 	EXITVALUECACHE();
@@ -1560,20 +1560,12 @@ static int get_ht_mcs(const __u8 *mcs)
 	unsigned int tx_max_num_spatial_streams, max_rx_supp_data_rate;
 	bool tx_mcs_set_defined, tx_mcs_set_equal, tx_unequal_modulation;
 	max_rx_supp_data_rate = ((mcs[10] >> 8) & ((mcs[11] & 0x3) << 8));
-	tx_mcs_set_defined = ! !(mcs[12] & (1 << 0));
+	tx_mcs_set_defined = !!(mcs[12] & (1 << 0));
 	tx_mcs_set_equal = !(mcs[12] & (1 << 1));
 	tx_max_num_spatial_streams = ((mcs[12] >> 2) & 3) + 1;
-	tx_unequal_modulation = ! !(mcs[12] & (1 << 4));
+	tx_unequal_modulation = !!(mcs[12] & (1 << 4));
 	/* XXX: else see 9.6.0e.5.3 how to get this I think */
-	if (tx_mcs_set_defined) {
-		if (tx_mcs_set_equal) {
-			return (get_max_mcs_index(mcs));
-		} else {
-			return (get_max_mcs_index(mcs));
-		}
-	} else {
-		return (get_max_mcs_index(mcs));
-	}
+	return get_max_mcs_index(mcs);
 }
 
 static int get_vht_mcs(__u32 capa, const __u8 *mcs)
@@ -1597,7 +1589,6 @@ static int get_vht_mcs(__u32 capa, const __u8 *mcs)
 			break;
 		}
 	}
-//      fprintf(stderr,"vht mcs %d\n",latest);
 	return latest;
 }
 
