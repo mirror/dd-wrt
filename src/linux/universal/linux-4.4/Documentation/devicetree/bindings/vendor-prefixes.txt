@@ -126,6 +126,7 @@ keymile	Keymile GmbH
 kinetic Kinetic Technologies
 lacie	LaCie
 lantiq	Lantiq Semiconductor
+lego	LEGO Systems A/S
 lenovo	Lenovo Group Ltd.
 lg	LG Corporation
 linux	Linux-specific binding
