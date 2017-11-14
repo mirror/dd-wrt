@@ -60,6 +60,27 @@ static struct wifi_channels *getcache(const char *ifname, const char *country)
 	return NULL;
 }
 
+#ifdef HAVE_WIL6210
+
+#define INITVALUECACHEi(prefix) \
+	static int devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 }; \
+	int dn, ret = 0; \
+	if (!strcmp(prefix,"giwifi")) \
+		dn = 2; \
+	else \
+		sscanf(prefix, "ath%d", &dn); \
+	if (dn > 7 || devs[dn] == -1) {
+
+#define INITVALUECACHE() \
+	static int devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 }; \
+	int dn, ret = 0; \
+	if (!strcmp(prefix,"giwifi")) \
+		dn = 2; \
+	else \
+		sscanf(prefix, "ath%d", &dn); \
+	if (dn > 7 || devs[dn] == -1) {
+#else
+
 #define INITVALUECACHEi(prefix) \
 	static int devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 }; \
 	int dn, ret = 0; \
@@ -72,6 +93,8 @@ static struct wifi_channels *getcache(const char *ifname, const char *country)
 	sscanf(prefix, "ath%d", &dn); \
 	if (dn > 7 || devs[dn] == -1) {
 
+
+#endif
 #define EXITVALUECACHE() \
 	} else { \
 		return devs[dn]; \
