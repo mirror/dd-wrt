@@ -550,8 +550,8 @@ cmd_exec(a_uint32_t *arg_val, int cmd_index, int cmd_index_sub)
 
     if(rtn != SW_OK)
         cmd_print_error(rtn);
-    else
-        dprintf("\noperate done.\n\n");
+///    else
+//        dprintf("\noperate done.\n\n");
 
     return 0;
 }
@@ -579,7 +579,7 @@ cmd_socket_init()
     rv = ssdk_init(0, &init_cfg);
     if (SW_OK == rv)
     {
-        dprintf("\n SSDK Init OK!");
+        //dprintf("\n SSDK Init OK!");
     }
     else
     {
