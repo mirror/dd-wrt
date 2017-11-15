@@ -793,6 +793,7 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 		cap = nla_get_u32(caps);
 		unsigned int bfantenna = (cap >> 13) & 0x7;
 		unsigned int sodimension = (cap >> 16) & 0x7;
+#if 0
 		if (bfantenna & 4)
 			bfantenna &= 4;
 		if (bfantenna & 2)
@@ -802,6 +803,7 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 			sodimension &= 4;
 		if (sodimension & 2)
 			sodimension &= 2;
+#endif
 		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s[MAX-A-MPDU-LEN-EXP%d]%s%s%s%s%s%s", (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : "")
 			 , (((cap & VHT_CAP_SHORT_GI_80) && shortgi && has5ghz && vht80) ? "[SHORT-GI-80]" : "")
 			 , (((cap & VHT_CAP_SHORT_GI_160) && shortgi && has5ghz && vht160) ? "[SHORT-GI-160]" : "")
