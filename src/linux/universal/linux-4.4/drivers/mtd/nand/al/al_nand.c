@@ -948,7 +948,7 @@ static int al_nand_probe(struct platform_device *pdev)
 		mtd->oobsize,
 		dev_ext_props.eccIsEnabled,
 		(nand_dat->ecc_config.spareAreaOffset - dev_ext_props.pageSize));
-
+	mtd->oobavail = mtd->oobsize;
 	if (0 != al_nand_dev_config(
 				&nand_dat->nand_obj,
 				&device_properties,
