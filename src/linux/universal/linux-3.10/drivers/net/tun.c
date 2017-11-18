@@ -2059,6 +2059,10 @@ static long __tun_chr_ioctl(struct file *file, unsigned int cmd,
 			ret = -EFAULT;
 			break;
 		}
+		if (sndbuf <= 0) {
+			ret = -EINVAL;
+			break;
+		}
 
 		tun->sndbuf = sndbuf;
 		tun_set_sndbuf(tun);
