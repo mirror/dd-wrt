@@ -1019,6 +1019,24 @@ int internal_getRouterBrand()
 	setRouter("CORENET X86i");
 	return ROUTER_BOARD_X86;
 #else
+	char name[64];
+	FILE *fp = fopen("/sys/devices/virtual/dmi/id/board_vendor", "rb");
+	if (!fp)
+		goto generic;
+	int len = fread(name, 1, sizeof(name) - 1, fp);
+	if (len < 0)
+		goto generic;
+	FILE *fp = fopen("/sys/devices/virtual/dmi/id/board_name", "rb");
+	if (!fp)
+		goto generic;
+	name[len] = 0;
+	len = fread(&name[len + 1], 1, sizeof(name) - (len + 2), fp);
+	if (len < 0)
+		goto generic;
+	name[len] = 0;
+	setRouter(name);
+	return ROUTER_BOARD_X86;
+      generic:;
 	setRouter("Generic X86");
 	return ROUTER_BOARD_X86;
 #endif
