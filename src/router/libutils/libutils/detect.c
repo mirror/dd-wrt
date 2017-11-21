@@ -1026,7 +1026,7 @@ int internal_getRouterBrand()
 	int len = fread(name, 1, sizeof(name) - 1, fp);
 	if (len < 0)
 		goto generic;
-	FILE *fp = fopen("/sys/devices/virtual/dmi/id/board_name", "rb");
+	fp = fopen("/sys/devices/virtual/dmi/id/board_name", "rb");
 	if (!fp)
 		goto generic;
 	name[len] = 0;
