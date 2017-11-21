@@ -23,8 +23,8 @@ END-INFO-DIR-ENTRY
    This file documents the Quagga Software Routing Suite which manages
 common TCP/IP routing protocols.
 
-   This is Edition 1.2.1, last updated 10 March 2017 of 'The Quagga
-Manual', for Quagga Version 1.2.1.
+   This is Edition 1.2.2, last updated 3 October 2017 of 'The Quagga
+Manual', for Quagga Version 1.2.2.
 
    Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
@@ -579,9 +579,9 @@ Family == IP version 6
      |      BGP Attribute [variable length]    			    |
      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-   BGP4 Attribute must not contain MP_UNREACH_NLRI.	If BGP Attribute has
-MP_REACH_NLRI field, it must has	zero length NLRI, e.g., MP_REACH_NLRI
-has only Address	Family, SAFI and next-hop values.
+   BGP4 Attribute must not contain MP_UNREACH_NLRI. If BGP Attribute has
+MP_REACH_NLRI field, it must has zero length NLRI, e.g., MP_REACH_NLRI
+has only Address Family, SAFI and next-hop values.
 
    If 'type' is PROTOCOL_BGP4MP and 'subtype' is BGP4MP_SNAPSHOT,
 

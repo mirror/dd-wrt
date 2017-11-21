@@ -15,19 +15,6 @@
 #include "nhrp_protocol.h"
 
 static int nhrp_nhs_resolve(struct thread *t);
-
-struct nhrp_registration {
-	struct list_head reglist_entry;
-	struct thread *t_register;
-	struct nhrp_nhs *nhs;
-	struct nhrp_reqid reqid;
-	unsigned int timeout;
-	unsigned mark : 1;
-	union sockunion proto_addr;
-	struct nhrp_peer *peer;
-	struct notifier_block peer_notifier;
-};
-
 static int nhrp_reg_send_req(struct thread *t);
 
 static void nhrp_reg_reply(struct nhrp_reqid *reqid, void *arg)
@@ -176,7 +163,7 @@ static int nhrp_reg_send_req(struct thread *t)
 
 	zb = zbuf_alloc(1400);
 	hdr = nhrp_packet_push(zb, NHRP_PACKET_REGISTRATION_REQUEST, &nifp->nbma, &if_ad->addr, dst_proto);
-	hdr->hop_count = 0;
+	hdr->hop_count = 1;
 	if (!(if_ad->flags & NHRP_IFF_REG_NO_UNIQUE))
 		hdr->flags |= htons(NHRP_FLAG_REGISTRATION_UNIQUE);
 
@@ -194,7 +181,7 @@ static int nhrp_reg_send_req(struct thread *t)
 	hdr->flags |= htons(NHRP_FLAG_REGISTRATION_NAT);
 	ext = nhrp_ext_push(zb, hdr, NHRP_EXTENSION_NAT_ADDRESS);
 	cie = nhrp_cie_push(zb, NHRP_CODE_SUCCESS, &nifp->nbma, &if_ad->addr);
-	cie->prefix_length = 8 * sockunion_get_addrlen(&nifp->nbma);
+	cie->prefix_length = 8 * sockunion_get_addrlen(&if_ad->addr);
 	nhrp_ext_complete(zb, ext);
 
 	nhrp_packet_complete(zb, hdr);
@@ -365,5 +352,20 @@ void nhrp_nhs_terminate(void)
 			list_for_each_entry_safe(nhs, tmp, &nifp->afi[afi].nhslist_head, nhslist_entry)
 				nhrp_nhs_free(nhs);
 		}
+	}
+}
+
+void nhrp_nhs_foreach(struct interface *ifp, afi_t afi, void (*cb)(struct nhrp_nhs *, struct nhrp_registration *, void *), void *ctx)
+{
+	struct nhrp_interface *nifp = ifp->info;
+	struct nhrp_nhs *nhs;
+	struct nhrp_registration *reg;
+
+	list_for_each_entry(nhs, &nifp->afi[afi].nhslist_head, nhslist_entry) {
+		if (!list_empty(&nhs->reglist_head)) {
+			list_for_each_entry(reg, &nhs->reglist_head, reglist_entry)
+				cb(nhs, reg, ctx);
+		} else
+			cb(nhs, 0, ctx);
 	}
 }
