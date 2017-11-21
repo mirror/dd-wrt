@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.62-rc1 Kernel Configuration
+# Linux/mips 4.9.64-rc1 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -2568,6 +2568,7 @@ CONFIG_CMDLINE_OVERRIDE=y
 # Security options
 #
 CONFIG_KEYS=y
+CONFIG_KEYS_COMPAT=y
 # CONFIG_PERSISTENT_KEYRINGS is not set
 # CONFIG_BIG_KEYS is not set
 CONFIG_ENCRYPTED_KEYS=y
