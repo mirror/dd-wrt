@@ -1029,7 +1029,7 @@ int internal_getRouterBrand()
 	fp = fopen("/sys/devices/virtual/dmi/id/board_name", "rb");
 	if (!fp)
 		goto generic;
-	name[len] = 0;
+	name[len] = 0x20;
 	len = fread(&name[len + 1], 1, sizeof(name) - (len + 2), fp);
 	if (len < 0)
 		goto generic;
