@@ -248,6 +248,8 @@ int nhrp_peer_check(struct nhrp_peer *p, int establish)
 		return 0;
 	if (p->requested)
 		return 0;
+	if (!nifp->ipsec_profile)
+		return 0;
 	if (sockunion_family(&vc->local.nbma) == AF_UNSPEC)
 		return 0;
 
@@ -381,11 +383,12 @@ static void nhrp_handle_registration_request(struct nhrp_packet_parser *p)
 	struct nhrp_extension_header *ext;
 	struct nhrp_cache *c;
 	union sockunion cie_nbma, cie_proto, *proto_addr, *nbma_addr, *nbma_natoa;
-	int holdtime, natted = 0;
+	int holdtime, prefix_len, hostprefix_len, natted = 0;
 	size_t paylen;
 	void *pay;
 
 	debugf(NHRP_DEBUG_COMMON, "Parsing and replying to Registration Req");
+	hostprefix_len = 8 * sockunion_get_addrlen(&p->if_ad->addr);
 
 	if (!sockunion_same(&p->src_nbma, &p->peer->vc->remote.nbma))
 		natted = 1;
@@ -407,13 +410,17 @@ static void nhrp_handle_registration_request(struct nhrp_packet_parser *p)
 	zbuf_init(&payload, pay, paylen, paylen);
 
 	while ((cie = nhrp_cie_pull(&payload, hdr, &cie_nbma, &cie_proto)) != NULL) {
-		if (cie->prefix_length != 0xff && !(p->hdr->flags & htons(NHRP_FLAG_REGISTRATION_UNIQUE))) {
+		prefix_len = cie->prefix_length;
+		if (prefix_len == 0 || prefix_len >= hostprefix_len)
+			prefix_len = hostprefix_len;
+
+		if (prefix_len != hostprefix_len && !(p->hdr->flags & htons(NHRP_FLAG_REGISTRATION_UNIQUE))) {
 			cie->code = NHRP_CODE_BINDING_NON_UNIQUE;
 			continue;
 		}
 
 		/* We currently support only unique prefix registrations */
-		if (cie->prefix_length != 0xff) {
+		if (prefix_len != hostprefix_len) {
 			cie->code = NHRP_CODE_ADMINISTRATIVELY_PROHIBITED;
 			continue;
 		}
@@ -729,6 +736,15 @@ static void nhrp_packet_debug(struct zbuf *zb, const char *dir)
 		reply ? buf[0] : buf[1]);
 }
 
+static int proto2afi(uint16_t proto)
+{
+	switch (proto) {
+	case ETH_P_IP: return AFI_IP;
+	case ETH_P_IPV6: return AFI_IP6;
+	}
+	return AF_UNSPEC;
+}
+
 struct nhrp_route_info {
 	int local;
 	struct interface *ifp;
@@ -748,7 +764,7 @@ void nhrp_peer_recv(struct nhrp_peer *p, struct zbuf *zb)
 	const char *info = NULL;
 	union sockunion *target_addr;
 	unsigned paylen, extoff, extlen, realsize;
-	afi_t afi;
+	afi_t nbma_afi, proto_afi;
 
 	debugf(NHRP_DEBUG_KERNEL, "PACKET: Recv %s -> %s",
 		sockunion2str(&vc->remote.nbma, buf[0], sizeof buf[0]),
@@ -776,20 +792,21 @@ void nhrp_peer_recv(struct nhrp_peer *p, struct zbuf *zb)
 	pp.hdr = hdr;
 	pp.peer = p;
 
-	afi = htons(hdr->afnum);
+	nbma_afi = htons(hdr->afnum);
+	proto_afi = proto2afi(htons(hdr->protocol_type));
 	if (hdr->type > ZEBRA_NUM_OF(packet_types) ||
 	    hdr->version != NHRP_VERSION_RFC2332 ||
-	    afi >= AFI_MAX ||
+	    nbma_afi >= AFI_MAX || proto_afi == AF_UNSPEC ||
 	    packet_types[hdr->type].type == PACKET_UNKNOWN ||
 	    htons(hdr->packet_size) > realsize) {
-		zlog_info("From %s: error: packet type %d, version %d, AFI %d, size %d (real size %d)",
+		zlog_info("From %s: error: packet type %d, version %d, AFI %d, proto %x, size %d (real size %d)",
 			   sockunion2str(&vc->remote.nbma, buf[0], sizeof buf[0]),
-			   (int) hdr->type, (int) hdr->version, (int) afi,
-			   (int) htons(hdr->packet_size),
-			   (int) realsize);
+			   (int) hdr->type, (int) hdr->version,
+			   (int) nbma_afi, (int) htons(hdr->protocol_type),
+			   (int) htons(hdr->packet_size), (int) realsize);
 		goto drop;
 	}
-	pp.if_ad = &((struct nhrp_interface *)ifp->info)->afi[afi];
+	pp.if_ad = &((struct nhrp_interface *)ifp->info)->afi[proto_afi];
 
 	extoff = htons(hdr->extension_offset);
 	if (extoff) {
@@ -805,7 +822,7 @@ void nhrp_peer_recv(struct nhrp_peer *p, struct zbuf *zb)
 	extlen = zbuf_used(zb);
 	zbuf_init(&pp.extensions, zbuf_pulln(zb, extlen), extlen, extlen);
 
-	if (!nifp->afi[afi].network_id) {
+	if (!nifp->afi[proto_afi].network_id) {
 		info = "nhrp not enabled";
 		goto drop;
 	}
