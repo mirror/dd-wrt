@@ -2522,7 +2522,7 @@ rip_update_process (int route_type)
 	        {
 		  if (vsend & RIPv1)
 		    rip_update_interface (connected, RIPv1, route_type);
-		  if ((vsend & RIPv2) && if_is_multicast(ifp))
+		  if (vsend & RIPv2) 
 		    rip_update_interface (connected, RIPv2, route_type);
 		}
 	    }
