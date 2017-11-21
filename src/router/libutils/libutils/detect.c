@@ -1034,6 +1034,8 @@ int internal_getRouterBrand()
 	if (len2 < 0)
 		goto generic;
 	name[len + len2 + 1] = 0;
+	setRouter(name);
+	return ROUTER_BOARD_X86;
       generic:;
 	setRouter("Generic X86");
 	return ROUTER_BOARD_X86;
