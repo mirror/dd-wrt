@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3723 | brainslayer | 2017-11-21 10:37:40 +0100 (Tue, 21 Nov 2017) | 1 line
+
+enforce greater wpa2 rekeying
+------------------------------------------------------------------------
 r3722 | brainslayer | 2017-11-20 17:07:29 +0100 (Mon, 20 Nov 2017) | 1 line
 
 mac80211: properly free requested-but-not-started TX agg sessions
