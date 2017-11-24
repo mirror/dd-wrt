@@ -2841,7 +2841,6 @@ int has_spectralscanning(const char *prefix)
 int has_airtime_fairness(char *prefix)
 {
 	INITVALUECACHE();
-	int mask = 0;
 	int devnum;
 	char *globstring;
 	devnum = get_ath9k_phy_ifname(prefix);
@@ -2850,20 +2849,18 @@ int has_airtime_fairness(char *prefix)
 	asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/airtime_flags", devnum);
 	FILE *fp = fopen(globstring, "rb");
 	free(globstring);
-	if (!fp)
-		mask |= 1;
-	else {
+	if (fp) {
 		fclose(fp);
-		RETURNVALUE(!mask);
+		RETURNVALUE(1);
 	}
 	asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath10k/atf", devnum);
 	fp = fopen(globstring, "rb");
 	free(globstring);
-	if (!fp)
-		mask |= 1;
-	else
+	if (fp) {
 		fclose(fp);
-	RETURNVALUE(!mask);
+		RETURNVALUE(1);
+	} 
+	RETURNVALUE(0);
 	EXITVALUECACHE();
 	return ret;
 }
