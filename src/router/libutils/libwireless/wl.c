@@ -2530,7 +2530,7 @@ int has_mimo(char *prefix)
 	char mimo[32];
 	sprintf(mimo, "%s_phytypes", prefix);
 	char *phy = nvram_safe_get(mimo);
-	if (contains(phy, 'n') || contains(phy, 'h') || contains(phy, 's') || contains(phy, 'v'))
+	if (strchr(phy, 'n') || strchr(phy, 'h') || strchr(phy, 's') || strchr(phy, 'v'))
 		return 1;
 	else
 		return 0;
@@ -2549,7 +2549,7 @@ int has_ac(char *prefix)
 	char mimo[32];
 	sprintf(mimo, "%s_phytypes", prefix);
 	char *phy = nvram_safe_get(mimo);
-	if (contains(phy, 'v'))
+	if (strchr(phy, 'v'))
 		return 1;
 	else
 		return 0;
