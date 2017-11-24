@@ -1167,10 +1167,10 @@ static void ipgrp_chain(int seq, unsigned int mark, int urlenable)
 		return;
 
 	foreach(var1, wordlist1, next1) {
-		if (contains(var1, '-')) {
+		if (strchr(var1, '-')) {
 			char *end = var1;
 			char *start = strsep(&end, "-");
-			if (!contains(start, '.') || !contains(end, '.')) {
+			if (!strchr(start, '.') || !strchr(end, '.')) {
 				if (atoi(start) == 0 && atoi(end) == 0)
 					continue;
 				//convert old style 
