@@ -740,7 +740,7 @@ static void save_secprefix(webs_t wp, char *prefix)
 	char p2[80];
 
 	strcpy(p2, prefix);
-	if (contains(prefix, '.'))
+	if (strchr(prefix, '.'))
 		rep(p2, '.', 'X');	// replace invalid characters for sub ifs
 
 #ifdef HAVE_WPA_SUPPLICANT
@@ -4040,7 +4040,7 @@ void ddns_save_value(webs_t wp)
 	if (strcmp(passwd, TMP_PASSWD)) {
 		nvram_set(_passwd, passwd);
 	}
-	if (gethash && !contains(hostname, ',')) {
+	if (gethash && !strchr(hostname, ',')) {
 		char hostn[128];
 		char *hash = request_freedns(username, nvram_safe_get(_passwd));
 
