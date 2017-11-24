@@ -3422,6 +3422,7 @@ int sock_queue_err_skb(struct sock *sk, struct sk_buff *skb)
 	    (unsigned int)sk->sk_rcvbuf)
 		return -ENOMEM;
 
+	ipvs_reset(skb);
 	skb_orphan(skb);
 	skb->sk = sk;
 	skb->destructor = sock_rmem_free;
