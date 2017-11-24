@@ -1471,20 +1471,6 @@ void getIfLists(char *eths, int size)
 
 }
 
-int contains(const char *string, char value)
-{
-	if (string == NULL)
-		return 0;
-	int len = strlen(string);
-	int i;
-
-	for (i = 0; i < len; i++) {
-		if (string[i] == value)
-			return 1;
-	}
-	return 0;
-}
-
 static uint32_t str_to_addr(const char *addr)
 {
 	uint32_t split[4];
