@@ -34,10 +34,9 @@ python-install:
 	make -C python install DESTDIR=$(INSTALLDIR)/python
 	rm -rf $(INSTALLDIR)/python/usr/include
 	rm -rf $(INSTALLDIR)/python/usr/share
-	rm -f $(INSTALLDIR)/python/usr/lib/python3.4/config-3.4m/*.a
+	rm -f $(INSTALLDIR)/python/usr/lib/python3.6/config-3.6m/*.a
 	-rm -rf $(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1
-#18M...
-	rm -rf $(INSTALLDIR)/python/usr/lib/python3.4/test
+	rm -rf $(INSTALLDIR)/python/usr/lib/python3.6/test
 
 	rm -rf $(INSTALLDIR)/libffi/usr/lib/pkgconfig
 	rm -rf $(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1
