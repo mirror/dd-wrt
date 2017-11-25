@@ -227,8 +227,6 @@ static int zebra_ospf_init(void)
 		strcat(eths, eths2);
 		bzero(bufferif, 256);
 		getIfListB(bufferif, NULL, 1, 1);
-		strcat(bufferif, " ");
-		strcat(bufferif, "br0");
 #ifndef HAVE_MADWIFI
 		int cnt = get_wl_instances();
 		int c;
@@ -325,7 +323,7 @@ static int zebra_ospf_init(void)
 		}
 
 		foreach(var, bufferif, next) {
-			if (!strcmp(get_wan_face(), var)) {
+			if (strcmp(get_wan_face(),"br0") && !strcmp(get_wan_face(), var)) {
 				char *ipaddr = nvram_safe_get("wan_ipaddr");
 				char *netmask = nvram_safe_get("wan_netmask");
 				if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
