@@ -295,7 +295,7 @@ static int zebra_ospf_init(void)
 			if (!strcmp(get_wan_face(), var)) {
 				char *ipaddr = nvram_safe_get("wan_ipaddr");
 				char *netmask = nvram_safe_get("wan_netmask");
-				fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, get_net(netmask));
+				fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
 				continue;
 			}
 
@@ -303,27 +303,27 @@ static int zebra_ospf_init(void)
 				char *ipaddr = nvram_nget("%s_ipaddr", var);
 				char *netmask = nvram_nget("%s_netmask", var);
 				if (strlen(ipaddr) > 0)
-					fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, get_net(netmask));
+					fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
 			}
 		}
 		foreach(var, bufferif, next) {
 			if (!strcmp(get_wan_face(), var)) {
 				char *ipaddr = nvram_safe_get("wan_ipaddr");
 				char *netmask = nvram_safe_get("wan_netmask");
-				fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, get_net(netmask));
+				fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
 				continue;
 			}
 			if (!strcmp("br0", var)) {
 				char *ipaddr = nvram_safe_get("lan_ipaddr");
 				char *netmask = nvram_safe_get("lan_netmask");
-				fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, get_net(netmask));
+				fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
 				continue;
 			}
 
 			char *ipaddr = nvram_nget("%s_ipaddr", var);
 			char *netmask = nvram_nget("%s_netmask", var);
 			if (strlen(ipaddr) > 0)
-				fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, get_net(netmask));
+				fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
 		}
 		fprintf(fp, " no default-information originate\n");
 		char *hostname = nvram_safe_get("router_name");
@@ -574,7 +574,7 @@ static int zebra_bgp_init(void)
 		fwritenvram("bgpd_conf", fp);
 	} else {
 		fprintf(fp, "router bgp %s\n", nvram_safe_get("routing_bgp_as"));
-		fprintf(fp, "  network %s/%d\n", nvram_safe_get("lan_ipaddr"), get_net(nvram_safe_get("lan_netmask")));
+		fprintf(fp, "  network %s/%d\n", nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")));
 		if (wf && strlen(wf) > 0 && strcmp(get_wan_ipaddr(), "0.0.0.0"))
 			fprintf(fp, "  network %s/%s\n", get_wan_ipaddr(), nvram_safe_get("wan_netmask"));
 		fprintf(fp, "neighbor %s local-as %s\n", lf, nvram_safe_get("routing_bgp_as"));
