@@ -1055,7 +1055,6 @@ int sv_valid_range(char *value, int low, int high);
 int sv_valid_statics(char *value);
 void get_network(char *ipaddr, char *netmask);
 int isbridge(char *name);
-int get_net(char *netmask);
 void get_broadcast(char *ipaddr, char *netmask);
 int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *genmask);
 int route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
