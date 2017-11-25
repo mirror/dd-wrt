@@ -278,10 +278,15 @@ static int zebra_ospf_init(void)
 		foreach(var, eths, next) {
 			if (!strcmp("etherip0", var))
 				continue;
-			fprintf(fp, "interface %s\n", var);
+			char *ipaddr = nvram_nget("%s_ipaddr", var);
+			if (nvram_nmatch("0", "%s_bridged", var) && strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
+				fprintf(fp, "interface %s\n", var);
+
 		}
 		foreach(var, bufferif, next) {
-			fprintf(fp, "interface %s\n", var);
+			char *ipaddr = nvram_nget("%s_ipaddr", var);
+			if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
+				fprintf(fp, "interface %s\n", var);
 		}
 
 		fprintf(fp, "router ospf\n");
@@ -295,36 +300,44 @@ static int zebra_ospf_init(void)
 			if (!strcmp(get_wan_face(), var)) {
 				char *ipaddr = nvram_safe_get("wan_ipaddr");
 				char *netmask = nvram_safe_get("wan_netmask");
-				fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
+				if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
+					fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
+
 				continue;
 			}
 
-			if (nvram_nmatch("1", "%s_bridged", var)) {
+			if (nvram_nmatch("0", "%s_bridged", var)) {
 				char *ipaddr = nvram_nget("%s_ipaddr", var);
 				char *netmask = nvram_nget("%s_netmask", var);
-				if (strlen(ipaddr) > 0)
+				if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
 					fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
 			}
 		}
+
 		foreach(var, bufferif, next) {
 			if (!strcmp(get_wan_face(), var)) {
 				char *ipaddr = nvram_safe_get("wan_ipaddr");
 				char *netmask = nvram_safe_get("wan_netmask");
-				fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
+				if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
+					fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
+
 				continue;
 			}
 			if (!strcmp("br0", var)) {
 				char *ipaddr = nvram_safe_get("lan_ipaddr");
 				char *netmask = nvram_safe_get("lan_netmask");
-				fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
+				if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
+					fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
+
 				continue;
 			}
 
 			char *ipaddr = nvram_nget("%s_ipaddr", var);
 			char *netmask = nvram_nget("%s_netmask", var);
-			if (strlen(ipaddr) > 0)
+			if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
 				fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
 		}
+
 		fprintf(fp, " no default-information originate\n");
 		char *hostname = nvram_safe_get("router_name");
 		if (strlen(hostname))
@@ -337,6 +350,7 @@ static int zebra_ospf_init(void)
 
 		fprintf(fp, "!\nline vty\n!\n");
 	}
+
 	fclose(fp);
 	return 1;
 }
