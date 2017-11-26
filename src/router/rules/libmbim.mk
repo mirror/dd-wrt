@@ -1,5 +1,5 @@
 GLIB_GIO=-lgio-2.0
-libmbim-configure:
+libmbim-configure: glib20
 	cd libmbim && ./configure --enable-more-warnings=no --enable-static --disable-shared --libexecdir=/usr/lib --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_realloc=realloc -Drpl_malloc=malloc -I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib/gobject -I$(TOP)/_staging/usr/include -liconv -lintl -lpthread -DMESSAGE_ENABLE_TRACE" \
 	LDFLAGS="-L$(TOP)/glib20/gettext/gettext-runtime/intl/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/glib20/libglib/gobject/.libs -L$(TOP)/glib20/libglib/gthread/.libs -L$(TOP)/glib20/libglib/gio/.libs -L$(TOP)/_staging/usr/lib" \
 	LIBMBIM_GLIB_CFLAGS="$(COPTS) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_realloc=realloc -Drpl_malloc=malloc -I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/glib20/libglib/gmodule -pthread" \
@@ -9,7 +9,7 @@ libmbim-configure:
 	MBIMPROXY_CFLAGS="$(COPTS) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_realloc=realloc -Drpl_malloc=malloc -I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -I$(TOP)/glib20/libglib/gmodule -pthread" \
 	MBIMPROXY_LIBS="-pthread -lpthread -L$(TOP)/glib20/libglib/glib/.libs -L$(TOP)/glib20/libglib/gio/.libs -L$(TOP)/glib20/libglib/gobject/.libs  -L$(TOP)/glib20/libglib/glib/.libs -L$(TOP)/glib20/libglib/gmodule/.libs -L$(TOP)/glib20/libglib/gthread/.libs $(GLIB_GIO) -lgobject-2.0 -lglib-2.0"
 
-libmbim:
+libmbim: glib20
 	$(MAKE) -C libmbim
 
 libmbim-clean:
