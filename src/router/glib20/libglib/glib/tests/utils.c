@@ -391,6 +391,7 @@ test_hostname (void)
   name = g_get_host_name ();
 
   g_assert (name != NULL);
+  g_assert_true (g_utf8_validate (name, -1, NULL));
 }
 
 #ifdef G_OS_UNIX
@@ -475,6 +476,31 @@ test_desktop_special_dir (void)
   g_reload_user_special_dirs_cache ();
   dir2 = g_get_user_special_dir (G_USER_DIRECTORY_DESKTOP);
   g_assert (dir2 != NULL);
+}
+
+static gboolean
+source_test (gpointer data)
+{
+  g_assert_not_reached ();
+  return G_SOURCE_REMOVE;
+}
+
+static void
+test_clear_source (void)
+{
+  guint id;
+
+  id = g_idle_add (source_test, NULL);
+  g_assert_cmpuint (id, >, 0);
+
+  g_clear_handle_id (&id, g_source_remove);
+  g_assert_cmpuint (id, ==, 0);
+
+  id = g_timeout_add (100, source_test, NULL);
+  g_assert_cmpuint (id, >, 0);
+
+  g_clear_handle_id (&id, g_source_remove);
+  g_assert_cmpuint (id, ==, 0);
 }
 
 static void
@@ -631,6 +657,7 @@ main (int   argc,
   g_test_add_func ("/utils/specialdir/desktop", test_desktop_special_dir);
   g_test_add_func ("/utils/clear-pointer", test_clear_pointer);
   g_test_add_func ("/utils/take-pointer", test_take_pointer);
+  g_test_add_func ("/utils/clear-source", test_clear_source);
   g_test_add_func ("/utils/misc-mem", test_misc_mem);
   g_test_add_func ("/utils/nullify", test_nullify);
   g_test_add_func ("/utils/atexit", test_atexit);

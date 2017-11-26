@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -61,7 +61,10 @@ set_up_mock_xdg_runtime_dir (void)
 
   /* alters tmpdir in-place */
   if (g_mkdtemp_full (tmpdir, 0700) == NULL)
-    g_error ("g_mkdtemp_full: %s", g_strerror (errno));
+    {
+      int errsv = errno;
+      g_error ("g_mkdtemp_full: %s", g_strerror (errsv));
+    }
 
   mock_bus_path = g_strconcat (tmpdir, "/bus", NULL);
   addr = g_unix_socket_address_new (mock_bus_path);
@@ -81,10 +84,16 @@ tear_down_mock_xdg_runtime_dir (void)
   g_assert_no_error (error);
 
   if (g_unlink (mock_bus_path) < 0)
-    g_error ("g_unlink(\"%s\"): %s", mock_bus_path, g_strerror (errno));
+    {
+      int errsv = errno;
+      g_error ("g_unlink(\"%s\"): %s", mock_bus_path, g_strerror (errsv));
+    }
 
   if (g_rmdir (tmpdir) < 0)
-    g_error ("g_rmdir(\"%s\"): %s", tmpdir, g_strerror (errno));
+    {
+      int errsv = errno;
+      g_error ("g_rmdir(\"%s\"): %s", tmpdir, g_strerror (errsv));
+    }
 
   g_clear_object (&mock_bus);
   g_clear_pointer (&mock_bus_path, g_free);

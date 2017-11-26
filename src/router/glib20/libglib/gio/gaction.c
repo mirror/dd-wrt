@@ -1,10 +1,10 @@
 /*
  * Copyright © 2010 Codethink Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -269,7 +269,7 @@ g_action_get_name (GAction *action)
  * In the case that this function returns %NULL, you must not give any
  * #GVariant, but %NULL instead.
  *
- * Returns: (allow-none): the parameter type
+ * Returns: (nullable): the parameter type
  *
  * Since: 2.28
  **/
@@ -299,7 +299,7 @@ g_action_get_parameter_type (GAction *action)
  * then this function will return %NULL. In that case, g_action_get_state()
  * will return %NULL and you must not call g_action_change_state().
  *
- * Returns: (allow-none): the state type, if the action is stateful
+ * Returns: (nullable): the state type, if the action is stateful
  *
  * Since: 2.28
  **/
@@ -373,7 +373,7 @@ g_action_get_enabled (GAction *action)
 /**
  * g_action_activate:
  * @action: a #GAction
- * @parameter: (allow-none): the parameter to the activation
+ * @parameter: (nullable): the parameter to the activation
  *
  * Activates the action.
  *
@@ -542,7 +542,7 @@ bad_fmt:
 /**
  * g_action_print_detailed_name:
  * @action_name: a valid action name
- * @target_value: (allow-none): a #GVariant target value, or %NULL
+ * @target_value: (nullable): a #GVariant target value, or %NULL
  *
  * Formats a detailed action name from @action_name and @target_value.
  *

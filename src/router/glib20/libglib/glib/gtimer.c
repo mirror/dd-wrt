@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -491,7 +491,14 @@ g_time_val_from_iso8601 (const gchar *iso_date,
  * Use g_date_time_format() or g_strdup_printf() if a different
  * variation of ISO 8601 format is required.
  *
- * Returns: a newly allocated string containing an ISO 8601 date
+ * If @time_ represents a date which is too large to fit into a `struct tm`,
+ * %NULL will be returned. This is platform dependent, but it is safe to assume
+ * years up to 3000 are supported. The return value of g_time_val_to_iso8601()
+ * has been nullable since GLib 2.54; before then, GLib would crash under the
+ * same conditions.
+ *
+ * Returns: (nullable): a newly allocated string containing an ISO 8601 date,
+ *    or %NULL if @time_ was too large
  *
  * Since: 2.12
  */
@@ -504,12 +511,12 @@ g_time_val_to_iso8601 (GTimeVal *time_)
   struct tm tm_;
 #endif
   time_t secs;
-  
+
   g_return_val_if_fail (time_->tv_usec >= 0 && time_->tv_usec < G_USEC_PER_SEC, NULL);
 
- secs = time_->tv_sec;
+  secs = time_->tv_sec;
 #ifdef _WIN32
- tm = gmtime (&secs);
+  tm = gmtime (&secs);
 #else
 #ifdef HAVE_GMTIME_R
   tm = gmtime_r (&secs, &tm_);
@@ -517,6 +524,10 @@ g_time_val_to_iso8601 (GTimeVal *time_)
   tm = gmtime (&secs);
 #endif
 #endif
+
+  /* If the gmtime() call has failed, time_->tv_sec is too big. */
+  if (tm == NULL)
+    return NULL;
 
   if (time_->tv_usec != 0)
     {

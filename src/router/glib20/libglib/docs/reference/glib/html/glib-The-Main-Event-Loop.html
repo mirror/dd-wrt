@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>The Main Event Loop: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-core.html" title="GLib Core Application Support">
 <link rel="prev" href="glib-core.html" title="GLib Core Application Support">
@@ -265,7 +265,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
+<a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="glib-The-Main-Event-Loop.html#g-main-context-check" title="g_main_context_check ()">g_main_context_check</a> <span class="c_punctuation">()</span>
@@ -788,6 +788,22 @@
 <a class="link" href="glib-The-Main-Event-Loop.html#g-source-remove-by-user-data" title="g_source_remove_by_user_data ()">g_source_remove_by_user_data</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<span class="c_punctuation">(</span><a class="link" href="glib-The-Main-Event-Loop.html#GClearHandleFunc" title="GClearHandleFunc ()">*GClearHandleFunc</a><span class="c_punctuation">)</span> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="glib-The-Main-Event-Loop.html#g-clear-handle-id" title="g_clear_handle_id ()">g_clear_handle_id</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
 </tbody>
 </table></div>
 </div>
@@ -899,8 +915,8 @@ This is often used in GTK+ applications when showing modal dialog
 boxes. Note that event sources are associated with a particular
 <a class="link" href="glib-The-Main-Event-Loop.html#GMainContext" title="GMainContext"><span class="type">GMainContext</span></a>, and will be checked and dispatched for all main
 loops associated with that GMainContext.</p>
-<p>GTK+ contains wrappers of some of these functions, e.g. <a href="http://developer.gnome.org/gtk4/gtk4-General.html#gtk-main"><code class="function">gtk_main()</code></a>,
-<a href="http://developer.gnome.org/gtk4/gtk4-General.html#gtk-main-quit"><code class="function">gtk_main_quit()</code></a> and <a href="http://developer.gnome.org/gtk4/gtk4-General.html#gtk-events-pending"><code class="function">gtk_events_pending()</code></a>.</p>
+<p>GTK+ contains wrappers of some of these functions, e.g. <a href="../gtk4/gtk4-General.html#gtk-main"><code class="function">gtk_main()</code></a>,
+<a href="../gtk4/gtk4-General.html#gtk-main-quit"><code class="function">gtk_main_quit()</code></a> and <a href="../gtk4/gtk4-General.html#gtk-events-pending"><code class="function">gtk_events_pending()</code></a>.</p>
 <div class="refsect3">
 <a name="id-1.4.2.6.9"></a><h4>Creating new source types</h4>
 <p>One of the unusual features of the <a class="link" href="glib-The-Main-Event-Loop.html#GMainLoop" title="GMainLoop"><span class="type">GMainLoop</span></a> functionality
@@ -988,7 +1004,7 @@ g_main_loop_new (<em class="parameter"><code><a class="link" href="glib-The-Main
 <tr>
 <td class="parameter_name"><p>context</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-The-Main-Event-Loop.html#GMainContext" title="GMainContext"><span class="type">GMainContext</span></a>  (if <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>, the default context will be used). </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>is_running</p></td>
@@ -1404,7 +1420,7 @@ be interrupted for other reasons than an event source becoming ready.</p>
 <tr>
 <td class="parameter_name"><p>context</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-The-Main-Event-Loop.html#GMainContext" title="GMainContext"><span class="type">GMainContext</span></a> (if <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>, the default context will be used). </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>may_block</p></td>
@@ -1468,7 +1484,7 @@ g_main_context_pending (<em class="parameter"><code><a class="link" href="glib-T
 <tbody><tr>
 <td class="parameter_name"><p>context</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-The-Main-Event-Loop.html#GMainContext" title="GMainContext"><span class="type">GMainContext</span></a> (if <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>, the default context will be used). </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr></tbody>
 </table></div>
 </div>
@@ -1518,7 +1534,7 @@ wrong source.</p>
 <tr>
 <td class="parameter_name"><p>context</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-The-Main-Event-Loop.html#GMainContext" title="GMainContext"><span class="type">GMainContext</span></a> (if <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>, the default context will be used). </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>source_id</p></td>
@@ -1595,7 +1611,7 @@ the first one found will be returned.</p>
 <tr>
 <td class="parameter_name"><p>context</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-The-Main-Event-Loop.html#GMainContext" title="GMainContext"><span class="type">GMainContext</span></a> (if <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>, the default context will be used). </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>funcs</p></td>
@@ -1933,7 +1949,7 @@ of records that need to be stored.</p>
 <hr>
 <div class="refsect2">
 <a name="g-main-context-check"></a><h3>g_main_context_check ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="returnvalue">gboolean</span></a>
 g_main_context_check (<em class="parameter"><code><a class="link" href="glib-The-Main-Event-Loop.html#GMainContext" title="GMainContext"><span class="type">GMainContext</span></a> *context</code></em>,
                       <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> max_priority</code></em>,
                       <em class="parameter"><code><a class="link" href="glib-The-Main-Event-Loop.html#GPollFD" title="struct GPollFD"><span class="type">GPollFD</span></a> *fds</code></em>,
@@ -2130,7 +2146,7 @@ a typical event source will use <a class="link" href="glib-The-Main-Event-Loop.h
 <tr>
 <td class="parameter_name"><p>context</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-The-Main-Event-Loop.html#GMainContext" title="GMainContext"><span class="type">GMainContext</span></a> (or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> for the default context). </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>fd</p></td>
@@ -2346,7 +2362,7 @@ these checks all over your code, since there are doubtless many,
 many things that the user could do. Instead, you can use the
 following techniques:</p>
 <div class="orderedlist"><ol class="orderedlist" type="1">
-<li class="listitem"><p>Use <a href="http://developer.gnome.org/gtk4/GtkWidget.html#gtk-widget-set-sensitive"><code class="function">gtk_widget_set_sensitive()</code></a> or modal dialogs to prevent
+<li class="listitem"><p>Use <a href="../gtk4/GtkWidget.html#gtk-widget-set-sensitive"><code class="function">gtk_widget_set_sensitive()</code></a> or modal dialogs to prevent
 the user from interacting with elements while the main
 loop is recursing.</p></li>
 <li class="listitem"><p>Avoid main loop recursion in situations where you can't handle
@@ -2444,7 +2460,7 @@ loop (and may prevent this call from returning).</p>
 <tr>
 <td class="parameter_name"><p>context</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-The-Main-Event-Loop.html#GMainContext" title="GMainContext"><span class="type">GMainContext</span></a>, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>function</p></td>
@@ -2476,7 +2492,7 @@ g_main_context_invoke_full (<em class="parameter"><code><a class="link" href="gl
 invocation of <em class="parameter"><code>function</code></em>
 .</p>
 <p>This function is the same as <a class="link" href="glib-The-Main-Event-Loop.html#g-main-context-invoke" title="g_main_context_invoke ()"><code class="function">g_main_context_invoke()</code></a> except that it
-lets you specify the priority incase <em class="parameter"><code>function</code></em>
+lets you specify the priority in case <em class="parameter"><code>function</code></em>
  ends up being
 scheduled as an idle and also lets you give a <a class="link" href="glib-Datasets.html#GDestroyNotify" title="GDestroyNotify ()"><span class="type">GDestroyNotify</span></a> for <em class="parameter"><code>data</code></em>
 .</p>
@@ -2495,7 +2511,7 @@ thread or with any particular context acquired.</p>
 <tr>
 <td class="parameter_name"><p>context</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-The-Main-Event-Loop.html#GMainContext" title="GMainContext"><span class="type">GMainContext</span></a>, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>priority</p></td>
@@ -2518,7 +2534,7 @@ thread or with any particular context acquired.</p>
 <td class="parameter_name"><p>notify</p></td>
 <td class="parameter_description"><p> a function to call when <em class="parameter"><code>data</code></em>
 is no longer in use, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -2607,7 +2623,7 @@ ensure that no other asynchronous operations accidentally get
 started while the non-default context is active.</p>
 <p>Beware that libraries that predate this function may not correctly
 handle being used from a thread with a thread-default context. Eg,
-see <a href="../GFile.html#g-file-supports-thread-contexts"><code class="function">g_file_supports_thread_contexts()</code></a>.</p>
+see <a href="../gio/GFile.html#g-file-supports-thread-contexts"><code class="function">g_file_supports_thread_contexts()</code></a>.</p>
 <div class="refsect3">
 <a name="g-main-context-push-thread-default.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -2619,7 +2635,7 @@ see <a href="../GFile.html#g-file-supports-thread-contexts"><code class="functio
 <tbody><tr>
 <td class="parameter_name"><p>context</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-The-Main-Event-Loop.html#GMainContext" title="GMainContext"><span class="type">GMainContext</span></a>, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> for the global default context. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr></tbody>
 </table></div>
 </div>
@@ -2644,7 +2660,7 @@ it was on the top of the stack).</p>
 <tbody><tr>
 <td class="parameter_name"><p>context</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-The-Main-Event-Loop.html#GMainContext" title="GMainContext"><span class="type">GMainContext</span></a> object, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr></tbody>
 </table></div>
 </div>
@@ -2849,7 +2865,7 @@ the range between <a class="link" href="glib-The-Main-Event-Loop.html#G-PRIORITY
 <tr>
 <td class="parameter_name"><p>notify</p></td>
 <td class="parameter_description"><p> function to call when the timeout is removed, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -2993,7 +3009,7 @@ the range between <a class="link" href="glib-The-Main-Event-Loop.html#G-PRIORITY
 <tr>
 <td class="parameter_name"><p>notify</p></td>
 <td class="parameter_description"><p> function to call when the timeout is removed, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3116,7 +3132,7 @@ range between <a class="link" href="glib-The-Main-Event-Loop.html#G-PRIORITY-DEF
 <tr>
 <td class="parameter_name"><p>notify</p></td>
 <td class="parameter_description"><p> function to call when the idle is removed, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3208,14 +3224,28 @@ executed.</p>
  must not be closed while the
 source is still active. Typically, you will want to call
 <a class="link" href="glib-Spawning-Processes.html#g-spawn-close-pid" title="g_spawn_close_pid ()"><code class="function">g_spawn_close_pid()</code></a> in the callback function for the source.</p>
-<p>Note further that using <a class="link" href="glib-The-Main-Event-Loop.html#g-child-watch-source-new" title="g_child_watch_source_new ()"><code class="function">g_child_watch_source_new()</code></a> is not
-compatible with calling <code class="literal">waitpid</code> with a nonpositive first
-argument in the application. Calling <code class="function">waitpid()</code> for individual
-pids will still work fine.</p>
-<p>Similarly, on POSIX platforms, the <em class="parameter"><code>pid</code></em>
- passed to this function must
-be greater than 0 (i.e. this function must wait for a specific child,
-and cannot wait for one of many children by using a nonpositive argument).</p>
+<p>On POSIX platforms, the following restrictions apply to this API
+due to limitations in POSIX process interfaces:</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p><em class="parameter"><code>pid</code></em>
+ must be a child of this process</p></li>
+<li class="listitem"><p><em class="parameter"><code>pid</code></em>
+ must be positive</p></li>
+<li class="listitem"><p>the application must not call <code class="literal">waitpid</code> with a non-positive
+first argument, for instance in another thread</p></li>
+<li class="listitem"><p>the application must not wait for <em class="parameter"><code>pid</code></em>
+ to exit by any other
+mechanism, including <code class="literal">waitpid(pid, ...)</code> or a second child-watch
+source for the same <em class="parameter"><code>pid</code></em>
+</p></li>
+<li class="listitem"><p>the application must not ignore SIGCHILD</p></li>
+</ul></div>
+<p>If any of those conditions are not met, this and related APIs will
+not work correctly. This can often be diagnosed via a GLib warning
+stating that <code class="literal">ECHILD</code> was received by <code class="literal">waitpid</code>.</p>
+<p>Calling <code class="literal">waitpid</code> for specific processes other than <em class="parameter"><code>pid</code></em>
+ remains a
+valid thing to do.</p>
 <div class="refsect3">
 <a name="g-child-watch-source-new.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -3257,7 +3287,9 @@ the spawn function for the child watching to work.</p>
  must not be closed while the
 source is still active. Typically, you will want to call
 <a class="link" href="glib-Spawning-Processes.html#g-spawn-close-pid" title="g_spawn_close_pid ()"><code class="function">g_spawn_close_pid()</code></a> in the callback function for the source.</p>
-<p>GLib supports only a single callback per process id.</p>
+<p>GLib supports only a single callback per process id.
+On POSIX platforms, the same restrictions mentioned for
+<a class="link" href="glib-The-Main-Event-Loop.html#g-child-watch-source-new" title="g_child_watch_source_new ()"><code class="function">g_child_watch_source_new()</code></a> apply to this function.</p>
 <p>This internally creates a main loop source using 
 <a class="link" href="glib-The-Main-Event-Loop.html#g-child-watch-source-new" title="g_child_watch_source_new ()"><code class="function">g_child_watch_source_new()</code></a> and attaches it to the main loop context 
 using <a class="link" href="glib-The-Main-Event-Loop.html#g-source-attach" title="g_source_attach ()"><code class="function">g_source_attach()</code></a>. You can do these steps manually if you 
@@ -3323,7 +3355,9 @@ successfully.</p>
  must not be closed while the source
 is still active.  Typically, you should invoke <a class="link" href="glib-Spawning-Processes.html#g-spawn-close-pid" title="g_spawn_close_pid ()"><code class="function">g_spawn_close_pid()</code></a>
 in the callback function for the source.</p>
-<p>GLib supports only a single callback per process id.</p>
+<p>GLib supports only a single callback per process id.
+On POSIX platforms, the same restrictions mentioned for
+<a class="link" href="glib-The-Main-Event-Loop.html#g-child-watch-source-new" title="g_child_watch_source_new ()"><code class="function">g_child_watch_source_new()</code></a> apply to this function.</p>
 <p>This internally creates a main loop source using 
 <a class="link" href="glib-The-Main-Event-Loop.html#g-child-watch-source-new" title="g_child_watch_source_new ()"><code class="function">g_child_watch_source_new()</code></a> and attaches it to the main loop context 
 using <a class="link" href="glib-The-Main-Event-Loop.html#g-source-attach" title="g_source_attach ()"><code class="function">g_source_attach()</code></a>. You can do these steps manually if you 
@@ -3364,7 +3398,7 @@ Windows a handle for a process (which doesn't have to be a child).</p></td>
 <tr>
 <td class="parameter_name"><p>notify</p></td>
 <td class="parameter_description"><p> function to call when the idle is removed, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3390,9 +3424,12 @@ directly if you need to block until a file descriptor is ready, but
 don't want to run the full main loop.</p>
 <p>Each element of <em class="parameter"><code>fds</code></em>
  is a <a class="link" href="glib-The-Main-Event-Loop.html#GPollFD" title="struct GPollFD"><span class="type">GPollFD</span></a> describing a single file
-descriptor to poll. The <code class="literal">fd</code> field indicates the file descriptor,
-and the <code class="literal">events</code> field indicates the events to poll for. On return,
-the <code class="literal">revents</code> fields will be filled with the events that actually
+descriptor to poll. The <em class="parameter"><code>fd</code></em>
+ field indicates the file descriptor,
+and the <em class="parameter"><code>events</code></em>
+ field indicates the events to poll for. On return,
+the <em class="parameter"><code>revents</code></em>
+ fields will be filled with the events that actually
 occurred.</p>
 <p>On POSIX systems, the file descriptors in <em class="parameter"><code>fds</code></em>
  can be any sort of
@@ -3431,7 +3468,8 @@ Windows, the easiest solution is to construct all of your
 <div class="refsect3">
 <a name="g-poll.returns"></a><h4>Returns</h4>
 <p> the number of entries in <em class="parameter"><code>fds</code></em>
-whose <code class="literal">revents</code> fields
+whose <em class="parameter"><code>revents</code></em>
+fields
 were filled in, or 0 if the operation timed out, or -1 on error or
 if the call was interrupted.</p>
 </div>
@@ -3442,7 +3480,7 @@ if the call was interrupted.</p>
 <a name="GSourceDummyMarshal"></a><h3>GSourceDummyMarshal ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 <span class="c_punctuation">(</span>*GSourceDummyMarshal<span class="c_punctuation">)</span> (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
-<p>This is just a placeholder for <a href="../gobject-Closures.html#GClosureMarshal"><span class="type">GClosureMarshal</span></a>,
+<p>This is just a placeholder for <a href="../gobject/gobject-Closures.html#GClosureMarshal"><span class="type">GClosureMarshal</span></a>,
 which cannot be used here for dependency reasons.</p>
 </div>
 <hr>
@@ -3595,7 +3633,7 @@ that context. Remove it by calling <a class="link" href="glib-The-Main-Event-Loo
 <tr>
 <td class="parameter_name"><p>context</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-The-Main-Event-Loop.html#GMainContext" title="GMainContext"><span class="type">GMainContext</span></a> (if <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>, the default context will be used). </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3679,10 +3717,10 @@ before the dispatch of your idle handler.</p>
 <span class="gtkdoc opt">{</span>
   SomeWidget <span class="gtkdoc opt">*</span>self <span class="gtkdoc opt">=</span> data<span class="gtkdoc opt">;</span>
    
-  <span class="function"><a href="http://developer.gnome.org/gdk3/gdk4-Threads.html#GDK-THREADS-ENTER:CAPS">GDK_THREADS_ENTER</a></span> <span class="gtkdoc opt">();</span>
+  <span class="function"><a href="../gdk4/gdk4-Threads.html#GDK-THREADS-ENTER:CAPS">GDK_THREADS_ENTER</a></span> <span class="gtkdoc opt">();</span>
   <span class="gtkdoc slc">// do stuff with self</span>
   self<span class="gtkdoc opt">-&gt;</span>idle_id <span class="gtkdoc opt">=</span> <span class="number">0</span><span class="gtkdoc opt">;</span>
-  <span class="function"><a href="http://developer.gnome.org/gdk3/gdk4-Threads.html#GDK-THREADS-LEAVE:CAPS">GDK_THREADS_LEAVE</a></span> <span class="gtkdoc opt">();</span>
+  <span class="function"><a href="../gdk4/gdk4-Threads.html#GDK-THREADS-LEAVE:CAPS">GDK_THREADS_LEAVE</a></span> <span class="gtkdoc opt">();</span>
    
   <span class="keyword">return</span> G_SOURCE_REMOVE<span class="gtkdoc opt">;</span>
 <span class="gtkdoc opt">}</span>
@@ -3701,7 +3739,7 @@ before the dispatch of your idle handler.</p>
   <span class="keyword">if</span> <span class="gtkdoc opt">(</span>self<span class="gtkdoc opt">-&gt;</span>idle_id<span class="gtkdoc opt">)</span>
     <span class="function"><a href="glib-The-Main-Event-Loop.html#g-source-remove">g_source_remove</a></span> <span class="gtkdoc opt">(</span>self<span class="gtkdoc opt">-&gt;</span>idle_id<span class="gtkdoc opt">);</span>
    
-  <span class="function"><a href="../gobject-The-Base-Object-Type.html#G-OBJECT-CLASS:CAPS">G_OBJECT_CLASS</a></span> <span class="gtkdoc opt">(</span>parent_class<span class="gtkdoc opt">)-&gt;</span><span class="function">finalize</span> <span class="gtkdoc opt">(</span>object<span class="gtkdoc opt">);</span>
+  <span class="function"><a href="../gobject/gobject-The-Base-Object-Type.html#G-OBJECT-CLASS:CAPS">G_OBJECT_CLASS</a></span> <span class="gtkdoc opt">(</span>parent_class<span class="gtkdoc opt">)-&gt;</span><span class="function">finalize</span> <span class="gtkdoc opt">(</span>object<span class="gtkdoc opt">);</span>
 <span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
@@ -3737,12 +3775,12 @@ has already been destroy within the callback.</p>
 <span class="gtkdoc opt">{</span>
   SomeWidget <span class="gtkdoc opt">*</span>self <span class="gtkdoc opt">=</span> data<span class="gtkdoc opt">;</span>
   
-  <span class="function"><a href="http://developer.gnome.org/gdk3/gdk4-Threads.html#GDK-THREADS-ENTER:CAPS">GDK_THREADS_ENTER</a></span> <span class="gtkdoc opt">();</span>
+  <span class="function"><a href="../gdk4/gdk4-Threads.html#GDK-THREADS-ENTER:CAPS">GDK_THREADS_ENTER</a></span> <span class="gtkdoc opt">();</span>
   <span class="keyword">if</span> <span class="gtkdoc opt">(!</span><span class="function"><a href="glib-The-Main-Event-Loop.html#g-source-is-destroyed">g_source_is_destroyed</a></span> <span class="gtkdoc opt">(</span><span class="function"><a href="glib-The-Main-Event-Loop.html#g-main-current-source">g_main_current_source</a></span> <span class="gtkdoc opt">()))</span>
     <span class="gtkdoc opt">{</span>
       <span class="gtkdoc slc">// do stuff with self</span>
     <span class="gtkdoc opt">}</span>
-  <span class="function"><a href="http://developer.gnome.org/gdk3/gdk4-Threads.html#GDK-THREADS-LEAVE:CAPS">GDK_THREADS_LEAVE</a></span> <span class="gtkdoc opt">();</span>
+  <span class="function"><a href="../gdk4/gdk4-Threads.html#GDK-THREADS-LEAVE:CAPS">GDK_THREADS_LEAVE</a></span> <span class="gtkdoc opt">();</span>
   
   <span class="keyword">return</span> FALSE<span class="gtkdoc opt">;</span>
 <span class="gtkdoc opt">}</span></pre></td>
@@ -3752,6 +3790,11 @@ has already been destroy within the callback.</p>
 </div>
 
 <p></p>
+<p>Calls to this function from a thread other than the one acquired by the
+<a class="link" href="glib-The-Main-Event-Loop.html#GMainContext" title="GMainContext"><span class="type">GMainContext</span></a> the <a class="link" href="glib-The-Main-Event-Loop.html#GSource" title="struct GSource"><span class="type">GSource</span></a> is attached to are typically redundant, as the
+source could be destroyed immediately after this function returns. However,
+once a source is destroyed it cannot be un-destroyed, so this function can be
+used for opportunistic checks from any thread.</p>
 <div class="refsect3">
 <a name="g-source-is-destroyed.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -4071,7 +4114,7 @@ whose <a class="link" href="glib-The-Main-Event-Loop.html#GMainContext" title="G
 <p> the <a class="link" href="glib-The-Main-Event-Loop.html#GMainContext" title="GMainContext"><span class="type">GMainContext</span></a> with which the
 source is associated, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if the context has not
 yet been added to a source. </p>
-<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 </div>
 <hr>
@@ -4123,7 +4166,7 @@ to the type of source you are using.</p>
 <td class="parameter_name"><p>notify</p></td>
 <td class="parameter_description"><p> a function to call when <em class="parameter"><code>data</code></em>
 is no longer in use, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -4224,6 +4267,8 @@ suggests that it will be delivered first but the priority for the
 other suggests that it would be delivered first, and the ready time
 for both sources is reached during the same main context iteration
 then the order of dispatch is undefined.</p>
+<p>It is a no-op to call this function on a <a class="link" href="glib-The-Main-Event-Loop.html#GSource" title="struct GSource"><span class="type">GSource</span></a> which has already been
+destroyed with <a class="link" href="glib-The-Main-Event-Loop.html#g-source-destroy" title="g_source_destroy ()"><code class="function">g_source_destroy()</code></a>.</p>
 <p>This API is only intended to be used by implementations of <a class="link" href="glib-The-Main-Event-Loop.html#GSource" title="struct GSource"><span class="type">GSource</span></a>.
 Do not call this API on a <a class="link" href="glib-The-Main-Event-Loop.html#GSource" title="struct GSource"><span class="type">GSource</span></a> that you did not create.</p>
 <div class="refsect3">
@@ -4557,7 +4602,7 @@ callback), and when <em class="parameter"><code>source</code></em>
 its own prepare/check functions indicate that it is ready.)</p>
 <p>If you don't need <em class="parameter"><code>child_source</code></em>
  to do anything on its own when it
-triggers, you can call <a href="../gobject-Closures.html#g-source-set-dummy-callback"><code class="function">g_source_set_dummy_callback()</code></a> on it to set a
+triggers, you can call <a href="../gobject/gobject-Closures.html#g-source-set-dummy-callback"><code class="function">g_source_set_dummy_callback()</code></a> on it to set a
 callback that does nothing (except return <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if appropriate).</p>
 <p><em class="parameter"><code>source</code></em>
  will hold a reference on <em class="parameter"><code>child_source</code></em>
@@ -4801,6 +4846,73 @@ data, only one will be destroyed.</p>
 <a name="g-source-remove-by-user-data.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if a source was found and removed. </p>
 </div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="GClearHandleFunc"></a><h3>GClearHandleFunc ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+<span class="c_punctuation">(</span>*GClearHandleFunc<span class="c_punctuation">)</span> (<em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> handle_id</code></em>);</pre>
+<p>Specifies the type of function passed to <a class="link" href="glib-The-Main-Event-Loop.html#g-clear-handle-id" title="g_clear_handle_id ()"><code class="function">g_clear_handle_id()</code></a>.
+The implementation is expected to free the resource identified
+by <em class="parameter"><code>handle_id</code></em>
+; for instance, if <em class="parameter"><code>handle_id</code></em>
+ is a <a class="link" href="glib-The-Main-Event-Loop.html#GSource" title="struct GSource"><span class="type">GSource</span></a> ID,
+<a class="link" href="glib-The-Main-Event-Loop.html#g-source-remove" title="g_source_remove ()"><code class="function">g_source_remove()</code></a> can be used.</p>
+<div class="refsect3">
+<a name="GClearHandleFunc.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>handle_id</p></td>
+<td class="parameter_description"><p>the handle ID to clear</p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<p class="since">Since: <a class="link" href="api-index-2-56.html#api-index-2.56">2.56</a></p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-clear-handle-id"></a><h3>g_clear_handle_id ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+g_clear_handle_id (<em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> *tag_ptr</code></em>,
+                   <em class="parameter"><code><a class="link" href="glib-The-Main-Event-Loop.html#GClearHandleFunc" title="GClearHandleFunc ()"><span class="type">GClearHandleFunc</span></a> clear_func</code></em>);</pre>
+<p>Clears a numeric handler, such as a <a class="link" href="glib-The-Main-Event-Loop.html#GSource" title="struct GSource"><span class="type">GSource</span></a> ID.</p>
+<p><em class="parameter"><code>tag_ptr</code></em>
+ must be a valid pointer to the variable holding the handler.</p>
+<p>If the ID is zero then this function does nothing.
+Otherwise, <code class="function">clear_func()</code> is called with the ID as a parameter, and the tag is
+set to zero.</p>
+<p>A macro is also included that allows this function to be used without
+pointer casts.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
+<div class="refsect3">
+<a name="g-clear-handle-id.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>tag_ptr</p></td>
+<td class="parameter_description"><p> a pointer to the handler ID. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL must not be passed as the value in, out, in-out; or as a return value."><span class="acronym">not nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>clear_func</p></td>
+<td class="parameter_description"><p> the function to call to clear the handler. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL must not be passed as the value in, out, in-out; or as a return value."><span class="acronym">not nullable</span></acronym>]</span></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: <a class="link" href="api-index-2-56.html#api-index-2.56">2.56</a></p>
 </div>
 </div>
 <div class="refsect1">
@@ -5054,7 +5166,10 @@ removed or <a class="link" href="glib-The-Main-Event-Loop.html#G-SOURCE-CONTINUE
 </tr>
 <tr>
 <td class="struct_member_name"><p><em class="structfield"><code><a name="GSourceFuncs.finalize"></a>finalize</code></em> ()</p></td>
-<td class="struct_member_description"><p>Called when the source is finalized.</p></td>
+<td class="struct_member_description"><p>Called when the source is finalized. At this point, the source
+will have been destroyed, had its callback cleared, and have been removed
+from its <a class="link" href="glib-The-Main-Event-Loop.html#GMainContext" title="GMainContext"><span class="type">GMainContext</span></a>, but it will still have its final reference count;
+so methods can be called on it from within this function.</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 </tbody>

@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -330,9 +330,9 @@ g_volume_should_automount (GVolume *volume)
  * g_volume_mount:
  * @volume: a #GVolume
  * @flags: flags affecting the operation
- * @mount_operation: (allow-none): a #GMountOperation or %NULL to avoid user interaction
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore
- * @callback: (allow-none): a #GAsyncReadyCallback, or %NULL
+ * @mount_operation: (nullable): a #GMountOperation or %NULL to avoid user interaction
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore
+ * @callback: (nullable): a #GAsyncReadyCallback, or %NULL
  * @user_data: user data that gets passed to @callback
  * 
  * Mounts a volume. This is an asynchronous operation, and is
@@ -406,8 +406,8 @@ g_volume_mount_finish (GVolume       *volume,
  * g_volume_eject:
  * @volume: a #GVolume
  * @flags: flags affecting the unmount if required for eject
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore
- * @callback: (allow-none): a #GAsyncReadyCallback, or %NULL
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore
+ * @callback: (nullable): a #GAsyncReadyCallback, or %NULL
  * @user_data: user data that gets passed to @callback
  * 
  * Ejects a volume. This is an asynchronous operation, and is
@@ -477,10 +477,10 @@ g_volume_eject_finish (GVolume       *volume,
  * g_volume_eject_with_operation:
  * @volume: a #GVolume
  * @flags: flags affecting the unmount if required for eject
- * @mount_operation: (allow-none): a #GMountOperation or %NULL to
+ * @mount_operation: (nullable): a #GMountOperation or %NULL to
  *     avoid user interaction
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore
- * @callback: (allow-none): a #GAsyncReadyCallback, or %NULL
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore
+ * @callback: (nullable): a #GAsyncReadyCallback, or %NULL
  * @user_data: user data passed to @callback
  *
  * Ejects a volume. This is an asynchronous operation, and is
@@ -633,7 +633,7 @@ g_volume_enumerate_identifiers (GVolume *volume)
  * then the expression
  * |[<!-- language="C" -->
  *   (g_file_has_prefix (volume_activation_root, mount_root) ||
-      g_file_equal (volume_activation_root, mount_root))
+ *    g_file_equal (volume_activation_root, mount_root))
  * ]|
  * will always be %TRUE.
  *

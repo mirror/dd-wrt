@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GVariant Format Strings: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-data-types.html" title="GLib Data Types">
 <link rel="prev" href="glib-GVariant.html" title="GVariant">
@@ -966,44 +966,6 @@ value2 <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-GV
 </div>
 <hr>
 <div class="refsect2">
-<a name="gvariant-format-strings-dictionaries"></a><h3>Dictionaries</h3>
-<p>
-    <span class="strong"><strong>
-     Characters: <code class="code">{}</code>
-    </strong></span>
-   </p>
-<p>
-    Dictionary entries are handled by handling first the key, then the value.  Each is handled in the usual way.
-   </p>
-<div class="refsect3">
-<a name="id-1.6.20.5.10.4"></a><h4>Examples</h4>
-<div class="informalexample">
-  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
-    <tbody>
-      <tr>
-        <td class="listing_lines" align="right"><pre>1
-2
-3
-4
-5
-6
-7</pre></td>
-        <td class="listing_code"><pre class="programlisting">GVariantBuilder <span class="gtkdoc opt">*</span>b<span class="gtkdoc opt">;</span>
-GVariant <span class="gtkdoc opt">*</span>dict<span class="gtkdoc opt">;</span>
-
-b <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-GVariant.html#g-variant-builder-new">g_variant_builder_new</a></span> <span class="gtkdoc opt">(</span><span class="function"><a href="glib-GVariantType.html#G-VARIANT-TYPE:CAPS">G_VARIANT_TYPE</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;a{sv}&quot;</span><span class="gtkdoc opt">));</span>
-<span class="function"><a href="glib-GVariant.html#g-variant-builder-add">g_variant_builder_add</a></span> <span class="gtkdoc opt">(</span>b<span class="gtkdoc opt">,</span> <span class="string">&quot;{sv}&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;name&quot;</span><span class="gtkdoc opt">,</span> <span class="function"><a href="glib-GVariant.html#g-variant-new-string">g_variant_new_string</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;foo&quot;</span><span class="gtkdoc opt">));</span>
-<span class="function"><a href="glib-GVariant.html#g-variant-builder-add">g_variant_builder_add</a></span> <span class="gtkdoc opt">(</span>b<span class="gtkdoc opt">,</span> <span class="string">&quot;{sv}&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;timeout&quot;</span><span class="gtkdoc opt">,</span> <span class="function"><a href="glib-GVariant.html#g-variant-new-int32">g_variant_new_int32</a></span> <span class="gtkdoc opt">(</span><span class="number">10</span><span class="gtkdoc opt">));</span>
-dict <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-GVariant.html#g-variant-builder-end">g_variant_builder_end</a></span> <span class="gtkdoc opt">(</span>b<span class="gtkdoc opt">);</span></pre></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-</div>
-</div>
-<hr>
-<div class="refsect2">
 <a name="gvariant-format-strings-gvariant"></a><h3>GVariant *</h3>
 <p>
     <span class="strong"><strong>
@@ -1039,7 +1001,7 @@ dict <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-GVar
     improvements in type safety and code self-documentation.
    </p>
 <div class="refsect3">
-<a name="id-1.6.20.5.11.6"></a><h4>Examples</h4>
+<a name="id-1.6.20.5.10.6"></a><h4>Examples</h4>
 <div class="informalexample">
   <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
     <tbody>
@@ -1089,6 +1051,99 @@ value2 <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-GV
   <span class="function"><a href="glib-GVariant.html#g-variant-get">g_variant_get</a></span> <span class="gtkdoc opt">(</span>value2<span class="gtkdoc opt">,</span> <span class="string">&quot;(rs)&quot;</span><span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">, &amp;</span>string<span class="gtkdoc opt">);</span> <span class="comment">/* or &quot;(&#64;(iii)s)&quot; */</span>
   <span class="function"><a href="glib-Warnings-and-Assertions.html#g-print">g_print</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;i only got the string: %s</span><span class="gtkdoc esc">\n</span><span class="string">&quot;</span><span class="gtkdoc opt">,</span> string<span class="gtkdoc opt">);</span>
   <span class="function"><a href="glib-Memory-Allocation.html#g-free">g_free</a></span> <span class="gtkdoc opt">(</span>string<span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">}</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="gvariant-format-strings-dictionaries"></a><h3>Dictionaries</h3>
+<p>
+    <span class="strong"><strong>
+     Characters: <code class="code">{}</code>
+    </strong></span>
+   </p>
+<p>
+    Dictionary entries are handled by handling first the key, then the value.  Each is handled in the usual way.
+   </p>
+<div class="refsect3">
+<a name="id-1.6.20.5.11.4"></a><h4>Examples</h4>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7</pre></td>
+        <td class="listing_code"><pre class="programlisting">GVariantBuilder <span class="gtkdoc opt">*</span>b<span class="gtkdoc opt">;</span>
+GVariant <span class="gtkdoc opt">*</span>dict<span class="gtkdoc opt">;</span>
+
+b <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-GVariant.html#g-variant-builder-new">g_variant_builder_new</a></span> <span class="gtkdoc opt">(</span><span class="function"><a href="glib-GVariantType.html#G-VARIANT-TYPE:CAPS">G_VARIANT_TYPE</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;a{sv}&quot;</span><span class="gtkdoc opt">));</span>
+<span class="function"><a href="glib-GVariant.html#g-variant-builder-add">g_variant_builder_add</a></span> <span class="gtkdoc opt">(</span>b<span class="gtkdoc opt">,</span> <span class="string">&quot;{sv}&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;name&quot;</span><span class="gtkdoc opt">,</span> <span class="function"><a href="glib-GVariant.html#g-variant-new-string">g_variant_new_string</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;foo&quot;</span><span class="gtkdoc opt">));</span>
+<span class="function"><a href="glib-GVariant.html#g-variant-builder-add">g_variant_builder_add</a></span> <span class="gtkdoc opt">(</span>b<span class="gtkdoc opt">,</span> <span class="string">&quot;{sv}&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;timeout&quot;</span><span class="gtkdoc opt">,</span> <span class="function"><a href="glib-GVariant.html#g-variant-new-int32">g_variant_new_int32</a></span> <span class="gtkdoc opt">(</span><span class="number">10</span><span class="gtkdoc opt">));</span>
+dict <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-GVariant.html#g-variant-builder-end">g_variant_builder_end</a></span> <span class="gtkdoc opt">(</span>b<span class="gtkdoc opt">);</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+<p>
+    To extract data from nested dictionaries you can go through a vardict.
+   </p>
+<div class="refsect3">
+<a name="id-1.6.20.5.11.6"></a><h4>Examples</h4>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20</pre></td>
+        <td class="listing_code"><pre class="programlisting">GVariant <span class="gtkdoc opt">*</span>data<span class="gtkdoc opt">;</span>
+gint value <span class="gtkdoc opt">=</span> <span class="number">1</span><span class="gtkdoc opt">;</span>
+gint max <span class="gtkdoc opt">=</span> <span class="number">3</span><span class="gtkdoc opt">;</span>
+
+<span class="comment">/* type (oa{sa{sv}) */</span>
+data <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-GVariant.html#g-variant-new-parsed">g_variant_new_parsed</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;(%o, {&apos;brightness&apos;: {&apos;value&apos;: &lt;%i&gt;, &apos;max&apos;: &lt;%i&gt;}})&quot;</span><span class="gtkdoc opt">,</span>
+                             <span class="string">&quot;/object/path&quot;</span><span class="gtkdoc opt">,</span> value<span class="gtkdoc opt">,</span> max<span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">{</span>
+  GVariant <span class="gtkdoc opt">*</span>params<span class="gtkdoc opt">;</span>
+  GVariant <span class="gtkdoc opt">*</span>p_brightness<span class="gtkdoc opt">;</span>
+  gchar <span class="gtkdoc opt">*</span>obj
+  gint p_max<span class="gtkdoc opt">;</span>
+
+  <span class="function"><a href="glib-GVariant.html#g-variant-get">g_variant_get</a></span> <span class="gtkdoc opt">(</span>data<span class="gtkdoc opt">,</span> <span class="string">&quot;(o&#64;a{?*})&quot;</span><span class="gtkdoc opt">, &amp;</span>obj<span class="gtkdoc opt">, &amp;</span>params<span class="gtkdoc opt">);</span>
+  <span class="function"><a href="glib-Warnings-and-Assertions.html#g-print">g_print</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;object_path: %s</span><span class="gtkdoc esc">\n</span><span class="string">&quot;</span><span class="gtkdoc opt">,</span> obj<span class="gtkdoc opt">);</span>
+
+  p_brightness <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-GVariant.html#g-variant-lookup-value">g_variant_lookup_value</a></span> <span class="gtkdoc opt">(</span>params<span class="gtkdoc opt">,</span> <span class="string">&quot;brightness&quot;</span><span class="gtkdoc opt">,</span> G_VARIANT_TYPE_VARDICT<span class="gtkdoc opt">);</span>
+  <span class="function"><a href="glib-GVariant.html#g-variant-lookup">g_variant_lookup</a></span> <span class="gtkdoc opt">(</span>p_brightness<span class="gtkdoc opt">,</span> <span class="string">&quot;max&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;i&quot;</span><span class="gtkdoc opt">, &amp;</span>p_max<span class="gtkdoc opt">);</span>
+  <span class="function"><a href="glib-Warnings-and-Assertions.html#g-print">g_print</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;max: %d</span><span class="gtkdoc esc">\n</span><span class="string">&quot;</span><span class="gtkdoc opt">,</span> p_max<span class="gtkdoc opt">);</span>
 <span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>

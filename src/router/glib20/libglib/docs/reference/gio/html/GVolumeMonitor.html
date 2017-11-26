@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GVolumeMonitor: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="volume_mon.html" title="Volumes and Drives">
 <link rel="prev" href="volume_mon.html" title="Volumes and Drives">
@@ -735,7 +735,9 @@ user_function (<a class="link" href="GVolumeMonitor.html" title="GVolumeMonitor"
 user_function (<a class="link" href="GVolumeMonitor.html" title="GVolumeMonitor"><span class="type">GVolumeMonitor</span></a> *volume_monitor,
                <a class="link" href="GMount.html" title="GMount"><span class="type">GMount</span></a>         *mount,
                <a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a>        user_data)</pre>
-<p>Emitted when a mount is about to be removed.</p>
+<p>May be emitted when a mount is about to be removed.</p>
+<p>This signal depends on the backend and is only emitted if
+GIO was used to unmount.</p>
 <div class="refsect3">
 <a name="GVolumeMonitor-mount-pre-unmount.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">

@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -596,6 +596,48 @@ extension_in_set (const char *str,
   return rv;
 }
 
+/*
+ * We must escape any characters that `make` finds significant.
+ * This is largely a duplicate of the logic in gcc's `mkdeps.c:munge()`.
+ */
+static char *
+escape_makefile_string (const char *string)
+{
+  GString *str;
+  const char *p, *q;
+
+  str = g_string_sized_new (strlen (string) + 1);
+  for (p = string; *p != '\0'; ++p)
+    {
+      switch (*p)
+        {
+        case ' ':
+        case '\t':
+          /* GNU make uses a weird quoting scheme for white space.
+             A space or tab preceded by 2N+1 backslashes represents
+             N backslashes followed by space; a space or tab
+             preceded by 2N backslashes represents N backslashes at
+             the end of a file name; and backslashes in other
+             contexts should not be doubled.  */
+          for (q = p - 1; string <= q && *q == '\\';  q--)
+            g_string_append_c (str, '\\');
+          g_string_append_c (str, '\\');
+          break;
+
+        case '$':
+          g_string_append_c (str, '$');
+          break;
+
+        case '#':
+          g_string_append_c (str, '\\');
+          break;
+        }
+      g_string_append_c (str, *p);
+    }
+
+  return g_string_free (str, FALSE);
+}
+
 int
 main (int argc, char **argv)
 {
@@ -612,6 +654,7 @@ main (int argc, char **argv)
   gboolean manual_register = FALSE;
   gboolean internal = FALSE;
   gboolean generate_dependencies = FALSE;
+  gboolean generate_phony_targets = FALSE;
   char *dependency_file = NULL;
   char *c_name = NULL;
   char *c_name_no_underscores;
@@ -626,6 +669,7 @@ main (int argc, char **argv)
     { "generate-source", 0, 0, G_OPTION_ARG_NONE, &generate_source, N_("Generate sourcecode used to link in the resource file into your code"), NULL },
     { "generate-dependencies", 0, 0, G_OPTION_ARG_NONE, &generate_dependencies, N_("Generate dependency list"), NULL },
     { "dependency-file", 0, 0, G_OPTION_ARG_FILENAME, &dependency_file, N_("name of the dependency file to generate"), N_("FILE") },
+    { "generate-phony-targets", 0, 0, G_OPTION_ARG_NONE, &generate_phony_targets, N_("Include phony targets in the generated dependency file"), NULL },
     { "manual-register", 0, 0, G_OPTION_ARG_NONE, &manual_register, N_("Don’t automatically create and register resource"), NULL },
     { "internal", 0, 0, G_OPTION_ARG_NONE, &internal, N_("Don’t export functions; declare them G_GNUC_INTERNAL"), NULL },
     { "c-name", 0, 0, G_OPTION_ARG_STRING, &c_name, N_("C identifier name used for the generated source code"), NULL },
@@ -736,7 +780,7 @@ main (int argc, char **argv)
       else if (extension_in_set (target, "h", "hh", "hpp", "hxx", "h++", NULL))
         generate_header = TRUE;
       else if (extension_in_set (target, "gresource", NULL))
-        ;
+        { }
     }
 
   files = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, (GDestroyNotify)file_data_free);
@@ -745,6 +789,7 @@ main (int argc, char **argv)
     {
       g_free (target);
       g_free (c_name);
+      g_hash_table_unref (files);
       return 1;
     }
 
@@ -758,29 +803,48 @@ main (int argc, char **argv)
       GHashTableIter iter;
       gpointer key, data;
       FileData *file_data;
+      char *escaped;
 
       g_hash_table_iter_init (&iter, files);
 
       dep_string = g_string_new (NULL);
-      g_string_printf (dep_string, "%s:", srcfile);
+      escaped = escape_makefile_string (srcfile);
+      g_string_printf (dep_string, "%s:", escaped);
+      g_free (escaped);
 
       /* First rule: foo.xml: resource1 resource2.. */
       while (g_hash_table_iter_next (&iter, &key, &data))
         {
           file_data = data;
           if (!g_str_equal (file_data->filename, srcfile))
-            g_string_append_printf (dep_string, " %s", file_data->filename);
+            {
+              escaped = escape_makefile_string (file_data->filename);
+              g_string_append_printf (dep_string, " %s", escaped);
+              g_free (escaped);
+            }
         }
 
-      g_string_append (dep_string, "\n\n");
+      g_string_append (dep_string, "\n");
 
-      /* One rule for every resource: resourceN: */
-      g_hash_table_iter_init (&iter, files);
-      while (g_hash_table_iter_next (&iter, &key, &data))
+      /* Optionally include phony targets as it silences `make` but
+       * isn't supported on `ninja` at the moment. See also: `gcc -MP`
+       */
+      if (generate_phony_targets)
         {
-          file_data = data;
-          if (!g_str_equal (file_data->filename, srcfile))
-            g_string_append_printf (dep_string, "%s:\n\n", file_data->filename);
+					g_string_append (dep_string, "\n");
+
+          /* One rule for every resource: resourceN: */
+          g_hash_table_iter_init (&iter, files);
+          while (g_hash_table_iter_next (&iter, &key, &data))
+            {
+              file_data = data;
+              if (!g_str_equal (file_data->filename, srcfile))
+                {
+                  escaped = escape_makefile_string (file_data->filename);
+                  g_string_append_printf (dep_string, "%s:\n\n", escaped);
+                  g_free (escaped);
+                }
+            }
         }
 
       if (g_str_equal (dependency_file, "-"))
@@ -795,6 +859,7 @@ main (int argc, char **argv)
               g_string_free (dep_string, TRUE);
               g_free (dependency_file);
               g_error_free (error);
+              g_hash_table_unref (files);
               return 1;
             }
         }
@@ -827,6 +892,7 @@ main (int argc, char **argv)
 	    {
 	      g_printerr ("Can't open temp file\n");
 	      g_free (c_name);
+              g_hash_table_unref (files);
 	      return 1;
 	    }
 	  close (fd);
@@ -873,6 +939,7 @@ main (int argc, char **argv)
       g_printerr ("%s\n", error->message);
       g_free (target);
       g_free (c_name);
+      g_hash_table_unref (files);
       return 1;
     }
 
@@ -885,6 +952,7 @@ main (int argc, char **argv)
 	{
 	  g_printerr ("can't write to file %s", target);
 	  g_free (c_name);
+          g_hash_table_unref (files);
 	  return 1;
 	}
 
@@ -922,6 +990,7 @@ main (int argc, char **argv)
 	{
 	  g_printerr ("can't read back temporary file");
 	  g_free (c_name);
+          g_hash_table_unref (files);
 	  return 1;
 	}
       g_unlink (binary_target);
@@ -931,6 +1000,7 @@ main (int argc, char **argv)
 	{
 	  g_printerr ("can't write to file %s", target);
 	  g_free (c_name);
+          g_hash_table_unref (files);
 	  return 1;
 	}
 
@@ -1027,6 +1097,7 @@ main (int argc, char **argv)
   g_hash_table_destroy (table);
   g_free (xmllint);
   g_free (c_name);
+  g_hash_table_unref (files);
 
   return 0;
 }

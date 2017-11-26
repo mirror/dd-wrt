@@ -1,8 +1,8 @@
 '\" t
 .\"     Title: gdbus-codegen
 .\"    Author: David Zeuthen <zeuthen@gmail.com>
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 10/24/2016
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 11/15/2017
 .\"    Manual: User Commands
 .\"    Source: GIO
 .\"  Language: English
@@ -31,7 +31,7 @@
 gdbus-codegen \- D\-Bus code and documentation generator
 .SH "SYNOPSIS"
 .HP \w'\fBgdbus\-codegen\fR\ 'u
-\fBgdbus\-codegen\fR [\fB\-h\fR,\ \fB\-\-help\fR] [\fB\-\-interface\-prefix\fR\ \fIorg\&.project\&.Prefix\fR] [\fB\-\-generate\-c\-code\fR\ \fIOUTFILES\fR] [\fB\-\-c\-namespace\fR\ \fIYourProject\fR] [\fB\-\-c\-generate\-object\-manager\fR] [\fB\-\-c\-generate\-autocleanup\fR\ none|objects|all] [\fB\-\-generate\-docbook\fR\ \fIOUTFILES\fR] [\fB\-\-xml\-files\fR\ \fIFILE\fR] [\fB\-\-annotate\fR\ \fIELEMENT\fR\ \fIKEY\fR\ \fIVALUE\fR]...  FILE [FILE...]
+\fBgdbus\-codegen\fR [\fB\-h\fR,\ \fB\-\-help\fR] [\fB\-\-interface\-prefix\fR\ \fIorg\&.project\&.Prefix\fR] [\fB\-\-generate\-c\-code\fR\ \fIOUTFILES\fR] [\fB\-\-c\-namespace\fR\ \fIYourProject\fR] [\fB\-\-c\-generate\-object\-manager\fR] [\fB\-\-c\-generate\-autocleanup\fR\ none|objects|all] [\fB\-\-output\-directory\fR\ \fIOUTDIR\fR] [\fB\-\-generate\-docbook\fR\ \fIOUTFILES\fR] [\fB\-\-xml\-files\fR\ \fIFILE\fR] [\fB\-\-annotate\fR\ \fIELEMENT\fR\ \fIKEY\fR\ \fIVALUE\fR]...  FILE [FILE...]
 .SH "DESCRIPTION"
 .PP
 \fBgdbus\-codegen\fR
@@ -125,7 +125,16 @@ and so on\&.
 Generate C code for all D\-Bus interfaces and put it in
 OUTFILES\&.c
 and
-OUTFILES\&.h\&.
+OUTFILES\&.h
+including any sub\-directories\&. If you want the files to be output in a different location use
+\fB\-\-output\-directory\fR
+as
+OUTFILES\&.h
+including sub\-directories will be referenced from
+OUTFILES\&.c\&.
+.sp
+The full paths would then be
+$(OUTDIR)/$(dirname $OUTFILES)/$(basename $OUTFILES)\&.{c,h}\&.
 .RE
 .PP
 \fB\-\-c\-namespace\fR \fIYourProject\fR
@@ -145,6 +154,11 @@ If this option is passed, suitable #GDBusObject, #GDBusObjectProxy, #GDBusObject
 \fB\-\-c\-generate\-autocleanup\fR none|objects|all
 .RS 4
 This option influences what types autocleanup functions are generated for\&. \*(Aqnone\*(Aq means to not generate any autocleanup functions\&. \*(Aqobjects\*(Aq means to generate them for object types, and \*(Aqall\*(Aq means to generate them for object types and interfaces\&. The default is \*(Aqobjects\*(Aq due to a corner case in backwards compatibility with a few projects, but you should likely switch your project to use \*(Aqall\*(Aq\&. This option was added in GLib 2\&.50\&.
+.RE
+.PP
+\fB\-\-output\-directory\fR \fIOUTDIR\fR
+.RS 4
+Directory to output generated source to\&. Equivalent to changing directory before generation\&.
 .RE
 .PP
 \fB\-\-annotate\fR \fIELEMENT\fR \fIKEY\fR \fIVALUE\fR

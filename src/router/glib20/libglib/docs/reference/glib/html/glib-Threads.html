@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Threads: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-core.html" title="GLib Core Application Support">
 <link rel="prev" href="glib-The-Main-Event-Loop.html" title="The Main Event Loop">
@@ -607,18 +607,18 @@ you must coordinate accesses to the same <a class="link" href="glib-Hash-Tables.
 threads. The two notable exceptions from this rule are <a class="link" href="glib-The-Main-Event-Loop.html#GMainLoop" title="GMainLoop"><span class="type">GMainLoop</span></a>
 and <a class="link" href="glib-Asynchronous-Queues.html#GAsyncQueue" title="GAsyncQueue"><span class="type">GAsyncQueue</span></a>, which are thread-safe and need no further
 application-level locking to be accessed from multiple threads.
-Most refcounting functions such as <a href="../gobject-The-Base-Object-Type.html#g-object-ref"><code class="function">g_object_ref()</code></a> are also thread-safe.</p>
+Most refcounting functions such as <a href="../gobject/gobject-The-Base-Object-Type.html#g-object-ref"><code class="function">g_object_ref()</code></a> are also thread-safe.</p>
 <p>A common use for <a href="glib-Threads.html#GThread"><span class="type">GThreads</span></a> is to move a long-running blocking operation out
 of the main thread and into a worker thread. For GLib functions, such as
 single GIO operations, this is not necessary, and complicates the code.
 Instead, the <code class="literal">…<code class="function">_async()</code></code> version of the function should be used from the main
 thread, eliminating the need for locking and synchronisation between multiple
 threads. If an operation does need to be moved to a worker thread, consider
-using <a href="../GTask.html#g-task-run-in-thread"><code class="function">g_task_run_in_thread()</code></a>, or a <a class="link" href="glib-Thread-Pools.html#GThreadPool" title="struct GThreadPool"><span class="type">GThreadPool</span></a>. <a class="link" href="glib-Thread-Pools.html#GThreadPool" title="struct GThreadPool"><span class="type">GThreadPool</span></a> is often a
+using <a href="../gio/GTask.html#g-task-run-in-thread"><code class="function">g_task_run_in_thread()</code></a>, or a <a class="link" href="glib-Thread-Pools.html#GThreadPool" title="struct GThreadPool"><span class="type">GThreadPool</span></a>. <a class="link" href="glib-Thread-Pools.html#GThreadPool" title="struct GThreadPool"><span class="type">GThreadPool</span></a> is often a
 better choice than <a class="link" href="glib-Threads.html#GThread" title="GThread"><span class="type">GThread</span></a>, as it handles thread reuse and task queueing;
-<a href="../GTask.html#GTask-struct"><span class="type">GTask</span></a> uses this internally.</p>
+<a href="../gio/GTask.html#GTask-struct"><span class="type">GTask</span></a> uses this internally.</p>
 <p>However, if multiple blocking operations need to be performed in sequence,
-and it is not possible to use <a href="../GTask.html#GTask-struct"><span class="type">GTask</span></a> for them, moving them to a worker thread
+and it is not possible to use <a href="../gio/GTask.html#GTask-struct"><span class="type">GTask</span></a> for them, moving them to a worker thread
 can clarify the code.</p>
 </div>
 <div class="refsect1">
@@ -689,7 +689,7 @@ Note that <a class="link" href="glib-Threads.html#g-thread-join" title="g_thread
 <tr>
 <td class="parameter_name"><p>name</p></td>
 <td class="parameter_description"><p> an (optional) name for the new thread. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>func</p></td>
@@ -735,7 +735,7 @@ it allows for the possibility of failure.</p>
 <tr>
 <td class="parameter_name"><p>name</p></td>
 <td class="parameter_description"><p> an (optional) name for the new thread. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>func</p></td>
@@ -1774,7 +1774,8 @@ the write lock on <em class="parameter"><code>rw_lock</code></em>
  or blocks waiting for it, the current
 thread will block. Read locks can be taken recursively.</p>
 <p>It is implementation-defined how many threads are allowed to
-hold read locks on the same lock simultaneously.</p>
+hold read locks on the same lock simultaneously. If the limit is hit,
+or if a deadlock is detected, a critical warning will be emitted.</p>
 <div class="refsect3">
 <a name="g-rw-lock-reader-lock.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -2188,7 +2189,7 @@ while calling this function, though not required.</p>
 </pre>
 <p>A macro to assist with the static initialisation of a <a class="link" href="glib-Threads.html#GPrivate" title="struct GPrivate"><span class="type">GPrivate</span></a>.</p>
 <p>This macro is useful for the case that a <a class="link" href="glib-Datasets.html#GDestroyNotify" title="GDestroyNotify ()"><span class="type">GDestroyNotify</span></a> function
-should be associated the key.  This is needed when the key will be
+should be associated with the key.  This is needed when the key will be
 used to point at memory that should be deallocated when the thread
 exits.</p>
 <p>Additionally, the <a class="link" href="glib-Datasets.html#GDestroyNotify" title="GDestroyNotify ()"><span class="type">GDestroyNotify</span></a> will also be called on the previous

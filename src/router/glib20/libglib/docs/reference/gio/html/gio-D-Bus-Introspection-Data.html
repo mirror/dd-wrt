@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>D-Bus Introspection Data: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="gdbus-lowlevel.html" title="Low-level D-Bus Support">
 <link rel="prev" href="gio-D-Bus-Addresses.html" title="D-Bus Addresses">
@@ -307,7 +307,7 @@
 </div>
 <div class="refsect1">
 <a name="gio-D-Bus-Introspection-Data.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/gobject-Boxed-Types.html">GBoxed</a>
+<pre class="screen">    <a href="/home/mclasen/gnome/share/gtk-doc/html/gobject/gobject-Boxed-Types.html">GBoxed</a>
     <span class="lineart">├──</span> GDBusAnnotationInfo
     <span class="lineart">├──</span> GDBusArgInfo
     <span class="lineart">├──</span> GDBusInterfaceInfo
@@ -351,7 +351,7 @@ g_dbus_annotation_info_lookup (<em class="parameter"><code><a class="link" href=
 <tr>
 <td class="parameter_name"><p>annotations</p></td>
 <td class="parameter_description"><p> A <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>-terminated array of annotations or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>name</p></td>
@@ -581,8 +581,8 @@ method.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>string_builder</p></td>
-<td class="parameter_description"><p> A <a href="../glib-Strings.html#GString"><span class="type">GString</span></a> to to append XML data to. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>]</span></td>
+<td class="parameter_description"><p>A <a href="../glib-Strings.html#GString"><span class="type">GString</span></a> to to append XML data to.</p></td>
+<td class="parameter_annotations"> </td>
 </tr>
 </tbody>
 </table></div>
@@ -703,8 +703,8 @@ handling the <code class="literal">org.freedesktop.DBus.Introspectable.Introspec
 </tr>
 <tr>
 <td class="parameter_name"><p>string_builder</p></td>
-<td class="parameter_description"><p> A <a href="../glib-Strings.html#GString"><span class="type">GString</span></a> to to append XML data to. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>]</span></td>
+<td class="parameter_description"><p>A <a href="../glib-Strings.html#GString"><span class="type">GString</span></a> to to append XML data to.</p></td>
+<td class="parameter_annotations"> </td>
 </tr>
 </tbody>
 </table></div>

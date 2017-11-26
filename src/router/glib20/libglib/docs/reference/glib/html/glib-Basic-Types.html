@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Basic Types: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-fundamentals.html" title="GLib Fundamentals">
 <link rel="prev" href="glib-Version-Information.html" title="Version Information">
@@ -384,19 +384,21 @@
 <div class="refsect1">
 <a name="glib-Basic-Types.description"></a><h2>Description</h2>
 <p>GLib defines a number of commonly used types, which can be divided
-into 4 groups:</p>
+into several groups:</p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem"><p>New types which are not part of standard C (but are defined in
-various C standard library header files) - <a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="type">gboolean</span></a>, <a class="link" href="glib-Basic-Types.html#gsize" title="gsize"><span class="type">gsize</span></a>,
-<a class="link" href="glib-Basic-Types.html#gssize" title="gssize"><span class="type">gssize</span></a>, <a class="link" href="glib-Basic-Types.html#goffset" title="goffset"><span class="type">goffset</span></a>, <a class="link" href="glib-Basic-Types.html#gintptr" title="gintptr"><span class="type">gintptr</span></a>, <a class="link" href="glib-Basic-Types.html#guintptr" title="guintptr"><span class="type">guintptr</span></a>.</p></li>
+various C standard library header files) — <a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="type">gboolean</span></a>, <a class="link" href="glib-Basic-Types.html#gssize" title="gssize"><span class="type">gssize</span></a>.</p></li>
 <li class="listitem"><p>Integer types which are guaranteed to be the same size across
-all platforms - <a class="link" href="glib-Basic-Types.html#gint8" title="gint8"><span class="type">gint8</span></a>, <a class="link" href="glib-Basic-Types.html#guint8" title="guint8"><span class="type">guint8</span></a>, <a class="link" href="glib-Basic-Types.html#gint16" title="gint16"><span class="type">gint16</span></a>, <a class="link" href="glib-Basic-Types.html#guint16" title="guint16"><span class="type">guint16</span></a>, <a class="link" href="glib-Basic-Types.html#gint32" title="gint32"><span class="type">gint32</span></a>,
+all platforms — <a class="link" href="glib-Basic-Types.html#gint8" title="gint8"><span class="type">gint8</span></a>, <a class="link" href="glib-Basic-Types.html#guint8" title="guint8"><span class="type">guint8</span></a>, <a class="link" href="glib-Basic-Types.html#gint16" title="gint16"><span class="type">gint16</span></a>, <a class="link" href="glib-Basic-Types.html#guint16" title="guint16"><span class="type">guint16</span></a>, <a class="link" href="glib-Basic-Types.html#gint32" title="gint32"><span class="type">gint32</span></a>,
 <a class="link" href="glib-Basic-Types.html#guint32" title="guint32"><span class="type">guint32</span></a>, <a class="link" href="glib-Basic-Types.html#gint64" title="gint64"><span class="type">gint64</span></a>, <a class="link" href="glib-Basic-Types.html#guint64" title="guint64"><span class="type">guint64</span></a>.</p></li>
 <li class="listitem"><p>Types which are easier to use than their standard C counterparts -
 <a class="link" href="glib-Basic-Types.html#gpointer" title="gpointer"><span class="type">gpointer</span></a>, <a class="link" href="glib-Basic-Types.html#gconstpointer" title="gconstpointer"><span class="type">gconstpointer</span></a>, <a class="link" href="glib-Basic-Types.html#guchar" title="guchar"><span class="type">guchar</span></a>, <a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a>, <a class="link" href="glib-Basic-Types.html#gushort" title="gushort"><span class="type">gushort</span></a>, <a class="link" href="glib-Basic-Types.html#gulong" title="gulong"><span class="type">gulong</span></a>.</p></li>
 <li class="listitem"><p>Types which correspond exactly to standard C types, but are
-included for completeness - <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a>, <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a>, <a class="link" href="glib-Basic-Types.html#gshort" title="gshort"><span class="type">gshort</span></a>, <a class="link" href="glib-Basic-Types.html#glong" title="glong"><span class="type">glong</span></a>,
+included for completeness — <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a>, <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a>, <a class="link" href="glib-Basic-Types.html#gshort" title="gshort"><span class="type">gshort</span></a>, <a class="link" href="glib-Basic-Types.html#glong" title="glong"><span class="type">glong</span></a>,
 <a class="link" href="glib-Basic-Types.html#gfloat" title="gfloat"><span class="type">gfloat</span></a>, <a class="link" href="glib-Basic-Types.html#gdouble" title="gdouble"><span class="type">gdouble</span></a>.</p></li>
+<li class="listitem"><p>Types which correspond exactly to standard C99 types, but are available
+to use even if your compiler does not support C99 — <a class="link" href="glib-Basic-Types.html#gsize" title="gsize"><span class="type">gsize</span></a>, <a class="link" href="glib-Basic-Types.html#goffset" title="goffset"><span class="type">goffset</span></a>,
+<a class="link" href="glib-Basic-Types.html#gintptr" title="gintptr"><span class="type">gintptr</span></a>, <a class="link" href="glib-Basic-Types.html#guintptr" title="guintptr"><span class="type">guintptr</span></a>.</p></li>
 </ul></div>
 <p>GLib also defines macros for the limits of some of the standard
 integer and floating point types, as well as macros for suitable

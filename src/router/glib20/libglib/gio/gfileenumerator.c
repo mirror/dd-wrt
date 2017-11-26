@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -176,7 +176,7 @@ g_file_enumerator_init (GFileEnumerator *enumerator)
 /**
  * g_file_enumerator_next_file:
  * @enumerator: a #GFileEnumerator.
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
  * @error: location to store the error occurring, or %NULL to ignore
  *
  * Returns information for the next file in the enumerated object.
@@ -245,7 +245,7 @@ g_file_enumerator_next_file (GFileEnumerator *enumerator,
 /**
  * g_file_enumerator_close:
  * @enumerator: a #GFileEnumerator.
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore. 
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
  * @error: location to store the error occurring, or %NULL to ignore
  *
  * Releases all resources used by this enumerator, making the
@@ -310,15 +310,15 @@ next_async_callback_wrapper (GObject      *source_object,
  * g_file_enumerator_next_files_async:
  * @enumerator: a #GFileEnumerator.
  * @num_files: the number of file info objects to request
- * @io_priority: the [I/O priority][io-priority] of the request 
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
+ * @io_priority: the [I/O priority][io-priority] of the request
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
  * @callback: (scope async): a #GAsyncReadyCallback to call when the request is satisfied
  * @user_data: (closure): the data to pass to callback function
  *
  * Request information for a number of files from the enumerator asynchronously.
  * When all i/o for the operation is finished the @callback will be called with
  * the requested information. 
-
+ *
  * See the documentation of #GFileEnumerator for information about the
  * order of returned files.
  *
@@ -437,7 +437,7 @@ close_async_callback_wrapper (GObject      *source_object,
  * g_file_enumerator_close_async:
  * @enumerator: a #GFileEnumerator.
  * @io_priority: the [I/O priority][io-priority] of the request
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore. 
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
  * @callback: (scope async): a #GAsyncReadyCallback to call when the request is satisfied
  * @user_data: (closure): the data to pass to callback function
  *
@@ -576,8 +576,8 @@ g_file_enumerator_set_pending (GFileEnumerator *enumerator,
 /**
  * g_file_enumerator_iterate:
  * @direnum: an open #GFileEnumerator
- * @out_info: (out) (transfer none) (allow-none): Output location for the next #GFileInfo, or %NULL
- * @out_child: (out) (transfer none) (allow-none): Output location for the next #GFile, or %NULL
+ * @out_info: (out) (transfer none) (optional): Output location for the next #GFileInfo, or %NULL
+ * @out_child: (out) (transfer none) (optional): Output location for the next #GFile, or %NULL
  * @cancellable: a #GCancellable
  * @error: a #GError
  *

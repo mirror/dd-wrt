@@ -4,7 +4,7 @@
 * This library is free software; you can redistribute it and/or
 * modify it under the terms of the GNU Lesser General Public
 * License as published by the Free Software Foundation; either
-* version 2 of the License, or (at your option) any later version.
+* version 2.1 of the License, or (at your option) any later version.
 *
 * This library is distributed in the hope that it will be useful,
 * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -58,7 +58,8 @@ g_gtk_notification_backend_is_supported (void)
   if (session_bus == NULL)
     return FALSE;
 
-  reply = g_dbus_connection_call_sync (session_bus, "org.freedesktop.DBus", "/", "org.freedesktop.DBus",
+  reply = g_dbus_connection_call_sync (session_bus, "org.freedesktop.DBus", "/org/freedesktop/DBus",
+                                       "org.freedesktop.DBus",
                                        "GetNameOwner", g_variant_new ("(s)", "org.gtk.Notifications"),
                                        G_VARIANT_TYPE ("(s)"), G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL);
 

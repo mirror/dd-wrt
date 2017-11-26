@@ -7,7 +7,7 @@ include $(top_srcdir)/glib.mk
 ACLOCAL_AMFLAGS = -I m4macros ${ACLOCAL_FLAGS}
 
 SUBDIRS = . m4macros glib gmodule gthread gobject gio po docs tests
-DIST_SUBDIRS = $(SUBDIRS) build
+DIST_SUBDIRS = $(SUBDIRS) build win32
 
 bin_SCRIPTS = glib-gettextize
 
@@ -49,7 +49,6 @@ EXTRA_DIST += 			\
 	glib-tap.mk		\
 	tap-driver.sh		\
 	tap-test		\
-	makefile.msc		\
 	msvc_recommended_pragmas.h \
 	config.h.win32.in	\
         po/po2tbl.sed.in        \
@@ -66,6 +65,48 @@ EXTRA_DIST += 			\
 	gtk-doc.make		\
 	$(NULL)
 
+meson_build_files = \
+	config.h.meson \
+	meson_options.txt \
+	meson.build \
+	docs/reference/gio/meson.build \
+	docs/reference/gio/xml/gtkdocentities.ent.in \
+	docs/reference/gio/xml/meson.build \
+	docs/reference/glib/meson.build \
+	docs/reference/glib/xml/gtkdocentities.ent.in \
+	docs/reference/glib/xml/meson.build \
+	docs/reference/gobject/meson.build \
+	docs/reference/gobject/xml/gtkdocentities.ent.in \
+	docs/reference/gobject/xml/meson.build \
+	gio/data-to-c.py \
+	gio/gdbus-2.0/codegen/meson.build \
+	gio/inotify/meson.build \
+	gio/kqueue/meson.build \
+	gio/meson.build \
+	gio/tests/meson.build \
+	gio/tests/gengiotypefuncs.py \
+	gio/tests/modules/meson.build \
+	gio/tests/gdbus-object-manager-example/meson.build \
+	gio/tests/de/LC_MESSAGES/meson.build \
+	gio/win32/meson.build \
+	gio/xdgmime/meson.build \
+	glib/glibconfig.h.in \
+	glib/gnulib/meson.build \
+	glib/libcharset/meson.build \
+	glib/meson.build \
+	glib/pcre/meson.build \
+	glib/tests/meson.build \
+	gmodule/meson.build \
+	gobject/meson.build \
+	gobject/tests/meson.build \
+	gthread/meson.build \
+	po/meson.build \
+	tests/refcount/meson.build \
+	tests/meson.build \
+	tests/gobject/meson.build \
+	$()
+
+EXTRA_DIST += $(meson_build_files)
 
 # These may be in the builddir too
 BUILT_EXTRA_DIST += 		\
@@ -102,6 +143,10 @@ pkgconfig_DATA += gio-windows-2.0.pc
 endif
 
 $(pkgconfig_DATA): config.status
+
+# Install Valgrind suppression file
+valgrinddir = $(datadir)/glib-2.0/valgrind
+dist_valgrind_DATA = glib.supp
 
 # build documentation when doing distcheck
 DISTCHECK_CONFIGURE_FLAGS = --enable-debug --enable-gtk-doc --enable-man --disable-maintainer-mode

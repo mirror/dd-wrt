@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gdbus-codegen: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="tools.html" title="GIO Tools">
 <link rel="prev" href="gdbus.html" title="gdbus">
@@ -30,7 +30,7 @@
 </tr></table></div>
 <div class="refsynopsisdiv">
 <h2>Synopsis</h2>
-<div class="cmdsynopsis"><p><code class="command">gdbus-codegen</code>  [<code class="option">-h</code>, <code class="option">--help</code>] [<code class="option">--interface-prefix</code> <em class="replaceable"><code>org.project.Prefix</code></em>] [<code class="option">--generate-c-code</code> <em class="replaceable"><code>OUTFILES</code></em>] [<code class="option">--c-namespace</code> <em class="replaceable"><code>YourProject</code></em>] [<code class="option">--c-generate-object-manager</code>] [<code class="option">--c-generate-autocleanup</code> none|objects|all] [<code class="option">--generate-docbook</code> <em class="replaceable"><code>OUTFILES</code></em>] [<code class="option">--xml-files</code> <em class="replaceable"><code>FILE</code></em>]  [
+<div class="cmdsynopsis"><p><code class="command">gdbus-codegen</code>  [<code class="option">-h</code>, <code class="option">--help</code>] [<code class="option">--interface-prefix</code> <em class="replaceable"><code>org.project.Prefix</code></em>] [<code class="option">--generate-c-code</code> <em class="replaceable"><code>OUTFILES</code></em>] [<code class="option">--c-namespace</code> <em class="replaceable"><code>YourProject</code></em>] [<code class="option">--c-generate-object-manager</code>] [<code class="option">--c-generate-autocleanup</code> none|objects|all] [<code class="option">--output-directory</code> <em class="replaceable"><code>OUTDIR</code></em>] [<code class="option">--generate-docbook</code> <em class="replaceable"><code>OUTFILES</code></em>] [<code class="option">--xml-files</code> <em class="replaceable"><code>FILE</code></em>]  [
         <code class="option">--annotate</code>
         <em class="replaceable"><code>ELEMENT</code></em>
         <em class="replaceable"><code>KEY</code></em>
@@ -55,7 +55,7 @@
 <a name="id-1.4.26.7.6"></a><h2>Generating C code</h2>
 <p>
     When generating C code, a
-    <a href="https://developer.gnome.org/gobject/unstable/GTypeModule.html"><span class="type">GInterface</span></a>-derived type is generated for each D-Bus
+    <a href="/home/mclasen/gnome/share/gtk-doc/html/gobject/GTypeModule.html"><span class="type">GInterface</span></a>-derived type is generated for each D-Bus
     interface. Additionally, for every generated type,
     <span class="type">FooBar</span>, two concrete instantiable types,
     <span class="type">FooBarProxy</span> and <span class="type">FooBarSkeleton</span>, implementing
@@ -158,11 +158,18 @@
 </tr>
 <tr>
 <td><p><span class="term"><code class="option">--generate-c-code</code> <em class="replaceable"><code>OUTFILES</code></em></span></p></td>
-<td><p>
+<td>
+<p>
           Generate C code for all D-Bus interfaces and put it in
           <code class="filename">OUTFILES.c</code> and
-          <code class="filename">OUTFILES.h</code>.
-        </p></td>
+          <code class="filename">OUTFILES.h</code> including any sub-directories. If you want the files to
+          be output in a different location use <code class="option">--output-directory</code> as <code class="filename">OUTFILES.h</code>
+          including sub-directories will be referenced from <code class="filename">OUTFILES.c</code>.
+        </p>
+<p>
+          The full paths would then be <code class="literal">$(OUTDIR)/$(dirname $OUTFILES)/$(basename $OUTFILES).{c,h}</code>.
+        </p>
+</td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="option">--c-namespace</code> <em class="replaceable"><code>YourProject</code></em></span></p></td>
@@ -190,6 +197,12 @@
           due to a corner case in backwards compatibility with a few projects,
           but you should likely switch your project to use 'all'.
           This option was added in GLib 2.50.
+        </p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="option">--output-directory</code> <em class="replaceable"><code>OUTDIR</code></em></span></p></td>
+<td><p>
+          Directory to output generated source to. Equivalent to changing directory before generation.
         </p></td>
 </tr>
 <tr>
@@ -1064,10 +1077,10 @@ proxy <span class="gtkdoc opt">=</span> <span class="function">my_app_frobber_pr
 <p>
     The ABI of the generated <a href="../gobject-Type-Information.html#GType"><span class="type">GType</span></a>s will be preserved only if
     the <code class="literal">org.gtk.GDBus.Since</code> annotation is used
-    judiciously — this is because the VTable for the <a href="https://developer.gnome.org/gobject/unstable/GTypeModule.html"><span class="type">GInterface</span></a>
+    judiciously — this is because the VTable for the <a href="/home/mclasen/gnome/share/gtk-doc/html/gobject/GTypeModule.html"><span class="type">GInterface</span></a>
     relies on functions pointers for signal handlers. Specifically, if
     a D-Bus method, property or signal or is added to a D-Bus
-    interface, then ABI of the generated <a href="https://developer.gnome.org/gobject/unstable/GTypeModule.html"><span class="type">GInterface</span></a> type is preserved
+    interface, then ABI of the generated <a href="/home/mclasen/gnome/share/gtk-doc/html/gobject/GTypeModule.html"><span class="type">GInterface</span></a> type is preserved
     if, and only if, each added method, property signal is annotated
     with they <code class="literal">org.gtk.GDBus.Since</code> annotation using
     a greater version number than previous versions.

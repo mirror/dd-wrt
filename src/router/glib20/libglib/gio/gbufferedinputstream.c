@@ -6,7 +6,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -369,7 +369,7 @@ g_buffered_input_stream_new_sized (GInputStream *base_stream,
  * g_buffered_input_stream_fill:
  * @stream: a #GBufferedInputStream
  * @count: the number of bytes that will be read from the stream
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore
  * @error: location to store the error occurring, or %NULL to ignore
  *
  * Tries to read @count bytes from the stream into the buffer.
@@ -455,7 +455,7 @@ async_fill_callback_wrapper (GObject      *source_object,
  * @stream: a #GBufferedInputStream
  * @count: the number of bytes that will be read from the stream
  * @io_priority: the [I/O priority][io-priority] of the request
- * @cancellable: (allow-none): optional #GCancellable object
+ * @cancellable: (nullable): optional #GCancellable object
  * @callback: (scope async): a #GAsyncReadyCallback
  * @user_data: (closure): a #gpointer
  *
@@ -524,7 +524,7 @@ g_buffered_input_stream_fill_async (GBufferedInputStream *stream,
  *
  * Finishes an asynchronous read.
  *
- * Returns: a #gssize of the read stream, or %-1 on an error.
+ * Returns: a #gssize of the read stream, or `-1` on an error.
  */
 gssize
 g_buffered_input_stream_fill_finish (GBufferedInputStream  *stream,
@@ -941,7 +941,7 @@ g_buffered_input_stream_truncate (GSeekable     *seekable,
 /**
  * g_buffered_input_stream_read_byte:
  * @stream: a #GBufferedInputStream
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore
  * @error: location to store the error occurring, or %NULL to ignore
  *
  * Tries to read a single byte from the stream or the buffer. Will block

@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -262,7 +262,9 @@ buffer_read (Buffer *buffer,
 	     char *dest,
 	     gsize count)
 {
-  memcpy (dest, buffer->data + buffer->start, count);
+  if (count != 0)
+    memcpy (dest, buffer->data + buffer->start, count);
+
   buffer_consumed (buffer, count);
 }
 
@@ -293,9 +295,11 @@ grow_buffer (Buffer *buffer)
   data = g_malloc (size);
   in_buffer = buffer_data_size (buffer);
 
-  memcpy (data,
-	  buffer->data + buffer->start,
-	  in_buffer);
+  if (in_buffer != 0)
+    memcpy (data,
+            buffer->data + buffer->start,
+            in_buffer);
+
   g_free (buffer->data);
   buffer->data = data;
   buffer->end -= buffer->start;

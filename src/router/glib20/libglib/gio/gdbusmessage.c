@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -32,6 +32,8 @@
 #include <sys/mkdev.h>
 #elif MAJOR_IN_SYSMACROS
 #include <sys/sysmacros.h>
+#else
+#define MAJOR_MINOR_NOT_FOUND 1
 #endif
 
 #include "gdbusutils.h"
@@ -474,7 +476,7 @@ enum
   PROP_LOCKED
 };
 
-G_DEFINE_TYPE (GDBusMessage, g_dbus_message, G_TYPE_OBJECT);
+G_DEFINE_TYPE (GDBusMessage, g_dbus_message, G_TYPE_OBJECT)
 
 static void
 g_dbus_message_finalize (GObject *object)
@@ -580,9 +582,9 @@ g_dbus_message_new (void)
 
 /**
  * g_dbus_message_new_method_call:
- * @name: (allow-none): A valid D-Bus name or %NULL.
+ * @name: (nullable): A valid D-Bus name or %NULL.
  * @path: A valid object path.
- * @interface_: (allow-none): A valid D-Bus interface name or %NULL.
+ * @interface_: (nullable): A valid D-Bus interface name or %NULL.
  * @method: A valid method name.
  *
  * Creates a new #GDBusMessage for a method call.
@@ -999,7 +1001,7 @@ g_dbus_message_get_header (GDBusMessage             *message,
  * g_dbus_message_set_header:
  * @message: A #GDBusMessage.
  * @header_field: A 8-bit unsigned integer (typically a value from the #GDBusMessageHeaderField enumeration)
- * @value: (allow-none): A #GVariant to set the header field or %NULL to clear the header field.
+ * @value: (nullable): A #GVariant to set the header field or %NULL to clear the header field.
  *
  * Sets a header field on @message.
  *
@@ -1162,7 +1164,7 @@ g_dbus_message_get_unix_fd_list (GDBusMessage  *message)
 /**
  * g_dbus_message_set_unix_fd_list:
  * @message: A #GDBusMessage.
- * @fd_list: (allow-none): A #GUnixFDList or %NULL.
+ * @fd_list: (nullable): A #GUnixFDList or %NULL.
  *
  * Sets the UNIX file descriptors associated with @message. As a
  * side-effect the %G_DBUS_MESSAGE_HEADER_FIELD_NUM_UNIX_FDS header
@@ -1438,7 +1440,9 @@ parse_value_from_blob (GMemoryBuffer       *buf,
 {
   GVariant *ret;
   GError *local_error;
+#ifdef DEBUG_SERIALIZER
   gboolean is_leaf;
+#endif /* DEBUG_SERIALIZER */
   const gchar *type_string;
 
   type_string = g_variant_type_peek_string (type);
@@ -1451,14 +1455,16 @@ parse_value_from_blob (GMemoryBuffer       *buf,
                indent, "",
                just_align ? "Aligning" : "Reading",
                s,
-               (gint) g_seekable_tell (G_SEEKABLE (buf)));
+               (gint) buf->pos);
       g_free (s);
     }
 #endif /* DEBUG_SERIALIZER */
 
   ret = NULL;
 
+#ifdef DEBUG_SERIALIZER
   is_leaf = TRUE;
+#endif /* DEBUG_SERIALIZER */
   local_error = NULL;
   switch (type_string[0])
     {
@@ -1641,8 +1647,8 @@ parse_value_from_blob (GMemoryBuffer       *buf,
 
           array_len = g_memory_buffer_read_uint32 (buf);
 
-          is_leaf = FALSE;
 #ifdef DEBUG_SERIALIZER
+          is_leaf = FALSE;
           g_print (": array spans 0x%04x bytes\n", array_len);
 #endif /* DEBUG_SERIALIZER */
 
@@ -1749,8 +1755,8 @@ parse_value_from_blob (GMemoryBuffer       *buf,
 
           ensure_input_padding (buf, 8);
 
-          is_leaf = FALSE;
 #ifdef DEBUG_SERIALIZER
+          is_leaf = FALSE;
           g_print ("\n");
 #endif /* DEBUG_SERIALIZER */
 
@@ -1784,8 +1790,8 @@ parse_value_from_blob (GMemoryBuffer       *buf,
         {
           ensure_input_padding (buf, 8);
 
-          is_leaf = FALSE;
 #ifdef DEBUG_SERIALIZER
+          is_leaf = FALSE;
           g_print ("\n");
 #endif /* DEBUG_SERIALIZER */
 
@@ -1819,8 +1825,8 @@ parse_value_from_blob (GMemoryBuffer       *buf,
         }
       else if (g_variant_type_is_variant (type))
         {
-          is_leaf = FALSE;
 #ifdef DEBUG_SERIALIZER
+          is_leaf = FALSE;
           g_print ("\n");
 #endif /* DEBUG_SERIALIZER */
 
@@ -1892,8 +1898,6 @@ parse_value_from_blob (GMemoryBuffer       *buf,
           g_free (s);
         }
     }
-#else
-  is_leaf = is_leaf; /* To avoid -Wunused-but-set-variable */
 #endif /* DEBUG_SERIALIZER */
 
   /* sink the reference, if floating */
@@ -3444,6 +3448,7 @@ g_dbus_message_print (GDBusMessage *message,
     {
       g_string_append_printf (str, "%*s  (none)\n", indent, "");
     }
+  g_list_free (keys);
   g_string_append_printf (str, "%*sBody: ", indent, "");
   if (message->body != NULL)
     {
@@ -3474,8 +3479,10 @@ g_dbus_message_print (GDBusMessage *message,
               fs = g_string_new (NULL);
               if (fstat (fds[n], &statbuf) == 0)
                 {
+#ifndef MAJOR_MINOR_NOT_FOUND                       
                   g_string_append_printf (fs, "%s" "dev=%d:%d", fs->len > 0 ? "," : "",
                                           major (statbuf.st_dev), minor (statbuf.st_dev));
+#endif                  
                   g_string_append_printf (fs, "%s" "mode=0%o", fs->len > 0 ? "," : "",
                                           statbuf.st_mode);
                   g_string_append_printf (fs, "%s" "ino=%" G_GUINT64_FORMAT, fs->len > 0 ? "," : "",
@@ -3484,8 +3491,10 @@ g_dbus_message_print (GDBusMessage *message,
                                           (guint) statbuf.st_uid);
                   g_string_append_printf (fs, "%s" "gid=%u", fs->len > 0 ? "," : "",
                                           (guint) statbuf.st_gid);
+#ifndef MAJOR_MINOR_NOT_FOUND                     
                   g_string_append_printf (fs, "%s" "rdev=%d:%d", fs->len > 0 ? "," : "",
                                           major (statbuf.st_rdev), minor (statbuf.st_rdev));
+#endif                  
                   g_string_append_printf (fs, "%s" "size=%" G_GUINT64_FORMAT, fs->len > 0 ? "," : "",
                                           (guint64) statbuf.st_size);
                   g_string_append_printf (fs, "%s" "atime=%" G_GUINT64_FORMAT, fs->len > 0 ? "," : "",
@@ -3497,7 +3506,8 @@ g_dbus_message_print (GDBusMessage *message,
                 }
               else
                 {
-                  g_string_append_printf (fs, "(fstat failed: %s)", strerror (errno));
+                  int errsv = errno;
+                  g_string_append_printf (fs, "(fstat failed: %s)", g_strerror (errsv));
                 }
               g_string_append_printf (str, "%*s  fd %d: %s\n", indent, "", fds[n], fs->str);
               g_string_free (fs, TRUE);

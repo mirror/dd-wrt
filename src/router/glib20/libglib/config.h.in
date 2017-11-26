@@ -83,6 +83,14 @@
 /* define to 1 if Carbon is available */
 #undef HAVE_CARBON
 
+/* Define to 1 if you have the Mac OS X function CFLocaleCopyCurrent in the
+   CoreFoundation framework. */
+#undef HAVE_CFLOCALECOPYCURRENT
+
+/* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in
+   the CoreFoundation framework. */
+#undef HAVE_CFPREFERENCESCOPYAPPVALUE
+
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
@@ -100,6 +108,10 @@
 
 /* Define to 1 if you have the `dcgettext' function. */
 #undef HAVE_DCGETTEXT
+
+/* Define to 1 if you have the declaration of `strerror_r', and to 0 if you
+   don't. */
+#undef HAVE_DECL_STRERROR_R
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
@@ -161,9 +173,6 @@
 
 /* Define to 1 if you have the `getmntent_r' function. */
 #undef HAVE_GETMNTENT_R
-
-/* Define to 1 if you have the `getprotobyname_r' function. */
-#undef HAVE_GETPROTOBYNAME_R
 
 /* Define to 1 if you have the `getpwuid_r' function. */
 #undef HAVE_GETPWUID_R
@@ -280,11 +289,11 @@
 /* Define to 1 if you have the `memalign' function. */
 #undef HAVE_MEMALIGN
 
-/* Define to 1 if you have the `memmem' function. */
-#undef HAVE_MEMMEM
-
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `mkostemp' function. */
+#undef HAVE_MKOSTEMP
 
 /* Define to 1 if you have the `mmap' function. */
 #undef HAVE_MMAP
@@ -343,6 +352,15 @@
 /* Define to 1 if you have the 'res_init' function. */
 #undef HAVE_RES_INIT
 
+/* Define to 1 if RTLD_GLOBAL is available */
+#undef HAVE_RTLD_GLOBAL
+
+/* Define to 1 if RTLD_LAZY is available */
+#undef HAVE_RTLD_LAZY
+
+/* Define to 1 if RTLD_NOW is available */
+#undef HAVE_RTLD_NOW
+
 /* Define to 1 if you have the <sched.h> header file. */
 #undef HAVE_SCHED_H
 
@@ -363,6 +381,9 @@
 
 /* Define if you have the 'sig_atomic_t' type. */
 #undef HAVE_SIG_ATOMIC_T
+
+/* SIOCGIFADDR is available */
+#undef HAVE_SIOCGIFADDR
 
 /* Define to 1 if you have the `snprintf' function. */
 #undef HAVE_SNPRINTF
@@ -550,6 +571,9 @@
 /* Define to 1 if you have the <sys/xattr.h> header file. */
 #undef HAVE_SYS_XATTR_H
 
+/* Define to 1 if you have the <termios.h> header file. */
+#undef HAVE_TERMIOS_H
+
 /* Define to 1 if you have the `timegm' function. */
 #undef HAVE_TIMEGM
 
@@ -684,6 +708,9 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
+/* Define to 1 if strerror_r returns char *. */
+#undef STRERROR_R_CHAR_P
+
 /* Use no threads */
 #undef THREADS_NONE
 
@@ -766,7 +793,7 @@
 /* Define to 1 if you need to in order for `stat' and other things to work. */
 #undef _POSIX_SOURCE
 
-/* Target the Windows XP API */
+/* Target the Windows 7 API */
 #undef _WIN32_WINNT
 
 /* Needed to get declarations for msg_control and msg_controllen on Solaris */

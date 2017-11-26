@@ -4,20 +4,18 @@
  *  g_execvpe implementation based on GNU libc execvp:
  *   Copyright 1991, 92, 95, 96, 97, 98, 99 Free Software Foundation, Inc.
  *
- * GLib is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * GLib is distributed in the hope that it will be useful,
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with GLib; see the file COPYING.LIB.  If not, write
- * to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -190,7 +188,7 @@ unquote_string_inplace (gchar* str, gchar** end, GError** err)
 
 /**
  * g_shell_quote:
- * @unquoted_string: a literal string
+ * @unquoted_string: (type filename): a literal string
  * 
  * Quotes a string so that the shell (/bin/sh) will interpret the
  * quoted string to mean @unquoted_string. If you pass a filename to
@@ -199,7 +197,7 @@ unquote_string_inplace (gchar* str, gchar** end, GError** err)
  * quoting style used is undefined (single or double quotes may be
  * used).
  * 
- * Returns: quoted string
+ * Returns: (type filename): quoted string
  **/
 gchar*
 g_shell_quote (const gchar *unquoted_string)
@@ -240,7 +238,7 @@ g_shell_quote (const gchar *unquoted_string)
 
 /**
  * g_shell_unquote:
- * @quoted_string: shell-quoted string
+ * @quoted_string: (type filename): shell-quoted string
  * @error: error return location or NULL
  * 
  * Unquotes a string as the shell (/bin/sh) would. Only handles
@@ -265,7 +263,7 @@ g_shell_quote (const gchar *unquoted_string)
  * be escaped with backslash. Otherwise double quotes preserve things
  * literally.
  *
- * Returns: an unquoted string
+ * Returns: (type filename): an unquoted string
  **/
 gchar*
 g_shell_unquote (const gchar *quoted_string,
@@ -618,10 +616,10 @@ tokenize_command_line (const gchar *command_line,
 
 /**
  * g_shell_parse_argv:
- * @command_line: command line to parse
+ * @command_line: (type filename): command line to parse
  * @argcp: (out) (optional): return location for number of args
- * @argvp: (out) (optional) (array length=argcp zero-terminated=1): return
- *   location for array of args
+ * @argvp: (out) (optional) (array length=argcp zero-terminated=1) (element-type filename):
+ *   return location for array of args
  * @error: (optional): return location for error
  * 
  * Parses a command line into an argument vector, in much the same way

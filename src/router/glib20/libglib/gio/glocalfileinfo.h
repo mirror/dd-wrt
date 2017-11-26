@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,6 +23,7 @@
 
 #include <gio/gfileinfo.h>
 #include <gio/gfile.h>
+#include <glib/gstdioprivate.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -40,8 +41,8 @@ typedef struct
 } GLocalParentFileInfo;
 
 #ifdef G_OS_WIN32
-/* We want 64-bit file size support */
-#define GLocalFileStat struct _stati64
+/* We want 64-bit file size, file ID and symlink support */
+#define GLocalFileStat GWin32PrivateStat
 #else
 #define GLocalFileStat struct stat
 #endif

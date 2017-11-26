@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Warnings and Assertions: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-core.html" title="GLib Core Application Support">
 <link rel="prev" href="glib-Error-Reporting.html" title="Error Reporting">
@@ -321,9 +321,26 @@ function, so that it avoids this incorrect call.</p>
  evaluates to <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a>,
 the result is usually that a critical message is logged and the current
 function returns.</p>
-<p>If G_DISABLE_CHECKS is defined then the check is not performed.  You
+<p>If <code class="literal">G_DISABLE_CHECKS</code> is defined then the check is not performed.  You
 should therefore not depend on any side effects of <em class="parameter"><code>expr</code></em>
 .</p>
+<p>To debug failure of a <a class="link" href="glib-Warnings-and-Assertions.html#g-return-if-fail" title="g_return_if_fail()"><code class="function">g_return_if_fail()</code></a> check, run the code under a debugger
+with <code class="literal">G_DEBUG=fatal-criticals</code> or <code class="literal">G_DEBUG=fatal-warnings</code> defined in the
+environment (see <a class="ulink" href="glib-running.html" target="_top">Running GLib Applications</a>):</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1</pre></td>
+        <td class="listing_code"><pre class="programlisting">G_DEBUG<span class="gtkdoc opt">=</span>fatal<span class="gtkdoc opt">-</span>warnings gdb <span class="gtkdoc opt">./</span>my<span class="gtkdoc opt">-</span>program</pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p></p>
+<p>Any unrelated failures can be skipped over in
+<a class="ulink" href="https://www.gnu.org/software/gdb/" target="_top">gdb</a> using the <code class="literal">continue</code> command.</p>
 <div class="refsect3">
 <a name="g-return-if-fail.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -358,9 +375,10 @@ function, so that it avoids this incorrect call.</p>
 the result is usually that a critical message is logged and <em class="parameter"><code>val</code></em>
  is
 returned from the current function.</p>
-<p>If G_DISABLE_CHECKS is defined then the check is not performed.  You
+<p>If <code class="literal">G_DISABLE_CHECKS</code> is defined then the check is not performed.  You
 should therefore not depend on any side effects of <em class="parameter"><code>expr</code></em>
 .</p>
+<p>See <a class="link" href="glib-Warnings-and-Assertions.html#g-return-if-fail" title="g_return_if_fail()"><code class="function">g_return_if_fail()</code></a> for guidance on how to debug failure of this check.</p>
 <div class="refsect3">
 <a name="g-return-val-if-fail.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -391,6 +409,7 @@ if the expression is not true</p></td>
 <pre class="programlisting">#define             g_return_if_reached()</pre>
 <p>Logs a critical message and returns from the current function.
 This can only be used in functions which do not return a value.</p>
+<p>See <a class="link" href="glib-Warnings-and-Assertions.html#g-return-if-fail" title="g_return_if_fail()"><code class="function">g_return_if_fail()</code></a> for guidance on how to debug failure of this check.</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -398,6 +417,7 @@ This can only be used in functions which do not return a value.</p>
 <pre class="programlisting">#define             g_return_val_if_reached(val)</pre>
 <p>Logs a critical message and returns <em class="parameter"><code>val</code></em>
 .</p>
+<p>See <a class="link" href="glib-Warnings-and-Assertions.html#g-return-if-fail" title="g_return_if_fail()"><code class="function">g_return_if_fail()</code></a> for guidance on how to debug failure of this check.</p>
 <div class="refsect3">
 <a name="g-return-val-if-reached.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -529,8 +549,8 @@ a stack trace. The prompt is then shown again.</p>
 <td class="parameter_description"><p>the program name, needed by gdb for the "[S]tack trace"
 option. If <em class="parameter"><code>prg_name</code></em>
 is <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>, <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-prgname" title="g_get_prgname ()"><code class="function">g_get_prgname()</code></a> is called to get
-the program name (which will work correctly if <a href="http://developer.gnome.org/gdk3/gdk4-General.html#gdk-init"><code class="function">gdk_init()</code></a> or
-<a href="http://developer.gnome.org/gtk4/gtk4-General.html#gtk-init"><code class="function">gtk_init()</code></a> has been called)</p></td>
+the program name (which will work correctly if <code class="function">gdk_init()</code> or
+<a href="../gtk4/gtk4-General.html#gtk-init"><code class="function">gtk_init()</code></a> has been called)</p></td>
 <td class="parameter_annotations"> </td>
 </tr></tbody>
 </table></div>
@@ -544,8 +564,8 @@ g_on_error_stack_trace (<em class="parameter"><code>const <a class="link" href="
 <p>Invokes gdb, which attaches to the current process and shows a
 stack trace. Called by <a class="link" href="glib-Warnings-and-Assertions.html#g-on-error-query" title="g_on_error_query ()"><code class="function">g_on_error_query()</code></a> when the "[S]tack trace"
 option is selected. You can get the current process's program name
-with <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-prgname" title="g_get_prgname ()"><code class="function">g_get_prgname()</code></a>, assuming that you have called <a href="http://developer.gnome.org/gtk4/gtk4-General.html#gtk-init"><code class="function">gtk_init()</code></a> or
-<a href="http://developer.gnome.org/gdk3/gdk4-General.html#gdk-init"><code class="function">gdk_init()</code></a>.</p>
+with <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-prgname" title="g_get_prgname ()"><code class="function">g_get_prgname()</code></a>, assuming that you have called <a href="../gtk4/gtk4-General.html#gtk-init"><code class="function">gtk_init()</code></a> or
+<code class="function">gdk_init()</code>.</p>
 <p>This function may cause different actions on non-UNIX platforms.</p>
 <div class="refsect3">
 <a name="g-on-error-stack-trace.parameters"></a><h4>Parameters</h4>

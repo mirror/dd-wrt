@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GIcon: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="icons.html" title="Icons">
 <link rel="prev" href="icons.html" title="Icons">
@@ -115,7 +115,7 @@
 </div>
 <div class="refsect1">
 <a name="GIcon.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/GTypeModule.html">GInterface</a>
+<pre class="screen">    <a href="/home/mclasen/gnome/share/gtk-doc/html/gobject/GTypeModule.html">GInterface</a>
     <span class="lineart">╰──</span> GIcon
 </pre>
 </div>
@@ -157,7 +157,7 @@ of an icon (see <a class="link" href="GThemedIcon.html" title="GThemedIcon"><spa
 <p>If you want to consume <a class="link" href="GIcon.html" title="GIcon"><span class="type">GIcon</span></a> (for example, in a toolkit) you must
 be prepared to handle at least the three following cases:
 <a class="link" href="GLoadableIcon.html" title="GLoadableIcon"><span class="type">GLoadableIcon</span></a>, <a class="link" href="GThemedIcon.html" title="GThemedIcon"><span class="type">GThemedIcon</span></a> and <a class="link" href="GEmblemedIcon.html" title="GEmblemedIcon"><span class="type">GEmblemedIcon</span></a>.  It may also make
-sense to have fast-paths for other cases (like handling <span class="type">GdkPixbuf</span>
+sense to have fast-paths for other cases (like handling <a href="../gdk-pixbuf/gdk-pixbuf-The-GdkPixbuf-Structure.html#GdkPixbuf-struct"><span class="type">GdkPixbuf</span></a>
 directly, for example) but all compliant <a class="link" href="GIcon.html" title="GIcon"><span class="type">GIcon</span></a> implementations
 outside of GIO must implement <a class="link" href="GLoadableIcon.html" title="GLoadableIcon"><span class="type">GLoadableIcon</span></a>.</p>
 <p>If your application or library provides one or more <a class="link" href="GIcon.html" title="GIcon"><span class="type">GIcon</span></a>
@@ -216,12 +216,12 @@ g_icon_equal (<em class="parameter"><code><a class="link" href="GIcon.html" titl
 <tr>
 <td class="parameter_name"><p>icon1</p></td>
 <td class="parameter_description"><p> pointer to the first <a class="link" href="GIcon.html" title="GIcon"><span class="type">GIcon</span></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>icon2</p></td>
 <td class="parameter_description"><p> pointer to the second <a class="link" href="GIcon.html" title="GIcon"><span class="type">GIcon</span></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>

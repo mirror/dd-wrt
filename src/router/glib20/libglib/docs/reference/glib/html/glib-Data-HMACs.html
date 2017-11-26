@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Secure HMAC Digests: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Data-Checksums.html" title="Data Checksums">
@@ -150,7 +150,7 @@ uses algorithms like SHA1 in a secure way to produce a digest of a
 key and data.</p>
 <p>Both the key and data are arbitrary byte arrays of bytes or characters.</p>
 <p>Support for HMAC Digests has been added in GLib 2.30, and support for SHA-512
-in GLib 2.42.</p>
+in GLib 2.42. Support for SHA-384 was added in GLib 2.52.</p>
 </div>
 <div class="refsect1">
 <a name="glib-Data-HMACs.functions_details"></a><h2>Functions</h2>
@@ -174,7 +174,8 @@ array of raw bytes. Once either <a class="link" href="glib-Data-HMACs.html#g-hma
 <a class="link" href="glib-Data-HMACs.html#g-hmac-get-digest" title="g_hmac_get_digest ()"><code class="function">g_hmac_get_digest()</code></a> have been called on a <a class="link" href="glib-Data-HMACs.html#GHmac" title="GHmac"><span class="type">GHmac</span></a>, the HMAC
 will be closed and it won't be possible to call <a class="link" href="glib-Data-HMACs.html#g-hmac-update" title="g_hmac_update ()"><code class="function">g_hmac_update()</code></a>
 on it anymore.</p>
-<p>Support for digests of type <a class="link" href="glib-Data-Checksums.html#G-CHECKSUM-SHA512:CAPS"><code class="literal">G_CHECKSUM_SHA512</code></a> has been added in GLib 2.42.</p>
+<p>Support for digests of type <a class="link" href="glib-Data-Checksums.html#G-CHECKSUM-SHA512:CAPS"><code class="literal">G_CHECKSUM_SHA512</code></a> has been added in GLib 2.42.
+Support for <a class="link" href="glib-Data-Checksums.html#G-CHECKSUM-SHA384:CAPS"><code class="literal">G_CHECKSUM_SHA384</code></a> was added in GLib 2.52.</p>
 <div class="refsect3">
 <a name="g-hmac-new.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">

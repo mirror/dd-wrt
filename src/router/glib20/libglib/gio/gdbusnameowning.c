@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -197,7 +197,7 @@ schedule_call_in_idle (Client *client, CallType  call_type)
                          call_in_idle_cb,
                          data,
                          (GDestroyNotify) call_handler_data_free);
-  g_source_set_name (idle_source, "[gio] call_in_idle_cb");
+  g_source_set_name (idle_source, "[gio, gdbusnameowning.c] call_in_idle_cb");
   g_source_attach (idle_source, client->main_context);
   g_source_unref (idle_source);
 }
@@ -272,6 +272,13 @@ on_name_lost_or_acquired (GDBusConnection  *connection,
       g_strcmp0 (interface_name, "org.freedesktop.DBus") != 0 ||
       g_strcmp0 (sender_name, "org.freedesktop.DBus") != 0)
     goto out;
+
+  if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(s)")))
+    {
+      g_warning ("%s signal had unexpected signature %s", signal_name,
+                 g_variant_get_type_string (parameters));
+      goto out;
+    }
 
   if (g_strcmp0 (signal_name, "NameLost") == 0)
     {
@@ -495,10 +502,10 @@ connection_get_cb (GObject      *source_object,
  * @connection: a #GDBusConnection
  * @name: the well-known name to own
  * @flags: a set of flags from the #GBusNameOwnerFlags enumeration
- * @name_acquired_handler: (allow-none): handler to invoke when @name is acquired or %NULL
- * @name_lost_handler: (allow-none): handler to invoke when @name is lost or %NULL
+ * @name_acquired_handler: (nullable): handler to invoke when @name is acquired or %NULL
+ * @name_lost_handler: (nullable): handler to invoke when @name is lost or %NULL
  * @user_data: user data to pass to handlers
- * @user_data_free_func: (allow-none): function for freeing @user_data or %NULL
+ * @user_data_free_func: (nullable): function for freeing @user_data or %NULL
  *
  * Like g_bus_own_name() but takes a #GDBusConnection instead of a
  * #GBusType.
@@ -557,11 +564,11 @@ g_bus_own_name_on_connection (GDBusConnection          *connection,
  * @bus_type: the type of bus to own a name on
  * @name: the well-known name to own
  * @flags: a set of flags from the #GBusNameOwnerFlags enumeration
- * @bus_acquired_handler: (allow-none): handler to invoke when connected to the bus of type @bus_type or %NULL
- * @name_acquired_handler: (allow-none): handler to invoke when @name is acquired or %NULL
- * @name_lost_handler: (allow-none): handler to invoke when @name is lost or %NULL
+ * @bus_acquired_handler: (nullable): handler to invoke when connected to the bus of type @bus_type or %NULL
+ * @name_acquired_handler: (nullable): handler to invoke when @name is acquired or %NULL
+ * @name_lost_handler: (nullable): handler to invoke when @name is lost or %NULL
  * @user_data: user data to pass to handlers
- * @user_data_free_func: (allow-none): function for freeing @user_data or %NULL
+ * @user_data_free_func: (nullable): function for freeing @user_data or %NULL
  *
  * Starts acquiring @name on the bus specified by @bus_type and calls
  * @name_acquired_handler and @name_lost_handler when the name is
@@ -788,11 +795,11 @@ bus_own_name_free_func (gpointer user_data)
  * @bus_type: the type of bus to own a name on
  * @name: the well-known name to own
  * @flags: a set of flags from the #GBusNameOwnerFlags enumeration
- * @bus_acquired_closure: (allow-none): #GClosure to invoke when connected to
+ * @bus_acquired_closure: (nullable): #GClosure to invoke when connected to
  *     the bus of type @bus_type or %NULL
- * @name_acquired_closure: (allow-none): #GClosure to invoke when @name is
+ * @name_acquired_closure: (nullable): #GClosure to invoke when @name is
  *     acquired or %NULL
- * @name_lost_closure: (allow-none): #GClosure to invoke when @name is lost or
+ * @name_lost_closure: (nullable): #GClosure to invoke when @name is lost or
  *     %NULL
  *
  * Version of g_bus_own_name() using closures instead of callbacks for
@@ -828,9 +835,9 @@ g_bus_own_name_with_closures (GBusType            bus_type,
  * @connection: a #GDBusConnection
  * @name: the well-known name to own
  * @flags: a set of flags from the #GBusNameOwnerFlags enumeration
- * @name_acquired_closure: (allow-none): #GClosure to invoke when @name is
+ * @name_acquired_closure: (nullable): #GClosure to invoke when @name is
  *     acquired or %NULL
- * @name_lost_closure: (allow-none): #GClosure to invoke when @name is lost
+ * @name_lost_closure: (nullable): #GClosure to invoke when @name is lost
  *     or %NULL
  *
  * Version of g_bus_own_name_on_connection() using closures instead of

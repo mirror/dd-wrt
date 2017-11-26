@@ -2,20 +2,18 @@
  *
  *  Copyright 2000 Red Hat, Inc.
  *
- * GLib is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * GLib is distributed in the hope that it will be useful,
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with GLib; see the file COPYING.LIB.  If not, write
- * to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef __G_SPAWN_H__
@@ -106,7 +104,7 @@ typedef enum
 
 /**
  * GSpawnChildSetupFunc:
- * @user_data: user data to pass to the function.
+ * @user_data: (closure): user data to pass to the function.
  *
  * Specifies the type of the setup function passed to g_spawn_async(),
  * g_spawn_sync() and g_spawn_async_with_pipes(), which can, in very
@@ -250,59 +248,6 @@ gboolean g_spawn_check_exit_status (gint      exit_status,
 
 GLIB_AVAILABLE_IN_ALL
 void g_spawn_close_pid (GPid pid);
-
-#ifndef __GTK_DOC_IGNORE__
-#ifdef G_OS_WIN32
-#define g_spawn_async              g_spawn_async_utf8
-#define g_spawn_async_with_pipes   g_spawn_async_with_pipes_utf8
-#define g_spawn_sync               g_spawn_sync_utf8
-#define g_spawn_command_line_sync  g_spawn_command_line_sync_utf8
-#define g_spawn_command_line_async g_spawn_command_line_async_utf8
-
-GLIB_AVAILABLE_IN_ALL
-gboolean g_spawn_async_utf8              (const gchar           *working_directory,
-                                          gchar                **argv,
-                                          gchar                **envp,
-                                          GSpawnFlags            flags,
-                                          GSpawnChildSetupFunc   child_setup,
-                                          gpointer               user_data,
-                                          GPid                  *child_pid,
-                                          GError               **error);
-GLIB_AVAILABLE_IN_ALL
-gboolean g_spawn_async_with_pipes_utf8   (const gchar           *working_directory,
-                                          gchar                **argv,
-                                          gchar                **envp,
-                                          GSpawnFlags            flags,
-                                          GSpawnChildSetupFunc   child_setup,
-                                          gpointer               user_data,
-                                          GPid                  *child_pid,
-                                          gint                  *standard_input,
-                                          gint                  *standard_output,
-                                          gint                  *standard_error,
-                                          GError               **error);
-GLIB_AVAILABLE_IN_ALL
-gboolean g_spawn_sync_utf8               (const gchar           *working_directory,
-                                          gchar                **argv,
-                                          gchar                **envp,
-                                          GSpawnFlags            flags,
-                                          GSpawnChildSetupFunc   child_setup,
-                                          gpointer               user_data,
-                                          gchar                **standard_output,
-                                          gchar                **standard_error,
-                                          gint                  *exit_status,
-                                          GError               **error);
-
-GLIB_AVAILABLE_IN_ALL
-gboolean g_spawn_command_line_sync_utf8  (const gchar           *command_line,
-                                          gchar                **standard_output,
-                                          gchar                **standard_error,
-                                          gint                  *exit_status,
-                                          GError               **error);
-GLIB_AVAILABLE_IN_ALL
-gboolean g_spawn_command_line_async_utf8 (const gchar           *command_line,
-                                          GError               **error);
-#endif
-#endif
 
 G_END_DECLS
 

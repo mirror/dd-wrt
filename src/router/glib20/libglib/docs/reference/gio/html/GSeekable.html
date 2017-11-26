@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GSeekable: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="streaming.html" title="Streaming I/O">
 <link rel="prev" href="streaming.html" title="Streaming I/O">
@@ -106,7 +106,7 @@
 </div>
 <div class="refsect1">
 <a name="GSeekable.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/GTypeModule.html">GInterface</a>
+<pre class="screen">    <a href="/home/mclasen/gnome/share/gtk-doc/html/gobject/GTypeModule.html">GInterface</a>
     <span class="lineart">╰──</span> GSeekable
 </pre>
 </div>
@@ -245,7 +245,7 @@ was cancelled, the error <a class="link" href="gio-GIOError.html#G-IO-ERROR-CANC
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -268,7 +268,8 @@ appropriately if present.</p>
 <a name="g-seekable-can-truncate"></a><h3>g_seekable_can_truncate ()</h3>
 <pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_seekable_can_truncate (<em class="parameter"><code><a class="link" href="GSeekable.html" title="GSeekable"><span class="type">GSeekable</span></a> *seekable</code></em>);</pre>
-<p>Tests if the stream can be truncated.</p>
+<p>Tests if the length of the stream can be adjusted with
+<a class="link" href="GSeekable.html#g-seekable-truncate" title="g_seekable_truncate ()"><code class="function">g_seekable_truncate()</code></a>.</p>
 <div class="refsect3">
 <a name="g-seekable-can-truncate.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -297,14 +298,19 @@ g_seekable_truncate (<em class="parameter"><code><a class="link" href="GSeekable
                      <em class="parameter"><code><a href="../glib-Basic-Types.html#goffset"><span class="type">goffset</span></a> offset</code></em>,
                      <em class="parameter"><code><a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> *cancellable</code></em>,
                      <em class="parameter"><code><a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
-<p>Truncates a stream with a given <span class="type">offset</span>. </p>
+<p>Sets the length of the stream to <em class="parameter"><code>offset</code></em>
+. If the stream was previously
+larger than <em class="parameter"><code>offset</code></em>
+, the extra data is discarded. If the stream was
+previouly shorter than <em class="parameter"><code>offset</code></em>
+, it is extended with NUL ('\0') bytes.</p>
 <p>If <em class="parameter"><code>cancellable</code></em>
  is not <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>, then the operation can be cancelled by
 triggering the cancellable object from another thread. If the operation
 was cancelled, the error <a class="link" href="gio-GIOError.html#G-IO-ERROR-CANCELLED:CAPS"><code class="literal">G_IO_ERROR_CANCELLED</code></a> will be returned. If an
 operation was partially finished when the operation was cancelled the
 partial result will be returned, without an error.</p>
-<p>Virtual: truncate_fn</p>
+<p><span class="annotation">[<acronym title="This is the invoker for a virtual method."><span class="acronym">virtual</span></acronym> truncate_fn]</span></p>
 <div class="refsect3">
 <a name="g-seekable-truncate.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -321,13 +327,14 @@ partial result will be returned, without an error.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>offset</p></td>
-<td class="parameter_description"><p>a <a href="../glib-Basic-Types.html#goffset"><span class="type">goffset</span></a>.</p></td>
+<td class="parameter_description"><p>new length for <em class="parameter"><code>seekable</code></em>
+, in bytes.</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>

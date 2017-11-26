@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -176,12 +176,14 @@ add_watch (const gchar       *cmdline,
     g_signal_connect (monitor, "changed", G_CALLBACK (watch_callback), g_strdup (cmdline));
 
   monitor = NULL; /* leak */
+  g_object_unref (file);
 
   return TRUE;
 
 err:
-  g_printerr ("error: %s: %s", cmdline, error->message);
+  print_file_error (file, error->message);
   g_error_free (error);
+  g_object_unref (file);
 
   return FALSE;
 }
@@ -193,7 +195,6 @@ handle_monitor (int argc, gchar *argv[], gboolean do_help)
   gchar *param;
   GError *error = NULL;
   GFileMonitorFlags flags;
-  guint total = 0;
   guint i;
 
   g_set_prgname ("gio monitor");
@@ -210,6 +211,7 @@ handle_monitor (int argc, gchar *argv[], gboolean do_help)
   if (do_help)
     {
       show_help (context, NULL);
+      g_option_context_free (context);
       return 0;
     }
 
@@ -217,6 +219,14 @@ handle_monitor (int argc, gchar *argv[], gboolean do_help)
     {
       show_help (context, error->message);
       g_error_free (error);
+      g_option_context_free (context);
+      return 1;
+    }
+
+  if (!watch_dirs && !watch_files && !watch_direct && !watch_silent && !watch_default)
+    {
+      show_help (context, _("No locations given"));
+      g_option_context_free (context);
       return 1;
     }
 
@@ -230,7 +240,6 @@ handle_monitor (int argc, gchar *argv[], gboolean do_help)
       for (i = 0; watch_dirs[i]; i++)
         if (!add_watch (watch_dirs[i], WATCH_DIR, flags, TRUE))
           return 1;
-      total++;
     }
 
   if (watch_files)
@@ -238,7 +247,6 @@ handle_monitor (int argc, gchar *argv[], gboolean do_help)
       for (i = 0; watch_files[i]; i++)
         if (!add_watch (watch_files[i], WATCH_FILE, flags, TRUE))
           return 1;
-      total++;
     }
 
   if (watch_direct)
@@ -246,7 +254,6 @@ handle_monitor (int argc, gchar *argv[], gboolean do_help)
       for (i = 0; watch_direct[i]; i++)
         if (!add_watch (watch_direct[i], WATCH_FILE, flags | G_FILE_MONITOR_WATCH_HARD_LINKS, TRUE))
           return 1;
-      total++;
     }
 
   if (watch_silent)
@@ -254,7 +261,6 @@ handle_monitor (int argc, gchar *argv[], gboolean do_help)
       for (i = 0; watch_silent[i]; i++)
         if (!add_watch (watch_silent[i], WATCH_FILE, flags | G_FILE_MONITOR_WATCH_HARD_LINKS, FALSE))
           return 1;
-      total++;
     }
 
   if (watch_default)
@@ -262,13 +268,6 @@ handle_monitor (int argc, gchar *argv[], gboolean do_help)
       for (i = 0; watch_default[i]; i++)
         if (!add_watch (watch_default[i], WATCH_AUTO, flags, TRUE))
           return 1;
-      total++;
-    }
-
-  if (!total)
-    {
-      g_printerr ("gio: Must give at least one file to monitor\n");
-      return 1;
     }
 
   while (TRUE)

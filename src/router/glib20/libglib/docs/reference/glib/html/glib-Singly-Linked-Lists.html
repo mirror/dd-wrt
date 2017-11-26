@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Singly-Linked Lists: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-data-types.html" title="GLib Data Types">
 <link rel="prev" href="glib-Doubly-Linked-Lists.html" title="Doubly-Linked Lists">
@@ -1238,7 +1238,10 @@ or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code
 <div class="refsect2">
 <a name="g-slist-next"></a><h3>g_slist_next()</h3>
 <pre class="programlisting">#define             g_slist_next(slist)</pre>
-<p>A convenience macro to get the next element in a <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a>.</p>
+<p>A convenience macro to get the next element in a <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a>.
+Note that it is considered perfectly acceptable to access
+<em class="parameter"><code>slist-&gt;next</code></em>
+ directly.</p>
 <div class="refsect3">
 <a name="g-slist-next.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">

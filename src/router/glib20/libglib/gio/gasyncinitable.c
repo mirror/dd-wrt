@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -166,6 +166,9 @@ g_async_initable_default_init (GAsyncInitableInterface *iface)
  * initial construction. If the object also implements #GInitable you can
  * optionally call g_initable_init() instead.
  *
+ * This method is intended for language bindings. If writing in C,
+ * g_async_initable_new_async() should typically be used instead.
+ *
  * When the initialization is finished, @callback will be called. You can
  * then call g_async_initable_init_finish() to get the result of the
  * initialization.
@@ -183,11 +186,11 @@ g_async_initable_default_init (GAsyncInitableInterface *iface)
  * have undefined behaviour. They will often fail with g_critical() or
  * g_warning(), but this must not be relied on.
  *
- * Implementations of this method must be idempotent: i.e. multiple calls
- * to this function with the same argument should return the same results.
- * Only the first call initializes the object; further calls return the result
- * of the first call. This is so that it's safe to implement the singleton
- * pattern in the GObject constructor function.
+ * Callers should not assume that a class which implements #GAsyncInitable can
+ * be initialized multiple times; for more information, see g_initable_init().
+ * If a class explicitly supports being initialized multiple times,
+ * implementation requires yielding all subsequent calls to init_async() on the
+ * results of the first call.
  *
  * For classes that also support the #GInitable interface, the default
  * implementation of this method will run the g_initable_init() function
@@ -311,7 +314,7 @@ g_async_initable_real_init_finish (GAsyncInitable  *initable,
  * @callback: a #GAsyncReadyCallback to call when the initialization is
  *     finished
  * @user_data: the data to pass to callback function
- * @first_property_name: (allow-none): the name of the first property, or %NULL if no
+ * @first_property_name: (nullable): the name of the first property, or %NULL if no
  *     properties
  * @...:  the value of the first property, followed by other property
  *    value pairs, and ended by %NULL.
@@ -363,6 +366,8 @@ g_async_initable_new_async (GType                object_type,
  * for any errors.
  *
  * Since: 2.22
+ * Deprecated: 2.54: Use g_object_new_with_properties() and
+ * g_async_initable_init_async() instead. See #GParameter for more information.
  */
 void
 g_async_initable_newv_async (GType                object_type,
@@ -377,7 +382,9 @@ g_async_initable_newv_async (GType                object_type,
 
   g_return_if_fail (G_TYPE_IS_ASYNC_INITABLE (object_type));
 
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   obj = g_object_newv (object_type, n_parameters, parameters);
+G_GNUC_END_IGNORE_DEPRECATIONS
 
   g_async_initable_init_async (G_ASYNC_INITABLE (obj),
 			       io_priority, cancellable,

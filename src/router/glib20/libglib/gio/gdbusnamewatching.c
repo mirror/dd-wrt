@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -77,7 +77,10 @@ typedef struct
   gboolean                  initialized;
 } Client;
 
-static guint next_global_id = 1;
+/* Must be accessed atomically. */
+static volatile guint next_global_id = 1;
+
+/* Must be accessed with @lock held. */
 static GHashTable *map_id_to_client = NULL;
 
 static Client *
@@ -198,7 +201,7 @@ schedule_call_in_idle (Client *client, CallType call_type)
                          call_in_idle_cb,
                          data,
                          (GDestroyNotify) call_handler_data_free);
-  g_source_set_name (idle_source, "[gio] call_in_idle_cb");
+  g_source_set_name (idle_source, "[gio, gdbusnamewatching.c] call_in_idle_cb");
   g_source_attach (idle_source, client->main_context);
   g_source_unref (idle_source);
 }
@@ -246,13 +249,43 @@ call_vanished_handler (Client  *client,
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+/* Return a reference to the #Client for @watcher_id, or %NULL if it’s been
+ * unwatched. This is safe to call from any thread. */
+static Client *
+dup_client (guint watcher_id)
+{
+  Client *client;
+
+  G_LOCK (lock);
+
+  g_assert (watcher_id != 0);
+  g_assert (map_id_to_client != NULL);
+
+  client = g_hash_table_lookup (map_id_to_client, GUINT_TO_POINTER (watcher_id));
+
+  if (client != NULL)
+    client_ref (client);
+
+  G_UNLOCK (lock);
+
+  return client;
+}
+
+/* Could be called from any thread, so it could be called after client_unref()
+ * has started finalising the #Client. Avoid that by looking up the #Client
+ * atomically. */
 static void
 on_connection_disconnected (GDBusConnection *connection,
                             gboolean         remote_peer_vanished,
                             GError          *error,
                             gpointer         user_data)
 {
-  Client *client = user_data;
+  guint watcher_id = GPOINTER_TO_UINT (user_data);
+  Client *client = NULL;
+
+  client = dup_client (watcher_id);
+  if (client == NULL)
+    return;
 
   if (client->name_owner_changed_subscription_id > 0)
     g_dbus_connection_signal_unsubscribe (client->connection, client->name_owner_changed_subscription_id);
@@ -264,10 +297,13 @@ on_connection_disconnected (GDBusConnection *connection,
   client->connection = NULL;
 
   call_vanished_handler (client, FALSE);
+
+  client_unref (client);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
 
+/* Will always be called from the thread which acquired client->main_context. */
 static void
 on_name_owner_changed (GDBusConnection *connection,
                        const gchar      *sender_name,
@@ -277,10 +313,15 @@ on_name_owner_changed (GDBusConnection *connection,
                        GVariant         *parameters,
                        gpointer          user_data)
 {
-  Client *client = user_data;
+  guint watcher_id = GPOINTER_TO_UINT (user_data);
+  Client *client = NULL;
   const gchar *name;
   const gchar *old_owner;
   const gchar *new_owner;
+
+  client = dup_client (watcher_id);
+  if (client == NULL)
+    return;
 
   if (!client->initialized)
     goto out;
@@ -316,7 +357,7 @@ on_name_owner_changed (GDBusConnection *connection,
     }
 
  out:
-  ;
+  client_unref (client);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -441,7 +482,7 @@ has_connection (Client *client)
   client->disconnected_signal_handler_id = g_signal_connect (client->connection,
                                                              "closed",
                                                              G_CALLBACK (on_connection_disconnected),
-                                                             client);
+                                                             GUINT_TO_POINTER (client->id));
 
   /* start listening to NameOwnerChanged messages immediately */
   client->name_owner_changed_subscription_id = g_dbus_connection_signal_subscribe (client->connection,
@@ -452,7 +493,7 @@ has_connection (Client *client)
                                                                                    client->name,
                                                                                    G_DBUS_SIGNAL_FLAGS_NONE,
                                                                                    on_name_owner_changed,
-                                                                                   client,
+                                                                                   GUINT_TO_POINTER (client->id),
                                                                                    NULL);
 
   if (client->flags & G_BUS_NAME_WATCHER_FLAGS_AUTO_START)
@@ -505,10 +546,10 @@ connection_get_cb (GObject      *source_object,
  * @bus_type: The type of bus to watch a name on.
  * @name: The name (well-known or unique) to watch.
  * @flags: Flags from the #GBusNameWatcherFlags enumeration.
- * @name_appeared_handler: (allow-none): Handler to invoke when @name is known to exist or %NULL.
- * @name_vanished_handler: (allow-none): Handler to invoke when @name is known to not exist or %NULL.
+ * @name_appeared_handler: (nullable): Handler to invoke when @name is known to exist or %NULL.
+ * @name_vanished_handler: (nullable): Handler to invoke when @name is known to not exist or %NULL.
  * @user_data: User data to pass to handlers.
- * @user_data_free_func: (allow-none): Function for freeing @user_data or %NULL.
+ * @user_data_free_func: (nullable): Function for freeing @user_data or %NULL.
  *
  * Starts watching @name on the bus specified by @bus_type and calls
  * @name_appeared_handler and @name_vanished_handler when the name is
@@ -562,7 +603,7 @@ g_bus_watch_name (GBusType                  bus_type,
 
   client = g_new0 (Client, 1);
   client->ref_count = 1;
-  client->id = next_global_id++; /* TODO: uh oh, handle overflow */
+  client->id = g_atomic_int_add (&next_global_id, 1); /* TODO: uh oh, handle overflow */
   client->name = g_strdup (name);
   client->flags = flags;
   client->name_appeared_handler = name_appeared_handler;
@@ -594,10 +635,10 @@ g_bus_watch_name (GBusType                  bus_type,
  * @connection: A #GDBusConnection.
  * @name: The name (well-known or unique) to watch.
  * @flags: Flags from the #GBusNameWatcherFlags enumeration.
- * @name_appeared_handler: (allow-none): Handler to invoke when @name is known to exist or %NULL.
- * @name_vanished_handler: (allow-none): Handler to invoke when @name is known to not exist or %NULL.
+ * @name_appeared_handler: (nullable): Handler to invoke when @name is known to exist or %NULL.
+ * @name_vanished_handler: (nullable): Handler to invoke when @name is known to not exist or %NULL.
  * @user_data: User data to pass to handlers.
- * @user_data_free_func: (allow-none): Function for freeing @user_data or %NULL.
+ * @user_data_free_func: (nullable): Function for freeing @user_data or %NULL.
  *
  * Like g_bus_watch_name() but takes a #GDBusConnection instead of a
  * #GBusType.
@@ -624,7 +665,7 @@ guint g_bus_watch_name_on_connection (GDBusConnection          *connection,
 
   client = g_new0 (Client, 1);
   client->ref_count = 1;
-  client->id = next_global_id++; /* TODO: uh oh, handle overflow */
+  client->id = g_atomic_int_add (&next_global_id, 1); /* TODO: uh oh, handle overflow */
   client->name = g_strdup (name);
   client->flags = flags;
   client->name_appeared_handler = name_appeared_handler;
@@ -744,9 +785,9 @@ bus_watch_name_free_func (gpointer user_data)
  * @bus_type: The type of bus to watch a name on.
  * @name: The name (well-known or unique) to watch.
  * @flags: Flags from the #GBusNameWatcherFlags enumeration.
- * @name_appeared_closure: (allow-none): #GClosure to invoke when @name is known
+ * @name_appeared_closure: (nullable): #GClosure to invoke when @name is known
  * to exist or %NULL.
- * @name_vanished_closure: (allow-none): #GClosure to invoke when @name is known
+ * @name_vanished_closure: (nullable): #GClosure to invoke when @name is known
  * to not exist or %NULL.
  *
  * Version of g_bus_watch_name() using closures instead of callbacks for
@@ -778,9 +819,9 @@ g_bus_watch_name_with_closures (GBusType                 bus_type,
  * @connection: A #GDBusConnection.
  * @name: The name (well-known or unique) to watch.
  * @flags: Flags from the #GBusNameWatcherFlags enumeration.
- * @name_appeared_closure: (allow-none): #GClosure to invoke when @name is known
+ * @name_appeared_closure: (nullable): #GClosure to invoke when @name is known
  * to exist or %NULL.
- * @name_vanished_closure: (allow-none): #GClosure to invoke when @name is known
+ * @name_vanished_closure: (nullable): #GClosure to invoke when @name is known
  * to not exist or %NULL.
  *
  * Version of g_bus_watch_name_on_connection() using closures instead of callbacks for

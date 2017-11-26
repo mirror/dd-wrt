@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GSettings: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="settings.html" title="Settings">
 <link rel="prev" href="settings.html" title="Settings">
@@ -1223,12 +1223,12 @@ have.</p>
 <tr>
 <td class="parameter_name"><p>backend</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GSettingsBackend.html" title="GSettingsBackend"><span class="type">GSettingsBackend</span></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>path</p></td>
 <td class="parameter_description"><p> the path to use. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -1244,8 +1244,7 @@ have.</p>
 <a name="g-settings-sync"></a><h3>g_settings_sync ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_settings_sync (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
-<p>Ensures that all pending operations for the given are complete for
-the default backend.</p>
+<p>Ensures that all pending operations are complete for the default backend.</p>
 <p>Writes made to a <a class="link" href="GSettings.html" title="GSettings"><span class="type">GSettings</span></a> are handled asynchronously.  For this
 reason, it is very unlikely that the changes have it to disk by the
 time <a class="link" href="GSettings.html#g-settings-set" title="g_settings_set ()"><code class="function">g_settings_set()</code></a> returns.</p>
@@ -1614,7 +1613,7 @@ schema for <em class="parameter"><code>settings</code></em>
 <div class="refsect3">
 <a name="g-settings-get-user-value.returns"></a><h4>Returns</h4>
 <p> the user's value, if set. </p>
-<p><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+<p><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-40.html#api-index-2.40">2.40</a></p>
 </div>
@@ -1667,7 +1666,7 @@ schema for <em class="parameter"><code>settings</code></em>
 <div class="refsect3">
 <a name="g-settings-get-default-value.returns"></a><h4>Returns</h4>
 <p> the default value. </p>
-<p><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+<p><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-40.html#api-index-2.40">2.40</a></p>
 </div>
@@ -2722,7 +2721,7 @@ having an array of strings type in the schema for <em class="parameter"><code>se
 <tr>
 <td class="parameter_name"><p>value</p></td>
 <td class="parameter_description"><p> the value to set it to, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3097,7 +3096,8 @@ function also establishes a binding between the writability of
  has
 a boolean property by that name). See <a class="link" href="GSettings.html#g-settings-bind-writable" title="g_settings_bind_writable ()"><code class="function">g_settings_bind_writable()</code></a>
 for more details about writable bindings.</p>
-<p>Note that the lifecycle of the binding is tied to the object,
+<p>Note that the lifecycle of the binding is tied to <em class="parameter"><code>object</code></em>
+,
 and that you can have only one binding per object property.
 If you bind the same property twice on the same object, the second
 binding overrides the first one.</p>
@@ -3161,7 +3161,8 @@ and the property <em class="parameter"><code>property</code></em>
 .</p>
 <p>The binding uses the provided mapping functions to map between
 settings and property values.</p>
-<p>Note that the lifecycle of the binding is tied to the object,
+<p>Note that the lifecycle of the binding is tied to <em class="parameter"><code>object</code></em>
+,
 and that you can have only one binding per object property.
 If you bind the same property twice on the same object, the second
 binding overrides the first one.</p>
@@ -3259,7 +3260,8 @@ property, not the other way.</p>
 value as it passes from the setting to the object, i.e. <em class="parameter"><code>property</code></em>
 
 will be set to <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if the key is not writable.</p>
-<p>Note that the lifecycle of the binding is tied to the object,
+<p>Note that the lifecycle of the binding is tied to <em class="parameter"><code>object</code></em>
+,
 and that you can have only one binding per object property.
 If you bind the same property twice on the same object, the second
 binding overrides the first one.</p>
@@ -3552,7 +3554,7 @@ directions.</p>
 <div class="refsect2">
 <a name="GSettings--backend"></a><h3>The <code class="literal">“backend”</code> property</h3>
 <pre class="programlisting">  “backend”                  <a class="link" href="GSettingsBackend.html" title="GSettingsBackend"><span class="type">GSettingsBackend</span></a> *</pre>
-<p>The GSettingsBackend for this settings object.</p>
+<p>The name of the context that the settings are stored in.</p>
 <p>Flags: Read / Write / Construct Only</p>
 </div>
 <hr>
@@ -3667,7 +3669,7 @@ for each affected key.  If any other connected handler returns
 <tr>
 <td class="parameter_name"><p>keys</p></td>
 <td class="parameter_description"><p>       an array of <a href="../glib-Quarks.html#GQuark"><span class="type">GQuarks</span></a> for the changed keys, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=n_keys][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> GQuark][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=n_keys][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> GQuark][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>n_keys</p></td>

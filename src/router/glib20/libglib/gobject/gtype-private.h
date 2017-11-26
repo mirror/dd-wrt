@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -90,6 +90,17 @@ void        _g_closure_invoke_va (GClosure       *closure,
 				  int             n_params,
 				  GType          *param_types);
 
+/**
+ * _G_DEFINE_TYPE_EXTENDED_WITH_PRELUDE:
+ *
+ * See also G_DEFINE_TYPE_EXTENDED().  This macro is generally only
+ * necessary as a workaround for classes which have properties of
+ * object types that may be initialized in distinct threads.  See:
+ * https://bugzilla.gnome.org/show_bug.cgi?id=674885
+ *
+ * Currently private.
+ */
+#define _G_DEFINE_TYPE_EXTENDED_WITH_PRELUDE(TN, t_n, T_P, _f_, _P_, _C_)	    _G_DEFINE_TYPE_EXTENDED_BEGIN_PRE (TN, t_n, T_P) {_P_;} _G_DEFINE_TYPE_EXTENDED_BEGIN_REGISTER (TN, t_n, T_P, _f_){_C_;} _G_DEFINE_TYPE_EXTENDED_END()
 
 G_END_DECLS
 

@@ -2,17 +2,17 @@
  * Copyright (C) 1998-2000 Red Hat, Inc.
  *
  * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public
+ * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Library General Public
- * License along with this library; if not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef __G_MAIN_H__
@@ -70,7 +70,7 @@ typedef struct _GSourcePrivate          GSourcePrivate;
  * @unref: Called when a reference to the callback object is dropped
  * @get: Called to extract the callback function and data from the
  *     callback object.
-
+ *
  * The `GSourceCallbackFuncs` struct contains
  * functions for managing callback objects.
  */
@@ -104,7 +104,10 @@ typedef struct _GSourceCallbackFuncs    GSourceCallbackFuncs;
  *     are needed for this type of event source. The return value of the
  *     @dispatch function should be #G_SOURCE_REMOVE if the source should be
  *     removed or #G_SOURCE_CONTINUE to keep it.
- * @finalize: Called when the source is finalized.
+ * @finalize: Called when the source is finalized. At this point, the source
+ *     will have been destroyed, had its callback cleared, and have been removed
+ *     from its #GMainContext, but it will still have its final reference count;
+ *     so methods can be called on it from within this function.
  *
  * The `GSourceFuncs` struct contains a table of
  * functions used to handle event sources in a generic manner.
@@ -366,10 +369,10 @@ gint     g_main_context_query    (GMainContext *context,
                                   GPollFD      *fds,
                                   gint          n_fds);
 GLIB_AVAILABLE_IN_ALL
-gint     g_main_context_check    (GMainContext *context,
-                                  gint          max_priority,
-                                  GPollFD      *fds,
-                                  gint          n_fds);
+gboolean     g_main_context_check    (GMainContext *context,
+                                      gint          max_priority,
+                                      GPollFD      *fds,
+                                      gint          n_fds);
 GLIB_AVAILABLE_IN_ALL
 void     g_main_context_dispatch (GMainContext *context);
 
@@ -559,6 +562,38 @@ gboolean g_source_remove_by_user_data        (gpointer       user_data);
 GLIB_AVAILABLE_IN_ALL
 gboolean g_source_remove_by_funcs_user_data  (GSourceFuncs  *funcs,
                                               gpointer       user_data);
+
+/**
+ * GClearHandleFunc:
+ * @handle_id: the handle ID to clear
+ *
+ * Specifies the type of function passed to g_clear_handle_id().
+ * The implementation is expected to free the resource identified
+ * by @handle_id; for instance, if @handle_id is a #GSource ID,
+ * g_source_remove() can be used.
+ *
+ * Since: 2.56
+ */
+typedef void (* GClearHandleFunc) (guint handle_id);
+
+GLIB_AVAILABLE_IN_2_56
+void    g_clear_handle_id (guint           *tag_ptr,
+                           GClearHandleFunc clear_func);
+
+#define g_clear_handle_id(tag_ptr, clear_func)             \
+  G_STMT_START {                                           \
+    G_STATIC_ASSERT (sizeof *(tag_ptr) == sizeof (guint)); \
+    guint *_tag_ptr = (guint *) (tag_ptr);                 \
+    guint _handle_id;                                      \
+                                                           \
+    _handle_id = *_tag_ptr;                                \
+    if (_handle_id > 0)                                    \
+      {                                                    \
+        *_tag_ptr = 0;                                     \
+        if (clear_func != NULL)                            \
+          clear_func (_handle_id);                         \
+      }                                                    \
+  } G_STMT_END
 
 /* Idles, child watchers and timeouts */
 GLIB_AVAILABLE_IN_ALL

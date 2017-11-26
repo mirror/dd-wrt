@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -51,7 +51,7 @@
 
 /* --- defines --- */
 #define PARAM_FLOATING_FLAG                     0x2
-#define	G_PARAM_USER_MASK			(~0 << G_PARAM_USER_SHIFT)
+#define	G_PARAM_USER_MASK			(~0U << G_PARAM_USER_SHIFT)
 #define PSPEC_APPLIES_TO_VALUE(pspec, value)	(G_TYPE_CHECK_VALUE_TYPE ((value), G_PARAM_SPEC_VALUE_TYPE (pspec)))
 
 /* --- prototypes --- */
@@ -948,7 +948,7 @@ g_param_spec_pool_insert (GParamSpecPool *pool,
       g_mutex_lock (&pool->mutex);
       pspec->owner_type = owner_type;
       g_param_spec_ref (pspec);
-      g_hash_table_insert (pool->hash_table, pspec, pspec);
+      g_hash_table_add (pool->hash_table, pspec);
       g_mutex_unlock (&pool->mutex);
     }
   else
@@ -1430,7 +1430,7 @@ g_param_type_register_static (const gchar              *name,
 /**
  * g_value_set_param:
  * @value: a valid #GValue of type %G_TYPE_PARAM
- * @param: (allow-none): the #GParamSpec to be set
+ * @param: (nullable): the #GParamSpec to be set
  *
  * Set the contents of a %G_TYPE_PARAM #GValue to @param.
  */
@@ -1452,7 +1452,7 @@ g_value_set_param (GValue     *value,
 /**
  * g_value_set_param_take_ownership: (skip)
  * @value: a valid #GValue of type %G_TYPE_PARAM
- * @param: (allow-none): the #GParamSpec to be set
+ * @param: (nullable): the #GParamSpec to be set
  *
  * This is an internal function introduced mainly for C marshallers.
  *
@@ -1468,7 +1468,7 @@ g_value_set_param_take_ownership (GValue     *value,
 /**
  * g_value_take_param: (skip)
  * @value: a valid #GValue of type %G_TYPE_PARAM
- * @param: (allow-none): the #GParamSpec to be set
+ * @param: (nullable): the #GParamSpec to be set
  *
  * Sets the contents of a %G_TYPE_PARAM #GValue to @param and takes
  * over the ownership of the callers reference to @param; the caller
@@ -1529,7 +1529,7 @@ g_value_dup_param (const GValue *value)
  *
  * Gets the default value of @pspec as a pointer to a #GValue.
  *
- * The #GValue will remain value for the life of @pspec.
+ * The #GValue will remain valid for the life of @pspec.
  *
  * Returns: a pointer to a #GValue which must not be modified
  *

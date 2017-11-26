@@ -2,10 +2,10 @@
  *
  * Copyright © 2009 Codethink Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * See the included COPYING file for more information.
  *
@@ -65,8 +65,8 @@ G_DEFINE_TYPE_WITH_CODE (GUnixConnection, g_unix_connection,
  * g_unix_connection_send_fd:
  * @connection: a #GUnixConnection
  * @fd: a file descriptor
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
- * @error: (allow-none): #GError for error reporting, or %NULL to ignore.
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
+ * @error: (nullable): #GError for error reporting, or %NULL to ignore.
  *
  * Passes a file descriptor to the receiving side of the
  * connection. The receiving end has to call g_unix_connection_receive_fd()
@@ -119,8 +119,8 @@ g_unix_connection_send_fd (GUnixConnection  *connection,
 /**
  * g_unix_connection_receive_fd:
  * @connection: a #GUnixConnection
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore
- * @error: (allow-none): #GError for error reporting, or %NULL to ignore
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore
+ * @error: (nullable): #GError for error reporting, or %NULL to ignore
  *
  * Receives a file descriptor from the sending end of the connection.
  * The sending end has to call g_unix_connection_send_fd() for this
@@ -288,7 +288,7 @@ gboolean                g_unix_connection_create_pair                   (GUnixCo
 /**
  * g_unix_connection_send_credentials:
  * @connection: A #GUnixConnection.
- * @cancellable: (allow-none): A #GCancellable or %NULL.
+ * @cancellable: (nullable): A #GCancellable or %NULL.
  * @error: Return location for error or %NULL.
  *
  * Passes the credentials of the current user the receiving side
@@ -386,7 +386,7 @@ send_credentials_async_thread (GTask         *task,
 /**
  * g_unix_connection_send_credentials_async:
  * @connection: A #GUnixConnection.
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
  * @callback: (scope async): a #GAsyncReadyCallback to call when the request is satisfied
  * @user_data: (closure): the data to pass to callback function
  *
@@ -439,7 +439,7 @@ g_unix_connection_send_credentials_finish (GUnixConnection *connection,
 /**
  * g_unix_connection_receive_credentials:
  * @connection: A #GUnixConnection.
- * @cancellable: (allow-none): A #GCancellable or %NULL.
+ * @cancellable: (nullable): A #GCancellable or %NULL.
  * @error: Return location for error or %NULL.
  *
  * Receives credentials from the sending end of the connection.  The
@@ -497,11 +497,12 @@ g_unix_connection_receive_credentials (GUnixConnection      *connection,
 			      &opt_val,
 			      NULL))
       {
+        int errsv = errno;
         g_set_error (error,
                      G_IO_ERROR,
-                     g_io_error_from_errno (errno),
+                     g_io_error_from_errno (errsv),
                      _("Error checking if SO_PASSCRED is enabled for socket: %s"),
-                     strerror (errno));
+                     g_strerror (errsv));
         goto out;
       }
     if (opt_val == 0)
@@ -512,11 +513,12 @@ g_unix_connection_receive_credentials (GUnixConnection      *connection,
 				  TRUE,
 				  NULL))
           {
+            int errsv = errno;
             g_set_error (error,
                          G_IO_ERROR,
-                         g_io_error_from_errno (errno),
+                         g_io_error_from_errno (errsv),
                          _("Error enabling SO_PASSCRED: %s"),
-                         strerror (errno));
+                         g_strerror (errsv));
             goto out;
           }
         turn_off_so_passcreds = TRUE;
@@ -605,11 +607,12 @@ g_unix_connection_receive_credentials (GUnixConnection      *connection,
 				FALSE,
 				NULL))
         {
+          int errsv = errno;
           g_set_error (error,
                        G_IO_ERROR,
-                       g_io_error_from_errno (errno),
+                       g_io_error_from_errno (errsv),
                        _("Error while disabling SO_PASSCRED: %s"),
-                       strerror (errno));
+                       g_strerror (errsv));
           goto out;
         }
     }
@@ -647,7 +650,7 @@ receive_credentials_async_thread (GTask         *task,
 /**
  * g_unix_connection_receive_credentials_async:
  * @connection: A #GUnixConnection.
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
  * @callback: (scope async): a #GAsyncReadyCallback to call when the request is satisfied
  * @user_data: (closure): the data to pass to callback function
  *

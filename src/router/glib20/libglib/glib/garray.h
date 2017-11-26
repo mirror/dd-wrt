@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -182,6 +182,15 @@ GLIB_AVAILABLE_IN_ALL
 void       g_ptr_array_foreach            (GPtrArray        *array,
 					   GFunc             func,
 					   gpointer          user_data);
+GLIB_AVAILABLE_IN_2_54
+gboolean   g_ptr_array_find               (GPtrArray        *haystack,
+                                           gconstpointer     needle,
+                                           guint            *index_);
+GLIB_AVAILABLE_IN_2_54
+gboolean   g_ptr_array_find_with_equal_func (GPtrArray     *haystack,
+                                             gconstpointer  needle,
+                                             GEqualFunc     equal_func,
+                                             guint         *index_);
 
 
 /* Byte arrays, an array of guint8.  Implemented as a GArray,

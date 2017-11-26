@@ -3,10 +3,10 @@
  * Copyright © 2009 Codethink Limited
  * Copyright © 2009 Red Hat, Inc
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -327,7 +327,7 @@ g_socket_service_class_init (GSocketServiceClass *class)
    * GSocketService::incoming:
    * @service: the #GSocketService
    * @connection: a new #GSocketConnection object
-   * @source_object: (allow-none): the source_object passed to
+   * @source_object: (nullable): the source_object passed to
    *     g_socket_listener_add_address()
    *
    * The ::incoming signal is emitted when a new incoming connection

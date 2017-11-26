@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -69,7 +69,7 @@ GLIB_AVAILABLE_IN_ALL
 GQuark g_convert_error_quark (void);
 
 /**
- * GIConv:
+ * GIConv: (skip)
  *
  * The GIConv struct wraps an iconv() conversion descriptor. It contains
  * private data and should only be accessed using the following functions.
@@ -165,36 +165,6 @@ gchar *g_filename_display_basename (const gchar *filename) G_GNUC_MALLOC;
 
 GLIB_AVAILABLE_IN_ALL
 gchar **g_uri_list_extract_uris (const gchar *uri_list) G_GNUC_MALLOC;
-
-#ifndef __GTK_DOC_IGNORE__
-#ifdef G_OS_WIN32
-#define g_filename_to_utf8   g_filename_to_utf8_utf8
-#define g_filename_from_utf8 g_filename_from_utf8_utf8
-#define g_filename_from_uri  g_filename_from_uri_utf8
-#define g_filename_to_uri    g_filename_to_uri_utf8
-
-GLIB_AVAILABLE_IN_ALL
-gchar* g_filename_to_utf8_utf8   (const gchar  *opsysstring,
-                                  gssize        len,
-                                  gsize        *bytes_read,
-                                  gsize        *bytes_written,
-                                  GError      **error) G_GNUC_MALLOC;
-GLIB_AVAILABLE_IN_ALL
-gchar* g_filename_from_utf8_utf8 (const gchar  *utf8string,
-                                  gssize        len,
-                                  gsize        *bytes_read,
-                                  gsize        *bytes_written,
-                                  GError      **error) G_GNUC_MALLOC;
-GLIB_AVAILABLE_IN_ALL
-gchar *g_filename_from_uri_utf8  (const gchar  *uri,
-                                  gchar       **hostname,
-                                  GError      **error) G_GNUC_MALLOC;
-GLIB_AVAILABLE_IN_ALL
-gchar *g_filename_to_uri_utf8    (const gchar  *filename,
-                                  const gchar  *hostname,
-                                  GError      **error) G_GNUC_MALLOC;
-#endif
-#endif /* __GTK_DOC_IGNORE__ */
 
 G_END_DECLS
 

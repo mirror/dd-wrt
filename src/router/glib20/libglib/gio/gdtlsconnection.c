@@ -6,7 +6,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -68,7 +68,7 @@
  * Since: 2.48
  */
 
-G_DEFINE_INTERFACE (GDtlsConnection, g_dtls_connection, G_TYPE_DATAGRAM_BASED);
+G_DEFINE_INTERFACE (GDtlsConnection, g_dtls_connection, G_TYPE_DATAGRAM_BASED)
 
 enum {
   ACCEPT_CERTIFICATE,
@@ -112,7 +112,7 @@ g_dtls_connection_default_init (GDtlsConnectionInterface *iface)
    *
    * The certificate database to use when verifying this TLS connection.
    * If no certificate database is set, then the default database will be
-   * used. See g_dtls_backend_get_default_database().
+   * used. See g_tls_backend_get_default_database().
    *
    * Since: 2.48
    */
@@ -294,7 +294,7 @@ g_dtls_connection_default_init (GDtlsConnectionInterface *iface)
  *
  * Sets the certificate database that is used to verify peer certificates.
  * This is set to the default database by default. See
- * g_dtls_backend_get_default_database(). If set to %NULL, then
+ * g_tls_backend_get_default_database(). If set to %NULL, then
  * peer certificate validation will always set the
  * %G_TLS_CERTIFICATE_UNKNOWN_CA error (meaning
  * #GDtlsConnection::accept-certificate will always be emitted on
@@ -405,7 +405,7 @@ g_dtls_connection_get_certificate (GDtlsConnection *conn)
 /**
  * g_dtls_connection_set_interaction:
  * @conn: a connection
- * @interaction: (allow-none): an interaction object, or %NULL
+ * @interaction: (nullable): an interaction object, or %NULL
  *
  * Set the object that will be used to interact with the user. It will be used
  * for things like prompting the user for passwords.
@@ -636,7 +636,7 @@ g_dtls_connection_get_rehandshake_mode (GDtlsConnection       *conn)
 /**
  * g_dtls_connection_handshake:
  * @conn: a #GDtlsConnection
- * @cancellable: (allow-none): a #GCancellable, or %NULL
+ * @cancellable: (nullable): a #GCancellable, or %NULL
  * @error: a #GError, or %NULL
  *
  * Attempts a TLS handshake on @conn.
@@ -681,7 +681,7 @@ g_dtls_connection_handshake (GDtlsConnection  *conn,
  * g_dtls_connection_handshake_async:
  * @conn: a #GDtlsConnection
  * @io_priority: the [I/O priority][io-priority] of the request
- * @cancellable: (allow-none): a #GCancellable, or %NULL
+ * @cancellable: (nullable): a #GCancellable, or %NULL
  * @callback: callback to call when the handshake is complete
  * @user_data: the data to pass to the callback function
  *

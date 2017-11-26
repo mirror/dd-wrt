@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -83,6 +83,7 @@ handle_mime (int argc, char *argv[], gboolean do_help)
   if (do_help)
     {
       show_help (context, NULL);
+      g_option_context_free (context);
       return 0;
     }
 
@@ -90,12 +91,14 @@ handle_mime (int argc, char *argv[], gboolean do_help)
     {
       show_help (context, error->message);
       g_error_free (error);
+      g_option_context_free (context);
       return 1;
     }
 
   if (argc != 2 && argc != 3)
     {
       show_help (context, _("Must specify a single mimetype, and maybe a handler"));
+      g_option_context_free (context);
       return 1;
     }
 
@@ -156,14 +159,14 @@ handle_mime (int argc, char *argv[], gboolean do_help)
       info = get_app_info_for_id (handler);
       if (info == NULL)
         {
-          g_printerr (_("Failed to load info for handler “%s”\n"), handler);
+          print_error (_("Failed to load info for handler “%s”"), handler);
           return 1;
         }
 
       if (g_app_info_set_as_default_for_type (info, mimetype, &error) == FALSE)
         {
-          g_printerr (_("Failed to set “%s” as the default handler for “%s”: %s\n"),
-                      handler, mimetype, error->message);
+          print_error (_("Failed to set “%s” as the default handler for “%s”: %s\n"),
+                       handler, mimetype, error->message);
           g_error_free (error);
           g_object_unref (info);
           return 1;

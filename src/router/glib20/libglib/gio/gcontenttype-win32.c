@@ -7,7 +7,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -128,6 +128,23 @@ g_content_type_is_a (const gchar *type,
   g_free (value_utf8);
   
   return res;
+}
+
+gboolean
+g_content_type_is_mime_type (const gchar *type,
+                             const gchar *mime_type)
+{
+  gchar *content_type;
+  gboolean ret;
+
+  g_return_val_if_fail (type != NULL, FALSE);
+  g_return_val_if_fail (mime_type != NULL, FALSE);
+
+  content_type = g_content_type_from_mime_type (mime_type);
+  ret = g_content_type_is_a (type, content_type);
+  g_free (content_type);
+
+  return ret;
 }
 
 gboolean

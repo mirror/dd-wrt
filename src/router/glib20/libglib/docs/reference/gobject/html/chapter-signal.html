@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>The GObject messaging system: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="pt01.html" title="Part I. Concepts">
 <link rel="prev" href="gobject-properties.html" title="Object properties">
@@ -209,7 +209,7 @@
   data1 <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject-Generic-values.html#g-value-peek-pointer">g_value_peek_pointer</a></span> <span class="gtkdoc opt">(</span>param_values <span class="gtkdoc opt">+</span> <span class="number">0</span><span class="gtkdoc opt">);</span>
   data2 <span class="gtkdoc opt">=</span> closure<span class="gtkdoc opt">-&gt;</span>data<span class="gtkdoc opt">;</span>
 
-  callback <span class="gtkdoc opt">= (</span>GMarshalFunc_VOID__INT<span class="gtkdoc opt">) (</span>marshal_data ? marshal_data <span class="gtkdoc opt">:</span> cc<span class="gtkdoc opt">-&gt;</span>callback<span class="gtkdoc opt">);</span>
+  callback <span class="gtkdoc opt">= (</span>GMarshalFunc_VOID__INT<span class="gtkdoc opt">) (</span>marshal_data <span class="gtkdoc opt">?</span> marshal_data <span class="gtkdoc opt">:</span> cc<span class="gtkdoc opt">-&gt;</span>callback<span class="gtkdoc opt">);</span>
 
   <span class="function">callback</span> <span class="gtkdoc opt">(</span>data1<span class="gtkdoc opt">,</span>
             <span class="function">g_marshal_value_peek_int</span> <span class="gtkdoc opt">(</span>param_values <span class="gtkdoc opt">+</span> <span class="number">1</span><span class="gtkdoc opt">),</span>

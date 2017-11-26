@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>glib-genmarshal: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="rn02.html" title="Tools Reference">
 <link rel="prev" href="glib-mkenums.html" title="glib-mkenums">
@@ -44,8 +44,9 @@ code function of the closure with all the parameters on the stack and to
 collect its return value.
 </p>
 <p><span class="command"><strong>glib-genmarshal</strong></span> takes a list of marshallers to generate as
-input. The marshaller list is either read from standard input or from files
-passed as additional arguments on the command line.
+input. The marshaller list is either read from files passed as additional arguments
+on the command line; or from standard input, by using <code class="literal">-</code> as the
+input file.
 </p>
 <div class="refsect2">
 <a name="id-1.5.3.5.4"></a><h3>Marshaller list format</h3>
@@ -73,7 +74,6 @@ or a marshaller specification of the form
 <em class="replaceable"><code>RTYPE</code></em>:<em class="replaceable"><code>PTYPE</code></em>,<em class="replaceable"><code>PTYPE</code></em>,<em class="replaceable"><code>PTYPE</code></em>
 </pre>
 <p>
-(up to 16 <em class="replaceable"><code>PTYPE</code></em>s may be present).
 </p>
 <p>
 The <em class="replaceable"><code>RTYPE</code></em> part specifies the callback's return
@@ -245,19 +245,21 @@ deprecated alias for <em class="replaceable"><code>BOOLEAN</code></em>
 <tr>
 <td><p><span class="term"><code class="option">--header</code></span></p></td>
 <td><p>
-Generate header file contents of the marshallers.
+Generate header file contents of the marshallers. This option is mutually
+exclusive with the <code class="option">--body</code> option.
 </p></td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="option">--body</code></span></p></td>
 <td><p>
-Generate C code file contents of the marshallers.
+Generate C code file contents of the marshallers. This option is mutually
+exclusive with the <code class="option">--header</code> option.
 </p></td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="option">--prefix=<em class="replaceable"><code>PREFIX</code></em></code></span></p></td>
 <td><p>
-Specify marshaller prefix. The default prefix is <code class="literal">`g_cclosure_marshal'</code>.
+Specify marshaller prefix. The default prefix is <code class="literal">`g_cclosure_user_marshal'</code>.
 </p></td>
 </tr>
 <tr>
@@ -270,26 +272,29 @@ Skip source location remarks in generated comments.
 <td><p><span class="term"><code class="option">--stdinc</code></span></p></td>
 <td><p>
 Use the standard marshallers of the GObject library, and include
-<code class="filename">gmarshal.h</code> in generated header files.
+<code class="filename">glib-object.h</code> in generated header files. This
+option is mutually exclusive with the <code class="option">--nostdinc</code>
+option.
 </p></td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="option">--nostdinc</code></span></p></td>
 <td><p>
 Do not use the standard marshallers of the GObject library, and skip
-<code class="filename">gmarshal.h</code> include directive in generated header files.
+<code class="filename">glib-object.h</code> include directive in generated header files.
+This option is mutually exclusive with the <code class="option">--stdinc</code> option.
 </p></td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="option">--internal</code></span></p></td>
 <td><p>
-Mark generated functions as internal, using G_GNUC_INTERNAL.
+Mark generated functions as internal, using <code class="literal">G_GNUC_INTERNAL</code>.
 </p></td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="option">--valist-marshallers</code></span></p></td>
 <td><p>
-Generate valist marshallers, for use with g_signal_set_va_marshaller().
+Generate valist marshallers, for use with <code class="function">g_signal_set_va_marshaller()</code>.
 </p></td>
 </tr>
 <tr>
@@ -319,14 +324,153 @@ Print version and exit.
 <tr>
 <td><p><span class="term"><code class="option">--output=FILE</code></span></p></td>
 <td><p>
-Write output to FILE instead of stdout.
+Write output to <em class="replaceable"><code>FILE</code></em> instead of the standard output.
+</p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="option">--prototypes</code></span></p></td>
+<td><p>
+Generate function prototypes before the function definition in the C source
+file, in order to avoid a <code class="literal">missing-prototypes</code> compiler
+warning. This option is only useful when using the <code class="option">--body</code>
+option.
+</p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="option">--pragma-once</code></span></p></td>
+<td><p>
+Use the <code class="literal">once</code> pragma instead of an old style header guard
+when generating the C header file. This option is only useful when using the
+<code class="option">--header</code> option.
+</p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="option">--include-header=<em class="replaceable"><code>HEADER</code></em></code></span></p></td>
+<td><p>
+Adds a <code class="literal">#include</code> directive for the given file in the C
+source file. This option is only useful when using the <code class="option">--body</code>
+option.
+</p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="option">-D <em class="replaceable"><code>SYMBOL[=VALUE]</code></em></code></span></p></td>
+<td><p>
+Adds a <code class="literal">#define</code> C pre-processor directive for
+<em class="replaceable"><code>SYMBOL</code></em> and its given <em class="replaceable"><code>VALUE</code></em>,
+or "1" if the value is unset. You can use this option multiple times; if you do,
+all the symbols will be defined in the same order given on the command line, before
+the symbols undefined using the <code class="option">-U</code> option. This option is only
+useful when using the <code class="option">--body</code> option.
+</p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="option">-U <em class="replaceable"><code>SYMBOL</code></em></code></span></p></td>
+<td><p>
+Adds a <code class="literal">#undef</code> C pre-processor directive to undefine the
+given <em class="replaceable"><code>SYMBOL</code></em>. You can use this option multiple times;
+if you do, all the symbols will be undefined in the same order given on the
+command line, after the symbols defined using the <code class="option">-D</code> option.
+This option is only useful when using the <code class="option">--body</code> option.
+</p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="option">--quiet</code></span></p></td>
+<td><p>
+Minimizes the output of <span class="command"><strong>glib-genmarshal</strong></span>, by printing only
+warnings and errors. This option is mutually exclusive with the
+<code class="option">--verbose</code> option.
+</p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="option">--verbose</code></span></p></td>
+<td><p>
+Increases the verbosity of <span class="command"><strong>glib-genmarshal</strong></span>, by printing
+debugging information. This option is mutually exclusive with the
+<code class="option">--quiet</code> option.
 </p></td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect1">
-<a name="id-1.5.3.7"></a><h2>Example</h2>
+<a name="id-1.5.3.7"></a><h2>Using glib-genmarshal with Autotools</h2>
+<p>
+In order to use <span class="command"><strong>glib-genmarshal</strong></span> in your project when using
+Autotools as the build system, you will first need to modify your
+<code class="filename">configure.ac</code> file to ensure you find the appropriate
+command using <span class="command"><strong>pkg-config</strong></span>, similarly as to how you discover
+the compiler and linker flags for GLib.
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="function">PKG_PROG_PKG_CONFIG</span><span class="gtkdoc opt">([</span><span class="number">0.28</span><span class="gtkdoc opt">])</span>
+
+<span class="function">PKG_CHECK_VAR</span><span class="gtkdoc opt">([</span>GLIB_GENMARSHAL<span class="gtkdoc opt">], [</span>glib<span class="gtkdoc opt">-</span><span class="number">2.0</span><span class="gtkdoc opt">], [</span>glib_genmarshal<span class="gtkdoc opt">])</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+In your <code class="filename">Makefile.am</code> file you will typically need very
+simple rules to generate the C files needed for the build.
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16</pre></td>
+        <td class="listing_code"><pre class="programlisting">marshal<span class="gtkdoc opt">.</span>h<span class="gtkdoc opt">:</span> marshal<span class="gtkdoc opt">.</span>list
+        $<span class="gtkdoc opt">(</span>AM_V_GEN<span class="gtkdoc opt">)</span>$<span class="gtkdoc opt">(</span>GLIB_GENMARSHAL<span class="gtkdoc opt">)</span> \
+                <span class="gtkdoc opt">--</span>header \
+                <span class="gtkdoc opt">--</span>output<span class="gtkdoc opt">=</span>$&#64; \
+                $<span class="gtkdoc opt">&lt;</span>
+
+marshal<span class="gtkdoc opt">.</span>c<span class="gtkdoc opt">:</span> marshal<span class="gtkdoc opt">.</span>list marshal<span class="gtkdoc opt">.</span>h
+        $<span class="gtkdoc opt">(</span>AM_V_GEN<span class="gtkdoc opt">)</span>$<span class="gtkdoc opt">(</span>GLIB_GENMARSHAL<span class="gtkdoc opt">)</span> \
+                <span class="gtkdoc opt">--</span>include<span class="gtkdoc opt">-</span>header<span class="gtkdoc opt">=</span>marshal<span class="gtkdoc opt">.</span>h \
+                <span class="gtkdoc opt">--</span>body \
+                <span class="gtkdoc opt">--</span>output<span class="gtkdoc opt">=</span>$&#64; \
+                $<span class="gtkdoc opt">&lt;</span>
+
+BUILT_SOURCES <span class="gtkdoc opt">+=</span> marshal<span class="gtkdoc opt">.</span>h marshal<span class="gtkdoc opt">.</span>c
+CLEANFILES <span class="gtkdoc opt">+=</span> marshal<span class="gtkdoc opt">.</span>h marshal<span class="gtkdoc opt">.</span>c
+EXTRA_DIST <span class="gtkdoc opt">+=</span> marshal<span class="gtkdoc opt">.</span>list</pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+In the example above, the first rule generates the header file and depends on
+a <code class="filename">marshal.list</code> file in order to regenerate the result in
+case the marshallers list is updated. The second rule generates the source file
+for the same <code class="filename">marshal.list</code>, and includes the file generated
+by the header rule.
+</p>
+</div>
+<div class="refsect1">
+<a name="id-1.5.3.8"></a><h2>Example</h2>
 <p>
 To generate marshallers for the following callback functions:
 </p>
@@ -377,9 +521,9 @@ The generated marshallers have the arguments encoded in their function name.
 For this particular list, they are
 </p>
 <pre class="programlisting">
-g_cclosure_user_marshal_VOID__VOID(),
-g_cclosure_user_marshal_VOID__INT(),
-g_cclosure_user_marshal_FLOAT__BOOLEAN_UCHAR().
+g_cclosure_user_marshal_VOID__VOID(...),
+g_cclosure_user_marshal_VOID__INT(...),
+g_cclosure_user_marshal_FLOAT__BOOLEAN_UCHAR(...).
 </pre>
 <p>
 They can be used directly for GClosures or be passed in as the
@@ -412,7 +556,7 @@ cc_baz <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject
 
 </div>
 <div class="refsect1">
-<a name="id-1.5.3.8"></a><h2>See also</h2>
+<a name="id-1.5.3.9"></a><h2>See also</h2>
 <p>
 <span class="citerefentry"><span class="refentrytitle">glib-mkenums</span>(1)</span>
 </p>

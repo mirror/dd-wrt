@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Unicode Manipulation: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Character-Set-Conversion.html" title="Character Set Conversion">
@@ -1508,7 +1508,7 @@ for details.</p>
 <tr>
 <td class="parameter_name"><p>result</p></td>
 <td class="parameter_description"><p> location to store decomposed result, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>result_len</p></td>
@@ -1563,7 +1563,7 @@ g_unichar_break_type (<em class="parameter"><code><a class="link" href="glib-Uni
 <a class="link" href="glib-Unicode-Manipulation.html#g-utf8-get-char" title="g_utf8_get_char ()"><code class="function">g_utf8_get_char()</code></a>). The break type is used to find word and line
 breaks ("text boundaries"), Pango implements the Unicode boundary
 resolution algorithms and normally you would use a function such
-as <a href="/home/mclasen/gnome/share/gtk-doc/html/pango/pango-Text-Processing.html#pango-break"><code class="function">pango_break()</code></a> instead of caring about break types yourself.</p>
+as <a href="../pango/pango-Text-Processing.html#pango-break"><code class="function">pango_break()</code></a> instead of caring about break types yourself.</p>
 <div class="refsect3">
 <a name="g-unichar-break-type.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1744,7 +1744,7 @@ by Unicode Standard Annex #24). No check is made for <em class="parameter"><code
  being a
 valid Unicode character; if you pass in invalid character, the
 result is undefined.</p>
-<p>This function is equivalent to <a href="/home/mclasen/gnome/share/gtk-doc/html/pango/pango-Scripts-and-Languages.html#pango-script-for-unichar"><code class="function">pango_script_for_unichar()</code></a> and the
+<p>This function is equivalent to <a href="../pango/pango-Scripts-and-Languages.html#pango-script-for-unichar"><code class="function">pango_script_for_unichar()</code></a> and the
 two are interchangeable.</p>
 <div class="refsect3">
 <a name="g-unichar-get-script.parameters"></a><h4>Parameters</h4>
@@ -1916,6 +1916,10 @@ g_utf8_get_char_validated (<em class="parameter"><code>const <a class="link" hre
 This function checks for incomplete characters, for invalid characters
 such as characters that are out of the range of Unicode, and for
 overlong encodings of valid characters.</p>
+<p>Note that <a class="link" href="glib-Unicode-Manipulation.html#g-utf8-get-char-validated" title="g_utf8_get_char_validated ()"><code class="function">g_utf8_get_char_validated()</code></a> returns (gunichar)-2 if
+<em class="parameter"><code>max_len</code></em>
+ is positive and any of the bytes in the first UTF-8 character
+sequence are nul.</p>
 <div class="refsect3">
 <a name="g-utf8-get-char-validated.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1932,8 +1936,7 @@ overlong encodings of valid characters.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>max_len</p></td>
-<td class="parameter_description"><p>the maximum number of bytes to read, or -1, for no maximum or
-if <em class="parameter"><code>p</code></em>
+<td class="parameter_description"><p>the maximum number of bytes to read, or -1 if <em class="parameter"><code>p</code></em>
 is nul-terminated</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
@@ -2086,6 +2089,12 @@ g_utf8_find_next_char (<em class="parameter"><code>const <a class="link" href="g
  does not have to be at the beginning of a UTF-8 character. No check
 is made to see if the character found is actually valid other than
 it starts with an appropriate byte.</p>
+<p>If <em class="parameter"><code>end</code></em>
+ is <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>, the return value will never be <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>: if the end of the
+string is reached, a pointer to the terminating nul byte is returned. If
+<em class="parameter"><code>end</code></em>
+ is non-<a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>, the return value will be <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if the end of the string
+is reached.</p>
 <div class="refsect3">
 <a name="g-utf8-find-next-char.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -2111,7 +2120,10 @@ or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code
 </div>
 <div class="refsect3">
 <a name="g-utf8-find-next-char.returns"></a><h4>Returns</h4>
-<p> a pointer to the found character or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a></p>
+<p> a pointer to the found character or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if <em class="parameter"><code>end</code></em>
+is
+set and is reached. </p>
+<p><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 </div>
 <hr>
@@ -2491,7 +2503,7 @@ doing anything else with it.</p>
 <tr>
 <td class="parameter_name"><p>end</p></td>
 <td class="parameter_description"><p> return location for end of valid data. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>][<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -2505,7 +2517,8 @@ doing anything else with it.</p>
 <div class="refsect2">
 <a name="g-utf8-make-valid"></a><h3>g_utf8_make_valid ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="returnvalue">gchar</span></a> *
-g_utf8_make_valid (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *str</code></em>);</pre>
+g_utf8_make_valid (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *str</code></em>,
+                   <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gssize" title="gssize"><span class="type">gssize</span></a> len</code></em>);</pre>
 <p>If the provided string is valid UTF-8, return a copy of it. If not,
 return a copy in which bytes that could not be interpreted as valid Unicode
 are replaced with the Unicode replacement character (U+FFFD).</p>
@@ -2522,11 +2535,21 @@ readable as-is.</p>
 <col class="parameters_description">
 <col width="200px" class="parameters_annotations">
 </colgroup>
-<tbody><tr>
+<tbody>
+<tr>
 <td class="parameter_name"><p>str</p></td>
 <td class="parameter_description"><p>string to coerce into UTF-8</p></td>
 <td class="parameter_annotations"> </td>
-</tr></tbody>
+</tr>
+<tr>
+<td class="parameter_name"><p>len</p></td>
+<td class="parameter_description"><p>the maximum length of <em class="parameter"><code>str</code></em>
+to use, in bytes. If <em class="parameter"><code>len</code></em>
+&lt; 0,
+then the string is nul-terminated.</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
 </table></div>
 </div>
 <div class="refsect3">
@@ -2535,7 +2558,7 @@ readable as-is.</p>
 . </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
-<p class="since">Since: 2.52</p>
+<p class="since">Since: <a class="link" href="api-index-2-52.html#api-index-2.52">2.52</a></p>
 </div>
 <hr>
 <div class="refsect2">
@@ -3431,7 +3454,7 @@ decomposition of a single Unicode character.</p>
 <a name="GUnicodeType"></a><h3>enum GUnicodeType</h3>
 <p>These are the possible character classifications from the
 Unicode specification.
-See &lt;ulink url="http://www.unicode.org/reports/tr44/<span class="type">General_Category_Values</span>"&gt;Unicode Character Database&lt;/unlink&gt;.</p>
+See <a class="ulink" href="http://www.unicode.org/reports/tr44/#General_Category_Values" target="_top">Unicode Character Database</a>.</p>
 <div class="refsect3">
 <a name="GUnicodeType.members"></a><h4>Members</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -3672,7 +3695,7 @@ See &lt;ulink url="http://www.unicode.org/reports/tr44/<span class="type">Genera
 <p>These are the possible line break classifications.</p>
 <p>Since new unicode versions may add new types here, applications should be ready 
 to handle unknown values. They may be regarded as <a class="link" href="glib-Unicode-Manipulation.html#G-UNICODE-BREAK-UNKNOWN:CAPS"><code class="literal">G_UNICODE_BREAK_UNKNOWN</code></a>.</p>
-<p>See &lt;ulink url="http://www.unicode.org/unicode/reports/tr14/"&gt;http://www.unicode.org/unicode/reports/tr14/&lt;/ulink&gt;.</p>
+<p>See <a class="ulink" href="http://www.unicode.org/unicode/reports/tr14/" target="_top">Unicode Line Breaking Algorithm</a>.</p>
 <div class="refsect3">
 <a name="GUnicodeBreakType.members"></a><h4>Members</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -3993,12 +4016,10 @@ to handle unknown values. They may be regarded as <a class="link" href="glib-Uni
 <p>The <a class="link" href="glib-Unicode-Manipulation.html#GUnicodeScript" title="enum GUnicodeScript"><span class="type">GUnicodeScript</span></a> enumeration identifies different writing
 systems. The values correspond to the names as defined in the
 Unicode standard. The enumeration has been added in GLib 2.14,
-and is interchangeable with <a href="/home/mclasen/gnome/share/gtk-doc/html/pango/pango-Scripts-and-Languages.html#PangoScript"><span class="type">PangoScript</span></a>.</p>
+and is interchangeable with <a href="../pango/pango-Scripts-and-Languages.html#PangoScript"><span class="type">PangoScript</span></a>.</p>
 <p>Note that new types may be added in the future. Applications
 should be ready to handle unknown values.
-See &lt;ulink
-url="http://www.unicode.org/reports/tr24/"&gt;Unicode Standard Annex
-<span class="type">24</span>: Script names&lt;/ulink&gt;.</p>
+See <a class="ulink" href="http://www.unicode.org/reports/tr24/" target="_top">Unicode Standard Annex <span class="type">24</span>: Script names</a>.</p>
 <div class="refsect3">
 <a name="GUnicodeScript.members"></a><h4>Members</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -4979,6 +5000,34 @@ url="http://www.unicode.org/reports/tr24/"&gt;Unicode Standard Annex
 <td class="enum_member_name"><p><a name="G-UNICODE-SCRIPT-TANGUT:CAPS"></a>G_UNICODE_SCRIPT_TANGUT</p></td>
 <td class="enum_member_description">
 <p>Tangut. Since: 2.50</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="G-UNICODE-SCRIPT-MASARAM-GONDI:CAPS"></a>G_UNICODE_SCRIPT_MASARAM_GONDI</p></td>
+<td class="enum_member_description">
+<p>Masaram Gondi. Since: 2.54</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="G-UNICODE-SCRIPT-NUSHU:CAPS"></a>G_UNICODE_SCRIPT_NUSHU</p></td>
+<td class="enum_member_description">
+<p>Nushu. Since: 2.54</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="G-UNICODE-SCRIPT-SOYOMBO:CAPS"></a>G_UNICODE_SCRIPT_SOYOMBO</p></td>
+<td class="enum_member_description">
+<p>Soyombo. Since: 2.54</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="G-UNICODE-SCRIPT-ZANABAZAR-SQUARE:CAPS"></a>G_UNICODE_SCRIPT_ZANABAZAR_SQUARE</p></td>
+<td class="enum_member_description">
+<p>Zanabazar Square. Since: 2.54</p>
 </td>
 <td class="enum_member_annotations"> </td>
 </tr>

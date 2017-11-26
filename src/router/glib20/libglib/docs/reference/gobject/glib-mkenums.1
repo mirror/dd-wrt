@@ -1,8 +1,8 @@
 '\" t
 .\"     Title: glib-mkenums
 .\"    Author: Owen Taylor
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 10/24/2016
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 11/15/2017
 .\"    Manual: User Commands
 .\"    Source: GObject
 .\"  Language: English
@@ -131,51 +131,111 @@ Per value definition, the options "skip" and "nick" are supported\&. The former 
 .PP
 \fB\-\-fhead\fR \fITEXT\fR
 .RS 4
-Put out
+Emits
 \fITEXT\fR
 prior to processing input files\&.
+.sp
+You can specify this option multiple times, and the
+\fITEXT\fR
+will be concatenated\&.
+.sp
+When used along with a template file,
+\fITEXT\fR
+will be prepended to the template\*(Aqs
+file\-header
+section\&.
 .RE
 .PP
 \fB\-\-fprod\fR \fITEXT\fR
 .RS 4
-Put out
+Emits
 \fITEXT\fR
-everytime a new input file is being processed\&.
+every time a new input file is being processed\&.
+.sp
+You can specify this option multiple times, and the
+\fITEXT\fR
+will be concatenated\&.
+.sp
+When used along with a template file,
+\fITEXT\fR
+will be appended to the template\*(Aqs
+file\-production
+section\&.
 .RE
 .PP
 \fB\-\-ftail\fR \fITEXT\fR
 .RS 4
-Put out
+Emits
 \fITEXT\fR
 after all input files have been processed\&.
+.sp
+You can specify this option multiple times, and the
+\fITEXT\fR
+will be concatenated\&.
+.sp
+When used along with a template file,
+\fITEXT\fR
+will be appended to the template\*(Aqs
+file\-tail
+section\&.
 .RE
 .PP
 \fB\-\-eprod\fR \fITEXT\fR
 .RS 4
-Put out
+Emits
 \fITEXT\fR
 everytime an enum is encountered in the input files\&.
 .RE
 .PP
 \fB\-\-vhead\fR \fITEXT\fR
 .RS 4
-Put out
+Emits
 \fITEXT\fR
 before iterating over the set of values of an enum\&.
+.sp
+You can specify this option multiple times, and the
+\fITEXT\fR
+will be concatenated\&.
+.sp
+When used along with a template file,
+\fITEXT\fR
+will be prepended to the template\*(Aqs
+value\-header
+section\&.
 .RE
 .PP
 \fB\-\-vprod\fR \fITEXT\fR
 .RS 4
-Put out
+Emits
 \fITEXT\fR
 for every value of an enum\&.
+.sp
+You can specify this option multiple times, and the
+\fITEXT\fR
+will be concatenated\&.
+.sp
+When used along with a template file,
+\fITEXT\fR
+will be appended to the template\*(Aqs
+value\-production
+section\&.
 .RE
 .PP
 \fB\-\-vtail\fR \fITEXT\fR
 .RS 4
-Put out
+Emits
 \fITEXT\fR
 after iterating over all values of an enum\&.
+.sp
+You can specify this option multiple times, and the
+\fITEXT\fR
+will be concatenated\&.
+.sp
+When used along with a template file,
+\fITEXT\fR
+will be appended to the template\*(Aqs
+value\-tail
+section\&.
 .RE
 .PP
 \fB\-\-comments\fR \fITEXT\fR
@@ -224,6 +284,154 @@ Print version and exit\&.
 .RS 4
 Write output to FILE instead of stdout\&.
 .RE
+.SH "USING GLIB\-MKENUMS WITH AUTOTOOLS"
+.PP
+In order to use
+\fBglib\-mkenums\fR
+in your project when using Autotools as the build system, you will first need to modify your
+configure\&.ac
+file to ensure you find the appropriate command using
+\fBpkg\-config\fR, similarly as to how you discover the compiler and linker flags for GLib\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+PKG_PROG_PKG_CONFIG([0\&.28])
+
+PKG_CHECK_VAR([GLIB_MKENUMS], [glib\-2\&.0], [glib_mkenums])
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+In your
+Makefile\&.am
+file you will typically use rules like these:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+# A list of headers to inspect
+project_headers = \e
+        project\-foo\&.h \e
+        project\-bar\&.h \e
+        project\-baz\&.h
+
+enum\-types\&.h: $(project_headers) enum\-types\&.h\&.in
+        $(AM_V_GEN)$(GLIB_MKENUMS) \e
+                \-\-template=enum\-types\&.h\&.in \e
+                \-\-output=$@ \e
+                $(project_headers)
+
+enum\-types\&.c: $(project_headers) enum\-types\&.c\&.in enum\-types\&.h
+        $(AM_V_GEN)$(GLIB_MKENUMS) \e
+                \-\-template=enum\-types\&.c\&.in \e
+                \-\-output=$@ \e
+                $(project_headers)
+
+BUILT_SOURCES += enum\-types\&.h enum\-types\&.c
+CLEANFILES += enum\-types\&.h enum\-types\&.c
+EXTRA_DIST += enum\-types\&.h\&.in enum\-types\&.c\&.in
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+In the example above, we have a variable called
+project_headers
+where we reference all header files we want to inspect for generating enumeration GTypes\&. In the
+enum\-types\&.h
+rule we use
+\fBglib\-mkenums\fR
+with a template called
+enum\-types\&.h\&.in
+in order to generate the header file; a header template file will typically look like this:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+/*** BEGIN file\-header ***/
+#pragma once
+
+/* Include the main project header */
+#include "project\&.h"
+
+G_BEGIN_DECLS
+/*** END file\-header ***/
+
+/*** BEGIN file\-production ***/
+
+/* enumerations from "@filename@" */
+/*** END file\-production ***/
+
+/*** BEGIN value\-header ***/
+GType @enum_name@_get_type (void) G_GNUC_CONST;
+#define @ENUMPREFIX@_TYPE_@ENUMSHORT@ (@enum_name@_get_type ())
+/*** END value\-header ***/
+
+/*** BEGIN file\-tail ***/
+G_END_DECLS
+/*** END file\-tail ***/
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+The
+enum\-types\&.c
+rule is similar to the rule for the header file, but will use a different
+enum\-types\&.c\&.in
+template file, similar to this:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+/*** BEGIN file\-header ***/
+#include "config\&.h"
+#include "enum\-types\&.h"
+
+/*** END file\-header ***/
+
+/*** BEGIN file\-production ***/
+/* enumerations from "@filename@" */
+/*** END file\-production ***/
+
+/*** BEGIN value\-header ***/
+GType
+@enum_name@_get_type (void)
+{
+  static volatile gsize g_@type@_type_id__volatile;
+
+  if (g_once_init_enter (&g_define_type_id__volatile))
+    {
+      static const G@Type@Value values[] = {
+/*** END value\-header ***/
+
+/*** BEGIN value\-production ***/
+            { @VALUENAME@, "@VALUENAME@", "@valuenick@" },
+/*** END value\-production ***/
+
+/*** BEGIN value\-tail ***/
+            { 0, NULL, NULL }
+      };
+
+      GType g_@type@_type_id =
+        g_@type@_register_static (g_intern_static_string ("@EnumName@"), values);
+
+      g_once_init_leave (&g_@type@_type_id__volatile, g_@type@_type_id);
+    }
+  return g_@type@_type_id__volatile;
+}
+
+/*** END value\-tail ***/
+.fi
+.if n \{\
+.RE
+.\}
 .SH "SEE ALSO"
 .PP
 \fBglib-genmarshal\fR(1)

@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Running GLib Applications: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib.html" title="GLib Overview">
 <link rel="prev" href="glib-compiling.html" title="Compiling GLib Applications">
@@ -235,16 +235,15 @@ returned by functions like <code class="function">strftime()</code>.
 </p>
 </div>
 <p>
-glib ships with a set of python macros for the gdb debugger. These includes pretty
-printers for lists, hashtables and gobject types. It also has a backtrace filter
+GLib ships with a set of Python macros for the GDB debugger. These includes pretty
+printers for lists, hashtables and GObject types. It also has a backtrace filter
 that makes backtraces with signal emissions easier to read.
 </p>
 <p>
-To use this you need a recent enough gdb that supports python scripting. Gdb 7.0
-should be recent enough, but branches of the "archer" gdb tree as used in Fedora 11
-and Fedora 12 should work too. You then need to install glib in the same prefix as
-gdb so that the python gdb autoloaded files get installed in the right place for
-gdb to pick up.
+To use this you need a version of GDB that supports Python scripting; anything
+from 7.0 should be fine. You then need to install GLib in the same prefix as
+GDB so that the Python GDB autoloaded files get installed in the right place
+for GDB to pick up.
 </p>
 <p>
 General pretty printing should just happen without having to do anything special.

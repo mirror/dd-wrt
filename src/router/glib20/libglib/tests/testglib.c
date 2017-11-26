@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -907,6 +907,7 @@ test_file_functions (void)
   char template[32];
   char *name_used, chars[62];
   gint fd, n;
+  int errsv;
   
   strcpy (template, "foobar");
   fd = g_mkstemp (template);
@@ -919,15 +920,17 @@ test_file_functions (void)
   if (fd == -1)
     g_error ("g_mkstemp didn't work for template %s\n", template);
   n = write (fd, hello, hellolen);
+  errsv = errno;
   if (n == -1)
-    g_error ("write() failed: %s\n", g_strerror (errno));
+    g_error ("write() failed: %s\n", g_strerror (errsv));
   else if (n != hellolen)
     g_error ("write() should have written %d bytes, wrote %d\n", hellolen, n);
 
   lseek (fd, 0, 0);
   n = read (fd, chars, sizeof (chars));
+  errsv = errno;
   if (n == -1)
-    g_error ("read() failed: %s\n", g_strerror (errno));
+    g_error ("read() failed: %s\n", g_strerror (errsv));
   else if (n != hellolen)
     g_error ("read() should have read %d bytes, got %d\n", hellolen, n);
 

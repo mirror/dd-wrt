@@ -1,8 +1,8 @@
 '\" t
 .\"     Title: glib-compile-resources
 .\"    Author: Alexander Larsson
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 10/24/2016
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 11/15/2017
 .\"    Manual: User Commands
 .\"    Source: GIO
 .\"  Language: English
@@ -165,6 +165,14 @@ is \-, the dependencies are written to the standard output\&. Unlike
 \fB\-\-generate\-dependencies\fR, this option can be combined with other
 \fB\-\-generate\fR
 options to generate dependencies as a side\-effect of generating sources\&.
+.RE
+.PP
+\fB\-\-generate\-phony\-targets\fR
+.RS 4
+When creating a dependency file with
+\fB\-\-dependency\-file\fR
+include phony targets in the same style as gcc \-MP\&. This would typically be used with
+make\&.
 .RE
 .SH "ENVIRONMENT"
 .PP

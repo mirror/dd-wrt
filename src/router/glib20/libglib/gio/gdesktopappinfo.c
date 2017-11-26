@@ -6,7 +6,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -47,6 +47,10 @@
 #include "gappinfo.h"
 #include "gappinfoprivate.h"
 #include "glocalfilemonitor.h"
+
+#ifdef G_OS_UNIX
+#include "gdocumentportal.h"
+#endif
 
 /**
  * SECTION:gdesktopappinfo
@@ -506,7 +510,8 @@ add_token_result (const gchar *app_name,
 static void
 merge_token_results (gboolean first)
 {
-  qsort (static_token_results, static_token_results_size, sizeof (struct search_result), compare_results);
+  if (static_token_results_size != 0)
+    qsort (static_token_results, static_token_results_size, sizeof (struct search_result), compare_results);
 
   /* If this is the first token then we are basically merging a list with
    * itself -- we only perform de-duplication.
@@ -606,7 +611,8 @@ reset_total_search_results (void)
 static void
 sort_total_search_results (void)
 {
-  qsort (static_total_results, static_total_results_size, sizeof (struct search_result), compare_categories);
+  if (static_total_results_size != 0)
+    qsort (static_total_results, static_total_results_size, sizeof (struct search_result), compare_categories);
 }
 
 static void
@@ -620,9 +626,10 @@ merge_directory_results (void)
       static_total_results = g_renew (struct search_result, static_total_results, static_total_results_allocated);
     }
 
-  memcpy (static_total_results + static_total_results_size,
-          static_search_results,
-          static_search_results_size * sizeof (struct search_result));
+  if (static_total_results + static_total_results_size != 0)
+    memcpy (static_total_results + static_total_results_size,
+            static_search_results,
+            static_search_results_size * sizeof (struct search_result));
 
   static_total_results_size += static_search_results_size;
 
@@ -2483,8 +2490,6 @@ prepend_terminal_to_vector (int    *argc,
       if (check == NULL)
         check = g_find_program_in_path ("rxvt");
       if (check == NULL)
-        check = g_find_program_in_path ("xterm");
-      if (check == NULL)
         check = g_find_program_in_path ("dtterm");
       if (check == NULL)
         {
@@ -2832,16 +2837,14 @@ g_desktop_app_info_make_platform_data (GDesktopAppInfo   *info,
   return g_variant_builder_end (&builder);
 }
 
-static gboolean
-g_desktop_app_info_launch_uris_with_dbus (GDesktopAppInfo    *info,
-                                          GDBusConnection    *session_bus,
-                                          GList              *uris,
-                                          GAppLaunchContext  *launch_context)
+static void
+launch_uris_with_dbus (GDesktopAppInfo    *info,
+                       GDBusConnection    *session_bus,
+                       GList              *uris,
+                       GAppLaunchContext  *launch_context)
 {
   GVariantBuilder builder;
   gchar *object_path;
-
-  g_return_val_if_fail (info != NULL, FALSE);
 
   g_variant_builder_init (&builder, G_VARIANT_TYPE_TUPLE);
 
@@ -2866,6 +2869,33 @@ g_desktop_app_info_launch_uris_with_dbus (GDesktopAppInfo    *info,
                           uris ? "Open" : "Activate", g_variant_builder_end (&builder),
                           NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
   g_free (object_path);
+}
+
+static gboolean
+g_desktop_app_info_launch_uris_with_dbus (GDesktopAppInfo    *info,
+                                          GDBusConnection    *session_bus,
+                                          GList              *uris,
+                                          GAppLaunchContext  *launch_context)
+{
+  GList *ruris = uris;
+  g_autofree char *app_id = NULL;
+
+  g_return_val_if_fail (info != NULL, FALSE);
+
+#ifdef G_OS_UNIX
+  app_id = g_desktop_app_info_get_string (info, "X-Flatpak");
+  if (app_id && *app_id)
+    {
+      ruris = g_document_portal_add_documents (uris, app_id, NULL);
+      if (ruris == NULL)
+        ruris = uris;
+    }
+#endif
+
+  launch_uris_with_dbus (info, session_bus, ruris, launch_context);
+
+  if (ruris != uris)
+    g_list_free_full (ruris, g_free);
 
   return TRUE;
 }
@@ -2971,13 +3001,13 @@ g_desktop_app_info_launch (GAppInfo           *appinfo,
  * g_desktop_app_info_launch_uris_as_manager:
  * @appinfo: a #GDesktopAppInfo
  * @uris: (element-type utf8): List of URIs
- * @launch_context: (allow-none): a #GAppLaunchContext
+ * @launch_context: (nullable): a #GAppLaunchContext
  * @spawn_flags: #GSpawnFlags, used for each process
- * @user_setup: (scope call) (allow-none): a #GSpawnChildSetupFunc, used once
+ * @user_setup: (scope async) (nullable): a #GSpawnChildSetupFunc, used once
  *     for each process.
- * @user_setup_data: (closure user_setup) (allow-none): User data for @user_setup
- * @pid_callback: (scope call) (allow-none): Callback for child processes
- * @pid_callback_data: (closure pid_callback) (allow-none): User data for @callback
+ * @user_setup_data: (closure user_setup) (nullable): User data for @user_setup
+ * @pid_callback: (scope call) (nullable): Callback for child processes
+ * @pid_callback_data: (closure pid_callback) (nullable): User data for @callback
  * @error: return location for a #GError, or %NULL
  *
  * This function performs the equivalent of g_app_info_launch_uris(),
@@ -3676,8 +3706,8 @@ g_desktop_app_info_delete (GAppInfo *appinfo)
 /* Create for commandline {{{2 */
 /**
  * g_app_info_create_from_commandline:
- * @commandline: the commandline to use
- * @application_name: (allow-none): the application name, or %NULL to use @commandline
+ * @commandline: (type filename): the commandline to use
+ * @application_name: (nullable): the application name, or %NULL to use @commandline
  * @flags: flags that can specify details of the created #GAppInfo
  * @error: a #GError location to store the error occurring, %NULL to ignore.
  *
@@ -4508,7 +4538,7 @@ g_desktop_app_info_get_action_name (GDesktopAppInfo *info,
  * @info: a #GDesktopAppInfo
  * @action_name: the name of the action as from
  *   g_desktop_app_info_list_actions()
- * @launch_context: (allow-none): a #GAppLaunchContext
+ * @launch_context: (nullable): a #GAppLaunchContext
  *
  * Activates the named application action.
  *

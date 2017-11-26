@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GDBusInterfaceSkeleton: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="gdbus-convenience.html" title="High-level D-Bus Support">
 <link rel="prev" href="GDBusInterface.html" title="GDBusInterface">
@@ -234,7 +234,7 @@ g_dbus_interface_skeleton_flush (<em class="parameter"><code><a class="link" hre
 emitted immediately.</p>
 <p>For example, an exported D-Bus interface may queue up property
 changes and emit the
-`org.freedesktop.DBus.Properties::Propert``
+<code class="literal">org.freedesktop.DBus.Properties::PropertiesChanged</code>
 signal later (e.g. in an idle handler). This technique is useful
 for collapsing multiple property changes into one.</p>
 <div class="refsect3">

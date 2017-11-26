@@ -144,10 +144,7 @@ endif
 # non-header sources (headers should be specified in the above variables)
 # that don't serve as direct make target sources, i.e. they don't have
 # their own .lo rules and don't get publically installed
-gobject_extra_sources = \
-	gmarshal.list		\
-	gmarshal.strings
-
+gobject_extra_sources =
 
 #
 # setup GObject library sources and their dependancies
@@ -157,8 +154,7 @@ gobject_target_sources = $(gobject_c_sources)
 EXTRA_HEADERS =
 EXTRA_DIST += \
 	$(gobject_private_h_sources) 	\
-	$(gobject_extra_sources) 	\
-	marshal-genstrings.pl
+	$(gobject_extra_sources)
 
 # This is read by gobject-introspection/misc/ and gtk-doc
 gobject-public-headers.txt: Makefile
@@ -183,14 +179,6 @@ CLEANFILES += $(gen_sources)
 # ../configure will supress all autogeneration rules.
 
 
-gmarshal.strings: @REBUILD@ $(srcdir)/gmarshal.list
-	$(AM_V_GEN) grep '^[A-Z]' $(srcdir)/gmarshal.list \
-	| $(SED) -e 's/^/"g_cclosure_marshal_/' -e 's/:/__/' -e 's/,/_/g' -e 's/$$/",/' > xgen-gms \
-	&& cp xgen-gms gmarshal.strings \
-	&& rm -f xgen-gms xgen-gms~
-
-glib-genmarshal.o: gmarshal.strings
-
 # target platform:
 libgobjectinclude_HEADERS = $(gobject_target_headers)
 libgobject_2_0_la_SOURCES = $(gobject_target_sources)
@@ -198,29 +186,26 @@ libgobject_2_0_la_SOURCES = $(gobject_target_sources)
 #
 # programs to compile and install
 #
-bin_PROGRAMS = gobject-query glib-genmarshal
-bin_SCRIPTS = glib-mkenums
+bin_PROGRAMS = gobject-query
+bin_SCRIPTS = glib-mkenums glib-genmarshal
 # source files
 gobject_query_SOURCES = gobject-query.c
-glib_genmarshal_SOURCES = glib-genmarshal.c
 # link programs against libgobject
 progs_LDADD = ./libgobject-2.0.la $(libglib)
-glib_genmarshal_LDADD = $(libglib)
 gobject_query_LDADD = $(progs_LDADD)
 
 #
 # auxillary files
 #
 EXTRA_DIST += 			\
-	makefile.msc.in 	\
 	gobject.rc.in		\
 	libgobject-gdb.py.in	\
+	glib-genmarshal.in	\
 	glib-mkenums.in
 
 CLEANFILES += libgobject-gdb.py
 
 BUILT_EXTRA_DIST += \
-	makefile.msc		\
 	gobject.rc
 
 gobject-win32-res.o: gobject.rc
@@ -242,9 +227,9 @@ gobject_HEADERS_DIR = $(libgobjectincludedir)
 gobject_HEADERS_INST = $(gobject_public_h_sources)
 gobject_HEADERS_EXCLUDES = dummy
 
-include $(top_srcdir)/build/Makefile.msvcproj
+include $(top_srcdir)/win32/Makefile.msvcproj
 
-dist-hook: $(BUILT_EXTRA_DIST) $(top_builddir)/build/win32/vs9/gobject.vcproj $(top_builddir)/build/win32/vs9/gobject.headers
+dist-hook: $(BUILT_EXTRA_DIST) $(top_builddir)/win32/vs9/gobject.vcproj $(top_builddir)/win32/vs9/gobject.headers
 	files='$(BUILT_EXTRA_DIST)'; \
 	for f in $$files; do \
 	  if test -f $$f; then d=.; else d=$(srcdir); fi; \
@@ -261,8 +246,9 @@ distclean-local:
 
 # install gdb scripts
 gdbdir = $(datadir)/glib-2.0/gdb
-dist_gdb_SCRIPTS = gobject_gdb.py
+dist_gdb_DATA = gobject_gdb.py
 
+all-local: libgobject-gdb.py
 libgobject-gdb.py: libgobject-gdb.py.in
 	$(AM_V_GEN) $(SED) -e "s|\@datadir\@|$(datadir)|" $(srcdir)/libgobject-gdb.py.in > $(builddir)/libgobject-gdb.py
 

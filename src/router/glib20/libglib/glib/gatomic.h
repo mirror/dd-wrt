@@ -1,10 +1,10 @@
 /*
  * Copyright © 2011 Ryan Lortie
  *
- * This library is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * licence, or (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -87,6 +87,10 @@ G_END_DECLS
 /* We prefer the new C11-style atomic extension of GCC if available */
 #if defined(__ATOMIC_SEQ_CST) && !defined(__clang__)
 
+/* This assumes sizeof(int) is 4: gatomic.c statically
+ * asserts that (using G_STATIC_ASSERT at top-level in a header was
+ * problematic, see #730932) */
+
 #define g_atomic_int_get(atomic) \
   (G_GNUC_EXTENSION ({                                                       \
     G_STATIC_ASSERT (sizeof *(atomic) == sizeof (gint));                     \
@@ -115,6 +119,10 @@ G_END_DECLS
   }))
 
 #else /* GLIB_SIZEOF_VOID_P == 8 */
+
+/* This assumes that if sizeof(void *) is not 8, then it is 4:
+ * gatomic.c statically asserts that (using G_STATIC_ASSERT
+ * at top-level in a header was problematic, see #730932) */
 
 #define g_atomic_pointer_get(atomic) \
   (G_GNUC_EXTENSION ({                                                       \

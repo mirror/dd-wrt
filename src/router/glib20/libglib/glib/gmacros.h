@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -165,7 +165,13 @@
 #define G_GNUC_DEPRECATED_FOR(f)        G_GNUC_DEPRECATED
 #endif /* __GNUC__ */
 
-#if    __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#ifdef __ICC
+#define G_GNUC_BEGIN_IGNORE_DEPRECATIONS                \
+  _Pragma ("warning (push)")                            \
+  _Pragma ("warning (disable:1478)")
+#define G_GNUC_END_IGNORE_DEPRECATIONS			\
+  _Pragma ("warning (pop)")
+#elif    __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
 #define G_GNUC_BEGIN_IGNORE_DEPRECATIONS		\
   _Pragma ("GCC diagnostic push")			\
   _Pragma ("GCC diagnostic ignored \"-Wdeprecated-declarations\"")

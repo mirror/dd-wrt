@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -38,7 +38,7 @@ typedef struct {
 } MockInterfaceClass;
 
 static GType mock_interface_get_type (void);
-G_DEFINE_TYPE (MockInterface, mock_interface, G_TYPE_DBUS_INTERFACE_SKELETON);
+G_DEFINE_TYPE (MockInterface, mock_interface, G_TYPE_DBUS_INTERFACE_SKELETON)
 
 static void
 mock_interface_init (MockInterface *self)
@@ -219,8 +219,9 @@ setup (Test *test,
 
   if (socketpair (AF_UNIX, SOCK_STREAM, 0, pair) < 0)
     {
-      g_set_error (&error, G_IO_ERROR, g_io_error_from_errno (errno),
-                   "%s", g_strerror (errno));
+      int errsv = errno;
+      g_set_error (&error, G_IO_ERROR, g_io_error_from_errno (errsv),
+                   "%s", g_strerror (errsv));
       g_assert_no_error (error);
     }
 

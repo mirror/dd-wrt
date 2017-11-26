@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -74,11 +74,15 @@ test_methods (GDBusProxy *proxy)
   g_assert_cmpstr (error->message, ==, "Yo is not a proper greeting");
   g_clear_error (&error);
 
-  /* Check that we get a timeout if the method handling is taking longer than timeout */
+  /* Check that we get a timeout if the method handling is taking longer than
+   * timeout. We use such a long sleep because on slow machines, if the
+   * sleep isn't much longer than the timeout and we're doing a parallel
+   * build, there's no guarantee we'll be scheduled in the window between
+   * the timeout being hit and the sleep finishing. */
   error = NULL;
   result = g_dbus_proxy_call_sync (proxy,
                                    "Sleep",
-                                   g_variant_new ("(i)", 500 /* msec */),
+                                   g_variant_new ("(i)", 10000 /* msec */),
                                    G_DBUS_CALL_FLAGS_NONE,
                                    100 /* msec */,
                                    NULL,
@@ -104,12 +108,14 @@ test_methods (GDBusProxy *proxy)
   g_assert_cmpstr (g_variant_get_type_string (result), ==, "()");
   g_variant_unref (result);
 
-  /* now set the proxy-default timeout to 250 msec and try the 500 msec call - this should FAIL */
+  /* Now set the proxy-default timeout to 250 msec and try the 10000 msec
+   * call - this should FAIL. Again, we use such a long sleep because on slow
+   * machines there's no guarantee we'll be scheduled when we want to be. */
   g_dbus_proxy_set_default_timeout (proxy, 250);
   g_assert_cmpint (g_dbus_proxy_get_default_timeout (proxy), ==, 250);
   result = g_dbus_proxy_call_sync (proxy,
                                    "Sleep",
-                                   g_variant_new ("(i)", 500 /* msec */),
+                                   g_variant_new ("(i)", 10000 /* msec */),
                                    G_DBUS_CALL_FLAGS_NONE,
                                    -1, /* use proxy default (e.g. 250 msec) */
                                    NULL,
@@ -829,6 +835,8 @@ fail_test (gpointer user_data)
 static void
 test_async (void)
 {
+  guint id;
+
   g_dbus_proxy_new_for_bus (G_BUS_TYPE_SESSION,
                             G_DBUS_PROXY_FLAGS_NONE,
                             NULL,                      /* GDBusInterfaceInfo */
@@ -842,8 +850,10 @@ test_async (void)
   /* this is safe; testserver will exit once the bus goes away */
   g_assert (g_spawn_command_line_async (g_test_get_filename (G_TEST_BUILT, "gdbus-testserver", NULL), NULL));
 
-  g_timeout_add (10000, fail_test, NULL);
+  id = g_timeout_add (10000, fail_test, NULL);
   g_main_loop_run (loop);
+
+  g_source_remove (id);
 }
 
 static void
@@ -889,6 +899,7 @@ test_wellknown_noauto (void)
 {
   GError *error = NULL;
   GDBusProxy *proxy;
+  guint id;
 
   proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SESSION,
                                          G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START,
@@ -898,9 +909,10 @@ test_wellknown_noauto (void)
   g_assert (proxy != NULL);
 
   g_dbus_proxy_call (proxy, "method", NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, check_error, NULL);
-  g_timeout_add (10000, fail_test, NULL);
+  id = g_timeout_add (10000, fail_test, NULL);
   g_main_loop_run (loop);
   g_object_unref (proxy);
+  g_source_remove (id);
 }
 
 int

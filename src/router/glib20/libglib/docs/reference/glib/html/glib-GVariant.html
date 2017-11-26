@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GVariant: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-data-types.html" title="GLib Data Types">
 <link rel="prev" href="glib-GVariantType.html" title="GVariantType">
@@ -1056,14 +1056,14 @@ can use:</p>
     <tbody>
       <tr>
         <td class="listing_lines" align="right"><pre>1</pre></td>
-        <td class="listing_code"><pre class="programlisting">GVariant <span class="gtkdoc opt">*</span>v <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-GVariant.html#g-variant-new">g_variant_new</a></span> <span class="gtkdoc opt">(</span><span class="string">&apos;u&apos;</span><span class="gtkdoc opt">,</span> <span class="number">40</span><span class="gtkdoc opt">);</span></pre></td>
+        <td class="listing_code"><pre class="programlisting">GVariant <span class="gtkdoc opt">*</span>v <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-GVariant.html#g-variant-new">g_variant_new</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;u&quot;</span><span class="gtkdoc opt">,</span> <span class="number">40</span><span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
 </div>
 
 <p></p>
-<p>The string 'u' in the first argument tells <a class="link" href="glib-GVariant.html#GVariant" title="GVariant"><span class="type">GVariant</span></a> that the data passed to
+<p>The string "u" in the first argument tells <a class="link" href="glib-GVariant.html#GVariant" title="GVariant"><span class="type">GVariant</span></a> that the data passed to
 the constructor (40) is going to be an unsigned integer.</p>
 <p>More advanced examples of <a class="link" href="glib-GVariant.html#GVariant" title="GVariant"><span class="type">GVariant</span></a> in use can be found in documentation for
 GVariant format strings.</p>
@@ -1087,7 +1087,7 @@ Serialised <a class="link" href="glib-GVariant.html#GVariant" title="GVariant"><
 <p><a class="link" href="glib-GVariant.html#GVariant" title="GVariant"><span class="type">GVariant</span></a> is largely compatible with D-Bus.  Almost all types of
 <a class="link" href="glib-GVariant.html#GVariant" title="GVariant"><span class="type">GVariant</span></a> instances can be sent over D-Bus.  See <a class="link" href="glib-GVariantType.html#GVariantType" title="GVariantType"><span class="type">GVariantType</span></a> for
 exceptions.  (However, <a class="link" href="glib-GVariant.html#GVariant" title="GVariant"><span class="type">GVariant</span></a>'s serialisation format is not the same
-as the serialisation format of a D-Bus message body: use <a href="../GDBusMessage.html#GDBusMessage-struct"><span class="type">GDBusMessage</span></a>,
+as the serialisation format of a D-Bus message body: use <a href="../gio/GDBusMessage.html#GDBusMessage-struct"><span class="type">GDBusMessage</span></a>,
 in the gio library, for those.)</p>
 <p>For space-efficiency, the <a class="link" href="glib-GVariant.html#GVariant" title="GVariant"><span class="type">GVariant</span></a> serialisation format does not
 automatically include the variant's length, type or endianness,
@@ -1242,7 +1242,7 @@ child.</p>
 <a name="id-1.6.19.6.27"></a><h4>Summary</h4>
 <p>To put the entire example together, for our dictionary mapping
 strings to variants (with two entries, as given above), we are
-using 91 bytes of memory for type information, 29 byes of memory
+using 91 bytes of memory for type information, 29 bytes of memory
 for the serialised data, 16 bytes for buffer management and 24
 bytes for the <a class="link" href="glib-GVariant.html#GVariant" title="GVariant"><span class="type">GVariant</span></a> instance, or a total of 160 bytes, plus
 malloc overhead.  If we were to use <a class="link" href="glib-GVariant.html#g-variant-get-child-value" title="g_variant_get_child_value ()"><code class="function">g_variant_get_child_value()</code></a> to
@@ -1680,7 +1680,7 @@ the data inside of the soon-to-be-freed <a class="link" href="glib-GVariant.html
 check fails then a <a class="link" href="glib-Message-Logging.html#g-critical" title="g_critical()"><code class="function">g_critical()</code></a> is printed and <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> is returned.</p>
 <p>This function is meant to be used by functions that wish to provide
 varargs accessors to <a class="link" href="glib-GVariant.html#GVariant" title="GVariant"><span class="type">GVariant</span></a> values of uncertain values (eg:
-<a class="link" href="glib-GVariant.html#g-variant-lookup" title="g_variant_lookup ()"><code class="function">g_variant_lookup()</code></a> or <a href="../GMenuModel.html#g-menu-model-get-item-attribute"><code class="function">g_menu_model_get_item_attribute()</code></a>).</p>
+<a class="link" href="glib-GVariant.html#g-variant-lookup" title="g_variant_lookup ()"><code class="function">g_variant_lookup()</code></a> or <a href="../gio/GMenuModel.html#g-menu-model-get-item-attribute"><code class="function">g_menu_model_get_item_attribute()</code></a>).</p>
 <div class="refsect3">
 <a name="g-variant-check-format-string.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1827,7 +1827,7 @@ GVariant format strings.</p>
 <td class="parameter_name"><p>endptr</p></td>
 <td class="parameter_description"><p> location to store the end pointer,
 or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Default parameter value (for in case the shadows-to function has less parameters)."><span class="acronym">default</span></acronym> NULL]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Default parameter value (for in case the shadows-to function has less parameters)."><span class="acronym">default</span></acronym> NULL]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>app</p></td>
@@ -1944,7 +1944,7 @@ pointing to the argument following the last.</p>
  must be of the correct width for their
 types specified in <em class="parameter"><code>format_string</code></em>
  when collected into the <span class="type">va_list</span>.
-See the [GVariant varargs documentation][gvariant-varargs.</p>
+See the GVariant varargs documentation.</p>
 <p>These two generalisations allow mixing of multiple calls to
 <a class="link" href="glib-GVariant.html#g-variant-new-va" title="g_variant_new_va ()"><code class="function">g_variant_new_va()</code></a> and <a class="link" href="glib-GVariant.html#g-variant-get-va" title="g_variant_get_va ()"><code class="function">g_variant_get_va()</code></a> within a single actual
 varargs call by the user.</p>
@@ -1978,7 +1978,7 @@ or by passing it to another <a class="link" href="glib-GVariant.html#g-variant-n
 <td class="parameter_name"><p>endptr</p></td>
 <td class="parameter_description"><p> location to store the end pointer,
 or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Default parameter value (for in case the shadows-to function has less parameters)."><span class="acronym">default</span></acronym> NULL]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Default parameter value (for in case the shadows-to function has less parameters)."><span class="acronym">default</span></acronym> NULL]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>app</p></td>
@@ -3069,7 +3069,7 @@ other than those three.</p>
 <td class="parameter_name"><p>length</p></td>
 <td class="parameter_description"><p> a pointer to a <a class="link" href="glib-Basic-Types.html#gsize" title="gsize"><span class="type">gsize</span></a>,
 to store the length. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Default parameter value (for in case the shadows-to function has less parameters)."><span class="acronym">default</span></acronym> 0][<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>][<acronym title="Default parameter value (for in case the shadows-to function has less parameters)."><span class="acronym">default</span></acronym> 0][<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3184,7 +3184,7 @@ is stored there.  In any case, the resulting array will be
 <tr>
 <td class="parameter_name"><p>length</p></td>
 <td class="parameter_description"><p> the length of the result, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3229,7 +3229,7 @@ is stored there.  In any case, the resulting array will be
 <tr>
 <td class="parameter_name"><p>length</p></td>
 <td class="parameter_description"><p> the length of the result, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3274,7 +3274,7 @@ is stored there.  In any case, the resulting array will be
 <tr>
 <td class="parameter_name"><p>length</p></td>
 <td class="parameter_description"><p> the length of the result, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3319,7 +3319,7 @@ is stored there.  In any case, the resulting array will be
 <tr>
 <td class="parameter_name"><p>length</p></td>
 <td class="parameter_description"><p> the length of the result, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3400,7 +3400,7 @@ returning a constant string, the string is duplicated.</p>
 <td class="parameter_name"><p>length</p></td>
 <td class="parameter_description"><p> a pointer to a <a class="link" href="glib-Basic-Types.html#gsize" title="gsize"><span class="type">gsize</span></a>, to store
 the length (not including the nul terminator). </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Default parameter value (for in case the shadows-to function has less parameters)."><span class="acronym">default</span></acronym> NULL]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>][<acronym title="Default parameter value (for in case the shadows-to function has less parameters)."><span class="acronym">default</span></acronym> NULL]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3445,7 +3445,7 @@ stored there.  In any case, the resulting array will be
 <tr>
 <td class="parameter_name"><p>length</p></td>
 <td class="parameter_description"><p> the length of the result, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3490,7 +3490,7 @@ stored there.  In any case, the resulting array will be
 <tr>
 <td class="parameter_name"><p>length</p></td>
 <td class="parameter_description"><p> the length of the result, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3538,12 +3538,12 @@ instance takes ownership of <em class="parameter"><code>child</code></em>
 <tr>
 <td class="parameter_name"><p>child_type</p></td>
 <td class="parameter_description"><p> the <a class="link" href="glib-GVariantType.html#GVariantType" title="GVariantType"><span class="type">GVariantType</span></a> of the child, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>child</p></td>
 <td class="parameter_description"><p> the child value, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3594,13 +3594,13 @@ new instance takes ownership of them as if via <a class="link" href="glib-GVaria
 <tr>
 <td class="parameter_name"><p>child_type</p></td>
 <td class="parameter_description"><p> the element type of the new array. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>children</p></td>
 <td class="parameter_description"><p> an array of
 <a class="link" href="glib-GVariant.html#GVariant" title="GVariant"><span class="type">GVariant</span></a> pointers, the children. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=n_children]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=n_children]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>n_children</p></td>
@@ -3718,9 +3718,10 @@ g_variant_new_fixed_array (<em class="parameter"><code>const <a class="link" hre
                            <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gconstpointer" title="gconstpointer"><span class="type">gconstpointer</span></a> elements</code></em>,
                            <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gsize" title="gsize"><span class="type">gsize</span></a> n_elements</code></em>,
                            <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gsize" title="gsize"><span class="type">gsize</span></a> element_size</code></em>);</pre>
-<p>Provides access to the serialised data for an array of fixed-sized
-items.</p>
-<p><em class="parameter"><code>value</code></em>
+<p>Constructs a new array <a class="link" href="glib-GVariant.html#GVariant" title="GVariant"><span class="type">GVariant</span></a> instance, where the elements are
+of <em class="parameter"><code>element_type</code></em>
+ type.</p>
+<p><em class="parameter"><code>elements</code></em>
  must be an array with fixed-sized elements.  Numeric types are
 fixed-size as are tuples containing only other fixed-sized types.</p>
 <p><em class="parameter"><code>element_size</code></em>
@@ -3730,8 +3731,8 @@ you might say sizeof(gint32). This value isn't used except for the purpose
 of a double-check that the form of the serialised data matches the caller's
 expectation.</p>
 <p><em class="parameter"><code>n_elements</code></em>
-, which must be non-<a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> is set equal to the number of
-items in the array.</p>
+ must be the length of the <em class="parameter"><code>elements</code></em>
+ array.</p>
 <div class="refsect3">
 <a name="g-variant-new-fixed-array.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -3797,7 +3798,7 @@ value is Nothing, then this function returns <a class="link" href="glib-Standard
 <a name="g-variant-get-maybe.returns"></a><h4>Returns</h4>
 <p> the contents of <em class="parameter"><code>value</code></em>
 , or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p>
-<p><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+<p><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-24.html#api-index-2.24">2.24</a></p>
 </div>
@@ -3987,7 +3988,7 @@ plan to do many lookups then <a class="link" href="glib-GVariant.html#GVariantDi
 <tr>
 <td class="parameter_name"><p>expected_type</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-GVariantType.html#GVariantType" title="GVariantType"><span class="type">GVariantType</span></a>, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -4086,11 +4087,11 @@ the appropriate type:</p>
 <li class="listitem"><p><a class="link" href="glib-GVariantType.html#G-VARIANT-TYPE-DOUBLE:CAPS" title="G_VARIANT_TYPE_DOUBLE"><code class="literal">G_VARIANT_TYPE_DOUBLE</code></a>: <a class="link" href="glib-Basic-Types.html#gdouble" title="gdouble"><span class="type">gdouble</span></a></p></li>
 </ul></div>
 <p>For example, if calling this function for an array of 32-bit integers,
-you might say sizeof(gint32). This value isn't used except for the purpose
+you might say <code class="literal">sizeof(gint32)</code>. This value isn't used except for the purpose
 of a double-check that the form of the serialised data matches the caller's
 expectation.</p>
 <p><em class="parameter"><code>n_elements</code></em>
-, which must be non-<a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> is set equal to the number of
+, which must be non-<a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>, is set equal to the number of
 items in the array.</p>
 <div class="refsect3">
 <a name="g-variant-get-fixed-array.parameters"></a><h4>Parameters</h4>
@@ -4709,7 +4710,7 @@ a new empty <a class="link" href="glib-Strings.html#GString" title="struct GStri
 <tr>
 <td class="parameter_name"><p>string</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-Strings.html#GString" title="struct GString"><span class="type">GString</span></a>, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Default parameter value (for in case the shadows-to function has less parameters)."><span class="acronym">default</span></acronym> NULL]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Default parameter value (for in case the shadows-to function has less parameters)."><span class="acronym">default</span></acronym> NULL]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>type_annotate</p></td>
@@ -4970,7 +4971,7 @@ you no longer need it.</p>
 <div class="refsect3">
 <a name="g-variant-iter-next-value.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="glib-GVariant.html#GVariant" title="GVariant"><span class="type">GVariant</span></a>, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p>
-<p><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+<p><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-24.html#api-index-2.24">2.24</a></p>
 </div>
@@ -5409,7 +5410,7 @@ freeing the <a class="link" href="glib-GVariant.html#GVariantBuilder" title="str
 <a class="link" href="glib-GVariant.html#GVariantBuilder" title="struct GVariantBuilder"><span class="type">GVariantBuilder</span></a> if you want to abort building the value part-way
 through.  This function need not be called if you call
 <a class="link" href="glib-GVariant.html#g-variant-builder-end" title="g_variant_builder_end ()"><code class="function">g_variant_builder_end()</code></a> and it also doesn't need to be called on
-builders allocated with g_variant_builder_new (see
+builders allocated with <a class="link" href="glib-GVariant.html#g-variant-builder-new" title="g_variant_builder_new ()"><code class="function">g_variant_builder_new()</code></a> (see
 <a class="link" href="glib-GVariant.html#g-variant-builder-unref" title="g_variant_builder_unref ()"><code class="function">g_variant_builder_unref()</code></a> for that).</p>
 <p>This function leaves the <a class="link" href="glib-GVariant.html#GVariantBuilder" title="struct GVariantBuilder"><span class="type">GVariantBuilder</span></a> structure set to all-zeros.
 It is valid to call this function on either an initialised
@@ -5697,10 +5698,73 @@ g_variant_builder_open (<em class="parameter"><code><a class="link" href="glib-G
                         <em class="parameter"><code>const <a class="link" href="glib-GVariantType.html#GVariantType" title="GVariantType"><span class="type">GVariantType</span></a> *type</code></em>);</pre>
 <p>Opens a subcontainer inside the given <em class="parameter"><code>builder</code></em>
 .  When done adding
-items to the subcontainer, <a class="link" href="glib-GVariant.html#g-variant-builder-close" title="g_variant_builder_close ()"><code class="function">g_variant_builder_close()</code></a> must be called.</p>
+items to the subcontainer, <a class="link" href="glib-GVariant.html#g-variant-builder-close" title="g_variant_builder_close ()"><code class="function">g_variant_builder_close()</code></a> must be called. <em class="parameter"><code>type</code></em>
+
+is the type of the container: so to build a tuple of several values, <em class="parameter"><code>type</code></em>
+
+must include the tuple itself.</p>
 <p>It is an error to call this function in any way that would cause an
 inconsistent value to be constructed (ie: adding too many values or
 a value of an incorrect type).</p>
+<p>Example of building a nested variant:</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24</pre></td>
+        <td class="listing_code"><pre class="programlisting">GVariantBuilder builder<span class="gtkdoc opt">;</span>
+guint32 some_number <span class="gtkdoc opt">=</span> <span class="function">get_number</span> <span class="gtkdoc opt">();</span>
+<span class="function"><a href="glib-Miscellaneous-Macros.html#g-autoptr">g_autoptr</a></span> <span class="gtkdoc opt">(</span>GHashTable<span class="gtkdoc opt">)</span> some_dict <span class="gtkdoc opt">=</span> <span class="function">get_dict</span> <span class="gtkdoc opt">();</span>
+GHashTableIter iter<span class="gtkdoc opt">;</span>
+<span class="gtkdoc kwb">const</span> gchar <span class="gtkdoc opt">*</span>key<span class="gtkdoc opt">;</span>
+<span class="gtkdoc kwb">const</span> GVariant <span class="gtkdoc opt">*</span>value<span class="gtkdoc opt">;</span>
+<span class="function"><a href="glib-Miscellaneous-Macros.html#g-autoptr">g_autoptr</a></span> <span class="gtkdoc opt">(</span>GVariant<span class="gtkdoc opt">)</span> output <span class="gtkdoc opt">=</span> NULL<span class="gtkdoc opt">;</span>
+
+<span class="function"><a href="glib-GVariant.html#g-variant-builder-init">g_variant_builder_init</a></span> <span class="gtkdoc opt">(&amp;</span>builder<span class="gtkdoc opt">,</span> <span class="function"><a href="glib-GVariantType.html#G-VARIANT-TYPE:CAPS">G_VARIANT_TYPE</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;(ua{sv})&quot;</span><span class="gtkdoc opt">));</span>
+<span class="function"><a href="glib-GVariant.html#g-variant-builder-add">g_variant_builder_add</a></span> <span class="gtkdoc opt">(&amp;</span>builder<span class="gtkdoc opt">,</span> <span class="string">&quot;u&quot;</span><span class="gtkdoc opt">,</span> some_number<span class="gtkdoc opt">);</span>
+<span class="function"><a href="glib-GVariant.html#g-variant-builder-open">g_variant_builder_open</a></span> <span class="gtkdoc opt">(&amp;</span>builder<span class="gtkdoc opt">,</span> <span class="function"><a href="glib-GVariantType.html#G-VARIANT-TYPE:CAPS">G_VARIANT_TYPE</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;a{sv}&quot;</span><span class="gtkdoc opt">));</span>
+
+<span class="function"><a href="glib-Hash-Tables.html#g-hash-table-iter-init">g_hash_table_iter_init</a></span> <span class="gtkdoc opt">(&amp;</span>iter<span class="gtkdoc opt">,</span> some_dict<span class="gtkdoc opt">);</span>
+<span class="keyword">while</span> <span class="gtkdoc opt">(</span><span class="function"><a href="glib-Hash-Tables.html#g-hash-table-iter-next">g_hash_table_iter_next</a></span> <span class="gtkdoc opt">(&amp;</span>iter<span class="gtkdoc opt">, (</span>gpointer <span class="gtkdoc opt">*) &amp;</span>key<span class="gtkdoc opt">, (</span>gpointer <span class="gtkdoc opt">*) &amp;</span>value<span class="gtkdoc opt">))</span>
+  <span class="gtkdoc opt">{</span>
+    <span class="function"><a href="glib-GVariant.html#g-variant-builder-open">g_variant_builder_open</a></span> <span class="gtkdoc opt">(&amp;</span>builder<span class="gtkdoc opt">,</span> <span class="function"><a href="glib-GVariantType.html#G-VARIANT-TYPE:CAPS">G_VARIANT_TYPE</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;{sv}&quot;</span><span class="gtkdoc opt">));</span>
+    <span class="function"><a href="glib-GVariant.html#g-variant-builder-add">g_variant_builder_add</a></span> <span class="gtkdoc opt">(&amp;</span>builder<span class="gtkdoc opt">,</span> <span class="string">&quot;s&quot;</span><span class="gtkdoc opt">,</span> key<span class="gtkdoc opt">);</span>
+    <span class="function"><a href="glib-GVariant.html#g-variant-builder-add">g_variant_builder_add</a></span> <span class="gtkdoc opt">(&amp;</span>builder<span class="gtkdoc opt">,</span> <span class="string">&quot;v&quot;</span><span class="gtkdoc opt">,</span> value<span class="gtkdoc opt">);</span>
+    <span class="function"><a href="glib-GVariant.html#g-variant-builder-close">g_variant_builder_close</a></span> <span class="gtkdoc opt">(&amp;</span>builder<span class="gtkdoc opt">);</span>
+  <span class="gtkdoc opt">}</span>
+
+<span class="function"><a href="glib-GVariant.html#g-variant-builder-close">g_variant_builder_close</a></span> <span class="gtkdoc opt">(&amp;</span>builder<span class="gtkdoc opt">);</span>
+
+output <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-GVariant.html#g-variant-builder-end">g_variant_builder_end</a></span> <span class="gtkdoc opt">(&amp;</span>builder<span class="gtkdoc opt">);</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p></p>
 <div class="refsect3">
 <a name="g-variant-builder-open.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -5717,7 +5781,7 @@ a value of an incorrect type).</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>type</p></td>
-<td class="parameter_description"><p>a <a class="link" href="glib-GVariantType.html#GVariantType" title="GVariantType"><span class="type">GVariantType</span></a></p></td>
+<td class="parameter_description"><p>the <a class="link" href="glib-GVariantType.html#GVariantType" title="GVariantType"><span class="type">GVariantType</span></a> of the container</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
@@ -5838,7 +5902,7 @@ using <a class="link" href="glib-GVariant.html#GVariantDict" title="struct GVari
 <td class="parameter_name"><p>from_asv</p></td>
 <td class="parameter_description"><p> the <a class="link" href="glib-GVariant.html#GVariant" title="GVariant"><span class="type">GVariant</span></a> with which to initialise the
 dictionary. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr></tbody>
 </table></div>
 </div>
@@ -5889,7 +5953,7 @@ reference may try to use reference counting; you should use
 <td class="parameter_name"><p>from_asv</p></td>
 <td class="parameter_description"><p> the initial value for <em class="parameter"><code>dict</code></em>
 . </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -6066,7 +6130,7 @@ value will have this type.</p>
 <tr>
 <td class="parameter_name"><p>expected_type</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-GVariantType.html#GVariantType" title="GVariantType"><span class="type">GVariantType</span></a>, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -6287,7 +6351,7 @@ produced by <a class="link" href="glib-GVariant.html#g-variant-print" title="g_v
 <tr>
 <td class="parameter_name"><p>type</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-GVariantType.html#GVariantType" title="GVariantType"><span class="type">GVariantType</span></a>, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>text</p></td>
@@ -6298,17 +6362,17 @@ produced by <a class="link" href="glib-GVariant.html#g-variant-print" title="g_v
 <td class="parameter_name"><p>limit</p></td>
 <td class="parameter_description"><p> a pointer to the end of <em class="parameter"><code>text</code></em>
 , or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>endptr</p></td>
 <td class="parameter_description"><p> a location to store the end pointer, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
 <td class="parameter_description"><p> a pointer to a <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> <a class="link" href="glib-Error-Reporting.html#GError" title="struct GError"><span class="type">GError</span></a> pointer, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>

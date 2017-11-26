@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -615,18 +615,21 @@ read_all_from_fd (gint fd, gsize *out_len, GError **error)
 
   do
     {
+      int errsv;
+
       num_read = read (fd, buf, sizeof (buf));
+      errsv = errno;
       if (num_read == -1)
         {
-          if (errno == EAGAIN || errno == EWOULDBLOCK)
+          if (errsv == EAGAIN || errsv == EWOULDBLOCK)
             continue;
           g_set_error (error,
                        G_IO_ERROR,
-                       g_io_error_from_errno (errno),
+                       g_io_error_from_errno (errsv),
                        "Failed reading %d bytes into offset %d: %s",
                        (gint) sizeof (buf),
                        (gint) str->len,
-                       strerror (errno));
+                       g_strerror (errsv));
           goto error;
         }
       else if (num_read > 0)

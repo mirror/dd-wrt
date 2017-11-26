@@ -129,6 +129,9 @@ GLIB_VERSION_2_44
 GLIB_VERSION_2_46
 GLIB_VERSION_2_48
 GLIB_VERSION_2_50
+GLIB_VERSION_2_52
+GLIB_VERSION_2_54
+GLIB_VERSION_2_56
 GLIB_VERSION_MIN_REQUIRED
 GLIB_VERSION_MAX_ALLOWED
 GLIB_DISABLE_DEPRECATION_WARNINGS
@@ -149,6 +152,9 @@ GLIB_AVAILABLE_IN_2_44
 GLIB_AVAILABLE_IN_2_46
 GLIB_AVAILABLE_IN_2_48
 GLIB_AVAILABLE_IN_2_50
+GLIB_AVAILABLE_IN_2_52
+GLIB_AVAILABLE_IN_2_54
+GLIB_AVAILABLE_IN_2_56
 GLIB_DEPRECATED_IN_2_26
 GLIB_DEPRECATED_IN_2_26_FOR
 GLIB_DEPRECATED_IN_2_28
@@ -175,6 +181,12 @@ GLIB_DEPRECATED_IN_2_48
 GLIB_DEPRECATED_IN_2_48_FOR
 GLIB_DEPRECATED_IN_2_50
 GLIB_DEPRECATED_IN_2_50_FOR
+GLIB_DEPRECATED_IN_2_52
+GLIB_DEPRECATED_IN_2_52_FOR
+GLIB_DEPRECATED_IN_2_54
+GLIB_DEPRECATED_IN_2_54_FOR
+GLIB_DEPRECATED_IN_2_56
+GLIB_DEPRECATED_IN_2_56_FOR
 GLIB_VERSION_CUR_STABLE
 GLIB_VERSION_PREV_STABLE
 </SECTION>
@@ -621,6 +633,8 @@ g_source_get_current_time
 g_source_remove
 g_source_remove_by_funcs_user_data
 g_source_remove_by_user_data
+GClearHandleFunc
+g_clear_handle_id
 
 <SUBSECTION Private>
 GLIB_HAVE_ALLOCA_H
@@ -1324,7 +1338,7 @@ g_option_error_quark
 <SECTION>
 <TITLE>File Utilities</TITLE>
 <FILE>fileutils</FILE>
-<INCLUDE>glib.h,glib/gstdio.h</INCLUDE>
+<INCLUDE>glib.h,glib/gstdio.h,fcntl.h,sys/types.h,sys/stat.h</INCLUDE>
 GFileError
 G_FILE_ERROR
 GFileTest
@@ -1476,6 +1490,15 @@ g_ascii_formatd
 g_strtod
 
 <SUBSECTION>
+GNumberParserError
+G_NUMBER_PARSER_ERROR
+g_ascii_string_to_signed
+g_ascii_string_to_unsigned
+
+<SUBSECTION Private>
+g_number_parser_error_quark
+
+<SUBSECTION>
 g_strchug
 g_strchomp
 g_strstrip
@@ -1542,6 +1565,7 @@ g_date_new_dmy
 g_date_new_julian
 g_date_clear
 g_date_free
+g_date_copy
 
 <SUBSECTION>
 g_date_set_day
@@ -1658,6 +1682,7 @@ g_date_time_new_from_unix_utc
 <SUBSECTION>
 g_date_time_new_from_timeval_local
 g_date_time_new_from_timeval_utc
+g_date_time_new_from_iso8601
 
 <SUBSECTION>
 g_date_time_new
@@ -1828,6 +1853,7 @@ g_path_get_basename
 g_path_get_dirname
 g_build_filename
 g_build_filenamev
+g_build_filename_valist
 g_build_path
 g_build_pathv
 
@@ -2566,6 +2592,8 @@ g_ptr_array_set_size
 g_ptr_array_index
 g_ptr_array_free
 g_ptr_array_foreach
+g_ptr_array_find
+g_ptr_array_find_with_equal_func
 
 </SECTION>
 
@@ -3402,4 +3430,11 @@ g_hostname_is_non_ascii
 g_hostname_is_ascii_encoded
 <SUBSECTION>
 g_hostname_is_ip_address
+</SECTION>
+
+<SECTION>
+<FILE>uuid</FILE>
+<TITLE>GUuid</TITLE>
+g_uuid_string_is_valid
+g_uuid_string_random
 </SECTION>

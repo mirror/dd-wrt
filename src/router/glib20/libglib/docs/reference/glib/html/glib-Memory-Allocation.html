@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Memory Allocation: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-core.html" title="GLib Core Application Support">
 <link rel="prev" href="glib-Dynamic-Loading-of-Modules.html" title="Dynamic Loading of Modules">
@@ -630,7 +630,7 @@ and <em class="parameter"><code>mem</code></em>
 <tr>
 <td class="parameter_name"><p>mem</p></td>
 <td class="parameter_description"><p> the memory to reallocate. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>n_bytes</p></td>
@@ -727,7 +727,7 @@ on failure.</p>
 <tr>
 <td class="parameter_name"><p>mem</p></td>
 <td class="parameter_description"><p> previously-allocated memory, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>n_bytes</p></td>
@@ -841,7 +841,7 @@ but care is taken to detect possible overflow during multiplication.</p>
 <tr>
 <td class="parameter_name"><p>mem</p></td>
 <td class="parameter_description"><p> the memory to reallocate. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>n_blocks</p></td>
@@ -961,7 +961,7 @@ but care is taken to detect possible overflow during multiplication.</p>
 <tr>
 <td class="parameter_name"><p>mem</p></td>
 <td class="parameter_description"><p> previously-allocated memory, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>n_blocks</p></td>
@@ -1004,7 +1004,7 @@ against <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL">
 <tbody><tr>
 <td class="parameter_name"><p>mem</p></td>
 <td class="parameter_description"><p> the memory to free. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr></tbody>
 </table></div>
 </div>
@@ -1084,7 +1084,7 @@ the following example (which only works on GCC and clang):</p>
         <td class="listing_code"><pre class="programlisting">GObject <span class="gtkdoc opt">*</span>
 <span class="function">create_object</span> <span class="gtkdoc opt">(</span><span class="gtkdoc kwb">void</span><span class="gtkdoc opt">)</span>
 <span class="gtkdoc opt">{</span>
-  <span class="function"><a href="glib-Miscellaneous-Macros.html#g-autoptr">g_autoptr</a></span><span class="gtkdoc opt">(</span>GObject<span class="gtkdoc opt">)</span> obj <span class="gtkdoc opt">=</span> <span class="function"><a href="../gobject-The-Base-Object-Type.html#g-object-new">g_object_new</a></span> <span class="gtkdoc opt">(</span>G_TYPE_OBJECT<span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+  <span class="function"><a href="glib-Miscellaneous-Macros.html#g-autoptr">g_autoptr</a></span><span class="gtkdoc opt">(</span>GObject<span class="gtkdoc opt">)</span> obj <span class="gtkdoc opt">=</span> <span class="function"><a href="../gobject/gobject-The-Base-Object-Type.html#g-object-new">g_object_new</a></span> <span class="gtkdoc opt">(</span>G_TYPE_OBJECT<span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
 
   <span class="keyword">if</span> <span class="gtkdoc opt">(</span>early_error_case<span class="gtkdoc opt">)</span>
     <span class="keyword">return</span> NULL<span class="gtkdoc opt">;</span>
@@ -1119,7 +1119,7 @@ particularly useful for dealing with optional out parameters:</p>
         <td class="listing_code"><pre class="programlisting">gboolean
 <span class="function">get_object</span> <span class="gtkdoc opt">(</span>GObject <span class="gtkdoc opt">**</span>obj_out<span class="gtkdoc opt">)</span>
 <span class="gtkdoc opt">{</span>
-  <span class="function"><a href="glib-Miscellaneous-Macros.html#g-autoptr">g_autoptr</a></span><span class="gtkdoc opt">(</span>GObject<span class="gtkdoc opt">)</span> obj <span class="gtkdoc opt">=</span> <span class="function"><a href="../gobject-The-Base-Object-Type.html#g-object-new">g_object_new</a></span> <span class="gtkdoc opt">(</span>G_TYPE_OBJECT<span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+  <span class="function"><a href="glib-Miscellaneous-Macros.html#g-autoptr">g_autoptr</a></span><span class="gtkdoc opt">(</span>GObject<span class="gtkdoc opt">)</span> obj <span class="gtkdoc opt">=</span> <span class="function"><a href="../gobject/gobject-The-Base-Object-Type.html#g-object-new">g_object_new</a></span> <span class="gtkdoc opt">(</span>G_TYPE_OBJECT<span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
 
   <span class="keyword">if</span> <span class="gtkdoc opt">(</span>early_error_case<span class="gtkdoc opt">)</span>
     <span class="keyword">return</span> FALSE<span class="gtkdoc opt">;</span>
@@ -1325,7 +1325,8 @@ is <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code
 g_mem_set_vtable (<em class="parameter"><code><a class="link" href="glib-Memory-Allocation.html#GMemVTable" title="struct GMemVTable"><span class="type">GMemVTable</span></a> *vtable</code></em>);</pre>
 <div class="warning">
 <p><code class="literal">g_mem_set_vtable</code> has been deprecated since version 2.46 and should not be used in newly-written code.</p>
-<p>Use other memory profiling tools instead</p>
+<p>This function now does nothing. Use other memory
+profiling tools instead</p>
 </div>
 <p>This function used to let you override the memory allocation function.
 However, its use was incompatible with the use of global constructors

@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>glib-mkenums: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="rn02.html" title="Tools Reference">
 <link rel="prev" href="rn02.html" title="Tools Reference">
@@ -244,50 +244,110 @@ Examples:
 <tbody>
 <tr>
 <td><p><span class="term"><code class="option">--fhead</code> <em class="replaceable"><code>TEXT</code></em></span></p></td>
-<td><p>
-Put out <em class="replaceable"><code>TEXT</code></em> prior to processing input files.
-</p></td>
+<td>
+<p>
+Emits <em class="replaceable"><code>TEXT</code></em> prior to processing input files.
+</p>
+<p>
+You can specify this option multiple times, and the <em class="replaceable"><code>TEXT</code></em>
+will be concatenated.
+</p>
+<p>
+When used along with a template file, <em class="replaceable"><code>TEXT</code></em>
+will be prepended to the template's <code class="literal">file-header</code> section.
+</p>
+</td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="option">--fprod</code> <em class="replaceable"><code>TEXT</code></em></span></p></td>
-<td><p>
-Put out <em class="replaceable"><code>TEXT</code></em> everytime a new input file
+<td>
+<p>
+Emits <em class="replaceable"><code>TEXT</code></em> every time a new input file
 is being processed.
-</p></td>
+</p>
+<p>
+You can specify this option multiple times, and the <em class="replaceable"><code>TEXT</code></em>
+will be concatenated.
+</p>
+<p>
+When used along with a template file, <em class="replaceable"><code>TEXT</code></em>
+will be appended to the template's <code class="literal">file-production</code> section.
+</p>
+</td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="option">--ftail</code> <em class="replaceable"><code>TEXT</code></em></span></p></td>
-<td><p>
-Put out <em class="replaceable"><code>TEXT</code></em> after all input files have been
+<td>
+<p>
+Emits <em class="replaceable"><code>TEXT</code></em> after all input files have been
 processed.
-</p></td>
+</p>
+<p>
+You can specify this option multiple times, and the <em class="replaceable"><code>TEXT</code></em>
+will be concatenated.
+</p>
+<p>
+When used along with a template file, <em class="replaceable"><code>TEXT</code></em>
+will be appended to the template's <code class="literal">file-tail</code> section.
+</p>
+</td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="option">--eprod</code> <em class="replaceable"><code>TEXT</code></em></span></p></td>
 <td><p>
-Put out <em class="replaceable"><code>TEXT</code></em> everytime an enum is encountered
+Emits <em class="replaceable"><code>TEXT</code></em> everytime an enum is encountered
 in the input files.
 </p></td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="option">--vhead</code> <em class="replaceable"><code>TEXT</code></em></span></p></td>
-<td><p>
-Put out <em class="replaceable"><code>TEXT</code></em> before iterating over the set of
+<td>
+<p>
+Emits <em class="replaceable"><code>TEXT</code></em> before iterating over the set of
 values of an enum.
-</p></td>
+</p>
+<p>
+You can specify this option multiple times, and the <em class="replaceable"><code>TEXT</code></em>
+will be concatenated.
+</p>
+<p>
+When used along with a template file, <em class="replaceable"><code>TEXT</code></em>
+will be prepended to the template's <code class="literal">value-header</code> section.
+</p>
+</td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="option">--vprod</code> <em class="replaceable"><code>TEXT</code></em></span></p></td>
-<td><p>
-Put out <em class="replaceable"><code>TEXT</code></em> for every value of an enum.
-</p></td>
+<td>
+<p>
+Emits <em class="replaceable"><code>TEXT</code></em> for every value of an enum.
+</p>
+<p>
+You can specify this option multiple times, and the <em class="replaceable"><code>TEXT</code></em>
+will be concatenated.
+</p>
+<p>
+When used along with a template file, <em class="replaceable"><code>TEXT</code></em>
+will be appended to the template's <code class="literal">value-production</code> section.
+</p>
+</td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="option">--vtail</code> <em class="replaceable"><code>TEXT</code></em></span></p></td>
-<td><p>
-Put out <em class="replaceable"><code>TEXT</code></em> after iterating over all values
+<td>
+<p>
+Emits <em class="replaceable"><code>TEXT</code></em> after iterating over all values
 of an enum.
-</p></td>
+</p>
+<p>
+You can specify this option multiple times, and the <em class="replaceable"><code>TEXT</code></em>
+will be concatenated.
+</p>
+<p>
+When used along with a template file, <em class="replaceable"><code>TEXT</code></em>
+will be appended to the template's <code class="literal">value-tail</code> section.
+</p>
+</td>
 </tr>
 <tr>
 <td><p><span class="term"><code class="option">--comments</code> <em class="replaceable"><code>TEXT</code></em></span></p></td>
@@ -369,7 +429,237 @@ Write output to FILE instead of stdout.
 </table></div>
 </div>
 <div class="refsect1">
-<a name="id-1.5.2.7"></a><h2>See also</h2>
+<a name="id-1.5.2.7"></a><h2>Using glib-mkenums with Autotools</h2>
+<p>
+In order to use <span class="command"><strong>glib-mkenums</strong></span> in your project when using
+Autotools as the build system, you will first need to modify your
+<code class="filename">configure.ac</code> file to ensure you find the appropriate
+command using <span class="command"><strong>pkg-config</strong></span>, similarly as to how you discover
+the compiler and linker flags for GLib.
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="function">PKG_PROG_PKG_CONFIG</span><span class="gtkdoc opt">([</span><span class="number">0.28</span><span class="gtkdoc opt">])</span>
+
+<span class="function">PKG_CHECK_VAR</span><span class="gtkdoc opt">([</span>GLIB_MKENUMS<span class="gtkdoc opt">], [</span>glib<span class="gtkdoc opt">-</span><span class="number">2.0</span><span class="gtkdoc opt">], [</span>glib_mkenums<span class="gtkdoc opt">])</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+In your <code class="filename">Makefile.am</code> file you will typically use rules
+like these:
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc ppc"># A list of headers to inspect</span>
+project_headers <span class="gtkdoc opt">=</span> \
+        project<span class="gtkdoc opt">-</span>foo<span class="gtkdoc opt">.</span>h \
+        project<span class="gtkdoc opt">-</span>bar<span class="gtkdoc opt">.</span>h \
+        project<span class="gtkdoc opt">-</span>baz<span class="gtkdoc opt">.</span>h
+
+<span class="gtkdoc kwb">enum</span><span class="gtkdoc opt">-</span>types<span class="gtkdoc opt">.</span>h<span class="gtkdoc opt">:</span> $<span class="gtkdoc opt">(</span>project_headers<span class="gtkdoc opt">)</span> <span class="gtkdoc kwb">enum</span><span class="gtkdoc opt">-</span>types<span class="gtkdoc opt">.</span>h<span class="gtkdoc opt">.</span>in
+        $<span class="gtkdoc opt">(</span>AM_V_GEN<span class="gtkdoc opt">)</span>$<span class="gtkdoc opt">(</span>GLIB_MKENUMS<span class="gtkdoc opt">)</span> \
+                <span class="gtkdoc opt">--</span><span class="gtkdoc kwc">template</span><span class="gtkdoc opt">=</span><span class="gtkdoc kwb">enum</span><span class="gtkdoc opt">-</span>types<span class="gtkdoc opt">.</span>h<span class="gtkdoc opt">.</span>in \
+                <span class="gtkdoc opt">--</span>output<span class="gtkdoc opt">=</span>$&#64; \
+                $<span class="gtkdoc opt">(</span>project_headers<span class="gtkdoc opt">)</span>
+
+<span class="gtkdoc kwb">enum</span><span class="gtkdoc opt">-</span>types<span class="gtkdoc opt">.</span>c<span class="gtkdoc opt">:</span> $<span class="gtkdoc opt">(</span>project_headers<span class="gtkdoc opt">)</span> <span class="gtkdoc kwb">enum</span><span class="gtkdoc opt">-</span>types<span class="gtkdoc opt">.</span>c<span class="gtkdoc opt">.</span>in <span class="gtkdoc kwb">enum</span><span class="gtkdoc opt">-</span>types<span class="gtkdoc opt">.</span>h
+        $<span class="gtkdoc opt">(</span>AM_V_GEN<span class="gtkdoc opt">)</span>$<span class="gtkdoc opt">(</span>GLIB_MKENUMS<span class="gtkdoc opt">)</span> \
+                <span class="gtkdoc opt">--</span><span class="gtkdoc kwc">template</span><span class="gtkdoc opt">=</span><span class="gtkdoc kwb">enum</span><span class="gtkdoc opt">-</span>types<span class="gtkdoc opt">.</span>c<span class="gtkdoc opt">.</span>in \
+                <span class="gtkdoc opt">--</span>output<span class="gtkdoc opt">=</span>$&#64; \
+                $<span class="gtkdoc opt">(</span>project_headers<span class="gtkdoc opt">)</span>
+
+BUILT_SOURCES <span class="gtkdoc opt">+=</span> <span class="gtkdoc kwb">enum</span><span class="gtkdoc opt">-</span>types<span class="gtkdoc opt">.</span>h <span class="gtkdoc kwb">enum</span><span class="gtkdoc opt">-</span>types<span class="gtkdoc opt">.</span>c
+CLEANFILES <span class="gtkdoc opt">+=</span> <span class="gtkdoc kwb">enum</span><span class="gtkdoc opt">-</span>types<span class="gtkdoc opt">.</span>h <span class="gtkdoc kwb">enum</span><span class="gtkdoc opt">-</span>types<span class="gtkdoc opt">.</span>c
+EXTRA_DIST <span class="gtkdoc opt">+=</span> <span class="gtkdoc kwb">enum</span><span class="gtkdoc opt">-</span>types<span class="gtkdoc opt">.</span>h<span class="gtkdoc opt">.</span>in <span class="gtkdoc kwb">enum</span><span class="gtkdoc opt">-</span>types<span class="gtkdoc opt">.</span>c<span class="gtkdoc opt">.</span>in</pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+In the example above, we have a variable called <code class="literal">project_headers</code>
+where we reference all header files we want to inspect for generating enumeration
+GTypes. In the <code class="filename">enum-types.h</code> rule we use <span class="command"><strong>glib-mkenums</strong></span>
+with a template called <code class="filename">enum-types.h.in</code> in order to generate the
+header file; a header template file will typically look like this:
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="comment">/*** BEGIN file-header ***/</span>
+<span class="gtkdoc ppc">#pragma once</span>
+
+<span class="comment">/* Include the main project header */</span>
+<span class="gtkdoc ppc">#include</span> <span class="gtkdoc pps">&quot;project.h&quot;</span><span class="gtkdoc ppc"></span>
+
+G_BEGIN_DECLS
+<span class="comment">/*** END file-header ***/</span>
+
+<span class="comment">/*** BEGIN file-production ***/</span>
+
+<span class="comment">/* enumerations from &quot;&#64;filename&#64;&quot; */</span>
+<span class="comment">/*** END file-production ***/</span>
+
+<span class="comment">/*** BEGIN value-header ***/</span>
+GType &#64;enum_name&#64;<span class="function">_get_type</span> <span class="gtkdoc opt">(</span><span class="gtkdoc kwb">void</span><span class="gtkdoc opt">)</span> G_GNUC_CONST<span class="gtkdoc opt">;</span>
+<span class="gtkdoc ppc">#define &#64;ENUMPREFIX&#64;_TYPE_&#64;ENUMSHORT&#64; (&#64;enum_name&#64;_get_type ())</span>
+<span class="comment">/*** END value-header ***/</span>
+
+<span class="comment">/*** BEGIN file-tail ***/</span>
+G_END_DECLS
+<span class="comment">/*** END file-tail ***/</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p>
+The <code class="filename">enum-types.c</code> rule is similar to the rule for the
+header file, but will use a different <code class="filename">enum-types.c.in</code> template
+file, similar to this:
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="comment">/*** BEGIN file-header ***/</span>
+<span class="gtkdoc ppc">#include</span> <span class="gtkdoc pps">&quot;config.h&quot;</span><span class="gtkdoc ppc"></span>
+<span class="gtkdoc ppc">#include</span> <span class="gtkdoc pps">&quot;enum-types.h&quot;</span><span class="gtkdoc ppc"></span>
+
+<span class="comment">/*** END file-header ***/</span>
+
+<span class="comment">/*** BEGIN file-production ***/</span>
+<span class="comment">/* enumerations from &quot;&#64;filename&#64;&quot; */</span>
+<span class="comment">/*** END file-production ***/</span>
+
+<span class="comment">/*** BEGIN value-header ***/</span>
+GType
+&#64;enum_name&#64;<span class="function">_get_type</span> <span class="gtkdoc opt">(</span><span class="gtkdoc kwb">void</span><span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="gtkdoc kwb">static</span> <span class="gtkdoc kwc">volatile</span> gsize g_&#64;type&#64;_type_id__volatile<span class="gtkdoc opt">;</span>
+
+  <span class="keyword">if</span> <span class="gtkdoc opt">(</span><span class="function"><a href="../glib-Threads.html#g-once-init-enter">g_once_init_enter</a></span> <span class="gtkdoc opt">(&amp;</span>g_define_type_id__volatile<span class="gtkdoc opt">))</span>
+    <span class="gtkdoc opt">{</span>
+      <span class="gtkdoc kwb">static const</span> G&#64;Type&#64;Value values<span class="gtkdoc opt">[] = {</span>
+<span class="comment">/*** END value-header ***/</span>
+
+<span class="comment">/*** BEGIN value-production ***/</span>
+            <span class="gtkdoc opt">{</span> &#64;VALUENAME&#64;<span class="gtkdoc opt">,</span> <span class="string">&quot;&#64;VALUENAME&#64;&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;&#64;valuenick&#64;&quot;</span> <span class="gtkdoc opt">},</span>
+<span class="comment">/*** END value-production ***/</span>
+
+<span class="comment">/*** BEGIN value-tail ***/</span>
+            <span class="gtkdoc opt">{</span> <span class="number">0</span><span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">,</span> NULL <span class="gtkdoc opt">}</span>
+      <span class="gtkdoc opt">};</span>
+
+      GType g_&#64;type&#64;_type_id <span class="gtkdoc opt">=</span>
+        g_&#64;type&#64;<span class="function">_register_static</span> <span class="gtkdoc opt">(</span><span class="function"><a href="../glib-Quarks.html#g-intern-static-string">g_intern_static_string</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;&#64;EnumName&#64;&quot;</span><span class="gtkdoc opt">),</span> values<span class="gtkdoc opt">);</span>
+
+      <span class="function"><a href="../glib-Threads.html#g-once-init-leave">g_once_init_leave</a></span> <span class="gtkdoc opt">(&amp;</span>g_&#64;type&#64;_type_id__volatile<span class="gtkdoc opt">,</span> g_&#64;type&#64;_type_id<span class="gtkdoc opt">);</span>
+    <span class="gtkdoc opt">}</span>
+  <span class="keyword">return</span> g_&#64;type&#64;_type_id__volatile<span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">}</span>
+
+<span class="comment">/*** END value-tail ***/</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+<div class="refsect1">
+<a name="id-1.5.2.8"></a><h2>See also</h2>
 <p>
 <span class="citerefentry"><span class="refentrytitle">glib-genmarshal</span>(1)</span>
 </p>
