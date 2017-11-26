@@ -577,7 +577,7 @@ ifeq ($(CONFIG_LIBQMI),y)
 endif
 ifeq ($(CONFIG_UQMI),y)
   CFLAGS += -DHAVE_UQMI -I$(TOP)/_staging/usr/include
-  QMILDFLAGS = -L$(TOP)/_staging/usr/lib -ljson
+  QMILDFLAGS = -L$(TOP)/_staging/usr/lib -ljson-c
 endif
 ifeq ($(CONFIG_MAGICBOX),y)
   CFLAGS += -DHAVE_MAGICBOX

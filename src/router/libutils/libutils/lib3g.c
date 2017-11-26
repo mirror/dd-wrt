@@ -1829,7 +1829,8 @@ void get3GControlDevice(void)
 				eval("/etc/hso/hso_connect.sh", "restart");
 				break;
 			case none:
-				return control;
+				nvram_set("3gcontrol", control);
+				return;
 				break;
 			default:
 				sprintf(control, "/dev/usb/tts/%d", devicelist[devicecount].controldevice);
@@ -1841,14 +1842,14 @@ void get3GControlDevice(void)
 				detectcontrol_and_data_port(control);
 			}
 			nvram_set("3gcontrol", control);
-			return control;
+			return;
 		}
 		devicecount++;
 	}
 	//not found, use generic implementation (all drivers)
 	insmod("cdc-acm cdc-wdm usbnet qmi_wwan usbserial usb_wwan sierra option qcserial");
 	nvram_set("3gcontrol", ttsdevice);
-	return ttsdevice;
+	return;
 }
 
 #ifdef HAVE_UQMI
