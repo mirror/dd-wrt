@@ -787,6 +787,8 @@ static int wanactive(void)
 
 static void nat_postrouting(void)
 {
+	char word[80], *tmp;
+	char *ipaddr, *netmask, *gateway, *metric, *ifname, *nat;
 	if (has_gateway()) {
 
 		// added for logic test
@@ -805,6 +807,35 @@ static void nat_postrouting(void)
 		if (strlen(wanface) && wanactive()
 		    && !nvram_matchi("br0_nat", 0))
 			save2file("-A POSTROUTING -s %s/%d -o %s -j SNAT --to-source %s\n", nvram_safe_get("lan_ipaddr"), loopmask, wanface, wanaddr);
+		char *sr = nvram_safe_get("static_route");
+		foreach(word, sr, tmp) {
+			netmask = word;
+			ipaddr = strsep(&netmask, ":");
+			if (!ipaddr || !netmask)
+				continue;
+			gateway = netmask;
+			netmask = strsep(&gateway, ":");
+			if (!netmask || !gateway)
+				continue;
+			metric = gateway;
+			gateway = strsep(&metric, ":");
+			if (!gateway || !metric)
+				continue;
+			ifname = metric;
+			metric = strsep(&ifname, ":");
+			if (!metric || !ifname)
+				continue;
+			if (strchr(ifname, ':')) {
+				nat = ifname;
+				ifname = strsep(&nat, ":");
+				if (!ifname || !nat)
+					continue;
+			}
+			if (nat && !strcmp(nat, "1")) {
+				save2file("-A POSTROUTING -s %s/%d -o %s -j SNAT --to-source %s\n", ipaddr, getmask(netmask), wanface, wanaddr);
+			}
+
+		}
 
 		char *wan_ifname_tun = nvram_safe_get("wan_ifname");
 		if (isClient()) {

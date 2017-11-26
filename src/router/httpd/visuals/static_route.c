@@ -37,7 +37,7 @@ void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 	int which;
 	char word[256];
 	char *next = NULL;
-	char *ipaddr = NULL, *netmask = NULL, *gateway = NULL, *metric = NULL, *ifname = NULL;
+	char *ipaddr = NULL, *netmask = NULL, *gateway = NULL, *metric = NULL, *ifname = NULL, *nat = NULL;
 	char ifnamecopy[32];
 	char bufferif[512];
 
@@ -62,6 +62,12 @@ void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 			metric = strsep(&ifname, ":");
 			if (!metric || !ifname)
 				continue;
+			if (strchr(ifname, ':')) {
+				nat = ifname;
+				ifname = strsep(&nat, ":");
+				if (!ifname || !nat)
+					continue;
+			}
 			break;
 		}
 	}
