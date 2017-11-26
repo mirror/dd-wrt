@@ -24,7 +24,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 4f0c793260dc4e841e513fb2fefaecfbf6feed75 $ */
+/* $Id: 7fbc77ceb7ee351011ae3c578eaa33541acbbf9e $ */
 
 /* Sanity check to ensure that pcre extension needed by this script is available.
  * In the event it is not, print a nice error message indicating that this script will
@@ -43,7 +43,7 @@ if (!extension_loaded('pcre')) {
 +-----------------------------------------------------------+
 
 NO_PCRE_ERROR;
-exit;
+exit(1);
 }
 
 if (!function_exists('proc_open')) {
@@ -56,7 +56,7 @@ if (!function_exists('proc_open')) {
 +-----------------------------------------------------------+
 
 NO_PROC_OPEN_ERROR;
-exit;
+exit(1);
 }
 
 // If timezone is not set, use UTC.
@@ -671,7 +671,7 @@ if (isset($argc) && $argc > 1) {
 					$html_output = is_resource($html_file);
 					break;
 				case '--version':
-					echo '$Id: 4f0c793260dc4e841e513fb2fefaecfbf6feed75 $' . "\n";
+					echo '$Id: 7fbc77ceb7ee351011ae3c578eaa33541acbbf9e $' . "\n";
 					exit(1);
 
 				default:

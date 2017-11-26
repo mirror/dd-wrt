@@ -1,5 +1,61 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+23 Nov 2017, PHP 7.1.12
+
+- Core:
+  . Fixed bug #75420 (Crash when modifing property name in __isset for
+    BP_VAR_IS). (Laruence)
+  . Fixed bug #75368 (mmap/munmap trashing on unlucky allocations). (Nikita,
+    Dmitry)
+
+- CLI:
+  . Fixed bug #75287 (Builtin webserver crash after chdir in a shutdown
+    function). (Laruence)
+
+- Enchant:
+  . Fixed bug #53070 (enchant_broker_get_path crashes if no path is set). (jelle
+    van der Waa, cmb)
+  . Fixed bug #75365 (Enchant still reports version 1.1.0). (cmb)
+
+- Exif:
+  . Fixed bug #75301 (Exif extension has built in revision version). (Peter
+    Kokot)
+
+- GD:
+  . Fixed bug #65148 (imagerotate may alter image dimensions). (cmb)
+  . Fixed bug #75437 (Wrong reflection on imagewebp). (Fabien Villepinte)
+
+- intl:
+  . Fixed bug #75317 (UConverter::setDestinationEncoding changes source instead 
+    of destination). (andrewnester)
+
+- interbase:
+  . Fixed bug #75453 (Incorrect reflection for ibase_[p]connect). (villfa)
+
+- Mysqli:
+  . Fixed bug #75434 (Wrong reflection for mysqli_fetch_all function). (Fabien
+    Villepinte)
+
+- OCI8:
+  . Fixed valgrind issue. (Tianfang Yang)
+
+- OpenSSL:
+  . Fixed bug #75363 (openssl_x509_parse leaks memory). (Bob, Jakub Zelenka)
+  . Fixed bug #75307 (Wrong reflection for openssl_open function). (villfa)
+
+- Opcache:
+  . Fixed bug #75373 (Warning Internal error: wrong size calculation). (Laruence, Dmitry)
+
+- PGSQL:
+  . Fixed bug #75419 (Default link incorrectly cleared/linked by pg_close()). (Sara)
+
+- SOAP:
+  . Fixed bug #75464 (Wrong reflection on SoapClient::__setSoapHeaders). (villfa)
+
+- Zlib:
+  . Fixed bug #75299 (Wrong reflection on inflate_init and inflate_add). (Fabien
+    Villepinte)
+
 26 Oct 2017, PHP 7.1.11
 
 - Core:
@@ -13,12 +69,12 @@ PHP                                                                        NEWS
   . Fixed bug #75290 (debug info of Closures of internal functions contain
     garbage argument names). (Andrea)
 
-- Date:
-  . Fixed bug #75055 (Out-Of-Bounds Read in timelib_meridian()). (Derick)
-
 - Apache2Handler:
   . Fixed bug #75311 (error: 'zend_hash_key' has no member named 'arKey' in
     apache2handler). (mcarbonneaux)
+
+- Date:
+  . Fixed bug #75055 (Out-Of-Bounds Read in timelib_meridian()). (Derick)
 
 - Hash:
   . Fixed bug #75303 (sha3 hangs on bigendian). (Remi)
