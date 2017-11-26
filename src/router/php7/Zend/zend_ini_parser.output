@@ -22,7 +22,7 @@ Grammar
     0 $accept: statement_list $end
 
     1 statement_list: statement_list statement
-    2               | /* empty */
+    2               | %empty
 
     3 statement: TC_SECTION section_string_or_value ']'
     4          | TC_LABEL '=' string_or_value
@@ -31,7 +31,7 @@ Grammar
     7          | END_OF_LINE
 
     8 section_string_or_value: var_string_list_section
-    9                        | /* empty */
+    9                        | %empty
 
    10 string_or_value: expr
    11                | BOOL_TRUE
@@ -40,11 +40,11 @@ Grammar
    14                | END_OF_LINE
 
    15 option_offset: var_string_list
-   16              | /* empty */
+   16              | %empty
 
    17 encapsed_list: encapsed_list cfg_var_ref
    18              | encapsed_list TC_QUOTED_STRING
-   19              | /* empty */
+   19              | %empty
 
    20 var_string_list_section: cfg_var_ref
    21                        | constant_literal
