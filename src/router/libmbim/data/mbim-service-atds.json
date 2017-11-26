@@ -1,0 +1,147 @@
+[
+  // *********************************************************************************
+  { "type" : "Service",
+    "name" : "ATT Device Service" },
+
+  // *********************************************************************************
+  { "name"         : "Signal",
+    "service"      : "ATDS",
+    "type"         : "Command",
+    "query"        : [],
+    "response"     : [ 
+                       // 0-31: dBm = -113 + (2*rssi)
+                       // 99:   unknown/undetectable
+                       { "name"   : "Rssi",
+                         "format" : "guint32" },
+
+                       // 0:  BER < 0.2%
+                       // 1:  0.2% < BER < 0.4%
+                       // 2:  0.4% < BER < 0.8%
+                       // 3:  0.8% < BER < 1.6%
+                       // 4:  1.6% < BER < 3.2%
+                       // 5:  3.2% < BER < 6.4%
+                       // 6:  6.4% < BER < 12.8%
+                       // 7:  12.8% < BER
+                       // 99: unknown/undetectable
+                       { "name"   : "ErrorRate",
+                         "format" : "guint32" },
+
+                       // 0:   -120 or less dBm
+                       // <96: dBm = -120+rscp
+                       // 96:  -24 or greater dBm
+                       // 255: unknown/undetectable
+                       { "name"   : "Rscp",
+                         "format" : "guint32" },
+
+                       // 0:   -24 or less dBm
+                       // <49: dBm = -24 + ((float)ecno/2)
+                       // 49:  0.5 or greater dBm
+                       // 255: unknown/undetectable
+                       { "name"   : "Ecno",
+                         "format" : "guint32" },
+
+                       // 0:   -19.5 or less dBm
+                       // <34: dBm = -19.5 + ((float)rsrq/2)
+                       // 34:  -2.5 or greater dBm
+                       // 255: unknown/undetectable
+                       { "name"   : "Rsrq",
+                         "format" : "guint32" },
+
+                       // 0:   -140 or less dBm
+                       // <97: dBm = -140 + rsrp
+                       // 97:  -43 or greater dBm
+                       // 255: unknown/undetectable
+                       { "name"   : "Rsrp",
+                         "format" : "guint32" },
+
+                       // 0:   -5 or less dB
+                       // <35: dB = -5 + rssnr
+                       // 35:  30 or greater dB
+                       // 255: unknown/undetectable
+                       { "name"   : "Rssnr",
+                         "format" : "guint32" } ] },
+
+  // *********************************************************************************
+  { "name"         : "Location",
+    "service"      : "ATDS",
+    "type"         : "Command",
+    "query"        : [],
+    "response"     : [ { "name"   : "Lac",
+                         "format" : "guint32" },
+                       { "name"   : "Tac",
+                         "format" : "guint32" },
+                       { "name"   : "CellId",
+                         "format" : "guint32" } ] },
+
+  // *********************************************************************************
+  { "name"     : "MbimAtdsProvider",
+    "type"     : "Struct",
+    "contents" : [ { "name"          : "ProviderId",
+                     "format"        : "string" },
+                   { "name"          : "ProviderState",
+                     "format"        : "guint32",
+                     "public-format" : "MbimProviderState" },
+                   { "name"          : "ProviderName",
+                     "format"        : "string" },
+                   { "name"          : "PlmnMode",
+                     "format"        : "guint32",
+                     "public-format" : "MbimAtdsProviderPlmnMode" },
+                   { "name"          : "Rssi",
+                     "format"        : "guint32" },
+                   { "name"          : "ErrorRate",
+                     "format"        : "guint32" } ] },
+
+  { "name"     : "Operators",
+    "service"  : "ATDS",
+    "type"     : "Command",
+    "query"    : [],
+    "response" : [ { "name"             : "ProvidersCount",
+                     "format"           : "guint32" },
+                   { "name"             : "Providers",
+                     "format"           : "ref-struct-array" ,
+                     "struct-type"      : "MbimAtdsProvider",
+                     "array-size-field" : "ProvidersCount" } ] },
+
+  // *********************************************************************************
+  { "name"     : "RAT",
+    "service"  : "ATDS",
+    "type"     : "Command",
+    "set"      : [ { "name"          : "Mode",
+                     "format"        : "guint32",
+                     "public-format" : "MbimAtdsRatMode" } ],
+    "query"    : [],
+    "response" : [ { "name"          : "Mode",
+                     "format"        : "guint32",
+                     "public-format" : "MbimAtdsRatMode" } ] },
+
+  // *********************************************************************************
+  { "name"         : "Register State",
+    "service"      : "ATDS",
+    "type"         : "Command",
+    "query"        : [],
+    "response"     : [ { "name"          : "NwError",
+                         "format"        : "guint32",
+                         "public-format" : "MbimNwError" },
+                       { "name"          : "RegisterState",
+                         "format"        : "guint32",
+                         "public-format" : "MbimRegisterState" },
+                       { "name"          : "RegisterMode",
+                         "format"        : "guint32",
+                         "public-format" : "MbimRegisterMode" },
+                       { "name"          : "AvailableDataClasses",
+                         "format"        : "guint32",
+                         "public-format" : "MbimDataClass" },
+                       { "name"          : "CurrentCellularClass",
+                         "format"        : "guint32",
+                         "public-format" : "MbimCellularClass" },
+                       { "name"   : "ProviderId",
+                         "format" : "string" },
+                       { "name"   : "ProviderName",
+                         "format" : "string" },
+                       { "name"   : "RoamingText",
+                         "format" : "string" },
+                       { "name"          : "RegistrationFlag",
+                         "format"        : "guint32",
+                         "public-format" : "MbimRegistrationFlag" } ] }
+
+]

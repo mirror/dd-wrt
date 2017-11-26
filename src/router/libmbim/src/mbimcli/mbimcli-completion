@@ -1,0 +1,83 @@
+# mbimcli(1) completion                                      -*- shell-script -*-
+
+_mbimcli()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+
+    case $prev in
+        '-d'|'--device')
+            _filedir
+            return 0
+            ;;
+        '--no-open')
+            COMPREPLY=( $(compgen -W "[Transaction-ID]" -- $cur) )
+            return 0
+            ;;
+        '--set-radio-state')
+            COMPREPLY=( $(compgen -W "[(on|off)]" -- $cur) )
+            return 0
+            ;;
+        '--enter-pin')
+            COMPREPLY=( $(compgen -W "[current-PIN]" -- $cur) )
+            return 0
+            ;;
+        '--change-pin')
+            COMPREPLY=( $(compgen -W "[(current-PIN),(new-PIN)]" -- $cur) )
+            return 0
+            ;;
+        '--enable-pin')
+            COMPREPLY=( $(compgen -W "[current-PIN]" -- $cur) )
+            return 0
+            ;;
+        '--disable-pin')
+            COMPREPLY=( $(compgen -W "[current-PIN]" -- $cur) )
+            return 0
+            ;;
+        '--enter-puk')
+            COMPREPLY=( $(compgen -W "[(PUK),(new-PIN)]" -- $cur) )
+            return 0
+            ;;
+        '--connect')
+            COMPREPLY=( $(compgen -W "[(APN),(PAP|CHAP|MSCHAPV2),(Username),(Password)]" -- $cur) )
+            return 0
+            ;;
+        '--phonebook-read')
+            COMPREPLY=( $(compgen -W "[(Phonebook-index)]" -- $cur) )
+            return 0
+            ;;
+        '--phonebook-write')
+            COMPREPLY=( $(compgen -W "[(Name),(Number)[,(Index)]]" -- $cur) )
+            return 0
+            ;;
+        '--phonebook-delete')
+            COMPREPLY=( $(compgen -W "[(Phonebook-index)]" -- $cur) )
+            return 0
+            ;;
+        '--dss-connect')
+            COMPREPLY=( $(compgen -W "[(UUID),(Session-ID)]" -- $cur) )
+            return 0
+            ;;
+        '--dss-disconnect')
+            COMPREPLY=( $(compgen -W "[(UUID),(Session-ID)]" -- $cur) )
+            return 0
+            ;;
+        '-V'|'--version')
+            return 0
+            ;;
+        '-h'|'--help'|'--help-all'|'--help-basic-connect'|'--help-phonebook'|'--help-dss'|'--help-ms-firmware-id'|'--help-ms-host-shutdown')
+            return 0
+            ;;
+    esac
+
+    $split && return 0
+
+    if [[ $cur == -* ]]; then
+        COMPREPLY=( $( compgen -W '$( _parse_help "$1" --help-all )' -- "$cur" ) )
+        [[ $COMPREPLY == *= ]] && compopt -o nospace
+        return 0
+    fi
+} &&
+complete -F _mbimcli mbimcli
+
+# ex: ts=4 sw=4 et filetype=sh

@@ -1,0 +1,47 @@
+
+[
+  // *********************************************************************************
+  { "type" : "Service",
+    "name" : "STK" },
+
+  // *********************************************************************************
+  { "name"         : "Pac",
+    "service"      : "STK",
+    "type"         : "Command",
+    "query"        : [],
+    "set"          : [ { "name"       : "PacHostControl",
+                         "format"     : "byte-array",
+                         "array-size" : "32" } ],
+
+    "response"     : [ { "name"       : "PacSupport",
+                         "format"     : "byte-array",
+                         "array-size" : "256" } ],
+    "notification" : [ { "name"          : "PacType",
+                         "format"        : "guint32",
+                         "public-format" : "MbimStkPacType" },
+                       { "name"   : "DataBuffer",
+                         "format" : "unsized-byte-array" } ] },
+
+  // *********************************************************************************
+  { "name"     : "Terminal Response",
+    "service"  : "STK",
+    "type"     : "Command",
+    "set"      : [ { "name"   : "Response",
+                     "format" : "ref-byte-array-no-offset" } ],
+    "response" : [ { "name"   : "ResultData",
+                     "format" : "ref-byte-array" },
+                   { "name"   : "StatusWords",
+                     "format" : "guint32" } ] },
+
+  // *********************************************************************************
+  { "name"     : "Envelope",
+    "service"  : "STK",
+    "type"     : "Command",
+    "query"    : [],
+    "set"      : [ { "name"   : "Data",
+                     "format" : "unsized-byte-array" } ],
+    // This response is only for the 'query', the 'set' one is empty...
+    "response" : [ { "name"       : "EnvelopeSupport",
+                     "format"     : "byte-array",
+                     "array-size" : "32" } ] }
+]

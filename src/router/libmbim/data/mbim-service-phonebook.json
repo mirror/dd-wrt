@@ -1,0 +1,89 @@
+
+[
+    // *********************************************************************************
+    { "type" : "Service",
+      "name" : "Phonebook" },
+
+    // *********************************************************************************
+    { "name"         : "Configuration",
+      "service"      : "Phonebook",
+      "type"         : "Command",
+      "query"        : [],
+      "response"     : [ { "name"          : "State",
+                           "format"        : "guint32",
+                           "public-format" : "MbimPhonebookState" },
+                         { "name"   : "NumberOfEntries",
+                           "format" : "guint32" },
+                         { "name"   : "UsedEntries",
+                           "format" : "guint32" },
+                         { "name"   : "MaxNumberLength",
+                           "format" : "guint32" },
+                         { "name"   : "MaxName",
+                           "format" : "guint32" } ],
+      "notification" : [ { "name"          : "State",
+                           "format"        : "guint32",
+                           "public-format" : "MbimPhonebookState" },
+                         { "name"   : "NumberOfEntries",
+                           "format" : "guint32" },
+                         { "name"   : "UsedEntries",
+                           "format" : "guint32" },
+                         { "name"   : "MaxNumberLength",
+                           "format" : "guint32" },
+                         { "name"   : "MaxName",
+                           "format" : "guint32" } ] },
+
+    // *********************************************************************************
+  { "name"     : "MbimPhonebookEntry",
+    "type"     : "Struct",
+    "contents" : [ { "name"   : "EntryIndex",
+                     "format" : "guint32" },
+                   { "name"   : "Number",
+                     "format" : "string" },
+                   { "name"   : "Name",
+                     "format" : "string" } ] },
+
+  { "name"     : "Read",
+    "service"  : "Phonebook",
+    "type"     : "Command",
+    "query"    : [ { "name"          : "FilterFlag",
+                     "format"        : "guint32",
+                     "public-format" : "MbimPhonebookFlag" },
+                   { "name"          : "FilterMessageIndex",
+                     "format"        : "guint32" } ],
+    "response" : [ { "name"   : "EntryCount",
+                     "format" : "guint32" },
+                   { "name"             : "Entries",
+                     "format"           : "ref-struct-array",
+                     "struct-type"      : "MbimPhonebookEntry",
+                     "array-size-field" : "EntryCount" } ] },
+
+    // *********************************************************************************
+
+  { "name"     : "Delete",
+    "service"  : "Phonebook",
+    "type"     : "Command",
+    "set"      : [ { "name"          : "FilterFlag",
+                     "format"        : "guint32",
+                     "public-format" : "MbimPhonebookFlag" },
+                   { "name"          : "FilterMessageIndex",
+                     "format"        : "guint32" } ],
+    "response" : [] },
+
+
+    // *********************************************************************************
+
+  { "name"     : "Write",
+    "service"  : "Phonebook",
+    "type"     : "Command",
+    "set"      : [ { "name"          : "SaveFlag",
+                     "format"        : "guint32",
+                     "public-format" : "MbimPhonebookWriteFlag" },
+                   { "name"   : "SaveIndex",
+                     "format" : "guint32" },
+                   { "name"   : "Number",
+                     "format" : "string" },
+                   { "name"   : "Name",
+                     "format" : "string" } ],
+    "response" : [] }
+
+]

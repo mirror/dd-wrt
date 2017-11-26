@@ -1,0 +1,17 @@
+
+[
+    // *********************************************************************************
+    { "type" : "Service",
+      "name" : "QMI" },
+
+    // *********************************************************************************
+    { "name"     : "msg",
+      "service"  : "QMI",
+      "type"     : "Command",
+      "set"      : [ { "name"      : "QmiMsg",
+                       "format"    : "unsized-byte-array",
+                       "pad-array" : "FALSE" } ],
+      "response" : [ { "name"      : "QMUX",
+                       "format"    : "unsized-byte-array",
+                       "pad-array" : "FALSE" } ] }
+]

@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: mbim-glib
+Description: Library to communicate with MBIM-powered modems
+Version: @VERSION@
+Requires: glib-2.0 gobject-2.0 gio-2.0
+Cflags: -I${includedir}/libmbim-glib
+Libs: -L${libdir} -lmbim-glib
