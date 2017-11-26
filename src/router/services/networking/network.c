@@ -3920,20 +3920,31 @@ void start_wan(int status)
 				}
 				fprintf(fp, "crtscts\n");
 				fprintf(fp, "460800\n");
-				char *dial = "*99***1#";
 				sprintf(wsbuf, "wan_dial%s", wsel);
-				if (nvram_match(wsbuf, "0"))
+				char *dial = NULL;
+				switch (nvram_geti(wsbuf)) {
+				case 0:
 					dial = "ATD*99***1#";
-				if (nvram_match(wsbuf, "1"))
+					break;
+				case 1:
 					dial = "ATD*99#";
-				if (nvram_match(wsbuf, "2"))
+					break;
+				case 2:
 					dial = "ATDT#777";
-				if (nvram_match(wsbuf, "3"))
+					break;
+				case 3:
 					dial = "ATD*99***3#";
-				if (nvram_match(wsbuf, "4"))
+					break;
+				case 4:
 					dial = "ATD*99***2#";
-				if (nvram_match(wsbuf, "5"))
+					break;
+				case 5:
 					dial = "ATD*99***4#";
+					break;
+				default:
+					dial = "*99***1#";
+					break;
+				}
 				fprintf(fp, "connect \"COMGTDIAL='%s' /usr/sbin/comgt -s -d %s /etc/comgt/dial.comgt >/tmp/comgt.out 2>&1\"\n", dial, nvram_safe_get("3gdata"));
 				if (strlen(username))
 					fprintf(fp, "user '%s'\n", username);
