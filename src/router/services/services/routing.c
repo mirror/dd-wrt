@@ -227,61 +227,21 @@ static int zebra_ospf_init(void)
 		strcat(eths, eths2);
 		bzero(bufferif, 256);
 		getIfListB(bufferif, NULL, 1, 1);
-#ifndef HAVE_MADWIFI
-		int cnt = get_wl_instances();
-		int c;
-		for (c = 0; c < cnt; c++) {
-			strcat(eths, " ");
-			strcat(eths, get_wl_instance_name(c));
-
-			char *vifs = nvram_nget("%s_vifs", dev);
-			if (vifs == NULL)
-				continue;
-			foreach(var, vifs, next) {
-				strcat(eths, " ");
-				strcat(eths, var);
-			}
-
-		}
-#else
-		int c = getdevicecount();
-		int i;
-
-		for (i = 0; i < c; i++) {
-			char dev[32];
-
-			sprintf(dev, "ath%d", i);
-			strcat(eths, " ");
-			strcat(eths, dev);
-			char *vifs = nvram_nget("%s_vifs", dev);
-			if (vifs == NULL)
-				continue;
-			foreach(var, vifs, next) {
-				strcat(eths, " ");
-				strcat(eths, var);
-			}
-
-			for (s = 1; s <= 10; s++) {
-				char *wdsdev;
-
-				wdsdev = nvram_nget("%s_wds%d_if", dev, s);
-				if (strlen(wdsdev) == 0)
-					continue;
-				if (nvram_nmatch("0", "%s_wds%d_enable", dev, s))
-					continue;
-
-				strcat(eths, " ");
-				strcat(eths, wdsdev);
-			}
-		}
-#endif
 		foreach(var, eths, next) {
 			if (!strcmp("etherip0", var))
 				continue;
 			char *ipaddr = nvram_nget("%s_ipaddr", var);
-			if (nvram_nmatch("0", "%s_bridged", var) && strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
+			if (nvram_nmatch("0", "%s_bridged", var) && strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0")) {
 				fprintf(fp, "interface %s\n", var);
+			} else {
+				if (!strcmp(get_wan_face(), var)) {
+					char *ipaddr = nvram_safe_get("wan_ipaddr");
+					if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0")) {
+						fprintf(fp, "interface %s\n", var);
+					}
+				}
 
+			}
 		}
 		foreach(var, bufferif, next) {
 			if (!strcmp("br0", var)) {
@@ -293,8 +253,16 @@ static int zebra_ospf_init(void)
 			}
 
 			char *ipaddr = nvram_nget("%s_ipaddr", var);
-			if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
+			if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0")) {
 				fprintf(fp, "interface %s\n", var);
+			} else {
+				if (!strcmp(get_wan_face(), var)) {
+					char *ipaddr = nvram_safe_get("wan_ipaddr");
+					if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0")) {
+						fprintf(fp, "interface %s\n", var);
+					}
+				}
+			}
 		}
 
 		fprintf(fp, "router ospf\n");
@@ -323,7 +291,7 @@ static int zebra_ospf_init(void)
 		}
 
 		foreach(var, bufferif, next) {
-			if (strcmp(get_wan_face(),"br0") && !strcmp(get_wan_face(), var)) {
+			if (strcmp(get_wan_face(), "br0") && !strcmp(get_wan_face(), var)) {
 				char *ipaddr = nvram_safe_get("wan_ipaddr");
 				char *netmask = nvram_safe_get("wan_netmask");
 				if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
@@ -345,8 +313,10 @@ static int zebra_ospf_init(void)
 			if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
 				fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
 		}
-
-		fprintf(fp, " no default-information originate\n");
+		if (nvram_match("ospfd_default_route", "1"))
+			fprintf(fp, " default-information originate\n");
+		else
+			fprintf(fp, " no default-information originate\n");
 		char *hostname = nvram_safe_get("router_name");
 		if (strlen(hostname))
 			fprintf(fp, "hostname %s\n", hostname);
