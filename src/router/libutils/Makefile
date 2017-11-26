@@ -569,7 +569,8 @@ ifeq ($(CONFIG_X86),y)
 endif
 ifeq ($(CONFIG_3G),y)
   CFLAGS += -DHAVE_3G
-  OBJS += libutils/lib3g.o
+  3GOBJS += libutils/lib3g.o
+  ADDLIB += lib3g.so
 endif
 ifeq ($(CONFIG_LIBQMI),y)
   CFLAGS += -DHAVE_LIBQMI
@@ -1428,18 +1429,18 @@ ifeq ($(CONFIG_SAMBA3),y)
   CFLAGS += -I$(TOP)/jansson/src
   CFLAGS += -DHAVE_SAMBA3
   CFLAGS += -DHAVE_SAMBA_SERVER
-  ADDLIB = libsharetools.so
+  ADDLIB += libsharetools.so
 endif
 ifeq ($(CONFIG_FTP),y)
   SHARETOOLSOBJS += libsharetools/samba3.o 
   CFLAGS += -I$(TOP)/jansson/src
-  ADDLIB = libsharetools.so
+  ADDLIB += libsharetools.so
 endif
 ifeq ($(CONFIG_MINIDLNA),y)
   SHARETOOLSOBJS += libsharetools/dlna.o
   CFLAGS += -I$(TOP)/jansson/src 
   CFLAGS += -DHAVE_MINIDLNA
-  ADDLIB = libsharetools.so
+  ADDLIB += libsharetools.so
 endif
 
 
@@ -1492,7 +1493,10 @@ libwireless.so: $(WOBJS) madwififiles ath9kfiles
 	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $(WOBJS) $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram -L. -lshutils $(WLDFLAGS) $(ATH9KLDFLAGS) $(QTNFLAGS)
 
 libutils.so: $(OBJS)
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils  $(QMILDFLAGS)
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils
+
+lib3g.so: $(3GOBJS)
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^ -L../nvram -lnvram -L. -lshutils $(QMILDFLAGS)
 
 libshutils.so: $(SHOBJS)
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram
