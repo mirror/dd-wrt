@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -46,13 +46,15 @@
 #define _MY_DEFINE_BOXED_TYPE(TypeName, type_name) \
   G_DEFINE_BOXED_TYPE (TypeName, type_name, type_name##_ref, type_name##_unref)
 
-_MY_DEFINE_BOXED_TYPE (GDBusNodeInfo,       g_dbus_node_info);
-_MY_DEFINE_BOXED_TYPE (GDBusInterfaceInfo,  g_dbus_interface_info);
-_MY_DEFINE_BOXED_TYPE (GDBusMethodInfo,     g_dbus_method_info);
-_MY_DEFINE_BOXED_TYPE (GDBusSignalInfo,     g_dbus_signal_info);
-_MY_DEFINE_BOXED_TYPE (GDBusPropertyInfo,   g_dbus_property_info);
-_MY_DEFINE_BOXED_TYPE (GDBusArgInfo,        g_dbus_arg_info);
-_MY_DEFINE_BOXED_TYPE (GDBusAnnotationInfo, g_dbus_annotation_info);
+_MY_DEFINE_BOXED_TYPE (GDBusNodeInfo,       g_dbus_node_info)
+_MY_DEFINE_BOXED_TYPE (GDBusInterfaceInfo,  g_dbus_interface_info)
+_MY_DEFINE_BOXED_TYPE (GDBusMethodInfo,     g_dbus_method_info)
+_MY_DEFINE_BOXED_TYPE (GDBusSignalInfo,     g_dbus_signal_info)
+_MY_DEFINE_BOXED_TYPE (GDBusPropertyInfo,   g_dbus_property_info)
+_MY_DEFINE_BOXED_TYPE (GDBusArgInfo,        g_dbus_arg_info)
+_MY_DEFINE_BOXED_TYPE (GDBusAnnotationInfo, g_dbus_annotation_info)
+
+#undef _MY_DEFINE_BOXED_TYPE
 
 /* ---------------------------------------------------------------------------------------------------- */
 
@@ -774,7 +776,7 @@ g_dbus_property_info_generate_xml (GDBusPropertyInfo *info,
  * g_dbus_interface_info_generate_xml:
  * @info: A #GDBusNodeInfo
  * @indent: Indentation level.
- * @string_builder: (out): A #GString to to append XML data to.
+ * @string_builder: A #GString to to append XML data to.
  *
  * Appends an XML representation of @info (and its children) to @string_builder.
  *
@@ -823,7 +825,7 @@ g_dbus_interface_info_generate_xml (GDBusInterfaceInfo *info,
  * g_dbus_node_info_generate_xml:
  * @info: A #GDBusNodeInfo.
  * @indent: Indentation level.
- * @string_builder: (out): A #GString to to append XML data to.
+ * @string_builder: A #GString to to append XML data to.
  *
  * Appends an XML representation of @info (and its children) to @string_builder.
  *
@@ -1838,7 +1840,7 @@ g_dbus_node_info_new_for_xml (const gchar  *xml_data,
 
 /**
  * g_dbus_annotation_info_lookup:
- * @annotations: (array zero-terminated=1) (allow-none): A %NULL-terminated array of annotations or %NULL.
+ * @annotations: (array zero-terminated=1) (nullable): A %NULL-terminated array of annotations or %NULL.
  * @name: The name of the annotation to look up.
  *
  * Looks up the value of an annotation.

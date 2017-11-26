@@ -79,7 +79,7 @@ dist_test_data = \
 check_PROGRAMS += $(installed_test_programs) $(installed_test_extra_programs)
 check_SCRIPTS += $(installed_test_scripts)
 TESTS += $(installed_test_programs) $(dist_uninstalled_test_extra_scripts)
-TESTS_ENVIRONMENT = \
+AM_TESTS_ENVIRONMENT = \
 	G_TEST_SRCDIR=$(abs_srcdir)				\
 	G_TEST_BUILDDIR=$(abs_builddir)				\
 	LIBCHARSET_ALIAS_DIR=$(top_builddir)/glib/libcharset	\
@@ -146,15 +146,11 @@ endif
 
 EXTRA_DIST += \
 	$(test_scripts)				\
-	makefile.msc.in				\
 	gen-casefold-txt.pl			\
 	gen-casemap-txt.pl			\
 	iochannel-test-infile			\
 	timeloop-basic.c			\
 	assert-msg-test.gdb
-
-BUILT_EXTRA_DIST +=				\
-	makefile.msc
 
 DISTCLEANFILES +=		\
 	iochannel-test-outfile	\

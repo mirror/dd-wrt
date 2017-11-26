@@ -6,7 +6,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -355,7 +355,7 @@ g_io_stream_real_close (GIOStream     *stream,
 /**
  * g_io_stream_close:
  * @stream: a #GIOStream
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore
  * @error: location to store the error occurring, or %NULL to ignore
  *
  * Closes the stream, releasing resources related to it. This will also
@@ -461,7 +461,7 @@ async_ready_close_callback_wrapper (GObject      *source_object,
  * g_io_stream_close_async:
  * @stream: a #GIOStream
  * @io_priority: the io priority of the request
- * @cancellable: (allow-none): optional cancellable object
+ * @cancellable: (nullable): optional cancellable object
  * @callback: (scope async): callback to call when the request is satisfied
  * @user_data: (closure): the data to pass to callback function
  *
@@ -826,7 +826,7 @@ splice_cancelled_cb (GCancellable *cancellable,
  * @stream2: a #GIOStream.
  * @flags: a set of #GIOStreamSpliceFlags.
  * @io_priority: the io priority of the request.
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
  * @callback: (scope async): a #GAsyncReadyCallback.
  * @user_data: (closure): user data passed to @callback.
  *

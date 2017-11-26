@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Character Set Conversion: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-String-Utility-Functions.html" title="String Utility Functions">
@@ -171,7 +171,7 @@
 </colgroup>
 <tbody>
 <tr>
-<td class="datatype_keyword"> </td>
+<td class="typedef_keyword">typedef</td>
 <td class="function_name"><a class="link" href="glib-Character-Set-Conversion.html#GIConv" title="GIConv">GIConv</a></td>
 </tr>
 <tr>
@@ -281,12 +281,12 @@ encoding for file names in the file system.</p>
 </div>
 <div class="refsect3">
 <a name="id-1.5.3.6.5"></a><h4>Checklist for Application Writers</h4>
-<p>This section is a practical summary of the detailed</p>
-<p>things to do to make sure your applications process file
+<p>This section is a practical summary of the detailed
+things to do to make sure your applications process file
 name encodings correctly.</p>
 <div class="orderedlist"><ol class="orderedlist" type="1">
 <li class="listitem"><p>If you get a file name from the file system from a function
-such as <code class="function">readdir()</code> or <a href="http://developer.gnome.org/gtk4/GtkFileChooser.html#gtk-file-chooser-get-filename"><code class="function">gtk_file_chooser_get_filename()</code></a>, you do
+such as <code class="function">readdir()</code> or <a href="../gtk4/GtkFileChooser.html#gtk-file-chooser-get-filename"><code class="function">gtk_file_chooser_get_filename()</code></a>, you do
 not need to do any conversion to pass that file name to
 functions like <code class="function">open()</code>, <code class="function">rename()</code>, or <code class="function">fopen()</code> -- those are "raw"
 file names which the file system understands.</p></li>
@@ -539,6 +539,7 @@ then this won't be preserved across successive calls to <a class="link" href="gl
 this is the GNU C converter for CP1255 which does not emit a base
 character until it knows that the next character is not a mark that
 could combine with the base character.)</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-convert-with-iconv.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -614,6 +615,7 @@ may be implemented via libiconv on UNIX flavors that lack
 a native implementation.</p>
 <p>GLib provides <a class="link" href="glib-Character-Set-Conversion.html#g-convert" title="g_convert ()"><code class="function">g_convert()</code></a> and <a class="link" href="glib-Character-Set-Conversion.html#g-locale-to-utf8" title="g_locale_to_utf8 ()"><code class="function">g_locale_to_utf8()</code></a> which are likely
 more convenient than the raw iconv wrappers.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-iconv-open.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -656,6 +658,7 @@ may be implemented via libiconv on UNIX flavors that lack
 a native implementation.</p>
 <p>GLib provides <a class="link" href="glib-Character-Set-Conversion.html#g-convert" title="g_convert ()"><code class="function">g_convert()</code></a> and <a class="link" href="glib-Character-Set-Conversion.html#g-locale-to-utf8" title="g_locale_to_utf8 ()"><code class="function">g_locale_to_utf8()</code></a> which are likely
 more convenient than the raw iconv wrappers.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-iconv.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -712,6 +715,7 @@ the conversion descriptor from <a class="link" href="glib-Character-Set-Conversi
 you are done converting things.</p>
 <p>GLib provides <a class="link" href="glib-Character-Set-Conversion.html#g-convert" title="g_convert ()"><code class="function">g_convert()</code></a> and <a class="link" href="glib-Character-Set-Conversion.html#g-locale-to-utf8" title="g_locale_to_utf8 ()"><code class="function">g_locale_to_utf8()</code></a> which are likely
 more convenient than the raw iconv wrappers.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-iconv-close.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1199,7 +1203,8 @@ of the character set. This string must be freed with <a class="link" href="glib-
 <a name="glib-Character-Set-Conversion.other_details"></a><h2>Types and Values</h2>
 <div class="refsect2">
 <a name="GIConv"></a><h3>GIConv</h3>
-<pre class="programlisting">typedef struct _GIConv GIConv;</pre>
+<pre class="programlisting">typedef struct _GIConv *GIConv;
+</pre>
 <p>The GIConv struct wraps an <code class="function">iconv()</code> conversion descriptor. It contains
 private data and should only be accessed using the following functions.</p>
 </div>

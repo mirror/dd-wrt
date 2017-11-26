@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Signals: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="chapter-signal.html" title="The GObject messaging system">
 <link rel="prev" href="chapter-signal.html" title="The GObject messaging system">
@@ -123,7 +123,7 @@
 			  closures.
 			</p></li>
 <li class="listitem"><p>
-			  <em class="parameter"><code>accumulator_data</code></em>: this pointer will be passed down to each invocation of the
+			  <em class="parameter"><code>accu_data</code></em>: this pointer will be passed down to each invocation of the
 			  accumulator during emission.
 			</p></li>
 <li class="listitem"><p>
@@ -276,8 +276,8 @@
 <p>
 	  </p>
 <p>
-		If, at any point during emission (except in <code class="literal">RUN_CLEANUP</code> state), one of the
-		closures or emission hook stops the signal emission with
+		If, at any point during emission (except in <code class="literal">RUN_CLEANUP</code> or
+		<code class="literal">EMISSION_HOOK</code> state), one of the closures stops the signal emission with
 		<code class="function"><a class="link" href="gobject-Signals.html#g-signal-stop-emission" title="g_signal_stop_emission ()">g_signal_stop_emission</a></code>,
 		emission jumps to <code class="literal">RUN_CLEANUP</code> state.
 	  </p>

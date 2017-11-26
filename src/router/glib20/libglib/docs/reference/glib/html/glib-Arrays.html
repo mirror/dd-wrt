@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Arrays: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-data-types.html" title="GLib Data Types">
 <link rel="prev" href="glib-String-Chunks.html" title="String Chunks">
@@ -365,7 +365,7 @@ allocation</p></td>
 g_array_ref (<em class="parameter"><code><a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a> *array</code></em>);</pre>
 <p>Atomically increments the reference count of <em class="parameter"><code>array</code></em>
  by one.
-This function is MT-safe and may be called from any thread.</p>
+This function is thread-safe and may be called from any thread.</p>
 <div class="refsect3">
 <a name="g-array-ref.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -395,7 +395,7 @@ g_array_unref (<em class="parameter"><code><a class="link" href="glib-Arrays.htm
 <p>Atomically decrements the reference count of <em class="parameter"><code>array</code></em>
  by one. If the
 reference count drops to 0, all memory allocated by the array is
-released. This function is MT-safe and may be called from any
+released. This function is thread-safe and may be called from any
 thread.</p>
 <div class="refsect3">
 <a name="g-array-unref.parameters"></a><h4>Parameters</h4>
@@ -1040,6 +1040,9 @@ of <em class="parameter"><code>array</code></em>
  will be set to zero.</p>
 <p>If array elements contain dynamically-allocated memory, they should
 be freed separately.</p>
+<p>This function is not thread-safe. If using a <a class="link" href="glib-Arrays.html#GArray" title="struct GArray"><span class="type">GArray</span></a> from multiple
+threads, use only the atomic <a class="link" href="glib-Arrays.html#g-array-ref" title="g_array_ref ()"><code class="function">g_array_ref()</code></a> and <a class="link" href="glib-Arrays.html#g-array-unref" title="g_array_unref ()"><code class="function">g_array_unref()</code></a>
+functions.</p>
 <div class="refsect3">
 <a name="g-array-free.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">

@@ -292,7 +292,8 @@
     <keyword type="function" name="g_object_interface_find_property ()" link="gobject-The-Base-Object-Type.html#g-object-interface-find-property" since="2.4"/>
     <keyword type="function" name="g_object_interface_list_properties ()" link="gobject-The-Base-Object-Type.html#g-object-interface-list-properties" since="2.4"/>
     <keyword type="function" name="g_object_new ()" link="gobject-The-Base-Object-Type.html#g-object-new"/>
-    <keyword type="function" name="g_object_newv ()" link="gobject-The-Base-Object-Type.html#g-object-newv"/>
+    <keyword type="function" name="g_object_new_with_properties ()" link="gobject-The-Base-Object-Type.html#g-object-new-with-properties" since="2.54"/>
+    <keyword type="function" name="g_object_newv ()" link="gobject-The-Base-Object-Type.html#g-object-newv" deprecated=""/>
     <keyword type="function" name="g_object_ref ()" link="gobject-The-Base-Object-Type.html#g-object-ref"/>
     <keyword type="function" name="g_object_unref ()" link="gobject-The-Base-Object-Type.html#g-object-unref"/>
     <keyword type="function" name="g_object_ref_sink ()" link="gobject-The-Base-Object-Type.html#g-object-ref-sink" since="2.10"/>
@@ -311,7 +312,9 @@
     <keyword type="function" name="g_object_connect ()" link="gobject-The-Base-Object-Type.html#g-object-connect"/>
     <keyword type="function" name="g_object_disconnect ()" link="gobject-The-Base-Object-Type.html#g-object-disconnect"/>
     <keyword type="function" name="g_object_set ()" link="gobject-The-Base-Object-Type.html#g-object-set"/>
+    <keyword type="function" name="g_object_setv ()" link="gobject-The-Base-Object-Type.html#g-object-setv" since="2.54"/>
     <keyword type="function" name="g_object_get ()" link="gobject-The-Base-Object-Type.html#g-object-get"/>
+    <keyword type="function" name="g_object_getv ()" link="gobject-The-Base-Object-Type.html#g-object-getv" since="2.54"/>
     <keyword type="function" name="g_object_notify ()" link="gobject-The-Base-Object-Type.html#g-object-notify"/>
     <keyword type="function" name="g_object_notify_by_pspec ()" link="gobject-The-Base-Object-Type.html#g-object-notify-by-pspec" since="2.26"/>
     <keyword type="function" name="g_object_freeze_notify ()" link="gobject-The-Base-Object-Type.html#g-object-freeze-notify"/>
@@ -343,7 +346,7 @@
     <keyword type="struct" name="struct GObject" link="gobject-The-Base-Object-Type.html#GObject-struct"/>
     <keyword type="struct" name="struct GObjectClass" link="gobject-The-Base-Object-Type.html#GObjectClass"/>
     <keyword type="struct" name="struct GObjectConstructParam" link="gobject-The-Base-Object-Type.html#GObjectConstructParam"/>
-    <keyword type="struct" name="struct GParameter" link="gobject-The-Base-Object-Type.html#GParameter"/>
+    <keyword type="struct" name="struct GParameter" link="gobject-The-Base-Object-Type.html#GParameter" deprecated="2.54: This type is not introspectable."/>
     <keyword type="typedef" name="GInitiallyUnowned" link="gobject-The-Base-Object-Type.html#GInitiallyUnowned"/>
     <keyword type="typedef" name="GInitiallyUnownedClass" link="gobject-The-Base-Object-Type.html#GInitiallyUnownedClass"/>
     <keyword type="macro" name="G_TYPE_INITIALLY_UNOWNED" link="gobject-The-Base-Object-Type.html#G-TYPE-INITIALLY-UNOWNED:CAPS"/>
@@ -362,9 +365,11 @@
     <keyword type="function" name="g_enum_get_value ()" link="gobject-Enumeration-and-Flag-Types.html#g-enum-get-value"/>
     <keyword type="function" name="g_enum_get_value_by_name ()" link="gobject-Enumeration-and-Flag-Types.html#g-enum-get-value-by-name"/>
     <keyword type="function" name="g_enum_get_value_by_nick ()" link="gobject-Enumeration-and-Flag-Types.html#g-enum-get-value-by-nick"/>
+    <keyword type="function" name="g_enum_to_string ()" link="gobject-Enumeration-and-Flag-Types.html#g-enum-to-string" since="2.54"/>
     <keyword type="function" name="g_flags_get_first_value ()" link="gobject-Enumeration-and-Flag-Types.html#g-flags-get-first-value"/>
     <keyword type="function" name="g_flags_get_value_by_name ()" link="gobject-Enumeration-and-Flag-Types.html#g-flags-get-value-by-name"/>
     <keyword type="function" name="g_flags_get_value_by_nick ()" link="gobject-Enumeration-and-Flag-Types.html#g-flags-get-value-by-nick"/>
+    <keyword type="function" name="g_flags_to_string ()" link="gobject-Enumeration-and-Flag-Types.html#g-flags-to-string" since="2.54"/>
     <keyword type="function" name="g_enum_register_static ()" link="gobject-Enumeration-and-Flag-Types.html#g-enum-register-static"/>
     <keyword type="function" name="g_flags_register_static ()" link="gobject-Enumeration-and-Flag-Types.html#g-flags-register-static"/>
     <keyword type="function" name="g_enum_complete_type_info ()" link="gobject-Enumeration-and-Flag-Types.html#g-enum-complete-type-info"/>

@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -2532,7 +2532,7 @@ g_param_spec_override (const gchar *name,
  * @nick: nick name for the property specified
  * @blurb: description of the property specified
  * @type: a #GVariantType
- * @default_value: (allow-none) (transfer full): a #GVariant of type @type to
+ * @default_value: (nullable) (transfer full): a #GVariant of type @type to
  *                 use as the default value, or %NULL
  * @flags: flags for the property specified
  *

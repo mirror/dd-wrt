@@ -25,7 +25,8 @@ my_pipe (int *fds)
 {
   if (pipe(fds) < 0)
     {
-      fprintf (stderr, "Cannot create pipe %s\n", strerror (errno));
+      int errsv = errno;
+      fprintf (stderr, "Cannot create pipe %s\n", strerror (errsv));
       exit (1);
     }
 }
@@ -34,7 +35,7 @@ int
 read_all (int fd, char *buf, int len)
 {
   size_t bytes_read = 0;
-  ssize_t count;
+  gssize count;
 
   while (bytes_read < len)
     {
@@ -57,7 +58,7 @@ int
 write_all (int fd, char *buf, int len)
 {
   size_t bytes_written = 0;
-  ssize_t count;
+  gssize count;
 
   while (bytes_written < len)
     {
@@ -121,7 +122,7 @@ input_callback (int source, int dest)
 void
 create_child (int pos)
 {
-  int pid;
+  int pid, errsv;
   int in_fds[2];
   int out_fds[2];
   
@@ -129,6 +130,7 @@ create_child (int pos)
   my_pipe (out_fds);
 
   pid = fork ();
+  errsv = errno;
 
   if (pid > 0)			/* Parent */
     {
@@ -150,7 +152,7 @@ create_child (int pos)
     }
   else				/* Error */
     {
-      fprintf (stderr,"Cannot fork: %s\n", strerror (errno));
+      fprintf (stderr,"Cannot fork: %s\n", strerror (errsv));
       exit (1);
     }
 }

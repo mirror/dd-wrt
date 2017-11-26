@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -31,9 +31,27 @@
 
 
 void
-print_file_error (GFile *file, const char *message)
+print_error (const gchar *format, ...)
 {
-  g_printerr ("gio: %s: %s\n", g_file_get_uri (file), message);
+  gchar *message;
+  va_list args;
+
+  va_start (args, format);
+  message = g_strdup_vprintf (format, args);
+  va_end (args);
+
+  g_printerr ("gio: %s\n", message);
+  g_free (message);
+}
+
+void
+print_file_error (GFile *file, const gchar *message)
+{
+  gchar *uri;
+
+  uri = g_file_get_uri (file);
+  print_error ("%s: %s", uri, message);
+  g_free (uri);
 }
 
 void

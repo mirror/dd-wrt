@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GPropertyAction: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="application.html" title="Application support">
 <link rel="prev" href="GSimpleAction.html" title="GSimpleAction">
@@ -166,16 +166,16 @@ particular piece of state is kept (and therefore has to be synchronised
 between). <a class="link" href="GPropertyAction.html" title="GPropertyAction"><span class="type">GPropertyAction</span></a> does not have a separate state that is kept
 in sync with the property value -- its state is the property value.</p>
 <p>For example, it might be useful to create a <a class="link" href="GAction.html" title="GAction"><span class="type">GAction</span></a> corresponding to
-the "visible-child-name" property of a <a href="http://developer.gnome.org/gtk4/GtkStack.html#GtkStack-struct"><span class="type">GtkStack</span></a> so that the current
+the "visible-child-name" property of a <a href="../gtk4/GtkStack.html#GtkStack-struct"><span class="type">GtkStack</span></a> so that the current
 page can be switched from a menu.  The active radio indication in the
 menu is then directly determined from the active page of the
-<a href="http://developer.gnome.org/gtk4/GtkStack.html#GtkStack-struct"><span class="type">GtkStack</span></a>.</p>
+<a href="../gtk4/GtkStack.html#GtkStack-struct"><span class="type">GtkStack</span></a>.</p>
 <p>An anti-example would be binding the "active-id" property on a
-<a href="http://developer.gnome.org/gtk4/GtkComboBox.html#GtkComboBox-struct"><span class="type">GtkComboBox</span></a>.  This is because the state of the combobox itself is
+<a href="../gtk4/GtkComboBox.html#GtkComboBox-struct"><span class="type">GtkComboBox</span></a>.  This is because the state of the combobox itself is
 probably uninteresting and is actually being used to control
 something else.</p>
 <p>Another anti-example would be to bind to the "visible-child-name"
-property of a <a href="http://developer.gnome.org/gtk4/GtkStack.html#GtkStack-struct"><span class="type">GtkStack</span></a> if this value is actually stored in
+property of a <a href="../gtk4/GtkStack.html#GtkStack-struct"><span class="type">GtkStack</span></a> if this value is actually stored in
 <a class="link" href="GSettings.html" title="GSettings"><span class="type">GSettings</span></a>.  In that case, the real source of the value is
 <a class="link" href="GSettings.html" title="GSettings"><span class="type">GSettings</span></a>.  If you want a <a class="link" href="GAction.html" title="GAction"><span class="type">GAction</span></a> to control a setting stored in
 <a class="link" href="GSettings.html" title="GSettings"><span class="type">GSettings</span></a>, see <a class="link" href="GSettings.html#g-settings-create-action" title="g_settings_create_action ()"><code class="function">g_settings_create_action()</code></a> instead, and possibly

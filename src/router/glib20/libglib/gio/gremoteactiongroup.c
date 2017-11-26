@@ -1,10 +1,10 @@
 /*
  * Copyright © 2010 Codethink Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -87,7 +87,7 @@ g_remote_action_group_default_init (GRemoteActionGroupInterface *iface)
  * g_remote_action_group_activate_action_full:
  * @remote: a #GDBusActionGroup
  * @action_name: the name of the action to activate
- * @parameter: (allow-none): the optional parameter to the activation
+ * @parameter: (nullable): the optional parameter to the activation
  * @platform_data: the platform data to send
  *
  * Activates the remote action.

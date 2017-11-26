@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -63,6 +63,7 @@
 #include "gstrfuncs.h"
 #include "garray.h"
 #include "glibintl.h"
+#include "gstdio.h"
 
 #ifdef G_PLATFORM_WIN32
 #include "gconvert.h"
@@ -221,12 +222,14 @@ void
 g_atexit (GVoidFunc func)
 {
   gint result;
+  int errsv;
 
   result = atexit ((void (*)(void)) func);
+  errsv = errno;
   if (result)
     {
       g_error ("Could not register atexit() function: %s",
-               g_strerror (errno));
+               g_strerror (errsv));
     }
 }
 
@@ -967,6 +970,8 @@ g_get_tmp_dir (void)
  * name can be determined, a default fixed string "localhost" is
  * returned.
  *
+ * The encoding of the returned string is UTF-8.
+ *
  * Returns: the host name of the machine.
  *
  * Since: 2.8
@@ -979,16 +984,25 @@ g_get_host_name (void)
   if (g_once_init_enter (&hostname))
     {
       gboolean failed;
-      gchar tmp[100];
+      gchar *utmp;
 
 #ifndef G_OS_WIN32
-      failed = (gethostname (tmp, sizeof (tmp)) == -1);
+      gchar *tmp = g_malloc (sizeof (gchar) * 100);
+      failed = (gethostname (tmp, sizeof (gchar) * 100) == -1);
+      if (failed)
+        g_clear_pointer (&tmp, g_free);
+      utmp = tmp;
 #else
-      DWORD size = sizeof (tmp);
-      failed = (!GetComputerName (tmp, &size));
+      wchar_t tmp[MAX_COMPUTERNAME_LENGTH + 1];
+      DWORD size = sizeof (tmp) / sizeof (tmp[0]);
+      failed = (!GetComputerNameW (tmp, &size));
+      if (!failed)
+        utmp = g_utf16_to_utf8 (tmp, size, NULL, NULL, NULL);
+      if (utmp == NULL)
+        failed = TRUE;
 #endif
 
-      g_once_init_leave (&hostname, g_strdup (failed ? "localhost" : tmp));
+      g_once_init_leave (&hostname, failed ? g_strdup ("localhost") : utmp);
     }
 
   return hostname;
@@ -1003,9 +1017,11 @@ static gchar *g_prgname = NULL;
  * Gets the name of the program. This name should not be localized,
  * in contrast to g_get_application_name().
  *
- * If you are using GDK or GTK+ the program name is set in gdk_init(), 
- * which is called by gtk_init(). The program name is found by taking 
- * the last component of @argv[0].
+ * If you are using #GApplication the program name is set in
+ * g_application_run(). In case of GDK or GTK+ it is set in
+ * gdk_init(), which is called by gtk_init() and the
+ * #GtkApplication::startup handler. The program name is found by
+ * taking the last component of @argv[0].
  *
  * Returns: the name of the program. The returned string belongs 
  *     to GLib and must not be modified or freed.
@@ -1051,6 +1067,12 @@ g_get_prgname (void)
  *
  * Sets the name of the program. This name should not be localized,
  * in contrast to g_set_application_name().
+ *
+ * If you are using #GApplication the program name is set in
+ * g_application_run(). In case of GDK or GTK+ it is set in
+ * gdk_init(), which is called by gtk_init() and the
+ * #GtkApplication::startup handler. The program name is found by
+ * taking the last component of @argv[0].
  *
  * Note that for thread-safety reasons this function can only be called once.
  */
@@ -1141,10 +1163,12 @@ g_set_application_name (const gchar *application_name)
  * [XDG Base Directory Specification](http://www.freedesktop.org/Standards/basedir-spec).
  * In this case the directory retrieved will be `XDG_DATA_HOME`.
  *
- * On Windows this is the folder to use for local (as opposed to
- * roaming) application data. See documentation for
- * CSIDL_LOCAL_APPDATA. Note that on Windows it thus is the same as
- * what g_get_user_config_dir() returns.
+ * On Windows it follows XDG Base Directory Specification if `XDG_DATA_HOME`
+ * is defined. If `XDG_DATA_HOME` is undefined, the folder to use for local (as
+ * opposed to roaming) application data is used instead. See the
+ * [documentation for `CSIDL_LOCAL_APPDATA`](https://msdn.microsoft.com/en-us/library/windows/desktop/bb762494%28v=vs.85%29.aspx#csidl_local_appdata).
+ * Note that in this case on Windows it will be the same
+ * as what g_get_user_config_dir() returns.
  *
  * Returns: (type filename): a string owned by GLib that must not be modified
  *               or freed.
@@ -1153,19 +1177,19 @@ g_set_application_name (const gchar *application_name)
 const gchar *
 g_get_user_data_dir (void)
 {
-  gchar *data_dir;  
+  gchar *data_dir = NULL;
 
   G_LOCK (g_utils_global);
 
   if (!g_user_data_dir)
     {
-#ifdef G_OS_WIN32
-      data_dir = get_special_folder (CSIDL_LOCAL_APPDATA);
-#else
-      data_dir = (gchar *) g_getenv ("XDG_DATA_HOME");
+      const gchar *data_dir_env = g_getenv ("XDG_DATA_HOME");
 
-      if (data_dir && data_dir[0])
-        data_dir = g_strdup (data_dir);
+      if (data_dir_env && data_dir_env[0])
+        data_dir = g_strdup (data_dir_env);
+#ifdef G_OS_WIN32
+      else
+        data_dir = get_special_folder (CSIDL_LOCAL_APPDATA);
 #endif
       if (!data_dir || !data_dir[0])
 	{
@@ -1190,17 +1214,17 @@ g_get_user_data_dir (void)
 static void
 g_init_user_config_dir (void)
 {
-  gchar *config_dir;
+  gchar *config_dir = NULL;
 
   if (!g_user_config_dir)
     {
-#ifdef G_OS_WIN32
-      config_dir = get_special_folder (CSIDL_LOCAL_APPDATA);
-#else
-      config_dir = (gchar *) g_getenv ("XDG_CONFIG_HOME");
+      const gchar *config_dir_env = g_getenv ("XDG_CONFIG_HOME");
 
-      if (config_dir && config_dir[0])
-	config_dir = g_strdup (config_dir);
+      if (config_dir_env && config_dir_env[0])
+	config_dir = g_strdup (config_dir_env);
+#ifdef G_OS_WIN32
+      else
+        config_dir = get_special_folder (CSIDL_LOCAL_APPDATA);
 #endif
       if (!config_dir || !config_dir[0])
 	{
@@ -1227,10 +1251,12 @@ g_init_user_config_dir (void)
  * [XDG Base Directory Specification](http://www.freedesktop.org/Standards/basedir-spec).
  * In this case the directory retrieved will be `XDG_CONFIG_HOME`.
  *
- * On Windows this is the folder to use for local (as opposed to
- * roaming) application data. See documentation for
- * CSIDL_LOCAL_APPDATA. Note that on Windows it thus is the same as
- * what g_get_user_data_dir() returns.
+ * On Windows it follows XDG Base Directory Specification if `XDG_CONFIG_HOME` is defined.
+ * If `XDG_CONFIG_HOME` is undefined, the folder to use for local (as opposed
+ * to roaming) application data is used instead. See the
+ * [documentation for `CSIDL_LOCAL_APPDATA`](https://msdn.microsoft.com/en-us/library/windows/desktop/bb762494%28v=vs.85%29.aspx#csidl_local_appdata).
+ * Note that in this case on Windows it will be  the same
+ * as what g_get_user_data_dir() returns.
  *
  * Returns: (type filename): a string owned by GLib that must not be modified
  *               or freed.
@@ -1257,12 +1283,13 @@ g_get_user_config_dir (void)
  * On UNIX platforms this is determined using the mechanisms described
  * in the
  * [XDG Base Directory Specification](http://www.freedesktop.org/Standards/basedir-spec).
- * In this case the directory retrieved will be XDG_CACHE_HOME.
+ * In this case the directory retrieved will be `XDG_CACHE_HOME`.
  *
- * On Windows is the directory that serves as a common repository for
- * temporary Internet files. A typical path is
- * C:\Documents and Settings\username\Local Settings\Temporary Internet Files.
- * See documentation for CSIDL_INTERNET_CACHE.
+ * On Windows it follows XDG Base Directory Specification if `XDG_CACHE_HOME` is defined.
+ * If `XDG_CACHE_HOME` is undefined, the directory that serves as a common
+ * repository for temporary Internet files is used instead. A typical path is
+ * `C:\Documents and Settings\username\Local Settings\Temporary Internet Files`.
+ * See the [documentation for `CSIDL_INTERNET_CACHE`](https://msdn.microsoft.com/en-us/library/windows/desktop/bb762494%28v=vs.85%29.aspx#csidl_internet_cache).
  *
  * Returns: (type filename): a string owned by GLib that must not be modified
  *               or freed.
@@ -1271,19 +1298,19 @@ g_get_user_config_dir (void)
 const gchar *
 g_get_user_cache_dir (void)
 {
-  gchar *cache_dir;  
+  gchar *cache_dir = NULL;
 
   G_LOCK (g_utils_global);
 
   if (!g_user_cache_dir)
     {
-#ifdef G_OS_WIN32
-      cache_dir = get_special_folder (CSIDL_INTERNET_CACHE); /* XXX correct? */
-#else
-      cache_dir = (gchar *) g_getenv ("XDG_CACHE_HOME");
+      const gchar *cache_dir_env = g_getenv ("XDG_CACHE_HOME");
 
-      if (cache_dir && cache_dir[0])
-          cache_dir = g_strdup (cache_dir);
+      if (cache_dir_env && cache_dir_env[0])
+        cache_dir = g_strdup (cache_dir_env);
+#ifdef G_OS_WIN32
+      else
+        cache_dir = get_special_folder (CSIDL_INTERNET_CACHE);
 #endif
       if (!cache_dir || !cache_dir[0])
 	{
@@ -1310,18 +1337,13 @@ g_get_user_cache_dir (void)
  * Returns a directory that is unique to the current user on the local
  * system.
  *
- * On UNIX platforms this is determined using the mechanisms described
+ * This is determined using the mechanisms described
  * in the 
  * [XDG Base Directory Specification](http://www.freedesktop.org/Standards/basedir-spec).
  * This is the directory
  * specified in the `XDG_RUNTIME_DIR` environment variable.
  * In the case that this variable is not set, we return the value of
  * g_get_user_cache_dir(), after verifying that it exists.
- *
- * On Windows this is the folder to use for local (as opposed to
- * roaming) application data. See documentation for
- * CSIDL_LOCAL_APPDATA.  Note that on Windows it thus is the same as
- * what g_get_user_config_dir() returns.
  *
  * Returns: (type filename): a string owned by GLib that must not be
  *     modified or freed.
@@ -1331,7 +1353,6 @@ g_get_user_cache_dir (void)
 const gchar *
 g_get_user_runtime_dir (void)
 {
-#ifndef G_OS_WIN32
   static const gchar *runtime_dir;
 
   if (g_once_init_enter (&runtime_dir))
@@ -1355,7 +1376,7 @@ g_get_user_runtime_dir (void)
            * exists this will work.  If the user changed $XDG_CACHE_HOME
            * then they can make sure that it exists...
            */
-          (void) mkdir (dir, 0700);
+          (void) g_mkdir (dir, 0700);
         }
 
       g_assert (dir != NULL);
@@ -1364,9 +1385,6 @@ g_get_user_runtime_dir (void)
     }
 
   return runtime_dir;
-#else /* Windows */
-  return g_get_user_cache_dir ();
-#endif
 }
 
 #ifdef HAVE_CARBON
@@ -1806,8 +1824,8 @@ get_module_share_dir (gconstpointer address)
   return retval;
 }
 
-const gchar * const *
-g_win32_get_system_data_dirs_for_module (void (*address_of_function)(void))
+static const gchar * const *
+g_win32_get_system_data_dirs_for_module_real (void (*address_of_function)(void))
 {
   GArray *data_dirs;
   HMODULE hmodule;
@@ -1903,6 +1921,54 @@ g_win32_get_system_data_dirs_for_module (void (*address_of_function)(void))
   return (const gchar * const *) retval;
 }
 
+const gchar * const *
+g_win32_get_system_data_dirs_for_module (void (*address_of_function)(void))
+{
+  gboolean should_call_g_get_system_data_dirs;
+
+  should_call_g_get_system_data_dirs = TRUE;
+  /* These checks are the same as the ones that g_get_system_data_dirs() does.
+   * Please keep them in sync.
+   */
+  G_LOCK (g_utils_global);
+
+  if (!g_system_data_dirs)
+    {
+      const gchar *data_dirs = g_getenv ("XDG_DATA_DIRS");
+
+      if (!data_dirs || !data_dirs[0])
+        should_call_g_get_system_data_dirs = FALSE;
+    }
+
+  G_UNLOCK (g_utils_global);
+
+  /* There is a subtle difference between g_win32_get_system_data_dirs_for_module (NULL),
+   * which is what GLib code can normally call,
+   * and g_win32_get_system_data_dirs_for_module (&_g_win32_get_system_data_dirs),
+   * which is what the inline function used by non-GLib code calls.
+   * The former gets prefix relative to currently-running executable,
+   * the latter - relative to the module that calls _g_win32_get_system_data_dirs()
+   * (disguised as g_get_system_data_dirs()), which could be an executable or
+   * a DLL that is located somewhere else.
+   * This is why that inline function in gutils.h exists, and why we can't just
+   * call g_get_system_data_dirs() from there - because we need to get the address
+   * local to the non-GLib caller-module.
+   */
+
+  /*
+   * g_get_system_data_dirs() will fall back to calling
+   * g_win32_get_system_data_dirs_for_module_real(NULL) if XDG_DATA_DIRS is NULL
+   * or an empty string. The checks above ensure that we do not call it in such
+   * cases and use the address_of_function that we've been given by the inline function.
+   * The reason we're calling g_get_system_data_dirs /at all/ is to give
+   * XDG_DATA_DIRS precedence (if it is set).
+   */
+  if (should_call_g_get_system_data_dirs)
+    return g_get_system_data_dirs ();
+
+  return g_win32_get_system_data_dirs_for_module_real (address_of_function);
+}
+
 #endif
 
 /**
@@ -1914,9 +1980,11 @@ g_win32_get_system_data_dirs_for_module (void (*address_of_function)(void))
  * On UNIX platforms this is determined using the mechanisms described
  * in the
  * [XDG Base Directory Specification](http://www.freedesktop.org/Standards/basedir-spec)
- * In this case the list of directories retrieved will be XDG_DATA_DIRS.
+ * In this case the list of directories retrieved will be `XDG_DATA_DIRS`.
  *
- * On Windows the first elements in the list are the Application Data
+ * On Windows it follows XDG Base Directory Specification if `XDG_DATA_DIRS` is defined.
+ * If `XDG_DATA_DIRS` is undefined,
+ * the first elements in the list are the Application Data
  * and Documents folders for All Users. (These can be determined only
  * on Windows 2000 or later and are not present in the list on other
  * Windows versions.) See documentation for CSIDL_COMMON_APPDATA and
@@ -1949,19 +2017,25 @@ g_get_system_data_dirs (void)
 {
   gchar **data_dir_vector;
 
+  /* These checks are the same as the ones that g_win32_get_system_data_dirs_for_module()
+   * does. Please keep them in sync.
+   */
   G_LOCK (g_utils_global);
 
   if (!g_system_data_dirs)
     {
-#ifdef G_OS_WIN32
-      data_dir_vector = (gchar **) g_win32_get_system_data_dirs_for_module (NULL);
-#else
       gchar *data_dirs = (gchar *) g_getenv ("XDG_DATA_DIRS");
 
+#ifndef G_OS_WIN32
       if (!data_dirs || !data_dirs[0])
           data_dirs = "/usr/local/share/:/usr/share/";
 
       data_dir_vector = g_strsplit (data_dirs, G_SEARCHPATH_SEPARATOR_S, 0);
+#else
+      if (!data_dirs || !data_dirs[0])
+        data_dir_vector = g_strdupv ((gchar **) g_win32_get_system_data_dirs_for_module_real (NULL));
+      else
+        data_dir_vector = g_strsplit (data_dirs, G_SEARCHPATH_SEPARATOR_S, 0);
 #endif
 
       g_system_data_dirs = data_dir_vector;
@@ -1985,12 +2059,15 @@ g_get_system_data_dirs (void)
  * [XDG Base Directory Specification](http://www.freedesktop.org/Standards/basedir-spec).
  * In this case the list of directories retrieved will be `XDG_CONFIG_DIRS`.
  *
- * On Windows is the directory that contains application data for all users.
- * A typical path is C:\Documents and Settings\All Users\Application Data.
- * This folder is used for application data that is not user specific.
- * For example, an application can store a spell-check dictionary, a database
- * of clip art, or a log file in the CSIDL_COMMON_APPDATA folder.
- * This information will not roam and is available to anyone using the computer.
+ * On Windows it follows XDG Base Directory Specification if `XDG_CONFIG_DIRS` is defined.
+ * If `XDG_CONFIG_DIRS` is undefined, the directory that contains application
+ * data for all users is used instead. A typical path is
+ * `C:\Documents and Settings\All Users\Application Data`.
+ * This folder is used for application data
+ * that is not user specific. For example, an application can store
+ * a spell-check dictionary, a database of clip art, or a log file in the
+ * CSIDL_COMMON_APPDATA folder. This information will not roam and is available
+ * to anyone using the computer.
  *
  * Returns: (array zero-terminated=1) (element-type filename) (transfer none):
  *     a %NULL-terminated array of strings owned by GLib that must not be
@@ -2001,27 +2078,31 @@ g_get_system_data_dirs (void)
 const gchar * const *
 g_get_system_config_dirs (void)
 {
-  gchar *conf_dirs, **conf_dir_vector;
+  gchar **conf_dir_vector;
 
   G_LOCK (g_utils_global);
 
   if (!g_system_config_dirs)
     {
+      const gchar *conf_dirs = g_getenv ("XDG_CONFIG_DIRS");
 #ifdef G_OS_WIN32
-      conf_dirs = get_special_folder (CSIDL_COMMON_APPDATA);
       if (conf_dirs)
 	{
 	  conf_dir_vector = g_strsplit (conf_dirs, G_SEARCHPATH_SEPARATOR_S, 0);
-	  g_free (conf_dirs);
 	}
       else
 	{
-	  /* Return empty list */
-	  conf_dir_vector = g_strsplit ("", G_SEARCHPATH_SEPARATOR_S, 0);
+	  gchar *special_conf_dirs = get_special_folder (CSIDL_COMMON_APPDATA);
+
+	  if (special_conf_dirs)
+	    conf_dir_vector = g_strsplit (special_conf_dirs, G_SEARCHPATH_SEPARATOR_S, 0);
+	  else
+	    /* Return empty list */
+	    conf_dir_vector = g_strsplit ("", G_SEARCHPATH_SEPARATOR_S, 0);
+
+	  g_free (special_conf_dirs);
 	}
 #else
-      conf_dirs = (gchar *) g_getenv ("XDG_CONFIG_DIRS");
-
       if (!conf_dirs || !conf_dirs[0])
           conf_dirs = "/etc/xdg";
 
@@ -2101,6 +2182,8 @@ g_format_size (guint64 size)
  *     suffixes. IEC units should only be used for reporting things with
  *     a strong "power of 2" basis, like RAM sizes or RAID stripe sizes.
  *     Network and storage sizes should be reported in the normal SI units.
+ * @G_FORMAT_SIZE_BITS: set the size as a quantity in bits, rather than
+ *     bytes, and return units in bits. For example, ‘Mb’ rather than ‘MB’.
  *
  * Flags to modify the format of the string returned by g_format_size_full().
  */
@@ -2127,63 +2210,118 @@ gchar *
 g_format_size_full (guint64          size,
                     GFormatSizeFlags flags)
 {
+  struct Format
+  {
+    guint64 factor;
+    char string[9];
+  };
+
+  typedef enum
+  {
+    FORMAT_BYTES,
+    FORMAT_BYTES_IEC,
+    FORMAT_BITS,
+    FORMAT_BITS_IEC
+  } FormatIndex;
+
+  const struct Format formats[4][6] = {
+    {
+      { KILOBYTE_FACTOR, N_("%.1f kB") },
+      { MEGABYTE_FACTOR, N_("%.1f MB") },
+      { GIGABYTE_FACTOR, N_("%.1f GB") },
+      { TERABYTE_FACTOR, N_("%.1f TB") },
+      { PETABYTE_FACTOR, N_("%.1f PB") },
+      { EXABYTE_FACTOR,  N_("%.1f EB") }
+    },
+    {
+      { KIBIBYTE_FACTOR, N_("%.1f KiB") },
+      { MEBIBYTE_FACTOR, N_("%.1f MiB") },
+      { GIBIBYTE_FACTOR, N_("%.1f GiB") },
+      { TEBIBYTE_FACTOR, N_("%.1f TiB") },
+      { PEBIBYTE_FACTOR, N_("%.1f PiB") },
+      { EXBIBYTE_FACTOR, N_("%.1f EiB") }
+    },
+    {
+      { KILOBYTE_FACTOR, N_("%.1f kb") },
+      { MEGABYTE_FACTOR, N_("%.1f Mb") },
+      { GIGABYTE_FACTOR, N_("%.1f Gb") },
+      { TERABYTE_FACTOR, N_("%.1f Tb") },
+      { PETABYTE_FACTOR, N_("%.1f Pb") },
+      { EXABYTE_FACTOR,  N_("%.1f Eb") }
+    },
+    {
+      { KIBIBYTE_FACTOR, N_("%.1f Kib") },
+      { MEBIBYTE_FACTOR, N_("%.1f Mib") },
+      { GIBIBYTE_FACTOR, N_("%.1f Gib") },
+      { TEBIBYTE_FACTOR, N_("%.1f Tib") },
+      { PEBIBYTE_FACTOR, N_("%.1f Pib") },
+      { EXBIBYTE_FACTOR, N_("%.1f Eib") }
+    }
+  };
+
   GString *string;
+  FormatIndex index;
 
   string = g_string_new (NULL);
 
-  if (flags & G_FORMAT_SIZE_IEC_UNITS)
+  switch (flags & ~G_FORMAT_SIZE_LONG_FORMAT)
     {
-      if (size < KIBIBYTE_FACTOR)
+    case G_FORMAT_SIZE_DEFAULT:
+      index = FORMAT_BYTES;
+      break;
+    case (G_FORMAT_SIZE_DEFAULT | G_FORMAT_SIZE_IEC_UNITS):
+      index = FORMAT_BYTES_IEC;
+      break;
+    case G_FORMAT_SIZE_BITS:
+      index = FORMAT_BITS;
+      break;
+    case (G_FORMAT_SIZE_BITS | G_FORMAT_SIZE_IEC_UNITS):
+      index = FORMAT_BITS_IEC;
+      break;
+    default:
+      g_assert_not_reached ();
+    }
+
+
+  if (size < formats[index][0].factor)
+    {
+      const char * format;
+
+      if (index == FORMAT_BYTES || index == FORMAT_BYTES_IEC)
         {
-          g_string_printf (string,
-                           g_dngettext(GETTEXT_PACKAGE, "%u byte", "%u bytes", (guint) size),
-                           (guint) size);
-          flags &= ~G_FORMAT_SIZE_LONG_FORMAT;
+          format = g_dngettext (GETTEXT_PACKAGE, "%u byte", "%u bytes", (guint) size);
+        }
+      else
+        {
+          format = g_dngettext (GETTEXT_PACKAGE, "%u bit", "%u bits", (guint) size);
         }
 
-      else if (size < MEBIBYTE_FACTOR)
-        g_string_printf (string, _("%.1f KiB"), (gdouble) size / (gdouble) KIBIBYTE_FACTOR);
-      else if (size < GIBIBYTE_FACTOR)
-        g_string_printf (string, _("%.1f MiB"), (gdouble) size / (gdouble) MEBIBYTE_FACTOR);
+      g_string_printf (string, format, (guint) size);
 
-      else if (size < TEBIBYTE_FACTOR)
-        g_string_printf (string, _("%.1f GiB"), (gdouble) size / (gdouble) GIBIBYTE_FACTOR);
-
-      else if (size < PEBIBYTE_FACTOR)
-        g_string_printf (string, _("%.1f TiB"), (gdouble) size / (gdouble) TEBIBYTE_FACTOR);
-
-      else if (size < EXBIBYTE_FACTOR)
-        g_string_printf (string, _("%.1f PiB"), (gdouble) size / (gdouble) PEBIBYTE_FACTOR);
-
-      else
-        g_string_printf (string, _("%.1f EiB"), (gdouble) size / (gdouble) EXBIBYTE_FACTOR);
+      flags &= ~G_FORMAT_SIZE_LONG_FORMAT;
     }
   else
     {
-      if (size < KILOBYTE_FACTOR)
+      const gsize n = G_N_ELEMENTS (formats[index]);
+      gsize i;
+
+      /*
+       * Point the last format (the highest unit) by default
+       * and then then scan all formats, starting with the 2nd one
+       * because the 1st is already managed by with the plural form
+       */
+      const struct Format * f = &formats[index][n - 1];
+
+      for (i = 1; i < n; i++)
         {
-          g_string_printf (string,
-                           g_dngettext(GETTEXT_PACKAGE, "%u byte", "%u bytes", (guint) size),
-                           (guint) size);
-          flags &= ~G_FORMAT_SIZE_LONG_FORMAT;
+          if (size < formats[index][i].factor)
+            {
+              f = &formats[index][i - 1];
+              break;
+            }
         }
 
-      else if (size < MEGABYTE_FACTOR)
-        g_string_printf (string, _("%.1f kB"), (gdouble) size / (gdouble) KILOBYTE_FACTOR);
-
-      else if (size < GIGABYTE_FACTOR)
-        g_string_printf (string, _("%.1f MB"), (gdouble) size / (gdouble) MEGABYTE_FACTOR);
-
-      else if (size < TERABYTE_FACTOR)
-        g_string_printf (string, _("%.1f GB"), (gdouble) size / (gdouble) GIGABYTE_FACTOR);
-      else if (size < PETABYTE_FACTOR)
-        g_string_printf (string, _("%.1f TB"), (gdouble) size / (gdouble) TERABYTE_FACTOR);
-
-      else if (size < EXABYTE_FACTOR)
-        g_string_printf (string, _("%.1f PB"), (gdouble) size / (gdouble) PETABYTE_FACTOR);
-
-      else
-        g_string_printf (string, _("%.1f EB"), (gdouble) size / (gdouble) EXABYTE_FACTOR);
+      g_string_printf (string, _(f->string), (gdouble) size / (gdouble) f->factor);
     }
 
   if (flags & G_FORMAT_SIZE_LONG_FORMAT)
@@ -2208,19 +2346,27 @@ g_format_size_full (guint64          size,
        */
       guint plural_form = size < 1000 ? size : size % 1000 + 1000;
 
-      /* Second problem: we need to translate the string "%u byte" and
-       * "%u bytes" for pluralisation, but the correct number format to
+      /* Second problem: we need to translate the string "%u byte/bit" and
+       * "%u bytes/bits" for pluralisation, but the correct number format to
        * use for a gsize is different depending on which architecture
        * we're on.
        *
-       * Solution: format the number separately and use "%s bytes" on
+       * Solution: format the number separately and use "%s bytes/bits" on
        * all platforms.
        */
       const gchar *translated_format;
       gchar *formatted_number;
 
-      /* Translators: the %s in "%s bytes" will always be replaced by a number. */
-      translated_format = g_dngettext(GETTEXT_PACKAGE, "%s byte", "%s bytes", plural_form);
+      if (index == FORMAT_BYTES || index == FORMAT_BYTES_IEC)
+        {
+          /* Translators: the %s in "%s bytes" will always be replaced by a number. */
+          translated_format = g_dngettext (GETTEXT_PACKAGE, "%s byte", "%s bytes", plural_form);
+        }
+      else
+        {
+          /* Translators: the %s in "%s bits" will always be replaced by a number. */
+          translated_format = g_dngettext (GETTEXT_PACKAGE, "%s bit", "%s bits", plural_form);
+        }
       /* XXX: Windows doesn't support the "'" format modifier, so we
        * must not use it there.  Instead, just display the number
        * without separation.  Bug #655336 is open until a solution is

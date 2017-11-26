@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -134,6 +134,32 @@ test_resource (GResource *resource)
   g_assert_no_error (error);
   g_assert_cmpint (g_strv_length (children), ==, 2);
   g_strfreev (children);
+
+  /* Test the preferred lookup where we have a trailing slash. */
+  children = g_resource_enumerate_children  (resource,
+					     "/a_prefix/",
+					     G_RESOURCE_LOOKUP_FLAGS_NONE,
+					     &error);
+  g_assert (children != NULL);
+  g_assert_no_error (error);
+  g_assert_cmpint (g_strv_length (children), ==, 2);
+  g_strfreev (children);
+
+  /* test with a path > 256 and no trailing slash to test the
+   * slow path of resources where we allocate a modified path.
+   */
+  children = g_resource_enumerate_children  (resource,
+					     "/not/here/not/here/not/here/not/here/not/here/not/here/not/here"
+					     "/not/here/not/here/not/here/not/here/not/here/not/here/not/here"
+					     "/not/here/not/here/not/here/not/here/not/here/not/here/not/here"
+					     "/not/here/not/here/not/here/not/here/not/here/not/here/not/here"
+					     "/not/here/not/here/not/here/not/here/not/here/not/here/not/here"
+					     "/with/no/trailing/slash",
+					     G_RESOURCE_LOOKUP_FLAGS_NONE,
+					     &error);
+  g_assert (children == NULL);
+  g_assert_error (error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND);
+  g_clear_error (&error);
 }
 
 static void
@@ -156,6 +182,49 @@ test_resource_file (void)
 }
 
 static void
+test_resource_file_path (void)
+{
+  static const struct {
+    const gchar *input;
+    const gchar *expected;
+  } test_uris[] = {
+    { "resource://", "resource:///" },
+    { "resource:///", "resource:///" },
+    { "resource://////", "resource:///" },
+    { "resource:///../../../", "resource:///" },
+    { "resource:///../../..", "resource:///" },
+    { "resource://abc", "resource:///abc" },
+    { "resource:///abc/", "resource:///abc" },
+    { "resource:/a/b/../c/", "resource:///a/c" },
+    { "resource://../a/b/../c/../", "resource:///a" },
+    { "resource://a/b/cc//bb//a///", "resource:///a/b/cc/bb/a" },
+    { "resource://././././", "resource:///" },
+    { "resource://././././../", "resource:///" },
+    { "resource://a/b/c/d.png", "resource:///a/b/c/d.png" },
+    { "resource://a/b/c/..png", "resource:///a/b/c/..png" },
+    { "resource://a/b/c/./png", "resource:///a/b/c/png" },
+  };
+  guint i;
+
+  for (i = 0; i < G_N_ELEMENTS (test_uris); i++)
+    {
+      GFile *file;
+      gchar *uri;
+
+      file = g_file_new_for_uri (test_uris[i].input);
+      g_assert (file != NULL);
+
+      uri = g_file_get_uri (file);
+      g_assert (uri != NULL);
+
+      g_assert_cmpstr (uri, ==, test_uris[i].expected);
+
+      g_object_unref (file);
+      g_free (uri);
+    }
+}
+
+static void
 test_resource_data (void)
 {
   GResource *resource;
@@ -170,6 +239,36 @@ test_resource_data (void)
   g_assert (loaded_file);
 
   data = g_bytes_new_take (content, content_size);
+  resource = g_resource_new_from_data (data, &error);
+  g_bytes_unref (data);
+  g_assert (resource != NULL);
+  g_assert_no_error (error);
+
+  test_resource (resource);
+
+  g_resource_unref (resource);
+}
+
+static void
+test_resource_data_unaligned (void)
+{
+  GResource *resource;
+  GError *error = NULL;
+  gboolean loaded_file;
+  char *content, *content_copy;
+  gsize content_size;
+  GBytes *data;
+
+  loaded_file = g_file_get_contents (g_test_get_filename (G_TEST_BUILT, "test.gresource", NULL),
+                                     &content, &content_size, NULL);
+  g_assert (loaded_file);
+
+  content_copy = g_new (char, content_size + 1);
+  memcpy (content_copy + 1, content, content_size);
+
+  data = g_bytes_new_with_free_func (content_copy + 1, content_size,
+                                     (GDestroyNotify) g_free, content_copy);
+  g_free (content);
   resource = g_resource_new_from_data (data, &error);
   g_bytes_unref (data);
   g_assert (resource != NULL);
@@ -643,7 +742,9 @@ main (int   argc,
   _g_test2_register_resource ();
 
   g_test_add_func ("/resource/file", test_resource_file);
+  g_test_add_func ("/resource/file-path", test_resource_file_path);
   g_test_add_func ("/resource/data", test_resource_data);
+  g_test_add_func ("/resource/data_unaligned", test_resource_data_unaligned);
   g_test_add_func ("/resource/registered", test_resource_registered);
   g_test_add_func ("/resource/manual", test_resource_manual);
   g_test_add_func ("/resource/manual2", test_resource_manual2);

@@ -2,19 +2,18 @@
    Copyright (C) 2005 John McCutchan
    Copyright © 2015 Canonical Limited
 
-   The Gnome Library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   This library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
 
-   The Gnome Library is distributed in the hope that it will be useful,
+   This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
+   Lesser General Public License for more details.
 
-   You should have received a copy of the GNU Library General Public
-   License along with the Gnome Library; see the file COPYING.LIB.  If not,
-   see <http://www.gnu.org/licenses/>.
+   You should have received a copy of the GNU Lesser General Public License
+   along with this library; if not, see <http://www.gnu.org/licenses/>.
 
    Authors:
      Ryan Lortie <desrt@desrt.ca>
@@ -141,19 +140,21 @@ ik_source_read_some_events (InotifyKernelSource *iks,
                             gsize                buffer_len)
 {
   gssize result;
+  int errsv;
 
 again:
   result = read (iks->fd, buffer, buffer_len);
+  errsv = errno;
 
   if (result < 0)
     {
-      if (errno == EINTR)
+      if (errsv == EINTR)
         goto again;
 
-      if (errno == EAGAIN)
+      if (errsv == EAGAIN)
         return 0;
 
-      g_error ("inotify read(): %s", g_strerror (errno));
+      g_error ("inotify read(): %s", g_strerror (errsv));
     }
   else if (result == 0)
     g_error ("inotify unexpectedly hit eof");
@@ -179,11 +180,13 @@ ik_source_read_all_the_events (InotifyKernelSource *iks,
       gchar *new_buffer;
       guint n_readable;
       gint result;
+      int errsv;
 
       /* figure out how many more bytes there are to read */
       result = ioctl (iks->fd, FIONREAD, &n_readable);
+      errsv = errno;
       if (result != 0)
-        g_error ("inotify ioctl(FIONREAD): %s", g_strerror (errno));
+        g_error ("inotify ioctl(FIONREAD): %s", g_strerror (errsv));
 
       if (n_readable != 0)
         {

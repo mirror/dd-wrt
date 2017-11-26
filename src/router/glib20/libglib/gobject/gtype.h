@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -457,7 +457,8 @@ struct _GTypeQuery
  * @instance: Location of a #GTypeInstance structure
  * 
  * Checks if @instance is a valid #GTypeInstance structure,
- * otherwise issues a warning and returns %FALSE.
+ * otherwise issues a warning and returns %FALSE. %NULL is not a valid
+ * #GTypeInstance.
  * 
  * This macro should only be used in type implementations.
  *
@@ -466,23 +467,26 @@ struct _GTypeQuery
 #define G_TYPE_CHECK_INSTANCE(instance)				(_G_TYPE_CHI ((GTypeInstance*) (instance)))
 /**
  * G_TYPE_CHECK_INSTANCE_CAST:
- * @instance: Location of a #GTypeInstance structure
+ * @instance: (nullable): Location of a #GTypeInstance structure
  * @g_type: The type to be returned
  * @c_type: The corresponding C type of @g_type
  * 
  * Checks that @instance is an instance of the type identified by @g_type
  * and issues a warning if this is not the case. Returns @instance casted 
  * to a pointer to @c_type.
+ *
+ * No warning will be issued if @instance is %NULL, and %NULL will be returned.
  * 
  * This macro should only be used in type implementations.
  */
 #define G_TYPE_CHECK_INSTANCE_CAST(instance, g_type, c_type)    (_G_TYPE_CIC ((instance), (g_type), c_type))
 /**
  * G_TYPE_CHECK_INSTANCE_TYPE:
- * @instance: Location of a #GTypeInstance structure.
+ * @instance: (nullable): Location of a #GTypeInstance structure.
  * @g_type: The type to be checked
  * 
- * Checks if @instance is an instance of the type identified by @g_type.
+ * Checks if @instance is an instance of the type identified by @g_type. If
+ * @instance is %NULL, %FALSE will be returned.
  * 
  * This macro should only be used in type implementations.
  *
@@ -491,10 +495,11 @@ struct _GTypeQuery
 #define G_TYPE_CHECK_INSTANCE_TYPE(instance, g_type)            (_G_TYPE_CIT ((instance), (g_type)))
 /**
  * G_TYPE_CHECK_INSTANCE_FUNDAMENTAL_TYPE:
- * @instance: Location of a #GTypeInstance structure.
+ * @instance: (nullable): Location of a #GTypeInstance structure.
  * @g_type: The fundamental type to be checked
  *
  * Checks if @instance is an instance of the fundamental type identified by @g_type.
+ * If @instance is %NULL, %FALSE will be returned.
  *
  * This macro should only be used in type implementations.
  *
@@ -539,18 +544,18 @@ struct _GTypeQuery
  * 
  * Checks that @g_class is a class structure of the type identified by @g_type
  * and issues a warning if this is not the case. Returns @g_class casted 
- * to a pointer to @c_type.
+ * to a pointer to @c_type. %NULL is not a valid class structure.
  * 
  * This macro should only be used in type implementations.
  */
 #define G_TYPE_CHECK_CLASS_CAST(g_class, g_type, c_type)        (_G_TYPE_CCC ((g_class), (g_type), c_type))
 /**
  * G_TYPE_CHECK_CLASS_TYPE:
- * @g_class: Location of a #GTypeClass structure
+ * @g_class: (nullable): Location of a #GTypeClass structure
  * @g_type: The type to be checked
  * 
  * Checks if @g_class is a class structure of the type identified by 
- * @g_type.
+ * @g_type. If @g_class is %NULL, %FALSE will be returned.
  * 
  * This macro should only be used in type implementations.
  *
@@ -1938,7 +1943,8 @@ static void     type_name##_class_intern_init (gpointer klass) \
 }
 #endif /* GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_38 */
 
-#define _G_DEFINE_TYPE_EXTENDED_BEGIN(TypeName, type_name, TYPE_PARENT, flags) \
+/* Added for _G_DEFINE_TYPE_EXTENDED_WITH_PRELUDE */
+#define _G_DEFINE_TYPE_EXTENDED_BEGIN_PRE(TypeName, type_name, TYPE_PARENT) \
 \
 static void     type_name##_init              (TypeName        *self); \
 static void     type_name##_class_init        (TypeName##Class *klass); \
@@ -1957,7 +1963,11 @@ type_name##_get_instance_private (TypeName *self) \
 GType \
 type_name##_get_type (void) \
 { \
-  static volatile gsize g_define_type_id__volatile = 0; \
+  static volatile gsize g_define_type_id__volatile = 0;
+  /* Prelude goes here */
+
+/* Added for _G_DEFINE_TYPE_EXTENDED_WITH_PRELUDE */
+#define _G_DEFINE_TYPE_EXTENDED_BEGIN_REGISTER(TypeName, type_name, TYPE_PARENT, flags) \
   if (g_once_init_enter (&g_define_type_id__volatile))  \
     { \
       GType g_define_type_id = \
@@ -1976,6 +1986,13 @@ type_name##_get_type (void) \
     }					\
   return g_define_type_id__volatile;	\
 } /* closes type_name##_get_type() */
+
+/* This was defined before we had G_DEFINE_TYPE_WITH_CODE_AND_PRELUDE, it's simplest
+ * to keep it.
+ */
+#define _G_DEFINE_TYPE_EXTENDED_BEGIN(TypeName, type_name, TYPE_PARENT, flags) \
+  _G_DEFINE_TYPE_EXTENDED_BEGIN_PRE(TypeName, type_name, TYPE_PARENT) \
+  _G_DEFINE_TYPE_EXTENDED_BEGIN_REGISTER(TypeName, type_name, TYPE_PARENT, flags) \
 
 #define _G_DEFINE_INTERFACE_EXTENDED_BEGIN(TypeName, type_name, TYPE_PREREQ) \
 \

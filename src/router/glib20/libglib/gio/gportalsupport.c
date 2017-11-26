@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,14 +27,13 @@ static gboolean network_available;
 static void
 read_flatpak_info (void)
 {
-  char *path;
+  const gchar *path = "/.flatpak-info";
 
   if (flatpak_info_read)
     return;
 
   flatpak_info_read = TRUE;
 
-  path = g_build_filename (g_get_user_runtime_dir (), "flatpak-info", NULL);
   if (g_file_test (path, G_FILE_TEST_EXISTS))
     {
       GKeyFile *keyfile;
@@ -66,8 +65,6 @@ read_flatpak_info (void)
         use_portal = TRUE;
       network_available = TRUE;
     }
-
-  g_free (path);
 }
 
 gboolean

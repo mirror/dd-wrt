@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -84,7 +84,6 @@ gchar* 		g_win32_getlocale  (void);
 GLIB_AVAILABLE_IN_ALL
 gchar*          g_win32_error_message (gint error);
 
-#ifndef _WIN64
 GLIB_DEPRECATED
 gchar*          g_win32_get_package_installation_directory (const gchar *package,
 							    const gchar *dll_name);
@@ -93,7 +92,6 @@ GLIB_DEPRECATED
 gchar*          g_win32_get_package_installation_subdirectory (const gchar *package,
 							       const gchar *dll_name,
 							       const gchar *subdir);
-#endif
 
 GLIB_AVAILABLE_IN_ALL
 gchar*          g_win32_get_package_installation_directory_of_module (gpointer hmodule);
@@ -110,23 +108,6 @@ gchar **        g_win32_get_command_line (void);
 /* As of GLib 2.14 we only support NT-based Windows */
 #define G_WIN32_IS_NT_BASED() TRUE
 #define G_WIN32_HAVE_WIDECHAR_API() TRUE
-
-#ifndef __GTK_DOC_IGNORE__
-#ifdef G_OS_WIN32
-#ifdef _WIN64
-#define g_win32_get_package_installation_directory g_win32_get_package_installation_directory_utf8
-#define g_win32_get_package_installation_subdirectory g_win32_get_package_installation_subdirectory_utf8
-#endif
-
-GLIB_AVAILABLE_IN_ALL
-gchar *g_win32_get_package_installation_directory_utf8    (const gchar *package,
-                                                           const gchar *dll_name);
-GLIB_AVAILABLE_IN_ALL
-gchar *g_win32_get_package_installation_subdirectory_utf8 (const gchar *package,
-                                                           const gchar *dll_name,
-                                                           const gchar *subdir);
-#endif /* G_OS_WIN32 */
-#endif /* __GTK_DOC_IGNORE__ */
 
 /**
  * GWin32OSType:

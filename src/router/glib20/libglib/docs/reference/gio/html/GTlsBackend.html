@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GTlsBackend: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="tls.html" title="TLS (SSL) support">
 <link rel="prev" href="GDtlsServerConnection.html" title="GDtlsServerConnection">
@@ -149,7 +149,7 @@
 </div>
 <div class="refsect1">
 <a name="GTlsBackend.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/GTypeModule.html">GInterface</a>
+<pre class="screen">    <a href="/home/mclasen/gnome/share/gtk-doc/html/gobject/GTypeModule.html">GInterface</a>
     <span class="lineart">╰──</span> GTlsBackend
 </pre>
 </div>
@@ -386,7 +386,7 @@ g_tls_backend_get_dtls_client_connection_type
 <a name="g-tls-backend-get-dtls-client-connection-type.returns"></a><h4>Returns</h4>
 <p> the <a href="../gobject-Type-Information.html#GType"><span class="type">GType</span></a> of <em class="parameter"><code>backend</code></em>
 ’s <a class="link" href="GDtlsClientConnection.html" title="GDtlsClientConnection"><span class="type">GDtlsClientConnection</span></a>
-implementation.</p>
+implementation, or <a href="../gobject-Type-Information.html#G-TYPE-INVALID:CAPS"><code class="literal">G_TYPE_INVALID</code></a> if this backend doesn’t support DTLS.</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-48.html#api-index-2.48">2.48</a></p>
 </div>
@@ -417,7 +417,7 @@ g_tls_backend_get_dtls_server_connection_type
 <a name="g-tls-backend-get-dtls-server-connection-type.returns"></a><h4>Returns</h4>
 <p> the <a href="../gobject-Type-Information.html#GType"><span class="type">GType</span></a> of <em class="parameter"><code>backend</code></em>
 ’s <a class="link" href="GDtlsServerConnection.html" title="GDtlsServerConnection"><span class="type">GDtlsServerConnection</span></a>
-implementation.</p>
+implementation, or <a href="../gobject-Type-Information.html#G-TYPE-INVALID:CAPS"><code class="literal">G_TYPE_INVALID</code></a> if this backend doesn’t support DTLS.</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-48.html#api-index-2.48">2.48</a></p>
 </div>

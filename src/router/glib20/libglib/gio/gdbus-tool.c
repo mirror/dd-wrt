@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -98,6 +98,7 @@ usage (gint *argc, gchar **argv[], gboolean use_stdout)
                          "  monitor      Monitor a remote object\n"
                          "  call         Invoke a method on a remote object\n"
                          "  emit         Emit a signal\n"
+                         "  wait         Wait for a bus name to appear\n"
                          "\n"
                          "Use “%s COMMAND --help” to get help on each command.\n"),
                        program_name);
@@ -136,9 +137,11 @@ modify_argv0_for_command (gint *argc, gchar **argv[], const gchar *command)
 /* ---------------------------------------------------------------------------------------------------- */
 
 static void
-print_methods (GDBusConnection *c,
-               const gchar *name,
-               const gchar *path)
+print_methods_and_signals (GDBusConnection *c,
+                           const gchar     *name,
+                           const gchar     *path,
+                           gboolean         print_methods,
+                           gboolean         print_signals)
 {
   GVariant *result;
   GError *error;
@@ -180,10 +183,15 @@ print_methods (GDBusConnection *c,
   for (n = 0; node->interfaces != NULL && node->interfaces[n] != NULL; n++)
     {
       const GDBusInterfaceInfo *iface = node->interfaces[n];
-      for (m = 0; iface->methods != NULL && iface->methods[m] != NULL; m++)
+      for (m = 0; print_methods && iface->methods != NULL && iface->methods[m] != NULL; m++)
         {
           const GDBusMethodInfo *method = iface->methods[m];
           g_print ("%s.%s \n", iface->name, method->name);
+        }
+      for (m = 0; print_signals && iface->signals != NULL && iface->signals[m] != NULL; m++)
+        {
+          const GDBusSignalInfo *signal = iface->signals[m];
+          g_print ("%s.%s \n", iface->name, signal->name);
         }
     }
   g_dbus_node_info_unref (node);
@@ -301,7 +309,7 @@ print_names (GDBusConnection *c,
     }
   g_variant_get (result, "(as)", &iter);
   while (g_variant_iter_loop (iter, "s", &str))
-    g_hash_table_insert (name_set, g_strdup (str), NULL);
+    g_hash_table_add (name_set, g_strdup (str));
   g_variant_iter_free (iter);
   g_variant_unref (result);
 
@@ -325,7 +333,7 @@ print_names (GDBusConnection *c,
     }
   g_variant_get (result, "(as)", &iter);
   while (g_variant_iter_loop (iter, "s", &str))
-    g_hash_table_insert (name_set, g_strdup (str), NULL);
+    g_hash_table_add (name_set, g_strdup (str));
   g_variant_iter_free (iter);
   g_variant_unref (result);
 
@@ -564,6 +572,7 @@ handle_emit (gint        *argc,
   gboolean skip_dashes;
   guint parm;
   guint n;
+  gboolean complete_names, complete_paths, complete_signals;
 
   ret = FALSE;
   c = NULL;
@@ -578,6 +587,27 @@ handle_emit (gint        *argc,
   g_option_context_set_summary (o, _("Emit a signal."));
   g_option_context_add_main_entries (o, emit_entries, GETTEXT_PACKAGE);
   g_option_context_add_group (o, connection_get_group ());
+
+  complete_names = FALSE;
+  if (request_completion && *argc > 1 && g_strcmp0 ((*argv)[(*argc)-1], "--dest") == 0)
+    {
+      complete_names = TRUE;
+      remove_arg ((*argc) - 1, argc, argv);
+    }
+
+  complete_paths = FALSE;
+  if (request_completion && *argc > 1 && g_strcmp0 ((*argv)[(*argc)-1], "--object-path") == 0)
+    {
+      complete_paths = TRUE;
+      remove_arg ((*argc) - 1, argc, argv);
+    }
+
+  complete_signals = FALSE;
+  if (request_completion && *argc > 1 && g_strcmp0 ((*argv)[(*argc)-1], "--signal") == 0)
+    {
+      complete_signals = TRUE;
+      remove_arg ((*argc) - 1, argc, argv);
+    }
 
   if (!g_option_context_parse (o, argc, argv, NULL))
     {
@@ -615,35 +645,98 @@ handle_emit (gint        *argc,
       goto out;
     }
 
-  /* All done with completion now */
-  if (request_completion)
-    goto out;
-
-  if (opt_emit_object_path == NULL)
+  /* validate and complete destination (bus name) */
+  if (complete_names)
     {
-      g_printerr (_("Error: object path not specified.\n"));
+      print_names (c, FALSE);
       goto out;
     }
-  if (!g_variant_is_object_path (opt_emit_object_path))
+  if (opt_emit_dest == NULL)
+    {
+      if (request_completion)
+        g_print ("--dest \n");
+      else
+        g_printerr (_("Error: Destination is not specified\n"));
+      goto out;
+    }
+  if (request_completion && g_strcmp0 ("--dest", completion_prev) == 0)
+    {
+      print_names (c, g_str_has_prefix (opt_emit_dest, ":"));
+      goto out;
+    }
+
+  if (!request_completion && !g_dbus_is_unique_name (opt_emit_dest))
+    {
+      g_printerr (_("Error: %s is not a valid unique bus name.\n"), opt_emit_dest);
+      goto out;
+    }
+
+  /* validate and complete object path */
+  if (complete_paths)
+    {
+      print_paths (c, opt_emit_dest, "/");
+      goto out;
+    }
+  if (opt_emit_object_path == NULL)
+    {
+      if (request_completion)
+        g_print ("--object-path \n");
+      else
+        g_printerr (_("Error: Object path is not specified\n"));
+      goto out;
+    }
+  if (request_completion && g_strcmp0 ("--object-path", completion_prev) == 0)
+    {
+      gchar *p;
+      s = g_strdup (opt_emit_object_path);
+      p = strrchr (s, '/');
+      if (p != NULL)
+        {
+          if (p == s)
+            p++;
+          *p = '\0';
+        }
+      print_paths (c, opt_emit_dest, s);
+      g_free (s);
+      goto out;
+    }
+  if (!request_completion && !g_variant_is_object_path (opt_emit_object_path))
     {
       g_printerr (_("Error: %s is not a valid object path\n"), opt_emit_object_path);
       goto out;
     }
 
-  if (opt_emit_signal == NULL)
+  /* validate and complete signal (interface + signal name) */
+  if (complete_signals)
     {
-      g_printerr (_("Error: signal not specified.\n"));
+      print_methods_and_signals (c, opt_emit_dest, opt_emit_object_path, FALSE, TRUE);
       goto out;
     }
-
-  s = strrchr (opt_emit_signal, '.');
-  if (s == NULL)
+  if (opt_emit_signal == NULL)
     {
-      g_printerr (_("Error: signal must be the fully-qualified name.\n"));
+      if (request_completion)
+        g_print ("--signal \n");
+      else
+        g_printerr (_("Error: Signal name is not specified\n"));
+      goto out;
+    }
+  if (request_completion && g_strcmp0 ("--signal", completion_prev) == 0)
+    {
+      print_methods_and_signals (c, opt_emit_dest, opt_emit_object_path, FALSE, TRUE);
+      goto out;
+    }
+  s = strrchr (opt_emit_signal, '.');
+  if (!request_completion && s == NULL)
+    {
+      g_printerr (_("Error: Signal name “%s” is invalid\n"), opt_emit_signal);
       goto out;
     }
   signal_name = g_strdup (s + 1);
   interface_name = g_strndup (opt_emit_signal, s - opt_emit_signal);
+
+  /* All done with completion now */
+  if (request_completion)
+    goto out;
 
   if (!g_dbus_is_interface_name (interface_name))
     {
@@ -654,12 +747,6 @@ handle_emit (gint        *argc,
   if (!g_dbus_is_member_name (signal_name))
     {
       g_printerr (_("Error: %s is not a valid member name\n"), signal_name);
-      goto out;
-    }
-
-  if (opt_emit_dest != NULL && !g_dbus_is_unique_name (opt_emit_dest))
-    {
-      g_printerr (_("Error: %s is not a valid unique bus name.\n"), opt_emit_dest);
       goto out;
     }
 
@@ -861,27 +948,23 @@ handle_call (gint        *argc,
     }
 
   /* validate and complete destination (bus name) */
-  if (g_dbus_connection_get_unique_name (c) != NULL)
+  if (complete_names)
     {
-      /* this only makes sense on message bus connections */
-      if (complete_names)
-        {
-          print_names (c, FALSE);
-          goto out;
-        }
-      if (opt_call_dest == NULL)
-        {
-          if (request_completion)
-            g_print ("--dest \n");
-          else
-            g_printerr (_("Error: Destination is not specified\n"));
-          goto out;
-        }
-      if (request_completion && g_strcmp0 ("--dest", completion_prev) == 0)
-        {
-          print_names (c, g_str_has_prefix (opt_call_dest, ":"));
-          goto out;
-        }
+      print_names (c, FALSE);
+      goto out;
+    }
+  if (opt_call_dest == NULL)
+    {
+      if (request_completion)
+        g_print ("--dest \n");
+      else
+        g_printerr (_("Error: Destination is not specified\n"));
+      goto out;
+    }
+  if (request_completion && g_strcmp0 ("--dest", completion_prev) == 0)
+    {
+      print_names (c, g_str_has_prefix (opt_call_dest, ":"));
+      goto out;
     }
 
   if (!request_completion && !g_dbus_is_name (opt_call_dest))
@@ -928,7 +1011,7 @@ handle_call (gint        *argc,
   /* validate and complete method (interface + method name) */
   if (complete_methods)
     {
-      print_methods (c, opt_call_dest, opt_call_object_path);
+      print_methods_and_signals (c, opt_call_dest, opt_call_object_path, TRUE, FALSE);
       goto out;
     }
   if (opt_call_method == NULL)
@@ -941,7 +1024,7 @@ handle_call (gint        *argc,
     }
   if (request_completion && g_strcmp0 ("--method", completion_prev) == 0)
     {
-      print_methods (c, opt_call_dest, opt_call_object_path);
+      print_methods_and_signals (c, opt_call_dest, opt_call_object_path, TRUE, FALSE);
       goto out;
     }
   s = strrchr (opt_call_method, '.');
@@ -1618,28 +1701,26 @@ handle_introspect (gint        *argc,
       goto out;
     }
 
-  if (g_dbus_connection_get_unique_name (c) != NULL)
+  if (complete_names)
     {
-      if (complete_names)
-        {
-          print_names (c, FALSE);
-          goto out;
-        }
-      /* this only makes sense on message bus connections */
-      if (opt_introspect_dest == NULL)
-        {
-          if (request_completion)
-            g_print ("--dest \n");
-          else
-            g_printerr (_("Error: Destination is not specified\n"));
-          goto out;
-        }
-      if (request_completion && g_strcmp0 ("--dest", completion_prev) == 0)
-        {
-          print_names (c, g_str_has_prefix (opt_introspect_dest, ":"));
-          goto out;
-        }
+      print_names (c, FALSE);
+      goto out;
     }
+  /* this only makes sense on message bus connections */
+  if (opt_introspect_dest == NULL)
+    {
+      if (request_completion)
+        g_print ("--dest \n");
+      else
+        g_printerr (_("Error: Destination is not specified\n"));
+      goto out;
+    }
+  if (request_completion && g_strcmp0 ("--dest", completion_prev) == 0)
+    {
+      print_names (c, g_str_has_prefix (opt_introspect_dest, ":"));
+      goto out;
+    }
+
   if (complete_paths)
     {
       print_paths (c, opt_introspect_dest, "/");
@@ -1648,7 +1729,7 @@ handle_introspect (gint        *argc,
 
   if (!request_completion && !g_dbus_is_name (opt_introspect_dest))
     {
-        g_printerr (_("Error: %s is not a valid bus name\n"), opt_introspect_dest);
+      g_printerr (_("Error: %s is not a valid bus name\n"), opt_introspect_dest);
       goto out;
     }
 
@@ -1853,27 +1934,32 @@ handle_monitor (gint        *argc,
       goto out;
     }
 
-  if (g_dbus_connection_get_unique_name (c) != NULL)
+  /* Monitoring doesn’t make sense on a non-message-bus connection. */
+  if (g_dbus_connection_get_unique_name (c) == NULL)
     {
-      if (complete_names)
-        {
-          print_names (c, FALSE);
-          goto out;
-        }
-      /* this only makes sense on message bus connections */
-      if (opt_monitor_dest == NULL)
-        {
-          if (request_completion)
-            g_print ("--dest \n");
-          else
-            g_printerr (_("Error: Destination is not specified\n"));
-          goto out;
-        }
-      if (request_completion && g_strcmp0 ("--dest", completion_prev) == 0)
-        {
-          print_names (c, g_str_has_prefix (opt_monitor_dest, ":"));
-          goto out;
-        }
+      if (!request_completion)
+        g_printerr (_("Error: can’t monitor a non-message-bus connection\n"));
+      goto out;
+    }
+
+  if (complete_names)
+    {
+      print_names (c, FALSE);
+      goto out;
+    }
+  /* this only makes sense on message bus connections */
+  if (opt_monitor_dest == NULL)
+    {
+      if (request_completion)
+        g_print ("--dest \n");
+      else
+        g_printerr (_("Error: Destination is not specified\n"));
+      goto out;
+    }
+  if (request_completion && g_strcmp0 ("--dest", completion_prev) == 0)
+    {
+      print_names (c, g_str_has_prefix (opt_monitor_dest, ":"));
+      goto out;
     }
 
   if (!request_completion && !g_dbus_is_name (opt_monitor_dest))
@@ -1944,6 +2030,238 @@ handle_monitor (gint        *argc,
   if (c != NULL)
     g_object_unref (c);
   g_option_context_free (o);
+  return ret;
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+static gboolean opt_wait_activate_set = FALSE;
+static gchar *opt_wait_activate_name = NULL;
+static gint64 opt_wait_timeout = 0;  /* no timeout */
+
+typedef enum {
+  WAIT_STATE_RUNNING,  /* waiting to see the service */
+  WAIT_STATE_SUCCESS,  /* seen it successfully */
+  WAIT_STATE_TIMEOUT,  /* timed out before seeing it */
+} WaitState;
+
+static gboolean
+opt_wait_activate_cb (const gchar  *option_name,
+                      const gchar  *value,
+                      gpointer      data,
+                      GError      **error)
+{
+  /* @value may be NULL */
+  opt_wait_activate_set = TRUE;
+  opt_wait_activate_name = g_strdup (value);
+
+  return TRUE;
+}
+
+static const GOptionEntry wait_entries[] =
+{
+  { "activate", 'a', G_OPTION_FLAG_OPTIONAL_ARG, G_OPTION_ARG_CALLBACK,
+    opt_wait_activate_cb,
+    N_("Service to activate before waiting for the other one (well-known name)"),
+    "[NAME]" },
+  { "timeout", 't', 0, G_OPTION_ARG_INT64, &opt_wait_timeout,
+    N_("Timeout to wait for before exiting with an error (seconds); 0 for "
+       "no timeout (default)"), "SECS" },
+  { NULL }
+};
+
+static void
+wait_name_appeared_cb (GDBusConnection *connection,
+                       const gchar     *name,
+                       const gchar     *name_owner,
+                       gpointer         user_data)
+{
+  WaitState *wait_state = user_data;
+
+  *wait_state = WAIT_STATE_SUCCESS;
+}
+
+static gboolean
+wait_timeout_cb (gpointer user_data)
+{
+  WaitState *wait_state = user_data;
+
+  *wait_state = WAIT_STATE_TIMEOUT;
+
+  /* Removed in handle_wait(). */
+  return G_SOURCE_CONTINUE;
+}
+
+static gboolean
+handle_wait (gint        *argc,
+             gchar      **argv[],
+             gboolean     request_completion,
+             const gchar *completion_cur,
+             const gchar *completion_prev)
+{
+  gint ret;
+  GOptionContext *o;
+  gchar *s;
+  GError *error;
+  GDBusConnection *c;
+  guint watch_id, timer_id = 0, activate_watch_id;
+  const gchar *activate_service, *wait_service;
+  WaitState wait_state = WAIT_STATE_RUNNING;
+
+  ret = FALSE;
+  c = NULL;
+
+  modify_argv0_for_command (argc, argv, "wait");
+
+  o = g_option_context_new (_("[OPTION…] BUS-NAME"));
+  g_option_context_set_help_enabled (o, FALSE);
+  g_option_context_set_summary (o, _("Wait for a bus name to appear."));
+  g_option_context_add_main_entries (o, wait_entries, GETTEXT_PACKAGE);
+  g_option_context_add_group (o, connection_get_group ());
+
+  if (!g_option_context_parse (o, argc, argv, NULL))
+    {
+      if (!request_completion)
+        {
+          s = g_option_context_get_help (o, FALSE, NULL);
+          g_printerr ("%s", s);
+          g_free (s);
+          goto out;
+        }
+    }
+
+  error = NULL;
+  c = connection_get_dbus_connection (&error);
+  if (c == NULL)
+    {
+      if (request_completion)
+        {
+          if (g_strcmp0 (completion_prev, "--address") == 0)
+            {
+              g_print ("unix:\n"
+                       "tcp:\n"
+                       "nonce-tcp:\n");
+            }
+          else
+            {
+              g_print ("--system \n--session \n--address \n");
+            }
+        }
+      else
+        {
+          g_printerr (_("Error connecting: %s\n"), error->message);
+          g_error_free (error);
+        }
+      goto out;
+    }
+
+  /* All done with completion now */
+  if (request_completion)
+    goto out;
+
+  /*
+   * Try and disentangle the command line arguments, with the aim of supporting:
+   *    gdbus wait --session --activate ActivateName WaitName
+   *    gdbus wait --session --activate ActivateAndWaitName
+   *    gdbus wait --activate --session ActivateAndWaitName
+   *    gdbus wait --session WaitName
+   */
+  if (*argc == 2 && opt_wait_activate_set && opt_wait_activate_name != NULL)
+    {
+      activate_service = opt_wait_activate_name;
+      wait_service = (*argv)[1];
+    }
+  else if (*argc == 2 &&
+           opt_wait_activate_set && opt_wait_activate_name == NULL)
+    {
+      activate_service = (*argv)[1];
+      wait_service = (*argv)[1];
+    }
+  else if (*argc == 2 && !opt_wait_activate_set)
+    {
+      activate_service = NULL;  /* disabled */
+      wait_service = (*argv)[1];
+    }
+  else if (*argc == 1 &&
+           opt_wait_activate_set && opt_wait_activate_name != NULL)
+    {
+      activate_service = opt_wait_activate_name;
+      wait_service = opt_wait_activate_name;
+    }
+  else if (*argc == 1 &&
+           opt_wait_activate_set && opt_wait_activate_name == NULL)
+    {
+      g_printerr (_("Error: A service to activate for must be specified.\n"));
+      goto out;
+    }
+  else if (*argc == 1 && !opt_wait_activate_set)
+    {
+      g_printerr (_("Error: A service to wait for must be specified.\n"));
+      goto out;
+    }
+  else /* if (*argc > 2) */
+    {
+      g_printerr (_("Error: Too many arguments.\n"));
+      goto out;
+    }
+
+  if (activate_service != NULL &&
+      (!g_dbus_is_name (activate_service) ||
+       g_dbus_is_unique_name (activate_service)))
+    {
+      g_printerr (_("Error: %s is not a valid well-known bus name.\n"),
+                  activate_service);
+      goto out;
+    }
+
+  if (!g_dbus_is_name (wait_service) || g_dbus_is_unique_name (wait_service))
+    {
+      g_printerr (_("Error: %s is not a valid well-known bus name.\n"),
+                  wait_service);
+      goto out;
+    }
+
+  /* Start the prerequisite service if needed. */
+  if (activate_service != NULL)
+    {
+      activate_watch_id = g_bus_watch_name_on_connection (c, activate_service,
+                                                          G_BUS_NAME_WATCHER_FLAGS_AUTO_START,
+                                                          NULL, NULL,
+                                                          NULL, NULL);
+    }
+  else
+    {
+      activate_watch_id = 0;
+    }
+
+  /* Wait for the expected name to appear. */
+  watch_id = g_bus_watch_name_on_connection (c,
+                                             wait_service,
+                                             G_BUS_NAME_WATCHER_FLAGS_NONE,
+                                             wait_name_appeared_cb,
+                                             NULL, &wait_state, NULL);
+
+  /* Safety timeout. */
+  if (opt_wait_timeout > 0)
+    timer_id = g_timeout_add (opt_wait_timeout, wait_timeout_cb, &wait_state);
+
+  while (wait_state == WAIT_STATE_RUNNING)
+    g_main_context_iteration (NULL, TRUE);
+
+  g_bus_unwatch_name (watch_id);
+  if (timer_id != 0)
+      g_source_remove (timer_id);
+  if (activate_watch_id != 0)
+      g_bus_unwatch_name (activate_watch_id);
+
+  ret = (wait_state == WAIT_STATE_SUCCESS);
+
+ out:
+  g_clear_object (&c);
+  g_option_context_free (o);
+  g_free (opt_wait_activate_name);
+  opt_wait_activate_name = NULL;
+
   return ret;
 }
 
@@ -2081,6 +2399,16 @@ main (gint argc, gchar *argv[])
         ret = 0;
       goto out;
     }
+  else if (g_strcmp0 (command, "wait") == 0)
+    {
+      if (handle_wait (&argc,
+                       &argv,
+                       request_completion,
+                       completion_cur,
+                       completion_prev))
+        ret = 0;
+      goto out;
+    }
   else if (g_strcmp0 (command, "complete") == 0 && argc == 4 && !request_completion)
     {
       const gchar *completion_line;
@@ -2150,7 +2478,7 @@ main (gint argc, gchar *argv[])
     {
       if (request_completion)
         {
-          g_print ("help \nemit \ncall \nintrospect \nmonitor \n");
+          g_print ("help \nemit \ncall \nintrospect \nmonitor \nwait \n");
           ret = 0;
           goto out;
         }

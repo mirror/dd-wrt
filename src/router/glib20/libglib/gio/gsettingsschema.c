@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -68,7 +68,7 @@
  *   ...
  *
  *   plugin->schema_source =
- *     g_settings_new_schema_source_from_directory (dir,
+ *     g_settings_schema_source_new_from_directory (dir,
  *       g_settings_schema_source_get_default (), FALSE, NULL);
  *
  *   ...
@@ -247,7 +247,7 @@ g_settings_schema_source_unref (GSettingsSchemaSource *source)
 /**
  * g_settings_schema_source_new_from_directory:
  * @directory: (type filename): the filename of a directory
- * @parent: (allow-none): a #GSettingsSchemaSource, or %NULL
+ * @parent: (nullable): a #GSettingsSchemaSource, or %NULL
  * @trusted: %TRUE, if the directory is trusted
  * @error: a pointer to a #GError pointer set to %NULL, or %NULL
  *
@@ -322,6 +322,14 @@ try_prepend_dir (const gchar *directory)
 }
 
 static void
+try_prepend_data_dir (const gchar *directory)
+{
+  gchar *dirname = g_build_filename (directory, "glib-2.0", "schemas", NULL);
+  try_prepend_dir (dirname);
+  g_free (dirname);
+}
+
+static void
 initialise_schema_sources (void)
 {
   static gsize initialised;
@@ -340,13 +348,9 @@ initialise_schema_sources (void)
       for (i = 0; dirs[i]; i++);
 
       while (i--)
-        {
-          gchar *dirname;
+        try_prepend_data_dir (dirs[i]);
 
-          dirname = g_build_filename (dirs[i], "glib-2.0", "schemas", NULL);
-          try_prepend_dir (dirname);
-          g_free (dirname);
-        }
+      try_prepend_data_dir (g_get_user_data_dir ());
 
       if ((path = g_getenv ("GSETTINGS_SCHEMA_DIR")) != NULL)
         try_prepend_dir (path);
@@ -372,11 +376,11 @@ initialise_schema_sources (void)
  * lookups performed against the default source should probably be done
  * recursively.
  *
- * Returns: (transfer none): the default schema source
+ * Returns: (transfer none) (nullable): the default schema source
  *
  * Since: 2.32
  **/
- GSettingsSchemaSource *
+GSettingsSchemaSource *
 g_settings_schema_source_get_default (void)
 {
   initialise_schema_sources ();
@@ -781,18 +785,21 @@ g_settings_schema_source_list_schemas (GSettingsSchemaSource   *source,
 
       for (i = 0; list[i]; i++)
         {
-          if (!g_hash_table_lookup (single, list[i]) &&
-              !g_hash_table_lookup (reloc, list[i]))
+          if (!g_hash_table_contains (single, list[i]) &&
+              !g_hash_table_contains (reloc, list[i]))
             {
+              gchar *schema;
               GvdbTable *table;
+
+              schema = g_strdup (list[i]);
 
               table = gvdb_table_get_table (s->table, list[i]);
               g_assert (table != NULL);
 
               if (gvdb_table_has_value (table, ".path"))
-                g_hash_table_insert (single, g_strdup (list[i]), NULL);
+                g_hash_table_add (single, schema);
               else
-                g_hash_table_insert (reloc, g_strdup (list[i]), NULL);
+                g_hash_table_add (reloc, schema);
 
               gvdb_table_unref (table);
             }

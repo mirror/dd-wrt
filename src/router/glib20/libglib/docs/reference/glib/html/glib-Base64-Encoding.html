@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Base64 Encoding: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Unicode-Manipulation.html" title="Unicode Manipulation">
@@ -203,6 +203,8 @@ g_base64_encode_close (<em class="parameter"><code><a class="link" href="glib-Ba
 <p>The output buffer must be large enough to fit all the data that will
 be written to it. It will need up to 4 bytes, or up to 5 bytes if
 line-breaking is enabled.</p>
+<p>The <em class="parameter"><code>out</code></em>
+ array will not be automatically nul-terminated.</p>
 <div class="refsect3">
 <a name="g-base64-encode-close.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -299,6 +301,7 @@ be written to it. Since base64 encodes 3 bytes in 4 chars you need
 at least: (<em class="parameter"><code>len</code></em>
  / 4) * 3 + 3 bytes (+ 3 may be needed in case of non-zero
 state).</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-base64-decode-step.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -322,7 +325,7 @@ data to decode</p></td>
 <tr>
 <td class="parameter_name"><p>out</p></td>
 <td class="parameter_description"><p> output buffer. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> guint8]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Out parameter, where caller must allocate storage."><span class="acronym">out caller-allocates</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> guint8]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>state</p></td>

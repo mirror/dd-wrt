@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GOutputStream: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="streaming.html" title="Streaming I/O">
 <link rel="prev" href="GInputStream.html" title="GInputStream">
@@ -355,7 +355,7 @@ partial result will be returned, without an error.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional cancellable object. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -431,12 +431,12 @@ language then you must write your own loop around
 <td class="parameter_name"><p>bytes_written</p></td>
 <td class="parameter_description"><p> location to store the number of bytes that was
 written to the stream. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -510,7 +510,7 @@ until <em class="parameter"><code>callback</code></em>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
@@ -568,7 +568,7 @@ language then you must write your own loop around
 <tr>
 <td class="parameter_name"><p>bytes_written</p></td>
 <td class="parameter_description"><p> location to store the number of bytes that was written to the stream. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -621,7 +621,7 @@ g_output_stream_splice (<em class="parameter"><code><a class="link" href="GOutpu
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -674,7 +674,7 @@ was cancelled, the error <a class="link" href="gio-GIOError.html#G-IO-ERROR-CANC
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional cancellable object. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -737,7 +737,7 @@ data will reach the target.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional cancellable object. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -787,7 +787,7 @@ method will just wait until this changes.</p>
 <p>Any outstanding I/O request with higher priority (lower numerical 
 value) will be executed before an outstanding request with lower 
 priority. Default priority is <a href="../glib-The-Main-Event-Loop.html#G-PRIORITY-DEFAULT:CAPS"><code class="literal">G_PRIORITY_DEFAULT</code></a>.</p>
-<p>The asyncronous methods have a default fallback that uses threads 
+<p>The asynchronous methods have a default fallback that uses threads
 to implement asynchronicity, so they are optional for inheriting 
 classes. However, if you override one you must override all.</p>
 <p>For the synchronous, blocking version of this function, see 
@@ -830,7 +830,7 @@ the contents (without copying) for the duration of the call.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
@@ -937,7 +937,7 @@ result of the operation.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
@@ -1037,7 +1037,7 @@ result of the operation.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
@@ -1109,7 +1109,7 @@ related to it. When the operation is finished <em class="parameter"><code>callba
 called. You can then call <a class="link" href="GOutputStream.html#g-output-stream-close-finish" title="g_output_stream_close_finish ()"><code class="function">g_output_stream_close_finish()</code></a> to get 
 the result of the operation.</p>
 <p>For behaviour details see <a class="link" href="GOutputStream.html#g-output-stream-close" title="g_output_stream_close ()"><code class="function">g_output_stream_close()</code></a>.</p>
-<p>The asyncronous methods have a default fallback that uses threads 
+<p>The asynchronous methods have a default fallback that uses threads
 to implement asynchronicity, so they are optional for inheriting 
 classes. However, if you override one you must override all.</p>
 <div class="refsect3">
@@ -1134,7 +1134,7 @@ classes. However, if you override one you must override all.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional cancellable object. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
@@ -1254,7 +1254,7 @@ is closed. <a href="../glib-Standard-Macros.html#FALSE:CAPS"><code class="litera
 <a name="g-output-stream-has-pending"></a><h3>g_output_stream_has_pending ()</h3>
 <pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_output_stream_has_pending (<em class="parameter"><code><a class="link" href="GOutputStream.html" title="GOutputStream"><span class="type">GOutputStream</span></a> *stream</code></em>);</pre>
-<p>Checks if an ouput stream has pending actions.</p>
+<p>Checks if an output stream has pending actions.</p>
 <div class="refsect3">
 <a name="g-output-stream-has-pending.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1379,7 +1379,7 @@ data in the output stream.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional cancellable object. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -1442,7 +1442,7 @@ data in the output stream.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
@@ -1539,12 +1539,12 @@ or <a class="link" href="GOutputStream.html#g-output-stream-write-all" title="g_
 <td class="parameter_name"><p>bytes_written</p></td>
 <td class="parameter_description"><p> location to store the number of bytes that was
 written to the stream. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -1611,12 +1611,12 @@ or <a class="link" href="GOutputStream.html#g-output-stream-write-all" title="g_
 <td class="parameter_name"><p>bytes_written</p></td>
 <td class="parameter_description"><p> location to store the number of bytes that was
 written to the stream. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>

@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -744,7 +744,7 @@ g_settings_class_init (GSettingsClass *class)
   /**
    * GSettings::change-event:
    * @settings: the object on which the signal was emitted
-   * @keys: (array length=n_keys) (element-type GQuark) (allow-none):
+   * @keys: (array length=n_keys) (element-type GQuark) (nullable):
    *        an array of #GQuarks for the changed keys, or %NULL
    * @n_keys: the length of the @keys array, or 0
    *
@@ -830,7 +830,7 @@ g_settings_class_init (GSettingsClass *class)
                   NULL, G_TYPE_BOOLEAN, 1, G_TYPE_UINT);
 
   /**
-   * GSettings:context:
+   * GSettings:backend:
    *
    * The name of the context that the settings are stored in.
    */
@@ -1084,8 +1084,8 @@ g_settings_new_with_backend_and_path (const gchar      *schema_id,
 /**
  * g_settings_new_full:
  * @schema: a #GSettingsSchema
- * @backend: (allow-none): a #GSettingsBackend
- * @path: (allow-none): the path to use
+ * @backend: (nullable): a #GSettingsBackend
+ * @path: (nullable): the path to use
  *
  * Creates a new #GSettings object with a given schema, backend and
  * path.
@@ -1238,7 +1238,7 @@ g_settings_get_value (GSettings   *settings,
  * It is a programmer error to give a @key that isn't contained in the
  * schema for @settings.
  *
- * Returns: (allow-none) (transfer full): the user's value, if set
+ * Returns: (nullable) (transfer full): the user's value, if set
  *
  * Since: 2.40
  **/
@@ -1286,7 +1286,7 @@ g_settings_get_user_value (GSettings   *settings,
  * It is a programmer error to give a @key that isn't contained in the
  * schema for @settings.
  *
- * Returns: (allow-none) (transfer full): the default value
+ * Returns: (nullable) (transfer full): the default value
  *
  * Since: 2.40
  **/
@@ -1571,6 +1571,7 @@ g_settings_set_value (GSettings   *settings,
   g_return_val_if_fail (G_IS_SETTINGS (settings), FALSE);
   g_return_val_if_fail (key != NULL, FALSE);
 
+  g_variant_ref_sink (value);
   g_settings_schema_key_init (&skey, settings->priv->schema, key);
 
   if (!g_settings_schema_key_type_check (&skey, value))
@@ -1580,22 +1581,23 @@ g_settings_set_value (GSettings   *settings,
                   g_settings_schema_get_id (settings->priv->schema),
                   g_variant_type_peek_string (skey.type),
                   g_variant_get_type_string (value));
-
-        return FALSE;
-      }
-
-  if (!g_settings_schema_key_range_check (&skey, value))
+      success = FALSE;
+    }
+  else if (!g_settings_schema_key_range_check (&skey, value))
     {
       g_warning ("g_settings_set_value: value for key '%s' in schema '%s' "
                  "is outside of valid range",
                  key,
                  g_settings_schema_get_id (settings->priv->schema));
-
-        return FALSE;
+      success = FALSE;
+    }
+  else
+    {
+      success = g_settings_write_to_backend (settings, &skey, value);
     }
 
-  success = g_settings_write_to_backend (settings, &skey, value);
   g_settings_schema_key_clear (&skey);
+  g_variant_unref (value);
 
   return success;
 }
@@ -2194,7 +2196,7 @@ g_settings_get_strv (GSettings   *settings,
  * g_settings_set_strv:
  * @settings: a #GSettings object
  * @key: the name of the key to set
- * @value: (allow-none) (array zero-terminated=1): the value to set it to, or %NULL
+ * @value: (nullable) (array zero-terminated=1): the value to set it to, or %NULL
  *
  * Sets @key in @settings to @value.
  *
@@ -2352,8 +2354,7 @@ g_settings_reset (GSettings *settings,
 /**
  * g_settings_sync:
  *
- * Ensures that all pending operations for the given are complete for
- * the default backend.
+ * Ensures that all pending operations are complete for the default backend.
  *
  * Writes made to a #GSettings are handled asynchronously.  For this
  * reason, it is very unlikely that the changes have it to disk by the
@@ -2766,7 +2767,7 @@ g_settings_bind_invert_boolean_set_mapping (const GValue       *value,
  * a boolean property by that name). See g_settings_bind_writable()
  * for more details about writable bindings.
  *
- * Note that the lifecycle of the binding is tied to the object,
+ * Note that the lifecycle of the binding is tied to @object,
  * and that you can have only one binding per object property.
  * If you bind the same property twice on the same object, the second
  * binding overrides the first one.
@@ -2816,7 +2817,7 @@ g_settings_bind (GSettings          *settings,
  * The binding uses the provided mapping functions to map between
  * settings and property values.
  *
- * Note that the lifecycle of the binding is tied to the object,
+ * Note that the lifecycle of the binding is tied to @object,
  * and that you can have only one binding per object property.
  * If you bind the same property twice on the same object, the second
  * binding overrides the first one.
@@ -3033,7 +3034,7 @@ g_settings_binding_writable_changed (GSettings   *settings,
  * value as it passes from the setting to the object, i.e. @property
  * will be set to %TRUE if the key is not writable.
  *
- * Note that the lifecycle of the binding is tied to the object,
+ * Note that the lifecycle of the binding is tied to @object,
  * and that you can have only one binding per object property.
  * If you bind the same property twice on the same object, the second
  * binding overrides the first one.
@@ -3271,6 +3272,7 @@ g_settings_action_finalize (GObject *object)
 
   g_signal_handlers_disconnect_by_data (gsa->settings, gsa);
   g_object_unref (gsa->settings);
+  g_settings_schema_key_clear (&gsa->key);
 
   G_OBJECT_CLASS (g_settings_action_parent_class)
     ->finalize (object);

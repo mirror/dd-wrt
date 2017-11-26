@@ -6,7 +6,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -82,7 +82,7 @@
  * Since: 2.28
  */
 
-G_DEFINE_INTERFACE (GTlsBackend, g_tls_backend, G_TYPE_OBJECT);
+G_DEFINE_INTERFACE (GTlsBackend, g_tls_backend, G_TYPE_OBJECT)
 
 static void
 g_tls_backend_default_init (GTlsBackendInterface *iface)
@@ -143,10 +143,8 @@ g_tls_backend_supports_dtls (GTlsBackend *backend)
 {
   if (G_TLS_BACKEND_GET_INTERFACE (backend)->supports_dtls)
     return G_TLS_BACKEND_GET_INTERFACE (backend)->supports_dtls (backend);
-  else if (G_IS_DUMMY_TLS_BACKEND (backend))
-    return FALSE;
-  else
-    return TRUE;
+
+  return FALSE;
 }
 
 /**
@@ -230,14 +228,22 @@ g_tls_backend_get_server_connection_type (GTlsBackend *backend)
  * Gets the #GType of @backend’s #GDtlsClientConnection implementation.
  *
  * Returns: the #GType of @backend’s #GDtlsClientConnection
- *   implementation.
+ *   implementation, or %G_TYPE_INVALID if this backend doesn’t support DTLS.
  *
  * Since: 2.48
  */
 GType
 g_tls_backend_get_dtls_client_connection_type (GTlsBackend *backend)
 {
-  return G_TLS_BACKEND_GET_INTERFACE (backend)->get_dtls_client_connection_type ();
+  GTlsBackendInterface *iface;
+
+  g_return_val_if_fail (G_IS_TLS_BACKEND (backend), G_TYPE_INVALID);
+
+  iface = G_TLS_BACKEND_GET_INTERFACE (backend);
+  if (iface->get_dtls_client_connection_type == NULL)
+    return G_TYPE_INVALID;
+
+  return iface->get_dtls_client_connection_type ();
 }
 
 /**
@@ -247,14 +253,22 @@ g_tls_backend_get_dtls_client_connection_type (GTlsBackend *backend)
  * Gets the #GType of @backend’s #GDtlsServerConnection implementation.
  *
  * Returns: the #GType of @backend’s #GDtlsServerConnection
- *   implementation.
+ *   implementation, or %G_TYPE_INVALID if this backend doesn’t support DTLS.
  *
  * Since: 2.48
  */
 GType
 g_tls_backend_get_dtls_server_connection_type (GTlsBackend *backend)
 {
-  return G_TLS_BACKEND_GET_INTERFACE (backend)->get_dtls_server_connection_type ();
+  GTlsBackendInterface *iface;
+
+  g_return_val_if_fail (G_IS_TLS_BACKEND (backend), G_TYPE_INVALID);
+
+  iface = G_TLS_BACKEND_GET_INTERFACE (backend);
+  if (iface->get_dtls_server_connection_type == NULL)
+    return G_TYPE_INVALID;
+
+  return iface->get_dtls_server_connection_type ();
 }
 
 /**

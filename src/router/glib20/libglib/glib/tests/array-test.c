@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -548,6 +548,59 @@ pointer_array_sort_with_data (void)
 }
 
 static void
+pointer_array_find_empty (void)
+{
+  GPtrArray *array;
+  guint idx;
+
+  array = g_ptr_array_new ();
+
+  g_assert_false (g_ptr_array_find (array, "some-value", NULL));  /* NULL index */
+  g_assert_false (g_ptr_array_find (array, "some-value", &idx));  /* non-NULL index */
+  g_assert_false (g_ptr_array_find_with_equal_func (array, "some-value", g_str_equal, NULL));  /* NULL index */
+  g_assert_false (g_ptr_array_find_with_equal_func (array, "some-value", g_str_equal, &idx));  /* non-NULL index */
+
+  g_ptr_array_free (array, TRUE);
+}
+
+static void
+pointer_array_find_non_empty (void)
+{
+  GPtrArray *array;
+  guint idx;
+  const gchar *str_pointer = "static-string";
+
+  array = g_ptr_array_new ();
+
+  g_ptr_array_add (array, "some");
+  g_ptr_array_add (array, "random");
+  g_ptr_array_add (array, "values");
+  g_ptr_array_add (array, "some");
+  g_ptr_array_add (array, "duplicated");
+  g_ptr_array_add (array, (gpointer) str_pointer);
+
+  g_assert_true (g_ptr_array_find_with_equal_func (array, "random", g_str_equal, NULL));  /* NULL index */
+  g_assert_true (g_ptr_array_find_with_equal_func (array, "random", g_str_equal, &idx));  /* non-NULL index */
+  g_assert_cmpuint (idx, ==, 1);
+
+  g_assert_true (g_ptr_array_find_with_equal_func (array, "some", g_str_equal, &idx));  /* duplicate element */
+  g_assert_cmpuint (idx, ==, 0);
+
+  g_assert_false (g_ptr_array_find_with_equal_func (array, "nope", g_str_equal, NULL));
+
+  g_assert_true (g_ptr_array_find_with_equal_func (array, str_pointer, g_str_equal, &idx));
+  g_assert_cmpuint (idx, ==, 5);
+  idx = G_MAXUINT;
+  g_assert_true (g_ptr_array_find_with_equal_func (array, str_pointer, NULL, &idx));  /* NULL equal func */
+  g_assert_cmpuint (idx, ==, 5);
+  idx = G_MAXUINT;
+  g_assert_true (g_ptr_array_find (array, str_pointer, &idx));  /* NULL equal func */
+  g_assert_cmpuint (idx, ==, 5);
+
+  g_ptr_array_free (array, TRUE);
+}
+
+static void
 byte_array_append (void)
 {
   GByteArray *gbarray;
@@ -834,7 +887,7 @@ main (int argc, char *argv[])
 {
   g_test_init (&argc, &argv, NULL);
 
-  g_test_bug_base ("http://bugs.gnome.org/");
+  g_test_bug_base ("https://bugzilla.gnome.org/");
 
   /* array tests */
   g_test_add_func ("/array/append", array_append);
@@ -854,6 +907,8 @@ main (int argc, char *argv[])
   g_test_add_func ("/pointerarray/free-func", pointer_array_free_func);
   g_test_add_func ("/pointerarray/sort", pointer_array_sort);
   g_test_add_func ("/pointerarray/sort-with-data", pointer_array_sort_with_data);
+  g_test_add_func ("/pointerarray/find/empty", pointer_array_find_empty);
+  g_test_add_func ("/pointerarray/find/non-empty", pointer_array_find_non_empty);
 
   /* byte arrays */
   g_test_add_func ("/bytearray/append", byte_array_append);

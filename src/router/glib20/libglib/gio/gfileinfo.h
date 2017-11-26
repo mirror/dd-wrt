@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -473,15 +473,15 @@ typedef struct _GFileInfoClass   GFileInfoClass;
  *
  * A key in the "time" namespace for getting the time the file was last
  * modified. Corresponding #GFileAttributeType is
- * %G_FILE_ATTRIBUTE_TYPE_UINT64, and contains the UNIX time since the
- * file was modified.
+ * %G_FILE_ATTRIBUTE_TYPE_UINT64, and contains the time since the
+ * file was modified, in seconds since the UNIX epoch.
  **/
 #define G_FILE_ATTRIBUTE_TIME_MODIFIED "time::modified"           /* uint64 */
 
 /**
  * G_FILE_ATTRIBUTE_TIME_MODIFIED_USEC:
  *
- * A key in the "time" namespace for getting the miliseconds of the time
+ * A key in the "time" namespace for getting the microseconds of the time
  * the file was last modified. This should be used in conjunction with
  * #G_FILE_ATTRIBUTE_TIME_MODIFIED. Corresponding #GFileAttributeType is
  * %G_FILE_ATTRIBUTE_TYPE_UINT32.
@@ -493,8 +493,8 @@ typedef struct _GFileInfoClass   GFileInfoClass;
  *
  * A key in the "time" namespace for getting the time the file was last
  * accessed. Corresponding #GFileAttributeType is
- * %G_FILE_ATTRIBUTE_TYPE_UINT64, and contains the UNIX time since the
- * file was last accessed.
+ * %G_FILE_ATTRIBUTE_TYPE_UINT64, and contains the time since the
+ * file was last accessed, in seconds since the UNIX epoch.
  **/
 #define G_FILE_ATTRIBUTE_TIME_ACCESS "time::access"               /* uint64 */
 
@@ -513,7 +513,8 @@ typedef struct _GFileInfoClass   GFileInfoClass;
  *
  * A key in the "time" namespace for getting the time the file was last
  * changed. Corresponding #GFileAttributeType is %G_FILE_ATTRIBUTE_TYPE_UINT64,
- * and contains the UNIX time since the file was last changed.
+ * and contains the time since the file was last changed, in seconds since the
+ * UNIX epoch.
  *
  * This corresponds to the traditional UNIX ctime.
  **/
@@ -534,7 +535,8 @@ typedef struct _GFileInfoClass   GFileInfoClass;
  *
  * A key in the "time" namespace for getting the time the file was created.
  * Corresponding #GFileAttributeType is %G_FILE_ATTRIBUTE_TYPE_UINT64,
- * and contains the UNIX time since the file was created.
+ * and contains the time since the file was created, in seconds since the UNIX
+ * epoch.
  *
  * This corresponds to the NTFS ctime.
  **/
@@ -836,7 +838,7 @@ typedef struct _GFileInfoClass   GFileInfoClass;
  * G_FILE_ATTRIBUTE_TRASH_ITEM_COUNT:
  *
  * A key in the "trash" namespace.  When requested against
- * "trash:///" returns the number of (toplevel) items in the trash folder.
+ * `trash:///` returns the number of (toplevel) items in the trash folder.
  * Corresponding #GFileAttributeType is %G_FILE_ATTRIBUTE_TYPE_UINT32.
  **/
 #define G_FILE_ATTRIBUTE_TRASH_ITEM_COUNT "trash::item-count"     /* uint32 */
@@ -845,7 +847,7 @@ typedef struct _GFileInfoClass   GFileInfoClass;
  * G_FILE_ATTRIBUTE_TRASH_ORIG_PATH:
  *
  * A key in the "trash" namespace.  When requested against
- * items in "trash:///", will return the original path to the file before it
+ * items in `trash:///`, will return the original path to the file before it
  * was trashed. Corresponding #GFileAttributeType is
  * %G_FILE_ATTRIBUTE_TYPE_BYTE_STRING.
  *
@@ -857,13 +859,24 @@ typedef struct _GFileInfoClass   GFileInfoClass;
  * G_FILE_ATTRIBUTE_TRASH_DELETION_DATE:
  *
  * A key in the "trash" namespace.  When requested against
- * items in "trash:///", will return the date and time when the file
+ * items in `trash:///`, will return the date and time when the file
  * was trashed. The format of the returned string is YYYY-MM-DDThh:mm:ss.
  * Corresponding #GFileAttributeType is %G_FILE_ATTRIBUTE_TYPE_STRING.
  *
  * Since: 2.24
  **/
 #define G_FILE_ATTRIBUTE_TRASH_DELETION_DATE "trash::deletion-date"  /* string */
+
+/**
+ * G_FILE_ATTRIBUTE_RECENT_MODIFIED:
+ *
+ * A key in the "recent" namespace for getting time, when the metadata for the
+ * file in `recent:///` was last changed. Corresponding #GFileAttributeType is
+ * %G_FILE_ATTRIBUTE_TYPE_INT64.
+ *
+ * Since: 2.52
+ **/
+#define G_FILE_ATTRIBUTE_RECENT_MODIFIED "recent::modified"          /* int64 (time_t) */
 
 GLIB_AVAILABLE_IN_ALL
 GType              g_file_info_get_type                  (void) G_GNUC_CONST;

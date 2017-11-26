@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -1632,7 +1632,7 @@ g_type_interface_add_prerequisite (GType interface_type,
 /**
  * g_type_interface_prerequisites:
  * @interface_type: an interface type
- * @n_prerequisites: (out) (allow-none): location to return the number
+ * @n_prerequisites: (out) (optional): location to return the number
  *     of prerequisites, or %NULL
  *
  * Returns the prerequisites of an interfaces type.
@@ -3528,7 +3528,7 @@ g_type_is_a (GType type,
 /**
  * g_type_children:
  * @type: the parent type
- * @n_children: (out) (allow-none): location to store the length of
+ * @n_children: (out) (optional): location to store the length of
  *     the returned array, or %NULL
  *
  * Return a newly allocated and 0-terminated array of type IDs, listing
@@ -3550,7 +3550,8 @@ g_type_children (GType  type,
       
       G_READ_LOCK (&type_rw_lock);	/* ->children is relocatable */
       children = g_new (GType, node->n_children + 1);
-      memcpy (children, node->children, sizeof (GType) * node->n_children);
+      if (node->n_children != 0)
+        memcpy (children, node->children, sizeof (GType) * node->n_children);
       children[node->n_children] = 0;
       
       if (n_children)
@@ -3571,7 +3572,7 @@ g_type_children (GType  type,
 /**
  * g_type_interfaces:
  * @type: the type to list interface types for
- * @n_interfaces: (out) (allow-none): location to store the length of
+ * @n_interfaces: (out) (optional): location to store the length of
  *     the returned array, or %NULL
  *
  * Return a newly allocated and 0-terminated array of type IDs, listing

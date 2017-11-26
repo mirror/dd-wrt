@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -99,7 +99,7 @@ g_bytes_new (gconstpointer data,
 /**
  * g_bytes_new_take:
  * @data: (transfer full) (array length=size) (element-type guint8) (nullable):
-          the data to be used for the bytes
+ *        the data to be used for the bytes
  * @size: the size of @data
  *
  * Creates a new #GBytes from @data.
@@ -130,7 +130,7 @@ g_bytes_new_take (gpointer data,
 /**
  * g_bytes_new_static: (skip)
  * @data: (transfer full) (array length=size) (element-type guint8) (nullable):
-          the data to be used for the bytes
+ *        the data to be used for the bytes
  * @size: the size of @data
  *
  * Creates a new #GBytes from static data.
@@ -152,7 +152,7 @@ g_bytes_new_static (gconstpointer data,
 /**
  * g_bytes_new_with_free_func: (skip)
  * @data: (array length=size) (element-type guint8) (nullable):
-          the data to be used for the bytes
+ *        the data to be used for the bytes
  * @size: the size of @data
  * @free_func: the function to call to release the data
  * @user_data: data to pass to @free_func
@@ -407,7 +407,8 @@ try_steal_and_unref (GBytes         *bytes,
 {
   gpointer result;
 
-  if (bytes->free_func != free_func || bytes->data == NULL)
+  if (bytes->free_func != free_func || bytes->data == NULL ||
+      bytes->user_data != bytes->data)
     return NULL;
 
   /* Are we the only reference? */

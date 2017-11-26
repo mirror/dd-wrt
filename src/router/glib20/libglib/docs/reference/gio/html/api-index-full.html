@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Index: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="index.html" title="GIO Reference Manual">
 <link rel="prev" href="gio-hierarchy.html" title="Object Hierarchy">
@@ -1117,6 +1117,10 @@
 <dd></dd>
 <dt>
 <a class="link" href="gio-GContentType.html#g-content-type-is-a" title="g_content_type_is_a ()">g_content_type_is_a</a>, function in <a class="link" href="gio-GContentType.html" title="GContentType">GContentType</a>
+</dt>
+<dd></dd>
+<dt>
+<a class="link" href="gio-GContentType.html#g-content-type-is-mime-type" title="g_content_type_is_mime_type ()">g_content_type_is_mime_type</a>, function in <a class="link" href="gio-GContentType.html" title="GContentType">GContentType</a>
 </dt>
 <dd></dd>
 <dt>
@@ -3747,6 +3751,10 @@
 </dt>
 <dd></dd>
 <dt>
+<a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-RECENT-MODIFIED:CAPS" title="G_FILE_ATTRIBUTE_RECENT_MODIFIED">G_FILE_ATTRIBUTE_RECENT_MODIFIED</a>, macro in <a class="link" href="GFileInfo.html" title="GFileInfo">GFileInfo</a>
+</dt>
+<dd></dd>
+<dt>
 <a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-SELINUX-CONTEXT:CAPS" title="G_FILE_ATTRIBUTE_SELINUX_CONTEXT">G_FILE_ATTRIBUTE_SELINUX_CONTEXT</a>, macro in <a class="link" href="GFileInfo.html" title="GFileInfo">GFileInfo</a>
 </dt>
 <dd></dd>
@@ -4423,6 +4431,18 @@
 </dt>
 <dd></dd>
 <dt>
+<a class="link" href="GFile.html#g-file-load-bytes" title="g_file_load_bytes ()">g_file_load_bytes</a>, function in <a class="link" href="GFile.html" title="GFile">GFile</a>
+</dt>
+<dd></dd>
+<dt>
+<a class="link" href="GFile.html#g-file-load-bytes-async" title="g_file_load_bytes_async ()">g_file_load_bytes_async</a>, function in <a class="link" href="GFile.html" title="GFile">GFile</a>
+</dt>
+<dd></dd>
+<dt>
+<a class="link" href="GFile.html#g-file-load-bytes-finish" title="g_file_load_bytes_finish ()">g_file_load_bytes_finish</a>, function in <a class="link" href="GFile.html" title="GFile">GFile</a>
+</dt>
+<dd></dd>
+<dt>
 <a class="link" href="GFile.html#g-file-load-contents" title="g_file_load_contents ()">g_file_load_contents</a>, function in <a class="link" href="GFile.html" title="GFile">GFile</a>
 </dt>
 <dd></dd>
@@ -4520,6 +4540,10 @@
 <dd></dd>
 <dt>
 <a class="link" href="GFile.html#g-file-move" title="g_file_move ()">g_file_move</a>, function in <a class="link" href="GFile.html" title="GFile">GFile</a>
+</dt>
+<dd></dd>
+<dt>
+<a class="link" href="GFile.html#g-file-new-build-filename" title="g_file_new_build_filename ()">g_file_new_build_filename</a>, function in <a class="link" href="GFile.html" title="GFile">GFile</a>
 </dt>
 <dd></dd>
 <dt>
@@ -8140,7 +8164,15 @@ g_native_socket_address_new, function in GNativeSocketAddress
 </dt>
 <dd></dd>
 <dt>
+<a class="link" href="GSocket.html#g-socket-join-multicast-group-ssm" title="g_socket_join_multicast_group_ssm ()">g_socket_join_multicast_group_ssm</a>, function in <a class="link" href="GSocket.html" title="GSocket">GSocket</a>
+</dt>
+<dd></dd>
+<dt>
 <a class="link" href="GSocket.html#g-socket-leave-multicast-group" title="g_socket_leave_multicast_group ()">g_socket_leave_multicast_group</a>, function in <a class="link" href="GSocket.html" title="GSocket">GSocket</a>
+</dt>
+<dd></dd>
+<dt>
+<a class="link" href="GSocket.html#g-socket-leave-multicast-group-ssm" title="g_socket_leave_multicast_group_ssm ()">g_socket_leave_multicast_group_ssm</a>, function in <a class="link" href="GSocket.html" title="GSocket">GSocket</a>
 </dt>
 <dd></dd>
 <dt>
@@ -9414,7 +9446,7 @@ g_native_socket_address_new, function in GNativeSocketAddress
 </dt>
 <dd></dd>
 <dt>
-<a class="link" href="gio-Unix-Mounts.html#GUnixMountEntry" title="GUnixMountEntry">GUnixMountEntry</a>, struct in <a class="link" href="gio-Unix-Mounts.html" title="Unix Mounts">Unix Mounts</a>
+<a class="link" href="gio-Unix-Mounts.html#GUnixMountEntry-struct" title="GUnixMountEntry">GUnixMountEntry</a>, struct in <a class="link" href="gio-Unix-Mounts.html" title="Unix Mounts">Unix Mounts</a>
 </dt>
 <dd></dd>
 <dt>
@@ -9430,7 +9462,7 @@ g_native_socket_address_new, function in GNativeSocketAddress
 </dt>
 <dd></dd>
 <dt>
-<a class="link" href="gio-Unix-Mounts.html#GUnixMountPoint" title="GUnixMountPoint">GUnixMountPoint</a>, struct in <a class="link" href="gio-Unix-Mounts.html" title="Unix Mounts">Unix Mounts</a>
+<a class="link" href="gio-Unix-Mounts.html#GUnixMountPoint-struct" title="GUnixMountPoint">GUnixMountPoint</a>, struct in <a class="link" href="gio-Unix-Mounts.html" title="Unix Mounts">Unix Mounts</a>
 </dt>
 <dd></dd>
 <dt>
@@ -9586,6 +9618,14 @@ g_native_socket_address_new, function in GNativeSocketAddress
 </dt>
 <dd></dd>
 <dt>
+<a class="link" href="gio-Unix-Mounts.html#g-unix-is-system-device-path" title="g_unix_is_system_device_path ()">g_unix_is_system_device_path</a>, function in <a class="link" href="gio-Unix-Mounts.html" title="Unix Mounts">Unix Mounts</a>
+</dt>
+<dd></dd>
+<dt>
+<a class="link" href="gio-Unix-Mounts.html#g-unix-is-system-fs-type" title="g_unix_is_system_fs_type ()">g_unix_is_system_fs_type</a>, function in <a class="link" href="gio-Unix-Mounts.html" title="Unix Mounts">Unix Mounts</a>
+</dt>
+<dd></dd>
+<dt>
 <a class="link" href="gio-Unix-Mounts.html#g-unix-mounts-changed-since" title="g_unix_mounts_changed_since ()">g_unix_mounts_changed_since</a>, function in <a class="link" href="gio-Unix-Mounts.html" title="Unix Mounts">Unix Mounts</a>
 </dt>
 <dd></dd>
@@ -9599,6 +9639,10 @@ g_native_socket_address_new, function in GNativeSocketAddress
 <dd></dd>
 <dt>
 <a class="link" href="gio-Unix-Mounts.html#g-unix-mount-compare" title="g_unix_mount_compare ()">g_unix_mount_compare</a>, function in <a class="link" href="gio-Unix-Mounts.html" title="Unix Mounts">Unix Mounts</a>
+</dt>
+<dd></dd>
+<dt>
+<a class="link" href="gio-Unix-Mounts.html#g-unix-mount-copy" title="g_unix_mount_copy ()">g_unix_mount_copy</a>, function in <a class="link" href="gio-Unix-Mounts.html" title="Unix Mounts">Unix Mounts</a>
 </dt>
 <dd></dd>
 <dt>
@@ -9667,6 +9711,10 @@ g_native_socket_address_new, function in GNativeSocketAddress
 <dd></dd>
 <dt>
 <a class="link" href="gio-Unix-Mounts.html#g-unix-mount-point-compare" title="g_unix_mount_point_compare ()">g_unix_mount_point_compare</a>, function in <a class="link" href="gio-Unix-Mounts.html" title="Unix Mounts">Unix Mounts</a>
+</dt>
+<dd></dd>
+<dt>
+<a class="link" href="gio-Unix-Mounts.html#g-unix-mount-point-copy" title="g_unix_mount_point_copy ()">g_unix_mount_point_copy</a>, function in <a class="link" href="gio-Unix-Mounts.html" title="Unix Mounts">Unix Mounts</a>
 </dt>
 <dd></dd>
 <dt>

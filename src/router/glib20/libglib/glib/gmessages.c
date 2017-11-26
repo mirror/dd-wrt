@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -94,7 +94,7 @@
  *  * Color output needed to be supported on the terminal, to make reading
  *    through logs easier.
  *
- * ## Using Structured Logging
+ * ## Using Structured Logging ## {#using-structured-logging}
  *
  * To use structured logging (rather than the old-style logging), either use
  * the g_log_structured() and g_log_structured_array() functions; or define
@@ -104,7 +104,7 @@
  * You do not need to define `G_LOG_USE_STRUCTURED` to use g_log_structured(),
  * but it is a good idea to avoid confusion.
  *
- * ## Log Domains
+ * ## Log Domains ## {#log-domains}
  *
  * Log domains may be used to broadly split up the origins of log messages.
  * Typically, there are one or a few log domains per application or library.
@@ -116,7 +116,7 @@
  * application or library name, optionally followed by a hyphen and a sub-domain
  * name. For example, `bloatpad` or `bloatpad-io`.
  *
- * ## Debug Message Output
+ * ## Debug Message Output ## {#debug-message-output}
  *
  * The default log functions (g_log_default_handler() for the old-style API and
  * g_log_writer_default() for the structured API) both drop debug and
@@ -129,7 +129,7 @@
  * so that developers can re-use the same debugging techniques and tools across
  * projects.
  *
- * ## Testing for Messages
+ * ## Testing for Messages ## {#testing-for-messages}
  *
  * With the old g_log() API, g_test_expect_message() and
  * g_test_assert_expected_messages() could be used in simple cases to check
@@ -175,7 +175,7 @@
 #include <locale.h>
 #include <errno.h>
 
-#ifdef __linux__
+#if defined(__linux__) && !defined(__BIONIC__)
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -189,6 +189,7 @@
 #include "gcharset.h"
 #include "gconvert.h"
 #include "genviron.h"
+#include "gmain.h"
 #include "gmem.h"
 #include "gprintfint.h"
 #include "gtestutils.h"
@@ -204,25 +205,100 @@
 #ifdef G_OS_WIN32
 #include <process.h>		/* For getpid() */
 #include <io.h>
-#  define _WIN32_WINDOWS 0x0401 /* to get IsDebuggerPresent */
 #  include <windows.h>
+
+#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#endif
+
+/* XXX: Remove once XP support really dropped */
+#if _WIN32_WINNT < 0x0600
+
+typedef enum _FILE_INFO_BY_HANDLE_CLASS
+{
+  FileBasicInfo                   = 0,
+  FileStandardInfo                = 1,
+  FileNameInfo                    = 2,
+  FileRenameInfo                  = 3,
+  FileDispositionInfo             = 4,
+  FileAllocationInfo              = 5,
+  FileEndOfFileInfo               = 6,
+  FileStreamInfo                  = 7,
+  FileCompressionInfo             = 8,
+  FileAttributeTagInfo            = 9,
+  FileIdBothDirectoryInfo         = 10,
+  FileIdBothDirectoryRestartInfo  = 11,
+  FileIoPriorityHintInfo          = 12,
+  FileRemoteProtocolInfo          = 13,
+  FileFullDirectoryInfo           = 14,
+  FileFullDirectoryRestartInfo    = 15,
+  FileStorageInfo                 = 16,
+  FileAlignmentInfo               = 17,
+  FileIdInfo                      = 18,
+  FileIdExtdDirectoryInfo         = 19,
+  FileIdExtdDirectoryRestartInfo  = 20,
+  MaximumFileInfoByHandlesClass
+} FILE_INFO_BY_HANDLE_CLASS;
+
+typedef struct _FILE_NAME_INFO
+{
+  DWORD FileNameLength;
+  WCHAR FileName[1];
+} FILE_NAME_INFO;
+
+typedef BOOL (WINAPI fGetFileInformationByHandleEx) (HANDLE,
+                                                     FILE_INFO_BY_HANDLE_CLASS,
+                                                     LPVOID,
+                                                     DWORD);
+#endif
+
+#if defined (_MSC_VER) && (_MSC_VER >=1400)
+/* This is ugly, but we need it for isatty() in case we have bad fd's,
+ * otherwise Windows will abort() the program on msvcrt80.dll and later
+ */
+#include <crtdbg.h>
+
+_GLIB_EXTERN void
+myInvalidParameterHandler(const wchar_t *expression,
+                          const wchar_t *function,
+                          const wchar_t *file,
+                          unsigned int   line,
+                          uintptr_t      pReserved)
+{
+}
+#endif
+
+#include "gwin32.h"
 #endif
 
 /**
  * G_LOG_DOMAIN:
  *
- * Defines the log domain.
+ * Defines the log domain. See [Log Domains](#log-domains).
  *
- * For applications, this is typically left as the default %NULL
- * (or "") domain. Libraries should define this so that any messages
+ * Libraries should define this so that any messages
  * which they log can be differentiated from messages from other
  * libraries and application code. But be careful not to define
  * it in any public header files.
  *
- * For example, GTK+ uses this in its Makefile.am:
+ * Log domains must be unique, and it is recommended that they are the
+ * application or library name, optionally followed by a hyphen and a sub-domain
+ * name. For example, `bloatpad` or `bloatpad-io`.
+ *
+ * If undefined, it defaults to the default %NULL (or `""`) log domain; this is
+ * not advisable, as it cannot be filtered against using the `G_MESSAGES_DEBUG`
+ * environment variable.
+ *
+ * For example, GTK+ uses this in its `Makefile.am`:
  * |[
  * AM_CPPFLAGS = -DG_LOG_DOMAIN=\"Gtk\"
  * ]|
+ *
+ * Applications can choose to leave it as the default %NULL (or `""`)
+ * domain. However, defining the domain offers the same advantages as
+ * above.
+ *
+
  */
 
 /**
@@ -304,7 +380,8 @@
  * @...: format string, followed by parameters to insert
  *     into the format string (as with printf())
  *
- * A convenience function/macro to log a warning message.
+ * A convenience function/macro to log a warning message. The message should
+ * typically *not* be translated to the user's language.
  *
  * This is not intended for end user error reporting. Use of #GError is
  * preferred for that instead, as it allows calling functions to perform actions
@@ -312,7 +389,14 @@
  *
  * You can make warnings fatal at runtime by setting the `G_DEBUG`
  * environment variable (see
- * [Running GLib Applications](glib-running.html)).
+ * [Running GLib Applications](glib-running.html)):
+ *
+ * |[
+ *   G_DEBUG=fatal-warnings gdb ./my-program
+ * ]|
+ *
+ * Any unrelated failures can be skipped over in
+ * [gdb](https://www.gnu.org/software/gdb/) using the `continue` command.
  *
  * If g_log_default_handler() is used as the log handler function,
  * a newline character will automatically be appended to @..., and
@@ -337,7 +421,17 @@
  *
  * You can also make critical warnings fatal at runtime by
  * setting the `G_DEBUG` environment variable (see
- * [Running GLib Applications](glib-running.html)).
+ * [Running GLib Applications](glib-running.html)):
+ *
+ * |[
+ *   G_DEBUG=fatal-warnings gdb ./my-program
+ * ]|
+ *
+ * Any unrelated failures can be skipped over in
+ * [gdb](https://www.gnu.org/software/gdb/) using the `continue` command.
+ *
+ * The message should typically *not* be translated to the
+ * user's language.
  *
  * If g_log_default_handler() is used as the log handler function, a new-line
  * character will automatically be appended to @..., and need not be entered
@@ -353,7 +447,8 @@
  * @...: format string, followed by parameters to insert
  *     into the format string (as with printf())
  *
- * A convenience function/macro to log an error message.
+ * A convenience function/macro to log an error message. The message should
+ * typically *not* be translated to the user's language.
  *
  * This is not intended for end user error reporting. Use of #GError is
  * preferred for that instead, as it allows calling functions to perform actions
@@ -401,7 +496,8 @@
  * @...: format string, followed by parameters to insert
  *     into the format string (as with printf())
  *
- * A convenience function/macro to log a debug message.
+ * A convenience function/macro to log a debug message. The message should
+ * typically *not* be translated to the user's language.
  *
  * If g_log_default_handler() is used as the log handler function, a new-line
  * character will automatically be appended to @..., and need not be entered
@@ -487,7 +583,6 @@ _g_log_abort (gboolean breakpoint)
 }
 
 #ifdef G_OS_WIN32
-#  include <windows.h>
 static gboolean win32_keep_fatal_message = FALSE;
 
 /* This default message will usually be overwritten. */
@@ -717,7 +812,7 @@ g_log_set_fatal_mask (const gchar   *log_domain,
 
 /**
  * g_log_set_handler:
- * @log_domain: (allow-none): the log domain, or %NULL for the default ""
+ * @log_domain: (nullable): the log domain, or %NULL for the default ""
  *     application domain
  * @log_levels: the log levels to apply the log handler for.
  *     To handle fatal and recursive messages as well, combine
@@ -770,7 +865,7 @@ g_log_set_handler (const gchar	 *log_domain,
 
 /**
  * g_log_set_handler_full: (rename-to g_log_set_handler)
- * @log_domain: (allow-none): the log domain, or %NULL for the default ""
+ * @log_domain: (nullable): the log domain, or %NULL for the default ""
  *     application domain
  * @log_levels: the log levels to apply the log handler for.
  *     To handle fatal and recursive messages as well, combine
@@ -780,7 +875,7 @@ g_log_set_handler (const gchar	 *log_domain,
  * @user_data: data passed to the log handler
  * @destroy: destroy notify for @user_data, or %NULL
  *
- * Like g_log_sets_handler(), but takes a destroy notify for the @user_data.
+ * Like g_log_set_handler(), but takes a destroy notify for the @user_data.
  *
  * This has no effect if structured logging is enabled; see
  * [Using Structured Logging][using-structured-logging].
@@ -1408,6 +1503,108 @@ color_reset (gboolean use_color)
   return "\033[0m";
 }
 
+#ifdef G_OS_WIN32
+
+/* We might be using tty emulators such as mintty, so try to detect it, if we passed in a valid FD
+ * so we need to check the name of the pipe if _isatty (fd) == 0
+ */
+
+static gboolean
+win32_is_pipe_tty (int fd)
+{
+  gboolean result = FALSE;
+  int error;
+  HANDLE h_fd;
+  FILE_NAME_INFO *info = NULL;
+  gint info_size = sizeof (FILE_NAME_INFO) + sizeof (WCHAR) * MAX_PATH;
+  wchar_t *name = NULL;
+  gint length;
+
+  /* XXX: Remove once XP support really dropped */
+#if _WIN32_WINNT < 0x0600
+  HANDLE h_kerneldll = NULL;
+  fGetFileInformationByHandleEx *GetFileInformationByHandleEx;
+#endif
+
+  h_fd = (HANDLE) _get_osfhandle (fd);
+
+  if (h_fd == INVALID_HANDLE_VALUE || GetFileType (h_fd) != FILE_TYPE_PIPE)
+    goto done_query;
+
+  /* The following check is available on Vista or later, so on XP, no color support */
+  /* mintty uses a pipe, in the form of \{cygwin|msys}-xxxxxxxxxxxxxxxx-ptyN-{from|to}-master */
+
+  /* XXX: Remove once XP support really dropped */
+#if _WIN32_WINNT < 0x0600
+  h_kerneldll = LoadLibraryW (L"kernel32.dll");
+
+  if (h_kerneldll == NULL)
+    goto done_query;
+
+  GetFileInformationByHandleEx =
+    (fGetFileInformationByHandleEx *) GetProcAddress (h_kerneldll, "GetFileInformationByHandleEx");
+
+  if (GetFileInformationByHandleEx == NULL)
+    goto done_query;
+#endif
+
+  info = g_try_malloc (info_size);
+
+  if (info == NULL ||
+      !GetFileInformationByHandleEx (h_fd, FileNameInfo, info, info_size))
+    goto done_query;
+
+  info->FileName[info->FileNameLength / sizeof (WCHAR)] = L'\0';
+  name = info->FileName;
+
+  length = wcslen (L"\\cygwin-");
+  if (wcsncmp (name, L"\\cygwin-", length))
+    {
+      length = wcslen (L"\\msys-");
+      if (wcsncmp (name, L"\\msys-", length))
+        goto done_query;
+    }
+
+  name += length;
+  length = wcsspn (name, L"0123456789abcdefABCDEF");
+  if (length != 16)
+    goto done_query;
+
+  name += length;
+  length = wcslen (L"-pty");
+  if (wcsncmp (name, L"-pty", length))
+    goto done_query;
+
+  name += length;
+  length = wcsspn (name, L"0123456789");
+  if (length != 1)
+    goto done_query;
+
+  name += length;
+  length = wcslen (L"-to-master");
+  if (wcsncmp (name, L"-to-master", length))
+    {
+      length = wcslen (L"-from-master");
+      if (wcsncmp (name, L"-from-master", length))
+        goto done_query;
+    }
+
+  result = TRUE;
+
+done_query:
+  if (info != NULL)
+    g_free (info);
+
+  /* XXX: Remove once XP support really dropped */
+#if _WIN32_WINNT < 0x0600
+  if (h_kerneldll != NULL)
+    FreeLibrary (h_kerneldll);
+#endif
+
+  return result;
+}
+#endif
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
 
@@ -1423,7 +1620,10 @@ color_reset (gboolean use_color)
  * Log a message with structured data. The message will be passed through to
  * the log writer set by the application using g_log_set_writer_func(). If the
  * message is fatal (i.e. its log level is %G_LOG_LEVEL_ERROR), the program will
- * be aborted at the end of this function.
+ * be aborted at the end of this function. If the log writer returns
+ * %G_LOG_WRITER_UNHANDLED (failure), no other fallback writers will be tried.
+ * See the documentation for #GLogWriterFunc for information on chaining
+ * writers.
  *
  * The structured data is provided as key–value pairs, where keys are UTF-8
  * strings, and values are arbitrary pointers — typically pointing to UTF-8
@@ -1488,8 +1688,8 @@ color_reset (gboolean use_color)
  * ]|
  *
  * Note also that, even if no other structured fields are specified, there
- * must always be a "MESSAGE" key before the format string. The "MESSAGE"-format
- * pair has to be the last of the key-value pairs, and "MESSAGE" is the only
+ * must always be a `MESSAGE` key before the format string. The `MESSAGE`-format
+ * pair has to be the last of the key-value pairs, and `MESSAGE` is the only
  * field for which printf()-style formatting is supported.
  *
  * The default writer function for `stdout` and `stderr` will automatically
@@ -1604,7 +1804,7 @@ g_log_structured (const gchar    *log_domain,
 
 /**
  * g_log_variant:
- * @log_domain: (allow-none): log domain, usually %G_LOG_DOMAIN
+ * @log_domain: (nullable): log domain, usually %G_LOG_DOMAIN
  * @log_level: log level, either from #GLogLevelFlags, or a user-defined
  *    level
  * @fields: a dictionary (#GVariant of the type %G_VARIANT_TYPE_VARDICT)
@@ -1823,12 +2023,28 @@ g_log_set_writer_func (GLogWriterFunc func,
 gboolean
 g_log_writer_supports_color (gint output_fd)
 {
+#ifdef G_OS_WIN32
+  gboolean result = FALSE;
+
+#if (defined (_MSC_VER) && _MSC_VER >= 1400)
+  _invalid_parameter_handler oldHandler, newHandler;
+  int prev_report_mode = 0;
+#endif
+
+#endif
+
   g_return_val_if_fail (output_fd >= 0, FALSE);
 
   /* FIXME: This check could easily be expanded in future to be more robust
    * against different types of terminal, which still vary in their color
-   * support. cmd.exe on Windows, for example, does not support ANSI colors;
-   * but bash on Windows does.
+   * support. cmd.exe on Windows, for example, supports ANSI colors only
+   * from Windows 10 onwards; bash on Windows has always supported ANSI colors.
+   * The Windows 10 color support is supported on:
+   * -Output in the cmd.exe, MSYS/Cygwin standard consoles.
+   * -Output in the cmd.exe, MSYS/Cygwin piped to the less program.
+   * but not:
+   * -Output in Cygwin via mintty (https://github.com/mintty/mintty/issues/482)
+   * -Color code output when output redirected to file (i.e. program 2> some.txt)
    *
    * On UNIX systems, we probably want to use the functions from terminfo to
    * work out whether colors are supported.
@@ -1839,10 +2055,62 @@ g_log_writer_supports_color (gint output_fd)
    *  - http://blog.mmediasys.com/2010/11/24/we-all-love-colors/
    *  - http://unix.stackexchange.com/questions/198794/where-does-the-term-environment-variable-default-get-set
    */
+#ifdef G_OS_WIN32
+
+#if (defined (_MSC_VER) && _MSC_VER >= 1400)
+  /* Set up our empty invalid parameter handler, for isatty(),
+   * in case of bad fd's passed in for isatty(), so that
+   * msvcrt80.dll+ won't abort the program
+   */
+  newHandler = myInvalidParameterHandler;
+  oldHandler = _set_invalid_parameter_handler (newHandler);
+
+  /* Disable the message box for assertions. */
+  prev_report_mode = _CrtSetReportMode(_CRT_ASSERT, 0);
+#endif
+
+  if (g_win32_check_windows_version (10, 0, 0, G_WIN32_OS_ANY))
+    {
+      HANDLE h_output;
+      DWORD dw_mode;
+
+      if (_isatty (output_fd))
+        {
+          h_output = (HANDLE) _get_osfhandle (output_fd);
+
+          if (!GetConsoleMode (h_output, &dw_mode))
+            goto reset_invalid_param_handler;
+
+          if (dw_mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+            result = TRUE;
+
+          if (!SetConsoleMode (h_output, dw_mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+            goto reset_invalid_param_handler;
+
+          result = TRUE;
+        }
+    }
+
+  /* FIXME: Support colored outputs for structured logs for pre-Windows 10,
+   *        perhaps using WriteConsoleOutput or SetConsoleTextAttribute
+   *        (bug 775468), on standard Windows consoles, such as cmd.exe
+   */
+  if (!result)
+    result = win32_is_pipe_tty (output_fd);
+
+reset_invalid_param_handler:
+#if defined (_MSC_VER) && (_MSC_VER >= 1400)
+      _CrtSetReportMode(_CRT_ASSERT, prev_report_mode);
+      _set_invalid_parameter_handler (oldHandler);
+#endif
+
+  return result;
+#else
   return isatty (output_fd);
+#endif
 }
 
-#ifdef __linux__
+#if defined(__linux__) && !defined(__BIONIC__)
 static int journal_fd = -1;
 
 #ifndef SOCK_CLOEXEC
@@ -1875,20 +2143,27 @@ open_journal (void)
  * systemd journal, or something else (like a log file or `stdout` or
  * `stderr`).
  *
+ * Invalid file descriptors are accepted and return %FALSE, which allows for
+ * the following construct without needing any additional error handling:
+ * |[<!-- language="C" -->
+ *   is_journald = g_log_writer_is_journald (fileno (stderr));
+ * ]|
+ *
  * Returns: %TRUE if @output_fd points to the journal, %FALSE otherwise
  * Since: 2.50
  */
 gboolean
 g_log_writer_is_journald (gint output_fd)
 {
-#ifdef __linux__
+#if defined(__linux__) && !defined(__BIONIC__)
   /* FIXME: Use the new journal API for detecting whether we’re writing to the
    * journal. See: https://github.com/systemd/systemd/issues/2473
    */
   static gsize initialized;
   static gboolean fd_is_journal = FALSE;
 
-  g_return_val_if_fail (output_fd >= 0, FALSE);
+  if (output_fd < 0)
+    return FALSE;
 
   if (g_once_init_enter (&initialized))
     {
@@ -1945,6 +2220,10 @@ g_log_writer_format_fields (GLogLevelFlags   log_level,
   const gchar *log_domain = NULL;
   gchar level_prefix[STRING_BUFFER_SIZE];
   GString *gstring;
+  gint64 now;
+  time_t now_secs;
+  struct tm *now_tm;
+  gchar time_buf[128];
 
   /* Extract some common fields. */
   for (i = 0; (message == NULL || log_domain == NULL) && i < n_fields; i++)
@@ -1986,6 +2265,18 @@ g_log_writer_format_fields (GLogLevelFlags   log_level,
   g_string_append (gstring, level_prefix);
 
   g_string_append (gstring, ": ");
+
+  /* Timestamp */
+  now = g_get_real_time ();
+  now_secs = (time_t) now / 1000000;
+  now_tm = localtime (&now_secs);
+  strftime (time_buf, sizeof (time_buf), "%H:%M:%S", now_tm);
+
+  g_string_append_printf (gstring, "%s%s.%03d%s: ",
+                          use_color ? "\033[34m" : "",
+                          time_buf, (gint) ((now / 1000) % 1000),
+                          color_reset (use_color));
+
   if (message == NULL)
     {
       g_string_append (gstring, "(NULL) message");
@@ -2016,44 +2307,12 @@ g_log_writer_format_fields (GLogLevelFlags   log_level,
   return g_string_free (gstring, FALSE);
 }
 
-#ifdef __linux__
-/* This assumes that a check for the
-   template size has already been made */
-static char *__randn(char *template)
-{
-	int i;
-	struct timespec ts;
-	unsigned long r;
+/* Enable support for the journal if we're on a recent enough Linux */
+#if defined(__linux__) && !defined(__BIONIC__) && defined(HAVE_MKOSTEMP) && defined(O_CLOEXEC)
+#define ENABLE_JOURNAL_SENDV
+#endif
 
-	clock_gettime(CLOCK_REALTIME, &ts);
-	r = ts.tv_nsec*65537 ^ (unsigned long)&ts / 16 + (unsigned long)template;
-	for (i=0; i<6; i++, r>>=5)
-		template[i] = 'A'+(r&15)+(r&16)*2;
-
-	return template;
-}
-
-static __mkostemp(char *template, int len, int flags)
-{
-	int fd, retries = 100;
-	size_t l = strlen(template);
-	if (l<6 || len>l-6 || memcmp(template+l-len-6, "XXXXXX", 6)) {
-		errno = EINVAL;
-		return -1;
-	}
-
-	flags -= flags & O_ACCMODE;
-	do {
-		__randn(template+l-len-6);
-		if ((fd = open(template, flags | O_RDWR | O_CREAT | O_EXCL, 0600))>=0)
-			return fd;
-	} while (--retries && errno == EEXIST);
-
-	memcpy(template+l-len-6, "XXXXXX", 6);
-	return -1;
-}
-
-
+#ifdef ENABLE_JOURNAL_SENDV
 static int
 journal_sendv (struct iovec *iov,
                gsize         iovlen)
@@ -2098,7 +2357,7 @@ retry:
   /* Message was too large, so dump to temporary file
    * and pass an FD to the journal
    */
-  if ((buf_fd = __mkostemp (path, 0, O_CLOEXEC|O_RDWR)) < 0)
+  if ((buf_fd = mkostemp (path, O_CLOEXEC|O_RDWR)) < 0)
     return -1;
 
   if (unlink (path) < 0)
@@ -2137,7 +2396,7 @@ retry2:
 
   return -1;
 }
-#endif
+#endif /* ENABLE_JOURNAL_SENDV */
 
 /**
  * g_log_writer_journald:
@@ -2167,7 +2426,7 @@ g_log_writer_journald (GLogLevelFlags   log_level,
                        gsize            n_fields,
                        gpointer         user_data)
 {
-#ifdef __linux__
+#ifdef ENABLE_JOURNAL_SENDV
   const char equals = '=';
   const char newline = '\n';
   gsize i, k;
@@ -2247,7 +2506,7 @@ g_log_writer_journald (GLogLevelFlags   log_level,
   return retval == 0 ? G_LOG_WRITER_HANDLED : G_LOG_WRITER_UNHANDLED;
 #else
   return G_LOG_WRITER_UNHANDLED;
-#endif
+#endif /* ENABLE_JOURNAL_SENDV */
 }
 
 /**
@@ -2554,7 +2813,7 @@ g_assert_warning (const char *log_domain,
 
 /**
  * g_test_expect_message:
- * @log_domain: (allow-none): the log domain of the message
+ * @log_domain: (nullable): the log domain of the message
  * @log_level: the log level of the message
  * @pattern: a glob-style [pattern][glib-Glob-style-pattern-matching]
  *
@@ -2801,20 +3060,9 @@ g_log_default_handler (const gchar   *log_domain,
 		       const gchar   *message,
 		       gpointer	      unused_data)
 {
-  const gchar *domains;
   GLogField fields[4];
   int n_fields = 0;
 
-  if ((log_level & DEFAULT_LEVELS) || (log_level >> G_LOG_LEVEL_USER_SHIFT))
-    goto emit;
-
-  domains = g_getenv ("G_MESSAGES_DEBUG");
-  if (((log_level & INFO_LEVELS) == 0) ||
-      domains == NULL ||
-      (strcmp (domains, "all") != 0 && (!log_domain || !strstr (domains, log_domain))))
-    return;
-
- emit:
   /* we can be called externally with recursion for whatever reason */
   if (log_level & G_LOG_FLAG_RECURSION)
     {

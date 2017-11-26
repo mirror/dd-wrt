@@ -12,10 +12,8 @@
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
  * License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301
- * USA.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * Authors: Christian Hergert <chris@dronelabs.com>
  *          Thiago Santos <thiago.sousa.santos@collabora.co.uk>
@@ -119,6 +117,10 @@ GLIB_AVAILABLE_IN_ALL
 GDateTime *             g_date_time_new_from_timeval_local              (const GTimeVal *tv);
 GLIB_AVAILABLE_IN_ALL
 GDateTime *             g_date_time_new_from_timeval_utc                (const GTimeVal *tv);
+
+GLIB_AVAILABLE_IN_2_56
+GDateTime *             g_date_time_new_from_iso8601                    (const gchar    *text,
+                                                                         GTimeZone      *default_tz);
 
 GLIB_AVAILABLE_IN_ALL
 GDateTime *             g_date_time_new                                 (GTimeZone      *tz,

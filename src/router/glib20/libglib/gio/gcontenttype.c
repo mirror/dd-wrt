@@ -7,7 +7,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -46,6 +46,8 @@
  * On Win32 it is an extension string like ".doc", ".txt" or a perceived
  * string like "audio". Such strings can be looked up in the registry at
  * HKEY_CLASSES_ROOT.
+ * On OSX it is a [Uniform Type Identifier](https://en.wikipedia.org/wiki/Uniform_Type_Identifier)
+ * such as "com.apple.application".
  **/
 
 #include <dirent.h>
@@ -162,12 +164,33 @@ g_content_type_is_a (const gchar *type,
 }
 
 /**
+ * g_content_type_is_mime_type:
+ * @type: a content type string
+ * @mime_type: a mime type string
+ *
+ * Determines if @type is a subset of @mime_type.
+ * Convenience wrapper around g_content_type_is_a().
+ *
+ * Returns: %TRUE if @type is a kind of @mime_type,
+ *     %FALSE otherwise.
+ *
+ * Since: 2.52
+ */
+gboolean
+g_content_type_is_mime_type (const gchar *type,
+                             const gchar *mime_type)
+{
+  return g_content_type_is_a (type, mime_type);
+}
+
+/**
  * g_content_type_is_unknown:
  * @type: a content type string
  *
  * Checks if the content type is the generic "unknown" type.
  * On UNIX this is the "application/octet-stream" mimetype,
- * while on win32 it is "*".
+ * while on win32 it is "*" and on OSX it is a dynamic type
+ * or octet-stream.
  *
  * Returns: %TRUE if the type is the unknown type.
  */
@@ -486,7 +509,7 @@ g_content_type_get_symbolic_icon (const gchar *type)
  * [shared-mime-info](http://www.freedesktop.org/wiki/Specifications/shared-mime-info-spec)
  * specification for more on the generic icon name.
  *
- * Returns: (allow-none): the registered generic icon name for the given @type,
+ * Returns: (nullable): the registered generic icon name for the given @type,
  *     or %NULL if unknown. Free with g_free()
  *
  * Since: 2.34
@@ -591,10 +614,10 @@ g_content_type_from_mime_type (const gchar *mime_type)
 
 /**
  * g_content_type_guess:
- * @filename: (allow-none): a string, or %NULL
- * @data: (allow-none) (array length=data_size): a stream of data, or %NULL
+ * @filename: (nullable): a string, or %NULL
+ * @data: (nullable) (array length=data_size): a stream of data, or %NULL
  * @data_size: the size of @data
- * @result_uncertain: (allow-none) (out): return location for the certainty
+ * @result_uncertain: (out) (optional): return location for the certainty
  *     of the result, or %NULL
  *
  * Guesses the content type based on example data. If the function is

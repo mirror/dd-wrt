@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Error Reporting: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-core.html" title="GLib Core Application Support">
 <link rel="prev" href="glib-IO-Channels.html" title="IO Channels">
@@ -323,13 +323,17 @@ Here's an example:</p>
 16
 17
 18
-19</pre></td>
+19
+20
+21</pre></td>
         <td class="listing_code"><pre class="programlisting">gint
 <span class="function">foo_open_file</span> <span class="gtkdoc opt">(</span>GError <span class="gtkdoc opt">**</span>error<span class="gtkdoc opt">)</span>
 <span class="gtkdoc opt">{</span>
   gint fd<span class="gtkdoc opt">;</span>
+  <span class="gtkdoc kwb">int</span> saved_errno<span class="gtkdoc opt">;</span>
 
   fd <span class="gtkdoc opt">=</span> <span class="function">open</span> <span class="gtkdoc opt">(</span><span class="string">&quot;file.txt&quot;</span><span class="gtkdoc opt">,</span> O_RDONLY<span class="gtkdoc opt">);</span>
+  saved_errno <span class="gtkdoc opt">=</span> errno<span class="gtkdoc opt">;</span>
 
   <span class="keyword">if</span> <span class="gtkdoc opt">(</span>fd <span class="gtkdoc opt">&lt;</span> <span class="number">0</span><span class="gtkdoc opt">)</span>
     <span class="gtkdoc opt">{</span>
@@ -337,7 +341,7 @@ Here's an example:</p>
                    FOO_ERROR<span class="gtkdoc opt">,</span>                 <span class="gtkdoc slc">// error domain</span>
                    FOO_ERROR_BLAH<span class="gtkdoc opt">,</span>            <span class="gtkdoc slc">// error code</span>
                    <span class="string">&quot;Failed to open file: %s&quot;</span><span class="gtkdoc opt">,</span> <span class="gtkdoc slc">// error message format string</span>
-                   <span class="function"><a href="glib-String-Utility-Functions.html#g-strerror">g_strerror</a></span> <span class="gtkdoc opt">(</span>errno<span class="gtkdoc opt">));</span>
+                   <span class="function"><a href="glib-String-Utility-Functions.html#g-strerror">g_strerror</a></span> <span class="gtkdoc opt">(</span>saved_errno<span class="gtkdoc opt">));</span>
       <span class="keyword">return</span> <span class="gtkdoc opt">-</span><span class="number">1</span><span class="gtkdoc opt">;</span>
     <span class="gtkdoc opt">}</span>
   <span class="keyword">else</span>
@@ -611,7 +615,7 @@ misinterpretation of error codes.</p>
 <p><a class="link" href="glib-Error-Reporting.html#GError" title="struct GError"><span class="type">GError</span></a> has disadvantages though: it requires a memory allocation, and
 formatting the error message string has a performance overhead. This makes it
 unsuitable for use in retry loops where errors are a common case, rather than
-being unusual. For example, using <a href="../gio-GIOError.html#G-IO-ERROR-WOULD-BLOCK:CAPS"><code class="literal">G_IO_ERROR_WOULD_BLOCK</code></a> means hitting these
+being unusual. For example, using <a href="../gio/gio-GIOError.html#G-IO-ERROR-WOULD-BLOCK:CAPS"><code class="literal">G_IO_ERROR_WOULD_BLOCK</code></a> means hitting these
 overheads in the normal control flow. String formatting overhead can be
 eliminated by using <a class="link" href="glib-Error-Reporting.html#g-set-error-literal" title="g_set_error_literal ()"><code class="function">g_set_error_literal()</code></a> in some cases.</p>
 <p>These performance issues can be compounded if a function wraps the <a href="glib-Error-Reporting.html#GError"><span class="type">GErrors</span></a>

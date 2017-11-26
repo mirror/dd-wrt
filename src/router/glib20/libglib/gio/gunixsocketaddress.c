@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -116,7 +116,9 @@ g_unix_socket_address_set_property (GObject      *object,
 	  /* Clip to fit in UNIX_PATH_MAX with zero termination or first byte */
 	  len = MIN (array->len, UNIX_PATH_MAX-1);
 
-	  memcpy (address->priv->path, array->data, len);
+	  if (len != 0)
+	    memcpy (address->priv->path, array->data, len);
+
 	  address->priv->path[len] = 0; /* Ensure null-terminated */
 	  address->priv->path_len = len;
 	}

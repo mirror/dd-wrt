@@ -1,10 +1,10 @@
 /*
  * Copyright © 2011 Canonical Limited
  *
- * This library is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * licence, or (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -45,6 +45,29 @@ G_STATIC_ASSERT (_g_alignof (gpointer) == _g_alignof (GFunc));
 G_STATIC_ASSERT (sizeof (GFunc) == sizeof (GCompareDataFunc));
 G_STATIC_ASSERT (_g_alignof (GFunc) == _g_alignof (GCompareDataFunc));
 
+/* We assume that "small" enums (those where all values fit in INT32_MIN
+ * to INT32_MAX) are exactly int-sized. In particular, we assume that if
+ * an enum has no members that exceed the range of char/short, the
+ * compiler will make it int-sized anyway, so adding a member later that
+ * *does* exceed the range of char/short is not an ABI break. */
+typedef enum {
+    TEST_CHAR_0 = 0
+} TestChar;
+typedef enum {
+    TEST_SHORT_0 = 0,
+    TEST_SHORT_256 = 256
+} TestShort;
+typedef enum {
+    TEST_INT32_MIN = G_MININT32,
+    TEST_INT32_MAX = G_MAXINT32
+} TestInt;
+G_STATIC_ASSERT (sizeof (TestChar) == sizeof (int));
+G_STATIC_ASSERT (sizeof (TestShort) == sizeof (int));
+G_STATIC_ASSERT (sizeof (TestInt) == sizeof (int));
+G_STATIC_ASSERT (_g_alignof (TestChar) == _g_alignof (int));
+G_STATIC_ASSERT (_g_alignof (TestShort) == _g_alignof (int));
+G_STATIC_ASSERT (_g_alignof (TestInt) == _g_alignof (int));
+
 /**
  * g_mem_gc_friendly:
  *
@@ -78,9 +101,16 @@ debug_key_matches (const gchar *key,
   return *key == '\0';
 }
 
+/* The GVariant documentation indirectly says that int is at least 32 bits
+ * (by saying that b, y, n, q, i, u, h are promoted to int). On any
+ * reasonable platform, int is in fact *exactly* 32 bits long, because
+ * otherwise, {signed char, short, int} wouldn't be sufficient to provide
+ * {int8_t, int16_t, int32_t}. */
+G_STATIC_ASSERT (sizeof (int) == sizeof (gint32));
+
 /**
  * g_parse_debug_string:
- * @string: (allow-none): a list of debug options separated by colons, spaces, or
+ * @string: (nullable): a list of debug options separated by colons, spaces, or
  * commas, or %NULL.
  * @keys: (array length=nkeys): pointer to an array of #GDebugKey which associate
  *     strings with bit flags.

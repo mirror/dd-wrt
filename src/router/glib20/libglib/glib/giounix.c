@@ -7,7 +7,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -592,6 +592,8 @@ g_io_channel_new_file (const gchar *filename,
  * is reading output from a command using via pipe, you may need to set
  * the encoding to the encoding of the current locale (see
  * g_get_charset()) with the g_io_channel_set_encoding() function.
+ * By default, the fd passed will not be closed when the final reference
+ * to the #GIOChannel data structure is dropped.
  *
  * If you want to read raw binary data without interpretation, then
  * call the g_io_channel_set_encoding() function with %NULL for the

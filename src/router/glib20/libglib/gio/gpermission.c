@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -78,7 +78,7 @@ G_DEFINE_ABSTRACT_TYPE_WITH_PRIVATE (GPermission, g_permission, G_TYPE_OBJECT)
 /**
  * g_permission_acquire:
  * @permission: a #GPermission instance
- * @cancellable: (allow-none): a #GCancellable, or %NULL
+ * @cancellable: (nullable): a #GCancellable, or %NULL
  * @error: a pointer to a %NULL #GError, or %NULL
  *
  * Attempts to acquire the permission represented by @permission.
@@ -114,7 +114,7 @@ g_permission_acquire (GPermission   *permission,
 /**
  * g_permission_acquire_async:
  * @permission: a #GPermission instance
- * @cancellable: (allow-none): a #GCancellable, or %NULL
+ * @cancellable: (nullable): a #GCancellable, or %NULL
  * @callback: the #GAsyncReadyCallback to call when done
  * @user_data: the user data to pass to @callback
  *
@@ -165,7 +165,7 @@ g_permission_acquire_finish (GPermission   *permission,
 /**
  * g_permission_release:
  * @permission: a #GPermission instance
- * @cancellable: (allow-none): a #GCancellable, or %NULL
+ * @cancellable: (nullable): a #GCancellable, or %NULL
  * @error: a pointer to a %NULL #GError, or %NULL
  *
  * Attempts to release the permission represented by @permission.
@@ -201,7 +201,7 @@ g_permission_release (GPermission   *permission,
 /**
  * g_permission_release_async:
  * @permission: a #GPermission instance
- * @cancellable: (allow-none): a #GCancellable, or %NULL
+ * @cancellable: (nullable): a #GCancellable, or %NULL
  * @callback: the #GAsyncReadyCallback to call when done
  * @user_data: the user data to pass to @callback
  *

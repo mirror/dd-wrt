@@ -2,19 +2,18 @@
  *
  *  Copyright 2000 Red Hat, Inc.
  *
- * GLib is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * GLib is distributed in the hope that it will be useful,
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with GLib; see the file COPYING.LIB.  If not,
- * see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef __G_FILEUTILS_H__
@@ -132,6 +131,9 @@ gchar   *g_build_filename     (const gchar *first_element,
                                ...) G_GNUC_MALLOC G_GNUC_NULL_TERMINATED;
 GLIB_AVAILABLE_IN_ALL
 gchar   *g_build_filenamev    (gchar      **args) G_GNUC_MALLOC;
+GLIB_AVAILABLE_IN_2_56
+gchar   *g_build_filename_valist (const gchar  *first_element,
+                                  va_list      *args) G_GNUC_MALLOC;
 
 GLIB_AVAILABLE_IN_ALL
 gint     g_mkdir_with_parents (const gchar *pathname,
@@ -176,33 +178,6 @@ GLIB_AVAILABLE_IN_ALL
 gchar *g_path_get_basename (const gchar *file_name) G_GNUC_MALLOC;
 GLIB_AVAILABLE_IN_ALL
 gchar *g_path_get_dirname  (const gchar *file_name) G_GNUC_MALLOC;
-
-#ifndef __GTK_DOC_IGNORE__
-#ifdef G_OS_WIN32
-#define g_file_test         g_file_test_utf8
-#define g_file_get_contents g_file_get_contents_utf8
-#define g_mkstemp           g_mkstemp_utf8
-#define g_file_open_tmp     g_file_open_tmp_utf8
-#define g_get_current_dir   g_get_current_dir_utf8
-
-GLIB_AVAILABLE_IN_ALL
-gboolean g_file_test_utf8         (const gchar  *filename,
-                                   GFileTest     test);
-GLIB_AVAILABLE_IN_ALL
-gboolean g_file_get_contents_utf8 (const gchar  *filename,
-                                   gchar       **contents,
-                                   gsize        *length,
-                                   GError      **error);
-GLIB_AVAILABLE_IN_ALL
-gint     g_mkstemp_utf8           (gchar        *tmpl);
-GLIB_AVAILABLE_IN_ALL
-gint     g_file_open_tmp_utf8     (const gchar  *tmpl,
-                                   gchar       **name_used,
-                                   GError      **error);
-GLIB_AVAILABLE_IN_ALL
-gchar   *g_get_current_dir_utf8   (void);
-#endif /* G_OS_WIN32 */
-#endif /* __GTK_DOC_IGNORE__ */
 
 G_END_DECLS
 

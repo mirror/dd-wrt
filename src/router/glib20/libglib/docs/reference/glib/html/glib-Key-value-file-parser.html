@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Key-value file parser: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Simple-XML-Subset-Parser.html" title="Simple XML Subset Parser">
@@ -629,7 +629,7 @@ form <code class="literal">lang_COUNTRY@MODIFIER</code> where <code class="liter
 are optional.
 Space before and after the '=' character are ignored. Newline, tab,
 carriage return and backslash characters in value are escaped as \n,
-\t, \r, and \, respectively. To preserve leading spaces in values,
+\t, \r, and \\, respectively. To preserve leading spaces in values,
 these can also be escaped as \s.</p>
 <p>Key files can store strings (possibly with localized variants), integers,
 booleans and lists of these. Lists are separated by a separator character,
@@ -656,6 +656,116 @@ key multiple times; the last entry wins. Key files may also contain
 multiple groups with the same name; they are merged together.
 Another difference is that keys and group names in key files are not
 restricted to ASCII characters.</p>
+<p>Here is an example of loading a key file and reading a value:</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="glib-Miscellaneous-Macros.html#g-autoptr">g_autoptr</a></span><span class="gtkdoc opt">(</span>GError<span class="gtkdoc opt">)</span> error <span class="gtkdoc opt">=</span> NULL<span class="gtkdoc opt">;</span>
+<span class="function"><a href="glib-Miscellaneous-Macros.html#g-autoptr">g_autoptr</a></span><span class="gtkdoc opt">(</span>GKeyFile<span class="gtkdoc opt">)</span> key_file <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Key-value-file-parser.html#g-key-file-new">g_key_file_new</a></span> <span class="gtkdoc opt">();</span>
+
+<span class="keyword">if</span> <span class="gtkdoc opt">(!</span><span class="function"><a href="glib-Key-value-file-parser.html#g-key-file-load-from-file">g_key_file_load_from_file</a></span> <span class="gtkdoc opt">(</span>key_file<span class="gtkdoc opt">,</span> <span class="string">&quot;key-file.ini&quot;</span><span class="gtkdoc opt">,</span> flags<span class="gtkdoc opt">, &amp;</span>error<span class="gtkdoc opt">))</span>
+  <span class="gtkdoc opt">{</span>
+    <span class="keyword">if</span> <span class="gtkdoc opt">(!</span><span class="function"><a href="glib-Error-Reporting.html#g-error-matches">g_error_matches</a></span> <span class="gtkdoc opt">(</span>error<span class="gtkdoc opt">,</span> G_FILE_ERROR<span class="gtkdoc opt">,</span> G_FILE_ERROR_NOENT<span class="gtkdoc opt">))</span>
+      <span class="function"><a href="glib-Message-Logging.html#g-warning">g_warning</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;Error loading key file: %s&quot;</span><span class="gtkdoc opt">,</span> error<span class="gtkdoc opt">-&gt;</span>message<span class="gtkdoc opt">);</span>
+    <span class="keyword">return</span><span class="gtkdoc opt">;</span>
+  <span class="gtkdoc opt">}</span>
+
+g_autofree gchar <span class="gtkdoc opt">*</span>val <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Key-value-file-parser.html#g-key-file-get-string">g_key_file_get_string</a></span> <span class="gtkdoc opt">(</span>key_file<span class="gtkdoc opt">,</span> <span class="string">&quot;Group Name&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;SomeKey&quot;</span><span class="gtkdoc opt">, &amp;</span>error<span class="gtkdoc opt">);</span>
+<span class="keyword">if</span> <span class="gtkdoc opt">(</span>val <span class="gtkdoc opt">==</span> NULL <span class="gtkdoc opt">&amp;&amp;</span>
+    <span class="gtkdoc opt">!</span><span class="function"><a href="glib-Error-Reporting.html#g-error-matches">g_error_matches</a></span> <span class="gtkdoc opt">(</span>error<span class="gtkdoc opt">,</span> G_KEY_FILE_ERROR<span class="gtkdoc opt">,</span> G_KEY_FILE_ERROR_KEY_NOT_FOUND<span class="gtkdoc opt">))</span>
+  <span class="gtkdoc opt">{</span>
+    <span class="function"><a href="glib-Message-Logging.html#g-warning">g_warning</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;Error finding key in key file: %s&quot;</span><span class="gtkdoc opt">,</span> error<span class="gtkdoc opt">-&gt;</span>message<span class="gtkdoc opt">);</span>
+    <span class="keyword">return</span><span class="gtkdoc opt">;</span>
+  <span class="gtkdoc opt">}</span>
+<span class="keyword">else if</span> <span class="gtkdoc opt">(</span>val <span class="gtkdoc opt">==</span> NULL<span class="gtkdoc opt">)</span>
+  <span class="gtkdoc opt">{</span>
+    <span class="gtkdoc slc">// Fall back to a default value.</span>
+    val <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-String-Utility-Functions.html#g-strdup">g_strdup</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;default-value&quot;</span><span class="gtkdoc opt">);</span>
+  <span class="gtkdoc opt">}</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p></p>
+<p>Here is an example of creating and saving a key file:</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="glib-Miscellaneous-Macros.html#g-autoptr">g_autoptr</a></span><span class="gtkdoc opt">(</span>GKeyFile<span class="gtkdoc opt">)</span> key_file <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Key-value-file-parser.html#g-key-file-new">g_key_file_new</a></span> <span class="gtkdoc opt">();</span>
+<span class="gtkdoc kwb">const</span> gchar <span class="gtkdoc opt">*</span>val <span class="gtkdoc opt">=</span> …<span class="gtkdoc opt">;</span>
+<span class="function"><a href="glib-Miscellaneous-Macros.html#g-autoptr">g_autoptr</a></span><span class="gtkdoc opt">(</span>GError<span class="gtkdoc opt">)</span> error <span class="gtkdoc opt">=</span> NULL<span class="gtkdoc opt">;</span>
+
+<span class="function"><a href="glib-Key-value-file-parser.html#g-key-file-set-string">g_key_file_set_string</a></span> <span class="gtkdoc opt">(</span>key_file<span class="gtkdoc opt">,</span> <span class="string">&quot;Group Name&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;SomeKey&quot;</span><span class="gtkdoc opt">,</span> val<span class="gtkdoc opt">);</span>
+
+<span class="gtkdoc slc">// Save as a file.</span>
+<span class="keyword">if</span> <span class="gtkdoc opt">(!</span><span class="function"><a href="glib-Key-value-file-parser.html#g-key-file-save-to-file">g_key_file_save_to_file</a></span> <span class="gtkdoc opt">(</span>key_file<span class="gtkdoc opt">,</span> <span class="string">&quot;key-file.ini&quot;</span><span class="gtkdoc opt">, &amp;</span>error<span class="gtkdoc opt">))</span>
+  <span class="gtkdoc opt">{</span>
+    <span class="function"><a href="glib-Message-Logging.html#g-warning">g_warning</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;Error saving key file: %s&quot;</span><span class="gtkdoc opt">,</span> error<span class="gtkdoc opt">-&gt;</span>message<span class="gtkdoc opt">);</span>
+    <span class="keyword">return</span><span class="gtkdoc opt">;</span>
+  <span class="gtkdoc opt">}</span>
+
+<span class="gtkdoc slc">// Or store to a GBytes for use elsewhere.</span>
+gsize data_len<span class="gtkdoc opt">;</span>
+g_autofree guint8 <span class="gtkdoc opt">*</span>data <span class="gtkdoc opt">= (</span>guint8 <span class="gtkdoc opt">*)</span> <span class="function"><a href="glib-Key-value-file-parser.html#g-key-file-to-data">g_key_file_to_data</a></span> <span class="gtkdoc opt">(</span>key_file<span class="gtkdoc opt">, &amp;</span>data_len<span class="gtkdoc opt">, &amp;</span>error<span class="gtkdoc opt">);</span>
+<span class="keyword">if</span> <span class="gtkdoc opt">(</span>data <span class="gtkdoc opt">==</span> NULL<span class="gtkdoc opt">)</span>
+  <span class="gtkdoc opt">{</span>
+    <span class="function"><a href="glib-Message-Logging.html#g-warning">g_warning</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;Error saving key file: %s&quot;</span><span class="gtkdoc opt">,</span> error<span class="gtkdoc opt">-&gt;</span>message<span class="gtkdoc opt">);</span>
+    <span class="keyword">return</span><span class="gtkdoc opt">;</span>
+  <span class="gtkdoc opt">}</span>
+<span class="function"><a href="glib-Miscellaneous-Macros.html#g-autoptr">g_autoptr</a></span><span class="gtkdoc opt">(</span>GBytes<span class="gtkdoc opt">)</span> bytes <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Byte-Arrays.html#g-bytes-new-take">g_bytes_new_take</a></span> <span class="gtkdoc opt">(</span><span class="function"><a href="glib-Memory-Allocation.html#g-steal-pointer">g_steal_pointer</a></span> <span class="gtkdoc opt">(&amp;</span>data<span class="gtkdoc opt">),</span> data_len<span class="gtkdoc opt">);</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p></p>
 </div>
 <div class="refsect1">
 <a name="glib-Key-value-file-parser.functions_details"></a><h2>Functions</h2>
@@ -797,10 +907,13 @@ g_key_file_load_from_file (<em class="parameter"><code><a class="link" href="gli
                            <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *file</code></em>,
                            <em class="parameter"><code><a class="link" href="glib-Key-value-file-parser.html#GKeyFileFlags" title="enum GKeyFileFlags"><span class="type">GKeyFileFlags</span></a> flags</code></em>,
                            <em class="parameter"><code><a class="link" href="glib-Error-Reporting.html#GError" title="struct GError"><span class="type">GError</span></a> **error</code></em>);</pre>
-<p>Loads a key file into an empty <a class="link" href="glib-Key-value-file-parser.html#GKeyFile" title="GKeyFile"><span class="type">GKeyFile</span></a> structure.
-If the file could not be loaded then <em class="parameter"><code>error</code></em>
- is set to
-either a <a class="link" href="glib-File-Utilities.html#GFileError" title="enum GFileError"><span class="type">GFileError</span></a> or <a class="link" href="glib-Key-value-file-parser.html#GKeyFileError" title="enum GKeyFileError"><span class="type">GKeyFileError</span></a>.</p>
+<p>Loads a key file into an empty <a class="link" href="glib-Key-value-file-parser.html#GKeyFile" title="GKeyFile"><span class="type">GKeyFile</span></a> structure.</p>
+<p>If the OS returns an error when opening or reading the file, a
+<a class="link" href="glib-File-Utilities.html#G-FILE-ERROR:CAPS" title="G_FILE_ERROR"><code class="literal">G_FILE_ERROR</code></a> is returned. If there is a problem parsing the file, a
+<a class="link" href="glib-Key-value-file-parser.html#G-KEY-FILE-ERROR:CAPS" title="G_KEY_FILE_ERROR"><code class="literal">G_KEY_FILE_ERROR</code></a> is returned.</p>
+<p>This function will never return a <a class="link" href="glib-Key-value-file-parser.html#G-KEY-FILE-ERROR-NOT-FOUND:CAPS"><code class="literal">G_KEY_FILE_ERROR_NOT_FOUND</code></a> error. If the
+<em class="parameter"><code>file</code></em>
+ is not found, <a class="link" href="glib-File-Utilities.html#G-FILE-ERROR-NOENT:CAPS"><code class="literal">G_FILE_ERROR_NOENT</code></a> is returned.</p>
 <div class="refsect3">
 <a name="g-key-file-load-from-file.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -983,7 +1096,7 @@ set to either a <a class="link" href="glib-File-Utilities.html#GFileError" title
 <td class="parameter_name"><p>full_path</p></td>
 <td class="parameter_description"><p> return location for a string containing the full path
 of the file, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>flags</p></td>
@@ -1020,9 +1133,13 @@ specified in <em class="parameter"><code>search_dirs</code></em>
 , loads the file into <em class="parameter"><code>key_file</code></em>
  and
 returns the file's full path in <em class="parameter"><code>full_path</code></em>
-.  If the file could not
-be loaded then an <code class="literal">error</code> is set to either a <a class="link" href="glib-File-Utilities.html#GFileError" title="enum GFileError"><span class="type">GFileError</span></a> or
-<a class="link" href="glib-Key-value-file-parser.html#GKeyFileError" title="enum GKeyFileError"><span class="type">GKeyFileError</span></a>.</p>
+.</p>
+<p>If the file could not be found in any of the <em class="parameter"><code>search_dirs</code></em>
+,
+<a class="link" href="glib-Key-value-file-parser.html#G-KEY-FILE-ERROR-NOT-FOUND:CAPS"><code class="literal">G_KEY_FILE_ERROR_NOT_FOUND</code></a> is returned. If
+the file is found but the OS returns an error when opening or reading the
+file, a <a class="link" href="glib-File-Utilities.html#G-FILE-ERROR:CAPS" title="G_FILE_ERROR"><code class="literal">G_FILE_ERROR</code></a> is returned. If there is a problem parsing the file, a
+<a class="link" href="glib-Key-value-file-parser.html#G-KEY-FILE-ERROR:CAPS" title="G_KEY_FILE_ERROR"><code class="literal">G_KEY_FILE_ERROR</code></a> is returned.</p>
 <div class="refsect3">
 <a name="g-key-file-load-from-dirs.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1051,7 +1168,7 @@ be loaded then an <code class="literal">error</code> is set to either a <a class
 <td class="parameter_name"><p>full_path</p></td>
 <td class="parameter_description"><p> return location for a string containing the full path
 of the file, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>flags</p></td>
@@ -1102,7 +1219,7 @@ so it is safe to pass <a class="link" href="glib-Standard-Macros.html#NULL:CAPS"
 <td class="parameter_name"><p>length</p></td>
 <td class="parameter_description"><p> return location for the length of the
 returned string, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -1221,7 +1338,7 @@ The array of returned groups will be <a class="link" href="glib-Standard-Macros.
 <tr>
 <td class="parameter_name"><p>length</p></td>
 <td class="parameter_description"><p> return location for the number of returned groups, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -1273,7 +1390,7 @@ be found, <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL
 <tr>
 <td class="parameter_name"><p>length</p></td>
 <td class="parameter_description"><p> return location for the number of keys returned, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -1557,7 +1674,7 @@ be found then the untranslated value is returned.</p>
 <tr>
 <td class="parameter_name"><p>locale</p></td>
 <td class="parameter_description"><p> a locale identifier or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -1650,7 +1767,8 @@ integer. </p>
  is set to
 <a class="link" href="glib-Key-value-file-parser.html#G-KEY-FILE-ERROR-KEY-NOT-FOUND:CAPS"><span class="type">G_KEY_FILE_ERROR_KEY_NOT_FOUND</span></a>. Likewise, if the value associated
 with <em class="parameter"><code>key</code></em>
- cannot be interpreted as an integer then 0 is returned
+ cannot be interpreted as an integer, or is out of range
+for a <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a>, then 0 is returned
 and <em class="parameter"><code>error</code></em>
  is set to <a class="link" href="glib-Key-value-file-parser.html#G-KEY-FILE-ERROR-INVALID-VALUE:CAPS"><span class="type">G_KEY_FILE_ERROR_INVALID_VALUE</span></a>.</p>
 <div class="refsect3">
@@ -1902,7 +2020,7 @@ and <em class="parameter"><code>error</code></em>
 <tr>
 <td class="parameter_name"><p>length</p></td>
 <td class="parameter_description"><p> return location for the number of returned strings, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -1974,12 +2092,12 @@ be <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code
 <tr>
 <td class="parameter_name"><p>locale</p></td>
 <td class="parameter_description"><p> a locale identifier or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>length</p></td>
 <td class="parameter_description"><p> return location for the number of returned strings or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -2083,7 +2201,8 @@ integers. </p>
  is set to
 <a class="link" href="glib-Key-value-file-parser.html#G-KEY-FILE-ERROR-KEY-NOT-FOUND:CAPS"><span class="type">G_KEY_FILE_ERROR_KEY_NOT_FOUND</span></a>. Likewise, if the values associated
 with <em class="parameter"><code>key</code></em>
- cannot be interpreted as integers then <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> is returned
+ cannot be interpreted as integers, or are out of range for
+<a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a>, then <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> is returned
 and <em class="parameter"><code>error</code></em>
  is set to <a class="link" href="glib-Key-value-file-parser.html#G-KEY-FILE-ERROR-INVALID-VALUE:CAPS"><span class="type">G_KEY_FILE_ERROR_INVALID_VALUE</span></a>.</p>
 <div class="refsect3">
@@ -2237,7 +2356,7 @@ If <em class="parameter"><code>key</code></em>
 <tr>
 <td class="parameter_name"><p>group_name</p></td>
 <td class="parameter_description"><p> a group name, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>key</p></td>
@@ -2972,12 +3091,12 @@ each line of <em class="parameter"><code>comment</code></em>
 <tr>
 <td class="parameter_name"><p>group_name</p></td>
 <td class="parameter_description"><p> a group name, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>key</p></td>
 <td class="parameter_description"><p> a key. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>comment</p></td>
@@ -3127,12 +3246,12 @@ be removed above the first group in the file.</p>
 <tr>
 <td class="parameter_name"><p>group_name</p></td>
 <td class="parameter_description"><p> a group name, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>key</p></td>
 <td class="parameter_description"><p> a key. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>

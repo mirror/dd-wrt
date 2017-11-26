@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GMount: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="volume_mon.html" title="Volumes and Drives">
 <link rel="prev" href="GVolume.html" title="GVolume">
@@ -316,7 +316,7 @@
 </div>
 <div class="refsect1">
 <a name="GMount.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/GTypeModule.html">GInterface</a>
+<pre class="screen">    <a href="/home/mclasen/gnome/share/gtk-doc/html/gobject/GTypeModule.html">GInterface</a>
     <span class="lineart">╰──</span> GMount
 </pre>
 </div>
@@ -345,9 +345,9 @@ and <a class="link" href="GTask.html" title="GTask"><span class="type">GTask</sp
 <a class="link" href="GMount.html#g-mount-unmount-with-operation" title="g_mount_unmount_with_operation ()"><code class="function">g_mount_unmount_with_operation()</code></a> with (at least) the <a class="link" href="GMount.html" title="GMount"><span class="type">GMount</span></a> instance and a
 <a class="link" href="GAsyncResult.html#GAsyncReadyCallback" title="GAsyncReadyCallback ()"><span class="type">GAsyncReadyCallback</span></a>.  The callback will be fired when the
 operation has resolved (either with success or failure), and a
-<span class="type">GAsyncReady</span> structure will be passed to the callback.  That
+<a class="link" href="GAsyncResult.html" title="GAsyncResult"><span class="type">GAsyncResult</span></a> structure will be passed to the callback.  That
 callback should then call <a class="link" href="GMount.html#g-mount-unmount-with-operation-finish" title="g_mount_unmount_with_operation_finish ()"><code class="function">g_mount_unmount_with_operation_finish()</code></a> with the <a class="link" href="GMount.html" title="GMount"><span class="type">GMount</span></a>
-and the <span class="type">GAsyncReady</span> data to see if the operation was completed
+and the <a class="link" href="GAsyncResult.html" title="GAsyncResult"><span class="type">GAsyncResult</span></a> data to see if the operation was completed
 successfully.  If an <em class="parameter"><code>error</code></em>
  is present when <a class="link" href="GMount.html#g-mount-unmount-with-operation-finish" title="g_mount_unmount_with_operation_finish ()"><code class="function">g_mount_unmount_with_operation_finish()</code></a> 
 is called, then it will be filled with any error information.</p>
@@ -610,7 +610,7 @@ The returned object should be unreffed with
 <pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_mount_can_unmount (<em class="parameter"><code><a class="link" href="GMount.html" title="GMount"><span class="type">GMount</span></a> *mount</code></em>);</pre>
 <p>Checks if <em class="parameter"><code>mount</code></em>
- can be mounted.</p>
+ can be unmounted.</p>
 <div class="refsect3">
 <a name="g-mount-can-unmount.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -672,12 +672,12 @@ and <a class="link" href="GAsyncResult.html" title="GAsyncResult"><span class="t
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GAsyncResult.html#GAsyncReadyCallback" title="GAsyncReadyCallback ()"><span class="type">GAsyncReadyCallback</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_data</p></td>
@@ -774,17 +774,17 @@ and <a class="link" href="GAsyncResult.html" title="GAsyncResult"><span class="t
 <td class="parameter_name"><p>mount_operation</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GMountOperation.html" title="GMountOperation"><span class="type">GMountOperation</span></a> or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to avoid
 user interaction. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GAsyncResult.html#GAsyncReadyCallback" title="GAsyncReadyCallback ()"><span class="type">GAsyncReadyCallback</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_data</p></td>
@@ -884,17 +884,17 @@ unmounted.</p>
 <td class="parameter_name"><p>mount_operation</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GMountOperation.html" title="GMountOperation"><span class="type">GMountOperation</span></a> or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to avoid
 user interaction. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GAsyncResult.html#GAsyncReadyCallback" title="GAsyncReadyCallback ()"><span class="type">GAsyncReadyCallback</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_data</p></td>
@@ -955,7 +955,7 @@ ignore.</p></td>
 <pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_mount_can_eject (<em class="parameter"><code><a class="link" href="GMount.html" title="GMount"><span class="type">GMount</span></a> *mount</code></em>);</pre>
 <p>Checks if <em class="parameter"><code>mount</code></em>
- can be eject.</p>
+ can be ejected.</p>
 <div class="refsect3">
 <a name="g-mount-can-eject.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1017,12 +1017,12 @@ and <a class="link" href="GAsyncResult.html" title="GAsyncResult"><span class="t
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GAsyncResult.html#GAsyncReadyCallback" title="GAsyncReadyCallback ()"><span class="type">GAsyncReadyCallback</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_data</p></td>
@@ -1119,17 +1119,17 @@ and <a class="link" href="GAsyncResult.html" title="GAsyncResult"><span class="t
 <td class="parameter_name"><p>mount_operation</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GMountOperation.html" title="GMountOperation"><span class="type">GMountOperation</span></a> or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to avoid
 user interaction. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GAsyncResult.html#GAsyncReadyCallback" title="GAsyncReadyCallback ()"><span class="type">GAsyncReadyCallback</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_data</p></td>
@@ -1231,7 +1231,7 @@ Otherwise a cached result will be used if available</p></td>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
@@ -1339,7 +1339,7 @@ Otherwise a cached result will be used if available</p></td>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -1839,8 +1839,10 @@ user_function (<a class="link" href="GMount.html" title="GMount"><span class="ty
 <pre class="programlisting"><span class="returnvalue">void</span>
 user_function (<a class="link" href="GMount.html" title="GMount"><span class="type">GMount</span></a>  *mount,
                <a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> user_data)</pre>
-<p>This signal is emitted when the <a class="link" href="GMount.html" title="GMount"><span class="type">GMount</span></a> is about to be
+<p>This signal may be emitted when the <a class="link" href="GMount.html" title="GMount"><span class="type">GMount</span></a> is about to be
 unmounted.</p>
+<p>This signal depends on the backend and is only emitted if
+GIO was used to unmount.</p>
 <div class="refsect3">
 <a name="GMount-pre-unmount.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">

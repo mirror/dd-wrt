@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GMountOperation: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="file_ops.html" title="File Operations">
 <link rel="prev" href="gio-GIOError.html" title="GIOError">
@@ -291,7 +291,7 @@ objects – for example it is also used in <a class="link" href="GDrive.html#g-d
 <a class="link" href="GDrive.html#g-drive-stop" title="g_drive_stop ()"><code class="function">g_drive_stop()</code></a>.</p>
 <p>Users should instantiate a subclass of this that implements all the
 various callbacks to show the required dialogs, such as
-<a href="http://developer.gnome.org/gtk4/gtk4-Filesystem-utilities.html#GtkMountOperation-struct"><span class="type">GtkMountOperation</span></a>. If no user interaction is desired (for example
+<a href="../gtk4/gtk4-Filesystem-utilities.html#GtkMountOperation-struct"><span class="type">GtkMountOperation</span></a>. If no user interaction is desired (for example
 when automounting filesystems at login time), usually <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> can be
 passed, see each method taking a <a class="link" href="GMountOperation.html" title="GMountOperation"><span class="type">GMountOperation</span></a> for details.</p>
 </div>
@@ -923,7 +923,7 @@ user_function (<a class="link" href="GMountOperation.html" title="GMountOperatio
 <p>Emitted when a mount operation asks the user for a password.</p>
 <p>If the message contains a line break, the first line should be
 presented as a heading. For example, it may be used as the
-primary text in a <a href="http://developer.gnome.org/gtk4/GtkMessageDialog.html#GtkMessageDialog-struct"><span class="type">GtkMessageDialog</span></a>.</p>
+primary text in a <a href="../gtk4/GtkMessageDialog.html#GtkMessageDialog-struct"><span class="type">GtkMessageDialog</span></a>.</p>
 <div class="refsect3">
 <a name="GMountOperation-ask-password.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -980,7 +980,7 @@ user_function (<a class="link" href="GMountOperation.html" title="GMountOperatio
 choices for the user to choose from.</p>
 <p>If the message contains a line break, the first line should be
 presented as a heading. For example, it may be used as the
-primary text in a <a href="http://developer.gnome.org/gtk4/GtkMessageDialog.html#GtkMessageDialog-struct"><span class="type">GtkMessageDialog</span></a>.</p>
+primary text in a <a href="../gtk4/GtkMessageDialog.html#GtkMessageDialog-struct"><span class="type">GtkMessageDialog</span></a>.</p>
 <div class="refsect3">
 <a name="GMountOperation-ask-question.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1070,7 +1070,7 @@ the latest signal (setting <a class="link" href="GMountOperation.html#GMountOper
 the user made).</p>
 <p>If the message contains a line break, the first line should be
 presented as a heading. For example, it may be used as the
-primary text in a <a href="http://developer.gnome.org/gtk4/GtkMessageDialog.html#GtkMessageDialog-struct"><span class="type">GtkMessageDialog</span></a>.</p>
+primary text in a <a href="../gtk4/GtkMessageDialog.html#GtkMessageDialog-struct"><span class="type">GtkMessageDialog</span></a>.</p>
 <div class="refsect3">
 <a name="GMountOperation-show-processes.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1135,7 +1135,7 @@ of completion, when <em class="parameter"><code>bytes_left</code></em>
  reaches zero.</p>
 <p>If the message contains a line break, the first line should be
 presented as a heading. For example, it may be used as the
-primary text in a <a href="http://developer.gnome.org/gtk4/GtkMessageDialog.html#GtkMessageDialog-struct"><span class="type">GtkMessageDialog</span></a>.</p>
+primary text in a <a href="../gtk4/GtkMessageDialog.html#GtkMessageDialog-struct"><span class="type">GtkMessageDialog</span></a>.</p>
 <div class="refsect3">
 <a name="GMountOperation-show-unmount-progress.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">

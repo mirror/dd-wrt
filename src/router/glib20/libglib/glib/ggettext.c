@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -184,7 +184,7 @@ g_strip_context (const gchar *msgid,
 
 /**
  * g_dpgettext:
- * @domain: (allow-none): the translation domain to use, or %NULL to use
+ * @domain: (nullable): the translation domain to use, or %NULL to use
  *   the domain set with textdomain()
  * @msgctxtid: a combined message context and message id, separated
  *   by a \004 character
@@ -248,7 +248,7 @@ g_dpgettext (const gchar *domain,
  */
 /**
  * g_dpgettext2:
- * @domain: (allow-none): the translation domain to use, or %NULL to use
+ * @domain: (nullable): the translation domain to use, or %NULL to use
  *   the domain set with textdomain()
  * @context: the message context
  * @msgid: the message
@@ -351,7 +351,7 @@ _g_dgettext_should_translate (void)
 
 /**
  * g_dgettext:
- * @domain: (allow-none): the translation domain to use, or %NULL to use
+ * @domain: (nullable): the translation domain to use, or %NULL to use
  *   the domain set with textdomain()
  * @msgid: message to translate
  *
@@ -404,7 +404,7 @@ g_dgettext (const gchar *domain,
 
 /**
  * g_dcgettext:
- * @domain: (allow-none): the translation domain to use, or %NULL to use
+ * @domain: (nullable): the translation domain to use, or %NULL to use
  *   the domain set with textdomain()
  * @msgid: message to translate
  * @category: a locale category
@@ -431,7 +431,7 @@ g_dcgettext (const gchar *domain,
 
 /**
  * g_dngettext:
- * @domain: (allow-none): the translation domain to use, or %NULL to use
+ * @domain: (nullable): the translation domain to use, or %NULL to use
  *   the domain set with textdomain()
  * @msgid: message to translate
  * @msgid_plural: plural form of the message

@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Testing: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Bookmark-file-parser.html" title="Bookmark file parser">
@@ -634,9 +634,6 @@ an extended set of assertions for comparisons: <a class="link" href="glib-Testin
 <a class="link" href="glib-Testing.html#g-assert-cmpstr" title="g_assert_cmpstr()"><code class="function">g_assert_cmpstr()</code></a>, and <a class="link" href="glib-Testing.html#g-assert-cmpmem" title="g_assert_cmpmem()"><code class="function">g_assert_cmpmem()</code></a>. The advantage of these
 variants over plain <a class="link" href="glib-Testing.html#g-assert" title="g_assert()"><code class="function">g_assert()</code></a> is that the assertion messages can be
 more elaborate, and include the values of the compared entities.</p>
-<p>GLib ships with two utilities called gtester and
-gtester-report to facilitate running tests and producing
-nicely formatted test reports.</p>
 <p>A full example of creating a test suite with two tests using fixtures:</p>
 <div class="informalexample">
   <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
@@ -725,8 +722,8 @@ nicely formatted test reports.</p>
 <span class="function">my_object_fixture_tear_down</span> <span class="gtkdoc opt">(</span>MyObjectFixture <span class="gtkdoc opt">*</span>fixture<span class="gtkdoc opt">,</span>
                              gconstpointer user_data<span class="gtkdoc opt">)</span>
 <span class="gtkdoc opt">{</span>
-  <span class="function"><a href="../gobject-The-Base-Object-Type.html#g-clear-object">g_clear_object</a></span> <span class="gtkdoc opt">(&amp;</span>fixture<span class="gtkdoc opt">-&gt;</span>helper<span class="gtkdoc opt">);</span>
-  <span class="function"><a href="../gobject-The-Base-Object-Type.html#g-clear-object">g_clear_object</a></span> <span class="gtkdoc opt">(&amp;</span>fixture<span class="gtkdoc opt">-&gt;</span>obj<span class="gtkdoc opt">);</span>
+  <span class="function"><a href="../gobject/gobject-The-Base-Object-Type.html#g-clear-object">g_clear_object</a></span> <span class="gtkdoc opt">(&amp;</span>fixture<span class="gtkdoc opt">-&gt;</span>helper<span class="gtkdoc opt">);</span>
+  <span class="function"><a href="../gobject/gobject-The-Base-Object-Type.html#g-clear-object">g_clear_object</a></span> <span class="gtkdoc opt">(&amp;</span>fixture<span class="gtkdoc opt">-&gt;</span>obj<span class="gtkdoc opt">);</span>
 <span class="gtkdoc opt">}</span>
 
 <span class="gtkdoc kwb">static void</span>
@@ -768,6 +765,128 @@ nicely formatted test reports.</p>
 </div>
 
 <p></p>
+<p>### Integrating GTest in your project</p>
+<p>If you are using the <a class="ulink" href="http://mesonbuild.com" target="_top">Meson</a> build system, you will
+typically use the provided <code class="literal"><code class="function">test()</code></code> primitive to call the test binaries,
+e.g.:</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="function">test</span><span class="gtkdoc opt">(</span>
+  <span class="string">&apos;foo&apos;</span><span class="gtkdoc opt">,</span>
+  <span class="function">executable</span><span class="gtkdoc opt">(</span><span class="string">&apos;foo&apos;</span><span class="gtkdoc opt">,</span> <span class="string">&apos;foo.c&apos;</span><span class="gtkdoc opt">,</span> dependencies<span class="gtkdoc opt">:</span> deps<span class="gtkdoc opt">),</span>
+  env<span class="gtkdoc opt">: [</span>
+    <span class="string">&apos;G_TEST_SRCDIR=&#64;0&#64;&apos;</span><span class="gtkdoc opt">.</span><span class="function">format</span><span class="gtkdoc opt">(</span>meson<span class="gtkdoc opt">.</span><span class="function">current_source_dir</span><span class="gtkdoc opt">()),</span>
+    <span class="string">&apos;G_TEST_BUILDDIR=&#64;0&#64;&apos;</span><span class="gtkdoc opt">.</span><span class="function">format</span><span class="gtkdoc opt">(</span>meson<span class="gtkdoc opt">.</span><span class="function">current_build_dir</span><span class="gtkdoc opt">()),</span>
+  <span class="gtkdoc opt">],</span>
+<span class="gtkdoc opt">)</span>
+
+<span class="function">test</span><span class="gtkdoc opt">(</span>
+  <span class="string">&apos;bar&apos;</span><span class="gtkdoc opt">,</span>
+  <span class="function">executable</span><span class="gtkdoc opt">(</span><span class="string">&apos;bar&apos;</span><span class="gtkdoc opt">,</span> <span class="string">&apos;bar.c&apos;</span><span class="gtkdoc opt">,</span> dependencies<span class="gtkdoc opt">:</span> deps<span class="gtkdoc opt">),</span>
+  env<span class="gtkdoc opt">: [</span>
+    <span class="string">&apos;G_TEST_SRCDIR=&#64;0&#64;&apos;</span><span class="gtkdoc opt">.</span><span class="function">format</span><span class="gtkdoc opt">(</span>meson<span class="gtkdoc opt">.</span><span class="function">current_source_dir</span><span class="gtkdoc opt">()),</span>
+    <span class="string">&apos;G_TEST_BUILDDIR=&#64;0&#64;&apos;</span><span class="gtkdoc opt">.</span><span class="function">format</span><span class="gtkdoc opt">(</span>meson<span class="gtkdoc opt">.</span><span class="function">current_build_dir</span><span class="gtkdoc opt">()),</span>
+  <span class="gtkdoc opt">],</span>
+<span class="gtkdoc opt">)</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p></p>
+<p>If you are using Autotools, you're strongly encouraged to use the Automake
+<a class="ulink" href="https://testanything.org/" target="_top">TAP</a> harness; GLib provides template files for
+easily integrating with it:</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p><a class="ulink" href="https://git.gnome.org/browse/glib/tree/glib-tap.mk" target="_top">glib-tap.mk</a></p></li>
+<li class="listitem"><p><a class="ulink" href="https://git.gnome.org/browse/glib/tree/tap-test" target="_top">tap-test</a></p></li>
+<li class="listitem"><p><a class="ulink" href="https://git.gnome.org/browse/glib/tree/tap-driver.sh" target="_top">tap-driver.sh</a></p></li>
+</ul></div>
+<p>You can copy these files in your own project's root directory, and then
+set up your <code class="literal">Makefile.am</code> file to reference them, for instance:</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15</pre></td>
+        <td class="listing_code"><pre class="programlisting">include $<span class="gtkdoc opt">(</span>top_srcdir<span class="gtkdoc opt">)/</span>glib<span class="gtkdoc opt">-</span>tap<span class="gtkdoc opt">.</span>mk
+
+<span class="gtkdoc ppc"># test binaries</span>
+test_programs <span class="gtkdoc opt">=</span> \
+  foo \
+  bar
+
+<span class="gtkdoc ppc"># data distributed in the tarball</span>
+dist_test_data <span class="gtkdoc opt">=</span> \
+  foo<span class="gtkdoc opt">.</span>data<span class="gtkdoc opt">.</span>txt \
+  bar<span class="gtkdoc opt">.</span>data<span class="gtkdoc opt">.</span>txt
+
+<span class="gtkdoc ppc"># data not distributed in the tarball</span>
+test_data <span class="gtkdoc opt">=</span> \
+  blah<span class="gtkdoc opt">.</span>data<span class="gtkdoc opt">.</span>txt</pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p></p>
+<p>Make sure to distribute the TAP files, using something like the following
+in your top-level <code class="literal">Makefile.am</code>:</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3</pre></td>
+        <td class="listing_code"><pre class="programlisting">EXTRA_DIST <span class="gtkdoc opt">+=</span> \
+  tap<span class="gtkdoc opt">-</span>driver<span class="gtkdoc opt">.</span>sh \
+  tap<span class="gtkdoc opt">-</span>test</pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p></p>
+<p><code class="literal">glib-tap.mk</code> will be distributed implicitly due to being included in a
+<code class="literal">Makefile.am</code>. All three files should be added to version control.</p>
+<p>If you don't have access to the Autotools TAP harness, you can use the
+gtester and gtester-report tools, and use
+the <a class="ulink" href="https://git.gnome.org/browse/glib/tree/glib.mk" target="_top">glib.mk</a> Automake
+template provided by GLib.</p>
 </div>
 <div class="refsect1">
 <a name="glib-Testing.functions_details"></a><h2>Functions</h2>
@@ -1466,7 +1585,7 @@ the test.</p>
 <tbody><tr>
 <td class="parameter_name"><p>msg</p></td>
 <td class="parameter_description"><p> explanation. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr></tbody>
 </table></div>
 </div>
@@ -1496,7 +1615,7 @@ the test.</p>
 <tbody><tr>
 <td class="parameter_name"><p>msg</p></td>
 <td class="parameter_description"><p> explanation. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr></tbody>
 </table></div>
 </div>
@@ -1683,7 +1802,7 @@ function which needs the special behavior.</p>
 <a class="link" href="glib-Message-Logging.html#g-log-structured" title="g_log_structured ()"><code class="function">g_log_structured()</code></a> or <a class="link" href="glib-Message-Logging.html#g-log-structured-array" title="g_log_structured_array ()"><code class="function">g_log_structured_array()</code></a>). To change the fatal
 behaviour for specific log messages, programs must install a custom log
 writer function using <a class="link" href="glib-Message-Logging.html#g-log-set-writer-func" title="g_log_set_writer_func ()"><code class="function">g_log_set_writer_func()</code></a>.See
-Using Structured Logging.</p>
+<a class="link" href="glib-Message-Logging.html#using-structured-logging" title="Using Structured Logging">Using Structured Logging</a>.</p>
 <div class="refsect3">
 <a name="g-test-log-set-fatal-handler.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1775,7 +1894,7 @@ g_test_queue_destroy (<em class="parameter"><code><a class="link" href="glib-Dat
 <p>This function enqueus a callback <em class="parameter"><code>destroy_func</code></em>
  to be executed
 during the next test case teardown phase. This is most useful
-to auto destruct allocted test resources at the end of a test run.
+to auto destruct allocated test resources at the end of a test run.
 Resources are released in reverse queue order, that means enqueueing
 callback A before callback B will cause <code class="function">B()</code> to be called before
 <code class="function">A()</code> during teardown.</p>
@@ -1807,9 +1926,9 @@ callback A before callback B will cause <code class="function">B()</code> to be 
 <div class="refsect2">
 <a name="g-test-queue-unref"></a><h3>g_test_queue_unref()</h3>
 <pre class="programlisting">#define             g_test_queue_unref(gobject)</pre>
-<p>Enqueue an object to be released with <a href="../gobject-The-Base-Object-Type.html#g-object-unref"><code class="function">g_object_unref()</code></a> during
+<p>Enqueue an object to be released with <a href="../gobject/gobject-The-Base-Object-Type.html#g-object-unref"><code class="function">g_object_unref()</code></a> during
 the next teardown phase. This is equivalent to calling
-<a class="link" href="glib-Testing.html#g-test-queue-destroy" title="g_test_queue_destroy ()"><code class="function">g_test_queue_destroy()</code></a> with a destroy callback of <a href="../gobject-The-Base-Object-Type.html#g-object-unref"><code class="function">g_object_unref()</code></a>.</p>
+<a class="link" href="glib-Testing.html#g-test-queue-destroy" title="g_test_queue_destroy ()"><code class="function">g_test_queue_destroy()</code></a> with a destroy callback of <a href="../gobject/gobject-The-Base-Object-Type.html#g-object-unref"><code class="function">g_object_unref()</code></a>.</p>
 <div class="refsect3">
 <a name="g-test-queue-unref.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1843,7 +1962,7 @@ message is logged, it will not be printed, and the test case will
 not abort.</p>
 <p>This API may only be used with the old logging API (<a class="link" href="glib-Message-Logging.html#g-log" title="g_log ()"><code class="function">g_log()</code></a> without
 <code class="literal">G_LOG_USE_STRUCTURED</code> defined). It will not work with the structured logging
-API. See Testing for Messages.</p>
+API. See <a class="link" href="glib-Message-Logging.html#testing-for-messages" title="Testing for Messages">Testing for Messages</a>.</p>
 <p>Use <a class="link" href="glib-Testing.html#g-test-assert-expected-messages" title="g_test_assert_expected_messages"><code class="function">g_test_assert_expected_messages()</code></a> to assert that all
 previously-expected messages have been seen and suppressed.</p>
 <p>You can call this multiple times in a row, if multiple messages are
@@ -1891,7 +2010,7 @@ expected via <a class="link" href="glib-Testing.html#g-test-expect-message" titl
 <tr>
 <td class="parameter_name"><p>log_domain</p></td>
 <td class="parameter_description"><p> the log domain of the message. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>log_level</p></td>
@@ -1916,7 +2035,7 @@ expected via <a class="link" href="glib-Testing.html#g-test-expect-message" titl
 <a class="link" href="glib-Testing.html#g-test-expect-message" title="g_test_expect_message ()"><code class="function">g_test_expect_message()</code></a> have been seen and suppressed.</p>
 <p>This API may only be used with the old logging API (<a class="link" href="glib-Message-Logging.html#g-log" title="g_log ()"><code class="function">g_log()</code></a> without
 <code class="literal">G_LOG_USE_STRUCTURED</code> defined). It will not work with the structured logging
-API. See Testing for Messages.</p>
+API. See <a class="link" href="glib-Message-Logging.html#testing-for-messages" title="Testing for Messages">Testing for Messages</a>.</p>
 <p>If messages at <a class="link" href="glib-Message-Logging.html#G-LOG-LEVEL-DEBUG:CAPS"><code class="literal">G_LOG_LEVEL_DEBUG</code></a> are emitted, but not explicitly
 expected via <a class="link" href="glib-Testing.html#g-test-expect-message" title="g_test_expect_message ()"><code class="function">g_test_expect_message()</code></a> then they will be ignored.</p>
 <p class="since">Since: <a class="link" href="api-index-2-34.html#api-index-2.34">2.34</a></p>
@@ -2030,7 +2149,7 @@ message.</p>
 <tr>
 <td class="parameter_name"><p>test_path</p></td>
 <td class="parameter_description"><p> Test to run in a subprocess. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>usec_timeout</p></td>
@@ -2403,7 +2522,9 @@ see <a class="link" href="glib-Testing.html#g-test-rand-int" title="g_test_rand_
 fails. If the assertion fails (i.e. the expression is not true),
 an error message is logged and the application is terminated.</p>
 <p>The macro can be turned off in final releases of code by defining
-<code class="literal">G_DISABLE_ASSERT</code> when compiling the application.</p>
+<code class="literal">G_DISABLE_ASSERT</code> when compiling the application, so code must
+not depend on any side effects from <em class="parameter"><code>expr</code></em>
+.</p>
 <div class="refsect3">
 <a name="g-assert.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -3213,7 +3334,7 @@ build from git) and are considered as distributed files.</p>
 <p><code class="literal">GTestTrapFlags</code> is deprecated and should not be used in newly-written code.</p>
 <p><a class="link" href="glib-Testing.html#GTestTrapFlags" title="enum GTestTrapFlags"><span class="type">GTestTrapFlags</span></a> is used only with <a class="link" href="glib-Testing.html#g-test-trap-fork" title="g_test_trap_fork ()"><code class="function">g_test_trap_fork()</code></a>,
 which is deprecated. <a class="link" href="glib-Testing.html#g-test-trap-subprocess" title="g_test_trap_subprocess ()"><code class="function">g_test_trap_subprocess()</code></a> uses
-<span class="type">GTestTrapSubprocessFlags</span>.</p>
+<a class="link" href="glib-Testing.html#GTestSubprocessFlags" title="enum GTestSubprocessFlags"><span class="type">GTestSubprocessFlags</span></a>.</p>
 </div>
 <p>Test traps are guards around forked tests.
 These flags determine what traps to set.</p>

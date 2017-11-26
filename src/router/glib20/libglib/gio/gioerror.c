@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -51,6 +51,18 @@ G_DEFINE_QUARK (g-io-error-quark, g_io_error)
  * value %G_IO_ERROR_FAILED is returned for error codes not currently
  * handled (but note that future GLib releases may return a more
  * specific value instead).
+ *
+ * As %errno is global and may be modified by intermediate function
+ * calls, you should save its value as soon as the call which sets it
+ * returns:
+ * |[
+ *   int saved_errno;
+ *
+ *   ret = read (blah);
+ *   saved_errno = errno;
+ *
+ *   g_io_error_from_errno (saved_errno);
+ * ]|
  *
  * Returns: #GIOErrorEnum value for the given errno.h error number.
  **/
@@ -325,6 +337,7 @@ g_io_error_from_win32_error (gint error_code)
       return G_IO_ERROR_NOT_SUPPORTED;
 
     case WSAECONNRESET:
+    case WSAESHUTDOWN:
       return G_IO_ERROR_CONNECTION_CLOSED;
 
     case WSAEHOSTUNREACH:

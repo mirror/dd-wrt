@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Keyed Data Lists: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-data-types.html" title="GLib Data Types">
 <link rel="prev" href="glib-Quarks.html" title="Quarks">
@@ -214,8 +214,8 @@ be accessed either with a string or with a <a class="link" href="glib-Quarks.htm
 the string.</p>
 <p>The <a class="link" href="glib-Quarks.html#GQuark" title="GQuark"><span class="type">GQuark</span></a> methods are quicker, since the strings have to be
 converted to <a href="glib-Quarks.html#GQuark"><span class="type">GQuarks</span></a> anyway.</p>
-<p>Data lists are used for associating arbitrary data with <a href="../gobject-The-Base-Object-Type.html#GObject-struct"><span class="type">GObjects</span></a>,
-using <a href="../gobject-The-Base-Object-Type.html#g-object-set-data"><code class="function">g_object_set_data()</code></a> and related functions.</p>
+<p>Data lists are used for associating arbitrary data with <a href="../gobject/gobject-The-Base-Object-Type.html#GObject-struct"><span class="type">GObjects</span></a>,
+using <a href="../gobject/gobject-The-Base-Object-Type.html#g-object-set-data"><code class="function">g_object_set_data()</code></a> and related functions.</p>
 <p>To create a datalist, use <a class="link" href="glib-Keyed-Data-Lists.html#g-datalist-init" title="g_datalist_init ()"><code class="function">g_datalist_init()</code></a>.</p>
 <p>To add data elements to a datalist use <a class="link" href="glib-Keyed-Data-Lists.html#g-datalist-id-set-data" title="g_datalist_id_set_data()"><code class="function">g_datalist_id_set_data()</code></a>,
 <a class="link" href="glib-Keyed-Data-Lists.html#g-datalist-id-set-data-full" title="g_datalist_id_set_data_full ()"><code class="function">g_datalist_id_set_data_full()</code></a>, <a class="link" href="glib-Keyed-Data-Lists.html#g-datalist-set-data" title="g_datalist_set_data()"><code class="function">g_datalist_set_data()</code></a> and
@@ -236,6 +236,7 @@ and <a class="link" href="glib-Keyed-Data-Lists.html#g-datalist-get-data" title=
 g_datalist_init (<em class="parameter"><code><a class="link" href="glib-Keyed-Data-Lists.html#GData" title="GData"><span class="type">GData</span></a> **datalist</code></em>);</pre>
 <p>Resets the datalist to <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. It does not free any memory or call
 any destroy functions.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-datalist-init.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -283,7 +284,7 @@ called.</p>
 <td class="parameter_description"><p> the data element, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> to remove any previous element
 corresponding to <em class="parameter"><code>q</code></em>
 . </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -301,6 +302,7 @@ g_datalist_id_set_data_full (<em class="parameter"><code><a class="link" href="g
 function to be called when the element is removed from the datalist.
 Any previous data with the same key is removed, and its destroy
 function is called.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-datalist-id-set-data-full.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -325,18 +327,18 @@ function is called.</p>
 <td class="parameter_description"><p> the data element or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> to remove any previous element
 corresponding to <em class="parameter"><code>key_id</code></em>
 . </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>destroy_func</p></td>
-<td class="parameter_description"><p>the function to call when the data element is
+<td class="parameter_description"><p> the function to call when the data element is
 removed. This function will be called with the data
 element and can be used to free any memory allocated
 for it. If <em class="parameter"><code>data</code></em>
 is <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>, then <em class="parameter"><code>destroy_func</code></em>
 must
-also be <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>.</p></td>
-<td class="parameter_annotations"> </td>
+also be <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -374,7 +376,9 @@ g_datalist_id_get_data (<em class="parameter"><code><a class="link" href="glib-K
 </div>
 <div class="refsect3">
 <a name="g-datalist-id-get-data.returns"></a><h4>Returns</h4>
-<p> the data element, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if it is not found.</p>
+<p> the data element, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if
+it is not found. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 </div>
 <hr>
@@ -413,6 +417,7 @@ g_datalist_id_remove_no_notify (<em class="parameter"><code><a class="link" href
                                 <em class="parameter"><code><a class="link" href="glib-Quarks.html#GQuark" title="GQuark"><span class="type">GQuark</span></a> key_id</code></em>);</pre>
 <p>Removes an element, without calling its destroy notification
 function.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-datalist-id-remove-no-notify.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -438,7 +443,9 @@ function.</p>
 <div class="refsect3">
 <a name="g-datalist-id-remove-no-notify.returns"></a><h4>Returns</h4>
 <p> the data previously stored at <em class="parameter"><code>key_id</code></em>
-, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if none.</p>
+,
+or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if none. </p>
+<p><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 </div>
 <hr>
@@ -468,8 +475,9 @@ object.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_data</p></td>
-<td class="parameter_description"><p>user data that was specified in <a class="link" href="glib-Keyed-Data-Lists.html#g-datalist-id-dup-data" title="g_datalist_id_dup_data ()"><code class="function">g_datalist_id_dup_data()</code></a></p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> user data that was specified in
+<a class="link" href="glib-Keyed-Data-Lists.html#g-datalist-id-dup-data" title="g_datalist_id_dup_data ()"><code class="function">g_datalist_id_dup_data()</code></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="This parameter is a 'user_data', for callbacks; many bindings can pass NULL here."><span class="acronym">closure</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -501,6 +509,7 @@ will be called with a <a class="link" href="glib-Standard-Macros.html#NULL:CAPS"
 is not allowed to read or modify the datalist.</p>
 <p>This function can be useful to avoid races when multiple
 threads are using the same datalist and the same key.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-datalist-id-dup-data.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -523,13 +532,13 @@ threads are using the same datalist and the same key.</p>
 <tr>
 <td class="parameter_name"><p>dup_func</p></td>
 <td class="parameter_description"><p> function to duplicate the old value. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="The callback is valid only during the call to the method."><span class="acronym">scope call</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_data</p></td>
 <td class="parameter_description"><p> passed as user_data to <em class="parameter"><code>dup_func</code></em>
 . </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="This parameter is a 'user_data', for callbacks; many bindings can pass NULL here."><span class="acronym">closure</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -542,7 +551,8 @@ associated with <em class="parameter"><code>key_id</code></em>
 in <em class="parameter"><code>datalist</code></em>
 , or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if not set.
 If <em class="parameter"><code>dup_func</code></em>
-is <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>, the value is returned unmodified.</p>
+is <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>, the value is returned unmodified. </p>
+<p><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-34.html#api-index-2.34">2.34</a></p>
 </div>
@@ -576,6 +586,7 @@ Its up to the caller to free this as he wishes, which may
 or may not include using <em class="parameter"><code>old_destroy</code></em>
  as sometimes replacement
 should not destroy the object in the normal way.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-datalist-id-replace-data.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -598,22 +609,22 @@ should not destroy the object in the normal way.</p>
 <tr>
 <td class="parameter_name"><p>oldval</p></td>
 <td class="parameter_description"><p> the old value to compare against. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>newval</p></td>
 <td class="parameter_description"><p> the new value to replace it with. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>destroy</p></td>
 <td class="parameter_description"><p> destroy notify for the new value. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>old_destroy</p></td>
 <td class="parameter_description"><p> destroy notify for the existing value. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -656,7 +667,7 @@ by <em class="parameter"><code>newval</code></em>
 <td class="parameter_description"><p> the data element, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> to remove any previous element
 corresponding to <em class="parameter"><code>k</code></em>
 . </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -692,17 +703,17 @@ and the function to be called when the data element is removed.</p>
 <td class="parameter_description"><p> the data element, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> to remove any previous element
 corresponding to <em class="parameter"><code>k</code></em>
 . </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>f</p></td>
-<td class="parameter_description"><p>the function to call when the data element is removed. This
-function will be called with the data element and can be used to
+<td class="parameter_description"><p> the function to call when the data element is removed.
+This function will be called with the data element and can be used to
 free any memory allocated for it. If <em class="parameter"><code>d</code></em>
 is <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>, then <em class="parameter"><code>f</code></em>
 must
-also be <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>.</p></td>
-<td class="parameter_annotations"> </td>
+also be <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -740,7 +751,9 @@ g_datalist_get_data (<em class="parameter"><code><a class="link" href="glib-Keye
 </div>
 <div class="refsect3">
 <a name="g-datalist-get-data.returns"></a><h4>Returns</h4>
-<p> the data element, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if it is not found.</p>
+<p> the data element, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if it
+is not found. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 </div>
 <hr>
@@ -831,13 +844,13 @@ not be called.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>func</p></td>
-<td class="parameter_description"><p>the function to call for each data element.</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the function to call for each data element. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="The callback is valid only during the call to the method."><span class="acronym">scope call</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_data</p></td>
-<td class="parameter_description"><p>user data to pass to the function.</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> user data to pass to the function. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="This parameter is a 'user_data', for callbacks; many bindings can pass NULL here."><span class="acronym">closure</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -851,6 +864,7 @@ g_datalist_clear (<em class="parameter"><code><a class="link" href="glib-Keyed-D
 <p>Frees all the data elements of the datalist.
 The data elements' destroy functions are called
 if they have been set.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-datalist-clear.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -877,7 +891,7 @@ g_datalist_set_flags (<em class="parameter"><code><a class="link" href="glib-Key
 to keep a small number of boolean flags in an object with
 a data list without using any additional space. It is
 not generally useful except in circumstances where space
-is very tight. (It is used in the base <a href="../gobject-The-Base-Object-Type.html#GObject-struct"><span class="type">GObject</span></a> type, for
+is very tight. (It is used in the base <a href="../gobject/gobject-The-Base-Object-Type.html#GObject-struct"><span class="type">GObject</span></a> type, for
 example.)</p>
 <div class="refsect3">
 <a name="g-datalist-set-flags.parameters"></a><h4>Parameters</h4>

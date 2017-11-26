@@ -7,7 +7,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -246,7 +246,7 @@ g_mutex_unlock (GMutex *mutex)
  * non-recursive.  As such, calling g_mutex_lock() on a #GMutex that has
  * already been locked by the same thread results in undefined behaviour
  * (including but not limited to deadlocks or arbitrary return values).
-
+ *
  * Returns: %TRUE if @mutex could be locked
  */
 gboolean
@@ -538,7 +538,10 @@ g_rw_lock_clear (GRWLock *rw_lock)
 void
 g_rw_lock_writer_lock (GRWLock *rw_lock)
 {
-  pthread_rwlock_wrlock (g_rw_lock_get_impl (rw_lock));
+  int retval = pthread_rwlock_wrlock (g_rw_lock_get_impl (rw_lock));
+
+  if (retval != 0)
+    g_critical ("Failed to get RW lock %p: %s", rw_lock, g_strerror (retval));
 }
 
 /**
@@ -588,14 +591,18 @@ g_rw_lock_writer_unlock (GRWLock *rw_lock)
  * thread will block. Read locks can be taken recursively.
  *
  * It is implementation-defined how many threads are allowed to
- * hold read locks on the same lock simultaneously.
+ * hold read locks on the same lock simultaneously. If the limit is hit,
+ * or if a deadlock is detected, a critical warning will be emitted.
  *
  * Since: 2.32
  */
 void
 g_rw_lock_reader_lock (GRWLock *rw_lock)
 {
-  pthread_rwlock_rdlock (g_rw_lock_get_impl (rw_lock));
+  int retval = pthread_rwlock_rdlock (g_rw_lock_get_impl (rw_lock));
+
+  if (retval != 0)
+    g_critical ("Failed to get RW lock %p: %s", rw_lock, g_strerror (retval));
 }
 
 /**
@@ -944,7 +951,7 @@ g_cond_wait_until (GCond  *cond,
  * A macro to assist with the static initialisation of a #GPrivate.
  *
  * This macro is useful for the case that a #GDestroyNotify function
- * should be associated the key.  This is needed when the key will be
+ * should be associated with the key.  This is needed when the key will be
  * used to point at memory that should be deallocated when the thread
  * exits.
  *

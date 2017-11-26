@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GCancellable: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="async.html" title="Asynchronous I/O">
 <link rel="prev" href="async.html" title="Asynchronous I/O">
@@ -243,7 +243,7 @@ g_cancellable_is_cancelled (<em class="parameter"><code><a class="link" href="GC
 <tbody><tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr></tbody>
 </table></div>
 </div>
@@ -275,7 +275,7 @@ that the operation was cancelled.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -365,7 +365,7 @@ with <a class="link" href="GCancellable.html#g-cancellable-reset" title="g_cance
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>pollfd</p></td>
@@ -440,7 +440,7 @@ in which case the source will never trigger.</p>
 <tbody><tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr></tbody>
 </table></div>
 </div>
@@ -641,7 +641,7 @@ code that unconditionally invokes e.g. <a class="link" href="GCancellable.html#g
 <td class="parameter_name"><p>data_destroy_func</p></td>
 <td class="parameter_description"><p> Free function for <em class="parameter"><code>data</code></em>
 or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -686,7 +686,7 @@ nothing.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> A <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>handler_id</p></td>

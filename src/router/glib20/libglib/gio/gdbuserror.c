@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -172,7 +172,7 @@ g_dbus_error_quark (void)
  * g_dbus_error_register_error_domain:
  * @error_domain_quark_name: The error domain name.
  * @quark_volatile: A pointer where to store the #GQuark.
- * @entries: A pointer to @num_entries #GDBusErrorEntry struct items.
+ * @entries: (array length=num_entries): A pointer to @num_entries #GDBusErrorEntry struct items.
  * @num_entries: Number of items to register.
  *
  * Helper function for associating a #GError error domain with D-Bus error names.
@@ -659,7 +659,7 @@ g_dbus_error_new_for_dbus_error (const gchar *dbus_error_name,
  * @error: A pointer to a #GError or %NULL.
  * @dbus_error_name: D-Bus error name.
  * @dbus_error_message: D-Bus error message.
- * @format: (allow-none): printf()-style format to prepend to @dbus_error_message or %NULL.
+ * @format: (nullable): printf()-style format to prepend to @dbus_error_message or %NULL.
  * @...: Arguments for @format.
  *
  * Does nothing if @error is %NULL. Otherwise sets *@error to
@@ -704,7 +704,7 @@ g_dbus_error_set_dbus_error (GError      **error,
  * @error: A pointer to a #GError or %NULL.
  * @dbus_error_name: D-Bus error name.
  * @dbus_error_message: D-Bus error message.
- * @format: (allow-none): printf()-style format to prepend to @dbus_error_message or %NULL.
+ * @format: (nullable): printf()-style format to prepend to @dbus_error_message or %NULL.
  * @var_args: Arguments for @format.
  *
  * Like g_dbus_error_set_dbus_error() but intended for language bindings.

@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Generic values: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="rn01.html" title="API Reference">
 <link rel="prev" href="gobject-Boxed-Types.html" title="Boxed Types">
@@ -723,7 +723,7 @@ value_table's <code class="function">collect_value()</code> function.</p>
 <tr>
 <td class="parameter_name"><p>instance</p></td>
 <td class="parameter_description"><p> the instance. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -917,6 +917,8 @@ is left untouched.</p>
                     <em class="parameter"><code><a class="link" href="gobject-Generic-values.html#GValue" title="GValue"><span class="type">GValue</span></a> *dest_value</code></em>);</pre>
 <p>The type of value transformation functions which can be registered with
 <a class="link" href="gobject-Generic-values.html#g-value-register-transform-func" title="g_value_register_transform_func ()"><code class="function">g_value_register_transform_func()</code></a>.</p>
+<p><em class="parameter"><code>dest_value</code></em>
+ will be initialized to the correct destination type.</p>
 <div class="refsect3">
 <a name="GValueTransform.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">

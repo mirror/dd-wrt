@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -133,7 +133,7 @@
  * - `s`: the type string of %G_VARIANT_TYPE_STRING; a string.
  * - `o`: the type string of %G_VARIANT_TYPE_OBJECT_PATH; a string in the form
  *   of a D-Bus object path.
- * - `g`: the type string of %G_VARIANT_TYPE_STRING; a string in the form of
+ * - `g`: the type string of %G_VARIANT_TYPE_SIGNATURE; a string in the form of
  *   a D-Bus type signature.
  * - `?`: the type string of %G_VARIANT_TYPE_BASIC; an indefinite type that
  *   is a supertype of any of the basic types.
@@ -197,8 +197,8 @@ g_variant_type_check (const GVariantType *type)
 /**
  * g_variant_type_string_scan:
  * @string: a pointer to any string
- * @limit: (allow-none): the end of @string, or %NULL
- * @endptr: (out) (allow-none): location to store the end pointer, or %NULL
+ * @limit: (nullable): the end of @string, or %NULL
+ * @endptr: (out) (optional): location to store the end pointer, or %NULL
  *
  * Scan for a single complete and valid GVariant type string in @string.
  * The memory pointed to by @limit (or bytes beyond it) is never
@@ -292,7 +292,7 @@ g_variant_type_string_is_valid (const gchar *type_string)
 
 /**
  * g_variant_type_free:
- * @type: (allow-none): a #GVariantType, or %NULL
+ * @type: (nullable): a #GVariantType, or %NULL
  *
  * Frees a #GVariantType that was allocated with
  * g_variant_type_copy(), g_variant_type_new() or one of the container

@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GIOError: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="file_ops.html" title="File Operations">
 <link rel="prev" href="GFileEnumerator.html" title="GFileEnumerator">
@@ -96,6 +96,8 @@ g_io_error_from_errno (<em class="parameter"><code><a href="../glib-Basic-Types.
 value <a class="link" href="gio-GIOError.html#G-IO-ERROR-FAILED:CAPS"><code class="literal">G_IO_ERROR_FAILED</code></a> is returned for error codes not currently
 handled (but note that future GLib releases may return a more
 specific value instead).</p>
+<p>As <code class="literal">errno</code> is global and may be modified by intermediate function
+calls, you should save its value as soon as the call which sets it</p>
 <div class="refsect3">
 <a name="g-io-error-from-errno.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">

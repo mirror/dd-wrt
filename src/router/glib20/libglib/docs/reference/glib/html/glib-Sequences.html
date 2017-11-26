@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Sequences: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-data-types.html" title="GLib Data Types">
 <link rel="prev" href="glib-Double-ended-Queues.html" title="Double-ended Queues">
@@ -481,13 +481,14 @@ are removed from the sequence.</p>
 <tbody><tr>
 <td class="parameter_name"><p>data_destroy</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-Datasets.html#GDestroyNotify" title="GDestroyNotify ()"><span class="type">GDestroyNotify</span></a> function, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
 <a name="g-sequence-new.returns"></a><h4>Returns</h4>
-<p> a new <a class="link" href="glib-Sequences.html#GSequence" title="GSequence"><span class="type">GSequence</span></a></p>
+<p> a new <a class="link" href="glib-Sequences.html#GSequence" title="GSequence"><span class="type">GSequence</span></a>. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -787,7 +788,8 @@ g_sequence_get_begin_iter (<em class="parameter"><code><a class="link" href="gli
 <div class="refsect3">
 <a name="g-sequence-get-begin-iter.returns"></a><h4>Returns</h4>
 <p> the begin iterator for <em class="parameter"><code>seq</code></em>
-.</p>
+. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -816,7 +818,8 @@ g_sequence_get_end_iter (<em class="parameter"><code><a class="link" href="glib-
 <div class="refsect3">
 <a name="g-sequence-get-end-iter.returns"></a><h4>Returns</h4>
 <p> the end iterator for <em class="parameter"><code>seq</code></em>
-</p>
+. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -857,7 +860,8 @@ than the number of items in <em class="parameter"><code>seq</code></em>
 <div class="refsect3">
 <a name="g-sequence-get-iter-at-pos.returns"></a><h4>Returns</h4>
 <p> The <a class="link" href="glib-Sequences.html#GSequenceIter" title="GSequenceIter"><span class="type">GSequenceIter</span></a> at position <em class="parameter"><code>pos</code></em>
-</p>
+. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -893,7 +897,8 @@ g_sequence_append (<em class="parameter"><code><a class="link" href="glib-Sequen
 </div>
 <div class="refsect3">
 <a name="g-sequence-append.returns"></a><h4>Returns</h4>
-<p> an iterator pointing to the new item</p>
+<p> an iterator pointing to the new item. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -929,7 +934,8 @@ g_sequence_prepend (<em class="parameter"><code><a class="link" href="glib-Seque
 </div>
 <div class="refsect3">
 <a name="g-sequence-prepend.returns"></a><h4>Returns</h4>
-<p> an iterator pointing to the new item</p>
+<p> an iterator pointing to the new item. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -965,7 +971,8 @@ g_sequence_insert_before (<em class="parameter"><code><a class="link" href="glib
 </div>
 <div class="refsect3">
 <a name="g-sequence-insert-before.returns"></a><h4>Returns</h4>
-<p> an iterator pointing to the new item</p>
+<p> an iterator pointing to the new item. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -1104,7 +1111,8 @@ if the second  item comes before the first.</p>
 </div>
 <div class="refsect3">
 <a name="g-sequence-insert-sorted.returns"></a><h4>Returns</h4>
-<p> a <a class="link" href="glib-Sequences.html#GSequenceIter" title="GSequenceIter"><span class="type">GSequenceIter</span></a> pointing to the new item.</p>
+<p> a <a class="link" href="glib-Sequences.html#GSequenceIter" title="GSequenceIter"><span class="type">GSequenceIter</span></a> pointing to the new item. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -1165,7 +1173,8 @@ if the second iterator comes before the first.</p>
 </div>
 <div class="refsect3">
 <a name="g-sequence-insert-sorted-iter.returns"></a><h4>Returns</h4>
-<p> a <a class="link" href="glib-Sequences.html#GSequenceIter" title="GSequenceIter"><span class="type">GSequenceIter</span></a> pointing to the new item</p>
+<p> a <a class="link" href="glib-Sequences.html#GSequenceIter" title="GSequenceIter"><span class="type">GSequenceIter</span></a> pointing to the new item. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -1449,7 +1458,8 @@ doing unsorted insertions.</p>
 <p> an <a class="link" href="glib-Sequences.html#GSequenceIter" title="GSequenceIter"><span class="type">GSequenceIter</span></a> pointing to the position where <em class="parameter"><code>data</code></em>
 would have been inserted according to <em class="parameter"><code>cmp_func</code></em>
 and <em class="parameter"><code>cmp_data</code></em>
-</p>
+. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -1515,7 +1525,8 @@ doing unsorted insertions.</p>
 where <em class="parameter"><code>data</code></em>
 would have been inserted according to <em class="parameter"><code>iter_cmp</code></em>
 and <em class="parameter"><code>cmp_data</code></em>
-</p>
+. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -1587,7 +1598,8 @@ first item found equal to <em class="parameter"><code>data</code></em>
 according to <em class="parameter"><code>cmp_func</code></em>
 and
 <em class="parameter"><code>cmp_data</code></em>
-, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if no such item exists</p>
+, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if no such item exists. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-28.html#api-index-2.28">2.28</a></p>
 </div>
@@ -1651,7 +1663,8 @@ doing unsorted insertions.</p>
 the first item found equal to <em class="parameter"><code>data</code></em>
 according to <em class="parameter"><code>cmp_func</code></em>
 and <em class="parameter"><code>cmp_data</code></em>
-, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if no such item exists</p>
+, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if no such item exists. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-28.html#api-index-2.28">2.28</a></p>
 </div>
@@ -1680,7 +1693,8 @@ g_sequence_get (<em class="parameter"><code><a class="link" href="glib-Sequences
 <div class="refsect3">
 <a name="g-sequence-get.returns"></a><h4>Returns</h4>
 <p> the data that <em class="parameter"><code>iter</code></em>
-points to</p>
+points to. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -1805,7 +1819,8 @@ If <em class="parameter"><code>iter</code></em>
 <div class="refsect3">
 <a name="g-sequence-iter-next.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="glib-Sequences.html#GSequenceIter" title="GSequenceIter"><span class="type">GSequenceIter</span></a> pointing to the next position after <em class="parameter"><code>iter</code></em>
-</p>
+. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -1837,7 +1852,8 @@ If <em class="parameter"><code>iter</code></em>
 <a name="g-sequence-iter-prev.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="glib-Sequences.html#GSequenceIter" title="GSequenceIter"><span class="type">GSequenceIter</span></a> pointing to the previous position
 before <em class="parameter"><code>iter</code></em>
-</p>
+. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -1914,7 +1930,8 @@ the returned <a class="link" href="glib-Sequences.html#GSequenceIter" title="GSe
 <a name="g-sequence-iter-move.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="glib-Sequences.html#GSequenceIter" title="GSequenceIter"><span class="type">GSequenceIter</span></a> which is <em class="parameter"><code>delta</code></em>
 positions away from <em class="parameter"><code>iter</code></em>
-</p>
+. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -1943,7 +1960,8 @@ g_sequence_iter_get_sequence (<em class="parameter"><code><a class="link" href="
 <div class="refsect3">
 <a name="g-sequence-iter-get-sequence.returns"></a><h4>Returns</h4>
 <p> the <a class="link" href="glib-Sequences.html#GSequence" title="GSequence"><span class="type">GSequence</span></a> that <em class="parameter"><code>iter</code></em>
-points into</p>
+points into. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -2039,7 +2057,8 @@ and <em class="parameter"><code>begin</code></em>
 <p> a <a class="link" href="glib-Sequences.html#GSequenceIter" title="GSequenceIter"><span class="type">GSequenceIter</span></a> pointing somewhere in the
 (<em class="parameter"><code>begin</code></em>
 , <em class="parameter"><code>end</code></em>
-) range</p>
+) range. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>

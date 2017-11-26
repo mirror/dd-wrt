@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Dynamic Loading of Modules: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-core.html" title="GLib Core Application Support">
 <link rel="prev" href="glib-Asynchronous-Queues.html" title="Asynchronous Queues">
@@ -319,7 +319,7 @@ directory it will return <code class="literal">\Windows\mylibrary.dll</code>.</p
 <td class="parameter_description"><p> the directory where the module is. This can be
 <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> or the empty string to indicate that the standard platform-specific
 directories will be used, though that is not recommended. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>module_name</p></td>
@@ -368,7 +368,7 @@ returned.</p>
 <td class="parameter_name"><p>file_name</p></td>
 <td class="parameter_description"><p> the name of the file containing the module, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>
 to obtain a <a class="link" href="glib-Dynamic-Loading-of-Modules.html#GModule" title="GModule"><span class="type">GModule</span></a> representing the main program itself. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>flags</p></td>
@@ -637,9 +637,13 @@ for Windows this is "dll".</p>
 <a name="G-MODULE-EXPORT:CAPS"></a><h3>G_MODULE_EXPORT</h3>
 <pre class="programlisting">#  define G_MODULE_EXPORT		__declspec(dllexport)
 </pre>
-<p>Used to declare functions exported by modules. This is a no-op on Linux
-and Unices, but when compiling for Windows, it marks a symbol to be
-exported from the library or executable being built.</p>
+<p>Used to declare functions exported by libraries or modules.</p>
+<p>When compiling for Windows, it marks the symbol as <code class="literal">dllexport</code>.</p>
+<p>When compiling for Linux and Unices, it marks the symbol as having <code class="literal">default</code>
+visibility. This is no-op unless the code is being compiled with a
+non-default
+<a class="ulink" href="https://gcc.gnu.org/onlinedocs/gcc/Code-Gen-Options.html#index-fvisibility-1260" target="_top">visibility flag</a>
+such as <code class="literal">hidden</code>.</p>
 </div>
 <hr>
 <div class="refsect2">

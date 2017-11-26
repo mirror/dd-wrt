@@ -90,7 +90,18 @@ gdbus_sources = 							\
 # These are not built into the library yet
 EXTRA_DIST += gdbusdaemon.c gdbusdaemon.h dbus-daemon.xml
 
-gdbus-daemon-generated.h gdbus-daemon-generated.c: $(srcdir)/dbus-daemon.xml $(srcdir)/gdbus-2.0/codegen/gdbus-codegen.in
+GDBUS_PYTHON_DEPS = 					\
+	$(srcdir)/gdbus-2.0/codegen/gdbus-codegen.in	\
+	$(srcdir)/gdbus-2.0/codegen/codegen_main.py 	\
+	$(srcdir)/gdbus-2.0/codegen/parser.py 		\
+	$(srcdir)/gdbus-2.0/codegen/codegen_docbook.py 	\
+	$(srcdir)/gdbus-2.0/codegen/codegen.py 		\
+	$(srcdir)/gdbus-2.0/codegen/__init__.py 	\
+	$(srcdir)/gdbus-2.0/codegen/dbustypes.py 	\
+	$(builddir)/gdbus-2.0/codegen/config.py 	\
+	$(srcdir)/gdbus-2.0/codegen/utils.py
+
+gdbus-daemon-generated.h gdbus-daemon-generated.c: $(srcdir)/dbus-daemon.xml $(GDBUS_PYTHON_DEPS)
 	$(AM_V_GEN) UNINSTALLED_GLIB_SRCDIR=$(top_srcdir) \
 		UNINSTALLED_GLIB_BUILDDIR=$(top_builddir) \
 		$(PYTHON) $(srcdir)/gdbus-2.0/codegen/gdbus-codegen.in \
@@ -221,6 +232,8 @@ local_sources = \
 platform_libadd =
 platform_deps =
 appinfo_sources =
+appinfo_headers =
+contenttype_sources =
 
 if HAVE_INOTIFY
 SUBDIRS += inotify
@@ -247,9 +260,13 @@ SUBDIRS += fam
 endif
 
 if OS_UNIX
-unix_appinfo_sources = gdesktopappinfo.c
 platform_libadd += xdgmime/libxdgmime.la
 platform_deps += xdgmime/libxdgmime.la
+if !OS_COCOA
+appinfo_headers += gdesktopappinfo.h
+endif
+
+
 unix_sources = \
 	gfiledescriptorbased.c  \
 	gunixconnection.c	\
@@ -266,27 +283,27 @@ unix_sources = \
 	gunixvolumemonitor.h 	\
 	gunixinputstream.c 	\
 	gunixoutputstream.c 	\
-	gcontenttype.c 		\
 	gcontenttypeprivate.h 	\
 	gfdonotificationbackend.c \
 	ggtknotificationbackend.c \
 	gportalnotificationbackend.c \
 	gdocumentportal.c	\
 	gdocumentportal.h	\
+	gopenuriportal.c	\
+	gopenuriportal.h	\
 	gportalsupport.c	\
 	gportalsupport.h	\
 	$(portal_sources)	\
 	$(NULL)
 
-appinfo_sources += $(unix_appinfo_sources)
-
 if OS_COCOA
+if MAC_OS_X_9
 unix_sources += gcocoanotificationbackend.c
+endif
 endif
 
 giounixincludedir=$(includedir)/gio-unix-2.0/gio
 giounixinclude_HEADERS = \
-	gdesktopappinfo.h	\
 	gfiledescriptorbased.h  \
 	gunixconnection.h	\
 	gunixcredentialsmessage.h	\
@@ -296,6 +313,7 @@ giounixinclude_HEADERS = \
 	gunixinputstream.h 	\
 	gunixoutputstream.h 	\
 	gunixsocketaddress.h	\
+	$(appinfo_headers) \
 	$(NULL)
 
 if HAVE_NETLINK
@@ -319,7 +337,6 @@ win32_actual_sources = \
 	$(gdbus_daemon_sources) \
 	gwin32registrykey.c \
 	gwin32registrykey.h \
-	gcontenttype-win32.c \
 	gwin32mount.c \
 	gwin32mount.h \
 	gwin32volumemonitor.c \
@@ -332,6 +349,7 @@ win32_actual_sources = \
 
 win32_more_sources_for_vcproj = \
 	gwin32appinfo.c \
+	gcontenttype-win32.c \
 	gregistrysettingsbackend.c \
 	win32/gwinhttpfile.c \
 	win32/gwinhttpfileinputstream.c \
@@ -341,10 +359,10 @@ win32_more_sources_for_vcproj = \
 	win32/gwin32filemonitor.c
 
 if OS_WIN32
-win32_appinfo_sources = gwin32appinfo.c gwin32appinfo.h
+appinfo_sources += gwin32appinfo.c gwin32appinfo.h
+contenttype_sources += gcontenttype-win32.c
 platform_libadd += -lshlwapi -lws2_32 -ldnsapi -liphlpapi
 win32_sources = $(win32_actual_sources)
-appinfo_sources += $(win32_appinfo_sources)
 
 giowin32includedir=$(includedir)/gio-win32-2.0/gio
 giowin32include_HEADERS = \
@@ -360,6 +378,7 @@ CLEANFILES += $(xdp_dbus_built_sources)
 
 portal_interfaces = \
 	org.freedesktop.portal.Documents.xml \
+	org.freedesktop.portal.OpenURI.xml \
 	org.freedesktop.portal.NetworkMonitor.xml \
 	org.freedesktop.portal.ProxyResolver.xml \
 	$(NULL)
@@ -375,6 +394,8 @@ $(xdp_dbus_built_sources) : $(portal_interfaces)
 		--generate-c-code $(builddir)/xdp-dbus			\
 		--annotate "org.freedesktop.portal.Documents.Add()" "org.gtk.GDBus.C.UnixFD" "true" \
 		--annotate "org.freedesktop.portal.Documents.AddNamed()" "org.gtk.GDBus.C.UnixFD" "true" \
+		--annotate "org.freedesktop.portal.Documents.AddFull()" "org.gtk.GDBus.C.UnixFD" "true" \
+		--annotate "org.freedesktop.portal.OpenURI.OpenFile()" "org.gtk.GDBus.C.UnixFD" "true" \
 		$^
 
 portal_sources = \
@@ -384,6 +405,18 @@ portal_sources = \
 	gproxyresolverportal.h		\
 	$(xdp_dbus_built_sources)	\
 	$(NULL)
+
+if OS_COCOA
+contenttype_sources += gosxcontenttype.c
+appinfo_sources += gosxappinfo.c gosxappinfo.h
+endif
+
+if OS_UNIX
+if !OS_COCOA
+contenttype_sources += gcontenttype.c
+appinfo_sources += gdesktopappinfo.c
+endif
+endif
 
 gio_base_sources =		\
 	gappinfo.c 		\
@@ -540,6 +573,7 @@ gio_base_sources =		\
 libgio_2_0_la_SOURCES =		\
 	$(gio_base_sources)	\
 	$(appinfo_sources) 	\
+	$(contenttype_sources) \
 	$(unix_sources) 	\
 	$(win32_sources) 	\
 	$(settings_sources) 	\
@@ -728,10 +762,9 @@ BUILT_SOURCES += 		\
 	$(NULL)
 
 EXTRA_DIST += 			\
-	data-to-c.pl		\
+	data-to-c.py		\
 	gioenumtypes.h.template	\
 	gioenumtypes.c.template	\
-	makefile.msc		\
 	gio.rc.in		\
 	gschema.dtd		\
 	gconstructor_as_data.h	\
@@ -789,8 +822,8 @@ gio_querymodules_LDADD	 = libgio-2.0.la 		\
 	$(top_builddir)/glib/libglib-2.0.la		\
 	$(NULL)
 
-gconstructor_as_data.h: $(top_srcdir)/glib/gconstructor.h data-to-c.pl
-	$(AM_V_GEN) $(srcdir)/data-to-c.pl $(top_srcdir)/glib/gconstructor.h gconstructor_code > $@.tmp && mv $@.tmp $@
+gconstructor_as_data.h: $(top_srcdir)/glib/gconstructor.h data-to-c.py
+	$(AM_V_GEN) $(srcdir)/data-to-c.py $(top_srcdir)/glib/gconstructor.h gconstructor_code $@
 
 glib_compile_schemas_LDADD = $(top_builddir)/glib/libglib-2.0.la
 glib_compile_schemas_SOURCES = \
@@ -859,6 +892,7 @@ gdbus_LDADD = libgio-2.0.la 				\
 	$(NULL)
 
 if OS_UNIX
+if !OS_COCOA
 # ------------------------------------------------------------------------
 # gapplication(1) tool
 bin_PROGRAMS += gapplication
@@ -868,6 +902,7 @@ gapplication_LDADD = libgio-2.0.la 			\
 	$(top_builddir)/gmodule/libgmodule-2.0.la 	\
 	$(top_builddir)/glib/libglib-2.0.la		\
 	$(NULL)
+endif
 endif
 
 completiondir = $(datadir)/bash-completion/completions
@@ -948,15 +983,15 @@ glib_compile_schemas_EXCLUDES = dummy
 gio_tool_FILES = $(gio_SOURCES)
 gio_tool_EXCLUDES = dummy
 
-include $(top_srcdir)/build/Makefile.msvcproj
+include $(top_srcdir)/win32/Makefile.msvcproj
 
 dist-hook: \
 	$(BUILT_EXTRA_DIST)						\
-	$(top_builddir)/build/win32/vs9/gio.vcproj			\
-	$(top_builddir)/build/win32/vs9/gio.headers			\
-	$(top_builddir)/build/win32/vs9/glib-compile-schemas.vcproj	\
-	$(top_builddir)/build/win32/vs9/glib-compile-resources.vcproj	\
-	$(top_builddir)/build/win32/vs9/gio-tool.vcproj
+	$(top_builddir)/win32/vs9/gio.vcproj			\
+	$(top_builddir)/win32/vs9/gio.headers			\
+	$(top_builddir)/win32/vs9/glib-compile-schemas.vcproj	\
+	$(top_builddir)/win32/vs9/glib-compile-resources.vcproj	\
+	$(top_builddir)/win32/vs9/gio-tool.vcproj
 	files='$(BUILT_EXTRA_DIST)'; \
 	for f in $$files; do \
 	  if test -f $$f; then d=.; else d=$(srcdir); fi; \

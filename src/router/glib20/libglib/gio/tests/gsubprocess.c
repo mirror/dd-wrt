@@ -182,6 +182,127 @@ test_exit1 (void)
   g_object_unref (proc);
 }
 
+typedef struct {
+  GMainLoop    *loop;
+  GCancellable *cancellable;
+  gboolean      cb_called;
+} TestExit1CancelData;
+
+static gboolean
+test_exit1_cancel_idle_quit_cb (gpointer user_data)
+{
+  GMainLoop *loop = user_data;
+  g_main_loop_quit (loop);
+  return G_SOURCE_REMOVE;
+}
+
+static void
+test_exit1_cancel_wait_check_cb (GObject      *source,
+                                 GAsyncResult *result,
+                                 gpointer      user_data)
+{
+  GSubprocess *subprocess = G_SUBPROCESS (source);
+  TestExit1CancelData *data = user_data;
+  gboolean ret;
+  GError *error = NULL;
+
+  g_assert_false (data->cb_called);
+  data->cb_called = TRUE;
+
+  ret = g_subprocess_wait_check_finish (subprocess, result, &error);
+  g_assert (!ret);
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
+  g_clear_error (&error);
+
+  g_idle_add (test_exit1_cancel_idle_quit_cb, data->loop);
+}
+
+static void
+test_exit1_cancel (void)
+{
+  GError *local_error = NULL;
+  GError **error = &local_error;
+  GPtrArray *args;
+  GSubprocess *proc;
+  TestExit1CancelData data = { 0 };
+
+  g_test_bug ("786456");
+
+  args = get_test_subprocess_args ("exit1", NULL);
+  proc = g_subprocess_newv ((const gchar * const *) args->pdata, G_SUBPROCESS_FLAGS_NONE, error);
+  g_ptr_array_free (args, TRUE);
+  g_assert_no_error (local_error);
+
+  data.loop = g_main_loop_new (NULL, FALSE);
+  data.cancellable = g_cancellable_new ();
+  g_subprocess_wait_check_async (proc, data.cancellable, test_exit1_cancel_wait_check_cb, &data);
+
+  g_subprocess_wait_check (proc, NULL, error);
+  g_assert_error (local_error, G_SPAWN_EXIT_ERROR, 1);
+  g_clear_error (error);
+
+  g_cancellable_cancel (data.cancellable);
+  g_main_loop_run (data.loop);
+
+  g_object_unref (proc);
+  g_main_loop_unref (data.loop);
+  g_clear_object (&data.cancellable);
+}
+
+static void
+test_exit1_cancel_in_cb_wait_check_cb (GObject      *source,
+                                       GAsyncResult *result,
+                                       gpointer      user_data)
+{
+  GSubprocess *subprocess = G_SUBPROCESS (source);
+  TestExit1CancelData *data = user_data;
+  gboolean ret;
+  GError *error = NULL;
+
+  g_assert_false (data->cb_called);
+  data->cb_called = TRUE;
+
+  ret = g_subprocess_wait_check_finish (subprocess, result, &error);
+  g_assert (!ret);
+  g_assert_error (error, G_SPAWN_EXIT_ERROR, 1);
+  g_clear_error (&error);
+
+  g_cancellable_cancel (data->cancellable);
+
+  g_idle_add (test_exit1_cancel_idle_quit_cb, data->loop);
+}
+
+static void
+test_exit1_cancel_in_cb (void)
+{
+  GError *local_error = NULL;
+  GError **error = &local_error;
+  GPtrArray *args;
+  GSubprocess *proc;
+  TestExit1CancelData data = { 0 };
+
+  g_test_bug ("786456");
+
+  args = get_test_subprocess_args ("exit1", NULL);
+  proc = g_subprocess_newv ((const gchar * const *) args->pdata, G_SUBPROCESS_FLAGS_NONE, error);
+  g_ptr_array_free (args, TRUE);
+  g_assert_no_error (local_error);
+
+  data.loop = g_main_loop_new (NULL, FALSE);
+  data.cancellable = g_cancellable_new ();
+  g_subprocess_wait_check_async (proc, data.cancellable, test_exit1_cancel_in_cb_wait_check_cb, &data);
+
+  g_subprocess_wait_check (proc, NULL, error);
+  g_assert_error (local_error, G_SPAWN_EXIT_ERROR, 1);
+  g_clear_error (error);
+
+  g_main_loop_run (data.loop);
+
+  g_object_unref (proc);
+  g_main_loop_unref (data.loop);
+  g_clear_object (&data.cancellable);
+}
+
 static gchar *
 splice_to_string (GInputStream   *stream,
                   GError        **error)
@@ -684,8 +805,7 @@ test_communicate (void)
   stdout_data = g_bytes_get_data (stdout, &stdout_len);
 
   g_assert_cmpmem (stdout_data, stdout_len, "hello world", 11);
-  g_bytes_unref (stdout);
-  
+
   g_bytes_unref (input);
   g_bytes_unref (stdout);
   g_object_unref (proc);
@@ -946,6 +1066,53 @@ test_env (void)
   g_strfreev (split);
   g_free (result);
   g_object_unref (proc);
+  g_object_unref (launcher);
+}
+
+/* Test that explicitly inheriting and modifying the parent process’
+ * environment works. */
+static void
+test_env_inherit (void)
+{
+  GError *local_error = NULL;
+  GError **error = &local_error;
+  GSubprocessLauncher *launcher;
+  GSubprocess *proc;
+  GPtrArray *args;
+  GInputStream *stdout;
+  gchar *result;
+  gchar **split;
+
+  g_setenv ("TEST_ENV_INHERIT1", "1", TRUE);
+  g_setenv ("TEST_ENV_INHERIT2", "2", TRUE);
+
+  args = get_test_subprocess_args ("env", NULL);
+  launcher = g_subprocess_launcher_new (G_SUBPROCESS_FLAGS_NONE);
+  g_subprocess_launcher_set_flags (launcher, G_SUBPROCESS_FLAGS_STDOUT_PIPE);
+  g_subprocess_launcher_set_environ (launcher, NULL);
+  g_subprocess_launcher_setenv (launcher, "TWO", "2", TRUE);
+  g_subprocess_launcher_unsetenv (launcher, "TEST_ENV_INHERIT1");
+
+  g_assert_null (g_subprocess_launcher_getenv (launcher, "TEST_ENV_INHERIT1"));
+  g_assert_cmpstr (g_subprocess_launcher_getenv (launcher, "TEST_ENV_INHERIT2"), ==, "2");
+  g_assert_cmpstr (g_subprocess_launcher_getenv (launcher, "TWO"), ==, "2");
+
+  proc = g_subprocess_launcher_spawn (launcher, error, args->pdata[0], "env", NULL);
+  g_ptr_array_free (args, TRUE);
+  g_assert_no_error (local_error);
+
+  stdout = g_subprocess_get_stdout_pipe (proc);
+
+  result = splice_to_string (stdout, error);
+  split = g_strsplit (result, "\n", -1);
+  g_assert_null (g_environ_getenv (split, "TEST_ENV_INHERIT1"));
+  g_assert_cmpstr (g_environ_getenv (split, "TEST_ENV_INHERIT2"), ==, "2");
+  g_assert_cmpstr (g_environ_getenv (split, "TWO"), ==, "2");
+
+  g_strfreev (split);
+  g_free (result);
+  g_object_unref (proc);
+  g_object_unref (launcher);
 }
 
 static void
@@ -979,6 +1146,7 @@ test_cwd (void)
 
   g_free (result);
   g_object_unref (proc);
+  g_object_unref (launcher);
 }
 #ifdef G_OS_UNIX
 static void
@@ -1234,12 +1402,15 @@ test_launcher_environment (void)
   g_free (out);
 
   g_object_unref (proc);
+  g_object_unref (launcher);
+  g_ptr_array_unref (args);
 }
 
 int
 main (int argc, char **argv)
 {
   g_test_init (&argc, &argv, NULL);
+  g_test_bug_base ("https://bugzilla.gnome.org/");
 
   g_test_add_func ("/gsubprocess/noop", test_noop);
   g_test_add_func ("/gsubprocess/noop-all-to-null", test_noop_all_to_null);
@@ -1250,6 +1421,8 @@ main (int argc, char **argv)
   g_test_add_func ("/gsubprocess/signal", test_signal);
 #endif
   g_test_add_func ("/gsubprocess/exit1", test_exit1);
+  g_test_add_func ("/gsubprocess/exit1/cancel", test_exit1_cancel);
+  g_test_add_func ("/gsubprocess/exit1/cancel_in_cb", test_exit1_cancel_in_cb);
   g_test_add_func ("/gsubprocess/echo1", test_echo1);
 #ifdef G_OS_UNIX
   g_test_add_func ("/gsubprocess/echo-merged", test_echo_merged);
@@ -1265,6 +1438,7 @@ main (int argc, char **argv)
   g_test_add_func ("/gsubprocess/communicate-nothing", test_communicate_nothing);
   g_test_add_func ("/gsubprocess/terminate", test_terminate);
   g_test_add_func ("/gsubprocess/env", test_env);
+  g_test_add_func ("/gsubprocess/env/inherit", test_env_inherit);
   g_test_add_func ("/gsubprocess/cwd", test_cwd);
 #ifdef G_OS_UNIX
   g_test_add_func ("/gsubprocess/stdout-file", test_stdout_file);

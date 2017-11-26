@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -94,7 +94,7 @@ io_job_thread (GTask         *task,
  * g_io_scheduler_push_job:
  * @job_func: a #GIOSchedulerJobFunc.
  * @user_data: data to pass to @job_func
- * @notify: (allow-none): a #GDestroyNotify for @user_data, or %NULL
+ * @notify: (nullable): a #GDestroyNotify for @user_data, or %NULL
  * @io_priority: the [I/O priority][io-priority]
  * of the request.
  * @cancellable: optional #GCancellable object, %NULL to ignore.
@@ -226,7 +226,7 @@ mainloop_proxy_free (MainLoopProxy *proxy)
  * @job: a #GIOSchedulerJob
  * @func: a #GSourceFunc callback that will be called in the original thread
  * @user_data: data to pass to @func
- * @notify: (allow-none): a #GDestroyNotify for @user_data, or %NULL
+ * @notify: (nullable): a #GDestroyNotify for @user_data, or %NULL
  * 
  * Used from an I/O job to send a callback to be run in the thread
  * that the job was started from, waiting for the result (and thus
@@ -281,7 +281,7 @@ g_io_scheduler_job_send_to_mainloop (GIOSchedulerJob *job,
  * @job: a #GIOSchedulerJob
  * @func: a #GSourceFunc callback that will be called in the original thread
  * @user_data: data to pass to @func
- * @notify: (allow-none): a #GDestroyNotify for @user_data, or %NULL
+ * @notify: (nullable): a #GDestroyNotify for @user_data, or %NULL
  * 
  * Used from an I/O job to send a callback to be run asynchronously in
  * the thread that the job was started from. The callback will be run

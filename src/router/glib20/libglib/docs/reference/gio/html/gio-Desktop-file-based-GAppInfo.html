@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GDesktopAppInfo: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="types.html" title="File types and applications">
 <link rel="prev" href="GAppInfoMonitor.html" title="GAppInfoMonitor">
@@ -261,7 +261,7 @@
 </div>
 <div class="refsect1">
 <a name="gio-Desktop-file-based-GAppInfo.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/GTypeModule.html">GInterface</a>
+<pre class="screen">    <a href="/home/mclasen/gnome/share/gtk-doc/html/gobject/GTypeModule.html">GInterface</a>
     <span class="lineart">╰──</span> GDesktopAppInfoLookup
     <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>
     <span class="lineart">╰──</span> GDesktopAppInfo
@@ -882,7 +882,7 @@ activation) then <em class="parameter"><code>spawn_flags</code></em>
 <tr>
 <td class="parameter_name"><p>launch_context</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GAppInfo.html#GAppLaunchContext"><span class="type">GAppLaunchContext</span></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>spawn_flags</p></td>
@@ -893,24 +893,24 @@ activation) then <em class="parameter"><code>spawn_flags</code></em>
 <td class="parameter_name"><p>user_setup</p></td>
 <td class="parameter_description"><p> a <a href="../glib-Spawning-Processes.html#GSpawnChildSetupFunc"><span class="type">GSpawnChildSetupFunc</span></a>, used once
 for each process. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="The callback is valid only during the call to the method."><span class="acronym">scope call</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="The callback is valid until first called."><span class="acronym">scope async</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_setup_data</p></td>
 <td class="parameter_description"><p> User data for <em class="parameter"><code>user_setup</code></em>
 . </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="This parameter is a 'user_data', for callbacks; many bindings can pass NULL here."><span class="acronym">closure</span></acronym> user_setup][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="This parameter is a 'user_data', for callbacks; many bindings can pass NULL here."><span class="acronym">closure</span></acronym> user_setup][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>pid_callback</p></td>
 <td class="parameter_description"><p> Callback for child processes. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="The callback is valid only during the call to the method."><span class="acronym">scope call</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="The callback is valid only during the call to the method."><span class="acronym">scope call</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>pid_callback_data</p></td>
 <td class="parameter_description"><p> User data for <em class="parameter"><code>callback</code></em>
 . </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="This parameter is a 'user_data', for callbacks; many bindings can pass NULL here."><span class="acronym">closure</span></acronym> pid_callback][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="This parameter is a 'user_data', for callbacks; many bindings can pass NULL here."><span class="acronym">closure</span></acronym> pid_callback][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -1040,7 +1040,7 @@ occur while using this function.</p>
 <tr>
 <td class="parameter_name"><p>launch_context</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GAppInfo.html#GAppLaunchContext"><span class="type">GAppLaunchContext</span></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>

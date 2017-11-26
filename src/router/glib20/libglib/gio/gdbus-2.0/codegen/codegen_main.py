@@ -7,7 +7,7 @@
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
-# version 2 of the License, or (at your option) any later version.
+# version 2.1 of the License, or (at your option) any later version.
 #
 # This library is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,6 +21,7 @@
 
 import sys
 import optparse
+from os import path
 
 from . import config
 from . import utils
@@ -162,6 +163,8 @@ def codegen_main():
                           help='Generate Docbook in OUTFILES-org.Project.IFace.xml')
     arg_parser.add_option('', '--annotate', nargs=3, action='append', metavar='WHAT KEY VALUE',
                           help='Add annotation (may be used several times)')
+    arg_parser.add_option('', '--output-directory', metavar='OUTDIR', default='',
+                          help='Location to output generated files')
     (opts, args) = arg_parser.parse_args();
 
     all_ifaces = []
@@ -178,22 +181,26 @@ def codegen_main():
     for i in all_ifaces:
         i.post_process(opts.interface_prefix, opts.c_namespace)
 
+    outdir = opts.output_directory
+
     docbook = opts.generate_docbook
-    docbook_gen = codegen_docbook.DocbookCodeGenerator(all_ifaces, docbook);
+    docbook_gen = codegen_docbook.DocbookCodeGenerator(all_ifaces, docbook, outdir);
     if docbook:
         ret = docbook_gen.generate()
 
     c_code = opts.generate_c_code
     if c_code:
-        h = open(c_code + '.h', 'w')
-        c = open(c_code + '.c', 'w')
+        header_name = c_code + '.h'
+        h = open(path.join(outdir, header_name), 'w')
+        c = open(path.join(outdir, c_code + '.c'), 'w')
         gen = codegen.CodeGenerator(all_ifaces,
                                     opts.c_namespace,
                                     opts.interface_prefix,
                                     opts.c_generate_object_manager,
                                     opts.c_generate_autocleanup,
                                     docbook_gen,
-                                    h, c);
+                                    h, c,
+                                    header_name)
         ret = gen.generate()
         h.close()
         c.close()

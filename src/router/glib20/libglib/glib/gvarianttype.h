@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -96,9 +96,10 @@ typedef struct _GVariantType GVariantType;
 /**
  * G_VARIANT_TYPE_UINT64:
  *
- * The type of an integer value that can range from 0 to
- * 18446744073709551616.  That's a really big number, but a Rubik's
- * cube can have a bit more than twice as many possible positions.
+ * The type of an integer value that can range from 0
+ * to 18446744073709551615 (inclusive).  That's a really big number,
+ * but a Rubik's cube can have a bit more than twice as many possible
+ * positions.
  **/
 #define G_VARIANT_TYPE_UINT64               ((const GVariantType *) "t")
 

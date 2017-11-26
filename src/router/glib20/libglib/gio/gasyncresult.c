@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -36,13 +36,16 @@
  * which are chained together by a #GAsyncReadyCallback. To begin
  * an asynchronous operation, provide a #GAsyncReadyCallback to the
  * asynchronous function. This callback will be triggered when the
- * operation has completed, and will be passed a #GAsyncResult instance
- * filled with the details of the operation's success or failure, the
- * object the asynchronous function was started for and any error codes
- * returned. The asynchronous callback function is then expected to call
- * the corresponding "_finish()" function, passing the object the
- * function was called for, the #GAsyncResult instance, and (optionally)
- * an @error to grab any error conditions that may have occurred.
+ * operation has completed, and must be run in a later iteration of
+ * the [thread-default main context][g-main-context-push-thread-default]
+ * from where the operation was initiated. It will be passed a
+ * #GAsyncResult instance filled with the details of the operation's
+ * success or failure, the object the asynchronous function was
+ * started for and any error codes returned. The asynchronous callback
+ * function is then expected to call the corresponding "_finish()"
+ * function, passing the object the function was called for, the
+ * #GAsyncResult instance, and (optionally) an @error to grab any
+ * error conditions that may have occurred.
  *
  * The "_finish()" function for an operation takes the generic result
  * (of type #GAsyncResult) and returns the specific result that the
@@ -147,8 +150,8 @@ g_async_result_get_user_data (GAsyncResult *res)
  *
  * Gets the source object from a #GAsyncResult.
  *
- * Returns: (transfer full): a new reference to the source object for the @res,
- *    or %NULL if there is none.
+ * Returns: (transfer full) (nullable): a new reference to the source
+ *    object for the @res, or %NULL if there is none.
  */
 GObject *
 g_async_result_get_source_object (GAsyncResult *res)

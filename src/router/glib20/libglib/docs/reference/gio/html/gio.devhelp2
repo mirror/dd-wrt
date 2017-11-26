@@ -273,6 +273,7 @@
     <sub name="Index of new symbols in 2.46" link="api-index-2-46.html"/>
     <sub name="Index of new symbols in 2.48" link="api-index-2-48.html"/>
     <sub name="Index of new symbols in 2.50" link="api-index-2-50.html"/>
+    <sub name="Index of new symbols in 2.52" link="api-index-2-52.html"/>
     <sub name="Annotation Glossary" link="annotation-glossary.html"/>
   </chapters>
   <functions>
@@ -285,6 +286,7 @@
     <keyword type="function" name="g_file_new_for_commandline_arg_and_cwd ()" link="GFile.html#g-file-new-for-commandline-arg-and-cwd" since="2.36"/>
     <keyword type="function" name="g_file_new_tmp ()" link="GFile.html#g-file-new-tmp" since="2.32"/>
     <keyword type="function" name="g_file_parse_name ()" link="GFile.html#g-file-parse-name"/>
+    <keyword type="function" name="g_file_new_build_filename ()" link="GFile.html#g-file-new-build-filename" since="2.56"/>
     <keyword type="function" name="g_file_dup ()" link="GFile.html#g-file-dup"/>
     <keyword type="function" name="g_file_hash ()" link="GFile.html#g-file-hash"/>
     <keyword type="function" name="g_file_equal ()" link="GFile.html#g-file-equal"/>
@@ -383,6 +385,9 @@
     <keyword type="function" name="g_file_monitor_directory ()" link="GFile.html#g-file-monitor-directory"/>
     <keyword type="function" name="g_file_monitor_file ()" link="GFile.html#g-file-monitor-file"/>
     <keyword type="function" name="g_file_monitor ()" link="GFile.html#g-file-monitor" since="2.18"/>
+    <keyword type="function" name="g_file_load_bytes ()" link="GFile.html#g-file-load-bytes" since="2.56"/>
+    <keyword type="function" name="g_file_load_bytes_async ()" link="GFile.html#g-file-load-bytes-async" since="2.56"/>
+    <keyword type="function" name="g_file_load_bytes_finish ()" link="GFile.html#g-file-load-bytes-finish" since="2.56"/>
     <keyword type="function" name="g_file_load_contents ()" link="GFile.html#g-file-load-contents"/>
     <keyword type="function" name="g_file_load_contents_async ()" link="GFile.html#g-file-load-contents-async"/>
     <keyword type="function" name="g_file_load_contents_finish ()" link="GFile.html#g-file-load-contents-finish"/>
@@ -507,6 +512,7 @@
     <keyword type="macro" name="G_FILE_ATTRIBUTE_STANDARD_DISPLAY_NAME" link="GFileInfo.html#G-FILE-ATTRIBUTE-STANDARD-DISPLAY-NAME:CAPS"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_STANDARD_EDIT_NAME" link="GFileInfo.html#G-FILE-ATTRIBUTE-STANDARD-EDIT-NAME:CAPS"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_STANDARD_COPY_NAME" link="GFileInfo.html#G-FILE-ATTRIBUTE-STANDARD-COPY-NAME:CAPS"/>
+    <keyword type="macro" name="G_FILE_ATTRIBUTE_STANDARD_DESCRIPTION" link="GFileInfo.html#G-FILE-ATTRIBUTE-STANDARD-DESCRIPTION:CAPS"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_STANDARD_ICON" link="GFileInfo.html#G-FILE-ATTRIBUTE-STANDARD-ICON:CAPS"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_STANDARD_SYMBOLIC_ICON" link="GFileInfo.html#G-FILE-ATTRIBUTE-STANDARD-SYMBOLIC-ICON:CAPS" since="2.34"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE" link="GFileInfo.html#G-FILE-ATTRIBUTE-STANDARD-CONTENT-TYPE:CAPS"/>
@@ -531,12 +537,12 @@
     <keyword type="macro" name="G_FILE_ATTRIBUTE_MOUNTABLE_UNIX_DEVICE" link="GFileInfo.html#G-FILE-ATTRIBUTE-MOUNTABLE-UNIX-DEVICE:CAPS"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_MOUNTABLE_UNIX_DEVICE_FILE" link="GFileInfo.html#G-FILE-ATTRIBUTE-MOUNTABLE-UNIX-DEVICE-FILE:CAPS" since="2.22"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_MOUNTABLE_HAL_UDI" link="GFileInfo.html#G-FILE-ATTRIBUTE-MOUNTABLE-HAL-UDI:CAPS"/>
-    <keyword type="macro" name="G_FILE_ATTRIBUTE_MOUNTABLE_CAN_POLL" link="GFileInfo.html#G-FILE-ATTRIBUTE-MOUNTABLE-CAN-POLL:CAPS" since="2.22"/>
-    <keyword type="macro" name="G_FILE_ATTRIBUTE_MOUNTABLE_IS_MEDIA_CHECK_AUTOMATIC" link="GFileInfo.html#G-FILE-ATTRIBUTE-MOUNTABLE-IS-MEDIA-CHECK-AUTOMATIC:CAPS" since="2.22"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_MOUNTABLE_CAN_START" link="GFileInfo.html#G-FILE-ATTRIBUTE-MOUNTABLE-CAN-START:CAPS" since="2.22"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_MOUNTABLE_CAN_START_DEGRADED" link="GFileInfo.html#G-FILE-ATTRIBUTE-MOUNTABLE-CAN-START-DEGRADED:CAPS" since="2.22"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_MOUNTABLE_CAN_STOP" link="GFileInfo.html#G-FILE-ATTRIBUTE-MOUNTABLE-CAN-STOP:CAPS" since="2.22"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_MOUNTABLE_START_STOP_TYPE" link="GFileInfo.html#G-FILE-ATTRIBUTE-MOUNTABLE-START-STOP-TYPE:CAPS" since="2.22"/>
+    <keyword type="macro" name="G_FILE_ATTRIBUTE_MOUNTABLE_CAN_POLL" link="GFileInfo.html#G-FILE-ATTRIBUTE-MOUNTABLE-CAN-POLL:CAPS" since="2.22"/>
+    <keyword type="macro" name="G_FILE_ATTRIBUTE_MOUNTABLE_IS_MEDIA_CHECK_AUTOMATIC" link="GFileInfo.html#G-FILE-ATTRIBUTE-MOUNTABLE-IS-MEDIA-CHECK-AUTOMATIC:CAPS" since="2.22"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_TIME_MODIFIED" link="GFileInfo.html#G-FILE-ATTRIBUTE-TIME-MODIFIED:CAPS"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_TIME_MODIFIED_USEC" link="GFileInfo.html#G-FILE-ATTRIBUTE-TIME-MODIFIED-USEC:CAPS"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_TIME_ACCESS" link="GFileInfo.html#G-FILE-ATTRIBUTE-TIME-ACCESS:CAPS"/>
@@ -569,14 +575,14 @@
     <keyword type="macro" name="G_FILE_ATTRIBUTE_FILESYSTEM_USED" link="GFileInfo.html#G-FILE-ATTRIBUTE-FILESYSTEM-USED:CAPS" since="2.32"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_FILESYSTEM_TYPE" link="GFileInfo.html#G-FILE-ATTRIBUTE-FILESYSTEM-TYPE:CAPS"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_FILESYSTEM_READONLY" link="GFileInfo.html#G-FILE-ATTRIBUTE-FILESYSTEM-READONLY:CAPS"/>
+    <keyword type="macro" name="G_FILE_ATTRIBUTE_FILESYSTEM_USE_PREVIEW" link="GFileInfo.html#G-FILE-ATTRIBUTE-FILESYSTEM-USE-PREVIEW:CAPS"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_FILESYSTEM_REMOTE" link="GFileInfo.html#G-FILE-ATTRIBUTE-FILESYSTEM-REMOTE:CAPS"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_GVFS_BACKEND" link="GFileInfo.html#G-FILE-ATTRIBUTE-GVFS-BACKEND:CAPS"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_SELINUX_CONTEXT" link="GFileInfo.html#G-FILE-ATTRIBUTE-SELINUX-CONTEXT:CAPS"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_TRASH_ITEM_COUNT" link="GFileInfo.html#G-FILE-ATTRIBUTE-TRASH-ITEM-COUNT:CAPS"/>
-    <keyword type="macro" name="G_FILE_ATTRIBUTE_TRASH_DELETION_DATE" link="GFileInfo.html#G-FILE-ATTRIBUTE-TRASH-DELETION-DATE:CAPS" since="2.24"/>
     <keyword type="macro" name="G_FILE_ATTRIBUTE_TRASH_ORIG_PATH" link="GFileInfo.html#G-FILE-ATTRIBUTE-TRASH-ORIG-PATH:CAPS" since="2.24"/>
-    <keyword type="macro" name="G_FILE_ATTRIBUTE_FILESYSTEM_USE_PREVIEW" link="GFileInfo.html#G-FILE-ATTRIBUTE-FILESYSTEM-USE-PREVIEW:CAPS"/>
-    <keyword type="macro" name="G_FILE_ATTRIBUTE_STANDARD_DESCRIPTION" link="GFileInfo.html#G-FILE-ATTRIBUTE-STANDARD-DESCRIPTION:CAPS"/>
+    <keyword type="macro" name="G_FILE_ATTRIBUTE_TRASH_DELETION_DATE" link="GFileInfo.html#G-FILE-ATTRIBUTE-TRASH-DELETION-DATE:CAPS" since="2.24"/>
+    <keyword type="macro" name="G_FILE_ATTRIBUTE_RECENT_MODIFIED" link="GFileInfo.html#G-FILE-ATTRIBUTE-RECENT-MODIFIED:CAPS" since="2.52"/>
     <keyword type="function" name="g_file_enumerator_iterate ()" link="GFileEnumerator.html#g-file-enumerator-iterate" since="2.44"/>
     <keyword type="function" name="g_file_enumerator_next_file ()" link="GFileEnumerator.html#g-file-enumerator-next-file"/>
     <keyword type="function" name="g_file_enumerator_close ()" link="GFileEnumerator.html#g-file-enumerator-close"/>
@@ -996,6 +1002,7 @@
     <keyword type="function" name="g_pollable_stream_write_all ()" link="gio-gpollableutils.html#g-pollable-stream-write-all" since="2.34"/>
     <keyword type="function" name="g_content_type_equals ()" link="gio-GContentType.html#g-content-type-equals"/>
     <keyword type="function" name="g_content_type_is_a ()" link="gio-GContentType.html#g-content-type-is-a"/>
+    <keyword type="function" name="g_content_type_is_mime_type ()" link="gio-GContentType.html#g-content-type-is-mime-type" since="2.52"/>
     <keyword type="function" name="g_content_type_is_unknown ()" link="gio-GContentType.html#g-content-type-is-unknown"/>
     <keyword type="function" name="g_content_type_get_description ()" link="gio-GContentType.html#g-content-type-get-description"/>
     <keyword type="function" name="g_content_type_get_mime_type ()" link="gio-GContentType.html#g-content-type-get-mime-type"/>
@@ -1205,6 +1212,7 @@
     <keyword type="signal" name="The “stop-button” signal" link="GDrive.html#GDrive-stop-button"/>
     <keyword type="function" name="g_unix_mount_free ()" link="gio-Unix-Mounts.html#g-unix-mount-free"/>
     <keyword type="function" name="g_unix_mount_compare ()" link="gio-Unix-Mounts.html#g-unix-mount-compare"/>
+    <keyword type="function" name="g_unix_mount_copy ()" link="gio-Unix-Mounts.html#g-unix-mount-copy" since="2.54"/>
     <keyword type="function" name="g_unix_mount_get_mount_path ()" link="gio-Unix-Mounts.html#g-unix-mount-get-mount-path"/>
     <keyword type="function" name="g_unix_mount_get_device_path ()" link="gio-Unix-Mounts.html#g-unix-mount-get-device-path"/>
     <keyword type="function" name="g_unix_mount_get_fs_type ()" link="gio-Unix-Mounts.html#g-unix-mount-get-fs-type"/>
@@ -1217,6 +1225,7 @@
     <keyword type="function" name="g_unix_mount_guess_should_display ()" link="gio-Unix-Mounts.html#g-unix-mount-guess-should-display"/>
     <keyword type="function" name="g_unix_mount_point_free ()" link="gio-Unix-Mounts.html#g-unix-mount-point-free"/>
     <keyword type="function" name="g_unix_mount_point_compare ()" link="gio-Unix-Mounts.html#g-unix-mount-point-compare"/>
+    <keyword type="function" name="g_unix_mount_point_copy ()" link="gio-Unix-Mounts.html#g-unix-mount-point-copy" since="2.54"/>
     <keyword type="function" name="g_unix_mount_point_get_mount_path ()" link="gio-Unix-Mounts.html#g-unix-mount-point-get-mount-path"/>
     <keyword type="function" name="g_unix_mount_point_get_device_path ()" link="gio-Unix-Mounts.html#g-unix-mount-point-get-device-path"/>
     <keyword type="function" name="g_unix_mount_point_get_fs_type ()" link="gio-Unix-Mounts.html#g-unix-mount-point-get-fs-type"/>
@@ -1237,8 +1246,10 @@
     <keyword type="function" name="g_unix_mount_monitor_new ()" link="gio-Unix-Mounts.html#g-unix-mount-monitor-new" deprecated="2.44:Use g_unix_mount_monitor_get() instead."/>
     <keyword type="function" name="g_unix_mount_monitor_set_rate_limit ()" link="gio-Unix-Mounts.html#g-unix-mount-monitor-set-rate-limit" deprecated="2.44:This function does nothing.  Don't call it." since="2.18"/>
     <keyword type="function" name="g_unix_is_mount_path_system_internal ()" link="gio-Unix-Mounts.html#g-unix-is-mount-path-system-internal"/>
-    <keyword type="struct" name="GUnixMountPoint" link="gio-Unix-Mounts.html#GUnixMountPoint"/>
-    <keyword type="struct" name="GUnixMountEntry" link="gio-Unix-Mounts.html#GUnixMountEntry"/>
+    <keyword type="function" name="g_unix_is_system_fs_type ()" link="gio-Unix-Mounts.html#g-unix-is-system-fs-type" since="2.56"/>
+    <keyword type="function" name="g_unix_is_system_device_path ()" link="gio-Unix-Mounts.html#g-unix-is-system-device-path" since="2.56"/>
+    <keyword type="struct" name="GUnixMountPoint" link="gio-Unix-Mounts.html#GUnixMountPoint-struct"/>
+    <keyword type="struct" name="GUnixMountEntry" link="gio-Unix-Mounts.html#GUnixMountEntry-struct"/>
     <keyword type="struct" name="GUnixMountMonitor" link="gio-Unix-Mounts.html#GUnixMountMonitor-struct"/>
     <keyword type="signal" name="The “mountpoints-changed” signal" link="gio-Unix-Mounts.html#GUnixMountMonitor-mountpoints-changed"/>
     <keyword type="signal" name="The “mounts-changed” signal" link="gio-Unix-Mounts.html#GUnixMountMonitor-mounts-changed"/>
@@ -1291,7 +1302,7 @@
     <keyword type="function" name="g_initable_init ()" link="GInitable.html#g-initable-init" since="2.22"/>
     <keyword type="function" name="g_initable_new ()" link="GInitable.html#g-initable-new" since="2.22"/>
     <keyword type="function" name="g_initable_new_valist ()" link="GInitable.html#g-initable-new-valist" since="2.22"/>
-    <keyword type="function" name="g_initable_newv ()" link="GInitable.html#g-initable-newv" since="2.22"/>
+    <keyword type="function" name="g_initable_newv ()" link="GInitable.html#g-initable-newv" deprecated="" since="2.22"/>
     <keyword type="struct" name="GInitable" link="GInitable.html#GInitable-struct"/>
     <keyword type="struct" name="struct GInitableIface" link="GInitable.html#GInitableIface" since="2.22"/>
     <keyword type="function" name="g_async_initable_init_async ()" link="GAsyncInitable.html#g-async-initable-init-async" since="2.22"/>
@@ -1299,7 +1310,7 @@
     <keyword type="function" name="g_async_initable_new_async ()" link="GAsyncInitable.html#g-async-initable-new-async" since="2.22"/>
     <keyword type="function" name="g_async_initable_new_finish ()" link="GAsyncInitable.html#g-async-initable-new-finish" since="2.22"/>
     <keyword type="function" name="g_async_initable_new_valist_async ()" link="GAsyncInitable.html#g-async-initable-new-valist-async" since="2.22"/>
-    <keyword type="function" name="g_async_initable_newv_async ()" link="GAsyncInitable.html#g-async-initable-newv-async" since="2.22"/>
+    <keyword type="function" name="g_async_initable_newv_async ()" link="GAsyncInitable.html#g-async-initable-newv-async" deprecated="" since="2.22"/>
     <keyword type="struct" name="GAsyncInitable" link="GAsyncInitable.html#GAsyncInitable-struct"/>
     <keyword type="struct" name="struct GAsyncInitableIface" link="GAsyncInitable.html#GAsyncInitableIface" since="2.22"/>
     <keyword type="function" name="g_subprocess_new ()" link="GSubprocess.html#g-subprocess-new" since="2.40"/>
@@ -1402,6 +1413,8 @@
     <keyword type="function" name="g_socket_get_credentials ()" link="GSocket.html#g-socket-get-credentials" since="2.26"/>
     <keyword type="function" name="g_socket_join_multicast_group ()" link="GSocket.html#g-socket-join-multicast-group" since="2.32"/>
     <keyword type="function" name="g_socket_leave_multicast_group ()" link="GSocket.html#g-socket-leave-multicast-group" since="2.32"/>
+    <keyword type="function" name="g_socket_join_multicast_group_ssm ()" link="GSocket.html#g-socket-join-multicast-group-ssm" since="2.56"/>
+    <keyword type="function" name="g_socket_leave_multicast_group_ssm ()" link="GSocket.html#g-socket-leave-multicast-group-ssm" since="2.56"/>
     <keyword type="function" name="g_socket_get_multicast_loopback ()" link="GSocket.html#g-socket-get-multicast-loopback" since="2.32"/>
     <keyword type="function" name="g_socket_set_multicast_loopback ()" link="GSocket.html#g-socket-set-multicast-loopback" since="2.32"/>
     <keyword type="function" name="g_socket_get_multicast_ttl ()" link="GSocket.html#g-socket-get-multicast-ttl" since="2.32"/>
@@ -3169,6 +3182,7 @@
     <keyword type="constant" name="G_BUS_NAME_OWNER_FLAGS_NONE" link="gio-Owning-Bus-Names.html#G-BUS-NAME-OWNER-FLAGS-NONE:CAPS"/>
     <keyword type="constant" name="G_BUS_NAME_OWNER_FLAGS_ALLOW_REPLACEMENT" link="gio-Owning-Bus-Names.html#G-BUS-NAME-OWNER-FLAGS-ALLOW-REPLACEMENT:CAPS"/>
     <keyword type="constant" name="G_BUS_NAME_OWNER_FLAGS_REPLACE" link="gio-Owning-Bus-Names.html#G-BUS-NAME-OWNER-FLAGS-REPLACE:CAPS"/>
+    <keyword type="constant" name="G_BUS_NAME_OWNER_FLAGS_DO_NOT_QUEUE" link="gio-Owning-Bus-Names.html#G-BUS-NAME-OWNER-FLAGS-DO-NOT-QUEUE:CAPS"/>
     <keyword type="constant" name="G_BUS_NAME_WATCHER_FLAGS_NONE" link="gio-Watching-Bus-Names.html#G-BUS-NAME-WATCHER-FLAGS-NONE:CAPS"/>
     <keyword type="constant" name="G_BUS_NAME_WATCHER_FLAGS_AUTO_START" link="gio-Watching-Bus-Names.html#G-BUS-NAME-WATCHER-FLAGS-AUTO-START:CAPS"/>
     <keyword type="constant" name="G_DBUS_INTERFACE_SKELETON_FLAGS_NONE" link="GDBusInterfaceSkeleton.html#G-DBUS-INTERFACE-SKELETON-FLAGS-NONE:CAPS"/>

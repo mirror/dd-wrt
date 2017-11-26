@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GSubprocess Launcher: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="subprocesses.html" title="Subprocesses">
 <link rel="prev" href="GSubprocess.html" title="GSubprocess">
@@ -329,7 +329,7 @@ g_subprocess_launcher_spawnv (<em class="parameter"><code><a class="link" href="
 <tr>
 <td class="parameter_name"><p>argv</p></td>
 <td class="parameter_description"><p> Command line arguments. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> utf8]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -360,6 +360,12 @@ the process 'environ' and using the functions <a href="../glib-Miscellaneous-Uti
 <a href="../glib-Miscellaneous-Utility-Functions.html#g-environ-unsetenv"><code class="function">g_environ_unsetenv()</code></a>, etc.</p>
 <p>As an alternative, you can use <a class="link" href="GSubprocessLauncher.html#g-subprocess-launcher-setenv" title="g_subprocess_launcher_setenv ()"><code class="function">g_subprocess_launcher_setenv()</code></a>,
 <a class="link" href="GSubprocessLauncher.html#g-subprocess-launcher-unsetenv" title="g_subprocess_launcher_unsetenv ()"><code class="function">g_subprocess_launcher_unsetenv()</code></a>, etc.</p>
+<p>Pass an empty array to set an empty environment. Pass <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to inherit the
+parent process’ environment. As of GLib 2.54, the parent process’ environment
+will be copied when <a class="link" href="GSubprocessLauncher.html#g-subprocess-launcher-set-environ" title="g_subprocess_launcher_set_environ ()"><code class="function">g_subprocess_launcher_set_environ()</code></a> is called.
+Previously, it was copied when the subprocess was executed. This means the
+copied environment may now be modified (using <a class="link" href="GSubprocessLauncher.html#g-subprocess-launcher-setenv" title="g_subprocess_launcher_setenv ()"><code class="function">g_subprocess_launcher_setenv()</code></a>,
+etc.) before launching the subprocess.</p>
 <p>On UNIX, all strings in this array can be arbitrary byte strings.
 On Windows, they should be in UTF-8.</p>
 <div class="refsect3">
@@ -378,8 +384,8 @@ On Windows, they should be in UTF-8.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>env</p></td>
-<td class="parameter_description"><p> the replacement environment. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1]</span></td>
+<td class="parameter_description"><p>    the replacement environment. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename][<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -416,13 +422,14 @@ On Windows, they should be in UTF-8.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>variable</p></td>
-<td class="parameter_description"><p>the environment variable to set, must not contain '='</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the environment variable to set,
+must not contain '='. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>value</p></td>
-<td class="parameter_description"><p>the new value for the variable</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the new value for the variable. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>overwrite</p></td>
@@ -461,8 +468,9 @@ containing '='. On Windows, it should be in UTF-8.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>variable</p></td>
-<td class="parameter_description"><p>the environment variable to unset, must not contain '='</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the environment variable to unset,
+must not contain '='. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -496,15 +504,17 @@ On Windows, it will be UTF-8.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>variable</p></td>
-<td class="parameter_description"><p>the environment variable to get</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the environment variable to get. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
 <a name="g-subprocess-launcher-getenv.returns"></a><h4>Returns</h4>
-<p> the value of the environment variable, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if unset</p>
+<p> the value of the environment variable,
+<a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if unset. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-40.html#api-index-2.40">2.40</a></p>
 </div>
@@ -896,6 +906,7 @@ given.</p>
 <p><a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> can be given as <em class="parameter"><code>child_setup</code></em>
  to disable the functionality.</p>
 <p>Child setup functions are only available on UNIX.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-subprocess-launcher-set-child-setup.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">

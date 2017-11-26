@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GObject: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="rn01.html" title="API Reference">
 <link rel="prev" href="GTypeModule.html" title="GTypeModule">
@@ -199,6 +199,14 @@
 </tr>
 <tr>
 <td class="function_type">
+<a class="link" href="gobject-The-Base-Object-Type.html#GObject"><span class="returnvalue">GObject</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="gobject-The-Base-Object-Type.html#g-object-new-with-properties" title="g_object_new_with_properties ()">g_object_new_with_properties</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
 <a href="../glib-Basic-Types.html#gpointer"><span class="returnvalue">gpointer</span></a>
 </td>
 <td class="function_name">
@@ -352,7 +360,23 @@
 <span class="returnvalue">void</span>
 </td>
 <td class="function_name">
+<a class="link" href="gobject-The-Base-Object-Type.html#g-object-setv" title="g_object_setv ()">g_object_setv</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
 <a class="link" href="gobject-The-Base-Object-Type.html#g-object-get" title="g_object_get ()">g_object_get</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">void</span>
+</td>
+<td class="function_name">
+<a class="link" href="gobject-The-Base-Object-Type.html#g-object-getv" title="g_object_getv ()">g_object_getv</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
 <tr>
@@ -718,7 +742,7 @@ language bindings that provide automated reference and memory ownership
 maintenance (such as smart pointers or garbage collection) should not
 expose floating references in their API.</p>
 <p>Some object implementations may need to save an objects floating state
-across certain code portions (an example is <a href="http://developer.gnome.org/gtk4/GtkMenu.html#GtkMenu-struct"><span class="type">GtkMenu</span></a>), to achieve this,
+across certain code portions (an example is <a href="../gtk4/GtkMenu.html#GtkMenu-struct"><span class="type">GtkMenu</span></a>), to achieve this,
 the following sequence can be used:</p>
 <div class="informalexample">
   <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
@@ -1619,10 +1643,67 @@ name/value pairs, followed by <a href="../glib-Standard-Macros.html#NULL:CAPS"><
 </div>
 <div class="refsect3">
 <a name="g-object-new.returns"></a><h4>Returns</h4>
-<p> (transfer full) (type GObject.Object) : a new instance of
+<p> a new instance of
 <em class="parameter"><code>object_type</code></em>
-</p>
+. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>][<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> GObject.Object]</span></p>
 </div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-object-new-with-properties"></a><h3>g_object_new_with_properties ()</h3>
+<pre class="programlisting"><a class="link" href="gobject-The-Base-Object-Type.html#GObject"><span class="returnvalue">GObject</span></a> *
+g_object_new_with_properties (<em class="parameter"><code><a class="link" href="gobject-Type-Information.html#GType" title="GType"><span class="type">GType</span></a> object_type</code></em>,
+                              <em class="parameter"><code><a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a> n_properties</code></em>,
+                              <em class="parameter"><code>const <span class="type">char</span> *names[]</code></em>,
+                              <em class="parameter"><code>const <a class="link" href="gobject-Generic-values.html#GValue" title="GValue"><span class="type">GValue</span></a> values[]</code></em>);</pre>
+<p>Creates a new instance of a <a class="link" href="gobject-The-Base-Object-Type.html#GObject"><span class="type">GObject</span></a> subtype and sets its properties using
+the provided arrays. Both arrays must have exactly <em class="parameter"><code>n_properties</code></em>
+ elements,
+and the names and values correspond by index.</p>
+<p>Construction parameters (see <a class="link" href="gobject-GParamSpec.html#G-PARAM-CONSTRUCT:CAPS"><code class="literal">G_PARAM_CONSTRUCT</code></a>, <a class="link" href="gobject-GParamSpec.html#G-PARAM-CONSTRUCT-ONLY:CAPS"><code class="literal">G_PARAM_CONSTRUCT_ONLY</code></a>)
+which are not explicitly specified are set to their default values.</p>
+<p><span class="annotation">[<acronym title="Rename the original symbol's name to SYMBOL."><span class="acronym">rename-to</span></acronym> g_object_new]</span></p>
+<div class="refsect3">
+<a name="g-object-new-with-properties.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>object_type</p></td>
+<td class="parameter_description"><p>the object type to instantiate</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>n_properties</p></td>
+<td class="parameter_description"><p>the number of properties</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>names</p></td>
+<td class="parameter_description"><p> the names of each property to be set. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=n_properties]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>values</p></td>
+<td class="parameter_description"><p> the values of each property to be set. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=n_properties]</span></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="g-object-new-with-properties.returns"></a><h4>Returns</h4>
+<p> a new instance of
+<em class="parameter"><code>object_type</code></em>
+. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> GObject.Object][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+</div>
+<p class="since">Since: 2.54</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1631,10 +1712,14 @@ name/value pairs, followed by <a href="../glib-Standard-Macros.html#NULL:CAPS"><
 g_object_newv (<em class="parameter"><code><a class="link" href="gobject-Type-Information.html#GType" title="GType"><span class="type">GType</span></a> object_type</code></em>,
                <em class="parameter"><code><a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a> n_parameters</code></em>,
                <em class="parameter"><code><a class="link" href="gobject-The-Base-Object-Type.html#GParameter" title="struct GParameter"><span class="type">GParameter</span></a> *parameters</code></em>);</pre>
+<div class="warning">
+<p><code class="literal">g_object_newv</code> has been deprecated since version 2.54 and should not be used in newly-written code.</p>
+<p>Use <a class="link" href="gobject-The-Base-Object-Type.html#g-object-new-with-properties" title="g_object_new_with_properties ()"><code class="function">g_object_new_with_properties()</code></a> instead.
+deprecated. See <a class="link" href="gobject-The-Base-Object-Type.html#GParameter" title="struct GParameter"><span class="type">GParameter</span></a> for more information.</p>
+</div>
 <p>Creates a new instance of a <a class="link" href="gobject-The-Base-Object-Type.html#GObject"><span class="type">GObject</span></a> subtype and sets its properties.</p>
 <p>Construction parameters (see <a class="link" href="gobject-GParamSpec.html#G-PARAM-CONSTRUCT:CAPS"><span class="type">G_PARAM_CONSTRUCT</span></a>, <a class="link" href="gobject-GParamSpec.html#G-PARAM-CONSTRUCT-ONLY:CAPS"><span class="type">G_PARAM_CONSTRUCT_ONLY</span></a>)
 which are not explicitly specified are set to their default values.</p>
-<p><span class="annotation">[<acronym title="Rename the original symbol's name to SYMBOL."><span class="acronym">rename-to</span></acronym> g_object_new]</span></p>
 <div class="refsect3">
 <a name="g-object-newv.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -2083,7 +2168,7 @@ thread. Use <a class="link" href="gobject-The-Base-Object-Type.html#GWeakRef" ti
 <td class="parameter_name"><p>weak_pointer_location</p></td>
 <td class="parameter_description"><p> The memory address
 of a pointer. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for input and for returning results. Default is transfer full."><span class="acronym">inout</span></acronym>][not optional][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for input and for returning results. Default is transfer full."><span class="acronym">inout</span></acronym>][not optional]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -2119,7 +2204,7 @@ to match the one used with <a class="link" href="gobject-The-Base-Object-Type.ht
 <td class="parameter_name"><p>weak_pointer_location</p></td>
 <td class="parameter_description"><p> The memory address
 of a pointer. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for input and for returning results. Default is transfer full."><span class="acronym">inout</span></acronym>][not optional][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for input and for returning results. Default is transfer full."><span class="acronym">inout</span></acronym>][not optional]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -2448,6 +2533,56 @@ name/value pairs, followed by <a href="../glib-Standard-Macros.html#NULL:CAPS"><
 </div>
 <hr>
 <div class="refsect2">
+<a name="g-object-setv"></a><h3>g_object_setv ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+g_object_setv (<em class="parameter"><code><a class="link" href="gobject-The-Base-Object-Type.html#GObject"><span class="type">GObject</span></a> *object</code></em>,
+               <em class="parameter"><code><a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a> n_properties</code></em>,
+               <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *names[]</code></em>,
+               <em class="parameter"><code>const <a class="link" href="gobject-Generic-values.html#GValue" title="GValue"><span class="type">GValue</span></a> values[]</code></em>);</pre>
+<p>Sets <em class="parameter"><code>n_properties</code></em>
+ properties for an <em class="parameter"><code>object</code></em>
+.
+Properties to be set will be taken from <em class="parameter"><code>values</code></em>
+. All properties must be
+valid. Warnings will be emitted and undefined behaviour may result if invalid
+properties are passed in.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
+<div class="refsect3">
+<a name="g-object-setv.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>object</p></td>
+<td class="parameter_description"><p>a <a class="link" href="gobject-The-Base-Object-Type.html#GObject"><span class="type">GObject</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>n_properties</p></td>
+<td class="parameter_description"><p>the number of properties</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>names</p></td>
+<td class="parameter_description"><p> the names of each property to be set. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=n_properties]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>values</p></td>
+<td class="parameter_description"><p> the values of each property to be set. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=n_properties]</span></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 2.54</p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="g-object-get"></a><h3>g_object_get ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_object_get (<em class="parameter"><code><a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> object</code></em>,
@@ -2526,6 +2661,55 @@ name/return location pairs, followed by <a href="../glib-Standard-Macros.html#NU
 </tbody>
 </table></div>
 </div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-object-getv"></a><h3>g_object_getv ()</h3>
+<pre class="programlisting"><span class="returnvalue">void</span>
+g_object_getv (<em class="parameter"><code><a class="link" href="gobject-The-Base-Object-Type.html#GObject"><span class="type">GObject</span></a> *object</code></em>,
+               <em class="parameter"><code><a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a> n_properties</code></em>,
+               <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *names[]</code></em>,
+               <em class="parameter"><code><a class="link" href="gobject-Generic-values.html#GValue" title="GValue"><span class="type">GValue</span></a> values[]</code></em>);</pre>
+<p>Gets <em class="parameter"><code>n_properties</code></em>
+ properties for an <em class="parameter"><code>object</code></em>
+.
+Obtained properties will be set to <em class="parameter"><code>values</code></em>
+. All properties must be valid.
+Warnings will be emitted and undefined behaviour may result if invalid
+properties are passed in.</p>
+<div class="refsect3">
+<a name="g-object-getv.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>object</p></td>
+<td class="parameter_description"><p>a <a class="link" href="gobject-The-Base-Object-Type.html#GObject"><span class="type">GObject</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>n_properties</p></td>
+<td class="parameter_description"><p>the number of properties</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>names</p></td>
+<td class="parameter_description"><p> the names of each property to get. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=n_properties]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>values</p></td>
+<td class="parameter_description"><p> the values of each property to get. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=n_properties]</span></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: 2.54</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -2761,8 +2945,9 @@ g_object_get_data (<em class="parameter"><code><a class="link" href="gobject-The
 </div>
 <div class="refsect3">
 <a name="g-object-get-data.returns"></a><h4>Returns</h4>
-<p> the data if found, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if no such data exists. </p>
-<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+<p> the data if found,
+or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if no such data exists. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 </div>
 <hr>
@@ -2797,8 +2982,8 @@ the old association will be destroyed.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>data</p></td>
-<td class="parameter_description"><p>data to associate with that key</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> data to associate with that key. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -2840,13 +3025,13 @@ to a different value or when the object is destroyed.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>data</p></td>
-<td class="parameter_description"><p>data to associate with that key</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> data to associate with that key. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>destroy</p></td>
-<td class="parameter_description"><p>function to call when the association is destroyed</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> function to call when the association is destroyed. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -2884,8 +3069,9 @@ without invoking the association's destroy handler.</p>
 </div>
 <div class="refsect3">
 <a name="g-object-steal-data.returns"></a><h4>Returns</h4>
-<p> the data if found, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if no such data exists. </p>
-<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+<p> the data if found, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>
+if no such data exists. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 </div>
 <hr>
@@ -2912,6 +3098,7 @@ is locked.</p>
 <p>This function can be useful to avoid races when multiple
 threads are using object data on the same key on the same
 object.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-object-dup-data.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -2934,13 +3121,13 @@ object.</p>
 <tr>
 <td class="parameter_name"><p>dup_func</p></td>
 <td class="parameter_description"><p> function to dup the value. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_data</p></td>
 <td class="parameter_description"><p> passed as user_data to <em class="parameter"><code>dup_func</code></em>
 . </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -2987,6 +3174,7 @@ Its up to the caller to free this as he wishes, which may
 or may not include using <em class="parameter"><code>old_destroy</code></em>
  as sometimes replacement
 should not destroy the object in the normal way.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-object-replace-data.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -3009,22 +3197,22 @@ should not destroy the object in the normal way.</p>
 <tr>
 <td class="parameter_name"><p>oldval</p></td>
 <td class="parameter_description"><p> the old value to compare against. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>newval</p></td>
 <td class="parameter_description"><p> the new value. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>destroy</p></td>
 <td class="parameter_description"><p> a destroy notify for the new value. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>old_destroy</p></td>
 <td class="parameter_description"><p> destroy notify for the existing value. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3071,7 +3259,7 @@ g_object_get_qdata (<em class="parameter"><code><a class="link" href="gobject-Th
 <div class="refsect3">
 <a name="g-object-get-qdata.returns"></a><h4>Returns</h4>
 <p> The user data pointer set, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p>
-<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 </div>
 <hr>
@@ -3113,8 +3301,8 @@ removes the data stored.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>data</p></td>
-<td class="parameter_description"><p>An opaque user data pointer</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> An opaque user data pointer. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3158,15 +3346,15 @@ with the same <em class="parameter"><code>quark</code></em>
 </tr>
 <tr>
 <td class="parameter_name"><p>data</p></td>
-<td class="parameter_description"><p>An opaque user data pointer</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> An opaque user data pointer. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>destroy</p></td>
-<td class="parameter_description"><p>Function to invoke with <em class="parameter"><code>data</code></em>
+<td class="parameter_description"><p> Function to invoke with <em class="parameter"><code>data</code></em>
 as argument, when <em class="parameter"><code>data</code></em>
-needs to be freed</p></td>
-<td class="parameter_annotations"> </td>
+needs to be freed. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3270,7 +3458,7 @@ and thus the partial string list would have been freed upon
 <div class="refsect3">
 <a name="g-object-steal-qdata.returns"></a><h4>Returns</h4>
 <p> The user data pointer set, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p>
-<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 </div>
 <hr>
@@ -3297,6 +3485,7 @@ is locked.</p>
 <p>This function can be useful to avoid races when multiple
 threads are using object data on the same key on the same
 object.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-object-dup-qdata.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -3319,13 +3508,13 @@ object.</p>
 <tr>
 <td class="parameter_name"><p>dup_func</p></td>
 <td class="parameter_description"><p> function to dup the value. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_data</p></td>
 <td class="parameter_description"><p> passed as user_data to <em class="parameter"><code>dup_func</code></em>
 . </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3372,6 +3561,7 @@ Its up to the caller to free this as he wishes, which may
 or may not include using <em class="parameter"><code>old_destroy</code></em>
  as sometimes replacement
 should not destroy the object in the normal way.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-object-replace-qdata.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -3394,22 +3584,22 @@ should not destroy the object in the normal way.</p>
 <tr>
 <td class="parameter_name"><p>oldval</p></td>
 <td class="parameter_description"><p> the old value to compare against. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>newval</p></td>
 <td class="parameter_description"><p> the new value. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>destroy</p></td>
 <td class="parameter_description"><p> a destroy notify for the new value. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>old_destroy</p></td>
 <td class="parameter_description"><p> destroy notify for the existing value. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -4076,6 +4266,10 @@ a <a class="link" href="gobject-The-Base-Object-Type.html#GObjectClass" title="s
   GValue       value;
 };
 </pre>
+<div class="warning">
+<p><code class="literal">GParameter</code> has been deprecated since version 2.54 and should not be used in newly-written code.</p>
+<p>This type is not introspectable.</p>
+</div>
 <p>The GParameter struct is an auxiliary structure used
 to hand parameter name/value pairs to <a class="link" href="gobject-The-Base-Object-Type.html#g-object-newv" title="g_object_newv ()"><code class="function">g_object_newv()</code></a>.</p>
 <div class="refsect3">

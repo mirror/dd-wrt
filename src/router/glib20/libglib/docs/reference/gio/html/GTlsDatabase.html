@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GTlsDatabase: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="tls.html" title="TLS (SSL) support">
 <link rel="prev" href="GTlsBackend.html" title="GTlsBackend">
@@ -221,11 +221,11 @@ g_tls_database_verify_chain (<em class="parameter"><code><a class="link" href="G
                              <em class="parameter"><code><a class="link" href="GTlsDatabase.html#GTlsDatabaseVerifyFlags" title="enum GTlsDatabaseVerifyFlags"><span class="type">GTlsDatabaseVerifyFlags</span></a> flags</code></em>,
                              <em class="parameter"><code><a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> *cancellable</code></em>,
                              <em class="parameter"><code><a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
-<p>Verify's a certificate chain after looking up and adding any missing
-certificates to the chain.</p>
+<p>Determines the validity of a certificate chain after looking up and
+adding any missing certificates to the chain.</p>
 <p><em class="parameter"><code>chain</code></em>
  is a chain of <a class="link" href="GTlsCertificate.html" title="GTlsCertificate"><span class="type">GTlsCertificate</span></a> objects each pointing to the next
-certificate in the chain by its <code class="literal">issuer</code> property. The chain may initially
+certificate in the chain by its <a class="link" href="GTlsCertificate.html#GTlsCertificate--issuer" title="The “issuer” property"><span class="type">“issuer”</span></a> property. The chain may initially
 consist of one or more certificates. After the verification process is
 complete, <em class="parameter"><code>chain</code></em>
  may be modified by adding missing certificates, or removing
@@ -245,6 +245,21 @@ host by host basis.</p>
 <p>Currently there are no <em class="parameter"><code>flags</code></em>
 , and <a class="link" href="GTlsDatabase.html#G-TLS-DATABASE-VERIFY-NONE:CAPS"><code class="literal">G_TLS_DATABASE_VERIFY_NONE</code></a> should be
 used.</p>
+<p>If <em class="parameter"><code>chain</code></em>
+ is found to be valid, then the return value will be 0. If
+<em class="parameter"><code>chain</code></em>
+ is found to be invalid, then the return value will indicate
+the problems found. If the function is unable to determine whether
+<em class="parameter"><code>chain</code></em>
+ is valid or not (eg, because <em class="parameter"><code>cancellable</code></em>
+ is triggered
+before it completes) then the return value will be
+<a class="link" href="gio-TLS-Overview.html#G-TLS-CERTIFICATE-GENERIC-ERROR:CAPS"><code class="literal">G_TLS_CERTIFICATE_GENERIC_ERROR</code></a> and <em class="parameter"><code>error</code></em>
+ will be set
+accordingly. <em class="parameter"><code>error</code></em>
+ is not set when <em class="parameter"><code>chain</code></em>
+ is successfully analyzed
+but found to be invalid.</p>
 <p>This function can block, use <a class="link" href="GTlsDatabase.html#g-tls-database-verify-chain-async" title="g_tls_database_verify_chain_async ()"><code class="function">g_tls_database_verify_chain_async()</code></a> to perform
 the verification operation asynchronously.</p>
 <div class="refsect3">
@@ -274,12 +289,12 @@ the verification operation asynchronously.</p>
 <tr>
 <td class="parameter_name"><p>identity</p></td>
 <td class="parameter_description"><p> the expected peer identity. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>interaction</p></td>
 <td class="parameter_description"><p> used to interact with the user if necessary. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>flags</p></td>
@@ -289,12 +304,12 @@ the verification operation asynchronously.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
 <td class="parameter_description"><p> a <a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -319,9 +334,9 @@ g_tls_database_verify_chain_async (<em class="parameter"><code><a class="link" h
                                    <em class="parameter"><code><a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> *cancellable</code></em>,
                                    <em class="parameter"><code><a class="link" href="GAsyncResult.html#GAsyncReadyCallback" title="GAsyncReadyCallback ()"><span class="type">GAsyncReadyCallback</span></a> callback</code></em>,
                                    <em class="parameter"><code><a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> user_data</code></em>);</pre>
-<p>Asynchronously verify's a certificate chain after looking up and adding
-any missing certificates to the chain. See <a class="link" href="GTlsDatabase.html#g-tls-database-verify-chain" title="g_tls_database_verify_chain ()"><code class="function">g_tls_database_verify_chain()</code></a>
-for more information.</p>
+<p>Asynchronously determines the validity of a certificate chain after
+looking up and adding any missing certificates to the chain. See
+<a class="link" href="GTlsDatabase.html#g-tls-database-verify-chain" title="g_tls_database_verify_chain ()"><code class="function">g_tls_database_verify_chain()</code></a> for more information.</p>
 <div class="refsect3">
 <a name="g-tls-database-verify-chain-async.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -349,12 +364,12 @@ for more information.</p>
 <tr>
 <td class="parameter_name"><p>identity</p></td>
 <td class="parameter_description"><p> the expected peer identity. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>interaction</p></td>
 <td class="parameter_description"><p> used to interact with the user if necessary. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>flags</p></td>
@@ -364,7 +379,7 @@ for more information.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
@@ -389,7 +404,22 @@ g_tls_database_verify_chain_finish (<em class="parameter"><code><a class="link" 
                                     <em class="parameter"><code><a class="link" href="GAsyncResult.html" title="GAsyncResult"><span class="type">GAsyncResult</span></a> *result</code></em>,
                                     <em class="parameter"><code><a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Finish an asynchronous verify chain operation. See
-<a class="link" href="GTlsDatabase.html#g-tls-database-verify-chain" title="g_tls_database_verify_chain ()"><code class="function">g_tls_database_verify_chain()</code></a> for more information. *</p>
+<a class="link" href="GTlsDatabase.html#g-tls-database-verify-chain" title="g_tls_database_verify_chain ()"><code class="function">g_tls_database_verify_chain()</code></a> for more information.</p>
+<p>If <em class="parameter"><code>chain</code></em>
+ is found to be valid, then the return value will be 0. If
+<em class="parameter"><code>chain</code></em>
+ is found to be invalid, then the return value will indicate
+the problems found. If the function is unable to determine whether
+<em class="parameter"><code>chain</code></em>
+ is valid or not (eg, because <em class="parameter"><code>cancellable</code></em>
+ is triggered
+before it completes) then the return value will be
+<a class="link" href="gio-TLS-Overview.html#G-TLS-CERTIFICATE-GENERIC-ERROR:CAPS"><code class="literal">G_TLS_CERTIFICATE_GENERIC_ERROR</code></a> and <em class="parameter"><code>error</code></em>
+ will be set
+accordingly. <em class="parameter"><code>error</code></em>
+ is not set when <em class="parameter"><code>chain</code></em>
+ is successfully analyzed
+but found to be invalid.</p>
 <div class="refsect3">
 <a name="g-tls-database-verify-chain-finish.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -465,7 +495,7 @@ the lookup operation asynchronously.</p>
 <tr>
 <td class="parameter_name"><p>interaction</p></td>
 <td class="parameter_description"><p> used to interact with the user if necessary. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>flags</p></td>
@@ -475,12 +505,12 @@ the lookup operation asynchronously.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
 <td class="parameter_description"><p> a <a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -530,7 +560,7 @@ g_tls_database_lookup_certificate_issuer_async
 <tr>
 <td class="parameter_name"><p>interaction</p></td>
 <td class="parameter_description"><p> used to interact with the user if necessary. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>flags</p></td>
@@ -540,7 +570,7 @@ g_tls_database_lookup_certificate_issuer_async
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
@@ -638,7 +668,7 @@ the lookup operation asynchronously.</p>
 <tr>
 <td class="parameter_name"><p>interaction</p></td>
 <td class="parameter_description"><p> used to interact with the user if necessary. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>flags</p></td>
@@ -648,12 +678,12 @@ the lookup operation asynchronously.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
 <td class="parameter_description"><p> a <a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -705,7 +735,7 @@ this time.</p>
 <tr>
 <td class="parameter_name"><p>interaction</p></td>
 <td class="parameter_description"><p> used to interact with the user if necessary. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>flags</p></td>
@@ -715,7 +745,7 @@ this time.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
@@ -863,7 +893,7 @@ the lookup operation asynchronously.</p>
 <tr>
 <td class="parameter_name"><p>interaction</p></td>
 <td class="parameter_description"><p> used to interact with the user if necessary. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>flags</p></td>
@@ -873,12 +903,12 @@ the lookup operation asynchronously.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
 <td class="parameter_description"><p> a <a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -887,7 +917,7 @@ the lookup operation asynchronously.</p>
 <a name="g-tls-database-lookup-certificate-for-handle.returns"></a><h4>Returns</h4>
 <p> a newly allocated
 <a class="link" href="GTlsCertificate.html" title="GTlsCertificate"><span class="type">GTlsCertificate</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. Use <a href="../gobject-The-Base-Object-Type.html#g-object-unref"><code class="function">g_object_unref()</code></a> to release the certificate. </p>
-<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-30.html#api-index-2.30">2.30</a></p>
 </div>
@@ -927,7 +957,7 @@ g_tls_database_lookup_certificate_for_handle_async
 <tr>
 <td class="parameter_name"><p>interaction</p></td>
 <td class="parameter_description"><p> used to interact with the user if necessary. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>flags</p></td>
@@ -937,7 +967,7 @@ g_tls_database_lookup_certificate_for_handle_async
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
@@ -963,7 +993,7 @@ g_tls_database_lookup_certificate_for_handle_finish
                                 <em class="parameter"><code><a class="link" href="GAsyncResult.html" title="GAsyncResult"><span class="type">GAsyncResult</span></a> *result</code></em>,
                                 <em class="parameter"><code><a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Finish an asynchronous lookup of a certificate by its handle. See
-<code class="function">g_tls_database_lookup_certificate_handle()</code> for more information.</p>
+<code class="function">g_tls_database_lookup_certificate_by_handle()</code> for more information.</p>
 <p>If the handle is no longer valid, or does not point to a certificate in
 this database, then <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> will be returned.</p>
 <div class="refsect3">
@@ -1239,7 +1269,7 @@ Used by TLS servers.</p>
 <hr>
 <div class="refsect2">
 <a name="GTlsDatabaseLookupFlags"></a><h3>enum GTlsDatabaseLookupFlags</h3>
-<p>Flags for <code class="function">g_tls_database_lookup_certificate_handle()</code>,
+<p>Flags for <a class="link" href="GTlsDatabase.html#g-tls-database-lookup-certificate-for-handle" title="g_tls_database_lookup_certificate_for_handle ()"><code class="function">g_tls_database_lookup_certificate_for_handle()</code></a>,
 <a class="link" href="GTlsDatabase.html#g-tls-database-lookup-certificate-issuer" title="g_tls_database_lookup_certificate_issuer ()"><code class="function">g_tls_database_lookup_certificate_issuer()</code></a>,
 and <a class="link" href="GTlsDatabase.html#g-tls-database-lookup-certificates-issued-by" title="g_tls_database_lookup_certificates_issued_by ()"><code class="function">g_tls_database_lookup_certificates_issued_by()</code></a>.</p>
 <div class="refsect3">

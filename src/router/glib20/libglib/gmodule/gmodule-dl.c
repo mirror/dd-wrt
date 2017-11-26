@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -57,17 +57,18 @@
  * RTLD_GLOBAL - the external symbols defined in the library will be made
  *		 available to subsequently loaded libraries.
  */
-#ifndef	RTLD_LAZY
+#ifndef	HAVE_RTLD_LAZY
 #define	RTLD_LAZY	1
 #endif	/* RTLD_LAZY */
-#ifndef	RTLD_NOW
+#ifndef	HAVE_RTLD_NOW
 #define	RTLD_NOW	0
 #endif	/* RTLD_NOW */
 /* some systems (OSF1 V5.0) have broken RTLD_GLOBAL linkage */
 #ifdef G_MODULE_BROKEN_RTLD_GLOBAL
 #undef	RTLD_GLOBAL
+#undef	HAVE_RTLD_GLOBAL
 #endif /* G_MODULE_BROKEN_RTLD_GLOBAL */
-#ifndef	RTLD_GLOBAL
+#ifndef	HAVE_RTLD_GLOBAL
 #define	RTLD_GLOBAL	0
 #endif	/* RTLD_GLOBAL */
 
@@ -110,8 +111,15 @@ _g_module_self (void)
   /* to query symbols from the program itself, special link options
    * are required on some systems.
    */
-  
-#ifdef __BIONIC__
+
+  /* On Android 32 bit (i.e. not __LP64__), dlopen(NULL)
+   * does not work reliable and generally no symbols are found
+   * at all. RTLD_DEFAULT works though.
+   * On Android 64 bit, dlopen(NULL) seems to work but dlsym(handle)
+   * always returns 'undefined symbol'. Only if RTLD_DEFAULT or 
+   * NULL is given, dlsym returns an appropriate pointer.
+   */
+#if defined(__BIONIC__)
   handle = RTLD_DEFAULT;
 #else
   handle = dlopen (NULL, RTLD_GLOBAL | RTLD_LAZY);
@@ -128,9 +136,15 @@ _g_module_close (gpointer handle,
 {
   /* are there any systems out there that have dlopen()/dlclose()
    * without a reference count implementation?
+   *
+   * See above for the Android special case
    */
+#if defined(__BIONIC__)
+  is_unref = (handle != RTLD_DEFAULT);
+#else
   is_unref |= 1;
-  
+#endif
+
   if (is_unref)
     {
       if (dlclose (handle) != 0)

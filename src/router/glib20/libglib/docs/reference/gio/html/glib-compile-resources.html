@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>glib-compile-resources: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="tools.html" title="GIO Tools">
 <link rel="prev" href="glib-compile-schemas.html" title="glib-compile-schemas">
@@ -186,6 +186,14 @@ If <code class="option">FILE</code> is -, the dependencies are written to the st
 output. Unlike <code class="option">--generate-dependencies</code>, this option can be
 combined with other <code class="option">--generate</code> options to generate dependencies
 as a side-effect of generating sources.
+</p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="option">--generate-phony-targets</code></span></p></td>
+<td><p>
+When creating a dependency file with <code class="option">--dependency-file</code>
+include phony targets in the same style as gcc -MP. This would typically
+be used with <code class="literal">make</code>.
 </p></td>
 </tr>
 </tbody>

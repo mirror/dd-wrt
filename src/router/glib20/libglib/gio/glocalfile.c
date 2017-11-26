@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -62,11 +62,11 @@
 #include "gunixmounts.h"
 #include "gioerror.h"
 #include <glib/gstdio.h>
+#include <glib/gstdioprivate.h>
 #include "glibintl.h"
 #ifdef G_OS_UNIX
 #include "glib-unix.h"
 #endif
-#include "glib-private.h"
 
 #include "glib-private.h"
 
@@ -753,6 +753,8 @@ get_fs_type (long f_type)
       return "xiafs";
     case 0x52345362:
       return "reiser4";
+    case 0x65735546:
+      return "fuse";
     default:
       return NULL;
     }
@@ -1104,16 +1106,16 @@ g_local_file_query_filesystem_info (GFile         *file,
 #ifndef G_OS_WIN32
 #ifdef USE_STATFS
 #if defined(HAVE_STRUCT_STATFS_F_FSTYPENAME)
-  fstype = g_strdup (statfs_buffer.f_fstypename);
+  fstype = statfs_buffer.f_fstypename;
 #else
   fstype = get_fs_type (statfs_buffer.f_type);
 #endif
 
 #elif defined(USE_STATVFS)
 #if defined(HAVE_STRUCT_STATVFS_F_FSTYPENAME)
-  fstype = g_strdup (statfs_buffer.f_fstypename);
+  fstype = statfs_buffer.f_fstypename;
 #elif defined(HAVE_STRUCT_STATVFS_F_BASETYPE)
-  fstype = g_strdup (statfs_buffer.f_basetype);
+  fstype = statfs_buffer.f_basetype;
 #else
   fstype = NULL;
 #endif
@@ -1168,11 +1170,11 @@ g_local_file_find_enclosing_mount (GFile         *file,
     return mount;
 
 error:
-  /* Translators: This is an error message when trying to find
-   * the enclosing (user visible) mount of a file, but none
-   * exists.
-   */
   g_set_io_error (error,
+		  /* Translators: This is an error message when trying to find
+		   * the enclosing (user visible) mount of a file, but none
+		   * exists.
+		   */
 		  _("Containing mount for file %s not found"),
                   file, 0);
 
@@ -1395,7 +1397,8 @@ g_local_file_read (GFile         *file,
 #ifdef G_OS_WIN32
       if (errsv == EACCES)
 	{
-	  ret = _stati64 (local->filename, &buf);
+	  /* Exploit the fact that on W32 the glib filename encoding is UTF8 */
+	  ret = GLIB_PRIVATE_CALL (g_win32_stat_utf8) (local->filename, &buf);
 	  if (ret == 0 && S_ISDIR (buf.st_mode))
             errsv = EISDIR;
 	}
@@ -1407,7 +1410,7 @@ g_local_file_read (GFile         *file,
     }
 
 #ifdef G_OS_WIN32
-  ret = _fstati64 (fd, &buf);
+  ret = GLIB_PRIVATE_CALL (g_win32_fstat) (fd, &buf);
 #else
   ret = fstat (fd, &buf);
 #endif
@@ -1577,7 +1580,7 @@ expand_symlink (const char *link)
   char symlink_value[4096];
 #ifdef G_OS_WIN32
 #else
-  ssize_t res;
+  gssize res;
 #endif
   
 #ifdef G_OS_WIN32
@@ -1918,10 +1921,11 @@ g_local_file_trash (GFile         *file,
   char *dirname, *globaldir;
   GVfsClass *class;
   GVfs *vfs;
+  int errsv;
 
   if (g_lstat (local->filename, &file_stat) != 0)
     {
-      int errsv = errno;
+      errsv = errno;
 
       g_set_io_error (error,
 		      _("Error trashing file %s: %s"),
@@ -1942,7 +1946,7 @@ g_local_file_trash (GFile         *file,
       if (g_mkdir_with_parents (trashdir, 0700) < 0)
 	{
           char *display_name;
-          int errsv = errno;
+          errsv = errno;
 
           display_name = g_filename_display_name (trashdir);
           g_set_error (error, G_IO_ERROR,
@@ -2085,14 +2089,15 @@ g_local_file_trash (GFile         *file,
     g_free (infoname);
 
     fd = g_open (infofile, O_CREAT | O_EXCL, 0666);
-  } while (fd == -1 && errno == EEXIST);
+    errsv = errno;
+  } while (fd == -1 && errsv == EEXIST);
 
   g_free (basename);
   g_free (infodir);
 
   if (fd == -1)
     {
-      int errsv = errno;
+      errsv = errno;
 
       g_free (filesdir);
       g_free (topdir);
@@ -2145,7 +2150,7 @@ g_local_file_trash (GFile         *file,
 
   if (g_rename (local->filename, trashfile) == -1)
     {
-      int errsv = errno;
+      errsv = errno;
 
       g_unlink (infofile);
 
@@ -2665,37 +2670,22 @@ g_local_file_measure_size_of_file (gint           parent_fd,
 
 #if defined (AT_FDCWD)
   if (fstatat (parent_fd, name->data, &buf, AT_SYMLINK_NOFOLLOW) != 0)
-    return g_local_file_measure_size_error (state->flags, errno, name, error);
+    {
+      int errsv = errno;
+      return g_local_file_measure_size_error (state->flags, errsv, name, error);
+    }
 #elif defined (HAVE_LSTAT) || !defined (G_OS_WIN32)
   if (g_lstat (name->data, &buf) != 0)
-    return g_local_file_measure_size_error (state->flags, errno, name, error);
-#else
-  {
-    const char *filename = (const gchar *) name->data;
-    wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
-    int retval;
-    int save_errno;
-    int len;
-
-    if (wfilename == NULL)
-      return g_local_file_measure_size_error (state->flags, errno, name, error);
-
-    len = wcslen (wfilename);
-    while (len > 0 && G_IS_DIR_SEPARATOR (wfilename[len-1]))
-      len--;
-    if (len > 0 &&
-        (!g_path_is_absolute (filename) || len > g_path_skip_root (filename) - filename))
-      wfilename[len] = '\0';
-
-    retval = _wstati64 (wfilename, &buf);
-    save_errno = errno;
-
-    g_free (wfilename);
-
-    errno = save_errno;
-    if (retval != 0)
-      return g_local_file_measure_size_error (state->flags, errno, name, error);
-  }
+    {
+      int errsv = errno;
+      return g_local_file_measure_size_error (state->flags, errsv, name, error);
+    }
+#else /* !AT_FDCWD && !HAVE_LSTAT && G_OS_WIN32 */
+  if (GLIB_PRIVATE_CALL (g_win32_lstat_utf8) (name->data, &buf) != 0)
+    {
+      int errsv = errno;
+      return g_local_file_measure_size_error (state->flags, errsv, name, error);
+    }
 #endif
 
   if (name->next)
@@ -2714,7 +2704,11 @@ g_local_file_measure_size_of_file (gint           parent_fd,
       state->contained_on = buf.st_dev;
     }
 
-#if defined (HAVE_STRUCT_STAT_ST_BLOCKS)
+#if defined (G_OS_WIN32)
+  if (~state->flags & G_FILE_MEASURE_APPARENT_SIZE)
+    state->disk_usage += buf.allocated_size;
+  else
+#elif defined (HAVE_STRUCT_STAT_ST_BLOCKS)
   if (~state->flags & G_FILE_MEASURE_APPARENT_SIZE)
     state->disk_usage += buf.st_blocks * G_GUINT64_CONSTANT (512);
   else
@@ -2759,6 +2753,7 @@ g_local_file_measure_size_of_file (gint           parent_fd,
   if (S_ISDIR (buf.st_mode))
     {
       int dir_fd = -1;
+      int errsv;
 
       if (g_cancellable_set_error_if_cancelled (state->cancellable, error))
         return FALSE;
@@ -2769,8 +2764,9 @@ g_local_file_measure_size_of_file (gint           parent_fd,
 #else
       dir_fd = openat (parent_fd, name->data, O_RDONLY);
 #endif
+      errsv = errno;
       if (dir_fd < 0)
-        return g_local_file_measure_size_error (state->flags, errno, name, error);
+        return g_local_file_measure_size_error (state->flags, errsv, name, error);
 #endif
 
       if (!g_local_file_measure_size_of_contents (dir_fd, name, state, error))

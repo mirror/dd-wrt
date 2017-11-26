@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -84,7 +84,7 @@
  *     implementation returns %G_TLS_INTERACTION_HANDLED, then the connection
  *     argument should have been filled in by using
  *     g_tls_connection_set_certificate().
- * @request_certificate_async: ask for a certificate asyncronously.
+ * @request_certificate_async: ask for a certificate asynchronously.
  * @request_certificate_finish: complete operation to ask for a certificate
  *     asynchronously. If the implementation returns %G_TLS_INTERACTION_HANDLED,
  *     then the connection argument of the async method should have been
@@ -457,8 +457,8 @@ g_tls_interaction_ask_password (GTlsInteraction    *interaction,
  * @interaction: a #GTlsInteraction object
  * @password: a #GTlsPassword object
  * @cancellable: an optional #GCancellable cancellation object
- * @callback: (allow-none): will be called when the interaction completes
- * @user_data: (allow-none): data to pass to the @callback
+ * @callback: (nullable): will be called when the interaction completes
+ * @user_data: (nullable): data to pass to the @callback
  *
  * Run asynchronous interaction to ask the user for a password. In general,
  * g_tls_interaction_invoke_ask_password() should be used instead of this
@@ -754,8 +754,8 @@ g_tls_interaction_request_certificate (GTlsInteraction              *interaction
  * @connection: a #GTlsConnection object
  * @flags: flags providing more information about the request
  * @cancellable: an optional #GCancellable cancellation object
- * @callback: (allow-none): will be called when the interaction completes
- * @user_data: (allow-none): data to pass to the @callback
+ * @callback: (nullable): will be called when the interaction completes
+ * @user_data: (nullable): data to pass to the @callback
  *
  * Run asynchronous interaction to ask the user for a certificate to use with
  * the connection. In general, g_tls_interaction_invoke_request_certificate() should

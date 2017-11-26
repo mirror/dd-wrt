@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GSettingsBackend: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="settings.html" title="Settings">
 <link rel="prev" href="GSettings.html" title="GSettings">
@@ -178,11 +178,11 @@ method for determining if writing of certain values will fail
 <p>The semantics of the interface are very precisely defined and
 implementations must carefully adhere to the expectations of
 callers that are documented on each of the interface methods.</p>
-<p>Some of the GSettingsBackend functions accept or return a <a href="../glib-Balanced-Binary-Trees.html#GTree"><span class="type">GTree</span></a>.
+<p>Some of the <a class="link" href="GSettingsBackend.html" title="GSettingsBackend"><span class="type">GSettingsBackend</span></a> functions accept or return a <a href="../glib-Balanced-Binary-Trees.html#GTree"><span class="type">GTree</span></a>.
 These trees always have strings as keys and <a href="../glib-GVariant.html#GVariant"><span class="type">GVariant</span></a> as values.
 <code class="function">g_settings_backend_create_tree()</code> is a convenience function to create
 suitable trees.</p>
-<p>The GSettingsBackend API is exported to allow third-party
+<p>The <a class="link" href="GSettingsBackend.html" title="GSettingsBackend"><span class="type">GSettingsBackend</span></a> API is exported to allow third-party
 implementations, but does not carry the same stability guarantees
 as the public GIO API. For this reason, you have to define the
 C preprocessor symbol <code class="literal">G_SETTINGS_ENABLE_BACKEND</code> before including
@@ -537,7 +537,7 @@ location to save the relative keys. </p></td>
 <tr>
 <td class="parameter_name"><p>values</p></td>
 <td class="parameter_description"><p>         the location to save the values, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>][<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -643,7 +643,7 @@ trouble.</p>
 <td class="parameter_description"><p> the group name corresponding to
 <em class="parameter"><code>root_path</code></em>
 , or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>

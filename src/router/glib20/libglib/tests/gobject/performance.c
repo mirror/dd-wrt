@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -181,7 +181,7 @@ struct _SimpleObjectClass
   GObjectClass parent_class;
 };
 
-G_DEFINE_TYPE (SimpleObject, simple_object, G_TYPE_OBJECT);
+G_DEFINE_TYPE (SimpleObject, simple_object, G_TYPE_OBJECT)
 
 static void
 simple_object_finalize (GObject *object)
@@ -265,17 +265,11 @@ static void complex_test_iface_init (gpointer         g_iface,
 
 G_DEFINE_TYPE_EXTENDED (ComplexObject, complex_object,
 			G_TYPE_OBJECT, 0,
-			G_IMPLEMENT_INTERFACE (TEST_TYPE_IFACE1,
-					       complex_test_iface_init)
-			G_IMPLEMENT_INTERFACE (TEST_TYPE_IFACE2,
-					       complex_test_iface_init)
-			G_IMPLEMENT_INTERFACE (TEST_TYPE_IFACE3,
-					       complex_test_iface_init)
-			G_IMPLEMENT_INTERFACE (TEST_TYPE_IFACE4,
-					       complex_test_iface_init)
-			G_IMPLEMENT_INTERFACE (TEST_TYPE_IFACE5,
-					       complex_test_iface_init)
-			);
+			G_IMPLEMENT_INTERFACE (TEST_TYPE_IFACE1, complex_test_iface_init)
+			G_IMPLEMENT_INTERFACE (TEST_TYPE_IFACE2, complex_test_iface_init)
+			G_IMPLEMENT_INTERFACE (TEST_TYPE_IFACE3, complex_test_iface_init)
+			G_IMPLEMENT_INTERFACE (TEST_TYPE_IFACE4, complex_test_iface_init)
+			G_IMPLEMENT_INTERFACE (TEST_TYPE_IFACE5, complex_test_iface_init))
 
 #define COMPLEX_OBJECT(object) (G_TYPE_CHECK_INSTANCE_CAST ((object), COMPLEX_TYPE_OBJECT, ComplexObject))
 

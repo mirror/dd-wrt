@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Byte Order Macros: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-fundamentals.html" title="GLib Fundamentals">
 <link rel="prev" href="glib-Type-Conversion-Macros.html" title="Type Conversion Macros">
@@ -1969,7 +1969,7 @@ converted to the opposite byte order</p>
 <hr>
 <div class="refsect2">
 <a name="GUINT32-SWAP-LE-BE:CAPS"></a><h3>GUINT32_SWAP_LE_BE()</h3>
-<pre class="programlisting">#    define GUINT32_SWAP_LE_BE(val) ((guint32) __builtin_bswap32 ((gint32) (val)))
+<pre class="programlisting">#    define GUINT32_SWAP_LE_BE(val) ((guint32) __builtin_bswap32 ((guint32) (val)))
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint32" title="guint32"><span class="type">guint32</span></a> value between little-endian and big-endian byte order.
 The conversion is symmetric so it can be used both ways.</p>
@@ -2024,7 +2024,7 @@ converted to the opposite byte order</p>
 <hr>
 <div class="refsect2">
 <a name="GUINT64-SWAP-LE-BE:CAPS"></a><h3>GUINT64_SWAP_LE_BE()</h3>
-<pre class="programlisting">#    define GUINT64_SWAP_LE_BE(val) ((guint64) __builtin_bswap64 ((gint64) (val)))
+<pre class="programlisting">#    define GUINT64_SWAP_LE_BE(val) ((guint64) __builtin_bswap64 ((guint64) (val)))
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint64" title="guint64"><span class="type">guint64</span></a> value between little-endian and big-endian byte order.
 The conversion is symmetric so it can be used both ways.</p>

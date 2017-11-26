@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GResource: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="resources.html" title="Resources">
 <link rel="prev" href="resources.html" title="Resources">
@@ -216,7 +216,7 @@
 </div>
 <div class="refsect1">
 <a name="GResource.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/gobject-Boxed-Types.html">GBoxed</a>
+<pre class="screen">    <a href="/home/mclasen/gnome/share/gtk-doc/html/gobject/gobject-Boxed-Types.html">GBoxed</a>
     <span class="lineart">╰──</span> GResource
 </pre>
 </div>
@@ -229,7 +229,7 @@
 <a name="GResource.description"></a><h2>Description</h2>
 <p>Applications and libraries often contain binary or textual data that is
 really part of the application, rather than user data. For instance
-<a href="http://developer.gnome.org/gtk4/GtkBuilder.html#GtkBuilder-struct"><span class="type">GtkBuilder</span></a> .ui files, splashscreen images, GMenu markup XML, CSS files,
+<a href="../gtk4/GtkBuilder.html#GtkBuilder-struct"><span class="type">GtkBuilder</span></a> .ui files, splashscreen images, GMenu markup XML, CSS files,
 icons, etc. These are often shipped as files in <code class="literal">$datadir/appname</code>, or
 manually included as literal strings in the code.</p>
 <p>The <a class="link" href="GResource.html" title="GResource"><span class="type">GResource</span></a> API and the glib-compile-resources program
@@ -256,6 +256,12 @@ the resource file, rather than an (uncompressed) copy if it. For this, the gdk-p
 program must be in the PATH, or the <code class="literal">GDK_PIXBUF_PIXDATA</code> environment variable must be
 set to the full path to the gdk-pixbuf-pixdata executable; otherwise the resource compiler will
 abort.</p>
+<p>Resource files will be exported in the GResource namespace using the
+combination of the given <code class="literal">prefix</code> and the filename from the <code class="literal">file</code> element.
+The <code class="literal">alias</code> attribute can be used to alter the filename to expose them at a
+different location in the resource namespace. Typically, this is used to
+include files from a different source directory without exposing the source
+directory in the resource namespace, as in the example below.</p>
 <p>Resource bundles are created by the glib-compile-resources program
 which takes an XML file that describes the bundle, and a set of files that the XML references. These
 are combined into a binary resource bundle.</p>
@@ -271,13 +277,15 @@ are combined into a binary resource bundle.</p>
 5
 6
 7
-8</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc opt">&lt;</span>?xml version<span class="gtkdoc opt">=</span><span class="string">&quot;1.0&quot;</span> encoding<span class="gtkdoc opt">=</span><span class="string">&quot;UTF-8&quot;</span>?<span class="gtkdoc opt">&gt;</span>
+8
+9</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc opt">&lt;?</span>xml version<span class="gtkdoc opt">=</span><span class="string">&quot;1.0&quot;</span> encoding<span class="gtkdoc opt">=</span><span class="string">&quot;UTF-8&quot;</span><span class="gtkdoc opt">?&gt;</span>
 <span class="gtkdoc opt">&lt;</span>gresources<span class="gtkdoc opt">&gt;</span>
   <span class="gtkdoc opt">&lt;</span>gresource prefix<span class="gtkdoc opt">=</span><span class="string">&quot;/org/gtk/Example&quot;</span><span class="gtkdoc opt">&gt;</span>
     <span class="gtkdoc opt">&lt;</span>file<span class="gtkdoc opt">&gt;</span>data<span class="gtkdoc opt">/</span>splashscreen<span class="gtkdoc opt">.</span>png<span class="gtkdoc opt">&lt;/</span>file<span class="gtkdoc opt">&gt;</span>
     <span class="gtkdoc opt">&lt;</span>file compressed<span class="gtkdoc opt">=</span><span class="string">&quot;true&quot;</span><span class="gtkdoc opt">&gt;</span>dialog<span class="gtkdoc opt">.</span>ui<span class="gtkdoc opt">&lt;/</span>file<span class="gtkdoc opt">&gt;</span>
     <span class="gtkdoc opt">&lt;</span>file preprocess<span class="gtkdoc opt">=</span><span class="string">&quot;xml-stripblanks&quot;</span><span class="gtkdoc opt">&gt;</span>menumarkup<span class="gtkdoc opt">.</span>xml<span class="gtkdoc opt">&lt;/</span>file<span class="gtkdoc opt">&gt;</span>
+    <span class="gtkdoc opt">&lt;</span>file alias<span class="gtkdoc opt">=</span><span class="string">&quot;example.css&quot;</span><span class="gtkdoc opt">&gt;</span>data<span class="gtkdoc opt">/</span>example<span class="gtkdoc opt">.</span>css<span class="gtkdoc opt">&lt;/</span>file<span class="gtkdoc opt">&gt;</span>
   <span class="gtkdoc opt">&lt;/</span>gresource<span class="gtkdoc opt">&gt;</span>
 <span class="gtkdoc opt">&lt;/</span>gresources<span class="gtkdoc opt">&gt;</span></pre></td>
       </tr>
@@ -293,10 +301,12 @@ are combined into a binary resource bundle.</p>
       <tr>
         <td class="listing_lines" align="right"><pre>1
 2
-3</pre></td>
+3
+4</pre></td>
         <td class="listing_code"><pre class="programlisting"><span class="gtkdoc opt">/</span>org<span class="gtkdoc opt">/</span>gtk<span class="gtkdoc opt">/</span>Example<span class="gtkdoc opt">/</span>data<span class="gtkdoc opt">/</span>splashscreen<span class="gtkdoc opt">.</span>png
 <span class="gtkdoc opt">/</span>org<span class="gtkdoc opt">/</span>gtk<span class="gtkdoc opt">/</span>Example<span class="gtkdoc opt">/</span>dialog<span class="gtkdoc opt">.</span>ui
-<span class="gtkdoc opt">/</span>org<span class="gtkdoc opt">/</span>gtk<span class="gtkdoc opt">/</span>Example<span class="gtkdoc opt">/</span>menumarkup<span class="gtkdoc opt">.</span>xml</pre></td>
+<span class="gtkdoc opt">/</span>org<span class="gtkdoc opt">/</span>gtk<span class="gtkdoc opt">/</span>Example<span class="gtkdoc opt">/</span>menumarkup<span class="gtkdoc opt">.</span>xml
+<span class="gtkdoc opt">/</span>org<span class="gtkdoc opt">/</span>gtk<span class="gtkdoc opt">/</span>Example<span class="gtkdoc opt">/</span>example<span class="gtkdoc opt">.</span>css</pre></td>
       </tr>
     </tbody>
   </table>
@@ -318,19 +328,21 @@ register the resource so its files can be accessed using
 using API calls like <a class="link" href="GResource.html#g-resources-open-stream" title="g_resources_open_stream ()"><code class="function">g_resources_open_stream()</code></a> to stream the data or <a class="link" href="GResource.html#g-resources-lookup-data" title="g_resources_lookup_data ()"><code class="function">g_resources_lookup_data()</code></a> to get a direct pointer
 to the data. You can also use URIs like "resource:///org/gtk/Example/data/splashscreen.png" with <a class="link" href="GFile.html" title="GFile"><span class="type">GFile</span></a> to access
 the resource data.</p>
+<p>Some higher-level APIs, such as <a href="../gtk4/GtkApplication.html#GtkApplication-struct"><span class="type">GtkApplication</span></a>, will automatically load
+resources from certain well-known paths in the resource namespace as a
+convenience. See the documentation for those APIs for details.</p>
 <p>There are two forms of the generated source, the default version uses the compiler support for constructor
 and destructor functions (where available) to automatically create and register the <a class="link" href="GResource.html" title="GResource"><span class="type">GResource</span></a> on startup
-or library load time. If you pass --manual-register two functions to register/unregister the resource is instead
-created. This requires an explicit initialization call in your application/library, but it works on all platforms,
-even on the minor ones where this is not available. (Constructor support is available for at least Win32, Mac OS and Linux.)</p>
+or library load time. If you pass <code class="literal">--manual-register</code>, two functions to register/unregister the resource are created
+instead. This requires an explicit initialization call in your application/library, but it works on all platforms,
+even on the minor ones where constructors are not supported. (Constructor support is available for at least Win32, Mac OS and Linux.)</p>
 <p>Note that resource data can point directly into the data segment of e.g. a library, so if you are unloading libraries
 during runtime you need to be very careful with keeping around pointers to data from a resource, as this goes away
 when the library is unloaded. However, in practice this is not generally a problem, since most resource accesses
-is for your own resources, and resource data is often used once, during parsing, and then released.</p>
+are for your own resources, and resource data is often used once, during parsing, and then released.</p>
 <p>When debugging a program or testing a change to an installed version, it is often useful to be able to
 replace resources in the program or library, without recompiling, for debugging or quick hacking and testing
-purposes.</p>
-<p>Since GLib 2.50, it is possible to use the <code class="literal">G_RESOURCE_OVERLAYS</code> environment variable to selectively overlay
+purposes. Since GLib 2.50, it is possible to use the <code class="literal">G_RESOURCE_OVERLAYS</code> environment variable to selectively overlay
 resources with replacements from the filesystem.  It is a colon-separated list of substitutions to perform
 during resource lookups.</p>
 <p>A substitution has the form</p>
@@ -410,6 +422,10 @@ This will keep a reference to <em class="parameter"><code>data</code></em>
 the data should not be modified or freed.</p>
 <p>If you want to use this resource in the global resource namespace you need
 to register it with <a class="link" href="GResource.html#g-resources-register" title="g_resources_register ()"><code class="function">g_resources_register()</code></a>.</p>
+<p>Note: <em class="parameter"><code>data</code></em>
+ must be backed by memory that is at least pointer aligned.
+Otherwise this function will internally create a copy of the memory since
+GLib 2.56, or in older versions fail and exit the process.</p>
 <div class="refsect3">
 <a name="g-resource-new-from-data.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -708,13 +724,13 @@ if found returns information about it.</p>
 <td class="parameter_name"><p>size</p></td>
 <td class="parameter_description"><p> a location to place the length of the contents of the file,
 or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if the length is not needed. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>flags</p></td>
 <td class="parameter_description"><p> a location to place the flags about the file,
 or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if the length is not needed. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -1050,13 +1066,13 @@ globally registered resources and if found returns information about it.</p>
 <td class="parameter_name"><p>size</p></td>
 <td class="parameter_description"><p> a location to place the length of the contents of the file,
 or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if the length is not needed. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>flags</p></td>
-<td class="parameter_description"><p> a location to place the flags about the file,
-or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if the length is not needed. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_description"><p> a location to place the <a class="link" href="GResource.html#GResourceFlags" title="enum GResourceFlags"><span class="type">GResourceFlags</span></a> about the file,
+or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if the flags are not needed. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>

@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GFileInfo: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="file_ops.html" title="File Operations">
 <link rel="prev" href="gio-GFileAttribute.html" title="GFileAttribute">
@@ -672,6 +672,10 @@
 </tr>
 <tr>
 <td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-STANDARD-DESCRIPTION:CAPS" title="G_FILE_ATTRIBUTE_STANDARD_DESCRIPTION">G_FILE_ATTRIBUTE_STANDARD_DESCRIPTION</a></td>
+</tr>
+<tr>
+<td class="define_keyword">#define</td>
 <td class="function_name"><a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-STANDARD-ICON:CAPS" title="G_FILE_ATTRIBUTE_STANDARD_ICON">G_FILE_ATTRIBUTE_STANDARD_ICON</a></td>
 </tr>
 <tr>
@@ -768,14 +772,6 @@
 </tr>
 <tr>
 <td class="define_keyword">#define</td>
-<td class="function_name"><a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-MOUNTABLE-CAN-POLL:CAPS" title="G_FILE_ATTRIBUTE_MOUNTABLE_CAN_POLL">G_FILE_ATTRIBUTE_MOUNTABLE_CAN_POLL</a></td>
-</tr>
-<tr>
-<td class="define_keyword">#define</td>
-<td class="function_name"><a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-MOUNTABLE-IS-MEDIA-CHECK-AUTOMATIC:CAPS" title="G_FILE_ATTRIBUTE_MOUNTABLE_IS_MEDIA_CHECK_AUTOMATIC">G_FILE_ATTRIBUTE_MOUNTABLE_IS_MEDIA_CHECK_AUTOMATIC</a></td>
-</tr>
-<tr>
-<td class="define_keyword">#define</td>
 <td class="function_name"><a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-MOUNTABLE-CAN-START:CAPS" title="G_FILE_ATTRIBUTE_MOUNTABLE_CAN_START">G_FILE_ATTRIBUTE_MOUNTABLE_CAN_START</a></td>
 </tr>
 <tr>
@@ -789,6 +785,14 @@
 <tr>
 <td class="define_keyword">#define</td>
 <td class="function_name"><a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-MOUNTABLE-START-STOP-TYPE:CAPS" title="G_FILE_ATTRIBUTE_MOUNTABLE_START_STOP_TYPE">G_FILE_ATTRIBUTE_MOUNTABLE_START_STOP_TYPE</a></td>
+</tr>
+<tr>
+<td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-MOUNTABLE-CAN-POLL:CAPS" title="G_FILE_ATTRIBUTE_MOUNTABLE_CAN_POLL">G_FILE_ATTRIBUTE_MOUNTABLE_CAN_POLL</a></td>
+</tr>
+<tr>
+<td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-MOUNTABLE-IS-MEDIA-CHECK-AUTOMATIC:CAPS" title="G_FILE_ATTRIBUTE_MOUNTABLE_IS_MEDIA_CHECK_AUTOMATIC">G_FILE_ATTRIBUTE_MOUNTABLE_IS_MEDIA_CHECK_AUTOMATIC</a></td>
 </tr>
 <tr>
 <td class="define_keyword">#define</td>
@@ -920,6 +924,10 @@
 </tr>
 <tr>
 <td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-FILESYSTEM-USE-PREVIEW:CAPS" title="G_FILE_ATTRIBUTE_FILESYSTEM_USE_PREVIEW">G_FILE_ATTRIBUTE_FILESYSTEM_USE_PREVIEW</a></td>
+</tr>
+<tr>
+<td class="define_keyword">#define</td>
 <td class="function_name"><a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-FILESYSTEM-REMOTE:CAPS" title="G_FILE_ATTRIBUTE_FILESYSTEM_REMOTE">G_FILE_ATTRIBUTE_FILESYSTEM_REMOTE</a></td>
 </tr>
 <tr>
@@ -936,26 +944,22 @@
 </tr>
 <tr>
 <td class="define_keyword">#define</td>
-<td class="function_name"><a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-TRASH-DELETION-DATE:CAPS" title="G_FILE_ATTRIBUTE_TRASH_DELETION_DATE">G_FILE_ATTRIBUTE_TRASH_DELETION_DATE</a></td>
-</tr>
-<tr>
-<td class="define_keyword">#define</td>
 <td class="function_name"><a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-TRASH-ORIG-PATH:CAPS" title="G_FILE_ATTRIBUTE_TRASH_ORIG_PATH">G_FILE_ATTRIBUTE_TRASH_ORIG_PATH</a></td>
 </tr>
 <tr>
 <td class="define_keyword">#define</td>
-<td class="function_name"><a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-FILESYSTEM-USE-PREVIEW:CAPS" title="G_FILE_ATTRIBUTE_FILESYSTEM_USE_PREVIEW">G_FILE_ATTRIBUTE_FILESYSTEM_USE_PREVIEW</a></td>
+<td class="function_name"><a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-TRASH-DELETION-DATE:CAPS" title="G_FILE_ATTRIBUTE_TRASH_DELETION_DATE">G_FILE_ATTRIBUTE_TRASH_DELETION_DATE</a></td>
 </tr>
 <tr>
 <td class="define_keyword">#define</td>
-<td class="function_name"><a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-STANDARD-DESCRIPTION:CAPS" title="G_FILE_ATTRIBUTE_STANDARD_DESCRIPTION">G_FILE_ATTRIBUTE_STANDARD_DESCRIPTION</a></td>
+<td class="function_name"><a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-RECENT-MODIFIED:CAPS" title="G_FILE_ATTRIBUTE_RECENT_MODIFIED">G_FILE_ATTRIBUTE_RECENT_MODIFIED</a></td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect1">
 <a name="GFileInfo.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/gobject-Boxed-Types.html">GBoxed</a>
+<pre class="screen">    <a href="/home/mclasen/gnome/share/gtk-doc/html/gobject/gobject-Boxed-Types.html">GBoxed</a>
     <span class="lineart">╰──</span> GFileAttributeMatcher
     <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>
     <span class="lineart">╰──</span> GFileInfo
@@ -3380,7 +3384,7 @@ decide to use a different order or omit needless parts.</p>
 <tbody><tr>
 <td class="parameter_name"><p>matcher</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GFileInfo.html#GFileAttributeMatcher"><span class="type">GFileAttributeMatcher</span></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr></tbody>
 </table></div>
 </div>
@@ -3574,6 +3578,19 @@ in UTF8, and corresponds directly to the original filename (only transcoded to
 UTF8). This is useful if you want to copy the file to another filesystem that
 might have a different encoding. If the filename is not a valid string in the
 encoding selected for the filesystem it is in then the copy name will not be set.</p>
+<p>Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" title="enum GFileAttributeType"><span class="type">GFileAttributeType</span></a> is <a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-STRING:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_STRING</code></a>.</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="G-FILE-ATTRIBUTE-STANDARD-DESCRIPTION:CAPS"></a><h3>G_FILE_ATTRIBUTE_STANDARD_DESCRIPTION</h3>
+<pre class="programlisting">#define G_FILE_ATTRIBUTE_STANDARD_DESCRIPTION "standard::description"        /* string */
+</pre>
+<p>A key in the "standard" namespace for getting the description of the file.
+The description is a utf8 string that describes the file, generally containing
+the filename, but can also contain furter information. Example descriptions
+could be "filename (on hostname)" for a remote file or "filename (in trash)"
+for a file in the trash. This is useful for instance as the window title
+when displaying a directory or for a bookmarks menu.</p>
 <p>Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" title="enum GFileAttributeType"><span class="type">GFileAttributeType</span></a> is <a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-STRING:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_STRING</code></a>.</p>
 </div>
 <hr>
@@ -3801,25 +3818,6 @@ file. Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttribute
 </div>
 <hr>
 <div class="refsect2">
-<a name="G-FILE-ATTRIBUTE-MOUNTABLE-CAN-POLL:CAPS"></a><h3>G_FILE_ATTRIBUTE_MOUNTABLE_CAN_POLL</h3>
-<pre class="programlisting">#define G_FILE_ATTRIBUTE_MOUNTABLE_CAN_POLL "mountable::can-poll"      /* boolean */
-</pre>
-<p>A key in the "mountable" namespace for checking if a file (of type G_FILE_TYPE_MOUNTABLE) can be polled.
-Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" title="enum GFileAttributeType"><span class="type">GFileAttributeType</span></a> is <a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-BOOLEAN:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_BOOLEAN</code></a>.</p>
-<p class="since">Since: <a class="link" href="api-index-2-22.html#api-index-2.22">2.22</a></p>
-</div>
-<hr>
-<div class="refsect2">
-<a name="G-FILE-ATTRIBUTE-MOUNTABLE-IS-MEDIA-CHECK-AUTOMATIC:CAPS"></a><h3>G_FILE_ATTRIBUTE_MOUNTABLE_IS_MEDIA_CHECK_AUTOMATIC</h3>
-<pre class="programlisting">#define G_FILE_ATTRIBUTE_MOUNTABLE_IS_MEDIA_CHECK_AUTOMATIC "mountable::is-media-check-automatic"      /* boolean */
-</pre>
-<p>A key in the "mountable" namespace for checking if a file (of type G_FILE_TYPE_MOUNTABLE)
-is automatically polled for media.
-Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" title="enum GFileAttributeType"><span class="type">GFileAttributeType</span></a> is <a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-BOOLEAN:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_BOOLEAN</code></a>.</p>
-<p class="since">Since: <a class="link" href="api-index-2-22.html#api-index-2.22">2.22</a></p>
-</div>
-<hr>
-<div class="refsect2">
 <a name="G-FILE-ATTRIBUTE-MOUNTABLE-CAN-START:CAPS"></a><h3>G_FILE_ATTRIBUTE_MOUNTABLE_CAN_START</h3>
 <pre class="programlisting">#define G_FILE_ATTRIBUTE_MOUNTABLE_CAN_START "mountable::can-start"     /* boolean */
 </pre>
@@ -3857,20 +3855,39 @@ Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" 
 </div>
 <hr>
 <div class="refsect2">
+<a name="G-FILE-ATTRIBUTE-MOUNTABLE-CAN-POLL:CAPS"></a><h3>G_FILE_ATTRIBUTE_MOUNTABLE_CAN_POLL</h3>
+<pre class="programlisting">#define G_FILE_ATTRIBUTE_MOUNTABLE_CAN_POLL "mountable::can-poll"      /* boolean */
+</pre>
+<p>A key in the "mountable" namespace for checking if a file (of type G_FILE_TYPE_MOUNTABLE) can be polled.
+Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" title="enum GFileAttributeType"><span class="type">GFileAttributeType</span></a> is <a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-BOOLEAN:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_BOOLEAN</code></a>.</p>
+<p class="since">Since: <a class="link" href="api-index-2-22.html#api-index-2.22">2.22</a></p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="G-FILE-ATTRIBUTE-MOUNTABLE-IS-MEDIA-CHECK-AUTOMATIC:CAPS"></a><h3>G_FILE_ATTRIBUTE_MOUNTABLE_IS_MEDIA_CHECK_AUTOMATIC</h3>
+<pre class="programlisting">#define G_FILE_ATTRIBUTE_MOUNTABLE_IS_MEDIA_CHECK_AUTOMATIC "mountable::is-media-check-automatic"      /* boolean */
+</pre>
+<p>A key in the "mountable" namespace for checking if a file (of type G_FILE_TYPE_MOUNTABLE)
+is automatically polled for media.
+Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" title="enum GFileAttributeType"><span class="type">GFileAttributeType</span></a> is <a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-BOOLEAN:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_BOOLEAN</code></a>.</p>
+<p class="since">Since: <a class="link" href="api-index-2-22.html#api-index-2.22">2.22</a></p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="G-FILE-ATTRIBUTE-TIME-MODIFIED:CAPS"></a><h3>G_FILE_ATTRIBUTE_TIME_MODIFIED</h3>
 <pre class="programlisting">#define G_FILE_ATTRIBUTE_TIME_MODIFIED "time::modified"           /* uint64 */
 </pre>
 <p>A key in the "time" namespace for getting the time the file was last
 modified. Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" title="enum GFileAttributeType"><span class="type">GFileAttributeType</span></a> is
-<a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-UINT64:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_UINT64</code></a>, and contains the UNIX time since the
-file was modified.</p>
+<a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-UINT64:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_UINT64</code></a>, and contains the time since the
+file was modified, in seconds since the UNIX epoch.</p>
 </div>
 <hr>
 <div class="refsect2">
 <a name="G-FILE-ATTRIBUTE-TIME-MODIFIED-USEC:CAPS"></a><h3>G_FILE_ATTRIBUTE_TIME_MODIFIED_USEC</h3>
 <pre class="programlisting">#define G_FILE_ATTRIBUTE_TIME_MODIFIED_USEC "time::modified-usec" /* uint32 */
 </pre>
-<p>A key in the "time" namespace for getting the miliseconds of the time
+<p>A key in the "time" namespace for getting the microseconds of the time
 the file was last modified. This should be used in conjunction with
 <a class="link" href="GFileInfo.html#G-FILE-ATTRIBUTE-TIME-MODIFIED:CAPS" title="G_FILE_ATTRIBUTE_TIME_MODIFIED"><span class="type">G_FILE_ATTRIBUTE_TIME_MODIFIED</span></a>. Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" title="enum GFileAttributeType"><span class="type">GFileAttributeType</span></a> is
 <a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-UINT32:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_UINT32</code></a>.</p>
@@ -3882,8 +3899,8 @@ the file was last modified. This should be used in conjunction with
 </pre>
 <p>A key in the "time" namespace for getting the time the file was last
 accessed. Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" title="enum GFileAttributeType"><span class="type">GFileAttributeType</span></a> is
-<a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-UINT64:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_UINT64</code></a>, and contains the UNIX time since the
-file was last accessed.</p>
+<a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-UINT64:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_UINT64</code></a>, and contains the time since the
+file was last accessed, in seconds since the UNIX epoch.</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -3902,7 +3919,8 @@ the file was last accessed. This should be used in conjunction with
 </pre>
 <p>A key in the "time" namespace for getting the time the file was last
 changed. Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" title="enum GFileAttributeType"><span class="type">GFileAttributeType</span></a> is <a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-UINT64:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_UINT64</code></a>,
-and contains the UNIX time since the file was last changed.</p>
+and contains the time since the file was last changed, in seconds since the
+UNIX epoch.</p>
 <p>This corresponds to the traditional UNIX ctime.</p>
 </div>
 <hr>
@@ -3922,7 +3940,8 @@ the file was last changed. This should be used in conjunction with
 </pre>
 <p>A key in the "time" namespace for getting the time the file was created.
 Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" title="enum GFileAttributeType"><span class="type">GFileAttributeType</span></a> is <a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-UINT64:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_UINT64</code></a>,
-and contains the UNIX time since the file was created.</p>
+and contains the time since the file was created, in seconds since the UNIX
+epoch.</p>
 <p>This corresponds to the NTFS ctime.</p>
 </div>
 <hr>
@@ -4166,6 +4185,16 @@ Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" 
 </div>
 <hr>
 <div class="refsect2">
+<a name="G-FILE-ATTRIBUTE-FILESYSTEM-USE-PREVIEW:CAPS"></a><h3>G_FILE_ATTRIBUTE_FILESYSTEM_USE_PREVIEW</h3>
+<pre class="programlisting">#define G_FILE_ATTRIBUTE_FILESYSTEM_USE_PREVIEW "filesystem::use-preview"        /* uint32 (GFilesystemPreviewType) */
+</pre>
+<p>A key in the "filesystem" namespace for hinting a file manager
+application whether it should preview (e.g. thumbnail) files on the
+file system. The value for this key contain a
+<a class="link" href="GFile.html#GFilesystemPreviewType" title="enum GFilesystemPreviewType"><span class="type">GFilesystemPreviewType</span></a>.</p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="G-FILE-ATTRIBUTE-FILESYSTEM-REMOTE:CAPS"></a><h3>G_FILE_ATTRIBUTE_FILESYSTEM_REMOTE</h3>
 <pre class="programlisting">#define G_FILE_ATTRIBUTE_FILESYSTEM_REMOTE "filesystem::remote"                   /* boolean */
 </pre>
@@ -4198,19 +4227,8 @@ available if GLib has been built with SELinux support.</p>
 <pre class="programlisting">#define G_FILE_ATTRIBUTE_TRASH_ITEM_COUNT "trash::item-count"     /* uint32 */
 </pre>
 <p>A key in the "trash" namespace.  When requested against
-"trash:///" returns the number of (toplevel) items in the trash folder.
+<code class="literal">trash:///</code> returns the number of (toplevel) items in the trash folder.
 Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" title="enum GFileAttributeType"><span class="type">GFileAttributeType</span></a> is <a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-UINT32:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_UINT32</code></a>.</p>
-</div>
-<hr>
-<div class="refsect2">
-<a name="G-FILE-ATTRIBUTE-TRASH-DELETION-DATE:CAPS"></a><h3>G_FILE_ATTRIBUTE_TRASH_DELETION_DATE</h3>
-<pre class="programlisting">#define G_FILE_ATTRIBUTE_TRASH_DELETION_DATE "trash::deletion-date"  /* string */
-</pre>
-<p>A key in the "trash" namespace.  When requested against
-items in "trash:///", will return the date and time when the file
-was trashed. The format of the returned string is YYYY-MM-DDThh:mm:ss.
-Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" title="enum GFileAttributeType"><span class="type">GFileAttributeType</span></a> is <a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-STRING:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_STRING</code></a>.</p>
-<p class="since">Since: <a class="link" href="api-index-2-24.html#api-index-2.24">2.24</a></p>
 </div>
 <hr>
 <div class="refsect2">
@@ -4218,33 +4236,31 @@ Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" 
 <pre class="programlisting">#define G_FILE_ATTRIBUTE_TRASH_ORIG_PATH "trash::orig-path"     /* byte string */
 </pre>
 <p>A key in the "trash" namespace.  When requested against
-items in "trash:///", will return the original path to the file before it
+items in <code class="literal">trash:///</code>, will return the original path to the file before it
 was trashed. Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" title="enum GFileAttributeType"><span class="type">GFileAttributeType</span></a> is
 <a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-BYTE-STRING:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_BYTE_STRING</code></a>.</p>
 <p class="since">Since: <a class="link" href="api-index-2-24.html#api-index-2.24">2.24</a></p>
 </div>
 <hr>
 <div class="refsect2">
-<a name="G-FILE-ATTRIBUTE-FILESYSTEM-USE-PREVIEW:CAPS"></a><h3>G_FILE_ATTRIBUTE_FILESYSTEM_USE_PREVIEW</h3>
-<pre class="programlisting">#define G_FILE_ATTRIBUTE_FILESYSTEM_USE_PREVIEW "filesystem::use-preview"        /* uint32 (GFilesystemPreviewType) */
+<a name="G-FILE-ATTRIBUTE-TRASH-DELETION-DATE:CAPS"></a><h3>G_FILE_ATTRIBUTE_TRASH_DELETION_DATE</h3>
+<pre class="programlisting">#define G_FILE_ATTRIBUTE_TRASH_DELETION_DATE "trash::deletion-date"  /* string */
 </pre>
-<p>A key in the "filesystem" namespace for hinting a file manager
-application whether it should preview (e.g. thumbnail) files on the
-file system. The value for this key contain a
-<a class="link" href="GFile.html#GFilesystemPreviewType" title="enum GFilesystemPreviewType"><span class="type">GFilesystemPreviewType</span></a>.</p>
+<p>A key in the "trash" namespace.  When requested against
+items in <code class="literal">trash:///</code>, will return the date and time when the file
+was trashed. The format of the returned string is YYYY-MM-DDThh:mm:ss.
+Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" title="enum GFileAttributeType"><span class="type">GFileAttributeType</span></a> is <a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-STRING:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_STRING</code></a>.</p>
+<p class="since">Since: <a class="link" href="api-index-2-24.html#api-index-2.24">2.24</a></p>
 </div>
 <hr>
 <div class="refsect2">
-<a name="G-FILE-ATTRIBUTE-STANDARD-DESCRIPTION:CAPS"></a><h3>G_FILE_ATTRIBUTE_STANDARD_DESCRIPTION</h3>
-<pre class="programlisting">#define G_FILE_ATTRIBUTE_STANDARD_DESCRIPTION "standard::description"        /* string */
+<a name="G-FILE-ATTRIBUTE-RECENT-MODIFIED:CAPS"></a><h3>G_FILE_ATTRIBUTE_RECENT_MODIFIED</h3>
+<pre class="programlisting">#define G_FILE_ATTRIBUTE_RECENT_MODIFIED "recent::modified"          /* int64 (time_t) */
 </pre>
-<p>A key in the "standard" namespace for getting the description of the file.
-The description is a utf8 string that describes the file, generally containing
-the filename, but can also contain furter information. Example descriptions
-could be "filename (on hostname)" for a remote file or "filename (in trash)"
-for a file in the trash. This is useful for instance as the window title
-when displaying a directory or for a bookmarks menu.</p>
-<p>Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" title="enum GFileAttributeType"><span class="type">GFileAttributeType</span></a> is <a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-STRING:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_STRING</code></a>.</p>
+<p>A key in the "recent" namespace for getting time, when the metadata for the
+file in <code class="literal">recent:///</code> was last changed. Corresponding <a class="link" href="gio-GFileAttribute.html#GFileAttributeType" title="enum GFileAttributeType"><span class="type">GFileAttributeType</span></a> is
+<a class="link" href="gio-GFileAttribute.html#G-FILE-ATTRIBUTE-TYPE-INT64:CAPS"><code class="literal">G_FILE_ATTRIBUTE_TYPE_INT64</code></a>.</p>
+<p class="since">Since: <a class="link" href="api-index-2-52.html#api-index-2.52">2.52</a></p>
 </div>
 </div>
 <div class="refsect1">

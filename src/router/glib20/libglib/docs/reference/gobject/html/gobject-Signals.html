@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Signals: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="rn01.html" title="API Reference">
 <link rel="prev" href="gobject-Varargs-Value-Collection.html" title="Varargs Value Collection">
@@ -723,7 +723,7 @@ not associate a class method slot with this signal.</p></td>
 <td class="parameter_name"><p>c_marshaller</p></td>
 <td class="parameter_description"><p> the function to translate arrays of parameter
 values to signal emissions into C language callback invocations or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>return_type</p></td>
@@ -798,12 +798,12 @@ the default handler is to be invoked. You should at least specify
 <td class="parameter_name"><p>class_closure</p></td>
 <td class="parameter_description"><p> The closure to invoke on signal emission;
 may be <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>accumulator</p></td>
 <td class="parameter_description"><p> the accumulator for this signal; may be <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>accu_data</p></td>
@@ -816,7 +816,7 @@ may be <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NU
 <td class="parameter_description"><p> the function to translate arrays of
 parameter values to signal emissions into C language callback
 invocations or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>return_type</p></td>
@@ -909,7 +909,7 @@ the default handler is to be invoked. You should at least specify
 <td class="parameter_name"><p>c_marshaller</p></td>
 <td class="parameter_description"><p> the function to translate arrays of parameter
 values to signal emissions into C language callback invocations or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>return_type</p></td>
@@ -1343,7 +1343,7 @@ calls.</p></td>
 </div>
 <div class="refsect3">
 <a name="g-signal-connect.returns"></a><h4>Returns</h4>
-<p> the handler id (always greater than 0 for successful connections)</p>
+<p> the handler ID, of type <a href="../glib-Basic-Types.html#gulong"><span class="type">gulong</span></a> (always greater than 0 for successful connections)</p>
 </div>
 </div>
 <hr>
@@ -1387,7 +1387,7 @@ calls.</p></td>
 </div>
 <div class="refsect3">
 <a name="g-signal-connect-after.returns"></a><h4>Returns</h4>
-<p> the handler id (always greater than 0 for successful connections)</p>
+<p> the handler ID, of type <a href="../glib-Basic-Types.html#gulong"><span class="type">gulong</span></a> (always greater than 0 for successful connections)</p>
 </div>
 </div>
 <hr>
@@ -1435,7 +1435,7 @@ parameters avoids the need to write a wrapper function.</p>
         <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">static void</span>
 <span class="function">button_clicked_cb</span> <span class="gtkdoc opt">(</span>GtkButton <span class="gtkdoc opt">*</span>button<span class="gtkdoc opt">,</span> GtkWidget <span class="gtkdoc opt">*</span>other_widget<span class="gtkdoc opt">)</span>
 <span class="gtkdoc opt">{</span>
-    <span class="function"><a href="http://developer.gnome.org/gtk4/GtkWidget.html#gtk-widget-hide">gtk_widget_hide</a></span> <span class="gtkdoc opt">(</span>other_widget<span class="gtkdoc opt">);</span>
+    <span class="function"><a href="../gtk4/GtkWidget.html#gtk-widget-hide">gtk_widget_hide</a></span> <span class="gtkdoc opt">(</span>other_widget<span class="gtkdoc opt">);</span>
 <span class="gtkdoc opt">}</span>
 
 <span class="gtkdoc opt">...</span>
@@ -1483,7 +1483,7 @@ calls.</p></td>
 </div>
 <div class="refsect3">
 <a name="g-signal-connect-swapped.returns"></a><h4>Returns</h4>
-<p> the handler ID (always greater than 0 for successful connections)</p>
+<p> the handler ID, of type <a href="../glib-Basic-Types.html#gulong"><span class="type">gulong</span></a> (always greater than 0 for successful connections)</p>
 </div>
 </div>
 <hr>
@@ -1614,7 +1614,7 @@ calls.</p></td>
 </div>
 <div class="refsect3">
 <a name="g-signal-connect-data.returns"></a><h4>Returns</h4>
-<p> the handler id (always greater than 0 for successful connections)</p>
+<p> the handler ID (always greater than 0 for successful connections)</p>
 </div>
 </div>
 <hr>
@@ -1661,7 +1661,7 @@ default handler of the signal.</p></td>
 </div>
 <div class="refsect3">
 <a name="g-signal-connect-closure.returns"></a><h4>Returns</h4>
-<p> the handler id (always greater than 0 for successful connections)</p>
+<p> the handler ID (always greater than 0 for successful connections)</p>
 </div>
 </div>
 <hr>
@@ -1714,7 +1714,7 @@ default handler of the signal.</p></td>
 </div>
 <div class="refsect3">
 <a name="g-signal-connect-closure-by-id.returns"></a><h4>Returns</h4>
-<p> the handler id (always greater than 0 for successful connections)</p>
+<p> the handler ID (always greater than 0 for successful connections)</p>
 </div>
 </div>
 <hr>
@@ -1889,7 +1889,7 @@ the handler has to match.</p></td>
 <tr>
 <td class="parameter_name"><p>closure</p></td>
 <td class="parameter_description"><p> The closure the handler will invoke. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>func</p></td>
@@ -1964,7 +1964,7 @@ the handlers have to match.</p></td>
 <tr>
 <td class="parameter_name"><p>closure</p></td>
 <td class="parameter_description"><p> The closure the handlers will invoke. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>func</p></td>
@@ -2040,7 +2040,7 @@ the handlers have to match.</p></td>
 <tr>
 <td class="parameter_name"><p>closure</p></td>
 <td class="parameter_description"><p> The closure the handlers will invoke. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>func</p></td>
@@ -2116,7 +2116,7 @@ the handlers have to match.</p></td>
 <tr>
 <td class="parameter_name"><p>closure</p></td>
 <td class="parameter_description"><p> The closure the handlers will invoke. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>func</p></td>
@@ -2143,7 +2143,7 @@ the handlers have to match.</p></td>
 g_signal_handler_is_connected (<em class="parameter"><code><a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> instance</code></em>,
                                <em class="parameter"><code><a href="../glib-Basic-Types.html#gulong"><span class="type">gulong</span></a> handler_id</code></em>);</pre>
 <p>Returns whether <em class="parameter"><code>handler_id</code></em>
- is the id of a handler connected to <em class="parameter"><code>instance</code></em>
+ is the ID of a handler connected to <em class="parameter"><code>instance</code></em>
 .</p>
 <div class="refsect3">
 <a name="g-signal-handler-is-connected.parameters"></a><h4>Parameters</h4>
@@ -2161,7 +2161,7 @@ g_signal_handler_is_connected (<em class="parameter"><code><a href="../glib-Basi
 </tr>
 <tr>
 <td class="parameter_name"><p>handler_id</p></td>
-<td class="parameter_description"><p>the handler id.</p></td>
+<td class="parameter_description"><p>the handler ID.</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
@@ -2615,7 +2615,7 @@ not associate a class method with this signal.</p></td>
 <td class="parameter_name"><p>c_marshaller</p></td>
 <td class="parameter_description"><p> the function to translate arrays of parameter
 values to signal emissions into C language callback invocations or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>return_type</p></td>
@@ -2936,7 +2936,8 @@ structure which is to be invoked by the new closure</p></td>
 </div>
 <div class="refsect3">
 <a name="g-signal-type-cclosure-new.returns"></a><h4>Returns</h4>
-<p> a new <a class="link" href="gobject-Closures.html#GCClosure" title="struct GCClosure"><span class="type">GCClosure</span></a></p>
+<p> a floating reference to a new <a class="link" href="gobject-Closures.html#GCClosure" title="struct GCClosure"><span class="type">GCClosure</span></a>. </p>
+<p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 </div>
 <hr>

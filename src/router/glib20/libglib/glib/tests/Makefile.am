@@ -59,6 +59,7 @@ test_programs = \
 	error				\
 	fileutils			\
 	gdatetime			\
+	guuid				\
 	gvariant			\
 	hash				\
 	hmac				\
@@ -179,6 +180,7 @@ atomic_CFLAGS += -Wstrict-aliasing=2
 endif
 
 overflow_fallback_SOURCES = overflow.c
+# FIXME: FLAGS?
 overflow_fallback_FALGS = $(AM_CFLAGS) -D_GLIB_TEST_OVERFLOW_FALLBACK
 
 test_programs += 642026-ec
@@ -220,6 +222,10 @@ if HAVE_GCC
 test_programs += \
 	autoptr				\
 	$(NULL)
+endif
+
+if OS_WIN32
+test_programs += gpoll
 endif
 
 # -----------------------------------------------------------------------------

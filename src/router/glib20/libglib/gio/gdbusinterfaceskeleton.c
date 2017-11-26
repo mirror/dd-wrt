@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -97,7 +97,7 @@ g_dbus_interface_skeleton_finalize (GObject *object)
 {
   GDBusInterfaceSkeleton *interface = G_DBUS_INTERFACE_SKELETON (object);
 
-  /* Hold the lock just incase any code we call verifies that the lock is held */
+  /* Hold the lock just in case any code we call verifies that the lock is held */
   g_mutex_lock (&interface->priv->lock);
 
   /* unexport from all connections if we're exported anywhere */
@@ -381,7 +381,7 @@ g_dbus_interface_skeleton_get_properties (GDBusInterfaceSkeleton *interface_)
  *
  * For example, an exported D-Bus interface may queue up property
  * changes and emit the
- * `org.freedesktop.DBus.Properties::Propert``
+ * `org.freedesktop.DBus.Properties::PropertiesChanged`
  * signal later (e.g. in an idle handler). This technique is useful
  * for collapsing multiple property changes into one.
  *

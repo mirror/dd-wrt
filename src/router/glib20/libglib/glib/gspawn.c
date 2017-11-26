@@ -4,20 +4,18 @@
  *  g_execvpe implementation based on GNU libc execvp:
  *   Copyright 1991, 92, 95, 96, 97, 98, 99 Free Software Foundation, Inc.
  *
- * GLib is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * GLib is distributed in the hope that it will be useful,
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with GLib; see the file COPYING.LIB.  If not, write
- * to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -70,6 +68,49 @@
  *
  * See #GSubprocess in GIO for a higher-level API that provides
  * stream interfaces for communication with child processes.
+ *
+ * An example of using g_spawn_async_with_pipes():
+ * |[<!-- language="C" -->
+ * const gchar * const argv[] = { "my-favourite-program", "--args", NULL };
+ * gint child_stdout, child_stderr;
+ * GPid child_pid;
+ * g_autoptr(GError) error = NULL;
+ *
+ * // Spawn child process.
+ * g_spawn_async_with_pipes (NULL, argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD, NULL,
+ *                           NULL, &child_pid, NULL, &child_stdout,
+ *                           &child_stderr, &error);
+ * if (error != NULL)
+ *   {
+ *     g_error ("Spawning child failed: %s", error->message);
+ *     return;
+ *   }
+ *
+ * // Add a child watch function which will be called when the child process
+ * // exits.
+ * g_child_watch_add (child_pid, child_watch_cb, NULL);
+ *
+ * // You could watch for output on @child_stdout and @child_stderr using
+ * // #GUnixInputStream or #GIOChannel here.
+ *
+ * static void
+ * child_watch_cb (GPid     pid,
+ *                 gint     status,
+ *                 gpointer user_data)
+ * {
+ *   g_message ("Child %" G_PID_FORMAT " exited %s", pid,
+ *              g_spawn_check_exit_status (status, NULL) ? "normally" : "abnormally");
+ *
+ *   // Free any resources associated with the child here, such as I/O channels
+ *   // on its stdout and stderr FDs. If you have no code to put in the
+ *   // child_watch_cb() callback, you can remove it and the g_child_watch_add()
+ *   // call, but you must also remove the G_SPAWN_DO_NOT_REAP_CHILD flag,
+ *   // otherwise the child process will stay around as a zombie until this
+ *   // process exits.
+ *
+ *   g_spawn_close_pid (pid);
+ * }
+ * ]|
  */
 
 
@@ -105,13 +146,16 @@ G_DEFINE_QUARK (g-spawn-exit-error-quark, g_spawn_exit_error)
 
 /**
  * g_spawn_async:
- * @working_directory: (type filename) (allow-none): child's current working directory, or %NULL to inherit parent's
- * @argv: (array zero-terminated=1): child's argument vector
- * @envp: (array zero-terminated=1) (allow-none): child's environment, or %NULL to inherit parent's
+ * @working_directory: (type filename) (nullable): child's current working
+ *     directory, or %NULL to inherit parent's
+ * @argv: (array zero-terminated=1) (element-type filename):
+ *     child's argument vector
+ * @envp: (array zero-terminated=1) (element-type filename) (nullable):
+ *     child's environment, or %NULL to inherit parent's
  * @flags: flags from #GSpawnFlags
- * @child_setup: (scope async) (allow-none): function to run in the child just before exec()
+ * @child_setup: (scope async) (nullable): function to run in the child just before exec()
  * @user_data: (closure): user data for @child_setup
- * @child_pid: (out) (allow-none): return location for child process reference, or %NULL
+ * @child_pid: (out) (optional): return location for child process reference, or %NULL
  * @error: return location for error
  * 
  * See g_spawn_async_with_pipes() for a full description; this function
@@ -120,10 +164,10 @@ G_DEFINE_QUARK (g-spawn-exit-error-quark, g_spawn_exit_error)
  * You should call g_spawn_close_pid() on the returned child process
  * reference when you don't need it any more.
  * 
- * If you are writing a GTK+ application, and the program you are
- * spawning is a graphical application, too, then you may want to
- * use gdk_spawn_on_screen() instead to ensure that the spawned program
- * opens its windows on the right screen.
+ * If you are writing a GTK+ application, and the program you are spawning is a
+ * graphical application too, then to ensure that the spawned program opens its
+ * windows on the right screen, you may want to use #GdkAppLaunchContext,
+ * #GAppLaunchContext, or set the %DISPLAY environment variable.
  *
  * Note that the returned @child_pid on Windows is a handle to the child
  * process and not its identifier. Process handles and process identifiers
@@ -215,15 +259,18 @@ read_data (GString *str,
 
 /**
  * g_spawn_sync:
- * @working_directory: (type filename) (allow-none): child's current working directory, or %NULL to inherit parent's
- * @argv: (array zero-terminated=1): child's argument vector
- * @envp: (array zero-terminated=1) (allow-none): child's environment, or %NULL to inherit parent's
+ * @working_directory: (type filename) (nullable): child's current working
+ *     directory, or %NULL to inherit parent's
+ * @argv: (array zero-terminated=1) (element-type filename):
+ *     child's argument vector
+ * @envp: (array zero-terminated=1) (element-type filename) (nullable):
+ *     child's environment, or %NULL to inherit parent's
  * @flags: flags from #GSpawnFlags
- * @child_setup: (scope async) (allow-none): function to run in the child just before exec()
+ * @child_setup: (scope async) (nullable): function to run in the child just before exec()
  * @user_data: (closure): user data for @child_setup
- * @standard_output: (out) (array zero-terminated=1) (element-type guint8) (allow-none): return location for child output, or %NULL
- * @standard_error: (out) (array zero-terminated=1) (element-type guint8) (allow-none): return location for child error messages, or %NULL
- * @exit_status: (out) (allow-none): return location for child exit status, as returned by waitpid(), or %NULL
+ * @standard_output: (out) (array zero-terminated=1) (element-type guint8) (optional): return location for child output, or %NULL
+ * @standard_error: (out) (array zero-terminated=1) (element-type guint8) (optional): return location for child error messages, or %NULL
+ * @exit_status: (out) (optional): return location for child exit status, as returned by waitpid(), or %NULL
  * @error: return location for error, or %NULL
  *
  * Executes a child synchronously (waits for the child to exit before returning).
@@ -236,7 +283,8 @@ read_data (GString *str,
  * the child is stored there; see the documentation of
  * g_spawn_check_exit_status() for how to use and interpret this.
  * Note that it is invalid to pass %G_SPAWN_DO_NOT_REAP_CHILD in
- * @flags.
+ * @flags, and on POSIX platforms, the same restrictions as for
+ * g_child_watch_source_new() apply.
  *
  * If an error occurs, no data is returned in @standard_output,
  * @standard_error, or @exit_status.
@@ -417,7 +465,7 @@ g_spawn_sync (const gchar          *working_directory,
         {
           if (exit_status)
             {
-              g_warning ("In call to g_spawn_sync(), exit status of a child process was requested but ECHILD was received by waitpid(). Most likely the process is ignoring SIGCHLD, or some other thread is invoking waitpid() with a nonpositive first argument; either behavior can break applications that use g_spawn_sync either directly or indirectly.");
+              g_warning ("In call to g_spawn_sync(), exit status of a child process was requested but ECHILD was received by waitpid(). See the documentation of g_child_watch_source_new() for possible causes.");
             }
           else
             {
@@ -467,16 +515,20 @@ g_spawn_sync (const gchar          *working_directory,
 
 /**
  * g_spawn_async_with_pipes:
- * @working_directory: (type filename) (allow-none): child's current working directory, or %NULL to inherit parent's, in the GLib file name encoding
- * @argv: (array zero-terminated=1): child's argument vector, in the GLib file name encoding
- * @envp: (array zero-terminated=1) (allow-none): child's environment, or %NULL to inherit parent's, in the GLib file name encoding
+ * @working_directory: (type filename) (nullable): child's current working
+ *     directory, or %NULL to inherit parent's, in the GLib file name encoding
+ * @argv: (array zero-terminated=1) (element-type filename): child's argument
+ *     vector, in the GLib file name encoding
+ * @envp: (array zero-terminated=1) (element-type filename) (nullable):
+ *     child's environment, or %NULL to inherit parent's, in the GLib file
+ *     name encoding
  * @flags: flags from #GSpawnFlags
- * @child_setup: (scope async) (allow-none): function to run in the child just before exec()
+ * @child_setup: (scope async) (nullable): function to run in the child just before exec()
  * @user_data: (closure): user data for @child_setup
- * @child_pid: (out) (allow-none): return location for child process ID, or %NULL
- * @standard_input: (out) (allow-none): return location for file descriptor to write to child's stdin, or %NULL
- * @standard_output: (out) (allow-none): return location for file descriptor to read child's stdout, or %NULL
- * @standard_error: (out) (allow-none): return location for file descriptor to read child's stderr, or %NULL
+ * @child_pid: (out) (optional): return location for child process ID, or %NULL
+ * @standard_input: (out) (optional): return location for file descriptor to write to child's stdin, or %NULL
+ * @standard_output: (out) (optional): return location for file descriptor to read child's stdout, or %NULL
+ * @standard_error: (out) (optional): return location for file descriptor to read child's stderr, or %NULL
  * @error: return location for error
  *
  * Executes a child program asynchronously (your program will not
@@ -537,10 +589,11 @@ g_spawn_sync (const gchar          *working_directory,
  *
  * @flags should be the bitwise OR of any flags you want to affect the
  * function's behaviour. The %G_SPAWN_DO_NOT_REAP_CHILD means that the
- * child will not automatically be reaped; you must use a child watch to
- * be notified about the death of the child process. Eventually you must
- * call g_spawn_close_pid() on the @child_pid, in order to free
- * resources which may be associated with the child process. (On Unix,
+ * child will not automatically be reaped; you must use a child watch
+ * (g_child_watch_add()) to be notified about the death of the child process,
+ * otherwise it will stay around as a zombie process until this process exits.
+ * Eventually you must call g_spawn_close_pid() on the @child_pid, in order to
+ * free resources which may be associated with the child process. (On Unix,
  * using a child watch is equivalent to calling waitpid() or handling
  * the %SIGCHLD signal manually. On Windows, calling g_spawn_close_pid()
  * is equivalent to calling CloseHandle() on the process handle returned
@@ -624,10 +677,10 @@ g_spawn_sync (const gchar          *working_directory,
  * If @child_pid is not %NULL and an error does not occur then the returned
  * process reference must be closed using g_spawn_close_pid().
  *
- * If you are writing a GTK+ application, and the program you 
- * are spawning is a graphical application, too, then you may
- * want to use gdk_spawn_on_screen_with_pipes() instead to ensure that
- * the spawned program opens its windows on the right screen.
+ * If you are writing a GTK+ application, and the program you are spawning is a
+ * graphical application too, then to ensure that the spawned program opens its
+ * windows on the right screen, you may want to use #GdkAppLaunchContext,
+ * #GAppLaunchContext, or set the %DISPLAY environment variable.
  * 
  * Returns: %TRUE on success, %FALSE if an error was set
  */
@@ -676,10 +729,10 @@ g_spawn_async_with_pipes (const gchar          *working_directory,
 
 /**
  * g_spawn_command_line_sync:
- * @command_line: a command line 
- * @standard_output: (out) (array zero-terminated=1) (element-type guint8) (allow-none): return location for child output
- * @standard_error: (out) (array zero-terminated=1) (element-type guint8) (allow-none): return location for child errors
- * @exit_status: (out) (allow-none): return location for child exit status, as returned by waitpid()
+ * @command_line: (type filename): a command line
+ * @standard_output: (out) (array zero-terminated=1) (element-type guint8) (optional): return location for child output
+ * @standard_error: (out) (array zero-terminated=1) (element-type guint8) (optional): return location for child errors
+ * @exit_status: (out) (optional): return location for child exit status, as returned by waitpid()
  * @error: return location for errors
  *
  * A simple version of g_spawn_sync() with little-used parameters
@@ -741,7 +794,7 @@ g_spawn_command_line_sync (const gchar  *command_line,
 
 /**
  * g_spawn_command_line_async:
- * @command_line: a command line
+ * @command_line: (type filename): a command line
  * @error: return location for errors
  * 
  * A simple version of g_spawn_async() that parses a command line with

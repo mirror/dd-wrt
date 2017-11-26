@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -144,7 +144,7 @@ g_file_monitor_class_init (GFileMonitorClass *klass)
    * GFileMonitor::changed:
    * @monitor: a #GFileMonitor.
    * @file: a #GFile.
-   * @other_file: (allow-none): a #GFile or #NULL.
+   * @other_file: (nullable): a #GFile or #NULL.
    * @event_type: a #GFileMonitorEvent.
    *
    * Emitted when @file has been changed.

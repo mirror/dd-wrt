@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>String Utility Functions: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-utilities.html" title="GLib Utilities">
@@ -529,6 +529,22 @@
 </tr>
 <tr>
 <td class="function_type">
+<a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="returnvalue">gboolean</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="glib-String-Utility-Functions.html#g-ascii-string-to-signed" title="g_ascii_string_to_signed ()">g_ascii_string_to_signed</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="returnvalue">gboolean</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="glib-String-Utility-Functions.html#g-ascii-string-to-unsigned" title="g_ascii_string_to_unsigned ()">g_ascii_string_to_unsigned</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
 <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="returnvalue">gchar</span></a> *
 </td>
 <td class="function_name">
@@ -675,6 +691,14 @@
 <td class="function_name"><a class="link" href="glib-String-Utility-Functions.html#G-ASCII-DTOSTR-BUF-SIZE:CAPS" title="G_ASCII_DTOSTR_BUF_SIZE">G_ASCII_DTOSTR_BUF_SIZE</a></td>
 </tr>
 <tr>
+<td class="datatype_keyword">enum</td>
+<td class="function_name"><a class="link" href="glib-String-Utility-Functions.html#GNumberParserError" title="enum GNumberParserError">GNumberParserError</a></td>
+</tr>
+<tr>
+<td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="glib-String-Utility-Functions.html#G-NUMBER-PARSER-ERROR:CAPS" title="G_NUMBER_PARSER_ERROR">G_NUMBER_PARSER_ERROR</a></td>
+</tr>
+<tr>
 <td class="define_keyword">#define</td>
 <td class="function_name"><a class="link" href="glib-String-Utility-Functions.html#G-STR-DELIMITERS:CAPS" title="G_STR_DELIMITERS">G_STR_DELIMITERS</a></td>
 </tr>
@@ -696,7 +720,7 @@
 <p>This section describes a number of utility functions for creating,
 duplicating, and manipulating strings.</p>
 <p>Note that the functions <a class="link" href="glib-String-Utility-Functions.html#g-printf" title="g_printf ()"><code class="function">g_printf()</code></a>, <a class="link" href="glib-String-Utility-Functions.html#g-fprintf" title="g_fprintf ()"><code class="function">g_fprintf()</code></a>, <a class="link" href="glib-String-Utility-Functions.html#g-sprintf" title="g_sprintf ()"><code class="function">g_sprintf()</code></a>,
-<a class="link" href="glib-String-Utility-Functions.html#g-snprintf" title="g_snprintf ()"><code class="function">g_snprintf()</code></a>, <a class="link" href="glib-String-Utility-Functions.html#g-vprintf" title="g_vprintf ()"><code class="function">g_vprintf()</code></a>, <a class="link" href="glib-String-Utility-Functions.html#g-vfprintf" title="g_vfprintf ()"><code class="function">g_vfprintf()</code></a>, <a class="link" href="glib-String-Utility-Functions.html#g-vsprintf" title="g_vsprintf ()"><code class="function">g_vsprintf()</code></a> and <a class="link" href="glib-String-Utility-Functions.html#g-vsnprintf" title="g_vsnprintf ()"><code class="function">g_vsnprintf()</code></a>
+<a class="link" href="glib-String-Utility-Functions.html#g-vprintf" title="g_vprintf ()"><code class="function">g_vprintf()</code></a>, <a class="link" href="glib-String-Utility-Functions.html#g-vfprintf" title="g_vfprintf ()"><code class="function">g_vfprintf()</code></a>, <a class="link" href="glib-String-Utility-Functions.html#g-vsprintf" title="g_vsprintf ()"><code class="function">g_vsprintf()</code></a> and <a class="link" href="glib-String-Utility-Functions.html#g-vasprintf" title="g_vasprintf ()"><code class="function">g_vasprintf()</code></a>
 are declared in the header <code class="literal">gprintf.h</code> which is not included in <code class="literal">glib.h</code>
 (otherwise using <code class="literal">glib.h</code> would drag in <code class="literal">stdio.h</code>), so you'll have to
 explicitly include <code class="literal">&lt;glib/gprintf.h&gt;</code> in order to use the GLib
@@ -1144,12 +1168,12 @@ Comparing two <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="
 <tr>
 <td class="parameter_name"><p>str1</p></td>
 <td class="parameter_description"><p> a C string or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>str2</p></td>
 <td class="parameter_description"><p> another C string or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -1205,7 +1229,7 @@ to be done independently of the currently locale, specify "C" for
 <tr>
 <td class="parameter_name"><p>from_locale</p></td>
 <td class="parameter_description"><p> the source locale, if known. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -1257,7 +1281,7 @@ known.</p>
 <td class="parameter_description"><p> the language code (like 'de' or
 'en_GB') from which <em class="parameter"><code>string</code></em>
 originates. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>ascii_alternates</p></td>
@@ -1304,11 +1328,11 @@ faster to call <a class="link" href="glib-String-Utility-Functions.html#g-str-to
 your corpus and build an index on the returned folded tokens, then
 call <a class="link" href="glib-String-Utility-Functions.html#g-str-tokenize-and-fold" title="g_str_tokenize_and_fold ()"><code class="function">g_str_tokenize_and_fold()</code></a> on the search term and
 perform lookups into that index.</p>
-<p>As some examples, searching for "fred" would match the potential hit
-"Smith, Fred" and also "Frédéric".  Searching for "Fréd" would match
-"Frédéric" but not "Frederic" (due to the one-directional nature of
-accent matching).  Searching "fo" would match "Foo" and "Bar Foo
-Baz", but not "SFO" (because no word as "fo" as a prefix).</p>
+<p>As some examples, searching for ‘fred’ would match the potential hit
+‘Smith, Fred’ and also ‘Frédéric’.  Searching for ‘Fréd’ would match
+‘Frédéric’ but not ‘Frederic’ (due to the one-directional nature of
+accent matching).  Searching ‘fo’ would match ‘Foo’ and ‘Bar Foo
+Baz’, but not ‘SFO’ (because no word has ‘fo’ as a prefix).</p>
 <div class="refsect3">
 <a name="g-str-match-string.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1560,6 +1584,7 @@ positional parameters, as specified in the Single Unix Specification.</p>
 new-line character to the message, so typically <em class="parameter"><code>format</code></em>
  should end with its
 own new-line character.</p>
+<p><code class="literal">glib/gprintf.h</code> must be explicitly included in order to use this function.</p>
 <div class="refsect3">
 <a name="g-printf.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1597,6 +1622,7 @@ g_vprintf (<em class="parameter"><code><a class="link" href="glib-Basic-Types.ht
            <em class="parameter"><code><span class="type">va_list</span> args</code></em>);</pre>
 <p>An implementation of the standard <code class="function">vprintf()</code> function which supports 
 positional parameters, as specified in the Single Unix Specification.</p>
+<p><code class="literal">glib/gprintf.h</code> must be explicitly included in order to use this function.</p>
 <div class="refsect3">
 <a name="g-vprintf.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1635,6 +1661,7 @@ g_fprintf (<em class="parameter"><code><span class="type">FILE</span> *file</cod
            <em class="parameter"><code>...</code></em>);</pre>
 <p>An implementation of the standard <code class="function">fprintf()</code> function which supports 
 positional parameters, as specified in the Single Unix Specification.</p>
+<p><code class="literal">glib/gprintf.h</code> must be explicitly included in order to use this function.</p>
 <div class="refsect3">
 <a name="g-fprintf.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1678,6 +1705,7 @@ g_vfprintf (<em class="parameter"><code><span class="type">FILE</span> *file</co
             <em class="parameter"><code><span class="type">va_list</span> args</code></em>);</pre>
 <p>An implementation of the standard <code class="function">fprintf()</code> function which supports 
 positional parameters, as specified in the Single Unix Specification.</p>
+<p><code class="literal">glib/gprintf.h</code> must be explicitly included in order to use this function.</p>
 <div class="refsect3">
 <a name="g-vfprintf.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1723,6 +1751,7 @@ g_sprintf (<em class="parameter"><code><a class="link" href="glib-Basic-Types.ht
 positional parameters, as specified in the Single Unix Specification.</p>
 <p>Note that it is usually better to use <a class="link" href="glib-String-Utility-Functions.html#g-snprintf" title="g_snprintf ()"><code class="function">g_snprintf()</code></a>, to avoid the
 risk of buffer overflow.</p>
+<p><code class="literal">glib/gprintf.h</code> must be explicitly included in order to use this function.</p>
 <p>See also <a class="link" href="glib-String-Utility-Functions.html#g-strdup-printf" title="g_strdup_printf ()"><code class="function">g_strdup_printf()</code></a>.</p>
 <div class="refsect3">
 <a name="g-sprintf.parameters"></a><h4>Parameters</h4>
@@ -1769,6 +1798,7 @@ g_vsprintf (<em class="parameter"><code><a class="link" href="glib-Basic-Types.h
             <em class="parameter"><code><span class="type">va_list</span> args</code></em>);</pre>
 <p>An implementation of the standard <code class="function">vsprintf()</code> function which supports 
 positional parameters, as specified in the Single Unix Specification.</p>
+<p><code class="literal">glib/gprintf.h</code> must be explicitly included in order to use this function.</p>
 <div class="refsect3">
 <a name="g-vsprintf.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1939,6 +1969,7 @@ positional parameters, as specified in the Single Unix Specification.
 This function is similar to <a class="link" href="glib-String-Utility-Functions.html#g-vsprintf" title="g_vsprintf ()"><code class="function">g_vsprintf()</code></a>, except that it allocates a 
 string to hold the output, instead of putting the output in a buffer 
 you allocate in advance.</p>
+<p><code class="literal">glib/gprintf.h</code> must be explicitly included in order to use this function.</p>
 <div class="refsect3">
 <a name="g-vasprintf.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -3304,6 +3335,170 @@ character after the last character used in the conversion. </p></td>
 </div>
 <hr>
 <div class="refsect2">
+<a name="g-ascii-string-to-signed"></a><h3>g_ascii_string_to_signed ()</h3>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="returnvalue">gboolean</span></a>
+g_ascii_string_to_signed (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *str</code></em>,
+                          <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> base</code></em>,
+                          <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint64" title="gint64"><span class="type">gint64</span></a> min</code></em>,
+                          <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint64" title="gint64"><span class="type">gint64</span></a> max</code></em>,
+                          <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint64" title="gint64"><span class="type">gint64</span></a> *out_num</code></em>,
+                          <em class="parameter"><code><a class="link" href="glib-Error-Reporting.html#GError" title="struct GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+<p>A convenience function for converting a string to a signed number.</p>
+<p>This function assumes that <em class="parameter"><code>str</code></em>
+ contains only a number of the given
+<em class="parameter"><code>base</code></em>
+ that is within inclusive bounds limited by <em class="parameter"><code>min</code></em>
+ and <em class="parameter"><code>max</code></em>
+. If
+this is true, then the converted number is stored in <em class="parameter"><code>out_num</code></em>
+. An
+empty string is not a valid input. A string with leading or
+trailing whitespace is also an invalid input.</p>
+<p><em class="parameter"><code>base</code></em>
+ can be between 2 and 36 inclusive. Hexadecimal numbers must
+not be prefixed with "0x" or "0X". Such a problem does not exist
+for octal numbers, since they were usually prefixed with a zero
+which does not change the value of the parsed number.</p>
+<p>Parsing failures result in an error with the <a class="link" href="glib-String-Utility-Functions.html#G-NUMBER-PARSER-ERROR:CAPS" title="G_NUMBER_PARSER_ERROR"><code class="literal">G_NUMBER_PARSER_ERROR</code></a>
+domain. If the input is invalid, the error code will be
+<a class="link" href="glib-String-Utility-Functions.html#G-NUMBER-PARSER-ERROR-INVALID:CAPS"><code class="literal">G_NUMBER_PARSER_ERROR_INVALID</code></a>. If the parsed number is out of
+bounds - <a class="link" href="glib-String-Utility-Functions.html#G-NUMBER-PARSER-ERROR-OUT-OF-BOUNDS:CAPS"><code class="literal">G_NUMBER_PARSER_ERROR_OUT_OF_BOUNDS</code></a>.</p>
+<p>See <a class="link" href="glib-String-Utility-Functions.html#g-ascii-strtoll" title="g_ascii_strtoll ()"><code class="function">g_ascii_strtoll()</code></a> if you have more complex needs such as
+parsing a string which starts with a number, but then has other
+characters.</p>
+<div class="refsect3">
+<a name="g-ascii-string-to-signed.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>str</p></td>
+<td class="parameter_description"><p>a string</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>base</p></td>
+<td class="parameter_description"><p>base of a parsed number</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>min</p></td>
+<td class="parameter_description"><p>a lower bound (inclusive)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>max</p></td>
+<td class="parameter_description"><p>an upper bound (inclusive)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>out_num</p></td>
+<td class="parameter_description"><p> a return location for a number. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>a return location for <a class="link" href="glib-Error-Reporting.html#GError" title="struct GError"><span class="type">GError</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="g-ascii-string-to-signed.returns"></a><h4>Returns</h4>
+<p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if <em class="parameter"><code>str</code></em>
+was a number, otherwise <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a>.</p>
+</div>
+<p class="since">Since: <a class="link" href="api-index-2-54.html#api-index-2.54">2.54</a></p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-ascii-string-to-unsigned"></a><h3>g_ascii_string_to_unsigned ()</h3>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="returnvalue">gboolean</span></a>
+g_ascii_string_to_unsigned (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *str</code></em>,
+                            <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> base</code></em>,
+                            <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint64" title="guint64"><span class="type">guint64</span></a> min</code></em>,
+                            <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint64" title="guint64"><span class="type">guint64</span></a> max</code></em>,
+                            <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint64" title="guint64"><span class="type">guint64</span></a> *out_num</code></em>,
+                            <em class="parameter"><code><a class="link" href="glib-Error-Reporting.html#GError" title="struct GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+<p>A convenience function for converting a string to an unsigned number.</p>
+<p>This function assumes that <em class="parameter"><code>str</code></em>
+ contains only a number of the given
+<em class="parameter"><code>base</code></em>
+ that is within inclusive bounds limited by <em class="parameter"><code>min</code></em>
+ and <em class="parameter"><code>max</code></em>
+. If
+this is true, then the converted number is stored in <em class="parameter"><code>out_num</code></em>
+. An
+empty string is not a valid input. A string with leading or
+trailing whitespace is also an invalid input.</p>
+<p><em class="parameter"><code>base</code></em>
+ can be between 2 and 36 inclusive. Hexadecimal numbers must
+not be prefixed with "0x" or "0X". Such a problem does not exist
+for octal numbers, since they were usually prefixed with a zero
+which does not change the value of the parsed number.</p>
+<p>Parsing failures result in an error with the <a class="link" href="glib-String-Utility-Functions.html#G-NUMBER-PARSER-ERROR:CAPS" title="G_NUMBER_PARSER_ERROR"><code class="literal">G_NUMBER_PARSER_ERROR</code></a>
+domain. If the input is invalid, the error code will be
+<a class="link" href="glib-String-Utility-Functions.html#G-NUMBER-PARSER-ERROR-INVALID:CAPS"><code class="literal">G_NUMBER_PARSER_ERROR_INVALID</code></a>. If the parsed number is out of
+bounds - <a class="link" href="glib-String-Utility-Functions.html#G-NUMBER-PARSER-ERROR-OUT-OF-BOUNDS:CAPS"><code class="literal">G_NUMBER_PARSER_ERROR_OUT_OF_BOUNDS</code></a>.</p>
+<p>See <a class="link" href="glib-String-Utility-Functions.html#g-ascii-strtoull" title="g_ascii_strtoull ()"><code class="function">g_ascii_strtoull()</code></a> if you have more complex needs such as
+parsing a string which starts with a number, but then has other
+characters.</p>
+<div class="refsect3">
+<a name="g-ascii-string-to-unsigned.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>str</p></td>
+<td class="parameter_description"><p>a string</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>base</p></td>
+<td class="parameter_description"><p>base of a parsed number</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>min</p></td>
+<td class="parameter_description"><p>a lower bound (inclusive)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>max</p></td>
+<td class="parameter_description"><p>an upper bound (inclusive)</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>out_num</p></td>
+<td class="parameter_description"><p> a return location for a number. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>error</p></td>
+<td class="parameter_description"><p>a return location for <a class="link" href="glib-Error-Reporting.html#GError" title="struct GError"><span class="type">GError</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="g-ascii-string-to-unsigned.returns"></a><h4>Returns</h4>
+<p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if <em class="parameter"><code>str</code></em>
+was a number, otherwise <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a>.</p>
+</div>
+<p class="since">Since: <a class="link" href="api-index-2-54.html#api-index-2.54">2.54</a></p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="g-strchug"></a><h3>g_strchug ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="returnvalue">gchar</span></a> *
 g_strchug (<em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *string</code></em>);</pre>
@@ -3447,7 +3642,7 @@ allow nesting such as</p>
 <td class="parameter_name"><p>delimiters</p></td>
 <td class="parameter_description"><p> a string containing the current delimiters,
 or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> to use the standard delimiters defined in <a class="link" href="glib-String-Utility-Functions.html#G-STR-DELIMITERS:CAPS" title="G_STR_DELIMITERS"><span class="type">G_STR_DELIMITERS</span></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>new_delimiter</p></td>
@@ -3813,7 +4008,7 @@ should be freed with <a class="link" href="glib-Memory-Allocation.html#g-free" t
 <td class="parameter_name"><p>separator</p></td>
 <td class="parameter_description"><p> a string to insert between each of the
 strings, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>...</p></td>
@@ -3859,7 +4054,7 @@ appear in the resulting string.</p>
 <td class="parameter_name"><p>separator</p></td>
 <td class="parameter_description"><p> a string to insert between each of the
 strings, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>str_array</p></td>
@@ -3956,7 +4151,31 @@ such process". Unlike <code class="function">strerror()</code>, this always retu
 UTF-8 encoding, and the pointer is guaranteed to remain valid for
 the lifetime of the process.</p>
 <p>Note that the string may be translated according to the current locale.</p>
-<p>The value of <code class="literal">errno</code> will not be changed by this function.</p>
+<p>The value of <code class="literal">errno</code> will not be changed by this function. However, it may
+be changed by intermediate function calls, so you should save its value
+as soon as the call returns:</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">int</span> saved_errno<span class="gtkdoc opt">;</span>
+
+ret <span class="gtkdoc opt">=</span> <span class="function">read</span> <span class="gtkdoc opt">(</span>blah<span class="gtkdoc opt">);</span>
+saved_errno <span class="gtkdoc opt">=</span> errno<span class="gtkdoc opt">;</span>
+
+<span class="function"><a href="glib-String-Utility-Functions.html#g-strerror">g_strerror</a></span> <span class="gtkdoc opt">(</span>saved_errno<span class="gtkdoc opt">);</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p></p>
 <div class="refsect3">
 <a name="g-strerror.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -4036,6 +4255,47 @@ on systems with 64bit IEEE-compatible doubles.</p>
 </div>
 
 <p></p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="GNumberParserError"></a><h3>enum GNumberParserError</h3>
+<p>Error codes returned by functions converting a string to a number.</p>
+<div class="refsect3">
+<a name="GNumberParserError.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="300px" class="enum_members_name">
+<col class="enum_members_description">
+<col width="200px" class="enum_members_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="enum_member_name"><p><a name="G-NUMBER-PARSER-ERROR-INVALID:CAPS"></a>G_NUMBER_PARSER_ERROR_INVALID</p></td>
+<td class="enum_member_description">
+<p>String was not a valid number.</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="G-NUMBER-PARSER-ERROR-OUT-OF-BOUNDS:CAPS"></a>G_NUMBER_PARSER_ERROR_OUT_OF_BOUNDS</p></td>
+<td class="enum_member_description">
+<p>String was a number, but out of bounds.</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<p class="since">Since: <a class="link" href="api-index-2-54.html#api-index-2.54">2.54</a></p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="G-NUMBER-PARSER-ERROR:CAPS"></a><h3>G_NUMBER_PARSER_ERROR</h3>
+<pre class="programlisting">#define G_NUMBER_PARSER_ERROR (g_number_parser_error_quark ())
+</pre>
+<p>Domain for errors returned by functions converting a string to a
+number.</p>
+<p class="since">Since: <a class="link" href="api-index-2-54.html#api-index-2.54">2.54</a></p>
 </div>
 <hr>
 <div class="refsect2">

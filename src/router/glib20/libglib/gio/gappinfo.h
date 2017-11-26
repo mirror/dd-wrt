@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -66,8 +66,7 @@ typedef struct _GAppLaunchContextPrivate GAppLaunchContextPrivate;
  * @supports_files: Indicates whether the application specified accepts filename arguments.
  * @launch_uris: Launches an application with a list of URIs.
  * @should_show: Returns whether an application should be shown (e.g. when getting a list of installed applications).
- * <ulink url="http://standards.freedesktop.org/startup-notification-spec/startup-notification-latest.txt">
- * <citetitle>FreeDesktop.Org Startup Notification Specification</citetitle></ulink>.
+ * [FreeDesktop.Org Startup Notification Specification](http://standards.freedesktop.org/startup-notification-spec/startup-notification-latest.txt).
  * @set_as_default_for_type: Sets an application as default for a given content type.
  * @set_as_default_for_extension: Sets an application as default for a given file extension.
  * @add_supports_type: Adds to the #GAppInfo information about supported file types.
@@ -100,13 +99,13 @@ struct _GAppInfoIface
   GIcon *      (* get_icon)                     (GAppInfo           *appinfo);
   gboolean     (* launch)                       (GAppInfo           *appinfo,
                                                  GList              *files,
-                                                 GAppLaunchContext  *launch_context,
+                                                 GAppLaunchContext  *context,
                                                  GError            **error);
   gboolean     (* supports_uris)                (GAppInfo           *appinfo);
   gboolean     (* supports_files)               (GAppInfo           *appinfo);
   gboolean     (* launch_uris)                  (GAppInfo           *appinfo,
                                                  GList              *uris,
-                                                 GAppLaunchContext  *launch_context,
+                                                 GAppLaunchContext  *context,
                                                  GError            **error);
   gboolean     (* should_show)                  (GAppInfo           *appinfo);
 
@@ -163,7 +162,7 @@ GIcon *     g_app_info_get_icon                     (GAppInfo             *appin
 GLIB_AVAILABLE_IN_ALL
 gboolean    g_app_info_launch                       (GAppInfo             *appinfo,
                                                      GList                *files,
-                                                     GAppLaunchContext    *launch_context,
+                                                     GAppLaunchContext    *context,
                                                      GError              **error);
 GLIB_AVAILABLE_IN_ALL
 gboolean    g_app_info_supports_uris                (GAppInfo             *appinfo);
@@ -172,7 +171,7 @@ gboolean    g_app_info_supports_files               (GAppInfo             *appin
 GLIB_AVAILABLE_IN_ALL
 gboolean    g_app_info_launch_uris                  (GAppInfo             *appinfo,
                                                      GList                *uris,
-                                                     GAppLaunchContext    *launch_context,
+                                                     GAppLaunchContext    *context,
                                                      GError              **error);
 GLIB_AVAILABLE_IN_ALL
 gboolean    g_app_info_should_show                  (GAppInfo             *appinfo);
@@ -227,12 +226,12 @@ GAppInfo *g_app_info_get_default_for_uri_scheme  (const char  *uri_scheme);
 
 GLIB_AVAILABLE_IN_ALL
 gboolean  g_app_info_launch_default_for_uri      (const char              *uri,
-                                                  GAppLaunchContext       *launch_context,
+                                                  GAppLaunchContext       *context,
                                                   GError                 **error);
 
 GLIB_AVAILABLE_IN_2_50
 void      g_app_info_launch_default_for_uri_async  (const char           *uri,
-                                                    GAppLaunchContext    *launch_context,
+                                                    GAppLaunchContext    *context,
                                                     GCancellable         *cancellable,
                                                     GAsyncReadyCallback   callback,
                                                     gpointer              user_data);

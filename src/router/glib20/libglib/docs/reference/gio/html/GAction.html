@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GAction: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="application.html" title="Application support">
 <link rel="prev" href="GSimpleActionGroup.html" title="GSimpleActionGroup">
@@ -193,7 +193,7 @@
 </div>
 <div class="refsect1">
 <a name="GAction.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/GTypeModule.html">GInterface</a>
+<pre class="screen">    <a href="/home/mclasen/gnome/share/gtk-doc/html/gobject/GTypeModule.html">GInterface</a>
     <span class="lineart">╰──</span> GAction
 </pre>
 </div>
@@ -335,7 +335,7 @@ given to that function must be of the type returned by this function.</p>
 <div class="refsect3">
 <a name="g-action-get-parameter-type.returns"></a><h4>Returns</h4>
 <p> the parameter type. </p>
-<p><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></p>
+<p><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-28.html#api-index-2.28">2.28</a></p>
 </div>
@@ -373,7 +373,7 @@ will return <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="litera
 <div class="refsect3">
 <a name="g-action-get-state-type.returns"></a><h4>Returns</h4>
 <p> the state type, if the action is stateful. </p>
-<p><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></p>
+<p><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-28.html#api-index-2.28">2.28</a></p>
 </div>
@@ -556,7 +556,7 @@ type was <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">
 <tr>
 <td class="parameter_name"><p>parameter</p></td>
 <td class="parameter_description"><p> the parameter to the activation. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -664,7 +664,7 @@ this function.</p>
 <tr>
 <td class="parameter_name"><p>target_value</p></td>
 <td class="parameter_description"><p> a <a href="../glib-GVariant.html#GVariant"><span class="type">GVariant</span></a> target value, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>

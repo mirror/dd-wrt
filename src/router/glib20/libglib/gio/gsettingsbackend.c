@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -70,12 +70,12 @@ static gboolean g_settings_has_backend;
  * implementations must carefully adhere to the expectations of
  * callers that are documented on each of the interface methods.
  *
- * Some of the GSettingsBackend functions accept or return a #GTree.
+ * Some of the #GSettingsBackend functions accept or return a #GTree.
  * These trees always have strings as keys and #GVariant as values.
  * g_settings_backend_create_tree() is a convenience function to create
  * suitable trees.
  *
- * The GSettingsBackend API is exported to allow third-party
+ * The #GSettingsBackend API is exported to allow third-party
  * implementations, but does not carry the same stability guarantees
  * as the public GIO API. For this reason, you have to define the
  * C preprocessor symbol %G_SETTINGS_ENABLE_BACKEND before including
@@ -137,7 +137,7 @@ struct _GSettingsBackendClosure
                     gchar            **names);
 
   GMainContext      *context;
-  GObject           *target;
+  GWeakRef          *target_ref;
   GSettingsBackend  *backend;
   gchar             *name;
   gpointer           origin_tag;
@@ -173,7 +173,7 @@ g_settings_backend_watch_weak_notify (gpointer  data,
  * g_settings_backend_watch:
  * @backend: a #GSettingsBackend
  * @target: the GObject (typically GSettings instance) to call back to
- * @context: (allow-none): a #GMainContext, or %NULL
+ * @context: (nullable): a #GMainContext, or %NULL
  * ...: callbacks...
  *
  * Registers a new watch on a #GSettingsBackend.
@@ -208,8 +208,9 @@ g_settings_backend_watch (GSettingsBackend              *backend,
    * GSettings object in a thread other than the one that is doing the
    * dispatching is as follows:
    *
-   *  1) hold a GObject reference on the GSettings during an outstanding
-   *     dispatch.  This ensures that the delivery is always possible.
+   *  1) hold a thread-safe GWeakRef on the GSettings during an outstanding
+   *     dispatch.  This ensures that the delivery is always possible while
+   *     the GSettings object is alive.
    *
    *  2) hold a weak reference on the GSettings at other times.  This
    *     allows us to receive early notification of pending destruction
@@ -224,12 +225,8 @@ g_settings_backend_watch (GSettingsBackend              *backend,
    * possible to keep the object alive using g_object_ref() and we would
    * have no way of knowing this.
    *
-   * Note also that we do not need to hold a reference on the main
-   * context here since the GSettings instance does that for us and we
-   * will receive the weak notify long before it is dropped.  We don't
-   * even need to hold it during dispatches because our reference on the
-   * GSettings will prevent the finalize from running and dropping the
-   * ref on the context.
+   * Note also that we need to hold a reference on the main context here
+   * since the GSettings instance may be finalized before the closure runs.
    *
    * All access to the list holds a mutex.  We have some strategies to
    * avoid some of the pain that would be associated with that.
@@ -263,12 +260,20 @@ static gboolean
 g_settings_backend_invoke_closure (gpointer user_data)
 {
   GSettingsBackendClosure *closure = user_data;
+  GObject *target = g_weak_ref_get (closure->target_ref);
 
-  closure->function (closure->target, closure->backend, closure->name,
-                     closure->origin_tag, closure->names);
+  if (target)
+    {
+      closure->function (target, closure->backend, closure->name,
+                         closure->origin_tag, closure->names);
+      g_object_unref (target);
+    }
 
+  if (closure->context)
+    g_main_context_unref (closure->context);
   g_object_unref (closure->backend);
-  g_object_unref (closure->target);
+  g_weak_ref_clear (closure->target_ref);
+  g_free (closure->target_ref);
   g_strfreev (closure->names);
   g_free (closure->name);
 
@@ -302,8 +307,11 @@ g_settings_backend_dispatch_signal (GSettingsBackend    *backend,
 
       closure = g_slice_new (GSettingsBackendClosure);
       closure->context = watch->context;
+      if (closure->context)
+        g_main_context_ref (closure->context);
       closure->backend = g_object_ref (backend);
-      closure->target = g_object_ref (watch->target);
+      closure->target_ref = g_new (GWeakRef, 1);
+      g_weak_ref_init (closure->target_ref, watch->target);
       closure->function = G_STRUCT_MEMBER (void *, watch->vtable,
                                            function_offset);
       closure->name = g_strdup (name);
@@ -586,7 +594,7 @@ g_settings_backend_flatten_one (gpointer key,
  * @path: (out): the location to save the path
  * @keys: (out) (transfer container) (array zero-terminated=1): the
  *        location to save the relative keys
- * @values: (out) (allow-none) (transfer container) (array zero-terminated=1):
+ * @values: (out) (optional) (transfer container) (array zero-terminated=1):
  *          the location to save the values, or %NULL
  *
  * Calculate the longest common prefix of all keys in a tree and write
