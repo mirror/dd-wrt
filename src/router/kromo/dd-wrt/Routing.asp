@@ -207,7 +207,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div id="idzebra">
 								<div class="setting">
-								    <dAiv class="label"><% tran("route.zebra_legend"); %></div>
+								    <div class="label"><% tran("route.zebra_legend"); %></div>
 								    <textarea cols="60" rows="12" id="zebra_conf" name="zebra_conf"></textarea>
 								    <script type="text/javascript">
 								    //<![CDATA[
@@ -270,7 +270,8 @@ addEvent(window, "unload", function() {
 								</div>
 								<% has_not_routing("gateway", "<!--"); %>
 								<div class="setting">
-									<input class="spaceradio" type="checkbox" value="1" name="_route_nat" <% static_route_setting("nat",""); %> /><% tran("routetbl.nat"); %>
+									<div class="label"><% tran("routetbl.nat"); %></div>
+									<input class="spaceradio" type="checkbox" value="1" name="_route_nat" <% static_route_setting("nat",""); %> />
 								</div>
 								<% has_not_routing("gateway", "-->"); %>
 								<div class="setting">
