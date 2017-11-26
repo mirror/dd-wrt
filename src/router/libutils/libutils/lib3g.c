@@ -30,7 +30,7 @@
 #include <glob.h>
 #include <utils.h>
 #ifdef HAVE_UQMI
-#include <json/json.h>
+#include <json-c/json.h>
 #endif
 
 #define SIERRA_DETECTION_FN "/tmp/.sierra_detection_done"
