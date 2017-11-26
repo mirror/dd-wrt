@@ -1155,7 +1155,7 @@ void closesocket(void);
 int isEMP(char *ifname);
 int isXR36(char *ifname);
 int isFXXN_PRO(char *ifname);
-char *get3GControlDevice(void);
+void get3GControlDevice(void);
 int mac80211_get_maxmcs(char *interface);
 int mac80211_get_maxvhtmcs(char *interface);
 int get_ath9k_phy_idx(int idx);
@@ -1222,3 +1222,13 @@ int writevaproc(char *value, char *fmt, ...);
 
 void MAC_ADD(char *mac);
 void MAC_SUB(char *mac);
+
+
+#ifdef HAVE_UQMI
+extern char *get_popen_data(char *command);
+extern char *get_json_data_by_key(char *output,char *getkey);
+#endif
+extern struct in_addr inet_netaddr_of(struct in_addr addr, struct in_addr msk);
+extern struct in_addr inet_bcastaddr_of(struct in_addr net, struct in_addr msk);
+extern void inet_addr_to_cidr(struct in_addr addr, struct in_addr msk, char *cidr_buf);
+extern int inet_cidr_to_addr(char *cidr_str, struct in_addr *addr, struct in_addr *msk);

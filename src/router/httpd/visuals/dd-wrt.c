@@ -1157,6 +1157,16 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 			else
 				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		}
+
+		char *ifname[32];
+		sprintf(ifname, "ath%d.sta", i);
+		char eths[256];
+		bzero(eths, 256);
+		getIfList(eths, ifname);
+		foreach(var, eths, next) {
+			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
+		}
+
 	}
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
@@ -1532,7 +1542,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n", !strcmp(wlc, "0") ? "selected=\\\"selected\\\"" : "");
 			int i = 0;
 #ifdef HAVE_ATH9K
-			int isath9k = is_ath9k(prefix);
+			int isath9k = is_ath9k(prefix) && !is_ath5k(prefix);
 #endif
 			while (chan[i].freq != -1) {
 #ifdef HAVE_BUFFALO

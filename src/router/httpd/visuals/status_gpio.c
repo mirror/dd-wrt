@@ -33,8 +33,10 @@
 
 void ej_show_status_gpio_output(webs_t wp, int argc, char_t ** argv)
 {
-	char *var, *next, *rgpio, *gpio_name;
-	char nvgpio[32], gpio_new_name[32];
+	char *var, *next;
+	char nvgpio[32];
+
+	char *value = websGetVar(wp, "action", "");
 
 	char *gpios = nvram_safe_get("gpio_outputs");
 	var = (char *)malloc(strlen(gpios) + 1);
@@ -42,21 +44,11 @@ void ej_show_status_gpio_output(webs_t wp, int argc, char_t ** argv)
 		if (gpios != NULL) {
 			foreach(var, gpios, next) {
 				sprintf(nvgpio, "gpio%s", var);
-				sprintf(gpio_new_name, "gpio%s_name", var);
-				rgpio = nvram_nget("gpio%s", var);
-				if (strlen(rgpio) == 0)
-					nvram_seti(nvgpio, 0);
-
-				rgpio = nvram_nget("gpio%s", var);
-				gpio_name = nvram_nget("gpio%s_name", var);
-				// enable
-				websWrite(wp, "<div class=\"label\">%s (%s)</div>", nvgpio, gpio_name);
-				websWrite(wp, "<input type=text maxlength=\"17\" size=\"17\" id=\"%s\" name=\"%s\" value=\"%s\">", gpio_new_name, gpio_new_name, gpio_name);
-				websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"1\" %s />\n", nvgpio, nvram_matchi(nvgpio, 1) ? "checked=\"checked\"" : "");
-				websWrite(wp, "<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;");
-				//disable 
-				websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" name=\"%s\" value=\"0\" %s />\n", nvgpio, nvram_matchi(nvgpio, 0) ? "checked=\"checked\"" : "");
-				websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script><br>");
+				nvgpio = nvram_nget("gpio_%s", var);
+				if (!nvgpio)
+					nvram_set(nvgpio, "0");
+				websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", nvgpio, nvram_match(nvgpio, "1") ? "checked=\"checked\"" : "");
+				websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"0\" %s />\n", nvgpio, nvram_match(nvgpio, "0") ? "checked=\"checked\"" : "");
 			}
 		}
 		free(var);

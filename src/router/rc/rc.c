@@ -87,20 +87,60 @@
 #include "ntp.c"
 
 #if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
+static void check_sierradirectip(void)
+{
+	// sysprintf("echo checksierraip | logger");
+	sysprintf("/etc/comgt/sierrastatus.sh %s dip",nvram_safe_get("3gcontrol"));
+}
+
+static void check_sierrappp(void)
+{
+	// sysprintf("echo checksierrappp | logger");
+	sysprintf("/etc/comgt/sierrastatus.sh %s",nvram_safe_get("3gcontrol"));
+}
+
+#if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
+static void check_mbim(void)
+{
+	if (registered_has_cap(27)) {
+		sysprintf("/usr/sbin/mbim-status.sh /dev/%s",nvram_safe_get("3gctrl"));
+	}
+}
+#endif
+
+
 static void check_qmi(void)
 {
 #ifdef HAVE_UQMI
+	char *output, *retval,*rsrq;
+	char command[256];
+	char buf[256];
 	int clientid = 0;
 	FILE *fp = fopen("/tmp/qmi-clientid", "rb");
 	if (fp) {
 		fscanf(fp, "%d", &clientid);
 		fclose(fp);
-		fp = fopen("/tmp/qmistatus.sh", "wb");
-		fprintf(fp, "#!/bin/sh\n");
-		fprintf(fp, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-serving-system|grep registered|wc -l>/tmp/qmistatus\n", clientid);
-		fclose(fp);
-		chmod("/tmp/qmistatus.sh", 0700);
-		eval("/tmp/qmistatus.sh");
+		sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-data-status | grep '^\"connected' | wc -l >/tmp/qmistatustemp ; mv /tmp/qmistatustemp /tmp/qmistatus", clientid);
+		sprintf(command,"uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-signal-info", clientid);
+		output=get_popen_data(command);
+		retval=get_json_data_by_key(output,"rssi");
+		rsrq=get_json_data_by_key(output,"rsrq");
+		if (retval && rsrq) {
+			snprintf(buf,sizeof(buf),"RSSI: %s / RSRQ: %s",retval, rsrq);
+			nvram_set("wan_3g_signal", buf);
+		}
+		if (retval && !rsrq) {
+			snprintf(buf,sizeof(buf),"RSSI: %s",retval);
+			nvram_set("wan_3g_signal", buf);
+		}
+		retval=get_json_data_by_key(output,"type");
+		if (retval) {
+			snprintf(buf,sizeof(buf),"%s",retval);
+			nvram_set("wan_3g_mode", buf);
+		}
+		free(retval);
+		free(rsrq);
+		free(output);
 	} else {
 		sysprintf("echo 0 > /tmp/qmistatus");
 	}
@@ -160,7 +200,21 @@ static int redial_main(int argc, char **argv)
 	int num;
 
 	while (1) {
+#if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
+		if (nvram_match("wan_proto", "3g")
+		    && nvram_match("3gdata", "mbim") && count == 1) {
+			check_mbim();
+		}
+#endif
 #if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
+		if (nvram_match("wan_proto", "3g")
+		    && nvram_match("3gdata", "sierradirectip")) {
+			check_sierradirectip();
+		}
+		else if (nvram_match("wan_proto", "3g")
+		    && nvram_match("3gnmvariant", "1")) {
+			check_sierrappp();
+		}
 		if (nvram_match("wan_proto", "3g")
 		    && nvram_match("3gdata", "qmi") && _count == 1) {
 			check_qmi();
@@ -629,6 +683,73 @@ int main(int argc, char **argv)
 			goto out;
 		}
 	}
+	if (strstr(base, "ipfmt")) {
+		char cidr[24];
+		char fmt;
+		struct in_addr addr, msk, outfmt;
+		int valid;
+		const char usage[] = "" 
+			"ipfmt <print option> <addr> <netmask>\n"
+			"ipfmt <print option> <addr/cidr>\n"
+			"\n"
+			"print options:\n"
+			"        b  : broadcast\n"
+			"        n  : network\n"
+			"        c  : cidr\n"
+			"        N  : netmask\n"
+			"\n";
+
+		if (argc < 3) {
+			puts(usage);
+			return 0;
+		}
+
+ 		fmt = argv[1][0];
+		if (argc == 3) {
+			valid = inet_cidr_to_addr(argv[2], &addr, &msk);
+			if (valid == -EINVAL) {
+				fprintf(stderr, "invalid cidr string\n");
+				return 1;
+			}
+		} else {
+			valid = inet_aton(argv[2], &addr);
+			if (valid == -EINVAL) {
+				fprintf(stderr, "invalid address\n");
+				return 1;
+			}
+			valid = inet_aton(argv[3], &msk);
+			if (valid == -EINVAL) {
+				fprintf(stderr, "invalid netmask\n");
+				return 1;
+			}
+		}
+
+	
+		switch (fmt) {
+		case 'b':
+			outfmt = inet_bcastaddr_of(
+					inet_netaddr_of(addr, msk),
+					msk
+					);
+			break;
+		case 'n':
+			outfmt = inet_netaddr_of(addr, msk);
+			break;
+		case 'N':
+			outfmt = msk;
+			break;
+		case 'c':
+			inet_addr_to_cidr(addr, msk, cidr);
+			puts(cidr);
+			return 0;
+		default:
+			fprintf(stderr, "invalid option\n%s", usage);
+			break;
+		}
+		puts(inet_ntoa(outfmt));
+		return 0;
+	}
+
 	ret = 1;
       out:;
 	airbag_deinit();

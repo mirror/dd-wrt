@@ -2448,11 +2448,10 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		eval("nldstart.sh");
 	}
 #endif
-// #if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
-	//if (registered_has_cap(19)) {
-	//      eval("batstart.sh");
-	//}
-// #endif
+#if defined(HAVE_TMK) || defined(HAVE_BKM)
+	eval("/jffs/bin/r1x_startup.sh");
+	eval("/sbin/r1x_startup.sh");
+#endif
 #ifdef HAVE_WPS
 	nvram_unset("wps_forcerelease");
 #endif

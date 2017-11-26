@@ -89,7 +89,7 @@ CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Iinclude
 #  -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 CFLAGS	+= -fPIC
 LDFLAGS += -L. -ldl
-OBJS := libutils/utils.o libutils/detect.o libutils/linux_timer.o libutils/gpio.o libutils/md5c.o libutils/nvparse.o libutils/bcmutils.o libutils/linux_osl.o libutils/airbag.o
+OBJS := libutils/utils.o libutils/detect.o libutils/linux_timer.o libutils/gpio.o libutils/md5c.o libutils/nvparse.o libutils/bcmutils.o libutils/linux_osl.o libutils/airbag.o libutils/ipfmt.o
 SHOBJS =  libshutils/timezones.o libshutils/shutils.o libshutils/sha1.o
 WOBJS := libwireless/wl.o libwireless/wl_basic.o libwireless/wl_linux.o libwireless/country.o libwireless/wl_macfuncs.o
 
@@ -575,7 +575,8 @@ ifeq ($(CONFIG_LIBQMI),y)
   CFLAGS += -DHAVE_LIBQMI
 endif
 ifeq ($(CONFIG_UQMI),y)
-  CFLAGS += -DHAVE_UQMI
+  CFLAGS += -DHAVE_UQMI -I$(TOP)/_staging/usr/include
+  QMILDFLAGS = -L$(TOP)/_staging/usr/lib -ljson
 endif
 ifeq ($(CONFIG_MAGICBOX),y)
   CFLAGS += -DHAVE_MAGICBOX
@@ -1491,7 +1492,7 @@ libwireless.so: $(WOBJS) madwififiles ath9kfiles
 	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $(WOBJS) $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram -L. -lshutils $(WLDFLAGS) $(ATH9KLDFLAGS) $(QTNFLAGS)
 
 libutils.so: $(OBJS)
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils  $(QMILDFLAGS)
 
 libshutils.so: $(SHOBJS)
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram

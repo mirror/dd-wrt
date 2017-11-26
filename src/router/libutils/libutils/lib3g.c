@@ -27,6 +27,15 @@
 #include <shutils.h>
 #include <utils.h>
 #include <bcmnvram.h>
+#include <glob.h>
+#include <utils.h>
+#ifdef HAVE_UQMI
+#include <json/json.h>
+#endif
+
+#define SIERRA_DETECTION_FN "/tmp/.sierra_detection_done"
+
+void *detectcontrol_and_data_port(char *controlport);
 
 #define HSO 0xf0
 
@@ -121,14 +130,55 @@ void checkreset(unsigned char tty)
 {
 	char tts[32];
 	sprintf(tts, "/dev/usb/tts/%d", tty);
-	eval("comgt", "-d", tts, "-s", "/etc/comgt/reset.comgt");
 	FILE *check = NULL;
 	int count = 0;
 	sleep(1);
-	while (!(check = fopen(tts, "rb")) && count < 10) {
+	char control[32];
+	int qmi = 0;
+	if (nvram_match("3gcontrol", "qmi")) {
+		sysprintf("uqmi -d /dev/cdc-wdm0 --set-device-operating-mode offline");
+		sysprintf("uqmi -d /dev/cdc-wdm0 --set-device-operating-mode reset");
+		while (ifexists("wwan0")) {
+			dd_syslog(LOG_INFO, "looking for wwan0 to disapear");
+			sleep(1);
+			if (count++ > 10) {
+				dd_syslog(LOG_INFO, "reset of wwan0 failed");
+				break;
+			}
+		}
+		count = 0;
+		while (!ifexists("wwan0")) {
+			dd_syslog(LOG_INFO, "looking for wwan0 after reset");
+			sleep(1);
+			if (count++ > 20) {
+				dd_syslog(LOG_INFO, "reset of wwan0 failed");
+				break;
+			}
+		}
+		sleep(10);
+		sysprintf("uqmi -d /dev/cdc-wdm0 --set-device-operating-mode online");
+	} else {
+		detectcontrol_and_data_port(control);
+		sysprintf("ifconfig wwan0 down");
+		rmmod("sierra_net");
+		sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/reset.comgt", tty);
 		sleep(1);
-		count++;
+		while (!(check = fopen(tty, "rb")) && count < 45) {
+			sleep(1);
+			count++;
+		}
+		if (check)
+			fclose(check);
+		else
+			fprintf(stderr, "reset error\n");
+		unlink(SIERRA_DETECTION_FN);
+		detectcontrol_and_data_port(control);
+		fprintf(stderr, "wakeup card\n");
+		sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/wakeup.comgt", tty);
+		// sleep(5);            //give extra delay for registering
+		insmod("sierra_net");
 	}
+
 	if (check)
 		fclose(check);
 	else {
@@ -363,6 +413,7 @@ static void modeswitch_others(int needreset, int devicecount)
 	eval("usb_modeswitch", "-v", "0x1e0e", "-p", "0xf000", "-M", "555342431234567800000000000006bd000000020000000000000000000000");
 }
 
+#define SIERRADIP 0xb0		// usbnet, qmi_wwan, cdc_wdm, rawip
 #define QMIRAW 0xa0		// usbnet, qmi_wwan, cdc_wdm, rawip
 #define H_NCM 0x90		// usbnet, cdc_ncm, huawei_cdc_ncm, cdc_wdm
 #define NCM 0x80		// usbnet, cdc_ncm, cdc_wdm
@@ -709,9 +760,9 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x6839, sierra, 3, 4, 1, NULL, "Sierra MC8781"},	//
 	{0x1199, 0x683a, sierra, 3, 4, 1, NULL, "Sierra MC8785"},	//
 	{0x1199, 0x683b, sierra, 3, 4, 1, NULL, "Sierra MC8785 Composite"},	//
-	{0x1199, 0x683c, sierra, 3, 3, 1, &reset_mc, "Sierra MC8790 Composite"},	//
-	{0x1199, 0x683d, sierra, 3, 3, 1, &reset_mc, "Sierra MC8791 Composite"},	//
-	{0x1199, 0x683e, sierra, 3, 3, 1, &reset_mc, "Sierra MC8790"},	//
+	{0x1199, 0x683c, sierra, 3, 3, 1 | SIERRADIP, &reset_mc, "Sierra MC8790 Composite"},	//
+	{0x1199, 0x683d, sierra, 3, 3, 1 | SIERRADIP, &reset_mc, "Sierra MC8791 Composite"},	//
+	{0x1199, 0x683e, sierra, 3, 3, 1 | SIERRADIP, &reset_mc, "Sierra MC8790"},	//
 	{0x1199, 0x6850, sierra, 2, 0, 1, NULL, "Sierra AC880"},	//
 	{0x1199, 0x6851, sierra, 2, 0, 1, NULL, "Sierra AC 881"},	//
 	{0x1199, 0x6852, sierra, 2, 0, 1, NULL, "Sierra AC880E"},	//
@@ -725,8 +776,14 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x6891, sierra, 3, 3, 1, NULL, "Sierra C22/C33"},	//
 	{0x1199, 0x6892, sierra, 3, 3, 1, NULL, "Sierra Compass HSPA"},	//
 	{0x1199, 0x6893, sierra, 3, 3, 1, NULL, "Sierra C889"},	//
-	{0x1199, 0x68a2, qcserial, 2, 0, 1 | QMI, NULL, "Sierra MC7710"},	// also cdc_mbim
-	{0x1199, 0x68a3, sierra, 3, 4, 1, &reset_mc, "Sierra MC8700/Compass Direct IP"},	// also sierra_net
+	{0x1199, 0x68a2, sierra, 3, 4, 1 | QMI, &reset_mc, "Sierra MC8700/MC7710 QMI"},	//
+#if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
+	{0x1199, 0x68c0, sierra, 2, 2, 1 | MBIM, &reset_mc, "Sierra MC775X MBIM"},	//
+#else
+	{0x1199, 0x68c0, sierra, 2, 2, 1 | QMI, &reset_mc, "Sierra MC77XX QMI"},	//
+#endif
+//      {0x1199, 0x68a3, sierra, 3, 4, 1 | SIERRADIP, &reset_mc, "Sierra MC8700/Compass Direct IP/MC7710"},     //
+	{0x1199, 0x68a3, sierra, 3, 4, 1, &reset_mc, "Sierra MC8700/Compass Direct IP/MC7710"},	//
 	{0x1199, 0x68a5, qcserial, 2, 0, 1 | QMI, NULL, "Sierra MC8705"},	//
 	{0x1199, 0x68a9, qcserial, 2, 0, 1 | QMI, &select_config1, "Sierra MC7750"},	// cdc_mbim in default config2
 	{0x1199, 0x68aa, sierra, 3, 3, 1, NULL, "Sierra AC320U/AC330U Direct IP"},	// also sierra_net
@@ -736,12 +793,13 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x901b, qcserial, 2, 0, 1 | QMI, &select_config1, "Sierra MC7770"},	// cdc_mbim in default config2
 	{0x1199, 0x901c, qcserial, 2, 0, 1 | QMI, &select_config1, "Sierra EM7700"},	// cdc_mbim in default config2
 	{0x1199, 0x901f, qcserial, 2, 0, 1 | QMI, &select_config1, "Sierra EM7355"},	// cdc_mbim in default config2
-	{0x1199, 0x9041, qcserial, 2, 0, 1 | QMI, &select_config1, "Sierra EM8805"},	// cdc_mbim in default config2
+	{0x1199, 0x9041, sierra, 2, 0, 1 | MBIM, &reset_mc, "Sierra MC74XX (modem)"},	//
+	{0x1199, 0x9071, sierra, 2, 0, 1 | MBIM, &reset_mc, "Sierra MC74XX (modem)"},	//
+
 	{0x1199, 0x9051, qcserial, 2, 0, 1 | QMI, &select_config1, "Netgear AC340U"},	// cdc_mbim in default config2
 	{0x1199, 0x9055, qcserial, 2, 0, 1 | QMI, &select_config1, "Netgear AC341U"},	//
 	{0x1199, 0x9057, qcserial, 2, 0, 1 | QMI, &select_config1, "Netgear AC341U"},	//
 	{0x1199, 0x9063, qcserial, 2, 0, 1 | QMI, &select_config1, "Sierra EM7305"},	// cdc_mbim in default config2
-	{0x1199, 0x9071, qcserial, 2, 0, 1 | QMIRAW, &select_config1, "Sierra MC7430"},	// cdc_mbim in default config2
 	{0x1199, 0x9079, qcserial, 2, 0, 1 | QMIRAW, &select_config1, "Sierra EM7455"},	// cdc_mbim in default config2
 
 /* Pirelli Broadband Solutions */
@@ -1467,6 +1525,69 @@ static struct DEVICES devicelist[] = {
 	{0xffff, 0xffff, none, 0, 0, 0, NULL, NULL}	//
 };
 
+void *detectcontrol_and_data_port(char *controlport)
+{
+	glob_t globbuf;
+	int globresult, i, result;
+	int controlfound = -1;
+	int datafound = -1;
+	char globstring[256];
+	char devicepath[32];
+	char *port;
+	FILE *out;
+	fprintf(stderr, "Starting Sierra port detection\n-----------------------\n");
+	sprintf(globstring, "/sys/bus/usb-serial/drivers/sierra/ttyUSB*");
+	globresult = glob(globstring, 0, NULL, &globbuf);
+	out = fopen("/tmp/sierra_detection-log.txt", "wb");
+
+	for (i = 0; i < globbuf.gl_pathc; i++) {
+		port = strrchr(globbuf.gl_pathv[i], '/');
+		if (!port)
+			continue;
+		fprintf(out, "Probing port _%s_\n", port);
+		if (controlfound == -1 || datafound == -1) {
+			// sprintf(comgtcall,"comgt -d /dev%s -s /etc/comgt/sierradetect.comgt",port);
+			sprintf(devicepath, "/dev%s", port);
+			result = eval("comgt", "-d", devicepath, "-s", "/etc/comgt/sierradetect.comgt");
+			if (result == 0) {
+				fprintf(out, "Found nothing on port _%s_\n", devicepath);
+				fprintf(stderr, "Found nothing on port _%s_\n", devicepath);
+			}
+			if (result == 1) {
+				sscanf(port, "/ttyUSB%d", &controlfound);
+				fprintf(out, "Found Control port _%d_\n", controlfound);
+				fprintf(stderr, "Found Control port _%d_\n", controlfound);
+			}
+			if (result == 2) {
+				sscanf(port, "/ttyUSB%d", &datafound);
+				fprintf(out, "Found Data port _%d_\n", datafound);
+				fprintf(stderr, "Found Data port _%d_\n", datafound);
+				if (controlfound != -1)
+					break;
+			}
+		}
+	}
+	globfree(&globbuf);
+	if (datafound != -1) {
+		sprintf(devicepath, "/dev/usb/tts/%d", datafound);
+		nvram_set("3gdata", devicepath);
+		fprintf(out, "Setting 3gdata port to _%s_\n", devicepath);
+		fprintf(stderr, "Setting 3gdata port to _%s_\n", devicepath);
+	} else if (controlfound != -1) {
+		sprintf(devicepath, "/dev/usb/tts/%d", controlfound);
+		nvram_set("3gdata", devicepath);
+		fprintf(out, "Setting 3gdata port to _%s_\n", devicepath);
+		fprintf(stderr, "Setting 3gdata port to _%s_\n", devicepath);
+	}
+	if (controlfound != -1) {
+		sprintf(controlport, "/dev/usb/tts/%d", controlfound);
+		fprintf(out, "Setting controlport to _%s_\n", controlport);
+	}
+	fclose(out);
+	fprintf(stderr, "END Sierra port detection\n----------------------------\n");
+	eval("touch", SIERRA_DETECTION_FN);
+}
+
 char *get3GDeviceVendor(void)
 {
 	char *vendor = "unknown";
@@ -1481,10 +1602,12 @@ char *get3GDeviceVendor(void)
 	return vendor;
 }
 
-char *get3GControlDevice(void)
+void get3GControlDevice(void)
 {
 	static char control[32];
 	static char data[32];
+	FILE *file = NULL;
+
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 	mkdir("/tmp/usb", 0700);
 	eval("mount", "-t", "usbfs", "usb", "/tmp/usb");
@@ -1493,6 +1616,11 @@ char *get3GControlDevice(void)
 	int needreset = 1;
 	char *ttsdevice = "/dev/usb/tts/0";
 #ifdef HAVE_CAMBRIA
+	if (nvram_invmatch("wan_select_enable", "1")) {
+		fprintf(stderr, "WAN_SELECT no multisim selected, turn back to A(1)\n");
+		nvram_set("wan_select", "1");
+		nvram_commit();
+	}
 	int gpio1, gpio2;
 	int select = nvram_geti("wan_select");
 	switch (select) {
@@ -1536,18 +1664,98 @@ char *get3GControlDevice(void)
 #ifdef HAVE_ERC
 	needreset = 0;
 #endif
+	file = fopen(SIERRA_DETECTION_FN, "r");
+	if (file) {
+		fclose(file);
+		if (needreset) {
+			fprintf(stderr, "Sierra needs reset, so continue\n");
+			unlink(SIERRA_DETECTION_FN);
+		} else {
+			fprintf(stderr, "Sierra detection already done\n");
+			return;
+		}
+	}
+
 	nvram_unset("3gnmvariant");
 //      nvram_set("3gdata", "/dev/usb/tts/0");  // crap
+	int wan_select = 1;
+	char checkforce[30];
+	char wsel[5];
+	sprintf(wsel, "");
+	if (strlen(nvram_safe_get("wan_select"))) {
+		wan_select = atoi(nvram_safe_get("wan_select"));
+		if (wan_select != 1) {
+			sprintf(wsel, "_%d", wan_select);
+		}
+	}
+	sprintf(checkforce, "wan_dial%s", wsel);
+	if (nvram_matchi(checkforce, 97))
+		dd_syslog(LOG_INFO, "lib3g force MBIM");
+	if (nvram_matchi(checkforce, 98))
+		dd_syslog(LOG_INFO, "lib3g force QMI");
+	if (nvram_matchi(checkforce, 99))
+		dd_syslog(LOG_INFO, "lib3g force DIRECTIP");
 
 	int devicecount = 0;
 	while (devicelist[devicecount].vendor != 0xffff) {
 		if (scanFor(devicelist[devicecount].vendor, devicelist[devicecount].product)) {
 			fprintf(stderr, "%s detected\n", devicelist[devicecount].name);
+			if ((devicelist[devicecount].modeswitch & SIERRADIP) || nvram_match(checkforce, "99")) {
+				insmod("usbserial");
+				insmod("sierra");
+				insmod("usbnet");
+				insmod("sierra_net");
+				if (ifexists("wwan0")) {
+					if (devicelist[devicecount].customsetup) {
+						sysprintf("touch /tmp/.sierrastatus.sh.lock");
+						fprintf(stderr, "SierraDirectip customsetup\n");
+						devicelist[devicecount].customsetup(needreset, devicecount);
+					}
+					detectcontrol_and_data_port(control);
+					nvram_set("3gcontrol", control);
+					sysprintf("echo \"Setting controlport to %s\" | logger", control);
+					sysprintf("rm /tmp/.sierrastatus.sh.lock");
+					nvram_set("3gdata", "sierradirectip");
+					nvram_set("3gnmvariant", "1");
+					return;
+				} else {
+					dd_syslog(LOG_INFO, "wwan0 not found, fall back to ppp mode");
+				}
+
+			}
+#if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
+			if ((devicelist[devicecount].modeswitch & MBIM) || nvram_match(checkforce, "97")) {
+				nvram_set("3gdata", "mbim");
+				sprintf(control, "mbim");
+				nvram_set("3gcontrol", control);
+				if (registered_has_cap(27)) {
+					insmod("cdc-wdm");
+					insmod("usbnet");
+					insmod("cdc_ncm");
+					insmod("cdc_mbim");
+					insmod("usbserial");
+					insmod("usb_wwan");
+					insmod("qcserial");
+					//start custom setup, if defined
+					if (devicelist[devicecount].customsetup) {
+						fprintf(stderr, "customsetup MBIM\n");
+						devicelist[devicecount].customsetup(needreset, devicecount);
+					}
+				}
+				return;
+			}
+#endif
 
 #if defined(HAVE_LIBQMI) || defined(HAVE_UQMI)
-			switch ((devicelist[devicecount].modeswitch & 0xf0)) {
+			int sw = (devicelist[devicecount].modeswitch & 0xf0);
+			if (nvram_match(checkforce, "98"))
+				sw = QMI;
+			switch (sw) {
 			case QMI:
 			case QMIRAW:
+				rmmod("qmi_wwan");
+				rmmod("usbnet");
+				rmmod("cdc-wdm");
 				insmod("cdc-wdm usbnet qmi_wwan");
 				//start custom setup, if defined
 				if (devicelist[devicecount].customsetup) {
@@ -1557,15 +1765,17 @@ char *get3GControlDevice(void)
 				}
 			}
 
-			switch ((devicelist[devicecount].modeswitch & 0xf0)) {
+			switch (sw) {
 			case QMI:
 				sprintf(control, "qmi");
 				nvram_set("3gdata", "qmi");
+				nvram_set("3gcontrol", control);
 				return control;
 				break;
 			case QMIRAW:
 				sprintf(control, "qmiraw");
 				nvram_set("3gdata", "qmiraw");
+				nvram_set("3gcontrol", control);
 				return control;
 				break;
 			}
@@ -1627,24 +1837,82 @@ char *get3GControlDevice(void)
 				break;
 			}
 			nvram_set("3gdata", data);
+			if (devicelist[devicecount].driver == sierra) {
+				detectcontrol_and_data_port(control);
+			}
+			nvram_set("3gcontrol", control);
 			return control;
 		}
 		devicecount++;
 	}
 	//not found, use generic implementation (all drivers)
 	insmod("cdc-acm cdc-wdm usbnet qmi_wwan usbserial usb_wwan sierra option qcserial");
+	nvram_set("3gcontrol", ttsdevice);
 	return ttsdevice;
 }
 
-/*
-//future
-typedef struct {
-char *devicename;
-int vendorid;
-int productid;
-char *drivers;
-char *3gdata;
-char *controldevice;
-int iconswitch;
-}3GDEVICE;
-*/
+#ifdef HAVE_UQMI
+
+char *get_popen_data(char *command)
+{
+	FILE *pf;
+	char temp[256];
+	int chunksize = 256;
+	char *data = NULL;
+	int length = 0;
+
+	pf = popen(command, "r");
+	if (!pf) {
+		fprintf(stderr, "Could not open pipe for output.\n");
+		return (data);
+	}
+	while (fgets(temp, chunksize, pf)) {
+		if (data == NULL) {
+			data = (char *)malloc(strlen(temp) + 1);
+			if (data)
+				strcpy(data, temp);
+			else
+				return (NULL);
+			length = strlen(temp);
+		} else {
+			length += strlen(temp);
+			data = (char *)realloc(data, length + 1);
+			if (data)
+				strncat(data, temp, strlen(temp));
+			else
+				return (NULL);
+		}
+	}
+	if (pclose(pf) != 0)
+		fprintf(stderr, " Error: Failed to close command stream \n");
+	return (data);
+}
+
+char *get_json_data_by_key(char *output, char *getkey)
+{
+	char *ret = NULL;
+	enum json_type type;
+	json_object *jobj = json_tokener_parse(output);
+	json_object_object_foreach(jobj, key, val) {
+		if (!strcmp(key, getkey)) {
+			type = json_object_get_type(val);
+			switch (type) {
+			case json_type_string:
+				asprintf(&ret, "%s", json_object_get_string(val));
+				return (ret);
+				break;
+			case json_type_int:
+				asprintf(&ret, "%d", json_object_get_int(val));
+				return (ret);
+			case json_type_boolean:
+				asprintf(&ret, "%d", json_object_get_boolean(val));
+				return (ret);
+			case json_type_double:
+				asprintf(&ret, "%f", json_object_get_double(val));
+				return (ret);
+				break;
+			}
+		}
+	}
+}
+#endif
