@@ -86,69 +86,6 @@
 #include "gratarp.c"
 #include "ntp.c"
 
-#if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
-static void check_sierradirectip(void)
-{
-	// sysprintf("echo checksierraip | logger");
-	sysprintf("/etc/comgt/sierrastatus.sh %s dip",nvram_safe_get("3gcontrol"));
-}
-
-static void check_sierrappp(void)
-{
-	// sysprintf("echo checksierrappp | logger");
-	sysprintf("/etc/comgt/sierrastatus.sh %s",nvram_safe_get("3gcontrol"));
-}
-
-#if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
-static void check_mbim(void)
-{
-	if (registered_has_cap(27)) {
-		sysprintf("/usr/sbin/mbim-status.sh /dev/%s",nvram_safe_get("3gctrl"));
-	}
-}
-#endif
-
-
-static void check_qmi(void)
-{
-#ifdef HAVE_UQMI
-	char *output, *retval,*rsrq;
-	char command[256];
-	char buf[256];
-	int clientid = 0;
-	FILE *fp = fopen("/tmp/qmi-clientid", "rb");
-	if (fp) {
-		fscanf(fp, "%d", &clientid);
-		fclose(fp);
-		sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-data-status | grep '^\"connected' | wc -l >/tmp/qmistatustemp ; mv /tmp/qmistatustemp /tmp/qmistatus", clientid);
-		sprintf(command,"uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-signal-info", clientid);
-		output=get_popen_data(command);
-		retval=get_json_data_by_key(output,"rssi");
-		rsrq=get_json_data_by_key(output,"rsrq");
-		if (retval && rsrq) {
-			snprintf(buf,sizeof(buf),"RSSI: %s / RSRQ: %s",retval, rsrq);
-			nvram_set("wan_3g_signal", buf);
-		}
-		if (retval && !rsrq) {
-			snprintf(buf,sizeof(buf),"RSSI: %s",retval);
-			nvram_set("wan_3g_signal", buf);
-		}
-		retval=get_json_data_by_key(output,"type");
-		if (retval) {
-			snprintf(buf,sizeof(buf),"%s",retval);
-			nvram_set("wan_3g_mode", buf);
-		}
-		free(retval);
-		free(rsrq);
-		free(output);
-	} else {
-		sysprintf("echo 0 > /tmp/qmistatus");
-	}
-#else
-	sysprintf("qmi-network /dev/cdc-wdm0 status|grep disconnected|wc -l>/tmp/qmistatus");
-#endif
-}
-#endif
 
 #ifdef HAVE_IPV6
 static int dhcp6c_state_main(int argc, char **argv)
@@ -203,33 +140,26 @@ static int redial_main(int argc, char **argv)
 #if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
 		if (nvram_match("wan_proto", "3g")
 		    && nvram_match("3gdata", "mbim") && count == 1) {
-			check_mbim();
+			start_service_force("check_mbim");
 		}
 #endif
 #if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
 		if (nvram_match("wan_proto", "3g")
 		    && nvram_match("3gdata", "sierradirectip")) {
-			check_sierradirectip();
+			start_service_force("sierradirectip");
 		}
 		else if (nvram_match("wan_proto", "3g")
 		    && nvram_match("3gnmvariant", "1")) {
-			check_sierrappp();
+			start_service_force("sierrappp");
 		}
 		if (nvram_match("wan_proto", "3g")
 		    && nvram_match("3gdata", "qmi") && _count == 1) {
-			check_qmi();
+			start_service_force("qmi");
 		}
 #endif
 		sleep(atoi(argv[1]));
 		num = 0;
 		_count++;
-
-#if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
-		if (nvram_match("wan_proto", "3g")
-		    && nvram_match("3gdata", "qmi")) {
-			check_qmi();
-		}
-#endif
 
 		// fprintf(stderr, "check PPPoE %d\n", num);
 		if (!check_wan_link(num)) {
