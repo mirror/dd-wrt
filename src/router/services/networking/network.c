@@ -4817,13 +4817,13 @@ void start_wan_done(char *wan_ifname)
 #ifdef HAVE_UPNP
 	stop_upnp();
 #endif
-#ifdef HAVE_BIRD
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	stop_zebra();
 #endif
 	// stop_cron ();
 	stop_wshaper();
 	cprintf("start zebra\n");
-#ifdef HAVE_BIRD
+#if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_zebra();
 #endif
 	cprintf("start upnp\n");
