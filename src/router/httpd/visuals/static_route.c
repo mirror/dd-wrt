@@ -96,7 +96,7 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 	int which, count;
 	char word[256];
 	char *next, *page;
-	char name[50] = "", *ipaddr, *netmask, *gateway, *metric, *ifname;
+	char name[50] = "", *ipaddr, *netmask, *gateway, *metric, *ifname, *nat = NULL;
 	int temp;
 	char new_name[200];
 	arg = argv[0];
@@ -140,6 +140,12 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 			metric = strsep(&ifname, ":");
 			if (!metric || !ifname)
 				continue;
+			if (strchr(ifname, ':')) {
+				nat = ifname;
+				ifname = strsep(&nat, ":");
+				if (!ifname || !nat)
+					continue;
+			}
 			if (!strcmp(arg, "ipaddr")) {
 				websWrite(wp, "%d", get_single_ip(ipaddr, count));
 				return;
@@ -151,6 +157,10 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 				return;
 			} else if (!strcmp(arg, "metric")) {
 				websWrite(wp, metric);
+				return;
+			} else if (!strcmp(arg, "nat")) {
+				if (nat && !strcmp(nat, "1"))
+					websWrite(wp, "checked=\"checked\"");
 				return;
 			} else if (!strcmp(arg, "lan")
 				   && nvram_match("lan_ifname", ifname)) {

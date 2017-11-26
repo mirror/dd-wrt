@@ -3022,7 +3022,7 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 	char *cur;
 	char *cur_name;
 
-	char *name, ipaddr[20], netmask[20], gateway[20], *metric, *ifname, *page;
+	char *name, ipaddr[20], netmask[20], gateway[20], *metric, *ifname, *page, *nat;
 	char new_name[80];
 	char temp[60], *val = NULL;
 
@@ -3040,6 +3040,7 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 	name = websGetVar(wp, "route_name", "");	// default empty if no find
 	// route_name
 	metric = websGetVar(wp, "route_metric", "0");
+
 	/*
 	 * validate ip address 
 	 */
@@ -3108,6 +3109,7 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 
 	page = websGetVar(wp, "route_page", NULL);
 	ifname = websGetVar(wp, "route_ifname", NULL);
+	nat = websGetVar(wp, "route_nat", "0");
 
 	if (!page || !metric || !ifname) {
 		free(old_name);
@@ -3214,7 +3216,7 @@ write_nvram:
 		snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 60, "%s", "");
 		snprintf(&old_name[atoi(page) * STATIC_ROUTE_PAGE], 60, "%s", "");
 	} else {
-		snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 60, "%s:%s:%s:%s:%s", ipaddr, netmask, gateway, metric, ifname);
+		snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 60, "%s:%s:%s:%s:%s:%s", ipaddr, netmask, gateway, metric, ifname, nat);
 		httpd_filter_name(name, new_name, sizeof(new_name), SET);
 		snprintf(&old_name[atoi(page) * STATIC_ROUTE_PAGE], 60, "$NAME:%s$$", new_name);
 	}
