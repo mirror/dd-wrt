@@ -1,0 +1,230 @@
+
+Overview of changes in libmbim 1.14
+----------------------------------------
+
+* New support for the 'QMI over MBIM' service, so that clients can use libqmi to
+  build messages and libmbim to transport them.
+
+* The GUDev library, which we use to read the max message size from the USB
+  descriptor, is now optional. When configuring, it will be used by default only
+  if it's found. It can also be explicitly disabled using the new configure
+  switch '--without-udev' or explicitly enabled using '--with-udev'. If GUDev
+  isn't used, libmbim-glib will rely on sysfs directly.
+
+* libmbim-glib updates:
+  ** Added support for building messages of custom services.
+
+* mbim-network updates:
+  ** Added support for loading profiles from different paths using the new
+     '--profile' option. This makes it possible to use mbim-network with
+     multiple devices running in the same system.
+  ** Added support to allow specifying APN user (APN_USER), password (APN_PASS)
+     and authentication type (APN_AUTH) in the profile.
+  ** Added support to allow using the mbim-proxy setup by configuring it in
+     the profile file (PROXY=yes).
+
+* Several other minor improvements and fixes.
+
+The following features which were backported to 1.12.x releases are also present
+in libmbim 1.14.0:
+
+ * mbimcli updates:
+   ** Updated '--connect' arguments to allow specifying "key=value" pairs. The
+      old legacy "[(APN),(PAP|CHAP|MSCHAPV2),(Username),(Password)]" format is
+      kept as valid for backwards compatibility, although it should be assumed
+      deprecated.
+   ** Longer timeouts for connect/register operations.
+   ** Report IP configuration when connected.
+   ** Allow specifying session ids.
+
+ * libmbim-glib updates:
+   ** Probing retry interval increased to 5s.
+
+Overview of changes in libmbim 1.12
+----------------------------------------
+
+* New `--enable-mbim-username' option during configure, which allows specifying
+  which will be the user owning the /dev/cdc-wdm character devices of all MBIM
+  modems (udev rules are installed to change file ownership). If this option is
+  used, the mbim-proxy will only allow connections from processes running by the
+  specified user or by the root user.
+
+* Function error messages can now be returned by the MbimDevice as responses to
+  `Command', `Open' or `Close' messages. Users of the library should not assume
+  the type of message returned to the previous actions.
+
+* The MbimProxy will monitor for 'NotOpened' errors, and when one detected it
+  will directly close the internal MbimDevice. Any subsequent request sent by
+  clients to that specific device will be aborted with a proxy-generated
+  'NotOpened' error. Clients will need to explicitly reopen the ports in that
+  case.
+
+* The API now has a new mbim_message_response_get_result() method which allows
+  getting a GError from a message which may be of a specific type (e.g. a
+  `Command Done' message in response to a `Command' request) or instead the
+  generic `Function Error' message type. Users of the library can use this new
+  method to avoid assuming the type of message returned.
+
+      E.g. the following check:
+          mbim_message_command_done_get_result (response, &error);
+      Can be updated as:
+          mbim_message_response_get_result (response,
+                                            MBIM_MESSAGE_TYPE_COMMAND_DONE,
+                                            &error);
+      And the same logic can be applied to `Open' and `Close' messages.
+
+* Other bugfixes and minor improvements:
+  ** Attach timeout and idle events to the thread-default context.
+  ** Fix bashisms in the mbim-network script.
+
+
+Overview of changes in libmbim 1.10
+----------------------------------------
+
+ * API break: Flag values in 'MbimRegistrationFlag' were updated to match the
+   ones in the MBIM documentation.
+
+ * Implemented a new 'mbim-proxy', which allows sharing a single MBIM control
+   port among different processes. The usage of the proxy is optional, and can
+   be requested by specifying the MBIM_DEVICE_OPEN_FLAGS_PROXY flag in the new
+   mbim_device_open_full() method. The 'mbimcli' command line tool was also
+   extended with a new '--device-open-proxy,-p' option, to allow requesting the
+   use of the proxy process.
+
+ * New 'removed' signal added to the MbimDevice, to notify when the underlying
+   connection to the device is lost (e.g. lost connection to the mbim-proxy, or
+   lost access to the MBIM control port).
+
+ * Added support for registering and using custom services.
+
+ * Added additional GMM cause codes to MbimNwError.
+
+ * Transactions are now matched not only by ID but also by type.
+
+ * Several other minor improvements and fixes.
+
+
+Overview of changes in libmbim 1.8
+----------------------------------------
+
+ * Added support for additional MBIM messages:
+    MBIM_CID_MS_FIRMWARE_ID_GET
+    MBIM_CID_MS_HOST_SHUTDOWN_NOTIFY
+
+ * Updated mbimcli with new commands:
+    --set-radio-state
+    --ms-query-firmware-id
+    --ms-notify-host-shutdown
+    --dss-connect
+    --dss-disconnect
+
+ * Several enums and functions were renamed, and marked as deprecated. A small
+   layer is given to provide backwards compatibility.
+
+ * Several other minor improvements and fixes.
+
+
+Overview of changes in libmbim 1.6
+----------------------------------------
+
+ * Updated mbimcli with new commands:
+    --phonebook-query-configuration
+    --phonebook-read
+    --phonebook-read-all
+    --phonebook-write
+    --phonebook-delete
+    --phonebook-delete-all
+
+ * Added generation of man pages for mbimcli and mbim-network.
+
+ * Several other minor improvements and fixes.
+
+
+Overview of changes in libmbim 1.4
+----------------------------------------
+
+ * Added support for additional MBIM messages:
+    MBIM_SMS_CONFIGURATION
+    MBIM_SMS_READ
+    MBIM_SMS_SEND
+    MBIM_SMS_DELETE
+    MBIM_SMS_MESSAGE_STORE_STATUS
+    MBIM_USSD
+    MBIM_PHONEBOOK_CONFIGURATION
+    MBIM_PHONEBOOK_READ
+    MBIM_PHONEBOOK_DELETE
+    MBIM_PHONEBOOK_WRITE
+    MBIM_STK_PAC
+    MBIM_STK_TERMINAL_RESPONSE
+    MBIM_STK_ENVELOPE
+    MBIM_DEVICE_SERVICE_SUBSCRIBER_LIST
+    MBIM_AUTH_AKA
+    MBIM_AUTH_AKAP
+    MBIM_AUTH_SIM
+    MBIM_PACKET_STATISTICS
+    MBIM_NETWORK_IDLE_HINT
+    MBIM_EMERGENCY_MODE
+    MBIM_IP_PACKET_FILTERS
+    MBIM_DSS_CONNECT
+    MBIM_MULTICARRIER_PROVIDERS
+
+ * Updated mbimcli with new commands:
+    --query-packet-statistics
+
+ * Use gtester to run unit tests.
+
+
+Overview of changes in libmbim 1.2
+----------------------------------------
+
+ * Added support for additional MBIM messages:
+    MBIM_VISIBLE_PROVIDERS
+    MBIM_PREFERRED_PROVIDERS
+    MBIM_HOME_PROVIDER
+    MBIM_SERVICE_ACTIVATION
+
+ * Updated mbimcli with new commands:
+    --query-visible-providers
+    --query-preferred-providers
+    --query-home-provider
+    --query-signal-state
+    --no-open
+    --noop
+
+ * Updated mbim-network with session support, keeping TRID sequence between
+   commands.
+
+ * New symbols to check library version.
+
+
+Overview of changes in libmbim 1.0
+----------------------------------------
+
+ * Updated mbimcli with new commands:
+    --enter-pin
+    --change-pin
+    --enable-pin
+    --disable-pin
+    --enter-puk
+    --query-registration-state
+    --register-automatic
+    --query-packet-service-state
+    --attach-packet-service
+    --detach-packet-service
+    --query-connection-state
+    --connect
+    --disconnect
+    --no-close
+
+ * Removed the 'basic-connect' prefix from mbimcli commands.
+
+ * New 'mbim-network' script to help launch a connection through the
+   shell.
+
+ * Added gtk-doc documentation
+
+
+Overview of changes in libmbim 0.0.1
+----------------------------------------
+
+Initial release.

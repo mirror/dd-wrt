@@ -1,0 +1,20 @@
+
+[
+  // *********************************************************************************
+  { "type" : "Service",
+    "name" : "DSS" },
+
+  // *********************************************************************************
+  { "name"     : "Connect",
+    "service"  : "DSS",
+    "type"     : "Command",
+    "set"      : [ { "name"   : "DeviceServiceId",
+                     "format" : "uuid" },
+                   { "name"   : "DssSessionId",
+                     "format" : "guint32" },
+                   { "name"          : "DssLinkState",
+                     "format"        : "guint32",
+                     "public-format" : "MbimDssLinkState" } ],
+    "response" : [] }
+
+]
