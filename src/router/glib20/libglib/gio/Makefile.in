@@ -630,6 +630,7 @@ am_gio_OBJECTS = gio-tool.$(OBJEXT) gio-tool-cat.$(OBJEXT) \
 gio_OBJECTS = $(am_gio_OBJECTS)
 gio_DEPENDENCIES = libgio-2.0.la \
 	$(top_builddir)/gobject/libgobject-2.0.la \
+	$(top_builddir)/gmodule/libgmodule-2.0.la \
 	$(top_builddir)/glib/libglib-2.0.la $(am__DEPENDENCIES_1)
 am_gio_querymodules_OBJECTS = gio-querymodules.$(OBJEXT)
 gio_querymodules_OBJECTS = $(am_gio_querymodules_OBJECTS)
@@ -1200,6 +1201,7 @@ program_transform_name = @program_transform_name@
 psdir = @psdir@
 pyexecdir = @pyexecdir@
 pythondir = @pythondir@
+runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -1983,6 +1985,7 @@ gio_SOURCES = \
 
 gio_LDADD = libgio-2.0.la 				\
 	$(top_builddir)/gobject/libgobject-2.0.la	\
+	$(top_builddir)/gmodule/libgmodule-2.0.la 	\
 	$(top_builddir)/glib/libglib-2.0.la		\
 	$(NULL)
 
