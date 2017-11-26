@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -42,11 +42,14 @@ static const GOptionEntry entries[] = {
   { NULL }
 };
 
+/* 256k minus malloc overhead */
+#define STREAM_BUFFER_SIZE (1024*256 - 2*sizeof(gpointer))
+
 static gboolean
 cat (GFile *file)
 {
   GInputStream *in;
-  char buffer[1024 * 8 + 1];
+  char *buffer;
   char *p;
   gssize res;
   gboolean close_res;
@@ -62,10 +65,11 @@ cat (GFile *file)
       return FALSE;
     }
 
+  buffer = g_malloc (STREAM_BUFFER_SIZE);
   success = TRUE;
   while (1)
     {
-      res = g_input_stream_read (in, buffer, sizeof (buffer) - 1, NULL, &error);
+      res = g_input_stream_read (in, buffer, STREAM_BUFFER_SIZE, NULL, &error);
       if (res > 0)
         {
           gssize written;
@@ -73,11 +77,14 @@ cat (GFile *file)
           p = buffer;
           while (res > 0)
             {
-              written = write (STDOUT_FILENO, p, res);
+              int errsv;
 
-              if (written == -1 && errno != EINTR)
+              written = write (STDOUT_FILENO, p, res);
+              errsv = errno;
+
+              if (written == -1 && errsv != EINTR)
                 {
-                  print_file_error (file, "error writing to stdout");
+                  print_error ("%s", _("Error writing to stdout"));
                   success = FALSE;
                   goto out;
                 }
@@ -105,6 +112,8 @@ cat (GFile *file)
       g_error_free (error);
       success = FALSE;
     }
+
+  g_free (buffer);
 
   return success;
 }
@@ -136,6 +145,7 @@ handle_cat (int argc, char *argv[], gboolean do_help)
   if (do_help)
     {
       show_help (context, NULL);
+      g_option_context_free (context);
       return 0;
     }
 
@@ -143,12 +153,14 @@ handle_cat (int argc, char *argv[], gboolean do_help)
     {
       show_help (context, error->message);
       g_error_free (error);
+      g_option_context_free (context);
       return 1;
     }
 
   if (argc < 2)
     {
-      show_help (context, _("No files given"));
+      show_help (context, _("No locations given"));
+      g_option_context_free (context);
       return 1;
     }
 

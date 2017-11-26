@@ -1,8 +1,8 @@
 '\" t
 .\"     Title: glib-genmarshal
-.\"    Author: Tim Janik
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 10/24/2016
+.\"    Author: Emmanuele Bassi
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 11/15/2017
 .\"    Manual: User Commands
 .\"    Source: GObject
 .\"  Language: English
@@ -38,7 +38,9 @@ glib-genmarshal \- C code marshaller generation utility for GLib closures
 is a small utility that generates C code marshallers for callback functions of the GClosure mechanism in the GObject sublibrary of GLib\&. The marshaller functions have a standard signature, they get passed in the invoking closure, an array of value structures holding the callback function parameters and a value structure for the return value of the callback\&. The marshaller is then responsible to call the respective C code function of the closure with all the parameters on the stack and to collect its return value\&.
 .PP
 \fBglib\-genmarshal\fR
-takes a list of marshallers to generate as input\&. The marshaller list is either read from standard input or from files passed as additional arguments on the command line\&.
+takes a list of marshallers to generate as input\&. The marshaller list is either read from files passed as additional arguments on the command line; or from standard input, by using
+\-
+as the input file\&.
 .SS "Marshaller list format"
 .PP
 The marshaller lists are processed line by line, a line can contain a comment in the form of
@@ -56,9 +58,6 @@ or a marshaller specification of the form
 .if n \{\
 .RE
 .\}
-.sp
-(up to 16
-\fIPTYPE\fRs may be present)\&.
 .PP
 The
 \fIRTYPE\fR
@@ -185,18 +184,22 @@ deprecated alias for
 .PP
 \fB\-\-header\fR
 .RS 4
-Generate header file contents of the marshallers\&.
+Generate header file contents of the marshallers\&. This option is mutually exclusive with the
+\fB\-\-body\fR
+option\&.
 .RE
 .PP
 \fB\-\-body\fR
 .RS 4
-Generate C code file contents of the marshallers\&.
+Generate C code file contents of the marshallers\&. This option is mutually exclusive with the
+\fB\-\-header\fR
+option\&.
 .RE
 .PP
 \fB\-\-prefix=\fR\fB\fIPREFIX\fR\fR
 .RS 4
 Specify marshaller prefix\&. The default prefix is
-`g_cclosure_marshal\*(Aq\&.
+`g_cclosure_user_marshal\*(Aq\&.
 .RE
 .PP
 \fB\-\-skip\-source\fR
@@ -207,25 +210,31 @@ Skip source location remarks in generated comments\&.
 \fB\-\-stdinc\fR
 .RS 4
 Use the standard marshallers of the GObject library, and include
-gmarshal\&.h
-in generated header files\&.
+glib\-object\&.h
+in generated header files\&. This option is mutually exclusive with the
+\fB\-\-nostdinc\fR
+option\&.
 .RE
 .PP
 \fB\-\-nostdinc\fR
 .RS 4
 Do not use the standard marshallers of the GObject library, and skip
-gmarshal\&.h
-include directive in generated header files\&.
+glib\-object\&.h
+include directive in generated header files\&. This option is mutually exclusive with the
+\fB\-\-stdinc\fR
+option\&.
 .RE
 .PP
 \fB\-\-internal\fR
 .RS 4
-Mark generated functions as internal, using G_GNUC_INTERNAL\&.
+Mark generated functions as internal, using
+G_GNUC_INTERNAL\&.
 .RE
 .PP
 \fB\-\-valist\-marshallers\fR
 .RS 4
-Generate valist marshallers, for use with g_signal_set_va_marshaller()\&.
+Generate valist marshallers, for use with
+\fBg_signal_set_va_marshaller()\fR\&.
 .RE
 .PP
 \fB\-v\fR, \fB\-\-version\fR
@@ -250,8 +259,133 @@ Print version and exit\&.
 .PP
 \fB\-\-output=FILE\fR
 .RS 4
-Write output to FILE instead of stdout\&.
+Write output to
+\fIFILE\fR
+instead of the standard output\&.
 .RE
+.PP
+\fB\-\-prototypes\fR
+.RS 4
+Generate function prototypes before the function definition in the C source file, in order to avoid a
+missing\-prototypes
+compiler warning\&. This option is only useful when using the
+\fB\-\-body\fR
+option\&.
+.RE
+.PP
+\fB\-\-pragma\-once\fR
+.RS 4
+Use the
+once
+pragma instead of an old style header guard when generating the C header file\&. This option is only useful when using the
+\fB\-\-header\fR
+option\&.
+.RE
+.PP
+\fB\-\-include\-header=\fR\fB\fIHEADER\fR\fR
+.RS 4
+Adds a
+#include
+directive for the given file in the C source file\&. This option is only useful when using the
+\fB\-\-body\fR
+option\&.
+.RE
+.PP
+\fB\-D \fR\fB\fISYMBOL[=VALUE]\fR\fR
+.RS 4
+Adds a
+#define
+C pre\-processor directive for
+\fISYMBOL\fR
+and its given
+\fIVALUE\fR, or "1" if the value is unset\&. You can use this option multiple times; if you do, all the symbols will be defined in the same order given on the command line, before the symbols undefined using the
+\fB\-U\fR
+option\&. This option is only useful when using the
+\fB\-\-body\fR
+option\&.
+.RE
+.PP
+\fB\-U \fR\fB\fISYMBOL\fR\fR
+.RS 4
+Adds a
+#undef
+C pre\-processor directive to undefine the given
+\fISYMBOL\fR\&. You can use this option multiple times; if you do, all the symbols will be undefined in the same order given on the command line, after the symbols defined using the
+\fB\-D\fR
+option\&. This option is only useful when using the
+\fB\-\-body\fR
+option\&.
+.RE
+.PP
+\fB\-\-quiet\fR
+.RS 4
+Minimizes the output of
+\fBglib\-genmarshal\fR, by printing only warnings and errors\&. This option is mutually exclusive with the
+\fB\-\-verbose\fR
+option\&.
+.RE
+.PP
+\fB\-\-verbose\fR
+.RS 4
+Increases the verbosity of
+\fBglib\-genmarshal\fR, by printing debugging information\&. This option is mutually exclusive with the
+\fB\-\-quiet\fR
+option\&.
+.RE
+.SH "USING GLIB\-GENMARSHAL WITH AUTOTOOLS"
+.PP
+In order to use
+\fBglib\-genmarshal\fR
+in your project when using Autotools as the build system, you will first need to modify your
+configure\&.ac
+file to ensure you find the appropriate command using
+\fBpkg\-config\fR, similarly as to how you discover the compiler and linker flags for GLib\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+PKG_PROG_PKG_CONFIG([0\&.28])
+
+PKG_CHECK_VAR([GLIB_GENMARSHAL], [glib\-2\&.0], [glib_genmarshal])
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+In your
+Makefile\&.am
+file you will typically need very simple rules to generate the C files needed for the build\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+marshal\&.h: marshal\&.list
+        $(AM_V_GEN)$(GLIB_GENMARSHAL) \e
+                \-\-header \e
+                \-\-output=$@ \e
+                $<
+
+marshal\&.c: marshal\&.list marshal\&.h
+        $(AM_V_GEN)$(GLIB_GENMARSHAL) \e
+                \-\-include\-header=marshal\&.h \e
+                \-\-body \e
+                \-\-output=$@ \e
+                $<
+
+BUILT_SOURCES += marshal\&.h marshal\&.c
+CLEANFILES += marshal\&.h marshal\&.c
+EXTRA_DIST += marshal\&.list
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+In the example above, the first rule generates the header file and depends on a
+marshal\&.list
+file in order to regenerate the result in case the marshallers list is updated\&. The second rule generates the source file for the same
+marshal\&.list, and includes the file generated by the header rule\&.
 .SH "EXAMPLE"
 .PP
 To generate marshallers for the following callback functions:
@@ -309,9 +443,9 @@ The generated marshallers have the arguments encoded in their function name\&. F
 .RS 4
 .\}
 .nf
-g_cclosure_user_marshal_VOID__VOID(),
-g_cclosure_user_marshal_VOID__INT(),
-g_cclosure_user_marshal_FLOAT__BOOLEAN_UCHAR()\&.
+g_cclosure_user_marshal_VOID__VOID(\&.\&.\&.),
+g_cclosure_user_marshal_VOID__INT(\&.\&.\&.),
+g_cclosure_user_marshal_FLOAT__BOOLEAN_UCHAR(\&.\&.\&.)\&.
 .fi
 .if n \{\
 .RE

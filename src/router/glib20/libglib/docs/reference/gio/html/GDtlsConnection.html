@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GDtlsConnection: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="tls.html" title="TLS (SSL) support">
 <link rel="prev" href="GTlsServerConnection.html" title="GTlsServerConnection">
@@ -310,7 +310,7 @@
 </div>
 <div class="refsect1">
 <a name="GDtlsConnection.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/GTypeModule.html">GInterface</a>
+<pre class="screen">    <a href="/home/mclasen/gnome/share/gtk-doc/html/gobject/GTypeModule.html">GInterface</a>
     <span class="lineart">╰──</span> GDtlsConnection
 </pre>
 </div>
@@ -705,7 +705,7 @@ g_dtls_connection_set_database (<em class="parameter"><code><a class="link" href
                                 <em class="parameter"><code><a class="link" href="GTlsDatabase.html" title="GTlsDatabase"><span class="type">GTlsDatabase</span></a> *database</code></em>);</pre>
 <p>Sets the certificate database that is used to verify peer certificates.
 This is set to the default database by default. See
-<code class="function">g_dtls_backend_get_default_database()</code>. If set to <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>, then
+<a class="link" href="GTlsBackend.html#g-tls-backend-get-default-database" title="g_tls_backend_get_default_database ()"><code class="function">g_tls_backend_get_default_database()</code></a>. If set to <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>, then
 peer certificate validation will always set the
 <a class="link" href="gio-TLS-Overview.html#G-TLS-CERTIFICATE-UNKNOWN-CA:CAPS"><code class="literal">G_TLS_CERTIFICATE_UNKNOWN_CA</code></a> error (meaning
 <a class="link" href="GDtlsConnection.html#GDtlsConnection-accept-certificate" title="The “accept-certificate” signal"><span class="type">“accept-certificate”</span></a> will always be emitted on
@@ -794,7 +794,7 @@ should occur for this connection.</p>
 <tr>
 <td class="parameter_name"><p>interaction</p></td>
 <td class="parameter_description"><p> an interaction object, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -846,7 +846,7 @@ handshake.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -896,7 +896,7 @@ g_dtls_connection_handshake_async (<em class="parameter"><code><a class="link" h
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
@@ -1365,7 +1365,7 @@ implementation of <a class="link" href="GDatagramBased.html" title="GDatagramBas
 <pre class="programlisting">  “database”                 <a class="link" href="GTlsDatabase.html" title="GTlsDatabase"><span class="type">GTlsDatabase</span></a> *</pre>
 <p>The certificate database to use when verifying this TLS connection.
 If no certificate database is set, then the default database will be
-used. See <code class="function">g_dtls_backend_get_default_database()</code>.</p>
+used. See <a class="link" href="GTlsBackend.html#g-tls-backend-get-default-database" title="g_tls_backend_get_default_database ()"><code class="function">g_tls_backend_get_default_database()</code></a>.</p>
 <p>Flags: Read / Write</p>
 <p class="since">Since: <a class="link" href="api-index-2-48.html#api-index-2.48">2.48</a></p>
 </div>

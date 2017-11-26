@@ -7,7 +7,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -45,7 +45,7 @@
  * thread-default-context active.
  **/
 
-G_DEFINE_TYPE (GVolumeMonitor, g_volume_monitor, G_TYPE_OBJECT);
+G_DEFINE_TYPE (GVolumeMonitor, g_volume_monitor, G_TYPE_OBJECT)
 
 enum {
   VOLUME_ADDED,
@@ -159,7 +159,10 @@ g_volume_monitor_class_init (GVolumeMonitorClass *klass)
    * @volume_monitor: The volume monitor emitting the signal.
    * @mount: a #GMount that is being unmounted.
    *
-   * Emitted when a mount is about to be removed.
+   * May be emitted when a mount is about to be removed.
+   *
+   * This signal depends on the backend and is only emitted if
+   * GIO was used to unmount.
    **/ 
   signals[MOUNT_PRE_UNMOUNT] = g_signal_new (I_("mount-pre-unmount"),
                                              G_TYPE_VOLUME_MONITOR,

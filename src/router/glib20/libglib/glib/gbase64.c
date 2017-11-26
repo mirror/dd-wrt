@@ -4,17 +4,17 @@
  *  Copyright (C) 2000-2003 Ximian Inc.
  *
  * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Library General Public
+ * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Library General Public
- * License along with this library; if not, see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, see <http://www.gnu.org/licenses/>.
  *
  * This is based on code in camel, written by:
  *    Michael Zucchi <notzed@ximian.com>
@@ -192,6 +192,8 @@ g_base64_encode_step (const guchar *in,
  * be written to it. It will need up to 4 bytes, or up to 5 bytes if
  * line-breaking is enabled.
  *
+ * The @out array will not be automatically nul-terminated.
+ *
  * Returns: The number of bytes of output that was written
  *
  * Since: 2.12
@@ -220,6 +222,7 @@ g_base64_encode_close (gboolean  break_lines,
       goto skip;
     case 1:
       outptr[2] = '=';
+      c2 = 0;  /* saved state here is not relevant */
     skip:
       outptr [0] = base64_alphabet [ c1 >> 2 ];
       outptr [1] = base64_alphabet [ c2 >> 4 | ( (c1&0x3) << 4 )];
@@ -295,10 +298,10 @@ static const unsigned char mime_base64_rank[256] = {
 };
 
 /**
- * g_base64_decode_step:
+ * g_base64_decode_step: (skip)
  * @in: (array length=len) (element-type guint8): binary input data
  * @len: max length of @in data to decode
- * @out: (out) (array) (element-type guint8): output buffer
+ * @out: (out caller-allocates) (array) (element-type guint8): output buffer
  * @state: (inout): Saved state between steps, initialize to 0
  * @save: (inout): Saved state between steps, initialize to 0
  *

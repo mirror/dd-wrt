@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -109,12 +109,6 @@ _g_boxed_type_init (void)
   g_assert (type == G_TYPE_BOXED);
 }
 
-static GDate *
-gdate_copy (GDate *date)
-{
-  return g_date_new_julian (g_date_get_julian (date));
-}
-
 static GString *
 gstring_copy (GString *src_gstring)
 {
@@ -130,14 +124,14 @@ gstring_free (GString *gstring)
 G_DEFINE_BOXED_TYPE (GClosure, g_closure, g_closure_ref, g_closure_unref)
 G_DEFINE_BOXED_TYPE (GValue, g_value, value_copy, value_free)
 G_DEFINE_BOXED_TYPE (GValueArray, g_value_array, g_value_array_copy, g_value_array_free)
-G_DEFINE_BOXED_TYPE (GDate, g_date, gdate_copy, g_date_free)
+G_DEFINE_BOXED_TYPE (GDate, g_date, g_date_copy, g_date_free)
 /* the naming is a bit odd, but GString is obviously not G_TYPE_STRING */
 G_DEFINE_BOXED_TYPE (GString, g_gstring, gstring_copy, gstring_free)
 G_DEFINE_BOXED_TYPE (GHashTable, g_hash_table, g_hash_table_ref, g_hash_table_unref)
 G_DEFINE_BOXED_TYPE (GArray, g_array, g_array_ref, g_array_unref)
 G_DEFINE_BOXED_TYPE (GPtrArray, g_ptr_array,g_ptr_array_ref, g_ptr_array_unref)
 G_DEFINE_BOXED_TYPE (GByteArray, g_byte_array, g_byte_array_ref, g_byte_array_unref)
-G_DEFINE_BOXED_TYPE (GBytes, g_bytes, g_bytes_ref, g_bytes_unref);
+G_DEFINE_BOXED_TYPE (GBytes, g_bytes, g_bytes_ref, g_bytes_unref)
 
 G_DEFINE_BOXED_TYPE (GRegex, g_regex, g_regex_ref, g_regex_unref)
 G_DEFINE_BOXED_TYPE (GMatchInfo, g_match_info, g_match_info_ref, g_match_info_unref)
@@ -151,8 +145,8 @@ G_DEFINE_BOXED_TYPE (GVariantDict, g_variant_dict, g_variant_dict_ref, g_variant
 
 G_DEFINE_BOXED_TYPE (GError, g_error, g_error_copy, g_error_free)
 
-G_DEFINE_BOXED_TYPE (GDateTime, g_date_time, g_date_time_ref, g_date_time_unref);
-G_DEFINE_BOXED_TYPE (GTimeZone, g_time_zone, g_time_zone_ref, g_time_zone_unref);
+G_DEFINE_BOXED_TYPE (GDateTime, g_date_time, g_date_time_ref, g_date_time_unref)
+G_DEFINE_BOXED_TYPE (GTimeZone, g_time_zone, g_time_zone_ref, g_time_zone_unref)
 G_DEFINE_BOXED_TYPE (GKeyFile, g_key_file, g_key_file_ref, g_key_file_unref)
 G_DEFINE_BOXED_TYPE (GMappedFile, g_mapped_file, g_mapped_file_ref, g_mapped_file_unref)
 
@@ -479,7 +473,7 @@ value_set_boxed_internal (GValue       *value,
 /**
  * g_value_set_boxed:
  * @value: a valid #GValue of %G_TYPE_BOXED derived type
- * @v_boxed: (allow-none): boxed value to be set
+ * @v_boxed: (nullable): boxed value to be set
  *
  * Set the contents of a %G_TYPE_BOXED derived #GValue to @v_boxed.
  */
@@ -496,7 +490,7 @@ g_value_set_boxed (GValue       *value,
 /**
  * g_value_set_static_boxed:
  * @value: a valid #GValue of %G_TYPE_BOXED derived type
- * @v_boxed: (allow-none): static boxed value to be set
+ * @v_boxed: (nullable): static boxed value to be set
  *
  * Set the contents of a %G_TYPE_BOXED derived #GValue to @v_boxed.
  * The boxed value is assumed to be static, and is thus not duplicated
@@ -515,7 +509,7 @@ g_value_set_static_boxed (GValue       *value,
 /**
  * g_value_set_boxed_take_ownership:
  * @value: a valid #GValue of %G_TYPE_BOXED derived type
- * @v_boxed: (allow-none): duplicated unowned boxed value to be set
+ * @v_boxed: (nullable): duplicated unowned boxed value to be set
  *
  * This is an internal function introduced mainly for C marshallers.
  *
@@ -531,7 +525,7 @@ g_value_set_boxed_take_ownership (GValue       *value,
 /**
  * g_value_take_boxed:
  * @value: a valid #GValue of %G_TYPE_BOXED derived type
- * @v_boxed: (allow-none): duplicated unowned boxed value to be set
+ * @v_boxed: (nullable): duplicated unowned boxed value to be set
  *
  * Sets the contents of a %G_TYPE_BOXED derived #GValue to @v_boxed
  * and takes over the ownership of the callers reference to @v_boxed;

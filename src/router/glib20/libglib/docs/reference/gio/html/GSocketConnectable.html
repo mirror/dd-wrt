@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GSocketConnectable: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="resolver.html" title="DNS resolution">
 <link rel="prev" href="GSimpleProxyResolver.html" title="GSimpleProxyResolver">
@@ -158,7 +158,7 @@
 </div>
 <div class="refsect1">
 <a name="GSocketConnectable.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/GTypeModule.html">GInterface</a>
+<pre class="screen">    <a href="/home/mclasen/gnome/share/gtk-doc/html/gobject/GTypeModule.html">GInterface</a>
     <span class="lineart">╰──</span> GSocketConnectable
     <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>
     <span class="lineart">╰──</span> GSocketAddressEnumerator
@@ -263,7 +263,7 @@ in the sample code below.</p>
   <span class="gtkdoc slc">// as the first).</span>
   <span class="keyword">while</span> <span class="gtkdoc opt">(!</span>conn <span class="gtkdoc opt">&amp;&amp; (</span>sockaddr <span class="gtkdoc opt">=</span> <span class="function"><a href="GSocketConnectable.html#g-socket-address-enumerator-next">g_socket_address_enumerator_next</a></span> <span class="gtkdoc opt">(</span>enumerator<span class="gtkdoc opt">,</span> cancellable<span class="gtkdoc opt">,</span> error<span class="gtkdoc opt">))</span>
     <span class="gtkdoc opt">{</span>
-      conn <span class="gtkdoc opt">=</span> <span class="function">connect_to_sockaddr</span> <span class="gtkdoc opt">(</span>sockaddr<span class="gtkdoc opt">,</span> conn_error ? NULL <span class="gtkdoc opt">: &amp;</span>conn_error<span class="gtkdoc opt">);</span>
+      conn <span class="gtkdoc opt">=</span> <span class="function">connect_to_sockaddr</span> <span class="gtkdoc opt">(</span>sockaddr<span class="gtkdoc opt">,</span> conn_error <span class="gtkdoc opt">?</span> NULL <span class="gtkdoc opt">: &amp;</span>conn_error<span class="gtkdoc opt">);</span>
       <span class="function"><a href="../gobject-The-Base-Object-Type.html#g-object-unref">g_object_unref</a></span> <span class="gtkdoc opt">(</span>sockaddr<span class="gtkdoc opt">);</span>
     <span class="gtkdoc opt">}</span>
   <span class="function"><a href="../gobject-The-Base-Object-Type.html#g-object-unref">g_object_unref</a></span> <span class="gtkdoc opt">(</span>enumerator<span class="gtkdoc opt">);</span>
@@ -436,7 +436,7 @@ ignored.</p>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -486,7 +486,7 @@ and then calls <em class="parameter"><code>callback</code></em>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>

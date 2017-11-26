@@ -2,19 +2,18 @@
  *
  *  Copyright 2001,2005 Red Hat, Inc.
  *
- * The Gnome Library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * The Gnome Library is distributed in the hope that it will be useful,
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with the Gnome Library; see the file COPYING.LIB.  If not,
- * see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -160,7 +159,7 @@ g_utf8_collate (const gchar *str1,
   return result;
 }
 
-#if defined(__STDC_ISO_10646__) || defined(HAVE_CARBON)
+#if defined(__STDC_ISO_10646__)
 /* We need UTF-8 encoding of numbers to encode the weights if
  * we are using wcsxfrm. However, we aren't encoding Unicode
  * characters, so we can't simply use g_unichar_to_utf8.
@@ -207,7 +206,7 @@ utf8_encode (char *buf, wchar_t val)
 
   return retval;
 }
-#endif /* __STDC_ISO_10646__ || HAVE_CARBON */
+#endif /* __STDC_ISO_10646__ */
 
 #ifdef HAVE_CARBON
 
@@ -216,26 +215,30 @@ collate_key_to_string (UCCollationValue *key,
                        gsize             key_len)
 {
   gchar *result;
-  gsize result_len = 0;
-  const gsize start = 2 * sizeof (void *) / sizeof (UCCollationValue);
-  gsize i;
+  gsize result_len;
+  long *lkey = (long *) key;
 
-  /* The first codes should be skipped: the same string on the same
-   * system can get different values at runtime in those positions,
-   * and they do not sort correctly.  The exact size of the prefix
-   * depends on whether we are building 64 or 32 bit.
+  /* UCCollationValue format:
+   *
+   * UCCollateOptions (32/64 bits)
+   * SizeInBytes      (32/64 bits)
+   * Value            (8 bits arrey)
+   *
+   * UCCollateOptions: ordering option mask of the collator
+   * used to create the key. Size changes on 32-bit / 64-bit
+   * hosts. On 64-bits also the extra half-word seems to have
+   * some extra (unknown) meaning.
+   * SizeInBytes: size of the whole structure, in bytes
+   * (including UCCollateOptions and SizeInBytes fields). Size
+   * changes on 32-bit & 64-bit hosts.
+   * Value: array of bytes containing the comparison weights.
+   * Seems to have several sub-strings separated by \001 and \002
+   * chars. Also, experience shows this is directly strcmp-able.
    */
-  if (key_len <= start)
-    return g_strdup ("");
 
-  for (i = start; i < key_len; i++)
-    result_len += utf8_encode (NULL, g_htonl (key[i] + 1));
-
+  result_len = lkey[1];
   result = g_malloc (result_len + 1);
-  result_len = 0;
-  for (i = start; i < key_len; i++)
-    result_len += utf8_encode (result + result_len, g_htonl (key[i] + 1));
-
+  memcpy (result, &lkey[2], result_len);
   result[result_len] = '\0';
 
   return result;

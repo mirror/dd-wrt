@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -62,7 +62,7 @@ g_loadable_icon_default_init (GLoadableIconIface *iface)
  * @size: an integer.
  * @type: (out) (optional): a location to store the type of the loaded
  * icon, %NULL to ignore.
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to
  * ignore.
  * @error: a #GError location to store the error occurring, or %NULL
  * to ignore.
@@ -92,7 +92,7 @@ g_loadable_icon_load (GLoadableIcon  *icon,
  * g_loadable_icon_load_async:
  * @icon: a #GLoadableIcon.
  * @size: an integer.
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore. 
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore. 
  * @callback: (scope async): a #GAsyncReadyCallback to call when the
  *            request is satisfied
  * @user_data: (closure): the data to pass to callback function

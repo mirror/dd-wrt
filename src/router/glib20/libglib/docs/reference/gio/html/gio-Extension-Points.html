@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Extension Points: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="extending.html" title="Extending GIO">
 <link rel="prev" href="GIOModule.html" title="GIOModule">
@@ -198,7 +198,7 @@ ep <span class="gtkdoc opt">=</span> <span class="function"><a href="gio-Extensi
 5
 6</pre></td>
         <td class="listing_code"><pre class="programlisting"><span class="gtkdoc slc">// Implement an extension point</span>
-<span class="function"><a href="../gobject-Type-Information.html#G-DEFINE-TYPE:CAPS">G_DEFINE_TYPE</a></span> <span class="gtkdoc opt">(</span>MyExampleImpl<span class="gtkdoc opt">,</span> my_example_impl<span class="gtkdoc opt">,</span> MY_TYPE_EXAMPLE<span class="gtkdoc opt">);</span>
+<span class="function"><a href="../gobject-Type-Information.html#G-DEFINE-TYPE:CAPS">G_DEFINE_TYPE</a></span> <span class="gtkdoc opt">(</span>MyExampleImpl<span class="gtkdoc opt">,</span> my_example_impl<span class="gtkdoc opt">,</span> MY_TYPE_EXAMPLE<span class="gtkdoc opt">)</span>
 <span class="function"><a href="gio-Extension-Points.html#g-io-extension-point-implement">g_io_extension_point_implement</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;my-extension-point&quot;</span><span class="gtkdoc opt">,</span>
                                 <span class="function">my_example_impl_get_type</span> <span class="gtkdoc opt">(),</span>
                                 <span class="string">&quot;my-example&quot;</span><span class="gtkdoc opt">,</span>

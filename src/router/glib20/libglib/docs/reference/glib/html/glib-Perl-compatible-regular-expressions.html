@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Perl-compatible regular expressions: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Glob-style-pattern-matching.html" title="Glob-style pattern matching">
@@ -1110,7 +1110,7 @@ freeing or modifying <em class="parameter"><code>string</code></em>
 <td class="parameter_name"><p>match_info</p></td>
 <td class="parameter_description"><p> pointer to location where to store
 the <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchInfo" title="GMatchInfo"><span class="type">GMatchInfo</span></a>, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if you do not need it. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -1257,7 +1257,7 @@ is nul-terminated</p></td>
 <td class="parameter_name"><p>match_info</p></td>
 <td class="parameter_description"><p> pointer to location where to store
 the <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchInfo" title="GMatchInfo"><span class="type">GMatchInfo</span></a>, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if you do not need it. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -1325,7 +1325,7 @@ freeing or modifying <em class="parameter"><code>string</code></em>
 <td class="parameter_name"><p>match_info</p></td>
 <td class="parameter_description"><p> pointer to location where to store
 the <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchInfo" title="GMatchInfo"><span class="type">GMatchInfo</span></a>, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if you do not need it. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -1422,7 +1422,7 @@ is nul-terminated</p></td>
 <td class="parameter_name"><p>match_info</p></td>
 <td class="parameter_description"><p> pointer to location where to store
 the <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchInfo" title="GMatchInfo"><span class="type">GMatchInfo</span></a>, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if you do not need it. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -1678,7 +1678,7 @@ number-th captured subexpression of the match, '\g&lt;name&gt;' refers
 to the captured subexpression with the given name. '\0' refers
 to the complete match, but '\0' followed by a number is the octal
 representation of a character. To include a literal '\' in the
-replacement, write '\'.</p>
+replacement, write '\\'.</p>
 <p>There are also escapes that changes the case of the following text:</p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem"><p>\l: Convert to lower case the next character</p></li>
@@ -2023,7 +2023,7 @@ subpattern) requires valid <a class="link" href="glib-Perl-compatible-regular-ex
 <td class="parameter_description"><p> location to store information about
 references in <em class="parameter"><code>replacement</code></em>
 or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -2176,7 +2176,7 @@ nothing.</p>
 <tbody><tr>
 <td class="parameter_name"><p>match_info</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchInfo" title="GMatchInfo"><span class="type">GMatchInfo</span></a>, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr></tbody>
 </table></div>
 </div>
@@ -2377,7 +2377,7 @@ contains references.</p>
 <tr>
 <td class="parameter_name"><p>match_info</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchInfo" title="GMatchInfo"><span class="type">GMatchInfo</span></a> or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>string_to_expand</p></td>
@@ -2395,7 +2395,7 @@ contains references.</p>
 <div class="refsect3">
 <a name="g-match-info-expand-references.returns"></a><h4>Returns</h4>
 <p> the expanded string, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if an error occurred. </p>
-<p><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></p>
+<p><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -2446,7 +2446,7 @@ so you cannot call this function after freeing the string.</p>
 <a name="g-match-info-fetch.returns"></a><h4>Returns</h4>
 <p> The matched substring, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if an error
 occurred. You have to free the string yourself. </p>
-<p><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></p>
+<p><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -2496,13 +2496,13 @@ substring. Substrings are matched in reverse order of length, so
 <td class="parameter_name"><p>start_pos</p></td>
 <td class="parameter_description"><p> pointer to location where to store
 the start position, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>end_pos</p></td>
 <td class="parameter_description"><p> pointer to location where to store
 the end position, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -2557,7 +2557,7 @@ so you cannot call this function after freeing the string.</p>
 <a name="g-match-info-fetch-named.returns"></a><h4>Returns</h4>
 <p> The matched substring, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if an error
 occurred. You have to free the string yourself. </p>
-<p><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></p>
+<p><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -2600,13 +2600,13 @@ then <em class="parameter"><code>start_pos</code></em>
 <td class="parameter_name"><p>start_pos</p></td>
 <td class="parameter_description"><p> pointer to location where to store
 the start position, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>end_pos</p></td>
 <td class="parameter_description"><p> pointer to location where to store
 the end position, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -3176,7 +3176,7 @@ error domains.</p>
 <tr>
 <td class="enum_member_name"><p><a name="G-REGEX-DOTALL:CAPS"></a>G_REGEX_DOTALL</p></td>
 <td class="enum_member_description">
-<p>A dot metacharater (".") in the pattern matches all
+<p>A dot metacharacter (".") in the pattern matches all
     characters, including newlines. Without it, newlines are excluded.
     This option can be changed within a pattern by a ("?s") option setting.</p>
 </td>
@@ -3201,7 +3201,7 @@ error domains.</p>
     it is constrained to match only at the first matching point in the
     string that is being searched. This effect can also be achieved by
     appropriate constructs in the pattern itself such as the "^"
-    metacharater.</p>
+    metacharacter.</p>
 </td>
 <td class="enum_member_annotations"> </td>
 </tr>
@@ -3349,7 +3349,7 @@ error domains.</p>
     it is constrained to match only at the first matching point in the
     string that is being searched. This effect can also be achieved by
     appropriate constructs in the pattern itself such as the "^"
-    metacharater.</p>
+    metacharacter.</p>
 </td>
 <td class="enum_member_annotations"> </td>
 </tr>

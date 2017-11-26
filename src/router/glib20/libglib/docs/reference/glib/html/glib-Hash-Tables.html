@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Hash Tables: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-data-types.html" title="GLib Data Types">
 <link rel="prev" href="glib-Trash-Stacks.html" title="Trash Stacks">
@@ -459,6 +459,9 @@ allocate memory to store the values, which can be a considerable
 space saving, if your set is large. The functions
 <a class="link" href="glib-Hash-Tables.html#g-hash-table-add" title="g_hash_table_add ()"><code class="function">g_hash_table_add()</code></a> and <a class="link" href="glib-Hash-Tables.html#g-hash-table-contains" title="g_hash_table_contains ()"><code class="function">g_hash_table_contains()</code></a> are designed to be
 used when using <a class="link" href="glib-Hash-Tables.html#GHashTable" title="GHashTable"><span class="type">GHashTable</span></a> this way.</p>
+<p><a class="link" href="glib-Hash-Tables.html#GHashTable" title="GHashTable"><span class="type">GHashTable</span></a> is not designed to be statically initialised with keys and
+values known at compile time. To build a static hash table, use a tool such
+as <a class="ulink" href="https://www.gnu.org/software/gperf/" target="_top">gperf</a>.</p>
 </div>
 <div class="refsect1">
 <a name="glib-Hash-Tables.functions_details"></a><h2>Functions</h2>
@@ -482,7 +485,10 @@ and <a class="link" href="glib-Hash-Tables.html#g-str-equal" title="g_str_equal�
 of keys. If <em class="parameter"><code>key_equal_func</code></em>
  is <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>, keys are compared directly in
 a similar fashion to <a class="link" href="glib-Hash-Tables.html#g-direct-equal" title="g_direct_equal ()"><code class="function">g_direct_equal()</code></a>, but without the overhead of
-a function call.</p>
+a function call. <em class="parameter"><code>key_equal_func</code></em>
+ is called with the key from the hash table
+as its first parameter, and the user-provided key to check against as
+its second.</p>
 <div class="refsect3">
 <a name="g-hash-table-new.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -526,7 +532,7 @@ entry from the <a class="link" href="glib-Hash-Tables.html#GHashTable" title="GH
 recursively remove further items from the hash table. This is only
 permissible if the application still holds a reference to the hash table.
 This means that you may need to ensure that the hash table is empty by
-calling g_hash_table_remove_all before releasing the last reference using
+calling <a class="link" href="glib-Hash-Tables.html#g-hash-table-remove-all" title="g_hash_table_remove_all ()"><code class="function">g_hash_table_remove_all()</code></a> before releasing the last reference using
 <a class="link" href="glib-Hash-Tables.html#g-hash-table-unref" title="g_hash_table_unref ()"><code class="function">g_hash_table_unref()</code></a>.</p>
 <div class="refsect3">
 <a name="g-hash-table-new-full.parameters"></a><h4>Parameters</h4>
@@ -936,7 +942,7 @@ of <em class="parameter"><code>hash_table</code></em>
 <tr>
 <td class="parameter_name"><p>orig_key</p></td>
 <td class="parameter_description"><p> return location for the original key. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>value</p></td>
@@ -1702,7 +1708,7 @@ pointed to as a result of this advancement. If <a class="link" href="glib-Standa
 <tr>
 <td class="parameter_name"><p>value</p></td>
 <td class="parameter_description"><p> a location to store the value. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>

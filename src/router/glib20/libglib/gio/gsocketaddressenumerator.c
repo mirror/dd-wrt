@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,7 +23,7 @@
 #include "gtask.h"
 
 
-G_DEFINE_ABSTRACT_TYPE (GSocketAddressEnumerator, g_socket_address_enumerator, G_TYPE_OBJECT);
+G_DEFINE_ABSTRACT_TYPE (GSocketAddressEnumerator, g_socket_address_enumerator, G_TYPE_OBJECT)
 
 static void            g_socket_address_enumerator_real_next_async  (GSocketAddressEnumerator  *enumerator,
 								     GCancellable              *cancellable,
@@ -48,7 +48,7 @@ g_socket_address_enumerator_class_init (GSocketAddressEnumeratorClass *enumerato
 /**
  * g_socket_address_enumerator_next:
  * @enumerator: a #GSocketAddressEnumerator
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
  * @error: a #GError.
  *
  * Retrieves the next #GSocketAddress from @enumerator. Note that this
@@ -112,7 +112,7 @@ g_socket_address_enumerator_real_next_async (GSocketAddressEnumerator *enumerato
 /**
  * g_socket_address_enumerator_next_async:
  * @enumerator: a #GSocketAddressEnumerator
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
  * @callback: (scope async): a #GAsyncReadyCallback to call when the request
  *     is satisfied
  * @user_data: (closure): the data to pass to callback function

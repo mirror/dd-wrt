@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -187,7 +187,7 @@ query_info (GFile *file)
 
   if (info == NULL)
     {
-      g_printerr ("Error getting info: %s\n", error->message);
+      print_file_error (file, error->message);
       g_error_free (error);
       return FALSE;
     }
@@ -218,20 +218,23 @@ get_writable_info (GFile *file)
   list = g_file_query_settable_attributes (file, NULL, &error);
   if (list == NULL)
     {
-      g_printerr (_("Error getting writable attributes: %s\n"), error->message);
+      print_file_error (file, error->message);
       g_error_free (error);
       return FALSE;
     }
 
-  g_print (_("Settable attributes:\n"));
-  for (i = 0; i < list->n_infos; i++)
+  if (list->n_infos > 0)
     {
-      flags = attribute_flags_to_string (list->infos[i].flags);
-      g_print (" %s (%s%s%s)\n",
-               list->infos[i].name,
-               attribute_type_to_string (list->infos[i].type),
-               (*flags != 0)?", ":"", flags);
-      g_free (flags);
+      g_print (_("Settable attributes:\n"));
+      for (i = 0; i < list->n_infos; i++)
+        {
+          flags = attribute_flags_to_string (list->infos[i].flags);
+          g_print (" %s (%s%s%s)\n",
+                   list->infos[i].name,
+                   attribute_type_to_string (list->infos[i].type),
+                   (*flags != 0)?", ":"", flags);
+          g_free (flags);
+        }
     }
 
   g_file_attribute_info_list_unref (list);
@@ -239,7 +242,7 @@ get_writable_info (GFile *file)
   list = g_file_query_writable_namespaces (file, NULL, &error);
   if (list == NULL)
     {
-      g_printerr ("Error getting writable namespaces: %s\n", error->message);
+      print_file_error (file, error->message);
       g_error_free (error);
       return FALSE;
     }
@@ -254,6 +257,7 @@ get_writable_info (GFile *file)
                    list->infos[i].name,
                    attribute_type_to_string (list->infos[i].type),
                    (*flags != 0)?", ":"", flags);
+          g_free (flags);
         }
     }
 
@@ -292,6 +296,7 @@ handle_info (int argc, char *argv[], gboolean do_help)
   if (do_help)
     {
       show_help (context, NULL);
+      g_option_context_free (context);
       return 0;
     }
 
@@ -299,12 +304,14 @@ handle_info (int argc, char *argv[], gboolean do_help)
     {
       show_help (context, error->message);
       g_error_free (error);
+      g_option_context_free (context);
       return 1;
     }
 
   if (argc < 2)
     {
       show_help (context, _("No locations given"));
+      g_option_context_free (context);
       return 1;
     }
 

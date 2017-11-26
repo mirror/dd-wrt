@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -120,6 +120,7 @@ struct _GApplicationImpl
   gboolean         properties_live;
   gboolean         primary;
   gboolean         busy;
+  gboolean         registered;
   GApplication    *app;
 };
 
@@ -403,6 +404,7 @@ g_application_impl_attempt_primary (GApplicationImpl  *impl,
   if (impl->actions_id == 0)
     return FALSE;
 
+  impl->registered = TRUE;
   if (!app_class->dbus_register (impl->app,
                                  impl->session_bus,
                                  impl->object_path,
@@ -455,9 +457,13 @@ g_application_impl_stop_primary (GApplicationImpl *impl)
 {
   GApplicationClass *app_class = G_APPLICATION_GET_CLASS (impl->app);
 
-  app_class->dbus_unregister (impl->app,
-                              impl->session_bus,
-                              impl->object_path);
+  if (impl->registered)
+    {
+      app_class->dbus_unregister (impl->app,
+                                  impl->session_bus,
+                                  impl->object_path);
+      impl->registered = FALSE;
+    }
 
   if (impl->object_id)
     {

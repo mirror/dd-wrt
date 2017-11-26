@@ -7,7 +7,7 @@
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
-# version 2 of the License, or (at your option) any later version.
+# version 2.1 of the License, or (at your option) any later version.
 #
 # This library is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -28,13 +28,15 @@ from . import dbustypes
 # ----------------------------------------------------------------------------------------------------
 
 class CodeGenerator:
-    def __init__(self, ifaces, namespace, interface_prefix, generate_objmanager, generate_autocleanup, docbook_gen, h, c):
+    def __init__(self, ifaces, namespace, interface_prefix, generate_objmanager,
+                 generate_autocleanup, docbook_gen, h, c, header_name):
         self.docbook_gen = docbook_gen
         self.generate_objmanager = generate_objmanager
         self.generate_autocleanup = generate_autocleanup
         self.ifaces = ifaces
         self.h = h
         self.c = c
+        self.header_name = header_name
         self.namespace = namespace
         if len(namespace) > 0:
             if utils.is_ugly_case(namespace):
@@ -48,7 +50,7 @@ class CodeGenerator:
             self.ns_upper = ''
             self.ns_lower = ''
         self.interface_prefix = interface_prefix
-        self.header_guard = self.h.name.upper().replace('.', '_').replace('-', '_').replace('/', '_')
+        self.header_guard = header_name.upper().replace('.', '_').replace('-', '_').replace('/', '_').replace(':', '_')
 
     # ----------------------------------------------------------------------------------------------------
 
@@ -67,7 +69,7 @@ class CodeGenerator:
                      '#include "%s"\n'
                      '\n'
                      '#include <string.h>\n'
-                     %(self.h.name))
+                     %(self.header_name))
 
         self.c.write('#ifdef G_OS_UNIX\n'
                      '#  include <gio/gunixfdlist.h>\n'
@@ -1060,7 +1062,7 @@ class CodeGenerator:
         self.c.write('\n')
 
         self.c.write('typedef %sIface %sInterface;\n'%(i.camel_name, i.camel_name))
-        self.c.write('G_DEFINE_INTERFACE (%s, %s, G_TYPE_OBJECT);\n'%(i.camel_name, i.name_lower))
+        self.c.write('G_DEFINE_INTERFACE (%s, %s, G_TYPE_OBJECT)\n'%(i.camel_name, i.name_lower))
         self.c.write('\n')
 
         self.c.write('static void\n'
@@ -1602,10 +1604,10 @@ class CodeGenerator:
         self.c.write('#if GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_38\n')
         self.c.write('G_DEFINE_TYPE_WITH_CODE (%sProxy, %s_proxy, G_TYPE_DBUS_PROXY,\n'%(i.camel_name, i.name_lower))
         self.c.write('                         G_ADD_PRIVATE (%sProxy)\n'%(i.camel_name))
-        self.c.write('                         G_IMPLEMENT_INTERFACE (%sTYPE_%s, %s_proxy_iface_init));\n\n'%(i.ns_upper, i.name_upper, i.name_lower))
+        self.c.write('                         G_IMPLEMENT_INTERFACE (%sTYPE_%s, %s_proxy_iface_init))\n\n'%(i.ns_upper, i.name_upper, i.name_lower))
         self.c.write('#else\n')
         self.c.write('G_DEFINE_TYPE_WITH_CODE (%sProxy, %s_proxy, G_TYPE_DBUS_PROXY,\n'%(i.camel_name, i.name_lower))
-        self.c.write('                         G_IMPLEMENT_INTERFACE (%sTYPE_%s, %s_proxy_iface_init));\n\n'%(i.ns_upper, i.name_upper, i.name_lower))
+        self.c.write('                         G_IMPLEMENT_INTERFACE (%sTYPE_%s, %s_proxy_iface_init))\n\n'%(i.ns_upper, i.name_upper, i.name_lower))
         self.c.write('#endif\n')
 
         # finalize
@@ -1710,8 +1712,8 @@ class CodeGenerator:
                      '  GVariantIter iter;\n'
                      '  GVariant *child;\n'
                      '  GValue *paramv;\n'
-                     '  guint num_params;\n'
-                     '  guint n;\n'
+                     '  gsize num_params;\n'
+                     '  gsize n;\n'
                      '  guint signal_id;\n');
         # Note: info could be NULL if we are talking to a newer version of the interface
         self.c.write('  info = (_ExtendedGDBusSignalInfo *) g_dbus_interface_info_lookup_signal ((GDBusInterfaceInfo *) &_%s_interface_info.parent_struct, signal_name);\n'
@@ -2130,9 +2132,9 @@ class CodeGenerator:
                      '  GVariantIter iter;\n'
                      '  GVariant *child;\n'
                      '  GValue *paramv;\n'
-                     '  guint num_params;\n'
+                     '  gsize num_params;\n'
                      '  guint num_extra;\n'
-                     '  guint n;\n'
+                     '  gsize n;\n'
                      '  guint signal_id;\n'
                      '  GValue return_value = G_VALUE_INIT;\n'
                      %(i.name_lower, i.camel_name, i.ns_upper, i.name_upper))
@@ -2389,10 +2391,10 @@ class CodeGenerator:
         self.c.write('#if GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_38\n')
         self.c.write('G_DEFINE_TYPE_WITH_CODE (%sSkeleton, %s_skeleton, G_TYPE_DBUS_INTERFACE_SKELETON,\n'%(i.camel_name, i.name_lower))
         self.c.write('                         G_ADD_PRIVATE (%sSkeleton)\n'%(i.camel_name))
-        self.c.write('                         G_IMPLEMENT_INTERFACE (%sTYPE_%s, %s_skeleton_iface_init));\n\n'%(i.ns_upper, i.name_upper, i.name_lower))
+        self.c.write('                         G_IMPLEMENT_INTERFACE (%sTYPE_%s, %s_skeleton_iface_init))\n\n'%(i.ns_upper, i.name_upper, i.name_lower))
         self.c.write('#else\n')
         self.c.write('G_DEFINE_TYPE_WITH_CODE (%sSkeleton, %s_skeleton, G_TYPE_DBUS_INTERFACE_SKELETON,\n'%(i.camel_name, i.name_lower))
-        self.c.write('                         G_IMPLEMENT_INTERFACE (%sTYPE_%s, %s_skeleton_iface_init));\n\n'%(i.ns_upper, i.name_upper, i.name_lower))
+        self.c.write('                         G_IMPLEMENT_INTERFACE (%sTYPE_%s, %s_skeleton_iface_init))\n\n'%(i.ns_upper, i.name_upper, i.name_lower))
         self.c.write('#endif\n')
 
         # finalize
@@ -2724,7 +2726,7 @@ class CodeGenerator:
         self.c.write('\n')
 
         self.c.write('typedef %sObjectIface %sObjectInterface;\n'%(self.namespace, self.namespace))
-        self.c.write('G_DEFINE_INTERFACE_WITH_CODE (%sObject, %sobject, G_TYPE_OBJECT, g_type_interface_add_prerequisite (g_define_type_id, G_TYPE_DBUS_OBJECT));\n'%(self.namespace, self.ns_lower))
+        self.c.write('G_DEFINE_INTERFACE_WITH_CODE (%sObject, %sobject, G_TYPE_OBJECT, g_type_interface_add_prerequisite (g_define_type_id, G_TYPE_DBUS_OBJECT);)\n'%(self.namespace, self.ns_lower))
         self.c.write('\n')
         self.c.write('static void\n'
                      '%sobject_default_init (%sObjectIface *iface)\n'
@@ -2844,7 +2846,7 @@ class CodeGenerator:
         self.c.write('\n')
         self.c.write('G_DEFINE_TYPE_WITH_CODE (%sObjectProxy, %sobject_proxy, G_TYPE_DBUS_OBJECT_PROXY,\n'
                      '                         G_IMPLEMENT_INTERFACE (%sTYPE_OBJECT, %sobject_proxy__%sobject_iface_init)\n'
-                     '                         G_IMPLEMENT_INTERFACE (G_TYPE_DBUS_OBJECT, %sobject_proxy__g_dbus_object_iface_init));\n'
+                     '                         G_IMPLEMENT_INTERFACE (G_TYPE_DBUS_OBJECT, %sobject_proxy__g_dbus_object_iface_init))\n'
                      '\n'
                      %(self.namespace, self.ns_lower, self.ns_upper, self.ns_lower, self.ns_lower, self.ns_lower))
         # class boilerplate
@@ -2964,7 +2966,7 @@ class CodeGenerator:
                      %(self.ns_lower, self.ns_lower, self.ns_lower))
         self.c.write('G_DEFINE_TYPE_WITH_CODE (%sObjectSkeleton, %sobject_skeleton, G_TYPE_DBUS_OBJECT_SKELETON,\n'
                      '                         G_IMPLEMENT_INTERFACE (%sTYPE_OBJECT, %sobject_skeleton__%sobject_iface_init)\n'
-                     '                         G_IMPLEMENT_INTERFACE (G_TYPE_DBUS_OBJECT, %sobject_skeleton__g_dbus_object_iface_init));\n'
+                     '                         G_IMPLEMENT_INTERFACE (G_TYPE_DBUS_OBJECT, %sobject_skeleton__g_dbus_object_iface_init))\n'
                      '\n'
                      %(self.namespace, self.ns_lower, self.ns_upper, self.ns_lower, self.ns_lower, self.ns_lower))
         # class boilerplate
@@ -3127,7 +3129,7 @@ class CodeGenerator:
         self.c.write('\n')
 
         # class boilerplate
-        self.c.write('G_DEFINE_TYPE (%sObjectManagerClient, %sobject_manager_client, G_TYPE_DBUS_OBJECT_MANAGER_CLIENT);\n'
+        self.c.write('G_DEFINE_TYPE (%sObjectManagerClient, %sobject_manager_client, G_TYPE_DBUS_OBJECT_MANAGER_CLIENT)\n'
                      '\n'
                      %(self.namespace, self.ns_lower))
 

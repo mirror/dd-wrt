@@ -32,7 +32,6 @@ test_programs = \
 	credentials				\
 	data-input-stream			\
 	data-output-stream			\
-	defaultvalue				\
 	fileattributematcher			\
 	filter-streams				\
 	giomodule				\
@@ -232,11 +231,29 @@ socket_client_SOURCES = \
 EXTRA_DIST += socket-common.c
 
 uninstalled_test_extra_programs += gdbus-daemon
+gdbus_daemon_SOURCES = gdbus-daemon.c
 nodist_gdbus_daemon_SOURCES = \
-	$(top_builddir)/gio/gdbus-daemon-generated.c
-gdbus_daemon_SOURCES = \
-	gdbus-daemon.c				\
-	$(top_srcdir)/gio/gdbusdaemon.c
+	gdbus-daemon-generated.c \
+	gdbus-daemon-impl.c
+CLEANFILES += gdbus-daemon-impl.c gdbus-daemon-generated.c gdbus-daemon-generated.h
+
+# With subdir-objects we need to create a link to the original
+# file in the right directory, otherwise libtool will complain
+# that it cannot find the wrapper file
+gdbus-daemon-impl.c: $(top_srcdir)/gio/gdbusdaemon.c
+	$(AM_V_GEN) $(LN_S) $^ $@
+
+# These files are only generated on Windows builds inside GIO,
+# but we want them on non-Windows builds for the tests
+gdbus-daemon-generated.h gdbus-daemon-generated.c: $(top_srcdir)/gio/dbus-daemon.xml $(GDBUS_PYTHON_DEPS)
+	$(AM_V_GEN) UNINSTALLED_GLIB_SRCDIR=$(top_srcdir) \
+		UNINSTALLED_GLIB_BUILDDIR=$(top_builddir) \
+		$(PYTHON) $(top_srcdir)/gio/gdbus-2.0/codegen/gdbus-codegen.in \
+		--interface-prefix org. \
+		--generate-c-code gdbus-daemon-generated \
+		--c-namespace _G \
+		$(top_srcdir)/gio/dbus-daemon.xml \
+		$(NULL)
 
 # -----------------------------------------------------------------------------
 #  Test programs buildable on UNIX only
@@ -245,12 +262,13 @@ if OS_UNIX
 test_programs += \
 	file					\
 	gdbus-peer-object-manager		\
-	gdbus-unix-addresses			\
 	live-g-file				\
 	socket-address				\
 	stream-rw_all				\
 	unix-fd					\
+	unix-mounts				\
 	unix-streams				\
+	g-file-info-filesystem-readonly		\
 	$(NULL)
 
 test_extra_programs += \
@@ -258,11 +276,13 @@ test_extra_programs += \
 	dbus-launch				\
 	$(NULL)
 
+if !OS_COCOA
 # Uninstalled because of the check-for-executable logic in DesktopAppInfo unable to find the installed executable
 uninstalled_test_programs += \
 	appinfo					\
 	desktop-app-info			\
 	$(NULL)
+endif
 
 home_desktop_files = \
 	epiphany-weather-for-toronto-island-9c6a4e022b17686306243dada811d550d25eb1fb.desktop	\
@@ -318,17 +338,19 @@ dist_test_data += \
 
 test_extra_programs += \
 	appinfo-test				\
-	apps					\
 	$(NULL)
 
 uninstalled_test_extra_programs += \
 	gdbus-example-unix-fd-client		\
 	$(NULL)
 
+if !OS_COCOA
+test_extra_programs += apps
 test_programs += mimeapps
 clean-local: clean-mimeapps
 clean-mimeapps:
 	rm -rf xdgdatadir xdgdatahome xdgconfighome
+endif
 
 uninstalled_test_programs += gsettings gschema-compile
 gsettings_DEPENDENCIES = test.mo
@@ -383,7 +405,6 @@ uninstalled_test_extra_programs += gdbus-test-fixture
 gdbus_test_fixture_LDADD = gdbus-object-manager-example/libgdbus-example-objectmanager.la $(LDADD)
 
 # This is peer to peer so it doesn't need a session bus (so we can run it normally)
-test_programs += gdbus-peer
 gdbus_peer_LDADD = gdbus-object-manager-example/libgdbus-example-objectmanager.la $(LDADD)
 
 # This test is currently unreliable
@@ -397,7 +418,7 @@ gdbus_sessionbus_sources = gdbus-sessionbus.c gdbus-sessionbus.h gdbus-tests.h g
 
 test_programs += \
 	actions					\
-	dbus-appinfo				\
+	defaultvalue				\
 	gapplication				\
 	gdbus-auth				\
 	gdbus-bz627724				\
@@ -410,6 +431,7 @@ test_programs += \
 	gdbus-export				\
 	gdbus-introspection			\
 	gdbus-names				\
+	gdbus-peer				\
 	gdbus-proxy				\
 	gdbus-proxy-threads			\
 	gdbus-proxy-well-known-name		\
@@ -419,6 +441,15 @@ test_programs += \
 	gmenumodel				\
 	gnotification				\
 	$(NULL)
+
+if OS_UNIX
+test_programs += gdbus-unix-addresses
+
+if !OS_COCOA
+test_programs += dbus-appinfo
+endif
+
+endif
 
 gdbus_proxy_threads_CFLAGS = $(AM_CFLAGS) $(DBUS1_CFLAGS)
 actions_SOURCES                          = $(gdbus_sessionbus_sources) actions.c
@@ -555,9 +586,9 @@ EXTRA_DIST += test.gresource.xml test1.txt test2.gresource.xml test2.txt test3.g
 CLEANFILES += test-generated.txt test_resources.c test_resources2.[ch] plugin_resources.c test.gresource
 endif # !CROSS_COMPILING
 
-BUILT_SOURCES += giotypefuncs.c
+BUILT_SOURCES += giotypefuncs.inc
 
-giotypefuncs.c: Makefile
+giotypefuncs.inc: Makefile
 	$(AM_V_GEN) echo '#include <gio/gio.h>' > xgen-giosrc.c && \
 	  echo "G_GNUC_BEGIN_IGNORE_DEPRECATIONS" > xgen-gio && \
 	  ${CPP} $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) xgen-giosrc.c | \
@@ -567,7 +598,7 @@ giotypefuncs.c: Makefile
 	  $(SED) -e 's/^/*tp++ = /' -e 's/$$/ ();/' >> xgen-gio && \
 	  cp xgen-gio $@ # && rm -f xgen-gio xgen-giosrc.c
 
-CLEANFILES += xgen-giosrc.c xgen-gio giotypefuncs.c
+CLEANFILES += xgen-giosrc.c xgen-gio giotypefuncs.inc
 
 if ENABLE_INSTALLED_TESTS
 if OS_UNIX

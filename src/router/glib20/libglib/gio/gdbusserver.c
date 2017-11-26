@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -154,8 +154,7 @@ static guint _signals[LAST_SIGNAL] = {0};
 static void initable_iface_init       (GInitableIface *initable_iface);
 
 G_DEFINE_TYPE_WITH_CODE (GDBusServer, g_dbus_server, G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, initable_iface_init)
-                         );
+                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, initable_iface_init))
 
 static void
 g_dbus_server_finalize (GObject *object)
@@ -448,8 +447,8 @@ on_run (GSocketService    *service,
  * @address: A D-Bus address.
  * @flags: Flags from the #GDBusServerFlags enumeration.
  * @guid: A D-Bus GUID.
- * @observer: (allow-none): A #GDBusAuthObserver or %NULL.
- * @cancellable: (allow-none): A #GCancellable or %NULL.
+ * @observer: (nullable): A #GDBusAuthObserver or %NULL.
+ * @cancellable: (nullable): A #GCancellable or %NULL.
  * @error: Return location for server or %NULL.
  *
  * Creates a new D-Bus server that listens on the first address in
@@ -504,8 +503,9 @@ g_dbus_server_new_sync (const gchar        *address,
  * g_dbus_server_get_client_address:
  * @server: A #GDBusServer.
  *
- * Gets a D-Bus address string that can be used by clients to connect
- * to @server.
+ * Gets a
+ * [D-Bus address](https://dbus.freedesktop.org/doc/dbus-specification.html#addresses)
+ * string that can be used by clients to connect to @server.
  *
  * Returns: A D-Bus address string. Do not free, the string is owned
  * by @server.
@@ -862,17 +862,20 @@ try_tcp (GDBusServer  *server,
       while (bytes_remaining > 0)
         {
           gssize ret;
+          int errsv;
+
           ret = write (fd, server->nonce + bytes_written, bytes_remaining);
+          errsv = errno;
           if (ret == -1)
             {
-              if (errno == EINTR)
+              if (errsv == EINTR)
                 goto again;
               g_set_error (error,
                            G_IO_ERROR,
-                           g_io_error_from_errno (errno),
+                           g_io_error_from_errno (errsv),
                            _("Error writing nonce file at “%s”: %s"),
                            server->nonce_file,
-                           strerror (errno));
+                           g_strerror (errsv));
               goto out;
             }
           bytes_written += ret;

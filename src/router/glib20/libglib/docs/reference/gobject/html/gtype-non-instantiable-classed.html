@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Non-instantiable classed types: interfaces: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="chapter-gtype.html" title="The GLib Dynamic Type System">
 <link rel="prev" href="gtype-instantiable-classed.html" title="Instantiable classed types: objects">
@@ -100,7 +100,7 @@
   <span class="function"><a href="../glib-Warnings-and-Assertions.html#g-return-if-fail">g_return_if_fail</a></span> <span class="gtkdoc opt">(</span><span class="function">VIEWER_IS_EDITABLE</span> <span class="gtkdoc opt">(</span>self<span class="gtkdoc opt">));</span>
   <span class="function"><a href="../glib-Warnings-and-Assertions.html#g-return-if-fail">g_return_if_fail</a></span> <span class="gtkdoc opt">(</span>error <span class="gtkdoc opt">==</span> NULL <span class="gtkdoc opt">|| *</span>error <span class="gtkdoc opt">==</span> NULL<span class="gtkdoc opt">);</span>
 
-  iface <span class="gtkdoc opt">=</span> <span class="function">VIEWER_EDITABLE_GET_INTERFACE</span> <span class="gtkdoc opt">(</span>self<span class="gtkdoc opt">);</span>
+  iface <span class="gtkdoc opt">=</span> <span class="function">VIEWER_EDITABLE_GET_IFACE</span> <span class="gtkdoc opt">(</span>self<span class="gtkdoc opt">);</span>
   <span class="function"><a href="../glib-Warnings-and-Assertions.html#g-return-if-fail">g_return_if_fail</a></span> <span class="gtkdoc opt">(</span>iface<span class="gtkdoc opt">-&gt;</span>save <span class="gtkdoc opt">!=</span> NULL<span class="gtkdoc opt">);</span>
   iface<span class="gtkdoc opt">-&gt;</span><span class="function">save</span> <span class="gtkdoc opt">(</span>self<span class="gtkdoc opt">);</span>
 <span class="gtkdoc opt">}</span></pre></td>
@@ -160,7 +160,7 @@
 
 <span class="function"><a href="gobject-Type-Information.html#G-DEFINE-TYPE-WITH-CODE:CAPS">G_DEFINE_TYPE_WITH_CODE</a></span> <span class="gtkdoc opt">(</span>ViewerFile<span class="gtkdoc opt">,</span> viewer_file<span class="gtkdoc opt">,</span> VIEWER_TYPE_FILE<span class="gtkdoc opt">,</span>
                          <span class="function"><a href="gobject-Type-Information.html#G-IMPLEMENT-INTERFACE:CAPS">G_IMPLEMENT_INTERFACE</a></span> <span class="gtkdoc opt">(</span>VIEWER_TYPE_EDITABLE<span class="gtkdoc opt">,</span>
-                                                viewer_file_editable_interface_init<span class="gtkdoc opt">));</span></pre></td>
+                                                viewer_file_editable_interface_init<span class="gtkdoc opt">))</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -360,7 +360,7 @@ GType
 5
 6
 7</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="gobject-Type-Information.html#G-DEFINE-INTERFACE:CAPS">G_DEFINE_INTERFACE</a></span> <span class="gtkdoc opt">(</span>ViewerEditable<span class="gtkdoc opt">,</span> viewer_editable<span class="gtkdoc opt">,</span> G_TYPE_OBJECT<span class="gtkdoc opt">);</span>
+        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="gobject-Type-Information.html#G-DEFINE-INTERFACE:CAPS">G_DEFINE_INTERFACE</a></span> <span class="gtkdoc opt">(</span>ViewerEditable<span class="gtkdoc opt">,</span> viewer_editable<span class="gtkdoc opt">,</span> G_TYPE_OBJECT<span class="gtkdoc opt">)</span>
 
 <span class="gtkdoc kwb">static void</span>
 <span class="function">viewer_editable_default_init</span> <span class="gtkdoc opt">(</span>ViewerEditableInterface <span class="gtkdoc opt">*</span>iface<span class="gtkdoc opt">)</span>

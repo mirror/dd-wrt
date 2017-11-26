@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Internationalization: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Data-HMACs.html" title="Secure HMAC Digests">
@@ -333,7 +333,7 @@ at runtime.</p>
   <span class="gtkdoc kwb">const char</span> <span class="gtkdoc opt">*</span>string<span class="gtkdoc opt">;</span>
   <span class="gtkdoc opt">...</span>
   string
-    <span class="gtkdoc opt">=</span> index <span class="gtkdoc opt">&amp;</span>gt<span class="gtkdoc opt">;</span> <span class="number">1</span> ? <span class="function">_</span><span class="gtkdoc opt">(</span><span class="string">&quot;a default message&quot;</span><span class="gtkdoc opt">) :</span> <span class="function">gettext</span> <span class="gtkdoc opt">(</span>messages<span class="gtkdoc opt">[</span>index<span class="gtkdoc opt">]);</span>
+    <span class="gtkdoc opt">=</span> index <span class="gtkdoc opt">&amp;</span>gt<span class="gtkdoc opt">;</span> <span class="number">1</span> <span class="gtkdoc opt">?</span> <span class="function">_</span><span class="gtkdoc opt">(</span><span class="string">&quot;a default message&quot;</span><span class="gtkdoc opt">) :</span> <span class="function">gettext</span> <span class="gtkdoc opt">(</span>messages<span class="gtkdoc opt">[</span>index<span class="gtkdoc opt">]);</span>
 
   <span class="function">fputs</span> <span class="gtkdoc opt">(</span>string<span class="gtkdoc opt">);</span>
   <span class="gtkdoc opt">...</span>
@@ -395,7 +395,7 @@ translated string, you should call <a class="link" href="glib-I18N.html#g-dpgett
   <span class="gtkdoc kwb">const char</span> <span class="gtkdoc opt">*</span>string<span class="gtkdoc opt">;</span>
   <span class="gtkdoc opt">...</span>
   string
-    <span class="gtkdoc opt">=</span> index <span class="gtkdoc opt">&gt;</span> <span class="number">1</span> ? <span class="function"><a href="glib-I18N.html#g-dpgettext2">g_dpgettext2</a></span> <span class="gtkdoc opt">(</span>NULL<span class="gtkdoc opt">,</span> <span class="string">&quot;some context&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;a default message&quot;</span><span class="gtkdoc opt">)</span>
+    <span class="gtkdoc opt">=</span> index <span class="gtkdoc opt">&gt;</span> <span class="number">1</span> <span class="gtkdoc opt">?</span> <span class="function"><a href="glib-I18N.html#g-dpgettext2">g_dpgettext2</a></span> <span class="gtkdoc opt">(</span>NULL<span class="gtkdoc opt">,</span> <span class="string">&quot;some context&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;a default message&quot;</span><span class="gtkdoc opt">)</span>
                 <span class="gtkdoc opt">:</span> <span class="function"><a href="glib-I18N.html#g-dpgettext2">g_dpgettext2</a></span> <span class="gtkdoc opt">(</span>NULL<span class="gtkdoc opt">,</span> <span class="string">&quot;some context&quot;</span><span class="gtkdoc opt">,</span> messages<span class="gtkdoc opt">[</span>index<span class="gtkdoc opt">]);</span>
 
   <span class="function">fputs</span> <span class="gtkdoc opt">(</span>string<span class="gtkdoc opt">);</span>
@@ -481,7 +481,7 @@ but use the <code class="function">_()</code> macro for translations.</p>
 <td class="parameter_name"><p>domain</p></td>
 <td class="parameter_description"><p> the translation domain to use, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> to use
 the domain set with <code class="function">textdomain()</code>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>msgid</p></td>
@@ -521,7 +521,7 @@ more information about how this functions differs from calling
 <td class="parameter_name"><p>domain</p></td>
 <td class="parameter_description"><p> the translation domain to use, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> to use
 the domain set with <code class="function">textdomain()</code>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>msgid</p></td>
@@ -568,7 +568,7 @@ proper.</p>
 <td class="parameter_name"><p>domain</p></td>
 <td class="parameter_description"><p> the translation domain to use, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> to use
 the domain set with <code class="function">textdomain()</code>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>msgid</p></td>
@@ -627,7 +627,7 @@ but use the <a class="link" href="glib-I18N.html#C-:CAPS" title="C_()"><code cla
 <td class="parameter_name"><p>domain</p></td>
 <td class="parameter_description"><p> the translation domain to use, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> to use
 the domain set with <code class="function">textdomain()</code>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>msgctxtid</p></td>
@@ -679,7 +679,7 @@ thus you may use non-string-literals as context and msgid arguments.</p>
 <td class="parameter_name"><p>domain</p></td>
 <td class="parameter_description"><p> the translation domain to use, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> to use
 the domain set with <code class="function">textdomain()</code>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>context</p></td>

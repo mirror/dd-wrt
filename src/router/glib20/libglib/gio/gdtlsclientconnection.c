@@ -6,7 +6,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -128,7 +128,7 @@ g_dtls_client_connection_default_init (GDtlsClientConnectionInterface *iface)
 /**
  * g_dtls_client_connection_new:
  * @base_socket: the #GDatagramBased to wrap
- * @server_identity: (allow-none): the expected identity of the server
+ * @server_identity: (nullable): the expected identity of the server
  * @error: #GError for error reporting, or %NULL to ignore.
  *
  * Creates a new #GDtlsClientConnection wrapping @base_socket which is

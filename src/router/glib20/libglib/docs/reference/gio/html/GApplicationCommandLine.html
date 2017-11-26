@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GApplicationCommandLine: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="application.html" title="Application support">
 <link rel="prev" href="GApplication.html" title="GApplication">
@@ -506,16 +506,15 @@ use <a href="../glib-Commandline-option-parser.html#g-option-context-parse-strv"
 <tr>
 <td class="parameter_name"><p>argc</p></td>
 <td class="parameter_description"><p> the length of the arguments array, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
 <a name="g-application-command-line-get-arguments.returns"></a><h4>Returns</h4>
-<p> the string array
-containing the arguments (the argv). </p>
-<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=argc][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+<p> (array length=argc) (element-type filename) (transfer full)
+the string array containing the arguments (the argv)</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-28.html#api-index-2.28">2.28</a></p>
 </div>
@@ -589,9 +588,8 @@ in the value of a single environment variable.</p>
 </div>
 <div class="refsect3">
 <a name="g-application-command-line-get-environ.returns"></a><h4>Returns</h4>
-<p> the environment
-strings, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if they were not sent. </p>
-<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+<p>    the environment strings, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if they were not sent. </p>
+<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename][<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-28.html#api-index-2.28">2.28</a></p>
 </div>
@@ -694,9 +692,9 @@ the invoking process rather than the local process.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>arg</p></td>
-<td class="parameter_description"><p>an argument from <em class="parameter"><code>cmdline</code></em>
-</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> an argument from <em class="parameter"><code>cmdline</code></em>
+. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -740,8 +738,8 @@ long as <em class="parameter"><code>cmdline</code></em>
 </tr>
 <tr>
 <td class="parameter_name"><p>name</p></td>
-<td class="parameter_description"><p>the environment variable to get</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the environment variable to get. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 </tbody>
 </table></div>

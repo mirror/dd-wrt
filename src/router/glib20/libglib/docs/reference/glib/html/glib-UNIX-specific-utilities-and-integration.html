@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>UNIX-specific utilities and integration: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Testing.html" title="Testing">
@@ -345,7 +345,7 @@ g_unix_signal_source_new (<em class="parameter"><code><a class="link" href="glib
 signal <em class="parameter"><code>signum</code></em>
 .  In GLib versions before 2.36, only <code class="literal">SIGHUP</code>, <code class="literal">SIGINT</code>,
 <code class="literal">SIGTERM</code> can be monitored.  In GLib 2.36, <code class="literal">SIGUSR1</code> and <code class="literal">SIGUSR2</code>
-were added.</p>
+were added. In GLib 2.54, <code class="literal">SIGWINCH</code> was added.</p>
 <p>Note that unlike the UNIX default, all sources which have created a
 watch will be dispatched, regardless of which underlying thread
 invoked <a class="link" href="glib-UNIX-specific-utilities-and-integration.html#g-unix-signal-source-new" title="g_unix_signal_source_new ()"><code class="function">g_unix_signal_source_new()</code></a>.</p>
@@ -468,7 +468,7 @@ to cancel the watch at any time that it exists.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>function</p></td>
-<td class="parameter_description"><p>a <span class="type">GPollFDFunc</span></p></td>
+<td class="parameter_description"><p>a <a class="link" href="glib-UNIX-specific-utilities-and-integration.html#GUnixFDSourceFunc" title="GUnixFDSourceFunc ()"><span class="type">GUnixFDSourceFunc</span></a></p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
@@ -605,7 +605,7 @@ exported enumeration mapping <code class="literal">errno</code>. Instead, all fu
 error message is always generated via <a class="link" href="glib-String-Utility-Functions.html#g-strerror" title="g_strerror ()"><code class="function">g_strerror()</code></a>.</p>
 <p>It is expected that most code will not look at <code class="literal">errno</code> from these APIs.
 Important cases where one would want to differentiate between errors are
-already covered by existing cross-platform GLib API, such as e.g. <a href="../GFile.html#GFile-struct"><span class="type">GFile</span></a>
+already covered by existing cross-platform GLib API, such as e.g. <a href="../gio/GFile.html#GFile-struct"><span class="type">GFile</span></a>
 wrapping <code class="literal">ENOENT</code>. However, it is provided for completeness, at least.</p>
 </div>
 </div>

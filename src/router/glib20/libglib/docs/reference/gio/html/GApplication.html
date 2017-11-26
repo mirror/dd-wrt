@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GApplication: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="application.html" title="Application support">
 <link rel="prev" href="application.html" title="Application support">
@@ -457,13 +457,13 @@ GApplication implements
 <p>A <a class="link" href="GApplication.html" title="GApplication"><span class="type">GApplication</span></a> is the foundation of an application.  It wraps some
 low-level platform-specific services and is intended to act as the
 foundation for higher-level application classes such as
-<a href="http://developer.gnome.org/gtk4/GtkApplication.html#GtkApplication-struct"><span class="type">GtkApplication</span></a> or <span class="type">MxApplication</span>.  In general, you should not use
+<a href="../gtk4/GtkApplication.html#GtkApplication-struct"><span class="type">GtkApplication</span></a> or <span class="type">MxApplication</span>.  In general, you should not use
 this class outside of a higher level framework.</p>
 <p>GApplication provides convenient life cycle management by maintaining
 a "use count" for the primary application instance. The use count can
 be changed using <a class="link" href="GApplication.html#g-application-hold" title="g_application_hold ()"><code class="function">g_application_hold()</code></a> and <a class="link" href="GApplication.html#g-application-release" title="g_application_release ()"><code class="function">g_application_release()</code></a>. If
 it drops to zero, the application exits. Higher-level classes such as
-<a href="http://developer.gnome.org/gtk4/GtkApplication.html#GtkApplication-struct"><span class="type">GtkApplication</span></a> employ the use count to ensure that the application
+<a href="../gtk4/GtkApplication.html#GtkApplication-struct"><span class="type">GtkApplication</span></a> employ the use count to ensure that the application
 stays alive as long as it has any opened windows.</p>
 <p>Another feature that GApplication (optionally) provides is process
 uniqueness. Applications can make use of this functionality by
@@ -490,7 +490,7 @@ instance and <a class="link" href="GApplication.html#g-application-run" title="g
 examples below.</p>
 <p>If used, the expected form of an application identifier is very close
 to that of of a
-<a class="ulink" href="http://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-names-interface" target="_top">DBus bus name</a>.
+<a class="ulink" href="http://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-names-interface" target="_top">D-Bus bus name</a>.
 Examples include: "com.example.MyApp", "org.example.internal-apps.Calculator".
 For details on valid application identifiers, see <a class="link" href="GApplication.html#g-application-id-is-valid" title="g_application_id_is_valid ()"><code class="function">g_application_id_is_valid()</code></a>.</p>
 <p>On Linux, the application identifier is claimed as a well-known bus name
@@ -542,7 +542,7 @@ The environment is only added to the platform data if the
 <a class="link" href="GApplication.html#G-APPLICATION-SEND-ENVIRONMENT:CAPS"><code class="literal">G_APPLICATION_SEND_ENVIRONMENT</code></a> flag is set. <a class="link" href="GApplication.html" title="GApplication"><span class="type">GApplication</span></a> subclasses
 can add their own platform data by overriding the <em class="parameter"><code>add_platform_data</code></em>
 
-virtual function. For instance, <a href="http://developer.gnome.org/gtk4/GtkApplication.html#GtkApplication-struct"><span class="type">GtkApplication</span></a> adds startup notification
+virtual function. For instance, <a href="../gtk4/GtkApplication.html#GtkApplication-struct"><span class="type">GtkApplication</span></a> adds startup notification
 data in this way.</p>
 <p>To parse commandline arguments you may handle the
 <a class="link" href="GApplication.html#GApplication-command-line" title="The “command-line” signal"><span class="type">“command-line”</span></a> signal or override the <code class="function">local_command_line()</code>
@@ -571,7 +571,7 @@ reproduced here:</p>
 <li class="listitem"><p>Application identifiers must contain only the ASCII characters
 "A-Z[0-9]_-." and must not begin with a digit.</p></li>
 <li class="listitem"><p>Application identifiers must contain at least one '.' (period)
-character (and thus at least three elements).</p></li>
+character (and thus at least two elements).</p></li>
 <li class="listitem"><p>Application identifiers must not begin or end with a '.' (period)
 character.</p></li>
 <li class="listitem"><p>Application identifiers must not contain consecutive '.' (period)
@@ -622,7 +622,7 @@ g_application_new (<em class="parameter"><code>const <a href="../glib-Basic-Type
 <tr>
 <td class="parameter_name"><p>application_id</p></td>
 <td class="parameter_description"><p> the application id. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>flags</p></td>
@@ -698,7 +698,7 @@ been registered.</p>
 <td class="parameter_name"><p>application_id</p></td>
 <td class="parameter_description"><p> the identifier for <em class="parameter"><code>application</code></em>
 . </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -886,7 +886,7 @@ the application ID after that point will not have an impact on the
 resource base path.</p>
 <p>As an example, if the application has an ID of "org.example.app" then
 the default resource base path will be "/org/example/app".  If this
-is a <a href="http://developer.gnome.org/gtk4/GtkApplication.html#GtkApplication-struct"><span class="type">GtkApplication</span></a> (and you have not manually changed the path)
+is a <a href="../gtk4/GtkApplication.html#GtkApplication-struct"><span class="type">GtkApplication</span></a> (and you have not manually changed the path)
 then Gtk will then search for the menus of the application at
 "/org/example/app/gtk/menus.ui".</p>
 <p>See <a class="link" href="GResource.html" title="GResource"><span class="type">GResource</span></a> for more information about adding resources to your
@@ -1033,7 +1033,7 @@ Now there is <a class="link" href="GActionMap.html" title="GActionMap"><span cla
 <tr>
 <td class="parameter_name"><p>action_group</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GActionGroup.html" title="GActionGroup"><span class="type">GActionGroup</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -1159,7 +1159,7 @@ instance is or is not the primary instance of the application.  See
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -1236,7 +1236,11 @@ g_application_quit (<em class="parameter"><code><a class="link" href="GApplicati
 <p>Immediately quits the application.</p>
 <p>Upon return to the mainloop, <a class="link" href="GApplication.html#g-application-run" title="g_application_run ()"><code class="function">g_application_run()</code></a> will return,
 calling only the 'shutdown' function before doing so.</p>
-<p>The hold count is ignored.</p>
+<p>The hold count is ignored.
+Take care if your code has called <a class="link" href="GApplication.html#g-application-hold" title="g_application_hold ()"><code class="function">g_application_hold()</code></a> on the application and
+is therefore still expecting it to exist.
+(Note that you may have called <a class="link" href="GApplication.html#g-application-hold" title="g_application_hold ()"><code class="function">g_application_hold()</code></a> indirectly, for example
+through <a href="../gtk4/GtkApplication.html#gtk-application-add-window"><code class="function">gtk_application_add_window()</code></a>.)</p>
 <p>The result of calling <a class="link" href="GApplication.html#g-application-run" title="g_application_run ()"><code class="function">g_application_run()</code></a> again after it returns is
 unspecified.</p>
 <div class="refsect3">
@@ -1389,7 +1393,7 @@ notifications without an id.</p>
 <tr>
 <td class="parameter_name"><p>id</p></td>
 <td class="parameter_description"><p> id of the notification, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>notification</p></td>
@@ -1542,8 +1546,8 @@ is <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</
 </tr>
 <tr>
 <td class="parameter_name"><p>argv</p></td>
-<td class="parameter_description"><p> the argv from <code class="function">main()</code>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=argc][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_description"><p>    the argv from <code class="function">main()</code>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=argc][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -1786,7 +1790,7 @@ back to <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">N
 <tbody><tr>
 <td class="parameter_name"><p>application</p></td>
 <td class="parameter_description"><p> the application to set as default, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr></tbody>
 </table></div>
 </div>

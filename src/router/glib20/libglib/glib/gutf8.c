@@ -6,7 +6,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -162,7 +162,13 @@ g_utf8_find_prev_char (const char *str,
  * is made to see if the character found is actually valid other than
  * it starts with an appropriate byte.
  * 
- * Returns: a pointer to the found character or %NULL
+ * If @end is %NULL, the return value will never be %NULL: if the end of the
+ * string is reached, a pointer to the terminating nul byte is returned. If
+ * @end is non-%NULL, the return value will be %NULL if the end of the string
+ * is reached.
+ *
+ * Returns: (nullable): a pointer to the found character or %NULL if @end is
+ *    set and is reached
  */
 gchar *
 g_utf8_find_next_char (const gchar *p,
@@ -567,6 +573,8 @@ g_utf8_get_char_extended (const  gchar *p,
   guint i, len;
   gunichar min_code;
   gunichar wc = (guchar) *p;
+  const gunichar partial_sequence = (gunichar) -2;
+  const gunichar malformed_sequence = (gunichar) -1;
 
   if (wc < 0x80)
     {
@@ -574,7 +582,7 @@ g_utf8_get_char_extended (const  gchar *p,
     }
   else if (G_UNLIKELY (wc < 0xc0))
     {
-      return (gunichar)-1;
+      return malformed_sequence;
     }
   else if (wc < 0xe0)
     {
@@ -608,7 +616,7 @@ g_utf8_get_char_extended (const  gchar *p,
     }
   else
     {
-      return (gunichar)-1;
+      return malformed_sequence;
     }
 
   if (G_UNLIKELY (max_len >= 0 && len > max_len))
@@ -616,9 +624,9 @@ g_utf8_get_char_extended (const  gchar *p,
       for (i = 1; i < max_len; i++)
 	{
 	  if ((((guchar *)p)[i] & 0xc0) != 0x80)
-	    return (gunichar)-1;
+	    return malformed_sequence;
 	}
-      return (gunichar)-2;
+      return partial_sequence;
     }
 
   for (i = 1; i < len; ++i)
@@ -628,9 +636,9 @@ g_utf8_get_char_extended (const  gchar *p,
       if (G_UNLIKELY ((ch & 0xc0) != 0x80))
 	{
 	  if (ch)
-	    return (gunichar)-1;
+	    return malformed_sequence;
 	  else
-	    return (gunichar)-2;
+	    return partial_sequence;
 	}
 
       wc <<= 6;
@@ -638,7 +646,7 @@ g_utf8_get_char_extended (const  gchar *p,
     }
 
   if (G_UNLIKELY (wc < min_code))
-    return (gunichar)-1;
+    return malformed_sequence;
 
   return wc;
 }
@@ -646,13 +654,16 @@ g_utf8_get_char_extended (const  gchar *p,
 /**
  * g_utf8_get_char_validated:
  * @p: a pointer to Unicode character encoded as UTF-8
- * @max_len: the maximum number of bytes to read, or -1, for no maximum or
- *     if @p is nul-terminated
- * 
+ * @max_len: the maximum number of bytes to read, or -1 if @p is nul-terminated
+ *
  * Convert a sequence of bytes encoded as UTF-8 to a Unicode character.
  * This function checks for incomplete characters, for invalid characters
  * such as characters that are out of the range of Unicode, and for
  * overlong encodings of valid characters.
+ *
+ * Note that g_utf8_get_char_validated() returns (gunichar)-2 if
+ * @max_len is positive and any of the bytes in the first UTF-8 character
+ * sequence are nul.
  * 
  * Returns: the resulting character. If @p points to a partial
  *     sequence at the end of a string that could begin a valid 
@@ -1627,7 +1638,7 @@ fast_validate_len (const char *str,
  * g_utf8_validate:
  * @str: (array length=max_len) (element-type guint8): a pointer to character data
  * @max_len: max bytes to validate, or -1 to go until NUL
- * @end: (allow-none) (out) (transfer none): return location for end of valid data
+ * @end: (out) (optional) (transfer none): return location for end of valid data
  * 
  * Validates UTF-8 encoded text. @str is the text to validate;
  * if @str is nul-terminated, then @max_len can be -1, otherwise
@@ -1738,6 +1749,8 @@ g_utf8_strreverse (const gchar *str,
 /**
  * g_utf8_make_valid:
  * @str: string to coerce into UTF-8
+ * @len: the maximum length of @str to use, in bytes. If @len < 0,
+ *     then the string is nul-terminated.
  *
  * If the provided string is valid UTF-8, return a copy of it. If not,
  * return a copy in which bytes that could not be interpreted as valid Unicode
@@ -1754,17 +1767,21 @@ g_utf8_strreverse (const gchar *str,
  * Since: 2.52
  */
 gchar *
-g_utf8_make_valid (const gchar *str)
+g_utf8_make_valid (const gchar *str,
+                   gssize       len)
 {
   GString *string;
   const gchar *remainder, *invalid;
-  gint remaining_bytes, valid_bytes;
+  gsize remaining_bytes, valid_bytes;
 
   g_return_val_if_fail (str != NULL, NULL);
 
+  if (len < 0)
+    len = strlen (str);
+
   string = NULL;
   remainder = str;
-  remaining_bytes = strlen (str);
+  remaining_bytes = len;
 
   while (remaining_bytes != 0) 
     {
@@ -1784,11 +1801,12 @@ g_utf8_make_valid (const gchar *str)
     }
   
   if (string == NULL)
-    return g_strdup (str);
+    return g_strndup (str, len);
   
-  g_string_append (string, remainder);
+  g_string_append_len (string, remainder, remaining_bytes);
+  g_string_append_c (string, '\0');
 
   g_assert (g_utf8_validate (string->str, -1, NULL));
-  
+
   return g_string_free (string, FALSE);
 }

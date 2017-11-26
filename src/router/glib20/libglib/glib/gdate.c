@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -340,6 +340,35 @@ g_date_free (GDate *date)
   g_return_if_fail (date != NULL);
   
   g_free (date);
+}
+
+/**
+ * g_date_copy:
+ * @date: a #GDate to copy
+ *
+ * Copies a GDate to a newly-allocated GDate. If the input was invalid
+ * (as determined by g_date_valid()), the invalid state will be copied
+ * as is into the new object.
+ *
+ * Returns: (transfer full): a newly-allocated #GDate initialized from @date
+ *
+ * Since: 2.56
+ */
+GDate *
+g_date_copy (const GDate *date)
+{
+  GDate *res;
+  g_return_val_if_fail (date != NULL, NULL);
+
+  if (g_date_valid (date))
+    res = g_date_new_julian (g_date_get_julian (date));
+  else
+    {
+      res = g_date_new ();
+      *res = *date;
+    }
+
+  return res;
 }
 
 /**

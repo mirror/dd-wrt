@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -178,8 +178,13 @@ notify_signal (GDBusConnection *connection,
         }
     }
 
-  backend->notifications = g_slist_remove (backend->notifications, n);
-  freedesktop_notification_free (n);
+  /* Get the notification again in case the action redrew it */
+  n = g_fdo_notification_backend_find_notification_by_notify_id (backend, id);
+  if (n != NULL)
+    {
+      backend->notifications = g_slist_remove (backend->notifications, n);
+      freedesktop_notification_free (n);
+    }
 }
 
 /* Converts a GNotificationPriority to an urgency level as defined by
@@ -195,9 +200,9 @@ urgency_from_priority (GNotificationPriority priority)
 
     default:
     case G_NOTIFICATION_PRIORITY_NORMAL:
+    case G_NOTIFICATION_PRIORITY_HIGH:
       return 1;
 
-    case G_NOTIFICATION_PRIORITY_HIGH:
     case G_NOTIFICATION_PRIORITY_URGENT:
       return 2;
     }
@@ -424,7 +429,7 @@ g_fdo_notification_backend_withdraw_notification (GNotificationBackend *backend,
                                   "org.freedesktop.Notifications",
                                   "/org/freedesktop/Notifications",
                                   "org.freedesktop.Notifications", "CloseNotification",
-                                  g_variant_new ("(u)", n->id), NULL,
+                                  g_variant_new ("(u)", n->notify_id), NULL,
                                   G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
         }
 

@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GDateTime: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-GTimeZone.html" title="GTimeZone">
@@ -109,6 +109,14 @@
 </td>
 <td class="function_name">
 <a class="link" href="glib-GDateTime.html#g-date-time-new-from-timeval-utc" title="g_date_time_new_from_timeval_utc ()">g_date_time_new_from_timeval_utc</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="glib-GDateTime.html#GDateTime" title="GDateTime"><span class="returnvalue">GDateTime</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="glib-GDateTime.html#g-date-time-new-from-iso8601" title="g_date_time_new_from_iso8601 ()">g_date_time_new_from_iso8601</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
 <tr>
@@ -747,6 +755,77 @@ when you are done with it.</p>
 <p> a new <a class="link" href="glib-GDateTime.html#GDateTime" title="GDateTime"><span class="type">GDateTime</span></a>, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-26.html#api-index-2.26">2.26</a></p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-date-time-new-from-iso8601"></a><h3>g_date_time_new_from_iso8601 ()</h3>
+<pre class="programlisting"><a class="link" href="glib-GDateTime.html#GDateTime" title="GDateTime"><span class="returnvalue">GDateTime</span></a> *
+g_date_time_new_from_iso8601 (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *text</code></em>,
+                              <em class="parameter"><code><a class="link" href="glib-GTimeZone.html#GTimeZone" title="GTimeZone"><span class="type">GTimeZone</span></a> *default_tz</code></em>);</pre>
+<p>Creates a <a class="link" href="glib-GDateTime.html#GDateTime" title="GDateTime"><span class="type">GDateTime</span></a> corresponding to the given
+<a class="ulink" href="https://en.wikipedia.org/wiki/ISO_8601" target="_top">ISO 8601 formatted string</a>
+<em class="parameter"><code>text</code></em>
+. ISO 8601 strings of the form &lt;date&gt;&lt;sep&gt;&lt;time&gt;&lt;tz&gt; are supported.</p>
+<p>&lt;sep&gt; is the separator and can be either 'T', 't' or ' '.</p>
+<p>&lt;date&gt; is in the form:</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p><code class="literal">YYYY-MM-DD</code> - Year/month/day, e.g. 2016-08-24.</p></li>
+<li class="listitem"><p><code class="literal">YYYYMMDD</code> - Same as above without dividers.</p></li>
+<li class="listitem"><p><code class="literal">YYYY-DDD</code> - Ordinal day where DDD is from 001 to 366, e.g. 2016-237.</p></li>
+<li class="listitem"><p><code class="literal">YYYYDDD</code> - Same as above without dividers.</p></li>
+<li class="listitem"><p><code class="literal">YYYY-Www-D</code> - Week day where ww is from 01 to 52 and D from 1-7,
+e.g. 2016-W34-3.</p></li>
+<li class="listitem"><p><code class="literal">YYYYWwwD</code> - Same as above without dividers.</p></li>
+</ul></div>
+<p>&lt;time&gt; is in the form:</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p><code class="literal">hh:mm:ss(.sss)</code> - Hours, minutes, seconds (subseconds), e.g. 22:10:42.123.</p></li>
+<li class="listitem"><p><code class="literal">hhmmss(.sss)</code> - Same as above without dividers.</p></li>
+</ul></div>
+<p>&lt;tz&gt; is an optional timezone suffix of the form:</p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
+<li class="listitem"><p><code class="literal">Z</code> - UTC.</p></li>
+<li class="listitem"><p><code class="literal">+hh:mm</code> or <code class="literal">-hh:mm</code> - Offset from UTC in hours and minutes, e.g. +12:00.</p></li>
+<li class="listitem"><p><code class="literal">+hh</code> or <code class="literal">-hh</code> - Offset from UTC in hours, e.g. +12.</p></li>
+</ul></div>
+<p>If the timezone is not provided in <em class="parameter"><code>text</code></em>
+ it must be provided in <em class="parameter"><code>default_tz</code></em>
+
+(this field is otherwise ignored).</p>
+<p>This call can fail (returning <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>) if <em class="parameter"><code>text</code></em>
+ is not a valid ISO 8601
+formatted string.</p>
+<p>You should release the return value by calling <a class="link" href="glib-GDateTime.html#g-date-time-unref" title="g_date_time_unref ()"><code class="function">g_date_time_unref()</code></a>
+when you are done with it.</p>
+<div class="refsect3">
+<a name="g-date-time-new-from-iso8601.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>text</p></td>
+<td class="parameter_description"><p>an ISO 8601 formatted time string.</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>default_tz</p></td>
+<td class="parameter_description"><p> a <a class="link" href="glib-GTimeZone.html#GTimeZone" title="GTimeZone"><span class="type">GTimeZone</span></a> to use if the text doesn't contain a
+timezone, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="g-date-time-new-from-iso8601.returns"></a><h4>Returns</h4>
+<p> a new <a class="link" href="glib-GDateTime.html#GDateTime" title="GDateTime"><span class="type">GDateTime</span></a>, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
+</div>
+<p class="since">Since: <a class="link" href="api-index-2-56.html#api-index-2.56">2.56</a></p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1511,17 +1590,17 @@ g_date_time_get_ymd (<em class="parameter"><code><a class="link" href="glib-GDat
 <tr>
 <td class="parameter_name"><p>year</p></td>
 <td class="parameter_description"><p> the return location for the gregorian year, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>month</p></td>
 <td class="parameter_description"><p> the return location for the month of the year, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>day</p></td>
 <td class="parameter_description"><p> the return location for the day of the month, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>

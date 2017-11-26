@@ -1,8 +1,8 @@
 #include <winver.h>
 
 VS_VERSION_INFO VERSIONINFO
-  FILEVERSION 2,51,0,0
-  PRODUCTVERSION 2,51,0,0
+  FILEVERSION 2,55,0,0
+  PRODUCTVERSION 2,55,0,0
   FILEFLAGSMASK 0
   FILEFLAGS 0
   FILEOS VOS__WINDOWS32
@@ -15,12 +15,12 @@ VS_VERSION_INFO VERSIONINFO
       BEGIN
 	VALUE "CompanyName", "The GLib developer community"
 	VALUE "FileDescription", "GThread"
-	VALUE "FileVersion", "2.51.0.0"
+	VALUE "FileVersion", "2.55.0.0"
 	VALUE "InternalName", "libgthread-2.0-0"
 	VALUE "LegalCopyright", "Copyright © 1995-2011 Peter Mattis, Spencer Kimball, Josh MacDonald, Sebastian Wilhelmi and others."
 	VALUE "OriginalFilename", "libgthread-2.0-0.dll"
 	VALUE "ProductName", "GLib"
-	VALUE "ProductVersion", "2.51.0"
+	VALUE "ProductVersion", "2.55.0"
       END
     END
     BLOCK "VarFileInfo"

@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -39,6 +39,8 @@
 #include <unistd.h>
 #include "gfiledescriptorbased.h"
 #endif
+
+#include "glib-private.h"
 
 #ifdef G_OS_WIN32
 #include <io.h>
@@ -234,7 +236,7 @@ _g_local_file_output_stream_really_close (GLocalFileOutputStream *file,
   /* Must close before renaming on Windows, so just do the close first
    * in all cases for now.
    */
-  if (_fstati64 (file->priv->fd, &final_stat) == 0)
+  if (GLIB_PRIVATE_CALL (g_win32_fstat) (file->priv->fd, &final_stat) == 0)
     file->priv->etag = _g_local_file_info_create_etag (&final_stat);
 
   if (!g_close (file->priv->fd, NULL))
@@ -748,6 +750,7 @@ handle_overwrite_open (const char    *filename,
   int open_flags;
   int res;
   int mode;
+  int errsv;
 
   mode = mode_from_flags_or_info (flags, reference_info);
 
@@ -763,7 +766,14 @@ handle_overwrite_open (const char    *filename,
 #ifdef O_NOFOLLOW
   is_symlink = FALSE;
   fd = g_open (filename, open_flags | O_NOFOLLOW, mode);
-  if (fd == -1 && errno == ELOOP)
+  errsv = errno;
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__DragonFly__)
+  if (fd == -1 && errsv == EMLINK)
+#elif defined(__NetBSD__)
+  if (fd == -1 && errsv == EFTYPE)
+#else
+  if (fd == -1 && errsv == ELOOP)
+#endif
     {
       /* Could be a symlink, or it could be a regular ELOOP error,
        * but then the next open will fail too. */
@@ -772,13 +782,13 @@ handle_overwrite_open (const char    *filename,
     }
 #else
   fd = g_open (filename, open_flags, mode);
+  errsv = errno;
   /* This is racy, but we do it as soon as possible to minimize the race */
   is_symlink = g_file_test (filename, G_FILE_TEST_IS_SYMLINK);
 #endif
-    
+
   if (fd == -1)
     {
-      int errsv = errno;
       char *display_name = g_filename_display_name (filename);
       g_set_error (error, G_IO_ERROR,
 		   g_io_error_from_errno (errsv),
@@ -789,14 +799,14 @@ handle_overwrite_open (const char    *filename,
     }
   
 #ifdef G_OS_WIN32
-  res = _fstati64 (fd, &original_stat);
+  res = GLIB_PRIVATE_CALL (g_win32_fstat) (fd, &original_stat);
 #else
   res = fstat (fd, &original_stat);
 #endif
+  errsv = errno;
 
-  if (res != 0) 
+  if (res != 0)
     {
-      int errsv = errno;
       char *display_name = g_filename_display_name (filename);
       g_set_error (error, G_IO_ERROR,
 		   g_io_error_from_errno (errsv),
@@ -883,7 +893,7 @@ handle_overwrite_open (const char    *filename,
           int tres;
 
 #ifdef G_OS_WIN32
-          tres = _fstati64 (tmpfd, &tmp_statbuf);
+          tres = GLIB_PRIVATE_CALL (g_win32_fstat) (tmpfd, &tmp_statbuf);
 #else
           tres = fstat (tmpfd, &tmp_statbuf);
 #endif

@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Shell-related Utilities: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Hostname-Utilities.html" title="Hostname Utilities">
@@ -128,8 +128,8 @@ domain. Free the returned vector with <a class="link" href="glib-String-Utility-
 <tbody>
 <tr>
 <td class="parameter_name"><p>command_line</p></td>
-<td class="parameter_description"><p>command line to parse</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> command line to parse. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>argcp</p></td>
@@ -138,9 +138,8 @@ domain. Free the returned vector with <a class="link" href="glib-String-Utility-
 </tr>
 <tr>
 <td class="parameter_name"><p>argvp</p></td>
-<td class="parameter_description"><p> return
-location for array of args. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=argcp zero-terminated=1]</span></td>
+<td class="parameter_description"><p>  return location for array of args. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=argcp zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -177,14 +176,15 @@ used).</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>unquoted_string</p></td>
-<td class="parameter_description"><p>a literal string</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> a literal string. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
 <a name="g-shell-quote.returns"></a><h4>Returns</h4>
-<p> quoted string</p>
+<p> quoted string. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 </div>
 <hr>
@@ -225,8 +225,8 @@ literally.</p>
 <tbody>
 <tr>
 <td class="parameter_name"><p>quoted_string</p></td>
-<td class="parameter_description"><p>shell-quoted string</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> shell-quoted string. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -238,7 +238,8 @@ literally.</p>
 </div>
 <div class="refsect3">
 <a name="g-shell-unquote.returns"></a><h4>Returns</h4>
-<p> an unquoted string</p>
+<p> an unquoted string. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 </div>
 </div>

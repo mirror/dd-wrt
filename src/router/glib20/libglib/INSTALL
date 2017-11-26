@@ -1,8 +1,8 @@
 Simple install procedure
 ========================
 
-  % tar xf glib-2.51.0.tar.gz       # unpack the sources
-  % cd glib-2.51.0                  # change to the toplevel directory
+  % tar xf glib-2.55.0.tar.gz       # unpack the sources
+  % cd glib-2.55.0                  # change to the toplevel directory
   % ./configure                             # run the `configure' script
   % make                                    # build GLIB
 

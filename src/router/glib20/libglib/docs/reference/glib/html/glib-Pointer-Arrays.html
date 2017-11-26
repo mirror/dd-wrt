@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Pointer Arrays: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-data-types.html" title="GLib Data Types">
 <link rel="prev" href="glib-Arrays.html" title="Arrays">
@@ -198,6 +198,22 @@
 <a class="link" href="glib-Pointer-Arrays.html#g-ptr-array-foreach" title="g_ptr_array_foreach ()">g_ptr_array_foreach</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
+<tr>
+<td class="function_type">
+<a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="returnvalue">gboolean</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="glib-Pointer-Arrays.html#g-ptr-array-find" title="g_ptr_array_find ()">g_ptr_array_find</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="returnvalue">gboolean</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="glib-Pointer-Arrays.html#g-ptr-array-find-with-equal-func" title="g_ptr_array_find_with_equal_func ()">g_ptr_array_find_with_equal_func</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
 </tbody>
 </table></div>
 </div>
@@ -343,7 +359,7 @@ either via <a class="link" href="glib-Pointer-Arrays.html#g-ptr-array-unref" tit
 <td class="parameter_description"><p> A function to free elements with
 destroy <em class="parameter"><code>array</code></em>
 or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr></tbody>
 </table></div>
 </div>
@@ -388,7 +404,7 @@ for freeing each element when the array is destroyed either via
 <td class="parameter_description"><p> A function to free elements with
 destroy <em class="parameter"><code>array</code></em>
 or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -429,7 +445,7 @@ with <em class="parameter"><code>free_segment</code></em>
 <td class="parameter_description"><p> A function to free elements with
 destroy <em class="parameter"><code>array</code></em>
 or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -475,7 +491,7 @@ g_ptr_array_unref (<em class="parameter"><code><a class="link" href="glib-Pointe
 reference count drops to 0, the effect is the same as calling
 <a class="link" href="glib-Pointer-Arrays.html#g-ptr-array-free" title="g_ptr_array_free ()"><code class="function">g_ptr_array_free()</code></a> with <em class="parameter"><code>free_segment</code></em>
  set to <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a>. This function
-is MT-safe and may be called from any thread.</p>
+is thread-safe and may be called from any thread.</p>
 <div class="refsect3">
 <a name="g-ptr-array-unref.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -937,6 +953,9 @@ be freed separately if <em class="parameter"><code>free_seg</code></em>
  is <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> and no <a class="link" href="glib-Datasets.html#GDestroyNotify" title="GDestroyNotify ()"><span class="type">GDestroyNotify</span></a>
 function has been set for <em class="parameter"><code>array</code></em>
 .</p>
+<p>This function is not thread-safe. If using a <a class="link" href="glib-Pointer-Arrays.html#GPtrArray" title="struct GPtrArray"><span class="type">GPtrArray</span></a> from multiple
+threads, use only the atomic <a class="link" href="glib-Pointer-Arrays.html#g-ptr-array-ref" title="g_ptr_array_ref ()"><code class="function">g_ptr_array_ref()</code></a> and <a class="link" href="glib-Pointer-Arrays.html#g-ptr-array-unref" title="g_ptr_array_unref ()"><code class="function">g_ptr_array_unref()</code></a>
+functions.</p>
 <div class="refsect3">
 <a name="g-ptr-array-free.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1002,6 +1021,132 @@ g_ptr_array_foreach (<em class="parameter"><code><a class="link" href="glib-Poin
 </table></div>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-4.html#api-index-2.4">2.4</a></p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-ptr-array-find"></a><h3>g_ptr_array_find ()</h3>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="returnvalue">gboolean</span></a>
+g_ptr_array_find (<em class="parameter"><code><a class="link" href="glib-Pointer-Arrays.html#GPtrArray" title="struct GPtrArray"><span class="type">GPtrArray</span></a> *haystack</code></em>,
+                  <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gconstpointer" title="gconstpointer"><span class="type">gconstpointer</span></a> needle</code></em>,
+                  <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> *index_</code></em>);</pre>
+<p>Checks whether <em class="parameter"><code>needle</code></em>
+ exists in <em class="parameter"><code>haystack</code></em>
+. If the element is found, <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> is
+returned and the element’s index is returned in <em class="parameter"><code>index_</code></em>
+ (if non-<a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>).
+Otherwise, <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> is returned and <em class="parameter"><code>index_</code></em>
+ is undefined. If <em class="parameter"><code>needle</code></em>
+ exists
+multiple times in <em class="parameter"><code>haystack</code></em>
+, the index of the first instance is returned.</p>
+<p>This does pointer comparisons only. If you want to use more complex equality
+checks, such as string comparisons, use <a class="link" href="glib-Pointer-Arrays.html#g-ptr-array-find-with-equal-func" title="g_ptr_array_find_with_equal_func ()"><code class="function">g_ptr_array_find_with_equal_func()</code></a>.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
+<div class="refsect3">
+<a name="g-ptr-array-find.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>haystack</p></td>
+<td class="parameter_description"><p>pointer array to be searched</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>needle</p></td>
+<td class="parameter_description"><p>pointer to look for</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>index_</p></td>
+<td class="parameter_description"><p> return location for the index of
+the element, if found. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>][<acronym title="Out parameter, where caller must allocate storage."><span class="acronym">out caller-allocates</span></acronym>]</span></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="g-ptr-array-find.returns"></a><h4>Returns</h4>
+<p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if <em class="parameter"><code>needle</code></em>
+is one of the elements of <em class="parameter"><code>haystack</code></em>
+</p>
+</div>
+<p class="since">Since: <a class="link" href="api-index-2-54.html#api-index-2.54">2.54</a></p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-ptr-array-find-with-equal-func"></a><h3>g_ptr_array_find_with_equal_func ()</h3>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="returnvalue">gboolean</span></a>
+g_ptr_array_find_with_equal_func (<em class="parameter"><code><a class="link" href="glib-Pointer-Arrays.html#GPtrArray" title="struct GPtrArray"><span class="type">GPtrArray</span></a> *haystack</code></em>,
+                                  <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gconstpointer" title="gconstpointer"><span class="type">gconstpointer</span></a> needle</code></em>,
+                                  <em class="parameter"><code><a class="link" href="glib-Hash-Tables.html#GEqualFunc" title="GEqualFunc ()"><span class="type">GEqualFunc</span></a> equal_func</code></em>,
+                                  <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> *index_</code></em>);</pre>
+<p>Checks whether <em class="parameter"><code>needle</code></em>
+ exists in <em class="parameter"><code>haystack</code></em>
+, using the given <em class="parameter"><code>equal_func</code></em>
+.
+If the element is found, <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> is returned and the element’s index is
+returned in <em class="parameter"><code>index_</code></em>
+ (if non-<a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>). Otherwise, <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> is returned and <em class="parameter"><code>index_</code></em>
+
+is undefined. If <em class="parameter"><code>needle</code></em>
+ exists multiple times in <em class="parameter"><code>haystack</code></em>
+, the index of
+the first instance is returned.</p>
+<p><em class="parameter"><code>equal_func</code></em>
+ is called with the element from the array as its first parameter,
+and <em class="parameter"><code>needle</code></em>
+ as its second parameter. If <em class="parameter"><code>equal_func</code></em>
+ is <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>, pointer
+equality is used.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
+<div class="refsect3">
+<a name="g-ptr-array-find-with-equal-func.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>haystack</p></td>
+<td class="parameter_description"><p>pointer array to be searched</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>needle</p></td>
+<td class="parameter_description"><p>pointer to look for</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>equal_func</p></td>
+<td class="parameter_description"><p> the function to call for each element, which should
+return <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> when the desired element is found; or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> to use pointer
+equality. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>index_</p></td>
+<td class="parameter_description"><p> return location for the index of
+the element, if found. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>][<acronym title="Out parameter, where caller must allocate storage."><span class="acronym">out caller-allocates</span></acronym>]</span></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="g-ptr-array-find-with-equal-func.returns"></a><h4>Returns</h4>
+<p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if <em class="parameter"><code>needle</code></em>
+is one of the elements of <em class="parameter"><code>haystack</code></em>
+</p>
+</div>
+<p class="since">Since: <a class="link" href="api-index-2-54.html#api-index-2.54">2.54</a></p>
 </div>
 </div>
 <div class="refsect1">

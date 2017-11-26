@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -48,6 +48,13 @@ glib__private__ (void)
     g_dir_new_from_dirp,
 
     glib_init,
+
+#ifdef G_OS_WIN32
+    g_win32_stat_utf8,
+    g_win32_lstat_utf8,
+    g_win32_readlink_utf8,
+    g_win32_fstat,
+#endif
   };
 
   return &table;

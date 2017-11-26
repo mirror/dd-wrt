@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GAsyncInitable: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="failable_initialization.html" title="Failable Initialization">
 <link rel="prev" href="GInitable.html" title="GInitable">
@@ -114,7 +114,7 @@
 </div>
 <div class="refsect1">
 <a name="GAsyncInitable.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/GTypeModule.html">GInterface</a>
+<pre class="screen">    <a href="/home/mclasen/gnome/share/gtk-doc/html/gobject/GTypeModule.html">GInterface</a>
     <span class="lineart">╰──</span> GAsyncInitable
 </pre>
 </div>
@@ -335,6 +335,8 @@ g_async_initable_init_async (<em class="parameter"><code><a class="link" href="G
 interface. This must be done before any real use of the object after
 initial construction. If the object also implements <a class="link" href="GInitable.html" title="GInitable"><span class="type">GInitable</span></a> you can
 optionally call <a class="link" href="GInitable.html#g-initable-init" title="g_initable_init ()"><code class="function">g_initable_init()</code></a> instead.</p>
+<p>This method is intended for language bindings. If writing in C,
+<a class="link" href="GAsyncInitable.html#g-async-initable-new-async" title="g_async_initable_new_async ()"><code class="function">g_async_initable_new_async()</code></a> should typically be used instead.</p>
 <p>When the initialization is finished, <em class="parameter"><code>callback</code></em>
  will be called. You can
 then call <a class="link" href="GAsyncInitable.html#g-async-initable-init-finish" title="g_async_initable_init_finish ()"><code class="function">g_async_initable_init_finish()</code></a> to get the result of the
@@ -352,11 +354,11 @@ returns with an error, then all operations on the object except
 <a href="../gobject-The-Base-Object-Type.html#g-object-ref"><code class="function">g_object_ref()</code></a> and <a href="../gobject-The-Base-Object-Type.html#g-object-unref"><code class="function">g_object_unref()</code></a> are considered to be invalid, and
 have undefined behaviour. They will often fail with <a href="../glib-Message-Logging.html#g-critical"><code class="function">g_critical()</code></a> or
 <a href="../glib-Message-Logging.html#g-warning"><code class="function">g_warning()</code></a>, but this must not be relied on.</p>
-<p>Implementations of this method must be idempotent: i.e. multiple calls
-to this function with the same argument should return the same results.
-Only the first call initializes the object; further calls return the result
-of the first call. This is so that it's safe to implement the singleton
-pattern in the GObject constructor function.</p>
+<p>Callers should not assume that a class which implements <a class="link" href="GAsyncInitable.html" title="GAsyncInitable"><span class="type">GAsyncInitable</span></a> can
+be initialized multiple times; for more information, see <a class="link" href="GInitable.html#g-initable-init" title="g_initable_init ()"><code class="function">g_initable_init()</code></a>.
+If a class explicitly supports being initialized multiple times,
+implementation requires yielding all subsequent calls to <code class="function">init_async()</code> on the
+results of the first call.</p>
 <p>For classes that also support the <a class="link" href="GInitable.html" title="GInitable"><span class="type">GInitable</span></a> interface, the default
 implementation of this method will run the <a class="link" href="GInitable.html#g-initable-init" title="g_initable_init ()"><code class="function">g_initable_init()</code></a> function
 in a thread, so if you want to support asynchronous initialization via
@@ -502,7 +504,7 @@ finished</p></td>
 <td class="parameter_name"><p>first_property_name</p></td>
 <td class="parameter_description"><p> the name of the first property, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if no
 properties. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>...</p></td>
@@ -640,6 +642,11 @@ g_async_initable_newv_async (<em class="parameter"><code><a href="../gobject-Typ
                              <em class="parameter"><code><a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> *cancellable</code></em>,
                              <em class="parameter"><code><a class="link" href="GAsyncResult.html#GAsyncReadyCallback" title="GAsyncReadyCallback ()"><span class="type">GAsyncReadyCallback</span></a> callback</code></em>,
                              <em class="parameter"><code><a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> user_data</code></em>);</pre>
+<div class="warning">
+<p><code class="literal">g_async_initable_newv_async</code> has been deprecated since version 2.54 and should not be used in newly-written code.</p>
+<p>Use <a href="../gobject-The-Base-Object-Type.html#g-object-new-with-properties"><code class="function">g_object_new_with_properties()</code></a> and
+<a class="link" href="GAsyncInitable.html#g-async-initable-init-async" title="g_async_initable_init_async ()"><code class="function">g_async_initable_init_async()</code></a> instead. See <a href="../gobject-The-Base-Object-Type.html#GParameter"><span class="type">GParameter</span></a> for more information.</p>
+</div>
 <p>Helper function for constructing <a class="link" href="GAsyncInitable.html" title="GAsyncInitable"><span class="type">GAsyncInitable</span></a> object. This is
 similar to <a href="../gobject-The-Base-Object-Type.html#g-object-newv"><code class="function">g_object_newv()</code></a> but also initializes the object asynchronously.</p>
 <p>When the initialization is finished, <em class="parameter"><code>callback</code></em>

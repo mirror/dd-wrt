@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GDBusMethodInvocation: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="gdbus-lowlevel.html" title="Low-level D-Bus Support">
 <link rel="prev" href="GDBusConnection.html" title="GDBusConnection">
@@ -540,9 +540,52 @@ g_dbus_method_invocation_return_value (<em class="parameter"><code><a class="lin
 If the <em class="parameter"><code>parameters</code></em>
  GVariant is floating, it is consumed.</p>
 <p>It is an error if <em class="parameter"><code>parameters</code></em>
- is not of the right format.</p>
-<p>This method will free <em class="parameter"><code>invocation</code></em>
-, you cannot use it afterwards.</p>
+ is not of the right format: it must be a tuple
+containing the out-parameters of the D-Bus method. Even if the method has a
+single out-parameter, it must be contained in a tuple. If the method has no
+out-parameters, <em class="parameter"><code>parameters</code></em>
+ may be <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> or an empty tuple.</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13</pre></td>
+        <td class="listing_code"><pre class="programlisting">GDBusMethodInvocation <span class="gtkdoc opt">*</span>invocation <span class="gtkdoc opt">=</span> some_invocation<span class="gtkdoc opt">;</span>
+g_autofree gchar <span class="gtkdoc opt">*</span>result_string <span class="gtkdoc opt">=</span> NULL<span class="gtkdoc opt">;</span>
+<span class="function"><a href="../glib-Miscellaneous-Macros.html#g-autoptr">g_autoptr</a></span> <span class="gtkdoc opt">(</span>GError<span class="gtkdoc opt">)</span> error <span class="gtkdoc opt">=</span> NULL<span class="gtkdoc opt">;</span>
+
+result_string <span class="gtkdoc opt">=</span> <span class="function">calculate_result</span> <span class="gtkdoc opt">(&amp;</span>error<span class="gtkdoc opt">);</span>
+
+<span class="keyword">if</span> <span class="gtkdoc opt">(</span>error <span class="gtkdoc opt">!=</span> NULL<span class="gtkdoc opt">)</span>
+  <span class="function"><a href="GDBusMethodInvocation.html#g-dbus-method-invocation-return-gerror">g_dbus_method_invocation_return_gerror</a></span> <span class="gtkdoc opt">(</span>invocation<span class="gtkdoc opt">,</span> error<span class="gtkdoc opt">);</span>
+<span class="keyword">else</span>
+  <span class="function"><a href="GDBusMethodInvocation.html#g-dbus-method-invocation-return-value">g_dbus_method_invocation_return_value</a></span> <span class="gtkdoc opt">(</span>invocation<span class="gtkdoc opt">,</span>
+                                         <span class="function"><a href="../glib-GVariant.html#g-variant-new">g_variant_new</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;(s)&quot;</span><span class="gtkdoc opt">,</span> result_string<span class="gtkdoc opt">));</span>
+
+<span class="gtkdoc opt">/&lt;!-- --&gt;*</span> Do <span class="keyword">not</span> free &#64;invocation here<span class="gtkdoc opt">;</span> returning a value does that <span class="gtkdoc opt">*&lt;!-- --&gt;/</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p></p>
+<p>This method will take ownership of <em class="parameter"><code>invocation</code></em>
+. See
+<a class="link" href="GDBusConnection.html#GDBusInterfaceVTable" title="GDBusInterfaceVTable"><span class="type">GDBusInterfaceVTable</span></a> for more information about the ownership of
+<em class="parameter"><code>invocation</code></em>
+.</p>
 <p>Since 2.48, if the method call requested for a reply not to be sent
 then this call will sink <em class="parameter"><code>parameters</code></em>
  and free <em class="parameter"><code>invocation</code></em>
@@ -566,7 +609,7 @@ specification).</p>
 <tr>
 <td class="parameter_name"><p>parameters</p></td>
 <td class="parameter_description"><p> A <a href="../glib-GVariant.html#GVariant"><span class="type">GVariant</span></a> tuple with out parameters for the method or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if not passing any parameters. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -592,8 +635,11 @@ transparent mapping of <a href="../glib-Error-Reporting.html#GError"><span class
 <p>If you are writing an application intended to be portable,
 always register errors with <a class="link" href="gio-GDBusError.html#g-dbus-error-register-error" title="g_dbus_error_register_error ()"><code class="function">g_dbus_error_register_error()</code></a>
 or use <a class="link" href="GDBusMethodInvocation.html#g-dbus-method-invocation-return-dbus-error" title="g_dbus_method_invocation_return_dbus_error ()"><code class="function">g_dbus_method_invocation_return_dbus_error()</code></a>.</p>
-<p>This method will free <em class="parameter"><code>invocation</code></em>
-, you cannot use it afterwards.</p>
+<p>This method will take ownership of <em class="parameter"><code>invocation</code></em>
+. See
+<a class="link" href="GDBusConnection.html#GDBusInterfaceVTable" title="GDBusInterfaceVTable"><span class="type">GDBusInterfaceVTable</span></a> for more information about the ownership of
+<em class="parameter"><code>invocation</code></em>
+.</p>
 <p>Since 2.48, if the method call requested for a reply not to be sent
 then this call will free <em class="parameter"><code>invocation</code></em>
  but otherwise do nothing (as per
@@ -650,8 +696,11 @@ g_dbus_method_invocation_return_error_valist
                                 <em class="parameter"><code><span class="type">va_list</span> var_args</code></em>);</pre>
 <p>Like <a class="link" href="GDBusMethodInvocation.html#g-dbus-method-invocation-return-error" title="g_dbus_method_invocation_return_error ()"><code class="function">g_dbus_method_invocation_return_error()</code></a> but intended for
 language bindings.</p>
-<p>This method will free <em class="parameter"><code>invocation</code></em>
-, you cannot use it afterwards.</p>
+<p>This method will take ownership of <em class="parameter"><code>invocation</code></em>
+. See
+<a class="link" href="GDBusConnection.html#GDBusInterfaceVTable" title="GDBusInterfaceVTable"><span class="type">GDBusInterfaceVTable</span></a> for more information about the ownership of
+<em class="parameter"><code>invocation</code></em>
+.</p>
 <div class="refsect3">
 <a name="g-dbus-method-invocation-return-error-valist.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -702,8 +751,11 @@ g_dbus_method_invocation_return_error_literal
                                 <em class="parameter"><code><a href="../glib-Basic-Types.html#gint"><span class="type">gint</span></a> code</code></em>,
                                 <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *message</code></em>);</pre>
 <p>Like <a class="link" href="GDBusMethodInvocation.html#g-dbus-method-invocation-return-error" title="g_dbus_method_invocation_return_error ()"><code class="function">g_dbus_method_invocation_return_error()</code></a> but without <code class="function">printf()</code>-style formatting.</p>
-<p>This method will free <em class="parameter"><code>invocation</code></em>
-, you cannot use it afterwards.</p>
+<p>This method will take ownership of <em class="parameter"><code>invocation</code></em>
+. See
+<a class="link" href="GDBusConnection.html#GDBusInterfaceVTable" title="GDBusInterfaceVTable"><span class="type">GDBusInterfaceVTable</span></a> for more information about the ownership of
+<em class="parameter"><code>invocation</code></em>
+.</p>
 <div class="refsect3">
 <a name="g-dbus-method-invocation-return-error-literal.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -747,8 +799,11 @@ g_dbus_method_invocation_return_gerror
                                 <em class="parameter"><code>const <a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> *error</code></em>);</pre>
 <p>Like <a class="link" href="GDBusMethodInvocation.html#g-dbus-method-invocation-return-error" title="g_dbus_method_invocation_return_error ()"><code class="function">g_dbus_method_invocation_return_error()</code></a> but takes a <a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a>
 instead of the error domain, error code and message.</p>
-<p>This method will free <em class="parameter"><code>invocation</code></em>
-, you cannot use it afterwards.</p>
+<p>This method will take ownership of <em class="parameter"><code>invocation</code></em>
+. See
+<a class="link" href="GDBusConnection.html#GDBusInterfaceVTable" title="GDBusInterfaceVTable"><span class="type">GDBusInterfaceVTable</span></a> for more information about the ownership of
+<em class="parameter"><code>invocation</code></em>
+.</p>
 <div class="refsect3">
 <a name="g-dbus-method-invocation-return-gerror.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -782,8 +837,11 @@ g_dbus_method_invocation_return_dbus_error
                                 <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *error_name</code></em>,
                                 <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *error_message</code></em>);</pre>
 <p>Finishes handling a D-Bus method call by returning an error.</p>
-<p>This method will free <em class="parameter"><code>invocation</code></em>
-, you cannot use it afterwards.</p>
+<p>This method will take ownership of <em class="parameter"><code>invocation</code></em>
+. See
+<a class="link" href="GDBusConnection.html#GDBusInterfaceVTable" title="GDBusInterfaceVTable"><span class="type">GDBusInterfaceVTable</span></a> for more information about the ownership of
+<em class="parameter"><code>invocation</code></em>
+.</p>
 <div class="refsect3">
 <a name="g-dbus-method-invocation-return-dbus-error.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -822,8 +880,11 @@ g_dbus_method_invocation_take_error (<em class="parameter"><code><a class="link"
 <p>Like <a class="link" href="GDBusMethodInvocation.html#g-dbus-method-invocation-return-gerror" title="g_dbus_method_invocation_return_gerror ()"><code class="function">g_dbus_method_invocation_return_gerror()</code></a> but takes ownership
 of <em class="parameter"><code>error</code></em>
  so the caller does not need to free it.</p>
-<p>This method will free <em class="parameter"><code>invocation</code></em>
-, you cannot use it afterwards.</p>
+<p>This method will take ownership of <em class="parameter"><code>invocation</code></em>
+. See
+<a class="link" href="GDBusConnection.html#GDBusInterfaceVTable" title="GDBusInterfaceVTable"><span class="type">GDBusInterfaceVTable</span></a> for more information about the ownership of
+<em class="parameter"><code>invocation</code></em>
+.</p>
 <p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-dbus-method-invocation-take-error.parameters"></a><h4>Parameters</h4>
@@ -859,8 +920,11 @@ g_dbus_method_invocation_return_value_with_unix_fd_list
                                 <em class="parameter"><code><a class="link" href="GUnixFDList.html" title="GUnixFDList"><span class="type">GUnixFDList</span></a> *fd_list</code></em>);</pre>
 <p>Like <a class="link" href="GDBusMethodInvocation.html#g-dbus-method-invocation-return-value" title="g_dbus_method_invocation_return_value ()"><code class="function">g_dbus_method_invocation_return_value()</code></a> but also takes a <a class="link" href="GUnixFDList.html" title="GUnixFDList"><span class="type">GUnixFDList</span></a>.</p>
 <p>This method is only available on UNIX.</p>
-<p>This method will free <em class="parameter"><code>invocation</code></em>
-, you cannot use it afterwards.</p>
+<p>This method will take ownership of <em class="parameter"><code>invocation</code></em>
+. See
+<a class="link" href="GDBusConnection.html#GDBusInterfaceVTable" title="GDBusInterfaceVTable"><span class="type">GDBusInterfaceVTable</span></a> for more information about the ownership of
+<em class="parameter"><code>invocation</code></em>
+.</p>
 <div class="refsect3">
 <a name="g-dbus-method-invocation-return-value-with-unix-fd-list.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -878,12 +942,12 @@ g_dbus_method_invocation_return_value_with_unix_fd_list
 <tr>
 <td class="parameter_name"><p>parameters</p></td>
 <td class="parameter_description"><p> A <a href="../glib-GVariant.html#GVariant"><span class="type">GVariant</span></a> tuple with out parameters for the method or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if not passing any parameters. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>fd_list</p></td>
 <td class="parameter_description"><p> A <a class="link" href="GUnixFDList.html" title="GUnixFDList"><span class="type">GUnixFDList</span></a> or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>

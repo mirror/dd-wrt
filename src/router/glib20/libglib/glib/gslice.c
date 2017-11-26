@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -118,7 +118,7 @@
  *
  * // Allocate one block, using the g_slice_new() macro.
  * array = g_slice_new (GRealArray);
-
+ *
  * // We can now use array just like a normal pointer to a structure.
  * array->data            = NULL;
  * array->len             = 0;
@@ -972,7 +972,7 @@ thread_memory_magazine2_free (ThreadMemory *tmem,
  * @block_size: the number of bytes to allocate
  *
  * Allocates a block of memory from the slice allocator.
- * The block adress handed out can be expected to be aligned
+ * The block address handed out can be expected to be aligned
  * to at least 1 * sizeof (void*),
  * though in general slices are 2 * sizeof (void*) bytes aligned,
  * if a malloc() fallback implementation is used instead,
@@ -1273,14 +1273,21 @@ allocator_add_slab (Allocator *allocator,
   ChunkLink *chunk;
   SlabInfo *sinfo;
   gsize addr, padding, n_chunks, color = 0;
-  gsize page_size = allocator_aligned_page_size (allocator, SLAB_BPAGE_SIZE (allocator, chunk_size));
-  /* allocate 1 page for the chunks and the slab */
-  gpointer aligned_memory = allocator_memalign (page_size, page_size - NATIVE_MALLOC_PADDING);
-  guint8 *mem = aligned_memory;
+  gsize page_size;
+  int errsv;
+  gpointer aligned_memory;
+  guint8 *mem;
   guint i;
+
+  page_size = allocator_aligned_page_size (allocator, SLAB_BPAGE_SIZE (allocator, chunk_size));
+  /* allocate 1 page for the chunks and the slab */
+  aligned_memory = allocator_memalign (page_size, page_size - NATIVE_MALLOC_PADDING);
+  errsv = errno;
+  mem = aligned_memory;
+
   if (!mem)
     {
-      const gchar *syserr = strerror (errno);
+      const gchar *syserr = strerror (errsv);
       mem_error ("failed to allocate %u bytes (alignment: %u): %s\n",
                  (guint) (page_size - NATIVE_MALLOC_PADDING), (guint) page_size, syserr);
     }
@@ -1485,18 +1492,18 @@ static void
 smc_notify_alloc (void   *pointer,
                   size_t  size)
 {
-  size_t adress = (size_t) pointer;
+  size_t address = (size_t) pointer;
   if (pointer)
-    smc_tree_insert (adress, size);
+    smc_tree_insert (address, size);
 }
 
 #if 0
 static void
 smc_notify_ignore (void *pointer)
 {
-  size_t adress = (size_t) pointer;
+  size_t address = (size_t) pointer;
   if (pointer)
-    smc_tree_remove (adress);
+    smc_tree_remove (address);
 }
 #endif
 
@@ -1504,13 +1511,13 @@ static int
 smc_notify_free (void   *pointer,
                  size_t  size)
 {
-  size_t adress = (size_t) pointer;
+  size_t address = (size_t) pointer;
   SmcVType real_size;
   gboolean found_one;
 
   if (!pointer)
     return 1; /* ignore */
-  found_one = smc_tree_lookup (adress, &real_size);
+  found_one = smc_tree_lookup (address, &real_size);
   if (!found_one)
     {
       fprintf (stderr, "GSlice: MemChecker: attempt to release non-allocated block: %p size=%" G_GSIZE_FORMAT "\n", pointer, size);
@@ -1521,7 +1528,7 @@ smc_notify_free (void   *pointer,
       fprintf (stderr, "GSlice: MemChecker: attempt to release block with invalid size: %p size=%" G_GSIZE_FORMAT " invalid-size=%" G_GSIZE_FORMAT "\n", pointer, real_size, size);
       return 0;
     }
-  if (!smc_tree_remove (adress))
+  if (!smc_tree_remove (address))
     {
       fprintf (stderr, "GSlice: MemChecker: attempt to release non-allocated block: %p size=%" G_GSIZE_FORMAT "\n", pointer, size);
       return 0;

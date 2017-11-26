@@ -1,8 +1,8 @@
 '\" t
 .\"     Title: gdbus
 .\"    Author: David Zeuthen <zeuthen@gmail.com>
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 10/24/2016
+.\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
+.\"      Date: 11/15/2017
 .\"    Manual: User Commands
 .\"    Source: GIO
 .\"  Language: English
@@ -38,6 +38,8 @@ gdbus \- Tool for working with D\-Bus objects
 \fBgdbus\fR call [\-\-system | \-\-session | \-\-address\ \fIaddress\fR] \-\-dest\ \fIbus_name\fR \-\-object\-path\ \fI/path/to/object\fR \-\-method\ \fIorg\&.project\&.InterfaceName\&.MethodName\fR [\-\-timeout\ \fIseconds\fR] ARG1 ARG2...
 .HP \w'\fBgdbus\fR\ 'u
 \fBgdbus\fR emit [\-\-system | \-\-session | \-\-address\ \fIaddress\fR] \-\-object\-path\ \fI/path/to/object\fR \-\-signal\ \fIorg\&.project\&.InterfaceName\&.SignalName\fR [\-\-dest\ \fIunique_bus_name\fR] ARG1 ARG2...
+.HP \w'\fBgdbus\fR\ 'u
+\fBgdbus\fR wait [\-\-system | \-\-session | \-\-address\ \fIaddress\fR] \-\-activate\ \fIbus_name\fR [\-\-timeout\ \fIseconds\fR] \fIbus_name\fR
 .HP \w'\fBgdbus\fR\ 'u
 \fBgdbus\fR help
 .SH "DESCRIPTION"
@@ -79,6 +81,15 @@ values\&.
 Emits a signal\&. Each argument to include in the signal must be specified as a serialized
 \fBGVariant\fR
 except that strings do not need explicit quotes\&.
+.RE
+.PP
+\fBwait\fR
+.RS 4
+Waits until
+\fIbus_name\fR
+is owned by some process on the bus\&. If the
+\fB\-\-activate\fR
+is specified, that bus name will be auto\-started first\&. It may be the same as the bus name being waited for, or different\&.
 .RE
 .PP
 \fBhelp\fR
@@ -311,6 +322,60 @@ Emitting a signal to a specific process:
 .\}
 .nf
 $ gdbus emit \-\-session \-\-object\-path /bar \-\-signal org\&.bar\&.Bar someString \-\-dest :1\&.42
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Waiting for a well\-known name to be owned on the bus; this will
+\fInot\fR
+auto\-start the service:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ gdbus wait \-\-session org\&.bar\&.SomeName
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Auto\-starting then waiting for a well\-known name to be owned on the bus:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ gdbus wait \-\-session \-\-activate org\&.bar\&.SomeName
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Auto\-starting a different service, then waiting for a well\-known name to be owned on the bus\&. This is useful in situations where
+\fISomeName\fR
+is not directly activatable:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ gdbus wait \-\-session \-\-activate org\&.bar\&.PrerequisiteName org\&.bar\&.SomeName
+.fi
+.if n \{\
+.RE
+.\}
+.PP
+Waiting for a well\-known name and giving up after 30 seconds\&. By default, the timeout is disabled; or set
+\fB\-\-timeout\fR
+to 0 to disable it:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+$ gdbus wait \-\-session \-\-timeout 30 org\&.bar\&.SomeName
 .fi
 .if n \{\
 .RE

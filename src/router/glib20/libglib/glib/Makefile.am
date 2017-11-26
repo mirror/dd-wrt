@@ -55,7 +55,6 @@ MIRRORING_TAB_SOURCE = 				\
 # The compilation of GRegex can be disabled, but the source files must
 # be distributed.
 EXTRA_DIST += 			\
-	makefile.msc.in		\
 	glib.rc.in		\
 	gen-unicode-tables.pl	\
 	glibconfig.h.win32.in	\
@@ -71,7 +70,6 @@ CLEANFILES += libglib-gdb.py
 
 # These may be in the builddir too
 BUILT_EXTRA_DIST += 		\
-	makefile.msc		\
 	glibconfig.h.win32	\
 	glib.rc
 
@@ -163,6 +161,7 @@ libglib_2_0_la_SOURCES = 	\
 	gslice.c		\
 	gslist.c		\
 	gstdio.c		\
+	gstdioprivate.h		\
 	gstrfuncs.c		\
 	gstring.c		\
 	gstringchunk.c		\
@@ -188,6 +187,7 @@ libglib_2_0_la_SOURCES = 	\
 	gunicodeprivate.h	\
 	gurifuncs.c 		\
 	gutils.c		\
+	guuid.c			\
 	gvariant.h		\
 	gvariant.c		\
 	gvariant-core.h		\
@@ -309,6 +309,7 @@ glibsubinclude_HEADERS = \
 	gunicode.h	\
 	gurifuncs.h 	\
 	gutils.h	\
+	guuid.h		\
 	gvarianttype.h	\
 	gvariant.h	\
 	gversion.h	\
@@ -466,9 +467,9 @@ glib_HEADERS_DIR = $(glibsubincludedir)
 glib_HEADERS_INST = $(deprecatedinclude_HEADERS) $(glibsubinclude_HEADERS)
 glib_HEADERS_EXCLUDES = dummy
 
-include $(top_srcdir)/build/Makefile.msvcproj
+include $(top_srcdir)/win32/Makefile.msvcproj
 
-dist-hook: $(BUILT_EXTRA_DIST) $(top_builddir)/build/win32/vs9/glib.vcproj $(top_builddir)/build/win32/vs9/glib.headers
+dist-hook: $(BUILT_EXTRA_DIST) $(top_builddir)/win32/vs9/glib.vcproj $(top_builddir)/win32/vs9/glib.headers
 	files='$(BUILT_EXTRA_DIST)'; \
 	for f in $$files; do \
 	  if test -f $$f; then d=.; else d=$(srcdir); fi; \
@@ -476,8 +477,9 @@ dist-hook: $(BUILT_EXTRA_DIST) $(top_builddir)/build/win32/vs9/glib.vcproj $(top
 
 # install gdb scripts
 gdbdir = $(datadir)/glib-2.0/gdb
-dist_gdb_SCRIPTS = glib_gdb.py
+dist_gdb_DATA = glib_gdb.py
 
+all-local: libglib-gdb.py
 libglib-gdb.py: libglib-gdb.py.in
 	$(AM_V_GEN) $(SED) -e "s|\@datadir\@|$(datadir)|" $(srcdir)/libglib-gdb.py.in > $(builddir)/libglib-gdb.py
 

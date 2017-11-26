@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GAppInfo: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="types.html" title="File types and applications">
 <link rel="prev" href="gio-GContentType.html" title="GContentType">
@@ -418,7 +418,7 @@
 </div>
 <div class="refsect1">
 <a name="GAppInfo.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/GTypeModule.html">GInterface</a>
+<pre class="screen">    <a href="/home/mclasen/gnome/share/gtk-doc/html/gobject/GTypeModule.html">GInterface</a>
     <span class="lineart">╰──</span> GAppInfo
     <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>
     <span class="lineart">╰──</span> GAppLaunchContext
@@ -538,14 +538,14 @@ being swallowed by Exec key unquoting. See the specification for exact quoting r
 <tbody>
 <tr>
 <td class="parameter_name"><p>commandline</p></td>
-<td class="parameter_description"><p>the commandline to use</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the commandline to use. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>application_name</p></td>
 <td class="parameter_description"><p> the application name, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to use <em class="parameter"><code>commandline</code></em>
 . </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>flags</p></td>
@@ -601,6 +601,9 @@ g_app_info_dup (<em class="parameter"><code><a class="link" href="GAppInfo.html"
 g_app_info_equal (<em class="parameter"><code><a class="link" href="GAppInfo.html" title="GAppInfo"><span class="type">GAppInfo</span></a> *appinfo1</code></em>,
                   <em class="parameter"><code><a class="link" href="GAppInfo.html" title="GAppInfo"><span class="type">GAppInfo</span></a> *appinfo2</code></em>);</pre>
 <p>Checks if two <a href="GAppInfo.html#GAppInfo-struct"><span class="type">GAppInfos</span></a> are equal.</p>
+<p>Note that the check &lt;emphasis&gt;may not&lt;/emphasis&gt; compare each individual
+field, and only does an identity check. In case detecting changes in the 
+contents is needed, program code must additionally compare relevant fields.</p>
 <div class="refsect3">
 <a name="g-app-info-equal.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -842,11 +845,11 @@ if there is no default icon. </p>
 <pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_app_info_launch (<em class="parameter"><code><a class="link" href="GAppInfo.html" title="GAppInfo"><span class="type">GAppInfo</span></a> *appinfo</code></em>,
                    <em class="parameter"><code><a href="../glib-Doubly-Linked-Lists.html#GList"><span class="type">GList</span></a> *files</code></em>,
-                   <em class="parameter"><code><a class="link" href="GAppInfo.html#GAppLaunchContext"><span class="type">GAppLaunchContext</span></a> *launch_context</code></em>,
+                   <em class="parameter"><code><a class="link" href="GAppInfo.html#GAppLaunchContext"><span class="type">GAppLaunchContext</span></a> *context</code></em>,
                    <em class="parameter"><code><a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Launches the application. Passes <em class="parameter"><code>files</code></em>
  to the launched application
-as arguments, using the optional <em class="parameter"><code>launch_context</code></em>
+as arguments, using the optional <em class="parameter"><code>context</code></em>
  to get information
 about the details of the launcher (like what screen it is on).
 On error, <em class="parameter"><code>error</code></em>
@@ -869,7 +872,7 @@ environment variable with the path of the launched desktop file and
 process. This can be used to ignore <code class="literal">GIO_LAUNCHED_DESKTOP_FILE</code>,
 should it be inherited by further processes. The <code class="literal">DISPLAY</code> and
 <code class="literal">DESKTOP_STARTUP_ID</code> environment variables are also set, based
-on information provided in <em class="parameter"><code>launch_context</code></em>
+on information provided in <em class="parameter"><code>context</code></em>
 .</p>
 <div class="refsect3">
 <a name="g-app-info-launch.parameters"></a><h4>Parameters</h4>
@@ -888,12 +891,12 @@ on information provided in <em class="parameter"><code>launch_context</code></em
 <tr>
 <td class="parameter_name"><p>files</p></td>
 <td class="parameter_description"><p> a <a href="../glib-Doubly-Linked-Lists.html#GList"><span class="type">GList</span></a> of <a class="link" href="GFile.html" title="GFile"><span class="type">GFile</span></a> objects. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> GFile]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> GFile]</span></td>
 </tr>
 <tr>
-<td class="parameter_name"><p>launch_context</p></td>
+<td class="parameter_name"><p>context</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GAppInfo.html#GAppLaunchContext"><span class="type">GAppLaunchContext</span></a> or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -968,11 +971,11 @@ supports URIs.</p>
 <pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_app_info_launch_uris (<em class="parameter"><code><a class="link" href="GAppInfo.html" title="GAppInfo"><span class="type">GAppInfo</span></a> *appinfo</code></em>,
                         <em class="parameter"><code><a href="../glib-Doubly-Linked-Lists.html#GList"><span class="type">GList</span></a> *uris</code></em>,
-                        <em class="parameter"><code><a class="link" href="GAppInfo.html#GAppLaunchContext"><span class="type">GAppLaunchContext</span></a> *launch_context</code></em>,
+                        <em class="parameter"><code><a class="link" href="GAppInfo.html#GAppLaunchContext"><span class="type">GAppLaunchContext</span></a> *context</code></em>,
                         <em class="parameter"><code><a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Launches the application. This passes the <em class="parameter"><code>uris</code></em>
  to the launched application
-as arguments, using the optional <em class="parameter"><code>launch_context</code></em>
+as arguments, using the optional <em class="parameter"><code>context</code></em>
  to get information
 about the details of the launcher (like what screen it is on).
 On error, <em class="parameter"><code>error</code></em>
@@ -999,12 +1002,12 @@ no way to detect this.</p>
 <tr>
 <td class="parameter_name"><p>uris</p></td>
 <td class="parameter_description"><p> a <a href="../glib-Doubly-Linked-Lists.html#GList"><span class="type">GList</span></a> containing URIs to launch. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> utf8]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> utf8]</span></td>
 </tr>
 <tr>
-<td class="parameter_name"><p>launch_context</p></td>
+<td class="parameter_name"><p>context</p></td>
 <td class="parameter_description"><p> a <a class="link" href="GAppInfo.html#GAppLaunchContext"><span class="type">GAppLaunchContext</span></a> or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -1594,7 +1597,7 @@ or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</
 <a name="g-app-info-launch-default-for-uri"></a><h3>g_app_info_launch_default_for_uri ()</h3>
 <pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_app_info_launch_default_for_uri (<em class="parameter"><code>const <span class="type">char</span> *uri</code></em>,
-                                   <em class="parameter"><code><a class="link" href="GAppInfo.html#GAppLaunchContext"><span class="type">GAppLaunchContext</span></a> *launch_context</code></em>,
+                                   <em class="parameter"><code><a class="link" href="GAppInfo.html#GAppLaunchContext"><span class="type">GAppLaunchContext</span></a> *context</code></em>,
                                    <em class="parameter"><code><a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Utility function that launches the default application
 registered to handle the specified uri. Synchronous I/O
@@ -1615,9 +1618,9 @@ required.</p>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
-<td class="parameter_name"><p>launch_context</p></td>
+<td class="parameter_name"><p>context</p></td>
 <td class="parameter_description"><p> an optional <a class="link" href="GAppInfo.html#GAppLaunchContext"><span class="type">GAppLaunchContext</span></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -1638,7 +1641,7 @@ required.</p>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_app_info_launch_default_for_uri_async
                                (<em class="parameter"><code>const <span class="type">char</span> *uri</code></em>,
-                                <em class="parameter"><code><a class="link" href="GAppInfo.html#GAppLaunchContext"><span class="type">GAppLaunchContext</span></a> *launch_context</code></em>,
+                                <em class="parameter"><code><a class="link" href="GAppInfo.html#GAppLaunchContext"><span class="type">GAppLaunchContext</span></a> *context</code></em>,
                                 <em class="parameter"><code><a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> *cancellable</code></em>,
                                 <em class="parameter"><code><a class="link" href="GAsyncResult.html#GAsyncReadyCallback" title="GAsyncReadyCallback ()"><span class="type">GAsyncReadyCallback</span></a> callback</code></em>,
                                 <em class="parameter"><code><a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> user_data</code></em>);</pre>
@@ -1663,20 +1666,24 @@ dialog to the user.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>context</p></td>
-<td class="parameter_description"><p> an optional <a class="link" href="GAppInfo.html#GAppLaunchContext"><span class="type">GAppLaunchContext</span></a>
-cancellable: (allow-none): a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_description"><p> an optional <a class="link" href="GAppInfo.html#GAppLaunchContext"><span class="type">GAppLaunchContext</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>cancellable</p></td>
+<td class="parameter_description"><p> a <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
 <td class="parameter_description"><p> a <span class="type">GASyncReadyCallback</span> to call when the request is done. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_data</p></td>
 <td class="parameter_description"><p> data to pass to <em class="parameter"><code>callback</code></em>
 . </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -1748,13 +1755,13 @@ environment when <em class="parameter"><code>context</code></em>
 </tr>
 <tr>
 <td class="parameter_name"><p>variable</p></td>
-<td class="parameter_description"><p>the environment variable to set</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the environment variable to set. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>value</p></td>
-<td class="parameter_description"><p>the value for to set the variable to.</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the value for to set the variable to. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -1787,8 +1794,8 @@ when <em class="parameter"><code>context</code></em>
 </tr>
 <tr>
 <td class="parameter_name"><p>variable</p></td>
-<td class="parameter_description"><p>the environment variable to remove</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the environment variable to remove. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -1822,9 +1829,8 @@ the form <code class="literal">KEY=VALUE</code>.</p>
 </div>
 <div class="refsect3">
 <a name="g-app-launch-context-get-environment.returns"></a><h4>Returns</h4>
-<p> the
-child's environment. </p>
-<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+<p>    the child's environment. </p>
+<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-32.html#api-index-2.32">2.32</a></p>
 </div>
@@ -1953,7 +1959,7 @@ the application startup notification started in <a class="link" href="GAppInfo.h
 <pre class="programlisting"><a class="link" href="GAppInfo.html#GAppLaunchContext"><span class="returnvalue">GAppLaunchContext</span></a> *
 g_app_launch_context_new (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
 <p>Creates a new application launch context. This is not normally used,
-instead you instantiate a subclass of this, such as <a href="http://developer.gnome.org/gdk3/gdk4-Application-launching.html#GdkAppLaunchContext-struct"><span class="type">GdkAppLaunchContext</span></a>.</p>
+instead you instantiate a subclass of this, such as <a href="../gdk4/gdk4-Application-launching.html#GdkAppLaunchContext-struct"><span class="type">GdkAppLaunchContext</span></a>.</p>
 <div class="refsect3">
 <a name="g-app-launch-context-new.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="GAppInfo.html#GAppLaunchContext"><span class="type">GAppLaunchContext</span></a>.</p>
@@ -2031,13 +2037,13 @@ it (with file arguments).</p>
   GIcon *      (* get_icon)                     (GAppInfo           *appinfo);
   gboolean     (* launch)                       (GAppInfo           *appinfo,
                                                  GList              *files,
-                                                 GAppLaunchContext  *launch_context,
+                                                 GAppLaunchContext  *context,
                                                  GError            **error);
   gboolean     (* supports_uris)                (GAppInfo           *appinfo);
   gboolean     (* supports_files)               (GAppInfo           *appinfo);
   gboolean     (* launch_uris)                  (GAppInfo           *appinfo,
                                                  GList              *uris,
-                                                 GAppLaunchContext  *launch_context,
+                                                 GAppLaunchContext  *context,
                                                  GError            **error);
   gboolean     (* should_show)                  (GAppInfo           *appinfo);
 
@@ -2133,8 +2139,7 @@ it (with file arguments).</p>
 <tr>
 <td class="struct_member_name"><p><em class="structfield"><code><a name="GAppInfoIface.should-show"></a>should_show</code></em> ()</p></td>
 <td class="struct_member_description"><p>Returns whether an application should be shown (e.g. when getting a list of installed applications).
-&lt;ulink url="http://standards.freedesktop.org/startup-notification-spec/startup-notification-latest.txt"&gt;
-&lt;citetitle&gt;FreeDesktop.Org Startup Notification Specification&lt;/citetitle&gt;&lt;/ulink&gt;.</p></td>
+<a class="ulink" href="http://standards.freedesktop.org/startup-notification-spec/startup-notification-latest.txt" target="_top">FreeDesktop.Org Startup Notification Specification</a>.</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>

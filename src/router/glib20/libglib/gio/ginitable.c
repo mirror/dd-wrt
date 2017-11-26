@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -72,6 +72,9 @@ g_initable_default_init (GInitableInterface *iface)
  *
  * Initializes the object implementing the interface.
  *
+ * This method is intended for language bindings. If writing in C,
+ * g_initable_new() should typically be used instead.
+ *
  * The object must be initialized before any real use after initial
  * construction, either with this function or g_async_initable_init_async().
  *
@@ -87,11 +90,24 @@ g_initable_default_init (GInitableInterface *iface)
  * g_object_unref() are considered to be invalid, and have undefined
  * behaviour. See the [introduction][ginitable] for more details.
  *
- * Implementations of this method must be idempotent, i.e. multiple calls
- * to this function with the same argument should return the same results.
- * Only the first call initializes the object, further calls return the result
- * of the first call. This is so that it's safe to implement the singleton
- * pattern in the GObject constructor function.
+ * Callers should not assume that a class which implements #GInitable can be
+ * initialized multiple times, unless the class explicitly documents itself as
+ * supporting this. Generally, a class’ implementation of init() can assume
+ * (and assert) that it will only be called once. Previously, this documentation
+ * recommended all #GInitable implementations should be idempotent; that
+ * recommendation was relaxed in GLib 2.54.
+ *
+ * If a class explicitly supports being initialized multiple times, it is
+ * recommended that the method is idempotent: multiple calls with the same
+ * arguments should return the same results. Only the first call initializes
+ * the object; further calls return the result of the first call.
+ *
+ * One reason why a class might need to support idempotent initialization is if
+ * it is designed to be used via the singleton pattern, with a
+ * #GObjectClass.constructor that sometimes returns an existing instance.
+ * In this pattern, a caller would expect to be able to call g_initable_init()
+ * on the result of g_object_new(), regardless of whether it is in fact a new
+ * instance.
  *
  * Returns: %TRUE if successful. If an error has occurred, this function will
  *     return %FALSE and set @error appropriately if present.
@@ -118,7 +134,7 @@ g_initable_init (GInitable     *initable,
  * @cancellable: optional #GCancellable object, %NULL to ignore.
  * @error: a #GError location to store the error occurring, or %NULL to
  *    ignore.
- * @first_property_name: (allow-none): the name of the first property, or %NULL if no
+ * @first_property_name: (nullable): the name of the first property, or %NULL if no
  *     properties
  * @...:  the value if the first property, followed by and other property
  *    value pairs, and ended by %NULL.
@@ -168,6 +184,8 @@ g_initable_new (GType          object_type,
  *      #GObject, or %NULL on error
  *
  * Since: 2.22
+ * Deprecated: 2.54: Use g_object_new_with_properties() and
+ * g_initable_init() instead. See #GParameter for more information.
  */
 gpointer
 g_initable_newv (GType          object_type,
@@ -180,7 +198,9 @@ g_initable_newv (GType          object_type,
 
   g_return_val_if_fail (G_TYPE_IS_INITABLE (object_type), NULL);
 
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   obj = g_object_newv (object_type, n_parameters, parameters);
+G_GNUC_END_IGNORE_DEPRECATIONS
 
   if (!g_initable_init (G_INITABLE (obj), cancellable, error))
     {

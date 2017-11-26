@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -218,7 +218,7 @@ g_win32_error_message (gint error)
 
 /**
  * g_win32_get_package_installation_directory_of_module:
- * @hmodule: (allow-none): The Win32 handle for a DLL loaded into the current process, or %NULL
+ * @hmodule: (nullable): The Win32 handle for a DLL loaded into the current process, or %NULL
  *
  * This function tries to determine the installation directory of a
  * software package based on the location of a DLL of the software
@@ -358,8 +358,8 @@ get_package_directory_from_module (const gchar *module_name)
 
 /**
  * g_win32_get_package_installation_directory:
- * @package: (allow-none): You should pass %NULL for this.
- * @dll_name: (allow-none): The name of a DLL that a package provides in UTF-8, or %NULL.
+ * @package: (nullable): You should pass %NULL for this.
+ * @dll_name: (nullable): The name of a DLL that a package provides in UTF-8, or %NULL.
  *
  * Try to determine the installation directory for a software package.
  *
@@ -412,9 +412,9 @@ get_package_directory_from_module (const gchar *module_name)
  * g_win32_get_package_installation_directory_of_module() instead.
  **/
 
- gchar *
-g_win32_get_package_installation_directory_utf8 (const gchar *package,
-						 const gchar *dll_name)
+gchar *
+g_win32_get_package_installation_directory (const gchar *package,
+                                            const gchar *dll_name)
 {
   gchar *result = NULL;
 
@@ -430,42 +430,10 @@ g_win32_get_package_installation_directory_utf8 (const gchar *package,
   return result;
 }
 
-#if !defined (_WIN64)
-
-/* DLL ABI binary compatibility version that uses system codepage file names */
-
-gchar *
-g_win32_get_package_installation_directory (const gchar *package,
-					    const gchar *dll_name)
-{
-  gchar *utf8_package = NULL, *utf8_dll_name = NULL;
-  gchar *utf8_retval, *retval;
-
-  if (package != NULL)
-    utf8_package = g_locale_to_utf8 (package, -1, NULL, NULL, NULL);
-
-  if (dll_name != NULL)
-    utf8_dll_name = g_locale_to_utf8 (dll_name, -1, NULL, NULL, NULL);
-
-  utf8_retval =
-    g_win32_get_package_installation_directory_utf8 (utf8_package,
-						     utf8_dll_name);
-
-  retval = g_locale_from_utf8 (utf8_retval, -1, NULL, NULL, NULL);
-
-  g_free (utf8_package);
-  g_free (utf8_dll_name);
-  g_free (utf8_retval);
-
-  return retval;
-}
-
-#endif
-
 /**
  * g_win32_get_package_installation_subdirectory:
- * @package: (allow-none): You should pass %NULL for this.
- * @dll_name: (allow-none): The name of a DLL that a package provides, in UTF-8, or %NULL.
+ * @package: (nullable): You should pass %NULL for this.
+ * @dll_name: (nullable): The name of a DLL that a package provides, in UTF-8, or %NULL.
  * @subdir: A subdirectory of the package installation directory, also in UTF-8
  *
  * This function is deprecated. Use
@@ -492,15 +460,15 @@ g_win32_get_package_installation_directory (const gchar *package,
  **/
 
 gchar *
-g_win32_get_package_installation_subdirectory_utf8 (const gchar *package,
-						    const gchar *dll_name,
-						    const gchar *subdir)
+g_win32_get_package_installation_subdirectory (const gchar *package,
+                                               const gchar *dll_name,
+                                               const gchar *subdir)
 {
   gchar *prefix;
   gchar *dirname;
 
 G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  prefix = g_win32_get_package_installation_directory_utf8 (package, dll_name);
+  prefix = g_win32_get_package_installation_directory (package, dll_name);
 G_GNUC_END_IGNORE_DEPRECATIONS
 
   dirname = g_build_filename (prefix, subdir, NULL);
@@ -508,30 +476,6 @@ G_GNUC_END_IGNORE_DEPRECATIONS
 
   return dirname;
 }
-
-#if !defined (_WIN64)
-
-/* DLL ABI binary compatibility version that uses system codepage file names */
-
-gchar *
-g_win32_get_package_installation_subdirectory (const gchar *package,
-					       const gchar *dll_name,
-					       const gchar *subdir)
-{
-  gchar *prefix;
-  gchar *dirname;
-
-  G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-  prefix = g_win32_get_package_installation_directory (package, dll_name);
-  G_GNUC_END_IGNORE_DEPRECATIONS
-
-  dirname = g_build_filename (prefix, subdir, NULL);
-  g_free (prefix);
-
-  return dirname;
-}
-
-#endif
 
 /**
  * g_win32_check_windows_version:
@@ -672,6 +616,49 @@ g_win32_get_windows_version (void)
   return windows_version;
 }
 
+/*
+ * Doesn't use gettext (and gconv), preventing recursive calls when
+ * g_win32_locale_filename_from_utf8() is called during
+ * gettext initialization.
+ */
+static gchar *
+special_wchar_to_locale_enoding (wchar_t *wstring)
+{
+  int sizeof_output;
+  int wctmb_result;
+  char *result;
+  BOOL not_representable = FALSE;
+
+  sizeof_output = WideCharToMultiByte (CP_ACP,
+                                       WC_NO_BEST_FIT_CHARS,
+                                       wstring, -1,
+                                       NULL, 0,
+                                       NULL,
+                                       &not_representable);
+
+  if (not_representable ||
+      sizeof_output == 0 ||
+      sizeof_output > MAX_PATH)
+    return NULL;
+
+  result = g_malloc0 (sizeof_output + 1);
+
+  wctmb_result = WideCharToMultiByte (CP_ACP,
+                                      WC_NO_BEST_FIT_CHARS,
+                                      wstring, -1,
+                                      result, sizeof_output + 1,
+                                      NULL,
+                                      &not_representable);
+
+  if (wctmb_result == sizeof_output &&
+      not_representable == FALSE)
+    return result;
+
+  g_free (result);
+
+  return NULL;
+}
+
 /**
  * g_win32_locale_filename_from_utf8:
  * @utf8filename: a UTF-8 encoded filename.
@@ -704,26 +691,27 @@ g_win32_get_windows_version (void)
 gchar *
 g_win32_locale_filename_from_utf8 (const gchar *utf8filename)
 {
-  gchar *retval = g_locale_from_utf8 (utf8filename, -1, NULL, NULL, NULL);
+  gchar *retval;
+  wchar_t *wname;
+
+  wname = g_utf8_to_utf16 (utf8filename, -1, NULL, NULL, NULL);
+
+  if (wname == NULL)
+    return NULL;
+
+  retval = special_wchar_to_locale_enoding (wname);
 
   if (retval == NULL)
     {
-      /* Conversion failed, so convert to wide chars, check if there
-       * is a 8.3 version, and use that.
-       */
-      wchar_t *wname = g_utf8_to_utf16 (utf8filename, -1, NULL, NULL, NULL);
-      if (wname != NULL)
-	{
-	  wchar_t wshortname[MAX_PATH + 1];
-	  if (GetShortPathNameW (wname, wshortname, G_N_ELEMENTS (wshortname)))
-	    {
-	      gchar *tem = g_utf16_to_utf8 (wshortname, -1, NULL, NULL, NULL);
-	      retval = g_locale_from_utf8 (tem, -1, NULL, NULL, NULL);
-	      g_free (tem);
-	    }
-	  g_free (wname);
-	}
+      /* Conversion failed, so check if there is a 8.3 version, and use that. */
+      wchar_t wshortname[MAX_PATH + 1];
+
+      if (GetShortPathNameW (wname, wshortname, G_N_ELEMENTS (wshortname)))
+        retval = special_wchar_to_locale_enoding (wshortname);
     }
+
+  g_free (wname);
+
   return retval;
 }
 
@@ -782,3 +770,37 @@ g_win32_get_command_line (void)
   LocalFree (args);
   return result;
 }
+
+#ifdef G_OS_WIN32
+
+/* Binary compatibility versions. Not for newly compiled code. */
+
+_GLIB_EXTERN gchar *g_win32_get_package_installation_directory_utf8    (const gchar *package,
+                                                                        const gchar *dll_name);
+
+_GLIB_EXTERN gchar *g_win32_get_package_installation_subdirectory_utf8 (const gchar *package,
+                                                                        const gchar *dll_name,
+                                                                        const gchar *subdir);
+
+gchar *
+g_win32_get_package_installation_directory_utf8 (const gchar *package,
+                                                 const gchar *dll_name)
+{
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+  return g_win32_get_package_installation_directory (package, dll_name);
+G_GNUC_END_IGNORE_DEPRECATIONS
+}
+
+gchar *
+g_win32_get_package_installation_subdirectory_utf8 (const gchar *package,
+                                                    const gchar *dll_name,
+                                                    const gchar *subdir)
+{
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+  return g_win32_get_package_installation_subdirectory (package,
+                                                        dll_name,
+                                                        subdir);
+G_GNUC_END_IGNORE_DEPRECATIONS
+}
+
+#endif

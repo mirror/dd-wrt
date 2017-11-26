@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Miscellaneous Utility Functions: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Hook-Functions.html" title="Hook Functions">
@@ -290,6 +290,14 @@
 <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="returnvalue">gchar</span></a> *
 </td>
 <td class="function_name">
+<a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-build-filename-valist" title="g_build_filename_valist ()">g_build_filename_valist</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="returnvalue">gchar</span></a> *
+</td>
+<td class="function_name">
 <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-build-path" title="g_build_path ()">g_build_path</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
@@ -473,7 +481,7 @@ g_set_application_name (<em class="parameter"><code>const <a class="link" href="
 <p>Sets a human-readable name for the application. This name should be
 localized if possible, and is intended for display to the user.
 Contrast with <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-set-prgname" title="g_set_prgname ()"><code class="function">g_set_prgname()</code></a>, which sets a non-localized name.
-<a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-set-prgname" title="g_set_prgname ()"><code class="function">g_set_prgname()</code></a> will be called automatically by <a href="http://developer.gnome.org/gtk4/gtk4-General.html#gtk-init"><code class="function">gtk_init()</code></a>,
+<a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-set-prgname" title="g_set_prgname ()"><code class="function">g_set_prgname()</code></a> will be called automatically by <a href="../gtk4/gtk4-General.html#gtk-init"><code class="function">gtk_init()</code></a>,
 but <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-set-application-name" title="g_set_application_name ()"><code class="function">g_set_application_name()</code></a> will not.</p>
 <p>Note that for thread safety reasons, this function can only
 be called once.</p>
@@ -503,9 +511,11 @@ or when displaying an application's name in the task list.</p>
 g_get_prgname (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
 <p>Gets the name of the program. This name should not be localized,
 in contrast to <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-application-name" title="g_get_application_name ()"><code class="function">g_get_application_name()</code></a>.</p>
-<p>If you are using GDK or GTK+ the program name is set in <a href="http://developer.gnome.org/gdk3/gdk4-General.html#gdk-init"><code class="function">gdk_init()</code></a>, 
-which is called by <a href="http://developer.gnome.org/gtk4/gtk4-General.html#gtk-init"><code class="function">gtk_init()</code></a>. The program name is found by taking 
-the last component of <em class="parameter"><code>argv</code></em>
+<p>If you are using <a href="../gio/GApplication.html#GApplication-struct"><span class="type">GApplication</span></a> the program name is set in
+<a href="../gio/GApplication.html#g-application-run"><code class="function">g_application_run()</code></a>. In case of GDK or GTK+ it is set in
+<code class="function">gdk_init()</code>, which is called by <a href="../gtk4/gtk4-General.html#gtk-init"><code class="function">gtk_init()</code></a> and the
+<span class="type">“startup”</span> handler. The program name is found by
+taking the last component of <em class="parameter"><code>argv</code></em>
 [0].</p>
 <div class="refsect3">
 <a name="g-get-prgname.returns"></a><h4>Returns</h4>
@@ -520,6 +530,12 @@ to GLib and must not be modified or freed.</p>
 g_set_prgname (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *prgname</code></em>);</pre>
 <p>Sets the name of the program. This name should not be localized,
 in contrast to <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-set-application-name" title="g_set_application_name ()"><code class="function">g_set_application_name()</code></a>.</p>
+<p>If you are using <a href="../gio/GApplication.html#GApplication-struct"><span class="type">GApplication</span></a> the program name is set in
+<a href="../gio/GApplication.html#g-application-run"><code class="function">g_application_run()</code></a>. In case of GDK or GTK+ it is set in
+<code class="function">gdk_init()</code>, which is called by <a href="../gtk4/gtk4-General.html#gtk-init"><code class="function">gtk_init()</code></a> and the
+<span class="type">“startup”</span> handler. The program name is found by
+taking the last component of <em class="parameter"><code>argv</code></em>
+[0].</p>
 <p>Note that for thread-safety reasons this function can only be called once.</p>
 <div class="refsect3">
 <a name="g-set-prgname.parameters"></a><h4>Parameters</h4>
@@ -551,9 +567,8 @@ except portable.</p>
 <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a> when it is no longer needed.</p>
 <div class="refsect3">
 <a name="g-get-environ.returns"></a><h4>Returns</h4>
-<p> the list of
-environment variables. </p>
-<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+<p>    the list of environment variables. </p>
+<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-28.html#api-index-2.28">2.28</a></p>
 </div>
@@ -578,15 +593,14 @@ provided list <em class="parameter"><code>envp</code></em>
 <tbody>
 <tr>
 <td class="parameter_name"><p>envp</p></td>
-<td class="parameter_description"><p> an environment
-list (eg, as returned from <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-environ" title="g_get_environ ()"><code class="function">g_get_environ()</code></a>), or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>
+<td class="parameter_description"><p>    an environment list (eg, as returned from <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-environ" title="g_get_environ ()"><code class="function">g_get_environ()</code></a>), or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>
 for an empty environment list. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>variable</p></td>
-<td class="parameter_description"><p>the environment variable to get</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the environment variable to get. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -599,7 +613,8 @@ the environment variable is not set in <em class="parameter"><code>envp</code></
 string is owned by <em class="parameter"><code>envp</code></em>
 , and will be freed if <em class="parameter"><code>variable</code></em>
 is
-set or unset again.</p>
+set or unset again. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-32.html#api-index-2.32">2.32</a></p>
 </div>
@@ -627,21 +642,21 @@ g_environ_setenv (<em class="parameter"><code><a class="link" href="glib-Basic-T
 <tbody>
 <tr>
 <td class="parameter_name"><p>envp</p></td>
-<td class="parameter_description"><p> an
-environment list that can be freed using <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a> (e.g., as
+<td class="parameter_description"><p>    an environment list that can be freed using <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a> (e.g., as
 returned from <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-environ" title="g_get_environ ()"><code class="function">g_get_environ()</code></a>), or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> for an empty
 environment list. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>variable</p></td>
-<td class="parameter_description"><p>the environment variable to set, must not contain '='</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the environment variable to set, must not
+contain '='. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>value</p></td>
-<td class="parameter_description"><p>the value for to set the variable to</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the value for to set the variable to. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>overwrite</p></td>
@@ -653,9 +668,8 @@ environment list. </p></td>
 </div>
 <div class="refsect3">
 <a name="g-environ-setenv.returns"></a><h4>Returns</h4>
-<p> the
-updated environment list. Free it using <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a>. </p>
-<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+<p>    the updated environment list. Free it using <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a>. </p>
+<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-32.html#api-index-2.32">2.32</a></p>
 </div>
@@ -680,24 +694,23 @@ environment <em class="parameter"><code>envp</code></em>
 <tbody>
 <tr>
 <td class="parameter_name"><p>envp</p></td>
-<td class="parameter_description"><p> an environment
-list that can be freed using <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a> (e.g., as returned from <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-environ" title="g_get_environ ()"><code class="function">g_get_environ()</code></a>),
-or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> for an empty environment list. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></td>
+<td class="parameter_description"><p>    an environment list that can be freed using <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a> (e.g., as
+returned from <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-environ" title="g_get_environ ()"><code class="function">g_get_environ()</code></a>), or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> for an empty environment list. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>variable</p></td>
-<td class="parameter_description"><p>the environment variable to remove, must not contain '='</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the environment variable to remove, must not
+contain '='. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
 <a name="g-environ-unsetenv.returns"></a><h4>Returns</h4>
-<p> the
-updated environment list. Free it using <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a>. </p>
-<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+<p>    the updated environment list. Free it using <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a>. </p>
+<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-32.html#api-index-2.32">2.32</a></p>
 </div>
@@ -722,8 +735,8 @@ references to other environment variables, they are expanded.</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>variable</p></td>
-<td class="parameter_description"><p>the environment variable to get</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the environment variable to get. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr></tbody>
 </table></div>
 </div>
@@ -732,7 +745,8 @@ references to other environment variables, they are expanded.</p>
 <p> the value of the environment variable, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if
 the environment variable is not found. The returned string
 may be overwritten by the next call to <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-getenv" title="g_getenv ()"><code class="function">g_getenv()</code></a>, <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-setenv" title="g_setenv ()"><code class="function">g_setenv()</code></a>
-or <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-unsetenv" title="g_unsetenv ()"><code class="function">g_unsetenv()</code></a>.</p>
+or <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-unsetenv" title="g_unsetenv ()"><code class="function">g_unsetenv()</code></a>. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 </div>
 <hr>
@@ -769,13 +783,14 @@ array directly to <code class="function">execvpe()</code>, <a class="link" href=
 <tbody>
 <tr>
 <td class="parameter_name"><p>variable</p></td>
-<td class="parameter_description"><p>the environment variable to set, must not contain '='.</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the environment variable to set, must not
+contain '='. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>value</p></td>
-<td class="parameter_description"><p>the value for to set the variable to.</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the value for to set the variable to. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>overwrite</p></td>
@@ -820,8 +835,9 @@ array directly to <code class="function">execvpe()</code>, <a class="link" href=
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>variable</p></td>
-<td class="parameter_description"><p>the environment variable to remove, must not contain '='</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the environment variable to remove, must
+not contain '='. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr></tbody>
 </table></div>
 </div>
@@ -841,9 +857,9 @@ use cases for environment variables in GLib-using programs you want
 the UTF-8 encoding that this function and <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-getenv" title="g_getenv ()"><code class="function">g_getenv()</code></a> provide.</p>
 <div class="refsect3">
 <a name="g-listenv.returns"></a><h4>Returns</h4>
-<p> a <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated
-list of strings which must be freed with <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a>. </p>
-<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+<p>    a <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated list of strings which must be freed with
+<a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a>. </p>
+<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-8.html#api-index-2.8">2.8</a></p>
 </div>
@@ -888,11 +904,12 @@ data specific to particular user.</p>
 <p>On UNIX platforms this is determined using the mechanisms described
 in the
 <a class="ulink" href="http://www.freedesktop.org/Standards/basedir-spec" target="_top">XDG Base Directory Specification</a>.
-In this case the directory retrieved will be XDG_CACHE_HOME.</p>
-<p>On Windows is the directory that serves as a common repository for
-temporary Internet files. A typical path is
-C:\Documents and Settings\username\Local Settings\Temporary Internet Files.
-See documentation for CSIDL_INTERNET_CACHE.</p>
+In this case the directory retrieved will be <code class="literal">XDG_CACHE_HOME</code>.</p>
+<p>On Windows it follows XDG Base Directory Specification if <code class="literal">XDG_CACHE_HOME</code> is defined.
+If <code class="literal">XDG_CACHE_HOME</code> is undefined, the directory that serves as a common
+repository for temporary Internet files is used instead. A typical path is
+<code class="literal">C:\Documents and Settings\username\Local Settings\Temporary Internet Files</code>.
+See the <a class="ulink" href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb762494%28v=vs.85%29.aspx#csidl_internet_cache" target="_top">documentation for <code class="literal">CSIDL_INTERNET_CACHE</code></a>.</p>
 <div class="refsect3">
 <a name="g-get-user-cache-dir.returns"></a><h4>Returns</h4>
 <p> a string owned by GLib that must not be modified
@@ -912,10 +929,12 @@ as icons that is customized for a particular user.  </p>
 in the
 <a class="ulink" href="http://www.freedesktop.org/Standards/basedir-spec" target="_top">XDG Base Directory Specification</a>.
 In this case the directory retrieved will be <code class="literal">XDG_DATA_HOME</code>.</p>
-<p>On Windows this is the folder to use for local (as opposed to
-roaming) application data. See documentation for
-CSIDL_LOCAL_APPDATA. Note that on Windows it thus is the same as
-what <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-user-config-dir" title="g_get_user_config_dir ()"><code class="function">g_get_user_config_dir()</code></a> returns.</p>
+<p>On Windows it follows XDG Base Directory Specification if <code class="literal">XDG_DATA_HOME</code>
+is defined. If <code class="literal">XDG_DATA_HOME</code> is undefined, the folder to use for local (as
+opposed to roaming) application data is used instead. See the
+<a class="ulink" href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb762494%28v=vs.85%29.aspx#csidl_local_appdata" target="_top">documentation for <code class="literal">CSIDL_LOCAL_APPDATA</code></a>.
+Note that in this case on Windows it will be the same
+as what <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-user-config-dir" title="g_get_user_config_dir ()"><code class="function">g_get_user_config_dir()</code></a> returns.</p>
 <div class="refsect3">
 <a name="g-get-user-data-dir.returns"></a><h4>Returns</h4>
 <p> a string owned by GLib that must not be modified
@@ -935,10 +954,12 @@ configuration information such as user preferences and settings. </p>
 in the
 <a class="ulink" href="http://www.freedesktop.org/Standards/basedir-spec" target="_top">XDG Base Directory Specification</a>.
 In this case the directory retrieved will be <code class="literal">XDG_CONFIG_HOME</code>.</p>
-<p>On Windows this is the folder to use for local (as opposed to
-roaming) application data. See documentation for
-CSIDL_LOCAL_APPDATA. Note that on Windows it thus is the same as
-what <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-user-data-dir" title="g_get_user_data_dir ()"><code class="function">g_get_user_data_dir()</code></a> returns.</p>
+<p>On Windows it follows XDG Base Directory Specification if <code class="literal">XDG_CONFIG_HOME</code> is defined.
+If <code class="literal">XDG_CONFIG_HOME</code> is undefined, the folder to use for local (as opposed
+to roaming) application data is used instead. See the
+<a class="ulink" href="https://msdn.microsoft.com/en-us/library/windows/desktop/bb762494%28v=vs.85%29.aspx#csidl_local_appdata" target="_top">documentation for <code class="literal">CSIDL_LOCAL_APPDATA</code></a>.
+Note that in this case on Windows it will be  the same
+as what <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-user-data-dir" title="g_get_user_data_dir ()"><code class="function">g_get_user_data_dir()</code></a> returns.</p>
 <div class="refsect3">
 <a name="g-get-user-config-dir.returns"></a><h4>Returns</h4>
 <p> a string owned by GLib that must not be modified
@@ -954,17 +975,13 @@ or freed. </p>
 g_get_user_runtime_dir (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
 <p>Returns a directory that is unique to the current user on the local
 system.</p>
-<p>On UNIX platforms this is determined using the mechanisms described
+<p>This is determined using the mechanisms described
 in the 
 <a class="ulink" href="http://www.freedesktop.org/Standards/basedir-spec" target="_top">XDG Base Directory Specification</a>.
 This is the directory
 specified in the <code class="literal">XDG_RUNTIME_DIR</code> environment variable.
 In the case that this variable is not set, we return the value of
 <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-user-cache-dir" title="g_get_user_cache_dir ()"><code class="function">g_get_user_cache_dir()</code></a>, after verifying that it exists.</p>
-<p>On Windows this is the folder to use for local (as opposed to
-roaming) application data. See documentation for
-CSIDL_LOCAL_APPDATA.  Note that on Windows it thus is the same as
-what <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-user-config-dir" title="g_get_user_config_dir ()"><code class="function">g_get_user_config_dir()</code></a> returns.</p>
 <div class="refsect3">
 <a name="g-get-user-runtime-dir.returns"></a><h4>Returns</h4>
 <p> a string owned by GLib that must not be
@@ -1020,8 +1037,10 @@ system-wide application data.</p>
 <p>On UNIX platforms this is determined using the mechanisms described
 in the
 <a class="ulink" href="http://www.freedesktop.org/Standards/basedir-spec" target="_top">XDG Base Directory Specification</a>
-In this case the list of directories retrieved will be XDG_DATA_DIRS.</p>
-<p>On Windows the first elements in the list are the Application Data
+In this case the list of directories retrieved will be <code class="literal">XDG_DATA_DIRS</code>.</p>
+<p>On Windows it follows XDG Base Directory Specification if <code class="literal">XDG_DATA_DIRS</code> is defined.
+If <code class="literal">XDG_DATA_DIRS</code> is undefined,
+the first elements in the list are the Application Data
 and Documents folders for All Users. (These can be determined only
 on Windows 2000 or later and are not present in the list on other
 Windows versions.) See documentation for CSIDL_COMMON_APPDATA and
@@ -1057,12 +1076,15 @@ system-wide configuration information.</p>
 in the
 <a class="ulink" href="http://www.freedesktop.org/Standards/basedir-spec" target="_top">XDG Base Directory Specification</a>.
 In this case the list of directories retrieved will be <code class="literal">XDG_CONFIG_DIRS</code>.</p>
-<p>On Windows is the directory that contains application data for all users.
-A typical path is C:\Documents and Settings\All Users\Application Data.
-This folder is used for application data that is not user specific.
-For example, an application can store a spell-check dictionary, a database
-of clip art, or a log file in the CSIDL_COMMON_APPDATA folder.
-This information will not roam and is available to anyone using the computer.</p>
+<p>On Windows it follows XDG Base Directory Specification if <code class="literal">XDG_CONFIG_DIRS</code> is defined.
+If <code class="literal">XDG_CONFIG_DIRS</code> is undefined, the directory that contains application
+data for all users is used instead. A typical path is
+<code class="literal">C:\Documents and Settings\All Users\Application Data</code>.
+This folder is used for application data
+that is not user specific. For example, an application can store
+a spell-check dictionary, a database of clip art, or a log file in the
+CSIDL_COMMON_APPDATA folder. This information will not roam and is available
+to anyone using the computer.</p>
 <div class="refsect3">
 <a name="g-get-system-config-dirs.returns"></a><h4>Returns</h4>
 <p>    a <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated array of strings owned by GLib that must not be
@@ -1101,6 +1123,7 @@ return value from this function does not change. The returned
 string is owned by GLib and should not be modified or freed. If no
 name can be determined, a default fixed string "localhost" is
 returned.</p>
+<p>The encoding of the returned string is UTF-8.</p>
 <div class="refsect3">
 <a name="g-get-host-name.returns"></a><h4>Returns</h4>
 <p> the host name of the machine.</p>
@@ -1227,7 +1250,7 @@ current directory introduce vagueness. This function interprets as
 an absolute file name one that either begins with a directory
 separator such as "\Users\tml" or begins with the root on a drive,
 for example "C:\Windows". The first case also includes UNC paths
-such as "\myserver\docs\foo". In all cases, either slashes or
+such as "\\myserver\docs\foo". In all cases, either slashes or
 backslashes are accepted.</p>
 <p>Note that a file name relative to the current drive root does not
 truly specify a file uniquely over time and across processes, as
@@ -1434,6 +1457,44 @@ with <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()
 <p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-8.html#api-index-2.8">2.8</a></p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-build-filename-valist"></a><h3>g_build_filename_valist ()</h3>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="returnvalue">gchar</span></a> *
+g_build_filename_valist (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *first_element</code></em>,
+                         <em class="parameter"><code><span class="type">va_list</span> *args</code></em>);</pre>
+<p>Behaves exactly like <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-build-filename" title="g_build_filename ()"><code class="function">g_build_filename()</code></a>, but takes the path elements
+as a va_list. This function is mainly meant for language bindings.</p>
+<div class="refsect3">
+<a name="g-build-filename-valist.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>first_element</p></td>
+<td class="parameter_description"><p> the first element in the path. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
+</tr>
+<tr>
+<td class="parameter_name"><p>args</p></td>
+<td class="parameter_description"><p>va_list of remaining elements in path</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="g-build-filename-valist.returns"></a><h4>Returns</h4>
+<p> a newly-allocated string that must be freed
+with <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a>. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
+</div>
+<p class="since">Since: <a class="link" href="api-index-2-56.html#api-index-2.56">2.56</a></p>
 </div>
 <hr>
 <div class="refsect2">
@@ -1923,7 +1984,7 @@ are printed out to standard error.</p>
 <td class="parameter_name"><p>string</p></td>
 <td class="parameter_description"><p> a list of debug options separated by colons, spaces, or
 commas, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>keys</p></td>
@@ -2206,6 +2267,14 @@ The returned string should be freed when no longer needed.</p>
     suffixes. IEC units should only be used for reporting things with
     a strong "power of 2" basis, like RAM sizes or RAID stripe sizes.
     Network and storage sizes should be reported in the normal SI units.</p>
+</td>
+<td class="enum_member_annotations"> </td>
+</tr>
+<tr>
+<td class="enum_member_name"><p><a name="G-FORMAT-SIZE-BITS:CAPS"></a>G_FORMAT_SIZE_BITS</p></td>
+<td class="enum_member_description">
+<p>set the size as a quantity in bits, rather than
+    bytes, and return units in bits. For example, ‘Mb’ rather than ‘MB’.</p>
 </td>
 <td class="enum_member_annotations"> </td>
 </tr>

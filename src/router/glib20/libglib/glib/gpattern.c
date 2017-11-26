@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -162,7 +162,7 @@ g_pattern_ph_match (const gchar *match_pattern,
  * @string_length: the length of @string (in bytes, i.e. strlen(),
  *     not g_utf8_strlen())
  * @string: the UTF-8 encoded string to match
- * @string_reversed: (allow-none): the reverse of @string or %NULL
+ * @string_reversed: (nullable): the reverse of @string or %NULL
  *
  * Matches a string against a compiled pattern. Passing the correct
  * length of the string given is mandatory. The reversed string can be

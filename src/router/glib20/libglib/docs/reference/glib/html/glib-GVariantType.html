@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GVariantType: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-data-types.html" title="GLib Data Types">
 <link rel="prev" href="glib-Datasets.html" title="Datasets">
@@ -450,10 +450,10 @@ type".</p>
 <p>This is similar to how instances of abstract classes may not
 directly exist in other type systems, but instances of their
 non-abstract subtypes may.  For example, in GTK, no object that has
-the type of <a href="http://developer.gnome.org/gtk4/GtkBin.html#GtkBin-struct"><span class="type">GtkBin</span></a> can exist (since <a href="http://developer.gnome.org/gtk4/GtkBin.html#GtkBin-struct"><span class="type">GtkBin</span></a> is an abstract class),
-but a <a href="http://developer.gnome.org/gtk4/GtkWindow.html#GtkWindow-struct"><span class="type">GtkWindow</span></a> can certainly be instantiated, and you would say
-that the <a href="http://developer.gnome.org/gtk4/GtkWindow.html#GtkWindow-struct"><span class="type">GtkWindow</span></a> is a <a href="http://developer.gnome.org/gtk4/GtkBin.html#GtkBin-struct"><span class="type">GtkBin</span></a> (since <a href="http://developer.gnome.org/gtk4/GtkWindow.html#GtkWindow-struct"><span class="type">GtkWindow</span></a> is a subclass of
-<a href="http://developer.gnome.org/gtk4/GtkBin.html#GtkBin-struct"><span class="type">GtkBin</span></a>).</p>
+the type of <a href="../gtk4/GtkBin.html#GtkBin-struct"><span class="type">GtkBin</span></a> can exist (since <a href="../gtk4/GtkBin.html#GtkBin-struct"><span class="type">GtkBin</span></a> is an abstract class),
+but a <a href="../gtk4/GtkWindow.html#GtkWindow-struct"><span class="type">GtkWindow</span></a> can certainly be instantiated, and you would say
+that the <a href="../gtk4/GtkWindow.html#GtkWindow-struct"><span class="type">GtkWindow</span></a> is a <a href="../gtk4/GtkBin.html#GtkBin-struct"><span class="type">GtkBin</span></a> (since <a href="../gtk4/GtkWindow.html#GtkWindow-struct"><span class="type">GtkWindow</span></a> is a subclass of
+<a href="../gtk4/GtkBin.html#GtkBin-struct"><span class="type">GtkBin</span></a>).</p>
 <div class="refsect3">
 <a name="id-1.6.18.6.9"></a><h4>GVariant Type Strings</h4>
 <p>A GVariant type string can be any of the following:</p>
@@ -491,7 +491,7 @@ floating point value.</p></li>
 <li class="listitem"><p><code class="literal">s</code>: the type string of <a class="link" href="glib-GVariantType.html#G-VARIANT-TYPE-STRING:CAPS" title="G_VARIANT_TYPE_STRING"><code class="literal">G_VARIANT_TYPE_STRING</code></a>; a string.</p></li>
 <li class="listitem"><p><code class="literal">o</code>: the type string of <a class="link" href="glib-GVariantType.html#G-VARIANT-TYPE-OBJECT-PATH:CAPS" title="G_VARIANT_TYPE_OBJECT_PATH"><code class="literal">G_VARIANT_TYPE_OBJECT_PATH</code></a>; a string in the form
 of a D-Bus object path.</p></li>
-<li class="listitem"><p><code class="literal">g</code>: the type string of <a class="link" href="glib-GVariantType.html#G-VARIANT-TYPE-STRING:CAPS" title="G_VARIANT_TYPE_STRING"><code class="literal">G_VARIANT_TYPE_STRING</code></a>; a string in the form of
+<li class="listitem"><p><code class="literal">g</code>: the type string of <a class="link" href="glib-GVariantType.html#G-VARIANT-TYPE-SIGNATURE:CAPS" title="G_VARIANT_TYPE_SIGNATURE"><code class="literal">G_VARIANT_TYPE_SIGNATURE</code></a>; a string in the form of
 a D-Bus type signature.</p></li>
 <li class="listitem"><p><code class="literal">?</code>: the type string of <a class="link" href="glib-GVariantType.html#G-VARIANT-TYPE-BASIC:CAPS" title="G_VARIANT_TYPE_BASIC"><code class="literal">G_VARIANT_TYPE_BASIC</code></a>; an indefinite type that
 is a supertype of any of the basic types.</p></li>
@@ -590,7 +590,7 @@ type constructor functions.</p>
 <tbody><tr>
 <td class="parameter_name"><p>type</p></td>
 <td class="parameter_description"><p> a <a class="link" href="glib-GVariantType.html#GVariantType" title="GVariantType"><span class="type">GVariantType</span></a>, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr></tbody>
 </table></div>
 </div>
@@ -729,12 +729,12 @@ see <a class="link" href="glib-GVariantType.html#g-variant-type-string-is-valid"
 <td class="parameter_name"><p>limit</p></td>
 <td class="parameter_description"><p> the end of <em class="parameter"><code>string</code></em>
 , or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>endptr</p></td>
 <td class="parameter_description"><p> location to store the end pointer, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -1652,9 +1652,10 @@ That's one number for everyone who was around in the late 1970s.</p>
 <a name="G-VARIANT-TYPE-UINT64:CAPS"></a><h3>G_VARIANT_TYPE_UINT64</h3>
 <pre class="programlisting">#define G_VARIANT_TYPE_UINT64               ((const GVariantType *) "t")
 </pre>
-<p>The type of an integer value that can range from 0 to</p>
-<div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem"><p>That's a really big number, but a Rubik's
-cube can have a bit more than twice as many possible positions.</p></li></ol></div>
+<p>The type of an integer value that can range from 0
+to 18446744073709551615 (inclusive).  That's a really big number,
+but a Rubik's cube can have a bit more than twice as many possible
+positions.</p>
 </div>
 <hr>
 <div class="refsect2">

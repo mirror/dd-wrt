@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Asynchronous Queues: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-core.html" title="GLib Core Application Support">
 <link rel="prev" href="glib-Thread-Pools.html" title="Thread Pools">
@@ -761,7 +761,7 @@ gint32 id2<span class="gtkdoc opt">;</span>
 id1 <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Type-Conversion-Macros.html#GPOINTER-TO-INT:CAPS">GPOINTER_TO_INT</a></span> <span class="gtkdoc opt">(</span>element1<span class="gtkdoc opt">);</span>
 id2 <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Type-Conversion-Macros.html#GPOINTER-TO-INT:CAPS">GPOINTER_TO_INT</a></span> <span class="gtkdoc opt">(</span>element2<span class="gtkdoc opt">);</span>
 
-<span class="keyword">return</span> <span class="gtkdoc opt">(</span>id1 <span class="gtkdoc opt">&gt;</span> id2 ? <span class="gtkdoc opt">+</span><span class="number">1</span> <span class="gtkdoc opt">:</span> id1 <span class="gtkdoc opt">==</span> id2 ? <span class="number">0</span> <span class="gtkdoc opt">: -</span><span class="number">1</span><span class="gtkdoc opt">);</span></pre></td>
+<span class="keyword">return</span> <span class="gtkdoc opt">(</span>id1 <span class="gtkdoc opt">&gt;</span> id2 <span class="gtkdoc opt">? +</span><span class="number">1</span> <span class="gtkdoc opt">:</span> id1 <span class="gtkdoc opt">==</span> id2 <span class="gtkdoc opt">?</span> <span class="number">0</span> <span class="gtkdoc opt">: -</span><span class="number">1</span><span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>

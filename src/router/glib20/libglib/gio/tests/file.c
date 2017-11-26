@@ -8,12 +8,10 @@
 #endif
 
 static void
-test_basic (void)
+test_basic_for_file (GFile       *file,
+                     const gchar *suffix)
 {
-  GFile *file;
   gchar *s;
-
-  file = g_file_new_for_path ("./some/directory/testfile");
 
   s = g_file_get_basename (file);
   g_assert_cmpstr (s, ==, "testfile");
@@ -21,14 +19,36 @@ test_basic (void)
 
   s = g_file_get_uri (file);
   g_assert (g_str_has_prefix (s, "file://"));
-  g_assert (g_str_has_suffix (s, "/some/directory/testfile"));
+  g_assert (g_str_has_suffix (s, suffix));
   g_free (s);
 
   g_assert (g_file_has_uri_scheme (file, "file"));
   s = g_file_get_uri_scheme (file);
   g_assert_cmpstr (s, ==, "file");
   g_free (s);
+}
 
+static void
+test_basic (void)
+{
+  GFile *file;
+
+  file = g_file_new_for_path ("./some/directory/testfile");
+  test_basic_for_file (file, "/some/directory/testfile");
+  g_object_unref (file);
+}
+
+static void
+test_build_filename (void)
+{
+  GFile *file;
+
+  file = g_file_new_build_filename (".", "some", "directory", "testfile", NULL);
+  test_basic_for_file (file, "/some/directory/testfile");
+  g_object_unref (file);
+
+  file = g_file_new_build_filename ("testfile", NULL);
+  test_basic_for_file (file, "/testfile");
   g_object_unref (file);
 }
 
@@ -466,7 +486,7 @@ test_create_delete (gconstpointer d)
 
   data->loop = g_main_loop_new (NULL, FALSE);
 
-  data->timeout = g_timeout_add (5000, stop_timeout, NULL);
+  data->timeout = g_timeout_add (10000, stop_timeout, NULL);
 
   g_file_create_async (data->file, 0, 0, NULL, created_cb, data);
 
@@ -498,7 +518,7 @@ static const gchar *replace_data =
     " * @file: input #GFile.\n"
     " * @contents: string of contents to replace the file with.\n"
     " * @length: the length of @contents in bytes.\n"
-    " * @etag: (allow-none): a new <link linkend=\"gfile-etag\">entity tag</link> for the @file, or %NULL\n"
+    " * @etag: (nullable): a new <link linkend=\"gfile-etag\">entity tag</link> for the @file, or %NULL\n"
     " * @make_backup: %TRUE if a backup should be created.\n"
     " * @flags: a set of #GFileCreateFlags.\n"
     " * @cancellable: optional #GCancellable object, %NULL to ignore.\n"
@@ -1043,6 +1063,91 @@ test_measure_async (void)
                                    measure_done, data);
 }
 
+static void
+test_load_bytes (void)
+{
+  gchar filename[] = "g_file_load_bytes_XXXXXX";
+  GError *error = NULL;
+  GBytes *bytes;
+  GFile *file;
+  int len;
+  int fd;
+  int ret;
+
+  fd = g_mkstemp (filename);
+  g_assert_cmpint (fd, !=, -1);
+  len = strlen ("test_load_bytes");
+  ret = write (fd, "test_load_bytes", len);
+  g_assert_cmpint (ret, ==, len);
+  close (fd);
+
+  file = g_file_new_for_path (filename);
+  bytes = g_file_load_bytes (file, NULL, NULL, &error);
+  g_assert_no_error (error);
+  g_assert (bytes != NULL);
+  g_assert_cmpint (len, ==, g_bytes_get_size (bytes));
+  g_assert_cmpstr ("test_load_bytes", ==, (gchar *)g_bytes_get_data (bytes, NULL));
+
+  g_file_delete (file, NULL, NULL);
+
+  g_bytes_unref (bytes);
+  g_object_unref (file);
+}
+
+typedef struct
+{
+  GMainLoop *main_loop;
+  GFile *file;
+  GBytes *bytes;
+} LoadBytesAsyncData;
+
+static void
+test_load_bytes_cb (GObject      *object,
+                    GAsyncResult *result,
+                    gpointer      user_data)
+{
+  GFile *file = G_FILE (object);
+  LoadBytesAsyncData *data = user_data;
+  GError *error = NULL;
+
+  data->bytes = g_file_load_bytes_finish (file, result, NULL, &error);
+  g_assert_no_error (error);
+  g_assert (data->bytes != NULL);
+
+  g_main_loop_quit (data->main_loop);
+}
+
+static void
+test_load_bytes_async (void)
+{
+  LoadBytesAsyncData data = { 0 };
+  gchar filename[] = "g_file_load_bytes_XXXXXX";
+  int len;
+  int fd;
+  int ret;
+
+  fd = g_mkstemp (filename);
+  g_assert_cmpint (fd, !=, -1);
+  len = strlen ("test_load_bytes_async");
+  ret = write (fd, "test_load_bytes_async", len);
+  g_assert_cmpint (ret, ==, len);
+  close (fd);
+
+  data.main_loop = g_main_loop_new (NULL, FALSE);
+  data.file = g_file_new_for_path (filename);
+
+  g_file_load_bytes_async (data.file, NULL, test_load_bytes_cb, &data);
+  g_main_loop_run (data.main_loop);
+
+  g_assert_cmpint (len, ==, g_bytes_get_size (data.bytes));
+  g_assert_cmpstr ("test_load_bytes_async", ==, (gchar *)g_bytes_get_data (data.bytes, NULL));
+
+  g_file_delete (data.file, NULL, NULL);
+  g_object_unref (data.file);
+  g_bytes_unref (data.bytes);
+  g_main_loop_unref (data.main_loop);
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -1051,6 +1156,7 @@ main (int argc, char *argv[])
   g_test_bug_base ("http://bugzilla.gnome.org/");
 
   g_test_add_func ("/file/basic", test_basic);
+  g_test_add_func ("/file/build-filename", test_build_filename);
   g_test_add_func ("/file/parent", test_parent);
   g_test_add_func ("/file/child", test_child);
   g_test_add_func ("/file/type", test_type);
@@ -1068,6 +1174,8 @@ main (int argc, char *argv[])
 #endif
   g_test_add_func ("/file/measure", test_measure);
   g_test_add_func ("/file/measure-async", test_measure_async);
+  g_test_add_func ("/file/load-bytes", test_load_bytes);
+  g_test_add_func ("/file/load-bytes-async", test_load_bytes_async);
 
   return g_test_run ();
 }

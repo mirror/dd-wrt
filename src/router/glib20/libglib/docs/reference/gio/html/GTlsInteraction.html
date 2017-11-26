@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GTlsInteraction: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="tls.html" title="TLS (SSL) support">
 <link rel="prev" href="GTlsFileDatabase.html" title="GTlsFileDatabase">
@@ -408,13 +408,13 @@ not support immediate cancellation.</p>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
 <td class="parameter_description"><p> will be called when the interaction completes. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_data</p></td>
 <td class="parameter_description"><p> data to pass to the <em class="parameter"><code>callback</code></em>
 . </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -584,13 +584,13 @@ request, which will usually abort the TLS connection.</p>
 <tr>
 <td class="parameter_name"><p>callback</p></td>
 <td class="parameter_description"><p> will be called when the interaction completes. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>user_data</p></td>
 <td class="parameter_description"><p> data to pass to the <em class="parameter"><code>callback</code></em>
 . </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
@@ -812,7 +812,7 @@ argument should have been filled in by using
 </tr>
 <tr>
 <td class="struct_member_name"><p><em class="structfield"><code><a name="GTlsInteractionClass.request-certificate-async"></a>request_certificate_async</code></em> ()</p></td>
-<td class="struct_member_description"><p>ask for a certificate asyncronously.</p></td>
+<td class="struct_member_description"><p>ask for a certificate asynchronously.</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>

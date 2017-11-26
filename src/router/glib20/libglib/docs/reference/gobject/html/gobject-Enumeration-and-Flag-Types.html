@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Enumeration and Flag Types: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="rn01.html" title="API Reference">
 <link rel="prev" href="gobject-The-Base-Object-Type.html" title="GObject">
@@ -125,6 +125,14 @@
 </tr>
 <tr>
 <td class="function_type">
+<a href="../glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="gobject-Enumeration-and-Flag-Types.html#g-enum-to-string" title="g_enum_to_string ()">g_enum_to_string</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
 <a class="link" href="gobject-Enumeration-and-Flag-Types.html#GFlagsValue" title="struct GFlagsValue"><span class="returnvalue">GFlagsValue</span></a> *
 </td>
 <td class="function_name">
@@ -145,6 +153,14 @@
 </td>
 <td class="function_name">
 <a class="link" href="gobject-Enumeration-and-Flag-Types.html#g-flags-get-value-by-nick" title="g_flags_get_value_by_nick ()">g_flags_get_value_by_nick</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<a href="../glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
+</td>
+<td class="function_name">
+<a class="link" href="gobject-Enumeration-and-Flag-Types.html#g-flags-to-string" title="g_flags_to_string ()">g_flags_to_string</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
 <tr>
@@ -628,6 +644,45 @@ with that nickname. </p>
 </div>
 <hr>
 <div class="refsect2">
+<a name="g-enum-to-string"></a><h3>g_enum_to_string ()</h3>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
+g_enum_to_string (<em class="parameter"><code><a class="link" href="gobject-Type-Information.html#GType" title="GType"><span class="type">GType</span></a> g_enum_type</code></em>,
+                  <em class="parameter"><code><a href="../glib-Basic-Types.html#gint"><span class="type">gint</span></a> value</code></em>);</pre>
+<p>Pretty-prints <em class="parameter"><code>value</code></em>
+ in the form of the enum’s name.</p>
+<p>This is intended to be used for debugging purposes. The format of the output
+may change in the future.</p>
+<div class="refsect3">
+<a name="g-enum-to-string.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>g_enum_type</p></td>
+<td class="parameter_description"><p>the type identifier of a <a class="link" href="gobject-Enumeration-and-Flag-Types.html#GEnumClass" title="struct GEnumClass"><span class="type">GEnumClass</span></a> type</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>value</p></td>
+<td class="parameter_description"><p>the value</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="g-enum-to-string.returns"></a><h4>Returns</h4>
+<p> a newly-allocated text string. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+</div>
+<p class="since">Since: 2.54</p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="g-flags-get-first-value"></a><h3>g_flags_get_first_value ()</h3>
 <pre class="programlisting"><a class="link" href="gobject-Enumeration-and-Flag-Types.html#GFlagsValue" title="struct GFlagsValue"><span class="returnvalue">GFlagsValue</span></a> *
 g_flags_get_first_value (<em class="parameter"><code><a class="link" href="gobject-Enumeration-and-Flag-Types.html#GFlagsClass" title="struct GFlagsClass"><span class="type">GFlagsClass</span></a> *flags_class</code></em>,
@@ -737,6 +792,46 @@ g_flags_get_value_by_nick (<em class="parameter"><code><a class="link" href="gob
 or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if there is no flag with that nickname. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
+</div>
+<hr>
+<div class="refsect2">
+<a name="g-flags-to-string"></a><h3>g_flags_to_string ()</h3>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
+g_flags_to_string (<em class="parameter"><code><a class="link" href="gobject-Type-Information.html#GType" title="GType"><span class="type">GType</span></a> flags_type</code></em>,
+                   <em class="parameter"><code><a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a> value</code></em>);</pre>
+<p>Pretty-prints <em class="parameter"><code>value</code></em>
+ in the form of the flag names separated by <code class="literal"> | </code> and
+sorted. Any extra bits will be shown at the end as a hexadecimal number.</p>
+<p>This is intended to be used for debugging purposes. The format of the output
+may change in the future.</p>
+<div class="refsect3">
+<a name="g-flags-to-string.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>flags_type</p></td>
+<td class="parameter_description"><p>the type identifier of a <a class="link" href="gobject-Enumeration-and-Flag-Types.html#GFlagsClass" title="struct GFlagsClass"><span class="type">GFlagsClass</span></a> type</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>value</p></td>
+<td class="parameter_description"><p>the value</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="g-flags-to-string.returns"></a><h4>Returns</h4>
+<p> a newly-allocated text string. </p>
+<p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
+</div>
+<p class="since">Since: 2.54</p>
 </div>
 <hr>
 <div class="refsect2">

@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>File Utilities: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Spawning-Processes.html" title="Spawning Processes">
@@ -400,16 +400,26 @@
 <a name="glib-File-Utilities.includes"></a><h2>Includes</h2>
 <pre class="synopsis">#include &lt;glib.h&gt;
 #include &lt;glib/gstdio.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/stat.h&gt;
 </pre>
 </div>
 <div class="refsect1">
 <a name="glib-File-Utilities.description"></a><h2>Description</h2>
+<p>Do not use these APIs unless you are porting a POSIX application to Windows.
+A more high-level file access API is provided as GIO — see the documentation
+for <a href="../gio/GFile.html#GFile-struct"><span class="type">GFile</span></a>.</p>
 <p>There is a group of functions which wrap the common POSIX functions
 dealing with filenames (<a class="link" href="glib-File-Utilities.html#g-open" title="g_open ()"><code class="function">g_open()</code></a>, <a class="link" href="glib-File-Utilities.html#g-rename" title="g_rename ()"><code class="function">g_rename()</code></a>, <a class="link" href="glib-File-Utilities.html#g-mkdir" title="g_mkdir ()"><code class="function">g_mkdir()</code></a>, <a class="link" href="glib-File-Utilities.html#g-stat" title="g_stat ()"><code class="function">g_stat()</code></a>,
 <a class="link" href="glib-File-Utilities.html#g-unlink" title="g_unlink ()"><code class="function">g_unlink()</code></a>, <a class="link" href="glib-File-Utilities.html#g-remove" title="g_remove ()"><code class="function">g_remove()</code></a>, <a class="link" href="glib-File-Utilities.html#g-fopen" title="g_fopen ()"><code class="function">g_fopen()</code></a>, <a class="link" href="glib-File-Utilities.html#g-freopen" title="g_freopen ()"><code class="function">g_freopen()</code></a>). The point of these
 wrappers is to make it possible to handle file names with any Unicode
 characters in them on Windows without having to use ifdefs and the
 wide character API in the application code.</p>
+<p>On some Unix systems, these APIs may be defined as identical to their POSIX
+counterparts. For this reason, you must check for and include the necessary
+header files (such as <code class="literal">fcntl.h</code>) before using functions like <a class="link" href="glib-File-Utilities.html#g-creat" title="g_creat ()"><code class="function">g_creat()</code></a>. You
+must also define the relevant feature test macros.</p>
 <p>The pathname argument should be in the GLib file name encoding.
 On POSIX this is the actual on-disk encoding which might correspond
 to the locale settings of the process (or the <code class="literal">G_FILENAME_ENCODING</code>
@@ -505,7 +515,7 @@ the returned string. </p></td>
 <tr>
 <td class="parameter_name"><p>length</p></td>
 <td class="parameter_description"><p> location to store length in bytes of the contents, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -699,6 +709,7 @@ sequence does not have to occur at the very end of the template.
 The X string will be modified to form the name of a file that
 didn't exist. The string should be in the GLib file name encoding.
 Most importantly, on Windows it should be in UTF-8.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-mkstemp.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -742,6 +753,7 @@ template and you can pass a <em class="parameter"><code>mode</code></em>
 string will be modified to form the name of a file that didn't exist.
 The string should be in the GLib file name encoding. Most importantly,
 on Windows it should be in UTF-8.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-mkstemp-full.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -816,7 +828,7 @@ name encoding.</p>
 <td class="parameter_name"><p>tmpl</p></td>
 <td class="parameter_description"><p> Template for file name, as in
 <a class="link" href="glib-File-Utilities.html#g-mkstemp" title="g_mkstemp ()"><code class="function">g_mkstemp()</code></a>, basename only, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> for a default template. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>name_used</p></td>
@@ -928,13 +940,15 @@ on most UNIX-like systems.</p>
 <p>The parameter is a string that should follow the rules for
 <code class="function">mkdtemp()</code> templates, i.e. contain the string "XXXXXX".
 <a class="link" href="glib-File-Utilities.html#g-mkdtemp" title="g_mkdtemp ()"><code class="function">g_mkdtemp()</code></a> is slightly more flexible than <code class="function">mkdtemp()</code> in that the
-sequence does not have to occur at the very end of the template
-and you can pass a <em class="parameter"><code>mode</code></em>
- and additional <em class="parameter"><code>flags</code></em>
-. The X string will
-be modified to form the name of a directory that didn't exist.
+sequence does not have to occur at the very end of the template.
+The X string will be modified to form the name of a directory that
+didn't exist.
 The string should be in the GLib file name encoding. Most importantly,
 on Windows it should be in UTF-8.</p>
+<p>If you are going to be creating a temporary directory inside the
+directory returned by <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-tmp-dir" title="g_get_tmp_dir ()"><code class="function">g_get_tmp_dir()</code></a>, you might want to use
+<a class="link" href="glib-File-Utilities.html#g-dir-make-tmp" title="g_dir_make_tmp ()"><code class="function">g_dir_make_tmp()</code></a> instead.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-mkdtemp.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -970,13 +984,17 @@ g_mkdtemp_full (<em class="parameter"><code><a class="link" href="glib-Basic-Typ
 on most UNIX-like systems.</p>
 <p>The parameter is a string that should follow the rules for
 <code class="function">mkdtemp()</code> templates, i.e. contain the string "XXXXXX".
-<a class="link" href="glib-File-Utilities.html#g-mkdtemp" title="g_mkdtemp ()"><code class="function">g_mkdtemp()</code></a> is slightly more flexible than <code class="function">mkdtemp()</code> in that the
+<a class="link" href="glib-File-Utilities.html#g-mkdtemp-full" title="g_mkdtemp_full ()"><code class="function">g_mkdtemp_full()</code></a> is slightly more flexible than <code class="function">mkdtemp()</code> in that the
 sequence does not have to occur at the very end of the template
 and you can pass a <em class="parameter"><code>mode</code></em>
 . The X string will be modified to form
 the name of a directory that didn't exist. The string should be
 in the GLib file name encoding. Most importantly, on Windows it
 should be in UTF-8.</p>
+<p>If you are going to be creating a temporary directory inside the
+directory returned by <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-tmp-dir" title="g_get_tmp_dir ()"><code class="function">g_get_tmp_dir()</code></a>, you might want to use
+<a class="link" href="glib-File-Utilities.html#g-dir-make-tmp" title="g_dir_make_tmp ()"><code class="function">g_dir_make_tmp()</code></a> instead.</p>
+<p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
 <a name="g-mkdtemp-full.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1039,7 +1057,7 @@ modified, and might thus be a read-only literal string.</p>
 <td class="parameter_name"><p>tmpl</p></td>
 <td class="parameter_description"><p> Template for directory name,
 as in <a class="link" href="glib-File-Utilities.html#g-mkdtemp" title="g_mkdtemp ()"><code class="function">g_mkdtemp()</code></a>, basename only, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> for a default template. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -1898,7 +1916,7 @@ opens a file and associates it with an existing stream.</p>
 <tr>
 <td class="parameter_name"><p>stream</p></td>
 <td class="parameter_description"><p> an existing stream which will be reused, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>

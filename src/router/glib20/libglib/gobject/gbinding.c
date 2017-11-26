@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -193,7 +193,7 @@ enum
 
 static guint gobject_notify_signal_id;
 
-G_DEFINE_TYPE (GBinding, g_binding, G_TYPE_OBJECT);
+G_DEFINE_TYPE (GBinding, g_binding, G_TYPE_OBJECT)
 
 /* the basic assumption is that if either the source or the target
  * goes away then the binding does not exist any more and it should
@@ -775,9 +775,9 @@ g_binding_unbind (GBinding *binding)
  * @target: (type GObject.Object): the target #GObject
  * @target_property: the property on @target to bind
  * @flags: flags to pass to #GBinding
- * @transform_to: (scope notified) (allow-none): the transformation function
+ * @transform_to: (scope notified) (nullable): the transformation function
  *     from the @source to the @target, or %NULL to use the default
- * @transform_from: (scope notified) (allow-none): the transformation function
+ * @transform_from: (scope notified) (nullable): the transformation function
  *     from the @target to the @source, or %NULL to use the default
  * @user_data: custom data to be passed to the transformation functions,
  *     or %NULL

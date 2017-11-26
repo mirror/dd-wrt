@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Miscellaneous Macros: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-fundamentals.html" title="GLib Fundamentals">
 <link rel="prev" href="glib-Numerical-Definitions.html" title="Numerical Definitions">
@@ -879,6 +879,28 @@ the following would only match on compilers such as GCC 4.8 or newer.</p>
 </div>
 
 <p></p>
+<div class="refsect3">
+<a name="G-GNUC-CHECK-VERSION.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody>
+<tr>
+<td class="parameter_name"><p>major</p></td>
+<td class="parameter_description"><p>major version to check against</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+<tr>
+<td class="parameter_name"><p>minor</p></td>
+<td class="parameter_description"><p>minor version to check against</p></td>
+<td class="parameter_annotations"> </td>
+</tr>
+</tbody>
+</table></div>
+</div>
 <p class="since">Since: <a class="link" href="api-index-2-42.html#api-index-2.42">2.42</a></p>
 </div>
 <hr>
@@ -988,7 +1010,9 @@ arguments, with the same syntax as <code class="function">printf()</code>. It al
 to type-check the arguments passed to the function.</p>
 <p>Place the attribute after the function declaration, just before the
 semicolon.</p>
-<p>See the GNU C documentation for more details.</p>
+<p>See the
+<a class="ulink" href="https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-Wformat-3288" target="_top">GNU C documentation</a>
+for more details.</p>
 <div class="informalexample">
   <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
     <tbody>
@@ -1019,12 +1043,13 @@ semicolon.</p>
 <tr>
 <td class="parameter_name"><p>format_idx</p></td>
 <td class="parameter_description"><p>the index of the argument corresponding to the
-format string (The arguments are numbered from 1)</p></td>
+format string (the arguments are numbered from 1)</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
 <td class="parameter_name"><p>arg_idx</p></td>
-<td class="parameter_description"><p>the index of the first of the format arguments</p></td>
+<td class="parameter_description"><p>the index of the first of the format arguments, or 0 if
+there are no format arguments</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
@@ -1039,7 +1064,9 @@ format string (The arguments are numbered from 1)</p></td>
 This is used for declaring functions which take a variable number of
 arguments, with the same syntax as <code class="function">scanf()</code>. It allows the compiler
 to type-check the arguments passed to the function.</p>
-<p>See the GNU C documentation for details.</p>
+<p>See the
+<a class="ulink" href="https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-Wformat-3288" target="_top">GNU C documentation</a>
+for details.</p>
 <div class="refsect3">
 <a name="G-GNUC-SCANF.parameters"></a><h4>Parameters</h4>
 <div class="informaltable"><table class="informaltable" width="100%" border="0">
@@ -1052,12 +1079,13 @@ to type-check the arguments passed to the function.</p>
 <tr>
 <td class="parameter_name"><p>format_idx</p></td>
 <td class="parameter_description"><p>the index of the argument corresponding to
-the format string (The arguments are numbered from 1)</p></td>
+the format string (the arguments are numbered from 1)</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
 <td class="parameter_name"><p>arg_idx</p></td>
-<td class="parameter_description"><p>the index of the first of the format arguments</p></td>
+<td class="parameter_description"><p>the index of the first of the format arguments, or 0 if
+there are no format arguments</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>

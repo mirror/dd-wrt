@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -233,6 +233,12 @@ GFlagsValue*	g_flags_get_value_by_name	(GFlagsClass	*flags_class,
 GLIB_AVAILABLE_IN_ALL
 GFlagsValue*	g_flags_get_value_by_nick	(GFlagsClass	*flags_class,
 						 const gchar	*nick);
+GLIB_AVAILABLE_IN_2_54
+gchar          *g_enum_to_string                (GType           g_enum_type,
+                                                 gint            value);
+GLIB_AVAILABLE_IN_2_54
+gchar          *g_flags_to_string               (GType           flags_type,
+                                                 guint           value);
 GLIB_AVAILABLE_IN_ALL
 void            g_value_set_enum        	(GValue         *value,
 						 gint            v_enum);

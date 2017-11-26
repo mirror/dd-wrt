@@ -85,6 +85,7 @@ g_file_new_for_commandline_arg
 g_file_new_for_commandline_arg_and_cwd
 g_file_new_tmp
 g_file_parse_name
+g_file_new_build_filename
 g_file_dup
 g_file_hash
 g_file_equal
@@ -183,6 +184,9 @@ g_file_mount_enclosing_volume_finish
 g_file_monitor_directory
 g_file_monitor_file
 g_file_monitor
+g_file_load_bytes
+g_file_load_bytes_async
+g_file_load_bytes_finish
 g_file_load_contents
 g_file_load_contents_async
 g_file_load_contents_finish
@@ -264,6 +268,7 @@ G_FILE_ATTRIBUTE_STANDARD_NAME
 G_FILE_ATTRIBUTE_STANDARD_DISPLAY_NAME
 G_FILE_ATTRIBUTE_STANDARD_EDIT_NAME
 G_FILE_ATTRIBUTE_STANDARD_COPY_NAME
+G_FILE_ATTRIBUTE_STANDARD_DESCRIPTION
 G_FILE_ATTRIBUTE_STANDARD_ICON
 G_FILE_ATTRIBUTE_STANDARD_SYMBOLIC_ICON
 G_FILE_ATTRIBUTE_STANDARD_CONTENT_TYPE
@@ -288,12 +293,12 @@ G_FILE_ATTRIBUTE_MOUNTABLE_CAN_EJECT
 G_FILE_ATTRIBUTE_MOUNTABLE_UNIX_DEVICE
 G_FILE_ATTRIBUTE_MOUNTABLE_UNIX_DEVICE_FILE
 G_FILE_ATTRIBUTE_MOUNTABLE_HAL_UDI
-G_FILE_ATTRIBUTE_MOUNTABLE_CAN_POLL
-G_FILE_ATTRIBUTE_MOUNTABLE_IS_MEDIA_CHECK_AUTOMATIC
 G_FILE_ATTRIBUTE_MOUNTABLE_CAN_START
 G_FILE_ATTRIBUTE_MOUNTABLE_CAN_START_DEGRADED
 G_FILE_ATTRIBUTE_MOUNTABLE_CAN_STOP
 G_FILE_ATTRIBUTE_MOUNTABLE_START_STOP_TYPE
+G_FILE_ATTRIBUTE_MOUNTABLE_CAN_POLL
+G_FILE_ATTRIBUTE_MOUNTABLE_IS_MEDIA_CHECK_AUTOMATIC
 G_FILE_ATTRIBUTE_TIME_MODIFIED
 G_FILE_ATTRIBUTE_TIME_MODIFIED_USEC
 G_FILE_ATTRIBUTE_TIME_ACCESS
@@ -326,14 +331,14 @@ G_FILE_ATTRIBUTE_FILESYSTEM_FREE
 G_FILE_ATTRIBUTE_FILESYSTEM_USED
 G_FILE_ATTRIBUTE_FILESYSTEM_TYPE
 G_FILE_ATTRIBUTE_FILESYSTEM_READONLY
+G_FILE_ATTRIBUTE_FILESYSTEM_USE_PREVIEW
 G_FILE_ATTRIBUTE_FILESYSTEM_REMOTE
 G_FILE_ATTRIBUTE_GVFS_BACKEND
 G_FILE_ATTRIBUTE_SELINUX_CONTEXT
 G_FILE_ATTRIBUTE_TRASH_ITEM_COUNT
-G_FILE_ATTRIBUTE_TRASH_DELETION_DATE
 G_FILE_ATTRIBUTE_TRASH_ORIG_PATH
-G_FILE_ATTRIBUTE_FILESYSTEM_USE_PREVIEW
-G_FILE_ATTRIBUTE_STANDARD_DESCRIPTION
+G_FILE_ATTRIBUTE_TRASH_DELETION_DATE
+G_FILE_ATTRIBUTE_RECENT_MODIFIED
 g_file_info_new
 g_file_info_dup
 g_file_info_copy_into
@@ -1375,6 +1380,7 @@ g_io_error_quark
 <TITLE>GContentType</TITLE>
 g_content_type_equals
 g_content_type_is_a
+g_content_type_is_mime_type
 g_content_type_is_unknown
 g_content_type_get_description
 g_content_type_get_mime_type
@@ -1535,6 +1541,7 @@ GUnixMountEntry
 GUnixMountMonitor
 g_unix_mount_free
 g_unix_mount_compare
+g_unix_mount_copy
 g_unix_mount_get_mount_path
 g_unix_mount_get_device_path
 g_unix_mount_get_fs_type
@@ -1547,6 +1554,7 @@ g_unix_mount_guess_can_eject
 g_unix_mount_guess_should_display
 g_unix_mount_point_free
 g_unix_mount_point_compare
+g_unix_mount_point_copy
 g_unix_mount_point_get_mount_path
 g_unix_mount_point_get_device_path
 g_unix_mount_point_get_fs_type
@@ -1567,6 +1575,8 @@ g_unix_mount_monitor_get
 g_unix_mount_monitor_new
 g_unix_mount_monitor_set_rate_limit
 g_unix_is_mount_path_system_internal
+g_unix_is_system_fs_type
+g_unix_is_system_device_path
 <SUBSECTION Standard>
 GUnixMountMonitorClass
 G_UNIX_MOUNT_MONITOR
@@ -1574,8 +1584,12 @@ G_IS_UNIX_MOUNT_MONITOR
 G_TYPE_UNIX_MOUNT_MONITOR
 G_UNIX_MOUNT_MONITOR_CLASS
 G_IS_UNIX_MOUNT_MONITOR_CLASS
+G_TYPE_UNIX_MOUNT_ENTRY
+G_TYPE_UNIX_MOUNT_POINT
 <SUBSECTION Private>
 g_unix_mount_monitor_get_type
+g_unix_mount_entry_get_type
+g_unix_mount_point_get_type
 </SECTION>
 
 <SECTION>
@@ -2087,6 +2101,8 @@ g_socket_get_credentials
 <SUBSECTION>
 g_socket_join_multicast_group
 g_socket_leave_multicast_group
+g_socket_join_multicast_group_ssm
+g_socket_leave_multicast_group_ssm
 g_socket_get_multicast_loopback
 g_socket_set_multicast_loopback
 g_socket_get_multicast_ttl

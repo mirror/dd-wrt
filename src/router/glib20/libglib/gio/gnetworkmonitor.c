@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -35,8 +35,11 @@
  * @include: gio/gio.h
  *
  * #GNetworkMonitor provides an easy-to-use cross-platform API
- * for monitoring network connectivity. On Linux, the implementation
- * is based on the kernel's netlink interface.
+ * for monitoring network connectivity. On Linux, the available
+ * implementations are based on the kernel's netlink interface and
+ * on NetworkManager.
+ *
+ * There is also an implementation for use inside Flatpak sandboxes.
  */
 
 /**
@@ -176,7 +179,7 @@ g_network_monitor_get_connectivity (GNetworkMonitor *monitor)
  * g_network_monitor_can_reach:
  * @monitor: a #GNetworkMonitor
  * @connectable: a #GSocketConnectable
- * @cancellable: (allow-none): a #GCancellable, or %NULL
+ * @cancellable: (nullable): a #GCancellable, or %NULL
  * @error: return location for a #GError, or %NULL
  *
  * Attempts to determine whether or not the host pointed to by
@@ -237,7 +240,7 @@ g_network_monitor_real_can_reach_async (GNetworkMonitor     *monitor,
  * g_network_monitor_can_reach_async:
  * @monitor: a #GNetworkMonitor
  * @connectable: a #GSocketConnectable
- * @cancellable: (allow-none): a #GCancellable, or %NULL
+ * @cancellable: (nullable): a #GCancellable, or %NULL
  * @callback: (scope async): a #GAsyncReadyCallback to call when the
  *     request is satisfied
  * @user_data: (closure): the data to pass to callback function

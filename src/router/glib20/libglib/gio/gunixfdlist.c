@@ -2,10 +2,10 @@
  *
  * Copyright © 2009 Codethink Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * See the included COPYING file for more information.
  *
@@ -200,7 +200,7 @@ g_unix_fd_list_new_from_array (const gint *fds,
 /**
  * g_unix_fd_list_steal_fds:
  * @list: a #GUnixFDList
- * @length: (out) (allow-none): pointer to the length of the returned
+ * @length: (out) (optional): pointer to the length of the returned
  *     array, or %NULL
  *
  * Returns the array of file descriptors that is contained in this
@@ -256,7 +256,7 @@ g_unix_fd_list_steal_fds (GUnixFDList *list,
 /**
  * g_unix_fd_list_peek_fds:
  * @list: a #GUnixFDList
- * @length: (out) (allow-none): pointer to the length of the returned
+ * @length: (out) (optional): pointer to the length of the returned
  *     array, or %NULL
  *
  * Returns the array of file descriptors that is contained in this

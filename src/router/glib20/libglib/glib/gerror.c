@@ -4,7 +4,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -124,8 +124,10 @@
  * foo_open_file (GError **error)
  * {
  *   gint fd;
+ *   int saved_errno;
  *
  *   fd = open ("file.txt", O_RDONLY);
+ *   saved_errno = errno;
  *
  *   if (fd < 0)
  *     {
@@ -133,7 +135,7 @@
  *                    FOO_ERROR,                 // error domain
  *                    FOO_ERROR_BLAH,            // error code
  *                    "Failed to open file: %s", // error message format string
- *                    g_strerror (errno));
+ *                    g_strerror (saved_errno));
  *       return -1;
  *     }
  *   else

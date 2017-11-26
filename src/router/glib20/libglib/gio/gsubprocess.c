@@ -3,10 +3,10 @@
  * Copyright © 2012, 2013 Red Hat, Inc.
  * Copyright © 2012, 2013 Canonical Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * See the included COPYING file for more information.
  *
@@ -169,7 +169,7 @@ struct _GSubprocess
 };
 
 G_DEFINE_TYPE_WITH_CODE (GSubprocess, g_subprocess, G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, initable_iface_init));
+                         G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE, initable_iface_init))
 
 enum
 {
@@ -199,36 +199,49 @@ unset_cloexec (int fd)
 
   if (flags != -1)
     {
+      int errsv;
       flags &= (~FD_CLOEXEC);
       do
-        result = fcntl (fd, F_SETFD, flags);
-      while (result == -1 && errno == EINTR);
+        {
+          result = fcntl (fd, F_SETFD, flags);
+          errsv = errno;
+        }
+      while (result == -1 && errsv == EINTR);
     }
 }
 
 static int
 dupfd_cloexec (int parent_fd)
 {
-  int fd;
+  int fd, errsv;
 #ifdef F_DUPFD_CLOEXEC
   do
-    fd = fcntl (parent_fd, F_DUPFD_CLOEXEC, 3);
-  while (fd == -1 && errno == EINTR);
+    {
+      fd = fcntl (parent_fd, F_DUPFD_CLOEXEC, 3);
+      errsv = errno;
+    }
+  while (fd == -1 && errsv == EINTR);
 #else
   /* OS X Snow Lion and earlier don't have F_DUPFD_CLOEXEC:
    * https://bugzilla.gnome.org/show_bug.cgi?id=710962
    */
   int result, flags;
   do
-    fd = fcntl (parent_fd, F_DUPFD, 3);
-  while (fd == -1 && errno == EINTR);
+    {
+      fd = fcntl (parent_fd, F_DUPFD, 3);
+      errsv = errno;
+    }
+  while (fd == -1 && errsv == EINTR);
   flags = fcntl (fd, F_GETFD, 0);
   if (flags != -1)
     {
       flags |= FD_CLOEXEC;
       do
-        result = fcntl (fd, F_SETFD, flags);
-      while (result == -1 && errno == EINTR);
+        {
+          result = fcntl (fd, F_SETFD, flags);
+          errsv = errno;
+        }
+      while (result == -1 && errsv == EINTR);
     }
 #endif
   return fd;
@@ -245,6 +258,7 @@ child_setup (gpointer user_data)
   ChildData *child_data = user_data;
   gint i;
   gint result;
+  int errsv;
 
   /* We're on the child side now.  "Rename" the file descriptors in
    * child_data.fds[] to stdin/stdout/stderr.
@@ -257,8 +271,11 @@ child_setup (gpointer user_data)
     if (child_data->fds[i] != -1 && child_data->fds[i] != i)
       {
         do
-          result = dup2 (child_data->fds[i], i);
-        while (result == -1 && errno == EINTR);
+          {
+            result = dup2 (child_data->fds[i], i);
+            errsv = errno;
+          }
+        while (result == -1 && errsv == EINTR);
       }
 
   /* Basic fd assignments we can just unset FD_CLOEXEC */
@@ -301,8 +318,11 @@ child_setup (gpointer user_data)
           else
             {
               do
-                result = dup2 (parent_fd, child_fd);
-              while (result == -1 && errno == EINTR);
+                {
+                  result = dup2 (parent_fd, child_fd);
+                  errsv = errno;
+                }
+              while (result == -1 && errsv == EINTR);
               (void) close (parent_fd);
             }
         }
@@ -648,7 +668,7 @@ g_subprocess_class_init (GSubprocessClass *class)
 /**
  * g_subprocess_new: (skip)
  * @flags: flags that define the behaviour of the subprocess
- * @error: (allow-none): return location for an error, or %NULL
+ * @error: (nullable): return location for an error, or %NULL
  * @argv0: first commandline argument to pass to the subprocess
  * @...:   more commandline arguments, followed by %NULL
  *
@@ -697,9 +717,9 @@ g_subprocess_new (GSubprocessFlags   flags,
 
 /**
  * g_subprocess_newv: (rename-to g_subprocess_new)
- * @argv: (array zero-terminated=1) (element-type utf8): commandline arguments for the subprocess
+ * @argv: (array zero-terminated=1) (element-type filename): commandline arguments for the subprocess
  * @flags: flags that define the behaviour of the subprocess
- * @error: (allow-none): return location for an error, or %NULL
+ * @error: (nullable): return location for an error, or %NULL
  *
  * Create a new process with the given flags and argument list.
  *
@@ -810,21 +830,51 @@ g_subprocess_get_stderr_pipe (GSubprocess *subprocess)
   return subprocess->stderr_pipe;
 }
 
+/* Remove the first list element containing @data, and return %TRUE. If no
+ * such element is found, return %FALSE. */
+static gboolean
+slist_remove_if_present (GSList        **list,
+                         gconstpointer   data)
+{
+  GSList *l, *prev;
+
+  for (l = *list, prev = NULL; l != NULL; prev = l, l = prev->next)
+    {
+      if (l->data == data)
+        {
+          if (prev != NULL)
+            prev->next = l->next;
+          else
+            *list = l->next;
+
+          g_slist_free_1 (l);
+
+          return TRUE;
+        }
+    }
+
+  return FALSE;
+}
+
 static void
 g_subprocess_wait_cancelled (GCancellable *cancellable,
                              gpointer      user_data)
 {
   GTask *task = user_data;
   GSubprocess *self;
+  gboolean task_was_pending;
 
   self = g_task_get_source_object (task);
 
   g_mutex_lock (&self->pending_waits_lock);
-  self->pending_waits = g_slist_remove (self->pending_waits, task);
+  task_was_pending = slist_remove_if_present (&self->pending_waits, task);
   g_mutex_unlock (&self->pending_waits_lock);
 
-  g_task_return_boolean (task, FALSE);
-  g_object_unref (task);
+  if (task_was_pending)
+    {
+      g_task_return_boolean (task, FALSE);
+      g_object_unref (task);  /* ref from pending_waits */
+    }
 }
 
 /**
@@ -1499,8 +1549,7 @@ g_subprocess_communicate_state_free (gpointer data)
 
   if (state->cancellable_source)
     {
-      if (!g_source_is_destroyed (state->cancellable_source))
-        g_source_destroy (state->cancellable_source);
+      g_source_destroy (state->cancellable_source);
       g_source_unref (state->cancellable_source);
     }
 
@@ -1577,7 +1626,7 @@ g_subprocess_communicate_internal (GSubprocess         *subprocess,
 /**
  * g_subprocess_communicate:
  * @subprocess: a #GSubprocess
- * @stdin_buf: (allow-none): data to send to the stdin of the subprocess, or %NULL
+ * @stdin_buf: (nullable): data to send to the stdin of the subprocess, or %NULL
  * @cancellable: a #GCancellable
  * @stdout_buf: (out): data read from the subprocess stdout
  * @stderr_buf: (out): data read from the subprocess stderr
@@ -1658,8 +1707,8 @@ g_subprocess_communicate (GSubprocess   *subprocess,
 /**
  * g_subprocess_communicate_async:
  * @subprocess: Self
- * @stdin_buf: (allow-none): Input data, or %NULL
- * @cancellable: (allow-none): Cancellable
+ * @stdin_buf: (nullable): Input data, or %NULL
+ * @cancellable: (nullable): Cancellable
  * @callback: Callback
  * @user_data: User data
  *
@@ -1724,7 +1773,7 @@ g_subprocess_communicate_finish (GSubprocess   *subprocess,
 /**
  * g_subprocess_communicate_utf8:
  * @subprocess: a #GSubprocess
- * @stdin_buf: (allow-none): data to send to the stdin of the subprocess, or %NULL
+ * @stdin_buf: (nullable): data to send to the stdin of the subprocess, or %NULL
  * @cancellable: a #GCancellable
  * @stdout_buf: (out): data read from the subprocess stdout
  * @stderr_buf: (out): data read from the subprocess stderr
@@ -1769,7 +1818,7 @@ g_subprocess_communicate_utf8 (GSubprocess   *subprocess,
 /**
  * g_subprocess_communicate_utf8_async:
  * @subprocess: Self
- * @stdin_buf: (allow-none): Input data, or %NULL
+ * @stdin_buf: (nullable): Input data, or %NULL
  * @cancellable: Cancellable
  * @callback: Callback
  * @user_data: User data

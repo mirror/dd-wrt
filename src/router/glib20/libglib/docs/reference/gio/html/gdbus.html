@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>gdbus: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
+<meta name="generator" content="DocBook XSL Stylesheets Vsnapshot">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="tools.html" title="GIO Tools">
 <link rel="prev" href="glib-compile-resources.html" title="glib-compile-resources">
@@ -34,6 +34,7 @@
 <div class="cmdsynopsis"><p><code class="command">gdbus</code>   monitor  [ --system  |   --session  |   --address <em class="replaceable"><code>address</code></em> ]  --dest <em class="replaceable"><code>bus_name</code></em>  [ --object-path <em class="replaceable"><code>/path/to/object</code></em> ]</p></div>
 <div class="cmdsynopsis"><p><code class="command">gdbus</code>   call  [ --system  |   --session  |   --address <em class="replaceable"><code>address</code></em> ]  --dest <em class="replaceable"><code>bus_name</code></em>   --object-path <em class="replaceable"><code>/path/to/object</code></em>   --method <em class="replaceable"><code>org.project.InterfaceName.MethodName</code></em>  [ --timeout <em class="replaceable"><code>seconds</code></em> ]  ARG1   ARG2... </p></div>
 <div class="cmdsynopsis"><p><code class="command">gdbus</code>   emit  [ --system  |   --session  |   --address <em class="replaceable"><code>address</code></em> ]  --object-path <em class="replaceable"><code>/path/to/object</code></em>   --signal <em class="replaceable"><code>org.project.InterfaceName.SignalName</code></em>  [ --dest <em class="replaceable"><code>unique_bus_name</code></em> ]  ARG1   ARG2... </p></div>
+<div class="cmdsynopsis"><p><code class="command">gdbus</code>   wait  [ --system  |   --session  |   --address <em class="replaceable"><code>address</code></em> ]  --activate <em class="replaceable"><code>bus_name</code></em>  [ --timeout <em class="replaceable"><code>seconds</code></em> ]  <em class="replaceable"><code>bus_name</code></em> </p></div>
 <div class="cmdsynopsis"><p><code class="command">gdbus</code>   help </p></div>
 </div>
 <div class="refsect1">
@@ -89,6 +90,15 @@
           Emits a signal. Each argument to include in the signal must be specified as a serialized
           <a href="../glib-GVariant.html#GVariant"><span class="type">GVariant</span></a> except that strings do
           not need explicit quotes.
+        </p></td>
+</tr>
+<tr>
+<td><p><span class="term"><code class="option">wait</code></span></p></td>
+<td><p>
+          Waits until <em class="replaceable"><code>bus_name</code></em> is owned by some
+          process on the bus. If the <code class="option">--activate</code> is specified,
+          that bus name will be auto-started first. It may be the same as the
+          bus name being waited for, or different.
         </p></td>
 </tr>
 <tr>
@@ -276,6 +286,34 @@ $ gdbus emit --session --object-path /foo --signal org.bar.Foo "['foo', 'bar', '
 </p>
 <pre class="programlisting">
 $ gdbus emit --session --object-path /bar --signal org.bar.Bar someString --dest :1.42
+</pre>
+<p>
+  Waiting for a well-known name to be owned on the bus; this will
+  <span class="emphasis"><em>not</em></span> auto-start the service:
+</p>
+<pre class="programlisting">
+$ gdbus wait --session org.bar.SomeName
+</pre>
+<p>
+  Auto-starting then waiting for a well-known name to be owned on the bus:
+</p>
+<pre class="programlisting">
+$ gdbus wait --session --activate org.bar.SomeName
+</pre>
+<p>
+  Auto-starting a different service, then waiting for a well-known name to be
+  owned on the bus. This is useful in situations where
+  <em class="replaceable"><code>SomeName</code></em> is not directly activatable:
+</p>
+<pre class="programlisting">
+$ gdbus wait --session --activate org.bar.PrerequisiteName org.bar.SomeName
+</pre>
+<p>
+  Waiting for a well-known name and giving up after 30 seconds. By default,
+  the timeout is disabled; or set <code class="option">--timeout</code> to 0 to disable it:
+</p>
+<pre class="programlisting">
+$ gdbus wait --session --timeout 30 org.bar.SomeName
 </pre>
 </div>
 <div class="refsect1">

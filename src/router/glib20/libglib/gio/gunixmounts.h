@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,6 +33,10 @@ G_BEGIN_DECLS
  **/
 typedef struct _GUnixMountEntry GUnixMountEntry;
 
+#define G_TYPE_UNIX_MOUNT_ENTRY (g_unix_mount_entry_get_type ())
+GLIB_AVAILABLE_IN_2_54
+GType g_unix_mount_entry_get_type (void) G_GNUC_CONST;
+
 /**
  * GUnixMountPoint:
  *
@@ -40,6 +44,10 @@ typedef struct _GUnixMountEntry GUnixMountEntry;
  * This corresponds roughly to a fstab entry.
  **/
 typedef struct _GUnixMountPoint GUnixMountPoint;
+
+#define G_TYPE_UNIX_MOUNT_POINT (g_unix_mount_point_get_type ())
+GLIB_AVAILABLE_IN_2_54
+GType g_unix_mount_point_get_type (void) G_GNUC_CONST;
 
 /**
  * GUnixMountMonitor:
@@ -58,8 +66,12 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC(GUnixMountMonitor, g_object_unref)
 
 GLIB_AVAILABLE_IN_ALL
 void           g_unix_mount_free                    (GUnixMountEntry    *mount_entry);
+GLIB_AVAILABLE_IN_2_54
+GUnixMountEntry *g_unix_mount_copy                  (GUnixMountEntry    *mount_entry);
 GLIB_AVAILABLE_IN_ALL
 void           g_unix_mount_point_free              (GUnixMountPoint    *mount_point);
+GLIB_AVAILABLE_IN_2_54
+GUnixMountPoint *g_unix_mount_point_copy            (GUnixMountPoint    *mount_point);
 GLIB_AVAILABLE_IN_ALL
 gint           g_unix_mount_compare                 (GUnixMountEntry    *mount1,
 						     GUnixMountEntry    *mount2);
@@ -84,6 +96,8 @@ GIcon *        g_unix_mount_guess_icon              (GUnixMountEntry    *mount_e
 GLIB_AVAILABLE_IN_ALL
 GIcon *        g_unix_mount_guess_symbolic_icon     (GUnixMountEntry    *mount_entry);
 
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(GUnixMountEntry, g_unix_mount_free)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(GUnixMountPoint, g_unix_mount_point_free)
 
 GLIB_AVAILABLE_IN_ALL
 gint           g_unix_mount_point_compare           (GUnixMountPoint    *mount1,
@@ -139,6 +153,10 @@ void               g_unix_mount_monitor_set_rate_limit (GUnixMountMonitor *mount
 
 GLIB_AVAILABLE_IN_ALL
 gboolean g_unix_is_mount_path_system_internal (const char *mount_path);
+GLIB_AVAILABLE_IN_2_56
+gboolean g_unix_is_system_fs_type             (const char *fs_type);
+GLIB_AVAILABLE_IN_2_56
+gboolean g_unix_is_system_device_path         (const char *device_path);
 
 G_END_DECLS
 

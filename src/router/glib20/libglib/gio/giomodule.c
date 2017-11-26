@@ -5,7 +5,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -43,8 +43,15 @@
 #endif
 #include <glib/gstdio.h>
 
-#ifdef G_OS_UNIX
+#if defined(G_OS_UNIX) && !defined(HAVE_COCOA)
 #include "gdesktopappinfo.h"
+#endif
+#ifdef HAVE_COCOA
+#include "gosxappinfo.h"
+#endif
+
+#ifdef HAVE_COCOA
+#include <AvailabilityMacros.h>
 #endif
 
 /**
@@ -89,7 +96,7 @@
  *
  *  |[<!-- language="C" -->
  *  // Implement an extension point
- *  G_DEFINE_TYPE (MyExampleImpl, my_example_impl, MY_TYPE_EXAMPLE);
+ *  G_DEFINE_TYPE (MyExampleImpl, my_example_impl, MY_TYPE_EXAMPLE)
  *  g_io_extension_point_implement ("my-extension-point",
  *                                  my_example_impl_get_type (),
  *                                  "my-example",
@@ -195,14 +202,14 @@ g_io_module_scope_block (GIOModuleScope *scope,
   g_return_if_fail (basename != NULL);
 
   key = g_strdup (basename);
-  g_hash_table_insert (scope->basenames, key, key);
+  g_hash_table_add (scope->basenames, key);
 }
 
 static gboolean
 _g_io_module_scope_contains (GIOModuleScope *scope,
                              const gchar    *basename)
 {
-  return g_hash_table_lookup (scope->basenames, basename) ? TRUE : FALSE;
+  return g_hash_table_contains (scope->basenames, basename);
 }
 
 struct _GIOModule {
@@ -254,7 +261,7 @@ struct _GIOExtensionPoint {
 static GHashTable *extension_points = NULL;
 G_LOCK_DEFINE_STATIC(extension_points);
 
-G_DEFINE_TYPE (GIOModule, g_io_module, G_TYPE_TYPE_MODULE);
+G_DEFINE_TYPE (GIOModule, g_io_module, G_TYPE_TYPE_MODULE)
 
 static void
 g_io_module_class_init (GIOModuleClass *class)
@@ -664,7 +671,7 @@ try_class (GIOExtension *extension,
 /**
  * _g_io_module_get_default_type:
  * @extension_point: the name of an extension point
- * @envvar: (allow-none): the name of an environment variable to
+ * @envvar: (nullable): the name of an environment variable to
  *     override the default implementation.
  * @is_supported_offset: a vtable offset, or zero
  *
@@ -785,9 +792,9 @@ try_implementation (GIOExtension         *extension,
 /**
  * _g_io_module_get_default:
  * @extension_point: the name of an extension point
- * @envvar: (allow-none): the name of an environment variable to
+ * @envvar: (nullable): the name of an environment variable to
  *     override the default implementation.
- * @verify_func: (allow-none): a function to call to verify that
+ * @verify_func: (nullable): a function to call to verify that
  *     a given implementation is usable in the current environment.
  *
  * Retrieves the default object implementing @extension_point.
@@ -918,7 +925,7 @@ extern GType g_proxy_resolver_portal_get_type (void);
 extern GType g_network_monitor_portal_get_type (void);
 #endif
 
-#ifdef HAVE_COCOA
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1090
 extern GType g_cocoa_notification_backend_get_type (void);
 #endif
 
@@ -971,7 +978,7 @@ _g_io_modules_ensure_extension_points_registered (void)
     {
       registered_extensions = TRUE;
       
-#ifdef G_OS_UNIX
+#if defined(G_OS_UNIX) && !defined(HAVE_COCOA)
 #if !GLIB_CHECK_VERSION (3, 0, 0)
       ep = g_io_extension_point_register (G_DESKTOP_APP_INFO_LOOKUP_EXTENSION_POINT_NAME);
       G_GNUC_BEGIN_IGNORE_DEPRECATIONS
@@ -1111,7 +1118,8 @@ _g_io_modules_ensure_loaded (void)
       g_type_ensure (g_registry_backend_get_type ());
 #endif
 #ifdef HAVE_COCOA
-      g_nextstep_settings_backend_get_type ();
+      g_type_ensure (g_nextstep_settings_backend_get_type ());
+      g_type_ensure (g_osx_app_info_get_type ());
 #endif
 #ifdef G_OS_UNIX
       g_type_ensure (_g_unix_volume_monitor_get_type ());
@@ -1121,7 +1129,7 @@ _g_io_modules_ensure_loaded (void)
       g_type_ensure (g_network_monitor_portal_get_type ());
       g_type_ensure (g_proxy_resolver_portal_get_type ());
 #endif
-#ifdef HAVE_COCOA
+#if HAVE_MAC_OS_X_VERSION_MIN_REQUIRED >= 1090
       g_type_ensure (g_cocoa_notification_backend_get_type ());
 #endif
 #ifdef G_OS_WIN32
@@ -1280,6 +1288,8 @@ lazy_load_modules (GIOExtensionPoint *extension_point)
 GList *
 g_io_extension_point_get_extensions (GIOExtensionPoint *extension_point)
 {
+  g_return_val_if_fail (extension_point != NULL, NULL);
+
   lazy_load_modules (extension_point);
   return extension_point->extensions;
 }
