@@ -17,9 +17,9 @@ json-c:
 	make -C json-c install
 
 json-c-install:
-	install -D json-c/.libs/libjson.so.2.0.2 $(INSTALLDIR)/json-c/usr/lib/libjson.so.2.0.2
-	cd $(INSTALLDIR)/json-c/usr/lib ; ln -s libjson.so.2.0.2 libjson.so.2  ; true
-	cd $(INSTALLDIR)/json-c/usr/lib ; ln -s libjson.so.2.0.2 libjson.so  ; true
+	install -D json-c/.libs/libjson-c.so.2.0.2 $(INSTALLDIR)/json-c/usr/lib/libjson-c.so.2.0.2
+	cd $(INSTALLDIR)/json-c/usr/lib ; ln -s libjson-c.so.2.0.2 libjson-c.so.2  ; true
+	cd $(INSTALLDIR)/json-c/usr/lib ; ln -s libjson-c.so.2.0.2 libjson-c.so  ; true
 
 json-c-clean: 
 	make -C json-c clean
