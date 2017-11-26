@@ -1116,6 +1116,7 @@ endif
 ifeq ($(CONFIG_WOL),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc wol
 endif
+	cd $(INSTALLDIR)/sbin && ln -sf rc ipfmt
 
 wland: wland.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless -lshutils -lqos

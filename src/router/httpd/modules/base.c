@@ -572,7 +572,10 @@ static void cert_file_out(unsigned char method, struct mime_handler *handler, ch
 		return;
 	char *temp2 = &path[idx + 1];
 	char link[128];
-	sprintf(link, "/jffs/etc/freeradius/certs/clients/%s", temp2);
+	if (!strcmp(temp2, "ca.pem"))
+		sprintf(link, "/jffs/etc/freeradius/certs/ca.pem");
+	else
+		sprintf(link, "/jffs/etc/freeradius/certs/clients/%s", temp2);
 	do_file_attach(handler, link, stream, temp2);
 }
 
@@ -716,6 +719,8 @@ static void do_radiuscert(unsigned char method, struct mime_handler *handler, ch
 	};
 	call_ej("do_pagehead", NULL, wp, 1, argv);	// thats dirty
 	websWrite(wp, "</head>\n" "<body>\n" "<div id=\"main\">\n" "<div id=\"contentsInfo\">\n" "<h2>%s</h2>\n", tran_string(buf, "freeradius.clientcert"));
+	sprintf(filename, "ca.pem");
+	show_certfield(wp, "CA Certificate", filename);
 	sprintf(filename, "%s-cert.pem", db->users[radiusindex].user);
 	show_certfield(wp, "Certificate PEM", filename);
 	sprintf(filename, "%s-cert.p12", db->users[radiusindex].user);
@@ -1137,6 +1142,9 @@ static struct gozila_action gozila_actions[] = {
 	 "milkfish_alias_remove"},
 	{"Milkfish_messaging", "send_message", "", 1, SERVICE_RESTART,
 	 "milkfish_sip_message"},
+#endif
+#ifdef HAVE_STATUS_GPIO
+	{"Gpio", "gpios_save", "", 0, REFRESH, "gpios_save"},
 #endif
 #ifdef HAVE_BUFFALO
 	{"SetupAssistant", "save", "setupassistant", 1, REFRESH,

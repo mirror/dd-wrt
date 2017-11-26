@@ -472,6 +472,9 @@ endif
 ifeq ($(CONFIG_3G),y)
 CFLAGS += -DHAVE_3G
 endif
+ifeq ($(CONFIG_UQMI),y)
+CFLAGS += -L$(TOP)/_staging/usr/lib -ljson
+endif
 ifeq ($(CONFIG_MAKSAT),y)
 CFLAGS += -DHAVE_MAKSAT
 endif

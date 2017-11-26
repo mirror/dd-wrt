@@ -434,7 +434,8 @@ int check_wan_link(int num)
 #endif
 #ifdef HAVE_3G
 	     || (nvram_match("wan_proto", "3g") && !nvram_match("3gdata", "hso")
-		 && !nvram_match("3gdata", "qmi"))
+		 && !nvram_match("3gdata", "qmi") && !nvram_match("3gdata", "mbim")
+		 && !nvram_match("3gdata", "sierradirectip"))
 #endif
 	     || nvram_match("wan_proto", "heartbeat"))
 	    ) {
@@ -469,8 +470,48 @@ int check_wan_link(int num)
 			}
 		}
 	}
+#if defined(HAVE_LIBMBIM)
+	else if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "mbim")) {
+		FILE *fp = fopen("/tmp/mbimstatus", "rb");
+		int value = 0;
+		if (fp) {
+			fscanf(fp, "%d", &value);
+			fclose(fp);
+		}
+		if (value)
+			return 1;
+	}
+#endif
 #if defined(HAVE_LIBQMI) || defined(HAVE_UQMI)
-	else if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "qmi")) {
+	else if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "sierradirectip")) {
+		FILE *fp = fopen("/tmp/sierradipstatus", "rb");
+		int value = 0;
+		if (fp) {
+			fscanf(fp, "%d", &value);
+			fclose(fp);
+		}
+		if (value) {
+#if defined(HAVE_TMK) || defined(HAVE_BKM)
+#if 0
+			char *gpio3g;
+			gpio3g = nvram_get("gpio3g");
+			if (gpio3g != NULL)
+				set_gpio(atoi(gpio3g), 1);
+#endif
+#endif
+			return 1;
+		}
+#if defined(HAVE_TMK) || defined(HAVE_BKM)
+		char *gpio3g;
+		gpio3g = nvram_get("gpio3g");
+		if (gpio3g != NULL)
+			set_gpio(atoi(gpio3g), 0);
+		gpio3g = nvram_get("gpiowancable");
+		if (gpio3g != NULL)
+			set_gpio(atoi(gpio3g), 0);
+#endif
+		return 0;
+	} else if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "qmi")) {
 		FILE *fp = fopen("/tmp/qmistatus", "rb");
 		int value = 0;
 		if (fp) {
@@ -478,8 +519,36 @@ int check_wan_link(int num)
 			fclose(fp);
 		}
 #ifdef HAVE_UQMI
-		if (value)
+		if (value) {
+#if defined(HAVE_TMK) || defined(HAVE_BKM)
+#if 0
+			char *gpio3g;
+			gpio3g = nvram_get("gpio3g");
+			if (gpio3g != NULL)
+				set_gpio(atoi(gpio3g), 1);
+#endif
+#endif
 			return 1;
+		}
+	} else if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "mbim")) {
+		FILE *fp = fopen("/tmp/mbimstatus", "rb");
+		int value = 0;
+		if (fp) {
+			fscanf(fp, "%d", &value);
+			fclose(fp);
+		}
+		if (value) {
+			return 1;
+		}
+#if defined(HAVE_TMK) || defined(HAVE_BKM)
+		char *gpio3g;
+		gpio3g = nvram_get("gpio3g");
+		if (gpio3g != NULL)
+			set_gpio(atoi(gpio3g), 0);
+		gpio3g = nvram_get("gpiowancable");
+		if (gpio3g != NULL)
+			set_gpio(atoi(gpio3g), 0);
+#endif
 		return 0;
 #else
 		if (value)
@@ -3667,9 +3736,12 @@ char *get_wan_face(void)
 	}
 #ifdef HAVE_3G
 	else if (nvram_match("wan_proto", "3g")) {
-		if (nvram_match("3gdata", "qmi")) {
+		if (nvram_match("3gdata", "mbim")) {
 			strncpy(localwanface, "wwan0", IFNAMSIZ);
-		} else {
+		} else if (nvram_match("3gdata", "qmi")) {
+			strncpy(localwanface, "wwan0", IFNAMSIZ);
+		} else if (nvram_match("3gdata", "sierradirectip")) {
+			strncpy(localwanface, "wwan0", IFNAMSIZ);
 			if (nvram_match("pppd_pppifname", ""))
 				strncpy(localwanface, "ppp0", IFNAMSIZ);
 			else

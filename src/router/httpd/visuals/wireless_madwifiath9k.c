@@ -52,11 +52,21 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 	struct mac80211_info *mac80211_info;
 	struct wifi_client_info *wc;
 	char nb[32];
-	int bias, qual, it;
+	int bias, qual, it, div = 1, mul = 1;
 	int co = 0;
 	sprintf(nb, "%s_bias", ifname);
 	bias = nvram_default_geti(nb, 0);
 
+	if (is_ath5k(ifname)) {
+		sprintf(nb, "%s_channelbw", ifname);
+		int channelbw = atoi(nvram_default_get(nb, "0"));
+		if (channelbw == 40)
+			mul = 2;
+		if (channelbw == 10)
+			div = 2;
+		if (channelbw == 5)
+			div = 4;
+	}
 	// sprintf(it, "inactivity_time", ifname);
 //      it = nvram_default_geti("inacttime", 300000);
 
@@ -122,8 +132,8 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 		if (ht == 5)
 			sprintf(info, "LEGACY%s", wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
 
-		websWrite(wp, "'%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d'", mac, wc->ifname, UPTIME(wc->uptime), wc->txrate / 10, wc->rxrate / 10, info, wc->signal + bias, wc->noise + bias,
-			  wc->signal - wc->noise, qual);
+		websWrite(wp, "'%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d'", mac, wc->ifname, UPTIME(wc->uptime), wc->txrate / 10 * mul / div, wc->rxrate / 10 * mul / div, info, wc->signal + bias,
+			  wc->noise + bias, wc->signal - wc->noise, qual);
 		cnt++;
 //              }
 	}

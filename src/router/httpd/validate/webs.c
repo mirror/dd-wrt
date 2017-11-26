@@ -2536,6 +2536,56 @@ void save_olsrd(webs_t wp)
 }
 #endif
 
+#ifdef HAVE_STATUS_GPIO
+void gpios_save(webs_t wp)
+{
+	char *var, *next;
+	char nvgpio[32], gpioname[32];
+
+	char *value = websGetVar(wp, "action", "");
+
+	char *gpios = nvram_safe_get("gpio_outputs");
+	var = (char *)malloc(strlen(gpios) + 1);
+	if (var != NULL) {
+		if (gpios != NULL) {
+			foreach(var, gpios, next) {
+				sprintf(nvgpio, "gpio%s", var);
+				sprintf(gpioname, "gpio%s_name", var);
+				value = websGetVar(wp, nvgpio, NULL);
+				if (value) {
+					set_gpio(atoi(var), atoi(value));
+					nvram_set(nvgpio, value);
+				}
+				value = websGetVar(wp, gpioname, NULL);
+				if (value) {
+					nvram_set(gpioname, value);
+				} else {
+					nvram_set(gpioname, "");
+				}
+			}
+		}
+		free(var);
+	}
+	gpios = nvram_safe_get("gpio_inputs");
+	var = (char *)malloc(strlen(gpios) + 1);
+	if (var != NULL) {
+		if (gpios != NULL) {
+			foreach(var, gpios, next) {
+				sprintf(gpioname, "gpio%s_name", var);
+				value = websGetVar(wp, gpioname, NULL);
+				if (value) {
+					nvram_set(gpioname, value);
+				} else {
+					nvram_set(gpioname, "");
+				}
+
+			}
+		}
+		free(var);
+	}
+	applytake(value);
+}
+#endif
 #ifdef HAVE_VLANTAGGING
 
 static void trunkspaces(char *str)

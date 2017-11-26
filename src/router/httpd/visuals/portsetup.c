@@ -177,6 +177,11 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 				// }
 			}
 			websWrite(wp, "</select>\n</div>\n");
+			// NSMD
+			sprintf(nld_enable, "nsmd_%s_enable", var);
+			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">NSMD enable</div>\n");
+			websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"nsmd_%s_enable\" value=\"1\" %s /></div>\n", var, nvram_match(nld_enable, "1") ? "checked=\"checked\"" : "");
+
 		}
 #endif
 #if defined(HAVE_BATMANADV)
@@ -216,6 +221,56 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_bridged\"), \"%s_idnet\", %s);\n", var, layer, nvram_matchi(ssid, 0) ? "true" : "false");
 		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_dns_redirect\"), \"%s_idredirect\", %s);\n", var, layer, nvram_matchi(redirect, 1) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
+#ifdef HAVE_TMK
+		websWrite(wp, "<fieldset>\n");
+		char r1x_if[32];
+		sprintf(r1x_if, "%s_r1x", var);
+		nvram_default_get(r1x_if, "0");
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">Enable Wired 802.1x Server</div>\n");
+		websWrite(wp, "<input class=\"spaceradio\" onclick=\"show_layer_ext(this, '%s_r1x_block', true);\" type=\"radio\" name=\"%s_r1x\" value=\"1\" %s />\n", var, var,
+			  nvram_match(r1x_if, "1") ? "checked=\"checked\"" : "");
+		websWrite(wp, "<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n");
+		websWrite(wp, "<input class=\"spaceradio\" onclick=\"show_layer_ext(this, '%s_r1x_block', false);\" type=\"radio\" name=\"%s_r1x\" value=\"0\" %s />\n", var, var,
+			  nvram_match(r1x_if, "0") ? "checked=\"checked\"" : "");
+		websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script>&nbsp;</div>\n");
+		// showRadio(wp, "Use as primary Wan", wan_prim);
+		websWrite(wp, "<div id=\"%s_r1x_block\">\n", var);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\">Radius Server address</div>\n");
+		char *ipv = nvram_nget("%s_r1x_server", var);
+		websWrite(wp, "<input name=\"%s_r1x_server\" size=\"32\" maxlength=\"255\" value=\"%s\" />", var, ipv);
+		websWrite(wp, "</div>\n");
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\">Radius Server Port</div>\n");
+		ipv = nvram_nget("%s_r1x_port", var);
+		websWrite(wp, "<input name=\"%s_r1x_port\" size=\"5\" maxlength=\"10\" value=\"%s\" />", var, ipv);
+		websWrite(wp, "</div>\n");
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\">Radius Shared Secret</div>\n");
+		ipv = nvram_nget("%s_r1x_ss", var);
+		websWrite(wp, "<input name=\"%s_r1x_ss\" size=\"32\" maxlength=\"255\" value=\"%s\" />", var, ipv);
+		websWrite(wp, "</div>\n");
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\">Session Time (s)</div>\n");
+		ipv = nvram_nget("%s_r1x_st", var);
+		websWrite(wp, "<input name=\"%s_r1x_st\" size=\"5\" maxlength=\"20\" value=\"%s\" />", var, ipv);
+		websWrite(wp, "</div>\n");
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\">MAC Address Whitelist</div>\n");
+		ipv = nvram_nget("%s_r1x_wl", var);
+		websWrite(wp, "<input name=\"%s_r1x_wl\" size=\"32\" maxlength=\"255\" value=\"%s\" />", var, ipv);
+		websWrite(wp, "</div>\n");
+
+		websWrite(wp, "</fieldset><br />\n");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n ");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_r1x\"), \"%s_r1x_block\", %s);\n", var, layer, nvram_match(r1x_if, "1") ? "true" : "false");
+		websWrite(wp, "//]]>\n</script>\n");
+#endif
+
 		websWrite(wp, "</fieldset>\n");
 	      skip:;
 	}

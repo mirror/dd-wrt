@@ -472,6 +472,10 @@ static void handle_index(void)
 	start_service("nas");
 	start_service("guest_nas");
 #endif
+#if defined(HAVE_TMK) || defined(HAVE_BKM)
+	start_service_f("nsmd");
+#endif
+
 	start_service_f("radio_timer");
 	startstop("firewall");
 	// httpd will not

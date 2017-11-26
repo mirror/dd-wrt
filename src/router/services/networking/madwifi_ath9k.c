@@ -48,7 +48,7 @@
 
 #include <services.h>
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
-static void setupSupplicant_ath9k(char *prefix, char *ssidoverride);
+static void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc);
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss);
 
 void delete_ath9k_devices(char *physical_iface)
@@ -124,6 +124,8 @@ void configure_single_ath9k(int count)
 	char primary[32] = { 0 };
 	char regdomain[16];
 	char *country;
+	int isadhoc = 0;
+
 	sprintf(dev, "ath%d", count);
 	isath5k = is_ath5k(dev);
 	// sprintf(regdomain, "%s_regdomain", dev);
@@ -240,7 +242,15 @@ void configure_single_ath9k(int count)
 
 		strcpy(primary, dev);
 	} else {
+		char akm[16];
+		sprintf(akm, "%s_akm", dev);
 		eval("iw", wif, "interface", "add", dev, "type", "ibss");
+		if (nvram_match(akm, "psk") || nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2")) {
+			// setup and join does wpa_supplicant
+			isadhoc = 1;
+		} else {
+			cprintf("handle ibss join");
+		}
 		// still TBD ;-)
 		// ifconfig ath0 up
 		// iw dev ath0 ibss join AdHocNetworkName 2412
@@ -275,7 +285,7 @@ void configure_single_ath9k(int count)
 	cprintf("setup encryption");
 	// setup encryption
 	int isfirst = 1;
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet")) {
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wet") && strcmp(apm, "infra")) {
 		setupHostAP_ath9k(dev, isfirst, 0, 0);
 		isfirst = 0;
 	} else {
@@ -288,7 +298,7 @@ void configure_single_ath9k(int count)
 			eval("ifconfig", dev, "hw", "ether", nvram_safe_get(clonename));
 		}
 
-		setupSupplicant_ath9k(dev, NULL);
+		setupSupplicant_ath9k(dev, NULL, isadhoc);
 	}
 	char *vifs = nvram_safe_get(wifivifs);
 	int countvaps = 1;
@@ -368,7 +378,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		country = "DE";
 	fprintf(fp, "country_code=%s\n", country);
 	char *netmode = nvram_nget("%s_net_mode", prefix);
-	if (isath5k || !(!strcmp(netmode, "n2-only") || !strcmp(netmode, "n5-only"))) {
+	if (isath5k || !(!strcmp(netmode, "n2-only") || !strcmp(netmode, "n5-only") || !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
 		fprintf(fp, "tx_queue_data2_burst=2.0\n");
 		fprintf(fp, "wmm_ac_be_txop_limit=64\n");
 	} else {
@@ -996,7 +1006,13 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			ssid = "ESSID-AOSS";
 	} else {
 		sprintf(nssid, "%s_ssid", ifname);
+#if defined(HAVE_TMK)
+		ssid = nvram_default_get(nssid, "KMT_vap");
+#elif defined(HAVE_BKM)
+		ssid = nvram_default_get(nssid, "BKM_vap");
+#else
 		ssid = nvram_default_get(nssid, "dd-wrt");
+#endif
 	}
 
 	fprintf(fp, "ssid=%s\n", ssid);
@@ -1188,35 +1204,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	fclose(fp);
 }
 
-/* das muessen wir noch machen
-void setupradauth_ath9k(char *prefix, char *driver, int iswan) {
-	if (nvram_match(akm, "radius")) {
-		// wrt-radauth $IFNAME $server $port $share $override $mackey $maxun
-		// &
-		char *ifname = prefix;
-		char *server = nvram_nget("%s_radius_ipaddr", prefix);
-		char *port = nvram_nget("%s_radius_port", prefix);
-		char *share = nvram_nget("%s_radius_key", prefix);
-		char exec[64];
-		char type[32];
-
-		sprintf(type, "%s_radmactype", prefix);
-		char *pragma = "";
-
-		if (nvram_default_match(type, "0", "0"))
-			pragma = "-n1 ";
-		if (nvram_matchi(type,1))
-			pragma = "-n2 ";
-		if (nvram_matchi(type,2))
-			pragma = "-n3 ";
-		if (nvram_matchi(type,3))
-			pragma = "";
-		sleep(1);	// some delay is usefull
-		sysprintf("wrt-radauth %s %s %s %s %s 1 1 0 &", pragma,
-			  prefix, server, port, share);
-	}
-*/
-
 static void addvhtcaps(char *prefix, FILE * fp)
 {
 
@@ -1274,7 +1261,7 @@ static void addvhtcaps(char *prefix, FILE * fp)
 #endif
 }
 
-void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
+void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 {
 #ifdef HAVE_REGISTER
 	if (!isregistered())
@@ -1282,6 +1269,14 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 #endif
 	char akm[16];
 	int i;
+	int freq = 0;
+	static char nfreq[16];
+	char *cellid;
+	char cellidtemp[32];
+	char cellidssid[5];
+	char mcr[32];
+	char *mrate;
+
 	sprintf(akm, "%s_akm", prefix);
 	if (nvram_match(akm, "psk") || nvram_match(akm, "psk2")
 	    || nvram_match(akm, "psk psk2")) {
@@ -1293,7 +1288,10 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 			led_control(LED_SEC1, LED_ON);
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
-		fprintf(fp, "ap_scan=1\n");
+		if (isadhoc)
+			fprintf(fp, "ap_scan=2\n");
+		else
+			fprintf(fp, "ap_scan=1\n");
 		fprintf(fp, "fast_reauth=1\n");
 		fprintf(fp, "eapol_version=1\n");
 		// fprintf (fp, "ctrl_interface_group=0\n");
@@ -1319,6 +1317,44 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		if (!ssidoverride)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
+		if (isadhoc) {
+			char ht[5];
+			char sb[32];
+			char bw[32];
+			fprintf(fp, "\tmode=1\n");
+			// autochannel 
+			sprintf(nfreq, "%s_channel", prefix);
+			freq = atoi(nvram_default_get(nfreq, "0"));
+			fprintf(fp, "\tfrequency=%d\n", freq);
+			sprintf(bw, "%s_channelbw", prefix);
+			sprintf(ht, "20");
+			if (nvram_default_match(bw, "20", "20")) {
+				sprintf(ht, "20");
+			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040")) {
+				sprintf(sb, "%s_nctrlsb", prefix);
+				if (nvram_default_match(sb, "upper", "lower")) {
+					sprintf(ht, "40+");
+				} else {
+					sprintf(ht, "40-");
+				}
+			}
+			if (!is_ath5k(prefix))
+				// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
+				fprintf(fp, "htmode=HT%s\n", ht);
+			sprintf(cellidtemp, "%s_cellid", prefix);
+			cellid = nvram_safe_get(cellidtemp);
+			if (strlen(cellid) != 0) {
+				fprintf(fp, "\tbssid=%s\n", cellid);
+			}
+#if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
+			else {
+				memset(cellidssid, 0, 5);
+				strncpy(cellidssid, ssidoverride, 5);
+				fprintf(fp, "\tbssid=02:%02x:%02x:%02x:%02x:%02x\n", cellidssid[0], cellidssid[1], cellidssid[2], cellidssid[3], cellidssid[4]);
+			}
+#endif
+		}
+
 		char scanlist[32];
 		sprintf(scanlist, "%s_scanlist", prefix);
 		char *sl = nvram_default_get(scanlist, "default");
@@ -1333,13 +1369,15 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		fprintf(fp, "\tkey_mgmt=WPA-PSK\n");
 		sprintf(psk, "%s_crypto", prefix);
 		if (nvram_match(psk, "aes")) {
-#if 1
 			fprintf(fp, "\tpairwise=CCMP\n");
-			fprintf(fp, "\tgroup=CCMP TKIP\n");
-#else
-			fprintf(fp, "\tpairwise=CCMP\n");
-			fprintf(fp, "\tgroup=CCMP\n");
+
+#if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
+			if (isadhoc)
+				fprintf(fp, "\tgroup=CCMP\n");
+			else
 #endif
+				fprintf(fp, "\tgroup=CCMP TKIP\n");
+
 		}
 		if (nvram_match(psk, "tkip")) {
 			fprintf(fp, "\tpairwise=TKIP\n");
@@ -1655,7 +1693,7 @@ void ath9k_start_supplicant(int count)
 			background = "-Bddd";
 	}
 #endif
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta")
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "infra")
 	    && strcmp(apm, "wet")) {
 		sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 		do_hostapd(fstr, dev);

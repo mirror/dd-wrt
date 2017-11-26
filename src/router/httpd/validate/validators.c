@@ -765,6 +765,21 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 		else
 			nvram_seti(val, 1000);
 
+#ifdef HAVE_TMK
+		sprintf(val, "%s_r1x", var);
+		nvram_set(val, websGetVar(wp, val, "0"));
+		sprintf(val, "%s_r1x_server", var);
+		nvram_set(val, websGetVar(wp, val, ""));
+		sprintf(val, "%s_r1x_port", var);
+		nvram_set(val, websGetVar(wp, val, ""));
+		sprintf(val, "%s_r1x_ss", var);
+		nvram_set(val, websGetVar(wp, val, ""));
+		sprintf(val, "%s_r1x_st", var);
+		nvram_set(val, websGetVar(wp, val, "0"));
+		sprintf(val, "%s_r1x_wl", var);
+		nvram_set(val, websGetVar(wp, val, ""));
+#endif
+
 		if (bridged && strcmp(bridged, "0") == 0) {
 			copymergetonv(wp, "%s_ipaddr", var);
 			copymergetonv(wp, "%s_netmask", var);
@@ -772,6 +787,9 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 			if (1) {
 				copytonv(wp, "nld_%s_enable", var);
 				copytonv(wp, "nld_%s_bridge", var);
+				//NSMD
+				copytonv(wp, "nsmd_%s_enable", var);
+
 			}
 #endif
 #if defined(HAVE_BATMANADV)

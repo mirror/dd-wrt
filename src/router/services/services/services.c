@@ -226,6 +226,23 @@ void stop_dhcpc(void)
 		dd_syslog(LOG_INFO, "udhcpc : udhcp client process successfully stopped\n");
 		kill(pid, SIGTERM);
 	}
+#ifdef HAVE_3G
+	if (nvram_match("3gdata", "sierradirectip")) {
+		sysprintf("comgt -d %s -s /etc/comgt/hangup-dip.comgt\n", nvram_safe_get("3gcontrol"));
+	}
+#endif
+#ifdef HAVE_LIBMBIM
+	if (nvram_match("3gdata", "mbim")) {
+		sysprintf("/usr/sbin/mbim-network --profile=/tmp/mbim-net-conf.conf /dev/cdc-wdm0 stop\n");
+		sysprintf("echo 0 >/tmp/mbimstatus\n");
+	}
+#endif
+#ifdef HAVE_UQMI
+	if (nvram_match("3gdata", "qmi")) {
+		sysprintf("/usr/sbin/uqmi -s -d /dev/cdc-wdm0 --stop-network %s\n", nvram_safe_get("3g_pdh"));
+		sysprintf("echo 0 >/tmp/qmistatus\n");
+	}
+#endif
 	cprintf("done\n");
 	return;
 }

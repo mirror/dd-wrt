@@ -325,8 +325,10 @@ static int notify_nas(char *type, char *ifname, char *action);
 #endif
 #endif
 
-void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
+void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leasetime, int nodeconfig)
 {
+	char temp[12];
+
 	pid_t pid;
 	char *wan_hostname = nvram_get("wan_hostname");
 #ifdef HAVE_FREECWMP
@@ -369,6 +371,8 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
 		NULL, NULL,
 		NULL, NULL,
 		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
 	};
 
 	int i = 7;
@@ -388,6 +392,14 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
 
 	if (flags)
 		dhcp_argv[i++] = flags;
+
+	if (leasetime) {
+		dhcp_argv[i++] = "-t";
+		snprintf(temp, sizeof(temp), "%d", leasetime);
+		dhcp_argv[i++] = temp;
+	}
+	if (nodeconfig)
+		dhcp_argv[i++] = "-T";
 
 	if (use_extra) {
 		if (vendorclass != NULL && strlen(vendorclass) > 0) {
@@ -3099,7 +3111,9 @@ void start_wan(int status)
 	}
 	rmmod("n_hdlc");
 
-	eval("ifconfig", nvram_safe_get("wan_ifname"), "allmulti", "promisc");
+	if (strcmp(wan_ifname, "wwan0")) {
+		eval("ifconfig", nvram_safe_get("wan_ifname"), "allmulti", "promisc");
+	}
 
 	start_firewall();	// start firewall once, to fix problem with rules which should exist even before wan is up
 	// wan test mode
@@ -3512,7 +3526,7 @@ void start_wan(int status)
 
 			ioctl(s, SIOCSIFHWADDR, &ifr);
 #else
-			if (!wlifname && strcmp(ethname, "br0")) {
+			if (!wlifname && strcmp(wan_ifname, "br0") && strcmp(wan_ifname, "wwan0")) {
 				eval("ifconfig", ethname, "down");
 				ioctl(s, SIOCSIFHWADDR, &ifr);
 			}
@@ -3564,7 +3578,7 @@ void start_wan(int status)
 	}
 	// fprintf(stderr,"set mtu for %s to %d\n",ifr.ifr_name,ifr.ifr_mtu);
 	ioctl(s, SIOCSIFMTU, &ifr);
-	eval("ifconfig", ethname, "txqueuelen", getTXQ(ethname));
+	eval("ifconfig", wan_ifname, "txqueuelen", getTXQ(wan_ifname));
 
 	if (strcmp(wan_proto, "disabled") == 0) {
 		if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
@@ -3614,8 +3628,38 @@ void start_wan(int status)
 		unlink("/tmp/ppp/log");
 		unlink("/tmp/ppp/connect-log");
 		unlink("/tmp/ppp/set-pppoepid");
-		char *controldevice = get3GControlDevice();
+		get3GControlDevice();
+		char *controldevice = nvram_safe_get("3gcontrol");
 		int timeout = 5;
+		char wsel[5];
+		char wsbuf[30];
+		sprintf(wsel, "");
+
+#if defined(HAVE_CAMBRIA) || defined(HAVE_LAGUNA)
+		int wan_select = 1;
+		if (strlen(nvram_safe_get("wan_select"))) {
+			wan_select = atoi(nvram_safe_get("wan_select"));
+			if (wan_select != 1) {
+				sprintf(wsel, "_%d", wan_select);
+			}
+		}
+#ifdef HAVE_LIBMBIM
+		if (controldevice && !strcmp(controldevice, "mbim")) {
+			if (registered_has_cap(27)) {
+				if (pidof("mbim-connect.sh") < 0) {
+					dd_syslog(LOG_INFO, "STARTING mbim-status.sh\n");
+					sysprintf("mbim-connect.sh");
+				}
+				if (status != REDIAL) {
+					start_redial();
+				}
+			} else {
+				nvram_set("wan_3g_mode", "Software feature not licenced. Please contact the vendor for a valid licence<br><a href=\"/register.asp\">Use Registration here</A>");
+
+			}
+		} else
+#endif
+#endif
 #ifdef HAVE_UQMI
 		if (controldevice && (!strcmp(controldevice, "qmi") || !strcmp(controldevice, "qmiraw"))) {
 			/* disconnect network */
@@ -3629,23 +3673,31 @@ void start_wan(int status)
 				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-client-id", wdsid, "--release-client-id", "wds");
 			}
 			clientid = 0;
-			if (nvram_matchi("wan_conmode", 6))
-				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "lte");
-//              if (nvram_match("wan_conmode","5")) //unsupported and useless. i dont know what that means
-//                  sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
-			if (nvram_matchi("wan_conmode", 4))
-				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "gsm,umts");
-			if (nvram_matchi("wan_conmode", 3))
-				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "umts,gsm");
-			if (nvram_matchi("wan_conmode", 2))
-				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "gsm");
-			if (nvram_matchi("wan_conmode", 1))
-				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "umts");
-			if (nvram_matchi("wan_conmode", 0))
-				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "all");
+			sprintf(wsbuf, "wan_roaming%s", wsel);
+			if (nvram_match(wsbuf, "1")) {
+				sysprintf("/usr/sbin/uqmi -d /dev/cdc-wdm0 --set-network-roaming any");
+			} else {
+				sysprintf("/usr/sbin/uqmi -d /dev/cdc-wdm0 --set-network-roaming off");
+			}
+			sprintf(wsbuf, "wan_conmode%s", wsel);
+			if (nvram_match(wsbuf, "6"))
+				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes lte");
+			if (nvram_match(wsbuf, "4"))
+				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes gsm,umts");
+			if (nvram_match(wsbuf, "3"))
+				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes umts,gsm");
+			if (nvram_match(wsbuf, "2"))
+				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes gsm");
+			if (nvram_match(wsbuf, "1"))
+				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes umts");
+			if (nvram_match(wsbuf, "0"))
+				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes all");
 
 			//set pin
-			eval("uqmi", "-d", "/dev/cdc-wdm0", "--verify-pin1", nvram_safe_get("wan_pin"));
+			sprintf(wsbuf, "wan_pin%s", wsel);
+			if (strlen(nvram_safe_get(wsbuf))) {
+				sysprintf("/usr/sbin/uqmi -d /dev/cdc-wdm0 --verify-pin1 %s >/tmp/qmiping.log 2>&1", nvram_safe_get(wsbuf));
+			}
 			//set apn and dial
 			fp = popen("/usr/sbin/uqmi -d /dev/cdc-wdm0 --get-client-id wds", "r");
 			fscanf(fp, "%d", &clientid);
@@ -3657,7 +3709,7 @@ void start_wan(int status)
 			fp = fopen("/tmp/qmi-connect.sh", "wb");
 			fprintf(fp, "#!/bin/sh\n");
 			fprintf(fp, "REG=0\n");
-			fprintf(fp, "COUNT=3\n");
+			fprintf(fp, "COUNT=2\n");
 			fprintf(fp, "while [ $REG = 0 ]\n");
 			fprintf(fp, "do\n");
 			fprintf(fp, "if [ $COUNT = 0 ]\n");
@@ -3673,20 +3725,29 @@ void start_wan(int status)
 			fprintf(fp, "COUNT=$(($COUNT - 1))\n");
 			fprintf(fp, "sleep 5\n");
 			fprintf(fp, "done\n");
-			if (strlen(nvram_safe_get("ppp_username")) && strlen(nvram_safe_get("ppp_passwd"))) {
+			sprintf(wsbuf, "ppp_username%s", wsel);
+			char *username = nvram_safe_get(wsbuf);
+			sprintf(wsbuf, "ppp_passwd%s", wsel);
+			char *passwd = nvram_safe_get(wsbuf);
+			sprintf(wsbuf, "wan_apn%s", wsel);
+			if (strlen(username) > 0 && strlen(passwd) > 0) {
 				fprintf(fp, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --start-network %s --auth-type both --username %s --password %s --keep-client-id wds\n",
-					nvram_safe_get("wan_apn"), nvram_safe_get("ppp_username"), nvram_safe_get("ppp_passwd"));
+					nvram_safe_get(wsbuf), username, passwd);
 			} else {
-				fprintf(fp, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --start-network %s --auth-type both --keep-client-id wds\n", nvram_safe_get("wan_apn"));
+				fprintf(fp, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --start-network %s --auth-type both --keep-client-id wds\n", nvram_safe_get(wsbuf));
 			}
 			if (!strcmp(controldevice, "qmiraw"))
 				sysprintf("echo Y > /sys/class/net/wwan0/qmi/raw_ip");
-			fprintf(fp, "ifconfig wwan0 up\n");
-			fprintf(fp, "ln -s /sbin/rc /tmp/udhcpc\n");
-			fprintf(fp, "udhcpc -i wwan0 -p /var/run/udhcpc.pid -s /tmp/udhcpc\n");
+			fprintf(fp, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --keep-client-id wds --get-data-status | grep '^\"connected' | wc -l >/tmp/qmistatus\n");
+			fprintf(fp, "(echo QMISTATUS ; cat /tmp/qmistatus) | logger\n");
+			// fprintf(fp,"ifconfig wwan0 up\n");
+			// fprintf(fp,"ln -s /sbin/rc /tmp/udhcpc\n");
+			// fprintf(fp,"udhcpc -i wwan0 -p /var/run/udhcpc.pid -s /tmp/udhcpc\n");
 			fclose(fp);
 			chmod("/tmp/qmi-connect.sh", 0700);
-			sysprintf("/tmp/qmi-connect.sh &");
+			sysprintf("/tmp/qmi-connect.sh >/tmp/qmi-connect.out 2>&1");
+			eval("ifconfig", "wwan0", "up");
+			start_dhcpc("wwan0", NULL, NULL, 1, 0, 0);
 			if (status != REDIAL) {
 				start_redial();
 			}
@@ -3726,7 +3787,7 @@ void start_wan(int status)
 			if (!strcmp(controldevice, "qmiraw"))
 				sysprintf("echo Y > /sys/class/net/wwan0/qmi/raw_ip");
 			eval("ifconfig", "wwan0", "up");
-			start_dhcpc("wwan0", NULL, NULL, 1);
+			start_dhcpc("wwan0", NULL, NULL, 1, 0, 0);
 			if (status != REDIAL) {
 				start_redial();
 			}
@@ -3736,16 +3797,41 @@ void start_wan(int status)
 		if (controldevice && !strcmp(controldevice, "hso")) {
 
 		} else {
+			if (nvram_match("3gnmvariant", "1")) {
+				sysprintf("touch /tmp/.sierrastatus.sh.lock");
+				sleep(3);
+				sprintf(wsbuf, "wan_roaming%s", wsel);
+				if (nvram_match(wsbuf, "1")) {
+					sysprintf("COMGTATC='AT^SYSCONFIG=16,3,1,4' comgt -s -d %s /etc/comgt/atcommand.comgt", controldevice);
+				} else {
+					sysprintf("COMGTATC='AT^SYSCONFIG=16,3,0,4' comgt -s -d %s /etc/comgt/atcommand.comgt", controldevice);
+				}
+			}
+			/* Set APN Necseeary before PIN */
+			sprintf(wsbuf, "wan_apn%s", wsel);
+			if (strlen(nvram_safe_get(wsbuf))) {
+				sprintf(wsbuf, "wan_dial%s", wsel);
+				if (!nvram_match(wsbuf, "2")) {
+					sprintf(wsbuf, "wan_apn%s", wsel);
+					if (nvram_match("3gdata", "sierradirectip")) {
+						sysprintf("export COMGTAPN=\"%s\";export COMGTPROF=3 ; comgt -s -d %s /etc/comgt/dip-apn.comgt", nvram_safe_get(wsbuf), controldevice);
+					} else {
+						sysprintf("export COMGTAPN=\"%s\";comgt APN -d %s", nvram_safe_get(wsbuf), controldevice);
+					}
+				}
+			}
 
 			/* init PIN */
-			if (strlen(nvram_safe_get("wan_pin")))
-				sysprintf("export COMGTPIN=%s;comgt -s -d %s PIN", nvram_safe_get("wan_pin"), controldevice);
+			sprintf(wsbuf, "wan_pin%s", wsel);
+			if (strlen(nvram_safe_get(wsbuf)))
+				sysprintf("export COMGTPIN=%s;comgt PIN -d %s", nvram_safe_get(wsbuf), controldevice);
 			// set netmode, even if it is auto, should be set every time, the stick might save it
 			// some sticks, don't save it ;-)
 			if (strlen(nvram_safe_get("3gnmvariant"))) {
 				int netmode;
 				int netmodetoggle;
-				netmode = nvram_default_geti("wan_conmode", 0);
+				sprintf(wsbuf, "wan_conmode%s", wsel);
+				netmode = atoi(nvram_default_get(wsbuf, "0"));
 				if (netmode == 5) {
 					if (strlen(nvram_safe_get("3gnetmodetoggle"))) {
 						netmodetoggle = nvram_geti("3gnetmodetoggle");
@@ -3764,156 +3850,160 @@ void start_wan(int status)
 						nvram_seti("3gnetmodetoggle", 1);
 					}
 				}
+				if (netmode == 0 || netmode == 6) {
+					printf("3g setting netmode with variant %s to mode %d\n", nvram_safe_get("3gnmvariant"), 4);
+					sysprintf("export COMGNMVARIANT=%s;export COMGTNM=%d;comgt -d %s -s /etc/comgt/netmode.comgt >/tmp/comgt-netmode.out", nvram_safe_get("3gnmvariant"), 4, controldevice);
+					sysprintf("comgt -d %s -s /etc/comgt/cgatt.comgt\n", controldevice);
+				}
 				sysprintf("export COMGNMVARIANT=%s;export COMGTNM=%d;comgt -d %s -s /etc/comgt/netmode.comgt >/tmp/comgt-netmode.out", nvram_safe_get("3gnmvariant"), netmode, controldevice);
 				printf("3g setting netmode with variant %s to mode %d\n", nvram_safe_get("3gnmvariant"), netmode);
+
 			}
 			// Wait for device to attach to the provider network
 			int retcgatt = 0;
-			retcgatt = sysprintf("comgt CGATT -d %s >/tmp/comgt-cgatt.out 2>&1", controldevice);
-			// if (retcgatt == 0) 
-			// {
-			// nvram_seti("3g_fastdial", 1);
-			// return (5);
-			// }
-			if (strlen(nvram_safe_get("wan_apn")))
-				if (!nvram_matchi("wan_dial", 2))
-					sysprintf("export COMGTAPN=\"%s\";comgt -s -d %s APN", nvram_safe_get("wan_apn"), controldevice);
 			// Lets open option file and enter all the parameters.
-			char *username = nvram_safe_get("ppp_username");
-			char *passwd = nvram_safe_get("ppp_passwd");
-			if (strlen(username) && strlen(passwd)) {
-				if ((fp = fopen("/tmp/ppp/chap-secrets", "w"))) {
-					fprintf(fp, "\"%s\" * \"%s\" *\n", username, passwd);
-					fclose(fp);
-					chmod("/tmp/ppp/chap-secrets", 0600);
+			sprintf(wsbuf, "ppp_username%s", wsel);
+			char *username = nvram_safe_get(wsbuf);
+			sprintf(wsbuf, "ppp_passwd%s", wsel);
+			char *passwd = nvram_safe_get(wsbuf);
+			if (nvram_match("3gdata", "sierradirectip")) {
+				sysprintf("comgt -d %s -s /etc/comgt/hangup-dip.comgt\n", controldevice);
+				// eval("ifconfig", "wwan0", "up");
+				if (strlen(username) && strlen(passwd)) {
+					if (!strcmp(username, "chap")) {
+						sysprintf("export COMGTPASSWORD=\"%s\"; export COMGTUSERNAME=\"%s\";export COMGTPROF=3; comgt -s -d %s /etc/comgt/dip-auth-chap.comgt", passwd, username, controldevice);
+					} else {
+						sysprintf("export COMGTPASSWORD=\"%s\"; export COMGTUSERNAME=\"%s\";export COMGTPROF=3; comgt -s -d %s /etc/comgt/dip-auth.comgt", passwd, username, controldevice);
+					}
 				}
 
-				if ((fp = fopen("/tmp/ppp/pap-secrets", "w"))) {
-					fprintf(fp, "\"%s\" * \"%s\" *\n", username, passwd);
-					fclose(fp);
-					chmod("/tmp/ppp/pap-secrets", 0600);
-				}
-			}
-
-			fp = fopen("/tmp/ppp/options.pppoe", "w");
-			if (strlen(username) && strlen(passwd)) {
-				fprintf(fp, "chap-secrets /tmp/ppp/chap-secrets\n");
-				fprintf(fp, "pap-secrets /tmp/ppp/pap-secrets\n");
-			}
-
-			fprintf(fp, "defaultroute\n");
-			fprintf(fp, "usepeerdns\n");
-			fprintf(fp, "noipdefault\n");
-			fprintf(fp, "noauth\n");
-			fprintf(fp, "ipcp-max-failure 30\n");
-			if (nvram_matchi("mtu_enable", 1)) {
-				if (nvram_geti("wan_mtu") > 0) {
-					fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
-					fprintf(fp, "mru %s\n", nvram_safe_get("wan_mtu"));
-				}
-
-			}
-			fprintf(fp, "crtscts\n");
-			fprintf(fp, "460800\n");
-//      fprintf(fp,"connect \"/usr/sbin/comgt DIAL -d %s\"\n",controldevice);
-			char *dial = NULL;
-			switch (nvram_geti("wan_dial")) {
-			case 0:
-				dial = "ATD*99***1#";
-				break;
-			case 1:
-				dial = "ATD*99#";
-				break;
-			case 2:
-				dial = "ATDT#777";
-				break;
-			case 3:
-				dial = "ATD*99***3#";
-				break;
-			case 4:
-				dial = "ATD*99***2#";
-				break;
-			case 5:
-				dial = "ATD*99***4#";
-				break;
-			default:
-				dial = "*99***1#";
-				break;
-			}
-			if (nvram_matchi("3gnmvariant", 1)) {
-				fprintf(fp, "connect \"COMGTXDIAL='%s' /etc/comgt/connect.sh %s %s >/tmp/comgt.out 2>&1\"\n", dial, controldevice, nvram_safe_get("3gdata"));
-			} else {
-				fprintf(fp, "connect \"COMGTDIAL='%s' /usr/sbin/comgt -s -d %s DIAL >/tmp/comgt.out 2>&1\"\n", dial, nvram_safe_get("3gdata"));
-			}
-			if (strlen(username))
-				fprintf(fp, "user '%s'\n", username);
-			if (strlen(passwd))
-				fprintf(fp, "password '%s'\n", passwd);
-			fprintf(fp, "%s\n", nvram_safe_get("3gdata"));
-
-			fclose(fp);
-			start_pppmodules();
-
-			eval("pppd", "file", "/tmp/ppp/options.pppoe");
-
-			/*
-			 * Pretend that the WAN interface is up 
-			 */
-			if (nvram_matchi("ppp_demand", 1)) {
-				/*
-				 * Wait for ppp0 to be created 
-				 */
-				while (ifconfig("ppp0", IFUP, NULL, NULL)
-				       && timeout--)
-					sleep(1);
-				strncpy(ifr.ifr_name, "ppp0", IFNAMSIZ);
-
-				/*
-				 * Set temporary IP address 
-				 */
-				timeout = 3;
-				while (ioctl(s, SIOCGIFADDR, &ifr) && timeout--) {
-					perror("ppp0");
-					printf("Wait ppp inteface to init (1) ...\n");
-					sleep(1);
-				};
-				char client[32];
-
-				nvram_set("wan_ipaddr", inet_ntop(AF_INET, &sin_addr(&ifr.ifr_addr), client, 16));
-				nvram_set("wan_netmask", "255.255.255.255");
-
-				/*
-				 * Set temporary P-t-P address 
-				 */
-				timeout = 3;
-				while (ioctl(s, SIOCGIFDSTADDR, &ifr)
-				       && timeout--) {
-					perror("ppp0");
-					printf("Wait ppp inteface to init (2) ...\n");
-					sleep(1);
-				}
-				const char *peer = inet_ntop(AF_INET,
-							     &sin_addr(&ifr.ifr_dstaddr),
-							     client,
-							     16);
-
-				nvram_set("wan_gateway", peer);
-
-				start_wan_done("ppp0");
-
-				// if user press Connect" button from web, we must force to dial
-				if (nvram_match("action_service", "start_3g")) {
-					sleep(3);
-					start_force_to_dial();
-					nvram_unset("action_service");
-				}
-			} else {
+				sysprintf("export COMGTPROF=3 ; comgt -s -d %s /etc/comgt/dip-prof.comgt", controldevice);
+				sysprintf("comgt -d %s -s /etc/comgt/dial-dip.comgt >/tmp/comgt-dial.out 2>&1\n", controldevice);
+				rmmod("sierra_net");
+				insmod("sierra_net");
+				// sysprintf("echo 1 > /proc/sys/net/ipv6/conf/wwan0/disable_ipv6\n");
+				start_dhcpc("wwan0", NULL, NULL, 1, 0, 0);
+				sysprintf("rm /tmp/.sierrastatus.sh.lock");
 				if (status != REDIAL) {
 					start_redial();
 				}
+			} else {
+				if (strlen(username) && strlen(passwd)) {
+					if ((fp = fopen("/tmp/ppp/chap-secrets", "w"))) {
+						fprintf(fp, "\"%s\" * \"%s\" *\n", username, passwd);
+						fclose(fp);
+						chmod("/tmp/ppp/chap-secrets", 0600);
+					}
+					if ((fp = fopen("/tmp/ppp/pap-secrets", "w"))) {
+						fprintf(fp, "\"%s\" * \"%s\" *\n", username, passwd);
+						fclose(fp);
+						chmod("/tmp/ppp/pap-secrets", 0600);
+					}
+				}
+				fp = fopen("/tmp/ppp/options.pppoe", "w");
+				if (strlen(username) && strlen(passwd)) {
+					fprintf(fp, "chap-secrets /tmp/ppp/chap-secrets\n");
+					fprintf(fp, "pap-secrets /tmp/ppp/pap-secrets\n");
+				}
+
+				fprintf(fp, "defaultroute\n");
+				fprintf(fp, "usepeerdns\n");
+				fprintf(fp, "noipdefault\n");
+				fprintf(fp, "noauth\n");
+				fprintf(fp, "ipcp-max-failure 30\n");
+				if (nvram_match("mtu_enable", "1")) {
+					if (atoi(nvram_safe_get("wan_mtu")) > 0) {
+						fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
+						fprintf(fp, "mru %s\n", nvram_safe_get("wan_mtu"));
+					}
+
+				}
+				fprintf(fp, "crtscts\n");
+				fprintf(fp, "460800\n");
+				char *dial = "*99***1#";
+				sprintf(wsbuf, "wan_dial%s", wsel);
+				if (nvram_match(wsbuf, "0"))
+					dial = "ATD*99***1#";
+				if (nvram_match(wsbuf, "1"))
+					dial = "ATD*99#";
+				if (nvram_match(wsbuf, "2"))
+					dial = "ATDT#777";
+				if (nvram_match(wsbuf, "3"))
+					dial = "ATD*99***3#";
+				if (nvram_match(wsbuf, "4"))
+					dial = "ATD*99***2#";
+				if (nvram_match(wsbuf, "5"))
+					dial = "ATD*99***4#";
+				fprintf(fp, "connect \"COMGTDIAL='%s' /usr/sbin/comgt -s -d %s /etc/comgt/dial.comgt >/tmp/comgt.out 2>&1\"\n", dial, nvram_safe_get("3gdata"));
+				if (strlen(username))
+					fprintf(fp, "user '%s'\n", username);
+				if (strlen(passwd))
+					fprintf(fp, "password '%s'\n", passwd);
+				fprintf(fp, "%s\n", nvram_safe_get("3gdata"));
+
+				fclose(fp);
+				start_pppmodules();
+
+				eval("pppd", "file", "/tmp/ppp/options.pppoe");
+
+				/*
+				 * Pretend that the WAN interface is up 
+				 */
+				if (nvram_matchi("ppp_demand", 1)) {
+					/*
+					 * Wait for ppp0 to be created 
+					 */
+					while (ifconfig("ppp0", IFUP, NULL, NULL)
+					       && timeout--)
+						sleep(1);
+					strncpy(ifr.ifr_name, "ppp0", IFNAMSIZ);
+
+					/*
+					 * Set temporary IP address 
+					 */
+					timeout = 3;
+					while (ioctl(s, SIOCGIFADDR, &ifr) && timeout--) {
+						perror("ppp0");
+						printf("Wait ppp inteface to init (1) ...\n");
+						sleep(1);
+					};
+					char client[32];
+
+					nvram_set("wan_ipaddr", inet_ntop(AF_INET, &sin_addr(&ifr.ifr_addr), client, 16));
+					nvram_set("wan_netmask", "255.255.255.255");
+
+					/*
+					 * Set temporary P-t-P address 
+					 */
+					timeout = 3;
+					while (ioctl(s, SIOCGIFDSTADDR, &ifr)
+					       && timeout--) {
+						perror("ppp0");
+						printf("Wait ppp inteface to init (2) ...\n");
+						sleep(1);
+					}
+					const char *peer = inet_ntop(AF_INET,
+								     &sin_addr(&ifr.ifr_dstaddr),
+								     client,
+								     16);
+
+					nvram_set("wan_gateway", peer);
+
+					start_wan_done("ppp0");
+
+					// if user press Connect" button from web, we must force to dial
+					if (nvram_match("action_service", "start_3g")) {
+						sleep(3);
+						start_force_to_dial();
+						nvram_unset("action_service");
+					}
+				} else {
+					if (status != REDIAL) {
+						start_redial();
+					}
+				}
 			}
 		}
-
 	} else
 #endif
 #ifdef HAVE_PPPOE
@@ -3957,7 +4047,7 @@ void start_wan(int status)
 					}
 					nvram_set("tvnicfrom", vlannic);
 					symlink("/sbin/rc", "/tmp/udhcpc_tv");
-					start_dhcpc(vlannic, "/var/run/udhcpc_tv.pid", "/tmp/udhcpc_tv", 1);
+					start_dhcpc(vlannic, "/var/run/udhcpc_tv.pid", "/tmp/udhcpc_tv", 1, 0, 0);
 				}
 				sprintf(vlannic, "%s.0007", ifn);
 				if (!ifexists(vlannic)) {
@@ -3993,7 +4083,7 @@ void start_wan(int status)
 					}
 					nvram_set("tvnicfrom", vlannic);
 					symlink("/sbin/rc", "/tmp/udhcpc_tv");
-					start_dhcpc(vlannic, "/var/run/udhcpc_tv.pid", "/tmp/udhcpc_tv", 1);
+					start_dhcpc(vlannic, "/var/run/udhcpc_tv.pid", "/tmp/udhcpc_tv", 1, 0, 0);
 				}
 				sprintf(vlannic, "%s.0007", pppoe_wan_ifname);
 				if (!ifexists(vlannic)) {
@@ -4214,7 +4304,7 @@ void start_wan(int status)
 				pppoe_dual_ifname = getSTA();
 			}
 
-			start_dhcpc(pppoe_dual_ifname, NULL, NULL, 1);
+			start_dhcpc(pppoe_dual_ifname, NULL, NULL, 1, 0, 0);
 		} else {
 			char *wan_iface = nvram_safe_get("wan_iface");
 			struct dns_lists *dns_list = NULL;
@@ -4406,7 +4496,7 @@ void start_wan(int status)
 	} else
 #endif
 	if (strcmp(wan_proto, "dhcp") == 0) {
-		start_dhcpc(wan_ifname, NULL, NULL, 1);
+		start_dhcpc(wan_ifname, NULL, NULL, 1, 0, 0);
 	}
 #ifdef HAVE_IPETH
 	else if (strcmp(wan_proto, "iphone") == 0) {
@@ -4422,7 +4512,7 @@ void start_wan(int status)
 		eval("usbmuxd");
 		eval("ipheth-pair");
 		eval("ifconfig", "iph0", "up");
-		start_dhcpc("iph0", NULL, NULL, 1);
+		start_dhcpc("iph0", NULL, NULL, 1, 0, 0);
 		if (status != REDIAL) {
 			start_redial();
 		}
@@ -4452,7 +4542,7 @@ void start_wan(int status)
 				l2tp_ifname = getSTA();
 			}
 
-			start_dhcpc(l2tp_ifname, NULL, NULL, 1);
+			start_dhcpc(l2tp_ifname, NULL, NULL, 1, 0, 0);
 		} else {
 			start_l2tp(status);
 		}
@@ -4460,7 +4550,7 @@ void start_wan(int status)
 #endif
 #ifdef HAVE_HEARTBEAT
 	else if (strcmp(wan_proto, "heartbeat") == 0) {
-		start_dhcpc(wan_ifname, NULL, NULL, 1);
+		start_dhcpc(wan_ifname, NULL, NULL, 1, 0, 0);
 	}
 #endif
 	else {
@@ -4915,7 +5005,34 @@ void start_wan_done(char *wan_ifname)
 	if (!nvram_match("wan_proto", "disabled")) {
 		led_control(LED_CONNECTED, LED_ON);
 		dd_syslog(LOG_INFO, "WAN is up. IP: %s\n", get_wan_ipaddr());
+		if (nvram_match("wan_proto", "3g")) {
+			stop_redial();
+			start_redial();
+		}
 	}
+#ifdef HAVE_3G
+#if defined(HAVE_TMK) || defined(HAVE_BKM)
+	char *gpio3g;
+	if (nvram_match("wan_proto", "3g")) {
+		gpio3g = nvram_get("gpio3g");
+		if (gpio3g != NULL)
+			set_gpio(atoi(gpio3g), 1);
+	} else {
+		if (!nvram_match("wan_proto", "disabled")) {
+			gpio3g = nvram_get("gpiowancable");
+			if (gpio3g != NULL)
+				set_gpio(atoi(gpio3g), 1);
+		} else {
+			gpio3g = nvram_get("gpio3g");
+			if (gpio3g != NULL)
+				set_gpio(atoi(gpio3g), 0);
+			gpio3g = nvram_get("gpiowancable");
+			if (gpio3g != NULL)
+				set_gpio(atoi(gpio3g), 0);
+		}
+	}
+#endif
+#endif
 
 	unsigned sys_uptime;
 	struct sysinfo info;
@@ -5037,6 +5154,19 @@ void stop_wan(void)
 #endif
 #ifdef HAVE_DHCPFORWARD
 	stop_dhcpfwd();
+#endif
+#ifdef HAVE_3G
+	if (nvram_match("3gdata", "sierradirectip")) {
+		sysprintf("comgt -d %s -s /etc/comgt/hangup-dip.comgt\n", nvram_safe_get("3gcontrol"));
+	}
+	if (nvram_match("3gdata", "mbim")) {
+		sysprintf("/jffs/bin/stop-mbim.sh", nvram_safe_get("3gcontrol"));
+	}
+// todo:
+// #ifdef HAVE_UQMI
+//      if (nvram_match("3gdata", "qmi")) {
+//      }
+// #endif
 #endif
 	/*
 	 * Stop firewall 
