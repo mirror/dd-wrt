@@ -2,7 +2,7 @@
  * zfcp device driver
  * debug feature declarations
  *
- * Copyright IBM Corp. 2008, 2016
+ * Copyright IBM Corp. 2008, 2017
  */
 
 #ifndef ZFCP_DBF_H
@@ -323,7 +323,11 @@ void zfcp_dbf_hba_fsf_response(struct zfcp_fsf_req *req)
 {
 	struct fsf_qtcb *qtcb = req->qtcb;
 
-	if ((qtcb->prefix.prot_status != FSF_PROT_GOOD) &&
+	if (unlikely(req->status & (ZFCP_STATUS_FSFREQ_DISMISSED |
+				    ZFCP_STATUS_FSFREQ_ERROR))) {
+		zfcp_dbf_hba_fsf_resp("fs_rerr", 3, req);
+
+	} else if ((qtcb->prefix.prot_status != FSF_PROT_GOOD) &&
 	    (qtcb->prefix.prot_status != FSF_PROT_FSF_STATUS_PRESENTED)) {
 		zfcp_dbf_hba_fsf_resp("fs_perr", 1, req);
 
@@ -401,7 +405,8 @@ void zfcp_dbf_scsi_abort(char *tag, struct scsi_cmnd *scmd,
  * @flag: indicates type of reset (Target Reset, Logical Unit Reset)
  */
 static inline
-void zfcp_dbf_scsi_devreset(char *tag, struct scsi_cmnd *scmnd, u8 flag)
+void zfcp_dbf_scsi_devreset(char *tag, struct scsi_cmnd *scmnd, u8 flag,
+			    struct zfcp_fsf_req *fsf_req)
 {
 	char tmp_tag[ZFCP_DBF_TAG_LEN];
 
@@ -411,7 +416,7 @@ void zfcp_dbf_scsi_devreset(char *tag, struct scsi_cmnd *scmnd, u8 flag)
 		memcpy(tmp_tag, "lr_", 3);
 
 	memcpy(&tmp_tag[3], tag, 4);
-	_zfcp_dbf_scsi(tmp_tag, 1, scmnd, NULL);
+	_zfcp_dbf_scsi(tmp_tag, 1, scmnd, fsf_req);
 }
 
 /**
