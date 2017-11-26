@@ -6,14 +6,10 @@ ATH9K_LDFLAGS=-L$(TOP)/libnl-tiny/ -lm -lnl-tiny
 TINY=libnltiny
 endif
 
-#ifndef $(HOSTAPDVERSION)
-#HOSTAPDVERSION=2014-06-03
-#endif
-#ifeq ($(CONFIG_HOTSPOT20),y)
-#HOSTAPDVERSION=2014-10-25
-#endif
-#ifeq ($(CONFIG_ATH10K),y)
-#HOSTAPDVERSION=2014-10-25
+ifeq ($(CONFIG_DRIVER_WIRED),y)
+ATH9K_LDFLAGS +=-L$(TOP)/libnfnetlink/src/.libs -lnfnetlink
+ATH9K_LDFLAGS +=-L$(TOP)/libnetfilter_log/src/.libs -lnetfilter_log
+endif
 ifndef $(HOSTAPDVERSION)
 HOSTAPDVERSION=2017-08-24
 endif
