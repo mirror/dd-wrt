@@ -268,11 +268,11 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("route.metric"); %></div>
 									<input name="route_metric" size="4" maxlength="4" onblur="valid_range(this,0,9999,route.metric)" class="num" value="<% static_route_setting("metric",""); %>" />
 								</div>
-								<% has_routing("gateway", "<!--"); %>
+								<% has_not_routing("gateway", "<!--"); %>
 								<div class="setting">
 									<input class="spaceradio" type="checkbox" value="1" name="_route_nat" <% static_route_setting("nat",""); %> /><% tran("routetbl.nat"); %>
 								</div>
-								<% has_routing("gateway", "-->"); %>
+								<% has_not_routing("gateway", "-->"); %>
 								<div class="setting">
 									<div class="label"><% tran("routetbl.th1"); %></div>
 									<input type="hidden" name="route_ipaddr" value="4" />
