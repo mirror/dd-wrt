@@ -243,16 +243,47 @@ void ej_has_routing(webs_t wp, int argc, char_t ** argv)
 		sub = nvram_safe_get("wk_mode");
 
 	foreach(var, sub, next) {
-		if (!strcmp(argv[0], "zebra") && !strcmp(var, "bgp"))
-			return;
-		if (!strcmp(argv[0], "zebra") && !strcmp(var, "router"))
-			return;
-		if (!strcmp(argv[0], "zebra") && !strcmp(var, "ospf"))
-			return;
+		if (!strcmp(argv[0], "zebra")) {
+			if (!strcmp(var, "bgp"))
+				return;
+			if (!strcmp(var, "router"))
+				return;
+			if (!strcmp(var, "ospf"))
+				return;
+		}
 		if (!strcmp(var, argv[0]))
 			return;
 	}
 	websWrite(wp, "%s", argv[1]);
+}
+
+void ej_has_not_routing(webs_t wp, int argc, char_t ** argv)
+{
+	char var[32], *next;
+	char *sub = websGetVar(wp, "wk_mode", NULL);
+	if (sub == NULL)
+		sub = nvram_safe_get("wk_mode");
+
+	foreach(var, sub, next) {
+		if (!strcmp(argv[0], "zebra")) {
+			if (!strcmp(var, "bgp")) {
+				websWrite(wp, "%s", argv[1]);
+				return;
+			}
+			if (!strcmp(var, "router")) {
+				websWrite(wp, "%s", argv[1]);
+				return;
+			}
+			if (!strcmp(var, "ospf")) {
+				websWrite(wp, "%s", argv[1]);
+				return;
+			}
+		}
+		if (!strcmp(var, argv[0])) {
+			websWrite(wp, "%s", argv[1]);
+			return;
+		}
+	}
 }
 
 #ifdef HAVE_BUFFALO
@@ -1492,7 +1523,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 #ifdef HAVE_ENEO
 		chan = NULL;
 		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n", !strcmp("0", "0") ? "selected=\\\"selected\\\"" : "");
-	
+
 #endif
 		if (chan) {
 			char *wlc = nvram_safe_get(wl_channel);
