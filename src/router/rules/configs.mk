@@ -251,6 +251,7 @@ obj-$(CONFIG_LIGHTTPD) += pcre lighttpd
 obj-$(CONFIG_NEXTMEDIAEXTRA) += nextmediaextra
 obj-$(CONFIG_LIBQMI) += libffi glib20 libqmi
 obj-$(CONFIG_UQMI) += json-c libubox uqmi
+obj-$(CONFIG_LIBMBIM) += glib20 libmbim
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 obj-$(CONFIG_UBIUTILS) += ubi-utils
 obj-$(CONFIG_STRONGSWAN) += gmp strongswan sqlite
