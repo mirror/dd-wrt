@@ -20,7 +20,7 @@
 #ifdef JSONC
 	#include <json.h>
 #else
-	#include <json/json.h>
+	#include <json-c/json.h>
 #endif
 
 bool blobmsg_add_object(struct blob_buf *b, json_object *obj)
