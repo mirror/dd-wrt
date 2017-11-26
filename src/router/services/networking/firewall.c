@@ -2474,14 +2474,16 @@ static void mangle_table(void)
 {
 	save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
 
-	if (wanactive() && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
-		insmod("ipt_mark xt_mark ipt_CONNMARK xt_CONNMARK xt_connmark");
+	if (strcmp(get_wan_face(), "wwan0")) {
 
-		save2file("-A PREROUTING -i ! %s -d %s -j MARK --set-mark %s\n", get_wan_face(), get_wan_ipaddr(), get_NFServiceMark("FORWARD", 1));
+		if (wanactive() && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
+			insmod("ipt_mark xt_mark ipt_CONNMARK xt_CONNMARK xt_connmark");
 
-		save2file("-A PREROUTING -j CONNMARK --save-mark\n");
+			save2file("-A PREROUTING -i ! %s -d %s -j MARK --set-mark %s\n", get_wan_face(), get_wan_ipaddr(), get_NFServiceMark("FORWARD", 1));
+
+			save2file("-A PREROUTING -j CONNMARK --save-mark\n");
+		}
 	}
-
 	/*
 	 * Clamp TCP MSS to PMTU of WAN interface 
 	 */

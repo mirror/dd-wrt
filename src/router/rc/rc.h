@@ -24,7 +24,7 @@ extern int udhcpc_main(int argc, char **argv);
 
 extern void shutdown_system(void);
 
-extern void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork);
+extern void start_dhcpc(char *wan_ifname,char *pidfile,char *script, int fork, int leasetime, int nodeconfig);
 
 /*
  * ppp scripts 

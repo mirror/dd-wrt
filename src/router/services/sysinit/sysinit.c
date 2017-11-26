@@ -3363,6 +3363,13 @@ void start_nvram(void)
 	nvram_unset("filter_services6");
 	nvram_unset("filter_services7");
 
+	nvram_unset("3gcontrol");
+	nvram_unset("3gdata");
+	nvram_unset("wan_3g_mode");
+	nvram_unset("wan_3g_signal");
+	nvram_unset("wan_3g_status");
+	nvram_unset("wan_3g_imsi");
+
 	// fix openvpnclient and server values (was 0/1 now is yes/no/adaptive)
 	// convert 0 -> no and 1 -> adaptive
 	if (nvram_matchi("openvpn_lzo", 0))

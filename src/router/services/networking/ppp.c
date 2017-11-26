@@ -73,6 +73,11 @@ int ipup_main(int argc, char **argv)
 	char buf[256];
 
 	cprintf("%s\n", argv[0]);
+	if (!strcmp(argv[1], "wwan0") && (!strcmp(argv[2], "fastpath"))) {
+		start_wan_done("wwan0");
+		cprintf("done (fastpath)\n");
+		return 0;
+	}
 
 	stop_process("listen", "activity listener");
 	nvram_set("wan_iface", wan_ifname);

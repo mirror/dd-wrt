@@ -158,6 +158,16 @@ static int update_value(void)
 	return 0;
 }
 
+static int mbim(void)
+{
+	stop_firewall();
+	cprintf("start wan done\n");
+	start_wan_done(nvram_get("wan_ifname"));
+	nvram_set("dhcpc_done", "1");
+	cprintf("done\n");
+	return 0;
+}
+
 // =================================================================
 
 /*
@@ -442,6 +452,8 @@ int udhcpc_main(int argc, char **argv)
 		return renew();
 	else if (strstr(argv[1], "update"))
 		return update_value();
+	else if (strstr(argv[1], "mbim"))
+		return mbim();
 	else
 		return EINVAL;
 }

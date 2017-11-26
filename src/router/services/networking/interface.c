@@ -49,6 +49,9 @@
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 int ifconfig(char *name, int flags, char *addr, char *netmask)
 {
+	if (!strcmp(name, "wwan0")) {
+		return 0;
+	}
 	// char *down="down";
 	// if (flags == IFUP)
 	// down = "up";
