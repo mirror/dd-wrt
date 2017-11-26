@@ -1,5 +1,5 @@
 json-c-configure: 
-	cd json-c && \
+	cd json-c && ./autogen.sh && \
 		ac_cv_func_malloc_0_nonnull=yes \
 		ac_cv_func_realloc_0_nonnull=yes \
 		./configure --host=$(ARCH)-linux \
@@ -12,12 +12,11 @@ json-c:
 	make -C json-c
 	-mkdir -p $(TOP)/_staging
 	make -C json-c install
-	make -C json-c install-libjsonincludeHEADERS
 
 json-c-install:
-	install -D json-c/.libs/libjson.so.0.0.1 $(INSTALLDIR)/json-c/usr/lib/libjson.so.0.0.1
-	cd $(INSTALLDIR)/json-c/usr/lib ; ln -s libjson.so.0.0.1 libjson.so.0  ; true
-	cd $(INSTALLDIR)/json-c/usr/lib ; ln -s libjson.so.0.0.1 libjson.so  ; true
+	install -D json-c/.libs/libjson.so.2.0.2 $(INSTALLDIR)/json-c/usr/lib/libjson.so.2.0.2
+	cd $(INSTALLDIR)/json-c/usr/lib ; ln -s libjson.so.2.0.2 libjson.so.2  ; true
+	cd $(INSTALLDIR)/json-c/usr/lib ; ln -s libjson.so.2.0.2 libjson.so  ; true
 
 json-c-clean: 
 	make -C json-c clean
