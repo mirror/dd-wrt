@@ -1,0 +1,38 @@
+
+[
+    // *********************************************************************************
+    { "type" : "Service",
+      "name" : "USSD" },
+
+    // *********************************************************************************
+    { "name"         : "",
+      "service"      : "USSD",
+      "type"         : "Command",
+      "set"          : [ { "name"          : "Action",
+                           "format"        : "guint32",
+                           "public-format" : "MbimUssdAction" },
+                         { "name"   : "DataCodingScheme",
+                           "format" : "guint32" },
+                         { "name"   : "Payload",
+                           "format" : "ref-byte-array" } ],
+      "response"     : [ { "name"          : "Response",
+                           "format"        : "guint32",
+                           "public-format" : "MbimUssdResponse" },
+                         { "name"          : "SessionState",
+                           "format"        : "guint32",
+                           "public-format" : "MbimUssdSessionState" },
+                         { "name"   : "DataCodingScheme",
+                           "format" : "guint32" },
+                         { "name"   : "Payload",
+                           "format" : "ref-byte-array" } ],
+      "notification" : [ { "name"          : "Response",
+                           "format"        : "guint32",
+                           "public-format" : "MbimUssdResponse" },
+                         { "name"          : "SessionState",
+                           "format"        : "guint32",
+                           "public-format" : "MbimUssdSessionState" },
+                         { "name"   : "DataCodingScheme",
+                           "format" : "guint32" },
+                         { "name"   : "Payload",
+                           "format" : "ref-byte-array" } ] }
+]

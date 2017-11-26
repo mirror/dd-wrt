@@ -1,0 +1,77 @@
+#!/usr/bin/env python
+# -*- Mode: python; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by the Free
+# Software Foundation; either version 2 of the License, or (at your option) any
+# later version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Lesser General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Copyright (C) 2013 Aleksander Morgado <aleksander@gnu.org>
+#
+
+import os
+import sys
+import optparse
+import json
+
+from ObjectList import ObjectList
+import utils
+
+def codegen_main():
+    # Input arguments
+    arg_parser = optparse.OptionParser('%prog [options]')
+    arg_parser.add_option('', '--input', metavar='JSONFILE',
+                          help='Input JSON-formatted database')
+    arg_parser.add_option('', '--output', metavar='OUTFILES',
+                          help='Generate C code in OUTFILES.[ch]')
+    (opts, args) = arg_parser.parse_args();
+
+    if opts.input == None:
+        raise RuntimeError('Input JSON file is mandatory')
+    if opts.output == None:
+        raise RuntimeError('Output file pattern is mandatory')
+
+    # Prepare output file names
+    output_file_c = open(opts.output + ".c", 'w')
+    output_file_h = open(opts.output + ".h", 'w')
+    output_file_sections = open(opts.output + ".sections", 'w')
+
+    # Load database file contents
+    database_file_contents = utils.read_json_file(opts.input)
+
+    # Build message list
+    object_list_json = json.loads(database_file_contents)
+    object_list = ObjectList(object_list_json)
+
+    # Add common stuff to the output files
+    utils.add_copyright(output_file_c);
+    utils.add_copyright(output_file_h);
+    utils.add_header_start(output_file_h, os.path.basename(opts.output))
+    utils.add_source_start(output_file_c, os.path.basename(opts.output))
+
+    # Emit the message creation/parsing code
+    object_list.emit(output_file_h, output_file_c)
+
+    # Emit sections
+    object_list.emit_sections(output_file_sections)
+
+    utils.add_header_stop(output_file_h, os.path.basename(opts.output))
+
+    output_file_c.close()
+    output_file_h.close()
+    output_file_sections.close()
+
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    codegen_main()

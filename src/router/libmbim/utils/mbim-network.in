@@ -1,0 +1,418 @@
+#!/bin/sh
+
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation, either version 2 of the License, or (at your option) any later
+# version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Copyright (C) 2013-2016 Aleksander Morgado <aleksander@aleksander.es>
+#
+# Based on libqmi's qmi-network script
+#
+
+print_usage ()
+{
+    echo "usage: $0 [OPTIONS] [DEVICE] [COMMAND]"
+}
+
+help ()
+{
+    echo "Usage: mbim-network [OPTIONS] [DEVICE] [COMMAND]"
+    echo
+    echo "Simple network management of MBIM devices"
+    echo
+    echo "Commands:"
+    echo "  start           Start network connection"
+    echo "  stop            Stop network connection"
+    echo "  status          Query network connection status"
+    echo
+    echo "Options:"
+    echo "  --profile=[PATH]  Use the profile in the specified path"
+    echo "  --help, -h        Show help options"
+    echo "  --version         Show version"
+    echo
+    echo "Notes:"
+    echo
+    echo "   1) [DEVICE] is given as the full path to the cdc-wdm character"
+    echo "   device, e.g.:"
+    echo "      /dev/cdc-wdm0"
+    echo
+    echo "   2) The mbim-network script requires a profile to work. Unless"
+    echo "   explicitly specified with \`--profile', the file is assumed to"
+    echo "   be available in the following path:"
+    echo "      /etc/mbim-network.conf"
+    echo
+    echo "   3) The APN to use should be configured in the profile, in the"
+    echo "   following way (e.g. assuming APN is called 'internet'):"
+    echo "      APN=internet"
+    echo
+    echo "   4) Optional APN user/password strings may be given in the"
+    echo "   following way:"
+    echo "      APN_USER=user"
+    echo "      APN_PASS=password"
+    echo
+    echo "   5) If APN user/password is specified, the authentication protocol"
+    echo "   to use (one of PAP, CHAP or MSCHAPV2) must also be specified in"
+    echo "   the following way:"
+    echo "      APN_AUTH=protocol"
+    echo
+    echo "   6) If you want to instruct the mbim-network script to use the"
+    echo "   mbim-proxy setup, you can do so by configuring the following line"
+    echo "   in the profile:"
+    echo "      PROXY=yes"
+    echo
+    echo "   7) Once the mbim-network script reports a successful connection"
+    echo "   you still need to run a DHCP client on the associated WWAN network"
+    echo "   interface."
+    echo
+}
+
+version ()
+{
+    echo "mbim-network @VERSION@"
+    echo "Copyright (2013-2015) Aleksander Morgado"
+    echo "License GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl-2.0.html>"
+    echo "This is free software: you are free to change and redistribute it."
+    echo "There is NO WARRANTY, to the extent permitted by law."
+    echo
+}
+
+# Basic options
+if [ $# -lt 2 ]; then
+    if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+        help
+        exit 0
+    elif [ "$1" = "--version" ]; then
+        version
+        exit 0
+    fi
+
+    echo "error: missing arguments" 1>&2
+    print_usage
+    exit 255
+fi
+
+# Defaults
+PROFILE_FILE=/etc/mbim-network.conf
+
+# Device + Command with options; options given first
+while [ $# -gt 2 ]; do
+    OPT="$1"
+    shift
+
+    case "$OPT" in
+        "--")
+            break 2;;
+        "--profile")
+            if [ $# -gt 2 ]; then
+                PROFILE_FILE="$1"
+                shift
+            else
+                PROFILE_FILE=""
+            fi
+            ;;
+        "--profile="*)
+            PROFILE_FILE="${OPT#*=}";;
+        *)
+            echo >&2 "Invalid option: $OPT"
+            print_usage
+            exit 255;;
+    esac
+done
+
+if [ -z "$PROFILE_FILE" ]; then
+    echo "error: empty profile path given" 1>&2
+    print_usage
+    exit 255
+fi
+
+if [ $# -ne 2 ] || [ "$1" = "--*" ] || [ "$2" = "--*" ]; then
+    echo "error: missing arguments" 1>&2
+    print_usage
+    exit 255
+fi
+
+DEVICE=$1
+COMMAND=$2
+
+STATE_FILE=/tmp/mbim-network-state-`basename $DEVICE`
+
+load_profile ()
+{
+    if [ -f "$PROFILE_FILE" ]; then
+        echo "Loading profile at ${PROFILE_FILE}..."
+        . $PROFILE_FILE
+
+        if [ -n "$APN" ]; then
+            echo "    APN: $APN"
+        else
+            echo "    APN: unset"
+        fi
+
+        if [ -n "$APN_AUTH" ]; then
+            echo "    APN auth protocol: $APN_AUTH"
+        else
+            echo "    APN auth protocol: unset"
+        fi
+
+        if [ -n "$APN_USER" ]; then
+            echo "    APN user: $APN_USER"
+            if [ -z "$APN_AUTH" ]; then
+                echo "error: APN_USER in the profile requires APN_AUTH" 1>&2
+                exit 32
+            fi
+        else
+            echo "    APN user: unset"
+        fi
+
+        if [ -n "$APN_PASS" ]; then
+            echo "    APN password: $APN_PASS"
+            if [ -z "$APN_USER" ]; then
+                echo "error: APN_PASS in the profile requires APN_USER" 1>&2
+                exit 32
+            fi
+        else
+            echo "    APN password: unset"
+        fi
+
+        if [ "$PROXY" = "yes" ]; then
+            echo "    mbim-proxy: $PROXY"
+            PROXY_OPT='--device-open-proxy'
+        else
+            echo "    mbim-proxy: no"
+        fi
+    else
+        echo "Profile at '$PROFILE_FILE' not found..."
+    fi
+}
+
+save_state ()
+{
+    KEY=$1
+    VAL=$2
+
+    echo "Saving state at ${STATE_FILE}... ($KEY: $VAL)"
+
+    if [ -f "$STATE_FILE" ]; then
+        PREVIOUS=`cat $STATE_FILE`
+        PREVIOUS=`echo "$PREVIOUS" | grep -v $KEY`
+        if [ -n "$PREVIOUS" ]; then
+            echo $PREVIOUS > $STATE_FILE
+        else
+            rm $STATE_FILE
+        fi
+    fi
+
+    if [ -n "$VAL" ]; then
+        echo "$KEY=\"$VAL\"" >> $STATE_FILE
+    fi
+}
+
+load_state ()
+{
+    if [ -f "$STATE_FILE" ]; then
+        echo "Loading previous state from ${STATE_FILE}..."
+        . $STATE_FILE
+
+        if [ -n "$TRID" ]; then
+            echo "    Previous Transaction ID: $TRID"
+        fi
+    fi
+}
+
+clear_state ()
+{
+    echo "Clearing state at ${STATE_FILE}..."
+    rm -f $STATE_FILE
+}
+
+#
+# $ sudo mbimcli -d /dev/cdc-wdm0 --connect="Internet" --no-close
+#   [/dev/cdc-wdm0] Successfully connected
+#   [/dev/cdc-wdm0] Connection status:
+#             Session ID: '0'
+#       Activation state: 'activated'
+#       Voice call state: 'none'
+#                IP type: 'ipv4'
+#           Context type: 'internet'
+#          Network error: 'unknown'
+#
+connect ()
+{
+    # Always try to connect using a fresh session
+    if [ -n "$TRID" ]; then
+        mbimcli -d $DEVICE --no-open=$TRID $PROXY_OPT
+        clear_state
+    fi
+
+    SUBSCRIBER_READY_CMD="mbimcli -d $DEVICE --query-subscriber-ready-status --no-close $PROXY_OPT"
+    echo "Querying subscriber ready status '$SUBSCRIBER_READY_CMD'..."
+
+    SUBSCRIBER_READY_OUT=`$SUBSCRIBER_READY_CMD`
+    echo $SUBSCRIBER_READY_OUT
+
+    # Save the new TRID
+    TRID=`echo "$SUBSCRIBER_READY_OUT" | sed -n "s/.*TRID.*'\(.*\)'.*/\1/p"`
+    if [ -n "$TRID" ]; then
+        save_state "TRID" $TRID
+    fi
+
+    REGISTRATION_STATE_CMD="mbimcli -d $DEVICE --query-registration-state --no-open=$TRID --no-close $PROXY_OPT"
+    echo "Querying registration state '$REGISTRATION_STATE_CMD'..."
+
+    REGISTRATION_STATE_OUT=`$REGISTRATION_STATE_CMD`
+    echo $REGISTRATION_STATE_OUT
+
+    # Save the new TRID
+    TRID=`echo "$REGISTRATION_STATE_OUT" | sed -n "s/.*TRID.*'\(.*\)'.*/\1/p"`
+    if [ -n "$TRID" ]; then
+        save_state "TRID" $TRID
+    fi
+
+    ATTACH_CMD="mbimcli -d $DEVICE --attach-packet-service --no-open=$TRID --no-close $PROXY_OPT"
+    echo "Attaching to packet service with '$ATTACH_CMD'..."
+
+    ATTACH_OUT=`$ATTACH_CMD`
+
+    # Save the new TRID
+    TRID=`echo "$ATTACH_OUT" | sed -n "s/.*TRID.*'\(.*\)'.*/\1/p"`
+    if [ -n "$TRID" ]; then
+        save_state "TRID" $TRID
+    fi
+
+    CONNECT_ARGS="apn='$APN'"
+    if [ -n "$APN_AUTH" ]; then
+        CONNECT_ARGS="${CONNECT_ARGS},auth='$APN_AUTH'"
+        if [ -n "$APN_USER" ]; then
+            CONNECT_ARGS="${CONNECT_ARGS},username='$APN_USER'"
+            if [ -n "$APN_PASS" ]; then
+                CONNECT_ARGS="${CONNECT_ARGS},password='$APN_PASS'"
+            fi
+        fi
+    fi
+
+    CONNECT_CMD="mbimcli -d $DEVICE --connect=$CONNECT_ARGS --no-open=$TRID --no-close $PROXY_OPT"
+    echo "Starting network with '$CONNECT_CMD'..."
+
+    CONNECT_OUT=`$CONNECT_CMD`
+    if [ $? -eq 0 ]; then
+        echo "Network started successfully"
+    else
+        echo "Network start failed"
+        echo $CONNECT_OUT
+    fi
+
+    # Save the new TRID
+    TRID=`echo "$CONNECT_OUT" | sed -n "s/.*TRID.*'\(.*\)'.*/\1/p"`
+    if [ -n "$TRID" ]; then
+        save_state "TRID" $TRID
+    fi
+}
+
+#
+# $ sudo mbimcli -d /dev/cdc-wdm0 --disconnect="0"
+#   [/dev/cdc-wdm0] Successfully disconnected
+#   [/dev/cdc-wdm0] Connection status:
+#             Session ID: '0'
+#       Activation state: 'deactivated'
+#       Voice call state: 'none'
+#                IP type: 'default'
+#           Context type: 'internet'
+#          Network error: 'unknown'
+#
+disconnect ()
+{
+    # Always close the session when disconnecting
+    if [ -n "$TRID" ]; then
+        DISCONNECT_CMD="mbimcli -d $DEVICE --disconnect --no-open=$TRID $PROXY_OPT"
+    else
+        DISCONNECT_CMD="mbimcli -d $DEVICE --disconnect $PROXY_OPT"
+    fi
+    echo "Stopping network with '$DISCONNECT_CMD'..."
+
+    DISCONNECT_OUT=`$DISCONNECT_CMD`
+    if [ $? -eq 0 ]; then
+        echo "Network stopped successfully"
+    else
+        echo "Network stop failed"
+        echo $DISCONNECT_OUT
+    fi
+
+    clear_state
+}
+
+#
+# $ sudo mbimcli -d /dev/cdc-wdm0 --query-connection-state  --no-close
+# [/dev/cdc-wdm0] Connection status:
+#         Session ID: '0'
+#   Activation state: 'deactivated'
+#   Voice call state: 'none'
+#            IP type: 'default'
+#       Context type: 'none'
+#      Network error: 'unknown'
+#
+status ()
+{
+    if [ -n "$TRID" ]; then
+        STATUS_CMD="mbimcli -d $DEVICE --query-connection-state --no-close --no-open=$TRID $PROXY_OPT"
+    else
+        STATUS_CMD="mbimcli -d $DEVICE --query-connection-state $PROXY_OPT"
+    fi
+    echo "Getting status with '$STATUS_CMD'..."
+
+    STATUS_OUT=`$STATUS_CMD`
+
+    # Save the new TRID
+    TRID=`echo "$STATUS_OUT" | sed -n "s/.*TRID.*'\(.*\)'.*/\1/p"`
+    if [ -n "$TRID" ]; then
+        save_state "TRID" $TRID
+    fi
+
+    CONN=`echo "$STATUS_OUT" | sed -n "s/.*Activation state:.*'\(.*\)'.*/\1/p"`
+    if [ -z "$CONN" ]; then
+        echo "error: couldn't get connection status" 1>&2
+        exit 2
+    else
+        echo "Status: $CONN"
+        if [ "$CONN" != "connected" ]; then
+            exit 64
+        fi
+    fi
+}
+
+# Main
+
+# Load profile, if any
+load_profile
+
+# Load previous state, if any
+load_state
+
+# Process commands
+case $COMMAND in
+    "start")
+        connect
+        ;;
+    "stop")
+        disconnect
+        ;;
+    "status")
+        status
+        ;;
+    *)
+        echo "error: unexpected command '$COMMAND'" 1>&2
+        print_usage
+        exit 255
+        ;;
+esac
+
+exit 0
