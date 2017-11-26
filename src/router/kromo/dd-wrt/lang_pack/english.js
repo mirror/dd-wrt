@@ -1506,6 +1506,7 @@ var routetbl=new Object();
 routetbl.titl="Routing Table";
 routetbl.h2="Routing Table Entry List";
 routetbl.th1="Destination LAN NET";
+routetbl.nat="Masquerade Route (NAT)";
 
 
 // ** Routing.asp **//

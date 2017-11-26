@@ -66,6 +66,9 @@ function submitcheck(F) {
 	}
 	
 	if(!valid_value(F)) return;
+	if(F._route_nat){
+		F.route_nat.value = F._route_nat.checked ? 1 : 0;
+	}
 	
 	F.change_action.value = "";
 	F.submit_type.value = "";
@@ -119,6 +122,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action"/>
 							<input type="hidden" name="submit_type" />
+							<input type="hidden" name="route_nat" />
 							<input type="hidden" name="olsrd_delcount" />
 							<input type="hidden" name="static_route" />
 							<h2><% tran("route.h2"); %></h2>
@@ -203,7 +207,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div id="idzebra">
 								<div class="setting">
-								    <div class="label"><% tran("route.zebra_legend"); %></div>
+								    <dAiv class="label"><% tran("route.zebra_legend"); %></div>
 								    <textarea cols="60" rows="12" id="zebra_conf" name="zebra_conf"></textarea>
 								    <script type="text/javascript">
 								    //<![CDATA[
@@ -264,6 +268,11 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("route.metric"); %></div>
 									<input name="route_metric" size="4" maxlength="4" onblur="valid_range(this,0,9999,route.metric)" class="num" value="<% static_route_setting("metric",""); %>" />
 								</div>
+								<% has_routing("gateway", "<!--"); %>
+								<div class="setting">
+									<input class="spaceradio" type="checkbox" value="1" name="_route_nat" <% static_route_setting("nat",""); %> /><% tran("routetbl.nat"); %>
+								</div>
+								<% has_routing("gateway", "-->"); %>
 								<div class="setting">
 									<div class="label"><% tran("routetbl.th1"); %></div>
 									<input type="hidden" name="route_ipaddr" value="4" />
