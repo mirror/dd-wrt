@@ -1,0 +1,226 @@
+nfulnl_test.o: nfulnl_test.c \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/stdio.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/features.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_config.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/sys/cdefs.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/include/stddef.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/types.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/wordsize.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/typesizes.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/pthreadtypes.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/endian.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/endian.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/byteswap.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/byteswap.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/byteswap-common.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_stdio.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/wchar.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/wchar.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_mutex.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/pthread.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/sched.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/time.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/sched.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/time.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_clk_tck.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/signal.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/sigset.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/setjmp.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_pthread.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/include/stdarg.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/stdio_lim.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/stdlib.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/sys/types.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/sys/select.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/select.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/sys/sysmacros.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/alloca.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/unistd.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/posix_opt.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/confname.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/getopt.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/netinet/in.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/include/stdint.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/stdint.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/sys/socket.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/sys/uio.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/uio.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/socket.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/include-fixed/limits.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/include-fixed/syslimits.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/limits.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/posix1_lim.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/local_lim.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/linux/limits.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_local_lim.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/posix2_lim.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/sockaddr.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm/socket.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm-generic/socket.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm/sockios.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm-generic/sockios.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/in.h \
+ ../include/libnetfilter_log/libnetfilter_log.h \
+ ../include/libnetfilter_log/linux_nfnetlink_log.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/linux/types.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm/types.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm-generic/types.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm-generic/int-ll64.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm/bitsperlong.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm-generic/bitsperlong.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/linux/posix_types.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/linux/stddef.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm/posix_types.h \
+ /home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm-generic/posix_types.h \
+ /home/seg/DEV/xscale/src/router/libnfnetlink/include/libnfnetlink/linux_nfnetlink.h \
+ /home/seg/DEV/xscale/src/router/libnfnetlink/include/libnfnetlink/linux_nfnetlink_compat.h
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/stdio.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/features.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_config.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/sys/cdefs.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/include/stddef.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/types.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/wordsize.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/typesizes.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/pthreadtypes.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/endian.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/endian.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/byteswap.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/byteswap.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/byteswap-common.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_stdio.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/wchar.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/wchar.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_mutex.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/pthread.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/sched.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/time.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/sched.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/time.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_clk_tck.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/signal.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/sigset.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/setjmp.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_pthread.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/include/stdarg.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/stdio_lim.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/stdlib.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/sys/types.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/sys/select.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/select.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/sys/sysmacros.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/alloca.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/unistd.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/posix_opt.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/confname.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/getopt.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/netinet/in.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/include/stdint.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/stdint.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/sys/socket.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/sys/uio.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/uio.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/socket.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/include-fixed/limits.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/include-fixed/syslimits.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/limits.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/posix1_lim.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/local_lim.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/linux/limits.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_local_lim.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/posix2_lim.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/sockaddr.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm/socket.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm-generic/socket.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm/sockios.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm-generic/sockios.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/bits/in.h:
+
+../include/libnetfilter_log/libnetfilter_log.h:
+
+../include/libnetfilter_log/linux_nfnetlink_log.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/linux/types.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm/types.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm-generic/types.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm-generic/int-ll64.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm/bitsperlong.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm-generic/bitsperlong.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/linux/posix_types.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/linux/stddef.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm/posix_types.h:
+
+/home/xfs/toolchains/toolchain-armeb_v5te_gcc-4.7-linaro_uClibc-0.9.33.2-7/bin/../lib64/gcc/armeb-openwrt-linux-uclibcgnueabi/4.7.3/../../../../armeb-openwrt-linux-uclibcgnueabi/sys-include/asm-generic/posix_types.h:
+
+/home/seg/DEV/xscale/src/router/libnfnetlink/include/libnfnetlink/linux_nfnetlink.h:
+
+/home/seg/DEV/xscale/src/router/libnfnetlink/include/libnfnetlink/linux_nfnetlink_compat.h:
