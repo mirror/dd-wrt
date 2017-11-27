@@ -249,6 +249,7 @@ include rules/libxml2.mk
 #snort
 include rules/libnfnetlink.mk
 include rules/libnetfilter_queue.mk
+include rules/libnetfilter_log.mk
 include rules/libdnet.mk
 include rules/daq.mk
 include rules/pcre.mk
