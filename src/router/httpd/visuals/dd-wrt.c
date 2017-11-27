@@ -1101,12 +1101,16 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 {
 	char *next;
 	char var[32];
+	char eths[256];
+	bzero(eths, 256);
+
 	int count = getdevicecount();
 
 	if (count < 1)
 		return;
+	getIfList(eths, ifname);
 
-	if (count == 1 && strlen(nvram_safe_get("ath0_vifs")) == 0)
+	if (count == 1 && strlen(nvram_safe_get("ath0_vifs")) == 0 && strlen(eths) == 0)
 		return;
 
 	websWrite(wp, "<div class=\"setting\">\n");
@@ -1131,7 +1135,6 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 
 		char *ifname[32];
 		sprintf(ifname, "ath%d.sta", i);
-		char eths[256];
 		bzero(eths, 256);
 		getIfList(eths, ifname);
 		foreach(var, eths, next) {
