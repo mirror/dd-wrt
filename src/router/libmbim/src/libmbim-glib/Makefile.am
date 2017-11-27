@@ -1,5 +1,5 @@
 
-SUBDIRS = generated . test
+SUBDIRS = generated .
 
 # Core library, built as a noinst
 noinst_LTLIBRARIES = libmbim-glib-core.la
