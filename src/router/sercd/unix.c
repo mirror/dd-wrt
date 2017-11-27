@@ -9,7 +9,7 @@
 #include "unix.h"
 
 #include <termios.h>
-#include <termio.h>
+// #include <termio.h>
 #include <syslog.h>
 #include <sys/types.h>
 #include <unistd.h>
