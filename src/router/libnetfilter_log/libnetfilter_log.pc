@@ -1,0 +1,16 @@
+# libnetfilter_log pkg-config file
+
+prefix=/usr
+exec_prefix=${prefix}
+libdir=/home/seg/DEV/xscale/src/router/libnfnetlink/src/.libs
+includedir=${prefix}/include
+
+Name: libnetfilter_log
+Description: netfilter userspace packet logging library
+URL: http://netfilter.org/projects/libnetfilter_log/
+Version: 1.0.1
+Requires: libnfnetlink
+Conflicts:
+Libs: -L${libdir} -lnetfilter_log
+Libs.private: -L/home/seg/DEV/xscale/src/router/libnfnetlink/src/.libs
+Cflags: -I${includedir}
