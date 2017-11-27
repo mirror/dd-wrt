@@ -35,7 +35,7 @@
 
 #define SIERRA_DETECTION_FN "/tmp/.sierra_detection_done"
 
-void *detectcontrol_and_data_port(char *controlport);
+void *detectcontrol_and_data_port();
 
 #define HSO 0xf0
 
@@ -157,13 +157,23 @@ void checkreset(unsigned char tty)
 		}
 		sleep(10);
 		sysprintf("uqmi -d /dev/cdc-wdm0 --set-device-operating-mode online");
+	}
+	else if (nvram_match("3gcontrol", "mbim")) {
+		sysprintf("ifconfig wwan0 down");
+		sysprintf("comgt -d %s -s /etc/comgt/reset.comgt", tts);
+		sleep(8);
+		while (!(ifexists("wwan0")) && count < 45) {
+			sleep(1);
+			count++;
+		}
+		return;
 	} else {
 		detectcontrol_and_data_port(control);
 		sysprintf("ifconfig wwan0 down");
 		rmmod("sierra_net");
-		sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/reset.comgt", tty);
+		sysprintf("comgt -d %s -s /etc/comgt/reset.comgt", tts);
 		sleep(1);
-		while (!(check = fopen(tty, "rb")) && count < 45) {
+		while (!(check = fopen(tts, "rb")) && count < 45) {
 			sleep(1);
 			count++;
 		}
@@ -174,7 +184,7 @@ void checkreset(unsigned char tty)
 		unlink(SIERRA_DETECTION_FN);
 		detectcontrol_and_data_port(control);
 		fprintf(stderr, "wakeup card\n");
-		sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/wakeup.comgt", tty);
+		sysprintf("comgt -d %s -s /etc/comgt/wakeup.comgt", tts);
 		// sleep(5);            //give extra delay for registering
 		insmod("sierra_net");
 	}
@@ -787,7 +797,7 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x68a5, qcserial, 2, 0, 1 | QMI, NULL, "Sierra MC8705"},	//
 	{0x1199, 0x68a9, qcserial, 2, 0, 1 | QMI, &select_config1, "Sierra MC7750"},	// cdc_mbim in default config2
 	{0x1199, 0x68aa, sierra, 3, 3, 1, NULL, "Sierra AC320U/AC330U Direct IP"},	// also sierra_net
-	{0x1199, 0x68c0, qcserial, 2, 0, 1 | QMI, NULL, "Sierra MC7304/7354"},	//
+// 	{0x1199, 0x68c0, qcserial, 2, 0, 1 | QMI, NULL, "Sierra MC7304/7354"},	//
 	{0x1199, 0x9011, qcserial, 2, 0, 1 | QMI, &select_config1, "Sierra MC8305"},	// cdc_mbim in default config2
 	{0x1199, 0x9013, qcserial, 2, 0, 1 | QMI, &select_config1, "Sierra MC8355"},	// cdc_mbim in default config2
 	{0x1199, 0x901b, qcserial, 2, 0, 1 | QMI, &select_config1, "Sierra MC7770"},	// cdc_mbim in default config2
@@ -1525,7 +1535,7 @@ static struct DEVICES devicelist[] = {
 	{0xffff, 0xffff, none, 0, 0, 0, NULL, NULL}	//
 };
 
-void *detectcontrol_and_data_port(char *controlport)
+void *detectcontrol_and_data_port()
 {
 	glob_t globbuf;
 	int globresult, i, result;
@@ -1533,6 +1543,7 @@ void *detectcontrol_and_data_port(char *controlport)
 	int datafound = -1;
 	char globstring[256];
 	char devicepath[32];
+	char controlport[32];
 	char *port;
 	FILE *out;
 	fprintf(stderr, "Starting Sierra port detection\n-----------------------\n");
@@ -1711,10 +1722,10 @@ void get3GControlDevice(void)
 						fprintf(stderr, "SierraDirectip customsetup\n");
 						devicelist[devicecount].customsetup(needreset, devicecount);
 					}
-					detectcontrol_and_data_port(control);
-					nvram_set("3gcontrol", control);
-					sysprintf("echo \"Setting controlport to %s\" | logger", control);
-					sysprintf("rm /tmp/.sierrastatus.sh.lock");
+					detectcontrol_and_data_port();
+					// nvram_set("3gcontrol", control);
+					// sysprintf("echo \"Setting controlport to %s\" | logger", control);
+					// sysprintf("rm /tmp/.sierrastatus.sh.lock");
 					nvram_set("3gdata", "sierradirectip");
 					nvram_set("3gnmvariant", "1");
 					return;
@@ -1725,9 +1736,7 @@ void get3GControlDevice(void)
 			}
 #if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
 			if ((devicelist[devicecount].modeswitch & MBIM) || nvram_match(checkforce, "97")) {
-				nvram_set("3gdata", "mbim");
-				sprintf(control, "mbim");
-				nvram_set("3gcontrol", control);
+				nvram_set("3gcontrol", "mbim");
 				if (registered_has_cap(27)) {
 					insmod("cdc-wdm");
 					insmod("usbnet");
@@ -1741,6 +1750,7 @@ void get3GControlDevice(void)
 						fprintf(stderr, "customsetup MBIM\n");
 						devicelist[devicecount].customsetup(needreset, devicecount);
 					}
+					nvram_set("3gdata", "mbim");
 				}
 				return;
 			}
@@ -1839,7 +1849,7 @@ void get3GControlDevice(void)
 			}
 			nvram_set("3gdata", data);
 			if (devicelist[devicecount].driver == sierra) {
-				detectcontrol_and_data_port(control);
+				detectcontrol_and_data_port();
 			}
 			nvram_set("3gcontrol", control);
 			return;

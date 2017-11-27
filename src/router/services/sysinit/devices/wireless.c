@@ -201,10 +201,10 @@ static void detect_wireless_devices(void)
 	}
 #endif
 #ifdef HAVE_ATH5K
-//      if (nvram_match("use_ath5k", "1")) {
+      if (nvram_match("use_ath5k", "1")) {
 	loadath5k = loadlegacy;
 	loadlegacy = 0;
-//                }
+                }
 #endif
 #ifndef HAVE_NOWIFI
 	nvram_default_get("rate_control", "minstrel");
