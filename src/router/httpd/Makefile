@@ -1397,7 +1397,7 @@ endif
 ifeq ($(CONFIG_ATH9K),y)
 	$(CC) --shared -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
 endif
-	$(CC) --shared -o $@ $^ $(NVISOBJS) $(ATH9KVISOBJS) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
+	$(CC) --shared -o $@ $^ $(NVISOBJS) $(ATH9KVISOBJS) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS) $(WEBSLDFLAGS)
 	
 	
 build_date.o: build_date.c
