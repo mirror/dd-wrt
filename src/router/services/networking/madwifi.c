@@ -2444,7 +2444,10 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		configure_wifi();
 	}
 #ifdef HAVE_NLD
-	if (registered_has_cap(21)) {
+#ifdef HAVE_REGISTER
+	if (registered_has_cap(21))
+#endif
+	{
 		eval("nldstart.sh");
 	}
 #endif
