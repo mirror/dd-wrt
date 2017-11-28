@@ -1546,8 +1546,6 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
 		unlink("/tmp/nvram/.lock");	// delete nvram database
 		eval("erase", "nvram");
-#else
-		eval("erase", "nvram");
 #endif
 #ifdef HAVE_BUFFALO_SA
 		nvram_seti("sv_restore_defaults", 1);
