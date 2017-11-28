@@ -559,6 +559,12 @@ static char *s_conditions[] = {
 #ifdef HAVE_DNSSEC
 	"DNSSEC",
 #endif
+#ifdef HAVE_KMT
+	"MULTISIM",
+#endif
+#if defined(HAVE_BKM) || defined(HAVE_TKM) 
+	"MULTISIM",
+#endif
 	NULL
 };
 
