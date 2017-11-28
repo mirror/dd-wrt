@@ -44,7 +44,7 @@ void start_check_mbim(void)
 	if (registered_has_cap(27)) {
 		char *str;
 		asprintf(&str, "/dev/%s", nvram_safe_get("3gctrl"));	// ???? no where set
-		sysprintf("/usr/sbin/mbim-status.sh", str);
+		eval("/usr/sbin/mbim-status.sh", str);
 		free(str);
 	}
 }
