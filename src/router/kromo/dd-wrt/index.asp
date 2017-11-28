@@ -318,7 +318,8 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.pptp_use_dhcp, 'idpptpdhcp', <% nvem("pptp_use_dhcp", "1", "1", "0"); %> == 0);
 	show_layer_ext(document.setup.l2tp_use_dhcp, 'idl2tpdhcp', <% nvem("l2tp_use_dhcp", "1", "1", "0"); %> == 0);
 	show_layer_ext(document.setup.reconnect_enable, 'idreconnect', <% nvem("reconnect_enable", "1", "1", "0"); %> == 1);
-
+	if (document.setup.wan_select_enable)
+		show_layer_ext(document.setup.wan_select_enable, 'wanselect', <% nvem("wan_select_enable", "1", "1", "0"); %> == 1);
 	if (document.setup.now_proto.value == "pptp")
 		dhcp_show_static_dns(<% nvg("pptp_use_dhcp"); %>);
 	if (document.setup.now_proto.value == "pppoe_dual")

@@ -139,22 +139,22 @@ static int redial_main(int argc, char **argv)
 	while (1) {
 #if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
 		if (nvram_match("wan_proto", "3g")
-		    && nvram_match("3gdata", "mbim") && count == 1) {
+		    && nvram_match("3gdata", "mbim")) {
 			start_service_force("check_mbim");
 		}
 #endif
 #if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
 		if (nvram_match("wan_proto", "3g")
 		    && nvram_match("3gdata", "sierradirectip")) {
-			start_service_force("sierradirectip");
+			start_service_force("check_sierradirectip");
 		}
 		else if (nvram_match("wan_proto", "3g")
 		    && nvram_match("3gnmvariant", "1")) {
-			start_service_force("sierrappp");
+			start_service_force("check_sierrappp");
 		}
 		if (nvram_match("wan_proto", "3g")
 		    && nvram_match("3gdata", "qmi") && _count == 1) {
-			start_service_force("qmi");
+			start_service_force("check_qmi");
 		}
 #endif
 		sleep(atoi(argv[1]));
