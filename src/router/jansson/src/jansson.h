@@ -66,6 +66,20 @@ typedef long json_int_t;
 #endif /* JSON_INTEGER_IS_LONG_LONG */
 #endif
 
+
+#define json_object dd_json_object
+#define json_array dd_json_array
+#define json_string dd_json_string
+#define json_stringn dd_json_stringn
+#define json_string_nocheck dd_json_nocheck
+#define json_stringn_nocheck dd_jsonn_nocheck
+#define json_integer dd_json_integer
+#define json_real dd_json_real
+#define json_true dd_json_true
+#define json_false dd_json_false
+#define json_null dd_json_null
+
+
 #define json_typeof(json)      ((json)->type)
 #define json_is_object(json)   ((json) && json_typeof(json) == JSON_OBJECT)
 #define json_is_array(json)    ((json) && json_typeof(json) == JSON_ARRAY)
@@ -141,6 +155,24 @@ typedef struct {
 
 
 /* getters, setters, manipulation */
+#define json_object_seed dd_json_object_seed
+#define json_object_size dd_json_object_size
+#define json_object_get dd_json_object_get
+#define json_object_set_new dd_json_object_set_new
+#define json_object_set_new_nocheck dd_json_object_set_new_nocheck
+#define json_object_del dd_json_object_del
+#define json_object_clear dd_json_object_clear
+#define json_object_update dd_json_object_update
+#define json_object_update_existing dd_json_object_update_existing
+#define json_object_update_missing dd_json_object_update_missing
+#define json_object_iter dd_json_object_iter
+#define json_object_iter_at dd_json_object_iter_at
+#define json_object_key_to_iter dd_json_object_key_to_iter
+#define json_object_iter_next dd_json_object_iter_next
+#define json_object_iter_key dd_json_object_iter_key
+#define json_object_iter_value dd_json_object_iter_value
+#define json_object_iter_set_new dd_json_object_iter_set_new
+
 
 void json_object_seed(size_t seed);
 size_t json_object_size(const json_t *object);
@@ -195,6 +227,15 @@ int json_object_iter_set(json_t *object, void *iter, json_t *value)
     return json_object_iter_set_new(object, iter, json_incref(value));
 }
 
+#define json_array_size dd_json_array_size
+#define json_array_get dd_json_array_get
+#define json_array_set_new dd_json_array_set_new
+#define json_array_append_new dd_json_array_append_new
+#define json_array_insert_new dd_json_array_insert_new
+#define json_array_remove dd_json_array_remove
+#define json_array_clear dd_json_array_clear
+#define json_array_extend dd_json_array_extend
+
 size_t json_array_size(const json_t *array);
 json_t *json_array_get(const json_t *array, size_t index);
 int json_array_set_new(json_t *array, size_t index, json_t *value);
@@ -222,6 +263,17 @@ int json_array_insert(json_t *array, size_t ind, json_t *value)
     return json_array_insert_new(array, ind, json_incref(value));
 }
 
+#define json_string_value dd_json_string_value
+#define json_string_length dd_json_string_length
+#define json_integer_value dd_json_integer_value
+#define json_real_value dd_json_real_value
+#define json_number_value dd_json_number_value
+#define json_string_set dd_json_string_set
+#define json_string_setn dd_json_string_setn
+#define json_string_set_nocheck dd_json_string_set_nocheck
+#define json_string_setn_nocheck dd_json_string_setn_nocheck
+#define json_integer_set dd_json_integer_set
+#define json_real_set dd_json_real_set
 const char *json_string_value(const json_t *string);
 size_t json_string_length(const json_t *string);
 json_int_t json_integer_value(const json_t *integer);
@@ -237,6 +289,10 @@ int json_real_set(json_t *real, double value);
 
 /* pack, unpack */
 
+#define json_pack dd_json_pack
+#define json_pack_ex dd_json_pack_ex
+#define json_vpack_ex dd_json_vpack_ex
+
 json_t *json_pack(const char *fmt, ...);
 json_t *json_pack_ex(json_error_t *error, size_t flags, const char *fmt, ...);
 json_t *json_vpack_ex(json_error_t *error, size_t flags, const char *fmt, va_list ap);
@@ -244,17 +300,24 @@ json_t *json_vpack_ex(json_error_t *error, size_t flags, const char *fmt, va_lis
 #define JSON_VALIDATE_ONLY  0x1
 #define JSON_STRICT         0x2
 
+#define json_unpack dd_unjson_pack
+#define json_unpack_ex dd_json_unpack_ex
+#define json_vunpack_ex dd_json_vunpack_ex
+
 int json_unpack(json_t *root, const char *fmt, ...);
 int json_unpack_ex(json_t *root, json_error_t *error, size_t flags, const char *fmt, ...);
 int json_vunpack_ex(json_t *root, json_error_t *error, size_t flags, const char *fmt, va_list ap);
 
 
 /* equality */
+#define json_equal dd_json_equal
 
 int json_equal(json_t *value1, json_t *value2);
 
 
 /* copying */
+#define json_copy dd_json_copy
+#define json_deep_copy dd_json_deep_copy
 
 json_t *json_copy(json_t *value);
 json_t *json_deep_copy(const json_t *value);
@@ -268,7 +331,15 @@ json_t *json_deep_copy(const json_t *value);
 #define JSON_DECODE_INT_AS_REAL 0x8
 #define JSON_ALLOW_NUL          0x10
 
+
 typedef size_t (*json_load_callback_t)(void *buffer, size_t buflen, void *data);
+
+#define json_loads dd_json_loads
+#define json_loadb dd_json_loadb
+#define json_loadf dd_json_loadf
+#define json_loadfd dd_json_loadfd
+#define json_load_file dd_json_loadfile
+#define json_load_callback dd_json_loadcallback
 
 json_t *json_loads(const char *input, size_t flags, json_error_t *error);
 json_t *json_loadb(const char *buffer, size_t buflen, size_t flags, json_error_t *error);
@@ -293,6 +364,13 @@ json_t *json_load_callback(json_load_callback_t callback, void *data, size_t fla
 
 typedef int (*json_dump_callback_t)(const char *buffer, size_t size, void *data);
 
+#define json_dumps dd_json_dumps
+#define json_dumpb dd_json_dumpb
+#define json_dumpf dd_json_dumpf
+#define json_dumpfd dd_json_dumpfd
+#define json_dump_file dd_json_dump_file
+#define json_dump_callback dd_json_dump_callback
+ 
 char *json_dumps(const json_t *json, size_t flags);
 size_t json_dumpb(const json_t *json, char *buffer, size_t size, size_t flags);
 int json_dumpf(const json_t *json, FILE *output, size_t flags);
@@ -302,9 +380,12 @@ int json_dump_callback(const json_t *json, json_dump_callback_t callback, void *
 
 /* custom memory allocation */
 
+
 typedef void *(*json_malloc_t)(size_t);
 typedef void (*json_free_t)(void *);
 
+#define json_set_alloc_funcs dd_json_set_alloc_funcs
+#define json_get_alloc_funcs dd_json_get_alloc_funcs
 void json_set_alloc_funcs(json_malloc_t malloc_fn, json_free_t free_fn);
 void json_get_alloc_funcs(json_malloc_t *malloc_fn, json_free_t *free_fn);
 
