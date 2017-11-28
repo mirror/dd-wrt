@@ -28,39 +28,6 @@ CFLAGS += -s $(MIPS16_OPT) $(COPTS) -I../shared -I$(SRCBASE)/include.bcm -I$(SRC
 LDFLAGS += -L../nvram -L../shared -L../libutils -lutils -lshutils -lnvram -lwireless -ffunction-sections -fdata-sections -Wl,--gc-sections
 ifeq ($(CONFIG_ATH9K),y)
 LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
-ifeq ($(ARCHITECTURE),openrisc)
-LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
-endif
-endif
-ifeq ($(CONFIG_TIEXTRA1),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-ifeq ($(ARCHITECTURE),openrisc)
-LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
-endif
-endif
-ifeq ($(CONFIG_TIEXTRA2),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-ifeq ($(ARCHITECTURE),openrisc)
-LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
-endif
-endif
-ifeq ($(CONFIG_SAMBA3),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-ifeq ($(ARCHITECTURE),openrisc)
-LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
-endif
-endif
-ifeq ($(CONFIG_FTP),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-ifeq ($(ARCHITECTURE),openrisc)
-LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
-endif
-endif
-ifeq ($(CONFIG_MINIDLNA),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-ifeq ($(ARCHITECTURE),openrisc)
-LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
-endif
 endif
 
 vpath %.c $(SRCBASE)/tools/misc
