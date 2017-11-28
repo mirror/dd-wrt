@@ -1,0 +1,14 @@
+#!/bin/sh
+
+if [ -z "$(nvram get wan_select_enable)" ]; then
+	nvram set wan_select_enable=0
+fi
+if [ -z "$(nvram get wan_roaming)" ]; then
+	nvram set wan_roaming=0
+fi
+if [ -z "$(nvram get wan_roaming_2)" ]; then
+	nvram set wan_roaming_2=0
+fi
+if [ -z "$(nvram get wan_roaming_3)" ]; then
+	nvram set wan_roaming_3=0
+fi
