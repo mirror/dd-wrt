@@ -27,21 +27,6 @@ endif
 
 CFLAGS += -DNEED_PRINTF $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/nvram -L$(TOP)/libutils -I$(TOP)/../include.bcm
 
-ifeq ($(CONFIG_TIEXTRA1),y)
-CFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-ifeq ($(CONFIG_TIEXTRA2),y)
-CFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-ifeq ($(CONFIG_SAMBA3),y)
-CFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-ifeq ($(CONFIG_FTP),y)
-CFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-ifeq ($(CONFIG_MINIDLNA),y)
-CFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
 
 COMMON_OBJ=$(OUTDIR)/base64utils.o $(OUTDIR)/dyndns.o \
 	$(OUTDIR)/errorcode.o $(OUTDIR)/get_cmd.o $(OUTDIR)/http_client.o \
