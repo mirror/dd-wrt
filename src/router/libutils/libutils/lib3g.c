@@ -1736,7 +1736,10 @@ void get3GControlDevice(void)
 #if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
 			if ((devicelist[devicecount].modeswitch & MBIM) || nvram_match(checkforce, "97")) {
 				nvram_set("3gcontrol", "mbim");
-				if (registered_has_cap(27)) {
+#ifdef HAVE_REGISTER
+				if (registered_has_cap(27)) 
+#endif
+				{
 					insmod("cdc-wdm");
 					insmod("usbnet");
 					insmod("cdc_ncm");
@@ -1874,7 +1877,7 @@ char *get_popen_data(char *command)
 	pf = popen(command, "r");
 	if (!pf) {
 		fprintf(stderr, "Could not open pipe for output.\n");
-		return (data);
+		return NULL;
 	}
 	while (fgets(temp, chunksize, pf)) {
 		if (data == NULL) {
