@@ -11,7 +11,7 @@ libnetfilter_queue-configure: libnfnetlink-configure libnfnetlink
 
 
 libnetfilter_queue: libnfnetlink
-	$(MAKE) -C libnetfilter_queue CFLAGS="$(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -DNEED_PRINTF -I$(TOP)/libnfnetlink/include" LDFLAGS="-L$(TOP)/libnfnetlink/src/.libs"
+	$(MAKE) -C libnetfilter_queue CFLAGS="$(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -I$(TOP)/libnfnetlink/include" LDFLAGS="-L$(TOP)/libnfnetlink/src/.libs"
 
 libnetfilter_queue-install:
 	@true	
