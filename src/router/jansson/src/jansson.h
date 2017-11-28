@@ -116,6 +116,8 @@ json_t *json_incref(json_t *json)
     return json;
 }
 
+#define json_delete dd_json_delete
+
 /* do not call json_delete directly */
 void json_delete(json_t *json);
 
