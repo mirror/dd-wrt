@@ -286,6 +286,8 @@ obj-$(CONFIG_MKIMAGE) += mkimage
 obj-$(CONFIG_SPEEDCHECKER) += speedchecker shownf
 obj-$(CONFIG_WOLFSSL) += wolfssl
 obj-$(CONFIG_MIKROTIK_BTEST) += mikrotik_btest
+obj-$(CONFIG_BKM) += multisim
+obj-$(CONFIG_TMK) += multisim
 obj-y+=configs
 
 
