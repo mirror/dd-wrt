@@ -18,7 +18,3 @@ PKG_NAME=libmbim
     touch ChangeLog
     autoreconf --force --install --verbose
 )
-
-if test -z "$NOCONFIGURE"; then
-    $srcdir/configure --enable-maintainer-mode "$@"
-fi
