@@ -30,21 +30,22 @@
 #if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
 void start_check_sierradirectip(void)
 {
-	// sysprintf("echo checksierraip | logger");
-	sysprintf("/etc/comgt/sierrastatus.sh %s dip", nvram_safe_get("3gcontrol"));
+	eval("/etc/comgt/sierrastatus.sh", nvram_safe_get("3gcontrol"), "dip");
 }
 
 void start_check_sierrappp(void)
 {
-	// sysprintf("echo checksierrappp | logger");
-	sysprintf("/etc/comgt/sierrastatus.sh %s", nvram_safe_get("3gcontrol"));
+	eval("/etc/comgt/sierrastatus.sh", nvram_safe_get("3gcontrol"));
 }
 
 #if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
 void start_check_mbim(void)
 {
 	if (registered_has_cap(27)) {
-		sysprintf("/usr/sbin/mbim-status.sh /dev/%s", nvram_safe_get("3gctrl"));
+		char *str;
+		asprintf(&str, "/dev/%s", nvram_safe_get("3gctrl"));	// ???? no where set
+		sysprintf("/usr/sbin/mbim-status.sh", str);
+		free(str);
 	}
 }
 #endif
@@ -63,24 +64,26 @@ void start_check_qmi(void)
 		sysprintf("uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-data-status | grep '^\"connected' | wc -l >/tmp/qmistatustemp ; mv /tmp/qmistatustemp /tmp/qmistatus", clientid);
 		sprintf(command, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-signal-info", clientid);
 		output = get_popen_data(command);
-		retval = get_json_data_by_key(output, "rssi");
-		rsrq = get_json_data_by_key(output, "rsrq");
-		if (retval && rsrq) {
-			snprintf(buf, sizeof(buf), "RSSI: %s / RSRQ: %s", retval, rsrq);
-			nvram_set("wan_3g_signal", buf);
+		if (output) {
+			retval = get_json_data_by_key(output, "rssi");
+			rsrq = get_json_data_by_key(output, "rsrq");
+			if (retval && rsrq) {
+				snprintf(buf, sizeof(buf), "RSSI: %s / RSRQ: %s", retval, rsrq);
+				nvram_set("wan_3g_signal", buf);
+				free(retval), free(rsrq);
+			} else if (retval && !rsrq) {
+				snprintf(buf, sizeof(buf), "RSSI: %s", retval);
+				nvram_set("wan_3g_signal", buf);
+				free(retval);
+			}
+			retval = get_json_data_by_key(output, "type");
+			if (retval) {
+				snprintf(buf, sizeof(buf), "%s", retval);
+				nvram_set("wan_3g_mode", buf);
+				free(retval);
+			}
+			free(output);
 		}
-		if (retval && !rsrq) {
-			snprintf(buf, sizeof(buf), "RSSI: %s", retval);
-			nvram_set("wan_3g_signal", buf);
-		}
-		retval = get_json_data_by_key(output, "type");
-		if (retval) {
-			snprintf(buf, sizeof(buf), "%s", retval);
-			nvram_set("wan_3g_mode", buf);
-		}
-		free(retval);
-		free(rsrq);
-		free(output);
 	} else {
 		sysprintf("echo 0 > /tmp/qmistatus");
 	}
