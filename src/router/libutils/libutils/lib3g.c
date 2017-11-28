@@ -157,8 +157,7 @@ void checkreset(unsigned char tty)
 		}
 		sleep(10);
 		sysprintf("uqmi -d /dev/cdc-wdm0 --set-device-operating-mode online");
-	}
-	else if (nvram_match("3gcontrol", "mbim")) {
+	} else if (nvram_match("3gcontrol", "mbim")) {
 		sysprintf("ifconfig wwan0 down");
 		sysprintf("comgt -d %s -s /etc/comgt/reset.comgt", tts);
 		sleep(8);
@@ -797,7 +796,7 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x68a5, qcserial, 2, 0, 1 | QMI, NULL, "Sierra MC8705"},	//
 	{0x1199, 0x68a9, qcserial, 2, 0, 1 | QMI, &select_config1, "Sierra MC7750"},	// cdc_mbim in default config2
 	{0x1199, 0x68aa, sierra, 3, 3, 1, NULL, "Sierra AC320U/AC330U Direct IP"},	// also sierra_net
-// 	{0x1199, 0x68c0, qcserial, 2, 0, 1 | QMI, NULL, "Sierra MC7304/7354"},	//
+//      {0x1199, 0x68c0, qcserial, 2, 0, 1 | QMI, NULL, "Sierra MC7304/7354"},  //
 	{0x1199, 0x9011, qcserial, 2, 0, 1 | QMI, &select_config1, "Sierra MC8305"},	// cdc_mbim in default config2
 	{0x1199, 0x9013, qcserial, 2, 0, 1 | QMI, &select_config1, "Sierra MC8355"},	// cdc_mbim in default config2
 	{0x1199, 0x901b, qcserial, 2, 0, 1 | QMI, &select_config1, "Sierra MC7770"},	// cdc_mbim in default config2
@@ -1879,19 +1878,16 @@ char *get_popen_data(char *command)
 	}
 	while (fgets(temp, chunksize, pf)) {
 		if (data == NULL) {
-			data = (char *)malloc(strlen(temp) + 1);
-			if (data)
-				strcpy(data, temp);
-			else
-				return (NULL);
-			length = strlen(temp);
+			length = asprintf(&data, "%s", temp);
 		} else {
 			length += strlen(temp);
 			data = (char *)realloc(data, length + 1);
 			if (data)
 				strncat(data, temp, strlen(temp));
-			else
+			else {
+				pclose(pf);
 				return (NULL);
+			}
 		}
 	}
 	if (pclose(pf) != 0)
@@ -1903,9 +1899,13 @@ char *get_json_data_by_key(char *output, char *getkey)
 {
 	char *ret = NULL;
 	enum json_type type;
+	if (!output || !getkey)
+		return NULL;
 	json_object *jobj = json_tokener_parse(output);
+	if (!jobj)
+		return NULL;
 	json_object_object_foreach(jobj, key, val) {
-		if (!strcmp(key, getkey)) {
+		if (val && key && !strcmp(key, getkey)) {
 			type = json_object_get_type(val);
 			switch (type) {
 			case json_type_string:
@@ -1921,7 +1921,6 @@ char *get_json_data_by_key(char *output, char *getkey)
 			case json_type_double:
 				asprintf(&ret, "%f", json_object_get_double(val));
 				return (ret);
-				break;
 			}
 		}
 	}
