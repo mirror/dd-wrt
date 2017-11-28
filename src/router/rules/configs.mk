@@ -195,6 +195,7 @@ obj-$(CONFIG_STRACE) += strace
 obj-$(CONFIG_RT3062) += rt3062
 obj-$(CONFIG_RT2860) += rt2860
 obj-$(CONFIG_P910ND) += p910nd
+obj-$(CONFIG_DRIVER_WIRED) += libnfnetlink libnetfilter_log
 obj-$(CONFIG_HOSTAPD2) += hostapd2
 obj-$(CONFIG_WPA_SUPPLICANT2) += wpa_supplicant2
 obj-$(CONFIG_MIITOOL) += net-tools
@@ -285,7 +286,6 @@ obj-$(CONFIG_MKIMAGE) += mkimage
 obj-$(CONFIG_SPEEDCHECKER) += speedchecker shownf
 obj-$(CONFIG_WOLFSSL) += wolfssl
 obj-$(CONFIG_MIKROTIK_BTEST) += mikrotik_btest
-obj-$(CONFIG_DRIVER_WIRED) += libnfnetlink libnetfilter_log
 obj-y+=configs
 
 
