@@ -609,12 +609,10 @@ ifeq ($(CONFIG_MAKSAT),y)
  endif
 endif
 ifeq ($(CONFIG_TMK),y)
-	#cp -f kmt/SuperChannel.asp $(INSTALLDIR)/www
 	cp -f kmt/logo.png $(INSTALLDIR)/www/style/logo.png
 	cp -f kmt/logo.png $(INSTALLDIR)/www/images/logo.png
 	cp -f kmt/kmt_logo_help.png $(INSTALLDIR)/www/help/logo-help.png
 	cp -f kmt/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
-	#rm -f $(INSTALLDIR)/www/images/favicon.ico
 	cp -f kmt/About.htm $(INSTALLDIR)/www/About.htm
 	cp -f kmt/help/HManagement.asp $(INSTALLDIR)/www/help/HManagement.asp
 	cp -f kmt/help/HServices.asp $(INSTALLDIR)/www/help/HServices.asp
@@ -626,6 +624,10 @@ ifeq ($(CONFIG_TMK),y)
 	#cp kmt/images/* $(INSTALLDIR)/www/images
 	#mkdir $(INSTALLDIR)/www/style/maksat
 	#cp maksat/maksat/* $(INSTALLDIR)/www/style/maksat
+	mkdir -p $(INSTALLDIR)/etc/config
+	cp -f kmt/defaults/config/* $(INSTALLDIR)/etc/config
+	mkdir -p $(INSTALLDIR)/sbin
+	cp -f kmt/defaults/sbin/* $(INSTALLDIR)/sbin/
 endif
 ifeq ($(CONFIG_BKM),y)
 	cp -f bkm/SuperChannel.asp $(INSTALLDIR)/www
