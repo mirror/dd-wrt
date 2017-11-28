@@ -23,6 +23,9 @@ endif
 ifeq ($(CONFIG_MADWIFI),y)
   CFLAGS += -DHAVE_MADWIFI -I../madwifi/ -include ../madwifi/include/compat.h -DHEADERS_KERNEL
 endif
+ifeq ($(CONFIG_ATH9K),y)
+  LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
+endif
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
   CFLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -I../madwifi/ -include ../madwifi/include/compat.h -DHEADERS_KERNEL
 endif
@@ -36,9 +39,9 @@ endif
 CFLAGS += -DNEED_PRINTF -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(LINUXDIR)/brcm/shared/bcmwifi/include
 LDFLAGS += -L -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-ifeq ($(CONFIG_ATH9K),y)
-LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
-endif
+#ifeq ($(CONFIG_ATH9K),y)
+#LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
+#endif
 
 all: wrt-radauth radius-client macupd
 
