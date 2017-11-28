@@ -26,6 +26,75 @@
 #include <syslog.h>
 #include <signal.h>
 #include <services.h>
+#ifdef HAVE_UQMI
+#include <json-c/json.h>
+
+static char *get_popen_data(char *command)
+{
+	FILE *pf;
+	char temp[256];
+	int chunksize = 256;
+	char *data = NULL;
+	int length = 0;
+
+	pf = popen(command, "r");
+	if (!pf) {
+		fprintf(stderr, "Could not open pipe for output.\n");
+		return NULL;
+	}
+	while (fgets(temp, chunksize, pf)) {
+		if (data == NULL) {
+			length = asprintf(&data, "%s", temp);
+		} else {
+			length += strlen(temp);
+			data = (char *)realloc(data, length + 1);
+			if (data)
+				strncat(data, temp, strlen(temp));
+			else {
+				pclose(pf);
+				return (NULL);
+			}
+		}
+	}
+	if (pclose(pf) != 0)
+		fprintf(stderr, " Error: Failed to close command stream \n");
+	return (data);
+}
+
+static char *get_json_data_by_key(char *output, char *getkey)
+{
+	char *ret = NULL;
+	enum json_type type;
+	if (!output || !getkey)
+		return NULL;
+	json_object *jobj = json_tokener_parse(output);
+	if (!jobj)
+		return NULL;
+	json_object_object_foreach(jobj, key, val) {
+		if (val && key && !strcmp(key, getkey)) {
+			type = json_object_get_type(val);
+			switch (type) {
+			case json_type_string:
+				asprintf(&ret, "%s", json_object_get_string(val));
+				return (ret);
+				break;
+			case json_type_int:
+				asprintf(&ret, "%d", json_object_get_int(val));
+				return (ret);
+			case json_type_boolean:
+				asprintf(&ret, "%d", json_object_get_boolean(val));
+				return (ret);
+			case json_type_double:
+				asprintf(&ret, "%f", json_object_get_double(val));
+				return (ret);
+			default:
+				break;
+			}
+		}
+	}
+	return NULL;
+}
+#endif
 
 #if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
 void start_check_sierradirectip(void)
