@@ -3645,7 +3645,10 @@ void start_wan(int status)
 		}
 #ifdef HAVE_LIBMBIM
 		if (controldevice && !strcmp(controldevice, "mbim")) {
-			if (registered_has_cap(27)) {
+#ifdef HAVE_REGISTER
+			if (registered_has_cap(27))
+#endif
+			{
 				if (pidof("mbim-connect.sh") < 0) {
 					dd_syslog(LOG_INFO, "STARTING mbim-status.sh\n");
 					sysprintf("mbim-connect.sh");
