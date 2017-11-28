@@ -68,6 +68,7 @@
 #define HWID_TL_WR841ND_V3	0x08410003
 #define HWID_TL_WR841ND_V5	0x08410005
 #define HWID_TL_WR841ND_V7	0x08410007
+#define HWID_TL_WR810N_V1	0x08100001
 #define HWID_TL_WNRT627_V1	0x08410007
 #define HWID_TL_WR841ND_V8	0x08410008
 #define HWID_TL_WR841ND_V9	0x08410009
@@ -544,6 +545,14 @@ static struct board_info boards[] = {
 		.id		= "TL-WR710Nv2.1",
 		.hw_id		= HWID_TL_WR710N_V2,
 		.hw_rev		= 2,
+		.fw_max_len	= 0x7b0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0x100000,
+	}, {
+		.id		= "TL-WR810Nv1",
+		.hw_id		= HWID_TL_WR810N_V1,
+		.hw_rev		= 1,
 		.fw_max_len	= 0x7b0000,
 		.kernel_la	= 0x80060000,
 		.kernel_ep	= 0x80060000,
