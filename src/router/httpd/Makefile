@@ -814,21 +814,21 @@ endif
 
 
 ifeq ($(CONFIG_FTP),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson  -lsharetools
+WEBSLDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
+WEBSLDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson  -lsharetools
 CFLAGS += -DHAVE_NAS_SERVER
 endif
 
 ifeq ($(CONFIG_SAMBA3),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs 
-LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson -lsharetools
+WEBSLDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs 
+WEBSLDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson -lsharetools
 CFLAGS += -DHAVE_NAS_SERVER
 CFLAGS += -DHAVE_SAMBA_SERVER
 endif
 
 ifeq ($(CONFIG_MINIDLNA),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson -lsharetools
+WEBSLDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
+WEBSLDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson -lsharetools
 CFLAGS += -DHAVE_MINIDLNA
 endif
 
@@ -1173,14 +1173,14 @@ endif
 
 
 ifeq ($(CONFIG_TIEXTRA1),y)
-CFLAGS += -DHAVE_TIEXTRA1 -Wl,-rpath,$(TOP)/jansson/src/.libs
-LDFLAGS +=   -Wl,-rpath,$(TOP)/jansson/src/.libs
+WEBSCFLAGS += -DHAVE_TIEXTRA1 -Wl,-rpath,$(TOP)/jansson/src/.libs
+WEBSLDFLAGS +=   -Wl,-rpath,$(TOP)/jansson/src/.libs
 VISOBJS  += $(TOP)/private/telkom/mchillispotejs.o
 WEBSOBJS  += $(TOP)/private/telkom/mchillispotvalidate.o
 endif
 ifeq ($(CONFIG_TIEXTRA2),y)
-CFLAGS += -DHAVE_TIEXTRA2 -Wl,-rpath,$(TOP)/jansson/src/.libs
-LDFLAGS +=   -Wl,-rpath,$(TOP)/jansson/src/.libs
+WEBSCFLAGS += -DHAVE_TIEXTRA2 -Wl,-rpath,$(TOP)/jansson/src/.libs
+WEBSLDFLAGS +=   -Wl,-rpath,$(TOP)/jansson/src/.libs
 VISOBJS  += $(TOP)/private/telkom/mwifidogejs.o
 WEBSOBJS  += $(TOP)/private/telkom/mwifidogvalidate.o
 endif
@@ -1388,7 +1388,7 @@ httpd: cgi.o ej.o httpd.o base.o \
 	rm -f ../rc/rc
 
 validate.so: validators.o webs.o wepkey.o setupassist.o aoss_save.o wps.o $(WEBSOBJS) $(REGOBJS)
-	$(CC) --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS)
+	$(CC) --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS) $(WEBSLDFLAGS)
 
 visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o fs_common.o minidlna.o samba3.o status_gpio.o eoptunnel.o $(VISOBJS) $(REGOBJS2)
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
