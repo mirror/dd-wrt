@@ -733,6 +733,8 @@ endif
 ifeq ($(CONFIG_UQMI),y)
 CFLAGS_EXTRA += -DHAVE_UQMI
 OBJS += qmi.o
+CFLAGS_EXTRA += -I$(TOP)/_staging/usr/include
+LDFLAGS += -L$(TOP)/_staging/usr/lib -ljson-c
 endif
 ifeq ($(CONFIG_WNDR3700V4),y)
 CFLAGS_EXTRA += -DHAVE_WNDR3700V4

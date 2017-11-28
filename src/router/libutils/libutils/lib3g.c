@@ -29,13 +29,10 @@
 #include <bcmnvram.h>
 #include <glob.h>
 #include <utils.h>
-#ifdef HAVE_UQMI
-#include <json-c/json.h>
-#endif
 
 #define SIERRA_DETECTION_FN "/tmp/.sierra_detection_done"
 
-void *detectcontrol_and_data_port();
+void detectcontrol_and_data_port(void);
 
 #define HSO 0xf0
 
@@ -133,7 +130,6 @@ void checkreset(unsigned char tty)
 	FILE *check = NULL;
 	int count = 0;
 	sleep(1);
-	char control[32];
 	int qmi = 0;
 	if (nvram_match("3gcontrol", "qmi")) {
 		sysprintf("uqmi -d /dev/cdc-wdm0 --set-device-operating-mode offline");
@@ -167,7 +163,7 @@ void checkreset(unsigned char tty)
 		}
 		return;
 	} else {
-		detectcontrol_and_data_port(control);
+		detectcontrol_and_data_port();
 		sysprintf("ifconfig wwan0 down");
 		rmmod("sierra_net");
 		sysprintf("comgt -d %s -s /etc/comgt/reset.comgt", tts);
@@ -181,7 +177,7 @@ void checkreset(unsigned char tty)
 		else
 			fprintf(stderr, "reset error\n");
 		unlink(SIERRA_DETECTION_FN);
-		detectcontrol_and_data_port(control);
+		detectcontrol_and_data_port();
 		fprintf(stderr, "wakeup card\n");
 		sysprintf("comgt -d %s -s /etc/comgt/wakeup.comgt", tts);
 		// sleep(5);            //give extra delay for registering
@@ -1534,7 +1530,7 @@ static struct DEVICES devicelist[] = {
 	{0xffff, 0xffff, none, 0, 0, 0, NULL, NULL}	//
 };
 
-void *detectcontrol_and_data_port()
+void detectcontrol_and_data_port(void)
 {
 	glob_t globbuf;
 	int globresult, i, result;
@@ -1548,8 +1544,11 @@ void *detectcontrol_and_data_port()
 	fprintf(stderr, "Starting Sierra port detection\n-----------------------\n");
 	sprintf(globstring, "/sys/bus/usb-serial/drivers/sierra/ttyUSB*");
 	globresult = glob(globstring, 0, NULL, &globbuf);
+	if (globresult)
+		return;
 	out = fopen("/tmp/sierra_detection-log.txt", "wb");
-
+	if (!out)
+		return;
 	for (i = 0; i < globbuf.gl_pathc; i++) {
 		port = strrchr(globbuf.gl_pathv[i], '/');
 		if (!port)
@@ -1737,7 +1736,7 @@ void get3GControlDevice(void)
 			if ((devicelist[devicecount].modeswitch & MBIM) || nvram_match(checkforce, "97")) {
 				nvram_set("3gcontrol", "mbim");
 #ifdef HAVE_REGISTER
-				if (registered_has_cap(27)) 
+				if (registered_has_cap(27))
 #endif
 				{
 					insmod("cdc-wdm");
@@ -1863,69 +1862,3 @@ void get3GControlDevice(void)
 	nvram_set("3gcontrol", ttsdevice);
 	return;
 }
-
-#ifdef HAVE_UQMI
-
-char *get_popen_data(char *command)
-{
-	FILE *pf;
-	char temp[256];
-	int chunksize = 256;
-	char *data = NULL;
-	int length = 0;
-
-	pf = popen(command, "r");
-	if (!pf) {
-		fprintf(stderr, "Could not open pipe for output.\n");
-		return NULL;
-	}
-	while (fgets(temp, chunksize, pf)) {
-		if (data == NULL) {
-			length = asprintf(&data, "%s", temp);
-		} else {
-			length += strlen(temp);
-			data = (char *)realloc(data, length + 1);
-			if (data)
-				strncat(data, temp, strlen(temp));
-			else {
-				pclose(pf);
-				return (NULL);
-			}
-		}
-	}
-	if (pclose(pf) != 0)
-		fprintf(stderr, " Error: Failed to close command stream \n");
-	return (data);
-}
-
-char *get_json_data_by_key(char *output, char *getkey)
-{
-	char *ret = NULL;
-	enum json_type type;
-	if (!output || !getkey)
-		return NULL;
-	json_object *jobj = json_tokener_parse(output);
-	if (!jobj)
-		return NULL;
-	json_object_object_foreach(jobj, key, val) {
-		if (val && key && !strcmp(key, getkey)) {
-			type = json_object_get_type(val);
-			switch (type) {
-			case json_type_string:
-				asprintf(&ret, "%s", json_object_get_string(val));
-				return (ret);
-				break;
-			case json_type_int:
-				asprintf(&ret, "%d", json_object_get_int(val));
-				return (ret);
-			case json_type_boolean:
-				asprintf(&ret, "%d", json_object_get_boolean(val));
-				return (ret);
-			case json_type_double:
-				asprintf(&ret, "%f", json_object_get_double(val));
-				return (ret);
-			}
-		}
-	}
-}
-#endif

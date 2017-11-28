@@ -569,15 +569,10 @@ ifeq ($(CONFIG_X86),y)
 endif
 ifeq ($(CONFIG_3G),y)
   CFLAGS += -DHAVE_3G
-  3GOBJS += libutils/lib3g.o
-  ADDLIB += lib3g.so
+  OBJS += libutils/lib3g.o
 endif
 ifeq ($(CONFIG_LIBQMI),y)
   CFLAGS += -DHAVE_LIBQMI
-endif
-ifeq ($(CONFIG_UQMI),y)
-  CFLAGS += -DHAVE_UQMI -I$(TOP)/_staging/usr/include
-  QMILDFLAGS = -L$(TOP)/_staging/usr/lib -ljson-c
 endif
 ifeq ($(CONFIG_MAGICBOX),y)
   CFLAGS += -DHAVE_MAGICBOX
@@ -1494,9 +1489,6 @@ libwireless.so: $(WOBJS) madwififiles ath9kfiles
 
 libutils.so: $(OBJS)
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils
-
-lib3g.so: $(3GOBJS)
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^ -L../nvram -lnvram -L. -lshutils $(QMILDFLAGS)
 
 libshutils.so: $(SHOBJS)
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram
