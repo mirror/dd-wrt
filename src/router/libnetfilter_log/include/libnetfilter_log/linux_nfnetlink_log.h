@@ -10,6 +10,7 @@
  * userspace.  Don't put kernel specific stuff in here */
 
 #include <linux/types.h>
+#include <sys/types.h>
 #include <libnfnetlink/linux_nfnetlink.h>
 
 enum nfulnl_msg_types {
