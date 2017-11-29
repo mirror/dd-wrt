@@ -162,3 +162,4 @@
 #include "protocols/someip.c"
 #include "protocols/tinc.c"
 #include "protocols/hangout.c"
+#include "protocols/checkmk.c"

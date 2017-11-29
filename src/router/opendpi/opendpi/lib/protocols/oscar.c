@@ -921,6 +921,7 @@ static void init_oscar_dissector(struct ndpi_detection_module_struct *ndpi_struc
 
 	*id += 1;
 }
+
 #undef DATA
 
 #endif
