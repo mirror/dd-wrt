@@ -67,6 +67,7 @@ l7filters filters_list[] = {
 	{"bittorrent", PDPI},
 #ifdef HAVE_OPENDPI
 	{"bjnp", NDPI_ONLY},
+	{"checkmk", NDPI_ONLY},
 #endif
 	{"chikka", L7_ONLY},
 	{"cimd", L7_ONLY},
@@ -225,6 +226,7 @@ l7filters filters_list[] = {
 	{"iax", NDPI_ONLY},
 	{"icecast", NDPI_ONLY},
 	{"icmp", NDPI_ONLY},
+	{"icq", NDPI_ONLY},
 #endif
 	{"icq_file", L7_ONLY},
 	{"icq_file_1", L7_ONLY},
@@ -443,12 +445,6 @@ l7filters filters_list[] = {
 	{"sip", DPI},
 #ifdef HAVE_OPENDPI
 	{"skinny", NDPI_ONLY},
-	{"skyfile_post", NDPI_ONLY},
-	{"skyfile_postpaid", NDPI_ONLY},
-	{"skyfile_pre", NDPI_ONLY},
-	{"skyfile_prepaid", NDPI_ONLY},
-	{"skyfile_ru", NDPI_ONLY},
-	{"skyfile_rudics", NDPI_ONLY},
 	{"skype", NDPI_ONLY},
 #endif
 	{"skypeout", L7_ONLY},
@@ -617,6 +613,7 @@ l7filters filters_list[] = {
 	{"yahoo_voice", L7_ONLY},
 	{"youtube", DPI},
 #ifdef HAVE_OPENDPI
+	{"youtube_upload", NDPI_ONLY},
 	{"zattoo", NDPI_ONLY},
 	{"zeromq", NDPI_ONLY},
 #endif
