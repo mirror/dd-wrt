@@ -374,7 +374,7 @@ static void ndpi_search_directconnect_udp(struct ndpi_detection_module_struct
 }
 
 static void ndpi_search_directconnect(struct ndpi_detection_module_struct
-			       *ndpi_struct, struct ndpi_flow_struct *flow)
+				      *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 	struct ndpi_id_struct *src = flow->src;

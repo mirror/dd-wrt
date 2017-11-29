@@ -32,7 +32,7 @@ static void ndpi_socrates_add_connection(struct ndpi_detection_module_struct
 }
 
 static void ndpi_search_socrates(struct ndpi_detection_module_struct
-			  *ndpi_struct, struct ndpi_flow_struct *flow)
+				 *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 

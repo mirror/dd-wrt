@@ -46,7 +46,7 @@ u_int8_t ndpi_int_is_wow_port(const u_int16_t port)
 }
 
 static void ndpi_search_worldofwarcraft(struct ndpi_detection_module_struct
-				 *ndpi_struct, struct ndpi_flow_struct *flow)
+					*ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 
