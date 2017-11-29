@@ -33,7 +33,7 @@ static void ndpi_int_tvants_add_connection(struct ndpi_detection_module_struct
 }
 
 static void ndpi_search_tvants_udp(struct ndpi_detection_module_struct
-			    *ndpi_struct, struct ndpi_flow_struct *flow)
+				   *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 

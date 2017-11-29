@@ -70,7 +70,7 @@ struct xt_ndpi_tginfo {
 "dropbox",         "gmail",                "google_maps",      "youtube",       "skype",\
 "google",          "dcerpc",               "netflow",          "sflow",         "http_connect",\
 "http_proxy",      "citrix",               "netflix",          "lastfm",        "grooveshark",\
-"skyfile_prepaid", "skyfile_rudics",       "skyfile_postpaid", "citrix_online", "apple",\
+"youtube_upload", "icq",       "checkmk", "citrix_online", "apple",\
 "webex",           "whatsapp",             "apple_icloud",     "viber",         "apple_itunes",\
 "radius",          "windows_update",       "teamviewer",       "tuenti",        "lotus_notes",\
 "sap",             "gtp",                  "upnp",             "llmnr",         "remote_scan",\
