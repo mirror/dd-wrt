@@ -484,6 +484,8 @@ endif
 ifeq ($(CONFIG_WR810N),y)
 	echo CONFIG_WR810N=y >> $(LINUXDIR)/.config
 	echo "# CONFIG_DIR615I is not set" >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_WR810N is not set" >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_WR841V8),y)
 	echo CONFIG_WR841V8=y >> $(LINUXDIR)/.config
