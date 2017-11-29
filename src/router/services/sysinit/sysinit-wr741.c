@@ -149,10 +149,12 @@ void start_sysinit(void)
 	eval("ifconfig", "wifi0", "hw", "ether", mac);
 #endif
 	//enable wlan led (card gpio based)
+#ifndef HAVE_WR810N
 #if defined(HAVE_WR841v7) || defined(HAVE_WR842) || defined(HAVE_MR3420)
 	setWirelessLedPhy0(0);
 #else
 	setWirelessLedPhy0(1);
+#endif
 #endif
 	/*
 	 * Set a sane date 
