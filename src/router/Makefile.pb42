@@ -481,6 +481,10 @@ ifeq ($(CONFIG_WRT160NL),y)
 	sed -i 's/\# CONFIG_WRT160NL is not set/CONFIG_WRT160NL=y/g' $(LINUXDIR)/.config
 endif
 endif
+ifeq ($(CONFIG_WR810N),y)
+	echo CONFIG_WR810N=y >> $(LINUXDIR)/.config
+	echo "# CONFIG_DIR615I is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_WR841V8),y)
 	echo CONFIG_WR841V8=y >> $(LINUXDIR)/.config
 	echo "# CONFIG_DIR615I is not set" >> $(LINUXDIR)/.config
@@ -489,6 +493,7 @@ ifeq ($(CONFIG_WR841V9),y)
 else
 	echo "# CONFIG_WR841V9 is not set" >> $(LINUXDIR)/.config
 endif
+
 ifeq ($(CONFIG_WR941V6),y)
 	echo CONFIG_WR941V6=y >> $(LINUXDIR)/.config
 else
@@ -1891,6 +1896,14 @@ ifeq ($(CONFIG_WR841V8),y)
 
 	-./tools/tplink/mktplinkfw -B TL-WA901NDv3 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WA901NDv3-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WA901NDv3-firmware.bin mips-uclibc/tplink-WA901NDv3-firmware.bin
+endif
+ifeq ($(CONFIG_WR810N),y)
+	-./tools/tplink/mktplinkfw -B TL-WR810Nv1 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR810Nv1-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR810Nv1-firmware.bin mips-uclibc/tplink-WR810Nv1-firmware.bin
+
+	-./tools/tplink/mktplinkfw -B TL-WR810Nv2 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR810Nv2-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR810Nv2-firmware.bin mips-uclibc/tplink-WR810Nv2-firmware.bin
+
 endif
 ifeq ($(CONFIG_WR841V9),y)
 	-./tools/tplink/mktplinkfw -B TL-WR841NDv9 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv9-firmware.bin
