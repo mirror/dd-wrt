@@ -1,4 +1,28 @@
 ------------------------------------------------------------------------
+r3747 | brainslayer | 2017-11-29 23:44:34 +0100 (Wed, 29 Nov 2017) | 1 line
+
+add WCN3990
+------------------------------------------------------------------------
+r3746 | brainslayer | 2017-11-29 23:29:59 +0100 (Wed, 29 Nov 2017) | 1 line
+
+update cipher list
+------------------------------------------------------------------------
+r3745 | brainslayer | 2017-11-29 23:15:23 +0100 (Wed, 29 Nov 2017) | 13 lines
+
+With current NAPI implementation, NAPI poll can deliver more frames
+to net core than allotted budget. This may cause warning in napi_poll.
+Remaining quota is not accounted, while processing amsdus in
+rx_in_ord_ind and rx_ind queue. Adding num_msdus at last can not
+prevent delivering more frames to net core. With this change,
+all amdus from both in_ord_ind and rx_ind queues are processed and
+enqueued into common skb list instead of delivering into mac80211.
+Later msdus from common queue are dequeued and delivered depends on
+quota availability. This change also simplifies the rx processing in
+napi poll routine.
+
+Signed-off-by: Rajkumar Manoharan <rmanohar@qti.qualcomm.com>
+
+------------------------------------------------------------------------
 r3744 | brainslayer | 2017-11-29 21:03:28 +0100 (Wed, 29 Nov 2017) | 1 line
 
 tweak tsq settings
