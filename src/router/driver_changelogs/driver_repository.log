@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3743 | brainslayer | 2017-11-29 03:45:07 +0100 (Wed, 29 Nov 2017) | 1 line
+
+change driver version of mwlwifi
+------------------------------------------------------------------------
 r3742 | brainslayer | 2017-11-28 23:59:22 +0100 (Tue, 28 Nov 2017) | 1 line
 
 set disable_eapol_key_retries as default for branding
