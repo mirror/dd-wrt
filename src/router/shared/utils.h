@@ -14,7 +14,9 @@
 #include <syslog.h>
 #include <typedefs.h>
 
-#define sys_reboot() eval("sync"); eval("event","3","1","15")
+#ifndef sys_reboot
+#define sys_reboot() eval("event","3","1","15")
+#endif
 /*
  * 2 byte router ID number; Eko 4.jul.06
  * 
