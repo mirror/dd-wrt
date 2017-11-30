@@ -16,9 +16,11 @@
 		<option value="2" <% nvsm("wan_dial", "2", "selected"); %> >#777 (CDMA/EVDO)</option>
 		<option value="4" <% nvsm("wan_dial", "4", "selected"); %> >*99***2#(UMTS/3G/3.5G)</option>
 		<option value="5" <% nvsm("wan_dial", "5", "selected"); %> >*99***4#(UMTS/3G/3.5G/LTE)</option>
+<% ifndef("MULTISIM", "<!--"); %>
 		<option value="97" <% nvsm("wan_dial", "97", "selected"); %> >Force MBIM</option>
 		<option value="98" <% nvsm("wan_dial", "98", "selected"); %> >Force QMI</option>
 		<option value="99" <% nvsm("wan_dial", "99", "selected"); %> >Force DirectIP</option>
+<% ifndef("MULTISIM", "-->"); %>
 	</select>
 </div>
 <div class="setting">
