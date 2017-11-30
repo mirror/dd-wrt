@@ -360,6 +360,11 @@ static int getbuttonstate()
 {
 	return !get_gpio(1);
 }
+#elif defined(HAVE_WR810N)
+static int getbuttonstate()
+{
+	return !get_gpio(12);
+}
 #elif defined(HAVE_WR841V9)
 static int getbuttonstate()
 {
