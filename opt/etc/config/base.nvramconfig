@@ -16,7 +16,7 @@
  "wan_apn" "apn name" "NULL" "TRUE" "0"
  "wan_pin" "pin number" "NULL" "TRUE" "0"
  "wan_conmode" "connection mode" "NULL" "TRUE" "0"
- "wan_dial" "dial string" "CHOICE" "5" "0" "1" "2" "3" "4" "FALSE" "0"
+ "wan_dial" "dial string" "CHOICE" "8" "0" "1" "2" "3" "4" "97" "98" "99" "FALSE" "0"
  "wan_dualaccess"  "dual-access mode" "CHOICE" "2" "1" "0" "FALSE" "0"
  "wan_roaming" "Roaming" "NULL" "TRUE" "0"
  "ntp_server"  "NTP Server" "NULL" "TRUE" "0"  //not use
