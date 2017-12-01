@@ -4,7 +4,7 @@
 CFLAGS += $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF
 # Run this with make LIBS=-lrt if you want to compile on kfreebsd
 
-all: macping mndp mactelnet mactelnetd
+all: multicall
 
 clean: distclean
 
@@ -19,11 +19,13 @@ dist: distclean potclean pot
 
 install: all
 	install -d $(INSTALLDIR)/usr/bin
-	install mndp $(INSTALLDIR)/usr/bin/
-	install macping $(INSTALLDIR)/usr/bin/
-	install mactelnet $(INSTALLDIR)/usr/bin/
 	install -d $(INSTALLDIR)/usr/sbin
-	install -o root mactelnetd $(INSTALLDIR)/usr/sbin/
+	install -D multicall $(INSTALLDIR)/usr/bin/mactelnet_multicall
+	cd $(INSTALLDIR)/usr/bin && ln -sf mactelnet_multicall mactelnet
+	cd $(INSTALLDIR)/usr/sbin && ln -sf ../bin/mactelnet_multicall mactelnetd
+	cd $(INSTALLDIR)/usr/bin && ln -sf mactelnet_multicall macping
+	cd $(INSTALLDIR)/usr/bin && ln -sf mactelnet_multicall mndp
+
 	install -d $(INSTALLDIR)/etc/config
 	install -m 600 -o root config/mactelnet.webservices $(INSTALLDIR)/etc/config
 	install -m 600 -o root config/mactelnet.nvramconfig $(INSTALLDIR)/etc/config
@@ -31,11 +33,6 @@ install: all
 install-docs:
 	install -d $(DESTDIR)/usr/share/man/man1/
 	install docs/*.1 $(DESTDIR)/usr/share/man/man1/
-
-pot: po/mactelnet.pot
-
-po/mactelnet.pot: *.c
-	xgettext --package-name=mactelnet --msgid-bugs-address=haakon.nessjoen@gmail.com -d mactelnet -C -c_ -k_ -kgettext_noop *.c -o po/mactelnet.pot
 
 autologin.o: autologin.c autologin.h
 	${CC} -Wall ${CFLAGS} -c autologin.c
@@ -55,14 +52,5 @@ md5.o: md5.c md5.h
 console.o: console.c
 	${CC} -Wall ${CFLAGS} -c console.c
 
-mactelnet: config.h mactelnet.c mactelnet.h protocol.o console.o interfaces.o md5.o mndp.c autologin.o
-	${CC} -Wall ${CFLAGS} ${LDFLAGS} -o mactelnet mactelnet.c protocol.o console.o interfaces.o md5.o autologin.o -DFROM_MACTELNET mndp.c ${LIBS}
-
-mactelnetd: config.h mactelnetd.c protocol.o interfaces.o console.o users.o users.h md5.o
-	${CC} -Wall ${CFLAGS} ${LDFLAGS} -o mactelnetd mactelnetd.c protocol.o console.o interfaces.o users.o md5.o ${LIBS}
-
-mndp: config.h mndp.c protocol.o
-	${CC} -Wall ${CFLAGS} ${LDFLAGS} -o mndp mndp.c protocol.o ${LIBS}
-
-macping: config.h macping.c interfaces.o protocol.o
-	${CC} -Wall ${CFLAGS} ${LDFLAGS} -o macping macping.c interfaces.o protocol.o ${LIBS}
+multicall: config.h multicall.c mactelnet.c mactelnetd.c mndp.c macping.c mactelnet.h protocol.o console.o interfaces.o md5.o autologin.o users.o
+	${CC} -Wall ${CFLAGS} ${LDFLAGS} -o multicall multicall.c mactelnet.c mndp.c mactelnetd.c macping.c protocol.o console.o interfaces.o md5.o autologin.o users.o ${LIBS}

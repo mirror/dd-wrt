@@ -98,7 +98,7 @@ static int mndpsockfd;
 
 static int pings = 0;
 
-struct net_interface *interfaces = NULL;
+static struct net_interface *interfaces = NULL;
 
 static int use_raw_socket = 0;
 
@@ -109,7 +109,7 @@ static int sourceport;
 static time_t last_mndp_time = 0;
 
 /* Protocol data direction */
-unsigned char mt_direction_fromserver = 1;
+extern unsigned char mt_direction_fromserver;
 
 /* Anti-timeout is every 10 seconds. Give up after 15. */
 #define MT_CONNECTION_TIMEOUT 15
@@ -949,7 +949,7 @@ void sighup_handler() {
 /*
  * TODO: Rewrite main() when all sub-functionality is tested
  */
-int main (int argc, char **argv) {
+int mactelnetd_main (int argc, char **argv) {
 	int result;
 	struct sockaddr_in si_me;
 	struct sockaddr_in si_me_mndp;
@@ -961,6 +961,7 @@ int main (int argc, char **argv) {
 	int print_help = 0;
 	int foreground = 0;
 	int interface_count = 0;
+	mt_direction_fromserver = 1;
 
 	setlocale(LC_ALL, "");
 

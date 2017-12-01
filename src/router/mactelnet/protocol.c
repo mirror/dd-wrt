@@ -47,6 +47,7 @@
 #include "protocol.h"
 
 #define _(String) String
+unsigned char mt_direction_fromserver = 0; 
 
 int init_packet(struct mt_packet *packet, enum mt_ptype ptype, unsigned char *srcmac, unsigned char *dstmac, unsigned short sessionkey, unsigned int counter) {
 	unsigned char *data = packet->data;

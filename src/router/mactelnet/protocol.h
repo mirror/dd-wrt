@@ -149,7 +149,6 @@ static const unsigned char mt_mactelnet_cpmagic[4] = { 0x56, 0x34, 0x12, 0xff };
 static const unsigned char mt_mactelnet_clienttype[2] = { 0x00, 0x15 };
 
 /* Must be initialized by application */
-extern unsigned char mt_direction_fromserver;
 
 /* Debugging stuff */
 #if defined(DEBUG_PROTO)
