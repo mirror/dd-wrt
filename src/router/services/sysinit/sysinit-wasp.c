@@ -160,6 +160,7 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
 #elif defined (HAVE_E355AC)
+#elif defined (HAVE_WR810N)
 #elif defined (HAVE_WR615N)
 #elif defined (HAVE_AP120C)
 #elif defined (HAVE_E380AC)
@@ -253,7 +254,7 @@ void start_sysinit(void)
 	runStartup("/etc/config/", ".onnet");
 #endif
 
-#if !defined(HAVE_WR650AC) && !defined(HAVE_E355AC) && !defined(HAVE_E325N) && !defined(HAVE_E380AC) && !defined(HAVE_WR615N)  && !defined(HAVE_AP120C) && !defined(HAVE_WILLY)
+#if !defined(HAVE_WR650AC) && !defined(HAVE_E355AC) && !defined(HAVE_E325N) && !defined(HAVE_E380AC) && !defined(HAVE_WR615N)  && !defined(HAVE_AP120C) && !defined(HAVE_WILLY) && !defined(HAVE_WR810N)
 #ifndef HAVE_JWAP606
 	eval("ifconfig", "eth0", "up");
 #if (defined(HAVE_MMS344) || defined(HAVE_XD3200) || defined(HAVE_ARCHERC7V4)) && !defined(HAVE_DIR862)
@@ -292,6 +293,10 @@ void start_sysinit(void)
 	}
 #endif
 #endif
+#endif
+#ifdef HAVE_WR810N
+	eval("ifconfig", "eth0", "up");
+	eval("ifconfig", "eth1", "up");
 #endif
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 		char eabuf[32];
@@ -414,6 +419,7 @@ void start_sysinit(void)
 #endif
 
 	detect_wireless_devices();
+#ifndef HAVE_WR810N
 
 #ifdef HAVE_WNDR3700V4
 	setWirelessLed(0, 11);
@@ -462,6 +468,7 @@ void start_sysinit(void)
 	setWirelessLed(1, 32);
 #else
 	setWirelessLed(0, 0);
+#endif
 #endif
 	/*
 	 * Set a sane date 
