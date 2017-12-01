@@ -53,7 +53,7 @@ static int sockfd, insockfd;
 
 static unsigned short ping_size = 38;
 
-struct net_interface *interfaces;
+static struct net_interface *interfaces;
 
 static struct in_addr sourceip;
 static struct in_addr destip;
@@ -66,7 +66,6 @@ static float avg_ms = 0;
 static float max_ms = 0;
 
 /* Protocol data direction, not used here, but obligatory for protocol.c */
-unsigned char mt_direction_fromserver = 0;
 
 static void print_version() {
 	fprintf(stderr, PROGRAM_NAME " " PACKAGE_VERSION "\n");
@@ -106,7 +105,7 @@ static void display_results() {
 	exit(0);
 }
 
-int main(int argc, char **argv)  {
+int macping_main(int argc, char **argv)  {
 	int optval = 1;
 	int print_help = 0;
 	int send_packets = 5;

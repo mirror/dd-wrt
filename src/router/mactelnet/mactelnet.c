@@ -99,11 +99,10 @@ static char username[MT_MNDP_MAX_STRING_SIZE];
 static char password[MT_MNDP_MAX_STRING_SIZE];
 static char nonpriv_username[MT_MNDP_MAX_STRING_SIZE];
 
-struct net_interface *interfaces=NULL;
+static struct net_interface *interfaces=NULL;
 struct net_interface *active_interface;
 
 /* Protocol data direction */
-unsigned char mt_direction_fromserver = 0;
 
 static unsigned int send_socket;
 
@@ -453,7 +452,7 @@ static int find_interface() {
 /*
  * TODO: Rewrite main() when all sub-functionality is tested
  */
-int main (int argc, char **argv) {
+int mactelnet_main (int argc, char **argv) {
 	int result;
 	struct mt_packet data;
 	struct sockaddr_in si_me;
