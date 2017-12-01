@@ -5,7 +5,7 @@
 	<body>
 		<form>
 			<h2><% tran("routetbl.h2"); %></h2>
-			<table>
+			<table class="table" cellspacing="4" id="routing_table" summary="routing table">
 				<tr>
 					<th><% tran("routetbl.th1"); %></th>
 					<th><% tran("share.subnet"); %></th>
@@ -16,7 +16,6 @@
 				</tr>
 				<script type="text/javascript">
 				//<![CDATA[
-
 					var table = new Array(<% dump_route_table(); %>);
 					
 					if(table.length == 0) {
@@ -33,6 +32,11 @@
 				//]]>
 				</script>
 			</table><br />
+			<script type="text/javascript">
+			//<![CDATA[
+			var t = new SortableTable(document.getElementById('routing_table'), 4000);
+			//]]>
+			</script>				
 			<div class="submitFooter">
 				<script type="text/javascript">
 				//<![CDATA[
