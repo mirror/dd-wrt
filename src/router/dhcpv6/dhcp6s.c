@@ -127,7 +127,7 @@ static int debug = 0;
 static sig_atomic_t sig_flags = 0;
 #define SIGF_TERM 0x1
 
-const dhcp6_mode_t dhcp6_mode = DHCP6_MODE_SERVER;
+extern dhcp6_mode_t dhcp6_mode;
 char *device = NULL;
 int ifidx;
 int insock;			/* inbound UDP port */
@@ -222,7 +222,7 @@ static int process_auth __P((struct dhcp6 *, ssize_t, struct host_conf *,
 static inline char *clientstr __P((struct host_conf *, struct duid *));
 
 int
-main(argc, argv)
+dhcp6s_main(argc, argv)
 	int argc;
 	char **argv;
 {
@@ -231,6 +231,7 @@ main(argc, argv)
 	struct dhcp6_listval *dlv;
 	char *progname;
 	FILE *pidfp;
+	dhcp6_mode = DHCP6_MODE_SERVER;
 
 	if ((progname = strrchr(*argv, '/')) == NULL)
 		progname = *argv;
