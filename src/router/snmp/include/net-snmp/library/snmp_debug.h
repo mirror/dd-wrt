@@ -90,7 +90,7 @@ extern          "C" {
      * as debugging output.
      */
 
-#ifndef SNMP_NO_DEBUGGING       /* make sure we're wanted */
+#if 0 //ndef SNMP_NO_DEBUGGING       /* make sure we're wanted */
 
     /*
      * define two macros : one macro with, one without,
