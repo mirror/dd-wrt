@@ -9,7 +9,7 @@ all: multicall
 clean: distclean
 
 distclean:
-	rm -f mactelnet macping mactelnetd mndp
+	rm -f mactelnet macping mactelnetd mndp multicall
 	rm -f *.o
 
 potclean:
