@@ -315,7 +315,7 @@ MDupdate(MDptr MDp, unsigned char *X, unsigned int count)
         return -1;
     }
     /*
-     * if (MDp->done) { fprintf(stderr,"\nError: MDupdate MD already done."); return; }
+     * if (MDp->done) { printf("\nError: MDupdate MD already done."); return; }
      */
     /*
      * Add count to MDp->count 
@@ -335,7 +335,7 @@ MDupdate(MDptr MDp, unsigned char *X, unsigned int count)
     } else if (count > 512)     /* Check for count too large */
         return -2;
     /*
-     * { fprintf(stderr,"\nError: MDupdate called with illegal count value %d.",count);
+     * { printf("\nError: MDupdate called with illegal count value %d.",count);
      * return;
      * }
      */

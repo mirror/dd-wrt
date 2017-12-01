@@ -157,7 +157,7 @@ intpr(int interval)
         cfg_nnets = *var->val.integer;
         snmp_free_var(var);
     } else {
-        fprintf(stderr,
+        printf(
                 "No response when requesting number of interfaces.\n");
         return;
     }
@@ -185,11 +185,11 @@ intpr(int interval)
         status = snmp_synch_response(Session, request, &response);
         if (status != STAT_SUCCESS
             || response->errstat != SNMP_ERR_NOERROR) {
-            fprintf(stderr,
+            printf(
                     "SNMP request failed after %d out of %d interfaces (IP)\n",
                     ifnum, cfg_nnets);
             if (snmp_get_do_debugging()) {
-                fprintf(stderr,
+                printf(
                         "status = %d, errstat = %ld, errindex = %ld\n",
                         status, response->errstat, response->errindex);
             }
@@ -208,7 +208,7 @@ intpr(int interval)
                      cur_if->ifindex != ifindex &&
                      cur_if->ifindex != 0; cur_if++);
                 if (cur_if >= (if_table + cfg_nnets)) {
-                    fprintf(stderr,
+                    printf(
                             "Inconsistent reponse from server. Aborting.\n");
                     exit(0);
                 }
@@ -281,7 +281,7 @@ intpr(int interval)
         }
         if (status != STAT_SUCCESS
             || response->errstat != SNMP_ERR_NOERROR) {
-            fprintf(stderr,
+            printf(
                     "SNMP request failed after %d out of %d interfaces (IF)\n",
                     ifnum, cfg_nnets);
             cfg_nnets = ifnum;
@@ -303,7 +303,7 @@ intpr(int interval)
                      cur_if->ifindex != ifindex && cur_if->ifindex != 0;
                      cur_if++);
                 if (cur_if >= (if_table + cfg_nnets)) {
-                    fprintf(stderr,
+                    printf(
                             "Inconsistent reponse from server. Aborting\n");
                     exit(0);
                 }
@@ -450,7 +450,7 @@ intpro(int interval)
         cfg_nnets = *var->val.integer;
         snmp_free_var(var);
     } else {
-        fprintf(stderr,
+        printf(
                 "No response when requesting number of interfaces.\n");
         return;
     }
@@ -478,7 +478,7 @@ intpro(int interval)
         status = snmp_synch_response(Session, request, &response);
         if (status != STAT_SUCCESS
             || response->errstat != SNMP_ERR_NOERROR) {
-            fprintf(stderr,
+            printf(
                     "SNMP request failed for interface %d, variable %ld out of %d interfaces (IP)\n",
                     ifnum, response->errindex, cfg_nnets);
             cfg_nnets = ifnum;
@@ -551,7 +551,7 @@ intpro(int interval)
         }
         if (status != STAT_SUCCESS
             || response->errstat != SNMP_ERR_NOERROR) {
-            fprintf(stderr,
+            printf(
                     "SNMP request failed for interface %d, variable %ld out of %d interfaces (IF)\n",
                     ifnum, response->errindex, cfg_nnets);
             cfg_nnets = ifnum;

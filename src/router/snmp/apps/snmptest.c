@@ -80,9 +80,9 @@ int             input_variable(netsnmp_variable_list *);
 void
 usage(void)
 {
-    fprintf(stderr, "USAGE: snmptest ");
+    printf( "USAGE: snmptest ");
     snmp_parse_args_usage(stderr);
-    fprintf(stderr, "\n\n");
+    printf( "\n\n");
     snmp_parse_args_descriptions(stderr);
 }
 

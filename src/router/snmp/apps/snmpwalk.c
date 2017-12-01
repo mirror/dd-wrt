@@ -81,15 +81,15 @@ int             numprinted = 0;
 void
 usage(void)
 {
-    fprintf(stderr, "USAGE: snmpwalk ");
+    printf( "USAGE: snmpwalk ");
     snmp_parse_args_usage(stderr);
-    fprintf(stderr, " [OID]\n\n");
+    printf( " [OID]\n\n");
     snmp_parse_args_descriptions(stderr);
-    fprintf(stderr,
+    printf(
             "  -C APPOPTS\t\tSet various application specific behaviours:\n");
-    fprintf(stderr, "\t\t\t  p:  print the number of variables found\n");
-    fprintf(stderr, "\t\t\t  i:  include given OID in the search range\n");
-    fprintf(stderr,
+    printf( "\t\t\t  p:  print the number of variables found\n");
+    printf( "\t\t\t  i:  include given OID in the search range\n");
+    printf(
             "\t\t\t  c:  do not check returned OIDs are increasing\n");
 }
 
@@ -137,7 +137,7 @@ optProc(int argc, char *const *argv, int opt)
 				    NETSNMP_DS_WALK_DONT_CHECK_LEXICOGRAPHIC);
                 break;
             default:
-                fprintf(stderr, "Unknown flag passed to -C: %c\n",
+                printf( "Unknown flag passed to -C: %c\n",
                         optarg[-1]);
                 exit(1);
             }
@@ -277,12 +277,12 @@ main(int argc, char *argv[])
                             && snmp_oid_compare(name, name_length,
                                                 vars->name,
                                                 vars->name_length) >= 0) {
-                            fprintf(stderr, "Error: OID not increasing: ");
+                            printf( "Error: OID not increasing: ");
                             fprint_objid(stderr, name, name_length);
-                            fprintf(stderr, " >= ");
+                            printf( " >= ");
                             fprint_objid(stderr, vars->name,
                                          vars->name_length);
-                            fprintf(stderr, "\n");
+                            printf( "\n");
                             running = 0;
                             exitval = 1;
                         }
@@ -303,10 +303,10 @@ main(int argc, char *argv[])
                 if (response->errstat == SNMP_ERR_NOSUCHNAME) {
                     printf("End of MIB\n");
                 } else {
-                    fprintf(stderr, "Error in packet.\nReason: %s\n",
+                    printf( "Error in packet.\nReason: %s\n",
                             snmp_errstring(response->errstat));
                     if (response->errindex != 0) {
-                        fprintf(stderr, "Failed object: ");
+                        printf( "Failed object: ");
                         for (count = 1, vars = response->variables;
                              vars && count != response->errindex;
                              vars = vars->next_variable, count++)
@@ -314,13 +314,13 @@ main(int argc, char *argv[])
                         if (vars)
                             fprint_objid(stderr, vars->name,
                                          vars->name_length);
-                        fprintf(stderr, "\n");
+                        printf( "\n");
                     }
                     exitval = 2;
                 }
             }
         } else if (status == STAT_TIMEOUT) {
-            fprintf(stderr, "Timeout: No Response from %s\n",
+            printf( "Timeout: No Response from %s\n",
                     session.peername);
             running = 0;
             exitval = 1;

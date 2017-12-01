@@ -106,19 +106,19 @@ int             viewTreeFamilyType = 1;
 void
 usage(void)
 {
-    fprintf(stderr, "Usage: snmpvacm ");
+    printf( "Usage: snmpvacm ");
     snmp_parse_args_usage(stderr);
-    fprintf(stderr, " COMMAND\n\n");
+    printf( " COMMAND\n\n");
     snmp_parse_args_descriptions(stderr);
-    fprintf(stderr, "\nsnmpvacm commands:\n");
-    fprintf(stderr,
+    printf( "\nsnmpvacm commands:\n");
+    printf(
             "                createAccess     GROUPNAME [CONTEXTPREFIX] SECURITYMODEL SECURITYLEVEL CONTEXTMATCH READVIEWNAME WRITEVIEWNAME NOTIFYVIEWNAME\n");
-    fprintf(stderr,
+    printf(
             "                deleteAccess     GROUPNAME [CONTEXTPREFIX] SECURITYMODEL SECURITYLEVEL\n");
-    fprintf(stderr, "        createSec2Group  MODEL SECURITYNAME  GROUPNAME\n");
-    fprintf(stderr, "        deleteSec2Group  MODEL SECURITYNAME\n");
-    fprintf(stderr, "  [-Ce] createView       NAME SUBTREE MASK\n");
-    fprintf(stderr, "        deleteView       NAME SUBTREE\n");
+    printf( "        createSec2Group  MODEL SECURITYNAME  GROUPNAME\n");
+    printf( "        deleteSec2Group  MODEL SECURITYNAME\n");
+    printf( "  [-Ce] createView       NAME SUBTREE MASK\n");
+    printf( "        deleteView       NAME SUBTREE\n");
 }
 
 
@@ -207,7 +207,7 @@ optProc(int argc, char *const *argv, int opt)
                 break;
 
             default:
-                fprintf(stderr,
+                printf(
                         "Unknown flag passed to -C: %c\n", optarg[-1]);
                 exit(1);
             }
@@ -284,7 +284,7 @@ main(int argc, char *argv[])
     pdu = snmp_pdu_create(SNMP_MSG_SET);
 
     if (arg >= argc) {
-        fprintf(stderr, "Please specify a opreation to perform.\n");
+        printf( "Please specify a opreation to perform.\n");
         usage();
         exit(1);
     }
@@ -298,7 +298,7 @@ main(int argc, char *argv[])
          */
     {
         if (++arg + 2 != argc) {
-            fprintf(stderr, "You must specify the view to delete\n");
+            printf( "You must specify the view to delete\n");
             usage();
             exit(1);
         }
@@ -320,7 +320,7 @@ main(int argc, char *argv[])
          */
     {
         if (++arg + 3 > argc) {
-            fprintf(stderr, "You must specify name, subtree and mask\n");
+            printf( "You must specify name, subtree and mask\n");
             usage();
             exit(1);
         }
@@ -369,7 +369,7 @@ main(int argc, char *argv[])
          */
     {
         if (++arg + 2 != argc) {
-            fprintf(stderr, "You must specify the sec2group to delete\n");
+            printf( "You must specify the sec2group to delete\n");
             usage();
             exit(1);
         }
@@ -396,7 +396,7 @@ main(int argc, char *argv[])
          */
     {
         if (++arg + 3 != argc) {
-            fprintf(stderr,
+            printf(
                     "You must specify model, security name and group name\n");
             usage();
             exit(1);
@@ -429,7 +429,7 @@ main(int argc, char *argv[])
          */
     {
         if (++arg + 3 > argc) {
-            fprintf(stderr,
+            printf(
                     "You must specify the access entry to delete\n");
             usage();
             exit(1);
@@ -468,7 +468,7 @@ main(int argc, char *argv[])
          */
     {
         if (++arg + 7 > argc) {
-            fprintf(stderr,
+            printf(
                     "You must specify the access entry to create\n");
             usage();
             exit(1);
@@ -540,26 +540,26 @@ main(int argc, char *argv[])
     if (status == STAT_SUCCESS) {
         if (response) {
             if (response->errstat == SNMP_ERR_NOERROR) {
-                fprintf(stderr, "%s\n", successNotes[command - 1]);
+                printf( "%s\n", successNotes[command - 1]);
             } else {
-                fprintf(stderr, "Error in packet.\nReason: %s\n",
+                printf( "Error in packet.\nReason: %s\n",
                         snmp_errstring(response->errstat));
 		if (response->errindex != 0){
 		    int count;
 		    struct variable_list *vars = response->variables;
-		    fprintf(stderr, "Failed object: ");
+		    printf( "Failed object: ");
 		    for(count = 1; vars && (count != response->errindex);
 			    vars = vars->next_variable, count++)
 			;
 		    if (vars)
 			fprint_objid(stderr, vars->name, vars->name_length);
-		    fprintf(stderr, "\n");
+		    printf( "\n");
 		}
                 exitval = 2;
             }
         }
     } else if (status == STAT_TIMEOUT) {
-        fprintf(stderr, "Timeout: No Response from %s\n",
+        printf( "Timeout: No Response from %s\n",
                 session.peername);
         exitval = 1;
     } else {

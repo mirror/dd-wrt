@@ -210,7 +210,7 @@ snmp_parse_args(int argc,
                 return (-1);
             }
             if (strcasecmp(optarg, "version") == 0) {
-                fprintf(stderr, "NET-SNMP version: %s\n",
+                printf( "NET-SNMP version: %s\n",
                         netsnmp_get_version());
                 return (-2);
             }
@@ -219,7 +219,7 @@ snmp_parse_args(int argc,
             break;
 
         case 'V':
-            fprintf(stderr, "NET-SNMP version: %s\n",
+            printf( "NET-SNMP version: %s\n",
                     netsnmp_get_version());
             return (-2);
 
@@ -229,7 +229,7 @@ snmp_parse_args(int argc,
 
         case 'H':
             init_snmp("snmpapp");
-            fprintf(stderr, "Configuration directives understood:\n");
+            printf( "Configuration directives understood:\n");
             read_config_print_usage("  ");
             return (-2);
 
@@ -248,7 +248,7 @@ snmp_parse_args(int argc,
         case 'O':
             cp = snmp_out_toggle_options(optarg);
             if (cp != NULL) {
-                fprintf(stderr,
+                printf(
                         "Unknown output option passed to -O: %c.\n", *cp);
                 return (-1);
             }
@@ -257,7 +257,7 @@ snmp_parse_args(int argc,
         case 'I':
             cp = snmp_in_toggle_options(optarg);
             if (cp != NULL) {
-                fprintf(stderr, "Unknown input option passed to -I: %c.\n",
+                printf( "Unknown input option passed to -I: %c.\n",
                         *cp);
                 return (-1);
             }
@@ -266,7 +266,7 @@ snmp_parse_args(int argc,
         case 'P':
             cp = snmp_mib_toggle_options(optarg);
             if (cp != NULL) {
-                fprintf(stderr,
+                printf(
                         "Unknown parsing option passed to -P: %c.\n", *cp);
                 return (-1);
             }
@@ -290,7 +290,7 @@ snmp_parse_args(int argc,
             } else if (!strcasecmp(optarg, "3")) {
                 session->version = SNMP_VERSION_3;
             } else {
-                fprintf(stderr,
+                printf(
                         "Invalid version specified after -v flag: %s\n",
                         optarg);
                 return (-1);
@@ -298,21 +298,21 @@ snmp_parse_args(int argc,
             break;
 
         case 'p':
-            fprintf(stderr, "Warning: -p option is no longer used - ");
-            fprintf(stderr, "specify the remote host as HOST:PORT\n");
+            printf( "Warning: -p option is no longer used - ");
+            printf( "specify the remote host as HOST:PORT\n");
             return (-1);
             break;
 
         case 'T':
-            fprintf(stderr, "Warning: -T option is no longer used - ");
-            fprintf(stderr, "specify the remote host as TRANSPORT:HOST\n");
+            printf( "Warning: -T option is no longer used - ");
+            printf( "specify the remote host as TRANSPORT:HOST\n");
             return (-1);
             break;
 
         case 't':
             session->timeout = atoi(optarg) * 1000000L;
             if (session->timeout < 0 || !isdigit(optarg[0])) {
-                fprintf(stderr,
+                printf(
                         "Invalid timeout in seconds after -t flag.\n");
                 return (-1);
             }
@@ -321,7 +321,7 @@ snmp_parse_args(int argc,
         case 'r':
             session->retries = atoi(optarg);
             if (session->retries < 0 || !isdigit(optarg[0])) {
-                fprintf(stderr,
+                printf(
                         "Invalid number of retries after -r flag.\n");
                 return (-1);
             }
@@ -343,7 +343,7 @@ snmp_parse_args(int argc,
         case 'Z':
             session->engineBoots = strtoul(optarg, NULL, 10);
             if (session->engineBoots == 0 || !isdigit(optarg[0])) {
-                fprintf(stderr,
+                printf(
                         "Need engine boots value after -Z flag.\n");
                 return (-1);
             }
@@ -356,7 +356,7 @@ snmp_parse_args(int argc,
             else if ((optind < argc) && isdigit(argv[optind][0]))
                 session->engineTime = strtoul(argv[optind], NULL, 10);
             else {
-                fprintf(stderr, "Need engine time value after -Z flag.\n");
+                printf( "Need engine time value after -Z flag.\n");
                 return (-1);
             }
             break;
@@ -366,13 +366,13 @@ snmp_parse_args(int argc,
                 u_char         *ebuf = (u_char *) malloc(ebuf_len);
 
                 if (ebuf == NULL) {
-                    fprintf(stderr,
+                    printf(
                             "malloc failure processing -e flag.\n");
                     return (-1);
                 }
                 if (!snmp_hex_to_binary
                     (&ebuf, &ebuf_len, &eout_len, 1, optarg)) {
-                    fprintf(stderr,
+                    printf(
                             "Bad engine ID value after -e flag.\n");
                     free(ebuf);
                     return (-1);
@@ -387,13 +387,13 @@ snmp_parse_args(int argc,
                 u_char         *ebuf = (u_char *) malloc(ebuf_len);
 
                 if (ebuf == NULL) {
-                    fprintf(stderr,
+                    printf(
                             "malloc failure processing -E flag.\n");
                     return (-1);
                 }
                 if (!snmp_hex_to_binary
                     (&ebuf, &ebuf_len, &eout_len, 1, optarg)) {
-                    fprintf(stderr,
+                    printf(
                             "Bad engine ID value after -E flag.\n");
                     free(ebuf);
                     return (-1);
@@ -426,7 +426,7 @@ snmp_parse_args(int argc,
                        || !strcasecmp(optarg, "ap")) {
                 session->securityLevel = SNMP_SEC_LEVEL_AUTHPRIV;
             } else {
-                fprintf(stderr,
+                printf(
                         "Invalid security level specified after -l flag: %s\n",
                         optarg);
                 return (-1);
@@ -442,7 +442,7 @@ snmp_parse_args(int argc,
                 session->securityAuthProto = usmHMACSHA1AuthProtocol;
                 session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
             } else {
-                fprintf(stderr,
+                printf(
                         "Invalid authentication protocol specified after -a flag: %s\n",
                         optarg);
                 return (-1);
@@ -465,7 +465,7 @@ snmp_parse_args(int argc,
                 session->securityPrivProtoLen = USM_PRIV_PROTO_AES256_LEN;
 #endif
             } else {
-                fprintf(stderr,
+                printf(
                         "Invalid privacy protocol specified after -x flag: %s\n",
                         optarg);
                 return (-1);
@@ -559,7 +559,7 @@ snmp_parse_args(int argc,
                         session->securityAuthKey,
                         &session->securityAuthKeyLen) != SNMPERR_SUCCESS) {
             snmp_perror(argv[0]);
-            fprintf(stderr,
+            printf(
                     "Error generating a key (Ku) from the supplied authentication pass phrase. \n");
             return (-2);
         }
@@ -590,7 +590,7 @@ snmp_parse_args(int argc,
                         session->securityPrivKey,
                         &session->securityPrivKeyLen) != SNMPERR_SUCCESS) {
             snmp_perror(argv[0]);
-            fprintf(stderr,
+            printf(
                     "Error generating a key (Ku) from the supplied privacy pass phrase. \n");
             return (-2);
         }
@@ -599,7 +599,7 @@ snmp_parse_args(int argc,
      * get the hostname 
      */
     if (optind == argc) {
-        fprintf(stderr, "No hostname specified.\n");
+        printf( "No hostname specified.\n");
         return (-1);
     }
     session->peername = argv[optind++]; /* hostname */
@@ -616,7 +616,7 @@ snmp_parse_args(int argc,
 					 NETSNMP_DS_LIB_COMMUNITY);
         }
         if (Cpsz == NULL) {
-            fprintf(stderr, "No community name specified.\n");
+            printf( "No community name specified.\n");
             return (-1);
         }
         session->community = (unsigned char *) Cpsz;

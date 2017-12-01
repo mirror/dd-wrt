@@ -1139,7 +1139,7 @@ snmp_clean_persistent(const char *type)
 
 
 
-
+#ifdef NEED_PRINTF
 /*
  * config_perror: prints a warning string associated with a file and
  * line number of a .conf file and increments the error count. 
@@ -1158,7 +1158,7 @@ config_pwarn(const char *string)
     snmp_log(LOG_WARNING, "%s: line %d: Warning: %s\n", curfilename,
              linecount, string);
 }
-
+#endif
 /*
  * skip all white spaces and return 1 if found something either end of
  * line or a comment character 

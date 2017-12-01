@@ -135,27 +135,27 @@ static struct protoent *getprotoent46(void);
 void
 usage(void)
 {
-    fprintf(stderr,
+    printf(
             "Usage: snmpnetstat [options...] hostname [ community ] [interval]\n");
-    fprintf(stderr, "NET-SNMP version: %s\n", netsnmp_get_version());
-    fprintf(stderr, "  -v [1 | 2c ]   SNMP version\n");
-    fprintf(stderr, "  -V             display version number\n");
-    fprintf(stderr, "  -p port        specify agent port number\n");
-    fprintf(stderr, "  -c community   specify community name\n");
-    fprintf(stderr, "  -t timeout     SNMP packet timeout (seconds)\n");
-    fprintf(stderr,
+    printf( "NET-SNMP version: %s\n", netsnmp_get_version());
+    printf( "  -v [1 | 2c ]   SNMP version\n");
+    printf( "  -V             display version number\n");
+    printf( "  -p port        specify agent port number\n");
+    printf( "  -c community   specify community name\n");
+    printf( "  -t timeout     SNMP packet timeout (seconds)\n");
+    printf(
             "  -i             show interfaces with packet counters\n");
-    fprintf(stderr,
+    printf(
             "  -o             show interfaces with octet counters\n");
-    fprintf(stderr, "  -r             show routing table\n");
-    fprintf(stderr, "  -s             show general statistics\n");
-    fprintf(stderr, "  -n             show IP addresses, not names\n");
-    fprintf(stderr, "  -a             show sockets in LISTEN mode too\n");
-    fprintf(stderr,
+    printf( "  -r             show routing table\n");
+    printf( "  -s             show general statistics\n");
+    printf( "  -n             show IP addresses, not names\n");
+    printf( "  -a             show sockets in LISTEN mode too\n");
+    printf(
             "  -P proto       show only details for this protocol\n");
-    fprintf(stderr, "  -I interface   show only this interface\n");
-    fprintf(stderr, "  -d             dump packets\n");
-    fprintf(stderr, "  -Ddebugspec    \n");
+    printf( "  -I interface   show only this interface\n");
+    printf( "  -d             dump packets\n");
+    printf( "  -Ddebugspec    \n");
 
 }
 
@@ -182,7 +182,7 @@ main(int argc, char *argv[])
     while ((arg = getopt(argc, argv, "VhdqD:p:t:c:v:aionrsP:I:")) != EOF) {
         switch (arg) {
         case 'V':
-            fprintf(stderr, "NET-SNMP version: %s\n",
+            printf( "NET-SNMP version: %s\n",
                     netsnmp_get_version());
             exit(0);
             break;
@@ -223,7 +223,7 @@ main(int argc, char *argv[])
             else if (!strcasecmp(argp, "2c"))
                 version = SNMP_VERSION_2c;
             else {
-                fprintf(stderr, "Invalid version: %s\n", argp);
+                printf( "Invalid version: %s\n", argp);
                 usage();
                 exit(1);
             }
@@ -255,7 +255,7 @@ main(int argc, char *argv[])
 
         case 'P':
             if ((tp = name2protox(optarg)) == NULLPROTOX) {
-                fprintf(stderr, "%s: unknown or uninstrumented protocol\n",
+                printf( "%s: unknown or uninstrumented protocol\n",
                         optarg);
                 exit(1);
             }
@@ -285,7 +285,7 @@ main(int argc, char *argv[])
     if ((version == SNMP_VERSION_1 || version == SNMP_VERSION_2c)
         && community == NULL && optind < argc) {
         community = argv[optind++];
-        fprintf(stderr,
+        printf(
                 "Warning: positional community parameter is deprecated. Use -c\n");
     }
     if (optind < argc && isdigit(argv[optind][0])) {
@@ -302,7 +302,7 @@ main(int argc, char *argv[])
     }
 
     if (!hostname) {
-        fprintf(stderr, "Missing host name.\n");
+        printf( "Missing host name.\n");
         exit(1);
     }
 
@@ -314,7 +314,7 @@ main(int argc, char *argv[])
         if (!community
             && !(community =
                  netsnmp_ds_get_string(NETSNMP_DS_LIBRARY_ID, NETSNMP_DS_LIB_COMMUNITY))) {
-            fprintf(stderr, "Missing community name.\n");
+            printf( "Missing community name.\n");
             exit(1);
         }
         session.version = version;
