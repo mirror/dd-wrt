@@ -88,7 +88,7 @@ static sig_atomic_t sig_flags = 0;
 #define SIGF_TERM 0x1
 #define SIGF_HUP 0x2
 
-const dhcp6_mode_t dhcp6_mode = DHCP6_MODE_CLIENT;
+extern dhcp6_mode_t dhcp6_mode;
 
 int sock;	/* inbound/outbound udp port */
 int rtsock;	/* routing socket */
@@ -162,7 +162,7 @@ extern int client6_script __P((char *, int, struct dhcp6_optinfo *));
 #define MAX_ELAPSED_TIME 0xffff
 
 int
-main(argc, argv)
+dhcp6c_main(argc, argv)
 	int argc;
 	char **argv;
 {
@@ -171,6 +171,7 @@ main(argc, argv)
 	FILE *pidfp;
 	struct dhcp6_if *ifp;
 	int fd;
+	dhcp6_mode = DHCP6_MODE_CLIENT;
 
 #ifndef HAVE_ARC4RANDOM
 	srandom(time(NULL) & getpid());
