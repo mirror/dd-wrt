@@ -84,7 +84,7 @@ struct mt_mndp_hdr {
   unsigned char version;
   unsigned char ttl;
   unsigned short cksum;
-};
+} __attribute__((packed));
 
 struct mt_mactelnet_hdr {
 	unsigned char ver;
@@ -95,13 +95,13 @@ struct mt_mactelnet_hdr {
 	unsigned short seskey;
 	unsigned int counter;
 	unsigned char *data;
-};
+} __attribute__((packed));
 
 struct mt_mactelnet_control_hdr {
 	enum mt_cptype cptype;
 	unsigned int length;
 	unsigned char *data;
-};
+} __attribute__((packed));
 
 /* TODO: Add all the other information obtainable from mndp */
 struct mt_mndp_info {
@@ -114,12 +114,12 @@ struct mt_mndp_info {
 	char softid[MT_MNDP_MAX_STRING_SIZE];
 	char ifname[MT_MNDP_MAX_STRING_SIZE];
 	unsigned int uptime;
-};
+} __attribute__((packed));
 
 struct mt_packet {
 	int size;
 	unsigned char data[MT_PACKET_LEN];
-};
+} __attribute__((packed));
 
 /* MacTelnet/Winbox packets */
 extern int init_packet(struct mt_packet *packet, enum mt_ptype ptype, unsigned char *srcmac, unsigned char *dstmac, unsigned short sessionkey, unsigned int counter);
