@@ -37,14 +37,15 @@
 #define _(String) String
 
 /* This file is also used for the -l option in mactelnet */
-#ifndef FROM_MACTELNET
 
-/* Protocol data direction, not used here, but obligatory for protocol.c */
-unsigned char mt_direction_fromserver = 0;
+static unsigned char mymain = 1;
+int mndp(int timeout, int batch_mode);
 
-int main(int argc, char **argv)  {
+int mndp_main(int argc, char **argv)  {
 	int batch_mode = 0;
-#else
+	mymain = 0;
+	return mndp(0,batch_mode);
+}
 
 void sig_alarm(int signo)
 {
@@ -52,17 +53,15 @@ void sig_alarm(int signo)
 }
 
 int mndp(int timeout, int batch_mode)  {
-#endif
+
 	int sock,result;
 	int optval = 1;
 	struct sockaddr_in si_me, si_remote;
 	unsigned char buff[MT_PACKET_LEN];
 
-#ifdef FROM_MACTELNET
 	/* mactelnet.c has this set to 1 */
-	mt_direction_fromserver = 0;
-	signal(SIGALRM, sig_alarm);
-#endif
+	if (!mymain)
+		signal(SIGALRM, sig_alarm);
 
 	setlocale(LC_ALL, "");
 
@@ -107,11 +106,10 @@ int mndp(int timeout, int batch_mode)  {
 	} else {
 		printf("\n\E[1m%-15s %-17s %s\E[m\n", _("IP"), _("MAC-Address"), _("Identity (platform version hardware) uptime"));
 	}
-#ifdef FROM_MACTELNET
+
 	if (timeout > 0) {
 		alarm(timeout);
 	}
-#endif
 
 	while(1) {
 		struct mt_mndp_info *packet;
