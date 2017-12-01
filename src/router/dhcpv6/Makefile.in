@@ -43,7 +43,7 @@ LDFLAGS=@LDFLAGS@
 LIBOBJS=@LIBOBJS@
 LIBS=	@LIBS@ @LEXLIB@
 CC=	@CC@
-TARGET=	dhcp6c dhcp6s dhcp6relay dhcp6ctl
+TARGET=	multicall dhcp6relay dhcp6ctl
 
 INSTALL=@INSTALL@
 INSTALL_PROGRAM=@INSTALL_PROGRAM@
@@ -67,17 +67,15 @@ CLIENTOBJS+=	lease.o
 CFLAGS+=	-DUSE_DHCP6SRV
 endif
 
-SERVOBJS=	dhcp6s.o common.o if.o config.o timer.o lease.o \
-	base64.o auth.o dhcp6_ctl.o $(GENSRCS:%.c=%.o)
+CLIENTOBJS+=	multicall.o dhcp6s.o lease.o \
+	dhcp6_ctl.o
 RELAYOBJS =	dhcp6relay.o dhcp6relay_script.o common.o timer.o
 CTLOBJS= dhcp6_ctlclient.o base64.o auth.o
 CLEANFILES+=	y.tab.h
 
 all:	$(TARGET)
-dhcp6c:	$(CLIENTOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o dhcp6c $(CLIENTOBJS) $(LIBOBJS) $(LIBS)
-dhcp6s:	$(SERVOBJS) $(LIBOBJS)
-	$(CC) $(LDFLAGS) -o dhcp6s $(SERVOBJS) $(LIBOBJS) $(LIBS)
+multicall:	$(CLIENTOBJS) $(LIBOBJS)
+	$(CC) $(LDFLAGS) -o multicall $(CLIENTOBJS) $(LIBOBJS) $(LIBS)
 dhcp6relay: $(RELAYOBJS) $(LIBOBJS)
 	$(CC) $(LDFLAGS) -o $@ $(RELAYOBJS) $(LIBOBJS) $(LIBS)
 dhcp6ctl: $(CTLOBJS)
