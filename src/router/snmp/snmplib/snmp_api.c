@@ -455,7 +455,7 @@ snmp_get_next_transid(void)
     else
         return retVal;
 }
-
+#ifdef NEED_PRINTF
 void
 snmp_perror(const char *prog_string)
 {
@@ -475,7 +475,7 @@ snmp_set_detail(const char *detail_string)
         snmp_detail_f = 1;
     }
 }
-
+#endif
 /*
  * returns pointer to static data 
  */

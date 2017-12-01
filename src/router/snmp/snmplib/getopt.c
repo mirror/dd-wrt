@@ -92,7 +92,7 @@ getopt(int nargc, char *const *nargv, const char *ostr)
         if (!*place)
             ++optind;
         if (opterr && *ostr != ':')
-            (void) fprintf(stderr,
+            (void) printf(
                            "%s: illegal option -- %c\n", __progname,
                            optopt);
         return (BADCH);
@@ -109,7 +109,7 @@ getopt(int nargc, char *const *nargv, const char *ostr)
             if (*ostr == ':')
                 return (BADARG);
             if (opterr)
-                (void) fprintf(stderr,
+                (void) printf(
                                "%s: option requires an argument -- %c\n",
                                __progname, optopt);
             return (BADCH);

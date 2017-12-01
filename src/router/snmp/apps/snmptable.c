@@ -123,14 +123,14 @@ optProc(int argc, char *const *argv, int opt)
 			max_width = atoi(argv[optind]);
 			if (max_width == 0) {
 			    usage();
-			    fprintf(stderr, "Bad -Cw option: %s\n", 
+			    printf( "Bad -Cw option: %s\n", 
 				    argv[optind]);
 			    exit(1);
 			}
 		    }
 		} else {
 		    usage();
-                    fprintf(stderr, "Bad -Cw option: no argument given\n");
+                    printf( "Bad -Cw option: no argument given\n");
 		    exit(1);
 		}
 		optind++;
@@ -140,7 +140,7 @@ optProc(int argc, char *const *argv, int opt)
 		    field_separator = argv[optind];
 		} else {
                     usage();
-		    fprintf(stderr, "Bad -Cf option: no argument given\n");
+		    printf( "Bad -Cf option: no argument given\n");
 		    exit(1);
 		}
 		optind++;
@@ -161,7 +161,7 @@ optProc(int argc, char *const *argv, int opt)
                 show_index = 1;
                 break;
             default:
-                fprintf(stderr, "Bad option after -C: %c\n", optarg[-1]);
+                printf( "Bad option after -C: %c\n", optarg[-1]);
                 usage();
             }
         }
@@ -172,19 +172,19 @@ optProc(int argc, char *const *argv, int opt)
 void
 usage(void)
 {
-    fprintf(stderr, "USAGE: snmptable ");
+    printf( "USAGE: snmptable ");
     snmp_parse_args_usage(stderr);
-    fprintf(stderr, " TABLE-OID\n\n");
+    printf( " TABLE-OID\n\n");
     snmp_parse_args_descriptions(stderr);
-    fprintf(stderr,
+    printf(
 	    "  -C APPOPTS\t\tSet various application specific behaviours:\n");
-    fprintf(stderr, "\t\t\t  b:       brief field names\n");
-    fprintf(stderr, "\t\t\t  B:       do not use GETBULK requests\n");
-    fprintf(stderr, "\t\t\t  f<STR>:  print table delimitied with <STR>\n");
-    fprintf(stderr, "\t\t\t  h:       print only the column headers\n");
-    fprintf(stderr, "\t\t\t  H:       print no column headers\n");
-    fprintf(stderr, "\t\t\t  i:       print index values\n");
-    fprintf(stderr, "\t\t\t  w<NUM>:  print table in parts of <NUM> chars width\n");
+    printf( "\t\t\t  b:       brief field names\n");
+    printf( "\t\t\t  B:       do not use GETBULK requests\n");
+    printf( "\t\t\t  f<STR>:  print table delimitied with <STR>\n");
+    printf( "\t\t\t  h:       print only the column headers\n");
+    printf( "\t\t\t  H:       print no column headers\n");
+    printf( "\t\t\t  i:       print index values\n");
+    printf( "\t\t\t  w<NUM>:  print table in parts of <NUM> chars width\n");
 }
 
 void
@@ -231,7 +231,7 @@ main(int argc, char *argv[])
      * specified on the command line 
      */
     if (optind + 1 != argc) {
-        fprintf(stderr, "Must have exactly one table name\n");
+        printf( "Must have exactly one table name\n");
         usage();
     }
 
@@ -434,7 +434,7 @@ get_field_names(char *tblname)
         column[fields - 1].subid = root[rootlen];
     }
     if (fields == 0) {
-        fprintf(stderr, "Was that a table? %s\n", buf);
+        printf( "Was that a table? %s\n", buf);
         exit(1);
     }
     *name_p = 0;
@@ -565,7 +565,7 @@ get_table_entries(netsnmp_session * ss)
                         if (localdebug) {
                             fprint_variable(stderr, vars->name,
                                             vars->name_length, vars);
-                            fprintf(stderr, " => ignored\n");
+                            printf( " => ignored\n");
                         }
                         continue;
                     }
@@ -607,7 +607,7 @@ get_table_entries(netsnmp_session * ss)
                                     name_p = strchr(name_p, '.')+1;
                                     break;
 				default:
-				    fprintf(stderr, "Unrecognized -O option: %d\n",
+				    printf( "Unrecognized -O option: %d\n",
 					    netsnmp_ds_get_int(NETSNMP_DS_LIBRARY_ID,
 							      NETSNMP_DS_LIB_OID_OUTPUT_FORMAT));
 				    exit(1);
@@ -667,10 +667,10 @@ get_table_entries(netsnmp_session * ss)
                 if (response->errstat == SNMP_ERR_NOSUCHNAME) {
                     printf("End of MIB\n");
                 } else {
-                    fprintf(stderr, "Error in packet.\nReason: %s\n",
+                    printf( "Error in packet.\nReason: %s\n",
                             snmp_errstring(response->errstat));
                     if (response->errindex != 0) {
-                        fprintf(stderr, "Failed object: ");
+                        printf( "Failed object: ");
                         for (count = 1, vars = response->variables;
                              vars && count != response->errindex;
                              vars = vars->next_variable, count++)
@@ -679,13 +679,13 @@ get_table_entries(netsnmp_session * ss)
                             fprint_objid(stderr, vars->name,
                                          vars->name_length);
                         }
-                        fprintf(stderr, "\n");
+                        printf( "\n");
                     }
                     exitval = 2;
                 }
             }
         } else if (status == STAT_TIMEOUT) {
-            fprintf(stderr, "Timeout: No Response from %s\n",
+            printf( "Timeout: No Response from %s\n",
                     ss->peername);
             running = 0;
             exitval = 1;
@@ -773,7 +773,7 @@ getbulk_table_entries(netsnmp_session * ss)
                             name_p = strchr(name_p, '.')+1;
                             break;
 			default:
-			    fprintf(stderr, "Unrecognized -O option: %d\n",
+			    printf( "Unrecognized -O option: %d\n",
 				    netsnmp_ds_get_int(NETSNMP_DS_LIBRARY_ID,
 					              NETSNMP_DS_LIB_OID_OUTPUT_FORMAT));
 			    exit(1);
@@ -851,10 +851,10 @@ getbulk_table_entries(netsnmp_session * ss)
                 if (response->errstat == SNMP_ERR_NOSUCHNAME) {
                     printf("End of MIB\n");
                 } else {
-                    fprintf(stderr, "Error in packet.\nReason: %s\n",
+                    printf( "Error in packet.\nReason: %s\n",
                             snmp_errstring(response->errstat));
                     if (response->errstat == SNMP_ERR_NOSUCHNAME) {
-                        fprintf(stderr,
+                        printf(
                                 "The request for this object identifier failed: ");
                         for (count = 1, vars = response->variables;
                              vars && count != response->errindex;
@@ -864,13 +864,13 @@ getbulk_table_entries(netsnmp_session * ss)
                             fprint_objid(stderr, vars->name,
                                          vars->name_length);
                         }
-                        fprintf(stderr, "\n");
+                        printf( "\n");
                     }
                     exitval = 2;
                 }
             }
         } else if (status == STAT_TIMEOUT) {
-            fprintf(stderr, "Timeout: No Response from %s\n",
+            printf( "Timeout: No Response from %s\n",
                     ss->peername);
             running = 0;
             exitval = 1;

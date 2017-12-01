@@ -132,7 +132,7 @@ main(int argc, char **argv)
                                                 sizeof(PASSPHRASE_FILE) +
                                                 4);
     if (!local_passphrase_filename) {
-        fprintf(stderr, "%s: out of memory!", local_progname);
+        printf( "%s: out of memory!", local_progname);
         exit(-1);
     }
     sprintf(local_passphrase_filename, "%s/%s", PASSPHRASE_DIR,
@@ -181,7 +181,7 @@ main(int argc, char **argv)
     }
 
     if (!transform_type_input) {
-        fprintf(stderr, "The -t option is mandatory.\n");
+        printf( "The -t option is mandatory.\n");
         usage_synopsis(stdout);
         exit(1000);
     }
@@ -198,7 +198,7 @@ main(int argc, char **argv)
         transform_type = usmHMACSHA1AuthProtocol;
 
     } else {
-        fprintf(stderr,
+        printf(
                 "Unrecognized hash transform: \"%s\".\n",
                 transform_type_input);
         usage_synopsis(stderr);
@@ -206,7 +206,7 @@ main(int argc, char **argv)
     }
 
     if (verbose) {
-        fprintf(stderr, "Hash:\t\t%s\n",
+        printf( "Hash:\t\t%s\n",
                 (transform_type == usmHMACMD5AuthProtocol)
                 ? "usmHMACMD5AuthProtocol" : "usmHMACSHA1AuthProtocol");
     }
@@ -234,7 +234,7 @@ main(int argc, char **argv)
 
 #ifdef SNMP_TESTING_CODE
     if (verbose) {
-        fprintf(stderr, "EngineID:\t%s\n",
+        printf( "EngineID:\t%s\n",
                 /*
                  * XXX = 
                  */ dump_snmpEngineID(engineid, &engineid_len));
@@ -249,18 +249,18 @@ main(int argc, char **argv)
     QUITFUN(rval, main_quit);
 
     if (strlen(oldpass) < USM_LENGTH_P_MIN) {
-        fprintf(stderr, "Old passphrase must be greater than %d "
+        printf( "Old passphrase must be greater than %d "
                 "characters in length.\n", USM_LENGTH_P_MIN);
         QUITFUN(rval = SNMPERR_GENERR, main_quit);
 
     } else if (strlen(newpass) < USM_LENGTH_P_MIN) {
-        fprintf(stderr, "New passphrase must be greater than %d "
+        printf( "New passphrase must be greater than %d "
                 "characters in length.\n", USM_LENGTH_P_MIN);
         QUITFUN(rval = SNMPERR_GENERR, main_quit);
     }
 
     if (verbose) {
-        fprintf(stderr,
+        printf(
                 "Old passphrase:\t%s\nNew passphrase:\t%s\n",
                 oldpass, newpass);
     }
@@ -499,11 +499,11 @@ get_user_passphrases(void)
      * Test directory. 
      */
     if (stat(path, &statbuf) < 0) {
-        fprintf(stderr, "Cannot access directory \"%s\".\n", path);
+        printf( "Cannot access directory \"%s\".\n", path);
         QUITFUN(rval = SNMPERR_GENERR, get_user_passphrases_quit);
 #ifndef WIN32
     } else if (statbuf.st_mode & (S_IRWXG | S_IRWXO)) {
-        fprintf(stderr,
+        printf(
                 "Directory \"%s\" is accessible by group or world.\n",
                 path);
         QUITFUN(rval = SNMPERR_GENERR, get_user_passphrases_quit);
@@ -516,11 +516,11 @@ get_user_passphrases(void)
     snprintf(path, sizeof(path), "%s/%s", s, local_passphrase_filename);
     path[ sizeof(path)-1 ] = 0;
     if (stat(path, &statbuf) < 0) {
-        fprintf(stderr, "Cannot access file \"%s\".\n", path);
+        printf( "Cannot access file \"%s\".\n", path);
         QUITFUN(rval = SNMPERR_GENERR, get_user_passphrases_quit);
 #ifndef WIN32
     } else if (statbuf.st_mode & (S_IRWXG | S_IRWXO)) {
-        fprintf(stderr,
+        printf(
                 "File \"%s\" is accessible by group or world.\n", path);
         QUITFUN(rval = SNMPERR_GENERR, get_user_passphrases_quit);
 #endif                          /* !WIN32 */
@@ -530,7 +530,7 @@ get_user_passphrases(void)
      * Open the file. 
      */
     if ((fp = fopen(path, "r")) == NULL) {
-        fprintf(stderr, "Cannot open \"%s\".", path);
+        printf( "Cannot open \"%s\".", path);
         QUITFUN(rval = SNMPERR_GENERR, get_user_passphrases_quit);
     }
 
@@ -539,7 +539,7 @@ get_user_passphrases(void)
      */
     if (!fgets(buf, sizeof(buf), fp)) {
         if (verbose) {
-            fprintf(stderr, "Passphrase file \"%s\" is empty...\n", path);
+            printf( "Passphrase file \"%s\" is empty...\n", path);
         }
         goto get_user_passphrases_prompt;
 
@@ -556,7 +556,7 @@ get_user_passphrases(void)
      */
     if (!fgets(buf, sizeof(buf), fp)) {
         if (verbose) {
-            fprintf(stderr, "Only one line in file \"%s\"...\n", path);
+            printf( "Only one line in file \"%s\"...\n", path);
         }
 
     } else if (!newpass) {

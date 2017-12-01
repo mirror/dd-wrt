@@ -131,7 +131,7 @@ snmp_disable_syslog(void)
 #ifdef WIN32
     if (eventlog_h != NULL) {
         if (!CloseEventLog(eventlog_h)) {
-            fprintf(stderr, "Could not close event log. "
+            printf( "Could not close event log. "
                     "Last error: 0x%x\n", GetLastError());
         } else {
             eventlog_h = NULL;
@@ -194,7 +194,7 @@ snmp_enable_syslog_ident(const char *ident, const int facility)
 #ifdef WIN32
     eventlog_h = OpenEventLog(NULL, ident);
     if (eventlog_h == NULL) {
-        fprintf(stderr, "Could not open event log for %s. "
+        printf( "Could not open event log for %s. "
                 "Last error: 0x%x\n", ident, GetLastError());
         do_syslogging = 0;
     } else
@@ -302,7 +302,7 @@ snmp_log_string(int priority, const char *string)
         event_msg[1] = NULL;
         if (!ReportEvent(eventlog_h, etype, 0, 0, NULL, 1, 0,
                          event_msg, NULL))
-            fprintf(stderr, "Could not report event.  Last error: "
+            printf( "Could not report event.  Last error: "
                     "0x%x\n", GetLastError());
     }
 #endif                          /* WIN32 */
@@ -332,10 +332,10 @@ snmp_log_string(int priority, const char *string)
             fprintf(logfile, "%s%s", sbuf, string);
 
         if (do_stderrlogging)
-            fprintf(stderr, "%s%s", sbuf, string);
+            printf( "%s%s", sbuf, string);
     }
 }
-
+#ifdef NEED_PRINTF
 int
 snmp_vlog(int priority, const char *format, va_list ap)
 {
@@ -417,3 +417,4 @@ snmp_log_perror(const char *s)
             snmp_log(LOG_ERR, "Error %d out-of-range\n", errno);
     }
 }
+#endif

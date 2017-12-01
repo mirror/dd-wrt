@@ -49,6 +49,7 @@ extern          "C" {
     void            snmp_enable_stderrlog(void);
     void            snmp_enable_calllog(void);
 
+#ifdef NEED_PRINTF
 #if HAVE_STDARG_H
     int             snmp_log(int priority, const char *format, ...);
 #else
@@ -68,9 +69,18 @@ extern          "C" {
     /*
      * -3 - Log-message too long! 
      */
-
-    void            snmp_log_perror(const char *s);
-
+	
+    void snmp_log_perror(const char *s);
+#else
+#if HAVE_STDARG_H
+    #define snmp_log(p,fmt,...) do { } while(0)
+#else
+    #define snmp_log(p) do { } while(0)
+#endif
+    #define snmp_log_perror(p) do { } while(0)
+    #define snmp_vlog(p,fmt,ap) do { } while(0)
+	
+#endif
 #ifdef __cplusplus
 }
 #endif

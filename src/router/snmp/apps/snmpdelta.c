@@ -112,25 +112,25 @@ void            processFileArgs(char *fileName);
 void
 usage(void)
 {
-    fprintf(stderr,
+    printf(
             "Usage: snmpdelta [-Cf] [-CF commandFile] [-Cl] [-CL SumFileName]\n\t[-Cs] [-Ck] [-Ct] [-CS] [-Cv vars/pkt] [-Cp period]\n\t[-CP peaks] ");
     snmp_parse_args_usage(stderr);
-    fprintf(stderr, " oid [oid ...]\n");
+    printf( " oid [oid ...]\n");
     snmp_parse_args_descriptions(stderr);
-    fprintf(stderr, "snmpdelta specific options\n");
-    fprintf(stderr, "  -Cf\t\tDon't fix errors and retry the request.\n");
-    fprintf(stderr, "  -Cl\t\twrite configuration to file\n");
-    fprintf(stderr, "  -CF config\tload configuration from file\n");
-    fprintf(stderr, "  -Cp period\tspecifies the poll period\n");
-    fprintf(stderr, "  -CP peaks\treporting period in poll periods\n");
-    fprintf(stderr, "  -Cv vars/pkt\tnumber of variables per packet\n");
-    fprintf(stderr, "  -Ck\t\tkeep seconds in output time\n");
-    fprintf(stderr, "  -Cm\t\tshow max values\n");
-    fprintf(stderr, "  -CS\t\tlog to a sum file\n");
-    fprintf(stderr, "  -Cs\t\tshow timestamps\n");
-    fprintf(stderr, "  -Ct\t\tget timing from agent\n");
-    fprintf(stderr, "  -CT\t\tprint output in tabular form\n");
-    fprintf(stderr, "  -CL sumfile\tspecifies the sum file name\n");
+    printf( "snmpdelta specific options\n");
+    printf( "  -Cf\t\tDon't fix errors and retry the request.\n");
+    printf( "  -Cl\t\twrite configuration to file\n");
+    printf( "  -CF config\tload configuration from file\n");
+    printf( "  -Cp period\tspecifies the poll period\n");
+    printf( "  -CP peaks\treporting period in poll periods\n");
+    printf( "  -Cv vars/pkt\tnumber of variables per packet\n");
+    printf( "  -Ck\t\tkeep seconds in output time\n");
+    printf( "  -Cm\t\tshow max values\n");
+    printf( "  -CS\t\tlog to a sum file\n");
+    printf( "  -Cs\t\tshow timestamps\n");
+    printf( "  -Ct\t\tget timing from agent\n");
+    printf( "  -CT\t\tprint output in tabular form\n");
+    printf( "  -CL sumfile\tspecifies the sum file name\n");
 }
 
 static void
@@ -181,7 +181,7 @@ optProc(int argc, char *const *argv, int opt)
                 tableForm = 1;
                 break;
             default:
-                fprintf(stderr, "Bad -C options: %c\n", opt);
+                printf( "Bad -C options: %c\n", opt);
                 exit(1);
             }
         }
@@ -233,7 +233,7 @@ print_log(char *file, char *message)
 
     fp = fopen(file, "a");
     if (fp == NULL) {
-        fprintf(stderr, "Couldn't open %s\n", file);
+        printf( "Couldn't open %s\n", file);
         return;
     }
     fprintf(fp, "%s\n", message);
@@ -288,7 +288,7 @@ processFileArgs(char *fileName)
     while (fgets(buf, sizeof(buf), fp)) {
         linenumber++;
         if (strlen(buf) > (sizeof(buf) - 2)) {
-            fprintf(stderr, "Line too long on line %d of %s\n",
+            printf( "Line too long on line %d of %s\n",
                     linenumber, fileName);
             exit(1);
         }
@@ -516,7 +516,7 @@ main(int argc, char *argv[])
                 vars = response->variables;
                 if (deltat) {
                     if (!vars) {
-                        fprintf(stderr, "Missing variable in reply\n");
+                        printf( "Missing variable in reply\n");
                         continue;
                     } else {
                         this_time = *(vars->val.integer);
@@ -531,7 +531,7 @@ main(int argc, char *argv[])
 
                     if (vip->oidlen) {
                         if (!vars) {
-                            fprintf(stderr, "Missing variable in reply\n");
+                            printf( "Missing variable in reply\n");
                             break;
                         }
                         vip->type = vars->type;
@@ -572,7 +572,7 @@ main(int argc, char *argv[])
 
                     if (deltat || tableForm) {
                         if (vip->type == ASN_COUNTER64) {
-                            fprintf(stderr,
+                            printf(
                                     "time delta and table form not supported for counter64s\n");
                             exit(1);
                         } else {
@@ -674,21 +674,21 @@ main(int argc, char *argv[])
                     end = last_end;
                     continue;
                 } else if (response->errindex != 0) {
-                    fprintf(stderr, "Failed object: ");
+                    printf( "Failed object: ");
                     for (count = 1, vars = response->variables;
                          vars && count != response->errindex;
                          vars = vars->next_variable, count++);
                     if (vars)
                         fprint_objid(stderr, vars->name,
                                      vars->name_length);
-                    fprintf(stderr, "\n");
+                    printf( "\n");
                     /*
                      * Don't exit when OIDs from file are not found on agent
                      * exit_code = 1;
                      * break;
                      */
                 } else {
-                    fprintf(stderr, "Error in packet: %s\n",
+                    printf( "Error in packet: %s\n",
                             snmp_errstring(response->errstat));
                     exit_code = 1;
                     break;
@@ -708,7 +708,7 @@ main(int argc, char *argv[])
             }
 
         } else if (status == STAT_TIMEOUT) {
-            fprintf(stderr, "Timeout: No Response from %s\n", gateway);
+            printf( "Timeout: No Response from %s\n", gateway);
             response = 0;
             exit_code = 1;
             break;

@@ -554,7 +554,7 @@ main(int argc, char *argv[])
             init_agent("snmpd");        /* register our .conf handlers */
             init_mib_modules();
             init_snmp("snmpd");
-            fprintf(stderr, "Configuration directives understood:\n");
+            printf( "Configuration directives understood:\n");
             read_config_print_usage("  ");
             exit(0);
 
@@ -569,7 +569,7 @@ main(int argc, char *argv[])
         case 'l':
             if (optarg != NULL) {
                 if (strlen(optarg) > PATH_MAX) {
-                    fprintf(stderr,
+                    printf(
                             "%s: logfile path too long (limit %d chars)\n",
                             argv[0], PATH_MAX);
                     exit(1);
@@ -641,11 +641,11 @@ main(int argc, char *argv[])
                     Facility = LOG_LOCAL7;
                     break;
                 default:
-                    fprintf(stderr, "invalid syslog facility: -S%c\n",*optarg);
+                    printf( "invalid syslog facility: -S%c\n",*optarg);
                     usage(argv[0]);
                 }
             } else {
-                fprintf(stderr, "no syslog facility specified\n");
+                printf( "no syslog facility specified\n");
                 usage(argv[0]);
             }
             break;
@@ -670,7 +670,7 @@ main(int argc, char *argv[])
                         uid = info->pw_uid;
                     } else {
 #endif
-                        fprintf(stderr, "Bad user id: %s\n", optarg);
+                        printf( "Bad user id: %s\n", optarg);
                         exit(1);
 #if HAVE_GETPWNAM && HAVE_PWD_H
                     }
@@ -709,7 +709,7 @@ main(int argc, char *argv[])
 #if defined(USING_AGENTX_SUBAGENT_MODULE)
             agent_mode = SUB_AGENT;
 #else
-            fprintf(stderr, "%s: Illegal argument -X:"
+            printf( "%s: Illegal argument -X:"
 		            "AgentX support not compiled in.\n", argv[0]);
             usage(argv[0]);
             exit(1);
@@ -733,7 +733,7 @@ main(int argc, char *argv[])
 					   NETSNMP_DS_AGENT_PORTS))) {
                 astring = malloc(strlen(c) + 2 + strlen(argv[i]));
                 if (astring == NULL) {
-                    fprintf(stderr, "malloc failure processing argv[%d]\n", i);
+                    printf( "malloc failure processing argv[%d]\n", i);
                     exit(1);
                 }
                 sprintf(astring, "%s,%s", c, argv[i]);
@@ -763,7 +763,7 @@ main(int argc, char *argv[])
     argvrestart = (char *) malloc(ret);
     argvrestartname = (char *) malloc(strlen(argv[0]) + 1);
     if (!argvrestartp || !argvrestart || !argvrestartname) {
-        fprintf(stderr, "malloc failure processing argvrestart\n");
+        printf( "malloc failure processing argvrestart\n");
         exit(1);
     }
     strcpy(argvrestartname, argv[0]);

@@ -84,14 +84,14 @@ int             names;
 void
 usage(void)
 {
-    fprintf(stderr, "USAGE: snmpbulkget ");
+    printf( "USAGE: snmpbulkget ");
     snmp_parse_args_usage(stderr);
-    fprintf(stderr, " OID [OID]...\n\n");
+    printf( " OID [OID]...\n\n");
     snmp_parse_args_descriptions(stderr);
-    fprintf(stderr,
+    printf(
             "  -C APPOPTS\t\tSet various application specific behaviours:\n");
-    fprintf(stderr, "\t\t\t  n<NUM>:  set non-repeaters to <NUM>\n");
-    fprintf(stderr, "\t\t\t  r<NUM>:  set max-repeaters to <NUM>\n");
+    printf( "\t\t\t  n<NUM>:  set non-repeaters to <NUM>\n");
+    printf( "\t\t\t  r<NUM>:  set max-repeaters to <NUM>\n");
 }
 
 static
@@ -127,7 +127,7 @@ optProc(int argc, char *const *argv, int opt)
                 break;
 
             default:
-                fprintf(stderr, "Unknown flag passed to -C: %c\n",
+                printf( "Unknown flag passed to -C: %c\n",
                         optarg[-1]);
                 exit(1);
             }
@@ -163,7 +163,7 @@ main(int argc, char *argv[])
 
     names = argc - arg;
     if (names < non_repeaters) {
-        fprintf(stderr, "snmpbulkget: need more objects than <nonrep>\n");
+        printf( "snmpbulkget: need more objects than <nonrep>\n");
         exit(1);
     }
 
@@ -223,10 +223,10 @@ main(int argc, char *argv[])
             if (response->errstat == SNMP_ERR_NOSUCHNAME) {
                 printf("End of MIB.\n");
             } else {
-                fprintf(stderr, "Error in packet.\nReason: %s\n",
+                printf( "Error in packet.\nReason: %s\n",
                         snmp_errstring(response->errstat));
                 if (response->errindex != 0) {
-                    fprintf(stderr, "Failed object: ");
+                    printf( "Failed object: ");
                     for (count = 1, vars = response->variables;
                          vars && (count != response->errindex);
                          vars = vars->next_variable, count++)
@@ -234,13 +234,13 @@ main(int argc, char *argv[])
                     if (vars)
                         fprint_objid(stderr, vars->name,
                                      vars->name_length);
-                    fprintf(stderr, "\n");
+                    printf( "\n");
                 }
                 exitval = 2;
             }
         }
     } else if (status == STAT_TIMEOUT) {
-        fprintf(stderr, "Timeout: No Response from %s\n",
+        printf( "Timeout: No Response from %s\n",
                 session.peername);
         running = 0;
         exitval = 1;

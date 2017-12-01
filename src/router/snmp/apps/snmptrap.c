@@ -82,17 +82,17 @@ int             inform = 0;
 void
 usage(void)
 {
-    fprintf(stderr, "USAGE: %s ", inform ? "snmpinform" : "snmptrap");
+    printf( "USAGE: %s ", inform ? "snmpinform" : "snmptrap");
     snmp_parse_args_usage(stderr);
-    fprintf(stderr, " TRAP-PARAMETERS\n\n");
+    printf( " TRAP-PARAMETERS\n\n");
     snmp_parse_args_descriptions(stderr);
-    fprintf(stderr,
+    printf(
             "  -C APPOPTS\t\tSet various application specific behaviour:\n");
-    fprintf(stderr, "\t\t\t  i:  send an INFORM instead of a TRAP\n");
-    fprintf(stderr,
+    printf( "\t\t\t  i:  send an INFORM instead of a TRAP\n");
+    printf(
             "\n  -v 1 TRAP-PARAMETERS:\n\t enterprise-oid agent trap-type specific-type uptime [OID TYPE VALUE]...\n");
-    fprintf(stderr, "  or\n");
-    fprintf(stderr,
+    printf( "  or\n");
+    printf(
             "  -v 2 TRAP-PARAMETERS:\n\t uptime trapoid [OID TYPE VALUE] ...\n");
 }
 
@@ -115,7 +115,7 @@ parse_address(char *address)
         return addr;
     hp = gethostbyname(address);
     if (hp == NULL) {
-        fprintf(stderr, "unknown host: %s\n", address);
+        printf( "unknown host: %s\n", address);
         exit(1);
     } else {
         memcpy(&saddr.sin_addr, hp->h_addr, hp->h_length);
@@ -135,7 +135,7 @@ optProc(int argc, char *const *argv, int opt)
                 inform = 1;
                 break;
             default:
-                fprintf(stderr,
+                printf(
                         "Unknown flag passed to -C: %c\n", optarg[-1]);
                 exit(1);
             }
@@ -249,13 +249,13 @@ main(int argc, char *argv[])
 
     if (session.version == SNMP_VERSION_1) {
         if (inform) {
-            fprintf(stderr, "Cannot send INFORM as SNMPv1 PDU\n");
+            printf( "Cannot send INFORM as SNMPv1 PDU\n");
             exit(1);
         }
         pdu = snmp_pdu_create(SNMP_MSG_TRAP);
         pdu_in_addr_t = (in_addr_t *) pdu->agent_addr;
         if (arg == argc) {
-            fprintf(stderr, "No enterprise oid\n");
+            printf( "No enterprise oid\n");
             usage();
             SOCK_CLEANUP;
             exit(1);
@@ -279,7 +279,7 @@ main(int argc, char *argv[])
             pdu->enterprise_length = name_length;
         }
         if (++arg >= argc) {
-            fprintf(stderr, "Missing agent parameter\n");
+            printf( "Missing agent parameter\n");
             usage();
             SOCK_CLEANUP;
             exit(1);
@@ -291,7 +291,7 @@ main(int argc, char *argv[])
             *pdu_in_addr_t = get_myaddr();
         }
         if (++arg == argc) {
-            fprintf(stderr, "Missing generic-trap parameter\n");
+            printf( "Missing generic-trap parameter\n");
             usage();
             SOCK_CLEANUP;
             exit(1);
@@ -299,7 +299,7 @@ main(int argc, char *argv[])
         trap = argv[arg];
         pdu->trap_type = atoi(trap);
         if (++arg == argc) {
-            fprintf(stderr, "Missing specific-trap parameter\n");
+            printf( "Missing specific-trap parameter\n");
             usage();
             SOCK_CLEANUP;
             exit(1);
@@ -307,7 +307,7 @@ main(int argc, char *argv[])
         specific = argv[arg];
         pdu->specific_type = atoi(specific);
         if (++arg == argc) {
-            fprintf(stderr, "Missing uptime parameter\n");
+            printf( "Missing uptime parameter\n");
             usage();
             SOCK_CLEANUP;
             exit(1);
@@ -323,7 +323,7 @@ main(int argc, char *argv[])
 
         pdu = snmp_pdu_create(inform ? SNMP_MSG_INFORM : SNMP_MSG_TRAP2);
         if (arg == argc) {
-            fprintf(stderr, "Missing up-time parameter\n");
+            printf( "Missing up-time parameter\n");
             usage();
             SOCK_CLEANUP;
             exit(1);
@@ -337,7 +337,7 @@ main(int argc, char *argv[])
         snmp_add_var(pdu, objid_sysuptime,
                      sizeof(objid_sysuptime) / sizeof(oid), 't', trap);
         if (++arg == argc) {
-            fprintf(stderr, "Missing trap-oid parameter\n");
+            printf( "Missing trap-oid parameter\n");
             usage();
             SOCK_CLEANUP;
             exit(1);
@@ -355,7 +355,7 @@ main(int argc, char *argv[])
     while (arg < argc) {
         arg += 3;
         if (arg > argc) {
-            fprintf(stderr, "%s: Missing type/value for variable\n",
+            printf( "%s: Missing type/value for variable\n",
                     argv[arg - 3]);
             SOCK_CLEANUP;
             exit(1);

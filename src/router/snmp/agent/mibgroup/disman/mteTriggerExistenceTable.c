@@ -219,7 +219,7 @@ write_mteTriggerExistenceTest(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerExistenceTest not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -311,7 +311,7 @@ write_mteTriggerExistenceStartup(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerExistenceStartup not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -403,7 +403,7 @@ write_mteTriggerExistenceObjectsOwner(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerExistenceObjectsOwner not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -495,7 +495,7 @@ write_mteTriggerExistenceObjects(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerExistenceObjects not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -587,7 +587,7 @@ write_mteTriggerExistenceEventOwner(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerExistenceEventOwner not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -678,7 +678,7 @@ write_mteTriggerExistenceEvent(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerExistenceEvent not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }

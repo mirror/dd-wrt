@@ -288,7 +288,7 @@ write_mteTriggerThresholdStartup(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerThresholdStartup not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -374,7 +374,7 @@ write_mteTriggerThresholdRising(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerThresholdRising not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -460,7 +460,7 @@ write_mteTriggerThresholdFalling(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerThresholdFalling not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -546,7 +546,7 @@ write_mteTriggerThresholdDeltaRising(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerThresholdDeltaRising not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -632,7 +632,7 @@ write_mteTriggerThresholdDeltaFalling(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerThresholdDeltaFalling not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -719,7 +719,7 @@ write_mteTriggerThresholdObjectsOwner(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerThresholdObjectsOwner not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -811,7 +811,7 @@ write_mteTriggerThresholdObjects(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerThresholdObjects not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -903,7 +903,7 @@ write_mteTriggerThresholdRisingEventOwner(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerThresholdRisingEventOwner not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -995,7 +995,7 @@ write_mteTriggerThresholdRisingEvent(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerThresholdRisingEvent not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -1087,7 +1087,7 @@ write_mteTriggerThresholdFallingEventOwner(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerThresholdFallingEventOwner not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -1179,7 +1179,7 @@ write_mteTriggerThresholdFallingEvent(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerThresholdFallingEvent not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -1271,7 +1271,7 @@ write_mteTriggerThresholdDeltaRisingEventOwner(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerThresholdDeltaRisingEventOwner not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -1365,7 +1365,7 @@ write_mteTriggerThresholdDeltaRisingEvent(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerThresholdDeltaRisingEvent not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -1458,7 +1458,7 @@ write_mteTriggerThresholdDeltaFallingEventOwner(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerThresholdDeltaFallingEventOwner not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -1552,7 +1552,7 @@ write_mteTriggerThresholdDeltaFallingEvent(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerThresholdDeltaFallingEvent not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }

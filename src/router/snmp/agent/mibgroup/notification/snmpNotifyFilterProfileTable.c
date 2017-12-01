@@ -361,7 +361,7 @@ write_snmpNotifyFilterProfileName(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to snmpNotifyFilterProfileName not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -451,7 +451,7 @@ write_snmpNotifyFilterProfileStorType(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            fprintf(stderr,
+            printf(
                     "write to snmpNotifyFilterProfileStorType not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -539,7 +539,7 @@ write_snmpNotifyFilterProfileRowStatus(int action,
 
 
     if (var_val_type != ASN_INTEGER || var_val == NULL) {
-        fprintf(stderr,
+        printf(
                 "write to snmpNotifyFilterProfileRowStatus not ASN_INTEGER\n");
         return SNMP_ERR_WRONGTYPE;
     }

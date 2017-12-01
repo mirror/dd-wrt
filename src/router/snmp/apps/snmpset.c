@@ -76,20 +76,20 @@ int             failures = 0;
 void
 usage(void)
 {
-    fprintf(stderr, "USAGE: snmpset ");
+    printf( "USAGE: snmpset ");
     snmp_parse_args_usage(stderr);
-    fprintf(stderr, " OID TYPE VALUE [OID TYPE VALUE]...\n\n");
+    printf( " OID TYPE VALUE [OID TYPE VALUE]...\n\n");
     snmp_parse_args_descriptions(stderr);
-    fprintf(stderr,
+    printf(
             "  -C APPOPTS\t\tSet various application specific behaviours:\n");
-    fprintf(stderr, "\t\t\t  q:  don't print results on success\n");
-    fprintf(stderr, "\n  TYPE: one of i, u, t, a, o, s, x, d, b, n\n");
-    fprintf(stderr,
+    printf( "\t\t\t  q:  don't print results on success\n");
+    printf( "\n  TYPE: one of i, u, t, a, o, s, x, d, b, n\n");
+    printf(
             "\ti: INTEGER, u: unsigned INTEGER, t: TIMETICKS, a: IPADDRESS\n");
-    fprintf(stderr,
+    printf(
             "\to: OBJID, s: STRING, x: HEX STRING, d: DECIMAL STRING, b: BITS\n");
 #ifdef OPAQUE_SPECIAL_TYPES
-    fprintf(stderr,
+    printf(
             "\tU: unsigned int64, I: signed int64, F: float, D: double\n");
 #endif                          /* OPAQUE_SPECIAL_TYPES */
 
@@ -110,7 +110,7 @@ optProc(int argc, char *const *argv, int opt)
                 break;
 
             default:
-                fprintf(stderr, "Unknown flag passed to -C: %c\n",
+                printf( "Unknown flag passed to -C: %c\n",
                         optarg[-1]);
                 exit(1);
             }
@@ -153,7 +153,7 @@ main(int argc, char *argv[])
     }
 
     if (arg >= argc) {
-        fprintf(stderr, "Missing object name\n");
+        printf( "Missing object name\n");
         usage();
         exit(1);
     }
@@ -187,18 +187,18 @@ main(int argc, char *argv[])
                 types[current_type++] = *argv[arg++];
                 break;
             default:
-                fprintf(stderr, "%s: Bad object type: %c\n", argv[arg - 1],
+                printf( "%s: Bad object type: %c\n", argv[arg - 1],
                         *argv[arg]);
                 exit(1);
             }
         } else {
-            fprintf(stderr, "%s: Needs type and value\n", argv[arg - 1]);
+            printf( "%s: Needs type and value\n", argv[arg - 1]);
             exit(1);
         }
         if (arg < argc)
             values[current_value++] = argv[arg];
         else {
-            fprintf(stderr, "%s: Needs value\n", argv[arg - 2]);
+            printf( "%s: Needs value\n", argv[arg - 2]);
             exit(1);
         }
     }
@@ -252,21 +252,21 @@ main(int argc, char *argv[])
                     print_variable(vars->name, vars->name_length, vars);
             }
         } else {
-            fprintf(stderr, "Error in packet.\nReason: %s\n",
+            printf( "Error in packet.\nReason: %s\n",
                     snmp_errstring(response->errstat));
             if (response->errindex != 0) {
-                fprintf(stderr, "Failed object: ");
+                printf( "Failed object: ");
                 for (count = 1, vars = response->variables;
                      vars && (count != response->errindex);
                      vars = vars->next_variable, count++);
                 if (vars)
                     fprint_objid(stderr, vars->name, vars->name_length);
-                fprintf(stderr, "\n");
+                printf( "\n");
             }
             exitval = 2;
         }
     } else if (status == STAT_TIMEOUT) {
-        fprintf(stderr, "Timeout: No Response from %s\n",
+        printf( "Timeout: No Response from %s\n",
                 session.peername);
         exitval = 1;
     } else {                    /* status == STAT_ERROR */

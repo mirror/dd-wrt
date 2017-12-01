@@ -221,7 +221,7 @@ snmpv3_options(char *optarg, netsnmp_session * session, char **Apsz,
          */
         optarg = argv[optind++];
         if (optind > argc) {
-            fprintf(stderr,
+            printf(
                     "Missing argument after SNMPv3 '-3%c' option.\n", *cp);
             return (-1);
         }
@@ -232,14 +232,14 @@ snmpv3_options(char *optarg, netsnmp_session * session, char **Apsz,
     case 'Z':
         session->engineBoots = strtoul(optarg, NULL, 10);
         if (session->engineBoots == 0 || !isdigit(optarg[0])) {
-            fprintf(stderr, "Need engine boots value after -3Z flag.\n");
+            printf( "Need engine boots value after -3Z flag.\n");
             return (-1);
         }
         cp = strchr(optarg, ',');
         if (cp && *(++cp) && isdigit(*cp))
             session->engineTime = strtoul(cp, NULL, 10);
         else {
-            fprintf(stderr, "Need engine time value after -3Z flag.\n");
+            printf( "Need engine time value after -3Z flag.\n");
             return (-1);
         }
         break;
@@ -249,12 +249,12 @@ snmpv3_options(char *optarg, netsnmp_session * session, char **Apsz,
             u_char         *ebuf = (u_char *) malloc(ebuf_len);
 
             if (ebuf == NULL) {
-                fprintf(stderr, "malloc failure processing -3e flag.\n");
+                printf( "malloc failure processing -3e flag.\n");
                 return (-1);
             }
             if (!snmp_hex_to_binary
                 (&ebuf, &ebuf_len, &eout_len, 1, optarg)) {
-                fprintf(stderr, "Bad engine ID value after -3e flag.\n");
+                printf( "Bad engine ID value after -3e flag.\n");
                 free(ebuf);
                 return (-1);
             }
@@ -268,12 +268,12 @@ snmpv3_options(char *optarg, netsnmp_session * session, char **Apsz,
             u_char         *ebuf = (u_char *) malloc(ebuf_len);
 
             if (ebuf == NULL) {
-                fprintf(stderr, "malloc failure processing -3E flag.\n");
+                printf( "malloc failure processing -3E flag.\n");
                 return (-1);
             }
             if (!snmp_hex_to_binary
                 (&ebuf, &ebuf_len, &eout_len, 1, optarg)) {
-                fprintf(stderr, "Bad engine ID value after -3E flag.\n");
+                printf( "Bad engine ID value after -3E flag.\n");
                 free(ebuf);
                 return (-1);
             }
@@ -303,7 +303,7 @@ snmpv3_options(char *optarg, netsnmp_session * session, char **Apsz,
                    || !strcasecmp(optarg, "ap")) {
             session->securityLevel = SNMP_SEC_LEVEL_AUTHPRIV;
         } else {
-            fprintf(stderr,
+            printf(
                     "Invalid security level specified after -3l flag: %s\n",
                     optarg);
             return (-1);
@@ -319,7 +319,7 @@ snmpv3_options(char *optarg, netsnmp_session * session, char **Apsz,
             session->securityAuthProto = usmHMACSHA1AuthProtocol;
             session->securityAuthProtoLen = USM_AUTH_PROTO_SHA_LEN;
         } else {
-            fprintf(stderr,
+            printf(
                     "Invalid authentication protocol specified after -3a flag: %s\n",
                     optarg);
             return (-1);
@@ -342,7 +342,7 @@ snmpv3_options(char *optarg, netsnmp_session * session, char **Apsz,
             session->securityPrivProtoLen = USM_PRIV_PROTO_AES256_LEN;
 #endif
         } else {
-            fprintf(stderr,
+            printf(
                     "Invalid privacy protocol specified after -3x flag: %s\n",
                     optarg);
             return (-1);
@@ -358,7 +358,7 @@ snmpv3_options(char *optarg, netsnmp_session * session, char **Apsz,
         break;
 
     default:
-        fprintf(stderr, "Unknown SNMPv3 option passed to -3: %c.\n", *cp);
+        printf( "Unknown SNMPv3 option passed to -3: %c.\n", *cp);
         return -1;
     }
     return 0;

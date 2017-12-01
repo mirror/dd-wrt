@@ -94,19 +94,19 @@ int             doauthkey = 0, doprivkey = 0;
 void
 usage(void)
 {
-    fprintf(stderr, "Usage: snmpusm ");
+    printf( "Usage: snmpusm ");
     snmp_parse_args_usage(stderr);
-    fprintf(stderr, " COMMAND\n\n");
+    printf( " COMMAND\n\n");
     snmp_parse_args_descriptions(stderr);
-    fprintf(stderr, "\nsnmpusm commands:\n");
-    fprintf(stderr, "  create    USER [CLONEFROM-USER]\n");
-    fprintf(stderr, "  delete    USER\n");
-    fprintf(stderr, "  cloneFrom USER CLONEFROM-USER\n");
-    fprintf(stderr,
+    printf( "\nsnmpusm commands:\n");
+    printf( "  create    USER [CLONEFROM-USER]\n");
+    printf( "  delete    USER\n");
+    printf( "  cloneFrom USER CLONEFROM-USER\n");
+    printf(
             "  passwd    [-Co] [-Ca] [-Cx] OLD-PASSPHRASE NEW-PASSPHRASE\n");
-    fprintf(stderr, "\t\t-Co\t\tUse the ownKeyChange objects.\n");
-    fprintf(stderr, "\t\t-Cx\t\tChange the privacy key.\n");
-    fprintf(stderr, "\t\t-Ca\t\tChange the authentication key.\n");
+    printf( "\t\t-Co\t\tUse the ownKeyChange objects.\n");
+    printf( "\t\t-Cx\t\tChange the privacy key.\n");
+    printf( "\t\t-Ca\t\tChange the authentication key.\n");
 }
 
 /*
@@ -162,7 +162,7 @@ optProc(int argc, char *const *argv, int opt)
                 break;
 
             default:
-                fprintf(stderr, "Unknown flag passed to -C: %c\n",
+                printf( "Unknown flag passed to -C: %c\n",
                         optarg[-1]);
                 exit(1);
             }
@@ -249,7 +249,7 @@ main(int argc, char *argv[])
     pdu = snmp_pdu_create(SNMP_MSG_SET);
 
     if (arg >= argc) {
-        fprintf(stderr, "Please specify a opreation to perform.\n");
+        printf( "Please specify a opreation to perform.\n");
         usage();
         exit(1);
     }
@@ -270,14 +270,14 @@ main(int argc, char *argv[])
             doprivkey = doauthkey = 1;
 
         if (newpass == NULL || strlen(newpass) < USM_LENGTH_P_MIN) {
-            fprintf(stderr,
+            printf(
                     "New passphrase must be greater than %d characters in length.\n",
                     USM_LENGTH_P_MIN);
             exit(1);
         }
 
         if (oldpass == NULL || strlen(oldpass) < USM_LENGTH_P_MIN) {
-            fprintf(stderr,
+            printf(
                     "Old passphrase must be greater than %d characters in length.\n",
                     USM_LENGTH_P_MIN);
             exit(1);
@@ -321,7 +321,7 @@ main(int argc, char *argv[])
 
         if (rval != SNMPERR_SUCCESS) {
             snmp_perror(argv[0]);
-            fprintf(stderr, "generating the old Ku failed\n");
+            printf( "generating the old Ku failed\n");
             exit(1);
         }
 
@@ -335,7 +335,7 @@ main(int argc, char *argv[])
 
         if (rval != SNMPERR_SUCCESS) {
             snmp_perror(argv[0]);
-            fprintf(stderr, "generating the new Ku failed\n");
+            printf( "generating the new Ku failed\n");
             exit(1);
         }
 
@@ -349,7 +349,7 @@ main(int argc, char *argv[])
 
         if (rval != SNMPERR_SUCCESS) {
             snmp_perror(argv[0]);
-            fprintf(stderr, "generating the old Kul failed\n");
+            printf( "generating the old Kul failed\n");
             exit(1);
         }
 
@@ -360,7 +360,7 @@ main(int argc, char *argv[])
 
         if (rval != SNMPERR_SUCCESS) {
             snmp_perror(argv[0]);
-            fprintf(stderr, "generating the new Kul failed\n");
+            printf( "generating the new Kul failed\n");
             exit(1);
         }
 
@@ -375,7 +375,7 @@ main(int argc, char *argv[])
 
         if (rval != SNMPERR_SUCCESS) {
             snmp_perror(argv[0]);
-            fprintf(stderr, "encoding the keychange failed\n");
+            printf( "encoding the keychange failed\n");
             usage();
             exit(1);
         }
@@ -405,7 +405,7 @@ main(int argc, char *argv[])
          * create USER [CLONEFROM]
          */
         if (++arg >= argc) {
-            fprintf(stderr, "You must specify the user name to create\n");
+            printf( "You must specify the user name to create\n");
             usage();
             exit(1);
         }
@@ -441,7 +441,7 @@ main(int argc, char *argv[])
          * cloneFrom USER FROM
          */
         if (++arg >= argc) {
-            fprintf(stderr,
+            printf(
                     "You must specify the user name to operate on\n");
             usage();
             exit(1);
@@ -452,7 +452,7 @@ main(int argc, char *argv[])
                   ss->contextEngineID, ss->contextEngineIDLen, argv[arg]);
 
         if (++arg >= argc) {
-            fprintf(stderr,
+            printf(
                     "You must specify the user name to clone from\n");
             usage();
             exit(1);
@@ -472,7 +472,7 @@ main(int argc, char *argv[])
          * delete USER
          */
         if (++arg >= argc) {
-            fprintf(stderr, "You must specify the user name to delete\n");
+            printf( "You must specify the user name to delete\n");
             exit(1);
         }
 
@@ -484,7 +484,7 @@ main(int argc, char *argv[])
                               ASN_INTEGER, (u_char *) & longvar,
                               sizeof(longvar));
     } else {
-        fprintf(stderr, "Unknown command\n");
+        printf( "Unknown command\n");
         usage();
         exit(1);
     }
@@ -497,14 +497,14 @@ main(int argc, char *argv[])
     if (status == STAT_SUCCESS) {
         if (response) {
             if (response->errstat == SNMP_ERR_NOERROR) {
-                fprintf(stderr, "%s\n", successNotes[command - 1]);
+                printf( "%s\n", successNotes[command - 1]);
             } else {
-                fprintf(stderr, "Error in packet.\nReason: %s\n",
+                printf( "Error in packet.\nReason: %s\n",
                         snmp_errstring(response->errstat));
                 if (response->errindex != 0) {
                     int             count;
                     netsnmp_variable_list *vars;
-                    fprintf(stderr, "Failed object: ");
+                    printf( "Failed object: ");
                     for (count = 1, vars = response->variables;
                          vars && count != response->errindex;
                          vars = vars->next_variable, count++)
@@ -512,13 +512,13 @@ main(int argc, char *argv[])
                     if (vars)
                         fprint_objid(stderr, vars->name,
                                      vars->name_length);
-                    fprintf(stderr, "\n");
+                    printf( "\n");
                 }
                 exitval = 2;
             }
         }
     } else if (status == STAT_TIMEOUT) {
-        fprintf(stderr, "Timeout: No Response from %s\n",
+        printf( "Timeout: No Response from %s\n",
                 session.peername);
         exitval = 1;
     } else {                    /* status == STAT_ERROR */
