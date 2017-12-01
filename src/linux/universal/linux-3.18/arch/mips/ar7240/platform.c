@@ -1010,7 +1010,7 @@ int __init ar7240_platform_init(void)
 {
 	int ret;
 	void *ee = NULL;
-#if defined(CONFIG_WR741) || defined(CONFIG_WDR4300) || defined(CONFIG_WDR2543) || defined(CONFIG_WR841V8) && !defined(CONFIG_GL150)
+#if defined(CONFIG_WR741) || defined(CONFIG_WDR4300) || defined(CONFIG_WDR2543) || defined(CONFIG_WR841V8) || defined(CONFIG_WR810N) && !defined(CONFIG_GL150)
 	u8 *mac = (u8 *)KSEG1ADDR(0x1f01fc00);
 #else
 	u8 *mac = NULL;		//(u8 *) KSEG1ADDR(0x1fff0000);
@@ -1075,6 +1075,8 @@ int __init ar7240_platform_init(void)
     #ifdef CONFIG_DIR825C1
 	u8 *art = (u8 *)KSEG1ADDR(0x1fff1000);
     #elif CONFIG_WR841V8
+//              u8 *art = (u8 *) KSEG1ADDR(0x1fff1000);
+    #elif CONFIG_WR810N
 //              u8 *art = (u8 *) KSEG1ADDR(0x1fff1000);
     #else
 	u8 *art = (u8 *)KSEG1ADDR(0x1fff0000);
@@ -1218,6 +1220,12 @@ int __init ar7240_platform_init(void)
     #elif CONFIG_JWAP606
 
 	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0 | 0x14000);
+    #elif CONFIG_WR810N
+	base = ioremap(AR933X_GMAC_BASE, AR933X_GMAC_SIZE);
+	t = __raw_readl(base + AR933X_GMAC_REG_ETH_CFG);
+	t &= ~(AR933X_ETH_CFG_SW_PHY_SWAP | AR933X_ETH_CFG_SW_PHY_ADDR_SWAP);
+	__raw_writel(t, base + AR933X_GMAC_REG_ETH_CFG);
+	iounmap(base);
 	
     #elif CONFIG_WR841V8
 	//swap phy
@@ -1561,6 +1569,25 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.phy_mask = BIT(4);
 	ar71xx_add_device_eth(0);
+    #elif CONFIG_WR810N
+	ar71xx_add_device_mdio(0, 0x0);
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, -1);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 0);
+
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	ar71xx_eth0_data.speed = SPEED_100;
+	ar71xx_eth0_data.phy_mask = BIT(4);
+	ar71xx_add_device_eth(0);
+
+	/* GMAC1 is connected to the internal switch */
+	ar71xx_switch_data.phy4_mii_en = 1;
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+	ar71xx_eth1_data.speed = SPEED_1000;
+	ar71xx_switch_data.phy_poll_mask |= BIT(4);
+	ar71xx_add_device_eth(1);
     #elif CONFIG_WR841V8
 	ar71xx_add_device_mdio(1, 0x0);
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, -1);
@@ -1854,6 +1881,8 @@ int __init ar7240_platform_init(void)
 	printk(KERN_INFO "wmac mac %02X:%02X:%02X:%02X:%02X:%02X\n",mac0[0]&0xff,mac0[1]&0xff,mac0[2]&0xff,mac0[3]&0xff,mac0[4]&0xff,mac0[5]&0xff);
 	ar9xxx_add_device_wmac(ee, mac0);
 #elif defined(CONFIG_WR841V9)
+	ar9xxx_add_device_wmac(ee, mac);
+#elif defined(CONFIG_WR810N)
 	ar9xxx_add_device_wmac(ee, mac);
 #elif defined(CONFIG_WR841V8)
 	ar9xxx_add_device_wmac(ee, mac);
