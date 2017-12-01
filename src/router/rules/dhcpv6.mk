@@ -8,8 +8,9 @@ dhcpv6:
 	$(MAKE) -C dhcpv6 all
 	
 dhcpv6-install:
-	install -D dhcpv6/dhcp6c $(INSTALLDIR)/dhcpv6/usr/bin/dhcp6c
-	install -D dhcpv6/dhcp6s $(INSTALLDIR)/dhcpv6/usr/bin/dhcp6s
+	install -D dhcpv6/multicall $(INSTALLDIR)/dhcpv6/usr/bin/dhcp6_multicall
+	cd $(INSTALLDIR)/dhcpv6/usr/bin && ln -sf dhcp6_multicall dhcp6c
+	cd $(INSTALLDIR)/dhcpv6/usr/bin && ln -sf dhcp6_multicall dhcp6s
 
 dhcpv6-clean:
 	$(MAKE) -C dhcpv6 clean
