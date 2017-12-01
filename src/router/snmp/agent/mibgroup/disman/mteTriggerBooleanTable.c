@@ -218,7 +218,7 @@ write_mteTriggerBooleanComparison(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerBooleanComparison not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -302,7 +302,7 @@ write_mteTriggerBooleanValue(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerBooleanValue not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -386,7 +386,7 @@ write_mteTriggerBooleanStartup(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerBooleanStartup not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -472,7 +472,7 @@ write_mteTriggerBooleanObjectsOwner(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerBooleanObjectsOwner not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -562,7 +562,7 @@ write_mteTriggerBooleanObjects(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerBooleanObjects not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -653,7 +653,7 @@ write_mteTriggerBooleanEventOwner(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerBooleanEventOwner not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -743,7 +743,7 @@ write_mteTriggerBooleanEvent(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OCTET_STR) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerBooleanEvent not ASN_OCTET_STR\n");
             return SNMP_ERR_WRONGTYPE;
         }

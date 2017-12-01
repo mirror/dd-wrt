@@ -252,9 +252,13 @@ typedef struct request_list {
 #define SNMP_DEFAULT_PRIV_PROTOLEN  USM_LENGTH_OID_TRANSFORM
 
     extern const char *snmp_api_errstring(int);
+#ifdef NEED_PRINTF
     extern void     snmp_perror(const char *);
     extern void     snmp_set_detail(const char *);
-
+#else
+    #define snmp_perror(s) do { } while(0)
+    #define snmp_set_detail(s) do { } while(0)
+#endif
 #define SNMP_MAX_MSG_SIZE          1472 /* ethernet MTU minus IP/UDP header */
 #define SNMP_MAX_MSG_V3_HDRS       (4+3+4+7+7+3+7+16)   /* fudge factor=16 */
 #define SNMP_MAX_ENG_SIZE          32

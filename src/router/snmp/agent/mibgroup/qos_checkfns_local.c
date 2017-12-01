@@ -418,12 +418,12 @@ int rtnl_open(struct rtnl_handle *rth, unsigned subscriptions)
 		return -1;
 	}
 	if (addr_len != sizeof(rth->local)) {
-//		fprintf(stderr, "Wrong address length %d\n", addr_len);
+//		printf( "Wrong address length %d\n", addr_len);
 		snmp_log(LOG_NOTICE,"wrong address length\n");
 		return -1;
 	}
 	if (rth->local.nl_family != AF_NETLINK) {
-//		fprintf(stderr, "Wrong address family %d\n", rth->local.nl_family);
+//		printf( "Wrong address family %d\n", rth->local.nl_family);
 		snmp_log(LOG_NOTICE,"wrong address family\n");
 		return -1;
 	}
@@ -507,12 +507,12 @@ int rtnl_dump_filter(struct rtnl_handle *rth,
 			continue;
 		}
 		if (status == 0) {
-//			fprintf(stderr, "EOF on netlink\n");
+//			printf( "EOF on netlink\n");
 			snmp_log(LOG_NOTICE,"EOF on netlink\n");
 			return -1;
 		}
 		if (msg.msg_namelen != sizeof(nladdr)) {
-//			fprintf(stderr, "sender address length == %d\n", msg.msg_namelen);
+//			printf( "sender address length == %d\n", msg.msg_namelen);
 			snmp_log(LOG_NOTICE,"sender address length\n");
 			return(1);
 		}
@@ -536,7 +536,7 @@ int rtnl_dump_filter(struct rtnl_handle *rth,
 			if (h->nlmsg_type == NLMSG_ERROR) {
 				struct nlmsgerr *err = (struct nlmsgerr*)NLMSG_DATA(h);
 				if (h->nlmsg_len < NLMSG_LENGTH(sizeof(struct nlmsgerr))) {
-//					fprintf(stderr, "ERROR truncated\n");
+//					printf( "ERROR truncated\n");
 					snmp_log(LOG_NOTICE,"error struncated\n");
 				} else {
 					errno = -err->error;
@@ -553,12 +553,12 @@ skip_it:
 			h = NLMSG_NEXT(h, status);
 		}
 		if (msg.msg_flags & MSG_TRUNC) {
-//			fprintf(stderr, "Message truncated\n");
+//			printf( "Message truncated\n");
 			snmp_log(LOG_NOTICE,"message truncated\n");
 			continue;
 		}
 		if (status) {
-//			fprintf(stderr, "!!!Remnant of size %d\n", status);
+//			printf( "!!!Remnant of size %d\n", status);
 			snmp_log(LOG_NOTICE,"remnant of size\n");
 			return(1);
 		}
@@ -573,7 +573,7 @@ int parse_rtattr(struct rtattr *tb[], int max, struct rtattr *rta, int len)
 		rta = RTA_NEXT(rta,len);
 	}
 	if (len)
-//		fprintf(stderr, "!!!Deficit %d, rta_len=%d\n", len, rta->rta_len);
+//		printf( "!!!Deficit %d, rta_len=%d\n", len, rta->rta_len);
 		snmp_log(LOG_WARNING,"deficit of rta_len\n");
 	return 0;
 }
@@ -696,7 +696,7 @@ int ll_init_map(struct rtnl_handle *rth)
 	}
 
 	if (rtnl_dump_filter(rth, ll_remember_index, &idxmap, NULL, NULL) < 0) {
-//		fprintf(stderr, "Dump terminated\n");
+//		printf( "Dump terminated\n");
 		snmp_log(LOG_WARNING,"dump terminated\n");
 //		exit(1);
 		return(-1);

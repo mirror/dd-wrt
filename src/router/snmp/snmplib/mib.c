@@ -5519,7 +5519,7 @@ int main(int argc, const char **argv)
     char *r;
     
     if (argc < 3) {
-	fprintf(stderr, "usage: dh <hint> <value>\n");
+	printf( "usage: dh <hint> <value>\n");
 	exit(2);
     }
     hint = argv[1];

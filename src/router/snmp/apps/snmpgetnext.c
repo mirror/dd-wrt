@@ -85,7 +85,7 @@ optProc(int argc, char *const *argv, int opt)
 					  NETSNMP_DS_APP_DONT_FIX_PDUS);
                 break;
             default:
-                fprintf(stderr, "Unknown flag passed to -C: %c\n",
+                printf( "Unknown flag passed to -C: %c\n",
                         optarg[-1]);
                 exit(1);
             }
@@ -97,13 +97,13 @@ optProc(int argc, char *const *argv, int opt)
 void
 usage(void)
 {
-    fprintf(stderr, "USAGE: snmpgetnext ");
+    printf( "USAGE: snmpgetnext ");
     snmp_parse_args_usage(stderr);
-    fprintf(stderr, " OID [OID]...\n\n");
+    printf( " OID [OID]...\n\n");
     snmp_parse_args_descriptions(stderr);
-    fprintf(stderr,
+    printf(
             "  -C APPOPTS\t\tSet various application specific behaviours:\n");
-    fprintf(stderr,
+    printf(
             "\t\t\t  f:  do not fix errors and retry the request\n");
 }
 
@@ -137,7 +137,7 @@ main(int argc, char *argv[])
     }
 
     if (arg >= argc) {
-        fprintf(stderr, "Missing object name\n");
+        printf( "Missing object name\n");
         usage();
         exit(1);
     }
@@ -192,16 +192,16 @@ main(int argc, char *argv[])
                  vars = vars->next_variable)
                 print_variable(vars->name, vars->name_length, vars);
         } else {
-            fprintf(stderr, "Error in packet.\nReason: %s\n",
+            printf( "Error in packet.\nReason: %s\n",
                     snmp_errstring(response->errstat));
             if (response->errindex != 0) {
-                fprintf(stderr, "Failed object: ");
+                printf( "Failed object: ");
                 for (count = 1, vars = response->variables;
                      vars && count != response->errindex;
                      vars = vars->next_variable, count++);
                 if (vars)
                     fprint_objid(stderr, vars->name, vars->name_length);
-                fprintf(stderr, "\n");
+                printf( "\n");
                 exitval = 2;
             }
 
@@ -218,7 +218,7 @@ main(int argc, char *argv[])
             }
         }
     } else if (status == STAT_TIMEOUT) {
-        fprintf(stderr, "Timeout: No Response from %s.\n",
+        printf( "Timeout: No Response from %s.\n",
                 session.peername);
         exitval = 1;
     } else {                    /* status == STAT_ERROR */

@@ -66,40 +66,40 @@ int             show_all_matched_objects(FILE *, const char *, oid *,
 void
 usage(void)
 {
-    fprintf(stderr, "USAGE: snmptranslate [OPTIONS] OID [OID]...\n\n");
-    fprintf(stderr, "  Version:  %s\n", netsnmp_get_version());
-    fprintf(stderr, "  Web:      http://www.net-snmp.org/\n");
-    fprintf(stderr,
+    printf( "USAGE: snmptranslate [OPTIONS] OID [OID]...\n\n");
+    printf( "  Version:  %s\n", netsnmp_get_version());
+    printf( "  Web:      http://www.net-snmp.org/\n");
+    printf(
             "  Email:    net-snmp-coders@lists.sourceforge.net\n\nOPTIONS:\n");
 
-    fprintf(stderr, "  -h\t\t\tdisplay this help message\n");
-    fprintf(stderr, "  -V\t\t\tdisplay package version number\n");
-    fprintf(stderr,
+    printf( "  -h\t\t\tdisplay this help message\n");
+    printf( "  -V\t\t\tdisplay package version number\n");
+    printf(
             "  -m MIB[:...]\t\tload given list of MIBs (ALL loads everything)\n");
-    fprintf(stderr,
+    printf(
             "  -M DIR[:...]\t\tlook in given list of directories for MIBs\n");
-    fprintf(stderr,
+    printf(
             "  -D TOKEN[,...]\tturn on debugging output for the specified TOKENs\n\t\t\t   (ALL gives extremely verbose debugging output)\n");
-    fprintf(stderr, "  -w WIDTH\t\tset width of tree and detail output\n");
-    fprintf(stderr,
+    printf( "  -w WIDTH\t\tset width of tree and detail output\n");
+    printf(
             "  -T TRANSOPTS\t\tSet various options controlling report produced:\n");
-    fprintf(stderr,
+    printf(
             "\t\t\t  B:  print all matching objects for a regex search\n");
-    fprintf(stderr, "\t\t\t  d:  print full details of the given OID\n");
-    fprintf(stderr, "\t\t\t  p:  print tree format symbol table\n");
-    fprintf(stderr, "\t\t\t  a:  print ASCII format symbol table\n");
-    fprintf(stderr, "\t\t\t  l:  enable labeled OID report\n");
-    fprintf(stderr, "\t\t\t  o:  enable OID report\n");
-    fprintf(stderr, "\t\t\t  s:  enable dotted symbolic report\n");
-    fprintf(stderr,
+    printf( "\t\t\t  d:  print full details of the given OID\n");
+    printf( "\t\t\t  p:  print tree format symbol table\n");
+    printf( "\t\t\t  a:  print ASCII format symbol table\n");
+    printf( "\t\t\t  l:  enable labeled OID report\n");
+    printf( "\t\t\t  o:  enable OID report\n");
+    printf( "\t\t\t  s:  enable dotted symbolic report\n");
+    printf(
             "\t\t\t  t:  enable alternate format symbolic suffix report\n");
-    fprintf(stderr,
+    printf(
             "  -P MIBOPTS\t\tToggle various defaults controlling mib parsing:\n");
     snmp_mib_toggle_options_usage("\t\t\t  ", stderr);
-    fprintf(stderr,
+    printf(
             "  -O OUTOPTS\t\tToggle various defaults controlling output display:\n");
     snmp_out_toggle_options_usage("\t\t\t  ", stderr);
-    fprintf(stderr,
+    printf(
             "  -I INOPTS\t\tToggle various defaults controlling input parsing:\n");
     snmp_in_toggle_options_usage("\t\t\t  ", stderr);
     exit(1);
@@ -137,21 +137,21 @@ main(int argc, char *argv[])
             snmp_set_do_debugging(1);
             break;
         case 'V':
-            fprintf(stderr, "NET-SNMP version: %s\n",
+            printf( "NET-SNMP version: %s\n",
                     netsnmp_get_version());
             exit(0);
             break;
         case 'w':
 	    width = atoi(optarg);
 	    if (width <= 0) {
-		fprintf(stderr, "Invalid width specification: %s\n", optarg);
+		printf( "Invalid width specification: %s\n", optarg);
 		exit (1);
 	    }
 	    break;
         case 'P':
             cp = snmp_mib_toggle_options(optarg);
             if (cp != NULL) {
-                fprintf(stderr, "Unknown parser option to -P: %c.\n", *cp);
+                printf( "Unknown parser option to -P: %c.\n", *cp);
                 usage();
                 exit(1);
             }
@@ -159,7 +159,7 @@ main(int argc, char *argv[])
         case 'O':
             cp = snmp_out_toggle_options(optarg);
             if (cp != NULL) {
-                fprintf(stderr, "Unknown OID option to -O: %c.\n", *cp);
+                printf( "Unknown OID option to -O: %c.\n", *cp);
                 usage();
                 exit(1);
             }
@@ -167,7 +167,7 @@ main(int argc, char *argv[])
         case 'I':
             cp = snmp_in_toggle_options(optarg);
             if (cp != NULL) {
-                fprintf(stderr, "Unknown OID option to -I: %c.\n", *cp);
+                printf( "Unknown OID option to -I: %c.\n", *cp);
                 usage();
                 exit(1);
             }
@@ -205,7 +205,7 @@ main(int argc, char *argv[])
                     print = 2;
                     break;
                 default:
-                    fprintf(stderr, "Invalid -T<lostpad> character: %c\n",
+                    printf( "Invalid -T<lostpad> character: %c\n",
                             *cp);
                     usage();
                     exit(1);
@@ -214,7 +214,7 @@ main(int argc, char *argv[])
             }
             break;
         default:
-            fprintf(stderr, "invalid option: -%c\n", arg);
+            printf( "invalid option: -%c\n", arg);
             usage();
             exit(1);
             break;
@@ -247,7 +247,7 @@ main(int argc, char *argv[])
         name_length = MAX_OID_LEN;
         if (snmp_get_random_access()) {
             if (!get_node(current_name, name, &name_length)) {
-                fprintf(stderr, "Unknown object identifier: %s\n",
+                printf( "Unknown object identifier: %s\n",
                         current_name);
                 exit(2);
             }
@@ -255,7 +255,7 @@ main(int argc, char *argv[])
             if (0 == show_all_matched_objects(stdout, current_name,
                                               name, &name_length,
                                               description, width)) {
-                fprintf(stderr,
+                printf(
                         "Unable to find a matching object identifier for \"%s\"\n",
                         current_name);
                 exit(1);
@@ -264,7 +264,7 @@ main(int argc, char *argv[])
         } else if (netsnmp_ds_get_boolean(NETSNMP_DS_LIBRARY_ID, 
 					  NETSNMP_DS_LIB_REGEX_ACCESS)) {
             if (0 == get_wild_node(current_name, name, &name_length)) {
-                fprintf(stderr,
+                printf(
                         "Unable to find a matching object identifier for \"%s\"\n",
                         current_name);
                 exit(1);

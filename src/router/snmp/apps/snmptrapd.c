@@ -262,7 +262,7 @@ event_input(netsnmp_variable_list * vp)
 	  !memcmp(vp->val.objid, unavailableAlarm, sizeof(unavailableAlarm)))
 	eventid = 3;
       else {
-	fprintf(stderr, "unknown event\n");
+	printf( "unknown event\n");
 	eventid = 0;
       }
       
@@ -416,7 +416,7 @@ do_external(char *cmd, struct hostent *host,
         tmpnam(file_buf);
         file = fopen(file_buf, "w");
         if (!file) {
-            fprintf(stderr, "fopen: %s: %s\n", file_buf, strerror(errno));
+            printf( "fopen: %s: %s\n", file_buf, strerror(errno));
         } else {
             send_handler_data(file, host, pdu, transport);
             fclose(file);
@@ -425,10 +425,10 @@ do_external(char *cmd, struct hostent *host,
             command_buf[ sizeof(command_buf)-1 ] = 0;
             result = system(command_buf);
             if (result == -1)
-                fprintf(stderr, "system: %s: %s\n", command_buf,
+                printf( "system: %s: %s\n", command_buf,
                         strerror(errno));
             else if (result)
-                fprintf(stderr, "system: %s: %d\n", command_buf, result);
+                printf( "system: %s: %d\n", command_buf, result);
             remove(file_buf);
         }
 #endif                          /* WIN32 */
@@ -725,7 +725,7 @@ snmp_input(int op,
             free(rbuf);
         }
     } else if (op == NETSNMP_CALLBACK_OP_TIMED_OUT) {
-        fprintf(stderr, "Timeout: This shouldn't happen!\n");
+        printf( "Timeout: This shouldn't happen!\n");
     }
     return 1;
 }
@@ -766,41 +766,41 @@ free_trap2_fmt(void)
 void
 usage(void)
 {
-    fprintf(stderr, "Usage: snmptrapd [OPTIONS] [LISTENING ADDRESSES]\n");
-    fprintf(stderr, "\n\tNET-SNMP Version:  %s\n", netsnmp_get_version());
-    fprintf(stderr, "\tWeb:      http://www.net-snmp.org/\n");
-    fprintf(stderr, "\tEmail:    net-snmp-coders@lists.sourceforge.net\n");
-    fprintf(stderr, "\n");
-    fprintf(stderr, "  -a\t\t\tignore authentication failture traps\n");
-    fprintf(stderr, "  -c FILE\t\tread FILE as a configuration file\n");
-    fprintf(stderr,
+    printf( "Usage: snmptrapd [OPTIONS] [LISTENING ADDRESSES]\n");
+    printf( "\n\tNET-SNMP Version:  %s\n", netsnmp_get_version());
+    printf( "\tWeb:      http://www.net-snmp.org/\n");
+    printf( "\tEmail:    net-snmp-coders@lists.sourceforge.net\n");
+    printf( "\n");
+    printf( "  -a\t\t\tignore authentication failture traps\n");
+    printf( "  -c FILE\t\tread FILE as a configuration file\n");
+    printf(
             "  -C\t\t\tdo not read the default configuration files\n");
-    fprintf(stderr, "  -d\t\t\tdump sent and received SNMP packets\n");
-    fprintf(stderr, "  -D\t\t\tturn on debugging output\n");
-    fprintf(stderr,
+    printf( "  -d\t\t\tdump sent and received SNMP packets\n");
+    printf( "  -D\t\t\tturn on debugging output\n");
+    printf(
             "  -e\t\t\tprint event # (rising/falling alarm, etc.)\n");
-    fprintf(stderr, "  -f\t\t\tdo not fork from the shell\n");
-    fprintf(stderr,
+    printf( "  -f\t\t\tdo not fork from the shell\n");
+    printf(
             "  -F FORMAT\t\tuse specified format for logging to standard error\n");
-    fprintf(stderr, "  -h, --help\t\tdisplay this usage message\n");
-    fprintf(stderr,
+    printf( "  -h, --help\t\tdisplay this usage message\n");
+    printf(
             "  -H\t\t\tdisplay configuration file directives understood\n");
-    fprintf(stderr,
+    printf(
             "  -m MIBLIST\t\tuse MIBLIST instead of the default MIB list\n");
-    fprintf(stderr,
+    printf(
             "  -M DIRLIST\t\tuse DIRLIST as the list of locations\n\t\t\t  to look for MIBs\n");
-    fprintf(stderr,
+    printf(
             "  -n\t\t\tuse numeric addresses instead of attempting\n\t\t\t  hostname lookups (no DNS)\n");
-    fprintf(stderr, "  -o FILE\t\toutput to FILE\n");
-    fprintf(stderr, "  -P\t\t\tprint to standard error\n");
-    fprintf(stderr, "  -s\t\t\tlog to syslog\n");
-    fprintf(stderr,
+    printf( "  -o FILE\t\toutput to FILE\n");
+    printf( "  -P\t\t\tprint to standard error\n");
+    printf( "  -s\t\t\tlog to syslog\n");
+    printf(
             "  -S d|i|0-7\t\tset syslog facility to LOG_DAEMON (d), LOG_INFO (i)\n\t\t\t  or LOG_LOCAL[0-7] (default LOG_DAEMON)\n");
 #if HAVE_GETPID
-    fprintf(stderr, "  -u FILE\t\tstore process id in FILE\n");
+    printf( "  -u FILE\t\tstore process id in FILE\n");
 #endif
-    fprintf(stderr, "  -v, --version\t\tdisplay version information\n");
-    fprintf(stderr,
+    printf( "  -v, --version\t\tdisplay version information\n");
+    printf(
             "  -O <OUTOPTS>\t\ttoggle options controlling output display\n");
     snmp_out_toggle_options_usage("\t\t\t", stderr);
 }
@@ -1023,12 +1023,12 @@ main(int argc, char *argv[])
         case 'H':
             init_notification_log();
             init_snmp("snmptrapd");
-            fprintf(stderr, "Configuration directives understood:\n");
+            printf( "Configuration directives understood:\n");
             read_config_print_usage("  ");
             exit(0);
 
         case 'l':
-	    fprintf(stderr,
+	    printf(
 		    "Warning: -l option is deprecated; use -S instead\n");
 	    depmsg = 1;
 	case 'S':
@@ -1067,12 +1067,12 @@ main(int argc, char *argv[])
                     Facility = LOG_LOCAL7;
                     break;
                 default:
-                    fprintf(stderr, "invalid syslog facility: -S%c\n",*optarg);
+                    printf( "invalid syslog facility: -S%c\n",*optarg);
                     usage();
                     exit(1);
                 }
             } else {
-                fprintf(stderr, "no syslog facility specified\n");
+                printf( "no syslog facility specified\n");
                 usage();
                 exit(1);
             }
@@ -1115,7 +1115,7 @@ main(int argc, char *argv[])
         case 'O':
             cp = snmp_out_toggle_options(optarg);
             if (cp != NULL) {
-                fprintf(stderr, "Unknown output option passed to -O: %c\n",
+                printf( "Unknown output option passed to -O: %c\n",
 			*cp);
                 usage();
                 exit(1);
@@ -1149,7 +1149,7 @@ main(int argc, char *argv[])
             break;
 
         default:
-            fprintf(stderr, "invalid option: -%c\n", arg);
+            printf( "invalid option: -%c\n", arg);
             usage();
             exit(1);
             break;
@@ -1165,7 +1165,7 @@ main(int argc, char *argv[])
             if (listen_ports != NULL) {
                 astring = malloc(strlen(listen_ports) + 2 + strlen(argv[i]));
                 if (astring == NULL) {
-                    fprintf(stderr, "malloc failure processing argv[%d]\n", i);
+                    printf( "malloc failure processing argv[%d]\n", i);
                     exit(1);
                 }
                 sprintf(astring, "%s,%s", listen_ports, argv[i]);
@@ -1174,7 +1174,7 @@ main(int argc, char *argv[])
             } else {
                 listen_ports = strdup(argv[i]);
                 if (listen_ports == NULL) {
-                    fprintf(stderr, "malloc failure processing argv[%d]\n", i);
+                    printf( "malloc failure processing argv[%d]\n", i);
                     exit(1);
                 }
             }
@@ -1253,7 +1253,7 @@ main(int argc, char *argv[])
 
         switch (fork()) {
         case -1:
-            fprintf(stderr, "bad fork - %s\n", strerror(errno));
+            printf( "bad fork - %s\n", strerror(errno));
             _exit(1);
 
         case 0:
@@ -1261,7 +1261,7 @@ main(int argc, char *argv[])
              * become process group leader 
              */
             if (setsid() == -1) {
-                fprintf(stderr, "bad setsid - %s\n", strerror(errno));
+                printf( "bad setsid - %s\n", strerror(errno));
                 _exit(1);
             }
 
@@ -1423,7 +1423,7 @@ main(int argc, char *argv[])
                 running = 0;
                 break;
             default:
-                fprintf(stderr, "select returned %d\n", count);
+                printf( "select returned %d\n", count);
                 running = 0;
             }
     }

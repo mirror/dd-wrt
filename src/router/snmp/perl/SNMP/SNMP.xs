@@ -199,7 +199,7 @@ static int _context_add       _((walk_context *context));
 static int _context_del       _((walk_context *context));
 static int _context_okay      _((walk_context *context));
 
-/* Wrapper around fprintf(stderr, ...) for clean and easy debug output. */
+/* Wrapper around printf( ...) for clean and easy debug output. */
 #ifdef	DEBUGGING
 static int _debug_level = 0;
 #define DBOUT PerlIO_stderr(),

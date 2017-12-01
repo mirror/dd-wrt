@@ -381,7 +381,7 @@ getstats(void)
     memset(stat->dinfo, 0, sizeof(struct devinfo));
 
     if ((getdevs(stat)) == -1) {
-        fprintf(stderr, "Can't get devices:%s\n", devstat_errbuf);
+        printf( "Can't get devices:%s\n", devstat_errbuf);
         return 1;
     }
     ndisk = stat->dinfo->numdevs;
@@ -496,7 +496,7 @@ collect_drive_stats(io_registry_entry_t driver, long *stats)
 					       kCFAllocatorDefault, kNilOptions);
     if (status != KERN_SUCCESS) {
 	snmp_log(LOG_ERR, "diskio: device has no properties\n");
-/*	fprintf(stderr, "device has no properties\n"); */
+/*	printf( "device has no properties\n"); */
 	return (1);
     }
 
@@ -551,7 +551,7 @@ handle_drive(io_registry_entry_t drive, struct drivestats * dstat)
     status = IORegistryEntryGetParentEntry(drive, kIOServicePlane, &parent);
     if (status != KERN_SUCCESS) {
 	snmp_log(LOG_ERR, "diskio: device has no parent\n");
-/*	fprintf(stderr, "device has no parent\n"); */
+/*	printf( "device has no parent\n"); */
 	return(1);
     }
 
@@ -562,7 +562,7 @@ handle_drive(io_registry_entry_t drive, struct drivestats * dstat)
 					    kCFAllocatorDefault, kNilOptions);
 	if (status != KERN_SUCCESS) {
 	    snmp_log(LOG_ERR, "diskio: device has no properties\n");
-/*	    fprintf(stderr, "device has no properties\n"); */
+/*	    printf( "device has no properties\n"); */
 	    return(1);
 	}
 
@@ -610,7 +610,7 @@ getstats(void)
     status = IOServiceGetMatchingServices(masterPort, match, &drivelist);
     if (status != KERN_SUCCESS) {
 	snmp_log(LOG_ERR, "diskio: couldn't match whole IOMedia devices\n");
-/*	fprintf(stderr,"Couldn't match whole IOMedia devices\n"); */
+/*	printf("Couldn't match whole IOMedia devices\n"); */
 	return(1);
     }
 

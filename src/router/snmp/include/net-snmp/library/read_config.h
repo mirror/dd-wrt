@@ -51,8 +51,13 @@ extern          "C" {
     void            read_premib_configs(void);
     void            read_config_files(int);
     void            free_config(void);
+#ifdef NEED_PRINTF
     void            config_perror(const char *);
     void            config_pwarn(const char *);
+#else
+    #define config_perror(s) do { } while(0)
+    #define config_pwarn(s) do { } while(0)
+#endif
     char           *skip_white(char *);
     char           *skip_not_white(char *);
     char           *skip_token(char *);

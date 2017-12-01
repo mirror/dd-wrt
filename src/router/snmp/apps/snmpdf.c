@@ -76,14 +76,14 @@ int             failures = 0;
 void
 usage(void)
 {
-    fprintf(stderr, "Usage: snmpdf [-Cu] ");
+    printf( "Usage: snmpdf [-Cu] ");
     snmp_parse_args_usage(stderr);
-    fprintf(stderr, "\n\n");
+    printf( "\n\n");
     snmp_parse_args_descriptions(stderr);
-    fprintf(stderr, "\nsnmpdf options:\n");
-    fprintf(stderr,
+    printf( "\nsnmpdf options:\n");
+    printf(
             "\t-Cu\tUse UCD-SNMP dskTable to do the calculations.\n");
-    fprintf(stderr,
+    printf(
             "\t\t[Normally the HOST-RESOURCES-MIB is consulted first.]\n");
 }
 
@@ -100,7 +100,7 @@ optProc(int argc, char *const *argv, int opt)
                 ucd_mib = 1;
                 break;
             default:
-                fprintf(stderr,
+                printf(
                         "Unknown flag passed to -C: %c\n", optarg[-1]);
                 exit(1);
             }
@@ -128,7 +128,7 @@ add(netsnmp_pdu *pdu, const char *mibnodename,
 
     if (!snmp_parse_oid(mibnodename, base, &base_length)) {
         snmp_perror(mibnodename);
-        fprintf(stderr, "couldn't find mib node %s, giving up\n",
+        printf( "couldn't find mib node %s, giving up\n",
                 mibnodename);
         exit(1);
     }
@@ -352,7 +352,7 @@ main(int argc, char *argv[])
     }
 
     if (count == 0) {
-        fprintf(stderr, "Failed to locate any partions.\n");
+        printf( "Failed to locate any partions.\n");
         exit(1);
     }
 

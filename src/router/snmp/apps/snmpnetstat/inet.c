@@ -362,7 +362,7 @@ protopr(const char *name)
         status = snmp_synch_response(Session, request, &response);
         if (status != STAT_SUCCESS
             || response->errstat != SNMP_ERR_NOERROR) {
-            fprintf(stderr, "SNMP request failed\n");
+            printf( "SNMP request failed\n");
             break;
         }
         vp = response->variables;

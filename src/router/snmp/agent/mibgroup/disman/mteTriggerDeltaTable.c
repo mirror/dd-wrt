@@ -186,7 +186,7 @@ write_mteTriggerDeltaDiscontinuityID(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_OBJECT_ID) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerDeltaDiscontinuityID not ASN_OBJECT_ID\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -276,7 +276,7 @@ write_mteTriggerDeltaDiscontinuityIDWildcard(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerDeltaDiscontinuityIDWildcard not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
@@ -361,7 +361,7 @@ write_mteTriggerDeltaDiscontinuityIDType(int action,
     switch (action) {
     case RESERVE1:
         if (var_val_type != ASN_INTEGER) {
-            fprintf(stderr,
+            printf(
                     "write to mteTriggerDeltaDiscontinuityIDType not ASN_INTEGER\n");
             return SNMP_ERR_WRONGTYPE;
         }
