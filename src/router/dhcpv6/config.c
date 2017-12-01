@@ -70,7 +70,7 @@ struct dhcp6_list nislist, nisnamelist;
 struct dhcp6_list nisplist, nispnamelist;
 struct dhcp6_list bcmcslist, bcmcsnamelist;
 long long optrefreshtime;
-
+dhcp6_mode_t dhcp6_mode = DHCP6_MODE_CLIENT;
 static struct dhcp6_ifconf *dhcp6_ifconflist;
 struct ia_conflist ia_conflist0;
 static struct host_conf *host_conflist0, *host_conflist;
