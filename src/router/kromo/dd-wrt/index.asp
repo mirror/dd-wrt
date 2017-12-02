@@ -476,8 +476,8 @@ addEvent(window, "unload", function() {
 								<legend><% tran("idx.legend3"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("idx.ntp_client"); %></div>
-									<input class="spaceradio" type="radio" name="ntp_enable" id="ntp_enable" value="1" <% nvc("ntp_enable", "1"); %> onclick="show_layer_ext(this, 'idntp', true)" /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" name="ntp_enable" id="ntp_enable" value="0" <% nvc("ntp_enable", "0"); %> onclick="show_layer_ext(this, 'idntp', false)" /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" name="ntp_enable" value="1" <% nvc("ntp_enable", "1"); %> onclick="show_layer_ext(this, 'idntp', true)" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="ntp_enable" value="0" <% nvc("ntp_enable", "0"); %> onclick="show_layer_ext(this, 'idntp', false)" /><% tran("share.disable"); %>
 								</div>
 								<div id="idntp">
 								<div class="setting">
