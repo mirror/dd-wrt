@@ -69,6 +69,7 @@ addEvent(window, "load", function() {
 	setElementVisible("wan_dhcp", "<% nvg("wan_proto"); %>" == "dhcp");
 	setElementVisible("wan_connection", "<% nvg("wan_proto"); %>" != "dhcp" && "<% nvg("wan_proto"); %>" != "static");
 	setElementVisible("wan_signal", "<% nvg("wan_proto"); %>" == "3g");
+	setElementVisible("wan_acname", "<% nvg("wan_proto"); %>" == "pppoe");
 
 	update = new StatusUpdate("Status_Internet.live.asp", <% nvg("refresh_time"); %>);
 	update.onUpdate("wan_shortproto", function(u) {
@@ -132,6 +133,10 @@ addEvent(window, "unload", function() {
 										<div class="setting" id="wan_signal">
 											<div class="label">Signal Status</div>
 											<span id="wan_3g_signal"><% nvram_status_get("wan_3g_signal"); %></span>
+										</div>
+										<div class="setting" id="wan_acname">
+											<div class="label"><% tran("status_inet.acname"); %></div>
+											<span id="pppoe_ac_name"><% nvram_get("pppoe_ac_name"); %></span>
 										</div>
 										 <div class="setting">
 											<div class="label"><% tran("status_inet.wanuptime"); %></div>
