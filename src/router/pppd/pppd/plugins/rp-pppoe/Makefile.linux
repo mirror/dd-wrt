@@ -28,7 +28,7 @@ RP_VERSION=3.8
 #COPTS=-O2 -g
 CFLAGS=$(COPTS)  $(MIPS16_OPT) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include -I../../../include -I../../../ '-DRP_VERSION="$(RP_VERSION)"' 
 #CFLAGS=$(COPTS) -I$(LINUXDIR)/include/linux
-
+LDFLAGS = -L$(TOP)/nvram -lnvram
 include $(TOP)/.config
 
 ifeq ($(CONFIG_DIST),"micro")
@@ -45,17 +45,13 @@ endif
 all: rp-pppoe.so pppoe-discovery
 
 pppoe-discovery: pppoe-discovery.o debug.o
-	$(CC) -o pppoe-discovery pppoe-discovery.o
-
-
-pppoe-discovery: pppoe-discovery.o debug.o
-	$(CC) -o pppoe-discovery pppoe-discovery.o debug.o
+	$(CC) $(LDFLAGS) -o pppoe-discovery pppoe-discovery.o debug.o
 
 debug.o: debug.c
 	$(CC) $(CFLAGS) -c -o debug.o debug.c
 
 rp-pppoe.so: plugin.o discovery.o if.o common.o
-	$(CC) -o rp-pppoe.so -shared plugin.o discovery.o if.o common.o
+	$(CC) $(LDFLAGS) -o rp-pppoe.so -shared plugin.o discovery.o if.o common.o
 
 install: all
 	$(INSTALL) -d -m 755 $(LIBDIR)
