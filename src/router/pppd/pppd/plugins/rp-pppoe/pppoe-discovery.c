@@ -376,6 +376,12 @@ parsePADOTags(UINT16_t type, UINT16_t len, unsigned char *data,
     case TAG_AC_NAME:
 	pc->seenACName = 1;
 	printf("Access-Concentrator: %.*s\n", (int) len, data);
+
+	char acname[64];
+	strncpy(acname,(char *)data,sizeof(acname)-1);
+	acname[len > (sizeof(acname)-1) ? 63 : len] = 0;
+	nvram_set("pppoe_ac_name",acname);
+
 	if (conn->acName && len == strlen(conn->acName) &&
 	    !strncmp((char *) data, conn->acName, len)) {
 	    pc->acNameOK = 1;
