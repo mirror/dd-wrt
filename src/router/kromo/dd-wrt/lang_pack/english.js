@@ -2070,6 +2070,7 @@ status_inet.h11="WAN";
 status_inet.conft="Configuration Type";
 status_inet.www_loginstatus="Login Status";
 status_inet.wanuptime="Connection Uptime";
+status_inet.acname="Access Concentrator Name";
 status_inet.leasetime="Remaining Lease Time";
 status_inet.traff="Traffic";
 status_inet.traff_tot="Total Traffic";
