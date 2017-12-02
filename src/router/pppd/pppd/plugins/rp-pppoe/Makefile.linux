@@ -31,11 +31,10 @@ CFLAGS=$(COPTS)  $(MIPS16_OPT) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include 
 LDFLAGS = -L$(TOP)/nvram -lnvram
 include $(TOP)/.config
 
-ifeq ($(CONFIG_DIST),"micro")
-CFLAGS += -DNEED_NOPRINTF
-endif
+ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
-CFLAGS += -DNEED_NOPRINTF
+CFLAGS += -DNEED_PRINTF
+endif
 endif
 
 #ifeq ($(CONFIG_AQOS),y)
