@@ -5776,14 +5776,14 @@ void ej_show_dnscrypt(webs_t wp, int argc, char_t ** argv)
 			bzero(fname, sizeof(fname));
 			bzero(name, sizeof(name));
 
-			for (i = 0; i < sizeof(name); i++) {
+			for (i = 0; i < sizeof(name) - 1; i++) {
 				if (line[i] == ',')
 					break;
 				name[i] = line[i];
 			}
 			int a, cnt = 0, c = 0;
 			i++;
-			for (a = i; a < i + sizeof(fname); a++) {
+			for (a = i; a < i + sizeof(fname) - 1; a++) {
 				if (line[a] == '"') {
 					cnt++;
 					continue;
