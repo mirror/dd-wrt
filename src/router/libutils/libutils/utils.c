@@ -102,6 +102,7 @@ void setWifiPass(void)
 	case ROUTER_NETGEAR_R7800:
 		mtd = getMTD("art");
 		offset = 0x007B;
+		break;
 	case ROUTER_NETGEAR_R9000:
 		mtd = getMTD("ART");
 		offset = 0x007B;
