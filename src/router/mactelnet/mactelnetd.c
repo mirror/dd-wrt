@@ -213,7 +213,7 @@ static void setup_sockets() {
 		struct sockaddr_in si_me;
 		struct ether_addr *mac = (struct ether_addr *)&(interface->mac_addr);
 		if (!strcmp(interface->name,"br0:0"))
-			continue
+			continue;
 
 		if (!interface->has_mac) {
 			continue;
@@ -694,7 +694,7 @@ static void handle_packet(unsigned char *data, int data_len, const struct sockad
 	parse_packet(data, &pkthdr);
 
 	/* Drop packets not belonging to us */
-	if ((interface = find_socket(pkthdr.dstaddr)) < 0) {
+	if ((interface = find_socket(pkthdr.dstaddr)) == NULL) {
 		return;
 	}
 
