@@ -104,7 +104,7 @@ CFLAGS= -DBROADCOM
 endif
 endif
 
-CFLAGS+= -Wall $(COMPILE_FLAGS) $(COPTS) $(MIPS16_OPT) -Os -ffunction-sections -fdata-sections -Wl,--gc-sections $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"' 
+CFLAGS+= -Wall $(COMPILE_FLAGS) $(COPTS) $(MIPS16_OPT) -Os -ffunction-sections -fdata-sections -Wl,--gc-sections $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"'
 
 
 ifdef CHAPMS
@@ -170,6 +170,7 @@ ifdef USE_PAM
 CFLAGS   += -DUSE_PAM
 LIBS     += -lpam -ldl
 endif
+LIBS += -L$(TOP)/nvram -lnvram
 
 # Multi-linnk
 ifdef HAVE_MULTILINK
