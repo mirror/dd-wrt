@@ -101,5 +101,5 @@ enable the larger PPP MTU.  The larger PPP MTU is negotiated according
 to RFC 4638.
 
 --
-David F. Skoll <dfs@roaringpenguin.com>
+Dianne Skoll <dfs@roaringpenguin.com>
 

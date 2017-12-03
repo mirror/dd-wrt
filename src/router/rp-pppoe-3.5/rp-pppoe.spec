@@ -1,6 +1,6 @@
 Summary: PPP Over Ethernet (xDSL support)
 Name: rp-pppoe
-Version: 3.11
+Version: 3.12
 %if %(%{expand:test %{_vendor} != mandrake ; echo $?})
 Release: 1mdk
 %else
@@ -8,9 +8,9 @@ Release: 1
 %endif
 License: GPL
 Group: System Environment/Daemons
-Source: http://www.roaringpenguin.com/penguin/pppoe/rp-pppoe-3.10.tar.gz
+Source: http://www.roaringpenguin.com/pppoe/rp-pppoe-3.12.tar.gz
 Url: http://www.roaringpenguin.com/pppoe/
-Packager: David F. Skoll <dfs@roaringpenguin.com>
+Packager: Dianne Skoll <dfs@roaringpenguin.com>
 BuildRoot: /tmp/pppoe-build
 Vendor: Roaring Penguin Software Inc.
 Requires: ppp >= 2.3.7

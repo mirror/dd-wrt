@@ -1,4 +1,14 @@
 # LIC: GPL
+Changes from version 3.11 to 3.12:
+
+- Update author's name to "Dianne Skoll"
+
+- Add "-W" option to pppoe executable to explicitly set a Host-Unique value
+
+- Fix a few compiler warnings and configure script bugs.
+
+- Removed dead code
+
 Changes from Version 3.10 to 3.11:
 
 - Make the rp-pppoe.so plugin avoid calling exit() if the "persist" pppd

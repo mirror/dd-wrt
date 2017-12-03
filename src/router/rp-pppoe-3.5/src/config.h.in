@@ -128,7 +128,7 @@
 /* Define if you have the <unistd.h> header file.  */
 #undef HAVE_UNISTD_H
 
-/* Define if you have the N_HDLC line discipline in linux/termios.h */
+/* Define if you have the N_HDLC line discipline in pty.h */
 #undef HAVE_N_HDLC
 
 /* Define if bitfields are packed in reverse order */
