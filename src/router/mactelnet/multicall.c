@@ -6,13 +6,13 @@ extern int mactelnetd_main(int argc, char **argv);
 extern int mactelnet_main(int argc, char **argv);
 extern int macping_main(int argc, char **argv);
 extern int mndp_main(int argc, char **argv);
-extern int airbag_init(void);
+//extern int airbag_init(void);
 
 int main(int argc, char **argv)
 {
 	bool restart = false;
 	const char *prog = argv[0];
-	airbag_init();
+//	airbag_init();
 restart:
 	if (strstr(argv[0], "mactelnetd"))
 		return mactelnetd_main(argc, argv);
