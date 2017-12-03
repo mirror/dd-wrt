@@ -3,5 +3,5 @@
 if [ -s /var/log/ppp.log ]; then
   exec tail "$@" /var/log/ppp.log
 else
-  exec tail "$@" /var/log/syslog | grep ' \(pppd\|chat\)\['
+  exec grep ' \(pppd\|chat\)\[' /var/log/syslog | tail "$@"
 fi

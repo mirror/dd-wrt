@@ -39,7 +39,7 @@ typedef struct ccp_options {
     bool deflate_draft;		/* use draft RFC code for deflate? */
     bool lzs;			/* do Stac LZS? */
     bool mppc;			/* do MPPC? */
-    bool mppe;			/* do MPPE? */
+    u_char mppe;		/* MPPE bitfield */
     bool mppe_40;		/* allow 40 bit encryption? */
     bool mppe_56;		/* allow 56 bit encryption? */
     bool mppe_128;		/* allow 128 bit encryption? */

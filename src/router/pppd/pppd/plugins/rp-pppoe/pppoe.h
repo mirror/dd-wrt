@@ -47,7 +47,10 @@
 #include <sys/socket.h>
 #endif
 
+/* This has to be included before Linux 4.8's linux/in.h
+ * gets dragged in. */
 #include <netinet/in.h>
+
 /* Ugly header files on some Linux boxes... */
 #if defined(HAVE_LINUX_IF_H)
 #include <linux/if.h>
@@ -84,7 +87,6 @@ typedef unsigned long UINT32_t;
 #ifdef HAVE_LINUX_IF_ETHER_H
 #include <linux/if_ether.h>
 #endif
-
 
 
 
