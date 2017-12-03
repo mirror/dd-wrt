@@ -212,6 +212,8 @@ static void setup_sockets() {
 		int optval = 1;
 		struct sockaddr_in si_me;
 		struct ether_addr *mac = (struct ether_addr *)&(interface->mac_addr);
+		if (!strcmp(interface->name,"br0:0"))
+			continue
 
 		if (!interface->has_mac) {
 			continue;
@@ -600,7 +602,7 @@ static void handle_data_packet(struct mt_connection *curconn, struct mt_mactelne
 	int got_width_packet = 0;
 	int got_height_packet = 0;
 	int success;
-
+	
 	/* Parse first control packet */
 	success = parse_control_packet(data, data_len - MT_HEADER_LEN, &cpkt);
 
