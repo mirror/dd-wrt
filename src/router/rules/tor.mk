@@ -15,7 +15,7 @@ miniupnpc-install:
 	rm -f $(INSTALLDIR)/miniupnpc/usr/lib/*.a
 
 tor-configure: libevent
-	cd tor && libtoolize -ci 
+	cd tor && libtoolize -ci --force 
 	cd tor && autoconf -fi 
 	cd tor && ./configure  --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --disable-systemd --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	--disable-asciidoc \
