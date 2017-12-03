@@ -50,6 +50,6 @@ dnscrypt-install:
 	rm -rf $(INSTALLDIR)/dnscrypt/usr/lib64
 	rm -rf $(INSTALLDIR)/dnscrypt/usr/share
 	install -D dnscrypt/dnscrypt-resolvers.csv $(INSTALLDIR)/dnscrypt/etc/dnscrypt/
-ifeq ($(CONFIG_DNSCRYPT_BLACKLIST),y)
-	install -D dnscrypt/contrib/dnscrypt-blacklist.txt $(INSTALLDIR)/dnscrypt/etc/dnscrypt/
-endif
+#ifeq ($(CONFIG_DNSCRYPT_BLACKLIST),y)
+#	install -D dnscrypt/contrib/dnscrypt-blacklist.txt $(INSTALLDIR)/dnscrypt/etc/dnscrypt/
+#endif
