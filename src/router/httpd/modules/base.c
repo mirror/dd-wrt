@@ -1914,6 +1914,7 @@ static void do_mypage(unsigned char method, struct mime_handler *handler, char *
 	char *snamelist = nvram_safe_get("mypage_scripts");
 	char *next;
 	char sname[128];
+	char fname[32];
 	int qnum;
 	int i = 1;
 	char *query = strchr(url, '?');
@@ -1924,16 +1925,19 @@ static void do_mypage(unsigned char method, struct mime_handler *handler, char *
 
 	if (qnum < 0)
 		qnum = 1;
+	
+	sprintf(fname, "/tmp/mypage%d.tmp", rand() % 100);
+	
 	foreach(sname, snamelist, next) {
 		if (qnum == i) {
 			FILE *fp = popen(sname, "rb");
-			FILE *out = fopen("/tmp/mypage.tmp", "wb");
+			FILE *out = fopen(fname, "wb");
 			while (!feof(fp))
 				putc(getc(fp), out);
 			fclose(out);
 			pclose(fp);
-			do_file_attach(handler, "/tmp/mypage.tmp", stream, "MyPage.asp");
-			unlink("/tmp/mypage.tmp");
+			do_file_attach(handler, fname, stream, "MyPage.asp");
+			unlink(fname);
 		}
 		i++;
 	}
