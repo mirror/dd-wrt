@@ -1627,8 +1627,8 @@ loadplugin(argv)
     if (handle == 0) {
 	err = dlerror();
 	if (err != 0)
-	    option_error("%s", err);
-	option_error("Couldn't load plugin %s", arg);
+	    fprintf(stderr, "%s\n", err);
+	fprintf(stderr,"Couldn't load plugin %s\n", arg);
 	goto err;
     }
     init = (void (*)(void))dlsym(handle, "plugin_init");
