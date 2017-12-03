@@ -1,9 +1,9 @@
 
 #CC?=gcc
 
-CFLAGS += $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF
+CFLAGS += $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF -mpoke-function-name
 # Run this with make LIBS=-lrt if you want to compile on kfreebsd
-
+LIBS = -L$(TOP)/libutils -L$(TOP)/nvram -lshutils -lutils -lnvram
 all: multicall
 
 clean: distclean
