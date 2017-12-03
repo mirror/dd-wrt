@@ -52,3 +52,4 @@ dnscrypt-install:
 
 
 	install -D dnscrypt/dnscrypt-resolvers.csv $(INSTALLDIR)/dnscrypt/etc/dnscrypt/
+	install -D dnscrypt/contrib/dnscrypt-blacklist.txt $(INSTALLDIR)/dnscrypt/etc/dnscrypt/
