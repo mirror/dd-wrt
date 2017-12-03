@@ -26,16 +26,10 @@ INSTALL	= install
 RP_VERSION=3.8
 
 #COPTS=-O2 -g
-CFLAGS=$(COPTS)  $(MIPS16_OPT) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include -I../../../include -I../../../ '-DRP_VERSION="$(RP_VERSION)"' 
+CFLAGS=$(COPTS)  $(MIPS16_OPT) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include -I../../../include -I../../../ '-DRP_VERSION="$(RP_VERSION)"'
 #CFLAGS=$(COPTS) -I$(LINUXDIR)/include/linux
 LDFLAGS = -L$(TOP)/nvram -lnvram
 include $(TOP)/.config
-
-ifneq ($(CONFIG_DIST),"micro")
-ifneq ($(CONFIG_DIST),"micro-special")
-CFLAGS += -DNEED_PRINTF
-endif
-endif
 
 #ifeq ($(CONFIG_AQOS),y)
 #CFLAGS += -DHAVE_AQOS 
