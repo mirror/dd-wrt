@@ -242,7 +242,7 @@ childHandler(pid_t pid, int status, void *s)
 #endif
 
     memset(&conn, 0, sizeof(conn));
-    conn.useHostUniq = 0;
+    conn.hostUniq = NULL;
 
     syslog(LOG_INFO,
 	   "Session %u closed for client "
@@ -1892,7 +1892,7 @@ startPPPDUserMode(ClientSession *session)
     }
     if (PassUnitOptionToPPPD) {
 	argv[c++] = "unit";
-	sprintf(buffer, "%u", (unsigned int) (ntohs(session->sess) - 1 - SessOffset));
+	sprintf(buffer, "%u", (unsigned int) (ntohs(session->sess) - 1));
 	argv[c++] = buffer;
     }
     if (session->requested_mtu > 1492) {
@@ -2058,7 +2058,7 @@ PppoeStopSession(ClientSession *ses,
     PPPoEConnection conn;
 
     memset(&conn, 0, sizeof(conn));
-    conn.useHostUniq = 0;
+    conn.hostUniq = NULL;
 
     memcpy(conn.myEth, ses->ethif->mac, ETH_ALEN);
     conn.discoverySocket = ses->ethif->sock;

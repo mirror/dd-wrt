@@ -38,7 +38,7 @@ static char const RCSID[] =
 
 #ifdef HAVE_N_HDLC
 #ifndef N_HDLC
-#include <linux/termios.h>
+#include <pty.h>
 #endif
 #endif
 
@@ -236,6 +236,76 @@ asyncReadFromPPP(PPPoEConnection *conn, PPPoEPacket *packet)
     }
 }
 
+/**********************************************************************
+*%FUNCTION: decodeFromPPP
+*%ARGUMENTS:
+* conn -- PPPoEConnection structure
+* packet -- buffer in which to place PPPoE packet
+*%RETURNS:
+* Nothing
+*%DESCRIPTION:
+* Reads from an async PPP device and builds a PPPoE packet to transmit
+***********************************************************************/
+void
+decodeFromPPP(PPPoEConnection *conn, PPPoEPacket *packet, unsigned char *buf, int r)
+{
+    unsigned char *ptr = buf;
+    unsigned char c;
+
+    while(r) {
+	if (PPPState == STATE_WAITFOR_FRAME_ADDR) {
+	    while(r) {
+		--r;
+		if (*ptr++ == FRAME_ADDR) {
+		    PPPState = STATE_DROP_PROTO;
+		    break;
+		}
+	    }
+	}
+
+	/* Still waiting... */
+	if (PPPState == STATE_WAITFOR_FRAME_ADDR) return;
+
+	while(r && PPPState == STATE_DROP_PROTO) {
+	    --r;
+	    if (*ptr++ == (FRAME_CTRL ^ FRAME_ENC)) {
+		PPPState = STATE_BUILDING_PACKET;
+	    }
+	}
+
+	if (PPPState == STATE_DROP_PROTO) return;
+
+	/* Start building frame */
+	while(r && PPPState == STATE_BUILDING_PACKET) {
+	    --r;
+	    c = *ptr++;
+	    switch(c) {
+	    case FRAME_ESC:
+		PPPXorValue = FRAME_ENC;
+		break;
+	    case FRAME_FLAG:
+		if (PPPPacketSize < 2) {
+		    rp_fatal("Packet too short from PPP (asyncReadFromPPP)");
+		}
+		sendSessionPacket(conn, packet, PPPPacketSize-2);
+		PPPPacketSize = 0;
+		PPPXorValue = 0;
+		PPPState = STATE_WAITFOR_FRAME_ADDR;
+		break;
+	    default:
+		if (PPPPacketSize >= ETH_JUMBO_LEN - 4) {
+		    syslog(LOG_ERR, "Packet too big!  Check MTU on PPP interface");
+		    PPPPacketSize = 0;
+		    PPPXorValue = 0;
+		    PPPState = STATE_WAITFOR_FRAME_ADDR;
+		} else {
+		    packet->payload[PPPPacketSize++] = c ^ PPPXorValue;
+		    PPPXorValue = 0;
+		}
+	    }
+	}
+    }
+}
 /**********************************************************************
 *%FUNCTION: pppFCS16
 *%ARGUMENTS:

@@ -16,7 +16,7 @@
 #***********************************************************************
 
 # Version is set ONLY IN THE MAKEFILE!  Don't delete this!
-VERSION=3.11
+VERSION=3.12
 
 DEFINES=
 prefix=@prefix@
@@ -73,6 +73,11 @@ pppoe-sniff: pppoe-sniff.o if.o common.o debug.o
 pppoe-server: pppoe-server.o if.o debug.o common.o md5.o libevent/libevent.a @PPPOE_SERVER_DEPS@
 	@CC@ -o $@ @RDYNAMIC@ $^ $(LDFLAGS) $(PPPOE_SERVER_LIBS) -Llibevent -levent
 
+# Experimental code from Savoir Faire Linux.  I do not consider it
+# production-ready, so not part of the official distribution.
+#pppoe-bridge: pppoe-bridge.o ppp.o modem.o rs232.o if.o debug.o common.o md5.o libevent/libevent.a @PPPOE_SERVER_DEPS@
+#	@CC@ -o $@ @RDYNAMIC@ $^ $(LDFLAGS) $(PPPOE_SERVER_LIBS) -Llibevent -levent
+
 pppoe: pppoe.o if.o debug.o common.o ppp.o discovery.o
 	@CC@ -o $@ $^ $(LDFLAGS)
 
@@ -94,6 +99,11 @@ md5.o: md5.c md5.h
 pppoe-server.o: pppoe-server.c pppoe.h @PPPOE_SERVER_DEPS@
 	@CC@ $(CFLAGS) '-DVERSION="$(VERSION)"' -c -o $@ $<
 
+# Experimental code from Savoir Faire Linux.  I do not consider it
+# production-ready, so not part of the official distribution.
+#pppoe-bridge.o: pppoe-bridge.c pppoe.h @PPPOE_SERVER_DEPS@
+#	@CC@ $(CFLAGS) '-DVERSION="$(VERSION)"' -c -o $@ $<
+
 pppoe-sniff.o: pppoe-sniff.c pppoe.h
 	@CC@ $(CFLAGS) '-DVERSION="$(VERSION)"' -c -o $@ $<
 
@@ -111,6 +121,15 @@ debug.o: debug.c pppoe.h
 
 relay.o: relay.c relay.h pppoe.h
 	@CC@ $(CFLAGS) '-DVERSION="$(VERSION)"' -c -o $@ $<
+
+# Experimental code from Savoir Faire Linux.  I do not consider it
+# production-ready, so not part of the official distribution.
+#modem.o: modem.c modem.h
+#	@CC@ $(CFLAGS) '-DVERSION="$(VERSION)"' -c -o $@ $<
+
+#rs232.o: rs232.c rs232.h
+#	@CC@ $(CFLAGS) '-DVERSION="$(VERSION)"' -c -o $@ $<
+
 
 # Linux-specific plugin
 rp-pppoe.so: plugin/plugin.o plugin/libplugin.a
@@ -307,7 +326,7 @@ update-version:
 	test -f ../servpoet.spec && sed -e 's/^Version: .*$$/Version: $(VERSION)/' ../servpoet.spec > ../servpoet.spec.new && mv ../servpoet.spec.new ../servpoet.spec || true
 	test -f ../servpoet.spec && sed -e 's+^Source: .*$$+Source: http://www.roaringpenguin.com/pppoe/servpoet-$(VERSION).tar.gz+' ../servpoet.spec > ../servpoet.spec.new && mv ../servpoet.spec.new ../servpoet.spec || true
 
-# Convenience target for David!  Don't try to use this one.
+# Convenience target for Dianne!  Don't try to use this one.
 km:
 	./configure --enable-plugin=/home/dfs/Archive/PPP/ppp-2.4.0.pppoe4-patched-dfs
 

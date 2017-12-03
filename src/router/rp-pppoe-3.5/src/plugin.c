@@ -117,10 +117,19 @@ PPPOEInitDevice(void)
     if (pppd_pppoe_service) {
 	SET_STRING(conn->serviceName, pppd_pppoe_service);
     }
+    if (strlen(devnam) > IFNAMSIZ) {
+	fatal("Device name %s is too long - max length %d",
+	      devnam, (int) IFNAMSIZ);
+    }
+
     SET_STRING(conn->ifName, devnam);
     conn->discoverySocket = -1;
     conn->sessionSocket = -1;
-    conn->useHostUniq = 1;
+    conn->hostUniq = malloc(17);
+    if (!conn->hostUniq) {
+	fatal("Out of Memory");
+    }
+    snprintf(conn->hostUniq, 17, "%lx", (unsigned long) getpid());
     conn->printACNames = printACNames;
     conn->discoveryTimeout = PADI_TIMEOUT;
     return 1;
@@ -214,7 +223,8 @@ PPPOEConnectDevice(void)
     sp.sa_family = AF_PPPOX;
     sp.sa_protocol = PX_PROTO_OE;
     sp.sa_addr.pppoe.sid = conn->session;
-    memcpy(sp.sa_addr.pppoe.dev, conn->ifName, IFNAMSIZ);
+    memset(sp.sa_addr.pppoe.dev, 0, IFNAMSIZ);
+    memcpy(sp.sa_addr.pppoe.dev, conn->ifName, strlen(conn->ifName));
     memcpy(sp.sa_addr.pppoe.remote, conn->peerEth, ETH_ALEN);
 
     /* Set remote_number for ServPoET */
@@ -302,7 +312,8 @@ PPPOEDisconnectDevice(void)
     sp.sa_family = AF_PPPOX;
     sp.sa_protocol = PX_PROTO_OE;
     sp.sa_addr.pppoe.sid = 0;
-    memcpy(sp.sa_addr.pppoe.dev, conn->ifName, IFNAMSIZ);
+    memset(sp.sa_addr.pppoe.dev, 0, IFNAMSIZ);
+    memcpy(sp.sa_addr.pppoe.dev, conn->ifName, strlen(conn->ifName));
     memcpy(sp.sa_addr.pppoe.remote, conn->peerEth, ETH_ALEN);
     if (connect(conn->sessionSocket, (struct sockaddr *) &sp,
 		sizeof(struct sockaddr_pppox)) < 0) {
@@ -311,7 +322,10 @@ PPPOEDisconnectDevice(void)
     }
     close(conn->sessionSocket);
     close(conn->discoverySocket);
-
+    if (conn->ifName) {
+	free(conn->ifName);
+    }
+    free(conn);
 }
 
 static void

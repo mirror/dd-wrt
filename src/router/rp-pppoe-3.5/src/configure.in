@@ -50,7 +50,9 @@ fi
 
 dnl Check for N_HDLC line discipline
 AC_MSG_CHECKING(for N_HDLC line discipline)
-AC_TRY_COMPILE([#include <linux/termios.h>],
+AC_TRY_COMPILE([
+#include <pty.h>
+],
 	[int x = N_HDLC;],
 	ac_cv_n_hdlc=yes,
 	ac_cv_n_hdlc=no)
@@ -166,7 +168,7 @@ fi
 AC_TRY_RUN([#include <sys/socket.h>
 #include <net/ethernet.h>
 #include <linux/if.h>
-#include <linux/in.h>
+#include <netinet/in.h>
 #include <linux/if_pppox.h>
 int main()
 {

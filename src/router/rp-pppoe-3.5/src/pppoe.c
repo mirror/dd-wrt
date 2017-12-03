@@ -4,7 +4,7 @@
 *
 * Implementation of user-space PPPoE redirector for Linux.
 *
-* Copyright (C) 2000-2012 by Roaring Penguin Software Inc.
+* Copyright (C) 2000-2015 by Roaring Penguin Software Inc.
 *
 * This program may be distributed according to the terms of the GNU
 * General Public License, version 2 or (at your option) any later version.
@@ -28,6 +28,7 @@ static char const RCSID[] =
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <errno.h>
 
 #ifdef HAVE_SYS_TIME_H
@@ -51,7 +52,7 @@ static char const RCSID[] =
 
 #ifdef HAVE_N_HDLC
 #ifndef N_HDLC
-#include <linux/termios.h>
+#include <pty.h>
 #endif
 #endif
 
@@ -370,6 +371,7 @@ usage(char const *argv0)
 	    "   -S name        -- Set desired service name.\n"
 	    "   -C name        -- Set desired access concentrator name.\n"
 	    "   -U             -- Use Host-Unique to allow multiple PPPoE sessions.\n"
+	    "   -W value       -- Use Host-Unique set to 'value' specifically.\n"
 	    "   -s             -- Use synchronous PPP encapsulation.\n"
 	    "   -m MSS         -- Clamp incoming and outgoing MSS options.\n"
 	    "   -p pidfile     -- Write process-ID to pidfile.\n"
@@ -379,7 +381,7 @@ usage(char const *argv0)
 	    "   -d             -- Perform discovery, print session info and exit.\n"
 	    "   -f disc:sess   -- Set Ethernet frame types (hex).\n"
 	    "   -h             -- Print usage information.\n\n"
-	    "PPPoE Version %s, Copyright (C) 2001-2006 Roaring Penguin Software Inc.\n"
+	    "PPPoE Version %s, Copyright (C) 2001-2015 Roaring Penguin Software Inc.\n"
 	    "PPPoE comes with ABSOLUTELY NO WARRANTY.\n"
 	    "This is free software, and you are welcome to redistribute it under the terms\n"
 	    "of the GNU General Public License, version 2 or any later version.\n"
@@ -432,9 +434,9 @@ main(int argc, char *argv[])
     openlog("pppoe", LOG_PID, LOG_DAEMON);
 
 #ifdef DEBUGGING_ENABLED
-    options = "I:VAT:D:hS:C:Usm:np:e:kdf:F:t:";
+    options = "I:VAT:D:hS:C:UW:sm:np:e:kdf:F:t:";
 #else
-    options = "I:VAT:hS:C:Usm:np:e:kdf:F:t:";
+    options = "I:VAT:hS:C:UW:sm:np:e:kdf:F:t:";
 #endif
     while((opt = getopt(argc, argv, options)) != -1) {
 	switch(opt) {
@@ -522,7 +524,24 @@ main(int argc, char *argv[])
 	    conn.synchronous = 1;
 	    break;
 	case 'U':
-	    conn.useHostUniq = 1;
+	    if (conn.hostUniq) {
+		fprintf(stderr, "-U and -W are mutually-exclusive and may only be used once.\n");
+		exit(EXIT_FAILURE);
+	    }
+	    /* Allows for a 64-bit PID */
+	    conn.hostUniq = malloc(17);
+	    if (!conn.hostUniq) {
+		fprintf(stderr, "Out of memory.\n");
+		exit(EXIT_FAILURE);
+	    }
+	    sprintf(conn.hostUniq, "%lx", (unsigned long) getpid());
+	    break;
+	case 'W':
+	    if (conn.hostUniq) {
+		fprintf(stderr, "-U and -W are mutually-exclusive and may only be used once.\n");
+		exit(EXIT_FAILURE);
+	    }
+	    SET_STRING(conn.hostUniq, optarg);
 	    break;
 #ifdef DEBUGGING_ENABLED
 	case 'D':
