@@ -92,6 +92,7 @@
 #include <ctype.h>
 #include <termios.h>
 #include <unistd.h>
+#include <linux/sockios.h>
 
 /* This is in netdevice.h. However, this compile will fail miserably if
    you attempt to include netdevice.h because it has so many references
