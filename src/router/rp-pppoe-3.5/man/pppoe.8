@@ -1,5 +1,5 @@
 .\" LIC: GPL
-.TH PPPOE 8 "3 July 2000"
+.TH PPPOE 8 "5 October 2015"
 .UC 4
 .SH NAME
 pppoe \- user-space PPPoE client.
@@ -73,7 +73,14 @@ Causes \fBpppoe\fR to use the Host-Uniq tag in its discovery packets.  This
 lets you run multiple \fBpppoe\fR daemons without having their discovery
 packets interfere with one another.  You must supply this option to
 \fIall\fR \fBpppoe\fR daemons if you intend to run multiple daemons
-simultaneously.
+simultaneously.  The specific Host-Uniq value used is the hexadecimal
+representation of the \fBpppoe\fR process's PID.
+
+.TP
+.B \-W value
+Causes \fBpppoe\fR to use the Host-Uniq tag in its discovery packets,
+and furthermore to set the value of Host-Uniq to \fIvalue\fR.  Use with
+caution.  Note that \fB\-W\fR and \fB\-U\fR are mutually-incompatible.
 
 .TP
 .B \-s
@@ -226,7 +233,7 @@ things to syslog.  You may have to turn on logging of \fIdebug\fR-level
 messages for complete diagnosis.
 
 .SH AUTHORS
-\fBpppoe\fR was written by David F. Skoll <dfs@roaringpenguin.com>,
+\fBpppoe\fR was written by Dianne Skoll <dfs@roaringpenguin.com>,
 with much inspiration from an earlier version by Luke Stras.
 
 The \fBpppoe\fR home page is \fIhttp://www.roaringpenguin.com/pppoe/\fR.

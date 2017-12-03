@@ -209,9 +209,9 @@ Event_HandleEvent(EventSelector *es)
 	    }
 	    /* Do callback */
 	    if (flags) {
-		EVENT_DEBUG(("Enter callback: eh=%p flags=%u\n", eh, flags));
+                EVENT_DEBUG(("Enter callback: eh=%p flags=%u fd=%d\n", eh, flags, eh->fd));
 		eh->fn(es, eh->fd, flags, eh->data);
-		EVENT_DEBUG(("Leave callback: eh=%p flags=%u\n", eh, flags));
+                EVENT_DEBUG(("Leave callback: eh=%p flags=%u fd=%d\n", eh, flags, eh->fd));
 	    }
 	}
     }
