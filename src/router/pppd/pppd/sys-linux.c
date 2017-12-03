@@ -73,12 +73,12 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
-#include <sys/errno.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/utsname.h>
 #include <sys/sysmacros.h>
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
@@ -233,7 +233,7 @@ static int baud_rate_of (int speed);
 static void close_route_table (void);
 static int open_route_table (void);
 static int read_route_table (struct rtentry *rt);
-static int defaultroute_exists (struct rtentry *rt);
+static int defaultroute_exists (struct rtentry *rt, int metric);
 static int get_ether_addr (u_int32_t ipaddr, struct sockaddr *hwaddr,
 			   char *name, int namelen);
 static void decode_version (char *buf, int *version, int *mod, int *patch);
@@ -243,6 +243,8 @@ static int make_ppp_unit(void);
 static int setifstate (int u, int state);
 
 extern u_char	inpacket_buf[];	/* borrowed from main.c */
+
+extern int dfl_route_metric;
 
 /*
  * SET_SA_FAMILY - set the sa_family field of a struct sockaddr,
@@ -668,6 +670,22 @@ static int make_ppp_unit()
 	{
 		error("Couldn't create new ppp unit: %m");
 	}
+
+	if (x == 0 && req_ifname[0] != '\0') {
+		struct ifreq ifr;
+		char t[MAXIFNAMELEN];
+		memset(&ifr, 0, sizeof(struct ifreq));
+		slprintf(t, sizeof(t), "%s%d", PPP_DRV_NAME, ifunit);
+		strncpy(ifr.ifr_name, t, IF_NAMESIZE);
+		strncpy(ifr.ifr_newname, req_ifname, IF_NAMESIZE);
+		x = ioctl(sock_fd, SIOCSIFNAME, &ifr);
+		if (x < 0) {
+		    error("Couldn't rename interface %s to %s: %m", t, req_ifname);
+		} else {
+		    info("Renamed interface %s to %s", t, req_ifname);
+		}
+	}
+
 	return x;
 }
 
@@ -1485,7 +1503,7 @@ static char *path_to_procfs(const char *tail)
 FILE *route_fd = (FILE *) 0;
 static char route_buffer[512];
 static int route_dev_col, route_dest_col, route_gw_col;
-static int route_flags_col, route_mask_col;
+static int route_flags_col, route_metric_col, route_mask_col;
 static int route_num_cols;
 
 static int open_route_table (void);
@@ -1528,6 +1546,7 @@ static int open_route_table (void)
     route_dest_col = 1;
     route_gw_col = 2;
     route_flags_col = 3;
+    route_metric_col = 6;
     route_mask_col = 7;
     route_num_cols = 8;
 
@@ -1588,6 +1607,7 @@ static int read_route_table(struct rtentry *rt)
     SIN_ADDR(rt->rt_genmask) = strtoul(cols[route_mask_col], NULL, 16);
 
     rt->rt_flags = (short) strtoul(cols[route_flags_col], NULL, 16);
+    rt->rt_metric = (short) strtoul(cols[route_metric_col], NULL, 10);
     rt->rt_dev   = cols[route_dev_col];
 
     return 1;
@@ -1596,9 +1616,10 @@ static int read_route_table(struct rtentry *rt)
 /********************************************************************
  *
  * defaultroute_exists - determine if there is a default route
+ * with the given metric (or negative for any)
  */
 
-static int defaultroute_exists (struct rtentry *rt)
+static int defaultroute_exists (struct rtentry *rt, int metric)
 {
     int result = 0;
 
@@ -1611,7 +1632,8 @@ static int defaultroute_exists (struct rtentry *rt)
 
 	if (kernel_version > KVERSION(2,1,0) && SIN_ADDR(rt->rt_genmask) != 0)
 	    continue;
-	if (SIN_ADDR(rt->rt_dst) == 0L) {
+	if (SIN_ADDR(rt->rt_dst) == 0L && (metric < 0
+					   || rt->rt_metric == metric)) {
 	    result = 1;
 	    break;
 	}
@@ -1658,16 +1680,14 @@ int sifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
 {
     struct rtentry rt;
 
-    if (defaultroute_exists(&rt) && strcmp(rt.rt_dev, ifname) != 0) {
-	if (rt.rt_flags & RTF_GATEWAY)
-	{
-	    error("not replacing existing default route via %I",
-		  SIN_ADDR(rt.rt_gateway));
+    if (defaultroute_exists(&rt, dfl_route_metric) && strcmp(rt.rt_dev, ifname) != 0) {
+	if (rt.rt_flags & RTF_GATEWAY) {
+	    error("not replacing existing default route via %I with metric %d",
+		  SIN_ADDR(rt.rt_gateway), dfl_route_metric);
 	}
-	else
-	{
-	    error("not replacing existing default route through %s",
-		  rt.rt_dev);
+	else {
+	    error("not replacing existing default route through %s with metric %d",
+		  rt.rt_dev, dfl_route_metric);
 	}
 	return 0;
     }
@@ -1676,6 +1696,7 @@ int sifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
     SET_SA_FAMILY (rt.rt_dst, AF_INET);
 
     rt.rt_dev = ifname;
+    rt.rt_metric = dfl_route_metric + 1; /* +1 for binary compatibility */
 
     if (kernel_version > KVERSION(2,1,0)) {
 	SET_SA_FAMILY (rt.rt_genmask, AF_INET);
@@ -1709,6 +1730,9 @@ int cifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
     SET_SA_FAMILY (rt.rt_gateway, AF_INET);
 
     rt.rt_dev = ifname;
+
+    rt.rt_dev = ifname;
+    rt.rt_metric = dfl_route_metric + 1; /* +1 for binary compatibility */
 
     if (kernel_version > KVERSION(2,1,0)) {
 	SET_SA_FAMILY (rt.rt_genmask, AF_INET);

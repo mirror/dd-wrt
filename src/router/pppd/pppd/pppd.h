@@ -83,6 +83,16 @@
 #define MAXARGS		1	/* max # args to a command */
 #define MAXNAMELEN	256	/* max length of hostname or name for auth */
 #define MAXSECRETLEN	256	/* max length of password or secret */
+#define MAXIFNAMELEN	32	/* max length of interface name; or use IFNAMSIZ, can we
+				   always include net/if.h? */
+
+/*
+ * If PPP_DRV_NAME is not defined, use the default "ppp" as the device name.
+ * Where should PPP_DRV_NAME come from? Do we include it here?
+ */
+#if !defined(PPP_DRV_NAME)
+#define PPP_DRV_NAME	"ppp"
+#endif /* !defined(PPP_DRV_NAME) */
 
 /*
  * Option descriptor structure.
@@ -328,6 +338,7 @@ extern bool	tune_kernel;	/* May alter kernel settings as necessary */
 extern int	connect_delay;	/* Time to delay after connect script */
 extern int	max_data_rate;	/* max bytes/sec through charshunt */
 extern int	req_unit;	/* interface unit number to use */
+extern char	req_ifname[MAXIFNAMELEN]; /* interface name to use */
 extern bool	multilink;	/* enable multilink operation */
 extern bool	noendpoint;	/* don't send or accept endpt. discrim. */
 extern char	*bundle_name;	/* bundle name for multilink */
