@@ -31,7 +31,6 @@
 
 /* prevent deadlock that occurs when a signal handler, which interrupted a
  * call to syslog(), attempts to call syslog(). */
-#ifdef NEED_PRINTF
 static int syslog_nesting = 0;
 #define SYSLOG_CALL(code) do {      \
     if (++syslog_nesting < 2) {     \
@@ -39,6 +38,7 @@ static int syslog_nesting = 0;
     }                               \
     --syslog_nesting;               \
 } while(0)
+#ifdef NEED_PRINTF
 
 void init_log()
 {
@@ -49,7 +49,6 @@ void init_log()
 	logopen=1;
     }
 }
-
 void l2tp_log (int level, const char *fmt, ...)
 {
     char buf[2048];
@@ -58,7 +57,7 @@ void l2tp_log (int level, const char *fmt, ...)
     vsnprintf (buf, sizeof (buf), fmt, args);
     va_end (args);
     
-    if(gconfig.syslog) {
+    if(gconfig.daemon) {
 	init_log();
 	SYSLOG_CALL( syslog (level, "%s", buf) );
     } else {
@@ -79,18 +78,12 @@ void set_error (struct call *c, int error, const char *fmt, ...)
     va_end (args);
 }
 #endif
-
 struct buffer *new_buf (int size)
 {
-    struct buffer *b = NULL;
+    struct buffer *b = malloc (sizeof (struct buffer));
 
-    if (!size || size < 0)
+    if (!b || !size || size < 0)
         return NULL;
-
-    b = malloc (sizeof (struct buffer));
-    if (!b)
-        return NULL;
-
     b->rstart = malloc (size);
     if (!b->rstart)
     {
@@ -177,6 +170,7 @@ void do_packet_dump (struct buffer *buf)
     printf ("}\n");
 }
 
+
 inline void toss (struct buffer *buf)
 {
     /*
@@ -199,13 +193,13 @@ struct ppp_opts *add_opt (struct ppp_opts *option, char *fmt, ...)
 {
     va_list args;
     struct ppp_opts *new, *last;
-    new = malloc (sizeof (struct ppp_opts));
+    new = (struct ppp_opts *) malloc (sizeof (struct ppp_opts));
     if (!new)
     {
         l2tp_log (LOG_WARNING,
 		  "%s : Unable to allocate ppp option memory.  Expect a crash\n",
 		  __FUNCTION__);
-        return option;
+        return NULL;
     }
     new->next = NULL;
     va_start (args, fmt);
