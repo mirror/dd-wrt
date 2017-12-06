@@ -88,30 +88,33 @@ void add_payload_hdr (struct tunnel *t, struct call *c, struct buffer *buf)
 /*	c->rbit=0; */
 }
 
-int read_packet (struct call *c)
+int read_packet (struct buffer *buf, int fd, int convert)
 {
-    struct buffer *buf = c->ppp_buf;
-    unsigned char ch;
+    unsigned char c;
     unsigned char escape = 0;
     unsigned char *p;
+    static unsigned char rbuf[MAX_RECV_SIZE];
+    static int pos = 0;
+    static int max = 0;
     int res;
     int errors = 0;
 
-    p = buf->start + buf->len;
+    /* Read a packet, doing async->sync conversion if necessary */
+    p = buf->start;
     while (1)
     {
-        if (c->rbuf_pos >= c->rbuf_max)
+        if (pos >= max)
         {
-            c->rbuf_max = read(c->fd, c->rbuf, sizeof (c->rbuf));
-            res = c->rbuf_max;
-            c->rbuf_pos = 0;
+            max = read(fd, rbuf, sizeof (rbuf));
+            res = max;
+            pos = 0;
         }
         else
         {
             res = 1;
         }
 
-        ch = c->rbuf[c->rbuf_pos++];
+        c = rbuf[pos++];
 
 	/* if there was a short read, then see what is about */
         if (res < 1)
@@ -129,7 +132,7 @@ int read_packet (struct call *c)
                 /*
                    * Oops, we were interrupted!
                    * Or, we ran out of data too soon
-                   * anyway, we discarded whatever it is we
+                   * anyway, we discared whatever it is we
                    * have
                  */
                 return 0;
@@ -142,37 +145,50 @@ int read_packet (struct call *c)
                 l2tp_log (LOG_DEBUG,
                      "%s: Too many errors.  Declaring call dead.\n",
                      __FUNCTION__);
-                c->rbuf_pos = 0;
-                c->rbuf_max = 0;
+		pos=0;
+		max=0;
                 return -errno;
             }
             continue;
         }
 
-        switch (ch)
+        switch (c)
         {
         case PPP_FLAG:
             if (escape)
             {
                 l2tp_log (LOG_DEBUG, "%s: got an escaped PPP_FLAG\n",
                      __FUNCTION__);
-                c->rbuf_pos = 0;
-                c->rbuf_max = 0;
+		pos=0;
+		max=0;
                 return -EINVAL;
             }
 
-            if (buf->len >= 2) {
-              /* must be the end, drop the FCS */
-              buf->len -= 2;
-            }
-            else if (buf->len == 1) {
-              /* Do nothing, just return the single character*/
-            }
-            else {
-              /* if the buffer is empty, then we have the beginning
-               * of a packet, not the end
-               */
-              break;
+            if (convert)
+            {
+	      if (buf->len >= 2) {
+		/* must be the end, drop the FCS */
+		buf->len -= 2;
+	      }
+	      else if (buf->len == 1) {
+		/* Do nothing, just return the single character*/
+	      }
+	      else {
+		/* if the buffer is empty, then we have the beginning
+		 * of a packet, not the end
+		 */
+		break;
+	      }
+	    }
+            else
+            {
+		/* if there is space, then insert the byte */
+                if (buf->len < buf->maxlen)
+                {
+                    *p = c;
+                    p++;
+                    buf->len++;
+                }
             }
 
 	    /* return what we have now */
@@ -180,21 +196,24 @@ int read_packet (struct call *c)
 
         case PPP_ESCAPE:
             escape = PPP_TRANS;
-            break;
+            if (convert)
+                break;
 
+	    /* fall through */
         default:
-            ch ^= escape;
+            if (convert)
+                c ^= escape;
             escape = 0;
             if (buf->len < buf->maxlen)
             {
-                *p = ch;
+                *p = c;
                 p++;
                 buf->len++;
                 break;
             }
             l2tp_log (LOG_WARNING, "%s: read overrun\n", __FUNCTION__);
-            c->rbuf_pos = 0;
-            c->rbuf_max = 0;
+	    pos=0;
+	    max=0;
             return -EINVAL;
         }
     }
@@ -223,8 +242,8 @@ void call_close (struct call *c)
          * entire tunnel
          */
 
-        /* First de-schedule any remaining packet transmissions
-           for this tunnel.  That means Hello's and any remaining
+        /* First deschedule any remaining packet transmissions
+           for this tunnel.  That means Hello's and any reminaing
            packets scheduled for transmission.  This is a very
            nasty little piece of code here. */
 
@@ -265,7 +284,7 @@ void call_close (struct call *c)
         if (c->closing)
         {
             /* Really close this tunnel, as our
-               StopCCN has been ACK'd */
+               StopCCN has been ack'd */
 #ifdef DEBUG_CLOSE
             l2tp_log (LOG_DEBUG, "%s: Actually closing tunnel %d\n", __FUNCTION__,
                  c->container->ourtid);
@@ -317,7 +336,7 @@ void call_close (struct call *c)
             tmp = tmp2;
         }
         l2tp_log (LOG_INFO,
-             "Connection %d closed to %s, port %d (%s)\n",
+             "Connection %d closed to %s, port %d (%s)\n", 
              c->container->tid,
              IPADDY (c->container->peer.sin_addr),
              ntohs (c->container->peer.sin_port), c->errormsg);
@@ -371,7 +390,7 @@ void call_close (struct call *c)
              c->ourcid, IPADDY (c->container->peer.sin_addr));
     }
     /*
-     * Note that we're in the process of closing now
+       * Note that we're in the process of closing now
      */
     c->closing = -1;
 }
@@ -389,37 +408,30 @@ void destroy_call (struct call *c)
      * Close the tty
      */
     if (c->fd > 0)
-    {
         close (c->fd);
-        c->fd = -1;
-    }
 /*	if (c->dethrottle) deschedule(c->dethrottle); */
     if (c->zlb_xmit)
         deschedule (c->zlb_xmit);
-    toss(c->ppp_buf);
 
 #ifdef IP_ALLOCATION
     if (c->addr)
         unreserve_addr (c->addr);
-
-    if (c->lns && c->lns->localrange)
-        unreserve_addr (c->lns->localaddr);
 #endif
 
     /*
-     * Kill off PPPD and wait for it to
+     * Kill off pppd and wait for it to 
      * return to us.  This should only be called
-     * in rare cases if PPPD hasn't already died
+     * in rare cases if pppd hasn't already died
      * voluntarily
      */
     pid = c->pppd;
-    if (pid > 0)
+    if (pid)
     {
       /* Set c->pppd to zero to prevent recursion with child_handler */
       c->pppd = 0;
       /*
-       * There is a bug in some PPPD versions where sending a SIGTERM
-       * does not actually seem to kill PPPD, and xl2tpd waits indefinately
+       * There is a bug in some pppd versions where sending a SIGTERM
+       * does not actually seem to kill pppd, and xl2tpd waits indefinately
        * using waitpid, not accepting any new connections either. Therefor
        * we now use some more force and send it a SIGKILL instead of SIGTERM.
        * One confirmed buggy version of pppd is ppp-2.4.2-6.4.RHEL4
@@ -482,8 +494,6 @@ void destroy_call (struct call *c)
             c->lac->rsched = schedule (tv, magic_lac_dial, c->lac);
         }
     }
-    if(c->oldptyconf)
-        free(c->oldptyconf);
 
     free (c);
 }
@@ -492,7 +502,7 @@ void destroy_call (struct call *c)
 struct call *new_call (struct tunnel *parent)
 {
     unsigned char entropy_buf[2] = "\0";
-    struct call *tmp = calloc (1,sizeof (struct call));
+    struct call *tmp = malloc (sizeof (struct call));
 
     if (!tmp)
         return NULL;
@@ -544,9 +554,6 @@ struct call *new_call (struct tunnel *parent)
     tmp->container = parent;
 /*	tmp->rws = -1; */
     tmp->fd = -1;
-    tmp->rbuf_pos = 0;
-    tmp->rbuf_max = 0;
-    tmp->ppp_buf = new_payload (parent->peer);
     tmp->oldptyconf = malloc (sizeof (struct termios));
     tmp->pnu = 0;
     tmp->cnu = 0;
@@ -568,8 +575,8 @@ struct call *new_call (struct tunnel *parent)
 /*	if (tmp->ourrws >= 0)
 		tmp->ourfbit = FBIT;
 	else */
-    tmp->ourfbit = 0;           /* initialize to 0 since we don't actually use this
-                                   value at this point anywhere in the code (I don't
+    tmp->ourfbit = 0;           /* initialize to 0 since we don't actually use this 
+                                   value at this point anywhere in the code (I don't 
                                    think)  We might just be able to remove it completely */
     tmp->dial_no[0] = '\0';     /* jz: dialing number for outgoing call */
     return tmp;
@@ -597,7 +604,7 @@ struct call *get_call (int tunnel, int call,  struct in_addr addr, int port,
 		       IPsecSAref_t refme, IPsecSAref_t refhim)
 {
     /*
-     * Figure out which call struct should handle this.
+     * Figure out which call struct should handle this. 
      * If we have tunnel and call ID's then they are unique.
      * Otherwise, if the tunnel is 0, look for an existing connection
      * or create a new tunnel.

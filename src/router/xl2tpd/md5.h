@@ -4,8 +4,7 @@
 #ifdef __alpha
 typedef unsigned int uint32;
 #else
-#include <stdint.h>
-typedef uint32_t uint32;
+typedef unsigned long uint32;
 #endif
 
 struct MD5Context

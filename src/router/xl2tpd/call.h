@@ -70,10 +70,6 @@ struct call
      */
     struct tunnel *container;   /* Tunnel we belong to */
     int fd;                     /* File descriptor for pty */
-    unsigned char rbuf[MAX_RECV_SIZE];  /* pty read buffer */
-    int rbuf_pos;               /* Read buffer position */
-    int rbuf_max;               /* Read buffer data length */
-    struct buffer *ppp_buf;     /* Packet readed from pty */
     struct termios *oldptyconf;
     int die;
     int nego;                   /* Show negotiation? */
@@ -108,10 +104,10 @@ extern struct call *get_tunnel (int, unsigned int, int);
 extern void destroy_call (struct call *);
 extern struct call *new_call (struct tunnel *);
 #ifdef NEED_PRINTF
- extern void set_error (struct call *, int, const char *, ...);
+extern void set_error (struct call *, int, const char *, ...);
 #else
 #define set_error(a,b, fmt,...) while(0) {}
-#endif
 
+#endif
 void *call_thread_init (void *);
 void call_close (struct call *);

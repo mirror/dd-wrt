@@ -105,12 +105,13 @@ struct schedule_entry *schedule (struct timeval tv, void (*func) (void *),
     };
     if (q)
     {
-        q->next = malloc (sizeof (struct schedule_entry));
+        q->next =
+            (struct schedule_entry *) malloc (sizeof (struct schedule_entry));
         q = q->next;
     }
     else
     {
-        q = malloc (sizeof (struct schedule_entry));
+        q = (struct schedule_entry *) malloc (sizeof (struct schedule_entry));
         events = q;
     }
     q->tv = tv;
