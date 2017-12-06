@@ -35,12 +35,4 @@
 
 #endif /* defined(SOLARIS) */
 
-#if !defined(LINUX)
-
-/* Declare empty structure to make code portable and keep simple */
-struct in_pktinfo {
-};
-
-#endif
-
 #endif /* _OSPORT_H_ */

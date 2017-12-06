@@ -14,11 +14,12 @@
 # include <pcap-bpf.h>
 #endif
 
-#if defined(FREEBSD) || defined(OPENBSD) || defined(NETBSD) || defined(SOLARIS)
+#ifdef OPENBSD
 # include <net/ppp_defs.h>
 #endif
 
 #ifdef SOLARIS
+# include <net/ppp_defs.h>
 # define u_int32_t unsigned int
 #endif
 
