@@ -97,19 +97,19 @@ static char
 		return "br0";
 }
 
-char
-*get_mtu_val(char *buf)
+int get_mtu_val(void)
 {
+	char buf[32];
 	if (nvram_match("wshaper_dev", "WAN")
 	    && !strcmp(get_wshaper_dev(), "ppp0"))
-		return nvram_safe_get("wan_mtu");
+		return nvram_geti("wan_mtu");
 	else if (nvram_match("wshaper_dev", "WAN")) {
 		if (nvram_matchi("wan_mtu", 1500))
-			return getMTU(get_wshaper_dev());
+			return atoi(getMTU(get_wshaper_dev()));
 		else
-			return nvram_safe_get("wan_mtu");
+			return nvram_geti("wan_mtu");
 	} else
-		return getBridgeMTU(get_wshaper_dev(), buf);
+		return atoi(getBridgeMTU(get_wshaper_dev(),buf));
 }
 
 struct namemaps {
@@ -126,9 +126,9 @@ static struct namemaps NM[] = {
 	{"soulseek", "soul"}
 };
 
-void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, int base, char *chain)
+void add_client_dev_srvfilter(char *name, char *type, char *data, int level, int base, char *chain)
 {
-	int idx = atoi(level) / 10;
+	int idx = level / 10;
 
 	if (idx == 10)
 		idx = 0;
@@ -185,9 +185,9 @@ void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, i
 	}
 }
 
-void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, int base, char *client)
+void add_client_mac_srvfilter(char *name, char *type, char *data, int level, int base, char *client)
 {
-	int idx = atoi(level) / 10;
+	int idx = level / 10;
 
 	if (idx == 10)
 		idx = 0;
@@ -245,9 +245,9 @@ void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, i
 	}
 }
 
-void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, int base, char *client)
+void add_client_ip_srvfilter(char *name, char *type, char *data, int level, int base, char *client)
 {
-	int idx = atoi(level) / 10;
+	int idx = level / 10;
 
 	if (idx == 10)
 		idx = 0;
@@ -410,12 +410,11 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 {
 	char *wan_dev = get_wan_face();
 
-	unsigned int uplimit = atoi(nvram_get("wshaper_uplink"));
-	unsigned int downlimit = atoi(nvram_get("wshaper_downlink"));
+	unsigned int uplimit = nvram_geti("wshaper_uplink");
+	unsigned int downlimit = nvram_geti("wshaper_downlink");
 	unsigned int lanlimit = 1000000;
 	unsigned int prio;
 	unsigned int parent;
-	char buf[256];
 	char target[64] = "";
 
 	int max = 50;
@@ -425,7 +424,7 @@ void add_client_classes(unsigned int base, unsigned int uprate, unsigned int dow
 		sprintf(target, "target %dms noecn", sec);
 	}
 
-	unsigned int quantum = atoi(get_mtu_val(buf)) + 14;
+	unsigned int quantum = get_mtu_val() + 14;
 
 	if (lanrate < 1)
 		lanrate = lanlimit;
@@ -435,14 +434,13 @@ void add_client_classes(unsigned int base, unsigned int level)
 {
 	char *wan_dev = get_wan_face();
 
-	unsigned int uplimit = atoi(nvram_get("wshaper_uplink"));
-	unsigned int downlimit = atoi(nvram_get("wshaper_downlink"));
+	unsigned int uplimit = nvram_geti("wshaper_uplink");
+	unsigned int downlimit = nvram_geti("wshaper_downlink");
 	unsigned int lanlimit = 1000000;
 	unsigned int prio;
 	unsigned int parent;
-	char buf[256];
 
-	unsigned int quantum = atoi(get_mtu_val(buf)) + 14;
+	unsigned int quantum = get_mtu_val() + 14;
 
 	unsigned int uprate = 0, downrate = 0;
 	int lanrate = lanlimit;
@@ -588,13 +586,11 @@ void add_client_classes(unsigned int base, unsigned int level)
 
 #ifdef HAVE_AQOS
 
-void add_usermac(char *mac, int base, char *upstream, char *downstream, char *lanstream)
+void add_usermac(char *mac, int base, int uprate, int downrate, int lanrate)
 {
-	unsigned int uprate = atoi(upstream);
-	unsigned int downrate = atoi(downstream);
-	unsigned int lanrate = atoi(lanstream);
 
-	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
+	char srvname[32], srvtype[32], srvdata[32];
+	int srvlevel;
 	char *qos_svcs = nvram_safe_get("svqos_svcs");
 
 	char nullmask[24];
@@ -606,7 +602,7 @@ void add_usermac(char *mac, int base, char *upstream, char *downstream, char *la
 	add_client_classes(base, uprate, downrate, lanrate, 0);
 
 	do {
-		if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
+		if (sscanf(qos_svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
 			break;
 
 		add_client_mac_srvfilter(srvname, srvtype, srvdata, srvlevel, base, mac);
@@ -618,14 +614,12 @@ void add_usermac(char *mac, int base, char *upstream, char *downstream, char *la
 	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "RETURN");
 }
 
-void add_userip(char *ip, int base, char *upstream, char *downstream, char *lanstream)
+void add_userip(char *ip, int base, int uprate, int downrate, int lanrate)
 {
-	unsigned int uprate = atoi(upstream);
-	unsigned int downrate = atoi(downstream);
-	unsigned int lanrate = atoi(lanstream);
 
 //      int ret;
-	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
+	char srvname[32], srvtype[32], srvdata[32];
+	int srvlevel;
 	char *qos_svcs = nvram_safe_get("svqos_svcs");
 
 	char nullmask[24];
@@ -641,7 +635,7 @@ void add_userip(char *ip, int base, char *upstream, char *downstream, char *lans
 	add_client_classes(base, uprate, downrate, lanrate, 0);
 
 	do {
-		if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
+		if (sscanf(qos_svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
 			break;
 
 		add_client_ip_srvfilter(srvname, srvtype, srvdata, srvlevel, base, ip);

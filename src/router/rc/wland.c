@@ -202,29 +202,29 @@ static void do_aqos_check(void)
 	char mask_buf[16];
 	char dev_buf[16];
 	int cmac;
-	char *defaulup;
-	char *defauldown;
-	char *defaultlan;
+	int defaulup;
+	int defauldown;
+	int defaultlan;
 	int cip;
 
 	if (arp == NULL) {
 		cprintf("/proc/net/arp missing, check kernel config\n");
 		return;
 	}
-	defaulup = nvram_safe_get("default_uplevel");
-	defauldown = nvram_safe_get("default_downlevel");
-	defaultlan = nvram_safe_get("default_lanlevel");
+	defaulup = nvram_geti("default_uplevel");
+	defauldown = nvram_geti("default_downlevel");
+	defaultlan = nvram_geti("default_lanlevel");
 
-	if (defaulup == NULL || strlen(defaulup) == 0) {
+	if (!defaulup || defaulup < 0) {
 		fclose(arp);
 		return;
 	}
-	if (defauldown == NULL || strlen(defauldown) == 0) {
+	if (!defauldown || defauldown < 0) {
 		fclose(arp);
 		return;
 	}
-	if (defaultlan == NULL || strlen(defaultlan) == 0) {
-		defaultlan = "0";
+	if (defaultlan < 0) {
+		defaultlan = 0;
 	}
 	while (fgetc(arp) != '\n') ;
 
