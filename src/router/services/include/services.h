@@ -278,5 +278,6 @@ void start_nvram(void);
 void start_restore_defaults(void);
 void start_conntrack(void);
 void start_jffs2(void);
-
+void start_speedchecker(void);
+void stop_speedchecker(void);
 void start_speedchecker_init(void);
