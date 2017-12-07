@@ -549,7 +549,7 @@ static void do_filtertable(unsigned char method, struct mime_handler *handler, c
 			strcpy(ifname, temp3);
 		}
 	}
-	idx = strchr(ifname, '.');
+	idx = strrchr(ifname, '.');
 	if (idx)
 		*idx = 0;
 
@@ -567,10 +567,10 @@ static void do_filtertable(unsigned char method, struct mime_handler *handler, c
 
 static void cert_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
-	char *idx = strchr(path, '/');
+	char *idx = strrchr(path, '/');
 	if (!idx)
 		return;
-	char *temp2 = &path[idx + 1];
+	char *temp2 = *idx + 1;
 	char link[128];
 	if (!strcmp(temp2, "ca.pem"))
 		sprintf(link, "/jffs/etc/freeradius/certs/ca.pem");
@@ -598,7 +598,7 @@ static void do_radiuscert(unsigned char method, struct mime_handler *handler, ch
 	char number[32];
 	webs_t wp = stream;
 	strncpy(number, temp2, sizeof(number) - 1);
-	idx = strchr(number, '.');
+	idx = strrchr(number, '.');
 	if (!idx)
 		return;
 	*idx = 0;
@@ -823,7 +823,7 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 		}
 	}
 
-	idx = strchr(ifname, '.');
+	idx = strrchr(ifname, '.');
 	if (idx)
 		*idx = 0;
 	if (!strlen(ifname))
@@ -841,7 +841,7 @@ static void do_wds(unsigned char method, struct mime_handler *handler, char *pat
 	char *temp2 = idx + 1;
 	char ifname[32];
 	strncpy(ifname, temp2, sizeof(ifname));
-	idx = strchr(ifname, '.');
+	idx = strrchr(ifname, '.');
 	*idx = 0;
 	char *temp = insert(ifname, "0", "Wireless_WDS.asp");
 	do_ej_buffer(temp, stream);
@@ -858,7 +858,7 @@ static void do_wireless_adv(unsigned char method, struct mime_handler *handler, 
 
 	strncpy(ifname, temp2, sizeof(ifname));
 
-	idx = strchr(ifname, '.');
+	idx = strrchr(ifname, '.');
 	if (!idx)
 		return;
 	*idx = 0;
