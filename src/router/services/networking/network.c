@@ -5465,11 +5465,11 @@ void start_hotplug_net(void)
 	char ifname[32];
 
 	bzero(ifname, 32);
-	char *index = strchr(interface, '.');
+	char *index = strrchr(interface, '.');
 
 	if (!index)
 		return;
-	strncpy(ifname, index + 1, strlen(interface) - (index + 1));
+	strncpy(ifname, index + 1,sizeof(ifname)-1);
 	if (strncmp(ifname, "sta", 3)) {
 		return;
 	}
@@ -5478,7 +5478,7 @@ void start_hotplug_net(void)
 	bzero(nr, 32);
 	strcpy(nr, ((char *)&ifname[0]) + 3);
 	bzero(ifname, 32);
-	strncpy(ifname, interface, index);
+	strncpy(ifname, interface, index - interface);
 	char bridged[32];
 
 	sprintf(bridged, "%s_bridged", ifname);
@@ -5547,7 +5547,7 @@ void start_hotplug_net(void)
 #define DEFAULT_MTU 1454
 #else
 #define DEFAULT_MTU 1492
-#endir
+#endif
 
 int init_mtu(char *wan_proto)
 {
