@@ -537,9 +537,9 @@ static void do_filtertable(unsigned char method, struct mime_handler *handler, c
 	char ifname[32];
 	char *temp2;
 	bzero(ifname, sizeof(ifname));
-	int idx = indexof(path, '-');
-	if (idx > 0) {
-		temp2 = &path[idx + 1];
+	char  *idx = strchr(path, '-');
+	if (idx) {
+		temp2 = idx + 1;
 		strncpy(ifname, temp2, sizeof(ifname));
 	}
 // and now the tricky part (more dirty as dirty)
@@ -549,9 +549,9 @@ static void do_filtertable(unsigned char method, struct mime_handler *handler, c
 			strcpy(ifname, temp3);
 		}
 	}
-	idx = indexof(ifname, '.');
-	if (idx > 0)
-		ifname[idx] = 0;
+	idx = strchr(ifname, '.');
+	if (idx)
+		*idx = 0;
 
 	if (!strlen(ifname))
 		return;
@@ -567,8 +567,8 @@ static void do_filtertable(unsigned char method, struct mime_handler *handler, c
 
 static void cert_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
-	int idx = indexof(path, '/');
-	if (idx < 0)
+	char *idx = strchr(path, '/');
+	if (!idx)
 		return;
 	char *temp2 = &path[idx + 1];
 	char link[128];
@@ -591,17 +591,17 @@ static void show_certfield(webs_t wp, char *title, char *file)
 static void do_radiuscert(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	char buf[128];
-	int idx = indexof(path, '-');
-	if (idx < 0)
+	char *idx = strchr(path, '-');
+	if (!idx)
 		return;
-	char *temp2 = &path[idx + 1];
+	char *temp2 = idx + 1;
 	char number[32];
 	webs_t wp = stream;
 	strncpy(number, temp2, sizeof(number) - 1);
-	idx = indexof(number, '.');
-	if (idx < 0)
+	idx = strchr(number, '.');
+	if (!idx)
 		return;
-	number[idx] = 0;
+	*idx = 0;
 	int radiusindex = atoi(number);
 
 	if (radiusindex == -1)
@@ -810,9 +810,9 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 {
 	char ifname[32];
 	bzero(ifname, sizeof(ifname));
-	int idx = indexof(path, '-');
-	if (idx > 0) {
-		char *temp2 = &path[idx + 1];
+	char *idx = strchr(path, '-');
+	if (idx) {
+		char *temp2 = idx + 1;
 		strncpy(ifname, temp2, sizeof(ifname) - 1);
 	}
 
@@ -823,9 +823,9 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 		}
 	}
 
-	idx = indexof(ifname, '.');
-	if (idx > 0)
-		ifname[idx] = 0;
+	idx = strchr(ifname, '.');
+	if (idx)
+		*idx = 0;
 	if (!strlen(ifname))
 		return;
 	char *temp = insert(ifname, "0", "WL_ActiveTable.asp");
@@ -835,13 +835,14 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 
 static void do_wds(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
-	int idx = indexof(path, '-');
-	if (idx < 0)
+	char *idx = strchr(path, '-');
+	if (!idx)
 		return;
-	char *temp2 = &path[idx + 1];
+	char *temp2 = idx + 1;
 	char ifname[32];
 	strncpy(ifname, temp2, sizeof(ifname));
-	ifname[indexof(ifname, '.')] = 0;
+	idx = strchr(ifname, '.');
+	*idx = 0;
 	char *temp = insert(ifname, "0", "Wireless_WDS.asp");
 	do_ej_buffer(temp, stream);
 	free(temp);
@@ -849,18 +850,18 @@ static void do_wds(unsigned char method, struct mime_handler *handler, char *pat
 
 static void do_wireless_adv(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
-	int idx = indexof(path, '-');
-	if (idx < 0)
+	char *idx = strchr(path, '-');
+	if (!idx)
 		return;
-	char *temp2 = &path[idx + 1];
+	char *temp2 = idx + 1;
 	char ifname[32];
 
 	strncpy(ifname, temp2, sizeof(ifname));
 
-	idx = indexof(ifname, '.');
-	if (idx < 0)
+	idx = strchr(ifname, '.');
+	if (!idx)
 		return;
-	ifname[idx] = 0;
+	*idx = 0;
 	char index[2];
 	int strl = strlen(ifname);
 	if (strl > 0)

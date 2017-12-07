@@ -5429,21 +5429,24 @@ void start_hotplug_net(void)
 	if (!action)
 		return;
 #ifdef _SC_NPROCESSORS_ONLN
+	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
+#else
+	int cpucount = 1
+#endif
 	if (!strcmp(action, "add")) {
 		int cpumask = 0;
-		int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
 		if (cpucount > 1 && nvram_matchi("wshaper_enable", 0)) {
 			cpumask = (1 << cpucount) - 1;
 		}
 		writenet("queues/rx-0/rps_cpus", cpumask, interface);
+		writenet("queues/rx-1/rps_cpus", cpumask, interface);
+		writenet("queues/rx-2/rps_cpus", cpumask, interface);
+		writenet("queues/rx-3/rps_cpus", cpumask, interface);
+		writenet("queues/rx-4/rps_cpus", cpumask, interface);
+		writenet("queues/rx-5/rps_cpus", cpumask, interface);
+		writenet("queues/rx-6/rps_cpus", cpumask, interface);
+		writenet("queues/rx-7/rps_cpus", cpumask, interface);
 		writenet("queues/tx-0/xps_cpus", cpumask, interface);
-#ifdef HAVE_ATH10K
-		if (is_ath10k(interface) || is_mvebu(interface)) {
-			writenet("queues/tx-1/xps_cpus", cpumask, interface);
-			writenet("queues/tx-2/xps_cpus", cpumask, interface);
-			writenet("queues/tx-3/xps_cpus", cpumask, interface);
-		}
-#endif
 		writenet("queues/tx-1/xps_cpus", cpumask, interface);
 		writenet("queues/tx-2/xps_cpus", cpumask, interface);
 		writenet("queues/tx-3/xps_cpus", cpumask, interface);
@@ -5452,7 +5455,6 @@ void start_hotplug_net(void)
 		writenet("queues/tx-6/xps_cpus", cpumask, interface);
 		writenet("queues/tx-7/xps_cpus", cpumask, interface);
 	}
-#endif
 
 #ifdef HAVE_MADWIFI
 	// sysprintf("echo \"Hotplug %s=%s\" > /dev/console\n",action,interface);
@@ -5463,11 +5465,11 @@ void start_hotplug_net(void)
 	char ifname[32];
 
 	bzero(ifname, 32);
-	int index = indexof(interface, '.');
+	char *index = strchr(interface, '.');
 
-	if (index == -1)
+	if (!index)
 		return;
-	strncpy(ifname, interface + index + 1, strlen(interface) - (index + 1));
+	strncpy(ifname, index + 1, strlen(interface) - (index + 1));
 	if (strncmp(ifname, "sta", 3)) {
 		return;
 	}
@@ -5541,50 +5543,42 @@ void start_hotplug_net(void)
 #endif
 }
 
+#ifdef BUFFALO_JP
+#define DEFAULT_MTU 1454
+#else
+#define DEFAULT_MTU 1492
+#endir
+
 int init_mtu(char *wan_proto)
 {
 	int mtu = nvram_geti("wan_mtu");
 
-	if (strcmp(wan_proto, "pppoe") == 0 || strcmp(wan_proto, "pppoe_dual") == 0) {	// 576 < mtu < 1454(linksys japan) |
-		// 1492(other)
+	if (strcmp(wan_proto, "pppoe") == 0 || strcmp(wan_proto, "pppoe_dual") == 0) {
 		if (nvram_matchi("mtu_enable", 0)) {	// Auto
 			nvram_seti("mtu_enable", 1);
-#ifdef BUFFALO_JP
-			nvram_seti("wan_mtu", 1454);	// set max value
-#else
-			nvram_seti("wan_mtu", 1492);	// set max value
-#endif
+			nvram_seti("wan_mtu", DEFAULT_MTU);	// set max value
 
 		} else {	// Manual
-#ifdef BUFFALO_JP
-			if (mtu > 1454) {
-				nvram_seti("wan_mtu", 1454);
-			}
-#else
-			if (mtu > 1492) {
-				nvram_seti("wan_mtu", 1492);
-			}
-#endif
-			if (mtu < 576) {
+			if (mtu > DEFAULT_MTU)
+				nvram_seti("wan_mtu", DEFAULT_MTU);
+			if (mtu < 576)
 				nvram_seti("wan_mtu", 576);
-			}
+
 		}
 	} else if (strcmp(wan_proto, "pptp") == 0 || strcmp(wan_proto, "l2tp") == 0) {	// 1200 < mtu < 1400 (1460)
-		if (mtu > 1460) {
-			nvram_seti("wan_mtu", 1460);	// set max value (linksys
-			// request to set to 1460)
-			// 2003/06/23
-		}
-		if (mtu < 1200) {
+		if (mtu > 1460)
+			nvram_seti("wan_mtu", 1460);
+
+		if (mtu < 1200)
 			nvram_seti("wan_mtu", 1200);
-		}
+
 	} else {		// 576 < mtu < 1500
 		if (nvram_matchi("mtu_enable", 0)) {	// Auto
 			nvram_seti("wan_mtu", 1500);	// set max value
 		} else {	// Manual
-			if (mtu < 576) {
+			if (mtu < 576)
 				nvram_seti("wan_mtu", 576);
-			}
+
 		}
 	}
 	return 0;
