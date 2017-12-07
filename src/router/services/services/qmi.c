@@ -110,7 +110,10 @@ void start_check_sierrappp(void)
 #if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
 void start_check_mbim(void)
 {
-	if (registered_has_cap(27)) {
+#ifdef HAVE_REGISTER
+	if (registered_has_cap(27)) 
+#endif
+{
 		// char *str;
 		// asprintf(&str, "/dev/%s", nvram_safe_get("3gctrl"));	// ???? no where set
 		eval("/usr/sbin/mbim-status.sh");
