@@ -1111,16 +1111,16 @@ void diag_ping_start(webs_t wp)
 	if (!wp->isregistered_real)
 		return;
 #endif
-	char cmd[256];
+	char cmd[1024];
 	snprintf(cmd, sizeof(cmd), "alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip, PING_TMP);
-	FORK(system(cmd));
+	//FORK(system(cmd));
 
-/*	FILE *fp = popen(cmd, "rb");
+	FILE *fp = popen(cmd, "rb");
 	FILE *out = fopen(PING_TMP, "wb");
 	while (!feof(fp))
 		putc(getc(fp), out);
 	fclose(out);
-	pclose(fp);*/
+	pclose(fp);
 
 	return;
 }
