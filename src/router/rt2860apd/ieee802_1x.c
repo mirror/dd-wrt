@@ -879,22 +879,6 @@ static void ieee802_1x_get_keys(rtapd *rtapd, struct sta_info *sta,
 }
 
 #ifdef HAVE_AQOS
-int stricmp( char *a, char *b )
-{
-    int l1 = strlen( a );
-    int l2 = strlen( b );
-
-    if( l1 != l2 )
-	return -1;
-    int i;
-
-    for( i = 0; i < l1; i++ )
-    {
-	if( toupper( a[i] ) != toupper( b[i] ) )
-	    return -1;
-    }
-    return 0;
-}
 extern int dd_sprintf(char *str, const char *fmt, ...);
 
 extern int dd_snprintf(char *str, int len, const char *fmt, ...);
@@ -942,6 +926,7 @@ int addrule(char *mac, int upstream, int downstream)
 }
 
 
+
 #endif
 
 
@@ -952,7 +937,7 @@ ieee802_1x_receive_auth(rtapd *rtapd, struct radius_msg *msg, struct radius_msg 
 			u8 *shared_secret, size_t shared_secret_len, void *data)
 {
 	struct sta_info *sta;
-	static int qosidx = 500;
+	static int qosidx = 3910;
 	u32 session_timeout = 0, idle_timeout = 0, termination_action;
 	int session_timeout_set, idle_timeout_set; 
 	int	free_flag = 0;
@@ -1055,10 +1040,10 @@ ieee802_1x_receive_auth(rtapd *rtapd, struct radius_msg *msg, struct radius_msg 
 		    //case 3 = change required, exists, new setting 
 		    if( !ret )
 		    {
-			qosidx += 2;
-			if( qosidx > 500 )
+			qosidx += 10;
+			if( qosidx > 6400 )
 			    qosidx = 0;
-			add_usermac( mac, qosidx, uplevel, downlevel );
+			add_usermac( mac, qosidx, uplevel, downlevel,0 );
 		    }
 		    else if( ret > 1 )
 		    {
