@@ -3565,31 +3565,32 @@ void start_wan(int status)
 	// fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
 
 	// Set our Interface to the right MTU
+	int mtu = atoi(getMTU(ethname));
 #ifdef HAVE_PPPOE
 	if (nvram_match("wan_proto", "pppoe")) {
-		ifr.ifr_mtu = atoi(getMTU(ethname));	// default ethernet frame size
+		ifr.ifr_mtu = mtu;	// default ethernet frame size
 	} else
 #endif
 #ifdef HAVE_PPPOEDUAL
 	if (nvram_match("wan_proto", "pppoe_dual")) {
-		ifr.ifr_mtu = atoi(getMTU(ethname));	// default ethernet frame size
+		ifr.ifr_mtu = mtu;	// default ethernet frame size
 	} else
 #endif
 #ifdef HAVE_PPTP
 	if (nvram_match("wan_proto", "pptp")) {
-		ifr.ifr_mtu = atoi(getMTU(ethname));	// default ethernet frame size
+		ifr.ifr_mtu = mtu;	// default ethernet frame size
 	} else
 #endif
 #ifdef HAVE_L2TP
 	if (nvram_match("wan_proto", "l2tp")) {
-		ifr.ifr_mtu = atoi(getMTU(ethname));	// default ethernet frame size
+		ifr.ifr_mtu = mtu;	// default ethernet frame size
 	} else
 #endif
 	{
-		int mtu = nvram_geti("wan_mtu");
-		if (mtu == 1500)
-			mtu = atoi(getMTU(ethname));
-		ifr.ifr_mtu = mtu;
+		int smtu = nvram_geti("wan_mtu");
+		if (smtu == 1500)
+			smtu = mtu;
+		ifr.ifr_mtu = smtu;
 	}
 	// fprintf(stderr,"set mtu for %s to %d\n",ifr.ifr_name,ifr.ifr_mtu);
 	ioctl(s, SIOCSIFMTU, &ifr);
@@ -3930,7 +3931,7 @@ void start_wan(int status)
 				fprintf(fp, "noauth\n");
 				fprintf(fp, "ipcp-max-failure 30\n");
 				if (nvram_match("mtu_enable", "1")) {
-					if (atoi(nvram_safe_get("wan_mtu")) > 0) {
+					if (nvram_geti("wan_mtu") > 0) {
 						fprintf(fp, "mtu %s\n", nvram_safe_get("wan_mtu"));
 						fprintf(fp, "mru %s\n", nvram_safe_get("wan_mtu"));
 					}
