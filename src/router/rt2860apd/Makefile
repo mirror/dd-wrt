@@ -3,20 +3,15 @@
 
 PLATFORM = RT2880
 
-ifndef CFLAGS
-CFLAGS = -O2 -Wall -g
-endif
 
 # If you want to support multiple radius server for multiple bssid, add following line
 CFLAGS +=  -DMULTIPLE_RADIUS -DNEED_PRINTF
 
-CFLAGS += -DHAVE_AQOS 
-LDFLAGS += -L$(TOP)/libutils -L$(TOP)/nvram -lutils -lnvram 
-
+CFLAGS += $(COPTS) -DHAVE_AQOS 
 
 CFLAGS += $(MIPS16_OPT)
 LDFLAGS += $(MIPS16_OPT)
-LDFLAGS += -L$(TOP)/libutils -L$(TOP)/nvram -lutils -lnvram $(ADDLIBS)
+LDFLAGS += -L$(TOP)/libutils -L$(TOP)/nvram -lshutils -lutils -lqos -lnvram $(ADDLIBS)
 
 
 # If you want to debug daemon, add following line
