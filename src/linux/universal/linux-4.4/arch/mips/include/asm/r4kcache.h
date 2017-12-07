@@ -743,18 +743,64 @@ static inline void prot##extra##blast_##pfx##cache##_range(unsigned long start, 
 						    unsigned long end)	\
 {									\
 	unsigned long lsize = cpu_##desc##_line_size();			\
+	unsigned long lsize_2 = lsize * 2;				\
+	unsigned long lsize_3 = lsize * 3;				\
+	unsigned long lsize_4 = lsize * 4;				\
+	unsigned long lsize_5 = lsize * 5;				\
+	unsigned long lsize_6 = lsize * 6;				\
+	unsigned long lsize_7 = lsize * 7;				\
+	unsigned long lsize_8 = lsize * 8;				\
 	unsigned long addr = start & ~(lsize - 1);			\
-	unsigned long aend = (end - 1) & ~(lsize - 1);			\
+	unsigned long aend = (end + lsize - 1) & ~(lsize - 1);		\
+	int lines = (aend - addr) / lsize;				\
 	war								\
 									\
 	__##pfx##flush_prologue						\
 									\
-	while (1) {							\
+	while (lines >= 8) {						\
 		war2						\
 		prot##cache_op(hitop, addr);				\
-		if (addr == aend)					\
-			break;						\
-		addr += lsize;						\
+		war2						\
+		prot##cache_op(hitop, addr + lsize);			\
+		war2						\
+		prot##cache_op(hitop, addr + lsize_2);			\
+		war2						\
+		prot##cache_op(hitop, addr + lsize_3);			\
+		war2						\
+		prot##cache_op(hitop, addr + lsize_4);			\
+		war2						\
+		prot##cache_op(hitop, addr + lsize_5);			\
+		war2						\
+		prot##cache_op(hitop, addr + lsize_6);			\
+		war2						\
+		prot##cache_op(hitop, addr + lsize_7);			\
+		addr += lsize_8;					\
+		lines -= 8;						\
+	}								\
+									\
+	if (lines & 0x4) {						\
+		war2						\
+		prot##cache_op(hitop, addr);				\
+		war2						\
+		prot##cache_op(hitop, addr + lsize);			\
+		war2						\
+		prot##cache_op(hitop, addr + lsize_2);			\
+		war2						\
+		prot##cache_op(hitop, addr + lsize_3);			\
+		addr += lsize_4;					\
+	}								\
+									\
+	if (lines & 0x2) {						\
+		war2						\
+		prot##cache_op(hitop, addr);				\
+		war2						\
+		prot##cache_op(hitop, addr + lsize);			\
+		addr += lsize_2;					\
+	}								\
+									\
+	if (lines & 0x1) {						\
+		war2						\
+		prot##cache_op(hitop, addr);				\
 	}								\
 									\
 	__##pfx##flush_epilogue						\
