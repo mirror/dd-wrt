@@ -1817,7 +1817,7 @@ ieee802_1x_receive_auth(struct radius_msg *msg, struct radius_msg *req,
 			if (qosidx>6400)
 			    qosidx=0;
 			wpa_printf(MSG_DEBUG, "bandwidth rule is new, no flush required!\n");			
-			add_usermac(mac, qosidx, uplevel,downlevel,"0");
+			add_usermac(mac, qosidx, uplevel,downlevel,0);
 			}else if (ret>1)
 			{
 			wpa_printf(MSG_DEBUG, "bandwidth rule change detected, flush table and reset it to new values! (status %d)\n",ret);			
