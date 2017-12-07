@@ -682,19 +682,6 @@ int osifname_to_nvifname(const char *osifname, char *nvifname_buf, int nvifname_
 
 #endif
 
-int indexof(char *str, char c)
-{
-	if (str == NULL)
-		return -1;
-	int i;
-	int slen = strlen(str);
-
-	for (i = 0; i < slen; i++)
-		if (str[(slen - 1) - i] == c)
-			return (slen - 1) - i;
-	return -1;
-}
-
 char *strcat_r(const char *s1, const char *s2, char *buf)
 {
 	strcpy(buf, s1);
