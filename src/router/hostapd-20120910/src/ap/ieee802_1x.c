@@ -1359,11 +1359,18 @@ ieee802_1x_search_radius_identifier(struct hostapd_data *hapd, u8 identifier)
 }
 
 #ifdef HAVE_AQOS
-extern void add_usermac( char *mac, int idx, char *upstream,
-			 char *downstream, char *lanstream );
+extern int dd_sprintf(char *str, const char *fmt, ...);
+
+extern int dd_snprintf(char *str, int len, const char *fmt, ...);
+
+#define sprintf(output,format,args...) dd_sprintf(output, format, ## args)
+#define snprintf(output,len,format,args...) dd_snprintf(output, len,format, ## args)
+
+extern void add_usermac( char *mac, int idx, int upstream,
+			 int downstream, int lanstream );
 extern char *nvram_safe_get(const char *name);
 
-int addrule(char *mac, char *upstream, char *downstream)
+int addrule(char *mac, int upstream, int downstream)
 {
 	char *qos_mac = nvram_safe_get( "svqos_macs" );
 	char *newqos;
@@ -1373,25 +1380,26 @@ int addrule(char *mac, char *upstream, char *downstream)
 	newqos = malloc(len + 128);
 	memset(newqos, 0, len + 128);
 
-	char level[32], level2[32], level3[32], data[32], type[32], prio[32];
+	char level3[32], data[32], type[32], prio[32];
+	int level, level2;
 	strcpy(level3, "0");
 	if (len > 0) {
 		do {
-			if(sscanf( qos_mac, "%31s %31s %31s %31s %31s %31s |", data, level, level2, type, level3, prio) < 6)
+			if(sscanf( qos_mac, "%31s %d %d %31s %31s %31s |", data, &level, &level2, type, level3, prio) < 6)
 				break;
 			if (!strcasecmp(data,mac)) {
-				sprintf(newqos,"%s %s %s %s %s %s %s |",newqos,data,upstream,downstream,"hostapd",level3,prio);
-				if (!strcmp(level,upstream) && !strcmp(level2,downstream))
+				sprintf(newqos,"%s %s %d %d %s %s %s |",newqos,data,upstream,downstream,"hostapd",level3,prio);
+				if (level == upstream && level2 == downstream)
 					ret = 1;
 				else
 					ret = 2;
 			} else
-				sprintf(newqos,"%s %s %s %s %s %s %s |",newqos,data,level,level2,type,level3,prio);
+				sprintf(newqos,"%s %s %d %d %s %s %s |",newqos,data,level,level2,type,level3,prio);
 		} while( ( qos_mac = strpbrk( ++qos_mac, "|" ) ) && qos_mac++ );
 	}
 
 	if (!ret)
-		sprintf(newqos,"%s %s %s %s %s %s %s |",newqos,mac,upstream,downstream,"hostapd",level3,prio);
+		sprintf(newqos,"%s %s %d %d %s %s %s |",newqos,mac,upstream,downstream,"hostapd",level3,prio);
 
 	nvram_set("svqos_macs",newqos);
 	free(newqos);
@@ -1502,10 +1510,10 @@ ieee802_1x_receive_auth(struct radius_msg *msg, struct radius_msg *req,
 		    wpa_printf(MSG_DEBUG, "downstream %d kbits, upstream %d kbits level found\n",*down,*up);
 		    char mac[64];
 		    sprintf(mac, MACSTR, MAC2STR(sta->addr));
-		    char uplevel[64];
-		    char downlevel[64];
-		    sprintf(uplevel,"%d",*up/1000);
-		    sprintf(downlevel,"%d",*down/1000);
+		    int uplevel;
+		    int downlevel;
+		    uplevel = *up / 1000;
+		    downlevel = *down / 1000;
 		    int ret = addrule(mac,uplevel,downlevel);
 		    //case 0 = does not exists, should just be added, no restart
 		    //case 1 = no change required, already added
