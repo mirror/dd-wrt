@@ -67,9 +67,9 @@ static int client_bridged_enabled(void)
 
 #ifdef HAVE_SVQOS
 
-extern char *get_mtu_val(char *buf);
-extern void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
-extern void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
+extern int get_mtu_val(void);
+extern void add_client_mac_srvfilter(char *name, char *type, char *data, int level, int base, char *client);
+extern void add_client_ip_srvfilter(char *name, char *type, char *data, int level, int base, char *client);
 extern char *get_NFServiceMark(char *service, uint32 mark);
 
 #if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
@@ -315,7 +315,8 @@ static void aqos_tables(void)
 	char *qos_svcs = NULL;
 
 	char data[32], type[32], proto1[32], proto2[32], proto3[32], proto4[32], proto[32];
-	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
+	char srvname[32], srvtype[32], srvdata[32];
+	int srvlevel;
 	int level, level2, level3, prio;
 	char nullmask[24];
 	strcpy(nullmask, qos_nfmark(0));
@@ -334,7 +335,7 @@ static void aqos_tables(void)
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
 		do {
-			if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
+			if (sscanf(qos_svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
 				break;
 
 			add_client_mac_srvfilter(srvname, srvtype, srvdata, srvlevel, base, data);
@@ -358,7 +359,7 @@ static void aqos_tables(void)
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
 		do {
-			if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
+			if (sscanf(qos_svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
 				break;
 
 			add_client_ip_srvfilter(srvname, srvtype, srvdata, srvlevel, base, data);
@@ -493,7 +494,7 @@ static void aqos_tables(void)
 				free_filters(s_filters);
 				sprintf(svcs, "%s %s %s %s", proto1, proto2, proto3, proto4);
 				do {
-					if (sscanf(svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
+					if (sscanf(svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
 						break;
 
 					add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, chainname_in);
@@ -509,7 +510,7 @@ static void aqos_tables(void)
 		 */
 		if (hasIF(data) && !strlen(proto) && strlen(qos_svcs)) {
 			do {
-				if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
+				if (sscanf(qos_svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
 					break;
 
 				add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, chainname_in);
@@ -803,7 +804,8 @@ static int svqos_iptables(void)
 	char *qos_ipaddr = nvram_safe_get("svqos_ips");
 	char *qos_devs = nvram_safe_get("svqos_devs");
 
-	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
+	char srvname[32], srvtype[32], srvdata[32];
+	int srvlevel;
 
 	int base = 210;
 
@@ -818,7 +820,7 @@ static int svqos_iptables(void)
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
 		do {
-			if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
+			if (sscanf(qos_svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
 				break;
 
 			add_client_mac_srvfilter(srvname, srvtype, srvdata, srvlevel, base, data);
@@ -843,7 +845,7 @@ static int svqos_iptables(void)
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
 		do {
-			if (sscanf(qos_svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
+			if (sscanf(qos_svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
 				break;
 
 			add_client_ip_srvfilter(srvname, srvtype, srvdata, srvlevel, base, data);
@@ -868,7 +870,7 @@ static int svqos_iptables(void)
 
 		svcs = nvram_safe_get("svqos_svcs");
 		do {
-			if (sscanf(svcs, "%31s %31s %31s %31s ", srvname, srvtype, srvdata, srvlevel) < 4)
+			if (sscanf(svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
 				break;
 
 			add_client_ip_srvfilter(srvname, srvtype, srvdata, srvlevel, base, data);
@@ -1007,13 +1009,12 @@ void start_wshaper(void)
 //      int ret = 0;
 	char *dl_val;
 	char *ul_val;
-	char *mtu_val = "1500";
+	char mtu_val[32];
 
 	char *wshaper_dev;
 	char *wan_dev;
 	char *aqd;
 	char *script_name;
-	char buf[256];
 	wan_dev = get_wanface();
 	if (!wan_dev)
 		wan_dev = "xx";
@@ -1035,7 +1036,7 @@ void start_wshaper(void)
 	if (!nvram_invmatchi("wshaper_enable", 0)) {
 		if (nvram_matchi("sfe", 1))
 			insmod("shortcut-fe");
-		return 0;
+		return;
 	} else
 		rmmod("shortcut-fe");
 	writeint("/sys/fast_classifier/skip_to_bridge_ingress", 1);
@@ -1043,8 +1044,8 @@ void start_wshaper(void)
 		return;
 	if ((ul_val = nvram_safe_get("wshaper_uplink")) == NULL && atoi(ul_val) > 0)
 		return;
-	mtu_val = get_mtu_val(buf);
-
+	int mtu_vali = get_mtu_val();
+	sprintf(mtu_val,"%d",mtu_vali);
 #ifdef HAVE_SVQOS
 	aqd = nvram_safe_get("svqos_aqd");
 

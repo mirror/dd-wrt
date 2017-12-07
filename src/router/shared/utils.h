@@ -1035,13 +1035,13 @@ char *qos_nfmark(uint32 x);
 extern char *get_tcfmark(uint32 mark);
 #endif
 
-extern char *get_mtu_val(char *buf);
-extern void add_client_dev_srvfilter(char *name, char *type, char *data, char *level, int base, char *chain);
-extern void add_client_mac_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
-extern void add_client_ip_srvfilter(char *name, char *type, char *data, char *level, int base, char *client);
+extern int get_mtu_val(void);
+extern void add_client_dev_srvfilter(char *name, char *type, char *data, int level, int base, char *chain);
+extern void add_client_mac_srvfilter(char *name, char *type, char *data, int level, int base, char *client);
+extern void add_client_ip_srvfilter(char *name, char *type, char *data, int level, int base, char *client);
 #ifdef HAVE_AQOS
-extern void add_usermac(char *mac, int idx, char *upstream, char *downstream, char *lanstream);
-extern void add_userip(char *ip, int idx, char *upstream, char *downstream, char *lanstream);
+extern void add_usermac(char *mac, int idx, int upstream, int downstream, int lanstream);
+extern void add_userip(char *ip, int idx, int upstream, int downstream, int lanstream);
 extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate, unsigned int level);
 #else
 extern void add_client_classes(unsigned int base, unsigned int level);
