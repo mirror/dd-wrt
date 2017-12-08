@@ -94,6 +94,16 @@
 #define PCIE_V0					0	/* apq8064 */
 #define PCIE_V1					1	/* apq8084 */
 
+#define PCIE20_LNK_CONTROL2_LINK_STATUS2        0xA0
+
+#define __set(v, a, b)	(((v) << (b)) & GENMASK(a, b))
+#define __mask(a, b)	(((1 << ((a) + 1)) - 1) & ~((1 << (b)) - 1))
+#define PCIE20_DEV_CAS			0x78
+#define PCIE20_MRRS_MASK		__mask(14, 12)
+#define PCIE20_MRRS(x)			__set(x, 14, 12)
+#define PCIE20_MPS_MASK			__mask(7, 5)
+#define PCIE20_MPS(x)			__set(x, 7, 5)
+
 struct qcom_pcie_resources_v0 {
 	struct clk *iface_clk;
 	struct clk *core_clk;
@@ -136,6 +146,7 @@ struct qcom_pcie {
 	struct phy *phy;
 	struct gpio_desc *reset;
 	unsigned int version;
+	uint32_t force_gen1;
 };
 
 #define to_qcom_pcie(x)		container_of(x, struct qcom_pcie, pp)
@@ -188,7 +199,8 @@ static void qcom_pcie_disable_resources_v0(struct qcom_pcie *pcie)
 {
 	struct qcom_pcie_resources_v0 *res = &pcie->res.v0;
 
-	reset_control_assert(res->pci_reset);
+	clk_disable_unprepare(res->phy_clk);
+	reset_control_assert(res->phy_reset);
 	reset_control_assert(res->axi_reset);
 	reset_control_assert(res->ahb_reset);
 	reset_control_assert(res->por_reset);
@@ -196,7 +208,6 @@ static void qcom_pcie_disable_resources_v0(struct qcom_pcie *pcie)
 	reset_control_assert(res->ext_reset);
 	clk_disable_unprepare(res->iface_clk);
 	clk_disable_unprepare(res->core_clk);
-	clk_disable_unprepare(res->phy_clk);
 	clk_disable_unprepare(res->aux_clk);
 	clk_disable_unprepare(res->ref_clk);
 	regulator_disable(res->vdda);
@@ -258,12 +269,6 @@ static int qcom_pcie_enable_resources_v0(struct qcom_pcie *pcie)
 		goto err_clk_core;
 	}
 
-	ret = clk_prepare_enable(res->phy_clk);
-	if (ret) {
-		dev_err(dev, "cannot prepare/enable phy clock\n");
-		goto err_clk_phy;
-	}
-
 	ret = clk_prepare_enable(res->aux_clk);
 	if (ret) {
 		dev_err(dev, "cannot prepare/enable aux clock\n");
@@ -281,17 +286,23 @@ static int qcom_pcie_enable_resources_v0(struct qcom_pcie *pcie)
 		dev_err(dev, "cannot deassert ahb reset\n");
 		goto err_reset_ahb;
 	}
+
+	ret = clk_prepare_enable(res->phy_clk);
+	if (ret) {
+		dev_err(dev, "cannot prepare/enable phy clock\n");
+		goto err_deassert_ahb;
+	}
 	udelay(1);
 
 	return 0;
 
+err_deassert_ahb:
+	reset_control_assert(res->ahb_reset);
 err_reset_ahb:
 	clk_disable_unprepare(res->ref_clk);
 err_clk_ref:
 	clk_disable_unprepare(res->aux_clk);
 err_clk_aux:
-	clk_disable_unprepare(res->phy_clk);
-err_clk_phy:
 	clk_disable_unprepare(res->core_clk);
 err_clk_core:
 	clk_disable_unprepare(res->iface_clk);
@@ -656,6 +667,12 @@ static void qcom_pcie_host_init_v0(struct pcie_port *pp)
 	/* wait 150ms for clock acquisition */
 	usleep_range(10000, 15000);
 
+	if (pcie->force_gen1) {
+		writel_relaxed((readl_relaxed(
+			pcie->pp.dbi_base + PCIE20_LNK_CONTROL2_LINK_STATUS2) | 1),
+			pcie->pp.dbi_base + PCIE20_LNK_CONTROL2_LINK_STATUS2);
+	}
+
 	dw_pcie_setup_rc(pp);
 
 	if (IS_ENABLED(CONFIG_PCI_MSI))
@@ -707,6 +724,35 @@ static struct pcie_host_ops qcom_pcie_ops = {
 	.rd_own_conf = qcom_pcie_rd_own_conf,
 };
 
+static void qcom_pcie_fixup_final(struct pci_dev *dev)
+{
+	int cap, err;
+	u16 ctl, reg_val;
+
+	cap = pci_pcie_cap(dev);
+	if (!cap)
+		return;
+
+	err = pci_read_config_word(dev, cap + PCI_EXP_DEVCTL, &ctl);
+
+	if (err)
+		return;
+
+	reg_val = ctl;
+
+	if (((reg_val & PCIE20_MRRS_MASK) >> 12) > 1)
+		reg_val = (reg_val & ~(PCIE20_MRRS_MASK)) | PCIE20_MRRS(0x1);
+
+	if (((ctl & PCIE20_MPS_MASK) >> 5) > 1)
+		reg_val = (reg_val & ~(PCIE20_MPS_MASK)) | PCIE20_MPS(0x1);
+
+	err = pci_write_config_word(dev, cap + PCI_EXP_DEVCTL, reg_val);
+
+	if (err)
+		pr_err("pcie config write failed %d\n", err);
+}
+DECLARE_PCI_FIXUP_FINAL(PCI_ANY_ID, PCI_ANY_ID, qcom_pcie_fixup_final);
+
 static const struct of_device_id qcom_pcie_match[] = {
 	{ .compatible = "qcom,pcie-v0", .data = (void *)PCIE_V0 },
 	{ .compatible = "qcom,pcie-v1", .data = (void *)PCIE_V1 },
@@ -721,6 +767,8 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 	struct qcom_pcie *pcie;
 	struct pcie_port *pp;
 	int ret;
+	uint32_t force_gen1 = 0;
+	struct device_node *np = pdev->dev.of_node;
 
 	match = of_match_node(qcom_pcie_match, dev->of_node);
 	if (!match)
@@ -735,6 +783,9 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 	pcie->reset = devm_gpiod_get_optional(dev, "perst");
 	if (IS_ERR(pcie->reset) && PTR_ERR(pcie->reset) == -EPROBE_DEFER)
 		return PTR_ERR(pcie->reset);
+
+	of_property_read_u32(np, "force_gen1", &force_gen1);
+	pcie->force_gen1 = force_gen1;
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "parf");
 	pcie->parf = devm_ioremap_resource(dev, res);
