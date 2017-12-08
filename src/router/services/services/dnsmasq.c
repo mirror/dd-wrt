@@ -188,7 +188,7 @@ void start_dnsmasq(void)
 			fprintf(fp, ",");
 	} else if (nvram_matchi("pptpd_enable", 1)) {
 		fprintf(fp, "listen-address=127.0.0.1");
-		if (!canlan())
+		if (canlan())
 			fprintf(fp, ",%s", nvram_safe_get("lan_ipaddr"));
 	} else {
 		fprintf(fp, "interface=");
