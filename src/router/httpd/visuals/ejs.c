@@ -896,7 +896,7 @@ void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 		port_forward_spec(wp, "sel_udp", i);
 		websWrite(wp, ">UDP</option>\n<script type=\"text/javascript\">\n//<![CDATA[\ndocument.write(\"<option value=\\\"both\\\" ");
 		port_forward_spec(wp, "sel_both", i);
-		websWrite(wp, " >\" + share.both + \"</option>\");\n" "\n//]]>\n</script>\n</select></td>\n<td>\n<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"src%d\" value=\"", i);
+		websWrite(wp, " >\" + share.both + \"</option>\");\n" "\n//]]>\n</script>\n</select></td>\n<td>\n<input class=\"num\" maxlength=\"18\" size=\"18\" name=\"src%d\" value=\"", i);
 		port_forward_spec(wp, "src", i);
 		websWrite(wp, "\" /></td>\n<td>\n<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_forward_spec(wp, "from", i);
