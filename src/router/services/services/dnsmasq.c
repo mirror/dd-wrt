@@ -40,6 +40,11 @@ extern int usejffs;
 extern void addHost(char *host, char *ip, int withdomain);
 
 void stop_dnsmasq(void);
+#define IDX_IFNAME 0
+#define IDX_DHCPON 1
+#define IDX_LEASESTART 2
+#define IDX_LEASEMAX 3
+#define IDX_LEASETIME 4
 
 static char *getmdhcp(int count, int index, char *word)
 {
@@ -178,38 +183,36 @@ void start_dnsmasq(void)
 	}
 //    fprintf(fp, "bind-interfaces\n");
 	if (nvram_matchi("chilli_enable", 1)) {
-		if (canlan())
-			fprintf(fp, "interface=%s", get_wdev());
-		else
-			fprintf(fp, "interface=%s,", get_wdev());
+		fprintf(fp, "interface=%s", get_wdev());
+		if (!canlan())
+			fprintf(fp, ",");
 	} else if (nvram_matchi("pptpd_enable", 1)) {
-		if (canlan())
-			fprintf(fp, "listen-address=%s,%s", "127.0.0.1", nvram_safe_get("lan_ipaddr"));
-		else
-			fprintf(fp, "listen-address=%s", "127.0.0.1");
+		fprintf(fp, "listen-address=127.0.0.1");
+		if (!canlan())
+			fprintf(fp, ",%s", nvram_safe_get("lan_ipaddr"));
 	} else {
+		fprintf(fp, "interface=");
 		if (canlan())
-			fprintf(fp, "interface=%s", nvram_safe_get("lan_ifname"));
-		else
-			fprintf(fp, "interface=");
+			fprintf(fp, "%s", nvram_safe_get("lan_ifname"));
 	}
 	int mdhcpcount = 0;
 	if (nvram_get("mdhcpd_count") != NULL) {
 		char *word = calloc(128, 1);
 		mdhcpcount = nvram_geti("mdhcpd_count");
 		for (i = 0; i < mdhcpcount; i++) {
-			if (!strlen(nvram_nget("%s_ipaddr", getmdhcp(0, i, word))) || !strlen(nvram_nget("%s_netmask", getmdhcp(0, i, word))))
+			char *ifname = getmdhcp(IDX_IFNAME, i, word);
+			if (!strlen(nvram_nget("%s_ipaddr", ifname)) || !strlen(nvram_nget("%s_netmask", ifname)))
 				continue;
 			if (canlan() || i > 0) {
 				if (nvram_matchi("pptpd_enable", 1))
-					fprintf(fp, ",%s", nvram_nget("%s_ipaddr", getmdhcp(0, i, word)));
+					fprintf(fp, ",%s", nvram_nget("%s_ipaddr", ifname));
 				else
-					fprintf(fp, ",%s", getmdhcp(0, i, word));
+					fprintf(fp, ",%s", ifname);
 			} else {
 				if (nvram_matchi("pptpd_enable", 1))
-					fprintf(fp, "%s", nvram_nget("%s_ipaddr", getmdhcp(0, i, word)));
+					fprintf(fp, "%s", nvram_nget("%s_ipaddr", ifname));
 				else
-					fprintf(fp, "%s", getmdhcp(0, i, word));
+					fprintf(fp, "%s", ifname);
 
 			}
 		}
@@ -272,18 +275,20 @@ void start_dnsmasq(void)
 		if (landhcp())
 			dhcp_max += nvram_geti("dhcp_num") + nvram_geti("static_leasenum");
 		for (i = 0; i < mdhcpcount; i++) {
-			if (!strlen(nvram_nget("%s_ipaddr", getmdhcp(0, i, word))) || !strlen(nvram_nget("%s_netmask", getmdhcp(0, i, word))))
+			char *ifname = getmdhcp(IDX_IFNAME, i, word);
+			if (!strlen(nvram_nget("%s_ipaddr", ifname)) || !strlen(nvram_nget("%s_netmask", ifname)))
 				continue;
-			dhcp_max += atoi(getmdhcp(3, i, word));
+			dhcp_max += atoi(getmdhcp(IDX_LEASEMAX, i, word));
 		}
 		fprintf(fp, "dhcp-lease-max=%d\n", dhcp_max);
 		if (landhcp())
 			fprintf(fp, "dhcp-option=%s,3,%s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
 		for (i = 0; i < mdhcpcount; i++) {
-			if (!strlen(nvram_nget("%s_ipaddr", getmdhcp(0, i, word))) || !strlen(nvram_nget("%s_netmask", getmdhcp(0, i, word))))
+			char *ifname = getmdhcp(IDX_IFNAME, i, word);
+			if (!strlen(nvram_nget("%s_ipaddr", ifname)) || !strlen(nvram_nget("%s_netmask", ifname)))
 				continue;
-			fprintf(fp, "dhcp-option=%s,3,", getmdhcp(0, i, word));
-			fprintf(fp, "%s\n", nvram_nget("%s_ipaddr", getmdhcp(0, i, word)));
+			fprintf(fp, "dhcp-option=%s,3,", ifname);
+			fprintf(fp, "%s\n", nvram_nget("%s_ipaddr", ifname));
 		}
 		if (nvram_invmatch("wan_wins", "")
 		    && nvram_invmatch("wan_wins", "0.0.0.0"))
@@ -306,10 +311,11 @@ void start_dnsmasq(void)
 				char *word = calloc(128, 1);
 				fprintf(fp, "dhcp-option=%s,6,%s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
 				for (i = 0; i < mdhcpcount; i++) {
-					if (!strlen(nvram_nget("%s_ipaddr", getmdhcp(0, i, word))) || !strlen(nvram_nget("%s_netmask", getmdhcp(0, i, word))))
+					char *ifname = getmdhcp(IDX_IFNAME, i, word);
+					if (!strlen(nvram_nget("%s_ipaddr", ifname)) || !strlen(nvram_nget("%s_netmask", ifname)))
 						continue;
-					fprintf(fp, "dhcp-option=%s,6,", getmdhcp(0, i, word));
-					fprintf(fp, "%s\n", nvram_nget("%s_ipaddr", getmdhcp(0, i, word)));
+					fprintf(fp, "dhcp-option=%s,6,", ifname);
+					fprintf(fp, "%s\n", nvram_nget("%s_ipaddr", ifname));
 				}
 				free(word);
 			}
@@ -329,16 +335,16 @@ void start_dnsmasq(void)
 
 		for (i = 0; i < mdhcpcount; i++) {
 			char *word = calloc(128, 1);
-			if (strcmp(getmdhcp(1, i, word), "On"))
+			if (strcmp(getmdhcp(IDX_DHCPON, i, word), "On"))
 				continue;
-			if (!strlen(nvram_nget("%s_ipaddr", getmdhcp(0, i, word))) || !strlen(nvram_nget("%s_netmask", getmdhcp(0, i, word))))
+			char *ifname = getmdhcp(IDX_IFNAME, i, word);
+			if (!strlen(nvram_nget("%s_ipaddr", ifname)) || !strlen(nvram_nget("%s_netmask", ifname)))
 				continue;
-			char *ifname = getmdhcp(0, i, word);
-			unsigned int dhcpnum = atoi(getmdhcp(3, i, word));
-			unsigned int dhcpstart = atoi(getmdhcp(2, i, word));
+			unsigned int dhcpnum = atoi(getmdhcp(IDX_LEASEMAX, i, word));
+			unsigned int dhcpstart = atoi(getmdhcp(IDX_LEASESTART, i, word));
 			char *ip = nvram_nget("%s_ipaddr", ifname);
 			char *netmask = nvram_nget("%s_netmask", ifname);
-			char *leasetime = getmdhcp(4, i, word);
+			char *leasetime = getmdhcp(IDX_LEASETIME, i, word);
 			makeentry(fp, ifname, dhcpnum, dhcpstart, ip, netmask, leasetime);
 			free(word);
 		}
