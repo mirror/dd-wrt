@@ -1116,10 +1116,8 @@ void diag_ping_start(webs_t wp)
 	//FORK(system(cmd));
 
 	FILE *fp = popen(cmd, "rb");
-	FILE *out = fopen(PING_TMP, "wb");
 	while (!feof(fp))
-		putc(getc(fp), out);
-	fclose(out);
+		getc(fp);
 	pclose(fp);
 
 	return;
