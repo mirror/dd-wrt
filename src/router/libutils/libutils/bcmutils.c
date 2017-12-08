@@ -439,7 +439,7 @@ static void add_dnslist(struct dns_lists *dns_list, char *dns)
 {
 	char *next, word[32];
 	if (!dns)
-		return 0;
+		return;
 	foreach(word, dns, next) {
 		add_dnslist_internal(dns_list, word);
 	}
