@@ -127,9 +127,8 @@ void start_lighttpd(void)
 			"server.port           = %s\n"
 			"server.document-root  = \"%s\"\n",
 			nvram_safe_get("lighttpd_sslport"), strcmp(nvram_get("lighttpd_wan"), "0") ? "0.0.0.0" : nvram_safe_get("lan_ipaddr"), nvram_safe_get("lighttpd_port"), nvram_safe_get("lighttpd_root"));
+		fclose(fp);
 	}
-
-	fclose(fp);
 
 	fp = fopen("/jffs/etc/lighttpd.conf", "r");	//test if custom config is available
 	if (fp != NULL) {
