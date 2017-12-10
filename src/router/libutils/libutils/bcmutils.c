@@ -793,30 +793,6 @@ int convert_ver(char *ver)
 		return -1;
 }
 
-/*
- * To avoid user to download old image that is not support intel flash to new 
- * hardware with intel flash. 
- */
-int check_flash(void)
-{
-	// The V2 image can support intel flash completely, so we don't want to
-	// check.
-	if (check_hw_type() == BCM4712_CHIP)
-		return FALSE;
-
-	// The V1.X some images cann't support intel flash, so we want to avoid
-	// user to downgrade.
-	if (nvram_matchi("skip_amd_check", 1)) {
-		if (strstr(nvram_safe_get("flash_type"), "Intel")
-		    && nvram_invmatchi("skip_intel_check", 1))
-			return TRUE;
-		else
-			return FALSE;
-	} else			// Cann't downgrade to old firmware version,
-		// no matter AMD or Intel flash
-		return TRUE;
-}
-
 int check_now_boot(void)
 {
 	char *ver = nvram_safe_get("pmon_ver");
@@ -900,36 +876,6 @@ int check_hw_type(void)
 		return NO_DEFINE_CHIP;
 }
 
-int ct_openlog(const char *ident, int option, int facility, char *log_name)
-{
-	int level = nvram_geti(log_name);
-
-	switch (level) {
-	case CONSOLE_ONLY:
-		break;
-	}
-	return level;
-}
-
-void ct_syslog(int level, int enable, const char *fmt, ...)
-{
-	char buf[1000];
-	va_list args;
-
-	va_start(args, fmt);
-	vsnprintf(buf, sizeof(buf), fmt, args);
-	va_end(args);
-
-	switch (enable) {
-	case CONSOLE_ONLY:
-		cprintf("[%d] %s\n", getpid(), buf);	// print to console
-		break;
-	}
-}
-
-void ct_logger(int level, const char *fmt, ...)
-{
-}
 
 static char *device_name[] = {
 	"eth0", "qos0"

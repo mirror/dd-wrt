@@ -111,13 +111,13 @@ static void alarm_handler(int i);
 static void check_event_queue();
 static void print_event_queue();
 static void check_timer();
+static void dd_unblock_timer();
 
 #if THIS_FINDS_USE
 static int count_queue(struct event *);
 #endif
 static int dd_timer_change_settime(timer_t timer_id, const struct itimerspec *timer_spec);
 void dd_block_timer();
-void dd_unblock_timer();
 
 static struct event *event_queue = NULL;
 static struct event *event_freelist;
@@ -381,7 +381,6 @@ int dd_timer_settime(timer_t timerid,	/* timer ID */
 	if (!(event->flags & TFLAG_NOQ))
 		event->flags |= TFLAG_QUEUED;
 
-	dd_unblock_timer();
 
 	return 0;
 }
@@ -605,6 +604,7 @@ void dd_unblock_timer()
 	}
 }
 
+#if 0
 void dd_timer_cancel_all()
 {
 	struct itimerval timeroff = { {0, 0}, {0, 0} };
@@ -620,6 +620,7 @@ void dd_timer_cancel_all()
 		event->next = NULL;
 	}
 }
+#endif
 
 void dd_timer_cancel(timer_t timerid)
 {
@@ -755,10 +756,6 @@ int bcm_timer_delete(bcm_timer_id timer_id)
 	return dd_timer_delete((timer_t) timer_id);
 }
 
-int bcm_timer_gettime(bcm_timer_id timer_id, struct itimerspec *timer_spec)
-{
-	return -1;
-}
 
 int bcm_timer_settime(bcm_timer_id timer_id, const struct itimerspec *timer_spec)
 {
@@ -768,12 +765,6 @@ int bcm_timer_settime(bcm_timer_id timer_id, const struct itimerspec *timer_spec
 int bcm_timer_connect(bcm_timer_id timer_id, bcm_timer_cb func, int data)
 {
 	return dd_timer_connect((timer_t) timer_id, (void *)func, data);
-}
-
-int bcm_timer_cancel(bcm_timer_id timer_id)
-{
-	dd_timer_cancel((timer_t) timer_id);
-	return 0;
 }
 
 int bcm_timer_change_expirytime(bcm_timer_id timer_id, const struct itimerspec *timer_spec)
