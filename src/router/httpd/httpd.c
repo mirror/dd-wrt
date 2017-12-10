@@ -373,7 +373,7 @@ static int auth_check(webs_t conn_fp)
 
 	/* Basic authorization info? */
 	if (!conn_fp->authorization || strncmp(conn_fp->authorization, "Basic ", 6) != 0) {
-		ct_syslog(LOG_INFO, httpd_level, "Authentication fail");
+		dd_syslog(LOG_INFO, httpd_level, "Authentication fail");
 
 		goto out;
 	}
@@ -1263,41 +1263,10 @@ get_client_ip_mac(int conn_fd, webs_t conn_fp)
 
 static void handle_server_sig_int(int sig)
 {
-	ct_syslog(LOG_INFO, httpd_level, "httpd server shutdown");
+	dd_syslog(LOG_INFO, httpd_level, "httpd server shutdown");
 	exit(0);
 }
-#if 0
-static void handle_server_sigsegv(int sig, siginfo_t * si, void *unused)
-{
-	ucontext_t *u = (ucontext_t *) unused;
-#if defined(__arm__)
-	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX fault_address 0x%08lX PC 0x%08lX", (long)si->si_addr, u->uc_mcontext.fault_address, u->uc_mcontext.arm_pc);
-#elif defined(__i386__)
-	unsigned char *pc = (unsigned char *)u->uc_mcontext.gregs[REG_EIP];
-	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX EIP = 0x%08lX", (long)si->si_addr, (long)pc);
-#elif defined(__powerpc__)
-#ifdef __UCLIBC__
-	unsigned char *pc = (unsigned char *)u->uc_mcontext.uc_regs->gregs[32];
-#else
-	unsigned char *pc = (unsigned char *)u->uc_mcontext.gregs[32];
-#endif
-	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX EIP = 0x%08lX", (long)si->si_addr, (long)pc);
-#elif defined(__x86_64__)
-	unsigned char *pc = (unsigned char *)u->uc_mcontext.gregs[REG_RIP];
-	dd_syslog(LOG_ERR, "httpd server crash at 0x%016lX RIP = 0x%016lX", (long)si->si_addr, (long)pc);
-#elif defined(__mips64__)
-	unsigned char *pc = (unsigned char *)u->uc_mcontext.sc_pc;
-	dd_syslog(LOG_ERR, "httpd server crash at 0x%016lX PC = 0x%016lX", (long)si->si_addr, (long)pc);
-#elif defined(__mips__)
-	struct sigcontext *ctx = (struct sigcontext *)&u->uc_mcontext;
-	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX PC = 0x%08lX", (long)si->si_addr, (long)ctx->sc_pc);
-#else
-	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX", (long)si->si_addr);
-#endif
 
-	exit(0);
-}
-#endif
 void settimeouts(webs_t wp, int secs)
 {
 	struct timeval tv;
@@ -1483,12 +1452,10 @@ int main(int argc, char **argv)
 		default:
 			break;
 		}
-
-	httpd_level = ct_openlog("httpd", LOG_PID | LOG_NDELAY, LOG_DAEMON, "LOG_HTTPD");
 #ifdef HAVE_HTTPS
-	ct_syslog(LOG_INFO, httpd_level, "httpd server %sstarted at port %d\n", do_ssl ? "(ssl support) " : "", server_port);
+	dd_syslog(LOG_INFO, httpd_level, "httpd server %sstarted at port %d\n", do_ssl ? "(ssl support) " : "", server_port);
 #else
-	ct_syslog(LOG_INFO, httpd_level, "httpd server started at port %d\n", server_port);
+	dd_syslog(LOG_INFO, httpd_level, "httpd server started at port %d\n", server_port);
 #endif
 	/* Ignore broken pipes */
 	signal(SIGPIPE, SIG_IGN);
@@ -1638,7 +1605,7 @@ int main(int argc, char **argv)
 	for (;;) {
 		webs_t conn_fp = safe_malloc(sizeof(webs));
 		if (!conn_fp) {
-			ct_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
+			dd_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
 			continue;
 		}
 		bzero(conn_fp, sizeof(webs));
@@ -1725,7 +1692,7 @@ int main(int argc, char **argv)
 				//berr_exit("SSL accept error");
 //                              ERR_print_errors_fp(stderr);
 //                              fprintf(stderr,"ssl accept return %d, ssl error %d %d\n",r,SSL_get_error(ssl,r),RAND_status());
-				ct_syslog(LOG_ERR, httpd_level, "SSL accept error");
+				dd_syslog(LOG_ERR, httpd_level, "SSL accept error");
 				close(conn_fp->conn_fd);
 
 				SSL_free(conn_fp->ssl);
