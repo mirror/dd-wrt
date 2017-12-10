@@ -241,8 +241,12 @@ def find_lib(lib):
 # Find a PIC archive for the library
 def find_pic(lib):
     base_name = so_pattern.match(lib).group(1)
+    debug(DEBUG_VERBOSE, "lib name ", lib)
+    debug(DEBUG_VERBOSE, "base name ", base_name)
     for path in lib_path:
+	debug(DEBUG_VERBOSE, "path ", path)
         for file in glob.glob(sysroot + path + "/" + base_name + "_pic.a"):
+    	    debug(DEBUG_VERBOSE, "file ", file)
             if os.access(file, os.F_OK):
                 return resolve_link(file)
     return ""
@@ -257,9 +261,12 @@ def find_pic_map(lib):
     return ""
 
 def extract_soname(so_file):
+    debug(DEBUG_VERBOSE, "so_file ", so_file)
     soname_data = command("mklibs-readelf", "--print-soname", so_file)
     if soname_data:
-        return soname_data.pop()
+	return soname_data.pop()
+    else:
+	return os.path.basename(so_file)
     return ""
 
 def multiarch(paths):
@@ -576,15 +583,18 @@ while 1:
         so_file_name = os.path.basename(so_file)
         if not so_file:
             sys.exit("File not found:" + library)
+        debug(DEBUG_VERBOSE, "find pic")
+
         pic_file = find_pic(library)
+        debug(DEBUG_VERBOSE, "pic", pic_file)
         if pic_file:
             # we have a pic file, recompile
-            debug(DEBUG_SPAM, "extracting from:", pic_file, "so_file:", so_file)
+            debug(DEBUG_VERBOSE, "extracting from:", pic_file, "so_file:", so_file)
             soname = extract_soname(so_file)
             if soname == "":
                 debug(DEBUG_VERBOSE, so_file, " has no soname, copying")
                 continue
-            debug(DEBUG_SPAM, "soname:", soname)
+            debug(DEBUG_VERBOSE, "soname:", soname)
 
             symbols = set()
             extra_flags = []
@@ -650,6 +660,8 @@ for lib in regexpfilter(os.listdir(dest_path), "(.*so[.\d]*)$"):
     soname = extract_soname(this_lib_path)
     if soname:
         debug(DEBUG_VERBOSE, "Moving %s to %s." % (lib, soname))
+        debug(DEBUG_VERBOSE, "source ", dest_path + "/" + lib)
+        debug(DEBUG_VERBOSE, "dest ", dest_path + "/" + soname)
         os.rename(dest_path + "/" + lib, dest_path + "/" + soname)
 
 # Make sure the dynamic linker is present and is executable
