@@ -350,7 +350,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	interface->freq = wrqfreq_to_int(&wrq);
 	return interface;
 }
-
+#ifdef defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 int wifi_getchannel(char *ifname)
 {
 	struct wifi_interface *interface = wifi_getfreq(ifname);
@@ -358,7 +358,7 @@ int wifi_getchannel(char *ifname)
 	free(interface);
 	return channel;
 }
-
+#endif
 long long wifi_getrate(char *ifname)
 {
 	struct iwreq wrq;
@@ -1009,6 +1009,7 @@ int has_2ghz(char *prefix)
 
 	return 0;
 }
+#ifdef defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 
 int wifi_getchannel(char *ifn)
 {
@@ -1026,7 +1027,7 @@ int wifi_getchannel(char *ifn)
 	} else
 		return -1;
 }
-
+#endif
 int wl_getbssid(char *wl, char *mac)
 {
 	int ret;
@@ -1719,6 +1720,8 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	return interface;
 }
 
+#ifdef defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
+
 int wifi_getchannel(char *ifname)
 {
 	struct wifi_interface *interface = wifi_getfreq(ifname);
@@ -1728,6 +1731,7 @@ int wifi_getchannel(char *ifname)
 	free(interface);
 	return channel;
 }
+#endif
 
 int get_radiostate(char *ifname)
 {

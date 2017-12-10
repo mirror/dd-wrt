@@ -123,7 +123,7 @@ static int scanFor(int Vendor, int Product)
 #endif
 }
 
-void checkreset(unsigned char tty)
+static void checkreset(unsigned char tty)
 {
 	char tts[32];
 	sprintf(tts, "/dev/usb/tts/%d", tty);

@@ -790,7 +790,7 @@ char *find_name_by_proc(int pid)
 	return "";
 }
 
-int diag_led_4702(int type, int act)
+static int diag_led_4702(int type, int act)
 {
 
 #if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_FONERA) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
@@ -813,7 +813,9 @@ int diag_led_4702(int type, int act)
 #endif
 }
 
-int C_led_4702(int i)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+
+static int C_led_4702(int i)
 {
 #if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE)  || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
 	return 0;
@@ -844,7 +846,7 @@ int C_led_4702(int i)
 	return 0;
 #endif
 }
-
+#endif
 unsigned int read_gpio(char *device)
 {
 	FILE *fp;
@@ -876,7 +878,7 @@ unsigned int write_gpio(char *device, unsigned int val)
 	}
 }
 
-int diag_led_4704(int type, int act)
+static int diag_led_4704(int type, int act)
 {
 #if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI)|| defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC) || defined(HAVE_ALPINE)
 	return 0;
@@ -922,7 +924,7 @@ int diag_led_4704(int type, int act)
 #endif
 }
 
-int diag_led_4712(int type, int act)
+static int diag_led_4712(int type, int act)
 {
 
 #if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA)|| defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC) | defined(HAVE_ALPINE)
@@ -959,7 +961,8 @@ int diag_led_4712(int type, int act)
 #endif
 }
 
-int C_led_4712(int i)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+static int C_led_4712(int i)
 {
 	if (i == 1)
 		return diag_led(DIAG, START_LED);
@@ -1000,7 +1003,7 @@ int diag_led(int type, int act)
 	}
 	return 0;
 }
-
+#endif
 // note - broadcast addr returned in ipaddr
 void get_broadcast(char *ipaddr, char *netmask)
 {
@@ -2961,13 +2964,14 @@ int led_control(int type, int act)
 		break;
 #endif
 	}
-
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	if (type == LED_DIAG && v1func == 1) {
 		if (act == LED_ON)
 			C_led(1);
 		else
 			C_led(0);
 	}
+#endif
 
 	switch (type) {
 	case LED_POWER:
