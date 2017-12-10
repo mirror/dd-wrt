@@ -198,7 +198,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	if (url)
 		return eval("write", url, WRITEPART);
 	// diag_led(DIAG, START_LED); // blink the diag led
-	C_led(1);
 	if (DO_SSL(stream))
 		ACTION("ACT_WEBS_UPGRADE");
 	else
@@ -699,7 +698,6 @@ err:
 		eval("mtd", "-e", "linux2", "-f", "write", "/tmp/parttemp", "linux2");
 	}
 	// diag_led(DIAG, STOP_LED);
-	C_led(0);
 	ACTION("ACT_IDLE");
 	return ret;
 #else
