@@ -564,8 +564,6 @@ bool set_forward_port(const netconf_nat_t * nat)
 		cur = safe_snprintf(cur, &len, nat->desc);
 	}
 
-	ct_logger(LOG_INFO, "upnp[%d]: Set \"%s\" to \"%s\"", getpid(), value, name);
-
 	/*
 	 * Do it 
 	 */

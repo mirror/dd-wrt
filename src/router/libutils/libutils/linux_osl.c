@@ -37,7 +37,7 @@ struct iface {
 #define FALSE (!TRUE)
 #endif
 
-short osl_ifflags(const char *ifname);	// - tofu
+static short osl_ifflags(const char *ifname);	// - tofu
 
 struct in_addr *osl_ifaddr(const char *ifname, struct in_addr *inaddr)
 {
@@ -61,7 +61,7 @@ struct in_addr *osl_ifaddr(const char *ifname, struct in_addr *inaddr)
 	return inaddr;
 }
 
-short osl_ifflags(const char *ifname)
+static short osl_ifflags(const char *ifname)
 {
 	int sockfd;
 	struct ifreq ifreq;
