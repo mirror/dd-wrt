@@ -348,7 +348,7 @@ ifneq ($(CONFIG_MUSL),y)
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
 else
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so} $(ARCH)-uclibc/target/lib/libc.so 
-#	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.a} $(ARCH)-uclibc/target/lib/libc_pic.a 
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.a} $(ARCH)-uclibc/target/lib/libc_pic.a 
 endif
 ifneq ($(CONFIG_MUSL),y)
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uclibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
@@ -399,7 +399,7 @@ ifneq ($(CONFIG_NOOPT),y)
 
 	mkdir -p /tmp/$(ARCHITECTURE)/mklibs-out
 ifneq ($(CONFIG_MUSL),y)
-	mklibs.py -D \
+	./mklibs/mklibs.py -D \
 		-d /tmp/$(ARCHITECTURE)/mklibs-out \
 		--sysroot $(TARGETDIR) \
 		-L /lib \
@@ -408,7 +408,7 @@ ifneq ($(CONFIG_MUSL),y)
 		--target $(ARCH)-linux-uclibc \
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
 else
-	mklibs.py -D \
+	./mklibs/mklibs.py -D \
 		-d /tmp/$(ARCHITECTURE)/mklibs-out \
 		--sysroot $(TARGETDIR) \
 		-L /lib \
@@ -419,7 +419,10 @@ else
 
 endif
 	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
+	rm -f $(ARCH)-uclibc/target/lib/libc_pic.a 
+
 endif
+#arm-linux-gcc -Xlinker --verbose  2>/dev/null | grep SEARCH | sed 's/SEARCH_DIR("=\?\([^"]\+\)"); */\1\n/g'  | grep -vE '^$'
 
 validate: $(eval FILE_SIZE = $(shell stat -c %s $(EX_PATH)))
 	@if [ ${FILE_SIZE} -gt ${MAXIMUM_SIZE} ] ; then \
