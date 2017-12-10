@@ -2213,7 +2213,9 @@ void start_lan(void)
 
 	}
 	// find wireless interface
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	diag_led(DIAG, STOP_LED);	// stop that blinking
+#endif
 	strcpy(wl_face, get_wdev());
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 #ifndef HAVE_NOWIFI
@@ -2954,6 +2956,7 @@ void start_lan(void)
 	/*
 	 * Disable wireless will cause diag led blink, so we want to stop it. 
 	 */
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	if (check_hw_type() == BCM4712_CHIP) {
 		diag_led(DIAG, STOP_LED);
 		/*
@@ -2965,7 +2968,7 @@ void start_lan(void)
 		else
 			diag_led(DMZ, STOP_LED);
 	}
-
+#endif
 	br_set_stp_state("br0", getBridgeSTP("br0"));
 	// eval ("rm", "/tmp/hosts");
 	addHost("localhost", "127.0.0.1", 0);
@@ -4621,6 +4624,7 @@ void start_wan(int status)
 	 */
 
 	cprintf("diag led control\n");
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	if ((check_hw_type() == BCM4712_CHIP)
 	    || (check_hw_type() == BCM5325E_CHIP)) {
 		// Barry will put disable WLAN here
@@ -4641,7 +4645,7 @@ void start_wan(int status)
 		diag_led(DMZ, START_LED);
 	else
 		diag_led(DMZ, STOP_LED);
-
+#endif
 	cprintf("%s %s\n", nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 
 	if (nvram_match("wan_proto", "l2tp")) {

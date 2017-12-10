@@ -924,7 +924,9 @@ void start_run_rc_shutdown(void)
 	/* 
 	 * Blink led before reboot 
 	 */
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	diag_led(DIAG, START_LED);
+#endif
 	led_control(LED_DIAG, LED_ON);
 	runStartup("/opt/etc/init.d", "K**");	// if available; run K** shutdown scripts
 	create_rc_file(RC_SHUTDOWN);

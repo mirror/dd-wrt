@@ -2988,10 +2988,12 @@ void start_firewall(void)
 	 * Turn on the DMZ-LED, if enabled.(from service.c) 
 	 */
 	cprintf("enable DMZ\n");
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	if (dmzenable)
 		diag_led(DMZ, START_LED);
 	else
 		diag_led(DMZ, STOP_LED);
+#endif
 	cprintf("done");
 
 	cprintf("Start firewall\n");
@@ -3076,7 +3078,9 @@ void stop_firewall(void)
 	/*
 	 * Make sure the DMZ-LED is off (from service.c) 
 	 */
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	diag_led(DMZ, STOP_LED);
+#endif
 #ifdef HAVE_GGEW
 	char *wordlist = nvram_safe_get("ral");
 	char var[256], *next;

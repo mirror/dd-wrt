@@ -356,7 +356,9 @@ void start_init_start(void)
 	start_ttraff();
 
 	cprintf("diag STOP LED\n");
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	diag_led(DIAG, STOP_LED);
+#endif
 	cprintf("set led release wan control\n");
 
 #ifdef HAVE_RADIOOFF
