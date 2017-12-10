@@ -19,12 +19,6 @@
 
 #define MAX_NVPARSE 256
 
-/*
- * Reads file and returns contents
- * @param       fd      file descriptor
- * @return      contents of file or NULL if an error occurred
- */
-extern char *fd2str(int fd);
 
 /*
  * Reads file and returns contents
