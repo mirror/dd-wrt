@@ -86,7 +86,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	}
 
 	// diag_led(DIAG, START_LED); // blink the diag led
-	C_led(1);
 	if (DO_SSL(stream))
 		ACTION("ACT_WEBS_UPGRADE");
 	else
