@@ -1,5 +1,5 @@
-    #
-# Broadcom Linux Router Makefile
+
+
 #
 # Copyright 2001-2003, Broadcom Corporation
 # All Rights Reserved.
@@ -139,6 +139,7 @@ endif
 #
 CONFIG_IPTABLES=y
 CONFIG_MUSL=y
+CONFIG_NOOPT=y
 
 include rules/configs.mk
 
