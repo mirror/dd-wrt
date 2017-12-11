@@ -165,7 +165,6 @@ int server_port;
 char pid_file[80];
 char *server_dir = NULL;
 
-int httpd_level;
 
 extern char *get_mac_from_ip(char *mac, char *ip);
 
@@ -373,7 +372,7 @@ static int auth_check(webs_t conn_fp)
 
 	/* Basic authorization info? */
 	if (!conn_fp->authorization || strncmp(conn_fp->authorization, "Basic ", 6) != 0) {
-		dd_syslog(LOG_INFO, httpd_level, "Authentication fail");
+		dd_syslog(LOG_INFO, "Authentication fail");
 
 		goto out;
 	}
@@ -1263,7 +1262,7 @@ get_client_ip_mac(int conn_fd, webs_t conn_fp)
 
 static void handle_server_sig_int(int sig)
 {
-	dd_syslog(LOG_INFO, httpd_level, "httpd server shutdown");
+	dd_syslog(LOG_INFO, "httpd server shutdown");
 	exit(0);
 }
 
@@ -1453,9 +1452,9 @@ int main(int argc, char **argv)
 			break;
 		}
 #ifdef HAVE_HTTPS
-	dd_syslog(LOG_INFO, httpd_level, "httpd server %sstarted at port %d\n", do_ssl ? "(ssl support) " : "", server_port);
+	dd_syslog(LOG_INFO, "httpd server %sstarted at port %d\n", do_ssl ? "(ssl support) " : "", server_port);
 #else
-	dd_syslog(LOG_INFO, httpd_level, "httpd server started at port %d\n", server_port);
+	dd_syslog(LOG_INFO, "httpd server started at port %d\n", server_port);
 #endif
 	/* Ignore broken pipes */
 	signal(SIGPIPE, SIG_IGN);
@@ -1605,7 +1604,7 @@ int main(int argc, char **argv)
 	for (;;) {
 		webs_t conn_fp = safe_malloc(sizeof(webs));
 		if (!conn_fp) {
-			dd_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
+			dd_syslog(LOG_ERR, "Out of memory while creating new connection");
 			continue;
 		}
 		bzero(conn_fp, sizeof(webs));
@@ -1692,7 +1691,7 @@ int main(int argc, char **argv)
 				//berr_exit("SSL accept error");
 //                              ERR_print_errors_fp(stderr);
 //                              fprintf(stderr,"ssl accept return %d, ssl error %d %d\n",r,SSL_get_error(ssl,r),RAND_status());
-				dd_syslog(LOG_ERR, httpd_level, "SSL accept error");
+				dd_syslog(LOG_ERR, "SSL accept error");
 				close(conn_fp->conn_fd);
 
 				SSL_free(conn_fp->ssl);
