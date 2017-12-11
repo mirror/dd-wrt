@@ -425,6 +425,20 @@ config GATEWORKS_GW16083
 	  Ethernet switch with 4 dedicated GbE RJ45 ports, and 2 Gbe/SFP
 	  ports"
 
+config MDIO_IPQ40XX
+	tristate "Qualcomm Atheros ipq40xx MDIO interface"
+	depends on HAS_IOMEM && OF
+	---help---
+	  This driver supports the MDIO interface found in Qualcomm
+	  Atheros ipq40xx Soc chip.
+
+config AR40XX_PHY
+	tristate "Driver for Qualcomm Atheros IPQ40XX switches"
+	depends on HAS_IOMEM && OF
+	select SWCONFIG
+	---help---
+	   This is the driver for Qualcomm Atheros IPQ40XX ESS switches.
+
 endif # PHYLIB
 
 config MICREL_KS8995MA

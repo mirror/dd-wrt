@@ -13,6 +13,12 @@
 #include <linux/types.h>
 
 struct cpufreq_dt_platform_data {
+	/*
+	 * True when each CPU has its own clock to control its
+	 * frequency, false when all CPUs are controlled by a single
+	 * clock.
+	 */
+	bool independent_clocks;
 	bool have_governor_per_policy;
 };
 

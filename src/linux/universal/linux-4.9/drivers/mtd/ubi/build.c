@@ -1335,6 +1335,10 @@ static void __init ubi_auto_attach(void)
 	if (IS_ERR(mtd))
 		mtd = open_mtd_device("data");
 	}
+	/* Hack for the Asus RT-AC58U */
+	if (IS_ERR(mtd))
+		mtd = open_mtd_device("UBI_DEV");
+
 	if (!IS_ERR(mtd)) {
 		size_t len;
 		char magic[4];

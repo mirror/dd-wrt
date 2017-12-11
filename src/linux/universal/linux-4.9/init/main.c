@@ -87,6 +87,10 @@
 #include <asm/sections.h>
 #include <asm/cacheflush.h>
 
+#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
+#include <linux/of.h>
+#endif
+
 static int kernel_init(void *);
 
 extern void init_IRQ(void);
@@ -514,6 +518,18 @@ asmlinkage __visible void __init start_kernel(void)
 	page_alloc_init();
 
 	pr_notice("Kernel command line: %s\n", boot_command_line);
+
+#if defined(CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE)
+	//Show bootloader's original command line for reference
+	if(of_chosen) {
+		const char *prop = of_get_property(of_chosen, "bootloader-args", NULL);
+		if(prop)
+			pr_notice("Bootloader command line (ignored): %s\n", prop);
+		else
+			pr_notice("Bootloader command line not present\n");
+	}
+#endif
+
 	parse_early_param();
 	after_dashes = parse_args("Booting kernel",
 				  static_command_line, __start___param,

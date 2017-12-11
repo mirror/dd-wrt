@@ -98,6 +98,16 @@ struct msm_pingroup {
 };
 
 /**
+ * struct msm_pinctrl_gpio_pull - pinctrl pull value bit field descriptor
+ */
+struct msm_pinctrl_gpio_pull {
+	unsigned no_pull;
+	unsigned pull_down;
+	unsigned keeper;
+	unsigned pull_up;
+};
+
+/**
  * struct msm_pinctrl_soc_data - Qualcomm pin controller driver configuration
  * @pins:       An array describing all pins the pin controller affects.
  * @npins:      The number of entries in @pins.
@@ -106,6 +116,7 @@ struct msm_pingroup {
  * @groups:     An array describing all pin groups the pin SoC supports.
  * @ngroups:    The numbmer of entries in @groups.
  * @ngpio:      The number of pingroups the driver should expose as GPIOs.
+ * @gpio_pull_val: The pull value bit field descriptor.
  */
 struct msm_pinctrl_soc_data {
 	const struct pinctrl_pin_desc *pins;
@@ -115,6 +126,14 @@ struct msm_pinctrl_soc_data {
 	const struct msm_pingroup *groups;
 	unsigned ngroups;
 	unsigned ngpios;
+	const struct msm_pinctrl_gpio_pull *gpio_pull;
+};
+
+static const struct msm_pinctrl_gpio_pull msm_gpio_pull = {
+	.no_pull = 0,
+	.pull_down = 1,
+	.keeper = 2,
+	.pull_up = 3,
 };
 
 int msm_pinctrl_probe(struct platform_device *pdev,

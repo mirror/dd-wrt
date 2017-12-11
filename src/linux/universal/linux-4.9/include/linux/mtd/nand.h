@@ -942,6 +942,7 @@ static inline void nand_set_controller_data(struct nand_chip *chip, void *priv)
 #define NAND_MFR_MICRON		0x2c
 #define NAND_MFR_AMD		0x01
 #define NAND_MFR_MACRONIX	0xc2
+#define NAND_MFR_WINBOND	0xef
 #define NAND_MFR_EON		0x92
 #define NAND_MFR_SANDISK	0x45
 #define NAND_MFR_INTEL		0x89
