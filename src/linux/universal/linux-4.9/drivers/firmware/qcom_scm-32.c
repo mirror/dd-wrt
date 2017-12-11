@@ -560,3 +560,21 @@ int __qcom_scm_pas_mss_reset(struct device *dev, bool reset)
 
 	return ret ? : le32_to_cpu(out);
 }
+
+int __qcom_scm_pinmux_read(u32 svc_id, u32 cmd_id, u32 arg1)
+{
+	s32 ret;
+
+	ret = qcom_scm_call_atomic1(svc_id, cmd_id, arg1);
+
+	return ret;
+}
+
+int __qcom_scm_pinmux_write(u32 svc_id, u32 cmd_id, u32 arg1, u32 arg2)
+{
+	s32 ret;
+
+	ret = qcom_scm_call_atomic2(svc_id, cmd_id, arg1, arg2);
+ 
+ return ret;
+ }

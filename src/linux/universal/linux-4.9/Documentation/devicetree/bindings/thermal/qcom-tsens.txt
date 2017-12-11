@@ -11,11 +11,15 @@ Required properties:
 - Refer to Documentation/devicetree/bindings/nvmem/nvmem.txt to know how to specify
 nvmem cells
 
+Optional properties:
+- interrupts: Interrupt which gets triggered when threshold is hit
+
 Example:
 tsens: thermal-sensor@900000 {
 		compatible = "qcom,msm8916-tsens";
 		reg = <0x4a8000 0x2000>;
 		nvmem-cells = <&tsens_caldata>, <&tsens_calsel>;
 		nvmem-cell-names = "caldata", "calsel";
+		interrupts = <0 178 0>;
 		#thermal-sensor-cells = <1>;
 	};

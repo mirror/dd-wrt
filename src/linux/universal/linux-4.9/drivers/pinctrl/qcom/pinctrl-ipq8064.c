@@ -630,6 +630,7 @@ static const struct msm_pinctrl_soc_data ipq8064_pinctrl = {
 	.groups = ipq8064_groups,
 	.ngroups = ARRAY_SIZE(ipq8064_groups),
 	.ngpios = NUM_GPIO_PINGROUPS,
+	.gpio_pull = &msm_gpio_pull,
 };
 
 static int ipq8064_pinctrl_probe(struct platform_device *pdev)

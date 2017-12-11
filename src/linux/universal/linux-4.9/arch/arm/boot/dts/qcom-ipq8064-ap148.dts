@@ -4,14 +4,6 @@
 	model = "Qualcomm IPQ8064/AP148";
 	compatible = "qcom,ipq8064-ap148", "qcom,ipq8064";
 
-	aliases {
-		serial0 = &gsbi4_serial;
-	};
-
-	chosen {
-		stdout-path = "serial0:115200n8";
-	};
-
 	memory@0 {
 		reg = <0x42000000 0x1e000000>;
 		device_type = "memory";
@@ -28,7 +20,7 @@
 	};
 
 	aliases {
-		serial0 = &uart4;
+		serial0 = &gsbi4_serial;
 		mdio-gpio0 = &mdio0;
 	};
 
@@ -44,24 +36,6 @@
 				bias-disable;
 			};
 
-			pcie0_pins: pcie0_pinmux {
-				mux {
-					pins = "gpio3";
-					function = "pcie1_rst";
-					drive-strength = <12>;
-					bias-disable;
-				};
-			};
-
-			pcie1_pins: pcie1_pinmux {
-				mux {
-					pins = "gpio48";
-					function = "pcie2_rst";
-					drive-strength = <12>;
-					bias-disable;
-				};
-			};
-
 			spi_pins: spi_pins {
 				mux {
 					pins = "gpio18", "gpio19", "gpio21";
@@ -70,7 +44,6 @@
 					bias-none;
 				};
 			};
-
 			nand_pins: nand_pins {
 				mux {
 					pins = "gpio34", "gpio35", "gpio36",
@@ -82,12 +55,10 @@
 					drive-strength = <10>;
 					bias-disable;
 				};
-
 				pullups {
 					pins = "gpio39";
 					bias-pull-up;
 				};
-
 				hold {
 					pins = "gpio40", "gpio41", "gpio42",
 					       "gpio43", "gpio44", "gpio45",
@@ -122,12 +93,13 @@
 			serial@16340000 {
 				status = "ok";
 			};
+
 			/*
-			 * The i2c device on gsbi4 should not be enabled.
-			 * On ipq806x designs gsbi4 i2c is meant for exclusive
-			 * RPM usage. Turning this on in kernel manifests as
-			 * i2c failure for the RPM.
-			 */
+			* The i2c device on gsbi4 should not be enabled.
+			* On ipq806x designs gsbi4 i2c is meant for exclusive
+			* RPM usage. Turning this on in kernel manifests as
+			* i2c failure for the RPM.
+			*/
 		};
 
 		gsbi5: gsbi@1a200000 {
@@ -160,7 +132,6 @@
 		};
 
 		sata@29000000 {
-			ports-implemented = <0x1>;
 			status = "ok";
 		};
 
@@ -190,16 +161,11 @@
 
 		pcie0: pci@1b500000 {
 			status = "ok";
-			reset-gpio = <&qcom_pinmux 3 0>;
-			pinctrl-0 = <&pcie0_pins>;
-			pinctrl-names = "default";
 		};
 
 		pcie1: pci@1b700000 {
 			status = "ok";
-			reset-gpio = <&qcom_pinmux 48 0>;
-			pinctrl-0 = <&pcie1_pins>;
-			pinctrl-names = "default";
+			force_gen1 = <1>;
 		};
 
 		nand@1ac00000 {
@@ -208,10 +174,16 @@
 			pinctrl-0 = <&nand_pins>;
 			pinctrl-names = "default";
 
-			nand-ecc-strength = <4>;
-			nand-bus-width = <8>;
+			cs0 {
+				reg = <0>;
+				compatible = "qcom,nandcs";
 
-			linux,part-probe = "qcom-smem";
+				nand-ecc-strength = <4>;
+				nand-bus-width = <8>;
+				nand-ecc-step-size = <512>;
+
+				linux,part-probe = "qcom-smem";
+			};
 		};
 
 		mdio0: mdio {
@@ -229,7 +201,7 @@
 					0x00004 0x7600000   /* PAD0_MODE */
 					0x00008 0x1000000   /* PAD5_MODE */
 					0x0000c 0x80        /* PAD6_MODE */
-					0x000e4 0xaa545     /* MAC_POWER_SEL */
+					0x000e4 0x6a545     /* MAC_POWER_SEL */
 					0x000e0 0xc74164de  /* SGMII_CTRL */
 					0x0007c 0x4e        /* PORT0_STATUS */
 					0x00094 0x4e        /* PORT6_STATUS */
@@ -249,6 +221,7 @@
 
 			pinctrl-0 = <&rgmii2_pins>;
 			pinctrl-names = "default";
+
 			fixed-link {
 				speed = <1000>;
 				full-duplex;

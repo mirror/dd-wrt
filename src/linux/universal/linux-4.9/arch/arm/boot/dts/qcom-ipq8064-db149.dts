@@ -31,33 +31,6 @@
 				bias-disable;
 			};
 
-			pcie0_pins: pcie0_pinmux {
-				mux {
-					pins = "gpio3";
-					function = "pcie1_rst";
-					drive-strength = <12>;
-					bias-disable;
-				};
-			};
-
-			pcie1_pins: pcie1_pinmux {
-				mux {
-					pins = "gpio48";
-					function = "pcie2_rst";
-					drive-strength = <12>;
-					bias-disable;
-				};
-			};
-
-			pcie2_pins: pcie2_pinmux {
-				mux {
-					pins = "gpio63";
-					function = "pcie3_rst";
-					drive-strength = <12>;
-					bias-disable;
-				};
-			};
-
 			spi_pins: spi_pins {
 				mux {
 					pins = "gpio18", "gpio19", "gpio21";
@@ -176,23 +149,14 @@
 
 		pcie0: pci@1b500000 {
 			status = "ok";
-			reset-gpio = <&qcom_pinmux 3 0>;
-			pinctrl-0 = <&pcie0_pins>;
-			pinctrl-names = "default";
 		};
 
 		pcie1: pci@1b700000 {
 			status = "ok";
-			reset-gpio = <&qcom_pinmux 48 0>;
-			pinctrl-0 = <&pcie1_pins>;
-			pinctrl-names = "default";
 		};
 
 		pcie2: pci@1b900000 {
 			status = "ok";
-			reset-gpio = <&qcom_pinmux 63 0>;
-			pinctrl-0 = <&pcie2_pins>;
-			pinctrl-names = "default";
 		};
 
 		mdio0: mdio {
@@ -211,7 +175,7 @@
 					0x00004 0x7600000   /* PAD0_MODE */
 					0x00008 0x1000000   /* PAD5_MODE */
 					0x0000c 0x80        /* PAD6_MODE */
-					0x000e4 0xaa545     /* MAC_POWER_SEL */
+					0x000e4 0x6a545     /* MAC_POWER_SEL */
 					0x000e0 0xc74164de  /* SGMII_CTRL */
 					0x0007c 0x4e        /* PORT0_STATUS */
 					0x00094 0x4e        /* PORT6_STATUS */

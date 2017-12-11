@@ -59,13 +59,12 @@ static const u8 SMEM_PTABLE_MAGIC[] = {
 
 static int qcom_smem_get_flash_blksz(u64 **smem_blksz)
 {
-	int ret;
 	size_t size;
 
-	ret = qcom_smem_get(SMEM_HOST_APPS, SMEM_BOOT_FLASH_BLOCK_SIZE,
-			    (void **) smem_blksz, &size);
+	*smem_blksz = qcom_smem_get(SMEM_HOST_APPS, SMEM_BOOT_FLASH_BLOCK_SIZE,
+			    	    &size);
 
-	if (ret < 0) {
+	if (IS_ERR(*smem_blksz)) {
 		pr_err("Unable to read flash blksz from SMEM\n");
 		return -ENOENT;
 	}
@@ -80,13 +79,12 @@ static int qcom_smem_get_flash_blksz(u64 **smem_blksz)
 
 static int qcom_smem_get_flash_type(u64 **smem_flash_type)
 {
-	int ret;
 	size_t size;
 
-	ret = qcom_smem_get(SMEM_HOST_APPS, SMEM_BOOT_FLASH_TYPE,
-			    (void **) smem_flash_type, &size);
+	*smem_flash_type = qcom_smem_get(SMEM_HOST_APPS, SMEM_BOOT_FLASH_TYPE,
+			    		&size);
 
-	if (ret < 0) {
+	if (IS_ERR(*smem_flash_type)) {
 		pr_err("Unable to read flash type from SMEM\n");
 		return -ENOENT;
 	}
@@ -101,13 +99,12 @@ static int qcom_smem_get_flash_type(u64 **smem_flash_type)
 
 static int qcom_smem_get_flash_partitions(struct smem_partition_table **pparts)
 {
-	int ret;
 	size_t size;
 
-	ret = qcom_smem_get(SMEM_HOST_APPS, SMEM_AARM_PARTITION_TABLE,
-			    (void **) pparts, &size);
+	*pparts = qcom_smem_get(SMEM_HOST_APPS, SMEM_AARM_PARTITION_TABLE,
+				&size);
 
-	if (ret < 0) {
+	if (IS_ERR(*pparts)) {
 		pr_err("Unable to read partition table from SMEM\n");
 		return -ENOENT;
 	}
@@ -133,13 +130,13 @@ static bool is_spi_device(struct device_node *np)
 }
 
 static int parse_qcom_smem_partitions(struct mtd_info *master,
-				      struct mtd_partition **pparts,
+				      const struct mtd_partition **pparts,
 				      struct mtd_part_parser_data *data)
 {
 	struct smem_partition_table *smem_parts;
 	u64 *smem_flash_type, *smem_blksz;
 	struct mtd_partition *mtd_parts;
-	struct device_node *of_node = data->of_node;
+	struct device_node *of_node = master->dev.of_node;
 	int i, ret;
 
 	/*

@@ -498,4 +498,16 @@ config PHY_NS2_PCIE
 	help
 	  Enable this to support the Broadcom Northstar2 PCIe PHY.
 	  If unsure, say N.
+
+config PHY_QCOM_DWC3
+	tristate "QCOM DWC3 USB PHY support"
+	depends on ARCH_QCOM
+	depends on HAS_IOMEM
+	depends on OF
+	select GENERIC_PHY
+	help
+	  This option enables support for the Synopsis PHYs present inside the
+	  Qualcomm USB3.0 DWC3 controller.  This driver supports both HS and SS
+	  PHY controllers.
+
 endmenu
