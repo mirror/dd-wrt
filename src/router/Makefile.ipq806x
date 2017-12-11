@@ -134,10 +134,10 @@ endif
 	$(MAKE) -C $(LINUXDIR) oldconfig
 	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs KALLSYMS_EXTRA_PASS=1 CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"  KALLSYMS_EXTRA_PASS=1 ; \
 	fi
 	
 
@@ -195,7 +195,7 @@ endif
 		echo; \
 	) > $(LINUXDIR)/symtab.h
 	#rm -f $(LINUXDIR)/vmlinux
-	#$(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-"
+	#$(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" KALLSYMS_EXTRA_PASS=1
 	
 
 
