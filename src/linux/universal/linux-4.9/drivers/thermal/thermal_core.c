@@ -1401,7 +1401,7 @@ thermal_cooling_device_weight_store(struct device *dev,
  */
 int thermal_zone_bind_cooling_device(struct thermal_zone_device *tz,
 				     int trip,
-				     struct thermal_cooling_device *cdev,
+					struct thermal_cooling_device *cdev,
 				     unsigned long upper, unsigned long lower,
 				     unsigned int weight)
 {
@@ -1852,6 +1852,12 @@ static int create_trip_attrs(struct thermal_zone_device *tz, int mask)
 		tz->trip_type_attrs[indx].attr.attr.mode = S_IRUGO | S_IWUSR;
 		tz->trip_type_attrs[indx].attr.show = trip_point_type_show;
 		tz->trip_type_attrs[indx].attr.store = trip_point_type_activate;
+
+		if (IS_ENABLED(CONFIG_THERMAL_WRITABLE_TRIPS)) {
+			tz->trip_type_attrs[indx].attr.store
+						= trip_point_type_activate;
+			tz->trip_type_attrs[indx].attr.attr.mode |= S_IWUSR;
+		}
 
 		device_create_file(&tz->device,
 				   &tz->trip_type_attrs[indx].attr);

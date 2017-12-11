@@ -32,6 +32,9 @@ struct private_data {
 	struct device *cpu_dev;
 	struct thermal_cooling_device *cdev;
 	const char *reg_name;
+	struct notifier_block opp_nb;
+	struct mutex lock;
+	unsigned long opp_freq;
 };
 
 static struct freq_attr *cpufreq_dt_attr[] = {
@@ -43,9 +46,46 @@ static struct freq_attr *cpufreq_dt_attr[] = {
 static int set_target(struct cpufreq_policy *policy, unsigned int index)
 {
 	struct private_data *priv = policy->driver_data;
+	int ret;
+	unsigned long target_freq = policy->freq_table[index].frequency * 1000;
+	struct clk *l2_clk = policy->l2_clk;
+	unsigned int l2_freq;
+	unsigned long new_l2_freq = 0;
 
-	return dev_pm_opp_set_rate(priv->cpu_dev,
-				   policy->freq_table[index].frequency * 1000);
+	mutex_lock(&priv->lock);
+	ret = dev_pm_opp_set_rate(priv->cpu_dev, target_freq);
+
+	if (!ret) {
+		if (!IS_ERR(l2_clk) && policy->l2_rate[0] && policy->l2_rate[1] &&
+				policy->l2_rate[2]) {
+			static unsigned long krait_l2[CONFIG_NR_CPUS] = { };
+			int cpu, ret = 0;
+
+			if (target_freq >= policy->l2_rate[2])
+				new_l2_freq = policy->l2_rate[2];
+			else if (target_freq >= policy->l2_rate[1])
+				new_l2_freq = policy->l2_rate[1];
+			else
+				new_l2_freq = policy->l2_rate[0];
+
+			krait_l2[policy->cpu] = new_l2_freq;
+			for_each_present_cpu(cpu)
+				new_l2_freq = max(new_l2_freq, krait_l2[cpu]);
+
+			l2_freq = clk_get_rate(l2_clk);
+
+			if (l2_freq != new_l2_freq) {
+				/* scale l2 with the core */
+				ret = clk_set_rate(l2_clk, new_l2_freq);
+			}
+		}
+
+		priv->opp_freq = target_freq;
+	}
+
+	mutex_unlock(&priv->lock);
+
+	return ret;
 }
 
 /*
@@ -84,6 +124,41 @@ static const char *find_supply_name(struct device *dev)
 node_put:
 	of_node_put(np);
 	return name;
+}
+
+static int opp_notifier(struct notifier_block *nb, unsigned long event,
+			void *data)
+{
+	struct dev_pm_opp *opp = data;
+	struct private_data *priv = container_of(nb, struct private_data,
+						 opp_nb);
+	struct device *cpu_dev = priv->cpu_dev;
+	struct regulator *cpu_reg;
+	unsigned long volt, freq;
+	int ret = 0;
+
+	if (event == OPP_EVENT_ADJUST_VOLTAGE) {
+		cpu_reg = dev_pm_opp_get_regulator(cpu_dev);
+		if (IS_ERR(cpu_reg)) {
+			ret = PTR_ERR(cpu_reg);
+			goto out;
+		}
+		rcu_read_lock();
+		volt = dev_pm_opp_get_voltage(opp);
+		freq = dev_pm_opp_get_freq(opp);
+		rcu_read_unlock();
+
+		mutex_lock(&priv->lock);
+		if (freq == priv->opp_freq) {
+			ret = regulator_set_voltage_triplet(cpu_reg, volt, volt, volt);
+		}
+		mutex_unlock(&priv->lock);
+		if (ret)
+			dev_err(cpu_dev, "failed to scale voltage: %d\n", ret);
+	}
+
+out:
+	return notifier_from_errno(ret);
 }
 
 static int resources_available(void)
@@ -153,6 +228,9 @@ static int cpufreq_init(struct cpufreq_policy *policy)
 	bool fallback = false;
 	const char *name;
 	int ret;
+	struct srcu_notifier_head *opp_srcu_head;
+	struct device_node *l2_np;
+	struct clk *l2_clk = NULL;
 
 	cpu_dev = get_cpu_device(policy->cpu);
 	if (!cpu_dev) {
@@ -221,7 +299,10 @@ static int cpufreq_init(struct cpufreq_policy *policy)
 	}
 
 	if (fallback) {
-		cpumask_setall(policy->cpus);
+		struct cpufreq_dt_platform_data *pd = cpufreq_get_driver_data();
+
+		if (!pd || !pd->independent_clocks)
+			cpumask_setall(policy->cpus);
 
 		/*
 		 * OPP tables are initialized only for policy->cpu, do it for
@@ -239,13 +320,29 @@ static int cpufreq_init(struct cpufreq_policy *policy)
 		goto out_free_opp;
 	}
 
+	mutex_init(&priv->lock);
+
+	rcu_read_lock();
+	opp_srcu_head = dev_pm_opp_get_notifier(cpu_dev);
+	if (IS_ERR(opp_srcu_head)) {
+		ret = PTR_ERR(opp_srcu_head);
+		rcu_read_unlock();
+		goto out_free_priv;
+	}
+
+	priv->opp_nb.notifier_call = opp_notifier;
+	ret = srcu_notifier_chain_register(opp_srcu_head, &priv->opp_nb);
+	rcu_read_unlock();
+	if (ret)
+		goto out_free_priv;
+
 	priv->reg_name = name;
 	priv->opp_table = opp_table;
 
 	ret = dev_pm_opp_init_cpufreq_table(cpu_dev, &freq_table);
 	if (ret) {
 		dev_err(cpu_dev, "failed to init cpufreq table: %d\n", ret);
-		goto out_free_priv;
+		goto out_unregister_nb;
 	}
 
 	priv->cpu_dev = cpu_dev;
@@ -257,6 +354,13 @@ static int cpufreq_init(struct cpufreq_policy *policy)
 	if (suspend_opp)
 		policy->suspend_freq = dev_pm_opp_get_freq(suspend_opp) / 1000;
 	rcu_read_unlock();
+
+	l2_clk = clk_get(cpu_dev, "l2");
+	if (!IS_ERR(l2_clk))
+		policy->l2_clk = l2_clk;
+	l2_np = of_find_node_by_name(NULL, "qcom,l2");
+	if (l2_np)
+		of_property_read_u32_array(l2_np, "qcom,l2-rates", policy->l2_rate, 3);
 
 	ret = cpufreq_table_validate_and_show(policy, freq_table);
 	if (ret) {
@@ -284,6 +388,8 @@ static int cpufreq_init(struct cpufreq_policy *policy)
 
 out_free_cpufreq_table:
 	dev_pm_opp_free_cpufreq_table(cpu_dev, &freq_table);
+out_unregister_nb:
+	srcu_notifier_chain_unregister(opp_srcu_head, &priv->opp_nb);
 out_free_priv:
 	kfree(priv);
 out_free_opp:
@@ -375,6 +481,8 @@ static int dt_cpufreq_probe(struct platform_device *pdev)
 
 	if (data && data->have_governor_per_policy)
 		dt_cpufreq_driver.flags |= CPUFREQ_HAVE_GOVERNOR_PER_POLICY;
+
+	dt_cpufreq_driver.driver_data = data;
 
 	ret = cpufreq_register_driver(&dt_cpufreq_driver);
 	if (ret)

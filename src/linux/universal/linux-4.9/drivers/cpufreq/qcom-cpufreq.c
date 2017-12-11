@@ -20,7 +20,7 @@
 #include <linux/platform_device.h>
 #include <linux/pm_opp.h>
 #include <linux/slab.h>
-#include <linux/cpufreq-dt.h>
+#include "cpufreq-dt.h"
 
 static void __init get_krait_bin_format_a(int *speed, int *pvs, int *pvs_ver)
 {
@@ -136,7 +136,7 @@ static int __init qcom_cpufreq_populate_opps(void)
 	}
 
 	snprintf(table_name, sizeof(table_name),
-			"qcom,speed%d-pvs%d-bin-v%d", speed, pvs, pvs_ver);
+		 "qcom,speed%d-pvs%d-bin-v%d", speed, pvs, pvs_ver);
 
 	if (!of_find_property(np, table_name, &len))
 		return -EINVAL;
@@ -168,8 +168,11 @@ static int __init qcom_cpufreq_populate_opps(void)
 
 static int __init qcom_cpufreq_driver_init(void)
 {
+	struct cpufreq_dt_platform_data pdata = { .independent_clocks = true };
 	struct platform_device_info devinfo = {
-		.name = "cpufreq-krait",
+		.name = "cpufreq-dt",
+		.data = &pdata,
+		.size_data = sizeof(pdata),
 	};
 	struct device *cpu_dev;
 	struct device_node *np;

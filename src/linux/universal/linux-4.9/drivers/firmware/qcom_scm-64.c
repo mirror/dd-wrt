@@ -365,3 +365,12 @@ int __qcom_scm_pas_mss_reset(struct device *dev, bool reset)
 
 	return ret ? : res.a1;
 }
+int __qcom_scm_pinmux_read(u32 svc_id, u32 cmd_id, u32 arg1)
+{
+	return -ENOTSUPP;
+}
+
+int __qcom_scm_pinmux_write(u32 svc_id, u32 cmd_id, u32 arg1, u32 arg2)
+{
+	return -ENOTSUPP;
+}

@@ -46,4 +46,6 @@ extern void qcom_scm_cpu_power_down(u32 flags);
 
 extern u32 qcom_scm_get_version(void);
 
+extern s32 qcom_scm_pinmux_read(u32 arg1);
+extern s32 qcom_scm_pinmux_write(u32 arg1, u32 arg2);
 #endif

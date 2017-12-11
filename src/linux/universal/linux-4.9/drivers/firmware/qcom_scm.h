@@ -56,6 +56,13 @@ extern int  __qcom_scm_pas_auth_and_reset(struct device *dev, u32 peripheral);
 extern int  __qcom_scm_pas_shutdown(struct device *dev, u32 peripheral);
 extern int  __qcom_scm_pas_mss_reset(struct device *dev, bool reset);
 
+#define SCM_IO_READ	1
+#define SCM_IO_WRITE	2
+#define SCM_SVC_IO_ACCESS	0x5
+
+s32 __qcom_scm_pinmux_read(u32 svc_id, u32 cmd_id, u32 arg1);
+s32 __qcom_scm_pinmux_write(u32 svc_id, u32 cmd_id, u32 arg1, u32 arg2);
+
 /* common error codes */
 #define QCOM_SCM_V2_EBUSY	-12
 #define QCOM_SCM_ENOMEM		-5

@@ -37,7 +37,13 @@
 #include "pcie-designware.h"
 
 #define PCIE20_PARF_PHY_CTRL			0x40
+#define PHY_CTRL_PHY_TX0_TERM_OFFSET_MASK	(0x1f << 16)
+#define PHY_CTRL_PHY_TX0_TERM_OFFSET(x)		(x << 16)
+
 #define PCIE20_PARF_PHY_REFCLK			0x4C
+#define REF_SSP_EN				BIT(16)
+#define REF_USE_PAD				BIT(12)
+
 #define PCIE20_PARF_DBI_BASE_ADDR		0x168
 #define PCIE20_PARF_SLV_ADDR_SPACE_SIZE		0x16c
 #define PCIE20_PARF_AXI_MSTR_WR_ADDR_HALT	0x178
@@ -46,21 +52,70 @@
 #define PCIE20_ELBI_SYS_CTRL_LT_ENABLE		BIT(0)
 
 #define PCIE20_CAP				0x70
+#define PCIE20_CAP_LINKCTRLSTATUS		(PCIE20_CAP + 0x10)
+
+#define PCIE20_AXI_MSTR_RESP_COMP_CTRL0		0x818
+#define PCIE20_AXI_MSTR_RESP_COMP_CTRL1		0x81c
+
+#define PCIE20_PLR_IATU_VIEWPORT		0x900
+#define PCIE20_PLR_IATU_REGION_OUTBOUND		(0x0 << 31)
+#define PCIE20_PLR_IATU_REGION_INDEX(x)		(x << 0)
+
+#define PCIE20_PLR_IATU_CTRL1			0x904
+#define PCIE20_PLR_IATU_TYPE_CFG0		(0x4 << 0)
+#define PCIE20_PLR_IATU_TYPE_MEM		(0x0 << 0)
+
+#define PCIE20_PLR_IATU_CTRL2			0x908
+#define PCIE20_PLR_IATU_ENABLE			BIT(31)
+
+#define PCIE20_PLR_IATU_LBAR			0x90C
+#define PCIE20_PLR_IATU_UBAR			0x910
+#define PCIE20_PLR_IATU_LAR			0x914
+#define PCIE20_PLR_IATU_LTAR			0x918
+#define PCIE20_PLR_IATU_UTAR			0x91c
+
+#define MSM_PCIE_DEV_CFG_ADDR		0x01000000
 
 #define PERST_DELAY_US				1000
+/* PARF registers */
+#define PCIE20_PARF_PCS_DEEMPH			0x34
+#define PCS_DEEMPH_TX_DEEMPH_GEN1(x)		(x << 16)
+#define PCS_DEEMPH_TX_DEEMPH_GEN2_3_5DB(x)	(x << 8)
+#define PCS_DEEMPH_TX_DEEMPH_GEN2_6DB(x)	(x << 0)
+
+#define PCIE20_PARF_PCS_SWING			0x38
+#define PCS_SWING_TX_SWING_FULL(x)		(x << 8)
+#define PCS_SWING_TX_SWING_LOW(x)		(x << 0)
+
+#define PCIE20_PARF_CONFIG_BITS			0x50
+#define PHY_RX0_EQ(x)				(x << 24)
+
+#define PCIE20_LNK_CONTROL2_LINK_STATUS2        0xA0
+
+#define __set(v, a, b)	(((v) << (b)) & GENMASK(a, b))
+#define __mask(a, b)	(((1 << ((a) + 1)) - 1) & ~((1 << (b)) - 1))
+#define PCIE20_DEV_CAS			0x78
+#define PCIE20_MRRS_MASK		__mask(14, 12)
+#define PCIE20_MRRS(x)			__set(x, 14, 12)
+#define PCIE20_MPS_MASK			__mask(7, 5)
+#define PCIE20_MPS(x)			__set(x, 7, 5)
 
 struct qcom_pcie_resources_v0 {
 	struct clk *iface_clk;
 	struct clk *core_clk;
 	struct clk *phy_clk;
+	struct clk *aux_clk;
+	struct clk *ref_clk;
 	struct reset_control *pci_reset;
 	struct reset_control *axi_reset;
 	struct reset_control *ahb_reset;
 	struct reset_control *por_reset;
 	struct reset_control *phy_reset;
+	struct reset_control *ext_reset;
 	struct regulator *vdda;
 	struct regulator *vdda_phy;
 	struct regulator *vdda_refclk;
+	uint8_t phy_tx0_term_offset;
 };
 
 struct qcom_pcie_resources_v1 {
@@ -93,9 +148,20 @@ struct qcom_pcie {
 	struct phy *phy;
 	struct gpio_desc *reset;
 	struct qcom_pcie_ops *ops;
+	uint32_t force_gen1;
 };
 
 #define to_qcom_pcie(x)		container_of(x, struct qcom_pcie, pp)
+
+static inline void
+writel_masked(void __iomem *addr, u32 clear_mask, u32 set_mask)
+{
+	u32 val = readl(addr);
+
+	val &= ~clear_mask;
+	val |= set_mask;
+	writel(val, addr);
+}
 
 static void qcom_ep_reset_assert(struct qcom_pcie *pcie)
 {
@@ -131,6 +197,57 @@ static int qcom_pcie_establish_link(struct qcom_pcie *pcie)
 	return dw_pcie_wait_for_link(&pcie->pp);
 }
 
+static void qcom_pcie_prog_viewport_cfg0(struct qcom_pcie *pcie, u32 busdev)
+{
+	struct pcie_port *pp = &pcie->pp;
+
+	/*
+	 * program and enable address translation region 0 (device config
+	 * address space); region type config;
+	 * axi config address range to device config address range
+	 */
+	writel(PCIE20_PLR_IATU_REGION_OUTBOUND |
+	       PCIE20_PLR_IATU_REGION_INDEX(0),
+	       pcie->pp.dbi_base + PCIE20_PLR_IATU_VIEWPORT);
+
+	writel(PCIE20_PLR_IATU_TYPE_CFG0, pcie->pp.dbi_base + PCIE20_PLR_IATU_CTRL1);
+	writel(PCIE20_PLR_IATU_ENABLE, pcie->pp.dbi_base + PCIE20_PLR_IATU_CTRL2);
+	writel(pp->cfg0_base, pcie->pp.dbi_base + PCIE20_PLR_IATU_LBAR);
+	writel((pp->cfg0_base >> 32), pcie->pp.dbi_base + PCIE20_PLR_IATU_UBAR);
+	writel((pp->cfg0_base + pp->cfg0_size - 1),
+	       pcie->pp.dbi_base + PCIE20_PLR_IATU_LAR);
+	writel(busdev, pcie->pp.dbi_base + PCIE20_PLR_IATU_LTAR);
+	writel(0, pcie->pp.dbi_base + PCIE20_PLR_IATU_UTAR);
+}
+
+static void qcom_pcie_prog_viewport_mem2_outbound(struct qcom_pcie *pcie)
+{
+	struct pcie_port *pp = &pcie->pp;
+
+	/*
+	 * program and enable address translation region 2 (device resource
+	 * address space); region type memory;
+	 * axi device bar address range to device bar address range
+	 */
+	writel(PCIE20_PLR_IATU_REGION_OUTBOUND |
+	       PCIE20_PLR_IATU_REGION_INDEX(2),
+	       pcie->pp.dbi_base + PCIE20_PLR_IATU_VIEWPORT);
+
+	writel(PCIE20_PLR_IATU_TYPE_MEM, pcie->pp.dbi_base + PCIE20_PLR_IATU_CTRL1);
+	writel(PCIE20_PLR_IATU_ENABLE, pcie->pp.dbi_base + PCIE20_PLR_IATU_CTRL2);
+	writel(pp->mem_base, pcie->pp.dbi_base + PCIE20_PLR_IATU_LBAR);
+	writel((pp->mem_base >> 32), pcie->pp.dbi_base + PCIE20_PLR_IATU_UBAR);
+	writel(pp->mem_base + pp->mem_size - 1,
+	       pcie->pp.dbi_base + PCIE20_PLR_IATU_LAR);
+	writel(pp->mem_bus_addr, pcie->pp.dbi_base + PCIE20_PLR_IATU_LTAR);
+	writel(upper_32_bits(pp->mem_bus_addr),
+	       pcie->pp.dbi_base + PCIE20_PLR_IATU_UTAR);
+
+	/* 256B PCIE buffer setting */
+	writel(0x1, pcie->pp.dbi_base + PCIE20_AXI_MSTR_RESP_COMP_CTRL0);
+	writel(0x1, pcie->pp.dbi_base + PCIE20_AXI_MSTR_RESP_COMP_CTRL1);
+}
+
 static int qcom_pcie_get_resources_v0(struct qcom_pcie *pcie)
 {
 	struct qcom_pcie_resources_v0 *res = &pcie->res.v0;
@@ -160,6 +277,14 @@ static int qcom_pcie_get_resources_v0(struct qcom_pcie *pcie)
 	if (IS_ERR(res->phy_clk))
 		return PTR_ERR(res->phy_clk);
 
+	res->aux_clk = devm_clk_get(dev, "aux");
+	if (IS_ERR(res->aux_clk))
+		return PTR_ERR(res->aux_clk);
+
+	res->ref_clk = devm_clk_get(dev, "ref");
+	if (IS_ERR(res->ref_clk))
+		return PTR_ERR(res->ref_clk);
+
 	res->pci_reset = devm_reset_control_get(dev, "pci");
 	if (IS_ERR(res->pci_reset))
 		return PTR_ERR(res->pci_reset);
@@ -179,6 +304,14 @@ static int qcom_pcie_get_resources_v0(struct qcom_pcie *pcie)
 	res->phy_reset = devm_reset_control_get(dev, "phy");
 	if (IS_ERR(res->phy_reset))
 		return PTR_ERR(res->phy_reset);
+
+	res->ext_reset = devm_reset_control_get(dev, "ext");
+	if (IS_ERR(res->ext_reset))
+		return PTR_ERR(res->ext_reset);
+
+	if (of_property_read_u8(dev->of_node, "phy-tx0-term-offset",
+				&res->phy_tx0_term_offset))
+		res->phy_tx0_term_offset = 0;
 
 	return 0;
 }
@@ -219,14 +352,17 @@ static void qcom_pcie_deinit_v0(struct qcom_pcie *pcie)
 {
 	struct qcom_pcie_resources_v0 *res = &pcie->res.v0;
 
-	reset_control_assert(res->pci_reset);
+	clk_disable_unprepare(res->phy_clk);
+	reset_control_assert(res->phy_reset);
 	reset_control_assert(res->axi_reset);
 	reset_control_assert(res->ahb_reset);
 	reset_control_assert(res->por_reset);
 	reset_control_assert(res->pci_reset);
+	reset_control_assert(res->ext_reset);
 	clk_disable_unprepare(res->iface_clk);
 	clk_disable_unprepare(res->core_clk);
-	clk_disable_unprepare(res->phy_clk);
+	clk_disable_unprepare(res->aux_clk);
+	clk_disable_unprepare(res->ref_clk);
 	regulator_disable(res->vdda);
 	regulator_disable(res->vdda_phy);
 	regulator_disable(res->vdda_refclk);
@@ -236,8 +372,13 @@ static int qcom_pcie_init_v0(struct qcom_pcie *pcie)
 {
 	struct qcom_pcie_resources_v0 *res = &pcie->res.v0;
 	struct device *dev = pcie->pp.dev;
-	u32 val;
 	int ret;
+
+	ret = reset_control_assert(res->ahb_reset);
+	if (ret) {
+		dev_err(dev, "cannot assert ahb reset\n");
+		return ret;
+	}
 
 	ret = regulator_enable(res->vdda);
 	if (ret) {
@@ -257,22 +398,16 @@ static int qcom_pcie_init_v0(struct qcom_pcie *pcie)
 		goto err_vdda_phy;
 	}
 
-	ret = reset_control_assert(res->ahb_reset);
+	ret = reset_control_deassert(res->ext_reset);
 	if (ret) {
-		dev_err(dev, "cannot assert ahb reset\n");
-		goto err_assert_ahb;
+		dev_err(dev, "cannot assert ext reset\n");
+		goto err_reset_ext;
 	}
 
 	ret = clk_prepare_enable(res->iface_clk);
 	if (ret) {
 		dev_err(dev, "cannot prepare/enable iface clock\n");
-		goto err_assert_ahb;
-	}
-
-	ret = clk_prepare_enable(res->phy_clk);
-	if (ret) {
-		dev_err(dev, "cannot prepare/enable phy clock\n");
-		goto err_clk_phy;
+		goto err_iface;
 	}
 
 	ret = clk_prepare_enable(res->core_clk);
@@ -281,21 +416,45 @@ static int qcom_pcie_init_v0(struct qcom_pcie *pcie)
 		goto err_clk_core;
 	}
 
+	ret = clk_prepare_enable(res->aux_clk);
+	if (ret) {
+		dev_err(dev, "cannot prepare/enable aux clock\n");
+		goto err_clk_aux;
+	}
+
+	ret = clk_prepare_enable(res->ref_clk);
+	if (ret) {
+		dev_err(dev, "cannot prepare/enable ref clock\n");
+		goto err_clk_ref;
+	}
+
 	ret = reset_control_deassert(res->ahb_reset);
 	if (ret) {
 		dev_err(dev, "cannot deassert ahb reset\n");
 		goto err_deassert_ahb;
 	}
 
-	/* enable PCIe clocks and resets */
-	val = readl(pcie->parf + PCIE20_PARF_PHY_CTRL);
-	val &= ~BIT(0);
-	writel(val, pcie->parf + PCIE20_PARF_PHY_CTRL);
+	writel_masked(pcie->parf + PCIE20_PARF_PHY_CTRL, BIT(0), 0);
 
-	/* enable external reference clock */
-	val = readl(pcie->parf + PCIE20_PARF_PHY_REFCLK);
-	val |= BIT(16);
-	writel(val, pcie->parf + PCIE20_PARF_PHY_REFCLK);
+	/* Set Tx termination offset */
+	writel_masked(pcie->parf + PCIE20_PARF_PHY_CTRL,
+		      PHY_CTRL_PHY_TX0_TERM_OFFSET_MASK,
+		      PHY_CTRL_PHY_TX0_TERM_OFFSET(res->phy_tx0_term_offset));
+
+	/* PARF programming */
+	writel(PCS_DEEMPH_TX_DEEMPH_GEN1(0x18) |
+	       PCS_DEEMPH_TX_DEEMPH_GEN2_3_5DB(0x18) |
+	       PCS_DEEMPH_TX_DEEMPH_GEN2_6DB(0x22),
+	       pcie->parf + PCIE20_PARF_PCS_DEEMPH);
+	writel(PCS_SWING_TX_SWING_FULL(0x78) |
+	       PCS_SWING_TX_SWING_LOW(0x78),
+	       pcie->parf + PCIE20_PARF_PCS_SWING);
+	writel(PHY_RX0_EQ(0x4), pcie->parf + PCIE20_PARF_CONFIG_BITS);
+
+	/* Enable reference clock */
+	writel_masked(pcie->parf + PCIE20_PARF_PHY_REFCLK,
+		      REF_USE_PAD, REF_SSP_EN);
+
 
 	ret = reset_control_deassert(res->phy_reset);
 	if (ret) {
@@ -321,18 +480,36 @@ static int qcom_pcie_init_v0(struct qcom_pcie *pcie)
 		return ret;
 	}
 
+	ret = clk_prepare_enable(res->phy_clk);
+	if (ret) {
+		dev_err(dev, "cannot prepare/enable phy clock\n");
+		goto err_deassert_ahb;
+	}
+
 	/* wait for clock acquisition */
 	usleep_range(1000, 1500);
+	if (pcie->force_gen1) {
+		writel_relaxed((readl_relaxed(
+			pcie->pp.dbi_base + PCIE20_LNK_CONTROL2_LINK_STATUS2) | 1),
+			pcie->pp.dbi_base + PCIE20_LNK_CONTROL2_LINK_STATUS2);
+	}
+
+	qcom_pcie_prog_viewport_cfg0(pcie, MSM_PCIE_DEV_CFG_ADDR);
+	qcom_pcie_prog_viewport_mem2_outbound(pcie);
 
 	return 0;
 
 err_deassert_ahb:
+	clk_disable_unprepare(res->ref_clk);
+err_clk_ref:
+	clk_disable_unprepare(res->aux_clk);
+err_clk_aux:
 	clk_disable_unprepare(res->core_clk);
 err_clk_core:
-	clk_disable_unprepare(res->phy_clk);
-err_clk_phy:
 	clk_disable_unprepare(res->iface_clk);
-err_assert_ahb:
+err_iface:
+	reset_control_assert(res->ext_reset);
+err_reset_ext:
 	regulator_disable(res->vdda_phy);
 err_vdda_phy:
 	regulator_disable(res->vdda_refclk);
@@ -429,7 +606,7 @@ static int qcom_pcie_link_up(struct pcie_port *pp)
 	return !!(val & PCI_EXP_LNKSTA_DLLLA);
 }
 
-static void qcom_pcie_host_init(struct pcie_port *pp)
+static int qcom_pcie_host_init(struct pcie_port *pp)
 {
 	struct qcom_pcie *pcie = to_qcom_pcie(pp);
 	int ret;
@@ -455,12 +632,13 @@ static void qcom_pcie_host_init(struct pcie_port *pp)
 	if (ret)
 		goto err;
 
-	return;
+	return 0;
 err:
 	qcom_ep_reset_assert(pcie);
 	phy_power_off(pcie->phy);
 err_deinit:
 	pcie->ops->deinit(pcie);
+	return ret;
 }
 
 static int qcom_pcie_rd_own_conf(struct pcie_port *pp, int where, int size,
@@ -502,6 +680,8 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 	struct qcom_pcie *pcie;
 	struct pcie_port *pp;
 	int ret;
+	uint32_t force_gen1 = 0;
+	struct device_node *np = pdev->dev.of_node;
 
 	pcie = devm_kzalloc(dev, sizeof(*pcie), GFP_KERNEL);
 	if (!pcie)
@@ -513,6 +693,9 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 	pcie->reset = devm_gpiod_get_optional(dev, "perst", GPIOD_OUT_LOW);
 	if (IS_ERR(pcie->reset))
 		return PTR_ERR(pcie->reset);
+
+	of_property_read_u32(np, "force_gen1", &force_gen1);
+	pcie->force_gen1 = force_gen1;
 
 	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "parf");
 	pcie->parf = devm_ioremap_resource(dev, res);
@@ -567,6 +750,35 @@ static int qcom_pcie_probe(struct platform_device *pdev)
 
 	return 0;
 }
+
+static void qcom_pcie_fixup_final(struct pci_dev *dev)
+{
+	int cap, err;
+	u16 ctl, reg_val;
+
+	cap = pci_pcie_cap(dev);
+	if (!cap)
+		return;
+
+	err = pci_read_config_word(dev, cap + PCI_EXP_DEVCTL, &ctl);
+
+	if (err)
+		return;
+
+	reg_val = ctl;
+
+	if (((reg_val & PCIE20_MRRS_MASK) >> 12) > 1)
+		reg_val = (reg_val & ~(PCIE20_MRRS_MASK)) | PCIE20_MRRS(0x1);
+
+	if (((ctl & PCIE20_MPS_MASK) >> 5) > 1)
+		reg_val = (reg_val & ~(PCIE20_MPS_MASK)) | PCIE20_MPS(0x1);
+
+	err = pci_write_config_word(dev, cap + PCI_EXP_DEVCTL, reg_val);
+
+	if (err)
+		pr_err("pcie config write failed %d\n", err);
+}
+DECLARE_PCI_FIXUP_FINAL(PCI_ANY_ID, PCI_ANY_ID, qcom_pcie_fixup_final);
 
 static const struct of_device_id qcom_pcie_match[] = {
 	{ .compatible = "qcom,pcie-ipq8064", .data = &ops_v0 },
