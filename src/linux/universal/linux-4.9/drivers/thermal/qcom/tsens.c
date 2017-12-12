@@ -40,9 +40,9 @@ static int tsens_get_trend(void *p, int trip, enum thermal_trend *trend)
 	return -ENOTSUPP;
 }
 
-static int  __maybe_unused tsens_suspend(void *data)
+static int  __maybe_unused tsens_suspend(struct device *dev)
 {
-	struct tsens_sensor *s = data;
+	struct tsens_sensor *s = dev_get_drvdata(dev);
 	struct tsens_device *tmdev = s->tmdev;
 
 	if (tmdev->ops && tmdev->ops->suspend)
@@ -51,9 +51,9 @@ static int  __maybe_unused tsens_suspend(void *data)
 	return 0;
 }
 
-static int __maybe_unused tsens_resume(void *data)
+static int __maybe_unused tsens_resume(struct device *dev)
 {
-	struct tsens_sensor *s = data;
+	struct tsens_sensor *s = dev_get_drvdata(dev);
 	struct tsens_device *tmdev = s->tmdev;
 
 	if (tmdev->ops && tmdev->ops->resume)
