@@ -320,7 +320,7 @@ static void hw_init(struct tsens_device *tmdev)
 	INIT_WORK(&tmdev->tsens_work, tsens_scheduler_fn);
 }
 
-static int init_ipq8064(struct tsens_device *tmdev)
+static int __init init_ipq8064(struct tsens_device *tmdev)
 {
 	int ret, i;
 	u32 reg_cntl, offset = 0;
