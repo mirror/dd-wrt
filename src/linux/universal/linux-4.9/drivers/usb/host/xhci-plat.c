@@ -174,12 +174,6 @@ static int xhci_plat_probe(struct platform_device *pdev)
 	if (!hcd)
 		return -ENOMEM;
 
-#if IS_ENABLED(CONFIG_DWMAC_IPQ806X)
-	if (pdata->usb2_susphy_quirk) {
-		hcd->susphy = pdata->susphy;
-	}
-#endif
-
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	hcd->regs = devm_ioremap_resource(&pdev->dev, res);
 	if (IS_ERR(hcd->regs)) {

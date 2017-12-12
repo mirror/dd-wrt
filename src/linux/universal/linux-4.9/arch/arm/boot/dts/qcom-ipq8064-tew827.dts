@@ -145,12 +145,13 @@
 			pinctrl-0 = <&nand_pins>;
 			pinctrl-names = "default";
 
-			nand-ecc-strength = <4>;
-			nand-bus-width = <8>;
+			cs0 {
+				reg = <0>;
+				compatible = "qcom,nandcs";
 
-			#address-cells = <1>;
-			#size-cells = <1>;
-
+				nand-ecc-strength = <4>;
+				nand-bus-width = <8>;
+				nand-ecc-step-size = <512>;
 			
 			qcadata@0 {
 				label = "qcadata";
@@ -201,8 +202,8 @@
 				reg = <0x98a0000 0x40000>;
 			};
 
-
-		};
+			};
+		};	
 
 		mdio0: mdio {
 			compatible = "virtual,mdio-gpio";

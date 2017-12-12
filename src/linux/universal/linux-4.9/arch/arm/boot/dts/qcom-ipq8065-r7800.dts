@@ -7,7 +7,7 @@
 	compatible = "netgear,r7800", "qcom,ipq8065", "qcom,ipq8064";
 
 	memory@0 {
-		reg = <0x42000000 0x1e000000>;
+		reg = <0x42000000 0x1de00000>;
 		device_type = "memory";
 	};
 
@@ -29,28 +29,15 @@
 	aliases {
 		serial0 = &gsbi4_serial;
 		mdio-gpio0 = &mdio0;
-
-		led-boot = &power_white;
-		led-failsafe = &power_amber;
-		led-running = &power_white;
-		led-upgrade = &power_amber;
 	};
 
 	chosen {
+		bootargs = "console=ttyMSM0,115200n8 rootfstype=squashfs noinitrd root=/dev/mtdblock6";
 		linux,stdout-path = "serial0:115200n8";
 	};
 
 	soc {
 		pinmux@800000 {
-			button_pins: button_pins {
-				mux {
-					pins = "gpio6", "gpio54", "gpio65";
-					function = "gpio";
-					drive-strength = <2>;
-					bias-pull-up;
-				};
-			};
-
 			i2c4_pins: i2c4_pinmux {
 				mux {
 					pins = "gpio12", "gpio13";
@@ -320,68 +307,61 @@
 				nand-bus-width = <8>;
 				nand-ecc-step-size = <512>;
 
-				partitions {
-					compatible = "fixed-partitions";
-					#address-cells = <1>;
-					#size-cells = <1>;
+			qcadata@0 {
+				label = "qcadata";
+				reg = <0x0000000 0x0c80000>;
+				read-only;
+			};
 
-					qcadata@0 {
-						label = "qcadata";
-						reg = <0x0000000 0x0c80000>;
-						read-only;
-					};
+			APPSBL@c80000 {
+				label = "APPSBL";
+				reg = <0x0c80000 0x0500000>;
+				read-only;
+			};
 
-					APPSBL@c80000 {
-						label = "APPSBL";
-						reg = <0x0c80000 0x0500000>;
-						read-only;
-					};
+			APPSBLENV@1180000 {
+				label = "APPSBLENV";
+				reg = <0x1180000 0x0080000>;
+				read-only;
+			};
 
-					APPSBLENV@1180000 {
-						label = "APPSBLENV";
-						reg = <0x1180000 0x0080000>;
-						read-only;
-					};
+			art: art@1200000 {
+				label = "art";
+				reg = <0x1200000 0x0140000>;
+				read-only;
+			};
+			
+			artbak@1340000 {
+				label = "artbak";
+				reg = <0x1340000 0x0140000>;
+				read-only;
+			};
 
-					art: art@1200000 {
-						label = "art";
-						reg = <0x1200000 0x0140000>;
-						read-only;
-					};
+			linux@1480000 {
+				label = "linux";
+				reg = <0x1480000 0x1E00000>;
+			};
 
-					artbak: art@1340000 {
-						label = "artbak";
-						reg = <0x1340000 0x0140000>;
-						read-only;
-					};
+			rootfs@16a0000 {
+				label = "rootfs";
+				reg = <0x16a0000 0x1be0000>;
+			};
+			
+			nvram@3280000 {
+				label = "nvram";
+				reg = <0x3280000 0x0200000>;
+			};
 
-					kernel@1480000 {
-						label = "kernel";
-						reg = <0x1480000 0x0200000>;
-					};
+			ddwrt@3480000 {
+				label = "ddwrt";
+				reg = <0x4000000 0x2000000>;
+			};
 
-					ubi@1680000 {
-						label = "ubi";
-						reg = <0x1680000 0x1E00000>;
-					};
-
-					netgear@3480000 {
-						label = "netgear";
-						reg = <0x3480000 0x4480000>;
-						read-only;
-					};
-
-					reserve@7900000 {
-						label = "reserve";
-						reg = <0x7900000 0x0700000>;
-						read-only;
-					};
-
-					firmware@1480000 {
-						label = "firmware";
-						reg = <0x1480000 0x2000000>;
-					};
-				};
+			reserved@7900000 {
+				label = "reserved";
+				reg = <0x7900000 0x640000>;
+				read-only;
+			};
 			};
 		};
 
