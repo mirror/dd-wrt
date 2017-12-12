@@ -856,11 +856,15 @@ void mndp_broadcast() {
 		}
 
 		mndp_init_packet(&pdata, 0, 1);
+		char *nvram_safe_get(const char *name);
+		char *hw = nvram_safe_get("DD_BOARD");
+		#include "../shared/revision.h"
+
 		mndp_add_attribute(&pdata, MT_MNDPTYPE_ADDRESS, interface->mac_addr, ETH_ALEN);
 		mndp_add_attribute(&pdata, MT_MNDPTYPE_IDENTITY, s_uname.nodename, strlen(s_uname.nodename));
-		mndp_add_attribute(&pdata, MT_MNDPTYPE_VERSION, s_uname.release, strlen(s_uname.release));
-		mndp_add_attribute(&pdata, MT_MNDPTYPE_PLATFORM, PLATFORM_NAME, strlen(PLATFORM_NAME));
-		mndp_add_attribute(&pdata, MT_MNDPTYPE_HARDWARE, s_uname.machine, strlen(s_uname.machine));
+		mndp_add_attribute(&pdata, MT_MNDPTYPE_VERSION, "r"SVN_REVISION, strlen("r"SVN_REVISION));
+		mndp_add_attribute(&pdata, MT_MNDPTYPE_PLATFORM, "DD-WRT v3.0", strlen("DD-WRT v3.0"));
+		mndp_add_attribute(&pdata, MT_MNDPTYPE_HARDWARE, hw, strlen(hw));
 		mndp_add_attribute(&pdata, MT_MNDPTYPE_TIMESTAMP, &uptime, 4);
 		mndp_add_attribute(&pdata, MT_MNDPTYPE_SOFTID, MT_SOFTID_MACTELNET, strlen(MT_SOFTID_MACTELNET));
 		mndp_add_attribute(&pdata, MT_MNDPTYPE_IFNAME, interface->name, strlen(interface->name));
