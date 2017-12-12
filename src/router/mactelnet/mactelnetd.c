@@ -212,8 +212,6 @@ static void setup_sockets() {
 		int optval = 1;
 		struct sockaddr_in si_me;
 		struct ether_addr *mac = (struct ether_addr *)&(interface->mac_addr);
-		if (!strcmp(interface->name,"br0:0"))
-			continue;
 
 		if (!interface->has_mac) {
 			continue;
