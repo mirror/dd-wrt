@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.64 Kernel Configuration
+# Linux/arm 4.9.68 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -1822,6 +1822,8 @@ CONFIG_SMSC_PHY=m
 # CONFIG_VITESSE_PHY is not set
 # CONFIG_XILINX_GMII2RGMII is not set
 CONFIG_GATEWORKS_GW16083=y
+# CONFIG_MDIO_IPQ40XX is not set
+# CONFIG_AR40XX_PHY is not set
 # CONFIG_MICREL_KS8995MA is not set
 CONFIG_PPP=y
 CONFIG_PPP_BSDCOMP=y
