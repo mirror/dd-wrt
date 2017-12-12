@@ -1077,16 +1077,16 @@ static int dwc3_probe(struct platform_device *pdev)
 	dwc->usb3_lpm_capable = device_property_read_bool(dev,
 				"snps,usb3_lpm_capable");
 
-		dwc->enable_usb2susphy_quirk = of_property_read_bool(node,
+		dwc->enable_usb2susphy_quirk = device_property_read_bool(dev,
 							"usb2-susphy-quirk");
 		dwc->enable_usb2_host_discon_quirk =
-			of_property_read_bool(node, "usb2-host-discon-quirk");
+			device_property_read_bool(dev, "usb2-host-discon-quirk");
 
 		if ((dwc->enable_usb2_host_discon_quirk) &&
-			(of_property_read_u32(node,
+			(device_property_read_u32(dev,
 					"usb2-host-discon-phy-misc-reg",
 					&dwc->phy_misc_reg) ||
-			of_property_read_u32(node, "usb2-host-discon-mask",
+			device_property_read_u32(dev, "usb2-host-discon-mask",
 					&dwc->phy_host_disc_on)))
 
 		{
