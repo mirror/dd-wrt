@@ -59,17 +59,17 @@ static void show_temp(webs_t wp, char *fmt)
 	int mon;
 	int temperature = 0;
 	for (mon = 0; mon < 11; mon++) {
-		snprintf(sysfs, 64, "/sys/class/hwmon/hwmon%d/temp1_input", mon);
+		snprintf(sysfs, 64, "/sys/devices/virtual/thermal/thermal_zone%d/temp", mon);
 		FILE *tempfp = fopen(sysfs, "rb");
 		if (tempfp) {
 			int cpu;
 			fscanf(tempfp, "%d", &cpu);
 			fclose(tempfp);
-			temperature += (cpu * 100);
+			temperature += cpu;
 		}
 	}
 	temperature /= mon;
-	websWrite(wp, fmt, temperature / 100, temperature % 100);
+	websWrite(wp, fmt, temperature / 1000, temperature % 1000);
 }
 #endif
 
