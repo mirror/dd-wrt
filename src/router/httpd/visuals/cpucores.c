@@ -107,16 +107,23 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 #elif HAVE_IPQ806X
 void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
+	FILE *fp2 = fopen("/sys/kernel/debug/clk/krait1_pri_mux/clk_rate", "rb");
 	FILE *fp = fopen("/sys/kernel/debug/clk/krait0_pri_mux/clk_rate", "rb");
-	if (fp) {
+	if (fp && fp2) {
 		int freq;
 		fscanf(fp, "%d", &freq);
-		fclose(fp);
-		websWrite(wp, "%d", freq / 1000000);
+		int freq2;
+		fscanf(fp2, "%d", &freq2);
+		websWrite(wp, "%d MHz / %d", freq / 1000000, freq2 / 1000000);
 	} else {
 		websWrite(wp, "1400");
 
 	}
+if (fp)
+		fclose(fp);
+if (fp2)
+		fclose(fp2);
+
 	return;
 }
 #elif HAVE_X86
