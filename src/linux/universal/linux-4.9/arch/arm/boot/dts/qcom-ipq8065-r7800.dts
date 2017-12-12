@@ -473,54 +473,57 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		pinctrl-0 = <&led_pins>;
-		pinctrl-names = "default";
-
-		power_white: power_white {
-			label = "r7800:white:power";
-			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
-			default-state = "keep";
-		};
-
-		power_amber: power_amber {
-			label = "r7800:amber:power";
-			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
-		};
-
-		wan_white {
-			label = "r7800:white:wan";
-			gpios = <&qcom_pinmux 22 GPIO_ACTIVE_HIGH>;
-		};
-
-		wan_amber {
-			label = "r7800:amber:wan";
-			gpios = <&qcom_pinmux 23 GPIO_ACTIVE_HIGH>;
-		};
 
 		usb1 {
-			label = "r7800:white:usb1";
-			gpios = <&qcom_pinmux 7 GPIO_ACTIVE_HIGH>;
+			label = "r7X00:amber:usb1";
+			gpios = <&qcom_pinmux 7 0>;
 		};
 
-		usb2 {
-			label = "r7800:white:usb2";
-			gpios = <&qcom_pinmux 8 GPIO_ACTIVE_HIGH>;
+		usb3 {
+			label = "r7X00:amber:usb3";
+			gpios = <&qcom_pinmux 8 0>;
 		};
 
-		esata {
-			label = "r7800:white:esata";
-			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
+		status {
+			label = "r7X00:amber:status";
+			gpios = <&qcom_pinmux 9 0>;
 		};
 
-		wifi {
-			label = "r7800:white:wifi";
-			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_HIGH>;
+		internet {
+			label = "r7X00:white:internet";
+			gpios = <&qcom_pinmux 22 0>;
+		};
+
+		wan {
+			label = "r7X00:white:wan";
+			gpios = <&qcom_pinmux 23 0>;
 		};
 
 		wps {
-			label = "r7800:white:wps";
-			gpios = <&qcom_pinmux 24 GPIO_ACTIVE_HIGH>;
+			label = "r7X00:white:wps";
+			gpios = <&qcom_pinmux 24 0>;
 		};
+
+		esata {
+			label = "r7X00:white:esata";
+			gpios = <&qcom_pinmux 26 0>;
+		};
+
+		power {
+			label = "r7X00:white:power";
+			gpios = <&qcom_pinmux 53 0>;
+			default-state = "on";
+		};
+
+		rfkill {
+			label = "r7X00:white:rfkill";
+			gpios = <&qcom_pinmux 64 0>;
+		};
+
+//		wifi {
+//			label = "r7X00:white:wifi";
+//			gpios = <&qcom_pinmux 67 0>;
+//		};
 	};
 };
 

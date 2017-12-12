@@ -29,15 +29,10 @@
 	aliases {
 		serial0 = &gsbi4_serial;
 		mdio-gpio0 = &mdio0;
-
-		led-boot = &power;
-		led-failsafe = &power;
-		led-running = &power;
-		led-upgrade = &power;
 	};
 
 	chosen {
-		bootargs = "rootfstype=squashfs noinitrd";
+		bootargs = "console=ttyMSM0,115200n8 rootfstype=squashfs noinitrd root=/dev/mtdblock6";
 		linux,stdout-path = "serial0:115200n8";
 	};
 
@@ -220,62 +215,62 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					qcadata@0 {
-						label = "qcadata";
-						reg = <0x0000000 0x0c80000>;
-						read-only;
-					};
 
-					APPSBL@c80000 {
-						label = "APPSBL";
-						reg = <0x0c80000 0x0500000>;
-						read-only;
-					};
+			qcadata@0 {
+				label = "qcadata";
+				reg = <0x0000000 0x0c80000>;
+				read-only;
+			};
 
-					APPSBLENV@1180000 {
-						label = "APPSBLENV";
-						reg = <0x1180000 0x0080000>;
-						read-only;
-					};
+			APPSBL@0c80000 {
+				label = "APPSBL";
+				reg = <0x0c80000 0x0500000>;
+				read-only;
+			};
 
-					art: art@1200000 {
-						label = "art";
-						reg = <0x1200000 0x0140000>;
-						read-only;
-					};
+			APPSBLENV@1180000 {
+				label = "APPSBLENV";
+				reg = <0x1180000 0x0080000>;
+				read-only;
+			};
 
-					artbak: art@1340000 {
-						label = "artbak";
-						reg = <0x1340000 0x0140000>;
-						read-only;
-					};
+			art: art@1200000 {
+				label = "art";
+				reg = <0x1200000 0x0140000>;
+				read-only;
+			};
+			
+			artbak@1340000 {
+				label = "artbak";
+				reg = <0x1340000 0x0140000>;
+				read-only;
+			};
 
-					kernel@1480000 {
-						label = "kernel";
-						reg = <0x1480000 0x0200000>;
-					};
+			linux@1480000 {
+				label = "linux";
+				reg = <0x1480000 0x1fe0000>;
+			};
 
-					ubi@1680000 {
-						label = "ubi";
-						reg = <0x1680000 0x1E00000>;
-					};
+			rootfs@16a0000 {
+				label = "rootfs";
+				reg = <0x16a0000 0x1dc0000>;
+			};
+			
+			nvram@3460000 {
+				label = "nvram";
+				reg = <0x3460000 0x0020000>;
+			};
 
-					netgear@3480000 {
-						label = "netgear";
-						reg = <0x3480000 0x4480000>;
-						read-only;
-					};
+			ddwrt@3480000 {
+				label = "ddwrt";
+				reg = <0x3480000 0x4880000>;
+				read-only;
+			};
 
-					reserve@7900000 {
-						label = "reserve";
-						reg = <0x7900000 0x0700000>;
-						read-only;
-					};
-
-					firmware@1480000 {
-						label = "firmware";
-						reg = <0x1480000 0x2000000>;
-					};
+			dnidata@7d00000 {
+				label = "dnidata";
+				reg = <0x7d00000 0x0300000>;
+			};
 				};
 			};
 		};
@@ -343,79 +338,58 @@
 		};
 	};
 
-	gpio-keys {
-		compatible = "gpio-keys";
-		pinctrl-0 = <&button_pins>;
-		pinctrl-names = "default";
-
-		wifi {
-			label = "wifi";
-			gpios = <&qcom_pinmux 6 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_RFKILL>;
-		};
-
-		reset {
-			label = "reset";
-			gpios = <&qcom_pinmux 54 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_RESTART>;
-		};
-
-		wps {
-			label = "wps";
-			gpios = <&qcom_pinmux 65 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_WPS_BUTTON>;
-		};
-	};
-
 	gpio-leds {
 		compatible = "gpio-leds";
-		pinctrl-0 = <&led_pins>;
-		pinctrl-names = "default";
 
 		usb1 {
-			label = "r7500v2:amber:usb1";
-			gpios = <&qcom_pinmux 7 GPIO_ACTIVE_HIGH>;
+			label = "r7X00:amber:usb1";
+			gpios = <&qcom_pinmux 7 0>;
 		};
 
 		usb3 {
-			label = "r7500v2:amber:usb3";
-			gpios = <&qcom_pinmux 8 GPIO_ACTIVE_HIGH>;
+			label = "r7X00:amber:usb3";
+			gpios = <&qcom_pinmux 8 0>;
 		};
 
 		status {
-			label = "r7500v2:amber:status";
-			gpios = <&qcom_pinmux 9 GPIO_ACTIVE_HIGH>;
+			label = "r7X00:amber:status";
+			gpios = <&qcom_pinmux 9 0>;
 		};
 
 		internet {
-			label = "r7500v2:white:internet";
-			gpios = <&qcom_pinmux 22 GPIO_ACTIVE_HIGH>;
+			label = "r7X00:white:internet";
+			gpios = <&qcom_pinmux 22 0>;
 		};
 
 		wan {
-			label = "r7500v2:white:wan";
-			gpios = <&qcom_pinmux 23 GPIO_ACTIVE_HIGH>;
+			label = "r7X00:white:wan";
+			gpios = <&qcom_pinmux 23 0>;
 		};
 
 		wps {
-			label = "r7500v2:white:wps";
-			gpios = <&qcom_pinmux 24 GPIO_ACTIVE_HIGH>;
+			label = "r7X00:white:wps";
+			gpios = <&qcom_pinmux 24 0>;
 		};
 
 		esata {
-			label = "r7500v2:white:esata";
-			gpios = <&qcom_pinmux 26 GPIO_ACTIVE_HIGH>;
+			label = "r7X00:white:esata";
+			gpios = <&qcom_pinmux 26 0>;
 		};
 
-		power: power {
-			label = "r7500v2:white:power";
-			gpios = <&qcom_pinmux 53 GPIO_ACTIVE_HIGH>;
-			default-state = "keep";
+		power {
+			label = "r7X00:white:power";
+			gpios = <&qcom_pinmux 53 0>;
+			default-state = "on";
 		};
 
-		wifi {
-			label = "r7500v2:white:wifi";
-			gpios = <&qcom_pinmux 64 GPIO_ACTIVE_HIGH>;
+		rfkill {
+			label = "r7X00:white:rfkill";
+			gpios = <&qcom_pinmux 64 0>;
+		};
+
+		wifi5g {
+			label = "r7X00:white:wifi5g";
+			gpios = <&qcom_pinmux 67 0>;
 		};
 	};
 };
