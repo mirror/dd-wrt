@@ -3,8 +3,8 @@
 #include <dt-bindings/input/input.h>
 
 / {
-	model = "Trendnet TEW-827";
-	compatible = "trendnet,tew-827", "qcom,ipq8064";
+	model = "ASRock G10";
+	compatible = "asrock,g10", "qcom,ipq8064";
 
 	memory@0 {
 		reg = <0x42000000 0x1e000000>;
@@ -110,6 +110,9 @@
 
 		phy@100f8830 {		/* USB3 port 1 SS phy */
 			status = "ok";
+			rx_eq = <2>;
+			tx_deamp_3_5db = <32>;
+			mpll = <0xa0>;
 		};
 
 		phy@110f8800 {		/* USB3 port 0 HS phy */
@@ -118,6 +121,9 @@
 
 		phy@110f8830 {		/* USB3 port 0 SS phy */
 			status = "ok";
+			rx_eq = <2>;
+			tx_deamp_3_5db = <32>;
+			mpll = <0xa0>;
 		};
 
 		usb30@0 {
@@ -130,12 +136,11 @@
 
 		pcie0: pci@1b500000 {
 			status = "ok";
-			phy-tx0-term-offset = <7>;
 		};
 
 		pcie1: pci@1b700000 {
 			status = "ok";
-			phy-tx0-term-offset = <7>;
+			force_gen1 = <1>;
 		};
 
 
@@ -145,13 +150,12 @@
 			pinctrl-0 = <&nand_pins>;
 			pinctrl-names = "default";
 
-			cs0 {
-				reg = <0>;
-				compatible = "qcom,nandcs";
+			nand-ecc-strength = <4>;
+			nand-bus-width = <8>;
 
-				nand-ecc-strength = <4>;
-				nand-bus-width = <8>;
-				nand-ecc-step-size = <512>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
 			
 			qcadata@0 {
 				label = "qcadata";
@@ -167,7 +171,7 @@
 
 			APPSBL_1@c80000 {
 				label = "APPSBL_1";
-				reg = <0x53a0000 0x0500000>;
+				reg = <0x43a0000 0x0500000>;
 				read-only;
 			};
 
@@ -178,7 +182,7 @@
 
 			BOOTCONFIG@c80000 {
 				label = "BOOTCONFIG";
-				reg = <0x5340000 0x0060000>;
+				reg = <0x4340000 0x0060000>;
 			};
 
 			art: art@1200000 {
@@ -189,21 +193,26 @@
 
 			firmware@1340000 {
 				label = "linux";
-				reg = <0x1340000 0x4000000>;
+				reg = <0x1340000 0x3000000>;
 			};
 
-			firmware2@58a0000 {
+			firmware2@48a0000 {
 				label = "linux2";
-				reg = <0x58a0000 0x4000000>;
+				reg = <0x48a0000 0x3000000>;
 			};
 
-			nvram@98a0000 {
+			nvram@78e0000 {
 				label = "nvram";
-				reg = <0x98a0000 0x40000>;
+				reg = <0x78e0000 0x40000>;
 			};
 
+			hwconfig@78a0000 {
+				label = "hwconfig";
+				reg = <0x78a0000 0x40000>;
 			};
-		};	
+
+
+		};
 
 		mdio0: mdio {
 			compatible = "virtual,mdio-gpio";
@@ -218,9 +227,8 @@
 				reg = <0>;
 				qca,ar8327-initvals = <
 					0x00004 0x7600000   /* PAD0_MODE */
-					0x00008 0x1000000   /* PAD5_MODE */
 					0x0000c 0x80        /* PAD6_MODE */
-					0x000e4 0xaa545     /* MAC_POWER_SEL */
+					0x000e4 0x6a545     /* MAC_POWER_SEL */
 					0x000e0 0xc74164de  /* SGMII_CTRL */
 					0x0007c 0x4e        /* PORT0_STATUS */
 					0x00094 0x4e        /* PORT6_STATUS */
@@ -231,6 +239,7 @@
 				device_type = "ethernet-phy";
 				reg = <4>;
 			};
+
 		};
 
 		gmac1: ethernet@37200000 {
@@ -243,12 +252,18 @@
 			pinctrl-names = "default";
 
 			mtd-mac-address = <&art 6>;
+
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
 		};
 
 		gmac2: ethernet@37400000 {
 			status = "ok";
 			phy-mode = "sgmii";
 			qcom,id = <2>;
+			phy-handle = <&phy0>;
 
 			mtd-mac-address = <&art 0>;
 
