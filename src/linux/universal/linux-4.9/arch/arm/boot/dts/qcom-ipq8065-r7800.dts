@@ -307,6 +307,11 @@
 				nand-bus-width = <8>;
 				nand-ecc-step-size = <512>;
 
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
 			qcadata@0 {
 				label = "qcadata";
 				reg = <0x0000000 0x0c80000>;
@@ -361,6 +366,7 @@
 				label = "reserved";
 				reg = <0x7900000 0x640000>;
 				read-only;
+			};
 			};
 			};
 		};
