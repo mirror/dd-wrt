@@ -128,6 +128,7 @@ ifeq ($(CONFIG_EA8500),y)
 	sed -i 's/\# CONFIG_ARM_ATAG_DTB_COMPAT is not set/CONFIG_ARM_ATAG_DTB_COMPAT=y/g' $(LINUXDIR)/.config
 	echo "# CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_FROM_BOOTLOADER is not set" >> $(LINUXDIR)/.config
 	echo "CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND=y" >> $(LINUXDIR)/.config
+	echo "# CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE is not set" >> $(LINUXDIR)/.config
 endif
 
 	$(kernelfeatures)
@@ -197,6 +198,77 @@ endif
 	#rm -f $(LINUXDIR)/vmlinux
 	#$(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-openwrt-linux-" KALLSYMS_EXTRA_PASS=1
 	
+	cp -fpR $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/uImage; 
+	-rm -rf $(ARCH)-uclibc/ipq806x;
+	-mkdir -p $(ARCH)-uclibc/ipq806x;
+	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-R7500-uImage;
+	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-R7500v2-uImage;
+	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-R7800-uImage;
+	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-TEW827-uImage;
+	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-G10-uImage;
+	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-EA8500-uImage;
+	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-r7500.dtb >> $(ARCH)-uclibc/ipq806x-R7500-uImage;
+	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-r7500v2.dtb >> $(ARCH)-uclibc/ipq806x-R7500v2-uImage;
+	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8065-r7800.dtb >> $(ARCH)-uclibc/ipq806x-R7800-uImage;
+	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-tew827.dtb >> $(ARCH)-uclibc/ipq806x-TEW827-uImage;
+	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-ea8500.dtb >> $(ARCH)-uclibc/ipq806x-EA8500-uImage;
+	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-asrockg10.dtb >> $(ARCH)-uclibc/ipq806x-G10-uImage;
+	./tools/r7500/mkimage -A arm -O linux -T filesystem -C none -a 0x42208000 -e 0x42208000 -n 'DD-WRT - Fakeroot' -s $(ARCH)-uclibc/rootfs.dummy
+	
+	( dd if=$(ARCH)-uclibc/ipq806x-R7500-uImage of=$(ARCH)-uclibc/vmlinux-r7500.uImage.normal bs=2048k conv=sync; )
+	
+	( dd if=$(ARCH)-uclibc/vmlinux-r7500.uImage.normal bs=2097023 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7500.uImage.new; )
+	
+	( dd if=$(ARCH)-uclibc/ipq806x-R7500v2-uImage of=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.normal bs=2176k conv=sync; )
+	
+	( dd if=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.normal bs=2228095 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7500v2.uImage.new; )
+	
+	( dd if=$(ARCH)-uclibc/ipq806x-R7800-uImage of=$(ARCH)-uclibc/vmlinux-r7800.uImage.normal bs=2176k conv=sync; )
+	
+	( dd if=$(ARCH)-uclibc/vmlinux-r7800.uImage.normal bs=2228095 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-r7800.uImage.new; )
+
+	( dd if=$(ARCH)-uclibc/ipq806x-TEW827-uImage of=$(ARCH)-uclibc/vmlinux-TEW827.uImage.normal bs=2048k conv=sync; )
+	
+	( dd if=$(ARCH)-uclibc/vmlinux-TEW827.uImage.normal bs=2097023 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-TEW827.uImage.new; )
+
+	( dd if=$(ARCH)-uclibc/ipq806x-G10-uImage of=$(ARCH)-uclibc/vmlinux-G10.uImage.normal bs=2048k conv=sync; )
+	
+	( dd if=$(ARCH)-uclibc/vmlinux-G10.uImage.normal bs=2097023 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-G10.uImage.new; )
+	
+
+	( dd if=$(ARCH)-uclibc/ipq806x-EA8500-uImage of=$(ARCH)-uclibc/vmlinux-EA8500.uImage.normal bs=2048k conv=sync; )
+	
+	( dd if=$(ARCH)-uclibc/vmlinux-EA8500.uImage.normal bs=2097023 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-EA8500.uImage.new; )	
+
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-r7500.uImage.new $(ARCH)-uclibc/vmlinux-r7500.uImage.final
+	
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-r7500v2.uImage.new $(ARCH)-uclibc/vmlinux-r7500v2.uImage.final
+	
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-r7800.uImage.new $(ARCH)-uclibc/vmlinux-r7800.uImage.final
+
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-TEW827.uImage.new $(ARCH)-uclibc/vmlinux-TEW827.uImage.final
+
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-G10.uImage.new $(ARCH)-uclibc/vmlinux-G10.uImage.final
+	
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-EA8500.uImage.new $(ARCH)-uclibc/vmlinux-EA8500.uImage.final
+	
+	echo -ne '\xff' >> $(ARCH)-uclibc/vmlinux-r7500.uImage.final;
+	cat $(ARCH)-uclibc/rootfs.dummy >> $(ARCH)-uclibc/vmlinux-r7500.uImage.final;
+	
+	echo -ne '\xff' >> $(ARCH)-uclibc/vmlinux-r7500v2.uImage.final;
+	cat $(ARCH)-uclibc/rootfs.dummy >> $(ARCH)-uclibc/vmlinux-r7500v2.uImage.final;
+	
+	echo -ne '\xff' >> $(ARCH)-uclibc/vmlinux-r7800.uImage.final;
+	cat $(ARCH)-uclibc/rootfs.dummy >> $(ARCH)-uclibc/vmlinux-r7800.uImage.final;
+
+	echo -ne '\xff' >> $(ARCH)-uclibc/vmlinux-TEW827.uImage.final;
+	cat $(ARCH)-uclibc/rootfs.dummy >> $(ARCH)-uclibc/vmlinux-TEW827.uImage.final;
+
+	echo -ne '\xff' >> $(ARCH)-uclibc/vmlinux-G10.uImage.final;
+	cat $(ARCH)-uclibc/rootfs.dummy >> $(ARCH)-uclibc/vmlinux-G10.uImage.final;
+	
+	echo -ne '\xff' >> $(ARCH)-uclibc/vmlinux-EA8500.uImage.final;
+	cat $(ARCH)-uclibc/rootfs.dummy >> $(ARCH)-uclibc/vmlinux-EA8500.uImage.final;
 
 
 
