@@ -240,17 +240,17 @@ endif
 	
 	( dd if=$(ARCH)-uclibc/vmlinux-EA8500.uImage.normal bs=2097023 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-EA8500.uImage.new; )	
 
-	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-r7500.uImage.new $(ARCH)-uclibc/vmlinux-r7500.uImage.final
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'DD-WRT V3.0' -d $(ARCH)-uclibc/vmlinux-r7500.uImage.new $(ARCH)-uclibc/vmlinux-r7500.uImage.final
 	
-	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-r7500v2.uImage.new $(ARCH)-uclibc/vmlinux-r7500v2.uImage.final
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'DD-WRT V3.0' -d $(ARCH)-uclibc/vmlinux-r7500v2.uImage.new $(ARCH)-uclibc/vmlinux-r7500v2.uImage.final
 	
-	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-r7800.uImage.new $(ARCH)-uclibc/vmlinux-r7800.uImage.final
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'DD-WRT V3.0' -d $(ARCH)-uclibc/vmlinux-r7800.uImage.new $(ARCH)-uclibc/vmlinux-r7800.uImage.final
 
-	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-TEW827.uImage.new $(ARCH)-uclibc/vmlinux-TEW827.uImage.final
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'DD-WRT V3.0' -d $(ARCH)-uclibc/vmlinux-TEW827.uImage.new $(ARCH)-uclibc/vmlinux-TEW827.uImage.final
 
-	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-G10.uImage.new $(ARCH)-uclibc/vmlinux-G10.uImage.final
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'DD-WRT V3.0' -d $(ARCH)-uclibc/vmlinux-G10.uImage.new $(ARCH)-uclibc/vmlinux-G10.uImage.final
 	
-	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-EA8500.uImage.new $(ARCH)-uclibc/vmlinux-EA8500.uImage.final
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'DD-WRT V3.0' -d $(ARCH)-uclibc/vmlinux-EA8500.uImage.new $(ARCH)-uclibc/vmlinux-EA8500.uImage.final
 	
 	echo -ne '\xff' >> $(ARCH)-uclibc/vmlinux-r7500.uImage.final;
 	cat $(ARCH)-uclibc/rootfs.dummy >> $(ARCH)-uclibc/vmlinux-r7500.uImage.final;
@@ -555,17 +555,17 @@ endif
 	
 	( dd if=$(ARCH)-uclibc/vmlinux-EA8500.uImage.normal bs=2097023 count=1 conv=sync of=$(ARCH)-uclibc/vmlinux-EA8500.uImage.new; )	
 
-	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-r7500.uImage.new $(ARCH)-uclibc/vmlinux-r7500.uImage.final
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'DD-WRT V3.0' -d $(ARCH)-uclibc/vmlinux-r7500.uImage.new $(ARCH)-uclibc/vmlinux-r7500.uImage.final
 	
-	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-r7500v2.uImage.new $(ARCH)-uclibc/vmlinux-r7500v2.uImage.final
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'DD-WRT V3.0' -d $(ARCH)-uclibc/vmlinux-r7500v2.uImage.new $(ARCH)-uclibc/vmlinux-r7500v2.uImage.final
 	
-	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-r7800.uImage.new $(ARCH)-uclibc/vmlinux-r7800.uImage.final
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'DD-WRT V3.0' -d $(ARCH)-uclibc/vmlinux-r7800.uImage.new $(ARCH)-uclibc/vmlinux-r7800.uImage.final
 
-	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-TEW827.uImage.new $(ARCH)-uclibc/vmlinux-TEW827.uImage.final
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'DD-WRT V3.0' -d $(ARCH)-uclibc/vmlinux-TEW827.uImage.new $(ARCH)-uclibc/vmlinux-TEW827.uImage.final
 
-	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-G10.uImage.new $(ARCH)-uclibc/vmlinux-G10.uImage.final
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'DD-WRT V3.0' -d $(ARCH)-uclibc/vmlinux-G10.uImage.new $(ARCH)-uclibc/vmlinux-G10.uImage.final
 	
-	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'Linux-3.18' -d $(ARCH)-uclibc/vmlinux-EA8500.uImage.new $(ARCH)-uclibc/vmlinux-EA8500.uImage.final
+	./tools/r7500/mkimage -A arm -O linux -C none -T kernel -a 0x42208000 -e 0x42208000 -n 'DD-WRT V3.0' -d $(ARCH)-uclibc/vmlinux-EA8500.uImage.new $(ARCH)-uclibc/vmlinux-EA8500.uImage.final
 	
 	echo -ne '\xff' >> $(ARCH)-uclibc/vmlinux-r7500.uImage.final;
 	cat $(ARCH)-uclibc/rootfs.dummy >> $(ARCH)-uclibc/vmlinux-r7500.uImage.final;
