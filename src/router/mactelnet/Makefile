@@ -52,5 +52,8 @@ md5.o: md5.c md5.h
 console.o: console.c
 	${CC} -Wall ${CFLAGS} -c console.c
 
-multicall: config.h multicall.c mactelnet.c mactelnetd.c mndp.c macping.c mactelnet.h protocol.o console.o interfaces.o md5.o autologin.o users.o
-	${CC} -Wall ${CFLAGS} ${LDFLAGS} -o multicall multicall.c mactelnet.c mndp.c mactelnetd.c macping.c protocol.o console.o interfaces.o md5.o autologin.o users.o ${LIBS}
+touch:
+	touch mactelnetd.c
+
+multicall: touch config.h multicall.o mactelnet.o mactelnetd.o mndp.o macping.o mactelnet.h protocol.o console.o interfaces.o md5.o autologin.o users.o
+	${CC} -Wall ${CFLAGS} ${LDFLAGS} -o multicall multicall.o mactelnet.o mndp.o mactelnetd.o macping.o protocol.o console.o interfaces.o md5.o autologin.o users.o ${LIBS}
