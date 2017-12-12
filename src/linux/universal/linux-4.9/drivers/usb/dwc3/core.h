@@ -30,7 +30,6 @@
 #include <linux/usb/ch9.h>
 #include <linux/usb/gadget.h>
 #include <linux/usb/otg.h>
-#include <linux/usb/suspend.h>
 #include <linux/ulpi/interface.h>
 
 #include <linux/phy/phy.h>
@@ -954,8 +953,6 @@ struct dwc3 {
 	unsigned		is_fpga:1;
 	unsigned		pending_events:1;
 	unsigned		pullups_connected:1;
-	unsigned		enable_usb2susphy_quirk:1;
-	unsigned		enable_usb2_host_discon_quirk:1;
 	unsigned		setup_packet_pending:1;
 	unsigned		three_stage_setup:1;
 	unsigned		usb3_lpm_capable:1;
@@ -977,13 +974,9 @@ struct dwc3 {
 
 	unsigned		tx_de_emphasis_quirk:1;
 	unsigned		tx_de_emphasis:2;
-	struct usb_susphy	susphy;
-
-	u32			phy_misc_reg;
-	u32			phy_host_disc_on;
 #ifdef CONFIG_USB_DWC3_AL_RMN_2648
 	void __iomem *		serdes_regs_base;
-u32			serdes_group;
+	u32			serdes_group;
 	u32			serdes_lane;
 #endif
 #ifdef CONFIG_USB_DWC3_AL_VBUS_GPIO
@@ -991,6 +984,7 @@ u32			serdes_group;
 	int			vbus_gpio;
 	struct delayed_work	vbus_work;
 #endif
+
 };
 
 /* -------------------------------------------------------------------------- */

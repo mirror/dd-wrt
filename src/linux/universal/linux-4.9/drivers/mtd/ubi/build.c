@@ -1212,6 +1212,7 @@ static struct mtd_info * __init open_mtd_device(const char *mtd_dev)
 	return mtd;
 }
 
+
 #define ALT_PART_NAME_LENGTH 16
 struct per_part_info {
 	char name[ALT_PART_NAME_LENGTH];
@@ -1289,20 +1290,28 @@ static int getbootdevice(void)
 				else
 					ret = 0;
 				if (upgrade && ipq_smem_bootconfig_v2_info->per_part_entry[i].upgraded)
-					ret = !!ret;
+					ret = 1 - ret;
 			}
 		}
 	}
 	if (ipq_smem_bootconfig_info) {
 		int upgrade = ipq_smem_bootconfig_info->upgradeinprogress;
+		printk(KERN_INFO "bootconfig upgrade %d\n", upgrade);
 		for (i = 0; i < ipq_smem_bootconfig_info->numaltpart; i++) {
+		printk(KERN_INFO "bootconfig name %s\n", ipq_smem_bootconfig_info->per_part_entry[i].name);
+		printk(KERN_INFO "bootconfig primaryboot %d\n", ipq_smem_bootconfig_info->per_part_entry[i].primaryboot);
+		printk(KERN_INFO "bootconfig upgraded %d\n", ipq_smem_bootconfig_info->per_part_entry[i].upgraded);
+
 			if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i].name, "rootfs", 6)) {
 				if (ipq_smem_bootconfig_info->per_part_entry[i].primaryboot)
 					ret = 1;
 				else
 					ret = 0;
-				if (upgrade && ipq_smem_bootconfig_info->per_part_entry[i].upgraded)
-					ret = !!ret;
+				printk(KERN_INFO "primary boot device is %d\n",ret);
+				if (upgrade && ipq_smem_bootconfig_info->per_part_entry[i].upgraded) {
+					ret = 1 - ret;
+					printk(KERN_INFO "primary boot device is %d (invert since upgrade)\n",ret);
+				}
 			}
 		}
 	}
