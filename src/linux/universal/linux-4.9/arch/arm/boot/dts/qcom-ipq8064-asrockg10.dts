@@ -143,19 +143,24 @@
 			force_gen1 = <1>;
 		};
 
-
 		nand@1ac00000 {
 			status = "ok";
 
 			pinctrl-0 = <&nand_pins>;
 			pinctrl-names = "default";
 
-			nand-ecc-strength = <4>;
-			nand-bus-width = <8>;
+			cs0 {
+				reg = <0>;
+				compatible = "qcom,nandcs";
 
-			#address-cells = <1>;
-			#size-cells = <1>;
+				nand-ecc-strength = <4>;
+				nand-bus-width = <8>;
+				nand-ecc-step-size = <512>;
 
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
 			
 			qcadata@0 {
 				label = "qcadata";
@@ -212,6 +217,8 @@
 			};
 
 
+		};
+		};
 		};
 
 		mdio0: mdio {
