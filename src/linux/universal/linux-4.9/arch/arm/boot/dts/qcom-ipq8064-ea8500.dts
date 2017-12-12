@@ -33,6 +33,10 @@
 
 	soc {
 		pinmux@800000 {
+
+			pinctrl-0 = <&reset-control>;
+			pinctrl-names = "default";
+
 			button_pins: button_pins {
 				mux {
 					pins = "gpio65", "gpio67", "gpio68";
@@ -57,6 +61,16 @@
 					function = "gpio";
 					drive-strength = <2>;
 					bias-pull-up;
+				};
+			};
+
+			reset-control: reset_control_pins {
+				mux {
+					pins = "gpio63";
+					function = "gpio";
+					drive-strength = <2>;
+					bias-disable;
+					output-low;
 				};
 			};
 
@@ -94,7 +108,7 @@
 
 			rgmii2_pins: rgmii2_pins {
 				mux {
-					pins = "gpio27", "gpio28", "gpio29", "gpio30", "gpio31", "gpio32",
+					pins = "gpio2", "gpio27", "gpio28", "gpio29", "gpio30", "gpio31", "gpio32",
 					       "gpio51", "gpio52", "gpio59", "gpio60", "gpio61", "gpio62" ;
 					function = "rgmii2";
 					drive-strength = <8>;
