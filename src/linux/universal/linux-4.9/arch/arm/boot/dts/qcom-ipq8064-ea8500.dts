@@ -34,7 +34,7 @@
 	soc {
 		pinmux@800000 {
 
-			pinctrl-0 = <&reset-control>;
+			pinctrl-0 = <&reset_control>;
 			pinctrl-names = "default";
 
 			button_pins: button_pins {
@@ -64,7 +64,7 @@
 				};
 			};
 
-			reset-control: reset_control_pins {
+			reset_control: reset_control_pins {
 				mux {
 					pins = "gpio63";
 					function = "gpio";
@@ -73,6 +73,7 @@
 					output-low;
 				};
 			};
+
 
 			mdio0_pins: mdio0_pins {
 				mux {
