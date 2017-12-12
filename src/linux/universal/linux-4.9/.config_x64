@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86_64 4.9.64 Kernel Configuration
+# Linux/x86_64 4.9.68 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -1833,6 +1833,7 @@ CONFIG_QED=m
 CONFIG_QEDE=m
 CONFIG_NET_VENDOR_QUALCOMM=y
 # CONFIG_QCOM_EMAC is not set
+# CONFIG_ESSEDMA is not set
 CONFIG_NET_VENDOR_REALTEK=y
 CONFIG_8139CP=m
 CONFIG_8139TOO=m
