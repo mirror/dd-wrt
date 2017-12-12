@@ -26,7 +26,6 @@
 #include <linux/dma-mapping.h>
 #include <linux/clk.h>
 #include <linux/clk-provider.h>
-#include <linux/reset.h>
 #include <linux/of.h>
 #include <linux/of_platform.h>
 #include <linux/pm_runtime.h>
@@ -35,8 +34,6 @@ struct dwc3_of_simple {
 	struct device		*dev;
 	struct clk		**clks;
 	int			num_clocks;
-	struct reset_control	*mstr_rst_30_0;
-	struct reset_control	*mstr_rst_30_1;
 };
 
 static int dwc3_of_simple_clk_init(struct dwc3_of_simple *simple, int count)
@@ -103,20 +100,6 @@ static int dwc3_of_simple_probe(struct platform_device *pdev)
 	if (ret)
 		return ret;
 
-	simple->mstr_rst_30_0 = devm_reset_control_get(dev, "usb30_0_mstr_rst");
-
-	if (!IS_ERR(simple->mstr_rst_30_0))
-		reset_control_deassert(simple->mstr_rst_30_0);
-	else
-		dev_dbg(simple->dev, "cannot get handle for USB PHY 0 master reset control\n");
-
-	simple->mstr_rst_30_1 = devm_reset_control_get(dev, "usb30_1_mstr_rst");
-
-	if (!IS_ERR(simple->mstr_rst_30_1))
-		reset_control_deassert(simple->mstr_rst_30_1);
-	else
-		dev_dbg(simple->dev, "cannot get handle for USB PHY 1 master reset control\n");
-
 	ret = of_platform_populate(np, NULL, NULL, dev);
 	if (ret) {
 		for (i = 0; i < simple->num_clocks; i++) {
@@ -144,12 +127,6 @@ static int dwc3_of_simple_remove(struct platform_device *pdev)
 		clk_disable_unprepare(simple->clks[i]);
 		clk_put(simple->clks[i]);
 	}
-
-	if (!IS_ERR(simple->mstr_rst_30_0))
-		reset_control_assert(simple->mstr_rst_30_0);
-
-	if (!IS_ERR(simple->mstr_rst_30_1))
-		reset_control_assert(simple->mstr_rst_30_1);
 
 	of_platform_depopulate(dev);
 

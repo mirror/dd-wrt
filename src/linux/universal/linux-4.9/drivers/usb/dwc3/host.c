@@ -112,15 +112,6 @@ int dwc3_host_init(struct dwc3 *dwc)
 			goto err1;
 		}
 	}
-
-	if (dwc->enable_usb2susphy_quirk) {
-		props[0].name = "usb2-susphy-quirk";
-		ret = platform_device_add_properties(xhci, props);
-		if (ret) {
-			dev_err(dwc->dev, "failed to add properties to xHCI\n");
-			goto err1;
-		}
-	}
  
 	phy_create_lookup(dwc->usb2_generic_phy, "usb2-phy",
 			  dev_name(&xhci->dev));
