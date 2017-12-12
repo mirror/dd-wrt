@@ -75,7 +75,7 @@ static void __clk_hfpll_enable(struct clk_hw *hw)
 	 * H/W requires a 5us delay between disabling the bypass and
 	 * de-asserting the reset. Delay 10us just to be safe.
 	 */
-	usleep_range(10, 100);
+	udelay(10);
 
 	/* De-assert active-low PLL reset. */
 	regmap_update_bits(regmap, hd->mode_reg, PLL_RESET_N, PLL_RESET_N);
@@ -86,7 +86,7 @@ static void __clk_hfpll_enable(struct clk_hw *hw)
 			regmap_read(regmap, hd->status_reg, &val);
 		} while (!(val & BIT(hd->lock_bit)));
 	} else {
-		usleep_range(60, 100);
+		udelay(60);
 	}
 
 	/* Enable PLL output. */
