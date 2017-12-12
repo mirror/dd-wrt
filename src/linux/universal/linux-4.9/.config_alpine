@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.64 Kernel Configuration
+# Linux/arm 4.9.68 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -317,7 +317,6 @@ CONFIG_MMU=y
 # CONFIG_ARCH_BRCM is not set
 CONFIG_ARCH_ALPINE=y
 # CONFIG_ARCH_CNS3XXX is not set
-# CONFIG_MSM_PCIE is not set
 
 #
 # Annapurna Labs Alpine Soc Device Tree
@@ -1763,6 +1762,7 @@ CONFIG_NET_VENDOR_QLOGIC=y
 CONFIG_NET_VENDOR_QUALCOMM=y
 # CONFIG_QCA7000 is not set
 # CONFIG_QCOM_EMAC is not set
+# CONFIG_ESSEDMA is not set
 CONFIG_NET_VENDOR_REALTEK=y
 # CONFIG_8139CP is not set
 # CONFIG_8139TOO is not set
@@ -1860,6 +1860,8 @@ CONFIG_FIXED_PHY=y
 # CONFIG_VITESSE_PHY is not set
 # CONFIG_XILINX_GMII2RGMII is not set
 # CONFIG_GATEWORKS_GW16083 is not set
+# CONFIG_MDIO_IPQ40XX is not set
+# CONFIG_AR40XX_PHY is not set
 # CONFIG_MICREL_KS8995MA is not set
 CONFIG_PPP=m
 # CONFIG_PPP_BSDCOMP is not set

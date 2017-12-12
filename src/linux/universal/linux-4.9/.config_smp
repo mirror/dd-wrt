@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.9.64 Kernel Configuration
+# Linux/i386 4.9.68 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -1771,6 +1771,7 @@ CONFIG_QEDE=m
 CONFIG_NET_VENDOR_QUALCOMM=y
 CONFIG_QCA7000=m
 # CONFIG_QCOM_EMAC is not set
+# CONFIG_ESSEDMA is not set
 CONFIG_NET_VENDOR_REALTEK=y
 CONFIG_8139CP=m
 CONFIG_8139TOO=m
@@ -1890,6 +1891,8 @@ CONFIG_SMSC_PHY=m
 # CONFIG_VITESSE_PHY is not set
 # CONFIG_XILINX_GMII2RGMII is not set
 # CONFIG_GATEWORKS_GW16083 is not set
+# CONFIG_MDIO_IPQ40XX is not set
+# CONFIG_AR40XX_PHY is not set
 # CONFIG_MICREL_KS8995MA is not set
 CONFIG_PPP=y
 CONFIG_PPP_BSDCOMP=y

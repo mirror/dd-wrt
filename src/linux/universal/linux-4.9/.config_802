@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.64 Kernel Configuration
+# Linux/mips 4.9.68 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1377,6 +1377,8 @@ CONFIG_FIXED_PHY=y
 # CONFIG_VITESSE_PHY is not set
 # CONFIG_XILINX_GMII2RGMII is not set
 # CONFIG_GATEWORKS_GW16083 is not set
+# CONFIG_MDIO_IPQ40XX is not set
+# CONFIG_AR40XX_PHY is not set
 CONFIG_PPP=y
 CONFIG_PPP_BSDCOMP=y
 CONFIG_PPP_DEFLATE=y
