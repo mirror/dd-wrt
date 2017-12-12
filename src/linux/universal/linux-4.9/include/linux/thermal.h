@@ -128,6 +128,8 @@ struct thermal_zone_device_ops {
 		enum thermal_trip_activation_mode);
 	int (*get_trip_temp) (struct thermal_zone_device *, int, int *);
 	int (*set_trip_temp) (struct thermal_zone_device *, int, int);
+	int (*set_trip_activate) (struct thermal_zone_device *, int,
+					enum thermal_trip_activation_mode);
 	int (*get_trip_hyst) (struct thermal_zone_device *, int, int *);
 	int (*set_trip_hyst) (struct thermal_zone_device *, int, int);
 	int (*get_crit_temp) (struct thermal_zone_device *, int *);
@@ -387,6 +389,8 @@ struct thermal_zone_of_device_ops {
 	int (*set_trips)(void *, int, int);
 	int (*set_emul_temp)(void *, int);
 	int (*set_trip_temp)(void *, int, int);
+	int (*set_trip_activate)(void *, int,
+				enum thermal_trip_activation_mode);
 };
 
 /**
