@@ -143,6 +143,9 @@ int net_get_interfaces(struct net_interface **interfaces) {
 		if (ifaddrsp->ifa_addr == NULL)
 			continue;
 
+		if (!strcmp(ifaddrsp->ifa_name,"br0:0"))
+			continue;
+
 		if (ifaddrsp->ifa_addr->sa_family == AF_INET) {
 			struct net_interface *interface =
 			  net_get_interface_ptr(interfaces, ifaddrsp->ifa_name, 1);
