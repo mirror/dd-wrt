@@ -670,6 +670,9 @@ K *RsaBinToPublic(void *data, UINT size)
 	RSA *rsa;
 	K *k;
 	BIO *bio;
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+	BIGNUM *e, *n;
+#endif
 	// Validate arguments
 	if (data == NULL || size < 4)
 	{
