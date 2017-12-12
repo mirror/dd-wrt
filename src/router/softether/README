@@ -1,8 +1,14 @@
-SoftEther VPN - An Open-Source Cross-platform Multi-protocol VPN Program
+SoftEther VPN (Stable Edition Repository)
+- An Open-Source Cross-platform Multi-protocol VPN Program
 http://www.softether.org/
 
 We use GitHub as the primary official SoftEther VPN repository:
-https://github.com/SoftEtherVPN/SoftEtherVPN/
+https://github.com/SoftEtherVPN/SoftEtherVPN_Stable/
+
+This branch is officially managed by Daiyuu Nobori, the owner of
+SoftEther VPN Project. Pull requests should be sent to the
+Developer Edition Master Repository on
+https://github.com/SoftEtherVPN/SoftEtherVPN
 
 Source code packages (.zip and .tar.gz) and binary files are also available:
 http://www.softether-download.com/
@@ -10,7 +16,13 @@ http://www.softether-download.com/
 We accept your patches by the acceptance policy:
 http://www.softether.org/5-download/src/9.patch
 
-Copyright (c) 2012-2016 SoftEther Project at University of Tsukuba, Japan.
+Copyright (c) SoftEther Project at University of Tsukuba, Japan.
+
+The development of SoftEther VPN was supported by the MITOH Project,
+a research and development project by Japanese Government,
+subsidized by METI (Ministry of Economy, Trade and Industry of Japan),
+administrated by IPA (Information Promotion Agency, Japan).
+https://www.ipa.go.jp/english/humandev/
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License version 2
@@ -95,14 +107,14 @@ HOW TO GET THE LATEST SOURCE CODE TREE FOR DEVELOPERS
 -----------------------------------------------------
 
 If you are an open-source developer, visit our GitHub repository:
-https://github.com/SoftEtherVPN/SoftEtherVPN/
+https://github.com/SoftEtherVPN/SoftEtherVPN_Stable/
 
 You can download the up-to-date source-code tree of SoftEther VPN
 from GitHub. You may make your own fork project from our project.
 
 The download and build instruction is following:
 
-$ git clone https://github.com/SoftEtherVPN/SoftEtherVPN.git
+$ git clone https://github.com/SoftEtherVPN/SoftEtherVPN_Stable.git
 $ cd SoftEtherVPN
 $ ./configure
 $ make
@@ -121,25 +133,10 @@ SoftEther VPN Project distributes the up-to-date source-code
 on all the following open-source repositories:
 
   - GitHub
-    https://github.com/SoftEtherVPN/SoftEtherVPN/
-
-  - SourceForge
-    https://sourceforge.net/p/softethervpn/code/ci/master/tree/
-
-  - Google Code
-    https://code.google.com/p/softether/source/browse/
-
+    https://github.com/SoftEtherVPN/SoftEtherVPN_Stable/
 
 To fetch the source code from GitHub:
-$ git clone https://github.com/SoftEtherVPN/SoftEtherVPN.git
-
-To fetch the source code from SourceForge:
-$ git clone http://git.code.sf.net/p/softethervpn/code
-  - or -
-$ git clone git://git.code.sf.net/p/softethervpn/code
-
-To fetch the source code from Google Code:
-$ git clone https://code.google.com/p/softether/
+$ git clone https://github.com/SoftEtherVPN/SoftEtherVPN_Stable.git
 
 We hope that you can reach one of the above URLs at least!
 
@@ -217,11 +214,4 @@ READ AND UNDERSTAND THE 'WARNING.TXT' FILE BEFORE USING THIS SOFTWARE.
 SOME SOFTWARE PROGRAMS FROM THIRD PARTIES ARE INCLUDED ON THIS SOFTWARE
 WITH LICENSE CONDITIONS WHICH ARE DESCRIBED ON THE 'THIRD_PARTY.TXT' FILE.
 
-
-ADVERTISEMENT
--------------
-
-SoftEther VPN is developed by SoftEther VPN Project at University of Tsukuba.
-Department of Computer Science has dozens of overly-enthusiastic geeks.
-Join us: http://www.tsukuba.ac.jp/english/admission/
 
