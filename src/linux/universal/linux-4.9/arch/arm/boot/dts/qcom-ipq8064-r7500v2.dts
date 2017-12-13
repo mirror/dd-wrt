@@ -340,6 +340,8 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
+		pinctrl-0 = <&led_pins>;
+		pinctrl-names = "default";
 
 		usb1 {
 			label = "r7X00:amber:usb1";
