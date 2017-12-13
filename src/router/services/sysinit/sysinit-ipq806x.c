@@ -507,46 +507,45 @@ void start_sysinit(void)
 	}
 
 	switch (board) {
-	case ROUTER_NETGEAR_R7800:
-		system("swconfig dev switch0 set reset 1");
-		system("swconfig dev switch0 set enable_vlan 0");
-		system("swconfig dev switch0 vlan 1 set ports \"6 1 2 3 4\"");
-		system("swconfig dev switch0 vlan 2 set ports \"0 5\"");
-		system("swconfig dev switch0 set apply");
+	case ROUTER_NETGEAR_R7800:	// why is this extra? looks like the default one
+		eval("swconfig", "dev", "switch0", "set", "reset", "1");
+		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "6 1 2 3 4");
+		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0 5");
+		eval("swconfig", "dev", "switch0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
-//              eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-//              eval("vconfig", "add", "eth1", "1");
-//              eval("vconfig", "add", "eth0", "2");
 		break;
 	case ROUTER_ASROCK_G10:
-		system("swconfig dev switch0 set reset 1");
-		system("swconfig dev switch0 set enable_vlan 1");
-		system("swconfig dev switch0 vlan 1 set ports \"2 3 4 5 6t\"");
-		system("swconfig dev switch0 vlan 2 set ports \"1 6t\"");
-		system("swconfig dev switch0 set apply");
+		eval("swconfig", "dev", "switch0", "set", "reset", "1");
+		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "2 3 4 5 6t");
+		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "1 6t");
+		eval("swconfig", "dev", "switch0", "set", "apply");
 		eval("ifconfig", "eth1", "up");
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth1", "1");
 		eval("vconfig", "add", "eth1", "2");
 		break;
 	case ROUTER_LINKSYS_EA8500:
-		system("swconfig dev switch0 set reset 1");
-		system("swconfig dev switch0 set enable_vlan 1");
-		system("swconfig dev switch0 vlan 1 set ports \"0t 1 2 3 4\"");
-		system("swconfig dev switch0 vlan 2 set ports \"0t 5\"");
-		system("swconfig dev switch0 set apply");
+		eval("swconfig", "dev", "switch0", "set", "reset", "1");
+		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0t 1 2 3 4");
+		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 5");
+		eval("swconfig", "dev", "switch0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
 		break;
 	default:
-		system("swconfig dev switch0 set reset 1");
-		system("swconfig dev switch0 set enable_vlan 0");
-		system("swconfig dev switch0 vlan 1 set ports \"6 1 2 3 4\"");
-		system("swconfig dev switch0 vlan 2 set ports \"5 0\"");
-		system("swconfig dev switch0 set apply");
+		eval("swconfig", "dev", "switch0", "set", "reset", "1");
+		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
+		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "6 1 2 3 4");
+		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "5 0");
+		eval("swconfig", "dev", "switch0", "set", "apply");
+		eval("ifconfig", "eth0", "up");
+		eval("ifconfig", "eth1", "up");
 		break;
 	}
 
@@ -555,8 +554,8 @@ void start_sysinit(void)
 
 	detect_wireless_devices();
 
-//	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
-//	writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000"); //why limiting?
+//      writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
+//      writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000"); //why limiting?
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
