@@ -174,7 +174,7 @@
 				read-only;
 			};
 
-			APPSBL_1@c80000 {
+			APPSBL_1@43a0000 {
 				label = "APPSBL_1";
 				reg = <0x43a0000 0x0500000>;
 				read-only;
