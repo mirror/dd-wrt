@@ -304,6 +304,7 @@ int mtd_write(const char *path, const char *mtd)
 		} else {
 			eval("startservice", "bootprimary");
 		}
+		eval("startservice", "finishupgrade");
 		break;
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
