@@ -630,7 +630,7 @@ static void nat_prerouting(void)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_dns_redirect", var)) {
 				char *target = nvram_nget("%s_dns_ipaddr", var);
-				if (target && strlen(target) && sv_valid_ipaddr(target) && strcmp(target, "0.0.0.0")) {
+				if (target && strlen(target) > 0 && sv_valid_ipaddr(target) && strcmp(target, "0.0.0.0")) {
 					save2file("-A PREROUTING -i %s -p udp --dport 53 -j DNAT --to %s\n", var, target);
 					save2file("-A PREROUTING -i %s -p tcp --dport 53 -j DNAT --to %s\n", var, target);
 				} else {
@@ -660,7 +660,7 @@ static void nat_prerouting(void)
 		}
 
 		/* no gui setting yet - redirect all except this IP */
-		if (strlen(nvram_safe_get("privoxy_transp_exclude"))) {
+		if (strlen(nvram_safe_get("privoxy_transp_exclude")) > 0) {
 			save2file("-A PREROUTING -p tcp -s %s --dport 80 -j ACCEPT \n", nvram_safe_get("privoxy_transp_exclude"));
 		}
 		/* block access from privoxy to webif */
@@ -804,7 +804,7 @@ static void nat_postrouting(void)
 		if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
 			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", nvram_safe_get("tvnicfrom"), nvram_safe_get("tvnicaddr"));
 		}
-		if (strlen(wanface) && wanactive()
+		if (strlen(wanface) > 0 && wanactive()
 		    && !nvram_matchi("br0_nat", 0))
 			save2file("-A POSTROUTING -s %s/%d -o %s -j SNAT --to-source %s\n", nvram_safe_get("lan_ipaddr"), loopmask, wanface, wanaddr);
 		char *sr = nvram_safe_get("static_route");
@@ -909,7 +909,7 @@ static void nat_postrouting(void)
 		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "NOTRACK");	//this speeds up networking alot on slow systems 
 		/* the following code must be used in future kernel versions, not yet used. we still need to test it */
 //              eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "CT","--notrack");      //this speeds up networking alot on slow systems 
-		if (strlen(wanface) && wanactive())
+		if (strlen(wanface) > 0 && wanactive())
 			if (nvram_matchi("wl_br1_enable", 1))
 				save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", wanface, wanaddr);
 	}
@@ -1201,7 +1201,7 @@ static void ipgrp_chain(int seq, unsigned int mark, int urlenable)
 		if (strchr(var1, '-')) {
 			char *end = var1;
 			char *start = strsep(&end, "-");
-			if (!strchr(start, '.') || !strchr(end, '.')) {
+			if (start && (!strchr(start, '.') || !strchr(end, '.'))) {
 				if (atoi(start) == 0 && atoi(end) == 0)
 					continue;
 				//convert old style 
@@ -1881,7 +1881,7 @@ static void add_bridges(char *chain, int forward)
 				eval("ifconfig", tag, "up");
 
 			}
-			if (forward && wan && strlen(wan))
+			if (forward && wan && strlen(wan) > 0 )
 				save2file("-A FORWARD -i %s -o %s -j %s\n", tag, wan, log_accept);
 			else {
 				if (!strcmp(chain, "OUTPUT"))
@@ -2343,7 +2343,7 @@ static void filter_forward(void)
 			save2file("-A FORWARD -i br1 -o br0 -j %s\n", log_accept);
 
 		char *wan = get_wan_face();
-		if (wan && strlen(wan))
+		if (wan && strlen(wan) > 0)
 			save2file("-A FORWARD -i br1 -o %s -j %s\n", wan, log_accept);
 
 	}
@@ -2353,7 +2353,7 @@ static void filter_forward(void)
 	stop_vpn_modules();
 	// unload_vpn_modules ();
 
-	if (nvram_invmatch("filter", "off") && strlen(wanface)) {
+	if (nvram_invmatch("filter", "off") && strlen(wanface) > 0) {
 
 		/*
 		 * DROP packets for PPTP pass through. 
@@ -2378,7 +2378,7 @@ static void filter_forward(void)
 	// load_vpn_modules ();
 	if (nvram_invmatch("filter", "off")) {
 		if (nvram_matchi("pptp_pass", 1)) {
-			if (strlen(wanface)) {
+			if (strlen(wanface) > 0) {
 				save2file("-I FORWARD -o %s -s %s/%d -p tcp --dport %d -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), PPTP_PORT, log_accept);
 				save2file("-I FORWARD -o %s -s %s/%d -p gre -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), log_accept);
 			}
@@ -2406,7 +2406,7 @@ static void filter_forward(void)
 			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
 #endif
 	} else {
-		if (doMultiCast() > 0 && strlen(wanface))
+		if (doMultiCast() > 0 && strlen(wanface) > 0)
 			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", wanface, IP_MULTICAST, log_accept);
 	}
 	/*
@@ -2421,7 +2421,7 @@ static void filter_forward(void)
 	/*
 	 * Incoming connection will be accepted, if it match the port-ranges. 
 	 */
-	if (strlen(wanface)) {
+	if strlen(wanface) > 0) {
 		save2file("-A FORWARD -i %s -o %s -j TRIGGER --trigger-type in\n", wanface, lanface);
 		save2file("-A FORWARD -i %s -j trigger_out\n", lanface);
 	}
@@ -2562,7 +2562,7 @@ static void filter_table(void)
 			/*
 			 * Make sure remote management ports are filtered if it is disabled 
 			 */
-			if (!remotemanage && strlen(wanface)) {
+			if (!remotemanage && strlen(wanface) > 0) {
 				save2file("-A INPUT -p tcp -i %s --dport %s -j %s\n", wanface, nvram_safe_get("http_wanport"), log_drop);
 				save2file("-A INPUT -p tcp -i %s --dport 80 -j %s\n", wanface, log_drop);
 				save2file("-A INPUT -p tcp -i %s --dport 443 -j %s\n", wanface, log_drop);
