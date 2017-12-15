@@ -2421,7 +2421,7 @@ static void filter_forward(void)
 	/*
 	 * Incoming connection will be accepted, if it match the port-ranges. 
 	 */
-	if strlen(wanface) > 0) {
+	if (strlen(wanface) > 0) {
 		save2file("-A FORWARD -i %s -o %s -j TRIGGER --trigger-type in\n", wanface, lanface);
 		save2file("-A FORWARD -i %s -j trigger_out\n", lanface);
 	}
