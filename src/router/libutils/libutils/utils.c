@@ -114,6 +114,7 @@ void setWifiPass(void)
 	case ROUTER_NETGEAR_R6300V2:
 //              case ROUTER_NETGEAR_R6400:
 	case ROUTER_NETGEAR_R7000:
+		case ROUTER_NETGEAR_R7000P:
 	case ROUTER_NETGEAR_R8000:
 	case ROUTER_NETGEAR_R8500:
 		mtd = getMTD("board_data");
@@ -2813,6 +2814,18 @@ int led_control(int type, int act)
 		usb_gpio = 0x111;	//usb1 
 		usb_gpio1 = 0x112;	//usb2 
 		break;
+	case ROUTER_NETGEAR_R7000P:
+		power_gpio = 0x102;	// power led *
+		diag_gpio = 0x103;	// power led orange *    
+		connected_gpio = 0x108;	// wan led
+		//usb_power = 0x000;	// usb enable
+		wlan0_gpio = 0x109;	// radio 0 *
+		wlan1_gpio = 0x10a;	// radio 1 *
+		ses_gpio = 0x10b;	// wps led * //13 is wifi
+		//wlan_gpio = 0x10f;    // wifi button led
+		usb_gpio = 0x10e;	//usb1 *
+		usb_gpio1 = 0x10f;	//usb2 *
+		break;
 	case ROUTER_NETGEAR_R7500V2:
 	case ROUTER_NETGEAR_R7500:
 		power_gpio = 0x000;	// power led 
@@ -3446,7 +3459,7 @@ void getPortMapping(int *vlanmap)
 			vlanmap[3] = 2;
 			vlanmap[4] = 3;
 		}
-		if (nvram_match("vlan1ports", "4 3 2 1 5*") && nvram_matchi("boardnum", 32)) {	//R7000
+		if (nvram_match("vlan1ports", "4 3 2 1 5*") && nvram_matchi("boardnum", 32)) {	//R7000/R7000P
 			vlanmap[1] = 1;
 			vlanmap[2] = 2;
 			vlanmap[3] = 3;
