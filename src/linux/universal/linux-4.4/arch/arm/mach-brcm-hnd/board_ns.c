@@ -983,6 +983,10 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 		bootossz = 0x3c00000;	
 		nvsz = 0x100000;
 	}
+	
+	if (boardnum == 32 && nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1601") && nvram_match("et2phyaddr", "30")) {
+		bootossz = 0x4000000;
+	}
 
 #ifdef CONFIG_FAILSAFE_UPGRADE
 	char *img_boot = nvram_get(BOOTPARTITION);
@@ -1126,7 +1130,7 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 
 		nparts++;
 
-		if (nvram_match("boardnum", "32") && nvram_match("boardtype", "0x072F") && nvram_match("boardrev", "0x1101")) {
+		if ((nvram_match("boardnum", "32") && nvram_match("boardtype", "0x072F") && nvram_match("boardrev", "0x1101")) || nvram_match("board_id", "U12H270T20_NETGEAR")) {
 			
 			bcm947xx_nflash_parts[nparts].name = "board_data";
 			bcm947xx_nflash_parts[nparts].size = 0x80000;
