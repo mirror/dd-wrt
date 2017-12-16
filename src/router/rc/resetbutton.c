@@ -1475,6 +1475,7 @@ static void resetbtn_period_check(int sig)
 	case ROUTER_NETGEAR_R6250:
 	case ROUTER_NETGEAR_R6300V2:
 	case ROUTER_NETGEAR_R7000:
+	case ROUTER_NETGEAR_R7000P:
 		wifi24gpio = 0x105;
 		//fall through
 	case ROUTER_WRT54G:
