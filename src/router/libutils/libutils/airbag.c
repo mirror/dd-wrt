@@ -700,7 +700,7 @@ backward:
 			if ((instr2 & (stmMask | (1 << 11))) == (stmBits | (1 << 11))) {
 				void *faddr = 0;
 				uint32_t priorPc = lr;	/* If LR was pushed, will find and use that.  For now assume leaf function. */
-				uint32_t priorFp;
+				uint32_t priorFp = 0;
 				found = 1;
 				i++;
 				if (load32((void *)(pc - i * 4), &instr) == 0 && (instr & stmMask) == stmBits) {
