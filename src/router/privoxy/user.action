@@ -68,7 +68,8 @@ stupid-server.example.com/
 
 { fragile }
 .bild.de
-cdn1.smartadserver.com/diff/251/
+.bildstatic.de
+.smartadserver.com
 
 # Here are some sites we wish to support, and we will allow their ads
 # through.
@@ -112,11 +113,44 @@ cdn1.smartadserver.com/diff/251/
 .shorte.st
 .moatads.com
 .redbutton.de
+.tr
+.ru
+.adjug.com
+.adroll.com
+.adnet.de
+.adnetworkperformance.com
+.adspirit.de
+.advertising.com
+.advolution.de
+.adxpansion.com
+.adzerk.net
+.afsanalytics.com
+.clickability.com
+.serving-sys.com
+.mediamath.com
+.itv.ard.de
+.hbbtv.*
+.rubiconproject.com
+.ioam.de
+.adrtx.net
 
 { +block{Kong-Privacy-Concern} }
 .sophosxl.net
 .mywot.com
 .ghostery.com
+.fullstory.com/s/fs.js
+.cloudfront.net/Record/js/sessioncam.recorder.js
+.sessioncam.com/
+.userreplay.net
+.script.hotjar.com
+.insights.hotjar.com/api
+.clicktale.net
+.smartlook.com
+.decibelinsight.net
+.quantummetric.com
+.inspectlet.com
+.mouseflow.com
+.logrocket.com
+.salemove.com
 { +block{Kong-URLs} }
 .binlayer.com
-ww251.smartadserver.com
