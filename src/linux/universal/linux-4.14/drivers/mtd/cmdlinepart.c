@@ -84,6 +84,10 @@ static char *mtdparts;
 static char *cmdline;
 static int cmdline_parsed;
 
+#if defined(CONFIG_USE_DNI_PARTITION)
+static char *dni_cmdline = CONFIG_DNI_PARTITION_CMDLINE;
+#endif
+
 /*
  * Parse one partition definition for an MTD. Since there can be many
  * comma separated partition definitions, this function calls itself
@@ -314,7 +318,13 @@ static int parse_cmdline_partitions(struct mtd_info *master,
 
 	/* parse command line */
 	if (!cmdline_parsed) {
+#if defined(CONFIG_USE_DNI_PARTITION)
+		printk("READ DNI CMDLINE!\n");
+		printk("dni_cmdline: %s\n", dni_cmdline);
+		err = mtdpart_setup_real(dni_cmdline);
+#else
 		err = mtdpart_setup_real(cmdline);
+#endif
 		if (err)
 			return err;
 	}

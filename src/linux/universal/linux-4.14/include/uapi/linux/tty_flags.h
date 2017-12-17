@@ -51,7 +51,7 @@
 #define ASYNCB_CONS_FLOW	23 /* flow control for console  */
 #define ASYNCB_FIRST_KERNEL	22
 #endif
-
+#define ASYNCB_VSOPENRISC_EPLD	21 /* usage of the EPLD's from the OpenRISC */
 /* Masks */
 #define ASYNC_HUP_NOTIFY	(1U << ASYNCB_HUP_NOTIFY)
 #define ASYNC_SUSPENDED		(1U << ASYNCB_SUSPENDED)
@@ -91,6 +91,7 @@
 #define ASYNC_CHECK_CD		(1U << ASYNCB_CHECK_CD)
 #define ASYNC_SHARE_IRQ		(1U << ASYNCB_SHARE_IRQ)
 #define ASYNC_CONS_FLOW		(1U << ASYNCB_CONS_FLOW)
+#define ASYNC_VSOPENRISC_EPLD	(1U << ASYNCB_VSOPENRISC_EPLD)
 #define ASYNC_INTERNAL_FLAGS	(~((1U << ASYNCB_FIRST_KERNEL) - 1))
 #endif
 

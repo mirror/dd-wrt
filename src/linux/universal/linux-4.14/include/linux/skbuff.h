@@ -41,6 +41,10 @@
 #include <linux/in6.h>
 #include <linux/if_packet.h>
 #include <net/flow.h>
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+#include <linux/imq.h>
+#endif
+
 
 /* The interface for checksum offload between the stack and networking drivers
  * is as follows...
@@ -684,6 +688,10 @@ struct sk_buff {
 	 * first. This is owned by whoever has the skb queued ATM.
 	 */
 	char			cb[48] __aligned(8);
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	void			*cb_next;
+#endif
+
 
 	unsigned long		_skb_refdst;
 	void			(*destructor)(struct sk_buff *skb);
@@ -692,6 +700,9 @@ struct sk_buff {
 #endif
 #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
 	unsigned long		 _nfct;
+#endif
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+       struct nf_queue_entry   *nf_queue_entry;
 #endif
 #if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
 	struct nf_bridge_info	*nf_bridge;
@@ -768,15 +779,20 @@ struct sk_buff {
 #endif
 	__u8			ipvs_property:1;
 	__u8			inner_protocol_type:1;
+	__u8			fast_forwarded:1;
 	__u8			remcsum_offload:1;
 #ifdef CONFIG_NET_SWITCHDEV
 	__u8			offload_fwd_mark:1;
 #endif
+	/* 1, 3 or 4 bit hole */
 #ifdef CONFIG_NET_CLS_ACT
 	__u8			tc_skip_classify:1;
 	__u8			tc_at_ingress:1;
 	__u8			tc_redirected:1;
 	__u8			tc_from_ingress:1;
+#endif
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	__u8			imq_flags:IMQ_F_BITS;
 #endif
 	__u8			gro_skip:1;
 
@@ -962,6 +978,11 @@ void consume_skb(struct sk_buff *skb);
 void __consume_stateless_skb(struct sk_buff *skb);
 void  __kfree_skb(struct sk_buff *skb);
 extern struct kmem_cache *skbuff_head_cache;
+
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+int skb_save_cb(struct sk_buff *skb);
+int skb_restore_cb(struct sk_buff *skb);
+#endif
 
 void kfree_skb_partial(struct sk_buff *skb, bool head_stolen);
 bool skb_try_coalesce(struct sk_buff *to, struct sk_buff *from,
@@ -3733,6 +3754,10 @@ static inline void nf_conntrack_get(struct nf_conntrack *nfct)
 	if (nfct)
 		atomic_inc(&nfct->use);
 }
+#endif
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+       dst->imq_flags = src->imq_flags;
+       dst->nf_queue_entry = src->nf_queue_entry;
 #endif
 #if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
 static inline void nf_bridge_put(struct nf_bridge_info *nf_bridge)

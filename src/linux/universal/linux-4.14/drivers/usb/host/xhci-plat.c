@@ -251,6 +251,15 @@ static int xhci_plat_probe(struct platform_device *pdev)
 		if (priv_match)
 			*priv = *priv_match;
 	}
+	
+#if IS_ENABLED(CONFIG_USB_XHCI_MVEBU)	
+	if (of_device_is_compatible(pdev->dev.of_node,
+				     "marvell,armada-380-xhci")) {
+		ret = xhci_mvebu_vbus_init_quirk();
+		if (ret)
+		       goto disable_clk;
+	}
+#endif
 
 	device_wakeup_enable(hcd->self.controller);
 

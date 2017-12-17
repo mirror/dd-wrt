@@ -37,6 +37,7 @@
 #include <linux/module.h>
 
 #include <uapi/linux/dma-buf.h>
+#include <linux/module.h>
 
 static inline int is_dma_buf_file(struct file *);
 

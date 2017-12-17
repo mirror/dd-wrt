@@ -360,6 +360,11 @@ struct mtd_info {
 	struct device dev;
 	int usecount;
 	struct mtd_debug_info dbg;
+	int (*refresh_device)(struct mtd_info *mtd);
+	struct mtd_info *split;
+#ifdef CONFIG_BCM47XX
+	spinlock_t *mlock;
+#endif
 };
 
 int mtd_ooblayout_ecc(struct mtd_info *mtd, int section,

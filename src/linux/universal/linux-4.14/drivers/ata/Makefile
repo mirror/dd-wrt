@@ -7,6 +7,9 @@ obj-$(CONFIG_SATA_AHCI)		+= ahci.o libahci.o
 obj-$(CONFIG_SATA_ACARD_AHCI)	+= acard-ahci.o libahci.o
 obj-$(CONFIG_SATA_AHCI_SEATTLE)	+= ahci_seattle.o libahci.o libahci_platform.o
 obj-$(CONFIG_SATA_AHCI_PLATFORM) += ahci_platform.o libahci.o libahci_platform.o
+ahci_platforms-y		+= ahci_platform.o
+ahci_platforms-$(CONFIG_SATA_AHCI_CNS3XXX) += ahci_cns3xxx.o
+
 obj-$(CONFIG_SATA_FSL)		+= sata_fsl.o
 obj-$(CONFIG_SATA_GEMINI)	+= sata_gemini.o
 obj-$(CONFIG_SATA_INIC162X)	+= sata_inic162x.o
@@ -108,9 +111,11 @@ obj-$(CONFIG_PATA_PCMCIA)	+= pata_pcmcia.o
 obj-$(CONFIG_PATA_PALMLD)	+= pata_palmld.o
 obj-$(CONFIG_PATA_PLATFORM)	+= pata_platform.o
 obj-$(CONFIG_PATA_OF_PLATFORM)	+= pata_of_platform.o
+obj-$(CONFIG_PATA_RB153_CF)	+= pata_rb153_cf.o
 obj-$(CONFIG_PATA_RB532)	+= pata_rb532_cf.o
 obj-$(CONFIG_PATA_RZ1000)	+= pata_rz1000.o
 obj-$(CONFIG_PATA_SAMSUNG_CF)	+= pata_samsung_cf.o
+obj-$(CONFIG_PPC)		+= pata_rb_ppc.o
 
 obj-$(CONFIG_PATA_PXA)		+= pata_pxa.o
 

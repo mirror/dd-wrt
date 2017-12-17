@@ -845,7 +845,7 @@ enum pcie_bus_config_types {
 	PCIE_BUS_DEFAULT,	/* ensure MPS matches upstream bridge */
 	PCIE_BUS_SAFE,		/* use largest MPS boot-time devices support */
 	PCIE_BUS_PERFORMANCE,	/* use MPS and MRRS for best performance */
-	PCIE_BUS_PEER2PEER,	/* set MPS = 128 for all devices */
+	PCIE_BUS_PEER2PEER,	/* set MPS and MRSS to 128 for all devices */
 };
 
 extern enum pcie_bus_config_types pcie_bus_config;
@@ -2186,7 +2186,7 @@ void pci_release_bus_of_node(struct pci_bus *bus);
 struct irq_domain *pci_host_bridge_of_msi_domain(struct pci_bus *bus);
 
 /* Arch may override this (weak) */
-struct device_node *pcibios_get_phb_of_node(struct pci_bus *bus);
+struct device_node *__weak pcibios_get_phb_of_node(struct pci_bus *bus);
 
 static inline struct device_node *
 pci_device_to_OF_node(const struct pci_dev *pdev)

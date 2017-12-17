@@ -656,6 +656,7 @@ void ssb_pcihost_set_power_state(struct ssb_device *sdev, pci_power_t state)
 }
 #endif /* CONFIG_SSB_PCIHOST */
 
+extern void ssb_commit_settings(struct ssb_bus *bus);
 
 /* If a driver is shutdown or suspended, call this to signal
  * that the bus may be completely powered down. SSB will decide,

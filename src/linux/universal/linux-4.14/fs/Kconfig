@@ -97,6 +97,11 @@ config MANDATORY_FILE_LOCKING
 
 source "fs/crypto/Kconfig"
 
+config DIRECT_IO
+	bool "Enable O_DIRECT support" if EXPERT
+	depends on BLOCK
+	default y
+
 source "fs/notify/Kconfig"
 
 source "fs/quota/Kconfig"
@@ -125,6 +130,7 @@ if BLOCK
 menu "DOS/FAT/NT Filesystems"
 
 source "fs/fat/Kconfig"
+source "fs/exfat/Kconfig"
 source "fs/ntfs/Kconfig"
 
 endmenu
@@ -138,7 +144,6 @@ source "fs/sysfs/Kconfig"
 
 config TMPFS
 	bool "Tmpfs virtual memory file system support (former shm fs)"
-	depends on SHMEM
 	help
 	  Tmpfs is a file system which keeps all files in virtual memory.
 
@@ -185,6 +190,7 @@ config TMPFS_XATTR
 	  You need this for POSIX ACL support on tmpfs.
 
 	  If unsure, say N.
+
 
 config HUGETLBFS
 	bool "HugeTLB file system support"
@@ -274,6 +280,7 @@ source "fs/nfsd/Kconfig"
 
 config GRACE_PERIOD
 	tristate
+
 
 config LOCKD
 	tristate

@@ -36,12 +36,23 @@ ifeq ($(CONFIG_ARCH_SA1100),y)
 OBJS		+= head-sa1100.o
 endif
 
+ifeq ($(CONFIG_ARCH_KS8695),y)
+OBJS		+= head-ks8695.o
+endif
+
 ifeq ($(CONFIG_CPU_XSCALE),y)
 OBJS		+= head-xscale.o
 endif
 
 ifeq ($(CONFIG_PXA_SHARPSL_DETECT_MACH_ID),y)
 OBJS		+= head-sharpsl.o
+endif
+
+ifeq ($(CONFIG_MACH_BRCM_NS),y)
+OBJS		+= head-mpcore.o
+OBJS		+= mpcore_cache.o
+$(obj)/mpcore_cache.S: arch/$(SRCARCH)/plat-brcm/mpcore_cache.S FORCE
+	$(call cmd,shipped)
 endif
 
 ifeq ($(CONFIG_CPU_ENDIAN_BE32),y)
@@ -143,12 +154,6 @@ lib1funcs = $(obj)/lib1funcs.o
 $(obj)/lib1funcs.S: $(srctree)/arch/$(SRCARCH)/lib/lib1funcs.S
 	$(call cmd,shipped)
 
-# For __aeabi_llsl
-ashldi3 = $(obj)/ashldi3.o
-
-$(obj)/ashldi3.S: $(srctree)/arch/$(SRCARCH)/lib/ashldi3.S
-	$(call cmd,shipped)
-
 # For __bswapsi2, __bswapdi2
 bswapsdi2 = $(obj)/bswapsdi2.o
 
@@ -176,6 +181,12 @@ if [ $(words $(ZRELADDR)) -gt 1 -a "$(CONFIG_AUTO_ZRELADDR)" = "" ]; then \
 fi
 
 efi-obj-$(CONFIG_EFI_STUB) := $(objtree)/drivers/firmware/efi/libstub/lib.a
+
+# For __aeabi_llsl
+ashldi3 = $(obj)/ashldi3.o
+
+$(obj)/ashldi3.S: $(srctree)/arch/$(SRCARCH)/lib/ashldi3.S FORCE
+	$(call cmd,shipped)
 
 $(obj)/vmlinux: $(obj)/vmlinux.lds $(obj)/$(HEAD) $(obj)/piggy.o \
 		$(addprefix $(obj)/, $(OBJS)) $(lib1funcs) $(ashldi3) \

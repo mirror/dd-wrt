@@ -1954,6 +1954,15 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	fep->full_duplex = 0;
 
 	phy_attached_info(phy_dev);
+#ifdef CONFIG_SOC_IMX6Q
+// hack for ventana
+		phy_write(phy_dev, 22, 3);
+		val = phy_read(phy_dev, 16);
+		val &= 0xff00;
+		val |= 0x0017;
+		phy_write(phy_dev, 16, val);
+		phy_write(phy_dev, 22, 0);
+#endif
 
 	return 0;
 }

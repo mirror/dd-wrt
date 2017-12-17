@@ -902,7 +902,6 @@ static void __init arch_mem_init(char **cmdline_p)
 				crashk_res.end - crashk_res.start + 1,
 				BOOTMEM_DEFAULT);
 #endif
-	device_tree_init();
 	sparse_init();
 	plat_swiotlb_setup();
 
@@ -1009,7 +1008,6 @@ void __init setup_arch(char **cmdline_p)
 	conswitchp = &dummy_con;
 #endif
 #endif
-
 	arch_mem_init(cmdline_p);
 
 	resource_init();
@@ -1018,6 +1016,7 @@ void __init setup_arch(char **cmdline_p)
 
 	cpu_cache_init();
 	paging_init();
+	device_tree_init();
 }
 
 unsigned long kernelsp[NR_CPUS];

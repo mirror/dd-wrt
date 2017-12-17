@@ -47,6 +47,11 @@ static unsigned core_vpe_count(unsigned int cluster, unsigned core)
 	return mips_cps_numvps(cluster, core);
 }
 
+bool __weak plat_cpu_core_present(int core)
+{
+	return true;
+}
+
 static void __init cps_smp_setup(void)
 {
 	unsigned int nclusters, ncores, nvpes, core_vpes;
@@ -64,6 +69,8 @@ static void __init cps_smp_setup(void)
 
 		ncores = mips_cps_numcores(cl);
 		for (c = 0; c < ncores; c++) {
+			if (!plat_cpu_core_present(c))
+				continue;
 			core_vpes = core_vpe_count(cl, c);
 
 			if (c > 0)

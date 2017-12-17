@@ -121,6 +121,9 @@
 #endif
 #include <net/l3mdev.h>
 
+#define BCMFASTPATH
+#define BCMFASTPATH_HOST
+
 
 /* The inetsw table contains everything that inet_create needs to
  * build a new socket.
@@ -1343,8 +1346,8 @@ struct sk_buff **inet_gro_receive(struct sk_buff **head, struct sk_buff *skb)
 	if (unlikely(ip_fast_csum((u8 *)iph, 5)))
 		goto out_unlock;
 
-	id = ntohl(*(__be32 *)&iph->id);
-	flush = (u16)((ntohl(*(__be32 *)iph) ^ skb_gro_len(skb)) | (id & ~IP_DF));
+	id = ntohl(net_hdr_word(&iph->id));
+	flush = (u16)((ntohl(net_hdr_word(iph)) ^ skb_gro_len(skb)) | (id & ~IP_DF));
 	id >>= 16;
 
 	for (p = *head; p; p = p->next) {

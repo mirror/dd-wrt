@@ -142,6 +142,11 @@ config PINCTRL_LPC18XX
 	help
 	  Pinctrl driver for NXP LPC18xx/43xx System Control Unit (SCU).
 
+config PINCTRL_RT2880
+	bool
+	depends on RALINK
+	select PINMUX
+
 config PINCTRL_FALCON
 	bool
 	depends on SOC_FALCON

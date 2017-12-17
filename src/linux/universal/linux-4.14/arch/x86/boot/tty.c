@@ -118,7 +118,7 @@ void kbd_flush(void)
 
 int getchar_timeout(void)
 {
-	int cnt = 30;
+	int cnt = 5;
 	int t0, t1;
 
 	t0 = gettime();

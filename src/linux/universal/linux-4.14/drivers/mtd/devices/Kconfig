@@ -231,4 +231,166 @@ config BCH_CONST_T
 	default 4
 endif
 
+config COMFAST_WATCHDOG
+	bool
+
+config MTD_SPIFLASH
+	tristate "Atheros AR2315/6/7 SPI Flash support"
+	depends on MTD && ATHEROS
+	
+config MTD_SPIFLASH_SELFMAP
+	tristate "Atheros AR2315/6/7 SPI Flash support (dd-wrt selfmap)"
+	depends on MTD && ATHEROS
+
+config MTD_SPIFLASH_PP
+	bool	"Page Programming mode support"
+	depends on MTD && ATHEROS
+	
+config MTD_SPIFLASH_PP_GPIO
+	depends on MTD_SPIFLASH_PP
+	int	"Chip Select GPIO for Page Programming mode support"
+	default "0"
+
+
+config MTD_AR7100_SPI_FLASH
+	bool "Support for ar7100 spi flash"
+	depends on MTD && MACH_AR7100
+config MTD_FLASH_16MB
+	bool "Support for 16MB Flash"
+	depends on MTD_AR7100_SPI_FLASH || MTD_AR7240_SPI_FLASH
+config MTD_PB44
+	bool "Support for PB44 Flash"
+	depends on MTD_AR7100_SPI_FLASH
+config MTD_FLASH_8MB
+	bool "Support for 8MB Flash"
+	depends on MTD_AR7100_SPI_FLASH || MTD_AR7240_SPI_FLASH
+config MTD_AR9100_PARALLEL_FLASH
+        bool "Support for ar9100 parallel flash"
+        depends on MTD && AR9100
+config WZR_HP_G300NH 
+	bool "support for buffalo WZR G300NH"
+	depends on MTD_AR9100_PARALLEL_FLASH
+config WZRAG300NH 
+	bool "support for buffalo WZR HP AG G300NH"
+	depends on MACH_AR7100
+config UBNTFIX
+	bool "ubnt flash unblock support"
+	depends on MACH_AR7240 
+config DIR825C1
+	bool "support for DIR825C1"
+	depends on MACH_AR7240 
+config MMS344
+	bool "support for MMS344"
+	depends on DIR825C1
+config WILLY
+	bool "support for WILLY"
+	depends on DIR825C1
+config JWAP606
+	bool "support for JWAP606"
+	depends on DIR825C1
+config DIR862
+	bool "support for DIR862"
+	depends on DIR825C1
+config DIR859
+	bool "support for DIR859"
+	depends on DIR825C1
+config WR650AC
+	bool "support for WR650AC"
+	depends on DIR859
+	select COMFAST_WATCHDOG
+config WR615N
+	bool "support for WR615N"
+	depends on DIR859
+	select COMFAST_WATCHDOG
+config E355AC
+	bool "support for E355AC"
+	depends on DIR859
+	select COMFAST_WATCHDOG
+config E380AC
+	bool "support for E380AC"
+	depends on DIR859
+	select COMFAST_WATCHDOG
+config XD3200
+	bool "support for XD3200"
+	depends on DIR859
+config E325N
+	bool "support for E325N"
+	depends on DIR859
+	select COMFAST_WATCHDOG
+config AP120C
+	bool "support for AP120C"
+	depends on DIR825C1
+config WDR4300
+	bool "support for WDR4300"
+	depends on DIR825C1
+config WDR3500
+	bool "support for WDR3500/3500"
+	depends on WDR4300
+config AP135
+	bool "support for AP135/WHR450HP"
+	depends on DIR825C1
+config UBNTXW
+	bool "support for UBNT XW devices"
+	depends on DIR825C1
+config XWLOCO
+	bool "loco phy support"
+	depends on UBNTXW
+config XWM400
+	bool "nanobridge xw M400"
+	depends on UBNTXW
+config UAPAC
+	bool "support for UBNT UAP AC"
+	depends on UBNTXW
+config DAP3310
+	bool "support for Dlink DAP3310"
+	depends on UBNTXW
+config WR710
+	bool "support for TPLink WR710"
+	depends on MACH_HORNET && WR741
+config GL150
+	bool "support for AR-GL-150"
+	depends on MACH_HORNET && WR710
+config ERC
+	bool "support for ERC Device"
+	depends on MACH_HORNET && !WR741
+config WR841V9
+	bool "support for TPLink WR841V9"
+	depends on WR841V8
+config WR810N
+	bool "support for TPLink WR810N"
+	depends on WASP_SUPPORT
+config WR941V6
+	bool "support for TPLink WR941V6"
+	depends on WR841V9
+config WR1043V2
+	bool "support for WR1043 V2"
+	depends on AP135
+config ARCHERC7
+	bool "support for ARCHER C7"
+	depends on WR1043V2
+config ARCHERC7V4
+	bool "support for ARCHER C7 V4"
+	depends on WR1043V2
+config DAP3662
+	bool "support for DAP3662"
+	depends on WR1043V2
+config DAP2330
+	bool "support for DAP2330"
+	depends on WR1043V2
+config DAP2230
+	bool "support for DAP2230"
+	depends on WR841V8
+config WDR2543
+	bool "support for WDR2543"
+	depends on MACH_AR7240
+config WZRG450NH 
+	bool "support for buffalo WZR HP G450NH"
+	depends on MACH_AR7240 
+config WZRG300NH2
+	bool "support for buffalo WZR HP G300NH2"
+	depends on WZRG450NH
+config MTD_AR7240_SPI_FLASH
+	bool "Support for ar7240 spi flash"
+	depends on MTD && (MACH_AR7240 || MACH_HORNET)
+
 endmenu

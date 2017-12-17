@@ -219,6 +219,7 @@ config IDE_GENERIC
 
 config BLK_DEV_PLATFORM
 	tristate "Platform driver for IDE interfaces"
+	select IDE_TIMINGS if MACH_KS8695_VSOPENRISC
 	help
 	  This is the platform IDE driver, used mostly for Memory Mapped
 	  IDE devices, like Compact Flashes running in True IDE mode.

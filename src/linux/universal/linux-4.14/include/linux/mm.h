@@ -1216,7 +1216,7 @@ extern void pagefault_out_of_memory(void);
 #define offset_in_page(p)	((unsigned long)(p) & ~PAGE_MASK)
 
 /*
- * Flags passed to show_mem() and show_free_areas() to suppress output in
+ * Flags passed to show_mem() and __show_free_areas() to suppress output in
  * various contexts.
  */
 #define SHOW_MEM_FILTER_NODES		(0x0001u)	/* disallowed nodes */
@@ -1456,6 +1456,7 @@ static inline bool vma_is_anonymous(struct vm_area_struct *vma)
 }
 
 #ifdef CONFIG_SHMEM
+void shmem_set_file(struct vm_area_struct *vma, struct file *file);
 /*
  * The vma_is_shmem is not inline because it is used only by slow
  * paths in userfault.

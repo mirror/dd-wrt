@@ -483,6 +483,8 @@ config	SOC_IMX53
 config SOC_IMX6
 	bool
 	select ARM_CPU_SUSPEND if PM
+	select ARCH_HAS_CPUFREQ
+	select ARCH_HAS_OPP
 	select ARM_ERRATA_754322
 	select ARM_ERRATA_775420
 	select ARM_GIC
@@ -491,13 +493,19 @@ config SOC_IMX6
 	select HAVE_IMX_MMDC
 	select HAVE_IMX_SRC
 	select MFD_SYSCON
-	select PL310_ERRATA_769419 if CACHE_L2X0
+	select PL310_ERRATA_588369 if CACHE_PL310
+	select PL310_ERRATA_727915 if CACHE_PL310
+	select PL310_ERRATA_769419 if CACHE_PL310
+
+	help
+	  This enables support for Freescale i.MX6 Quad processor.
 
 config SOC_IMX6Q
 	bool "i.MX6 Quad/DualLite support"
 	select ARM_ERRATA_764369 if SMP
 	select HAVE_ARM_SCU if SMP
 	select HAVE_ARM_TWD
+	select MIGHT_HAVE_PCI
 	select PINCTRL_IMX6Q
 	select SOC_IMX6
 

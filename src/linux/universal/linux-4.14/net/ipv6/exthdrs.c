@@ -733,7 +733,7 @@ static bool ipv6_hop_jumbo(struct sk_buff *skb, int optoff)
 		goto drop;
 	}
 
-	pkt_len = ntohl(*(__be32 *)(nh + optoff + 2));
+	pkt_len = ntohl(net_hdr_word(nh + optoff + 2));
 	if (pkt_len <= IPV6_MAXPLEN) {
 		__IP6_INC_STATS(net, ipv6_skb_idev(skb),
 				IPSTATS_MIB_INHDRERRORS);

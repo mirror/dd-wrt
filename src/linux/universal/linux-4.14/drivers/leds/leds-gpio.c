@@ -51,10 +51,7 @@ static void gpio_led_set(struct led_classdev *led_cdev,
 						 NULL, NULL);
 		led_dat->blinking = 0;
 	} else {
-		if (led_dat->can_sleep)
-			gpiod_set_value_cansleep(led_dat->gpiod, level);
-		else
-			gpiod_set_value(led_dat->gpiod, level);
+		gpiod_direction_output(led_dat->gpiod, level); // in case its set to KEEP, direction must be configured too
 	}
 }
 
@@ -137,7 +134,8 @@ static int create_gpio_led(const struct gpio_led *template,
 	if (template->retain_state_shutdown)
 		led_dat->cdev.flags |= LED_RETAIN_AT_SHUTDOWN;
 
-	ret = gpiod_direction_output(led_dat->gpiod, state);
+	if (template->default_state != LEDS_GPIO_DEFSTATE_KEEP)  // KEEP means KEEP, this also affects output/input state
+		ret = gpiod_direction_output(led_dat->gpiod, gpiod_is_active_low(led_dat->gpiod) ^ state);
 	if (ret < 0)
 		return ret;
 
@@ -197,12 +195,12 @@ static struct gpio_leds_priv *gpio_leds_create(struct platform_device *pdev)
 
 		if (!fwnode_property_read_string(child, "default-state",
 						 &state)) {
-			if (!strcmp(state, "keep"))
-				led.default_state = LEDS_GPIO_DEFSTATE_KEEP;
+			if (!strcmp(state, "off"))
+				led.default_state = LEDS_GPIO_DEFSTATE_OFF;
 			else if (!strcmp(state, "on"))
 				led.default_state = LEDS_GPIO_DEFSTATE_ON;
 			else
-				led.default_state = LEDS_GPIO_DEFSTATE_OFF;
+				led.default_state = LEDS_GPIO_DEFSTATE_KEEP;
 		}
 
 		if (fwnode_property_present(child, "retain-state-suspended"))

@@ -36,6 +36,10 @@
 /* Do not check the TCP window for incoming packets  */
 static int nf_ct_tcp_no_window_check __read_mostly = 1;
 
+/* Do not check the TCP window for incoming packets  */
+static int nf_ct_tcp_no_window_check __read_mostly = 1;
+EXPORT_SYMBOL_GPL(nf_ct_tcp_no_window_check);
+
 /* "Be conservative in what you do,
     be liberal in what you accept from others."
     If it's non-zero, we mark only out of window RST segments as INVALID. */
@@ -444,7 +448,7 @@ static void tcp_sack(const struct sk_buff *skb, unsigned int dataoff,
 
 	/* Fast path for timestamp-only option */
 	if (length == TCPOLEN_TSTAMP_ALIGNED
-	    && *(__be32 *)ptr == htonl((TCPOPT_NOP << 24)
+	    && net_hdr_word(ptr) == htonl((TCPOPT_NOP << 24)
 				       | (TCPOPT_NOP << 16)
 				       | (TCPOPT_TIMESTAMP << 8)
 				       | TCPOLEN_TIMESTAMP))
@@ -507,6 +511,9 @@ static bool tcp_in_window(const struct nf_conn *ct,
 	__u32 seq, ack, sack, end, win, swin;
 	s32 receiver_offset;
 	bool res, in_recv_win;
+
+	if (nf_ct_tcp_no_window_check)
+		return true;
 
 	if (nf_ct_tcp_no_window_check)
 		return true;
@@ -1481,6 +1488,12 @@ static struct ctl_table tcp_sysctl_table[] = {
 		.proc_handler	= proc_dointvec,
 	},
 	{
+		.procname       = "nf_conntrack_tcp_no_window_check",
+		.maxlen         = sizeof(unsigned int),
+		.mode           = 0644,
+		.proc_handler   = proc_dointvec,
+	},
+	{
 		.procname       = "nf_conntrack_tcp_be_liberal",
 		.maxlen         = sizeof(unsigned int),
 		.mode           = 0644,
@@ -1527,8 +1540,9 @@ static int tcp_kmemdup_sysctl_table(struct nf_proto_net *pn,
 	pn->ctl_table[8].data = &tn->timeouts[TCP_CONNTRACK_RETRANS];
 	pn->ctl_table[9].data = &tn->timeouts[TCP_CONNTRACK_UNACK];
 	pn->ctl_table[10].data = &tn->tcp_loose;
-	pn->ctl_table[11].data = &tn->tcp_be_liberal;
-	pn->ctl_table[12].data = &tn->tcp_max_retrans;
+	pn->ctl_table[11].data = &nf_ct_tcp_no_window_check;
+	pn->ctl_table[12].data = &tn->tcp_be_liberal;
+	pn->ctl_table[13].data = &tn->tcp_max_retrans;
 #endif
 	return 0;
 }

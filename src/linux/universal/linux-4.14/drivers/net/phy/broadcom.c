@@ -307,6 +307,20 @@ static int bcm54xx_config_init(struct phy_device *phydev)
 			return err;
 	}
 
+	if (BRCM_PHY_MODEL(phydev) == PHY_ID_BCM54210E) {
+		err = bcm54210e_config_init(phydev);
+		if (err)
+			return err;
+	} else if (BRCM_PHY_MODEL(phydev) == PHY_ID_BCM54612E) {
+		err = bcm54612e_config_init(phydev);
+		if (err)
+			return err;
+	} else if (BRCM_PHY_MODEL(phydev) == PHY_ID_BCM54810) {
+		err = bcm54810_config(phydev);
+		if (err)
+			return err;
+	}
+
 	bcm54xx_phydsp_config(phydev);
 
 	return 0;
@@ -412,6 +426,14 @@ static int bcm5481_config_aneg(struct phy_device *phydev)
 
 	/* Then we can set up the delay. */
 	bcm5481x_config(phydev);
+
+	if (of_property_read_bool(np, "enet-phy-lane-swap")) {
+		/* Lane Swap - Undocumented register...magic! */
+		ret = bcm_phy_write_exp(phydev, MII_BCM54XX_EXP_SEL_ER + 0x9,
+					0x11B);
+		if (ret < 0)
+			return ret;
+	}
 
 	if (of_property_read_bool(np, "enet-phy-lane-swap")) {
 		/* Lane Swap - Undocumented register...magic! */
@@ -569,6 +591,17 @@ static struct phy_driver broadcom_drivers[] = {
 	.ack_interrupt	= bcm_phy_ack_intr,
 	.config_intr	= bcm_phy_config_intr,
 }, {
+	.phy_id		= PHY_ID_BCM54210E,
+	.phy_id_mask	= 0xfffffff0,
+	.name		= "Broadcom BCM54210E",
+	.features	= PHY_GBIT_FEATURES,
+	.flags		= PHY_HAS_MAGICANEG | PHY_HAS_INTERRUPT,
+	.config_init	= bcm54xx_config_init,
+	.config_aneg	= genphy_config_aneg,
+	.read_status	= genphy_read_status,
+	.ack_interrupt	= bcm_phy_ack_intr,
+	.config_intr	= bcm_phy_config_intr,
+}, {
 	.phy_id		= PHY_ID_BCM5461,
 	.phy_id_mask	= 0xfffffff0,
 	.name		= "Broadcom BCM5461",
@@ -585,6 +618,18 @@ static struct phy_driver broadcom_drivers[] = {
 	.name		= "Broadcom BCM54612E",
 	.features	= PHY_GBIT_FEATURES,
 	.flags		= PHY_HAS_INTERRUPT,
+	.config_init	= bcm54xx_config_init,
+	.config_aneg	= genphy_config_aneg,
+	.read_status	= genphy_read_status,
+	.ack_interrupt	= bcm_phy_ack_intr,
+	.config_intr	= bcm_phy_config_intr,
+}, {
+	.phy_id		= PHY_ID_BCM54612E,
+	.phy_id_mask	= 0xfffffff0,
+	.name		= "Broadcom BCM54612E",
+	.features	= PHY_GBIT_FEATURES |
+			  SUPPORTED_Pause | SUPPORTED_Asym_Pause,
+	.flags		= PHY_HAS_MAGICANEG | PHY_HAS_INTERRUPT,
 	.config_init	= bcm54xx_config_init,
 	.config_aneg	= genphy_config_aneg,
 	.read_status	= genphy_read_status,

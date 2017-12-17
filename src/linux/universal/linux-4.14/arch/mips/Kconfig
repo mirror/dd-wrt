@@ -133,6 +133,46 @@ config MIPS_GENERIC
 	  using the boot protocol defined in the UHI (Unified Hosting
 	  Interface) specification.
 
+config MIPS_BRCM
+        bool "Broadcom MIPS based platforms"
+        select SYS_SUPPORTS_LITTLE_ENDIAN
+        select DMA_NONCOHERENT
+        select HW_HAS_PCI
+        select IRQ_CPU
+	select CEVT_R4K
+	select CSRC_R4K
+	select IRQ_MIPS_CPU
+        select SYS_SUPPORTS_32BIT_KERNEL
+        select SYS_SUPPORTS_KGDB
+        select SYS_HAS_CPU_MIPS32_R1
+        select SYS_HAS_CPU_MIPS32_R2
+        select ARCH_SELECT_MEMORY_MODEL
+        select CPU_SUPPORTS_HIGHMEM
+        select SYS_SUPPORTS_HIGHMEM
+        select EMBEDDED
+	select BOOT_RAW
+	select NO_EXCEPT_FILL
+	select CFE
+
+
+config ADM5120
+	bool "Infineon/ADMtek ADM5120 SoC based machines"
+	select BOOT_RAW
+	select NO_EXCEPT_FILL
+	select CEVT_R4K
+	select CSRC_R4K
+	select SYS_HAS_CPU_MIPS32_R1	
+select SYS_HAS_EARLY_PRINTK
+	select DMA_NONCOHERENT
+	select IRQ_CPU
+	select SYS_SUPPORTS_LITTLE_ENDIAN
+	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select ARCH_REQUIRE_GPIOLIB
+	select SWAP_IO_SPACE if CPU_BIG_ENDIAN
+	select MIPS_MACHINE
+	select HAVE_CLK
+
 config MIPS_ALCHEMY
 	bool "Alchemy processor based machines"
 	select ARCH_PHYS_ADDR_T_64BIT
@@ -182,6 +222,23 @@ config ATH25
 	select SYS_HAS_EARLY_PRINTK
 	help
 	  Support for Atheros AR231x and Atheros AR531x based boards
+
+config ATHEROS
+	bool "Atheros SoC support"
+	select DMA_NONCOHERENT
+	select BOOT_RAW
+	select CEVT_R4K
+	select CSRC_R4K
+	select IRQ_CPU
+	select SYS_HAS_CPU_MIPS32_R1
+	select HAVE_STD_PC_SERIAL_PORT
+	select SYS_HAS_EARLY_PRINTK
+	select GENERIC_GPIO
+	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select IRQ_MIPS_CPU
+
+
 
 config ATH79
 	bool "Atheros AR71XX/AR724X/AR913X based boards"
@@ -240,28 +297,6 @@ config BMIPS_GENERIC
 	  BCM33xx cable modem chips, BCM63xx DSL chips, and BCM7xxx set-top
 	  box chips.  Note that CONFIG_CPU_BIG_ENDIAN/CONFIG_CPU_LITTLE_ENDIAN
 	  must be set appropriately for your board.
-
-config BCM47XX
-	bool "Broadcom BCM47XX based boards"
-	select BOOT_RAW
-	select CEVT_R4K
-	select CSRC_R4K
-	select DMA_NONCOHERENT
-	select HW_HAS_PCI
-	select IRQ_MIPS_CPU
-	select SYS_HAS_CPU_MIPS32_R1
-	select NO_EXCEPT_FILL
-	select SYS_SUPPORTS_32BIT_KERNEL
-	select SYS_SUPPORTS_LITTLE_ENDIAN
-	select SYS_SUPPORTS_MIPS16
-	select SYS_HAS_EARLY_PRINTK
-	select USE_GENERIC_EARLY_PRINTK_8250
-	select GPIOLIB
-	select LEDS_GPIO_REGISTER
-	select BCM47XX_NVRAM
-	select BCM47XX_SPROM
-	help
-	 Support for BCM47XX based boards
 
 config BCM63XX
 	bool "Broadcom BCM63XX based boards"
@@ -506,6 +541,7 @@ config MIPS_MALTA
 	select COMMON_CLK
 	select DMA_MAYBE_COHERENT
 	select GENERIC_ISA_DMA
+	select DMA_UNMAP_POST_FLUSH
 	select HAVE_PCSPKR_PLATFORM
 	select IRQ_MIPS_CPU
 	select MIPS_GIC
@@ -628,6 +664,11 @@ config RALINK
 	select CLKDEV_LOOKUP
 	select ARCH_HAS_RESET_CONTROLLER
 	select RESET_CONTROLLER
+	select PINCTRL
+	select PINCTRL_RT2880
+	select ARCH_HAS_RESET_CONTROLLER
+	select RESET_CONTROLLER
+	select ARCH_REQUIRE_GPIOLIB
 
 config SGI_IP22
 	bool "SGI IP22 (Indy/Indigo2)"
@@ -889,6 +930,7 @@ config MIKROTIK_RB532
 	select IRQ_MIPS_CPU
 	select SYS_HAS_CPU_MIPS32_R1
 	select SYS_SUPPORTS_32BIT_KERNEL
+	select IRQ_MIPS_CPU
 	select SYS_SUPPORTS_LITTLE_ENDIAN
 	select SWAP_IO_SPACE
 	select BOOT_RAW
@@ -963,6 +1005,165 @@ config NLM_XLR_BOARD
 	  Support for systems based on Netlogic XLR and XLS processors.
 	  Say Y here if you have a XLR or XLS based board.
 
+config MACH_HORNET
+    bool "Support for Atheros HORNET based board"
+	select DMA_NONCOHERENT
+	select IRQ_CPU
+	select IRQ_MIPS_CPU
+	select CEVT_R4K
+	select CSRC_R4K
+	select DMA_NONCOHERENT
+	select ARCH_REQUIRE_GPIOLIB
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_HAS_CPU_MIPS32_R2
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_HAS_EARLY_PRINTK
+
+config HORNET_EMULATION
+    bool "build system for Hornet emulation board?"
+    depends on MACH_HORNET
+
+config WR741
+    bool "wr741 wireless mac?"
+    depends on MACH_HORNET
+    default n
+
+
+
+
+config  MACH_AR7100
+    bool "Support for Atheros ar7100 based boards"
+	select CEVT_R4K
+	select CSRC_R4K
+	select DMA_NONCOHERENT
+	select HW_HAS_PCI
+	select IRQ_CPU
+	select ARCH_REQUIRE_GPIOLIB
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_HAS_CPU_MIPS32_R2
+	select SYS_SUPPORTS_MIPS16
+	select IRQ_MIPS_CPU
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_HAS_EARLY_PRINTK
+#	select MIPS_MACHINE
+
+
+    select HW_HAS_PCI
+
+config AR9100
+    bool "Support for Atheros ar9100 extenstions to ar7100"
+    depends on MACH_AR7100
+
+config WR941
+    bool "wr941 wireless mac?"
+    depends on AR9100
+    default n
+
+config WA901
+    bool "WA901 wireless mac?"
+    depends on AR9100
+    default n
+
+config WRT160NL
+    bool "wrt160nl wireless mac?"
+    depends on AR9100
+    default n
+
+config E2100L
+    bool "wrt160nl wireless mac?"
+    depends on AR9100
+    default n
+
+config  AR7100_LOW 
+    bool "Support for loading AR7100 in low memory"
+    depends on MACH_AR7100
+
+config AR7100_EMULATION
+    bool "build system for AR7100 emulation board?"
+    depends on MACH_AR7100
+
+
+config  MACH_AR7240
+    bool "Support for Atheros ar7240 based board"
+	select CEVT_R4K
+	select CSRC_R4K
+	select DMA_NONCOHERENT
+	select HW_HAS_PCI
+	select IRQ_CPU
+	select ARCH_REQUIRE_GPIOLIB
+	select IRQ_MIPS_CPU
+#	select ARCH_REQUIRE_GPIOLIB
+	select SYS_HAS_CPU_MIPS32_R1
+	select SYS_HAS_CPU_MIPS32_R2
+	select SYS_SUPPORTS_MIPS16
+	select SYS_SUPPORTS_32BIT_KERNEL
+	select SYS_SUPPORTS_BIG_ENDIAN
+	select SYS_HAS_EARLY_PRINTK
+#	select MIPS_MACHINE
+
+config AR7240_DEFAULT_GPIO
+    bool "use default gpios for wireless?"
+    depends on MACH_AR7240
+
+config DIR615E
+    bool "dir615e support?"
+    depends on MACH_AR7240
+    default n
+
+config WPE72
+    bool "WPE72 support?"
+    depends on MACH_AR7240
+    default n
+
+config ALFANX
+    bool "alfa networks n5/n2"
+    depends on MACH_AR7240
+    default n
+
+
+config WR741
+    bool "wr741 wireless mac?"
+    depends on MACH_AR7240
+    default n
+
+
+config AR7240_EMULATION
+    bool "build system for AR7240 emulation board?"
+    depends on MACH_AR7240
+
+config WASP_SUPPORT
+	bool "build system for WASP based board"
+	depends on MACH_AR7240
+
+config DIR615I
+    bool "dir615i support?"
+    depends on WASP_SUPPORT
+    default n
+
+config WR841V8
+    bool "WR841V8 support?"
+    depends on WASP_SUPPORT
+    default n
+
+config RB2011
+    bool "Mikrotik RB2011 support"
+    depends on WASP_SUPPORT
+    default n
+
+
+config AR7100_USB_GPIO_LED
+    bool "usb led support?"
+    depends on MACH_AR7100 || MACH_AR7240
+    default n
+
+
+config AP_USB_LED_GPIO
+    int "gpio number"
+    depends on AR7100_USB_GPIO_LED
+
+
 config NLM_XLP_BOARD
 	bool "Netlogic XLP based systems"
 	select BOOT_ELF32
@@ -1013,6 +1214,9 @@ config MIPS_PARAVIRT
 
 endchoice
 
+source "arch/mips/atheros/Kconfig"
+source "arch/mips/brcm-boards/Kconfig"
+source "arch/mips/adm5120/Kconfig"
 source "arch/mips/alchemy/Kconfig"
 source "arch/mips/ath25/Kconfig"
 source "arch/mips/ath79/Kconfig"
@@ -1123,12 +1327,19 @@ config DMA_PERDEV_COHERENT
 	bool
 	select DMA_MAYBE_COHERENT
 
+config DMA_MAYBE_COHERENT
+	select DMA_NONCOHERENT
+	bool
+
 config DMA_COHERENT
 	bool
 
 config DMA_NONCOHERENT
 	bool
 	select NEED_DMA_MAP_STATE
+
+config DMA_UNMAP_POST_FLUSH
+	bool
 
 config DMA_UNMAP_POST_FLUSH
 	bool
@@ -1145,6 +1356,17 @@ config SYS_SUPPORTS_HOTPLUG_CPU
 config MIPS_BONITO64
 	bool
 
+config MIPS_FPU_EMU
+	bool "Enable FPU emulation"
+	default y
+	help
+	   This option allows building a kernel with or without the Algorithmics
+	   FPU emulator enabled. Turning off this option results in a kernel which
+	   does not catch floating operations exceptions. Make sure that your toolchain
+	   is configured to enable software floating point emulation in that case.
+		
+	   If unsure say Y here.
+
 config MIPS_MSC
 	bool
 
@@ -1156,6 +1378,10 @@ config SYNC_R4K
 
 config MIPS_MACHINE
 	def_bool n
+
+config IMAGE_CMDLINE_HACK
+	bool "OpenWrt specific image command line hack"
+	default n
 
 config IMAGE_CMDLINE_HACK
 	bool "OpenWrt specific image command line hack"
@@ -1641,6 +1867,7 @@ config CPU_NEVADA
 	select CPU_SUPPORTS_32BIT_KERNEL
 	select CPU_SUPPORTS_64BIT_KERNEL
 	select CPU_SUPPORTS_HUGEPAGES
+	select DMA_UNMAP_POST_FLUSH
 	help
 	  QED / PMC-Sierra RM52xx-series ("Nevada") processors.
 
@@ -1686,6 +1913,7 @@ config CPU_SB1
 config CPU_CAVIUM_OCTEON
 	bool "Cavium Octeon processor"
 	depends on SYS_HAS_CPU_CAVIUM_OCTEON
+	select SYS_HAS_DMA_OPS
 	select CPU_HAS_PREFETCH
 	select CPU_SUPPORTS_64BIT_KERNEL
 	select WEAK_ORDERING
@@ -1995,6 +2223,9 @@ config SYS_HAS_CPU_XLR
 	bool
 
 config SYS_HAS_CPU_XLP
+	bool
+
+config SYS_HAS_DMA_OPS
 	bool
 
 config MIPS_MALTA_PM
@@ -2322,6 +2553,50 @@ config MIPS_VPE_LOADER
 	help
 	  Includes a loader for loading an elf relocatable object
 	  onto another VPE and running it.
+
+config IFX_VPE_EXT
+	bool "IFX APRP Extensions"
+	depends on MIPS_VPE_LOADER
+	default y
+	help
+	  IFX included extensions in APRP
+
+config IFX_VPE_CACHE_SPLIT
+	bool "IFX Cache Split Ways"
+	depends on IFX_VPE_EXT
+	help
+	  IFX extension for reserving (splitting) cache ways among VPEs. You must
+	  give kernel command line arguments vpe_icache_shared=0 or
+	  vpe_dcache_shared=0 to enable splitting of icache or dcache
+	  respectively. Then you can specify which cache ways should be
+	  assigned to which VPE. There are total 8 cache ways, 4 each
+	  for dcache and icache: dcache_way0, dcache_way1,dcache_way2,
+	  dcache_way3 and icache_way0,icache_way1, icache_way2,icache_way3.
+
+	  For example, if you specify vpe_icache_shared=0 and icache_way2=1,
+	  then the 3rd icache way will be assigned to VPE0 and denied in VPE1.
+
+	  For icache, software is required to make at least one cache way available
+	  for a VPE at all times i.e., one can't assign all the icache ways to one
+	  VPE.
+
+	  By default, vpe_dcache_shared and vpe_icache_shared are set to 1
+	  (i.e., both icache and dcache are shared among VPEs)
+
+config PERFCTRS
+	bool "34K Performance counters"
+	depends on MIPS_MT && PROC_FS
+	default n
+	help
+	  34K Performance counter through /proc
+
+config MTSCHED
+	bool "Support mtsched priority configuration for TCs"
+	depends on MIPS_MT && PROC_FS
+	default y
+	help
+	  Support for mtsched priority configuration for TCs through
+	  /proc/mips/mtsched
 
 config MIPS_VPE_LOADER_CMP
 	bool
@@ -2918,11 +3193,37 @@ config MIPS_FPU_EMULATOR
 
 	  Say Y, please.
 
+config MIPS_FPU_EMULATOR
+	bool "MIPS FPU Emulator"
+	default y
+	help
+	  This option lets you disable the built-in MIPS FPU (Coprocessor 1)
+	  emulator, which handles floating-point instructions on processors
+	  without a hardware FPU.  It is generally a good idea to keep the
+	  emulator built-in, unless you are perfectly sure you have a
+	  complete soft-float environment.  With the emulator disabled, all
+	  users of float operations will be killed with an illegal instr-
+	  uction exception.
+
+	  Say Y, please.
+
 config USE_OF
 	bool
 	select OF
 	select OF_EARLY_FLATTREE
 	select IRQ_DOMAIN
+
+config BOOT_RAW
+	bool "Enable the kernel to be executed from the load address"
+	default n
+	help
+	 Allow the kernel to be executed from the load address for
+	 bootloaders which cannot read the ELF format. This places
+	 a jump to start_kernel at the load address.
+
+	 If unsure, say N.
+
+
 
 config BUILTIN_DTB
 	bool
@@ -3211,11 +3512,11 @@ menu "Power management options"
 
 config ARCH_HIBERNATION_POSSIBLE
 	def_bool y
-	depends on SYS_SUPPORTS_HOTPLUG_CPU || !SMP
+	depends on (SYS_SUPPORTS_HOTPLUG_CPU || !SMP) && !ATHEROS && !RALINK_DEVICE && !MACH_AR7240 && !MACH_AR7100
 
 config ARCH_SUSPEND_POSSIBLE
 	def_bool y
-	depends on SYS_SUPPORTS_HOTPLUG_CPU || !SMP
+	depends on (SYS_SUPPORTS_HOTPLUG_CPU || !SMP) && !ATHEROS && !RALINK_DEVICE && !MACH_AR7240 && !MACH_AR7100
 
 source "kernel/power/Kconfig"
 

@@ -67,6 +67,8 @@ static inline struct mtd_part *mtd_to_part(const struct mtd_info *mtd)
 	return container_of(mtd, struct mtd_part, mtd);
 }
 
+#define PART(x)  ((struct mtd_part *)(x))
+#define IS_PART(mtd) (mtd->_read == part_read)
 
 /*
  * MTD methods which simply translate the effective address and pass through
@@ -207,6 +209,7 @@ static int part_write_oob(struct mtd_info *mtd, loff_t to,
 		struct mtd_oob_ops *ops)
 {
 	struct mtd_part *part = mtd_to_part(mtd);
+
 
 	if (to >= mtd->size)
 		return -EINVAL;
@@ -811,6 +814,162 @@ static int __mtd_del_partition(struct mtd_part *priv)
 	return 0;
 }
 
+
+
+#ifdef CONFIG_MTD_ROOTFS_SPLIT
+#define ROOTFS_SPLIT_NAME "ddwrt"
+#define ROOTFS_REMOVED_NAME "<removed>"
+
+
+static int split_squashfs(struct mtd_info *master, int offset, int *split_offset)
+{
+	struct squashfs_super_block sb;
+	int len, ret;
+
+	ret = mtd_read(master, offset, sizeof(sb), &len, (void *) &sb);
+	if (ret || (len != sizeof(sb))) {
+		printk(KERN_ALERT "split_squashfs: error occured while reading "
+			"from \"%s\"\n", master->name);
+		return -EINVAL;
+	}
+	printk(KERN_EMERG " magic %X vs %X\n",sb.s_magic, SQUASHFS_MAGIC);
+	if (SQUASHFS_MAGIC != sb.s_magic ) {
+		printk(KERN_ALERT "split_squashfs: no squashfs found in \"%s\"\n",
+			master->name);
+		*split_offset = 0;
+		return 0;
+	}
+
+	if (le64_to_cpu(sb.bytes_used) <= 0) {
+		printk(KERN_ALERT "split_squashfs: squashfs is empty in \"%s\"\n",
+			master->name);
+		*split_offset = 0;
+		return 0;
+	}
+
+	len = le64_to_cpu(sb.bytes_used);
+	len += (offset & 0x000fffff);
+	len +=  (master->erasesize - 1);
+	len &= ~(master->erasesize - 1);
+	len -= (offset & 0x000fffff);
+	*split_offset = offset + len;
+
+	return 0;
+}
+
+static int split_rootfs_data(struct mtd_info *master, struct mtd_info *rpart, const struct mtd_partition *part)
+{
+	struct mtd_partition *dpart;
+	struct mtd_part *slave = NULL;
+	struct mtd_part *spart;
+	int ret, split_offset = 0;
+
+	spart = PART(rpart);
+	ret = split_squashfs(master, spart->offset, &split_offset);
+	if (ret)
+		return ret;
+
+	if (split_offset <= 0)
+		return 0;
+
+	dpart = kmalloc(sizeof(*part)+sizeof(ROOTFS_SPLIT_NAME)+1, GFP_KERNEL);
+	if (dpart == NULL) {
+		printk(KERN_INFO "split_squashfs: no memory for partition \"%s\"\n",
+			ROOTFS_SPLIT_NAME);
+		return -ENOMEM;
+	}
+
+	memcpy(dpart, part, sizeof(*part));
+	dpart->name = (unsigned char *)&dpart[1];
+	strcpy(dpart->name, ROOTFS_SPLIT_NAME);
+
+	dpart->size = rpart->size - (split_offset - spart->offset);
+ 	dpart->size /= 65536;
+ 	dpart->size *= 65536;
+#ifdef CONFIG_SOC_MT7620_OPENWRT
+	// todo: add proper board detection
+	dpart->size -= 0x110000;
+#endif
+	dpart->offset = split_offset;
+	dpart->mask_flags = 0;
+
+	if (dpart == NULL)
+		return 1;
+
+	printk(KERN_INFO "mtd: partition \"%s\" created automatically, ofs=%llX, len=%llX \n",
+		ROOTFS_SPLIT_NAME, dpart->offset, dpart->size);
+
+	slave = allocate_partition(master, dpart, 0, split_offset);
+	if (IS_ERR(slave))
+		return PTR_ERR(slave);
+	mutex_lock(&mtd_partitions_mutex);
+	list_add(&slave->list, &mtd_partitions);
+	mutex_unlock(&mtd_partitions_mutex);
+
+	add_mtd_device(&slave->mtd);
+
+	rpart->split = &slave->mtd;
+
+	return 0;
+}
+
+static int refresh_rootfs_split(struct mtd_info *mtd)
+{
+	struct mtd_partition tpart;
+	struct mtd_part *part;
+	char *name;
+	//int index = 0;
+	int offset, size;
+	int ret;
+
+	part = PART(mtd);
+
+	/* check for the new squashfs offset first */
+	ret = split_squashfs(part->master, part->offset, &offset);
+	if (ret)
+		return ret;
+
+	if ((offset > 0) && !mtd->split) {
+		printk(KERN_INFO "%s: creating new split partition for \"%s\"\n", __func__, mtd->name);
+		/* if we don't have a rootfs split partition, create a new one */
+		tpart.name = (char *) mtd->name;
+		tpart.size = mtd->size;
+		tpart.offset = part->offset;
+
+		return split_rootfs_data(part->master, &part->mtd, &tpart);
+	} else if ((offset > 0) && mtd->split) {
+		/* update the offsets of the existing partition */
+		size = mtd->size + part->offset - offset;
+
+		part = PART(mtd->split);
+		part->offset = offset;
+		part->mtd.size = size;
+		printk(KERN_INFO "%s: %s partition \"" ROOTFS_SPLIT_NAME "\", offset: 0x%06x (0x%06x)\n",
+			__func__, (!strcmp(part->mtd.name, ROOTFS_SPLIT_NAME) ? "updating" : "creating"),
+			(u32) part->offset, (u32) part->mtd.size);
+		name = kmalloc(sizeof(ROOTFS_SPLIT_NAME) + 1, GFP_KERNEL);
+		strcpy(name, ROOTFS_SPLIT_NAME);
+		part->mtd.name = name;
+	} else if ((offset <= 0) && mtd->split) {
+		printk(KERN_INFO "%s: removing partition \"%s\"\n", __func__, mtd->split->name);
+
+		/* mark existing partition as removed */
+		part = PART(mtd->split);
+		name = kmalloc(sizeof(ROOTFS_SPLIT_NAME) + 1, GFP_KERNEL);
+		strcpy(name, ROOTFS_REMOVED_NAME);
+		part->mtd.name = name;
+		part->offset = 0;
+		part->mtd.size = 0;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_MTD_ROOTFS_SPLIT */
+
+#ifdef CONFIG_MTD_ROOTFS_GEN
+#include <linux/vmalloc.h>
+#endif
+
 /*
  * This function unregisters and destroy all slave MTD objects which are
  * attached to the given MTD object.
@@ -943,6 +1102,9 @@ int add_mtd_partitions(struct mtd_info *master,
 	struct mtd_part *slave;
 	uint64_t cur_offset = 0;
 	int i;
+#ifdef CONFIG_MTD_ROOTFS_SPLIT
+	int ret;
+#endif
 
 	printk(KERN_NOTICE "Creating %d MTD partitions on \"%s\":\n", nbparts, master->name);
 
@@ -963,11 +1125,77 @@ int add_mtd_partitions(struct mtd_info *master,
 		if (parts[i].types)
 			mtd_parse_part(slave, parts[i].types);
 
+#ifdef CONFIG_MTD_ROOTFS_GEN
+		if (!strcmp(parts[i].name, "linux") || !strcmp(parts[i].name, "linux2")) {
+
+		unsigned int buf;
+		int offset = slave->offset;
+		int bootsize = slave->offset;
+		printk(KERN_INFO "scan from offset %X\n",bootsize);
+		int nvramsize = master->erasesize;
+			    while((offset + master->erasesize) < master->size)
+			    {
+			    int retlen;
+			    mtd_read(master,offset,4, &retlen, (u_char *)&buf);
+			    if (SQUASHFS_MAGIC == le32_to_cpu(buf))
+				    {
+				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
+				    	struct mtd_partition part;
+				    	part.name = "rootfs";
+				    	part.offset = offset;
+				    	part.size = (master->size - nvramsize) - offset; 
+				    	part.mask_flags = 0;
+				    	add_mtd_partitions(master,&part,1);
+					break;
+				    } 
+			    offset+=4096;
+			    }
+		}
+#endif
+		if (!strcmp(parts[i].name, "rootfs") || !strcmp(parts[i].name, "rootfs2")) {
+#ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
+			if (ROOT_DEV == 0) {
+				printk(KERN_NOTICE "mtd: partition \"rootfs\" "
+					"set to be root filesystem\n");
+				ROOT_DEV = MKDEV(MTD_BLOCK_MAJOR, slave->mtd.index);
+			}
+#endif
+#ifdef CONFIG_MTD_ROOTFS_SPLIT
+			ret = split_rootfs_data(master, &slave->mtd, &parts[i]);
+			/* if (ret == 0)
+			 * 	j++; */
+#endif
 		cur_offset = slave->offset + slave->mtd.size;
 	}
 
 	return 0;
 }
+
+int refresh_mtd_partitions(struct mtd_info *mtd)
+{
+	int ret = 0;
+
+	if (IS_PART(mtd)) {
+		struct mtd_part *part;
+		struct mtd_info *master;
+
+		part = PART(mtd);
+		master = part->master;
+		if (master->refresh_device)
+			ret = master->refresh_device(master);
+	}
+
+	if (!ret && mtd->refresh_device)
+		ret = mtd->refresh_device(mtd);
+
+#ifdef CONFIG_MTD_ROOTFS_SPLIT
+	if (!ret && IS_PART(mtd) && !strcmp(mtd->name, "rootfs"))
+		refresh_rootfs_split(mtd);
+#endif
+
+	return 0;
+}
+EXPORT_SYMBOL_GPL(refresh_mtd_partitions);
 
 static DEFINE_SPINLOCK(part_parser_lock);
 static LIST_HEAD(part_parsers);
@@ -1062,6 +1290,27 @@ static const char * const default_mtd_part_types[] = {
 	"ofpart",
 	NULL
 };
+
+static int mtd_part_do_parse(struct mtd_part_parser *parser,
+			     struct mtd_info *master,
+			     struct mtd_partitions *pparts,
+			     struct mtd_part_parser_data *data)
+{
+	int ret;
+
+	ret = (*parser->parse_fn)(master, &pparts->parts, data);
+	pr_debug("%s: parser %s: %i\n", master->name, parser->name, ret);
+	if (ret <= 0)
+		return ret;
+
+	pr_notice("%d %s partitions found on MTD device %s\n", ret,
+		  parser->name, master->name);
+
+	pparts->nr_parts = ret;
+	pparts->parser = parser;
+
+	return ret;
+}
 
 static int mtd_part_do_parse(struct mtd_part_parser *parser,
 			     struct mtd_info *master,
@@ -1263,3 +1512,96 @@ uint64_t mtd_get_device_size(const struct mtd_info *mtd)
 	return mtd_get_device_size(mtd_to_part(mtd)->parent);
 }
 EXPORT_SYMBOL_GPL(mtd_get_device_size);
+
+#ifdef CONFIG_RALINK
+/*
+ * Flash API: ra_mtd_read, ra_mtd_write
+ * Arguments:
+ *   - num: specific the mtd number
+ *   - to/from: the offset to read from or written to
+ *   - len: length
+ *   - buf: data to be read/written
+ * Returns:
+ *   - return -errno if failed
+ *   - return the number of bytes read/written if successed
+ */
+int ra_mtd_write(int num, loff_t to, size_t len, const u_char *buf)
+{
+	int ret = -1;
+	size_t rdlen, wrlen;
+	struct mtd_info *mtd;
+	struct erase_info ei;
+	u_char *bak = NULL;
+//	printk(KERN_EMERG "writing to partition %d, offset %d, len %d\n",num,to,len);
+#ifdef CONFIG_RT2880_FLASH_8M
+        /* marklin 20080605 : return read mode for ST */
+        Flash_SetModeRead();
+#endif
+
+	mtd = get_mtd_device(NULL, num);
+	if (IS_ERR(mtd))
+		return (int)mtd;
+	if (len > mtd->erasesize) {
+		put_mtd_device(mtd);
+		return -E2BIG;
+	}
+
+	bak = kmalloc(mtd->erasesize, GFP_KERNEL);
+	if (bak == NULL) {
+		put_mtd_device(mtd);
+		return -ENOMEM;
+	}
+
+	ret = mtd_read(mtd, 0, mtd->erasesize, &rdlen, bak);
+	if (ret != 0) {
+		put_mtd_device(mtd);
+		kfree(bak);
+		return ret;
+	}
+	if (rdlen != mtd->erasesize)
+		printk(KERN_EMERG "warning: ra_mtd_write: rdlen is not equal to erasesize\n");
+
+	memcpy(bak + to, buf, len);
+
+	ei.mtd = mtd;
+	ei.callback = NULL;
+	ei.addr = 0;
+	ei.len = mtd->erasesize;
+	ei.priv = 0;
+	ret = mtd_erase(mtd, &ei);
+	if (ret != 0) {
+		put_mtd_device(mtd);
+		kfree(bak);
+		return ret;
+	}
+
+	ret = mtd_write(mtd, 0, mtd->erasesize, &wrlen, bak);
+
+	put_mtd_device(mtd);
+	kfree(bak);
+#ifdef CONFIG_RT2880_FLASH_8M
+        /* marklin 20080605 : return read mode for ST */
+        Flash_SetModeRead();
+#endif
+	return ret;
+}
+
+
+int ra_mtd_read(int num,int from, int len, u_char *buf)
+{
+	int ret;
+	size_t rdlen;
+	struct mtd_info *mtd;
+	printk(KERN_INFO "read ralink eeprom from %X with len %X to %p (device %d)\n",from,len,buf,num);
+	mtd = get_mtd_device(NULL, num);
+
+	ret = mtd_read(mtd, from, len, &rdlen, buf);
+	if (rdlen != len)
+		printk(KERN_EMERG "warning: ra_mtd_read: rdlen is not equal to len\n");
+
+	put_mtd_device(mtd);
+	return ret;
+}
+EXPORT_SYMBOL(ra_mtd_read);
+EXPORT_SYMBOL(ra_mtd_write);
+#endif

@@ -22,6 +22,38 @@
 #include <asm/mipsmtregs.h>
 #include <linux/uaccess.h> /* for uaccess_kernel() */
 
+#ifdef CONFIG_BCM47XX
+#include <asm/paccess.h>
+#include <linux/ssb/ssb.h>
+#define BCM4710_DUMMY_RREG() bcm4710_dummy_rreg()
+
+static inline unsigned long bcm4710_dummy_rreg(void)
+{
+      return *(volatile unsigned long *)(KSEG1ADDR(SSB_ENUM_BASE));
+}
+
+#define BCM4710_FILL_TLB(addr) bcm4710_fill_tlb((void *)(addr))
+
+static inline unsigned long bcm4710_fill_tlb(void *addr)
+{
+      return *(unsigned long *)addr;
+}
+
+#define BCM4710_PROTECTED_FILL_TLB(addr) bcm4710_protected_fill_tlb((void *)(addr))
+
+static inline void bcm4710_protected_fill_tlb(void *addr)
+{
+      unsigned long x;
+      get_dbe(x, (unsigned long *)addr);;
+}
+
+#else
+#define BCM4710_DUMMY_RREG()
+
+#define BCM4710_FILL_TLB(addr)
+#define BCM4710_PROTECTED_FILL_TLB(addr)
+#endif
+
 extern void (*r4k_blast_dcache)(void);
 extern void (*r4k_blast_icache)(void);
 
@@ -98,6 +130,7 @@ static inline void flush_icache_line_indexed(unsigned long addr)
 static inline void flush_dcache_line_indexed(unsigned long addr)
 {
 	__dflush_prologue
+	BCM4710_DUMMY_RREG();
 	cache_op(Index_Writeback_Inv_D, addr);
 	__dflush_epilogue
 }
@@ -125,6 +158,7 @@ static inline void flush_icache_line(unsigned long addr)
 static inline void flush_dcache_line(unsigned long addr)
 {
 	__dflush_prologue
+	BCM4710_DUMMY_RREG();
 	cache_op(Hit_Writeback_Inv_D, addr);
 	__dflush_epilogue
 }
@@ -132,6 +166,7 @@ static inline void flush_dcache_line(unsigned long addr)
 static inline void invalidate_dcache_line(unsigned long addr)
 {
 	__dflush_prologue
+	BCM4710_DUMMY_RREG();
 	cache_op(Hit_Invalidate_D, addr);
 	__dflush_epilogue
 }
@@ -197,6 +232,7 @@ static inline void flush_scache_line(unsigned long addr)
  */
 static inline int protected_flush_icache_line(unsigned long addr)
 {
+	BCM4710_DUMMY_RREG();
 	switch (boot_cpu_type()) {
 	case CPU_LOONGSON2:
 		return protected_cache_op(Hit_Invalidate_I_Loongson2, addr);
@@ -218,11 +254,8 @@ static inline int protected_flush_icache_line(unsigned long addr)
  */
 static inline int protected_writeback_dcache_line(unsigned long addr)
 {
-#ifdef CONFIG_EVA
-	return protected_cachee_op(Hit_Writeback_Inv_D, addr);
-#else
+	BCM4710_DUMMY_RREG();
 	return protected_cache_op(Hit_Writeback_Inv_D, addr);
-#endif
 }
 
 static inline int protected_writeback_scache_line(unsigned long addr)
@@ -233,6 +266,51 @@ static inline int protected_writeback_scache_line(unsigned long addr)
 	return protected_cache_op(Hit_Writeback_Inv_SD, addr);
 #endif
 }
+
+#ifdef CONFIG_MIPS_BRCM
+static inline void blast_dcache(void)
+{
+	unsigned long start = KSEG0;
+	unsigned long dcache_size = current_cpu_data.dcache.waysize * current_cpu_data.dcache.ways;
+	unsigned long end = (start + dcache_size);
+
+	do {
+		BCM4710_DUMMY_RREG();
+		cache_op(Index_Writeback_Inv_D, start);
+		start += current_cpu_data.dcache.linesz;
+	} while(start < end);
+}
+
+static inline void blast_dcache_page(unsigned long page)
+{
+	unsigned long start = page;
+	unsigned long end = start + PAGE_SIZE;
+
+	BCM4710_FILL_TLB(start);
+	do {
+		BCM4710_DUMMY_RREG();
+		cache_op(Hit_Writeback_Inv_D, start);
+		start += current_cpu_data.dcache.linesz;
+	} while(start < end);
+}
+
+static inline void blast_dcache_page_indexed(unsigned long page)
+{
+	unsigned long start = page;
+	unsigned long end = start + PAGE_SIZE;
+	unsigned long ws_inc = 1UL << current_cpu_data.dcache.waybit;
+	unsigned long ws_end = current_cpu_data.dcache.ways <<
+	                       current_cpu_data.dcache.waybit;
+	unsigned long ws, addr;
+	for (ws = 0; ws < ws_end; ws += ws_inc) {
+		start = page + ws;
+		for (addr = start; addr < end; addr += current_cpu_data.dcache.linesz) {
+			BCM4710_DUMMY_RREG();
+			cache_op(Index_Writeback_Inv_D, addr);
+		}
+	}
+}
+#endif
 
 /*
  * This one is RM7000-specific
@@ -576,7 +654,7 @@ static inline void invalidate_tcache_page(unsigned long addr)
 		  "i" (op));
 
 /* build blast_xxx, blast_xxx_page, blast_xxx_page_indexed */
-#define __BUILD_BLAST_CACHE(pfx, desc, indexop, hitop, lsize, extra)	\
+#define __BUILD_BLAST_CACHE(pfx, desc, indexop, hitop, lsize, war, extra)	\
 static inline void extra##blast_##pfx##cache##lsize(void)		\
 {									\
 	unsigned long start = INDEX_BASE;				\
@@ -588,6 +666,7 @@ static inline void extra##blast_##pfx##cache##lsize(void)		\
 									\
 	__##pfx##flush_prologue						\
 									\
+	war								\
 	for (ws = 0; ws < ws_end; ws += ws_inc)				\
 		for (addr = start; addr < end; addr += lsize * 32)	\
 			cache##lsize##_unroll32(addr|ws, indexop);	\
@@ -602,6 +681,7 @@ static inline void extra##blast_##pfx##cache##lsize##_page(unsigned long page) \
 									\
 	__##pfx##flush_prologue						\
 									\
+	war								\
 	do {								\
 		cache##lsize##_unroll32(start, hitop);			\
 		start += lsize * 32;					\
@@ -621,6 +701,7 @@ static inline void extra##blast_##pfx##cache##lsize##_page_indexed(unsigned long
 	unsigned long ws, addr;						\
 									\
 	__##pfx##flush_prologue						\
+	war								\
 									\
 	for (ws = 0; ws < ws_end; ws += ws_inc)				\
 		for (addr = start; addr < end; addr += lsize * 32)	\
@@ -629,26 +710,26 @@ static inline void extra##blast_##pfx##cache##lsize##_page_indexed(unsigned long
 	__##pfx##flush_epilogue						\
 }
 
-__BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 16, )
-__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 16, )
-__BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 16, )
-__BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 32, )
-__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 32, )
-__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I_Loongson2, 32, loongson2_)
-__BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 32, )
-__BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 64, )
-__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 64, )
-__BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 64, )
-__BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 128, )
-__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 128, )
-__BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 128, )
+__BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 16,, )
+__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 16, BCM4710_FILL_TLB(start);,)
+__BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 16,, )
+__BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 32,, )
+__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 32, BCM4710_FILL_TLB(start);,)
+__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I_Loongson2, 32,, loongson2_)
+__BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 32,, )
+__BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 64,, )
+__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 64, BCM4710_FILL_TLB(start);,)
+__BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 64,, )
+__BUILD_BLAST_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D, 128,, )
+__BUILD_BLAST_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 128,, )
+__BUILD_BLAST_CACHE(s, scache, Index_Writeback_Inv_SD, Hit_Writeback_Inv_SD, 128,, )
 
-__BUILD_BLAST_CACHE(inv_d, dcache, Index_Writeback_Inv_D, Hit_Invalidate_D, 16, )
-__BUILD_BLAST_CACHE(inv_d, dcache, Index_Writeback_Inv_D, Hit_Invalidate_D, 32, )
-__BUILD_BLAST_CACHE(inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 16, )
-__BUILD_BLAST_CACHE(inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 32, )
-__BUILD_BLAST_CACHE(inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 64, )
-__BUILD_BLAST_CACHE(inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 128, )
+__BUILD_BLAST_CACHE(inv_d, dcache, Index_Writeback_Inv_D, Hit_Invalidate_D, 16,, )
+__BUILD_BLAST_CACHE(inv_d, dcache, Index_Writeback_Inv_D, Hit_Invalidate_D, 32,, )
+__BUILD_BLAST_CACHE(inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 16,, )
+__BUILD_BLAST_CACHE(inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 32,, )
+__BUILD_BLAST_CACHE(inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 64,, )
+__BUILD_BLAST_CACHE(inv_s, scache, Index_Writeback_Inv_SD, Hit_Invalidate_SD, 128,, )
 
 #define __BUILD_BLAST_USER_CACHE(pfx, desc, indexop, hitop, lsize) \
 static inline void blast_##pfx##cache##lsize##_user_page(unsigned long page) \
@@ -677,21 +758,69 @@ __BUILD_BLAST_USER_CACHE(d, dcache, Index_Writeback_Inv_D, Hit_Writeback_Inv_D,
 __BUILD_BLAST_USER_CACHE(i, icache, Index_Invalidate_I, Hit_Invalidate_I, 64)
 
 /* build blast_xxx_range, protected_blast_xxx_range */
-#define __BUILD_BLAST_CACHE_RANGE(pfx, desc, hitop, prot, extra)	\
+#define __BUILD_BLAST_CACHE_RANGE(pfx, desc, hitop, prot, war, war2, extra) \
 static inline void prot##extra##blast_##pfx##cache##_range(unsigned long start, \
 						    unsigned long end)	\
 {									\
 	unsigned long lsize = cpu_##desc##_line_size();			\
+	unsigned long lsize_2 = lsize * 2;				\
+	unsigned long lsize_3 = lsize * 3;				\
+	unsigned long lsize_4 = lsize * 4;				\
+	unsigned long lsize_5 = lsize * 5;				\
+	unsigned long lsize_6 = lsize * 6;				\
+	unsigned long lsize_7 = lsize * 7;				\
+	unsigned long lsize_8 = lsize * 8;				\
 	unsigned long addr = start & ~(lsize - 1);			\
-	unsigned long aend = (end - 1) & ~(lsize - 1);			\
+	unsigned long aend = (end + lsize - 1) & ~(lsize - 1);		\
+	int lines = (aend - addr) / lsize;				\
 									\
+	war								\
 	__##pfx##flush_prologue						\
 									\
-	while (1) {							\
+	while (lines >= 8) {						\
+		war2						\
 		prot##cache_op(hitop, addr);				\
-		if (addr == aend)					\
-			break;						\
-		addr += lsize;						\
+		war2						\
+		prot##cache_op(hitop, addr + lsize);			\
+		war2						\
+		prot##cache_op(hitop, addr + lsize_2);			\
+		war2						\
+		prot##cache_op(hitop, addr + lsize_3);			\
+		war2						\
+		prot##cache_op(hitop, addr + lsize_4);			\
+		war2						\
+		prot##cache_op(hitop, addr + lsize_5);			\
+		war2						\
+		prot##cache_op(hitop, addr + lsize_6);			\
+		war2						\
+		prot##cache_op(hitop, addr + lsize_7);			\
+		addr += lsize_8;					\
+		lines -= 8;						\
+	}								\
+									\
+	if (lines & 0x4) {						\
+		war2						\
+		prot##cache_op(hitop, addr);				\
+		war2						\
+		prot##cache_op(hitop, addr + lsize);			\
+		war2						\
+		prot##cache_op(hitop, addr + lsize_2);			\
+		war2						\
+		prot##cache_op(hitop, addr + lsize_3);			\
+		addr += lsize_4;					\
+	}								\
+									\
+	if (lines & 0x2) {						\
+		war2						\
+		prot##cache_op(hitop, addr);				\
+		war2						\
+		prot##cache_op(hitop, addr + lsize);			\
+		addr += lsize_2;					\
+	}								\
+									\
+	if (lines & 0x1) {						\
+		war2						\
+		prot##cache_op(hitop, addr);				\
 	}								\
 									\
 	__##pfx##flush_epilogue						\
@@ -699,8 +828,8 @@ static inline void prot##extra##blast_##pfx##cache##_range(unsigned long start, 
 
 #ifndef CONFIG_EVA
 
-__BUILD_BLAST_CACHE_RANGE(d, dcache, Hit_Writeback_Inv_D, protected_, )
-__BUILD_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I, protected_, )
+__BUILD_BLAST_CACHE_RANGE(d, dcache, Hit_Writeback_Inv_D, protected_, BCM4710_PROTECTED_FILL_TLB(addr); BCM4710_PROTECTED_FILL_TLB(aend);, BCM4710_DUMMY_RREG();,)
+__BUILD_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I, protected_,,, )
 
 #else
 
@@ -737,14 +866,16 @@ __BUILD_PROT_BLAST_CACHE_RANGE(d, dcache, Hit_Writeback_Inv_D)
 __BUILD_PROT_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I)
 
 #endif
-__BUILD_BLAST_CACHE_RANGE(s, scache, Hit_Writeback_Inv_SD, protected_, )
+__BUILD_BLAST_CACHE_RANGE(s, scache, Hit_Writeback_Inv_SD, protected_,,, )
 __BUILD_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I_Loongson2, \
-	protected_, loongson2_)
-__BUILD_BLAST_CACHE_RANGE(d, dcache, Hit_Writeback_Inv_D, , )
-__BUILD_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I, , )
-__BUILD_BLAST_CACHE_RANGE(s, scache, Hit_Writeback_Inv_SD, , )
+	protected_,,, loongson2_)
+
+__BUILD_BLAST_CACHE_RANGE(d, dcache, Hit_Writeback_Inv_D,, BCM4710_FILL_TLB(addr); BCM4710_FILL_TLB(aend);, BCM4710_DUMMY_RREG();,)
+
+__BUILD_BLAST_CACHE_RANGE(i, icache, Hit_Invalidate_I,,,, )
+__BUILD_BLAST_CACHE_RANGE(s, scache, Hit_Writeback_Inv_SD,,,, )
 /* blast_inv_dcache_range */
-__BUILD_BLAST_CACHE_RANGE(inv_d, dcache, Hit_Invalidate_D, , )
-__BUILD_BLAST_CACHE_RANGE(inv_s, scache, Hit_Invalidate_SD, , )
+__BUILD_BLAST_CACHE_RANGE(inv_d, dcache, Hit_Invalidate_D,,,BCM4710_DUMMY_RREG();,)
+__BUILD_BLAST_CACHE_RANGE(inv_s, scache, Hit_Invalidate_SD,,,, )
 
 #endif /* _ASM_R4KCACHE_H */

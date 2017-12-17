@@ -2302,7 +2302,8 @@ static void pcie_write_mrrs(struct pci_dev *dev)
 	/* In the "safe" case, do not configure the MRRS.  There appear to be
 	 * issues with setting MRRS to 0 on a number of devices.
 	 */
-	if (pcie_bus_config != PCIE_BUS_PERFORMANCE)
+	if (pcie_bus_config != PCIE_BUS_PERFORMANCE &&
+	    pcie_bus_config != PCIE_BUS_PEER2PEER)
 		return;
 
 	/* For Max performance, the MRRS must be set to the largest supported
@@ -2330,7 +2331,7 @@ static void pcie_write_mrrs(struct pci_dev *dev)
 		dev_err(&dev->dev, "MRRS was unable to be configured with a safe value.  If problems are experienced, try running with pci=pcie_bus_safe\n");
 }
 
-static int pcie_bus_configure_set(struct pci_dev *dev, void *data)
+int pcie_bus_configure_set(struct pci_dev *dev, void *data)
 {
 	int mps, orig_mps;
 

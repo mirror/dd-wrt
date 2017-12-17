@@ -144,6 +144,14 @@ config ARM_DMA_IOMMU_ALIGNMENT
 
 endif
 
+config ARM_HWCC_FLAG
+	bool
+	default n
+	help
+	  Select if you want the ARM specific device structure to inclue a flag
+	  for determining whether HW cache coherency is enabled.
+	  If unsure, say 'N'.
+
 config MIGHT_HAVE_PCI
 	bool
 
@@ -199,6 +207,10 @@ config ARCH_HAS_ILOG2_U32
 
 config ARCH_HAS_ILOG2_U64
 	bool
+
+config ARCH_LONG_LONG_ATOMIC
+	bool
+	default n
 
 config ARCH_HAS_BANDGAP
 	bool
@@ -265,6 +277,13 @@ config ARM_PATCH_PHYS_VIRT
 	  Only disable this option if you know that you do not require
 	  this feature (eg, building a kernel for a single machine) and
 	  you need to shrink the kernel to the minimal size.
+
+config NEED_MACH_GPIO_H
+	bool
+	help
+	  Select this when mach/gpio.h is required to provide special
+	  definitions for this platform. The need for mach/gpio.h should
+	  be avoided when possible.
 
 config NEED_MACH_IO_H
 	bool
@@ -341,7 +360,7 @@ config ARCH_MULTIPLATFORM
 	depends on MMU
 	select ARM_HAS_SG_CHAIN
 	select ARM_PATCH_PHYS_VIRT
-	select AUTO_ZRELADDR
+	select AUTO_ZRELADDR if !ARCH_QCOM
 	select TIMER_OF
 	select COMMON_CLK
 	select GENERIC_CLOCKEVENTS
@@ -644,6 +663,70 @@ config ARCH_OMAP1
 	help
 	  Support for older TI OMAP1 (omap7xx, omap15xx or omap16xx)
 
+config ARCH_BRCM
+	bool "Broadcom ARM"
+	help
+	  Support for Broadcom ARM-based devices and boards.
+
+config ARCH_ALPINE
+        bool "AnnapurnaLabs Alpine SOCs with Device Tree support"
+        select ARCH_WANT_OPTIONAL_GPIOLIB
+        select ARM_AMBA
+		select SPARSE_IRQ
+        select ARM_TIMER_SP804
+        select CLKDEV_LOOKUP
+        select GENERIC_CLOCKEVENTS
+		select GENERIC_IRQ_CHIP
+        select HAVE_CLK
+        select HAVE_SMP 
+        select HAVE_ARM_ARCH_TIMER
+        select HAVE_SCHED_CLOCK
+        select ARCH_SCHED_CLOCK
+	select ICST
+        select CPU_V7
+        select ARM_GIC
+        select HAVE_ARCH_TIMERS
+        select COMMON_CLK
+        select PCI
+	select PCI_HOST_GENERIC
+	select ARM_GIC
+	select PCI_MSI_IRQ_DOMAIN
+	select ALPINE_MSI
+	select PCI_DOMAINS
+        select ARCH_SUPPORTS_MSI
+	select ARM_HWCC_FLAG
+	select ARCH_LONG_LONG_ATOMIC
+	select ARM_HAS_SG_CHAIN
+	select ARCH_SUPPORTS_BIG_ENDIAN
+        help
+          This enables support for the AnnapurnaLabs SoC Gen1 boards.
+
+config ARCH_CNS3XXX
+	bool "Cavium Networks CNS3XXX family"
+	select CPU_V6K
+#	select HAVE_CLK
+	select NEED_MACH_GPIO_H	
+	select GENERIC_IRQ_CHIP
+	select COMMON_CLKDEV
+	select HAVE_ARM_SCU if SMP
+	select HAVE_ARM_TWD
+	select GENERIC_TIME
+	select GENERIC_CLOCKEVENTS
+	select ARM_GIC
+	select ARCH_WANT_OPTIONAL_GPIOLIB
+	select HAVE_SMP
+	select MIGHT_HAVE_CACHE_L2X0
+	select ARCH_REQUIRE_GPIOLIB
+	select MIGHT_HAVE_PCI
+	select ARCH_HAS_CPUFREQ
+	select PCI_DOMAINS if PCI
+	select SPARSE_IRQ
+	select FIQ
+	help
+	  Support for Cavium Networks CNS3XXX platform.
+
+
+
 endchoice
 
 menu "Multiple platform selection"
@@ -717,8 +800,6 @@ config ARCH_VIRT
 source "arch/arm/mach-mvebu/Kconfig"
 
 source "arch/arm/mach-actions/Kconfig"
-
-source "arch/arm/mach-alpine/Kconfig"
 
 source "arch/arm/mach-artpec/Kconfig"
 
@@ -849,6 +930,8 @@ source "arch/arm/mach-versatile/Kconfig"
 source "arch/arm/mach-vexpress/Kconfig"
 source "arch/arm/plat-versatile/Kconfig"
 
+source "arch/arm/mach-alpine/Kconfig"
+
 source "arch/arm/mach-vt8500/Kconfig"
 
 source "arch/arm/mach-w90x900/Kconfig"
@@ -888,6 +971,9 @@ config ARCH_MPS2
 
 	  Please, note that depends which Application Note is used memory map
 	  for the platform may vary, so adjustment of RAM base might be needed.
+
+source "arch/arm/mach-brcm-hnd/Kconfig"
+source "arch/arm/plat-brcm/Kconfig"
 
 # Definitions to make life easier
 config ARCH_ACORN
@@ -1221,6 +1307,23 @@ endmenu
 
 source "arch/arm/common/Kconfig"
 
+menu "Support for Broadcom ARM based boards"
+
+config BCM947XX
+        bool "Support for Broadcom BCM947XX"
+        depends on ARCH_BRCM
+
+config BCM47XX
+        bool "Support for Broadcom BCM47XX processors"
+        depends on BCM947XX
+
+config FAILSAFE_UPGRADE
+        bool "Failsafe Upgrades"
+        depends on BCM947XX
+        default n
+
+endmenu
+
 menu "Bus support"
 
 config ISA
@@ -1271,6 +1374,8 @@ config PCI_HOST_ITE8152
 	default y
 	select DMABOUNCE
 
+source "drivers/pci/pcie/Kconfig"
+
 source "drivers/pci/Kconfig"
 
 source "drivers/pcmcia/Kconfig"
@@ -1290,7 +1395,7 @@ config HAVE_SMP
 
 config SMP
 	bool "Symmetric Multi-Processing"
-	depends on CPU_V6K || CPU_V7
+	depends on CPU_V6K || CPU_V7 || PLAT_MPCORE
 	depends on GENERIC_CLOCKEVENTS
 	depends on HAVE_SMP
 	depends on MMU || ARM_MPU
@@ -1356,7 +1461,7 @@ config HAVE_ARM_SCU
 
 config HAVE_ARM_ARCH_TIMER
 	bool "Architected timer support"
-	depends on CPU_V7
+	depends on CPU_V7 && OF
 	select ARM_ARCH_TIMER
 	select GENERIC_CLOCKEVENTS
 	help
@@ -1937,6 +2042,17 @@ config ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND
 	help
 	  The command-line arguments provided by the boot loader will be
 	  appended to the the device tree bootargs property.
+
+config ARM_ATAG_DTB_COMPAT_CMDLINE_MANGLE
+	bool "Append rootblock parsing bootloader's kernel arguments"
+	help
+	  The command-line arguments provided by the boot loader will be
+	  appended to a new device tree property: bootloader-args.
+	  If there is a property "append-rootblock" in DT under /chosen 
+	  and a root= option in bootloaders command line it will be parsed 
+	  and added to DT bootargs with the form: <append-rootblock>XX.
+	  Only command line ATAG will be processed, the rest of the ATAGs
+	  sent by bootloader will be ignored.
 
 endchoice
 

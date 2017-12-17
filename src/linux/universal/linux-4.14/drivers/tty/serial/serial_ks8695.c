@@ -62,6 +62,8 @@
 #define UART_DUMMY_LSR_RX	0x100
 #define UART_PORT_SIZE		(KS8695_USR - KS8695_URRB + 4)
 
+static irqreturn_t ks8695uart_tx_chars(int irq, void *dev_id);
+
 static inline int tx_enabled(struct uart_port *port)
 {
 	return port->unused[0] & 1;
@@ -123,6 +125,15 @@ static void ks8695uart_start_tx(struct uart_port *port)
 	if (!tx_enabled(port)) {
 		enable_irq(KS8695_IRQ_UART_TX);
 		tx_enable(port, 1);
+
+		/*
+		 * workaround for the "lost" interrupt:
+		 * call the ISR manually to compensate
+		 * the lost interrupt, when terminating
+		 * processes, that are making much output
+		 * to the console
+		 */
+		ks8695uart_tx_chars(KS8695_IRQ_UART_TX, port);
 	}
 }
 
@@ -223,6 +234,12 @@ static irqreturn_t ks8695uart_tx_chars(int irq, void *dev_id)
 		ks8695uart_stop_tx(port);
 		return IRQ_HANDLED;
 	}
+
+	/*
+	 * workaround for the "lost" interrupt:
+	 * check if the FIFO is empty before writing
+	 */
+	while(!(UART_GET_LSR(port) & 0x40)){}
 
 	count = 16;	/* fifo size */
 	while (!uart_circ_empty(xmit) && (count-- > 0)) {

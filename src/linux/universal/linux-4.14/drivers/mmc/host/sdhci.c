@@ -1666,6 +1666,21 @@ void sdhci_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 		else
 			ctrl &= ~SDHCI_CTRL_HISPD;
 	}
+#ifdef CONFIG_ARCH_CNS3XXX
+	if (ios->bus_width == MMC_BUS_WIDTH_8) //jacky for eMMC
+		ctrl |= (0x1 << 5);//CNS34xxx proprietary
+	else
+		ctrl &= ~(0x1 << 5);
+#endif
+
+	if (ios->timing == MMC_TIMING_MMC_HS)//for eMMC
+		ctrl |= SDHCI_CTRL_HISPD;	else
+		ctrl &= ~SDHCI_CTRL_HISPD;
+
+	if (ios->timing == MMC_TIMING_MMC_HS)
+	{                
+	        sdhci_writeb(host, 0x3, 0x2d);
+	}	
 
 	if (host->version >= SDHCI_SPEC_300) {
 		u16 clk, ctrl_2;

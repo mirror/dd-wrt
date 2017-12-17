@@ -4750,7 +4750,7 @@ static struct net_device *sky2_init_netdev(struct sky2_hw *hw, unsigned port,
 {
 	struct sky2_port *sky2;
 	struct net_device *dev = alloc_etherdev(sizeof(*sky2));
-	const void *iap;
+	unsigned char *iap, tmpaddr[ETH_ALEN];
 
 	if (!dev)
 		return NULL;
@@ -4816,16 +4816,37 @@ static struct net_device *sky2_init_netdev(struct sky2_hw *hw, unsigned port,
 	else
 		dev->max_mtu = ETH_JUMBO_MTU;
 
-	/* try to get mac address in the following order:
+	/*
+	 * try to get mac address in the following order:
 	 * 1) from device tree data
 	 * 2) from internal registers set by bootloader
 	 */
-	iap = of_get_mac_address(hw->pdev->dev.of_node);
-	if (iap)
-		memcpy(dev->dev_addr, iap, ETH_ALEN);
-	else
-		memcpy_fromio(dev->dev_addr, hw->regs + B2_MAC_1 + port * 8,
-			      ETH_ALEN);
+	iap = NULL;
+#ifdef CONFIG_OF
+	if (IS_ENABLED(CONFIG_OF)) {
+		struct device_node *np;
+		np = of_find_node_by_path("/aliases");
+		if (np) {
+			const char *path = of_get_property(np, "sky2", NULL);
+			if (path)
+				np = of_find_node_by_path(path);
+			if (np)
+				path = of_get_mac_address(np);
+			if (path)
+				iap = (unsigned char *) path;
+		}
+	}
+#endif
+	/*
+	 * 2) mac registers set by bootloader
+	 */
+	if (!iap || !is_valid_ether_addr(iap)) {
+		memcpy_fromio(&tmpaddr, hw->regs + B2_MAC_1 + port * 8, ETH_ALEN);
+		iap = &tmpaddr[0];
+	}
+
+	/* read the mac address */
+	memcpy(dev->dev_addr, iap, ETH_ALEN);
 
 	/* if the address is invalid, use a random value */
 	if (!is_valid_ether_addr(dev->dev_addr)) {

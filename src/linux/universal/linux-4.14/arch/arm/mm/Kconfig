@@ -705,8 +705,8 @@ config ARM_THUMBEE
 	  make use of it. Say N for code that can run on CPUs without ThumbEE.
 
 config ARM_VIRT_EXT
-	bool
-	depends on MMU
+	bool "Native support for the ARM Virtualization Extensions"
+	depends on MMU && CPU_V7
 	default y if CPU_V7
 	help
 	  Enable the kernel to make use of the ARM Virtualization
@@ -882,7 +882,7 @@ config VDSO
 
 config DMA_CACHE_RWFO
 	bool "Enable read/write for ownership DMA cache maintenance"
-	depends on CPU_V6K && SMP
+	depends on CPU_V6K && SMP && !ARCH_CNS3XXX
 	default y
 	help
 	  The Snoop Control Unit on ARM11MPCore does not detect the
@@ -898,6 +898,17 @@ config DMA_CACHE_RWFO
 	  processors, if cache maintenance operations are not broadcast
 	  in hardware, other workarounds are needed (e.g. cache
 	  maintenance broadcasting in software via FIQ).
+
+config DMA_CACHE_FIQ_BROADCAST
+	bool "Enable fiq broadcast DMA cache maintenance"
+	depends on CPU_V6K && SMP
+	select FIQ
+	help
+	  The Snoop Control Unit on ARM11MPCore does not detect the
+	  cache maintenance operations and the dma_{map,unmap}_area()
+	  functions may leave stale cache entries on other CPUs. By
+	  enabling this option, fiq broadcast in the ARMv6
+	  DMA cache maintenance functions is performed.
 
 config OUTER_CACHE
 	bool

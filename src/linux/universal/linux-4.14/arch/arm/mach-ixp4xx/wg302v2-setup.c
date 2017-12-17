@@ -19,6 +19,7 @@
 #include <linux/serial.h>
 #include <linux/tty.h>
 #include <linux/serial_8250.h>
+#include <linux/slab.h>
 
 #include <asm/types.h>
 #include <asm/setup.h>
@@ -102,7 +103,7 @@ MACHINE_START(WG302V2, "Netgear WG302 v2 / WAG302 v2")
 	.init_early	= ixp4xx_init_early,
 	.init_irq	= ixp4xx_init_irq,
 	.init_time	= ixp4xx_timer_init,
-	.atag_offset	= 0x100,
+	.atag_offset	= 0x0100,
 	.init_machine	= wg302v2_init,
 #if defined(CONFIG_PCI)
 	.dma_zone_size	= SZ_64M,

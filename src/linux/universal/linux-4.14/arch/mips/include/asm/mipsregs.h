@@ -761,6 +761,7 @@
 #define MIPS_LLADDR_LLB_SHIFT	0
 #define MIPS_LLADDR_LLB		(_ULCAST_(1) << MIPS_LLADDR_LLB_SHIFT)
 
+
 /*
  * Bits in the MIPS32 Memory Segmentation registers.
  */

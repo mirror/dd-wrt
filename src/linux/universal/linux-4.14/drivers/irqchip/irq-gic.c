@@ -121,9 +121,26 @@ static DEFINE_RAW_SPINLOCK(cpu_map_lock);
 #define NR_GIC_CPU_IF 8
 static u8 gic_cpu_map[NR_GIC_CPU_IF] __read_mostly;
 
+/*
+ * Supported arch specific GIC irq extension.
+ * Default make them NULL.
+ */
+struct irq_chip gic_arch_extn = {
+	.irq_eoi	= NULL,
+	.irq_mask	= NULL,
+	.irq_unmask	= NULL,
+	.irq_set_type	= NULL,
+};
+
+
 static struct static_key supports_deactivate = STATIC_KEY_INIT_TRUE;
 
-static struct gic_chip_data gic_data[CONFIG_ARM_GIC_MAX_NR] __read_mostly;
+struct gic_chip_data gic_data[CONFIG_ARM_GIC_MAX_NR] __read_mostly;
+
+struct irq_domain * getgicdomain(void)
+{
+	return gic_data[0].domain;
+}
 
 static struct gic_kvm_info gic_v2_kvm_info;
 
@@ -204,10 +221,12 @@ static int gic_peek_irq(struct irq_data *d, u32 offset)
 
 static void gic_mask_irq(struct irq_data *d)
 {
+	if (gic_arch_extn.irq_mask)
+		gic_arch_extn.irq_mask(d);
 	gic_poke_irq(d, GIC_DIST_ENABLE_CLEAR);
 }
 
-static void gic_eoimode1_mask_irq(struct irq_data *d)
+void gic_eoimode1_mask_irq(struct irq_data *d)
 {
 	gic_mask_irq(d);
 	/*
@@ -222,13 +241,18 @@ static void gic_eoimode1_mask_irq(struct irq_data *d)
 		gic_poke_irq(d, GIC_DIST_ACTIVE_CLEAR);
 }
 
-static void gic_unmask_irq(struct irq_data *d)
+void gic_unmask_irq(struct irq_data *d)
 {
+	if (gic_arch_extn.irq_unmask)
+		gic_arch_extn.irq_unmask(d);
 	gic_poke_irq(d, GIC_DIST_ENABLE_SET);
 }
 
 static void gic_eoi_irq(struct irq_data *d)
 {
+	if (gic_arch_extn.irq_eoi) {
+		gic_arch_extn.irq_eoi(d);
+	}
 	writel_relaxed(gic_irq(d), gic_cpu_base(d) + GIC_CPU_EOI);
 }
 
@@ -303,6 +327,9 @@ static int gic_set_type(struct irq_data *d, unsigned int type)
 	if (gicirq >= 32 && type != IRQ_TYPE_LEVEL_HIGH &&
 			    type != IRQ_TYPE_EDGE_RISING)
 		return -EINVAL;
+
+	if (gic_arch_extn.irq_set_type)
+		gic_arch_extn.irq_set_type(d, type);
 
 	return gic_configure_irq(gicirq, type, base, NULL);
 }
@@ -715,6 +742,20 @@ void gic_cpu_restore(struct gic_chip_data *gic)
 	gic_cpu_if_up(gic);
 }
 
+static void gic_cpu_mask(unsigned int gic_nr)
+{
+	void __iomem *cpu_base;
+
+	cpu_base = gic_data_cpu_base(&gic_data[gic_nr]);
+
+	if (!cpu_base)
+		return;
+
+	/* do not raise any interrupt from cpu interface.
+	 * do not bypass to legacy_irq and legacy_fiq legs*/
+	writel_relaxed(0 | (3<<5), cpu_base + GIC_CPU_CTRL);
+}
+
 static int gic_notifier(struct notifier_block *self, unsigned long cmd,	void *v)
 {
 	int i;
@@ -742,6 +783,11 @@ static int gic_notifier(struct notifier_block *self, unsigned long cmd,	void *v)
 			break;
 		}
 	}
+#ifdef CONFIG_ARCH_ALPINE
+	/*do not accept interrupt from main gic*/
+	if (cmd == CPU_PM_ENTER)
+		gic_cpu_mask(0);
+#endif
 
 	return NOTIFY_OK;
 }
@@ -1122,7 +1168,7 @@ static int gic_init_bases(struct gic_chip_data *gic, int irq_start,
 		gic_irqs = 1020;
 	gic->gic_irqs = gic_irqs;
 
-	if (handle) {		/* DT/ACPI */
+	if (handle){
 		gic->domain = irq_domain_create_linear(handle, gic_irqs,
 						       &gic_irq_domain_hierarchy_ops,
 						       gic);

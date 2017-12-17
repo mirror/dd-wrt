@@ -319,6 +319,7 @@ void __sync_icache_dcache(pte_t pteval)
 void flush_dcache_page(struct page *page)
 {
 	struct address_space *mapping;
+	bool skip_broadcast = true;
 
 	/*
 	 * The zero page is never written to, so never has any dirty
@@ -335,7 +336,10 @@ void flush_dcache_page(struct page *page)
 
 	mapping = page_mapping(page);
 
-	if (!cache_ops_need_broadcast() &&
+#ifndef CONFIG_DMA_CACHE_FIQ_BROADCAST
+	skip_broadcast = !cache_ops_need_broadcast();
+#endif
+	if (skip_broadcast &&
 	    mapping && !page_mapcount(page))
 		clear_bit(PG_dcache_clean, &page->flags);
 	else {

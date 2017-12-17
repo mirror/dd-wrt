@@ -10,5 +10,6 @@ obj-$(CONFIG_QCA7000_UART) += qcauart.o
 qcauart-objs := qca_uart.o
 
 obj-y += emac/
+obj-$(CONFIG_ESSEDMA) += essedma/
 
 obj-$(CONFIG_RMNET) += rmnet/

@@ -665,6 +665,20 @@ static void dwc3_core_setup_global_control(struct dwc3 *dwc)
 	u32 hwparams4 = dwc->hwparams.hwparams4;
 	u32 reg;
 
+#ifdef CONFIG_USB_DWC3_AL
+	/* Annapurna Labs specific USB3 PHY configuration */
+	reg = dwc3_readl(dwc->regs, DWC3_GUSB3PIPECTL(0));
+	reg |= (1 << 9); /* LFPS filter */
+	reg |= (1 << 10); /* U3 exit handshake is performed in P2 */
+	reg |= (1 << 11); /* Direct P2<->P3 transitions */
+	reg |= (1 << 13); /* Skip RX detect if pipe3_RxElecIdle is low,
+				retry after appropriate timeout */
+	reg |= (1 << 27); /* U1/U2/U3 exit in PHY power state P1/P2/P3 */
+	dwc3_writel(dwc->regs, DWC3_GUSB3PIPECTL(0), reg);
+	mdelay(100);
+#endif
+
+
 	reg = dwc3_readl(dwc->regs, DWC3_GCTL);
 	reg &= ~DWC3_GCTL_SCALEDOWN_MASK;
 
@@ -1031,7 +1045,6 @@ static void dwc3_get_properties(struct dwc3 *dwc)
 				&hird_threshold);
 	dwc->usb3_lpm_capable = device_property_read_bool(dev,
 				"snps,usb3_lpm_capable");
-
 	dwc->disable_scramble_quirk = device_property_read_bool(dev,
 				"snps,disable_scramble_quirk");
 	dwc->u2exit_lfps_quirk = device_property_read_bool(dev,

@@ -27,10 +27,13 @@
 
 #include <asm/mach/pci.h>
 
+#define IRQT_LOW IRQ_TYPE_LEVEL_LOW
+#define set_irq_type irq_set_irq_type
+
 void __init wg302v2_pci_preinit(void)
 {
-	irq_set_irq_type(IRQ_IXP4XX_GPIO8, IRQ_TYPE_LEVEL_LOW);
-	irq_set_irq_type(IRQ_IXP4XX_GPIO9, IRQ_TYPE_LEVEL_LOW);
+	set_irq_type(IRQ_IXP4XX_GPIO8, IRQT_LOW);
+	set_irq_type(IRQ_IXP4XX_GPIO9, IRQT_LOW);
 
 	ixp4xx_pci_preinit();
 }

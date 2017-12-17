@@ -64,10 +64,15 @@ static void __init ks8695_clock_info(void)
 			sysclk[scdc] / 1000000, cpuclk[scdc] / 1000000);
 }
 
+void __init ks8695p_extio_init(void);
+
 void __init ks8695_map_io(void)
 {
 	iotable_init(ks8695_io_desc, ARRAY_SIZE(ks8695_io_desc));
 
 	ks8695_processor_info();
 	ks8695_clock_info();
+
+	ks8695p_extio_init();
+
 }

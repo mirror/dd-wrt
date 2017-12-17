@@ -326,7 +326,7 @@ static int ct_seq_show(struct seq_file *s, void *v)
 	if (seq_has_overflowed(s))
 		goto release;
 
-	if (seq_print_acct(s, ct, IP_CT_DIR_ORIGINAL))
+	if (nf_ct_ext_seq_print(s,ct,IP_CT_DIR_ORIGINAL))
 		goto release;
 
 	if (!(test_bit(IPS_SEEN_REPLY_BIT, &ct->status)))
@@ -337,7 +337,7 @@ static int ct_seq_show(struct seq_file *s, void *v)
 
 	ct_show_zone(s, ct, NF_CT_ZONE_DIR_REPL);
 
-	if (seq_print_acct(s, ct, IP_CT_DIR_REPLY))
+	if (nf_ct_ext_seq_print(s,ct,IP_CT_DIR_REPLY))
 		goto release;
 
 	if (test_bit(IPS_ASSURED_BIT, &ct->status))
@@ -353,6 +353,10 @@ static int ct_seq_show(struct seq_file *s, void *v)
 	ct_show_secctx(s, ct);
 	ct_show_zone(s, ct, NF_CT_DEFAULT_ZONE_DIR);
 	ct_show_delta_time(s, ct);
+#if defined(CONFIG_NETFILTER_XT_MATCH_LAYER7) || defined(CONFIG_NETFILTER_XT_MATCH_LAYER7_MODULE)
+	if(ct->layer7.app_proto)
+           seq_printf(s, "l7proto=%s ", ct->layer7.app_proto);
+#endif
 
 	seq_printf(s, "use=%u\n", atomic_read(&ct->ct_general.use));
 
@@ -605,11 +609,32 @@ nf_conntrack_hash_sysctl(struct ctl_table *table, int write,
 	nf_conntrack_htable_size_user = nf_conntrack_htable_size;
 	return ret;
 }
+static int nf_conntrack_flush_var = 0;
+
+static int
+nf_conntrack_flush_sysctl(struct ctl_table *table, int write,
+			 void __user *buffer, size_t *lenp, loff_t *ppos)
+{
+	int ret;
+
+	ret = proc_dointvec(table, write, buffer, lenp, ppos);
+	if (ret < 0 || !write)
+		return ret;
+
+	nf_conntrack_flush();
+	return ret;
+}
 
 static struct ctl_table_header *nf_ct_netfilter_header;
 
 static struct ctl_table nf_ct_sysctl_table[] = {
 	{
+		.procname	= "nf_conntrack_flush",
+		.data		= &nf_conntrack_flush_var,
+		.maxlen		= sizeof(int),
+		.mode		= 0644,
+		.proc_handler	= nf_conntrack_flush_sysctl,
+	},	{
 		.procname	= "nf_conntrack_max",
 		.data		= &nf_conntrack_max,
 		.maxlen		= sizeof(int),

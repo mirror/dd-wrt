@@ -1,10 +1,11 @@
 # All platforms listed in alphabetic order
 
+platforms += adm5120
 platforms += alchemy
 platforms += ar7
 platforms += ath25
 platforms += ath79
-platforms += bcm47xx
+platforms += brcm-boards
 platforms += bcm63xx
 platforms += bmips
 platforms += cavium-octeon

@@ -6,6 +6,7 @@
 #include <linux/of_address.h>
 #include <linux/of_device.h>
 #include <linux/of_pci.h>
+#include <linux/of_irq.h>
 #include <linux/slab.h>
 
 static inline int __of_pci_pci_compare(struct device_node *node,
@@ -161,6 +162,7 @@ void of_pci_check_probe_only(void)
 	pr_info("PROBE_ONLY %sabled\n", val ? "en" : "dis");
 }
 EXPORT_SYMBOL_GPL(of_pci_check_probe_only);
+
 
 #if defined(CONFIG_OF_ADDRESS)
 /**

@@ -65,7 +65,11 @@ struct device_node *of_irq_find_parent(struct device_node *child)
 		return NULL;
 
 	do {
+#ifdef CONFIG_ARCH_ALPINE
+		if (!strncmp(child->name,"pcie-external",13) || !strncmp(child->name,"pcie-internal",13) || of_property_read_u32(child, "interrupt-parent", &parent)) {
+#else
 		if (of_property_read_u32(child, "interrupt-parent", &parent)) {
+#endif
 			p = of_get_parent(child);
 		} else	{
 			if (of_irq_workarounds & OF_IMAP_NO_PHANDLE)
@@ -651,8 +655,16 @@ struct irq_domain *of_msi_get_domain(struct device *dev,
 	struct device_node *msi_np;
 	struct irq_domain *d;
 
+#ifdef CONFIG_ARCH_ALPINE
+	struct device_node *msi_external;
+	msi_external = of_find_compatible_node(NULL, NULL, "annapurna-labs,al-msix");
 	/* Check for a single msi-parent property */
-	msi_np = of_parse_phandle(np, "msi-parent", 0);
+	if (!strncmp(np->name,"pcie-external",13) || !strncmp(np->name,"pcie-internal",13)) {
+	    printk(KERN_EMERG "msi override %s\n",np->name);
+	    msi_np = msi_external;
+	} else
+#endif
+	    msi_np = of_parse_phandle(np, "msi-parent", 0);
 	if (msi_np && !of_property_read_bool(msi_np, "#msi-cells")) {
 		d = irq_find_matching_host(msi_np, token);
 		if (!d)

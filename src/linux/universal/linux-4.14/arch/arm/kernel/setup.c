@@ -1204,6 +1204,7 @@ static const char *hwcap_str[] = {
 	"evtstrm",
 	NULL
 };
+extern int get_cns3xxx_cpu_clock(void);
 
 static const char *hwcap2_str[] = {
 	"aes",
@@ -1219,18 +1220,22 @@ static int c_show(struct seq_file *m, void *v)
 	int i, j;
 	u32 cpuid;
 
+
 	for_each_online_cpu(i) {
 		/*
 		 * glibc reads /proc/cpuinfo to determine the number of
 		 * online processors, looking for lines beginning with
 		 * "processor".  Give glibc what it expects.
 		 */
-		seq_printf(m, "processor\t: %d\n", i);
 		cpuid = is_smp() ? per_cpu(cpu_data, i).cpuid : read_cpuid_id();
 		seq_printf(m, "model name\t: %s rev %d (%s)\n",
 			   cpu_name, cpuid & 15, elf_platform);
+#ifdef CONFIG_MACH_GW2388
+	seq_printf(m, "CPUClock\t: %d\n",get_cns3xxx_cpu_clock());
+#endif
 
 #if defined(CONFIG_SMP)
+		seq_printf(m, "processor\t: %d\n", i);
 		seq_printf(m, "BogoMIPS\t: %lu.%02lu\n",
 			   per_cpu(cpu_data, i).loops_per_jiffy / (500000UL/HZ),
 			   (per_cpu(cpu_data, i).loops_per_jiffy / (5000UL/HZ)) % 100);

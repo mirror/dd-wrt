@@ -530,6 +530,15 @@ config SENSORS_GL520SM
 	  This driver can also be built as a module.  If so, the module
 	  will be called gl520sm.
 
+config SENSORS_GSP
+	tristate "Gateworks System Peripheral"
+	depends on I2C
+	help
+	  If you say yes here you get support for the Gateworks System Peripherals.
+
+	  This driver can also be built as a module. If so, the module
+	  will be called gsp.
+
 config SENSORS_G760A
 	tristate "GMT G760A"
 	depends on I2C
@@ -540,6 +549,17 @@ config SENSORS_G760A
 	  This driver can also be built as a module.  If so, the module
 	  will be called g760a.
 
+config SENSORS_G761
+	tristate "DNI GMT G761"
+	depends on I2C
+	help
+	  If you say yes here you get support for Global Mixed-mode
+	  Technology Inc G761 fan speed PWM controller chips.
+
+	  This driver can also be built as a module.  If so, the module
+	  will be called g761.
+
+
 config SENSORS_G762
 	tristate "GMT G762 and G763"
 	depends on I2C
@@ -549,7 +569,7 @@ config SENSORS_G762
 
 	  This driver can also be built as a module.  If so, the module
 	  will be called g762.
-
+	 
 config SENSORS_GPIO_FAN
 	tristate "GPIO fan"
 	depends on GPIOLIB || COMPILE_TEST

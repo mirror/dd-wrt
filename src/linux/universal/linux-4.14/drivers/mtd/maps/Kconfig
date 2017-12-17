@@ -2,6 +2,18 @@ menu "Mapping drivers for chip access"
 	depends on MTD!=n
 	depends on HAS_IOMEM
 
+config MTD_RALINK
+       bool "Ralink MTD support"
+       depends on MTD && RAETH
+
+config MTD_ESR6650
+       bool "Senao ESR6650 support"
+       depends on MTD && RAETH
+
+config MTD_AR670W
+       bool "Senao ESR6650 support"
+       depends on MTD && RAETH
+
 config MTD_COMPLEX_MAPPINGS
 	bool "Support non-linear mappings of flash chips"
 	help
@@ -299,6 +311,16 @@ config MTD_IXP4XX
 	  IXDP425 and Coyote. If you have an IXP4xx based board and
 	  would like to use the flash chips on it, say 'Y'.
 
+config MTD_IXP4XXWRT 
+	tristate "CFI Flash device mapped on Intel IXP4xx based systems (Linksys WRT)"
+	depends on MTD_CFI && MTD_COMPLEX_MAPPINGS && ARCH_IXP4XX
+	help
+	  This enables MTD access to flash devices on platforms based
+	  on Intel's IXP4xx family of network processors such as the
+	  IXDP425 and Coyote. If you have an IXP4xx based board and
+	  would like to use the flash chips on it, say 'Y'.
+
+
 config MTD_IMPA7
 	tristate "JEDEC Flash device mapped on impA7"
 	depends on ARM && MTD_JEDECPROBE
@@ -418,5 +440,33 @@ config MTD_LATCH_ADDR
           and have the upper address lines set by a board specific code.
 
           If compiled as a module, it will be called latch-addr-flash.
+
+config MTD_AR531X
+        tristate "AR531X Flash device in physical memory map"
+        depends on MTD && ATHEROS
+        help
+          Map driver for Atheros SoC AR531x
+
+config MTD_EOC5610
+        tristate "Senao EOC5610 Flash mapping"
+        depends on MTD && ATHEROS
+        help
+          Map driver for Senao EOC5610
+
+config MTD_AR531X_SIZE
+        hex "Physical size"
+        depends on MTD_AR531X
+        default "0x400000"
+        help
+          Physical size flash
+
+config MTD_BCM947XX
+	tristate "CFI Flash device mapped on Broadcom BCM947XX boards"
+	depends on MTD_CFI && BCM47XX && MIPS_BRCM
+
+
+config MTD_ADM5120
+	tristate "Map driver for ADM5120 based boards"
+	depends on ADM5120
 
 endmenu

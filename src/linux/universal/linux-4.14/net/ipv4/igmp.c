@@ -509,7 +509,7 @@ static struct sk_buff *add_grec(struct sk_buff *skb, struct ip_mc_list *pmc,
 		if (!skb)
 			return NULL;
 		psrc = skb_put(skb, sizeof(__be32));
-		*psrc = psf->sf_inaddr;
+		net_hdr_word(psrc) = psf->sf_inaddr;
 		scount++; stotal++;
 		if ((type == IGMPV3_ALLOW_NEW_SOURCES ||
 		     type == IGMPV3_BLOCK_OLD_SOURCES) && psf->sf_crcount) {
@@ -2966,6 +2966,7 @@ static const struct file_operations igmp_mcf_seq_fops = {
 
 static int __net_init igmp_net_init(struct net *net)
 {
+#ifndef CONFIG_PROC_STRIPPED
 	struct proc_dir_entry *pde;
 	int err;
 
@@ -2983,7 +2984,7 @@ static int __net_init igmp_net_init(struct net *net)
 		       err);
 		goto out_sock;
 	}
-
+#endif
 	return 0;
 
 out_sock:
@@ -2996,8 +2997,10 @@ out_igmp:
 
 static void __net_exit igmp_net_exit(struct net *net)
 {
+#ifndef CONFIG_PROC_STRIPPED
 	remove_proc_entry("mcfilter", net->proc_net);
 	remove_proc_entry("igmp", net->proc_net);
+#endif
 	inet_ctl_sock_destroy(net->ipv4.mc_autojoin_sk);
 }
 
@@ -3033,7 +3036,7 @@ int __init igmp_mc_init(void)
 {
 #if defined(CONFIG_PROC_FS)
 	int err;
-
+		
 	err = register_pernet_subsys(&igmp_net_ops);
 	if (err)
 		return err;

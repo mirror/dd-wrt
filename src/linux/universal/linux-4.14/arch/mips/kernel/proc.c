@@ -8,6 +8,7 @@
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/seq_file.h>
+#include <linux/proc_fs.h>
 #include <asm/bootinfo.h>
 #include <asm/cpu.h>
 #include <asm/cpu-features.h>
@@ -17,6 +18,7 @@
 #include <asm/prom.h>
 
 unsigned int vced_count, vcei_count;
+extern unsigned int getCPUClock(void);
 
 /*
  *  * No lock; only written during early bootup by CPU 0.
@@ -52,9 +54,9 @@ static int show_cpuinfo(struct seq_file *m, void *v)
 	 */
 	if (n == 0) {
 		seq_printf(m, "system type\t\t: %s\n", get_system_type());
-		if (mips_get_machine_name())
-			seq_printf(m, "machine\t\t\t: %s\n",
-				   mips_get_machine_name());
+//		if (mips_get_machine_name())
+//			seq_printf(m, "machine\t\t\t: %s\n",
+//				   mips_get_machine_name());
 	}
 
 	seq_printf(m, "processor\t\t: %ld\n", n);
@@ -66,6 +68,7 @@ static int show_cpuinfo(struct seq_file *m, void *v)
 	seq_printf(m, "BogoMIPS\t\t: %u.%02u\n",
 		      cpu_data[n].udelay_val / (500000/HZ),
 		      (cpu_data[n].udelay_val / (5000/HZ)) % 100);
+	seq_printf(m, "CPUClock\t\t: %d\n",getCPUClock());
 	seq_printf(m, "wait instruction\t: %s\n", cpu_wait ? "yes" : "no");
 	seq_printf(m, "microsecond timers\t: %s\n",
 		      cpu_has_counter ? "yes" : "no");
@@ -183,3 +186,19 @@ const struct seq_operations cpuinfo_op = {
 	.stop	= c_stop,
 	.show	= show_cpuinfo,
 };
+
+/*
+ * Support for MIPS/local /proc hooks in /proc/mips/
+ */
+
+static struct proc_dir_entry *mips_proc = NULL;
+
+struct proc_dir_entry *get_mips_proc_dir(void)
+{
+       /*
+        * This ought not to be preemptable.
+        */
+       if(mips_proc == NULL)
+               mips_proc = proc_mkdir("mips", NULL);
+       return(mips_proc);
+}

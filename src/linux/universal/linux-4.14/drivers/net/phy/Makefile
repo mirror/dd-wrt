@@ -94,3 +94,15 @@ obj-$(CONFIG_STE10XP)		+= ste10Xp.o
 obj-$(CONFIG_TERANETICS_PHY)	+= teranetics.o
 obj-$(CONFIG_VITESSE_PHY)	+= vitesse.o
 obj-$(CONFIG_XILINX_GMII2RGMII) += xilinx_gmii2rgmii.o
+obj-$(CONFIG_AR8216_PHY)	+= ar8216.o ar8327.o
+obj-$(CONFIG_RTL8306_PHY)	+= rtl8306.o
+obj-$(CONFIG_RTL8366_SMI)	+= rtl8366_smi.o
+obj-$(CONFIG_RTL8366S_PHY)	+= rtl8366s.o
+obj-$(CONFIG_RTL8366RB_PHY)	+= rtl8366rb.o
+obj-$(CONFIG_RTL8367_PHY)	+= rtl8367.o
+obj-$(CONFIG_RTL8367B_PHY)	+= rtl8367b.o
+
+# GPIO simulate MDIO
+ifeq ($(CONFIG_ARCH_ALPINE),y)
+obj-m				+= mii_gpio.o
+endif

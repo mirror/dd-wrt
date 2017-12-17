@@ -40,6 +40,26 @@ config PHY_XGENE
 	help
 	  This option enables support for APM X-Gene SoC multi-purpose PHY.
 
+config PHY_RALINK_USB
+	tristate "Ralink USB PHY driver"
+	select GENERIC_PHY
+	depends on RALINK
+	help
+	  This option enables support for the Ralink USB PHY found inside
+	  RT3352 and MT7620.
+
+config PHY_QCOM_DWC3
+	tristate "QCOM DWC3 USB PHY support"
+	depends on ARCH_QCOM
+	depends on HAS_IOMEM
+	depends on OF
+	select GENERIC_PHY
+	help
+	  This option enables support for the Synopsis PHYs present inside the
+	  Qualcomm USB3.0 DWC3 controller.  This driver supports both HS and SS
+	  PHY controllers.
+
+
 source "drivers/phy/allwinner/Kconfig"
 source "drivers/phy/amlogic/Kconfig"
 source "drivers/phy/broadcom/Kconfig"
@@ -56,5 +76,6 @@ source "drivers/phy/samsung/Kconfig"
 source "drivers/phy/st/Kconfig"
 source "drivers/phy/tegra/Kconfig"
 source "drivers/phy/ti/Kconfig"
+
 
 endmenu

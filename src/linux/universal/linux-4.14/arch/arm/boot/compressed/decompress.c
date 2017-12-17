@@ -31,6 +31,8 @@ extern void error(char *);
 #  define Tracecv(c,x)
 #endif
 
+extern char * strstr(const char *, const char *);
+
 /* Not needed, but used in some headers pulled in by decompressors */
 extern char * strstr(const char * s1, const char *s2);
 extern size_t strlen(const char *s);

@@ -1097,6 +1097,7 @@ static void __gfar_detect_errata_83xx(struct gfar_private *priv)
 
 	/* MPC8313 and MPC837x all rev */
 	if ((pvr == 0x80850010 && mod == 0x80b0) ||
+            (pvr == 0x80850020 && mod == 0x80b6 && rev >= 0x0010) ||
 	    (pvr == 0x80861010 && (mod & 0xfff9) == 0x80c0))
 		priv->errata |= GFAR_ERRATA_76;
 
@@ -3254,15 +3255,13 @@ static int gfar_poll_rx(struct napi_struct *napi, int budget)
 			continue;
 
 		rx_queue = priv->rx_queue[i];
-		work_done_per_q =
-			gfar_clean_rx_ring(rx_queue, budget_per_q);
+		work_done_per_q = gfar_clean_rx_ring(rx_queue, budget_per_q);
 		work_done += work_done_per_q;
 
 		/* finished processing this queue */
 		if (work_done_per_q < budget_per_q) {
 			/* clear active queue hw indication */
-			gfar_write(&regs->rstat,
-				   RSTAT_CLEAR_RXF0 >> i);
+			gfar_write(&regs->rstat, RSTAT_CLEAR_RXF0 >> i);
 			num_act_queues--;
 
 			if (!num_act_queues)
@@ -3313,7 +3312,7 @@ static int gfar_poll_tx(struct napi_struct *napi, int budget)
 
 	if (!has_tx_work) {
 		u32 imask;
-		napi_complete(napi);
+		napi_complete_done(napi, work_done);
 
 		spin_lock_irq(&gfargrp->grplock);
 		imask = gfar_read(&regs->imask);
@@ -3324,7 +3323,6 @@ static int gfar_poll_tx(struct napi_struct *napi, int budget)
 
 	return 0;
 }
-
 
 #ifdef CONFIG_NET_POLL_CONTROLLER
 /* Polling 'interrupt' - used by things like netconsole to send skbs

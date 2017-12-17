@@ -188,6 +188,18 @@ u64 uevent_next_seqnum(void)
 }
 EXPORT_SYMBOL_GPL(uevent_next_seqnum);
 
+u64 uevent_next_seqnum(void)
+{
+	u64 seq;
+
+	mutex_lock(&uevent_sock_mutex);
+	seq = ++uevent_seqnum;
+	mutex_unlock(&uevent_sock_mutex);
+
+	return seq;
+}
+EXPORT_SYMBOL_GPL(uevent_next_seqnum);
+
 /**
  * kobject_synth_uevent - send synthetic uevent with arguments
  *
@@ -470,7 +482,7 @@ int kobject_uevent_env(struct kobject *kobj, enum kobject_action action,
 	retval = add_uevent_var(env, "SEQNUM=%llu", (unsigned long long)++uevent_seqnum);
 	if (retval) {
 		mutex_unlock(&uevent_sock_mutex);
-		goto exit;
+ 		goto exit;
 	}
 
 #if defined(CONFIG_NET)
@@ -597,6 +609,43 @@ int add_uevent_var(struct kobj_uevent_env *env, const char *format, ...)
 	return 0;
 }
 EXPORT_SYMBOL_GPL(add_uevent_var);
+
+#if defined(CONFIG_NET)
+int broadcast_uevent(struct sk_buff *skb, __u32 pid, __u32 group,
+		     gfp_t allocation)
+{
+	struct uevent_sock *ue_sk;
+	int err = 0;
+
+	/* send netlink message */
+	mutex_lock(&uevent_sock_mutex);
+	list_for_each_entry(ue_sk, &uevent_sock_list, list) {
+		struct sock *uevent_sock = ue_sk->sk;
+		struct sk_buff *skb2;
+
+		skb2 = skb_clone(skb, allocation);
+		if (!skb2)
+			break;
+
+		err = netlink_broadcast(uevent_sock, skb2, pid, group,
+					allocation);
+		if (err)
+			break;
+	}
+	mutex_unlock(&uevent_sock_mutex);
+
+	kfree_skb(skb);
+	return err;
+}
+#else
+int broadcast_uevent(struct sk_buff *skb, __u32 pid, __u32 group,
+		     gfp_t allocation)
+{
+	kfree_skb(skb);
+	return 0;
+}
+#endif
+EXPORT_SYMBOL_GPL(broadcast_uevent);
 
 #if defined(CONFIG_NET)
 int broadcast_uevent(struct sk_buff *skb, __u32 pid, __u32 group,

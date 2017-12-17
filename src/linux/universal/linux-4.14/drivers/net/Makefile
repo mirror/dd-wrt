@@ -13,6 +13,7 @@ obj-$(CONFIG_DUMMY) += dummy.o
 obj-$(CONFIG_EQUALIZER) += eql.o
 obj-$(CONFIG_IFB) += ifb.o
 obj-$(CONFIG_MACSEC) += macsec.o
+obj-$(CONFIG_IMQ) += imq.o
 obj-$(CONFIG_MACVLAN) += macvlan.o
 obj-$(CONFIG_MACVTAP) += macvtap.o
 obj-$(CONFIG_MII) += mii.o
@@ -43,6 +44,7 @@ obj-$(CONFIG_CAN) += can/
 obj-$(CONFIG_ETRAX_ETHERNET) += cris/
 obj-$(CONFIG_NET_DSA) += dsa/
 obj-$(CONFIG_ETHERNET) += ethernet/
+obj-$(CONFIG_ADM5120_ENET) += adm5120sw.o
 obj-$(CONFIG_FDDI) += fddi/
 obj-$(CONFIG_HIPPI) += hippi/
 obj-$(CONFIG_HAMRADIO) += hamradio/
@@ -68,9 +70,18 @@ obj-$(CONFIG_IEEE802154) += ieee802154/
 obj-$(CONFIG_VMXNET3) += vmxnet3/
 obj-$(CONFIG_XEN_NETDEV_FRONTEND) += xen-netfront.o
 obj-$(CONFIG_XEN_NETDEV_BACKEND) += xen-netback/
-
 obj-$(CONFIG_USB_NET_DRIVERS) += usb/
-
+ifeq ($(CONFIG_BCM47XX),y)
+obj-$(CONFIG_DHDAP) 		+= dhd/
+obj-$(CONFIG_HND) 		+= hnd/
+obj-$(CONFIG_WL) += wl/
+obj-$(CONFIG_PROXYARP) += proxyarp/
+obj-m += switch/
+endif
+obj-$(CONFIG_USB_CDC_PHONET)   += usb/
+ifeq ($(CONFIG_RAETH_ROUTER),y)
+obj-$(CONFIG_RT2880_GMAC) += mii.o
+endif
 obj-$(CONFIG_HYPERV_NET) += hyperv/
 obj-$(CONFIG_NTB_NETDEV) += ntb_netdev.o
 

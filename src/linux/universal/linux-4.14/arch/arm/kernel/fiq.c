@@ -56,6 +56,8 @@
 static unsigned long dfl_fiq_insn;
 static struct pt_regs dfl_fiq_regs;
 
+unsigned int fiq_number[2] = {0, 0};
+
 /* Default reacquire function
  * - we always relinquish FIQ control
  * - we always reacquire FIQ control
@@ -84,9 +86,12 @@ static struct fiq_handler *current_fiq = &default_owner;
 
 int show_fiq_list(struct seq_file *p, int prec)
 {
-	if (current_fiq != &default_owner)
-		seq_printf(p, "%*s:              %s\n", prec, "FIQ",
-			current_fiq->name);
+	if (current_fiq != &default_owner) {
+		seq_printf(p, "%*s: ", prec, "FIQ");
+		seq_printf(p, "%10u ", fiq_number[0]);
+		seq_printf(p, "%10u ", fiq_number[1]);
+		seq_printf(p, "      %s\n", current_fiq->name);
+	}
 
 	return 0;
 }
