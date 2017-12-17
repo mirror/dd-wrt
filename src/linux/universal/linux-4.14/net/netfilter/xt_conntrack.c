@@ -26,6 +26,96 @@ MODULE_ALIAS("ipt_conntrack");
 MODULE_ALIAS("ip6t_conntrack");
 
 static bool
+conntrack_mt_v0(const struct sk_buff *skb, struct xt_action_param *par)
+{
+	const struct xt_conntrack_info *sinfo = par->matchinfo;
+	const struct nf_conn *ct;
+	enum ip_conntrack_info ctinfo;
+	unsigned int statebit;
+
+	ct = nf_ct_get(skb, &ctinfo);
+
+#define FWINV(bool, invflg) ((bool) ^ !!(sinfo->invflags & (invflg)))
+
+	if (ct == &nf_conntrack_untracked)
+		statebit = XT_CONNTRACK_STATE_UNTRACKED;
+	else if (ct)
+		statebit = XT_CONNTRACK_STATE_BIT(ctinfo);
+	else
+		statebit = XT_CONNTRACK_STATE_INVALID;
+
+	if (sinfo->flags & XT_CONNTRACK_STATE) {
+		if (ct) {
+			if (test_bit(IPS_SRC_NAT_BIT, &ct->status))
+				statebit |= XT_CONNTRACK_STATE_SNAT;
+			if (test_bit(IPS_DST_NAT_BIT, &ct->status))
+				statebit |= XT_CONNTRACK_STATE_DNAT;
+		}
+		if (FWINV((statebit & sinfo->statemask) == 0,
+			  XT_CONNTRACK_STATE))
+			return false;
+	}
+
+	if (ct == NULL) {
+		if (sinfo->flags & ~XT_CONNTRACK_STATE)
+			return false;
+		return true;
+	}
+
+	if (sinfo->flags & XT_CONNTRACK_PROTO &&
+	    FWINV(nf_ct_protonum(ct) !=
+		  sinfo->tuple[IP_CT_DIR_ORIGINAL].dst.protonum,
+		  XT_CONNTRACK_PROTO))
+		return false;
+
+	if (sinfo->flags & XT_CONNTRACK_ORIGSRC &&
+	    FWINV((ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.u3.ip &
+		   sinfo->sipmsk[IP_CT_DIR_ORIGINAL].s_addr) !=
+		  sinfo->tuple[IP_CT_DIR_ORIGINAL].src.ip,
+		  XT_CONNTRACK_ORIGSRC))
+		return false;
+
+	if (sinfo->flags & XT_CONNTRACK_ORIGDST &&
+	    FWINV((ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.u3.ip &
+		   sinfo->dipmsk[IP_CT_DIR_ORIGINAL].s_addr) !=
+		  sinfo->tuple[IP_CT_DIR_ORIGINAL].dst.ip,
+		  XT_CONNTRACK_ORIGDST))
+		return false;
+
+	if (sinfo->flags & XT_CONNTRACK_REPLSRC &&
+	    FWINV((ct->tuplehash[IP_CT_DIR_REPLY].tuple.src.u3.ip &
+		   sinfo->sipmsk[IP_CT_DIR_REPLY].s_addr) !=
+		  sinfo->tuple[IP_CT_DIR_REPLY].src.ip,
+		  XT_CONNTRACK_REPLSRC))
+		return false;
+
+	if (sinfo->flags & XT_CONNTRACK_REPLDST &&
+	    FWINV((ct->tuplehash[IP_CT_DIR_REPLY].tuple.dst.u3.ip &
+		   sinfo->dipmsk[IP_CT_DIR_REPLY].s_addr) !=
+		  sinfo->tuple[IP_CT_DIR_REPLY].dst.ip,
+		  XT_CONNTRACK_REPLDST))
+		return false;
+
+	if (sinfo->flags & XT_CONNTRACK_STATUS &&
+	    FWINV((ct->status & sinfo->statusmask) == 0,
+		  XT_CONNTRACK_STATUS))
+		return false;
+
+	if(sinfo->flags & XT_CONNTRACK_EXPIRES) {
+		unsigned long expires = nf_ct_expires(ct) / HZ;
+
+		if ((expires >= sinfo->expires_min &&
+		    expires <= sinfo->expires_max) ^
+		    !(sinfo->invflags & XT_CONNTRACK_EXPIRES))
+			return false;
+
+		
+	}
+	return true;
+#undef FWINV
+}
+
+static bool
 conntrack_addrcmp(const union nf_inet_addr *kaddr,
                   const union nf_inet_addr *uaddr,
                   const union nf_inet_addr *umask, unsigned int l3proto)
@@ -242,6 +332,7 @@ conntrack_mt(const struct sk_buff *skb, struct xt_action_param *par,
 	return true;
 }
 
+
 static bool
 conntrack_mt_v1(const struct sk_buff *skb, struct xt_action_param *par)
 {
@@ -282,7 +373,71 @@ static void conntrack_mt_destroy(const struct xt_mtdtor_param *par)
 	nf_ct_netns_put(par->net, par->family);
 }
 
+#ifdef CONFIG_COMPAT
+struct compat_xt_conntrack_info
+{
+	compat_uint_t			statemask;
+	compat_uint_t			statusmask;
+	struct ip_conntrack_old_tuple	tuple[IP_CT_DIR_MAX];
+	struct in_addr			sipmsk[IP_CT_DIR_MAX];
+	struct in_addr			dipmsk[IP_CT_DIR_MAX];
+	compat_ulong_t			expires_min;
+	compat_ulong_t			expires_max;
+	u_int8_t			flags;
+	u_int8_t			invflags;
+};
+
+static void conntrack_mt_compat_from_user_v0(void *dst, const void *src)
+{
+	const struct compat_xt_conntrack_info *cm = src;
+	struct xt_conntrack_info m = {
+		.statemask	= cm->statemask,
+		.statusmask	= cm->statusmask,
+		.expires_min	= cm->expires_min,
+		.expires_max	= cm->expires_max,
+		.flags		= cm->flags,
+		.invflags	= cm->invflags,
+	};
+	memcpy(m.tuple, cm->tuple, sizeof(m.tuple));
+	memcpy(m.sipmsk, cm->sipmsk, sizeof(m.sipmsk));
+	memcpy(m.dipmsk, cm->dipmsk, sizeof(m.dipmsk));
+	memcpy(dst, &m, sizeof(m));
+}
+
+static int conntrack_mt_compat_to_user_v0(void __user *dst, const void *src)
+{
+	const struct xt_conntrack_info *m = src;
+	struct compat_xt_conntrack_info cm = {
+		.statemask	= m->statemask,
+		.statusmask	= m->statusmask,
+		.expires_min	= m->expires_min,
+		.expires_max	= m->expires_max,
+		.flags		= m->flags,
+		.invflags	= m->invflags,
+	};
+	memcpy(cm.tuple, m->tuple, sizeof(cm.tuple));
+	memcpy(cm.sipmsk, m->sipmsk, sizeof(cm.sipmsk));
+	memcpy(cm.dipmsk, m->dipmsk, sizeof(cm.dipmsk));
+	return copy_to_user(dst, &cm, sizeof(cm)) ? -EFAULT : 0;
+}
+#endif
+
 static struct xt_match conntrack_mt_reg[] __read_mostly = {
+	{
+		.name       = "conntrack",
+		.revision   = 0,
+		.family     = NFPROTO_IPV4,
+		.match      = conntrack_mt_v0,
+		.checkentry = conntrack_mt_check,
+		.destroy    = conntrack_mt_destroy,
+		.matchsize  = sizeof(struct xt_conntrack_info),
+		.me         = THIS_MODULE,
+#ifdef CONFIG_COMPAT
+		.compatsize       = sizeof(struct compat_xt_conntrack_info),
+		.compat_from_user = conntrack_mt_compat_from_user_v0,
+		.compat_to_user   = conntrack_mt_compat_to_user_v0,
+#endif
+	},
 	{
 		.name       = "conntrack",
 		.revision   = 1,

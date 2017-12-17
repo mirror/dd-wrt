@@ -719,6 +719,12 @@ int fib_nl_delrule(struct sk_buff *skb, struct nlmsghdr *nlh,
 		if (rule->tun_id)
 			ip_tunnel_unneed_metadata();
 
+		if (ops->delete) {
+			err = ops->delete(rule);
+			if (err)
+				goto errout;
+		}
+
 		list_del_rcu(&rule->list);
 
 		if (rule->action == FR_ACT_GOTO) {

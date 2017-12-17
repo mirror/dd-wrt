@@ -14,8 +14,10 @@ obj-$(CONFIG_USB_ISP1760)	+= isp1760/
 
 obj-$(CONFIG_USB_MON)		+= mon/
 obj-$(CONFIG_USB_MTU3)		+= mtu3/
+obj-$(CONFIG_USB_SUPPORT)	+= phy/
 
 obj-$(CONFIG_USB_PCI)		+= host/
+obj-$(CONFIG_USB_ADM5120_HCD)	+= host/
 obj-$(CONFIG_USB_EHCI_HCD)	+= host/
 obj-$(CONFIG_USB_ISP116X_HCD)	+= host/
 obj-$(CONFIG_USB_OHCI_HCD)	+= host/
@@ -36,6 +38,8 @@ obj-$(CONFIG_USB_C67X00_HCD)	+= c67x00/
 
 obj-$(CONFIG_USB_WUSB)		+= wusbcore/
 
+obj-$(CONFIG_DWC_OTG)           += dwc_otg/
+
 obj-$(CONFIG_USB_ACM)		+= class/
 obj-$(CONFIG_USB_PRINTER)	+= class/
 obj-$(CONFIG_USB_WDM)		+= class/
@@ -54,6 +58,7 @@ obj-$(CONFIG_EARLY_PRINTK_USB)	+= early/
 
 obj-$(CONFIG_USB_ATM)		+= atm/
 obj-$(CONFIG_USB_SPEEDTOUCH)	+= atm/
+obj-$(CONFIG_DWC_OTG_RALINK) 	+= dwc_otg_ralink/
 
 obj-$(CONFIG_USB_MUSB_HDRC)	+= musb/
 obj-$(CONFIG_USB_CHIPIDEA)	+= chipidea/

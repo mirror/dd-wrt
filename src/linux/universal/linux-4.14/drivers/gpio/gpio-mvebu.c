@@ -1068,6 +1068,8 @@ static int mvebu_gpio_probe_raw(struct platform_device *pdev,
 			return PTR_ERR(mvchip->percpu_regs);
 	}
 
+	mvebu_pwm_suspend(mvchip);
+
 	return 0;
 }
 
@@ -1080,6 +1082,8 @@ static int mvebu_gpio_probe_syscon(struct platform_device *pdev,
 
 	if (of_property_read_u32(pdev->dev.of_node, "offset", &mvchip->offset))
 		return -EINVAL;
+
+	mvebu_pwm_resume(mvchip);
 
 	return 0;
 }
@@ -1256,7 +1260,8 @@ static int mvebu_gpio_probe(struct platform_device *pdev)
 	if (IS_ENABLED(CONFIG_PWM))
 		return mvebu_pwm_probe(pdev, mvchip, id);
 
-	return 0;
+	/* Armada 370/XP has simple PWM support for gpio lines */
+	return mvebu_pwm_probe(pdev, mvchip, id);
 
 err_domain:
 	irq_domain_remove(mvchip->domain);

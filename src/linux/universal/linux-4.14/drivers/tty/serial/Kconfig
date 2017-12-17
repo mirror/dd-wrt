@@ -25,9 +25,17 @@ config SERIAL_AMBA_PL010
 	help
 	  This selects the ARM(R) AMBA(R) PrimeCell PL010 UART.  If you have
 	  an Integrator/AP or Integrator/PP2 platform, or if you have a
-	  Cirrus Logic EP93xx CPU, say Y or M here.
+	  Cirrus Logic EP93xx CPU or an Infineon ADM5120 SOC, say Y or M here.
 
 	  If unsure, say N.
+
+config SERIAL_AMBA_PL010_NUMPORTS
+	int "Maximum number of AMBA PL010 serial ports"
+	depends on SERIAL_AMBA_PL010
+	default "8"
+	---help---
+	  Set this to the number of serial ports you want the AMBA PL010 driver
+	  to support.
 
 config SERIAL_AMBA_PL010_CONSOLE
 	bool "Support for console on AMBA serial port"
@@ -1460,32 +1468,6 @@ config SERIAL_XILINX_PS_UART_CONSOLE
 	select SERIAL_EARLYCON
 	help
 	  Enable a Cadence UART port to be the system console.
-
-config SERIAL_AR933X
-	tristate "AR933X serial port support"
-	depends on HAVE_CLK && SOC_AR933X
-	select SERIAL_CORE
-	help
-	  If you have an Atheros AR933X SOC based board and want to use the
-	  built-in UART of the SoC, say Y to this option.
-
-	  To compile this driver as a module, choose M here: the
-	  module will be called ar933x_uart.
-
-config SERIAL_AR933X_CONSOLE
-	bool "Console on AR933X serial port"
-	depends on SERIAL_AR933X=y
-	select SERIAL_CORE_CONSOLE
-	help
-	  Enable a built-in UART port of the AR933X to be the system console.
-
-config SERIAL_AR933X_NR_UARTS
-	int "Maximum number of AR933X serial ports"
-	depends on SERIAL_AR933X
-	default "2"
-	help
-	  Set this to the number of serial ports you want the driver
-	  to support.
 
 config SERIAL_EFM32_UART
 	tristate "EFM32 UART/USART port"

@@ -116,6 +116,10 @@
 #include <net/sock_reuseport.h>
 #include <net/addrconf.h>
 
+#if defined(CONFIG_IFX_UDP_REDIRECT) || defined(CONFIG_IFX_UDP_REDIRECT_MODULE)
+#include <linux/udp_redirect.h>
+#endif
+
 struct udp_table udp_table __read_mostly;
 EXPORT_SYMBOL(udp_table);
 
@@ -879,7 +883,7 @@ int udp_sendmsg(struct sock *sk, struct msghdr *msg, size_t len)
 	u8  tos;
 	int err, is_udplite = IS_UDPLITE(sk);
 	int corkreq = up->corkflag || msg->msg_flags&MSG_MORE;
-	int (*getfrag)(void *, char *, int, int, int, struct sk_buff *);
+	int (*getfrag)(void *, char *, int, int, int, struct sk_buff *) = NULL;
 	struct sk_buff *skb;
 	struct ip_options_data opt_copy;
 
@@ -898,7 +902,13 @@ int udp_sendmsg(struct sock *sk, struct msghdr *msg, size_t len)
 	ipc.ttl = 0;
 	ipc.tos = -1;
 
-	getfrag = is_udplite ? udplite_getfrag : ip_generic_getfrag;
+/* UDPREDIRECT */
+#if defined(CONFIG_IFX_UDP_REDIRECT) || defined(CONFIG_IFX_UDP_REDIRECT_MODULE)
+	if(udpredirect_getfrag_fn && sk->sk_user_data == UDP_REDIRECT_MAGIC)
+		getfrag = udpredirect_getfrag_fn;
+	else
+#endif /* IFX_UDP_REDIRECT */
+		getfrag = is_udplite ? udplite_getfrag : ip_generic_getfrag;
 
 	fl4 = &inet->cork.fl.u.ip4;
 	if (up->pending) {
@@ -2054,6 +2064,7 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
 	struct rtable *rt = skb_rtable(skb);
 	__be32 saddr, daddr;
 	struct net *net = dev_net(skb->dev);
+	int ret = 0;
 
 	/*
 	 *  Validate the packet.
@@ -2104,6 +2115,15 @@ int __udp4_lib_rcv(struct sk_buff *skb, struct udp_table *udptable,
 	sk = __udp4_lib_lookup_skb(skb, uh->source, uh->dest, udptable);
 	if (sk) {
 		int ret;
+	/* UDPREDIRECT */
+#if defined(CONFIG_IFX_UDP_REDIRECT) || defined(CONFIG_IFX_UDP_REDIRECT_MODULE)
+      if(udp_do_redirect_fn && sk->sk_user_data == UDP_REDIRECT_MAGIC)
+      {
+         udp_do_redirect_fn(sk,skb);
+         kfree_skb(skb);
+         return(0);
+      }
+#endif
 
 		if (inet_get_convert_csum(sk) && uh->check && !IS_UDPLITE(sk))
 			skb_checksum_try_convert(skb, IPPROTO_UDP, uh->check,
@@ -2569,7 +2589,7 @@ struct proto udp_prot = {
 	.diag_destroy	   = udp_abort,
 };
 EXPORT_SYMBOL(udp_prot);
-
+EXPORT_SYMBOL(udp_rcv);
 /* ------------------------------------------------------------------------ */
 #ifdef CONFIG_PROC_FS
 

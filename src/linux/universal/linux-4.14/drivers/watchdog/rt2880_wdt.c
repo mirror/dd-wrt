@@ -19,7 +19,7 @@
 #include <linux/moduleparam.h>
 #include <linux/platform_device.h>
 
-#include <asm/mach-ralink/ralink_regs.h>
+#include <asm/mach-ralink-openwrt/ralink_regs.h>
 
 #define SYSC_RSTSTAT			0x38
 #define WDT_RST_CAUSE			BIT(1)
@@ -144,7 +144,7 @@ static int rt288x_wdt_probe(struct platform_device *pdev)
 	int ret;
 
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	rt288x_wdt_base = devm_ioremap_resource(&pdev->dev, res);
+	rt288x_wdt_base = devm_request_and_ioremap(&pdev->dev, res);
 	if (IS_ERR(rt288x_wdt_base))
 		return PTR_ERR(rt288x_wdt_base);
 
@@ -206,3 +206,4 @@ module_platform_driver(rt288x_wdt_driver);
 MODULE_DESCRIPTION("MediaTek/Ralink RT288x/RT3xxx hardware watchdog driver");
 MODULE_AUTHOR("Gabor Juhos <juhosg@openwrt.org");
 MODULE_LICENSE("GPL v2");
+MODULE_ALIAS_MISCDEV(WATCHDOG_MINOR);

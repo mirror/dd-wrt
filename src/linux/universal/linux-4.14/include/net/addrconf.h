@@ -47,7 +47,7 @@ struct prefix_info {
 	__be32			reserved2;
 
 	struct in6_addr		prefix;
-};
+} MIPS_ENABLED(__attribute__((packed, aligned(2))));
 
 #include <linux/netdevice.h>
 #include <net/if_inet6.h>
@@ -88,7 +88,7 @@ struct inet6_ifaddr *ipv6_get_ifaddr(struct net *net,
 				     const struct in6_addr *addr,
 				     struct net_device *dev, int strict);
 
-int ipv6_dev_get_saddr(struct net *net, const struct net_device *dev,
+int __weak ipv6_dev_get_saddr(struct net *net, const struct net_device *dev,
 		       const struct in6_addr *daddr, unsigned int srcprefs,
 		       struct in6_addr *saddr);
 int __ipv6_get_lladdr(struct inet6_dev *idev, struct in6_addr *addr,
@@ -279,8 +279,8 @@ bool ipv6_chk_acast_addr_src(struct net *net, struct net_device *dev,
 			     const struct in6_addr *addr);
 
 /* Device notifier */
-int register_inet6addr_notifier(struct notifier_block *nb);
-int unregister_inet6addr_notifier(struct notifier_block *nb);
+int __weak register_inet6addr_notifier(struct notifier_block *nb);
+int __weak unregister_inet6addr_notifier(struct notifier_block *nb);
 int inet6addr_notifier_call_chain(unsigned long val, void *v);
 
 int register_inet6addr_validator_notifier(struct notifier_block *nb);

@@ -15,6 +15,7 @@ obj-$(CONFIG_NET)		+= $(tmp-y)
 obj-$(CONFIG_LLC)		+= llc/
 obj-$(CONFIG_NET)		+= ethernet/ 802/ sched/ netlink/ bpf/
 obj-$(CONFIG_NETFILTER)		+= netfilter/
+obj-m				+= shortcut-fe/
 obj-$(CONFIG_INET)		+= ipv4/
 obj-$(CONFIG_TLS)		+= tls/
 obj-$(CONFIG_XFRM)		+= xfrm/
@@ -73,6 +74,16 @@ obj-$(CONFIG_BATMAN_ADV)	+= batman-adv/
 obj-$(CONFIG_NFC)		+= nfc/
 obj-$(CONFIG_PSAMPLE)		+= psample/
 obj-$(CONFIG_NET_IFE)		+= ife/
+ifeq ($(CONFIG_RAETH),y)
+ifneq ($(CONFIG_RA_NAT_NONE),y)
+obj-y                           += nat/foe_hook/
+endif
+endif
+ifeq ($(CONFIG_RAETH),m)
+ifneq ($(CONFIG_RA_NAT_NONE),y)
+obj-y                           += nat/foe_hook/
+endif
+endif
 obj-$(CONFIG_OPENVSWITCH)	+= openvswitch/
 obj-$(CONFIG_VSOCKETS)	+= vmw_vsock/
 obj-$(CONFIG_MPLS)		+= mpls/

@@ -21,6 +21,9 @@ struct dev_archdata {
 #endif
 	unsigned int dma_coherent:1;
 	unsigned int dma_ops_setup:1;
+#ifdef CONFIG_ARM_HWCC_FLAG
+	unsigned int hwcc:1; /* 1 - HW cache coherency, 0 - SW cache coherency */
+#endif
 };
 
 struct omap_device;

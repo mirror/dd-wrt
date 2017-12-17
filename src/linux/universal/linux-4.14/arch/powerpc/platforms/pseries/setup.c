@@ -461,7 +461,7 @@ static void __init find_and_init_phbs(void)
 
 static void __init pSeries_setup_arch(void)
 {
-	set_arch_panic_timeout(10, ARCH_PANIC_TIMEOUT);
+	set_arch_panic_timeout(1, ARCH_PANIC_TIMEOUT);
 
 	/* Discover PIC type and setup ppc_md accordingly */
 	smp_init_pseries();

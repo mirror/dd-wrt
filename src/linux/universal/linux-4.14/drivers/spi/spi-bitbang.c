@@ -279,9 +279,9 @@ static int spi_bitbang_transfer_one(struct spi_master *master,
 			goto out;
 	}
 
-	if (transfer->len)
+	if (transfer->len) {
 		status = bitbang->txrx_bufs(spi, transfer);
-
+	}
 	if (status == transfer->len)
 		status = 0;
 	else if (status >= 0)

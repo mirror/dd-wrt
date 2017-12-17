@@ -48,7 +48,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/of.h>
 
-static int nand_get_device(struct mtd_info *mtd, int new_state);
+int nand_get_device(struct mtd_info *mtd, int new_state);
 
 static int nand_do_write_oob(struct mtd_info *mtd, loff_t to,
 			     struct mtd_oob_ops *ops);
@@ -240,7 +240,7 @@ static int check_offs_len(struct mtd_info *mtd,
  *
  * Release chip lock and wake up anyone waiting on the device.
  */
-static void nand_release_device(struct mtd_info *mtd)
+void nand_release_device(struct mtd_info *mtd)
 {
 	struct nand_chip *chip = mtd_to_nand(mtd);
 
@@ -481,7 +481,11 @@ static int nand_default_block_markbad(struct mtd_info *mtd, loff_t ofs)
 	} else {
 		ops.len = ops.ooblen = 1;
 	}
-	ops.mode = MTD_OPS_PLACE_OOB;
+
+	if (unlikely(chip->bbt_options & NAND_BBT_ACCESS_BBM_RAW))
+		ops.mode = MTD_OPS_RAW;
+	else
+		ops.mode = MTD_OPS_PLACE_OOB;
 
 	/* Write to first/last page(s) if necessary */
 	if (chip->bbt_options & NAND_BBT_SCANLASTPAGE)
@@ -963,7 +967,7 @@ static void panic_nand_get_device(struct nand_chip *chip,
  *
  * Get the device and lock it for exclusive access
  */
-static int
+int
 nand_get_device(struct mtd_info *mtd, int new_state)
 {
 	struct nand_chip *chip = mtd_to_nand(mtd);
@@ -1922,6 +1926,7 @@ read_retry:
 			else
 				ret = chip->ecc.read_page(mtd, chip, bufpoi,
 							  oob_required, page);
+#endif
 			if (ret < 0) {
 				if (use_bufpoi)
 					/* Invalidate page cache */
@@ -4170,6 +4175,32 @@ static int nand_dt_init(struct nand_chip *chip)
 		chip->ecc.options |= NAND_ECC_MAXIMIZE;
 
 	return 0;
+}
+
+int nand_lock_and_callback(struct mtd_info *mtd,
+			   int (*callback)(struct mtd_info *, void *),
+			   void *priv)
+{
+	int ret;
+	struct nand_chip *chip = mtd->priv;
+	if (chip == NULL) {
+		/* this is partition - get a master */
+		mtd = *(struct mtd_info **)(mtd + 1);
+		chip = mtd->priv;
+	}
+
+	/* Grab the lock and see if the device is available */
+	nand_get_device(mtd , FL_READING);
+
+	chip->select_chip(mtd, 0);
+
+	ret = (*callback)(mtd, priv);
+
+	chip->select_chip(mtd, -1);
+
+	/* Deselect and wake up anyone waiting on the device */
+	nand_release_device(mtd);
+	return ret;
 }
 
 /**

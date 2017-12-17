@@ -27,6 +27,23 @@
  * receives, no matter what.
  */
 
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+static const struct nf_queue_handler __rcu *queue_imq_handler __read_mostly;
+
+void nf_register_queue_imq_handler(const struct nf_queue_handler *qh)
+{
+	rcu_assign_pointer(queue_imq_handler, qh);
+}
+EXPORT_SYMBOL_GPL(nf_register_queue_imq_handler);
+
+void nf_unregister_queue_imq_handler(void)
+{
+	RCU_INIT_POINTER(queue_imq_handler, NULL);
+	synchronize_rcu();
+}
+EXPORT_SYMBOL_GPL(nf_unregister_queue_imq_handler);
+#endif
+
 /* return EBUSY when somebody else is registered, return EEXIST if the
  * same handler is registered, return 0 in case of success. */
 void nf_register_queue_handler(struct net *net, const struct nf_queue_handler *qh)
@@ -113,16 +130,27 @@ EXPORT_SYMBOL_GPL(nf_queue_nf_hook_drop);
 
 static int __nf_queue(struct sk_buff *skb, const struct nf_hook_state *state,
 		      const struct nf_hook_entries *entries,
-		      unsigned int index, unsigned int queuenum)
+		      unsigned int index, unsigned int verdict)
 {
 	int status = -ENOENT;
 	struct nf_queue_entry *entry = NULL;
 	const struct nf_afinfo *afinfo;
 	const struct nf_queue_handler *qh;
 	struct net *net = state->net;
+	unsigned int queuetype = verdict & NF_VERDICT_MASK;
+	unsigned int queuenum  = verdict >> NF_VERDICT_QBITS;
 
 	/* QUEUE == DROP if no one is waiting, to be safe. */
-	qh = rcu_dereference(net->nf.queue_handler);
+	if (queuetype == NF_IMQ_QUEUE) {
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+		qh = rcu_dereference(queue_imq_handler);
+#else
+		BUG();
+		goto err_unlock;
+#endif
+	} else {
+		qh = rcu_dereference(net->nf.queue_handler);
+	}
 	if (!qh) {
 		status = -ESRCH;
 		goto err;
@@ -169,8 +197,14 @@ int nf_queue(struct sk_buff *skb, struct nf_hook_state *state,
 {
 	int ret;
 
-	ret = __nf_queue(skb, state, entries, index, verdict >> NF_VERDICT_QBITS);
+	ret = __nf_queue(skb, state, verdict);
 	if (ret < 0) {
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+		if (ret == -ECANCELED && skb->imq_flags == 0) { // down interface
+			*entryp = rcu_dereference(entry->next);
+			return 1;
+		}
+#endif
 		if (ret == -ESRCH &&
 		    (verdict & NF_VERDICT_FLAG_QUEUE_BYPASS))
 			return 1;
@@ -256,6 +290,7 @@ next_hook:
 		local_bh_enable();
 		break;
 	case NF_QUEUE:
+	case NF_IMQ_QUEUE:
 		err = nf_queue(skb, &entry->state, hooks, i, verdict);
 		if (err == 1)
 			goto next_hook;

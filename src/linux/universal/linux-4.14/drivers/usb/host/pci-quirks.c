@@ -77,6 +77,8 @@
 #define USB_INTEL_USB3_PSSEN   0xD8
 #define USB_INTEL_USB3PRM      0xDC
 
+#ifndef CONFIG_PCI_DISABLE_COMMON_QUIRKS
+
 /* ASMEDIA quirk use */
 #define ASMT_DATA_WRITE0_REG	0xF8
 #define ASMT_DATA_WRITE1_REG	0xFC
@@ -517,6 +519,10 @@ EXPORT_SYMBOL_GPL(usb_amd_dev_put);
 
 #if IS_ENABLED(CONFIG_USB_UHCI_HCD)
 
+#endif /* CONFIG_PCI_DISABLE_COMMON_QUIRKS */
+
+#if IS_ENABLED(CONFIG_USB_UHCI_HCD)
+
 /*
  * Make sure the controller is completely inactive, unable to
  * generate interrupts or do DMA.
@@ -626,12 +632,21 @@ static void quirk_usb_handoff_uhci(struct pci_dev *pdev)
 
 	for (i = 0; i < PCI_ROM_RESOURCE; i++)
 		if ((pci_resource_flags(pdev, i) & IORESOURCE_IO)) {
+#ifndef CONFIG_MACH_KS8695_VSOPENRISC
 			base = pci_resource_start(pdev, i);
+#else
+			base = ioremap(pci_resource_start(pdev, i), pci_resource_len(pdev, i));
+#endif
 			break;
 		}
 
 	if (base)
+	{
 		uhci_check_and_reset_hc(pdev, base);
+#ifdef CONFIG_MACH_KS8695_VSOPENRISC
+		iounmap(base);
+#endif
+	}
 }
 
 static int mmio_resource_enabled(struct pci_dev *pdev, int idx)

@@ -49,6 +49,7 @@ obj-$(CONFIG_977_WATCHDOG) += wdt977.o
 obj-$(CONFIG_GEMINI_WATCHDOG) += gemini_wdt.o
 obj-$(CONFIG_IXP4XX_WATCHDOG) += ixp4xx_wdt.o
 obj-$(CONFIG_KS8695_WATCHDOG) += ks8695_wdt.o
+obj-$(CONFIG_MPCORE_WATCHDOG) += mpcore_wdt.o
 obj-$(CONFIG_S3C2410_WATCHDOG) += s3c2410_wdt.o
 obj-$(CONFIG_SA1100_WATCHDOG) += sa1100_wdt.o
 obj-$(CONFIG_SAMA5D4_WATCHDOG) += sama5d4_wdt.o
@@ -57,6 +58,7 @@ obj-$(CONFIG_EP93XX_WATCHDOG) += ep93xx_wdt.o
 obj-$(CONFIG_PNX4008_WATCHDOG) += pnx4008_wdt.o
 obj-$(CONFIG_IOP_WATCHDOG) += iop_wdt.o
 obj-$(CONFIG_DAVINCI_WATCHDOG) += davinci_wdt.o
+obj-$(CONFIG_CNS3XXX_WATCHDOG) += cns3xxx_wdt.o
 obj-$(CONFIG_ORION_WATCHDOG) += orion_wdt.o
 obj-$(CONFIG_SUNXI_WATCHDOG) += sunxi_wdt.o
 obj-$(CONFIG_RN5T618_WATCHDOG) += rn5t618_wdt.o
@@ -66,6 +68,7 @@ obj-$(CONFIG_NUC900_WATCHDOG) += nuc900_wdt.o
 obj-$(CONFIG_TS4800_WATCHDOG) += ts4800_wdt.o
 obj-$(CONFIG_TS72XX_WATCHDOG) += ts72xx_wdt.o
 obj-$(CONFIG_IMX2_WDT) += imx2_wdt.o
+obj-$(CONFIG_MIPS_BRCM)+= bcmdog.o
 obj-$(CONFIG_UX500_WATCHDOG) += ux500_wdt.o
 obj-$(CONFIG_RETU_WATCHDOG) += retu_wdt.o
 obj-$(CONFIG_BCM2835_WDT) += bcm2835_wdt.o
@@ -160,6 +163,7 @@ obj-$(CONFIG_ATH79_WDT) += ath79_wdt.o
 obj-$(CONFIG_BCM47XX_WDT) += bcm47xx_wdt.o
 obj-$(CONFIG_BCM63XX_WDT) += bcm63xx_wdt.o
 obj-$(CONFIG_RC32434_WDT) += rc32434_wdt.o
+obj-$(CONFIG_ADM5120_WDT) += adm5120_wdt.o
 obj-$(CONFIG_INDYDOG) += indydog.o
 obj-$(CONFIG_JZ4740_WDT) += jz4740_wdt.o
 obj-$(CONFIG_WDT_MTX1) += mtx-1_wdt.o
@@ -222,5 +226,22 @@ obj-$(CONFIG_WM8350_WATCHDOG) += wm8350_wdt.o
 obj-$(CONFIG_MAX63XX_WATCHDOG) += max63xx_wdt.o
 obj-$(CONFIG_MAX77620_WATCHDOG) += max77620_wdt.o
 obj-$(CONFIG_ZIIRAVE_WATCHDOG) += ziirave_wdt.o
+ifeq ($(CONFIG_MACH_AR7240),y)
+obj-$(CONFIG_SOFT_WATCHDOG) += ar71xx_wdt.o
+else
+ifeq ($(CONFIG_MACH_AR7100),y)
+obj-$(CONFIG_SOFT_WATCHDOG) += ar71xx_wdt.o
+else
+ifeq ($(CONFIG_MACH_HORNET),y)
+obj-$(CONFIG_SOFT_WATCHDOG) += ar71xx_wdt.o
+else
 obj-$(CONFIG_SOFT_WATCHDOG) += softdog.o
+endif
+endif
+endif
+
+obj-$(CONFIG_AR2315_WDT) += ar2315_wdt.o
+ifeq ($(CONFIG_RALINK_DEVICE),y)
+obj-y += ralink_wdt.o
+endif
 obj-$(CONFIG_MENF21BMC_WATCHDOG) += menf21bmc_wdt.o

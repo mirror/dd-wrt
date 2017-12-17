@@ -448,6 +448,26 @@ static const struct dmi_system_id reboot_dmi_table[] __initconst = {
 		},
 	},
 
+	/* PC Engines */
+	{	/* Handle problems with rebooting on PC Engines apu2 */
+		.callback = set_pci_reboot,
+		.ident = "PC Engines apu2",
+		.matches = {
+			DMI_MATCH(DMI_BOARD_VENDOR, "PC Engines"),
+			DMI_MATCH(DMI_BOARD_NAME, "apu2"),
+		},
+	},
+
+	/* PC Engines */
+	{	/* Handle problems with rebooting on PC Engines apu2 */
+		.callback = set_pci_reboot,
+		.ident = "PC Engines apu2",
+		.matches = {
+			DMI_MATCH(DMI_BOARD_VENDOR, "PC Engines"),
+			DMI_MATCH(DMI_BOARD_NAME, "apu2"),
+		},
+	},
+
 	/* Sony */
 	{	/* Handle problems with rebooting on Sony VGN-Z540N */
 		.callback = set_bios_reboot,

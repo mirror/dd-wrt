@@ -415,23 +415,15 @@ static void __init gmlr_init(void)
 	if (hw_bits & CFG_HW_HAS_EEPROM)
 		device_tab[devices++] = &device_i2c; /* max index 6 */
 
-	gpio_request(GPIO_SCL, "SCL/clock");
-	gpio_request(GPIO_SDA, "SDA/data");
-	gpio_request(GPIO_STR, "strobe");
-	gpio_request(GPIO_HSS0_RTS_N, "HSS0 RTS");
-	gpio_request(GPIO_HSS1_RTS_N, "HSS1 RTS");
-	gpio_request(GPIO_HSS0_DCD_N, "HSS0 DCD");
-	gpio_request(GPIO_HSS1_DCD_N, "HSS1 DCD");
-
-	gpio_direction_output(GPIO_SCL, 1);
-	gpio_direction_output(GPIO_SDA, 1);
-	gpio_direction_output(GPIO_STR, 0);
-	gpio_direction_output(GPIO_HSS0_RTS_N, 1);
-	gpio_direction_output(GPIO_HSS1_RTS_N, 1);
-	gpio_direction_input(GPIO_HSS0_DCD_N);
-	gpio_direction_input(GPIO_HSS1_DCD_N);
-	irq_set_irq_type(IXP4XX_GPIO_IRQ(GPIO_HSS0_DCD_N), IRQ_TYPE_EDGE_BOTH);
-	irq_set_irq_type(IXP4XX_GPIO_IRQ(GPIO_HSS1_DCD_N), IRQ_TYPE_EDGE_BOTH);
+	gpio_line_config(GPIO_SCL, IXP4XX_GPIO_OUT);
+	gpio_line_config(GPIO_SDA, IXP4XX_GPIO_OUT);
+	gpio_line_config(GPIO_STR, IXP4XX_GPIO_OUT);
+	gpio_line_config(GPIO_HSS0_RTS_N, IXP4XX_GPIO_OUT);
+	gpio_line_config(GPIO_HSS1_RTS_N, IXP4XX_GPIO_OUT);
+	gpio_line_config(GPIO_HSS0_DCD_N, IXP4XX_GPIO_IN);
+	gpio_line_config(GPIO_HSS1_DCD_N, IXP4XX_GPIO_IN);
+	set_irq_type(IXP4XX_GPIO_IRQ(GPIO_HSS0_DCD_N), IRQ_TYPE_EDGE_BOTH);
+	set_irq_type(IXP4XX_GPIO_IRQ(GPIO_HSS1_DCD_N), IRQ_TYPE_EDGE_BOTH);
 
 	set_control(CONTROL_HSS0_DTR_N, 1);
 	set_control(CONTROL_HSS1_DTR_N, 1);
@@ -451,10 +443,10 @@ static void __init gmlr_init(void)
 #ifdef CONFIG_PCI
 static void __init gmlr_pci_preinit(void)
 {
-	irq_set_irq_type(IXP4XX_GPIO_IRQ(GPIO_IRQ_ETHA), IRQ_TYPE_LEVEL_LOW);
-	irq_set_irq_type(IXP4XX_GPIO_IRQ(GPIO_IRQ_ETHB), IRQ_TYPE_LEVEL_LOW);
-	irq_set_irq_type(IXP4XX_GPIO_IRQ(GPIO_IRQ_NEC), IRQ_TYPE_LEVEL_LOW);
-	irq_set_irq_type(IXP4XX_GPIO_IRQ(GPIO_IRQ_MPCI), IRQ_TYPE_LEVEL_LOW);
+	set_irq_type(IXP4XX_GPIO_IRQ(GPIO_IRQ_ETHA), IRQ_TYPE_LEVEL_LOW);
+	set_irq_type(IXP4XX_GPIO_IRQ(GPIO_IRQ_ETHB), IRQ_TYPE_LEVEL_LOW);
+	set_irq_type(IXP4XX_GPIO_IRQ(GPIO_IRQ_NEC), IRQ_TYPE_LEVEL_LOW);
+	set_irq_type(IXP4XX_GPIO_IRQ(GPIO_IRQ_MPCI), IRQ_TYPE_LEVEL_LOW);
 	ixp4xx_pci_preinit();
 }
 
@@ -472,7 +464,7 @@ static void __init gmlr_pci_postinit(void)
 	}
 }
 
-static int __init gmlr_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
+static int __init gmlr_map_irq(struct pci_dev *dev, u8 slot, u8 pin)
 {
 	switch(slot) {
 	case SLOT_ETHA:	return IXP4XX_GPIO_IRQ(GPIO_IRQ_ETHA);
@@ -505,14 +497,13 @@ subsys_initcall(gmlr_pci_init);
 
 MACHINE_START(GORAMO_MLR, "MultiLink")
 	/* Maintainer: Krzysztof Halasa */
+	.phys_io	= IXP4XX_PERIPHERAL_BASE_PHYS,
+	.io_pg_offst	= ((IXP4XX_PERIPHERAL_BASE_VIRT) >> 18) & 0xFFFC,
 	.map_io		= ixp4xx_map_io,
 	.init_early	= ixp4xx_init_early,
 	.init_irq	= ixp4xx_init_irq,
 	.init_time	= ixp4xx_timer_init,
-	.atag_offset	= 0x100,
+	.boot_params	= 0x0100,
 	.init_machine	= gmlr_init,
-#if defined(CONFIG_PCI)
-	.dma_zone_size	= SZ_64M,
-#endif
 	.restart	= ixp4xx_restart,
 MACHINE_END

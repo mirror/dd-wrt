@@ -22,7 +22,11 @@ static void urb_destroy(struct kref *kref)
 
 	if (urb->transfer_flags & URB_FREE_BUFFER)
 		kfree(urb->transfer_buffer);
-
+	if (urb->aligned_transfer_buffer) {
+		kfree(urb->aligned_transfer_buffer);
+		urb->aligned_transfer_buffer = 0;
+		urb->aligned_transfer_dma = 0;
+	}
 	kfree(urb);
 }
 

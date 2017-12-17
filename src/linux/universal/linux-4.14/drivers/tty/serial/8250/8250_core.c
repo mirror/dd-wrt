@@ -43,6 +43,21 @@
 
 #include <asm/irq.h>
 
+#ifdef CONFIG_PLAT_BCM5301X
+#include <typedefs.h>
+#include <bcmdevs.h>
+extern int _chipid;
+#endif
+
+/* enable EPLD for VS OpenRISC devices */
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+#define CONFIG_SERIAL_NETCOM_EPLD
+#define ENABLE_16C950_BAUD_GENERATION_FEATURES
+#define PROC_NAME_EPLD	"epld_ttyS"
+#include <linux/vsopenrisc.h>
+#include <linux/proc_fs.h>
+#endif
+
 #include "8250.h"
 
 /*
@@ -519,7 +534,11 @@ static void __init serial8250_isa_init_ports(void)
 		struct uart_8250_port *up = &serial8250_ports[i];
 		struct uart_port *port = &up->port;
 
-		port->line = i;
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+		up->port.line = i + 2;
+#else
+		up->port.line = i;
+#endif
 		serial8250_init_port(up);
 		if (!base_ops)
 			base_ops = port->ops;
@@ -685,6 +704,11 @@ static struct console univ8250_console = {
 
 static int __init univ8250_console_init(void)
 {
+#ifdef CONFIG_PLAT_BCM5301X
+	if (BCM53573_CHIP(_chipid)) {
+		nr_uarts = 1;
+	}
+#endif
 	if (nr_uarts == 0)
 		return -ENODEV;
 
@@ -707,6 +731,8 @@ static struct uart_driver serial8250_reg = {
 	.minor			= 64,
 	.cons			= SERIAL8250_CONSOLE,
 };
+
+
 
 /*
  * early_serial_setup - early registration for 8250 ports
@@ -737,6 +763,9 @@ int __init early_serial_setup(struct uart_port *port)
 	p->private_data = port->private_data;
 	p->type		= port->type;
 	p->line		= port->line;
+#ifdef CONFIG_BCM47XX
+	p->custom_divisor	= port->custom_divisor;
+#endif
 
 	serial8250_set_defaults(up_to_u8250p(p));
 
@@ -810,6 +839,14 @@ static int serial8250_probe(struct platform_device *dev)
 	struct uart_8250_port uart;
 	int ret, i, irqflag = 0;
 
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+	unsigned char scratch, lsr;
+	char proc_name_epld[32];
+	struct proc_dir_entry *proc_epld;
+#endif
+	if(!p)
+		return 0;
+
 	memset(&uart, 0, sizeof(uart));
 
 	if (share_irqs)
@@ -838,6 +875,14 @@ static int serial8250_probe(struct platform_device *dev)
 		uart.port.pm		= p->pm;
 		uart.port.dev		= &dev->dev;
 		uart.port.irqflags	|= irqflag;
+		uart.port.rw_delay		= p->rw_delay;
+		uart.port.irqflags		|= irqflag;
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+		uart.port.epld_capabilities	= p->epld_capabilities;
+#endif
+#ifdef CONFIG_BCM47XX
+		uart.port.custom_divisor	= p->custom_divisor;
+#endif
 		ret = serial8250_register_8250_port(&uart);
 		if (ret < 0) {
 			dev_err(&dev->dev, "unable to register port at index %d "
@@ -846,6 +891,60 @@ static int serial8250_probe(struct platform_device *dev)
 				p->irq, ret);
 		}
 	}
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+	for (i = 0; i < nr_uarts; i++) {
+		struct uart_8250_port *up = &serial8250_ports[i];
+
+		if(up->port.membase == NULL)
+		{
+			continue;
+		}
+
+		serial_out(up, UART_SCR, 0x00);
+	}
+	for (i = 0; i < nr_uarts; i++) {
+		struct uart_8250_port *up = &serial8250_ports[i];
+
+		if(up->port.membase == 0)
+		{
+			continue;
+		}
+		lsr = serial_in(up, UART_LSR);
+		scratch = serial_in(up, UART_SCR);
+		serial_out(up, UART_SCR, 0xaa);
+		if(!(lsr & 0x60) || scratch == 0xaa)
+		{
+			printk(KERN_DEBUG "serial8250: ttyS%d: is only a mirror, eliminate\n",
+			       up->port.line);
+			serial8250_unregister_port(i);
+		}
+		else
+		{
+			printk(KERN_EMERG "try to configure %d iobase %lX membase %p mapbase %X\n",i,up->port.iobase,up->port.membase,up->port.mapbase);
+			/* set up EPLD structure i.e. define EPLD address and get current value */
+			up->port.epld.reg_shift = 2;
+			up->port.epld.port = (unsigned long)up->port.membase - (0x08 << 2);
+			up->port.epld.value = readl(up->port.membase - (0x08 << 2));
+
+			/* set EPLD to rs232 mode */
+			if (!strstr(saved_command_line, "rsoff"))
+				writel(EPLD_RS232, up->port.membase - (0x08 << 2));
+
+			/* set up /proc entries and read/write functions */
+			sprintf(proc_name_epld, PROC_NAME_EPLD"%d", up->port.line);
+			if (!openriscdir)
+	    		    openriscdir = proc_mkdir("vsopenrisc", NULL);
+	    		    
+			printk(KERN_INFO "create /proc/vsopenrisc/%s\n",proc_name_epld);
+			proc_epld = proc_create_data(proc_name_epld, 0644, openriscdir, &fops_info, (void*)&up->port);
+			if (proc_epld == NULL)
+			{
+				remove_proc_entry(proc_name_epld, 0);
+				printk(KERN_ALERT "Could not initialize /proc/vsopenrisc/%s\n", proc_name_epld);
+			}
+		}
+	}
+#endif
 	return 0;
 }
 
@@ -885,7 +984,6 @@ static int serial8250_resume(struct platform_device *dev)
 
 	for (i = 0; i < UART_NR; i++) {
 		struct uart_8250_port *up = &serial8250_ports[i];
-
 		if (up->port.type != PORT_UNKNOWN && up->port.dev == &dev->dev)
 			serial8250_resume_port(i);
 	}
@@ -992,6 +1090,7 @@ int serial8250_register_8250_port(struct uart_8250_port *up)
 		uart->port.flags        = up->port.flags | UPF_BOOT_AUTOCONF;
 		uart->bugs		= up->bugs;
 		uart->port.mapbase      = up->port.mapbase;
+		uart->port.rw_delay	= up->port.rw_delay;
 		uart->port.mapsize      = up->port.mapsize;
 		uart->port.private_data = up->port.private_data;
 		uart->tx_loadsz		= up->tx_loadsz;
@@ -1001,6 +1100,9 @@ int serial8250_register_8250_port(struct uart_8250_port *up)
 		uart->port.rs485_config	= up->port.rs485_config;
 		uart->port.rs485	= up->port.rs485;
 		uart->dma		= up->dma;
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+		uart->port.epld_capabilities	= up->port.epld_capabilities;
+#endif
 
 		/* Take tx_loadsz from fifosize if it wasn't set separately */
 		if (uart->port.fifosize && !uart->tx_loadsz)
@@ -1108,6 +1210,12 @@ EXPORT_SYMBOL(serial8250_unregister_port);
 static int __init serial8250_init(void)
 {
 	int ret;
+	printk(KERN_INFO "%s\n",__func__);
+#ifdef CONFIG_PLAT_BCM5301X
+	if (BCM53573_CHIP(_chipid)) {
+		nr_uarts = 1;
+	}
+#endif
 
 	if (nr_uarts == 0)
 		return -ENODEV;
@@ -1166,6 +1274,29 @@ static void __exit serial8250_exit(void)
 {
 	struct platform_device *isa_dev = serial8250_isa_devs;
 
+#ifdef ENABLE_16C950_BAUD_GENERATION_FEATURES
+	/* setup TCR and CPR register values to achieve the desired baudrate */
+	if (up->port.type == PORT_16C950)
+	{
+		unsigned int temp_EFR = 0;
+
+		printk(KERN_DEBUG "cpr = 0x%x, tcr = 0x%x, quot = 0x%x\n", port->speed_regs.cpr, port->speed_regs.tcr, (unsigned short)quot);
+
+		/* set CPR and TCR */
+		serial_icr_write(up, UART_TCR, port->speed_regs.tcr);
+		serial_icr_write(up, UART_CPR, port->speed_regs.cpr);
+
+		/* enable baud prescale */
+		serial_out(up, UART_LCR, 0xBF);
+		temp_EFR = serial_in(up, UART_EFR);
+		temp_EFR |= UART_EFR_ECB;
+		serial_out(up, UART_EFR, temp_EFR);
+		serial_out(up, UART_LCR, 0);
+		up->mcr |= 0x80;
+		serial_out(up, UART_MCR, up->mcr);
+	}
+#endif
+
 	/*
 	 * This tells serial8250_unregister_port() not to re-register
 	 * the ports (thereby making serial8250_isa_driver permanently
@@ -1184,6 +1315,16 @@ static void __exit serial8250_exit(void)
 	uart_unregister_driver(&serial8250_reg);
 #endif
 }
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+static const struct file_operations fops_info = {
+	.read =  proc_epld_read,
+	.write = proc_epld_write,
+	.llseek = default_llseek,
+};
+#endif
+
+
+extern struct proc_dir_entry *openriscdir;
 
 module_init(serial8250_init);
 module_exit(serial8250_exit);

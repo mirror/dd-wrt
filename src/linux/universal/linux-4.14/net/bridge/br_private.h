@@ -14,6 +14,7 @@
 #define _BR_PRIVATE_H
 
 #include <linux/netdevice.h>
+#include <linux/netfilter.h>
 #include <linux/if_bridge.h>
 #include <linux/netpoll.h>
 #include <linux/u64_stats_sync.h>
@@ -180,8 +181,9 @@ struct net_bridge_fdb_entry {
 	struct rcu_head			rcu;
 };
 
-#define MDB_PG_FLAGS_PERMANENT	BIT(0)
-#define MDB_PG_FLAGS_OFFLOAD	BIT(1)
+#define MDB_PG_FLAGS_PERMANENT		BIT(0)
+#define MDB_PG_FLAGS_OFFLOAD		BIT(1)
+#define MDB_PG_FLAGS_MCAST_TO_UCAST	BIT(2)
 
 struct net_bridge_port_group {
 	struct net_bridge_port		*port;
@@ -1000,14 +1002,28 @@ extern const struct nf_br_ops __rcu *nf_br_ops;
 
 /* br_netfilter.c */
 #if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
+extern int brnf_call_ebtables;
 int br_nf_core_init(void);
 void br_nf_core_fini(void);
 void br_netfilter_rtable_init(struct net_bridge *);
+bool br_netfilter_run_hooks(void);
 #else
 static inline int br_nf_core_init(void) { return 0; }
 static inline void br_nf_core_fini(void) {}
 #define br_netfilter_rtable_init(x)
+#define br_netfilter_run_hooks()	false
 #endif
+
+static inline int
+BR_HOOK(uint8_t pf, unsigned int hook, struct net *net, struct sock *sk, struct sk_buff *skb,
+	struct net_device *in, struct net_device *out,
+	int (*okfn)(struct net *, struct sock *, struct sk_buff *))
+{
+	if (!br_netfilter_run_hooks())
+		return okfn(net, sk, skb);
+
+	return NF_HOOK(pf, hook, net, sk, skb, in, out, okfn);
+}
 
 /* br_stp.c */
 void br_set_state(struct net_bridge_port *p, unsigned int state);

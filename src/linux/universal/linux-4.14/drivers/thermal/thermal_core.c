@@ -673,7 +673,7 @@ void thermal_zone_device_unbind_exception(struct thermal_zone_device *tz,
  */
 int thermal_zone_bind_cooling_device(struct thermal_zone_device *tz,
 				     int trip,
-				     struct thermal_cooling_device *cdev,
+					struct thermal_cooling_device *cdev,
 				     unsigned long upper, unsigned long lower,
 				     unsigned int weight)
 {
@@ -1150,6 +1150,49 @@ exit:
 }
 
 /**
+ * thermal_update_governor() - update the thermal zone device's governor
+ * to a new one.
+ * @tzd: pointer of thermal zone device, which need to update governor.
+ * @name: thermal zone name to fetch the temperature
+ *
+ * Return: On success returns 0, an error code otherwise
+ */
+int thermal_update_governor(struct thermal_zone_device *tzd,
+			    const char *name)
+{
+	struct thermal_governor *old_gov, *new_gov;
+	int ret = 0;
+
+	mutex_lock(&thermal_governor_lock);
+
+	new_gov = __find_governor(name);
+	if (!new_gov) {
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	old_gov = tzd->governor;
+
+	if (old_gov && old_gov->stop)
+		old_gov->stop(tzd);
+
+	if (new_gov->start) {
+		ret = new_gov->start(tzd);
+		if (ret < 0) {
+			if (old_gov && old_gov->start)
+				old_gov->start(tzd);
+			goto exit;
+		}
+	}
+
+	tzd->governor = new_gov;
+
+exit:
+	mutex_unlock(&thermal_governor_lock);
+	return ret;
+}
+
+/**
  * thermal_zone_device_register() - register a new thermal zone device
  * @type:	the thermal zone device type
  * @trips:	the number of trip points the thermal zone support
@@ -1190,16 +1233,28 @@ thermal_zone_device_register(const char *type, int trips, int mask,
 		return ERR_PTR(-EINVAL);
 
 	if (type && strlen(type) >= THERMAL_NAME_LENGTH)
+	{
+	printk(KERN_EMERG "type invalid\n");
 		return ERR_PTR(-EINVAL);
+	}
 
 	if (trips > THERMAL_MAX_TRIPS || trips < 0 || mask >> trips)
+	{
+	printk(KERN_EMERG "trips invalid\n");
 		return ERR_PTR(-EINVAL);
+	}
 
 	if (!ops)
+	{
+	printk(KERN_EMERG "ops invalid\n");
 		return ERR_PTR(-EINVAL);
+	}
 
 	if (trips > 0 && (!ops->get_trip_type || !ops->get_trip_temp))
+	{
+	printk(KERN_EMERG "trip type bad\n");
 		return ERR_PTR(-EINVAL);
+	}
 
 	tz = kzalloc(sizeof(*tz), GFP_KERNEL);
 	if (!tz)
@@ -1257,15 +1312,24 @@ thermal_zone_device_register(const char *type, int trips, int mask,
 	result = thermal_set_governor(tz, governor);
 	if (result) {
 		mutex_unlock(&thermal_governor_lock);
+	printk(KERN_EMERG "device register fail %d\n",__LINE__);
 		goto unregister;
+	}
+
+	if (tz->governor && tz->governor->start) {
+		result = tz->governor->start(tz);
+		if (result < 0)
+			tz->governor = NULL;
 	}
 
 	mutex_unlock(&thermal_governor_lock);
 
 	if (!tz->tzp || !tz->tzp->no_hwmon) {
 		result = thermal_add_hwmon_sysfs(tz);
-		if (result)
+		if (result) {
+	printk(KERN_EMERG "device register fail %d\n",__LINE__);
 			goto unregister;
+		}
 	}
 
 	mutex_lock(&thermal_list_lock);
@@ -1285,6 +1349,9 @@ thermal_zone_device_register(const char *type, int trips, int mask,
 	return tz;
 
 unregister:
+	if (tz->governor && tz->governor->stop)
+		tz->governor->stop(tz);
+	tz->governor = NULL;
 	ida_simple_remove(&thermal_tz_ida, tz->id);
 	device_unregister(&tz->device);
 	return ERR_PTR(result);
@@ -1395,6 +1462,39 @@ exit:
 	return ref;
 }
 EXPORT_SYMBOL_GPL(thermal_zone_get_zone_by_name);
+
+/**
+* thermal_zone_get_zone_by_node() - search for a zone and returns its ref
+* @node: device node of the thermal zone
+*
+* When thermal zone is found with the passed device node, returns a reference
+* to it.
+*
+* Return: On success returns a reference to an unique thermal zone with
+* matching device node, an ERR_PTR otherwise (-EINVAL for invalid
+* paramenters, -ENODEV for not found).
+*/
+struct thermal_zone_device *
+thermal_zone_get_zone_by_node(struct device_node *node)
+{
+	struct thermal_zone_device *pos = NULL, *ref = ERR_PTR(-ENODEV);
+	bool found = false;
+
+	if (!node)
+		return ERR_PTR(-EINVAL);
+
+	mutex_lock(&thermal_list_lock);
+	list_for_each_entry(pos, &thermal_tz_list, node)
+		if (node == pos->np) {
+			ref = pos;
+			found = true;
+			break;
+		}
+	mutex_unlock(&thermal_list_lock);
+
+	return ref;
+}
+EXPORT_SYMBOL_GPL(thermal_zone_get_zone_by_node);
 
 #ifdef CONFIG_NET
 static const struct genl_multicast_group thermal_event_mcgrps[] = {
@@ -1535,9 +1635,11 @@ static int __init thermal_init(void)
 	if (result)
 		goto unregister_class;
 
+#ifndef THERMAL_QCOMTSENS	
 	result = of_parse_thermal_zones();
 	if (result)
 		goto exit_netlink;
+#endif
 
 	result = register_pm_notifier(&thermal_pm_nb);
 	if (result)
@@ -1564,7 +1666,9 @@ error:
 static void __exit thermal_exit(void)
 {
 	unregister_pm_notifier(&thermal_pm_nb);
+#ifndef THERMAL_QCOMTSENS	
 	of_thermal_destroy_zones();
+#endif
 	genetlink_exit();
 	class_unregister(&thermal_class);
 	thermal_unregister_governors();

@@ -298,6 +298,12 @@ config GPIO_MENZ127
 	help
 	 Say yes here to support the MEN 16Z127 GPIO Controller
 
+config GPIO_MT7621
+	bool "Mediatek GPIO Support"
+	depends on SOC_MT7620 || SOC_MT7621
+	help
+	  Say yes here to support the Mediatek SoC GPIO device
+
 config GPIO_MM_LANTIQ
 	bool "Lantiq Memory mapped GPIOs"
 	depends on LANTIQ && SOC_XWAY
@@ -341,6 +347,11 @@ config GPIO_MVEBU
 	depends on OF_GPIO
 	select GENERIC_IRQ_CHIP
 	select REGMAP_MMIO
+
+config GPIO_MVEBU_PWM
+	def_bool y
+	depends on GPIO_MVEBU
+	depends on PWM
 
 config GPIO_MXC
 	def_bool y
@@ -397,6 +408,12 @@ config GPIO_REG
 	help
 	  A 32-bit single register GPIO fixed in/out implementation.  This
 	  can be used to represent any register as a set of GPIO signals.
+
+config GPIO_RALINK
+	bool "Ralink GPIO Support"
+	depends on RALINK
+	help
+	  Say yes here to support the Ralink SoC GPIO device
 
 config GPIO_SPEAR_SPICS
 	bool "ST SPEAr13xx SPI Chip Select as GPIO support"

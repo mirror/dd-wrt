@@ -52,11 +52,14 @@ extern int __weak get_c0_perfcount_int(void);
  * Initialize the calling CPU's compare interrupt as clockevent device
  */
 extern unsigned int get_c0_compare_int(void);
+extern unsigned int __weak get_c0_compare_irq(void);
 extern int r4k_clockevent_init(void);
 
 static inline int mips_clockevent_init(void)
 {
-#ifdef CONFIG_CEVT_R4K
+#if defined(CONFIG_MIPS_BRCM)
+	return 0;
+#elif CONFIG_CEVT_R4K
 	return r4k_clockevent_init();
 #else
 	return -ENXIO;

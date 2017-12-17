@@ -50,7 +50,6 @@ struct bug_entry {
 #ifndef HAVE_ARCH_BUG
 #define BUG() do { \
 	printk("BUG: failure at %s:%d/%s()!\n", __FILE__, __LINE__, __func__); \
-	panic("BUG!"); \
 } while (0)
 #endif
 

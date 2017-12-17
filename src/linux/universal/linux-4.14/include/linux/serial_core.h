@@ -38,6 +38,10 @@
 #define uart_console(port)      ({ (void)port; 0; })
 #endif
 
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+#include <linux/vsopenrisc.h>
+#endif
+
 struct uart_port;
 struct serial_struct;
 struct device;
@@ -87,8 +91,7 @@ struct uart_ops {
 	int		(*verify_port)(struct uart_port *, struct serial_struct *);
 	int		(*ioctl)(struct uart_port *, unsigned int, unsigned long);
 #ifdef CONFIG_CONSOLE_POLL
-	int		(*poll_init)(struct uart_port *);
-	void		(*poll_put_char)(struct uart_port *, unsigned char);
+	void	(*poll_put_char)(struct uart_port *, unsigned char);
 	int		(*poll_get_char)(struct uart_port *);
 #endif
 };
@@ -113,6 +116,14 @@ struct uart_icount {
 
 typedef unsigned int __bitwise upf_t;
 typedef unsigned int __bitwise upstat_t;
+
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+/* values for the 16C950 specific baudrate generation registers TCR and CPR */
+struct uart16C950_speed_regs{
+	unsigned tcr;
+	unsigned cpr;
+};
+#endif
 
 struct uart_port {
 	spinlock_t		lock;			/* port lock */
@@ -154,6 +165,8 @@ struct uart_port {
 #define UPIO_TSI		(SERIAL_IO_TSI)		/* Tsi108/109 type IO */
 #define UPIO_MEM32BE		(SERIAL_IO_MEM32BE)	/* 32b big endian */
 #define UPIO_MEM16		(SERIAL_IO_MEM16)	/* 16b little endian */
+#define UPIO_RM9000		(SERIAL_IO_RM9000)			/* RM9000 type IO */
+#define UPIO_MEM_DELAY		(SERIAL_IO_MEM_DELAY)
 
 	/* quirks must be updated while holding port mutex */
 #define UPQ_NO_TXEN_TEST	BIT(0)
@@ -237,6 +250,7 @@ struct uart_port {
 	int			hw_stopped;		/* sw-assisted CTS flow state */
 	unsigned int		mctrl;			/* current modem ctrl settings */
 	unsigned int		timeout;		/* character-based timeout */
+	unsigned int		rw_delay;		/* udelay for slow busses, IXP4XX Expansion Bus */
 	unsigned int		type;			/* port type */
 	const struct uart_ops	*ops;
 	unsigned int		custom_divisor;
@@ -253,6 +267,11 @@ struct uart_port {
 	const struct attribute_group **tty_groups;	/* all attributes (serial core use only) */
 	struct serial_rs485     rs485;
 	void			*private_data;		/* generic platform data pointer */
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+	struct epld_struct epld;
+	unsigned short epld_capabilities;		/* EPLD capabilities */
+	struct uart16C950_speed_regs speed_regs;	/* values for TCR and CPR registers */
+#endif
 };
 
 static inline int serial_port_in(struct uart_port *up, int offset)
@@ -395,6 +414,27 @@ struct tty_driver *uart_console_device(struct console *co, int *index);
 void uart_console_write(struct uart_port *port, const char *s,
 			unsigned int count,
 			void (*putchar)(struct uart_port *, int));
+
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+/*
+ * /proc functions for EPLD
+ */
+#define PROC_NAME_EPLD	"epld_ttyS"
+
+ssize_t proc_epld_read(struct file *file, char __user * buffer, size_t size, loff_t * ppos);
+ssize_t proc_epld_write(struct file *file, const char __user * buffer, size_t count, loff_t * ppos);
+
+
+/*
+ * EPLD IOCTLs
+ */
+int ioctl_epld(struct uart_port *port, struct epld_struct *epld, unsigned int cmd);
+
+/*
+ * custom divisor calculation
+ */
+int serial16C950_get_divisors(unsigned long baudbase, unsigned long baud, unsigned *TCR, unsigned *CPR, unsigned short *Divisor);
+#endif
 
 /*
  * Port/driver registration/removal

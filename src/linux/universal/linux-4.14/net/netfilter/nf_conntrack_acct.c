@@ -18,7 +18,9 @@
 #include <net/netfilter/nf_conntrack_extend.h>
 #include <net/netfilter/nf_conntrack_acct.h>
 
-static bool nf_ct_acct __read_mostly;
+#define NF_CT_ACCT_DEFAULT 1
+
+static bool nf_ct_acct __read_mostly = NF_CT_ACCT_DEFAULT;
 
 module_param_named(acct, nf_ct_acct, bool, 0644);
 MODULE_PARM_DESC(acct, "Enable connection tracking flow accounting.");
@@ -56,6 +58,7 @@ seq_print_acct(struct seq_file *s, const struct nf_conn *ct, int dir)
 EXPORT_SYMBOL_GPL(seq_print_acct);
 
 static const struct nf_ct_ext_type acct_extend = {
+	.seq_print = seq_print_acct,
 	.len	= sizeof(struct nf_conn_acct),
 	.align	= __alignof__(struct nf_conn_acct),
 	.id	= NF_CT_EXT_ACCT,

@@ -35,6 +35,9 @@
 #include "hub.h"
 #include "otg_whitelist.h"
 
+void ap_usb_led_on(void);
+void ap_usb_led_off(void);
+
 #define USB_VENDOR_GENESYS_LOGIC		0x05e3
 #define HUB_QUIRK_CHECK_PORT_AUTOSUSPEND	0x01
 
@@ -1689,6 +1692,10 @@ static int hub_probe(struct usb_interface *intf, const struct usb_device_id *id)
 	desc = intf->cur_altsetting;
 	hdev = interface_to_usbdev(intf);
 
+#if defined(CONFIG_MACH_AR7100) || defined(CONFIG_MACH_AR7240) || defined(CONFIG_LANTIQ)
+	ap_usb_led_off();
+#endif
+
 	/*
 	 * Set default autosuspend delay as 0 to speedup bus suspend,
 	 * based on the below considerations:
@@ -2105,6 +2112,12 @@ void usb_disconnect(struct usb_device **pdev)
 	usb_set_device_state(udev, USB_STATE_NOTATTACHED);
 	dev_info(&udev->dev, "USB disconnect, device number %d\n",
 			udev->devnum);
+
+#if defined(CONFIG_MACH_AR7100) || defined(CONFIG_MACH_AR7240) || defined(CONFIG_LANTIQ)
+        /* Turn USB LED off only if its a last device attached to root hub */
+	if(udev->parent == udev->bus->root_hub)
+		ap_usb_led_off();
+#endif
 
 	/*
 	 * Ensure that the pm runtime code knows that the USB device
@@ -4371,7 +4384,9 @@ hub_port_init(struct usb_hub *hub, struct usb_device *udev, int port1,
 	/* success, speed is known */
 
 	retval = -ENODEV;
-
+#if defined(CONFIG_MACH_AR7100) || defined(CONFIG_MACH_AR7240) || defined(CONFIG_LANTIQ)
+	ap_usb_led_on();
+#endif
 	/* Don't allow speed changes at reset, except usb 3.0 to faster */
 	if (oldspeed != USB_SPEED_UNKNOWN && oldspeed != udev->speed &&
 	    !(oldspeed == USB_SPEED_SUPER && udev->speed > oldspeed)) {
@@ -4437,11 +4452,11 @@ hub_port_init(struct usb_hub *hub, struct usb_device *udev, int port1,
 		udev->ttport = hdev->ttport;
 	} else if (udev->speed != USB_SPEED_HIGH
 			&& hdev->speed == USB_SPEED_HIGH) {
-		if (!hub->tt.hub) {
+/*		if (!hub->tt.hub) {
 			dev_err(&udev->dev, "parent hub has no TT\n");
 			retval = -EINVAL;
 			goto fail;
-		}
+		}*/
 		udev->tt = &hub->tt;
 		udev->ttport = port1;
 	}
@@ -4485,7 +4500,7 @@ hub_port_init(struct usb_hub *hub, struct usb_device *udev, int port1,
 			 * 255 is for WUSB devices, we actually need to use
 			 * 512 (WUSB1.0[4.8.1]).
 			 */
-			for (operations = 0; operations < 3; ++operations) {
+			for (operations = 0; operations < 10; ++operations) {
 				buf->bMaxPacketSize0 = 0;
 				r = usb_control_msg(udev, usb_rcvaddr0pipe(),
 					USB_REQ_GET_DESCRIPTOR, USB_DIR_IN,
@@ -4501,8 +4516,10 @@ hub_port_init(struct usb_hub *hub, struct usb_device *udev, int port1,
 					}
 					/* FALL THROUGH */
 				default:
-					if (r == 0)
+					if (r == 0) {
 						r = -EPROTO;
+						continue;
+					}
 					break;
 				}
 				/*

@@ -65,6 +65,7 @@ void arch_jump_label_transform(struct jump_entry *e,
 	} else
 		*insn_p = insn;
 
+	if (flush_icache_range)
 	flush_icache_range((unsigned long)insn_p,
 			   (unsigned long)insn_p + sizeof(*insn_p));
 

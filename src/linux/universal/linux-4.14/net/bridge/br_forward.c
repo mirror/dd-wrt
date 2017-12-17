@@ -20,6 +20,9 @@
 #include <linux/if_vlan.h>
 #include <linux/netfilter_bridge.h>
 #include "br_private.h"
+#include <linux/inetdevice.h>
+#include <linux/if_arp.h>
+#include <net/arp.h>
 
 /* Don't forward packets to originating port or forwarding disabled */
 static inline int should_deliver(const struct net_bridge_port *p,
@@ -64,7 +67,36 @@ EXPORT_SYMBOL_GPL(br_dev_queue_push_xmit);
 
 int br_forward_finish(struct net *net, struct sock *sk, struct sk_buff *skb)
 {
-	return NF_HOOK(NFPROTO_BRIDGE, NF_BR_POST_ROUTING,
+#ifdef CONFIG_KERNEL_ARP_SPOOFING_PROTECT
+extern int g_arp_spoofing_enable;
+	struct net_device *dev;
+	struct in_device *in_dev;
+	struct arphdr *arp;
+
+	if(g_arp_spoofing_enable)
+	{
+		dev = skb->dev;
+		in_dev = __in_dev_get_rcu(dev);
+
+		if(NULL != in_dev)
+		{
+			if(htons(ETH_P_ARP) == skb->protocol && PACKET_OTHERHOST == skb->pkt_type)
+			{
+				arp = arp_hdr(skb);
+				if(arp->ar_op == htons(ARPOP_REPLY))
+				{
+					if(arp_spoofing_protect(skb))
+					{
+						kfree_skb(skb);
+						return NF_DROP;
+					}
+				}
+			}
+		}
+	}
+#endif
+
+	return BR_HOOK(NFPROTO_BRIDGE, NF_BR_POST_ROUTING,
 		       net, sk, skb, NULL, skb->dev,
 		       br_dev_queue_push_xmit);
 
@@ -175,6 +207,29 @@ static struct net_bridge_port *maybe_deliver(
 
 out:
 	return p;
+}
+
+static void maybe_deliver_addr(struct net_bridge_port *p, struct sk_buff *skb,
+			       const unsigned char *addr, bool local_orig)
+{
+	struct net_device *dev = BR_INPUT_SKB_CB(skb)->brdev;
+	const unsigned char *src = eth_hdr(skb)->h_source;
+
+	if (!should_deliver(p, skb))
+		return;
+
+	/* Even with hairpin, no soliloquies - prevent breaking IPv6 DAD */
+	if (skb->dev == p->dev && ether_addr_equal(src, addr))
+		return;
+
+	skb = skb_copy(skb, GFP_ATOMIC);
+	if (!skb) {
+		dev->stats.tx_dropped++;
+		return;
+	}
+
+	memcpy(eth_hdr(skb)->h_dest, addr, ETH_ALEN);
+	__br_forward(p, skb, local_orig);
 }
 
 /* called under rcu_read_lock */

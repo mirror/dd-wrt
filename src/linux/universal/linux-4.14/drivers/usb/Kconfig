@@ -2,6 +2,8 @@
 # USB device configuration
 #
 
+
+
 config USB_OHCI_BIG_ENDIAN_DESC
 	bool
 
@@ -93,6 +95,10 @@ source "drivers/usb/wusbcore/Kconfig"
 
 source "drivers/usb/host/Kconfig"
 
+source "drivers/usb/dwc_otg/Kconfig"
+
+source "drivers/usb/dwc/Kconfig"
+
 source "drivers/usb/renesas_usbhs/Kconfig"
 
 source "drivers/usb/class/Kconfig"
@@ -163,6 +169,8 @@ source "drivers/usb/phy/Kconfig"
 source "drivers/usb/gadget/Kconfig"
 
 source "drivers/usb/typec/Kconfig"
+
+source "drivers/usb/dwc_otg_ralink/Kconfig"
 
 config USB_LED_TRIG
 	bool "USB LED Triggers"

@@ -646,12 +646,12 @@ static inline u32 hifn_read_1(struct hifn_device *dev, u32 reg)
 
 static inline void hifn_write_0(struct hifn_device *dev, u32 reg, u32 val)
 {
-	writel((__force u32)cpu_to_le32(val), dev->bar[0] + reg);
+	writel(val, dev->bar[0] + reg);
 }
 
 static inline void hifn_write_1(struct hifn_device *dev, u32 reg, u32 val)
 {
-	writel((__force u32)cpu_to_le32(val), dev->bar[1] + reg);
+	writel(val, dev->bar[1] + reg);
 }
 
 static void hifn_wait_puc(struct hifn_device *dev)

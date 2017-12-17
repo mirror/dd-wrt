@@ -15,6 +15,7 @@
 #include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/err.h>
+#include <linux/export.h>
 #include <linux/smp.h>
 #include <linux/jiffies.h>
 #include <linux/clockchips.h>
@@ -22,6 +23,8 @@
 #include <linux/io.h>
 #include <linux/of_irq.h>
 #include <linux/of_address.h>
+#include <linux/module.h>
+#include <linux/moduleparam.h>
 
 #include <asm/smp_twd.h>
 
@@ -241,6 +244,7 @@ static irqreturn_t twd_handler(int irq, void *dev_id)
 
 	return IRQ_NONE;
 }
+#ifndef CONFIG_ARCH_CNS3XXX
 
 static void twd_get_clock(struct device_node *np)
 {
@@ -265,13 +269,14 @@ static void twd_get_clock(struct device_node *np)
 
 	twd_timer_rate = clk_get_rate(twd_clk);
 }
-
+#endif
 /*
  * Setup the local clock events for a CPU.
  */
 static void twd_timer_setup(void)
 {
 	struct clock_event_device *clk = raw_cpu_ptr(twd_evt);
+
 	int cpu = smp_processor_id();
 
 	/*
@@ -286,12 +291,14 @@ static void twd_timer_setup(void)
 	}
 	per_cpu(percpu_setup_called, cpu) = true;
 
+
 	twd_calibrate_rate();
 
 	/*
 	 * The following is done once per CPU the first time .setup() is
 	 * called.
 	 */
+
 	writel_relaxed(0, twd_base + TWD_TIMER_CONTROL);
 
 	clk->name = "local_timer";
@@ -342,7 +349,9 @@ static int __init twd_local_timer_common_register(struct device_node *np)
 				  "arm/timer/twd:starting",
 				  twd_timer_starting_cpu, twd_timer_dying_cpu);
 
+#ifndef CONFIG_ARCH_CNS3XXX
 	twd_get_clock(np);
+#endif
 	if (!of_property_read_bool(np, "always-on"))
 		twd_features |= CLOCK_EVT_FEAT_C3STOP;
 
@@ -379,6 +388,14 @@ int __init twd_local_timer_register(struct twd_local_timer *tlt)
 
 	return twd_local_timer_common_register(NULL);
 }
+
+/* Needed by mpcore_wdt */
+unsigned long twd_timer_get_rate(void)
+{
+	return twd_timer_rate;
+}
+EXPORT_SYMBOL_GPL(twd_timer_get_rate);
+
 
 #ifdef CONFIG_OF
 static int __init twd_local_timer_of_register(struct device_node *np)

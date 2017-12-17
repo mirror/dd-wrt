@@ -283,6 +283,9 @@ static inline int pdev_bad_for_parity(struct pci_dev *dev)
 
 }
 
+#ifdef CONFIG_PLAT_BCM5301X
+extern bool plat_fixup_bus(struct pci_bus *b);
+#endif
 /*
  * pcibios_fixup_bus - Called after each bus is probed,
  * but before its children are examined.
@@ -292,6 +295,12 @@ void pcibios_fixup_bus(struct pci_bus *bus)
 	struct pci_dev *dev;
 	u16 features = PCI_COMMAND_SERR | PCI_COMMAND_PARITY | PCI_COMMAND_FAST_BACK;
 
+
+
+#ifdef CONFIG_PLAT_BCM5301X
+	if (plat_fixup_bus(bus))
+		return;
+#endif
 	/*
 	 * Walk the devices on this bus, working out what we can
 	 * and can't support.
@@ -416,6 +425,14 @@ static int pcibios_init_resource(int busnr, struct pci_sys_data *sys,
 {
 	int ret;
 	struct resource_entry *window;
+#ifdef CONFIG_PLAT_BCM5301X
+	if (list_empty(&sys->resources)) {
+		pci_add_resource_offset(&sys->resources,
+			&ioport_resource, sys->io_offset);
+		pci_add_resource_offset(&sys->resources,
+			 &iomem_resource, sys->mem_offset);    
+	}
+#else
 
 	if (list_empty(&sys->resources)) {
 		pci_add_resource_offset(&sys->resources,
@@ -448,6 +465,7 @@ static int pcibios_init_resource(int busnr, struct pci_sys_data *sys,
 	pci_add_resource_offset(&sys->resources, &sys->io_res,
 				sys->io_offset);
 
+#endif
 	return 0;
 }
 
@@ -609,6 +627,7 @@ resource_size_t pcibios_align_resource(void *data, const struct resource *res,
 
 	return start;
 }
+
 
 void __init pci_map_io_early(unsigned long pfn)
 {

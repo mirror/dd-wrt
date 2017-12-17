@@ -346,6 +346,19 @@ static int phy_bus_match(struct device *dev, struct device_driver *drv)
 	}
 }
 
+static int generic_receive_skb(struct sk_buff *skb)
+{
+	skb->protocol = eth_type_trans(skb, skb->dev);
+	return netif_receive_skb(skb);
+}
+
+static int generic_rx(struct sk_buff *skb)
+{
+	skb->protocol = eth_type_trans(skb, skb->dev);
+	return netif_rx(skb);
+}
+
+
 struct phy_device *phy_device_create(struct mii_bus *bus, int addr, int phy_id,
 				     bool is_c45,
 				     struct phy_c45_device_ids *c45_ids)
@@ -387,6 +400,8 @@ struct phy_device *phy_device_create(struct mii_bus *bus, int addr, int phy_id,
 	dev_set_name(&mdiodev->dev, PHY_ID_FMT, bus->id, addr);
 
 	dev->state = PHY_DOWN;
+	dev->netif_receive_skb = &generic_receive_skb;
+	dev->netif_rx = &generic_rx;
 
 	mutex_init(&dev->lock);
 	INIT_DELAYED_WORK(&dev->state_queue, phy_state_machine);
@@ -408,6 +423,7 @@ struct phy_device *phy_device_create(struct mii_bus *bus, int addr, int phy_id,
 
 	return dev;
 }
+
 EXPORT_SYMBOL(phy_device_create);
 
 /* get_phy_c45_devs_in_pkg - reads a MMD's devices in package registers.
@@ -509,6 +525,7 @@ static int get_phy_c45_ids(struct mii_bus *bus, int addr, u32 *phy_id,
 	return 0;
 }
 
+
 /**
  * get_phy_id - reads the specified addr for its ID.
  * @bus: the target MII bus
@@ -523,7 +540,6 @@ static int get_phy_c45_ids(struct mii_bus *bus, int addr, u32 *phy_id,
  *
  *   In the case of a 802.3-c45 PHY, get_phy_c45_ids() is invoked, and
  *   its return value is in turn returned.
- *
  */
 static int get_phy_id(struct mii_bus *bus, int addr, u32 *phy_id,
 		      bool is_c45, struct phy_c45_device_ids *c45_ids)
@@ -549,6 +565,7 @@ static int get_phy_id(struct mii_bus *bus, int addr, u32 *phy_id,
 
 	return 0;
 }
+EXPORT_SYMBOL(get_phy_id);
 
 /**
  * get_phy_device - reads the specified PHY device and returns its @phy_device
@@ -687,6 +704,19 @@ struct phy_device *phy_find_first(struct mii_bus *bus)
 	return NULL;
 }
 EXPORT_SYMBOL(phy_find_first);
+
+static void phy_link_change(struct phy_device *phydev, bool up, bool do_carrier)
+{
+	struct net_device *netdev = phydev->attached_dev;
+
+	if (do_carrier) {
+		if (up)
+			netif_carrier_on(netdev);
+		else
+			netif_carrier_off(netdev);
+	}
+	phydev->adjust_link(netdev);
+}
 
 static void phy_link_change(struct phy_device *phydev, bool up, bool do_carrier)
 {
@@ -1205,6 +1235,7 @@ out:
 }
 EXPORT_SYMBOL(phy_loopback);
 
+
 /* Generic PHY support and helper functions */
 
 /**
@@ -1438,6 +1469,9 @@ int genphy_update_link(struct phy_device *phydev)
 	int status;
 
 	if (phydev->drv && phydev->drv->update_link)
+		return phydev->drv->update_link(phydev);
+
+	if (phydev->drv->update_link)
 		return phydev->drv->update_link(phydev);
 
 	/* Do a fake read */

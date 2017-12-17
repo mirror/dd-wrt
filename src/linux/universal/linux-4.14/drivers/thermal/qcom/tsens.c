@@ -31,7 +31,7 @@ static int tsens_get_temp(void *data, int *temp)
 
 static int tsens_get_trend(void *p, int trip, enum thermal_trend *trend)
 {
-	const struct tsens_sensor *s = p;
+	struct tsens_sensor *s = p;
 	struct tsens_device *tmdev = s->tmdev;
 
 	if (tmdev->ops->get_trend)
@@ -42,7 +42,8 @@ static int tsens_get_trend(void *p, int trip, enum thermal_trend *trend)
 
 static int  __maybe_unused tsens_suspend(struct device *dev)
 {
-	struct tsens_device *tmdev = dev_get_drvdata(dev);
+	struct tsens_sensor *s = dev_get_drvdata(dev);
+	struct tsens_device *tmdev = s->tmdev;
 
 	if (tmdev->ops && tmdev->ops->suspend)
 		return tmdev->ops->suspend(tmdev);
@@ -52,13 +53,38 @@ static int  __maybe_unused tsens_suspend(struct device *dev)
 
 static int __maybe_unused tsens_resume(struct device *dev)
 {
-	struct tsens_device *tmdev = dev_get_drvdata(dev);
+	struct tsens_sensor *s = dev_get_drvdata(dev);
+	struct tsens_device *tmdev = s->tmdev;
 
 	if (tmdev->ops && tmdev->ops->resume)
 		return tmdev->ops->resume(tmdev);
 
 	return 0;
 }
+
+static int  __maybe_unused tsens_set_trip_temp(void *data, int trip, int temp)
+{
+	struct tsens_sensor *s = data;
+	struct tsens_device *tmdev = s->tmdev;
+
+	if (tmdev->ops && tmdev->ops->set_trip_temp)
+		return tmdev->ops->set_trip_temp(s, trip, temp);
+
+	return 0;
+}
+
+static int __maybe_unused tsens_activate_trip_type(void *data, int trip,
+					enum thermal_trip_activation_mode mode)
+{
+	struct tsens_sensor *s = data;
+	struct tsens_device *tmdev = s->tmdev;
+
+	if (tmdev->ops && tmdev->ops->set_trip_activate)
+		return tmdev->ops->set_trip_activate(s, trip, mode);
+
+	return 0;
+}
+
 
 static SIMPLE_DEV_PM_OPS(tsens_pm_ops, tsens_suspend, tsens_resume);
 
@@ -72,6 +98,9 @@ static const struct of_device_id tsens_table[] = {
 	}, {
 		.compatible = "qcom,msm8996-tsens",
 		.data = &data_8996,
+	}, {
+		.compatible = "qcom,ipq8064-tsens",
+		.data = &data_ipq8064,
 	},
 	{}
 };
@@ -80,6 +109,8 @@ MODULE_DEVICE_TABLE(of, tsens_table);
 static const struct thermal_zone_of_device_ops tsens_of_ops = {
 	.get_temp = tsens_get_temp,
 	.get_trend = tsens_get_trend,
+	.set_trip_temp = tsens_set_trip_temp,
+	.set_trip_activate = tsens_activate_trip_type,
 };
 
 static int tsens_register(struct tsens_device *tmdev)
@@ -128,7 +159,7 @@ static int tsens_probe(struct platform_device *pdev)
 	if (id)
 		data = id->data;
 	else
-		data = &data_8960;
+		return -EINVAL;
 
 	if (data->num_sensors <= 0) {
 		dev_err(dev, "invalid number of sensors\n");
@@ -143,6 +174,9 @@ static int tsens_probe(struct platform_device *pdev)
 	tmdev->dev = dev;
 	tmdev->num_sensors = data->num_sensors;
 	tmdev->ops = data->ops;
+
+	tmdev->tsens_irq = platform_get_irq(pdev, 0);
+
 	for (i = 0;  i < tmdev->num_sensors; i++) {
 		if (data->hw_ids)
 			tmdev->sensor[i].hw_id = data->hw_ids[i];

@@ -249,7 +249,7 @@ err_out5:
 err_out4:
 	unregister_netdevice_notifier(&br_device_notifier);
 err_out3:
-	br_nf_core_fini();
+
 err_out2:
 	unregister_pernet_subsys(&br_net_ops);
 err_out1:

@@ -412,6 +412,7 @@ struct phy_device {
 	bool suspended;
 	bool sysfs_links;
 	bool loopback_enabled;
+	bool no_auto_carrier_off;
 
 	enum phy_state state;
 
@@ -478,6 +479,20 @@ struct phy_device {
 
 	void (*phy_link_change)(struct phy_device *, bool up, bool do_carrier);
 	void (*adjust_link)(struct net_device *dev);
+
+	/*
+	 * By default these point to the original functions
+	 * with the same name. adding them to the phy_device
+	 * allows the phy driver to override them for packet
+	 * mangling if the ethernet driver supports it
+	 * This is required to support some really horrible
+	 * switches such as the Marvell 88E6060
+	 */
+	int (*netif_receive_skb)(struct sk_buff *skb);
+	int (*netif_rx)(struct sk_buff *skb);
+
+	/* alignment offset for packets */
+	int pkt_align;
 };
 #define to_phy_device(d) container_of(to_mdio_device(d), \
 				      struct phy_device, mdio)
@@ -681,24 +696,6 @@ struct phy_fixup {
 	u32 phy_uid_mask;
 	int (*run)(struct phy_device *phydev);
 };
-
-const char *phy_speed_to_str(int speed);
-const char *phy_duplex_to_str(unsigned int duplex);
-
-/* A structure for mapping a particular speed and duplex
- * combination to a particular SUPPORTED and ADVERTISED value
- */
-struct phy_setting {
-	u32 speed;
-	u8 duplex;
-	u8 bit;
-};
-
-const struct phy_setting *
-phy_lookup_setting(int speed, int duplex, const unsigned long *mask,
-		   size_t maxbit, bool exact);
-size_t phy_speeds(unsigned int *speeds, size_t size,
-		  unsigned long *mask, size_t maxbit);
 
 /**
  * phy_read_mmd - Convenience function for reading a register

@@ -11,10 +11,10 @@
 
 #include <linux/irq.h>
 #include <linux/pci.h>
-#include <linux/init.h>
+#include <linux/module.h>
 #include <linux/platform_device.h>
-#include <asm/mach-ath79/ath79.h>
-#include <asm/mach-ath79/ar71xx_regs.h>
+#include <asm/mach-ar71xx/ar71xx.h>
+#include <asm/mach-ar71xx/pci.h>
 
 #define AR724X_PCI_REG_RESET		0x18
 #define AR724X_PCI_REG_INT_STATUS	0x4c
@@ -35,6 +35,7 @@
 				 PCI_COMMAND_SERR |		\
 				 PCI_COMMAND_FAST_BACK)
 
+int ath_nopcie=0;
 struct ar724x_pci_controller {
 	void __iomem *devcfg_base;
 	void __iomem *ctrl_base;
@@ -312,7 +313,7 @@ static void ar724x_pci_irq_init(struct ar724x_pci_controller *apc,
 	__raw_writel(0, base + AR724X_PCI_REG_INT_MASK);
 	__raw_writel(0, base + AR724X_PCI_REG_INT_STATUS);
 
-	apc->irq_base = ATH79_PCI_IRQ_BASE + (id * AR724X_PCI_IRQ_COUNT);
+	apc->irq_base = AR71XX_PCI_IRQ_BASE + (id * AR724X_PCI_IRQ_COUNT);
 
 	for (i = apc->irq_base;
 	     i < apc->irq_base + AR724X_PCI_IRQ_COUNT; i++) {
@@ -384,8 +385,10 @@ static int ar724x_pci_probe(struct platform_device *pdev)
 	apc->pci_controller.mem_resource = &apc->mem_res;
 
 	apc->link_up = ar724x_pci_check_link(apc);
-	if (!apc->link_up)
+	if (!apc->link_up) {
+		ath_nopcie=1;
 		dev_warn(&pdev->dev, "PCIe link is down\n");
+	}
 
 	ar724x_pci_irq_init(apc, id);
 

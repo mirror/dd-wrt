@@ -1021,6 +1021,11 @@ static int spi_transfer_one_message(struct spi_controller *ctlr,
 	list_for_each_entry(xfer, &msg->transfers, transfer_list) {
 		trace_spi_transfer_start(msg, xfer);
 
+#ifdef CONFIG_SPI_CNS3XXX
+		xfer->last_in_message_list =
+			list_is_last(&xfer->transfer_list, &msg->transfers);
+#endif
+
 		spi_statistics_add_transfer_stats(statm, xfer, ctlr);
 		spi_statistics_add_transfer_stats(stats, xfer, ctlr);
 

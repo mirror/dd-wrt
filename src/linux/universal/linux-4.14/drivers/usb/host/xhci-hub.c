@@ -27,6 +27,10 @@
 #include "xhci.h"
 #include "xhci-trace.h"
 
+#ifdef CONFIG_BCM47XX
+extern int usb2mode;
+#endif
+
 #define	PORT_WAKE_BITS	(PORT_WKOC_E | PORT_WKDISC_E | PORT_WKCONN_E)
 #define	PORT_RWC_BITS	(PORT_CSC | PORT_PEC | PORT_WRC | PORT_OCC | \
 			 PORT_RC | PORT_PLC | PORT_PE)
@@ -591,7 +595,20 @@ static void xhci_set_port_power(struct xhci_hcd *xhci, struct usb_hcd *hcd,
 	temp = xhci_port_state_to_neutral(temp);
 	if (on) {
 		/* Power on */
-		writel(temp | PORT_POWER, addr);
+#ifdef CONFIG_BCM47XX
+			if(usb2mode != 0){
+				writel(0x0, port_array[wIndex]);
+
+				if(usb2mode == 1){ // 0bc2:a0a1
+					writel(0x0 & ~PORT_PE | PORT_POWER | PORT_LINK_STROBE & ~PORT_PLS_MASK, port_array[wIndex]);
+				}
+			}
+			else{
+				writel(temp | PORT_POWER, port_array[wIndex]);
+			}
+#else
+			writel(temp | PORT_POWER, port_array[wIndex]);
+#endif
 		temp = readl(addr);
 		xhci_dbg(xhci, "set port power, actual port %d status  = 0x%x\n",
 						index, temp);

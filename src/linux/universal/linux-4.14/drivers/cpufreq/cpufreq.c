@@ -2475,7 +2475,7 @@ int cpufreq_register_driver(struct cpufreq_driver *driver_data)
 	     (!!driver_data->get_intermediate != !!driver_data->target_intermediate))
 		return -EINVAL;
 
-	pr_debug("trying to register driver %s\n", driver_data->name);
+	printk(KERN_INFO "trying to register driver %s\n", driver_data->name);
 
 	/* Protect against concurrent CPU online/offline. */
 	cpus_read_lock();

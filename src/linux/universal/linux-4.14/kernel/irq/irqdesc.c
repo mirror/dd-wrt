@@ -557,6 +557,7 @@ static void free_desc(unsigned int irq)
 	raw_spin_unlock_irqrestore(&desc->lock, flags);
 }
 
+
 static inline int alloc_descs(unsigned int start, unsigned int cnt, int node,
 			      const struct cpumask *affinity,
 			      struct module *owner)
@@ -637,7 +638,7 @@ int __handle_domain_irq(struct irq_domain *domain, unsigned int hwirq,
 	 * Some hardware gives randomly wrong interrupts.  Rather
 	 * than crashing, do something sensible.
 	 */
-	if (unlikely(!irq || irq >= nr_irqs)) {
+	if (unlikely(irq >= nr_irqs)) {
 		ack_bad_irq(irq);
 		ret = -EINVAL;
 	} else {
@@ -925,3 +926,20 @@ unsigned int kstat_irqs_usr(unsigned int irq)
 	irq_unlock_sparse();
 	return sum;
 }
+
+
+/**
+ * dynamic_irq_cleanup - cleanup a dynamically allocated irq
+ * @irq:	irq number to initialize
+ */
+
+void dynamic_irq_cleanup(unsigned int irq)
+{
+	struct irq_desc *desc = irq_to_desc(irq);
+	unsigned long flags;
+
+	raw_spin_lock_irqsave(&desc->lock, flags);
+	desc_set_defaults(irq, desc, irq_desc_get_node(desc), NULL, NULL);
+	raw_spin_unlock_irqrestore(&desc->lock, flags);
+}
+

@@ -59,6 +59,7 @@
 
 /* Default value */
 #define IMX_I2C_BIT_RATE	100000	/* 100kHz */
+#define IMX_I2C_MAX_RETRIES	3	/* number of retries to attempt */
 
 /*
  * Enable DMA if transfer byte size is bigger than this threshold.
@@ -460,7 +461,9 @@ static int i2c_imx_acked(struct imx_i2c_struct *i2c_imx)
 {
 	if (imx_i2c_read_reg(i2c_imx, IMX_I2C_I2SR) & I2SR_RXAK) {
 		dev_dbg(&i2c_imx->adapter.dev, "<%s> No ACK\n", __func__);
-		return -ENXIO;  /* No ACK */
+		if (i2c_imx->adapter.retries)
+			return -EAGAIN;
+		return -EAGAIN; /* try again */
 	}
 
 	dev_dbg(&i2c_imx->adapter.dev, "<%s> ACK received\n", __func__);
@@ -1084,7 +1087,12 @@ static int i2c_imx_probe(struct platform_device *pdev)
 	i2c_imx->adapter.dev.parent	= &pdev->dev;
 	i2c_imx->adapter.nr		= pdev->id;
 	i2c_imx->adapter.dev.of_node	= pdev->dev.of_node;
+	i2c_imx->adapter.retries	= IMX_I2C_MAX_RETRIES;
 	i2c_imx->base			= base;
+	if (of_machine_is_compatible("gw,ventana") && phy_addr == 0x021a0000) {
+		dev_info(&pdev->dev, "Adding retries for Ventana GSC\n");
+		i2c_imx->adapter.retries = 3;
+	}
 
 	/* Get I2C clock */
 	i2c_imx->clk = devm_clk_get(&pdev->dev, NULL);

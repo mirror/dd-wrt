@@ -19,6 +19,7 @@
 #include <linux/io.h>
 #include <linux/irq.h>
 #include <linux/irqchip.h>
+#include <linux/delay.h>
 #include <linux/of.h>
 #include <linux/of_address.h>
 #include <linux/of_irq.h>
@@ -38,6 +39,7 @@
 #include "common.h"
 #include "cpuidle.h"
 #include "hardware.h"
+
 
 /* For imx6q sabrelite board: set KSZ9021RN RGMII pad skew */
 static int ksz9021rn_phy_fixup(struct phy_device *phydev)
@@ -84,6 +86,7 @@ static int ksz9031rn_phy_fixup(struct phy_device *dev)
  * fixup for PLX PEX8909 bridge to configure GPIO1-7 as output High
  * as they are used for slots1-7 PERST#
  */
+unsigned int ventana_plx_gpio = 0xfe;
 static void ventana_pciesw_early_fixup(struct pci_dev *dev)
 {
 	u32 dw;
@@ -95,18 +98,24 @@ static void ventana_pciesw_early_fixup(struct pci_dev *dev)
 		return;
 
 	pci_read_config_dword(dev, 0x62c, &dw);
+	dev_info(&dev->dev, "de-asserting downstream PERST# 0x%04x\n",
+		 ventana_plx_gpio);
 	dw |= 0xaaa8; // GPIO1-7 outputs
 	pci_write_config_dword(dev, 0x62c, dw);
-
-	pci_read_config_dword(dev, 0x644, &dw);
-	dw |= 0xfe;   // GPIO1-7 output high
-	pci_write_config_dword(dev, 0x644, dw);
-
+	pci_write_config_dword(dev, 0x644, ventana_plx_gpio);
 	msleep(100);
 }
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8609, ventana_pciesw_early_fixup);
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8606, ventana_pciesw_early_fixup);
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8604, ventana_pciesw_early_fixup);
+
+static int __init setup_ventana_plx_gpio(char *str)
+{
+	get_option(&str, &ventana_plx_gpio);
+
+	return 0;
+}
+early_param("plx_gpio", setup_ventana_plx_gpio);
 
 static int ar8031_phy_fixup(struct phy_device *dev)
 {
@@ -322,9 +331,10 @@ static void __init imx6q_opp_check_speed_grading(struct device *cpu_dev)
 	val >>= OCOTP_CFG3_SPEED_SHIFT;
 	val &= 0x3;
 
-	if ((val != OCOTP_CFG3_SPEED_1P2GHZ) && cpu_is_imx6q())
-		if (dev_pm_opp_disable(cpu_dev, 1200000000))
-			pr_warn("failed to disable 1.2 GHz OPP\n");
+
+	if (val != OCOTP_CFG3_SPEED_1P2GHZ) {
+		printk(KERN_INFO "disable 1,2 Ghz support (okay we wont for testing)\n");
+	}
 	if (val < OCOTP_CFG3_SPEED_996MHZ)
 		if (dev_pm_opp_disable(cpu_dev, 996000000))
 			pr_warn("failed to disable 996 MHz OPP\n");
@@ -399,7 +409,7 @@ static void __init imx6q_init_irq(void)
 	imx6_pm_ccm_init("fsl,imx6q-ccm");
 }
 
-static const char * const imx6q_dt_compat[] __initconst = {
+static const char *imx6q_dt_compat[] __initdata = {
 	"fsl,imx6dl",
 	"fsl,imx6q",
 	"fsl,imx6qp",

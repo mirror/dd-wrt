@@ -1244,6 +1244,7 @@ static const struct msm_pinctrl_soc_data msm8960_pinctrl = {
 	.groups = msm8960_groups,
 	.ngroups = ARRAY_SIZE(msm8960_groups),
 	.ngpios = NUM_GPIO_PINGROUPS,
+	.gpio_pull = &msm_gpio_pull,
 };
 
 static int msm8960_pinctrl_probe(struct platform_device *pdev)

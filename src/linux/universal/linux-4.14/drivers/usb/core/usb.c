@@ -859,6 +859,36 @@ int __usb_get_extra_descriptor(char *buffer, unsigned size,
 }
 EXPORT_SYMBOL_GPL(__usb_get_extra_descriptor);
 
+
+static struct usb_device *match_device_name(struct usb_device *dev,
+					    const char *name)
+{
+	struct usb_device *ret_dev = NULL;
+	struct usb_device *childdev = NULL;
+	int child;
+
+	dev_dbg(&dev->dev, "check for name %s ...\n", name);
+
+	/* see if this device matches */
+	if (strcmp(dev_name(&dev->dev), name) == 0 ) {
+		dev_dbg(&dev->dev, "matched this device!\n");
+		ret_dev = usb_get_dev(dev);
+		goto exit;
+	}
+	/* look through all of the children of this device */
+	usb_hub_for_each_child(dev, child, childdev) {
+		if (childdev) {
+			usb_lock_device(childdev);
+			ret_dev = match_device_name(childdev, name);
+			usb_unlock_device(childdev);
+			if (ret_dev)
+				goto exit;
+		}
+	}
+exit:
+	return ret_dev;
+}
+
 /**
  * usb_alloc_coherent - allocate dma-consistent buffer for URB_NO_xxx_DMA_MAP
  * @dev: device the buffer will be used with
@@ -1226,6 +1256,9 @@ static int __init usb_init(void)
 	retval = usb_devio_init();
 	if (retval)
 		goto usb_devio_init_failed;
+	retval = usbfs_init();
+	if (retval)
+		goto fs_init_failed;
 	retval = usb_hub_init();
 	if (retval)
 		goto hub_init_failed;
@@ -1235,6 +1268,8 @@ static int __init usb_init(void)
 
 	usb_hub_cleanup();
 hub_init_failed:
+	usbfs_cleanup();
+fs_init_failed:
 	usb_devio_cleanup();
 usb_devio_init_failed:
 	usb_deregister(&usbfs_driver);
@@ -1262,6 +1297,7 @@ static void __exit usb_exit(void)
 
 	usb_deregister_device_driver(&usb_generic_driver);
 	usb_major_cleanup();
+	usbfs_cleanup();
 	usb_deregister(&usbfs_driver);
 	usb_devio_cleanup();
 	usb_hub_cleanup();

@@ -3,7 +3,7 @@
  * under the terms of the GNU General Public License version 2 as published
  * by the Free Software Foundation.
  *
- * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+ * Copyright (C) 2008-2014 Imre Kaloz <kaloz@openwrt.org>
  * Copyright (C) 2008-2009 Gabor Juhos <juhosg@openwrt.org>
  * Copyright (C) 2013 John Crispin <john@phrozen.org>
  */
@@ -15,6 +15,7 @@
 #include <linux/of_fdt.h>
 #include <linux/kernel.h>
 #include <linux/bootmem.h>
+#include <linux/module.h>
 #include <linux/of_platform.h>
 #include <linux/of_address.h>
 
@@ -26,6 +27,7 @@
 #include "common.h"
 
 __iomem void *rt_sysc_membase;
+EXPORT_SYMBOL(rt_sysc_membase);
 __iomem void *rt_memc_membase;
 
 __iomem void *plat_of_remap_node(const char *node)
@@ -63,6 +65,19 @@ static int __init early_init_dt_find_memory(unsigned long node,
 
 	return 0;
 }
+
+static int chosen_dtb;
+
+static int __init early_init_dt_find_chosen(unsigned long node, const char *uname,
+				     int depth, void *data)
+{
+	if (depth == 1 && !strcmp(uname, "chosen"))
+		chosen_dtb = 1;
+
+	return 0;
+}
+
+extern struct boot_param_header __image_dtb;
 
 void __init plat_mem_setup(void)
 {

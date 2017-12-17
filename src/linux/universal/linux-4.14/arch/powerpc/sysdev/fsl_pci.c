@@ -1089,6 +1089,7 @@ int fsl_pci_mcheck_exception(struct pt_regs *regs)
 #if defined(CONFIG_FSL_SOC_BOOKE) || defined(CONFIG_PPC_86xx)
 static const struct of_device_id pci_ids[] = {
 	{ .compatible = "fsl,mpc8540-pci", },
+	{ .compatible = "fsl,mpc8540-pcie", },
 	{ .compatible = "fsl,mpc8548-pcie", },
 	{ .compatible = "fsl,mpc8610-pci", },
 	{ .compatible = "fsl,mpc8641-pcie", },
@@ -1336,6 +1337,7 @@ static struct platform_driver fsl_pci_driver = {
 	.probe = fsl_pci_probe,
 };
 
+#if !defined(CONFIG_RB_PPC) && !defined(CONFIG_RB800) && !defined(CONFIG_RB1000)
 static int __init fsl_pci_init(void)
 {
 #ifdef CONFIG_PM_SLEEP
@@ -1344,4 +1346,13 @@ static int __init fsl_pci_init(void)
 	return platform_driver_register(&fsl_pci_driver);
 }
 arch_initcall(fsl_pci_init);
+#else
+int __init fsl_pci_init(void)
+{
+#ifdef CONFIG_PM_SLEEP
+	register_syscore_ops(&pci_syscore_pm_ops);
+#endif
+	return platform_driver_register(&fsl_pci_driver);
+}
+#endif
 #endif

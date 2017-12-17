@@ -45,6 +45,16 @@
 #include <asm/irq.h>
 #include <asm/unaligned.h>
 
+#if defined(CONFIG_MACH_AR7240) || defined(CONFIG_WASP_SUPPORT)
+
+#ifdef CONFIG_WASP_SUPPORT
+#include "../gadget/ath_defs.h"
+#else
+#include "../gadget/ar9130_defs.h"
+#endif
+#endif
+
+
 #if defined(CONFIG_PPC_PS3)
 #include <asm/firmware.h>
 #endif
@@ -252,6 +262,58 @@ int ehci_reset(struct ehci_hcd *ehci)
 	command |= CMD_RESET;
 	dbg_cmd (ehci, "reset", command);
 	ehci_writel(ehci, command, &ehci->regs->command);
+
+#if ((defined(CONFIG_MACH_AR7240) || defined(CONFIG_WASP_SUPPORT)) && !defined(CONFIG_AP135)  && !defined(CONFIG_DIR859)) || defined(CONFIG_MMS344) 
+#define ath_usb_reg_wr		ar7240_reg_wr
+#define ath_usb_reg_rd		ar7240_reg_rd
+#define ATH_USB_USB_MODE	AR9130_USB_MODE
+	udelay(1000);
+#ifdef CONFIG_WASP_SUPPORT
+	ath_usb_reg_wr(ATH_USB_USB_MODE,
+			(ath_usb_reg_rd(ATH_USB_USB_MODE) | 0x13));
+#else
+	ath_usb_reg_wr(ATH_USB_USB_MODE,
+			(ath_usb_reg_rd(ATH_USB_USB_MODE) | 0x03));
+#endif
+	printk("%s Intialize USB CONTROLLER in host mode: %x\n",
+			__func__, ath_usb_reg_rd(ATH_USB_USB_MODE));
+
+	udelay(1000);
+	writel((readl(&ehci->regs->port_status[0]) | (1 << 28) ), &ehci->regs->port_status[0]);
+	printk("%s Port Status %x \n", __func__, readl(&ehci->regs->port_status[0]));
+#endif
+
+	if (ehci->qca_force_host_mode) {
+		u32 usbmode;
+
+		udelay(1000);
+
+		usbmode = ehci_readl(ehci, &ehci->regs->usbmode);
+		usbmode |= USBMODE_CM_HC | (1 << 4);
+		ehci_writel(ehci, usbmode, &ehci->regs->usbmode);
+
+		printk(KERN_EMERG "forced host mode, usbmode: %08x\n",
+			 ehci_readl(ehci, &ehci->regs->usbmode));
+	}
+
+	if (ehci->qca_force_16bit_ptw) {
+		u32 port_status;
+
+		udelay(1000);
+
+		/* enable 16-bit UTMI interface */
+		port_status = ehci_readl(ehci, &ehci->regs->port_status[0]);
+		port_status |= BIT(28);
+		ehci_writel(ehci, port_status, &ehci->regs->port_status[0]);
+
+		printk(KERN_EMERG "16-bit UTMI interface enabled, status: %08x\n",
+			 ehci_readl(ehci, &ehci->regs->port_status[0]));
+	}
+
+	if (ehci->reset_notifier)
+		ehci->reset_notifier(ehci_to_hcd(ehci));
+
+
 	ehci->rh_state = EHCI_RH_HALTED;
 	ehci->next_statechange = jiffies;
 	retval = ehci_handshake(ehci, &ehci->regs->command,
@@ -781,6 +843,18 @@ static irqreturn_t ehci_irq (struct usb_hcd *hcd)
 		/* kick root hub later */
 		pcd_status = status;
 
+#ifdef CONFIG_WASP_SUPPORT
+#define ath_reg_wr		ar7240_reg_wr
+#define ath_reg_rd		ar7240_reg_rd
+
+#define USB_PHY_CTRL5 0xb8116c94
+		if((ath_reg_rd(&ehci->regs->status) & STS_PCD) && (hcd->state != HC_STATE_SUSPENDED) && \
+			((1<<USB_PORT_STAT_HIGH_SPEED) == ehci_port_speed(ehci, ehci_readl(ehci, &ehci->regs->port_status [0])))) {
+	                ath_reg_wr (USB_PHY_CTRL5, (ath_reg_rd(USB_PHY_CTRL5)|((1<<17) | (1<<22) | (1<<23))) & (~((0x3<<18) | (0x1<<20))));
+	                ath_reg_wr (USB_PHY_CTRL5, (ath_reg_rd(USB_PHY_CTRL5)) & (~(1<<17)));
+	        }
+#endif
+
 		/* resume root hub? */
 		if (ehci->rh_state == EHCI_RH_SUSPENDED)
 			usb_hcd_resume_root_hub(hcd);
@@ -1301,6 +1375,21 @@ MODULE_LICENSE ("GPL");
 #ifdef CONFIG_SPARC_LEON
 #include "ehci-grlib.c"
 #define PLATFORM_DRIVER		ehci_grlib_driver
+#endif
+
+#ifdef CONFIG_USB_EHCI_AR9130
+#include "ehci-ar71xx.c"
+#define PLATFORM_DRIVER		ehci_ar71xx_driver
+#endif
+
+#ifdef CONFIG_USB_EHCI_AR7100
+#include "ehci-ar71xx.c"
+#define PLATFORM_DRIVER		ehci_ar71xx_driver
+#endif
+
+#if defined (CONFIG_RT3XXX_EHCI) || defined (CONFIG_RT3XXX_EHCI_MODULE)
+#include "ehci-rt3xxx.c"
+#define PLATFORM_DRIVER     rt3xxx_ehci_driver
 #endif
 
 #ifdef CONFIG_USB_EHCI_MV

@@ -370,6 +370,58 @@ static void au_serial_dl_write(struct uart_8250_port *up, int value)
 
 #endif
 
+#ifdef CONFIG_SERIAL_8250_RM9K
+
+static const u8
+	regmap_in[8] = {
+		[UART_RX]	= 0x00,
+		[UART_IER]	= 0x0c,
+		[UART_IIR]	= 0x14,
+		[UART_LCR]	= 0x1c,
+		[UART_MCR]	= 0x20,
+		[UART_LSR]	= 0x24,
+		[UART_MSR]	= 0x28,
+		[UART_SCR]	= 0x2c
+	},
+	regmap_out[8] = {
+		[UART_TX] 	= 0x04,
+		[UART_IER]	= 0x0c,
+		[UART_FCR]	= 0x18,
+		[UART_LCR]	= 0x1c,
+		[UART_MCR]	= 0x20,
+		[UART_LSR]	= 0x24,
+		[UART_MSR]	= 0x28,
+		[UART_SCR]	= 0x2c
+	};
+
+static unsigned int rm9k_serial_in(struct uart_port *p, int offset)
+{
+	offset = regmap_in[offset] << p->regshift;
+	return readl(p->membase + offset);
+}
+
+static void rm9k_serial_out(struct uart_port *p, int offset, int value)
+{
+	offset = regmap_out[offset] << p->regshift;
+	writel(value, p->membase + offset);
+}
+
+static int rm9k_serial_dl_read(struct uart_8250_port *up)
+{
+	return ((__raw_readl(up->port.membase + 0x10) << 8) |
+		(__raw_readl(up->port.membase + 0x08) & 0xff)) & 0xffff;
+}
+
+
+static void rm9k_serial_dl_write(struct uart_8250_port *up, int value)
+{
+	__raw_writel(value, up->port.membase + 0x08);
+	__raw_writel(value >> 8, up->port.membase + 0x10);
+}
+
+#endif
+
+
 static unsigned int hub6_serial_in(struct uart_port *p, int offset)
 {
 	offset = offset << p->regshift;
@@ -406,6 +458,20 @@ static unsigned int mem16_serial_in(struct uart_port *p, int offset)
 {
 	offset = offset << p->regshift;
 	return readw(p->membase + offset);
+}
+
+static unsigned int memdelay_serial_in(struct uart_port *p, int offset)
+{
+	struct uart_8250_port *up = (struct uart_8250_port *)p;
+	udelay(up->port.rw_delay);
+	return mem_serial_in(p, offset);
+}
+
+static void memdelay_serial_out(struct uart_port *p, int offset, int value)
+{
+	struct uart_8250_port *up = (struct uart_8250_port *)p;
+	udelay(up->port.rw_delay);
+	mem_serial_out(p, offset, value);
 }
 
 static void mem32_serial_out(struct uart_port *p, int offset, int value)
@@ -474,6 +540,18 @@ static void set_io_from_upio(struct uart_port *p)
 		p->serial_in = mem32_serial_in;
 		p->serial_out = mem32_serial_out;
 		break;
+#ifdef CONFIG_SERIAL_8250_RM9K
+	case UPIO_RM9000:
+		p->serial_in = rm9k_serial_in;
+		p->serial_out = rm9k_serial_out;
+		up->dl_read = rm9k_serial_dl_read;
+		up->dl_write = rm9k_serial_dl_write;
+		break;
+#endif
+	case UPIO_MEM_DELAY:
+		p->serial_in = memdelay_serial_in;
+		p->serial_out = memdelay_serial_out;
+		break;
 
 	case UPIO_MEM32BE:
 		p->serial_in = mem32be_serial_in;
@@ -507,6 +585,7 @@ serial_port_out_sync(struct uart_port *p, int offset, int value)
 	case UPIO_MEM16:
 	case UPIO_MEM32:
 	case UPIO_MEM32BE:
+	case UPIO_MEM_DELAY:
 	case UPIO_AU:
 		p->serial_out(p, offset, value);
 		p->serial_in(p, UART_LCR);	/* safe, no side-effects */
@@ -2830,6 +2909,7 @@ static int serial8250_request_std_resource(struct uart_8250_port *up)
 	case UPIO_AU:
 	case UPIO_TSI:
 	case UPIO_MEM32:
+	case UPIO_MEM_DELAY:
 	case UPIO_MEM32BE:
 	case UPIO_MEM16:
 	case UPIO_MEM:
@@ -2868,6 +2948,7 @@ static void serial8250_release_std_resource(struct uart_8250_port *up)
 	case UPIO_AU:
 	case UPIO_TSI:
 	case UPIO_MEM32:
+	case UPIO_MEM_DELAY:
 	case UPIO_MEM32BE:
 	case UPIO_MEM16:
 	case UPIO_MEM:

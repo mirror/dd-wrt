@@ -113,7 +113,7 @@ static ssize_t bin_attr_nvmem_read(struct file *filp, struct kobject *kobj,
 
 	rc = nvmem_reg_read(nvmem, pos, buf, count);
 
-	if (rc)
+	if (rc < 0)
 		return rc;
 
 	return count;
@@ -147,7 +147,7 @@ static ssize_t bin_attr_nvmem_write(struct file *filp, struct kobject *kobj,
 
 	rc = nvmem_reg_write(nvmem, pos, buf, count);
 
-	if (rc)
+	if (rc < 0)
 		return rc;
 
 	return count;

@@ -125,6 +125,17 @@ config AHCI_BRCM
 
 	  If unsure, say N.
 
+config SATA_AHCI_CNS3XXX
+	bool "AHCI Support on the Cavium Networks CNS3xxx SOC"
+	depends on ARCH_CNS3XXX
+	depends on SATA_AHCI_PLATFORM
+	help
+	  This option enables AHCI platform driver to support CNS3xxx
+	  System-on-Chip devices. This is only needed when using CNS3xxx AHCI
+	  controller.
+
+	  If unsure, say N.
+
 config AHCI_DA850
 	tristate "DaVinci DA850 AHCI SATA support"
 	depends on ARCH_DAVINCI_DA850
@@ -1057,6 +1068,15 @@ config PATA_QDI
 	select PATA_LEGACY
 	help
 	  Support for QDI 6500 and 6580 PATA controllers on VESA local bus.
+
+config PATA_RB153_CF
+	tristate "RouterBOARD 153 Compact Flash support"
+	depends on ADM5120_MACH_RB_153
+	help
+	  This option enables support for a Compact Flash connected on
+	  the RouterBOARD 153.
+
+	  If unsure, say N.
 
 config PATA_RB532
 	tristate "RouterBoard 532 PATA CompactFlash support"

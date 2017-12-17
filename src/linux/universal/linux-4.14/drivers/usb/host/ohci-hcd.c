@@ -1245,6 +1245,16 @@ MODULE_LICENSE ("GPL");
 #define PLATFORM_DRIVER		ohci_hcd_tilegx_driver
 #endif
 
+#ifdef CONFIG_USB_OHCI_AR7100
+#include "ohci-ar71xx.c"
+#define PLATFORM_DRIVER		ohci_hcd_ar71xx_driver
+#endif
+
+#ifdef CONFIG_USB_OHCI_AR7240
+#include "ohci-ar7240.c"
+#define PLATFORM_DRIVER		ohci_hcd_ar7240_driver
+#endif
+
 static int __init ohci_hcd_mod_init(void)
 {
 	int retval = 0;

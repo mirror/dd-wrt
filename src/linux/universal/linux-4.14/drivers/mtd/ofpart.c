@@ -19,12 +19,14 @@
 #include <linux/mtd/mtd.h>
 #include <linux/slab.h>
 #include <linux/mtd/partitions.h>
+#include <asm/setup.h>
 
 static bool node_has_compatible(struct device_node *pp)
 {
 	return of_get_property(pp, "compatible", NULL);
 }
 
+static int mangled_rootblock;
 static int parse_ofpart_partitions(struct mtd_info *master,
 				   const struct mtd_partition **pparts,
 				   struct mtd_part_parser_data *data)
@@ -33,6 +35,7 @@ static int parse_ofpart_partitions(struct mtd_info *master,
 	struct device_node *mtd_node;
 	struct device_node *ofpart_node;
 	const char *partname;
+	const char *owrtpart = "ubi";
 	struct device_node *pp;
 	int nr_parts, i, ret = 0;
 	bool dedicated = true;
@@ -42,6 +45,17 @@ static int parse_ofpart_partitions(struct mtd_info *master,
 	mtd_node = mtd_get_of_node(master);
 	if (!mtd_node)
 		return 0;
+
+#ifdef CONFIG_ARCH_MVEBU
+	for (i = 0;i < COMMAND_LINE_SIZE - sizeof("/dev/mtdblockxx"); i++) {
+	    if (!memcmp(&boot_command_line[i],"/dev/mtdblock",13)) {
+		    printk(KERN_INFO "found commandline\n");
+		    mangled_rootblock = boot_command_line[i + 13] - '0';
+		    break;
+	    }
+	}
+	printk(KERN_INFO "rename part %d to ubi",mangled_rootblock);
+#endif
 
 	ofpart_node = of_get_child_by_name(mtd_node, "partitions");
 	if (!ofpart_node) {
@@ -67,6 +81,9 @@ static int parse_ofpart_partitions(struct mtd_info *master,
 
 		nr_parts++;
 	}
+	#ifdef CONFIG_SOC_IMX6
+		nr_parts++; // for nvram
+	#endif
 
 	if (nr_parts == 0)
 		return 0;
@@ -110,9 +127,14 @@ static int parse_ofpart_partitions(struct mtd_info *master,
 		parts[i].size = of_read_number(reg + a_cells, s_cells);
 		parts[i].of_node = pp;
 
-		partname = of_get_property(pp, "label", &len);
-		if (!partname)
-			partname = of_get_property(pp, "name", &len);
+		if (mangled_rootblock && (i == mangled_rootblock)) {
+				partname = owrtpart;
+		} else {
+			partname = of_get_property(pp, "label", &len);
+
+			if (!partname)
+				partname = of_get_property(pp, "name", &len);
+		}
 		parts[i].name = partname;
 
 		if (of_get_property(pp, "read-only", &len))
@@ -121,6 +143,17 @@ static int parse_ofpart_partitions(struct mtd_info *master,
 		if (of_get_property(pp, "lock", &len))
 			parts[i].mask_flags |= MTD_POWERUP_LOCK;
 
+		#ifdef CONFIG_SOC_IMX6
+		// for ventana, we hack a nvram partition into the layout
+		if (!strcmp(partname,"env")) {
+			(*pparts)[i].size -= 0x80000;
+			i++;
+			(*pparts)[i].offset = (*pparts)[i-1].offset + (*pparts)[i-1].size;
+			(*pparts)[i].size = 0x80000;	
+			(*pparts)[i].mask_flags = 0;	
+			(*pparts)[i].name = "nvram";
+		}    
+		#endif
 		i++;
 	}
 
@@ -211,6 +244,18 @@ static int __init ofpart_parser_init(void)
 	register_mtd_parser(&ofoldpart_parser);
 	return 0;
 }
+
+static int __init active_root(char *str)
+{
+	get_option(&str, &mangled_rootblock);
+
+	if (!mangled_rootblock)
+		return 1;
+
+	return 1;
+}
+
+__setup("mangled_rootblock=", active_root);
 
 static void __exit ofpart_parser_exit(void)
 {
