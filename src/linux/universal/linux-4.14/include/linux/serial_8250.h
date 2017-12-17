@@ -28,9 +28,13 @@ struct plat_serial8250_port {
 	void            *private_data;
 	unsigned char	regshift;	/* register shift */
 	unsigned char	iotype;		/* UPIO_* */
+	unsigned int rw_delay;	/* udelay for slower busses IXP4XX Expansion Bus */
 	unsigned char	hub6;
 	upf_t		flags;		/* UPF_* flags */
 	unsigned int	type;		/* If UPF_FIXED_TYPE */
+#ifdef CONFIG_BCM47XX
+	int		custom_divisor; /* custom divisor if flag has UPF_SPD_CUST and baud rate 38400 */
+#endif
 	unsigned int	(*serial_in)(struct uart_port *, int);
 	void		(*serial_out)(struct uart_port *, int, int);
 	void		(*set_termios)(struct uart_port *,
@@ -43,6 +47,9 @@ struct plat_serial8250_port {
 	void		(*pm)(struct uart_port *, unsigned int state,
 			      unsigned old);
 	void		(*handle_break)(struct uart_port *);
+#if defined(CONFIG_MACH_KS8695_VSOPENRISC)
+	unsigned short epld_capabilities;		/* EPLD capabilities */
+#endif
 };
 
 /*

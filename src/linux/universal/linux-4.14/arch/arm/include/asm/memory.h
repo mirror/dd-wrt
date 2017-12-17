@@ -146,7 +146,9 @@ extern unsigned long vectors_base;
  * have CONFIG_ARM_PATCH_PHYS_VIRT. Assembly code must always use
  * PLAT_PHYS_OFFSET and not PHYS_OFFSET.
  */
+#ifndef PLAT_PHYS_OFFSET
 #define PLAT_PHYS_OFFSET	UL(CONFIG_PHYS_OFFSET)
+#endif
 
 #ifdef CONFIG_XIP_KERNEL
 /*
@@ -373,6 +375,12 @@ static inline unsigned long __virt_to_idmap(unsigned long x)
 #define virt_addr_valid(kaddr)	(((unsigned long)(kaddr) >= PAGE_OFFSET && (unsigned long)(kaddr) < (unsigned long)high_memory) \
 					&& pfn_valid(virt_to_pfn(kaddr)))
 
+
+#else
+#ifdef CONFIG_PLAT_BCM5301X
+#define __virt_to_phys(x)	((x) - PAGE_OFFSET + CONFIG_DRAM_BASE)
+#define __phys_to_virt(x)	((x) - CONFIG_DRAM_BASE + PAGE_OFFSET)
+#endif
 #endif
 
 #include <asm-generic/memory_model.h>

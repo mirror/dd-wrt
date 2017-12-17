@@ -1568,6 +1568,10 @@ power_cycle:
 void mmc_set_timing(struct mmc_host *host, unsigned int timing)
 {
 	host->ios.timing = timing;
+#ifdef CONFIG_ARCH_CNS3XXX
+	if (host->ios.timing&MMC_TIMING_MMC_HS)
+	 host->ios.clock = 50000000;//jacky
+#endif
 	mmc_set_ios(host);
 }
 

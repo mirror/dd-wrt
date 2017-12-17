@@ -329,12 +329,12 @@ struct iw_handler_def {
 	const iw_handler *	standard;
 	/* Number of handlers defined (more precisely, index of the
 	 * last defined handler + 1) */
-	__u16			num_standard;
+	__u32			num_standard;
 
 #ifdef CONFIG_WEXT_PRIV
-	__u16			num_private;
+	__u32			num_private;
 	/* Number of private arg description */
-	__u16			num_private_args;
+	__u32			num_private_args;
 	/* Array of handlers for private ioctls
 	 * Will call dev->wireless_handlers->private[ioctl - SIOCIWFIRSTPRIV]
 	 */

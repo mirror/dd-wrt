@@ -420,7 +420,11 @@ static int scan_block_fast(struct mtd_info *mtd, struct nand_bbt_descr *bd,
 	ops.oobbuf = buf;
 	ops.ooboffs = 0;
 	ops.datbuf = NULL;
-	ops.mode = MTD_OPS_PLACE_OOB;
+
+	if (unlikely(bd->options & NAND_BBT_ACCESS_BBM_RAW))
+		ops.mode = MTD_OPS_RAW;
+	else
+		ops.mode = MTD_OPS_PLACE_OOB;
 
 	for (j = 0; j < numpages; j++) {
 		/*
@@ -1213,6 +1217,25 @@ err:
 	kfree(this->bbt);
 	this->bbt = NULL;
 	return res;
+}
+
+void nand_bbt_set(struct mtd_info *mtd, int page, int flag)
+{
+	struct nand_chip *this = mtd->priv;
+	int block;
+
+	block = (int)(page >> (this->bbt_erase_shift - this->page_shift - 1));
+	this->bbt[block >> 3] &= ~(0x03 << (block & 0x6));
+	this->bbt[block >> 3] |= (flag & 0x3) << (block & 0x6);
+}
+
+int nand_bbt_get(struct mtd_info *mtd, int page)
+{
+	struct nand_chip *this = mtd->priv;
+	int block;
+
+	block = (int)(page >> (this->bbt_erase_shift - this->page_shift - 1));
+	return (this->bbt[block >> 3] >> (block & 0x06)) & 0x03;
 }
 
 /**

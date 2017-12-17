@@ -3,6 +3,7 @@
 # Makefile for MMC/SD host controller drivers
 #
 
+obj-$(CONFIG_MTK_MMC) 		+= mtk-mmc/
 obj-$(CONFIG_MMC_ARMMMCI) += armmmci.o
 armmmci-y := mmci.o
 armmmci-$(CONFIG_MMC_QCOM_DML) += mmci_qcom_dml.o
@@ -22,6 +23,7 @@ obj-$(CONFIG_MMC_SDHCI_F_SDH30)	+= sdhci_f_sdh30.o
 obj-$(CONFIG_MMC_SDHCI_SPEAR)	+= sdhci-spear.o
 obj-$(CONFIG_MMC_WBSD)		+= wbsd.o
 obj-$(CONFIG_MMC_AU1X)		+= au1xmmc.o
+obj-$(CONFIG_MMC_OCTEON)	+= octeon_mmc.o
 obj-$(CONFIG_MMC_MTK)		+= mtk-sd.o
 obj-$(CONFIG_MMC_OMAP)		+= omap.o
 obj-$(CONFIG_MMC_OMAP_HS)	+= omap_hsmmc.o
@@ -47,6 +49,7 @@ obj-$(CONFIG_MMC_SDHI)		+= renesas_sdhi_internal_dmac.o
 endif
 obj-$(CONFIG_MMC_CB710)		+= cb710-mmc.o
 obj-$(CONFIG_MMC_VIA_SDMMC)	+= via-sdmmc.o
+obj-$(CONFIG_GPIOMMC)		+= gpiommc.o
 obj-$(CONFIG_SDH_BFIN)		+= bfin_sdh.o
 octeon-mmc-objs := cavium.o cavium-octeon.o
 obj-$(CONFIG_MMC_CAVIUM_OCTEON) += octeon-mmc.o
@@ -87,6 +90,7 @@ obj-$(CONFIG_MMC_SDHCI_OF_HLWD)		+= sdhci-of-hlwd.o
 obj-$(CONFIG_MMC_SDHCI_BCM_KONA)	+= sdhci-bcm-kona.o
 obj-$(CONFIG_MMC_SDHCI_IPROC)		+= sdhci-iproc.o
 obj-$(CONFIG_MMC_SDHCI_MSM)		+= sdhci-msm.o
+obj-$(CONFIG_MMC_SDHCI_MT7620)		+= sdhci-mt7620.o
 obj-$(CONFIG_MMC_SDHCI_ST)		+= sdhci-st.o
 obj-$(CONFIG_MMC_SDHCI_MICROCHIP_PIC32)	+= sdhci-pic32.o
 obj-$(CONFIG_MMC_SDHCI_BRCMSTB)		+= sdhci-brcmstb.o

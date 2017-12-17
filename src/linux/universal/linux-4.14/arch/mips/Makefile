@@ -91,14 +91,18 @@ all-$(CONFIG_SYS_SUPPORTS_ZBOOT)+= vmlinuz
 # crossformat linking we rely on the elf2ecoff tool for format conversion.
 #
 cflags-y			+= -G 0 -mno-abicalls -fno-pic -pipe -mno-branch-likely
-cflags-y			+= -msoft-float
-LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib
+cflags-y			+= -msoft-float -mno-branch-likely
+LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib --gc-sections
 ifdef CONFIG_64BIT
 KBUILD_AFLAGS_MODULE		+= -mlong-calls
 KBUILD_CFLAGS_MODULE		+= -mlong-calls
 else
 KBUILD_AFLAGS_MODULE		+= -mno-long-calls
 KBUILD_CFLAGS_MODULE		+= -mno-long-calls
+endif
+
+ifndef CONFIG_FUNCTION_TRACER
+KBUILD_CFLAGS_KERNEL		+= -ffunction-sections -fdata-sections
 endif
 
 ifeq ($(CONFIG_RELOCATABLE),y)
@@ -186,12 +190,85 @@ cflags-$(CONFIG_CPU_SB1)	+= $(call cc-option,-mno-mips3d)
 cflags-$(CONFIG_CPU_R8000)	+= -march=r8000 -Wa,--trap
 cflags-$(CONFIG_CPU_R10000)	+= $(call cc-option,-march=r10000,-march=r8000) \
 			-Wa,--trap
-cflags-$(CONFIG_CPU_CAVIUM_OCTEON) += $(call cc-option,-march=octeon) -Wa,--trap
-ifeq (,$(findstring march=octeon, $(cflags-$(CONFIG_CPU_CAVIUM_OCTEON))))
-cflags-$(CONFIG_CPU_CAVIUM_OCTEON) += -Wa,-march=octeon
+ifdef CONFIG_CPU_CAVIUM_OCTEON
+ifdef CONFIG_CAVIUM_OCTEON2
+cflags-y += $(call cc-option,-march=octeon2) -Wa,--trap
+ifeq (,$(findstring march=octeon2, $(cflags-y)))
+cflags-y += -Wa,-march=octeon2
 endif
+else
+cflags-y += $(call cc-option,-march=octeon) -Wa,--trap
+ifeq (,$(findstring march=octeon, $(cflags-y)))
+cflags-y += -Wa,-march=octeon
+endif
+endif
+endif
+
+cflags-$(CONFIG_CPU_CAVIUM_OCTEON) += -DCVMX_BUILD_FOR_LINUX_KERNEL=1 -DUSE_RUNTIME_MODEL_CHECKS=1
+
+ifdef  CONFIG_CAVIUM_OCTEON_CHK_CVMX_PARAMETER
+cflags-y += -DCVMX_ENABLE_PARAMETER_CHECKING=1
+else
+cflags-y += -DCVMX_ENABLE_PARAMETER_CHECKING=0
+endif
+ifdef  CONFIG_CAVIUM_OCTEON_CHK_CVMX_ADDRESS
+cflags-y += -DCVMX_ENABLE_CSR_ADDRESS_CHECKING=1
+else
+cflags-y += -DCVMX_ENABLE_CSR_ADDRESS_CHECKING=0
+ endif
+ifdef  CONFIG_CAVIUM_OCTEON_CHK_CVMX_POW
+cflags-y += -DCVMX_ENABLE_POW_CHECKS=1
+else
+cflags-y += -DCVMX_ENABLE_POW_CHECKS=0
+endif
+
+
+
+
 cflags-$(CONFIG_CAVIUM_CN63XXP1) += -Wa,-mfix-cn63xxp1
 cflags-$(CONFIG_CPU_BMIPS)	+= -march=mips32 -Wa,-mips32 -Wa,--trap
+
+
+# Atheros AR5312/AR2312 WiSoC
+#
+core-$(CONFIG_ATHEROS)		+= arch/mips/atheros/
+cflags-$(CONFIG_ATHEROS)	+= -I$(srctree)/arch/mips/include/asm/mach-ar231x
+load-$(CONFIG_ATHEROS)		+= 0xffffffff80041000
+#load-$(CONFIG_ATHEROS)		+= 0xffffffff80000000
+
+#
+#
+# This is the AR9100 variant. Still dependant on MACH_AR7100
+#
+core-$(CONFIG_MACH_AR7100)		+=	arch/mips/ar7100/
+load-$(CONFIG_MACH_AR7100)		+=	0xffffffff80060000
+cflags-$(CONFIG_MACH_AR7100)	+= -I$(srctree)/arch/mips/include/asm/mach-ar7100
+#
+
+#Atheros Ar9330(Hornet)
+#
+core-$(CONFIG_MACH_HORNET)		+=	arch/mips/ar7240/
+load-$(CONFIG_MACH_HORNET)		+=	0xffffffff80060000
+cflags-$(CONFIG_MACH_HORNET)	+= -I$(srctree)/arch/mips/include/asm/mach-ar7240
+
+
+#Atheros Ar7240
+#
+core-$(CONFIG_MACH_AR7240)		+=	arch/mips/ar7240/
+ifdef CONFIG_DAP3662
+load-$(CONFIG_MACH_AR7240)		+=	0xffffffff80002000
+else
+ifdef CONFIG_DAP2230
+load-$(CONFIG_MACH_AR7240)		+=	0xffffffff80002000
+else
+load-$(CONFIG_MACH_AR7240)		+=	0xffffffff80060000
+endif
+endif
+cflags-$(CONFIG_MACH_AR7240)	+= -I$(srctree)/arch/mips/include/asm/mach-ar7240
+#
+
+
+
 
 cflags-$(CONFIG_CPU_R4000_WORKAROUNDS)	+= $(call cc-option,-mfix-r4000,)
 cflags-$(CONFIG_CPU_R4400_WORKAROUNDS)	+= $(call cc-option,-mfix-r4400,)

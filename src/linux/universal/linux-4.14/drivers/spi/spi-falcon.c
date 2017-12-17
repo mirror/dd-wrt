@@ -3,7 +3,7 @@
  *  under the terms of the GNU General Public License version 2 as published
  *  by the Free Software Foundation.
  *
- *  Copyright (C) 2012 Thomas Langer <thomas.langer@lantiq.com>
+ *  Copyright (C) 2010 Thomas Langer <thomas.langer@lantiq.com>
  */
 
 #include <linux/module.h>
@@ -11,36 +11,35 @@
 #include <linux/platform_device.h>
 #include <linux/spi/spi.h>
 #include <linux/delay.h>
-#include <linux/of.h>
-#include <linux/of_platform.h>
+#include <linux/workqueue.h>
 
 #include <lantiq_soc.h>
 
-#define DRV_NAME		"sflash-falcon"
+#define DRV_NAME			"falcon_spi"
 
-#define FALCON_SPI_XFER_BEGIN	(1 << 0)
-#define FALCON_SPI_XFER_END	(1 << 1)
+#define FALCON_SPI_XFER_BEGIN		(1 << 0)
+#define FALCON_SPI_XFER_END		(1 << 1)
 
 /* Bus Read Configuration Register0 */
-#define BUSRCON0		0x00000010
+#define LTQ_BUSRCON0	0x00000010
 /* Bus Write Configuration Register0 */
-#define BUSWCON0		0x00000018
+#define LTQ_BUSWCON0	0x00000018
 /* Serial Flash Configuration Register */
-#define SFCON			0x00000080
+#define LTQ_SFCON	0x00000080
 /* Serial Flash Time Register */
-#define SFTIME			0x00000084
+#define LTQ_SFTIME	0x00000084
 /* Serial Flash Status Register */
-#define SFSTAT			0x00000088
+#define LTQ_SFSTAT	0x00000088
 /* Serial Flash Command Register */
-#define SFCMD			0x0000008C
+#define LTQ_SFCMD	0x0000008C
 /* Serial Flash Address Register */
-#define SFADDR			0x00000090
+#define LTQ_SFADDR	0x00000090
 /* Serial Flash Data Register */
-#define SFDATA			0x00000094
+#define LTQ_SFDATA	0x00000094
 /* Serial Flash I/O Control Register */
-#define SFIO			0x00000098
+#define LTQ_SFIO	0x00000098
 /* EBU Clock Control Register */
-#define EBUCC			0x000000C4
+#define LTQ_EBUCC	0x000000C4
 
 /* Dummy Phase Length */
 #define SFCMD_DUMLEN_OFFSET	16
@@ -88,19 +87,18 @@
 /* Chip Select after opcode */
 #define SFCMD_KEEP_CS_KEEP_SELECTED	0x00008000
 
-#define CLOCK_100M	100000000
-#define CLOCK_50M	50000000
-
-struct falcon_sflash {
+struct falcon_spi {
 	u32 sfcmd; /* for caching of opcode, direction, ... */
 	struct spi_master *master;
 };
 
-int falcon_sflash_xfer(struct spi_device *spi, struct spi_transfer *t,
-		unsigned long flags)
+int
+falcon_spi_xfer(struct spi_device *spi,
+		    struct spi_transfer *t,
+		    unsigned long flags)
 {
 	struct device *dev = &spi->dev;
-	struct falcon_sflash *priv = spi_master_get_devdata(spi->master);
+	struct falcon_spi *priv = spi_master_get_devdata(spi->master);
 	const u8 *txp = t->tx_buf;
 	u8 *rxp = t->rx_buf;
 	unsigned int bytelen = ((8 * t->len + 7) / 8);
@@ -124,11 +122,12 @@ int falcon_sflash_xfer(struct spi_device *spi, struct spi_transfer *t,
 				if (!txp) {
 					dev_err(dev,
 						"BEGIN without tx data!\n");
-					return -ENODATA;
+					return -1;
 				}
 				/*
 				 * Prepare the parts of the sfcmd register,
-				 * which should not change during a sequence!
+				 * which should not
+				 * change during a sequence!
 				 * Only exception are the length fields,
 				 * especially alen and dumlen.
 				 */
@@ -141,10 +140,8 @@ int falcon_sflash_xfer(struct spi_device *spi, struct spi_transfer *t,
 				txp++;
 				bytelen--;
 				if (bytelen) {
-					/*
-					 * more data:
-					 * maybe address and/or dummy
-					 */
+					/* more data:
+					 * maybe address and/or dummy */
 					state = state_command_prepare;
 					break;
 				} else {
@@ -169,8 +166,8 @@ int falcon_sflash_xfer(struct spi_device *spi, struct spi_transfer *t,
 				state = state_end;
 			break;
 		}
-		/* collect tx data for address and dummy phase */
-		case state_command_prepare:
+		case state_command_prepare: /* collect tx data for
+					       address and dummy phase */
 		{
 			/* txp is valid, already checked */
 			val = 0;
@@ -178,7 +175,7 @@ int falcon_sflash_xfer(struct spi_device *spi, struct spi_transfer *t,
 			dumlen = 0;
 			while (bytelen > 0) {
 				if (alen < 3) {
-					val = (val << 8) | (*txp++);
+					val = (val<<8)|(*txp++);
 					alen++;
 				} else if ((dumlen < 15) && (*txp == 0)) {
 					/*
@@ -187,18 +184,18 @@ int falcon_sflash_xfer(struct spi_device *spi, struct spi_transfer *t,
 					 */
 					dumlen++;
 					txp++;
-				} else {
+				} else
 					break;
-				}
 				bytelen--;
 			}
 			priv->sfcmd &= ~(SFCMD_ALEN_MASK | SFCMD_DUMLEN_MASK);
 			priv->sfcmd |= (alen << SFCMD_ALEN_OFFSET) |
 					 (dumlen << SFCMD_DUMLEN_OFFSET);
 			if (alen > 0)
-				ltq_ebu_w32(val, SFADDR);
+				ltq_ebu_w32(val, LTQ_SFADDR);
 
-			dev_dbg(dev, "wr %02X, alen=%d (addr=%06X) dlen=%d\n",
+			dev_dbg(dev, "write cmd %02X, alen=%d "
+				"(addr=%06X) dumlen=%d\n",
 				priv->sfcmd & SFCMD_OPC_MASK,
 				alen, val, dumlen);
 
@@ -209,10 +206,8 @@ int falcon_sflash_xfer(struct spi_device *spi, struct spi_transfer *t,
 				/* end of sequence? */
 				state = state_disable_cs;
 			} else {
-				/*
-				 * go to end and expect another
-				 * call (read or write)
-				 */
+				/* go to end and expect another
+				 * call (read or write) */
 				state = state_end;
 			}
 			break;
@@ -232,10 +227,10 @@ int falcon_sflash_xfer(struct spi_device *spi, struct spi_transfer *t,
 						~SFCMD_KEEP_CS_KEEP_SELECTED;
 				}
 				if ((len == 4) || (bytelen == 0)) {
-					ltq_ebu_w32(val, SFDATA);
+					ltq_ebu_w32(val, LTQ_SFDATA);
 					ltq_ebu_w32(priv->sfcmd
 						| (len<<SFCMD_DLEN_OFFSET),
-						SFCMD);
+						LTQ_SFCMD);
 					len = 0;
 					val = 0;
 					priv->sfcmd &= ~(SFCMD_ALEN_MASK
@@ -258,21 +253,21 @@ int falcon_sflash_xfer(struct spi_device *spi, struct spi_transfer *t,
 				len = (bytelen > 4) ? 4 : bytelen;
 				bytelen -= len;
 				ltq_ebu_w32(priv->sfcmd
-					| (len << SFCMD_DLEN_OFFSET), SFCMD);
+					|(len<<SFCMD_DLEN_OFFSET), LTQ_SFCMD);
 				priv->sfcmd &= ~(SFCMD_ALEN_MASK
 						 | SFCMD_DUMLEN_MASK);
 				do {
-					val = ltq_ebu_r32(SFSTAT);
+					val = ltq_ebu_r32(LTQ_SFSTAT);
 					if (val & SFSTAT_CMD_ERR) {
 						/* reset error status */
-						dev_err(dev, "SFSTAT: CMD_ERR");
-						dev_err(dev, " (%x)\n", val);
+						dev_err(dev, "SFSTAT: CMD_ERR "
+							"(%x)\n", val);
 						ltq_ebu_w32(SFSTAT_CMD_ERR,
-							SFSTAT);
-						return -EBADE;
+							LTQ_SFSTAT);
+						return -1;
 					}
 				} while (val & SFSTAT_CMD_PEND);
-				val = ltq_ebu_r32(SFDATA);
+				val = ltq_ebu_r32(LTQ_SFDATA);
 				do {
 					*rxp = (val & 0xFF);
 					rxp++;
@@ -287,13 +282,13 @@ int falcon_sflash_xfer(struct spi_device *spi, struct spi_transfer *t,
 		{
 			priv->sfcmd &= ~SFCMD_KEEP_CS_KEEP_SELECTED;
 			ltq_ebu_w32(priv->sfcmd | (0 << SFCMD_DLEN_OFFSET),
-				SFCMD);
-			val = ltq_ebu_r32(SFSTAT);
+				LTQ_SFCMD);
+			val = ltq_ebu_r32(LTQ_SFSTAT);
 			if (val & SFSTAT_CMD_ERR) {
 				/* reset error status */
 				dev_err(dev, "SFSTAT: CMD_ERR (%x)\n", val);
-				ltq_ebu_w32(SFSTAT_CMD_ERR, SFSTAT);
-				return -EBADE;
+				ltq_ebu_w32(SFSTAT_CMD_ERR, LTQ_SFSTAT);
+				return -1;
 			}
 			state = state_end;
 			break;
@@ -306,24 +301,32 @@ int falcon_sflash_xfer(struct spi_device *spi, struct spi_transfer *t,
 	return 0;
 }
 
-static int falcon_sflash_setup(struct spi_device *spi)
+static int
+falcon_spi_setup(struct spi_device *spi)
 {
+	struct device *dev = &spi->dev;
+	const u32 ebuclk = CLOCK_100M;
 	unsigned int i;
 	unsigned long flags;
 
+	dev_dbg(dev, "setup\n");
+
+	if (spi->master->bus_num > 0 || spi->chip_select > 0)
+		return -ENODEV;
+
 	spin_lock_irqsave(&ebu_lock, flags);
 
-	if (spi->max_speed_hz >= CLOCK_100M) {
+	if (ebuclk < spi->max_speed_hz) {
 		/* set EBU clock to 100 MHz */
-		ltq_sys1_w32_mask(0, EBUCC_EBUDIV_SELF100, EBUCC);
+		ltq_sys1_w32_mask(0, EBUCC_EBUDIV_SELF100, LTQ_EBUCC);
 		i = 1; /* divider */
 	} else {
 		/* set EBU clock to 50 MHz */
-		ltq_sys1_w32_mask(EBUCC_EBUDIV_SELF100, 0, EBUCC);
+		ltq_sys1_w32_mask(EBUCC_EBUDIV_SELF100, 0, LTQ_EBUCC);
 
 		/* search for suitable divider */
 		for (i = 1; i < 7; i++) {
-			if (CLOCK_50M / i <= spi->max_speed_hz)
+			if (ebuclk / i <= spi->max_speed_hz)
 				break;
 		}
 	}
@@ -371,7 +374,7 @@ static int falcon_sflash_xfer_one(struct spi_master *master,
 			spi_flags |= FALCON_SPI_XFER_END;
 
 		spin_lock_irqsave(&ebu_lock, flags);
-		ret = falcon_sflash_xfer(m->spi, t, spi_flags);
+		ret = falcon_spi_xfer(spi, t, spi_flags);
 		spin_unlock_irqrestore(&ebu_lock, flags);
 
 		if (ret)
@@ -379,7 +382,9 @@ static int falcon_sflash_xfer_one(struct spi_master *master,
 
 		m->actual_length += t->len;
 
-		WARN_ON(t->delay_usecs || t->cs_change);
+		if (t->delay_usecs || t->cs_change)
+			BUG();
+
 		spi_flags = 0;
 	}
 

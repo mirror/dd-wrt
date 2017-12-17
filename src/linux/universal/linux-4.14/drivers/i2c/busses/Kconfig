@@ -357,6 +357,10 @@ config I2C_ASPEED
 	  This driver can also be built as a module.  If so, the module
 	  will be called i2c-aspeed.
 
+config I2C_FALCON
+	tristate "Falcon I2C interface"
+	depends on SOC_FALCON
+
 config I2C_AT91
 	tristate "Atmel AT91 I2C Two-Wire interface (TWI)"
 	depends on ARCH_AT91
@@ -455,6 +459,18 @@ config I2C_BLACKFIN_TWI_CLK_KHZ
 	default 50
 	help
 	  The unit of the TWI clock is kHz.
+
+config I2C_CNS3XXX
+	tristate "Cavium CNS3xxx I2C driver"
+	depends on ARCH_CNS3XXX
+	help
+	  Support for Cavium CNS3xxx I2C controller driver.
+
+	  This driver can also be built as a module.  If so, the module
+	  will be called i2c-cns3xxx.
+
+	  Please note that this driver might be needed to bring up other
+	  devices such as Cavium CNS3xxx Ethernet.
 
 config I2C_CADENCE
 	tristate "Cadence I2C Controller"
@@ -669,6 +685,21 @@ config I2C_JZ4780
 
 	 If you don't know what to do here, say N.
 
+config I2C_IXP4XX
+	tristate "IXP4xx GPIO-Based I2C Interface (DEPRECATED)"
+	depends on ARCH_IXP4XX
+	select I2C_ALGOBIT
+	help
+	  Say Y here if you have an Intel IXP4xx(420,421,422,425) based 
+	  system and are using GPIO lines for an I2C bus.
+
+	  This support is also available as a module. If so, the module
+	  will be called i2c-ixp4xx.
+
+	  This driver is deprecated and will be dropped soon. Use i2c-gpio
+	  instead.
+
+
 config I2C_KEMPLD
 	tristate "Kontron COM I2C Controller"
 	depends on MFD_KEMPLD
@@ -833,6 +864,10 @@ config I2C_PXA_SLAVE
 	  is necessary for systems where the PXA may be a target on the
 	  I2C bus.
 
+config I2C_RALINK
+	tristate "Ralink I2C Controller"
+	select OF_I2C
+
 config I2C_QUP
 	tristate "Qualcomm QUP based I2C controller"
 	depends on ARCH_QCOM
@@ -862,6 +897,16 @@ config I2C_RK3X
 
 	  This driver can also be built as a module. If so, the module will
 	  be called i2c-rk3x.
+
+config I2C_RALINK
+	tristate "Ralink I2C Controller"
+	depends on RALINK && !SOC_MT7621
+	select OF_I2C
+
+config I2C_MT7621
+	tristate "MT7621/MT7628 I2C Controller"
+	depends on RALINK && (SOC_MT7620 || SOC_MT7621)
+	select OF_I2C
 
 config HAVE_S3C2410_I2C
 	bool

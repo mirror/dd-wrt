@@ -20,7 +20,7 @@
 #endif
 
 
-#define BUG() _BUG(__FILE__, __LINE__, BUG_INSTR_VALUE)
+#define BUG() WARN_ON(1)
 #define _BUG(file, line, value) __BUG(file, line, value)
 
 #ifdef CONFIG_DEBUG_BUGVERBOSE

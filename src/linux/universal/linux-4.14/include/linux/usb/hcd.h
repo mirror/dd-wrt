@@ -24,6 +24,7 @@
 #include <linux/rwsem.h>
 #include <linux/interrupt.h>
 #include <linux/idr.h>
+#include <linux/usb/suspend.h>
 
 #define MAX_TOPO_LEVEL		6
 
@@ -187,6 +188,7 @@ struct usb_hcd {
 	struct usb_hcd		*shared_hcd;
 	struct usb_hcd		*primary_hcd;
 
+	struct usb_susphy	*susphy;
 
 #define HCD_BUFFER_POOLS	4
 	struct dma_pool		*pool[HCD_BUFFER_POOLS];
@@ -523,7 +525,6 @@ extern void usb_destroy_configuration(struct usb_device *dev);
 /*
  * HCD Root Hub support
  */
-
 #include <linux/usb/ch11.h>
 
 /*
@@ -662,6 +663,28 @@ static inline void usb_hcd_resume_root_hub(struct usb_hcd *hcd)
 	return;
 }
 #endif /* CONFIG_PM */
+
+/*
+ * USB device fs stuff
+ */
+
+#ifdef CONFIG_USB_DEVICEFS
+
+/*
+ * these are expected to be called from the USB core/hub thread
+ * with the kernel lock held
+ */
+extern void usbfs_update_special(void);
+extern int usbfs_init(void);
+extern void usbfs_cleanup(void);
+
+#else /* CONFIG_USB_DEVICEFS */
+
+static inline void usbfs_update_special(void) {}
+static inline int usbfs_init(void) { return 0; }
+static inline void usbfs_cleanup(void) { }
+
+#endif /* CONFIG_USB_DEVICEFS */
 
 /*-------------------------------------------------------------------------*/
 

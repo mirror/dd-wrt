@@ -323,7 +323,9 @@ static struct page *__dma_alloc_buffer(struct device *dev, size_t size,
 {
 	unsigned long order = get_order(size);
 	struct page *page, *p, *e;
-
+#ifdef CONFIG_ARCH_IXP4XX
+	gfp |= GFP_DMA;
+#endif
 	page = alloc_pages(gfp, order);
 	if (!page)
 		return NULL;

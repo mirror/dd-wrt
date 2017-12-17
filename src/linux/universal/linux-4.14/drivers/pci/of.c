@@ -17,10 +17,32 @@
 #include <linux/of_pci.h>
 #include "pci.h"
 
+static struct device_node *__pcibios_get_phb_of_node(struct pci_bus *bus)
+{
+	/* This should only be called for PHBs */
+	if (WARN_ON(bus->self || bus->parent))
+		return NULL;
+
+	if (pcibios_get_phb_of_node)
+		return pcibios_get_phb_of_node(bus);
+
+	/* Look for a node pointer in either the intermediary device we
+	 * create above the root bus or it's own parent. Normally only
+	 * the later is populated.
+	 */
+	if (bus->bridge->of_node)
+		return of_node_get(bus->bridge->of_node);
+	if (bus->bridge->parent && bus->bridge->parent->of_node)
+		return of_node_get(bus->bridge->parent->of_node);
+
+	return NULL;
+}
+
 void pci_set_of_node(struct pci_dev *dev)
 {
 	if (!dev->bus->dev.of_node)
 		return;
+
 	dev->dev.of_node = of_pci_find_child_device(dev->bus->dev.of_node,
 						    dev->devfn);
 }
@@ -34,7 +56,7 @@ void pci_release_of_node(struct pci_dev *dev)
 void pci_set_bus_of_node(struct pci_bus *bus)
 {
 	if (bus->self == NULL)
-		bus->dev.of_node = pcibios_get_phb_of_node(bus);
+		bus->dev.of_node = __pcibios_get_phb_of_node(bus);
 	else
 		bus->dev.of_node = of_node_get(bus->self->dev.of_node);
 }

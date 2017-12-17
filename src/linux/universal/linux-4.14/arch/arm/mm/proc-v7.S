@@ -12,6 +12,7 @@
 #include <linux/init.h>
 #include <linux/linkage.h>
 #include <asm/assembler.h>
+#include <asm/memory.h>
 #include <asm/asm-offsets.h>
 #include <asm/hwcap.h>
 #include <asm/pgtable-hwdef.h>
@@ -456,7 +457,12 @@ __v7_pj4b_setup:
 #endif /* CONFIG_CPU_PJ4B */
 
 __v7_setup:
+#ifdef CONFIG_PLAT_BCM5301X	
+	@ temporary local stack in RAM, physical address, MMU is off
+	ldr	r0, =__virt_to_phys(__v7_setup_stack_ptr)
+#else
 	adr	r0, __v7_setup_stack_ptr
+#endif
 	ldr	r12, [r0]
 	add	r12, r12, r0			@ the local stack
 	stmia	r12, {r1-r6, lr}		@ v7_invalidate_l1 touches r0-r6

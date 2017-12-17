@@ -2135,6 +2135,12 @@ int mmc_attach_mmc(struct mmc_host *host)
 		return err;
 
 	mmc_attach_bus(host, &mmc_ops);
+
+#ifdef CONFIG_ARCH_CNS3XXX
+//Jacky for eMMC capabilities
+	host->caps   |= (MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA);
+        host->caps   |= MMC_CAP_MMC_HIGHSPEED;
+#endif
 	if (host->ocr_avail_mmc)
 		host->ocr_avail = host->ocr_avail_mmc;
 

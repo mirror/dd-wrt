@@ -261,6 +261,24 @@
 			no-memory-wc;
 			status = "disabled";
 		};
+
+		crypto_sram0: sa-sram0 {
+			compatible = "mmio-sram";
+			reg = <MBUS_ID(0x09, 0x09) 0 0x800>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0 MBUS_ID(0x09, 0x09) 0 0x800>;
+			status = "okay";
+		};
+
+		crypto_sram1: sa-sram1 {
+			compatible = "mmio-sram";
+			reg = <MBUS_ID(0x09, 0x05) 0 0x800>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0 MBUS_ID(0x09, 0x05) 0 0x800>;
+			status = "okay";
+		};
 	};
 
 	clocks {
@@ -355,6 +373,57 @@
 		marvell,pins = "mpp13", "mpp14",
 			       "mpp16", "mpp17";
 		marvell,function = "spi1";
+	};
+
+	uart2_pins: uart2-pins {
+		marvell,pins = "mpp42", "mpp43";
+		marvell,function = "uart2";
+	};
+
+	uart3_pins: uart3-pins {
+		marvell,pins = "mpp44", "mpp45";
+		marvell,function = "uart3";
+	};
+};
+
+&pinctrl {
+	ge0_gmii_pins: ge0-gmii-pins {
+		marvell,pins =
+		     "mpp0",  "mpp1",  "mpp2",  "mpp3",
+		     "mpp4",  "mpp5",  "mpp6",  "mpp7",
+		     "mpp8",  "mpp9",  "mpp10", "mpp11",
+		     "mpp12", "mpp13", "mpp14", "mpp15",
+		     "mpp16", "mpp17", "mpp18", "mpp19",
+		     "mpp20", "mpp21", "mpp22", "mpp23";
+		marvell,function = "ge0";
+	};
+
+	ge0_rgmii_pins: ge0-rgmii-pins {
+		marvell,pins =
+		     "mpp0", "mpp1", "mpp2", "mpp3",
+		     "mpp4", "mpp5", "mpp6", "mpp7",
+		     "mpp8", "mpp9", "mpp10", "mpp11";
+		marvell,function = "ge0";
+	};
+
+	ge1_rgmii_pins: ge1-rgmii-pins {
+		marvell,pins =
+		     "mpp12", "mpp13", "mpp14", "mpp15",
+		     "mpp16", "mpp17", "mpp18", "mpp19",
+		     "mpp20", "mpp21", "mpp22", "mpp23";
+		marvell,function = "ge1";
+	};
+
+	sdio_pins: sdio-pins {
+		marvell,pins = "mpp30", "mpp31", "mpp32",
+			       "mpp33", "mpp34", "mpp35";
+		marvell,function = "sd0";
+	};
+
+	spi0_pins: spi0-pins {
+		marvell,pins = "mpp36", "mpp37",
+			       "mpp38", "mpp39";
+		marvell,function = "spi";
 	};
 
 	uart2_pins: uart2-pins {

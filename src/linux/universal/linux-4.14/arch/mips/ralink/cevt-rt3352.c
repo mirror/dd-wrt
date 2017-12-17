@@ -29,6 +29,10 @@
 /* enable the counter */
 #define CFG_CNT_EN		0x1
 
+/* mt7620 frequency scaling defines */
+#define CLK_LUT_CFG	0x40
+#define SLEEP_EN	BIT(31)
+
 struct systick_device {
 	void __iomem *membase;
 	struct clock_event_device dev;
@@ -36,21 +40,53 @@ struct systick_device {
 	int freq_scale;
 };
 
+static void (*systick_freq_scaling)(struct systick_device *sdev, int status);
+
 static int systick_set_oneshot(struct clock_event_device *evt);
 static int systick_shutdown(struct clock_event_device *evt);
+
+static inline void mt7620_freq_scaling(struct systick_device *sdev, int status)
+{
+	if (sdev->freq_scale == status)
+		return;
+
+	sdev->freq_scale = status;
+
+	pr_info("%s: %s autosleep mode\n", sdev->dev.name,
+			(status) ? ("enable") : ("disable"));
+	if (status)
+		rt_sysc_w32(rt_sysc_r32(CLK_LUT_CFG) | SLEEP_EN, CLK_LUT_CFG);
+	else
+		rt_sysc_w32(rt_sysc_r32(CLK_LUT_CFG) & ~SLEEP_EN, CLK_LUT_CFG);
+}
+
+static inline unsigned int read_count(struct systick_device *sdev)
+{
+	return ioread32(sdev->membase + SYSTICK_COUNT);
+}
+
+static inline unsigned int read_compare(struct systick_device *sdev)
+{
+	return ioread32(sdev->membase + SYSTICK_COMPARE);
+}
+
+static inline void write_compare(struct systick_device *sdev, unsigned int val)
+{
+	iowrite32(val, sdev->membase + SYSTICK_COMPARE);
+}
 
 static int systick_next_event(unsigned long delta,
 				struct clock_event_device *evt)
 {
 	struct systick_device *sdev;
-	u32 count;
+	int res;
 
 	sdev = container_of(evt, struct systick_device, dev);
-	count = ioread32(sdev->membase + SYSTICK_COUNT);
-	count = (count + delta) % SYSTICK_FREQ;
-	iowrite32(count, sdev->membase + SYSTICK_COMPARE);
+	delta += read_count(sdev);
+	write_compare(sdev, delta);
+	res = ((int)(read_count(sdev) - delta) >= 0) ? -ETIME : 0;
 
-	return 0;
+	return res;
 }
 
 static void systick_event_handler(struct clock_event_device *dev)
@@ -60,20 +96,25 @@ static void systick_event_handler(struct clock_event_device *dev)
 
 static irqreturn_t systick_interrupt(int irq, void *dev_id)
 {
-	struct clock_event_device *dev = (struct clock_event_device *) dev_id;
+	int ret = 0;
+	struct clock_event_device *cdev;
+	struct systick_device *sdev;
 
-	dev->event_handler(dev);
+	if (read_c0_cause() & STATUSF_IP7) {
+		cdev = (struct clock_event_device *) dev_id;
+		sdev = container_of(cdev, struct systick_device, dev);
 
-	return IRQ_HANDLED;
+		/* Clear Count/Compare Interrupt */
+		write_compare(sdev, read_compare(sdev));
+		cdev->event_handler(cdev);
+		ret = 1;
+	}
+
+	return IRQ_RETVAL(ret);
 }
 
 static struct systick_device systick = {
 	.dev = {
-		/*
-		 * cevt-r4k uses 300, make sure systick
-		 * gets used if available
-		 */
-		.rating			= 310,
 		.features		= CLOCK_EVT_FEAT_ONESHOT,
 		.set_next_event		= systick_next_event,
 		.set_state_shutdown	= systick_shutdown,
@@ -95,9 +136,15 @@ static int systick_shutdown(struct clock_event_device *evt)
 	sdev = container_of(evt, struct systick_device, dev);
 
 	if (sdev->irq_requested)
-		free_irq(systick.dev.irq, &systick_irqaction);
+		remove_irq(systick.dev.irq, &systick_irqaction);
 	sdev->irq_requested = 0;
-	iowrite32(0, systick.membase + SYSTICK_CONFIG);
+	iowrite32(CFG_CNT_EN, systick.membase + SYSTICK_CONFIG);
+
+	if (systick_freq_scaling)
+		systick_freq_scaling(sdev, 0);
+
+	if (systick_freq_scaling)
+		systick_freq_scaling(sdev, 1);
 
 	return 0;
 }

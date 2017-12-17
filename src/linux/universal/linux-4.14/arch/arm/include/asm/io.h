@@ -200,7 +200,12 @@ void __iomem *pci_remap_cfgspace(resource_size_t res_cookie, size_t size);
  * Now, pick up the machine-defined IO definitions
  */
 #ifdef CONFIG_NEED_MACH_IO_H
+#ifdef CONFIG_SOC_IMX6Q
+// ugly hack: <mach/io.h> can't be found in arch/arm/mach-imx/include/mach/io.h??
+#include "../../mach-imx/include/mach/io.h"
+#else
 #include <mach/io.h>
+#endif
 #elif defined(CONFIG_PCI)
 #define IO_SPACE_LIMIT	((resource_size_t)0xfffff)
 #define __io(a)		__typesafe_io(PCI_IO_VIRT_BASE + ((a) & IO_SPACE_LIMIT))
@@ -220,7 +225,7 @@ void __iomem *pci_remap_cfgspace(resource_size_t res_cookie, size_t size);
  * readb() et.al. on such platforms.
  */
 #ifndef IO_SPACE_LIMIT
-#if defined(CONFIG_PCMCIA_SOC_COMMON) || defined(CONFIG_PCMCIA_SOC_COMMON_MODULE)
+#if defined(CONFIG_PCMCIA_SOC_COMMON) || defined(CONFIG_PCMCIA_SOC_COMMON_MODULE) || defined(CONFIG_SOC_IMX6Q)
 #define IO_SPACE_LIMIT ((resource_size_t)0xffffffff)
 #elif defined(CONFIG_PCI) || defined(CONFIG_ISA) || defined(CONFIG_PCCARD)
 #define IO_SPACE_LIMIT ((resource_size_t)0xffff)

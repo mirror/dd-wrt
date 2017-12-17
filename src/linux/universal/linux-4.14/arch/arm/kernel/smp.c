@@ -50,6 +50,10 @@
 #include <asm/mach/arch.h>
 #include <asm/mpu.h>
 
+#ifdef CONFIG_BCM47XX
+extern void soc_watchdog(void);
+#endif
+
 #define CREATE_TRACE_POINTS
 #include <trace/events/ipi.h>
 
@@ -497,13 +501,13 @@ void show_ipi_list(struct seq_file *p, int prec)
 	unsigned int cpu, i;
 
 	for (i = 0; i < NR_IPI; i++) {
-		seq_printf(p, "%*s%u: ", prec - 1, "IPI", i);
+		seq_printf(p, "%*s%u:", prec - 1, "IPI", i);
 
 		for_each_online_cpu(cpu)
 			seq_printf(p, "%10u ",
 				   __get_irq_stat(cpu, ipi_irqs[i]));
 
-		seq_printf(p, " %s\n", ipi_types[i]);
+		seq_printf(p, "      %s\n", ipi_types[i]);
 	}
 }
 

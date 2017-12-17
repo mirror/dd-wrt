@@ -29,7 +29,7 @@
 #include <linux/watchdog.h>
 
 /* default timeout in seconds */
-#define DEFAULT_TIMEOUT		60
+#define DEFAULT_TIMEOUT		30
 
 #define MODULE_NAME		"sp805-wdt"
 
@@ -239,6 +239,9 @@ sp805_wdt_probe(struct amba_device *adev, const struct amba_id *id)
 		goto err;
 	}
 	amba_set_drvdata(adev, wdt);
+//	wdt_enable(&wdt->wdd);
+//	wdt_ping(&wdt->wdd);
+
 
 	dev_info(&adev->dev, "registration successful\n");
 	return 0;

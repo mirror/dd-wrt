@@ -120,7 +120,7 @@ int dwc3_host_init(struct dwc3 *dwc)
 			goto err1;
 		}
 	}
-
+ 
 	phy_create_lookup(dwc->usb2_generic_phy, "usb2-phy",
 			  dev_name(dwc->dev));
 	phy_create_lookup(dwc->usb3_generic_phy, "usb3-phy",

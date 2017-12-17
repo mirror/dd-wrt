@@ -644,8 +644,12 @@ static const struct scsi_host_template usb_stor_host_template = {
 	 * and Apple Mac OS X 10.11 limiting transfers to 256 sectors for USB2
 	 * and 2048 for USB3 devices.
 	 */
-	.max_sectors =                  240,
 
+#ifdef CONFIG_BCM47XX
+	.max_sectors =                  960,
+#else
+	.max_sectors =                  240,
+#endif
 	/*
 	 * merge commands... this seems to help performance, but
 	 * periodically someone should test to see which setting is more

@@ -525,6 +525,7 @@ static inline void dma_set_unmap(struct dma_async_tx_descriptor *tx,
 struct dmaengine_unmap_data *
 dmaengine_get_unmap_data(struct device *dev, int nr, gfp_t flags);
 void dmaengine_unmap_put(struct dmaengine_unmap_data *unmap);
+struct dma_chan *dma_get_slave_channel(struct dma_chan *chan);
 #else
 static inline void dma_set_unmap(struct dma_async_tx_descriptor *tx,
 				 struct dmaengine_unmap_data *unmap)
@@ -703,6 +704,8 @@ struct dma_filter {
  *	be called after period_len bytes have been transferred.
  * @device_prep_interleaved_dma: Transfer expression in a generic way.
  * @device_prep_dma_imm_data: DMA's 8 byte immediate data to the dst address
+ * @device_prep_dma_custom_mapping: prepares a dma operation from dma driver
+ * 	specific custom data
  * @device_config: Pushes a new configuration to a channel, return 0 or an error
  *	code
  * @device_pause: Pauses any transfer happening on a channel. Returns
@@ -788,6 +791,9 @@ struct dma_device {
 		unsigned long flags);
 	struct dma_async_tx_descriptor *(*device_prep_dma_imm_data)(
 		struct dma_chan *chan, dma_addr_t dst, u64 data,
+		unsigned long flags);
+	struct dma_async_tx_descriptor *(*device_prep_dma_custom_mapping)(
+		struct dma_chan *chan, void *data,
 		unsigned long flags);
 
 	int (*device_config)(struct dma_chan *chan,
@@ -901,6 +907,15 @@ static inline struct dma_async_tx_descriptor *dmaengine_prep_dma_memcpy(
 
 	return chan->device->device_prep_dma_memcpy(chan, dest, src,
 						    len, flags);
+}
+
+static inline struct dma_async_tx_descriptor *dmaengine_prep_dma_custom_mapping(
+		struct dma_chan *chan,
+		void *data,
+		unsigned long flags)
+{
+	return chan->device->device_prep_dma_custom_mapping(chan, data,
+			flags);
 }
 
 /**

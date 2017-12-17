@@ -68,6 +68,7 @@
 #include <asm/types.h>
 #include <asm/stacktrace.h>
 #include <asm/uasm.h>
+#include <asm/time.h>
 
 extern void check_wait(void);
 extern asmlinkage void rollback_handle_int(void);
@@ -780,7 +781,7 @@ static int simulate_fp(struct pt_regs *regs, unsigned int opcode,
 		       unsigned long old_epc, unsigned long old_ra)
 {
 	union mips_instruction inst = { .word = opcode };
-	void __user *fault_addr;
+	void __user *fault_addr = NULL;
 	unsigned long fcr31;
 	int sig;
 
@@ -834,7 +835,7 @@ static int simulate_fp(struct pt_regs *regs, unsigned int opcode,
 asmlinkage void do_fpe(struct pt_regs *regs, unsigned long fcr31)
 {
 	enum ctx_state prev_state;
-	void __user *fault_addr;
+	void __user *fault_addr = NULL;
 	int sig;
 
 	prev_state = exception_enter();
@@ -1364,7 +1365,7 @@ asmlinkage void do_cpu(struct pt_regs *regs)
 	enum ctx_state prev_state;
 	unsigned int __user *epc;
 	unsigned long old_epc, old31;
-	void __user *fault_addr;
+	void __user *fault_addr = NULL;
 	unsigned int opcode;
 	unsigned long fcr31;
 	unsigned int cpid;
@@ -2219,6 +2220,8 @@ void per_cpu_trap_init(bool is_boot_cpu)
 
 		cp0_compare_irq_shift = CAUSEB_TI - CAUSEB_IP;
 		cp0_compare_irq = (read_c0_intctl() >> INTCTLB_IPTI) & 7;
+		if (get_c0_compare_irq)
+			cp0_compare_irq = get_c0_compare_irq();
 		cp0_perfcount_irq = (read_c0_intctl() >> INTCTLB_IPPCI) & 7;
 		cp0_fdc_irq = (read_c0_intctl() >> INTCTLB_IPFDC) & 7;
 		if (!cp0_fdc_irq)

@@ -83,8 +83,7 @@ ltq_wdt_disable(void)
 {
 	/* write the first password magic */
 	ltq_w32(LTQ_WDT_PW1, ltq_wdt_membase + LTQ_WDT_CR);
-	/*
-	 * write the second password magic with no config
+	/* write the second password magic with no config
 	 * this turns the watchdog off
 	 */
 	ltq_w32(LTQ_WDT_PW2, ltq_wdt_membase + LTQ_WDT_CR);

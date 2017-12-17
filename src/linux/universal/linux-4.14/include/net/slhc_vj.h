@@ -117,8 +117,9 @@
  */
 
 typedef __u8 byte_t;
+#ifndef CONFIG_BCM47XX
 typedef __u32 int32;
-
+#endif
 /*
  * "state" data for each active tcp conversation on the wire.  This is
  * basically a copy of the entire IP/TCP header from the last packet
@@ -153,20 +154,20 @@ struct slcompress {
 	byte_t flags;
 #define SLF_TOSS	0x01	/* tossing rcvd frames until id received */
 
-	int32 sls_o_nontcp;	/* outbound non-TCP packets */
-	int32 sls_o_tcp;	/* outbound TCP packets */
-	int32 sls_o_uncompressed;	/* outbound uncompressed packets */
-	int32 sls_o_compressed;	/* outbound compressed packets */
-	int32 sls_o_searches;	/* searches for connection state */
-	int32 sls_o_misses;	/* times couldn't find conn. state */
+	__u32 sls_o_nontcp;	/* outbound non-TCP packets */
+	__u32 sls_o_tcp;	/* outbound TCP packets */
+	__u32 sls_o_uncompressed;	/* outbound uncompressed packets */
+	__u32 sls_o_compressed;	/* outbound compressed packets */
+	__u32 sls_o_searches;	/* searches for connection state */
+	__u32 sls_o_misses;	/* times couldn't find conn. state */
 
-	int32 sls_i_uncompressed;	/* inbound uncompressed packets */
-	int32 sls_i_compressed;	/* inbound compressed packets */
-	int32 sls_i_error;	/* inbound error packets */
-	int32 sls_i_tossed;	/* inbound packets tossed because of error */
+	__u32 sls_i_uncompressed;	/* inbound uncompressed packets */
+	__u32 sls_i_compressed;	/* inbound compressed packets */
+	__u32 sls_i_error;	/* inbound error packets */
+	__u32 sls_i_tossed;	/* inbound packets tossed because of error */
 
-	int32 sls_i_runt;
-	int32 sls_i_badcheck;
+	__u32 sls_i_runt;
+	__u32 sls_i_badcheck;
 };
 #define NULLSLCOMPR	(struct slcompress *)0
 

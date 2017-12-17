@@ -18,16 +18,17 @@
 #include <linux/io.h>
 #include <linux/ioport.h>
 #include <linux/interrupt.h>
+#include <linux/irq.h>
 #include <linux/ptrace.h>
 #include <asm/mach/map.h>
-#include "cns3xxx.h"
+#include <mach/cns3xxx.h>
 #include "core.h"
 
 struct cns3xxx_pcie {
 	void __iomem *host_regs; /* PCI config registers for host bridge */
 	void __iomem *cfg0_regs; /* PCI Type 0 config registers */
 	void __iomem *cfg1_regs; /* PCI Type 1 config registers */
-	unsigned int irqs[2];
+	unsigned int irqs[5];
 	struct resource res_io;
 	struct resource res_mem;
 	int port;
@@ -86,6 +87,79 @@ static void __iomem *cns3xxx_pci_map_bus(struct pci_bus *bus,
 	return base + (where & 0xffc) + (devfn << 12);
 }
 
+static inline int check_master_abort(struct pci_bus *bus, unsigned int devfn, int where)
+{
+	struct cns3xxx_pcie *cnspci = pbus_to_cnspci(bus);
+
+  /* check PCI-compatible status register after access */
+	if (cnspci->linked) {
+		void __iomem *host_base;
+		u32 sreg, ereg;
+
+		host_base = (void __iomem *) cnspci->host_regs;
+		sreg = __raw_readw(host_base + 0x6) & 0xF900;
+		ereg = __raw_readl(host_base + 0x104); // Uncorrectable Error Status Reg
+
+		if (sreg | ereg) {
+			/* SREG:
+			 *  BIT15 - Detected Parity Error
+			 *  BIT14 - Signaled System Error
+			 *  BIT13 - Received Master Abort
+			 *  BIT12 - Received Target Abort
+			 *  BIT11 - Signaled Target Abort
+			 *  BIT08 - Master Data Parity Error
+			 *
+			 * EREG:
+			 *  BIT20 - Unsupported Request
+			 *  BIT19 - ECRC
+			 *  BIT18 - Malformed TLP
+			 *  BIT17 - Receiver Overflow
+			 *  BIT16 - Unexpected Completion
+			 *  BIT15 - Completer Abort
+			 *  BIT14 - Completion Timeout
+			 *  BIT13 - Flow Control Protocol Error
+			 *  BIT12 - Poisoned TLP
+			 *  BIT04 - Data Link Protocol Error
+			 *
+			 * TODO: see Documentation/pci-error-recovery.txt
+			 *    implement error_detected handler
+			 */
+/*
+			printk("pci error: %04d:%02x:%02x.%02x sreg=0x%04x ereg=0x%08x", pci_domain_nr(bus), bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), sreg, ereg);
+			if (sreg & BIT(15)) printk(" <PERR");
+			if (sreg & BIT(14)) printk(" >SERR");
+			if (sreg & BIT(13)) printk(" <MABRT");
+			if (sreg & BIT(12)) printk(" <TABRT");
+			if (sreg & BIT(11)) printk(" >TABRT");
+			if (sreg & BIT( 8)) printk(" MPERR");
+
+			if (ereg & BIT(20)) printk(" Unsup");
+			if (ereg & BIT(19)) printk(" ECRC");
+			if (ereg & BIT(18)) printk(" MTLP");
+			if (ereg & BIT(17)) printk(" OFLOW");
+			if (ereg & BIT(16)) printk(" Unex");
+			if (ereg & BIT(15)) printk(" ABRT");
+			if (ereg & BIT(14)) printk(" COMPTO");
+			if (ereg & BIT(13)) printk(" FLOW");
+			if (ereg & BIT(12)) printk(" PTLP");
+			if (ereg & BIT( 4)) printk(" DLINK");
+			printk("\n");
+*/
+			pr_debug("%s failed port%d sreg=0x%04x\n", __func__,
+				pci_domain_nr(bus), sreg);
+
+			/* make sure the status bits are reset */
+			__raw_writew(sreg, host_base + 6);
+			__raw_writel(ereg, host_base + 0x104);
+			return 1;
+		}
+	}
+	else
+		return 1;
+
+  return 0;
+}
+
 static int cns3xxx_pci_read_config(struct pci_bus *bus, unsigned int devfn,
 				   int where, int size, u32 *val)
 {
@@ -94,6 +168,11 @@ static int cns3xxx_pci_read_config(struct pci_bus *bus, unsigned int devfn,
 	int shift = (where % 4) * 8;
 
 	ret = pci_generic_config_read32(bus, devfn, where, size, val);
+
+	if (check_master_abort(bus, devfn, where)) {
+		printk(KERN_ERR "pci error: %04d:%02x:%02x.%02x %02x(%d)= master_abort on read\n", pci_domain_nr(bus), bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn), where, size);
+		return PCIBIOS_DEVICE_NOT_FOUND;
+	}
 
 	if (ret == PCIBIOS_SUCCESSFUL && !bus->number && !devfn &&
 	    (where & 0xffc) == PCI_CLASS_REVISION)
@@ -131,7 +210,7 @@ static struct pci_ops cns3xxx_pcie_ops = {
 static int cns3xxx_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	struct cns3xxx_pcie *cnspci = pdev_to_cnspci(dev);
-	int irq = cnspci->irqs[!!dev->bus->number];
+	int irq = cnspci->irqs[!!dev->bus->number + pin - 1];
 
 	pr_info("PCIe map irq: %04d:%02x:%02x.%02x slot %d, pin %d, irq: %d\n",
 		pci_domain_nr(dev->bus), dev->bus->number, PCI_SLOT(dev->devfn),
@@ -157,7 +236,13 @@ static struct cns3xxx_pcie cns3xxx_pcie[] = {
 			.end = CNS3XXX_PCIE0_HOST_BASE - 1, /* 176 MiB */
 			.flags = IORESOURCE_MEM,
 		},
-		.irqs = { IRQ_CNS3XXX_PCIE0_RC, IRQ_CNS3XXX_PCIE0_DEVICE, },
+		.irqs = {
+			IRQ_CNS3XXX_PCIE0_RC,
+			IRQ_CNS3XXX_PCIE0_DEVICE,
+			IRQ_CNS3XXX_PCIE0_DEVICE,
+			IRQ_CNS3XXX_PCIE0_DEVICE,
+			IRQ_CNS3XXX_PCIE0_DEVICE,
+		},
 		.port = 0,
 	},
 	[1] = {
@@ -176,7 +261,13 @@ static struct cns3xxx_pcie cns3xxx_pcie[] = {
 			.end = CNS3XXX_PCIE1_HOST_BASE - 1, /* 176 MiB */
 			.flags = IORESOURCE_MEM,
 		},
-		.irqs = { IRQ_CNS3XXX_PCIE1_RC, IRQ_CNS3XXX_PCIE1_DEVICE, },
+		.irqs = {
+			IRQ_CNS3XXX_PCIE1_RC,
+			IRQ_CNS3XXX_PCIE1_DEVICE,
+			IRQ_CNS3XXX_PCIE1_DEVICE,
+			IRQ_CNS3XXX_PCIE1_DEVICE,
+			IRQ_CNS3XXX_PCIE1_DEVICE,
+		},
 		.port = 1,
 	},
 };
@@ -257,9 +348,23 @@ static void __init cns3xxx_pcie_hw_init(struct cns3xxx_pcie *cnspci)
 static int cns3xxx_pcie_abort_handler(unsigned long addr, unsigned int fsr,
 				      struct pt_regs *regs)
 {
+#if 0
+/* R14_ABORT = PC+4 for XSCALE but not ARM11MPCORE
+ * ignore imprecise aborts and use PCI-compatible Status register to
+ * determine errors instead
+ */
 	if (fsr & (1 << 10))
 		regs->ARM_pc += 4;
+#endif
 	return 0;
+}
+
+void __init cns3xxx_pcie_set_irqs(int bus, int *irqs)
+{
+	int i;
+
+	for (i = 0; i < 4; i++)
+		cns3xxx_pcie[bus].irqs[i + 1] = irqs[i];
 }
 
 void __init cns3xxx_pcie_init_late(void)
@@ -281,9 +386,9 @@ void __init cns3xxx_pcie_init_late(void)
 			"imprecise external abort");
 
 	for (i = 0; i < ARRAY_SIZE(cns3xxx_pcie); i++) {
-		cns3xxx_pwr_clk_en(0x1 << PM_CLK_GATE_REG_OFFSET_PCIE(i));
-		cns3xxx_pwr_soft_rst(0x1 << PM_SOFT_RST_REG_OFFST_PCIE(i));
 		cns3xxx_pcie_check_link(&cns3xxx_pcie[i]);
+		if (!cns3xxx_pcie[i].linked)
+			continue;
 		cns3xxx_pcie_hw_init(&cns3xxx_pcie[i]);
 		private_data = &cns3xxx_pcie[i];
 		pci_common_init(&hw_pci);

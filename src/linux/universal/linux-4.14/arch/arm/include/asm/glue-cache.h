@@ -152,9 +152,16 @@ static inline void nop_dma_unmap_area(const void *s, size_t l, int f) { }
 #define __cpuc_flush_user_range		__glue(_CACHE,_flush_user_cache_range)
 #define __cpuc_coherent_kern_range	__glue(_CACHE,_coherent_kern_range)
 #define __cpuc_coherent_user_range	__glue(_CACHE,_coherent_user_range)
-#define __cpuc_flush_dcache_area	__glue(_CACHE,_flush_kern_dcache_area)
 
+#ifndef CONFIG_DMA_CACHE_FIQ_BROADCAST
+#define __cpuc_flush_dcache_area	__glue(_CACHE,_flush_kern_dcache_area)
 #define dmac_flush_range		__glue(_CACHE,_dma_flush_range)
+#else
+#define __cpuc_flush_dcache_area	__glue(fiq,_flush_kern_dcache_area)
+#define dmac_flush_range		__glue(fiq,_dma_flush_range)
+#endif /* CONFIG_DMA_CACHE_FIQ_BROADCAST */
+
+
 #endif
 
 #endif

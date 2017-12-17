@@ -35,6 +35,9 @@
 #include <linux/usb/hcd.h>
 #include <linux/usb/ehci_pdriver.h>
 #include <linux/usb/of.h>
+#include <linux/usb/phy.h>
+#include <linux/usb/otg.h>
+ 
 
 #include "ehci.h"
 
@@ -53,6 +56,14 @@ struct ehci_platform_priv {
 
 static const char hcd_name[] = "ehci-platform";
 
+static void ehci_platform_reset_notifier(struct usb_hcd *hcd)
+{
+	struct platform_device *pdev = to_platform_device(hcd->self.controller);
+	struct usb_ehci_pdata *pdata = pdev->dev.platform_data;
+
+	pdata->reset_notifier(pdev);
+}
+
 static int ehci_platform_reset(struct usb_hcd *hcd)
 {
 	struct platform_device *pdev = to_platform_device(hcd->self.controller);
@@ -61,6 +72,12 @@ static int ehci_platform_reset(struct usb_hcd *hcd)
 	int retval;
 
 	ehci->has_synopsys_hc_bug = pdata->has_synopsys_hc_bug;
+	ehci->ignore_oc = pdata->ignore_oc;
+	ehci->qca_force_host_mode = pdata->qca_force_host_mode;
+	ehci->qca_force_16bit_ptw = pdata->qca_force_16bit_ptw;
+ 
+	if (pdata->reset_notifier)
+		ehci->reset_notifier = ehci_platform_reset_notifier;
 
 	if (pdata->pre_setup) {
 		retval = pdata->pre_setup(hcd);
@@ -289,6 +306,15 @@ static int ehci_platform_probe(struct platform_device *dev)
 			goto err_reset;
 	}
 
+#ifdef CONFIG_USB_PHY
+	hcd->usb_phy = devm_usb_get_phy(&dev->dev, USB_PHY_TYPE_USB2);
+	if (!IS_ERR_OR_NULL(hcd->usb_phy)) {
+		otg_set_host(hcd->usb_phy->otg,
+				&hcd->self);
+		usb_phy_init(hcd->usb_phy);
+	}
+#endif
+
 	res_mem = platform_get_resource(dev, IORESOURCE_MEM, 0);
 	hcd->regs = devm_ioremap_resource(&dev->dev, res_mem);
 	if (IS_ERR(hcd->regs)) {
@@ -349,6 +375,9 @@ static int ehci_platform_remove(struct platform_device *dev)
 	if (pdata == &ehci_platform_defaults)
 		dev->dev.platform_data = NULL;
 
+	if (pdata == &ehci_platform_defaults)
+		dev->dev.platform_data = NULL;
+
 	return 0;
 }
 
@@ -396,14 +425,14 @@ static int ehci_platform_resume(struct device *dev)
 }
 #endif /* CONFIG_PM_SLEEP */
 
-static const struct of_device_id vt8500_ehci_ids[] = {
+static const struct of_device_id ralink_ehci_ids[] = {
+	{ .compatible = "ralink,rt3xxx-ehci", },
 	{ .compatible = "via,vt8500-ehci", },
 	{ .compatible = "wm,prizm-ehci", },
 	{ .compatible = "generic-ehci", },
 	{ .compatible = "cavium,octeon-6335-ehci", },
 	{}
 };
-MODULE_DEVICE_TABLE(of, vt8500_ehci_ids);
 
 static const struct acpi_device_id ehci_acpi_match[] = {
 	{ "PNP0D20", 0 }, /* EHCI controller without debug */
@@ -428,7 +457,7 @@ static struct platform_driver ehci_platform_driver = {
 	.driver		= {
 		.name	= "ehci-platform",
 		.pm	= &ehci_platform_pm_ops,
-		.of_match_table = vt8500_ehci_ids,
+		.of_match_table = ralink_ehci_ids,
 		.acpi_match_table = ACPI_PTR(ehci_acpi_match),
 	}
 };

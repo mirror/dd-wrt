@@ -401,6 +401,15 @@ config DW_WATCHDOG
 	  To compile this driver as a module, choose M here: the
 	  module will be called dw_wdt.
 
+config MPCORE_WATCHDOG
+	tristate "MPcore watchdog"
+	depends on ARCH_CNS3XXX || PLAT_MPCORE
+	help
+	  Watchdog timer embedded into the MPcore system.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called mpcore_wdt.
+
 config EP93XX_WATCHDOG
 	tristate "EP93xx Watchdog"
 	depends on ARCH_EP93XX || COMPILE_TEST
@@ -460,6 +469,16 @@ config DAVINCI_WATCHDOG
 
 	  NOTE: once enabled, this timer cannot be disabled.
 	  Say N if you are unsure.
+
+config CNS3XXX_WATCHDOG
+	tristate "CNS3XXX watchdog"
+	depends on ARCH_CNS3XXX
+	help
+	  Watchdog timer embedded into the CNS3XXX SoCs system.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called cns3xxx_wdt.
+
 
 config ORION_WATCHDOG
 	tristate "Orion watchdog"
@@ -1116,6 +1135,7 @@ config KEMPLD_WDT
 	  This driver can also be built as a module. If so, the module will be
 	  called kempld_wdt.
 
+
 config HPWDT_NMI_DECODING
 	bool "NMI decoding support for the HP ProLiant iLO2+ Hardware Watchdog Timer"
 	depends on HP_WATCHDOG
@@ -1449,6 +1469,26 @@ config RC32434_WDT
 	  To compile this driver as a module, choose M here: the
 	  module will be called rc32434_wdt.
 
+config AR2315_WDT
+	tristate "AR2315 watch dog timer"
+	depends on WATCHDOG && ATHEROS
+	help
+	  An atheros watchdog timer for the ar2315 soc.
+	  Most people will say N
+
+
+config ADM5120_WDT
+	tristate "Infineon ADM5120 SoC hardware watchdog"
+	depends on WATCHDOG && ADM5120
+	help
+	  This is a driver for hardware watchdog integrated in Infineon
+	  ADM5120 SoC. This watchdog simply watches your kernel to make sure
+	  it doesn't freeze, and if it does, it reboots your computer after a
+	  certain amount of time.
+
+	  To compile this driver as a module, choose M here: the module will be
+	  called adm5120_wdt.
+
 config INDYDOG
 	tristate "Indy/I2 Hardware Watchdog"
 	depends on SGI_HAS_INDYDOG || (MIPS && COMPILE_TEST)
@@ -1527,16 +1567,6 @@ config OCTEON_WDT
 	  from the first interrupt, it is then only poked when the
 	  device is written.
 
-config BCM63XX_WDT
-	tristate "Broadcom BCM63xx hardware watchdog"
-	depends on BCM63XX
-	help
-	  Watchdog driver for the built in watchdog hardware in Broadcom
-	  BCM63xx SoC.
-
-	  To compile this driver as a loadable module, choose M here.
-	  The module will be called bcm63xx_wdt.
-
 config BCM2835_WDT
 	tristate "Broadcom BCM2835 hardware watchdog"
 	depends on ARCH_BCM2835 || (OF && COMPILE_TEST)
@@ -1547,6 +1577,16 @@ config BCM2835_WDT
 
 	  To compile this driver as a loadable module, choose M here.
 	  The module will be called bcm2835_wdt.
+
+config BCM63XX_WDT
+	tristate "Broadcom BCM63xx hardware watchdog"
+	depends on BCM63XX
+	help
+	  Watchdog driver for the built in watchdog hardware in Broadcom
+	  BCM63xx SoC.
+
+	  To compile this driver as a loadable module, choose M here.
+	  The module will be called bcm63xx_wdt.
 
 config BCM_KONA_WDT
 	tristate "BCM Kona Watchdog"
@@ -1605,6 +1645,13 @@ config LOONGSON1_WDT
 	select WATCHDOG_CORE
 	help
 	  Hardware driver for the Loongson1 SoC Watchdog Timer.
+
+config RALINK_WDT_OPENWRT
+	tristate "Ralink SoC watchdog"
+	select WATCHDOG_CORE
+	depends on RALINK_OPENWRT
+	help
+	  Hardware driver for the Ralink SoC Watchdog Timer.
 
 config RALINK_WDT
 	tristate "Ralink SoC watchdog"
@@ -1726,6 +1773,7 @@ config MEN_A21_WDT
 	  called mena21_wdt.
 
 	  If unsure select N here.
+
 
 # PPC64 Architecture
 

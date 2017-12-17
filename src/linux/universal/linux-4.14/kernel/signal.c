@@ -1339,6 +1339,7 @@ static int kill_proc_info(int sig, struct siginfo *info, pid_t pid)
 	rcu_read_unlock();
 	return error;
 }
+EXPORT_SYMBOL(kill_proc_info);
 
 static int kill_as_cred_perm(const struct cred *cred,
 			     struct task_struct *target)

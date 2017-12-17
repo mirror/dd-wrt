@@ -68,6 +68,10 @@
 #include <linux/netconf.h>
 #include <net/nexthop.h>
 
+#ifdef CONFIG_PROC_STRIPPED
+#undef CONFIG_PROC_FS
+#endif
+
 struct ipmr_rule {
 	struct fib_rule		common;
 };

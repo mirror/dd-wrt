@@ -42,21 +42,6 @@
  * erasesize aligned (e.g. use MTDPART_OFS_NEXTBLK).
  */
 
-struct mtd_partition {
-	const char *name;		/* identifier string */
-	const char *const *types;	/* names of parsers to use if any */
-	uint64_t size;			/* partition size */
-	uint64_t offset;		/* offset within the master MTD space */
-	uint32_t mask_flags;		/* master MTD flags to mask out for this partition */
-	struct device_node *of_node;
-};
-
-#define MTDPART_OFS_RETAIN	(-3)
-#define MTDPART_OFS_NXTBLK	(-2)
-#define MTDPART_OFS_APPEND	(-1)
-#define MTDPART_SIZ_FULL	(0)
-
-
 struct mtd_info;
 struct device_node;
 
@@ -67,6 +52,23 @@ struct device_node;
 struct mtd_part_parser_data {
 	unsigned long origin;
 };
+
+struct mtd_partition {
+	const char *name;		/* identifier string */
+	const char *const *types;	/* names of parsers to use if any */
+	uint64_t size;			/* partition size */
+	uint64_t offset;		/* offset within the master MTD space */
+	uint32_t mask_flags;		/* master MTD flags to mask out for this partition */
+	int (*refresh_partition)(struct mtd_info *);
+	struct device_node *of_node;
+};
+
+#define MTDPART_OFS_RETAIN	(-3)
+#define MTDPART_OFS_NXTBLK	(-2)
+#define MTDPART_OFS_APPEND	(-1)
+#define MTDPART_SIZ_FULL	(0)
+
+int refresh_mtd_partitions(struct mtd_info *);
 
 /*
  * Functions dealing with the various ways of partitioning the space

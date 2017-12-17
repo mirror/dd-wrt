@@ -18,6 +18,7 @@ config ARM_GIC_PM
 config ARM_GIC_MAX_NR
 	int
 	default 2 if ARCH_REALVIEW
+	default 2 if ARCH_ALPINE
 	default 1
 
 config ARM_GIC_V2M

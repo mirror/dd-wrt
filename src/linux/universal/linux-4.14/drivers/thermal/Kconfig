@@ -234,6 +234,25 @@ config QORIQ_THERMAL
 	  cpufreq is used as the cooling device to throttle CPUs when the
 	  passive trip is crossed.
 
+config IMX_THERMAL
+	tristate "Temperature sensor driver for Freescale i.MX SoCs"
+	depends on CPU_THERMAL
+	depends on MFD_SYSCON
+	depends on OF
+	help
+	  Support for Temperature Monitor (TEMPMON) found on Freescale i.MX SoCs.
+	  It supports one critical trip point and one passive trip point.  The
+	  cpufreq is used as the cooling device to throttle CPUs when the
+	  passive trip is crossed.
+
+config AL_THERMAL
+	bool "Annapurna Labs thermal sensor driver"
+	depends on ARCH_ALPINE
+	depends on OF
+	help
+	  Enable this to plug the Annapurna Labs thermal sensor driver into the
+	  Linux thermal framework
+
 config SPEAR_THERMAL
 	tristate "SPEAr thermal sensor driver"
 	depends on PLAT_SPEAR || COMPILE_TEST
@@ -411,6 +430,31 @@ menu "Broadcom thermal drivers"
 depends on ARCH_BCM || COMPILE_TEST
 source "drivers/thermal/broadcom/Kconfig"
 endmenu
+
+config THERMAL_QCOMTSENS
+	tristate "Qualcomm Tsens Temperature driver"
+	depends on THERMAL
+	depends on ARCH_QCOM
+	help
+	  QCOM tsens thermal driver provides support for Temperature sensor
+	  (TSENS) found on QCOM SoCs. It supports four configurable trip points
+	  and controls multiple sensors on the SOC. The four trip points are
+	  common across all sensors present in the SoC. The number of sensors
+	  present varies from chip to chip and are set through device tree entry.
+	  The driver presents as a standard thermal zone device with configurable
+	  trip points and cooling device mapping through standard thermal zone
+	  device tree.
+
+config THERMAL_MONITOR
+	bool "Monitor thermal state and limit CPU Frequency"
+	depends on THERMAL_QCOMTSENS
+	depends on CPU_FREQ
+	help
+	  This enables thermal monitoring capability in the kernel in the
+	  absence of a system wide thermal monitoring entity or until such an
+	  entity starts running in the userspace. Monitors TSENS temperature
+	  and limits the max frequency of the cores.
+
 
 menu "Texas Instruments thermal drivers"
 depends on ARCH_HAS_BANDGAP || COMPILE_TEST

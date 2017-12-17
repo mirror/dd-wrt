@@ -2029,11 +2029,15 @@ retry_open:
 	}
 	clear_bit(TTY_HUPPED, &tty->flags);
 
+#ifdef CONFIG_MACH_KS8695_VSOPENRISC
+	noctty = 0;
+#else
 	noctty = (filp->f_flags & O_NOCTTY) ||
 		 (IS_ENABLED(CONFIG_VT) && device == MKDEV(TTY_MAJOR, 0)) ||
 		 device == MKDEV(TTYAUX_MAJOR, 1) ||
 		 (tty->driver->type == TTY_DRIVER_TYPE_PTY &&
 		  tty->driver->subtype == PTY_TYPE_MASTER);
+#endif
 	if (!noctty)
 		tty_open_proc_set_tty(filp, tty);
 	tty_unlock(tty);

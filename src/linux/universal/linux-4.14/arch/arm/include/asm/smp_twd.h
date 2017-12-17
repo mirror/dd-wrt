@@ -19,6 +19,12 @@
 #define TWD_TIMER_CONTROL_PERIODIC	(1 << 1)
 #define TWD_TIMER_CONTROL_IT_ENABLE	(1 << 2)
 
+#define TWD_WDOG_CONTROL_ENABLE		(1 << 0)
+#define TWD_WDOG_CONTROL_PERIODIC	(1 << 1)
+#define TWD_WDOG_CONTROL_IT_ENABLE	(1 << 2)
+#define TWD_WDOG_CONTROL_TIMER_MODE	(0 << 3)
+#define TWD_WDOG_CONTROL_WATCHDOG_MODE	(1 << 3)
+
 #include <linux/ioport.h>
 
 struct twd_local_timer {
@@ -34,5 +40,6 @@ struct twd_local_timer name __initdata = {	\
 };
 
 int twd_local_timer_register(struct twd_local_timer *);
+unsigned long twd_timer_get_rate(void);
 
 #endif

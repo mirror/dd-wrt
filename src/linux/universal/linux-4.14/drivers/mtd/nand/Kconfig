@@ -401,6 +401,21 @@ config MTD_NAND_PLATFORM
 	  devices. You will need to provide platform-specific functions
 	  via platform_data.
 
+config MTD_NAND_RB_PPC
+	bool "Support for RB333/RB600/RB1000 nand"
+	depends on MTD_NAND && (RB_PPC || RB1000 || RB800)
+	select MTD_NAND_RB
+
+config MTD_NAND_RB400
+	bool "Support for RB2011 nand"
+	depends on MTD_NAND && RB2011
+	select MTD_NAND_RB
+
+
+config MTD_NAND_RB
+	tristate
+
+
 config MTD_NAND_ORION
 	tristate "NAND Flash support for Marvell Orion SoC"
 	depends on PLAT_ORION
@@ -534,6 +549,19 @@ config MTD_NAND_XWAY
 	help
 	  Enables support for NAND Flash chips on Lantiq XWAY SoCs. NAND is attached
 	  to the External Bus Unit (EBU).
+config MTD_NAND_ATH
+	tristate "Support for NAND on Atheros board"
+	default n
+	depends on MTD_NAND && WASP_SUPPORT
+	help
+	  Enables support for NAND Flash chip on Atheros board.
+
+config MTD_NAND_QCOM
+	tristate "Support for NAND on QCOM SoCs"
+	depends on ARCH_QCOM
+	help
+	  Enables support for NAND flash chips on SoCs containing the EBI2 NAND
+	  controller. This controller is found on IPQ806x SoC.
 
 config MTD_NAND_SUNXI
 	tristate "Support for NAND on Allwinner SoCs"
@@ -562,5 +590,17 @@ config MTD_NAND_MTK
 	help
 	  Enables support for NAND controller on MTK SoCs.
 	  This controller is found on mt27xx, mt81xx, mt65xx SoCs.
+
+config MTD_NAND_AL
+	tristate "NAND support for Annapurna Labs NAND controller"
+	depends on MTD_NAND
+	help
+	  Enable support for NAND Flash chips on Annapurna Labs NAND controllers.
+
+config MTK_MTD_NAND
+	tristate "Support for MTK SoC NAND controller"
+	depends on SOC_MT7621
+	select MTD_NAND_IDS
+	select MTD_NAND_ECC
 
 endif # MTD_NAND

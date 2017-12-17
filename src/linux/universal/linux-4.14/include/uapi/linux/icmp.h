@@ -82,7 +82,7 @@ struct icmphdr {
 	} frag;
 	__u8	reserved[4];
   } un;
-};
+} MIPS_ENABLED(__attribute__((packed, aligned(2))));
 
 
 /*

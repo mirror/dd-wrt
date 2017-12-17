@@ -16,8 +16,10 @@
 #include <linux/compiler.h>
 #include <linux/dma-mapping.h>
 #include <linux/platform_device.h>
-#include "cns3xxx.h"
-#include "pm.h"
+#include <mach/cns3xxx.h>
+#include <mach/irqs.h>
+#include <mach/pm.h>
+#include <asm/mach-types.h>
 #include "core.h"
 #include "devices.h"
 
@@ -40,7 +42,7 @@ static struct resource cns3xxx_ahci_resource[] = {
 static u64 cns3xxx_ahci_dmamask = DMA_BIT_MASK(32);
 
 static struct platform_device cns3xxx_ahci_pdev = {
-	.name		= "ahci",
+	.name		= "ahci-cns3xxx",
 	.id		= 0,
 	.resource	= cns3xxx_ahci_resource,
 	.num_resources	= ARRAY_SIZE(cns3xxx_ahci_resource),
@@ -97,11 +99,15 @@ static struct platform_device cns3xxx_sdhci_pdev = {
 
 void __init cns3xxx_sdhci_init(void)
 {
-	u32 __iomem *gpioa = IOMEM(CNS3XXX_MISC_BASE_VIRT + 0x0014);
+	u32 __iomem *gpioa = (void __iomem *) (CNS3XXX_MISC_BASE_VIRT + 0x0014);
 	u32 gpioa_pins = __raw_readl(gpioa);
 
 	/* MMC/SD pins share with GPIOA */
-	gpioa_pins |= 0x1fff0004;
+	if (machine_is_gw2388()) {
+		gpioa_pins |= 0x1fff0000;
+	} else {
+		gpioa_pins |= 0x1fff0004;
+	}
 	__raw_writel(gpioa_pins, gpioa);
 
 	cns3xxx_pwr_clk_en(CNS3XXX_PWR_CLK_EN(SDIO));

@@ -1,20 +1,25 @@
 # SPDX-License-Identifier: GPL-2.0
-menuconfig ARCH_CNS3XXX
-	bool "Cavium Networks CNS3XXX family"
-	depends on ARCH_MULTI_V6
-	select ARM_GIC
-	help
-	  Support for Cavium Networks CNS3XXX platform.
-
-if ARCH_CNS3XXX
+menu "CNS3XXX platform type"
+	depends on ARCH_CNS3XXX
 
 config MACH_CNS3420VB
 	bool "Support for CNS3420 Validation Board"
-	depends on ATAGS
 	help
 	  Include support for the Cavium Networks CNS3420 MPCore Platform
 	  Baseboard.
 	  This is a platform with an on-board ARM11 MPCore and has support
 	  for USB, USB-OTG, MMC/SD/SDIO, SATA, PCI-E, etc.
 
-endif
+config MACH_GW2388
+	bool "Support for Gateworks Laguna Platform"
+	help
+	  Include support for the Gateworks Laguna Platform
+
+	  This is a platform with an on-board ARM11 MPCore and has support
+	  for USB, USB-OTG, MMC/SD/SDIO, SATA, PCI-E, I2C, GIG, etc.
+
+config CPU_FREQ_CNS3XXX
+	tristate "CPUfreq support for Cavium CNS3XXX CPUs"
+	depends on CPU_FREQ && ARCH_CNS3XXX
+
+endmenu

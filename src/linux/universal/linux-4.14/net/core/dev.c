@@ -145,6 +145,9 @@
 #include <linux/crash_dump.h>
 #include <linux/sctp.h>
 #include <net/udp_tunnel.h>
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+#include <linux/imq.h>
+#endif
 
 #include "net-sysfs.h"
 
@@ -2971,7 +2974,17 @@ static int xmit_one(struct sk_buff *skb, struct net_device *dev,
 	unsigned int len;
 	int rc;
 
-	if (!list_empty(&ptype_all) || !list_empty(&dev->ptype_all))
+	/*
+	 * If this skb has been fast forwarded then we don't want it to
+	 * go to any taps (by definition we're trying to bypass them).
+	 */
+	if (!skb->fast_forwarded) {
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	if (!list_empty(&ptype_all) &&
+		!(skb->imq_flags & IMQ_F_ENQUEUE))
+#else
+		if (!list_empty(&ptype_all))
+#endif
 		dev_queue_xmit_nit(skb, dev);
 
 #ifdef CONFIG_ETHERNET_PACKET_MANGLE
@@ -3019,6 +3032,8 @@ out:
 	*ret = rc;
 	return skb;
 }
+
+EXPORT_SYMBOL_GPL(dev_hard_start_xmit);
 
 static struct sk_buff *validate_xmit_vlan(struct sk_buff *skb,
 					  netdev_features_t features)
@@ -4265,6 +4280,9 @@ void netdev_rx_handler_unregister(struct net_device *dev)
 }
 EXPORT_SYMBOL_GPL(netdev_rx_handler_unregister);
 
+int (*fast_nat_recv)(struct sk_buff *skb) __rcu __read_mostly;
+EXPORT_SYMBOL_GPL(fast_nat_recv);
+
 /*
  * Limit the use of PFMEMALLOC reserves to those protocols that implement
  * the special handling of PFMEMALLOC skbs.
@@ -4312,10 +4330,12 @@ static int __netif_receive_skb_core(struct sk_buff *skb, bool pfmemalloc)
 	bool deliver_exact = false;
 	int ret = NET_RX_DROP;
 	__be16 type;
+	int (*fast_recv)(struct sk_buff *skb);
 
 	net_timestamp_check(!netdev_tstamp_prequeue, skb);
 
 	trace_netif_receive_skb(skb);
+
 
 	orig_dev = skb->dev;
 
@@ -8001,6 +8021,12 @@ EXPORT_SYMBOL(dev_get_stats);
 struct netdev_queue *dev_ingress_queue_create(struct net_device *dev)
 {
 	struct netdev_queue *queue = dev_ingress_queue(dev);
+
+	fast_recv = rcu_dereference(fast_nat_recv);
+	if (fast_recv && fast_recv(skb)) {
+		ret = NET_RX_SUCCESS;
+		goto out;
+	}
 
 #ifdef CONFIG_NET_CLS_ACT
 	if (queue)

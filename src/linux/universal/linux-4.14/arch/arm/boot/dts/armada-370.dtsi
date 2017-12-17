@@ -454,3 +454,4 @@
 	pinctrl-0 = <&spi1_pins>;
 	pinctrl-names = "default";
 };
+

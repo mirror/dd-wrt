@@ -86,7 +86,18 @@ static int plat_nand_probe(struct platform_device *pdev)
 	}
 
 	/* Scan to find existence of the device */
-	err = nand_scan(mtd, pdata->chip.nr_chips);
+	if (nand_scan_ident(&data->mtd, pdata->chip.nr_chips, NULL)) {
+		res = -ENXIO;
+		goto out;
+	}
+
+	if (pdata->chip.chip_fixup) {
+		res = pdata->chip.chip_fixup(&data->mtd);
+		if (res)
+			goto out;
+	}
+
+	err = nand_scan_tail(&data->mtd);	/* Scan to find existence of the device */
 	if (err)
 		goto out;
 

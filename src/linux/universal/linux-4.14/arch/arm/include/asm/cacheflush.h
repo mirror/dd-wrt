@@ -160,7 +160,6 @@ extern void __cpuc_flush_dcache_area(void *, size_t);
  * visible to the CPU.
  */
 extern void dmac_flush_range(const void *, const void *);
-
 #endif
 
 /*

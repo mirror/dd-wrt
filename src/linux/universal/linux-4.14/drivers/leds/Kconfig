@@ -40,6 +40,10 @@ config LEDS_BRIGHTNESS_HW_CHANGED
 
 comment "LED drivers"
 
+config LEDS_RB_PPC
+	tristate "LED Support for RB300/RB600/RB1000"
+	depends on LEDS_CLASS && (RB_PPC || RB1000 || RB800)
+
 config LEDS_88PM860X
 	tristate "LED Support for Marvell 88PM860x PMIC"
 	depends on LEDS_CLASS
@@ -651,6 +655,7 @@ config LEDS_POWERNV
 	  To compile this driver as a module, choose 'm' here: the module
 	  will be called leds-powernv.
 
+
 config LEDS_SYSCON
 	bool "LED support for LEDs on system controllers"
 	depends on LEDS_CLASS=y
@@ -697,6 +702,15 @@ config LEDS_NIC78BX
 	  will be called leds-nic78bx.
 
 comment "LED Triggers"
+
 source "drivers/leds/trigger/Kconfig"
+
+config LEDS_TRIGGER_ADM5120_SWITCH
+	tristate "LED ADM5120 Switch Port Status Trigger"
+	depends on LEDS_TRIGGERS && ADM5120
+	help
+	  This allows LEDs to be controlled by the port states of
+	  the ADM5120 built-in Ethernet Switch
+	  If unsure, say N.
 
 endif # NEW_LEDS

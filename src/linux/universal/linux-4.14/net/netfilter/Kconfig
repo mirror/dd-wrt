@@ -85,6 +85,16 @@ config NF_CONNTRACK_SECMARK
 
 	  If unsure, say 'N'.
 
+config NF_CONNTRACK_CUSTOM
+	int "Number of custom extend"
+	range 0 8
+	depends on NETFILTER_ADVANCED
+	default "4"
+	help
+	  This parameter specifies how many custom extensions can be registered.
+
+	  The default value is 4.
+
 config NF_CONNTRACK_ZONES
 	bool  'Connection tracking zones'
 	depends on NETFILTER_ADVANCED
@@ -118,6 +128,18 @@ config NF_CONNTRACK_EVENTS
 
 	  If unsure, say `N'.
 
+config NF_CONNTRACK_RTCACHE
+	tristate "Cache route entries in conntrack objects"
+	depends on NETFILTER_ADVANCED
+	depends on NF_CONNTRACK
+	help
+	  If this option is enabled, the connection tracking code will
+	  cache routing information for each connection that is being
+	  forwarded, at a cost of 32 bytes per conntrack object.
+
+	  To compile it as a module, choose M here.  If unsure, say N.
+	  The module will be called nf_conntrack_rtcache.
+
 config NF_CONNTRACK_TIMEOUT
 	bool  'Connection tracking timeout'
 	depends on NETFILTER_ADVANCED
@@ -127,6 +149,13 @@ config NF_CONNTRACK_TIMEOUT
 	  via the CT target.
 
 	  If unsure, say `N'.
+
+config NF_CONNTRACK_DSCPREMARK_EXT
+	bool  'Connection tracking extension for dscp remark target'
+	depends on NETFILTER_ADVANCED
+	help
+	  This option enables support for connection tracking extension
+	  for dscp remark.
 
 config NF_CONNTRACK_TIMESTAMP
 	bool  'Connection tracking timestamping'
@@ -334,6 +363,16 @@ config NF_CONNTRACK_TFTP
 	  you will need this.
 
 	  To compile it as a module, choose M here.  If unsure, say N.
+
+config NF_CONNTRACK_RTSP
+	tristate "RTSP protocol support"
+	depends on NF_CONNTRACK
+	help
+		Support the RTSP protocol.  This allows UDP transports to be setup
+		properly, including RTP and RDT.
+
+		If you want to compile it as a module, say 'M' here and read
+		Documentation/modules.txt.  If unsure, say 'Y'.
 
 config NF_CT_NETLINK
 	tristate 'Connection tracking netlink interface'
@@ -866,6 +905,18 @@ config NETFILTER_XT_TARGET_LOG
 
 	  To compile it as a module, choose M here.  If unsure, say N.
 
+config NETFILTER_XT_TARGET_IMQ
+        tristate '"IMQ" target support'
+	depends on NETFILTER_XTABLES
+	depends on IP_NF_MANGLE || IP6_NF_MANGLE
+	select IMQ
+	default m if NETFILTER_ADVANCED=n
+        help
+          This option adds a `IMQ' target which is used to specify if and
+          to which imq device packets should get enqueued/dequeued.
+
+          To compile it as a module, choose M here.  If unsure, say N.
+
 config NETFILTER_XT_TARGET_MARK
 	tristate '"MARK" target support'
 	depends on NETFILTER_ADVANCED
@@ -1270,6 +1321,26 @@ config NETFILTER_XT_MATCH_IPVS
 
 	  If unsure, say N.
 
+config NETFILTER_XT_MATCH_LAYER7
+	tristate '"layer7" match support'
+	depends on NETFILTER_XTABLES
+	depends on NETFILTER_ADVANCED
+	depends on NF_CONNTRACK
+	help
+	  Say Y if you want to be able to classify connections (and their
+	  packets) based on regular expression matching of their application
+	  layer data.   This is one way to classify applications such as
+	  peer-to-peer filesharing systems that do not always use the same
+	  port.
+
+	  To compile it as a module, choose M here.  If unsure, say N.
+
+config NETFILTER_XT_MATCH_LAYER7_DEBUG
+	bool 'Layer 7 debugging output'
+	depends on NETFILTER_XT_MATCH_LAYER7
+	help
+	  Say Y to get lots of debugging output.
+
 config NETFILTER_XT_MATCH_L2TP
 	tristate '"l2tp" match support'
 	depends on NETFILTER_ADVANCED
@@ -1475,6 +1546,12 @@ config NETFILTER_XT_MATCH_STATE
 	  is a powerful tool for packet classification.
 
 	  To compile it as a module, choose M here.  If unsure, say N.
+
+config NETFILTER_XT_MATCH_LAYER7_DEBUG
+	bool 'Layer 7 debugging output'
+	depends on NETFILTER_XT_MATCH_LAYER7
+	help
+	  Say Y to get lots of debugging output.
 
 config NETFILTER_XT_MATCH_STATISTIC
 	tristate '"statistic" match support'

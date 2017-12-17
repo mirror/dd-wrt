@@ -352,6 +352,17 @@ config MMC_MESON_GX
 
 	  If you have a controller with this interface, say Y here.
 
+config MMC_SDHCI_MT7620
+	tristate "SDHCI platform support for the MT7620 SD/MMC Controller"
+	depends on SOC_MT7620_OPENWRT
+	depends on MMC_SDHCI_PLTFM
+	select MMC_SDHCI_IO_ACCESSORS
+	help
+	  This selects the BCM2835 SD/MMC controller. If you have a BCM2835
+	  platform with SD or MMC devices, say Y or M here.
+
+	  If unsure, say N.
+
 config MMC_MOXART
 	tristate "MOXART SD/MMC Host Controller support"
 	depends on ARCH_MOXART && MMC
@@ -454,6 +465,16 @@ config MMC_MXS
 	help
 	  This selects the Freescale SSP MMC controller found on MXS based
 	  platforms like mx23/28.
+
+	  If unsure, say N.
+
+config MMC_OCTEON
+	tristate "Cavium OCTEON Multimedia Card Interface support"
+	depends on CAVIUM_OCTEON_SOC
+	help
+	  This selects Cavium OCTEON Multimedia card Interface.
+	  If you have an OCTEON board with a Multimedia Card slot,
+	  say Y or M here.
 
 	  If unsure, say N.
 
@@ -606,6 +627,31 @@ config MMC_SDHI_INTERNAL_DMAC
 	  This provides DMA support for SDHI SD/SDIO controllers
 	  using on-chip bus mastering. This supports the controllers
 	  found in arm64 based SoCs.
+
+config GPIOMMC
+	tristate "MMC/SD over GPIO-based SPI"
+	depends on MMC && MMC_SPI && SPI_GPIO_OLD
+	help
+	  This driver hooks up the mmc_spi and spi_gpio modules so that
+	  MMC/SD cards can be used on a GPIO based bus by bitbanging
+	  the SPI protocol in software.
+
+	  This driver provides a configfs interface to dynamically create
+	  and destroy GPIO-based MMC/SD card devices. It also provides
+	  a platform device interface API.
+	  See Documentation/gpiommc.txt for details.
+
+	  The module will be called gpiommc.
+
+	  If unsure, say N.
+
+config GPIOMMC_CONFIGFS
+	bool
+	depends on GPIOMMC && CONFIGFS_FS
+	default y
+	help
+	  This option automatically enables configfs support for gpiommc
+	  if configfs is available.
 
 config MMC_CB710
 	tristate "ENE CB710 MMC/SD Interface support"
@@ -899,3 +945,5 @@ config MMC_SDHCI_XENON
 	  This selects Marvell Xenon eMMC/SD/SDIO SDHCI.
 	  If you have a controller with this interface, say Y or M here.
 	  If unsure, say N.
+
+source "drivers/mmc/host/mtk-mmc/Kconfig"

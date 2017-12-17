@@ -15,21 +15,11 @@
 
 extern void cns3xxx_timer_init(void);
 
-#ifdef CONFIG_CACHE_L2X0
-void __init cns3xxx_l2x0_init(void);
-#else
-static inline void cns3xxx_l2x0_init(void) {}
-#endif /* CONFIG_CACHE_L2X0 */
-
-#ifdef CONFIG_PCI
-extern void __init cns3xxx_pcie_init_late(void);
-#else
-static inline void __init cns3xxx_pcie_init_late(void) {}
-#endif
-
-void __init cns3xxx_map_io(void);
+void __init cns3xxx_common_init(void);
 void __init cns3xxx_init_irq(void);
 void cns3xxx_power_off(void);
 void cns3xxx_restart(enum reboot_mode, const char *);
+extern void __init cns3xxx_pcie_init_late(void);
+extern void __init cns3xxx_pcie_set_irqs(int bus, int *irqs);
 
 #endif /* __CNS3XXX_CORE_H */

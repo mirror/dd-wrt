@@ -38,11 +38,21 @@
 int __initdata rd_doload;	/* 1 = load RAM disk, 0 = don't load */
 
 int root_mountflags = MS_RDONLY | MS_SILENT;
+
+#ifdef CONFIG_X86
+int root_devices=14;
+char * __initdata root_device_name2[14]={"/dev/hda2","/dev/hdb2","/dev/hdc2","/dev/hdd2", "/dev/sda2","/dev/sdb2","/dev/sdc2","/dev/sdd2","/dev/sde2","/dev/sdf2","/dev/sdg2","/dev/sdh2","/dev/sdi2", "/dev/mmcblk0p2"};
+#define root_device_name root_device_name2[0]
+dev_t ROOT_DEV[13];
+#define BASE_ROOT ROOT_DEV[0]
+#else
 static char * __initdata root_device_name;
-static char __initdata saved_root_name[64];
+dev_t ROOT_DEV;
+#define BASE_ROOT ROOT_DEV
+#endif
+char __initdata saved_root_name[64];
 static int root_wait;
 
-dev_t ROOT_DEV;
 
 static int __init load_ramdisk(char *str)
 {
@@ -290,9 +300,13 @@ done:
 }
 EXPORT_SYMBOL_GPL(name_to_dev_t);
 
-static int __init root_dev_setup(char *line)
+int __init root_dev_setup(char *line)
 {
+#ifdef CONFIG_ARCH_MVEBU
+	strcpy(saved_root_name, "/dev/ubiblock0_0");
+#else
 	strlcpy(saved_root_name, line, sizeof(saved_root_name));
+#endif
 	return 1;
 }
 
@@ -318,7 +332,12 @@ static int __init root_data_setup(char *str)
 static char * __initdata root_fs_names;
 static int __init fs_names_setup(char *str)
 {
-	root_fs_names = str;
+
+#ifdef CONFIG_ARCH_MVEBU	
+root_fs_names = "squashfs";
+#else
+root_fs_names = str;
+#endif
 	return 1;
 }
 
@@ -369,16 +388,16 @@ static int __init do_mount_root(char *name, char *fs, int flags, void *data)
 
 	sys_chdir("/root");
 	s = current->fs->pwd.dentry->d_sb;
-	ROOT_DEV = s->s_dev;
+	BASE_ROOT = s->s_dev;
 	printk(KERN_INFO
 	       "VFS: Mounted root (%s filesystem)%s on device %u:%u.\n",
 	       s->s_type->name,
 	       sb_rdonly(s) ? " readonly" : "",
-	       MAJOR(ROOT_DEV), MINOR(ROOT_DEV));
+	       MAJOR(BASE_ROOT), MINOR(BASE_ROOT));
 	return 0;
 }
 
-void __init mount_block_root(char *name, int flags)
+int __init mount_block_root(char *name, int flags)
 {
 	struct page *page = alloc_page(GFP_KERNEL |
 					__GFP_NOTRACK_FALSE_POSITIVE);
@@ -406,6 +425,7 @@ retry:
 		 * and bad superblock on root device.
 		 * and give them a list of the available devices
 		 */
+#ifndef CONFIG_X86
 #ifdef CONFIG_BLOCK
 		__bdevname(ROOT_DEV, b);
 #endif
@@ -419,6 +439,7 @@ retry:
 		       "explicit textual name for \"root=\" boot option.\n");
 #endif
 		panic("VFS: Unable to mount root fs on %s", b);
+#endif
 	}
 	if (!(flags & SB_RDONLY)) {
 		flags |= SB_RDONLY;
@@ -431,12 +452,17 @@ retry:
 	for (p = fs_names; *p; p += strlen(p)+1)
 		printk(" %s", p);
 	printk("\n");
+#ifndef CONFIG_X86
 #ifdef CONFIG_BLOCK
 	__bdevname(ROOT_DEV, b);
 #endif
 	panic("VFS: Unable to mount root fs on %s", b);
+#else
+	return -1;
+#endif
 out:
 	put_page(page);
+	return 0;
 }
 
 static int __init mount_ubi_rootfs(void)
@@ -533,20 +559,20 @@ void __init change_floppy(char *fmt, ...)
 void __init mount_root(void)
 {
 #ifdef CONFIG_ROOT_NFS
-	if (ROOT_DEV == Root_NFS) {
+	if (BASE_ROOT == Root_NFS) {
 		if (mount_nfs_root())
 			return;
 
 		printk(KERN_ERR "VFS: Unable to mount root fs via NFS, trying floppy.\n");
-		ROOT_DEV = Root_FD0;
+		BASE_ROOT = Root_FD0;
 	}
 #endif
 #ifdef CONFIG_BLK_DEV_FD
-	if (MAJOR(ROOT_DEV) == FLOPPY_MAJOR) {
+	if (MAJOR(BASE_ROOT) == FLOPPY_MAJOR) {
 		/* rd_doload is 2 for a dual initrd/ramload setup */
 		if (rd_doload==2) {
 			if (rd_load_disk(1)) {
-				ROOT_DEV = Root_RAM1;
+				BASE_ROOT = Root_RAM1;
 				root_device_name = NULL;
 			}
 		} else
@@ -558,6 +584,16 @@ void __init mount_root(void)
 		return;
 #endif
 #ifdef CONFIG_BLOCK
+#ifdef CONFIG_X86
+ 	int i;
+ 	for (i = 0; i < root_devices; i++) {
+ 		create_dev("/dev/root", ROOT_DEV[i]);
+ 		int ret = mount_block_root("/dev/root", root_mountflags);
+ 		if (ret == 0)
+ 			return;
+ 	}
+ 	panic("unable to mount root\n");
+#else
 	{
 		int err = create_dev("/dev/root", ROOT_DEV);
 
@@ -565,6 +601,7 @@ void __init mount_root(void)
 			pr_emerg("Failed to create /dev/root: %d\n", err);
 		mount_block_root("/dev/root", root_mountflags);
 	}
+#endif
 #endif
 }
 
@@ -593,6 +630,7 @@ void __init prepare_namespace(void)
 	md_run_setup();
 
 	if (saved_root_name[0]) {
+#ifndef CONFIG_X86
 		root_device_name = saved_root_name;
 		if (!strncmp(root_device_name, "mtd", 3) ||
 		    !strncmp(root_device_name, "ubi", 3)) {
@@ -602,25 +640,42 @@ void __init prepare_namespace(void)
 		ROOT_DEV = name_to_dev_t(root_device_name);
 		if (strncmp(root_device_name, "/dev/", 5) == 0)
 			root_device_name += 5;
+#else
+ 		int i;
+ 		for (i=0;i<root_devices;i++)
+ 		{
+ 		ROOT_DEV[i] = name_to_dev_t(root_device_name2[i]);
+ 		if (strncmp(root_device_name2[i], "/dev/", 5) == 0)
+ 			root_device_name2[i] += 5;
+  		}
+#endif
 	}
 
 	if (initrd_load())
 		goto out;
 
 	/* wait for any asynchronous scanning to complete */
+#ifndef CONFIG_X86
 	if ((ROOT_DEV == 0) && root_wait) {
+#else
+	if (root_wait) {
+#endif
 		printk(KERN_INFO "Waiting for root device %s...\n",
 			saved_root_name);
+#ifndef CONFIG_X86
 		while (driver_probe_done() != 0 ||
 			(ROOT_DEV = name_to_dev_t(saved_root_name)) == 0)
+#else
+		while (driver_probe_done() != 0)
+#endif
 			msleep(5);
 		async_synchronize_full();
 	}
 
-	is_floppy = MAJOR(ROOT_DEV) == FLOPPY_MAJOR;
+	is_floppy = MAJOR(BASE_ROOT) == FLOPPY_MAJOR;
 
 	if (is_floppy && rd_doload && rd_load_disk(0))
-		ROOT_DEV = Root_RAM0;
+		BASE_ROOT = Root_RAM0;
 
 	mount_root();
 out:
@@ -639,7 +694,7 @@ static struct dentry *rootfs_mount(struct file_system_type *fs_type,
 	if (test_and_set_bit(0, &once))
 		return ERR_PTR(-ENODEV);
 
-	if (IS_ENABLED(CONFIG_TMPFS) && is_tmpfs)
+	if (IS_ENABLED(CONFIG_DEVTMPFS) && is_tmpfs)
 		fill = shmem_fill_super;
 
 	return mount_nodev(fs_type, flags, data, fill);

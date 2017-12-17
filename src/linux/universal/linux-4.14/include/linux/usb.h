@@ -8,7 +8,6 @@
 #define USB_MAJOR			180
 #define USB_DEVICE_MAJOR		189
 
-
 #ifdef __KERNEL__
 
 #include <linux/errno.h>        /* for -ENODEV */
@@ -462,6 +461,10 @@ struct usb_bus {
 	int bandwidth_int_reqs;		/* number of Interrupt requests */
 	int bandwidth_isoc_reqs;	/* number of Isoc. requests */
 
+#ifdef CONFIG_USB_DEVICEFS
+	struct dentry *usbfs_dentry;	/* usbfs dentry entry for the bus */
+#endif
+
 	unsigned resuming_ports;	/* bit array: resuming root-hub ports */
 
 #if defined(CONFIG_USB_MON) || defined(CONFIG_USB_MON_MODULE)
@@ -668,6 +671,13 @@ struct usb_device {
 
 	struct list_head filelist;
 
+#ifdef CONFIG_USB_DEVICE_CLASS
+	struct device *usb_classdev;
+#endif
+#ifdef CONFIG_USB_DEVICEFS
+	struct dentry *usbfs_dentry;
+#endif
+
 	int maxchild;
 
 	u32 quirks;
@@ -725,17 +735,6 @@ extern int usb_lock_device_for_reset(struct usb_device *udev,
 /* USB port reset for device reinitialization */
 extern int usb_reset_device(struct usb_device *dev);
 extern void usb_queue_reset_device(struct usb_interface *dev);
-
-#ifdef CONFIG_ACPI
-extern int usb_acpi_set_power_state(struct usb_device *hdev, int index,
-	bool enable);
-extern bool usb_acpi_power_manageable(struct usb_device *hdev, int index);
-#else
-static inline int usb_acpi_set_power_state(struct usb_device *hdev, int index,
-	bool enable) { return 0; }
-static inline bool usb_acpi_power_manageable(struct usb_device *hdev, int index)
-	{ return true; }
-#endif
 
 /* USB autosuspend and autoresume */
 #ifdef CONFIG_PM
@@ -796,11 +795,16 @@ static inline bool usb_device_supports_ltm(struct usb_device *udev)
 	return udev->bos->ss_cap->bmAttributes & USB_LTM_SUPPORT;
 }
 
-static inline bool usb_device_no_sg_constraint(struct usb_device *udev)
-{
-	return udev && udev->bus && udev->bus->no_sg_constraint;
-}
-
+#ifdef CONFIG_ACPI
+extern int usb_acpi_set_power_state(struct usb_device *hdev, int index,
+	bool enable);
+extern bool usb_acpi_power_manageable(struct usb_device *hdev, int index);
+#else
+static inline int usb_acpi_set_power_state(struct usb_device *hdev, int index,
+	bool enable) { return 0; }
+static inline bool usb_acpi_power_manageable(struct usb_device *hdev, int index)
+	{ return true; }
+#endif
 
 /*-------------------------------------------------------------------------*/
 
@@ -825,10 +829,7 @@ extern int usb_driver_claim_interface(struct usb_driver *driver,
  * usb_interface_claimed - returns true iff an interface is claimed
  * @iface: the interface being checked
  *
- * Return: %true (nonzero) iff the interface is claimed, else %false
- * (zero).
- *
- * Note:
+ * Returns true (nonzero) iff the interface is claimed, else false (zero).
  * Callers must own the driver model's usb bus readlock.  So driver
  * probe() entries don't need extra locking, but other call contexts
  * may need to explicitly claim that lock.
@@ -857,6 +858,13 @@ extern struct usb_host_interface *usb_find_alt_setting(
 		struct usb_host_config *config,
 		unsigned int iface_num,
 		unsigned int alt_num);
+
+static inline bool usb_device_no_sg_constraint(struct usb_device *udev)
+{
+	return udev && udev->bus && udev->bus->no_sg_constraint;
+}
+
+extern struct usb_device *usb_find_device_by_name(const char *name);
 
 /* port claiming functions */
 int usb_hub_claim_port(struct usb_device *hdev, unsigned port1,
@@ -1544,6 +1552,9 @@ struct urb {
 	unsigned int transfer_flags;	/* (in) URB_SHORT_NOT_OK | ...*/
 	void *transfer_buffer;		/* (in) associated data buffer */
 	dma_addr_t transfer_dma;	/* (in) dma addr for transfer_buffer */
+	void *aligned_transfer_buffer;	/* (in) associeated data buffer */
+	dma_addr_t aligned_transfer_dma;/* (in) dma addr for transfer_buffer */
+	u32 aligned_transfer_buffer_length; /* (in) data buffer length */
 	struct scatterlist *sg;		/* (in) scatter gather buffer list */
 	int num_mapped_sgs;		/* (internal) mapped sg entries */
 	int num_sgs;			/* (in) number of entries in the sg list */
@@ -1792,7 +1803,6 @@ extern int usb_set_configuration(struct usb_device *dev, int configuration);
  */
 #define USB_CTRL_GET_TIMEOUT	5000
 #define USB_CTRL_SET_TIMEOUT	5000
-
 
 /**
  * struct usb_sg_request - support for scatter/gather I/O

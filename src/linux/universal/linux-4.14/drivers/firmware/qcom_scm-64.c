@@ -439,3 +439,12 @@ int __qcom_scm_iommu_secure_ptbl_init(struct device *dev, u64 addr, u32 size,
 
 	return ret;
 }
+int __qcom_scm_pinmux_read(u32 svc_id, u32 cmd_id, u32 arg1)
+{
+	return -ENOTSUPP;
+}
+
+int __qcom_scm_pinmux_write(u32 svc_id, u32 cmd_id, u32 arg1, u32 arg2)
+{
+	return -ENOTSUPP;
+}

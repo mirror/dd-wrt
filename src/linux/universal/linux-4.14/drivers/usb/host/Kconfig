@@ -3,6 +3,10 @@
 #
 comment "USB Host Controller Drivers"
 
+config USB_ADM5120_HCD
+	tristate "ADM5120 HCD support (EXPERIMENTAL)"
+	depends on USB && ADM5120 && EXPERIMENTAL
+
 config USB_C67X00_HCD
 	tristate "Cypress C67x00 HCD support"
 	depends on HAS_IOMEM
@@ -102,6 +106,12 @@ config USB_EHCI_HCD
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called ehci-hcd.
+
+config RT3XXX_EHCI
+	bool "Ralink EHCI HCD support"
+	depends on USB_EHCI_HCD && RAETH
+	default y
+
 
 config USB_EHCI_ROOT_HUB_TT
 	bool "Root Hub Transaction Translators"
@@ -409,6 +419,32 @@ config USB_OHCI_HCD
 
 	  To compile this driver as a module, choose M here: the
 	  module will be called ohci-hcd.
+
+config USB_OHCI_AR7100
+	bool "USB OHCI support for Atheros AR71xx"
+	depends on USB_OHCI_HCD && MACH_AR7100
+	help
+	  Support for Atheros AR71xx built-in OHCI controller
+
+config USB_OHCI_AR7240
+	bool "USB OHCI support for AR7240"
+	depends on (MACH_AR7240) && USB_OHCI_HCD
+	depends on MACH_AR7240 && USB_OHCI_HCD
+	help
+	  Support for AR7240 OHCI controller
+
+config USB_EHCI_AR7100
+	bool "USB EHCI support for AR71xx"
+	depends on USB_EHCI_HCD && MACH_AR7100
+	help
+	  Support for Atheros AR71xx built-in EHCI controller
+
+config USB_EHCI_AR9130
+	bool "USB EHCI support for AR9130"
+	depends on (MACH_AR7100 || MACH_AR7240) && USB_EHCI_HCD
+	help
+	  Support for AR9130 EHCI controller
+
 
 if USB_OHCI_HCD
 

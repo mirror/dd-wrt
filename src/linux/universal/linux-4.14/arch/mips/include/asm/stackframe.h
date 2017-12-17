@@ -428,6 +428,10 @@
 		eretnc
 #else
 		.set	arch=r4000
+#ifdef CONFIG_BCM47XX
+		nop
+		nop
+#endif
 		eret
 		.set	mips0
 #endif
