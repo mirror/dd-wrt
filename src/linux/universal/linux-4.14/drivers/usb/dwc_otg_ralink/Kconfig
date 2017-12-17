@@ -1,0 +1,25 @@
+config DWC_OTG_RALINK
+        depends on RALINK_RT3052 || RALINK_RT3352
+        tristate "Ralink DWC_OTG support"
+        ---help---
+          This driver supports Ralink DWC_OTG
+
+choice
+        prompt "USB Operation Mode"
+        depends on DWC_OTG_RALINK
+        default DWC_OTG_HOST_ONLY_RALINK
+
+config DWC_OTG_HOST_ONLY_RALINK
+        bool "HOST ONLY MODE"
+        depends on DWC_OTG_RALINK
+
+config DWC_OTG_DEVICE_ONLY_RALINK
+        bool "DEVICE ONLY MODE"
+        depends on DWC_OTG_RALINK
+
+endchoice
+
+
+config DWC_OTG_DEBUG_RALINK
+        bool "Enable debug mode"
+        depends on DWC_OTG_RALINK

@@ -1,0 +1,20 @@
+obj-m += al_eth_drv.o
+al_eth_drv-objs := al_eth.o al_eth_sysfs.o al_hal_eth_main.o al_hal_udma_main.o\
+		al_hal_udma_debug.o al_hal_iofic.o al_hal_udma_iofic.o\
+		al_hal_udma_config.o al_hal_serdes.o  al_init_eth_kr.o\
+		al_hal_eth_kr.o al_init_eth_lm.o
+
+KBUILD_CPPFLAGS+=-I$(PWD)/
+
+KBUILD_CPPFLAGS+=-DCONFIG_AL_ETH_ALLOC_FRAG
+#KBUILD_CPPFLAGS+=-DCONFIG_AL_ETH_ALLOC_PAGE
+KBUILD_CPPFLAGS+=-DPCI_VENDOR_ID_ANNAPURNA_LABS=0x1c36
+KBUILD_CPPFLAGS+=-DPCI_DEVICE_ID_AL_ETH=0x0001
+KBUILD_CPPFLAGS+=-DPCI_DEVICE_ID_AL_ETH_ADVANCED=0x0003
+KBUILD_CPPFLAGS+=-DPCI_DEVICE_ID_AL_ETH_NIC=0x0004
+KBUILD_CPPFLAGS+=-DPCI_DEVICE_ID_AL_ETH_FPGA_NIC=0x0031
+all:
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+
+clean:
+	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
