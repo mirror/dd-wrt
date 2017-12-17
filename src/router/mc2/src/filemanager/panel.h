@@ -6,6 +6,7 @@
 #define MC__PANEL_H
 
 #include <inttypes.h>           /* uintmax_t */
+#include <limits.h>             /* MB_LEN_MAX */
 
 #include "lib/global.h"         /* gboolean */
 #include "lib/fs.h"             /* MC_MAXPATHLEN */
@@ -21,7 +22,7 @@
 #define selection(p) (&(p->dir.list[p->selected]))
 #define DEFAULT_USER_FORMAT "half type name | size | perm"
 
-#define LIST_TYPES 4
+#define LIST_FORMATS 4
 
 #define UP_KEEPSEL ((char *) -1)
 
@@ -33,7 +34,7 @@ typedef enum
     list_brief,                 /* Name */
     list_long,                  /* Like ls -l */
     list_user                   /* User defined */
-} list_type_t;
+} list_format_t;
 
 typedef enum
 {
@@ -93,7 +94,7 @@ typedef struct
     Widget widget;
     dir_list dir;               /* Directory contents */
 
-    list_type_t list_type;      /* listing type */
+    list_format_t list_format;  /* listing type */
     int active;                 /* If panel is currently selected */
     vfs_path_t *cwd_vpath;      /* Current Working Directory */
     vfs_path_t *lwd_vpath;      /* Last Working Directory */
@@ -119,7 +120,7 @@ typedef struct
 
     gboolean user_mini_status;  /* Is user_status_format used */
     char *user_format;          /* User format */
-    char *user_status_format[LIST_TYPES];       /* User format for status line */
+    char *user_status_format[LIST_FORMATS];     /* User format for status line */
 
     struct format_e *format;    /* Display format */
     struct format_e *status_format;     /* Mini status format */

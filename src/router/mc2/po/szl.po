@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-03-04 18:55+0100\n"
-"PO-Revision-Date: 2017-02-25 09:22+0000\n"
+"POT-Creation-Date: 2017-11-25 19:35+0100\n"
+"PO-Revision-Date: 2017-05-03 01:03+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Silesian (http://www.transifex.com/mc/mc/language/szl/)\n"
 "Language: szl\n"
@@ -561,7 +561,6 @@ msgstr ""
 msgid "Temporary files will not be created\n"
 msgstr ""
 
-#, c-format
 msgid "Press any key to continue..."
 msgstr ""
 
@@ -729,13 +728,16 @@ msgstr ""
 msgid "Color options"
 msgstr ""
 
-msgid "+number"
+msgid "[+lineno] file1[:lineno] [file2[:lineno]...]"
+msgstr ""
+
+msgid "file"
+msgstr ""
+
+msgid "file1 file2"
 msgstr ""
 
 msgid "[this_dir] [other_panel_dir]"
-msgstr ""
-
-msgid "Set initial line number for the internal editor"
 msgstr ""
 
 msgid ""
@@ -1696,7 +1698,6 @@ msgstr ""
 msgid "The shell is already running a command"
 msgstr ""
 
-#, c-format
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr ""
 
@@ -1926,7 +1927,7 @@ msgstr ""
 msgid "User &mini status"
 msgstr ""
 
-msgid "Listing mode"
+msgid "Listing format"
 msgstr ""
 
 msgid "Executable &first"
@@ -2358,9 +2359,6 @@ msgstr ""
 
 #, no-c-format
 msgid "%o %d %f%m"
-msgstr ""
-
-msgid "file"
 msgstr ""
 
 msgid "files"
@@ -3049,7 +3047,7 @@ msgstr ""
 msgid "&Info"
 msgstr ""
 
-msgid "&Listing mode..."
+msgid "&Listing format..."
 msgstr ""
 
 msgid "&Sort order..."
@@ -3477,48 +3475,6 @@ msgid ""
 "%s\n"
 msgstr ""
 
-msgid "Debug"
-msgstr ""
-
-msgid "ERROR:"
-msgstr ""
-
-msgid "True:"
-msgstr ""
-
-msgid "False:"
-msgstr ""
-
-msgid "Error calling program"
-msgstr ""
-
-msgid "Warning -- ignoring file"
-msgstr ""
-
-#, c-format
-msgid ""
-"File %s is not owned by root or you or is world writable.\n"
-"Using it may compromise your security"
-msgstr ""
-
-msgid "Format error on file Extensions File"
-msgstr ""
-
-#, c-format
-msgid "The %%var macro has no default"
-msgstr ""
-
-#, c-format
-msgid "The %%var macro has no variable"
-msgstr ""
-
-#, c-format
-msgid "No suitable entries found in %s"
-msgstr ""
-
-msgid "User menu"
-msgstr ""
-
 msgid "Help file format error\n"
 msgstr ""
 
@@ -3710,6 +3666,48 @@ msgid "User data"
 msgstr ""
 
 msgid "Cache directory:"
+msgstr ""
+
+msgid "Debug"
+msgstr ""
+
+msgid "ERROR:"
+msgstr ""
+
+msgid "True:"
+msgstr ""
+
+msgid "False:"
+msgstr ""
+
+msgid "Error calling program"
+msgstr ""
+
+msgid "Warning -- ignoring file"
+msgstr ""
+
+#, c-format
+msgid ""
+"File %s is not owned by root or you or is world writable.\n"
+"Using it may compromise your security"
+msgstr ""
+
+msgid "Format error on file Extensions File"
+msgstr ""
+
+#, c-format
+msgid "The %%var macro has no default"
+msgstr ""
+
+#, c-format
+msgid "The %%var macro has no variable"
+msgstr ""
+
+#, c-format
+msgid "No suitable entries found in %s"
+msgstr ""
+
+msgid "User menu"
 msgstr ""
 
 #, c-format

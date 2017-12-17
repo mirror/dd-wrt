@@ -18,8 +18,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-03-04 18:55+0100\n"
-"PO-Revision-Date: 2017-02-25 23:24+0000\n"
+"POT-Creation-Date: 2017-11-25 19:35+0100\n"
+"PO-Revision-Date: 2017-09-19 09:10+0000\n"
 "Last-Translator: Ettore Atalan <atalanttore@googlemail.com>\n"
 "Language-Team: German (http://www.transifex.com/mc/mc/language/de/)\n"
 "Language: de\n"
@@ -33,7 +33,7 @@ msgid "Warning: cannot load codepages list"
 msgstr "Warnung: Kann Zeichensatztabelle nicht laden"
 
 msgid "7-bit ASCII"
-msgstr "7-bit ASCII"
+msgstr "7-Bit-ASCII"
 
 #, c-format
 msgid "Cannot translate from %s to %s"
@@ -122,7 +122,7 @@ msgid "Invalid character"
 msgstr "Ungültiges Zeichen"
 
 msgid "Unmatched quotes character"
-msgstr ""
+msgstr "Nicht übereinstimmende Anführungszeichen"
 
 #, c-format
 msgid ""
@@ -607,7 +607,6 @@ msgstr "Temporäre Dateien werden in \"%s\" gespeichert\n"
 msgid "Temporary files will not be created\n"
 msgstr "Es werden keine temporären Dateien erzeugt\n"
 
-#, c-format
 msgid "Press any key to continue..."
 msgstr "Drücken Sie eine Taste zum Fortfahren..."
 
@@ -737,7 +736,7 @@ msgid "Specifies a color configuration"
 msgstr "Gibt eine Farbkonfiguration an"
 
 msgid "Show mc with specified skin"
-msgstr "Zeige mc mit dem angegebenen Skin"
+msgstr "mc mit dem angegebenen Skin anzeigen"
 
 #. TRANSLATORS: don't translate keywords
 msgid ""
@@ -807,14 +806,17 @@ msgstr ""
 msgid "Color options"
 msgstr "Farbeinstellungen"
 
-msgid "+number"
-msgstr "+Zeilennummer"
+msgid "[+lineno] file1[:lineno] [file2[:lineno]...]"
+msgstr "[+Zeilennr.] Datei1[:lineno] [Datei2[:Zeilennr.]...]"
+
+msgid "file"
+msgstr "Datei"
+
+msgid "file1 file2"
+msgstr "Datei1 Datei2"
 
 msgid "[this_dir] [other_panel_dir]"
 msgstr "[dieses_Verzeichnis] [anderes_Panel_Verzeichnis]"
-
-msgid "Set initial line number for the internal editor"
-msgstr "Erste Zeilennummer für den internen Editor setzen"
 
 msgid ""
 "\n"
@@ -1809,7 +1811,6 @@ msgstr "Kann keine lokale Kopie von %s anlegen"
 msgid "The shell is already running a command"
 msgstr "Die Shell führt bereits einen Befehl aus"
 
-#, c-format
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Geben Sie 'exit' ein, um zu Midnight Commander zurückzukehren"
 
@@ -1860,7 +1861,7 @@ msgid "Skins"
 msgstr "Skins"
 
 msgid "Other 8 bit"
-msgstr "Andere 8 bit"
+msgstr "Andere 8 Bit"
 
 msgid "Running"
 msgstr "Läuft"
@@ -1968,7 +1969,7 @@ msgid "Show &backup files"
 msgstr "Sicherheitsko&pien anzeigen"
 
 msgid "Show &hidden files"
-msgstr "&Verborgene Dateien anzeigen"
+msgstr "&Versteckte Dateien anzeigen"
 
 msgid "&Fast dir reload"
 msgstr "S&chnelles Neulesen"
@@ -2046,8 +2047,8 @@ msgstr "Spalten"
 msgid "User &mini status"
 msgstr "Benutzer-&Ministatus"
 
-msgid "Listing mode"
-msgstr "Listenmodus"
+msgid "Listing format"
+msgstr "Listenformat"
 
 msgid "Executable &first"
 msgstr "Aus&führbare Dateien zuerst"
@@ -2084,19 +2085,19 @@ msgid "&UTF-8 output"
 msgstr "&UTF-8-Ausgabe"
 
 msgid "&Full 8 bits output"
-msgstr "&Komplette 8 bits-Ausgabe"
+msgstr "&Komplette 8-Bit-Ausgabe"
 
 msgid "&ISO 8859-1"
 msgstr "&ISO 8859-1"
 
 msgid "7 &bits"
-msgstr "7 &bits"
+msgstr "7 &Bit"
 
 msgid "F&ull 8 bits input"
-msgstr "Komplette 8-Bit &Eingabe"
+msgstr "Komplette 8-Bit-&Eingabe"
 
 msgid "Display bits"
-msgstr "Zeige Bits"
+msgstr "Bit anzeigen"
 
 msgid "Input / display codepage:"
 msgstr "Codepage eingeben / anzeigen:"
@@ -2496,9 +2497,6 @@ msgstr "%o %f%n\"%s\"%m"
 msgid "%o %d %f%m"
 msgstr "%o %d %f%m"
 
-msgid "file"
-msgstr "Datei"
-
 msgid "files"
 msgstr "Dateien"
 
@@ -2526,7 +2524,6 @@ msgstr ""
 "Kann Quell-Link \"%s\" nicht lesen\n"
 "%s"
 
-#, fuzzy
 msgid ""
 "Cannot make stable symlinks across non-local filesystems:\n"
 "\n"
@@ -2535,7 +2532,7 @@ msgstr ""
 "Kann keine stabilen symbolischen Links auf nicht-lokalen Dateisystemen "
 "anlegen:\n"
 "\n"
-"Einstellung Stabile Symbolische Links wird deaktiviert"
+"Einstellung Stabile Symbolische Links werden deaktiviert"
 
 #, c-format
 msgid ""
@@ -3263,8 +3260,8 @@ msgstr "Schnell&ansicht"
 msgid "&Info"
 msgstr "&Info"
 
-msgid "&Listing mode..."
-msgstr "&Listenmodus..."
+msgid "&Listing format..."
+msgstr "&Listenformat..."
 
 msgid "&Sort order..."
 msgstr "&Sortierreihenfolge..."
@@ -3696,51 +3693,6 @@ msgstr ""
 "Kann in Datei \"%s\" nicht schreiben:\n"
 "%s\n"
 
-msgid "Debug"
-msgstr "Debug"
-
-msgid "ERROR:"
-msgstr "FEHLER:"
-
-msgid "True:"
-msgstr "Wahr:"
-
-msgid "False:"
-msgstr "Falsch:"
-
-msgid "Error calling program"
-msgstr "Fehler beim aufgerufenen Programm"
-
-msgid "Warning -- ignoring file"
-msgstr "Warnung -- ignoriere Datei"
-
-#, c-format
-msgid ""
-"File %s is not owned by root or you or is world writable.\n"
-"Using it may compromise your security"
-msgstr ""
-"Die Datei \"%s\" gehört weder root noch Ihnen oder sie kann von jedem "
-"beschrieben werden.\n"
-"Sie zu benutzen, kann Ihre Sicherheit gefährden"
-
-msgid "Format error on file Extensions File"
-msgstr "Formatfehler bei der Datei-Erweiterungsdatei"
-
-#, c-format
-msgid "The %%var macro has no default"
-msgstr "Das %%var-Makro hat keinen Standardwert"
-
-#, c-format
-msgid "The %%var macro has no variable"
-msgstr "Das %%var-Makro hat keine Variable"
-
-#, c-format
-msgid "No suitable entries found in %s"
-msgstr "Keine verwendbaren Einträge in %s gefunden"
-
-msgid "User menu"
-msgstr "Benutzermenü"
-
 msgid "Help file format error\n"
 msgstr "Formatfehler in Hilfedatei\n"
 
@@ -3937,7 +3889,7 @@ msgid "Home directory:"
 msgstr "Home-Verzeichnis:"
 
 msgid "Profile root directory:"
-msgstr ""
+msgstr "Profil-Wurzel-Verzeichnis:"
 
 msgid "System data"
 msgstr "System-Daten"
@@ -3959,6 +3911,51 @@ msgstr "Benutzerdaten"
 
 msgid "Cache directory:"
 msgstr "Cache-Zerzeichnis:"
+
+msgid "Debug"
+msgstr "Debug"
+
+msgid "ERROR:"
+msgstr "FEHLER:"
+
+msgid "True:"
+msgstr "Wahr:"
+
+msgid "False:"
+msgstr "Falsch:"
+
+msgid "Error calling program"
+msgstr "Fehler beim aufgerufenen Programm"
+
+msgid "Warning -- ignoring file"
+msgstr "Warnung -- ignoriere Datei"
+
+#, c-format
+msgid ""
+"File %s is not owned by root or you or is world writable.\n"
+"Using it may compromise your security"
+msgstr ""
+"Die Datei \"%s\" gehört weder root noch Ihnen oder sie kann von jedem "
+"beschrieben werden.\n"
+"Sie zu benutzen, kann Ihre Sicherheit gefährden"
+
+msgid "Format error on file Extensions File"
+msgstr "Formatfehler bei der Datei-Erweiterungsdatei"
+
+#, c-format
+msgid "The %%var macro has no default"
+msgstr "Das %%var-Makro hat keinen Standardwert"
+
+#, c-format
+msgid "The %%var macro has no variable"
+msgstr "Das %%var-Makro hat keine Variable"
+
+#, c-format
+msgid "No suitable entries found in %s"
+msgstr "Keine verwendbaren Einträge in %s gefunden"
+
+msgid "User menu"
+msgstr "Benutzermenü"
 
 #, c-format
 msgid ""

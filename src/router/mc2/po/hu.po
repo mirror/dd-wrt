@@ -4,16 +4,16 @@
 #
 # Translators:
 # Mátyás Demeter <mathias.demeter@gmail.com>, 2014
-# Rezső Páder <rezso@rezso.net>, 2012-2016
+# Rezső Páder <rezso@rezso.net>, 2012-2017
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # Szabo Attila <atekka@gmail.com>, 2013
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-03-04 18:55+0100\n"
-"PO-Revision-Date: 2017-02-25 09:22+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2017-11-25 19:35+0100\n"
+"PO-Revision-Date: 2017-11-20 23:51+0000\n"
+"Last-Translator: Rezső Páder <rezso@rezso.net>\n"
 "Language-Team: Hungarian (http://www.transifex.com/mc/mc/language/hu/)\n"
 "Language: hu\n"
 "MIME-Version: 1.0\n"
@@ -108,7 +108,7 @@ msgid ""
 msgstr ""
 
 msgid "Invalid character"
-msgstr ""
+msgstr "Érvénytelen karakter"
 
 msgid "Unmatched quotes character"
 msgstr ""
@@ -487,25 +487,25 @@ msgstr ""
 "Ellenőrizze a TERM környezeti változót.\n"
 
 msgid "B"
-msgstr ""
+msgstr "B"
 
 msgid "kB"
-msgstr ""
+msgstr "kB"
 
 msgid "KiB"
-msgstr ""
+msgstr "KiB"
 
 msgid "MB"
-msgstr ""
+msgstr "MB"
 
 msgid "MiB"
-msgstr ""
+msgstr "MiB"
 
 msgid "GB"
-msgstr ""
+msgstr "GB"
 
 msgid "GiB"
-msgstr ""
+msgstr "GiB"
 
 msgid "Cannot create pipe descriptor"
 msgstr ""
@@ -582,7 +582,6 @@ msgstr "Az ideiglenes fájlok a(z) \"%s\" könyvtárban jönnek létre\n"
 msgid "Temporary files will not be created\n"
 msgstr "Ideiglenes fájlok nem jönnek létre\n"
 
-#, c-format
 msgid "Press any key to continue..."
 msgstr "Nyomjon meg egy billentyűt..."
 
@@ -780,14 +779,17 @@ msgstr ""
 msgid "Color options"
 msgstr "Színbeállítások"
 
-msgid "+number"
-msgstr "+szám"
+msgid "[+lineno] file1[:lineno] [file2[:lineno]...]"
+msgstr ""
+
+msgid "file"
+msgstr "fájl"
+
+msgid "file1 file2"
+msgstr ""
 
 msgid "[this_dir] [other_panel_dir]"
 msgstr "[aktuális_könyvtár] [másik_könyvtár]"
-
-msgid "Set initial line number for the internal editor"
-msgstr "A kezdősor számának megadása a belső szerkesztő számára."
 
 msgid ""
 "\n"
@@ -1781,7 +1783,6 @@ msgstr "Nem sikerült behozni \"%s\" helyi másolatát"
 msgid "The shell is already running a command"
 msgstr "A parancsértelmező már futtat egy parancsot."
 
-#, c-format
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Írjon \"exit\"-et a Midnight Commanderbe való visszatéréshez."
 
@@ -2018,8 +2019,8 @@ msgstr "oszlopok"
 msgid "User &mini status"
 msgstr "Saját extra adat&sor"
 
-msgid "Listing mode"
-msgstr "Listázási mód"
+msgid "Listing format"
+msgstr ""
 
 msgid "Executable &first"
 msgstr "Futtatható fent"
@@ -2467,9 +2468,6 @@ msgstr "%o %f%n\"%s\"%m"
 msgid "%o %d %f%m"
 msgstr "%d kijelölt %f %o%m"
 
-msgid "file"
-msgstr "fájl"
-
 msgid "files"
 msgstr "fájl"
 
@@ -2497,15 +2495,11 @@ msgstr ""
 "Nem sikerült olvasni a forráslinket (\"%s\")\n"
 "%s"
 
-#, fuzzy
 msgid ""
 "Cannot make stable symlinks across non-local filesystems:\n"
 "\n"
 "Option Stable Symlinks will be disabled"
 msgstr ""
-"Távoli fájlrendszerek közt nem hozhatók létre stabil szimbolikus linkek:\n"
-"\n"
-"A \"Stabil szimbolikus linkek\" opció ki lesz kapcsolva."
 
 #, c-format
 msgid ""
@@ -2802,7 +2796,7 @@ msgstr ""
 
 #, c-format
 msgid "Directories: %zu, total size: %s"
-msgstr ""
+msgstr "Könyvtár: %zu, teljes méret: %s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "A \"..\" könyvtárral ez nem lehetséges!"
@@ -3235,8 +3229,8 @@ msgstr "Gyors nézet"
 msgid "&Info"
 msgstr "&Info"
 
-msgid "&Listing mode..."
-msgstr "&Listázási mód..."
+msgid "&Listing format..."
+msgstr ""
 
 msgid "&Sort order..."
 msgstr "&Rendezési mód..."
@@ -3667,50 +3661,6 @@ msgstr ""
 "Nem sikerült írni a(z) \"%s\" fájlba:\n"
 "%s\n"
 
-msgid "Debug"
-msgstr "Nyomkövetés"
-
-msgid "ERROR:"
-msgstr "HIBA:"
-
-msgid "True:"
-msgstr "Igaz:"
-
-msgid "False:"
-msgstr "Hamis:"
-
-msgid "Error calling program"
-msgstr "Programhívási hiba"
-
-msgid "Warning -- ignoring file"
-msgstr "Figyelem: a fájl figyelmen kívül hagyva"
-
-#, c-format
-msgid ""
-"File %s is not owned by root or you or is world writable.\n"
-"Using it may compromise your security"
-msgstr ""
-"A(z) \"%s\" fájl sem a rendszergazdáé, sem az Öné,\n"
-"vagy mindenki által írható. Használata gyengítheti a biztonságot."
-
-msgid "Format error on file Extensions File"
-msgstr "Formátumhiba a kiterjesztésfájlban"
-
-#, c-format
-msgid "The %%var macro has no default"
-msgstr "A %%var makrónak nincs alapértéke"
-
-#, c-format
-msgid "The %%var macro has no variable"
-msgstr "A %%var makrónak nincs változója"
-
-#, c-format
-msgid "No suitable entries found in %s"
-msgstr "Nincsenek megfelelő bejegyzések ebben: %s"
-
-msgid "User menu"
-msgstr "Felhasználói menü"
-
 msgid "Help file format error\n"
 msgstr "Hibás súgófájl formátum\n"
 
@@ -3931,6 +3881,50 @@ msgstr "Felhasználói adatok"
 
 msgid "Cache directory:"
 msgstr "Gyorsítótár könyvtára:"
+
+msgid "Debug"
+msgstr "Nyomkövetés"
+
+msgid "ERROR:"
+msgstr "HIBA:"
+
+msgid "True:"
+msgstr "Igaz:"
+
+msgid "False:"
+msgstr "Hamis:"
+
+msgid "Error calling program"
+msgstr "Programhívási hiba"
+
+msgid "Warning -- ignoring file"
+msgstr "Figyelem: a fájl figyelmen kívül hagyva"
+
+#, c-format
+msgid ""
+"File %s is not owned by root or you or is world writable.\n"
+"Using it may compromise your security"
+msgstr ""
+"A(z) \"%s\" fájl sem a rendszergazdáé, sem az Öné,\n"
+"vagy mindenki által írható. Használata gyengítheti a biztonságot."
+
+msgid "Format error on file Extensions File"
+msgstr "Formátumhiba a kiterjesztésfájlban"
+
+#, c-format
+msgid "The %%var macro has no default"
+msgstr "A %%var makrónak nincs alapértéke"
+
+#, c-format
+msgid "The %%var macro has no variable"
+msgstr "A %%var makrónak nincs változója"
+
+#, c-format
+msgid "No suitable entries found in %s"
+msgstr "Nincsenek megfelelő bejegyzések ebben: %s"
+
+msgid "User menu"
+msgstr "Felhasználói menü"
 
 #, c-format
 msgid ""

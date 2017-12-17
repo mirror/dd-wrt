@@ -564,7 +564,7 @@ Wygląd panelu katalogowego może zostać zmieniony poprzez menu
 i
 .BR right .
 .PP
-.\"NODE "    Listing Mode..."
+.\"NODE "    Listing Format..."
 .SH "    Tryby wyświetlania (Listing modes)"
 Tryby wyświetlania są używane do zmienia ustawień przy wyświetlaniu.
 Dostępne są cztery różne tryby:
@@ -2911,7 +2911,7 @@ definiowania ogólnosystemowych ustawień terminali.
 Własny setup użytkownika. Jeśli ten plik jest dostępny, jest ładowany
 zamiast pliku globalnego.
 .PP
-%prefix%/share/mc/mc.hint
+%prefix%/share/mc/hints/mc.hint
 .IP
 Plik zawierający podpowiedzi (hints) wyświetlane przez program.
 .PP

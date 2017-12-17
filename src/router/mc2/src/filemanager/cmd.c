@@ -63,11 +63,13 @@
 #include "lib/keybind.h"        /* CK_Down, CK_History */
 #include "lib/event.h"          /* mc_event_raise() */
 
-#include "src/viewer/mcviewer.h"
 #include "src/setup.h"
 #include "src/execute.h"        /* toggle_panels() */
 #include "src/history.h"
+#include "src/usermenu.h"       /* MC_GLOBAL_MENU */
 #include "src/util.h"           /* check_for_default() */
+
+#include "src/viewer/mcviewer.h"
 
 #ifdef USE_INTERNAL_EDIT
 #include "src/editor/edit.h"
@@ -85,7 +87,6 @@
 #include "panel.h"              /* WPanel */
 #include "tree.h"               /* tree_chdir() */
 #include "midnight.h"           /* change_panel() */
-#include "usermenu.h"           /* MC_GLOBAL_MENU */
 #include "command.h"            /* cmdline */
 #include "layout.h"             /* get_current_type() */
 #include "ext.h"                /* regex_command() */
@@ -171,15 +172,15 @@ do_edit (const vfs_path_t * what_vpath)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-set_panel_filter_to (WPanel * p, char *allocated_filter_string)
+set_panel_filter_to (WPanel * p, char *filter)
 {
-    g_free (p->filter);
-    p->filter = 0;
+    MC_PTR_FREE (p->filter);
 
-    if (!(allocated_filter_string[0] == '*' && allocated_filter_string[1] == 0))
-        p->filter = allocated_filter_string;
+    /* Three ways to clear filter: NULL, "", "*" */
+    if (filter == NULL || filter[0] == '\0' || (filter[0] == '*' && filter[1] == '\0'))
+        g_free (filter);
     else
-        g_free (allocated_filter_string);
+        p->filter = filter;
     reread_cmd ();
 }
 
@@ -192,15 +193,14 @@ set_panel_filter (WPanel * p)
     char *reg_exp;
     const char *x;
 
-    x = p->filter ? p->filter : easy_patterns ? "*" : ".";
+    x = p->filter != NULL ? p->filter : easy_patterns ? "*" : ".";
 
     reg_exp = input_dialog_help (_("Filter"),
                                  _("Set expression for filtering filenames"),
                                  "[Filter...]", MC_HISTORY_FM_PANEL_FILTER, x, FALSE,
                                  INPUT_COMPLETE_FILENAMES);
-    if (!reg_exp)
-        return;
-    set_panel_filter_to (p, reg_exp);
+    if (reg_exp != NULL)
+        set_panel_filter_to (p, reg_exp);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -351,20 +351,24 @@ static void
 do_link (link_type_t link_type, const char *fname)
 {
     char *dest = NULL, *src = NULL;
-    vfs_path_t *fname_vpath, *dest_vpath = NULL;
+    vfs_path_t *dest_vpath = NULL;
 
-    fname_vpath = vfs_path_from_str (fname);
     if (link_type == LINK_HARDLINK)
     {
+        vfs_path_t *fname_vpath;
+
         src = g_strdup_printf (_("Link %s to:"), str_trunc (fname, 46));
         dest =
             input_expand_dialog (_("Link"), src, MC_HISTORY_FM_LINK, "", INPUT_COMPLETE_FILENAMES);
-        if (!dest || !*dest)
+        if (dest == NULL || *dest == '\0')
             goto cleanup;
         save_cwds_stat ();
+
+        fname_vpath = vfs_path_from_str (fname);
         dest_vpath = vfs_path_from_str (dest);
-        if (-1 == mc_link (fname_vpath, dest_vpath))
+        if (mc_link (fname_vpath, dest_vpath) == -1)
             message (D_ERROR, MSG_ERROR, _("link: %s"), unix_error_string (errno));
+        vfs_path_free (fname_vpath);
     }
     else
     {
@@ -393,7 +397,7 @@ do_link (link_type_t link_type, const char *fname)
         vfs_path_free (d);
         vfs_path_free (s);
 
-        if (!dest || !*dest || !src || !*src)
+        if (dest == NULL || *dest == '\0' || src == NULL || *src == '\0')
             goto cleanup;
         save_cwds_stat ();
 
@@ -409,7 +413,6 @@ do_link (link_type_t link_type, const char *fname)
     repaint_screen ();
 
   cleanup:
-    vfs_path_free (fname_vpath);
     vfs_path_free (dest_vpath);
     g_free (src);
     g_free (dest);
@@ -472,23 +475,23 @@ nice_cd (const char *text, const char *xtext, const char *help,
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-configure_panel_listing (WPanel * p, int list_type, int brief_cols, gboolean use_msformat,
+configure_panel_listing (WPanel * p, int list_format, int brief_cols, gboolean use_msformat,
                          char **user, char **status)
 {
     p->user_mini_status = use_msformat;
-    p->list_type = list_type;
+    p->list_format = list_format;
 
-    if (list_type == list_brief)
+    if (list_format == list_brief)
         p->brief_cols = brief_cols;
 
-    if (list_type == list_user || use_msformat)
+    if (list_format == list_user || use_msformat)
     {
         g_free (p->user_format);
         p->user_format = *user;
         *user = NULL;
 
-        g_free (p->user_status_format[list_type]);
-        p->user_status_format[list_type] = *status;
+        g_free (p->user_status_format[list_format]);
+        p->user_status_format[list_format] = *status;
         *status = NULL;
 
         set_panel_formats (p);
@@ -505,38 +508,6 @@ switch_to_listing (int panel_index)
 {
     if (get_display_type (panel_index) != view_listing)
         set_display_type (panel_index, view_listing);
-    else
-    {
-        WPanel *p;
-
-        p = PANEL (get_panel_widget (panel_index));
-        if (p->is_panelized)
-        {
-            p->is_panelized = FALSE;
-            panel_reload (p);
-        }
-    }
-}
-
-/* --------------------------------------------------------------------------------------------- */
-/** Handle the tree internal listing modes switching */
-
-static gboolean
-set_basic_panel_listing_to (int panel_index, int listing_mode)
-{
-    WPanel *p;
-    gboolean ok;
-
-    p = PANEL (get_panel_widget (panel_index));
-    switch_to_listing (panel_index);
-    p->list_type = listing_mode;
-
-    ok = set_panel_formats (p) == 0;
-
-    if (ok)
-        do_refresh ();
-
-    return ok;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1583,15 +1554,22 @@ quick_cmd_no_menu (void)
 void
 listing_cmd (void)
 {
+    WPanel *p;
+
     switch_to_listing (MENU_PANEL_IDX);
+
+    p = PANEL (get_panel_widget (MENU_PANEL_IDX));
+
+    p->is_panelized = FALSE;
+    set_panel_filter_to (p, NULL);      /* including panel reload */
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 void
-change_listing_cmd (void)
+setup_listing_format_cmd (void)
 {
-    int list_type;
+    int list_format;
     gboolean use_msformat;
     int brief_cols;
     char *user, *status;
@@ -1600,12 +1578,12 @@ change_listing_cmd (void)
     if (SELECTED_IS_PANEL)
         p = MENU_PANEL_IDX == 0 ? left_panel : right_panel;
 
-    list_type = panel_listing_box (p, MENU_PANEL_IDX, &user, &status, &use_msformat, &brief_cols);
-    if (list_type != -1)
+    list_format = panel_listing_box (p, MENU_PANEL_IDX, &user, &status, &use_msformat, &brief_cols);
+    if (list_format != -1)
     {
         switch_to_listing (MENU_PANEL_IDX);
         p = MENU_PANEL_IDX == 0 ? left_panel : right_panel;
-        configure_panel_listing (p, list_type, brief_cols, use_msformat, &user, &status);
+        configure_panel_listing (p, list_format, brief_cols, use_msformat, &user, &status);
         g_free (user);
         g_free (status);
     }
@@ -1635,20 +1613,6 @@ quick_view_cmd (void)
     if (PANEL (get_panel_widget (MENU_PANEL_IDX)) == current_panel)
         change_panel ();
     set_display_type (MENU_PANEL_IDX, view_quick);
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
-toggle_listing_cmd (void)
-{
-    int current;
-    WPanel *p;
-
-    current = get_current_index ();
-    p = PANEL (get_panel_widget (current));
-
-    set_basic_panel_listing_to (current, (p->list_type + 1) % LIST_TYPES);
 }
 
 /* --------------------------------------------------------------------------------------------- */

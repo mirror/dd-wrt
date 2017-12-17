@@ -173,14 +173,15 @@ am__libinternal_la_SOURCES_DIST = cons.handler.c consaver/cons.saver.h \
 	args.c args.h clipboard.c clipboard.h events_init.c \
 	events_init.h execute.c execute.h help.c help.h history.h \
 	keybind-defaults.c keybind-defaults.h learn.c learn.h setup.c \
-	setup.h textconf.c textconf.h util.c util.h selcodepage.c \
-	selcodepage.h background.c background.h
+	setup.h textconf.c textconf.h usermenu.c usermenu.h util.c \
+	util.h selcodepage.c selcodepage.h background.c background.h
 am__objects_1 = cons.handler.lo
 @CHARSET_TRUE@am__objects_2 = selcodepage.lo
 @ENABLE_BACKGROUND_TRUE@am__objects_3 = background.lo
 am_libinternal_la_OBJECTS = $(am__objects_1) args.lo clipboard.lo \
 	events_init.lo execute.lo help.lo keybind-defaults.lo learn.lo \
-	setup.lo textconf.lo util.lo $(am__objects_2) $(am__objects_3)
+	setup.lo textconf.lo usermenu.lo util.lo $(am__objects_2) \
+	$(am__objects_3)
 libinternal_la_OBJECTS = $(am_libinternal_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -556,8 +557,9 @@ mc_SOURCES = \
 libinternal_la_SOURCES = $(SRC_mc_conssaver) args.c args.h clipboard.c \
 	clipboard.h events_init.c events_init.h execute.c execute.h \
 	help.c help.h history.h keybind-defaults.c keybind-defaults.h \
-	learn.c learn.h setup.c setup.h textconf.c textconf.h util.c \
-	util.h $(am__append_7) $(am__append_8)
+	learn.c learn.h setup.c setup.h textconf.c textconf.h \
+	usermenu.c usermenu.h util.c util.h $(am__append_7) \
+	$(am__append_8)
 EXTRA_DIST = $(SRC_maintainer) $(SRC_charset)
 all: all-recursive
 
@@ -679,6 +681,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/selcodepage.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/setup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/textconf.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usermenu.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/util.Plo@am__quote@
 
 .c.o:

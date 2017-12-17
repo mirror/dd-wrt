@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-03-04 18:55+0100\n"
-"PO-Revision-Date: 2017-02-25 09:22+0000\n"
+"POT-Creation-Date: 2017-11-25 19:35+0100\n"
+"PO-Revision-Date: 2017-09-19 09:10+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Serbian (http://www.transifex.com/mc/mc/language/sr/)\n"
 "Language: sr\n"
@@ -585,7 +585,6 @@ msgstr "Привремене датотеке ће бити направљене
 msgid "Temporary files will not be created\n"
 msgstr "Привремене датотеке неће бити направљене\n"
 
-#, c-format
 msgid "Press any key to continue..."
 msgstr "Притиснитенеки тастер да наставите..."
 
@@ -781,14 +780,17 @@ msgstr ""
 msgid "Color options"
 msgstr "Опције боје"
 
-msgid "+number"
-msgstr "+број"
+msgid "[+lineno] file1[:lineno] [file2[:lineno]...]"
+msgstr ""
+
+msgid "file"
+msgstr "датотеку"
+
+msgid "file1 file2"
+msgstr ""
 
 msgid "[this_dir] [other_panel_dir]"
 msgstr "[овај_дир] [други_дир_панела]"
-
-msgid "Set initial line number for the internal editor"
-msgstr "Поставите број почетног реда за уграђени уређивач"
 
 msgid ""
 "\n"
@@ -1782,7 +1784,6 @@ msgstr "Не могу да довучем месни умножак „%s“"
 msgid "The shell is already running a command"
 msgstr "Шкољка већ извршава наредбу"
 
-#, c-format
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Укуцајте „exit“ да се вратите Поноћном нареднику"
 
@@ -2020,8 +2021,8 @@ msgstr "колоне"
 msgid "User &mini status"
 msgstr "Корисниково &мини стање"
 
-msgid "Listing mode"
-msgstr "Режим списка"
+msgid "Listing format"
+msgstr ""
 
 msgid "Executable &first"
 msgstr "Прво &извршне"
@@ -2468,9 +2469,6 @@ msgstr "%o %f%n„%s“%m"
 msgid "%o %d %f%m"
 msgstr "%o %d %f%m"
 
-msgid "file"
-msgstr "датотеку"
-
 msgid "files"
 msgstr "датотека"
 
@@ -2498,16 +2496,11 @@ msgstr ""
 "Не могу да прочитам изворну везу „%s“\n"
 "%s"
 
-#, fuzzy
 msgid ""
 "Cannot make stable symlinks across non-local filesystems:\n"
 "\n"
 "Option Stable Symlinks will be disabled"
 msgstr ""
-"Не могу да направим постојане симболичке везе преко не-месних система "
-"датотека:\n"
-"\n"
-"Опција постојаних симболичких веза биће искључена"
 
 #, c-format
 msgid ""
@@ -3235,8 +3228,8 @@ msgstr "&Брзи преглед"
 msgid "&Info"
 msgstr "&Подаци"
 
-msgid "&Listing mode..."
-msgstr "Режим &списка..."
+msgid "&Listing format..."
+msgstr ""
 
 msgid "&Sort order..."
 msgstr "Редослед &ређања..."
@@ -3670,50 +3663,6 @@ msgstr ""
 "Не могу да пишем у датотеку „%s“:\n"
 "%s\n"
 
-msgid "Debug"
-msgstr "Прочисти"
-
-msgid "ERROR:"
-msgstr "ГРЕШКА:"
-
-msgid "True:"
-msgstr "Тачно:"
-
-msgid "False:"
-msgstr "Нетачно:"
-
-msgid "Error calling program"
-msgstr "Грешка позивања програма"
-
-msgid "Warning -- ignoring file"
-msgstr "Упозорење — занемарујем датотеку"
-
-#, c-format
-msgid ""
-"File %s is not owned by root or you or is world writable.\n"
-"Using it may compromise your security"
-msgstr ""
-"Ни администратор ни ви нисте власници датотеке „%s“\n"
-"или није уопште читљива. Њена употреба може да угрози вашу безбедност"
-
-msgid "Format error on file Extensions File"
-msgstr "Грешка записа на датотеци „Датотека проширења“"
-
-#, c-format
-msgid "The %%var macro has no default"
-msgstr "Макро „%%var“ нема основности"
-
-#, c-format
-msgid "The %%var macro has no variable"
-msgstr "Макро „%%var“ нема променљиве"
-
-#, c-format
-msgid "No suitable entries found in %s"
-msgstr "Нисам нашао одговарајуће уносе у „%s“"
-
-msgid "User menu"
-msgstr "Кориснички изборник"
-
 msgid "Help file format error\n"
 msgstr "Грешка записа датотеке помоћи\n"
 
@@ -3931,6 +3880,50 @@ msgstr "Кориснички подаци"
 
 msgid "Cache directory:"
 msgstr "Директоријум оставе:"
+
+msgid "Debug"
+msgstr "Прочисти"
+
+msgid "ERROR:"
+msgstr "ГРЕШКА:"
+
+msgid "True:"
+msgstr "Тачно:"
+
+msgid "False:"
+msgstr "Нетачно:"
+
+msgid "Error calling program"
+msgstr "Грешка позивања програма"
+
+msgid "Warning -- ignoring file"
+msgstr "Упозорење — занемарујем датотеку"
+
+#, c-format
+msgid ""
+"File %s is not owned by root or you or is world writable.\n"
+"Using it may compromise your security"
+msgstr ""
+"Ни администратор ни ви нисте власници датотеке „%s“\n"
+"или није уопште читљива. Њена употреба може да угрози вашу безбедност"
+
+msgid "Format error on file Extensions File"
+msgstr "Грешка записа на датотеци „Датотека проширења“"
+
+#, c-format
+msgid "The %%var macro has no default"
+msgstr "Макро „%%var“ нема основности"
+
+#, c-format
+msgid "The %%var macro has no variable"
+msgstr "Макро „%%var“ нема променљиве"
+
+#, c-format
+msgid "No suitable entries found in %s"
+msgstr "Нисам нашао одговарајуће уносе у „%s“"
+
+msgid "User menu"
+msgstr "Кориснички изборник"
 
 #, c-format
 msgid ""
