@@ -162,7 +162,7 @@ static void save2file(const char *fmt, ...)
 	vsnprintf(buf, sizeof(buf), fmt, args);
 	va_end(args);
 	va_start(args, fmt);
-	fprintf(fp, "%s", buf);
+	fprintf(fp, "%s\n", buf);
 	va_end(args);
 
 	fclose(fp);
@@ -334,11 +334,11 @@ static void parse_port_forward(char *wordlist)
 			bzero(buff, sizeof(buff));
 
 			if (flag_dis == 0) {
-				save2file("-A PREROUTING -p tcp -d %s --dport %s -j DNAT --to-destination %s\n", wanaddr, port, ip);
+				save2file("-A PREROUTING -p tcp -d %s --dport %s -j DNAT --to-destination %s", wanaddr, port, ip);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
 				if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) || (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1))
 				    )
-					save2file("-A PREROUTING -i %s -p tcp --dport %s -j DNAT --to-destination %s\n", wan_iface, port, ip);
+					save2file("-A PREROUTING -i %s -p tcp --dport %s -j DNAT --to-destination %s", wan_iface, port, ip);
 #endif
 				snprintf(buff, sizeof(buff), "-A FORWARD -p tcp -m tcp -d %s --dport %s -j %s\n", ip, port, log_accept);
 			} else {
@@ -356,11 +356,11 @@ static void parse_port_forward(char *wordlist)
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
 			bzero(buff, sizeof(buff));
 			if (flag_dis == 0) {
-				save2file("-A PREROUTING -p udp -d %s --dport %s -j DNAT --to-destination %s\n", wanaddr, port, ip);
+				save2file("-A PREROUTING -p udp -d %s --dport %s -j DNAT --to-destination %s", wanaddr, port, ip);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
 				if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) || (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1))
 				    )
-					save2file("-A PREROUTING -i %s -p udp -m udp --dport %s -j DNAT --to-destination %s\n", wan_iface, port, ip);
+					save2file("-A PREROUTING -i %s -p udp -m udp --dport %s -j DNAT --to-destination %s", wan_iface, port, ip);
 #endif
 				snprintf(buff, sizeof(buff), "-A FORWARD -p udp -m udp -d %s --dport %s -j %s\n", ip, port, log_accept);
 			} else {
@@ -485,7 +485,7 @@ static void parse_upnp_forward()
 		}
 
 		if (!strcmp(proto, "tcp") || !strcmp(proto, "both")) {
-			save2file("-A PREROUTING -i %s -p tcp -d %s --dport %s -j DNAT --to-destination %s%d:%s\n", wan, wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
+			save2file("-A PREROUTING -i %s -p tcp -d %s --dport %s -j DNAT --to-destination %s%d:%s", wan, wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
 
 			snprintf(buff, sizeof(buff), "-A FORWARD -p tcp -m tcp -d %s%d --dport %s -j %s\n", lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0, log_accept);
 
@@ -494,7 +494,7 @@ static void parse_upnp_forward()
 			strcat(suspense, buff);
 		}
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
-			save2file("-A PREROUTING -i %s -p udp -d %s --dport %s -j DNAT --to-destination %s%d:%s\n", wan, wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
+			save2file("-A PREROUTING -i %s -p udp -d %s --dport %s -j DNAT --to-destination %s%d:%s", wan, wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
 
 			snprintf(buff, sizeof(buff), "-A FORWARD -p udp -m udp -d %s%d --dport %s -j %s\n", lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0, log_accept);
 
@@ -515,11 +515,11 @@ static void create_spec_forward(char *proto, char *src, char *wanaddr, char *fro
 		wan_iface = nvram_safe_get("wan_ifname2");
 #endif
 	if (src && strlen(src) > 0) {
-		save2file("-A PREROUTING -p %s -m %s -s %s -d %s --dport %s -j DNAT --to-destination %s:%s\n", proto, proto, src, wanaddr, from, ip, to);
+		save2file("-A PREROUTING -p %s -m %s -s %s -d %s --dport %s -j DNAT --to-destination %s:%s", proto, proto, src, wanaddr, from, ip, to);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
 		if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) || (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1))
 		    )
-			save2file("-A PREROUTING -i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s\n", wan_iface, proto, proto, from, ip, to);
+			save2file("-A PREROUTING -i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s", wan_iface, proto, proto, from, ip, to);
 #endif
 		if (!strcmp(nvram_get("lan_ipaddr"), ip)) {
 			snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip, to, log_accept);
@@ -527,11 +527,11 @@ static void create_spec_forward(char *proto, char *src, char *wanaddr, char *fro
 			snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip, to, log_accept);
 		}
 	} else {
-		save2file("-A PREROUTING -p %s -m %s -d %s --dport %s -j DNAT --to-destination %s:%s\n", proto, proto, wanaddr, from, ip, to);
+		save2file("-A PREROUTING -p %s -m %s -d %s --dport %s -j DNAT --to-destination %s:%s", proto, proto, wanaddr, from, ip, to);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
 		if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) || (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1))
 		    )
-			save2file("-A PREROUTING -i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s\n", wan_iface, proto, proto, from, ip, to);
+			save2file("-A PREROUTING -i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s", wan_iface, proto, proto, from, ip, to);
 #endif
 		if (!strcmp(nvram_get("lan_ipaddr"), ip)) {
 			snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -d %s --dport %s -j %s\n", proto, proto, ip, to, log_accept);
@@ -622,8 +622,8 @@ static void nat_prerouting(void)
 	getIfLists(vifs, 256);
 
 	if (nvram_matchi("dns_redirect", 1) && nvram_matchi("dnsmasq_enable", 1)) {
-		save2file("-A PREROUTING -i %s -p udp --dport 53 -j DNAT --to %s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
-		save2file("-A PREROUTING -i %s -p tcp --dport 53 -j DNAT --to %s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
+		save2file("-A PREROUTING -i %s -p udp --dport 53 -j DNAT --to %s", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
+		save2file("-A PREROUTING -i %s -p tcp --dport 53 -j DNAT --to %s", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
 	}
 	foreach(var, vifs, next) {
 		if (strcmp(get_wan_face(), var)
@@ -631,11 +631,11 @@ static void nat_prerouting(void)
 			if (nvram_nmatch("1", "%s_dns_redirect", var)) {
 				char *target = nvram_nget("%s_dns_ipaddr", var);
 				if (target && strlen(target) > 0 && sv_valid_ipaddr(target) && strcmp(target, "0.0.0.0")) {
-					save2file("-A PREROUTING -i %s -p udp --dport 53 -j DNAT --to %s\n", var, target);
-					save2file("-A PREROUTING -i %s -p tcp --dport 53 -j DNAT --to %s\n", var, target);
+					save2file("-A PREROUTING -i %s -p udp --dport 53 -j DNAT --to %s", var, target);
+					save2file("-A PREROUTING -i %s -p tcp --dport 53 -j DNAT --to %s", var, target);
 				} else {
-					save2file("-A PREROUTING -i %s -p udp --dport 53 -j DNAT --to %s\n", var, nvram_safe_get("lan_ipaddr"));
-					save2file("-A PREROUTING -i %s -p tcp --dport 53 -j DNAT --to %s\n", var, nvram_safe_get("lan_ipaddr"));
+					save2file("-A PREROUTING -i %s -p udp --dport 53 -j DNAT --to %s", var, nvram_safe_get("lan_ipaddr"));
+					save2file("-A PREROUTING -i %s -p tcp --dport 53 -j DNAT --to %s", var, nvram_safe_get("lan_ipaddr"));
 				}
 			}
 		}
@@ -652,29 +652,29 @@ static void nat_prerouting(void)
 			if (strcmp(get_wan_face(), var)
 			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				if (nvram_nmatch("1", "%s_isolation", var)) {
-					save2file("-A PREROUTING -i %s -d %s/%s -j RETURN\n", var, lan_ip, nvram_safe_get("lan_netmask"));
+					save2file("-A PREROUTING -i %s -d %s/%s -j RETURN", var, lan_ip, nvram_safe_get("lan_netmask"));
 					sprintf(vif_ip, "%s_ipaddr", var);
-					save2file("-A PREROUTING -i %s -d %s -j RETURN\n", var, nvram_safe_get(vif_ip));
+					save2file("-A PREROUTING -i %s -d %s -j RETURN", var, nvram_safe_get(vif_ip));
 				}
 			}
 		}
 
 		/* no gui setting yet - redirect all except this IP */
 		if (strlen(nvram_safe_get("privoxy_transp_exclude")) > 0) {
-			save2file("-A PREROUTING -p tcp -s %s --dport 80 -j ACCEPT \n", nvram_safe_get("privoxy_transp_exclude"));
+			save2file("-A PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", nvram_safe_get("privoxy_transp_exclude"));
 		}
 		/* block access from privoxy to webif */
-		save2file("-A PREROUTING -p tcp -s %s -d %s --dport %d -j DROP\n", lan_ip, lan_ip, web_lanport);
+		save2file("-A PREROUTING -p tcp -s %s -d %s --dport %d -j DROP", lan_ip, lan_ip, web_lanport);
 		/* do not filter access to the webif from lan */
-		save2file("-A PREROUTING -p tcp -s %s/%s -d %s --dport %d -j ACCEPT\n", lan_ip, nvram_safe_get("lan_netmask"), lan_ip, web_lanport);
+		save2file("-A PREROUTING -p tcp -s %s/%s -d %s --dport %d -j ACCEPT", lan_ip, nvram_safe_get("lan_netmask"), lan_ip, web_lanport);
 		/* go through proxy */
-		save2file("-A PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118\n", wanaddr, lan_ip);
+		save2file("-A PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118", wanaddr, lan_ip);
 	}
 #endif
 #ifdef HAVE_TOR
 	if (nvram_matchi("tor_transparent", 1) && nvram_matchi("tor_enable", 1)) {
-		save2file("-A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:53\n", lan_ip);
-		save2file("-A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040\n", lan_ip);
+		save2file("-A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:53", lan_ip);
+		save2file("-A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040", lan_ip);
 	}
 #endif
 
@@ -684,13 +684,13 @@ static void nat_prerouting(void)
 	char tmp[1024];
 	if (remotemanage) {
 		if (remote_any) {
-			save2file("-A PREROUTING -p tcp -d %s --dport %s -j DNAT --to-destination %s:%d\n", wanaddr, nvram_safe_get("http_wanport"), lan_ip, web_lanport);
+			save2file("-A PREROUTING -p tcp -d %s --dport %s -j DNAT --to-destination %s:%d", wanaddr, nvram_safe_get("http_wanport"), lan_ip, web_lanport);
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
 			wordlist = range(from, get_complete_ip(from, to), tmp);
 
 			foreach(var, wordlist, next) {
-				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:%d\n", var, wanaddr, nvram_safe_get("http_wanport"), lan_ip, web_lanport);
+				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:%d", var, wanaddr, nvram_safe_get("http_wanport"), lan_ip, web_lanport);
 			}
 		}
 	}
@@ -700,14 +700,14 @@ static void nat_prerouting(void)
 	 */
 	if (remotessh) {
 		if (remote_any) {
-			save2file("-A PREROUTING -p tcp -d %s --dport %s -j DNAT --to-destination %s:%s\n", wanaddr, nvram_safe_get("sshd_wanport"), lan_ip, nvram_safe_get("sshd_port"));
+			save2file("-A PREROUTING -p tcp -d %s --dport %s -j DNAT --to-destination %s:%s", wanaddr, nvram_safe_get("sshd_wanport"), lan_ip, nvram_safe_get("sshd_port"));
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
 
 			wordlist = range(from, get_complete_ip(from, to), tmp);
 
 			foreach(var, wordlist, next) {
-				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:%s\n", var, wanaddr, nvram_safe_get("sshd_wanport"), lan_ip, nvram_safe_get("sshd_port"));
+				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:%s", var, wanaddr, nvram_safe_get("sshd_wanport"), lan_ip, nvram_safe_get("sshd_port"));
 			}
 		}
 	}
@@ -719,14 +719,14 @@ static void nat_prerouting(void)
 	 */
 	if (remotetelnet) {
 		if (remote_any) {
-			save2file("-A PREROUTING -p tcp -d %s --dport %s -j DNAT --to-destination %s:23\n", wanaddr, nvram_safe_get("telnet_wanport"), lan_ip);
+			save2file("-A PREROUTING -p tcp -d %s --dport %s -j DNAT --to-destination %s:23", wanaddr, nvram_safe_get("telnet_wanport"), lan_ip);
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
 
 			wordlist = range(from, get_complete_ip(from, to), tmp);
 
 			foreach(var, wordlist, next) {
-				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:23\n", var, wanaddr, nvram_safe_get("telnet_wanport"), lan_ip);
+				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s -j DNAT --to-destination %s:23", var, wanaddr, nvram_safe_get("telnet_wanport"), lan_ip);
 			}
 		}
 	}
@@ -735,14 +735,14 @@ static void nat_prerouting(void)
 	/*
 	 * ICMP packets are always redirected to INPUT chains 
 	 */
-	save2file("-A PREROUTING -p icmp -d %s -j DNAT --to-destination %s\n", wanaddr, lan_ip);
+	save2file("-A PREROUTING -p icmp -d %s -j DNAT --to-destination %s", wanaddr, lan_ip);
 
 #ifdef HAVE_TFTP
 	/*
 	 * Enable remote upgrade 
 	 */
 	if (nvram_matchi("remote_upgrade", 1))
-		save2file("-A PREROUTING -p udp -d %s --dport %d -j DNAT --to-destination %s\n", wanaddr, TFTP_PORT, lan_ip);
+		save2file("-A PREROUTING -p udp -d %s --dport %d -j DNAT --to-destination %s", wanaddr, TFTP_PORT, lan_ip);
 #endif
 
 	/*
@@ -766,7 +766,7 @@ static void nat_prerouting(void)
 		/*
 		 * DD-WRT addition by Eric Sauvageau 
 		 */
-		save2file("-A PREROUTING -d %s -j TRIGGER --trigger-type dnat\n", wanaddr);
+		save2file("-A PREROUTING -d %s -j TRIGGER --trigger-type dnat", wanaddr);
 		/*
 		 * DD-WRT addition end 
 		 */
@@ -776,7 +776,7 @@ static void nat_prerouting(void)
 	 * DMZ forwarding 
 	 */
 	if (dmzenable)
-		save2file("-A PREROUTING -d %s -j DNAT --to-destination %s%s\n", wanaddr, lan_cclass, nvram_safe_get("dmz_ipaddr"));
+		save2file("-A PREROUTING -d %s -j DNAT --to-destination %s%s", wanaddr, lan_cclass, nvram_safe_get("dmz_ipaddr"));
 
 }
 
@@ -802,11 +802,11 @@ static void nat_postrouting(void)
 		// MASQUERADE "
 		// "--to-ports 5056-5071\n", wanface);
 		if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
-			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", nvram_safe_get("tvnicfrom"), nvram_safe_get("tvnicaddr"));
+			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s", nvram_safe_get("tvnicfrom"), nvram_safe_get("tvnicaddr"));
 		}
 		if (strlen(wanface) > 0 && wanactive()
 		    && !nvram_matchi("br0_nat", 0))
-			save2file("-A POSTROUTING -s %s/%d -o %s -j SNAT --to-source %s\n", nvram_safe_get("lan_ipaddr"), loopmask, wanface, wanaddr);
+			save2file("-A POSTROUTING -s %s/%d -o %s -j SNAT --to-source %s", nvram_safe_get("lan_ipaddr"), loopmask, wanface, wanaddr);
 		char *sr = nvram_safe_get("static_route");
 		foreach(word, sr, tmp) {
 			netmask = word;
@@ -832,7 +832,7 @@ static void nat_postrouting(void)
 					continue;
 			}
 			if (nat && !strcmp(nat, "1")) {
-				save2file("-A POSTROUTING -s %s/%d -o %s -j SNAT --to-source %s\n", ipaddr, getmask(netmask), wanface, wanaddr);
+				save2file("-A POSTROUTING -s %s/%d -o %s -j SNAT --to-source %s", ipaddr, getmask(netmask), wanface, wanaddr);
 			}
 
 		}
@@ -846,28 +846,28 @@ static void nat_postrouting(void)
 		if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) || (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1))) {
 			struct in_addr ifaddr;
 			osl_ifaddr(wan_ifname_tun, &ifaddr);
-			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", wan_ifname_tun, inet_ntoa(ifaddr));
+			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s", wan_ifname_tun, inet_ntoa(ifaddr));
 		}
 #endif
 /*
 		if (nvram_match("wan_proto", "pptp")) {
 			struct in_addr ifaddr;
 			osl_ifaddr(nvram_safe_get("pptp_ifname"), &ifaddr);
-			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", nvram_safe_get("pptp_ifname"), inet_ntoa(ifaddr));
+			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s", nvram_safe_get("pptp_ifname"), inet_ntoa(ifaddr));
 		}
 		if (nvram_match("wan_proto", "l2tp")) {
 			struct in_addr ifaddr;
 			osl_ifaddr(wan_ifname_tun, &ifaddr);
-			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", wan_ifname_tun, inet_ntoa(ifaddr));
+			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s", wan_ifname_tun, inet_ntoa(ifaddr));
 		}
 		if (nvram_match("wan_proto", "pppoe_dual")) {
 			struct in_addr ifaddr;
 			osl_ifaddr(wan_ifname_tun, &ifaddr);
-			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", wan_ifname_tun, inet_ntoa(ifaddr));
+			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s", wan_ifname_tun, inet_ntoa(ifaddr));
 		}
 */
 		if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off")) {
-			save2file("-A POSTROUTING -m mark --mark %s -j MASQUERADE\n", get_NFServiceMark("FORWARD", 1));
+			save2file("-A POSTROUTING -m mark --mark %s -j MASQUERADE", get_NFServiceMark("FORWARD", 1));
 		}
 
 		char *next;
@@ -888,7 +888,7 @@ static void nat_postrouting(void)
 					sprintf(nat, "%s_nat", var);
 					nvram_default_get(nat, "1");
 					if (nvram_matchi(nat, 1)) {
-						save2file("-A POSTROUTING -s %s/%d -o %s -j SNAT --to-source %s\n", nvram_nget("%s_ipaddr", var), getmask(nvram_nget("%s_netmask", var)), wanface, wanaddr);
+						save2file("-A POSTROUTING -s %s/%d -o %s -j SNAT --to-source %s", nvram_nget("%s_ipaddr", var), getmask(nvram_nget("%s_netmask", var)), wanface, wanaddr);
 					}
 
 				}
@@ -911,7 +911,7 @@ static void nat_postrouting(void)
 //              eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "CT","--notrack");      //this speeds up networking alot on slow systems 
 		if (strlen(wanface) > 0 && wanactive())
 			if (nvram_matchi("wl_br1_enable", 1))
-				save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", wanface, wanaddr);
+				save2file("-A POSTROUTING -o %s -j SNAT --to-source %s", wanface, wanaddr);
 	}
 }
 
@@ -941,10 +941,10 @@ static void parse_port_filter(char *wordlist)
 		 * FORWARD -i br0 -p udp --dport 0:655 -j logdrop 
 		 */
 		if (!strcmp(protocol, "tcp") || !strcmp(protocol, "both")) {
-			save2file("-A FORWARD -i %s -p tcp --dport %s:%s -j %s\n", lanface, lan_port0, lan_port1, log_drop);
+			save2file("-A FORWARD -i %s -p tcp --dport %s:%s -j %s", lanface, lan_port0, lan_port1, log_drop);
 		}
 		if (!strcmp(protocol, "udp") || !strcmp(protocol, "both")) {
-			save2file("-A FORWARD -i %s -p udp --dport %s:%s -j %s\n", lanface, lan_port0, lan_port1, log_drop);
+			save2file("-A FORWARD -i %s -p udp --dport %s:%s -j %s", lanface, lan_port0, lan_port1, log_drop);
 		}
 	}
 }
@@ -1075,7 +1075,7 @@ static int schedule_by_tod(int seq)
 	 * Anytime 
 	 */
 	if (!sched) {
-		save2file("-A lan2wan -j grp_%d\n", seq);
+		save2file("-A lan2wan -j grp_%d", seq);
 		return 1;
 	}
 
@@ -1145,7 +1145,7 @@ static int schedule_by_tod(int seq)
 	 */
 	DEBUG("intime=%d\n", intime);
 	if (intime) {
-		save2file("-A lan2wan -j grp_%d\n", seq);
+		save2file("-A lan2wan -j grp_%d", seq);
 		return 1;
 	}
 
@@ -1165,13 +1165,13 @@ static void macgrp_chain(int seq, unsigned int mark, int urlenable)
 
 	if (mark == MARK_DROP) {
 		foreach(var, wordlist, next) {
-			save2file("-A grp_%d -m mac --mac-source %s -j %s\n", seq, var, log_drop);
-			save2file("-A grp_%d -m mac --mac-destination %s -j %s\n", seq, var, log_drop);
+			save2file("-A grp_%d -m mac --mac-source %s -j %s", seq, var, log_drop);
+			save2file("-A grp_%d -m mac --mac-destination %s -j %s", seq, var, log_drop);
 		}
 	} else {
 		foreach(var, wordlist, next) {
-			save2file("-A grp_%d -m mac --mac-source %s -j advgrp_%d\n", seq, var, seq);
-			save2file("-A grp_%d -m mac --mac-destination %s -j advgrp_%d\n", seq, var, seq);
+			save2file("-A grp_%d -m mac --mac-source %s -j advgrp_%d", seq, var, seq);
+			save2file("-A grp_%d -m mac --mac-destination %s -j advgrp_%d", seq, var, seq);
 
 			/*
 			 * mark = urlenable ? mark : webfilter ? MARK_HTTP : 0; if (mark) 
@@ -1237,12 +1237,12 @@ static void ipgrp_chain(int seq, unsigned int mark, int urlenable)
 
 		if (mark == MARK_DROP) {
 			foreach(var2, wordlist2, next2) {
-				save2file("-A grp_%d -s %s -j %s\n", seq, var2, log_drop);
+				save2file("-A grp_%d -s %s -j %s", seq, var2, log_drop);
 			}
 		} else {
 			foreach(var2, wordlist2, next2) {
-				save2file("-A grp_%d -s %s -j advgrp_%d\n", seq, var2, seq);
-				save2file("-A grp_%d -d %s -j advgrp_%d\n", seq, var2, seq);
+				save2file("-A grp_%d -s %s -j advgrp_%d", seq, var2, seq);
+				save2file("-A grp_%d -d %s -j advgrp_%d", seq, var2, seq);
 
 				/*
 				 * mark = urlenable ? mark : webfilter ? MARK_HTTP : 0; if
@@ -1295,10 +1295,10 @@ static void portgrp_chain(int seq, unsigned int mark, int urlenable)
 		 * udp --dport 0:655 -j logdrop 
 		 */
 		if (!strcmp(protocol, "tcp") || !strcmp(protocol, "both")) {
-			save2file("-A grp_%d -p tcp --dport %s:%s -j %s\n", seq, lan_port0, lan_port1, target);
+			save2file("-A grp_%d -p tcp --dport %s:%s -j %s", seq, lan_port0, lan_port1, target);
 		}
 		if (!strcmp(protocol, "udp") || !strcmp(protocol, "both")) {
-			save2file("-A grp_%d -p udp --dport %s:%s -j %s\n", seq, lan_port0, lan_port1, target);
+			save2file("-A grp_%d -p udp --dport %s:%s -j %s", seq, lan_port0, lan_port1, target);
 		}
 	}
 }
@@ -1408,12 +1408,12 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 			cprintf("match:: name=%s, protocol=%s, ports=%s\n", word, protocol, ports);
 			if (!strcmp(protocol, "tcp")
 			    || !strcmp(protocol, "both"))
-				save2file("-A advgrp_%d -p tcp --dport %s -j %s\n", seq, ports, log_drop);
+				save2file("-A advgrp_%d -p tcp --dport %s -j %s", seq, ports, log_drop);
 			if (!strcmp(protocol, "udp")
 			    || !strcmp(protocol, "both"))
-				save2file("-A advgrp_%d -p udp --dport %s -j %s\n", seq, ports, log_drop);
+				save2file("-A advgrp_%d -p udp --dport %s -j %s", seq, ports, log_drop);
 			if (!strcmp(protocol, "icmp"))
-				save2file("-A advgrp_%d -p icmp -j %s\n", seq, log_drop);
+				save2file("-A advgrp_%d -p icmp -j %s", seq, log_drop);
 			if (!strcmp(protocol, "l7")) {
 				int i;
 
@@ -1421,12 +1421,12 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 					realname[i] = tolower(realname[i]);
 				insmod("ipt_layer7 xt_layer7");
 
-				save2file("-A advgrp_%d -m layer7 --l7proto %s -j %s\n", seq, realname, log_drop);
+				save2file("-A advgrp_%d -m layer7 --l7proto %s -j %s", seq, realname, log_drop);
 			}
 #ifdef HAVE_OPENDPI
 			if (!strcmp(protocol, "dpi")) {
 				insmod("xt_opendpi");
-				save2file("-A advgrp_%d -m ndpi --%s -j %s\n", seq, realname, log_drop);
+				save2file("-A advgrp_%d -m ndpi --%s -j %s", seq, realname, log_drop);
 			}
 #endif
 			if (!strcmp(protocol, "p2p")) {
@@ -1462,21 +1462,21 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 				if (proto)	//avoid null pointer, if realname isnt matched
 				{
 					insmod("ipt_ipp2p xt_ipp2p");
-					save2file("-A advgrp_%d -m ipp2p --%s -j %s\n", seq, proto, log_drop);
+					save2file("-A advgrp_%d -m ipp2p --%s -j %s", seq, proto, log_drop);
 					if (!strcmp(proto, "bit")) {
 						/* bittorrent detection enhanced */
 #ifdef HAVE_OPENDPI
 						insmod("xt_opendpi");
-						save2file("-A advgrp_%d -m ndpi --bittorrent -j %s\n", seq, log_drop);
+						save2file("-A advgrp_%d -m ndpi --bittorrent -j %s", seq, log_drop);
 #else
 						insmod("ipt_layer7 xt_layer7");
 #ifdef HAVE_MICRO
-						save2file("-A advgrp_%d -m layer7 --l7proto bt -j %s\n", seq, log_drop);
+						save2file("-A advgrp_%d -m layer7 --l7proto bt -j %s", seq, log_drop);
 #else
-						save2file("-A advgrp_%d -m length --length 0:550 -m layer7 --l7proto bt -j %s\n", seq, log_drop);
+						save2file("-A advgrp_%d -m length --length 0:550 -m layer7 --l7proto bt -j %s", seq, log_drop);
 #endif
-						save2file("-A advgrp_%d -m layer7 --l7proto bt1 -j %s\n", seq, log_drop);
-						save2file("-A advgrp_%d -m layer7 --l7proto bt2 -j %s\n", seq, log_drop);
+						save2file("-A advgrp_%d -m layer7 --l7proto bt1 -j %s", seq, log_drop);
+						save2file("-A advgrp_%d -m layer7 --l7proto bt2 -j %s", seq, log_drop);
 #endif
 					}
 				}
@@ -1489,77 +1489,77 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 	 */
 	if (nvram_nmatch("1", "filter_p2p_grp%d", seq)) {
 		insmod("ipt_layer7 xt_layer7 ipt_ipp2p xt_ipp2p");
-		save2file("-A advgrp_%d -m ipp2p --edk -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m ipp2p --dc -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m ipp2p --gnu -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m ipp2p --kazaa -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m ipp2p --bit -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m ipp2p --apple -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m ipp2p --soul -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m ipp2p --winmx -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m ipp2p --ares -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m ipp2p --mute -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m ipp2p --waste -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m ipp2p --xdcc -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --edk -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --dc -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --gnu -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --kazaa -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --bit -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --apple -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --soul -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --winmx -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --ares -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --mute -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --waste -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --xdcc -j %s", seq, log_drop);
 
 		/* p2p detection enhanced */
 #ifdef HAVE_OPENDPI
 		insmod("xt_opendpi");
 		/*commonly used protocols, decending */
-		save2file("-A advgrp_%d -m ndpi --bittorrent -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m ndpi --bittorrent -j %s", seq, log_drop);
 /*  disable till pattern works
 		save2file
-		    ("-A advgrp_%d -m ndpi --edonkey -j %s\n",
+		    ("-A advgrp_%d -m ndpi --edonkey -j %s",
 		     seq, log_drop); */
 		/*atm rarly used protocols */
-		save2file("-A advgrp_%d -m ndpi --apple -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -p tcp -m ndpi --directconnect -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m ndpi --fasttrack -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m ndpi --filetopia -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -p tcp -m ndpi --gnutella -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m ndpi --imesh -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -p tcp -m ndpi --openft -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -p tcp -m ndpi --pando -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -p tcp -m ndpi --soulseek -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -p tcp -m ndpi --winmx -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m ndpi --apple -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m ndpi --directconnect -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ndpi --fasttrack -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ndpi --filetopia -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m ndpi --gnutella -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ndpi --imesh -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m ndpi --openft -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m ndpi --pando -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m ndpi --soulseek -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m ndpi --winmx -j %s", seq, log_drop);
 #else
 #ifdef HAVE_MICRO
-		save2file("-A advgrp_%d -m layer7 --l7proto bt -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto bt -j %s", seq, log_drop);
 #else
-		save2file("-A advgrp_%d -m length --length 0:550 -m layer7 --l7proto bt -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m length --length 0:550 -m layer7 --l7proto bt -j %s", seq, log_drop);
 #endif
 #endif
 		/* commonly used protocols, decending */
-/*		save2file("-A advgrp_%d -m layer7 --l7proto bt -j %s\n", seq, log_drop); */
-		save2file("-A advgrp_%d  -p tcp -m layer7 --l7proto ares -j %s\n", seq, log_drop);
+/*		save2file("-A advgrp_%d -m layer7 --l7proto bt -j %s", seq, log_drop); */
+		save2file("-A advgrp_%d  -p tcp -m layer7 --l7proto ares -j %s", seq, log_drop);
 #ifndef HAVE_OPENDPI
-		save2file("-A advgrp_%d -m layer7 --l7proto bt4 -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m layer7 --l7proto bt1 -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m layer7 --l7proto bittorrent -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m layer7 --l7proto bt2 -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto gnutella -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m layer7 --l7proto applejuice -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto directconnect -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto soulseek -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto openft -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m layer7 --l7proto fasttrack -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m layer7 --l7proto imesh -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto bt4 -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto bt1 -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto bittorrent -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto bt2 -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto gnutella -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto applejuice -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto directconnect -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto soulseek -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto openft -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto fasttrack -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto imesh -j %s", seq, log_drop);
 #endif
-		save2file("-A advgrp_%d -m layer7 --l7proto audiogalaxy -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto bearshare -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto audiogalaxy -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto bearshare -j %s", seq, log_drop);
 		/* atm rarly used protocols */
-		save2file("-A advgrp_%d -m layer7 --l7proto edonkey -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m layer7 --l7proto freenet -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m layer7 --l7proto gnucleuslan -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m layer7 --l7proto goboogy -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m layer7 --l7proto hotline -j %s\n", seq, log_drop);
-/*	 	save2file("-A advgrp_%d -m layer7 --l7proto kugoo -j %s\n", seq, log_drop);// xunlei, kugoo, winmx block websurfing */
-		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto mute -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto napster -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto soribada -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m layer7 --l7proto tesla -j %s\n", seq, log_drop);
-/*		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto winmx -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m layer7 --l7proto xunlei -j %s\n", seq, log_drop); */
+		save2file("-A advgrp_%d -m layer7 --l7proto edonkey -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto freenet -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto gnucleuslan -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto goboogy -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto hotline -j %s", seq, log_drop);
+/*	 	save2file("-A advgrp_%d -m layer7 --l7proto kugoo -j %s", seq, log_drop);// xunlei, kugoo, winmx block websurfing */
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto mute -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto napster -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto soribada -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto tesla -j %s", seq, log_drop);
+/*		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto winmx -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto xunlei -j %s", seq, log_drop); */
 	}
 	free(services);
 	/*
@@ -1568,7 +1568,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 	wordlist = nvram_nget("filter_web_host%d", seq);
 	if (wordlist && strcmp(wordlist, "")) {
 		insmod("ipt_webstr");
-		save2file("-A advgrp_%d -p tcp -m webstr --host \"%s\" -j %s\n", seq, wordlist, log_reject);
+		save2file("-A advgrp_%d -p tcp -m webstr --host \"%s\" -j %s", seq, wordlist, log_reject);
 #if !defined(ARCH_broadcom) && !defined(HAVE_RTG32) || defined(HAVE_BCMMODERN)
 		char var[256];
 		char *next;
@@ -1580,7 +1580,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 			int offset = 0;
 			if (strstr(var, "https://"))
 				offset = 8;
-			save2file("-A advgrp_%d -p tcp -m string --string \"%s\" --algo bm --from 1 --to 600 -j %s\n", seq, &var[offset], log_reject);
+			save2file("-A advgrp_%d -p tcp -m string --string \"%s\" --algo bm --from 1 --to 600 -j %s", seq, &var[offset], log_reject);
 			wordlist = next + 8;
 		}
 
@@ -1593,7 +1593,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 	wordlist = nvram_nget("filter_web_url%d", seq);
 	if (wordlist && strcmp(wordlist, "")) {
 		insmod("ipt_webstr");
-		save2file("-A advgrp_%d -p tcp -m webstr --url \"%s\" -j %s\n", seq, wordlist, log_reject);
+		save2file("-A advgrp_%d -p tcp -m webstr --url \"%s\" -j %s", seq, wordlist, log_reject);
 #if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN) && !defined(HAVE_RTG32)
 		char var[256];
 		char *next;
@@ -1605,7 +1605,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 			int offset = 0;
 			if (strstr(var, "https://"))
 				offset = 8;
-			save2file("-A advgrp_%d -p tcp -m string --string \"%s\" --algo bm --from 1 --to 600 -j %s\n", seq, &var[offset], log_reject);
+			save2file("-A advgrp_%d -p tcp -m string --string \"%s\" --algo bm --from 1 --to 600 -j %s", seq, &var[offset], log_reject);
 			wordlist = next + 8;
 		}
 #endif
@@ -1614,7 +1614,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 	/*
 	 * Others will be accepted 
 	 */
-	// save2file ("-A advgrp_%d -j %s\n", seq, log_accept);
+	// save2file ("-A advgrp_%d -j %s", seq, log_accept);
 }
 
 static void lan2wan_chains(void)
@@ -1841,12 +1841,12 @@ static void parse_trigger_out(char *wordlist)
 
 		if (!strcmp(proto, "tcp") || !strcmp(proto, "udp")) {
 			save2file("-A trigger_out -p %s -m %s --dport %s:%s "
-				  "-j TRIGGER --trigger-type out --trigger-proto %s --trigger-match %s-%s --trigger-relate %s-%s\n", proto, proto, wport0, wport1, proto, wport0, wport1, lport0, lport1);
+				  "-j TRIGGER --trigger-type out --trigger-proto %s --trigger-match %s-%s --trigger-relate %s-%s", proto, proto, wport0, wport1, proto, wport0, wport1, lport0, lport1);
 		} else if (!strcmp(proto, "both")) {
 			save2file("-A trigger_out -p tcp --dport %s:%s "
-				  "-j TRIGGER --trigger-type out --trigger-proto all --trigger-match %s-%s --trigger-relate %s-%s\n", wport0, wport1, wport0, wport1, lport0, lport1);
+				  "-j TRIGGER --trigger-type out --trigger-proto all --trigger-match %s-%s --trigger-relate %s-%s", wport0, wport1, wport0, wport1, lport0, lport1);
 			save2file("-A trigger_out -p udp --dport %s:%s "
-				  "-j TRIGGER --trigger-type out --trigger-proto all --trigger-match %s-%s --trigger-relate %s-%s\n", wport0, wport1, wport0, wport1, lport0, lport1);
+				  "-j TRIGGER --trigger-type out --trigger-proto all --trigger-match %s-%s --trigger-relate %s-%s", wport0, wport1, wport0, wport1, lport0, lport1);
 		}
 	}
 }
@@ -1882,12 +1882,12 @@ static void add_bridges(char *chain, int forward)
 
 			}
 			if (forward && wan && strlen(wan) > 0 )
-				save2file("-A FORWARD -i %s -o %s -j %s\n", tag, wan, log_accept);
+				save2file("-A FORWARD -i %s -o %s -j %s", tag, wan, log_accept);
 			else {
 				if (!strcmp(chain, "OUTPUT"))
-					save2file("-A %s -o %s -j %s\n", chain, tag, log_accept);
+					save2file("-A %s -o %s -j %s", chain, tag, log_accept);
 				else
-					save2file("-A %s -i %s -j %s\n", chain, tag, log_accept);
+					save2file("-A %s -i %s -j %s", chain, tag, log_accept);
 			}
 		}
 	}
@@ -1906,9 +1906,9 @@ static void filter_input(void)
 	/*
 	 * most of what was here has been moved to the end 
 	 */
-	save2file("-A INPUT -m state --state RELATED,ESTABLISHED -j %s\n", log_accept);
+	save2file("-A INPUT -m state --state RELATED,ESTABLISHED -j %s", log_accept);
 	if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
-		save2file("-A INPUT -i %s -j %s\n", nvram_safe_get("tvnicfrom"), log_accept);
+		save2file("-A INPUT -i %s -j %s", nvram_safe_get("tvnicfrom"), log_accept);
 	}
 #ifdef HAVE_PPTP
 	/*
@@ -1917,23 +1917,23 @@ static void filter_input(void)
 #ifndef HAVE_MICRO
 	if (nvram_matchi("pptpd_enable", 1)) {
 		if (nvram_matchi("limit_pptp", 1)) {
-			save2file("-A INPUT -i %s -p tcp --dport %d -j logbrute\n", wanface, PPTP_PORT);
-			save2file("-A INPUT -i %s -p tcp --dport %d -j %s\n", wanface, PPTP_PORT, log_accept);
+			save2file("-A INPUT -i %s -p tcp --dport %d -j logbrute", wanface, PPTP_PORT);
+			save2file("-A INPUT -i %s -p tcp --dport %d -j %s", wanface, PPTP_PORT, log_accept);
 		} else {
-			save2file("-A INPUT -i %s -p tcp --dport %d -j %s\n", wanface, PPTP_PORT, log_accept);
+			save2file("-A INPUT -i %s -p tcp --dport %d -j %s", wanface, PPTP_PORT, log_accept);
 		}
 	}
 #endif
 	if (nvram_match("wan_proto", "dhcp"))
-		save2file("-A INPUT -i %s -p udp --sport 67 --dport 68 -j %s\n", wanface, log_accept);
+		save2file("-A INPUT -i %s -p udp --sport 67 --dport 68 -j %s", wanface, log_accept);
 	if (nvram_matchi("pptpd_enable", 1)
 	    || nvram_matchi("pptpd_client_enable", 1)
 	    || nvram_match("wan_proto", "pptp")) {
-		save2file("-A INPUT -p tcp --dport %d -j %s\n", PPTP_PORT, log_accept);
-		save2file("-A INPUT -p 47 -j %s\n", log_accept);
+		save2file("-A INPUT -p tcp --dport %d -j %s", PPTP_PORT, log_accept);
+		save2file("-A INPUT -p 47 -j %s", log_accept);
 		if (nvram_matchi("pptpd_lockdown", 1)) {
-			save2file("-A INPUT -i %s -p udp --sport 67 --dport 68 -j %s\n", lanface, log_accept);
-			save2file("-A INPUT -i %s -j %s\n", lanface, log_drop);
+			save2file("-A INPUT -i %s -p udp --sport 67 --dport 68 -j %s", lanface, log_accept);
+			save2file("-A INPUT -i %s -j %s", lanface, log_drop);
 		}
 	}
 #endif
@@ -1941,17 +1941,17 @@ static void filter_input(void)
 	if (nvram_matchi("proftpd_enable", 1)
 	    && nvram_matchi("proftpd_wan", 1)) {
 		if (nvram_matchi("limit_ftp", 1)) {
-			save2file("-A INPUT -i %s -p tcp --dport %s -j logbrute\n", wanface, nvram_safe_get("proftpd_port"));
-			save2file("-A INPUT -i %s -p tcp --dport %s -j %s\n", wanface, nvram_safe_get("proftpd_port"), log_accept);
+			save2file("-A INPUT -i %s -p tcp --dport %s -j logbrute", wanface, nvram_safe_get("proftpd_port"));
+			save2file("-A INPUT -i %s -p tcp --dport %s -j %s", wanface, nvram_safe_get("proftpd_port"), log_accept);
 		} else {
-			save2file("-A INPUT -i %s -p tcp --dport %s -j %s\n", wanface, nvram_safe_get("proftpd_port"), log_accept);
+			save2file("-A INPUT -i %s -p tcp --dport %s -j %s", wanface, nvram_safe_get("proftpd_port"), log_accept);
 		}
 	}
 #endif
 #ifdef HAVE_WEBSERVER
 	if (nvram_matchi("lighttpd_enable", 1) && nvram_matchi("lighttpd_wan", 1)) {
-		save2file("-A INPUT -i %s -p tcp --dport %s -j %s\n", wanface, nvram_safe_get("lighttpd_port"), log_accept);
-		save2file("-A INPUT -i %s -p tcp --dport %s -j %s\n", wanface, nvram_safe_get("lighttpd_sslport"), log_accept);
+		save2file("-A INPUT -i %s -p tcp --dport %s -j %s", wanface, nvram_safe_get("lighttpd_port"), log_accept);
+		save2file("-A INPUT -i %s -p tcp --dport %s -j %s", wanface, nvram_safe_get("lighttpd_sslport"), log_accept);
 	}
 #endif
 /*#ifdef HAVE_AP_SERV
@@ -1968,33 +1968,33 @@ static void filter_input(void)
 #ifdef HAVE_OPENVPN
 	//check if ovpn server is running
 	if (nvram_matchi("openvpn_enable", 1)) {
-		save2file("-A INPUT -p %s --dport %s -j %s\n", nvram_match("openvpn_proto", "udp") ? "udp" : "tcp", nvram_safe_get("openvpn_port"), log_accept);
+		save2file("-A INPUT -p %s --dport %s -j %s", nvram_match("openvpn_proto", "udp") ? "udp" : "tcp", nvram_safe_get("openvpn_port"), log_accept);
 		if (nvram_match("openvpn_tuntap", "tun")) {
 //                      if (strlen(nvram_safe_get("openvpn_ccddef")) = 0) {
-			save2file("-A INPUT -i %s2 -j %s\n", nvram_safe_get("openvpn_tuntap"), log_accept);
-			save2file("-A FORWARD -i %s2 -j %s\n", nvram_safe_get("openvpn_tuntap"), log_accept);
-			save2file("-A FORWARD -o %s2 -j %s\n", nvram_safe_get("openvpn_tuntap"), log_accept);
+			save2file("-A INPUT -i %s2 -j %s", nvram_safe_get("openvpn_tuntap"), log_accept);
+			save2file("-A FORWARD -i %s2 -j %s", nvram_safe_get("openvpn_tuntap"), log_accept);
+			save2file("-A FORWARD -o %s2 -j %s", nvram_safe_get("openvpn_tuntap"), log_accept);
 //                      }
 		}
 	}
 #endif
 	if (wanactive()) {
 		if (nvram_invmatchi("dr_wan_rx", 0))
-			save2file("-A INPUT -p udp -i %s --dport %d -j %s\n", wanface, RIP_PORT, log_accept);
+			save2file("-A INPUT -p udp -i %s --dport %d -j %s", wanface, RIP_PORT, log_accept);
 		else
-			save2file("-A INPUT -p udp -i %s --dport %d -j %s\n", wanface, RIP_PORT, log_drop);
+			save2file("-A INPUT -p udp -i %s --dport %d -j %s", wanface, RIP_PORT, log_drop);
 	}
 	if (nvram_invmatchi("dr_lan_rx", 0))
-		save2file("-A INPUT -p udp -i %s --dport %d -j %s\n", lanface, RIP_PORT, log_accept);
+		save2file("-A INPUT -p udp -i %s --dport %d -j %s", lanface, RIP_PORT, log_accept);
 	else
-		save2file("-A INPUT -p udp -i %s --dport %d -j %s\n", lanface, RIP_PORT, log_drop);
+		save2file("-A INPUT -p udp -i %s --dport %d -j %s", lanface, RIP_PORT, log_drop);
 
 	iflist = nvram_safe_get("no_route_if");
 	foreach(buff, iflist, next) {
-		save2file("-A INPUT -p udp -i %s --dport %d -j %s\n", buff, RIP_PORT, log_drop);
+		save2file("-A INPUT -p udp -i %s --dport %d -j %s", buff, RIP_PORT, log_drop);
 	}
 
-	save2file("-A INPUT -p udp --dport %d -j %s\n", RIP_PORT, log_accept);
+	save2file("-A INPUT -p udp --dport %d -j %s", RIP_PORT, log_accept);
 
 	/*
 	 * end lonewolf mods 
@@ -2005,18 +2005,18 @@ static void filter_input(void)
 	 */
 #ifdef HAVE_IPV6
 	if (nvram_matchi("ipv6_enable", 1))
-		save2file("-A INPUT -p 41 -j %s\n", log_accept);
+		save2file("-A INPUT -p 41 -j %s", log_accept);
 #endif
 	/*
 	 * Sveasoft mod - accept OSPF protocol broadcasts 
 	 */
 	if (nvram_match("wk_mode", "ospf"))
-		save2file("-A INPUT -p ospf -j %s\n", log_accept);
+		save2file("-A INPUT -p ospf -j %s", log_accept);
 	if (nvram_match("wk_mode", "bgp"))
-		save2file("-A INPUT -p tcp --dport 179 -j %s\n", log_accept);
+		save2file("-A INPUT -p tcp --dport 179 -j %s", log_accept);
 #ifdef HAVE_OLSRD
 	if (nvram_match("wk_mode", "olsr"))
-		save2file("-A INPUT -p udp --dport 698 -j %s\n", log_accept);
+		save2file("-A INPUT -p udp --dport 698 -j %s", log_accept);
 #endif
 	/*
 	 * Sveasoft mod - default for br1/separate subnet WDS type 
@@ -2024,11 +2024,11 @@ static void filter_input(void)
 	if (nvram_matchi("wl0_br1_enable", 1)
 	    && nvram_invmatchi("wl0_br1_nat", 1)
 	    && nvram_invmatchi("wl0_br1_nat", 2))
-		save2file("-A INPUT -i br1 -j %s\n", log_accept);
+		save2file("-A INPUT -i br1 -j %s", log_accept);
 	if (nvram_matchi("wl1_br1_enable", 1)
 	    && nvram_invmatchi("wl1_br1_nat", 1)
 	    && nvram_invmatchi("wl1_br1_nat", 2))
-		save2file("-A INPUT -i br1 -j %s\n", log_accept);
+		save2file("-A INPUT -i br1 -j %s", log_accept);
 #ifdef HAVE_VLANTAGGING
 	add_bridges("INPUT", 0);
 #endif
@@ -2038,7 +2038,7 @@ static void filter_input(void)
 	 * port to make sure that it's redirected from WAN 
 	 */
 	if (remotemanage) {
-		save2file("-A INPUT -p tcp -d %s --dport %d -j %s\n", nvram_safe_get("lan_ipaddr"), web_lanport, log_accept);
+		save2file("-A INPUT -p tcp -d %s --dport %d -j %s", nvram_safe_get("lan_ipaddr"), web_lanport, log_accept);
 	}
 #ifdef HAVE_SSHD
 	/*
@@ -2056,7 +2056,7 @@ static void filter_input(void)
 	 * management are not linked anymore 
 	 */
 	if (remotessh) {
-		save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"), log_accept);
+		save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j %s", wanface, nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"), log_accept);
 	}
 #endif
 
@@ -2067,11 +2067,11 @@ static void filter_input(void)
 #ifndef HAVE_MICRO
 	if (remotetelnet) {
 		if (nvram_matchi("limit_telnet", 1))
-			save2file("-A INPUT -i %s -p tcp -d %s --dport 23 -j logbrute\n", wanface, nvram_safe_get("lan_ipaddr"));
+			save2file("-A INPUT -i %s -p tcp -d %s --dport 23 -j logbrute", wanface, nvram_safe_get("lan_ipaddr"));
 	}
 #endif
 	if (remotetelnet) {
-		save2file("-A INPUT -i %s -p tcp -d %s --dport 23 -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), log_accept);
+		save2file("-A INPUT -i %s -p tcp -d %s --dport 23 -j %s", wanface, nvram_safe_get("lan_ipaddr"), log_accept);
 	}
 #endif
 	/*
@@ -2079,18 +2079,18 @@ static void filter_input(void)
 	 */
 	if (wanactive()) {
 		if (nvram_invmatch("filter", "off"))
-			save2file("-A INPUT -i %s -p icmp -j %s\n", wanface, nvram_matchi("block_wan", 1) ? log_drop : log_accept);
+			save2file("-A INPUT -i %s -p icmp -j %s", wanface, nvram_matchi("block_wan", 1) ? log_drop : log_accept);
 		else
-			save2file("-A INPUT -i %s -p icmp -j %s\n", wanface, log_accept);
+			save2file("-A INPUT -i %s -p icmp -j %s", wanface, log_accept);
 	}
 	/*
 	 * IGMP query from WAN interface 
 	 */
-	save2file("-A INPUT -p igmp -j %s\n", doMultiCast() == 0 ? log_drop : log_accept);
+	save2file("-A INPUT -p igmp -j %s", doMultiCast() == 0 ? log_drop : log_accept);
 
 #ifdef HAVE_UDPXY
 	if (wanactive() && nvram_matchi("udpxy_enable", 1) && nvram_get("tvnicfrom"))
-		save2file("-A INPUT -i %s -p udp -d %s -j %s\n", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
+		save2file("-A INPUT -i %s -p udp -d %s -j %s", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
 #endif
 
 #ifndef HAVE_MICRO
@@ -2098,7 +2098,7 @@ static void filter_input(void)
 	 * SNMP access from WAN interface 
 	 */
 	if (nvram_matchi("snmpd_enable", 1) && (nvram_matchi("block_snmp", 0) || nvram_match("filter", "off"))) {
-		save2file("-A INPUT -i %s -p udp --dport 161 -j %s\n", wanface, log_accept);
+		save2file("-A INPUT -i %s -p udp --dport 161 -j %s", wanface, log_accept);
 	}
 #endif
 
@@ -2107,49 +2107,49 @@ static void filter_input(void)
 	 * Remote Upgrade 
 	 */
 	if (nvram_matchi("remote_upgrade", 1))
-		save2file("-A INPUT -p udp --dport %d -j %s\n", TFTP_PORT, log_accept);
+		save2file("-A INPUT -p udp --dport %d -j %s", TFTP_PORT, log_accept);
 #endif
 
 #ifdef HAVE_MILKFISH
 	if (strlen(wanface) && nvram_matchi("milkfish_enabled", 1))
-		save2file("-A INPUT -p udp -i %s --dport 5060 -j %s\n", wanface, log_accept);
+		save2file("-A INPUT -p udp -i %s --dport 5060 -j %s", wanface, log_accept);
 	// save2file ("-A INPUT -m udp -p udp -i %s --dport 35000 36000 -j
 	// ACCEPT\n", wanface);
 #endif
 #ifdef HAVE_VNCREPEATER
 	if (nvram_matchi("vncr_enable", 1) && strlen(wanface)) {
-		save2file("-A INPUT -p tcp -i %s --dport 5900 -j %s\n", wanface, log_accept);
-		save2file("-A INPUT -p tcp -i %s --dport 5500 -j %s\n", wanface, log_accept);
+		save2file("-A INPUT -p tcp -i %s --dport 5900 -j %s", wanface, log_accept);
+		save2file("-A INPUT -p tcp -i %s --dport 5500 -j %s", wanface, log_accept);
 	}
 #endif
 #ifdef HAVE_TOR
 	if (nvram_matchi("tor_enable", 1)) {
 		if (nvram_matchi("tor_relay", 1))
-			save2file("-A INPUT -p tcp -i %s --dport 9001 -j %s\n", wanface, log_accept);
+			save2file("-A INPUT -p tcp -i %s --dport 9001 -j %s", wanface, log_accept);
 		if (nvram_matchi("tor_dir", 1))
-			save2file("-A INPUT -p tcp -i %s --dport 9030 -j %s\n", wanface, log_accept);
+			save2file("-A INPUT -p tcp -i %s --dport 9030 -j %s", wanface, log_accept);
 	}
 #endif
 	/*
 	 * Ident request backs by telnet or IRC server 
 	 */
 	if (nvram_matchi("block_ident", 0) || nvram_match("filter", "off"))
-		save2file("-A INPUT -p tcp --dport %d -j %s\n", IDENT_PORT, log_accept);
+		save2file("-A INPUT -p tcp --dport %d -j %s", IDENT_PORT, log_accept);
 
 	/*
 	 * Filter known SPI state 
 	 */
 	// removed first rule: -A INPUT -m state --state INVALID -j DROP
 	// (wolfiR)
-	save2file("-A INPUT -i lo -m state --state NEW -j ACCEPT\n");
-	save2file("-A INPUT -i %s -m state --state NEW -j %s\n", lanface, log_accept);
+	save2file("-A INPUT -i lo -m state --state NEW -j ACCEPT");
+	save2file("-A INPUT -i %s -m state --state NEW -j %s", lanface, log_accept);
 
 	/*
 	 * lonewolf mods for extra VLANs / interfaces 
 	 */
 	iflist = nvram_safe_get("no_firewall_if");
 	foreach(buff, iflist, next) {
-		save2file("-A INPUT -i %s -m state --state NEW -j %s\n", buff, log_accept);
+		save2file("-A INPUT -i %s -m state --state NEW -j %s", buff, log_accept);
 	}
 	char dev[16];
 	char var[80];
@@ -2164,13 +2164,13 @@ static void filter_input(void)
 		if (strcmp(get_wan_face(), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_isolation", var)) {
-				save2file("-A INPUT -i %s -p udp --dport 67 -j %s\n", var, log_accept);
-				save2file("-A INPUT -i %s -p udp --dport 53 -j %s\n", var, log_accept);
-				save2file("-A INPUT -i %s -p tcp --dport 53 -j %s\n", var, log_accept);
-				save2file("-A INPUT -i %s -m state --state NEW -j %s\n", var, log_drop);
+				save2file("-A INPUT -i %s -p udp --dport 67 -j %s", var, log_accept);
+				save2file("-A INPUT -i %s -p udp --dport 53 -j %s", var, log_accept);
+				save2file("-A INPUT -i %s -p tcp --dport 53 -j %s", var, log_accept);
+				save2file("-A INPUT -i %s -m state --state NEW -j %s", var, log_drop);
 			}
 			if (isstandalone(var)) {
-				save2file("-A INPUT -i %s -j %s\n", var, log_accept);
+				save2file("-A INPUT -i %s -j %s", var, log_accept);
 			}
 
 		}
@@ -2183,7 +2183,7 @@ static void filter_input(void)
 	/*
 	 * Drop those packets we are NOT recognizable 
 	 */
-	save2file("-A INPUT -j %s\n", log_drop);
+	save2file("-A INPUT -j %s", log_drop);
 }
 
 void filter_output(void)
@@ -2194,11 +2194,11 @@ void filter_output(void)
 	if (nvram_matchi("wl0_br1_enable", 1)
 	    && nvram_invmatchi("wl0_br1_nat", 1)
 	    && nvram_invmatchi("wl_br1_nat", 2))
-		save2file("-A OUTPUT -o br1 -j %s\n", log_accept);
+		save2file("-A OUTPUT -o br1 -j %s", log_accept);
 	if (nvram_matchi("wl1_br1_enable", 1)
 	    && nvram_invmatchi("wl1_br1_nat", 1)
 	    && nvram_invmatchi("wl_br1_nat", 2))
-		save2file("-A OUTPUT -o br1 -j %s\n", log_accept);
+		save2file("-A OUTPUT -o br1 -j %s", log_accept);
 #ifdef HAVE_VLANTAGGING
 	add_bridges("OUTPUT", 0);
 #endif
@@ -2232,8 +2232,8 @@ static void filter_forward(void)
 	}
 
 	if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
-		save2file("-A FORWARD -i %s -j %s\n", nvram_safe_get("tvnicfrom"), log_accept);
-		save2file("-A FORWARD -o %s -j %s\n", nvram_safe_get("tvnicfrom"), log_accept);
+		save2file("-A FORWARD -i %s -j %s", nvram_safe_get("tvnicfrom"), log_accept);
+		save2file("-A FORWARD -o %s -j %s", nvram_safe_get("tvnicfrom"), log_accept);
 	}
 
 	getIfLists(vifs, 256);
@@ -2243,7 +2243,7 @@ static void filter_forward(void)
 		if (strcmp(get_wan_face(), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (isstandalone(var) && nvram_nmatch("1", "%s_nat", var)) {
-				save2file("-A FORWARD -i %s -j %s\n", var, log_accept);
+				save2file("-A FORWARD -i %s -j %s", var, log_accept);
 			}
 		}
 	}
@@ -2257,42 +2257,42 @@ static void filter_forward(void)
 	 * Sveasoft add - log invalid packets 
 	 */
 	if (!has_gateway())
-		save2file("-A FORWARD -m state --state INVALID -j %s\n", log_drop);
+		save2file("-A FORWARD -m state --state INVALID -j %s", log_drop);
 
 	/*
 	 * Filter setting by user definition 
 	 */
 	// save2file ("-A FORWARD -i %s -j lan2wan\n", lanface);
-	save2file("-A FORWARD -j lan2wan\n");
+	save2file("-A FORWARD -j lan2wan");
 
 	/*
 	 * Filter Web application 
 	 */
 	// if (webfilter)
 	// save2file ("-A FORWARD -i %s -o %s -p tcp --dport %d "
-	// "-m webstr --content %d -j %s\n",
+	// "-m webstr --content %d -j %s",
 	// lanface, wanface, HTTP_PORT, webfilter, log_reject);
 	if (nvram_invmatch("filter", "off") && webfilter && strlen(wanface)) {
 		insmod("ipt_webstr");
-		save2file("-A FORWARD -i %s -o %s -p tcp -m webstr --content %d -j %s\n", lanface, wanface, webfilter, log_reject);
+		save2file("-A FORWARD -i %s -o %s -p tcp -m webstr --content %d -j %s", lanface, wanface, webfilter, log_reject);
 	}
 
 	/*
 	 * If webfilter is used this rule must be evaluated after webstr rule
 	 */
 	if (filter_host_url)
-		save2file("-A FORWARD -m state --state RELATED,ESTABLISHED -j %s\n", log_accept);
+		save2file("-A FORWARD -m state --state RELATED,ESTABLISHED -j %s", log_accept);
 
 	/*
 	 * Accept the redirect, might be seen as INVALID, packets 
 	 */
-	save2file("-A FORWARD -i %s -o %s -j %s\n", lanface, lanface, log_accept);
+	save2file("-A FORWARD -i %s -o %s -j %s", lanface, lanface, log_accept);
 
 	/*
 	 * Drop all traffic from lan 
 	 */
 	if (nvram_matchi("pptpd_lockdown", 1))
-		save2file("-A FORWARD -i %s -j %s\n", lanface, log_drop);
+		save2file("-A FORWARD -i %s -j %s", lanface, log_drop);
 
 	/*
 	 * Filter by destination ports "filter_port" if firewall on 
@@ -2304,18 +2304,18 @@ static void filter_forward(void)
 	 * Sveasoft mods - accept OSPF protocol broadcasts 
 	 */
 	if (nvram_match("wk_mode", "ospf")) {
-		save2file("-A FORWARD -p ospf -j %s\n", log_accept);
+		save2file("-A FORWARD -p ospf -j %s", log_accept);
 	}
 	if (nvram_match("wk_mode", "bgp")) {
-		save2file("-A FORWARD -p tcp --sport 179 -j %s\n", log_accept);	// BGP 
+		save2file("-A FORWARD -p tcp --sport 179 -j %s", log_accept);	// BGP 
 		// port
-		save2file("-A FORWARD -p tcp --dport 179 -j %s\n", log_accept);	// BGP 
+		save2file("-A FORWARD -p tcp --dport 179 -j %s", log_accept);	// BGP 
 		// port
 	}
 #ifdef HAVE_OLSRD
 	if (nvram_match("wk_mode", "olsr")) {
-		save2file("-A FORWARD -p udp --dport 698 -j %s\n", log_accept);
-		save2file("-A FORWARD -p udp --sport 698 -j %s\n", log_accept);
+		save2file("-A FORWARD -p udp --dport 698 -j %s", log_accept);
+		save2file("-A FORWARD -p udp --sport 698 -j %s", log_accept);
 	}
 #endif
 
@@ -2325,26 +2325,26 @@ static void filter_forward(void)
 	if (nvram_matchi("wl0_br1_enable", 1)) {
 
 		if (nvram_matchi("wl0_br1_nat", 1)) {
-			save2file("-A FORWARD -i br0 -o br1 -j %s\n", log_accept);
-			save2file("-A FORWARD -o br0 -i br1 -m state --state ESTABLISHED,RELATED -j %s\n", log_accept);
+			save2file("-A FORWARD -i br0 -o br1 -j %s", log_accept);
+			save2file("-A FORWARD -o br0 -i br1 -m state --state ESTABLISHED,RELATED -j %s", log_accept);
 		}
 
 		/*
 		 * Sveasoft mod - FORWARD br0 to br1, protecting br1 
 		 */
 		else if (nvram_matchi("wl0_br1_nat", 2)) {
-			save2file("-A FORWARD -o br0 -i br1 -j %s\n", log_accept);
-			save2file("-A FORWARD -i br0 -o br1 -m state --state ESTABLISHED,RELATED -j %s\n", log_accept);
+			save2file("-A FORWARD -o br0 -i br1 -j %s", log_accept);
+			save2file("-A FORWARD -i br0 -o br1 -m state --state ESTABLISHED,RELATED -j %s", log_accept);
 		}
 		/*
 		 * Sveasoft mod - default for br1/separate subnet WDS type 
 		 */
 		else
-			save2file("-A FORWARD -i br1 -o br0 -j %s\n", log_accept);
+			save2file("-A FORWARD -i br1 -o br0 -j %s", log_accept);
 
 		char *wan = get_wan_face();
 		if (wan && strlen(wan) > 0)
-			save2file("-A FORWARD -i br1 -o %s -j %s\n", wan, log_accept);
+			save2file("-A FORWARD -i br1 -o %s -j %s", wan, log_accept);
 
 	}
 #ifdef HAVE_VLANTAGGING
@@ -2359,19 +2359,19 @@ static void filter_forward(void)
 		 * DROP packets for PPTP pass through. 
 		 */
 		if (nvram_matchi("pptp_pass", 0))
-			save2file("-A FORWARD -o %s -p tcp --dport %d -j %s\n", wanface, PPTP_PORT, log_drop);
+			save2file("-A FORWARD -o %s -p tcp --dport %d -j %s", wanface, PPTP_PORT, log_drop);
 
 		/*
 		 * DROP packets for L2TP pass through. 
 		 */
 		if (nvram_matchi("l2tp_pass", 0))
-			save2file("-A FORWARD -o %s -p udp --dport %d -j %s\n", wanface, L2TP_PORT, log_drop);
+			save2file("-A FORWARD -o %s -p udp --dport %d -j %s", wanface, L2TP_PORT, log_drop);
 
 		/*
 		 * DROP packets for IPsec pass through 
 		 */
 		if (nvram_matchi("ipsec_pass", 0))
-			save2file("-A FORWARD -o %s -p udp --dport %d -j %s\n", wanface, ISAKMP_PORT, log_drop);
+			save2file("-A FORWARD -o %s -p udp --dport %d -j %s", wanface, ISAKMP_PORT, log_drop);
 
 	}
 	start_vpn_modules();
@@ -2379,8 +2379,8 @@ static void filter_forward(void)
 	if (nvram_invmatch("filter", "off")) {
 		if (nvram_matchi("pptp_pass", 1)) {
 			if (strlen(wanface) > 0) {
-				save2file("-I FORWARD -o %s -s %s/%d -p tcp --dport %d -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), PPTP_PORT, log_accept);
-				save2file("-I FORWARD -o %s -s %s/%d -p gre -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), log_accept);
+				save2file("-I FORWARD -o %s -s %s/%d -p tcp --dport %d -j %s", wanface, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), PPTP_PORT, log_accept);
+				save2file("-I FORWARD -o %s -s %s/%d -p gre -j %s", wanface, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), log_accept);
 			}
 		}
 	}
@@ -2389,25 +2389,25 @@ static void filter_forward(void)
 	 */
 	if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
 		if (doMultiCast() > 0)
-			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
+			save2file("-A FORWARD -i %s -p udp --destination %s -j %s", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
 #ifdef HAVE_PPTP
 	} else if (nvram_match("wan_proto", "pptp") && nvram_matchi("pptp_iptv", 1) && nvram_get("tvnicfrom")) {
 		if (doMultiCast() > 0)
-			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
+			save2file("-A FORWARD -i %s -p udp --destination %s -j %s", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
 #endif
 #ifdef HAVE_L2TP
 	} else if (nvram_match("wan_proto", "l2tp") && nvram_matchi("pptp_iptv", 1) && nvram_get("tvnicfrom")) {
 		if (doMultiCast() > 0)
-			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
+			save2file("-A FORWARD -i %s -p udp --destination %s -j %s", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
 #endif
 #ifdef HAVE_PPPOEDUAL
 	} else if (nvram_match("wan_proto", "pppoe_dual") && nvram_matchi("pptp_iptv", 1) && nvram_get("tvnicfrom")) {
 		if (doMultiCast() > 0)
-			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
+			save2file("-A FORWARD -i %s -p udp --destination %s -j %s", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
 #endif
 	} else {
 		if (doMultiCast() > 0 && strlen(wanface) > 0)
-			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", wanface, IP_MULTICAST, log_accept);
+			save2file("-A FORWARD -i %s -p udp --destination %s -j %s", wanface, IP_MULTICAST, log_accept);
 	}
 	/*
 	 * port-forwarding accepting rules 
@@ -2429,7 +2429,7 @@ static void filter_forward(void)
 	 * DMZ forwarding 
 	 */
 	if (dmzenable)
-		save2file("-A FORWARD -o %s -d %s%s -j %s\n", lanface, lan_cclass, nvram_safe_get("dmz_ipaddr"), log_accept);
+		save2file("-A FORWARD -o %s -d %s%s -j %s", lanface, lan_cclass, nvram_safe_get("dmz_ipaddr"), log_accept);
 
 	getIfLists(vifs, 256);
 
@@ -2437,10 +2437,10 @@ static void filter_forward(void)
 		if (strcmp(get_wan_face(), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_isolation", var)) {
-				save2file("-I FORWARD -i %s -d %s/%s -m state --state NEW -j %s\n", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_drop);
-				save2file("-A FORWARD -i br0 -o %s -m state --state NEW -j %s\n", var, log_drop);
+				save2file("-I FORWARD -i %s -d %s/%s -m state --state NEW -j %s", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_drop);
+				save2file("-A FORWARD -i br0 -o %s -m state --state NEW -j %s", var, log_drop);
 				if (nvram_matchi("privoxy_transp_enable", 1)) {
-					save2file("-I INPUT -i %s -d %s/%s -p tcp --dport 8118 -j %s\n", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_accept);
+					save2file("-I INPUT -i %s -d %s/%s -p tcp --dport 8118 -j %s", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_accept);
 				}
 			}
 		}
@@ -2449,12 +2449,12 @@ static void filter_forward(void)
 	/*
 	 * Accept new connections 
 	 */
-	save2file("-A FORWARD -i %s -m state --state NEW -j %s\n", lanface, log_accept);
+	save2file("-A FORWARD -i %s -m state --state NEW -j %s", lanface, log_accept);
 	/*
 	 * ...otherwise drop if firewall on 
 	 */
 	if (nvram_invmatch("filter", "off"))
-		save2file("-A FORWARD -j %s\n", log_drop);
+		save2file("-A FORWARD -j %s", log_drop);
 
 	lan2wan_chains();
 
@@ -2464,7 +2464,7 @@ static void filter_forward(void)
 	 * If webfilter is not used we can put this rule on top in order to increase WAN<->LAN throughput
 	 */
 	if (!filter_host_url)
-		save2file("-I FORWARD -m state --state RELATED,ESTABLISHED -j %s\n", log_accept);
+		save2file("-I FORWARD -m state --state RELATED,ESTABLISHED -j %s", log_accept);
 }
 
 /*
@@ -2479,9 +2479,9 @@ static void mangle_table(void)
 		if (wanactive() && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
 			insmod("ipt_mark xt_mark ipt_CONNMARK xt_CONNMARK xt_connmark");
 
-			save2file("-A PREROUTING -i ! %s -d %s -j MARK --set-mark %s\n", get_wan_face(), get_wan_ipaddr(), get_NFServiceMark("FORWARD", 1));
+			save2file("-A PREROUTING -i ! %s -d %s -j MARK --set-mark %s", get_wan_face(), get_wan_ipaddr(), get_NFServiceMark("FORWARD", 1));
 
-			save2file("-A PREROUTING -j CONNMARK --save-mark\n");
+			save2file("-A PREROUTING -j CONNMARK --save-mark");
 		}
 	}
 	/*
@@ -2491,7 +2491,7 @@ static void mangle_table(void)
 
 #ifdef HAVE_PRIVOXY
 	if ((nvram_matchi("privoxy_enable", 1)) && (nvram_matchi("wshaper_enable", 1))) {
-		save2file("-I OUTPUT -p tcp --sport 8118 -j IMQ --todev 0\n");
+		save2file("-I OUTPUT -p tcp --sport 8118 -j IMQ --todev 0");
 	}
 #endif
 
@@ -2513,7 +2513,7 @@ static void mangle_table(void)
  */
 static void nat_table(void)
 {
-	save2file("*nat\n:PREROUTING ACCEPT [0:0]\n:POSTROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
+	save2file("*nat\n:PREROUTING ACCEPT [0:0]\n:POSTROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]");
 	if (wanactive()) {
 		nat_prerouting();
 		nat_postrouting();
@@ -2528,27 +2528,27 @@ static void filter_table(void)
 {
 	save2file("*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n:logaccept - [0:0]\n:logdrop - [0:0]\n:logreject - [0:0]\n"
 #ifdef FLOOD_PROTECT
-		  ":limaccept - [0:0]\n"
+		  ":limaccept - [0:0]"
 #endif
-		  ":trigger_out - [0:0]\n:lan2wan - [0:0]\n");
+		  ":trigger_out - [0:0]\n:lan2wan - [0:0]");
 
 	int seq;
 
 	for (seq = 1; seq <= NR_RULES; seq++) {
-		save2file(":grp_%d - [0:0]\n", seq);
-		save2file(":advgrp_%d - [0:0]\n", seq);
+		save2file(":grp_%d - [0:0]", seq);
+		save2file(":advgrp_%d - [0:0]", seq);
 	}
 #ifndef HAVE_MICRO
 	if ((nvram_matchi("limit_telnet", 1)) || (nvram_matchi("limit_pptp", 1)) || (nvram_matchi("limit_ssh", 1)) || (nvram_matchi("limit_ftp", 1))) {
-		save2file(":logbrute - [0:0]\n");
-		save2file("-A logbrute -m recent --set --name BRUTEFORCE --rsource\n");
-		save2file("-A logbrute -m recent ! --update --seconds 60 --hitcount 4 --name BRUTEFORCE --rsource -j RETURN\n");
+		save2file(":logbrute - [0:0]");
+		save2file("-A logbrute -m recent --set --name BRUTEFORCE --rsource");
+		save2file("-A logbrute -m recent ! --update --seconds 60 --hitcount 4 --name BRUTEFORCE --rsource -j RETURN");
 		// -m limit rule is a fallback in case -m recent isn't included in a build
-		save2file("-A logbrute -m limit --limit 1/min --limit-burst 1 -j RETURN\n");
+		save2file("-A logbrute -m limit --limit 1/min --limit-burst 1 -j RETURN");
 		if ((nvram_matchi("log_enable", 1))
 		    && (nvram_matchi("log_dropped", 1)))
-			save2file("-A logbrute -j LOG --log-prefix \"[DROP BRUTEFORCE] : \" --log-tcp-options --log-ip-options\n");
-		save2file("-A logbrute -j %s\n", log_drop);
+			save2file("-A logbrute -j LOG --log-prefix \"[DROP BRUTEFORCE] : \" --log-tcp-options --log-ip-options");
+		save2file("-A logbrute -j %s", log_drop);
 	}
 #endif
 
@@ -2563,10 +2563,10 @@ static void filter_table(void)
 			 * Make sure remote management ports are filtered if it is disabled 
 			 */
 			if (!remotemanage && strlen(wanface) > 0) {
-				save2file("-A INPUT -p tcp -i %s --dport %s -j %s\n", wanface, nvram_safe_get("http_wanport"), log_drop);
-				save2file("-A INPUT -p tcp -i %s --dport 80 -j %s\n", wanface, log_drop);
-				save2file("-A INPUT -p tcp -i %s --dport 443 -j %s\n", wanface, log_drop);
-				save2file("-A INPUT -p tcp -i %s --dport 69 -j %s\n", wanface, log_drop);
+				save2file("-A INPUT -p tcp -i %s --dport %s -j %s", wanface, nvram_safe_get("http_wanport"), log_drop);
+				save2file("-A INPUT -p tcp -i %s --dport 80 -j %s", wanface, log_drop);
+				save2file("-A INPUT -p tcp -i %s --dport 443 -j %s", wanface, log_drop);
+				save2file("-A INPUT -p tcp -i %s --dport 69 -j %s", wanface, log_drop);
 			}
 			/*
 			 * Make sure remote ssh/telnet port is filtered if it is disabled :
@@ -2574,13 +2574,13 @@ static void filter_table(void)
 			 */
 #ifdef HAVE_SSHD
 			if (!remotessh && strlen(wanface) > 0) {
-				save2file("-A INPUT -i %s -p tcp --dport %s -j %s\n", wanface, nvram_safe_get("sshd_port"), log_drop);
+				save2file("-A INPUT -i %s -p tcp --dport %s -j %s", wanface, nvram_safe_get("sshd_port"), log_drop);
 			}
 #endif
 
 #ifdef HAVE_TELNET
 			if (!remotetelnet && strlen(wanface) > 0) {
-				save2file("-A INPUT -p tcp -i %s --dport 23 -j %s\n", wanface, log_drop);
+				save2file("-A INPUT -p tcp -i %s --dport 23 -j %s", wanface, log_drop);
 			}
 #endif
 			filter_forward();
@@ -2600,13 +2600,13 @@ static void filter_table(void)
 			if (strcmp(get_wan_face(), var)
 			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				if (nvram_nmatch("1", "%s_isolation", var)) {
-					save2file("-A INPUT -i %s -p udp --dport 67 -j %s\n", var, log_accept);
-					save2file("-A INPUT -i %s -p udp --dport 53 -j %s\n", var, log_accept);
-					save2file("-A INPUT -i %s -p tcp --dport 53 -j %s\n", var, log_accept);
-					save2file("-A INPUT -i %s -m state --state NEW -j %s\n", var, log_drop);
+					save2file("-A INPUT -i %s -p udp --dport 67 -j %s", var, log_accept);
+					save2file("-A INPUT -i %s -p udp --dport 53 -j %s", var, log_accept);
+					save2file("-A INPUT -i %s -p tcp --dport 53 -j %s", var, log_accept);
+					save2file("-A INPUT -i %s -m state --state NEW -j %s", var, log_drop);
 				}
 				if (isstandalone(var)) {
-					save2file("-A INPUT -i %s -j %s\n", var, log_accept);
+					save2file("-A INPUT -i %s -j %s", var, log_accept);
 				}
 
 			}
@@ -2620,13 +2620,13 @@ static void filter_table(void)
 #ifdef FLOOD_PROTECT
 	if ((nvram_matchi("log_enable", 1))
 	    && (nvram_matchi("log_accepted", 1)))
-		save2file("-A logaccept -i %s -m state --state NEW -m limit --limit %d -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options\n", wanface, FLOOD_RATE);
-	save2file("-A logaccept -i %s -m state --state NEW -m limit --limit %d -j %s\n", wanface, FLOOD_RATE, log_drop);
+		save2file("-A logaccept -i %s -m state --state NEW -m limit --limit %d -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options", wanface, FLOOD_RATE);
+	save2file("-A logaccept -i %s -m state --state NEW -m limit --limit %d -j %s", wanface, FLOOD_RATE, log_drop);
 #endif
 	if ((nvram_matchi("log_enable", 1))
 	    && (nvram_matchi("log_accepted", 1)))
-		save2file("-A logaccept -m state --state NEW -j LOG --log-prefix \"ACCEPT \" --log-tcp-sequence --log-tcp-options --log-ip-options\n");
-	save2file("-A logaccept -j ACCEPT\n");
+		save2file("-A logaccept -m state --state NEW -j LOG --log-prefix \"ACCEPT \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+	save2file("-A logaccept -j ACCEPT");
 
 	/*
 	 * logdrop chain 
@@ -2635,21 +2635,21 @@ static void filter_table(void)
 		if ((nvram_matchi("log_enable", 1))
 		    && (nvram_matchi("log_dropped", 1)))
 			save2file
-			    ("-A logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options\n-A logdrop -m state --state INVALID -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options\n");
+			    ("-A logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options\n-A logdrop -m state --state INVALID -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
 	} else {
 		if ((nvram_matchi("log_enable", 1))
 		    && (nvram_matchi("log_dropped", 1)))
-			save2file("-A logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options\n");
+			save2file("-A logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
 	}
-	save2file("-A logdrop -j DROP\n");
+	save2file("-A logdrop -j DROP");
 
 	/*
 	 * logreject chain 
 	 */
 	if ((nvram_matchi("log_enable", 1))
 	    && (nvram_matchi("log_rejected", 1)))
-		save2file("-A logreject -j LOG --log-prefix \"WEBDROP \" --log-tcp-sequence --log-tcp-options --log-ip-options\n");
-	save2file("-A logreject -p tcp -j REJECT --reject-with tcp-reset\n");
+		save2file("-A logreject -j LOG --log-prefix \"WEBDROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+	save2file("-A logreject -p tcp -j REJECT --reject-with tcp-reset");
 
 #ifdef FLOOD_PROTECT
 	/*
@@ -2657,11 +2657,11 @@ static void filter_table(void)
 	 */
 	if ((nvram_matchi("log_enable", 1))
 	    && (nvram_matchi("log_accepted", 1)))
-		save2file("-A limaccept -i %s -m state --state NEW -m limit --limit %d -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options\n");
-	save2file("-A limaccept -i %s -m state --state NEW -m limit --limit %d -j %s\n-A limaccept -j ACCEPT\n", wanface, FLOOD_RATE, wanface, FLOOD_RATE, log_drop);
+		save2file("-A limaccept -i %s -m state --state NEW -m limit --limit %d -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+	save2file("-A limaccept -i %s -m state --state NEW -m limit --limit %d -j %s\n-A limaccept -j ACCEPT", wanface, FLOOD_RATE, wanface, FLOOD_RATE, log_drop);
 #endif
 
-	save2file("COMMIT\n");
+	save2file("COMMIT");
 }
 
 static void create_restore_file(void)
