@@ -901,8 +901,10 @@ init_subshell_precmd (char *precmd, size_t buff_size)
  * replaced by the backslash-escape sequence \0nnn, where "nnn" is the
  * numeric value of the character converted to octal number.
  * 
- *   cd "`printf "%b" 'ABC\0nnnDEF\0nnnXYZ'`"
+ *   cd "`printf '%b' 'ABC\0nnnDEF\0nnnXYZ'`"
  *
+ * N.B.: Use single quotes for conversion specifier to work around
+ *       tcsh 6.20+ parser breakage, see ticket #3852 for the details.
  */
 
 static GString *
@@ -914,7 +916,7 @@ subshell_name_quote (const char *s)
 
     if (mc_global.shell->type == SHELL_FISH)
     {
-        quote_cmd_start = "(printf \"%b\" '";
+        quote_cmd_start = "(printf '%b' '";
         quote_cmd_end = "')";
     }
     /* TODO: When BusyBox printf is fixed, get rid of this "else if", see
@@ -926,7 +928,7 @@ subshell_name_quote (const char *s)
        } */
     else
     {
-        quote_cmd_start = "\"`printf \"%b\" '";
+        quote_cmd_start = "\"`printf '%b' '";
         quote_cmd_end = "'`\"";
     }
 

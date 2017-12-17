@@ -19310,6 +19310,15 @@ _ACEOF
 
 
 fi
+ac_fn_c_check_member "$LINENO" "struct stat" "st_mtim" "ac_cv_member_struct_stat_st_mtim" "$ac_includes_default"
+if test "x$ac_cv_member_struct_stat_st_mtim" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_STAT_ST_MTIM 1
+_ACEOF
+
+
+fi
 
 
       for ac_header in sys/param.h
@@ -19871,6 +19880,7 @@ _ACEOF
 fi
 
 done
+
 
 
 
@@ -20585,6 +20595,7 @@ _ACEOF
 fi
 
 done
+
 
 
 
@@ -27201,8 +27212,11 @@ fi
 # Check whether --with-homedir was given.
 if test "${with_homedir+set}" = set; then :
   withval=$with_homedir;
+
 	if test "x$withval" = "xXDG"; then
 	    with_homedir=XDG
+	elif test "x$withval" = "xyes"; then
+	    with_homedir=.mc
 	else
 	    with_homedir=$withval
 	fi

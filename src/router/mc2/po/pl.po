@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-03-04 18:55+0100\n"
-"PO-Revision-Date: 2017-02-25 19:32+0000\n"
+"POT-Creation-Date: 2017-11-25 19:35+0100\n"
+"PO-Revision-Date: 2017-09-23 18:02+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish (http://www.transifex.com/mc/mc/language/pl/)\n"
 "Language: pl\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n"
-"%100<12 || n%100>=14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n"
+"%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n"
 "%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
 
 # "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
@@ -597,7 +597,6 @@ msgstr "Pliki tymczasowe zostaną utworzone w %s\n"
 msgid "Temporary files will not be created\n"
 msgstr "Pliki tymczasowe nie zostaną utworzone\n"
 
-#, c-format
 msgid "Press any key to continue..."
 msgstr "Naciśnięcie dowolnego klawisza kontynuuje…"
 
@@ -796,14 +795,17 @@ msgstr ""
 msgid "Color options"
 msgstr "Opcje kolorów"
 
-msgid "+number"
-msgstr "+numer"
+msgid "[+lineno] file1[:lineno] [file2[:lineno]...]"
+msgstr "[+nr-wiersza] plik1[:nr-wiersza] [plik2[:nr-wiersza]…]"
+
+msgid "file"
+msgstr "plik"
+
+msgid "file1 file2"
+msgstr "plik1 plik2"
 
 msgid "[this_dir] [other_panel_dir]"
 msgstr "[ten_katalog] [katalog_w_drugim_panelu]"
-
-msgid "Set initial line number for the internal editor"
-msgstr "Ustawia początkowy numer wiersza dla wewnętrznego edytora"
 
 msgid ""
 "\n"
@@ -1524,10 +1526,10 @@ msgid "&Toggle fullscreen"
 msgstr "&Przełącz pełny ekran"
 
 msgid "&Next"
-msgstr "&Następny"
+msgstr "&Następne"
 
 msgid "&Previous"
-msgstr "&Poprzedni"
+msgstr "&Poprzednie"
 
 msgid "&List..."
 msgstr "&Lista…"
@@ -1645,7 +1647,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 "Łatwy w obsłudze edytor tekstu,\n"
-"napisany dla programu Midnight Commander"
+"napisany dla programu Midnight Commander."
 
 msgid "Copyright (C) 1996-2016 the Free Software Foundation"
 msgstr "Copyright © 1996-2016 Free Software Foundation"
@@ -1799,7 +1801,6 @@ msgstr "Nie można pobrać lokalnej kopii %s"
 msgid "The shell is already running a command"
 msgstr "Powłoka wykonuje już polecenie"
 
-#, c-format
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Wpisanie „exit” powróci do programu Midnight Commander"
 
@@ -2037,8 +2038,8 @@ msgstr "kolumny"
 msgid "User &mini status"
 msgstr "&Krótki stan użytkownika"
 
-msgid "Listing mode"
-msgstr "Tryb wyświetlania"
+msgid "Listing format"
+msgstr "Format wyświetlania"
 
 msgid "Executable &first"
 msgstr "Najpierw &pliki wykonywalne"
@@ -2486,11 +2487,8 @@ msgstr "%o %f%n„%s”%m"
 msgid "%o %d %f%m"
 msgstr "%o %d %f%m"
 
-msgid "file"
-msgstr "pliku"
-
 msgid "files"
-msgstr "plików"
+msgstr "pliki"
 
 msgid "directory"
 msgstr "katalogu"
@@ -2499,7 +2497,7 @@ msgid "directories"
 msgstr "katalogów"
 
 msgid "files/directories"
-msgstr "plików/katalogów"
+msgstr "pliki/katalogi"
 
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
@@ -2516,7 +2514,6 @@ msgstr ""
 "Nie można odczytać dowiązania źródłowego „%s”\n"
 "%s "
 
-#, fuzzy
 msgid ""
 "Cannot make stable symlinks across non-local filesystems:\n"
 "\n"
@@ -2890,11 +2887,11 @@ msgstr "Proces w tle: plik istnieje"
 
 #, c-format
 msgid "Files processed: %zu/%zu"
-msgstr "Przetworzono plików: %zu/%zu"
+msgstr "Przetworzono pliki: %zu/%zu"
 
 #, c-format
 msgid "Files processed: %zu"
-msgstr "Przetworzono plików: %zu"
+msgstr "Przetworzono pliki: %zu"
 
 #, c-format
 msgid "Time: %s %s"
@@ -3257,8 +3254,8 @@ msgstr "&Szybki widok"
 msgid "&Info"
 msgstr "&Informacje"
 
-msgid "&Listing mode..."
-msgstr "&Tryb wyświetlania…"
+msgid "&Listing format..."
+msgstr "&Format wyświetlania…"
 
 msgid "&Sort order..."
 msgstr "Porządek s&ortowania…"
@@ -3357,7 +3354,7 @@ msgid "Switch &panels on/off"
 msgstr "Prz&ełącz wyświetlanie paneli"
 
 msgid "&Compare directories"
-msgstr "P&orównanie katalogów"
+msgstr "P&orównaj katalogi"
 
 msgid "C&ompare files"
 msgstr "P&orównaj pliki"
@@ -3512,7 +3509,7 @@ msgid "sort|m"
 msgstr "m"
 
 msgid "&Modify time"
-msgstr "Czas &modyfikacji"
+msgstr "&Modyfikacja"
 
 #. TRANSLATORS: one single character to represent 'Access time' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3520,7 +3517,7 @@ msgid "sort|a"
 msgstr "d"
 
 msgid "&Access time"
-msgstr "Czas &dostępu"
+msgstr "&Dostęp"
 
 #. TRANSLATORS: one single character to represent 'Change time' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3528,7 +3525,7 @@ msgid "sort|h"
 msgstr "z"
 
 msgid "C&hange time"
-msgstr "Czas &zmiany"
+msgstr "&Zmiana"
 
 msgid "Perm"
 msgstr "Prawa"
@@ -3693,50 +3690,6 @@ msgstr ""
 "Nie można zapisać do pliku %s:\n"
 "%s\n"
 
-msgid "Debug"
-msgstr "Debugowanie"
-
-msgid "ERROR:"
-msgstr "BŁĄD:"
-
-msgid "True:"
-msgstr "Prawda:"
-
-msgid "False:"
-msgstr "Fałsz:"
-
-msgid "Error calling program"
-msgstr "Błąd podczas wywoływania programu"
-
-msgid "Warning -- ignoring file"
-msgstr "Ostrzeżenie - ignorowanie pliku"
-
-#, c-format
-msgid ""
-"File %s is not owned by root or you or is world writable.\n"
-"Using it may compromise your security"
-msgstr ""
-"Właścicielem pliku %s jest root i jest on zapisywalny przez\n"
-"wszystkich. Użycie go może negatywnie wpłynąć na bezpieczeństwo"
-
-msgid "Format error on file Extensions File"
-msgstr "Błąd formatu pliku rozszerzeń"
-
-#, c-format
-msgid "The %%var macro has no default"
-msgstr "Makro %%var nie ma wartości domyślnej"
-
-#, c-format
-msgid "The %%var macro has no variable"
-msgstr "Makro %%var nie ma zmiennych"
-
-#, c-format
-msgid "No suitable entries found in %s"
-msgstr "Nie odnaleziono odpowiednich wpisów w %s"
-
-msgid "User menu"
-msgstr "Menu użytkownika"
-
 msgid "Help file format error\n"
 msgstr "Błąd formatu pliku pomocy\n"
 
@@ -3848,10 +3801,10 @@ msgid "-  < No translation >"
 msgstr "—  < Bez tłumaczenia >"
 
 msgid "%b %e  %Y"
-msgstr "%e.%m.%Y "
+msgstr "%-d %b %Y"
 
 msgid "%b %e %H:%M"
-msgstr "%e.%m %H∶%M"
+msgstr "%-d %b, %H:%M"
 
 #, c-format
 msgid ""
@@ -3955,6 +3908,50 @@ msgstr "Dane użytkownika"
 
 msgid "Cache directory:"
 msgstr "Katalog pamięci podręcznej:"
+
+msgid "Debug"
+msgstr "Debugowanie"
+
+msgid "ERROR:"
+msgstr "BŁĄD:"
+
+msgid "True:"
+msgstr "Prawda:"
+
+msgid "False:"
+msgstr "Fałsz:"
+
+msgid "Error calling program"
+msgstr "Błąd podczas wywoływania programu"
+
+msgid "Warning -- ignoring file"
+msgstr "Ostrzeżenie - ignorowanie pliku"
+
+#, c-format
+msgid ""
+"File %s is not owned by root or you or is world writable.\n"
+"Using it may compromise your security"
+msgstr ""
+"Właścicielem pliku %s jest root i jest on zapisywalny przez\n"
+"wszystkich. Użycie go może negatywnie wpłynąć na bezpieczeństwo"
+
+msgid "Format error on file Extensions File"
+msgstr "Błąd formatu pliku rozszerzeń"
+
+#, c-format
+msgid "The %%var macro has no default"
+msgstr "Makro %%var nie ma wartości domyślnej"
+
+#, c-format
+msgid "The %%var macro has no variable"
+msgstr "Makro %%var nie ma zmiennych"
+
+#, c-format
+msgid "No suitable entries found in %s"
+msgstr "Nie odnaleziono odpowiednich wpisów w %s"
+
+msgid "User menu"
+msgstr "Menu użytkownika"
 
 #, c-format
 msgid ""

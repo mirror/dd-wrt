@@ -23,8 +23,6 @@ typedef unsigned char byte;
 /* A width or height on the screen */
 typedef unsigned int screen_dimen;
 
-extern const off_t OFFSETTYPE_MAX;
-
 /*** enums ***************************************************************************************/
 
 /* data sources of the view */
@@ -314,7 +312,7 @@ void mcview_select_encoding (WView * view);
 void mcview_set_codeset (WView * view);
 void mcview_show_error (WView * view, const char *error);
 off_t mcview_bol (WView * view, off_t current, off_t limit);
-off_t mcview_eol (WView * view, off_t current, off_t limit);
+off_t mcview_eol (WView * view, off_t current);
 char *mcview_get_title (const WDialog * h, size_t len);
 int mcview_calc_percent (WView * view, off_t p);
 

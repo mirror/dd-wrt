@@ -35,6 +35,7 @@ SYNTAXFILES =			\
 	glsl.syntax		\
 	go.syntax		\
 	haskell.syntax		\
+	hive.syntax		\
 	html.syntax		\
 	idl.syntax		\
 	ini.syntax		\
@@ -50,6 +51,7 @@ SYNTAXFILES =			\
 	m4.syntax		\
 	mail.syntax		\
 	makefile.syntax		\
+	markdown.syntax		\
 	ml.syntax		\
 	named.syntax		\
 	nemerle.syntax		\
@@ -64,6 +66,7 @@ SYNTAXFILES =			\
 	povray.syntax		\
 	procmail.syntax		\
 	properties.syntax	\
+	protobuf.syntax		\
 	puppet.syntax		\
 	python.syntax		\
 	r.syntax		\
@@ -78,6 +81,7 @@ SYNTAXFILES =			\
 	syntax.syntax		\
 	tcl.syntax		\
 	texinfo.syntax		\
+	ts.syntax		\
 	tt.syntax		\
 	unknown.syntax		\
 	verilog.syntax		\

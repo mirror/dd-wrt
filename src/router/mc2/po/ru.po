@@ -4,7 +4,7 @@
 #
 # Translators:
 # aborodin <aborodin@vmail.ru>, 2011
-# AlexL <loginov.alex.valer@gmail.com>, 2015-2016
+# AlexL <loginov.alex.valer@gmail.com>, 2015-2017
 # Alex Tkachenko <alex@bcs.zp.ua>, 1998
 # and Alex Tkachenko <alex@bcs.zp.ua>, 1998
 # aborodin <aborodin@vmail.ru>, 2009-2012
@@ -25,8 +25,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-03-04 18:55+0100\n"
-"PO-Revision-Date: 2017-02-26 05:09+0000\n"
+"POT-Creation-Date: 2017-11-25 19:35+0100\n"
+"PO-Revision-Date: 2017-09-19 09:10+0000\n"
 "Last-Translator: aborodin <aborodin@vmail.ru>\n"
 "Language-Team: Russian (http://www.transifex.com/mc/mc/language/ru/)\n"
 "Language: ru\n"
@@ -507,25 +507,25 @@ msgstr ""
 "Проверьте переменную окружения TERM.\n"
 
 msgid "B"
-msgstr ""
+msgstr "Б"
 
 msgid "kB"
-msgstr ""
+msgstr "кБ"
 
 msgid "KiB"
-msgstr ""
+msgstr "КиБ"
 
 msgid "MB"
-msgstr ""
+msgstr "МБ"
 
 msgid "MiB"
-msgstr ""
+msgstr "МиБ"
 
 msgid "GB"
-msgstr ""
+msgstr "ГБ"
 
 msgid "GiB"
-msgstr ""
+msgstr "ГиБ"
 
 msgid "Cannot create pipe descriptor"
 msgstr "Не удалось создать дескриптор канала"
@@ -606,7 +606,6 @@ msgstr "Временные файлы будут создаваться в ка�
 msgid "Temporary files will not be created\n"
 msgstr "Временные файлы не будут создаваться\n"
 
-#, c-format
 msgid "Press any key to continue..."
 msgstr "Для продолжения нажмите любую клавишу..."
 
@@ -808,14 +807,17 @@ msgstr ""
 msgid "Color options"
 msgstr "Цветовые настройки"
 
-msgid "+number"
-msgstr "+число"
+msgid "[+lineno] file1[:lineno] [file2[:lineno]...]"
+msgstr "[+номер_строки] файл1[:номер_строки] [файл1[:номер_строки]...]"
+
+msgid "file"
+msgstr "файл"
+
+msgid "file1 file2"
+msgstr "файл1 файл2"
 
 msgid "[this_dir] [other_panel_dir]"
 msgstr "[этот_каталог] [каталог_другой_панели]"
-
-msgid "Set initial line number for the internal editor"
-msgstr "Задать начальную строку для встроенного редактора"
 
 msgid ""
 "\n"
@@ -1809,7 +1811,6 @@ msgstr "Невозможно получить локальную копию %s"
 msgid "The shell is already running a command"
 msgstr "Интерпретатор занят выполнением команды"
 
-#, c-format
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Введите exit для возврата в Midnight Commander"
 
@@ -2047,7 +2048,7 @@ msgstr "столбцы"
 msgid "User &mini status"
 msgstr "Строка &мини-статуса в формате пользователя"
 
-msgid "Listing mode"
+msgid "Listing format"
 msgstr "Формат списка файлов"
 
 msgid "Executable &first"
@@ -2495,9 +2496,6 @@ msgstr "%o %f%n\"%s\"%m"
 msgid "%o %d %f%m"
 msgstr "%o эти %f (%d шт.)%m"
 
-msgid "file"
-msgstr "файл"
-
 msgid "files"
 msgstr "файлы"
 
@@ -2525,7 +2523,6 @@ msgstr ""
 "Невозможно прочесть исходную ссылку \"%s\"\n"
 "%s"
 
-#, fuzzy
 msgid ""
 "Cannot make stable symlinks across non-local filesystems:\n"
 "\n"
@@ -3266,7 +3263,7 @@ msgstr "&Быстрый просмотр"
 msgid "&Info"
 msgstr "&Информация"
 
-msgid "&Listing mode..."
+msgid "&Listing format..."
 msgstr "Фор&мат списка..."
 
 msgid "&Sort order..."
@@ -3702,51 +3699,6 @@ msgstr ""
 "Невозможно писать в файл %s:\n"
 "%s\n"
 
-msgid "Debug"
-msgstr "Отладка"
-
-msgid "ERROR:"
-msgstr "ОШИБКА:"
-
-msgid "True:"
-msgstr "Истина:"
-
-msgid "False:"
-msgstr "Ложь:"
-
-msgid "Error calling program"
-msgstr "Ошибка выполнения программы"
-
-msgid "Warning -- ignoring file"
-msgstr "Предупреждение - файл игнорируется"
-
-#, c-format
-msgid ""
-"File %s is not owned by root or you or is world writable.\n"
-"Using it may compromise your security"
-msgstr ""
-"Файл %s в текущем каталоге не принадлежит ни root'у, ни Вам,\n"
-"или доступен другим на запись. Использование такого файла неприемлемо\n"
-"c точки зрения безопасности."
-
-msgid "Format error on file Extensions File"
-msgstr "Ошибка в формате файла Расширений файлов"
-
-#, c-format
-msgid "The %%var macro has no default"
-msgstr "Макрос %%var не имеет значения по умолчанию"
-
-#, c-format
-msgid "The %%var macro has no variable"
-msgstr "Макрос %%var не имеет переменной"
-
-#, c-format
-msgid "No suitable entries found in %s"
-msgstr "Не найдено подходящих элементов в %s"
-
-msgid "User menu"
-msgstr "Меню пользователя"
-
 msgid "Help file format error\n"
 msgstr "Ошибка в формате файла помощи\n"
 
@@ -3963,6 +3915,51 @@ msgstr "Пользовательские данные"
 
 msgid "Cache directory:"
 msgstr "Каталог с кэшируемыми данными:"
+
+msgid "Debug"
+msgstr "Отладка"
+
+msgid "ERROR:"
+msgstr "ОШИБКА:"
+
+msgid "True:"
+msgstr "Истина:"
+
+msgid "False:"
+msgstr "Ложь:"
+
+msgid "Error calling program"
+msgstr "Ошибка выполнения программы"
+
+msgid "Warning -- ignoring file"
+msgstr "Предупреждение - файл игнорируется"
+
+#, c-format
+msgid ""
+"File %s is not owned by root or you or is world writable.\n"
+"Using it may compromise your security"
+msgstr ""
+"Файл %s в текущем каталоге не принадлежит ни root'у, ни Вам,\n"
+"или доступен другим на запись. Использование такого файла неприемлемо\n"
+"c точки зрения безопасности."
+
+msgid "Format error on file Extensions File"
+msgstr "Ошибка в формате файла Расширений файлов"
+
+#, c-format
+msgid "The %%var macro has no default"
+msgstr "Макрос %%var не имеет значения по умолчанию"
+
+#, c-format
+msgid "The %%var macro has no variable"
+msgstr "Макрос %%var не имеет переменной"
+
+#, c-format
+msgid "No suitable entries found in %s"
+msgstr "Не найдено подходящих элементов в %s"
+
+msgid "User menu"
+msgstr "Меню пользователя"
 
 #, c-format
 msgid ""

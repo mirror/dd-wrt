@@ -5,6 +5,7 @@
 # Translators:
 # Enrico Nicoletto <enrico.BR@gmx.co.uk>, 2013
 # Heitor Adão Júnior <heitoradao@gmail.com>, 2017
+# Mauro Hemerly Gazzani <mauro.hemerly@gmail.com>, 2017
 # Rafael Fontenelle <rffontenelle@gmail.com>, 2012
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # Van Der Fran <transifex@vanderland.com>, 2011
@@ -12,9 +13,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-03-04 18:55+0100\n"
-"PO-Revision-Date: 2017-02-25 09:22+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2017-11-25 19:35+0100\n"
+"PO-Revision-Date: 2017-09-19 09:10+0000\n"
+"Last-Translator: Mauro Hemerly Gazzani <mauro.hemerly@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) (http://www.transifex.com/mc/mc/language/"
 "pt_BR/)\n"
 "Language: pt_BR\n"
@@ -107,19 +108,21 @@ msgstr ""
 msgid ""
 "Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
 "hex)"
-msgstr ""
+msgstr "Número fora da faixa (deveria ser de 0<= n <= 0xFF, em hexadecimal)"
 
 msgid "Invalid character"
-msgstr ""
+msgstr "Carácter inválido"
 
 msgid "Unmatched quotes character"
-msgstr ""
+msgstr "número de aspas não equivalentes"
 
 #, c-format
 msgid ""
 "Hex pattern error at position %d:\n"
 "%s."
 msgstr ""
+"Erro de padrão hexa na posição %d:\n"
+"%s"
 
 msgid "Search string not found"
 msgstr "Texto não encontrado"
@@ -592,7 +595,6 @@ msgstr "Arquivos temporários serão criados em %s\n"
 msgid "Temporary files will not be created\n"
 msgstr "Arquivos temporários não será criado\n"
 
-#, c-format
 msgid "Press any key to continue..."
 msgstr "Pressione uma tecla para continuar..."
 
@@ -656,7 +658,7 @@ msgid "Print extended info about used data directories"
 msgstr ""
 
 msgid "Print configure options"
-msgstr ""
+msgstr "Opções de configuração de impressão"
 
 msgid "Print last working directory to specified file"
 msgstr "Exibir último diretório de trabalho para o arquivo especificado"
@@ -760,14 +762,17 @@ msgstr ""
 msgid "Color options"
 msgstr "Opções de cores"
 
-msgid "+number"
-msgstr "+número"
+msgid "[+lineno] file1[:lineno] [file2[:lineno]...]"
+msgstr ""
+
+msgid "file"
+msgstr "arquivo"
+
+msgid "file1 file2"
+msgstr ""
 
 msgid "[this_dir] [other_panel_dir]"
 msgstr "[esse_dir] [outro_painel_dir]"
-
-msgid "Set initial line number for the internal editor"
-msgstr "Definir número da linha inicial para o editor interno"
 
 msgid ""
 "\n"
@@ -1749,7 +1754,6 @@ msgstr "Não foi possível adquirir uma cópia local de %s"
 msgid "The shell is already running a command"
 msgstr "A shell já está executando um comando"
 
-#, c-format
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr ""
 
@@ -1983,8 +1987,8 @@ msgstr "colunas"
 msgid "User &mini status"
 msgstr ""
 
-msgid "Listing mode"
-msgstr "Modo de Listagem"
+msgid "Listing format"
+msgstr ""
 
 msgid "Executable &first"
 msgstr "Executáveis primeiro"
@@ -2423,9 +2427,6 @@ msgstr ""
 msgid "%o %d %f%m"
 msgstr "%o %d %f%m"
 
-msgid "file"
-msgstr "arquivo"
-
 msgid "files"
 msgstr "arquivos"
 
@@ -2453,16 +2454,11 @@ msgstr ""
 "Não foi possível ler o link fonte \"%s\"\n"
 "%s"
 
-#, fuzzy
 msgid ""
 "Cannot make stable symlinks across non-local filesystems:\n"
 "\n"
 "Option Stable Symlinks will be disabled"
 msgstr ""
-"Não foi possível criar symlink estável entre systema de arquivos não-"
-"locais:\n"
-"\n"
-"Opção Symlinks Estáveis será desabilitada"
 
 #, c-format
 msgid ""
@@ -3179,8 +3175,8 @@ msgstr ""
 msgid "&Info"
 msgstr ""
 
-msgid "&Listing mode..."
-msgstr "Modo de &Listagem"
+msgid "&Listing format..."
+msgstr ""
 
 msgid "&Sort order..."
 msgstr "&Ordem..."
@@ -3610,51 +3606,6 @@ msgstr ""
 "Impossível escrever para o arquivo %s :\n"
 "%s\n"
 
-msgid "Debug"
-msgstr ""
-
-msgid "ERROR:"
-msgstr ""
-
-msgid "True:"
-msgstr ""
-
-msgid "False:"
-msgstr ""
-
-msgid "Error calling program"
-msgstr "Erro ao chamar programa"
-
-msgid "Warning -- ignoring file"
-msgstr ""
-
-#, c-format
-msgid ""
-"File %s is not owned by root or you or is world writable.\n"
-"Using it may compromise your security"
-msgstr ""
-"Arquivo %s não pertence ao superusuário ou a você ou pode\n"
-"ser escrito por todos.\n"
-"O seu uso pode comprometer a segurança"
-
-msgid "Format error on file Extensions File"
-msgstr ""
-
-#, c-format
-msgid "The %%var macro has no default"
-msgstr ""
-
-#, c-format
-msgid "The %%var macro has no variable"
-msgstr ""
-
-#, c-format
-msgid "No suitable entries found in %s"
-msgstr ""
-
-msgid "User menu"
-msgstr ""
-
 msgid "Help file format error\n"
 msgstr ""
 
@@ -3858,6 +3809,51 @@ msgid "User data"
 msgstr ""
 
 msgid "Cache directory:"
+msgstr ""
+
+msgid "Debug"
+msgstr ""
+
+msgid "ERROR:"
+msgstr ""
+
+msgid "True:"
+msgstr ""
+
+msgid "False:"
+msgstr ""
+
+msgid "Error calling program"
+msgstr "Erro ao chamar programa"
+
+msgid "Warning -- ignoring file"
+msgstr ""
+
+#, c-format
+msgid ""
+"File %s is not owned by root or you or is world writable.\n"
+"Using it may compromise your security"
+msgstr ""
+"Arquivo %s não pertence ao superusuário ou a você ou pode\n"
+"ser escrito por todos.\n"
+"O seu uso pode comprometer a segurança"
+
+msgid "Format error on file Extensions File"
+msgstr ""
+
+#, c-format
+msgid "The %%var macro has no default"
+msgstr ""
+
+#, c-format
+msgid "The %%var macro has no variable"
+msgstr ""
+
+#, c-format
+msgid "No suitable entries found in %s"
+msgstr ""
+
+msgid "User menu"
 msgstr ""
 
 #, c-format
