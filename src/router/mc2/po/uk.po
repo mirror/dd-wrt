@@ -12,8 +12,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-03-04 18:55+0100\n"
-"PO-Revision-Date: 2017-02-25 09:22+0000\n"
+"POT-Creation-Date: 2017-11-25 19:35+0100\n"
+"PO-Revision-Date: 2017-09-19 09:10+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Ukrainian (http://www.transifex.com/mc/mc/language/uk/)\n"
 "Language: uk\n"
@@ -594,7 +594,6 @@ msgstr "Тимчасові файли створюватимуться у %s\n"
 msgid "Temporary files will not be created\n"
 msgstr "Тимчасові файли не створюватимуться\n"
 
-#, c-format
 msgid "Press any key to continue..."
 msgstr "Щоб продовжити, натисніть будь-яку клавішу…"
 
@@ -773,14 +772,17 @@ msgstr ""
 msgid "Color options"
 msgstr "Параметри кольору"
 
-msgid "+number"
-msgstr "+число"
+msgid "[+lineno] file1[:lineno] [file2[:lineno]...]"
+msgstr ""
+
+msgid "file"
+msgstr "файл"
+
+msgid "file1 file2"
+msgstr ""
 
 msgid "[this_dir] [other_panel_dir]"
 msgstr "[цей_каталог] [каталог_іншої_панелі]"
-
-msgid "Set initial line number for the internal editor"
-msgstr "Задати номер початкового рядка для редактора"
 
 msgid ""
 "\n"
@@ -1771,7 +1773,6 @@ msgstr "Не вдалося отримати локальну копію %s"
 msgid "The shell is already running a command"
 msgstr "Інтерпретатор вже виконує команду"
 
-#, c-format
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Введіть 'exit', щоб повернутися до Midnight Commander"
 
@@ -2008,8 +2009,8 @@ msgstr "стовпці"
 msgid "User &mini status"
 msgstr "Рядок &міні-статусу у форматі користувача"
 
-msgid "Listing mode"
-msgstr "Формат списку файлів"
+msgid "Listing format"
+msgstr ""
 
 msgid "Executable &first"
 msgstr "Виконувані &першими"
@@ -2456,9 +2457,6 @@ msgstr "%o %f%n\"%s\"%m"
 msgid "%o %d %f%m"
 msgstr "%o %d %f%m"
 
-msgid "file"
-msgstr "файл"
-
 msgid "files"
 msgstr "файли"
 
@@ -2486,16 +2484,11 @@ msgstr ""
 "Не вдалося прочитати джерельне посилання «%s»\n"
 "%s"
 
-#, fuzzy
 msgid ""
 "Cannot make stable symlinks across non-local filesystems:\n"
 "\n"
 "Option Stable Symlinks will be disabled"
 msgstr ""
-"Не вдалося створити стійкі символьні посилання між нелокальними файловими "
-"системами:\n"
-"\n"
-"Параметр «Стійкі символьні посилання» буде вимкнено"
 
 #, c-format
 msgid ""
@@ -3223,8 +3216,8 @@ msgstr "&Швидкий перегляд"
 msgid "&Info"
 msgstr "&Відомості"
 
-msgid "&Listing mode..."
-msgstr "Фор&мат списку…"
+msgid "&Listing format..."
+msgstr ""
 
 msgid "&Sort order..."
 msgstr "Порядок &сортування…"
@@ -3658,50 +3651,6 @@ msgstr ""
 "Не вдалося записати у файл %s:\n"
 "%s\n"
 
-msgid "Debug"
-msgstr "Відлагоджування"
-
-msgid "ERROR:"
-msgstr "ПОМИЛКА:"
-
-msgid "True:"
-msgstr "Істина:"
-
-msgid "False:"
-msgstr "Хибність:"
-
-msgid "Error calling program"
-msgstr "Сталася помилка виклику програми"
-
-msgid "Warning -- ignoring file"
-msgstr "Попередження — файл не враховується"
-
-#, c-format
-msgid ""
-"File %s is not owned by root or you or is world writable.\n"
-"Using it may compromise your security"
-msgstr ""
-"Файл %s не належить ні root'у, ні вам, або доступний усім на запис.\n"
-"Його використання неприйнятно з міркувань безпеки."
-
-msgid "Format error on file Extensions File"
-msgstr "Виявлено помилку формату у файлі розширень"
-
-#, c-format
-msgid "The %%var macro has no default"
-msgstr "Макрос %%var не має стандартного значення"
-
-#, c-format
-msgid "The %%var macro has no variable"
-msgstr "Макрос %%var не має змінної"
-
-#, c-format
-msgid "No suitable entries found in %s"
-msgstr "У %s не знайдено потрібних записів"
-
-msgid "User menu"
-msgstr "Меню користувача"
-
 msgid "Help file format error\n"
 msgstr "Виявлено помилку формату файла довідки\n"
 
@@ -3919,6 +3868,50 @@ msgstr "Користувацький каталог:"
 
 msgid "Cache directory:"
 msgstr "Каталог кешу:"
+
+msgid "Debug"
+msgstr "Відлагоджування"
+
+msgid "ERROR:"
+msgstr "ПОМИЛКА:"
+
+msgid "True:"
+msgstr "Істина:"
+
+msgid "False:"
+msgstr "Хибність:"
+
+msgid "Error calling program"
+msgstr "Сталася помилка виклику програми"
+
+msgid "Warning -- ignoring file"
+msgstr "Попередження — файл не враховується"
+
+#, c-format
+msgid ""
+"File %s is not owned by root or you or is world writable.\n"
+"Using it may compromise your security"
+msgstr ""
+"Файл %s не належить ні root'у, ні вам, або доступний усім на запис.\n"
+"Його використання неприйнятно з міркувань безпеки."
+
+msgid "Format error on file Extensions File"
+msgstr "Виявлено помилку формату у файлі розширень"
+
+#, c-format
+msgid "The %%var macro has no default"
+msgstr "Макрос %%var не має стандартного значення"
+
+#, c-format
+msgid "The %%var macro has no variable"
+msgstr "Макрос %%var не має змінної"
+
+#, c-format
+msgid "No suitable entries found in %s"
+msgstr "У %s не знайдено потрібних записів"
+
+msgid "User menu"
+msgstr "Меню користувача"
 
 #, c-format
 msgid ""

@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-03-04 18:55+0100\n"
-"PO-Revision-Date: 2017-02-25 09:22+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2017-11-25 19:35+0100\n"
+"PO-Revision-Date: 2017-09-19 09:16+0000\n"
+"Last-Translator: Keith Bowes <zooplah@gmail.com>\n"
 "Language-Team: Esperanto (http://www.transifex.com/mc/mc/language/eo/)\n"
 "Language: eo\n"
 "MIME-Version: 1.0\n"
@@ -103,18 +103,22 @@ msgid ""
 "Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
 "hex)"
 msgstr ""
+"Nombro ekster skalo (devas esti en la skalo: 0 <= n <= 0xFF, esprimita "
+"deksesume)"
 
 msgid "Invalid character"
-msgstr ""
+msgstr "Nevalida signo"
 
 msgid "Unmatched quotes character"
-msgstr ""
+msgstr "Neniu korelativa citilo"
 
 #, c-format
 msgid ""
 "Hex pattern error at position %d:\n"
 "%s."
 msgstr ""
+"Eraro pri deksesuma ŝablono ĉe pozicio: %d\n"
+"%s"
 
 msgid "Search string not found"
 msgstr "Serĉita ĉeno ne trovita"
@@ -166,6 +170,9 @@ msgid ""
 "%s\n"
 "Default skin has been loaded"
 msgstr ""
+"Ne eblas uzi etoson '%s' kun rego de verkoloj:\n"
+"%s\n"
+"Uzanta la aprioran etoson"
 
 #, c-format
 msgid ""
@@ -178,16 +185,17 @@ msgstr ""
 "Uzanta la aprioran etoson"
 
 msgid "True color not supported with ncurses."
-msgstr ""
+msgstr "Verkoloro ne estas regata per ncurses."
 
 msgid "True color not supported in this slang version."
-msgstr ""
+msgstr "Verkoloro ne estas regata de tiu eldono de S-Lang"
 
 msgid "Your terminal doesn't even seem to support 256 colors."
-msgstr ""
+msgstr "Via terminalo ŝajnas ne regi 256 kolorojn"
 
 msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
 msgstr ""
+"Agordi je COLORTERM=truecolor se via terminalo efektive regas verkolorojn."
 
 msgid "Escape"
 msgstr "Eskapa klavo"
@@ -484,25 +492,25 @@ msgstr ""
 "Kontroli la medivariablon TERM.\n"
 
 msgid "B"
-msgstr ""
+msgstr "B"
 
 msgid "kB"
-msgstr ""
+msgstr "kB"
 
 msgid "KiB"
-msgstr ""
+msgstr "KiB"
 
 msgid "MB"
-msgstr ""
+msgstr "MB"
 
 msgid "MiB"
-msgstr ""
+msgstr "MiB"
 
 msgid "GB"
-msgstr ""
+msgstr "GB"
 
 msgid "GiB"
-msgstr ""
+msgstr "GiB"
 
 msgid "Cannot create pipe descriptor"
 msgstr "Ne eblas krei duktan priskribilon"
@@ -583,7 +591,6 @@ msgstr "Provizoraj dosieroj kreiĝos en %s\n"
 msgid "Temporary files will not be created\n"
 msgstr "Provizoraj dosieroj ne kreiĝos\n"
 
-#, c-format
 msgid "Press any key to continue..."
 msgstr "Premu iun klavon por daŭri..."
 
@@ -781,14 +788,17 @@ msgstr ""
 msgid "Color options"
 msgstr "Kolora agordo"
 
-msgid "+number"
-msgstr "+numero"
+msgid "[+lineno] file1[:lineno] [file2[:lineno]...]"
+msgstr "[+linia_numero] dosiero1[:linia_numero] [dosiero2[:linia_numero…]]"
+
+msgid "file"
+msgstr "dosieron"
+
+msgid "file1 file2"
+msgstr "dosiero1 dosiero2"
 
 msgid "[this_dir] [other_panel_dir]"
 msgstr "[maldekstra_flanko] [dekstra_flanko]"
-
-msgid "Set initial line number for the internal editor"
-msgstr "Agordi komencan lininumeron por la interna tekstoredaktilo"
 
 msgid ""
 "\n"
@@ -1785,7 +1795,6 @@ msgstr "Ne eblas atingi lokan kopion de %s"
 msgid "The shell is already running a command"
 msgstr "La ŝelo jam plenumas komandon"
 
-#, c-format
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Tajpu \"exit\" por reiri al Midnight Commander"
 
@@ -2023,8 +2032,8 @@ msgstr "kolumnojn"
 msgid "User &mini status"
 msgstr "Miniatura &stato de uzanto"
 
-msgid "Listing mode"
-msgstr "Lista reĝimo"
+msgid "Listing format"
+msgstr "Listo-aranĝo"
 
 msgid "Executable &first"
 msgstr "P&lenumebla unue"
@@ -2472,9 +2481,6 @@ msgstr "%o %f%n\"%s\"%m"
 msgid "%o %d %f%m"
 msgstr "%o %d %f%m"
 
-msgid "file"
-msgstr "dosieron"
-
 msgid "files"
 msgstr "dosierojn"
 
@@ -2502,7 +2508,6 @@ msgstr ""
 "Ne eblas legi fontan ligilon \"%s\"\n"
 "%s"
 
-#, fuzzy
 msgid ""
 "Cannot make stable symlinks across non-local filesystems:\n"
 "\n"
@@ -2510,7 +2515,7 @@ msgid ""
 msgstr ""
 "Ne eblas fari stabilajn molajn ligilojn inter foraj dosiersistemoj:\n"
 "\n"
-"La agordaĵo \"Stabilaj molaj ligiloj\" estos malebligitaj"
+"La agordaĵo \"Stabilaj molaj ligiloj\" estos malaktivigita"
 
 #, c-format
 msgid ""
@@ -2805,7 +2810,7 @@ msgstr ""
 
 #, c-format
 msgid "Directories: %zu, total size: %s"
-msgstr ""
+msgstr "Dosierujoj: %zu, ĉioma grando: %s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "Ne eblas operacii je \"..\"!"
@@ -2957,7 +2962,7 @@ msgstr "&Redakti - F4"
 
 #, c-format
 msgid "Found: %lu"
-msgstr ""
+msgstr "Trovita: %lu"
 
 msgid "Malformed regular expression"
 msgstr "Misformita regulesprimo"
@@ -3008,8 +3013,8 @@ msgstr "Finita"
 #, c-format
 msgid "Finished (ignored %zu directory)"
 msgid_plural "Finished (ignored %zu directories)"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "Finita (ignoris %zu dosierujon)"
+msgstr[1] "Finita (ignoris %zu dosierujojn)"
 
 msgid "Searching"
 msgstr "Serĉanta"
@@ -3024,7 +3029,7 @@ msgid "&Refresh"
 msgstr "&Refreŝigi"
 
 msgid "&Add current"
-msgstr "&Aldoni nunan"
+msgstr "Al&doni nunan"
 
 msgid "&Up"
 msgstr "&Supren"
@@ -3033,7 +3038,7 @@ msgid "New &group"
 msgstr "Nova &grupo"
 
 msgid "New &entry"
-msgstr "&Nova ero"
+msgstr "Nova &ero"
 
 msgid "&Insert"
 msgstr "&Enmeti"
@@ -3171,8 +3176,8 @@ msgstr "Grando:         %s"
 #, c-format
 msgid " (%lu block)"
 msgid_plural " (%lu blocks)"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] " (%lu bloko)"
+msgstr[1] " (%lu blokoj)"
 
 #, c-format
 msgid "Owner:      %s/%s"
@@ -3238,8 +3243,8 @@ msgstr "Rapida &vido"
 msgid "&Info"
 msgstr "&Informoj"
 
-msgid "&Listing mode..."
-msgstr "&Lista reĝimo..."
+msgid "&Listing format..."
+msgstr "&Listo-aranĝo…"
 
 msgid "&Sort order..."
 msgstr "&Ordigi laŭ..."
@@ -3406,8 +3411,8 @@ msgstr "Flankoj:"
 #, c-format
 msgid "You have %zu opened screen. Quit anyway?"
 msgid_plural "You have %zu opened screens. Quit anyway?"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "%zu paĝo estas malfermita. Ĉu senkonsidere eliri?"
+msgstr[1] "%zu paĝoj estas malfermitaj. Ĉu senkonsidere eliri?"
 
 msgid "The Midnight Commander"
 msgstr "Midnight Commander"
@@ -3422,7 +3427,7 @@ msgid "&Left"
 msgstr "&Maldekstra"
 
 msgid "&Below"
-msgstr "Muls&upra"
+msgstr "Mals&upra"
 
 msgid "&Right"
 msgstr "D&ekstra"
@@ -3670,51 +3675,6 @@ msgstr ""
 "Ne eblas skribi al la dosiero %s:\n"
 "%s\n"
 
-msgid "Debug"
-msgstr "Senerarigi"
-
-msgid "ERROR:"
-msgstr "ERARO:"
-
-msgid "True:"
-msgstr "Vera:"
-
-msgid "False:"
-msgstr "Malvera:"
-
-msgid "Error calling program"
-msgstr "Eraro dum programa plenumo"
-
-msgid "Warning -- ignoring file"
-msgstr "Averto -- ignoranta dosieron"
-
-#, c-format
-msgid ""
-"File %s is not owned by root or you or is world writable.\n"
-"Using it may compromise your security"
-msgstr ""
-"Dosiero %s estas posedata de nek la ĉefuzanto nek vi aŭ estas universale "
-"skribebla.\n"
-"Uzi ĝin eble kompromitos vian sekurecon"
-
-msgid "Format error on file Extensions File"
-msgstr "Formata eraro en sufikso-dosiero"
-
-#, c-format
-msgid "The %%var macro has no default"
-msgstr "La makroo %%var havas neniun aprioraĵon"
-
-#, c-format
-msgid "The %%var macro has no variable"
-msgstr "La makroo %%var havas neniun variablon"
-
-#, c-format
-msgid "No suitable entries found in %s"
-msgstr "Neniuj taŭgaj eroj trovitaj en %s"
-
-msgid "User menu"
-msgstr "Uzanto-menuo"
-
 msgid "Help file format error\n"
 msgstr "Eraro ĉe la helpdosiera formato\n"
 
@@ -3907,10 +3867,10 @@ msgid "Data types:"
 msgstr "Datumtipoj:"
 
 msgid "Home directory:"
-msgstr ""
+msgstr "Hejma dosierujo:"
 
 msgid "Profile root directory:"
-msgstr ""
+msgstr "Hejma dosierujo profila:"
 
 msgid "System data"
 msgstr "Sistemaj datumoj"
@@ -3932,6 +3892,51 @@ msgstr "Uzanto-datumoj"
 
 msgid "Cache directory:"
 msgstr "Teneja dosierujo:"
+
+msgid "Debug"
+msgstr "Senerarigi"
+
+msgid "ERROR:"
+msgstr "ERARO:"
+
+msgid "True:"
+msgstr "Vera:"
+
+msgid "False:"
+msgstr "Malvera:"
+
+msgid "Error calling program"
+msgstr "Eraro dum programa plenumo"
+
+msgid "Warning -- ignoring file"
+msgstr "Averto -- ignoranta dosieron"
+
+#, c-format
+msgid ""
+"File %s is not owned by root or you or is world writable.\n"
+"Using it may compromise your security"
+msgstr ""
+"Dosiero %s estas posedata de nek la ĉefuzanto nek vi aŭ estas universale "
+"skribebla.\n"
+"Uzi ĝin eble kompromitos vian sekurecon"
+
+msgid "Format error on file Extensions File"
+msgstr "Formata eraro en sufikso-dosiero"
+
+#, c-format
+msgid "The %%var macro has no default"
+msgstr "La makroo %%var havas neniun aprioraĵon"
+
+#, c-format
+msgid "The %%var macro has no variable"
+msgstr "La makroo %%var havas neniun variablon"
+
+#, c-format
+msgid "No suitable entries found in %s"
+msgstr "Neniuj taŭgaj eroj trovitaj en %s"
+
+msgid "User menu"
+msgstr "Uzanto-menuo"
 
 #, c-format
 msgid ""
@@ -4403,7 +4408,7 @@ msgid "ButtonBar|Goto"
 msgstr "ButtonBar|Iri"
 
 msgid "ButtonBar|Raw"
-msgstr "ButtonBar|Nuda"
+msgstr "ButtonBar|Kruda"
 
 msgid "ButtonBar|Parse"
 msgstr "ButtonBar|Analizi"

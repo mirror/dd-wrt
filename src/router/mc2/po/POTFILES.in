@@ -62,7 +62,6 @@ src/filemanager/panel.c
 src/filemanager/panelize.c
 src/filemanager/tree.c
 src/filemanager/treestore.c
-src/filemanager/usermenu.c
 src/help.c
 src/learn.c
 src/main.c
@@ -70,6 +69,7 @@ src/selcodepage.c
 src/setup.c
 src/subshell/common.c
 src/textconf.c
+src/usermenu.c
 src/vfs/cpio/cpio.c
 src/vfs/extfs/extfs.c
 src/vfs/fish/fish.c

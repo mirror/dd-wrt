@@ -513,9 +513,9 @@ respectively.
 .TP
 .B Alt\-t
 toggle the current display listing to show the next display listing
-mode.
+format.
 With this it is possible to quickly switch to brief listing, long
-listing, user defined listing mode, and back to the default.
+listing, user defined listing format, and back to the default.
 .TP
 .B C\-\\\\ (control\-backslash)
 show the
@@ -815,10 +815,10 @@ when the horizontal panel split is chosen from the
 Layout
 .\"Layout"
 options dialog).
-.\"NODE "    Listing Mode..."
-.SH "    Listing Mode..."
+.\"NODE "    Listing Format..."
+.SH "    Listing Format..."
 The listing mode view is used to display a listing of files, there are
-four different listing modes available:
+four different listing formats available:
 .BR Full ,
 .BR Brief ,
 .B Long
@@ -1440,7 +1440,7 @@ delete and so on). To return to the normal file listing, change directory
 to "..".
 .PP
 The 'Enable ignore directories' checkbox and input field below it
-allow to set up the list of directories that should be skip during the search
+allow one to set up the list of directories that should be skip during the search
 files (for example, you may want to avoid searches on a CD\-ROM or on a NFS
 directory that is mounted across a slow link). List components must be separated
 with a colon, here is an example:
@@ -2003,10 +2003,10 @@ If enabled, main menu of Midnight Commander is always visible on the top row
 of screen above panels. Enabled by default.
 .PP
 .I Command prompt.
-If enabled, command line is avalable. Enabled by default.
+If enabled, command line is available. Enabled by default.
 .PP
 .I Keybar visible.
-If enabled, 10 lables associated with F1\-F10 keys are located at the bottom
+If enabled, 10 labels associated with F1\-F10 keys are located at the bottom
 row of screen. Enabled by default.
 .PP
 .I Hintbar visible.
@@ -2118,7 +2118,7 @@ and
 .I mode
 .\"LINK2"
 display fields
-.\"Listing Mode..."
+.\"Listing Format..."
 which apply to the user running Midnight Commander are highlighted with
 the color defined by the
 .I selected
@@ -2395,7 +2395,8 @@ The error file name.
 The current menu name.
 .TP
 .IR %f " and " %p
-The current file name.
+In file manager user menu: the current file name in selected panel.
+In mcedit user menu: the name of opened file.
 .TP
 .I %x
 The extension of current file name.
@@ -4287,7 +4288,7 @@ by the
 environment variable. If it's set, its value is used instead of
 %prefix%/share/mc in the paths below.
 .PP
-.I %prefix%/share/mc/mc.hlp
+.I %prefix%/share/mc/help/mc.hlp
 .IP
 The help file for the program.
 .PP
@@ -4319,7 +4320,7 @@ are loaded from mc.lib.
 User's own setup. If this file is present then the setup is loaded
 from here instead of the system\-wide startup file.
 .PP
-.I %prefix%/share/mc/mc.hint
+.I %prefix%/share/mc/hints/mc.hint
 .IP
 This file contains the hints displayed by the program.
 .PP

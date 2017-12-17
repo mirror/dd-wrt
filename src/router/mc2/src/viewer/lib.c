@@ -35,7 +35,6 @@
 
 #include <config.h>
 
-#include <limits.h>
 #include <sys/types.h>
 
 #include "lib/global.h"
@@ -54,9 +53,6 @@
 #include "internal.h"
 
 /*** global variables ****************************************************************************/
-
-#define OFF_T_BITWIDTH (unsigned int) (sizeof (off_t) * CHAR_BIT - 1)
-const off_t OFFSETTYPE_MAX = ((off_t) 1 << (OFF_T_BITWIDTH - 1)) - 1;
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -357,16 +353,14 @@ mcview_bol (WView * view, off_t current, off_t limit)
  */
 
 off_t
-mcview_eol (WView * view, off_t current, off_t limit)
+mcview_eol (WView * view, off_t current)
 {
     int c, prev_ch = 0;
-    off_t filesize;
-    filesize = mcview_get_filesize (view);
+
     if (current < 0)
         return 0;
-    if (current >= filesize)
-        return filesize;
-    while (current < filesize && current < limit)
+
+    while (TRUE)
     {
         if (!mcview_get_byte (view, current, &c))
             break;

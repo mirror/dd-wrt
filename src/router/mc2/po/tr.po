@@ -8,14 +8,14 @@
 # Muhammet Kara <muhammetk@gmail.com>, 2014
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # yusuf <yusuf.aydemir@pisilinux.org>, 2015-2016
-# yusuf <yusuf.aydemir@pisilinux.org>, 2016
+# yusuf <yusuf.aydemir@pisilinux.org>, 2016-2017
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-03-04 18:55+0100\n"
-"PO-Revision-Date: 2017-02-25 09:22+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2017-11-25 19:35+0100\n"
+"PO-Revision-Date: 2017-11-05 02:24+0000\n"
+"Last-Translator: yusuf <yusuf.aydemir@pisilinux.org>\n"
 "Language-Team: Turkish (http://www.transifex.com/mc/mc/language/tr/)\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
@@ -110,7 +110,7 @@ msgid ""
 msgstr ""
 
 msgid "Invalid character"
-msgstr ""
+msgstr "Geçersiz karakter"
 
 msgid "Unmatched quotes character"
 msgstr ""
@@ -588,7 +588,6 @@ msgstr "Geçici dosyalar %s içinde oluşturulacak\n"
 msgid "Temporary files will not be created\n"
 msgstr "Geçici dosyalar oluşturulmayacak\n"
 
-#, c-format
 msgid "Press any key to continue..."
 msgstr "Bir tuşa basınız..."
 
@@ -785,14 +784,17 @@ msgstr ""
 msgid "Color options"
 msgstr "Renk seçenekleri"
 
-msgid "+number"
-msgstr "+sayı"
+msgid "[+lineno] file1[:lineno] [file2[:lineno]...]"
+msgstr ""
+
+msgid "file"
+msgstr "dosya:"
+
+msgid "file1 file2"
+msgstr "dosya1 dosya2"
 
 msgid "[this_dir] [other_panel_dir]"
 msgstr "[seçenekler] [bu_dizin] [diğer_panel_dizini]"
-
-msgid "Set initial line number for the internal editor"
-msgstr "İç düzenleyici için başlangıç satır numarasını ayarla"
 
 msgid ""
 "\n"
@@ -1791,7 +1793,6 @@ msgstr "`%s'in yerel kopyası alınamadı"
 msgid "The shell is already running a command"
 msgstr "Kabukta halen bir komut etkin"
 
-#, c-format
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Midnight Commander'a dönmek için 'exit' yazın"
 
@@ -2030,8 +2031,8 @@ msgstr "sütunlar"
 msgid "User &mini status"
 msgstr "&Mini durum satırı"
 
-msgid "Listing mode"
-msgstr "Listeleme kipi"
+msgid "Listing format"
+msgstr "Listeleme biçimi"
 
 msgid "Executable &first"
 msgstr "Önce çalıştırılabilir"
@@ -2243,10 +2244,10 @@ msgid "User name"
 msgstr "Kullanıcı ismi"
 
 msgid "<Unknown user>"
-msgstr "<Bilinmeyen>"
+msgstr "<Bilinmeyen kullanıcı>"
 
 msgid "<Unknown group>"
-msgstr "<Bilinmeyen>"
+msgstr "<Bilinmeyen grup>"
 
 msgid "Enter machine name (F1 for details):"
 msgstr "makina ismi (ayrıntılar için F1):"
@@ -2283,10 +2284,7 @@ msgid "Cannot chdir to \"%s\""
 msgstr "\"%s dizinine geçilemedi"
 
 msgid "View file"
-msgstr ""
-"GNU Midnight Commander zaten\n"
-"bu terminalde �al���yor.\n"
-"Altkabuk deste�i kapat�lacak."
+msgstr "Dosyayı görüntüle"
 
 msgid "Filename:"
 msgstr "Dosya adı:"
@@ -2481,9 +2479,6 @@ msgstr "%o %f%n\"%s\"%m"
 msgid "%o %d %f%m"
 msgstr "%o %d %f%m"
 
-msgid "file"
-msgstr "dosya:"
-
 msgid "files"
 msgstr "dosya"
 
@@ -2511,7 +2506,6 @@ msgstr ""
 "Kaynak bağı \"%s\" okunamadı \n"
 " %s"
 
-#, fuzzy
 msgid ""
 "Cannot make stable symlinks across non-local filesystems:\n"
 "\n"
@@ -2814,7 +2808,7 @@ msgstr ""
 
 #, c-format
 msgid "Directories: %zu, total size: %s"
-msgstr ""
+msgstr "Dizinler:%zu, toplam boyut:%s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "\"..\" üzerinde işlem yapılamıyor!"
@@ -2966,7 +2960,7 @@ msgstr "Düz&enle - F4"
 
 #, c-format
 msgid "Found: %lu"
-msgstr ""
+msgstr "Bulunan: %lu"
 
 msgid "Malformed regular expression"
 msgstr " Düzenli ifade yanlış"
@@ -3247,8 +3241,8 @@ msgstr "Dosya içe&Riği"
 msgid "&Info"
 msgstr "&Bilgi kipi"
 
-msgid "&Listing mode..."
-msgstr "&Listeleme kipi..."
+msgid "&Listing format..."
+msgstr "&Listeleme biçimi..."
 
 msgid "&Sort order..."
 msgstr "&Sıralama türü..."
@@ -3679,50 +3673,6 @@ msgstr ""
 "%s dosyasına yazılamıyor:\n"
 "%s\n"
 
-msgid "Debug"
-msgstr "Hata Ayıklama"
-
-msgid "ERROR:"
-msgstr "Hata:"
-
-msgid "True:"
-msgstr "Doğru:"
-
-msgid "False:"
-msgstr "Yanlış:"
-
-msgid "Error calling program"
-msgstr "Programı çağırırken hata"
-
-msgid "Warning -- ignoring file"
-msgstr "Uyarı: -- dosya yoksayılıyor"
-
-#, c-format
-msgid ""
-"File %s is not owned by root or you or is world writable.\n"
-"Using it may compromise your security"
-msgstr ""
-"%s dosyasının sahibi değiştirilemedi.\n"
-"Dosyanın kullanımı güvenliği bozabilir"
-
-msgid "Format error on file Extensions File"
-msgstr "Extensions File dosyasında biçim hatası"
-
-#, c-format
-msgid "The %%var macro has no default"
-msgstr "%%var makrosunun bir öntanımı yok"
-
-#, c-format
-msgid "The %%var macro has no variable"
-msgstr "%%var makrosunun bir değişkeni yok"
-
-#, c-format
-msgid "No suitable entries found in %s"
-msgstr "%s içinde tahsis edilebilir bir girdi yok"
-
-msgid "User menu"
-msgstr "Kullanıcı menüsü"
-
 msgid "Help file format error\n"
 msgstr "Yardım dosyası biçim hatası\n"
 
@@ -3916,7 +3866,7 @@ msgid "Data types:"
 msgstr "Veri tipleri:"
 
 msgid "Home directory:"
-msgstr ""
+msgstr "Ev dizini:"
 
 msgid "Profile root directory:"
 msgstr ""
@@ -3941,6 +3891,50 @@ msgstr "Kullanıcı verisi"
 
 msgid "Cache directory:"
 msgstr "Ön bellek dizini:"
+
+msgid "Debug"
+msgstr "Hata Ayıklama"
+
+msgid "ERROR:"
+msgstr "Hata:"
+
+msgid "True:"
+msgstr "Doğru:"
+
+msgid "False:"
+msgstr "Yanlış:"
+
+msgid "Error calling program"
+msgstr "Programı çağırırken hata"
+
+msgid "Warning -- ignoring file"
+msgstr "Uyarı: -- dosya yoksayılıyor"
+
+#, c-format
+msgid ""
+"File %s is not owned by root or you or is world writable.\n"
+"Using it may compromise your security"
+msgstr ""
+"%s dosyasının sahibi değiştirilemedi.\n"
+"Dosyanın kullanımı güvenliği bozabilir"
+
+msgid "Format error on file Extensions File"
+msgstr "Extensions File dosyasında biçim hatası"
+
+#, c-format
+msgid "The %%var macro has no default"
+msgstr "%%var makrosunun bir öntanımı yok"
+
+#, c-format
+msgid "The %%var macro has no variable"
+msgstr "%%var makrosunun bir değişkeni yok"
+
+#, c-format
+msgid "No suitable entries found in %s"
+msgstr "%s içinde tahsis edilebilir bir girdi yok"
+
+msgid "User menu"
+msgstr "Kullanıcı menüsü"
 
 #, c-format
 msgid ""
