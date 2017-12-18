@@ -276,7 +276,7 @@ static struct inode *usbfs_get_inode (struct super_block *sb, umode_t mode, dev_
 	if (inode) {
 		inode->i_ino = get_next_ino();
 		inode_init_owner(inode, NULL, mode);
-		inode->i_atime = inode->i_mtime = inode->i_ctime = CURRENT_TIME;
+		inode->i_atime = inode->i_mtime = inode->i_ctime = current_kernel_time();
 		switch (mode & S_IFMT) {
 		default:
 			init_special_inode(inode, mode, dev);
@@ -609,7 +609,7 @@ void usbfs_update_special (void)
 	if (devices_usbfs_dentry) {
 		inode = devices_usbfs_dentry->d_inode;
 		if (inode)
-			inode->i_atime = inode->i_mtime = inode->i_ctime = CURRENT_TIME;
+			inode->i_atime = inode->i_mtime = inode->i_ctime = current_kernel_time();
 	}
 }
 

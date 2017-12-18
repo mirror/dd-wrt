@@ -153,7 +153,7 @@ static int sfe_cm_recv(struct sk_buff *skb)
 	 * If ingress Qdisc configured, and packet not processed by ingress Qdisc yet
 	 * We cannot accelerate this packet.
 	 */
-	if (dev->ingress_queue && !(skb->tc_verd & TC_NCLS)) {
+	if (dev->ingress_queue && !skb_skip_tc_classify(skb)) {
 		return 0;
 	}
 #endif
@@ -380,17 +380,6 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_NO_CT);
 #endif
 		DEBUG_TRACE("no conntrack connection, ignoring\n");
-		return NF_ACCEPT;
-	}
-
-	/*
-	 * Don't process untracked connections.
-	 */
-	if (unlikely(nf_ct_is_untracked(ct))) {
-#ifdef SFE_DEBUG
-		sfe_cm_incr_exceptions(SFE_CM_EXCEPTION_CT_NO_TRACK);
-#endif
-		DEBUG_TRACE("untracked connection\n");
 		return NF_ACCEPT;
 	}
 
@@ -741,14 +730,6 @@ static int sfe_cm_conntrack_event(struct notifier_block *this,
 	 */
 	if (unlikely(!ct)) {
 		DEBUG_WARN("no ct in conntrack event callback\n");
-		return NOTIFY_DONE;
-	}
-
-	/*
-	 * If this is an untracked connection then we can't have any state either.
-	 */
-	if (unlikely(nf_ct_is_untracked(ct))) {
-		DEBUG_TRACE("ignoring untracked conn\n");
 		return NOTIFY_DONE;
 	}
 

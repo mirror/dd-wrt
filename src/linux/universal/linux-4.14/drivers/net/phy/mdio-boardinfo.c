@@ -15,8 +15,8 @@
 
 #include "mdio-boardinfo.h"
 
-static LIST_HEAD(mdio_board_list);
-static DEFINE_MUTEX(mdio_board_lock);
+LIST_HEAD(mdio_board_list);
+DEFINE_MUTEX(mdio_board_lock);
 
 /**
  * mdiobus_setup_mdiodev_from_board_info - create and setup MDIO devices

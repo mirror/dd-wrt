@@ -14,7 +14,7 @@
 #include <linux/mm.h>
 //#include <asm/addrspace.h>
 #include <asm/io.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 
 #include "nvram_linux.h"
 
@@ -325,7 +325,8 @@ int nvram_commit(void)
 	wr = buf;
 	offs = 0;
 	for (i = 0; i < (NVRAM_SPACE / PAGE_SIZE); i++) {
-		len = kernel_write(srcf, wr, PAGE_SIZE, srcf->f_pos + offs);
+		loff_t pos = srcf->f_pos + offs;
+		len = kernel_write(srcf, wr, PAGE_SIZE, &pos);
 		offs += len;
 		wr += PAGE_SIZE;
 	}

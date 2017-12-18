@@ -297,11 +297,11 @@ trigger_target(struct sk_buff *skb, const struct xt_action_param *par)
 	return XT_CONTINUE;
 
     if (info->type == IPT_TRIGGER_OUT)
-	return trigger_out(&skb, par->hooknum, par->in, par->out, par->targinfo);
+	return trigger_out(&skb, xt_hooknum(par), xt_in(par), xt_out(par), par->targinfo);
     else if (info->type == IPT_TRIGGER_IN)
-	return trigger_in(&skb, par->hooknum, par->in, par->out, par->targinfo);
+	return trigger_in(&skb, xt_hooknum(par), xt_in(par), xt_out(par), par->targinfo);
     else if (info->type == IPT_TRIGGER_DNAT)
-    	return trigger_dnat(&skb, par->hooknum, par->in, par->out, par->targinfo);
+    	return trigger_dnat(&skb, xt_hooknum(par), xt_in(par), xt_out(par), par->targinfo);
 
     return XT_CONTINUE;
 }
