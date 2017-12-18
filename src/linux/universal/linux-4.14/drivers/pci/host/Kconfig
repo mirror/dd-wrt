@@ -226,13 +226,4 @@ config VMD
 	  To compile this driver as a module, choose M here: the
 	  module will be called vmd.
 
-config PCIE_QCOM
-	bool "Qualcomm PCIe controller"
-	depends on ARCH_QCOM && OF || (ARM && COMPILE_TEST)
-	select PCIE_DW
-	select PCIEPORTBUS
-	help
-	  Say Y here to enable PCIe controller support on Qualcomm SoCs. The
-	  PCIe controller use Designware core plus Qualcomm specific hardware
-	  wrappers.
 endmenu

@@ -1157,50 +1157,6 @@ static struct mtd_info * __init open_mtd_device(const char *mtd_dev)
 	return mtd;
 }
 
-/*
- * This function tries attaching mtd partitions named either "ubi" or "data"
- * during boot.
- */
-static void __init ubi_auto_attach(void)
-{
-	int err;
-	struct mtd_info *mtd;
-
-	/* try attaching mtd device named "ubi" or "data" */
-	mtd = open_mtd_device("ubi");
-	if (IS_ERR(mtd))
-		mtd = open_mtd_device("data");
-
-	if (!IS_ERR(mtd)) {
-		size_t len;
-		char magic[4];
-
-		/* check for a valid ubi magic */
-		err = mtd_read(mtd, 0, 4, &len, (void *) magic);
-		if (!err && len == 4 && strncmp(magic, "UBI#", 4)) {
-			pr_err("UBI error: no valid UBI magic found inside mtd%d", mtd->index);
-			put_mtd_device(mtd);
-			return;
-		}
-
-		/* auto-add only media types where UBI makes sense */
-		if (mtd->type == MTD_NANDFLASH ||
-		    mtd->type == MTD_NORFLASH ||
-		    mtd->type == MTD_DATAFLASH ||
-		    mtd->type == MTD_MLCNANDFLASH) {
-			mutex_lock(&ubi_devices_mutex);
-			pr_notice("UBI: auto-attach mtd%d\n", mtd->index);
-			err = ubi_attach_mtd_dev(mtd, UBI_DEV_NUM_AUTO, 0, 0);
-			mutex_unlock(&ubi_devices_mutex);
-			if (err < 0) {
-				pr_err("UBI error: cannot attach mtd%d", mtd->index);
-				put_mtd_device(mtd);
-			}
-		}
-	}
-}
-
-
 #define ALT_PART_NAME_LENGTH 16
 struct per_part_info {
 	char name[ALT_PART_NAME_LENGTH];
@@ -1447,12 +1403,6 @@ static int __init ubi_init(void)
 				goto out_detach;
 		}
 	}
-
-	/* auto-attach mtd devices only if built-in to the kernel and no ubi.mtd
-	 * parameter was given */
-	if (IS_ENABLED(CONFIG_MTD_ROOTFS_ROOT_DEV) &&
-	    !ubi_is_module() && !mtd_devs)
-		ubi_auto_attach();
 
 	/* auto-attach mtd devices only if built-in to the kernel and no ubi.mtd
 	 * parameter was given */

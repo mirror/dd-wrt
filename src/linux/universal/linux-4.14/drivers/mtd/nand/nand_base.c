@@ -1907,6 +1907,9 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
 						 __func__, buf);
 
 read_retry:
+#ifdef CONFIG_MTK_MTD_NAND
+			ret = chip->read_page(mtd, chip, bufpoi, page);
+#else
 			if (nand_standard_page_accessors(&chip->ecc))
 				chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, page);
 

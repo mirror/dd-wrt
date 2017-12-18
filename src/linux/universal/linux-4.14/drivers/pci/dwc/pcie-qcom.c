@@ -77,6 +77,8 @@
 #define PCIE20_CAP_LINK_1			(PCIE20_CAP + 0x14)
 #define PCIE_CAP_LINK1_VAL			0x2FD7F
 
+#define PCIE20_LNK_CONTROL2_LINK_STATUS2        0xA0
+
 #define PCIE20_PARF_Q2A_FLUSH			0x1AC
 
 #define PCIE20_MISC_CONTROL_1_REG		0x8BC
@@ -172,6 +174,7 @@ struct qcom_pcie {
 	struct phy *phy;
 	struct gpio_desc *reset;
 	struct qcom_pcie_ops *ops;
+	uint32_t force_gen1;
 };
 
 #define to_qcom_pcie(x)		dev_get_drvdata((x)->dev)
@@ -378,6 +381,11 @@ static int qcom_pcie_init_2_1_0(struct qcom_pcie *pcie)
 
 	/* wait for clock acquisition */
 	usleep_range(1000, 1500);
+	if (pcie->force_gen1) {
+		writel_relaxed((readl_relaxed(
+			pci->dbi_base + PCIE20_LNK_CONTROL2_LINK_STATUS2) | 1),
+			pci->dbi_base + PCIE20_LNK_CONTROL2_LINK_STATUS2);
+	}
 
 
 	/* Set the Max TLP size to 2K, instead of using default of 4K */
