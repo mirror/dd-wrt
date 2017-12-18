@@ -445,7 +445,7 @@ static const struct net_device_ops etherip_netdev_ops = {
 static void etherip_tunnel_setup(struct net_device *dev)
 {
 	dev->netdev_ops		= &etherip_netdev_ops;
-	dev->destructor      = etherip_dev_free;
+	dev->priv_destructor      = etherip_dev_free;
 	dev->features		|= NETIF_F_NETNS_LOCAL;
 	dev->priv_flags		&= ~IFF_XMIT_DST_RELEASE;
 
@@ -500,7 +500,7 @@ accept:
 //	tstats->rx_packets++;
 //	tstats->rx_bytes += skb->len;
 	
-	tunnel->dev->last_rx = jiffies;
+//	tunnel->dev->last_rx = jiffies;
 	tunnel->dev->stats.rx_packets++;
 	tunnel->dev->stats.rx_bytes += skb->len;
 	nf_reset(skb);

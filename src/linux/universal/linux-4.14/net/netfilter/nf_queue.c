@@ -196,12 +196,11 @@ int nf_queue(struct sk_buff *skb, struct nf_hook_state *state,
 	     unsigned int verdict)
 {
 	int ret;
-
-	ret = __nf_queue(skb, state, verdict);
+	
+	ret = __nf_queue(skb, state, entries, index, verdict);
 	if (ret < 0) {
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 		if (ret == -ECANCELED && skb->imq_flags == 0) { // down interface
-			*entryp = rcu_dereference(entry->next);
 			return 1;
 		}
 #endif

@@ -43,6 +43,12 @@ static int bcm54210e_config_init(struct phy_device *phydev)
 	val &= ~BCM54810_SHD_CLK_CTL_GTXCLK_EN;
 	bcm_phy_write_shadow(phydev, BCM54810_SHD_CLK_CTL, val);
 
+	if (phydev->dev_flags & PHY_BRCM_EN_MASTER_MODE) {
+		val = phy_read(phydev, MII_CTRL1000);
+		val |= CTL1000_AS_MASTER | CTL1000_ENABLE_MASTER;
+		phy_write(phydev, MII_CTRL1000, val);
+	}
+
 	return 0;
 }
 
@@ -595,7 +601,7 @@ static struct phy_driver broadcom_drivers[] = {
 	.phy_id_mask	= 0xfffffff0,
 	.name		= "Broadcom BCM54210E",
 	.features	= PHY_GBIT_FEATURES,
-	.flags		= PHY_HAS_MAGICANEG | PHY_HAS_INTERRUPT,
+	.flags		=PHY_HAS_INTERRUPT,
 	.config_init	= bcm54xx_config_init,
 	.config_aneg	= genphy_config_aneg,
 	.read_status	= genphy_read_status,
@@ -629,7 +635,7 @@ static struct phy_driver broadcom_drivers[] = {
 	.name		= "Broadcom BCM54612E",
 	.features	= PHY_GBIT_FEATURES |
 			  SUPPORTED_Pause | SUPPORTED_Asym_Pause,
-	.flags		= PHY_HAS_MAGICANEG | PHY_HAS_INTERRUPT,
+	.flags		= PHY_HAS_INTERRUPT,
 	.config_init	= bcm54xx_config_init,
 	.config_aneg	= genphy_config_aneg,
 	.read_status	= genphy_read_status,

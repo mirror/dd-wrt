@@ -1794,7 +1794,7 @@ EXPORT_SYMBOL_GPL(nf_ct_free_hashtable);
 
 void nf_conntrack_flush(void)
 {
-	nf_ct_iterate_cleanup(&init_net, kill_all, NULL, 0, 0);
+	nf_ct_iterate_cleanup_net(&init_net, kill_all, NULL, 0, 0);
 }
 EXPORT_SYMBOL_GPL(nf_conntrack_flush);
 

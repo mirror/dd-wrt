@@ -109,8 +109,6 @@ struct amd_chipset_type {
 	u8 rev;
 };
 
-#ifndef CONFIG_PCI_DISABLE_COMMON_QUIRKS
-
 static struct amd_chipset_info {
 	struct pci_dev	*nb_dev;
 	struct pci_dev	*smbus_dev;
@@ -514,10 +512,6 @@ void usb_amd_dev_put(void)
 	pci_dev_put(smbus);
 }
 EXPORT_SYMBOL_GPL(usb_amd_dev_put);
-
-#endif /* CONFIG_PCI_DISABLE_COMMON_QUIRKS */
-
-#if IS_ENABLED(CONFIG_USB_UHCI_HCD)
 
 #endif /* CONFIG_PCI_DISABLE_COMMON_QUIRKS */
 
