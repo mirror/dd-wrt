@@ -713,6 +713,16 @@ struct xps_map {
 #define XPS_MIN_MAP_ALLOC ((L1_CACHE_ALIGN(offsetof(struct xps_map, queues[1])) \
        - sizeof(struct xps_map)) / sizeof(u16))
 
+#ifdef CONFIG_RFS_ACCEL
+typedef int (*set_rfs_filter_callback_t)(struct net_device *dev,
+                                     __be32 src,
+                                     __be32 dst,
+                                     __be16 sport,
+                                     __be16 dport,
+                                     u8 proto,
+                                     u16 rxq_index,
+                                     u32 action);
+#endif
 /*
  * This structure holds all XPS maps for device.  Maps are indexed by CPU.
  */
@@ -1239,6 +1249,9 @@ struct net_device_ops {
 						     const struct sk_buff *skb,
 						     u16 rxq_index,
 						     u32 flow_id);
+        int                     (*ndo_register_rfs_filter)(struct net_device *dev,
+                                                              set_rfs_filter_callback_t set_filter);
+        int                     (*ndo_get_default_vlan_tag)(struct net_device *net);
 #endif
 	int			(*ndo_add_slave)(struct net_device *dev,
 						 struct net_device *slave_dev);
