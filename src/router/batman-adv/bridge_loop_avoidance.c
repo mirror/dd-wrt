@@ -352,8 +352,9 @@ static void batadv_bla_send_claim(struct batadv_priv *bat_priv, uint8_t *mac,
 	batadv_inc_counter(bat_priv, BATADV_CNT_RX);
 	batadv_add_counter(bat_priv, BATADV_CNT_RX_BYTES,
 			   skb->len + ETH_HLEN);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,10,0)
 	soft_iface->last_rx = jiffies;
-
+#endif
 	netif_rx(skb);
 out:
 	if (primary_if)
