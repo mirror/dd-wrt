@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.14.6 Kernel Configuration
+# Linux/mips 4.14.7 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -2066,15 +2066,3 @@ CONFIG_GENERIC_ATOMIC64=y
 CONFIG_SBITMAP=y
 # CONFIG_STRING_SELFTEST is not set
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_SOFTLOCKUP_DETECTOR is not set
-# CONFIG_ARCH_ACTIONS is not set
-# CONFIG_DWMAC_DWC_QOS_ETH is not set
-# CONFIG_PINCTRL_SX150X is not set
-# CONFIG_PINCTRL_IPQ8074 is not set
-# CONFIG_PINCTRL_MSM8994 is not set
-# CONFIG_USB_MSM_OTG is not set
-# CONFIG_USB_QCOM_8X16_PHY is not set
-# CONFIG_QCOM_IOMMU is not set
-# CONFIG_EXTCON_GPIO is not set
-# CONFIG_EXTCON_MAX3355 is not set
-# CONFIG_EXTCON_QCOM_SPMI_MISC is not set
