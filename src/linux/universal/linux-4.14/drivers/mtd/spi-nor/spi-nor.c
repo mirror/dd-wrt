@@ -89,6 +89,10 @@ struct flash_info {
 #define NO_CHIP_ERASE		BIT(12) /* Chip does not support chip erase */
 #define SPI_NOR_SKIP_SFDP	BIT(13)	/* Skip parsing of SFDP tables */
 #define USE_CLSR		BIT(14)	/* use CLSR command */
+#define SPI_NOR_4B_READ_OP	BIT(15)	/*
+					 * Like SPI_NOR_4B_OPCODES, but for read
+					 * op code only.
+					 */
 };
 
 #define JEDEC_MFR(info)	((info)->id[0])
@@ -238,6 +242,15 @@ static inline u8 spi_nor_convert_3to4_erase(u8 opcode)
 
 	return spi_nor_convert_opcode(opcode, spi_nor_3to4_erase,
 				      ARRAY_SIZE(spi_nor_3to4_erase));
+}
+
+static void spi_nor_set_4byte_read(struct spi_nor *nor,
+				   const struct flash_info *info)
+{
+	nor->addr_width = 3;
+	nor->ext_addr = 0;
+	nor->read_opcode = spi_nor_convert_3to4_read(nor->read_opcode);
+	nor->flags |= SNOR_F_4B_EXT_ADDR;
 }
 
 static void spi_nor_set_4byte_opcodes(struct spi_nor *nor,
@@ -491,6 +504,36 @@ static int spi_nor_erase_sector(struct spi_nor *nor, u32 addr)
 	return nor->write_reg(nor, nor->erase_opcode, buf, nor->addr_width);
 }
 
+static int spi_nor_check_ext_addr(struct spi_nor *nor, u32 addr)
+{
+	bool ext_addr;
+	int ret;
+	u8 cmd;
+
+	if (!(nor->flags & SNOR_F_4B_EXT_ADDR))
+		return 0;
+
+	ext_addr = !!(addr & 0xff000000);
+	if (nor->ext_addr == ext_addr)
+		return 0;
+
+	cmd = ext_addr ? SPINOR_OP_EN4B : SPINOR_OP_EX4B;
+	write_enable(nor);
+	ret = nor->write_reg(nor, cmd, NULL, 0);
+	if (ret)
+		return ret;
+
+	cmd = 0;
+	ret = nor->write_reg(nor, SPINOR_OP_WREAR, &cmd, 1);
+	if (ret)
+		return ret;
+
+	nor->addr_width = 3 + ext_addr;
+	nor->ext_addr = ext_addr;
+	write_disable(nor);
+	return 0;
+}
+
 /*
  * Erase an address range on the nor chip.  The address range may extend
  * one or more erase sectors.  Return an error is there is a problem erasing.
@@ -513,6 +556,10 @@ static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 	len = instr->len;
 
 	ret = spi_nor_lock_and_prep(nor, SPI_NOR_OPS_ERASE);
+	if (ret)
+		return ret;
+
+	ret = spi_nor_check_ext_addr(nor, addr + len);
 	if (ret)
 		return ret;
 
@@ -566,6 +613,7 @@ static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 	write_disable(nor);
 
 erase_err:
+	spi_nor_check_ext_addr(nor, 0);
 	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_ERASE);
 
 	instr->state = ret ? MTD_ERASE_FAILED : MTD_ERASE_DONE;
@@ -858,7 +906,9 @@ static int spi_nor_lock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 	if (ret)
 		return ret;
 
+	spi_nor_check_ext_addr(nor, ofs + len);
 	ret = nor->flash_lock(nor, ofs, len);
+	spi_nor_check_ext_addr(nor, 0);
 
 	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_UNLOCK);
 	return ret;
@@ -873,7 +923,9 @@ static int spi_nor_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 	if (ret)
 		return ret;
 
+	spi_nor_check_ext_addr(nor, ofs + len);
 	ret = nor->flash_unlock(nor, ofs, len);
+	spi_nor_check_ext_addr(nor, 0);
 
 	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_LOCK);
 	return ret;
@@ -1202,7 +1254,7 @@ static const struct flash_info spi_nor_ids[] = {
 	{ "w25q80", INFO(0xef5014, 0, 64 * 1024,  16, SECT_4K) },
 	{ "w25q80bl", INFO(0xef4014, 0, 64 * 1024,  16, SECT_4K) },
 	{ "w25q128", INFO(0xef4018, 0, 64 * 1024, 256, SECT_4K) },
-	{ "w25q256", INFO(0xef4019, 0, 64 * 1024, 512, SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+	{ "w25q256", INFO(0xef4019, 0, 64 * 1024, 512, SECT_4K | SPI_NOR_4B_READ_OP) },
 	{ "w25m512jv", INFO(0xef7119, 0, 64 * 1024, 1024,
 			SECT_4K | SPI_NOR_QUAD_READ | SPI_NOR_DUAL_READ) },
 
@@ -1258,6 +1310,9 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 	if (ret)
 		return ret;
 
+	if (nor->flags & SNOR_F_4B_EXT_ADDR)
+		nor->addr_width = 4;
+
 	while (len) {
 		loff_t addr = from;
 
@@ -1282,6 +1337,18 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 	ret = 0;
 
 read_err:
+	if (nor->flags & SNOR_F_4B_EXT_ADDR) {
+		u8 val = 0;
+
+		if ((from + len) & 0xff000000) {
+			write_enable(nor);
+			nor->write_reg(nor, SPINOR_OP_WREAR, &val, 1);
+			write_disable(nor);
+		}
+
+		nor->addr_width = 3;
+	}
+
 	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_READ);
 	return ret;
 }
@@ -1383,6 +1450,10 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len,
 	if (ret)
 		return ret;
 
+	ret = spi_nor_check_ext_addr(nor, to + len);
+	if (ret < 0)
+		return ret;
+
 	for (i = 0; i < len; ) {
 		ssize_t written;
 		loff_t addr = to + i;
@@ -1430,6 +1501,7 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len,
 	}
 
 write_err:
+	spi_nor_check_ext_addr(nor, 0);
 	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_WRITE);
 	return ret;
 }
@@ -2926,8 +2998,10 @@ int spi_nor_scan(struct spi_nor *nor, const char *name,
 	} else if (mtd->size > 0x1000000) {
 		/* enable 4-byte addressing if the device exceeds 16MiB */
 		nor->addr_width = 4;
-		if (JEDEC_MFR(info) == SNOR_MFR_SPANSION ||
-		    info->flags & SPI_NOR_4B_OPCODES)
+		if (info->flags & SPI_NOR_4B_READ_OP)
+			spi_nor_set_4byte_read(nor, info);
+		else if (JEDEC_MFR(info) == SNOR_MFR_SPANSION ||
+			 info->flags & SPI_NOR_4B_OPCODES)
 			spi_nor_set_4byte_opcodes(nor, info);
 		else
 			set_4byte(nor, info, 1);
