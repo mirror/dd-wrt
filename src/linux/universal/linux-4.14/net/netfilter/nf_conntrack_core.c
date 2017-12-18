@@ -52,6 +52,7 @@
 #include <net/netfilter/nf_conntrack_dscpremark_ext.h>
 #include <net/netfilter/nf_conntrack_labels.h>
 #include <net/netfilter/nf_conntrack_synproxy.h>
+#include <net/netfilter/nf_conntrack_rtcache.h>
 #include <net/netfilter/nf_nat.h>
 #include <net/netfilter/nf_nat_core.h>
 #include <net/netfilter/nf_nat_helper.h>
@@ -1984,7 +1985,7 @@ module_param_call(hashsize, nf_conntrack_set_hashsize, param_get_uint,
 static __always_inline unsigned int total_extension_size(void)
 {
 	/* remember to add new extensions below */
-	BUILD_BUG_ON(NF_CT_EXT_NUM > 9);
+	BUILD_BUG_ON(NF_CT_EXT_NUM > 11);
 
 	return sizeof(struct nf_ct_ext) +
 	       sizeof(struct nf_conn_help)
@@ -2007,6 +2008,12 @@ static __always_inline unsigned int total_extension_size(void)
 #endif
 #if IS_ENABLED(CONFIG_NETFILTER_SYNPROXY)
 		+ sizeof(struct nf_conn_synproxy)
+#endif
+#if IS_ENABLED(CONFIG_NF_CONNTRACK_RTCACHE)
+		+ sizeof(struct nf_conn_rtcache)
+#endif
+#if IS_ENABLED(CONFIG_NF_CONNTRACK_DSCPREMARK_EXT)
+		+ sizeof(struct nf_ct_dscpremark_ext)
 #endif
 	;
 };
