@@ -2986,7 +2986,7 @@ static int xmit_one(struct sk_buff *skb, struct net_device *dev,
 		if (!list_empty(&ptype_all))
 #endif
 		dev_queue_xmit_nit(skb, dev);
-
+	}
 #ifdef CONFIG_ETHERNET_PACKET_MANGLE
 	if (!dev->eth_mangle_tx ||
 	    (skb = dev->eth_mangle_tx(dev, skb)) != NULL)
@@ -4356,6 +4356,12 @@ another_round:
 		skb = skb_vlan_untag(skb);
 		if (unlikely(!skb))
 			goto out;
+	}
+
+	fast_recv = rcu_dereference(fast_nat_recv);
+	if (fast_recv && fast_recv(skb)) {
+		ret = NET_RX_SUCCESS;
+		goto out;
 	}
 
 	if (skb_skip_tc_classify(skb))
@@ -8021,12 +8027,6 @@ EXPORT_SYMBOL(dev_get_stats);
 struct netdev_queue *dev_ingress_queue_create(struct net_device *dev)
 {
 	struct netdev_queue *queue = dev_ingress_queue(dev);
-
-	fast_recv = rcu_dereference(fast_nat_recv);
-	if (fast_recv && fast_recv(skb)) {
-		ret = NET_RX_SUCCESS;
-		goto out;
-	}
 
 #ifdef CONFIG_NET_CLS_ACT
 	if (queue)

@@ -718,19 +718,6 @@ static void phy_link_change(struct phy_device *phydev, bool up, bool do_carrier)
 	phydev->adjust_link(netdev);
 }
 
-static void phy_link_change(struct phy_device *phydev, bool up, bool do_carrier)
-{
-	struct net_device *netdev = phydev->attached_dev;
-
-	if (do_carrier) {
-		if (up)
-			netif_carrier_on(netdev);
-		else
-			netif_carrier_off(netdev);
-	}
-	phydev->adjust_link(netdev);
-}
-
 /**
  * phy_prepare_link - prepares the PHY layer to monitor link status
  * @phydev: target phy_device struct

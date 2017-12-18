@@ -63,8 +63,6 @@ static void nf_ct_rtcache_ext_add(struct nf_conn *ct)
 
 static struct nf_conn_rtcache *nf_ct_rtcache_find_usable(struct nf_conn *ct)
 {
-	if (nf_ct_is_untracked(ct))
-		return NULL;
 	return nf_ct_rtcache_find(ct);
 }
 
@@ -271,7 +269,7 @@ static int nf_rtcache_netdev_event(struct notifier_block *this,
 	struct net *net = dev_net(dev);
 
 	if (event == NETDEV_DOWN)
-		nf_ct_iterate_cleanup(net, nf_rtcache_dst_remove, dev, 0, 0);
+		nf_ct_iterate_cleanup_net(net, nf_rtcache_dst_remove, dev, 0, 0);
 
 	return NOTIFY_DONE;
 }
@@ -391,7 +389,7 @@ static void __exit nf_conntrack_rtcache_fini(void)
 
 	/* zap all conntracks with rtcache extension */
 	for_each_net(net)
-		nf_ct_iterate_cleanup(net, nf_rtcache_ext_remove, NULL, 0, 0);
+		nf_ct_iterate_cleanup_net(net, nf_rtcache_ext_remove, NULL, 0, 0);
 
 	for_each_net(net) {
 		/* .. and make sure they're gone from dying list, too */

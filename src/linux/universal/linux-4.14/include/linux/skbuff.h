@@ -3755,10 +3755,6 @@ static inline void nf_conntrack_get(struct nf_conntrack *nfct)
 		atomic_inc(&nfct->use);
 }
 #endif
-#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-       dst->imq_flags = src->imq_flags;
-       dst->nf_queue_entry = src->nf_queue_entry;
-#endif
 #if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
 static inline void nf_bridge_put(struct nf_bridge_info *nf_bridge)
 {
@@ -3804,6 +3800,10 @@ static inline void __nf_copy(struct sk_buff *dst, const struct sk_buff *src,
 #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
 	dst->_nfct = src->_nfct;
 	nf_conntrack_get(skb_nfct(src));
+#endif
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+       dst->imq_flags = src->imq_flags;
+       dst->nf_queue_entry = src->nf_queue_entry;
 #endif
 #if IS_ENABLED(CONFIG_BRIDGE_NETFILTER)
 	dst->nf_bridge  = src->nf_bridge;

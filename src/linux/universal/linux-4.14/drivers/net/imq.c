@@ -556,7 +556,7 @@ static int __imq_nf_queue(struct nf_queue_entry *entry, struct net_device *dev)
 	int retval = -EINVAL;
 	unsigned int orig_queue_index;
 
-	dev->last_rx = jiffies;
+//	dev->last_rx = jiffies;
 
 	skb = entry->skb;
 	skb_orig = NULL;
@@ -602,14 +602,14 @@ static int __imq_nf_queue(struct nf_queue_entry *entry, struct net_device *dev)
 	root_lock = qdisc_lock(q);
 	spin_lock(root_lock);
 
-	users = atomic_read(&skb->users);
+	users = refcount_read(&skb->users);
 
 	skb_shared = skb_get(skb); /* increase reference count by one */
 
 	/* backup skb->cb, as qdisc layer will overwrite it */
 	skb_save_cb(skb_shared);
 	qdisc_enqueue_root(skb_shared, q, &to_free); /* might kfree_skb */
-	if (likely(atomic_read(&skb_shared->users) == users + 1)) {
+	if (likely(refcount_read(&skb_shared->users) == users + 1)) {
 		bool validate;
 
 		kfree_skb(skb_shared); /* decrease reference count by one */
@@ -730,7 +730,7 @@ static void imq_setup(struct net_device *dev)
 				     IFF_TX_SKB_SHARING);
 }
 
-static int imq_validate(struct nlattr *tb[], struct nlattr *data[])
+static int imq_validate(struct nlattr *tb[], struct nlattr *data[], struct netlink_ext_ack *extack)
 {
 	int ret = 0;
 

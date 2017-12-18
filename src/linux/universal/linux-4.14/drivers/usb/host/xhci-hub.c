@@ -597,17 +597,17 @@ static void xhci_set_port_power(struct xhci_hcd *xhci, struct usb_hcd *hcd,
 		/* Power on */
 #ifdef CONFIG_BCM47XX
 			if(usb2mode != 0){
-				writel(0x0, port_array[wIndex]);
+				writel(0x0, addr);
 
 				if(usb2mode == 1){ // 0bc2:a0a1
-					writel(0x0 & ~PORT_PE | PORT_POWER | PORT_LINK_STROBE & ~PORT_PLS_MASK, port_array[wIndex]);
+					writel(0x0 & ~PORT_PE | PORT_POWER | PORT_LINK_STROBE & ~PORT_PLS_MASK, addr);
 				}
 			}
 			else{
-				writel(temp | PORT_POWER, port_array[wIndex]);
+				writel(temp | PORT_POWER, addr);
 			}
 #else
-			writel(temp | PORT_POWER, port_array[wIndex]);
+			writel(temp | PORT_POWER, addr);
 #endif
 		temp = readl(addr);
 		xhci_dbg(xhci, "set port power, actual port %d status  = 0x%x\n",

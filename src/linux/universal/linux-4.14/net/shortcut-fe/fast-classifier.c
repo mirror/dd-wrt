@@ -130,13 +130,6 @@ static struct genl_multicast_group fast_classifier_genl_mcgrp[] = {
 	},
 };
 
-static struct genl_family fast_classifier_gnl_family = {
-	.id = GENL_ID_GENERATE,
-	.hdrsize = FAST_CLASSIFIER_GENL_HDRSIZE,
-	.name = FAST_CLASSIFIER_GENL_NAME,
-	.version = FAST_CLASSIFIER_GENL_VERSION,
-	.maxattr = FAST_CLASSIFIER_A_MAX,
-};
 
 static int fast_classifier_offload_genl_msg(struct sk_buff *skb, struct genl_info *info);
 static int fast_classifier_nl_genl_msg_DUMP(struct sk_buff *skb, struct netlink_callback *cb);
@@ -163,6 +156,18 @@ static struct genl_ops fast_classifier_gnl_ops[] = {
 		.doit = NULL,
 		.dumpit = fast_classifier_nl_genl_msg_DUMP,
 	},
+};
+
+
+static struct genl_family fast_classifier_gnl_family = {
+	.hdrsize = FAST_CLASSIFIER_GENL_HDRSIZE,
+	.name = FAST_CLASSIFIER_GENL_NAME,
+	.version = FAST_CLASSIFIER_GENL_VERSION,
+	.maxattr = FAST_CLASSIFIER_A_MAX,
+	.ops = fast_classifier_gnl_ops,
+	.n_ops = ARRAY_SIZE(fast_classifier_gnl_ops),
+	.mcgrps = fast_classifier_genl_mcgrp,
+	.n_mcgrps = ARRAY_SIZE(fast_classifier_genl_mcgrp),
 };
 
 static atomic_t offload_msgs = ATOMIC_INIT(0);
@@ -240,7 +245,7 @@ static int fast_classifier_recv(struct sk_buff *skb)
 	 * If ingress Qdisc configured, and packet not processed by ingress Qdisc yet
 	 * We cannot accelerate this packet.
 	 */
-	if (dev->ingress_queue && !(skb->tc_verd & TC_NCLS)) {
+	if (dev->ingress_queue && !skb_skip_tc_classify(skb)) {
 		goto rx_exit;
 	}
 #endif
@@ -843,17 +848,6 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	}
 
 	/*
-	 * Don't process untracked connections.
-	 */
-	if (unlikely(nf_ct_is_untracked(ct))) {
-#ifdef SFE_DEBUG
-		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_CT_NO_TRACK);
-#endif
-		DEBUG_TRACE("untracked connection\n");
-		return NF_ACCEPT;
-	}
-
-	/*
 	 * Unconfirmed connection may be dropped by Linux at the final step,
 	 * So we don't process unconfirmed connections.
 	 */
@@ -1268,14 +1262,6 @@ static int fast_classifier_conntrack_event(struct notifier_block *this,
 	 */
 	if (unlikely(!ct)) {
 		DEBUG_WARN("no ct in conntrack event callback\n");
-		return NOTIFY_DONE;
-	}
-
-	/*
-	 * If this is an untracked connection then we can't have any state either.
-	 */
-	if (unlikely(nf_ct_is_untracked(ct))) {
-		DEBUG_TRACE("ignoring untracked conn\n");
 		return NOTIFY_DONE;
 	}
 
@@ -1823,34 +1809,11 @@ static int fast_classifier_init(void)
 	}
 #endif
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0))
-	result = genl_register_family_with_ops_groups(&fast_classifier_gnl_family,
-						      fast_classifier_gnl_ops,
-						      fast_classifier_genl_mcgrp);
+	result = genl_register_family(&fast_classifier_gnl_family);
 	if (result) {
 		DEBUG_ERROR("failed to register genl ops: %d\n", result);
 		goto exit5;
 	}
-#else
-	result = genl_register_family(&fast_classifier_gnl_family);
-	if (result) {
-		printk(KERN_CRIT "unable to register genl family\n");
-		goto exit5;
-	}
-
-	result = genl_register_ops(&fast_classifier_gnl_family, fast_classifier_gnl_ops);
-	if (result) {
-		printk(KERN_CRIT "unable to register ops\n");
-		goto exit6;
-	}
-
-	result = genl_register_mc_group(&fast_classifier_gnl_family,
-					fast_classifier_genl_mcgrp);
-	if (result) {
-		printk(KERN_CRIT "unable to register multicast group\n");
-		goto exit6;
-	}
-#endif
 
 	printk(KERN_ALERT "fast-classifier: registered\n");
 
