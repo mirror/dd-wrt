@@ -352,7 +352,11 @@ static struct ndpi_id_struct *ndpi_id_search_or_insert(struct ndpi_net *n, union
 
 static void ndpi_free_id(struct ndpi_net *n, struct osdpi_id_node *id)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
+	if (refcount_sub_and_test((int)1, &id->refcnt.refcount)) {
+#else
 	if (atomic_sub_and_test((int)1, &id->refcnt.refcount)) {
+#endif
 		rb_erase(&id->node, &n->osdpi_id_root);
 		kmem_cache_free(osdpi_id_cache, id);
 		(volatile unsigned long int)ndpi_pc--;
@@ -368,7 +372,11 @@ static inline void *nf_ct_ext_add_ndpi(struct nf_conn *ct)
 {
 #ifdef NF_CT_CUSTOM
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,10,0)
+	return nf_ct_ext_add(ct, nf_ct_ext_id_ndpi, GFP_ATOMIC);
+#else
 	return __nf_ct_ext_add_length(ct, nf_ct_ext_id_ndpi, sizeof(struct nf_ct_ext_ndpi), GFP_ATOMIC);
+#endif
 #else
 	return __nf_ct_ext_add(ct, nf_ct_ext_id_ndpi, GFP_ATOMIC);
 #endif
@@ -735,9 +743,11 @@ static bool ndpi_mt(const struct sk_buff *skb, struct xt_action_param *par)
 	if (ct == NULL)
 		return false;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,10,0)
 	if (nf_ct_is_untracked(ct)) {
 		return false;
 	}
+#endif
 	ct_ndpi = nf_ct_ext_find_ndpi(ct);
 	if (!ct_ndpi) {
 		if (nf_ct_is_confirmed(ct)) {
@@ -866,7 +876,11 @@ static void ndpi_cleanup(struct net *net)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 1)
 	nf_ct_iterate_cleanup(net, __ndpi_free_flow, n);
 #else
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4,10,0)
+	nf_ct_iterate_cleanup_net(net, __ndpi_free_flow, n, 0, 0);
+#else
 	nf_ct_iterate_cleanup(net, __ndpi_free_flow, n, 0, 0);
+#endif
 #endif
 	/* free all objects before destroying caches */
 
@@ -914,7 +928,11 @@ static unsigned int ndpi_tg(struct sk_buff *skb, const struct xt_action_param *p
 			struct nf_ct_ext_ndpi *ct_ndpi;
 
 			ct = nf_ct_get(skb, &ctinfo);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4,10,0)
+			if (ct) {
+#else
 			if (ct && !nf_ct_is_untracked(ct)) {
+#endif
 				ct_ndpi = nf_ct_ext_find_ndpi(ct);
 				if (ct_ndpi) {
 					spin_lock_bh(&ct_ndpi->lock);
@@ -1068,7 +1086,6 @@ static ssize_t _ninfo_proc_read(struct file *file, char __user * buf, size_t cou
 			if (!atomic_read(&ht->count))
 				tmin = 0;
 			l = snprintf(lbuf, sizeof(lbuf) - 1, "hash_size %lu hash timeout %lus count %u min %d max %d gc %d\n", bt_hash_size * 1024, bt_hash_tmo, atomic_read(&ht->count), tmin, tmax, n->gc_count);
-
 			if (!(access_ok(VERIFY_WRITE, buf, l) && !__copy_to_user(buf, lbuf, l)))
 				return -EFAULT;
 			(*ppos)++;
