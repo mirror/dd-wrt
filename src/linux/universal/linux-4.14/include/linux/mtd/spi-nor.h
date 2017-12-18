@@ -102,6 +102,7 @@
 /* Used for Macronix and Winbond flashes. */
 #define SPINOR_OP_EN4B		0xb7	/* Enter 4-byte mode */
 #define SPINOR_OP_EX4B		0xe9	/* Exit 4-byte mode */
+#define SPINOR_OP_WREAR		0xc5	/* Write extended address register */
 
 /* Used for Spansion flashes only. */
 #define SPINOR_OP_BRWR		0x17	/* Bank register write */
@@ -229,7 +230,8 @@ enum spi_nor_option_flags {
 	SNOR_F_S3AN_ADDR_DEFAULT = BIT(3),
 	SNOR_F_READY_XSR_RDY	= BIT(4),
 	SNOR_F_USE_CLSR		= BIT(5),
-	SNOR_F_SST		= BIT(6),
+	SNOR_F_4B_EXT_ADDR	= BIT(6),
+	SNOR_F_SST		= BIT(7),
 };
 
 /**
@@ -282,6 +284,7 @@ struct spi_nor {
 	enum spi_nor_protocol	reg_proto;
 	bool			sst_write_second;
 	u32			flags;
+	u8			ext_addr;
 	u8			cmd_buf[SPI_NOR_MAX_CMD_SIZE];
 
 	int (*prepare)(struct spi_nor *nor, enum spi_nor_ops ops);
