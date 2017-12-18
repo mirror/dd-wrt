@@ -271,6 +271,7 @@ struct spi_nor {
 	struct mutex		lock;
 	struct device		*dev;
 	u32			page_size;
+	u16			chunk_size;
 	u8			addr_width;
 	u8			erase_opcode;
 	u8			read_opcode;
