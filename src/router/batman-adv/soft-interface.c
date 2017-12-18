@@ -350,8 +350,9 @@ void batadv_interface_rx(struct net_device *soft_iface,
 	batadv_add_counter(bat_priv, BATADV_CNT_RX_BYTES,
 			   skb->len + ETH_HLEN);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,10,0)
 	soft_iface->last_rx = jiffies;
-
+#endif
 	/* Let the bridge loop avoidance check the packet. If will
 	 * not handle it, we can safely push it up.
 	 */
@@ -604,7 +605,11 @@ static void batadv_softif_init_early(struct net_device *dev)
 	ether_setup(dev);
 
 	dev->netdev_ops = &batadv_netdev_ops;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4,10,0)
+	dev->priv_destructor = batadv_softif_free;
+#else
 	dev->destructor = batadv_softif_free;
+#endif
 	dev->tx_queue_len = 0;
 
 	/* can't call min_mtu, because the needed variables
