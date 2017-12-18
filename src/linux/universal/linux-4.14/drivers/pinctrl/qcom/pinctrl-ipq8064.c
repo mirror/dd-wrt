@@ -308,7 +308,7 @@ static const char * const gpio_groups[] = {
 };
 
 static const char * const mdio_groups[] = {
-	"gpio0", "gpio1", "gpio2", "gpio10", "gpio11", "gpio66",
+	"gpio0", "gpio1", "gpio10", "gpio11",
 };
 
 static const char * const mi2s_groups[] = {
@@ -412,8 +412,8 @@ static const char * const usb2_hsic_groups[] = {
 };
 
 static const char * const rgmii2_groups[] = {
-	"gpio2", "gpio27", "gpio28", "gpio29", "gpio30", "gpio31", "gpio32",
-	"gpio51", "gpio52", "gpio59", "gpio60", "gpio61", "gpio62", "gpio66",
+	"gpio27", "gpio28", "gpio29", "gpio30", "gpio31", "gpio32",
+	"gpio51", "gpio52", "gpio59", "gpio60", "gpio61", "gpio62",
 };
 
 static const char * const sata_groups[] = {
@@ -548,7 +548,7 @@ static const struct msm_function ipq8064_functions[] = {
 static const struct msm_pingroup ipq8064_groups[] = {
 	PINGROUP(0, mdio, NA, NA, NA, NA, NA, NA, NA, NA, NA),
 	PINGROUP(1, mdio, NA, NA, NA, NA, NA, NA, NA, NA, NA),
-	PINGROUP(2, gsbi5_spi_cs3, rgmii2, mdio, NA, NA, NA, NA, NA, NA, NA),
+	PINGROUP(2, gsbi5_spi_cs3, NA, NA, NA, NA, NA, NA, NA, NA, NA),
 	PINGROUP(3, pcie1_rst, pcie1_prsnt, pdm, NA, NA, NA, NA, NA, NA, NA),
 	PINGROUP(4, pcie1_pwren_n, pcie1_pwren, NA, NA, NA, NA, NA, NA, NA, NA),
 	PINGROUP(5, pcie1_clk_req, pcie1_pwrflt, NA, NA, NA, NA, NA, NA, NA, NA),
@@ -612,7 +612,7 @@ static const struct msm_pingroup ipq8064_groups[] = {
 	PINGROUP(63, pcie3_rst, NA, NA, NA, NA, NA, NA, NA, NA, NA),
 	PINGROUP(64, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
 	PINGROUP(65, pcie3_clk_req, NA, NA, NA, NA, NA, NA, NA, NA, NA),
-	PINGROUP(66, rgmii2, mdio, NA, NA, NA, NA, NA, NA, NA, NA),
+	PINGROUP(66, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA),
 	PINGROUP(67, usb2_hsic, NA, NA, NA, NA, NA, NA, NA, NA, NA),
 	PINGROUP(68, usb2_hsic, NA, NA, NA, NA, NA, NA, NA, NA, NA),
 	SDC_PINGROUP(sdc3_clk, 0x204a, 14, 6),
@@ -630,7 +630,6 @@ static const struct msm_pinctrl_soc_data ipq8064_pinctrl = {
 	.groups = ipq8064_groups,
 	.ngroups = ARRAY_SIZE(ipq8064_groups),
 	.ngpios = NUM_GPIO_PINGROUPS,
-	.gpio_pull = &msm_gpio_pull,
 };
 
 static int ipq8064_pinctrl_probe(struct platform_device *pdev)
@@ -646,7 +645,6 @@ static const struct of_device_id ipq8064_pinctrl_of_match[] = {
 static struct platform_driver ipq8064_pinctrl_driver = {
 	.driver = {
 		.name = "ipq8064-pinctrl",
-		.owner = THIS_MODULE,
 		.of_match_table = ipq8064_pinctrl_of_match,
 	},
 	.probe = ipq8064_pinctrl_probe,
