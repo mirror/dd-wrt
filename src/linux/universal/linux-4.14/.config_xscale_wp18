@@ -1378,6 +1378,7 @@ CONFIG_E1000=m
 # CONFIG_IGBVF is not set
 # CONFIG_IXGB is not set
 # CONFIG_IXGBE is not set
+# CONFIG_E1000GBE is not set
 # CONFIG_I40E is not set
 # CONFIG_NET_VENDOR_I825XX is not set
 CONFIG_IXP400_ETH=m
