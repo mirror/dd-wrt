@@ -455,27 +455,6 @@ static loff_t spi_nor_s3an_addr_convert(struct spi_nor *nor, unsigned int addr)
 }
 
 /*
- * This code converts an address to the Default Address Mode, that has non
- * power of two page sizes. We must support this mode because it is the default
- * mode supported by Xilinx tools, it can access the whole flash area and
- * changing over to the Power-of-two mode is irreversible and corrupts the
- * original data.
- * Addr can safely be unsigned int, the biggest S3AN device is smaller than
- * 4 MiB.
- */
-static loff_t spi_nor_s3an_addr_convert(struct spi_nor *nor, unsigned int addr)
-{
-	unsigned int offset;
-	unsigned int page;
-
-	offset = addr % nor->page_size;
-	page = addr / nor->page_size;
-	page <<= (nor->page_size > 512) ? 10 : 9;
-
-	return page | offset;
-}
-
-/*
  * Initiate the erasure of a single sector
  */
 static int spi_nor_erase_sector(struct spi_nor *nor, u32 addr)

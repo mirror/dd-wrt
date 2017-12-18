@@ -1,4 +1,4 @@
-~/*
+/*
  * Generic OPP Interface
  *
  * Copyright (C) 2009-2010 Texas Instruments Incorporated.
@@ -139,14 +139,13 @@ struct regulator *dev_pm_opp_get_regulator(struct device *dev)
 		return ERR_CAST(opp_table);
 	}
 
-	reg = opp_table->regulator;
+	reg = opp_table->regulators[0];
 
 	rcu_read_unlock();
 
 	return reg;
 }
 EXPORT_SYMBOL_GPL(dev_pm_opp_get_regulator);
-
 /**
  * dev_pm_opp_is_turbo() - Returns if opp is turbo OPP or not
  * @opp: opp for which turbo mode is being verified
@@ -1563,7 +1562,7 @@ EXPORT_SYMBOL_GPL(dev_pm_opp_add);
  *
  * Set the availability of an OPP, opp_{enable,disable} share a common logic
  * which is isolated here.
- *
+ * 
  * Return: -EINVAL for bad pointers, -ENOMEM if no memory available for the
  * copy operation, returns 0 if no modification was done OR modification was
  * successful.
@@ -1619,11 +1618,13 @@ static int _opp_set_availability(struct device *dev, unsigned long freq,
 	goto put_table;
 
 unlock:
-	mutex_unlock(&opp_table_lock);
-	kfree(new_opp);
+	mutex_unlock(&opp_table->lock);
+put_table:
+	dev_pm_opp_put_opp_table(opp_table);
 	return r;
 }
 
+#if 0
 /**
  * dev_pm_opp_adjust_voltage() - helper to change the voltage of an OPP
  * @dev:		device for which we do this operation
@@ -1706,7 +1707,7 @@ put_table:
 	dev_pm_opp_put_opp_table(opp_table);
 	return r;
 }
-
+#endif
 /**
  * dev_pm_opp_enable() - Enable a specific OPP
  * @dev:	device for which we do this operation
