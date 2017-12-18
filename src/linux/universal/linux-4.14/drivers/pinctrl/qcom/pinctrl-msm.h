@@ -98,16 +98,6 @@ struct msm_pingroup {
 };
 
 /**
- * struct msm_pinctrl_gpio_pull - pinctrl pull value bit field descriptor
- */
-struct msm_pinctrl_gpio_pull {
-	unsigned no_pull;
-	unsigned pull_down;
-	unsigned keeper;
-	unsigned pull_up;
-};
-
-/**
  * struct msm_pinctrl_soc_data - Qualcomm pin controller driver configuration
  * @pins:	    An array describing all pins the pin controller affects.
  * @npins:	    The number of entries in @pins.

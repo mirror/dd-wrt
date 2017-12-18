@@ -30,8 +30,7 @@
 #include <linux/reboot.h>
 #include <linux/pm.h>
 #include <linux/log2.h>
-#include <linux/qcom_scm.h>
-#include <linux/io.h>
+
 #include "../core.h"
 #include "../pinconf.h"
 #include "pinctrl-msm.h"
@@ -639,9 +638,6 @@ static void msm_gpio_irq_ack(struct irq_data *d)
 	const struct msm_pingroup *g;
 	unsigned long flags;
 	u32 val;
-	u32 addr;
-	int ret;
-	const __be32 *reg;
 
 	g = &pctrl->soc->groups[d->hwirq];
 
@@ -680,30 +676,11 @@ static int msm_gpio_irq_set_type(struct irq_data *d, unsigned int type)
 	else
 		clear_bit(d->hwirq, pctrl->dual_edge_irqs);
 
-	ret = of_device_is_compatible(pctrl->dev->of_node,
-					"qcom,ipq8064-pinctrl");
 	/* Route interrupts to application cpu */
-	if (!ret) {
-		val = readl(pctrl->regs + g->intr_target_reg);
-		val &= ~(7 << g->intr_target_bit);
-		val |= g->intr_target_kpss_val << g->intr_target_bit;
-		writel(val, pctrl->regs + g->intr_target_reg);
-	} else {
-		reg = of_get_property(pctrl->dev->of_node, "reg", NULL);
-		if (reg) {
-			addr = be32_to_cpup(reg) + g->intr_target_reg;
-			val = qcom_scm_pinmux_read(addr);
-			__iormb();
-
-			val &= ~(7 << g->intr_target_bit);
-			val |= g->intr_target_kpss_val << g->intr_target_bit;
-
-			__iowmb();
-			ret = qcom_scm_pinmux_write(addr, val);
-			if (ret)
-				pr_err("\n Routing interrupts to Apps proc failed");
-		}
-	}
+	val = readl(pctrl->regs + g->intr_target_reg);
+	val &= ~(7 << g->intr_target_bit);
+	val |= g->intr_target_kpss_val << g->intr_target_bit;
+	writel(val, pctrl->regs + g->intr_target_reg);
 
 	/* Update configuration for gpio.
 	 * RAW_STATUS_EN is left on for all gpio irqs. Due to the
@@ -977,3 +954,4 @@ int msm_pinctrl_remove(struct platform_device *pdev)
 	return 0;
 }
 EXPORT_SYMBOL(msm_pinctrl_remove);
+

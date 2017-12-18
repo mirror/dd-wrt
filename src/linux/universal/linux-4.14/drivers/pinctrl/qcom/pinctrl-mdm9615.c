@@ -444,7 +444,6 @@ static const struct msm_pinctrl_soc_data mdm9615_pinctrl = {
 	.groups = mdm9615_groups,
 	.ngroups = ARRAY_SIZE(mdm9615_groups),
 	.ngpios = NUM_GPIO_PINGROUPS,
-	.gpio_pull = &msm_gpio_pull,
 };
 
 static int mdm9615_pinctrl_probe(struct platform_device *pdev)
