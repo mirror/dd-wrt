@@ -138,8 +138,10 @@ struct regulator *dev_pm_opp_get_regulator(struct device *dev)
 		rcu_read_unlock();
 		return ERR_CAST(opp_table);
 	}
-
-	reg = opp_table->regulators[0];
+	if (opp_table->regulator_count > 0)
+		reg = opp_table->regulators[0];
+	else
+		reg = NULL;
 
 	rcu_read_unlock();
 
