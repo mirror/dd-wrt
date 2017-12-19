@@ -47,11 +47,6 @@
 #define N_REG			0xc
 #define D_REG			0x10
 
-enum freq_policy {
-	FLOOR,
-	CEIL,
-};
-
 static int clk_rcg2_is_enabled(struct clk_hw *hw)
 {
 	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
@@ -181,26 +176,15 @@ clk_rcg2_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
 	return calc_rate(parent_rate, m, n, mode, hid_div);
 }
 
-static int _freq_tbl_determine_rate(struct clk_hw *hw, const struct freq_tbl *f,
-				    struct clk_rate_request *req,
-				    enum freq_policy policy)
+static int _freq_tbl_determine_rate(struct clk_hw *hw,
+		const struct freq_tbl *f, struct clk_rate_request *req)
 {
 	unsigned long clk_flags, rate = req->rate;
 	struct clk_hw *p;
 	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
 	int index;
 
-	switch (policy) {
-	case FLOOR:
-		f = qcom_find_freq_floor(f, rate);
-		break;
-	case CEIL:
-		f = qcom_find_freq(f, rate);
-		break;
-	default:
-		return -EINVAL;
-	};
-
+	f = qcom_find_freq(f, rate);
 	if (!f)
 		return -EINVAL;
 
@@ -237,15 +221,7 @@ static int clk_rcg2_determine_rate(struct clk_hw *hw,
 {
 	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
 
-	return _freq_tbl_determine_rate(hw, rcg->freq_tbl, req, CEIL);
-}
-
-static int clk_rcg2_determine_floor_rate(struct clk_hw *hw,
-					 struct clk_rate_request *req)
-{
-	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
-
-	return _freq_tbl_determine_rate(hw, rcg->freq_tbl, req, FLOOR);
+	return _freq_tbl_determine_rate(hw, rcg->freq_tbl, req);
 }
 
 static int clk_rcg2_configure(struct clk_rcg2 *rcg, const struct freq_tbl *f)
@@ -289,23 +265,12 @@ static int clk_rcg2_configure(struct clk_rcg2 *rcg, const struct freq_tbl *f)
 	return update_config(rcg);
 }
 
-static int __clk_rcg2_set_rate(struct clk_hw *hw, unsigned long rate,
-			       enum freq_policy policy)
+static int __clk_rcg2_set_rate(struct clk_hw *hw, unsigned long rate)
 {
 	struct clk_rcg2 *rcg = to_clk_rcg2(hw);
 	const struct freq_tbl *f;
 
-	switch (policy) {
-	case FLOOR:
-		f = qcom_find_freq_floor(rcg->freq_tbl, rate);
-		break;
-	case CEIL:
-		f = qcom_find_freq(rcg->freq_tbl, rate);
-		break;
-	default:
-		return -EINVAL;
-	};
-
+	f = qcom_find_freq(rcg->freq_tbl, rate);
 	if (!f)
 		return -EINVAL;
 
@@ -315,25 +280,13 @@ static int __clk_rcg2_set_rate(struct clk_hw *hw, unsigned long rate,
 static int clk_rcg2_set_rate(struct clk_hw *hw, unsigned long rate,
 			    unsigned long parent_rate)
 {
-	return __clk_rcg2_set_rate(hw, rate, CEIL);
-}
-
-static int clk_rcg2_set_floor_rate(struct clk_hw *hw, unsigned long rate,
-				   unsigned long parent_rate)
-{
-	return __clk_rcg2_set_rate(hw, rate, FLOOR);
+	return __clk_rcg2_set_rate(hw, rate);
 }
 
 static int clk_rcg2_set_rate_and_parent(struct clk_hw *hw,
 		unsigned long rate, unsigned long parent_rate, u8 index)
 {
-	return __clk_rcg2_set_rate(hw, rate, CEIL);
-}
-
-static int clk_rcg2_set_floor_rate_and_parent(struct clk_hw *hw,
-		unsigned long rate, unsigned long parent_rate, u8 index)
-{
-	return __clk_rcg2_set_rate(hw, rate, FLOOR);
+	return __clk_rcg2_set_rate(hw, rate);
 }
 
 const struct clk_ops clk_rcg2_ops = {
@@ -346,17 +299,6 @@ const struct clk_ops clk_rcg2_ops = {
 	.set_rate_and_parent = clk_rcg2_set_rate_and_parent,
 };
 EXPORT_SYMBOL_GPL(clk_rcg2_ops);
-
-const struct clk_ops clk_rcg2_floor_ops = {
-	.is_enabled = clk_rcg2_is_enabled,
-	.get_parent = clk_rcg2_get_parent,
-	.set_parent = clk_rcg2_set_parent,
-	.recalc_rate = clk_rcg2_recalc_rate,
-	.determine_rate = clk_rcg2_determine_floor_rate,
-	.set_rate = clk_rcg2_set_floor_rate,
-	.set_rate_and_parent = clk_rcg2_set_floor_rate_and_parent,
-};
-EXPORT_SYMBOL_GPL(clk_rcg2_floor_ops);
 
 static int clk_rcg2_shared_force_enable(struct clk_hw *hw, unsigned long rate)
 {
@@ -381,7 +323,7 @@ static int clk_rcg2_shared_force_enable(struct clk_hw *hw, unsigned long rate)
 		pr_err("%s: RCG did not turn on\n", name);
 
 	/* set clock rate */
-	ret = __clk_rcg2_set_rate(hw, rate, CEIL);
+	ret = __clk_rcg2_set_rate(hw, rate);
 	if (ret)
 		return ret;
 
