@@ -78,6 +78,8 @@ void sm_V(struct semaphore *sm)
 	up(sm);
 } /* end of sm_V */
 
+#define CURRENT_TIME		(current_kernel_time())
+#define CURRENT_TIME_SEC	((struct timespec) { get_seconds(), 0 })
 
 /*======================================================================*/
 /*                                                                      */
