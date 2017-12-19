@@ -95,6 +95,9 @@ static char exfat_default_iocharset[] = CONFIG_EXFAT_DEFAULT_IOCHARSET;
 
 extern struct timezone sys_tz;
 
+#define CURRENT_TIME		(current_kernel_time())
+#define CURRENT_TIME_SEC	((struct timespec) { get_seconds(), 0 })
+
 #define CHECK_ERR(x)	BUG_ON(x)
 
 #define UNIX_SECS_1980    315532800L
@@ -1335,8 +1338,10 @@ static int exfat_setattr(struct dentry *dentry, struct iattr *attr)
 	return error;
 }
 
-static int exfat_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *stat)
+static int exfat_getattr(const struct path *path, struct kstat *stat,
+		 u32 request_mask, unsigned int flags)
 {
+	struct dentry *dentry = path->dentry;
 	struct inode *inode = dentry->d_inode;
 
 	DPRINTK("exfat_getattr entered\n");
@@ -1391,7 +1396,6 @@ static void *exfat_follow_link(struct dentry *dentry, struct nameidata *nd)
 #endif
 
 const struct inode_operations exfat_symlink_inode_operations = {
-	.readlink    = generic_readlink,
 	#if LINUX_VERSION_CODE < KERNEL_VERSION(4,5,0)
 		.follow_link = exfat_follow_link,
 	#endif
