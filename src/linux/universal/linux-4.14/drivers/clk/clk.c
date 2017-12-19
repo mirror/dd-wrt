@@ -51,9 +51,13 @@ struct clk_core {
 	struct clk_core		**parents;
 	u8			num_parents;
 	u8			new_parent_index;
+	u8			safe_parent_index;
 	unsigned long		rate;
 	unsigned long		req_rate;
+	unsigned long		old_rate;
 	unsigned long		new_rate;
+	unsigned long		safe_freq;
+	struct clk_core		*safe_parent;
 	struct clk_core		*new_parent;
 	struct clk_core		*new_child;
 	unsigned long		flags;
@@ -1312,7 +1316,9 @@ out:
 static void clk_calc_subtree(struct clk_core *core, unsigned long new_rate,
 			     struct clk_core *new_parent, u8 p_index)
 {
-	struct clk_core *child;
+	struct clk_core *child, *parent;
+	struct clk_hw *parent_hw;
+	unsigned long safe_freq = 0;
 
 	core->new_rate = new_rate;
 	core->new_parent = new_parent;
@@ -1321,6 +1327,23 @@ static void clk_calc_subtree(struct clk_core *core, unsigned long new_rate,
 	core->new_child = NULL;
 	if (new_parent && new_parent != core->parent)
 		new_parent->new_child = core;
+
+	if (core->ops->get_safe_parent) {
+		parent_hw = core->ops->get_safe_parent(core->hw, &safe_freq);
+		if (parent_hw) {
+			parent = parent_hw->core;
+			p_index = clk_fetch_parent_index(core, parent);
+			core->safe_parent_index = p_index;
+			core->safe_parent = parent;
+			if (safe_freq)
+				core->safe_freq = safe_freq;
+			else
+				core->safe_freq = 0;
+		}
+	} else {
+		core->safe_parent = NULL;
+		core->safe_freq = 0;
+	}
 
 	hlist_for_each_entry(child, &core->children, child_node) {
 		child->new_rate = clk_recalc(child, new_rate);
@@ -1434,14 +1457,51 @@ static struct clk_core *clk_propagate_rate_change(struct clk_core *core,
 						  unsigned long event)
 {
 	struct clk_core *child, *tmp_clk, *fail_clk = NULL;
+	struct clk_core *old_parent;
 	int ret = NOTIFY_DONE;
 
-	if (core->rate == core->new_rate)
+	if (core->rate == core->new_rate && event != POST_RATE_CHANGE)
 		return NULL;
 
+	switch (event) {
+	case PRE_RATE_CHANGE:
+		if (core->safe_parent) {
+			if (core->safe_freq)
+				core->ops->set_rate_and_parent(core->hw,
+						core->safe_freq,
+						core->safe_parent->rate,
+						core->safe_parent_index);
+			else
+				core->ops->set_parent(core->hw,
+						core->safe_parent_index);
+		}
+		core->old_rate = core->rate;
+		break;
+	case POST_RATE_CHANGE:
+		if (core->safe_parent) {
+			old_parent = __clk_set_parent_before(core,
+							     core->new_parent);
+			if (core->ops->set_rate_and_parent) {
+				core->ops->set_rate_and_parent(core->hw,
+						core->new_rate,
+						core->new_parent ?
+						core->new_parent->rate : 0,
+						core->new_parent_index);
+			} else if (core->ops->set_parent) {
+				core->ops->set_parent(core->hw,
+						core->new_parent_index);
+			}
+			__clk_set_parent_after(core, core->new_parent,
+					       old_parent);
+		}
+		break;
+	}
+
 	if (core->notifier_count) {
-		ret = __clk_notify(core, event, core->rate, core->new_rate);
-		if (ret & NOTIFY_STOP_MASK)
+		if (event != POST_RATE_CHANGE || core->old_rate != core->rate)
+			ret = __clk_notify(core, event, core->old_rate,
+					   core->new_rate);
+		if (ret & NOTIFY_STOP_MASK && event != POST_RATE_CHANGE)
 			fail_clk = core;
 	}
 
@@ -1468,12 +1528,12 @@ static struct clk_core *clk_propagate_rate_change(struct clk_core *core,
  * walk down a subtree and set the new rates notifying the rate
  * change on the way
  */
-static void clk_change_rate(struct clk_core *core)
+static void
+clk_change_rate(struct clk_core *core, unsigned long best_parent_rate)
 {
 	struct clk_core *child;
 	struct hlist_node *tmp;
 	unsigned long old_rate;
-	unsigned long best_parent_rate = 0;
 	bool skip_set_rate = false;
 	struct clk_core *old_parent;
 	struct clk_core *parent = NULL;
@@ -1497,7 +1557,8 @@ static void clk_change_rate(struct clk_core *core)
 		clk_enable_unlock(flags);
 	}
 
-	if (core->new_parent && core->new_parent != core->parent) {
+	if (core->new_parent && core->new_parent != core->parent &&
+	    !core->safe_parent) {
 		old_parent = __clk_set_parent_before(core, core->new_parent);
 		trace_clk_set_parent(core, core->new_parent);
 
@@ -1525,6 +1586,7 @@ static void clk_change_rate(struct clk_core *core)
 	trace_clk_set_rate_complete(core, core->new_rate);
 
 	core->rate = clk_recalc(core, best_parent_rate);
+	core->rate = core->new_rate;
 
 	if (core->flags & CLK_SET_RATE_UNGATE) {
 		unsigned long flags;
@@ -1552,12 +1614,13 @@ static void clk_change_rate(struct clk_core *core)
 		/* Skip children who will be reparented to another clock */
 		if (child->new_parent && child->new_parent != core)
 			continue;
-		clk_change_rate(child);
+		if (child->new_rate != child->rate)
+			clk_change_rate(child, core->new_rate);
 	}
 
-	/* handle the new child who might not be in core->children yet */
-	if (core->new_child)
-		clk_change_rate(core->new_child);
+	/* handle the new child who might not be in clk->children yet */
+	if (core->new_child && core->new_child->new_rate != core->new_child->rate)
+		clk_change_rate(core->new_child, core->new_rate);
 }
 
 static int clk_core_set_rate_nolock(struct clk_core *core,
@@ -1565,6 +1628,7 @@ static int clk_core_set_rate_nolock(struct clk_core *core,
 {
 	struct clk_core *top, *fail_clk;
 	unsigned long rate = req_rate;
+	unsigned long parent_rate;
 
 	if (!core)
 		return 0;
@@ -1590,10 +1654,17 @@ static int clk_core_set_rate_nolock(struct clk_core *core,
 		return -EBUSY;
 	}
 
+	if (top->parent)
+		parent_rate = top->parent->rate;
+	else
+		parent_rate = 0;
+
 	/* change the rates */
-	clk_change_rate(top);
+	clk_change_rate(top, parent_rate);
 
 	core->req_rate = req_rate;
+
+	clk_propagate_rate_change(top, POST_RATE_CHANGE);
 
 	return 0;
 }
