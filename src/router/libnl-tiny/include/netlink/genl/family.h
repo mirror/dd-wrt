@@ -56,6 +56,9 @@ extern int 			genl_family_add_grp(struct genl_family *,
  * @name Attributes
  * @{
  */
+#ifndef GENL_ID_GENERATE
+#define GENL_ID_GENERATE 0
+#endif
 
 static inline unsigned int genl_family_get_id(struct genl_family *family)
 {
