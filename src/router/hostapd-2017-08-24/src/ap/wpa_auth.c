@@ -191,7 +191,7 @@ int wpa_auth_for_each_auth(struct wpa_authenticator *wpa_auth,
 	return wpa_auth->cb->for_each_auth(wpa_auth->cb_ctx, cb, cb_ctx);
 }
 
-#ifdef CONFIG_NO_WPA_MSG
+#ifndef CONFIG_NO_WPA_MSG
 
 void wpa_auth_logger(struct wpa_authenticator *wpa_auth, const u8 *addr,
 		     logger_level level, const char *txt)
