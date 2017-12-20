@@ -258,7 +258,7 @@ void wpa_auth_vlogger(struct wpa_authenticator *wpa_auth, const u8 *addr,
 		      logger_level level, const char *fmt, ...);
 #else
 #define wpa_auth_logger(auth,addr,level,txt) do { } while(0)
-#define wpa_auth_vlogger(auth,addr,level,txt) do { } while(0)
+#define wpa_auth_vlogger(auth,addr,level,...) do { } while(0)
 #endif
 void __wpa_send_eapol(struct wpa_authenticator *wpa_auth,
 		      struct wpa_state_machine *sm, int key_info,
