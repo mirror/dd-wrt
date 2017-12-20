@@ -677,6 +677,7 @@ ifeq ($(CONFIG_DHDAP),y)
 ifneq ($(CONFIG_NVRAM_128K),y)
 	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r8000.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r8000.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R8000.chk
 else
+	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r7000P.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r7000P.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R7000P.chk
 	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r8500.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r8500.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R8500.chk
 endif
 else
