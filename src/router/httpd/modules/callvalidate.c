@@ -103,6 +103,10 @@ int websGetVari(webs_t wp, char *var, int d)
 
 char *GOZILA_GET(webs_t wp, char *name)
 {
+	if (!name)
+		return NULL;
+	if (!wp)
+		return nvram_safe_get(name);
 	return wp->gozila_action ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
 }
 
