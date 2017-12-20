@@ -264,7 +264,7 @@ void start_sysinit(void)
 	eval("/sbin/vconfig", "add", "eth2", "2");
 	set_smp_affinity(258, 3);
 	set_smp_affinity(259, 2);
-	writeprocsysnet("message_cost", "0");
+	writeprocsysnet("core/message_cost", "0");
 	switch (board) {
 	case ROUTER_NETGEAR_R9000:
 		set_gpio(29, 1);	//WIFI button led
