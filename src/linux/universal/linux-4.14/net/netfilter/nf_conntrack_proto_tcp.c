@@ -512,9 +512,6 @@ static bool tcp_in_window(const struct nf_conn *ct,
 	if (nf_ct_tcp_no_window_check)
 		return true;
 
-	if (nf_ct_tcp_no_window_check)
-		return true;
-
 	/*
 	 * Get the required data from the packet.
 	 */
@@ -1501,13 +1498,6 @@ static struct ctl_table tcp_sysctl_table[] = {
 		.maxlen		= sizeof(unsigned int),
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec,
-	},
-	{
-		.procname       = "nf_conntrack_tcp_no_window_check",
-		.data           = &nf_ct_tcp_no_window_check,
-		.maxlen         = sizeof(unsigned int),
-		.mode           = 0644,
-		.proc_handler   = proc_dointvec,
 	},
 	{ }
 };
