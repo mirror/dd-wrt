@@ -397,7 +397,8 @@ static int qcom_pcie_get_resources_2_1_0(struct qcom_pcie *pcie)
 		return PTR_ERR(res->por_reset);
 
 	res->phy_reset = devm_reset_control_get_exclusive(dev, "phy");
-	return PTR_ERR_OR_ZERO(res->phy_reset);
+	if (IS_ERR(res->phy_reset))
+		return PTR_ERR(res->phy_reset);
 
 	res->ext_reset = devm_reset_control_get_exclusive(dev, "ext");
 	if (IS_ERR(res->ext_reset))
