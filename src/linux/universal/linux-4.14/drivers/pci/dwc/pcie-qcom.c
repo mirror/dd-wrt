@@ -398,6 +398,17 @@ static int qcom_pcie_get_resources_2_1_0(struct qcom_pcie *pcie)
 
 	res->phy_reset = devm_reset_control_get_exclusive(dev, "phy");
 	return PTR_ERR_OR_ZERO(res->phy_reset);
+
+	res->ext_reset = devm_reset_control_get_exclusive(dev, "ext");
+	if (IS_ERR(res->ext_reset))
+		return PTR_ERR(res->ext_reset);
+
+	if (of_property_read_u8(dev->of_node, "phy-tx0-term-offset",
+				&res->phy_tx0_term_offset))
+		res->phy_tx0_term_offset = 0;
+
+	return 0;
+
 }
 
 static void qcom_pcie_deinit_2_1_0(struct qcom_pcie *pcie)
@@ -551,24 +562,6 @@ static int qcom_pcie_init_2_1_0(struct qcom_pcie *pcie)
 
 	qcom_pcie_prog_viewport_cfg0(pcie, MSM_PCIE_DEV_CFG_ADDR);
 	qcom_pcie_prog_viewport_mem2_outbound(pcie);
-
-
-
-
-	/* Set the Max TLP size to 2K, instead of using default of 4K */
-	writel(CFG_REMOTE_RD_REQ_BRIDGE_SIZE_2K,
-	       pci->dbi_base + PCIE20_AXI_MSTR_RESP_COMP_CTRL0);
-	writel(CFG_BRIDGE_SB_INIT,
-	       pci->dbi_base + PCIE20_AXI_MSTR_RESP_COMP_CTRL1);
-
-	res->ext_reset = devm_reset_control_get(dev, "ext");
-	if (IS_ERR(res->ext_reset))
-		return PTR_ERR(res->ext_reset);
-
-	if (of_property_read_u8(dev->of_node, "phy-tx0-term-offset",
-				&res->phy_tx0_term_offset))
-		res->phy_tx0_term_offset = 0;
-
 
 	return 0;
 
