@@ -70,6 +70,9 @@ void start_sysinit(void)
 	cprintf("sysinit() get router\n");
 	insmod("lzo_compress");
 	insmod("lzo_decompress");
+	insmod("xxhash");
+	insmod("zstd_compress");
+	insmod("zstd_decompress");
 	insmod("raid6_pq");
 	insmod("xor");
 	insmod("btrfs");
