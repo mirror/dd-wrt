@@ -750,12 +750,12 @@ choice
 		  their output to the serial port on Qualcomm devices.
 
 		  ARCH      DEBUG_UART_PHYS   DEBUG_UART_VIRT
-		  APQ8064   0x16640000        0xf0040000
-		  IPQ8064   0x16340000        0xf0040000
+		  APQ8064   0x16640000        0xf0840000
+		  IPQ8064   0x16340000        0xf0840000
 		  APQ8084   0xf995e000        0xfa75e000
 		  IPQ4019   0x078af000        0xf78af000
-		  MSM8X60   0x19c40000        0xf0040000
-		  MSM8960   0x16440000        0xf0040000
+		  MSM8X60   0x19c40000        0xf0840000
+		  MSM8960   0x16440000        0xf0840000
 		  MSM8974   0xf991e000        0xfa71e000
 
 		  Please adjust DEBUG_UART_PHYS and DEBUG_UART_BASE configuration
@@ -1677,7 +1677,7 @@ config DEBUG_UART_VIRT
 	default 0xfa06c000 if DEBUG_OMAP2UART2 || DEBUG_OMAP3UART2 || \
 				DEBUG_OMAP4UART2 || DEBUG_OMAP5UART2
 	default 0xfa06e000 if DEBUG_OMAP2UART3 || DEBUG_OMAP4UART4
-	default 0xf0040000 if DEBUG_QCOM_UARTDM
+	default 0xf0840000 if DEBUG_QCOM_UARTDM
 	default 0xfb002000 if DEBUG_CNS3XXX
 	default 0xfb009000 if DEBUG_REALVIEW_STD_PORT
 	default 0xfb00c000 if DEBUG_AT91_SAMA5D4_USART3
