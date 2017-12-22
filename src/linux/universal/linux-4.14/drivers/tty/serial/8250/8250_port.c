@@ -2408,8 +2408,9 @@ int serial8250_do_startup(struct uart_port *port)
 	 * test if we receive TX irq.  This way, we'll never enable
 	 * UART_BUG_TXEN.
 	 */
-	if (up->port.quirks & UPQ_NO_TXEN_TEST)
+	if (up->port.quirks & UPQ_NO_TXEN_TEST || up->port.flags & UPF_NO_TXEN_TEST)
 		goto dont_test_tx_en;
+
 
 	/*
 	 * Do a quick test to see if we receive an interrupt when we enable
