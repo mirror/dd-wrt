@@ -47,7 +47,7 @@
 
 #include "IxOsal.h"
 
-#include <linux/sched.h>
+#include <linux/sched/signal.h>
 
 #ifdef IX_OSAL_OS_LINUX_VERSION_2_6
 

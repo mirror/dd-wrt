@@ -7,7 +7,7 @@
  */
 
 #include <linux/linkage.h>
-#include <generated/mach-types.h>
+#include <asm/mach-types.h>
 
 		.section        ".start", "ax"
 

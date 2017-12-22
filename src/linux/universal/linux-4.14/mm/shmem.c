@@ -2339,6 +2339,7 @@ int shmem_mfill_zeropage_pte(struct mm_struct *dst_mm,
 	return shmem_mfill_atomic_pte(dst_mm, dst_pmd, dst_vma,
 				      dst_addr, 0, true, &page);
 }
+#error "check"
 
 #ifdef CONFIG_TMPFS
 static const struct inode_operations shmem_symlink_inode_operations;

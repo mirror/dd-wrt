@@ -416,10 +416,12 @@ static long do_fcntl(int fd, unsigned int cmd, unsigned long arg,
 	case F_GETPIPE_SZ:
 		err = pipe_fcntl(filp, cmd, arg);
 		break;
+#ifdef CONFIG_SHMEM
 	case F_ADD_SEALS:
 	case F_GET_SEALS:
 		err = shmem_fcntl(filp, cmd, arg);
 		break;
+#endif
 	case F_GET_RW_HINT:
 	case F_SET_RW_HINT:
 	case F_GET_FILE_RW_HINT:
