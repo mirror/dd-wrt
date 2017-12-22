@@ -3510,35 +3510,38 @@ static int al_eth_close(struct net_device *netdev)
 }
 
 static int
-al_eth_get_settings(struct net_device *netdev, struct ethtool_cmd *ecmd)
+al_eth_get_settings(struct net_device *netdev,  struct ethtool_link_ksettings *ecmd)
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	struct phy_device *phydev = adapter->phydev;
 
-	if (phydev)
-		return phy_ethtool_gset(phydev, ecmd);
+	if (phydev) {
+		phy_ethtool_ksettings_get(phydev, ecmd);
+		return 0;
+	}
 
-	ecmd->speed = adapter->link_config.active_speed;
-	ecmd->duplex = adapter->link_config.active_duplex;
-	ecmd->autoneg = adapter->link_config.autoneg;
+	ecmd->base.speed = adapter->link_config.active_speed;
+	ecmd->base.duplex = adapter->link_config.active_duplex;
+	ecmd->base.autoneg = adapter->link_config.autoneg;
 
 	return 0;
 }
 
 static int
-al_eth_set_settings(struct net_device *netdev, struct ethtool_cmd *ecmd)
+al_eth_set_settings(struct net_device *netdev, const struct ethtool_link_ksettings *ecmd)
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	struct phy_device *phydev = adapter->phydev;
 	int rc = 0;
 
-	if (phydev)
-		return phy_ethtool_sset(phydev, ecmd);
+	if (phydev) {
+		return phy_ethtool_ksettings_set(phydev, ecmd);
+	}
 
 	/* in case no phy exist set only mac parameters */
-	adapter->link_config.active_speed = ecmd->speed;
-	adapter->link_config.active_duplex = ecmd->duplex;
-	adapter->link_config.autoneg = ecmd->autoneg;
+	adapter->base.link_config.active_speed = ecmd->speed;
+	adapter->base.link_config.active_duplex = ecmd->duplex;
+	adapter->base.link_config.autoneg = ecmd->autoneg;
 
 	if (adapter->up)
 		dev_warn(&adapter->pdev->dev,
@@ -3936,8 +3939,8 @@ static int al_eth_set_wol(struct net_device *netdev, struct ethtool_wolinfo *wol
 
 
 static const struct ethtool_ops al_eth_ethtool_ops = {
-	.get_settings		= al_eth_get_settings,
-	.set_settings		= al_eth_set_settings,
+	.get_link_ksettings		= al_eth_get_settings,
+	.set_link_ksettings		= al_eth_set_settings,
 	.get_drvinfo		= al_eth_get_drvinfo,
 /*	.get_regs_len		= al_eth_get_regs_len,*/
 /*	.get_regs		= al_eth_get_regs,*/

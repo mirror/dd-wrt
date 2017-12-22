@@ -865,16 +865,17 @@ static void cns3xxx_get_drvinfo(struct net_device *dev,
 	strcpy(info->bus_info, "internal");
 }
 
-static int cns3xxx_get_settings(struct net_device *dev, struct ethtool_cmd *cmd)
+static int cns3xxx_get_settings(struct net_device *dev, struct ethtool_link_ksettings *ecmd)
 {
 	struct port *port = netdev_priv(dev);
-	return phy_ethtool_gset(port->phydev, cmd);
+	phy_ethtool_ksettings_get(port->phydev, ecmd);
+	return 0;
 }
 
-static int cns3xxx_set_settings(struct net_device *dev, struct ethtool_cmd *cmd)
+static int cns3xxx_set_settings(struct net_device *dev, const struct ethtool_link_ksettings *ecmd)
 {
 	struct port *port = netdev_priv(dev);
-	return phy_ethtool_sset(port->phydev, cmd);
+	return phy_ethtool_ksettings_set(port->phydev, ecmd);
 }
 
 static int cns3xxx_nway_reset(struct net_device *dev)
@@ -885,8 +886,8 @@ static int cns3xxx_nway_reset(struct net_device *dev)
 
 static struct ethtool_ops cns3xxx_ethtool_ops = {
 	.get_drvinfo = cns3xxx_get_drvinfo,
-	.get_settings = cns3xxx_get_settings,
-	.set_settings = cns3xxx_set_settings,
+	.get_link_ksettings = cns3xxx_get_settings,
+	.set_link_ksettings = cns3xxx_set_settings,
 	.nway_reset = cns3xxx_nway_reset,
 	.get_link = ethtool_op_get_link,
 };
