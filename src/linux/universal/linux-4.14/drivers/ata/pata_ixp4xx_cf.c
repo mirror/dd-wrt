@@ -96,15 +96,15 @@ static unsigned int ixp4xx_mmio_data_xfer(struct ata_queued_cmd *qc,
 	/* set the expansion bus in 16bit mode and restore
 	 * 8 bit mode after the transaction.
 	 */
-	if (dev->id[ATA_ID_FIELD_VALID] & (1 << 1)){
-		pio_mask = dev->id[ATA_ID_PIO_MODES] & 0x03;
+	if (qc->dev->id[ATA_ID_FIELD_VALID] & (1 << 1)){
+		pio_mask = qc->dev->id[ATA_ID_PIO_MODES] & 0x03;
 		if (pio_mask & (1 << 1)){
 			pio_mask = 4;
 		}else{
 			pio_mask = 3;
 		}
 	}else{
-		pio_mask = (dev->id[ATA_ID_OLD_PIO_MODES] >> 8);
+		pio_mask = (qc->dev->id[ATA_ID_OLD_PIO_MODES] >> 8);
 	}
 	switch (pio_mask){
 		case 0:
