@@ -13,8 +13,9 @@
 
 #include "ag71xx.h"
 
+
 static int ag71xx_ethtool_get_settings(struct net_device *dev,
-				       struct ethtool_cmd *cmd)
+				       struct ethtool_link_ksettings *ecmd)
 {
 	struct ag71xx *ag = netdev_priv(dev);
 	struct phy_device *phydev = ag->phy_dev;
@@ -22,11 +23,12 @@ static int ag71xx_ethtool_get_settings(struct net_device *dev,
 	if (!phydev)
 		return -ENODEV;
 
-	return phy_ethtool_gset(phydev, cmd);
+	phy_ethtool_ksettings_get(phydev, ecmd);
+	return 0;
 }
 
 static int ag71xx_ethtool_set_settings(struct net_device *dev,
-				       struct ethtool_cmd *cmd)
+				       const struct ethtool_link_ksettings *ecmd)
 {
 	struct ag71xx *ag = netdev_priv(dev);
 	struct phy_device *phydev = ag->phy_dev;
@@ -34,7 +36,7 @@ static int ag71xx_ethtool_set_settings(struct net_device *dev,
 	if (!phydev)
 		return -ENODEV;
 
-	return phy_ethtool_sset(phydev, cmd);
+	return phy_ethtool_ksettings_set(phydev, ecmd);
 }
 
 static void ag71xx_ethtool_get_drvinfo(struct net_device *dev,
@@ -119,8 +121,8 @@ static int ag71xx_ethtool_set_ringparam(struct net_device *dev,
 }
 
 struct ethtool_ops ag71xx_ethtool_ops = {
-	.set_settings	= ag71xx_ethtool_set_settings,
-	.get_settings	= ag71xx_ethtool_get_settings,
+	.set_link_ksettings	= ag71xx_ethtool_set_settings,
+	.get_link_ksettings	= ag71xx_ethtool_get_settings,
 	.get_drvinfo	= ag71xx_ethtool_get_drvinfo,
 	.get_msglevel	= ag71xx_ethtool_get_msglevel,
 	.set_msglevel	= ag71xx_ethtool_set_msglevel,
