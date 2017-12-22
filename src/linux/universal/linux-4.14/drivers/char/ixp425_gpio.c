@@ -298,7 +298,7 @@ static long gpio_ioctl(struct file *file,
 	IXP425_GPIO_SIG val;
 	int temp;
 //printk("enter gpio ioctl\n");
-	if (copy_from_user(&bit, (struct gpio_bit *)arg, 
+	if (raw_copy_from_user(&bit, (struct gpio_bit *)arg, 
 				sizeof(bit)))
 		return -EFAULT;
 //printk("ixp425_gpio: ioctl cmd 0x%02x, bit %d, state %d\n", cmd, bit.bit, bit.state);
@@ -325,7 +325,7 @@ else if (bit.bit < 32)
 {
 	bit.state = pld_read_gpio_b2(bit.bit - 24);
 }
-		return copy_to_user((void *)arg, &bit, sizeof(bit)) ? -EFAULT : 0;
+		return raw_copy_to_user((void *)arg, &bit, sizeof(bit)) ? -EFAULT : 0;
         case 5:
 #ifdef DEBUG
              	printk("ixp425_gpio: Write _bit 0x%02x %s\n", bit.bit, (bit.state==0)?"LOW":"HIGH");
@@ -379,7 +379,7 @@ else if (bit.bit < 32)
 {
 	bit.state = pld_read_gpio_b2(bit.bit - 24);
 }
-		return copy_to_user((void *)arg, &bit, sizeof(bit)) ? -EFAULT : 0;
+		return raw_copy_to_user((void *)arg, &bit, sizeof(bit)) ? -EFAULT : 0;
 	case GPIO_SET_CONFIG:
 if (bit.bit < 16)
 {
