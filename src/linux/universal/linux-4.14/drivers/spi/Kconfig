@@ -380,10 +380,6 @@ config SPI_MPC52xx
 	  This drivers supports the MPC52xx SPI controller in master SPI
 	  mode.
 
-config SPI_FALCON
-	tristate "Falcon SPI controller support"
-	depends on SOC_FALCON
-
 config SPI_MPC52xx_PSC
 	tristate "Freescale MPC52xx PSC SPI controller"
 	depends on PPC_MPC52xx
