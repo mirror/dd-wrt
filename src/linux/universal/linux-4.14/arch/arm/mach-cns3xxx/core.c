@@ -242,7 +242,7 @@ static void __init cns3xxx_init_twd(void)
 	twd_local_timer_register(&cns3xx_twd_local_timer);
 }
 
-static cycle_t cns3xxx_get_cycles(struct clocksource *cs)
+static u64 cns3xxx_get_cycles(struct clocksource *cs)
 {
   u64 val;
 
