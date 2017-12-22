@@ -313,20 +313,6 @@ static int bcm54xx_config_init(struct phy_device *phydev)
 			return err;
 	}
 
-	if (BRCM_PHY_MODEL(phydev) == PHY_ID_BCM54210E) {
-		err = bcm54210e_config_init(phydev);
-		if (err)
-			return err;
-	} else if (BRCM_PHY_MODEL(phydev) == PHY_ID_BCM54612E) {
-		err = bcm54612e_config_init(phydev);
-		if (err)
-			return err;
-	} else if (BRCM_PHY_MODEL(phydev) == PHY_ID_BCM54810) {
-		err = bcm54810_config(phydev);
-		if (err)
-			return err;
-	}
-
 	bcm54xx_phydsp_config(phydev);
 
 	return 0;
