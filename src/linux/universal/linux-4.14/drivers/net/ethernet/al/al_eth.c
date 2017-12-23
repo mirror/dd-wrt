@@ -2276,16 +2276,9 @@ al_eth_enable_msix(struct al_eth_adapter *adapter)
 		adapter->msix_entries[irq_idx].vector = 0;
 	}
 
-	rc = -ENOSPC;
-	while (msix_vecs >= 1) {
-		rc = pci_enable_msix(adapter->pdev, adapter->msix_entries, msix_vecs);
-		if (rc <= 0)
-			break;
-		if (rc > 0)
-			msix_vecs = 1; /* if we can't allocate all, then try only 1; */
-	}
-
-	if (rc != 0) {
+	rc = pci_enable_msix_range(pdev,adapter->msix_entries, 1, msix_vecs);
+	
+	if (rc < 0) {
 		dev_dbg(&adapter->pdev->dev, "failed to enable MSIX, vectors %d\n",
 			   msix_vecs);
 		adapter->msix_vecs = 0;
@@ -2294,7 +2287,9 @@ al_eth_enable_msix(struct al_eth_adapter *adapter)
 		dev_dbg(&adapter->pdev->dev, "%s %d\n", __func__, __LINE__);
 
 		return;
-	}
+	} else
+		msix_vecs = rc;
+
 	dev_dbg(&adapter->pdev->dev, "enable MSIX, vectors %d\n", msix_vecs);
 
 	/* enable MSIX in the msix capability of the eth controller
