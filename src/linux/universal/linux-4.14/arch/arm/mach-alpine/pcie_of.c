@@ -495,18 +495,21 @@ static int al_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 	return of_irq_parse_and_map_pci(dev, slot, pin);
 }	
 
-static struct pci_bus *al_pcie_scan_bus(int nr, struct pci_sys_data *sys)
+static int al_pcie_scan_bus(int nr, struct pci_host_bridge *bridge)
 {
+	struct pci_sys_data *sys = pci_host_bridge_priv(bridge);
 	struct al_pcie_pd *pcie = sys_to_pcie(sys);
 
-	if (pcie->type == AL_PCI_TYPE_INTERNAL)
-		return pci_scan_root_bus(pcie->dev, sys->busnr,
-					 &al_internal_pcie_ops,
-					 sys, &sys->resources);
-	else
-		return pci_scan_root_bus(pcie->dev, sys->busnr,
-					 &al_pcie_ops,
-					 sys, &sys->resources);
+	bridge->dev.parent = pcie->dev;
+	bridge->sysdata = sys;
+	bridge->busnr = sys->busnr;
+
+	if (pcie->type == AL_PCI_TYPE_INTERNAL) {
+		bridge->ops = &al_internal_pcie_ops;
+	} else {
+		bridge->ops = &al_pcie_ops;
+	}
+	return pci_scan_root_bus_bridge(bridge);
 }
 
 

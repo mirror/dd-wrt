@@ -32,11 +32,6 @@ module_param(op_support_memcpy, int, 0444);
 MODULE_PARM_DESC(op_support_memcpy,
 	"DMA_MEMCPY capability (default: 1 - enabled)");
 
-static int op_support_sg = 1;
-module_param(op_support_sg, int, 0444);
-MODULE_PARM_DESC(op_support_sg,
-	"DMA_SG capability (default: 1 - enabled)");
-
 static int op_support_memset = 1;
 module_param(op_support_memset, int, 0444);
 MODULE_PARM_DESC(op_support_memset,
@@ -95,11 +90,6 @@ int al_dma_get_op_support_interrupt(void)
 int al_dma_get_op_support_memcpy(void)
 {
 	return op_support_memcpy;
-}
-
-int al_dma_get_op_support_sg(void)
-{
-	return op_support_sg;
 }
 
 int al_dma_get_op_support_memset(void)

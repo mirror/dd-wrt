@@ -79,7 +79,7 @@ static void __init al_timer_init(void)
 
 	/* Timer initialization */
 	of_clk_init(NULL);
-	clocksource_probe();
+	timer_probe();
 }
 
 static void al_power_off(void)

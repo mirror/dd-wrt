@@ -2276,7 +2276,7 @@ al_eth_enable_msix(struct al_eth_adapter *adapter)
 		adapter->msix_entries[irq_idx].vector = 0;
 	}
 
-	rc = pci_enable_msix_range(pdev,adapter->msix_entries, 1, msix_vecs);
+	rc = pci_enable_msix_range(adapter->pdev,adapter->msix_entries, 1, msix_vecs);
 	
 	if (rc < 0) {
 		dev_dbg(&adapter->pdev->dev, "failed to enable MSIX, vectors %d\n",
@@ -3534,9 +3534,9 @@ al_eth_set_settings(struct net_device *netdev, const struct ethtool_link_ksettin
 	}
 
 	/* in case no phy exist set only mac parameters */
-	adapter->base.link_config.active_speed = ecmd->speed;
-	adapter->base.link_config.active_duplex = ecmd->duplex;
-	adapter->base.link_config.autoneg = ecmd->autoneg;
+	adapter->link_config.active_speed = ecmd->base.speed;
+	adapter->link_config.active_duplex = ecmd->base.duplex;
+	adapter->link_config.autoneg = ecmd->base.autoneg;
 
 	if (adapter->up)
 		dev_warn(&adapter->pdev->dev,
@@ -3645,14 +3645,15 @@ static void al_eth_set_msglevel(struct net_device *netdev, u32 value)
 	adapter->msg_enable = value;
 }
 
-static struct rtnl_link_stats64 *al_eth_get_stats64(struct net_device *netdev,
+
+static void al_eth_get_stats64(struct net_device *netdev,
 						    struct rtnl_link_stats64 *stats)
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	struct al_eth_mac_stats *mac_stats = &adapter->mac_stats;
 
 	if (!adapter->up)
-		return NULL;
+		return;
 
 	al_eth_mac_stats_get(&adapter->hal_adapter, mac_stats);
 
@@ -3677,7 +3678,7 @@ static struct rtnl_link_stats64 *al_eth_get_stats64(struct net_device *netdev,
 	stats->rx_errors = mac_stats->ifInErrors;
 	stats->tx_errors = mac_stats->ifOutErrors;
 
-	return stats;
+	return;
 
 }
 
