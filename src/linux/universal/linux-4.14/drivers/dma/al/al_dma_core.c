@@ -211,11 +211,6 @@ int al_dma_core_init(
 		dma->device_prep_dma_memcpy = al_dma_prep_memcpy_lock;
 	}
 
-	if (al_dma_get_op_support_sg()) {
-		dma_cap_set(DMA_SG, dma->cap_mask);
-		dma->device_prep_dma_sg = al_dma_prep_sg_lock;
-	}
-
 	if (al_dma_get_op_support_memset()) {
 		dma_cap_set(DMA_MEMSET, dma->cap_mask);
 		dma->device_prep_dma_memset = al_dma_prep_memset_lock;
@@ -890,7 +885,12 @@ static int al_dma_setup_interrupts(struct al_dma_device *device)
 	for (i = 0; i < msixcnt; i++)
 		device->msix_entries[i].entry = 3 + i;
 
-	err = pci_enable_msix(pdev, device->msix_entries, msixcnt);
+	err = pci_enable_msix_exact(pdev, device->msix_entries, msixcnt);
+	if (err < 0) {
+		err = pci_enable_msix_exact(pdev, device->msix_entries, 1);
+		if (!err)
+		    err = 1;
+	}
 
 	if (err < 0) {
 		dev_err(dev, "pci_enable_msix failed! using intx instead.\n");
@@ -979,11 +979,6 @@ msix_single_vector:
 	msix = &device->msix_entries[0];
 
 	msix->entry = 0;
-
-	err = pci_enable_msix(pdev, device->msix_entries, 1);
-
-	if (err)
-		goto intx;
 
 	snprintf(device->irq_tbl[0].name, AL_DMA_IRQNAME_SIZE,
 		"al-dma-msix-all@pci:%s", pci_name(pdev));

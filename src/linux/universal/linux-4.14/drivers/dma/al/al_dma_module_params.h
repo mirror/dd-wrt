@@ -27,8 +27,6 @@ int al_dma_get_op_support_interrupt(void);
 
 int al_dma_get_op_support_memcpy(void);
 
-int al_dma_get_op_support_sg(void);
-
 int al_dma_get_op_support_memset(void);
 
 int al_dma_get_op_support_xor(void);

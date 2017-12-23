@@ -476,13 +476,6 @@ msix_single_vector:
 			al_crypto_cleanup_tasklet_msix_rx,
 			(unsigned long)device);
 
-	err = pci_enable_msix_exact(pdev, device->msix_entries, 1);
-
-	if (err < 0) {
-		pci_disable_msix(pdev);
-		goto intx;
-	}
-
 	snprintf(device->irq_tbl[0].name, AL_CRYPTO_IRQNAME_SIZE,
 		 "al-crypto-msix-all@pci:%s", pci_name(pdev));
 
