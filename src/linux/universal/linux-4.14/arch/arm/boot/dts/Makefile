@@ -1048,34 +1048,15 @@ dtb-$(CONFIG_MACH_ARMADA_370) += \
 dtb-$(CONFIG_MACH_ARMADA_375) += \
 	armada-375-db.dtb
 dtb-$(CONFIG_MACH_ARMADA_38X) += \
-	armada-385-db-ap.dtb \
 	armada-385-linksys-caiman.dtb \
 	armada-385-linksys-cobra.dtb \
 	armada-385-linksys-rango.dtb \
 	armada-385-linksys-shelby.dtb \
-	armada-385-linksys-venom.dtb \
-	armada-385-synology-ds116.dtb \
-	armada-385-turris-omnia.dtb \
-	armada-388-clearfog.dtb \
-	armada-388-clearfog-base.dtb \
-	armada-388-clearfog-pro.dtb \
-	armada-388-db.dtb \
-	armada-388-gp.dtb \
-	armada-388-rd.dtb
+	armada-385-linksys-venom.dtb
 dtb-$(CONFIG_MACH_ARMADA_39X) += \
 	armada-398-db.dtb
 dtb-$(CONFIG_MACH_ARMADA_XP) += \
-	armada-xp-axpwifiap.dtb \
-	armada-xp-db.dtb \
-	armada-xp-db-dxbc2.dtb \
-	armada-xp-db-xc3-24g4xg.dtb \
-	armada-xp-gp.dtb \
-	armada-xp-lenovo-ix4-300d.dtb \
-	armada-xp-linksys-mamba.dtb \
-	armada-xp-matrix.dtb \
-	armada-xp-netgear-rn2120.dtb \
-	armada-xp-openblocks-ax3-4.dtb \
-	armada-xp-synology-ds414.dtb
+	armada-xp-linksys-mamba.dtb
 dtb-$(CONFIG_MACH_DOVE) += \
 	dove-cubox.dtb \
 	dove-cubox-es.dtb \

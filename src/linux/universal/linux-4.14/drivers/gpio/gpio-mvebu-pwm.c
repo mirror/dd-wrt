@@ -194,7 +194,6 @@ int mvebu_pwm_probe(struct platform_device *pdev,
 	pwm->chip.ops = &mvebu_pwm_ops;
 	pwm->chip.base = mvchip->chip.base;
 	pwm->chip.npwm = mvchip->chip.ngpio;
-	pwm->chip.can_sleep = false;
 
 	spin_lock_init(&pwm->lock);
 
