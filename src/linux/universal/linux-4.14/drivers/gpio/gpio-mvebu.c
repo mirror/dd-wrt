@@ -326,7 +326,7 @@ static int mvebu_gpio_get(struct gpio_chip *chip, unsigned int pin)
 	return (u >> pin) & 1;
 }
 
-static void mvebu_gpio_blink(struct gpio_chip *chip, unsigned int pin,
+void mvebu_gpio_blink(struct gpio_chip *chip, unsigned int pin,
 			     int value)
 {
 	struct mvebu_gpio_chip *mvchip = gpiochip_get_data(chip);
