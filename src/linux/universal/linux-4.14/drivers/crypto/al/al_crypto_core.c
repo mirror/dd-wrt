@@ -476,9 +476,9 @@ msix_single_vector:
 			al_crypto_cleanup_tasklet_msix_rx,
 			(unsigned long)device);
 
-	err = pci_enable_msix(pdev, device->msix_entries, 1);
+	err = pci_enable_msix_exact(pdev, device->msix_entries, 1);
 
-	if (err) {
+	if (err < 0) {
 		pci_disable_msix(pdev);
 		goto intx;
 	}
