@@ -35,7 +35,7 @@
 
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
-#include <linux/mtd/nand.h>
+#include <linux/mtd/rawnand.h>
 #include <linux/mtd/nand_ecc.h>
 
 #include "al_hal_nand.h"
@@ -883,7 +883,6 @@ static int al_nand_probe(struct platform_device *pdev)
 	int ret = 0;
 	void __iomem *nand_base;
 	void __iomem *pbs_base;
-	struct mtd_part_parser_data ppdata = {};
 
 	nand_dat = kzalloc(sizeof(struct nand_data), GFP_KERNEL);
 	if (nand_dat == NULL) {
@@ -998,7 +997,6 @@ static int al_nand_probe(struct platform_device *pdev)
 	/* parse the device tree looking for partitions declaration.
 	 * if no partition declaration will be found, 1 partition will be
 	 * created for the all device */
-	ppdata.of_node = pdev->dev.of_node;
 	mtd_device_parse_register(mtd, dni_part_probes, NULL, NULL, 0);
 
 	return 0;

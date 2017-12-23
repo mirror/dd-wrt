@@ -239,7 +239,7 @@ static struct ar8327_platform_data switch1_data = {
 static struct mdio_board_info switch0_mdio_info[] = {
 	{
 	 .bus_id = "mdio_on_al",
-	 .phy_addr = 0,
+	 .mdio_addr = 0,
 	 .platform_data = &switch0_data,
 	 },
 };
@@ -247,7 +247,7 @@ static struct mdio_board_info switch0_mdio_info[] = {
 static struct mdio_board_info switch1_mdio_info[] = {
 	{
 	 .bus_id = "mdio-al",
-	 .phy_addr = 0,
+	 .mdio_addr = 0,
 	 .platform_data = &switch1_data,
 	 },
 };
