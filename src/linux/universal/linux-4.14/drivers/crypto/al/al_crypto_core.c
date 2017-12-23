@@ -394,8 +394,13 @@ static int al_crypto_setup_interrupts(struct al_crypto_device *device)
 	device->msix_entries[device->num_channels].entry =
 			AL_INT_MSIX_GROUP_A_SUM_D_IDX;
 
-	err = pci_enable_msix(pdev, device->msix_entries, msixcnt);
-
+	err = pci_enable_msix_exact(pdev, device->msix_entries, msixcnt);
+	if (err < 0) {
+	    err = pci_enable_msix_exact(pdev, device->msix_entries, 1);
+	    if (!err)
+		err = 1;
+	}
+	
 	if (err < 0) {
 		dev_err(dev, "pci_enable_msix failed! using intx instead.\n");
 		goto intx;
