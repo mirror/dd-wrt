@@ -16,13 +16,11 @@
 
 #include <linux/clk-provider.h>
 #include "clk-regmap.h"
-#include "clk-rcg.h"
 
 struct clk_regmap_mux {
 	u32			reg;
 	u32			shift;
 	u32			width;
-	const struct parent_map	*parent_map;
 	struct clk_regmap	clkr;
 };
 
