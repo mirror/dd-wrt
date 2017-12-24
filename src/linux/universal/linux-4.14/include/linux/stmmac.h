@@ -108,6 +108,7 @@ struct stmmac_dma_cfg {
 	bool pblx8;
 	int fixed_burst;
 	int mixed_burst;
+	int burst_len;
 	bool aal;
 };
 
