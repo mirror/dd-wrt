@@ -81,7 +81,7 @@
 #define GCC_WCSS5G_CLK					62
 #define GCC_WCSS5G_REF_CLK				63
 #define GCC_WCSS5G_RTC_CLK				64
-#define GCC_APSS_DDRPLL_VCO				65
+#define GCC_APPS_DDRPLL_VCO				65
 #define GCC_SDCC_PLLDIV_CLK				66
 #define GCC_FEPLL_VCO					67
 #define GCC_FEPLL125_CLK				68
