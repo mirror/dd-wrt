@@ -165,5 +165,9 @@
 #define GCC_QDSS_BCR					69
 #define GCC_MPM_BCR					70
 #define GCC_SPDM_BCR					71
+#define GCC_FEPLL_WCSS2G_CLK				72
+#define GCC_FEPLL_WCSS5G_CLK				73
+#define GCC_APPS_CPU_PLLDIV_CLK				74
+#define GCC_PCNOC_AHB_CLK_SRC				75
 
 #endif
