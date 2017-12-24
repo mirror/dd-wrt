@@ -1,4 +1,5 @@
-/* Copyright (c) 2015, The Linux Foundation. All rights reserved.
+/*
+ * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -13,8 +14,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  */
-#ifndef _DT_BINDINGS_CLK_IPQ_ADCC_40xx_H
-#define _DT_BINDINGS_CLK_IPQ_ADCC_40xx_H
+#ifndef _DT_BINDINGS_CLK_IPQ_ADCC_4019_H
+#define _DT_BINDINGS_CLK_IPQ_ADCC_4019_H
 
 #define ADSS_PLL_SRC				1
 #define RXM_CLK_SRC				2
