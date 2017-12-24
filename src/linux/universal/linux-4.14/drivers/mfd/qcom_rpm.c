@@ -630,17 +630,20 @@ static int qcom_rpm_probe(struct platform_device *pdev)
 	fw_version[2] = readl(RPM_STATUS_REG(rpm, 2));
 	if (fw_version[0] != rpm->data->version) {
 		dev_err(&pdev->dev,
-			"RPM version %u.%u.%u incompatible with driver version %u",
+			"RPM version %u.%u.%u:%u:%u incompatible with driver version %u",
 			fw_version[0],
 			fw_version[1],
-			fw_version[2],
+			((fw_version[2] >> 24) & 0xff),
+			((fw_version[2] >> 16) & 0xff),
+			(fw_version[2] & 0xffff),
 			rpm->data->version);
 		return -EFAULT;
 	}
 
-	dev_info(&pdev->dev, "RPM firmware %u.%u.%u\n", fw_version[0],
-							fw_version[1],
-							fw_version[2]);
+	dev_info(&pdev->dev, "RPM firmware %u.%u.%u\n",
+				((fw_version[2] >> 24) & 0xff),
+				((fw_version[2] >> 16) & 0xff),
+				(fw_version[2] & 0xffff));
 
 	ret = devm_request_irq(&pdev->dev,
 			       irq_ack,
