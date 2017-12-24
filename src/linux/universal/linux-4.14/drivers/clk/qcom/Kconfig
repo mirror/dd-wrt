@@ -2,41 +2,12 @@ config QCOM_GDSC
 	bool
 	select PM_GENERIC_DOMAINS if PM
 
-config QCOM_RPMCC
-	bool
-
 config COMMON_CLK_QCOM
 	tristate "Support for Qualcomm's clock controllers"
 	depends on OF
 	depends on ARCH_QCOM || COMPILE_TEST
 	select REGMAP_MMIO
 	select RESET_CONTROLLER
-
-config QCOM_CLK_RPM
-	tristate "RPM based Clock Controller"
-	depends on COMMON_CLK_QCOM && MFD_QCOM_RPM
-	select QCOM_RPMCC
-	help
-	  The RPM (Resource Power Manager) is a dedicated hardware engine for
-	  managing the shared SoC resources in order to keep the lowest power
-	  profile. It communicates with other hardware subsystems via shared
-	  memory and accepts clock requests, aggregates the requests and turns
-	  the clocks on/off or scales them on demand.
-	  Say Y if you want to support the clocks exposed by the RPM on
-	  platforms such as ipq806x, msm8660, msm8960 etc.
-
-config QCOM_CLK_SMD_RPM
-	tristate "RPM over SMD based Clock Controller"
-	depends on COMMON_CLK_QCOM && QCOM_SMD_RPM
-	select QCOM_RPMCC
-	help
-	  The RPM (Resource Power Manager) is a dedicated hardware engine for
-	  managing the shared SoC resources in order to keep the lowest power
-	  profile. It communicates with other hardware subsystems via shared
-	  memory and accepts clock requests, aggregates the requests and turns
-	  the clocks on/off or scales them on demand.
-	  Say Y if you want to support the clocks exposed by the RPM on
-	  platforms such as apq8016, apq8084, msm8974 etc.
 
 config APQ_GCC_8084
 	tristate "APQ8084 Global Clock Controller"
@@ -65,9 +36,19 @@ config IPQ_GCC_4019
 	  Say Y if you want to use peripheral devices such as UART, SPI,
 	  i2c, USB, SD/eMMC, etc.
 
+config IPQ_ADCC_4019
+	tristate "IPQ4019 Audio Clock Controller"
+	depends on COMMON_CLK_QCOM
+	help
+	  Say Y if you need support for audio clock controller on IPQ4019 devices.
+	  Audio clocks TXM, RXM, TXB and RXB depend on ADCC. ADCC also is used for
+	  selecting the pad's as the source for the ADSS [audio subsystem] clocks.
+
 config IPQ_GCC_806X
 	tristate "IPQ806x Global Clock Controller"
 	depends on COMMON_CLK_QCOM
+	select MFD_QCOM_RPM
+	select QCOM_RPM_CLK
 	help
 	  Support for the global clock controller on ipq806x devices.
 	  Say Y if you want to use peripheral devices such as UART, SPI,
@@ -81,6 +62,31 @@ config IPQ_LCC_806X
 	  Support for the LPASS clock controller on ipq806x devices.
 	  Say Y if you want to use audio devices such as i2s, pcm,
 	  S/PDIF, etc.
+
+config IPQ_ADSS_807x
+	tristate "IPQ807x ADSS Clock Controller"
+	select IPQ_GCC_807x
+	depends on COMMON_CLK_QCOM
+	help
+	  Support for ADSS clock controller on ipq807x devices.
+	  Say Y if you want to use ADSS clocks for Audio.
+
+config IPQ_APSS_807x
+	tristate "IPQ807x APSS Clock Controller"
+	select IPQ_GCC_807x
+	depends on COMMON_CLK_QCOM
+	help
+	  Support for APSS clock controller on ipq807x devices.
+	  Say Y if you want to use APSS clocks such as CPU.
+
+config IPQ_GCC_807x
+	tristate "IPQ807x Global Clock Controller"
+	depends on COMMON_CLK_QCOM
+	help
+	  Support for global clock controller on ipq807x devices.
+	  Say Y if you want to use peripheral devices such as UART, SPI,
+	  i2c, USB, SD/eMMC, etc. Select this for the root clock
+	  of ipq807x.
 
 config MSM_GCC_8660
 	tristate "MSM8660 Global Clock Controller"
@@ -116,23 +122,6 @@ config MSM_LCC_8960
 	  Say Y if you want to use audio devices such as i2s, pcm,
 	  SLIMBus, etc.
 
-config MDM_GCC_9615
-	tristate "MDM9615 Global Clock Controller"
-	depends on COMMON_CLK_QCOM
-	help
-	  Support for the global clock controller on mdm9615 devices.
-	  Say Y if you want to use peripheral devices such as UART, SPI,
-	  i2c, USB, SD/eMMC, etc.
-
-config MDM_LCC_9615
-	tristate "MDM9615 LPASS Clock Controller"
-	select MDM_GCC_9615
-	depends on COMMON_CLK_QCOM
-	help
-	  Support for the LPASS clock controller on mdm9615 devices.
-	  Say Y if you want to use audio devices such as i2s, pcm,
-	  SLIMBus, etc.
-
 config MSM_MMCC_8960
 	tristate "MSM8960 Multimedia Clock Controller"
 	select MSM_GCC_8960
@@ -161,25 +150,6 @@ config MSM_MMCC_8974
 	  Say Y if you want to support multimedia devices such as display,
 	  graphics, video encode/decode, camera, etc.
 
-config MSM_GCC_8996
-	tristate "MSM8996 Global Clock Controller"
-	select QCOM_GDSC
-	depends on COMMON_CLK_QCOM
-	help
-	  Support for the global clock controller on msm8996 devices.
-	  Say Y if you want to use peripheral devices such as UART, SPI,
-	  i2c, USB, UFS, SD/eMMC, PCIe, etc.
-
-config MSM_MMCC_8996
-	tristate "MSM8996 Multimedia Clock Controller"
-	select MSM_GCC_8996
-	select QCOM_GDSC
-	depends on COMMON_CLK_QCOM
-	help
-	  Support for the multimedia clock controller on msm8996 devices.
-	  Say Y if you want to support multimedia devices such as display,
-	  graphics, video encode/decode, camera, etc.
-
 config QCOM_HFPLL
 	tristate "High-Frequency PLL (HFPLL) Clock Controller"
 	depends on COMMON_CLK_QCOM
@@ -187,6 +157,14 @@ config QCOM_HFPLL
 	  Support for the high-frequency PLLs present on Qualcomm devices.
 	  Say Y if you want to support CPU frequency scaling on devices
 	  such as MSM8974, APQ8084, etc.
+
+config QCOM_RPM_CLK
+	tristate "RPM Clock Controller"
+	depends on COMMON_CLK_QCOM && MFD_QCOM_RPM
+	help
+	  If you say yes to this option, support will be included for the
+	  clocks exposed by the Resource Power Manager (RPM) found in the
+	  QCA based devices such as ipq806x.
 
 config KPSS_XCC
 	tristate "KPSS Clock Controller"

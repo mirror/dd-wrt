@@ -3396,6 +3396,9 @@ static int mmcc_apq8084_probe(struct platform_device *pdev)
 		return ret;
 
 	regmap = dev_get_regmap(&pdev->dev, NULL);
+	if (!regmap)
+		return -ENODEV;
+
 	clk_pll_configure_sr_hpm_lp(&mmpll1, regmap, &mmpll1_config, true);
 	clk_pll_configure_sr_hpm_lp(&mmpll3, regmap, &mmpll3_config, false);
 

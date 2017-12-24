@@ -18,17 +18,15 @@
 
 struct krait_mux_clk {
 	unsigned int	*parent_map;
+	bool		has_safe_parent;
+	u8		safe_sel;
 	u32		offset;
 	u32		mask;
 	u32		shift;
 	u32		en_mask;
 	bool		lpl;
-	u8		safe_sel;
-	u8		old_index;
-	bool		reparent;
 
 	struct clk_hw	hw;
-	struct notifier_block   clk_nb;
 };
 
 #define to_krait_mux_clk(_hw) container_of(_hw, struct krait_mux_clk, hw)
