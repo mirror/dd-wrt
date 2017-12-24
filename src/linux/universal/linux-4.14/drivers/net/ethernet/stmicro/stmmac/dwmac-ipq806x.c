@@ -259,6 +259,7 @@ static int ipq806x_gmac_probe(struct platform_device *pdev)
 	struct stmmac_resources stmmac_res;
 	struct device *dev = &pdev->dev;
 	struct ipq806x_gmac *gmac;
+	struct stmmac_dma_cfg *dma_cfg;
 	int val;
 	int err;
 
@@ -349,6 +350,17 @@ static int ipq806x_gmac_probe(struct platform_device *pdev)
 	plat_dat->has_gmac = true;
 	plat_dat->bsp_priv = gmac;
 	plat_dat->fix_mac_speed = ipq806x_gmac_fix_mac_speed;
+
+	dma_cfg = devm_kzalloc(&pdev->dev, sizeof(*dma_cfg),
+			       GFP_KERNEL);
+
+	dma_cfg->pbl = 32;
+	dma_cfg->aal = 1;
+	dma_cfg->burst_len = DMA_AXI_BLEN_16 |
+		(7 << DMA_AXI_RD_OSR_LMT_SHIFT) |
+		(7 << DMA_AXI_WR_OSR_LMT_SHIFT);
+
+	plat_dat->dma_cfg = dma_cfg;
 
 	err = stmmac_dvr_probe(&pdev->dev, plat_dat, &stmmac_res);
 	if (err)
