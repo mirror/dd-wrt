@@ -101,13 +101,14 @@ EXPORT_SYMBOL_GPL(clk_disable_regmap);
  * clk_regmap struct via this function so that the regmap is initialized
  * and so that the clock is registered with the common clock framework.
  */
-int devm_clk_register_regmap(struct device *dev, struct clk_regmap *rclk)
+struct clk *devm_clk_register_regmap(struct device *dev,
+				     struct clk_regmap *rclk)
 {
 	if (dev && dev_get_regmap(dev, NULL))
 		rclk->regmap = dev_get_regmap(dev, NULL);
 	else if (dev && dev->parent)
 		rclk->regmap = dev_get_regmap(dev->parent, NULL);
 
-	return devm_clk_hw_register(dev, &rclk->hw);
+	return devm_clk_register(dev, &rclk->hw);
 }
 EXPORT_SYMBOL_GPL(devm_clk_register_regmap);
