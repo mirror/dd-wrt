@@ -30,7 +30,7 @@
 
 static void dwmac100_dma_init(void __iomem *ioaddr,
 			      struct stmmac_dma_cfg *dma_cfg,
-			      u32 dma_tx, u32 dma_rx, int atds, int aal)
+			      u32 dma_tx, u32 dma_rx, int atds)
 {
 	/* Enable Application Access by writing to DMA CSR0 */
 	writel(DMA_BUS_MODE_DEFAULT | (dma_cfg->pbl << DMA_BUS_MODE_PBL_SHIFT),
