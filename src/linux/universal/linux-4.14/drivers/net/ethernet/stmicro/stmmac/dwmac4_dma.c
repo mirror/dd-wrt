@@ -117,7 +117,7 @@ static void dwmac4_dma_init_channel(void __iomem *ioaddr,
 
 static void dwmac4_dma_init(void __iomem *ioaddr,
 			    struct stmmac_dma_cfg *dma_cfg,
-			    u32 dma_tx, u32 dma_rx, int atds)
+			    u32 dma_tx, u32 dma_rx, int atds, int aal)
 {
 	u32 value = readl(ioaddr + DMA_SYS_BUS_MODE);
 
