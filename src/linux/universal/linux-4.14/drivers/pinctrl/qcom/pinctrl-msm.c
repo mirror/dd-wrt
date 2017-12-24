@@ -30,7 +30,8 @@
 #include <linux/reboot.h>
 #include <linux/pm.h>
 #include <linux/log2.h>
-
+#include <linux/qcom_scm.h>
+#include <linux/io.h>
 #include "../core.h"
 #include "../pinconf.h"
 #include "pinctrl-msm.h"
@@ -202,12 +203,6 @@ static int msm_config_reg(struct msm_pinctrl *pctrl,
 	return 0;
 }
 
-#define MSM_NO_PULL		0
-#define MSM_PULL_DOWN		1
-#define MSM_KEEPER		2
-#define MSM_PULL_UP_NO_KEEPER	2
-#define MSM_PULL_UP		3
-
 static unsigned msm_regval_to_drive(u32 val)
 {
 	return (val + 1) * 2;
@@ -238,22 +233,16 @@ static int msm_config_group_get(struct pinctrl_dev *pctldev,
 	/* Convert register value to pinconf value */
 	switch (param) {
 	case PIN_CONFIG_BIAS_DISABLE:
-		arg = arg == MSM_NO_PULL;
+		arg = arg == pctrl->soc->gpio_pull->no_pull;
 		break;
 	case PIN_CONFIG_BIAS_PULL_DOWN:
-		arg = arg == MSM_PULL_DOWN;
+		arg = arg == pctrl->soc->gpio_pull->pull_down;
 		break;
 	case PIN_CONFIG_BIAS_BUS_HOLD:
-		if (pctrl->soc->pull_no_keeper)
-			return -ENOTSUPP;
-
-		arg = arg == MSM_KEEPER;
+		arg = arg == pctrl->soc->gpio_pull->keeper;
 		break;
 	case PIN_CONFIG_BIAS_PULL_UP:
-		if (pctrl->soc->pull_no_keeper)
-			arg = arg == MSM_PULL_UP_NO_KEEPER;
-		else
-			arg = arg == MSM_PULL_UP;
+		arg = arg == pctrl->soc->gpio_pull->pull_up;
 		break;
 	case PIN_CONFIG_DRIVE_STRENGTH:
 		arg = msm_regval_to_drive(arg);
@@ -310,22 +299,16 @@ static int msm_config_group_set(struct pinctrl_dev *pctldev,
 		/* Convert pinconf values to register values */
 		switch (param) {
 		case PIN_CONFIG_BIAS_DISABLE:
-			arg = MSM_NO_PULL;
+			arg = pctrl->soc->gpio_pull->no_pull;
 			break;
 		case PIN_CONFIG_BIAS_PULL_DOWN:
-			arg = MSM_PULL_DOWN;
+			arg = pctrl->soc->gpio_pull->pull_down;
 			break;
 		case PIN_CONFIG_BIAS_BUS_HOLD:
-			if (pctrl->soc->pull_no_keeper)
-				return -ENOTSUPP;
-
-			arg = MSM_KEEPER;
+			arg = pctrl->soc->gpio_pull->keeper;
 			break;
 		case PIN_CONFIG_BIAS_PULL_UP:
-			if (pctrl->soc->pull_no_keeper)
-				arg = MSM_PULL_UP_NO_KEEPER;
-			else
-				arg = MSM_PULL_UP;
+			arg = pctrl->soc->gpio_pull->pull_up;
 			break;
 		case PIN_CONFIG_DRIVE_STRENGTH:
 			/* Check for invalid values */
@@ -435,20 +418,6 @@ static int msm_gpio_direction_output(struct gpio_chip *chip, unsigned offset, in
 	return 0;
 }
 
-static int msm_gpio_get_direction(struct gpio_chip *chip, unsigned int offset)
-{
-	struct msm_pinctrl *pctrl = gpiochip_get_data(chip);
-	const struct msm_pingroup *g;
-	u32 val;
-
-	g = &pctrl->soc->groups[offset];
-
-	val = readl(pctrl->regs + g->ctl_reg);
-
-	/* 0 = output, 1 = input */
-	return val & BIT(g->oe_bit) ? 0 : 1;
-}
-
 static int msm_gpio_get(struct gpio_chip *chip, unsigned offset)
 {
 	const struct msm_pingroup *g;
@@ -534,10 +503,9 @@ static void msm_gpio_dbg_show(struct seq_file *s, struct gpio_chip *chip)
 #define msm_gpio_dbg_show NULL
 #endif
 
-static const struct gpio_chip msm_gpio_template = {
+static struct gpio_chip msm_gpio_template = {
 	.direction_input  = msm_gpio_direction_input,
 	.direction_output = msm_gpio_direction_output,
-	.get_direction    = msm_gpio_get_direction,
 	.get              = msm_gpio_get,
 	.set              = msm_gpio_set,
 	.request          = gpiochip_generic_request,
@@ -663,6 +631,9 @@ static int msm_gpio_irq_set_type(struct irq_data *d, unsigned int type)
 	const struct msm_pingroup *g;
 	unsigned long flags;
 	u32 val;
+	u32 addr;
+	int ret;
+	const __be32 *reg;
 
 	g = &pctrl->soc->groups[d->hwirq];
 
@@ -676,11 +647,30 @@ static int msm_gpio_irq_set_type(struct irq_data *d, unsigned int type)
 	else
 		clear_bit(d->hwirq, pctrl->dual_edge_irqs);
 
+	ret = of_device_is_compatible(pctrl->dev->of_node,
+					"qcom,ipq8064-pinctrl");
 	/* Route interrupts to application cpu */
-	val = readl(pctrl->regs + g->intr_target_reg);
-	val &= ~(7 << g->intr_target_bit);
-	val |= g->intr_target_kpss_val << g->intr_target_bit;
-	writel(val, pctrl->regs + g->intr_target_reg);
+	if (!ret) {
+		val = readl(pctrl->regs + g->intr_target_reg);
+		val &= ~(7 << g->intr_target_bit);
+		val |= g->intr_target_kpss_val << g->intr_target_bit;
+		writel(val, pctrl->regs + g->intr_target_reg);
+	} else {
+		reg = of_get_property(pctrl->dev->of_node, "reg", NULL);
+		if (reg) {
+			addr = be32_to_cpup(reg) + g->intr_target_reg;
+			val = qcom_scm_pinmux_read(addr);
+			__iormb();
+
+			val &= ~(7 << g->intr_target_bit);
+			val |= g->intr_target_kpss_val << g->intr_target_bit;
+
+			__iowmb();
+			ret = qcom_scm_pinmux_write(addr, val);
+			if (ret)
+				pr_err("\n Routing interrupts to Apps proc failed");
+		}
+	}
 
 	/* Update configuration for gpio.
 	 * RAW_STATUS_EN is left on for all gpio irqs. Due to the
@@ -954,4 +944,3 @@ int msm_pinctrl_remove(struct platform_device *pdev)
 	return 0;
 }
 EXPORT_SYMBOL(msm_pinctrl_remove);
-
