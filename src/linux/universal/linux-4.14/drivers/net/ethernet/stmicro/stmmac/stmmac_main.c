@@ -2182,7 +2182,7 @@ static int stmmac_init_dma_engine(struct stmmac_priv *priv)
 				    tx_q->dma_tx_phy, rx_q->dma_rx_phy, atds);
 	}
 
-	if (!dma_cfg->burst_len && priv->plat->axi && priv->hw->dma->axi)
+	if (!priv->plat->dma_cfg->burst_len && priv->plat->axi && priv->hw->dma->axi)
 		priv->hw->dma->axi(priv->ioaddr, priv->plat->axi);
 
 	return ret;
