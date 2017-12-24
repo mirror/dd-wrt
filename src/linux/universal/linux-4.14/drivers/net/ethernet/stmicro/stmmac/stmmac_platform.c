@@ -386,6 +386,20 @@ stmmac_probe_config_dt(struct platform_device *pdev, const char **mac)
 		return ERR_PTR(-ENOMEM);
 
 	*mac = of_get_mac_address(np);
+	
+	if (!*mac) {
+		u8 mtd_mac[ETH_ALEN];
+		int ret;
+
+		ret = of_get_mac_address_mtd(np, mtd_mac);
+		if (ret == -EPROBE_DEFER)
+			return ERR_PTR(ret);
+
+		if (is_valid_ether_addr(mtd_mac))
+			*mac = devm_kmemdup(&pdev->dev, mtd_mac, ETH_ALEN,
+					    GFP_KERNEL);
+	}
+
 	plat->interface = of_get_phy_mode(np);
 
 	/* Get max speed of operation from device tree */

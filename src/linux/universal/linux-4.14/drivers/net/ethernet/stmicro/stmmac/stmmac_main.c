@@ -2122,6 +2122,7 @@ static int stmmac_init_dma_engine(struct stmmac_priv *priv)
 	u32 chan = 0;
 	int atds = 0;
 	int ret = 0;
+	int aal = 0;
 
 	if (!priv->plat->dma_cfg || !priv->plat->dma_cfg->pbl) {
 		dev_err(priv->device, "Invalid DMA configuration\n");
@@ -2130,6 +2131,8 @@ static int stmmac_init_dma_engine(struct stmmac_priv *priv)
 
 	if (priv->extend_desc && (priv->mode == STMMAC_RING_MODE))
 		atds = 1;
+
+	aal = priv->plat->dma_cfg->aal;
 
 	ret = priv->hw->dma->reset(priv->ioaddr);
 	if (ret) {
@@ -2179,7 +2182,7 @@ static int stmmac_init_dma_engine(struct stmmac_priv *priv)
 		rx_q = &priv->rx_queue[chan];
 		tx_q = &priv->tx_queue[chan];
 		priv->hw->dma->init(priv->ioaddr, priv->plat->dma_cfg,
-				    tx_q->dma_tx_phy, rx_q->dma_rx_phy, atds);
+				    tx_q->dma_tx_phy, rx_q->dma_rx_phy, atds, aal);
 	}
 
 	if (priv->plat->axi && priv->hw->dma->axi)
