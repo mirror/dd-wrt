@@ -35,8 +35,51 @@ static unsigned int pri_mux_map[] = {
 	0,
 };
 
+/*
+ * Notifier function for switching the muxes to safe parent
+ * while the hfpll is getting reprogrammed.
+ */
+static int krait_notifier_cb(struct notifier_block *nb,
+			     unsigned long event,
+			     void *data)
+{
+	int ret = 0;
+	struct krait_mux_clk *mux = container_of(nb, struct krait_mux_clk,
+						 clk_nb);
+	/* Switch to safe parent */
+	if (event == PRE_RATE_CHANGE) {
+		mux->old_index = krait_mux_clk_ops.get_parent(&mux->hw);
+		ret = krait_mux_clk_ops.set_parent(&mux->hw, mux->safe_sel);
+		mux->reparent = false;
+	/*
+	 * By the time POST_RATE_CHANGE notifier is called,
+	 * clk framework itself would have changed the parent for the new rate.
+	 * Only otherwise, put back to the old parent.
+	 */
+	} else if (event == POST_RATE_CHANGE) {
+		if (!mux->reparent)
+			ret = krait_mux_clk_ops.set_parent(&mux->hw,
+							   mux->old_index);
+	}
+
+	return notifier_from_errno(ret);
+}
+
+static int krait_notifier_register(struct device *dev, struct clk *clk,
+				   struct krait_mux_clk *mux)
+{
+	int ret = 0;
+
+	mux->clk_nb.notifier_call = krait_notifier_cb;
+	ret = clk_notifier_register(clk, &mux->clk_nb);
+	if (ret)
+		dev_err(dev, "failed to register clock notifier: %d\n", ret);
+
+	return ret;
+}
+
 static int
-krait_add_div(struct device *dev, int id, const char *s, unsigned offset)
+krait_add_div(struct device *dev, int id, const char *s, unsigned int offset)
 {
 	struct krait_div2_clk *div;
 	struct clk_init_data init = {
@@ -76,9 +119,10 @@ krait_add_div(struct device *dev, int id, const char *s, unsigned offset)
 }
 
 static int
-krait_add_sec_mux(struct device *dev, int id, const char *s, unsigned offset,
-		  bool unique_aux)
+krait_add_sec_mux(struct device *dev, int id, const char *s,
+		  unsigned int offset, bool unique_aux)
 {
+	int ret;
 	struct krait_mux_clk *mux;
 	static const char *sec_mux_list[] = {
 		"acpu_aux",
@@ -98,12 +142,11 @@ krait_add_sec_mux(struct device *dev, int id, const char *s, unsigned offset,
 
 	mux->offset = offset;
 	mux->lpl = id >= 0;
-	mux->has_safe_parent = true;
-	mux->safe_sel = 2;
 	mux->mask = 0x3;
 	mux->shift = 2;
 	mux->parent_map = sec_mux_map;
 	mux->hw.init = &init;
+	mux->safe_sel = 0;
 
 	init.name = kasprintf(GFP_KERNEL, "krait%s_sec_mux", s);
 	if (!init.name)
@@ -119,6 +162,11 @@ krait_add_sec_mux(struct device *dev, int id, const char *s, unsigned offset,
 
 	clk = devm_clk_register(dev, &mux->hw);
 
+	ret = krait_notifier_register(dev, clk, mux);
+	if (ret)
+		goto unique_aux;
+
+unique_aux:
 	if (unique_aux)
 		kfree(sec_mux_list[0]);
 err_aux:
@@ -127,8 +175,10 @@ err_aux:
 }
 
 static struct clk *
-krait_add_pri_mux(struct device *dev, int id, const char *s, unsigned offset)
+krait_add_pri_mux(struct device *dev, int id, const char *s,
+		  unsigned int offset)
 {
+	int ret;
 	struct krait_mux_clk *mux;
 	const char *p_names[3];
 	struct clk_init_data init = {
@@ -143,14 +193,13 @@ krait_add_pri_mux(struct device *dev, int id, const char *s, unsigned offset)
 	if (!mux)
 		return ERR_PTR(-ENOMEM);
 
-	mux->has_safe_parent = true;
-	mux->safe_sel = 0;
 	mux->mask = 0x3;
 	mux->shift = 0;
 	mux->offset = offset;
 	mux->lpl = id >= 0;
 	mux->parent_map = pri_mux_map;
 	mux->hw.init = &init;
+	mux->safe_sel = 2;
 
 	init.name = kasprintf(GFP_KERNEL, "krait%s_pri_mux", s);
 	if (!init.name)
@@ -176,6 +225,10 @@ krait_add_pri_mux(struct device *dev, int id, const char *s, unsigned offset)
 
 	clk = devm_clk_register(dev, &mux->hw);
 
+	ret = krait_notifier_register(dev, clk, mux);
+	if (ret)
+		goto err_p3;
+err_p3:
 	kfree(p_names[2]);
 err_p2:
 	kfree(p_names[1]);
@@ -190,7 +243,7 @@ err_p0:
 static struct clk *krait_add_clks(struct device *dev, int id, bool unique_aux)
 {
 	int ret;
-	unsigned offset;
+	unsigned int offset;
 	void *p = NULL;
 	const char *s;
 	struct clk *clk;
@@ -296,7 +349,7 @@ static int krait_cc_probe(struct platform_device *pdev)
 	for_each_online_cpu(cpu) {
 		clk_prepare_enable(l2_pri_mux_clk);
 		WARN(clk_prepare_enable(clks[cpu]),
-			"Unable to turn on CPU%d clock", cpu);
+		     "Unable to turn on CPU%d clock", cpu);
 	}
 
 	/*
@@ -327,6 +380,7 @@ static int krait_cc_probe(struct platform_device *pdev)
 			pr_info("CPU%d @ QSB rate. Forcing new rate.\n", cpu);
 			cur_rate = aux_rate;
 		}
+
 		clk_set_rate(clk, aux_rate);
 		clk_set_rate(clk, 2);
 		clk_set_rate(clk, cur_rate);
