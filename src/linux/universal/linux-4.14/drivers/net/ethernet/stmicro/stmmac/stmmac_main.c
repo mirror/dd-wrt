@@ -2143,7 +2143,7 @@ static int stmmac_init_dma_engine(struct stmmac_priv *priv)
 	if (priv->synopsys_id >= DWMAC_CORE_4_00) {
 		/* DMA Configuration */
 		priv->hw->dma->init(priv->ioaddr, priv->plat->dma_cfg,
-				    dummy_dma_tx_phy, dummy_dma_rx_phy, atds);
+				    dummy_dma_tx_phy, dummy_dma_rx_phy, atds, aal);
 
 		/* DMA RX Channel Configuration */
 		for (chan = 0; chan < rx_channels_count; chan++) {
