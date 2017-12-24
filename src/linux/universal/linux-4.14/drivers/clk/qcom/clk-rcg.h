@@ -180,4 +180,9 @@ extern const struct clk_ops clk_byte2_ops;
 extern const struct clk_ops clk_pixel_ops;
 extern const struct clk_ops clk_gfx3d_ops;
 
+ 
+extern void clk_dyn_configure_bank(struct clk_dyn_rcg *rcg,
+					const struct freq_tbl *f);
+
 #endif
+
