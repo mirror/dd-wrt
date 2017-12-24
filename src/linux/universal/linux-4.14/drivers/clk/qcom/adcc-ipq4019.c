@@ -663,14 +663,14 @@ static int adcc_ipq4019_probe(struct platform_device *pdev)
 	struct regmap *regmap;
 
 	/* High speed external clock */
-	clk_register_fixed_rate(dev, "xo", NULL, CLK_IS_ROOT, 48000000);
+	clk_register_fixed_rate(dev, "xo", NULL, 0, 48000000);
 
 	/* External padbclk & padmclk clock.These [254 & 255] frequencies are
 	 * taken as tokens only to support the INPUTS from PADS.
 	 * Reference: ADSS_HPG/HDD document for IPQ4019
 	 */
-	clk_register_fixed_rate(dev, "padbclk", NULL, CLK_IS_ROOT, 254);
-	clk_register_fixed_rate(dev, "padmclk", NULL, CLK_IS_ROOT, 255);
+	clk_register_fixed_rate(dev, "padbclk", NULL, 0, 254);
+	clk_register_fixed_rate(dev, "padmclk", NULL, 0, 255);
 
 	regmap = qcom_cc_map(pdev, &adcc_ipq4019_desc);
 	if (IS_ERR(regmap))

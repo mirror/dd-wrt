@@ -75,7 +75,7 @@ static u8 krait_mux_get_parent(struct clk_hw *hw)
 	return clk_mux_get_parent(hw, sel, mux->parent_map, 0);
 }
 
-static struct clk_hw *krait_mux_get_safe_parent(struct clk_hw *hw)
+static struct clk_hw *krait_mux_get_safe_parent(struct clk_hw *hw, unsigned long *safe_freq)
 {
 	int i;
 	struct krait_mux_clk *mux = to_krait_mux_clk(hw);
