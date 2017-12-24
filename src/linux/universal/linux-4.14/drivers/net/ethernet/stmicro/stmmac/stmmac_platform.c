@@ -387,6 +387,7 @@ stmmac_probe_config_dt(struct platform_device *pdev, const char **mac)
 
 	*mac = of_get_mac_address(np);
 	
+#if 0
 	if (!*mac) {
 		u8 mtd_mac[ETH_ALEN];
 		int ret;
@@ -399,6 +400,7 @@ stmmac_probe_config_dt(struct platform_device *pdev, const char **mac)
 			*mac = devm_kmemdup(&pdev->dev, mtd_mac, ETH_ALEN,
 					    GFP_KERNEL);
 	}
+#endif
 
 	plat->interface = of_get_phy_mode(np);
 
