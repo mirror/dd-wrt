@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.14.8-rc1 Kernel Configuration
+# Linux/i386 4.14.9-rc1 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -4083,8 +4083,8 @@ CONFIG_IO_DELAY_0X80=y
 CONFIG_DEFAULT_IO_DELAY_TYPE=0
 # CONFIG_OPTIMIZE_INLINING is not set
 # CONFIG_PUNIT_ATOM_DEBUG is not set
-CONFIG_FRAME_POINTER_UNWINDER=y
-# CONFIG_GUESS_UNWINDER is not set
+CONFIG_UNWINDER_FRAME_POINTER=y
+# CONFIG_UNWINDER_GUESS is not set
 
 #
 # Security options
