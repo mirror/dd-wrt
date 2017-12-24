@@ -1789,7 +1789,7 @@ static struct clk_branch gmem_axi_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "gmem_axi_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -1805,7 +1805,7 @@ static struct clk_branch ijpeg_axi_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "ijpeg_axi_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -1821,7 +1821,7 @@ static struct clk_branch mmss_imem_axi_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "mmss_imem_axi_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -1835,7 +1835,7 @@ static struct clk_branch jpegd_axi_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "jpegd_axi_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -1851,7 +1851,7 @@ static struct clk_branch vcodec_axi_b_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "vcodec_axi_b_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -1867,7 +1867,7 @@ static struct clk_branch vcodec_axi_a_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "vcodec_axi_a_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -1883,7 +1883,7 @@ static struct clk_branch vcodec_axi_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "vcodec_axi_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -1897,7 +1897,7 @@ static struct clk_branch vfe_axi_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "vfe_axi_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -1913,7 +1913,7 @@ static struct clk_branch mdp_axi_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "mdp_axi_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -1929,7 +1929,7 @@ static struct clk_branch rot_axi_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "rot_axi_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -1945,7 +1945,7 @@ static struct clk_branch vcap_axi_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "vcap_axi_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -1961,7 +1961,7 @@ static struct clk_branch vpe_axi_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "vpe_axi_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -1977,7 +1977,7 @@ static struct clk_branch gfx3d_axi_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "gfx3d_axi_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -1991,7 +1991,7 @@ static struct clk_branch amp_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "amp_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -2005,7 +2005,6 @@ static struct clk_branch csi_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "csi_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT
 		},
 	},
 };
@@ -2019,7 +2018,7 @@ static struct clk_branch dsi_m_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "dsi_m_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -2035,7 +2034,7 @@ static struct clk_branch dsi_s_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "dsi_s_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -2049,7 +2048,6 @@ static struct clk_branch dsi2_m_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "dsi2_m_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT
 		},
 	},
 };
@@ -2065,7 +2063,7 @@ static struct clk_branch dsi2_s_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "dsi2_s_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -2425,7 +2423,7 @@ static struct clk_branch gfx2d0_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "gfx2d0_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -2441,7 +2439,7 @@ static struct clk_branch gfx2d1_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "gfx2d1_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -2457,7 +2455,7 @@ static struct clk_branch gfx3d_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "gfx3d_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -2473,7 +2471,7 @@ static struct clk_branch hdmi_m_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "hdmi_m_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -2489,7 +2487,7 @@ static struct clk_branch hdmi_s_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "hdmi_s_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -2503,7 +2501,6 @@ static struct clk_branch ijpeg_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "ijpeg_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT
 		},
 	},
 };
@@ -2519,7 +2516,6 @@ static struct clk_branch mmss_imem_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "mmss_imem_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT
 		},
 	},
 };
@@ -2533,7 +2529,7 @@ static struct clk_branch jpegd_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "jpegd_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -2547,7 +2543,7 @@ static struct clk_branch mdp_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "mdp_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -2561,7 +2557,6 @@ static struct clk_branch rot_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "rot_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT
 		},
 	},
 };
@@ -2577,7 +2572,7 @@ static struct clk_branch smmu_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "smmu_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -2591,7 +2586,7 @@ static struct clk_branch tv_enc_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "tv_enc_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -2605,7 +2600,7 @@ static struct clk_branch vcap_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "vcap_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -2621,7 +2616,7 @@ static struct clk_branch vcodec_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "vcodec_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -2635,7 +2630,7 @@ static struct clk_branch vfe_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "vfe_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
@@ -2649,7 +2644,7 @@ static struct clk_branch vpe_ahb_clk = {
 		.hw.init = &(struct clk_init_data){
 			.name = "vpe_ahb_clk",
 			.ops = &clk_branch_ops,
-			.flags = CLK_IS_ROOT,
+			
 		},
 	},
 };
