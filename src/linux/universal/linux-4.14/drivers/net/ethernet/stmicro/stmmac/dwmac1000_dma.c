@@ -82,7 +82,7 @@ static void dwmac1000_dma_axi(void __iomem *ioaddr, struct stmmac_axi *axi)
 
 static void dwmac1000_dma_init(void __iomem *ioaddr,
 			       struct stmmac_dma_cfg *dma_cfg,
-			       u32 dma_tx, u32 dma_rx, int atds, int aal)
+			       u32 dma_tx, u32 dma_rx, int atds)
 {
 	u32 value = readl(ioaddr + DMA_BUS_MODE);
 	int txpbl = dma_cfg->txpbl ?: dma_cfg->pbl;
@@ -101,10 +101,6 @@ static void dwmac1000_dma_init(void __iomem *ioaddr,
 	value |= (txpbl << DMA_BUS_MODE_PBL_SHIFT);
 	value |= (rxpbl << DMA_BUS_MODE_RPBL_SHIFT);
 
-	/* Address Aligned Beats */
-	if (aal)
-		value |= DMA_BUS_MODE_AAL;
-
 	/* Set the Fixed burst mode */
 	if (dma_cfg->fixed_burst)
 		value |= DMA_BUS_MODE_FB;
@@ -118,6 +114,26 @@ static void dwmac1000_dma_init(void __iomem *ioaddr,
 
 	if (dma_cfg->aal)
 		value |= DMA_BUS_MODE_AAL;
+
+	/* In case of GMAC AXI configuration, program the DMA_AXI_BUS_MODE
+	 * for supported bursts.
+	 *
+	 * Note: This is applicable only for revision GMACv3.61a. For
+	 * older version this register is reserved and shall have no
+	 * effect.
+	 *
+	 * Note:
+	 *  For Fixed Burst Mode: if we directly write 0xFF to this
+	 *  register using the configurations pass from platform code,
+	 *  this would ensure that all bursts supported by core are set
+	 *  and those which are not supported would remain ineffective.
+	 *
+	 *  For Non Fixed Burst Mode: provide the maximum value of the
+	 *  burst length. Any burst equal or below the provided burst
+	 *  length would be allowed to perform.
+	 */
+	if (dma_cfg->burst_len)
+		writel(dma_cfg->burst_len, ioaddr + DMA_AXI_BUS_MODE);
 
 	writel(value, ioaddr + DMA_BUS_MODE);
 
