@@ -121,7 +121,7 @@ static void __clk_hfpll_disable(struct clk_hfpll *h)
 	 * and assert the reset.
 	 */
 	regmap_update_bits(regmap, hd->mode_reg,
-			PLL_BYPASSNL | PLL_RESET_N | PLL_OUTCTRL, 0);
+			   PLL_BYPASSNL | PLL_RESET_N | PLL_OUTCTRL, 0);
 }
 
 static void clk_hfpll_disable(struct clk_hw *hw)
@@ -222,7 +222,7 @@ static void clk_hfpll_init(struct clk_hw *hw)
 		regmap_read(regmap, hd->status_reg, &status);
 		if (!(status & BIT(hd->lock_bit))) {
 			WARN(1, "HFPLL %s is ON, but not locked!\n",
-					__clk_get_name(hw->clk));
+			     __clk_get_name(hw->clk));
 			clk_hfpll_disable(hw);
 			__clk_hfpll_init_once(hw);
 		}
