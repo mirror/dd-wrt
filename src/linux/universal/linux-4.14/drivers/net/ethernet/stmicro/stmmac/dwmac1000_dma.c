@@ -82,7 +82,7 @@ static void dwmac1000_dma_axi(void __iomem *ioaddr, struct stmmac_axi *axi)
 
 static void dwmac1000_dma_init(void __iomem *ioaddr,
 			       struct stmmac_dma_cfg *dma_cfg,
-			       u32 dma_tx, u32 dma_rx, int atds)
+			       u32 dma_tx, u32 dma_rx, int atds, int aal)
 {
 	u32 value = readl(ioaddr + DMA_BUS_MODE);
 	int txpbl = dma_cfg->txpbl ?: dma_cfg->pbl;
@@ -100,6 +100,10 @@ static void dwmac1000_dma_init(void __iomem *ioaddr,
 	value &= ~(DMA_BUS_MODE_PBL_MASK | DMA_BUS_MODE_RPBL_MASK);
 	value |= (txpbl << DMA_BUS_MODE_PBL_SHIFT);
 	value |= (rxpbl << DMA_BUS_MODE_RPBL_SHIFT);
+
+	/* Address Aligned Beats */
+	if (aal)
+		value |= DMA_BUS_MODE_AAL;
 
 	/* Set the Fixed burst mode */
 	if (dma_cfg->fixed_burst)
