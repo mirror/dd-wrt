@@ -702,7 +702,7 @@
 			regulators {
 				compatible = "qcom,rpm-smb208-regulators";
 
-				smb208_s1a: vin_s1a {
+				smb208_s1a: s1a {
 					regulator-min-microvolt = <1050000>;
 					regulator-max-microvolt = <1150000>;
 
@@ -710,21 +710,21 @@
 
 				};
 
-				smb208_s1b: vin_s1b {
+				smb208_s1b: s1b {
 					regulator-min-microvolt = <1050000>;
 					regulator-max-microvolt = <1150000>;
 
 					qcom,switch-mode-frequency = <1200000>;
 				};
 
-				smb208_s2a: vin_s2a {
+				smb208_s2a: s2a {
 					regulator-min-microvolt = < 800000>;
 					regulator-max-microvolt = <1250000>;
 
 					qcom,switch-mode-frequency = <1200000>;
 				};
 
-				smb208_s2b: vin_s2b {
+				smb208_s2b: s2b {
 					regulator-min-microvolt = < 800000>;
 					regulator-max-microvolt = <1250000>;
 
