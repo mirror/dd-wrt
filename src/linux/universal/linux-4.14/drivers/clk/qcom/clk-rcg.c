@@ -813,6 +813,11 @@ static int clk_dyn_rcg_set_rate_and_parent(struct clk_hw *hw,
 	return __clk_dyn_rcg_set_rate(hw, rate);
 }
 
+void clk_dyn_configure_bank(struct clk_dyn_rcg *rcg, const struct freq_tbl *f)
+{
+	configure_bank(rcg, f);
+}
+
 const struct clk_ops clk_rcg_ops = {
 	.enable = clk_enable_regmap,
 	.disable = clk_disable_regmap,
