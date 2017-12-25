@@ -203,7 +203,7 @@ static int rpm_clk_probe(struct platform_device *pdev)
 		return ret;
 	}
 	init.ops = &clk_rpm_ops;
-	init.flags = CLK_IS_ROOT;
+	init.flags = 0;
 	init.parent_names = NULL;
 	init.num_parents =  0;
 	clk->hw.init = &init;
