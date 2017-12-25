@@ -302,7 +302,7 @@ static int krait_cpufreq_probe(struct platform_device *pdev)
 			ret = PTR_ERR(clk);
 			goto out_free_table;
 		}
-		core = devm_regulator_get(dev, "core");
+		core = devm_regulator_get(dev, "cpu");
 		if (IS_ERR(core)) {
 			pr_debug("failed to get core regulator\n");
 			ret = PTR_ERR(core);
