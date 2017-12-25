@@ -87,4 +87,19 @@
 		};
 
 	};
+
+	nss-common {
+		compatible = "qcom,nss-common";
+		reg = <0x03000000 0x00001000>;
+		reg-names = "nss_fpb_base";
+		clocks = <&gcc NSS_CORE_CLK>, <&gcc NSSTCM_CLK>,
+			 <&nss_fabric0_clk>, <&nss_fabric1_clk>;
+		clock-names = "nss-core-clk", "nss-tcm-clk", "nss-fab0-clk",
+			      "nss-fab0-clk";
+		nss_core-supply = <&smb208_s1b>;
+		nss_core_vdd_nominal = <1100000>;
+		nss_core_vdd_high = <1150000>;
+		nss_core_threshold_freq = <800000000>;
+	};
+
 };
