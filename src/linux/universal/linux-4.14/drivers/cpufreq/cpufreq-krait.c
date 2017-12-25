@@ -199,12 +199,33 @@ static int krait_cpufreq_init(struct cpufreq_policy *policy)
 	return 0;
 }
 
+static void krait_cpufreq_ready(struct cpufreq_policy *policy)
+{
+	struct device_node *np = of_get_cpu_node(policy->cpu, NULL);
+
+	if (of_find_property(np, "#cooling-cells", NULL)) {
+		cdev = of_cpufreq_cooling_register(np, policy);
+
+		if (IS_ERR(cdev)) {
+			pr_err("cpu%d is not running as cooling device\n",
+					policy->cpu);
+
+			cdev = NULL;
+		}
+	}
+
+	of_node_put(np);
+}
+
+
+
 static struct cpufreq_driver krait_cpufreq_driver = {
 	.flags = CPUFREQ_STICKY,
 	.verify = cpufreq_generic_frequency_table_verify,
 	.target_index = krait_set_target,
 	.get = cpufreq_generic_get,
 	.init = krait_cpufreq_init,
+	.ready = krait_cpufreq_ready,
 	.name = "generic_krait",
 	.attr = cpufreq_generic_attr,
 };
@@ -348,21 +369,6 @@ static int krait_cpufreq_probe(struct platform_device *pdev)
 	}
 	of_node_put(np);
 
-	/*
-	 * For now, just loading the cooling device;
-	 * thermal DT code takes care of matching them.
-	 */
-	for_each_possible_cpu(cpu) {
-		dev = get_cpu_device(cpu);
-		np = of_node_get(dev->of_node);
-		if (of_find_property(np, "#cooling-cells", NULL)) {
-			cdev = of_cpufreq_cooling_register(np, cpumask_of(cpu));
-			if (IS_ERR(cdev))
-				pr_err("running cpufreq without cooling device: %ld\n",
-				       PTR_ERR(cdev));
-		}
-		of_node_put(np);
-	}
 
 	return 0;
 
