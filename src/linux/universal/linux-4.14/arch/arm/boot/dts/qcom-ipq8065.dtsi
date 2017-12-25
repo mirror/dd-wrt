@@ -4,6 +4,218 @@
 	model = "Qualcomm IPQ8065";
 	compatible = "qcom,ipq8065", "qcom,ipq8064";
 
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "qcom,krait";
+			enable-method = "qcom,kpss-acc-v1";
+			device_type = "cpu";
+			reg = <0>;
+			next-level-cache = <&L2>;
+			qcom,acc = <&acc0>;
+			qcom,saw = <&saw0>;
+			clocks = <&kraitcc 0>, <&kraitcc 4>;
+			clock-names = "cpu", "l2";
+			clock-latency = <100000>;
+			cpu-supply = <&smb208_s2a>;
+			cpu_fab_threshold = <1000000000>;
+			voltage-tolerance = <5>;
+			cooling-min-state = <0>;
+			cooling-max-state = <10>;
+			#cooling-cells = <2>;
+			cpu-idle-states = <&CPU_SPC>;
+
+			operating-points-0-0 = <
+				/* kHz      uV */
+				1725000 1262500
+				1400000 1175000
+				1000000 1150000
+				 800000 1050000
+				 600000 1000000
+ 				 384000 975000
+ 			>;
+			operating-points-0-1 = <
+				/* kHz      uV */
+				1725000 1225000
+				1400000 1175000
+				1000000 1075000
+				 800000 1025000
+				 600000  975000
+				 384000  925000
+			>;
+
+			operating-points-0-2 = <
+				/* kHz      uV */
+				1725000 1200000
+				1400000 1125000
+				1000000 1050000
+				 800000  1000000
+				 600000  950000
+				 384000  925000
+			>;
+			operating-points-0-3 = <
+				/* kHz      uV */
+				1725000 1175000
+				1400000 1100000
+				1000000 1025000
+				 800000 975000
+				 600000 925000
+				 384000 900000
+			>;
+
+			operating-points-0-4 = <
+				/* kHz      uV */
+				1725000 1150000
+				1400000 1075000
+				1000000 1000000
+				 800000 950000
+				 600000 900000
+				 384000 875000
+			>;
+
+			operating-points-0-5 = <
+				/* kHz      uV */
+				1725000 1100000
+				1400000 1025000
+				1000000 950000
+				 800000 900000
+				 600000 850000
+				 384000 825000
+			>;
+
+			operating-points-0-6 = <
+				/* kHz      uV */
+				1725000 1050000
+				1400000 975000
+				1000000 900000
+				 800000 850000
+				 600000 800000
+				 384000 775000
+			>;
+		};
+
+		cpu1: cpu@1 {
+			compatible = "qcom,krait";
+			enable-method = "qcom,kpss-acc-v1";
+			device_type = "cpu";
+			reg = <1>;
+			next-level-cache = <&L2>;
+			qcom,acc = <&acc1>;
+			qcom,saw = <&saw1>;
+			clocks = <&kraitcc 1>, <&kraitcc 4>;
+			clock-names = "cpu", "l2";
+			clock-latency = <100000>;
+			cpu-supply = <&smb208_s2b>;
+			cooling-min-state = <0>;
+			cooling-max-state = <10>;
+			#cooling-cells = <2>;
+			cpu_fab_threshold = <1000000000>;
+			cpu-idle-states = <&CPU_SPC>;
+
+			operating-points-0-0 = <
+				/* kHz      uV */
+				1725000 1262500
+				1400000 1175000
+				1000000 1150000
+				 800000 1050000
+				 600000 1000000
+ 				 384000 975000
+ 			>;
+			operating-points-0-1 = <
+				/* kHz      uV */
+				1725000 1225000
+				1400000 1175000
+				1000000 1075000
+				 800000 1025000
+				 600000  975000
+				 384000  925000
+			>;
+
+			operating-points-0-2 = <
+				/* kHz      uV */
+				1725000 1200000
+				1400000 1125000
+				1000000 1050000
+				 800000  1000000
+				 600000  950000
+				 384000  925000
+			>;
+			operating-points-0-3 = <
+				/* kHz      uV */
+				1725000 1175000
+				1400000 1100000
+				1000000 1025000
+				 800000 975000
+				 600000 925000
+				 384000 900000
+			>;
+
+			operating-points-0-4 = <
+				/* kHz      uV */
+				1725000 1150000
+				1400000 1075000
+				1000000 1000000
+				 800000 950000
+				 600000 900000
+				 384000 875000
+			>;
+
+			operating-points-0-5 = <
+				/* kHz      uV */
+				1725000 1100000
+				1400000 1025000
+				1000000 950000
+				 800000 900000
+				 600000 850000
+				 384000 825000
+			>;
+
+			operating-points-0-6 = <
+				/* kHz      uV */
+				1725000 1050000
+				1400000 975000
+				1000000 900000
+				 800000 850000
+				 600000 800000
+				 384000 775000
+			>;
+		};
+
+		L2: l2-cache {
+			compatible = "cache";
+			cache-level = <2>;
+			qcom,saw = <&saw_l2>;
+			clocks = <&kraitcc 4>;
+			clock-names = "cache";
+			cache-points-kHz = <
+				/* kHz    uV    CPU kHz */
+				1200000 1150000 1725000
+				1000000 1100000 1400000
+				1000000 1100000 1200000
+				1000000 1100000  600000
+				 384000 1100000  384000
+			>;
+			vdd_dig-supply = <&smb208_s1a>;
+		};
+
+		qcom,l2 {
+			qcom,l2-rates = <384000000 1000000000 1200000000>;
+		};
+
+		idle-states {
+			CPU_SPC: spc {
+				compatible = "qcom,idle-state-spc",
+						"arm,idle-state";
+				entry-latency-us = <400>;
+				exit-latency-us = <900>;
+				min-residency-us = <3000>;
+			};
+		};
+	};
+
+
 	qcom,pvs {
 		qcom,pvs-format-a;
 		qcom,speed0-pvs0-bin-v0 =
