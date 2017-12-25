@@ -170,7 +170,7 @@ static int __init qcom_cpufreq_driver_init(void)
 {
 	struct cpufreq_dt_platform_data pdata = { .independent_clocks = true };
 	struct platform_device_info devinfo = {
-		.name = "cpufreq-dt",
+		.name = "cpufreq-krait",
 		.data = &pdata,
 		.size_data = sizeof(pdata),
 	};
