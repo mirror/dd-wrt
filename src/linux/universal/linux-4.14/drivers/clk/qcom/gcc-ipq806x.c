@@ -3509,6 +3509,7 @@ static int gcc_ipq806x_probe(struct platform_device *pdev)
 	struct regmap *regmap;
 	int ret;
 
+
 	ret = qcom_cc_register_board_clk(dev, "cxo_board", "cxo", 25000000);
 	if (ret)
 		return ret;
