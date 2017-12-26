@@ -24,14 +24,19 @@
 #include <net/protocol.h>
 #include <net/gre.h>
 
+#define GREPROTO_CNT \
+		(GREPROTO_MAX + GREPROTO_NONSTD_MAX - GREPROTO_NONSTD_BASE)
 
-static const struct gre_protocol __rcu *gre_proto[GREPROTO_MAX] __read_mostly;
+static const struct gre_protocol __rcu *gre_proto[GREPROTO_CNT] __read_mostly;
 static DEFINE_SPINLOCK(gre_proto_lock);
 
 int gre_add_protocol(const struct gre_protocol *proto, u8 version)
 {
-	if (version >= GREPROTO_MAX)
-		goto err_out;
+	if (version >= GREPROTO_NONSTD_BASE && version < GREPROTO_NONSTD_MAX)
+		version -= GREPROTO_NONSTD_BASE - GREPROTO_MAX;
+	else
+		if (version >= GREPROTO_MAX)
+			goto err_out;
 
 	spin_lock(&gre_proto_lock);
 	if (gre_proto[version])
@@ -50,8 +55,11 @@ EXPORT_SYMBOL_GPL(gre_add_protocol);
 
 int gre_del_protocol(const struct gre_protocol *proto, u8 version)
 {
-	if (version >= GREPROTO_MAX)
-		goto err_out;
+	if (version >= GREPROTO_NONSTD_BASE && version < GREPROTO_NONSTD_MAX)
+		version -= GREPROTO_NONSTD_BASE - GREPROTO_MAX;
+	else
+		if (version >= GREPROTO_MAX)
+			goto err_out;
 
 	spin_lock(&gre_proto_lock);
 	if (rcu_dereference_protected(gre_proto[version],
@@ -75,12 +83,22 @@ static int gre_rcv(struct sk_buff *skb)
 	u8 ver;
 	int ret;
 
+	/* the standard GRE header is 12 octets; the EOIP header is 8
+	 * 4 octets long ethernet packet can not be valid
+	 */
 	if (!pskb_may_pull(skb, 12))
 		goto drop;
 
-	ver = skb->data[1]&0x7f;
-	if (ver >= GREPROTO_MAX)
-		goto drop;
+	/* check for custom EOIP header */
+	if (skb->data[0] == 0x20 && skb->data[1] == 0x01 &&
+			skb->data[2] == 0x64 && skb->data[3] == 0x00)
+		ver = GREPROTO_NONSTD_EOIP - GREPROTO_NONSTD_BASE
+				+ GREPROTO_MAX;
+	else {
+		ver = skb->data[1]&0x7f;
+		if (ver >= GREPROTO_MAX)
+			goto drop;
+	}
 
 	rcu_read_lock();
 	proto = rcu_dereference(gre_proto[ver]);
@@ -101,10 +119,19 @@ static void gre_err(struct sk_buff *skb, u32 info)
 {
 	const struct gre_protocol *proto;
 	const struct iphdr *iph = (const struct iphdr *)skb->data;
-	u8 ver = skb->data[(iph->ihl<<2) + 1]&0x7f;
+	u8 ver;
 
-	if (ver >= GREPROTO_MAX)
-		return;
+	if (skb->data[(iph->ihl<<2) + 0] == 0x20 &&
+			skb->data[(iph->ihl<<2) + 1] == 0x01 &&
+			skb->data[(iph->ihl<<2) + 2] == 0x64 &&
+			skb->data[(iph->ihl<<2) + 3] == 0x00)
+		ver = GREPROTO_NONSTD_EOIP - GREPROTO_NONSTD_BASE
+				+ GREPROTO_MAX;
+	else {
+		ver = skb->data[(iph->ihl<<2) + 1]&0x7f;
+		if (ver >= GREPROTO_MAX)
+			return;
+	}
 
 	rcu_read_lock();
 	proto = rcu_dereference(gre_proto[ver]);
