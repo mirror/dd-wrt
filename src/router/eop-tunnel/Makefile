@@ -13,9 +13,11 @@ clean:
 install:
 	install -d $(INSTALLDIR)/etc
 	install -d $(INSTALLDIR)/etc/config
+	install -d $(INSTALLDIR)/usr/sbin
 	cp $(MODULE)*.nvramconfig $(INSTALLDIR)/etc/config
 	cp $(MODULE)*.startup $(INSTALLDIR)/etc/config
 	cp $(MODULE)*.firewall $(INSTALLDIR)/etc/config
+	cp mtik/eoip $(INSTALLDIR)/usr/sbin
 
 www-install:
 	install -d $(INSTALLDIR)/../www
@@ -23,5 +25,5 @@ www-install:
 	cp $(MODULE)*.asp $(INSTALLDIR)/../www/www
 
 all: install
-	@true
+	make -C mtik
 
