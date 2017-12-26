@@ -540,9 +540,9 @@ static netdev_tx_t eoip_if_xmit(struct sk_buff *skb, struct net_device *dev)
 	((__le16 *)(iph + 1))[3] = cpu_to_le16(tunnel->parms.i_key);
 
 	nf_reset(skb);
-	//tstats = this_cpu_ptr(dev->tstats);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
+	tstats = this_cpu_ptr(dev->tstats);
 	__IPTUNNEL_XMIT_COMPAT(tstats, &dev->stats);
 #else
 	__IPTUNNEL_XMIT_COMPAT(dev_net(dev), skb->sk, &dev->stats, &dev->stats);
