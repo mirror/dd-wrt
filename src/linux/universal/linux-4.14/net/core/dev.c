@@ -2981,8 +2981,7 @@ static int xmit_one(struct sk_buff *skb, struct net_device *dev,
 	 */
 	if (!skb->fast_forwarded) {
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-	if (!list_empty(&ptype_all) &&
-		!(skb->imq_flags & IMQ_F_ENQUEUE))
+	if (!list_empty(&ptype_all) && !(skb->imq_flags & IMQ_F_ENQUEUE))
 #else
 		if (!list_empty(&ptype_all))
 #endif
