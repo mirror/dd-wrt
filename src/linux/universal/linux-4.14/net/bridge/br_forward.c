@@ -141,7 +141,7 @@ static void __br_forward(const struct net_bridge_port *to,
 		indev = NULL;
 	}
 
-	NF_HOOK(NFPROTO_BRIDGE, br_hook,
+	BR_HOOK(NFPROTO_BRIDGE, br_hook,
 		net, NULL, skb, indev, skb->dev,
 		br_forward_finish);
 }
