@@ -107,7 +107,7 @@ int rtnetlink_request(struct nlmsghdr *msg, int buflen, struct sockaddr_nl *adr)
 	rsk = socket(PF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
 	if (rsk < 0)
 		return -1;
-	n = sendto(rsk, msg, buflen, 0, (struct sockaddr *)adr, sizeof(struct sockaddr_nl));
+	n = sendto(rsk, msg, buflen , 0, (struct sockaddr *)adr, sizeof(struct sockaddr_nl));
 	if (errno)
 		perror("in send");
 	close(rsk);
@@ -140,6 +140,7 @@ static int eoip_add(int excl,char *name,uint16_t tunnelid,uint32_t sip,uint32_t 
 		struct rtattr a_tos;
 		uint8_t tos;
 		uint8_t tospad[3];
+		uint8_t dummy[0];
 	} req = {
 		.msg = {
 			.nlmsg_len = 0, // fix me later
@@ -203,7 +204,7 @@ static int eoip_add(int excl,char *name,uint16_t tunnelid,uint32_t sip,uint32_t 
 		.nl_family = AF_NETLINK,
 	};
 
-	req.msg.nlmsg_len=NLMSG_LENGTH(sizeof(req));
+	req.msg.nlmsg_len = NLMSG_LENGTH(sizeof(req)) - sizeof(req.msg);
 
 	req.a_name.rta_len=(char *)&req.a_lnfo-(char *)&req.a_name;
 	req.a_lnfo.rta_len=(char *)&req.dummy-(char *)&req.a_lnfo;
