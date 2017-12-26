@@ -1953,6 +1953,7 @@ var eoip=new Object();
 eoip.titl="EoIP Tunnel";
 eoip.tunnel="Tunnel";
 eoip.legend="Ethernet Over IP Tunneling";
+eoip.mtik="Mikrotik Protocol";
 eoip.srv="EoIP Tunnel";
 eoip.remoteIP="Remote IP Address";
 eoip.tunnelID="Tunnel ID";
