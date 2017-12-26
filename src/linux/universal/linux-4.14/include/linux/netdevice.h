@@ -1797,6 +1797,10 @@ struct net_device {
 /*
  * Cache lines mostly used on receive path (including eth_type_trans())
  */
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+	unsigned long		last_rx;
+#endif
+
 	/* Interface address info used in eth_type_trans() */
 	unsigned char		*dev_addr;
 
@@ -3655,6 +3659,18 @@ static inline void netif_tx_unlock_bh(struct net_device *dev)
 	} else {					\
 		__netif_tx_release(txq);		\
 	}						\
+}
+
+#define HARD_TX_LOCK_BH(dev, txq) {           \
+    if ((dev->features & NETIF_F_LLTX) == 0) {  \
+        __netif_tx_lock_bh(txq);      \
+    }                       \
+}
+
+#define HARD_TX_UNLOCK_BH(dev, txq) {          \
+    if ((dev->features & NETIF_F_LLTX) == 0) {  \
+        __netif_tx_unlock_bh(txq);         \
+    }                       \
 }
 
 static inline void netif_tx_disable(struct net_device *dev)
