@@ -7,8 +7,11 @@ endif
 
 MODULE:=eop-tunnel
 
+all:
+	make -C mtik
+
 clean:
-	@true
+	make -C mtik clean
 
 install:
 	install -d $(INSTALLDIR)/etc
@@ -24,6 +27,4 @@ www-install:
 	install -d $(INSTALLDIR)/../www/www
 	cp $(MODULE)*.asp $(INSTALLDIR)/../www/www
 
-all: install
-	make -C mtik
 
