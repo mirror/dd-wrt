@@ -66,7 +66,9 @@ struct device_node *of_irq_find_parent(struct device_node *child)
 
 	do {
 #ifdef CONFIG_ARCH_ALPINE
-		if (!strncmp(child->name,"pcie-external",13) || !strncmp(child->name,"pcie-internal",13) || of_property_read_u32(child, "interrupt-parent", &parent)) {
+		if (!strncmp(child->name,"pcie-external",13) || !strncmp(child->name,"pcie-internal",13)) {
+			p = of_get_parent(child);
+		else if (of_property_read_u32(child, "interrupt-parent", &parent)) {
 #else
 		if (of_property_read_u32(child, "interrupt-parent", &parent)) {
 #endif
