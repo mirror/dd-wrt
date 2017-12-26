@@ -5,6 +5,7 @@ do
     echo COPY $i
     cp $i .config
     echo "# CONFIG_EXFAT_FS is not set" >> .config
+    echo "CONFIG_NET_EOIP=m" >> .config
     grep "CONFIG_X86=y" $i
     if [ $? -eq 0 ] 
 	then 
