@@ -877,7 +877,7 @@ static void __br_multicast_send_query(struct net_bridge *br,
 		skb->dev = port->dev;
 		br_multicast_count(br, port, skb, igmp_type,
 				   BR_MCAST_DIR_TX);
-		NF_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT,
+		BR_HOOK(NFPROTO_BRIDGE, NF_BR_LOCAL_OUT,
 			dev_net(port->dev), NULL, skb, NULL, skb->dev,
 			br_dev_queue_push_xmit);
 	} else {
