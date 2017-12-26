@@ -446,9 +446,7 @@ drop_nolock:
 static netdev_tx_t eoip_if_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct ip_tunnel *tunnel = netdev_priv(dev);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
 	struct pcpu_sw_netstats *tstats;
-#endif
 	const struct iphdr *old_iph = ip_hdr(skb);
 	const struct iphdr *tiph;
 	struct flowi4 fl4;
