@@ -1345,6 +1345,7 @@ static int msm_request_port(struct uart_port *port)
 		return -EBUSY;
 
 	port->membase = ioremap(port->mapbase, size);
+	printk(KERN_INFO "physical %p = virtual %p\n",port->mapbase, port->membase);
 	if (!port->membase) {
 		ret = -EBUSY;
 		goto fail_release_port;
