@@ -3,6 +3,7 @@ nv=/usr/sbin/nvram
 		
 /bin/mkdir -p /tmp/oet/pid
 cd /tmp/oet/pid
+rmmod eoip
 for i in 1 2 3 4 5 6 7 8 9 10
 do
 	if test -e "${i}.pid" 
@@ -14,23 +15,39 @@ do
 	fi
 	if [ `$nv get oet${i}_en` -eq 1 ]
 	then
-		insmod etherip
-		if [ `$nv get oet${i}_bridged` -eq 1 ]
+
+		if [ `$nv get oet${i}_mtik` -eq 1 ]
 		then
-			ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local any
-			ip link set dev oet${i} up
-			ifconfig oet${i} up 2>&1 > /dev/null
-			ifconfig oet${i} promisc 2>&1 > /dev/null
-			brctl addif $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
-			brctl setportprio $(getbridge oet${i}) oet${i} $(getbridgeprio oet${i})
-			emf add iface $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
+			insmod eoip
+			eoip add tunnel-id $($nv get oet${i}_id) name oet${i} remote $($nv get oet${i}_rem)
+			if [ `$nv get oet${i}_bridged` -eq 1 ]
+			then
+				ifconfig oet${i} up 2>&1 > /dev/null
+				ifconfig oet${i} promisc 2>&1 > /dev/null
+				brctl addif $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
+				brctl setportprio $(getbridge oet${i}) oet${i} $(getbridgeprio oet${i})
+				emf add iface $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
+			else
+				ifconfig oet${i} promisc up 2>&1 > /dev/null
+				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
+			fi
 		else
+			insmod etherip
 			ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local any
-			ip link set dev oet${i} up
-			ifconfig oet${i} promisc 2>&1 > /dev/null
-			#ifconfig oet${i} $($nv get oet${i}_ipaddr) netmask $($nv get oet${i}_netmask)
-			ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
-    		fi
-		echo enable > ${i}.pid
+			if [ `$nv get oet${i}_bridged` -eq 1 ]
+			then
+				ip link set dev oet${i} up
+				ifconfig oet${i} up 2>&1 > /dev/null
+				ifconfig oet${i} promisc 2>&1 > /dev/null
+				brctl addif $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
+				brctl setportprio $(getbridge oet${i}) oet${i} $(getbridgeprio oet${i})
+				emf add iface $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
+			else
+				ip link set dev oet${i} up
+				ifconfig oet${i} promisc 2>&1 > /dev/null
+				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
+    			fi
+			echo enable > ${i}.pid
+		fi
 	fi
 done
