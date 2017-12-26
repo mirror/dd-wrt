@@ -39,7 +39,7 @@
 #include <net/ip.h>
 #include <net/icmp.h>
 #include <net/protocol.h>
-#include <net/ipip.h>
+//#include <net/ipip.h>
 #include <net/arp.h>
 #include <net/checksum.h>
 #include <net/dsfield.h>
@@ -76,17 +76,6 @@ struct eoip_net {
  * Locking : hash tables are protected by RCU and RTNL
  */
 
-#define for_each_ip_tunnel_rcu(start) \
-	for (t = rcu_dereference(start); t; t = rcu_dereference(t->next))
-
-/* often modified stats are per cpu, other are shared (netdev->stats) */
-struct pcpu_tstats {
-	unsigned long rx_packets;
-	unsigned long rx_bytes;
-	unsigned long tx_packets;
-	unsigned long tx_bytes;
-};
-
 static struct net_device_stats *eoip_if_get_stats(struct net_device *dev)
 {
 	struct pcpu_tstats sum = { 0 };
@@ -121,7 +110,7 @@ static struct ip_tunnel *eoip_tunnel_lookup(struct net_device *dev,
 	int dev_type = ARPHRD_ETHER;
 	int score, cand_score = 4;
 
-	for_each_ip_tunnel_rcu(ign->tunnels[h0]) {
+	for_each_ip_tunnel_rcu(t, ign->tunnels[h0]) {
 		if (local != t->parms.iph.saddr ||
 				remote != t->parms.iph.daddr ||
 				key != t->parms.i_key ||
@@ -228,7 +217,7 @@ static struct ip_tunnel *eoip_tunnel_locate(struct net *net,
 	else
 		strcpy(name, "eoip%d");
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
 	dev = alloc_netdev(sizeof(*t), name, eoip_setup);
 #else
 	dev = alloc_netdev(sizeof(*t), name, NET_NAME_UNKNOWN, eoip_setup);
@@ -491,7 +480,7 @@ static netdev_tx_t eoip_if_xmit(struct sk_buff *skb, struct net_device *dev)
 	mtu = skb_dst(skb) ? dst_mtu(skb_dst(skb)) : dev->mtu;
 
 	if (skb_dst(skb))
-		skb_dst(skb)->ops->update_pmtu(skb_dst(skb), mtu);
+		skb_dst(skb)->ops->update_pmtu(skb_dst(skb), NULL, skb, mtu);
 
 	if (tunnel->err_count > 0) {
 		if (time_before(jiffies,
@@ -533,7 +522,7 @@ static netdev_tx_t eoip_if_xmit(struct sk_buff *skb, struct net_device *dev)
 	skb_dst_set(skb, &rt->dst);
 
 	/*
-	 *	Push down and install the IPIP header.
+	 *	Push down and install the EOIP header.
 	 */
 
 	iph = ip_hdr(skb);
@@ -558,12 +547,14 @@ static netdev_tx_t eoip_if_xmit(struct sk_buff *skb, struct net_device *dev)
 	((__le16 *)(iph + 1))[3] = cpu_to_le16(tunnel->parms.i_key);
 
 	nf_reset(skb);
+
 	tstats = this_cpu_ptr(dev->tstats);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
 	__IPTUNNEL_XMIT_COMPAT(tstats, &dev->stats);
 #else
 	__IPTUNNEL_XMIT_COMPAT(dev_net(dev), skb->sk, tstats, &dev->stats);
 #endif
+	//ip_tunnel_xmit(skb, dev, tiph, tiph->protocol);
 	return NETDEV_TX_OK;
 
 tx_error:
@@ -911,12 +902,13 @@ static int eoip_fill_info(struct sk_buff *skb, const struct net_device *dev)
 	struct ip_tunnel *t = netdev_priv(dev);
 	struct ip_tunnel_parm *p = &t->parms;
 
-	NLA_PUT_U32(skb, IFLA_GRE_LINK, p->link);
-	NLA_PUT_BE32(skb, IFLA_GRE_IKEY, p->i_key);
-	NLA_PUT_BE32(skb, IFLA_GRE_LOCAL, p->iph.saddr);
-	NLA_PUT_BE32(skb, IFLA_GRE_REMOTE, p->iph.daddr);
-	NLA_PUT_U8(skb, IFLA_GRE_TTL, p->iph.ttl);
-	NLA_PUT_U8(skb, IFLA_GRE_TOS, p->iph.tos);
+	if (nla_put_u32(skb, IFLA_GRE_LINK, p->link) ||
+		nla_put_be32(skb, IFLA_GRE_IKEY, p->i_key) ||
+		nla_put_be32(skb, IFLA_GRE_LOCAL, p->iph.saddr) ||
+		nla_put_be32(skb, IFLA_GRE_REMOTE, p->iph.daddr) ||
+		nla_put_u8(skb, IFLA_GRE_TTL, p->iph.ttl) ||
+		nla_put_u8(skb, IFLA_GRE_TOS, p->iph.tos))
+		goto nla_put_failure;
 
 	return 0;
 
