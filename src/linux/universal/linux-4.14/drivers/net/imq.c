@@ -10,7 +10,7 @@
  *
  *            The first version was written by Martin Devera, <devik@cdi.cz>
  *
- *			   See Creditis.txt
+ *			   See Credits.txt
  */
 
 #include <linux/module.h>
@@ -25,7 +25,7 @@
 #include <linux/netfilter.h>
 #include <linux/netfilter_ipv4.h>
 #if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
-	#include <linux/netfilter_ipv6.h>
+#include <linux/netfilter_ipv6.h>
 #endif
 #include <linux/imq.h>
 #include <net/pkt_sched.h>
@@ -316,6 +316,8 @@ static netdev_tx_t imq_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct nf_queue_entry *entry = skb->nf_queue_entry;
 
+	rcu_read_lock();
+
 	skb->nf_queue_entry = NULL;
 	netif_trans_update(dev);
 
@@ -343,6 +345,7 @@ static netdev_tx_t imq_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 		dev->stats.tx_dropped++;
 		dev_kfree_skb(skb);
 
+		rcu_read_unlock();
 		return NETDEV_TX_OK;
 	}
 
@@ -355,6 +358,7 @@ static netdev_tx_t imq_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 
 	nf_reinject(entry, NF_ACCEPT);
 
+	rcu_read_unlock();
 	return NETDEV_TX_OK;
 }
 
@@ -390,7 +394,7 @@ static struct nf_queue_entry *nf_queue_entry_dup(struct nf_queue_entry *e)
 	struct nf_queue_entry *entry = kmemdup(e, e->size, GFP_ATOMIC);
 	if (entry) {
 		nf_queue_entry_get_refs(entry);
-			return entry;
+		return entry;
 	}
 	return NULL;
 }
@@ -556,7 +560,7 @@ static int __imq_nf_queue(struct nf_queue_entry *entry, struct net_device *dev)
 	int retval = -EINVAL;
 	unsigned int orig_queue_index;
 
-//	dev->last_rx = jiffies;
+	dev->last_rx = jiffies;
 
 	skb = entry->skb;
 	skb_orig = NULL;
@@ -709,6 +713,10 @@ static int imq_open(struct net_device *dev)
 	return 0;
 }
 
+static struct device_type imq_device_type = {
+	.name = "imq",
+};
+
 static const struct net_device_ops imq_netdev_ops = {
 	.ndo_open		= imq_open,
 	.ndo_stop		= imq_close,
@@ -730,7 +738,8 @@ static void imq_setup(struct net_device *dev)
 				     IFF_TX_SKB_SHARING);
 }
 
-static int imq_validate(struct nlattr *tb[], struct nlattr *data[], struct netlink_ext_ack *extack)
+static int imq_validate(struct nlattr *tb[], struct nlattr *data[],
+			struct netlink_ext_ack *extack)
 {
 	int ret = 0;
 
@@ -761,18 +770,61 @@ static const struct nf_queue_handler imq_nfqh = {
 	.outfn = imq_nf_queue,
 };
 
-static int __init imq_init_hooks(void)
+static int __net_init imq_nf_register(struct net *net)
+{
+	return nf_register_net_hooks(net, imq_ops,
+				    ARRAY_SIZE(imq_ops));
+};
+
+static void __net_exit imq_nf_unregister(struct net *net)
+{
+	nf_unregister_net_hooks(net, imq_ops,
+			    ARRAY_SIZE(imq_ops));
+};
+
+static struct pernet_operations imq_net_ops = {
+	.init		= imq_nf_register,
+	.exit		= imq_nf_unregister,
+};
+
+static int __net_init imq_init_hooks(void)
 {
 	int ret;
-
 	nf_register_queue_imq_handler(&imq_nfqh);
 
-	ret = nf_register_hooks(imq_ops, ARRAY_SIZE(imq_ops));
+	ret = register_pernet_subsys(&imq_net_ops);
 	if (ret < 0)
 		nf_unregister_queue_imq_handler();
 
 	return ret;
 }
+
+#ifdef CONFIG_LOCKDEP
+	static struct lock_class_key imq_netdev_addr_lock_key;
+
+	static void __init imq_dev_set_lockdep_one(struct net_device *dev,
+				    struct netdev_queue *txq, void *arg)
+	{
+	/*
+	 * the IMQ transmit locks can be taken recursively,
+	 * for example with one IMQ rule for input- and one for
+	 * output network devices in iptables!
+	 * until we find a better solution ignore them.
+	 */
+		lockdep_set_novalidate_class(&txq->_xmit_lock);
+	}
+
+	static void imq_dev_set_lockdep_class(struct net_device *dev)
+		{
+			lockdep_set_class_and_name(&dev->addr_list_lock,
+			   			   &imq_netdev_addr_lock_key, "_xmit_addr_IMQ");
+			netdev_for_each_tx_queue(dev, imq_dev_set_lockdep_one, NULL);
+}
+#else
+	static inline void imq_dev_set_lockdep_class(struct net_device *dev)
+		{
+		}
+#endif
 
 static int __init imq_init_one(int index)
 {
@@ -788,9 +840,12 @@ static int __init imq_init_one(int index)
 		goto fail;
 
 	dev->rtnl_link_ops = &imq_link_ops;
+	SET_NETDEV_DEVTYPE(dev, &imq_device_type);
 	ret = register_netdevice(dev);
 	if (ret < 0)
 		goto fail;
+
+	imq_dev_set_lockdep_class(dev);
 
 	return 0;
 fail:
@@ -801,6 +856,7 @@ fail:
 static int __init imq_init_devs(void)
 {
 	int err, i;
+
 
 	if (numdevs < 1 || numdevs > IMQ_MAX_DEVS) {
 		pr_err("IMQ: numdevs has to be betweed 1 and %u\n",
@@ -879,7 +935,7 @@ static int __init imq_init_module(void)
 
 static void __exit imq_unhook(void)
 {
-	nf_unregister_hooks(imq_ops, ARRAY_SIZE(imq_ops));
+	unregister_pernet_subsys(&imq_net_ops);
 	nf_unregister_queue_imq_handler();
 }
 
