@@ -52,84 +52,34 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 			  temp, (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""), tun);
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"idoet%d\">\n", tun);
+
+
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.mtik)</script></div>\n");
+		sprintf(temp, "oet%d_mtik", tun);
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s \" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+			  temp, (nvram_matchi(temp, 1) ? "checked=\"checked\"" : ""), tun);
+		websWrite(wp,
+			  " <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s \" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
+			  temp, (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""), tun);
+		websWrite(wp, "</div>\n");
+
+		websWrite( wp, "<div class=\"setting\">\n" );
+		websWrite( wp,
+		   "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.tunnelID)</script></div>\n" );
+		  sprintf( temp, "oet%d_id", tun );
+		websWrite( wp,
+		   "<input size=\"4\" maxlength=\"3\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,999,eoip.tunnelID)\" value=\"%s\" />\n",
+		   temp, nvram_get( temp ) );
+		websWrite( wp, "</div>\n" );
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.remoteIP)</script></div>\n");
 		websWrite(wp, "<input type=\"hidden\" name=\"oet%d_rem\" value=\"0.0.0.0\"/>\n", tun);
 		sprintf(temp, "oet%d_rem", tun);
 		show_ip(wp, NULL, temp, 0, "eoip.remoteIP");
 		websWrite(wp, "</div>\n");
-/*
-	websWrite( wp, "<div class=\"setting\">\n" );
-	websWrite( wp,
-		   "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.tunnelID)</script></div>\n" );
-		  	sprintf( temp, "oet%d_id", tun );
-	websWrite( wp,
-		   "<input size=\"4\" maxlength=\"3\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,999,eoip.tunnelID)\" value=\"%s\" />\n",
-		   temp, nvram_get( temp ) );
-	websWrite( wp, "</div>\n" );
-
-	websWrite( wp, "<div class=\"setting\">\n" );
-	websWrite( wp,
-		   "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.comp)</script></div>\n" );
-	sprintf( temp, "oet%d_comp", tun );
-	websWrite( wp,
-		   "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-		   temp,
-		   ( nvram_matchi( temp,1)) ? "checked=\"checked\"" :
-		     "" ) );
-	websWrite( wp,
-		   "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-		   temp,
-		   ( nvram_matchi( temp,0)) ? "checked=\"checked\"" :
-		     "" ) );
-	websWrite( wp, "</div>\n" );
-	websWrite( wp, "<div class=\"setting\">\n" );
-	websWrite( wp,
-		   "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.passtos)</script></div>\n" );
-	sprintf( temp, "oet%d_pt", tun );
-	websWrite( wp,
-		   "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-		   temp,
-		   ( nvram_matchi( temp,1)) ? "checked=\"checked\"" :
-		     "" ) );
-	websWrite( wp,
-		   "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-		   temp,
-		   ( nvram_matchi( temp,0)) ? "checked=\"checked\"" :
-		     "" ) );
-	websWrite( wp, "</div>\n" );
-	websWrite( wp, "<div class=\"setting\">\n" );
-	websWrite( wp,
-		   "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.frag)</script></div>\n" );
-	sprintf( temp, "oet%d_fragment", tun );
-	websWrite( wp,
-		   "<input size=\"4\" maxlength=\"4\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,1500,eoip.frag)\" value=\"%s\" />\n",
-		   temp, nvram_get( temp ) );
-	websWrite( wp, "</div>\n" );
-	websWrite( wp, "<div class=\"setting\">\n" );
-	websWrite( wp,
-		   "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.mssfix)</script></div>\n" );
-	sprintf( temp, "oet%d_mssfix", tun );
-	websWrite( wp,
-		   "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-		   temp,
-		   ( nvram_matchi( temp,1)) ? "checked=\"checked\"" :
-		     "" ) );
-	websWrite( wp,
-		   "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-		   temp,
-		   ( nvram_matchi( temp,0)) ? "checked=\"checked\"" :
-		     "" ) );
-	websWrite( wp, "</div>\n" );
-	websWrite( wp, "<div class=\"setting\">\n" );
-	websWrite( wp,
-		   "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.shaper)</script></div>\n" );
-	sprintf( temp, "oet%d_shaper", tun );
-	websWrite( wp,
-		   "<input size=\"6\" maxlength=\"6\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,100000,eoip.shaper)\" value=\"%s\" />\n",
-		   temp, nvram_get( temp ) );
-	websWrite( wp, "</div>\n" );
-*/
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.bridging)</script></div>\n");
 		sprintf(temp, "oet%d_bridged", tun);

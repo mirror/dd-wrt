@@ -1661,6 +1661,7 @@ eoip.tunnel="Tunnel";
 eoip.legend="Ethernet &Uuml;ber IP Tunneln";
 eoip.srv="EoIP Tunnel";
 eoip.remoteIP="Entfernte IP Address";
+eoip.mtik="Mikrotik Protokol";
 eoip.tunnelID="Tunnel Nummer";
 eoip.comp="Kompression";
 eoip.passtos="TOS Durchleitung";
