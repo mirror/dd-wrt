@@ -429,6 +429,23 @@ drop_nolock:
 	return 0;
 }
 
+#define __IPTUNNEL_XMIT(stats1, stats2) do {                \
+	int err;                            \
+	int pkt_len = skb->len - skb_transport_offset(skb);     \
+														\
+	skb->ip_summed = CHECKSUM_NONE;                 \
+	ip_select_ident(skb, &rt->dst, NULL);               \
+                                    \
+	err = ip_local_out(skb);                    \
+	if (likely(net_xmit_eval(err) == 0)) {              \
+		(stats1)->tx_bytes += pkt_len;              \
+		(stats1)->tx_packets++;                 \
+	} else {                            \
+		(stats2)->tx_errors++;                  \
+		(stats2)->tx_aborted_errors++;              \
+	}                               \
+} while (0)
+
 static netdev_tx_t eoip_if_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct ip_tunnel *tunnel = netdev_priv(dev);
@@ -543,11 +560,11 @@ static netdev_tx_t eoip_if_xmit(struct sk_buff *skb, struct net_device *dev)
 	((__le16 *)(iph + 1))[3] = cpu_to_le16(tunnel->parms.i_key);
 
 	nf_reset(skb);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
 	tstats = this_cpu_ptr(dev->tstats);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
 	__IPTUNNEL_XMIT_COMPAT(tstats, &dev->stats);
 #else
-	__IPTUNNEL_XMIT_COMPAT(dev_net(dev), skb->sk, &dev->stats, &dev->stats);
+	__IPTUNNEL_XMIT_COMPAT(dev_net(dev), skb->sk, tstats, &dev->stats);
 #endif
 	return NETDEV_TX_OK;
 
