@@ -4682,19 +4682,16 @@ int nand_scan_tail(struct mtd_info *mtd)
 	struct nand_ecc_ctrl *ecc = &chip->ecc;
 	struct nand_buffers *nbuf = NULL;
 	int ret, i;
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 	/* New bad blocks should be marked in OOB, flash-based BBT, or both */
 	if (WARN_ON((chip->bbt_options & NAND_BBT_NO_OOB_BBM) &&
 		   !(chip->bbt_options & NAND_BBT_USE_FLASH))) {
 		return -EINVAL;
 	}
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 
 	if (invalid_ecc_page_accessors(chip)) {
 		pr_err("Invalid ECC page accessors setup\n");
 		return -EINVAL;
 	}
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 
 	if (!(chip->options & NAND_OWN_BUFFERS)) {
 		nbuf = kzalloc(sizeof(*nbuf), GFP_KERNEL);
@@ -4724,7 +4721,6 @@ printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 	} else if (!chip->buffers) {
 		return -ENOMEM;
 	}
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 
 	/*
 	 * FIXME: some NAND manufacturer drivers expect the first die to be
@@ -4733,13 +4729,10 @@ printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 	 * chip.
 	 */
 	chip->select_chip(mtd, 0);
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 	ret = nand_manufacturer_init(chip);
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 	chip->select_chip(mtd, -1);
 	if (ret)
 		goto err_free_nbuf;
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 
 	/* Set the internal oob buffer location, just after the page data */
 	chip->oob_poi = chip->buffers->databuf + mtd->writesize;
@@ -4765,7 +4758,6 @@ printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 			goto err_nand_manuf_cleanup;
 		}
 	}
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 
 	/*
 	 * Check ECC mode, default to software if 3byte/512byte hardware ECC is
@@ -4877,7 +4869,6 @@ printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 		ret = -EINVAL;
 		goto err_nand_manuf_cleanup;
 	}
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 
 	/* For many systems, the standard OOB write also works for raw */
 	if (!ecc->read_oob_raw)
@@ -4899,14 +4890,12 @@ printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 		ret = -EINVAL;
 		goto err_nand_manuf_cleanup;
 	}
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 	ecc->total = ecc->steps * ecc->bytes;
-	if (ecc->total > mtd->oobsize) {
+/*	if (ecc->total > mtd->oobsize) {
 		WARN(1, "Total number of ECC bytes exceeded oobsize\n");
 		ret = -EINVAL;
 		goto err_nand_manuf_cleanup;
-	}
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
+	}*/
 
 	/*
 	 * The number of bytes available for a client to place data into
@@ -4916,14 +4905,12 @@ printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 	if (ret < 0)
 		ret = 0;
 
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 	mtd->oobavail = ret;
 
 	/* ECC sanity check: warn if it's too weak */
 	if (!nand_ecc_strength_good(mtd))
 		pr_warn("WARNING: %s: the ECC used on your system is too weak compared to the one required by the NAND chip\n",
 			mtd->name);
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 
 	/* Allow subpage writes up to ecc.steps. Not possible for MLC flash */
 	if (!(chip->options & NAND_NO_SUBPAGE_WRITE) && nand_is_slc(chip)) {
@@ -4956,7 +4943,6 @@ printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 	default:
 		break;
 	}
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 
 	/* Fill in remaining MTD driver data */
 	mtd->type = nand_is_slc(chip) ? MTD_NANDFLASH : MTD_MLCNANDFLASH;
@@ -4990,12 +4976,10 @@ printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 	if (!mtd->bitflip_threshold)
 		mtd->bitflip_threshold = DIV_ROUND_UP(mtd->ecc_strength * 3, 4);
 
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 	/* Initialize the ->data_interface field. */
 	ret = nand_init_data_interface(chip);
 	if (ret)
 		goto err_nand_manuf_cleanup;
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 
 	/* Enter fastest possible mode on all dies. */
 	for (i = 0; i < chip->numchips; i++) {
@@ -5007,17 +4991,14 @@ printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 			goto err_nand_data_iface_cleanup;
 	}
 
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 	/* Check, if we should skip the bad block table scan */
 	if (chip->options & NAND_SKIP_BBTSCAN)
 		return 0;
 
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 	/* Build bad block table */
 	ret = chip->scan_bbt(mtd);
 	if (ret)
 		goto err_nand_data_iface_cleanup;
-printk(KERN_INFO "%s:%d\n",__func__,__LINE__);
 
 	return 0;
 
