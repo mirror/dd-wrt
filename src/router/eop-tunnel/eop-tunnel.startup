@@ -20,7 +20,7 @@ do
 		then
 			insmod gre
 			insmod eoip
-			eoip add tunnel-id $($nv get oet${i}_id) name oet${i} remote $($nv get oet${i}_rem)
+			eoip add tunnel-id $($nv get oet${i}_id) name oet${i} remote $($nv get oet${i}_rem) local $($nv get oet${i}_local)
 			if [ `$nv get oet${i}_bridged` -eq 1 ]
 			then
 				ifconfig oet${i} up 2>&1 > /dev/null
