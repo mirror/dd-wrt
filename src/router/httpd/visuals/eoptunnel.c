@@ -74,12 +74,24 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		   "<input size=\"4\" maxlength=\"3\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,999,eoip.tunnelID)\" value=\"%s\" />\n",
 		   temp, nvram_get( temp ) );
 		websWrite( wp, "</div>\n" );
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.localIP)</script></div>\n");
+		websWrite(wp, "<input type=\"hidden\" name=\"oet%d_local\" value=\"0.0.0.0\"/>\n", tun);
+		sprintf(temp, "oet%d_local", tun);
+		show_ip(wp, NULL, temp, 0, "eoip.localIP");
+		websWrite(wp, "</div>\n");
+
+
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.remoteIP)</script></div>\n");
 		websWrite(wp, "<input type=\"hidden\" name=\"oet%d_rem\" value=\"0.0.0.0\"/>\n", tun);
 		sprintf(temp, "oet%d_rem", tun);
 		show_ip(wp, NULL, temp, 0, "eoip.remoteIP");
 		websWrite(wp, "</div>\n");
+
+
+
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.bridging)</script></div>\n");
 		sprintf(temp, "oet%d_bridged", tun);
