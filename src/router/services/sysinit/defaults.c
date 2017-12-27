@@ -3271,6 +3271,7 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_EOP
 	{"oet1_en", "0"},
 	{"oet1_rem", "192.168.90.1"},
+	{"oet1_local", "0.0.0.0"},
 	{"oet1_ipaddr", "1.2.3.4"},
 	{"oet1_netmask", "255.255.255.0"},
 	{"oet1_id", "1"},
@@ -3279,6 +3280,7 @@ struct nvram_param srouter_defaults[] = {
 
 	{"oet2_en", "0"},
 	{"oet2_rem", "192.168.90.1"},
+	{"oet2_local", "0.0.0.0"},
 	{"oet2_ipaddr", "1.2.3.4"},
 	{"oet2_netmask", "255.255.255.0"},
 	{"oet2_id", "1"},
@@ -3287,6 +3289,7 @@ struct nvram_param srouter_defaults[] = {
 
 	{"oet3_en", "0"},
 	{"oet3_rem", "192.168.90.1"},
+	{"oet3_local", "0.0.0.0"},
 	{"oet3_ipaddr", "1.2.3.4"},
 	{"oet3_netmask", "255.255.255.0"},
 	{"oet3_id", "1"},
@@ -3295,6 +3298,7 @@ struct nvram_param srouter_defaults[] = {
 
 	{"oet4_en", "0"},
 	{"oet4_rem", "192.168.90.1"},
+	{"oet4_local", "0.0.0.0"},
 	{"oet4_ipaddr", "1.2.3.4"},
 	{"oet4_netmask", "255.255.255.0"},
 	{"oet4_id", "1"},
@@ -3303,6 +3307,7 @@ struct nvram_param srouter_defaults[] = {
 
 	{"oet5_en", "0"},
 	{"oet5_rem", "192.168.90.1"},
+	{"oet5_local", "0.0.0.0"},
 	{"oet5_ipaddr", "1.2.3.4"},
 	{"oet5_netmask", "255.255.255.0"},
 	{"oet5_id", "1"},
@@ -3311,6 +3316,7 @@ struct nvram_param srouter_defaults[] = {
 
 	{"oet6_en", "0"},
 	{"oet6_rem", "192.168.90.1"},
+	{"oet6_local", "0.0.0.0"},
 	{"oet6_ipaddr", "1.2.3.4"},
 	{"oet6_netmask", "255.255.255.0"},
 	{"oet6_id", "1"},
@@ -3319,6 +3325,7 @@ struct nvram_param srouter_defaults[] = {
 
 	{"oet7_en", "0"},
 	{"oet7_rem", "192.168.90.1"},
+	{"oet7_local", "0.0.0.0"},
 	{"oet7_ipaddr", "1.2.3.4"},
 	{"oet7_netmask", "255.255.255.0"},
 	{"oet7_id", "1"},
@@ -3327,6 +3334,7 @@ struct nvram_param srouter_defaults[] = {
 
 	{"oet8_en", "0"},
 	{"oet8_rem", "192.168.90.1"},
+	{"oet8_local", "0.0.0.0"},
 	{"oet8_ipaddr", "1.2.3.4"},
 	{"oet8_netmask", "255.255.255.0"},
 	{"oet8_id", "1"},
@@ -3335,6 +3343,7 @@ struct nvram_param srouter_defaults[] = {
 
 	{"oet9_en", "0"},
 	{"oet9_rem", "192.168.90.1"},
+	{"oet9_local", "0.0.0.0"},
 	{"oet9_ipaddr", "1.2.3.4"},
 	{"oet9_netmask", "255.255.255.0"},
 	{"oet9_id", "1"},
@@ -3343,6 +3352,7 @@ struct nvram_param srouter_defaults[] = {
 
 	{"oet10_en", "0"},
 	{"oet10_rem", "192.168.90.1"},
+	{"oet10_local", "0.0.0.0"},
 	{"oet10_ipaddr", "1.2.3.4"},
 	{"oet10_netmask", "255.255.255.0"},
 	{"oet10_id", "1"},
