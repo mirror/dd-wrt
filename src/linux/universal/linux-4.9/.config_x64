@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86_64 4.9.69-rc1 Kernel Configuration
+# Linux/x86_64 4.9.71 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -1317,7 +1317,9 @@ CONFIG_BLK_DEV_NBD=y
 # CONFIG_BLK_DEV_HD is not set
 # CONFIG_BLK_DEV_RBD is not set
 # CONFIG_BLK_DEV_RSXX is not set
-# CONFIG_BLK_DEV_NVME is not set
+CONFIG_NVME_CORE=y
+CONFIG_BLK_DEV_NVME=y
+CONFIG_BLK_DEV_NVME_SCSI=y
 # CONFIG_NVME_TARGET is not set
 
 #
@@ -4242,4 +4244,3 @@ CONFIG_ARCH_HAS_SG_CHAIN=y
 CONFIG_ARCH_HAS_PMEM_API=y
 CONFIG_ARCH_HAS_MMIO_FLUSH=y
 CONFIG_SBITMAP=y
-CONFIG_NET_EOIP=m

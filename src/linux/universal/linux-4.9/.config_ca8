@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.69-rc1 Kernel Configuration
+# Linux/mips 4.9.71 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1835,4 +1835,3 @@ CONFIG_GENERIC_ATOMIC64=y
 # CONFIG_ARCH_HAS_SG_CHAIN is not set
 CONFIG_SBITMAP=y
 # CONFIG_VIRTUALIZATION is not set
-CONFIG_NET_EOIP=m
