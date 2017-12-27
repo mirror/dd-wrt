@@ -20,11 +20,10 @@ obj-$(CONFIG_NETFILTER_NETLINK_LOG) += nfnetlink_log.o
 # connection tracking
 obj-$(CONFIG_NF_CONNTRACK) += nf_conntrack.o
 
-obj-$(CONFIG_NF_CT_PROTO_GRE) += nf_conntrack_proto_gre.o
-
 # optional conntrack route cache extension
 obj-$(CONFIG_NF_CONNTRACK_RTCACHE) += nf_conntrack_rtcache.o
 
+obj-$(CONFIG_NF_CT_PROTO_GRE) += nf_conntrack_proto_gre.o
 
 # netlink interface for nf_conntrack
 obj-$(CONFIG_NF_CT_NETLINK) += nf_conntrack_netlink.o
