@@ -1906,7 +1906,8 @@ static void filter_input(void)
 	/*
 	 * most of what was here has been moved to the end 
 	 */
-	save2file("-A INPUT -m state --state RELATED,ESTABLISHED -j %s", log_accept);
+	save2file("-A INPUT -m state --state ESTABLISHED -j %s", log_accept);
+	save2file("-A INPUT -m state --state RELATED -j %s", log_accept);
 	if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
 		save2file("-A INPUT -i %s -j %s", nvram_safe_get("tvnicfrom"), log_accept);
 	}
@@ -2280,8 +2281,10 @@ static void filter_forward(void)
 	/*
 	 * If webfilter is used this rule must be evaluated after webstr rule
 	 */
-	if (filter_host_url)
-		save2file("-A FORWARD -m state --state RELATED,ESTABLISHED -j %s", log_accept);
+	if (filter_host_url){
+		save2file("-A FORWARD -m state --state ESTABLISHED -j %s", log_accept);
+		save2file("-A FORWARD -m state --state RELATED -j %s", log_accept);
+	}
 
 	/*
 	 * Accept the redirect, might be seen as INVALID, packets 
@@ -2326,7 +2329,8 @@ static void filter_forward(void)
 
 		if (nvram_matchi("wl0_br1_nat", 1)) {
 			save2file("-A FORWARD -i br0 -o br1 -j %s", log_accept);
-			save2file("-A FORWARD -o br0 -i br1 -m state --state ESTABLISHED,RELATED -j %s", log_accept);
+			save2file("-A FORWARD -o br0 -i br1 -m state --state ESTABLISHED -j %s", log_accept);
+			save2file("-A FORWARD -o br0 -i br1 -m state --state RELATED -j %s", log_accept);
 		}
 
 		/*
@@ -2334,7 +2338,8 @@ static void filter_forward(void)
 		 */
 		else if (nvram_matchi("wl0_br1_nat", 2)) {
 			save2file("-A FORWARD -o br0 -i br1 -j %s", log_accept);
-			save2file("-A FORWARD -i br0 -o br1 -m state --state ESTABLISHED,RELATED -j %s", log_accept);
+			save2file("-A FORWARD -i br0 -o br1 -m state --state ESTABLISHED -j %s", log_accept);
+			save2file("-A FORWARD -i br0 -o br1 -m state --state RELATED -j %s", log_accept);
 		}
 		/*
 		 * Sveasoft mod - default for br1/separate subnet WDS type 
@@ -2463,8 +2468,10 @@ static void filter_forward(void)
 	/*
 	 * If webfilter is not used we can put this rule on top in order to increase WAN<->LAN throughput
 	 */
-	if (!filter_host_url)
-		save2file("-I FORWARD -m state --state RELATED,ESTABLISHED -j %s", log_accept);
+	if (!filter_host_url){
+		save2file("-I FORWARD -m state --state ESTABLISHED -j %s", log_accept);
+		save2file("-I FORWARD -m state --state RELATED -j %s", log_accept);
+	}
 }
 
 /*
@@ -2719,7 +2726,8 @@ void start_firewall6(void)
 	eval("ip6tables", "-F", "INPUT");
 	eval("ip6tables", "-F", "FORWARD");
 	eval("ip6tables", "-F", "OUTPUT");
-	eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT");
+	eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "ESTABLISHED", "-j", "ACCEPT");
+	eval("ip6tables", "-A", "INPUT", "-m", "state", "--state", "RELATED", "-j", "ACCEPT");
 	eval("ip6tables", "-A", "INPUT", "-p", "icmpv6", "-j", "ACCEPT");
 	eval("ip6tables", "-A", "INPUT", "-s", "fe80::/64", "-j", "ACCEPT");
 	eval("ip6tables", "-A", "INPUT", "-i", "br0", "-j", "ACCEPT");
@@ -2744,7 +2752,8 @@ void start_firewall6(void)
 
 	eval("ip6tables", "-A", "INPUT", "-j", "DROP");
 
-	eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "RELATED,ESTABLISHED", "-j", "ACCEPT");
+	eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "ESTABLISHED", "-j", "ACCEPT");
+	eval("ip6tables", "-A", "FORWARD", "-m", "state", "--state", "RELATED", "-j", "ACCEPT");
 
 	if (nvram_match("ipv6_typ", "ipv6native") || nvram_match("ipv6_typ", "ipv6pd")) {
 		if (nvram_match("wan_proto", "disabled")) {
@@ -2794,6 +2803,9 @@ void start_firewall(void)
 		writeproc("/proc/net/arp_spoofing_enable", "1");
 	else
 		writeproc("/proc/net/arp_spoofing_enable", "0");
+
+	if (strlen(nvram_safe_get("openvpncl_route")) > 0)//policy routing currently not working with SFE
+		nvram_seti("sfe", 0);
 
 	if (nvram_matchi("sfe", 1))
 		insmod("shortcut-fe");
