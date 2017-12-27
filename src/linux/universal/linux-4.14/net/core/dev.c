@@ -6423,7 +6423,6 @@ void netdev_upper_dev_unlink(struct net_device *dev,
 	__netdev_adjacent_dev_unlink_neighbour(dev, upper_dev);
 
 	netdev_update_addr_mask(dev);
-	netdev_update_addr_mask(dev);
 	call_netdevice_notifiers_info(NETDEV_CHANGEUPPER, dev,
 				      &changeupper_info.info);
 }
