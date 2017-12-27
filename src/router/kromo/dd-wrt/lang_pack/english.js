@@ -1956,6 +1956,7 @@ eoip.legend="Ethernet Over IP Tunneling";
 eoip.mtik="Mikrotik Protocol";
 eoip.srv="EoIP Tunnel";
 eoip.remoteIP="Remote IP Address";
+eoip.localIP="Local IP Address";
 eoip.tunnelID="Tunnel ID";
 eoip.comp="Compression";
 eoip.passtos="TOS passthrough";
