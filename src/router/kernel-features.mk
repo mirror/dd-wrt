@@ -1,10 +1,12 @@
 define kernelfeatures
 	if [ "$(CONFIG_EOP_TUNNEL)" = "y" ]; then \
 		echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config; \
+		echo CONFIG_NET_EOIP=m >> $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_NET_EOIP is not set/CONFIG_NET_EOIP=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_NET_ETHERIP is not set/CONFIG_NET_ETHERIP=m/g' $(LINUXDIR)/.config; \
 	else \
 		echo "# CONFIG_NET_ETHERIP is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_NET_EOIP is not set" >> $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_NET_EOIP=m/# CONFIG_NET_EOIP is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_NET_ETHERIP=m/# CONFIG_NET_ETHERIP is not set/g' $(LINUXDIR)/.config; \
 	fi
