@@ -53,9 +53,7 @@ void start_pptpd(void)
 		&& nvram_matchi("sys_enable_jffs2", 1)))
 		jffs = 1;
 
-#ifdef HAVE_PPTP_ACCEL
 	insmod("pptp");
-#endif
 
 	// cprintf("stop vpn modules\n");
 	// stop_vpn_modules ();

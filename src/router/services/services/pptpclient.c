@@ -161,6 +161,7 @@ void start_pptp(int status)
 
 	if (status != REDIAL) {
 		start_pppmodules();
+		insmod("pptp");
 		create_pptp_config(nvram_safe_get("pptp_server_name"), username);
 		/*
 		 * Generate pap-secrets file 
