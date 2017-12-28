@@ -35,6 +35,18 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.eop.oet9_bridged, 'idbridged9', <% nvram_else_match("oet9_bridged", "1", "0", "1"); %> == 1);
 		show_layer_ext(document.eop.oet10_en, 'idoet10', <% nvram_else_match("oet10_en", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.eop.oet10_bridged, 'idbridged10', <% nvram_else_match("oet10_bridged", "1", "0", "1"); %> == 1);
+
+
+		show_layer_ext(document.eop.oet1_mtik, 'idmtik1', <% nvram_else_match("oet1_mtik", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.eop.oet2_mtik, 'idmtik2', <% nvram_else_match("oet2_mtik", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.eop.oet3_mtik, 'idmtik3', <% nvram_else_match("oet3_mtik", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.eop.oet4_mtik, 'idmtik4', <% nvram_else_match("oet4_mtik", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.eop.oet5_mtik, 'idmtik5', <% nvram_else_match("oet5_mtik", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.eop.oet6_mtik, 'idmtik6', <% nvram_else_match("oet6_mtik", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.eop.oet7_mtik, 'idmtik7', <% nvram_else_match("oet7_mtik", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.eop.oet8_mtik, 'idmtik8', <% nvram_else_match("oet8_mtik", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.eop.oet9_mtik, 'idmtik9', <% nvram_else_match("oet9_mtik", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.eop.oet10_mtik, 'idmtik10', <% nvram_else_match("oet10_mtik", "1", "1", "0"); %> == 1);
 		
 		update = new StatusbarUpdate();
 		update.start();
