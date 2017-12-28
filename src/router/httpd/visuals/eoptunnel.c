@@ -1,7 +1,7 @@
 /*
  * eoptunnel.c
  *
- * Copyright (C) 2005 - 2013 Sebastian Gottschall <gottschall@dd-wrt.com>
+ * Copyright (C) 2005 - 2017 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -59,10 +59,10 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.mtik)</script></div>\n");
 		sprintf(temp, "oet%d_mtik", tun);
 		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s \" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s \"  onclick=\"show_layer_ext(this, 'idoet%d', true)/><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
 			  temp, (nvram_matchi(temp, 1) ? "checked=\"checked\"" : ""), tun);
 		websWrite(wp,
-			  " <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s \" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
+			  " <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s \" onclick=\"show_layer_ext(this, 'idoet%d', false)/><script type=\"text/javascript\">Capture(share.disable)</script>\n",
 			  temp, (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""), tun);
 		websWrite(wp, "</div>\n");
 
