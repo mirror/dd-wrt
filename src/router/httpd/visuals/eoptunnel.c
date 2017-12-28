@@ -41,7 +41,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		char oet[32];
 		sprintf(oet,"oet%d", tun);
 		websWrite(wp, "<fieldset>\n");
-		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(eoip.tunnel)</script> %s</legend>\n", tun, getNetworkLabel(wp, oet));
+		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(eoip.tunnel)</script> %s</legend>\n", getNetworkLabel(wp, oet));
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.srv)</script></div>\n");
 		sprintf(temp, "oet%d_en", tun);
