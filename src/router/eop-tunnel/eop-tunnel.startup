@@ -34,7 +34,7 @@ do
 			fi
 		else
 			insmod etherip
-			ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local any
+			ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local $($nv get oet${i}_local)
 			if [ `$nv get oet${i}_bridged` -eq 1 ]
 			then
 				ip link set dev oet${i} up
