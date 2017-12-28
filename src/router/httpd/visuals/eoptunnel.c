@@ -66,6 +66,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 			  temp, (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""), tun);
 		websWrite(wp, "</div>\n");
 
+		websWrite(wp, "<div id=\"idmtik%d\">\n", tun);
 		websWrite( wp, "<div class=\"setting\">\n" );
 		websWrite( wp,
 		   "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.tunnelID)</script></div>\n" );
@@ -74,6 +75,8 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		   "<input size=\"4\" maxlength=\"3\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,999,eoip.tunnelID)\" value=\"%s\" />\n",
 		   temp, nvram_get( temp ) );
 		websWrite( wp, "</div>\n" );
+		websWrite( wp, "</div>\n" );
+
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.localIP)</script></div>\n");
