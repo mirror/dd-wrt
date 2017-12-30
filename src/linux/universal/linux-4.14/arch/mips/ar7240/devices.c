@@ -965,6 +965,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
 			pdata->switch_data = &ar71xx_switch_data;
+			pdata->use_flow_control = 1;
 
 			ar71xx_switch_data.phy_poll_mask |= BIT(4);
 
@@ -1021,6 +1022,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
 			pdata->switch_data = &ar71xx_switch_data;
+			pdata->use_flow_control = 1;
 
 			ar71xx_switch_data.phy_poll_mask |= BIT(4);
 
@@ -1044,6 +1046,8 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		if (id == 0) {
 			pdata->reset_bit = AR934X_RESET_GE0_MAC | AR934X_RESET_GE0_MDIO;
 			pdata->set_speed = ar934x_set_speed_ge0;
+			if (ar71xx_soc == AR71XX_SOC_QCA9533)
+				pdata->disable_inline_checksum_engine = 1;
 		} else {
 			pdata->reset_bit = AR934X_RESET_GE1_MAC | AR934X_RESET_GE1_MDIO;
 			pdata->set_speed = ar71xx_set_speed_dummy;
@@ -1079,6 +1083,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 
 			if (!pdata->phy_mask)
 				pdata->phy_mask = BIT(4);
+			pdata->use_flow_control = 1;
 		} else {
 			pdata->reset_bit = AR933X_RESET_GE1_MAC |
 					   AR933X_RESET_GE1_MDIO;
@@ -1147,6 +1152,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 				pdata->set_speed = qca956x_set_speed_sgmii;
 			else
 				pdata->set_speed = ar934x_set_speed_ge0;
+			pdata->disable_inline_checksum_engine = 1;
 		} else {
 			pdata->reset_bit = QCA955X_RESET_GE1_MAC |
 					   QCA955X_RESET_GE1_MDIO;
@@ -1157,6 +1163,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
+			pdata->use_flow_control = 1;
 
 			/* reset the built-in switch */
 			ar71xx_device_stop(AR934X_RESET_ETH_SWITCH);
