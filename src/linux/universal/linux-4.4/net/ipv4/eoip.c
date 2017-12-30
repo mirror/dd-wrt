@@ -225,7 +225,7 @@ static struct ip_tunnel *eoip_tunnel_locate(struct net *net,
 	else
 		strcpy(name, "eoip%d");
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
 	dev = alloc_netdev(sizeof(*t), name, eoip_setup);
 #else
 	dev = alloc_netdev(sizeof(*t), name, NET_NAME_UNKNOWN, eoip_setup);

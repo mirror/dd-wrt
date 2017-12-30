@@ -943,6 +943,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
 			pdata->switch_data = &ar71xx_switch_data;
+			pdata->use_flow_control = 1;
 
 			ar71xx_switch_data.phy_poll_mask |= BIT(4);
 
@@ -999,6 +1000,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
 			pdata->switch_data = &ar71xx_switch_data;
+			pdata->use_flow_control = 1;
 
 			ar71xx_switch_data.phy_poll_mask |= BIT(4);
 
@@ -1018,8 +1020,6 @@ void __init ar71xx_add_device_eth(unsigned int id)
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
-	case AR71XX_SOC_QCA9563:
-	case AR71XX_SOC_TP9343:
 		if (id == 0) {
 			pdata->reset_bit = AR934X_RESET_GE0_MAC | AR934X_RESET_GE0_MDIO;
 			pdata->ddr_flush = ar934x_ddr_flush_ge0;
@@ -1048,6 +1048,70 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			pdata->fifo_cfg2 = 0x015500aa;
 		if (!pdata->fifo_cfg3)
 			pdata->fifo_cfg3 = 0x01f00140;
+	
+		break;
+	case AR71XX_SOC_QCA9563:
+		if (id == 0) {
+			pdata->reset_bit = AR934X_RESET_GE0_MAC | AR934X_RESET_GE0_MDIO;
+			pdata->ddr_flush = ar934x_ddr_flush_ge0;
+			pdata->set_speed = ar934x_set_speed_ge0;
+			pdata->disable_inline_checksum_engine = 1;
+		} else {
+			pdata->reset_bit = AR934X_RESET_GE1_MAC | AR934X_RESET_GE1_MDIO;
+			pdata->ddr_flush = ar934x_ddr_flush_ge1;
+			pdata->set_speed = ar934x_set_speed_ge1;
+
+			pdata->switch_data = &ar71xx_switch_data;
+			pdata->use_flow_control = 1;
+
+			/* reset the built-in switch */
+			ar71xx_device_stop(AR934X_RESET_ETH_SWITCH);
+			ar71xx_device_start(AR934X_RESET_ETH_SWITCH);
+		}
+
+		pdata->has_gbit = 1;
+		pdata->is_ar724x = 1;
+
+		pdata->max_frame_len = SZ_16K - 1;
+		pdata->desc_pktlen_mask = SZ_16K - 1;
+
+		if (!pdata->fifo_cfg1)
+			pdata->fifo_cfg1 = 0x0010ffff;
+		if (!pdata->fifo_cfg2)
+			pdata->fifo_cfg2 = 0x015500aa;
+		if (!pdata->fifo_cfg3)
+			pdata->fifo_cfg3 = 0x01f00140;
+		break;
+	case AR71XX_SOC_TP9343:
+		if (id == 0) {
+			pdata->reset_bit = AR934X_RESET_GE0_MAC | AR934X_RESET_GE0_MDIO;
+			pdata->ddr_flush = ar934x_ddr_flush_ge0;
+			pdata->set_speed = ar934x_set_speed_ge0;
+		} else {
+			pdata->reset_bit = AR934X_RESET_GE1_MAC | AR934X_RESET_GE1_MDIO;
+			pdata->ddr_flush = ar934x_ddr_flush_ge1;
+			pdata->set_speed = ar934x_set_speed_ge1;
+
+			pdata->switch_data = &ar71xx_switch_data;
+			pdata->use_flow_control = 1;
+
+			/* reset the built-in switch */
+			ar71xx_device_stop(AR934X_RESET_ETH_SWITCH);
+			ar71xx_device_start(AR934X_RESET_ETH_SWITCH);
+		}
+
+		pdata->has_gbit = 1;
+		pdata->is_ar724x = 1;
+
+		pdata->max_frame_len = SZ_16K - 1;
+		pdata->desc_pktlen_mask = SZ_16K - 1;
+
+		if (!pdata->fifo_cfg1)
+			pdata->fifo_cfg1 = 0x0010ffff;
+		if (!pdata->fifo_cfg2)
+			pdata->fifo_cfg2 = 0x015500aa;
+		if (!pdata->fifo_cfg3)
+			pdata->fifo_cfg3 = 0x01f00140;
 		break;
 
 	case AR71XX_SOC_QCA9533:
@@ -1057,6 +1121,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			pdata->set_speed = ar933x_set_speed_ge0;
 
 			pdata->phy_mask = BIT(4);
+			pdata->disable_inline_checksum_engine = 1;
 		} else {
 			pdata->reset_bit = AR933X_RESET_GE1_MAC |
 					   AR933X_RESET_GE1_MDIO;
