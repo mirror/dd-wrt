@@ -11,6 +11,7 @@ gmp:
 	$(MAKE) -C gmp CFLAGS="$(COPTS)"
 
 gmp-install:
+	@true
 #	$(MAKE) -C gmp install DESTDIR=$(INSTALLDIR)/gmp
 #	rm -rf $(INSTALLDIR)/gmp/usr/share
 #	rm -rf $(INSTALLDIR)/gmp/usr/include
