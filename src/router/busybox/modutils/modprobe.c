@@ -930,10 +930,7 @@ int modprobe_main(int argc UNUSED_PARAM, char **argv)
 	unsigned opt;
 	char *unused;
 
-	opt = getopt32long(argv, "^" MAIN_OPT_STR "\0" "q-v:v-q",
-			modprobe_longopts
-			INSMOD_ARGS
-	);
+	opt = getopt32(argv, "^" MAIN_OPT_STR "\0" "q-v:v-q");
 
 	argv += optind;
 
