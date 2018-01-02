@@ -2472,26 +2472,26 @@ static void filter_forward(void)
  */
 static void mangle_table(void)
 {
-	save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
+//	save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
 
 	if (strcmp(get_wan_face(), "wwan0")) {
 
 		if (wanactive() && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
 			insmod("ipt_mark xt_mark ipt_CONNMARK xt_CONNMARK xt_connmark");
 
-			save2file("-A PREROUTING -i ! %s -d %s -j MARK --set-mark %s", get_wan_face(), get_wan_ipaddr(), get_NFServiceMark("FORWARD", 1));
+			sysprintf("iptables -A PREROUTING -i ! %s -d %s -j MARK --set-mark %s", get_wan_face(), get_wan_ipaddr(), get_NFServiceMark("FORWARD", 1));
 
-			save2file("-A PREROUTING -j CONNMARK --save-mark");
+			sysprintf("iptables -A PREROUTING -j CONNMARK --save-mark");
 		}
 	}
 	/*
 	 * Clamp TCP MSS to PMTU of WAN interface 
 	 */
-	save2file("-I FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+	sysprintf("iptables -I FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 
 #ifdef HAVE_PRIVOXY
 	if ((nvram_matchi("privoxy_enable", 1)) && (nvram_matchi("wshaper_enable", 1))) {
-		save2file("-I OUTPUT -p tcp --sport 8118 -j IMQ --todev 0");
+		sysprintf("iptables -I OUTPUT -p tcp --sport 8118 -j IMQ --todev 0");
 	}
 #endif
 
@@ -2505,7 +2505,7 @@ static void mangle_table(void)
 	 */
 	// save2file("-A PREROUTING -i %s -m mark ! --mark 0 -j MARK --set-mark
 	// %d\n", lanface, MARK_LAN2WAN);
-	save2file("COMMIT\n");
+//	save2file("COMMIT\n");
 }
 
 /*
@@ -2795,9 +2795,10 @@ void start_firewall(void)
 	else
 		writeproc("/proc/net/arp_spoofing_enable", "0");
 
-	if (nvram_matchi("sfe", 1))
-		insmod("shortcut-fe");
-	else
+	if (!nvram_matchi("wshaper_enable", 0)) {
+		if (nvram_matchi("sfe", 1))
+			insmod("shortcut-fe");
+	} else
 		rmmod("shortcut-fe");
 	writeint("/sys/fast_classifier/skip_to_bridge_ingress", 1);
 #ifndef	HAVE_80211AC
@@ -3081,24 +3082,10 @@ void stop_firewall(void)
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	diag_led(DMZ, STOP_LED);
 #endif
-#ifdef HAVE_GGEW
-	char *wordlist = nvram_safe_get("ral");
-	char var[256], *next;
-
-	foreach(var, wordlist, next) {
-		sysprintf("iptables -D INPUT -s %s -j %s", var, log_accept);
-	}
-#endif
 	char num[32];
 	int i;
 
-	for (i = 0; i < 10; i++) {
-		eval("iptables", "-F", "lan2wan");
-		sprintf(num, "grp_%d", i);
-		eval("iptables", "-F", num);
-		sprintf(num, "advgrp_%d", i);
-		eval("iptables", "-F", num);
-	}
+	eval("iptables", "-F");
 	rmmod("ipt_webstr");
 	rmmod("ipt_layer7");
 	rmmod("xt_layer7");

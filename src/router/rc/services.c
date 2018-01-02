@@ -718,8 +718,8 @@ static void handle_services(void)
 #endif
 		startstop_f("sshd");
 #endif
-	startstop("firewall");
 	startstop_f("wshaper");
+	startstop("firewall");
 #ifdef HAVE_SYSLOG
 	startstop_f("syslog");
 #endif
@@ -832,9 +832,9 @@ static void handle_management(void)
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_service_f("zebra");
 #endif
-	startstop("firewall");
 	stop_service("wland");
 	startstop_f("wshaper");
+	startstop("firewall");
 	start_service_f("wland");
 	startstop_fdelay("httpd", 2);
 #ifdef HAVE_NOCAT
@@ -996,11 +996,11 @@ static void handle_forward(void)
 #ifdef HAVE_UPNP
 //    stop_service( "upnp");
 #endif
-	startstop("firewall");
 #ifdef HAVE_UPNP
 //    start_service( "upnp");
 #endif
 	start_service_f("wshaper");
+	startstop("firewall");
 	start_service_f("wland");
 //      start_service_f("anchorfreednat");
 #ifdef HAVE_NOCAT
@@ -1031,12 +1031,12 @@ static void handle_forwardupnp(void)
 #ifdef HAVE_UPNP
 	stop_service("upnp");
 #endif
-	startstop("firewall");
 #ifdef HAVE_UPNP
 	start_service_f("upnp");
 #endif
 	stop_service("wland");
 	startstop_f("wshaper");
+	startstop("firewall");
 	start_service_f("wland");
 //      start_service_f("anchorfreednat");
 #ifdef HAVE_NOCAT

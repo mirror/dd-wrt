@@ -314,9 +314,9 @@ static int bound(void)
 		stop_unbound();
 		start_unbound();
 #endif
+		start_wshaper();
 		start_firewall();
 		stop_wland();
-		start_wshaper();
 		start_wland();
 		start_heartbeat_boot();
 	}
