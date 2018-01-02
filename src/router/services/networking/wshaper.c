@@ -1033,7 +1033,7 @@ void start_wshaper(void)
 		|| client_bridged_enabled()))
 		return;
 
-	if (nvram_matchi("wshaper_enable", 0)) {
+	if (!nvram_matchi("wshaper_enable", 1)) {
 		if (nvram_matchi("sfe", 1))
 			insmod("shortcut-fe");
 		return;
