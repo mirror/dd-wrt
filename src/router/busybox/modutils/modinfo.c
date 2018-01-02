@@ -140,8 +140,9 @@ int modinfo_main(int argc UNUSED_PARAM, char **argv)
 	unsigned i;
 
 	env.field = NULL;
-	opt_complementary = "-1"; /* minimum one param */
-	opts = getopt32(argv, "nladvAsDumpF:0", &env.field);
+	opts = getopt32(argv, "^" "nladvAsDumpF:0" "\0" "-1"/*minimum one arg*/, &field);
+
+
 	env.tags = opts & OPT_TAGS ? opts & OPT_TAGS : OPT_TAGS;
 	argv += optind;
 
