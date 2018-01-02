@@ -50,8 +50,13 @@ static enum retry_state ecache_work_evict_list(struct ct_pcpu *pcpu)
 
 	hlist_nulls_for_each_entry(h, n, &pcpu->dying, hnnode) {
 		struct nf_conn *ct = nf_ct_tuplehash_to_ctrack(h);
+		struct nf_conntrack_ecache *e;
 
-		if (nf_ct_is_dying(ct))
+		if (!nf_ct_is_confirmed(ct))
+			continue;
+
+		e = nf_ct_ecache_find(ct);
+		if (!e || e->state != NFCT_ECACHE_DESTROY_FAIL)
 			continue;
 
 		if (nf_conntrack_event(IPCT_DESTROY, ct)) {
@@ -59,8 +64,7 @@ static enum retry_state ecache_work_evict_list(struct ct_pcpu *pcpu)
 			break;
 		}
 
-		/* we've got the event delivered, now it's dying */
-		set_bit(IPS_DYING_BIT, &ct->status);
+		e->state = NFCT_ECACHE_DESTROY_SENT;
 		refs[evicted] = ct;
 
 		if (++evicted >= ARRAY_SIZE(refs)) {
@@ -125,7 +129,7 @@ int nf_conntrack_eventmask_report(unsigned int eventmask, struct nf_conn *ct,
 	if (!e)
 		return 0;
 
-	if (nf_ct_is_confirmed(ct) && !nf_ct_is_dying(ct)) {
+	if (nf_ct_is_confirmed(ct)) {
 		struct nf_ct_event item = {
 			.ct	= ct,
 			.portid	= e->portid ? e->portid : portid,
@@ -160,7 +164,7 @@ void nf_ct_deliver_cached_events(struct nf_conn *ct)
 
 	events = xchg(&e->cache, 0);
 
-	if (!nf_ct_is_confirmed(ct) || nf_ct_is_dying(ct) || !events)
+	if (!nf_ct_is_confirmed(ct) || nf_ct_is_dying(ct))
 		return;
 
 	/* We make a copy of the missed event cache without taking
