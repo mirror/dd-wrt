@@ -1,4 +1,7 @@
 CREATE INDEX actions_1 on actions (eventsource,status);
+alter table auditlog add       ip              varchar(39)             DEFAULT ''      NOT NULL;
+alter table auditlog add        resourceid              bigint          DEFAULT '0'     NOT NULL;
+alter table auditlog add        resourcename            varchar(255)            DEFAULT ''      NOT NULL;
 CREATE TABLE auditlog_details (
         auditdetailid           bigint          DEFAULT '0'     NOT NULL,
         auditid         bigint          DEFAULT '0'     NOT NULL,
@@ -9,9 +12,6 @@ CREATE TABLE auditlog_details (
         PRIMARY KEY (auditdetailid)
 ) with OIDS;
 CREATE INDEX auditlog_details_1 on auditlog_details (auditid);
-alter table auditlog add       ip              varchar(39)             DEFAULT ''      NOT NULL;
-alter table auditlog add        resourceid              bigint          DEFAULT '0'     NOT NULL;
-alter table auditlog add        resourcename            varchar(255)            DEFAULT ''      NOT NULL;
 CREATE TABLE autoreg_host (
         autoreg_hostid          bigint          DEFAULT '0'     NOT NULL,
         proxy_hostid            bigint          DEFAULT '0'     NOT NULL,
@@ -64,35 +64,6 @@ CREATE TABLE globalmacro (
         PRIMARY KEY (globalmacroid)
 ) with OIDS;
 CREATE INDEX globalmacro_1 on globalmacro (macro);
-CREATE TABLE graphs_items_tmp (
-        gitemid         bigint          DEFAULT '0'     NOT NULL,
-        graphid         bigint          DEFAULT '0'     NOT NULL,
-        itemid          bigint          DEFAULT '0'     NOT NULL,
-        drawtype                integer         DEFAULT '0'     NOT NULL,
-        sortorder               integer         DEFAULT '0'     NOT NULL,
-        color           varchar(6)              DEFAULT '009600'        NOT NULL,
-        yaxisside               integer         DEFAULT '1'     NOT NULL,
-        calc_fnc                integer         DEFAULT '2'     NOT NULL,
-        type            integer         DEFAULT '0'     NOT NULL,
-        periods_cnt             integer         DEFAULT '5'     NOT NULL,
-        PRIMARY KEY (gitemid)
-) with OIDS;
-
-insert into graphs_items_tmp select gitemid,graphid,itemid,drawtype,sortorder,color,yaxisside,calc_fnc,type,periods_cnt from graphs_items;
-drop table graphs_items;
-alter table graphs_items_tmp rename to graphs_items;
-
-CREATE INDEX graphs_items_1 on graphs_items (itemid);
-CREATE INDEX graphs_items_2 on graphs_items (graphid);
-alter table graphs add ymin_type               integer         DEFAULT '0'     NOT NULL;
-alter table graphs add ymax_type               integer         DEFAULT '0'     NOT NULL;
-alter table graphs add ymin_itemid             bigint          DEFAULT '0'     NOT NULL;
-alter table graphs add ymax_itemid             bigint          DEFAULT '0'     NOT NULL;
-
-update graphs set ymin_type=yaxistype;
-update graphs set ymax_type=yaxistype;
-
-alter table graphs drop yaxistype;
 CREATE TABLE graph_theme (
         graphthemeid            bigint          DEFAULT '0'     NOT NULL,
         description             varchar(64)             DEFAULT ''      NOT NULL,
@@ -117,6 +88,35 @@ CREATE INDEX graph_theme_2 on graph_theme (theme);
 
 INSERT INTO graph_theme VALUES (1,'Original Blue','css_ob.css','F0F0F0','FFFFFF','333333','CCCCCC','AAAAAA','000000','222222','AA4444','11CC11','CC1111','E0E0E0',1,1);
 INSERT INTO graph_theme VALUES (2,'Black & Blue','css_bb.css','333333','0A0A0A','888888','222222','4F4F4F','EFEFEF','0088FF','CC4444','1111FF','FF1111','1F1F1F',1,1);
+alter table graphs add ymin_type               integer         DEFAULT '0'     NOT NULL;
+alter table graphs add ymax_type               integer         DEFAULT '0'     NOT NULL;
+alter table graphs add ymin_itemid             bigint          DEFAULT '0'     NOT NULL;
+alter table graphs add ymax_itemid             bigint          DEFAULT '0'     NOT NULL;
+
+update graphs set ymin_type=yaxistype;
+update graphs set ymax_type=yaxistype;
+
+alter table graphs drop yaxistype;
+CREATE TABLE graphs_items_tmp (
+        gitemid         bigint          DEFAULT '0'     NOT NULL,
+        graphid         bigint          DEFAULT '0'     NOT NULL,
+        itemid          bigint          DEFAULT '0'     NOT NULL,
+        drawtype                integer         DEFAULT '0'     NOT NULL,
+        sortorder               integer         DEFAULT '0'     NOT NULL,
+        color           varchar(6)              DEFAULT '009600'        NOT NULL,
+        yaxisside               integer         DEFAULT '1'     NOT NULL,
+        calc_fnc                integer         DEFAULT '2'     NOT NULL,
+        type            integer         DEFAULT '0'     NOT NULL,
+        periods_cnt             integer         DEFAULT '5'     NOT NULL,
+        PRIMARY KEY (gitemid)
+) with OIDS;
+
+insert into graphs_items_tmp select gitemid,graphid,itemid,drawtype,sortorder,color,yaxisside,calc_fnc,type,periods_cnt from graphs_items;
+drop table graphs_items;
+alter table graphs_items_tmp rename to graphs_items;
+
+CREATE INDEX graphs_items_1 on graphs_items (itemid);
+CREATE INDEX graphs_items_2 on graphs_items (graphid);
 alter table groups add internal                integer         DEFAULT '0'     NOT NULL;
 drop table help_items;
 
@@ -296,10 +296,6 @@ CREATE TABLE hostmacro (
         PRIMARY KEY (hostmacroid)
 ) with OIDS;
 CREATE INDEX hostmacro_1 on hostmacro (hostid,macro);
-drop index hosts_groups_groups_1;
-
-CREATE INDEX hosts_groups_1 on hosts_groups (hostid,groupid);
-CREATE INDEX hosts_groups_2 on hosts_groups (groupid);
 alter table hosts add maintenanceid bigint DEFAULT '0' NOT NULL;
 alter table hosts add maintenance_status integer DEFAULT '0' NOT NULL;
 alter table hosts add maintenance_type integer DEFAULT '0' NOT NULL;
@@ -315,6 +311,10 @@ ALTER TABLE hosts ALTER COLUMN inbytes SET NOT NULL;
 ALTER TABLE hosts ALTER COLUMN outbytes TYPE numeric(20);
 ALTER TABLE hosts ALTER COLUMN outbytes SET DEFAULT '0';
 ALTER TABLE hosts ALTER COLUMN outbytes SET NOT NULL;
+drop index hosts_groups_groups_1;
+
+CREATE INDEX hosts_groups_1 on hosts_groups (hostid,groupid);
+CREATE INDEX hosts_groups_2 on hosts_groups (groupid);
 CREATE INDEX hosts_templates_2 on hosts_templates (templateid);
 alter table httptest add authentication          integer         DEFAULT '0'     NOT NULL;
 alter table httptest add http_user               varchar(64)             DEFAULT ''      NOT NULL;
@@ -332,6 +332,16 @@ alter table items add privatekey              varchar(64)             DEFAULT ''
 alter table items add mtime                   integer         DEFAULT '0'     NOT NULL;
 
 UPDATE items SET units='Bps' WHERE type=9 AND units='bps';
+CREATE TABLE maintenances (
+        maintenanceid           bigint          DEFAULT '0'     NOT NULL,
+        name            varchar(128)            DEFAULT ''      NOT NULL,
+        maintenance_type                integer         DEFAULT '0'     NOT NULL,
+        description             text            DEFAULT ''      NOT NULL,
+        active_since            integer         DEFAULT '0'     NOT NULL,
+        active_till             integer         DEFAULT '0'     NOT NULL,
+        PRIMARY KEY (maintenanceid)
+) with OIDS;
+CREATE INDEX maintenances_1 on maintenances (active_since,active_till);
 CREATE TABLE maintenances_groups (
         maintenance_groupid             bigint          DEFAULT '0'     NOT NULL,
         maintenanceid           bigint          DEFAULT '0'     NOT NULL,
@@ -346,16 +356,6 @@ CREATE TABLE maintenances_hosts (
         PRIMARY KEY (maintenance_hostid)
 ) with OIDS;
 CREATE INDEX maintenances_hosts_1 on maintenances_hosts (maintenanceid,hostid);
-CREATE TABLE maintenances (
-        maintenanceid           bigint          DEFAULT '0'     NOT NULL,
-        name            varchar(128)            DEFAULT ''      NOT NULL,
-        maintenance_type                integer         DEFAULT '0'     NOT NULL,
-        description             text            DEFAULT ''      NOT NULL,
-        active_since            integer         DEFAULT '0'     NOT NULL,
-        active_till             integer         DEFAULT '0'     NOT NULL,
-        PRIMARY KEY (maintenanceid)
-) with OIDS;
-CREATE INDEX maintenances_1 on maintenances (active_since,active_till);
 CREATE TABLE maintenances_windows (
         maintenance_timeperiodid                bigint          DEFAULT '0'     NOT NULL,
         maintenanceid           bigint          DEFAULT '0'     NOT NULL,
@@ -418,6 +418,23 @@ CREATE INDEX regexps_1 on regexps (name);
 CREATE INDEX rights_2 on rights (id);
 CREATE INDEX services_1 on services (triggerid);
 CREATE INDEX sessions_1 on sessions (userid, status);
+CREATE TABLE sysmaps_tmp (
+	sysmapid		bigint		DEFAULT '0'	NOT NULL,
+	name		varchar(128)		DEFAULT ''	NOT NULL,
+	width		integer		DEFAULT '0'	NOT NULL,
+	height		integer		DEFAULT '0'	NOT NULL,
+	backgroundid		bigint		DEFAULT '0'	NOT NULL,
+	label_type		integer		DEFAULT '0'	NOT NULL,
+	label_location		integer		DEFAULT '0'	NOT NULL,
+	highlight		integer		DEFAULT '1'	NOT NULL,
+	PRIMARY KEY (sysmapid)
+) with OIDS;
+
+insert into sysmaps_tmp select sysmapid,name,width,height,backgroundid,label_type,label_location,1 from sysmaps;
+drop table sysmaps;
+alter table sysmaps_tmp rename to sysmaps;
+
+CREATE INDEX sysmaps_1 on sysmaps (name);
 CREATE TABLE sysmaps_elements_tmp (
         selementid              bigint          DEFAULT '0'     NOT NULL,
         sysmapid                bigint          DEFAULT '0'     NOT NULL,
@@ -453,23 +470,6 @@ CREATE TABLE sysmaps_links_tmp (
 insert into sysmaps_links_tmp select linkid,sysmapid,selementid1,selementid2,drawtype,color,'' from sysmaps_links;
 drop table sysmaps_links;
 alter table sysmaps_links_tmp rename to sysmaps_links;
-CREATE TABLE sysmaps_tmp (
-	sysmapid		bigint		DEFAULT '0'	NOT NULL,
-	name		varchar(128)		DEFAULT ''	NOT NULL,
-	width		integer		DEFAULT '0'	NOT NULL,
-	height		integer		DEFAULT '0'	NOT NULL,
-	backgroundid		bigint		DEFAULT '0'	NOT NULL,
-	label_type		integer		DEFAULT '0'	NOT NULL,
-	label_location		integer		DEFAULT '0'	NOT NULL,
-	highlight		integer		DEFAULT '1'	NOT NULL,
-	PRIMARY KEY (sysmapid)
-) with OIDS;
-
-insert into sysmaps_tmp select sysmapid,name,width,height,backgroundid,label_type,label_location,1 from sysmaps;
-drop table sysmaps;
-alter table sysmaps_tmp rename to sysmaps;
-
-CREATE INDEX sysmaps_1 on sysmaps (name);
 CREATE TABLE timeperiods (
         timeperiodid            bigint          DEFAULT '0'     NOT NULL,
         timeperiod_type         integer         DEFAULT '0'     NOT NULL,
