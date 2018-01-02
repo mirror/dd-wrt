@@ -371,9 +371,9 @@ static ssize_t
 layer7_read_proc(struct file *file, char __user *buf,
 		  size_t size, loff_t *ppos)
 {
+	char page[4];
 	if(num_packets > 99 && net_ratelimit())
 		printk(KERN_ERR "layer7: NOT REACHED. num_packets too big\n");
-	char page[4];
 	
 	page[0] = num_packets/10 + '0';
 	page[1] = num_packets%10 + '0';
