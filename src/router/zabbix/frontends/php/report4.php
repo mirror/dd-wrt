@@ -199,7 +199,7 @@ else {
 	}
 
 	// time till
-	$maxTime = ($year == $currentYear) ? time() : mktime(0, 0, 0, 1, 1, $year + 1);
+	$maxTime = ($year == $currentYear || $period === 'yearly') ? time() : mktime(0, 0, 0, 1, 1, $year + 1);
 
 	// fetch alerts
 	$alerts = [];

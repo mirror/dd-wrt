@@ -504,7 +504,7 @@ elseif (isset($_REQUEST['form'])) {
 		'recovery_expression_constructor' => getRequest('recovery_expression_constructor', IM_ESTABLISHED),
 		'limited' => false,
 		'templates' => [],
-		'hostid' => getRequest('hostid', 0),
+		'hostid' => getRequest('hostid', $discoveryRule['hostid']),
 		'expression_action' => $expression_action,
 		'recovery_expression_action' => $recovery_expression_action,
 		'tags' => getRequest('tags', []),
@@ -512,8 +512,6 @@ elseif (isset($_REQUEST['form'])) {
 		'correlation_tag' => getRequest('correlation_tag', ''),
 		'manual_close' => getRequest('manual_close', ZBX_TRIGGER_MANUAL_CLOSE_NOT_ALLOWED)
 	]);
-
-	$data['hostid'] = $discoveryRule['hostid'];
 
 	$triggersView = new CView('configuration.trigger.prototype.edit', $data);
 	$triggersView->render();

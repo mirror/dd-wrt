@@ -15,4 +15,5 @@ EXTRA_DIST = \
 	postgresql/schema.sql \
 	sqlite3/data.sql \
 	sqlite3/images.sql \
-	sqlite3/schema.sql
+	sqlite3/schema.sql \
+	elasticsearch/elasticsearch.map

@@ -65,6 +65,10 @@ alter table events drop index events_2;
 
 CREATE INDEX events_1 on events (object,objectid,eventid);
 CREATE INDEX events_2 on events (clock);
+alter table graphs add show_legend int(11) NOT NULL default '0';
+alter table graphs add show_3d int(11) NOT NULL default '0';
+alter table graphs add percent_left            double(16,4)            DEFAULT '0'     NOT NULL;
+alter table graphs add percent_right           double(16,4)            DEFAULT '0'     NOT NULL;
 update graphs_items set color='FF0000' where color='Red';
 update graphs_items set color='960000' where color='Dark Red';
 update graphs_items set color='00FF00' where color='Green';
@@ -80,12 +84,25 @@ update graphs_items set color='FFFFFF' where color='White';
 alter table graphs_items change color color varchar(6) DEFAULT '009600' NOT NULL;
 CREATE INDEX graphs_items_1 on graphs_items (itemid);
 CREATE INDEX graphs_items_2 on graphs_items (graphid);
-alter table graphs add show_legend int(11) NOT NULL default '0';
-alter table graphs add show_3d int(11) NOT NULL default '0';
-alter table graphs add percent_left            double(16,4)            DEFAULT '0'     NOT NULL;
-alter table graphs add percent_right           double(16,4)            DEFAULT '0'     NOT NULL;
 CREATE UNIQUE INDEX history_log_2 on history_log (itemid,id);
 CREATE UNIQUE INDEX history_text_2 on history_text (itemid,id);
+alter table hosts add proxy_hostid bigint unsigned DEFAULT '0' NOT NULL after hostid;
+alter table hosts add lastaccess integer DEFAULT '0' NOT NULL;
+alter table hosts add inbytes bigint unsigned DEFAULT '0' NOT NULL;
+alter table hosts add outbytes bigint unsigned DEFAULT '0' NOT NULL;
+alter table hosts modify ip varchar(39) DEFAULT '127.0.0.1' NOT NULL;
+alter table hosts add useipmi         integer         DEFAULT '0'     NOT NULL;
+alter table hosts add ipmi_port               integer         DEFAULT '623'   NOT NULL;
+alter table hosts add ipmi_authtype           integer         DEFAULT '0'     NOT NULL;
+alter table hosts add ipmi_privilege          integer         DEFAULT '2'     NOT NULL;
+alter table hosts add ipmi_username           varchar(16)             DEFAULT ''      NOT NULL;
+alter table hosts add ipmi_password           varchar(20)             DEFAULT ''      NOT NULL;
+alter table hosts add ipmi_disable_until              integer         DEFAULT '0'     NOT NULL;
+alter table hosts add ipmi_available          integer         DEFAULT '0'     NOT NULL;
+alter table hosts add snmp_disable_until              integer         DEFAULT '0'     NOT NULL;
+alter table hosts add snmp_available          integer         DEFAULT '0'     NOT NULL;
+
+CREATE INDEX hosts_3 on hosts (proxy_hostid);
 CREATE TABLE hosts_profiles_ext (
 	hostid		bigint unsigned		DEFAULT '0'	NOT NULL,
 	device_alias		varchar(64)		DEFAULT ''	NOT NULL,
@@ -148,23 +165,6 @@ CREATE TABLE hosts_profiles_ext (
 	poc_2_notes		blob			NOT NULL,
 	PRIMARY KEY (hostid)
 ) ENGINE=InnoDB;
-alter table hosts add proxy_hostid bigint unsigned DEFAULT '0' NOT NULL after hostid;
-alter table hosts add lastaccess integer DEFAULT '0' NOT NULL;
-alter table hosts add inbytes bigint unsigned DEFAULT '0' NOT NULL;
-alter table hosts add outbytes bigint unsigned DEFAULT '0' NOT NULL;
-alter table hosts modify ip varchar(39) DEFAULT '127.0.0.1' NOT NULL;
-alter table hosts add useipmi         integer         DEFAULT '0'     NOT NULL;
-alter table hosts add ipmi_port               integer         DEFAULT '623'   NOT NULL;
-alter table hosts add ipmi_authtype           integer         DEFAULT '0'     NOT NULL;
-alter table hosts add ipmi_privilege          integer         DEFAULT '2'     NOT NULL;
-alter table hosts add ipmi_username           varchar(16)             DEFAULT ''      NOT NULL;
-alter table hosts add ipmi_password           varchar(20)             DEFAULT ''      NOT NULL;
-alter table hosts add ipmi_disable_until              integer         DEFAULT '0'     NOT NULL;
-alter table hosts add ipmi_available          integer         DEFAULT '0'     NOT NULL;
-alter table hosts add snmp_disable_until              integer         DEFAULT '0'     NOT NULL;
-alter table hosts add snmp_available          integer         DEFAULT '0'     NOT NULL;
-
-CREATE INDEX hosts_3 on hosts (proxy_hostid);
 alter table httpstep modify url             varchar(255)            DEFAULT ''      NOT NULL;
 CREATE TABLE httptest_tmp (
         httptestid              bigint unsigned         DEFAULT '0'     NOT NULL,
@@ -281,6 +281,7 @@ CREATE INDEX services_1 on services (triggerid);
 alter table sessions add status          integer         DEFAULT '0'     NOT NULL;
 alter table sysmaps_elements add iconid_disabled bigint unsigned DEFAULT '0' NOT NULL;
 update sysmaps_elements set iconid_disabled=iconid_off;
+-- See sysmaps_links.sql
 CREATE TABLE sysmaps_link_triggers (
 	linktriggerid bigint unsigned DEFAULT '0'      NOT NULL,
 	linkid        bigint unsigned DEFAULT '0'      NOT NULL,
@@ -320,7 +321,6 @@ alter table sysmaps_links change drawtype_off drawtype integer DEFAULT '0' NOT N
 alter table sysmaps_links change color_off color varchar(6) DEFAULT '000000' NOT NULL;
 alter table sysmaps_links drop drawtype_on;
 alter table sysmaps_links drop color_on;
--- See sysmaps_links.sql
 CREATE TABLE trends_uint (
         itemid          bigint unsigned         DEFAULT '0'     NOT NULL,
         clock           integer         DEFAULT '0'     NOT NULL,

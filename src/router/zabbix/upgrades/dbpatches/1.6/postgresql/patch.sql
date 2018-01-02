@@ -104,6 +104,10 @@ drop index events_2;
 
 CREATE INDEX events_1 on events (object,objectid,eventid);
 CREATE INDEX events_2 on events (clock);
+alter table graphs add show_legend integer NOT NULL default '0';
+alter table graphs add show_3d integer NOT NULL default '0';
+alter table graphs add percent_left            numeric(16,4)            DEFAULT '0'     NOT NULL;
+alter table graphs add percent_right           numeric(16,4)            DEFAULT '0'     NOT NULL;
 update graphs_items set color='FF0000' where color='Red';
 update graphs_items set color='960000' where color='Dark Red';
 update graphs_items set color='00FF00' where color='Green';
@@ -120,10 +124,6 @@ alter table graphs_items alter color set default '009600';
 alter table graphs_items alter color type varchar(6);
 CREATE INDEX graphs_items_1 on graphs_items (itemid);
 CREATE INDEX graphs_items_2 on graphs_items (graphid);
-alter table graphs add show_legend integer NOT NULL default '0';
-alter table graphs add show_3d integer NOT NULL default '0';
-alter table graphs add percent_left            numeric(16,4)            DEFAULT '0'     NOT NULL;
-alter table graphs add percent_right           numeric(16,4)            DEFAULT '0'     NOT NULL;
 CREATE TABLE history_log_tmp (
 	id		bigint		DEFAULT '0'	NOT NULL,
 	itemid		bigint		DEFAULT '0'	NOT NULL,
@@ -140,6 +140,42 @@ alter table history_log_tmp rename to history_log;
 CREATE INDEX history_log_1 on history_log (itemid,clock);
 CREATE UNIQUE INDEX history_log_2 on history_log (itemid,id);
 CREATE UNIQUE INDEX history_text_2 on history_text (itemid,id);
+CREATE TABLE hosts_tmp (
+        hostid          bigint          DEFAULT '0'     NOT NULL,
+        proxy_hostid            bigint          DEFAULT '0'     NOT NULL,
+        host            varchar(64)             DEFAULT ''      NOT NULL,
+        dns             varchar(64)             DEFAULT ''      NOT NULL,
+        useip           integer         DEFAULT '1'     NOT NULL,
+        ip              varchar(39)             DEFAULT '127.0.0.1'     NOT NULL,
+        port            integer         DEFAULT '10050' NOT NULL,
+        status          integer         DEFAULT '0'     NOT NULL,
+        disable_until           integer         DEFAULT '0'     NOT NULL,
+        error           varchar(128)            DEFAULT ''      NOT NULL,
+        available               integer         DEFAULT '0'     NOT NULL,
+        errors_from             integer         DEFAULT '0'     NOT NULL,
+        lastaccess              integer         DEFAULT '0'     NOT NULL,
+        inbytes         bigint          DEFAULT '0'     NOT NULL,
+        outbytes                bigint          DEFAULT '0'     NOT NULL,
+        useipmi         integer         DEFAULT '0'     NOT NULL,
+        ipmi_port               integer         DEFAULT '623'   NOT NULL,
+        ipmi_authtype           integer         DEFAULT '0'     NOT NULL,
+        ipmi_privilege          integer         DEFAULT '2'     NOT NULL,
+        ipmi_username           varchar(16)             DEFAULT ''      NOT NULL,
+        ipmi_password           varchar(20)             DEFAULT ''      NOT NULL,
+        ipmi_disable_until              integer         DEFAULT '0'     NOT NULL,
+        ipmi_available          integer         DEFAULT '0'     NOT NULL,
+        snmp_disable_until              integer         DEFAULT '0'     NOT NULL,
+        snmp_available          integer         DEFAULT '0'     NOT NULL,
+        PRIMARY KEY (hostid)
+) with OIDS;
+
+insert into hosts_tmp select hostid,0,host,dns,useip,ip,port,status,disable_until,error,available,errors_from from hosts;
+drop table hosts;
+alter table hosts_tmp rename to hosts;
+
+CREATE INDEX hosts_1 on hosts (host);
+CREATE INDEX hosts_2 on hosts (status);
+CREATE INDEX hosts_3 on hosts (proxy_hostid);
 CREATE TABLE hosts_profiles_ext (
         hostid          bigint          DEFAULT '0'     NOT NULL,
         device_alias            varchar(64)             DEFAULT ''      NOT NULL,
@@ -202,42 +238,6 @@ CREATE TABLE hosts_profiles_ext (
         poc_2_notes             text            DEFAULT ''      NOT NULL,
         PRIMARY KEY (hostid)
 ) with OIDS;
-CREATE TABLE hosts_tmp (
-        hostid          bigint          DEFAULT '0'     NOT NULL,
-        proxy_hostid            bigint          DEFAULT '0'     NOT NULL,
-        host            varchar(64)             DEFAULT ''      NOT NULL,
-        dns             varchar(64)             DEFAULT ''      NOT NULL,
-        useip           integer         DEFAULT '1'     NOT NULL,
-        ip              varchar(39)             DEFAULT '127.0.0.1'     NOT NULL,
-        port            integer         DEFAULT '10050' NOT NULL,
-        status          integer         DEFAULT '0'     NOT NULL,
-        disable_until           integer         DEFAULT '0'     NOT NULL,
-        error           varchar(128)            DEFAULT ''      NOT NULL,
-        available               integer         DEFAULT '0'     NOT NULL,
-        errors_from             integer         DEFAULT '0'     NOT NULL,
-        lastaccess              integer         DEFAULT '0'     NOT NULL,
-        inbytes         bigint          DEFAULT '0'     NOT NULL,
-        outbytes                bigint          DEFAULT '0'     NOT NULL,
-        useipmi         integer         DEFAULT '0'     NOT NULL,
-        ipmi_port               integer         DEFAULT '623'   NOT NULL,
-        ipmi_authtype           integer         DEFAULT '0'     NOT NULL,
-        ipmi_privilege          integer         DEFAULT '2'     NOT NULL,
-        ipmi_username           varchar(16)             DEFAULT ''      NOT NULL,
-        ipmi_password           varchar(20)             DEFAULT ''      NOT NULL,
-        ipmi_disable_until              integer         DEFAULT '0'     NOT NULL,
-        ipmi_available          integer         DEFAULT '0'     NOT NULL,
-        snmp_disable_until              integer         DEFAULT '0'     NOT NULL,
-        snmp_available          integer         DEFAULT '0'     NOT NULL,
-        PRIMARY KEY (hostid)
-) with OIDS;
-
-insert into hosts_tmp select hostid,0,host,dns,useip,ip,port,status,disable_until,error,available,errors_from from hosts;
-drop table hosts;
-alter table hosts_tmp rename to hosts;
-
-CREATE INDEX hosts_1 on hosts (host);
-CREATE INDEX hosts_2 on hosts (status);
-CREATE INDEX hosts_3 on hosts (proxy_hostid);
 CREATE TABLE httpstep_tmp (
         httpstepid              bigint          DEFAULT '0'     NOT NULL,
         httptestid              bigint          DEFAULT '0'     NOT NULL,
@@ -394,6 +394,7 @@ CREATE INDEX services_1 on services (triggerid);
 alter table sessions add status          integer         DEFAULT '0'     NOT NULL;
 alter table sysmaps_elements add iconid_disabled         bigint         DEFAULT '0'     NOT NULL;
 update sysmaps_elements set iconid_disabled=iconid_off;
+-- see sysmaps_links
 CREATE TABLE sysmaps_link_triggers (
         linktriggerid bigint     DEFAULT '0'      NOT NULL,
         linkid        bigint     DEFAULT '0'      NOT NULL,
@@ -436,7 +437,6 @@ alter table sysmaps_links drop drawtype_off;
 alter table sysmaps_links drop color_off;
 alter table sysmaps_links drop drawtype_on;
 alter table sysmaps_links drop color_on;
--- see sysmaps_links
 CREATE TABLE trends_uint (
         itemid          bigint          DEFAULT '0'     NOT NULL,
         clock           integer         DEFAULT '0'     NOT NULL,
