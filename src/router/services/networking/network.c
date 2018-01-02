@@ -4909,16 +4909,17 @@ void start_wan_done(char *wan_ifname)
 	//start_dnsmasq (); 
 
 	cprintf("start firewall\n");
-	/*
-	 * Start firewall 
-	 */
-	start_firewall();
 
 	/*
 	 * Set additional wan static routes if need 
 	 */
 
 	start_set_routes();
+	/*
+	 * Start firewall 
+	 */
+	start_wshaper();
+	start_firewall();
 	cprintf("routes done\n");
 	if (nvram_match("wan_proto", "pppoe")
 	    || nvram_match("wan_proto", "pppoe_dual")
@@ -4944,8 +4945,6 @@ void start_wan_done(char *wan_ifname)
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	stop_zebra();
 #endif
-	// stop_cron ();
-	stop_wshaper();
 	cprintf("start zebra\n");
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_zebra();
@@ -4958,7 +4957,6 @@ void start_wan_done(char *wan_ifname)
 	// start_OAcron ();
 	cprintf("start wshaper\n");
 	stop_wland();
-	start_wshaper();
 	start_wland();
 	if (nvram_match("wan_proto", "pptp")) {
 
