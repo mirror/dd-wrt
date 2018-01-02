@@ -506,8 +506,8 @@ endif
 	echo "# CONFIG_NUKE is not set" >> busybox/.config
 	echo "# CONFIG_RESUME is not set" >> busybox/.config
 	echo "# CONFIG_RUN_INIT is not set" >> busybox/.config
-	echo "# CONFIG_XARGS_SUPPORT_PARALLEL is not set" >> busybox/.config
-	echo "# CONFIG_XARGS_SUPPORT_ARGS_FILE is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_XARGS_SUPPORT_PARALLEL is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_XARGS_SUPPORT_ARGS_FILE is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_VOLUMEID_MINIX is not set" >> busybox/.config
 	echo "# CONFIG_HEXEDIT is not set" >> busybox/.config
 	echo "# CONFIG_SETFATTR is not set" >> busybox/.config
