@@ -160,7 +160,7 @@ void nf_ct_deliver_cached_events(struct nf_conn *ct)
 
 	events = xchg(&e->cache, 0);
 
-	if (!nf_ct_is_confirmed(ct) || nf_ct_is_dying(ct))
+	if (!nf_ct_is_confirmed(ct) || nf_ct_is_dying(ct) || !events)
 		return;
 
 	/* We make a copy of the missed event cache without taking
