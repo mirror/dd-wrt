@@ -1033,7 +1033,7 @@ void start_wshaper(void)
 		|| client_bridged_enabled()))
 		return;
 
-	if (!nvram_invmatchi("wshaper_enable", 0)) {
+	if (nvram_matchi("wshaper_enable", 0)) {
 		if (nvram_matchi("sfe", 1))
 			insmod("shortcut-fe");
 		return;
@@ -1183,10 +1183,7 @@ void stop_wshaper(void)
 	foreach(var, vifs, next) {
 		eval("tc", "qdisc", "del", "dev", var, "root");
 	}
-#ifndef TEST
-	stop_firewall();
-	start_firewall();
-#endif
+
 	// don't let packages pass to iptables without ebtables loaded
 	writeprocsysnet("bridge/bridge-nf-call-arptables", "0");
 	writeprocsysnet("bridge/bridge-nf-call-ip6tables", "0");
