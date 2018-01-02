@@ -50,7 +50,6 @@ void nf_ct_deliver_cached_events(struct nf_conn *ct)
 			.pid	= 0,
 			.report	= 0
 		};
-		int ret;
 		/* We make a copy of the missed event cache without taking
 		 * the lock, thus we may send missed events twice. However,
 		 * this does not harm and it happens very rarely. */

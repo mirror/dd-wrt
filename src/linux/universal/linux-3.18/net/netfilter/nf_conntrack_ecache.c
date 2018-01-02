@@ -122,7 +122,6 @@ void nf_ct_deliver_cached_events(struct nf_conn *ct)
         /* Incredibly nasty duplication in order to hack second event */
 	struct nf_conntrack_ecache *e;
 	struct nf_ct_event item;
-	int ret;
 
 	struct net *net = nf_ct_net(ct);
 

@@ -308,7 +308,6 @@ trigger_target(struct sk_buff *skb, const struct xt_action_param *par)
 
 static int trigger_check(const struct xt_tgchk_param *par)
 {
-	const struct ipt_entry *e = (struct ipt_entry*)par->entryinfo;
 	const struct ipt_trigger_info *info = par->targinfo;
 	struct list_head *cur_item, *tmp_item;
 
