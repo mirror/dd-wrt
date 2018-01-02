@@ -500,6 +500,19 @@ endif
 	echo "# CONFIG_FEATURE_POWERTOP_INTERACTIVE is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_UNZIP_CDF is not set" >> busybox/.config
 	echo "# CONFIG_FEDORA_COMPAT is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_CATN is not set" >> busybox/.config
+	echo "# CONFIG_BB_ARCH is not set" >> busybox/.config
+	echo "# CONFIG_MINIPS is not set" >> busybox/.config
+	echo "# CONFIG_NUKE is not set" >> busybox/.config
+	echo "# CONFIG_RESUME is not set" >> busybox/.config
+	echo "# CONFIG_RUN_INIT is not set" >> busybox/.config
+	echo "# CONFIG_XARGS_SUPPORT_PARALLEL is not set" >> busybox/.config
+	echo "# CONFIG_XARGS_SUPPORT_ARGS_FILE is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_VOLUMEID_MINIX is not set" >> busybox/.config
+	echo "# CONFIG_HEXEDIT is not set" >> busybox/.config
+	echo "# CONFIG_SETFATTR is not set" >> busybox/.config
+	echo "# CONFIG_NETCAT is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_SH_READ_FRAC is not set" >> busybox/.config
 
 	cd busybox && make oldconfig
 	
