@@ -108,32 +108,40 @@ jQuery(function($) {
 	 * @param object data
 	 * @param string data.object   object name
 	 * @param array  data.values   values
+	 * @param array  data.elements values for multiple input elements
 	 * @param string data.parentId parent id
 	 */
 	$(document).on('add.popup', function(e, data) {
-		// multiselect check
-		if ($('#' + data.parentId).hasClass('multiselect')) {
-			for (var i = 0; i < data.values.length; i++) {
-				if (typeof data.values[i].id !== 'undefined') {
-					var item = {
-						'id': data.values[i].id,
-						'name': data.values[i].name
-					};
+		if (data.elements) {
+			jQuery.each(data.elements, function(_, element) {
+				jQuery('#' + element.id).val(element.value);
+			});
+		}
+		else if (data.values) {
+			// multiselect check
+			if ($('#' + data.parentId).hasClass('multiselect')) {
+				for (var i = 0; i < data.values.length; i++) {
+					if (typeof data.values[i].id !== 'undefined') {
+						var item = {
+							'id': data.values[i].id,
+							'name': data.values[i].name
+						};
 
-					if (typeof(data.values[i].prefix) !== 'undefined') {
-						item.prefix = data.values[i].prefix;
+						if (typeof data.values[i].prefix !== 'undefined') {
+							item.prefix = data.values[i].prefix;
+						}
+
+						jQuery('#' + data.parentId).multiSelect('addData', item);
 					}
-
-					jQuery('#' + data.parentId).multiSelect('addData', item);
 				}
 			}
-		}
-		else if (typeof addPopupValues !== 'undefined') {
-			// execute function if they exist
-			addPopupValues(data);
-		}
-		else {
-			jQuery('#' + data.parentId).val(data.values[0].name);
+			else if (typeof addPopupValues !== 'undefined') {
+				// execute function if they exist
+				addPopupValues(data);
+			}
+			else {
+				jQuery('#' + data.parentId).val(data.values[0].name);
+			}
 		}
 	});
 

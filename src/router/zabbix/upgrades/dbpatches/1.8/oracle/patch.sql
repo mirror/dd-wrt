@@ -12,6 +12,11 @@ alter table alerts modify subject         nvarchar2(255)          DEFAULT '';
 alter table alerts modify message         nvarchar2(2048)         DEFAULT '';
 alter table alerts modify error           nvarchar2(128)          DEFAULT '';
 alter table applications modify name            nvarchar2(255)          DEFAULT '';
+alter table auditlog add ip nvarchar2(39)           DEFAULT '';
+alter table auditlog add resourceid              number(20)              DEFAULT '0'     NOT NULL;
+alter table auditlog add resourcename            nvarchar2(255)          DEFAULT '';
+
+alter table auditlog modify details         nvarchar2(128)          DEFAULT '0';
 CREATE TABLE auditlog_details (
         auditdetailid           number(20)              DEFAULT '0'     NOT NULL,
         auditid         number(20)              DEFAULT '0'     NOT NULL,
@@ -22,11 +27,6 @@ CREATE TABLE auditlog_details (
         PRIMARY KEY (auditdetailid)
 );
 CREATE INDEX auditlog_details_1 on auditlog_details (auditid);
-alter table auditlog add ip nvarchar2(39)           DEFAULT '';
-alter table auditlog add resourceid              number(20)              DEFAULT '0'     NOT NULL;
-alter table auditlog add resourcename            nvarchar2(255)          DEFAULT '';
-
-alter table auditlog modify details         nvarchar2(128)          DEFAULT '0';
 CREATE TABLE autoreg_host (
         autoreg_hostid          number(20)              DEFAULT '0'     NOT NULL,
         proxy_hostid            number(20)              DEFAULT '0'     NOT NULL,
@@ -106,23 +106,6 @@ CREATE TABLE globalmacro (
         PRIMARY KEY (globalmacroid)
 );
 CREATE INDEX globalmacro_1 on globalmacro (macro);
-alter table graphs_items modify color           nvarchar2(6)            DEFAULT '009600';
-
-CREATE INDEX graphs_items_1 on graphs_items (itemid);
-CREATE INDEX graphs_items_2 on graphs_items (graphid);
-
-alter table graphs_items modify color           nvarchar2(6)            DEFAULT '009600';
-alter table graphs add ymin_type               number(10)              DEFAULT '0'     NOT NULL;
-alter table graphs add ymax_type               number(10)              DEFAULT '0'     NOT NULL;
-alter table graphs add ymin_itemid             number(20)              DEFAULT '0'     NOT NULL;
-alter table graphs add ymax_itemid             number(20)              DEFAULT '0'     NOT NULL;
-
-update graphs set ymin_type=yaxistype;
-update graphs set ymax_type=yaxistype;
-
-alter table graphs drop column yaxistype;
-
-alter table graphs modify name            nvarchar2(128)          DEFAULT '';
 CREATE TABLE graph_theme (
         graphthemeid            number(20)              DEFAULT '0'     NOT NULL,
         description             nvarchar2(64)           DEFAULT ''      ,
@@ -147,6 +130,23 @@ CREATE INDEX graph_theme_2 on graph_theme (theme);
 
 INSERT INTO graph_theme VALUES (1,'Original Blue','css_ob.css','F0F0F0','FFFFFF','333333','CCCCCC','AAAAAA','000000','222222','AA4444','11CC11','CC1111','E0E0E0',1,1);
 INSERT INTO graph_theme VALUES (2,'Black & Blue','css_bb.css','333333','0A0A0A','888888','222222','4F4F4F','EFEFEF','0088FF','CC4444','1111FF','FF1111','1F1F1F',1,1);
+alter table graphs add ymin_type               number(10)              DEFAULT '0'     NOT NULL;
+alter table graphs add ymax_type               number(10)              DEFAULT '0'     NOT NULL;
+alter table graphs add ymin_itemid             number(20)              DEFAULT '0'     NOT NULL;
+alter table graphs add ymax_itemid             number(20)              DEFAULT '0'     NOT NULL;
+
+update graphs set ymin_type=yaxistype;
+update graphs set ymax_type=yaxistype;
+
+alter table graphs drop column yaxistype;
+
+alter table graphs modify name            nvarchar2(128)          DEFAULT '';
+alter table graphs_items modify color           nvarchar2(6)            DEFAULT '009600';
+
+CREATE INDEX graphs_items_1 on graphs_items (itemid);
+CREATE INDEX graphs_items_2 on graphs_items (graphid);
+
+alter table graphs_items modify color           nvarchar2(6)            DEFAULT '009600';
 alter table groups add internal                number(10)         DEFAULT '0'     NOT NULL;
 
 alter table groups modify name            nvarchar2(64)           DEFAULT '';
@@ -402,9 +402,38 @@ CREATE TABLE hostmacro (
 );
 CREATE INDEX hostmacro_1 on hostmacro (hostid,macro);
 
+alter table hosts add maintenanceid number(20) DEFAULT '0' NOT NULL;
+alter table hosts add maintenance_status number(10) DEFAULT '0' NOT NULL;
+alter table hosts add maintenance_type number(10) DEFAULT '0' NOT NULL;
+alter table hosts add maintenance_from number(10) DEFAULT '0' NOT NULL;
+alter table hosts add ipmi_ip nvarchar2(64) DEFAULT '127.0.0.1';
+alter table hosts add ipmi_errors_from number(10) DEFAULT '0' NOT NULL;
+alter table hosts add snmp_errors_from number(10) DEFAULT '0' NOT NULL;
+alter table hosts add ipmi_error nvarchar2(128) DEFAULT '';
+alter table hosts add snmp_error nvarchar2(128) DEFAULT '';
+
+alter table hosts modify host            nvarchar2(64)           DEFAULT '';
+alter table hosts modify dns             nvarchar2(64)           DEFAULT '';
+alter table hosts modify ip              nvarchar2(39)           DEFAULT '127.0.0.1';
+alter table hosts modify error           nvarchar2(128)          DEFAULT '';
+alter table hosts modify ipmi_username           nvarchar2(16)           DEFAULT '';
+alter table hosts modify ipmi_password           nvarchar2(20)           DEFAULT '';
+alter table hosts modify ipmi_ip         nvarchar2(64)           DEFAULT '127.0.0.1';
+
 drop index hosts_groups_groups_1;
 CREATE INDEX hosts_groups_1 on hosts_groups (hostid,groupid);
 CREATE INDEX hosts_groups_2 on hosts_groups (groupid);
+alter table hosts_profiles modify devicetype              nvarchar2(64)           DEFAULT '';
+alter table hosts_profiles modify name            nvarchar2(64)           DEFAULT '';
+alter table hosts_profiles modify os              nvarchar2(64)           DEFAULT '';
+alter table hosts_profiles modify serialno                nvarchar2(64)           DEFAULT '';
+alter table hosts_profiles modify tag             nvarchar2(64)           DEFAULT '';
+alter table hosts_profiles modify macaddress              nvarchar2(64)           DEFAULT '';
+alter table hosts_profiles modify hardware                nvarchar2(2048)         DEFAULT '';
+alter table hosts_profiles modify software                nvarchar2(2048)         DEFAULT '';
+alter table hosts_profiles modify contact         nvarchar2(2048)         DEFAULT '';
+alter table hosts_profiles modify location                nvarchar2(2048)         DEFAULT '';
+alter table hosts_profiles modify notes           nvarchar2(2048)         DEFAULT '';
 alter table hosts_profiles_ext modify device_alias            nvarchar2(64)           DEFAULT ''  ;
 alter table hosts_profiles_ext modify device_type             nvarchar2(64)           DEFAULT ''  ;
 alter table hosts_profiles_ext modify device_chassis          nvarchar2(64)           DEFAULT ''  ;
@@ -464,35 +493,6 @@ alter table hosts_profiles_ext modify poc_2_cell              nvarchar2(64)     
 alter table hosts_profiles_ext modify poc_2_screen            nvarchar2(64)           DEFAULT ''  ;
 alter table hosts_profiles_ext modify poc_2_notes             nvarchar2(2048)         DEFAULT ''  ;
 
-alter table hosts_profiles modify devicetype              nvarchar2(64)           DEFAULT '';
-alter table hosts_profiles modify name            nvarchar2(64)           DEFAULT '';
-alter table hosts_profiles modify os              nvarchar2(64)           DEFAULT '';
-alter table hosts_profiles modify serialno                nvarchar2(64)           DEFAULT '';
-alter table hosts_profiles modify tag             nvarchar2(64)           DEFAULT '';
-alter table hosts_profiles modify macaddress              nvarchar2(64)           DEFAULT '';
-alter table hosts_profiles modify hardware                nvarchar2(2048)         DEFAULT '';
-alter table hosts_profiles modify software                nvarchar2(2048)         DEFAULT '';
-alter table hosts_profiles modify contact         nvarchar2(2048)         DEFAULT '';
-alter table hosts_profiles modify location                nvarchar2(2048)         DEFAULT '';
-alter table hosts_profiles modify notes           nvarchar2(2048)         DEFAULT '';
-alter table hosts add maintenanceid number(20) DEFAULT '0' NOT NULL;
-alter table hosts add maintenance_status number(10) DEFAULT '0' NOT NULL;
-alter table hosts add maintenance_type number(10) DEFAULT '0' NOT NULL;
-alter table hosts add maintenance_from number(10) DEFAULT '0' NOT NULL;
-alter table hosts add ipmi_ip nvarchar2(64) DEFAULT '127.0.0.1';
-alter table hosts add ipmi_errors_from number(10) DEFAULT '0' NOT NULL;
-alter table hosts add snmp_errors_from number(10) DEFAULT '0' NOT NULL;
-alter table hosts add ipmi_error nvarchar2(128) DEFAULT '';
-alter table hosts add snmp_error nvarchar2(128) DEFAULT '';
-
-alter table hosts modify host            nvarchar2(64)           DEFAULT '';
-alter table hosts modify dns             nvarchar2(64)           DEFAULT '';
-alter table hosts modify ip              nvarchar2(39)           DEFAULT '127.0.0.1';
-alter table hosts modify error           nvarchar2(128)          DEFAULT '';
-alter table hosts modify ipmi_username           nvarchar2(16)           DEFAULT '';
-alter table hosts modify ipmi_password           nvarchar2(20)           DEFAULT '';
-alter table hosts modify ipmi_ip         nvarchar2(64)           DEFAULT '127.0.0.1';
-
 CREATE INDEX hosts_templates_2 on hosts_templates (templateid);
 alter table housekeeper modify tablename               nvarchar2(64)           DEFAULT '';
 alter table housekeeper modify field           nvarchar2(64)           DEFAULT '';
@@ -546,6 +546,17 @@ alter table items modify params          nvarchar2(2048)         DEFAULT '';
 alter table items modify ipmi_sensor             nvarchar2(128)          DEFAULT '';
 
 UPDATE items SET units='Bps' WHERE type=9 AND units='bps';
+CREATE TABLE maintenances (
+        maintenanceid           number(20)              DEFAULT '0'     NOT NULL,
+        name            nvarchar2(128)          DEFAULT ''      ,
+        maintenance_type                number(10)              DEFAULT '0'     NOT NULL,
+        description             nvarchar2(2048)         DEFAULT ''      ,
+        active_since            number(10)              DEFAULT '0'     NOT NULL,
+        active_till             number(10)              DEFAULT '0'     NOT NULL,
+        PRIMARY KEY (maintenanceid)
+);
+CREATE INDEX maintenances_1 on maintenances (active_since,active_till);
+
 CREATE TABLE maintenances_groups (
         maintenance_groupid             number(20)              DEFAULT '0'     NOT NULL,
         maintenanceid           number(20)              DEFAULT '0'     NOT NULL,
@@ -561,17 +572,6 @@ CREATE TABLE maintenances_hosts (
         PRIMARY KEY (maintenance_hostid)
 );
 CREATE INDEX maintenances_hosts_1 on maintenances_hosts (maintenanceid,hostid);
-
-CREATE TABLE maintenances (
-        maintenanceid           number(20)              DEFAULT '0'     NOT NULL,
-        name            nvarchar2(128)          DEFAULT ''      ,
-        maintenance_type                number(10)              DEFAULT '0'     NOT NULL,
-        description             nvarchar2(2048)         DEFAULT ''      ,
-        active_since            number(10)              DEFAULT '0'     NOT NULL,
-        active_till             number(10)              DEFAULT '0'     NOT NULL,
-        PRIMARY KEY (maintenanceid)
-);
-CREATE INDEX maintenances_1 on maintenances (active_since,active_till);
 
 CREATE TABLE maintenances_windows (
         maintenance_timeperiodid                number(20)              DEFAULT '0'     NOT NULL,
@@ -727,9 +727,9 @@ CREATE TABLE regexps (
 CREATE INDEX regexps_1 on regexps (name);
 
 CREATE INDEX rights_2 on rights (id);
-alter table screens_items modify url             nvarchar2(255)          DEFAULT '';
-
 alter table screens modify name            nvarchar2(255)          DEFAULT 'Screen';
+
+alter table screens_items modify url             nvarchar2(255)          DEFAULT '';
 
 alter table scripts modify name            nvarchar2(255)          DEFAULT '';
 alter table scripts modify command         nvarchar2(255)          DEFAULT '';
@@ -743,16 +743,16 @@ CREATE INDEX sessions_1 on sessions (userid, status);
 
 alter table sessions modify sessionid               nvarchar2(32)           DEFAULT '';
 alter table slideshows modify name            nvarchar2(255)          DEFAULT '';
+ALTER TABLE sysmaps ADD highlight number(10) DEFAULT '1' NOT NULL;
+
+alter table sysmaps modify name            nvarchar2(128)          DEFAULT '';
 alter table sysmaps_elements  modify label           nvarchar2(255)            DEFAULT '';
 ALTER TABLE sysmaps_elements ADD iconid_maintenance number(20) DEFAULT '0' NOT NULL;
 
 alter table sysmaps_elements modify url             nvarchar2(255)          DEFAULT '';
+alter table sysmaps_link_triggers modify color           nvarchar2(6)            DEFAULT '000000';
 alter table sysmaps_links  add label           nvarchar2(255)            DEFAULT '';
 alter table sysmaps_links modify color           nvarchar2(6)            DEFAULT '000000';
-alter table sysmaps_link_triggers modify color           nvarchar2(6)            DEFAULT '000000';
-ALTER TABLE sysmaps ADD highlight number(10) DEFAULT '1' NOT NULL;
-
-alter table sysmaps modify name            nvarchar2(128)          DEFAULT '';
 CREATE TABLE timeperiods (
         timeperiodid            number(20)              DEFAULT '0'     NOT NULL,
         timeperiod_type         number(10)              DEFAULT '0'     NOT NULL,

@@ -98,6 +98,10 @@ drop table events;
 alter table events_tmp rename to events;
 CREATE INDEX events_1 on events (object,objectid,eventid);
 CREATE INDEX events_2 on events (clock);
+alter table graphs add show_legend	number(10)	DEFAULT '0'	NOT NULL;
+alter table graphs add show_3d		number(10)	DEFAULT '0'	NOT NULL;
+alter table graphs add percent_left	number(5,2)	DEFAULT '0'	NOT NULL;
+alter table graphs add percent_right	number(5,2)	DEFAULT '0'	NOT NULL;
 update graphs_items set color='FF0000' where color='Red';
 update graphs_items set color='960000' where color='Dark Red';
 update graphs_items set color='00FF00' where color='Green';
@@ -114,12 +118,38 @@ alter table graphs_items modify color varchar2(6) DEFAULT '009600';
 
 CREATE INDEX graphs_items_1 on graphs_items (itemid);
 CREATE INDEX graphs_items_2 on graphs_items (graphid);
-alter table graphs add show_legend	number(10)	DEFAULT '0'	NOT NULL;
-alter table graphs add show_3d		number(10)	DEFAULT '0'	NOT NULL;
-alter table graphs add percent_left	number(5,2)	DEFAULT '0'	NOT NULL;
-alter table graphs add percent_right	number(5,2)	DEFAULT '0'	NOT NULL;
 CREATE UNIQUE INDEX history_log_2 on history_log (itemid,id);
 CREATE UNIQUE INDEX history_text_2 on history_text (itemid,id);
+CREATE TABLE hosts_tmp (
+	hostid		number(20)		DEFAULT '0'	NOT NULL,
+	proxy_hostid		number(20)		DEFAULT '0'	NOT NULL,
+	host		varchar2(64)		DEFAULT ''	,
+	dns		varchar2(64)		DEFAULT ''	,
+	useip		number(10)		DEFAULT '1'	NOT NULL,
+	ip		varchar2(39)		DEFAULT '127.0.0.1'	,
+	port		number(10)		DEFAULT '10050'	NOT NULL,
+	status		number(10)		DEFAULT '0'	NOT NULL,
+	disable_until		number(10)		DEFAULT '0'	NOT NULL,
+	error		varchar2(128)		DEFAULT ''	,
+	available		number(10)		DEFAULT '0'	NOT NULL,
+	errors_from		number(10)		DEFAULT '0'	NOT NULL,
+	lastaccess		number(10)		DEFAULT '0'	NOT NULL,
+	inbytes		number(20)		DEFAULT '0'	NOT NULL,
+	outbytes		number(20)		DEFAULT '0'	NOT NULL,
+	useipmi		number(10)		DEFAULT '0'	NOT NULL,
+	ipmi_port		number(10)		DEFAULT '623'	NOT NULL,
+	ipmi_authtype		number(10)		DEFAULT '0'	NOT NULL,
+	ipmi_privilege		number(10)		DEFAULT '2'	NOT NULL,
+	ipmi_username		varchar2(16)		DEFAULT ''	,
+	ipmi_password		varchar2(20)		DEFAULT ''	,
+	PRIMARY KEY (hostid)
+);
+insert into hosts_tmp select hostid,0,host,dns,useip,ip,port,status,disable_until,error,available,errors_from,0,0,0,0,623,0,2,'','' from hosts;
+drop table hosts;
+alter table hosts_tmp rename to hosts;
+CREATE INDEX hosts_1 on hosts (host);
+CREATE INDEX hosts_2 on hosts (status);
+CREATE INDEX hosts_3 on hosts (proxy_hostid);
 CREATE TABLE hosts_profiles_ext (
 	hostid		number(20)	DEFAULT '0'	NOT NULL,
 	device_alias	varchar2(64)	DEFAULT '',
@@ -182,36 +212,6 @@ CREATE TABLE hosts_profiles_ext (
 	poc_2_notes	varchar2(2048)	DEFAULT '',
 	PRIMARY KEY (hostid)
 );
-CREATE TABLE hosts_tmp (
-	hostid		number(20)		DEFAULT '0'	NOT NULL,
-	proxy_hostid		number(20)		DEFAULT '0'	NOT NULL,
-	host		varchar2(64)		DEFAULT ''	,
-	dns		varchar2(64)		DEFAULT ''	,
-	useip		number(10)		DEFAULT '1'	NOT NULL,
-	ip		varchar2(39)		DEFAULT '127.0.0.1'	,
-	port		number(10)		DEFAULT '10050'	NOT NULL,
-	status		number(10)		DEFAULT '0'	NOT NULL,
-	disable_until		number(10)		DEFAULT '0'	NOT NULL,
-	error		varchar2(128)		DEFAULT ''	,
-	available		number(10)		DEFAULT '0'	NOT NULL,
-	errors_from		number(10)		DEFAULT '0'	NOT NULL,
-	lastaccess		number(10)		DEFAULT '0'	NOT NULL,
-	inbytes		number(20)		DEFAULT '0'	NOT NULL,
-	outbytes		number(20)		DEFAULT '0'	NOT NULL,
-	useipmi		number(10)		DEFAULT '0'	NOT NULL,
-	ipmi_port		number(10)		DEFAULT '623'	NOT NULL,
-	ipmi_authtype		number(10)		DEFAULT '0'	NOT NULL,
-	ipmi_privilege		number(10)		DEFAULT '2'	NOT NULL,
-	ipmi_username		varchar2(16)		DEFAULT ''	,
-	ipmi_password		varchar2(20)		DEFAULT ''	,
-	PRIMARY KEY (hostid)
-);
-insert into hosts_tmp select hostid,0,host,dns,useip,ip,port,status,disable_until,error,available,errors_from,0,0,0,0,623,0,2,'','' from hosts;
-drop table hosts;
-alter table hosts_tmp rename to hosts;
-CREATE INDEX hosts_1 on hosts (host);
-CREATE INDEX hosts_2 on hosts (status);
-CREATE INDEX hosts_3 on hosts (proxy_hostid);
 alter table httpstep modify url varchar2(255) DEFAULT '';
 CREATE TABLE httptest_tmp (
         httptestid              number(20)              DEFAULT '0'     NOT NULL,
@@ -325,6 +325,7 @@ CREATE INDEX services_1 on services (triggerid);
 alter table sessions add status number(10) DEFAULT '0' NOT NULL;
 alter table sysmaps_elements add iconid_disabled number(20) DEFAULT '0' NOT NULL;
 update sysmaps_elements set iconid_disabled=iconid_off;
+-- See sysmaps_links.sql
 CREATE TABLE sysmaps_link_triggers (
 	linktriggerid	number(20)	DEFAULT '0'	NOT NULL,
 	linkid		number(20)	DEFAULT '0'	NOT NULL,
@@ -365,7 +366,6 @@ alter table sysmaps_links rename column color_off to color;
 alter table sysmaps_links modify color varchar2(6) DEFAULT '000000';
 alter table sysmaps_links drop column drawtype_on;
 alter table sysmaps_links drop column color_on;
--- See sysmaps_links.sql
 CREATE TABLE trends_uint (
 	itemid		number(20)	DEFAULT '0'	NOT NULL,
 	clock		number(10)	DEFAULT '0'	NOT NULL,

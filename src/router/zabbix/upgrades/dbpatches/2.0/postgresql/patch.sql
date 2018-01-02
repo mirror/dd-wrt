@@ -33,14 +33,14 @@ UPDATE applications SET templateid=NULL WHERE templateid=0;
 UPDATE applications SET templateid=NULL WHERE templateid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM applications a WHERE a.applicationid=applications.templateid);
 ALTER TABLE ONLY applications ADD CONSTRAINT c_applications_1 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
 ALTER TABLE ONLY applications ADD CONSTRAINT c_applications_2 FOREIGN KEY (templateid) REFERENCES applications (applicationid) ON DELETE CASCADE;
-ALTER TABLE ONLY auditlog_details ALTER auditdetailid DROP DEFAULT,
-				  ALTER auditid DROP DEFAULT;
-DELETE FROM auditlog_details WHERE NOT EXISTS (SELECT 1 FROM auditlog WHERE auditlog.auditid=auditlog_details.auditid);
-ALTER TABLE ONLY auditlog_details ADD CONSTRAINT c_auditlog_details_1 FOREIGN KEY (auditid) REFERENCES auditlog (auditid) ON DELETE CASCADE;
 ALTER TABLE ONLY auditlog ALTER auditid DROP DEFAULT,
 			  ALTER userid DROP DEFAULT;
 DELETE FROM auditlog WHERE NOT EXISTS (SELECT 1 FROM users WHERE users.userid=auditlog.userid);
 ALTER TABLE ONLY auditlog ADD CONSTRAINT c_auditlog_1 FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE;
+ALTER TABLE ONLY auditlog_details ALTER auditdetailid DROP DEFAULT,
+				  ALTER auditid DROP DEFAULT;
+DELETE FROM auditlog_details WHERE NOT EXISTS (SELECT 1 FROM auditlog WHERE auditlog.auditid=auditlog_details.auditid);
+ALTER TABLE ONLY auditlog_details ADD CONSTRAINT c_auditlog_details_1 FOREIGN KEY (auditid) REFERENCES auditlog (auditid) ON DELETE CASCADE;
 DROP INDEX autoreg_host_1;
 CREATE INDEX autoreg_host_1 ON autoreg_host (proxy_hostid,host);
 ALTER TABLE ONLY autoreg_host ALTER autoreg_hostid DROP DEFAULT,
@@ -185,35 +185,6 @@ CREATE TABLE graph_discovery (
 CREATE UNIQUE INDEX graph_discovery_1 on graph_discovery (graphid,parent_graphid);
 ALTER TABLE ONLY graph_discovery ADD CONSTRAINT c_graph_discovery_1 FOREIGN KEY (graphid) REFERENCES graphs (graphid) ON DELETE CASCADE;
 ALTER TABLE ONLY graph_discovery ADD CONSTRAINT c_graph_discovery_2 FOREIGN KEY (parent_graphid) REFERENCES graphs (graphid) ON DELETE CASCADE;
-ALTER TABLE ONLY graphs_items
-	ALTER gitemid DROP DEFAULT,
-	ALTER graphid DROP DEFAULT,
-	ALTER itemid DROP DEFAULT,
-	DROP COLUMN periods_cnt;
-UPDATE graphs_items SET type=0 WHERE type=1;
-DELETE FROM graphs_items WHERE NOT EXISTS (SELECT 1 FROM graphs WHERE graphs.graphid=graphs_items.graphid);
-DELETE FROM graphs_items WHERE NOT EXISTS (SELECT 1 FROM items WHERE items.itemid=graphs_items.itemid);
-ALTER TABLE ONLY graphs_items ADD CONSTRAINT c_graphs_items_1 FOREIGN KEY (graphid) REFERENCES graphs (graphid) ON DELETE CASCADE;
-ALTER TABLE ONLY graphs_items ADD CONSTRAINT c_graphs_items_2 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
-ALTER TABLE ONLY graphs ALTER graphid DROP DEFAULT,
-			ALTER templateid DROP DEFAULT,
-			ALTER templateid DROP NOT NULL,
-			ALTER ymin_itemid DROP DEFAULT,
-			ALTER ymin_itemid DROP NOT NULL,
-			ALTER ymax_itemid DROP DEFAULT,
-			ALTER ymax_itemid DROP NOT NULL,
-			ALTER show_legend SET DEFAULT 1,
-			ADD flags integer DEFAULT '0' NOT NULL;
-UPDATE graphs SET show_legend=1 WHERE graphtype=0 OR graphtype=1;
-UPDATE graphs SET templateid=NULL WHERE templateid=0;
-UPDATE graphs SET templateid=NULL WHERE templateid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM graphs g WHERE g.graphid=graphs.templateid);
-UPDATE graphs SET ymin_itemid=NULL WHERE ymin_itemid=0 OR NOT EXISTS (SELECT itemid FROM items WHERE items.itemid=graphs.ymin_itemid);
-UPDATE graphs SET ymax_itemid=NULL WHERE ymax_itemid=0 OR NOT EXISTS (SELECT itemid FROM items WHERE items.itemid=graphs.ymax_itemid);
-UPDATE graphs SET ymin_type=0 WHERE ymin_type=2 AND ymin_itemid=NULL;
-UPDATE graphs SET ymax_type=0 WHERE ymax_type=2 AND ymax_itemid=NULL;
-ALTER TABLE ONLY graphs ADD CONSTRAINT c_graphs_1 FOREIGN KEY (templateid) REFERENCES graphs (graphid) ON DELETE CASCADE;
-ALTER TABLE ONLY graphs ADD CONSTRAINT c_graphs_2 FOREIGN KEY (ymin_itemid) REFERENCES items (itemid);
-ALTER TABLE ONLY graphs ADD CONSTRAINT c_graphs_3 FOREIGN KEY (ymax_itemid) REFERENCES items (itemid);
 ALTER TABLE ONLY graph_theme ALTER graphthemeid DROP DEFAULT,
 			     ALTER noneworktimecolor SET DEFAULT 'CCCCCC';
 ALTER TABLE ONLY graph_theme RENAME noneworktimecolor TO nonworktimecolor;
@@ -243,6 +214,35 @@ SELECT (SELECT MAX(graphthemeid) FROM graph_theme) + 1 AS graphthemeid, 'Classic
 WHERE EXISTS (SELECT NULL FROM graph_theme);
 
 DELETE FROM ids WHERE table_name = 'graph_theme';
+ALTER TABLE ONLY graphs ALTER graphid DROP DEFAULT,
+			ALTER templateid DROP DEFAULT,
+			ALTER templateid DROP NOT NULL,
+			ALTER ymin_itemid DROP DEFAULT,
+			ALTER ymin_itemid DROP NOT NULL,
+			ALTER ymax_itemid DROP DEFAULT,
+			ALTER ymax_itemid DROP NOT NULL,
+			ALTER show_legend SET DEFAULT 1,
+			ADD flags integer DEFAULT '0' NOT NULL;
+UPDATE graphs SET show_legend=1 WHERE graphtype=0 OR graphtype=1;
+UPDATE graphs SET templateid=NULL WHERE templateid=0;
+UPDATE graphs SET templateid=NULL WHERE templateid IS NOT NULL AND NOT EXISTS (SELECT 1 FROM graphs g WHERE g.graphid=graphs.templateid);
+UPDATE graphs SET ymin_itemid=NULL WHERE ymin_itemid=0 OR NOT EXISTS (SELECT itemid FROM items WHERE items.itemid=graphs.ymin_itemid);
+UPDATE graphs SET ymax_itemid=NULL WHERE ymax_itemid=0 OR NOT EXISTS (SELECT itemid FROM items WHERE items.itemid=graphs.ymax_itemid);
+UPDATE graphs SET ymin_type=0 WHERE ymin_type=2 AND ymin_itemid=NULL;
+UPDATE graphs SET ymax_type=0 WHERE ymax_type=2 AND ymax_itemid=NULL;
+ALTER TABLE ONLY graphs ADD CONSTRAINT c_graphs_1 FOREIGN KEY (templateid) REFERENCES graphs (graphid) ON DELETE CASCADE;
+ALTER TABLE ONLY graphs ADD CONSTRAINT c_graphs_2 FOREIGN KEY (ymin_itemid) REFERENCES items (itemid);
+ALTER TABLE ONLY graphs ADD CONSTRAINT c_graphs_3 FOREIGN KEY (ymax_itemid) REFERENCES items (itemid);
+ALTER TABLE ONLY graphs_items
+	ALTER gitemid DROP DEFAULT,
+	ALTER graphid DROP DEFAULT,
+	ALTER itemid DROP DEFAULT,
+	DROP COLUMN periods_cnt;
+UPDATE graphs_items SET type=0 WHERE type=1;
+DELETE FROM graphs_items WHERE NOT EXISTS (SELECT 1 FROM graphs WHERE graphs.graphid=graphs_items.graphid);
+DELETE FROM graphs_items WHERE NOT EXISTS (SELECT 1 FROM items WHERE items.itemid=graphs_items.itemid);
+ALTER TABLE ONLY graphs_items ADD CONSTRAINT c_graphs_items_1 FOREIGN KEY (graphid) REFERENCES graphs (graphid) ON DELETE CASCADE;
+ALTER TABLE ONLY graphs_items ADD CONSTRAINT c_graphs_items_2 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
 ALTER TABLE ONLY groups ALTER groupid DROP DEFAULT;
 DROP TABLE help_items;
 
@@ -402,11 +402,11 @@ INSERT INTO help_items (itemtype,key_,description) values ('7','web.page.regexp[
 INSERT INTO help_items (itemtype,key_,description) values ('8','grpfunc[&lt;group&gt;,&lt;key&gt;,&lt;func&gt;,&lt;param&gt;]','Aggregate checks do not require any agent running on a host being monitored. Zabbix server collects aggregate information by doing direct database queries. See Zabbix Manual.');
 INSERT INTO help_items (itemtype,key_,description) values ('17','snmptrap.fallback','Catches all SNMP traps from a corresponding address that were not catched by any of the snmptrap[] items for that interface.');
 INSERT INTO help_items (itemtype,key_,description) values ('17','snmptrap[&lt;regex&gt;]','Catches all SNMP traps from a corresponding address that match regex. Default regex is an empty string.');
-ALTER TABLE ONLY history_log
-	ALTER id DROP DEFAULT,
+ALTER TABLE ONLY history
 	ALTER itemid DROP DEFAULT,
 	ADD ns integer DEFAULT '0' NOT NULL;
-ALTER TABLE ONLY history
+ALTER TABLE ONLY history_log
+	ALTER id DROP DEFAULT,
 	ALTER itemid DROP DEFAULT,
 	ADD ns integer DEFAULT '0' NOT NULL;
 ALTER TABLE ONLY history_str
@@ -724,30 +724,6 @@ DELETE FROM hostmacro
 DROP INDEX hostmacro_1;
 CREATE UNIQUE INDEX hostmacro_1 ON hostmacro (hostid,macro);
 ALTER TABLE ONLY hostmacro ADD CONSTRAINT c_hostmacro_1 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
-ALTER TABLE ONLY hosts_groups ALTER hostgroupid DROP DEFAULT,
-			      ALTER hostid DROP DEFAULT,
-			      ALTER groupid DROP DEFAULT;
-DELETE FROM hosts_groups WHERE NOT EXISTS (SELECT 1 FROM hosts WHERE hosts.hostid=hosts_groups.hostid);
-DELETE FROM hosts_groups WHERE NOT EXISTS (SELECT 1 FROM groups WHERE groups.groupid=hosts_groups.groupid);
--- remove duplicates to allow unique index
-DELETE FROM hosts_groups
-	WHERE hostgroupid IN (
-		SELECT hg1.hostgroupid
-		FROM hosts_groups hg1
-		LEFT OUTER JOIN (
-			SELECT MIN(hg2.hostgroupid) AS hostgroupid
-			FROM hosts_groups hg2
-			GROUP BY hg2.hostid,hg2.groupid
-		) keep_rows ON
-			hg1.hostgroupid=keep_rows.hostgroupid
-		WHERE keep_rows.hostgroupid IS NULL
-	);
-DROP INDEX hosts_groups_1;
-CREATE UNIQUE INDEX hosts_groups_1 ON hosts_groups (hostid,groupid);
-ALTER TABLE ONLY hosts_groups ADD CONSTRAINT c_hosts_groups_1 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
-ALTER TABLE ONLY hosts_groups ADD CONSTRAINT c_hosts_groups_2 FOREIGN KEY (groupid) REFERENCES groups (groupid) ON DELETE CASCADE;
--- See host_inventory.sql
--- See host_inventory.sql
 ---- Patching table `interfaces`
 
 CREATE TABLE interface (
@@ -1034,6 +1010,30 @@ UPDATE hosts SET name=host WHERE status in (0,1,3);	-- MONITORED, NOT_MONITORED,
 CREATE INDEX hosts_4 on hosts (name);
 ALTER TABLE ONLY hosts ADD CONSTRAINT c_hosts_1 FOREIGN KEY (proxy_hostid) REFERENCES hosts (hostid);
 ALTER TABLE ONLY hosts ADD CONSTRAINT c_hosts_2 FOREIGN KEY (maintenanceid) REFERENCES maintenances (maintenanceid);
+ALTER TABLE ONLY hosts_groups ALTER hostgroupid DROP DEFAULT,
+			      ALTER hostid DROP DEFAULT,
+			      ALTER groupid DROP DEFAULT;
+DELETE FROM hosts_groups WHERE NOT EXISTS (SELECT 1 FROM hosts WHERE hosts.hostid=hosts_groups.hostid);
+DELETE FROM hosts_groups WHERE NOT EXISTS (SELECT 1 FROM groups WHERE groups.groupid=hosts_groups.groupid);
+-- remove duplicates to allow unique index
+DELETE FROM hosts_groups
+	WHERE hostgroupid IN (
+		SELECT hg1.hostgroupid
+		FROM hosts_groups hg1
+		LEFT OUTER JOIN (
+			SELECT MIN(hg2.hostgroupid) AS hostgroupid
+			FROM hosts_groups hg2
+			GROUP BY hg2.hostid,hg2.groupid
+		) keep_rows ON
+			hg1.hostgroupid=keep_rows.hostgroupid
+		WHERE keep_rows.hostgroupid IS NULL
+	);
+DROP INDEX hosts_groups_1;
+CREATE UNIQUE INDEX hosts_groups_1 ON hosts_groups (hostid,groupid);
+ALTER TABLE ONLY hosts_groups ADD CONSTRAINT c_hosts_groups_1 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
+ALTER TABLE ONLY hosts_groups ADD CONSTRAINT c_hosts_groups_2 FOREIGN KEY (groupid) REFERENCES groups (groupid) ON DELETE CASCADE;
+-- See host_inventory.sql
+-- See host_inventory.sql
 DELETE FROM hosts_templates WHERE NOT EXISTS (SELECT 1 FROM hosts WHERE hosts.hostid=hosts_templates.hostid);
 DELETE FROM hosts_templates WHERE NOT EXISTS (SELECT 1 FROM hosts WHERE hosts.hostid=hosts_templates.templateid);
 
@@ -1063,6 +1063,10 @@ INSERT INTO hosts_templates (SELECT hosttemplateid, hostid, templateid FROM t_ho
 DROP TABLE t_hosts_templates;
 ALTER TABLE ONLY housekeeper ALTER housekeeperid DROP DEFAULT,
 			     ALTER value DROP DEFAULT;
+ALTER TABLE ONLY httpstep ALTER httpstepid DROP DEFAULT,
+			  ALTER httptestid DROP DEFAULT;
+DELETE FROM httpstep WHERE NOT EXISTS (SELECT 1 FROM httptest WHERE httptest.httptestid=httpstep.httptestid);
+ALTER TABLE ONLY httpstep ADD CONSTRAINT c_httpstep_1 FOREIGN KEY (httptestid) REFERENCES httptest (httptestid) ON DELETE CASCADE;
 ALTER TABLE ONLY httpstepitem ALTER httpstepitemid DROP DEFAULT,
 			      ALTER httpstepid DROP DEFAULT,
 			      ALTER itemid DROP DEFAULT;
@@ -1070,17 +1074,6 @@ DELETE FROM httpstepitem WHERE NOT EXISTS (SELECT 1 FROM httpstep WHERE httpstep
 DELETE FROM httpstepitem WHERE NOT EXISTS (SELECT 1 FROM items WHERE items.itemid=httpstepitem.itemid);
 ALTER TABLE ONLY httpstepitem ADD CONSTRAINT c_httpstepitem_1 FOREIGN KEY (httpstepid) REFERENCES httpstep (httpstepid) ON DELETE CASCADE;
 ALTER TABLE ONLY httpstepitem ADD CONSTRAINT c_httpstepitem_2 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
-ALTER TABLE ONLY httpstep ALTER httpstepid DROP DEFAULT,
-			  ALTER httptestid DROP DEFAULT;
-DELETE FROM httpstep WHERE NOT EXISTS (SELECT 1 FROM httptest WHERE httptest.httptestid=httpstep.httptestid);
-ALTER TABLE ONLY httpstep ADD CONSTRAINT c_httpstep_1 FOREIGN KEY (httptestid) REFERENCES httptest (httptestid) ON DELETE CASCADE;
-ALTER TABLE ONLY httptestitem ALTER httptestitemid DROP DEFAULT,
-			      ALTER httptestid DROP DEFAULT,
-			      ALTER itemid DROP DEFAULT;
-DELETE FROM httptestitem WHERE NOT EXISTS (SELECT 1 FROM httptest WHERE httptest.httptestid=httptestitem.httptestid);
-DELETE FROM httptestitem WHERE NOT EXISTS (SELECT 1 FROM items WHERE items.itemid=httptestitem.itemid);
-ALTER TABLE ONLY httptestitem ADD CONSTRAINT c_httptestitem_1 FOREIGN KEY (httptestid) REFERENCES httptest (httptestid) ON DELETE CASCADE;
-ALTER TABLE ONLY httptestitem ADD CONSTRAINT c_httptestitem_2 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
 ALTER TABLE ONLY httptest
 	ALTER httptestid DROP DEFAULT,
 	ALTER applicationid DROP DEFAULT,
@@ -1092,7 +1085,13 @@ ALTER TABLE ONLY httptest
 	DROP COLUMN error;
 DELETE FROM httptest WHERE NOT EXISTS (SELECT 1 FROM applications WHERE applications.applicationid=httptest.applicationid);
 ALTER TABLE ONLY httptest ADD CONSTRAINT c_httptest_1 FOREIGN KEY (applicationid) REFERENCES applications (applicationid) ON DELETE CASCADE;
--- See icon_map.sql
+ALTER TABLE ONLY httptestitem ALTER httptestitemid DROP DEFAULT,
+			      ALTER httptestid DROP DEFAULT,
+			      ALTER itemid DROP DEFAULT;
+DELETE FROM httptestitem WHERE NOT EXISTS (SELECT 1 FROM httptest WHERE httptest.httptestid=httptestitem.httptestid);
+DELETE FROM httptestitem WHERE NOT EXISTS (SELECT 1 FROM items WHERE items.itemid=httptestitem.itemid);
+ALTER TABLE ONLY httptestitem ADD CONSTRAINT c_httptestitem_1 FOREIGN KEY (httptestid) REFERENCES httptest (httptestid) ON DELETE CASCADE;
+ALTER TABLE ONLY httptestitem ADD CONSTRAINT c_httptestitem_2 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
 CREATE TABLE icon_map (
 	iconmapid                bigint                                    NOT NULL,
 	name                     varchar(64)     DEFAULT ''                NOT NULL,
@@ -1114,6 +1113,7 @@ CREATE TABLE icon_mapping (
 CREATE INDEX icon_mapping_1 ON icon_mapping (iconmapid);
 ALTER TABLE ONLY icon_mapping ADD CONSTRAINT c_icon_mapping_1 FOREIGN KEY (iconmapid) REFERENCES icon_map (iconmapid) ON DELETE CASCADE;
 ALTER TABLE ONLY icon_mapping ADD CONSTRAINT c_icon_mapping_2 FOREIGN KEY (iconid) REFERENCES images (imageid);
+-- See icon_map.sql
 ALTER TABLE ONLY ids ALTER nodeid DROP DEFAULT;
 ALTER TABLE ONLY ids ALTER nextid DROP DEFAULT;
 ALTER TABLE ONLY images ALTER imageid DROP DEFAULT;
@@ -1130,6 +1130,7 @@ CREATE TABLE item_discovery (
 CREATE UNIQUE INDEX item_discovery_1 on item_discovery (itemid,parent_itemid);
 ALTER TABLE ONLY item_discovery ADD CONSTRAINT c_item_discovery_1 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
 ALTER TABLE ONLY item_discovery ADD CONSTRAINT c_item_discovery_2 FOREIGN KEY (parent_itemid) REFERENCES items (itemid) ON DELETE CASCADE;
+-- See hosts.sql
 ALTER TABLE ONLY items_applications ALTER itemappid DROP DEFAULT,
 				    ALTER applicationid DROP DEFAULT,
 				    ALTER itemid DROP DEFAULT;
@@ -1139,7 +1140,7 @@ DELETE FROM items_applications WHERE NOT EXISTS (SELECT 1 FROM items WHERE items
 CREATE UNIQUE INDEX items_applications_1 ON items_applications (applicationid,itemid);
 ALTER TABLE ONLY items_applications ADD CONSTRAINT c_items_applications_1 FOREIGN KEY (applicationid) REFERENCES applications (applicationid) ON DELETE CASCADE;
 ALTER TABLE ONLY items_applications ADD CONSTRAINT c_items_applications_2 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
--- See hosts.sql
+ALTER TABLE ONLY maintenances ALTER maintenanceid DROP DEFAULT;
 ALTER TABLE ONLY maintenances_groups ALTER maintenance_groupid DROP DEFAULT,
 				     ALTER maintenanceid DROP DEFAULT,
 				     ALTER groupid DROP DEFAULT;
@@ -1158,7 +1159,6 @@ DELETE FROM maintenances_hosts WHERE NOT EXISTS (SELECT 1 FROM hosts WHERE hosts
 CREATE UNIQUE INDEX maintenances_hosts_1 ON maintenances_hosts (maintenanceid,hostid);
 ALTER TABLE ONLY maintenances_hosts ADD CONSTRAINT c_maintenances_hosts_1 FOREIGN KEY (maintenanceid) REFERENCES maintenances (maintenanceid) ON DELETE CASCADE;
 ALTER TABLE ONLY maintenances_hosts ADD CONSTRAINT c_maintenances_hosts_2 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
-ALTER TABLE ONLY maintenances ALTER maintenanceid DROP DEFAULT;
 ALTER TABLE ONLY maintenances_windows ALTER maintenance_timeperiodid DROP DEFAULT,
 				      ALTER maintenanceid DROP DEFAULT,
 				      ALTER timeperiodid DROP DEFAULT;
@@ -1610,16 +1610,16 @@ DELETE FROM rights WHERE NOT EXISTS (SELECT 1 FROM usrgrp WHERE usrgrp.usrgrpid=
 DELETE FROM rights WHERE NOT EXISTS (SELECT 1 FROM groups WHERE groups.groupid=rights.id);
 ALTER TABLE ONLY rights ADD CONSTRAINT c_rights_1 FOREIGN KEY (groupid) REFERENCES usrgrp (usrgrpid) ON DELETE CASCADE;
 ALTER TABLE ONLY rights ADD CONSTRAINT c_rights_2 FOREIGN KEY (id) REFERENCES groups (groupid) ON DELETE CASCADE;
+ALTER TABLE ONLY screens ALTER screenid DROP DEFAULT,
+			 ALTER name DROP DEFAULT,
+			 ADD templateid bigint NULL;
+ALTER TABLE ONLY screens ADD CONSTRAINT c_screens_1 FOREIGN KEY (templateid) REFERENCES hosts (hostid) ON DELETE CASCADE;
 ALTER TABLE ONLY screens_items
 	ALTER screenitemid DROP DEFAULT,
 	ALTER screenid DROP DEFAULT,
 	ADD sort_triggers integer DEFAULT '0' NOT NULL;
 DELETE FROM screens_items WHERE NOT EXISTS (SELECT 1 FROM screens WHERE screens.screenid=screens_items.screenid);
 ALTER TABLE ONLY screens_items ADD CONSTRAINT c_screens_items_1 FOREIGN KEY (screenid) REFERENCES screens (screenid) ON DELETE CASCADE;
-ALTER TABLE ONLY screens ALTER screenid DROP DEFAULT,
-			 ALTER name DROP DEFAULT,
-			 ADD templateid bigint NULL;
-ALTER TABLE ONLY screens ADD CONSTRAINT c_screens_1 FOREIGN KEY (templateid) REFERENCES hosts (hostid) ON DELETE CASCADE;
 ALTER TABLE ONLY scripts
 	ALTER scriptid DROP DEFAULT,
 	ALTER usrgrpid DROP DEFAULT,
@@ -1641,6 +1641,9 @@ ALTER TABLE ONLY service_alarms ALTER servicealarmid DROP DEFAULT,
 				ALTER serviceid DROP DEFAULT;
 DELETE FROM service_alarms WHERE NOT EXISTS (SELECT 1 FROM services WHERE services.serviceid=service_alarms.serviceid);
 ALTER TABLE ONLY service_alarms ADD CONSTRAINT c_service_alarms_1 FOREIGN KEY (serviceid) REFERENCES services (serviceid) ON DELETE CASCADE;
+UPDATE services SET triggerid = NULL WHERE NOT EXISTS (SELECT 1 FROM triggers t WHERE t.triggerid = services.triggerid);
+ALTER TABLE ONLY services ALTER serviceid DROP DEFAULT;
+ALTER TABLE ONLY services ADD CONSTRAINT c_services_1 FOREIGN KEY (triggerid) REFERENCES triggers (triggerid) ON DELETE CASCADE;
 ALTER TABLE ONLY services_links ALTER linkid DROP DEFAULT,
 				ALTER serviceupid DROP DEFAULT,
 				ALTER servicedownid DROP DEFAULT;
@@ -1648,9 +1651,6 @@ DELETE FROM services_links WHERE NOT EXISTS (SELECT 1 FROM services WHERE servic
 DELETE FROM services_links WHERE NOT EXISTS (SELECT 1 FROM services WHERE services.serviceid=services_links.servicedownid);
 ALTER TABLE ONLY services_links ADD CONSTRAINT c_services_links_1 FOREIGN KEY (serviceupid) REFERENCES services (serviceid) ON DELETE CASCADE;
 ALTER TABLE ONLY services_links ADD CONSTRAINT c_services_links_2 FOREIGN KEY (servicedownid) REFERENCES services (serviceid) ON DELETE CASCADE;
-UPDATE services SET triggerid = NULL WHERE NOT EXISTS (SELECT 1 FROM triggers t WHERE t.triggerid = services.triggerid);
-ALTER TABLE ONLY services ALTER serviceid DROP DEFAULT;
-ALTER TABLE ONLY services ADD CONSTRAINT c_services_1 FOREIGN KEY (triggerid) REFERENCES triggers (triggerid) ON DELETE CASCADE;
 ALTER TABLE ONLY services_times ALTER timeid DROP DEFAULT,
 				ALTER serviceid DROP DEFAULT;
 DELETE FROM services_times WHERE NOT EXISTS (SELECT 1 FROM services WHERE services.serviceid=services_times.serviceid);
@@ -1658,7 +1658,6 @@ ALTER TABLE ONLY services_times ADD CONSTRAINT c_services_times_1 FOREIGN KEY (s
 ALTER TABLE ONLY sessions ALTER userid DROP DEFAULT;
 DELETE FROM sessions WHERE NOT EXISTS (SELECT 1 FROM users WHERE users.userid=sessions.userid);
 ALTER TABLE ONLY sessions ADD CONSTRAINT c_sessions_1 FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE;
-ALTER TABLE ONLY slideshows ALTER slideshowid DROP DEFAULT;
 ALTER TABLE ONLY slides ALTER slideid DROP DEFAULT,
 			ALTER slideshowid DROP DEFAULT,
 			ALTER screenid DROP DEFAULT;
@@ -1666,7 +1665,56 @@ DELETE FROM slides WHERE NOT EXISTS (SELECT 1 FROM slideshows WHERE slideshows.s
 DELETE FROM slides WHERE NOT EXISTS (SELECT 1 FROM screens WHERE screens.screenid=slides.screenid);
 ALTER TABLE ONLY slides ADD CONSTRAINT c_slides_1 FOREIGN KEY (slideshowid) REFERENCES slideshows (slideshowid) ON DELETE CASCADE;
 ALTER TABLE ONLY slides ADD CONSTRAINT c_slides_2 FOREIGN KEY (screenid) REFERENCES screens (screenid) ON DELETE CASCADE;
+ALTER TABLE ONLY slideshows ALTER slideshowid DROP DEFAULT;
 -- See sysmaps_elements.sql
+CREATE TABLE sysmap_url (
+	sysmapurlid              bigint                                    NOT NULL,
+	sysmapid                 bigint                                    NOT NULL,
+	name                     varchar(255)                              NOT NULL,
+	url                      varchar(255)    DEFAULT ''                NOT NULL,
+	elementtype              integer         DEFAULT '0'               NOT NULL,
+	PRIMARY KEY (sysmapurlid)
+);
+CREATE UNIQUE INDEX sysmap_url_1 on sysmap_url (sysmapid,name);
+ALTER TABLE ONLY sysmap_url ADD CONSTRAINT c_sysmap_url_1 FOREIGN KEY (sysmapid) REFERENCES sysmaps (sysmapid) ON DELETE CASCADE;
+ALTER TABLE ONLY sysmaps
+	ALTER sysmapid DROP DEFAULT,
+	ALTER width SET DEFAULT '600',
+	ALTER height SET DEFAULT '400',
+	ALTER backgroundid DROP DEFAULT,
+	ALTER backgroundid DROP NOT NULL,
+	ALTER label_type SET DEFAULT '2',
+	ALTER label_location SET DEFAULT '3',
+	ADD expandproblem integer DEFAULT '1' NOT NULL,
+	ADD markelements integer DEFAULT '0' NOT NULL,
+	ADD show_unack integer DEFAULT '0' NOT NULL,
+	ADD grid_size integer DEFAULT '50' NOT NULL,
+	ADD grid_show integer DEFAULT '1' NOT NULL,
+	ADD grid_align integer DEFAULT '1' NOT NULL,
+	ADD label_format integer DEFAULT '0' NOT NULL,
+	ADD label_type_host integer DEFAULT '2' NOT NULL,
+	ADD label_type_hostgroup integer DEFAULT '2' NOT NULL,
+	ADD label_type_trigger integer DEFAULT '2' NOT NULL,
+	ADD label_type_map integer DEFAULT '2' NOT NULL,
+	ADD label_type_image integer DEFAULT '2' NOT NULL,
+	ADD label_string_host varchar(255) DEFAULT '' NOT NULL,
+	ADD label_string_hostgroup varchar(255) DEFAULT '' NOT NULL,
+	ADD label_string_trigger varchar(255) DEFAULT '' NOT NULL,
+	ADD label_string_map varchar(255) DEFAULT '' NOT NULL,
+	ADD label_string_image varchar(255) DEFAULT '' NOT NULL,
+	ADD iconmapid bigint NULL,
+	ADD expand_macros integer DEFAULT '0' NOT NULL;
+UPDATE sysmaps SET backgroundid=NULL WHERE backgroundid=0;
+UPDATE sysmaps SET show_unack=1 WHERE highlight>7 AND highlight<16;
+UPDATE sysmaps SET show_unack=2 WHERE highlight>23;
+UPDATE sysmaps SET highlight=(highlight-16) WHERE highlight>15;
+UPDATE sysmaps SET highlight=(highlight-8) WHERE highlight>7;
+UPDATE sysmaps SET markelements=1 WHERE highlight>3  AND highlight<8;
+UPDATE sysmaps SET highlight=(highlight-4) WHERE highlight>3;
+UPDATE sysmaps SET expandproblem=0 WHERE highlight>1 AND highlight<4;
+UPDATE sysmaps SET highlight=(highlight-2) WHERE highlight>1;
+ALTER TABLE ONLY sysmaps ADD CONSTRAINT c_sysmaps_1 FOREIGN KEY (backgroundid) REFERENCES images (imageid);
+ALTER TABLE ONLY sysmaps ADD CONSTRAINT c_sysmaps_2 FOREIGN KEY (iconmapid) REFERENCES icon_map (iconmapid);
 CREATE TABLE sysmap_element_url (
 	sysmapelementurlid       bigint                                    NOT NULL,
 	selementid               bigint                                    NOT NULL,
@@ -1714,6 +1762,13 @@ ALTER TABLE ONLY sysmaps_elements ADD CONSTRAINT c_sysmaps_elements_2 FOREIGN KE
 ALTER TABLE ONLY sysmaps_elements ADD CONSTRAINT c_sysmaps_elements_3 FOREIGN KEY (iconid_on) REFERENCES images (imageid);
 ALTER TABLE ONLY sysmaps_elements ADD CONSTRAINT c_sysmaps_elements_4 FOREIGN KEY (iconid_disabled) REFERENCES images (imageid);
 ALTER TABLE ONLY sysmaps_elements ADD CONSTRAINT c_sysmaps_elements_5 FOREIGN KEY (iconid_maintenance) REFERENCES images (imageid);
+ALTER TABLE ONLY sysmaps_link_triggers ALTER linktriggerid DROP DEFAULT,
+				       ALTER linkid DROP DEFAULT,
+				       ALTER triggerid DROP DEFAULT;
+DELETE FROM sysmaps_link_triggers WHERE NOT EXISTS (SELECT 1 FROM sysmaps_links WHERE sysmaps_links.linkid=sysmaps_link_triggers.linkid);
+DELETE FROM sysmaps_link_triggers WHERE NOT EXISTS (SELECT 1 FROM triggers WHERE triggers.triggerid=sysmaps_link_triggers.triggerid);
+ALTER TABLE ONLY sysmaps_link_triggers ADD CONSTRAINT c_sysmaps_link_triggers_1 FOREIGN KEY (linkid) REFERENCES sysmaps_links (linkid) ON DELETE CASCADE;
+ALTER TABLE ONLY sysmaps_link_triggers ADD CONSTRAINT c_sysmaps_link_triggers_2 FOREIGN KEY (triggerid) REFERENCES triggers (triggerid) ON DELETE CASCADE;
 ALTER TABLE ONLY sysmaps_links ALTER linkid DROP DEFAULT,
 			       ALTER sysmapid DROP DEFAULT,
 			       ALTER selementid1 DROP DEFAULT,
@@ -1724,61 +1779,6 @@ DELETE FROM sysmaps_links WHERE NOT EXISTS (SELECT 1 FROM sysmaps_elements WHERE
 ALTER TABLE ONLY sysmaps_links ADD CONSTRAINT c_sysmaps_links_1 FOREIGN KEY (sysmapid) REFERENCES sysmaps (sysmapid) ON DELETE CASCADE;
 ALTER TABLE ONLY sysmaps_links ADD CONSTRAINT c_sysmaps_links_2 FOREIGN KEY (selementid1) REFERENCES sysmaps_elements (selementid) ON DELETE CASCADE;
 ALTER TABLE ONLY sysmaps_links ADD CONSTRAINT c_sysmaps_links_3 FOREIGN KEY (selementid2) REFERENCES sysmaps_elements (selementid) ON DELETE CASCADE;
-ALTER TABLE ONLY sysmaps_link_triggers ALTER linktriggerid DROP DEFAULT,
-				       ALTER linkid DROP DEFAULT,
-				       ALTER triggerid DROP DEFAULT;
-DELETE FROM sysmaps_link_triggers WHERE NOT EXISTS (SELECT 1 FROM sysmaps_links WHERE sysmaps_links.linkid=sysmaps_link_triggers.linkid);
-DELETE FROM sysmaps_link_triggers WHERE NOT EXISTS (SELECT 1 FROM triggers WHERE triggers.triggerid=sysmaps_link_triggers.triggerid);
-ALTER TABLE ONLY sysmaps_link_triggers ADD CONSTRAINT c_sysmaps_link_triggers_1 FOREIGN KEY (linkid) REFERENCES sysmaps_links (linkid) ON DELETE CASCADE;
-ALTER TABLE ONLY sysmaps_link_triggers ADD CONSTRAINT c_sysmaps_link_triggers_2 FOREIGN KEY (triggerid) REFERENCES triggers (triggerid) ON DELETE CASCADE;
-ALTER TABLE ONLY sysmaps
-	ALTER sysmapid DROP DEFAULT,
-	ALTER width SET DEFAULT '600',
-	ALTER height SET DEFAULT '400',
-	ALTER backgroundid DROP DEFAULT,
-	ALTER backgroundid DROP NOT NULL,
-	ALTER label_type SET DEFAULT '2',
-	ALTER label_location SET DEFAULT '3',
-	ADD expandproblem integer DEFAULT '1' NOT NULL,
-	ADD markelements integer DEFAULT '0' NOT NULL,
-	ADD show_unack integer DEFAULT '0' NOT NULL,
-	ADD grid_size integer DEFAULT '50' NOT NULL,
-	ADD grid_show integer DEFAULT '1' NOT NULL,
-	ADD grid_align integer DEFAULT '1' NOT NULL,
-	ADD label_format integer DEFAULT '0' NOT NULL,
-	ADD label_type_host integer DEFAULT '2' NOT NULL,
-	ADD label_type_hostgroup integer DEFAULT '2' NOT NULL,
-	ADD label_type_trigger integer DEFAULT '2' NOT NULL,
-	ADD label_type_map integer DEFAULT '2' NOT NULL,
-	ADD label_type_image integer DEFAULT '2' NOT NULL,
-	ADD label_string_host varchar(255) DEFAULT '' NOT NULL,
-	ADD label_string_hostgroup varchar(255) DEFAULT '' NOT NULL,
-	ADD label_string_trigger varchar(255) DEFAULT '' NOT NULL,
-	ADD label_string_map varchar(255) DEFAULT '' NOT NULL,
-	ADD label_string_image varchar(255) DEFAULT '' NOT NULL,
-	ADD iconmapid bigint NULL,
-	ADD expand_macros integer DEFAULT '0' NOT NULL;
-UPDATE sysmaps SET backgroundid=NULL WHERE backgroundid=0;
-UPDATE sysmaps SET show_unack=1 WHERE highlight>7 AND highlight<16;
-UPDATE sysmaps SET show_unack=2 WHERE highlight>23;
-UPDATE sysmaps SET highlight=(highlight-16) WHERE highlight>15;
-UPDATE sysmaps SET highlight=(highlight-8) WHERE highlight>7;
-UPDATE sysmaps SET markelements=1 WHERE highlight>3  AND highlight<8;
-UPDATE sysmaps SET highlight=(highlight-4) WHERE highlight>3;
-UPDATE sysmaps SET expandproblem=0 WHERE highlight>1 AND highlight<4;
-UPDATE sysmaps SET highlight=(highlight-2) WHERE highlight>1;
-ALTER TABLE ONLY sysmaps ADD CONSTRAINT c_sysmaps_1 FOREIGN KEY (backgroundid) REFERENCES images (imageid);
-ALTER TABLE ONLY sysmaps ADD CONSTRAINT c_sysmaps_2 FOREIGN KEY (iconmapid) REFERENCES icon_map (iconmapid);
-CREATE TABLE sysmap_url (
-	sysmapurlid              bigint                                    NOT NULL,
-	sysmapid                 bigint                                    NOT NULL,
-	name                     varchar(255)                              NOT NULL,
-	url                      varchar(255)    DEFAULT ''                NOT NULL,
-	elementtype              integer         DEFAULT '0'               NOT NULL,
-	PRIMARY KEY (sysmapurlid)
-);
-CREATE UNIQUE INDEX sysmap_url_1 on sysmap_url (sysmapid,name);
-ALTER TABLE ONLY sysmap_url ADD CONSTRAINT c_sysmap_url_1 FOREIGN KEY (sysmapid) REFERENCES sysmaps (sysmapid) ON DELETE CASCADE;
 ALTER TABLE ONLY timeperiods ALTER timeperiodid DROP DEFAULT;
 ALTER TABLE ONLY trends ALTER itemid DROP DEFAULT;
 ALTER TABLE ONLY trends_uint ALTER itemid DROP DEFAULT;
@@ -1926,30 +1926,6 @@ ALTER TABLE ONLY user_history ALTER userhistoryid DROP DEFAULT,
 			      ALTER userid DROP DEFAULT;
 DELETE FROM user_history WHERE NOT EXISTS (SELECT 1 FROM users WHERE users.userid=user_history.userid);
 ALTER TABLE ONLY user_history ADD CONSTRAINT c_user_history_1 FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE;
-ALTER TABLE ONLY users_groups ALTER id DROP DEFAULT,
-			      ALTER usrgrpid DROP DEFAULT,
-			      ALTER userid DROP DEFAULT;
-DELETE FROM users_groups WHERE NOT EXISTS (SELECT 1 FROM usrgrp WHERE usrgrp.usrgrpid=users_groups.usrgrpid);
-DELETE FROM users_groups WHERE NOT EXISTS (SELECT 1 FROM users WHERE users.userid=users_groups.userid);
-
--- remove duplicates to allow unique index
-DELETE FROM users_groups
-	WHERE id IN (
-		SELECT ug1.id
-		FROM users_groups ug1
-		LEFT OUTER JOIN (
-			SELECT MIN(ug2.id) AS id
-			FROM users_groups ug2
-			GROUP BY ug2.usrgrpid,ug2.userid
-		) keep_rows ON
-			ug1.id=keep_rows.id
-		WHERE keep_rows.id IS NULL
-	);
-
-DROP INDEX users_groups_1;
-CREATE UNIQUE INDEX users_groups_1 ON users_groups (usrgrpid,userid);
-ALTER TABLE ONLY users_groups ADD CONSTRAINT c_users_groups_1 FOREIGN KEY (usrgrpid) REFERENCES usrgrp (usrgrpid) ON DELETE CASCADE;
-ALTER TABLE ONLY users_groups ADD CONSTRAINT c_users_groups_2 FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE;
 ALTER TABLE ONLY users ALTER userid DROP DEFAULT,
 	ALTER COLUMN lang SET DEFAULT 'en_GB',
 	ALTER COLUMN theme SET DEFAULT 'default';
@@ -1974,6 +1950,30 @@ UPDATE users SET theme = 'darkblue' WHERE theme = 'css_bb.css';
 UPDATE users SET theme = 'originalblue' WHERE theme = 'css_ob.css';
 UPDATE users SET theme = 'darkorange' WHERE theme = 'css_od.css';
 UPDATE users SET theme = 'default' WHERE theme = 'default.css';
+ALTER TABLE ONLY users_groups ALTER id DROP DEFAULT,
+			      ALTER usrgrpid DROP DEFAULT,
+			      ALTER userid DROP DEFAULT;
+DELETE FROM users_groups WHERE NOT EXISTS (SELECT 1 FROM usrgrp WHERE usrgrp.usrgrpid=users_groups.usrgrpid);
+DELETE FROM users_groups WHERE NOT EXISTS (SELECT 1 FROM users WHERE users.userid=users_groups.userid);
+
+-- remove duplicates to allow unique index
+DELETE FROM users_groups
+	WHERE id IN (
+		SELECT ug1.id
+		FROM users_groups ug1
+		LEFT OUTER JOIN (
+			SELECT MIN(ug2.id) AS id
+			FROM users_groups ug2
+			GROUP BY ug2.usrgrpid,ug2.userid
+		) keep_rows ON
+			ug1.id=keep_rows.id
+		WHERE keep_rows.id IS NULL
+	);
+
+DROP INDEX users_groups_1;
+CREATE UNIQUE INDEX users_groups_1 ON users_groups (usrgrpid,userid);
+ALTER TABLE ONLY users_groups ADD CONSTRAINT c_users_groups_1 FOREIGN KEY (usrgrpid) REFERENCES usrgrp (usrgrpid) ON DELETE CASCADE;
+ALTER TABLE ONLY users_groups ADD CONSTRAINT c_users_groups_2 FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE;
 ALTER TABLE ONLY usrgrp ALTER usrgrpid DROP DEFAULT,
 			DROP COLUMN api_access;
 ALTER TABLE ONLY valuemaps ALTER valuemapid DROP DEFAULT;

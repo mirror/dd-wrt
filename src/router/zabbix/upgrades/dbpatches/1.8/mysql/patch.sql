@@ -1,4 +1,7 @@
 CREATE INDEX actions_1 on actions (eventsource,status);
+alter table auditlog add ip              varchar(39)             DEFAULT ''      NOT NULL;
+alter table auditlog add resourceid              bigint unsigned         DEFAULT '0'     NOT NULL;
+alter table auditlog add resourcename            varchar(255)            DEFAULT ''      NOT NULL;
 CREATE TABLE auditlog_details (
       auditdetailid           bigint unsigned         DEFAULT '0'     NOT NULL,
       auditid         bigint unsigned         DEFAULT '0'     NOT NULL,
@@ -9,9 +12,6 @@ CREATE TABLE auditlog_details (
       PRIMARY KEY (auditdetailid)
 ) ENGINE=InnoDB;
 CREATE INDEX auditlog_details_1 on auditlog_details (auditid);
-alter table auditlog add ip              varchar(39)             DEFAULT ''      NOT NULL;
-alter table auditlog add resourceid              bigint unsigned         DEFAULT '0'     NOT NULL;
-alter table auditlog add resourcename            varchar(255)            DEFAULT ''      NOT NULL;
 CREATE TABLE autoreg_host (
       autoreg_hostid          bigint unsigned         DEFAULT '0'     NOT NULL,
       proxy_hostid            bigint unsigned         DEFAULT '0'     NOT NULL,
@@ -63,19 +63,6 @@ CREATE TABLE globalmacro (
       PRIMARY KEY (globalmacroid)
 ) ENGINE=InnoDB;
 CREATE INDEX globalmacro_1 on globalmacro (macro);
-alter table graphs_items change color color varchar(6) DEFAULT '009600' NOT NULL;
-
-CREATE INDEX graphs_items_1 on graphs_items (itemid);
-CREATE INDEX graphs_items_2 on graphs_items (graphid);
-alter table graphs add ymin_type               integer         DEFAULT '0'     NOT NULL;
-alter table graphs add ymax_type               integer         DEFAULT '0'     NOT NULL;
-alter table graphs add ymin_itemid             bigint unsigned         DEFAULT '0'     NOT NULL;
-alter table graphs add ymax_itemid             bigint unsigned         DEFAULT '0'     NOT NULL;
-
-update graphs set ymin_type=yaxistype;
-update graphs set ymax_type=yaxistype;
-
-alter table graphs drop yaxistype;
 CREATE TABLE graph_theme (
       graphthemeid            bigint unsigned         DEFAULT '0'     NOT NULL,
       description             varchar(64)             DEFAULT ''      NOT NULL,
@@ -100,6 +87,19 @@ CREATE INDEX graph_theme_2 on graph_theme (theme);
 
 INSERT INTO graph_theme VALUES (1,'Original Blue','css_ob.css','F0F0F0','FFFFFF','333333','CCCCCC','AAAAAA','000000','222222','AA4444','11CC11','CC1111','E0E0E0',1,1);
 INSERT INTO graph_theme VALUES (2,'Black & Blue','css_bb.css','333333','0A0A0A','888888','222222','4F4F4F','EFEFEF','0088FF','CC4444','1111FF','FF1111','1F1F1F',1,1);
+alter table graphs add ymin_type               integer         DEFAULT '0'     NOT NULL;
+alter table graphs add ymax_type               integer         DEFAULT '0'     NOT NULL;
+alter table graphs add ymin_itemid             bigint unsigned         DEFAULT '0'     NOT NULL;
+alter table graphs add ymax_itemid             bigint unsigned         DEFAULT '0'     NOT NULL;
+
+update graphs set ymin_type=yaxistype;
+update graphs set ymax_type=yaxistype;
+
+alter table graphs drop yaxistype;
+alter table graphs_items change color color varchar(6) DEFAULT '009600' NOT NULL;
+
+CREATE INDEX graphs_items_1 on graphs_items (itemid);
+CREATE INDEX graphs_items_2 on graphs_items (graphid);
 alter table groups add internal                integer         DEFAULT '0'     NOT NULL;
 drop table help_items;
 
@@ -273,9 +273,6 @@ CREATE TABLE hostmacro (
       PRIMARY KEY (hostmacroid)
 ) ENGINE=InnoDB;
 CREATE INDEX hostmacro_1 on hostmacro (hostid,macro);
-alter table hosts_groups drop index hosts_groups_groups_1;
-CREATE INDEX hosts_groups_1 on hosts_groups (hostid,groupid);
-CREATE INDEX hosts_groups_2 on hosts_groups (groupid);
 alter table hosts add maintenanceid bigint unsigned DEFAULT '0' NOT NULL;
 alter table hosts add maintenance_status integer DEFAULT '0' NOT NULL;
 alter table hosts add maintenance_type integer DEFAULT '0' NOT NULL;
@@ -285,6 +282,9 @@ alter table hosts add ipmi_errors_from integer DEFAULT '0' NOT NULL;
 alter table hosts add snmp_errors_from integer DEFAULT '0' NOT NULL;
 alter table hosts add ipmi_error varchar(128) DEFAULT '' NOT NULL;
 alter table hosts add snmp_error varchar(128) DEFAULT '' NOT NULL;
+alter table hosts_groups drop index hosts_groups_groups_1;
+CREATE INDEX hosts_groups_1 on hosts_groups (hostid,groupid);
+CREATE INDEX hosts_groups_2 on hosts_groups (groupid);
 CREATE INDEX hosts_templates_2 on hosts_templates (templateid);
 alter table httptest add authentication          integer         DEFAULT '0'     NOT NULL;
 alter table httptest add http_user               varchar(64)             DEFAULT ''      NOT NULL;
@@ -302,6 +302,16 @@ alter table items add privatekey varchar(64) DEFAULT ''  NOT NULL;
 alter table items add mtime      integer     DEFAULT '0' NOT NULL;
 
 UPDATE items SET units='Bps' WHERE type=9 AND units='bps';
+CREATE TABLE maintenances (
+      maintenanceid           bigint unsigned         DEFAULT '0'     NOT NULL,
+      name            varchar(128)            DEFAULT ''      NOT NULL,
+      maintenance_type                integer         DEFAULT '0'     NOT NULL,
+      description             blob                    NOT NULL,
+      active_since            integer         DEFAULT '0'     NOT NULL,
+      active_till             integer         DEFAULT '0'     NOT NULL,
+      PRIMARY KEY (maintenanceid)
+) ENGINE=InnoDB;
+CREATE INDEX maintenances_1 on maintenances (active_since,active_till);
 CREATE TABLE maintenances_groups (
       maintenance_groupid             bigint unsigned         DEFAULT '0'     NOT NULL,
       maintenanceid           bigint unsigned         DEFAULT '0'     NOT NULL,
@@ -316,16 +326,6 @@ CREATE TABLE maintenances_hosts (
       PRIMARY KEY (maintenance_hostid)
 ) ENGINE=InnoDB;
 CREATE INDEX maintenances_hosts_1 on maintenances_hosts (maintenanceid,hostid);
-CREATE TABLE maintenances (
-      maintenanceid           bigint unsigned         DEFAULT '0'     NOT NULL,
-      name            varchar(128)            DEFAULT ''      NOT NULL,
-      maintenance_type                integer         DEFAULT '0'     NOT NULL,
-      description             blob                    NOT NULL,
-      active_since            integer         DEFAULT '0'     NOT NULL,
-      active_till             integer         DEFAULT '0'     NOT NULL,
-      PRIMARY KEY (maintenanceid)
-) ENGINE=InnoDB;
-CREATE INDEX maintenances_1 on maintenances (active_since,active_till);
 CREATE TABLE maintenances_windows (
       maintenance_timeperiodid                bigint unsigned         DEFAULT '0'     NOT NULL,
       maintenanceid           bigint unsigned         DEFAULT '0'     NOT NULL,
@@ -373,11 +373,11 @@ CREATE INDEX regexps_1 on regexps (name);
 CREATE INDEX rights_2 on rights (id);
 CREATE INDEX services_1 on services (triggerid);
 CREATE INDEX sessions_1 on sessions (userid, status);
+ALTER TABLE sysmaps ADD highlight INTEGER DEFAULT '1' NOT NULL;
 alter table sysmaps_elements change label label varchar(255) DEFAULT '' NOT NULL;
 
 ALTER TABLE sysmaps_elements ADD iconid_maintenance BIGINT unsigned DEFAULT '0' NOT NULL;
 alter table sysmaps_links  add label           varchar(255)            DEFAULT ''      NOT NULL;
-ALTER TABLE sysmaps ADD highlight INTEGER DEFAULT '1' NOT NULL;
 CREATE TABLE timeperiods (
       timeperiodid            bigint unsigned         DEFAULT '0'     NOT NULL,
       timeperiod_type         integer         DEFAULT '0'     NOT NULL,

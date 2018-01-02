@@ -241,103 +241,49 @@ function insert_js_function($fnct_name) {
 				}');
 			break;
 
-		case 'addSelectedValues':
+		case 'popupSelectHandlers':
 			insert_js('
-				function addSelectedValues(form, object, parentId) {
-					form = $(form);
-					if (is_null(form)) {
-						return close_window()
-					};
-					var parent = window.opener;
-					if (!parent) {
-						return close_window();
-					}
+				var processing = false;
 
-					if (typeof parentId === "undefined") {
-						var parentId = null;
-					}
-
-					var data = { object: object, values: [], parentId: parentId };
-					var chkBoxes = form.getInputs("checkbox");
-					for (var i = 0; i < chkBoxes.length; i++) {
-						if (chkBoxes[i].checked && (chkBoxes[i].name.indexOf("all_") < 0)) {
-							var value = {};
-							if (isset(chkBoxes[i].value, popupReference)) {
-								value = popupReference[chkBoxes[i].value];
-							}
-							else {
-								value[object] = chkBoxes[i].value;
-							}
-							data["values"].push(value);
+				jQuery(document)
+					.on("click", "[data-object]", function() {
+						if (!processing && window.opener) {
+							processing = true;
+							window.opener.jQuery(window.opener.document)
+								.trigger("add.popup", jQuery(this).data("object"));
 						}
-					}
-					close_window();
+						window.close();
+					});
 
-					parent.jQuery(parent.document).trigger("add.popup", data);
-				}');
-			break;
+				function addSelectedFormValuesHandler(formid) {
+					var checked = jQuery("#"+formid).find("input[type=checkbox]:checked").not("[name*=all_],:disabled"),
+						reference = jQuery("[name=reference]").val(),
+						values = [],
+						parentid = null;
 
-		case 'addValue':
-			insert_js('
-				function addValue(object, singleValue, parentId) {
-					var parent = window.opener;
-					if (!parent) {
-						return close_window();
-					}
-					var value = {};
-					if (isset(singleValue, popupReference)) {
-						value = popupReference[singleValue];
-					}
-					else {
-						value[object] = singleValue;
-					}
+					jQuery.each(checked, function(_, checkbox) {
+						var data = jQuery(checkbox).closest("tr").find("[data-object]").data("object");
 
-					if (typeof parentId === "undefined") {
-						var parentId = null;
-					}
-					var data = { object: object, values: [value], parentId: parentId };
-
-					close_window();
-
-					parent.jQuery(parent.document).trigger("add.popup", data);
-				}');
-			break;
-
-		case 'addValues':
-			insert_js('
-				function addValues(frame, values, submitParent) {
-					var parentDocument = window.opener.document;
-					if (!parentDocument) {
-						return close_window();
-					}
-					var parentDocumentForms = $(parentDocument.body).select("form[name=" + frame + "]");
-					var submitParent = submitParent || false;
-					var frmStorage = null;
-
-					for (var key in values) {
-						if (is_null(values[key])) {
-							continue;
+						if (data) {
+							values.push(data.values.pop());
+							parentid = data.parentId;
 						}
+					});
 
-						if (parentDocumentForms.length > 0) {
-							frmStorage = jQuery(parentDocumentForms[0]).find("#" + key).get(0);
-						}
-						if (typeof frmStorage === "undefined" || is_null(frmStorage)) {
-							frmStorage = parentDocument.getElementById(key);
-						}
+					if (window.opener && values.length) {
+						window.opener.jQuery(window.opener.document)
+							.trigger("add.popup", {
+								"object": reference,
+								"values": values,
+								"parentId": parentid
+							});
+					}
 
-						if (jQuery(frmStorage).is("span")) {
-							jQuery(frmStorage).html(values[key]);
-						}
-						else {
-							jQuery(frmStorage).val(values[key]).change();
-						}
-					}
-					if (!is_null(frmStorage) && submitParent) {
-						frmStorage.form.submit();
-					}
-					close_window();
-				}');
+					window.close();
+
+					return false;
+				};
+			');
 			break;
 	}
 };
