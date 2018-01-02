@@ -145,7 +145,8 @@ static int start_services_main(int argc, char **argv)
 	start_service_f("olsrd");
 #endif
 
-	start_service_f("wshaper");
+	start_service("wshaper");
+	startstop_f("firewall");
 	start_service_f("wland");
 #ifndef HAVE_MICRO
 	start_service_f("cron");
@@ -718,8 +719,8 @@ static void handle_services(void)
 #endif
 		startstop_f("sshd");
 #endif
-	startstop_f("wshaper");
-	startstop("firewall");
+	startstop("wshaper");
+	startstop_f("firewall");
 #ifdef HAVE_SYSLOG
 	startstop_f("syslog");
 #endif
@@ -833,8 +834,8 @@ static void handle_management(void)
 	start_service_f("zebra");
 #endif
 	stop_service("wland");
-	startstop_f("wshaper");
-	startstop("firewall");
+	startstop("wshaper");
+	startstop_f("firewall");
 	start_service_f("wland");
 	startstop_fdelay("httpd", 2);
 #ifdef HAVE_NOCAT
@@ -931,7 +932,8 @@ static void handle_filters(void)
 	startstop_f("syslog");
 #endif
 	stop_service("wland");
-	startstop_f("wshaper");
+	startstop("wshaper");
+	startstop_f("firewall");
 	start_service_f("wland");
 #ifndef HAVE_MICRO
 	start_service_f("cron");
@@ -999,8 +1001,8 @@ static void handle_forward(void)
 #ifdef HAVE_UPNP
 //    start_service( "upnp");
 #endif
-	start_service_f("wshaper");
-	startstop("firewall");
+	start_service("wshaper");
+	startstop_f("firewall");
 	start_service_f("wland");
 //      start_service_f("anchorfreednat");
 #ifdef HAVE_NOCAT
@@ -1012,7 +1014,8 @@ static void handle_forward(void)
 static void handle_qos(void)
 {
 
-	startstop_f("wshaper");
+	startstop("wshaper");
+	startstop_f("firewall");
 	startstop_f("wland");
 #ifdef HAVE_NOCAT
 	startstop_f("splashd");
@@ -1035,8 +1038,8 @@ static void handle_forwardupnp(void)
 	start_service_f("upnp");
 #endif
 	stop_service("wland");
-	startstop_f("wshaper");
-	startstop("firewall");
+	startstop("wshaper");
+	startstop_f("firewall");
 	start_service_f("wland");
 //      start_service_f("anchorfreednat");
 #ifdef HAVE_NOCAT
