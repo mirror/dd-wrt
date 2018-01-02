@@ -19,22 +19,27 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config TFTP
-//config:	bool "tftp"
+//config:	bool "tftp (12 kb)"
 //config:	default y
 //config:	help
-//config:	  This enables the Trivial File Transfer Protocol client program. TFTP
-//config:	  is usually used for simple, small transfers such as a root image
-//config:	  for a network-enabled bootloader.
+//config:	Trivial File Transfer Protocol client. TFTP is usually used
+//config:	for simple, small transfers such as a root image
+//config:	for a network-enabled bootloader.
+//config:
+//config:config FEATURE_TFTP_PROGRESS_BAR
+//config:	bool "Enable progress bar"
+//config:	default y
+//config:	depends on TFTP
 //config:
 //config:config TFTPD
-//config:	bool "tftpd"
+//config:	bool "tftpd (10 kb)"
 //config:	default y
 //config:	help
-//config:	  This enables the Trivial File Transfer Protocol server program.
-//config:	  It expects that stdin is a datagram socket and a packet
-//config:	  is already pending on it. It will exit after one transfer.
-//config:	  In other words: it should be run from inetd in nowait mode,
-//config:	  or from udpsvd. Example: "udpsvd -E 0 69 tftpd DIR"
+//config:	Trivial File Transfer Protocol server.
+//config:	It expects that stdin is a datagram socket and a packet
+//config:	is already pending on it. It will exit after one transfer.
+//config:	In other words: it should be run from inetd in nowait mode,
+//config:	or from udpsvd. Example: "udpsvd -E 0 69 tftpd DIR"
 //config:
 //config:comment "Common options for tftp/tftpd"
 //config:	depends on TFTP || TFTPD
@@ -44,42 +49,37 @@
 //config:	default y
 //config:	depends on TFTP || TFTPD
 //config:	help
-//config:	  Add support for the GET command within the TFTP client. This allows
-//config:	  a client to retrieve a file from a TFTP server.
-//config:	  Also enable upload support in tftpd, if tftpd is selected.
+//config:	Add support for the GET command within the TFTP client. This allows
+//config:	a client to retrieve a file from a TFTP server.
+//config:	Also enable upload support in tftpd, if tftpd is selected.
 //config:
-//config:	  Note: this option does _not_ make tftpd capable of download
-//config:	  (the usual operation people need from it)!
+//config:	Note: this option does _not_ make tftpd capable of download
+//config:	(the usual operation people need from it)!
 //config:
 //config:config FEATURE_TFTP_PUT
 //config:	bool "Enable 'tftp put' and/or tftpd download code"
 //config:	default y
 //config:	depends on TFTP || TFTPD
 //config:	help
-//config:	  Add support for the PUT command within the TFTP client. This allows
-//config:	  a client to transfer a file to a TFTP server.
-//config:	  Also enable download support in tftpd, if tftpd is selected.
+//config:	Add support for the PUT command within the TFTP client. This allows
+//config:	a client to transfer a file to a TFTP server.
+//config:	Also enable download support in tftpd, if tftpd is selected.
 //config:
 //config:config FEATURE_TFTP_BLOCKSIZE
 //config:	bool "Enable 'blksize' and 'tsize' protocol options"
 //config:	default y
 //config:	depends on TFTP || TFTPD
 //config:	help
-//config:	  Allow tftp to specify block size, and tftpd to understand
-//config:	  "blksize" and "tsize" options.
-//config:
-//config:config FEATURE_TFTP_PROGRESS_BAR
-//config:	bool "Enable progress bar"
-//config:	default y
-//config:	depends on TFTP && FEATURE_TFTP_BLOCKSIZE
+//config:	Allow tftp to specify block size, and tftpd to understand
+//config:	"blksize" and "tsize" options.
 //config:
 //config:config TFTP_DEBUG
 //config:	bool "Enable debug"
 //config:	default n
 //config:	depends on TFTP || TFTPD
 //config:	help
-//config:	  Make tftp[d] print debugging messages on stderr.
-//config:	  This is useful if you are diagnosing a bug in tftp[d].
+//config:	Make tftp[d] print debugging messages on stderr.
+//config:	This is useful if you are diagnosing a bug in tftp[d].
 
 //applet:#if ENABLE_FEATURE_TFTP_GET || ENABLE_FEATURE_TFTP_PUT
 //applet:IF_TFTP(APPLET(tftp, BB_DIR_USR_BIN, BB_SUID_DROP))
@@ -208,7 +208,7 @@ struct globals {
 #define G_error_pkt_reason (G.error_pkt[3])
 #define G_error_pkt_str    ((char*)(G.error_pkt + 4))
 
-#if ENABLE_FEATURE_TFTP_PROGRESS_BAR
+#if ENABLE_FEATURE_TFTP_PROGRESS_BAR && ENABLE_FEATURE_TFTP_BLOCKSIZE
 static void tftp_progress_update(void)
 {
 	bb_progress_update(&G.pmt, 0, G.pos, G.size);
@@ -227,6 +227,7 @@ static void tftp_progress_done(void)
 	}
 }
 #else
+# define tftp_progress_update() ((void)0)
 # define tftp_progress_init() ((void)0)
 # define tftp_progress_done() ((void)0)
 #endif
@@ -761,15 +762,16 @@ int tftp_main(int argc UNUSED_PARAM, char **argv)
 
 	INIT_G();
 
-	/* -p or -g is mandatory, and they are mutually exclusive */
-	opt_complementary = "" IF_FEATURE_TFTP_GET("g:") IF_FEATURE_TFTP_PUT("p:")
-			IF_GETPUT("g--p:p--g:");
-
-	IF_GETPUT(opt =) getopt32(argv,
+	IF_GETPUT(opt =) getopt32(argv, "^"
 			IF_FEATURE_TFTP_GET("g") IF_FEATURE_TFTP_PUT("p")
-				"l:r:" IF_FEATURE_TFTP_BLOCKSIZE("b:"),
+			"l:r:" IF_FEATURE_TFTP_BLOCKSIZE("b:")
+			"\0"
+			/* -p or -g is mandatory, and they are mutually exclusive */
+			IF_FEATURE_TFTP_GET("g:") IF_FEATURE_TFTP_PUT("p:")
+			IF_GETPUT("g--p:p--g:"),
 			&local_file, &remote_file
-			IF_FEATURE_TFTP_BLOCKSIZE(, &blksize_str));
+			IF_FEATURE_TFTP_BLOCKSIZE(, &blksize_str)
+	);
 	argv += optind;
 
 # if ENABLE_FEATURE_TFTP_BLOCKSIZE

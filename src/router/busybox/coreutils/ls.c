@@ -28,10 +28,10 @@
  * ls sorts listing now, and supports almost all options.
  */
 //config:config LS
-//config:	bool "ls"
+//config:	bool "ls (14 kb)"
 //config:	default y
 //config:	help
-//config:	  ls is used to list the contents of directories.
+//config:	ls is used to list the contents of directories.
 //config:
 //config:config FEATURE_LS_FILETYPES
 //config:	bool "Enable filetyping options (-p and -F)"
@@ -58,39 +58,39 @@
 //config:	default y
 //config:	depends on LS
 //config:	help
-//config:	  Allow ls to sort file names alphabetically.
+//config:	Allow ls to sort file names alphabetically.
 //config:
 //config:config FEATURE_LS_TIMESTAMPS
 //config:	bool "Show file timestamps"
 //config:	default y
 //config:	depends on LS
 //config:	help
-//config:	  Allow ls to display timestamps for files.
+//config:	Allow ls to display timestamps for files.
 //config:
 //config:config FEATURE_LS_USERNAME
 //config:	bool "Show username/groupnames"
 //config:	default y
 //config:	depends on LS
 //config:	help
-//config:	  Allow ls to display username/groupname for files.
+//config:	Allow ls to display username/groupname for files.
 //config:
 //config:config FEATURE_LS_COLOR
 //config:	bool "Allow use of color to identify file types"
 //config:	default y
 //config:	depends on LS && LONG_OPTS
 //config:	help
-//config:	  This enables the --color option to ls.
+//config:	This enables the --color option to ls.
 //config:
 //config:config FEATURE_LS_COLOR_IS_DEFAULT
 //config:	bool "Produce colored ls output by default"
 //config:	default y
 //config:	depends on FEATURE_LS_COLOR
 //config:	help
-//config:	  Saying yes here will turn coloring on by default,
-//config:	  even if no "--color" option is given to the ls command.
-//config:	  This is not recommended, since the colors are not
-//config:	  configurable, and the output may not be legible on
-//config:	  many output screens.
+//config:	Saying yes here will turn coloring on by default,
+//config:	even if no "--color" option is given to the ls command.
+//config:	This is not recommended, since the colors are not
+//config:	configurable, and the output may not be legible on
+//config:	many output screens.
 
 //applet:IF_LS(APPLET_NOEXEC(ls, ls, BB_DIR_BIN, BB_SUID_DROP, ls))
 
@@ -206,18 +206,18 @@ SPLIT_SUBDIR    = 2,
 /* -SXvhTw  GNU options, busybox optionally supports */
 /* -T WIDTH Ignored (we don't use tabs on output) */
 /* -Z       SELinux mandated option, busybox optionally supports */
-static const char ls_options[] ALIGN1 =
-	"Cadi1lgnsxAk"       /* 12 opts, total 12 */
-	IF_FEATURE_LS_FILETYPES("Fp")    /* 2, 14 */
-	IF_FEATURE_LS_RECURSIVE("R")     /* 1, 15 */
-	IF_SELINUX("Z")                  /* 1, 16 */
-	"Q"                              /* 1, 17 */
-	IF_FEATURE_LS_TIMESTAMPS("ctu")  /* 3, 20 */
-	IF_FEATURE_LS_SORTFILES("SXrv")  /* 4, 24 */
-	IF_FEATURE_LS_FOLLOWLINKS("LH")  /* 2, 26 */
-	IF_FEATURE_HUMAN_READABLE("h")   /* 1, 27 */
+#define ls_options \
+	"Cadi1lgnsxAk"       /* 12 opts, total 12 */ \
+	IF_FEATURE_LS_FILETYPES("Fp")    /* 2, 14 */ \
+	IF_FEATURE_LS_RECURSIVE("R")     /* 1, 15 */ \
+	IF_SELINUX("Z")                  /* 1, 16 */ \
+	"Q"                              /* 1, 17 */ \
+	IF_FEATURE_LS_TIMESTAMPS("ctu")  /* 3, 20 */ \
+	IF_FEATURE_LS_SORTFILES("SXrv")  /* 4, 24 */ \
+	IF_FEATURE_LS_FOLLOWLINKS("LH")  /* 2, 26 */ \
+	IF_FEATURE_HUMAN_READABLE("h")   /* 1, 27 */ \
 	IF_FEATURE_LS_WIDTH("T:w:")      /* 2, 29 */
-;
+
 enum {
 	OPT_C = (1 << 0),
 	OPT_a = (1 << 1),
@@ -346,6 +346,8 @@ struct globals {
 	IF_FEATURE_LS_WIDTH(G_terminal_width = TERMINAL_WIDTH;) \
 	IF_FEATURE_LS_TIMESTAMPS(time(&G.current_time_t);) \
 } while (0)
+
+#define ESC "\033"
 
 
 /*** Output code ***/
@@ -480,12 +482,11 @@ static NOINLINE unsigned display_single(const struct dnode *dn)
 	int opt;
 #if ENABLE_FEATURE_LS_FILETYPES || ENABLE_FEATURE_LS_COLOR
 	struct stat statbuf;
-	char append;
+#endif
+#if ENABLE_FEATURE_LS_FILETYPES
+	char append = append_char(dn->dn_mode);
 #endif
 
-#if ENABLE_FEATURE_LS_FILETYPES
-	append = append_char(dn->dn_mode);
-#endif
 	opt = option_mask32;
 
 	/* Do readlink early, so that if it fails, error message
@@ -586,12 +587,12 @@ static NOINLINE unsigned display_single(const struct dnode *dn)
 		if (!mode)
 			if (lstat(dn->fullname, &statbuf) == 0)
 				mode = statbuf.st_mode;
-		printf("\033[%u;%um", bold(mode), fgcolor(mode));
+		printf(ESC"[%u;%um", bold(mode), fgcolor(mode));
 	}
 #endif
 	column += print_name(dn->name);
 	if (G_show_color) {
-		printf("\033[0m");
+		printf(ESC"[m");
 	}
 
 	if (lpath) {
@@ -609,7 +610,7 @@ static NOINLINE unsigned display_single(const struct dnode *dn)
 # endif
 # if ENABLE_FEATURE_LS_COLOR
 			if (G_show_color) {
-				printf("\033[%u;%um", bold(mode), fgcolor(mode));
+				printf(ESC"[%u;%um", bold(mode), fgcolor(mode));
 			}
 # endif
 		}
@@ -617,7 +618,7 @@ static NOINLINE unsigned display_single(const struct dnode *dn)
 		column += print_name(lpath) + 4;
 		free(lpath);
 		if (G_show_color) {
-			printf("\033[0m");
+			printf(ESC"[m");
 		}
 	}
 #if ENABLE_FEATURE_LS_FILETYPES
@@ -1093,25 +1094,26 @@ int ls_main(int argc UNUSED_PARAM, char **argv)
 #endif
 
 	/* process options */
-	IF_LONG_OPTS(applet_long_options = ls_longopts;)
-	opt_complementary =
-		/* -n and -g imply -l */
-		"nl:gl"
-		/* --full-time implies -l */
-		IF_FEATURE_LS_TIMESTAMPS(IF_LONG_OPTS(":\xff""l"))
-		/* http://pubs.opengroup.org/onlinepubs/9699919799/utilities/ls.html:
-		 * in some pairs of opts, only last one takes effect:
-		 */
-		IF_FEATURE_LS_TIMESTAMPS(IF_FEATURE_LS_SORTFILES(":t-S:S-t")) /* time/size */
-		// ":m-l:l-m" - we don't have -m
-		IF_FEATURE_LS_FOLLOWLINKS(":H-L:L-H")
-		":C-xl:x-Cl:l-xC" /* bycols/bylines/long */
-		":C-1:1-C" /* bycols/oneline */
-		":x-1:1-x" /* bylines/oneline (not in SuS, but in GNU coreutils 8.4) */
-		IF_FEATURE_LS_TIMESTAMPS(":c-u:u-c") /* mtime/atime */
-		/* -w NUM: */
-		IF_FEATURE_LS_WIDTH(":w+");
-	opt = getopt32(argv, ls_options
+	opt = getopt32long(argv, "^"
+		ls_options
+			"\0"
+			/* -n and -g imply -l */
+			"nl:gl"
+			/* --full-time implies -l */
+			IF_FEATURE_LS_TIMESTAMPS(IF_LONG_OPTS(":\xff""l"))
+			/* http://pubs.opengroup.org/onlinepubs/9699919799/utilities/ls.html:
+			 * in some pairs of opts, only last one takes effect:
+			 */
+			IF_FEATURE_LS_TIMESTAMPS(IF_FEATURE_LS_SORTFILES(":t-S:S-t")) /* time/size */
+			// ":m-l:l-m" - we don't have -m
+			IF_FEATURE_LS_FOLLOWLINKS(":H-L:L-H")
+			":C-xl:x-Cl:l-xC" /* bycols/bylines/long */
+			":C-1:1-C" /* bycols/oneline */
+			":x-1:1-x" /* bylines/oneline (not in SuS, but in GNU coreutils 8.4) */
+			IF_FEATURE_LS_TIMESTAMPS(":c-u:u-c") /* mtime/atime */
+			/* -w NUM: */
+			IF_FEATURE_LS_WIDTH(":w+")
+		, ls_longopts
 		IF_FEATURE_LS_WIDTH(, /*-T*/ NULL, /*-w*/ &G_terminal_width)
 		IF_FEATURE_LS_COLOR(, &color_opt)
 	);

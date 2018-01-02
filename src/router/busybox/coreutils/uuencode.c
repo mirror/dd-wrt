@@ -1,17 +1,17 @@
 /* vi: set sw=4 ts=4: */
 /*
- *  Copyright (C) 2000 by Glenn McGrath
+ * Copyright (C) 2000 by Glenn McGrath
  *
- *  based on the function base64_encode from http.c in wget v1.6
- *  Copyright (C) 1995, 1996, 1997, 1998, 2000 Free Software Foundation, Inc.
+ * based on the function base64_encode from http.c in wget v1.6
+ * Copyright (C) 1995, 1996, 1997, 1998, 2000 Free Software Foundation, Inc.
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config UUENCODE
-//config:	bool "uuencode"
+//config:	bool "uuencode (4.6 kb)"
 //config:	default y
 //config:	help
-//config:	  uuencode is used to uuencode a file.
+//config:	uuencode is used to uuencode a file.
 
 //applet:IF_UUENCODE(APPLET(uuencode, BB_DIR_USR_BIN, BB_SUID_DROP))
 
@@ -49,8 +49,7 @@ int uuencode_main(int argc UNUSED_PARAM, char **argv)
 
 	tbl = bb_uuenc_tbl_std;
 	mode = 0666 & ~umask(0666);
-	opt_complementary = "-1:?2"; /* must have 1 or 2 args */
-	if (getopt32(argv, "m")) {
+	if (getopt32(argv, "^" "m" "\0" "-1:?2"/*must have 1 or 2 args*/)) {
 		tbl = bb_uuenc_tbl_base64;
 	}
 	argv += optind;

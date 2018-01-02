@@ -1,8 +1,8 @@
 /* vi: set sw=4 ts=4: */
 /*
- *  readprofile.c - used to read /proc/profile
+ * readprofile.c - used to read /proc/profile
  *
- *  Copyright (C) 1994,1996 Alessandro Rubini (rubini@ipvvis.unipv.it)
+ * Copyright (C) 1994,1996 Alessandro Rubini (rubini@ipvvis.unipv.it)
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
@@ -32,11 +32,11 @@
  * Paul Mundt <lethal@linux-sh.org>.
  */
 //config:config READPROFILE
-//config:	bool "readprofile"
+//config:	bool "readprofile (7.2 kb)"
 //config:	default y
 //config:	#select PLATFORM_LINUX
 //config:	help
-//config:	  This allows you to parse /proc/profile for basic profiling.
+//config:	This allows you to parse /proc/profile for basic profiling.
 
 //applet:IF_READPROFILE(APPLET(readprofile, BB_DIR_USR_SBIN, BB_SUID_DROP))
 
@@ -266,8 +266,10 @@ int readprofile_main(int argc UNUSED_PARAM, char **argv)
 		printf("%6u %-40s %8.4f\n",
 			total, "total", total/(double)(fn_add-add0));
 
-	fclose(map);
-	free(buf);
+	if (ENABLE_FEATURE_CLEAN_UP) {
+		fclose(map);
+		free(buf);
+	}
 
 	return EXIT_SUCCESS;
 }

@@ -6,7 +6,6 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
-
 /*
  * TODO:
  * - Add more regular expression support - search modifiers, certain matches, etc.
@@ -20,13 +19,12 @@
  * - the inp file pointer is used so that keyboard input works after
  *   redirected input has been read from stdin
  */
-
 //config:config LESS
-//config:	bool "less"
+//config:	bool "less (15 kb)"
 //config:	default y
 //config:	help
-//config:	  'less' is a pager, meaning that it displays text files. It possesses
-//config:	  a wide array of features, and is an improvement over 'more'.
+//config:	'less' is a pager, meaning that it displays text files. It possesses
+//config:	a wide array of features, and is an improvement over 'more'.
 //config:
 //config:config FEATURE_LESS_MAXLINES
 //config:	int "Max number of input lines less will try to eat"
@@ -38,64 +36,64 @@
 //config:	default y
 //config:	depends on LESS
 //config:	help
-//config:	  This option adds the capability to search for matching left and right
-//config:	  brackets, facilitating programming.
+//config:	This option adds the capability to search for matching left and right
+//config:	brackets, facilitating programming.
 //config:
 //config:config FEATURE_LESS_FLAGS
 //config:	bool "Enable -m/-M"
 //config:	default y
 //config:	depends on LESS
 //config:	help
-//config:	  The -M/-m flag enables a more sophisticated status line.
+//config:	The -M/-m flag enables a more sophisticated status line.
 //config:
 //config:config FEATURE_LESS_TRUNCATE
 //config:	bool "Enable -S"
 //config:	default y
 //config:	depends on LESS
 //config:	help
-//config:	  The -S flag causes long lines to be truncated rather than
-//config:	  wrapped.
+//config:	The -S flag causes long lines to be truncated rather than
+//config:	wrapped.
 //config:
 //config:config FEATURE_LESS_MARKS
 //config:	bool "Enable marks"
 //config:	default y
 //config:	depends on LESS
 //config:	help
-//config:	  Marks enable positions in a file to be stored for easy reference.
+//config:	Marks enable positions in a file to be stored for easy reference.
 //config:
 //config:config FEATURE_LESS_REGEXP
 //config:	bool "Enable regular expressions"
 //config:	default y
 //config:	depends on LESS
 //config:	help
-//config:	  Enable regular expressions, allowing complex file searches.
+//config:	Enable regular expressions, allowing complex file searches.
 //config:
 //config:config FEATURE_LESS_WINCH
 //config:	bool "Enable automatic resizing on window size changes"
 //config:	default y
 //config:	depends on LESS
 //config:	help
-//config:	  Makes less track window size changes.
+//config:	Makes less track window size changes.
 //config:
 //config:config FEATURE_LESS_ASK_TERMINAL
 //config:	bool "Use 'tell me cursor position' ESC sequence to measure window"
 //config:	default y
 //config:	depends on FEATURE_LESS_WINCH
 //config:	help
-//config:	  Makes less track window size changes.
-//config:	  If terminal size can't be retrieved and $LINES/$COLUMNS are not set,
-//config:	  this option makes less perform a last-ditch effort to find it:
-//config:	  position cursor to 999,999 and ask terminal to report real
-//config:	  cursor position using "ESC [ 6 n" escape sequence, then read stdin.
-//config:	  This is not clean but helps a lot on serial lines and such.
+//config:	Makes less track window size changes.
+//config:	If terminal size can't be retrieved and $LINES/$COLUMNS are not set,
+//config:	this option makes less perform a last-ditch effort to find it:
+//config:	position cursor to 999,999 and ask terminal to report real
+//config:	cursor position using "ESC [ 6 n" escape sequence, then read stdin.
+//config:	This is not clean but helps a lot on serial lines and such.
 //config:
 //config:config FEATURE_LESS_DASHCMD
 //config:	bool "Enable flag changes ('-' command)"
 //config:	default y
 //config:	depends on LESS
 //config:	help
-//config:	  This enables the ability to change command-line flags within
-//config:	  less itself ('-' keyboard command).
+//config:	This enables the ability to change command-line flags within
+//config:	less itself ('-' keyboard command).
 //config:
 //config:config FEATURE_LESS_LINENUMS
 //config:	bool "Enable -N (dynamic switching of line numbers)"
@@ -137,9 +135,9 @@
 #define ESC "\033"
 /* The escape codes for highlighted and normal text */
 #define HIGHLIGHT   ESC"[7m"
-#define NORMAL      ESC"[0m"
+#define NORMAL      ESC"[m"
 /* The escape code to home and clear to the end of screen */
-#define CLEAR       ESC"[H\033[J"
+#define CLEAR       ESC"[H"ESC"[J"
 /* The escape code to clear to the end of line */
 #define CLEAR_2_EOL ESC"[K"
 
@@ -281,9 +279,9 @@ static void set_tty_cooked(void)
 
 /* Move the cursor to a position (x,y), where (0,0) is the
    top-left corner of the console */
-static void move_cursor(int line, int row)
+static void move_cursor(int line, int col)
 {
-	printf(ESC"[%u;%uH", line, row);
+	printf(ESC"[%u;%uH", line, col);
 }
 
 static void clear_line(void)
@@ -1042,7 +1040,7 @@ static void reinitialize(void)
 	open_file_and_read_lines();
 #if ENABLE_FEATURE_LESS_ASK_TERMINAL
 	if (G.winsize_err)
-		printf("\033[999;999H" "\033[6n");
+		printf(ESC"[999;999H" ESC"[6n");
 #endif
 	buffer_fill_and_print();
 }
@@ -1103,7 +1101,7 @@ static int64_t getch_nowait(void)
 			goto again;
 		}
 		/* EOF/error (ssh session got killed etc) */
-		less_exit(0);
+		less_exit(EXIT_SUCCESS);
 	}
 	set_tty_cooked();
 	return key64;
@@ -1824,15 +1822,9 @@ int less_main(int argc, char **argv)
 	G.kbd_fd_orig_flags = ndelay_on(tty_fd);
 	kbd_fd = tty_fd; /* save in a global */
 
-	tcgetattr(kbd_fd, &term_orig);
-	term_less = term_orig;
-	term_less.c_lflag &= ~(ICANON | ECHO);
-	term_less.c_iflag &= ~(IXON | ICRNL);
-	/*term_less.c_oflag &= ~ONLCR;*/
-	term_less.c_cc[VMIN] = 1;
-	term_less.c_cc[VTIME] = 0;
+	get_termios_and_make_raw(tty_fd, &term_less, &term_orig, TERMIOS_RAW_CRNL);
 
-	IF_FEATURE_LESS_ASK_TERMINAL(G.winsize_err =) get_terminal_width_height(kbd_fd, &width, &max_displayed_line);
+	IF_FEATURE_LESS_ASK_TERMINAL(G.winsize_err =) get_terminal_width_height(tty_fd, &width, &max_displayed_line);
 	/* 20: two tabstops + 4 */
 	if (width < 20 || max_displayed_line < 3)
 		return bb_cat(argv);

@@ -1,6 +1,6 @@
 VERSION = 1
-PATCHLEVEL = 27
-SUBLEVEL = 2
+PATCHLEVEL = 28
+SUBLEVEL = 0
 EXTRAVERSION =
 NAME = Unnamed
 
@@ -178,7 +178,7 @@ endif
 # SUBARCH is subsequently ignored.
 
 ifneq ($(CROSS_COMPILE),)
-SUBARCH := $(shell echo $(CROSS_COMPILE) | cut -d- -f1)
+SUBARCH := $(shell echo $(CROSS_COMPILE) | cut -d- -f1 | sed 's:^.*/::g')
 else
 SUBARCH := $(shell uname -m)
 endif
@@ -470,6 +470,7 @@ libs-y		:= \
 		coreutils/ \
 		coreutils/libcoreutils/ \
 		debianutils/ \
+		klibc-utils/ \
 		e2fsprogs/ \
 		editors/ \
 		findutils/ \
@@ -508,6 +509,8 @@ ifeq ($(dot-config),1)
 # To avoid any implicit rule to kick in, define an empty command
 .config .kconfig.d: ;
 
+-include $(srctree)/arch/$(ARCH)/Makefile
+
 # Now we can define CFLAGS etc according to .config
 include $(srctree)/Makefile.flags
 
@@ -530,8 +533,6 @@ endif
 # This allow a user to issue only 'make' to build a kernel including modules
 # Defaults busybox but it is usually overridden in the arch makefile
 all: busybox doc
-
--include $(srctree)/arch/$(ARCH)/Makefile
 
 # arch Makefile may override CC so keep this after arch Makefile is included
 #bbox# NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)

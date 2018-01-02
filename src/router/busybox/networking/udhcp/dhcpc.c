@@ -1,7 +1,6 @@
 /* vi: set sw=4 ts=4: */
 /*
  * udhcp client
- *
  * Russ Dill <Russ.Dill@asu.edu> July 2001
  *
  * This program is free software; you can redistribute it and/or modify
@@ -705,10 +704,16 @@ static int raw_bcast_from_client_config_ifindex(struct dhcp_packet *packet, uint
 
 static int bcast_or_ucast(struct dhcp_packet *packet, uint32_t ciaddr, uint32_t server)
 {
-	if (server)
+	if (server) {
+		/* Without MSG_DONTROUTE, the packet was seen routed over
+		 * _other interface_ if server ID is bogus (example: 1.1.1.1).
+		 */
 		return udhcp_send_kernel_packet(packet,
 			ciaddr, CLIENT_PORT,
-			server, SERVER_PORT);
+			server, SERVER_PORT,
+			/*send_flags: "to hosts only on directly connected networks" */ MSG_DONTROUTE
+		);
+	}
 	return raw_bcast_from_client_config_ifindex(packet, ciaddr);
 }
 
@@ -748,7 +753,7 @@ static NOINLINE int send_discover(uint32_t xid, uint32_t requested)
 static NOINLINE int send_select(uint32_t xid, uint32_t server, uint32_t requested)
 {
 	struct dhcp_packet packet;
-	struct in_addr addr;
+	struct in_addr temp_addr;
 
 /*
  * RFC 2131 4.3.2 DHCPREQUEST message
@@ -779,8 +784,8 @@ static NOINLINE int send_select(uint32_t xid, uint32_t server, uint32_t requeste
 	 */
 	add_client_options(&packet);
 
-	addr.s_addr = requested;
-	bb_error_msg("sending select for %s", inet_ntoa(addr));
+	temp_addr.s_addr = requested;
+	bb_error_msg("sending select for %s", inet_ntoa(temp_addr));
 	return raw_bcast_from_client_config_ifindex(&packet, INADDR_ANY);
 }
 
@@ -789,6 +794,7 @@ static NOINLINE int send_select(uint32_t xid, uint32_t server, uint32_t requeste
 static NOINLINE int send_renew(uint32_t xid, uint32_t server, uint32_t ciaddr)
 {
 	struct dhcp_packet packet;
+	struct in_addr temp_addr;
 
 /*
  * RFC 2131 4.3.2 DHCPREQUEST message
@@ -819,7 +825,8 @@ static NOINLINE int send_renew(uint32_t xid, uint32_t server, uint32_t ciaddr)
 	 */
 	add_client_options(&packet);
 
-	bb_error_msg("sending %s", "renew");
+	temp_addr.s_addr = server;
+	bb_error_msg("sending renew to %s", inet_ntoa(temp_addr));
 	return bcast_or_ucast(&packet, ciaddr, server);
 }
 
@@ -1014,18 +1021,23 @@ static int udhcp_raw_socket(int ifindex)
 	int fd;
 	struct sockaddr_ll sock;
 
-	log1("opening raw socket on ifindex %d", ifindex); //log2?
+	log2("opening raw socket on ifindex %d", ifindex);
 
 	fd = xsocket(PF_PACKET, SOCK_DGRAM, htons(ETH_P_IP));
 	/* ^^^^^
 	 * SOCK_DGRAM: remove link-layer headers on input (SOCK_RAW keeps them)
 	 * ETH_P_IP: want to receive only packets with IPv4 eth type
 	 */
-	log1("got raw socket fd"); //log2?
+	log2("got raw socket fd");
 
+	memset(&sock, 0, sizeof(sock)); /* let's be deterministic */
 	sock.sll_family = AF_PACKET;
 	sock.sll_protocol = htons(ETH_P_IP);
 	sock.sll_ifindex = ifindex;
+	/*sock.sll_hatype = ARPHRD_???;*/
+	/*sock.sll_pkttype = PACKET_???;*/
+	/*sock.sll_halen = ???;*/
+	/*sock.sll_addr[8] = ???;*/
 	xbind(fd, (struct sockaddr *) &sock, sizeof(sock));
 
 #if 0 /* Several users reported breakage when BPF filter is used */
@@ -1195,44 +1207,6 @@ static void client_background(void)
 //usage:       "	[-i IFACE]"IF_FEATURE_UDHCP_PORT(" [-P PORT]")" [-s PROG] [-p PIDFILE]\n"
 //usage:       "	[-oC] [-r IP] [-V VENDOR] [-F NAME] [-x OPT:VAL]... [-O OPT]..."
 //usage:#define udhcpc_full_usage "\n"
-//usage:	IF_LONG_OPTS(
-//usage:     "\n	-i,--interface IFACE	Interface to use (default eth0)"
-//usage:	IF_FEATURE_UDHCP_PORT(
-//usage:     "\n	-P,--client-port PORT	Use PORT (default 68)"
-//usage:	)
-//usage:     "\n	-s,--script PROG	Run PROG at DHCP events (default "CONFIG_UDHCPC_DEFAULT_SCRIPT")"
-//usage:     "\n	-p,--pidfile FILE	Create pidfile"
-//usage:     "\n	-B,--broadcast		Request broadcast replies"
-//usage:     "\n	-t,--retries N		Send up to N discover packets (default 3)"
-//usage:     "\n	-T,--timeout SEC	Pause between packets (default 3)"
-//usage:     "\n	-A,--tryagain SEC	Wait if lease is not obtained (default 20)"
-//usage:     "\n	-n,--now		Exit if lease is not obtained"
-//usage:     "\n	-q,--quit		Exit after obtaining lease"
-//usage:     "\n	-R,--release		Release IP on exit"
-//usage:     "\n	-f,--foreground		Run in foreground"
-//usage:	USE_FOR_MMU(
-//usage:     "\n	-b,--background		Background if lease is not obtained"
-//usage:	)
-//usage:     "\n	-S,--syslog		Log to syslog too"
-//usage:	IF_FEATURE_UDHCPC_ARPING(
-//usage:     "\n	-a[MSEC],--arping[=MSEC] Validate offered address with ARP ping"
-//usage:	)
-//usage:     "\n	-r,--request IP		Request this IP address"
-//usage:     "\n	-o,--no-default-options	Don't request any options (unless -O is given)"
-//usage:     "\n	-O,--request-option OPT	Request option OPT from server (cumulative)"
-//usage:     "\n	-x OPT:VAL		Include option OPT in sent packets (cumulative)"
-//usage:     "\n				Examples of string, numeric, and hex byte opts:"
-//usage:     "\n				-x hostname:bbox - option 12"
-//usage:     "\n				-x lease:3600 - option 51 (lease time)"
-//usage:     "\n				-x 0x3d:0100BEEFC0FFEE - option 61 (client id)"
-//usage:     "\n	-F,--fqdn NAME		Ask server to update DNS mapping for NAME"
-//usage:     "\n	-V,--vendorclass VENDOR	Vendor identifier (default 'udhcp VERSION')"
-//usage:     "\n	-C,--clientid-none	Don't send MAC as client identifier"
-//usage:	IF_UDHCP_VERBOSE(
-//usage:     "\n	-v			Verbose"
-//usage:	)
-//usage:	)
-//usage:	IF_NOT_LONG_OPTS(
 //usage:     "\n	-i IFACE	Interface to use (default eth0)"
 //usage:	IF_FEATURE_UDHCP_PORT(
 //usage:     "\n	-P PORT		Use PORT (default 68)"
@@ -1267,7 +1241,6 @@ static void client_background(void)
 //usage:     "\n	-C		Don't send MAC as client identifier"
 //usage:	IF_UDHCP_VERBOSE(
 //usage:     "\n	-v		Verbose"
-//usage:	)
 //usage:	)
 //usage:     "\nSignals:"
 //usage:     "\n	USR1	Renew lease"
@@ -1307,16 +1280,18 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	str_V = "udhcp "BB_VER;
 
 	/* Parse command line */
-	/* O,x: list; -T,-t,-A take numeric param */
-	IF_UDHCP_VERBOSE(opt_complementary = "vv";)
-	IF_LONG_OPTS(applet_long_options = udhcpc_longopts;)
-	opt = getopt32(argv, "CV:H:h:F:i:np:qRr:s:T:+t:+SA:+O:*ox:*fB"
+	opt = getopt32long(argv, "^"
+		/* O,x: list; -T,-t,-A take numeric param */
+		"CV:H:h:F:i:np:qRr:s:T:+t:+SA:+O:*ox:*fB"
 		USE_FOR_MMU("b")
 		IF_FEATURE_UDHCPC_ARPING("a::")
 		IF_FEATURE_UDHCP_PORT("P:")
 		"v"
+		"\0" IF_UDHCP_VERBOSE("vv") /* -v is a counter */
+		, udhcpc_longopts
 		, &str_V, &str_h, &str_h, &str_F
-		, &client_config.interface, &client_config.pidfile, &str_r /* i,p */
+		, &client_config.interface, &client_config.pidfile /* i,p */
+		, &str_r /* r */
 		, &client_config.script /* s */
 		, &discover_timeout, &discover_retries, &tryagain_timeout /* T,t,A */
 		, &list_O
@@ -1473,7 +1448,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		retval = 0;
 		/* If we already timed out, fall through with retval = 0, else... */
 		if (tv > 0) {
-			log1("waiting on select %u seconds", tv);
+			log1("waiting %u seconds", tv);
 			timestamp_before_wait = (unsigned)monotonic_sec();
 			retval = poll(pfds, 2, tv < INT_MAX/1000 ? tv * 1000 : INT_MAX);
 			if (retval < 0) {
@@ -1483,7 +1458,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 					continue;
 				}
 				/* Else: an error occurred, panic! */
-				bb_perror_msg_and_die("select");
+				bb_perror_msg_and_die("poll");
 			}
 		}
 
@@ -1574,11 +1549,24 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 			 * Anyway, it does recover by eventually failing through
 			 * into INIT_SELECTING state.
 			 */
-					send_renew(xid, server_addr, requested_ip);
-					timeout >>= 1;
-					continue;
+					if (send_renew(xid, server_addr, requested_ip) >= 0) {
+						timeout >>= 1;
+//TODO: the timeout to receive an answer for our renew should not be selected
+//with "timeout = lease_seconds / 2; ...; timeout = timeout / 2": it is often huge.
+//Waiting e.g. 4*3600 seconds for a reply does not make sense
+//(if reply isn't coming, we keep an open socket for hours),
+//it should be something like 10 seconds.
+//Also, it's probably best to try sending renew in kernel mode a few (3-5) times
+//and fall back to raw mode if it does not work.
+						continue;
+					}
+					/* else: error sending.
+					 * example: ENETUNREACH seen with server
+					 * which gave us bogus server ID 1.1.1.1
+					 * which wasn't reachable (and probably did not exist).
+					 */
 				}
-				/* Timed out, enter rebinding state */
+				/* Timed out or error, enter rebinding state */
 				log1("entering rebinding state");
 				state = REBINDING;
 				/* fall right through */
@@ -1660,7 +1648,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 				len = udhcp_recv_raw_packet(&packet, sockfd);
 			if (len == -1) {
 				/* Error is severe, reopen socket */
-				bb_error_msg("read error: %s, reopening socket", strerror(errno));
+				bb_error_msg("read error: "STRERROR_FMT", reopening socket" STRERROR_ERRNO);
 				sleep(discover_timeout); /* 3 seconds by default */
 				change_listen_mode(listen_mode); /* just close and reopen */
 			}

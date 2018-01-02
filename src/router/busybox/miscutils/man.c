@@ -3,10 +3,10 @@
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 //config:config MAN
-//config:	bool "man"
+//config:	bool "man (27 kb)"
 //config:	default y
 //config:	help
-//config:	  Format and display manual pages.
+//config:	Format and display manual pages.
 
 //applet:IF_MAN(APPLET(man, BB_DIR_USR_BIN, BB_SUID_DROP))
 
@@ -253,8 +253,7 @@ int man_main(int argc UNUSED_PARAM, char **argv)
 
 	INIT_G();
 
-	opt_complementary = "-1"; /* at least one argument */
-	opt = getopt32(argv, "+aw");
+	opt = getopt32(argv, "^+" "aw" "\0" "-1"/*at least one arg*/);
 	argv += optind;
 
 	sec_list = xstrdup("0p:1:1p:2:3:3p:4:5:6:7:8:9");

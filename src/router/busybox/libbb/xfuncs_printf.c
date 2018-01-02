@@ -8,7 +8,6 @@
  *
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
-
 /* We need to have separate xfuncs.c and xfuncs_printf.c because
  * with current linkers, even with section garbage collection,
  * if *.o module references any of XXXprintf functions, you pull in
@@ -19,7 +18,6 @@
  * which do not pull in printf, directly or indirectly.
  * xfunc_printf.c contains those which do.
  */
-
 #include "libbb.h"
 
 
@@ -344,20 +342,28 @@ void FAST_FUNC xsetenv(const char *key, const char *value)
  */
 void FAST_FUNC bb_unsetenv(const char *var)
 {
-	char *tp = strchr(var, '=');
+	char onstack[128 - 16]; /* smaller stack setup code on x86 */
+	char *tp;
 
-	if (!tp) {
-		unsetenv(var);
-		return;
+	tp = strchr(var, '=');
+	if (tp) {
+		/* In case var was putenv'ed, we can't replace '='
+		 * with NUL and unsetenv(var) - it won't work,
+		 * env is modified by the replacement, unsetenv
+		 * sees "VAR" instead of "VAR=VAL" and does not remove it!
+		 * Horror :(
+		 */
+		unsigned sz = tp - var;
+		if (sz < sizeof(onstack)) {
+			((char*)mempcpy(onstack, var, sz))[0] = '\0';
+			tp = NULL;
+			var = onstack;
+		} else {
+			/* unlikely: very long var name */
+			var = tp = xstrndup(var, sz);
+		}
 	}
-
-	/* In case var was putenv'ed, we can't replace '='
-	 * with NUL and unsetenv(var) - it won't work,
-	 * env is modified by the replacement, unsetenv
-	 * sees "VAR" instead of "VAR=VAL" and does not remove it!
-	 * horror :( */
-	tp = xstrndup(var, tp - var);
-	unsetenv(tp);
+	unsetenv(var);
 	free(tp);
 }
 

@@ -188,6 +188,7 @@ char get_header_ar(archive_handle_t *archive_handle) FAST_FUNC;
 char get_header_cpio(archive_handle_t *archive_handle) FAST_FUNC;
 char get_header_tar(archive_handle_t *archive_handle) FAST_FUNC;
 char get_header_tar_gz(archive_handle_t *archive_handle) FAST_FUNC;
+char get_header_tar_xz(archive_handle_t *archive_handle) FAST_FUNC;
 char get_header_tar_bz2(archive_handle_t *archive_handle) FAST_FUNC;
 char get_header_tar_lzma(archive_handle_t *archive_handle) FAST_FUNC;
 char get_header_tar_xz(archive_handle_t *archive_handle) FAST_FUNC;
@@ -196,6 +197,7 @@ void seek_by_jump(int fd, off_t amount) FAST_FUNC;
 void seek_by_read(int fd, off_t amount) FAST_FUNC;
 
 const char *strip_unsafe_prefix(const char *str) FAST_FUNC;
+int unsafe_symlink_target(const char *target) FAST_FUNC;
 
 void data_align(archive_handle_t *archive_handle, unsigned boundary) FAST_FUNC;
 const llist_t *find_list_entry(const llist_t *list, const char *filename) FAST_FUNC;

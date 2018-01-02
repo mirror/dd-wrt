@@ -1,39 +1,39 @@
 /* vi: set sw=4 ts=4: */
 /*
- *  Copyright (C) 2003 Glenn L. McGrath
- *  Copyright (C) 2003-2004 Erik Andersen
+ * Copyright (C) 2003 Glenn L. McGrath
+ * Copyright (C) 2003-2004 Erik Andersen
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config MD5SUM
-//config:	bool "md5sum"
+//config:	bool "md5sum (6.8 kb)"
 //config:	default y
 //config:	help
-//config:	  md5sum is used to print or check MD5 checksums.
+//config:	md5sum is used to print or check MD5 checksums.
 //config:
 //config:config SHA1SUM
-//config:	bool "sha1sum"
+//config:	bool "sha1sum (6 kb)"
 //config:	default y
 //config:	help
-//config:	  Compute and check SHA1 message digest
+//config:	Compute and check SHA1 message digest
 //config:
 //config:config SHA256SUM
-//config:	bool "sha256sum"
+//config:	bool "sha256sum (7.1 kb)"
 //config:	default y
 //config:	help
-//config:	  Compute and check SHA256 message digest
+//config:	Compute and check SHA256 message digest
 //config:
 //config:config SHA512SUM
-//config:	bool "sha512sum"
+//config:	bool "sha512sum (7.6 kb)"
 //config:	default y
 //config:	help
-//config:	  Compute and check SHA512 message digest
+//config:	Compute and check SHA512 message digest
 //config:
 //config:config SHA3SUM
-//config:	bool "sha3sum"
+//config:	bool "sha3sum (6.3 kb)"
 //config:	default y
 //config:	help
-//config:	  Compute and check SHA3 message digest
+//config:	Compute and check SHA3 message digest
 //config:
 //config:comment "Common options for md5sum, sha1sum, sha256sum, sha512sum, sha3sum"
 //config:	depends on MD5SUM || SHA1SUM || SHA256SUM || SHA512SUM || SHA3SUM
@@ -43,9 +43,9 @@
 //config:	default y
 //config:	depends on MD5SUM || SHA1SUM || SHA256SUM || SHA512SUM || SHA3SUM
 //config:	help
-//config:	  Enabling the -c options allows files to be checked
-//config:	  against pre-calculated hash values.
-//config:	  -s and -w are useful options when verifying checksums.
+//config:	Enabling the -c options allows files to be checked
+//config:	against pre-calculated hash values.
+//config:	-s and -w are useful options when verifying checksums.
 
 //applet:IF_MD5SUM(APPLET_NOEXEC(md5sum, md5_sha1_sum, BB_DIR_USR_BIN, BB_SUID_DROP, md5sum))
 //applet:IF_SHA1SUM(APPLET_NOEXEC(sha1sum, md5_sha1_sum, BB_DIR_USR_BIN, BB_SUID_DROP, sha1sum))
@@ -258,15 +258,14 @@ int md5_sha1_sum_main(int argc UNUSED_PARAM, char **argv)
 #endif
 
 	if (ENABLE_FEATURE_MD5_SHA1_SUM_CHECK) {
-		/* -s and -w require -c */
-		opt_complementary = "s?c:w?c";
 		/* -b "binary", -t "text" are ignored (shaNNNsum compat) */
+		/* -s and -w require -c */
 #if ENABLE_SHA3SUM
 		if (applet_name[3] == HASH_SHA3)
-			flags = getopt32(argv, "scwbta:+", &sha3_width);
+			flags = getopt32(argv, "^" "scwbta:+" "\0" "s?c:w?c", &sha3_width);
 		else
 #endif
-			flags = getopt32(argv, "scwbt");
+			flags = getopt32(argv, "^" "scwbt" "\0" "s?c:w?c");
 	} else {
 #if ENABLE_SHA3SUM
 		if (applet_name[3] == HASH_SHA3)

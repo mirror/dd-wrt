@@ -8,23 +8,36 @@
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 //config:config UMOUNT
-//config:	bool "umount"
+//config:	bool "umount (4.5 kb)"
 //config:	default y
 //config:	select PLATFORM_LINUX
 //config:	help
-//config:	  When you want to remove a mounted filesystem from its current mount
-//config:	  point, for example when you are shutting down the system, the
-//config:	  'umount' utility is the tool to use. If you enabled the 'mount'
-//config:	  utility, you almost certainly also want to enable 'umount'.
+//config:	When you want to remove a mounted filesystem from its current mount
+//config:	point, for example when you are shutting down the system, the
+//config:	'umount' utility is the tool to use. If you enabled the 'mount'
+//config:	utility, you almost certainly also want to enable 'umount'.
 //config:
 //config:config FEATURE_UMOUNT_ALL
-//config:	bool "Support option -a"
+//config:	bool "Support -a (unmount all)"
 //config:	default y
 //config:	depends on UMOUNT
 //config:	help
-//config:	  Support -a option to unmount all currently mounted filesystems.
+//config:	Support -a option to unmount all currently mounted filesystems.
 
-//applet:IF_UMOUNT(APPLET(umount, BB_DIR_BIN, BB_SUID_DROP))
+//applet:IF_UMOUNT(APPLET_NOEXEC(umount, umount, BB_DIR_BIN, BB_SUID_DROP, umount))
+/*
+ * On one hand, in some weird situations you'd want umount
+ * to not do anything surprising, to behave as a usual fork+execed executable.
+ *
+ * OTOH, there can be situations where execing would not succeed, or even hang
+ * (say, if executable is on a filesystem which is in trouble and accesses to it
+ * block in kernel).
+ * In this case, you might be actually happy if your standalone bbox shell
+ * does not fork+exec, but only forks and calls umount_main() which it already has!
+ * Let's go with NOEXEC.
+ *
+ * bb_common_bufsiz1 usage here is safe wrt NOEXEC: not expecting it to be zeroed.
+ */
 
 //kbuild:lib-$(CONFIG_UMOUNT) += umount.o
 

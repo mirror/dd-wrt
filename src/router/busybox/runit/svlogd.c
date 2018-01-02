@@ -13,7 +13,7 @@ modification, are permitted provided that the following conditions are met:
    3. The name of the author may not be used to endorse or promote products
       derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ''AS IS'' AND ANY EXPRESS OR IMPLIED
 WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
 MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
 EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
@@ -123,14 +123,13 @@ log message, you can use a pattern like this instead
 
 -*: *: pid *
 */
-
 //config:config SVLOGD
-//config:	bool "svlogd"
+//config:	bool "svlogd (15 kb)"
 //config:	default y
 //config:	help
-//config:	  svlogd continuously reads log data from its standard input, optionally
-//config:	  filters log messages, and writes the data to one or more automatically
-//config:	  rotated logs.
+//config:	svlogd continuously reads log data from its standard input, optionally
+//config:	filters log messages, and writes the data to one or more automatically
+//config:	rotated logs.
 
 //applet:IF_SVLOGD(APPLET(svlogd, BB_DIR_USR_SBIN, BB_SUID_DROP))
 
@@ -1037,9 +1036,10 @@ int svlogd_main(int argc, char **argv)
 
 	INIT_G();
 
-	opt_complementary = "tt:vv";
-	opt = getopt32(argv, "r:R:l:b:tv",
-			&r, &replace, &l, &b, &timestamp, &verbose);
+	opt = getopt32(argv, "^"
+			"r:R:l:b:tv" "\0" "tt:vv",
+			&r, &replace, &l, &b, &timestamp, &verbose
+	);
 	if (opt & 1) { // -r
 		repl = r[0];
 		if (!repl || r[1])

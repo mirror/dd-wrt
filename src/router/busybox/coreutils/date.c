@@ -19,46 +19,47 @@
    much as possible, missed out a lot of bounds checking */
 
 //config:config DATE
-//config:	bool "date"
+//config:	bool "date (7.1 kb)"
 //config:	default y
 //config:	help
-//config:	  date is used to set the system date or display the
-//config:	  current time in the given format.
+//config:	date is used to set the system date or display the
+//config:	current time in the given format.
 //config:
 //config:config FEATURE_DATE_ISOFMT
 //config:	bool "Enable ISO date format output (-I)"
 //config:	default y
 //config:	depends on DATE
 //config:	help
-//config:	  Enable option (-I) to output an ISO-8601 compliant
-//config:	  date/time string.
+//config:	Enable option (-I) to output an ISO-8601 compliant
+//config:	date/time string.
 //config:
 //config:# defaults to "no": stat's nanosecond field is a bit non-portable
 //config:config FEATURE_DATE_NANO
 //config:	bool "Support %[num]N nanosecond format specifier"
-//config:	default n
-//config:	depends on DATE  # syscall(__NR_clock_gettime)
+//config:	default n  # syscall(__NR_clock_gettime)
+//config:	depends on DATE
 //config:	select PLATFORM_LINUX
 //config:	help
-//config:	  Support %[num]N format specifier. Adds ~250 bytes of code.
+//config:	Support %[num]N format specifier. Adds ~250 bytes of code.
 //config:
 //config:config FEATURE_DATE_COMPAT
 //config:	bool "Support weird 'date MMDDhhmm[[YY]YY][.ss]' format"
 //config:	default y
 //config:	depends on DATE
 //config:	help
-//config:	  System time can be set by 'date -s DATE' and simply 'date DATE',
-//config:	  but formats of DATE string are different. 'date DATE' accepts
-//config:	  a rather weird MMDDhhmm[[YY]YY][.ss] format with completely
-//config:	  unnatural placement of year between minutes and seconds.
-//config:	  date -s (and other commands like touch -d) use more sensible
-//config:	  formats (for one, ISO format YYYY-MM-DD hh:mm:ss.ssssss).
+//config:	System time can be set by 'date -s DATE' and simply 'date DATE',
+//config:	but formats of DATE string are different. 'date DATE' accepts
+//config:	a rather weird MMDDhhmm[[YY]YY][.ss] format with completely
+//config:	unnatural placement of year between minutes and seconds.
+//config:	date -s (and other commands like touch -d) use more sensible
+//config:	formats (for one, ISO format YYYY-MM-DD hh:mm:ss.ssssss).
 //config:
-//config:	  With this option off, 'date DATE' is 'date -s DATE' support
-//config:	  the same format. With it on, 'date DATE' additionally supports
-//config:	  MMDDhhmm[[YY]YY][.ss] format.
+//config:	With this option off, 'date DATE' is 'date -s DATE' support
+//config:	the same format. With it on, 'date DATE' additionally supports
+//config:	MMDDhhmm[[YY]YY][.ss] format.
 
-//applet:IF_DATE(APPLET(date, BB_DIR_BIN, BB_SUID_DROP))
+//applet:IF_DATE(APPLET_NOEXEC(date, date, BB_DIR_BIN, BB_SUID_DROP, date))
+/* bb_common_bufsiz1 usage here is safe wrt NOEXEC: not expecting it to be zeroed. */
 
 //kbuild:lib-$(CONFIG_DATE) += date.o
 
@@ -66,7 +67,7 @@
  * date [OPTION]... [+FORMAT]
  * date [-u|--utc|--universal] [MMDDhhmm[[CC]YY][.ss]]
  * -d, --date=STRING
- *      display time described by STRING, not `now'
+ *      display time described by STRING, not 'now'
  * -f, --file=DATEFILE
  *      like --date once for each line of DATEFILE
  * -r, --reference=FILE
@@ -153,12 +154,6 @@ enum {
 	OPT_HINT      = (1 << 7) * ENABLE_FEATURE_DATE_ISOFMT, /* D */
 };
 
-static void maybe_set_utc(int opt)
-{
-	if (opt & OPT_UTC)
-		putenv((char*)"TZ=UTC0");
-}
-
 #if ENABLE_LONG_OPTS
 static const char date_longopts[] ALIGN1 =
 		"rfc-822\0"   No_argument       "R"
@@ -171,6 +166,19 @@ static const char date_longopts[] ALIGN1 =
 		"set-kernel-tz\0" No_argument   "k"
 		;
 #endif
+
+/* We are a NOEXEC applet.
+ * Obstacles to NOFORK:
+ * - we change env
+ * - xasprintf result not freed
+ * - after xasprintf we use other xfuncs
+ */
+
+static void maybe_set_utc(int opt)
+{
+	if (opt & OPT_UTC)
+		putenv((char*)"TZ=UTC0");
+}
 
 int date_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int date_main(int argc UNUSED_PARAM, char **argv)
@@ -318,8 +326,6 @@ int date_main(int argc UNUSED_PARAM, char **argv)
 		if (date_str[0] != '@')
 			tm_time.tm_isdst = -1;
 		ts.tv_sec = validate_tm_time(date_str, &tm_time);
-
-		maybe_set_utc(opt);
 
 		/* if setting time, set it */
 		if ((opt & OPT_SET) && stime(&ts.tv_sec) < 0) {

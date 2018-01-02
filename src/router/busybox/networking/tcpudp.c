@@ -29,18 +29,18 @@
  * - don't know how to retrieve ORIGDST for udp.
  */
 //config:config TCPSVD
-//config:	bool "tcpsvd"
+//config:	bool "tcpsvd (13 kb)"
 //config:	default y
 //config:	help
-//config:	  tcpsvd listens on a TCP port and runs a program for each new
-//config:	  connection.
+//config:	tcpsvd listens on a TCP port and runs a program for each new
+//config:	connection.
 //config:
 //config:config UDPSVD
-//config:	bool "udpsvd"
+//config:	bool "udpsvd (13 kb)"
 //config:	default y
 //config:	help
-//config:	  udpsvd listens on an UDP port and runs a program for each new
-//config:	  connection.
+//config:	udpsvd listens on an UDP port and runs a program for each new
+//config:	connection.
 
 //applet:IF_TCPSVD(APPLET_ODDNAME(tcpsvd, tcpudpsvd, BB_DIR_USR_BIN, BB_SUID_DROP, tcpsvd))
 //applet:IF_UDPSVD(APPLET_ODDNAME(udpsvd, tcpudpsvd, BB_DIR_USR_BIN, BB_SUID_DROP, udpsvd))
@@ -269,10 +269,11 @@ int tcpudpsvd_main(int argc UNUSED_PARAM, char **argv)
 
 	tcp = (applet_name[0] == 't');
 
-	/* 3+ args, -i at most once, -p implies -h, -v is counter, -b N, -c N */
-	opt_complementary = "-3:i--i:ph:vv";
 #ifdef SSLSVD
-	opts = getopt32(argv, "+c:+C:i:x:u:l:Eb:+hpt:vU:/:Z:K:",
+	opts = getopt32(argv, "^+"
+		"c:+C:i:x:u:l:Eb:+hpt:vU:/:Z:K:" /* -c NUM, -b NUM */
+		/* 3+ args, -i at most once, -p implies -h, -v is a counter */
+		"\0" "-3:i--i:ph:vv",
 		&cmax, &str_C, &instructs, &instructs, &user, &preset_local_hostname,
 		&backlog, &str_t, &ssluser, &root, &cert, &key, &verbose
 	);

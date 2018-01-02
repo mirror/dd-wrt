@@ -11,8 +11,8 @@
 //config:	default n
 //config:	select PLATFORM_LINUX
 //config:	help
-//config:	  Utility to create ReiserFS filesystems.
-//config:	  Note: this applet needs a lot of testing and polishing.
+//config:	Utility to create ReiserFS filesystems.
+//config:	Note: this applet needs a lot of testing and polishing.
 
 //applet:IF_MKFS_REISER(APPLET_ODDNAME(mkfs.reiser, mkfs_reiser, BB_DIR_SBIN, BB_SUID_DROP, mkfs_reiser))
 
@@ -180,8 +180,7 @@ int mkfs_reiser_main(int argc UNUSED_PARAM, char **argv)
 
 	// using global "option_mask32" instead of local "opts":
 	// we are register starved here
-	opt_complementary = "-1";
-	/*opts =*/ getopt32(argv, "b:+j:s:o:t:B:h:u:l:fqd",
+	/*opts =*/ getopt32(argv, "^" "b:+j:s:o:t:B:h:u:l:fqd" "\0" "-1",
 		NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &label);
 	argv += optind; // argv[0] -- device
 

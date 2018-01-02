@@ -1,54 +1,52 @@
 /* vi: set sw=4 ts=4: */
-/* printf - format and print data
-
-   Copyright 1999 Dave Cinege
-   Portions copyright (C) 1990-1996 Free Software Foundation, Inc.
-
-   Licensed under GPLv2 or later, see file LICENSE in this source tree.
-*/
-
+/*
+ * printf - format and print data
+ *
+ * Copyright 1999 Dave Cinege
+ * Portions copyright (C) 1990-1996 Free Software Foundation, Inc.
+ *
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
+ */
 /* Usage: printf format [argument...]
-
-   A front end to the printf function that lets it be used from the shell.
-
-   Backslash escapes:
-
-   \" = double quote
-   \\ = backslash
-   \a = alert (bell)
-   \b = backspace
-   \c = produce no further output
-   \f = form feed
-   \n = new line
-   \r = carriage return
-   \t = horizontal tab
-   \v = vertical tab
-   \0ooo = octal number (ooo is 0 to 3 digits)
-   \xhhh = hexadecimal number (hhh is 1 to 3 digits)
-
-   Additional directive:
-
-   %b = print an argument string, interpreting backslash escapes
-
-   The 'format' argument is re-used as many times as necessary
-   to convert all of the given arguments.
-
-   David MacKenzie <djm@gnu.ai.mit.edu>
-*/
-
+ *
+ * A front end to the printf function that lets it be used from the shell.
+ *
+ * Backslash escapes:
+ *
+ * \" = double quote
+ * \\ = backslash
+ * \a = alert (bell)
+ * \b = backspace
+ * \c = produce no further output
+ * \f = form feed
+ * \n = new line
+ * \r = carriage return
+ * \t = horizontal tab
+ * \v = vertical tab
+ * \0ooo = octal number (ooo is 0 to 3 digits)
+ * \xhhh = hexadecimal number (hhh is 1 to 3 digits)
+ *
+ * Additional directive:
+ *
+ * %b = print an argument string, interpreting backslash escapes
+ *
+ * The 'format' argument is re-used as many times as necessary
+ * to convert all of the given arguments.
+ *
+ * David MacKenzie <djm@gnu.ai.mit.edu>
+ */
 /* 19990508 Busy Boxed! Dave Cinege */
 
 //config:config PRINTF
-//config:	bool "printf"
+//config:	bool "printf (3.3 kb)"
 //config:	default y
 //config:	help
-//config:	  printf is used to format and print specified strings.
-//config:	  It's similar to `echo' except it has more options.
+//config:	printf is used to format and print specified strings.
+//config:	It's similar to 'echo' except it has more options.
 
 //applet:IF_PRINTF(APPLET_NOFORK(printf, printf, BB_DIR_USR_BIN, BB_SUID_DROP, printf))
 
 //kbuild:lib-$(CONFIG_PRINTF) += printf.o
-
 //kbuild:lib-$(CONFIG_ASH_PRINTF)  += printf.o
 //kbuild:lib-$(CONFIG_HUSH_PRINTF) += printf.o
 
@@ -305,7 +303,7 @@ static char **print_formatted(char *f, char **argv, int *conv_err)
 				}
 				break;
 			}
-			if (strchr("-+ #", *f)) {
+			if (*f && strchr("-+ #", *f)) {
 				++f;
 				++direc_length;
 			}
@@ -348,7 +346,7 @@ static char **print_formatted(char *f, char **argv, int *conv_err)
 				static const char format_chars[] ALIGN1 = "diouxXfeEgGcs";
 				char *p = strchr(format_chars, *f);
 				/* needed - try "printf %" without it */
-				if (p == NULL) {
+				if (p == NULL || *f == '\0') {
 					bb_error_msg("%s: invalid format", direc_start);
 					/* causes main() to exit with error */
 					return saved_argv - 1;

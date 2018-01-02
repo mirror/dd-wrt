@@ -5,10 +5,10 @@
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 //config:config NL
-//config:	bool "nl"
+//config:	bool "nl (4.3 kb)"
 //config:	default y
 //config:	help
-//config:	  nl is used to number lines of files.
+//config:	nl is used to number lines of files.
 
 //applet:IF_NL(APPLET(nl, BB_DIR_USR_BIN, BB_SUID_DROP))
 
@@ -35,26 +35,6 @@
 
 #include "libbb.h"
 
-void FAST_FUNC print_numbered_lines(struct number_state *ns, const char *filename)
-{
-	FILE *fp = fopen_or_warn_stdin(filename);
-	unsigned N = ns->start;
-	char *line;
-
-	while ((line = xmalloc_fgetline(fp)) != NULL) {
-		if (ns->all
-		 || (ns->nonempty && line[0])
-		) {
-			printf("%*u%s%s\n", ns->width, N, ns->sep, line);
-			N += ns->inc;
-		} else if (ns->empty_str)
-			fputs(ns->empty_str, stdout);
-		free(line);
-	}
-
-	fclose(fp);
-}
-
 int nl_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int nl_main(int argc UNUSED_PARAM, char **argv)
 {
@@ -77,14 +57,13 @@ int nl_main(int argc UNUSED_PARAM, char **argv)
 		"starting-line-number\0"Required_argument "v"
 		"number-width\0"	Required_argument "w"
 	;
-
-	applet_long_options = nl_longopts;
 #endif
 	ns.width = 6;
 	ns.start = 1;
 	ns.inc = 1;
 	ns.sep = "\t";
-	getopt32(argv, "pw:+s:v:+i:+b:", &ns.width, &ns.sep, &ns.start, &ns.inc, &opt_b);
+	getopt32long(argv, "pw:+s:v:+i:+b:", nl_longopts,
+			&ns.width, &ns.sep, &ns.start, &ns.inc, &opt_b);
 	ns.all = (opt_b[0] == 'a');
 	ns.nonempty = (opt_b[0] == 't');
 	ns.empty_str = xasprintf("%*s\n", ns.width + (int)strlen(ns.sep), "");

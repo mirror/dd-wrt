@@ -10,14 +10,14 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config CONSPY
-//config:	bool "conspy"
+//config:	bool "conspy (10 kb)"
 //config:	default y
 //config:	select PLATFORM_LINUX
 //config:	help
-//config:	  A text-mode VNC like program for Linux virtual terminals.
-//config:	  example:  conspy NUM      shared access to console num
-//config:	  or        conspy -nd NUM  screenshot of console num
-//config:	  or        conspy -cs NUM  poor man's GNU screen like
+//config:	A text-mode VNC like program for Linux virtual terminals.
+//config:	example:  conspy NUM      shared access to console num
+//config:	or        conspy -nd NUM  screenshot of console num
+//config:	or        conspy -cs NUM  poor man's GNU screen like
 
 //applet:IF_CONSPY(APPLET(conspy, BB_DIR_BIN, BB_SUID_DROP))
 
@@ -367,7 +367,7 @@ int conspy_main(int argc UNUSED_PARAM, char **argv)
 	unsigned ttynum;
 	int poll_timeout_ms;
 #if ENABLE_LONG_OPTS
-	static const char getopt_longopts[] ALIGN1 =
+	static const char conspy_longopts[] ALIGN1 =
 		"viewonly\0"     No_argument "v"
 		"createdevice\0" No_argument "c"
 		"neverquit\0"    No_argument "Q"
@@ -377,8 +377,6 @@ int conspy_main(int argc UNUSED_PARAM, char **argv)
 		"follow\0"       No_argument "f"
 		"framebuffer\0"  No_argument "F"
 		;
-
-	applet_long_options = getopt_longopts;
 #endif
 #define keybuf bb_common_bufsiz1
 	setup_common_bufsiz();
@@ -387,7 +385,7 @@ int conspy_main(int argc UNUSED_PARAM, char **argv)
 	strcpy(G.vcsa_name, DEV_VCSA);
 
 	// numeric params
-	opts = getopt32(argv, "vcQsndfFx:+y:+", &G.x, &G.y);
+	opts = getopt32long(argv, "vcQsndfFx:+y:+", conspy_longopts, &G.x, &G.y);
 	argv += optind;
 	ttynum = 0;
 	if (argv[0]) {

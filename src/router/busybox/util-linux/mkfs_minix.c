@@ -67,18 +67,18 @@
 //config:	default y
 //config:	select PLATFORM_LINUX
 //config:	help
-//config:	  The minix filesystem is a nice, small, compact, read-write filesystem
-//config:	  with little overhead. If you wish to be able to create minix
-//config:	  filesystems this utility will do the job for you.
+//config:	The minix filesystem is a nice, small, compact, read-write filesystem
+//config:	with little overhead. If you wish to be able to create minix
+//config:	filesystems this utility will do the job for you.
 //config:
 //config:config FEATURE_MINIX2
 //config:	bool "Support Minix fs v2 (fsck_minix/mkfs_minix)"
 //config:	default y
 //config:	depends on FSCK_MINIX || MKFS_MINIX
 //config:	help
-//config:	  If you wish to be able to create version 2 minix filesystems, enable
-//config:	  this. If you enabled 'mkfs_minix' then you almost certainly want to
-//config:	  be using the version 2 filesystem support.
+//config:	If you wish to be able to create version 2 minix filesystems, enable
+//config:	this. If you enabled 'mkfs_minix' then you almost certainly want to
+//config:	be using the version 2 filesystem support.
 
 //                     APPLET_ODDNAME:name        main        location     suid_type     help
 //applet:IF_MKFS_MINIX(APPLET_ODDNAME(mkfs.minix, mkfs_minix, BB_DIR_SBIN, BB_SUID_DROP, mkfs_minix))
@@ -142,7 +142,10 @@ struct globals {
 	unsigned currently_testing;
 
 	char root_block[BLOCK_SIZE];
-	char superblock_buffer[BLOCK_SIZE];
+	union {
+		char superblock_buffer[BLOCK_SIZE];
+		struct minix_superblock SB;
+	} u;
 	char boot_block_buffer[512];
 	unsigned short good_blocks_table[MAX_GOOD_BLOCKS];
 	/* check_blocks(): buffer[] was the biggest static in entire bbox */
@@ -166,7 +169,7 @@ static ALWAYS_INLINE unsigned div_roundup(unsigned size, unsigned n)
 #define INODE_BUF1              (((struct minix1_inode*)G.inode_buffer) - 1)
 #define INODE_BUF2              (((struct minix2_inode*)G.inode_buffer) - 1)
 
-#define SB                      (*(struct minix_superblock*)G.superblock_buffer)
+#define SB                      (G.u.SB)
 
 #define SB_INODES               (SB.s_ninodes)
 #define SB_IMAPS                (SB.s_imap_blocks)
@@ -234,7 +237,7 @@ static void write_tables(void)
 	xlseek(dev_fd, BLOCK_SIZE, SEEK_SET);
 
 	msg_eol = "can't write superblock";
-	xwrite(dev_fd, G.superblock_buffer, BLOCK_SIZE);
+	xwrite(dev_fd, G.u.superblock_buffer, BLOCK_SIZE);
 
 	msg_eol = "can't write inode map";
 	xwrite(dev_fd, G.inode_map, SB_IMAPS * BLOCK_SIZE);
@@ -541,7 +544,7 @@ static void setup_tables(void)
 	unsigned sb_zmaps;
 	unsigned i;
 
-	/* memset(G.superblock_buffer, 0, BLOCK_SIZE); */
+	/* memset(G.u.superblock_buffer, 0, BLOCK_SIZE); */
 	/* memset(G.boot_block_buffer, 0, 512); */
 	SB_MAGIC = G.magic;
 	SB_ZONE_SIZE = 0;

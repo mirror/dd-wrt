@@ -27,11 +27,16 @@ static uint32_t xz_crc32(const uint8_t *buf, size_t size, uint32_t crc)
 	return ~crc32_block_endian0(~crc, buf, size, global_crc32_table);
 }
 
-/* We use arch-optimized unaligned accessors */
-#define get_unaligned_le32(buf) ({ uint32_t v; move_from_unaligned32(v, buf); SWAP_LE32(v); })
-#define get_unaligned_be32(buf) ({ uint32_t v; move_from_unaligned32(v, buf); SWAP_BE32(v); })
-#define put_unaligned_le32(val, buf) move_to_unaligned32(buf, SWAP_LE32(val))
-#define put_unaligned_be32(val, buf) move_to_unaligned32(buf, SWAP_BE32(val))
+/* We use arch-optimized unaligned fixed-endian accessors.
+ * They have been moved to libbb (proved to be useful elsewhere as well),
+ * just check that we have them defined:
+ */
+#if !defined(get_unaligned_le32) \
+ || !defined(get_unaligned_be32) \
+ || !defined(put_unaligned_le32) \
+ || !defined(put_unaligned_be32)
+# error get_unaligned_le32 accessors are not defined
+#endif
 
 #include "unxz/xz_dec_bcj.c"
 #include "unxz/xz_dec_lzma2.c"

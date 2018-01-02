@@ -22,15 +22,15 @@
 //config:	bool "du (default blocksize of 512 bytes)"
 //config:	default y
 //config:	help
-//config:	  du is used to report the amount of disk space used
-//config:	  for specified files.
+//config:	du is used to report the amount of disk space used
+//config:	for specified files.
 //config:
 //config:config FEATURE_DU_DEFAULT_BLOCKSIZE_1K
 //config:	bool "Use a default blocksize of 1024 bytes (1K)"
 //config:	default y
 //config:	depends on DU
 //config:	help
-//config:	  Use a blocksize of (1K) instead of the default 512b.
+//config:	Use a blocksize of (1K) instead of the default 512b.
 
 //applet:IF_DU(APPLET(du, BB_DIR_USR_BIN, BB_SUID_DROP))
 
@@ -242,8 +242,11 @@ int du_main(int argc UNUSED_PARAM, char **argv)
 	 * ignore -a.  This is consistent with -s being equivalent to -d 0.
 	 */
 #if ENABLE_FEATURE_HUMAN_READABLE
-	opt_complementary = "h-km:k-hm:m-hk:H-L:L-H:s-d:d-s";
-	opt = getopt32(argv, "aHkLsx" "d:+" "lc" "hm", &G.max_print_depth);
+	opt = getopt32(argv, "^"
+			"aHkLsxd:+lchm"
+			"\0" "h-km:k-hm:m-hk:H-L:L-H:s-d:d-s",
+			&G.max_print_depth
+	);
 	argv += optind;
 	if (opt & OPT_h_for_humans) {
 		G.disp_unit = 0;
@@ -255,8 +258,11 @@ int du_main(int argc UNUSED_PARAM, char **argv)
 		G.disp_unit = 1024;
 	}
 #else
-	opt_complementary = "H-L:L-H:s-d:d-s";
-	opt = getopt32(argv, "aHkLsx" "d:+" "lc", &G.max_print_depth);
+	opt = getopt32(argv, "^"
+			"aHkLsxd:+lc"
+			"\0" "H-L:L-H:s-d:d-s",
+			&G.max_print_depth
+	);
 	argv += optind;
 #if !ENABLE_FEATURE_DU_DEFAULT_BLOCKSIZE_1K
 	if (opt & OPT_k_kbytes) {

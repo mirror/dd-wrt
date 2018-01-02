@@ -6,17 +6,14 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
-
-/* BB_AUDIT SUSv3 N/A */
-
 //config:config VCONFIG
-//config:	bool "vconfig"
+//config:	bool "vconfig (2.5 kb)"
 //config:	default y
 //config:	select PLATFORM_LINUX
 //config:	help
-//config:	  Creates, removes, and configures VLAN interfaces
+//config:	Creates, removes, and configures VLAN interfaces
 
-//applet:IF_VCONFIG(APPLET(vconfig, BB_DIR_SBIN, BB_SUID_DROP))
+//applet:IF_VCONFIG(APPLET_NOEXEC(vconfig, vconfig, BB_DIR_SBIN, BB_SUID_DROP, vconfig))
 
 //kbuild:lib-$(CONFIG_VCONFIG) += vconfig.o
 
@@ -33,6 +30,8 @@
 
 #include "libbb.h"
 #include <net/if.h>
+
+/* BB_AUDIT SUSv3 N/A */
 
 /* Stuff from linux/if_vlan.h, kernel version 2.4.23 */
 enum vlan_ioctl_cmds {
