@@ -132,7 +132,7 @@ int nf_conntrack_eventmask_report(unsigned int eventmask, struct nf_conn *ct,
 			.report = report
 		};
 		/* This is a resent of a destroy event? If so, skip missed */
-		unsigned long missed = e->portid ? 0 : e->missed;
+		u32 missed = e->portid ? 0 : e->missed;
 
 		if (!((eventmask | missed) & e->ctmask))
 			return 0;
@@ -161,7 +161,7 @@ void nf_ct_deliver_cached_events(struct nf_conn *ct)
 
 	events = xchg(&e->cache, 0);
 
-	if (!nf_ct_is_confirmed(ct) || nf_ct_is_dying(ct) || !events)
+	if (!nf_ct_is_confirmed(ct) || nf_ct_is_dying(ct))
 		return;
 
 	/* We make a copy of the missed event cache without taking
