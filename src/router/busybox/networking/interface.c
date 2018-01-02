@@ -30,7 +30,6 @@
  *          20001008 - Bernd Eckenfels, Patch from RH for setting mtu
  *			(default AF was wrong)
  */
-
 #include "libbb.h"
 #include "inet_common.h"
 #include <net/if.h>
@@ -223,7 +222,7 @@ static char* FAST_FUNC UNSPEC_print(unsigned char *ptr)
 	pos = buff;
 	for (i = 0; i < sizeof(struct sockaddr); i++) {
 		/* careful -- not every libc's sprintf returns # bytes written */
-		sprintf(pos, "%02X-", (*ptr++ & 0377));
+		sprintf(pos, "%02X-", *ptr++);
 		pos += 3;
 	}
 	/* Erase trailing "-".  Works as long as sizeof(struct sockaddr) != 0 */
@@ -704,9 +703,8 @@ static char* FAST_FUNC ether_print(unsigned char *ptr)
 {
 	char *buff;
 	buff = xasprintf("%02X:%02X:%02X:%02X:%02X:%02X",
-			 (ptr[0] & 0377), (ptr[1] & 0377), (ptr[2] & 0377),
-			 (ptr[3] & 0377), (ptr[4] & 0377), (ptr[5] & 0377)
-		);
+		ptr[0], ptr[1], ptr[2], ptr[3], ptr[4], ptr[5]
+	);
 	return auto_string(buff);
 }
 

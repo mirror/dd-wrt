@@ -4,10 +4,10 @@
  * This is free software, licensed under the GNU General Public License v2.
  */
 //config:config FLOCK
-//config:	bool "flock"
+//config:	bool "flock (6.1 kb)"
 //config:	default y
 //config:	help
-//config:	  Manage locks from shell scripts
+//config:	Manage locks from shell scripts
 
 //applet:IF_FLOCK(APPLET(flock, BB_DIR_USR_BIN, BB_SUID_DROP))
 
@@ -38,17 +38,15 @@ int flock_main(int argc UNUSED_PARAM, char **argv)
 	};
 
 #if ENABLE_LONG_OPTS
-	static const char getopt_longopts[] ALIGN1 =
+	static const char flock_longopts[] ALIGN1 =
 		"shared\0"      No_argument       "s"
 		"exclusive\0"   No_argument       "x"
 		"unlock\0"      No_argument       "u"
 		"nonblock\0"    No_argument       "n"
 		;
-	applet_long_options = getopt_longopts;
 #endif
-	opt_complementary = "-1";
 
-	opt = getopt32(argv, "+sxnu");
+	opt = getopt32long(argv, "^+" "sxnu" "\0" "-1", flock_longopts);
 	argv += optind;
 
 	if (argv[1]) {

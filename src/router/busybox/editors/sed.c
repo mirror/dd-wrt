@@ -12,7 +12,6 @@
  *
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
-
 /* Code overview.
  *
  * Files are laid out to avoid unnecessary function declarations.  So for
@@ -29,7 +28,6 @@
  *
  * sed_main() is where external code calls into this, with a command line.
  */
-
 /* Supported features and commands in this version of sed:
  *
  * - comments ('#')
@@ -55,21 +53,20 @@
  * http://pubs.opengroup.org/onlinepubs/9699919799/utilities/sed.html
  * http://sed.sourceforge.net/sedfaq3.html
  */
-
 //config:config SED
-//config:	bool "sed"
+//config:	bool "sed (12 kb)"
 //config:	default y
 //config:	help
-//config:	  sed is used to perform text transformations on a file
-//config:	  or input from a pipeline.
-
-//kbuild:lib-$(CONFIG_SED) += sed.o
+//config:	sed is used to perform text transformations on a file
+//config:	or input from a pipeline.
 
 //applet:IF_SED(APPLET(sed, BB_DIR_BIN, BB_SUID_DROP))
 
+//kbuild:lib-$(CONFIG_SED) += sed.o
+
 //usage:#define sed_trivial_usage
-//usage:       "[-inrE] [-f FILE]... [-e CMD]... [FILE]...\n"
-//usage:       "or: sed [-inrE] CMD [FILE]..."
+//usage:       "[-i[SFX]] [-nrE] [-f FILE]... [-e CMD]... [FILE]...\n"
+//usage:       "or: sed [-i[SFX]] [-nrE] CMD [FILE]..."
 //usage:#define sed_full_usage "\n\n"
 //usage:       "	-e CMD	Add CMD to sed commands to be executed"
 //usage:     "\n	-f FILE	Add FILE contents to sed commands to be executed"
@@ -350,10 +347,16 @@ static int get_address(const char *my_str, int *linenum, regex_t ** regex)
 		if (*my_str == '\\')
 			delimiter = *++pos;
 		next = index_of_next_unescaped_regexp_delim(delimiter, ++pos);
-		temp = copy_parsing_escapes(pos, next);
-		*regex = xzalloc(sizeof(regex_t));
-		xregcomp(*regex, temp, G.regex_type);
-		free(temp);
+		if (next != 0) {
+			temp = copy_parsing_escapes(pos, next);
+			G.previous_regex_ptr = *regex = xzalloc(sizeof(regex_t));
+			xregcomp(*regex, temp, G.regex_type);
+			free(temp);
+		} else {
+			*regex = G.previous_regex_ptr;
+			if (!G.previous_regex_ptr)
+				bb_error_msg_and_die("no previous regexp");
+		}
 		/* Move position to next character after last delimiter */
 		pos += (next+1);
 	}
@@ -1507,21 +1510,21 @@ int sed_main(int argc UNUSED_PARAM, char **argv)
 	/* do normal option parsing */
 	opt_e = opt_f = NULL;
 	opt_i = NULL;
-	opt_complementary = "nn"; /* count -n */
-
-	IF_LONG_OPTS(applet_long_options = sed_longopts);
-
 	/* -i must be first, to match OPT_in_place definition */
 	/* -E is a synonym of -r:
 	 * GNU sed 4.2.1 mentions it in neither --help
 	 * nor manpage, but does recognize it.
 	 */
-	opt = getopt32(argv, "i::rEne:*f:*", &opt_i, &opt_e, &opt_f,
-			    &G.be_quiet); /* counter for -n */
+	opt = getopt32long(argv, "^"
+			"i::rEne:*f:*"
+			"\0" "nn"/*count -n*/,
+			sed_longopts,
+			&opt_i, &opt_e, &opt_f,
+			&G.be_quiet); /* counter for -n */
 	//argc -= optind;
 	argv += optind;
 	if (opt & OPT_in_place) { // -i
-		atexit(cleanup_outname);
+		die_func = cleanup_outname;
 	}
 	if (opt & (2|4))
 		G.regex_type |= REG_EXTENDED; // -r or -E

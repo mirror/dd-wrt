@@ -25,19 +25,19 @@
  * bugs that need to be fixed
  *  - (unknown, please let me know when you find any)
  */
-
 //config:config DPKG
-//config:	bool "dpkg"
+//config:	bool "dpkg (44 kb)"
 //config:	default y
 //config:	select FEATURE_SEAMLESS_GZ
 //config:	help
-//config:	  dpkg is a medium-level tool to install, build, remove and manage
-//config:	  Debian packages.
+//config:	dpkg is a medium-level tool to install, build, remove and manage
+//config:	Debian packages.
 //config:
-//config:	  This implementation of dpkg has a number of limitations,
-//config:	  you should use the official dpkg if possible.
+//config:	This implementation of dpkg has a number of limitations,
+//config:	you should use the official dpkg if possible.
 
 //applet:IF_DPKG(APPLET(dpkg, BB_DIR_USR_BIN, BB_SUID_DROP))
+
 //kbuild:lib-$(CONFIG_DPKG) += dpkg.o
 
 //usage:#define dpkg_trivial_usage
@@ -1766,8 +1766,7 @@ int dpkg_main(int argc UNUSED_PARAM, char **argv)
 
 	INIT_G();
 
-	IF_LONG_OPTS(applet_long_options = dpkg_longopts);
-	opt = getopt32(argv, "CilPruF:", &str_f);
+	opt = getopt32long(argv, "CilPruF:", dpkg_longopts, &str_f);
 	argv += optind;
 	//if (opt & OPT_configure) ... // -C
 	if (opt & OPT_force) { // -F (--force in official dpkg)

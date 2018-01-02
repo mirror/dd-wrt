@@ -1,19 +1,20 @@
 /* vi: set sw=4 ts=4: */
-/* fold -- wrap each input line to fit in specified width.
-
-   Written by David MacKenzie, djm@gnu.ai.mit.edu.
-   Copyright (C) 91, 1995-2002 Free Software Foundation, Inc.
-
-   Modified for busybox based on coreutils v 5.0
-   Copyright (C) 2003 Glenn McGrath
-
-   Licensed under GPLv2 or later, see file LICENSE in this source tree.
-*/
+/*
+ * fold -- wrap each input line to fit in specified width.
+ *
+ * Written by David MacKenzie, djm@gnu.ai.mit.edu.
+ * Copyright (C) 91, 1995-2002 Free Software Foundation, Inc.
+ *
+ * Modified for busybox based on coreutils v 5.0
+ * Copyright (C) 2003 Glenn McGrath
+ *
+ * Licensed under GPLv2 or later, see file LICENSE in this source tree.
+ */
 //config:config FOLD
-//config:	bool "fold"
+//config:	bool "fold (4.6 kb)"
 //config:	default y
 //config:	help
-//config:	  Wrap text to fit a specific width.
+//config:	Wrap text to fit a specific width.
 
 //applet:IF_FOLD(APPLET_NOEXEC(fold, fold, BB_DIR_USR_BIN, BB_SUID_DROP, fold))
 

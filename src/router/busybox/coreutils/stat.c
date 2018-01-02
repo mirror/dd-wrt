@@ -13,19 +13,19 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config STAT
-//config:	bool "stat"
+//config:	bool "stat (10 kb)"
 //config:	default y
 //config:	help
-//config:	  display file or filesystem status.
+//config:	display file or filesystem status.
 //config:
 //config:config FEATURE_STAT_FORMAT
 //config:	bool "Enable custom formats (-c)"
 //config:	default y
 //config:	depends on STAT
 //config:	help
-//config:	  Without this, stat will not support the '-c format' option where
-//config:	  users can pass a custom format string for output. This adds about
-//config:	  7k to a nonstatic build on amd64.
+//config:	Without this, stat will not support the '-c format' option where
+//config:	users can pass a custom format string for output. This adds about
+//config:	7k to a nonstatic build on amd64.
 //config:
 //config:config FEATURE_STAT_FILESYSTEM
 //config:	bool "Enable display of filesystem status (-f)"
@@ -33,10 +33,10 @@
 //config:	depends on STAT
 //config:	select PLATFORM_LINUX # statfs()
 //config:	help
-//config:	  Without this, stat will not support the '-f' option to display
-//config:	  information about filesystem status.
+//config:	Without this, stat will not support the '-f' option to display
+//config:	information about filesystem status.
 
-//applet:IF_STAT(APPLET(stat, BB_DIR_BIN, BB_SUID_DROP))
+//applet:IF_STAT(APPLET_NOEXEC(stat, stat, BB_DIR_BIN, BB_SUID_DROP, stat))
 
 //kbuild:lib-$(CONFIG_STAT) += stat.o
 
@@ -759,14 +759,19 @@ int stat_main(int argc UNUSED_PARAM, char **argv)
 	IF_FEATURE_STAT_FORMAT(char *format = NULL;)
 	int i;
 	int ok;
-	unsigned opts;
 	statfunc_ptr statfunc = do_stat;
+#if ENABLE_FEATURE_STAT_FILESYSTEM || ENABLE_SELINUX
+	unsigned opts;
 
-	opt_complementary = "-1"; /* min one arg */
-	opts = getopt32(argv, "tL"
+	opts =
+#endif
+	getopt32(argv, "^"
+		"tL"
 		IF_FEATURE_STAT_FILESYSTEM("f")
 		IF_SELINUX("Z")
-		IF_FEATURE_STAT_FORMAT("c:", &format)
+		IF_FEATURE_STAT_FORMAT("c:")
+		"\0" "-1" /* min one arg */
+		IF_FEATURE_STAT_FORMAT(,&format)
 	);
 #if ENABLE_FEATURE_STAT_FILESYSTEM
 	if (opts & OPT_FILESYS) /* -f */

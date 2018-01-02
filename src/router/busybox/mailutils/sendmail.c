@@ -7,10 +7,10 @@
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 //config:config SENDMAIL
-//config:	bool "sendmail"
+//config:	bool "sendmail (14 kb)"
 //config:	default y
 //config:	help
-//config:	  Barebones sendmail.
+//config:	Barebones sendmail.
 
 //applet:IF_SENDMAIL(APPLET(sendmail, BB_DIR_USR_SBIN, BB_SUID_DROP))
 
@@ -150,7 +150,13 @@ static char *sane_address(char *str)
 	trim(str);
 	s = str;
 	while (*s) {
-		if (!isalnum(*s) && !strchr("+_-.@", *s)) {
+		/* Standard allows these chars in username without quoting:
+		 * /!#$%&'*+-=?^_`{|}~
+		 * and allows dot (.) with some restrictions.
+		 * I chose to only allow a saner subset.
+		 * I propose to expand it only on user's request.
+		 */
+		if (!isalnum(*s) && !strchr("=+_-.@", *s)) {
 			bb_error_msg("bad address '%s'", str);
 			/* returning "": */
 			str[0] = '\0';
@@ -166,9 +172,8 @@ static char *angle_address(char *str)
 {
 	char *s, *e;
 
-	trim(str);
-	e = last_char_is(str, '>');
-	if (e) {
+	e = trim(str);
+	if (e != str && e[-1] == '>') {
 		s = strrchr(str, '<');
 		if (s) {
 			*e = '\0';
@@ -190,8 +195,9 @@ static void rcptto(const char *s)
 // send to a list of comma separated addresses
 static void rcptto_list(const char *list)
 {
-	char *str = xstrdup(list);
-	char *s = str;
+	char *free_me = xstrdup(list);
+	char *str = free_me;
+	char *s = free_me;
 	char prev = 0;
 	int in_quote = 0;
 
@@ -209,7 +215,7 @@ static void rcptto_list(const char *list)
 	}
 	if (prev != ',')
 		rcptto(angle_address(str));
-	free(str);
+	free(free_me);
 }
 
 int sendmail_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
@@ -257,13 +263,17 @@ int sendmail_main(int argc UNUSED_PARAM, char **argv)
 	G.fp0 = xfdopen_for_read(3);
 
 	// parse options
-	// -v is a counter, -H and -S are mutually exclusive, -a is a list
-	opt_complementary = "vv:H--S:S--H";
 	// N.B. since -H and -S are mutually exclusive they do not interfere in opt_connect
 	// -a is for ssmtp (http://downloads.openwrt.org/people/nico/man/man8/ssmtp.8.html) compatibility,
 	// it is still under development.
-	opts = getopt32(argv, "tf:o:iw:+H:S:a:*:v", &opt_from, NULL,
-			&timeout, &opt_connect, &opt_connect, &list, &verbose);
+	opts = getopt32(argv, "^"
+			"tf:o:iw:+H:S:a:*:v"
+			"\0"
+			// -v is a counter, -H and -S are mutually exclusive, -a is a list
+			"vv:H--S:S--H",
+			&opt_from, NULL,
+			&timeout, &opt_connect, &opt_connect, &list, &verbose
+	);
 	//argc -= optind;
 	argv += optind;
 

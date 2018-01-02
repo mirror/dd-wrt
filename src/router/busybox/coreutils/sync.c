@@ -8,17 +8,17 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config SYNC
-//config:	bool "sync"
+//config:	bool "sync (769 bytes)"
 //config:	default y
 //config:	help
-//config:	  sync is used to flush filesystem buffers.
+//config:	sync is used to flush filesystem buffers.
 //config:config FEATURE_SYNC_FANCY
 //config:	bool "Enable -d and -f flags (requires syncfs(2) in libc)"
 //config:	default y
 //config:	depends on SYNC
 //config:	help
-//config:	  sync -d FILE... executes fdatasync() on each FILE.
-//config:	  sync -f FILE... executes syncfs() on each FILE.
+//config:	sync -d FILE... executes fdatasync() on each FILE.
+//config:	sync -f FILE... executes syncfs() on each FILE.
 
 //applet:IF_SYNC(APPLET_NOFORK(sync, sync, BB_DIR_BIN, BB_SUID_DROP, sync))
 
@@ -59,8 +59,7 @@ int sync_main(int argc UNUSED_PARAM, char **argv IF_NOT_DESKTOP(UNUSED_PARAM))
 		OPT_SYNCFS   = (1 << 1),
 	};
 
-	opt_complementary = "d--f:f--d";
-	opts = getopt32(argv, "df");
+	opts = getopt32(argv, "^" "df" "\0" "d--f:f--d");
 	argv += optind;
 
 	/* Handle the no-argument case. */

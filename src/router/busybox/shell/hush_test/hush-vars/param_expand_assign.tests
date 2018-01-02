@@ -1,22 +1,23 @@
-# first try some invalid patterns (do in subshell due to parsing error)
-"$THIS_SH" -c 'echo ${=}'
-"$THIS_SH" -c 'echo ${:=}'
+# First try some invalid patterns. Do in subshell due to parsing error.
+# (set argv0 to "SHELL" to avoid "/path/to/shell: blah" in error messages)
+"$THIS_SH" -c 'echo ${=}' SHELL
+"$THIS_SH" -c 'echo ${:=}' SHELL
 
 # now some funky ones
-"$THIS_SH" -c 'echo ${#=}'
-"$THIS_SH" -c 'echo ${#:=}'
+"$THIS_SH" -c 'echo ${#=}' SHELL
+"$THIS_SH" -c 'echo ${#:=}' SHELL
 
 # should error out
-"$THIS_SH" -c 'set --; echo _${1=}'
-"$THIS_SH" -c 'set --; echo _${1:=}'
-"$THIS_SH" -c 'set --; echo _${1=word}'
-"$THIS_SH" -c 'set --; echo _${1:=word}'
+"$THIS_SH" -c 'set --; echo _${1=}' SHELL
+"$THIS_SH" -c 'set --; echo _${1:=}' SHELL
+"$THIS_SH" -c 'set --; echo _${1=word}' SHELL
+"$THIS_SH" -c 'set --; echo _${1:=word}' SHELL
 
 # should not error
-"$THIS_SH" -c 'set aa; echo _${1=}'
-"$THIS_SH" -c 'set aa; echo _${1:=}'
-"$THIS_SH" -c 'set aa; echo _${1=word}'
-"$THIS_SH" -c 'set aa; echo _${1:=word}'
+"$THIS_SH" -c 'set aa; echo _${1=}' SHELL
+"$THIS_SH" -c 'set aa; echo _${1:=}' SHELL
+"$THIS_SH" -c 'set aa; echo _${1=word}' SHELL
+"$THIS_SH" -c 'set aa; echo _${1:=word}' SHELL
 
 # should work fine
 unset f; echo _$f

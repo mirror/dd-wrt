@@ -18,22 +18,22 @@
  * Implement -P and -B; better coreutils compat; cleanup
  */
 //config:config DF
-//config:	bool "df"
+//config:	bool "df (7.5 kb)"
 //config:	default y
 //config:	help
-//config:	  df reports the amount of disk space used and available
-//config:	  on filesystems.
+//config:	df reports the amount of disk space used and available
+//config:	on filesystems.
 //config:
 //config:config FEATURE_DF_FANCY
 //config:	bool "Enable -a, -i, -B"
 //config:	default y
 //config:	depends on DF
 //config:	help
-//config:	  -a Show all filesystems
-//config:	  -i Inodes
-//config:	  -B <SIZE> Blocksize
+//config:	-a Show all filesystems
+//config:	-i Inodes
+//config:	-B <SIZE> Blocksize
 
-//applet:IF_DF(APPLET(df, BB_DIR_BIN, BB_SUID_DROP))
+//applet:IF_DF(APPLET_NOEXEC(df, df, BB_DIR_BIN, BB_SUID_DROP, df))
 
 //kbuild:lib-$(CONFIG_DF) += df.o
 
@@ -77,7 +77,7 @@
 //usage:       "/dev/sda3             17381728  17107080    274648      98% /\n"
 
 #include <mntent.h>
-#include <sys/vfs.h>
+#include <sys/statvfs.h>
 #include "libbb.h"
 #include "unicode.h"
 
@@ -98,7 +98,7 @@ int df_main(int argc UNUSED_PARAM, char **argv)
 	unsigned opt;
 	FILE *mount_table;
 	struct mntent *mount_entry;
-	struct statfs s;
+	struct statvfs s;
 
 	enum {
 		OPT_KILO  = (1 << 0),
@@ -115,15 +115,18 @@ int df_main(int argc UNUSED_PARAM, char **argv)
 
 	init_unicode();
 
-#if ENABLE_FEATURE_HUMAN_READABLE && ENABLE_FEATURE_DF_FANCY
-	opt_complementary = "k-mB:m-Bk:B-km";
-#elif ENABLE_FEATURE_HUMAN_READABLE
-	opt_complementary = "k-m:m-k";
-#endif
-	opt = getopt32(argv, "kPT"
+	opt = getopt32(argv, "^"
+			"kPT"
 			IF_FEATURE_DF_FANCY("aiB:")
 			IF_FEATURE_HUMAN_READABLE("hm")
-			IF_FEATURE_DF_FANCY(, &chp));
+			"\0"
+#if ENABLE_FEATURE_HUMAN_READABLE && ENABLE_FEATURE_DF_FANCY
+			"k-mB:m-Bk:B-km"
+#elif ENABLE_FEATURE_HUMAN_READABLE
+			"k-m:m-k"
+#endif
+			IF_FEATURE_DF_FANCY(, &chp)
+	);
 	if (opt & OPT_MEGA)
 		df_disp_hr = 1024*1024;
 
@@ -208,7 +211,7 @@ int df_main(int argc UNUSED_PARAM, char **argv)
 		mount_point = mount_entry->mnt_dir;
 		fs_type = mount_entry->mnt_type;
 
-		if (statfs(mount_point, &s) != 0) {
+		if (statvfs(mount_point, &s) != 0) {
 			bb_simple_perror_msg(mount_point);
 			goto set_error;
 		}

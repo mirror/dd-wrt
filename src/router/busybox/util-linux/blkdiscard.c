@@ -6,13 +6,15 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config BLKDISCARD
-//config:	bool "blkdiscard"
+//config:	bool "blkdiscard (5.3 kb)"
 //config:	default y
+//config:	select PLATFORM_LINUX
 //config:	help
-//config:	  blkdiscard discards sectors on a given device.
+//config:	blkdiscard discards sectors on a given device.
+
+//applet:IF_BLKDISCARD(APPLET_NOEXEC(blkdiscard, blkdiscard, BB_DIR_USR_BIN, BB_SUID_DROP, blkdiscard))
 
 //kbuild:lib-$(CONFIG_BLKDISCARD) += blkdiscard.o
-//applet:IF_BLKDISCARD(APPLET(blkdiscard, BB_DIR_USR_BIN, BB_SUID_DROP))
 
 //usage:#define blkdiscard_trivial_usage
 //usage:       "[-o OFS] [-l LEN] [-s] DEVICE"
@@ -28,6 +30,13 @@
 #include "libbb.h"
 #include <linux/fs.h>
 
+#ifndef BLKDISCARD
+#define BLKDISCARD 0x1277
+#endif
+#ifndef BLKSECDISCARD
+#define BLKSECDISCARD 0x127d
+#endif
+
 int blkdiscard_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int blkdiscard_main(int argc UNUSED_PARAM, char **argv)
 {
@@ -37,7 +46,6 @@ int blkdiscard_main(int argc UNUSED_PARAM, char **argv)
 	uint64_t offset; /* Leaving these two variables out does not  */
 	uint64_t length; /* shrink code size and hampers readability. */
 	uint64_t range[2];
-//	struct stat st;
 	int fd;
 
 	enum {
@@ -46,8 +54,7 @@ int blkdiscard_main(int argc UNUSED_PARAM, char **argv)
 		OPT_SECURE = (1 << 2),
 	};
 
-	opt_complementary = "=1";
-	opts = getopt32(argv, "o:l:s", &offset_str, &length_str);
+	opts = getopt32(argv, "^" "o:l:s" "\0" "=1", &offset_str, &length_str);
 	argv += optind;
 
 	fd = xopen(argv[0], O_RDWR|O_EXCL);

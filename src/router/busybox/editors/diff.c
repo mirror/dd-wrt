@@ -12,7 +12,6 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
-
 /*
  * The following code uses an algorithm due to Harold Stone,
  * which finds a pair of longest identical subsequences in
@@ -75,14 +74,13 @@
  * 3*(number of k-candidates installed), typically about
  * 6n words for files of length n.
  */
-
 //config:config DIFF
-//config:	bool "diff"
+//config:	bool "diff (13 kb)"
 //config:	default y
 //config:	help
-//config:	  diff compares two files or directories and outputs the
-//config:	  differences between them in a form that can be given to
-//config:	  the patch command.
+//config:	diff compares two files or directories and outputs the
+//config:	differences between them in a form that can be given to
+//config:	the patch command.
 //config:
 //config:config FEATURE_DIFF_LONG_OPTIONS
 //config:	bool "Enable long options"
@@ -94,12 +92,12 @@
 //config:	default y
 //config:	depends on DIFF
 //config:	help
-//config:	  This option enables support for directory and subdirectory
-//config:	  comparison.
-
-//kbuild:lib-$(CONFIG_DIFF) += diff.o
+//config:	This option enables support for directory and subdirectory
+//config:	comparison.
 
 //applet:IF_DIFF(APPLET(diff, BB_DIR_USR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_DIFF) += diff.o
 
 //usage:#define diff_trivial_usage
 //usage:       "[-abBdiNqrTstw] [-L LABEL] [-S FILE] [-U LINES] FILE1 FILE2"
@@ -967,6 +965,11 @@ static const char diff_longopts[] ALIGN1 =
 	"starting-file\0"            Required_argument "S"
 	"minimal\0"                  No_argument       "d"
 	;
+# define GETOPT32 getopt32long
+# define LONGOPTS ,diff_longopts
+#else
+# define GETOPT32 getopt32
+# define LONGOPTS
 #endif
 
 int diff_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
@@ -979,11 +982,8 @@ int diff_main(int argc UNUSED_PARAM, char **argv)
 	INIT_G();
 
 	/* exactly 2 params; collect multiple -L <label>; -U N */
-	opt_complementary = "=2";
-#if ENABLE_FEATURE_DIFF_LONG_OPTIONS
-	applet_long_options = diff_longopts;
-#endif
-	getopt32(argv, "abdiL:*NqrsS:tTU:+wupBE",
+	GETOPT32(argv, "^" "abdiL:*NqrsS:tTU:+wupBE" "\0" "=2"
+			LONGOPTS,
 			&L_arg, &s_start, &opt_U_context);
 	argv += optind;
 	while (L_arg)

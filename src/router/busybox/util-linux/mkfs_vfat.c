@@ -8,18 +8,18 @@
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 //config:config MKDOSFS
-//config:	bool "mkdosfs"
+//config:	bool "mkdosfs (6.8 kb)"
 //config:	default y
 //config:	select PLATFORM_LINUX
 //config:	help
-//config:	  Utility to create FAT32 filesystems.
+//config:	Utility to create FAT32 filesystems.
 //config:
 //config:config MKFS_VFAT
-//config:	bool "mkfs.vfat"
+//config:	bool "mkfs.vfat (6.8 kb)"
 //config:	default y
 //config:	select PLATFORM_LINUX
 //config:	help
-//config:	  Alias to "mkdosfs".
+//config:	Alias to "mkdosfs".
 
 //                    APPLET_ODDNAME:name       main       location     suid_type     help
 //applet:IF_MKDOSFS(  APPLET_ODDNAME(mkdosfs,   mkfs_vfat, BB_DIR_SBIN, BB_SUID_DROP, mkfs_vfat))
@@ -269,8 +269,9 @@ int mkfs_vfat_main(int argc UNUSED_PARAM, char **argv)
 		OPT_v = 1 << 16, // verbose
 	};
 
-	opt_complementary = "-1";//:b+:f+:F+:h+:r+:R+:s+:S+:vv:c--l:l--c";
-	opts = getopt32(argv, "Ab:cCf:F:h:Ii:l:m:n:r:R:s:S:v",
+	opts = getopt32(argv, "^"
+		"Ab:cCf:F:h:Ii:l:m:n:r:R:s:S:v"
+		"\0" "-1", //:b+:f+:F+:h+:r+:R+:s+:S+:vv:c--l:l--c
 		NULL, NULL, NULL, NULL, NULL,
 		NULL, NULL, &volume_label, NULL, NULL, NULL, NULL);
 	argv += optind;

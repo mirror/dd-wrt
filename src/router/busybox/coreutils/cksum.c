@@ -7,12 +7,13 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config CKSUM
-//config:	bool "cksum"
+//config:	bool "cksum (4.2 kb)"
 //config:	default y
 //config:	help
-//config:	  cksum is used to calculate the CRC32 checksum of a file.
+//config:	cksum is used to calculate the CRC32 checksum of a file.
 
 //applet:IF_CKSUM(APPLET_NOEXEC(cksum, cksum, BB_DIR_USR_BIN, BB_SUID_DROP, cksum))
+/* bb_common_bufsiz1 usage here is safe wrt NOEXEC: not expecting it to be zeroed. */
 
 //kbuild:lib-$(CONFIG_CKSUM) += cksum.o
 

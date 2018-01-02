@@ -22,7 +22,7 @@
 //config:	bool "echo (basic SuSv3 version taking no options)"
 //config:	default y
 //config:	help
-//config:	  echo is used to print a specified string to stdout.
+//config:	echo is used to print a specified string to stdout.
 //config:
 //config:# this entry also appears in shell/Config.in, next to the echo builtin
 //config:config FEATURE_FANCY_ECHO
@@ -218,7 +218,7 @@ int echo_main(int argc UNUSED_PARAM, char **argv)
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE

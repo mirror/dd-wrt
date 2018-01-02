@@ -8,37 +8,36 @@
  *
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
-
 //config:config UDHCPC6
-//config:	bool "udhcpc6 (DHCPv6 client, EXPERIMENTAL)"
+//config:	bool "udhcpc6"
 //config:	default n  # not yet ready
 //config:	depends on FEATURE_IPV6
 //config:	help
-//config:	  udhcpc6 is a DHCPv6 client
+//config:	udhcpc6 is a DHCPv6 client
 //config:
 //config:config FEATURE_UDHCPC6_RFC3646
 //config:	bool "Support RFC 3646 (DNS server and search list)"
 //config:	default y
 //config:	depends on UDHCPC6
 //config:	help
-//config:	  List of DNS servers and domain search list can be requested with
-//config:	  "-O dns" and "-O search". If server gives these values,
-//config:	  they will be set in environment variables "dns" and "search".
+//config:	List of DNS servers and domain search list can be requested with
+//config:	"-O dns" and "-O search". If server gives these values,
+//config:	they will be set in environment variables "dns" and "search".
 //config:
 //config:config FEATURE_UDHCPC6_RFC4704
 //config:	bool "Support RFC 4704 (Client FQDN)"
 //config:	default y
 //config:	depends on UDHCPC6
 //config:	help
-//config:	  You can request FQDN to be given by server using "-O fqdn".
+//config:	You can request FQDN to be given by server using "-O fqdn".
 //config:
 //config:config FEATURE_UDHCPC6_RFC4833
 //config:	bool "Support RFC 4833 (Timezones)"
 //config:	default y
 //config:	depends on UDHCPC6
 //config:	help
-//config:	  You can request POSIX timezone with "-O tz" and timezone name
-//config:	  with "-O timezone".
+//config:	You can request POSIX timezone with "-O tz" and timezone name
+//config:	with "-O timezone".
 
 //applet:IF_UDHCPC6(APPLET(udhcpc6, BB_DIR_USR_BIN, BB_SUID_DROP))
 
@@ -703,13 +702,15 @@ static NOINLINE int send_d6_renew(uint32_t xid, struct in6_addr *server_ipv6, st
 	opt_ptr = add_d6_client_options(opt_ptr);
 
 	bb_error_msg("sending %s", "renew");
-	if (server_ipv6)
+	if (server_ipv6) {
 		return d6_send_kernel_packet(
 			&packet, (opt_ptr - (uint8_t*) &packet),
 			our_cur_ipv6, CLIENT_PORT6,
 			server_ipv6, SERVER_PORT6,
 			client_config.ifindex
+			/* TODO? send_flags: MSG_DONTROUTE (see IPv4 code for reason why) */
 		);
+	}
 	return d6_mcast_from_client_config_ifindex(&packet, opt_ptr);
 }
 
@@ -877,14 +878,19 @@ static int d6_raw_socket(int ifindex)
 	};
 #endif
 
-	log1("opening raw socket on ifindex %d", ifindex); //log2?
+	log2("opening raw socket on ifindex %d", ifindex);
 
 	fd = xsocket(PF_PACKET, SOCK_DGRAM, htons(ETH_P_IPV6));
-	log1("got raw socket fd %d", fd); //log2?
+	log2("got raw socket fd %d", fd);
 
+	memset(&sock, 0, sizeof(sock)); /* let's be deterministic */
 	sock.sll_family = AF_PACKET;
 	sock.sll_protocol = htons(ETH_P_IPV6);
 	sock.sll_ifindex = ifindex;
+	/*sock.sll_hatype = ARPHRD_???;*/
+	/*sock.sll_pkttype = PACKET_???;*/
+	/*sock.sll_halen = ???;*/
+	/*sock.sll_addr[8] = ???;*/
 	xbind(fd, (struct sockaddr *) &sock, sizeof(sock));
 
 #if 0
@@ -1101,14 +1107,15 @@ int udhcpc6_main(int argc UNUSED_PARAM, char **argv)
 	client_config.script = CONFIG_UDHCPC_DEFAULT_SCRIPT;
 
 	/* Parse command line */
-	/* O,x: list; -T,-t,-A take numeric param */
-	IF_UDHCP_VERBOSE(opt_complementary = "vv";)
-	IF_LONG_OPTS(applet_long_options = udhcpc6_longopts;)
-	opt = getopt32(argv, "i:np:qRr:s:T:+t:+SA:+O:*ox:*f"
+	opt = getopt32long(argv, "^"
+		/* O,x: list; -T,-t,-A take numeric param */
+		"i:np:qRr:s:T:+t:+SA:+O:*ox:*f"
 		USE_FOR_MMU("b")
 		///IF_FEATURE_UDHCPC_ARPING("a")
 		IF_FEATURE_UDHCP_PORT("P:")
 		"v"
+		"\0" IF_UDHCP_VERBOSE("vv") /* -v is a counter */
+		, udhcpc6_longopts
 		, &client_config.interface, &client_config.pidfile, &str_r /* i,p */
 		, &client_config.script /* s */
 		, &discover_timeout, &discover_retries, &tryagain_timeout /* T,t,A */
@@ -1238,7 +1245,7 @@ int udhcpc6_main(int argc UNUSED_PARAM, char **argv)
 		retval = 0;
 		/* If we already timed out, fall through with retval = 0, else... */
 		if (tv > 0) {
-			log1("waiting on select %u seconds", tv);
+			log1("waiting %u seconds", tv);
 			timestamp_before_wait = (unsigned)monotonic_sec();
 			retval = poll(pfds, 2, tv < INT_MAX/1000 ? tv * 1000 : INT_MAX);
 			if (retval < 0) {
@@ -1248,7 +1255,7 @@ int udhcpc6_main(int argc UNUSED_PARAM, char **argv)
 					continue;
 				}
 				/* Else: an error occured, panic! */
-				bb_perror_msg_and_die("select");
+				bb_perror_msg_and_die("poll");
 			}
 		}
 
@@ -1425,7 +1432,7 @@ int udhcpc6_main(int argc UNUSED_PARAM, char **argv)
 				len = d6_recv_raw_packet(&srv6_buf, &packet, sockfd);
 			if (len == -1) {
 				/* Error is severe, reopen socket */
-				bb_error_msg("read error: %s, reopening socket", strerror(errno));
+				bb_error_msg("read error: "STRERROR_FMT", reopening socket" STRERROR_ERRNO);
 				sleep(discover_timeout); /* 3 seconds by default */
 				change_listen_mode(listen_mode); /* just close and reopen */
 			}

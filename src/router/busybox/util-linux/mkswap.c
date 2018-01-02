@@ -1,29 +1,30 @@
 /* vi: set sw=4 ts=4: */
-/* mkswap.c - format swap device (Linux v1 only)
+/*
+ * mkswap.c - format swap device (Linux v1 only)
  *
  * Copyright 2006 Rob Landley <rob@landley.net>
  *
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 //config:config MKSWAP
-//config:	bool "mkswap"
+//config:	bool "mkswap (5.8 kb)"
 //config:	default y
 //config:	help
-//config:	  The mkswap utility is used to configure a file or disk partition as
-//config:	  Linux swap space. This allows Linux to use the entire file or
-//config:	  partition as if it were additional RAM, which can greatly increase
-//config:	  the capability of low-memory machines. This additional memory is
-//config:	  much slower than real RAM, but can be very helpful at preventing your
-//config:	  applications being killed by the Linux out of memory (OOM) killer.
-//config:	  Once you have created swap space using 'mkswap' you need to enable
-//config:	  the swap space using the 'swapon' utility.
+//config:	The mkswap utility is used to configure a file or disk partition as
+//config:	Linux swap space. This allows Linux to use the entire file or
+//config:	partition as if it were additional RAM, which can greatly increase
+//config:	the capability of low-memory machines. This additional memory is
+//config:	much slower than real RAM, but can be very helpful at preventing your
+//config:	applications being killed by the Linux out of memory (OOM) killer.
+//config:	Once you have created swap space using 'mkswap' you need to enable
+//config:	the swap space using the 'swapon' utility.
 //config:
 //config:config FEATURE_MKSWAP_UUID
 //config:	bool "UUID support"
 //config:	default y
 //config:	depends on MKSWAP
 //config:	help
-//config:	  Generate swap spaces with universally unique identifiers.
+//config:	Generate swap spaces with universally unique identifiers.
 
 //applet:IF_MKSWAP(APPLET(mkswap, BB_DIR_SBIN, BB_SUID_DROP))
 
@@ -119,9 +120,8 @@ int mkswap_main(int argc UNUSED_PARAM, char **argv)
 
 	INIT_G();
 
-	opt_complementary = "-1"; /* at least one param */
 	/* TODO: -p PAGESZ, -U UUID */
-	getopt32(argv, "L:", &label);
+	getopt32(argv, "^" "L:" "\0" "-1"/*at least one arg*/, &label);
 	argv += optind;
 
 	fd = xopen(argv[0], O_WRONLY);

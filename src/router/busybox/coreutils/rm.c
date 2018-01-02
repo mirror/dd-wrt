@@ -11,10 +11,10 @@
  * Size reduction.
  */
 //config:config RM
-//config:	bool "rm"
+//config:	bool "rm (4.9 kb)"
 //config:	default y
 //config:	help
-//config:	  rm is used to remove files or directories.
+//config:	rm is used to remove files or directories.
 
 //applet:IF_RM(APPLET_NOEXEC(rm, rm, BB_DIR_BIN, BB_SUID_DROP, rm))
 /* was NOFORK, but then "rm -i FILE" can't be ^C'ed if run by hush */
@@ -46,8 +46,7 @@ int rm_main(int argc UNUSED_PARAM, char **argv)
 	int flags = 0;
 	unsigned opt;
 
-	opt_complementary = "f-i:i-f";
-	opt = getopt32(argv, "fiRrv");
+	opt = getopt32(argv, "^" "fiRrv" "\0" "f-i:i-f");
 	argv += optind;
 	if (opt & 1)
 		flags |= FILEUTILS_FORCE;

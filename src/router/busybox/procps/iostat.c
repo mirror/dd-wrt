@@ -6,12 +6,11 @@
  *
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
-
 //config:config IOSTAT
-//config:	bool "iostat"
+//config:	bool "iostat (7.4 kb)"
 //config:	default y
 //config:	help
-//config:	  Report CPU and I/O statistics
+//config:	Report CPU and I/O statistics
 
 //applet:IF_IOSTAT(APPLET(iostat, BB_DIR_BIN, BB_SUID_DROP))
 
@@ -418,8 +417,7 @@ int iostat_main(int argc UNUSED_PARAM, char **argv)
 
 	/* Parse and process arguments */
 	/* -k and -m are mutually exclusive */
-	opt_complementary = "k--m:m--k";
-	opt = getopt32(argv, "cdtzkm");
+	opt = getopt32(argv, "^" "cdtzkm" "\0" "k--m:m--k");
 	if (!(opt & (OPT_c + OPT_d)))
 		/* Default is -cd */
 		opt |= OPT_c + OPT_d;

@@ -18,33 +18,32 @@
  * <jam@ltsp.org>
  * Modified 2004/02/11 to add ability to pass the USER variable to remote host
  * by Fernando Silveira <swrh@gmx.net>
- *
  */
 //config:config TELNET
-//config:	bool "telnet"
+//config:	bool "telnet (8.7 kb)"
 //config:	default y
 //config:	help
-//config:	  Telnet is an interface to the TELNET protocol, but is also commonly
-//config:	  used to test other simple protocols.
+//config:	Telnet is an interface to the TELNET protocol, but is also commonly
+//config:	used to test other simple protocols.
 //config:
 //config:config FEATURE_TELNET_TTYPE
 //config:	bool "Pass TERM type to remote host"
 //config:	default y
 //config:	depends on TELNET
 //config:	help
-//config:	  Setting this option will forward the TERM environment variable to the
-//config:	  remote host you are connecting to. This is useful to make sure that
-//config:	  things like ANSI colors and other control sequences behave.
+//config:	Setting this option will forward the TERM environment variable to the
+//config:	remote host you are connecting to. This is useful to make sure that
+//config:	things like ANSI colors and other control sequences behave.
 //config:
 //config:config FEATURE_TELNET_AUTOLOGIN
 //config:	bool "Pass USER type to remote host"
 //config:	default y
 //config:	depends on TELNET
 //config:	help
-//config:	  Setting this option will forward the USER environment variable to the
-//config:	  remote host you are connecting to. This is useful when you need to
-//config:	  log into a machine without telling the username (autologin). This
-//config:	  option enables `-a' and `-l USER' arguments.
+//config:	Setting this option will forward the USER environment variable to the
+//config:	remote host you are connecting to. This is useful when you need to
+//config:	log into a machine without telling the username (autologin). This
+//config:	option enables '-a' and '-l USER' options.
 //config:
 //config:config FEATURE_TELNET_WIDTH
 //config:	bool "Enable window size autodetection"
@@ -643,8 +642,10 @@ int telnet_main(int argc UNUSED_PARAM, char **argv)
 	}
 
 #if ENABLE_FEATURE_TELNET_AUTOLOGIN
-	if (1 & getopt32(argv, "al:", &G.autologin))
+	if (1 == getopt32(argv, "al:", &G.autologin)) {
+		/* Only -a without -l USER picks $USER from envvar */
 		G.autologin = getenv("USER");
+	}
 	argv += optind;
 #else
 	argv++;

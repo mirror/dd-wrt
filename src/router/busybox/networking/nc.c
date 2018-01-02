@@ -1,5 +1,6 @@
 /* vi: set sw=4 ts=4: */
-/* nc: mini-netcat - built from the ground up for LRP
+/*
+ * nc: mini-netcat - built from the ground up for LRP
  *
  * Copyright (C) 1998, 1999  Charles P. Wright
  * Copyright (C) 1998  Dave Cinege
@@ -7,41 +8,50 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config NC
-//config:	bool "nc"
+//config:	bool "nc (11 kb)"
 //config:	default y
 //config:	help
-//config:	  A simple Unix utility which reads and writes data across network
-//config:	  connections.
+//config:	A simple Unix utility which reads and writes data across network
+//config:	connections.
+//config:
+//config:config NETCAT
+//config:	bool "netcat (11 kb)"
+//config:	default n
+//config:	help
+//config:	Alias to nc.
 //config:
 //config:config NC_SERVER
 //config:	bool "Netcat server options (-l)"
 //config:	default y
-//config:	depends on NC
+//config:	depends on NC || NETCAT
 //config:	help
-//config:	  Allow netcat to act as a server.
+//config:	Allow netcat to act as a server.
 //config:
 //config:config NC_EXTRA
 //config:	bool "Netcat extensions (-eiw and -f FILE)"
 //config:	default y
-//config:	depends on NC
+//config:	depends on NC || NETCAT
 //config:	help
-//config:	  Add -e (support for executing the rest of the command line after
-//config:	  making or receiving a successful connection), -i (delay interval for
-//config:	  lines sent), -w (timeout for initial connection).
+//config:	Add -e (support for executing the rest of the command line after
+//config:	making or receiving a successful connection), -i (delay interval for
+//config:	lines sent), -w (timeout for initial connection).
 //config:
 //config:config NC_110_COMPAT
 //config:	bool "Netcat 1.10 compatibility (+2.5k)"
-//config:	default n  # off specially for Rob
-//config:	depends on NC
+//config:	default y
+//config:	depends on NC || NETCAT
 //config:	help
-//config:	  This option makes nc closely follow original nc-1.10.
-//config:	  The code is about 2.5k bigger. It enables
-//config:	  -s ADDR, -n, -u, -v, -o FILE, -z options, but loses
-//config:	  busybox-specific extensions: -f FILE.
+//config:	This option makes nc closely follow original nc-1.10.
+//config:	The code is about 2.5k bigger. It enables
+//config:	-s ADDR, -n, -u, -v, -o FILE, -z options, but loses
+//config:	busybox-specific extensions: -f FILE.
 
 //applet:IF_NC(APPLET(nc, BB_DIR_USR_BIN, BB_SUID_DROP))
+//                 APPLET_ODDNAME:name    main location        suid_type     help
+//applet:IF_NETCAT(APPLET_ODDNAME(netcat, nc,  BB_DIR_USR_BIN, BB_SUID_DROP, nc))
 
 //kbuild:lib-$(CONFIG_NC) += nc.o
+//kbuild:lib-$(CONFIG_NETCAT) += nc.o
 
 #include "libbb.h"
 #include "common_bufsiz.h"

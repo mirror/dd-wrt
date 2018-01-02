@@ -4,12 +4,12 @@
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 //config:config UEVENT
-//config:	bool "uevent"
+//config:	bool "uevent (3.2 kb)"
 //config:	default y
 //config:	select PLATFORM_LINUX
 //config:	help
-//config:	  uevent is a netlink listener for kernel uevent notifications
-//config:	  sent via netlink. It is usually used for dynamic device creation.
+//config:	uevent is a netlink listener for kernel uevent notifications
+//config:	sent via netlink. It is usually used for dynamic device creation.
 
 //applet:IF_UEVENT(APPLET(uevent, BB_DIR_SBIN, BB_SUID_DROP))
 
@@ -32,7 +32,10 @@
 #define env ((char **)bb_common_bufsiz1)
 #define INIT_G() do { setup_common_bufsiz(); } while (0)
 enum {
-	MAX_ENV = COMMON_BUFSIZE / sizeof(env[0]) - 1,
+	MAX_ENV = COMMON_BUFSIZE / sizeof(char*) - 1,
+	/* sizeof(env[0]) instead of sizeof(char*)
+	 * makes gcc-6.3.0 emit "strict-aliasing" warning.
+	 */
 };
 
 #ifndef SO_RCVBUFFORCE

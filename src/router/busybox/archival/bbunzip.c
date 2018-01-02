@@ -4,9 +4,6 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
-#include "libbb.h"
-#include "bb_archive.h"
-
 //kbuild:lib-$(CONFIG_ZCAT) += bbunzip.o
 //kbuild:lib-$(CONFIG_GUNZIP) += bbunzip.o
 //kbuild:lib-$(CONFIG_BZCAT) += bbunzip.o
@@ -20,6 +17,9 @@
 //kbuild:lib-$(CONFIG_BZIP2) += bbunzip.o
 /* gzip_main() too: */
 //kbuild:lib-$(CONFIG_GZIP) += bbunzip.o
+
+#include "libbb.h"
+#include "bb_archive.h"
 
 /* Note: must be kept in sync with archival/lzop.c */
 enum {
@@ -237,11 +237,11 @@ char* FAST_FUNC make_new_name_generic(char *filename, const char *expected_ext)
 //usage:     "\n	-f	Overwrite"
 
 //config:config UNCOMPRESS
-//config:	bool "uncompress"
+//config:	bool "uncompress (7.1 kb)"
 //config:	default n  # ancient
 //config:	help
-//config:	  uncompress is used to decompress archives created by compress.
-//config:	  Not much used anymore, replaced by gzip/gunzip.
+//config:	uncompress is used to decompress archives created by compress.
+//config:	Not much used anymore, replaced by gzip/gunzip.
 
 //applet:IF_UNCOMPRESS(APPLET(uncompress, BB_DIR_BIN, BB_SUID_DROP))
 //kbuild:lib-$(CONFIG_UNCOMPRESS) += bbunzip.o
@@ -312,20 +312,20 @@ int uncompress_main(int argc UNUSED_PARAM, char **argv)
 //usage:       "Decompress to stdout"
 
 //config:config GUNZIP
-//config:	bool "gunzip"
+//config:	bool "gunzip (12 kb)"
 //config:	default y
 //config:	select FEATURE_GZIP_DECOMPRESS
 //config:	help
-//config:	  gunzip is used to decompress archives created by gzip.
-//config:	  You can use the `-t' option to test the integrity of
-//config:	  an archive, without decompressing it.
+//config:	gunzip is used to decompress archives created by gzip.
+//config:	You can use the '-t' option to test the integrity of
+//config:	an archive, without decompressing it.
 //config:
 //config:config ZCAT
-//config:	bool "zcat"
+//config:	bool "zcat (25 kb)"
 //config:	default y
 //config:	select FEATURE_GZIP_DECOMPRESS
 //config:	help
-//config:	  Alias to "gunzip -c".
+//config:	Alias to "gunzip -c".
 //config:
 //config:config FEATURE_GUNZIP_LONG_OPTIONS
 //config:	bool "Enable long options"
@@ -389,16 +389,17 @@ int gunzip_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int gunzip_main(int argc UNUSED_PARAM, char **argv)
 {
 #if ENABLE_FEATURE_GUNZIP_LONG_OPTIONS
-	applet_long_options = gunzip_longopts;
-#endif
+	getopt32long(argv, "cfkvqdtn", gunzip_longopts);
+#else
 	getopt32(argv, "cfkvqdtn");
+#endif
 	argv += optind;
 
 	/* If called as zcat...
 	 * Normally, "zcat" is just "gunzip -c".
 	 * But if seamless magic is enabled, then we are much more clever.
 	 */
-	if (ENABLE_ZCAT && applet_name[1] == 'c')
+	if (ENABLE_ZCAT && (!ENABLE_GUNZIP || applet_name[1] == 'c'))
 		option_mask32 |= OPT_STDOUT | SEAMLESS_MAGIC;
 
 	return bbunpack(argv, unpack_gz_stream, make_new_name_gunzip, /*unused:*/ NULL);
@@ -425,25 +426,25 @@ int gunzip_main(int argc UNUSED_PARAM, char **argv)
 //usage:       "Decompress to stdout"
 
 //config:config BUNZIP2
-//config:	bool "bunzip2"
+//config:	bool "bunzip2 (8.8 kb)"
 //config:	default y
 //config:	select FEATURE_BZIP2_DECOMPRESS
 //config:	help
-//config:	  bunzip2 is a compression utility using the Burrows-Wheeler block
-//config:	  sorting text compression algorithm, and Huffman coding. Compression
-//config:	  is generally considerably better than that achieved by more
-//config:	  conventional LZ77/LZ78-based compressors, and approaches the
-//config:	  performance of the PPM family of statistical compressors.
+//config:	bunzip2 is a compression utility using the Burrows-Wheeler block
+//config:	sorting text compression algorithm, and Huffman coding. Compression
+//config:	is generally considerably better than that achieved by more
+//config:	conventional LZ77/LZ78-based compressors, and approaches the
+//config:	performance of the PPM family of statistical compressors.
 //config:
-//config:	  Unless you have a specific application which requires bunzip2, you
-//config:	  should probably say N here.
+//config:	Unless you have a specific application which requires bunzip2, you
+//config:	should probably say N here.
 //config:
 //config:config BZCAT
-//config:	bool "bzcat"
+//config:	bool "bzcat (8.8 kb)"
 //config:	default y
 //config:	select FEATURE_BZIP2_DECOMPRESS
 //config:	help
-//config:	  Alias to "bunzip2 -c".
+//config:	Alias to "bunzip2 -c".
 
 //applet:IF_BUNZIP2(APPLET(bunzip2, BB_DIR_USR_BIN, BB_SUID_DROP))
 //                APPLET_ODDNAME:name   main     location        suid_type     help
@@ -454,7 +455,7 @@ int bunzip2_main(int argc UNUSED_PARAM, char **argv)
 {
 	getopt32(argv, "cfkvqdt");
 	argv += optind;
-	if (ENABLE_BZCAT && applet_name[2] == 'c') /* bzcat */
+	if (ENABLE_BZCAT && (!ENABLE_BUNZIP2 || applet_name[2] == 'c')) /* bzcat */
 		option_mask32 |= OPT_STDOUT;
 
 	return bbunpack(argv, unpack_bz2_stream, make_new_name_generic, "bz2");
@@ -493,43 +494,26 @@ int bunzip2_main(int argc UNUSED_PARAM, char **argv)
 //usage:       "Decompress to stdout"
 
 //config:config UNLZMA
-//config:	bool "unlzma"
+//config:	bool "unlzma (8.6 kb)"
 //config:	default y
 //config:	help
-//config:	  unlzma is a compression utility using the Lempel-Ziv-Markov chain
-//config:	  compression algorithm, and range coding. Compression
-//config:	  is generally considerably better than that achieved by the bzip2
-//config:	  compressors.
-//config:
-//config:	  The BusyBox unlzma applet is limited to decompression only.
-//config:	  On an x86 system, this applet adds about 4K.
+//config:	unlzma is a compression utility using the Lempel-Ziv-Markov chain
+//config:	compression algorithm, and range coding. Compression
+//config:	is generally considerably better than that achieved by the bzip2
+//config:	compressors.
 //config:
 //config:config LZCAT
-//config:	bool "lzcat"
+//config:	bool "lzcat (8.5 kb)"
 //config:	default y
 //config:	help
-//config:	  unlzma is a compression utility using the Lempel-Ziv-Markov chain
-//config:	  compression algorithm, and range coding. Compression
-//config:	  is generally considerably better than that achieved by the bzip2
-//config:	  compressors.
-//config:
-//config:	  The BusyBox unlzma applet is limited to decompression only.
-//config:	  On an x86 system, this applet adds about 4K.
+//config:	Alias to "unlzma -c".
 //config:
 //config:config LZMA
 //config:	bool "lzma -d"
 //config:	default y
 //config:	help
-//config:	  Enable this option if you want commands like "lzma -d" to work.
-//config:	  IOW: you'll get lzma applet, but it will always require -d option.
-//config:
-//config:config FEATURE_LZMA_FAST
-//config:	bool "Optimize for speed"
-//config:	default n
-//config:	depends on UNLZMA || LZCAT || LZMA
-//config:	help
-//config:	  This option reduces decompression time by about 25% at the cost of
-//config:	  a 1K bigger binary.
+//config:	Enable this option if you want commands like "lzma -d" to work.
+//config:	IOW: you'll get lzma applet, but it will always require -d option.
 
 //applet:IF_UNLZMA(APPLET(unlzma, BB_DIR_USR_BIN, BB_SUID_DROP))
 //                APPLET_ODDNAME:name   main    location        suid_type     help
@@ -581,23 +565,23 @@ int unlzma_main(int argc UNUSED_PARAM, char **argv)
 //usage:       "Decompress to stdout"
 
 //config:config UNXZ
-//config:	bool "unxz"
+//config:	bool "unxz (13 kb)"
 //config:	default y
 //config:	help
-//config:	  unxz is a unlzma successor.
+//config:	unxz is a unlzma successor.
 //config:
 //config:config XZCAT
-//config:	bool "xzcat"
+//config:	bool "xzcat (13 kb)"
 //config:	default y
 //config:	help
-//config:	  Alias to "unxz -c".
+//config:	Alias to "unxz -c".
 //config:
 //config:config XZ
 //config:	bool "xz -d"
 //config:	default y
 //config:	help
-//config:	  Enable this option if you want commands like "xz -d" to work.
-//config:	  IOW: you'll get xz applet, but it will always require -d option.
+//config:	Enable this option if you want commands like "xz -d" to work.
+//config:	IOW: you'll get xz applet, but it will always require -d option.
 
 //applet:IF_UNXZ(APPLET(unxz, BB_DIR_USR_BIN, BB_SUID_DROP))
 //                APPLET_ODDNAME:name   main  location        suid_type     help

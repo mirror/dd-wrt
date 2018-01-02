@@ -1,5 +1,5 @@
 /* vi: set sw=4 ts=4: */
-/*----------------------------------------------------------------------
+/*
  * Mini who is used to display user name, login time,
  * idle time and host name.
  *
@@ -13,35 +13,33 @@
  * Copyright (c) 2002 AYR Networks, Inc.
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
- *
- *----------------------------------------------------------------------
  */
 //config:config WHO
-//config:      bool "who"
-//config:      default y
-//config:      depends on FEATURE_UTMP
-//config:      help
-//config:        who is used to show who is logged on.
+//config:	bool "who (3.7 kb)"
+//config:	default y
+//config:	depends on FEATURE_UTMP
+//config:	help
+//config:	Print users currently logged on.
 //config:
 // procps-ng has this variation of "who":
 //config:config W
-//config:      bool "w"
-//config:      default y
-//config:      depends on FEATURE_UTMP
-//config:      help
-//config:        w is used to show who is logged on.
+//config:	bool "w (3.7 kb)"
+//config:	default y
+//config:	depends on FEATURE_UTMP
+//config:	help
+//config:	Print users currently logged on.
 //config:
 //config:config USERS
-//config:      bool "users"
-//config:      default y
-//config:      depends on FEATURE_UTMP
-//config:      help
-//config:        Print users currently logged on.
+//config:	bool "users (3.2 kb)"
+//config:	default y
+//config:	depends on FEATURE_UTMP
+//config:	help
+//config:	Print users currently logged on.
 
-//                APPLET_ODDNAME:name   main location        suid_type     help
-//applet:IF_USERS(APPLET_ODDNAME(users, who, BB_DIR_USR_BIN, BB_SUID_DROP, users))
-//applet:IF_W(    APPLET_ODDNAME(w,     who, BB_DIR_USR_BIN, BB_SUID_DROP, w))
-//applet:IF_WHO(  APPLET(        who,        BB_DIR_USR_BIN, BB_SUID_DROP))
+//                APPLET_NOEXEC:name   main location        suid_type     help
+//applet:IF_USERS(APPLET_NOEXEC(users, who, BB_DIR_USR_BIN, BB_SUID_DROP, users))
+//applet:IF_W(    APPLET_NOEXEC(w,     who, BB_DIR_USR_BIN, BB_SUID_DROP, w))
+//applet:IF_WHO(  APPLET_NOEXEC(who,   who, BB_DIR_USR_BIN, BB_SUID_DROP, who))
 
 //kbuild:lib-$(CONFIG_USERS) += who.o
 //kbuild:lib-$(CONFIG_W)     += who.o
@@ -117,8 +115,7 @@ int who_main(int argc UNUSED_PARAM, char **argv)
 	unsigned opt;
 	const char *fmt = "%s";
 
-	opt_complementary = "=0";
-	opt = getopt32(argv, do_who ? "aH" : "");
+	opt = getopt32(argv, do_who ? "^" "aH" "\0" "=0": "^" "" "\0" "=0");
 	if ((opt & 2) || do_w) /* -H or we are w */
 		puts("USER\t\tTTY\t\tIDLE\tTIME\t\t HOST");
 

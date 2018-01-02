@@ -1,20 +1,21 @@
 /* vi: set sw=4 ts=4: */
-/* 'time' utility to display resource usage of processes.
-   Copyright (C) 1990, 91, 92, 93, 96 Free Software Foundation, Inc.
-
-   Licensed under GPLv2, see file LICENSE in this source tree.
-*/
+/*
+ * 'time' utility to display resource usage of processes.
+ * Copyright (C) 1990, 91, 92, 93, 96 Free Software Foundation, Inc.
+ *
+ * Licensed under GPLv2, see file LICENSE in this source tree.
+ */
 /* Originally written by David Keppel <pardo@cs.washington.edu>.
-   Heavily modified by David MacKenzie <djm@gnu.ai.mit.edu>.
-   Heavily modified for busybox by Erik Andersen <andersen@codepoet.org>
-*/
+ * Heavily modified by David MacKenzie <djm@gnu.ai.mit.edu>.
+ * Heavily modified for busybox by Erik Andersen <andersen@codepoet.org>
+ */
 //config:config TIME
-//config:	bool "time"
+//config:	bool "time (7 kb)"
 //config:	default y
 //config:	help
-//config:	  The time command runs the specified program with the given arguments.
-//config:	  When the command finishes, time writes a message to standard output
-//config:	  giving timing statistics about this program run.
+//config:	The time command runs the specified program with the given arguments.
+//config:	When the command finishes, time writes a message to standard output
+//config:	giving timing statistics about this program run.
 
 //applet:IF_TIME(APPLET(time, BB_DIR_USR_BIN, BB_SUID_DROP))
 
@@ -127,13 +128,13 @@ static unsigned long ptok(const unsigned pagesize, const unsigned long pages)
 
 /* summarize: Report on the system use of a command.
 
-   Print the FMT argument except that `%' sequences
-   have special meaning, and `\n' and `\t' are translated into
-   newline and tab, respectively, and `\\' is translated into `\'.
+   Print the FMT argument except that '%' sequences
+   have special meaning, and '\n' and '\t' are translated into
+   newline and tab, respectively, and '\\' is translated into '\'.
 
-   The character following a `%' can be:
+   The character following a '%' can be:
    (* means the tcsh time builtin also recognizes it)
-   % == a literal `%'
+   % == a literal '%'
    C == command name and arguments
 *  D == average unshared data size in K (ru_idrss+ru_isrss)
 *  E == elapsed real (wall clock) time in [hour:]min:sec
@@ -434,9 +435,10 @@ int time_main(int argc UNUSED_PARAM, char **argv)
 		OPT_f = (1 << 4),
 	};
 
-	opt_complementary = "-1"; /* at least one arg */
 	/* "+": stop on first non-option */
-	opt = getopt32(argv, "+vpao:f:", &output_filename, &output_format);
+	opt = getopt32(argv, "^+" "vpao:f:" "\0" "-1"/*at least one arg*/,
+				&output_filename, &output_format
+	);
 	argv += optind;
 	if (opt & OPT_v)
 		output_format = long_format;
@@ -444,11 +446,16 @@ int time_main(int argc UNUSED_PARAM, char **argv)
 		output_format = posix_format;
 	output_fd = STDERR_FILENO;
 	if (opt & OPT_o) {
+#ifndef O_CLOEXEC
+# define O_CLOEXEC 0
+#endif
 		output_fd = xopen(output_filename,
 			(opt & OPT_a) /* append? */
 			? (O_CREAT | O_WRONLY | O_CLOEXEC | O_APPEND)
 			: (O_CREAT | O_WRONLY | O_CLOEXEC | O_TRUNC)
 		);
+		if (!O_CLOEXEC)
+			close_on_exec_on(output_fd);
 	}
 
 	run_command(argv, &res);

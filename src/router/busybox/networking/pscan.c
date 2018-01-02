@@ -6,10 +6,10 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config PSCAN
-//config:	bool "pscan"
+//config:	bool "pscan (6.6 kb)"
 //config:	default y
 //config:	help
-//config:	  Simple network port scanner.
+//config:	Simple network port scanner.
 
 //applet:IF_PSCAN(APPLET(pscan, BB_DIR_USR_BIN, BB_SUID_DROP))
 
@@ -75,8 +75,11 @@ int pscan_main(int argc UNUSED_PARAM, char **argv)
 	unsigned rtt_4;
 	unsigned start, diff;
 
-	opt_complementary = "=1"; /* exactly one non-option */
-	opt = getopt32(argv, "cbp:P:t:T:", &opt_min_port, &opt_max_port, &opt_timeout, &opt_min_rtt);
+	opt = getopt32(argv, "^"
+		"cbp:P:t:T:"
+		"\0" "=1", /* exactly one non-option */
+		&opt_min_port, &opt_max_port, &opt_timeout, &opt_min_rtt
+	);
 	argv += optind;
 	max_port = xatou_range(opt_max_port, 1, 65535);
 	port = xatou_range(opt_min_port, 1, max_port);

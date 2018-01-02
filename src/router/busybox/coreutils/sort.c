@@ -12,22 +12,22 @@
  * http://www.opengroup.org/onlinepubs/007904975/utilities/sort.html
  */
 //config:config SORT
-//config:	bool "sort"
+//config:	bool "sort (7.4 kb)"
 //config:	default y
 //config:	help
-//config:	  sort is used to sort lines of text in specified files.
+//config:	sort is used to sort lines of text in specified files.
 //config:
 //config:config FEATURE_SORT_BIG
 //config:	bool "Full SuSv3 compliant sort (support -ktcsbdfiozgM)"
 //config:	default y
 //config:	depends on SORT
 //config:	help
-//config:	  Without this, sort only supports -r, -u, and an integer version
-//config:	  of -n. Selecting this adds sort keys, floating point support, and
-//config:	  more. This adds a little over 3k to a nonstatic build on x86.
+//config:	Without this, sort only supports -r, -u, and an integer version
+//config:	of -n. Selecting this adds sort keys, floating point support, and
+//config:	more. This adds a little over 3k to a nonstatic build on x86.
 //config:
-//config:	  The SuSv3 sort standard is available at:
-//config:	  http://www.opengroup.org/onlinepubs/007904975/utilities/sort.html
+//config:	The SuSv3 sort standard is available at:
+//config:	http://www.opengroup.org/onlinepubs/007904975/utilities/sort.html
 
 //applet:IF_SORT(APPLET_NOEXEC(sort, sort, BB_DIR_USR_BIN, BB_SUID_DROP, sort))
 
@@ -94,7 +94,7 @@
 */
 
 /* These are sort types */
-static const char OPT_STR[] ALIGN1 = "ngMucszbrdfimS:T:o:k:*t:";
+#define OPT_STR "ngMucszbrdfimS:T:o:k:*t:"
 enum {
 	FLAG_n  = 1,            /* Numeric sort */
 	FLAG_g  = 2,            /* Sort using strtod() */
@@ -378,9 +378,11 @@ int sort_main(int argc UNUSED_PARAM, char **argv)
 	xfunc_error_retval = 2;
 
 	/* Parse command line options */
-	/* -o and -t can be given at most once */
-	opt_complementary = "o--o:t--t"; /* -t, -o: at most one of each */
-	opts = getopt32(argv, OPT_STR, &str_ignored, &str_ignored, &str_o, &lst_k, &str_t);
+	opts = getopt32(argv, "^"
+			OPT_STR
+			"\0" "o--o:t--t"/*-t, -o: at most one of each*/,
+			&str_ignored, &str_ignored, &str_o, &lst_k, &str_t
+	);
 	/* global b strips leading and trailing spaces */
 	if (opts & FLAG_b)
 		option_mask32 |= FLAG_bb;

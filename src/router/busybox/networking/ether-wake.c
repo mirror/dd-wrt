@@ -64,11 +64,11 @@
  *   filter.  That configuration consumes more power.
  */
 //config:config ETHER_WAKE
-//config:	bool "ether-wake"
+//config:	bool "ether-wake (6.6 kb)"
 //config:	default y
 //config:	select PLATFORM_LINUX
 //config:	help
-//config:	  Send a magic packet to wake up sleeping machines.
+//config:	Send a magic packet to wake up sleeping machines.
 
 //applet:IF_ETHER_WAKE(APPLET_ODDNAME(ether-wake, ether_wake, BB_DIR_USR_SBIN, BB_SUID_DROP, ether_wake))
 
@@ -212,8 +212,7 @@ int ether_wake_main(int argc UNUSED_PARAM, char **argv)
 	struct whereto_t whereto;  /* who to wake up */
 
 	/* handle misc user options */
-	opt_complementary = "=1";
-	flags = getopt32(argv, "bi:p:", &ifname, &pass);
+	flags = getopt32(argv, "^" "bi:p:" "\0" "=1", &ifname, &pass);
 	if (flags & 4) /* -p */
 		wol_passwd_sz = get_wol_pw(pass, wol_passwd);
 	flags &= 1; /* we further interested only in -b [bcast] flag */

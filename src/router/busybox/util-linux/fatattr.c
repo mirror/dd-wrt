@@ -9,13 +9,13 @@
  * Public License
  */
 //config:config FATATTR
-//config:	bool "fatattr"
+//config:	bool "fatattr (1.9 kb)"
 //config:	default y
 //config:	select PLATFORM_LINUX
 //config:	help
-//config:	  fatattr lists or changes the file attributes on a fat file system.
+//config:	fatattr lists or changes the file attributes on a fat file system.
 
-//applet:IF_FATATTR(APPLET(fatattr, BB_DIR_BIN, BB_SUID_DROP))
+//applet:IF_FATATTR(APPLET_NOEXEC(fatattr, fatattr, BB_DIR_BIN, BB_SUID_DROP, fatattr))
 
 //kbuild:lib-$(CONFIG_FATATTR) += fatattr.o
 

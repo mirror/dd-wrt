@@ -6,30 +6,30 @@
  * See README and LICENSE files in bz/ directory for more information
  * about bzip2 library code.
  */
-
 //config:config BZIP2
-//config:	bool "bzip2"
+//config:	bool "bzip2 (18 kb)"
 //config:	default y
 //config:	help
-//config:	  bzip2 is a compression utility using the Burrows-Wheeler block
-//config:	  sorting text compression algorithm, and Huffman coding. Compression
-//config:	  is generally considerably better than that achieved by more
-//config:	  conventional LZ77/LZ78-based compressors, and approaches the
-//config:	  performance of the PPM family of statistical compressors.
+//config:	bzip2 is a compression utility using the Burrows-Wheeler block
+//config:	sorting text compression algorithm, and Huffman coding. Compression
+//config:	is generally considerably better than that achieved by more
+//config:	conventional LZ77/LZ78-based compressors, and approaches the
+//config:	performance of the PPM family of statistical compressors.
 //config:
-//config:	  Unless you have a specific application which requires bzip2, you
-//config:	  should probably say N here.
+//config:	Unless you have a specific application which requires bzip2, you
+//config:	should probably say N here.
 //config:
 //config:config FEATURE_BZIP2_DECOMPRESS
 //config:	bool "Enable decompression"
 //config:	default y
 //config:	depends on BZIP2 || BUNZIP2 || BZCAT
 //config:	help
-//config:	  Enable -d (--decompress) and -t (--test) options for bzip2.
-//config:	  This will be automatically selected if bunzip2 or bzcat is
-//config:	  enabled.
+//config:	Enable -d (--decompress) and -t (--test) options for bzip2.
+//config:	This will be automatically selected if bunzip2 or bzcat is
+//config:	enabled.
 
 //applet:IF_BZIP2(APPLET(bzip2, BB_DIR_USR_BIN, BB_SUID_DROP))
+
 //kbuild:lib-$(CONFIG_BZIP2) += bzip2.o
 
 //usage:#define bzip2_trivial_usage
@@ -195,9 +195,11 @@ int bzip2_main(int argc UNUSED_PARAM, char **argv)
 	 * --best        alias for -9
 	 */
 
-	opt_complementary = "s2"; /* -s means -2 (compatibility) */
-	/* Must match bbunzip's constants OPT_STDOUT, OPT_FORCE! */
-	opt = getopt32(argv, "cfkv" IF_FEATURE_BZIP2_DECOMPRESS("dt") "123456789qzs");
+	opt = getopt32(argv, "^"
+		/* Must match bbunzip's constants OPT_STDOUT, OPT_FORCE! */
+		"cfkv" IF_FEATURE_BZIP2_DECOMPRESS("dt") "123456789qzs"
+		"\0" "s2" /* -s means -2 (compatibility) */
+	);
 #if ENABLE_FEATURE_BZIP2_DECOMPRESS /* bunzip2_main may not be visible... */
 	if (opt & 0x30) // -d and/or -t
 		return bunzip2_main(argc, argv);

@@ -588,7 +588,9 @@ static void send_packet_to_relay(struct dhcp_packet *dhcp_pkt)
 
 	udhcp_send_kernel_packet(dhcp_pkt,
 			server_config.server_nip, SERVER_PORT,
-			dhcp_pkt->gateway_nip, SERVER_PORT);
+			dhcp_pkt->gateway_nip, SERVER_PORT,
+			/*send_flags:*/ 0
+	);
 }
 
 static void send_packet(struct dhcp_packet *dhcp_pkt, int force_broadcast)
@@ -814,11 +816,12 @@ int udhcpd_main(int argc UNUSED_PARAM, char **argv)
 	IF_FEATURE_UDHCP_PORT(SERVER_PORT = 67;)
 	IF_FEATURE_UDHCP_PORT(CLIENT_PORT = 68;)
 
+	opt = getopt32(argv, "^"
+		"fSI:va:"IF_FEATURE_UDHCP_PORT("P:")
+		"\0"
 #if defined CONFIG_UDHCP_DEBUG && CONFIG_UDHCP_DEBUG >= 1
-	opt_complementary = "vv";
+		"vv"
 #endif
-	opt = getopt32(argv, "fSI:va:"
-		IF_FEATURE_UDHCP_PORT("P:")
 		, &str_I
 		, &str_a
 		IF_FEATURE_UDHCP_PORT(, &str_P)
@@ -945,7 +948,7 @@ int udhcpd_main(int argc UNUSED_PARAM, char **argv)
 		if (bytes < 0) {
 			/* bytes can also be -2 ("bad packet data") */
 			if (bytes == -1 && errno != EINTR) {
-				log1("read error: %s, reopening socket", strerror(errno));
+				log1("read error: "STRERROR_FMT", reopening socket" STRERROR_ERRNO);
 				close(server_socket);
 				server_socket = -1;
 			}

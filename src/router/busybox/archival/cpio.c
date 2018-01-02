@@ -10,40 +10,37 @@
  * Doesn't check CRC's
  * Only supports new ASCII and CRC formats
  */
-#include "libbb.h"
-#include "common_bufsiz.h"
-#include "bb_archive.h"
-
 //config:config CPIO
-//config:	bool "cpio"
+//config:	bool "cpio (14 kb)"
 //config:	default y
 //config:	help
-//config:	  cpio is an archival utility program used to create, modify, and
-//config:	  extract contents from archives.
-//config:	  cpio has 110 bytes of overheads for every stored file.
+//config:	cpio is an archival utility program used to create, modify, and
+//config:	extract contents from archives.
+//config:	cpio has 110 bytes of overheads for every stored file.
 //config:
-//config:	  This implementation of cpio can extract cpio archives created in the
-//config:	  "newc" or "crc" format.
+//config:	This implementation of cpio can extract cpio archives created in the
+//config:	"newc" or "crc" format.
 //config:
-//config:	  Unless you have a specific application which requires cpio, you
-//config:	  should probably say N here.
+//config:	Unless you have a specific application which requires cpio, you
+//config:	should probably say N here.
 //config:
 //config:config FEATURE_CPIO_O
 //config:	bool "Support archive creation"
 //config:	default y
 //config:	depends on CPIO
 //config:	help
-//config:	  This implementation of cpio can create cpio archives in the "newc"
-//config:	  format only.
+//config:	This implementation of cpio can create cpio archives in the "newc"
+//config:	format only.
 //config:
 //config:config FEATURE_CPIO_P
 //config:	bool "Support passthrough mode"
 //config:	default y
 //config:	depends on FEATURE_CPIO_O
 //config:	help
-//config:	  Passthrough mode. Rarely used.
+//config:	Passthrough mode. Rarely used.
 
 //applet:IF_CPIO(APPLET(cpio, BB_DIR_BIN, BB_SUID_DROP))
+
 //kbuild:lib-$(CONFIG_CPIO) += cpio.o
 
 //usage:#define cpio_trivial_usage
@@ -141,6 +138,10 @@
       --sparse               Write files with blocks of zeros as sparse files
   -u, --unconditional        Replace all files unconditionally
  */
+
+#include "libbb.h"
+#include "common_bufsiz.h"
+#include "bb_archive.h"
 
 enum {
 	OPT_EXTRACT            = (1 << 0),
@@ -360,9 +361,8 @@ int cpio_main(int argc UNUSED_PARAM, char **argv)
 	char *cpio_owner;
 	IF_FEATURE_CPIO_O(const char *cpio_fmt = "";)
 	unsigned opt;
-
 #if ENABLE_LONG_OPTS
-	applet_long_options =
+	const char *long_opts =
 		"extract\0"      No_argument       "i"
 		"list\0"         No_argument       "t"
 #if ENABLE_FEATURE_CPIO_O
@@ -390,9 +390,9 @@ int cpio_main(int argc UNUSED_PARAM, char **argv)
 	/* -L makes sense only with -o or -p */
 
 #if !ENABLE_FEATURE_CPIO_O
-	opt = getopt32(argv, OPTION_STR, &cpio_filename, &cpio_owner);
+	opt = getopt32long(argv, OPTION_STR, long_opts, &cpio_filename, &cpio_owner);
 #else
-	opt = getopt32(argv, OPTION_STR "oH:" IF_FEATURE_CPIO_P("p"),
+	opt = getopt32long(argv, OPTION_STR "oH:" IF_FEATURE_CPIO_P("p"), long_opts,
 		       &cpio_filename, &cpio_owner, &cpio_fmt);
 #endif
 	argv += optind;
