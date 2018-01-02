@@ -127,8 +127,12 @@ int system2(char *command)
 #if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)	//we must disable this on x86 since nvram is not available at startup
 
 	if (nvram_matchi("console_debug", 1)) {
-		fprintf(stderr, "system: %s\n", command);
+		fprintf(stderr, "%s\n", command);
 		flog("system: %s\n", command);
+	}
+
+	if (nvram_match("debug_delay","1")) {
+		sleep(1);
 	}
 #endif
 
@@ -220,6 +224,12 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 	fprintf(stderr, "\n");
 
 #endif
+#endif
+#if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)	//we must disable this on x86 since nvram is not available at startup
+
+	if (nvram_match("debug_delay","1")) {
+		sleep(1);
+	}
 #endif
 
 	switch (pid = fork()) {
