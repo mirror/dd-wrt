@@ -17,33 +17,32 @@
  *
  * (C) 2006 Jac Goudsmit added -o option
  */
-
 //config:config GREP
-//config:	bool "grep"
+//config:	bool "grep (8.5 kb)"
 //config:	default y
 //config:	help
-//config:	  grep is used to search files for a specified pattern.
+//config:	grep is used to search files for a specified pattern.
 //config:
 //config:config EGREP
-//config:	bool "egrep"
+//config:	bool "egrep (7.6 kb)"
 //config:	default y
 //config:	help
-//config:	  Alias to "grep -E"
+//config:	Alias to "grep -E".
 //config:
 //config:config FGREP
-//config:	bool "fgrep"
+//config:	bool "fgrep (7.6 kb)"
 //config:	default y
 //config:	help
-//config:	  Alias to "grep -F"
+//config:	Alias to "grep -F".
 //config:
 //config:config FEATURE_GREP_CONTEXT
 //config:	bool "Enable before and after context flags (-A, -B and -C)"
 //config:	default y
 //config:	depends on GREP || EGREP || FGREP
 //config:	help
-//config:	  Print the specified number of leading (-B) and/or trailing (-A)
-//config:	  context surrounding our matching lines.
-//config:	  Print the specified number of context lines (-C).
+//config:	Print the specified number of leading (-B) and/or trailing (-A)
+//config:	context surrounding our matching lines.
+//config:	Print the specified number of context lines (-C).
 
 //applet:IF_GREP(APPLET(grep, BB_DIR_BIN, BB_SUID_DROP))
 //                APPLET_ODDNAME:name   main  location    suid_type     help
@@ -107,6 +106,7 @@
 //usage:#define fgrep_trivial_usage NOUSAGE_STR
 //usage:#define fgrep_full_usage ""
 
+/* -e,-f are lists; -m,-A,-B,-C have numeric param */
 #define OPTSTR_GREP \
 	"lnqvscFiHhe:*f:*Lorm:+wx" \
 	IF_FEATURE_GREP_CONTEXT("A:+B:+C:+") \
@@ -639,11 +639,28 @@ static void load_regexes_from_file(llist_t *fopt)
 }
 
 static int FAST_FUNC file_action_grep(const char *filename,
-			struct stat *statbuf UNUSED_PARAM,
+			struct stat *statbuf,
 			void* matched,
 			int depth UNUSED_PARAM)
 {
-	FILE *file = fopen_for_read(filename);
+	FILE *file;
+
+	/* If we are given a link to a directory, we should bail out now, rather
+	 * than trying to open the "file" and hoping getline gives us nothing,
+	 * since that is not portable across operating systems (FreeBSD for
+	 * example will return the raw directory contents). */
+	if (S_ISLNK(statbuf->st_mode)) {
+		struct stat sb;
+		if (stat(filename, &sb) != 0) {
+			if (!SUPPRESS_ERR_MSGS)
+				bb_simple_perror_msg(filename);
+			return 0;
+		}
+		if (S_ISDIR(sb.st_mode))
+			return 1;
+	}
+
+	file = fopen_for_read(filename);
 	if (file == NULL) {
 		if (!SUPPRESS_ERR_MSGS)
 			bb_simple_perror_msg(filename);
@@ -686,11 +703,9 @@ int grep_main(int argc UNUSED_PARAM, char **argv)
 
 	/* do normal option parsing */
 #if ENABLE_FEATURE_GREP_CONTEXT
-	/* -H unsets -h; -C unsets -A,-B; -e,-f are lists;
-	 * -m,-A,-B,-C have numeric param */
-	opt_complementary = "H-h:C-AB";
+	/* -H unsets -h; -C unsets -A,-B */
 	opts = getopt32(argv,
-		OPTSTR_GREP,
+		"^" OPTSTR_GREP "\0" "H-h:C-AB",
 		&pattern_head, &fopt, &max_matches,
 		&lines_after, &lines_before, &Copt);
 
@@ -716,9 +731,7 @@ int grep_main(int argc UNUSED_PARAM, char **argv)
 	}
 #else
 	/* with auto sanity checks */
-	/* -H unsets -h; -c,-q or -l unset -n; -e,-f are lists; -m N */
-	opt_complementary = "H-h:c-n:q-n:l-n:";
-	getopt32(argv, OPTSTR_GREP,
+	getopt32(argv, "^" OPTSTR_GREP "\0" "H-h:c-n:q-n:l-n:", // why trailing ":"?
 		&pattern_head, &fopt, &max_matches);
 #endif
 	invert_search = ((option_mask32 & OPT_v) != 0); /* 0 | 1 */

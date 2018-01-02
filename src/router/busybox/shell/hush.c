@@ -41,14 +41,26 @@
  *
  * TODOs:
  *      grep for "TODO" and fix (some of them are easy)
- *      special variables (done: PWD, PPID, RANDOM)
- *      tilde expansion
- *      aliases
- *      follow IFS rules more precisely, including update semantics
- *      builtins mandated by standards we don't support:
- *          [un]alias, command, fc, getopts, newgrp, readonly, times
  *      make complex ${var%...} constructs support optional
  *      make here documents optional
+ *      special variables (done: PWD, PPID, RANDOM)
+ *      follow IFS rules more precisely, including update semantics
+ *      tilde expansion
+ *      aliases
+ *      builtins mandated by standards we don't support:
+ *          [un]alias, command, fc:
+ *          command -v CMD: print "/path/to/CMD"
+ *              prints "CMD" for builtins
+ *              prints "alias ALIAS='EXPANSION'" for aliases
+ *              prints nothing and sets $? to 1 if not found
+ *          command -V CMD: print "CMD is /path/CMD|a shell builtin|etc"
+ *          command [-p] CMD: run CMD, even if a function CMD also exists
+ *              (can use this to override standalone shell as well)
+ *              -p: use default $PATH
+ *          command BLTIN: disables special-ness (e.g. errors do not abort)
+ *          fc -l[nr] [BEG] [END]: list range of commands in history
+ *          fc [-e EDITOR] [BEG] [END]: edit/rerun range of commands
+ *          fc -s [PAT=REP] [CMD]: rerun CMD, replacing PAT with REP
  *
  * Bash compat TODO:
  *      redirection of stdout+stderr: &> and >&
@@ -64,8 +76,13 @@
  *          The EXPR is evaluated according to ARITHMETIC EVALUATION.
  *          This is exactly equivalent to let "EXPR".
  *      $[EXPR]: synonym for $((EXPR))
+ *      indirect expansion: ${!VAR}
+ *      substring op on @: ${@:n:m}
  *
  * Won't do:
+ *      Some builtins mandated by standards:
+ *          newgrp [GRP]: not a builtin in bash but a suid binary
+ *              which spawns a new shell with new group ID
  *      In bash, export builtin is special, its arguments are assignments
  *          and therefore expansion of them should be "one-word" expansion:
  *              $ export i=`echo 'a  b'` # export has one arg: "i=a  b"
@@ -82,18 +99,18 @@
  *              aaa
  */
 //config:config HUSH
-//config:	bool "hush"
+//config:	bool "hush (64 kb)"
 //config:	default y
 //config:	help
-//config:	  hush is a small shell (25k). It handles the normal flow control
-//config:	  constructs such as if/then/elif/else/fi, for/in/do/done, while loops,
-//config:	  case/esac. Redirections, here documents, $((arithmetic))
-//config:	  and functions are supported.
+//config:	hush is a small shell. It handles the normal flow control
+//config:	constructs such as if/then/elif/else/fi, for/in/do/done, while loops,
+//config:	case/esac. Redirections, here documents, $((arithmetic))
+//config:	and functions are supported.
 //config:
-//config:	  It will compile and work on no-mmu systems.
+//config:	It will compile and work on no-mmu systems.
 //config:
-//config:	  It does not handle select, aliases, tilde expansion,
-//config:	  &>file and >&file redirection of stdout+stderr.
+//config:	It does not handle select, aliases, tilde expansion,
+//config:	&>file and >&file redirection of stdout+stderr.
 //config:
 //config:config HUSH_BASH_COMPAT
 //config:	bool "bash-compatible extensions"
@@ -105,17 +122,17 @@
 //config:	default y
 //config:	depends on HUSH_BASH_COMPAT
 //config:	help
-//config:	  Enable {abc,def} extension.
+//config:	Enable {abc,def} extension.
 //config:
 //config:config HUSH_INTERACTIVE
 //config:	bool "Interactive mode"
 //config:	default y
 //config:	depends on HUSH || SH_IS_HUSH || BASH_IS_HUSH
 //config:	help
-//config:	  Enable interactive mode (prompt and command editing).
-//config:	  Without this, hush simply reads and executes commands
-//config:	  from stdin just like a shell script from a file.
-//config:	  No prompt, no PS1/PS2 magic shell variables.
+//config:	Enable interactive mode (prompt and command editing).
+//config:	Without this, hush simply reads and executes commands
+//config:	from stdin just like a shell script from a file.
+//config:	No prompt, no PS1/PS2 magic shell variables.
 //config:
 //config:config HUSH_SAVEHISTORY
 //config:	bool "Save command history to .hush_history"
@@ -127,18 +144,18 @@
 //config:	default y
 //config:	depends on HUSH_INTERACTIVE
 //config:	help
-//config:	  Enable job control: Ctrl-Z backgrounds, Ctrl-C interrupts current
-//config:	  command (not entire shell), fg/bg builtins work. Without this option,
-//config:	  "cmd &" still works by simply spawning a process and immediately
-//config:	  prompting for next command (or executing next command in a script),
-//config:	  but no separate process group is formed.
+//config:	Enable job control: Ctrl-Z backgrounds, Ctrl-C interrupts current
+//config:	command (not entire shell), fg/bg builtins work. Without this option,
+//config:	"cmd &" still works by simply spawning a process and immediately
+//config:	prompting for next command (or executing next command in a script),
+//config:	but no separate process group is formed.
 //config:
 //config:config HUSH_TICK
 //config:	bool "Support process substitution"
 //config:	default y
 //config:	depends on HUSH || SH_IS_HUSH || BASH_IS_HUSH
 //config:	help
-//config:	  Enable `command` and $(command).
+//config:	Enable `command` and $(command).
 //config:
 //config:config HUSH_IF
 //config:	bool "Support if/then/elif/else/fi"
@@ -155,37 +172,37 @@
 //config:	default y
 //config:	depends on HUSH || SH_IS_HUSH || BASH_IS_HUSH
 //config:	help
-//config:	  Enable case ... esac statement. +400 bytes.
+//config:	Enable case ... esac statement. +400 bytes.
 //config:
 //config:config HUSH_FUNCTIONS
 //config:	bool "Support funcname() { commands; } syntax"
 //config:	default y
 //config:	depends on HUSH || SH_IS_HUSH || BASH_IS_HUSH
 //config:	help
-//config:	  Enable support for shell functions. +800 bytes.
+//config:	Enable support for shell functions. +800 bytes.
 //config:
 //config:config HUSH_LOCAL
 //config:	bool "local builtin"
 //config:	default y
 //config:	depends on HUSH_FUNCTIONS
 //config:	help
-//config:	  Enable support for local variables in functions.
+//config:	Enable support for local variables in functions.
 //config:
 //config:config HUSH_RANDOM_SUPPORT
 //config:	bool "Pseudorandom generator and $RANDOM variable"
 //config:	default y
 //config:	depends on HUSH || SH_IS_HUSH || BASH_IS_HUSH
 //config:	help
-//config:	  Enable pseudorandom generator and dynamic variable "$RANDOM".
-//config:	  Each read of "$RANDOM" will generate a new pseudorandom value.
+//config:	Enable pseudorandom generator and dynamic variable "$RANDOM".
+//config:	Each read of "$RANDOM" will generate a new pseudorandom value.
 //config:
 //config:config HUSH_MODE_X
 //config:	bool "Support 'hush -x' option and 'set -x' command"
 //config:	default y
 //config:	depends on HUSH || SH_IS_HUSH || BASH_IS_HUSH
 //config:	help
-//config:	  This instructs hush to print commands before execution.
-//config:	  Adds ~300 bytes.
+//config:	This instructs hush to print commands before execution.
+//config:	Adds ~300 bytes.
 //config:
 //config:config HUSH_ECHO
 //config:	bool "echo builtin"
@@ -217,7 +234,14 @@
 //config:	default y
 //config:	depends on HUSH_EXPORT
 //config:	help
-//config:	  export -n unexports variables. It is a bash extension.
+//config:	export -n unexports variables. It is a bash extension.
+//config:
+//config:config HUSH_READONLY
+//config:	bool "readonly builtin"
+//config:	default y
+//config:	depends on HUSH || SH_IS_HUSH || BASH_IS_HUSH
+//config:	help
+//config:	Enable support for read-only variables.
 //config:
 //config:config HUSH_KILL
 //config:	bool "kill builtin (supports kill %jobspec)"
@@ -236,6 +260,11 @@
 //config:
 //config:config HUSH_TYPE
 //config:	bool "type builtin"
+//config:	default y
+//config:	depends on HUSH || SH_IS_HUSH || BASH_IS_HUSH
+//config:
+//config:config HUSH_TIMES
+//config:	bool "times builtin"
 //config:	default y
 //config:	depends on HUSH || SH_IS_HUSH || BASH_IS_HUSH
 //config:
@@ -264,21 +293,18 @@
 //config:	default y
 //config:	depends on HUSH || SH_IS_HUSH || BASH_IS_HUSH
 //config:
+//config:config HUSH_GETOPTS
+//config:	bool "getopts builtin"
+//config:	default y
+//config:	depends on HUSH || SH_IS_HUSH || BASH_IS_HUSH
+//config:
 //config:config HUSH_MEMLEAK
 //config:	bool "memleak builtin (debugging)"
 //config:	default n
 //config:	depends on HUSH || SH_IS_HUSH || BASH_IS_HUSH
-//config:
-//config:config MSH
-//config:	bool "msh (deprecated: aliased to hush)"
-//config:	default n
-//config:	select HUSH
-//config:	help
-//config:	  msh is deprecated and will be removed, please migrate to hush.
 
 //applet:IF_HUSH(APPLET(hush, BB_DIR_BIN, BB_SUID_DROP))
 //                       APPLET_ODDNAME:name  main  location    suid_type     help
-//applet:IF_MSH(         APPLET_ODDNAME(msh,  hush, BB_DIR_BIN, BB_SUID_DROP, hush))
 //applet:IF_SH_IS_HUSH(  APPLET_ODDNAME(sh,   hush, BB_DIR_BIN, BB_SUID_DROP, hush))
 //applet:IF_BASH_IS_HUSH(APPLET_ODDNAME(bash, hush, BB_DIR_BIN, BB_SUID_DROP, hush))
 
@@ -293,7 +319,7 @@
  * therefore we don't show them either.
  */
 //usage:#define hush_trivial_usage
-//usage:	"[-nxl] [-c 'SCRIPT' [ARG0 [ARGS]] / FILE [ARGS]]"
+//usage:	"[-enxl] [-c 'SCRIPT' [ARG0 [ARGS]] / FILE [ARGS]]"
 //usage:#define hush_full_usage "\n\n"
 //usage:	"Unix shell interpreter"
 
@@ -307,6 +333,7 @@
 #if ENABLE_HUSH_CASE
 # include <fnmatch.h>
 #endif
+#include <sys/times.h>
 #include <sys/utsname.h> /* for setting $HOSTNAME */
 
 #include "busybox.h"  /* for APPLET_IS_NOFORK/NOEXEC */
@@ -334,6 +361,7 @@
 #define BASH_SOURCE        ENABLE_HUSH_BASH_COMPAT
 #define BASH_HOSTNAME_VAR  ENABLE_HUSH_BASH_COMPAT
 #define BASH_TEST2         (ENABLE_HUSH_BASH_COMPAT && ENABLE_HUSH_TEST)
+#define BASH_READ_D        ENABLE_HUSH_BASH_COMPAT
 
 
 /* Build knobs */
@@ -410,6 +438,7 @@
 #define debug_printf_expand(...) do {} while (0)
 #define debug_printf_varexp(...) do {} while (0)
 #define debug_printf_glob(...)   do {} while (0)
+#define debug_printf_redir(...)  do {} while (0)
 #define debug_printf_list(...)   do {} while (0)
 #define debug_printf_subst(...)  do {} while (0)
 #define debug_printf_clean(...)  do {} while (0)
@@ -753,6 +782,7 @@ struct function {
 static const char o_opt_strings[] ALIGN1 =
 	"pipefail\0"
 	"noexec\0"
+	"errexit\0"
 #if ENABLE_HUSH_MODE_X
 	"xtrace\0"
 #endif
@@ -760,6 +790,7 @@ static const char o_opt_strings[] ALIGN1 =
 enum {
 	OPT_O_PIPEFAIL,
 	OPT_O_NOEXEC,
+	OPT_O_ERREXIT,
 #if ENABLE_HUSH_MODE_X
 	OPT_O_XTRACE,
 #endif
@@ -816,6 +847,25 @@ struct globals {
 #else
 # define G_saved_tty_pgrp 0
 #endif
+	/* How deeply are we in context where "set -e" is ignored */
+	int errexit_depth;
+	/* "set -e" rules (do we follow them correctly?):
+	 * Exit if pipe, list, or compound command exits with a non-zero status.
+	 * Shell does not exit if failed command is part of condition in
+	 * if/while, part of && or || list except the last command, any command
+	 * in a pipe but the last, or if the command's return value is being
+	 * inverted with !. If a compound command other than a subshell returns a
+	 * non-zero status because a command failed while -e was being ignored, the
+	 * shell does not exit. A trap on ERR, if set, is executed before the shell
+	 * exits [ERR is a bashism].
+	 *
+	 * If a compound command or function executes in a context where -e is
+	 * ignored, none of the commands executed within are affected by the -e
+	 * setting. If a compound command or function sets -e while executing in a
+	 * context where -e is ignored, that setting does not have any effect until
+	 * the compound command or the command containing the function call completes.
+	 */
+
 	char o_opt[NUM_OPT_O];
 #if ENABLE_HUSH_MODE_X
 # define G_x_mode (G.o_opt[OPT_O_XTRACE])
@@ -839,6 +889,7 @@ struct globals {
 	smallint exiting; /* used to prevent EXIT trap recursion */
 	/* These four support $?, $#, and $1 */
 	smalluint last_exitcode;
+	smalluint last_bg_pid_exitcode;
 #if ENABLE_HUSH_SET
 	/* are global_argv and global_argv[1..n] malloced? (note: not [0]) */
 	smalluint global_args_malloced;
@@ -855,6 +906,9 @@ struct globals {
 #if ENABLE_HUSH_LOOPS
 	unsigned depth_break_continue;
 	unsigned depth_of_loop;
+#endif
+#if ENABLE_HUSH_GETOPTS
+	unsigned getopt_count;
 #endif
 	const char *ifs;
 	const char *cwd;
@@ -929,9 +983,15 @@ static int builtin_exit(char **argv) FAST_FUNC;
 #if ENABLE_HUSH_EXPORT
 static int builtin_export(char **argv) FAST_FUNC;
 #endif
+#if ENABLE_HUSH_READONLY
+static int builtin_readonly(char **argv) FAST_FUNC;
+#endif
 #if ENABLE_HUSH_JOB
 static int builtin_fg_bg(char **argv) FAST_FUNC;
 static int builtin_jobs(char **argv) FAST_FUNC;
+#endif
+#if ENABLE_HUSH_GETOPTS
+static int builtin_getopts(char **argv) FAST_FUNC;
 #endif
 #if ENABLE_HUSH_HELP
 static int builtin_help(char **argv) FAST_FUNC;
@@ -965,6 +1025,9 @@ static int builtin_trap(char **argv) FAST_FUNC;
 #endif
 #if ENABLE_HUSH_TYPE
 static int builtin_type(char **argv) FAST_FUNC;
+#endif
+#if ENABLE_HUSH_TIMES
+static int builtin_times(char **argv) FAST_FUNC;
 #endif
 static int builtin_true(char **argv) FAST_FUNC;
 #if ENABLE_HUSH_UMASK
@@ -1024,7 +1087,10 @@ static const struct built_in_command bltins1[] = {
 	BLTIN("export"   , builtin_export  , "Set environment variables"),
 #endif
 #if ENABLE_HUSH_JOB
-	BLTIN("fg"       , builtin_fg_bg   , "Bring job into foreground"),
+	BLTIN("fg"       , builtin_fg_bg   , "Bring job to foreground"),
+#endif
+#if ENABLE_HUSH_GETOPTS
+	BLTIN("getopts"  , builtin_getopts , NULL),
 #endif
 #if ENABLE_HUSH_HELP
 	BLTIN("help"     , builtin_help    , NULL),
@@ -1047,6 +1113,9 @@ static const struct built_in_command bltins1[] = {
 #if ENABLE_HUSH_READ
 	BLTIN("read"     , builtin_read    , "Input into variable"),
 #endif
+#if ENABLE_HUSH_READONLY
+	BLTIN("readonly" , builtin_readonly, "Make variables read-only"),
+#endif
 #if ENABLE_HUSH_FUNCTIONS
 	BLTIN("return"   , builtin_return  , "Return from function"),
 #endif
@@ -1056,6 +1125,9 @@ static const struct built_in_command bltins1[] = {
 	BLTIN("shift"    , builtin_shift   , "Shift positional parameters"),
 #if BASH_SOURCE
 	BLTIN("source"   , builtin_source  , NULL),
+#endif
+#if ENABLE_HUSH_TIMES
+	BLTIN("times"    , builtin_times   , NULL),
 #endif
 #if ENABLE_HUSH_TRAP
 	BLTIN("trap"     , builtin_trap    , "Trap signals"),
@@ -1074,7 +1146,7 @@ static const struct built_in_command bltins1[] = {
 	BLTIN("unset"    , builtin_unset   , "Unset variables"),
 #endif
 #if ENABLE_HUSH_WAIT
-	BLTIN("wait"     , builtin_wait    , "Wait for process"),
+	BLTIN("wait"     , builtin_wait    , "Wait for process to finish"),
 #endif
 };
 /* These builtins won't be used if we are on NOMMU and need to re-exec
@@ -1154,6 +1226,10 @@ static const struct built_in_command bltins2[] = {
 # define DEBUG_GLOB 0
 #endif
 
+#ifndef debug_printf_redir
+# define debug_printf_redir(...) (indent(), fdprintf(2, __VA_ARGS__))
+#endif
+
 #ifndef debug_printf_list
 # define debug_printf_list(...) (indent(), fdprintf(2, __VA_ARGS__))
 #endif
@@ -1221,7 +1297,7 @@ static void xxfree(void *ptr)
  * HUSH_DEBUG >= 2 prints line number in this file where it was detected.
  */
 #if HUSH_DEBUG < 2
-# define die_if_script(lineno, ...)             die_if_script(__VA_ARGS__)
+# define msg_and_die_if_script(lineno, ...)     msg_and_die_if_script(__VA_ARGS__)
 # define syntax_error(lineno, msg)              syntax_error(msg)
 # define syntax_error_at(lineno, msg)           syntax_error_at(msg)
 # define syntax_error_unterm_ch(lineno, ch)     syntax_error_unterm_ch(ch)
@@ -1229,7 +1305,16 @@ static void xxfree(void *ptr)
 # define syntax_error_unexpected_ch(lineno, ch) syntax_error_unexpected_ch(ch)
 #endif
 
-static void die_if_script(unsigned lineno, const char *fmt, ...)
+static void die_if_script(void)
+{
+	if (!G_interactive_fd) {
+		if (G.last_exitcode) /* sometines it's 2, not 1 (bash compat) */
+			xfunc_error_retval = G.last_exitcode;
+		xfunc_die();
+	}
+}
+
+static void msg_and_die_if_script(unsigned lineno, const char *fmt, ...)
 {
 	va_list p;
 
@@ -1239,8 +1324,7 @@ static void die_if_script(unsigned lineno, const char *fmt, ...)
 	va_start(p, fmt);
 	bb_verror_msg(fmt, p, NULL);
 	va_end(p);
-	if (!G_interactive_fd)
-		xfunc_die();
+	die_if_script();
 }
 
 static void syntax_error(unsigned lineno UNUSED_PARAM, const char *msg)
@@ -1249,16 +1333,20 @@ static void syntax_error(unsigned lineno UNUSED_PARAM, const char *msg)
 		bb_error_msg("syntax error: %s", msg);
 	else
 		bb_error_msg("syntax error");
+	die_if_script();
 }
 
 static void syntax_error_at(unsigned lineno UNUSED_PARAM, const char *msg)
 {
 	bb_error_msg("syntax error at '%s'", msg);
+	die_if_script();
 }
 
 static void syntax_error_unterm_str(unsigned lineno UNUSED_PARAM, const char *s)
 {
 	bb_error_msg("syntax error: unterminated %s", s);
+//? source4.tests fails: in bash, echo ${^} in script does not terminate the script
+//	die_if_script();
 }
 
 static void syntax_error_unterm_ch(unsigned lineno, char ch)
@@ -1276,17 +1364,18 @@ static void syntax_error_unexpected_ch(unsigned lineno UNUSED_PARAM, int ch)
 	bb_error_msg("hush.c:%u", lineno);
 #endif
 	bb_error_msg("syntax error: unexpected %s", ch == EOF ? "EOF" : msg);
+	die_if_script();
 }
 
 #if HUSH_DEBUG < 2
-# undef die_if_script
+# undef msg_and_die_if_script
 # undef syntax_error
 # undef syntax_error_at
 # undef syntax_error_unterm_ch
 # undef syntax_error_unterm_str
 # undef syntax_error_unexpected_ch
 #else
-# define die_if_script(...)             die_if_script(__LINE__, __VA_ARGS__)
+# define msg_and_die_if_script(...)     msg_and_die_if_script(__LINE__, __VA_ARGS__)
 # define syntax_error(msg)              syntax_error(__LINE__, msg)
 # define syntax_error_at(msg)           syntax_error_at(__LINE__, msg)
 # define syntax_error_unterm_ch(ch)     syntax_error_unterm_ch(__LINE__, ch)
@@ -1389,17 +1478,37 @@ static void free_strings(char **strings)
 	free(strings);
 }
 
-
-static int xdup_and_close(int fd, int F_DUPFD_maybe_CLOEXEC)
+static int fcntl_F_DUPFD(int fd, int avoid_fd)
 {
-	/* We avoid taking stdio fds. Mimicking ash: use fds above 9 */
-	int newfd = fcntl(fd, F_DUPFD_maybe_CLOEXEC, 10);
+	int newfd;
+ repeat:
+	newfd = fcntl(fd, F_DUPFD, avoid_fd + 1);
 	if (newfd < 0) {
+		if (errno == EBUSY)
+			goto repeat;
+		if (errno == EINTR)
+			goto repeat;
+	}
+	return newfd;
+}
+
+static int xdup_CLOEXEC_and_close(int fd, int avoid_fd)
+{
+	int newfd;
+ repeat:
+	newfd = fcntl(fd, F_DUPFD_CLOEXEC, avoid_fd + 1);
+	if (newfd < 0) {
+		if (errno == EBUSY)
+			goto repeat;
+		if (errno == EINTR)
+			goto repeat;
 		/* fd was not open? */
 		if (errno == EBADF)
 			return fd;
 		xfunc_die();
 	}
+	if (F_DUPFD_CLOEXEC == F_DUPFD) /* if old libc (w/o F_DUPFD_CLOEXEC) */
+		fcntl(newfd, F_SETFD, FD_CLOEXEC);
 	close(fd);
 	return newfd;
 }
@@ -1432,13 +1541,14 @@ static void fclose_and_forget(FILE *fp)
 	}
 	fclose(fp);
 }
-static int save_FILEs_on_redirect(int fd)
+static int save_FILEs_on_redirect(int fd, int avoid_fd)
 {
 	struct FILE_list *fl = G.FILE_list;
 	while (fl) {
 		if (fd == fl->fd) {
 			/* We use it only on script files, they are all CLOEXEC */
-			fl->fd = xdup_and_close(fd, F_DUPFD_CLOEXEC);
+			fl->fd = xdup_CLOEXEC_and_close(fd, avoid_fd);
+			debug_printf_redir("redirect_fd %d: matches a script fd, moving it to %d\n", fd, fl->fd);
 			return 1;
 		}
 		fl = fl->next;
@@ -1451,6 +1561,7 @@ static void restore_redirected_FILEs(void)
 	while (fl) {
 		int should_be = fileno(fl->fp);
 		if (fl->fd != should_be) {
+			debug_printf_redir("restoring script fd from %d to %d\n", fl->fd, should_be);
 			xmove_fd(fl->fd, should_be);
 			fl->fd = should_be;
 		}
@@ -1473,6 +1584,16 @@ static void close_all_FILE_list(void)
 	}
 }
 #endif
+static int fd_in_FILEs(int fd)
+{
+	struct FILE_list *fl = G.FILE_list;
+	while (fl) {
+		if (fl->fd == fd)
+			return 1;
+		fl = fl->next;
+	}
+	return 0;
+}
 
 
 /* Helpers for setting new $n and restoring them back
@@ -1717,7 +1838,7 @@ static void restore_ttypgrp_and__exit(void)
  *	echo END_OF_SCRIPT
  * lseeks fd in input FILE object from EOF to "e" in "echo END_OF_SCRIPT".
  * This makes "echo END_OF_SCRIPT" executed twice.
- * Similar problems can be seen with die_if_script() -> xfunc_die()
+ * Similar problems can be seen with msg_and_die_if_script() -> xfunc_die()
  * and in `cmd` handling.
  * If set as die_func(), this makes xfunc_die() exit via _exit(), not exit():
  */
@@ -1883,6 +2004,9 @@ static int check_and_run_traps(void)
 			break;
 #if ENABLE_HUSH_JOB
 		case SIGHUP: {
+//TODO: why are we doing this? ash and dash don't do this,
+//they have no handler for SIGHUP at all,
+//they rely on kernel to send SIGHUP+SIGCONT to orphaned process groups
 			struct pipe *job;
 			debug_printf_exec("%s: sig:%d default SIGHUP handler\n", __func__, sig);
 			/* bash is observed to signal whole process groups,
@@ -1986,32 +2110,19 @@ static const char* FAST_FUNC get_local_var_value(const char *name)
 
 /* str holds "NAME=VAL" and is expected to be malloced.
  * We take ownership of it.
- * flg_export:
- *  0: do not change export flag
- *     (if creating new variable, flag will be 0)
- *  1: set export flag and putenv the variable
- * -1: clear export flag and unsetenv the variable
- * flg_read_only is set only when we handle -R var=val
  */
-#if !BB_MMU && ENABLE_HUSH_LOCAL
-/* all params are used */
-#elif BB_MMU && ENABLE_HUSH_LOCAL
-#define set_local_var(str, flg_export, local_lvl, flg_read_only) \
-	set_local_var(str, flg_export, local_lvl)
-#elif BB_MMU && !ENABLE_HUSH_LOCAL
-#define set_local_var(str, flg_export, local_lvl, flg_read_only) \
-	set_local_var(str, flg_export)
-#elif !BB_MMU && !ENABLE_HUSH_LOCAL
-#define set_local_var(str, flg_export, local_lvl, flg_read_only) \
-	set_local_var(str, flg_export, flg_read_only)
-#endif
-static int set_local_var(char *str, int flg_export, int local_lvl, int flg_read_only)
+#define SETFLAG_EXPORT   (1 << 0)
+#define SETFLAG_UNEXPORT (1 << 1)
+#define SETFLAG_MAKE_RO  (1 << 2)
+#define SETFLAG_LOCAL_SHIFT    3
+static int set_local_var(char *str, unsigned flags)
 {
 	struct variable **var_pp;
 	struct variable *cur;
 	char *free_me = NULL;
 	char *eq_sign;
 	int name_len;
+	IF_HUSH_LOCAL(unsigned local_lvl = (flags >> SETFLAG_LOCAL_SHIFT);)
 
 	eq_sign = strchr(str, '=');
 	if (!eq_sign) { /* not expected to ever happen? */
@@ -2029,14 +2140,13 @@ static int set_local_var(char *str, int flg_export, int local_lvl, int flg_read_
 
 		/* We found an existing var with this name */
 		if (cur->flg_read_only) {
-#if !BB_MMU
-			if (!flg_read_only)
-#endif
-				bb_error_msg("%s: readonly variable", str);
+			bb_error_msg("%s: readonly variable", str);
 			free(str);
+//NOTE: in bash, assignment in "export READONLY_VAR=Z" fails, and sets $?=1,
+//but export per se succeeds (does put the var in env). We don't mimic that.
 			return -1;
 		}
-		if (flg_export == -1) { // "&& cur->flg_export" ?
+		if (flags & SETFLAG_UNEXPORT) { // && cur->flg_export ?
 			debug_printf_env("%s: unsetenv '%s'\n", __func__, str);
 			*eq_sign = '\0';
 			unsetenv(str);
@@ -2060,7 +2170,7 @@ static int set_local_var(char *str, int flg_export, int local_lvl, int flg_read_
 			 * z=z
 			 */
 			if (cur->flg_export)
-				flg_export = 1;
+				flags |= SETFLAG_EXPORT;
 			break;
 		}
 #endif
@@ -2091,24 +2201,29 @@ static int set_local_var(char *str, int flg_export, int local_lvl, int flg_read_
 
 	/* Not found - create new variable struct */
 	cur = xzalloc(sizeof(*cur));
-#if ENABLE_HUSH_LOCAL
-	cur->func_nest_level = local_lvl;
-#endif
+	IF_HUSH_LOCAL(cur->func_nest_level = local_lvl;)
 	cur->next = *var_pp;
 	*var_pp = cur;
 
  set_str_and_exp:
 	cur->varstr = str;
-#if !BB_MMU
-	cur->flg_read_only = flg_read_only;
-#endif
  exp:
-	if (flg_export == 1)
+#if !BB_MMU || ENABLE_HUSH_READONLY
+	if (flags & SETFLAG_MAKE_RO) {
+		cur->flg_read_only = 1;
+	}
+#endif
+	if (flags & SETFLAG_EXPORT)
 		cur->flg_export = 1;
 	if (name_len == 4 && cur->varstr[0] == 'P' && cur->varstr[1] == 'S')
 		cmdedit_update_prompt();
+#if ENABLE_HUSH_GETOPTS
+	/* defoptindvar is a "OPTIND=..." constant string */
+	if (strncmp(cur->varstr, defoptindvar, 7) == 0)
+		G.getopt_count = 0;
+#endif
 	if (cur->flg_export) {
-		if (flg_export == -1) {
+		if (flags & SETFLAG_UNEXPORT) {
 			cur->flg_export = 0;
 			/* unsetenv was already done */
 		} else {
@@ -2125,10 +2240,9 @@ static int set_local_var(char *str, int flg_export, int local_lvl, int flg_read_
 }
 
 /* Used at startup and after each cd */
-static void set_pwd_var(int exp)
+static void set_pwd_var(unsigned flag)
 {
-	set_local_var(xasprintf("PWD=%s", get_cwd(/*force:*/ 1)),
-		/*exp:*/ exp, /*lvl:*/ 0, /*ro:*/ 0);
+	set_local_var(xasprintf("PWD=%s", get_cwd(/*force:*/ 1)), flag);
 }
 
 static int unset_local_var_len(const char *name, int name_len)
@@ -2138,6 +2252,10 @@ static int unset_local_var_len(const char *name, int name_len)
 
 	if (!name)
 		return EXIT_SUCCESS;
+#if ENABLE_HUSH_GETOPTS
+	if (name_len == 6 && strncmp(name, "OPTIND", 6) == 0)
+		G.getopt_count = 0;
+#endif
 	var_pp = &G.top_var;
 	while ((cur = *var_pp) != NULL) {
 		if (strncmp(cur->varstr, name, name_len) == 0 && cur->varstr[name_len] == '=') {
@@ -2160,7 +2278,7 @@ static int unset_local_var_len(const char *name, int name_len)
 	return EXIT_SUCCESS;
 }
 
-#if ENABLE_HUSH_UNSET
+#if ENABLE_HUSH_UNSET || ENABLE_HUSH_GETOPTS
 static int unset_local_var(const char *name)
 {
 	return unset_local_var_len(name, strlen(name));
@@ -2182,11 +2300,11 @@ static void unset_vars(char **strings)
 	free(strings);
 }
 
-#if BASH_HOSTNAME_VAR || ENABLE_FEATURE_SH_MATH || ENABLE_HUSH_READ
+#if BASH_HOSTNAME_VAR || ENABLE_FEATURE_SH_MATH || ENABLE_HUSH_READ || ENABLE_HUSH_GETOPTS
 static void FAST_FUNC set_local_var_from_halves(const char *name, const char *val)
 {
 	char *var = xasprintf("%s=%s", name, val);
-	set_local_var(var, /*flags:*/ 0, /*lvl:*/ 0, /*ro:*/ 0);
+	set_local_var(var, /*flag:*/ 0);
 }
 #endif
 
@@ -2229,16 +2347,32 @@ static struct variable *set_vars_and_save_old(char **strings)
 		if (eq) {
 			var_pp = get_ptr_to_local_var(*s, eq - *s);
 			if (var_pp) {
-				/* Remove variable from global linked list */
 				var_p = *var_pp;
+				if (var_p->flg_read_only) {
+					char **p;
+					bb_error_msg("%s: readonly variable", *s);
+					/*
+					 * "VAR=V BLTIN" unsets VARs after BLTIN completes.
+					 * If VAR is readonly, leaving it in the list
+					 * after asssignment error (msg above)
+					 * causes doubled error message later, on unset.
+					 */
+					debug_printf_env("removing/freeing '%s' element\n", *s);
+					free(*s);
+					p = s;
+					do { *p = p[1]; p++; } while (*p);
+					goto next;
+				}
+				/* Remove variable from global linked list */
 				debug_printf_env("%s: removing '%s'\n", __func__, var_p->varstr);
 				*var_pp = var_p->next;
 				/* Add it to returned list */
 				var_p->next = old;
 				old = var_p;
 			}
-			set_local_var(*s, /*exp:*/ 1, /*lvl:*/ 0, /*ro:*/ 0);
+			set_local_var(*s, SETFLAG_EXPORT);
 		}
+ next:
 		s++;
 	}
 	return old;
@@ -2327,18 +2461,17 @@ static int get_user_input(struct in_str *i)
 		/* buglet: SIGINT will not make new prompt to appear _at once_,
 		 * only after <Enter>. (^C works immediately) */
 		r = read_line_input(G.line_input_state, prompt_str,
-				G.user_input_buf, CONFIG_FEATURE_EDITING_MAX_LEN-1,
-				/*timeout*/ -1
+				G.user_input_buf, CONFIG_FEATURE_EDITING_MAX_LEN-1
 		);
 		/* read_line_input intercepts ^C, "convert" it to SIGINT */
-		if (r == 0) {
-			write(STDOUT_FILENO, "^C", 2);
+		if (r == 0)
 			raise(SIGINT);
-		}
 		check_and_run_traps();
 		if (r != 0 && !G.flag_SIGINT)
 			break;
 		/* ^C or SIGINT: repeat */
+		/* bash prints ^C even on real SIGINT (non-kbd generated) */
+		write(STDOUT_FILENO, "^C", 2);
 		G.last_exitcode = 128 + SIGINT;
 	}
 	if (r < 0) {
@@ -2590,9 +2723,8 @@ static void o_delchr(o_string *o)
 static void o_addblock(o_string *o, const char *str, int len)
 {
 	o_grow_by(o, len);
-	memcpy(&o->data[o->length], str, len);
+	((char*)mempcpy(&o->data[o->length], str, len))[0] = '\0';
 	o->length += len;
-	o->data[o->length] = '\0';
 }
 
 static void o_addstr(o_string *o, const char *str)
@@ -3301,7 +3433,7 @@ static int done_command(struct parse_context *ctx)
 #if 0	/* Instead we emit error message at run time */
 	if (ctx->pending_redirect) {
 		/* For example, "cmd >" (no filename to redirect to) */
-		die_if_script("syntax error: %s", "invalid redirect");
+		syntax_error("invalid redirect");
 		ctx->pending_redirect = NULL;
 	}
 #endif
@@ -3334,12 +3466,49 @@ static void done_pipe(struct parse_context *ctx, pipe_style type)
 	debug_printf_parse("done_pipe entered, followup %d\n", type);
 	/* Close previous command */
 	not_null = done_command(ctx);
-	ctx->pipe->followup = type;
 #if HAS_KEYWORDS
 	ctx->pipe->pi_inverted = ctx->ctx_inverted;
 	ctx->ctx_inverted = 0;
 	ctx->pipe->res_word = ctx->ctx_res_w;
 #endif
+	if (type == PIPE_BG && ctx->list_head != ctx->pipe) {
+		/* Necessary since && and || have precedence over &:
+		 * "cmd1 && cmd2 &" must spawn both cmds, not only cmd2,
+		 * in a backgrounded subshell.
+		 */
+		struct pipe *pi;
+		struct command *command;
+
+		/* Is this actually this construct, all pipes end with && or ||? */
+		pi = ctx->list_head;
+		while (pi != ctx->pipe) {
+			if (pi->followup != PIPE_AND && pi->followup != PIPE_OR)
+				goto no_conv;
+			pi = pi->next;
+		}
+
+		debug_printf_parse("BG with more than one pipe, converting to { p1 &&...pN; } &\n");
+		pi->followup = PIPE_SEQ; /* close pN _not_ with "&"! */
+		pi = xzalloc(sizeof(*pi));
+		pi->followup = PIPE_BG;
+		pi->num_cmds = 1;
+		pi->cmds = xzalloc(sizeof(pi->cmds[0]));
+		command = &pi->cmds[0];
+		if (CMD_NORMAL != 0) /* "if xzalloc didn't do that already" */
+			command->cmd_type = CMD_NORMAL;
+		command->group = ctx->list_head;
+#if !BB_MMU
+		command->group_as_string = xstrndup(
+			    ctx->as_string.data,
+			    ctx->as_string.length - 1 /* do not copy last char, "&" */
+		);
+#endif
+		/* Replace all pipes in ctx with one newly created */
+		ctx->list_head = ctx->pipe = pi;
+	} else {
+ no_conv:
+		ctx->pipe->followup = type;
+	}
 
 	/* Without this check, even just <enter> on command line generates
 	 * tree of three NOPs (!). Which is harmless but annoying.
@@ -3509,9 +3678,8 @@ static int reserved_word(o_string *word, struct parse_context *ctx)
 	if (r->flag & FLAG_START) {
 		struct parse_context *old;
 
-		old = xmalloc(sizeof(*old));
+		old = xmemdup(ctx, sizeof(*ctx));
 		debug_printf_parse("push stack %p\n", old);
-		*old = *ctx;   /* physical copy */
 		initialize_context(ctx);
 		ctx->stack = old;
 	} else if (/*ctx->ctx_res_w == RES_NONE ||*/ !(ctx->old_flag & (1 << r->res))) {
@@ -3831,7 +3999,7 @@ static int parse_redirect(struct parse_context *ctx,
 #if 0		/* Instead we emit error message at run time */
 		if (ctx->pending_redirect) {
 			/* For example, "cmd > <file" */
-			die_if_script("syntax error: %s", "invalid redirect");
+			syntax_error("invalid redirect");
 		}
 #endif
 		/* Set ctx->pending_redirect, so we know what to do at the
@@ -3894,24 +4062,34 @@ static char *fetch_till_str(o_string *as_string,
 		ch = i_getch(input);
 		if (ch != EOF)
 			nommu_addchr(as_string, ch);
-		if ((ch == '\n' || ch == EOF)
-		 && ((heredoc_flags & HEREDOC_QUOTED) || prev != '\\')
-		) {
-			if (strcmp(heredoc.data + past_EOL, word) == 0) {
-				heredoc.data[past_EOL] = '\0';
-				debug_printf_parse("parsed heredoc '%s'\n", heredoc.data);
-				return heredoc.data;
-			}
-			while (ch == '\n') {
-				o_addchr(&heredoc, ch);
-				prev = ch;
+		if (ch == '\n' || ch == EOF) {
+ check_heredoc_end:
+			if ((heredoc_flags & HEREDOC_QUOTED) || prev != '\\') {
+				if (strcmp(heredoc.data + past_EOL, word) == 0) {
+					heredoc.data[past_EOL] = '\0';
+					debug_printf_parse("parsed heredoc '%s'\n", heredoc.data);
+					return heredoc.data;
+				}
+				if (ch == '\n') {
+					/* This is a new line.
+					 * Remember position and backslash-escaping status.
+					 */
+					o_addchr(&heredoc, ch);
+					prev = ch;
  jump_in:
-				past_EOL = heredoc.length;
-				do {
-					ch = i_getch(input);
-					if (ch != EOF)
-						nommu_addchr(as_string, ch);
-				} while ((heredoc_flags & HEREDOC_SKIPTABS) && ch == '\t');
+					past_EOL = heredoc.length;
+					/* Get 1st char of next line, possibly skipping leading tabs */
+					do {
+						ch = i_getch(input);
+						if (ch != EOF)
+							nommu_addchr(as_string, ch);
+					} while ((heredoc_flags & HEREDOC_SKIPTABS) && ch == '\t');
+					/* If this immediately ended the line,
+					 * go back to end-of-line checks.
+					 */
+					if (ch == '\n')
+						goto check_heredoc_end;
+				}
 			}
 		}
 		if (ch == EOF) {
@@ -4359,6 +4537,8 @@ static int parse_dollar(o_string *as_string,
 	case '@': /* args */
 		goto make_one_char_var;
 	case '{': {
+		char len_single_ch;
+
 		o_addchr(dest, SPECIAL_VAR_SYMBOL);
 
 		ch = i_getch(input); /* eat '{' */
@@ -4378,6 +4558,7 @@ static int parse_dollar(o_string *as_string,
 			return 0;
 		}
 		nommu_addchr(as_string, ch);
+		len_single_ch = ch;
 		ch |= quote_mask;
 
 		/* It's possible to just call add_till_closing_bracket() at this point.
@@ -4402,9 +4583,18 @@ static int parse_dollar(o_string *as_string,
 				/* handle parameter expansions
 				 * http://www.opengroup.org/onlinepubs/009695399/utilities/xcu_chap02.html#tag_02_06_02
 				 */
-				if (!strchr(VAR_SUBST_OPS, ch)) /* ${var<bad_char>... */
-					goto bad_dollar_syntax;
-
+				if (!strchr(VAR_SUBST_OPS, ch)) { /* ${var<bad_char>... */
+					if (len_single_ch != '#'
+					/*|| !strchr(SPECIAL_VARS_STR, ch) - disallow errors like ${#+} ? */
+					 || i_peek(input) != '}'
+					) {
+						goto bad_dollar_syntax;
+					}
+					/* else: it's "length of C" ${#C} op,
+					 * where C is a single char
+					 * special var name, e.g. ${#!}.
+					 */
+				}
 				/* Eat everything until closing '}' (or ':') */
 				end_ch = '}';
 				if (BASH_SUBSTR
@@ -4461,6 +4651,7 @@ static int parse_dollar(o_string *as_string,
 				}
 				break;
 			}
+			len_single_ch = 0; /* it can't be ${#C} op */
 		}
 		o_addchr(dest, SPECIAL_VAR_SYMBOL);
 		break;
@@ -4782,7 +4973,9 @@ static struct pipe *parse_stream(char **pstring,
 					 * Really, ask yourself, why
 					 * "cmd && <newline>" doesn't start
 					 * cmd but waits for more input?
-					 * No reason...)
+					 * The only reason is that it might be
+					 * a "cmd1 && <nl> cmd2 &" construct,
+					 * cmd1 may need to run in BG).
 					 */
 					struct pipe *pi = ctx.list_head;
 					if (pi->num_cmds != 0       /* check #1 */
@@ -4878,10 +5071,16 @@ static struct pipe *parse_stream(char **pstring,
 				else
 					o_free_unsafe(&ctx.as_string);
 #endif
-				debug_leave();
+				if (ch != ';' && IS_NULL_PIPE(ctx.list_head)) {
+					/* Example: bare "{ }", "()" */
+					G.last_exitcode = 2; /* bash compat */
+					syntax_error_unexpected_ch(ch);
+					goto parse_error2;
+				}
 				debug_printf_parse("parse_stream return %p: "
 						"end_trigger char found\n",
 						ctx.list_head);
+				debug_leave();
 				return ctx.list_head;
 			}
 		}
@@ -4941,14 +5140,23 @@ static struct pipe *parse_stream(char **pstring,
 		case '#':
 			if (dest.length == 0 && !dest.has_quoted_part) {
 				/* skip "#comment" */
+				/* note: we do not add it to &ctx.as_string */
+/* TODO: in bash:
+ * comment inside $() goes to the next \n, even inside quoted string (!):
+ * cmd "$(cmd2 #comment)" - syntax error
+ * cmd "`cmd2 #comment`" - ok
+ * We accept both (comment ends where command subst ends, in both cases).
+ */
 				while (1) {
 					ch = i_peek(input);
-					if (ch == EOF || ch == '\n')
+					if (ch == '\n') {
+						nommu_addchr(&ctx.as_string, '\n');
 						break;
-					i_getch(input);
-					/* note: we do not add it to &ctx.as_string */
+					}
+					ch = i_getch(input);
+					if (ch == EOF)
+						break;
 				}
-				nommu_addchr(&ctx.as_string, '\n');
 				continue; /* back to top of while (1) */
 			}
 			break;
@@ -5139,9 +5347,9 @@ static struct pipe *parse_stream(char **pstring,
 			/* proper use of this character is caught by end_trigger:
 			 * if we see {, we call parse_group(..., end_trigger='}')
 			 * and it will match } earlier (not here). */
-			syntax_error_unexpected_ch(ch);
 			G.last_exitcode = 2;
-			goto parse_error1;
+			syntax_error_unexpected_ch(ch);
+			goto parse_error2;
 		default:
 			if (HUSH_DEBUG)
 				bb_error_msg_and_die("BUG: unexpected %c\n", ch);
@@ -5150,7 +5358,7 @@ static struct pipe *parse_stream(char **pstring,
 
  parse_error:
 	G.last_exitcode = 1;
- parse_error1:
+ parse_error2:
 	{
 		struct parse_context *pctx;
 		IF_HAS_KEYWORDS(struct parse_context *p2;)
@@ -5197,7 +5405,7 @@ static struct pipe *parse_stream(char **pstring,
 /*** Execution routines ***/
 
 /* Expansion can recurse, need forward decls: */
-#if !BASH_PATTERN_SUBST
+#if !BASH_PATTERN_SUBST && !ENABLE_HUSH_CASE
 /* only ${var/pattern/repl} (its pattern part) needs additional mode */
 #define expand_string_to_string(str, do_unbackslash) \
 	expand_string_to_string(str)
@@ -5325,6 +5533,9 @@ static int expand_on_ifs(int *ended_with_ifs, o_string *output, int n, const cha
 #endif
 static char *encode_then_expand_string(const char *str, int process_bkslash, int do_unbackslash)
 {
+#if !BASH_PATTERN_SUBST
+	enum { do_unbackslash = 1 };
+#endif
 	char *exp_str;
 	struct in_str input;
 	o_string dest = NULL_O_STRING;
@@ -5367,7 +5578,7 @@ static arith_t expand_and_evaluate_arith(const char *arg, const char **errmsg_p)
 	if (errmsg_p)
 		*errmsg_p = math_state.errmsg;
 	if (math_state.errmsg)
-		die_if_script(math_state.errmsg);
+		msg_and_die_if_script(math_state.errmsg);
 	return res;
 }
 #endif
@@ -5406,17 +5617,15 @@ static char *replace_pattern(char *val, const char *pattern, const char *repl, c
 			break;
 
 		result = xrealloc(result, res_len + (s - val) + repl_len + 1);
-		memcpy(result + res_len, val, s - val);
-		res_len += s - val;
-		strcpy(result + res_len, repl);
-		res_len += repl_len;
+		strcpy(mempcpy(result + res_len, val, s - val), repl);
+		res_len += (s - val) + repl_len;
 		debug_printf_varexp("val:'%s' s:'%s' result:'%s'\n", val, s, result);
 
 		val = s + size;
 		if (exp_op == '/')
 			break;
 	}
-	if (val[0] && result) {
+	if (*val && result) {
 		result = xrealloc(result, res_len + strlen(val) + 1);
 		strcpy(result + res_len, val);
 		debug_printf_varexp("val:'%s' result:'%s'\n", val, result);
@@ -5449,8 +5658,10 @@ static NOINLINE const char *expand_one_var(char **to_be_freed_pp, char *arg, cha
 	first_char = arg[0] = arg0 & 0x7f;
 	exp_op = 0;
 
-	if (first_char == '#'      /* ${#... */
-	 && arg[1] && !exp_saveptr /* not ${#} and not ${#<op_char>...} */
+	if (first_char == '#' && arg[1] /* ${#...} but not ${#} */
+	 && (!exp_saveptr               /* and ( not(${#<op_char>...}) */
+	    || (arg[2] == '\0' && strchr(SPECIAL_VARS_STR, arg[1])) /* or ${#C} "len of $C" ) */
+	    )		/* NB: skipping ^^^specvar check mishandles ${#::2} */
 	) {
 		/* It must be length operator: ${#var} */
 		var++;
@@ -5623,27 +5834,34 @@ static NOINLINE const char *expand_one_var(char **to_be_freed_pp, char *arg, cha
 			if (errmsg)
 				goto arith_err;
 			debug_printf_varexp("len:'%s'=%lld\n", exp_word, (long long)len);
-			if (len >= 0) { /* bash compat: len < 0 is illegal */
-				if (beg < 0) /* bash compat */
-					beg = 0;
-				debug_printf_varexp("from val:'%s'\n", val);
-				if (len == 0 || !val || beg >= strlen(val)) {
- arith_err:
-					val = NULL;
-				} else {
-					/* Paranoia. What if user entered 9999999999999
-					 * which fits in arith_t but not int? */
-					if (len >= INT_MAX)
-						len = INT_MAX;
-					val = to_be_freed = xstrndup(val + beg, len);
-				}
-				debug_printf_varexp("val:'%s'\n", val);
-			} else
-#endif /* HUSH_SUBSTR_EXPANSION && FEATURE_SH_MATH */
-			{
-				die_if_script("malformed ${%s:...}", var);
-				val = NULL;
+			if (beg < 0) {
+				/* negative beg counts from the end */
+				beg = (arith_t)strlen(val) + beg;
+				if (beg < 0) /* ${v: -999999} is "" */
+					beg = len = 0;
 			}
+			debug_printf_varexp("from val:'%s'\n", val);
+			if (len < 0) {
+				/* in bash, len=-n means strlen()-n */
+				len = (arith_t)strlen(val) - beg + len;
+				if (len < 0) /* bash compat */
+					msg_and_die_if_script("%s: substring expression < 0", var);
+			}
+			if (len <= 0 || !val || beg >= strlen(val)) {
+ arith_err:
+				val = NULL;
+			} else {
+				/* Paranoia. What if user entered 9999999999999
+				 * which fits in arith_t but not int? */
+				if (len >= INT_MAX)
+					len = INT_MAX;
+				val = to_be_freed = xstrndup(val + beg, len);
+			}
+			debug_printf_varexp("val:'%s'\n", val);
+#else /* not (HUSH_SUBSTR_EXPANSION && FEATURE_SH_MATH) */
+			msg_and_die_if_script("malformed ${%s:...}", var);
+			val = NULL;
+#endif
 		} else { /* one of "-=+?" */
 			/* Standard-mandated substitution ops:
 			 * ${var?word} - indicate error if unset
@@ -5678,9 +5896,13 @@ static NOINLINE const char *expand_one_var(char **to_be_freed_pp, char *arg, cha
 					exp_word = to_be_freed;
 				if (exp_op == '?') {
 					/* mimic bash message */
-					die_if_script("%s: %s",
+					msg_and_die_if_script("%s: %s",
 						var,
-						exp_word[0] ? exp_word : "parameter null or not set"
+						exp_word[0]
+						? exp_word
+						: "parameter null or not set"
+						/* ash has more specific messages, a-la: */
+						/*: (exp_save == ':' ? "parameter null or not set" : "parameter not set")*/
 					);
 //TODO: how interactive bash aborts expansion mid-command?
 				} else {
@@ -5691,11 +5913,11 @@ static NOINLINE const char *expand_one_var(char **to_be_freed_pp, char *arg, cha
 					/* ${var=[word]} or ${var:=[word]} */
 					if (isdigit(var[0]) || var[0] == '#') {
 						/* mimic bash message */
-						die_if_script("$%s: cannot assign in this way", var);
+						msg_and_die_if_script("$%s: cannot assign in this way", var);
 						val = NULL;
 					} else {
 						char *new_var = xasprintf("%s=%s", var, val);
-						set_local_var(new_var, /*exp:*/ 0, /*lvl:*/ 0, /*ro:*/ 0);
+						set_local_var(new_var, /*flag:*/ 0);
 					}
 				}
 			}
@@ -5944,7 +6166,7 @@ static char **expand_strvec_to_strvec_singleword_noglob(char **argv)
  */
 static char *expand_string_to_string(const char *str, int do_unbackslash)
 {
-#if !BASH_PATTERN_SUBST
+#if !BASH_PATTERN_SUBST && !ENABLE_HUSH_CASE
 	const int do_unbackslash = 1;
 #endif
 	char *argv[2], **list;
@@ -5977,7 +6199,7 @@ static char *expand_string_to_string(const char *str, int do_unbackslash)
 	return (char*)list;
 }
 
-/* Used for "eval" builtin */
+/* Used for "eval" builtin and case string */
 static char* expand_strvec_to_string(char **argv)
 {
 	char **list;
@@ -6519,85 +6741,175 @@ static void setup_heredoc(struct redir_struct *redir)
 	wait(NULL); /* wait till child has died */
 }
 
+struct squirrel {
+	int orig_fd;
+	int moved_to;
+	/* moved_to = n: fd was moved to n; restore back to orig_fd after redir */
+	/* moved_to = -1: fd was opened by redirect; close orig_fd after redir */
+};
+
+static struct squirrel *append_squirrel(struct squirrel *sq, int i, int orig, int moved)
+{
+	sq = xrealloc(sq, (i + 2) * sizeof(sq[0]));
+	sq[i].orig_fd = orig;
+	sq[i].moved_to = moved;
+	sq[i+1].orig_fd = -1; /* end marker */
+	return sq;
+}
+
+static struct squirrel *add_squirrel(struct squirrel *sq, int fd, int avoid_fd)
+{
+	int moved_to;
+	int i;
+
+	i = 0;
+	if (sq) for (; sq[i].orig_fd >= 0; i++) {
+		/* If we collide with an already moved fd... */
+		if (fd == sq[i].moved_to) {
+			sq[i].moved_to = fcntl_F_DUPFD(sq[i].moved_to, avoid_fd);
+			debug_printf_redir("redirect_fd %d: already busy, moving to %d\n", fd, sq[i].moved_to);
+			if (sq[i].moved_to < 0) /* what? */
+				xfunc_die();
+			return sq;
+		}
+		if (fd == sq[i].orig_fd) {
+			/* Example: echo Hello >/dev/null 1>&2 */
+			debug_printf_redir("redirect_fd %d: already moved\n", fd);
+			return sq;
+		}
+	}
+
+	/* If this fd is open, we move and remember it; if it's closed, moved_to = -1 */
+	moved_to = fcntl_F_DUPFD(fd, avoid_fd);
+	debug_printf_redir("redirect_fd %d: previous fd is moved to %d (-1 if it was closed)\n", fd, moved_to);
+	if (moved_to < 0 && errno != EBADF)
+		xfunc_die();
+	return append_squirrel(sq, i, fd, moved_to);
+}
+
+static struct squirrel *add_squirrel_closed(struct squirrel *sq, int fd)
+{
+	int i;
+
+	i = 0;
+	if (sq) for (; sq[i].orig_fd >= 0; i++) {
+		/* If we collide with an already moved fd... */
+		if (fd == sq[i].orig_fd) {
+			/* Examples:
+			 * "echo 3>FILE 3>&- 3>FILE"
+			 * "echo 3>&- 3>FILE"
+			 * No need for last redirect to insert
+			 * another "need to close 3" indicator.
+			 */
+			debug_printf_redir("redirect_fd %d: already moved or closed\n", fd);
+			return sq;
+		}
+	}
+
+	debug_printf_redir("redirect_fd %d: previous fd was closed\n", fd);
+	return append_squirrel(sq, i, fd, -1);
+}
+
 /* fd: redirect wants this fd to be used (e.g. 3>file).
  * Move all conflicting internally used fds,
  * and remember them so that we can restore them later.
  */
-static int save_fds_on_redirect(int fd, int squirrel[3])
+static int save_fd_on_redirect(int fd, int avoid_fd, struct squirrel **sqp)
 {
-	if (squirrel) {
-		/* Handle redirects of fds 0,1,2 */
-
-		/* If we collide with an already moved stdio fd... */
-		if (fd == squirrel[0]) {
-			squirrel[0] = xdup_and_close(squirrel[0], F_DUPFD);
-			return 1;
-		}
-		if (fd == squirrel[1]) {
-			squirrel[1] = xdup_and_close(squirrel[1], F_DUPFD);
-			return 1;
-		}
-		if (fd == squirrel[2]) {
-			squirrel[2] = xdup_and_close(squirrel[2], F_DUPFD);
-			return 1;
-		}
-		/* If we are about to redirect stdio fd, and did not yet move it... */
-		if (fd <= 2 && squirrel[fd] < 0) {
-			/* We avoid taking stdio fds */
-			squirrel[fd] = fcntl(fd, F_DUPFD, 10);
-			if (squirrel[fd] < 0 && errno != EBADF)
-				xfunc_die();
-			return 0; /* "we did not close fd" */
-		}
-	}
+	if (avoid_fd < 9) /* the important case here is that it can be -1 */
+		avoid_fd = 9;
 
 #if ENABLE_HUSH_INTERACTIVE
-	if (fd != 0 && fd == G.interactive_fd) {
-		G.interactive_fd = xdup_and_close(G.interactive_fd, F_DUPFD_CLOEXEC);
-		return 1;
+	if (fd == G.interactive_fd) {
+		/* Testcase: "ls -l /proc/$$/fd 255>&-" should work */
+		G.interactive_fd = xdup_CLOEXEC_and_close(G.interactive_fd, avoid_fd);
+		debug_printf_redir("redirect_fd %d: matches interactive_fd, moving it to %d\n", fd, G.interactive_fd);
+		return 1; /* "we closed fd" */
 	}
 #endif
-
 	/* Are we called from setup_redirects(squirrel==NULL)? Two cases:
 	 * (1) Redirect in a forked child. No need to save FILEs' fds,
 	 * we aren't going to use them anymore, ok to trash.
-	 * (2) "exec 3>FILE". Bummer. We can save FILEs' fds,
-	 * but how are we doing to use them?
+	 * (2) "exec 3>FILE". Bummer. We can save script FILEs' fds,
+	 * but how are we doing to restore them?
 	 * "fileno(fd) = new_fd" can't be done.
 	 */
-	if (!squirrel)
+	if (!sqp)
 		return 0;
 
-	return save_FILEs_on_redirect(fd);
+	/* If this one of script's fds? */
+	if (save_FILEs_on_redirect(fd, avoid_fd))
+		return 1; /* yes. "we closed fd" */
+
+	/* Check whether it collides with any open fds (e.g. stdio), save fds as needed */
+	*sqp = add_squirrel(*sqp, fd, avoid_fd);
+	return 0; /* "we did not close fd" */
 }
 
-static void restore_redirects(int squirrel[3])
+static void restore_redirects(struct squirrel *sq)
 {
-	int i, fd;
-	for (i = 0; i <= 2; i++) {
-		fd = squirrel[i];
-		if (fd != -1) {
-			/* We simply die on error */
-			xmove_fd(fd, i);
+	if (sq) {
+		int i;
+		for (i = 0; sq[i].orig_fd >= 0; i++) {
+			if (sq[i].moved_to >= 0) {
+				/* We simply die on error */
+				debug_printf_redir("restoring redirected fd from %d to %d\n", sq[i].moved_to, sq[i].orig_fd);
+				xmove_fd(sq[i].moved_to, sq[i].orig_fd);
+			} else {
+				/* cmd1 9>FILE; cmd2_should_see_fd9_closed */
+				debug_printf_redir("restoring redirected fd %d: closing it\n", sq[i].orig_fd);
+				close(sq[i].orig_fd);
+			}
 		}
+		free(sq);
 	}
 
-	/* Moved G.interactive_fd stays on new fd, not doing anything for it */
+	/* If moved, G.interactive_fd stays on new fd, not restoring it */
 
 	restore_redirected_FILEs();
 }
 
+#if ENABLE_FEATURE_SH_STANDALONE && BB_MMU
+static void close_saved_fds_and_FILE_fds(void)
+{
+	if (G_interactive_fd)
+		close(G_interactive_fd);
+	close_all_FILE_list();
+}
+#endif
+
+static int internally_opened_fd(int fd, struct squirrel *sq)
+{
+	int i;
+
+#if ENABLE_HUSH_INTERACTIVE
+	if (fd == G.interactive_fd)
+		return 1;
+#endif
+	/* If this one of script's fds? */
+	if (fd_in_FILEs(fd))
+		return 1;
+
+	if (sq) for (i = 0; sq[i].orig_fd >= 0; i++) {
+		if (fd == sq[i].moved_to)
+			return 1;
+	}
+	return 0;
+}
+
 /* squirrel != NULL means we squirrel away copies of stdin, stdout,
  * and stderr if they are redirected. */
-static int setup_redirects(struct command *prog, int squirrel[])
+static int setup_redirects(struct command *prog, struct squirrel **sqp)
 {
-	int openfd, mode;
 	struct redir_struct *redir;
 
 	for (redir = prog->redirects; redir; redir = redir->next) {
+		int newfd;
+		int closed;
+
 		if (redir->rd_type == REDIRECT_HEREDOC2) {
 			/* "rd_fd<<HERE" case */
-			save_fds_on_redirect(redir->rd_fd, squirrel);
+			save_fd_on_redirect(redir->rd_fd, /*avoid:*/ 0, sqp);
 			/* for REDIRECT_HEREDOC2, rd_filename holds _contents_
 			 * of the heredoc */
 			debug_printf_parse("set heredoc '%s'\n",
@@ -6609,20 +6921,22 @@ static int setup_redirects(struct command *prog, int squirrel[])
 		if (redir->rd_dup == REDIRFD_TO_FILE) {
 			/* "rd_fd<*>file" case (<*> is <,>,>>,<>) */
 			char *p;
+			int mode;
+
 			if (redir->rd_filename == NULL) {
 				/*
 				 * Examples:
 				 * "cmd >" (no filename)
 				 * "cmd > <file" (2nd redirect starts too early)
 				 */
-				die_if_script("syntax error: %s", "invalid redirect");
+				syntax_error("invalid redirect");
 				continue;
 			}
 			mode = redir_table[redir->rd_type].mode;
 			p = expand_string_to_string(redir->rd_filename, /*unbackslash:*/ 1);
-			openfd = open_or_warn(p, mode);
+			newfd = open_or_warn(p, mode);
 			free(p);
-			if (openfd < 0) {
+			if (newfd < 0) {
 				/* Error message from open_or_warn can be lost
 				 * if stderr has been redirected, but bash
 				 * and ash both lose it as well
@@ -6630,27 +6944,52 @@ static int setup_redirects(struct command *prog, int squirrel[])
 				 */
 				return 1;
 			}
+			if (newfd == redir->rd_fd && sqp) {
+				/* open() gave us precisely the fd we wanted.
+				 * This means that this fd was not busy
+				 * (not opened to anywhere).
+				 * Remember to close it on restore:
+				 */
+				*sqp = add_squirrel_closed(*sqp, newfd);
+				debug_printf_redir("redir to previously closed fd %d\n", newfd);
+			}
 		} else {
-			/* "rd_fd<*>rd_dup" or "rd_fd<*>-" cases */
-			openfd = redir->rd_dup;
+			/* "rd_fd>&rd_dup" or "rd_fd>&-" case */
+			newfd = redir->rd_dup;
 		}
 
-		if (openfd != redir->rd_fd) {
-			int closed = save_fds_on_redirect(redir->rd_fd, squirrel);
-			if (openfd == REDIRFD_CLOSE) {
-				/* "rd_fd >&-" means "close me" */
-				if (!closed) {
-					/* ^^^ optimization: saving may already
-					 * have closed it. If not... */
-					close(redir->rd_fd);
-				}
-			} else {
-				xdup2(openfd, redir->rd_fd);
-				if (redir->rd_dup == REDIRFD_TO_FILE)
-					/* "rd_fd > FILE" */
-					close(openfd);
-				/* else: "rd_fd > rd_dup" */
+		if (newfd == redir->rd_fd)
+			continue;
+
+		/* if "N>FILE": move newfd to redir->rd_fd */
+		/* if "N>&M": dup newfd to redir->rd_fd */
+		/* if "N>&-": close redir->rd_fd (newfd is REDIRFD_CLOSE) */
+
+		closed = save_fd_on_redirect(redir->rd_fd, /*avoid:*/ newfd, sqp);
+		if (newfd == REDIRFD_CLOSE) {
+			/* "N>&-" means "close me" */
+			if (!closed) {
+				/* ^^^ optimization: saving may already
+				 * have closed it. If not... */
+				close(redir->rd_fd);
 			}
+			/* Sometimes we do another close on restore, getting EBADF.
+			 * Consider "echo 3>FILE 3>&-"
+			 * first redirect remembers "need to close 3",
+			 * and second redirect closes 3! Restore code then closes 3 again.
+			 */
+		} else {
+			/* if newfd is a script fd or saved fd, simulate EBADF */
+			if (internally_opened_fd(newfd, sqp ? *sqp : NULL)) {
+				//errno = EBADF;
+				//bb_perror_msg_and_die("can't duplicate file descriptor");
+				newfd = -1; /* same effect as code above */
+			}
+			xdup2(newfd, redir->rd_fd);
+			if (redir->rd_dup == REDIRFD_TO_FILE)
+				/* "rd_fd > FILE" */
+				close(newfd);
+			/* else: "rd_fd > rd_dup" */
 		}
 	}
 	return 0;
@@ -6817,11 +7156,34 @@ static void exec_function(char ***to_free,
 	argv[0] = G.global_argv[0];
 	G.global_argv = argv;
 	G.global_argc = n = 1 + string_array_len(argv + 1);
+
+// Example when we are here: "cmd | func"
+// func will run with saved-redirect fds open.
+// $ f() { echo /proc/self/fd/*; }
+// $ true | f
+// /proc/self/fd/0 /proc/self/fd/1 /proc/self/fd/2 /proc/self/fd/255 /proc/self/fd/3
+// stdio^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ G_interactive_fd^ DIR fd for glob
+// Same in script:
+// $ . ./SCRIPT
+// /proc/self/fd/0 /proc/self/fd/1 /proc/self/fd/2 /proc/self/fd/255 /proc/self/fd/3 /proc/self/fd/4
+// stdio^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ G_interactive_fd^ opened ./SCRIPT DIR fd for glob
+// They are CLOEXEC so external programs won't see them, but
+// for "more correctness" we might want to close those extra fds here:
+//?	close_saved_fds_and_FILE_fds();
+
+	/* "we are in function, ok to use return" */
+	G_flag_return_in_progress = -1;
+	IF_HUSH_LOCAL(G.func_nest_level++;)
+
 	/* On MMU, funcp->body is always non-NULL */
 	n = run_list(funcp->body);
 	fflush_all();
 	_exit(n);
 # else
+//?	close_saved_fds_and_FILE_fds();
+
+//TODO: check whether "true | func_with_return" works
+
 	re_execute_shell(to_free,
 			funcp->body_as_string,
 			G.global_argv[0],
@@ -6841,9 +7203,7 @@ static int run_function(const struct function *funcp, char **argv)
 	/* "we are in function, ok to use return" */
 	sv_flg = G_flag_return_in_progress;
 	G_flag_return_in_progress = -1;
-# if ENABLE_HUSH_LOCAL
-	G.func_nest_level++;
-# endif
+	IF_HUSH_LOCAL(G.func_nest_level++;)
 
 	/* On MMU, funcp->body is always non-NULL */
 # if !BB_MMU
@@ -6907,6 +7267,7 @@ static void exec_builtin(char ***to_free,
 #if BB_MMU
 	int rcode;
 	fflush_all();
+//?	close_saved_fds_and_FILE_fds();
 	rcode = x->b_function(argv);
 	fflush_all();
 	_exit(rcode);
@@ -7028,6 +7389,16 @@ static NOINLINE void pseudo_exec_argv(nommu_save_t *nommu_save,
 		goto skip;
 #endif
 
+#if ENABLE_HUSH_FUNCTIONS
+	/* Check if the command matches any functions (this goes before bltins) */
+	{
+		const struct function *funcp = find_function(argv[0]);
+		if (funcp) {
+			exec_function(&nommu_save->argv_from_re_execing, funcp, argv);
+		}
+	}
+#endif
+
 	/* Check if the command matches any of the builtins.
 	 * Depending on context, this might be redundant.  But it's
 	 * easier to waste a few CPU cycles than it is to figure out
@@ -7044,15 +7415,6 @@ static NOINLINE void pseudo_exec_argv(nommu_save_t *nommu_save,
 			exec_builtin(&nommu_save->argv_from_re_execing, x, argv);
 		}
 	}
-#if ENABLE_HUSH_FUNCTIONS
-	/* Check if the command matches any functions */
-	{
-		const struct function *funcp = find_function(argv[0]);
-		if (funcp) {
-			exec_function(&nommu_save->argv_from_re_execing, funcp, argv);
-		}
-	}
-#endif
 
 #if ENABLE_FEATURE_SH_STANDALONE
 	/* Check if the command matches any busybox applets */
@@ -7061,12 +7423,16 @@ static NOINLINE void pseudo_exec_argv(nommu_save_t *nommu_save,
 		if (a >= 0) {
 # if BB_MMU /* see above why on NOMMU it is not allowed */
 			if (APPLET_IS_NOEXEC(a)) {
-				/* Do not leak open fds from opened script files etc */
-				close_all_FILE_list();
+				/* Do not leak open fds from opened script files etc.
+				 * Testcase: interactive "ls -l /proc/self/fd"
+				 * should not show tty fd open.
+				 */
+				close_saved_fds_and_FILE_fds();
+//FIXME: should also close saved redir fds
 				/* Without this, "rm -i FILE" can't be ^C'ed: */
 				switch_off_special_sigs(G.special_sig_mask);
 				debug_printf_exec("running applet '%s'\n", argv[0]);
-				run_applet_no_and_exit(a, argv[0], argv);
+				run_noexec_applet_and_exit(a, argv[0], argv);
 			}
 # endif
 			/* Re-exec ourselves */
@@ -7163,24 +7529,54 @@ static const char *get_cmdtext(struct pipe *pi)
 	return pi->cmdtext;
 }
 
-static void insert_bg_job(struct pipe *pi)
+static void remove_job_from_table(struct pipe *pi)
+{
+	struct pipe *prev_pipe;
+
+	if (pi == G.job_list) {
+		G.job_list = pi->next;
+	} else {
+		prev_pipe = G.job_list;
+		while (prev_pipe->next != pi)
+			prev_pipe = prev_pipe->next;
+		prev_pipe->next = pi->next;
+	}
+	G.last_jobid = 0;
+	if (G.job_list)
+		G.last_jobid = G.job_list->jobid;
+}
+
+static void delete_finished_job(struct pipe *pi)
+{
+	remove_job_from_table(pi);
+	free_pipe(pi);
+}
+
+static void clean_up_last_dead_job(void)
+{
+	if (G.job_list && !G.job_list->alive_cmds)
+		delete_finished_job(G.job_list);
+}
+
+static void insert_job_into_table(struct pipe *pi)
 {
 	struct pipe *job, **jobp;
 	int i;
 
-	/* Linear search for the ID of the job to use */
-	pi->jobid = 1;
-	for (job = G.job_list; job; job = job->next)
-		if (job->jobid >= pi->jobid)
-			pi->jobid = job->jobid + 1;
+	clean_up_last_dead_job();
 
-	/* Add job to the list of running jobs */
+	/* Find the end of the list, and find next job ID to use */
+	i = 0;
 	jobp = &G.job_list;
-	while ((job = *jobp) != NULL)
+	while ((job = *jobp) != NULL) {
+		if (job->jobid > i)
+			i = job->jobid;
 		jobp = &job->next;
-	job = *jobp = xmalloc(sizeof(*job));
+	}
+	pi->jobid = i + 1;
 
-	*job = *pi; /* physical copy */
+	/* Create a new job struct at the end */
+	job = *jobp = xmemdup(pi, sizeof(*pi));
 	job->next = NULL;
 	job->cmds = xzalloc(sizeof(pi->cmds[0]) * pi->num_cmds);
 	/* Cannot copy entire pi->cmds[] vector! This causes double frees */
@@ -7193,31 +7589,6 @@ static void insert_bg_job(struct pipe *pi)
 	if (G_interactive_fd)
 		printf("[%u] %u %s\n", job->jobid, (unsigned)job->cmds[0].pid, job->cmdtext);
 	G.last_jobid = job->jobid;
-}
-
-static void remove_bg_job(struct pipe *pi)
-{
-	struct pipe *prev_pipe;
-
-	if (pi == G.job_list) {
-		G.job_list = pi->next;
-	} else {
-		prev_pipe = G.job_list;
-		while (prev_pipe->next != pi)
-			prev_pipe = prev_pipe->next;
-		prev_pipe->next = pi->next;
-	}
-	if (G.job_list)
-		G.last_jobid = G.job_list->jobid;
-	else
-		G.last_jobid = 0;
-}
-
-/* Remove a backgrounded job */
-static void delete_finished_bg_job(struct pipe *pi)
-{
-	remove_bg_job(pi);
-	free_pipe(pi);
 }
 #endif /* JOB */
 
@@ -7305,7 +7676,7 @@ static int process_wait_result(struct pipe *fg_pipe, pid_t childpid, int status)
 				if (G_interactive_fd) {
 #if ENABLE_HUSH_JOB
 					if (fg_pipe->alive_cmds != 0)
-						insert_bg_job(fg_pipe);
+						insert_job_into_table(fg_pipe);
 #endif
 					return rcode;
 				}
@@ -7334,16 +7705,31 @@ static int process_wait_result(struct pipe *fg_pipe, pid_t childpid, int status)
  found_pi_and_prognum:
 	if (dead) {
 		/* child exited */
-		pi->cmds[i].pid = 0;
-		pi->cmds[i].cmd_exitcode = WEXITSTATUS(status);
+		int rcode = WEXITSTATUS(status);
 		if (WIFSIGNALED(status))
-			pi->cmds[i].cmd_exitcode = 128 + WTERMSIG(status);
+			rcode = 128 + WTERMSIG(status);
+		pi->cmds[i].cmd_exitcode = rcode;
+		if (G.last_bg_pid == pi->cmds[i].pid)
+			G.last_bg_pid_exitcode = rcode;
+		pi->cmds[i].pid = 0;
 		pi->alive_cmds--;
 		if (!pi->alive_cmds) {
-			if (G_interactive_fd)
+			if (G_interactive_fd) {
 				printf(JOB_STATUS_FORMAT, pi->jobid,
 						"Done", pi->cmdtext);
-			delete_finished_bg_job(pi);
+				delete_finished_job(pi);
+			} else {
+/*
+ * bash deletes finished jobs from job table only in interactive mode,
+ * after "jobs" cmd, or if pid of a new process matches one of the old ones
+ * (see cleanup_dead_jobs(), delete_old_job(), J_NOTIFIED in bash source).
+ * Testcase script: "(exit 3) & sleep 1; wait %1; echo $?" prints 3 in bash.
+ * We only retain one "dead" job, if it's the single job on the list.
+ * This covers most of real-world scenarios where this is useful.
+ */
+				if (pi != G.job_list)
+					delete_finished_job(pi);
+			}
 		}
 	} else {
 		/* child stopped */
@@ -7500,14 +7886,14 @@ static int checkjobs_and_fg_shell(struct pipe *fg_pipe)
 static int redirect_and_varexp_helper(char ***new_env_p,
 		struct variable **old_vars_p,
 		struct command *command,
-		int squirrel[3],
+		struct squirrel **sqp,
 		char **argv_expanded)
 {
 	/* setup_redirects acts on file descriptors, not FILEs.
 	 * This is perfect for work that comes after exec().
 	 * Is it really safe for inline use?  Experimentally,
 	 * things seem to work. */
-	int rcode = setup_redirects(command, squirrel);
+	int rcode = setup_redirects(command, sqp);
 	if (rcode == 0) {
 		char **new_env = expand_assignments(command->argv, command->assignment_cnt);
 		*new_env_p = new_env;
@@ -7527,8 +7913,7 @@ static NOINLINE int run_pipe(struct pipe *pi)
 	struct command *command;
 	char **argv_expanded;
 	char **argv;
-	/* it is not always needed, but we aim to smaller code */
-	int squirrel[] = { -1, -1, -1 };
+	struct squirrel *squirrel = NULL;
 	int rcode;
 
 	debug_printf_exec("run_pipe start: members:%d\n", pi->num_cmds);
@@ -7585,7 +7970,7 @@ static NOINLINE int run_pipe(struct pipe *pi)
 		/* { list } */
 		debug_printf("non-subshell group\n");
 		rcode = 1; /* exitcode if redir failed */
-		if (setup_redirects(command, squirrel) == 0) {
+		if (setup_redirects(command, &squirrel) == 0) {
 			debug_printf_exec(": run_list\n");
 			rcode = run_list(command->group) & 0xff;
 		}
@@ -7612,15 +7997,15 @@ static NOINLINE int run_pipe(struct pipe *pi)
 			/* Ensure redirects take effect (that is, create files).
 			 * Try "a=t >file" */
 #if 0 /* A few cases in testsuite fail with this code. FIXME */
-			rcode = redirect_and_varexp_helper(&new_env, /*old_vars:*/ NULL, command, squirrel, /*argv_expanded:*/ NULL);
+			rcode = redirect_and_varexp_helper(&new_env, /*old_vars:*/ NULL, command, &squirrel, /*argv_expanded:*/ NULL);
 			/* Set shell variables */
 			if (new_env) {
 				argv = new_env;
 				while (*argv) {
-					set_local_var(*argv, /*exp:*/ 0, /*lvl:*/ 0, /*ro:*/ 0);
-					/* Do we need to flag set_local_var() errors?
-					 * "assignment to readonly var" and "putenv error"
-					 */
+					if (set_local_var(*argv, /*flag:*/ 0)) {
+						/* assignment to readonly var / putenv error? */
+						rcode = 1;
+					}
 					argv++;
 				}
 			}
@@ -7634,7 +8019,7 @@ static NOINLINE int run_pipe(struct pipe *pi)
 
 #else /* Older, bigger, but more correct code */
 
-			rcode = setup_redirects(command, squirrel);
+			rcode = setup_redirects(command, &squirrel);
 			restore_redirects(squirrel);
 			/* Set shell variables */
 			if (G_x_mode)
@@ -7645,10 +8030,10 @@ static NOINLINE int run_pipe(struct pipe *pi)
 					fprintf(stderr, " %s", p);
 				debug_printf_exec("set shell var:'%s'->'%s'\n",
 						*argv, p);
-				set_local_var(p, /*exp:*/ 0, /*lvl:*/ 0, /*ro:*/ 0);
-				/* Do we need to flag set_local_var() errors?
-				 * "assignment to readonly var" and "putenv error"
-				 */
+				if (set_local_var(p, /*flag:*/ 0)) {
+					/* assignment to readonly var / putenv error? */
+					rcode = 1;
+				}
 				argv++;
 			}
 			if (G_x_mode)
@@ -7682,12 +8067,13 @@ static NOINLINE int run_pipe(struct pipe *pi)
 			return G.last_exitcode;
 		}
 
-		x = find_builtin(argv_expanded[0]);
 #if ENABLE_HUSH_FUNCTIONS
-		funcp = NULL;
-		if (!x)
-			funcp = find_function(argv_expanded[0]);
+		/* Check if argv[0] matches any functions (this goes before bltins) */
+		funcp = find_function(argv_expanded[0]);
 #endif
+		x = NULL;
+		if (!funcp)
+			x = find_builtin(argv_expanded[0]);
 		if (x || funcp) {
 			if (!funcp) {
 				if (x->b_function == builtin_exec && argv_expanded[1] == NULL) {
@@ -7697,7 +8083,7 @@ static NOINLINE int run_pipe(struct pipe *pi)
 					goto clean_up_and_ret1;
 				}
 			}
-			rcode = redirect_and_varexp_helper(&new_env, &old_vars, command, squirrel, argv_expanded);
+			rcode = redirect_and_varexp_helper(&new_env, &old_vars, command, &squirrel, argv_expanded);
 			if (rcode == 0) {
 				if (!funcp) {
 					debug_printf_exec(": builtin '%s' '%s'...\n",
@@ -7753,10 +8139,10 @@ static NOINLINE int run_pipe(struct pipe *pi)
 			return rcode;
 		}
 
-		if (ENABLE_FEATURE_SH_NOFORK) {
+		if (ENABLE_FEATURE_SH_NOFORK && NUM_APPLETS > 1) {
 			int n = find_applet_by_name(argv_expanded[0]);
 			if (n >= 0 && APPLET_IS_NOFORK(n)) {
-				rcode = redirect_and_varexp_helper(&new_env, &old_vars, command, squirrel, argv_expanded);
+				rcode = redirect_and_varexp_helper(&new_env, &old_vars, command, &squirrel, argv_expanded);
 				if (rcode == 0) {
 					debug_printf_exec(": run_nofork_applet '%s' '%s'...\n",
 						argv_expanded[0], argv_expanded[1]);
@@ -7989,6 +8375,7 @@ static int run_list(struct pipe *pi)
 	/* Go through list of pipes, (maybe) executing them. */
 	for (; pi; pi = IF_HUSH_LOOPS(rword == RES_DONE ? loop_top : ) pi->next) {
 		int r;
+		int sv_errexit_depth;
 
 		if (G.flag_SIGINT)
 			break;
@@ -7998,6 +8385,16 @@ static int run_list(struct pipe *pi)
 		IF_HAS_KEYWORDS(rword = pi->res_word;)
 		debug_printf_exec(": rword=%d cond_code=%d last_rword=%d\n",
 				rword, cond_code, last_rword);
+
+		sv_errexit_depth = G.errexit_depth;
+		if (
+#if ENABLE_HUSH_IF
+		    rword == RES_IF || rword == RES_ELIF ||
+#endif
+		    pi->followup != PIPE_SEQ
+		) {
+			G.errexit_depth++;
+		}
 #if ENABLE_HUSH_LOOPS
 		if ((rword == RES_WHILE || rword == RES_UNTIL || rword == RES_FOR)
 		 && loop_top == NULL /* avoid bumping G.depth_of_loop twice */
@@ -8075,7 +8472,7 @@ static int run_list(struct pipe *pi)
 			}
 			/* Insert next value from for_lcur */
 			/* note: *for_lcur already has quotes removed, $var expanded, etc */
-			set_local_var(xasprintf("%s=%s", pi->cmds[0].argv[0], *for_lcur++), /*exp:*/ 0, /*lvl:*/ 0, /*ro:*/ 0);
+			set_local_var(xasprintf("%s=%s", pi->cmds[0].argv[0], *for_lcur++), /*flag:*/ 0);
 			continue;
 		}
 		if (rword == RES_IN) {
@@ -8089,6 +8486,7 @@ static int run_list(struct pipe *pi)
 		if (rword == RES_CASE) {
 			debug_printf_exec("CASE cond_code:%d\n", cond_code);
 			case_word = expand_strvec_to_string(pi->cmds->argv);
+			unbackslash(case_word);
 			continue;
 		}
 		if (rword == RES_MATCH) {
@@ -8100,9 +8498,10 @@ static int run_list(struct pipe *pi)
 			/* all prev words didn't match, does this one match? */
 			argv = pi->cmds->argv;
 			while (*argv) {
-				char *pattern = expand_string_to_string(*argv, /*unbackslash:*/ 1);
+				char *pattern = expand_string_to_string(*argv, /*unbackslash:*/ 0);
 				/* TODO: which FNM_xxx flags to use? */
 				cond_code = (fnmatch(pattern, case_word, /*flags:*/ 0) != 0);
+				debug_printf_exec("fnmatch(pattern:'%s',str:'%s'):%d\n", pattern, case_word, cond_code);
 				free(pattern);
 				if (cond_code == 0) { /* match! we will execute this branch */
 					free(case_word);
@@ -8183,10 +8582,11 @@ static int run_list(struct pipe *pi)
 			 * I'm NOT treating inner &'s as jobs */
 #if ENABLE_HUSH_JOB
 			if (G.run_list_level == 1)
-				insert_bg_job(pi);
+				insert_job_into_table(pi);
 #endif
 			/* Last command's pid goes to $! */
 			G.last_bg_pid = pi->cmds[pi->num_cmds - 1].pid;
+			G.last_bg_pid_exitcode = 0;
 			debug_printf_exec(": cmd&: exitcode EXIT_SUCCESS\n");
 /* Check pi->pi_inverted? "! sleep 1 & echo $?": bash says 1. dash and ash say 0 */
 			rcode = EXIT_SUCCESS;
@@ -8207,6 +8607,14 @@ static int run_list(struct pipe *pi)
 			G.last_exitcode = rcode;
 			check_and_run_traps();
 		}
+
+		/* Handle "set -e" */
+		if (rcode != 0 && G.o_opt[OPT_O_ERREXIT]) {
+			debug_printf_exec("ERREXIT:1 errexit_depth:%d\n", G.errexit_depth);
+			if (G.errexit_depth == 0)
+				hush_exit(rcode);
+		}
+		G.errexit_depth = sv_errexit_depth;
 
 		/* Analyze how result affects subsequent commands */
 #if ENABLE_HUSH_IF
@@ -8289,6 +8697,10 @@ static void install_sighandlers(unsigned mask)
 		 */
 		if (sig == SIGCHLD)
 			continue;
+		/* bash re-enables SIGHUP which is SIG_IGNed on entry.
+		 * Try: "trap '' HUP; bash; echo RET" and type "kill -HUP $$"
+		 */
+		//if (sig == SIGHUP) continue; - TODO?
 		if (old_handler == SIG_IGN) {
 			/* oops... restore back to IGN, and record this fact */
 			install_sighandler(sig, old_handler);
@@ -8387,6 +8799,9 @@ static int set_mode(int state, char mode, const char *o_opt)
 			G.o_opt[idx] = state;
 			break;
 		}
+	case 'e':
+		G.o_opt[OPT_O_ERREXIT] = state;
+		break;
 	default:
 		return EXIT_FAILURE;
 	}
@@ -8446,7 +8861,7 @@ int hush_main(int argc, char **argv)
 	putenv(shell_ver->varstr);
 
 	/* Export PWD */
-	set_pwd_var(/*exp:*/ 1);
+	set_pwd_var(SETFLAG_EXPORT);
 
 #if BASH_HOSTNAME_VAR
 	/* Set (but not export) HOSTNAME unless already set */
@@ -8513,7 +8928,7 @@ int hush_main(int argc, char **argv)
 	flags = (argv[0] && argv[0][0] == '-') ? OPT_login : 0;
 	builtin_argc = 0;
 	while (1) {
-		opt = getopt(argc, argv, "+c:xinsl"
+		opt = getopt(argc, argv, "+c:exinsl"
 #if !BB_MMU
 				"<:$:R:V:"
 # if ENABLE_HUSH_FUNCTIONS
@@ -8616,7 +9031,7 @@ int hush_main(int argc, char **argv)
 		}
 		case 'R':
 		case 'V':
-			set_local_var(xstrdup(optarg), /*exp:*/ 0, /*lvl:*/ 0, /*ro:*/ opt == 'R');
+			set_local_var(xstrdup(optarg), opt == 'R' ? SETFLAG_MAKE_RO : 0);
 			break;
 # if ENABLE_HUSH_FUNCTIONS
 		case 'F': {
@@ -8631,6 +9046,7 @@ int hush_main(int argc, char **argv)
 #endif
 		case 'n':
 		case 'x':
+		case 'e':
 			if (set_mode(1, opt, NULL) == 0) /* no error */
 				break;
 		default:
@@ -8717,7 +9133,7 @@ int hush_main(int argc, char **argv)
 			G_saved_tty_pgrp = 0;
 
 		/* try to dup stdin to high fd#, >= 255 */
-		G_interactive_fd = fcntl(STDIN_FILENO, F_DUPFD, 255);
+		G_interactive_fd = fcntl_F_DUPFD(STDIN_FILENO, 254);
 		if (G_interactive_fd < 0) {
 			/* try to dup to any fd */
 			G_interactive_fd = dup(STDIN_FILENO);
@@ -8790,7 +9206,7 @@ int hush_main(int argc, char **argv)
 #elif ENABLE_HUSH_INTERACTIVE
 	/* No job control compiled in, only prompt/line editing */
 	if (isatty(STDIN_FILENO) && isatty(STDOUT_FILENO)) {
-		G_interactive_fd = fcntl(STDIN_FILENO, F_DUPFD, 255);
+		G_interactive_fd = fcntl_F_DUPFD(STDIN_FILENO, 254);
 		if (G_interactive_fd < 0) {
 			/* try to dup to any fd */
 			G_interactive_fd = dup(STDIN_FILENO);
@@ -8827,16 +9243,6 @@ int hush_main(int argc, char **argv)
  final_return:
 	hush_exit(G.last_exitcode);
 }
-
-
-#if ENABLE_MSH
-int msh_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-int msh_main(int argc, char **argv)
-{
-	bb_error_msg("msh is deprecated, please use hush instead");
-	return hush_main(argc, argv);
-}
-#endif
 
 
 /*
@@ -8928,7 +9334,7 @@ static int FAST_FUNC builtin_cd(char **argv)
 	 * Note: do not enforce exporting. If PWD was unset or unexported,
 	 * set it again, but do not export. bash does the same.
 	 */
-	set_pwd_var(/*exp:*/ 0);
+	set_pwd_var(/*flag:*/ 0);
 	return EXIT_SUCCESS;
 }
 
@@ -8966,6 +9372,14 @@ static int FAST_FUNC builtin_exec(char **argv)
 	 * tty pgrp then, only top-level shell process does that */
 	if (G_saved_tty_pgrp && getpid() == G.root_pid)
 		tcsetpgrp(G_interactive_fd, G_saved_tty_pgrp);
+
+	/* Saved-redirect fds, script fds and G_interactive_fd are still
+	 * open here. However, they are all CLOEXEC, and execv below
+	 * closes them. Try interactive "exec ls -l /proc/self/fd",
+	 * it should show no extra open fds in the "ls" process.
+	 * If we'd try to run builtins/NOEXECs, this would need improving.
+	 */
+	//close_saved_fds_and_FILE_fds();
 
 	/* TODO: if exec fails, bash does NOT exit! We do.
 	 * We'll need to undo trap cleanup (it's inside execvp_or_die)
@@ -9068,13 +9482,20 @@ static int FAST_FUNC builtin_read(char **argv)
 	char *opt_p = NULL;
 	char *opt_t = NULL;
 	char *opt_u = NULL;
+	char *opt_d = NULL; /* optimized out if !BASH */
 	const char *ifs;
 	int read_flags;
 
 	/* "!": do not abort on errors.
 	 * Option string must start with "sr" to match BUILTIN_READ_xxx
 	 */
-	read_flags = getopt32(argv, "!srn:p:t:u:", &opt_n, &opt_p, &opt_t, &opt_u);
+	read_flags = getopt32(argv,
+#if BASH_READ_D
+		"!srn:p:t:u:d:", &opt_n, &opt_p, &opt_t, &opt_u, &opt_d
+#else
+		"!srn:p:t:u:", &opt_n, &opt_p, &opt_t, &opt_u
+#endif
+	);
 	if (read_flags == (uint32_t)-1)
 		return EXIT_FAILURE;
 	argv += optind;
@@ -9088,7 +9509,8 @@ static int FAST_FUNC builtin_read(char **argv)
 		opt_n,
 		opt_p,
 		opt_t,
-		opt_u
+		opt_u,
+		opt_d
 	);
 
 	if ((uintptr_t)r == 1 && errno == EINTR) {
@@ -9166,12 +9588,8 @@ static void print_escaped(const char *s)
 }
 #endif
 
-#if ENABLE_HUSH_EXPORT || ENABLE_HUSH_LOCAL
-# if !ENABLE_HUSH_LOCAL
-#define helper_export_local(argv, exp, lvl) \
-	helper_export_local(argv, exp)
-# endif
-static void helper_export_local(char **argv, int exp, int lvl)
+#if ENABLE_HUSH_EXPORT || ENABLE_HUSH_LOCAL || ENABLE_HUSH_READONLY
+static int helper_export_local(char **argv, unsigned flags)
 {
 	do {
 		char *name = *argv;
@@ -9185,7 +9603,7 @@ static void helper_export_local(char **argv, int exp, int lvl)
 			vpp = get_ptr_to_local_var(name, name_end - name);
 			var = vpp ? *vpp : NULL;
 
-			if (exp == -1) { /* unexporting? */
+			if (flags & SETFLAG_UNEXPORT) {
 				/* export -n NAME (without =VALUE) */
 				if (var) {
 					var->flg_export = 0;
@@ -9194,7 +9612,7 @@ static void helper_export_local(char **argv, int exp, int lvl)
 				} /* else: export -n NOT_EXISTING_VAR: no-op */
 				continue;
 			}
-			if (exp == 1) { /* exporting? */
+			if (flags & SETFLAG_EXPORT) {
 				/* export NAME (without =VALUE) */
 				if (var) {
 					var->flg_export = 1;
@@ -9203,28 +9621,45 @@ static void helper_export_local(char **argv, int exp, int lvl)
 					continue;
 				}
 			}
+			if (flags & SETFLAG_MAKE_RO) {
+				/* readonly NAME (without =VALUE) */
+				if (var) {
+					var->flg_read_only = 1;
+					continue;
+				}
+			}
 # if ENABLE_HUSH_LOCAL
-			if (exp == 0 /* local? */
-			 && var && var->func_nest_level == lvl
-			) {
-				/* "local x=abc; ...; local x" - ignore second local decl */
-				continue;
+			/* Is this "local" bltin? */
+			if (!(flags & (SETFLAG_EXPORT|SETFLAG_UNEXPORT|SETFLAG_MAKE_RO))) {
+				unsigned lvl = flags >> SETFLAG_LOCAL_SHIFT;
+				if (var && var->func_nest_level == lvl) {
+					/* "local x=abc; ...; local x" - ignore second local decl */
+					continue;
+				}
 			}
 # endif
 			/* Exporting non-existing variable.
 			 * bash does not put it in environment,
 			 * but remembers that it is exported,
 			 * and does put it in env when it is set later.
-			 * We just set it to "" and export. */
+			 * We just set it to "" and export.
+			 */
 			/* Or, it's "local NAME" (without =VALUE).
-			 * bash sets the value to "". */
+			 * bash sets the value to "".
+			 */
+			/* Or, it's "readonly NAME" (without =VALUE).
+			 * bash remembers NAME and disallows its creation
+			 * in the future.
+			 */
 			name = xasprintf("%s=", name);
 		} else {
 			/* (Un)exporting/making local NAME=VALUE */
 			name = xstrdup(name);
 		}
-		set_local_var(name, /*exp:*/ exp, /*lvl:*/ lvl, /*ro:*/ 0);
+		if (set_local_var(name, flags))
+			return EXIT_FAILURE;
 	} while (*++argv);
+	return EXIT_SUCCESS;
 }
 #endif
 
@@ -9270,9 +9705,7 @@ static int FAST_FUNC builtin_export(char **argv)
 		return EXIT_SUCCESS;
 	}
 
-	helper_export_local(argv, (opt_unexport ? -1 : 1), 0);
-
-	return EXIT_SUCCESS;
+	return helper_export_local(argv, opt_unexport ? SETFLAG_UNEXPORT : SETFLAG_EXPORT);
 }
 #endif
 
@@ -9283,8 +9716,29 @@ static int FAST_FUNC builtin_local(char **argv)
 		bb_error_msg("%s: not in a function", argv[0]);
 		return EXIT_FAILURE; /* bash compat */
 	}
-	helper_export_local(argv, 0, G.func_nest_level);
-	return EXIT_SUCCESS;
+	argv++;
+	return helper_export_local(argv, G.func_nest_level << SETFLAG_LOCAL_SHIFT);
+}
+#endif
+
+#if ENABLE_HUSH_READONLY
+static int FAST_FUNC builtin_readonly(char **argv)
+{
+	argv++;
+	if (*argv == NULL) {
+		/* bash: readonly [-p]: list all readonly VARs
+		 * (-p has no effect in bash)
+		 */
+		struct variable *e;
+		for (e = G.top_var; e; e = e->next) {
+			if (e->flg_read_only) {
+//TODO: quote value: readonly VAR='VAL'
+				printf("readonly %s\n", e->varstr);
+			}
+		}
+		return EXIT_SUCCESS;
+	}
+	return helper_export_local(argv, SETFLAG_MAKE_RO);
 }
 #endif
 
@@ -9414,7 +9868,18 @@ static int FAST_FUNC builtin_shift(char **argv)
 	int n = 1;
 	argv = skip_dash_dash(argv);
 	if (argv[0]) {
-		n = atoi(argv[0]);
+		n = bb_strtou(argv[0], NULL, 10);
+		if (errno || n < 0) {
+			/* shared string with ash.c */
+			bb_error_msg("Illegal number: %s", argv[0]);
+			/*
+			 * ash aborts in this case.
+			 * bash prints error message and set $? to 1.
+			 * Interestingly, for "shift 99999" bash does not
+			 * print error message, but does set $? to 1
+			 * (and does no shifting at all).
+			 */
+		}
 	}
 	if (n >= 0 && n < G.global_argc) {
 		if (G_global_args_malloced) {
@@ -9429,6 +9894,131 @@ static int FAST_FUNC builtin_shift(char **argv)
 	}
 	return EXIT_FAILURE;
 }
+
+#if ENABLE_HUSH_GETOPTS
+static int FAST_FUNC builtin_getopts(char **argv)
+{
+/* http://pubs.opengroup.org/onlinepubs/9699919799/utilities/getopts.html
+
+TODO:
+If a required argument is not found, and getopts is not silent,
+a question mark (?) is placed in VAR, OPTARG is unset, and a
+diagnostic message is printed.  If getopts is silent, then a
+colon (:) is placed in VAR and OPTARG is set to the option
+character found.
+
+Test that VAR is a valid variable name?
+
+"Whenever the shell is invoked, OPTIND shall be initialized to 1"
+*/
+	char cbuf[2];
+	const char *cp, *optstring, *var;
+	int c, n, exitcode, my_opterr;
+	unsigned count;
+
+	optstring = *++argv;
+	if (!optstring || !(var = *++argv)) {
+		bb_error_msg("usage: getopts OPTSTRING VAR [ARGS]");
+		return EXIT_FAILURE;
+	}
+
+	if (argv[1])
+		argv[0] = G.global_argv[0]; /* for error messages in getopt() */
+	else
+		argv = G.global_argv;
+	cbuf[1] = '\0';
+
+	my_opterr = 0;
+	if (optstring[0] != ':') {
+		cp = get_local_var_value("OPTERR");
+		/* 0 if "OPTERR=0", 1 otherwise */
+		my_opterr = (!cp || NOT_LONE_CHAR(cp, '0'));
+	}
+
+	/* getopts stops on first non-option. Add "+" to force that */
+	/*if (optstring[0] != '+')*/ {
+		char *s = alloca(strlen(optstring) + 2);
+		sprintf(s, "+%s", optstring);
+		optstring = s;
+	}
+
+	/* Naively, now we should just
+	 *	cp = get_local_var_value("OPTIND");
+	 *	optind = cp ? atoi(cp) : 0;
+	 *	optarg = NULL;
+	 *	opterr = my_opterr;
+	 *	c = getopt(string_array_len(argv), argv, optstring);
+	 * and be done? Not so fast...
+	 * Unlike normal getopt() usage in C programs, here
+	 * each successive call will (usually) have the same argv[] CONTENTS,
+	 * but not the ADDRESSES. Worse yet, it's possible that between
+	 * invocations of "getopts", there will be calls to shell builtins
+	 * which use getopt() internally. Example:
+	 *	while getopts "abc" RES -a -bc -abc de; do
+	 *		unset -ff func
+	 *	done
+	 * This would not work correctly: getopt() call inside "unset"
+	 * modifies internal libc state which is tracking position in
+	 * multi-option strings ("-abc"). At best, it can skip options
+	 * or return the same option infinitely. With glibc implementation
+	 * of getopt(), it would use outright invalid pointers and return
+	 * garbage even _without_ "unset" mangling internal state.
+	 *
+	 * We resort to resetting getopt() state and calling it N times,
+	 * until we get Nth result (or failure).
+	 * (N == G.getopt_count is reset to 0 whenever OPTIND is [un]set).
+	 */
+	GETOPT_RESET();
+	count = 0;
+	n = string_array_len(argv);
+	do {
+		optarg = NULL;
+		opterr = (count < G.getopt_count) ? 0 : my_opterr;
+		c = getopt(n, argv, optstring);
+		if (c < 0)
+			break;
+		count++;
+	} while (count <= G.getopt_count);
+
+	/* Set OPTIND. Prevent resetting of the magic counter! */
+	set_local_var_from_halves("OPTIND", utoa(optind));
+	G.getopt_count = count; /* "next time, give me N+1'th result" */
+	GETOPT_RESET(); /* just in case */
+
+	/* Set OPTARG */
+	/* Always set or unset, never left as-is, even on exit/error:
+	 * "If no option was found, or if the option that was found
+	 * does not have an option-argument, OPTARG shall be unset."
+	 */
+	cp = optarg;
+	if (c == '?') {
+		/* If ":optstring" and unknown option is seen,
+		 * it is stored to OPTARG.
+		 */
+		if (optstring[1] == ':') {
+			cbuf[0] = optopt;
+			cp = cbuf;
+		}
+	}
+	if (cp)
+		set_local_var_from_halves("OPTARG", cp);
+	else
+		unset_local_var("OPTARG");
+
+	/* Convert -1 to "?" */
+	exitcode = EXIT_SUCCESS;
+	if (c < 0) { /* -1: end of options */
+		exitcode = EXIT_FAILURE;
+		c = '?';
+	}
+
+	/* Set VAR */
+	cbuf[0] = c;
+	set_local_var_from_halves(var, cbuf);
+
+	return exitcode;
+}
+#endif
 
 static int FAST_FUNC builtin_source(char **argv)
 {
@@ -9524,10 +10114,10 @@ static int FAST_FUNC builtin_trap(char **argv)
 			sighandler_t handler;
 
 			sig = get_signum(*argv++);
-			if (sig < 0 || sig >= NSIG) {
+			if (sig < 0) {
 				ret = EXIT_FAILURE;
 				/* Mimic bash message exactly */
-				bb_perror_msg("trap: %s: invalid signal specification", argv[-1]);
+				bb_error_msg("trap: %s: invalid signal specification", argv[-1]);
 				continue;
 			}
 
@@ -9620,6 +10210,9 @@ static int FAST_FUNC builtin_jobs(char **argv UNUSED_PARAM)
 
 		printf(JOB_STATUS_FORMAT, job->jobid, status_string, job->cmdtext);
 	}
+
+	clean_up_last_dead_job();
+
 	return EXIT_SUCCESS;
 }
 
@@ -9664,14 +10257,14 @@ static int FAST_FUNC builtin_fg_bg(char **argv)
 	i = kill(- pi->pgrp, SIGCONT);
 	if (i < 0) {
 		if (errno == ESRCH) {
-			delete_finished_bg_job(pi);
+			delete_finished_job(pi);
 			return EXIT_SUCCESS;
 		}
 		bb_perror_msg("kill (SIGCONT)");
 	}
 
 	if (argv[0][0] == 'f') {
-		remove_bg_job(pi);
+		remove_job_from_table(pi); /* FG job shouldn't be in job table */
 		return checkjobs_and_fg_shell(pi);
 	}
 	return EXIT_SUCCESS;
@@ -9864,8 +10457,12 @@ static int FAST_FUNC builtin_wait(char **argv)
 				wait_pipe = parse_jobspec(*argv);
 				if (wait_pipe) {
 					ret = job_exited_or_stopped(wait_pipe);
-					if (ret < 0)
+					if (ret < 0) {
 						ret = wait_for_child_or_signal(wait_pipe, 0);
+					} else {
+						/* waiting on "last dead job" removes it */
+						clean_up_last_dead_job();
+					}
 				}
 				/* else: parse_jobspec() already emitted error msg */
 				continue;
@@ -9881,14 +10478,15 @@ static int FAST_FUNC builtin_wait(char **argv)
 		ret = waitpid(pid, &status, WNOHANG);
 		if (ret < 0) {
 			/* No */
+			ret = 127;
 			if (errno == ECHILD) {
-				if (G.last_bg_pid > 0 && pid == G.last_bg_pid) {
+				if (pid == G.last_bg_pid) {
 					/* "wait $!" but last bg task has already exited. Try:
 					 * (sleep 1; exit 3) & sleep 2; echo $?; wait $!; echo $?
 					 * In bash it prints exitcode 0, then 3.
 					 * In dash, it is 127.
 					 */
-					/* ret = G.last_bg_pid_exitstatus - FIXME */
+					ret = G.last_bg_pid_exitcode;
 				} else {
 					/* Example: "wait 1". mimic bash message */
 					bb_error_msg("wait: pid %d is not a child of this shell", (int)pid);
@@ -9897,7 +10495,6 @@ static int FAST_FUNC builtin_wait(char **argv)
 				/* ??? */
 				bb_perror_msg("wait %s", *argv);
 			}
-			ret = 127;
 			continue; /* bash checks all argv[] */
 		}
 		if (ret == 0) {
@@ -9979,6 +10576,41 @@ static int FAST_FUNC builtin_return(char **argv)
 	 */
 	rc = parse_numeric_argv1(argv, G.last_exitcode, 0);
 	return rc;
+}
+#endif
+
+#if ENABLE_HUSH_TIMES
+static int FAST_FUNC builtin_times(char **argv UNUSED_PARAM)
+{
+	static const uint8_t times_tbl[] ALIGN1 = {
+		' ',  offsetof(struct tms, tms_utime),
+		'\n', offsetof(struct tms, tms_stime),
+		' ',  offsetof(struct tms, tms_cutime),
+		'\n', offsetof(struct tms, tms_cstime),
+		0
+	};
+	const uint8_t *p;
+	unsigned clk_tck;
+	struct tms buf;
+
+	clk_tck = bb_clk_tck();
+
+	times(&buf);
+	p = times_tbl;
+	do {
+		unsigned sec, frac;
+		unsigned long t;
+		t = *(clock_t *)(((char *) &buf) + p[1]);
+		sec = t / clk_tck;
+		frac = t % clk_tck;
+		printf("%um%u.%03us%c",
+			sec / 60, sec % 60,
+			(frac * 1000) / clk_tck,
+			p[0]);
+		p += 2;
+	} while (*p);
+
+	return EXIT_SUCCESS;
 }
 #endif
 

@@ -5,24 +5,24 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
-
 //config:config TASKSET
-//config:	bool "taskset"
+//config:	bool "taskset (4.1 kb)"
 //config:	default y
 //config:	help
-//config:	  Retrieve or set a processes's CPU affinity.
-//config:	  This requires sched_{g,s}etaffinity support in your libc.
+//config:	Retrieve or set a processes's CPU affinity.
+//config:	This requires sched_{g,s}etaffinity support in your libc.
 //config:
 //config:config FEATURE_TASKSET_FANCY
 //config:	bool "Fancy output"
 //config:	default y
 //config:	depends on TASKSET
 //config:	help
-//config:	  Needed for machines with more than 32-64 CPUs:
-//config:	  affinity parameter 0xHHHHHHHHHHHHHHHHHHHH can be arbitrarily long
-//config:	  in this case. Otherwise, it is limited to sizeof(long).
+//config:	Needed for machines with more than 32-64 CPUs:
+//config:	affinity parameter 0xHHHHHHHHHHHHHHHHHHHH can be arbitrarily long
+//config:	in this case. Otherwise, it is limited to sizeof(long).
 
-//applet:IF_TASKSET(APPLET(taskset, BB_DIR_USR_BIN, BB_SUID_DROP))
+//applet:IF_TASKSET(APPLET_NOEXEC(taskset, taskset, BB_DIR_USR_BIN, BB_SUID_DROP, taskset))
+
 //kbuild:lib-$(CONFIG_TASKSET) += taskset.o
 
 //usage:#define taskset_trivial_usage
@@ -123,8 +123,7 @@ int taskset_main(int argc UNUSED_PARAM, char **argv)
 	 * Indeed, util-linux-2.13-pre7 uses:
 	 * getopt_long(argc, argv, "+pchV", ...), not "...p:..." */
 
-	opt_complementary = "-1"; /* at least 1 arg */
-	opt_p = getopt32(argv, "+p");
+	opt_p = getopt32(argv, "^+" "p" "\0" "-1" /* at least 1 arg */);
 	argv += optind;
 
 	aff = *argv++;

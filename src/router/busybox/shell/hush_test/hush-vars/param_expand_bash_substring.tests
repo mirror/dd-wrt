@@ -1,13 +1,14 @@
 # first try some invalid patterns
 # do all of these in subshells since it's supposed to error out
+# (set argv0 to "SHELL" to avoid "/path/to/shell: blah" in error messages)
 export var=0123456789
-"$THIS_SH" -c 'echo ${:}'
-"$THIS_SH" -c 'echo ${::}'
-"$THIS_SH" -c 'echo ${:1}'
-"$THIS_SH" -c 'echo ${::1}'
+"$THIS_SH" -c 'echo ${:}' SHELL
+"$THIS_SH" -c 'echo ${::}' SHELL
+"$THIS_SH" -c 'echo ${:1}' SHELL
+"$THIS_SH" -c 'echo ${::1}' SHELL
 
-#this also is not valid in bash, but we accept it:
-"$THIS_SH" -c 'echo ${var:}'
+#this also is not valid in bash, hush accepts it:
+"$THIS_SH" -c 'echo ${var:}' SHELL
 
 # then some funky ones
 # UNFIXED BUG: this should work: "$THIS_SH" -c 'echo ${?:0}'

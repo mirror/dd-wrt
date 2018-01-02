@@ -24,38 +24,38 @@
 
    "Minimalized" for busybox by Alain Knaff
 */
-
 //config:config LZOP
-//config:	bool "lzop"
+//config:	bool "lzop (13 kb)"
 //config:	default y
 //config:	help
-//config:	  Lzop compression/decompresion.
+//config:	Lzop compression/decompresion.
 //config:
 //config:config UNLZOP
-//config:	bool "unlzop"
+//config:	bool "unlzop (13 kb)"
 //config:	default n  # INCOMPAT: upstream lzop does not provide such tool
 //config:	help
-//config:	  Lzop decompresion.
+//config:	Lzop decompresion.
 //config:
 //config:config LZOPCAT
-//config:	bool "lzopcat"
+//config:	bool "lzopcat (13 kb)"
 //config:	default n  # INCOMPAT: upstream lzop does not provide such tool
 //config:	help
-//config:	  Alias to "unlzop -c".
+//config:	Alias to "lzop -dc".
 //config:
 //config:config LZOP_COMPR_HIGH
 //config:	bool "lzop compression levels 7,8,9 (not very useful)"
 //config:	default n
 //config:	depends on LZOP || UNLZOP || LZOPCAT
 //config:	help
-//config:	  High levels (7,8,9) of lzop compression. These levels
-//config:	  are actually slower than gzip at equivalent compression ratios
-//config:	  and take up 3.2K of code.
+//config:	High levels (7,8,9) of lzop compression. These levels
+//config:	are actually slower than gzip at equivalent compression ratios
+//config:	and take up 3.2K of code.
 
 //applet:IF_LZOP(APPLET(lzop, BB_DIR_BIN, BB_SUID_DROP))
 //                  APPLET_ODDNAME:name     main  location        suid_type     help
 //applet:IF_UNLZOP( APPLET_ODDNAME(unlzop,  lzop, BB_DIR_USR_BIN, BB_SUID_DROP, unlzop))
 //applet:IF_LZOPCAT(APPLET_ODDNAME(lzopcat, lzop, BB_DIR_USR_BIN, BB_SUID_DROP, lzopcat))
+
 //kbuild:lib-$(CONFIG_LZOP) += lzop.o
 //kbuild:lib-$(CONFIG_UNLZOP) += lzop.o
 //kbuild:lib-$(CONFIG_LZOPCAT) += lzop.o
@@ -1138,7 +1138,7 @@ int lzop_main(int argc UNUSED_PARAM, char **argv)
 	/* -U is "anti -k", invert bit for bbunpack(): */
 	option_mask32 ^= OPT_KEEP;
 	/* -k disables -U (if any): */
-	/* opt_complementary = "k-U"; - nope, only handles -Uk, not -kU */
+	/* opt_complementary "k-U"? - nope, only handles -Uk, not -kU */
 	if (option_mask32 & OPT_k)
 		option_mask32 |= OPT_KEEP;
 

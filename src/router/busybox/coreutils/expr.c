@@ -23,22 +23,22 @@
  * provided they all associate ((x op x) op x).
  */
 //config:config EXPR
-//config:	bool "expr"
+//config:	bool "expr (6.1 kb)"
 //config:	default y
 //config:	help
-//config:	  expr is used to calculate numbers and print the result
-//config:	  to standard output.
+//config:	expr is used to calculate numbers and print the result
+//config:	to standard output.
 //config:
 //config:config EXPR_MATH_SUPPORT_64
 //config:	bool "Extend Posix numbers support to 64 bit"
 //config:	default y
 //config:	depends on EXPR
 //config:	help
-//config:	  Enable 64-bit math support in the expr applet. This will make
-//config:	  the applet slightly larger, but will allow computation with very
-//config:	  large numbers.
+//config:	Enable 64-bit math support in the expr applet. This will make
+//config:	the applet slightly larger, but will allow computation with very
+//config:	large numbers.
 
-//applet:IF_EXPR(APPLET(expr, BB_DIR_USR_BIN, BB_SUID_DROP))
+//applet:IF_EXPR(APPLET_NOEXEC(expr, expr, BB_DIR_USR_BIN, BB_SUID_DROP, expr))
 
 //kbuild:lib-$(CONFIG_EXPR) += expr.o
 
@@ -118,7 +118,10 @@ struct globals {
 	char **args;
 } FIX_ALIASING;
 #define G (*(struct globals*)bb_common_bufsiz1)
-#define INIT_G() do { setup_common_bufsiz(); } while (0)
+#define INIT_G() do { \
+	setup_common_bufsiz(); \
+	/* NB: noexec applet - globals not zeroed */ \
+} while (0)
 
 /* forward declarations */
 static VALUE *eval(void);

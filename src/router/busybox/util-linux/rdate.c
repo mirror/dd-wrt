@@ -8,13 +8,13 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config RDATE
-//config:	bool "rdate"
+//config:	bool "rdate (6 kb)"
 //config:	default y
 //config:	help
-//config:	  The rdate utility allows you to synchronize the date and time of your
-//config:	  system clock with the date and time of a remote networked system using
-//config:	  the RFC868 protocol, which is built into the inetd daemon on most
-//config:	  systems.
+//config:	The rdate utility allows you to synchronize the date and time of your
+//config:	system clock with the date and time of a remote networked system using
+//config:	the RFC868 protocol, which is built into the inetd daemon on most
+//config:	systems.
 
 //applet:IF_RDATE(APPLET(rdate, BB_DIR_USR_SBIN, BB_SUID_DROP))
 
@@ -41,7 +41,7 @@ static time_t askremotedate(const char *host)
 	uint32_t nett;
 	int fd;
 
-	/* Add a timeout for dead or inaccessible servers */
+	/* Timeout for dead or inaccessible servers */
 	alarm(10);
 	signal(SIGALRM, socket_timeout);
 
@@ -53,9 +53,8 @@ static time_t askremotedate(const char *host)
 		close(fd);
 
 	/* Convert from network byte order to local byte order.
-	 * RFC 868 time is the number of seconds
-	 * since 00:00 (midnight) 1 January 1900 GMT
-	 * the RFC 868 time 2,208,988,800 corresponds to 00:00  1 Jan 1970 GMT
+	 * RFC 868 time is seconds since 1900-01-01 00:00 GMT.
+	 * RFC 868 time 2,208,988,800 corresponds to 1970-01-01 00:00 GMT.
 	 * Subtract the RFC 868 time to get Linux epoch.
 	 */
 	nett = ntohl(nett) - RFC_868_BIAS;
@@ -66,7 +65,7 @@ static time_t askremotedate(const char *host)
 		 * current time  cur = 0x123ffffffff.
 		 * Assuming our time is not some 40 years off,
 		 * remote time must be 0x12400000001.
-		 * Need to adjust out time by (int32_t)(nett - cur).
+		 * Need to adjust our time by (int32_t)(nett - cur).
 		 */
 		time_t cur = time(NULL);
 		int32_t adjust = (int32_t)(nett - (uint32_t)cur);
@@ -82,8 +81,7 @@ int rdate_main(int argc UNUSED_PARAM, char **argv)
 	time_t remote_time;
 	unsigned flags;
 
-	opt_complementary = "-1";
-	flags = getopt32(argv, "sp");
+	flags = getopt32(argv, "^" "sp" "\0" "-1");
 
 	remote_time = askremotedate(argv[optind]);
 

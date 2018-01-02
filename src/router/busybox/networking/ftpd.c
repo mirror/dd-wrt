@@ -12,35 +12,42 @@
  * You have to run this daemon via inetd.
  */
 //config:config FTPD
-//config:	bool "ftpd"
+//config:	bool "ftpd (30 kb)"
 //config:	default y
 //config:	help
-//config:	  Simple FTP daemon. You have to run it via inetd.
+//config:	Simple FTP daemon. You have to run it via inetd.
 //config:
 //config:config FEATURE_FTPD_WRITE
-//config:	bool "Enable upload commands"
+//config:	bool "Enable -w (upload commands)"
 //config:	default y
 //config:	depends on FTPD
 //config:	help
-//config:	  Enable all kinds of FTP upload commands (-w option)
+//config:	Enable -w option. "ftpd -w" will accept upload commands
+//config:	such as STOR, STOU, APPE, DELE, MKD, RMD, rename commands.
 //config:
 //config:config FEATURE_FTPD_ACCEPT_BROKEN_LIST
 //config:	bool "Enable workaround for RFC-violating clients"
 //config:	default y
 //config:	depends on FTPD
 //config:	help
-//config:	  Some ftp clients (among them KDE's Konqueror) issue illegal
-//config:	  "LIST -l" requests. This option works around such problems.
-//config:	  It might prevent you from listing files starting with "-" and
-//config:	  it increases the code size by ~40 bytes.
-//config:	  Most other ftp servers seem to behave similar to this.
+//config:	Some ftp clients (among them KDE's Konqueror) issue illegal
+//config:	"LIST -l" requests. This option works around such problems.
+//config:	It might prevent you from listing files starting with "-" and
+//config:	it increases the code size by ~40 bytes.
+//config:	Most other ftp servers seem to behave similar to this.
 //config:
 //config:config FEATURE_FTPD_AUTHENTICATION
 //config:	bool "Enable authentication"
 //config:	default y
 //config:	depends on FTPD
 //config:	help
-//config:	  Enable basic system login as seen in telnet etc.
+//config:	Require login, and change to logged in user's UID:GID before
+//config:	accessing any files. Option "-a USER" allows "anonymous"
+//config:	logins (treats them as if USER logged in).
+//config:
+//config:	If this option is not selected, ftpd runs with the rights
+//config:	of the user it was started under, and does not require login.
+//config:	Take care to not launch it under root.
 
 //applet:IF_FTPD(APPLET(ftpd, BB_DIR_USR_SBIN, BB_SUID_DROP))
 
@@ -1167,17 +1174,20 @@ int ftpd_main(int argc UNUSED_PARAM, char **argv)
 	abs_timeout = 1 * 60 * 60;
 	verbose_S = 0;
 	G.timeout = 2 * 60;
-	opt_complementary = "vv:SS";
 #if BB_MMU
-	opts = getopt32(argv,    "vS"
-		IF_FEATURE_FTPD_WRITE("w") "t:+T:+" IF_FEATURE_FTPD_AUTHENTICATION("a:"),
+	opts = getopt32(argv, "^"    "vS"
+		IF_FEATURE_FTPD_WRITE("w") "t:+T:+" IF_FEATURE_FTPD_AUTHENTICATION("a:")
+		"\0" "vv:SS",
 		&G.timeout, &abs_timeout, IF_FEATURE_FTPD_AUTHENTICATION(&anon_opt,)
-		&G.verbose, &verbose_S);
+		&G.verbose, &verbose_S
+	);
 #else
-	opts = getopt32(argv, "l1AvS"
-		IF_FEATURE_FTPD_WRITE("w") "t:+T:+" IF_FEATURE_FTPD_AUTHENTICATION("a:"),
+	opts = getopt32(argv, "^" "l1AvS"
+		IF_FEATURE_FTPD_WRITE("w") "t:+T:+" IF_FEATURE_FTPD_AUTHENTICATION("a:")
+		"\0" "vv:SS",
 		&G.timeout, &abs_timeout, IF_FEATURE_FTPD_AUTHENTICATION(&anon_opt,)
-		&G.verbose, &verbose_S);
+		&G.verbose, &verbose_S
+	);
 	if (opts & (OPT_l|OPT_1)) {
 		/* Our secret backdoor to ls */
 		if (fchdir(3) != 0)

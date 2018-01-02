@@ -9,12 +9,11 @@
  * Add ipv6 support
  * Add proxy support
  */
-
 //config:config WHOIS
-//config:	bool "whois"
+//config:	bool "whois (6.6 kb)"
 //config:	default y
 //config:	help
-//config:	  whois is a client for the whois directory service
+//config:	whois is a client for the whois directory service
 
 //applet:IF_WHOIS(APPLET(whois, BB_DIR_USR_BIN, BB_SUID_DROP))
 
@@ -167,8 +166,7 @@ int whois_main(int argc UNUSED_PARAM, char **argv)
 	int port = 43;
 	const char *host = "whois.iana.org";
 
-	opt_complementary = "-1";
-	getopt32(argv, "ih:p:+", &host, &port);
+	getopt32(argv, "^" "ih:p:+" "\0" "-1", &host, &port);
 	argv += optind;
 
 	do {

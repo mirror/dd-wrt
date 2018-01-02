@@ -7,33 +7,33 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config SETARCH
-//config:	bool "setarch"
+//config:	bool "setarch (3.4 kb)"
 //config:	default y
 //config:	select PLATFORM_LINUX
 //config:	help
-//config:	  The linux32 utility is used to create a 32bit environment for the
-//config:	  specified program (usually a shell). It only makes sense to have
-//config:	  this util on a system that supports both 64bit and 32bit userland
-//config:	  (like amd64/x86, ppc64/ppc, sparc64/sparc, etc...).
+//config:	The linux32 utility is used to create a 32bit environment for the
+//config:	specified program (usually a shell). It only makes sense to have
+//config:	this util on a system that supports both 64bit and 32bit userland
+//config:	(like amd64/x86, ppc64/ppc, sparc64/sparc, etc...).
 //config:
 //config:config LINUX32
-//config:	bool "linux32"
+//config:	bool "linux32 (3.2 kb)"
 //config:	default y
 //config:	select PLATFORM_LINUX
 //config:	help
-//config:	  Alias to "setarch linux32".
+//config:	Alias to "setarch linux32".
 //config:
 //config:config LINUX64
-//config:	bool "linux64"
+//config:	bool "linux64 (3.2 kb)"
 //config:	default y
 //config:	select PLATFORM_LINUX
 //config:	help
-//config:	  Alias to "setarch linux64".
+//config:	Alias to "setarch linux64".
 
-//applet:IF_SETARCH(APPLET(setarch, BB_DIR_BIN, BB_SUID_DROP))
-//                  APPLET_ODDNAME:name     main     location    suid_type     help
-//applet:IF_LINUX32(APPLET_ODDNAME(linux32, setarch, BB_DIR_BIN, BB_SUID_DROP, linux32))
-//applet:IF_LINUX64(APPLET_ODDNAME(linux64, setarch, BB_DIR_BIN, BB_SUID_DROP, linux64))
+//applet:IF_SETARCH(APPLET_NOEXEC(setarch, setarch, BB_DIR_BIN, BB_SUID_DROP, setarch))
+//                  APPLET_NOEXEC:name     main     location    suid_type     help
+//applet:IF_LINUX32(APPLET_NOEXEC(linux32, setarch, BB_DIR_BIN, BB_SUID_DROP, linux32))
+//applet:IF_LINUX64(APPLET_NOEXEC(linux64, setarch, BB_DIR_BIN, BB_SUID_DROP, linux64))
 
 //kbuild:lib-$(CONFIG_SETARCH) += setarch.o
 //kbuild:lib-$(CONFIG_LINUX32) += setarch.o

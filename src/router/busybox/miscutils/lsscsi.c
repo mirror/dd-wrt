@@ -7,16 +7,16 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config LSSCSI
-//config:	bool "lsscsi"
+//config:	bool "lsscsi (2.4 kb)"
 //config:	default y
 //config:	#select PLATFORM_LINUX
 //config:	help
-//config:	  lsscsi is a utility for displaying information about SCSI buses in the
-//config:	  system and devices connected to them.
+//config:	lsscsi is a utility for displaying information about SCSI buses in the
+//config:	system and devices connected to them.
 //config:
-//config:	  This version uses sysfs (/sys/bus/scsi/devices) only.
+//config:	This version uses sysfs (/sys/bus/scsi/devices) only.
 
-//applet:IF_LSSCSI(APPLET(lsscsi, BB_DIR_USR_BIN, BB_SUID_DROP))
+//applet:IF_LSSCSI(APPLET_NOEXEC(lsscsi, lsscsi, BB_DIR_USR_BIN, BB_SUID_DROP, lsscsi))
 
 //kbuild:lib-$(CONFIG_LSSCSI) += lsscsi.o
 
@@ -24,6 +24,8 @@
 //usage:#define lsscsi_full_usage ""
 
 #include "libbb.h"
+
+static const char scsi_dir[] ALIGN1 = "/sys/bus/scsi/devices";
 
 static char *get_line(const char *filename, char *buf, unsigned *bufsize_p)
 {
@@ -37,9 +39,8 @@ static char *get_line(const char *filename, char *buf, unsigned *bufsize_p)
 	if (sz < 0)
 		sz = 0;
 	buf[sz] = '\0';
-	trim(buf);
 
-	sz = strlen(buf) + 1;
+	sz = (trim(buf) - buf) + 1;
 	bufsize -= sz;
 	buf += sz;
 	buf[0] = '\0';
@@ -54,7 +55,7 @@ int lsscsi_main(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 	struct dirent *de;
 	DIR *dir;
 
-	xchdir("/sys/bus/scsi/devices");
+	xchdir(scsi_dir);
 
 	dir = xopendir(".");
 	while ((de = readdir(dir)) != NULL) {
@@ -113,7 +114,10 @@ int lsscsi_main(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 		);
 		/* TODO: also output device column, e.g. "/dev/sdX" */
 
-		xchdir("..");
+		/* chdir("..") may not work as expected,
+		 * since we might have followed a symlink.
+		 */
+		xchdir(scsi_dir);
 	}
 
 	if (ENABLE_FEATURE_CLEAN_UP)

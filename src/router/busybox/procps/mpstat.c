@@ -6,16 +6,16 @@
  *
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
-
-//applet:IF_MPSTAT(APPLET(mpstat, BB_DIR_BIN, BB_SUID_DROP))
-
-//kbuild:lib-$(CONFIG_MPSTAT) += mpstat.o
-
 //config:config MPSTAT
-//config:	bool "mpstat"
+//config:	bool "mpstat (10 kb)"
 //config:	default y
 //config:	help
-//config:	  Per-processor statistics
+//config:	Per-processor statistics
+
+//applet:IF_MPSTAT(APPLET(mpstat, BB_DIR_BIN, BB_SUID_DROP))
+/* shouldn't be noexec: "mpstat INTERVAL" runs indefinitely */
+
+//kbuild:lib-$(CONFIG_MPSTAT) += mpstat.o
 
 #include "libbb.h"
 #include <sys/utsname.h>  /* struct utsname */

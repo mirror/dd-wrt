@@ -11,10 +11,10 @@
  * Major size reduction... over 50% (>1.5k) on i386.
  */
 //config:config CAL
-//config:	bool "cal"
+//config:	bool "cal (6.5 kb)"
 //config:	default y
 //config:	help
-//config:	  cal is used to display a monthly calendar.
+//config:	cal is used to display a monthly calendar.
 
 //applet:IF_CAL(APPLET(cal, BB_DIR_USR_BIN, BB_SUID_DROP))
 
@@ -376,7 +376,7 @@ static char *build_row(char *p, unsigned *dp)
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE

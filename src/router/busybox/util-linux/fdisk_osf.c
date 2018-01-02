@@ -18,7 +18,7 @@
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ''AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
@@ -709,6 +709,9 @@ sync_disks(void)
 static void
 xbsd_write_bootstrap(void)
 {
+#ifndef MAXPATHLEN
+# define MAXPATHLEN 1024
+#endif
 	char path[MAXPATHLEN];
 	const char *bootdir = BSD_LINUX_BOOTDIR;
 	const char *dkbasename;

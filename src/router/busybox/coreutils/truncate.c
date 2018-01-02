@@ -6,11 +6,11 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config TRUNCATE
-//config:	bool "truncate"
+//config:	bool "truncate (4.7 kb)"
 //config:	default y
 //config:	help
-//config:	  truncate truncates files to a given size. If a file does
-//config:	  not exist, it is created unless told otherwise.
+//config:	truncate truncates files to a given size. If a file does
+//config:	not exist, it is created unless told otherwise.
 
 //applet:IF_TRUNCATE(APPLET_NOFORK(truncate, truncate, BB_DIR_USR_BIN, BB_SUID_DROP, truncate))
 
@@ -50,8 +50,7 @@ int truncate_main(int argc UNUSED_PARAM, char **argv)
 		OPT_SIZE = (1 << 1),
 	};
 
-	opt_complementary = "s:-1";
-	opts = getopt32(argv, "cs:", &size_str);
+	opts = getopt32(argv, "^" "cs:" "\0" "s:-1", &size_str);
 
 	if (!(opts & OPT_NOCREATE))
 		flags |= O_CREAT;

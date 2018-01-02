@@ -36,13 +36,12 @@ a:       85.1% -- replaced with a.gz
 gzip: bogus: No such file or directory
 aa:      85.1% -- replaced with aa.gz
 */
-
 //config:config GZIP
-//config:	bool "gzip"
+//config:	bool "gzip (19 kb)"
 //config:	default y
 //config:	help
-//config:	  gzip is used to compress files.
-//config:	  It's probably the most widely used UNIX compression program.
+//config:	gzip is used to compress files.
+//config:	It's probably the most widely used UNIX compression program.
 //config:
 //config:config FEATURE_GZIP_LONG_OPTIONS
 //config:	bool "Enable long options"
@@ -55,32 +54,33 @@ aa:      85.1% -- replaced with aa.gz
 //config:	range 0 2
 //config:	depends on GZIP
 //config:	help
-//config:	  Enable big memory options for gzip.
-//config:	  0: small buffers, small hash-tables
-//config:	  1: larger buffers, larger hash-tables
-//config:	  2: larger buffers, largest hash-tables
-//config:	  Larger models may give slightly better compression
+//config:	Enable big memory options for gzip.
+//config:	0: small buffers, small hash-tables
+//config:	1: larger buffers, larger hash-tables
+//config:	2: larger buffers, largest hash-tables
+//config:	Larger models may give slightly better compression
 //config:
 //config:config FEATURE_GZIP_LEVELS
 //config:	bool "Enable compression levels"
 //config:	default n
 //config:	depends on GZIP
 //config:	help
-//config:	  Enable support for compression levels 4-9. The default level
-//config:	  is 6. If levels 1-3 are specified, 4 is used.
-//config:	  If this option is not selected, -N options are ignored and -9
-//config:	  is used.
+//config:	Enable support for compression levels 4-9. The default level
+//config:	is 6. If levels 1-3 are specified, 4 is used.
+//config:	If this option is not selected, -N options are ignored and -9
+//config:	is used.
 //config:
 //config:config FEATURE_GZIP_DECOMPRESS
 //config:	bool "Enable decompression"
 //config:	default y
 //config:	depends on GZIP || GUNZIP || ZCAT
 //config:	help
-//config:	  Enable -d (--decompress) and -t (--test) options for gzip.
-//config:	  This will be automatically selected if gunzip or zcat is
-//config:	  enabled.
+//config:	Enable -d (--decompress) and -t (--test) options for gzip.
+//config:	This will be automatically selected if gunzip or zcat is
+//config:	enabled.
 
 //applet:IF_GZIP(APPLET(gzip, BB_DIR_BIN, BB_SUID_DROP))
+
 //kbuild:lib-$(CONFIG_GZIP) += gzip.o
 
 //usage:#define gzip_trivial_usage
@@ -2216,11 +2216,12 @@ int gzip_main(int argc UNUSED_PARAM, char **argv)
 	SET_PTR_TO_GLOBALS((char *)xzalloc(sizeof(struct globals)+sizeof(struct globals2))
 			+ sizeof(struct globals));
 
-#if ENABLE_FEATURE_GZIP_LONG_OPTIONS
-	applet_long_options = gzip_longopts;
-#endif
 	/* Must match bbunzip's constants OPT_STDOUT, OPT_FORCE! */
+#if ENABLE_FEATURE_GZIP_LONG_OPTIONS
+	opt = getopt32long(argv, "cfkv" IF_FEATURE_GZIP_DECOMPRESS("dt") "qn123456789", gzip_longopts);
+#else
 	opt = getopt32(argv, "cfkv" IF_FEATURE_GZIP_DECOMPRESS("dt") "qn123456789");
+#endif
 #if ENABLE_FEATURE_GZIP_DECOMPRESS /* gunzip_main may not be visible... */
 	if (opt & 0x30) // -d and/or -t
 		return gunzip_main(argc, argv);

@@ -7,11 +7,11 @@
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 //config:config XXD
-//config:	bool "xxd"
+//config:	bool "xxd (8.9 kb)"
 //config:	default y
 //config:	help
-//config:	  The xxd utility is used to display binary data in a readable
-//config:	  way that is comparable to the output from most hex editors.
+//config:	The xxd utility is used to display binary data in a readable
+//config:	way that is comparable to the output from most hex editors.
 
 //applet:IF_XXD(APPLET_NOEXEC(xxd, xxd, BB_DIR_USR_BIN, BB_SUID_DROP, xxd))
 
@@ -73,8 +73,9 @@ int xxd_main(int argc UNUSED_PARAM, char **argv)
 #define OPT_s (1 << 1)
 #define OPT_a (1 << 2)
 #define OPT_p (1 << 3)
-	opt_complementary = "?1"; /* 1 argument max */
-	opt = getopt32(argv, "l:s:apg:+c:+", &opt_l, &opt_s, &bytes, &cols);
+	opt = getopt32(argv, "^" "l:s:apg:+c:+" "\0" "?1" /* 1 argument max */,
+			&opt_l, &opt_s, &bytes, &cols
+	);
 	argv += optind;
 
 	dumper->dump_vflag = ALL;

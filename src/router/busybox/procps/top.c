@@ -50,74 +50,74 @@
  * chroot . ./top -bn1 >top1.out
  */
 //config:config TOP
-//config:	bool "top"
+//config:	bool "top (17 kb)"
 //config:	default y
 //config:	help
-//config:	  The top program provides a dynamic real-time view of a running
-//config:	  system.
+//config:	The top program provides a dynamic real-time view of a running
+//config:	system.
 //config:
 //config:config FEATURE_TOP_INTERACTIVE
 //config:	bool "Accept keyboard commands"
 //config:	default y
 //config:	depends on TOP
 //config:	help
-//config:	  Without this, top will only refresh display every 5 seconds.
-//config:	  No keyboard commands will work, only ^C to terminate.
+//config:	Without this, top will only refresh display every 5 seconds.
+//config:	No keyboard commands will work, only ^C to terminate.
 //config:
 //config:config FEATURE_TOP_CPU_USAGE_PERCENTAGE
 //config:	bool "Show CPU per-process usage percentage"
 //config:	default y
 //config:	depends on TOP
 //config:	help
-//config:	  Make top display CPU usage for each process.
-//config:	  This adds about 2k.
+//config:	Make top display CPU usage for each process.
+//config:	This adds about 2k.
 //config:
 //config:config FEATURE_TOP_CPU_GLOBAL_PERCENTS
 //config:	bool "Show CPU global usage percentage"
 //config:	default y
 //config:	depends on FEATURE_TOP_CPU_USAGE_PERCENTAGE
 //config:	help
-//config:	  Makes top display "CPU: NN% usr NN% sys..." line.
-//config:	  This adds about 0.5k.
+//config:	Makes top display "CPU: NN% usr NN% sys..." line.
+//config:	This adds about 0.5k.
 //config:
 //config:config FEATURE_TOP_SMP_CPU
 //config:	bool "SMP CPU usage display ('c' key)"
 //config:	default y
 //config:	depends on FEATURE_TOP_CPU_GLOBAL_PERCENTS
 //config:	help
-//config:	  Allow 'c' key to switch between individual/cumulative CPU stats
-//config:	  This adds about 0.5k.
+//config:	Allow 'c' key to switch between individual/cumulative CPU stats
+//config:	This adds about 0.5k.
 //config:
 //config:config FEATURE_TOP_DECIMALS
 //config:	bool "Show 1/10th of a percent in CPU/mem statistics"
 //config:	default y
 //config:	depends on FEATURE_TOP_CPU_USAGE_PERCENTAGE
 //config:	help
-//config:	  Show 1/10th of a percent in CPU/mem statistics.
-//config:	  This adds about 0.3k.
+//config:	Show 1/10th of a percent in CPU/mem statistics.
+//config:	This adds about 0.3k.
 //config:
 //config:config FEATURE_TOP_SMP_PROCESS
 //config:	bool "Show CPU process runs on ('j' field)"
 //config:	default y
 //config:	depends on TOP
 //config:	help
-//config:	  Show CPU where process was last found running on.
-//config:	  This is the 'j' field.
+//config:	Show CPU where process was last found running on.
+//config:	This is the 'j' field.
 //config:
 //config:config FEATURE_TOPMEM
 //config:	bool "Topmem command ('s' key)"
 //config:	default y
 //config:	depends on TOP
 //config:	help
-//config:	  Enable 's' in top (gives lots of memory info).
+//config:	Enable 's' in top (gives lots of memory info).
 
 //applet:IF_TOP(APPLET(top, BB_DIR_USR_BIN, BB_SUID_DROP))
 
 //kbuild:lib-$(CONFIG_TOP) += top.o
 
 #include "libbb.h"
-#include "common_bufsiz.h"
 
+#define ESC "\033"
 
 typedef struct top_status_t {
 	unsigned long vsz;
@@ -154,6 +154,8 @@ typedef int (*cmp_funcp)(top_status_t *P, top_status_t *Q);
 
 enum { SORT_DEPTH = 3 };
 
+/* Screens wider than this are unlikely */
+enum { LINE_BUF_SIZE = 512 - 64 };
 
 struct globals {
 	top_status_t *top;
@@ -192,10 +194,9 @@ struct globals {
 #if ENABLE_FEATURE_TOP_INTERACTIVE
 	char kbd_input[KEYCODE_BUFFER_SIZE];
 #endif
-	char line_buf[80];
-}; //FIX_ALIASING; - large code growth
-enum { LINE_BUF_SIZE = COMMON_BUFSIZE - offsetof(struct globals, line_buf) };
-#define G (*(struct globals*)bb_common_bufsiz1)
+	char line_buf[LINE_BUF_SIZE];
+};
+#define G (*ptr_to_globals)
 #define top              (G.top               )
 #define ntop             (G.ntop              )
 #define sort_field       (G.sort_field        )
@@ -213,8 +214,7 @@ enum { LINE_BUF_SIZE = COMMON_BUFSIZE - offsetof(struct globals, line_buf) };
 #define total_pcpu       (G.total_pcpu        )
 #define line_buf         (G.line_buf          )
 #define INIT_G() do { \
-	setup_common_bufsiz(); \
-	BUILD_BUG_ON(sizeof(G) > COMMON_BUFSIZE); \
+	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
 	BUILD_BUG_ON(LINE_BUF_SIZE <= 80); \
 } while (0)
 
@@ -581,7 +581,7 @@ static unsigned long display_header(int scr_width, int *lines_rem_p)
 		meminfo[MI_BUFFERS],
 		meminfo[MI_CACHED]);
 	/* Go to top & clear to the end of screen */
-	printf(OPT_BATCH_MODE ? "%s\n" : "\033[H\033[J%s\n", scrbuf);
+	printf(OPT_BATCH_MODE ? "%s\n" : ESC"[H" ESC"[J" "%s\n", scrbuf);
 	(*lines_rem_p)--;
 
 	/* Display CPU time split as percentage of total time.
@@ -619,7 +619,7 @@ static NOINLINE void display_process_list(int lines_rem, int scr_width)
 #endif
 
 	/* what info of the processes is shown */
-	printf(OPT_BATCH_MODE ? "%.*s" : "\033[7m%.*s\033[0m", scr_width,
+	printf(OPT_BATCH_MODE ? "%.*s" : ESC"[7m" "%.*s" ESC"[m", scr_width,
 		"  PID  PPID USER     STAT   VSZ %VSZ"
 		IF_FEATURE_TOP_SMP_PROCESS(" CPU")
 		IF_FEATURE_TOP_CPU_USAGE_PERCENTAGE(" %CPU")
@@ -803,7 +803,7 @@ static void display_topmem_header(int scr_width, int *lines_rem_p)
 		meminfo[MI_ANONPAGES],
 		meminfo[MI_MAPPED],
 		meminfo[MI_MEMFREE]);
-	printf(OPT_BATCH_MODE ? "%.*s\n" : "\033[H\033[J%.*s\n", scr_width, line_buf);
+	printf(OPT_BATCH_MODE ? "%.*s\n" : ESC"[H" ESC"[J" "%.*s\n", scr_width, line_buf);
 
 	snprintf(line_buf, LINE_BUF_SIZE,
 		" slab:%lu buf:%lu cache:%lu dirty:%lu write:%lu",
@@ -845,7 +845,7 @@ static NOINLINE void display_topmem_process_list(int lines_rem, int scr_width)
 	cp[6] = ch;
 	do *cp++ = ch; while (*cp == ' ');
 
-	printf(OPT_BATCH_MODE ? "%.*s" : "\e[7m%.*s\e[0m", scr_width, line_buf);
+	printf(OPT_BATCH_MODE ? "%.*s" : ESC"[7m" "%.*s" ESC"[m", scr_width, line_buf);
 	lines_rem--;
 
 	if (lines_rem > ntop - G_scroll_ofs)
@@ -1110,15 +1110,14 @@ int top_main(int argc UNUSED_PARAM, char **argv)
 #endif
 
 	/* all args are options; -n NUM */
-	opt_complementary = "-"; /* options can be specified w/o dash */
+	make_all_argv_opts(argv); /* options can be specified w/o dash */
 	col = getopt32(argv, "d:n:b"IF_FEATURE_TOPMEM("m"), &str_interval, &str_iterations);
 #if ENABLE_FEATURE_TOPMEM
 	if (col & OPT_m) /* -m (busybox specific) */
 		scan_mask = TOPMEM_MASK;
 #endif
 	if (col & OPT_d) {
-		/* work around for "-d 1" -> "-d -1" done by getopt32
-		 * (opt_complementary == "-" does this) */
+		/* work around for "-d 1" -> "-d -1" done by make_all_argv_opts() */
 		if (str_interval[0] == '-')
 			str_interval++;
 		/* Need to limit it to not overflow poll timeout */
@@ -1148,6 +1147,7 @@ int top_main(int argc UNUSED_PARAM, char **argv)
 	else {
 		/* Turn on unbuffered input; turn off echoing, ^C ^Z etc */
 		set_termios_to_raw(STDIN_FILENO, &initial_settings, TERMIOS_CLEAR_ISIG);
+		die_func = reset_term;
 	}
 
 	bb_signals(BB_FATAL_SIGS, sig_catcher);

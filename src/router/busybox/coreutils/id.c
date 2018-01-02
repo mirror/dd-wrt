@@ -13,16 +13,16 @@
  * Added -G option Tito Ragusa (C) 2008 for SUSv3.
  */
 //config:config ID
-//config:	bool "id"
+//config:	bool "id (6.7 kb)"
 //config:	default y
 //config:	help
-//config:	  id displays the current user and group ID names.
+//config:	id displays the current user and group ID names.
 //config:
 //config:config GROUPS
-//config:	bool "groups"
+//config:	bool "groups (6.5 kb)"
 //config:	default y
 //config:	help
-//config:	  Print the group names associated with current user id.
+//config:	Print the group names associated with current user id.
 
 //applet:IF_GROUPS(APPLET_NOEXEC(groups, id, BB_DIR_USR_BIN, BB_SUID_DROP, groups))
 //applet:IF_ID(    APPLET_NOEXEC(id,     id, BB_DIR_USR_BIN, BB_SUID_DROP, id    ))
@@ -170,9 +170,12 @@ int id_main(int argc UNUSED_PARAM, char **argv)
 	} else {
 		/* Don't allow -n -r -nr -ug -rug -nug -rnug -uZ -gZ -GZ*/
 		/* Don't allow more than one username */
-		opt_complementary = "?1:u--g:g--u:G--u:u--G:g--G:G--g:r?ugG:n?ugG"
-			IF_SELINUX(":u--Z:Z--u:g--Z:Z--g:G--Z:Z--G");
-		opt = getopt32(argv, "rnugG" IF_SELINUX("Z"));
+		opt = getopt32(argv, "^"
+			"rnugG" IF_SELINUX("Z")
+			"\0"
+			"?1:u--g:g--u:G--u:u--G:g--G:G--g:r?ugG:n?ugG"
+			IF_SELINUX(":u--Z:Z--u:g--Z:Z--g:G--Z:Z--G")
+		);
 	}
 
 	username = argv[optind];

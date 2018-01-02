@@ -7,23 +7,23 @@
  * known bugs: can't deal with alpha ranges
  */
 //config:config MAKEDEVS
-//config:	bool "makedevs"
+//config:	bool "makedevs (9.3 kb)"
 //config:	default y
 //config:	help
-//config:	  'makedevs' is a utility used to create a batch of devices with
-//config:	  one command.
+//config:	'makedevs' is a utility used to create a batch of devices with
+//config:	one command.
 //config:
-//config:	  There are two choices for command line behaviour, the interface
-//config:	  as used by LEAF/Linux Router Project, or a device table file.
+//config:	There are two choices for command line behaviour, the interface
+//config:	as used by LEAF/Linux Router Project, or a device table file.
 //config:
-//config:	  'leaf' is traditionally what busybox follows, it allows multiple
-//config:	  devices of a particluar type to be created per command.
-//config:	  e.g. /dev/hda[0-9]
-//config:	  Device properties are passed as command line arguments.
+//config:	'leaf' is traditionally what busybox follows, it allows multiple
+//config:	devices of a particluar type to be created per command.
+//config:	e.g. /dev/hda[0-9]
+//config:	Device properties are passed as command line arguments.
 //config:
-//config:	  'table' reads device properties from a file or stdin, allowing
-//config:	  a batch of unrelated devices to be made with one command.
-//config:	  User/group names are allowed as an alternative to uid/gid.
+//config:	'table' reads device properties from a file or stdin, allowing
+//config:	a batch of unrelated devices to be made with one command.
+//config:	User/group names are allowed as an alternative to uid/gid.
 //config:
 //config:choice
 //config:	prompt "Choose makedevs behaviour"
@@ -38,7 +38,7 @@
 //config:
 //config:endchoice
 
-//applet:IF_MAKEDEVS(APPLET(makedevs, BB_DIR_SBIN, BB_SUID_DROP))
+//applet:IF_MAKEDEVS(APPLET_NOEXEC(makedevs, makedevs, BB_DIR_SBIN, BB_SUID_DROP, makedevs))
 
 //kbuild:lib-$(CONFIG_MAKEDEVS) += makedevs.o
 
@@ -183,8 +183,7 @@ int makedevs_main(int argc UNUSED_PARAM, char **argv)
 	char *line = (char *)"-";
 	int ret = EXIT_SUCCESS;
 
-	opt_complementary = "=1"; /* exactly one param */
-	getopt32(argv, "d:", &line);
+	getopt32(argv, "^" "d:" "\0" "=1", &line);
 	argv += optind;
 
 	xchdir(*argv); /* ensure root dir exists */
@@ -208,17 +207,17 @@ int makedevs_main(int argc UNUSED_PARAM, char **argv)
 		unsigned count = 0;
 		unsigned increment = 0;
 		unsigned start = 0;
-		char name[41];
 		char user[41];
 		char group[41];
-		char *full_name = name;
+		char *full_name;
+		int name_len;
 		uid_t uid;
 		gid_t gid;
 
 		linenum = parser->lineno;
 
-		if ((2 > sscanf(line, "%40s %c %o %40s %40s %u %u %u %u %u",
-					name, &type, &mode, user, group,
+		if ((1 > sscanf(line, "%*s%n %c %o %40s %40s %u %u %u %u %u",
+					&name_len, &type, &mode, user, group,
 					&major, &minor, &start, &increment, &count))
 		 || ((unsigned)(major | minor | start | count | increment) > 255)
 		) {
@@ -229,9 +228,11 @@ int makedevs_main(int argc UNUSED_PARAM, char **argv)
 
 		gid = (*group) ? get_ug_id(group, xgroup2gid) : getgid();
 		uid = (*user) ? get_ug_id(user, xuname2uid) : getuid();
+		line[name_len] = '\0';
+		full_name = line;
 		/* We are already in the right root dir,
 		 * so make absolute paths relative */
-		if ('/' == *full_name)
+		if ('/' == full_name[0])
 			full_name++;
 
 		if (type == 'd') {
@@ -260,9 +261,7 @@ int makedevs_main(int argc UNUSED_PARAM, char **argv)
 			if (chmod(full_name, mode) < 0)
 				goto chmod_fail;
 		} else {
-			dev_t rdev;
 			unsigned i;
-			char *full_name_inc;
 
 			if (type == 'p') {
 				mode |= S_IFIFO;
@@ -276,26 +275,29 @@ int makedevs_main(int argc UNUSED_PARAM, char **argv)
 				continue;
 			}
 
-			full_name_inc = xmalloc(strlen(full_name) + sizeof(int)*3 + 2);
-			if (count)
+			if (count != 0)
 				count--;
-			for (i = start; i <= start + count; i++) {
-				sprintf(full_name_inc, count ? "%s%u" : "%s", full_name, i);
-				rdev = makedev(major, minor + (i - start) * increment);
-				if (mknod(full_name_inc, mode, rdev) != 0
+			for (i = 0; i <= count; i++) {
+				dev_t rdev;
+				char *nameN = full_name;
+				if (count != 0)
+					nameN = xasprintf("%s%u", full_name, start + i);
+				rdev = makedev(major, minor + i * increment);
+				if (mknod(nameN, mode, rdev) != 0
 				 && errno != EEXIST
 				) {
-					bb_perror_msg("line %d: can't create node %s", linenum, full_name_inc);
+					bb_perror_msg("line %d: can't create node %s", linenum, nameN);
 					ret = EXIT_FAILURE;
-				} else if (chown(full_name_inc, uid, gid) < 0) {
-					bb_perror_msg("line %d: can't chown %s", linenum, full_name_inc);
+				} else if (chown(nameN, uid, gid) < 0) {
+					bb_perror_msg("line %d: can't chown %s", linenum, nameN);
 					ret = EXIT_FAILURE;
-				} else if (chmod(full_name_inc, mode) < 0) {
-					bb_perror_msg("line %d: can't chmod %s", linenum, full_name_inc);
+				} else if (chmod(nameN, mode) < 0) {
+					bb_perror_msg("line %d: can't chmod %s", linenum, nameN);
 					ret = EXIT_FAILURE;
 				}
+				if (count != 0)
+					free(nameN);
 			}
-			free(full_name_inc);
 		}
 	}
 	if (ENABLE_FEATURE_CLEAN_UP)

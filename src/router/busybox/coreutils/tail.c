@@ -19,23 +19,23 @@
  * 7) lseek attempted when count==0 even if arg was +0 (from top)
  */
 //config:config TAIL
-//config:	bool "tail"
+//config:	bool "tail (7.1 kb)"
 //config:	default y
 //config:	help
-//config:	  tail is used to print the last specified number of lines
-//config:	  from files.
+//config:	tail is used to print the last specified number of lines
+//config:	from files.
 //config:
 //config:config FEATURE_FANCY_TAIL
 //config:	bool "Enable -q, -s, -v, and -F options"
 //config:	default y
 //config:	depends on TAIL
 //config:	help
-//config:	  These options are provided by GNU tail, but
-//config:	  are not specific in the SUSv3 standard:
-//config:	    -q      Never output headers giving file names
-//config:	    -s SEC  Wait SEC seconds between reads with -f
-//config:	    -v      Always output headers giving file names
-//config:	    -F      Same as -f, but keep retrying
+//config:	These options are provided by GNU tail, but
+//config:	are not specified in the SUSv3 standard:
+//config:		-q      Never output headers giving file names
+//config:		-s SEC  Wait SEC seconds between reads with -f
+//config:		-v      Always output headers giving file names
+//config:		-F      Same as -f, but keep retrying
 
 //applet:IF_TAIL(APPLET(tail, BB_DIR_USR_BIN, BB_SUID_DROP))
 
@@ -140,9 +140,11 @@ int tail_main(int argc, char **argv)
 #endif
 
 	/* -s NUM, -F imlies -f */
-	IF_FEATURE_FANCY_TAIL(opt_complementary = "Ff";)
-	opt = getopt32(argv, "fc:n:" IF_FEATURE_FANCY_TAIL("qs:+vF"),
-			&str_c, &str_n IF_FEATURE_FANCY_TAIL(,&sleep_period));
+	opt = getopt32(argv, IF_FEATURE_FANCY_TAIL("^")
+			"fc:n:"IF_FEATURE_FANCY_TAIL("qs:+vF")
+			IF_FEATURE_FANCY_TAIL("\0" "Ff"),
+			&str_c, &str_n IF_FEATURE_FANCY_TAIL(,&sleep_period)
+	);
 #define FOLLOW (opt & 0x1)
 #define COUNT_BYTES (opt & 0x2)
 	//if (opt & 0x1) // -f

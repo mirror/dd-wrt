@@ -7,17 +7,17 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config LOSETUP
-//config:	bool "losetup"
+//config:	bool "losetup (5.4 kb)"
 //config:	default y
 //config:	select PLATFORM_LINUX
 //config:	help
-//config:	  losetup is used to associate or detach a loop device with a regular
-//config:	  file or block device, and to query the status of a loop device. This
-//config:	  version does not currently support enabling data encryption.
+//config:	losetup is used to associate or detach a loop device with a regular
+//config:	file or block device, and to query the status of a loop device. This
+//config:	version does not currently support enabling data encryption.
+
+//applet:IF_LOSETUP(APPLET_NOEXEC(losetup, losetup, BB_DIR_SBIN, BB_SUID_DROP, losetup))
 
 //kbuild:lib-$(CONFIG_LOSETUP) += losetup.o
-
-//applet:IF_LOSETUP(APPLET(losetup, BB_DIR_SBIN, BB_SUID_DROP))
 
 //usage:#define losetup_trivial_usage
 //usage:       "[-r] [-o OFS] {-f|LOOPDEV} FILE - associate loop devices\n"
@@ -57,8 +57,7 @@ int losetup_main(int argc UNUSED_PARAM, char **argv)
 		OPT_r = (1 << 4), /* must be last */
 	};
 
-	opt_complementary = "?2:d--ofar:a--ofr";
-	opt = getopt32(argv, "do:far", &opt_o);
+	opt = getopt32(argv, "^" "do:far" "\0" "?2:d--ofar:a--ofr", &opt_o);
 	argv += optind;
 
 	/* LOOPDEV */
