@@ -128,7 +128,7 @@ int system2(char *command)
 
 	if (nvram_matchi("console_debug", 1)) {
 		fprintf(stderr, "%s\n", command);
-		flog("system: %s\n", command);
+		flog("%s\n", command);
 	}
 
 	if (nvram_match("debug_delay","1")) {
