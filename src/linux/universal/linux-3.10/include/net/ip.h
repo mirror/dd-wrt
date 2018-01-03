@@ -31,6 +31,8 @@
 #include <net/snmp.h>
 #include <net/flow.h>
 
+#define IPV4_MIN_MTU		68			/* RFC 791 */
+
 struct sock;
 
 struct inet_skb_parm {
