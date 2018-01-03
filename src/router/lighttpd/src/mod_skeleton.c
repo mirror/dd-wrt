@@ -6,7 +6,6 @@
 
 #include "plugin.h"
 
-#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -47,6 +46,7 @@ static handler_ctx * handler_ctx_init() {
 	handler_ctx * hctx;
 
 	hctx = calloc(1, sizeof(*hctx));
+	force_assert(hctx);
 
 	return hctx;
 }
@@ -61,6 +61,7 @@ INIT_FUNC(mod_skeleton_init) {
 	plugin_data *p;
 
 	p = calloc(1, sizeof(*p));
+	force_assert(p);
 
 	p->match_buf = buffer_init();
 
@@ -111,12 +112,12 @@ SETDEFAULTS_FUNC(mod_skeleton_set_defaults) {
 	if (!p) return HANDLER_ERROR;
 
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
+	force_assert(p->config_storage);
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		data_config const* config = (data_config const*)srv->config_context->data[i];
-		plugin_config *s;
-
-		s = calloc(1, sizeof(plugin_config));
+		plugin_config *s = calloc(1, sizeof(plugin_config));
+		force_assert(s);
 		s->match    = array_init();
 
 		cv[0].destination = s->match;
@@ -124,6 +125,12 @@ SETDEFAULTS_FUNC(mod_skeleton_set_defaults) {
 		p->config_storage[i] = s;
 
 		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
+			return HANDLER_ERROR;
+		}
+
+		if (!array_is_vlist(s->match)) {
+			log_error_write(srv, __FILE__, __LINE__, "s",
+					"unexpected value for skeleton.array; expected list of \"urlpath\"");
 			return HANDLER_ERROR;
 		}
 	}

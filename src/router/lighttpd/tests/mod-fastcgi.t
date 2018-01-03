@@ -7,7 +7,7 @@ BEGIN {
 }
 
 use strict;
-use Test::More tests => 60;
+use Test::More tests => 59;
 use LightyTest;
 
 my $tf = LightyTest->new();
@@ -348,7 +348,7 @@ EOF
 
 
 SKIP: {
-	skip "no fcgi-responder found", 11 unless -x $tf->{BASEDIR}."/tests/fcgi-responder" || -x $tf->{BASEDIR}."/tests/fcgi-responder.exe";
+	skip "no fcgi-responder found", 10 unless -x $tf->{BASEDIR}."/tests/fcgi-responder" || -x $tf->{BASEDIR}."/tests/fcgi-responder.exe";
 	
 	$tf->{CONFIGFILE} = 'fastcgi-responder.conf';
 	ok($tf->start_proc == 0, "Starting lighttpd with $tf->{CONFIGFILE}") or die();
@@ -409,17 +409,11 @@ EOF
 	$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, 'HTTP-Content' => 'test123' } ];
 	ok($tf->handle_http($t) == 0, 'killing fastcgi and wait for restart');
 
-	select(undef, undef, undef, .2);
-	$t->{REQUEST}  = ( <<EOF
-GET /index.fcgi?die-at-end HTTP/1.0
-Host: www.example.org
-EOF
- );
-	$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, 'HTTP-Content' => 'test123' } ];
-	ok($tf->handle_http($t) == 0, 'killing fastcgi and wait for restart');
-
-
-	select(undef, undef, undef, .2);
+	# (might take lighttpd 1 sec to detect backend exit)
+	select(undef, undef, undef, .5);
+	for (my $c = 2*20; $c && 0 == $tf->listening_on(10000); --$c) {
+		select(undef, undef, undef, 0.05);
+	}
 	$t->{REQUEST}  = ( <<EOF
 GET /index.fcgi?crlf HTTP/1.0
 Host: www.example.org

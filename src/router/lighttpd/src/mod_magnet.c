@@ -13,10 +13,8 @@
 #include "status_counter.h"
 #include "etag.h"
 
-#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include <setjmp.h>
 
 #include <lua.h>
@@ -124,6 +122,18 @@ SETDEFAULTS_FUNC(mod_magnet_set_defaults) {
 		p->config_storage[i] = s;
 
 		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
+			return HANDLER_ERROR;
+		}
+
+		if (!array_is_vlist(s->url_raw)) {
+			log_error_write(srv, __FILE__, __LINE__, "s",
+					"unexpected value for magnet.attract-raw-url-to; expected list of \"scriptpath\"");
+			return HANDLER_ERROR;
+		}
+
+		if (!array_is_vlist(s->physical_path)) {
+			log_error_write(srv, __FILE__, __LINE__, "s",
+					"unexpected value for magnet.attract-physical-path-to; expected list \"scriptpath\"");
 			return HANDLER_ERROR;
 		}
 	}
@@ -415,9 +425,10 @@ static int magnet_reqhdr_get(lua_State *L) {
 	data_string *ds;
 
 	/* __index: param 1 is the (empty) table the value was not found in */
-	const char *key = luaL_checkstring(L, 2);
+	size_t klen;
+	const char *key = luaL_checklstring(L, 2, &klen);
 
-	if (NULL != (ds = (data_string *)array_get_element(con->request.headers, key))) {
+	if (NULL != (ds = (data_string *)array_get_element_klen(con->request.headers, key, klen))) {
 		if (!buffer_is_empty(ds->value)) {
 			lua_pushlstring(L, CONST_BUF_LEN(ds->value));
 		} else {
@@ -651,9 +662,10 @@ static int magnet_cgi_get(lua_State *L) {
 	data_string *ds;
 
 	/* __index: param 1 is the (empty) table the value was not found in */
-	const char *key = luaL_checkstring(L, 2);
+	size_t klen;
+	const char *key = luaL_checklstring(L, 2, &klen);
 
-	ds = (data_string *)array_get_element(con->environment, key);
+	ds = (data_string *)array_get_element_klen(con->environment, key, klen);
 	if (NULL != ds && !buffer_is_empty(ds->value))
 		lua_pushlstring(L, CONST_BUF_LEN(ds->value));
 	else
@@ -667,7 +679,7 @@ static int magnet_cgi_set(lua_State *L) {
 
 	/* __newindex: param 1 is the (empty) table the value is supposed to be set in */
 	const_buffer key = magnet_checkconstbuffer(L, 2);
-	const_buffer val = magnet_checkconstbuffer(L, 2);
+	const_buffer val = magnet_checkconstbuffer(L, 3);
 
 	array_set_key_value(con->environment, key.ptr, key.len, val.ptr, val.len);
 
@@ -1030,9 +1042,7 @@ static handler_t magnet_attract_array(server *srv, connection *con, plugin_data 
 	/* no filename set */
 	if (files->used == 0) return HANDLER_GO_ON;
 
-      #ifdef USE_OPENSSL
-	if (con->ssl) http_cgi_ssl_env(srv, con);
-      #endif
+	srv->request_env(srv, con);
 
 	/**
 	 * execute all files and jump out on the first !HANDLER_GO_ON

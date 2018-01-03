@@ -6,8 +6,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <stdio.h>
-
 #ifdef HAVE_VALGRIND_VALGRIND_H
 # include <valgrind/valgrind.h>
 #endif
@@ -34,10 +32,14 @@ typedef enum {
 
 	PLUGIN_FUNC_HANDLE_URI_CLEAN,
 	PLUGIN_FUNC_HANDLE_URI_RAW,
+	PLUGIN_FUNC_HANDLE_REQUEST_ENV,
 	PLUGIN_FUNC_HANDLE_REQUEST_DONE,
+	PLUGIN_FUNC_HANDLE_CONNECTION_ACCEPT,
+	PLUGIN_FUNC_HANDLE_CONNECTION_SHUT_WR,
 	PLUGIN_FUNC_HANDLE_CONNECTION_CLOSE,
 	PLUGIN_FUNC_HANDLE_TRIGGER,
 	PLUGIN_FUNC_HANDLE_SIGHUP,
+	PLUGIN_FUNC_HANDLE_WAITPID,
 	PLUGIN_FUNC_HANDLE_SUBREQUEST,
 	PLUGIN_FUNC_HANDLE_SUBREQUEST_START,
 	PLUGIN_FUNC_HANDLE_RESPONSE_START,
@@ -296,7 +298,6 @@ int plugins_load(server *srv) {
 	handler_t plugins_call_##y(server *srv, connection *con) {\
 		plugin **slot;\
 		size_t j;\
-		if (!srv->plugin_slots) return HANDLER_GO_ON;\
 		slot = ((plugin ***)(srv->plugin_slots))[x];\
 		if (!slot) return HANDLER_GO_ON;\
 		for (j = 0; j < srv->plugins.used && slot[j]; j++) { \
@@ -329,7 +330,10 @@ int plugins_load(server *srv) {
 
 PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_URI_CLEAN, handle_uri_clean)
 PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_URI_RAW, handle_uri_raw)
+PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_REQUEST_ENV, handle_request_env)
 PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_REQUEST_DONE, handle_request_done)
+PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_CONNECTION_ACCEPT, handle_connection_accept)
+PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_CONNECTION_SHUT_WR, handle_connection_shut_wr)
 PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_CONNECTION_CLOSE, handle_connection_close)
 PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_SUBREQUEST, handle_subrequest)
 PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_SUBREQUEST_START, handle_subrequest_start)
@@ -380,6 +384,18 @@ PLUGIN_TO_SLOT(PLUGIN_FUNC_CLEANUP, cleanup)
 PLUGIN_TO_SLOT(PLUGIN_FUNC_SET_DEFAULTS, set_defaults)
 
 #undef PLUGIN_TO_SLOT
+
+handler_t plugins_call_handle_waitpid(server *srv, pid_t pid, int status) {
+	plugin ** const slot =
+	  ((plugin ***)(srv->plugin_slots))[PLUGIN_FUNC_HANDLE_WAITPID];
+	if (!slot) return HANDLER_GO_ON;
+	for (size_t i = 0; i < srv->plugins.used && slot[i]; ++i) {
+		plugin *p = slot[i];
+		handler_t r = p->handle_waitpid(srv, p->data, pid, status);
+		if (r != HANDLER_GO_ON) return r;
+	}
+	return HANDLER_GO_ON;
+}
 
 #if 0
 /**
@@ -458,10 +474,14 @@ handler_t plugins_call_init(server *srv) {
 
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_URI_CLEAN, handle_uri_clean);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_URI_RAW, handle_uri_raw);
+		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_REQUEST_ENV, handle_request_env);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_REQUEST_DONE, handle_request_done);
+		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_CONNECTION_ACCEPT, handle_connection_accept);
+		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_CONNECTION_SHUT_WR, handle_connection_shut_wr);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_CONNECTION_CLOSE, handle_connection_close);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_TRIGGER, handle_trigger);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_SIGHUP, handle_sighup);
+		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_WAITPID, handle_waitpid);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_SUBREQUEST, handle_subrequest);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_SUBREQUEST_START, handle_subrequest_start);
 		PLUGIN_TO_SLOT(PLUGIN_FUNC_HANDLE_RESPONSE_START, handle_response_start);
@@ -489,6 +509,10 @@ handler_t plugins_call_init(server *srv) {
 			}
 		} else {
 			p->data = NULL;
+		}
+
+		if (p->priv_defaults && HANDLER_ERROR==p->priv_defaults(srv, p->data)) {
+			return HANDLER_ERROR;
 		}
 	}
 

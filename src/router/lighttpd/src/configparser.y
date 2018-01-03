@@ -9,7 +9,6 @@
 #include "array.h"
 #include "request.h" /* http_request_host_normalize() */
 
-#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
@@ -50,8 +49,10 @@ static data_unset *configparser_get_variable(config_t *ctx, const buffer *key) {
     fprintf(stderr, "get var on block: %s\n", dc->key->ptr);
     array_print(dc->value, 0);
 #endif
-    if (NULL != (du = array_get_element(dc->value, key->ptr))) {
-      return du->copy(du);
+    if (NULL != (du = array_get_element_klen(dc->value, CONST_BUF_LEN(key)))) {
+      du = du->copy(du);
+      buffer_reset(du->key);
+      return du;
     }
   }
   return NULL;
@@ -96,7 +97,7 @@ data_unset *configparser_merge_data(data_unset *op1, const data_unset *op2) {
       for (i = 0; i < src->used; i ++) {
         du = (data_unset *)src->data[i];
         if (du) {
-          if (du->is_index_key || buffer_is_empty(du->key) || !array_get_element(dst, du->key->ptr)) {
+          if (du->is_index_key || buffer_is_empty(du->key) || !array_get_element_klen(dst, CONST_BUF_LEN(du->key))) {
             array_insert_unique(dst, du->copy(du));
           } else {
             fprintf(stderr, "Duplicate array-key '%s'\n", du->key->ptr);
@@ -130,7 +131,7 @@ static int configparser_remoteip_normalize_compat(buffer *rvalue) {
       buffer_append_string_buffer(b, rvalue);
   }
 
-  rc = http_request_host_normalize(b);
+  rc = http_request_host_normalize(b, 0);
 
   if (0 == rc) {
     /* remove surrounding '[]' */
@@ -190,7 +191,7 @@ varline ::= key(A) ASSIGN expression(B). {
           ctx->current->context_ndx,
           ctx->current->key->ptr, A->ptr);
       ctx->ok = 0;
-    } else if (NULL == array_get_element(ctx->current->value, B->key->ptr)) {
+    } else if (NULL == array_get_element_klen(ctx->current->value, CONST_BUF_LEN(B->key))) {
       array_insert_unique(ctx->current->value, B);
       B = NULL;
     } else {
@@ -198,12 +199,31 @@ varline ::= key(A) ASSIGN expression(B). {
               ctx->current->context_ndx,
               ctx->current->key->ptr, B->key->ptr);
       ctx->ok = 0;
-      B->free(B);
+    }
+  }
+  buffer_free(A);
+  A = NULL;
+  if (B) B->free(B);
+  B = NULL;
+}
+
+varline ::= key(A) FORCE_ASSIGN expression(B). {
+  if (ctx->ok) {
+    if (strncmp(A->ptr, "env.", sizeof("env.") - 1) == 0) {
+      fprintf(stderr, "Setting env variable is not supported in conditional %d %s: %s\n",
+              ctx->current->context_ndx,
+              ctx->current->key->ptr, A->ptr);
+      ctx->ok = 0;
+    } else {
+      buffer_copy_buffer(B->key, A);
+      array_replace(ctx->current->value, B);
       B = NULL;
     }
   }
   buffer_free(A);
   A = NULL;
+  if (B) B->free(B);
+  B = NULL;
 }
 
 varline ::= key(A) APPEND expression(B). {
@@ -216,7 +236,7 @@ varline ::= key(A) APPEND expression(B). {
           ctx->current->context_ndx,
           ctx->current->key->ptr, A->ptr);
       ctx->ok = 0;
-    } else if (NULL != (du = array_extract_element(vars, A->ptr)) || NULL != (du = configparser_get_variable(ctx, A))) {
+    } else if (NULL != (du = array_extract_element_klen(vars, CONST_BUF_LEN(A))) || NULL != (du = configparser_get_variable(ctx, A))) {
       du = configparser_merge_data(du, B);
       if (NULL == du) {
         ctx->ok = 0;
@@ -225,40 +245,43 @@ varline ::= key(A) APPEND expression(B). {
         buffer_copy_buffer(du->key, A);
         array_insert_unique(ctx->current->value, du);
       }
-      B->free(B);
     } else {
       buffer_copy_buffer(B->key, A);
       array_insert_unique(ctx->current->value, B);
+      B = NULL;
     }
-    buffer_free(A);
-    A = NULL;
-    B = NULL;
   }
+  buffer_free(A);
+  A = NULL;
+  if (B) B->free(B);
+  B = NULL;
 }
 
 key(A) ::= LKEY(B). {
   if (strchr(B->ptr, '.') == NULL) {
     A = buffer_init_string("var.");
     buffer_append_string_buffer(A, B);
-    buffer_free(B);
-    B = NULL;
   } else {
     A = B;
     B = NULL;
   }
+  buffer_free(B);
+  B = NULL;
 }
 
 expression(A) ::= expression(B) PLUS value(C). {
   A = NULL;
   if (ctx->ok) {
     A = configparser_merge_data(B, C);
+    B = NULL;
     if (NULL == A) {
       ctx->ok = 0;
     }
-    B = NULL;
-    C->free(C);
-    C = NULL;
   }
+  if (B) B->free(B);
+  B = NULL;
+  if (C) C->free(C);
+  C = NULL;
 }
 
 expression(A) ::= value(B). {
@@ -286,14 +309,14 @@ value(A) ::= key(B). {
       fprintf(stderr, "Undefined config variable: %s\n", B->ptr);
       ctx->ok = 0;
     }
-    buffer_free(B);
-    B = NULL;
   }
+  buffer_free(B);
+  B = NULL;
 }
 
 value(A) ::= STRING(B). {
   A = (data_unset *)data_string_init();
-  buffer_copy_buffer(((data_string *)(A))->value, B);
+  buffer_move(((data_string *)(A))->value, B);
   buffer_free(B);
   B = NULL;
 }
@@ -330,20 +353,22 @@ aelements(A) ::= aelements(C) COMMA aelement(B). {
   A = NULL;
   if (ctx->ok) {
     if (buffer_is_empty(B->key) ||
-        NULL == array_get_element(C, B->key->ptr)) {
+        NULL == array_get_element_klen(C, CONST_BUF_LEN(B->key))) {
       array_insert_unique(C, B);
       B = NULL;
     } else {
       fprintf(stderr, "Error: duplicate array-key: %s. Please get rid of the duplicate entry.\n",
               B->key->ptr);
       ctx->ok = 0;
-      B->free(B);
-      B = NULL;
     }
 
     A = C;
     C = NULL;
   }
+  array_free(C);
+  C = NULL;
+  if (B) B->free(B);
+  B = NULL;
 }
 
 aelements(A) ::= aelements(C) COMMA. {
@@ -358,6 +383,8 @@ aelements(A) ::= aelement(B). {
     array_insert_unique(A, B);
     B = NULL;
   }
+  if (B) B->free(B);
+  B = NULL;
 }
 
 aelement(A) ::= expression(B). {
@@ -368,12 +395,14 @@ aelement(A) ::= stringop(B) ARRAY_ASSIGN expression(C). {
   A = NULL;
   if (ctx->ok) {
     buffer_copy_buffer(C->key, B);
-    buffer_free(B);
-    B = NULL;
 
     A = C;
     C = NULL;
   }
+  if (C) C->free(C);
+  C = NULL;
+  buffer_free(B);
+  B = NULL;
 }
 
 eols ::= EOL.
@@ -381,7 +410,7 @@ eols ::= .
 
 globalstart ::= GLOBAL. {
   data_config *dc;
-  dc = (data_config *)array_get_element(ctx->srv->config_context, "global");
+  dc = (data_config *)array_get_element_klen(ctx->srv->config_context, CONST_STR_LEN("global"));
   force_assert(dc);
   configparser_push(ctx, dc, 0);
 }
@@ -406,9 +435,9 @@ condlines(A) ::= condlines(B) eols ELSE condline(C). {
     C->prev = B;
     B->next = C;
     A = C;
-    B = NULL;
-    C = NULL;
   }
+  B = NULL;
+  C = NULL;
 }
 
 condlines(A) ::= condlines(B) eols ELSE cond_else(C). {
@@ -426,9 +455,10 @@ condlines(A) ::= condlines(B) eols ELSE cond_else(C). {
   if (ctx->ok) {
     size_t pos;
     data_config *dc;
-    dc = (data_config *)array_extract_element(ctx->all_configs, C->key->ptr);
+    dc = (data_config *)array_extract_element_klen(ctx->all_configs, CONST_BUF_LEN(C->key));
     force_assert(C == dc);
     buffer_copy_buffer(C->key, B->key);
+    C->comp = B->comp;
     /*buffer_copy_buffer(C->comp_key, B->comp_key);*/
     /*C->string = buffer_init_buffer(B->string);*/
     pos = buffer_string_length(C->key)-buffer_string_length(B->string)-2;
@@ -453,7 +483,7 @@ condlines(A) ::= condlines(B) eols ELSE cond_else(C). {
       force_assert(0);
     }
 
-    if (NULL == (dc = (data_config *)array_get_element(ctx->all_configs, C->key->ptr))) {
+    if (NULL == (dc = (data_config *)array_get_element_klen(ctx->all_configs, CONST_BUF_LEN(C->key)))) {
       /* re-insert into ctx->all_configs with new C->key */
       array_insert_unique(ctx->all_configs, (data_unset *)C);
       C->prev = B;
@@ -466,9 +496,9 @@ condlines(A) ::= condlines(B) eols ELSE cond_else(C). {
     }
 
     A = C;
-    B = NULL;
-    C = NULL;
   }
+  B = NULL;
+  C = NULL;
 }
 
 condlines(A) ::= condline(B). {
@@ -506,7 +536,7 @@ cond_else(A) ::= context_else LCURLY metalines RCURLY. {
 
 context ::= DOLLAR SRVVARNAME(B) LBRACKET stringop(C) RBRACKET cond(E) expression(D). {
   data_config *dc;
-  buffer *b, *rvalue, *op;
+  buffer *b = NULL, *rvalue, *op = NULL;
 
   if (ctx->ok && D->type != TYPE_STRING) {
     fprintf(stderr, "rvalue must be string");
@@ -541,7 +571,7 @@ context ::= DOLLAR SRVVARNAME(B) LBRACKET stringop(C) RBRACKET cond(E) expressio
     rvalue = ((data_string*)D)->value;
     buffer_append_string_buffer(b, rvalue);
 
-    if (NULL != (dc = (data_config *)array_get_element(ctx->all_configs, b->ptr))) {
+    if (NULL != (dc = (data_config *)array_get_element_klen(ctx->all_configs, CONST_BUF_LEN(b)))) {
       configparser_push(ctx, dc, 0);
     } else {
       static const struct {
@@ -552,11 +582,11 @@ context ::= DOLLAR SRVVARNAME(B) LBRACKET stringop(C) RBRACKET cond(E) expressio
         { COMP_SERVER_SOCKET,      CONST_STR_LEN("SERVER[\"socket\"]"   ) },
         { COMP_HTTP_URL,           CONST_STR_LEN("HTTP[\"url\"]"        ) },
         { COMP_HTTP_HOST,          CONST_STR_LEN("HTTP[\"host\"]"       ) },
-        { COMP_HTTP_REFERER,       CONST_STR_LEN("HTTP[\"referer\"]"    ) },
+        { COMP_HTTP_REQUEST_HEADER,CONST_STR_LEN("HTTP[\"referer\"]"    ) },
         { COMP_HTTP_USER_AGENT,    CONST_STR_LEN("HTTP[\"useragent\"]"  ) },
-        { COMP_HTTP_USER_AGENT,    CONST_STR_LEN("HTTP[\"user-agent\"]"  ) },
+        { COMP_HTTP_REQUEST_HEADER,CONST_STR_LEN("HTTP[\"user-agent\"]" ) },
         { COMP_HTTP_LANGUAGE,      CONST_STR_LEN("HTTP[\"language\"]"   ) },
-        { COMP_HTTP_COOKIE,        CONST_STR_LEN("HTTP[\"cookie\"]"     ) },
+        { COMP_HTTP_REQUEST_HEADER,CONST_STR_LEN("HTTP[\"cookie\"]"     ) },
         { COMP_HTTP_REMOTE_IP,     CONST_STR_LEN("HTTP[\"remoteip\"]"   ) },
         { COMP_HTTP_REMOTE_IP,     CONST_STR_LEN("HTTP[\"remote-ip\"]"   ) },
         { COMP_HTTP_QUERY_STRING,  CONST_STR_LEN("HTTP[\"querystring\"]") },
@@ -571,6 +601,7 @@ context ::= DOLLAR SRVVARNAME(B) LBRACKET stringop(C) RBRACKET cond(E) expressio
 
       buffer_copy_buffer(dc->key, b);
       buffer_copy_buffer(dc->op, op);
+      buffer_copy_buffer(dc->comp_tag, C);
       buffer_copy_buffer(dc->comp_key, B);
       buffer_append_string_len(dc->comp_key, CONST_STR_LEN("[\""));
       buffer_append_string_buffer(dc->comp_key, C);
@@ -585,8 +616,21 @@ context ::= DOLLAR SRVVARNAME(B) LBRACKET stringop(C) RBRACKET cond(E) expressio
         }
       }
       if (COMP_UNSET == dc->comp) {
-        fprintf(stderr, "error comp_key %s", dc->comp_key->ptr);
-        ctx->ok = 0;
+        if (buffer_is_equal_string(B, CONST_STR_LEN("REQUEST_HEADER"))) {
+          dc->comp = COMP_HTTP_REQUEST_HEADER;
+        }
+        else {
+          fprintf(stderr, "error comp_key %s", dc->comp_key->ptr);
+          ctx->ok = 0;
+        }
+      }
+      else if (COMP_HTTP_LANGUAGE == dc->comp) {
+        dc->comp = COMP_HTTP_REQUEST_HEADER;
+        buffer_copy_string_len(dc->comp_tag, CONST_STR_LEN("Accept-Language"));
+      }
+      else if (COMP_HTTP_USER_AGENT == dc->comp) {
+        dc->comp = COMP_HTTP_REQUEST_HEADER;
+        buffer_copy_string_len(dc->comp_tag, CONST_STR_LEN("User-Agent"));
       }
       else if (COMP_HTTP_REMOTE_IP == dc->comp
                && (dc->cond == CONFIG_COND_EQ || dc->cond == CONFIG_COND_NE)) {
@@ -606,7 +650,7 @@ context ::= DOLLAR SRVVARNAME(B) LBRACKET stringop(C) RBRACKET cond(E) expressio
             int rc;
             buffer_string_set_length(rvalue, (size_t)(slash - rvalue->ptr)); /*(truncate)*/
             rc = (NULL == colon)
-              ? http_request_host_normalize(rvalue)
+              ? http_request_host_normalize(rvalue, 0)
               : configparser_remoteip_normalize_compat(rvalue);
             buffer_append_string_len(rvalue, CONST_STR_LEN("/"));
             buffer_append_int(rvalue, (int)nm_bits);
@@ -618,7 +662,7 @@ context ::= DOLLAR SRVVARNAME(B) LBRACKET stringop(C) RBRACKET cond(E) expressio
         }
         else {
           int rc = (NULL == colon)
-            ? http_request_host_normalize(rvalue)
+            ? http_request_host_normalize(rvalue, 0)
             : configparser_remoteip_normalize_compat(rvalue);
           if (0 != rc) {
             fprintf(stderr, "invalid IP addr: %s\n", rvalue->ptr);
@@ -630,7 +674,7 @@ context ::= DOLLAR SRVVARNAME(B) LBRACKET stringop(C) RBRACKET cond(E) expressio
         /*(redundant with parsing in network.c; not actually required here)*/
         if (rvalue->ptr[0] != ':' /*(network.c special-cases ":" and "[]")*/
             && !(rvalue->ptr[0] == '[' && rvalue->ptr[1] == ']')) {
-          if (http_request_host_normalize(rvalue)) {
+          if (http_request_host_normalize(rvalue, 0)) {
             fprintf(stderr, "invalid IP addr: %s\n", rvalue->ptr);
             ctx->ok = 0;
           }
@@ -638,7 +682,7 @@ context ::= DOLLAR SRVVARNAME(B) LBRACKET stringop(C) RBRACKET cond(E) expressio
       }
       else if (COMP_HTTP_HOST == dc->comp) {
         if (dc->cond == CONFIG_COND_EQ || dc->cond == CONFIG_COND_NE) {
-          if (http_request_host_normalize(rvalue)) {
+          if (http_request_host_normalize(rvalue, 0)) {
             fprintf(stderr, "invalid IP addr: %s\n", rvalue->ptr);
             ctx->ok = 0;
           }
@@ -704,16 +748,16 @@ context ::= DOLLAR SRVVARNAME(B) LBRACKET stringop(C) RBRACKET cond(E) expressio
         dc->free((data_unset*) dc);
       }
     }
-
-    buffer_free(b);
-    buffer_free(op);
-    buffer_free(B);
-    B = NULL;
-    buffer_free(C);
-    C = NULL;
-    D->free(D);
-    D = NULL;
   }
+
+  buffer_free(b);
+  buffer_free(op);
+  buffer_free(B);
+  B = NULL;
+  buffer_free(C);
+  C = NULL;
+  if (D) D->free(D);
+  D = NULL;
 }
 
 context_else ::= . {
@@ -744,7 +788,8 @@ stringop(A) ::= expression(B). {
   A = NULL;
   if (ctx->ok) {
     if (B->type == TYPE_STRING) {
-      A = buffer_init_buffer(((data_string*)B)->value);
+      A = ((data_string*)B)->value;
+      ((data_string*)B)->value = NULL;
     } else if (B->type == TYPE_INTEGER) {
       A = buffer_init();
       buffer_copy_int(A, ((data_integer *)B)->value);
@@ -753,7 +798,7 @@ stringop(A) ::= expression(B). {
       ctx->ok = 0;
     }
   }
-  B->free(B);
+  if (B) B->free(B);
   B = NULL;
 }
 
@@ -762,9 +807,9 @@ include ::= INCLUDE stringop(A). {
     if (0 != config_parse_file(ctx->srv, ctx, A->ptr)) {
       ctx->ok = 0;
     }
-    buffer_free(A);
-    A = NULL;
   }
+  buffer_free(A);
+  A = NULL;
 }
 
 include_shell ::= INCLUDE_SHELL stringop(A). {
@@ -772,7 +817,7 @@ include_shell ::= INCLUDE_SHELL stringop(A). {
     if (0 != config_parse_cmd(ctx->srv, ctx, A->ptr)) {
       ctx->ok = 0;
     }
-    buffer_free(A);
-    A = NULL;
   }
+  buffer_free(A);
+  A = NULL;
 }

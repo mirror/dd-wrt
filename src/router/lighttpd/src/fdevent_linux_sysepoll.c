@@ -1,5 +1,6 @@
 #include "first.h"
 
+#include "fdevent_impl.h"
 #include "fdevent.h"
 #include "buffer.h"
 #include "log.h"
@@ -8,13 +9,10 @@
 
 #include <unistd.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <signal.h>
-#include <fcntl.h>
 
-#ifdef USE_LINUX_EPOLL
+#ifdef FDEVENT_USE_LINUX_EPOLL
 
 # include <sys/epoll.h>
 
@@ -142,7 +140,7 @@ int fdevent_linux_sysepoll_init(fdevents *ev) {
 		return -1;
 	}
 
-	fd_close_on_exec(ev->epoll_fd);
+	fdevent_setfd_cloexec(ev->epoll_fd);
 
 	ev->epoll_events = malloc(ev->maxfds * sizeof(*ev->epoll_events));
 	force_assert(NULL != ev->epoll_events);

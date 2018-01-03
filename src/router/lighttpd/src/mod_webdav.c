@@ -8,20 +8,17 @@
 
 #include "plugin.h"
 
-#include "stream.h"
 #include "stat_cache.h"
 
 #include "sys-mmap.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <stdio.h>
-#include <assert.h>
 
 #include <unistd.h>
 #include <dirent.h>
@@ -34,7 +31,8 @@
 #include <sqlite3.h>
 #endif
 
-#if defined(HAVE_LIBXML_H) && defined(HAVE_SQLITE3_H) && defined(HAVE_UUID_UUID_H)
+#if defined(HAVE_LIBXML_H) && defined(HAVE_SQLITE3_H) \
+ && defined(HAVE_UUID) && defined(HAVE_UUID_UUID_H)
 #define USE_LOCKS
 #include <uuid/uuid.h>
 #endif
@@ -88,6 +86,10 @@ typedef struct {
 
 	plugin_config conf;
 } plugin_data;
+
+typedef struct {
+	plugin_config conf;
+} handler_ctx;
 
 /* init the plugin data */
 INIT_FUNC(mod_webdav_init) {
@@ -533,7 +535,7 @@ static int webdav_gen_response_status_tag(server *srv, connection *con, physical
 	return 0;
 }
 
-static int webdav_delete_file(server *srv, connection *con, plugin_data *p, physical *dst, buffer *b) {
+static int webdav_delete_file(server *srv, connection *con, handler_ctx *hctx, physical *dst, buffer *b) {
 	int status = 0;
 
 	/* try to unlink it */
@@ -551,7 +553,7 @@ static int webdav_delete_file(server *srv, connection *con, plugin_data *p, phys
 		webdav_gen_response_status_tag(srv, con, dst, status, b);
 	} else {
 #ifdef USE_PROPPATCH
-		sqlite3_stmt *stmt = p->conf.stmt_delete_uri;
+		sqlite3_stmt *stmt = hctx->conf.stmt_delete_uri;
 
 		if (!stmt) {
 			status = 403;
@@ -570,14 +572,14 @@ static int webdav_delete_file(server *srv, connection *con, plugin_data *p, phys
 			}
 		}
 #else
-		UNUSED(p);
+		UNUSED(hctx);
 #endif
 	}
 
 	return (status != 0);
 }
 
-static int webdav_delete_dir(server *srv, connection *con, plugin_data *p, physical *dst, buffer *b) {
+static int webdav_delete_dir(server *srv, connection *con, handler_ctx *hctx, physical *dst, buffer *b) {
 	DIR *dir;
 	int have_multi_status = 0;
 	physical d;
@@ -609,7 +611,7 @@ static int webdav_delete_dir(server *srv, connection *con, plugin_data *p, physi
 			if (-1 == stat(d.path->ptr, &st)) {
 				/* don't about it yet, rmdir will fail too */
 			} else if (S_ISDIR(st.st_mode)) {
-				have_multi_status = webdav_delete_dir(srv, con, p, &d, b);
+				have_multi_status = webdav_delete_dir(srv, con, hctx, &d, b);
 
 				/* try to unlink it */
 				if (-1 == rmdir(d.path->ptr)) {
@@ -629,7 +631,7 @@ static int webdav_delete_dir(server *srv, connection *con, plugin_data *p, physi
 					webdav_gen_response_status_tag(srv, con, &d, status, b);
 				} else {
 #ifdef USE_PROPPATCH
-					sqlite3_stmt *stmt = p->conf.stmt_delete_uri;
+					sqlite3_stmt *stmt = hctx->conf.stmt_delete_uri;
 
 					if (stmt) {
 						sqlite3_reset(stmt);
@@ -647,7 +649,7 @@ static int webdav_delete_dir(server *srv, connection *con, plugin_data *p, physi
 #endif
 				}
 			} else {
-				have_multi_status = webdav_delete_file(srv, con, p, &d, b);
+				have_multi_status = webdav_delete_file(srv, con, hctx, &d, b);
 			}
 		}
 		closedir(dir);
@@ -670,7 +672,7 @@ static int webdav_delete_dir(server *srv, connection *con, plugin_data *p, physi
 #define O_BINARY 0
 #endif
 
-static int webdav_copy_file(server *srv, connection *con, plugin_data *p, physical *src, physical *dst, int overwrite) {
+static int webdav_copy_file(server *srv, connection *con, handler_ctx *hctx, physical *src, physical *dst, int overwrite) {
 	char *data;
 	ssize_t rd, wr, offset;
 	int status = 0, ifd, ofd;
@@ -729,7 +731,7 @@ static int webdav_copy_file(server *srv, connection *con, plugin_data *p, physic
 #ifdef USE_PROPPATCH
 	if (0 == status) {
 		/* copy worked fine, copy connected properties */
-		sqlite3_stmt *stmt = p->conf.stmt_copy_uri;
+		sqlite3_stmt *stmt = hctx->conf.stmt_copy_uri;
 
 		if (stmt) {
 			sqlite3_reset(stmt);
@@ -749,12 +751,12 @@ static int webdav_copy_file(server *srv, connection *con, plugin_data *p, physic
 		}
 	}
 #else
-	UNUSED(p);
+	UNUSED(hctx);
 #endif
 	return status;
 }
 
-static int webdav_copy_dir(server *srv, connection *con, plugin_data *p, physical *src, physical *dst, int overwrite) {
+static int webdav_copy_dir(server *srv, connection *con, handler_ctx *hctx, physical *src, physical *dst, int overwrite) {
 	DIR *srcdir;
 	int status = 0;
 
@@ -801,9 +803,9 @@ static int webdav_copy_dir(server *srv, connection *con, plugin_data *p, physica
 					/* WTH ? */
 				} else {
 #ifdef USE_PROPPATCH
-					sqlite3_stmt *stmt = p->conf.stmt_copy_uri;
+					sqlite3_stmt *stmt = hctx->conf.stmt_copy_uri;
 
-					if (0 != (status = webdav_copy_dir(srv, con, p, &s, &d, overwrite))) {
+					if (0 != (status = webdav_copy_dir(srv, con, hctx, &s, &d, overwrite))) {
 						break;
 					}
 					/* directory is copied, copy the properties too */
@@ -828,7 +830,7 @@ static int webdav_copy_dir(server *srv, connection *con, plugin_data *p, physica
 				}
 			} else if (S_ISREG(st.st_mode)) {
 				/* a plain file */
-				if (0 != (status = webdav_copy_file(srv, con, p, &s, &d, overwrite))) {
+				if (0 != (status = webdav_copy_file(srv, con, hctx, &s, &d, overwrite))) {
 					break;
 				}
 			}
@@ -883,9 +885,9 @@ static void webdav_activelock(buffer *b,
 	buffer_append_string_len(b, CONST_STR_LEN("</D:activelock>\n"));
 }
 
-static void webdav_get_live_property_lockdiscovery(server *srv, connection *con, plugin_data *p, physical *dst, buffer *b) {
+static void webdav_get_live_property_lockdiscovery(server *srv, connection *con, handler_ctx *hctx, physical *dst, buffer *b) {
 
-	sqlite3_stmt *stmt = p->conf.stmt_read_lock_by_uri;
+	sqlite3_stmt *stmt = hctx->conf.stmt_read_lock_by_uri;
 	if (!stmt) { /*(should not happen)*/
 		buffer_append_string_len(b, CONST_STR_LEN("<D:lockdiscovery>\n</D:lockdiscovery>\n"));
 		return;
@@ -923,16 +925,15 @@ static void webdav_get_live_property_lockdiscovery(server *srv, connection *con,
 }
 #endif
 
-static int webdav_get_live_property(server *srv, connection *con, plugin_data *p, physical *dst, char *prop_name, buffer *b) {
+static int webdav_get_live_property(server *srv, connection *con, handler_ctx *hctx, physical *dst, char *prop_name, buffer *b) {
 	stat_cache_entry *sce = NULL;
 	int found = 0;
 
-	UNUSED(p);
+	UNUSED(hctx);
 
 	if (HANDLER_ERROR != (stat_cache_get_entry(srv, con, dst->path, &sce))) {
 		char ctime_buf[] = "2005-08-18T07:27:16Z";
 		char mtime_buf[] = "Thu, 18 Aug 2005 07:27:16 GMT";
-		size_t k;
 
 		if (0 == strcmp(prop_name, "resourcetype")) {
 			if (S_ISDIR(sce->st.st_mode)) {
@@ -946,19 +947,12 @@ static int webdav_get_live_property(server *srv, connection *con, plugin_data *p
 				buffer_append_string_len(b, CONST_STR_LEN("<D:getcontenttype>httpd/unix-directory</D:getcontenttype>"));
 				found = 1;
 			} else if(S_ISREG(sce->st.st_mode)) {
-				for (k = 0; k < con->conf.mimetypes->used; k++) {
-					data_string *ds = (data_string *)con->conf.mimetypes->data[k];
-
-					if (buffer_is_empty(ds->key)) continue;
-
-					if (buffer_is_equal_right_len(dst->path, ds->key, buffer_string_length(ds->key))) {
-						buffer_append_string_len(b,CONST_STR_LEN("<D:getcontenttype>"));
-						buffer_append_string_buffer(b, ds->value);
-						buffer_append_string_len(b, CONST_STR_LEN("</D:getcontenttype>"));
-						found = 1;
-
-						break;
-					}
+				const buffer *type = stat_cache_mimetype_by_ext(con, CONST_BUF_LEN(dst->path));
+				if (NULL != type) {
+					buffer_append_string_len(b, CONST_STR_LEN("<D:getcontenttype>"));
+					buffer_append_string_buffer(b, type);
+					buffer_append_string_len(b, CONST_STR_LEN("</D:getcontenttype>"));
+					found = 1;
 				}
 			}
 		} else if (0 == strcmp(prop_name, "creationdate")) {
@@ -985,6 +979,7 @@ static int webdav_get_live_property(server *srv, connection *con, plugin_data *p
 			found = 1;
 		} else if (0 == strcmp(prop_name, "getetag")) {
 			etag_create(con->physical.etag, &sce->st, con->etag_flags);
+			etag_mutate(con->physical.etag, con->physical.etag);
 			buffer_append_string_len(b, CONST_STR_LEN("<D:getetag>"));
 			buffer_append_string_buffer(b, con->physical.etag);
 			buffer_append_string_len(b, CONST_STR_LEN("</D:getetag>"));
@@ -992,7 +987,7 @@ static int webdav_get_live_property(server *srv, connection *con, plugin_data *p
 			found = 1;
 	      #ifdef USE_LOCKS
 		} else if (0 == strcmp(prop_name, "lockdiscovery")) {
-			webdav_get_live_property_lockdiscovery(srv, con, p, dst, b);
+			webdav_get_live_property_lockdiscovery(srv, con, hctx, dst, b);
 			found = 1;
 		} else if (0 == strcmp(prop_name, "supportedlock")) {
 			buffer_append_string_len(b,CONST_STR_LEN("<D:supportedlock>"));
@@ -1009,14 +1004,14 @@ static int webdav_get_live_property(server *srv, connection *con, plugin_data *p
 	return found ? 0 : -1;
 }
 
-static int webdav_get_property(server *srv, connection *con, plugin_data *p, physical *dst, char *prop_name, char *prop_ns, buffer *b) {
+static int webdav_get_property(server *srv, connection *con, handler_ctx *hctx, physical *dst, char *prop_name, char *prop_ns, buffer *b) {
 	if (0 == strcmp(prop_ns, "DAV:")) {
 		/* a local 'live' property */
-		return webdav_get_live_property(srv, con, p, dst, prop_name, b);
+		return webdav_get_live_property(srv, con, hctx, dst, prop_name, b);
 	} else {
 		int found = 0;
 #ifdef USE_PROPPATCH
-		sqlite3_stmt *stmt = p->conf.stmt_select_prop;
+		sqlite3_stmt *stmt = hctx->conf.stmt_select_prop;
 
 		if (stmt) {
 			/* perhaps it is in sqlite3 */
@@ -1081,7 +1076,7 @@ typedef struct {
 	size_t size;
 } webdav_properties;
 
-static int webdav_get_props(server *srv, connection *con, plugin_data *p, physical *dst, webdav_properties *props, buffer *b_200, buffer *b_404) {
+static int webdav_get_props(server *srv, connection *con, handler_ctx *hctx, physical *dst, webdav_properties *props, buffer *b_200, buffer *b_404) {
 	size_t i;
 
 	if (props && props->used) {
@@ -1090,7 +1085,7 @@ static int webdav_get_props(server *srv, connection *con, plugin_data *p, physic
 
 			prop = props->ptr[i];
 
-			if (0 != webdav_get_property(srv, con, p,
+			if (0 != webdav_get_property(srv, con, hctx,
 				dst, prop->prop, prop->ns, b_200)) {
 				webdav_gen_prop_tag(srv, con, prop->prop, prop->ns, NULL, b_404);
 			}
@@ -1098,7 +1093,7 @@ static int webdav_get_props(server *srv, connection *con, plugin_data *p, physic
 	} else {
 		for (i = 0; live_properties[i].prop; i++) {
 			/* a local 'live' property */
-			webdav_get_live_property(srv, con, p, dst, live_properties[i].prop, b_200);
+			webdav_get_live_property(srv, con, hctx, dst, live_properties[i].prop, b_200);
 		}
 	}
 
@@ -1106,7 +1101,7 @@ static int webdav_get_props(server *srv, connection *con, plugin_data *p, physic
 }
 
 #ifdef USE_PROPPATCH
-static int webdav_parse_chunkqueue(server *srv, connection *con, plugin_data *p, chunkqueue *cq, xmlDoc **ret_xml) {
+static int webdav_parse_chunkqueue(server *srv, connection *con, handler_ctx *hctx, chunkqueue *cq, xmlDoc **ret_xml) {
 	xmlParserCtxtPtr ctxt;
 	xmlDoc *xml;
 	int res;
@@ -1178,7 +1173,7 @@ static int webdav_parse_chunkqueue(server *srv, connection *con, plugin_data *p,
 
 			if (weHave > weWant) weHave = weWant;
 
-			if (p->conf.log_xml) {
+			if (hctx->conf.log_xml) {
 				log_error_write(srv, __FILE__, __LINE__, "ss", "XML-request-body:", c->mem->ptr + c->offset);
 			}
 
@@ -1248,7 +1243,7 @@ static int webdav_lockdiscovery(server *srv, connection *con,
  *
  *
  */
-static int webdav_has_lock(server *srv, connection *con, plugin_data *p, buffer *uri) {
+static int webdav_has_lock(server *srv, connection *con, handler_ctx *hctx, buffer *uri) {
 	int has_lock = 1;
 
 #ifdef USE_LOCKS
@@ -1279,7 +1274,7 @@ static int webdav_has_lock(server *srv, connection *con, plugin_data *p, buffer 
 		/* we didn't provided a lock-token -> */
 		/* if the resource is locked -> 423 */
 
-		sqlite3_stmt *stmt = p->conf.stmt_read_lock_by_uri;
+		sqlite3_stmt *stmt = hctx->conf.stmt_read_lock_by_uri;
 
 		sqlite3_reset(stmt);
 
@@ -1294,7 +1289,7 @@ static int webdav_has_lock(server *srv, connection *con, plugin_data *p, buffer 
 #else
 	UNUSED(srv);
 	UNUSED(con);
-	UNUSED(p);
+	UNUSED(hctx);
 	UNUSED(uri);
 #endif
 
@@ -1304,6 +1299,7 @@ static int webdav_has_lock(server *srv, connection *con, plugin_data *p, buffer 
 
 SUBREQUEST_FUNC(mod_webdav_subrequest_handler_huge) {
 	plugin_data *p = p_d;
+	handler_ctx *hctx = con->plugin_ctx[p->id];
 	buffer *b;
 	DIR *dir;
 	data_string *ds;
@@ -1316,7 +1312,8 @@ SUBREQUEST_FUNC(mod_webdav_subrequest_handler_huge) {
 
 	UNUSED(srv);
 
-	if (!p->conf.enabled) return HANDLER_GO_ON;
+	if (NULL == hctx) return HANDLER_GO_ON;
+	if (!hctx->conf.enabled) return HANDLER_GO_ON;
 	/* physical path is setup */
 	if (buffer_is_empty(con->physical.path)) return HANDLER_GO_ON;
 
@@ -1342,6 +1339,14 @@ SUBREQUEST_FUNC(mod_webdav_subrequest_handler_huge) {
 				con->http_status = 404;
 				return HANDLER_FINISHED;
 			}
+			else if (errno == EACCES) {
+				con->http_status = 403;
+				return HANDLER_FINISHED;
+			}
+			else {
+				con->http_status = 500;
+				return HANDLER_FINISHED;
+			}
 			break;
 		default:
 			break;
@@ -1362,7 +1367,7 @@ SUBREQUEST_FUNC(mod_webdav_subrequest_handler_huge) {
 				if (r != HANDLER_GO_ON) return r;
 			}
 
-			if (1 == webdav_parse_chunkqueue(srv, con, p, con->request_content_queue, &xml)) {
+			if (1 == webdav_parse_chunkqueue(srv, con, hctx, con->request_content_queue, &xml)) {
 				xmlNode *rootnode = xmlDocGetRootElement(xml);
 
 				force_assert(rootnode);
@@ -1462,7 +1467,7 @@ SUBREQUEST_FUNC(mod_webdav_subrequest_handler_huge) {
 
 		{
 			/* Depth: 0  or  Depth: 1 */
-			webdav_get_props(srv, con, p, &(con->physical), req_props, prop_200, prop_404);
+			webdav_get_props(srv, con, hctx, &(con->physical), req_props, prop_200, prop_404);
 
 			buffer_append_string_len(b,CONST_STR_LEN("<D:response>\n"));
 			buffer_append_string_len(b,CONST_STR_LEN("<D:href>"));
@@ -1528,7 +1533,7 @@ SUBREQUEST_FUNC(mod_webdav_subrequest_handler_huge) {
 					buffer_reset(prop_200);
 					buffer_reset(prop_404);
 
-					webdav_get_props(srv, con, p, &d, req_props, prop_200, prop_404);
+					webdav_get_props(srv, con, hctx, &d, req_props, prop_200, prop_404);
 
 					buffer_append_string_len(b,CONST_STR_LEN("<D:response>\n"));
 					buffer_append_string_len(b,CONST_STR_LEN("<D:href>"));
@@ -1644,7 +1649,7 @@ SUBREQUEST_FUNC(mod_webdav_subrequest_handler_huge) {
 		}
 
 		/* does the client have a lock for this connection ? */
-		if (!webdav_has_lock(srv, con, p, con->uri.path)) {
+		if (!webdav_has_lock(srv, con, hctx, con->uri.path)) {
 			con->http_status = 423;
 			return HANDLER_FINISHED;
 		}
@@ -1670,7 +1675,7 @@ SUBREQUEST_FUNC(mod_webdav_subrequest_handler_huge) {
 
 			multi_status_resp = buffer_init();
 
-			if (webdav_delete_dir(srv, con, p, &(con->physical), multi_status_resp)) {
+			if (webdav_delete_dir(srv, con, hctx, &(con->physical), multi_status_resp)) {
 				/* we got an error somewhere in between, build a 207 */
 				response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_STR_LEN("text/xml; charset=\"utf-8\""));
 
@@ -1743,7 +1748,7 @@ SUBREQUEST_FUNC(mod_webdav_subrequest_handler_huge) {
 
 		/* is a exclusive lock set on the source */
 		/* (check for lock once before potentially reading large input) */
-		if (0 == cq->bytes_in && !webdav_has_lock(srv, con, p, con->uri.path)) {
+		if (0 == cq->bytes_in && !webdav_has_lock(srv, con, hctx, con->uri.path)) {
 			con->http_status = 423;
 			return HANDLER_FINISHED;
 		}
@@ -1933,7 +1938,7 @@ SUBREQUEST_FUNC(mod_webdav_subrequest_handler_huge) {
 
 		/* is a exclusive lock set on the source */
 		if (con->request.http_method == HTTP_METHOD_MOVE) {
-			if (!webdav_has_lock(srv, con, p, con->uri.path)) {
+			if (!webdav_has_lock(srv, con, hctx, con->uri.path)) {
 				con->http_status = 423;
 				return HANDLER_FINISHED;
 			}
@@ -2118,13 +2123,13 @@ SUBREQUEST_FUNC(mod_webdav_subrequest_handler_huge) {
 			}
 
 			/* copy the content of src to dest */
-			if (0 != (r = webdav_copy_dir(srv, con, p, &(con->physical), &(p->physical), overwrite))) {
+			if (0 != (r = webdav_copy_dir(srv, con, hctx, &(con->physical), &(p->physical), overwrite))) {
 				con->http_status = r;
 				return HANDLER_FINISHED;
 			}
 			if (con->request.http_method == HTTP_METHOD_MOVE) {
 				b = buffer_init();
-				webdav_delete_dir(srv, con, p, &(con->physical), b); /* content */
+				webdav_delete_dir(srv, con, hctx, &(con->physical), b); /* content */
 				buffer_free(b);
 
 				rmdir(con->physical.path->ptr);
@@ -2137,7 +2142,7 @@ SUBREQUEST_FUNC(mod_webdav_subrequest_handler_huge) {
 			int destdir = 0;
 
 			/* does the client have a lock for this connection ? */
-			if (!webdav_has_lock(srv, con, p, p->uri.path)) {
+			if (!webdav_has_lock(srv, con, hctx, p->uri.path)) {
 				con->http_status = 423;
 				return HANDLER_FINISHED;
 			}
@@ -2205,7 +2210,7 @@ SUBREQUEST_FUNC(mod_webdav_subrequest_handler_huge) {
 				/* rename failed, fall back to COPY + DELETE */
 			}
 
-			if (0 != (r = webdav_copy_file(srv, con, p, &(con->physical), &(p->physical), overwrite))) {
+			if (0 != (r = webdav_copy_file(srv, con, hctx, &(con->physical), &(p->physical), overwrite))) {
 				con->http_status = r;
 
 				return HANDLER_FINISHED;
@@ -2213,7 +2218,7 @@ SUBREQUEST_FUNC(mod_webdav_subrequest_handler_huge) {
 
 			if (con->request.http_method == HTTP_METHOD_MOVE) {
 				b = buffer_init();
-				webdav_delete_file(srv, con, p, &(con->physical), b);
+				webdav_delete_file(srv, con, hctx, &(con->physical), b);
 				buffer_free(b);
 			}
 		}
@@ -2226,7 +2231,7 @@ SUBREQUEST_FUNC(mod_webdav_subrequest_handler_huge) {
 			return HANDLER_FINISHED;
 		}
 
-		if (!webdav_has_lock(srv, con, p, con->uri.path)) {
+		if (!webdav_has_lock(srv, con, hctx, con->uri.path)) {
 			con->http_status = 423;
 			return HANDLER_FINISHED;
 		}
@@ -2254,7 +2259,7 @@ SUBREQUEST_FUNC(mod_webdav_subrequest_handler_huge) {
 				if (r != HANDLER_GO_ON) return r;
 			}
 
-			if (1 == webdav_parse_chunkqueue(srv, con, p, con->request_content_queue, &xml)) {
+			if (1 == webdav_parse_chunkqueue(srv, con, hctx, con->request_content_queue, &xml)) {
 				xmlNode *rootnode = xmlDocGetRootElement(xml);
 
 				if (0 == xmlStrcmp(rootnode->name, BAD_CAST "propertyupdate")) {
@@ -2451,7 +2456,7 @@ propmatch_cleanup:
 				}
 			}
 
-			if (1 == webdav_parse_chunkqueue(srv, con, p, con->request_content_queue, &xml)) {
+			if (1 == webdav_parse_chunkqueue(srv, con, hctx, con->request_content_queue, &xml)) {
 				xmlNode *rootnode = xmlDocGetRootElement(xml);
 
 				force_assert(rootnode);
@@ -2735,14 +2740,30 @@ PHYSICALPATH_FUNC(mod_webdav_physical_handler) {
 	case HTTP_METHOD_MKCOL:
 	case HTTP_METHOD_DELETE:
 	case HTTP_METHOD_LOCK:
-	case HTTP_METHOD_UNLOCK:
+	case HTTP_METHOD_UNLOCK: {
+		handler_ctx *hctx = calloc(1, sizeof(*hctx));
+		memcpy(&hctx->conf, &p->conf, sizeof(plugin_config));
+		con->plugin_ctx[p->id] = hctx;
 		con->conf.stream_request_body = 0;
 		con->mode = p->id;
 		break;
+	}
 	default:
 		break;
 	}
 
+	return HANDLER_GO_ON;
+}
+
+static handler_t mod_webdav_connection_reset(server *srv, connection *con, void *p_d) {
+	plugin_data *p = p_d;
+	handler_ctx *hctx = con->plugin_ctx[p->id];
+	if (hctx) {
+		free(hctx);
+		con->plugin_ctx[p->id] = NULL;
+	}
+
+	UNUSED(srv);
 	return HANDLER_GO_ON;
 }
 
@@ -2758,6 +2779,7 @@ int mod_webdav_plugin_init(plugin *p) {
 	p->handle_uri_clean  = mod_webdav_uri_handler;
 	p->handle_physical   = mod_webdav_physical_handler;
 	p->handle_subrequest = mod_webdav_subrequest_handler;
+	p->connection_reset  = mod_webdav_connection_reset;
 	p->set_defaults  = mod_webdav_set_defaults;
 	p->cleanup     = mod_webdav_free;
 

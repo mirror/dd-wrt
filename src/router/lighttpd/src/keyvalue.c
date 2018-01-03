@@ -6,15 +6,14 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
-static keyvalue http_versions[] = {
+static const keyvalue http_versions[] = {
 	{ HTTP_VERSION_1_1, "HTTP/1.1" },
 	{ HTTP_VERSION_1_0, "HTTP/1.0" },
 	{ HTTP_VERSION_UNSET, NULL }
 };
 
-static keyvalue http_methods[] = {
+static const keyvalue http_methods[] = {
 	{ HTTP_METHOD_GET, "GET" },
 	{ HTTP_METHOD_HEAD, "HEAD" },
 	{ HTTP_METHOD_POST, "POST" },
@@ -57,7 +56,7 @@ static keyvalue http_methods[] = {
 	{ HTTP_METHOD_UNSET, NULL }
 };
 
-static keyvalue http_status[] = {
+static const keyvalue http_status[] = {
 	{ 100, "Continue" },
 	{ 101, "Switching Protocols" },
 	{ 102, "Processing" }, /* WebDAV */
@@ -77,6 +76,7 @@ static keyvalue http_status[] = {
 	{ 305, "Use Proxy" },
 	{ 306, "(Unused)" },
 	{ 307, "Temporary Redirect" },
+	{ 308, "Permanent Redirect" },
 	{ 400, "Bad Request" },
 	{ 401, "Unauthorized" },
 	{ 402, "Payment Required" },
@@ -110,7 +110,7 @@ static keyvalue http_status[] = {
 	{ -1, NULL }
 };
 
-static keyvalue http_status_body[] = {
+static const keyvalue http_status_body[] = {
 	{ 400, "400.html" },
 	{ 401, "401.html" },
 	{ 403, "403.html" },
@@ -126,7 +126,7 @@ static keyvalue http_status_body[] = {
 };
 
 
-const char *keyvalue_get_value(keyvalue *kv, int k) {
+const char *keyvalue_get_value(const keyvalue *kv, int k) {
 	int i;
 	for (i = 0; kv[i].value; i++) {
 		if (kv[i].key == k) return kv[i].value;
@@ -134,7 +134,7 @@ const char *keyvalue_get_value(keyvalue *kv, int k) {
 	return NULL;
 }
 
-int keyvalue_get_key(keyvalue *kv, const char *s) {
+int keyvalue_get_key(const keyvalue *kv, const char *s) {
 	int i;
 	for (i = 0; kv[i].value; i++) {
 		if (0 == strcmp(kv[i].value, s)) return kv[i].key;

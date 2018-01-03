@@ -26,10 +26,13 @@
 #include "md5.h"
 #include "plugin.h"
 
-#include <ctype.h>
 #include <errno.h>
+#include <stdio.h>
 #include <string.h>
 
+#if defined(HAVE_CRYPT_R) || defined(HAVE_CRYPT)
+#include <unistd.h>     /* crypt() */
+#endif
 #ifdef HAVE_CRYPT_H
 #include <crypt.h>
 #endif
@@ -175,6 +178,7 @@ FREE_FUNC(mod_authn_mysql_free) {
         }
         free(p->config_storage);
     }
+    mod_authn_mysql_sock_close(&p->conf);
 
     free(p);
 
@@ -257,13 +261,13 @@ SETDEFAULTS_FUNC(mod_authn_mysql_set_defaults) {
     if (p->config_storage[0]) { /*(always true)*/
         plugin_config *s = p->config_storage[0];
         if (buffer_is_empty(s->auth_mysql_col_user)) {
-            s->auth_mysql_col_user = buffer_init_string("user");
+            buffer_copy_string_len(s->auth_mysql_col_user, CONST_STR_LEN("user"));
         }
         if (buffer_is_empty(s->auth_mysql_col_pass)) {
-            s->auth_mysql_col_pass = buffer_init_string("password");
+            buffer_copy_string_len(s->auth_mysql_col_pass, CONST_STR_LEN("password"));
         }
         if (buffer_is_empty(s->auth_mysql_col_realm)) {
-            s->auth_mysql_col_realm = buffer_init_string("realm");
+            buffer_copy_string_len(s->auth_mysql_col_realm, CONST_STR_LEN("realm"));
         }
     }
 
@@ -341,7 +345,11 @@ static int mod_authn_mysql_password_cmp(const char *userpw, unsigned long userpw
             char *crypted;
           #if defined(HAVE_CRYPT_R)
             struct crypt_data crypt_tmp_data;
+           #ifdef _AIX
+            memset(&crypt_tmp_data, 0, sizeof(crypt_tmp_data));
+           #else
             crypt_tmp_data.initialized = 0;
+           #endif
           #endif
             memcpy(salt, saltb, slen);
             salt[slen] = '\0';

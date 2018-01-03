@@ -88,7 +88,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @CHECK_WITH_FASTCGI_TRUE@check_PROGRAMS = fcgi-auth$(EXEEXT) \
-@CHECK_WITH_FASTCGI_TRUE@	fcgi-responder$(EXEEXT)
+@CHECK_WITH_FASTCGI_TRUE@	fcgi-responder$(EXEEXT) \
+@CHECK_WITH_FASTCGI_TRUE@	scgi-responder$(EXEEXT)
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
@@ -116,6 +117,9 @@ am__fcgi_responder_SOURCES_DIST = fcgi-responder.c
 @CHECK_WITH_FASTCGI_TRUE@	fcgi-responder.$(OBJEXT)
 fcgi_responder_OBJECTS = $(am_fcgi_responder_OBJECTS)
 fcgi_responder_DEPENDENCIES =
+am_scgi_responder_OBJECTS = scgi-responder.$(OBJEXT)
+scgi_responder_OBJECTS = $(am_scgi_responder_OBJECTS)
+scgi_responder_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -150,9 +154,10 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(fcgi_auth_SOURCES) $(fcgi_responder_SOURCES)
+SOURCES = $(fcgi_auth_SOURCES) $(fcgi_responder_SOURCES) \
+	$(scgi_responder_SOURCES)
 DIST_SOURCES = $(am__fcgi_auth_SOURCES_DIST) \
-	$(am__fcgi_responder_SOURCES_DIST)
+	$(am__fcgi_responder_SOURCES_DIST) $(scgi_responder_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -264,8 +269,11 @@ CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CPPFLAGS_FOR_BUILD = @CPPFLAGS_FOR_BUILD@
 CPP_FOR_BUILD = @CPP_FOR_BUILD@
+CRYPTO_LIB = @CRYPTO_LIB@
 CRYPT_LIB = @CRYPT_LIB@
 CYGPATH_W = @CYGPATH_W@
+DBI_CFLAGS = @DBI_CFLAGS@
+DBI_LIBS = @DBI_LIBS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
@@ -330,10 +338,15 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PCRECONFIG = @PCRECONFIG@
 PCRE_LIB = @PCRE_LIB@
+PGSQL_CONFIG = @PGSQL_CONFIG@
+PGSQL_INCLUDE = @PGSQL_INCLUDE@
+PGSQL_LIBS = @PGSQL_LIBS@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 RANLIB = @RANLIB@
+SASL_CFLAGS = @SASL_CFLAGS@
+SASL_LIBS = @SASL_LIBS@
 SED = @SED@
 SENDFILE_LIB = @SENDFILE_LIB@
 SET_MAKE = @SET_MAKE@
@@ -407,6 +420,7 @@ testdir = $(srcdir)/tmp/lighttpd/
 @CHECK_WITH_FASTCGI_TRUE@fcgi_auth_LDADD = -lfcgi
 @CHECK_WITH_FASTCGI_TRUE@fcgi_responder_SOURCES = fcgi-responder.c
 @CHECK_WITH_FASTCGI_TRUE@fcgi_responder_LDADD = -lfcgi
+scgi_responder_SOURCES = scgi-responder.c
 TESTS = \
 	prepare.sh \
 	run-tests.pl \
@@ -453,6 +467,7 @@ CONFS = \
 	mod-userdir.t \
 	proxy.conf \
 	request.t \
+	scgi-responder.conf \
 	symlink.t \
 	var-include-sub.conf \
 	var-include.conf
@@ -462,6 +477,7 @@ EXTRA_DIST = \
 	$(CONFS) \
 	$(TESTS) \
 	CMakeLists.txt \
+	meson.build \
 	lighttpd.conf \
 	lighttpd.htpasswd \
 	lighttpd.user \
@@ -520,6 +536,10 @@ fcgi-responder$(EXEEXT): $(fcgi_responder_OBJECTS) $(fcgi_responder_DEPENDENCIES
 	@rm -f fcgi-responder$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(fcgi_responder_OBJECTS) $(fcgi_responder_LDADD) $(LIBS)
 
+scgi-responder$(EXEEXT): $(scgi_responder_OBJECTS) $(scgi_responder_DEPENDENCIES) $(EXTRA_scgi_responder_DEPENDENCIES) 
+	@rm -f scgi-responder$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(scgi_responder_OBJECTS) $(scgi_responder_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -528,6 +548,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fcgi-auth.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fcgi-responder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scgi-responder.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

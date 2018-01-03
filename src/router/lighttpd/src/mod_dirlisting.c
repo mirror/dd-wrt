@@ -8,16 +8,12 @@
 
 #include "response.h"
 #include "stat_cache.h"
-#include "stream.h"
 
-#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <dirent.h>
-#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <stdio.h>
 #include <unistd.h>
 #include <time.h>
 
@@ -293,13 +289,13 @@ SETDEFAULTS_FUNC(mod_dirlisting_set_defaults) {
 			array *excludes_list;
 			size_t j;
 
-			if (du_excludes->type != TYPE_ARRAY) {
-				log_error_write(srv, __FILE__, __LINE__, "sss",
-					"unexpected type for key: ", CONFIG_EXCLUDE, "array of strings");
+			excludes_list = ((data_array*)du_excludes)->value;
+
+			if (du_excludes->type != TYPE_ARRAY || !array_is_vlist(excludes_list)) {
+				log_error_write(srv, __FILE__, __LINE__, "s",
+					"unexpected type for " CONFIG_EXCLUDE "; expected list of \"regex\"");
 				return HANDLER_ERROR;
 			}
-
-			excludes_list = ((data_array*)du_excludes)->value;
 
 #ifndef HAVE_PCRE_H
 			if (excludes_list->used > 0) {
@@ -590,6 +586,27 @@ static const char js_simple_table_resort[] = \
 "      : (unit=='E') ? 1000000000000000000 : 1;\n" \
 "}\n" \
 "\n" \
+"var li_date_regex=/(\\d{4})-(\\w{3})-(\\d{2}) (\\d{2}):(\\d{2}):(\\d{2})/;\n" \
+"\n" \
+"var li_mon = ['Jan','Feb','Mar','Apr','May','Jun',\n" \
+"              'Jul','Aug','Sep','Oct','Nov','Dec'];\n" \
+"\n" \
+"function li_mon_num(mon) {\n" \
+" var i; for (i = 0; i < 12 && mon != li_mon[i]; ++i); return i;\n" \
+"}\n" \
+"\n" \
+"function li_date_cmp(s1, s2) {\n" \
+" var dp1 = li_date_regex.exec(s1)\n" \
+" var dp2 = li_date_regex.exec(s2)\n" \
+" for (var i = 1; i < 7; ++i) {\n" \
+"  var cmp = (2 != i)\n" \
+"   ? parseInt(dp1[i]) - parseInt(dp2[i])\n" \
+"   : li_mon_num(dp1[2]) - li_mon_num(dp2[2]);\n" \
+"  if (0 != cmp) return cmp;\n" \
+" }\n" \
+" return 0;\n" \
+"}\n" \
+"\n" \
 "function sortfn_then_by_name(a,b,sort_column) {\n" \
 " if (sort_column == name_column || sort_column == type_column) {\n" \
 "  var ad = (a.cells[type_column].innerHTML === 'Directory');\n" \
@@ -599,14 +616,17 @@ static const char js_simple_table_resort[] = \
 " var at = get_inner_text(a.cells[sort_column]);\n" \
 " var bt = get_inner_text(b.cells[sort_column]);\n" \
 " var cmp;\n" \
+" if (sort_column == name_column) {\n" \
+"  if (at == '..') return -1;\n" \
+"  if (bt == '..') return  1;\n" \
+" }\n" \
 " if (a.cells[sort_column].className == 'int') {\n" \
 "  cmp = parseInt(at)-parseInt(bt);\n" \
 " } else if (sort_column == date_column) {\n" \
-"  cmp = Date.parse(at.replace(/-/g, '/'))\n" \
-"      - Date.parse(bt.replace(/-/g, '/'));\n" \
 "  var ad = isdigit(at.substr(0,1));\n" \
 "  var bd = isdigit(bt.substr(0,1));\n" \
 "  if (ad != bd) return (!ad ? -1 : 1);\n" \
+"  cmp = li_date_cmp(at,bt);\n" \
 " } else if (sort_column == size_column) {\n" \
 "  var ai = parseInt(at, 10) * unit_multiplier(at.substr(-1,1));\n" \
 "  var bi = parseInt(bt, 10) * unit_multiplier(bt.substr(-1,1));\n" \
@@ -726,18 +746,24 @@ static void http_list_directory_header(server *srv, connection *con, plugin_data
 
 	if (p->conf.auto_layout) {
 		buffer_append_string_len(out, CONST_STR_LEN(
-			"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n"
-			"<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n"
+			"<!DOCTYPE html>\n"
+			"<html>\n"
 			"<head>\n"
-			"<title>Index of "
 		));
+		if (!buffer_string_is_empty(p->conf.encoding)) {
+			buffer_append_string_len(out, CONST_STR_LEN("<meta charset=\""));
+			buffer_append_string_buffer(out, p->conf.encoding);
+			buffer_append_string_len(out, CONST_STR_LEN("\">\n"));
+		}
+		buffer_append_string_len(out, CONST_STR_LEN("<title>Index of "));
 		buffer_append_string_encoded(out, CONST_BUF_LEN(con->uri.path), ENCODING_MINIMAL_XML);
 		buffer_append_string_len(out, CONST_STR_LEN("</title>\n"));
 
 		if (!buffer_string_is_empty(p->conf.external_css)) {
+			buffer_append_string_len(out, CONST_STR_LEN("<meta name=\"viewport\" content=\"initial-scale=1\">"));
 			buffer_append_string_len(out, CONST_STR_LEN("<link rel=\"stylesheet\" type=\"text/css\" href=\""));
 			buffer_append_string_buffer(out, p->conf.external_css);
-			buffer_append_string_len(out, CONST_STR_LEN("\" />\n"));
+			buffer_append_string_len(out, CONST_STR_LEN("\">\n"));
 		} else {
 			buffer_append_string_len(out, CONST_STR_LEN(
 				"<style type=\"text/css\">\n"
@@ -780,11 +806,15 @@ static void http_list_directory_header(server *srv, connection *con, plugin_data
 	if (!buffer_string_is_empty(p->conf.show_header)) {
 		/* if we have a HEADER file, display it in <pre class="header"></pre> */
 
-		buffer_copy_buffer(p->tmp_buf, con->physical.path);
-		buffer_append_slash(p->tmp_buf);
-		buffer_append_string_buffer(p->tmp_buf, p->conf.show_header);
+		buffer *hb = p->conf.show_header;
+		if (hb->ptr[0] != '/') {
+			buffer_copy_buffer(p->tmp_buf, con->physical.path);
+			buffer_append_slash(p->tmp_buf);
+			buffer_append_string_buffer(p->tmp_buf, p->conf.show_header);
+			hb = p->tmp_buf;
+		}
 
-		http_list_directory_include_file(out, p->tmp_buf, "header", p->conf.encode_header);
+		http_list_directory_include_file(out, hb, "header", p->conf.encode_header);
 	}
 
 	buffer_append_string_len(out, CONST_STR_LEN("<h2>Index of "));
@@ -802,13 +832,17 @@ static void http_list_directory_header(server *srv, connection *con, plugin_data
 		"</tr>"
 		"</thead>\n"
 		"<tbody>\n"
+	));
+	if (!buffer_is_equal_string(con->uri.path, CONST_STR_LEN("/"))) {
+		buffer_append_string_len(out, CONST_STR_LEN(
 		"<tr class=\"d\">"
 			"<td class=\"n\"><a href=\"../\">..</a>/</td>"
 			"<td class=\"m\">&nbsp;</td>"
 			"<td class=\"s\">- &nbsp;</td>"
 			"<td class=\"t\">Directory</td>"
 		"</tr>\n"
-	));
+		));
+	}
 }
 
 static void http_list_directory_footer(server *srv, connection *con, plugin_data *p, buffer *out) {
@@ -823,22 +857,18 @@ static void http_list_directory_footer(server *srv, connection *con, plugin_data
 	if (!buffer_string_is_empty(p->conf.show_readme)) {
 		/* if we have a README file, display it in <pre class="readme"></pre> */
 
-		buffer_copy_buffer(p->tmp_buf,  con->physical.path);
-		buffer_append_slash(p->tmp_buf);
-		buffer_append_string_buffer(p->tmp_buf, p->conf.show_readme);
+		buffer *rb = p->conf.show_readme;
+		if (rb->ptr[0] != '/') {
+			buffer_copy_buffer(p->tmp_buf,  con->physical.path);
+			buffer_append_slash(p->tmp_buf);
+			buffer_append_string_buffer(p->tmp_buf, p->conf.show_readme);
+			rb = p->tmp_buf;
+		}
 
-		http_list_directory_include_file(out, p->tmp_buf, "readme", p->conf.encode_readme);
+		http_list_directory_include_file(out, rb, "readme", p->conf.encode_readme);
 	}
 
 	if(p->conf.auto_layout) {
-
-		if (!buffer_string_is_empty(p->conf.external_js)) {
-			buffer_append_string_len(out, CONST_STR_LEN("<script type=\"text/javascript\" src=\""));
-			buffer_append_string_buffer(out, p->conf.external_js);
-			buffer_append_string_len(out, CONST_STR_LEN("\" />\n"));
-		} else if (buffer_is_empty(p->conf.external_js)) {
-			http_dirlist_append_js_table_resort(out, con);
-		}
 
 		buffer_append_string_len(out, CONST_STR_LEN(
 			"<div class=\"foot\">"
@@ -852,6 +882,17 @@ static void http_list_directory_footer(server *srv, connection *con, plugin_data
 
 		buffer_append_string_len(out, CONST_STR_LEN(
 			"</div>\n"
+		));
+
+		if (!buffer_string_is_empty(p->conf.external_js)) {
+			buffer_append_string_len(out, CONST_STR_LEN("<script type=\"text/javascript\" src=\""));
+			buffer_append_string_buffer(out, p->conf.external_js);
+			buffer_append_string_len(out, CONST_STR_LEN("\"></script>\n"));
+		} else if (buffer_is_empty(p->conf.external_js)) {
+			http_dirlist_append_js_table_resort(out, con);
+		}
+
+		buffer_append_string_len(out, CONST_STR_LEN(
 			"</body>\n"
 			"</html>\n"
 		));
@@ -870,7 +911,6 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 	dirls_entry_t *tmp;
 	char sizebuf[sizeof("999.9K")];
 	char datebuf[sizeof("2005-Jan-01 22:23:24")];
-	size_t k;
 	const char *content_type;
 	long name_max;
 #if defined(HAVE_XATTR) || defined(HAVE_EXTATTR)
@@ -1013,13 +1053,6 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 	if (files.used) http_dirls_sort(files.ent, files.used);
 
 	out = buffer_init();
-	buffer_copy_string_len(out, CONST_STR_LEN("<?xml version=\"1.0\" encoding=\""));
-	if (buffer_string_is_empty(p->conf.encoding)) {
-		buffer_append_string_len(out, CONST_STR_LEN("iso-8859-1"));
-	} else {
-		buffer_append_string_buffer(out, p->conf.encoding);
-	}
-	buffer_append_string_len(out, CONST_STR_LEN("\"?>\n"));
 	http_list_directory_header(srv, con, p, out);
 
 	/* directories */
@@ -1069,23 +1102,8 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 #endif
 
 		if (content_type == NULL) {
-			content_type = "application/octet-stream";
-			for (k = 0; k < con->conf.mimetypes->used; k++) {
-				data_string *ds = (data_string *)con->conf.mimetypes->data[k];
-				size_t ct_len;
-
-				if (buffer_is_empty(ds->key))
-					continue;
-
-				ct_len = buffer_string_length(ds->key);
-				if (tmp->namelen < ct_len)
-					continue;
-
-				if (0 == strncasecmp(DIRLIST_ENT_NAME(tmp) + tmp->namelen - ct_len, ds->key->ptr, ct_len)) {
-					content_type = ds->value->ptr;
-					break;
-				}
-			}
+			const buffer *type = stat_cache_mimetype_by_ext(con, DIRLIST_ENT_NAME(tmp), tmp->namelen);
+			content_type = NULL != type ? type->ptr : "application/octet-stream";
 		}
 
 #ifdef HAVE_LOCALTIME_R

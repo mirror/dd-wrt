@@ -3,14 +3,13 @@
 #include "request.h"
 #include "keyvalue.h"
 #include "log.h"
+#include "sock_addr.h"
 
 #include <sys/stat.h>
 
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <ctype.h>
 
 static int request_check_hostname(buffer *host) {
 	enum { DOMAINLABEL, TOPLABEL } stage = TOPLABEL;
@@ -202,7 +201,7 @@ static int request_check_hostname(buffer *host) {
 	return 0;
 }
 
-int http_request_host_normalize(buffer *b) {
+int http_request_host_normalize(buffer *b, int scheme_port) {
     /*
      * check for and canonicalize numeric IP address and portnum (optional)
      * (IP address may be followed by ":portnum" (optional))
@@ -252,29 +251,15 @@ int http_request_host_normalize(buffer *b) {
 
         if (light_isdigit(*p)) {
             /* (IPv4 address literal or domain starting w/ digit (e.g. 3com))*/
-            struct in_addr addr;
-          #if defined(HAVE_INET_ATON) /*(Windows does not provide inet_aton())*/
-            if (0 != inet_aton(p, &addr))
-          #else
-            if ((addr.s_addr = inet_addr(p)) != INADDR_NONE)
-          #endif
-            {
-              #if defined(HAVE_INET_PTON)/*(expect inet_ntop() if inet_pton())*/
-               #ifndef INET_ADDRSTRLEN
-               #define INET_ADDRSTRLEN 16
-               #endif
-                char buf[INET_ADDRSTRLEN];
-                inet_ntop(AF_INET, (const void *)&addr, buf, sizeof(buf));
-                buffer_copy_string(b, buf);
-              #else
-                buffer_copy_string(b, inet_ntoa(addr)); /*(not thread-safe)*/
-              #endif
+            sock_addr addr;
+            if (1 == sock_addr_inet_pton(&addr, p, AF_INET, 0)) {
+                sock_addr_inet_ntop_copy_buffer(b, &addr);
             }
         }
     } else { /* IPv6 addr */
       #if defined(HAVE_IPV6) && defined(HAVE_INET_PTON)
 
-        struct in6_addr addr;
+        sock_addr addr;
         char *bracket = b->ptr+blen-1;
         char *percent = strchr(b->ptr+1, '%');
         size_t len;
@@ -299,12 +284,12 @@ int http_request_host_normalize(buffer *b) {
 
         *bracket = '\0';/*(terminate IPv6 string)*/
         if (percent) *percent = '\0'; /*(remove %interface from address)*/
-        rc = inet_pton(AF_INET6, b->ptr+1, &addr);
+        rc = sock_addr_inet_pton(&addr, b->ptr+1, AF_INET6, 0);
         if (percent) *percent = '%'; /*(restore %interface)*/
         *bracket = ']'; /*(restore bracket)*/
         if (1 != rc) return -1;
 
-        inet_ntop(AF_INET6,(const void *)&addr, buf, sizeof(buf));
+        sock_addr_inet_ntop(&addr, buf, sizeof(buf));
         len = strlen(buf);
         if (percent) {
             if (percent > bracket) return -1;
@@ -323,12 +308,24 @@ int http_request_host_normalize(buffer *b) {
       #endif
     }
 
-    if (port) {
+    if (0 != port && port != scheme_port) {
         buffer_append_string_len(b, CONST_STR_LEN(":"));
         buffer_append_int(b, (int)port);
     }
 
     return 0;
+}
+
+static int scheme_port (const buffer *scheme)
+{
+    return buffer_is_equal_string(scheme, CONST_STR_LEN("https")) ? 443 : 80;
+}
+
+int http_request_host_policy (connection *con, buffer *b, const buffer *scheme) {
+    return (((con->conf.http_parseopts & HTTP_PARSEOPT_HOST_STRICT)
+             && 0 != request_check_hostname(b))
+            || ((con->conf.http_parseopts & HTTP_PARSEOPT_HOST_NORMALIZE)
+                && 0 != http_request_host_normalize(b, scheme_port(scheme))));
 }
 
 #if 0
@@ -409,6 +406,18 @@ static int request_uri_is_valid_char(unsigned char c) {
 	return 1;
 }
 
+static int http_request_missing_CR_before_LF(server *srv, connection *con) {
+	if (srv->srvconf.log_request_header_on_error) {
+		log_error_write(srv, __FILE__, __LINE__, "s", "missing CR before LF in header -> 400");
+		log_error_write(srv, __FILE__, __LINE__, "Sb", "request-header:\n", con->request.request);
+	}
+
+	con->http_status = 400;
+	con->keep_alive = 0;
+	con->response.keep_alive = 0;
+	return 0;
+}
+
 int http_request_parse(server *srv, connection *con) {
 	char *uri = NULL, *proto = NULL, *method = NULL, con_length_set;
 	int is_key = 1, key_len = 0, is_ws_after_key = 0, in_folding;
@@ -444,8 +453,28 @@ int http_request_parse(server *srv, connection *con) {
 	    con->request.request->ptr[1] == '\n') {
 		/* we are in keep-alive and might get \r\n after a previous POST request.*/
 
+	      #ifdef __COVERITY__
+		if (buffer_string_length(con->request.request) < 2) {
+			con->keep_alive = 0;
+			con->http_status = 400;
+			return 0;
+		}
+	      #endif
 		/* coverity[overflow_sink : FALSE] */
 		buffer_copy_string_len(con->parse_request, con->request.request->ptr + 2, buffer_string_length(con->request.request) - 2);
+	} else if (con->request_count > 0 &&
+	    con->request.request->ptr[1] == '\n') {
+		/* we are in keep-alive and might get \n after a previous POST request.*/
+		if (http_header_strict) return http_request_missing_CR_before_LF(srv, con);
+	      #ifdef __COVERITY__
+		if (buffer_string_length(con->request.request) < 1) {
+			con->keep_alive = 0;
+			con->http_status = 400;
+			return 0;
+		}
+	      #endif
+		/* coverity[overflow_sink : FALSE] */
+		buffer_copy_string_len(con->parse_request, con->request.request->ptr + 1, buffer_string_length(con->request.request) - 1);
 	} else {
 		/* fill the local request buffer */
 		buffer_copy_buffer(con->parse_request, con->request.request);
@@ -464,16 +493,24 @@ int http_request_parse(server *srv, connection *con) {
 	for (i = 0, first = 0; i < ilen && line == 0; i++) {
 		switch(con->parse_request->ptr[i]) {
 		case '\r':
-			if (con->parse_request->ptr[i+1] == '\n') {
+			if (con->parse_request->ptr[i+1] != '\n') break;
+			/* fall through */
+		case '\n':
+			{
 				http_method_t r;
 				char *nuri = NULL;
 				size_t j, jlen;
 
-				/* \r\n -> \0\0 */
-				con->parse_request->ptr[i] = '\0';
-				con->parse_request->ptr[i+1] = '\0';
-
 				buffer_copy_string_len(con->request.request_line, con->parse_request->ptr, i);
+
+				/* \r\n -> \0\0 */
+				if (con->parse_request->ptr[i] == '\r') {
+					con->parse_request->ptr[i] = '\0';
+					++i;
+				} else if (http_header_strict) { /* '\n' */
+					return http_request_missing_CR_before_LF(srv, con);
+				}
+				con->parse_request->ptr[i] = '\0';
 
 				if (request_line_stage != 2) {
 					con->http_status = 400;
@@ -583,21 +620,30 @@ int http_request_parse(server *srv, connection *con) {
 					return 0;
 				}
 
-				if (0 == strncmp(uri, "http://", 7) &&
+				if (*uri == '/') {
+					/* (common case) */
+					buffer_copy_string_len(con->request.uri, uri, proto - uri - 1);
+				} else if (0 == strncasecmp(uri, "http://", 7) &&
 				    NULL != (nuri = strchr(uri + 7, '/'))) {
 					reqline_host = uri + 7;
 					reqline_hostlen = nuri - reqline_host;
 
 					buffer_copy_string_len(con->request.uri, nuri, proto - nuri - 1);
-				} else if (0 == strncmp(uri, "https://", 8) &&
+				} else if (0 == strncasecmp(uri, "https://", 8) &&
 				    NULL != (nuri = strchr(uri + 8, '/'))) {
 					reqline_host = uri + 8;
 					reqline_hostlen = nuri - reqline_host;
 
 					buffer_copy_string_len(con->request.uri, nuri, proto - nuri - 1);
-				} else {
+				} else if (!http_header_strict
+					   || (HTTP_METHOD_OPTIONS == con->request.http_method && uri[0] == '*' && uri[1] == '\0')) {
 					/* everything looks good so far */
 					buffer_copy_string_len(con->request.uri, uri, proto - uri - 1);
+				} else {
+					con->http_status = 400;
+					con->keep_alive = 0;
+					log_error_write(srv, __FILE__, __LINE__, "ss", "request-URI parse error -> 400 for:", uri);
+					return 0;
 				}
 
 				/* check uri for invalid characters */
@@ -642,7 +688,6 @@ int http_request_parse(server *srv, connection *con) {
 
 				con->http_status = 0;
 
-				i++;
 				line++;
 				first = i+1;
 			}
@@ -832,6 +877,15 @@ int http_request_parse(server *srv, connection *con) {
 					return 0;
 				}
 				break;
+			case '\n':
+				if (http_header_strict) {
+					return http_request_missing_CR_before_LF(srv, con);
+				} else if (i == first) {
+					con->parse_request->ptr[i] = '\0';
+					done = 1;
+					break;
+				}
+				/* fall through */
 			default:
 				if (http_header_strict ? (*cur < 32 || ((unsigned char)*cur) >= 127) : *cur == '\0') {
 					con->http_status = 400;
@@ -855,15 +909,20 @@ int http_request_parse(server *srv, connection *con) {
 		} else {
 			switch(*cur) {
 			case '\r':
-				if (con->parse_request->ptr[i+1] == '\n') {
+			case '\n':
+				if (*cur == '\n' || con->parse_request->ptr[i+1] == '\n') {
 					data_string *ds = NULL;
+					if (*cur == '\n') {
+						if (http_header_strict) return http_request_missing_CR_before_LF(srv, con);
+					} else { /* (con->parse_request->ptr[i+1] == '\n') */
+						con->parse_request->ptr[i] = '\0';
+						++i;
+					}
 
 					/* End of Headerline */
 					con->parse_request->ptr[i] = '\0';
-					con->parse_request->ptr[i+1] = '\0';
 
 					if (in_folding) {
-						buffer *key_b;
 						/**
 						 * we use a evil hack to handle the line-folding
 						 * 
@@ -891,14 +950,9 @@ int http_request_parse(server *srv, connection *con) {
 							return 0;
 						}
 
-						key_b = buffer_init();
-						buffer_copy_string_len(key_b, key, key_len);
-
-						if (NULL != (ds = (data_string *)array_get_element(con->request.headers, key_b->ptr))) {
+						if (NULL != (ds = (data_string *)array_get_element_klen(con->request.headers, key, key_len))) {
 							buffer_append_string(ds->value, value);
 						}
-
-						buffer_free(key_b);
 					} else {
 						int s_len;
 						key = con->parse_request->ptr + first;
@@ -954,8 +1008,7 @@ int http_request_parse(server *srv, connection *con) {
 
 							} else if (cmp > 0 && 0 == (cmp = buffer_caseless_compare(CONST_BUF_LEN(ds->key), CONST_STR_LEN("Content-Length")))) {
 								char *err;
-								unsigned long int r;
-								size_t j, jlen;
+								off_t r;
 
 								if (con_length_set) {
 									con->http_status = 400;
@@ -972,24 +1025,9 @@ int http_request_parse(server *srv, connection *con) {
 									return 0;
 								}
 
-								jlen = buffer_string_length(ds->value);
-								for (j = 0; j < jlen; j++) {
-									char c = ds->value->ptr[j];
-									if (!isdigit((unsigned char)c)) {
-										log_error_write(srv, __FILE__, __LINE__, "sbs",
-												"content-length broken:", ds->value, "-> 400");
+								r = strtoll(ds->value->ptr, &err, 10);
 
-										con->http_status = 400;
-										con->keep_alive = 0;
-
-										array_insert_unique(con->request.headers, (data_unset *)ds);
-										return 0;
-									}
-								}
-
-								r = strtoul(ds->value->ptr, &err, 10);
-
-								if (*err == '\0') {
+								if (*err == '\0' && r >= 0) {
 									con_length_set = 1;
 									con->request.content_length = r;
 								} else {
@@ -1017,28 +1055,6 @@ int http_request_parse(server *srv, connection *con) {
 												"request-header:\n",
 												con->request.request);
 									}
-									array_insert_unique(con->request.headers, (data_unset *)ds);
-									return 0;
-								}
-							} else if (cmp > 0 && 0 == (cmp = buffer_caseless_compare(CONST_BUF_LEN(ds->key), CONST_STR_LEN("Expect")))) {
-								/* HTTP 2616 8.2.3
-								 * Expect: 100-continue
-								 *
-								 *   -> (10.1.1)  100 (read content, process request, send final status-code)
-								 *   -> (10.4.18) 417 (close)
-								 *
-								 * (not handled at all yet, we always send 417 here)
-								 *
-								 * What has to be added ?
-								 * 1. handling of chunked request body
-								 * 2. out-of-order sending from the HTTP/1.1 100 Continue
-								 *    header
-								 *
-								 */
-
-								if (srv->srvconf.reject_expect_100_with_417 && 0 == buffer_caseless_compare(CONST_BUF_LEN(ds->value), CONST_STR_LEN("100-continue"))) {
-									con->http_status = 417;
-									con->keep_alive = 0;
 									array_insert_unique(con->request.headers, (data_unset *)ds);
 									return 0;
 								}
@@ -1129,7 +1145,6 @@ int http_request_parse(server *srv, connection *con) {
 						}
 					}
 
-					i++;
 					first = i+1;
 					is_key = 1;
 					value = NULL;
@@ -1216,10 +1231,7 @@ int http_request_parse(server *srv, connection *con) {
 
 	/* check hostname field if it is set */
 	if (!buffer_is_empty(con->request.http_host) &&
-	    (((con->conf.http_parseopts & HTTP_PARSEOPT_HOST_STRICT) &&
-	      0 != request_check_hostname(con->request.http_host))
-	     || ((con->conf.http_parseopts & HTTP_PARSEOPT_HOST_NORMALIZE) &&
-		 0 != http_request_host_normalize(con->request.http_host)))) {
+	    0 != http_request_host_policy(con, con->request.http_host, con->proto)) {
 
 		if (srv->srvconf.log_request_header_on_error) {
 			log_error_write(srv, __FILE__, __LINE__, "s",
@@ -1234,6 +1246,38 @@ int http_request_parse(server *srv, connection *con) {
 		con->keep_alive = 0;
 
 		return 0;
+	}
+
+	{
+		data_string *ds = (data_string *)array_get_element(con->request.headers, "Transfer-Encoding");
+		if (NULL != ds) {
+			if (con->request.http_version == HTTP_VERSION_1_0) {
+				log_error_write(srv, __FILE__, __LINE__, "s",
+						"HTTP/1.0 with Transfer-Encoding (bad HTTP/1.0 proxy?) -> 400");
+				con->keep_alive = 0;
+				con->http_status = 400; /* Bad Request */
+				return 0;
+			}
+
+			if (0 != strcasecmp(ds->value->ptr, "chunked")) {
+				/* Transfer-Encoding might contain additional encodings,
+				 * which are not currently supported by lighttpd */
+				con->keep_alive = 0;
+				con->http_status = 501; /* Not Implemented */
+				return 0;
+			}
+
+			/* reset value for Transfer-Encoding, a hop-by-hop header,
+			 * which must not be blindly forwarded to backends */
+			buffer_reset(ds->value); /* headers with empty values are ignored */
+
+			con_length_set = 1;
+			con->request.content_length = -1;
+
+			/*(note: ignore whether or not Content-Length was provided)*/
+			ds = (data_string *)array_get_element(con->request.headers, "Content-Length");
+			if (NULL != ds) buffer_reset(ds->value); /* headers with empty values are ignored */
+		}
 	}
 
 	switch(con->request.http_method) {
@@ -1264,31 +1308,12 @@ int http_request_parse(server *srv, connection *con) {
 		}
 		break;
 	default:
-		/* require Content-Length if request contains request body */
-		if (array_get_element(con->request.headers, "Transfer-Encoding")) {
-			/* presence of Transfer-Encoding in request headers requires "chunked"
-			 * be final encoding in HTTP/1.1.  Return 411 Length Required as
-			 * lighttpd does not support request input transfer-encodings */
-			con->keep_alive = 0;
-			con->http_status = 411; /* 411 Length Required */
-			return 0;
-		}
 		break;
 	}
 
 
 	/* check if we have read post data */
 	if (con_length_set) {
-		/* don't handle more the SSIZE_MAX bytes in content-length */
-		if (con->request.content_length > SSIZE_MAX) {
-			con->http_status = 413;
-			con->keep_alive = 0;
-
-			log_error_write(srv, __FILE__, __LINE__, "sos",
-					"request-size too long:", (off_t) con->request.content_length, "-> 413");
-			return 0;
-		}
-
 		/* we have content */
 		if (con->request.content_length != 0) {
 			return 1;

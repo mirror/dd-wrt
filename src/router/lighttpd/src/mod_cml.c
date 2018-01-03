@@ -6,8 +6,6 @@
 #include "plugin.h"
 #include "response.h"
 
-#include "stream.h"
-
 #include "mod_cml.h"
 
 #include <sys/stat.h>
@@ -16,8 +14,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <unistd.h>
-#include <stdio.h>
 
 /* init the plugin data */
 INIT_FUNC(mod_cml_init) {
@@ -93,7 +89,7 @@ SETDEFAULTS_FUNC(mod_cml_set_defaults) {
 		data_config const* config = (data_config const*)srv->config_context->data[i];
 		plugin_config *s;
 
-		s = malloc(sizeof(plugin_config));
+		s = calloc(1, sizeof(plugin_config));
 		s->ext    = buffer_init();
 		s->mc_hosts       = array_init();
 		s->mc_namespace   = buffer_init();
@@ -110,6 +106,12 @@ SETDEFAULTS_FUNC(mod_cml_set_defaults) {
 		p->config_storage[i] = s;
 
 		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
+			return HANDLER_ERROR;
+		}
+
+		if (!array_is_vlist(s->mc_hosts)) {
+			log_error_write(srv, __FILE__, __LINE__, "s",
+					"unexpected value for cml.memcache-hosts; expected list of \"host\"");
 			return HANDLER_ERROR;
 		}
 

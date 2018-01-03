@@ -14,24 +14,25 @@
 # define HAVE_CRYPT
 #endif
 
-#include "base.h"
+#if defined HAVE_LIBSSL && defined HAVE_OPENSSL_SSL_H
+#define USE_OPENSSL_CRYPTO
+#endif
 
-#ifdef USE_OPENSSL
-#include "base64.h"
+#ifdef USE_OPENSSL_CRYPTO
 #include <openssl/md4.h>
-#include <openssl/sha.h>
 #endif
 
 #include "safe_memclear.h"
 /*(htpasswd)*/
 
 
+#include "base.h"
 #include "plugin.h"
 #include "http_auth.h"
 #include "log.h"
 #include "response.h"
 
-#include "inet_ntop_cache.h"
+#include "algo_sha1.h"
 #include "base64.h"
 #include "md5.h"
 
@@ -39,6 +40,7 @@
 #include <sys/stat.h>
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -594,7 +596,6 @@ static void apr_md5_encode(const char *pw, const char *salt, char *result, size_
     apr_cpystrn(result, passwd, nbytes - 1);
 }
 
-#ifdef USE_OPENSSL
 static void apr_sha_encode(const char *pw, char *result, size_t nbytes) {
     unsigned char digest[20];
     size_t base64_written;
@@ -611,7 +612,6 @@ static void apr_sha_encode(const char *pw, char *result, size_t nbytes) {
     force_assert(base64_written == 28);
     result[5 + base64_written] = '\0'; /* terminate string */
 }
-#endif
 
 static handler_t mod_authn_file_htpasswd_basic(server *srv, connection *con, void *p_d, const http_auth_require_t *require, const buffer *username, const char *pw) {
     plugin_data *p = (plugin_data *)p_d;
@@ -629,21 +629,23 @@ static handler_t mod_authn_file_htpasswd_basic(server *srv, connection *con, voi
             apr_md5_encode(pw, password->ptr, sample, sizeof(sample));
             rc = strcmp(sample, password->ptr);
         }
-      #ifdef USE_OPENSSL
         else if (0 == strncmp(password->ptr, "{SHA}", 5)) {
             apr_sha_encode(pw, sample, sizeof(sample));
             rc = strcmp(sample, password->ptr);
         }
-      #endif
       #if defined(HAVE_CRYPT_R) || defined(HAVE_CRYPT)
         /* a simple DES password is 2 + 11 characters. everything else should be longer. */
         else if (buffer_string_length(password) >= 13) {
             char *crypted;
            #if defined(HAVE_CRYPT_R)
             struct crypt_data crypt_tmp_data;
+            #ifdef _AIX
+            memset(&crypt_tmp_data, 0, sizeof(crypt_tmp_data));
+            #else
             crypt_tmp_data.initialized = 0;
+            #endif
            #endif
-           #ifdef USE_OPENSSL /* (for MD4_*() (e.g. MD4_Update())) */
+           #ifdef USE_OPENSSL_CRYPTO /* (for MD4_*() (e.g. MD4_Update())) */
             if (0 == memcmp(password->ptr, CONST_STR_LEN("$1+ntlm$"))) {
                 /* CRYPT-MD5-NTLM algorithm
                  * This algorithm allows for the construction of (slight more)
@@ -680,7 +682,7 @@ static handler_t mod_authn_file_htpasswd_basic(server *srv, connection *con, voi
                     li_tohex(ntlmhex,sizeof(ntlmhex),ntlmhash,sizeof(ntlmhash));
 
                     /*(reuse sample buffer for salt  (FYI: expect slen == 8))*/
-                    memcpy(sample, CONST_STR_LEN("$1$"));
+                    memcpy(sample, "$1$", sizeof("$1$")-1);
                     memcpy(sample+sizeof("$1$")-1, b, slen);
                     sample[sizeof("$1$")-1+slen] = '\0';
                    #if defined(HAVE_CRYPT_R)

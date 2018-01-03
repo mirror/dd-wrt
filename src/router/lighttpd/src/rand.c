@@ -9,14 +9,20 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
 
-#ifdef USE_OPENSSL
+#if defined HAVE_LIBSSL && defined HAVE_OPENSSL_SSL_H
+#define USE_OPENSSL_CRYPTO
+#endif
+#ifdef USE_OPENSSL_CRYPTO
+#include <openssl/opensslv.h> /* OPENSSL_VERSION_NUMBER */
 #include <openssl/rand.h>
+#endif
+#ifdef HAVE_GETENTROPY
+#include <sys/random.h>
 #endif
 #ifdef HAVE_LINUX_RANDOM_H
 #include <sys/syscall.h>
@@ -31,7 +37,18 @@
  * block, and are intended to be called only at startup in lighttpd, or
  * immediately after fork() to start lighttpd workers.
  *
- * Note: results from li_rand() are not necessarily cryptographically random.
+ * Update: li_rand_init() is now deferred until first use so that installations
+ * that do not use modules which use these routines do need to potentially block
+ * at startup.  Current use by core lighttpd modules is in mod_auth HTTP Digest
+ * auth and in mod_usertrack.  Deferring collection of random data until first
+ * use may allow sufficient entropy to be collected by kernel before first use,
+ * helping reduce or avoid situations in low-entropy-generating embedded devices
+ * which might otherwise block lighttpd for minutes at device startup.
+ * Further discussion in https://redmine.lighttpd.net/boards/2/topics/6981
+ *
+ * Note: results from li_rand_pseudo_bytes() are not necessarily
+ * cryptographically random and must not be used for purposes such
+ * as key generation which require cryptographic randomness.
  *
  * https://wiki.openssl.org/index.php/Random_Numbers
  * https://wiki.openssl.org/index.php/Random_fork-safety
@@ -96,7 +113,8 @@ static int li_rand_device_bytes (unsigned char *buf, int num)
             ssize_t rd = 0;
           #ifdef RNDGETENTCNT
             int entropy;
-            if (0 == ioctl(fd, RNDGETENTCNT, &entropy) && entropy >= num*8)
+            if (0 == ioctl(fd, (unsigned long)(RNDGETENTCNT), &entropy)
+                && entropy >= num*8)
           #endif
                 rd = read(fd, buf, (size_t)num);
             close(fd);
@@ -109,9 +127,10 @@ static int li_rand_device_bytes (unsigned char *buf, int num)
     return 0;
 }
 
+static int li_rand_inited;
 static unsigned short xsubi[3];
 
-void li_rand_reseed (void)
+static void li_rand_init (void)
 {
     /* (intended to be called at init and after fork() in order to re-seed PRNG
      *  so that forked children, grandchildren, etc do not share PRNG seed)
@@ -121,11 +140,12 @@ void li_rand_reseed (void)
      * https://github.com/libressl-portable/portable/commit/32d9eeeecf4e951e1566d5f4a42b36ea37b60f35
      */
     unsigned int u;
+    li_rand_inited = 1;
     if (1 == li_rand_device_bytes((unsigned char *)xsubi, (int)sizeof(xsubi))) {
         u = ((unsigned int)xsubi[0] << 16) | xsubi[1];
     }
     else {
-      #ifdef HAVE_ARC4RANDOM
+      #ifdef HAVE_ARC4RANDOM_BUF
         u = arc4random();
         arc4random_buf(xsubi, sizeof(xsubi));
       #else
@@ -141,21 +161,29 @@ void li_rand_reseed (void)
   #ifdef HAVE_SRANDOM
     srandom(u); /*(initialize just in case random() used elsewhere)*/
   #endif
-  #ifdef USE_OPENSSL
+  #ifdef USE_OPENSSL_CRYPTO
     RAND_poll();
     RAND_seed(xsubi, (int)sizeof(xsubi));
   #endif
 }
 
-int li_rand (void)
+void li_rand_reseed (void)
+{
+    if (li_rand_inited) li_rand_init();
+}
+
+int li_rand_pseudo (void)
 {
     /* randomness *is not* cryptographically strong */
     /* (attempt to use better mechanisms to replace the more portable rand()) */
-  #ifdef USE_OPENSSL
+  #ifdef USE_OPENSSL_CRYPTO /* (openssl 1.1.0 deprecates RAND_pseudo_bytes()) */
+  #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
     int i;
     if (-1 != RAND_pseudo_bytes((unsigned char *)&i, sizeof(i))) return i;
   #endif
-  #ifdef HAVE_ARC4RANDOM
+  #endif
+    if (!li_rand_inited) li_rand_init();
+  #ifdef HAVE_ARC4RANDOM_BUF
     return (int)arc4random();
   #elif defined(HAVE_SRANDOM)
     /* coverity[dont_call : FALSE] */
@@ -170,9 +198,15 @@ int li_rand (void)
   #endif
 }
 
+void li_rand_pseudo_bytes (unsigned char *buf, int num)
+{
+    for (int i = 0; i < num; ++i)
+        buf[i] = li_rand_pseudo() & 0xFF;
+}
+
 int li_rand_bytes (unsigned char *buf, int num)
 {
-  #ifdef USE_OPENSSL
+  #ifdef USE_OPENSSL_CRYPTO
     int rc = RAND_bytes(buf, num);
     if (-1 != rc) {
         return rc;
@@ -183,8 +217,7 @@ int li_rand_bytes (unsigned char *buf, int num)
     }
     else {
         /* NOTE: not cryptographically random !!! */
-        for (int i = 0; i < num; ++i)
-            buf[i] = li_rand() & 0xFF;
+        li_rand_pseudo_bytes(buf, num);
         /*(openssl RAND_pseudo_bytes rc for non-cryptographically random data)*/
         return 0;
     }
@@ -192,7 +225,7 @@ int li_rand_bytes (unsigned char *buf, int num)
 
 void li_rand_cleanup (void)
 {
-  #ifdef USE_OPENSSL
+  #ifdef USE_OPENSSL_CRYPTO
     RAND_cleanup();
   #endif
     safe_memclear(xsubi, sizeof(xsubi));

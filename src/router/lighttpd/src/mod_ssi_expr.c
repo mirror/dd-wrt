@@ -43,7 +43,7 @@ int ssi_val_tobool(ssi_val_t *B) {
 	}
 }
 
-static int ssi_expr_tokenizer(server *srv, connection *con, plugin_data *p,
+static int ssi_expr_tokenizer(server *srv, connection *con, handler_ctx *p,
 			      ssi_tokenizer_t *t, int *token_id, buffer *token) {
 	int tid = 0;
 	size_t i;
@@ -218,9 +218,9 @@ static int ssi_expr_tokenizer(server *srv, connection *con, plugin_data *p,
 
 			tid = TK_VALUE;
 
-			if (NULL != (ds = (data_string *)array_get_element(p->ssi_cgi_env, token->ptr))) {
+			if (NULL != (ds = (data_string *)array_get_element_klen(p->ssi_cgi_env, CONST_BUF_LEN(token)))) {
 				buffer_copy_buffer(token, ds->value);
-			} else if (NULL != (ds = (data_string *)array_get_element(p->ssi_vars, token->ptr))) {
+			} else if (NULL != (ds = (data_string *)array_get_element_klen(p->ssi_vars, CONST_BUF_LEN(token)))) {
 				buffer_copy_buffer(token, ds->value);
 			} else {
 				buffer_copy_string_len(token, CONST_STR_LEN(""));
@@ -272,7 +272,7 @@ static int ssi_expr_tokenizer(server *srv, connection *con, plugin_data *p,
 	return 0;
 }
 
-int ssi_eval_expr(server *srv, connection *con, plugin_data *p, const char *expr) {
+int ssi_eval_expr(server *srv, connection *con, handler_ctx *p, const char *expr) {
 	ssi_tokenizer_t t;
 	void *pParser;
 	int token_id;

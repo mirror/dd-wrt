@@ -8,6 +8,7 @@
 
 #include "chunk.h"
 #include "base.h"
+#include "fdevent.h"
 #include "log.h"
 
 #include <sys/types.h>
@@ -18,7 +19,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <stdio.h>
 #include <errno.h>
 #include <string.h>
 
@@ -28,6 +28,12 @@
 
 static array *chunkqueue_default_tempdirs = NULL;
 static unsigned int chunkqueue_default_tempfile_size = DEFAULT_TEMPFILE_SIZE;
+
+void chunkqueue_set_tempdirs_default_reset (void)
+{
+    chunkqueue_default_tempdirs = NULL;
+    chunkqueue_default_tempfile_size = DEFAULT_TEMPFILE_SIZE;
+}
 
 chunkqueue *chunkqueue_init(void) {
 	chunkqueue *cq;
@@ -453,7 +459,7 @@ void chunkqueue_steal(chunkqueue *dest, chunkqueue *src, off_t len) {
 	}
 }
 
-static chunk *chunkqueue_get_append_tempfile(chunkqueue *cq) {
+static chunk *chunkqueue_get_append_tempfile(server *srv, chunkqueue *cq) {
 	chunk *c;
 	buffer *template = buffer_init_string("/var/tmp/lighttpd-upload-XXXXXX");
 	int fd = -1;
@@ -468,25 +474,41 @@ static chunk *chunkqueue_get_append_tempfile(chunkqueue *cq) {
 			buffer_append_slash(template);
 			buffer_append_string_len(template, CONST_STR_LEN("lighttpd-upload-XXXXXX"));
 
+		      #ifdef __COVERITY__
+			/* POSIX-2008 requires mkstemp create file with 0600 perms */
+			umask(0600);
+		      #endif
 			/* coverity[secure_temp : FALSE] */
 			if (-1 != (fd = mkstemp(template->ptr))) break;
 		}
 	} else {
+	      #ifdef __COVERITY__
+		/* POSIX-2008 requires mkstemp create file with 0600 perms */
+		umask(0600);
+	      #endif
 		/* coverity[secure_temp : FALSE] */
 		fd = mkstemp(template->ptr);
 	}
 
 	if (fd < 0) {
+		/* (report only the last error to mkstemp()
+		 *  if multiple temp dirs attempted) */
+		log_error_write(srv, __FILE__, __LINE__, "sbs",
+				"opening temp-file failed:",
+				template, strerror(errno));
 		buffer_free(template);
 		return NULL;
 	}
 
 	if (0 != fcntl(fd, F_SETFL, fcntl(fd, F_GETFL, 0) | O_APPEND)) {
+		/* (should not happen; fd is regular file) */
+		log_error_write(srv, __FILE__, __LINE__, "sbs",
+				"fcntl():", template, strerror(errno));
 		close(fd);
 		buffer_free(template);
 		return NULL;
 	}
-	fd_close_on_exec(fd);
+	fdevent_setfd_cloexec(fd);
 
 	c = chunkqueue_get_unused_chunk(cq);
 	c->type = FILE_CHUNK;
@@ -543,18 +565,12 @@ int chunkqueue_append_mem_to_tempfile(server *srv, chunkqueue *dest, const char 
 			dst_c = NULL;
 		}
 
-		if (NULL == dst_c && NULL == (dst_c = chunkqueue_get_append_tempfile(dest))) {
-			/* we don't have file to write to,
-			 * EACCES might be one reason.
-			 *
-			 * Instead of sending 500 we send 413 and say the request is too large
-			 */
-
-			log_error_write(srv, __FILE__, __LINE__, "ss",
-				"opening temp-file failed:", strerror(errno));
-
+		if (NULL == dst_c && NULL == (dst_c = chunkqueue_get_append_tempfile(srv, dest))) {
 			return -1;
 		}
+	      #ifdef __COVERITY__
+		if (dst_c->file.fd < 0) return -1;
+	      #endif
 
 		/* (dst_c->file.fd >= 0) */
 		/* coverity[negative_returns : FALSE] */
@@ -678,10 +694,6 @@ off_t chunkqueue_length(chunkqueue *cq) {
 	return len;
 }
 
-int chunkqueue_is_empty(chunkqueue *cq) {
-	return NULL == cq->first;
-}
-
 void chunkqueue_mark_written(chunkqueue *cq, off_t len) {
 	off_t written = len;
 	chunk *c;
@@ -738,4 +750,39 @@ static void chunkqueue_remove_empty_chunks(chunkqueue *cq) {
 			chunkqueue_push_unused_chunk(cq, empty);
 		}
 	}
+}
+
+int chunkqueue_open_file_chunk(server *srv, chunkqueue *cq) {
+	chunk* const c = cq->first;
+	off_t offset, toSend;
+	struct stat st;
+
+	force_assert(NULL != c);
+	force_assert(FILE_CHUNK == c->type);
+	force_assert(c->offset >= 0 && c->offset <= c->file.length);
+
+	offset = c->file.start + c->offset;
+	toSend = c->file.length - c->offset;
+
+	if (-1 == c->file.fd) {
+		if (-1 == (c->file.fd = fdevent_open_cloexec(c->file.name->ptr, O_RDONLY, 0))) {
+			log_error_write(srv, __FILE__, __LINE__, "ssb", "open failed:", strerror(errno), c->file.name);
+			return -1;
+		}
+	}
+
+	/*(skip file size checks if file is temp file created by lighttpd)*/
+	if (c->file.is_temp) return 0;
+
+	if (-1 == fstat(c->file.fd, &st)) {
+		log_error_write(srv, __FILE__, __LINE__, "ss", "fstat failed:", strerror(errno));
+		return -1;
+	}
+
+	if (offset > st.st_size || toSend > st.st_size || offset > st.st_size - toSend) {
+		log_error_write(srv, __FILE__, __LINE__, "sb", "file shrunk:", c->file.name);
+		return -1;
+	}
+
+	return 0;
 }

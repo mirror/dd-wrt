@@ -1,6 +1,5 @@
 #include "first.h"
 
-#define USE_LDAP
 #include <ldap.h>
 
 #include "server.h"
@@ -8,7 +7,6 @@
 #include "log.h"
 #include "plugin.h"
 
-#include <ctype.h>
 #include <errno.h>
 #include <string.h>
 
@@ -21,6 +19,7 @@ typedef struct {
     buffer *auth_ldap_bindpw;
     buffer *auth_ldap_filter;
     buffer *auth_ldap_cafile;
+    buffer *auth_ldap_groupmember;
     unsigned short auth_ldap_starttls;
     unsigned short auth_ldap_allow_empty_pw;
 } plugin_config;
@@ -70,6 +69,7 @@ FREE_FUNC(mod_authn_ldap_free) {
             buffer_free(s->auth_ldap_bindpw);
             buffer_free(s->auth_ldap_filter);
             buffer_free(s->auth_ldap_cafile);
+            buffer_free(s->auth_ldap_groupmember);
 
             if (NULL != s->ldap) ldap_unbind_ext_s(s->ldap, NULL, NULL);
             free(s);
@@ -80,6 +80,39 @@ FREE_FUNC(mod_authn_ldap_free) {
     free(p);
 
     return HANDLER_GO_ON;
+}
+
+/*(copied from mod_vhostdb_ldap.c)*/
+static void mod_authn_add_scheme (server *srv, buffer *host)
+{
+    if (!buffer_string_is_empty(host)) {
+        /* reformat hostname(s) as LDAP URIs (scheme://host:port) */
+        static const char *schemes[] = {
+          "ldap://", "ldaps://", "ldapi://", "cldap://"
+        };
+        char *b, *e = host->ptr;
+        buffer_string_set_length(srv->tmp_buf, 0);
+        while (*(b = e)) {
+            unsigned int j;
+            while (*b==' '||*b=='\t'||*b=='\r'||*b=='\n'||*b==',') ++b;
+            if (*b == '\0') break;
+            e = b;
+            while (*e!=' '&&*e!='\t'&&*e!='\r'&&*e!='\n'&&*e!=','&&*e!='\0')
+                ++e;
+            if (!buffer_string_is_empty(srv->tmp_buf))
+                buffer_append_string_len(srv->tmp_buf, CONST_STR_LEN(","));
+            for (j = 0; j < sizeof(schemes)/sizeof(char *); ++j) {
+                if (0 == strncasecmp(b, schemes[j], strlen(schemes[j]))) {
+                    break;
+                }
+            }
+            if (j == sizeof(schemes)/sizeof(char *))
+                buffer_append_string_len(srv->tmp_buf,
+                                         CONST_STR_LEN("ldap://"));
+            buffer_append_string_len(srv->tmp_buf, b, (size_t)(e - b));
+        }
+        buffer_copy_buffer(host, srv->tmp_buf);
+    }
 }
 
 SETDEFAULTS_FUNC(mod_authn_ldap_set_defaults) {
@@ -94,6 +127,7 @@ config_values_t cv[] = {
         { "auth.backend.ldap.bind-dn",      NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION }, /* 5 */
         { "auth.backend.ldap.bind-pw",      NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION }, /* 6 */
         { "auth.backend.ldap.allow-empty-pw",     NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 7 */
+        { "auth.backend.ldap.groupmember",  NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION }, /* 8 */
         { NULL,                             NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
     };
 
@@ -111,6 +145,7 @@ config_values_t cv[] = {
         s->auth_ldap_bindpw = buffer_init();
         s->auth_ldap_filter = buffer_init();
         s->auth_ldap_cafile = buffer_init();
+        s->auth_ldap_groupmember = buffer_init_string("memberUid");
         s->auth_ldap_starttls = 0;
         s->ldap = NULL;
 
@@ -122,6 +157,7 @@ config_values_t cv[] = {
         cv[5].destination = s->auth_ldap_binddn;
         cv[6].destination = s->auth_ldap_bindpw;
         cv[7].destination = &(s->auth_ldap_allow_empty_pw);
+        cv[8].destination = s->auth_ldap_groupmember;
 
         p->config_storage[i] = s;
 
@@ -130,13 +166,18 @@ config_values_t cv[] = {
         }
 
         if (!buffer_string_is_empty(s->auth_ldap_filter)) {
-            if (*s->auth_ldap_filter->ptr != ','
-                && NULL == strchr(s->auth_ldap_filter->ptr, '$')) {
-                log_error_write(srv, __FILE__, __LINE__, "s", "ldap: auth.backend.ldap.filter is missing a replace-operator '$'");
-
-                return HANDLER_ERROR;
+            if (*s->auth_ldap_filter->ptr != ',') {
+                /*(translate '$' to '?' for consistency with other modules)*/
+                char *d = s->auth_ldap_filter->ptr;
+                for (; NULL != (d = strchr(d, '$')); ++d) *d = '?';
+                if (NULL == strchr(s->auth_ldap_filter->ptr, '?')) {
+                    log_error_write(srv, __FILE__, __LINE__, "s", "ldap: auth.backend.ldap.filter is missing a replace-operator '?'");
+                    return HANDLER_ERROR;
+                }
             }
         }
+
+        mod_authn_add_scheme(srv, s->auth_ldap_hostname);
     }
 
     return HANDLER_GO_ON;
@@ -156,6 +197,7 @@ static int mod_authn_ldap_patch_connection(server *srv, connection *con, plugin_
     PATCH(auth_ldap_cafile);
     PATCH(auth_ldap_starttls);
     PATCH(auth_ldap_allow_empty_pw);
+    PATCH(auth_ldap_groupmember);
     p->anon_conf = s;
 
     /* skip the first, the global context */
@@ -187,6 +229,8 @@ static int mod_authn_ldap_patch_connection(server *srv, connection *con, plugin_
                 PATCH(auth_ldap_bindpw);
             } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("auth.backend.ldap.allow-empty-pw"))) {
                 PATCH(auth_ldap_allow_empty_pw);
+            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("auth.backend.ldap.groupmember"))) {
+                PATCH(auth_ldap_groupmember);
             }
         }
     }
@@ -207,16 +251,146 @@ static void mod_authn_ldap_opt_err(server *srv, const char *file, unsigned long 
     mod_authn_ldap_err(srv, file, line, fn, err);
 }
 
+static void mod_authn_append_ldap_dn_escape(buffer * const filter, const buffer * const raw) {
+    /* [RFC4514] 2.4 Converting an AttributeValue from ASN.1 to a String
+     *
+     * https://www.ldap.com/ldap-dns-and-rdns
+     * http://social.technet.microsoft.com/wiki/contents/articles/5312.active-directory-characters-to-escape.aspx
+     */
+    const char * const b = raw->ptr;
+    const size_t rlen = buffer_string_length(raw);
+    if (0 == rlen) return;
+
+    if (b[0] == ' ') { /* || b[0] == '#' handled below for MS Active Directory*/
+        /* escape leading ' ' */
+        buffer_append_string_len(filter, CONST_STR_LEN("\\"));
+    }
+
+    for (size_t i = 0; i < rlen; ++i) {
+        size_t len = i;
+        int bs = 0;
+        do {
+            /* encode all UTF-8 chars with high bit set
+             * (instead of validating UTF-8 and escaping only invalid UTF-8) */
+            if (((unsigned char *)b)[len] > 0x7f)
+                break;
+            switch (b[len]) {
+              default:
+                continue;
+              case '"': case '+': case ',': case ';': case '\\':
+              case '<': case '>':
+              case '=': case '#': /* (for MS Active Directory) */
+                bs = 1;
+                break;
+              case '\0':
+                break;
+            }
+            break;
+        } while (++len < rlen);
+        len -= i;
+
+        if (len) {
+            buffer_append_string_len(filter, b+i, len);
+            if ((i += len) == rlen) break;
+        }
+
+        if (bs) {
+            buffer_append_string_len(filter, CONST_STR_LEN("\\"));
+            buffer_append_string_len(filter, b+i, 1);
+        }
+        else {
+            /* escape NUL ('\0') (and all UTF-8 chars with high bit set) */
+            char *f;
+            buffer_string_prepare_append(filter, 3);
+            f = filter->ptr + buffer_string_length(filter);
+            f[0] = '\\';
+            f[1] = "0123456789abcdef"[(((unsigned char *)b)[i] >> 4) & 0xf];
+            f[2] = "0123456789abcdef"[(((unsigned char *)b)[i]     ) & 0xf];
+            buffer_commit(filter, 3);
+        }
+    }
+
+    if (rlen > 1 && b[rlen-1] == ' ') {
+        /* escape trailing ' ' */
+        filter->ptr[buffer_string_length(filter)-1] = '\\';
+        buffer_append_string_len(filter, CONST_STR_LEN(" "));
+    }
+}
+
+static void mod_authn_append_ldap_filter_escape(buffer * const filter, const buffer * const raw) {
+    /* [RFC4515] 3. String Search Filter Definition
+     *
+     * [...]
+     *
+     * The <valueencoding> rule ensures that the entire filter string is a
+     * valid UTF-8 string and provides that the octets that represent the
+     * ASCII characters "*" (ASCII 0x2a), "(" (ASCII 0x28), ")" (ASCII
+     * 0x29), "\" (ASCII 0x5c), and NUL (ASCII 0x00) are represented as a
+     * backslash "\" (ASCII 0x5c) followed by the two hexadecimal digits
+     * representing the value of the encoded octet.
+     *
+     * [...]
+     *
+     * As indicated by the <valueencoding> rule, implementations MUST escape
+     * all octets greater than 0x7F that are not part of a valid UTF-8
+     * encoding sequence when they generate a string representation of a
+     * search filter.  Implementations SHOULD accept as input strings that
+     * are not valid UTF-8 strings.  This is necessary because RFC 2254 did
+     * not clearly define the term "string representation" (and in
+     * particular did not mention that the string representation of an LDAP
+     * search filter is a string of UTF-8-encoded Unicode characters).
+     *
+     *
+     * https://www.ldap.com/ldap-filters
+     * Although not required, you may escape any other characters that you want
+     * in the assertion value (or substring component) of a filter. This may be
+     * accomplished by prefixing the hexadecimal representation of each byte of
+     * the UTF-8 encoding of the character to escape with a backslash character.
+     */
+    const char * const b = raw->ptr;
+    const size_t rlen = buffer_string_length(raw);
+    for (size_t i = 0; i < rlen; ++i) {
+        size_t len = i;
+        char *f;
+        do {
+            /* encode all UTF-8 chars with high bit set
+             * (instead of validating UTF-8 and escaping only invalid UTF-8) */
+            if (((unsigned char *)b)[len] > 0x7f)
+                break;
+            switch (b[len]) {
+              default:
+                continue;
+              case '\0': case '(': case ')': case '*': case '\\':
+                break;
+            }
+            break;
+        } while (++len < rlen);
+        len -= i;
+
+        if (len) {
+            buffer_append_string_len(filter, b+i, len);
+            if ((i += len) == rlen) break;
+        }
+
+        /* escape * ( ) \ NUL ('\0') (and all UTF-8 chars with high bit set) */
+        buffer_string_prepare_append(filter, 3);
+        f = filter->ptr + buffer_string_length(filter);
+        f[0] = '\\';
+        f[1] = "0123456789abcdef"[(((unsigned char *)b)[i] >> 4) & 0xf];
+        f[2] = "0123456789abcdef"[(((unsigned char *)b)[i]     ) & 0xf];
+        buffer_commit(filter, 3);
+    }
+}
+
 static LDAP * mod_authn_ldap_host_init(server *srv, plugin_config *s) {
     LDAP *ld;
     int ret;
 
     if (buffer_string_is_empty(s->auth_ldap_hostname)) return NULL;
 
-    ld = ldap_init(s->auth_ldap_hostname->ptr, LDAP_PORT);
-    if (NULL == ld) {
-        log_error_write(srv, __FILE__, __LINE__, "sss", "ldap:", "ldap_init():",
-                        strerror(errno));
+    if (LDAP_SUCCESS != ldap_initialize(&ld, s->auth_ldap_hostname->ptr)) {
+        log_error_write(srv, __FILE__, __LINE__, "sss", "ldap:",
+                        "ldap_initialize():", strerror(errno));
         return NULL;
     }
 
@@ -255,7 +429,6 @@ static LDAP * mod_authn_ldap_host_init(server *srv, plugin_config *s) {
 }
 
 static int mod_authn_ldap_bind(server *srv, LDAP *ld, const char *dn, const char *pw) {
-  #if 0
     struct berval creds;
     int ret;
 
@@ -273,12 +446,6 @@ static int mod_authn_ldap_bind(server *srv, LDAP *ld, const char *dn, const char
     if (ret != LDAP_SUCCESS) {
         mod_authn_ldap_err(srv, __FILE__, __LINE__, "ldap_sasl_bind_s()", ret);
     }
-  #else
-    int ret = ldap_simple_bind_s(ld, dn, pw);
-    if (ret != LDAP_SUCCESS) {
-        mod_authn_ldap_err(srv, __FILE__, __LINE__, "ldap_simple_bind_s()",ret);
-    }
-  #endif
 
     return ret;
 }
@@ -380,43 +547,50 @@ static char * mod_authn_ldap_get_dn(server *srv, plugin_config *s, char *base, c
     return dn;
 }
 
+static handler_t mod_authn_ldap_memberOf(server *srv, plugin_config *s, const http_auth_require_t *require, const buffer *username, const char *userdn) {
+    array *groups = require->group;
+    buffer *filter = buffer_init();
+    handler_t rc = HANDLER_ERROR;
+
+    buffer_copy_string_len(filter, CONST_STR_LEN("("));
+    buffer_append_string_buffer(filter, s->auth_ldap_groupmember);
+    buffer_append_string_len(filter, CONST_STR_LEN("="));
+    if (buffer_is_equal_string(s->auth_ldap_groupmember,
+                               CONST_STR_LEN("member"))) {
+        buffer_append_string(filter, userdn);
+    } else { /*(assume "memberUid"; consider validating in SETDEFAULTS_FUNC)*/
+        mod_authn_append_ldap_filter_escape(filter, username);
+    }
+    buffer_append_string_len(filter, CONST_STR_LEN(")"));
+
+    for (size_t i = 0; i < groups->used; ++i) {
+        char *base = groups->data[i]->key->ptr;
+        LDAPMessage *lm = mod_authn_ldap_search(srv, s, base, filter->ptr);
+        if (NULL != lm) {
+            int count = ldap_count_entries(s->ldap, lm);
+            ldap_msgfree(lm);
+            if (count > 0) {
+                rc = HANDLER_GO_ON;
+                break;
+            }
+        }
+    }
+
+    buffer_free(filter);
+    return rc;
+}
+
 static handler_t mod_authn_ldap_basic(server *srv, connection *con, void *p_d, const http_auth_require_t *require, const buffer *username, const char *pw) {
     plugin_data *p = (plugin_data *)p_d;
     LDAP *ld;
     char *dn;
     buffer *template;
+    handler_t rc;
 
     mod_authn_ldap_patch_connection(srv, con, p);
 
     if (pw[0] == '\0' && !p->conf.auth_ldap_allow_empty_pw)
         return HANDLER_ERROR;
-
-    /* check username
-     *
-     * we have to protect againt username which modifies our filter in
-     * an unpleasant way
-     */
-
-    for (size_t i = 0, len = buffer_string_length(username); i < len; i++) {
-        char c = username->ptr[i];
-
-        if (!isalpha(c) &&
-            !isdigit(c) &&
-            (c != ' ') &&
-            (c != '@') &&
-            (c != '-') &&
-            (c != '_') &&
-            (c != '.') ) {
-
-            log_error_write(srv, __FILE__, __LINE__, "sbd",
-                            "ldap: invalid character (- _.@a-zA-Z0-9 allowed) "
-                            "in username:", username, i);
-
-            con->http_status = 400; /* Bad Request */
-            con->mode = DIRECT;
-            return HANDLER_FINISHED;
-        }
-    }
 
     template = p->conf.auth_ldap_filter;
     if (buffer_string_is_empty(template)) {
@@ -428,14 +602,14 @@ static handler_t mod_authn_ldap_basic(server *srv, connection *con, void *p_d, c
     if (*template->ptr == ',') {
         /* special-case filter template beginning with ',' to be explicit DN */
         buffer_append_string_len(p->ldap_filter, CONST_STR_LEN("uid="));
-        buffer_append_string_buffer(p->ldap_filter, username);
+        mod_authn_append_ldap_dn_escape(p->ldap_filter, username);
         buffer_append_string_buffer(p->ldap_filter, template);
         dn = p->ldap_filter->ptr;
     } else {
         for (char *b = template->ptr, *d; *b; b = d+1) {
-            if (NULL != (d = strchr(b, '$'))) {
+            if (NULL != (d = strchr(b, '?'))) {
                 buffer_append_string_len(p->ldap_filter, b, (size_t)(d - b));
-                buffer_append_string_buffer(p->ldap_filter, username);
+                mod_authn_append_ldap_filter_escape(p->ldap_filter, username);
             } else {
                 d = template->ptr + buffer_string_length(template);
                 buffer_append_string_len(p->ldap_filter, b, (size_t)(d - b));
@@ -467,10 +641,19 @@ static handler_t mod_authn_ldap_basic(server *srv, connection *con, void *p_d, c
     }
 
     ldap_unbind_ext_s(ld, NULL, NULL); /* disconnect */
+
+    if (http_auth_match_rules(require, username->ptr, NULL, NULL)) {
+        rc = HANDLER_GO_ON; /* access granted */
+    } else {
+        rc = HANDLER_ERROR;
+        if (require->group->used) {
+            /*(must not re-use p->ldap_filter, since it might be used for dn)*/
+            rc = mod_authn_ldap_memberOf(srv, &p->conf, require, username, dn);
+        }
+    }
+
     if (dn != p->ldap_filter->ptr) ldap_memfree(dn);
-    return http_auth_match_rules(require, username->ptr, NULL, NULL)
-      ? HANDLER_GO_ON  /* access granted */
-      : HANDLER_ERROR;
+    return rc;
 }
 
 int mod_authn_ldap_plugin_init(plugin *p);
