@@ -72,6 +72,7 @@ void start_lighttpd(void)
 			"\"mod_cgi\",\n"
 			"\"mod_compress\",\n"
 			"\"mod_accesslog\"\n"
+			"\"mod_openssl\"\n"
 			")\n\n"
 			"server.indexfiles           = ( \"index.php\", \"index.html\", \"index.htm\" )\n\n"
 			"mimetype.assign             = (\n"
