@@ -8,7 +8,6 @@
 #include "plugin.h"
 #include "stat_cache.h"
 
-#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -246,6 +245,12 @@ SETDEFAULTS_FUNC(mod_expire_set_defaults) {
 			return HANDLER_ERROR;
 		}
 
+		if (!array_is_kvstring(s->expire_url)) {
+			log_error_write(srv, __FILE__, __LINE__, "s",
+					"unexpected value for expire.url; expected list of \"urlpath\" => \"expiration\"");
+			return HANDLER_ERROR;
+		}
+
 		for (k = 0; k < s->expire_url->used; k++) {
 			data_string *ds = (data_string *)s->expire_url->data[k];
 
@@ -255,6 +260,12 @@ SETDEFAULTS_FUNC(mod_expire_set_defaults) {
 						"parsing expire.url failed:", ds->value);
 				return HANDLER_ERROR;
 			}
+		}
+
+		if (!array_is_kvstring(s->expire_mimetypes)) {
+			log_error_write(srv, __FILE__, __LINE__, "s",
+					"unexpected value for expire.mimetypes; expected list of \"mimetype\" => \"expiration\"");
+			return HANDLER_ERROR;
 		}
 
 		for (k = 0; k < s->expire_mimetypes->used; k++) {

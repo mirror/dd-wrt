@@ -6,7 +6,6 @@
 
 #include "plugin.h"
 
-#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -84,6 +83,18 @@ SETDEFAULTS_FUNC(mod_access_set_defaults) {
 		p->config_storage[i] = s;
 
 		if (0 != config_insert_values_global(srv, config->value, cv, i == 0 ? T_CONFIG_SCOPE_SERVER : T_CONFIG_SCOPE_CONNECTION)) {
+			return HANDLER_ERROR;
+		}
+
+		if (!array_is_vlist(s->access_deny)) {
+			log_error_write(srv, __FILE__, __LINE__, "s",
+					"unexpected value for url.access-deny; expected list of \"suffix\"");
+			return HANDLER_ERROR;
+		}
+
+		if (!array_is_vlist(s->access_allow)) {
+			log_error_write(srv, __FILE__, __LINE__, "s",
+					"unexpected value for url.access-allow; expected list of \"suffix\"");
 			return HANDLER_ERROR;
 		}
 	}

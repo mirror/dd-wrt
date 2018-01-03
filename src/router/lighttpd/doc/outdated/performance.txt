@@ -69,7 +69,6 @@ OS           Method     Config Value
 ============ ========== ===============
 all          select     select
 Unix         poll       poll
-Linux 2.4+   rt-signals linux-rtsig
 Linux 2.6+   epoll      linux-sysepoll
 Solaris      /dev/poll  solaris-devpoll
 FreeBSD, ... kqueue     freebsd-kqueue
@@ -122,7 +121,7 @@ another backend set: ::
 
 You can find more information about network backend in:
 
-  http://blog.lighttpd.net/articles/2005/11/11/optimizing-lighty-for-high-concurrent-large-file-downloads
+  https://blog.lighttpd.net/articles/2005/11/11/optimizing-lighty-for-high-concurrent-large-file-downloads
 
 
 Max Connections

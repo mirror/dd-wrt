@@ -5,10 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <stdio.h>
-#include <assert.h>
-#include <ctype.h>
-
 static const char hex_chars[] = "0123456789abcdef";
 
 /**
@@ -238,20 +234,19 @@ void buffer_append_string_buffer(buffer *b, const buffer *src) {
 
 void buffer_append_uint_hex(buffer *b, uintmax_t value) {
 	char *buf;
-	int shift = 0;
+	unsigned int shift = 0;
 
 	{
 		uintmax_t copy = value;
 		do {
 			copy >>= 8;
-			shift += 2; /* counting nibbles (4 bits) */
+			shift += 8; /* counting bits */
 		} while (0 != copy);
 	}
 
-	buf = buffer_string_prepare_append(b, shift);
-	buffer_commit(b, shift); /* will fill below */
+	buf = buffer_string_prepare_append(b, shift >> 2); /*nibbles (4 bits)*/
+	buffer_commit(b, shift >> 2); /* will fill below */
 
-	shift <<= 2; /* count bits now */
 	while (shift > 0) {
 		shift -= 4;
 		*(buf++) = hex_chars[(value >> shift) & 0x0F];
@@ -377,30 +372,6 @@ char hex2int(unsigned char hex) {
 	return value;
 }
 
-char * buffer_search_string_len(buffer *b, const char *needle, size_t len) {
-	size_t i;
-	force_assert(NULL != b);
-	force_assert(0 != len && NULL != needle); /* empty needles not allowed */
-
-	if (b->used < len) return NULL;
-
-	for(i = 0; i < b->used - len; i++) {
-		if (0 == memcmp(b->ptr + i, needle, len)) {
-			return b->ptr + i;
-		}
-	}
-
-	return NULL;
-}
-
-int buffer_is_empty(const buffer *b) {
-	return NULL == b || 0 == b->used;
-}
-
-int buffer_string_is_empty(const buffer *b) {
-	return 0 == buffer_string_length(b);
-}
-
 /**
  * check if two buffer contain the same data
  *
@@ -488,6 +459,27 @@ void buffer_copy_string_hex(buffer *b, const char *in, size_t in_len) {
 	buffer_string_set_length(b, 2 * in_len);
 	li_tohex(b->ptr, buffer_string_length(b)+1, in, in_len);
 }
+
+
+void buffer_substr_replace (buffer * const b, const size_t offset,
+                            const size_t len, const buffer * const replace)
+{
+    const size_t blen = buffer_string_length(b);
+    const size_t rlen = buffer_string_length(replace);
+
+    if (rlen > len) {
+        buffer_string_set_length(b, blen-len+rlen);
+        memmove(b->ptr+offset+rlen, b->ptr+offset+len, blen-offset-len);
+    }
+
+    memcpy(b->ptr+offset, replace->ptr, rlen);
+
+    if (rlen < len) {
+        memmove(b->ptr+offset+rlen, b->ptr+offset+len, blen-offset-len);
+        buffer_string_set_length(b, blen-len+rlen);
+    }
+}
+
 
 /* everything except: ! ( ) * - . 0-9 A-Z _ a-z */
 static const char encoded_chars_rel_uri_part[] = {
@@ -1022,11 +1014,14 @@ void buffer_to_upper(buffer *b) {
 	}
 }
 
+
+#include <stdio.h>
+
 #ifdef HAVE_LIBUNWIND
 # define UNW_LOCAL_ONLY
 # include <libunwind.h>
 
-void print_backtrace(FILE *file) {
+static void print_backtrace(FILE *file) {
 	unw_cursor_t cursor;
 	unw_context_t context;
 	int ret;
@@ -1087,7 +1082,7 @@ error:
 	fprintf(file, "Error while generating backtrace: unwind error %i\n", (int) -ret);
 }
 #else
-void print_backtrace(FILE *file) {
+static void print_backtrace(FILE *file) {
 	UNUSED(file);
 }
 #endif

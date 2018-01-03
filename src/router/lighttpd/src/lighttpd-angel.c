@@ -38,12 +38,15 @@ static void sigaction_handler(int sig, siginfo_t *si, void *context) {
 	switch (sig) {
 	case SIGINT: 
 	case SIGTERM:
+	case SIGUSR1:
+		if (pid <= 0) break;
 		memcpy(&last_sigterm_info, si, sizeof(*si));
 
 		/** forward the sig to the child */
 		kill(pid, sig);
 		break;
 	case SIGHUP: /** do a graceful restart */
+		if (pid <= 0) break;
 		memcpy(&last_sighup_info, si, sizeof(*si));
 
 		/** do a graceful shutdown on the main process and start a new child */
@@ -65,6 +68,10 @@ int main(int argc, char **argv) {
 	struct sigaction act;
 
 	UNUSED(argc);
+	*(const char **)&argv[0] = BINPATH;
+      #ifdef __COVERITY__
+	__coverity_tainted_data_sanitize__(argv);
+      #endif
 
 	/**
 	 * we are running as root BEWARE
@@ -81,6 +88,7 @@ int main(int argc, char **argv) {
 
 	sigaction(SIGINT,  &act, NULL);
 	sigaction(SIGTERM, &act, NULL);
+	sigaction(SIGUSR1, &act, NULL);
 	sigaction(SIGHUP,  &act, NULL);
 	sigaction(SIGALRM, &act, NULL);
 	sigaction(SIGCHLD, &act, NULL);
@@ -99,11 +107,10 @@ int main(int argc, char **argv) {
 			if (0 == pid) {
 				/* i'm the child */
 
-				argv[0] = BINPATH;
-
-				execvp(BINPATH, argv);
-
-				exit(1);
+				/* intentionally pass argv params */
+				/* coverity[tainted_string : FALSE] */
+				execvp(argv[0], argv);
+				_exit(1);
 			} else if (-1 == pid) {
 				/** error */
 

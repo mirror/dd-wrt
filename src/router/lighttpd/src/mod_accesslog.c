@@ -1,6 +1,7 @@
 #include "first.h"
 
 #include "base.h"
+#include "fdevent.h"
 #include "log.h"
 #include "buffer.h"
 
@@ -9,15 +10,12 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 #include <time.h>
-
-#include <stdio.h>
 
 #ifdef HAVE_SYSLOG_H
 # include <syslog.h>
@@ -447,7 +445,11 @@ FREE_FUNC(mod_accesslog_free) {
 				}
 			}
 
-			if (s->log_access_fd != -1) close(s->log_access_fd);
+			if (s->log_access_fd != -1) {
+				if (buffer_string_is_empty(s->access_logfile) || *s->access_logfile->ptr != '|') {
+					close(s->log_access_fd);
+				} /*(else piped loggers closed in fdevent_close_logger_pipes())*/
+			}
 
 			buffer_free(s->ts_accesslog_str);
 			buffer_free(s->access_logbuffer);
@@ -581,8 +583,6 @@ SETDEFAULTS_FUNC(log_access_open) {
 					f->opt |= FORMAT_FLAG_TIME_USEC;
 					srv->srvconf.high_precision_timestamps = 1;
 				} else if (FORMAT_TIME_USED == f->field) {
-					if (f->opt & ~(FORMAT_FLAG_TIME_SEC)) srv->srvconf.high_precision_timestamps = 1;
-
 					if (buffer_string_is_empty(f->string)
 					      || buffer_is_equal_string(f->string, CONST_STR_LEN("s"))
 					      || buffer_is_equal_string(f->string, CONST_STR_LEN("sec")))  f->opt |= FORMAT_FLAG_TIME_SEC;
@@ -598,6 +598,8 @@ SETDEFAULTS_FUNC(log_access_open) {
 
 						return HANDLER_ERROR;
 					}
+
+					if (f->opt & ~(FORMAT_FLAG_TIME_SEC)) srv->srvconf.high_precision_timestamps = 1;
 				} else if (FORMAT_COOKIE == f->field) {
 					if (buffer_string_is_empty(f->string)) f->type = FIELD_STRING; /*(blank)*/
 				}
@@ -632,19 +634,20 @@ SETDEFAULTS_FUNC(log_access_open) {
 
 		if (srv->srvconf.preflight_check) continue;
 
-		if (-1 == (s->log_access_fd = open_logfile_or_pipe(srv, s->access_logfile->ptr)))
+		if (-1 == (s->log_access_fd = fdevent_open_logger(s->access_logfile->ptr))) {
+			log_error_write(srv, __FILE__, __LINE__, "SBSS",
+					"opening log '", s->access_logfile,
+					"' failed: ", strerror(errno));
 			return HANDLER_ERROR;
-
+		}
 	}
 
 	return HANDLER_GO_ON;
 }
 
-SIGHUP_FUNC(log_access_cycle) {
+static void log_access_flush(server *srv, void *p_d) {
 	plugin_data *p = p_d;
 	size_t i;
-
-	if (!p->config_storage) return HANDLER_GO_ON;
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		plugin_config *s = p->config_storage[i];
@@ -656,18 +659,31 @@ SIGHUP_FUNC(log_access_cycle) {
 
 			buffer_reset(s->access_logbuffer);
 		}
+	}
+}
 
+TRIGGER_FUNC(log_access_periodic_flush) {
+	/* flush buffered access logs every 4 seconds */
+	if (0 == (srv->cur_ts & 3)) log_access_flush(srv, p_d);
+	return HANDLER_GO_ON;
+}
+
+SIGHUP_FUNC(log_access_cycle) {
+	plugin_data *p = p_d;
+	size_t i;
+
+	if (!p->config_storage) return HANDLER_GO_ON;
+
+	log_access_flush(srv, p);
+
+	for (i = 0; i < srv->config_context->used; i++) {
+		plugin_config *s = p->config_storage[i];
 		if (s->use_syslog == 0
 			&& !buffer_string_is_empty(s->access_logfile)
 			&& s->access_logfile->ptr[0] != '|') {
 
-			if (-1 != s->log_access_fd) close(s->log_access_fd);
-
-			if (-1 == (s->log_access_fd =
-				   fdevent_open_cloexec(s->access_logfile->ptr, O_APPEND | O_WRONLY | O_CREAT | O_LARGEFILE, 0644))) {
-
+			if (-1 == fdevent_cycle_logger(s->access_logfile->ptr, &s->log_access_fd)) {
 				log_error_write(srv, __FILE__, __LINE__, "ss", "cycling access-log failed:", strerror(errno));
-
 				return HANDLER_ERROR;
 			}
 		}
@@ -929,14 +945,14 @@ REQUESTDONE_FUNC(log_access_write) {
 				}
 				break;
 			case FORMAT_HEADER:
-				if (NULL != (ds = (data_string *)array_get_element(con->request.headers, f->string->ptr))) {
+				if (NULL != (ds = (data_string *)array_get_element_klen(con->request.headers, CONST_BUF_LEN(f->string)))) {
 					accesslog_append_escaped(b, ds->value);
 				} else {
 					buffer_append_string_len(b, CONST_STR_LEN("-"));
 				}
 				break;
 			case FORMAT_RESPONSE_HEADER:
-				if (NULL != (ds = (data_string *)array_get_element(con->response.headers, f->string->ptr))) {
+				if (NULL != (ds = (data_string *)array_get_element_klen(con->response.headers, CONST_BUF_LEN(f->string)))) {
 					accesslog_append_escaped(b, ds->value);
 				} else {
 					buffer_append_string_len(b, CONST_STR_LEN("-"));
@@ -944,7 +960,7 @@ REQUESTDONE_FUNC(log_access_write) {
 				break;
 			case FORMAT_ENV:
 			case FORMAT_NOTE:
-				if (NULL != (ds = (data_string *)array_get_element(con->environment, f->string->ptr))) {
+				if (NULL != (ds = (data_string *)array_get_element_klen(con->environment, CONST_BUF_LEN(f->string)))) {
 					accesslog_append_escaped(b, ds->value);
 				} else {
 					buffer_append_string_len(b, CONST_STR_LEN("-"));
@@ -1122,6 +1138,7 @@ int mod_accesslog_plugin_init(plugin *p) {
 	p->cleanup     = mod_accesslog_free;
 
 	p->handle_request_done  = log_access_write;
+	p->handle_trigger       = log_access_periodic_flush;
 	p->handle_sighup        = log_access_cycle;
 
 	p->data        = NULL;

@@ -1,16 +1,14 @@
 #include "first.h"
 
 #include "base.h"
+#include "fdevent.h"
 #include "log.h"
 #include "buffer.h"
 
 #include "plugin.h"
 #include "response.h"
-#include "inet_ntop_cache.h"
 
-#include <ctype.h>
 #include <stdlib.h>
-#include <fcntl.h>
 #include <string.h>
 
 #if defined(HAVE_GDBM_H)
@@ -184,7 +182,7 @@ SETDEFAULTS_FUNC(mod_trigger_b4_dl_set_defaults) {
 						"gdbm-open failed");
 				return HANDLER_ERROR;
 			}
-			fd_close_on_exec(gdbm_fdesc(s->db));
+			fdevent_setfd_cloexec(gdbm_fdesc(s->db));
 		}
 #endif
 #if defined(HAVE_PCRE_H)
@@ -211,6 +209,12 @@ SETDEFAULTS_FUNC(mod_trigger_b4_dl_set_defaults) {
 			}
 		}
 #endif
+
+		if (!array_is_vlist(s->mc_hosts)) {
+			log_error_write(srv, __FILE__, __LINE__, "s",
+					"unexpected value for trigger-before-download.memcache-hosts; expected list of \"host\"");
+			return HANDLER_ERROR;
+		}
 
 		if (s->mc_hosts->used) {
 #if defined(USE_MEMCACHED)
@@ -357,7 +361,7 @@ URIHANDLER_FUNC(mod_trigger_b4_dl_uri_handler) {
 
 		/* memcache can't handle spaces */
 	} else {
-		remote_ip = inet_ntop_cache_get_ip(srv, &(con->dst_addr));
+		remote_ip = con->dst_addr_buf->ptr;
 	}
 
 	if (p->conf.debug) {

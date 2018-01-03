@@ -2,6 +2,10 @@
 #define _CHUNK_H_
 #include "first.h"
 
+#ifdef _AIX  /*(AIX might #define mmap mmap64)*/
+#include "sys-mmap.h"
+#endif
+
 #include "buffer.h"
 #include "array.h"
 
@@ -50,6 +54,7 @@ typedef struct {
 } chunkqueue;
 
 chunkqueue *chunkqueue_init(void);
+void chunkqueue_set_tempdirs_default_reset (void);
 void chunkqueue_set_tempdirs_default (array *tempdirs, unsigned int upload_temp_file_size);
 void chunkqueue_append_file(chunkqueue *cq, buffer *fn, off_t offset, off_t len); /* copies "fn" */
 void chunkqueue_append_file_fd(chunkqueue *cq, buffer *fn, int fd, off_t offset, off_t len); /* copies "fn" */
@@ -87,10 +92,15 @@ void chunkqueue_steal(chunkqueue *dest, chunkqueue *src, off_t len);
 struct server;
 int chunkqueue_steal_with_tempfiles(struct server *srv, chunkqueue *dest, chunkqueue *src, off_t len);
 
+int chunkqueue_open_file_chunk(struct server *srv, chunkqueue *cq);
+
 off_t chunkqueue_length(chunkqueue *cq);
 void chunkqueue_free(chunkqueue *cq);
 void chunkqueue_reset(chunkqueue *cq);
 
-int chunkqueue_is_empty(chunkqueue *cq);
+static inline int chunkqueue_is_empty(const chunkqueue *cq);
+static inline int chunkqueue_is_empty(const chunkqueue *cq) {
+	return NULL == cq->first;
+}
 
 #endif

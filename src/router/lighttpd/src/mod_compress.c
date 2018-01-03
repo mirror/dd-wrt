@@ -13,14 +13,12 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "sys-strings.h"
 
-#include <assert.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #include <errno.h>
 #include <time.h>
 
@@ -211,6 +209,18 @@ SETDEFAULTS_FUNC(mod_compress_setdefaults) {
 
 		if (!buffer_string_is_empty(srv->tmp_buf)) {
 			s->max_loadavg = strtod(srv->tmp_buf->ptr, NULL);
+		}
+
+		if (!array_is_vlist(s->compress)) {
+			log_error_write(srv, __FILE__, __LINE__, "s",
+					"unexpected value for compress.filetype; expected list of \"mimetype\"");
+			return HANDLER_ERROR;
+		}
+
+		if (!array_is_vlist(encodings_arr)) {
+			log_error_write(srv, __FILE__, __LINE__, "s",
+					"unexpected value for compress.allowed-encodings; expected list of \"encoding\"");
+			return HANDLER_ERROR;
 		}
 
 		if (encodings_arr->used) {
@@ -881,12 +891,6 @@ PHYSICALPATH_FUNC(mod_compress_physical) {
 
 	for (m = 0; m < p->conf.compress->used; m++) {
 		data_string *compress_ds = (data_string *)p->conf.compress->data[m];
-
-		if (!compress_ds) {
-			log_error_write(srv, __FILE__, __LINE__, "sbb", "evil", con->physical.path, con->uri.path);
-
-			return HANDLER_GO_ON;
-		}
 
 		if (buffer_is_equal(compress_ds->value, sce->content_type)
 		    || (content_type && buffer_is_equal(compress_ds->value, content_type))) {

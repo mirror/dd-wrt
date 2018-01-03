@@ -164,32 +164,22 @@ FREE_FUNC(mod_rewrite_free) {
 	return HANDLER_GO_ON;
 }
 
-static int parse_config_entry(server *srv, array *ca, rewrite_rule_buffer *kvb, const char *option, int once) {
+static int parse_config_entry(server *srv, array *ca, rewrite_rule_buffer *kvb, const char *option, size_t olen, int once) {
 	data_unset *du;
 
-	if (NULL != (du = array_get_element(ca, option))) {
+	if (NULL != (du = array_get_element_klen(ca, option, olen))) {
 		data_array *da;
 		size_t j;
 
-		if (du->type != TYPE_ARRAY) {
-			log_error_write(srv, __FILE__, __LINE__, "sss",
-					"unexpected type for key: ", option, "array of strings");
+		da = (data_array *)du;
 
+		if (du->type != TYPE_ARRAY || !array_is_kvstring(da->value)) {
+			log_error_write(srv, __FILE__, __LINE__, "SSS",
+					"unexpected value for ", option, "; expected list of \"regex\" => \"subst\"");
 			return HANDLER_ERROR;
 		}
 
-		da = (data_array *)du;
-
 		for (j = 0; j < da->value->used; j++) {
-			if (da->value->data[j]->type != TYPE_STRING) {
-				log_error_write(srv, __FILE__, __LINE__, "sssbs",
-						"unexpected type for key: ",
-						option,
-						"[", da->value->data[j]->key, "](string)");
-
-				return HANDLER_ERROR;
-			}
-
 			if (0 != rewrite_rule_buffer_append(kvb,
 							    ((data_string *)(da->value->data[j]))->key,
 							    ((data_string *)(da->value->data[j]))->value,
@@ -204,10 +194,10 @@ static int parse_config_entry(server *srv, array *ca, rewrite_rule_buffer *kvb, 
 	return 0;
 }
 #else
-static int parse_config_entry(server *srv, array *ca, const char *option) {
+static int parse_config_entry(server *srv, array *ca, const char *option, size_t olen) {
 	static int logged_message = 0;
 	if (logged_message) return 0;
-	if (NULL != array_get_element(ca, option)) {
+	if (NULL != array_get_element_klen(ca, option, olen)) {
 		logged_message = 1;
 		log_error_write(srv, __FILE__, __LINE__, "s",
 			"pcre support is missing, please install libpcre and the headers");
@@ -271,12 +261,12 @@ SETDEFAULTS_FUNC(mod_rewrite_set_defaults) {
 #ifndef HAVE_PCRE_H
 # define parse_config_entry(srv, ca, x, option, y) parse_config_entry(srv, ca, option)
 #endif
-		parse_config_entry(srv, config->value, s->rewrite, "url.rewrite-once",      1);
-		parse_config_entry(srv, config->value, s->rewrite, "url.rewrite-final",     1);
-		parse_config_entry(srv, config->value, s->rewrite_NF, "url.rewrite-if-not-file",   1);
-		parse_config_entry(srv, config->value, s->rewrite_NF, "url.rewrite-repeat-if-not-file", 0);
-		parse_config_entry(srv, config->value, s->rewrite, "url.rewrite",           1);
-		parse_config_entry(srv, config->value, s->rewrite, "url.rewrite-repeat",    0);
+		parse_config_entry(srv, config->value, s->rewrite, CONST_STR_LEN("url.rewrite-once"),      1);
+		parse_config_entry(srv, config->value, s->rewrite, CONST_STR_LEN("url.rewrite-final"),     1);
+		parse_config_entry(srv, config->value, s->rewrite_NF, CONST_STR_LEN("url.rewrite-if-not-file"),   1);
+		parse_config_entry(srv, config->value, s->rewrite_NF, CONST_STR_LEN("url.rewrite-repeat-if-not-file"), 0);
+		parse_config_entry(srv, config->value, s->rewrite, CONST_STR_LEN("url.rewrite"),           1);
+		parse_config_entry(srv, config->value, s->rewrite, CONST_STR_LEN("url.rewrite-repeat"),    0);
 	}
 
 	return HANDLER_GO_ON;
@@ -474,6 +464,7 @@ URIHANDLER_FUNC(mod_rewrite_physical) {
 	switch(r = process_rewrite_rules(srv, con, p, p->conf.rewrite_NF)) {
 	case HANDLER_COMEBACK:
 		buffer_reset(con->physical.path);
+		/* fall through */
 	default:
 		return r;
 	}

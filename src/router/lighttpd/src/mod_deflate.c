@@ -107,8 +107,10 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
+#include <unistd.h>     /* read() */
 
 #include "base.h"
+#include "fdevent.h"
 #include "log.h"
 #include "buffer.h"
 #include "etag.h"
@@ -322,6 +324,18 @@ SETDEFAULTS_FUNC(mod_deflate_setdefaults) {
 
 		if (!buffer_string_is_empty(p->tmp_buf)) {
 			s->max_loadavg = strtod(p->tmp_buf->ptr, NULL);
+		}
+
+		if (!array_is_vlist(s->mimetypes)) {
+			log_error_write(srv, __FILE__, __LINE__, "s",
+					"unexpected value for deflate.mimetypes; expected list of \"mimetype\"");
+			return HANDLER_ERROR;
+		}
+
+		if (!array_is_vlist(p->encodings)) {
+			log_error_write(srv, __FILE__, __LINE__, "s",
+					"unexpected value for deflate.allowed-encodings; expected list of \"encoding\"");
+			return HANDLER_ERROR;
 		}
 
 		if (p->encodings->used) {
@@ -1036,7 +1050,7 @@ CONNECTION_FUNC(mod_deflate_handle_response_start) {
 	/*(current implementation requires response be complete)*/
 	if (!con->file_finished) return HANDLER_GO_ON;
 	if (con->request.http_method == HTTP_METHOD_HEAD) return HANDLER_GO_ON;
-	if (con->parsed_response & HTTP_TRANSFER_ENCODING_CHUNKED) return HANDLER_GO_ON;
+	if (con->parsed_response & HTTP_TRANSFER_ENCODING) return HANDLER_GO_ON;
 
 	/* disable compression for some http status types. */
 	switch(con->http_status) {
@@ -1245,7 +1259,6 @@ int mod_deflate_plugin_init(plugin *p) {
 	p->cleanup	= mod_deflate_free;
 	p->set_defaults	= mod_deflate_setdefaults;
 	p->connection_reset	= mod_deflate_cleanup;
-	p->handle_connection_close	= mod_deflate_cleanup;
 	p->handle_response_start	= mod_deflate_handle_response_start;
 
 	p->data        = NULL;

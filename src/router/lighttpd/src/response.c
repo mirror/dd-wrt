@@ -1,6 +1,7 @@
 #include "first.h"
 
 #include "response.h"
+#include "fdevent.h"
 #include "keyvalue.h"
 #include "log.h"
 #include "stat_cache.h"
@@ -15,17 +16,9 @@
 
 #include <limits.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <assert.h>
-
-#include <stdio.h>
-
-#include "sys-socket.h"
 
 int http_response_write_header(server *srv, connection *con) {
 	buffer *b;
@@ -51,18 +44,13 @@ int http_response_write_header(server *srv, connection *con) {
 		con->keep_alive_idle = con->conf.max_keep_alive_idle;
 	}
 
-	if (con->request.http_version != HTTP_VERSION_1_1 || con->keep_alive == 0) {
-		if (con->keep_alive) {
-			response_header_overwrite(srv, con, CONST_STR_LEN("Connection"), CONST_STR_LEN("keep-alive"));
-		} else {
-			response_header_overwrite(srv, con, CONST_STR_LEN("Connection"), CONST_STR_LEN("close"));
-		}
+	if ((con->parsed_response & HTTP_UPGRADE) && con->request.http_version == HTTP_VERSION_1_1) {
+		response_header_overwrite(srv, con, CONST_STR_LEN("Connection"), CONST_STR_LEN("upgrade"));
+	} else if (0 == con->keep_alive) {
+		response_header_overwrite(srv, con, CONST_STR_LEN("Connection"), CONST_STR_LEN("close"));
+	} else if (con->request.http_version == HTTP_VERSION_1_0) {/*(&& con->keep_alive != 0)*/
+		response_header_overwrite(srv, con, CONST_STR_LEN("Connection"), CONST_STR_LEN("keep-alive"));
 	}
-
-	if (con->response.transfer_encoding & HTTP_TRANSFER_ENCODING_CHUNKED) {
-		response_header_overwrite(srv, con, CONST_STR_LEN("Transfer-Encoding"), CONST_STR_LEN("chunked"));
-	}
-
 
 	/* add all headers */
 	for (i = 0; i < con->response.headers->used; i++) {
@@ -70,9 +58,21 @@ int http_response_write_header(server *srv, connection *con) {
 
 		ds = (data_string *)con->response.headers->data[i];
 
-		if (!buffer_is_empty(ds->value) && !buffer_is_empty(ds->key) &&
-		    0 != strncasecmp(ds->key->ptr, CONST_STR_LEN("X-LIGHTTPD-")) &&
-			0 != strncasecmp(ds->key->ptr, CONST_STR_LEN("X-Sendfile"))) {
+		if (buffer_string_is_empty(ds->value) || buffer_string_is_empty(ds->key)) continue;
+		if (0 == strncasecmp(ds->key->ptr, CONST_STR_LEN("X-Sendfile"))) continue;
+		if (0 == strncasecmp(ds->key->ptr, CONST_STR_LEN("X-LIGHTTPD-"))) {
+			if (0 == strncasecmp(ds->key->ptr+sizeof("X-LIGHTTPD-")-1, CONST_STR_LEN("KBytes-per-second"))) {
+				/* "X-LIGHTTPD-KBytes-per-second" */
+				long limit = strtol(ds->value->ptr, NULL, 10);
+				if (limit > 0
+				    && (limit < con->conf.kbytes_per_second
+				        || 0 == con->conf.kbytes_per_second)) {
+					if (limit > USHRT_MAX) limit= USHRT_MAX;
+					con->conf.kbytes_per_second = limit;
+				}
+			}
+			continue;
+		} else {
 			if (0 == strcasecmp(ds->key->ptr, "Date")) have_date = 1;
 			if (0 == strcasecmp(ds->key->ptr, "Server")) have_server = 1;
 			if (0 == strcasecmp(ds->key->ptr, "Content-Encoding") && 304 == con->http_status) continue;
@@ -127,102 +127,6 @@ int http_response_write_header(server *srv, connection *con) {
 
 	return 0;
 }
-
-#ifdef USE_OPENSSL
-#include <openssl/bn.h>
-#include <openssl/err.h>
-static void https_add_ssl_client_entries(server *srv, connection *con) {
-	X509 *xs;
-	X509_NAME *xn;
-	int i, nentries;
-
-	long vr = SSL_get_verify_result(con->ssl);
-	if (vr != X509_V_OK) {
-		char errstr[256];
-		ERR_error_string_n(vr, errstr, sizeof(errstr));
-		buffer_copy_string_len(srv->tmp_buf, CONST_STR_LEN("FAILED:"));
-		buffer_append_string(srv->tmp_buf, errstr);
-		array_set_key_value(con->environment,
-				    CONST_STR_LEN("SSL_CLIENT_VERIFY"),
-				    CONST_BUF_LEN(srv->tmp_buf));
-		return;
-	} else if (!(xs = SSL_get_peer_certificate(con->ssl))) {
-		array_set_key_value(con->environment,
-				    CONST_STR_LEN("SSL_CLIENT_VERIFY"),
-				    CONST_STR_LEN("NONE"));
-		return;
-	} else {
-		array_set_key_value(con->environment,
-				    CONST_STR_LEN("SSL_CLIENT_VERIFY"),
-				    CONST_STR_LEN("SUCCESS"));
-	}
-
-	buffer_copy_string_len(srv->tmp_buf, CONST_STR_LEN("SSL_CLIENT_S_DN_"));
-	xn = X509_get_subject_name(xs);
-	for (i = 0, nentries = X509_NAME_entry_count(xn); i < nentries; ++i) {
-		int xobjnid;
-		const char * xobjsn;
-		X509_NAME_ENTRY *xe;
-
-		if (!(xe = X509_NAME_get_entry(xn, i))) {
-			continue;
-		}
-		xobjnid = OBJ_obj2nid((ASN1_OBJECT*)X509_NAME_ENTRY_get_object(xe));
-		xobjsn = OBJ_nid2sn(xobjnid);
-		if (xobjsn) {
-			buffer_string_set_length(srv->tmp_buf, sizeof("SSL_CLIENT_S_DN_")-1);
-			buffer_append_string(srv->tmp_buf, xobjsn);
-			array_set_key_value(con->environment,
-					    CONST_BUF_LEN(srv->tmp_buf),
-					    (const char *)X509_NAME_ENTRY_get_data(xe)->data,
-					    X509_NAME_ENTRY_get_data(xe)->length);
-		}
-	}
-
-	{
-		ASN1_INTEGER *xsn = X509_get_serialNumber(xs);
-		BIGNUM *serialBN = ASN1_INTEGER_to_BN(xsn, NULL);
-		char *serialHex = BN_bn2hex(serialBN);
-		array_set_key_value(con->environment,
-				    CONST_STR_LEN("SSL_CLIENT_M_SERIAL"),
-				    serialHex, strlen(serialHex));
-		OPENSSL_free(serialHex);
-		BN_free(serialBN);
-	}
-
-	if (!buffer_string_is_empty(con->conf.ssl_verifyclient_username)) {
-		/* pick one of the exported values as "REMOTE_USER", for example
-		 * ssl.verifyclient.username   = "SSL_CLIENT_S_DN_UID" or "SSL_CLIENT_S_DN_emailAddress"
-		 */
-		data_string *ds = (data_string *)array_get_element(con->environment, con->conf.ssl_verifyclient_username->ptr);
-		if (ds) array_set_key_value(con->environment, CONST_STR_LEN("REMOTE_USER"), CONST_BUF_LEN(ds->value));
-	}
-
-	if (con->conf.ssl_verifyclient_export_cert) {
-		BIO *bio;
-		if (NULL != (bio = BIO_new(BIO_s_mem()))) {
-			data_string *envds;
-			int n;
-
-			PEM_write_bio_X509(bio, xs);
-			n = BIO_pending(bio);
-
-			if (NULL == (envds = (data_string *)array_get_unused_element(con->environment, TYPE_STRING))) {
-				envds = data_string_init();
-			}
-
-			buffer_copy_string_len(envds->key, CONST_STR_LEN("SSL_CLIENT_CERT"));
-			buffer_string_prepare_copy(envds->value, n);
-			BIO_read(bio, envds->value->ptr, n);
-			BIO_free(bio);
-			buffer_commit(envds->value, n);
-			array_replace(con->environment, (data_unset *)envds);
-		}
-	}
-	X509_free(xs);
-}
-#endif
-
 
 handler_t http_response_prepare(server *srv, connection *con) {
 	handler_t r;
@@ -283,12 +187,10 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		 *
 		 */
 
-		/* initial scheme value. can be overwritten for example by mod_extforward later */
-		if (con->srv_socket->is_ssl) {
-			buffer_copy_string_len(con->uri.scheme, CONST_STR_LEN("https"));
-		} else {
-			buffer_copy_string_len(con->uri.scheme, CONST_STR_LEN("http"));
-		}
+		/* take initial scheme value from connection-level state
+		 * (request con->uri.scheme can be overwritten for later,
+		 *  for example by mod_extforward or mod_magnet) */
+		buffer_copy_buffer(con->uri.scheme, con->proto);
 		buffer_copy_buffer(con->uri.authority, con->request.http_host);
 		buffer_to_lower(con->uri.authority);
 
@@ -326,20 +228,11 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		con->conditional_is_valid[COMP_HTTP_SCHEME] = 1;         /* Scheme:      */
 		con->conditional_is_valid[COMP_HTTP_HOST] = 1;           /* Host:        */
 		con->conditional_is_valid[COMP_HTTP_REMOTE_IP] = 1;      /* Client-IP */
-		con->conditional_is_valid[COMP_HTTP_REFERER] = 1;        /* Referer:     */
-		con->conditional_is_valid[COMP_HTTP_USER_AGENT] =        /* User-Agent:  */
-		con->conditional_is_valid[COMP_HTTP_LANGUAGE] = 1;       /* Accept-Language:  */
-		con->conditional_is_valid[COMP_HTTP_COOKIE] = 1;         /* Cookie:  */
 		con->conditional_is_valid[COMP_HTTP_REQUEST_METHOD] = 1; /* REQUEST_METHOD */
 		con->conditional_is_valid[COMP_HTTP_URL] = 1;            /* HTTPurl */
 		con->conditional_is_valid[COMP_HTTP_QUERY_STRING] = 1;   /* HTTPqs */
+		con->conditional_is_valid[COMP_HTTP_REQUEST_HEADER] = 1; /* HTTP request header */
 		config_patch_connection(srv, con);
-
-#ifdef USE_OPENSSL
-		if (con->srv_socket->is_ssl && con->conf.ssl_verifyclient) {
-			https_add_ssl_client_entries(srv, con);
-		}
-#endif
 
 		/* do we have to downgrade to 1.0 ? */
 		if (!con->conf.allow_http11) {
@@ -532,6 +425,9 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		buffer_append_slash(con->physical.path);
 		if (!buffer_string_is_empty(con->physical.rel_path) &&
 		    con->physical.rel_path->ptr[0] == '/') {
+		      #ifdef __COVERITY__
+			if (buffer_string_length(con->physical.rel_path) < 1) return HANDLER_ERROR;
+		      #endif
 			/* coverity[overflow_sink : FALSE] */
 			buffer_append_string_len(con->physical.path, con->physical.rel_path->ptr + 1, buffer_string_length(con->physical.rel_path) - 1);
 		} else {

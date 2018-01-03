@@ -1,5 +1,6 @@
 #include "first.h"
 
+#include "fdevent_impl.h"
 #include "fdevent.h"
 #include "buffer.h"
 #include "log.h"
@@ -8,13 +9,10 @@
 
 #include <unistd.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include <signal.h>
-#include <fcntl.h>
 
-#ifdef USE_POLL
+#ifdef FDEVENT_USE_POLL
 
 # ifdef HAVE_POLL_H
 #  include <poll.h>

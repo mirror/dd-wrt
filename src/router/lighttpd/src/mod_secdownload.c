@@ -7,11 +7,14 @@
 
 #include "plugin.h"
 
-#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(USE_OPENSSL)
+#if defined HAVE_LIBSSL && defined HAVE_OPENSSL_SSL_H
+#define USE_OPENSSL_CRYPTO
+#endif
+
+#ifdef USE_OPENSSL_CRYPTO
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 #endif
@@ -92,6 +95,8 @@ typedef struct {
 	secdl_algorithm algorithm;
 
 	unsigned int timeout;
+	unsigned short path_segments;
+	unsigned short hash_querystr;
 } plugin_config;
 
 typedef struct {
@@ -181,7 +186,7 @@ static int secdl_verify_mac(server *srv, plugin_config *config, const char* prot
 			return (32 == maclen) && const_time_memeq(mac, hexmd5, 32);
 		}
 	case SECDL_HMAC_SHA1:
-#if defined(USE_OPENSSL)
+#ifdef USE_OPENSSL_CRYPTO
 		{
 			unsigned char digest[20];
 			char base64_digest[27];
@@ -203,7 +208,7 @@ static int secdl_verify_mac(server *srv, plugin_config *config, const char* prot
 #endif
 		break;
 	case SECDL_HMAC_SHA256:
-#if defined(USE_OPENSSL)
+#ifdef USE_OPENSSL_CRYPTO
 		{
 			unsigned char digest[32];
 			char base64_digest[43];
@@ -278,6 +283,8 @@ SETDEFAULTS_FUNC(mod_secdownload_set_defaults) {
 		{ "secdownload.uri-prefix",    NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION }, /* 2 */
 		{ "secdownload.timeout",       NULL, T_CONFIG_INT,    T_CONFIG_SCOPE_CONNECTION }, /* 3 */
 		{ "secdownload.algorithm",     NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION }, /* 4 */
+		{ "secdownload.path-segments", NULL, T_CONFIG_SHORT,  T_CONFIG_SCOPE_CONNECTION }, /* 5 */
+		{ "secdownload.hash-querystr", NULL, T_CONFIG_BOOLEAN,T_CONFIG_SCOPE_CONNECTION }, /* 6 */
 		{ NULL,                        NULL, T_CONFIG_UNSET,  T_CONFIG_SCOPE_UNSET      }
 	};
 
@@ -295,12 +302,16 @@ SETDEFAULTS_FUNC(mod_secdownload_set_defaults) {
 		s->doc_root      = buffer_init();
 		s->uri_prefix    = buffer_init();
 		s->timeout       = 60;
+		s->path_segments = 0;
+		s->hash_querystr = 0;
 
 		cv[0].destination = s->secret;
 		cv[1].destination = s->doc_root;
 		cv[2].destination = s->uri_prefix;
 		cv[3].destination = &(s->timeout);
 		cv[4].destination = algorithm;
+		cv[5].destination = &(s->path_segments);
+		cv[6].destination = &(s->hash_querystr);
 
 		p->config_storage[i] = s;
 
@@ -318,14 +329,12 @@ SETDEFAULTS_FUNC(mod_secdownload_set_defaults) {
 					algorithm);
 				buffer_free(algorithm);
 				return HANDLER_ERROR;
-#if !defined(USE_OPENSSL)
+#ifndef USE_OPENSSL_CRYPTO
 			case SECDL_HMAC_SHA1:
 			case SECDL_HMAC_SHA256:
 				log_error_write(srv, __FILE__, __LINE__, "sb",
 					"unsupported secdownload.algorithm:",
 					algorithm);
-				buffer_free(algorithm);
-				return HANDLER_ERROR;
 #endif
 			default:
 				break;
@@ -400,6 +409,8 @@ static int mod_secdownload_patch_connection(server *srv, connection *con, plugin
 	PATCH(uri_prefix);
 	PATCH(timeout);
 	PATCH(algorithm);
+	PATCH(path_segments);
+	PATCH(hash_querystr);
 
 	/* skip the first, the global context */
 	for (i = 1; i < srv->config_context->used; i++) {
@@ -423,6 +434,10 @@ static int mod_secdownload_patch_connection(server *srv, connection *con, plugin
 				PATCH(timeout);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("secdownload.algorithm"))) {
 				PATCH(algorithm);
+			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("secdownload.path-segments"))) {
+				PATCH(path_segments);
+			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("secdownload.hash-querystr"))) {
+				PATCH(hash_querystr);
 			}
 		}
 	}
@@ -496,6 +511,30 @@ URIHANDLER_FUNC(mod_secdownload_uri_handler) {
 	}
 
 	rel_uri = ts_str + 8;
+
+	if (p->conf.path_segments) {
+		const char *rel_uri_end = rel_uri;
+		unsigned int count = p->conf.path_segments;
+		do {
+			rel_uri_end = strchr(rel_uri_end+1, '/');
+		} while (rel_uri_end && --count);
+		if (rel_uri_end) {
+			buffer_copy_string_len(srv->tmp_buf, protected_path,
+					       rel_uri_end - protected_path);
+			protected_path = srv->tmp_buf->ptr;
+		}
+	}
+
+	if (p->conf.hash_querystr && !buffer_is_empty(con->uri.query)) {
+		buffer *b = srv->tmp_buf;
+		if (protected_path != b->ptr) {
+			buffer_copy_string(b, protected_path);
+		}
+		buffer_append_string_len(b, CONST_STR_LEN("?"));
+		buffer_append_string_buffer(b, con->uri.query);
+		/* assign last in case b->ptr is reallocated */
+		protected_path = b->ptr;
+	}
 
 	if (!secdl_verify_mac(srv, &p->conf, protected_path, mac_str, mac_len)) {
 		con->http_status = 403;

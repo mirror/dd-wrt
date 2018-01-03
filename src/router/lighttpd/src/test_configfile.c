@@ -47,22 +47,7 @@ static void test_configfile_addrbuf_eq_remote_ip_mask (void) {
 	sock_addr rmt;
 
 	for (i = 0; i < (int)(sizeof(rmtmask)/sizeof(rmtmask[0])); ++i) {
-	      #ifndef HAVE_INET_PTON
-		rmt.ipv4.sin_family = AF_INET;
-		rmt.ipv4.sin_addr.s_addr = inet_addr(rmtmask[i].rmtstr);
-	      #else
-		if (rmtmask[i].rmtfamily == AF_INET) {
-			rmt.ipv4.sin_family = AF_INET;
-			inet_pton(AF_INET, rmtmask[i].rmtstr, &rmt.ipv4.sin_addr);
-		#ifdef HAVE_IPV6
-		} else if (rmtmask[i].rmtfamily == AF_INET6) {
-			rmt.ipv6.sin6_family = AF_INET6;
-			inet_pton(AF_INET6, rmtmask[i].rmtstr, &rmt.ipv6.sin6_addr);
-		#endif
-		} else {
-			continue;
-		}
-	      #endif
+		if (1 != sock_addr_inet_pton(&rmt, rmtmask[i].rmtstr, rmtmask[i].rmtfamily, 0)) exit(-1); /*(bad test)*/
 		buffer_copy_string(s, rmtmask[i].string);
 		slash = strchr(s->ptr,'/'); assert(slash);
 		m = config_addrbuf_eq_remote_ip_mask(NULL, s, slash, &rmt);
@@ -83,8 +68,3 @@ int main (void) {
 
 	return 0;
 }
-
-/*
- * stub functions (for linking)
- */
-void fd_close_on_exec(int fd) { UNUSED(fd); }

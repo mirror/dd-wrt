@@ -1,12 +1,13 @@
 #include "first.h"
 
+#include <stdlib.h>
+
+#include "fdevent_impl.h"
 #include "fdevent.h"
 #include "buffer.h"
 #include "log.h"
 
-#include <assert.h>
-
-#ifdef USE_LIBEV
+#ifdef FDEVENT_USE_LIBEV
 
 # include <ev.h>
 
@@ -100,7 +101,6 @@ static int fdevent_libev_poll(fdevents *ev, int timeout_ms) {
 
 	ev_timer_again(ev->libev_loop, &timeout_watcher);
 	ev_run(ev->libev_loop, EVRUN_ONCE);
-	fdevent_sched_run(ev->srv, ev);
 
 	return 0;
 }
@@ -136,6 +136,7 @@ static int fdevent_libev_reset(fdevents *ev) {
 
 int fdevent_libev_init(fdevents *ev) {
 	struct ev_timer * const timer = &timeout_watcher;
+	memset(timer, 0, sizeof(*timer));
 
 	ev->type = FDEVENT_HANDLER_LIBEV;
 #define SET(x) \
