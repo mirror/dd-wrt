@@ -10,7 +10,7 @@ TESTS=\
 	test_configfile$(EXEEXT)
 
 lemon$(BUILD_EXEEXT): lemon.c
-	gcc -o $@ $(srcdir)/lemon.c
+	$(AM_V_CC)$(CC_FOR_BUILD) $(CPPFLAGS_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) -o $@ $(srcdir)/lemon.c
 
 lighttpd_angel_SOURCES=lighttpd-angel.c
 
@@ -57,31 +57,33 @@ CLEANFILES = versionstamp.h versionstamp.h.tmp lemon$(BUILD_EXEEXT)
 
 common_src=base64.c buffer.c log.c \
 	keyvalue.c chunk.c  \
-	http_chunk.c stream.c fdevent.c \
+	http_chunk.c stream.c fdevent.c gw_backend.c \
 	stat_cache.c plugin.c joblist.c etag.c array.c \
 	data_string.c data_array.c \
-	data_integer.c md5.c data_fastcgi.c \
+	data_integer.c algo_sha1.c md5.c \
 	vector.c \
 	fdevent_select.c fdevent_libev.c \
 	fdevent_poll.c fdevent_linux_sysepoll.c \
 	fdevent_solaris_devpoll.c fdevent_solaris_port.c \
 	fdevent_freebsd_kqueue.c \
 	data_config.c \
-	inet_ntop_cache.c crc32.c \
+	crc32.c \
 	connections-glue.c \
 	configfile-glue.c \
 	http-header-glue.c \
 	http_auth.c \
-	network_write.c network_linux_sendfile.c \
-	network_write_mmap.c network_write_no_mmap.c \
-	network_freebsd_sendfile.c network_writev.c \
-	network_solaris_sendfilev.c network_openssl.c \
+	http_vhostdb.c \
 	rand.c \
+	request.c \
+	sock_addr.c \
 	splaytree.c status_counter.c \
-	safe_memclear.c network_darwin_sendfile.c
+	safe_memclear.c
 
-src = server.c response.c connections.c network.c \
-	configfile.c configparser.c request.c proc_open.c
+src = server.c response.c connections.c \
+	inet_ntop_cache.c \
+	network.c \
+	network_write.c \
+	configfile.c configparser.c proc_open.c
 
 lib_LTLIBRARIES =
 
@@ -94,7 +96,7 @@ lib_LTLIBRARIES += liblightcomp.la
 liblightcomp_la_SOURCES=$(common_src)
 liblightcomp_la_CFLAGS=$(AM_CFLAGS) $(LIBEV_CFLAGS)
 liblightcomp_la_LDFLAGS = $(common_ldflags)
-liblightcomp_la_LIBADD = $(PCRE_LIB) $(SSL_LIB) $(FAM_LIBS) $(LIBEV_LIBS) $(ATTR_LIB)
+liblightcomp_la_LIBADD = $(PCRE_LIB) $(CRYPTO_LIB) $(FAM_LIBS) $(LIBEV_LIBS) $(ATTR_LIB)
 common_libadd = liblightcomp.la
 else
 src += $(common_src)
@@ -149,12 +151,48 @@ mod_trigger_b4_dl_la_LDFLAGS = $(common_module_ldflags)
 mod_trigger_b4_dl_la_LIBADD = $(GDBM_LIB) $(MEMCACHED_LIB) $(PCRE_LIB) $(common_libadd)
 endif
 
+lib_LTLIBRARIES += mod_vhostdb.la
+mod_vhostdb_la_SOURCES = mod_vhostdb.c
+mod_vhostdb_la_LDFLAGS = $(common_module_ldflags)
+mod_vhostdb_la_LIBADD = $(common_libadd)
+
+if BUILD_WITH_LDAP
+lib_LTLIBRARIES += mod_vhostdb_ldap.la
+mod_vhostdb_ldap_la_SOURCES = mod_vhostdb_ldap.c
+mod_vhostdb_ldap_la_LDFLAGS = $(common_module_ldflags)
+mod_vhostdb_ldap_la_LIBADD = $(LDAP_LIB) $(LBER_LIB) $(common_libadd)
+endif
+
 if BUILD_WITH_MYSQL
 lib_LTLIBRARIES += mod_mysql_vhost.la
 mod_mysql_vhost_la_SOURCES = mod_mysql_vhost.c
 mod_mysql_vhost_la_LDFLAGS = $(common_module_ldflags)
 mod_mysql_vhost_la_LIBADD = $(MYSQL_LIBS) $(common_libadd)
 mod_mysql_vhost_la_CPPFLAGS = $(MYSQL_INCLUDE)
+endif
+
+if BUILD_WITH_MYSQL
+lib_LTLIBRARIES += mod_vhostdb_mysql.la
+mod_vhostdb_mysql_la_SOURCES = mod_vhostdb_mysql.c
+mod_vhostdb_mysql_la_LDFLAGS = $(common_module_ldflags)
+mod_vhostdb_mysql_la_LIBADD = $(MYSQL_LIBS) $(common_libadd)
+mod_vhostdb_mysql_la_CPPFLAGS = $(MYSQL_INCLUDE)
+endif
+
+if BUILD_WITH_PGSQL
+lib_LTLIBRARIES += mod_vhostdb_pgsql.la
+mod_vhostdb_pgsql_la_SOURCES = mod_vhostdb_pgsql.c
+mod_vhostdb_pgsql_la_LDFLAGS = $(common_module_ldflags)
+mod_vhostdb_pgsql_la_LIBADD = $(PGSQL_LIBS) $(common_libadd)
+mod_vhostdb_pgsql_la_CPPFLAGS = $(PGSQL_INCLUDE)
+endif
+
+if BUILD_WITH_DBI
+lib_LTLIBRARIES += mod_vhostdb_dbi.la
+mod_vhostdb_dbi_la_SOURCES = mod_vhostdb_dbi.c
+mod_vhostdb_dbi_la_LDFLAGS = $(common_module_ldflags)
+mod_vhostdb_dbi_la_LIBADD = $(DBI_LIBS) $(common_libadd)
+mod_vhostdb_dbi_la_CPPFLAGS = $(DBI_CFLAGS)
 endif
 
 lib_LTLIBRARIES += mod_cgi.la
@@ -220,7 +258,7 @@ mod_ssi_la_LIBADD = $(common_libadd)
 lib_LTLIBRARIES += mod_secdownload.la
 mod_secdownload_la_SOURCES = mod_secdownload.c
 mod_secdownload_la_LDFLAGS = $(common_module_ldflags)
-mod_secdownload_la_LIBADD = $(common_libadd)
+mod_secdownload_la_LIBADD = $(common_libadd) $(CRYPTO_LIB)
 
 #lib_LTLIBRARIES += mod_httptls.la
 #mod_httptls_la_SOURCES = mod_httptls.c
@@ -275,7 +313,7 @@ mod_auth_la_LIBADD = $(common_libadd)
 lib_LTLIBRARIES += mod_authn_file.la
 mod_authn_file_la_SOURCES = mod_authn_file.c
 mod_authn_file_la_LDFLAGS = $(common_module_ldflags)
-mod_authn_file_la_LIBADD = $(CRYPT_LIB) $(SSL_LIB) $(common_libadd)
+mod_authn_file_la_LIBADD = $(CRYPT_LIB) $(CRYPTO_LIB) $(common_libadd)
 
 if BUILD_WITH_KRB5
 lib_LTLIBRARIES += mod_authn_gssapi.la
@@ -297,6 +335,21 @@ mod_authn_mysql_la_SOURCES = mod_authn_mysql.c
 mod_authn_mysql_la_LDFLAGS = $(common_module_ldflags)
 mod_authn_mysql_la_LIBADD = $(CRYPT_LIB) $(MYSQL_LIBS) $(common_libadd)
 mod_authn_mysql_la_CPPFLAGS = $(MYSQL_INCLUDE)
+endif
+
+if BUILD_WITH_SASL
+lib_LTLIBRARIES += mod_authn_sasl.la
+mod_authn_sasl_la_SOURCES = mod_authn_sasl.c
+mod_authn_sasl_la_LDFLAGS = $(common_module_ldflags)
+mod_authn_sasl_la_LIBADD = $(SASL_LIBS) $(common_libadd)
+mod_authn_sasl_la_CPPFLAGS = $(SASL_CFLAGS)
+endif
+
+if BUILD_WITH_OPENSSL
+lib_LTLIBRARIES += mod_openssl.la
+mod_openssl_la_SOURCES = mod_openssl.c
+mod_openssl_la_LDFLAGS = $(common_module_ldflags)
+mod_openssl_la_LIBADD = $(SSL_LIB) $(common_libadd)
 endif
 
 lib_LTLIBRARIES += mod_rewrite.la
@@ -324,24 +377,30 @@ mod_uploadprogress_la_SOURCES = mod_uploadprogress.c
 mod_uploadprogress_la_LDFLAGS = $(common_module_ldflags)
 mod_uploadprogress_la_LIBADD = $(common_libadd)
 
+lib_LTLIBRARIES += mod_wstunnel.la
+mod_wstunnel_la_SOURCES = mod_wstunnel.c
+mod_wstunnel_la_LDFLAGS = $(common_module_ldflags)
+mod_wstunnel_la_LIBADD = $(common_libadd) $(CRYPTO_LIB)
+
 
 hdr = server.h base64.h buffer.h network.h log.h keyvalue.h \
 	response.h request.h fastcgi.h chunk.h \
 	first.h settings.h http_chunk.h \
-	md5.h http_auth.h stream.h \
-	fdevent.h connections.h base.h stat_cache.h \
+	algo_sha1.h md5.h http_auth.h http_vhostdb.h stream.h \
+	fdevent.h gw_backend.h connections.h base.h base_decls.h stat_cache.h \
 	plugin.h \
 	etag.h joblist.h array.h vector.h crc32.h \
-	network_backends.h configfile.h \
+	fdevent_impl.h network_write.h configfile.h \
 	mod_ssi.h mod_ssi_expr.h inet_ntop_cache.h \
 	configparser.h mod_ssi_exprparser.h \
 	rand.h \
-	sys-endian.h sys-mmap.h sys-socket.h mod_cml.h mod_cml_funcs.h \
-	safe_memclear.h splaytree.h proc_open.h status_counter.h \
-	mod_magnet_cache.h \
-	version.h
+	sys-endian.h sys-mmap.h sys-socket.h sys-strings.h \
+	mod_cml.h mod_cml_funcs.h \
+	safe_memclear.h sock_addr.h splaytree.h proc_open.h status_counter.h \
+	mod_magnet_cache.h
 
-DEFS= @DEFS@ -DHAVE_VERSION_H -DLIBRARY_DIR="\"$(libdir)\"" -DSBIN_DIR="\"$(sbindir)\""
+
+DEFS= @DEFS@ -DHAVE_VERSIONSTAMP_H -DLIBRARY_DIR="\"$(libdir)\"" -DSBIN_DIR="\"$(sbindir)\""
 
 
 if LIGHTTPD_STATIC
@@ -379,6 +438,7 @@ lighttpd_SOURCES = \
   mod_uploadprogress.c \
   mod_userdir.c \
   mod_usertrack.c \
+  mod_vhostdb.c \
   mod_webdav.c
 lighttpd_CPPFLAGS = \
   -DLIGHTTPD_STATIC \
@@ -386,7 +446,7 @@ lighttpd_CPPFLAGS = \
   $(FAM_CFLAGS) $(LIBEV_CFLAGS) $(LIBUNWIND_CFLAGS)
 lighttpd_LDADD = \
   $(common_libadd) \
-  $(CRYPT_LIB) $(SSL_LIB) \
+  $(CRYPT_LIB) $(CRYPTO_LIB) \
   $(XML_LIBS) $(SQLITE_LIBS) $(UUID_LIBS) \
   $(PCRE_LIB) $(Z_LIB) $(BZ_LIB) $(DL_LIB) $(SENDFILE_LIB) $(ATTR_LIB) \
   $(FAM_LIBS) $(LIBEV_LIBS) $(LIBUNWIND_LIBS)
@@ -407,13 +467,27 @@ lighttpd_SOURCES += mod_authn_gssapi.c
 lighttpd_LDADD += $(KRB5_LIB)
 endif
 if BUILD_WITH_LDAP
-lighttpd_SOURCES += mod_authn_ldap.c
+lighttpd_SOURCES += mod_authn_ldap.c mod_vhostdb_ldap.c
 lighttpd_LDADD += $(LDAP_LIB) $(LBER_LIB)
 endif
 if BUILD_WITH_MYSQL
-lighttpd_SOURCES += mod_authn_mysql.c mod_mysql_vhost.c
+lighttpd_SOURCES += mod_authn_mysql.c mod_mysql_vhost.c mod_vhostdb_mysql.c
 lighttpd_CPPFLAGS += $(MYSQL_INCLUDE)
 lighttpd_LDADD += $(MYSQL_LIBS)
+endif
+if BUILD_WITH_PGSQL
+lighttpd_SOURCES += mod_vhostdb_pgsql.c
+lighttpd_CPPFLAGS += $(PGSQL_INCLUDE)
+lighttpd_LDADD += $(PGSQL_LIBS)
+endif
+if BUILD_WITH_DBI
+lighttpd_SOURCES += mod_vhostdb_dbi.c
+lighttpd_CPPFLAGS += $(DBI_CFLAGS)
+lighttpd_LDADD += $(DBI_LIBS)
+endif
+if BUILD_WITH_OPENSSL
+lighttpd_SOURCES += mod_openssl.c
+lighttpd_LDADD += $(SSL_LIB)
 endif
 if BUILD_WITH_MEMCACHED
 lighttpd_CPPFLAGS += $(MEMCACHED_CFLAGS)
@@ -431,7 +505,7 @@ else
 ## default lighttpd server
 lighttpd_SOURCES = $(src)
 lighttpd_CPPFLAGS = $(FAM_CFLAGS) $(LIBEV_CFLAGS)
-lighttpd_LDADD = $(PCRE_LIB) $(DL_LIB) $(SENDFILE_LIB) $(ATTR_LIB) $(common_libadd) $(SSL_LIB) $(FAM_LIBS) $(LIBEV_LIBS) $(LIBUNWIND_LIBS)
+lighttpd_LDADD = $(PCRE_LIB) $(DL_LIB) $(SENDFILE_LIB) $(ATTR_LIB) $(common_libadd) $(CRYPTO_LIB) $(FAM_LIBS) $(LIBEV_LIBS) $(LIBUNWIND_LIBS)
 lighttpd_LDFLAGS = -export-dynamic
 
 endif
@@ -446,7 +520,7 @@ test_buffer_LDADD = $(LIBUNWIND_LIBS)
 test_base64_SOURCES = test_base64.c base64.c buffer.c
 test_base64_LDADD = $(LIBUNWIND_LIBS)
 
-test_configfile_SOURCES = test_configfile.c buffer.c array.c data_string.c keyvalue.c vector.c log.c
+test_configfile_SOURCES = test_configfile.c buffer.c array.c data_string.c keyvalue.c vector.c log.c sock_addr.c
 test_configfile_LDADD = $(PCRE_LIB) $(LIBUNWIND_LIBS)
 
 noinst_HEADERS   = $(hdr)
@@ -457,5 +531,5 @@ EXTRA_DIST = \
 	lemon.c \
 	lempar.c \
 	SConscript \
-	CMakeLists.txt config.h.cmake
-
+	CMakeLists.txt config.h.cmake \
+	meson.build

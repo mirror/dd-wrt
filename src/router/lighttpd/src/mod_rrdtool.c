@@ -1,27 +1,20 @@
 #include "first.h"
 
-#include "server.h"
-#include "connections.h"
-#include "response.h"
-#include "connections.h"
+#include "base.h"
+#include "fdevent.h"
 #include "log.h"
 
 #include "plugin.h"
 #include <sys/types.h>
+#include <sys/wait.h>
 
-#include <assert.h>
 #include <fcntl.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
 #include <time.h>
 
-#ifdef HAVE_FORK
-/* no need for waitpid if we don't have fork */
-#include <sys/wait.h>
-#endif
 typedef struct {
 	buffer *path_rrdtool_bin;
 	buffer *path_rrd;
@@ -39,8 +32,10 @@ typedef struct {
 
 	int read_fd, write_fd;
 	pid_t rrdtool_pid;
+	pid_t srv_pid;
 
 	int rrdtool_running;
+	time_t rrdtool_startup_ts;
 
 	plugin_config **config_storage;
 	plugin_config conf;
@@ -80,14 +75,12 @@ FREE_FUNC(mod_rrd_free) {
 
 	free(p->config_storage);
 
-	if (p->rrdtool_pid) {
-		int status;
-		close(p->read_fd);
-		close(p->write_fd);
-#ifdef HAVE_FORK
+	if (p->read_fd >= 0) close(p->read_fd);
+	if (p->write_fd >= 0) close(p->write_fd);
+
+	if (p->rrdtool_pid > 0 && p->srv_pid == srv->pid) {
 		/* collect status */
-		waitpid(p->rrdtool_pid, &status, 0);
-#endif
+		while (-1 == waitpid(p->rrdtool_pid, NULL, 0) && errno == EINTR) ;
 	}
 
 	free(p);
@@ -96,95 +89,51 @@ FREE_FUNC(mod_rrd_free) {
 }
 
 static int mod_rrd_create_pipe(server *srv, plugin_data *p) {
-#ifdef HAVE_FORK
-	pid_t pid;
-
+	char *args[3];
 	int to_rrdtool_fds[2];
 	int from_rrdtool_fds[2];
+	/* mod_rrdtool does not work with server.max-workers > 0
+	 * since the data between workers is not aggregated,
+	 * and it is not valid to send data to rrdtool more than once a sec
+	 * (which would happen with multiple workers writing to same pipe)
+	 * If pipes were to be shared, then existing pipes would need to be
+	 * reused here, if they already exist (not -1), and after flushing
+	 * existing contents (read and discard from read-end of pipes). */
 	if (pipe(to_rrdtool_fds)) {
 		log_error_write(srv, __FILE__, __LINE__, "ss",
 				"pipe failed: ", strerror(errno));
 		return -1;
 	}
-
 	if (pipe(from_rrdtool_fds)) {
 		log_error_write(srv, __FILE__, __LINE__, "ss",
 				"pipe failed: ", strerror(errno));
 		return -1;
 	}
+	fdevent_setfd_cloexec(to_rrdtool_fds[1]);
+	fdevent_setfd_cloexec(from_rrdtool_fds[0]);
+	*(const char **)&args[0] = p->conf.path_rrdtool_bin->ptr;
+	*(const char **)&args[1] = "-";
+	args[2] = NULL;
 
-	/* fork, execve */
-	switch (pid = fork()) {
-	case 0: {
-		/* child */
-		char **args;
-		int argc;
-		int i = 0;
-		char *dash = "-";
+	p->rrdtool_pid = fdevent_fork_execve(args[0], args, NULL, to_rrdtool_fds[0], from_rrdtool_fds[1], -1, -1);
 
-		/* move stdout to from_rrdtool_fd[1] */
-		close(STDOUT_FILENO);
-		dup2(from_rrdtool_fds[1], STDOUT_FILENO);
-		close(from_rrdtool_fds[1]);
-		/* not needed */
-		close(from_rrdtool_fds[0]);
-
-		/* move the stdin to to_rrdtool_fd[0] */
-		close(STDIN_FILENO);
-		dup2(to_rrdtool_fds[0], STDIN_FILENO);
-		close(to_rrdtool_fds[0]);
-		/* not needed */
-		close(to_rrdtool_fds[1]);
-
-		/* set up args */
-		argc = 3;
-		args = malloc(sizeof(*args) * argc);
-		i = 0;
-
-		args[i++] = p->conf.path_rrdtool_bin->ptr;
-		args[i++] = dash;
-		args[i  ] = NULL;
-
-		/* we don't need the client socket */
-		for (i = 3; i < 256; i++) {
-			close(i);
-		}
-
-		/* exec the cgi */
-		execv(args[0], args);
-
-		/* log_error_write(srv, __FILE__, __LINE__, "sss", "spawing rrdtool failed: ", strerror(errno), args[0]); */
-
-		/* */
-		SEGFAULT();
-		break;
-	}
-	case -1:
-		/* error */
-		log_error_write(srv, __FILE__, __LINE__, "ss", "fork failed: ", strerror(errno));
-		break;
-	default: {
-		/* father */
-
+	if (-1 != p->rrdtool_pid) {
 		close(from_rrdtool_fds[1]);
 		close(to_rrdtool_fds[0]);
-
-		/* register PID and wait for them asyncronously */
+		if (p->read_fd >= 0) close(p->read_fd);
+		if (p->write_fd >= 0) close(p->write_fd);
 		p->write_fd = to_rrdtool_fds[1];
 		p->read_fd = from_rrdtool_fds[0];
-		p->rrdtool_pid = pid;
-
-		fd_close_on_exec(p->write_fd);
-		fd_close_on_exec(p->read_fd);
-
-		break;
+		p->srv_pid = srv->pid;
+		return 0;
+	} else {
+		log_error_write(srv, __FILE__, __LINE__, "SBss", "fork/exec(", p->conf.path_rrdtool_bin, "):", strerror(errno));
+		close(to_rrdtool_fds[0]);
+		close(to_rrdtool_fds[1]);
+		close(from_rrdtool_fds[0]);
+		close(from_rrdtool_fds[1]);
+		return -1;
 	}
-	}
-
-	return 0;
-#else
-	return -1;
-#endif
 }
 
 /* read/write wrappers to catch EINTR */
@@ -213,24 +162,21 @@ static ssize_t safe_write(int fd, const void *buf, size_t count) {
 }
 
 /* this assumes we get enough data on a successful read */
-static ssize_t safe_read(int fd, void *buf, size_t count) {
+static ssize_t safe_read(int fd, buffer *b) {
 	ssize_t res;
 
-	for (;;) {
-		res = read(fd, buf, count);
-		if (res >= 0) return res;
-		switch (errno) {
-		case EINTR:
-			continue;
-		default:
-			return -1;
-		}
-	}
+	buffer_string_prepare_copy(b, 4095);
+
+	do {
+		res = read(fd, b->ptr, b->size-1);
+	} while (-1 == res && errno == EINTR);
+
+	if (res >= 0) buffer_commit(b, res);
+	return res;
 }
 
 static int mod_rrdtool_create_rrd(server *srv, plugin_data *p, plugin_config *s) {
 	struct stat st;
-	int r;
 
 	/* check if DB already exists */
 	if (0 == stat(s->path_rrd->ptr, &st)) {
@@ -275,15 +221,12 @@ static int mod_rrdtool_create_rrd(server *srv, plugin_data *p, plugin_config *s)
 		return HANDLER_ERROR;
 	}
 
-	buffer_string_prepare_copy(p->resp, 4095);
-	if (-1 == (r = safe_read(p->read_fd, p->resp->ptr, p->resp->size - 1))) {
+	if (-1 == safe_read(p->read_fd, p->resp)) {
 		log_error_write(srv, __FILE__, __LINE__, "ss",
 			"rrdtool-read: failed", strerror(errno));
 
 		return HANDLER_ERROR;
 	}
-
-	buffer_commit(p->resp, r);
 
 	if (p->resp->ptr[0] != 'O' ||
 		p->resp->ptr[1] != 'K') {
@@ -336,9 +279,20 @@ static int mod_rrd_patch_connection(server *srv, connection *con, plugin_data *p
 }
 #undef PATCH
 
+static int mod_rrd_exec(server *srv, plugin_data *p) {
+    if (mod_rrd_create_pipe(srv, p)) {
+        return -1;
+    }
+
+    p->rrdtool_running = 1;
+    p->rrdtool_startup_ts = srv->cur_ts;
+    return 0;
+}
+
 SETDEFAULTS_FUNC(mod_rrd_set_defaults) {
 	plugin_data *p = p_d;
 	size_t i;
+	int activate = 0;
 
 	config_values_t cv[] = {
 		{ "rrdtool.binary",  NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION }, /* 0 */
@@ -380,10 +334,15 @@ SETDEFAULTS_FUNC(mod_rrd_set_defaults) {
 			return HANDLER_ERROR;
 		}
 
+		if (!buffer_string_is_empty(s->path_rrd)) activate = 1;
 	}
 
 	p->conf.path_rrdtool_bin = p->config_storage[0]->path_rrdtool_bin;
 	p->rrdtool_running = 0;
+	p->read_fd  = -1;
+	p->write_fd = -1;
+
+	if (!activate) return HANDLER_GO_ON;
 
 	/* check for dir */
 
@@ -393,32 +352,40 @@ SETDEFAULTS_FUNC(mod_rrd_set_defaults) {
 		return HANDLER_ERROR;
 	}
 
-	/* open the pipe to rrdtool */
-	if (mod_rrd_create_pipe(srv, p)) {
-		return HANDLER_ERROR;
-	}
+	return 0 == mod_rrd_exec(srv, p) ? HANDLER_GO_ON : HANDLER_ERROR;
+}
 
-	p->rrdtool_running = 1;
-
-	return HANDLER_GO_ON;
+static void mod_rrd_fatal_error(server *srv, plugin_data *p) {
+    /* future: might send kill() signal to p->rrdtool_pid to trigger restart */
+    p->rrdtool_running = 0;
+    UNUSED(srv);
 }
 
 TRIGGER_FUNC(mod_rrd_trigger) {
 	plugin_data *p = p_d;
 	size_t i;
 
-	if (!p->rrdtool_running) return HANDLER_GO_ON;
+	if (!p->rrdtool_running) {
+		/* limit restart to once every 5 sec */
+		/*(0 == p->rrdtool_pid if never activated; not used)*/
+		if (-1 == p->rrdtool_pid
+		    && p->srv_pid == srv->pid
+		    && p->rrdtool_startup_ts + 5 < srv->cur_ts) {
+			mod_rrd_exec(srv, p);
+		}
+		return HANDLER_GO_ON;
+	}
+
 	if ((srv->cur_ts % 60) != 0) return HANDLER_GO_ON;
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		plugin_config *s = p->config_storage[i];
-		int r;
 
 		if (buffer_string_is_empty(s->path_rrd)) continue;
 
 		/* write the data down every minute */
 
-		if (HANDLER_GO_ON != mod_rrdtool_create_rrd(srv, p, s)) return HANDLER_ERROR;
+		if (HANDLER_GO_ON != mod_rrdtool_create_rrd(srv, p, s)) return HANDLER_GO_ON;
 
 		buffer_copy_string_len(p->cmd, CONST_STR_LEN("update "));
 		buffer_append_string_buffer(p->cmd, s->path_rrd);
@@ -430,37 +397,31 @@ TRIGGER_FUNC(mod_rrd_trigger) {
 		buffer_append_int(p->cmd, s->requests);
 		buffer_append_string_len(p->cmd, CONST_STR_LEN("\n"));
 
-		if (-1 == (r = safe_write(p->write_fd, CONST_BUF_LEN(p->cmd)))) {
-			p->rrdtool_running = 0;
-
+		if (-1 == safe_write(p->write_fd, CONST_BUF_LEN(p->cmd))) {
 			log_error_write(srv, __FILE__, __LINE__, "ss",
 					"rrdtool-write: failed", strerror(errno));
 
-			return HANDLER_ERROR;
+			mod_rrd_fatal_error(srv, p);
+			return HANDLER_GO_ON;
 		}
 
-		buffer_string_prepare_copy(p->resp, 4095);
-		if (-1 == (r = safe_read(p->read_fd, p->resp->ptr, p->resp->size - 1))) {
-			p->rrdtool_running = 0;
-
+		if (-1 == safe_read(p->read_fd, p->resp)) {
 			log_error_write(srv, __FILE__, __LINE__, "ss",
 					"rrdtool-read: failed", strerror(errno));
 
-			return HANDLER_ERROR;
+			mod_rrd_fatal_error(srv, p);
+			return HANDLER_GO_ON;
 		}
-
-		buffer_commit(p->resp, r);
 
 		if (p->resp->ptr[0] != 'O' ||
 		    p->resp->ptr[1] != 'K') {
 			/* don't fail on this error if we just started (graceful restart, the old one might have just updated too) */
 			if (!(strstr(p->resp->ptr, "(minimum one second step)") && (srv->cur_ts - srv->startup_ts < 3))) {
-				p->rrdtool_running = 0;
-
 				log_error_write(srv, __FILE__, __LINE__, "sbb",
 					"rrdtool-response:", p->cmd, p->resp);
 
-				return HANDLER_ERROR;
+				mod_rrd_fatal_error(srv, p);
+				return HANDLER_GO_ON;
 			}
 		}
 		s->requests = 0;
@@ -471,9 +432,27 @@ TRIGGER_FUNC(mod_rrd_trigger) {
 	return HANDLER_GO_ON;
 }
 
+static handler_t mod_rrd_waitpid_cb(server *srv, void *p_d, pid_t pid, int status) {
+	plugin_data *p = p_d;
+	if (pid != p->rrdtool_pid) return HANDLER_GO_ON;
+	if (srv->pid != p->srv_pid) return HANDLER_GO_ON;
+
+	p->rrdtool_running = 0;
+	p->rrdtool_pid = -1;
+
+	/* limit restart to once every 5 sec */
+	if (p->rrdtool_startup_ts + 5 < srv->cur_ts)
+		mod_rrd_exec(srv, p);
+
+	UNUSED(status);
+	return HANDLER_FINISHED;
+}
+
 REQUESTDONE_FUNC(mod_rrd_account) {
 	plugin_data *p = p_d;
 
+	/*(0 == p->rrdtool_pid if never activated; not used)*/
+	if (0 == p->rrdtool_pid) return HANDLER_GO_ON;
 	mod_rrd_patch_connection(srv, con, p);
 
 	*(p->conf.requests_ptr)      += 1;
@@ -493,6 +472,7 @@ int mod_rrdtool_plugin_init(plugin *p) {
 	p->set_defaults= mod_rrd_set_defaults;
 
 	p->handle_trigger      = mod_rrd_trigger;
+	p->handle_waitpid      = mod_rrd_waitpid_cb;
 	p->handle_request_done = mod_rrd_account;
 
 	p->data        = NULL;

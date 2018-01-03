@@ -227,8 +227,11 @@ CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CPPFLAGS_FOR_BUILD = @CPPFLAGS_FOR_BUILD@
 CPP_FOR_BUILD = @CPP_FOR_BUILD@
+CRYPTO_LIB = @CRYPTO_LIB@
 CRYPT_LIB = @CRYPT_LIB@
 CYGPATH_W = @CYGPATH_W@
+DBI_CFLAGS = @DBI_CFLAGS@
+DBI_LIBS = @DBI_LIBS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DLLTOOL = @DLLTOOL@
@@ -293,10 +296,15 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PCRECONFIG = @PCRECONFIG@
 PCRE_LIB = @PCRE_LIB@
+PGSQL_CONFIG = @PGSQL_CONFIG@
+PGSQL_INCLUDE = @PGSQL_INCLUDE@
+PGSQL_LIBS = @PGSQL_LIBS@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 RANLIB = @RANLIB@
+SASL_CFLAGS = @SASL_CFLAGS@
+SASL_LIBS = @SASL_LIBS@
 SED = @SED@
 SENDFILE_LIB = @SENDFILE_LIB@
 SET_MAKE = @SET_MAKE@
@@ -364,7 +372,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = src doc tests
-EXTRA_DIST = autogen.sh SConstruct CMakeLists.txt README.FreeBSD scripts
+EXTRA_DIST = autogen.sh SConstruct CMakeLists.txt meson.build meson_options.txt README.FreeBSD scripts
 ACLOCAL_AMFLAGS = -I m4 -I scripts/m4
 distcleancheck_listfiles = find -type f -exec sh -c 'test -f $(srcdir)/{} || echo {}' ';'
 AM_DISTCHECK_CONFIGURE_FLAGS = --with-openssl
@@ -603,7 +611,7 @@ distdir: $(DISTFILES)
 	  ! -type d ! -perm -444 -exec $(install_sh) -c -m a+r {} {} \; \
 	|| chmod -R a+r "$(distdir)"
 dist-gzip: distdir
-	tardir=$(distdir) && $(am__tar) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
+	tardir=$(distdir) && $(am__tar) | eval GZIP= gzip $(GZIP_ENV) -c >$(distdir).tar.gz
 	$(am__post_remove_distdir)
 
 dist-bzip2: distdir
@@ -628,7 +636,7 @@ dist-shar: distdir
 	@echo WARNING: "Support for shar distribution archives is" \
 	               "deprecated." >&2
 	@echo WARNING: "It will be removed altogether in Automake 2.0" >&2
-	shar $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).shar.gz
+	shar $(distdir) | eval GZIP= gzip $(GZIP_ENV) -c >$(distdir).shar.gz
 	$(am__post_remove_distdir)
 
 dist-zip: distdir
@@ -646,7 +654,7 @@ dist dist-all:
 distcheck: dist
 	case '$(DIST_ARCHIVES)' in \
 	*.tar.gz*) \
-	  GZIP=$(GZIP_ENV) gzip -dc $(distdir).tar.gz | $(am__untar) ;;\
+	  eval GZIP= gzip $(GZIP_ENV) -dc $(distdir).tar.gz | $(am__untar) ;;\
 	*.tar.bz2*) \
 	  bzip2 -dc $(distdir).tar.bz2 | $(am__untar) ;;\
 	*.tar.lz*) \
@@ -656,7 +664,7 @@ distcheck: dist
 	*.tar.Z*) \
 	  uncompress -c $(distdir).tar.Z | $(am__untar) ;;\
 	*.shar.gz*) \
-	  GZIP=$(GZIP_ENV) gzip -dc $(distdir).shar.gz | unshar ;;\
+	  eval GZIP= gzip $(GZIP_ENV) -dc $(distdir).shar.gz | unshar ;;\
 	*.zip*) \
 	  unzip $(distdir).zip ;;\
 	esac

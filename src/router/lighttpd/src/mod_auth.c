@@ -15,6 +15,7 @@ typedef struct {
 	/* auth */
 	array  *auth_require;
 	buffer *auth_backend_conf;
+	unsigned short auth_extern_authn;
 
 	/* generated */
 	const http_auth_backend_t *auth_backend;
@@ -163,9 +164,11 @@ static int mod_auth_require_parse (server *srv, http_auth_require_t * const requ
                 data_string *ds = data_string_init();
                 buffer_copy_string_len(ds->key,str+6,len-6); /*("group=" is 6)*/
                 array_insert_unique(require->group, (data_unset *)ds);
+              #if 0/*(supported by mod_authn_ldap, but not all other backends)*/
                 log_error_write(srv, __FILE__, __LINE__, "ssb",
                                 "warning parsing auth.require 'require' field: 'group' not implemented;",
                                 "field value:", b);
+              #endif
                 continue;
             }
             break; /* to error */
@@ -200,6 +203,7 @@ SETDEFAULTS_FUNC(mod_auth_set_defaults) {
 	config_values_t cv[] = {
 		{ "auth.backend",                   NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION }, /* 0 */
 		{ "auth.require",                   NULL, T_CONFIG_LOCAL, T_CONFIG_SCOPE_CONNECTION },  /* 1 */
+		{ "auth.extern-authn",              NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION },/* 2 */
 		{ NULL,                             NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
 	};
 
@@ -218,6 +222,7 @@ SETDEFAULTS_FUNC(mod_auth_set_defaults) {
 
 		cv[0].destination = s->auth_backend_conf;
 		cv[1].destination = s->auth_require; /* T_CONFIG_LOCAL; not modified by config_insert_values_global() */
+		cv[2].destination = &s->auth_extern_authn;
 
 		p->config_storage[i] = s;
 
@@ -237,7 +242,13 @@ SETDEFAULTS_FUNC(mod_auth_set_defaults) {
 		/* no auth.require for this section */
 		if (NULL == (da = (data_array *)array_get_element(config->value, "auth.require"))) continue;
 
-		if (da->type != TYPE_ARRAY) continue;
+		if (da->type != TYPE_ARRAY || !array_is_kvarray(da->value)) {
+			log_error_write(srv, __FILE__, __LINE__, "ss",
+					"unexpected value for auth.require; expected ",
+					"auth.require = ( \"urlpath\" => ( \"option\" => \"value\" ) )");
+			return HANDLER_ERROR;
+		}
+
 
 		for (n = 0; n < da->value->used; n++) {
 			size_t m;
@@ -245,10 +256,10 @@ SETDEFAULTS_FUNC(mod_auth_set_defaults) {
 			const buffer *method = NULL, *realm = NULL, *require = NULL;
 			const http_auth_scheme_t *auth_scheme;
 
-			if (da->value->data[n]->type != TYPE_ARRAY) {
+			if (!array_is_kvstring(da_file->value)) {
 				log_error_write(srv, __FILE__, __LINE__, "ss",
-						"auth.require should contain an array as in:",
-						"auth.require = ( \"...\" => ( ..., ...) )");
+						"unexpected value for auth.require; expected ",
+						"auth.require = ( \"urlpath\" => ( \"option\" => \"value\" ) )");
 
 				return HANDLER_ERROR;
 			}
@@ -336,6 +347,7 @@ static int mod_auth_patch_connection(server *srv, connection *con, plugin_data *
 
 	PATCH(auth_backend);
 	PATCH(auth_require);
+	PATCH(auth_extern_authn);
 
 	/* skip the first, the global context */
 	for (i = 1; i < srv->config_context->used; i++) {
@@ -353,6 +365,8 @@ static int mod_auth_patch_connection(server *srv, connection *con, plugin_data *
 				PATCH(auth_backend);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("auth.require"))) {
 				PATCH(auth_require);
+			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("auth.extern-authn"))) {
+				PATCH(auth_extern_authn);
 			}
 		}
 	}
@@ -382,6 +396,12 @@ static handler_t mod_auth_uri_handler(server *srv, connection *con, void *p_d) {
 		    ? 0 == strncmp(con->uri.path->ptr, path->ptr, buffer_string_length(path))
 		    : 0 == strncasecmp(con->uri.path->ptr, path->ptr, buffer_string_length(path))) {
 			const http_auth_scheme_t * const scheme = dauth->require->scheme;
+			if (p->conf.auth_extern_authn) {
+				data_string *ds = (data_string *)array_get_element(con->environment, "REMOTE_USER");
+				if (NULL != ds && http_auth_match_rules(dauth->require, ds->value->ptr, NULL, NULL)) {
+					return HANDLER_GO_ON;
+				}
+			}
 			return scheme->checkfn(srv, con, scheme->p_d, dauth->require, p->conf.auth_backend);
 		}
 	}
@@ -464,6 +484,11 @@ static handler_t mod_auth_check_basic(server *srv, connection *con, void *p_d, c
 	if (0 != strncasecmp(ds->value->ptr, "Basic ", sizeof("Basic ")-1)) {
 		return mod_auth_send_400_bad_request(srv, con);
 	}
+      #ifdef __COVERITY__
+	if (buffer_string_length(ds->value) < sizeof("Basic ")-1) {
+		return mod_auth_send_400_bad_request(srv, con);
+	}
+      #endif
 
 	username = buffer_init();
 
@@ -594,11 +619,17 @@ static handler_t mod_auth_check_digest(server *srv, connection *con, void *p_d, 
 
 	if (0 != strncasecmp(ds->value->ptr, "Digest ", sizeof("Digest ")-1)) {
 		return mod_auth_send_400_bad_request(srv, con);
+	} else {
+		size_t n = buffer_string_length(ds->value);
+	      #ifdef __COVERITY__
+		if (n < sizeof("Digest ")-1) {
+			return mod_auth_send_400_bad_request(srv, con);
+		}
+	      #endif
+		n -= (sizeof("Digest ")-1);
+		b = buffer_init();
+		buffer_copy_string_len(b,ds->value->ptr+sizeof("Digest ")-1,n);
 	}
-
-	b = buffer_init();
-	/* coverity[overflow_sink : FALSE] */
-	buffer_copy_string_len(b, ds->value->ptr+sizeof("Digest ")-1, buffer_string_length(ds->value)-(sizeof("Digest ")-1));
 
 	/* parse credentials from client */
 	for (c = b->ptr; *c; c++) {
@@ -785,7 +816,7 @@ static handler_t mod_auth_check_digest(server *srv, connection *con, void *p_d, 
 		for (i = 0; i < 8 && light_isxdigit(nonce_uns[i]); ++i) {
 			ts = (ts << 4) + hex2int(nonce_uns[i]);
 		}
-		if (i != 8 || nonce[8] != ':'
+		if (nonce[i] != ':'
 		    || ts > srv->cur_ts || srv->cur_ts - ts > 600) { /*(10 mins)*/
 			/* nonce is stale; have client regenerate digest */
 			buffer_free(b);
@@ -809,19 +840,12 @@ static handler_t mod_auth_send_401_unauthorized_digest(server *srv, connection *
 
 	/* generate nonce */
 
-	/* using unknown contents of srv->tmp_buf (modified elsewhere)
-	 * adds dubious amount of randomness.  Remove use of srv->tmp_buf in nonce? */
-
 	/* generate shared-secret */
 	li_MD5_Init(&Md5Ctx);
-	li_MD5_Update(&Md5Ctx, CONST_BUF_LEN(srv->tmp_buf)); /*(dubious randomness)*/
-	li_MD5_Update(&Md5Ctx, CONST_STR_LEN("+"));
 
-	/* we assume sizeof(time_t) == 4 here, but if not it ain't a problem at all */
 	li_itostrn(hh, sizeof(hh), srv->cur_ts);
 	li_MD5_Update(&Md5Ctx, (unsigned char *)hh, strlen(hh));
-	li_MD5_Update(&Md5Ctx, (unsigned char *)srv->entropy, sizeof(srv->entropy));
-	li_itostrn(hh, sizeof(hh), li_rand());
+	li_itostrn(hh, sizeof(hh), li_rand_pseudo());
 	li_MD5_Update(&Md5Ctx, (unsigned char *)hh, strlen(hh));
 
 	li_MD5_Final(h, &Md5Ctx);

@@ -1,20 +1,16 @@
 #include "first.h"
 
 #include <unistd.h>
-#include <stdio.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <string.h>
 
 #include <mysql.h>
 
 #include "plugin.h"
+#include "fdevent.h"
 #include "log.h"
 
 #include "stat_cache.h"
-#ifdef DEBUG_MOD_MYSQL_VHOST
-#define DEBUG
-#endif
 
 /*
  * Plugin for lighttpd to use MySQL
@@ -71,10 +67,6 @@ SERVER_FUNC(mod_mysql_vhost_cleanup) {
 
 	UNUSED(srv);
 
-#ifdef DEBUG
-	log_error_write(srv, __FILE__, __LINE__, "ss",
-		"mod_mysql_vhost_cleanup", p ? "yes" : "NO");
-#endif
 	if (!p) return HANDLER_GO_ON;
 
 	if (p->config_storage) {
@@ -112,11 +104,6 @@ static void* mod_mysql_vhost_connection_data(server *srv, connection *con, void 
 
 	UNUSED(srv);
 
-#ifdef DEBUG
-	log_error_write(srv, __FILE__, __LINE__, "ss",
-		"mod_mysql_connection_data", c ? "old" : "NEW");
-#endif
-
 	if (c) return c;
 	c = calloc(1, sizeof(*c));
 
@@ -127,16 +114,11 @@ static void* mod_mysql_vhost_connection_data(server *srv, connection *con, void 
 }
 
 /* destroy the plugin per connection data */
-CONNECTION_FUNC(mod_mysql_vhost_handle_connection_close) {
+CONNECTION_FUNC(mod_mysql_vhost_handle_connection_reset) {
 	plugin_data *p = p_d;
 	plugin_connection_data *c = con->plugin_ctx[p->id];
 
 	UNUSED(srv);
-
-#ifdef DEBUG
-	log_error_write(srv, __FILE__, __LINE__, "ss",
-		"mod_mysql_vhost_handle_connection_close", c ? "yes" : "NO");
-#endif
 
 	if (!c) return HANDLER_GO_ON;
 
@@ -236,7 +218,7 @@ SERVER_FUNC(mod_mysql_vhost_set_defaults) {
 			}
 #undef FOO
 
-			fd_close_on_exec(s->mysql->net.fd);
+			fdevent_setfd_cloexec(s->mysql->net.fd);
 		}
 	}
 
@@ -365,11 +347,6 @@ GO_ON:
 	buffer_copy_buffer(con->server_name, c->server_name);
 	buffer_copy_buffer(con->physical.doc_root, c->document_root);
 
-#ifdef DEBUG
-	log_error_write(srv, __FILE__, __LINE__, "sbb",
-		result ? "NOT CACHED" : "cached",
-		con->server_name, con->physical.doc_root);
-#endif
 	return HANDLER_GO_ON;
 
 ERR500:
@@ -390,7 +367,7 @@ int mod_mysql_vhost_plugin_init(plugin *p) {
 
 	p->init           = mod_mysql_vhost_init;
 	p->cleanup        = mod_mysql_vhost_cleanup;
-	p->connection_reset = mod_mysql_vhost_handle_connection_close;
+	p->connection_reset = mod_mysql_vhost_handle_connection_reset;
 
 	p->set_defaults   = mod_mysql_vhost_set_defaults;
 	p->handle_docroot = mod_mysql_vhost_handle_docroot;

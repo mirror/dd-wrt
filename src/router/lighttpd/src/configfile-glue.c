@@ -5,14 +5,12 @@
 #include "array.h"
 #include "log.h"
 #include "plugin.h"
+#include "sock_addr.h"
 
 #include "configfile.h"
 
 #include <string.h>
 #include <stdlib.h>
-#ifndef _WIN32
-#include <arpa/inet.h>
-#endif
 
 /**
  * like all glue code this file contains functions which
@@ -35,7 +33,7 @@ int config_insert_values_internal(server *srv, array *ca, const config_values_t 
 
 	for (i = 0; cv[i].key; i++) {
 
-		if (NULL == (du = array_get_element(ca, cv[i].key))) {
+		if (NULL == (du = array_get_element_klen(ca, cv[i].key, strlen(cv[i].key)))) {
 			/* no found */
 
 			continue;
@@ -57,7 +55,7 @@ int config_insert_values_internal(server *srv, array *ca, const config_values_t 
 
 				for (j = 0; j < da->value->used; j++) {
 					data_unset *ds = da->value->data[j];
-					if (ds->type == TYPE_STRING) {
+					if (ds->type == TYPE_STRING || ds->type == TYPE_INTEGER || ds->type == TYPE_ARRAY) {
 						array_insert_unique(cv[i].destination, ds->copy(ds));
 					} else {
 						log_error_write(srv, __FILE__, __LINE__, "sssbsd",
@@ -79,7 +77,7 @@ int config_insert_values_internal(server *srv, array *ca, const config_values_t 
 
 				buffer_copy_buffer(cv[i].destination, ds->value);
 			} else {
-				log_error_write(srv, __FILE__, __LINE__, "ssss", cv[i].key, "should have been a string like ... = \"...\"");
+				log_error_write(srv, __FILE__, __LINE__, "ss", cv[i].key, "should have been a string like ... = \"...\"");
 
 				return -1;
 			}
@@ -195,7 +193,7 @@ int config_insert_values_global(server *srv, array *ca, const config_values_t cv
 	for (i = 0; cv[i].key; i++) {
 		data_string *touched;
 
-		if (NULL == (du = array_get_element(ca, cv[i].key))) {
+		if (NULL == (du = array_get_element_klen(ca, cv[i].key, strlen(cv[i].key)))) {
 			/* no found */
 
 			continue;
@@ -213,14 +211,6 @@ int config_insert_values_global(server *srv, array *ca, const config_values_t cv
 	return config_insert_values_internal(srv, ca, cv, scope);
 }
 
-static unsigned short sock_addr_get_port(sock_addr *addr) {
-#ifdef HAVE_IPV6
-	return ntohs(addr->plain.sa_family ? addr->ipv6.sin6_port : addr->ipv4.sin_port);
-#else
-	return ntohs(addr->ipv4.sin_port);
-#endif
-}
-
 static const char* cond_result_to_string(cond_result_t cond_result) {
 	switch (cond_result) {
 	case COND_RESULT_UNSET: return "unset";
@@ -233,72 +223,22 @@ static const char* cond_result_to_string(cond_result_t cond_result) {
 
 static int config_addrstr_eq_remote_ip_mask(server *srv, const char *addrstr, int nm_bits, sock_addr *rmt) {
 	/* special-case 0 == nm_bits to mean "all bits of the address" in addrstr */
-	sock_addr val;
-#ifdef HAVE_INET_PTON
-	if (1 == inet_pton(AF_INET, addrstr, &val.ipv4.sin_addr))
-#else
-	if (INADDR_NONE != (val.ipv4.sin_addr = inet_addr(addrstr)))
-#endif
-	{
-		/* build netmask */
-		uint32_t nm;
+	sock_addr addr;
+	if (1 == sock_addr_inet_pton(&addr, addrstr, AF_INET, 0)) {
 		if (nm_bits > 32) {
 			log_error_write(srv, __FILE__, __LINE__, "sd", "ERROR: ipv4 netmask too large:", nm_bits);
 			return -1;
 		}
-		nm = htonl(~((1u << (32 - (0 != nm_bits ? nm_bits : 32))) - 1));
-
-		if (rmt->plain.sa_family == AF_INET) {
-			return ((val.ipv4.sin_addr.s_addr & nm) == (rmt->ipv4.sin_addr.s_addr & nm));
-#ifdef HAVE_IPV6
-		} else if (rmt->plain.sa_family == AF_INET6
-			   && IN6_IS_ADDR_V4MAPPED(&rmt->ipv6.sin6_addr)) {
-		      #ifdef s6_addr32
-			in_addr_t x = rmt->ipv6.sin6_addr.s6_addr32[3];
-		      #else
-			in_addr_t x;
-			memcpy(&x, rmt->ipv6.sin6_addr.s6_addr+12, sizeof(in_addr_t));
-		      #endif
-			return ((val.ipv4.sin_addr.s_addr & nm) == (x & nm));
-#endif
-		} else {
-			return 0;
-		}
-#if defined(HAVE_INET_PTON) && defined(HAVE_IPV6)
-	} else if (1 == inet_pton(AF_INET6, addrstr, &val.ipv6.sin6_addr)) {
+	} else if (1 == sock_addr_inet_pton(&addr, addrstr, AF_INET6, 0)) {
 		if (nm_bits > 128) {
 			log_error_write(srv, __FILE__, __LINE__, "sd", "ERROR: ipv6 netmask too large:", nm_bits);
 			return -1;
 		}
-		if (rmt->plain.sa_family == AF_INET6) {
-			uint8_t *a = (uint8_t *)&val.ipv6.sin6_addr.s6_addr[0];
-			uint8_t *b = (uint8_t *)&rmt->ipv6.sin6_addr.s6_addr[0];
-			int match;
-			do {
-				match = (nm_bits >= 8)
-				  ? *a++ == *b++
-				  : (*a >> (8 - nm_bits)) == (*b >> (8 - nm_bits));
-			} while (match && (nm_bits -= 8) > 0);
-			return match;
-		} else if (rmt->plain.sa_family == AF_INET
-			   && IN6_IS_ADDR_V4MAPPED(&val.ipv6.sin6_addr)) {
-			uint32_t nm =
-			  nm_bits < 128 ? htonl(~(~0u >> (nm_bits > 96 ? nm_bits - 96 : 0))) : ~0u;
-		      #ifdef s6_addr32
-			in_addr_t x = val.ipv6.sin6_addr.s6_addr32[3];
-		      #else
-			in_addr_t x;
-			memcpy(&x, val.ipv6.sin6_addr.s6_addr+12, sizeof(in_addr_t));
-		      #endif
-			return ((x & nm) == (rmt->ipv4.sin_addr.s_addr & nm));
-		} else {
-			return 0;
-		}
-#endif
 	} else {
 		log_error_write(srv, __FILE__, __LINE__, "ss", "ERROR: ip addr is invalid:", addrstr);
 		return -1;
 	}
+	return sock_addr_is_addr_eq_bits(&addr, rmt, nm_bits);
 }
 
 static int config_addrbuf_eq_remote_ip_mask(server *srv, buffer *string, char *nm_slash, sock_addr *rmt) {
@@ -415,6 +355,7 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
 	switch (dc->comp) {
 	case COMP_HTTP_HOST: {
 		char *ck_colon = NULL, *val_colon = NULL;
+		unsigned short port;
 
 		if (!buffer_string_is_empty(con->uri.authority)) {
 
@@ -427,6 +368,8 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
 			switch(dc->cond) {
 			case CONFIG_COND_NE:
 			case CONFIG_COND_EQ:
+				port = sock_addr_get_port(&srv_sock->addr);
+				if (0 == port) break;
 				ck_colon = strchr(dc->string->ptr, ':');
 				val_colon = strchr(l->ptr, ':');
 
@@ -434,7 +377,7 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
 					/* condition "host:port" but client send "host" */
 					buffer_copy_buffer(srv->cond_check_buf, l);
 					buffer_append_string_len(srv->cond_check_buf, CONST_STR_LEN(":"));
-					buffer_append_int(srv->cond_check_buf, sock_addr_get_port(&(srv_sock->addr)));
+					buffer_append_int(srv->cond_check_buf, port);
 					l = srv->cond_check_buf;
 				} else if (NULL != val_colon && NULL == ck_colon) {
 					/* condition "host" but client send "host:port" */
@@ -445,10 +388,6 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
 			default:
 				break;
 			}
-#if defined USE_OPENSSL && ! defined OPENSSL_NO_TLSEXT
-		} else if (!buffer_string_is_empty(con->tlsext_server_name)) {
-			l = con->tlsext_server_name;
-#endif
 		} else {
 			l = srv->empty_string;
 		}
@@ -493,28 +432,9 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
 		l = srv_sock->srv_token;
 		break;
 
-	case COMP_HTTP_REFERER: {
+	case COMP_HTTP_REQUEST_HEADER: {
 		data_string *ds;
-
-		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "Referer"))) {
-			l = ds->value;
-		} else {
-			l = srv->empty_string;
-		}
-		break;
-	}
-	case COMP_HTTP_COOKIE: {
-		data_string *ds;
-		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "Cookie"))) {
-			l = ds->value;
-		} else {
-			l = srv->empty_string;
-		}
-		break;
-	}
-	case COMP_HTTP_USER_AGENT: {
-		data_string *ds;
-		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "User-Agent"))) {
+		if (NULL != (ds = (data_string *)array_get_element_klen(con->request.headers, CONST_BUF_LEN(dc->comp_tag)))) {
 			l = ds->value;
 		} else {
 			l = srv->empty_string;
@@ -530,15 +450,6 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
 
 		l = srv->tmp_buf;
 
-		break;
-	}
-	case COMP_HTTP_LANGUAGE: {
-		data_string *ds;
-		if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "Accept-Language"))) {
-			l = ds->value;
-		} else {
-			l = srv->empty_string;
-		}
 		break;
 	}
 	default:
@@ -635,8 +546,17 @@ static void config_cond_clear_node(server *srv, connection *con, data_config *dc
 	if (con->cond_cache[dc->context_ndx].result != COND_RESULT_UNSET) {
 		size_t i;
 
-		con->cond_cache[dc->context_ndx].patterncount = 0;
-		con->cond_cache[dc->context_ndx].comp_value = NULL;
+	      #if 0
+		/* (redundant; matches not relevant unless COND_RESULT_TRUE) */
+		switch (con->cond_cache[dc->context_ndx].local_result) {
+		case COND_RESULT_TRUE:
+		case COND_RESULT_FALSE:
+			break;
+		default:
+			con->cond_cache[dc->context_ndx].patterncount = 0;
+			con->cond_cache[dc->context_ndx].comp_value = NULL;
+		}
+	      #endif
 		con->cond_cache[dc->context_ndx].result = COND_RESULT_UNSET;
 
 		for (i = 0; i < dc->children.used; ++i) {

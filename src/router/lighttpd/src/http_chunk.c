@@ -10,16 +10,15 @@
 #include "chunk.h"
 #include "http_chunk.h"
 #include "stat_cache.h"
+#include "fdevent.h"
 #include "log.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
 
 #include <stdlib.h>
-#include <fcntl.h>
 #include <unistd.h>
 
-#include <stdio.h>
 #include <errno.h>
 #include <string.h>
 

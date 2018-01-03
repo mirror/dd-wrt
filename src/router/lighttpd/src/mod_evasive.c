@@ -4,12 +4,10 @@
 #include "log.h"
 #include "buffer.h"
 #include "response.h"
+#include "sock_addr.h"
 
 #include "plugin.h"
 
-#include "inet_ntop_cache.h"
-
-#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -160,43 +158,21 @@ URIHANDLER_FUNC(mod_evasive_uri_handler) {
 	/* no limit set, nothing to block */
 	if (p->conf.max_conns == 0) return HANDLER_GO_ON;
 
-	switch (con->dst_addr.plain.sa_family) {
-		case AF_INET:
-#ifdef HAVE_IPV6
-		case AF_INET6:
-#endif
-			break;
-		default: /* Address family not supported */
-			return HANDLER_GO_ON;
-	};
-
 	for (j = 0; j < srv->conns->used; j++) {
 		connection *c = srv->conns->ptr[j];
 
 		/* check if other connections are already actively serving data for the same IP
 		 * we can only ban connections which are already behind the 'read request' state
 		 * */
-		if (c->dst_addr.plain.sa_family != con->dst_addr.plain.sa_family) continue;
 		if (c->state <= CON_STATE_REQUEST_END) continue;
 
-		switch (con->dst_addr.plain.sa_family) {
-			case AF_INET:
-				if (c->dst_addr.ipv4.sin_addr.s_addr != con->dst_addr.ipv4.sin_addr.s_addr) continue;
-				break;
-#ifdef HAVE_IPV6
-			case AF_INET6:
-				if (0 != memcmp(c->dst_addr.ipv6.sin6_addr.s6_addr, con->dst_addr.ipv6.sin6_addr.s6_addr, 16)) continue;
-				break;
-#endif
-			default: /* Address family not supported, should never be reached */
-				continue;
-		};
+		if (!sock_addr_is_addr_eq(&c->dst_addr, &con->dst_addr)) continue;
 		conns_by_ip++;
 
 		if (conns_by_ip > p->conf.max_conns) {
 			if (!p->conf.silent) {
-				log_error_write(srv, __FILE__, __LINE__, "ss",
-					inet_ntop_cache_get_ip(srv, &(con->dst_addr)),
+				log_error_write(srv, __FILE__, __LINE__, "bs",
+					con->dst_addr_buf,
 					"turned away. Too many connections.");
 			}
 
