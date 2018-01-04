@@ -845,7 +845,7 @@
 /* Validate the include paths - the include path used to generate pnglibconf.h
  * must match that used in the build, or we must be using pnglibconf.h.prebuilt:
  */
-#if 0 // PNG_ZLIB_VERNUM != 0 && PNG_ZLIB_VERNUM != ZLIB_VERNUM
+#if PNG_ZLIB_VERNUM != 0 && PNG_ZLIB_VERNUM != ZLIB_VERNUM
 #  error ZLIB_VERNUM != PNG_ZLIB_VERNUM \
       "-I (include path) error: see the notes in pngpriv.h"
    /* This means that when pnglibconf.h was built the copy of zlib.h that it
