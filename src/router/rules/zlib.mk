@@ -7,8 +7,20 @@ ZLIB_CMAKE_OPTIONS=
 ZLIB_STAGING_DIR=$(TOP)/_staging/usr
 ZLIB_EXTRA_CFLAGS=-I$(TOP)/_staging/usr/include $(COPTS) $(MIPS16_OPT)
 ZLIB_EXTRA_LDFLAGS=-L$(TOP)/_staging/usr/lib
-
 ZLIB_CMAKE_OPTIONS=
+ifeq ($(ARCH),i386)
+ZLIB_CMAKE_OPTIONS=-DASM686=ON
+endif
+ifeq ($(ARCH),x86_64)
+ZLIB_CMAKE_OPTIONS=-DAMD64=ON
+endif
+ifeq ($(ARCHITECURE),ipq806x)
+ZLIB_CMAKE_OPTIONS=-DARMv8=ON
+endif
+ifeq ($(ARCHITECURE),ventana)
+ZLIB_CMAKE_OPTIONS=-DARMv8=ON
+endif
+
 
 zlib-configure:
 	$(call CMakeClean,$(ZLIB_PKG_BUILD_DIR))
