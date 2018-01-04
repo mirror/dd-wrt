@@ -385,6 +385,7 @@ ifeq ($(CONFIG_SWAP),y)
 	echo "CONFIG_SWAPOFF=y" >> busybox/.config
 	echo "CONFIG_FEATURE_SWAPON_PRI=y" >> busybox/.config
 	echo "# CONFIG_FEATURE_SWAPON_DISCARD is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_SWAPONOFF_LABEL is not set" >> busybox/.config
 else
 	echo "# CONFIG_SWAPON is not set" >> busybox/.config
 	echo "# CONFIG_SWAPOFF is not set" >> busybox/.config
