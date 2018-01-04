@@ -69,7 +69,7 @@ endif
 
 #export KERNELRELEASE = $(shell cat $(LINUXDIR)/.kernelrelease 2> /dev/null)
 #export KERNELRELEASE = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
-export KRELEASE = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
+export KERNELRELEASE = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
 
 #ifeq ($(PLATFORM),mipsel)
 #export CROSS_COMPILE := mipsel-linux-
@@ -167,8 +167,8 @@ endif
 	fi
 	rm -rf $(TARGETDIR)/lib/modules
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
-	rm -f $(TARGETDIR)/lib/modules/$(KRELEASE)/build
-	rm -f $(TARGETDIR)/lib/modules/$(KRELEASE)/source
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 
 	-$(MAKE) -f Makefile.x86 ath9k
 	-$(MAKE) -f Makefile.x86 ath9k-install
@@ -210,7 +210,8 @@ endif
 	) > $(LINUXDIR)/symtab.h
 	rm -f $(LINUXDIR)/vmlinux
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) bzImage EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
+	    #$(MAKE) -j 4 -C $(LINUXDIR) bzImage EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) bzImage EXTRA_LDSFLAGS="-I$(LINUXDIR)" CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
 	fi
 	
 #	cat $(LINUXDIR)/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/rb500/vmlinux.lzma
@@ -220,8 +221,8 @@ endif
 
 install_headers:
 # important step, required for new kernels
-	-mkdir -p $(TOP)/kernel_headers/$(KRELEASE)
-	$(MAKE) -C $(LINUXDIR) headers_install ARCH=i386 INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KRELEASE)
+	-mkdir -p $(TOP)/kernel_headers/$(KERNELRELEASE)
+	$(MAKE) -C $(LINUXDIR) headers_install ARCH=i386 INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KERNELRELEASE)
 
 	
 realclean: $(obj-clean)
@@ -433,7 +434,7 @@ install package: clean_target $(filter-out lib.i386-install,$(obj-install)) $(LI
 	    $(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
 	fi
 ifeq ($(CONFIG_MADWIFI),y)
-	rm -rf $(TARGETDIR)/lib/modules/$(KRELEASE)/kernel/drivers/net/wl
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wl
 endif
 #	mkdir -p $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
 #	cp ../wl/ctmisc/ctmisc.o $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
@@ -514,8 +515,8 @@ ifneq ($(CONFIG_JFFS2),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jffs2
 endif
 
-	rm -f $(TARGETDIR)/lib/modules/$(KRELEASE)/build
-	rm -f $(TARGETDIR)/lib/modules/$(KRELEASE)/source
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 	
 	
 	
@@ -536,10 +537,10 @@ endif
 #	umount $(TARGETDIR)
 #find $(TARGETDIR)/lib/modules -name *.ko -exec mipsel-linux-strip --strip-unneeded --remove-section=.comment {} +		
 	#e2fsck -y -f $(ARCH)-uclibc/root.fs
-	-find $(TARGETDIR)/lib/modules/$(KRELEASE)/kernel -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KRELEASE) \;
-	-find $(TARGETDIR)/lib/modules/$(KRELEASE)/net -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KRELEASE) \;
-	rm -rf $(TARGETDIR)/lib/modules/$(KRELEASE)/kernel
-	rm -rf $(TARGETDIR)/lib/modules/$(KRELEASE)/net
+	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
+	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net
 	#e2fsck -y -f $(ARCH)-uclibc/root.fs
 	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
 	#cd $(TARGETDIR)
