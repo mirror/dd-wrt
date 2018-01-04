@@ -18,7 +18,7 @@ ZLIB_CMAKE_OPTIONS=-DARMv8=ON
 endif
 ifeq ($(ARCHITECTURE),ventana)
 ZLIB_CMAKE_OPTIONS=-DARMv8=ON
-#endif
+endif
 
 
 zlib-configure:
