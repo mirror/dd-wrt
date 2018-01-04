@@ -36,4 +36,4 @@ zlib-install:
 
 zlib-clean:
 	if [ -e "$(ZLIB_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C zlib clean ; fi
-	$(call CMakeClean,$(ZLIB_PKG_BUILD_DIR))
+#	$(call CMakeClean,$(ZLIB_PKG_BUILD_DIR))
