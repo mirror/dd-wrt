@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.4.98-rc1 Kernel Configuration
+# Linux/i386 4.4.110-rc1 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -677,6 +677,7 @@ CONFIG_NET_IP_TUNNEL=m
 CONFIG_NET_IPGRE=m
 # CONFIG_NET_IPGRE_BROADCAST is not set
 CONFIG_NET_ETHERIP=m
+# CONFIG_NET_EOIP is not set
 CONFIG_IP_MROUTE=y
 CONFIG_IP_MROUTE_MULTIPLE_TABLES=y
 # CONFIG_IP_PIMSM_V1 is not set
@@ -4031,4 +4032,3 @@ CONFIG_FONT_8x16=y
 # CONFIG_SG_SPLIT is not set
 CONFIG_ARCH_HAS_SG_CHAIN=y
 CONFIG_ARCH_HAS_MMIO_FLUSH=y
-CONFIG_NET_EOIP=m

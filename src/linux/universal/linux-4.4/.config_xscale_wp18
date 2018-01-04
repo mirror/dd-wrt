@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.4.98-rc1 Kernel Configuration
+# Linux/arm 4.4.110-rc1 Kernel Configuration
 #
 CONFIG_ARM=y
 # CONFIG_ARM_HWCC_FLAG is not set
@@ -523,6 +523,7 @@ CONFIG_NET_IP_TUNNEL=m
 CONFIG_NET_IPGRE=m
 # CONFIG_NET_IPGRE_BROADCAST is not set
 CONFIG_NET_ETHERIP=m
+# CONFIG_NET_EOIP is not set
 CONFIG_IP_MROUTE=y
 # CONFIG_IP_MROUTE_MULTIPLE_TABLES is not set
 # CONFIG_IP_PIMSM_V1 is not set
@@ -2638,4 +2639,3 @@ CONFIG_ARCH_HAS_ATOMIC64_DEC_IF_POSITIVE=y
 # CONFIG_SG_SPLIT is not set
 # CONFIG_ARCH_HAS_SG_CHAIN is not set
 # CONFIG_VIRTUALIZATION is not set
-CONFIG_NET_EOIP=m
