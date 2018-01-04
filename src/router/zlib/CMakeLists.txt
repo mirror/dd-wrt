@@ -184,6 +184,7 @@ if(CMAKE_COMPILER_IS_GNUCC)
         # But it was optional for ARMv7.
         elseif(${COMPILER} MATCHES "arm")
             set_source_files_properties(${ZLIB_ARMv8} PROPERTIES LANGUAGE C COMPILE_FLAGS -mfpu=neon)
+            set_source_files_properties(${ZLIB_ARMv8} PROPERTIES LANGUAGE C COMPILE_FLAGS -mfpu=neon-vfpv4)
         endif()
     endif()
 endif()
