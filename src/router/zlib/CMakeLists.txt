@@ -7,6 +7,7 @@ set(VERSION "1.2.11")
 
 option(ASM686 "Enable building i686 assembly implementation")
 option(AMD64 "Enable building amd64 assembly implementation")
+option(ARMv8 "Enable building ARM NEON intrinsics implementation")
 
 set(INSTALL_BIN_DIR "${CMAKE_INSTALL_PREFIX}/bin" CACHE PATH "Installation directory for executables")
 set(INSTALL_LIB_DIR "${CMAKE_INSTALL_PREFIX}/lib" CACHE PATH "Installation directory for libraries")
@@ -94,34 +95,67 @@ set(ZLIB_PUBLIC_HDRS
     ${CMAKE_CURRENT_BINARY_DIR}/zconf.h
     zlib.h
 )
-set(ZLIB_PRIVATE_HDRS
-    crc32.h
-    deflate.h
-    gzguts.h
-    inffast.h
-    inffixed.h
-    inflate.h
-    inftrees.h
-    trees.h
-    zutil.h
-)
-set(ZLIB_SRCS
-    adler32.c
-    compress.c
-    crc32.c
-    deflate.c
-    gzclose.c
-    gzlib.c
-    gzread.c
-    gzwrite.c
-    inflate.c
-    infback.c
-    inftrees.c
-    inffast.c
-    trees.c
-    uncompr.c
-    zutil.c
-)
+
+if(ARMv8)
+    set(ZLIB_PRIVATE_HDRS
+	crc32.h
+	deflate.h
+	gzguts.h
+	inffast.h
+	inffixed.h
+	inflate.h
+	inftrees.h
+	trees.h
+	zutil.h
+	contrib/arm/chunkcopy.h
+    )
+    set(ZLIB_SRCS
+	adler32.c
+	compress.c
+	crc32.c
+	deflate.c
+	gzclose.c
+	gzlib.c
+	gzread.c
+	gzwrite.c
+	infback.c
+	inftrees.c
+	contrib/arm/inflate.c
+	contrib/arm/inffast.c
+	trees.c
+	uncompr.c
+	zutil.c
+    )
+    else()
+    set(ZLIB_PRIVATE_HDRS
+	crc32.h
+	deflate.h
+	gzguts.h
+	inffast.h
+	inffixed.h
+	inflate.h
+	inftrees.h
+	trees.h
+	zutil.h
+    )
+    set(ZLIB_SRCS
+	adler32.c
+	compress.c
+	crc32.c
+	deflate.c
+	gzclose.c
+	gzlib.c
+	gzread.c
+	gzwrite.c
+	inflate.c
+	infback.c
+	inftrees.c
+	inffast.c
+	trees.c
+	uncompr.c
+	zutil.c
+    )
+endif()
 
 if(NOT MINGW)
     set(ZLIB_DLL_SRCS
@@ -132,14 +166,26 @@ endif()
 if(CMAKE_COMPILER_IS_GNUCC)
     if(ASM686)
         set(ZLIB_ASMS contrib/asm686/match.S)
-    elseif (AMD64)
+    elseif(AMD64)
         set(ZLIB_ASMS contrib/amd64/amd64-match.S)
-    endif ()
+    elseif(ARMv8)
+        set(ZLIB_ARMv8 contrib/arm/neon_adler32.c)
+    endif()
 
-	if(ZLIB_ASMS)
-		add_definitions(-DASMV)
-		set_source_files_properties(${ZLIB_ASMS} PROPERTIES LANGUAGE C COMPILE_FLAGS -DNO_UNDERLINE)
-	endif()
+    if(ZLIB_ASMS)
+        add_definitions(-DASMV)
+	    set_source_files_properties(${ZLIB_ASMS} PROPERTIES LANGUAGE C COMPILE_FLAGS -DNO_UNDERLINE)
+    elseif(ZLIB_ARMv8)
+        add_definitions(-DARMv8)
+        set(COMPILER ${CMAKE_C_COMPILER})
+        # NEON is mandatory in ARMv8.
+        if(${COMPILER} MATCHES "aarch64")
+            set_source_files_properties(${ZLIB_ARMv8} PROPERTIES LANGUAGE C COMPILE_FLAGS -march=armv8-a)
+        # But it was optional for ARMv7.
+        elseif(${COMPILER} MATCHES "arm")
+            set_source_files_properties(${ZLIB_ARMv8} PROPERTIES LANGUAGE C COMPILE_FLAGS -mfpu=neon)
+        endif()
+    endif()
 endif()
 
 if(MSVC)
@@ -183,8 +229,8 @@ if(MINGW)
     set(ZLIB_DLL_SRCS ${CMAKE_CURRENT_BINARY_DIR}/zlib1rc.obj)
 endif(MINGW)
 
-add_library(zlib SHARED ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_DLL_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
-add_library(zlibstatic STATIC ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+add_library(zlib SHARED ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_ARMv8} ${ZLIB_DLL_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
+add_library(zlibstatic STATIC ${ZLIB_SRCS} ${ZLIB_ASMS} ${ZLIB_ARMv8} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
 set_target_properties(zlib PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
 set_target_properties(zlib PROPERTIES SOVERSION 1)
 
