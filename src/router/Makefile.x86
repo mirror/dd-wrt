@@ -167,8 +167,8 @@ endif
 	fi
 	rm -rf $(TARGETDIR)/lib/modules
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
-	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
-	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
+	rm -f $(TARGETDIR)/lib/modules/$(KRELEASE)/build
+	rm -f $(TARGETDIR)/lib/modules/$(KRELEASE)/source
 
 	-$(MAKE) -f Makefile.x86 ath9k
 	-$(MAKE) -f Makefile.x86 ath9k-install
@@ -220,8 +220,8 @@ endif
 
 install_headers:
 # important step, required for new kernels
-	-mkdir -p $(TOP)/kernel_headers/$(KERNELRELEASE)
-	$(MAKE) -C $(LINUXDIR) headers_install ARCH=i386 INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KERNELRELEASE)
+	-mkdir -p $(TOP)/kernel_headers/$(KRELEASE)
+	$(MAKE) -C $(LINUXDIR) headers_install ARCH=i386 INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KRELEASE)
 
 	
 realclean: $(obj-clean)
@@ -536,10 +536,10 @@ endif
 #	umount $(TARGETDIR)
 #find $(TARGETDIR)/lib/modules -name *.ko -exec mipsel-linux-strip --strip-unneeded --remove-section=.comment {} +		
 	#e2fsck -y -f $(ARCH)-uclibc/root.fs
-	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
-	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net
+	-find $(TARGETDIR)/lib/modules/$(KRELEASE)/kernel -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KRELEASE) \;
+	-find $(TARGETDIR)/lib/modules/$(KRELEASE)/net -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KRELEASE) \;
+	rm -rf $(TARGETDIR)/lib/modules/$(KRELEASE)/kernel
+	rm -rf $(TARGETDIR)/lib/modules/$(KRELEASE)/net
 	#e2fsck -y -f $(ARCH)-uclibc/root.fs
 	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
 	#cd $(TARGETDIR)
