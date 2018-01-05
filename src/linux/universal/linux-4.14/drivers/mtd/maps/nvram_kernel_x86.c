@@ -74,7 +74,8 @@ static void early_nvram_init(void)
 	wr = buffer;
 	offs = 0;
 	for (i = 0; i < (NVRAM_SPACE / PAGE_SIZE); i++) {
-		len = kernel_read(srcf,  srcf->f_pos + offs, wr, PAGE_SIZE);
+		loff_t offset = srcf->f_pos + offs;
+		len = kernel_read(srcf, wr, PAGE_SIZE, &offset);
 		offs += len;
 		wr += PAGE_SIZE;
 	}
