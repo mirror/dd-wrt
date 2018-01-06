@@ -206,7 +206,7 @@ static int fq_parse_opt(struct qdisc_util *qu, int argc, char **argv,
 	if (set_maxrate)
 		addattr_l(n, 1024, TCA_FQ_FLOW_MAX_RATE,
 			  &maxrate, sizeof(maxrate));
-#ifdef CE_THRESHOLD
+#ifdef LOW_RATE_THRESHOLD
 	if (set_low_rate_threshold)
 		addattr_l(n, 1024, TCA_FQ_LOW_RATE_THRESHOLD,
 			  &low_rate_threshold, sizeof(low_rate_threshold));
@@ -295,7 +295,7 @@ static int fq_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
 		if (rate != 0)
 			fprintf(f, "defrate %s ", sprint_rate(rate, b1));
 	}
-#ifdef CE_THRESHOLD
+#ifdef LOW_RATE_THRESHOLD
 	if (tb[TCA_FQ_LOW_RATE_THRESHOLD] &&
 	    RTA_PAYLOAD(tb[TCA_FQ_LOW_RATE_THRESHOLD]) >= sizeof(__u32)) {
 		rate = rta_getattr_u32(tb[TCA_FQ_LOW_RATE_THRESHOLD]);
@@ -340,7 +340,7 @@ static int fq_print_xstats(struct qdisc_util *qu, FILE *f,
 
 	fprintf(f, ", %llu throttled", st->throttled);
 
-#ifdef CE_THRESHOLD
+#ifdef LOW_RATE_THRESHOLD
 	if (st->unthrottle_latency_ns)
 		fprintf(f, ", %u ns latency", st->unthrottle_latency_ns);
 #endif
