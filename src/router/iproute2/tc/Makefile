@@ -26,6 +26,7 @@ TCMODULES += q_multiq.o
 endif
 ifeq ($(KERNELVERSION),3.18)
 TCMODULES += q_multiq.o
+TCMODULES += q_codel.o
 TCMODULES += q_fq_codel.o
 TCMODULES += q_fq.o
 TCMODULES += q_pie.o
@@ -33,6 +34,7 @@ endif
 
 ifeq ($(KERNELVERSION),4.4)
 TCMODULES += q_multiq.o
+TCMODULES += q_codel.o
 TCMODULES += q_fq_codel.o
 TCMODULES += q_fq.o
 TCMODULES += q_pie.o
@@ -40,6 +42,7 @@ endif
 
 ifeq ($(KERNELVERSION),4.9)
 TCMODULES += q_multiq.o
+TCMODULES += q_codel.o
 TCMODULES += q_fq_codel.o
 TCMODULES += q_fq.o
 TCMODULES += q_pie.o
@@ -47,6 +50,7 @@ endif
 
 ifeq ($(KERNELVERSION),4.14)
 TCMODULES += q_multiq.o
+TCMODULES += q_codel.o
 TCMODULES += q_fq_codel.o
 TCMODULES += q_fq.o
 TCMODULES += q_pie.o
