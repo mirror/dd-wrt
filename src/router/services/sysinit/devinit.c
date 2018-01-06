@@ -138,7 +138,7 @@ void start_devinit(void)
 	fprintf(stderr, "start MSTP Daemon\n");
 	eval("/sbin/mstpd");
 #endif
-#ifdef HAVE_ATH10K
+#if defined(HAVE_ATH10K) && !defined(HAVE_X86)
 	eval("rm", "-f", "/tmp/ath10k-board.bin");
 	eval("ln", "-s", "/lib/ath10k/board.bin", "/tmp/ath10k-board.bin");
 	eval("ln", "-s", "/lib/ath10k/board_9984.bin", "/tmp/board1.bin");
