@@ -33,6 +33,7 @@ TCMODULES += q_pie.o
 endif
 
 ifeq ($(KERNELVERSION),4.4)
+CFLAGS += -DCE_THRESHOLD
 TCMODULES += q_multiq.o
 TCMODULES += q_codel.o
 TCMODULES += q_fq_codel.o
@@ -41,6 +42,7 @@ TCMODULES += q_pie.o
 endif
 
 ifeq ($(KERNELVERSION),4.9)
+CFLAGS += -DCE_THRESHOLD
 TCMODULES += q_multiq.o
 TCMODULES += q_codel.o
 TCMODULES += q_fq_codel.o
@@ -49,6 +51,7 @@ TCMODULES += q_pie.o
 endif
 
 ifeq ($(KERNELVERSION),4.14)
+CFLAGS += -DCE_THRESHOLD
 TCMODULES += q_multiq.o
 TCMODULES += q_codel.o
 TCMODULES += q_fq_codel.o
