@@ -42,6 +42,7 @@ TCMODULES += q_pie.o
 endif
 
 ifeq ($(KERNELVERSION),4.9)
+CFLAGS += -DLOW_RATE_THRESHOLD
 CFLAGS += -DCE_THRESHOLD
 TCMODULES += q_multiq.o
 TCMODULES += q_codel.o
@@ -51,6 +52,7 @@ TCMODULES += q_pie.o
 endif
 
 ifeq ($(KERNELVERSION),4.14)
+CFLAGS += -DLOW_RATE_THRESHOLD
 CFLAGS += -DCE_THRESHOLD
 TCMODULES += q_multiq.o
 TCMODULES += q_codel.o
