@@ -1040,17 +1040,13 @@ int internal_getRouterBrand()
 	fp = fopen("/sys/devices/virtual/dmi/id/board_name", "rb");
 	if (!fp)
 		goto generic;
-	name[len] = 0x20;
-
-	int len2 = len + 1;
-	while (!feof(fp) && len2 < (sizeof(name) - 1)) {
-		name[len2] = getc(fp);
-		if (name[len2] != 0xa && name[len2] != 0)
-			len2++;
+	name[len++] = 0x20;
+	while (!feof(fp) && len < (sizeof(name) - 1)) {
+		name[len] = getc(fp);
+		if (name[len] != 0xa && name[len] != 0)
+			len++;
 	}
-	if (len2 < 0)
-		goto generic;
-	name[len2] = 0;
+	name[len] = 0;
 	setRouter(name);
 	return ROUTER_BOARD_X86;
       generic:;
