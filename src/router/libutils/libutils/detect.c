@@ -1031,7 +1031,7 @@ int internal_getRouterBrand()
 		goto generic;
 	int len = 0;
 	int b;
-	while ((b = getc(in)) != EOF && len < (sizeof(name) - 1)) {
+	while ((b = getc(fp)) != EOF && len < (sizeof(name) - 1)) {
 		if (b == 0xa || b == 0)
 			break;
 		name[len++] = b;
@@ -1043,7 +1043,7 @@ int internal_getRouterBrand()
 	if (!fp)
 		goto generic;
 	name[len++] = 0x20;
-	while ((b = getc(in)) != EOF && len < (sizeof(name) - 1)) {
+	while ((b = getc(fp)) != EOF && len < (sizeof(name) - 1)) {
 		if (b == 0xa || b == 0)
 			break;
 		name[len++] = b;
