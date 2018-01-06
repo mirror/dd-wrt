@@ -605,7 +605,7 @@ int internal_getRouterBrand()
 		}
 		return ROUTER_NETGEAR_R7000;
 	}
-	
+
 	if (boardnum == 32 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1601")) {
 		if (nvram_match("et2phyaddr", "30")) {
@@ -615,7 +615,7 @@ int internal_getRouterBrand()
 			setRouter("Netgear R6400");
 			return ROUTER_NETGEAR_R6400;
 		}
-		
+
 	}
 
 	if (boardnum == 32 && nvram_match("boardtype", "0x0665")
@@ -1029,17 +1029,28 @@ int internal_getRouterBrand()
 	FILE *fp = fopen("/sys/devices/virtual/dmi/id/board_vendor", "rb");
 	if (!fp)
 		goto generic;
-	int len = fread(name, 1, sizeof(name) - 1, fp);
+	int len = 0;
+	while (!feof(fp) && len < (sizeof(name) - 1)) {
+		name[len] = getc(fp);
+		if (name[len] != 0xa && name[len] != 0)
+			len++;
+	}
 	if (len < 1)
 		goto generic;
 	fp = fopen("/sys/devices/virtual/dmi/id/board_name", "rb");
 	if (!fp)
 		goto generic;
-	name[len - 1] = 0x20;
-	int len2 = fread(&name[len], 1, sizeof(name) - (len + 2), fp);
+	name[len] = 0x20;
+
+	int len2 = len + 1;
+	while (!feof(fp) && len2 < (sizeof(name) - 1)) {
+		name[len2] = getc(fp);
+		if (name[len2] != 0xa && name[len2] != 0)
+			len2++;
+	}
 	if (len2 < 0)
 		goto generic;
-	name[len + len2 + 1] = 0;
+	name[len2] = 0;
 	setRouter(name);
 	return ROUTER_BOARD_X86;
       generic:;
