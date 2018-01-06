@@ -38,6 +38,20 @@ TCMODULES += q_fq.o
 TCMODULES += q_pie.o
 endif
 
+ifeq ($(KERNELVERSION),4.9)
+TCMODULES += q_multiq.o
+TCMODULES += q_fq_codel.o
+TCMODULES += q_fq.o
+TCMODULES += q_pie.o
+endif
+
+ifeq ($(KERNELVERSION),4.14)
+TCMODULES += q_multiq.o
+TCMODULES += q_fq_codel.o
+TCMODULES += q_fq.o
+TCMODULES += q_pie.o
+endif
+
 
 TCMODULES += m_gact.o
 TCMODULES += m_mirred.o
