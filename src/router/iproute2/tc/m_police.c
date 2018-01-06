@@ -293,9 +293,10 @@ int act_parse_police(struct action_util *a,int *argc_p, char ***argv_p, int tca_
                 addattr_l(n, MAX_MSG, TCA_POLICE_PEAKRATE, ptab, 1024);
 	if (avrate)
 		addattr32(n, MAX_MSG, TCA_POLICE_AVRATE, avrate);
+#ifdef TCA_POLICE_RESULT	
 	if (presult)
 		addattr32(n, MAX_MSG, TCA_POLICE_RESULT, presult);
-
+#endif
 	tail->rta_len = (void *) NLMSG_TAIL(n) - (void *) tail;
 	res = 0;
 
@@ -346,9 +347,11 @@ print_police(struct action_util *a, FILE *f, struct rtattr *arg)
 	if (tb[TCA_POLICE_AVRATE])
 		fprintf(f, "avrate %s ", sprint_rate(*(__u32*)RTA_DATA(tb[TCA_POLICE_AVRATE]), b1));
 	fprintf(f, "action %s", police_action_n2a(p->action, b1, sizeof(b1)));
+#ifdef TCA_POLICE_RESULT	
 	if (tb[TCA_POLICE_RESULT]) {
 		fprintf(f, "/%s ", police_action_n2a(*(int*)RTA_DATA(tb[TCA_POLICE_RESULT]), b1, sizeof(b1)));
 	} else
+#endif
 		fprintf(f, " ");
 	fprintf(f, "\nref %d bind %d\n",p->refcnt, p->bindcnt);
 

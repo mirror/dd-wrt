@@ -135,18 +135,22 @@ static int fq_codel_parse_opt(struct qdisc_util *qu, int argc, char **argv,
 		addattr_l(n, 1024, TCA_FQ_CODEL_FLOWS, &flows, sizeof(flows));
 	if (quantum)
 		addattr_l(n, 1024, TCA_FQ_CODEL_QUANTUM, &quantum, sizeof(quantum));
+#ifdef CE_THRESHOLD
 	if (interval)
 		addattr_l(n, 1024, TCA_FQ_CODEL_INTERVAL, &interval, sizeof(interval));
+#endif
 	if (target)
 		addattr_l(n, 1024, TCA_FQ_CODEL_TARGET, &target, sizeof(target));
 	if (ecn != -1)
 		addattr_l(n, 1024, TCA_FQ_CODEL_ECN, &ecn, sizeof(ecn));
+#ifdef CE_THRESHOLD
 	if (ce_threshold != ~0U)
 		addattr_l(n, 1024, TCA_FQ_CODEL_CE_THRESHOLD,
 			  &ce_threshold, sizeof(ce_threshold));
 	if (memory != ~0U)
 		addattr_l(n, 1024, TCA_FQ_CODEL_MEMORY_LIMIT,
 			  &memory, sizeof(memory));
+#endif
 
 	tail->rta_len = (void *) NLMSG_TAIL(n) - (void *) tail;
 	return 0;
@@ -191,6 +195,7 @@ static int fq_codel_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt
 		target = rta_getattr_u32(tb[TCA_FQ_CODEL_TARGET]);
 		fprintf(f, "target %s ", sprint_time(target, b1));
 	}
+#ifdef CE_THRESHOLD
 	if (tb[TCA_FQ_CODEL_CE_THRESHOLD] &&
 	    RTA_PAYLOAD(tb[TCA_FQ_CODEL_CE_THRESHOLD]) >= sizeof(__u32)) {
 		ce_threshold = rta_getattr_u32(tb[TCA_FQ_CODEL_CE_THRESHOLD]);
@@ -207,6 +212,7 @@ static int fq_codel_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt
 
 		fprintf(f, "memory_limit %s ", sprint_size(memory_limit, b1));
 	}
+#endif
 	if (tb[TCA_FQ_CODEL_ECN] &&
 	    RTA_PAYLOAD(tb[TCA_FQ_CODEL_ECN]) >= sizeof(__u32)) {
 		ecn = rta_getattr_u32(tb[TCA_FQ_CODEL_ECN]);
@@ -238,12 +244,14 @@ static int fq_codel_print_xstats(struct qdisc_util *qu, FILE *f,
 			st->qdisc_stats.drop_overlimit,
 			st->qdisc_stats.new_flow_count,
 			st->qdisc_stats.ecn_mark);
+#ifdef CE_THRESHOLD
 		if (st->qdisc_stats.ce_mark)
 			fprintf(f, " ce_mark %u", st->qdisc_stats.ce_mark);
 		if (st->qdisc_stats.memory_usage)
 			fprintf(f, " memory_used %u", st->qdisc_stats.memory_usage);
 		if (st->qdisc_stats.drop_overmemory)
 			fprintf(f, " drop_overmemory %u", st->qdisc_stats.drop_overmemory);
+#endif
 		fprintf(f, "\n  new_flows_len %u old_flows_len %u",
 			st->qdisc_stats.new_flows_len,
 			st->qdisc_stats.old_flows_len);
