@@ -298,6 +298,8 @@ include rules/lsof.mk
 include rules/wolfssl.mk
 include rules/powertop.mk
 include rules/libmbim.mk
+include rules/libmnl.mk
+include rules/wireguard.mk
 
 #
 # Generic rules
