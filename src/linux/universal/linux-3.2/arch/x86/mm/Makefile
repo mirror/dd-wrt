@@ -1,5 +1,5 @@
 obj-y	:=  init.o init_$(BITS).o fault.o ioremap.o extable.o pageattr.o mmap.o \
-	    pat.o pgtable.o physaddr.o gup.o setup_nx.o
+	    pat.o pgtable.o physaddr.o gup.o setup_nx.o tlb.o
 
 # Make sure __phys_addr has no stackprotector
 nostackp := $(call cc-option, -fno-stack-protector)
@@ -7,7 +7,6 @@ CFLAGS_physaddr.o		:= $(nostackp)
 CFLAGS_setup_nx.o		:= $(nostackp)
 
 obj-$(CONFIG_X86_PAT)		+= pat_rbtree.o
-obj-$(CONFIG_SMP)		+= tlb.o
 
 obj-$(CONFIG_X86_32)		+= pgtable_32.o iomap_32.o
 
@@ -30,3 +29,4 @@ obj-$(CONFIG_NUMA_EMU)		+= numa_emulation.o
 obj-$(CONFIG_HAVE_MEMBLOCK)		+= memblock.o
 
 obj-$(CONFIG_MEMTEST)		+= memtest.o
+obj-$(CONFIG_PAGE_TABLE_ISOLATION)		+= kaiser.o
