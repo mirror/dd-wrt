@@ -12,12 +12,43 @@
 #include <asm/cache.h>
 #include <asm/apic.h>
 #include <asm/uv/uv.h>
+#include <asm/kaiser.h>
 
 DEFINE_PER_CPU_SHARED_ALIGNED(struct tlb_state, cpu_tlbstate)
 			= { &init_mm, 0, };
 
+static void load_new_mm_cr3(pgd_t *pgdir)
+{
+	unsigned long new_mm_cr3 = __pa(pgdir);
+
+	if (kaiser_enabled) {
+		/*
+		 * We reuse the same PCID for different tasks, so we must
+		 * flush all the entries for the PCID out when we change tasks.
+		 * Flush KERN below, flush USER when returning to userspace in
+		 * kaiser's SWITCH_USER_CR3 (_SWITCH_TO_USER_CR3) macro.
+		 *
+		 * invpcid_flush_single_context(X86_CR3_PCID_ASID_USER) could
+		 * do it here, but can only be used if X86_FEATURE_INVPCID is
+		 * available - and many machines support pcid without invpcid.
+		 *
+		 * If X86_CR3_PCID_KERN_FLUSH actually added something, then it
+		 * would be needed in the write_cr3() below - if PCIDs enabled.
+		 */
+		BUILD_BUG_ON(X86_CR3_PCID_KERN_FLUSH);
+		kaiser_flush_tlb_on_return_to_user();
+	}
+
+	/*
+	 * Caution: many callers of this function expect
+	 * that load_new_mm_cr3() is serializing and orders TLB
+	 * fills with respect to the mm_cpumask writes.
+	 */
+	write_cr3(new_mm_cr3);
+}
+
 /*
- *	Smarter SMP flushing macros.
+ *	TLB flushing, formerly SMP-only
  *		c/o Linus Torvalds.
  *
  *	These mean you can really definitely utterly forget about
@@ -65,9 +96,84 @@ void leave_mm(int cpu)
 		BUG();
 	cpumask_clear_cpu(cpu,
 			  mm_cpumask(percpu_read(cpu_tlbstate.active_mm)));
-	load_cr3(swapper_pg_dir);
+	load_new_mm_cr3(swapper_pg_dir);
 }
 EXPORT_SYMBOL_GPL(leave_mm);
+
+void switch_mm(struct mm_struct *prev, struct mm_struct *next,
+	       struct task_struct *tsk)
+{
+	unsigned long flags;
+
+	local_irq_save(flags);
+	switch_mm_irqs_off(prev, next, tsk);
+	local_irq_restore(flags);
+}
+
+void switch_mm_irqs_off(struct mm_struct *prev, struct mm_struct *next,
+			struct task_struct *tsk)
+{
+	unsigned cpu = smp_processor_id();
+
+	if (likely(prev != next)) {
+		percpu_write(cpu_tlbstate.state, TLBSTATE_OK);
+		percpu_write(cpu_tlbstate.active_mm, next);
+		cpumask_set_cpu(cpu, mm_cpumask(next));
+
+		/*
+		 * Re-load page tables.
+		 *
+		 * This logic has an ordering constraint:
+		 *
+		 *  CPU 0: Write to a PTE for 'next'
+		 *  CPU 0: load bit 1 in mm_cpumask.  if nonzero, send IPI.
+		 *  CPU 1: set bit 1 in next's mm_cpumask
+		 *  CPU 1: load from the PTE that CPU 0 writes (implicit)
+		 *
+		 * We need to prevent an outcome in which CPU 1 observes
+		 * the new PTE value and CPU 0 observes bit 1 clear in
+		 * mm_cpumask.  (If that occurs, then the IPI will never
+		 * be sent, and CPU 0's TLB will contain a stale entry.)
+		 *
+		 * The bad outcome can occur if either CPU's load is
+		 * reordered before that CPU's store, so both CPUs must
+		 * execute full barriers to prevent this from happening.
+		 *
+		 * Thus, switch_mm needs a full barrier between the
+		 * store to mm_cpumask and any operation that could load
+		 * from next->pgd.  TLB fills are special and can happen
+		 * due to instruction fetches or for no reason at all,
+		 * and neither LOCK nor MFENCE orders them.
+		 * Fortunately, load_new_mm_cr3() is serializing
+		 * and gives the  ordering guarantee we need.
+		 */
+		load_new_mm_cr3(next->pgd);
+
+		/* stop flush ipis for the previous mm */
+		cpumask_clear_cpu(cpu, mm_cpumask(prev));
+
+		/*
+		 * load the LDT, if the LDT is different:
+		 */
+		if (unlikely(prev->context.ldt != next->context.ldt))
+			load_mm_ldt(next);
+	} else {
+		percpu_write(cpu_tlbstate.state, TLBSTATE_OK);
+		BUG_ON(percpu_read(cpu_tlbstate.active_mm) != next);
+
+		if (!cpumask_test_and_set_cpu(cpu, mm_cpumask(next))) {
+			/* We were in lazy tlb mode and leave_mm disabled
+			 * tlb flush IPI delivery. We must reload CR3
+			 * to make sure to use no freed page tables.
+			 *
+			 * As above, load_new_mm_cr3() is serializing and orders
+			 * TLB fills with respect to the mm_cpumask write.
+			 */
+			load_new_mm_cr3(next->pgd);
+			load_mm_ldt(next);
+		}
+	}
+}
 
 /*
  *
@@ -172,6 +278,7 @@ out:
 static void flush_tlb_others_ipi(const struct cpumask *cpumask,
 				 struct mm_struct *mm, unsigned long va)
 {
+#ifdef CONFIG_SMP
 	unsigned int sender;
 	union smp_flush_state *f;
 
@@ -200,6 +307,7 @@ static void flush_tlb_others_ipi(const struct cpumask *cpumask,
 	f->flush_va = 0;
 	if (nr_cpu_ids > NUM_INVALIDATE_TLB_VECTORS)
 		raw_spin_unlock(&f->tlbstate_lock);
+#endif
 }
 
 void native_flush_tlb_others(const struct cpumask *cpumask,

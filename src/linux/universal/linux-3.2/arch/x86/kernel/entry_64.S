@@ -56,6 +56,9 @@
 #include <asm/ftrace.h>
 #include <asm/percpu.h>
 #include <asm/pgtable_types.h>
+#include <asm/alternative-asm.h>
+#include <asm/cpufeature.h>
+#include <asm/kaiser.h>
 
 /* Avoid __ASSEMBLER__'ifying <linux/audit.h> just for this.  */
 #include <linux/elf-em.h>
@@ -323,6 +326,7 @@ ENDPROC(native_usergs_sysret64)
 	testl $3, CS(%rdi)
 	je 1f
 	SWAPGS
+	SWITCH_KERNEL_CR3
 	/*
 	 * irq_count is used to check if a CPU is already on an interrupt stack
 	 * or not. While this is essentially redundant with preempt_count it is
@@ -362,6 +366,12 @@ END(save_rest)
 
 /* save complete stack frame */
 	.pushsection .kprobes.text, "ax"
+/*
+ * Return: ebx=0: needs swapgs but not SWITCH_USER_CR3 in paranoid_exit
+ *         ebx=1: needs neither swapgs nor SWITCH_USER_CR3 in paranoid_exit
+ *         ebx=2: needs both swapgs and SWITCH_USER_CR3 in paranoid_exit
+ *         ebx=3: needs SWITCH_USER_CR3 but not swapgs in paranoid_exit
+ */
 ENTRY(save_paranoid)
 	XCPT_FRAME 1 RDI+8
 	cld
@@ -387,7 +397,26 @@ ENTRY(save_paranoid)
 	js 1f	/* negative -> in kernel */
 	SWAPGS
 	xorl %ebx,%ebx
-1:	ret
+1:
+#ifdef CONFIG_PAGE_TABLE_ISOLATION
+	/*
+	 * We might have come in between a swapgs and a SWITCH_KERNEL_CR3
+	 * on entry, or between a SWITCH_USER_CR3 and a swapgs on exit.
+	 * Do a conditional SWITCH_KERNEL_CR3: this could safely be done
+	 * unconditionally, but we need to find out whether the reverse
+	 * should be done on return (conveyed to paranoid_exit in %ebx).
+	 */
+	ALTERNATIVE "jmp 2f", "movq %cr3, %rax", X86_FEATURE_KAISER
+	testl	$KAISER_SHADOW_PGD_OFFSET, %eax
+	jz	2f
+	orl	$2, %ebx
+	andq	$(~(X86_CR3_PCID_ASID_MASK | KAISER_SHADOW_PGD_OFFSET)), %rax
+	/* If PCID enabled, set X86_CR3_PCID_NOFLUSH_BIT */
+	ALTERNATIVE "", "bts $63, %rax", X86_FEATURE_PCID
+	movq	%rax, %cr3
+2:
+#endif
+	ret
 	CFI_ENDPROC
 END(save_paranoid)
 	.popsection
@@ -464,6 +493,7 @@ ENTRY(system_call)
 	CFI_REGISTER	rip,rcx
 	/*CFI_REGISTER	rflags,r11*/
 	SWAPGS_UNSAFE_STACK
+	SWITCH_KERNEL_CR3_NO_STACK
 	/*
 	 * A hypervisor implementation might want to use a label
 	 * after the swapgs, so that it can do the swapgs
@@ -515,6 +545,14 @@ sysret_check:
 	CFI_REGISTER	rip,rcx
 	RESTORE_ARGS 1,-ARG_SKIP,0
 	/*CFI_REGISTER	rflags,r11*/
+	/*
+	 * This opens a window where we have a user CR3, but are
+	 * running in the kernel.  This makes using the CS
+	 * register useless for telling whether or not we need to
+	 * switch CR3 in NMIs.  Normal interrupts are OK because
+	 * they are off here.
+	 */
+	SWITCH_USER_CR3
 	movq	PER_CPU_VAR(old_rsp), %rsp
 	USERGS_SYSRET64
 
@@ -851,6 +889,14 @@ retint_swapgs:		/* return to user-space */
 	 */
 	DISABLE_INTERRUPTS(CLBR_ANY)
 	TRACE_IRQS_IRETQ
+	/*
+	 * This opens a window where we have a user CR3, but are
+	 * running in the kernel.  This makes using the CS
+	 * register useless for telling whether or not we need to
+	 * switch CR3 in NMIs.  Normal interrupts are OK because
+	 * they are off here.
+	 */
+	SWITCH_USER_CR3
 	SWAPGS
 	jmp restore_args
 
@@ -891,6 +937,7 @@ native_irq_return_ldt:
 	pushq_cfi %rax
 	pushq_cfi %rdi
 	SWAPGS
+	SWITCH_KERNEL_CR3
 	movq PER_CPU_VAR(espfix_waddr),%rdi
 	movq %rax,(0*8)(%rdi)	/* RAX */
 	movq (2*8)(%rsp),%rax	/* RIP */
@@ -906,6 +953,7 @@ native_irq_return_ldt:
 	andl $0xffff0000,%eax
 	popq_cfi %rdi
 	orq PER_CPU_VAR(espfix_stack),%rax
+	SWITCH_USER_CR3
 	SWAPGS
 	movq %rax,%rsp
 	popq_cfi %rax
@@ -1366,30 +1414,41 @@ paranoidzeroentry machine_check *machine_check_vector(%rip)
 	 * is fundamentally NMI-unsafe. (we cannot change the soft and
 	 * hard flags at once, atomically)
 	 */
-
-	/* ebx:	no swapgs flag */
+/*
+ * On entry: ebx=0: needs swapgs but not SWITCH_USER_CR3
+ *           ebx=1: needs neither swapgs nor SWITCH_USER_CR3
+ *           ebx=2: needs both swapgs and SWITCH_USER_CR3
+ *           ebx=3: needs SWITCH_USER_CR3 but not swapgs
+ */
 ENTRY(paranoid_exit)
 	DEFAULT_FRAME
 	DISABLE_INTERRUPTS(CLBR_NONE)
 	TRACE_IRQS_OFF
-	testl %ebx,%ebx				/* swapgs needed? */
-	jnz paranoid_restore
-	testl $3,CS(%rsp)
-	jnz   paranoid_userspace
-paranoid_swapgs:
+	movq	%rbx, %r12		/* paranoid_userspace uses %ebx */
+	testl	$3, CS(%rsp)
+	jnz	paranoid_userspace
+paranoid_kernel:
+	movq	%r12, %rbx		/* restore after paranoid_userspace */
 	TRACE_IRQS_IRETQ 0
+#ifdef CONFIG_PAGE_TABLE_ISOLATION
+	/* No ALTERNATIVE for X86_FEATURE_KAISER: save_paranoid sets %ebx */
+	testl	$2, %ebx		/* SWITCH_USER_CR3 needed? */
+	jz	paranoid_exit_no_switch
+	SWITCH_USER_CR3
+paranoid_exit_no_switch:
+#endif
+	testl	$1, %ebx		/* swapgs needed? */
+	jnz	paranoid_exit_no_swapgs
 	SWAPGS_UNSAFE_STACK
+paranoid_exit_no_swapgs:
 	RESTORE_ALL 8
-	jmp irq_return
-paranoid_restore:
-	TRACE_IRQS_IRETQ 0
-	RESTORE_ALL 8
-	jmp irq_return
+	jmp	irq_return
+
 paranoid_userspace:
 	GET_THREAD_INFO(%rcx)
 	movl TI_flags(%rcx),%ebx
 	andl $_TIF_WORK_MASK,%ebx
-	jz paranoid_swapgs
+	jz paranoid_kernel
 	movq %rsp,%rdi			/* &pt_regs */
 	call sync_regs
 	movq %rax,%rsp			/* switch stack for scheduling */
@@ -1438,6 +1497,13 @@ ENTRY(error_entry)
 	movq_cfi r13, R13+8
 	movq_cfi r14, R14+8
 	movq_cfi r15, R15+8
+	/*
+	 * error_entry() always returns with a kernel gsbase and
+	 * CR3.  We must also have a kernel CR3/gsbase before
+	 * calling TRACE_IRQS_*.  Just unconditionally switch to
+	 * the kernel CR3 here.
+	 */
+	SWITCH_KERNEL_CR3
 	xorl %ebx,%ebx
 	testl $3,CS+8(%rsp)
 	je error_kernelspace
@@ -1527,22 +1593,32 @@ ENTRY(nmi)
 	call do_nmi
 #ifdef CONFIG_TRACE_IRQFLAGS
 	/* paranoidexit; without TRACE_IRQS_OFF */
-	/* ebx:	no swapgs flag */
+	/* ebx:	no-swapgs and kaiser-switch-cr3 flag */
 	DISABLE_INTERRUPTS(CLBR_NONE)
-	testl %ebx,%ebx				/* swapgs needed? */
-	jnz nmi_restore
-	testl $3,CS(%rsp)
-	jnz nmi_userspace
-nmi_swapgs:
+	movq	%rbx, %r12		/* nmi_userspace uses %ebx */
+	testl	$3, CS(%rsp)
+	jnz	nmi_userspace
+nmi_kernel:
+	movq	%r12, %rbx		/* restore after nmi_userspace */
+#ifdef CONFIG_PAGE_TABLE_ISOLATION
+	/* No ALTERNATIVE for X86_FEATURE_KAISER: save_paranoid sets %ebx */
+	testl	$2, %ebx		/* SWITCH_USER_CR3 needed? */
+	jz	nmi_exit_no_switch
+	SWITCH_USER_CR3
+nmi_exit_no_switch:
+#endif
+	testl	$1, %ebx		/* swapgs needed? */
+	jnz	nmi_exit_no_swapgs
 	SWAPGS_UNSAFE_STACK
-nmi_restore:
+nmi_exit_no_swapgs:
 	RESTORE_ALL 8
-	jmp irq_return
+	jmp	irq_return
+
 nmi_userspace:
 	GET_THREAD_INFO(%rcx)
 	movl TI_flags(%rcx),%ebx
 	andl $_TIF_WORK_MASK,%ebx
-	jz nmi_swapgs
+	jz nmi_kernel
 	movq %rsp,%rdi			/* &pt_regs */
 	call sync_regs
 	movq %rax,%rsp			/* switch stack for scheduling */
