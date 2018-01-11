@@ -194,6 +194,10 @@ endif
 	-$(MAKE) -f Makefile.danube batman-adv-install
 	-$(MAKE) -f Makefile.danube opendpi
 	-$(MAKE) -f Makefile.danube opendpi-install
+ifeq ($(CONFIG_WIREGUARD),y)
+	-$(MAKE) -f Makefile.danube wireguard
+	-$(MAKE) -f Makefile.dabube wireguard-install
+endif
 	-$(MAKE) -f Makefile.danube uniwip-gpio
 	-$(MAKE) -f Makefile.danube uniwip-gpio-install
 

@@ -154,6 +154,10 @@ kernel:
 	-$(MAKE) -f Makefile.alpine batman-adv-install
 	-$(MAKE) -f Makefile.alpine opendpi
 	-$(MAKE) -f Makefile.alpine opendpi-install
+ifeq ($(CONFIG_WIREGUARD),y)
+	-$(MAKE) -f Makefile.alpine wireguard
+	-$(MAKE) -f Makefile.alpine wireguard-install
+endif
 #	-$(MAKE) -f Makefile.alpine uniwip-gpio
 #	-$(MAKE) -f Makefile.alpine uniwip-gpio-install
 

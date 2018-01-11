@@ -295,6 +295,11 @@ endif
 	-$(MAKE) -f Makefile.ar531x batman-adv-install
 	-$(MAKE) -f Makefile.ar531x opendpi
 	-$(MAKE) -f Makefile.ar531x opendpi-install
+ifeq ($(CONFIG_WIREGUARD),y)
+	-$(MAKE) -f Makefile.ar531x wireguard
+	-$(MAKE) -f Makefile.ar531x wireguard-install
+endif
+
 	-$(MAKE) -f Makefile.ar531x uniwip-gpio
 	-$(MAKE) -f Makefile.ar531x uniwip-gpio-install
 

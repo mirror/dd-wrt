@@ -182,6 +182,10 @@ kernel:
 	-$(MAKE) -f Makefile.ventana batman-adv-install
 	-$(MAKE) -f Makefile.ventana opendpi
 	-$(MAKE) -f Makefile.ventana opendpi-install
+ifeq ($(CONFIG_WIREGUARD),y)
+	-$(MAKE) -f Makefile.ventana wireguard
+	-$(MAKE) -f Makefile.ventana wireguard-install
+endif
 	-$(MAKE) -f Makefile.ventana uniwip-gpio
 	-$(MAKE) -f Makefile.ventana uniwip-gpio-install
 
