@@ -582,15 +582,6 @@ ifneq ($(CONFIG_ATH10K),y)
 	sed -i 's/\CONFIG_HWMON=y/# CONFIG_HWMON is not set/g' $(LINUXDIR)/.config
 	sed -i 's/\CONFIG_HWMON=m/# CONFIG_HWMON is not set/g' $(LINUXDIR)/.config
 endif
-ifeq ($(CONFIG_LIBMBIM),y)
-	sed -i 's/\# CONFIG_USB_NET_CDC_NCM is not set/CONFIG_USB_NET_CDC_NCM=m/g' $(LINUXDIR)/.config
-	sed -i 's/\# CONFIG_USB_NET_HUAWEI_CDC_NCM is not set/CONFIG_USB_NET_HUAWEI_CDC_NCM=m/g' $(LINUXDIR)/.config
-	sed -i 's/\# CONFIG_USB_NET_CDC_MBIM is not set/CONFIG_USB_NET_CDC_MBIM=m/g' $(LINUXDIR)/.config
-endif
-ifeq ($(CONFIG_WIREGUARD),y)
-	sed -i 's/\# CONFIG_NET_FOU is not set/CONFIG_NET_FOU=m/g' $(LINUXDIR)/.config
-endif
-
 
 	rm -f $(LINUXDIR)/symtab.h
 	touch $(LINUXDIR)/symtab.h
