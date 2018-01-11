@@ -83,10 +83,13 @@ void __init chacha20poly1305_fpu_init(void)
 	chacha20poly1305_use_neon = elf_hwcap & HWCAP_NEON;
 #endif
 }
-#elif defined(CONFIG_MIPS) && defined(CONFIG_64BIT)
+#elif defined(CONFIG_MIPS) && (defined(CONFIG_64BIT) || defined(CONFIG_CPU_MIPS32_R2))
 asmlinkage void poly1305_init_mips(void *ctx, const u8 key[16]);
 asmlinkage void poly1305_blocks_mips(void *ctx, const u8 *inp, size_t len, u32 padbit);
 asmlinkage void poly1305_emit_mips(void *ctx, u8 mac[16], const u32 nonce[4]);
+#if defined(CONFIG_CPU_MIPS32_R2)
+asmlinkage void chacha20_mips(u8 *out, const u8 *in, size_t len, const u32 key[8], const u32 counter[4]);
+#endif
 void __init chacha20poly1305_fpu_init(void) { }
 #else
 void __init chacha20poly1305_fpu_init(void) { }
@@ -265,6 +268,10 @@ static void chacha20_crypt(struct chacha20_ctx *ctx, u8 *dst, const u8 *src, u32
 no_simd:
 #if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 	chacha20_arm(dst, src, bytes, &ctx->state[4], &ctx->state[12]);
+	ctx->state[12] += (bytes + 63) / 64;
+	return;
+#elif defined(CONFIG_MIPS) && defined(CONFIG_CPU_MIPS32_R2)
+	chacha20_mips(dst, src, bytes, &ctx->state[4], &ctx->state[12]);
 	ctx->state[12] += (bytes + 63) / 64;
 	return;
 #endif
@@ -498,7 +505,7 @@ static void poly1305_init(struct poly1305_ctx *ctx, const u8 key[POLY1305_KEY_SI
 		ctx->func.emit = poly1305_emit_neon;
 	}
 #endif
-#elif defined(CONFIG_MIPS) && defined(CONFIG_64BIT)
+#elif defined(CONFIG_MIPS) && (defined(CONFIG_64BIT) || defined(CONFIG_CPU_MIPS32_R2))
 	poly1305_init_mips(ctx->opaque, key);
 	ctx->func.blocks = poly1305_blocks_mips;
 	ctx->func.emit = poly1305_emit_mips;
@@ -510,7 +517,7 @@ static void poly1305_init(struct poly1305_ctx *ctx, const u8 key[POLY1305_KEY_SI
 
 static void poly1305_update(struct poly1305_ctx *ctx, const u8 *inp, size_t len)
 {
-#if defined(CONFIG_X86_64) || defined(CONFIG_ARM) || defined(CONFIG_ARM64) || (defined(CONFIG_MIPS) && defined(CONFIG_64BIT))
+#if defined(CONFIG_X86_64) || defined(CONFIG_ARM) || defined(CONFIG_ARM64) || (defined(CONFIG_MIPS) && (defined(CONFIG_64BIT) || defined(CONFIG_CPU_MIPS32_R2)))
 	const poly1305_blocks_f blocks = ctx->func.blocks;
 #else
 	const poly1305_blocks_f blocks = poly1305_blocks_generic;
@@ -550,7 +557,7 @@ static void poly1305_update(struct poly1305_ctx *ctx, const u8 *inp, size_t len)
 
 static void poly1305_finish(struct poly1305_ctx *ctx, u8 mac[16])
 {
-#if defined(CONFIG_X86_64) || defined(CONFIG_ARM) || defined(CONFIG_ARM64) || (defined(CONFIG_MIPS) && defined(CONFIG_64BIT))
+#if defined(CONFIG_X86_64) || defined(CONFIG_ARM) || defined(CONFIG_ARM64) || (defined(CONFIG_MIPS) && (defined(CONFIG_64BIT) || defined(CONFIG_CPU_MIPS32_R2xxxxxxxPOLY_IS_NOT_READY_YET)))
 	const poly1305_blocks_f blocks = ctx->func.blocks;
 	const poly1305_emit_f emit = ctx->func.emit;
 #else
