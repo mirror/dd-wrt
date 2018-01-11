@@ -57,7 +57,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		sprintf(temp, "oet%d_proto", tun);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.proto)</script></div>\n");
-		websWrite(wp, "<select name=\"oet%d_proto\"\">\n", tum);
+		websWrite(wp, "<select name=\"oet%d_proto\"\">\n", tun);
 		websWrite(wp, "<option value=\"0\" %s onclick=\"show_layer_ext(this, 'idmtik%d', false)><script type=\"text/javascript\">Capture(eoip.etherip)</script></option>\n",
 			  nvram_match(temp, "0") ? "selected=\"selected\"" : "", tun);
 		websWrite(wp, "<option value=\"1\" %s onclick=\"show_layer_ext(this, 'idmtik%d', true)><script type=\"text/javascript\">Capture(eoip.mtik)</script></option>\n",
