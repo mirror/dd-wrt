@@ -12,6 +12,22 @@ function to_apply(F) {
 	applytake(F);
 }
 
+function changeproto(F, index, value)
+{
+if (value == 1) {
+	show_layer_ext(F, "idmtik" + index, true);
+} else {
+	show_layer_ext(F, "idmtik" + index, false);
+}
+
+if (value == 2) {
+	show_layer_ext(F, "idwireguard" + index, true);
+} else {
+	show_layer_ext(F, "idwireguard" + index, false);
+}
+
+}
+
 var update;
 
 addEvent(window, "load", function() {
@@ -47,6 +63,17 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.eop.oet8_proto, 'idmtik8', <% nvram_else_match("oet8_proto", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.eop.oet9_proto, 'idmtik9', <% nvram_else_match("oet9_proto", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.eop.oet10_proto, 'idmtik10', <% nvram_else_match("oet10_proto", "1", "1", "0"); %> == 1);
+
+		show_layer_ext(document.eop.oet1_proto, 'idwireguard1', <% nvram_else_match("oet1_proto", "2", "2", "0"); %> == 2);
+		show_layer_ext(document.eop.oet2_proto, 'idwireguard2', <% nvram_else_match("oet2_proto", "2", "2", "0"); %> == 2);
+		show_layer_ext(document.eop.oet3_proto, 'idwireguard3', <% nvram_else_match("oet3_proto", "2", "2", "0"); %> == 2);
+		show_layer_ext(document.eop.oet4_proto, 'idwireguard4', <% nvram_else_match("oet4_proto", "2", "2", "0"); %> == 2);
+		show_layer_ext(document.eop.oet5_proto, 'idwireguard5', <% nvram_else_match("oet5_proto", "2", "2", "0"); %> == 2);
+		show_layer_ext(document.eop.oet6_proto, 'idwireguard6', <% nvram_else_match("oet6_proto", "2", "2", "0"); %> == 2);
+		show_layer_ext(document.eop.oet7_proto, 'idwireguard7', <% nvram_else_match("oet7_proto", "2", "2", "0"); %> == 2);
+		show_layer_ext(document.eop.oet8_proto, 'idwireguard8', <% nvram_else_match("oet8_proto", "2", "2", "0"); %> == 2);
+		show_layer_ext(document.eop.oet9_proto, 'idwireguard9', <% nvram_else_match("oet9_proto", "2", "2", "0"); %> == 2);
+		show_layer_ext(document.eop.oet10_proto, 'idwireguard10', <% nvram_else_match("oet10_proto", "2", "2", "0"); %> == 2);
 		
 		update = new StatusbarUpdate();
 		update.start();
