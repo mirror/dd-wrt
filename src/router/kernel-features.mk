@@ -1,4 +1,12 @@
 define kernelfeatures
+	if [ "$(CONFIG_LIBMBIM)" = "y" ]; then \
+		sed -i 's/\# CONFIG_USB_NET_CDC_NCM is not set/CONFIG_USB_NET_CDC_NCM=m/g' $(LINUXDIR)/.config \
+		sed -i 's/\# CONFIG_USB_NET_HUAWEI_CDC_NCM is not set/CONFIG_USB_NET_HUAWEI_CDC_NCM=m/g' $(LINUXDIR)/.config \
+		sed -i 's/\# CONFIG_USB_NET_CDC_MBIM is not set/CONFIG_USB_NET_CDC_MBIM=m/g' $(LINUXDIR)/.config \
+	fi
+	if [ "$(CONFIG_WIREGUARD)" = "y" ]; then \
+		sed -i 's/\# CONFIG_NET_FOU is not set/CONFIG_NET_FOU=m/g' $(LINUXDIR)/.config \
+	fi
 	if [ "$(CONFIG_EOP_TUNNEL)" = "y" ]; then \
 		echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config; \
 		echo CONFIG_NET_EOIP=m >> $(LINUXDIR)/.config; \
