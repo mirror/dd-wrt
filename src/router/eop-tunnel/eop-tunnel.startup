@@ -19,7 +19,12 @@ done
 nv=/usr/sbin/nvram		
 /bin/mkdir -p /tmp/oet/pid
 cd /tmp/oet/pid
+rmmod etherip
 rmmod eoip
+rmmod wireguard
+rmmod udp_tunnel
+rmmod ip6_udp_tunnel
+
 for i in 1 2 3 4 5 6 7 8 9 10
 do
 	if test -e "${i}.pid" 
@@ -31,7 +36,26 @@ do
 	fi
 	if [ `$nv get oet${i}_en` -eq 1 ]
 	then
-
+		if [ `$nv get oet${i}_proto` -eq 3 ]
+		then
+			insmod udp_tunnel
+			insmod ip6_udp_tunnel
+			insmod wireguard
+			ip link add oet${i} type wireguard
+			wg set oet${i} private-key /tmp/wireguard/oet${i}_private
+			wg set oet${i} peer `$nv get oet{i}_peerkey` allowed-ips 0.0.0.0/0 endpoint `$nv get oet{i}_rem`:51820
+			if [ `$nv get oet${i}_bridged` -eq 1 ]
+			then
+				ifconfig oet${i} up 2>&1 > /dev/null
+				ifconfig oet${i} promisc 2>&1 > /dev/null
+				brctl addif $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
+				brctl setportprio $(getbridge oet${i}) oet${i} $(getbridgeprio oet${i})
+				emf add iface $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
+			else
+				ifconfig oet${i} promisc up 2>&1 > /dev/null
+				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
+			fi
+		fi
 		if [ `$nv get oet${i}_proto` -eq 1 ]
 		then
 			insmod gre
@@ -48,7 +72,9 @@ do
 				ifconfig oet${i} promisc up 2>&1 > /dev/null
 				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
 			fi
-		else
+		fi
+		if [ `$nv get oet${i}_proto` -eq 0 ]
+		then
 			insmod etherip
 			if [ `$nv get oet${i}_local` == "0.0.0.0" ]
 			then
