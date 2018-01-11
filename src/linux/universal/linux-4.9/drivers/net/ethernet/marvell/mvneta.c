@@ -1201,11 +1201,6 @@ static void mvneta_port_disable(struct mvneta_port *pp)
 	val = mvreg_read(pp, MVNETA_GMAC_CTRL_0);
 	val &= ~MVNETA_GMAC0_PORT_ENABLE;
 	mvreg_write(pp, MVNETA_GMAC_CTRL_0, val);
-
-	pp->link = 0;
-	pp->duplex = -1;
-	pp->speed = 0;
-
 	udelay(200);
 }
 
