@@ -57,15 +57,15 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		sprintf(temp, "oet%d_proto", tun);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.proto)</script></div>\n");
-		websWrite(wp, "<select name=\"oet%d_proto\"\">\n", tun);
-		websWrite(wp, "<option value=\"0\" %s onclick=\"show_layer_ext(this, 'idmtik%d', false)><script type=\"text/javascript\">Capture(eoip.etherip)</script></option>\n",
-			  nvram_match(temp, "0") ? "selected=\"selected\"" : "", tun);
-		websWrite(wp, "<option value=\"1\" %s onclick=\"show_layer_ext(this, 'idmtik%d', true)><script type=\"text/javascript\">Capture(eoip.mtik)</script></option>\n",
-			  nvram_match(temp, "1") ? "selected=\"selected\"" : "", tun);
+		websWrite(wp, "<select name=\"oet%d_proto\" onclick=\"changeproto(this, %d, this.value)\">\n", tun, tun);
+
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\"  + eoip.etherip + \"</option>\");\n", nvram_match(temp, "0") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\"  + eoip.mtik + \"</option>\");\n", nvram_match(temp, "1") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_WIREGUARD
-		websWrite(wp, "<option value=\"2\" %s onclick=\"show_layer_ext(this, 'idmtik%d', false)><script type=\"text/javascript\">Capture(eoip.wireguard)</script></option>\n",
-			  nvram_match(temp, "2") ? "selected=\"selected\"" : "", tun);
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\"  + eoip.wireguard + \"</option>\");\n", nvram_match(temp, "2") ? "selected=\\\"selected\\\"" : "");
 #endif
+		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
 
@@ -73,9 +73,31 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.tunnelID)</script></div>\n");
 		sprintf(temp, "oet%d_id", tun);
-		websWrite(wp, "<input size=\"4\" maxlength=\"3\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,999,eoip.tunnelID)\" value=\"%s\" />\n", temp, nvram_get(temp));
+		websWrite(wp, "<input size=\"4\" maxlength=\"3\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,65535,eoip.tunnelID)\" value=\"%s\" />\n", temp, nvram_get(temp));
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</div>\n");
+		websWrite(wp, "<div id=\"idwireguard%d\">\n", tun);
+#ifdef HAVE_WIREGUARD
+		//public key show
+		sprintf(temp, "oet%d_public", tun);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_localkey)</script>:%s</div>\n",nvram_safe_get(temp));
+		websWrite(wp, "<input size=\"32\" maxlength=\"32\" name=\"%s\" value=\"%s\ disabled=\"true\"/>\n", temp, nvram_safe_get(temp));
+		websWrite(wp, "</div>\n");
+
+		//public key peer input
+		sprintf(temp, "oet%d_peerkey", tun);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_peerkey)</script>:%s</div>\n",nvram_safe_get(temp));
+		websWrite(wp, "<input size=\"32\" maxlength=\"32\" name=\"%s\" value=\"%s\ disabled=\"true\"/>\n", temp, nvram_safe_get(temp));
+		websWrite(wp, "</div>\n");
+#endif
+		websWrite(wp, "</div>\n");
+
+
+
+
+
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.localIP)</script></div>\n");
