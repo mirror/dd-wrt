@@ -39,7 +39,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 
 	for (tun = 1; tun < 11; tun++) {
 		char oet[32];
-		sprintf(oet,"oet%d", tun);
+		sprintf(oet, "oet%d", tun);
 		websWrite(wp, "<fieldset>\n");
 		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(eoip.tunnel)</script> %s</legend>\n", getNetworkLabel(wp, oet));
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -54,30 +54,26 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"idoet%d\">\n", tun);
 
-
-
+		sprintf(temp, "oet%d_proto", tun);
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.mtik)</script></div>\n");
-		sprintf(temp, "oet%d_mtik", tun);
-		websWrite(wp,
-			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idmtik%d', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
-			  temp, (nvram_matchi(temp, 1) ? "checked=\"checked\"" : ""), tun);
-		websWrite(wp,
-			  " <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idmtik%d', false)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
-			  temp, (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""), tun);
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.proto)</script></div>\n");
+		websWrite(wp, "<select name=\"oet%d_proto\"\">\n", tum);
+		websWrite(wp, "<option value=\"0\" %s onclick=\"show_layer_ext(this, 'idmtik%d', false)><script type=\"text/javascript\">Capture(eoip.etherip)</script></option>\n",
+			  nvram_match(temp, "0") ? "selected=\"selected\"" : "", tun);
+		websWrite(wp, "<option value=\"1\" %s onclick=\"show_layer_ext(this, 'idmtik%d', true)><script type=\"text/javascript\">Capture(eoip.mtik)</script></option>\n",
+			  nvram_match(temp, "1") ? "selected=\"selected\"" : "", tun);
+		websWrite(wp, "<option value=\"2\" %s onclick=\"show_layer_ext(this, 'idmtik%d', false)><script type=\"text/javascript\">Capture(eoip.wireguard)</script></option>\n",
+			  nvram_match(temp, "1") ? "selected=\"selected\"" : "", tun);
+		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<div id=\"idmtik%d\">\n", tun);
-		websWrite( wp, "<div class=\"setting\">\n" );
-		websWrite( wp,
-		   "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.tunnelID)</script></div>\n" );
-		  sprintf( temp, "oet%d_id", tun );
-		websWrite( wp,
-		   "<input size=\"4\" maxlength=\"3\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,999,eoip.tunnelID)\" value=\"%s\" />\n",
-		   temp, nvram_get( temp ) );
-		websWrite( wp, "</div>\n" );
-		websWrite( wp, "</div>\n" );
-
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.tunnelID)</script></div>\n");
+		sprintf(temp, "oet%d_id", tun);
+		websWrite(wp, "<input size=\"4\" maxlength=\"3\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,999,eoip.tunnelID)\" value=\"%s\" />\n", temp, nvram_get(temp));
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.localIP)</script></div>\n");
@@ -86,15 +82,12 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		show_ip(wp, NULL, temp, 0, "eoip.localIP");
 		websWrite(wp, "</div>\n");
 
-
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.remoteIP)</script></div>\n");
 		websWrite(wp, "<input type=\"hidden\" name=\"oet%d_rem\" value=\"0.0.0.0\"/>\n", tun);
 		sprintf(temp, "oet%d_rem", tun);
 		show_ip(wp, NULL, temp, 0, "eoip.remoteIP");
 		websWrite(wp, "</div>\n");
-
-
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.bridging)</script></div>\n");
