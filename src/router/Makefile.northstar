@@ -221,6 +221,10 @@ ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.northstar opendpi
 	-$(MAKE) -f Makefile.northstar opendpi-install
 endif
+ifeq ($(CONFIG_WIREGUARD),y)
+	-$(MAKE) -f Makefile.northstar wireguard
+	-$(MAKE) -f Makefile.northstar wireguard-install
+endif
 
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source

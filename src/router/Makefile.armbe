@@ -207,6 +207,10 @@ endif
 	-$(MAKE) -f Makefile.armbe batman-adv-install
 	-$(MAKE) -f Makefile.armbe opendpi
 	-$(MAKE) -f Makefile.armbe opendpi-install
+ifeq ($(CONFIG_WIREGUARD),y)
+	-$(MAKE) -f Makefile.armbe wireguard
+	-$(MAKE) -f Makefile.armbe wireguard-install
+endif
 	-$(MAKE) -f Makefile.armbe uniwip-gpio
 	-$(MAKE) -f Makefile.armbe uniwip-gpio-install
 

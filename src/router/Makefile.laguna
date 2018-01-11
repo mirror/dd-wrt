@@ -185,6 +185,10 @@ endif
 	-$(MAKE) -f Makefile.laguna batman-adv-install
 	-$(MAKE) -f Makefile.laguna opendpi
 	-$(MAKE) -f Makefile.laguna opendpi-install
+ifeq ($(CONFIG_WIREGUARD),y)
+	-$(MAKE) -f Makefile.laguna wireguard
+	-$(MAKE) -f Makefile.laguna wireguard-install
+endif
 	-$(MAKE) -f Makefile.laguna uniwip-gpio
 	-$(MAKE) -f Makefile.laguna uniwip-gpio-install
 

@@ -198,6 +198,10 @@ endif
 	-$(MAKE) -f Makefile.mpc85xx batman-adv-install
 	-$(MAKE) -f Makefile.mpc85xx opendpi
 	-$(MAKE) -f Makefile.mpc85xx opendpi-install
+ifeq ($(CONFIG_WIREGUARD),y)
+	-$(MAKE) -f Makefile.mpc85xx wireguard
+	-$(MAKE) -f Makefile.mpc85xx wireguard-install
+endif
 
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source

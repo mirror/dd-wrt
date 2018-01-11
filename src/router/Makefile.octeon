@@ -221,6 +221,10 @@ ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.octeon opendpi
 	-$(MAKE) -f Makefile.octeon opendpi-install
 endif
+ifeq ($(CONFIG_WIREGUARD),y)
+	-$(MAKE) -f Makefile.octeon wireguard
+	-$(MAKE) -f Makefile.octeon wireguard-install
+endif
 
 ifneq ($(CONFIG_SAMBA),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs

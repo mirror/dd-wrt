@@ -260,6 +260,10 @@ ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.mt7621 opendpi
 	-$(MAKE) -f Makefile.mt7621 opendpi-install
 endif
+ifeq ($(CONFIG_WIREGUARD),y)
+	-$(MAKE) -f Makefile.mt7621 wireguard
+	-$(MAKE) -f Makefile.mt7621 wireguard-install
+endif
 	-$(MAKE) -f Makefile.mt7621 uniwip-gpio
 	-$(MAKE) -f Makefile.mt7621 uniwip-gpio-install
 
