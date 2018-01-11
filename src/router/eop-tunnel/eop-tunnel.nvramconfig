@@ -1,5 +1,5 @@
 "oet1_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
-"oet1_mtik"  "mikrotik protocol"  "CHOICE" "2" "0" "1" "FALSE" "0"  
+"oet1_proto"  "protocol type"  "CHOICE" "2" "0" "1" "FALSE" "0"  
 "oet1_id"  "mikrotik tunnel id"	"NULL"	"FALSE"	"0"
 "oet1_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet1_local"  "local ip address"  "MERGEIPADDRS" "FALSE" "0"  
@@ -8,7 +8,7 @@
 "oet1_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
 
 "oet2_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
-"oet2_mtik"  "mikrotik protocol"  "CHOICE" "2" "0" "1" "FALSE" "0"  
+"oet2_proto"  "protocol type"  "CHOICE" "2" "0" "1" "FALSE" "0"  
 "oet2_id"  "mikrotik tunnel id"	"NULL"	"FALSE"	"0"
 "oet2_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet2_local"  "local ip address"  "MERGEIPADDRS" "FALSE" "0"  
@@ -17,7 +17,7 @@
 "oet2_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
 
 "oet3_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
-"oet3_mtik"  "mikrotik protocol"  "CHOICE" "2" "0" "1" "FALSE" "0"  
+"oet3_proto"  "protocol type"  "CHOICE" "2" "0" "1" "FALSE" "0"  
 "oet3_id"  "mikrotik tunnel id"	"NULL"	"FALSE"	"0"
 "oet3_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet3_local"  "local ip address"  "MERGEIPADDRS" "FALSE" "0"  
@@ -26,7 +26,7 @@
 "oet3_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
 
 "oet4_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
-"oet4_mtik"  "mikrotik protocol"  "CHOICE" "2" "0" "1" "FALSE" "0"  
+"oet4_proto"  "protocol type"  "CHOICE" "2" "0" "1" "FALSE" "0"  
 "oet4_id"  "mikrotik tunnel id"	"NULL"	"FALSE"	"0"
 "oet4_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet4_local"  "local ip address"  "MERGEIPADDRS" "FALSE" "0"  
@@ -35,7 +35,7 @@
 "oet4_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
 
 "oet5_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
-"oet5_mtik"  "mikrotik protocol"  "CHOICE" "2" "0" "1" "FALSE" "0"  
+"oet5_proto"  "protocol type"  "CHOICE" "2" "0" "1" "FALSE" "0"  
 "oet5_id"  "mikrotik tunnel id"	"NULL"	"FALSE"	"0"
 "oet5_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet5_local"  "local ip address"  "MERGEIPADDRS" "FALSE" "0"  
@@ -44,7 +44,7 @@
 "oet5_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
 
 "oet6_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
-"oet6_mtik"  "mikrotik protocol"  "CHOICE" "2" "0" "1" "FALSE" "0"  
+"oet6_proto"  "protocol type"  "CHOICE" "2" "0" "1" "FALSE" "0"  
 "oet6_id"  "mikrotik tunnel id"	"NULL"	"FALSE"	"0"
 "oet6_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet6_local"  "local ip address"  "MERGEIPADDRS" "FALSE" "0"  
@@ -53,7 +53,7 @@
 "oet6_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
 
 "oet7_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
-"oet7_mtik"  "mikrotik protocol"  "CHOICE" "2" "0" "1" "FALSE" "0"  
+"oet7_proto"  "protocol type"  "CHOICE" "2" "0" "1" "FALSE" "0"  
 "oet7_id"  "mikrotik tunnel id"	"NULL"	"FALSE"	"0"
 "oet7_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet7_local"  "local ip address"  "MERGEIPADDRS" "FALSE" "0"  
@@ -62,7 +62,7 @@
 "oet7_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
 
 "oet8_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
-"oet8_mtik"  "mikrotik protocol"  "CHOICE" "2" "0" "1" "FALSE" "0"  
+"oet8_proto"  "protocol type"  "CHOICE" "2" "0" "1" "FALSE" "0"  
 "oet8_id"  "mikrotik tunnel id"	"NULL"	"FALSE"	"0"
 "oet8_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet8_local"  "local ip address"  "MERGEIPADDRS" "FALSE" "0"  
@@ -71,7 +71,7 @@
 "oet8_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
 
 "oet9_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
-"oet9_mtik"  "mikrotik protocol"  "CHOICE" "2" "0" "1" "FALSE" "0"  
+"oet9_proto"  "protocol type"  "CHOICE" "2" "0" "1" "FALSE" "0"  
 "oet9_id"  "mikrotik tunnel id"	"NULL"	"FALSE"	"0"
 "oet9_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet9_local"  "local ip address"  "MERGEIPADDRS" "FALSE" "0"  
@@ -80,7 +80,7 @@
 "oet9_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
 
 "oet10_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
-"oet10_mtik"  "mikrotik protocol"  "CHOICE" "2" "0" "1" "FALSE" "0"  
+"oet10_proto"  "protocol type"  "CHOICE" "2" "0" "1" "FALSE" "0"  
 "oet10_id"  "mikrotik tunnel id" "NULL"	"FALSE"	"0"
 "oet10_rem"  "remote ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet10_local"  "local ip address"  "MERGEIPADDRS" "FALSE" "0"  
