@@ -1,6 +1,6 @@
 wireguard: 
 	cd wireguard/src ; $(MAKE) -C $(LINUXDIR) M="$(TOP)/wireguard/src" KERNELDIR=$(LINUX_DIR)
-	cd wireguard/src ; $(MAKE) LIBMNL_CFLAGS="-I$(TOP)/libmnl/include" LIBMNL_LDLIBS="-L$(TOP)/libmnl/src/.libs -lmnl" tools
+	cd wireguard/src ; $(MAKE) CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections"  LIBMNL_CFLAGS="-I$(TOP)/libmnl/include" LIBMNL_LDLIBS="-L$(TOP)/libmnl/src/.libs -lmnl" tools
 
 wireguard-install:
 	install -D wireguard/src/wireguard.ko $(INSTALLDIR)/wireguard/lib/modules/$(KERNELRELEASE)/wireguard.ko
