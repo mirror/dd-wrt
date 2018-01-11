@@ -8,8 +8,7 @@ libmnl-install:
 	cd $(INSTALLDIR)/libmnl/usr/lib ; ln -s libmnl.so.0.2.0 libmnl.so.0  ; true
 
 libmnl-configure:
-	#cd libmnl && ./configure --target=$(ARCH)-linux --host=$(ARCH) CC=$(ARCH)-linux-gcc 
-	cd libmnl && ./configure --host=$(ARCH)-linux
+	cd libmnl && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT)"
 
 libmnl-clean:
 	$(MAKE) -C libmnl clean
