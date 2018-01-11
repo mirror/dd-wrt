@@ -1,6 +1,22 @@
 #!/bin/sh
-nv=/usr/sbin/nvram
-		
+
+mkdir -p /tmp/wireguard
+nv=/usr/sbin/nvram		
+
+for i in 1 2 3 4 5 6 7 8 9 10
+do
+	if [ -n `$nv get oet${i}_private` ]
+	then
+		$nv get oet${i}_private > /tmp/wireguard/oet${i}_private
+		$nv get oet${i}_public > /tmp/wireguard/oet${i}_public
+	else
+		wg genkey > /tmp/wireguard/oet${i}_private
+		wg pubkey < /tmp/wireguard/oet${i}_private > /tmp/wireguard/oet${i}_public
+		nvram set oet${i}_private=`cat /tmp/wireguard/oet${i}_private`
+		nvram set oet${i}_public=`cat /tmp/wireguard/oet${i}_public`
+	fi
+done
+nv=/usr/sbin/nvram		
 /bin/mkdir -p /tmp/oet/pid
 cd /tmp/oet/pid
 rmmod eoip
