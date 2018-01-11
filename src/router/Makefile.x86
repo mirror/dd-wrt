@@ -179,6 +179,10 @@ endif
 	-$(MAKE) -f Makefile.x86 batman-adv-install
 	-$(MAKE) -f Makefile.x86 opendpi
 	-$(MAKE) -f Makefile.x86 opendpi-install
+ifeq ($(CONFIG_WIREGUARD),y)
+	-$(MAKE) -f Makefile.x86 wireguard
+	-$(MAKE) -f Makefile.x86 wireguard-install
+endif
 	-$(MAKE) -f Makefile.x86 uniwip-gpio
 	-$(MAKE) -f Makefile.x86 uniwip-gpio-install
 

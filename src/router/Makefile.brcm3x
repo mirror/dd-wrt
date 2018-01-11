@@ -200,6 +200,10 @@ ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.brcm3x opendpi
 	-$(MAKE) -f Makefile.brcm3x opendpi-install
 endif
+ifeq ($(CONFIG_WIREGUARD),y)
+	-$(MAKE) -f Makefile.brcm3x wireguard
+	-$(MAKE) -f Makefile.brcm3x wireguard-install
+endif
 	-$(MAKE) -f Makefile.brcm3x uniwip-gpio
 	-$(MAKE) -f Makefile.brcm3x uniwip-gpio-install
 

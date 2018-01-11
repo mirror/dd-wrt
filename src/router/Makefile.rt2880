@@ -275,6 +275,11 @@ ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.rt2880 opendpi
 	-$(MAKE) -f Makefile.rt2880 opendpi-install
 endif
+ifeq ($(CONFIG_WIREGUARD),y)
+	-$(MAKE) -f Makefile.rt2880 wireguard
+	-$(MAKE) -f Makefile.rt2880 wireguard-install
+endif
+
 	-$(MAKE) -f Makefile.rt2880 uniwip-gpio
 	-$(MAKE) -f Makefile.rt2880 uniwip-gpio-install
 

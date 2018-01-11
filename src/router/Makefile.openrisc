@@ -164,6 +164,10 @@ kernel:
 	-$(MAKE) -f Makefile.openrisc batman-adv-install
 	-$(MAKE) -f Makefile.openrisc opendpi
 	-$(MAKE) -f Makefile.openrisc opendpi-install
+ifeq ($(CONFIG_WIREGUARD),y)
+	-$(MAKE) -f Makefile.openrisc wireguard
+	-$(MAKE) -f Makefile.openrisc wireguard-install
+endif
 	-$(MAKE) -f Makefile.openrisc uniwip-gpio
 	-$(MAKE) -f Makefile.openrisc uniwip-gpio-install
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
