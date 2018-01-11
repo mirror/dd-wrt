@@ -62,8 +62,10 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 			  nvram_match(temp, "0") ? "selected=\"selected\"" : "", tun);
 		websWrite(wp, "<option value=\"1\" %s onclick=\"show_layer_ext(this, 'idmtik%d', true)><script type=\"text/javascript\">Capture(eoip.mtik)</script></option>\n",
 			  nvram_match(temp, "1") ? "selected=\"selected\"" : "", tun);
+#ifdef HAVE_WIREGUARD
 		websWrite(wp, "<option value=\"2\" %s onclick=\"show_layer_ext(this, 'idmtik%d', false)><script type=\"text/javascript\">Capture(eoip.wireguard)</script></option>\n",
-			  nvram_match(temp, "1") ? "selected=\"selected\"" : "", tun);
+			  nvram_match(temp, "2") ? "selected=\"selected\"" : "", tun);
+#endif
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
 
