@@ -445,6 +445,16 @@ endif
 ifeq ($(CONFIG_BUSYBOX_INETD),y)
 	sed -i 's/\# CONFIG_INETD is not set/CONFIG_INETD=y/g' busybox/.config
 endif
+	sed -i 's/\# CONFIG_IP is not set/CONFIG_IP=y/g' busybox/.config
+	sed -i 's/\# CONFIG_IPADDR is not set/CONFIG_IPADDR=y/g' busybox/.config
+	sed -i 's/\# CONFIG_IPLINK is not set/CONFIG_IPLINK=y/g' busybox/.config
+	sed -i 's/\# CONFIG_IPROUTE is not set/CONFIG_IPROUTE=y/g' busybox/.config
+	sed -i 's/\# CONFIG_IPTUNNEL is not set/CONFIG_IPTUNNEL=y/g' busybox/.config
+
+	sed -i 's/\# CONFIG_FEATURE_IP_ADDRESS is not set/CONFIG_FEATURE_IP_ADDRESS=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_IP_LINK is not set/CONFIG_FEATURE_IP_LINK=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_IP_ROUTE is not set/CONFIG_FEATURE_IP_ROUTE=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_IP_TUNNEL is not set/CONFIG_FEATURE_IP_TUNNEL=y/g' busybox/.config
 	echo "# CONFIG_ZCAT is not set" >> busybox/.config
 	echo "# CONFIG_BZCAT is not set" >> busybox/.config
 	echo "# CONFIG_LZCAT is not set" >> busybox/.config
@@ -514,6 +524,7 @@ endif
 	echo "# CONFIG_SETFATTR is not set" >> busybox/.config
 	echo "# CONFIG_NETCAT is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_SH_READ_FRAC is not set" >> busybox/.config
+
 
 	cd busybox && make oldconfig
 	
