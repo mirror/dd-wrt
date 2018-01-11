@@ -36,8 +36,9 @@ do
 	fi
 	if [ `$nv get oet${i}_en` -eq 1 ]
 	then
-		if [ `$nv get oet${i}_proto` -eq 3 ]
+		if [ `$nv get oet${i}_proto` -eq 2 ]
 		then
+			insmod ipv6
 			insmod udp_tunnel
 			insmod ip6_udp_tunnel
 			insmod wireguard
