@@ -13,7 +13,7 @@ do
 	fi
 	if [ `$nv get oet${i}_en` -eq 1 ]
 	then
-		if [ `$nv get oet${i}_mtik` -eq 1 ]
+		if [ `$nv get oet${i}_proto` -eq 1 ]
 		then
 			$ipt -I INPUT -p 47 -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
 		else
