@@ -16,7 +16,7 @@ do
 	if [ `$nv get oet${i}_en` -eq 1 ]
 	then
 
-		if [ `$nv get oet${i}_mtik` -eq 1 ]
+		if [ `$nv get oet${i}_proto` -eq 1 ]
 		then
 			insmod gre
 			insmod eoip
