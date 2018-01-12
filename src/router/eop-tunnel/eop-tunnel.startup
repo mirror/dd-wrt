@@ -19,10 +19,7 @@ done
 nv=/usr/sbin/nvram		
 /bin/mkdir -p /tmp/oet/pid
 cd /tmp/oet/pid
-rmmod wireguard
-rmmod udp_tunnel
-rmmod ip6_udp_tunnel
-
+rmmod eoip
 for i in 1 2 3 4 5 6 7 8 9 10
 do
 	if test -e "${i}.pid" 
@@ -30,6 +27,7 @@ do
 	    emf del iface $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
 	    brctl delif $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
 	    ip tunnel del oet${i}
+	    wg set oet${i} remove
 	    rm -f ${i}.pid
 	fi
 	if [ `$nv get oet${i}_en` -eq 1 ]
