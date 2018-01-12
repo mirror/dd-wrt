@@ -100,6 +100,13 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
 					websWrite(wp, "</div>\n");
 				}
+				sprintf(temp, "oet%d_ka", tun);
+				{
+					websWrite(wp, "<div class=\"setting\">\n");
+					websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_ka)</script></div>\n");
+					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" onblur=\"valid_range(this,0,65535,eoip.wireguard_ka)\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+					websWrite(wp, "</div>\n");
+				}
 				//public key show
 				sprintf(temp, "oet%d_public", tun);
 				{
