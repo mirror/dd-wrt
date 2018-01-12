@@ -43,8 +43,9 @@ do
 			insmod ip6_udp_tunnel
 			insmod wireguard
 			ip link add oet${i} type wireguard
+			wg set oet${i} listen-port `expr 51820+${i}`
 			wg set oet${i} private-key /tmp/wireguard/oet${i}_private
-			wg set oet${i} peer $($nv get oet${i}_peerkey) allowed-ips 0.0.0.0/0 endpoint $($nv get oet${i}_rem):51820
+			wg set oet${i} peer $($nv get oet${i}_peerkey) allowed-ips 0.0.0.0/0 endpoint $($nv get oet${i}_rem):oet${i}_port
 			ifconfig oet${i} promisc up 2>&1 > /dev/null
 			ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
 		fi
