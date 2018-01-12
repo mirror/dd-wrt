@@ -1957,6 +1957,7 @@ eoip.proto="Protocol Type";
 eoip.mtik="Mikrotik";
 eoip.wireguard="Wireguard";
 eoip.wireguard_localport="Local Port";
+eoip.wireguard_ka="Persistent Keep-Alive";
 eoip.wireguard_peerport="Peer Port";
 eoip.wireguard_peerkey="Peer Public Key";
 eoip.wireguard_localkey="Local Public Key";
