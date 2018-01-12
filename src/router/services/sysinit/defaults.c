@@ -3277,8 +3277,6 @@ struct nvram_param srouter_defaults[] = {
 	{"oet1_id", "1"},
 	{"oet1_proto", "0"},
 	{"oet1_bridged", "1"},
-	{"oet1_port", "51820"},
-	{"oet1_peerport", "51820"},
 
 	{"oet2_en", "0"},
 	{"oet2_rem", "192.168.90.1"},
@@ -3288,8 +3286,6 @@ struct nvram_param srouter_defaults[] = {
 	{"oet2_id", "1"},
 	{"oet2_proto", "0"},
 	{"oet2_bridged", "1"},
-	{"oet2_port", "51821"},
-	{"oet2_peerport", "51821"},
 
 	{"oet3_en", "0"},
 	{"oet3_rem", "192.168.90.1"},
@@ -3299,8 +3295,7 @@ struct nvram_param srouter_defaults[] = {
 	{"oet3_id", "1"},
 	{"oet3_proto", "0"},
 	{"oet3_bridged", "1"},
-	{"oet3_port", "51822"},
-	{"oet3_peerport", "51822"},
+
 
 	{"oet4_en", "0"},
 	{"oet4_rem", "192.168.90.1"},
@@ -3310,8 +3305,6 @@ struct nvram_param srouter_defaults[] = {
 	{"oet4_id", "1"},
 	{"oet4_proto", "0"},
 	{"oet4_bridged", "1"},
-	{"oet4_port", "51823"},
-	{"oet4_peerport", "51823"},
 
 	{"oet5_en", "0"},
 	{"oet5_rem", "192.168.90.1"},
@@ -3321,8 +3314,6 @@ struct nvram_param srouter_defaults[] = {
 	{"oet5_id", "1"},
 	{"oet5_proto", "0"},
 	{"oet5_bridged", "1"},
-	{"oet5_port", "51824"},
-	{"oet5_peerport", "51824"},
 
 	{"oet6_en", "0"},
 	{"oet6_rem", "192.168.90.1"},
@@ -3332,8 +3323,6 @@ struct nvram_param srouter_defaults[] = {
 	{"oet6_id", "1"},
 	{"oet6_proto", "0"},
 	{"oet6_bridged", "1"},
-	{"oet6_port", "51825"},
-	{"oet6_peerport", "51825"},
 
 	{"oet7_en", "0"},
 	{"oet7_rem", "192.168.90.1"},
@@ -3343,8 +3332,6 @@ struct nvram_param srouter_defaults[] = {
 	{"oet7_id", "1"},
 	{"oet7_proto", "0"},
 	{"oet7_bridged", "1"},
-	{"oet7_port", "51826"},
-	{"oet7_peerport", "51826"},
 
 	{"oet8_en", "0"},
 	{"oet8_rem", "192.168.90.1"},
@@ -3354,8 +3341,6 @@ struct nvram_param srouter_defaults[] = {
 	{"oet8_id", "1"},
 	{"oet8_proto", "0"},
 	{"oet8_bridged", "1"},
-	{"oet8_port", "51827"},
-	{"oet8_peerport", "51827"},
 
 	{"oet9_en", "0"},
 	{"oet9_rem", "192.168.90.1"},
@@ -3365,8 +3350,6 @@ struct nvram_param srouter_defaults[] = {
 	{"oet9_id", "1"},
 	{"oet9_proto", "0"},
 	{"oet9_bridged", "1"},
-	{"oet9_port", "51828"},
-	{"oet9_peerport", "51828"},
 
 	{"oet10_en", "0"},
 	{"oet10_rem", "192.168.90.1"},
@@ -3376,8 +3359,38 @@ struct nvram_param srouter_defaults[] = {
 	{"oet10_id", "1"},
 	{"oet10_proto", "0"},
 	{"oet10_bridged", "1"},
+#ifdef HAVE_WIREGUARD
+	{"oet9_port", "51828"},
+	{"oet9_peerport", "51828"},
+	{"oet9_ka", "0"},
+	{"oet8_port", "51827"},
+	{"oet8_peerport", "51827"},
+	{"oet8_ka", "0"},
+	{"oet7_port", "51826"},
+	{"oet7_peerport", "51826"},
+	{"oet7_ka", "0"},
+	{"oet6_port", "51825"},
+	{"oet6_peerport", "51825"},
+	{"oet6_ka", "0"},
+	{"oet5_port", "51824"},
+	{"oet5_peerport", "51824"},
+	{"oet5_ka", "0"},
+	{"oet4_port", "51823"},
+	{"oet4_peerport", "51823"},
+	{"oet4_ka", "0"},
+	{"oet1_port", "51820"},
+	{"oet1_peerport", "51820"},
+	{"oet1_ka", "0"},
+	{"oet2_port", "51821"},
+	{"oet2_peerport", "51821"},
+	{"oet2_ka", "0"},
+	{"oet3_port", "51822"},
+	{"oet3_peerport", "51822"},
+	{"oet3_ka", "0"},
 	{"oet10_port", "51829"},
 	{"oet10_peerport", "51829"},
+	{"oet10_ka", "0"},
+#endif
 #endif
 	{"wifi_bonding", "0"},
 #ifdef HAVE_RADLOCAL
