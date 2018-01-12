@@ -119,9 +119,9 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "1400");
 
 	}
-if (fp)
+	if (fp)
 		fclose(fp);
-if (fp2)
+	if (fp2)
 		fclose(fp2);
 
 	return;
