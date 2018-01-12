@@ -43,6 +43,7 @@ do
 			ip link add oet${i} type wireguard
 			wg set oet${i} listen-port oet${i}_port
 			wg set oet${i} private-key /tmp/wireguard/oet${i}_private
+			wg set oet${i} persistent-keepalive oet${i}_ka
 			wg set oet${i} peer $($nv get oet${i}_peerkey) allowed-ips 0.0.0.0/0 endpoint $($nv get oet${i}_rem):oet${i}_peerport
 			ifconfig oet${i} promisc up 2>&1 > /dev/null
 			ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
