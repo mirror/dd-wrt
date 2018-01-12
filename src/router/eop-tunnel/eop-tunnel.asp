@@ -30,7 +30,7 @@ if (value == 2) {
 
 if (value == 2) {
 	show_layer_ext(F, "idbridged" + index, false);
-}else {
+} else {
 	if (brvalue == 1) {
 	    show_layer_ext(F, "idbridged" + index, false);
 	} else {
