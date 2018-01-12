@@ -45,17 +45,8 @@ do
 			ip link add oet${i} type wireguard
 			wg set oet${i} private-key /tmp/wireguard/oet${i}_private
 			wg set oet${i} peer $($nv get oet${i}_peerkey) allowed-ips 0.0.0.0/0 endpoint $($nv get oet${i}_rem):51820
-			if [ `$nv get oet${i}_bridged` -eq 1 ]
-			then
-				ifconfig oet${i} up 2>&1 > /dev/null
-				ifconfig oet${i} promisc 2>&1 > /dev/null
-				brctl addif $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
-				brctl setportprio $(getbridge oet${i}) oet${i} $(getbridgeprio oet${i})
-				emf add iface $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
-			else
-				ifconfig oet${i} promisc up 2>&1 > /dev/null
-				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
-			fi
+			ifconfig oet${i} promisc up 2>&1 > /dev/null
+			ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
 		fi
 		if [ `$nv get oet${i}_proto` -eq 1 ]
 		then
