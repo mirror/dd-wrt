@@ -19,8 +19,6 @@ done
 nv=/usr/sbin/nvram		
 /bin/mkdir -p /tmp/oet/pid
 cd /tmp/oet/pid
-rmmod etherip
-rmmod eoip
 rmmod wireguard
 rmmod udp_tunnel
 rmmod ip6_udp_tunnel
@@ -48,6 +46,7 @@ do
 			wg set oet${i} peer $($nv get oet${i}_peerkey) allowed-ips 0.0.0.0/0 endpoint $($nv get oet${i}_rem):oet${i}_peerport
 			ifconfig oet${i} promisc up 2>&1 > /dev/null
 			ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
+			echo enable > ${i}.pid
 		fi
 		if [ `$nv get oet${i}_proto` -eq 1 ]
 		then
@@ -65,6 +64,7 @@ do
 				ifconfig oet${i} promisc up 2>&1 > /dev/null
 				ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
 			fi
+			echo enable > ${i}.pid
 		fi
 		if [ `$nv get oet${i}_proto` -eq 0 ]
 		then
