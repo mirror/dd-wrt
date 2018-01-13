@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: 3d8b1b552f4ec8feb6bdd881a451e64ae4daa441 $
+ * Version:     $Id: e914fb2be55c4be4fc9f7cb94848bb087689983e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 3d8b1b552f4ec8feb6bdd881a451e64ae4daa441 $")
+RCSID("$Id: e914fb2be55c4be4fc9f7cb94848bb087689983e $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -1226,6 +1226,10 @@ static CONF_PARSER tls_server_config[] = {
 	{ "disable_tlsv1_2", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, disable_tlsv1_2), NULL },
 #endif
 
+	{ "tls_max_version", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, tls_max_version), "" },
+
+	{ "tls_min_version", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, tls_min_version), "1.0" },
+
 	{ "cache", FR_CONF_POINTER(PW_TYPE_SUBSECTION, NULL), (void const *) cache_config },
 
 	{ "verify", FR_CONF_POINTER(PW_TYPE_SUBSECTION, NULL), (void const *) verify_config },
@@ -1271,6 +1275,11 @@ static CONF_PARSER tls_client_config[] = {
 #ifdef SSL_OP_NO_TLSv1_2
 	{ "disable_tlsv1_2", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, fr_tls_server_conf_t, disable_tlsv1_2), NULL },
 #endif
+
+	{ "tls_max_version", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, tls_max_version), "" },
+
+	{ "tls_min_version", FR_CONF_OFFSET(PW_TYPE_STRING, fr_tls_server_conf_t, tls_min_version), "1.0" },
+
 	CONF_PARSER_TERMINATOR
 };
 
@@ -1731,7 +1740,7 @@ static ocsp_status_t ocsp_check(REQUEST *request, X509_STORE *store, X509 *issue
 	BIO		*cbio, *bio_out;
 	ocsp_status_t	ocsp_status = OCSP_STATUS_FAILED;
 	int		status;
-	ASN1_GENERALIZEDTIME *rev, *thisupd, *nextupd;
+	ASN1_GENERALIZEDTIME *rev = NULL, *thisupd, *nextupd;
 	int		reason;
 #if OPENSSL_VERSION_NUMBER >= 0x1000003f
 	OCSP_REQ_CTX	*ctx;
@@ -1883,6 +1892,11 @@ static ocsp_status_t ocsp_check(REQUEST *request, X509_STORE *store, X509 *issue
 		goto ocsp_end;
 	}
 	bresp = OCSP_response_get1_basic(resp);
+	if (!bresp) {
+		RDEBUG("ocsp: Failed parsing response");
+		goto ocsp_end;
+	}
+
 	if (conf->ocsp_use_nonce && OCSP_check_nonce(req, bresp)!=1) {
 		REDEBUG("ocsp: Response has wrong nonce value");
 		goto ocsp_end;
@@ -1930,7 +1944,7 @@ static ocsp_status_t ocsp_check(REQUEST *request, X509_STORE *store, X509 *issue
 		REDEBUG("ocsp: Cert status: %s", OCSP_cert_status_str(status));
 		if (reason != -1) REDEBUG("ocsp: Reason: %s", OCSP_crl_reason_str(reason));
 
-		if (bio_out) {
+		if (bio_out && rev) {
 			BIO_puts(bio_out, "\tRevocation Time: ");
 			ASN1_GENERALIZEDTIME_print(bio_out, rev);
 			BIO_puts(bio_out, "\n");
@@ -2586,7 +2600,7 @@ static void sess_free_certs(UNUSED void *parent, void *data_ptr,
  * This should be called exactly once from main, before reading the main config
  * or initialising any modules.
  */
-void tls_global_init(void)
+int tls_global_init(bool spawn_flag, bool check)
 {
 	SSL_load_error_strings();	/* readable error messages (examples show call before library_init) */
 	SSL_library_init();		/* initialize library */
@@ -2597,6 +2611,20 @@ void tls_global_init(void)
 	 *	Initialize the index for the certificates.
 	 */
 	fr_tls_ex_index_certs = SSL_SESSION_get_ex_new_index(0, NULL, NULL, NULL, sess_free_certs);
+
+	/*
+	 *	If we're linking with OpenSSL too, then we need
+	 *	to set up the mutexes and enable the thread callbacks.
+	 *
+	 *	'check' and not 'check_config' because it's a global,
+	 *	and we don't want to have tls.c depend on globals.
+	 */
+	if (spawn_flag && !check && (tls_mutexes_init() < 0)) {
+		ERROR("FATAL: Failed to set up SSL mutexes");
+		return -1;
+	}
+
+	return 0;
 }
 
 #ifdef ENABLE_OPENSSL_VERSION_CHECK
@@ -2664,6 +2692,28 @@ void tls_global_cleanup(void)
 	EVP_cleanup();
 	CRYPTO_cleanup_all_ex_data();
 }
+
+
+/*
+ *	Map version strings to OpenSSL macros.
+ */
+static const FR_NAME_NUMBER version2int[] = {
+	{ "1.0",    TLS1_VERSION },
+#ifdef TLS1_1_VERSION
+	{ "1.1",    TLS1_1_VERSION },
+#endif
+#ifdef TLS1_2_VERSION
+	{ "1.2",    TLS1_2_VERSION },
+#endif
+#ifdef TLS1_3_VERSION
+	{ "1.3",    TLS1_3_VERSION },
+#endif
+#ifdef TLS1_4_VERSION
+	{ "1.4",    TLS1_4_VERSION },
+#endif
+	{ NULL, 0 }
+};
+
 
 /** Create SSL context
  *
@@ -2900,22 +2950,122 @@ post_ca:
 	ctx_options |= SSL_OP_NO_SSLv3;
 
 	/*
-	 *	As of 3.0.5, we always allow TLSv1.1 and TLSv1.2.
-	 *	Though they can be *globally* disabled if necessary.x
+	 *	SSL_CTX_set_(min|max)_proto_version was included in OpenSSL 1.1.0
+	 *
+	 *	This version already defines macros for TLS1_2_VERSION and
+	 *	below, so we don't need to check for them explicitly.
+	 *
+	 *	TLS1_3_VERSION is available in OpenSSL 1.1.1.
+	 *
+	 *	TLS1_4_VERSION in speculative.
+	 */
+	{
+		int min_version = 0;
+		int max_version = 0;
+
+		/*
+		 *	Get the max version.
+		 */
+		if (conf->tls_max_version && *conf->tls_max_version) {
+			max_version = fr_str2int(version2int, conf->tls_max_version, 0);
+			if (!max_version) {
+				ERROR("Invalid value for tls_max_version '%s'", conf->tls_max_version);
+				return NULL;
+			}
+		} else {
+			/*
+			 *	Pick the maximum one we know about.
+			 */
+#ifdef TLS1_4_VERSION
+			max_version = TLS1_4_VERSION;
+#elif defined(TLS1_3_VERSION)
+			max_version = TLS1_3_VERSION;
+#elif defined(TLS1_2_VERSION)
+			max_version = TLS1_2_VERSION;
+#elif defined(TLS1_1_VERSION)
+			max_version = TLS1_1_VERSION;
+#else
+			max_version = TLS1_VERSION;
+#endif
+		}
+
+		/*
+		 *	Set these for the rest of the code.
+		 */
+		if (max_version < TLS1_2_VERSION) {
+			conf->disable_tlsv1_2 = true;
+		}
+		if (max_version < TLS1_1_VERSION) {
+			conf->disable_tlsv1_1 = true;
+		}
+
+		/*
+		 *	Get the min version.
+		 */
+		if (conf->tls_min_version && *conf->tls_min_version) {
+			min_version = fr_str2int(version2int, conf->tls_min_version, 0);
+			if (!min_version) {
+				ERROR("Unknown or unsupported value for tls_min_version '%s'", conf->tls_min_version);
+				return NULL;
+			}
+		} else {
+			min_version = TLS1_VERSION;
+		}
+
+		/*
+		 *	Compare the two.
+		 */
+		if (min_version > max_version) {
+			ERROR("tls_min_version '%s' must be <= tls_max_version '%s'",
+			      conf->tls_min_version, conf->tls_max_version);
+			return NULL;
+		}
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+		if (!SSL_CTX_set_max_proto_version(ctx, max_version)) {
+			ERROR("Failed setting TLS maximum version");
+			return NULL;
+		}
+
+		if (!SSL_CTX_set_min_proto_version(ctx, min_version)) {
+			ERROR("Failed setting TLS minimum version");
+			return NULL;
+		}
+#endif	/* OpenSSL version >1.1.0 */
+	}
+
+	/*
+	 *	For historical config compatibility, we also allow
+	 *	these, but complain if the admin uses them.
 	 */
 #ifdef SSL_OP_NO_TLSv1
-	if (conf->disable_tlsv1) ctx_options |= SSL_OP_NO_TLSv1;
+	if (conf->disable_tlsv1) {
+		ctx_options |= SSL_OP_NO_TLSv1;
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+		WARN("Please use tls_min_version and tls_max_version instead of disable_tlsv1");
+#endif
+	}
 
 	ctx_tls_versions |= SSL_OP_NO_TLSv1;
 #endif
 #ifdef SSL_OP_NO_TLSv1_1
-	if (conf->disable_tlsv1_1) ctx_options |= SSL_OP_NO_TLSv1_1;
+	if (conf->disable_tlsv1_1) {
+		ctx_options |= SSL_OP_NO_TLSv1_1;
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+		WARN("Please use tls_min_version and tls_max_version instead of disable_tlsv1_2");
+#endif
+	}
 
 	ctx_tls_versions |= SSL_OP_NO_TLSv1_1;
 #endif
 #ifdef SSL_OP_NO_TLSv1_2
 
-	if (conf->disable_tlsv1_2) ctx_options |= SSL_OP_NO_TLSv1_2;
+	if (conf->disable_tlsv1_2) {
+		ctx_options |= SSL_OP_NO_TLSv1_2;
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+		WARN("Please use tls_min_version and tls_max_version instead of disable_tlsv1_2");
+#endif
+	}
 
 	ctx_tls_versions |= SSL_OP_NO_TLSv1_2;
 
@@ -3378,12 +3528,7 @@ int tls_success(tls_session_t *ssn, REQUEST *request)
 			 */
 			fr_pair_add(&vps, fr_pair_list_copy(talloc_ctx, *certs));
 
-			/*
-			 *	Save the certs in the packet, so that we can see them.
-			 */
-			fr_pair_add(&request->packet->vps, fr_pair_list_copy(request->packet, *certs));
-
-			vp = fr_pair_find_by_num(request->packet->vps, PW_TLS_CLIENT_CERT_EXPIRATION, 0, TAG_ANY);
+			vp = fr_pair_find_by_num(vps, PW_TLS_CLIENT_CERT_EXPIRATION, 0, TAG_ANY);
 			if (vp) {
 				time_t expires;
 

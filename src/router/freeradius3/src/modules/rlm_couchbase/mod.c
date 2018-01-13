@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: c5b721df647b0c5d4a4223b39b040736c0039ab8 $
+ * $Id: f8b37dfc2c027581f1095c1d294e818066c4c6e0 $
  *
  * @brief Utillity functions used in the module.
  * @file mod.c
@@ -24,7 +24,7 @@
  * @copyright 2013-2014 The FreeRADIUS Server Project.
  */
 
-RCSID("$Id: c5b721df647b0c5d4a4223b39b040736c0039ab8 $")
+RCSID("$Id: f8b37dfc2c027581f1095c1d294e818066c4c6e0 $")
 
 #include <freeradius-devel/radiusd.h>
 
@@ -157,6 +157,11 @@ int mod_build_attribute_element_map(CONF_SECTION *conf, void *instance)
 
 		/* get pair name (attribute name) */
 		attribute = cf_pair_attr(cp);
+
+		if (!dict_attrbyname(attribute)) {
+			ERROR("Unknown RADIUS attribute '%s'", attribute);
+			return -1;
+		}
 
 		/* get pair value (element name) */
 		element = cf_pair_value(cp);

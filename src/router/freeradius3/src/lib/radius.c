@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 2ecaabf65da94ba87799069f1afe6b9f80a801e9 $
+ * $Id: 60f2c7d20526a9ce32cce5480a9898a01178aca9 $
  *
  * @file radius.c
  * @brief Functions to send/receive radius packets.
@@ -23,7 +23,7 @@
  * @copyright 2000-2003,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 2ecaabf65da94ba87799069f1afe6b9f80a801e9 $")
+RCSID("$Id: 60f2c7d20526a9ce32cce5480a9898a01178aca9 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -3354,7 +3354,7 @@ static ssize_t data2vp_wimax(TALLOC_CTX *ctx,
 	 *	No continued data, just decode the attribute in place.
 	 */
 	if ((data[6] & 0x80) == 0) {
-		if ((data[5] + 4) != attrlen) goto raw; /* WiMAX attribute doesn't fill Vendor-Specific */
+		if (((size_t) (data[5] + 4)) != attrlen) goto raw; /* WiMAX attribute doesn't fill Vendor-Specific */
 
 		rcode = data2vp(ctx, packet, original, secret, child,
 				data + 7, data[5] - 3, data[5] - 3,

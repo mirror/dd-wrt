@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 763d7bc6e1bf48c59c692213c38b7aac46b1aaa9 $
+ * $Id: 3c4feb7d5076b5e138f38d5e2674038ac7322a7e $
  * @file main/client.c
  * @brief Manage clients allowed to communicate with the server.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000 Alan DeKok <aland@ox.org>
  * @copyright 2000 Miquel van Smoorenburg <miquels@cistron.nl>
  */
-RCSID("$Id: 763d7bc6e1bf48c59c692213c38b7aac46b1aaa9 $")
+RCSID("$Id: 3c4feb7d5076b5e138f38d5e2674038ac7322a7e $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -749,9 +749,13 @@ bool client_add_dynamic(RADCLIENT_LIST *clients, RADCLIENT *master, RADCLIENT *c
 	c->created = time(NULL);
 	c->longname = talloc_typed_strdup(c, c->shortname);
 
-	INFO("Adding client %s/%i with shared secret \"%s\"",
-	     ip_ntoh(&c->ipaddr, buffer, sizeof(buffer)), c->ipaddr.prefix, c->secret);
-
+	if (rad_debug_lvl <= 2) {
+		INFO("Adding client %s/%i",
+		     ip_ntoh(&c->ipaddr, buffer, sizeof(buffer)), c->ipaddr.prefix);
+	} else {
+		INFO("Adding client %s/%i with shared secret \"%s\"",
+		     ip_ntoh(&c->ipaddr, buffer, sizeof(buffer)), c->ipaddr.prefix, c->secret);
+	}
 	return true;
 
 error:
@@ -1166,9 +1170,6 @@ RADCLIENT *client_afrom_query(TALLOC_CTX *ctx, char const *identifier, char cons
 	RADCLIENT *c;
 	char buffer[128];
 
-	rad_assert(identifier);
-	rad_assert(secret);
-
 	c = talloc_zero(ctx, RADCLIENT);
 
 	if (fr_pton(&c->ipaddr, identifier, -1, AF_UNSPEC, true) < 0) {
@@ -1354,7 +1355,8 @@ RADCLIENT *client_afrom_request(RADCLIENT_LIST *clients, REQUEST *request)
 			for (parse = client_config; parse->name; parse++) {
 				if (parse->offset == dynamic_config[i].offset) break;
 			}
-			rad_assert(parse);
+
+			if (!parse) break;
 
 			cp = cf_pair_alloc(c->cs, parse->name, strvalue, T_OP_SET, T_BARE_WORD, T_SINGLE_QUOTED_STRING);
 		}
@@ -1373,7 +1375,7 @@ RADCLIENT *client_afrom_request(RADCLIENT_LIST *clients, REQUEST *request)
 			for (parse = client_config; parse->name; parse++) {
 				if (parse->offset == dynamic_config[i].offset) break;
 			}
-			rad_assert(parse);
+			if (!parse) break;
 
 			cp = cf_pair_alloc(c->cs, parse->name, strvalue, T_OP_SET, T_BARE_WORD, T_BARE_WORD);
 		}

@@ -2,7 +2,7 @@
  * log.c	Functions in the library call radlib_log() which
  *		does internal logging.
  *
- * Version:	$Id: e9c86174753e670a91ea64c4c068321613416715 $
+ * Version:	$Id: 3193270b80202c9b9c74d0389c832d3bacd0cd89 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: e9c86174753e670a91ea64c4c068321613416715 $")
+RCSID("$Id: 3193270b80202c9b9c74d0389c832d3bacd0cd89 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -42,7 +42,7 @@ fr_thread_local_setup(char *, fr_syserror_buffer)	/* macro */
  *
  * Non-POSIX macros may be added, but you must check they're defined.
  */
-char const *fr_errno_macro_names[] = {
+static char const *fr_errno_macro_names[] = {
 	[E2BIG] = "E2BIG",
 	[EACCES] = "EACCES",
 	[EADDRINUSE] = "EADDRINUSE",

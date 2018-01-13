@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 801e6ada2b7143fee4c647eb732a686d01c72c36 $
+ * $Id: 20843a4fe63f53be9b1cae1daa6e63ded2d2041c $
  * @file rlm_detail.c
  * @brief Write plaintext versions of packets to flatfiles.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  */
-RCSID("$Id: 801e6ada2b7143fee4c647eb732a686d01c72c36 $")
+RCSID("$Id: 20843a4fe63f53be9b1cae1daa6e63ded2d2041c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -348,7 +348,7 @@ static int detail_write(FILE *out, rlm_detail_t *inst, REQUEST *request, RADIUS_
  */
 static rlm_rcode_t CC_HINT(nonnull) detail_do(void *instance, REQUEST *request, RADIUS_PACKET *packet, bool compat)
 {
-	int		outfd;
+	int		outfd, dupfd;
 	char		buffer[DIRLEN];
 
 	FILE		*outfp;
@@ -388,7 +388,7 @@ static rlm_rcode_t CC_HINT(nonnull) detail_do(void *instance, REQUEST *request, 
 #endif
 #endif
 
-	outfd = exfile_open(inst->ef, buffer, inst->perm, true);
+	outfd = exfile_open(inst->ef, buffer, inst->perm);
 	if (outfd < 0) {
 		RERROR("Couldn't open file %s: %s", buffer, fr_strerror());
 		return RLM_MODULE_FAIL;
@@ -412,11 +412,18 @@ skip_group:
 	/*
 	 *	Open the output fp for buffering.
 	 */
-	if ((outfp = fdopen(outfd, "a")) == NULL) {
+	outfp = NULL;
+	dupfd = dup(outfd);
+	if (dupfd < 0) {
+		RERROR("Failed to dup() file descriptor for detail file");
+		goto fail;
+	}
+
+	if ((outfp = fdopen(dupfd, "a")) == NULL) {
 		RERROR("Couldn't open file %s: %s", buffer, fr_syserror(errno));
 	fail:
 		if (outfp) fclose(outfp);
-		exfile_unlock(inst->ef, outfd);
+		exfile_close(inst->ef, outfd);
 		return RLM_MODULE_FAIL;
 	}
 
@@ -426,7 +433,7 @@ skip_group:
 	 *	Flush everything
 	 */
 	fclose(outfp);
-	exfile_unlock(inst->ef, outfd); /* do NOT close outfd */
+	exfile_close(inst->ef, outfd);
 
 	/*
 	 *	And everything is fine.

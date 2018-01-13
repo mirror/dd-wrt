@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: d83f0a099e33e8b80e9a8963918ce68f3d705f81 $
+ * $Id: 4cff1492974a7cd0bb9c1baeed1799374522d212 $
  * @file ldap.c
  * @brief LDAP module library functions.
  *
@@ -598,8 +598,12 @@ process_error:
 		goto error_string;
 
 	case LDAP_OPERATIONS_ERROR:
-		*error = "Please set 'chase_referrals=yes' and 'rebind=yes'. See the ldap module configuration "
-			 "for details.";
+		if (inst->chase_referrals) {
+			*error = "Operations error with LDAP database.  Please see the LDAP server configuration / documentation for more information.";
+		} else {
+			*error = "Please set 'chase_referrals=yes' and 'rebind=yes'. See the ldap module configuration "
+				"for details.";
+		}
 
 		/* FALL-THROUGH */
 	default:
@@ -698,7 +702,10 @@ ldap_rcode_t rlm_ldap_bind(rlm_ldap_t const *inst, REQUEST *request, ldap_handle
 	rad_assert(!retry || inst->pool);
 
 #ifndef WITH_SASL
-	rad_assert(!sasl->mech);
+	if (sasl && sasl->mech) {
+		REDEBUG("Server is built without SASL, but is being asked to do SASL.");
+		return status;
+	}
 #endif
 
 	/*
@@ -1331,8 +1338,6 @@ int rlm_ldap_global_init(rlm_ldap_t *inst)
 {
 	int ldap_errno;
 
-	rad_assert(inst); /* clang scan */
-
 #define do_ldap_global_option(_option, _name, _value) \
 	if (ldap_set_option(NULL, _option, _value) != LDAP_OPT_SUCCESS) { \
 		ldap_get_option(NULL, LDAP_OPT_ERROR_NUMBER, &ldap_errno); \
@@ -1598,7 +1603,7 @@ void mod_conn_release(rlm_ldap_t const *inst, ldap_handle_t *conn)
 	 *	Instead, we let the next caller do the rebind.
 	 */
 	if (conn->referred) {
-		fr_connection_close(inst->pool, conn);
+		fr_connection_close(inst->pool, conn, "Was referred to a different LDAP server");
 		return;
 	}
 

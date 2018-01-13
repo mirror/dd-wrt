@@ -1,7 +1,7 @@
 /*
  * print.c	Routines to print stuff.
  *
- * Version:	$Id: 43c457c9cecebf3bc4ee8e74c4cdde209c0ff8fe $
+ * Version:	$Id: 7704ac97e5a5b9a13587d2fc7dfca9c1cbacbc1b $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 43c457c9cecebf3bc4ee8e74c4cdde209c0ff8fe $")
+RCSID("$Id: 7704ac97e5a5b9a13587d2fc7dfca9c1cbacbc1b $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -336,7 +336,7 @@ size_t fr_prints(char *out, size_t outlen, char const *in, ssize_t inlen, char q
 			freespace = 0;
 
 		} else if (freespace > utf8) { /* room for char AND trailing zero */
-			memcpy(out + used, p, utf8);
+			if (out) memcpy(out + used, p, utf8);
 			freespace -= utf8;
 		}
 

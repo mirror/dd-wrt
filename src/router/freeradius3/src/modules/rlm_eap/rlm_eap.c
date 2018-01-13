@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 14265ee754b32a0fb530a3a5135c72c2ef46a2f1 $
+ * $Id: 4200a3defe5f1cbe14e18d5dc4df4a9e42999490 $
  * @file rlm_eap.c
  * @brief Implements the EAP framework.
  *
@@ -23,7 +23,7 @@
  * @copyright 2001  hereUare Communications, Inc. <raghud@hereuare.com>
  * @copyright 2003  Alan DeKok <aland@freeradius.org>
  */
-RCSID("$Id: 14265ee754b32a0fb530a3a5135c72c2ef46a2f1 $")
+RCSID("$Id: 4200a3defe5f1cbe14e18d5dc4df4a9e42999490 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -84,8 +84,14 @@ static int eap_handler_cmp(void const *a, void const *b)
 	 *	EAP work.
 	 */
 	if (fr_ipaddr_cmp(&one->src_ipaddr, &two->src_ipaddr) != 0) {
-		WARN("EAP packets are arriving from two different upstream "
-		       "servers.  Has there been a proxy fail-over?");
+		char src1[64], src2[64];
+
+		fr_ntop(src1, sizeof(src1), &one->src_ipaddr);
+		fr_ntop(src2, sizeof(src2), &two->src_ipaddr);
+		
+		RATE_LIMIT(WARN("EAP packets for one session are arriving from two different upstream"
+				"servers (%s and %s).  Has there been a proxy fail-over?",
+				src1, src2));
 	}
 
 	return 0;
@@ -470,7 +476,6 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(void *instance, REQUEST *re
 
 			memcpy(new, old, vp->vp_length);
 			new[vp->length] = '\0';
-			new[vp->length + 1] = '\0';
 			vp->vp_strvalue = new;
 
 			rad_const_free(old);

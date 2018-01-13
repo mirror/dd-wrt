@@ -1,7 +1,7 @@
 /*
  * rlm_ippool_tool.c
  *
- * Version:  $Id: b96223ed3f1449e186429093f57bc86f47d3d447 $
+ * Version:  $Id: 94f6161302b173924eae2e9fc160f8cd46fb7d23 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@
  SUCH DAMAGE.
 */
 
-RCSID("$Id: b96223ed3f1449e186429093f57bc86f47d3d447 $")
+RCSID("$Id: 94f6161302b173924eae2e9fc160f8cd46fb7d23 $")
 
 #include <freeradius-devel/libradius.h>
 #include <fcntl.h>
@@ -446,6 +446,7 @@ void viewdb(char *sessiondbname, char *indexdbname, char *ipaddress, int old) {
 		return;
 	}
 
+	memset(&key, 0, sizeof(key));	/* -Winitialize */
 	memset(key_str, 0,17);
 
 	key_datum = gdbm_firstkey(sessiondb);

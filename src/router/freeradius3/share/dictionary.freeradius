@@ -3,7 +3,7 @@
 #
 #	The FreeRADIUS Vendor-Specific dictionary.
 #
-# Version:	$Id: f142f94b19a630bc32040d5c70e5b9239254c49e $
+# Version:	$Id: ea468da88509aeff96b6f0d38ebc97411b9775b3 $
 #
 #	For a complete list of Private Enterprise Codes, see:
 #
@@ -182,5 +182,7 @@ ATTRIBUTE	FreeRADIUS-EAP-FAST-Crypto-Binding			186.12	octets
 ATTRIBUTE	FreeRADIUS-EAP-FAST-Trusted-Root			186.18	octets
 ATTRIBUTE	FreeRADIUS-EAP-FAST-Request-Action			186.19	short
 ATTRIBUTE	FreeRADIUS-EAP-FAST-PKCS				186.20	octets
+
+ATTRIBUTE	FreeRADIUS-Stats-Error					187	string
 
 END-VENDOR FreeRADIUS

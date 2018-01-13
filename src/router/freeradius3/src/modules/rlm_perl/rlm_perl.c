@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 80db218b633254ccb339004c529255ef53fb3534 $
+ * $Id: 910f23ef1acb0e0471ee382bd8de47ba10bdb26a $
  * @file rlm_perl.c
  * @brief Translates requests between the server an a perl interpreter.
  *
  * @copyright 2002,2006  The FreeRADIUS server project
  * @copyright 2002  Boian Jordanov <bjordanov@orbitel.bg>
  */
-RCSID("$Id: 80db218b633254ccb339004c529255ef53fb3534 $")
+RCSID("$Id: 910f23ef1acb0e0471ee382bd8de47ba10bdb26a $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -922,6 +922,8 @@ static int do_perl(void *instance, REQUEST *request, char const *function_name)
 			RDEBUG("perl_embed:: module = %s , func = %s exit status= %s\n",
 			       inst->module, function_name, SvPV(ERRSV,n_a));
 			(void)POPs;
+			count = 0;
+			exitstatus = RLM_MODULE_FAIL;
 		}
 
 		if (count == 1) {
