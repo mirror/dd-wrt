@@ -24,7 +24,7 @@
 # file for complete information.
 
 # Initialize the autoconf system for the specified tool, version and mailing list
-AC_INIT(iperf, 3.2, https://github.com/esnet/iperf, iperf, http://software.es.net/iperf/)
+AC_INIT(iperf, 3.3, https://github.com/esnet/iperf, iperf, http://software.es.net/iperf/)
 m4_include([config/ax_check_openssl.m4])
 AC_LANG(C)
 
@@ -101,13 +101,20 @@ AC_CHECK_HEADERS([netinet/sctp.h],
 #endif
 ])
 
-# Check for OPENSSL support
-#AX_CHECK_OPENSSL(
-#	AC_DEFINE([HAVE_SSL], [1], [OpenSSL Is Available])
-#)
-#LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
-#LIBS="$OPENSSL_LIBS $LIBS"
-#CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
+if test "x$with_openssl" = "xno"; then
+    AC_MSG_WARN( [Building without OpenSSL; disabling iperf_auth functionality.] )
+else
+    # Check for OPENSSL support
+    AX_CHECK_OPENSSL(
+        [ AC_DEFINE([HAVE_SSL], [1], [OpenSSL Is Available]) ],
+	[ if test "x$with_openssl" != "x"; then
+	  AC_MSG_FAILURE([--with-openssl was given, but test for OpenSSL failed])
+	  fi ]
+    )
+    LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
+    LIBS="$OPENSSL_LIBS $LIBS"
+    CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
+fi
 
 # Check for TCP_CONGESTION sockopt (believed to be Linux and FreeBSD only)
 AC_CACHE_CHECK([TCP_CONGESTION socket option],
