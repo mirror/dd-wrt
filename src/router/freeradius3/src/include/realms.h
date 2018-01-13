@@ -5,11 +5,11 @@
  * realms.h	Structures, prototypes and global variables
  *		for realms
  *
- * Version:	$Id: d8571155f7bce51f4eec5d74ab2e0780378fa16c $
+ * Version:	$Id: 8208b8f04cff3dce664433486b65cccb3a3f8c14 $
  *
  */
 
-RCSIDH(realms_h, "$Id: d8571155f7bce51f4eec5d74ab2e0780378fa16c $")
+RCSIDH(realms_h, "$Id: 8208b8f04cff3dce664433486b65cccb3a3f8c14 $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -130,6 +130,10 @@ typedef struct home_server {
 
 	fr_stats_ema_t  	ema;
 #endif
+#ifdef HAVE_TRUST_ROUTER_TR_DH_H
+	time_t			expiration;
+#endif
+
 } home_server_t;
 
 

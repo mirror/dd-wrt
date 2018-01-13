@@ -5,7 +5,7 @@
 #
 #	As posted to the list by Eric Kilfoil <ekilfoil@uslec.net>
 #
-# Version:	$Id: d294e4bdf7957f51d95584bb9b85a65737a74592 $
+# Version:	$Id: 7528abf4ad976050dd27c389900ea3e28797e394 $
 #
 
 VENDOR		Juniper				2636
@@ -22,6 +22,7 @@ ATTRIBUTE	Juniper-Interactive-Command		8	string
 ATTRIBUTE	Juniper-Configuration-Change		9	string
 ATTRIBUTE	Juniper-User-Permissions		10	string
 ATTRIBUTE	Juniper-Junosspace-Profile		11	String
+ATTRIBUTE	Juniper-Junosspace-Profiles		11	String
 
 ATTRIBUTE	Juniper-CTP-Group			21	integer
 ATTRIBUTE	Juniper-CTPView-APP-Group		22	integer

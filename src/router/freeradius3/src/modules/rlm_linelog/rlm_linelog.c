@@ -1,7 +1,7 @@
 /*
  * rlm_linelog.c
  *
- * Version:	$Id: 3d4219ca9ec21594e6c2c8b3d0d38f23187b95bb $
+ * Version:	$Id: 3c15bf04b309da384df5acdf871a8c9c5cbea47c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2004  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id: 3d4219ca9ec21594e6c2c8b3d0d38f23187b95bb $")
+RCSID("$Id: 3c15bf04b309da384df5acdf871a8c9c5cbea47c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -248,7 +248,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_do_linelog(void *instance, REQUEST *requ
 		return RLM_MODULE_FAIL;
 	}
 
-	fd = exfile_open(inst->ef, path, inst->permissions, true);
+	fd = exfile_open(inst->ef, path, inst->permissions);
 	if (fd < 0) {
 		ERROR("rlm_linelog: Failed to open %s: %s", path, fr_syserror(errno));
 		return RLM_MODULE_FAIL;

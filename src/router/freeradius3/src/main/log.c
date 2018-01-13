@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 3ead46e08016cd5e26418fa605f4e04b3699eb1c $
+ * $Id: 21b21b3071470c307ea48f9ed873405146689623 $
  *
  * @brief Logging functions used by the server core.
  * @file main/log.c
@@ -25,7 +25,7 @@
  * @copyright 2000  Alan DeKok <aland@ox.org>
  * @copyright 2001  Chad Miller <cmiller@surfsouth.com>
  */
-RCSID("$Id: 3ead46e08016cd5e26418fa605f4e04b3699eb1c $")
+RCSID("$Id: 21b21b3071470c307ea48f9ed873405146689623 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -630,8 +630,6 @@ void vradlog_request(log_type_t type, log_lvl_t lvl, REQUEST *request, char cons
 	uint8_t indent;
 	va_list aq;
 
-	rad_assert(request);
-
 	/*
 	 *	Debug messages get treated specially.
 	 */
@@ -782,8 +780,6 @@ void radlog_request(log_type_t type, log_lvl_t lvl, REQUEST *request, char const
 {
 	va_list ap;
 
-	rad_assert(request);
-
 	if (!request->log.func && !(type & L_DBG)) return;
 
 	va_start(ap, msg);
@@ -812,8 +808,6 @@ void radlog_request_error(log_type_t type, log_lvl_t lvl, REQUEST *request, char
 {
 	va_list ap;
 
-	rad_assert(request);
-
 	va_start(ap, msg);
 	if (request->log.func) request->log.func(type, lvl, request, msg, ap);
 	else if (!(type & L_DBG)) vradlog_request(type, lvl, request, msg, ap);
@@ -835,8 +829,6 @@ void radlog_request_marker(log_type_t type, log_lvl_t lvl, REQUEST *request,
 {
 	char const *prefix = "";
 	uint8_t indent;
-
-	rad_assert(request);
 
 	if (idx >= sizeof(spaces)) {
 		size_t offset = (idx - (sizeof(spaces) - 1)) + (sizeof(spaces) * 0.75);

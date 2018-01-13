@@ -1,7 +1,7 @@
 /*
  * mem.c  Memory allocation, deallocation stuff.
  *
- * Version:     $Id: 4246dfb22c57378dc8dcd5b6782695892f1b394f $
+ * Version:     $Id: d80a91b42221ef69f4ba00d3bf20d082103b35da $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2001  hereUare Communications, Inc. <raghud@hereuare.com>
  */
 
-RCSID("$Id: 4246dfb22c57378dc8dcd5b6782695892f1b394f $")
+RCSID("$Id: d80a91b42221ef69f4ba00d3bf20d082103b35da $")
 
 #include <stdio.h>
 #include "rlm_eap.h"
@@ -100,11 +100,15 @@ static int _eap_handler_free(eap_handler_t *handler)
 	if (fr_debug_lvl && handler->tls && !handler->finished &&
 	    (time(NULL) > (handler->timestamp + 3))) {
 		WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-		WARN("!! EAP session with state 0x%02x%02x%02x%02x%02x%02x%02x%02x did not finish!                  !!",
+		WARN("!! EAP session with state 0x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x did not finish!                  !!",
 		     handler->state[0], handler->state[1],
 		     handler->state[2], handler->state[3],
 		     handler->state[4], handler->state[5],
-		     handler->state[6], handler->state[7]);
+		     handler->state[6], handler->state[7],
+		     handler->state[8], handler->state[9],
+		     handler->state[10], handler->state[11],
+		     handler->state[12], handler->state[13],
+		     handler->state[14], handler->state[15]);
 
 		WARN("!! Please read http://wiki.freeradius.org/guide/Certificate_Compatibility     !!");
 		WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");

@@ -1,7 +1,7 @@
 /*
  * parser.c	Parse various things
  *
- * Version:	$Id: 5fab262fdc2c77b050a5e62fd5dc3b7fb3bc4c73 $
+ * Version:	$Id: 8b57725a1f151b2336416af85094401243a523cb $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2013  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id: 5fab262fdc2c77b050a5e62fd5dc3b7fb3bc4c73 $")
+RCSID("$Id: 8b57725a1f151b2336416af85094401243a523cb $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -1196,9 +1196,7 @@ static ssize_t condition_tokenize(TALLOC_CTX *ctx, CONF_ITEM *ci, char const *st
 				 *	and do no parsing until after all of the modules
 				 *	are loaded.  But that has issues, too.
 				 */
-				if ((c->data.map->lhs->type == TMPL_TYPE_LITERAL) &&
-				    (lhs_type == T_BARE_WORD) &&
-				    (c->data.map->rhs->type == TMPL_TYPE_LITERAL)) {
+				if ((c->data.map->lhs->type == TMPL_TYPE_LITERAL) && (lhs_type == T_BARE_WORD)) {
 					int hyphens = 0;
 					bool may_be_attr = true;
 					size_t i;

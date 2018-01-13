@@ -1,7 +1,7 @@
 /*
  * radclient.c	General radius packet debug tool.
  *
- * Version:	$Id: 2f78c306e9fe6211c21050d5eb41ccabc5a22c6d $
+ * Version:	$Id: 34c8205b3319e7f7c9f24de4660dca1ddfe8dc48 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 2f78c306e9fe6211c21050d5eb41ccabc5a22c6d $")
+RCSID("$Id: 34c8205b3319e7f7c9f24de4660dca1ddfe8dc48 $")
 
 #include <freeradius-devel/radclient.h>
 #include <freeradius-devel/radpaths.h>
@@ -77,7 +77,10 @@ static char const *radclient_version = "radclient version " RADIUSD_VERSION_STRI
 #ifdef RADIUSD_VERSION_COMMIT
 " (git #" STRINGIFY(RADIUSD_VERSION_COMMIT) ")"
 #endif
-", built on " __DATE__ " at " __TIME__;
+#ifndef ENABLE_REPRODUCIBLE_BUILDS
+", built on " __DATE__ " at " __TIME__
+#endif
+;
 
 static void NEVER_RETURNS usage(void)
 {

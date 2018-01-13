@@ -1,7 +1,7 @@
 /*
  * radiusd.c	Main loop of the radius server.
  *
- * Version:	$Id: 9f190cb18be46bc1caa054179788748c725a5826 $
+ * Version:	$Id: 55a3bbca7cb5dabbf28b0026c5299633a3fd94ce $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * Copyright 2000  Chad Miller <cmiller@surfsouth.com>
  */
 
-RCSID("$Id: 9f190cb18be46bc1caa054179788748c725a5826 $")
+RCSID("$Id: 55a3bbca7cb5dabbf28b0026c5299633a3fd94ce $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -63,7 +63,11 @@ char const *radiusd_version = "FreeRADIUS Version " RADIUSD_VERSION_STRING
 #ifdef RADIUSD_VERSION_COMMIT
 " (git #" STRINGIFY(RADIUSD_VERSION_COMMIT) ")"
 #endif
-", for host " HOSTINFO ", built on " __DATE__ " at " __TIME__;
+", for host " HOSTINFO
+#ifndef ENABLE_REPRODUCIBLE_BUILDS
+", built on " __DATE__ " at " __TIME__
+#endif
+;
 
 static pid_t radius_pid;
 
@@ -333,7 +337,7 @@ int main(int argc, char *argv[])
 	 *  Initialising OpenSSL once, here, is safer than having individual modules do it.
 	 */
 #ifdef HAVE_OPENSSL_CRYPTO_H
-	tls_global_init();
+	if (tls_global_init(spawn_flag, check_config) < 0) exit(EXIT_FAILURE);
 #endif
 
 	/*

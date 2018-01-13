@@ -23,7 +23,7 @@
  * @copyright 2012  The FreeRADIUS server project
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
-RCSID("$Id: 56e8f87e68282570c32183048d051925f1b538e8 $")
+RCSID("$Id: a228678ca641c64ea5b9961c45441b7f4d9b7fa0 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/heap.h>
@@ -1436,18 +1436,23 @@ void *fr_connection_reconnect(fr_connection_pool_t *pool, void *conn)
  *
  * @param[in,out] pool Connection pool to modify.
  * @param[in] conn to delete.
+ * @param[in] msg why the connection was closed.
  * @return
  *	- 0 If the connection could not be found.
  *	- 1 if the connection was deleted.
  */
-int fr_connection_close(fr_connection_pool_t *pool, void *conn)
+int fr_connection_close(fr_connection_pool_t *pool, void *conn, char const *msg)
 {
 	fr_connection_t *this;
 
 	this = fr_connection_find(pool, conn);
 	if (!this) return 0;
 
-	INFO("%s: Deleting connection (%" PRIu64 ")", pool->log_prefix, this->number);
+	if (!msg) {
+		INFO("%s: Deleting connection (%" PRIu64 ")", pool->log_prefix, this->number);
+	} else {
+		INFO("%s: Deleting connection (%" PRIu64 ") - %s", pool->log_prefix, this->number, msg);
+	}
 
 	fr_connection_close_internal(pool, this);
 	fr_connection_pool_check(pool);

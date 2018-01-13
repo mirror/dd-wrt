@@ -1,7 +1,7 @@
 /*
  * eap_tls.c
  *
- * Version:     $Id: a08cd50b14657a504dc552869e284385751098e4 $
+ * Version:     $Id: 082d0c84ef3361a34b3fc2aa989e68338fa1a167 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@
  *
  */
 
-RCSID("$Id: a08cd50b14657a504dc552869e284385751098e4 $")
+RCSID("$Id: 082d0c84ef3361a34b3fc2aa989e68338fa1a167 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <assert.h>
@@ -149,7 +149,7 @@ int eaptls_success(eap_handler_t *handler, int peap_flag)
 	if (tls_session->prf_label) {
 		eaptls_gen_mppe_keys(handler->request,
 				     tls_session->ssl, tls_session->prf_label);
-	} else {
+	} else if (handler->type != PW_EAP_FAST) {
 		RWDEBUG("Not adding MPPE keys because there is no PRF label");
 	}
 

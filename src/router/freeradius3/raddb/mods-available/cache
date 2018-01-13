@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 63f44b1c1bedf70e6fc7eb6e4120a18084408a41 $
+#  $Id: 8bd4730cf570fdfedc9c516dc6974eab39981600 $
 
 #
 #	A module to cache attributes.  The idea is that you can look
@@ -89,7 +89,7 @@ cache {
 		# <list>:<attribute> <op> <value>
 
 		# Cache all instances of Reply-Message in the reply list
-		&reply:Reply-Message += &reply:Reply-Message
+		&reply:Reply-Message += &reply:Reply-Message[*]
 
 		# Add our own to show when the cache was last updated
 		&reply:Reply-Message += "Cache last updated at %t"

@@ -1,5 +1,5 @@
 ###########################################################################
-# $Id: a7f4c3121ded2b6557294de8bcab832c5715d038 $                 #
+# $Id: 606599735415b041e17230d829834a94a3a678d8 $                 #
 #                                                                         #
 #  schema.sql                       rlm_sql - FreeRADIUS SQL Module       #
 #                                                                         #
@@ -21,7 +21,6 @@ CREATE TABLE radacct (
   acctsessionid varchar(64) NOT NULL default '',
   acctuniqueid varchar(32) NOT NULL default '',
   username varchar(64) NOT NULL default '',
-  groupname varchar(64) NOT NULL default '',
   realm varchar(64) default '',
   nasipaddress varchar(15) NOT NULL default '',
   nasportid varchar(15) default NULL,

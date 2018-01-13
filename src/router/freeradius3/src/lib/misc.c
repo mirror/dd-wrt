@@ -1,7 +1,7 @@
 /*
  * misc.c	Various miscellaneous functions.
  *
- * Version:	$Id: 6449b291459300903f98c35e394881272f11bfd6 $
+ * Version:	$Id: 5b88d914557aa3f958693560ddb7c428eddaaf16 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 6449b291459300903f98c35e394881272f11bfd6 $")
+RCSID("$Id: 5b88d914557aa3f958693560ddb7c428eddaaf16 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -79,6 +79,8 @@ typedef struct fr_talloc_link {
  * @param sig to set handler for.
  * @param func handler to set.
  */
+DIAG_OPTIONAL
+DIAG_OFF(disabled-macro-expansion)
 int fr_set_signal(int sig, sig_t func)
 {
 #ifdef HAVE_SIGACTION
@@ -101,6 +103,7 @@ int fr_set_signal(int sig, sig_t func)
 #endif
 	return 0;
 }
+DIAG_ON(disabled-macro-expansion)
 
 /** Uninstall a signal for a specific handler
  *
@@ -108,6 +111,8 @@ int fr_set_signal(int sig, sig_t func)
  *
  * @param sig SIGNAL
  */
+DIAG_OPTIONAL
+DIAG_OFF(disabled-macro-expansion)
 int fr_unset_signal(int sig)
 {
 #ifdef HAVE_SIGACTION
@@ -123,6 +128,7 @@ int fr_unset_signal(int sig)
         return signal(sig, SIG_DFL);
 #endif
 }
+DIAG_ON(disabled-macro-expansion)
 
 static int _fr_trigger_talloc_ctx_free(fr_talloc_link_t *trigger)
 {
@@ -647,7 +653,7 @@ do_port:
 	return 0;
 }
 
-int fr_ntop(char *out, size_t outlen, fr_ipaddr_t *addr)
+int fr_ntop(char *out, size_t outlen, fr_ipaddr_t const *addr)
 {
 	char buffer[INET6_ADDRSTRLEN];
 

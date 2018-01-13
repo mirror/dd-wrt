@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 0ef86751acd4389e7a6446e37856fde75fd4137c $
+#  $Id: 7952ee4ecebf03496869c88c55a2f32dc689a364 $
 
 #
 #  Configuration file for the "redis" module.  This module does nothing
@@ -18,6 +18,9 @@ redis {
 	#  The password used to authenticate to the server.
 	#  We recommend using a strong password.
 #	password = thisisreallysecretandhardtoguess
+
+	#  Set connection and query timeout for rlm_redis
+	query_timeout = 5
 
 	#
 	#  Information for the connection pool.  The configuration items

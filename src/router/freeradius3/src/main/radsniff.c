@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 2e5c486388134ed1affcc22d1655edc73b04b958 $
+ * $Id: 55b78cef598ef694de6155b7ab48397dff172891 $
  * @file radsniff.c
  * @brief Capture, filter, and generate statistics for RADIUS traffic
  *
@@ -24,7 +24,7 @@
  * @copyright 2006 Nicolas Baradakis <nicolas.baradakis@cegetel.net>
  */
 
-RCSID("$Id: 2e5c486388134ed1affcc22d1655edc73b04b958 $")
+RCSID("$Id: 55b78cef598ef694de6155b7ab48397dff172891 $")
 
 #define _LIBRADIUS 1
 #include <time.h>
@@ -60,7 +60,10 @@ static char const *radsniff_version = "radsniff version " RADIUSD_VERSION_STRING
 #ifdef RADIUSD_VERSION_COMMIT
 " (git #" STRINGIFY(RADIUSD_VERSION_COMMIT) ")"
 #endif
-", built on " __DATE__ " at " __TIME__;
+#ifndef ENABLE_REPRODUCIBLE_BUILDS
+", built on " __DATE__ " at " __TIME__
+#endif
+;
 
 static int rs_useful_codes[] = {
 	PW_CODE_ACCESS_REQUEST,			//!< RFC2865 - Authentication request

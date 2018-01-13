@@ -1,7 +1,7 @@
 /*
  * unittest.c	Unit test wrapper for the RADIUS daemon.
  *
- * Version:	$Id: a09cef4da633742b8a0d372462547aeafd3935df $
+ * Version:	$Id: 7ae605c516824911e0358f3fb537b335167958a9 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2013  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: a09cef4da633742b8a0d372462547aeafd3935df $")
+RCSID("$Id: 7ae605c516824911e0358f3fb537b335167958a9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -48,7 +48,11 @@ char const *radiusd_version = "FreeRADIUS Version " RADIUSD_VERSION_STRING
 #ifdef RADIUSD_VERSION_COMMIT
 " (git #" STRINGIFY(RADIUSD_VERSION_COMMIT) ")"
 #endif
-", for host " HOSTINFO ", built on " __DATE__ " at " __TIME__;
+", for host " HOSTINFO
+#ifndef ENABLE_REPRODUCIBLE_BUILDS
+", built on " __DATE__ " at " __TIME__
+#endif
+;
 
 /*
  *	Static functions.
@@ -748,7 +752,7 @@ int main(int argc, char *argv[])
 	 *  Initialising OpenSSL once, here, is safer than having individual modules do it.
 	 */
 #ifdef HAVE_OPENSSL_CRYPTO_H
-	tls_global_init();
+	tls_global_init(false, false);
 #endif
 
 	if (xlat_register("poke", xlat_poke, NULL, NULL) < 0) {

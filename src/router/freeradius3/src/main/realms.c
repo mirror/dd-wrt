@@ -1,7 +1,7 @@
 /*
  * realms.c	Realm handling code
  *
- * Version:     $Id: 4f3c6b80e27d2690405e66619194b8543d681a83 $
+ * Version:     $Id: c96c0352f1e7237c123973224e7fc5f99e53df17 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 4f3c6b80e27d2690405e66619194b8543d681a83 $")
+RCSID("$Id: c96c0352f1e7237c123973224e7fc5f99e53df17 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/realms.h>
@@ -868,6 +868,11 @@ home_server_t *home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SE
 				rad_assert(0);
 				/* FALL-THROUGH */
 
+			/*
+			 *	One is added to get the accounting port
+			 *	for home->dual.
+			 */
+			case HOME_TYPE_AUTH_ACCT:
 			case HOME_TYPE_AUTH:
 				home->port = PW_AUTH_UDP_PORT;
 				break;

@@ -2,7 +2,7 @@
 /*
  * radwho.c	Show who is logged in on the terminal servers.
  *
- * Version:	$Id: e169a47086d9f7b2f70124deab98b71070805949 $
+ * Version:	$Id: bd534cfaa9df5b8a636e1ff59c9a72230228027f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: e169a47086d9f7b2f70124deab98b71070805949 $")
+RCSID("$Id: bd534cfaa9df5b8a636e1ff59c9a72230228027f $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/sysutmp.h>
@@ -62,12 +62,12 @@ bool log_stripped_names;
 main_config_t main_config;
 
 #include <sys/wait.h>
+#ifdef HAVE_PTHREAD_H
 pid_t rad_fork(void)
 {
 	return fork();
 }
 
-#ifdef HAVE_PTHREAD_H
 pid_t rad_waitpid(pid_t pid, int *status)
 {
 	return waitpid(pid, status, 0);

@@ -2,7 +2,7 @@
  *  sql.c		rlm_sql - FreeRADIUS SQL Module
  *		Main code directly taken from ICRADIUS
  *
- * Version:	$Id: 05d0bc245643e26a2f39aa30e24c5b6609d8c10c $
+ * Version:	$Id: 76bbf2e96981888f55ebc309bcdbaa8d249d9567 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * Copyright 2001  Chad Miller <cmiller@surfsouth.com>
  */
 
-RCSID("$Id: 05d0bc245643e26a2f39aa30e24c5b6609d8c10c $")
+RCSID("$Id: 76bbf2e96981888f55ebc309bcdbaa8d249d9567 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/rad_assert.h>
@@ -487,7 +487,7 @@ void rlm_sql_query_log(rlm_sql_t *inst, REQUEST *request,
 		return;
 	}
 
-	fd = exfile_open(inst->ef, filename, 0640, true);
+	fd = exfile_open(inst->ef, expanded, 0640);
 	if (fd < 0) {
 		ERROR("rlm_sql (%s): Couldn't open logfile '%s': %s", inst->name,
 		      expanded, fr_syserror(errno));
