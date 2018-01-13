@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 5bbcc8e540b2e480dbddc56e6b550ac951850c38 $
+ * $Id: f3aee9085c5c362758b564c204292dea98092f43 $
  * @file trustrouter.h
  * @brief Headers for trust router code
  *
@@ -33,6 +33,6 @@ REALM *tr_query_realm(REQUEST *request, char const *realm,
 		      char const *trustrouter,
 		      unsigned int port);
 
-bool tr_init(void);
+bool tr_init(bool cnf_rekey_enabled, uint32_t cnf_realm_lifetime);
 
 #endif

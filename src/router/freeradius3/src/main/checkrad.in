@@ -10,7 +10,7 @@
 #
 # Returns:	0 = no duplicate, 1 = duplicate, >1 = error.
 #
-# Version:	$Id: d50101e850b6e4fc79cade32104ee9d7054574d5 $
+# Version:	$Id: c0cf440106232184228ec3d4dc79dacb21037ff8 $
 #
 #		livingston_snmp  1.2	Author: miquels@cistron.nl
 #		cvx_snmp	 1.0	Author: miquels@cistron.nl
@@ -1251,8 +1251,8 @@ sub mikrotik_snmp {
     }
   }
 
-  # We want interface descriptions
-  $oid = "ifDescr";
+  # We want  mtxrInterfaceStatsName from MIKROTIK-MIB
+  $oid = "1.3.6.1.4.1.14988.1.1.14.1.1.2";
 
   # Mikrotik doesnt give port IDs correctly to RADIUS :(
   # practically this would limit us to a simple only-one user limit for

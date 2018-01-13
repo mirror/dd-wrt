@@ -1,7 +1,7 @@
 /*
  * eap_fast.c  contains the interfaces that are called from the main handler
  *
- * Version:     $Id: 95e52171885cd7195a2af2fdbeed8abd034020d0 $
+ * Version:     $Id: 44e6bce7ad10c8153802ab92890c35f5448b0ec5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: 95e52171885cd7195a2af2fdbeed8abd034020d0 $")
+RCSID("$Id: 44e6bce7ad10c8153802ab92890c35f5448b0ec5 $")
 
 #include "eap_fast.h"
 #include "eap_fast_crypto.h"
@@ -268,11 +268,11 @@ static void eap_fast_append_crypto_binding(REQUEST *request, tls_session_t *tls_
 {
 	eap_fast_tunnel_t		*t = tls_session->opaque;
 	eap_tlv_crypto_binding_tlv_t	binding;
-    memset(&binding, 0, sizeof(eap_tlv_crypto_binding_tlv_t));
 	const int			len = sizeof(binding) - (&binding.reserved - (uint8_t *)&binding);
 
 	RDEBUG("Sending Cryptobinding");
 
+	memset(&binding, 0, sizeof(eap_tlv_crypto_binding_tlv_t));
 	binding.tlv_type = htons(EAP_FAST_TLV_MANDATORY | EAP_FAST_TLV_CRYPTO_BINDING);
 	binding.length = htons(len);
 	binding.version = EAP_FAST_VERSION;
@@ -282,7 +282,6 @@ static void eap_fast_append_crypto_binding(REQUEST *request, tls_session_t *tls_
 	rad_assert(sizeof(binding.nonce) % sizeof(uint32_t) == 0);
 	RANDFILL(binding.nonce);
 	binding.nonce[sizeof(binding.nonce) - 1] &= ~0x01; /* RFC 4851 section 4.2.8 */
-
 
 	fr_hmac_sha1(binding.compound_mac, (uint8_t *)&binding, sizeof(binding), t->cmk, EAP_FAST_CMK_LEN);
 
@@ -1057,6 +1056,7 @@ static PW_CODE eap_fast_process_tlvs(REQUEST *request, eap_handler_t *eap_sessio
 	VALUE_PAIR			*vp;
 	vp_cursor_t			cursor;
 	eap_tlv_crypto_binding_tlv_t	*binding = NULL;
+	eap_tlv_crypto_binding_tlv_t	my_binding;
 
 	for (vp = fr_cursor_init(&cursor, &fast_vps); vp; vp = fr_cursor_next(&cursor)) {
 		PW_CODE code = PW_CODE_ACCESS_REJECT;
@@ -1085,11 +1085,11 @@ static PW_CODE eap_fast_process_tlvs(REQUEST *request, eap_handler_t *eap_sessio
 				t->stage = PROVISIONING;
 				break;
 			case EAP_FAST_TLV_CRYPTO_BINDING:
-				if (!binding) {
-					binding = talloc_zero(request->packet, eap_tlv_crypto_binding_tlv_t);
-					memcpy(binding, vp->vp_octets, sizeof(*binding));
+				if (!binding && (vp->vp_length >= sizeof(eap_tlv_crypto_binding_tlv_t))) {
+					binding = &my_binding;
 					binding->tlv_type = htons(EAP_FAST_TLV_MANDATORY | EAP_FAST_TLV_CRYPTO_BINDING);
 					binding->length = htons(sizeof(*binding) - 2 * sizeof(uint16_t));
+					memcpy(&my_binding.reserved, vp->vp_octets, sizeof(my_binding) - 4);
 				}
 				continue;
 			default:
@@ -1136,8 +1136,10 @@ static PW_CODE eap_fast_process_tlvs(REQUEST *request, eap_handler_t *eap_sessio
 
 	if (binding) {
 		PW_CODE code = eap_fast_crypto_binding(request, eap_session, tls_session, binding);
-		if (code == PW_CODE_ACCESS_ACCEPT)
+		if (code == PW_CODE_ACCESS_ACCEPT) {
 			t->stage = PROVISIONING;
+		}
+		return code;
 	}
 
 	return PW_CODE_ACCESS_ACCEPT;

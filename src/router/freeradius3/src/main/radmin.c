@@ -1,7 +1,7 @@
 /*
  * radmin.c	RADIUS Administration tool.
  *
- * Version:	$Id: c9d3be9303b5c67eef471653c8c80fd0fc9da2da $
+ * Version:	$Id: 4e941aa123e3cf1b7c384323705d82b92e68904c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2012   Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: c9d3be9303b5c67eef471653c8c80fd0fc9da2da $")
+RCSID("$Id: 4e941aa123e3cf1b7c384323705d82b92e68904c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/md5.h>
@@ -70,7 +70,10 @@ static char const *radmin_version = "radmin version " RADIUSD_VERSION_STRING
 #ifdef RADIUSD_VERSION_COMMIT
 " (git #" STRINGIFY(RADIUSD_VERSION_COMMIT) ")"
 #endif
-", built on " __DATE__ " at " __TIME__;
+#ifndef ENABLE_REPRODUCIBLE_BUILDS
+", built on " __DATE__ " at " __TIME__
+#endif
+;
 
 
 /*
@@ -84,12 +87,12 @@ static bool echo = false;
 static char const *secret = "testing123";
 
 #include <sys/wait.h>
+
+#ifdef HAVE_PTHREAD_H
 pid_t rad_fork(void)
 {
 	return fork();
 }
-
-#ifdef HAVE_PTHREAD_H
 pid_t rad_waitpid(pid_t pid, int *status)
 {
 	return waitpid(pid, status, 0);

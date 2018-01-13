@@ -1,5 +1,5 @@
 /*
- * $Id: 00b5e3b52b55f024e5ed91d7aaf26d78c309c741 $
+ * $Id: ccc77f926542bf0e05b627b7f78fdeaebd00364f $
  *
  * Postgresql schema for FreeRADIUS
  *
@@ -18,7 +18,6 @@ CREATE TABLE radacct (
 	AcctSessionId		text NOT NULL,
 	AcctUniqueId		text NOT NULL UNIQUE,
 	UserName		text,
-	GroupName		text,
 	Realm			text,
 	NASIPAddress		inet NOT NULL,
 	NASPortId		text,

@@ -1,7 +1,7 @@
 /*
  * eap_chbind.c
  *
- * Version:     $Id: e4d7ed81c2a3763f8b63a1d871213ef7013e74d3 $
+ * Version:     $Id: 91d2cc783eb5ac9aecd5789ace3d5427524ce749 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 
-RCSID("$Id: e4d7ed81c2a3763f8b63a1d871213ef7013e74d3 $")
+RCSID("$Id: 91d2cc783eb5ac9aecd5789ace3d5427524ce749 $")
 
 #include "eap_chbind.h"
 
@@ -284,7 +284,7 @@ VALUE_PAIR *eap_chbind_packet2vp(RADIUS_PACKET *packet, chbind_packet_t *chbind)
 
 	if (!chbind) return NULL; /* don't produce garbage */
 
-	vp = fr_pair_afrom_num(packet, VENDORPEC_UKERNA, PW_UKERNA_CHBIND);
+	vp = fr_pair_afrom_num(packet, PW_UKERNA_CHBIND, VENDORPEC_UKERNA);
 	if (!vp) return NULL;
 	fr_pair_value_memcpy(vp, (uint8_t *) chbind, talloc_array_length((uint8_t *)chbind));
 

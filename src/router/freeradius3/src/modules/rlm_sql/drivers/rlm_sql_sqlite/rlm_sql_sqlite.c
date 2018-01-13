@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: c94831da322fefbcfaa20bbe9b0ea345ab616026 $
+ * $Id: 9cf1aff604053f2e70ad4c6a930f16e409e8bd71 $
  * @file rlm_sql_sqlite.c
  * @brief SQLite driver.
  *
  * @copyright 2013 Network RADIUS SARL <info@networkradius.com>
  * @copyright 2007 Apple Inc.
  */
-RCSID("$Id: c94831da322fefbcfaa20bbe9b0ea345ab616026 $")
+RCSID("$Id: 9cf1aff604053f2e70ad4c6a930f16e409e8bd71 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -233,7 +233,7 @@ static int sql_loadfile(TALLOC_CTX *ctx, sqlite3 *db, char const *filename)
 	ssize_t		len;
 	int		statement_cnt = 0;
 	char		*buffer;
-	char		*p, *q, *s;
+	char		*p, *q;
 	int		cl;
 	FILE		*f;
 	struct stat	finfo;
@@ -321,20 +321,18 @@ static int sql_loadfile(TALLOC_CTX *ctx, sqlite3 *db, char const *filename)
 	/*
 	 *	Statement delimiter is ;\n
 	 */
-	s = p = buffer;
+	p = buffer;
 	while ((q = strchr(p, ';'))) {
-		if (q[1] != '\n') {
+		if ((q[1] != '\n') && (q[1] != '\0')) {
 			p = q + 1;
 			statement_cnt++;
 			continue;
 		}
 
-		*q = '\0';
-
 #ifdef HAVE_SQLITE3_PREPARE_V2
-		status = sqlite3_prepare_v2(db, s, len, &statement, &z_tail);
+		status = sqlite3_prepare_v2(db, p, q - p, &statement, &z_tail);
 #else
-		status = sqlite3_prepare(db, s, len, &statement, &z_tail);
+		status = sqlite3_prepare(db, p, q - p, &statement, &z_tail);
 #endif
 
 		if (sql_check_error(db, status) != RLM_SQL_OK) {
@@ -359,7 +357,7 @@ static int sql_loadfile(TALLOC_CTX *ctx, sqlite3 *db, char const *filename)
 		}
 
 		statement_cnt++;
-		p = s = q + 1;
+		p = q + 1;
 	}
 
 	talloc_free(buffer);

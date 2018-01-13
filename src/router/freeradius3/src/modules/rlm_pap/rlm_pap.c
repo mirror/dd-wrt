@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: be50257605870815689a23eb2e840dce89af7f6a $
+ * $Id: dff2e86bbda4fa49ef642bb3d13dbde1fdcbdf53 $
  * @file rlm_pap.c
  * @brief Hashes plaintext passwords to compare against a prehashed reference.
  *
@@ -23,7 +23,7 @@
  * @copyright 2012       Matthew Newton <matthew@newtoncomputing.co.uk>
  * @copyright 2001       Kostas Kalevras <kkalev@noc.ntua.gr>
  */
-RCSID("$Id: be50257605870815689a23eb2e840dce89af7f6a $")
+RCSID("$Id: dff2e86bbda4fa49ef642bb3d13dbde1fdcbdf53 $")
 USES_APPLE_DEPRECATED_API
 
 #include <freeradius-devel/radiusd.h>
@@ -539,8 +539,7 @@ static rlm_rcode_t CC_HINT(nonnull) pap_auth_clear(UNUSED rlm_pap_t *inst, REQUE
 	    (rad_digest_cmp(vp->vp_octets,
 			    request->password->vp_octets,
 			    vp->vp_length) != 0)) {
-		REDEBUG("Cleartext password \"%s\" does not match \"known good\" password",
-			request->password->vp_strvalue);
+		REDEBUG("Cleartext password does not match \"known good\" password");
 		return RLM_MODULE_REJECT;
 	}
 	return RLM_MODULE_OK;
@@ -889,7 +888,7 @@ static rlm_rcode_t CC_HINT(nonnull) pap_auth_ns_mta_md5(UNUSED rlm_pap_t *inst, 
 	FR_MD5_CTX md5_context;
 	uint8_t digest[128];
 	uint8_t buff[MAX_STRING_LEN];
-	char buff2[MAX_STRING_LEN + 50];
+	uint8_t buff2[MAX_STRING_LEN + 50];
 
 	RDEBUG("Using NT-MTA-MD5-Password");
 
@@ -920,19 +919,19 @@ static rlm_rcode_t CC_HINT(nonnull) pap_auth_ns_mta_md5(UNUSED rlm_pap_t *inst, 
 	 *	Set up the algorithm.
 	 */
 	{
-		char *p = buff2;
+		uint8_t *p = buff2;
 
 		memcpy(p, &vp->vp_octets[32], 32);
 		p += 32;
 		*(p++) = 89;
-		strcpy(p, request->password->vp_strvalue);
-		p += strlen(p);
+		memcpy(p, (uint8_t const *)request->password->vp_strvalue, request->password->vp_length);
+		p += request->password->vp_length;
 		*(p++) = 247;
 		memcpy(p, &vp->vp_octets[32], 32);
 		p += 32;
 
 		fr_md5_init(&md5_context);
-		fr_md5_update(&md5_context, (uint8_t *) buff2, p - buff2);
+		fr_md5_update(&md5_context, buff2, p - buff2);
 		fr_md5_final(buff, &md5_context);
 	}
 

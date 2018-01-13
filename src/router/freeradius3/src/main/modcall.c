@@ -1,7 +1,7 @@
 /*
  * @name modcall.c
  *
- * Version:	$Id: c385db21f4a53ee6e98897346677a6df32dcdf25 $
+ * Version:	$Id: 4723971d20f7fbb7a369c8c28c073d88df6a5983 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: c385db21f4a53ee6e98897346677a6df32dcdf25 $")
+RCSID("$Id: 4723971d20f7fbb7a369c8c28c073d88df6a5983 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -3478,12 +3478,6 @@ static bool pass2_callback(void *ctx, fr_cond_t *c)
 	}
 
 	if (!radius_find_compare(map->lhs->tmpl_da)) return true;
-
-	if (map->rhs->type == TMPL_TYPE_ATTR) {
-		cf_log_err(map->ci, "Cannot compare virtual attribute %s to another attribute",
-			   map->lhs->name);
-		return false;
-	}
 
 	if (map->rhs->type == TMPL_TYPE_REGEX) {
 		cf_log_err(map->ci, "Cannot compare virtual attribute %s via a regex",

@@ -1,5 +1,5 @@
 /***************************************************************************
- * $Id: 80ccc116db8fa203260561a1db86111f16960992 $		   *
+ * $Id: f3ca88cc829b9d496e9a49643f142e90224fd9b5 $		   *
  *									   *
  * db_mssql.sql                 					   *
  *                                                                         *
@@ -19,7 +19,6 @@ CREATE TABLE [radacct] (
 	[AcctSessionId] [varchar] (64) DEFAULT ('') FOR [AcctSessionId],
 	[AcctUniqueId] [varchar] (32) DEFAULT ('') FOR [AcctUniqueId],
 	[UserName] [varchar] (64) DEFAULT ('') FOR [UserName],
-	[GroupName] [varchar] (64) DEFAULT ('') FOR [GroupName],
 	[Realm] [varchar] (64) DEFAULT ('') FOR [Realm],
 	[NASIPAddress] [varchar] (15) DEFAULT ('') FOR [NASIPAddress],
 	[NASPortId] [varchar] (15) NULL ,

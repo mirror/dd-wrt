@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------
--- $Id: aa2c8ecaa40e22410f80d7b8ff179b79471beb6c $                 	   --
+-- $Id: 83cd0df8c3764436abe5c4751a3a1fff90a5c4e5 $                 	   --
 --                                                                         --
 --  schema.sql                       rlm_sql - FreeRADIUS SQLite Module    --
 --                                                                         --
@@ -15,7 +15,6 @@ CREATE TABLE radacct (
 	acctsessionid varchar(64) NOT NULL default '',
 	acctuniqueid varchar(32) NOT NULL default '',
 	username varchar(64) NOT NULL default '',
-	groupname varchar(64) NOT NULL default '',
 	realm varchar(64) default '',
 	nasipaddress varchar(15) NOT NULL default '',
 	nasportid varchar(15) default NULL,
