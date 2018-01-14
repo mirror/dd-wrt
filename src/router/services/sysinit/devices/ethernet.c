@@ -210,9 +210,9 @@ static int detect_drivers(char *enabled, char *list, char **driverset,int delay)
 	char word[256];
 	char *next, *wordlist;
 	int rcc = 0;
-	if (!nvram_match(enabled, "1")) {
+	if (!nvram_matchi(enabled, 1)) {
 		rcc = detect_driver(driverset, list, delay);
-		nvram_set(enabled, "1");
+		nvram_seti(enabled, 1);
 		nvram_commit();
 	} else {
 		wordlist = nvram_safe_get(list);
@@ -233,7 +233,7 @@ static int detect_pcidrivers(void)
 
 static int detect_usbdrivers(void)
 {
-	return detect_drivers("usb_detected", "usbdrivers", usbdrivers, 1);
+	return detect_drivers("usb_detected", "usbdrivers", usbdrivers, 0);
 }
 
 static int detect_ethernet_devices(void)
@@ -246,8 +246,8 @@ static int detect_ethernet_devices(void)
 
 void start_detectdrivers(void)
 {
-	nvram_set("usb_detected", "0");
-	nvram_set("pci_detected", "0");
+	nvram_seti("usb_detected", 0);
+	nvram_seti("pci_detected", 0);
 	detect_ethernet_devices();
 }
 
