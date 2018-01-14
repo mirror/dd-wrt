@@ -175,7 +175,7 @@ static char *usbdrivers[] = {
 	NULL
 };
 
-static int detect_driver(char **drivers, char *list)
+static int detect_driver(char **drivers, char *list, int delay)
 {
 	int basecount = getifcount("eth");
 	int ret;
@@ -185,6 +185,8 @@ static int detect_driver(char **drivers, char *list)
 	char *driver;
 	while ((driver = drivers[cnt++]) != NULL) {
 		ret = eval("modprobe", driver);
+		if (delay)
+			sleep(delay);
 		if (!ret && (newcount = getifcount("eth")) > basecount) {
 			basecount = newcount;
 			char *pcid = nvram_safe_get(list);
@@ -203,13 +205,13 @@ static int detect_driver(char **drivers, char *list)
 	return rcc;
 }
 
-static int detect_drivers(char *enabled, char *list, char **driverset)
+static int detect_drivers(char *enabled, char *list, char **driverset,int delay)
 {
 	char word[256];
 	char *next, *wordlist;
 	int rcc = 0;
 	if (!nvram_match(enabled, "1")) {
-		rcc = detect_driver(driverset, list);
+		rcc = detect_driver(driverset, list, delay);
 		nvram_set(enabled, "1");
 		nvram_commit();
 	} else {
@@ -226,12 +228,12 @@ static int detect_drivers(char *enabled, char *list, char **driverset)
 
 static int detect_pcidrivers(void)
 {
-	return detect_drivers("pci_detected", "pcidrivers", pcidrivers);
+	return detect_drivers("pci_detected", "pcidrivers", pcidrivers, 0);
 }
 
 static int detect_usbdrivers(void)
 {
-	return detect_drivers("usb_detected", "usbdrivers", usbdrivers);
+	return detect_drivers("usb_detected", "usbdrivers", usbdrivers, 1);
 }
 
 static int detect_ethernet_devices(void)
