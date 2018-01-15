@@ -30,7 +30,9 @@ if (value == 2) {
 
 if (value == 2) {
 	show_layer_ext(F, "idbridged" + index, false);
+	show_layer_ext(F, "idlocalip" + index, false);
 } else {
+	show_layer_ext(F, "idlocalip" + index, true);
 	if (brvalue == 1) {
 	    show_layer_ext(F, "idbridged" + index, false);
 	} else {
