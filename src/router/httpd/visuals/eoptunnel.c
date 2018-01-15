@@ -127,11 +127,15 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "</div>\n");
 			}
 			{
-				websWrite(wp, "<div class=\"setting\">\n");
-				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.localIP)</script></div>\n");
-				websWrite(wp, "<input type=\"hidden\" name=\"oet%d_local\" value=\"0.0.0.0\"/>\n", tun);
-				sprintf(temp, "oet%d_local", tun);
-				show_ip(wp, NULL, temp, 0, "eoip.localIP");
+				websWrite(wp, "<div id=\"idlocalip%d\">\n", tun);
+				{
+					websWrite(wp, "<div class=\"setting\">\n");
+					websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.localIP)</script></div>\n");
+					websWrite(wp, "<input type=\"hidden\" name=\"oet%d_local\" value=\"0.0.0.0\"/>\n", tun);
+					sprintf(temp, "oet%d_local", tun);
+					show_ip(wp, NULL, temp, 0, "eoip.localIP");
+					websWrite(wp, "</div>\n");
+				}
 				websWrite(wp, "</div>\n");
 			}
 			{
