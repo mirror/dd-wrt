@@ -1122,6 +1122,7 @@ static struct gozila_action gozila_actions[] = {
 #endif
 #ifdef HAVE_WIREGUARD
 	{"eop-tunnel", "gen_wg_key", "", 0, REFRESH, "gen_wg_key"},
+	{"eop-tunnel", "gen_wg_psk", "", 0, REFRESH, "gen_wg_psk"},
 #endif
 	{"ForwardSpec", "add_forward_spec", "", 0, REFRESH, "forwardspec_add"},
 	{"ForwardSpec", "remove_forward_spec", "", 0, REFRESH,
