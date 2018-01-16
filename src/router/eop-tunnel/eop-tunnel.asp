@@ -12,11 +12,11 @@ function to_apply(F) {
 	applytake(F);
 }
 
-function ken_key(index)
+function ken_wg_key(index)
 {
 	F.keyindex.value = keyindex;
 	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "gen_key";
+	F.submit_type.value = "gen_wg_key";
 	apply(F);
 }
 
