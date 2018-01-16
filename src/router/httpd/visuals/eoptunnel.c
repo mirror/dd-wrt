@@ -111,7 +111,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				{
 
 				websWrite(wp, "<div class=\"center\">\n");
-				websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"ken_key_button\\\" value=\\\"\" + eoip.genkey + \"\\\" onclick=\\\"gen_key(%d)\\\" />\");\n",tun);
+				websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"ken_key_button\\\" value=\\\"\" + eoip.genkey + \"\\\" onclick=\\\"gen_wg_key(%d)\\\" />\");\n",tun);
 				websWrite(wp, "</div>\n");
 				}
 
