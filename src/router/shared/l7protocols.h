@@ -42,6 +42,7 @@ l7filters filters_list[] = {
 	{"apple", NDPI_ONLY},
 	{"apple_icloud", NDPI_ONLY},
 	{"apple_itunes", NDPI_ONLY},
+	{"apple_push", NDPI_ONLY},
 #endif
 	{"applejuice", PDPI},
 #ifdef HAVE_OPENDPI
@@ -102,6 +103,7 @@ l7filters filters_list[] = {
 	{"dhcp", DPI},
 #ifdef HAVE_OPENDPI
 	{"dhcpv6", NDPI_ONLY},
+	{"diameter", NDPI_ONLY},
 	{"direct_download_link", NDPI_ONLY},
 #endif
 	{"directconnect", PDPI},
@@ -168,6 +170,8 @@ l7filters filters_list[] = {
 	{"google", NDPI_ONLY},
 	{"google_drive", NDPI_ONLY},
 	{"google_maps", NDPI_ONLY},
+	{"google_plus", NDPI_ONLY},
+	{"google_services", NDPI_ONLY},
 #endif
 	{"gopher", L7_ONLY},
 #ifdef HAVE_OPENDPI
