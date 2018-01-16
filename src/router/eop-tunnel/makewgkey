@@ -3,5 +3,5 @@
 mkdir -p /tmp/wireguard
 wg genkey > /tmp/wireguard/oet$1_private
 wg pubkey < /tmp/wireguard/oet$1_private > /tmp/wireguard/oet$1_public
-nvram set oet${i}_private=`cat /tmp/wireguard/oet$i_private`
-nvram set oet${i}_public=`cat /tmp/wireguard/oet$i_public`
+nvram set oet$1_private=`cat /tmp/wireguard/oet$1_private`
+nvram set oet$1_public=`cat /tmp/wireguard/oet$1_public`
