@@ -1955,6 +1955,7 @@ eoip.tunnel="Tunnel";
 eoip.legend="Ethernet Over IP Tunneling";
 eoip.proto="Protocol Type";
 eoip.mtik="Mikrotik";
+eoip.genkey="Generate Key";
 eoip.wireguard="Wireguard";
 eoip.wireguard_localport="Local Port";
 eoip.wireguard_ka="Persistent Keep-Alive";
