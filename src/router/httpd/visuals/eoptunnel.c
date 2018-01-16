@@ -60,7 +60,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 			{
 				websWrite(wp, "<div class=\"setting\">\n");
 				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.proto)</script></div>\n");
-				websWrite(wp, "<select name=\"oet%d_proto\" onclick=\"changeproto(this, %d, this.value, this.form.oet%d_bridged.value)\">\n", tun, tun, tun);
+				websWrite(wp, "<select name=\"oet%d_proto\" onclick=\"changeproto(this, %d, this.value, this.form.oet%d_bridged.value, this.form.oet%d_usepsk.value)\">\n", tun, tun, tun);
 
 				websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 				websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\"  + eoip.etherip + \"</option>\");\n", nvram_match(temp, "0") ? "selected=\\\"selected\\\"" : "");
@@ -113,7 +113,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "<div class=\"center\">\n");
 					websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 					websWrite(wp,
-						  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"ken_key_button\\\" value=\\\"\" + eoip.genkey + \"\\\" onclick=\\\"gen_wg_key(this.form,%d)\\\" />\");\n",
+						  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"gen_key_button\\\" value=\\\"\" + eoip.genkey + \"\\\" onclick=\\\"gen_wg_key(this.form,%d)\\\" />\");\n",
 						  tun);
 					websWrite(wp, "//]]>\n</script>\n");
 					websWrite(wp, "</div>\n");
@@ -124,7 +124,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				{
 					websWrite(wp, "<div class=\"setting\">\n");
 					websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_localkey)</script></div>\n");
-					websWrite(wp, "<input size=\"44\" maxlength=\"44\" name=\"%s\" value=\"%s\" disabled=\"disabled\"/>\n", temp, nvram_safe_get(temp));
+					websWrite(wp, "<input size=\"64\" maxlength=\"64\" name=\"%s\" value=\"%s\" disabled=\"disabled\"/>\n", temp, nvram_safe_get(temp));
 					websWrite(wp, "</div>\n");
 				}
 				//public key peer input
@@ -132,9 +132,44 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				{
 					websWrite(wp, "<div class=\"setting\">\n");
 					websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_peerkey)</script></div>\n");
-					websWrite(wp, "<input size=\"44\" maxlength=\"44\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+					websWrite(wp, "<input size=\"64\" maxlength=\"64\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
 					websWrite(wp, "</div>\n");
 				}
+				sprintf(temp, "oet%d_usepsk", tun);
+				{
+					websWrite(wp, "<div class=\"setting\">\n");
+					websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_usepsk)</script></div>\n");
+					websWrite(wp,
+						  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idpsk%d', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+						  temp, (nvram_matchi(temp, 1) ? "checked=\"checked\"" : ""), tun);
+					websWrite(wp,
+						  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idpsk%d', false)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
+						  temp, (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""), tun);
+					websWrite(wp, "</div>\n");
+				}
+				{
+					websWrite(wp, "<div id=\"idpsk%d\">\n", tun);
+					{
+
+						websWrite(wp, "<div class=\"center\">\n");
+						websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+						websWrite(wp,
+							  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"gen_psk_button\\\" value=\\\"\" + eoip.wireguard_genpsk + \"\\\" onclick=\\\"gen_wg_psk(this.form,%d)\\\" />\");\n",
+							  tun);
+						websWrite(wp, "//]]>\n</script>\n");
+						websWrite(wp, "</div>\n");
+					}
+
+					sprintf(temp, "oet%d_psk", tun);
+					{
+						websWrite(wp, "<div class=\"setting\">\n");
+						websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_psk)</script></div>\n");
+						websWrite(wp, "<input size=\"64\" maxlength=\"64\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+						websWrite(wp, "</div>\n");
+					}
+					websWrite(wp, "</div>\n");
+				}
+
 #endif
 				websWrite(wp, "</div>\n");
 			}
