@@ -504,6 +504,7 @@ static inline void poly1305_blocks(void *ctx, const u8 *inp, size_t len, u32 pad
 		poly1305_blocks_neon(ctx, inp, len, padbit);
 	else
 #endif
+		poly1305_blocks_arm(ctx, inp, len, padbit);
 #elif defined(CONFIG_MIPS) && (defined(CONFIG_64BIT) || defined(CONFIG_CPU_MIPS32_R2))
 	poly1305_blocks_mips(ctx, inp, len, padbit);
 #else
