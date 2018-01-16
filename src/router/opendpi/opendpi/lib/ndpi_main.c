@@ -1090,6 +1090,16 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_QUIC, no_master, no_master, "Quic", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 443, 80, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DIAMETER, no_master, no_master, "Diameter", ndpi_build_default_ports(ports_a, 3868, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_APPLE_PUSH, no_master, no_master, "ApplePush", ndpi_build_default_ports(ports_a, 1, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DROPBOX, no_master, no_master, "Dropbox", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 17500, 0, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SPOTIFY, no_master, no_master, "Spotify", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+ 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_LISP, no_master, no_master, "LISP", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+ 				ndpi_build_default_ports(ports_b, 4342, 4341, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_EAQ, no_master, no_master, "EAQ", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 6000, 80, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_KAKAOTALK_VOICE, no_master, no_master, "KakaoTalk_Voice", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
@@ -1425,8 +1435,10 @@ static void ndpi_exit_detection_module(struct ndpi_detection_module_struct
 		if (ndpi_struct->protocols_ptree)
 			ndpi_Destroy_Patricia((patricia_tree_t *) ndpi_struct->protocols_ptree, free_ptree_data);
 
-		ndpi_tdestroy(ndpi_struct->udpRoot, ndpi_free);
-		ndpi_tdestroy(ndpi_struct->tcpRoot, ndpi_free);
+		if (ndpi_struct->udpRoot != NULL)
+			ndpi_tdestroy(ndpi_struct->udpRoot, ndpi_free);
+		if (ndpi_struct->tcpRoot != NULL)
+			ndpi_tdestroy(ndpi_struct->tcpRoot, ndpi_free);
 
 		if (ndpi_struct->host_automa.ac_automa != NULL)
 			ac_automata_release((AC_AUTOMATA_t *) ndpi_struct->host_automa.ac_automa);
@@ -2186,6 +2198,12 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 
 	/* QUIC */
 	init_quic_dissector(ndpi_struct, &a, detection_bitmask);
+
+	/* DIAMETER */
+	init_diameter_dissector(ndpi_struct, &a, detection_bitmask);
+
+	/* APPLE_PUSH */
+	init_apple_push_dissector(ndpi_struct, &a, detection_bitmask);
 
 	/* EAQ */
 	init_eaq_dissector(ndpi_struct, &a, detection_bitmask);
