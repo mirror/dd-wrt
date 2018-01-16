@@ -205,6 +205,11 @@
 #else
 #define NDPI_LOG(proto, mod, log_level, args...) {}
 #endif
+# define NDPI_LOG(proto, mod, log_level, args...) {}
+# define NDPI_LOG_ERR(mod, args...) {}
+# define NDPI_LOG_INFO(mod, args...) {}
+# define NDPI_LOG_DBG(mod,  args...) {}
+# define NDPI_LOG_DBG2(mod, args...) {}
 
 #endif				/* NDPI_ENABLE_DEBUG_MESSAGES */
 
