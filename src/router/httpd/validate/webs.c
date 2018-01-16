@@ -1416,7 +1416,7 @@ void qos_add_mac(webs_t wp)
 }
 
 #ifdef HAVE_WIREGUARD
-void gen_key(webs_t wp)
+void gen_wg_key(webs_t wp)
 {
 	int key = websGetVari(wp, "keyindex", -1);
 	if (key < 0)
