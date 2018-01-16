@@ -1425,6 +1425,16 @@ void gen_wg_key(webs_t wp)
 	sprintf(idx, "%d", key);
 	eval("makewgkey", idx);
 }
+
+void gen_wg_psk(webs_t wp)
+{
+	int key = websGetVari(wp, "keyindex", -1);
+	if (key < 0)
+		return;
+	char idx[32];
+	sprintf(idx, "%d", key);
+	eval("makewgpsk", idx);
+}
 #endif
 
 void qos_save(webs_t wp)
