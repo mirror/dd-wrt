@@ -12,6 +12,14 @@ function to_apply(F) {
 	applytake(F);
 }
 
+function ken_key(index)
+{
+	F.keyindex.value = keyindex;
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "gen_key";
+	apply(F);
+}
+
 function changeproto(F, index, value, brvalue)
 {
 if (value == 1) {
@@ -106,6 +114,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_button" value="eop-tunnel" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
+							<input type="hidden" name="keyindex" />
 							<input type="hidden" name="submit_type" />
 							
 							<h2><% tran("eoip.legend"); %></h2>
