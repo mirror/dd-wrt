@@ -568,7 +568,7 @@ static void poly1305_update(struct poly1305_ctx *ctx, const u8 *inp, size_t len,
 	len -= rem;
 
 	if (len >= POLY1305_BLOCK_SIZE) {
-		blocks(ctx->opaque, inp, len, 1);
+		poly1305_blocks(ctx->opaque, inp, len, 1, have_simd);
 		inp += len;
 	}
 
