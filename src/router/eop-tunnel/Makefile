@@ -21,6 +21,7 @@ install: all
 	cp $(MODULE)*.startup $(INSTALLDIR)/etc/config
 	cp $(MODULE)*.firewall $(INSTALLDIR)/etc/config
 	-cp mtik/eoip $(INSTALLDIR)/usr/sbin
+	-cp makewgkey $(INSTALLDIR)/usr/sbin
 
 www-install:
 	install -d $(INSTALLDIR)/../www
