@@ -163,3 +163,5 @@
 #include "protocols/tinc.c"
 #include "protocols/hangout.c"
 #include "protocols/checkmk.c"
+#include "protocols/apple_push.c"
+#include "protocols/diameter.c"
