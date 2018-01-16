@@ -11,6 +11,11 @@
 "oet1_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet1_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
 
+"oet1_usepsk"  "wireguard option psk"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet1_psk"  "wireguard psk"	"NULL"	"FALSE"	"0"
+
+
+
 "oet2_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet2_proto"  "protocol type"  "CHOICE" "3" "0" "1" "2" "FALSE" "0"  
 "oet2_peerkey"  "wireguard peer key"  "NULL" "FALSE" "0"  
@@ -23,6 +28,8 @@
 "oet2_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet2_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet2_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet2_usepsk"  "wireguard option psk"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet2_psk"  "wireguard psk"	"NULL"	"FALSE"	"0"
 
 "oet3_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet3_proto"  "protocol type"  "CHOICE" "3" "0" "1" "2" "FALSE" "0"  
@@ -36,6 +43,8 @@
 "oet3_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet3_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet3_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet3_usepsk"  "wireguard option psk"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet3_psk"  "wireguard psk"	"NULL"	"FALSE"	"0"
 
 "oet4_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet4_proto"  "protocol type"  "CHOICE" "3" "0" "1" "2" "FALSE" "0"  
@@ -49,6 +58,8 @@
 "oet4_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet4_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet4_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet4_usepsk"  "wireguard option psk"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet4_psk"  "wireguard psk"	"NULL"	"FALSE"	"0"
 
 "oet5_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet5_proto"  "protocol type"  "CHOICE" "3" "0" "1" "2" "FALSE" "0"  
@@ -62,6 +73,8 @@
 "oet5_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet5_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet5_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet5_usepsk"  "wireguard option psk"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet5_psk"  "wireguard psk"	"NULL"	"FALSE"	"0"
 
 "oet6_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet6_proto"  "protocol type"  "CHOICE" "3" "0" "1" "2" "FALSE" "0"  
@@ -75,6 +88,8 @@
 "oet6_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet6_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet6_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet6_usepsk"  "wireguard option psk"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet6_psk"  "wireguard psk"	"NULL"	"FALSE"	"0"
 
 "oet7_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet7_proto"  "protocol type"  "CHOICE" "3" "0" "1" "2" "FALSE" "0"  
@@ -88,6 +103,8 @@
 "oet7_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet7_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet7_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet7_usepsk"  "wireguard option psk"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet7_psk"  "wireguard psk"	"NULL"	"FALSE"	"0"
 
 "oet8_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet8_proto"  "protocol type"  "CHOICE" "3" "0" "1" "2" "FALSE" "0"  
@@ -101,6 +118,8 @@
 "oet8_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet8_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet8_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet8_usepsk"  "wireguard option psk"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet8_psk"  "wireguard psk"	"NULL"	"FALSE"	"0"
 
 "oet9_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet9_proto"  "protocol type"  "CHOICE" "3" "0" "1" "2" "FALSE" "0"  
@@ -114,6 +133,8 @@
 "oet9_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet9_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet9_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet9_usepsk"  "wireguard option psk"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet9_psk"  "wireguard psk"	"NULL"	"FALSE"	"0"
 
 "oet10_en"  "OET Tunnel"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
 "oet10_proto"  "protocol type"  "CHOICE" "3" "0" "1" "2" "FALSE" "0"  
@@ -127,3 +148,5 @@
 "oet10_ipaddr"  "ip address"  "MERGEIPADDRS" "FALSE" "0"  
 "oet10_netmask"  "netmask"  "MERGEIPADDRS" "FALSE" "0"
 "oet10_bridged"  "bridged"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet10_usepsk"  "wireguard option psk"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
+"oet10_psk"  "wireguard psk"	"NULL"	"FALSE"	"0"
