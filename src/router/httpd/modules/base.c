@@ -1121,7 +1121,7 @@ static struct gozila_action gozila_actions[] = {
 	{"Hotspot", "add_iradius", "", 0, REFRESH, "raduser_add"},
 #endif
 #ifdef HAVE_WIREGUARD
-	{"eop-tunnel", "gen_key", "", 0, REFRESH, "gen_key"},
+	{"eop-tunnel", "gen_wg_key", "", 0, REFRESH, "gen_wg_key"},
 #endif
 	{"ForwardSpec", "add_forward_spec", "", 0, REFRESH, "forwardspec_add"},
 	{"ForwardSpec", "remove_forward_spec", "", 0, REFRESH,
