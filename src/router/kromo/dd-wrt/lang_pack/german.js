@@ -1666,6 +1666,7 @@ eoip.wireguard_ka="Persistent Keep-Alive";
 eoip.wireguard_peerport="Entfernter Port";
 eoip.wireguard_peerkey="Entfernter &Ouml;ffentlicher Schl&uuml;ssel";
 eoip.wireguard_localkey="Lokaler &Ouml;ffentlicher Schl&uuml;ssel";
+eoip.wireguard_genpsk="Erzeuge Pre-Shared Key";
 eoip.wireguard_usepsk="Nutze Pre-Shared Key";
 eoip.remoteIP="Entfernte IP Adresse";
 eoip.localIP="Lokale IP Adresse";

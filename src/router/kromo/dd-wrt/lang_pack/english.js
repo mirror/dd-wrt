@@ -1963,6 +1963,7 @@ eoip.wireguard_peerport="Peer Port";
 eoip.wireguard_peerkey="Peer Public Key";
 eoip.wireguard_localkey="Local Public Key";
 eoip.wireguard_usepsk="Use Pre-Shared Key";
+eoip.wireguard_genpsk="Generate Pre-Shared Key";
 eoip.wireguard_psk="Pre-Shared Key";
 eoip.etherip="RFC 3378 Ethernet Over IP";
 eoip.srv="EoIP Tunnel";
