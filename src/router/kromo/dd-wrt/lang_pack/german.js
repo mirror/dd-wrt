@@ -1660,6 +1660,7 @@ eoip.titl="EoIP Tunnel";
 eoip.tunnel="Tunnel";
 eoip.legend="Ethernet &Uuml;ber IP Tunneln";
 eoip.srv="EoIP Tunnel";
+eoip.genkey="Erzeuge Schl&uuml;ssel";
 eoip.wireguard_localport="Lokaler Port";
 eoip.wireguard_ka="Persistent Keep-Alive";
 eoip.wireguard_peerport="Entfernter Port";
