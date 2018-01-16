@@ -12,7 +12,7 @@ function to_apply(F) {
 	applytake(F);
 }
 
-function gen_wg_key(index)
+function gen_wg_key(F,index)
 {
 	F.keyindex.value = keyindex;
 	F.change_action.value="gozila_cgi";
