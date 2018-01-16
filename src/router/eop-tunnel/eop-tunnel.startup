@@ -1,21 +1,4 @@
 #!/bin/sh
-
-mkdir -p /tmp/wireguard
-nv=/usr/sbin/nvram		
-
-for i in 1 2 3 4 5 6 7 8 9 10
-do
-	if [ -z `$nv get oet${i}_private` ]
-	then
-		wg genkey > /tmp/wireguard/oet${i}_private
-		wg pubkey < /tmp/wireguard/oet${i}_private > /tmp/wireguard/oet${i}_public
-		nvram set oet${i}_private=`cat /tmp/wireguard/oet${i}_private`
-		nvram set oet${i}_public=`cat /tmp/wireguard/oet${i}_public`
-	else
-		$nv get oet${i}_private > /tmp/wireguard/oet${i}_private
-		$nv get oet${i}_public > /tmp/wireguard/oet${i}_public
-	fi
-done
 nv=/usr/sbin/nvram		
 /bin/mkdir -p /tmp/oet/pid
 cd /tmp/oet/pid
@@ -34,15 +17,22 @@ do
 	then
 		if [ `$nv get oet${i}_proto` -eq 2 ]
 		then
+			mkdir -p /tmp/wireguard
 			insmod ipv6
 			insmod udp_tunnel
 			insmod ip6_udp_tunnel
 			insmod wireguard
 			ip link add oet${i} type wireguard
 			wg set oet${i} listen-port oet${i}_port
+			$nv get oet${i}_private > /tmp/wireguard/oet${i}_private
 			wg set oet${i} private-key /tmp/wireguard/oet${i}_private
 			wg set oet${i} persistent-keepalive oet${i}_ka
-			wg set oet${i} peer $($nv get oet${i}_peerkey) allowed-ips 0.0.0.0/0 endpoint $($nv get oet${i}_rem):oet${i}_peerport
+			if [ `$nv get oet${i}_usepsk` -eq 1 ]
+			then
+				$nv get oet${i}_psk > /tmp/wireguard/oet${i}_psk
+				wg set oet${i} preshared-key /tmp/wireguard/oet${i}_psk
+			fi
+			wg set oet${i} peer $($nv get oet${i}_peerkey) allowed-ips 0.0.0.0/0 endpoint $($nv get oet${i}_rem):$($nv get oet${i}_peerport)
 			ifconfig oet${i} promisc up 2>&1 > /dev/null
 			ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
 			echo enable > ${i}.pid
