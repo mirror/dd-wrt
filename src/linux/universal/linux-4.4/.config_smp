@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.4.111 Kernel Configuration
+# Linux/i386 4.4.112 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -1153,6 +1153,7 @@ CONFIG_EXTRA_FIRMWARE=""
 # CONFIG_SYS_HYPERVISOR is not set
 # CONFIG_GENERIC_CPU_DEVICES is not set
 CONFIG_GENERIC_CPU_AUTOPROBE=y
+CONFIG_GENERIC_CPU_VULNERABILITIES=y
 CONFIG_REGMAP=y
 # CONFIG_REGMAP_I2C is not set
 # CONFIG_REGMAP_SPI is not set
