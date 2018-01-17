@@ -721,26 +721,21 @@ static int eth_poll(struct napi_struct *napi, int budget)
 	}
 
 	rx_ring->cur_index = i;
-	if (!received) {
-		napi_complete(napi);
-		enable_irq(sw->rx_irq);
-		budget = 0;
-
-		/* if  1 or more frames came  in during IRQ enable, re-schedule*/
-		if (rx_ring->desc[i].cown)
-			eth_schedule_poll(sw);
-	}
-
-	spin_lock_bh(&tx_lock);
-	eth_complete_tx(sw);
-	spin_unlock_bh(&tx_lock);
 
 	cns3xxx_alloc_rx_buf(sw, received);
 
 	wmb();
 	enable_rx_dma(sw);
 
-	return budget;
+	if (received < budget && napi_complete_done(napi, received)) {
+		enable_irq(sw->rx_irq);
+	}
+	
+	spin_lock_bh(&tx_lock);
+	eth_complete_tx(sw);
+	spin_unlock_bh(&tx_lock);
+	
+	return received;
 }
 
 static void eth_set_desc(struct sw *sw, struct _tx_ring *tx_ring, int index,
@@ -865,19 +860,6 @@ static void cns3xxx_get_drvinfo(struct net_device *dev,
 	strcpy(info->bus_info, "internal");
 }
 
-static int cns3xxx_get_settings(struct net_device *dev, struct ethtool_link_ksettings *ecmd)
-{
-	struct port *port = netdev_priv(dev);
-	phy_ethtool_ksettings_get(port->phydev, ecmd);
-	return 0;
-}
-
-static int cns3xxx_set_settings(struct net_device *dev, const struct ethtool_link_ksettings *ecmd)
-{
-	struct port *port = netdev_priv(dev);
-	return phy_ethtool_ksettings_set(port->phydev, ecmd);
-}
-
 static int cns3xxx_nway_reset(struct net_device *dev)
 {
 	struct port *port = netdev_priv(dev);
@@ -886,8 +868,8 @@ static int cns3xxx_nway_reset(struct net_device *dev)
 
 static struct ethtool_ops cns3xxx_ethtool_ops = {
 	.get_drvinfo = cns3xxx_get_drvinfo,
-	.get_link_ksettings = cns3xxx_get_settings,
-	.set_link_ksettings = cns3xxx_set_settings,
+	.get_link_ksettings = phy_ethtool_get_link_ksettings,
+	.set_link_ksettings = phy_ethtool_set_link_ksettings,
 	.nway_reset = cns3xxx_nway_reset,
 	.get_link = ethtool_op_get_link,
 };
@@ -1187,7 +1169,7 @@ static int eth_init_one(struct platform_device *pdev)
 		goto err_remove_mdio;
 	}
 
-	strcpy(napi_dev->name, "switch%d");
+	strcpy(napi_dev->name, "cns3xxx_eth");
 	napi_dev->features = NETIF_F_IP_CSUM | NETIF_F_SG | NETIF_F_FRAGLIST;
 
 	SET_NETDEV_DEV(napi_dev, &pdev->dev);
