@@ -20,7 +20,7 @@ struct dst_cache {
  *	source address to be used when xmitting to the cached dst.
  *	local BH must be disabled.
  */
-struct dst_entry *dst_cache_get(struct dst_cache *dst_cache);
+static struct dst_entry *dst_cache_get(struct dst_cache *dst_cache);
 
 /**
  *	dst_cache_get_ip4 - perform cache lookup and fetch ipv4 source address
@@ -29,7 +29,7 @@ struct dst_entry *dst_cache_get(struct dst_cache *dst_cache);
  *
  *	local BH must be disabled.
  */
-struct rtable *dst_cache_get_ip4(struct dst_cache *dst_cache, __be32 *saddr);
+static struct rtable *dst_cache_get_ip4(struct dst_cache *dst_cache, __be32 *saddr);
 
 /**
  *	dst_cache_set_ip4 - store the ipv4 dst into the cache
@@ -39,7 +39,7 @@ struct rtable *dst_cache_get_ip4(struct dst_cache *dst_cache, __be32 *saddr);
  *
  *	local BH must be disabled.
  */
-void dst_cache_set_ip4(struct dst_cache *dst_cache, struct dst_entry *dst,
+static void dst_cache_set_ip4(struct dst_cache *dst_cache, struct dst_entry *dst,
 		       __be32 saddr);
 
 #if IS_ENABLED(CONFIG_IPV6)
@@ -52,7 +52,7 @@ void dst_cache_set_ip4(struct dst_cache *dst_cache, struct dst_entry *dst,
  *
  *	local BH must be disabled.
  */
-void dst_cache_set_ip6(struct dst_cache *dst_cache, struct dst_entry *dst,
+static void dst_cache_set_ip6(struct dst_cache *dst_cache, struct dst_entry *dst,
 		       const struct in6_addr *addr);
 
 /**
@@ -62,7 +62,7 @@ void dst_cache_set_ip6(struct dst_cache *dst_cache, struct dst_entry *dst,
  *
  *	local BH must be disabled.
  */
-struct dst_entry *dst_cache_get_ip6(struct dst_cache *dst_cache,
+static struct dst_entry *dst_cache_get_ip6(struct dst_cache *dst_cache,
 				    struct in6_addr *saddr);
 #endif
 
@@ -83,7 +83,7 @@ static inline void dst_cache_reset(struct dst_cache *dst_cache)
  *	@dst_cache: the cache
  *	@gfp: allocation flags
  */
-int dst_cache_init(struct dst_cache *dst_cache, gfp_t gfp);
+static int dst_cache_init(struct dst_cache *dst_cache, gfp_t gfp);
 
 /**
  *	dst_cache_destroy - empty the cache and free the allocated storage
@@ -92,6 +92,6 @@ int dst_cache_init(struct dst_cache *dst_cache, gfp_t gfp);
  *	No synchronization is enforced: it must be called only when the cache
  *	is unsed.
  */
-void dst_cache_destroy(struct dst_cache *dst_cache);
+static void dst_cache_destroy(struct dst_cache *dst_cache);
 
 #endif /* _WG_NET_DST_CACHE_H */
