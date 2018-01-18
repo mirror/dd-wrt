@@ -24,7 +24,7 @@
 
 #ifdef __SIZEOF_INT128__
 typedef __uint128_t uint128_t;
-A
+
 static  uint64_t uint64_t_eq_mask(uint64_t x, uint64_t y)
 {
 	x = ~(x ^ y);
