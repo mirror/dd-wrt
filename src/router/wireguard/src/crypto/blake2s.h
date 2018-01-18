@@ -25,10 +25,10 @@ struct blake2s_state {
 	u8 last_node;
 };
 
-void blake2s_init(struct blake2s_state *state, const size_t outlen);
-void blake2s_init_key(struct blake2s_state *state, const size_t outlen, const void *key, const size_t keylen);
-void blake2s_update(struct blake2s_state *state, const u8 *in, size_t inlen);
-void __blake2s_final(struct blake2s_state *state);
+static void blake2s_init(struct blake2s_state *state, const size_t outlen);
+static void blake2s_init_key(struct blake2s_state *state, const size_t outlen, const void *key, const size_t keylen);
+static void blake2s_update(struct blake2s_state *state, const u8 *in, size_t inlen);
+static void __blake2s_final(struct blake2s_state *state);
 static inline void blake2s_final(struct blake2s_state *state, u8 *out, size_t outlen)
 {
 	int i;
@@ -83,12 +83,12 @@ static inline void blake2s(u8 *out, const u8 *in, const u8 *key, const size_t ou
 	blake2s_final(&state, out, outlen);
 }
 
-void blake2s_hmac(u8 *out, const u8 *in, const u8 *key, const size_t outlen, const size_t inlen, const size_t keylen);
+static void blake2s_hmac(u8 *out, const u8 *in, const u8 *key, const size_t outlen, const size_t inlen, const size_t keylen);
 
-void blake2s_fpu_init(void);
+static void blake2s_fpu_init(void);
 
 #ifdef DEBUG
-bool blake2s_selftest(void);
+static bool blake2s_selftest(void);
 #endif
 
 #endif /* _WG_BLAKE2S_H */

@@ -16,32 +16,32 @@ enum chacha20poly1305_lengths {
 	CHACHA20POLY1305_AUTHTAGLEN = 16
 };
 
-void chacha20poly1305_fpu_init(void);
+static void chacha20poly1305_fpu_init(void);
 
-void chacha20poly1305_encrypt(u8 *dst, const u8 *src, const size_t src_len,
+static void chacha20poly1305_encrypt(u8 *dst, const u8 *src, const size_t src_len,
 			      const u8 *ad, const size_t ad_len,
 			      const u64 nonce, const u8 key[CHACHA20POLY1305_KEYLEN]);
 
-bool __must_check chacha20poly1305_encrypt_sg(struct scatterlist *dst, struct scatterlist *src, const size_t src_len,
+static bool __must_check chacha20poly1305_encrypt_sg(struct scatterlist *dst, struct scatterlist *src, const size_t src_len,
 					      const u8 *ad, const size_t ad_len,
 					      const u64 nonce, const u8 key[CHACHA20POLY1305_KEYLEN],
 					      bool have_simd);
 
-bool __must_check chacha20poly1305_decrypt(u8 *dst, const u8 *src, const size_t src_len,
+static bool __must_check chacha20poly1305_decrypt(u8 *dst, const u8 *src, const size_t src_len,
 					   const u8 *ad, const size_t ad_len,
 					   const u64 nonce, const u8 key[CHACHA20POLY1305_KEYLEN]);
 
-bool __must_check chacha20poly1305_decrypt_sg(struct scatterlist *dst, struct scatterlist *src, const size_t src_len,
+static bool __must_check chacha20poly1305_decrypt_sg(struct scatterlist *dst, struct scatterlist *src, const size_t src_len,
 					      const u8 *ad, const size_t ad_len,
 					      const u64 nonce, const u8 key[CHACHA20POLY1305_KEYLEN],
 					      bool have_simd);
 
-void xchacha20poly1305_encrypt(u8 *dst, const u8 *src, const size_t src_len,
+static void xchacha20poly1305_encrypt(u8 *dst, const u8 *src, const size_t src_len,
 			       const u8 *ad, const size_t ad_len,
 			       const u8 nonce[XCHACHA20POLY1305_NONCELEN],
 			       const u8 key[CHACHA20POLY1305_KEYLEN]);
 
-bool __must_check xchacha20poly1305_decrypt(u8 *dst, const u8 *src, const size_t src_len,
+static bool __must_check xchacha20poly1305_decrypt(u8 *dst, const u8 *src, const size_t src_len,
 					    const u8 *ad, const size_t ad_len,
 					    const u8 nonce[XCHACHA20POLY1305_NONCELEN],
 					    const u8 key[CHACHA20POLY1305_KEYLEN]);
@@ -86,7 +86,7 @@ static inline void chacha20poly1305_deinit_simd(bool was_on)
 }
 
 #ifdef DEBUG
-bool chacha20poly1305_selftest(void);
+static bool chacha20poly1305_selftest(void);
 #endif
 
 #endif /* _WG_CHACHA20POLY1305_H */

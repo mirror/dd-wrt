@@ -13,7 +13,7 @@
 #include <asm/fpu/api.h>
 #include <asm/simd.h>
 static bool curve25519_use_avx __read_mostly;
-void __init curve25519_fpu_init(void)
+static void __init curve25519_fpu_init(void)
 {
 #ifndef CONFIG_UML
 	curve25519_use_avx = boot_cpu_has(X86_FEATURE_AVX) && cpu_has_xfeatures(XFEATURE_MASK_SSE | XFEATURE_MASK_YMM, NULL);
