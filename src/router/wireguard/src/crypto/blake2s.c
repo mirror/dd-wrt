@@ -115,7 +115,7 @@ void blake2s_init_key(struct blake2s_state *state, const size_t outlen, const vo
 #include <asm/cpufeature.h>
 #include <asm/processor.h>
 #include <asm/fpu/api.h>
-#include <asm/simd.h>
+//#include <asm/simd.h>
 static bool blake2s_use_avx __read_mostly;
 static bool blake2s_use_avx512 __read_mostly;
 void __init blake2s_fpu_init(void)
