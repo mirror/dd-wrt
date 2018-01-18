@@ -35,11 +35,11 @@ struct udp_port_cfg {
 				ipv6_v6only:1;
 };
 
-int udp_sock_create4(struct net *net, struct udp_port_cfg *cfg,
+static int udp_sock_create4(struct net *net, struct udp_port_cfg *cfg,
 		     struct socket **sockp);
 
 #if IS_ENABLED(CONFIG_IPV6)
-int udp_sock_create6(struct net *net, struct udp_port_cfg *cfg,
+static int udp_sock_create6(struct net *net, struct udp_port_cfg *cfg,
 		     struct socket **sockp);
 #else
 static inline int udp_sock_create6(struct net *net, struct udp_port_cfg *cfg,
@@ -62,7 +62,7 @@ static inline int udp_sock_create(struct net *net,
 	return -EPFNOSUPPORT;
 }
 
-typedef int (*udp_tunnel_encap_rcv_t)(struct sock *sk, struct sk_buff *skb);
+static typedef int (*udp_tunnel_encap_rcv_t)(struct sock *sk, struct sk_buff *skb);
 
 struct udp_tunnel_sock_cfg {
 	void *sk_user_data;
@@ -71,17 +71,17 @@ struct udp_tunnel_sock_cfg {
 };
 
 /* Setup the given (UDP) sock to receive UDP encapsulated packets */
-void setup_udp_tunnel_sock(struct net *net, struct socket *sock,
+static void setup_udp_tunnel_sock(struct net *net, struct socket *sock,
 			   struct udp_tunnel_sock_cfg *sock_cfg);
 
 /* Transmit the skb using UDP encapsulation. */
-void udp_tunnel_xmit_skb(struct rtable *rt, struct sock *sk, struct sk_buff *skb,
+static void udp_tunnel_xmit_skb(struct rtable *rt, struct sock *sk, struct sk_buff *skb,
 			 __be32 src, __be32 dst, __u8 tos, __u8 ttl,
 			 __be16 df, __be16 src_port, __be16 dst_port,
 			 bool xnet, bool nocheck);
 
 #if IS_ENABLED(CONFIG_IPV6)
-int udp_tunnel6_xmit_skb(struct dst_entry *dst, struct sock *sk,
+static int udp_tunnel6_xmit_skb(struct dst_entry *dst, struct sock *sk,
 			 struct sk_buff *skb,
 			 struct net_device *dev, struct in6_addr *saddr,
 			 struct in6_addr *daddr,
@@ -89,6 +89,6 @@ int udp_tunnel6_xmit_skb(struct dst_entry *dst, struct sock *sk,
 			 __be16 src_port, __be16 dst_port, bool nocheck);
 #endif
 
-void udp_tunnel_sock_release(struct socket *sock);
+static void udp_tunnel_sock_release(struct socket *sock);
 
 #endif /* _WG_NET_UDP_TUNNEL_H */

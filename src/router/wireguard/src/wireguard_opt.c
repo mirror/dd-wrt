@@ -19,7 +19,8 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
 #include "compat/siphash/siphash.c"
 #endif
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 6, 0)
 #include "compat/dst_cache/dst_cache.c"
 #endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
+#include "compat/udp_tunnel/udp_tunnel.c"
