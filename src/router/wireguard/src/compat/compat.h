@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0
  *
- * Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
 #ifndef _WG_COMPAT_H
@@ -105,7 +105,7 @@ static const struct ipv6_stub_type *ipv6_stub = &ipv6_stub_impl;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 8, 0) && IS_ENABLED(CONFIG_IPV6) && !defined(ISOPENSUSE42) && !defined(ISRHEL7)
 #include <net/addrconf.h>
-static inline bool wg_ipv6_mod_enabled(void)
+static inline bool ipv6_mod_enabled(void)
 {
 	return ipv6_stub->udpv6_encap_enable != NULL;
 }
