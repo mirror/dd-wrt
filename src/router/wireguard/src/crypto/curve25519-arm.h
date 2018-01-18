@@ -10,7 +10,7 @@
 //#include <asm/simd.h>
 asmlinkage void curve25519_neon(u8 mypublic[CURVE25519_POINT_SIZE], const u8 secret[CURVE25519_POINT_SIZE], const u8 basepoint[CURVE25519_POINT_SIZE]);
 static bool curve25519_use_neon __read_mostly;
-void __init curve25519_fpu_init(void)
+static void __init curve25519_fpu_init(void)
 {
 	curve25519_use_neon = elf_hwcap & HWCAP_NEON;
 }
