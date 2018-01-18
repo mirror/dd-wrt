@@ -20,7 +20,6 @@ endif
 
 ifeq ($(wildcard $(srctree)/include/net/dst_cache.h),)
 ccflags-y += -I$(src)/compat/dst_cache/include
-wireguard-y += compat/dst_cache/dst_cache.o
 endif
 
 ifeq ($(wildcard $(srctree)/arch/x86/include/asm/intel-family.h),)
