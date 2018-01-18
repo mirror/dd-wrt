@@ -49,7 +49,7 @@ static bool __must_check xchacha20poly1305_decrypt(u8 *dst, const u8 *src, const
 #if defined(CONFIG_X86_64)
 #include <linux/version.h>
 #include <asm/fpu/api.h>
-#include <asm/simd.h>
+//#include <asm/simd.h>
 #elif IS_ENABLED(CONFIG_KERNEL_MODE_NEON)
 #include <asm/neon.h>
 #include <asm/simd.h>
