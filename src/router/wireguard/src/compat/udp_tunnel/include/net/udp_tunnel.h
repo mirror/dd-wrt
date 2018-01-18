@@ -62,7 +62,7 @@ static inline int udp_sock_create(struct net *net,
 	return -EPFNOSUPPORT;
 }
 
-static typedef int (*udp_tunnel_encap_rcv_t)(struct sock *sk, struct sk_buff *skb);
+typedef int (*udp_tunnel_encap_rcv_t)(struct sock *sk, struct sk_buff *skb);
 
 struct udp_tunnel_sock_cfg {
 	void *sk_user_data;
