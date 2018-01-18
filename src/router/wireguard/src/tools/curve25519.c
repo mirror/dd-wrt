@@ -24,8 +24,8 @@
 
 #ifdef __SIZEOF_INT128__
 typedef __uint128_t uint128_t;
-
-static __always_inline uint64_t uint64_t_eq_mask(uint64_t x, uint64_t y)
+A
+static  uint64_t uint64_t_eq_mask(uint64_t x, uint64_t y)
 {
 	x = ~(x ^ y);
 	x &= x << 32;
@@ -37,14 +37,14 @@ static __always_inline uint64_t uint64_t_eq_mask(uint64_t x, uint64_t y)
 	return ((int64_t)x) >> 63;
 }
 
-static __always_inline uint64_t uint64_t_gte_mask(uint64_t x, uint64_t y)
+static  uint64_t uint64_t_gte_mask(uint64_t x, uint64_t y)
 {
 	uint64_t low63 = ~((uint64_t)((int64_t)((int64_t)(x & 0x7fffffffffffffffLLU) - (int64_t)(y & 0x7fffffffffffffffLLU)) >> 63));
 	uint64_t high_bit = ~((uint64_t)((int64_t)((int64_t)(x & 0x8000000000000000LLU) - (int64_t)(y & 0x8000000000000000LLU)) >> 63));
 	return low63 & high_bit;
 }
 
-static __always_inline void modulo_carry_top(uint64_t *b)
+static  void modulo_carry_top(uint64_t *b)
 {
 	uint64_t b4 = b[4];
 	uint64_t b0 = b[0];
@@ -54,7 +54,7 @@ static __always_inline void modulo_carry_top(uint64_t *b)
 	b[0] = b0_;
 }
 
-static __always_inline void fproduct_copy_from_wide_(uint64_t *output, uint128_t *input)
+static  void fproduct_copy_from_wide_(uint64_t *output, uint128_t *input)
 {
 	{
 		uint128_t xi = input[0];
@@ -78,7 +78,7 @@ static __always_inline void fproduct_copy_from_wide_(uint64_t *output, uint128_t
 	}
 }
 
-static __always_inline void fproduct_sum_scalar_multiplication_(uint128_t *output, uint64_t *input, uint64_t s)
+static  void fproduct_sum_scalar_multiplication_(uint128_t *output, uint64_t *input, uint64_t s)
 {
 	uint32_t i;
 	for (i = 0; i < 5; ++i) {
@@ -88,7 +88,7 @@ static __always_inline void fproduct_sum_scalar_multiplication_(uint128_t *outpu
 	}
 }
 
-static __always_inline void fproduct_carry_wide_(uint128_t *tmp)
+static  void fproduct_carry_wide_(uint128_t *tmp)
 {
 	uint32_t i;
 	for (i = 0; i < 4; ++i) {
@@ -102,7 +102,7 @@ static __always_inline void fproduct_carry_wide_(uint128_t *tmp)
 	}
 }
 
-static __always_inline void fmul_shift_reduce(uint64_t *output)
+static  void fmul_shift_reduce(uint64_t *output)
 {
 	uint64_t tmp = output[4];
 	uint64_t b0;
@@ -131,7 +131,7 @@ static __always_inline void fmul_shift_reduce(uint64_t *output)
 	output[0] = 19 * b0;
 }
 
-static __always_inline void fmul_mul_shift_reduce_(uint128_t *output, uint64_t *input, uint64_t *input21)
+static  void fmul_mul_shift_reduce_(uint128_t *output, uint64_t *input, uint64_t *input21)
 {
 	uint32_t i;
 	uint64_t input2i;
@@ -160,7 +160,7 @@ static __always_inline void fmul_mul_shift_reduce_(uint128_t *output, uint64_t *
 	fproduct_sum_scalar_multiplication_(output, input, input2i);
 }
 
-static __always_inline void fmul_fmul(uint64_t *output, uint64_t *input, uint64_t *input21)
+static  void fmul_fmul(uint64_t *output, uint64_t *input, uint64_t *input21)
 {
 	uint64_t tmp[5];
 	memcpy(tmp, input, 5 * sizeof(*input));
@@ -192,7 +192,7 @@ static __always_inline void fmul_fmul(uint64_t *output, uint64_t *input, uint64_
 	}
 }
 
-static __always_inline void fsquare_fsquare__(uint128_t *tmp, uint64_t *output)
+static  void fsquare_fsquare__(uint128_t *tmp, uint64_t *output)
 {
 	uint64_t r0 = output[0];
 	uint64_t r1 = output[1];
@@ -216,7 +216,7 @@ static __always_inline void fsquare_fsquare__(uint128_t *tmp, uint64_t *output)
 	tmp[4] = s4;
 }
 
-static __always_inline void fsquare_fsquare_(uint128_t *tmp, uint64_t *output)
+static  void fsquare_fsquare_(uint128_t *tmp, uint64_t *output)
 {
 	uint128_t b4;
 	uint128_t b0;
@@ -243,7 +243,7 @@ static __always_inline void fsquare_fsquare_(uint128_t *tmp, uint64_t *output)
 	output[1] = i1_;
 }
 
-static __always_inline void fsquare_fsquare_times_(uint64_t *input, uint128_t *tmp, uint32_t count1)
+static  void fsquare_fsquare_times_(uint64_t *input, uint128_t *tmp, uint32_t count1)
 {
 	uint32_t i;
 	fsquare_fsquare_(tmp, input);
@@ -251,7 +251,7 @@ static __always_inline void fsquare_fsquare_times_(uint64_t *input, uint128_t *t
 		fsquare_fsquare_(tmp, input);
 }
 
-static __always_inline void fsquare_fsquare_times(uint64_t *output, uint64_t *input, uint32_t count1)
+static  void fsquare_fsquare_times(uint64_t *output, uint64_t *input, uint32_t count1)
 {
 	{
 		uint128_t t[5] = { 0 };
@@ -260,13 +260,13 @@ static __always_inline void fsquare_fsquare_times(uint64_t *output, uint64_t *in
 	}
 }
 
-static __always_inline void fsquare_fsquare_times_inplace(uint64_t *output, uint32_t count1)
+static  void fsquare_fsquare_times_inplace(uint64_t *output, uint32_t count1)
 {
 	uint128_t t[5] = { 0 };
 	fsquare_fsquare_times_(output, t, count1);
 }
 
-static __always_inline void crecip_crecip(uint64_t *out, uint64_t *z)
+static  void crecip_crecip(uint64_t *out, uint64_t *z)
 {
 	uint64_t buf[20] = { 0 };
 	uint64_t *a0 = buf;
@@ -310,7 +310,7 @@ static __always_inline void crecip_crecip(uint64_t *out, uint64_t *z)
 	fmul_fmul(out, t0, a);
 }
 
-static __always_inline void fsum(uint64_t *a, uint64_t *b)
+static  void fsum(uint64_t *a, uint64_t *b)
 {
 	uint32_t i;
 	for (i = 0; i < 5; ++i) {
@@ -320,7 +320,7 @@ static __always_inline void fsum(uint64_t *a, uint64_t *b)
 	}
 }
 
-static __always_inline void fdifference(uint64_t *a, uint64_t *b)
+static  void fdifference(uint64_t *a, uint64_t *b)
 {
 	uint64_t tmp[5] = { 0 };
 	uint64_t b0;
@@ -366,7 +366,7 @@ static __always_inline void fdifference(uint64_t *a, uint64_t *b)
 	}
 }
 
-static __always_inline void fscalar(uint64_t *output, uint64_t *b, uint64_t s)
+static  void fscalar(uint64_t *output, uint64_t *b, uint64_t s)
 {
 	uint128_t tmp[5];
 	uint128_t b4;
@@ -403,17 +403,17 @@ static __always_inline void fscalar(uint64_t *output, uint64_t *b, uint64_t s)
 	fproduct_copy_from_wide_(output, tmp);
 }
 
-static __always_inline void fmul(uint64_t *output, uint64_t *a, uint64_t *b)
+static  void fmul(uint64_t *output, uint64_t *a, uint64_t *b)
 {
 	fmul_fmul(output, a, b);
 }
 
-static __always_inline void crecip(uint64_t *output, uint64_t *input)
+static  void crecip(uint64_t *output, uint64_t *input)
 {
 	crecip_crecip(output, input);
 }
 
-static __always_inline void point_swap_conditional_step(uint64_t *a, uint64_t *b, uint64_t swap1, uint32_t ctr)
+static  void point_swap_conditional_step(uint64_t *a, uint64_t *b, uint64_t swap1, uint32_t ctr)
 {
 	uint32_t i = ctr - 1;
 	uint64_t ai = a[i];
@@ -425,27 +425,27 @@ static __always_inline void point_swap_conditional_step(uint64_t *a, uint64_t *b
 	b[i] = bi1;
 }
 
-static __always_inline void point_swap_conditional_(uint64_t *a, uint64_t *b, uint64_t swap1, uint32_t ctr)
+static  void point_swap_conditional_(uint64_t *a, uint64_t *b, uint64_t swap1, uint32_t ctr)
 {
 	uint32_t i;
 	for (i = ctr; i > 0; --i)
 		point_swap_conditional_step(a, b, swap1, i);
 }
 
-static __always_inline void point_swap_conditional(uint64_t *a, uint64_t *b, uint64_t iswap)
+static  void point_swap_conditional(uint64_t *a, uint64_t *b, uint64_t iswap)
 {
 	uint64_t swap1 = 0 - iswap;
 	point_swap_conditional_(a, b, swap1, 5);
 	point_swap_conditional_(a + 5, b + 5, swap1, 5);
 }
 
-static __always_inline void point_copy(uint64_t *output, uint64_t *input)
+static  void point_copy(uint64_t *output, uint64_t *input)
 {
 	memcpy(output, input, 5 * sizeof(*input));
 	memcpy(output + 5, input + 5, 5 * sizeof(*input));
 }
 
-static __always_inline void addanddouble_fmonty(uint64_t *pp, uint64_t *ppq, uint64_t *p, uint64_t *pq, uint64_t *qmqp)
+static  void addanddouble_fmonty(uint64_t *pp, uint64_t *ppq, uint64_t *p, uint64_t *pq, uint64_t *qmqp)
 {
 	uint64_t *qx = qmqp;
 	uint64_t *x2 = pp;
@@ -510,7 +510,7 @@ static __always_inline void addanddouble_fmonty(uint64_t *pp, uint64_t *ppq, uin
 	}
 }
 
-static __always_inline void ladder_smallloop_cmult_small_loop_step(uint64_t *nq, uint64_t *nqpq, uint64_t *nq2, uint64_t *nqpq2, uint64_t *q, uint8_t byt)
+static  void ladder_smallloop_cmult_small_loop_step(uint64_t *nq, uint64_t *nqpq, uint64_t *nq2, uint64_t *nqpq2, uint64_t *q, uint8_t byt)
 {
 	uint64_t bit0 = (uint64_t)(byt >> 7);
 	uint64_t bit;
@@ -520,7 +520,7 @@ static __always_inline void ladder_smallloop_cmult_small_loop_step(uint64_t *nq,
 	point_swap_conditional(nq2, nqpq2, bit);
 }
 
-static __always_inline void ladder_smallloop_cmult_small_loop_double_step(uint64_t *nq, uint64_t *nqpq, uint64_t *nq2, uint64_t *nqpq2, uint64_t *q, uint8_t byt)
+static  void ladder_smallloop_cmult_small_loop_double_step(uint64_t *nq, uint64_t *nqpq, uint64_t *nq2, uint64_t *nqpq2, uint64_t *q, uint8_t byt)
 {
 	uint8_t byt1;
 	ladder_smallloop_cmult_small_loop_step(nq, nqpq, nq2, nqpq2, q, byt);
@@ -528,7 +528,7 @@ static __always_inline void ladder_smallloop_cmult_small_loop_double_step(uint64
 	ladder_smallloop_cmult_small_loop_step(nq2, nqpq2, nq, nqpq, q, byt1);
 }
 
-static __always_inline void ladder_smallloop_cmult_small_loop(uint64_t *nq, uint64_t *nqpq, uint64_t *nq2, uint64_t *nqpq2, uint64_t *q, uint8_t byt, uint32_t i)
+static  void ladder_smallloop_cmult_small_loop(uint64_t *nq, uint64_t *nqpq, uint64_t *nq2, uint64_t *nqpq2, uint64_t *q, uint8_t byt, uint32_t i)
 {
 	while (i--) {
 		ladder_smallloop_cmult_small_loop_double_step(nq, nqpq, nq2, nqpq2, q, byt);
@@ -536,7 +536,7 @@ static __always_inline void ladder_smallloop_cmult_small_loop(uint64_t *nq, uint
 	}
 }
 
-static __always_inline void ladder_bigloop_cmult_big_loop(uint8_t *n1, uint64_t *nq, uint64_t *nqpq, uint64_t *nq2, uint64_t *nqpq2, uint64_t *q, uint32_t i)
+static  void ladder_bigloop_cmult_big_loop(uint8_t *n1, uint64_t *nq, uint64_t *nqpq, uint64_t *nq2, uint64_t *nqpq2, uint64_t *q, uint32_t i)
 {
 	while (i--) {
 		uint8_t byte = n1[i];
@@ -544,7 +544,7 @@ static __always_inline void ladder_bigloop_cmult_big_loop(uint8_t *n1, uint64_t 
 	}
 }
 
-static __always_inline void ladder_cmult(uint64_t *result, uint8_t *n1, uint64_t *q)
+static  void ladder_cmult(uint64_t *result, uint8_t *n1, uint64_t *q)
 {
 	uint64_t point_buf[40] = { 0 };
 	uint64_t *nq = point_buf;
@@ -557,7 +557,7 @@ static __always_inline void ladder_cmult(uint64_t *result, uint8_t *n1, uint64_t
 	point_copy(result, nq);
 }
 
-static __always_inline void format_fexpand(uint64_t *output, const uint8_t *input)
+static  void format_fexpand(uint64_t *output, const uint8_t *input)
 {
 	const uint8_t *x00 = input + 6;
 	const uint8_t *x01 = input + 12;
@@ -581,7 +581,7 @@ static __always_inline void format_fexpand(uint64_t *output, const uint8_t *inpu
 	output[4] = output4;
 }
 
-static __always_inline void format_fcontract_first_carry_pass(uint64_t *input)
+static  void format_fcontract_first_carry_pass(uint64_t *input)
 {
 	uint64_t t0 = input[0];
 	uint64_t t1 = input[1];
@@ -603,13 +603,13 @@ static __always_inline void format_fcontract_first_carry_pass(uint64_t *input)
 	input[4] = t4_;
 }
 
-static __always_inline void format_fcontract_first_carry_full(uint64_t *input)
+static  void format_fcontract_first_carry_full(uint64_t *input)
 {
 	format_fcontract_first_carry_pass(input);
 	modulo_carry_top(input);
 }
 
-static __always_inline void format_fcontract_second_carry_pass(uint64_t *input)
+static  void format_fcontract_second_carry_pass(uint64_t *input)
 {
 	uint64_t t0 = input[0];
 	uint64_t t1 = input[1];
@@ -631,7 +631,7 @@ static __always_inline void format_fcontract_second_carry_pass(uint64_t *input)
 	input[4] = t4_;
 }
 
-static __always_inline void format_fcontract_second_carry_full(uint64_t *input)
+static  void format_fcontract_second_carry_full(uint64_t *input)
 {
 	uint64_t i0;
 	uint64_t i1;
@@ -647,7 +647,7 @@ static __always_inline void format_fcontract_second_carry_full(uint64_t *input)
 	input[1] = i1_;
 }
 
-static __always_inline void format_fcontract_trim(uint64_t *input)
+static  void format_fcontract_trim(uint64_t *input)
 {
 	uint64_t a0 = input[0];
 	uint64_t a1 = input[1];
@@ -672,7 +672,7 @@ static __always_inline void format_fcontract_trim(uint64_t *input)
 	input[4] = a4_;
 }
 
-static __always_inline void format_fcontract_store(uint8_t *output, uint64_t *input)
+static  void format_fcontract_store(uint8_t *output, uint64_t *input)
 {
 	uint64_t t0 = input[0];
 	uint64_t t1 = input[1];
@@ -693,7 +693,7 @@ static __always_inline void format_fcontract_store(uint8_t *output, uint64_t *in
 	*(uint64_t *)b3 = htole64(o3);
 }
 
-static __always_inline void format_fcontract(uint8_t *output, uint64_t *input)
+static  void format_fcontract(uint8_t *output, uint64_t *input)
 {
 	format_fcontract_first_carry_full(input);
 	format_fcontract_second_carry_full(input);
@@ -701,7 +701,7 @@ static __always_inline void format_fcontract(uint8_t *output, uint64_t *input)
 	format_fcontract_store(output, input);
 }
 
-static __always_inline void format_scalar_of_point(uint8_t *scalar, uint64_t *point)
+static  void format_scalar_of_point(uint8_t *scalar, uint64_t *point)
 {
 	uint64_t *x = point;
 	uint64_t *z = point + 5;
@@ -752,7 +752,7 @@ typedef struct fe { uint32_t v[10]; } fe;
  */
 typedef struct fe_loose { uint32_t v[10]; } fe_loose;
 
-static __always_inline void fe_frombytes_impl(uint32_t h[10], const uint8_t *s)
+static  void fe_frombytes_impl(uint32_t h[10], const uint8_t *s)
 {
 	/* Ignores top bit of s. */
 	uint32_t a0 = le32toh(*(uint32_t *)(s));
@@ -775,12 +775,12 @@ static __always_inline void fe_frombytes_impl(uint32_t h[10], const uint8_t *s)
 	h[9] = (a7>> 6)&((1<<25)-1); /*                                     25 */
 }
 
-static __always_inline void fe_frombytes(fe *h, const uint8_t *s)
+static  void fe_frombytes(fe *h, const uint8_t *s)
 {
 	fe_frombytes_impl(h->v, s);
 }
 
-static __always_inline uint8_t /*bool*/ addcarryx_u25(uint8_t /*bool*/ c, uint32_t a, uint32_t b, uint32_t *low)
+static  uint8_t /*bool*/ addcarryx_u25(uint8_t /*bool*/ c, uint32_t a, uint32_t b, uint32_t *low)
 {
 	/* This function extracts 25 bits of result and 1 bit of carry (26 total), so
 	 * a 32-bit intermediate is sufficient.
@@ -790,7 +790,7 @@ static __always_inline uint8_t /*bool*/ addcarryx_u25(uint8_t /*bool*/ c, uint32
 	return (x >> 25) & 1;
 }
 
-static __always_inline uint8_t /*bool*/ addcarryx_u26(uint8_t /*bool*/ c, uint32_t a, uint32_t b, uint32_t *low)
+static  uint8_t /*bool*/ addcarryx_u26(uint8_t /*bool*/ c, uint32_t a, uint32_t b, uint32_t *low)
 {
 	/* This function extracts 26 bits of result and 1 bit of carry (27 total), so
 	 * a 32-bit intermediate is sufficient.
@@ -800,7 +800,7 @@ static __always_inline uint8_t /*bool*/ addcarryx_u26(uint8_t /*bool*/ c, uint32
 	return (x >> 26) & 1;
 }
 
-static __always_inline uint8_t /*bool*/ subborrow_u25(uint8_t /*bool*/ c, uint32_t a, uint32_t b, uint32_t *low)
+static  uint8_t /*bool*/ subborrow_u25(uint8_t /*bool*/ c, uint32_t a, uint32_t b, uint32_t *low)
 {
 	/* This function extracts 25 bits of result and 1 bit of borrow (26 total), so
 	 * a 32-bit intermediate is sufficient.
@@ -810,7 +810,7 @@ static __always_inline uint8_t /*bool*/ subborrow_u25(uint8_t /*bool*/ c, uint32
 	return x >> 31;
 }
 
-static __always_inline uint8_t /*bool*/ subborrow_u26(uint8_t /*bool*/ c, uint32_t a, uint32_t b, uint32_t *low)
+static  uint8_t /*bool*/ subborrow_u26(uint8_t /*bool*/ c, uint32_t a, uint32_t b, uint32_t *low)
 {
 	/* This function extracts 26 bits of result and 1 bit of borrow (27 total), so
 	 * a 32-bit intermediate is sufficient.
@@ -820,13 +820,13 @@ static __always_inline uint8_t /*bool*/ subborrow_u26(uint8_t /*bool*/ c, uint32
 	return x >> 31;
 }
 
-static __always_inline uint32_t cmovznz32(uint32_t t, uint32_t z, uint32_t nz)
+static  uint32_t cmovznz32(uint32_t t, uint32_t z, uint32_t nz)
 {
 	t = -!!t; /* all set if nonzero, 0 if 0 */
 	return (t&nz) | ((~t)&z);
 }
 
-static __always_inline void fe_freeze(uint32_t out[10], const uint32_t in1[10])
+static  void fe_freeze(uint32_t out[10], const uint32_t in1[10])
 {
 	{ const uint32_t x17 = in1[9];
 	{ const uint32_t x18 = in1[8];
@@ -882,7 +882,7 @@ static __always_inline void fe_freeze(uint32_t out[10], const uint32_t in1[10])
 	}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}
 }
 
-static __always_inline void fe_tobytes(uint8_t s[32], const fe *f)
+static  void fe_tobytes(uint8_t s[32], const fe *f)
 {
 	uint32_t h[10];
 	fe_freeze(h, f->v);
@@ -921,30 +921,30 @@ static __always_inline void fe_tobytes(uint8_t s[32], const fe *f)
 }
 
 /* h = f */
-static __always_inline void fe_copy(fe *h, const fe *f)
+static  void fe_copy(fe *h, const fe *f)
 {
 	memmove(h, f, sizeof(uint32_t) * 10);
 }
 
-static __always_inline void fe_copy_lt(fe_loose *h, const fe *f)
+static  void fe_copy_lt(fe_loose *h, const fe *f)
 {
 	memmove(h, f, sizeof(uint32_t) * 10);
 }
 
 /* h = 0 */
-static __always_inline void fe_0(fe *h)
+static  void fe_0(fe *h)
 {
 	memset(h, 0, sizeof(uint32_t) * 10);
 }
 
 /* h = 1 */
-static __always_inline void fe_1(fe *h)
+static  void fe_1(fe *h)
 {
 	memset(h, 0, sizeof(uint32_t) * 10);
 	h->v[0] = 1;
 }
 
-static __always_inline void fe_add_impl(uint32_t out[10], const uint32_t in1[10], const uint32_t in2[10])
+static  void fe_add_impl(uint32_t out[10], const uint32_t in1[10], const uint32_t in2[10])
 {
 	{ const uint32_t x20 = in1[9];
 	{ const uint32_t x21 = in1[8];
@@ -982,12 +982,12 @@ static __always_inline void fe_add_impl(uint32_t out[10], const uint32_t in1[10]
 /* h = f + g
  * Can overlap h with f or g.
  */
-static __always_inline void fe_add(fe_loose *h, const fe *f, const fe *g)
+static  void fe_add(fe_loose *h, const fe *f, const fe *g)
 {
 	fe_add_impl(h->v, f->v, g->v);
 }
 
-static __always_inline void fe_sub_impl(uint32_t out[10], const uint32_t in1[10], const uint32_t in2[10])
+static  void fe_sub_impl(uint32_t out[10], const uint32_t in1[10], const uint32_t in2[10])
 {
 	{ const uint32_t x20 = in1[9];
 	{ const uint32_t x21 = in1[8];
@@ -1025,12 +1025,12 @@ static __always_inline void fe_sub_impl(uint32_t out[10], const uint32_t in1[10]
 /* h = f - g
  * Can overlap h with f or g.
  */
-static __always_inline void fe_sub(fe_loose *h, const fe *f, const fe *g)
+static  void fe_sub(fe_loose *h, const fe *f, const fe *g)
 {
 	fe_sub_impl(h->v, f->v, g->v);
 }
 
-static __always_inline void fe_mul_impl(uint32_t out[10], const uint32_t in1[10], const uint32_t in2[10])
+static  void fe_mul_impl(uint32_t out[10], const uint32_t in1[10], const uint32_t in2[10])
 {
 	{ const uint32_t x20 = in1[9];
 	{ const uint32_t x21 = in1[8];
@@ -1146,22 +1146,22 @@ static __always_inline void fe_mul_impl(uint32_t out[10], const uint32_t in1[10]
 	}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}
 }
 
-static __always_inline void fe_mul_ttt(fe *h, const fe *f, const fe *g)
+static  void fe_mul_ttt(fe *h, const fe *f, const fe *g)
 {
 	fe_mul_impl(h->v, f->v, g->v);
 }
 
-static __always_inline void fe_mul_tlt(fe *h, const fe_loose *f, const fe *g)
+static  void fe_mul_tlt(fe *h, const fe_loose *f, const fe *g)
 {
 	fe_mul_impl(h->v, f->v, g->v);
 }
 
-static __always_inline void fe_mul_tll(fe *h, const fe_loose *f, const fe_loose *g)
+static  void fe_mul_tll(fe *h, const fe_loose *f, const fe_loose *g)
 {
 	fe_mul_impl(h->v, f->v, g->v);
 }
 
-static __always_inline void fe_sqr_impl(uint32_t out[10], const uint32_t in1[10])
+static  void fe_sqr_impl(uint32_t out[10], const uint32_t in1[10])
 {
 	{ const uint32_t x17 = in1[9];
 	{ const uint32_t x18 = in1[8];
@@ -1267,17 +1267,17 @@ static __always_inline void fe_sqr_impl(uint32_t out[10], const uint32_t in1[10]
 	}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}
 }
 
-static __always_inline void fe_sq_tl(fe *h, const fe_loose *f)
+static  void fe_sq_tl(fe *h, const fe_loose *f)
 {
 	fe_sqr_impl(h->v, f->v);
 }
 
-static __always_inline void fe_sq_tt(fe *h, const fe *f)
+static  void fe_sq_tt(fe *h, const fe *f)
 {
 	fe_sqr_impl(h->v, f->v);
 }
 
-static __always_inline void fe_loose_invert(fe *out, const fe_loose *z)
+static  void fe_loose_invert(fe *out, const fe_loose *z)
 {
 	fe t0;
 	fe t1;
@@ -1327,7 +1327,7 @@ static __always_inline void fe_loose_invert(fe *out, const fe_loose *z)
 	fe_mul_ttt(out, &t1, &t0);
 }
 
-static __always_inline void fe_invert(fe *out, const fe *z)
+static  void fe_invert(fe *out, const fe *z)
 {
 	fe_loose l;
 	fe_copy_lt(&l, z);
@@ -1339,7 +1339,7 @@ static __always_inline void fe_invert(fe *out, const fe *z)
  *
  * Preconditions: b in {0,1}
  */
-static __always_inline void fe_cswap(fe *f, fe *g, unsigned int b)
+static  void fe_cswap(fe *f, fe *g, unsigned int b)
 {
 	unsigned i;
 	b = 0-b;
@@ -1352,7 +1352,7 @@ static __always_inline void fe_cswap(fe *f, fe *g, unsigned int b)
 }
 
 /* NOTE: based on fiat-crypto fe_mul, edited for in2=121666, 0, 0.*/
-static __always_inline void fe_mul_121666_impl(uint32_t out[10], const uint32_t in1[10])
+static  void fe_mul_121666_impl(uint32_t out[10], const uint32_t in1[10])
 {
 	{ const uint32_t x20 = in1[9];
 	{ const uint32_t x21 = in1[8];
@@ -1468,7 +1468,7 @@ static __always_inline void fe_mul_121666_impl(uint32_t out[10], const uint32_t 
 	}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}}
 }
 
-static __always_inline void fe_mul121666(fe *h, const fe_loose *f)
+static  void fe_mul121666(fe *h, const fe_loose *f)
 {
 	fe_mul_121666_impl(h->v, f->v);
 }
