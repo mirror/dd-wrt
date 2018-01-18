@@ -16,3 +16,6 @@
 #include "crypto/curve25519.c" 
 #include "crypto/chacha20poly1305.c" 
 #include "crypto/blake2s.c"
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
+#include "compat/siphash/siphash.c"
+#endif
