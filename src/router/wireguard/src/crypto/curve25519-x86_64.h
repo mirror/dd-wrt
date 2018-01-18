@@ -4,6 +4,9 @@
  *
  * Based on algorithms from Tung Chou <blueprint@crypto.tw>
  */
+#ifndef _WG_CURVEX64_H
+#define _WG_CURVEX64_H
+
 
 #include <asm/cpufeature.h>
 #include <asm/processor.h>
@@ -173,3 +176,4 @@ static void curve25519_sandy2x_base(u8 pub[CURVE25519_POINT_SIZE], const u8 secr
 	memzero_explicit(x_51, sizeof(x_51));
 	memzero_explicit(z_51, sizeof(z_51));
 }
+#endif
