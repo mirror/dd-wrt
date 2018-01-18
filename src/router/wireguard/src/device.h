@@ -18,7 +18,7 @@
 #include <linux/net.h>
 #include <linux/ptr_ring.h>
 
-struct wireguard_device;
+static struct wireguard_device;
 
 struct multicore_worker {
 	void *ptr;
@@ -58,7 +58,7 @@ struct wireguard_device {
 	bool have_creating_net_ref;
 };
 
-int device_init(void);
-void device_uninit(void);
+static int device_init(void);
+static void device_uninit(void);
 
 #endif /* _WG_DEVICE_H */
