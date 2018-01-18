@@ -24,3 +24,7 @@
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
 #include "compat/udp_tunnel/udp_tunnel.c"
+#endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 10, 106)
+#include "compat/memneq/memneq.c"
+#endif
