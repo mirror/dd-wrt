@@ -178,7 +178,7 @@ void packet_handshake_receive_worker(struct work_struct *work)
 	}
 }
 
-static inline void keep_key_fresh(struct wireguard_peer *peer)
+static inline void receive_keep_key_fresh(struct wireguard_peer *peer)
 {
 	struct noise_keypair *keypair;
 	bool send = false;
@@ -294,7 +294,7 @@ static void packet_consume_data_done(struct sk_buff *skb, struct endpoint *endpo
 		packet_send_staged_packets(peer);
 	}
 
-	keep_key_fresh(peer);
+	receive_keep_key_fresh(peer);
 
 	timers_any_authenticated_packet_received(peer);
 	timers_any_authenticated_packet_traversal(peer);
