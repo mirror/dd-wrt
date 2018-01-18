@@ -156,24 +156,7 @@ static inline void fake_destructor(struct sk_buff *skb)
 #include <linux/skbuff.h>
 #include <linux/if.h>
 #include <net/udp_tunnel.h>
-struct udp_port_cfg_new {
-	u8 family;
-	union {
-		struct in_addr local_ip;
-#if IS_ENABLED(CONFIG_IPV6)
-		struct in6_addr local_ip6;
-#endif
-	};
-	union {
-		struct in_addr peer_ip;
-#if IS_ENABLED(CONFIG_IPV6)
-		struct in6_addr peer_ip6;
-#endif
-	};
-	__be16 local_udp_port;
-	__be16 peer_udp_port;
-	unsigned int use_udp_checksums:1, use_udp6_tx_checksums:1, use_udp6_rx_checksums:1, ipv6_v6only:1;
-};
+#include "socket.h"
 static inline int __maybe_unused udp_sock_create_new(struct net *net, struct udp_port_cfg_new *cfg, struct socket **sockp)
 {
 	struct udp_port_cfg old_cfg = {
@@ -196,27 +179,10 @@ static inline int __maybe_unused udp_sock_create_new(struct net *net, struct udp
 		return udp_sock_create4(net, &old_cfg, sockp);
 
 #if IS_ENABLED(CONFIG_IPV6)
-	if (cfg->family == AF_INET6) {
-		int ret;
-		int old_bindv6only;
-		struct net *nobns;
 
-		if (cfg->ipv6_v6only) {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)
-			nobns = &init_net;
-#else
-			nobns = net;
-#endif
-			/* Since udp_port_cfg only learned of ipv6_v6only in 4.3, we do this horrible
-			 * hack here and set the sysctl variable temporarily to something that will
-			 * set the right option for us in sock_create. It's super racey! */
-			old_bindv6only = nobns->ipv6.sysctl.bindv6only;
-			nobns->ipv6.sysctl.bindv6only = 1;
-		}
-		ret = udp_sock_create6(net, &old_cfg, sockp);
-		if (cfg->ipv6_v6only)
-			nobns->ipv6.sysctl.bindv6only = old_bindv6only;
-		return ret;
+	if (cfg->family == AF_INET6) {
+		if (udp_sock_create_new6)
+		    return udp_sock_create_new6(net, cfg, sockp, &old_cfg);
 	}
 #endif
 	return -EPFNOSUPPORT;
