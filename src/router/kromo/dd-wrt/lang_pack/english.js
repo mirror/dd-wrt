@@ -1950,7 +1950,7 @@ service.transmission_dir="Transmission Directory";
 
 // ** eop-tunnel.asp **//
 var eoip=new Object();
-eoip.titl="EoIP Tunnel";
+eoip.titl="Tunnels";
 eoip.tunnel="Tunnel";
 eoip.legend="Ethernet Over IP Tunneling";
 eoip.proto="Protocol Type";
