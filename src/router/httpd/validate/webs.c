@@ -1425,15 +1425,39 @@ void gen_wg_key(webs_t wp)
 	sprintf(idx, "%d", key);
 	eval("makewgkey", idx);
 }
-
+void add_peer(webs_t wp)
+{
+	int key = websGetVari(wp, "keyindex", -1);
+	char idx[32];
+	sprintf(idx,"oet%d_peers",key);
+	int peer = nvram_geti(idx);
+	peer++;
+	nvram_seti(idx,peer);
+	nvram_nset("0", "oet%d_ka%d",key, peer);
+	nvram_nset("0", "oet%d_usepsk%d",key, peer);
+	nvram_nset("51280", "oet%d_peerport%d",key, peer);
+}
+void del_peer(webs_t wp)
+{
+	int key = websGetVari(wp, "keyindex", -1);
+	char idx[32];
+	sprintf(idx,"oet%d_peers",key);
+	int peer = nvram_geti(idx);
+	if (peer>0)
+		peer--;
+	nvram_seti(idx,peer);
+}
 void gen_wg_psk(webs_t wp)
 {
 	int key = websGetVari(wp, "keyindex", -1);
-	if (key < 0)
+	int peer = websGetVari(wp, "peerindex", -1);
+	if (key < 0 || peer < 0)
 		return;
 	char idx[32];
 	sprintf(idx, "%d", key);
-	eval("makewgpsk", idx);
+	char peeridx[32];
+	sprintf(peeridx, "%d", peerkey);
+	eval("makewgpsk", idx, peeridx);
 }
 #endif
 
