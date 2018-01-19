@@ -1656,7 +1656,7 @@ service.zabbix_usrpara="User Parameter";
 
 // ** eop-tunnel.asp **//
 
-eoip.titl="EoIP Tunnel";
+eoip.titl="Tunnels";
 eoip.tunnel="Tunnel";
 eoip.legend="Ethernet &Uuml;ber IP Tunneln";
 eoip.srv="EoIP Tunnel";
