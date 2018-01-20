@@ -1415,6 +1415,35 @@ void qos_add_mac(webs_t wp)
 
 }
 
+#ifdef HAVE_EOP_TUNNEL
+void tunnel_save(webs_t wp)
+{
+	int i;
+	for (i = 1; i < 11; i++) {
+		copytonv(wp, "oet%d_proto", i);
+		copytonv(wp, "oet%d_peers", i);
+		copytonv(wp, "oet%d_id", i);
+		copytonv(wp, "oet%d_bridged", i);
+		copymergetonv(wp, "oet%d_rem", i);
+		copymergetonv(wp, "oet%d_local", i);
+		copymergetonv(wp, "oet%d_ipaddr", i);
+		copymergetonv(wp, "oet%d_netmask", i);
+		char temp[32];
+		sprintf(temp, "oet%d_peers", i);
+		int peers = websGetVari(wp, temp, 0);
+		int peer;
+		for (peer = 0; peer < peers; peer++) {
+			copytonv(wp, "oet%d_peerkey%d", i, peer);
+			copytonv(wp, "oet%d_ka%d", i, peer);
+			copytonv(wp, "oet%d_peerport%d", i, peer);
+			copymergetonv(wp, "oet%d_rem%d", i, peer);
+			copytonv(wp, "oet%d_usepsk%d", i, peer);
+			copytonv(wp, "oet%d_psk%d", i, peer);
+		}
+	}
+
+}
+#endif
 #ifdef HAVE_WIREGUARD
 void gen_wg_key(webs_t wp)
 {
@@ -1425,28 +1454,34 @@ void gen_wg_key(webs_t wp)
 	sprintf(idx, "%d", key);
 	eval("makewgkey", idx);
 }
+
 void add_peer(webs_t wp)
 {
 	int key = websGetVari(wp, "keyindex", -1);
 	char idx[32];
-	sprintf(idx,"oet%d_peers",key);
+	sprintf(idx, "oet%d_peers", key);
+	nvram_default_get(idx, "0");
 	int peer = nvram_geti(idx);
+	nvram_nset("0", "oet%d_ka%d", key, peer);
+	nvram_nset("0", "oet%d_usepsk%d", key, peer);
+	nvram_nset("51280", "oet%d_peerport%d", key, peer);
 	peer++;
-	nvram_seti(idx,peer);
-	nvram_nset("0", "oet%d_ka%d",key, peer);
-	nvram_nset("0", "oet%d_usepsk%d",key, peer);
-	nvram_nset("51280", "oet%d_peerport%d",key, peer);
+	nvram_seti(idx, peer);
+	tunnel_save(wp);
 }
+
 void del_peer(webs_t wp)
 {
 	int key = websGetVari(wp, "keyindex", -1);
 	char idx[32];
-	sprintf(idx,"oet%d_peers",key);
+	sprintf(idx, "oet%d_peers", key);
 	int peer = nvram_geti(idx);
-	if (peer>0)
+	if (peer > 0)
 		peer--;
-	nvram_seti(idx,peer);
+	nvram_seti(idx, peer);
+	tunnel_save(wp);
 }
+
 void gen_wg_psk(webs_t wp)
 {
 	int key = websGetVari(wp, "keyindex", -1);
@@ -1456,7 +1491,7 @@ void gen_wg_psk(webs_t wp)
 	char idx[32];
 	sprintf(idx, "%d", key);
 	char peeridx[32];
-	sprintf(peeridx, "%d", peerkey);
+	sprintf(peeridx, "%d", peer);
 	eval("makewgpsk", idx, peeridx);
 }
 #endif
