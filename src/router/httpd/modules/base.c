@@ -1126,6 +1126,9 @@ static struct gozila_action gozila_actions[] = {
 	{"eop-tunnel", "add_peer", "", 0, REFRESH, "add_peer"},
 	{"eop-tunnel", "del_peer", "", 0, REFRESH, "del_peer"},
 #endif
+#ifdef HAVE_EOP_TUNNEL
+	{"eop-tunnel", "save", "eop", 1, REFRESH, "tunnel_save"},
+#endif
 	{"ForwardSpec", "add_forward_spec", "", 0, REFRESH, "forwardspec_add"},
 	{"ForwardSpec", "remove_forward_spec", "", 0, REFRESH,
 	 "forwardspec_remove"},
