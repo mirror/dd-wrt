@@ -1,8 +1,7 @@
 <% do_pagehead(""); %>
 
-		<script type="text/javascript">
-		//<![CDATA[
-
+<script type="text/javascript">
+//<![CDATA[
 var clk = <% get_clkfreq(); %>;
 var rest_default = <% nvg("sv_restore_defaults"); %>;
 var my_tab = new getTimeOut(clk, rest_default, <% getrebootflags(); %>);
@@ -48,8 +47,8 @@ addEvent(window, "unload", function() {
 	clearTimeout(timer);
 });
 		
-		//]]>
-		</script>
+//]]>
+</script>
 	</head>
 	
 	<body>
