@@ -1450,6 +1450,7 @@ void tunnel_save(webs_t wp)
 #ifdef HAVE_WIREGUARD
 void gen_wg_key(webs_t wp)
 {
+	tunnel_save(wp);
 	int key = websGetVari(wp, "keyindex", -1);
 	if (key < 0)
 		return;
@@ -1487,6 +1488,7 @@ void del_peer(webs_t wp)
 
 void gen_wg_psk(webs_t wp)
 {
+	tunnel_save(wp);
 	int key = websGetVari(wp, "keyindex", -1);
 	int peer = websGetVari(wp, "peerindex", -1);
 	if (key < 0 || peer < 0)
