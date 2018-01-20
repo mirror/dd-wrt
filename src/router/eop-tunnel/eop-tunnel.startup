@@ -3,7 +3,7 @@ nv=/usr/sbin/nvram
 /bin/mkdir -p /tmp/oet/pid
 cd /tmp/oet/pid
 rmmod eoip
-for i in 1 2 3 4 5 6 7 8 9 10
+for i in `seq 1 10`
 do
 	if test -e "${i}.pid" 
 	then 
@@ -27,13 +27,17 @@ do
 			wg set oet${i} listen-port $($nv get oet${i}_port)
 			$nv get oet${i}_private > /tmp/wireguard/oet${i}_private
 			wg set oet${i} private-key /tmp/wireguard/oet${i}_private
-			if [ `$nv get oet${i}_usepsk` -eq 1 ]
-			then
-				$nv get oet${i}_psk > /tmp/wireguard/oet${i}_psk
-				PSKARG1="preshared-key" 
-				PSKARG2="/tmp/wireguard/oet${i}_psk"
-			fi
-			wg set oet${i} peer $($nv get oet${i}_peerkey) persistent-keepalive $($nv get oet${i}_ka) $PSKARG1 $PSKARG2 allowed-ips 0.0.0.0/0 endpoint $($nv get oet${i}_rem):$($nv get oet${i}_peerport)
+			peers=$((`$nv get oet${i}_peers` - 1))
+			for p in `seq 0 $peers`
+			do
+				if [ `$nv get oet${i}_usepsk${p}` -eq 1 ]
+				then
+					$nv get oet${i}_psk${p} > /tmp/wireguard/oet${i}_psk${p}
+					PSKARG1="preshared-key" 
+					PSKARG2="/tmp/wireguard/oet${i}_psk${p}"
+				fi
+				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips 0.0.0.0/0 endpoint $($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p})
+			done
 			ifconfig oet${i} promisc up 2>&1 > /dev/null
 			ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
 			echo enable > ${i}.pid
