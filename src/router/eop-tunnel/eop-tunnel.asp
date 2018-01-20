@@ -4,11 +4,15 @@
 
 function to_submit(F) {
 	F.save_button.value = sbutton.saving;
+	F.submit_type.value = "save";
+	F.change_action.value="gozila_cgi";
 	apply(F);
 }
 
 function to_apply(F) {
 	F.save_button.value = sbutton.saving;
+	F.submit_type.value = "save";
+	F.change_action.value="gozila_cgi";
 	applytake(F);
 }
 
@@ -27,6 +31,13 @@ function add_peer(F,keyindex)
 	F.submit_type.value = "add_peer";
 	apply(F);
 }
+function del_peer(F,keyindex)
+{
+	F.keyindex.value = keyindex;
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "del_peer";
+	apply(F);
+}
 
 function gen_wg_psk(F,keyindex,peer)
 {
@@ -36,9 +47,10 @@ function gen_wg_psk(F,keyindex,peer)
 	F.submit_type.value = "gen_wg_psk";
 	apply(F);
 }
+
 function changepeer(F, index, value, pskvalue, peerindex)
 {
-if (value == 2 {
+if (value == 2) {
 	if (pskvalue == 1) {
 	show_layer_ext(F, "idpsk" + index + "_peer" + peerindex, true);
 	} else {
