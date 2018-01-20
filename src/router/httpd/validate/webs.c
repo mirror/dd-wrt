@@ -1420,17 +1420,19 @@ void tunnel_save(webs_t wp)
 {
 	int i;
 	for (i = 1; i < 11; i++) {
+		copytonv(wp, "oet%d_en", i);
 		copytonv(wp, "oet%d_proto", i);
 		copytonv(wp, "oet%d_peers", i);
 		copytonv(wp, "oet%d_id", i);
 		copytonv(wp, "oet%d_bridged", i);
+		copytonv(wp, "oet%d_port", i);
 		copymergetonv(wp, "oet%d_rem", i);
 		copymergetonv(wp, "oet%d_local", i);
 		copymergetonv(wp, "oet%d_ipaddr", i);
 		copymergetonv(wp, "oet%d_netmask", i);
 		char temp[32];
 		sprintf(temp, "oet%d_peers", i);
-		int peers = websGetVari(wp, temp, 0);
+		int peers = nvram_geti(temp);
 		int peer;
 		for (peer = 0; peer < peers; peer++) {
 			copytonv(wp, "oet%d_peerkey%d", i, peer);
@@ -1441,7 +1443,8 @@ void tunnel_save(webs_t wp)
 			copytonv(wp, "oet%d_psk%d", i, peer);
 		}
 	}
-
+	char *value = websGetVar(wp, "action", "");
+	applytake(value);
 }
 #endif
 #ifdef HAVE_WIREGUARD
