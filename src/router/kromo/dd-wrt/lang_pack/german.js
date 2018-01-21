@@ -1664,6 +1664,7 @@ eoip.genkey="Erzeuge Schl&uuml;ssel";
 eoip.wireguard_localport="Lokaler Port";
 eoip.wireguard_ka="Persistent Keep-Alive";
 eoip.wireguard_endpoint="Endpunkt";
+eoip.wireguard_peer="Endpunkt Adresse";
 eoip.wireguard_peerport="Entfernter Port";
 eoip.wireguard_peerkey="Entfernter &Ouml;ffentlicher Schl&uuml;ssel";
 eoip.wireguard_localkey="Lokaler &Ouml;ffentlicher Schl&uuml;ssel";
