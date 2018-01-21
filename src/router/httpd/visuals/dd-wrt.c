@@ -1133,7 +1133,7 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		}
 
-		char *ifname[32];
+		char ifname[32];
 		sprintf(ifname, "ath%d.sta", i);
 		bzero(eths, 256);
 		getIfList(eths, ifname);
