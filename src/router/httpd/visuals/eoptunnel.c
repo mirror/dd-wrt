@@ -122,15 +122,36 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					{
 						websWrite(wp, "<fieldset>\n");
 						websWrite(wp, "<legend>Peer %d</legend>\n", peer + 1);
-						snprintf(temp2, sizeof(temp2), "oet%d_peerport%d", tun, peer);
-						snprintf(temp, sizeof(temp), "oet%d_rem%d", tun, peer);
+						snprintf(temp, sizeof(temp), "oet%d_endpoint%d", tun, peer);
+						nvram_default_get(temp, "0");
 						{
 							websWrite(wp, "<div class=\"setting\">\n");
-							websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_peer)</script></div>\n");
-							websWrite(wp, "<input size=\"20\" maxlength=\"20\" name=\"%s\" value=\"%s\" />:<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n\n",
-								  temp, nvram_safe_get(temp), temp2, nvram_safe_get(temp2));
+							websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_endpoint)</script></div>\n");
+							websWrite(wp,
+								  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idendpoint%d_peer%d', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+								  temp, (nvram_matchi(temp, 1) ? "checked=\"checked\"" : ""), tun, peer);
+							websWrite(wp,
+								  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idendpoint%d_peer%d', false)\" /><script type=\"text/javascript\">Capture(share.disable)</script>\n",
+								  temp, (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""), tun, peer);
 							websWrite(wp, "</div>\n");
 						}
+						{
+							websWrite(wp, "<div id=\"idendpoint%d_peer%d\">\n", tun, peer);
+							{
+
+								snprintf(temp2, sizeof(temp2), "oet%d_peerport%d", tun, peer);
+								snprintf(temp, sizeof(temp), "oet%d_rem%d", tun, peer);
+								{
+									websWrite(wp, "<div class=\"setting\">\n");
+									websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_peer)</script></div>\n");
+									websWrite(wp,
+										  "<input size=\"20\" maxlength=\"20\" name=\"%s\" value=\"%s\" />:<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n\n",
+										  temp, nvram_safe_get(temp), temp2, nvram_safe_get(temp2));
+									websWrite(wp, "</div>\n");
+								}
+							}
+						}
+						websWrite(wp, "</div>\n");
 						snprintf(temp, sizeof(temp), "oet%d_aip%d", tun, peer);
 						{
 							websWrite(wp, "<div class=\"setting\">\n");
@@ -189,13 +210,14 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 								websWrite(wp, "</div>\n");
 							}
 							websWrite(wp, "</div>\n");
-							websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-							websWrite(wp, "changepeer(this, %d, %s, %s, %d);\n", tun, nvram_nget("oet%d_proto", tun), nvram_nget("oet%d_usepsk%d", tun, peer), peer);
-							websWrite(wp,
-								  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"del_peer_button\\\" value=\\\"\" + eoip.wireguard_delpeer + \"\\\" onclick=\\\"del_peer(this.form,%d,%d)\\\" />\");\n",
-								  tun, peer);
-							websWrite(wp, "//]]>\n</script>\n");
 						}
+						websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+						websWrite(wp, "show_layer_ext(this, \"idpsk%d_peer%d,%s);\n", tun, peer, nvram_nmatch("1", "oet%d_usepsk%d", tun, peer) ? "true" : "false");
+						websWrite(wp, "show_layer_ext(this, \"idendpoint%d_peer%d,%s);\n", tun, peer, nvram_nmatch("1", "oet%d_endpoint%d", tun, peer) ? "true" : "false");
+						websWrite(wp,
+							  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"del_peer_button\\\" value=\\\"\" + eoip.wireguard_delpeer + \"\\\" onclick=\\\"del_peer(this.form,%d,%d)\\\" />\");\n",
+							  tun, peer);
+						websWrite(wp, "//]]>\n</script>\n");
 						websWrite(wp, "</fieldset>\n");
 					}
 				}

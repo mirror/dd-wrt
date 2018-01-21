@@ -1959,6 +1959,7 @@ eoip.genkey="Generate Key";
 eoip.wireguard="WireGuard";
 eoip.wireguard_localport="Local Port";
 eoip.wireguard_ka="Persistent Keepalive";
+eoip.wireguard_endpoint="Endpoint";
 eoip.wireguard_peer="Peer";
 eoip.wireguard_peerkey="Peer Public Key";
 eoip.wireguard_localkey="Local Public Key";
