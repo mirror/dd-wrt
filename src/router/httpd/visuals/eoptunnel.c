@@ -37,8 +37,9 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 	int tun;
 	char temp[128];
 	char temp2[128];
+	int tunnels = nvram_default_geti("oet_tunnels", 10) + 1;
 
-	for (tun = 1; tun < 11; tun++) {
+	for (tun = 1; tun < tunnels; tun++) {
 		char oet[32];
 		sprintf(oet, "oet%d", tun);
 		websWrite(wp, "<fieldset>\n");
@@ -190,6 +191,9 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							websWrite(wp, "</div>\n");
 							websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 							websWrite(wp, "changepeer(this, %d, %s, %s, %d);\n", tun, nvram_nget("oet%d_proto", tun), nvram_nget("oet%d_usepsk%d", tun, peer), peer);
+							websWrite(wp,
+								  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"del_peer_button\\\" value=\\\"\" + eoip.wireguard_delpeer + \"\\\" onclick=\\\"del_peer(this.form,%d,%d)\\\" />\");\n",
+								  tun, peer);
 							websWrite(wp, "//]]>\n</script>\n");
 						}
 						websWrite(wp, "</fieldset>\n");
@@ -200,10 +204,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "<div class=\"center\">\n");
 					websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 					websWrite(wp,
-						  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"gen_peer_button\\\" value=\\\"\" + eoip.wireguard_addpeer + \"\\\" onclick=\\\"add_peer(this.form,%d)\\\" />\");\n",
-						  tun);
-					websWrite(wp,
-						  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"del_peer_button\\\" value=\\\"\" + eoip.wireguard_delpeer + \"\\\" onclick=\\\"del_peer(this.form,%d)\\\" />\");\n",
+						  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"add_peer_button\\\" value=\\\"\" + eoip.wireguard_addpeer + \"\\\" onclick=\\\"add_peer(this.form,%d)\\\" />\");\n",
 						  tun);
 					websWrite(wp, "//]]>\n</script>\n");
 					websWrite(wp, "</div>\n");
@@ -270,7 +271,16 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 			}
 			websWrite(wp, "</div>\n");
 		}
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"del_button\\\" value=\\\"\" + eoip.wireguard_del + \"\\\" onclick=\\\"del_tunnel(this.form,%d)\\\" />\");\n", tun);
+		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</fieldset><br/>\n");
 	}
+	websWrite(wp, "<div class=\"center\">\n");
+	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+	websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"add_button\\\" value=\\\"\" + eoip.wireguard_add + \"\\\" onclick=\\\"add_tunnel(this.form)\\\" />\");\n");
+	websWrite(wp, "//]]>\n</script>\n");
+	websWrite(wp, "</div>\n");
 }
 #endif
