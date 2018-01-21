@@ -115,7 +115,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "</div>\n");
 				}
 				snprintf(temp, sizeof(temp), "oet%d_peers", tun);
-				nvram_default_get(temp, "1");
+				nvram_default_get(temp, "0");
 				int peers = nvram_geti(temp);
 				int peer;
 				for (peer = 0; peer < peers; peer++) {
