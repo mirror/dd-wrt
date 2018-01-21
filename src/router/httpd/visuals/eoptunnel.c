@@ -126,7 +126,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 						snprintf(temp, sizeof(temp), "oet%d_rem%d", tun, peer);
 						{
 							websWrite(wp, "<div class=\"setting\">\n");
-							websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_peername)</script></div>\n");
+							websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_peer)</script></div>\n");
 							websWrite(wp, "<input size=\"20\" maxlength=\"20\" name=\"%s\" value=\"%s\" />:<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n\n",
 								  temp, nvram_safe_get(temp), temp2, nvram_safe_get(temp2));
 							websWrite(wp, "</div>\n");
@@ -273,7 +273,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		}
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"del_button\\\" value=\\\"\" + eoip.wireguard_del + \"\\\" onclick=\\\"del_tunnel(this.form,%d)\\\" />\");\n", tun);
+		websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"del_button\\\" value=\\\"\" + eoip.del + \"\\\" onclick=\\\"del_tunnel(this.form,%d)\\\" />\");\n", tun);
 		websWrite(wp, "changeproto(document.eop.oet%d_proto, %d, %s, %s);\n", tun, tun, nvram_nget("oet%d_proto", tun), nvram_nget("oet%d_bridged", tun));
 		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d', %s);\n", tun, tun, nvram_nmatch("1", "oet%d_en", tun) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
@@ -281,7 +281,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 	}
 	websWrite(wp, "<div class=\"center\">\n");
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"add_button\\\" value=\\\"\" + eoip.wireguard_add + \"\\\" onclick=\\\"add_tunnel(this.form)\\\" />\");\n");
+	websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"add_button\\\" value=\\\"\" + eoip.add + \"\\\" onclick=\\\"add_tunnel(this.form)\\\" />\");\n");
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</div>\n");
 }
