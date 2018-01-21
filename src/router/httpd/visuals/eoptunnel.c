@@ -37,7 +37,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 	int tun;
 	char temp[128];
 	char temp2[128];
-	int tunnels = nvram_default_geti("oet_tunnels", 10) + 1;
+	int tunnels = nvram_default_geti("oet_tunnels", 0) + 1;
 
 	for (tun = 1; tun < tunnels; tun++) {
 		char oet[32];
