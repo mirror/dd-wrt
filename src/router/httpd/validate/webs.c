@@ -1471,7 +1471,7 @@ void add_peer(webs_t wp)
 	nvram_default_get(idx, "0");
 	int peer = nvram_geti(idx);
 
-#define default_set(name,val) if (strlen(nvram_nget(val))==0)nvram_nset(val, "oet%d_%s%d",key,name,peer)
+#define default_set(name,val) if (strlen(nvram_nget("oet%d_%s%d",key,name,peer))==0)nvram_nset(val, "oet%d_%s%d",key,name,peer)
 	default_set("ka", "0");
 	default_set("endpoint", "0");
 	default_set("usepsk", "0");
@@ -1555,7 +1555,7 @@ void add_tunnel(webs_t wp)
 	int tunnels = nvram_geti("oet_tunnels");
 	tunnels++;
 	nvram_seti("oet_tunnels", tunnels);
-#define default_set(name,val) if (strlen(nvram_nget(name))==0)nvram_nset(val, "oet%d_%s",tunnels,name)
+#define default_set(name,val) if (strlen(nvram_nget("oet%d_%s",tunnels, name))==0)nvram_nset(val, "oet%d_%s",tunnels,name)
 	default_set("en", "0");
 	default_set("rem", "192.168.90.1");
 	default_set("local", "0.0.0.0");
