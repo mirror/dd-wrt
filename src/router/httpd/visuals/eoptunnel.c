@@ -210,8 +210,8 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 						}
 						websWrite(wp, "</div>\n");
 						websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-						websWrite(wp, "show_layer_ext(this, \"idpsk%d_peer%d,%s);\n", tun, peer, nvram_nmatch("1", "oet%d_usepsk%d", tun, peer) ? "true" : "false");
-						websWrite(wp, "show_layer_ext(this, \"idendpoint%d_peer%d,%s);\n", tun, peer, nvram_nmatch("1", "oet%d_endpoint%d", tun, peer) ? "true" : "false");
+						websWrite(wp, "show_layer_ext(this, 'idpsk%d_peer%d',%s);\n", tun, peer, nvram_nmatch("1", "oet%d_usepsk%d", tun, peer) ? "true" : "false");
+						websWrite(wp, "show_layer_ext(this, 'idendpoint%d_peer%d',%s);\n", tun, peer, nvram_nmatch("1", "oet%d_endpoint%d", tun, peer) ? "true" : "false");
 						websWrite(wp,
 							  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"del_peer_button\\\" value=\\\"\" + eoip.wireguard_delpeer + \"\\\" onclick=\\\"del_peer(this.form,%d,%d)\\\" />\");\n",
 							  tun, peer);
