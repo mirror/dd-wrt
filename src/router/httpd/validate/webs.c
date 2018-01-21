@@ -1436,6 +1436,7 @@ void tunnel_save(webs_t wp)
 		int peers = nvram_geti(temp);
 		int peer;
 		for (peer = 0; peer < peers; peer++) {
+			copytonv(wp, "oet%d_endpoint%d", i, peer);
 			copytonv(wp, "oet%d_peerkey%d", i, peer);
 			copytonv(wp, "oet%d_ka%d", i, peer);
 			copytonv(wp, "oet%d_aip%d", i, peer);
@@ -1470,7 +1471,9 @@ void add_peer(webs_t wp)
 	nvram_default_get(idx, "0");
 	int peer = nvram_geti(idx);
 	nvram_nset("0", "oet%d_ka%d", key, peer);
+	nvram_nset("0", "oet%d_endpoint%d", key, peer);
 	nvram_nset("0", "oet%d_usepsk%d", key, peer);
+	nvram_nset("0", "oet%d_rem%d", key, peer);
 	nvram_nset("51280", "oet%d_peerport%d", key, peer);
 	peer++;
 	nvram_seti(idx, peer);
@@ -1523,6 +1526,7 @@ static void deltunvalue(char *valuename, int tun)
 static void copypeer(int tun, int from, int to)
 {
 	copypeervalue("peerkey", tun, from, to);
+	copypeervalue("endpoint", tun, from, to);
 	copypeervalue("ka", tun, from, to);
 	copypeervalue("aip", tun, from, to);
 	copypeervalue("peerport", tun, from, to);
@@ -1534,6 +1538,7 @@ static void copypeer(int tun, int from, int to)
 static void copytunpeer(int peer, int from, int to)
 {
 	copypeertunvalue("peerkey", peer, from, to);
+	copypeertunvalue("endpoint", peer, from, to);
 	copypeertunvalue("ka", peer, from, to);
 	copypeertunvalue("aip", peer, from, to);
 	copypeertunvalue("peerport", peer, from, to);
@@ -1565,6 +1570,7 @@ static void delpeer(int tun, int peer)
 {
 	delpeervalue("peerkey", tun, peer);
 	delpeervalue("ka", tun, peer);
+	delpeervalue("endpoint", tun, peer);
 	delpeervalue("aip", tun, peer);
 	delpeervalue("peerport", tun, peer);
 	delpeervalue("rem", tun, peer);
