@@ -37,7 +37,7 @@ do
 					PSKARG1="preshared-key" 
 					PSKARG2="/tmp/wireguard/oet${i}_psk${p}"
 				fi
-				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips $($nv get oet${i}_aip${p}) endpoint $($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p})
+				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips $($nv get oet${i}_aip${p}) endpoint $($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p}) &
 			done
 			ifconfig oet${i} promisc up 2>&1 > /dev/null
 			ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
