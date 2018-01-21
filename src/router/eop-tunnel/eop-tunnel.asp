@@ -31,11 +31,26 @@ function add_peer(F,keyindex)
 	F.submit_type.value = "add_peer";
 	apply(F);
 }
-function del_peer(F,keyindex)
+function del_peer(F,keyindex,peerindex)
 {
 	F.keyindex.value = keyindex;
+	F.peerindex.value = peerindex;
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "del_peer";
+	apply(F);
+}
+
+function add_tunnel(F)
+{
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "add_tunnel";
+	apply(F);
+}
+function del_tunnel(F,tunnelindex)
+{
+	F.keyindex.value = tunnelindex;
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "del_tunnel";
 	apply(F);
 }
 
@@ -86,29 +101,7 @@ if (value == 2) {
 
 var update;
 
-addEvent(window, "load", function() {
-		show_layer_ext(document.eop.oet1_en, 'idoet1', <% nvram_else_match("oet1_en", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.eop.oet2_en, 'idoet2', <% nvram_else_match("oet2_en", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.eop.oet3_en, 'idoet3', <% nvram_else_match("oet3_en", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.eop.oet4_en, 'idoet4', <% nvram_else_match("oet4_en", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.eop.oet5_en, 'idoet5', <% nvram_else_match("oet5_en", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.eop.oet6_en, 'idoet6', <% nvram_else_match("oet6_en", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.eop.oet7_en, 'idoet7', <% nvram_else_match("oet7_en", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.eop.oet8_en, 'idoet8', <% nvram_else_match("oet8_en", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.eop.oet9_en, 'idoet9', <% nvram_else_match("oet9_en", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.eop.oet10_en, 'idoet10', <% nvram_else_match("oet10_en", "1", "1", "0"); %> == 1);
-		
-		changeproto(document.eop.oet1_proto, 1, <% nvram_get("oet1_proto"); %>, <% nvram_get("oet1_bridged"); %>);
-		changeproto(document.eop.oet2_proto, 2, <% nvram_get("oet2_proto"); %>, <% nvram_get("oet2_bridged"); %>);
-		changeproto(document.eop.oet3_proto, 3, <% nvram_get("oet3_proto"); %>, <% nvram_get("oet3_bridged"); %>);
-		changeproto(document.eop.oet4_proto, 4, <% nvram_get("oet4_proto"); %>, <% nvram_get("oet4_bridged"); %>);
-		changeproto(document.eop.oet5_proto, 5, <% nvram_get("oet5_proto"); %>, <% nvram_get("oet5_bridged"); %>);
-		changeproto(document.eop.oet6_proto, 6, <% nvram_get("oet6_proto"); %>, <% nvram_get("oet6_bridged"); %>);
-		changeproto(document.eop.oet7_proto, 7, <% nvram_get("oet7_proto"); %>, <% nvram_get("oet7_bridged"); %>);
-		changeproto(document.eop.oet8_proto, 8, <% nvram_get("oet8_proto"); %>, <% nvram_get("oet8_bridged"); %>);
-		changeproto(document.eop.oet9_proto, 9, <% nvram_get("oet9_proto"); %>, <% nvram_get("oet9_bridged"); %>);
-		changeproto(document.eop.oet10_proto, 10, <% nvram_get("oet10_proto"); %>, <% nvram_get("oet10_bridged"); %>);
-		
+addEvent(window, "load", function() {				
 		update = new StatusbarUpdate();
 		update.start();
 		
