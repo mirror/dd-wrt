@@ -1979,6 +1979,9 @@ eoip.frag="fragment";
 eoip.mssfix="mssfix";
 eoip.shaper="shaper";
 eoip.bridging="Bridging";
+eoip.add="Add Tunnel";
+eoip.del="Del Tunnel";
+
 
 // help page
 var heoip=new Object();
