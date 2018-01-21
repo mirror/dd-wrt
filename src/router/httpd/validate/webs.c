@@ -1439,7 +1439,7 @@ void tunnel_save(webs_t wp)
 			copytonv(wp, "oet%d_ka%d", i, peer);
 			copytonv(wp, "oet%d_aip%d", i, peer);
 			copytonv(wp, "oet%d_peerport%d", i, peer);
-			copymergetonv(wp, "oet%d_rem%d", i, peer);
+			copytonv(wp, "oet%d_rem%d", i, peer);
 			copytonv(wp, "oet%d_usepsk%d", i, peer);
 			copytonv(wp, "oet%d_psk%d", i, peer);
 		}
@@ -1447,7 +1447,7 @@ void tunnel_save(webs_t wp)
 	char *value = websGetVar(wp, "action", "");
 	applytake(value);
 }
-#endif
+
 #ifdef HAVE_WIREGUARD
 void gen_wg_key(webs_t wp)
 {
@@ -1475,14 +1475,162 @@ void add_peer(webs_t wp)
 	tunnel_save(wp);
 }
 
+static void copypeervalue(char *valuename, int tun, int from, int to)
+{
+	char name[32];
+	sprintf(name, "oet%d_%s%d", tun, valuename, from);
+	char *c = nvram_safe_get(name);
+	sprintf(name, "oet%d_%s%d", tun, valuename, to);
+	nvram_set(name, c);
+
+}
+
+static void copypeertunvalue(char *valuename, int peer, int from, int to)
+{
+	char name[32];
+	sprintf(name, "oet%d_%s%d", from, valuename, peer);
+	char *c = nvram_safe_get(name);
+	sprintf(name, "oet%d_%s%d", to, valuename, peer);
+	nvram_set(name, c);
+
+}
+
+static void delpeervalue(char *valuename, int tun, int from)
+{
+	char name[32];
+	sprintf(name, "oet%d_%s%d", tun, valuename, from);
+	nvram_unset(name);
+}
+
+static void copytunvalue(char *valuename, int from, int to)
+{
+	char name[32];
+	sprintf(name, "oet%d_%s%d", from, valuename);
+	char *c = nvram_safe_get(name);
+	sprintf(name, "oet%d_%s%d", to, valuename);
+	nvram_set(name, c);
+
+}
+
+static void deltunvalue(char *valuename, int tun)
+{
+	char name[32];
+	sprintf(name, "oet%d_%s", tun, valuename);
+	nvram_unset(name);
+}
+
+static void copypeer(int tun, int from, int to)
+{
+	copypeervalue("peerkey", tun, from, to);
+	copypeervalue("ka", tun, from, to);
+	copypeervalue("aip", tun, from, to);
+	copypeervalue("peerport", tun, from, to);
+	copypeervalue("rem", tun, from, to);
+	copypeervalue("usepsk", tun, from, to);
+	copypeervalue("psk", tun, from, to);
+}
+
+static void copytunpeer(int peer, int from, int to)
+{
+	copypeertunvalue("peerkey", peer, from, to);
+	copypeertunvalue("ka", peer, from, to);
+	copypeertunvalue("aip", peer, from, to);
+	copypeertunvalue("peerport", peer, from, to);
+	copypeertunvalue("rem", peer, from, to);
+	copypeertunvalue("usepsk", peer, from, to);
+	copypeertunvalue("psk", peer, from, to);
+}
+
+void add_tunnel(webs_t wp)
+{
+	int tunnels = nvram_geti("oet_tunnels");
+	tunnels++;
+	nvram_seti("oet_tunnels", tunnels);
+
+#define default_set(name,val) nvram_nset(val, "oet%d_%s",tunnels,name)
+	default_set("en", "0");
+	default_set("rem", "192.168.90.1");
+	default_set("local", "0.0.0.0");
+	default_set("ipaddr", "1.2.3.4");
+	default_set("netmask", "255.255.255.255");
+	default_set("id", "1");
+	default_set("proto", "0");
+	default_set("bridged", "1");
+	default_set("peers", "0");
+#undef default_set
+}
+
+static void delpeer(int tun, int peer)
+{
+	delpeervalue("peerkey", tun, peer);
+	delpeervalue("ka", tun, peer);
+	delpeervalue("aip", tun, peer);
+	delpeervalue("peerport", tun, peer);
+	delpeervalue("rem", tun, peer);
+	delpeervalue("usepsk", tun, peer);
+	delpeervalue("psk", tun, peer);
+
+}
+
+void del_tunnel(webs_t wp)
+{
+	int peer;
+	char idx[32];
+	int tun = websGetVari(wp, "keyindex", -1);
+	int tunnels = nvram_geti("oet_tunnels");
+
+	int i;
+	for (i = tun + 1; i < tunnels; i++) {
+		copytunvalue("en", i, i - 1);
+		copytunvalue("rem", i, i - 1);
+		copytunvalue("local", i, i - 1);
+		copytunvalue("ipaddr", i, i - 1);
+		copytunvalue("netmask", i, i - 1);
+		copytunvalue("id", i, i - 1);
+		copytunvalue("proto", i, i - 1);
+		copytunvalue("bridged", i, i - 1);
+		copytunvalue("peers", i, i - 1);
+		sprintf(idx, "oet%d_peers", i);
+		int peers = nvram_geti(idx);
+		for (peer = 0; peer < peers; peer++) {
+			copytunpeer(peer, i, i - 1);
+		}
+	}
+
+	sprintf(idx, "oet%d_peers", tunnels);
+	int peers = nvram_geti(idx);
+	for (peer = 0; peer < peers; peer++) {
+		delpeer(tun, peer);
+	}
+	deltunvalue("en", tunnels);
+	deltunvalue("rem", tunnels);
+	deltunvalue("local", tunnels);
+	deltunvalue("ipaddr", tunnels);
+	deltunvalue("netmask", tunnels);
+	deltunvalue("id", tunnels);
+	deltunvalue("proto", tunnels);
+	deltunvalue("bridged", tunnels);
+	deltunvalue("peers", tunnels);
+
+	tunnels--;
+	nvram_seti("oet_tunnels", tunnels);
+
+}
+
 void del_peer(webs_t wp)
 {
-	int key = websGetVari(wp, "keyindex", -1);
+	int tun = websGetVari(wp, "keyindex", -1);
+	int peer = websGetVari(wp, "peerindex", -1);
 	char idx[32];
-	sprintf(idx, "oet%d_peers", key);
-	int peer = nvram_geti(idx);
-	if (peer > 0)
-		peer--;
+	int i;
+	sprintf(idx, "oet%d_peers", tun);
+	int peers = nvram_geti(idx);
+	for (i = peer + 1; i < peers; i++)
+		copypeer(tun, i, i - 1);
+
+	delpeer(tun, peers - 1);
+	if (peers > 0)
+		peers--;
 	nvram_seti(idx, peer);
 	tunnel_save(wp);
 }
@@ -1500,6 +1648,7 @@ void gen_wg_psk(webs_t wp)
 	sprintf(peeridx, "%d", peer);
 	eval("makewgpsk", idx, peeridx);
 }
+#endif
 #endif
 
 void qos_save(webs_t wp)

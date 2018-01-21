@@ -1668,6 +1668,9 @@ eoip.wireguard_peerkey="Entfernter &Ouml;ffentlicher Schl&uuml;ssel";
 eoip.wireguard_localkey="Lokaler &Ouml;ffentlicher Schl&uuml;ssel";
 eoip.wireguard_genpsk="Erzeuge Pre-shared Key";
 eoip.wireguard_usepsk="Nutze Pre-shared Key";
+eoip.wireguard_addpeer="Partner Hinzuf&uuml;gen";
+eoip.wireguard_delpeer="Partner Entfernen";
+eoip.wireguard_allowedips="Erlaubte IPs";
 eoip.remoteIP="Entfernte IP Adresse";
 eoip.localIP="Lokale IP Adresse";
 eoip.proto="Protokoll Typ";
@@ -1678,6 +1681,8 @@ eoip.frag="Fragment";
 eoip.mssfix="mssfix";
 eoip.shaper="shaper";
 eoip.bridging="Br&uuml;cken";
+eoip.add="Tunnel Hinzuf&uuml;gen";
+eoip.del="Tunnel Entfernen";
 
 
 // ** Sipath.asp + cgi **//
