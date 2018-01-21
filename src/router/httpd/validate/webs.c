@@ -1470,11 +1470,14 @@ void add_peer(webs_t wp)
 	sprintf(idx, "oet%d_peers", key);
 	nvram_default_get(idx, "0");
 	int peer = nvram_geti(idx);
-	nvram_nset("0", "oet%d_ka%d", key, peer);
-	nvram_nset("0", "oet%d_endpoint%d", key, peer);
-	nvram_nset("0", "oet%d_usepsk%d", key, peer);
-	nvram_nset("0", "oet%d_rem%d", key, peer);
-	nvram_nset("51280", "oet%d_peerport%d", key, peer);
+
+#define default_set(name,val) if (strlen(nvram_nget(val))==0)nvram_nset(val, "oet%d_%s%d",key,name,peer)
+	default_set("ka", "0");
+	default_set("endpoint", "0");
+	default_set("usepsk", "0");
+	default_set("rem", "0.0.0.0");
+	default_set("peerport", "51280");
+#undef default_set
 	peer++;
 	nvram_seti(idx, peer);
 }
@@ -1552,8 +1555,7 @@ void add_tunnel(webs_t wp)
 	int tunnels = nvram_geti("oet_tunnels");
 	tunnels++;
 	nvram_seti("oet_tunnels", tunnels);
-
-#define default_set(name,val) nvram_nset(val, "oet%d_%s",tunnels,name)
+#define default_set(name,val) if (strlen(nvram_nget(name))==0)nvram_nset(val, "oet%d_%s",tunnels,name)
 	default_set("en", "0");
 	default_set("rem", "192.168.90.1");
 	default_set("local", "0.0.0.0");
@@ -1655,6 +1657,7 @@ void gen_wg_psk(webs_t wp)
 	sprintf(peeridx, "%d", peer);
 	eval("makewgpsk", idx, peeridx);
 }
+
 #endif
 #endif
 
