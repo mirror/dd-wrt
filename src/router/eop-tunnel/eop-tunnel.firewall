@@ -1,7 +1,8 @@
 #!/bin/sh
 nv=/usr/sbin/nvram
 ipt=/usr/sbin/iptables
-for i in 1 2 3 4 5 6 7 8 9 10
+tunnels=`$nv get oet_tunnels`
+for i in `seq 1 $tunnels`
 do
 	if test -e "/tmp/oet/pid/${i}.pid"
 	then 
