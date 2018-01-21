@@ -63,17 +63,6 @@ function gen_wg_psk(F,keyindex,peer)
 	apply(F);
 }
 
-function changepeer(F, index, value, pskvalue, peerindex)
-{
-if (value == 2) {
-	if (pskvalue == 1) {
-	show_layer_ext(F, "idpsk" + index + "_peer" + peerindex, true);
-	} else {
-	show_layer_ext(F, "idpsk" + index + "_peer" + peerindex, false);
-	}
-}
-}
-
 function changeproto(F, index, value, brvalue)
 {
 if (value == 1) {
