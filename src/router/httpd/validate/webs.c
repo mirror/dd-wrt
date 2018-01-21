@@ -1419,7 +1419,8 @@ void qos_add_mac(webs_t wp)
 void tunnel_save(webs_t wp)
 {
 	int i;
-	for (i = 1; i < 11; i++) {
+	int tunnels = nvram_geti("oet_tunnels");
+	for (i = 1; i < tunnels + 1; i++) {
 		copytonv(wp, "oet%d_en", i);
 		copytonv(wp, "oet%d_proto", i);
 		copytonv(wp, "oet%d_peers", i);
@@ -1462,6 +1463,7 @@ void gen_wg_key(webs_t wp)
 
 void add_peer(webs_t wp)
 {
+	tunnel_save(wp);
 	int key = websGetVari(wp, "keyindex", -1);
 	char idx[32];
 	sprintf(idx, "oet%d_peers", key);
@@ -1472,7 +1474,6 @@ void add_peer(webs_t wp)
 	nvram_nset("51280", "oet%d_peerport%d", key, peer);
 	peer++;
 	nvram_seti(idx, peer);
-	tunnel_save(wp);
 }
 
 static void copypeervalue(char *valuename, int tun, int from, int to)
@@ -1505,9 +1506,9 @@ static void delpeervalue(char *valuename, int tun, int from)
 static void copytunvalue(char *valuename, int from, int to)
 {
 	char name[32];
-	sprintf(name, "oet%d_%s%d", from, valuename);
+	sprintf(name, "oet%d_%s", from, valuename);
 	char *c = nvram_safe_get(name);
-	sprintf(name, "oet%d_%s%d", to, valuename);
+	sprintf(name, "oet%d_%s", to, valuename);
 	nvram_set(name, c);
 
 }
@@ -1578,9 +1579,8 @@ void del_tunnel(webs_t wp)
 	char idx[32];
 	int tun = websGetVari(wp, "keyindex", -1);
 	int tunnels = nvram_geti("oet_tunnels");
-
 	int i;
-	for (i = tun + 1; i < tunnels; i++) {
+	for (i = tun + 1; i < tunnels + 1; i++) {
 		copytunvalue("en", i, i - 1);
 		copytunvalue("rem", i, i - 1);
 		copytunvalue("local", i, i - 1);
@@ -1621,18 +1621,19 @@ void del_peer(webs_t wp)
 {
 	int tun = websGetVari(wp, "keyindex", -1);
 	int peer = websGetVari(wp, "peerindex", -1);
+	tunnel_save(wp);
 	char idx[32];
 	int i;
 	sprintf(idx, "oet%d_peers", tun);
 	int peers = nvram_geti(idx);
-	for (i = peer + 1; i < peers; i++)
+	for (i = peer + 1; i < peers; i++) {
 		copypeer(tun, i, i - 1);
 
+	}
 	delpeer(tun, peers - 1);
 	if (peers > 0)
 		peers--;
-	nvram_seti(idx, peer);
-	tunnel_save(wp);
+	nvram_seti(idx, peers);
 }
 
 void gen_wg_psk(webs_t wp)
