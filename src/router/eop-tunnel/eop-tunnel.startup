@@ -3,7 +3,8 @@ nv=/usr/sbin/nvram
 /bin/mkdir -p /tmp/oet/pid
 cd /tmp/oet/pid
 rmmod eoip
-for i in `seq 1 10`
+tunnels=`$nv get oet_tunnels`
+for i in `seq 1 $tunnels`
 do
 	if test -e "${i}.pid" 
 	then 
