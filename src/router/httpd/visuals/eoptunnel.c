@@ -35,7 +35,8 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 {
 
 	int tun;
-	char temp[32];
+	char temp[128];
+	char temp2[128];
 
 	for (tun = 1; tun < 11; tun++) {
 		char oet[32];
@@ -45,7 +46,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		{
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.srv)</script></div>\n");
-			sprintf(temp, "oet%d_en", tun);
+			snprintf(temp, sizeof(temp), "oet%d_en", tun);
 			websWrite(wp,
 				  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d', true)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
 				  temp, (nvram_matchi(temp, 1) ? "checked=\"checked\"" : ""), tun);
@@ -56,7 +57,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		}
 		{
 			websWrite(wp, "<div id=\"idoet%d\">\n", tun);
-			sprintf(temp, "oet%d_proto", tun);
+			snprintf(temp, sizeof(temp), "oet%d_proto", tun);
 			{
 				websWrite(wp, "<div class=\"setting\">\n");
 				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.proto)</script></div>\n");
@@ -77,7 +78,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				{
 					websWrite(wp, "<div class=\"setting\">\n");
 					websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.tunnelID)</script></div>\n");
-					sprintf(temp, "oet%d_id", tun);
+					snprintf(temp, sizeof(temp), "oet%d_id", tun);
 					websWrite(wp, "<input size=\"4\" maxlength=\"3\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,65535,eoip.tunnelID)\" value=\"%s\" />\n", temp, nvram_get(temp));
 					websWrite(wp, "</div>\n");
 				}
@@ -86,7 +87,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 			{
 				websWrite(wp, "<div id=\"idwireguard%d\">\n", tun);
 #ifdef HAVE_WIREGUARD
-				sprintf(temp, "oet%d_port", tun);
+				snprintf(temp, sizeof(temp), "oet%d_port", tun);
 				{
 					websWrite(wp, "<div class=\"setting\">\n");
 					websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_localport)</script></div>\n");
@@ -105,14 +106,14 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				}
 
 				//public key show
-				sprintf(temp, "oet%d_public", tun);
+				snprintf(temp, sizeof(temp), "oet%d_public", tun);
 				{
 					websWrite(wp, "<div class=\"setting\">\n");
 					websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_localkey)</script></div>\n");
 					websWrite(wp, "<input size=\"48\" maxlength=\"48\" name=\"%s\" value=\"%s\" disabled=\"disabled\"/>\n", temp, nvram_safe_get(temp));
 					websWrite(wp, "</div>\n");
 				}
-				sprintf(temp, "oet%d_peers", tun);
+				snprintf(temp, sizeof(temp), "oet%d_peers", tun);
 				nvram_default_get(temp, "1");
 				int peers = nvram_geti(temp);
 				int peer;
@@ -120,22 +121,23 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					{
 						websWrite(wp, "<fieldset>\n");
 						websWrite(wp, "<legend>Peer %d</legend>\n", peer + 1);
-						sprintf(temp, "oet%d_peerport%d", tun, peer);
+						snprintf(temp2, sizeof(temp2), "oet%d_peerport%d", tun, peer);
+						snprintf(temp, sizeof(temp), "oet%d_rem%d", tun, peer);
 						{
 							websWrite(wp, "<div class=\"setting\">\n");
-							websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_peerport)</script></div>\n");
-							websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+							websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_peername)</script></div>\n");
+							websWrite(wp, "<input size=\"20\" maxlength=\"20\" name=\"%s\" value=\"%s\" />:<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n\n",
+								  temp, nvram_safe_get(temp), temp2, nvram_safe_get(temp2));
 							websWrite(wp, "</div>\n");
 						}
+						snprintf(temp, sizeof(temp), "oet%d_aip%d", tun, peer);
 						{
 							websWrite(wp, "<div class=\"setting\">\n");
-							websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_peerip)</script></div>\n");
-							websWrite(wp, "<input type=\"hidden\" name=\"oet%d_rem%d\" value=\"0.0.0.0\"/>\n", tun, peer);
-							sprintf(temp, "oet%d_rem%d", tun, peer);
-							show_ip(wp, NULL, temp, 0, "eoip.remoteIP");
+							websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_allowedips)</script></div>\n");
+							websWrite(wp, "<input size=\"20\" maxlength=\"20\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "0.0.0.0/0"));
 							websWrite(wp, "</div>\n");
 						}
-						sprintf(temp, "oet%d_ka%d", tun, peer);
+						snprintf(temp, sizeof(temp), "oet%d_ka%d", tun, peer);
 						{
 							websWrite(wp, "<div class=\"setting\">\n");
 							websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_ka)</script></div>\n");
@@ -145,14 +147,14 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 						}
 
 						//public key peer input
-						sprintf(temp, "oet%d_peerkey%d", tun, peer);
+						snprintf(temp, sizeof(temp), "oet%d_peerkey%d", tun, peer);
 						{
 							websWrite(wp, "<div class=\"setting\">\n");
 							websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_peerkey)</script></div>\n");
 							websWrite(wp, "<input size=\"48\" maxlength=\"48\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
 							websWrite(wp, "</div>\n");
 						}
-						sprintf(temp, "oet%d_usepsk%d", tun, peer);
+						snprintf(temp, sizeof(temp), "oet%d_usepsk%d", tun, peer);
 						nvram_default_get(temp, "0");
 						{
 							websWrite(wp, "<div class=\"setting\">\n");
@@ -178,7 +180,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 								websWrite(wp, "</div>\n");
 							}
 
-							sprintf(temp, "oet%d_psk%d", tun, peer);
+							snprintf(temp, sizeof(temp), "oet%d_psk%d", tun, peer);
 							{
 								websWrite(wp, "<div class=\"setting\">\n");
 								websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.wireguard_psk)</script></div>\n");
@@ -216,7 +218,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "<div class=\"setting\">\n");
 					websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.localIP)</script></div>\n");
 					websWrite(wp, "<input type=\"hidden\" name=\"oet%d_local\" value=\"0.0.0.0\"/>\n", tun);
-					sprintf(temp, "oet%d_local", tun);
+					snprintf(temp, sizeof(temp), "oet%d_local", tun);
 					show_ip(wp, NULL, temp, 1, "eoip.localIP");
 					websWrite(wp, "</div>\n");
 				}
@@ -224,7 +226,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "<div class=\"setting\">\n");
 					websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.remoteIP)</script></div>\n");
 					websWrite(wp, "<input type=\"hidden\" name=\"oet%d_rem\" value=\"0.0.0.0\"/>\n", tun);
-					sprintf(temp, "oet%d_rem", tun);
+					snprintf(temp, sizeof(temp), "oet%d_rem", tun);
 					show_ip(wp, NULL, temp, 0, "eoip.remoteIP");
 					websWrite(wp, "</div>\n");
 				}
@@ -235,7 +237,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				{
 					websWrite(wp, "<div class=\"setting\">\n");
 					websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(eoip.bridging)</script></div>\n");
-					sprintf(temp, "oet%d_bridged", tun);
+					snprintf(temp, sizeof(temp), "oet%d_bridged", tun);
 					websWrite(wp,
 						  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idbridged%d', false)\" /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
 						  temp, (nvram_matchi(temp, 1) ? "checked=\"checked\"" : ""), tun);
@@ -252,7 +254,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "<div class=\"setting\">\n");
 					websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
 					websWrite(wp, "<input type=\"hidden\" name=\"oet%d_ipaddr\" value=\"0.0.0.0\"/>\n", tun);
-					sprintf(temp, "oet%d_ipaddr", tun);
+					snprintf(temp, sizeof(temp), "oet%d_ipaddr", tun);
 					show_ip(wp, NULL, temp, 0, "share.ip");
 					websWrite(wp, "</div>\n");
 				}
@@ -260,7 +262,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "<div class=\"setting\">\n");
 					websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
 					websWrite(wp, "<input type=\"hidden\" name=\"oet%d_netmask\" value=\"0.0.0.0\"/>\n", tun);
-					sprintf(temp, "oet%d_netmask", tun);
+					snprintf(temp, sizeof(temp), "oet%d_netmask", tun);
 					show_ip(wp, NULL, temp, 1, "share.subnet");
 					websWrite(wp, "</div>\n");
 				}
