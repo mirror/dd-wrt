@@ -31,13 +31,22 @@ do
 			peers=$((`$nv get oet${i}_peers` - 1))
 			for p in `seq 0 $peers`
 			do
+				PSKARG1=
+				PSKARG2=
+				ENDPOINTARG1=
+				ENDPOINTARG2=
 				if [ `$nv get oet${i}_usepsk${p}` -eq 1 ]
 				then
 					$nv get oet${i}_psk${p} > /tmp/wireguard/oet${i}_psk${p}
 					PSKARG1="preshared-key" 
 					PSKARG2="/tmp/wireguard/oet${i}_psk${p}"
 				fi
-				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips $($nv get oet${i}_aip${p}) endpoint $($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p}) &
+				if [ `$nv get oet${i}_endpoint${p}` -eq 1 ]
+				then
+					ENDPOINTARG1="endpoint"
+					ENDPOINTARG2="$($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p})"
+				fi
+				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips $($nv get oet${i}_aip${p}) $ENDPOINTARG1 $ENDPOINTARG2 &
 			done
 			ifconfig oet${i} promisc up 2>&1 > /dev/null
 			ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
