@@ -300,11 +300,11 @@ int mtd_write(const char *path, const char *mtd)
 	case ROUTER_ASROCK_G10:
 		if (nvram_matchi("bootpartition", 0)) {
 			mtd = "linux2";
-			eval("startservice", "bootsecondary");
+			eval("startservice", "bootsecondary", "-f");
 		} else {
-			eval("startservice", "bootprimary");
+			eval("startservice", "bootprimary", "-f");
 		}
-		eval("startservice", "finishupgrade");
+		eval("startservice", "finishupgrade", "-f");
 		break;
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
