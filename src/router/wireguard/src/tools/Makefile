@@ -36,7 +36,7 @@ endif
 endif
 
 CFLAGS ?= -O3
-CFLAGS += -std=gnu11 -D_GNU_SOURCE
+CFLAGS += -std=gnu11 -D_GNU_SOURCE -DNEED_PRINTF
 CFLAGS += -Wall -Wextra
 CFLAGS += -MMD -MP
 CFLAGS += -DRUNSTATEDIR="\"$(RUNSTATEDIR)\""
