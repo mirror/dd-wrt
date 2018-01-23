@@ -118,12 +118,7 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 		_dport = atoi(dpt);
 		_sport = atoi(spt);
 
-		if (!strncmp(proto, "TCP", 3))
-			_proto = "tcp";
-		else if (!strncmp(proto, "UDP", 3))
-			_proto = "udp";
-
-		servp = my_getservbyport(htons(_dport), _proto);
+		servp = my_getservbyport(htons(_dport), proto);
 
 		if (!strcmp(type, "incoming")) {
 			if ((!strncmp(in, "ppp", 3) && !strncmp(in, wan_if, 3))
