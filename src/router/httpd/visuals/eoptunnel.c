@@ -85,8 +85,8 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "</div>\n");
 			}
 			websWrite(wp, "</div>\n");
+			websWrite(wp, "<div id=\"idwireguard%d\">\n", tun);
 			{
-				websWrite(wp, "<div id=\"idwireguard%d\">\n", tun);
 #ifdef HAVE_WIREGUARD
 				snprintf(temp, sizeof(temp), "oet%d_port", tun);
 				websWrite(wp, "<div class=\"setting\">\n");
@@ -229,7 +229,6 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "//]]>\n</script>\n");
 				}
 				websWrite(wp, "</div>\n");
-
 #endif
 			}
 			websWrite(wp, "</div>\n");
