@@ -1,4 +1,9 @@
 ------------------------------------------------------------------------
+r3807 | brainslayer | 2018-01-23 23:08:22 +0100 (Tue, 23 Jan 2018) | 2 lines
+
+Sometimes the hardware will push small packets that trigger a WARN_ON
+in mac80211. Discard them early to avoid this issue.
+------------------------------------------------------------------------
 r3806 | brainslayer | 2018-01-23 21:53:55 +0100 (Tue, 23 Jan 2018) | 1 line
 
 add support for noise floor calibration on ar9003 series
