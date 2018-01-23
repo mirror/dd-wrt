@@ -2098,6 +2098,12 @@ int led_control(int type, int act)
 		break;
 #elif HAVE_XD3200
 	case ROUTER_BOARD_WHRHPGN:
+#ifdef HAVE_SR3200
+		diag_gpio = 0x101;
+		power_gpio = 0x101;
+		wlan0_gpio = 0x113;
+		wlan1_gpio = 0x000;
+#endif
 		break;
 #elif HAVE_E380AC
 	case ROUTER_BOARD_WHRHPGN:
