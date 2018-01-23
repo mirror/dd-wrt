@@ -17,7 +17,11 @@ do
 	then
 		if [ `$nv get oet${i}_proto` -eq 2 ]
 		then
-			$ipt -I INPUT -p udp --dport `$nv get oet${i}_peerport` -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
+			peers=$((`$nv get oet${i}_peers` - 1))
+			for p in `seq 0 $peers`
+			do
+				$ipt -I INPUT -p udp -s `$nv get oet${i}_rem${p}` -j ACCEPT 2>&1 > /dev/null
+			done
 		fi
 		if [ `$nv get oet${i}_proto` -eq 1 ]
 		then
