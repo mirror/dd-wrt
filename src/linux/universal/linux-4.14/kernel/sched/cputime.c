@@ -21,6 +21,7 @@
  * compromise in place of having locks on each irq in account_system_time.
  */
 DEFINE_PER_CPU(struct irqtime, cpu_irqtime);
+DEFINE_PER_CPU(struct irqtime, cpu_ksoftirqd_time);
 
 static int sched_clock_irqtime;
 
@@ -73,6 +74,19 @@ void irqtime_account_irq(struct task_struct *curr)
 		irqtime_account_delta(irqtime, delta, CPUTIME_IRQ);
 	else if (in_serving_softirq() && curr != this_cpu_ksoftirqd())
 		irqtime_account_delta(irqtime, delta, CPUTIME_SOFTIRQ);
+	else if (in_serving_softirq()) {
+		/*
+		 * With the original IRQ time accounting patch, As
+		 * cpu_softirq_time does not account for softirq time when
+		 * ksoftirqd is running, we store it in cpu_ksoftirqd_time.
+		 * We later use this along with cpu_softirq_time to update
+		 * cpustat[CPUTIME_SOFTIRQ]
+		 */
+		if (curr == this_cpu_ksoftirqd())
+			irqtime_account_delta(cpu_ksoftirqd_time, delta, CPUTIME_SOFTIRQ);
+		else
+			irqtime_account_delta(irqtime, delta, CPUTIME_SOFTIRQ);
+	}
 }
 EXPORT_SYMBOL_GPL(irqtime_account_irq);
 
