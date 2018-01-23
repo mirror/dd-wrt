@@ -11,7 +11,13 @@ do
 		$ipt -D INPUT -i oet${i} -j ACCEPT 2>&1 > /dev/null
 		$ipt -D INPUT -p 47 -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
 		$ipt -D INPUT -p 97 -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
-		$ipt -D INPUT -p udp --dport `$nv get oet${i}_peerport` -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
+			for p in `seq 0 $peers`
+			do
+				if [ `$nv get oet${i}_endpoint${p}` -eq 1 ]
+				then
+					$ipt -D INPUT -p udp -s `$nv get oet${i}_rem{p}` -j ACCEPT 2>&1 > /dev/null
+				fi
+			done
 	fi
 	if [ `$nv get oet${i}_en` -eq 1 ]
 	then
@@ -20,7 +26,10 @@ do
 			peers=$((`$nv get oet${i}_peers` - 1))
 			for p in `seq 0 $peers`
 			do
-				$ipt -I INPUT -p udp -s `$nv get oet${i}_rem${p}` -j ACCEPT 2>&1 > /dev/null
+				if [ `$nv get oet${i}_endpoint${p}` -eq 1 ]
+				then
+					$ipt -I INPUT -p udp -s `$nv get oet${i}_rem${p}` -j ACCEPT 2>&1 > /dev/null
+				fi
 			done
 		fi
 		if [ `$nv get oet${i}_proto` -eq 1 ]
