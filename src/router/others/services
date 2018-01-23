@@ -27,8 +27,8 @@ tacacs		49/tcp
 tacacs		49/udp
 re-mail-ck	50/tcp				
 re-mail-ck	50/udp
-domain		53/tcp				
-domain		53/udp
+dns		53/tcp				
+dns		53/udp
 tacacs-ds	65/tcp				
 tacacs-ds	65/udp
 bootps		67/tcp				
