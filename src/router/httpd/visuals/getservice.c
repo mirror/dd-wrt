@@ -149,7 +149,7 @@ struct servent *my_getservbyport(int port, const char *proto)
 	while ((p = my_getservent()) != NULL) {
 		if (p->s_port != port)
 			continue;
-		if (proto == 0 || strcmp(p->s_proto, proto) == 0)
+		if (proto == 0 || strcasecmp(p->s_proto, proto) == 0)
 			break;
 	}
 	if (!serv_stayopen)
