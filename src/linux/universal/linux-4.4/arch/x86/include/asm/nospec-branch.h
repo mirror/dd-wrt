@@ -5,7 +5,7 @@
 
 #include <asm/alternative.h>
 #include <asm/alternative-asm.h>
-#include <asm/cpufeatures.h>
+#include <asm/cpufeature.h>
 
 /*
  * Fill the CPU return stack buffer.
@@ -54,19 +54,6 @@
 #ifdef __ASSEMBLY__
 
 /*
- * This should be used immediately before a retpoline alternative.  It tells
- * objtool where the retpolines are so that it can make sense of the control
- * flow by just reading the original instruction(s) and ignoring the
- * alternatives.
- */
-.macro ANNOTATE_NOSPEC_ALTERNATIVE
-	.Lannotate_\@:
-	.pushsection .discard.nospec
-	.long .Lannotate_\@ - .
-	.popsection
-.endm
-
-/*
  * These are the bare retpoline primitives for indirect jmp and call.
  * Do not use these directly; they only exist to make the ALTERNATIVE
  * invocation below less ugly.
@@ -101,7 +88,6 @@
  */
 .macro JMP_NOSPEC reg:req
 #ifdef CONFIG_RETPOLINE
-	ANNOTATE_NOSPEC_ALTERNATIVE
 	ALTERNATIVE_2 __stringify(jmp *\reg),				\
 		__stringify(RETPOLINE_JMP \reg), X86_FEATURE_RETPOLINE,	\
 		__stringify(lfence; jmp *\reg), X86_FEATURE_RETPOLINE_AMD
@@ -112,7 +98,6 @@
 
 .macro CALL_NOSPEC reg:req
 #ifdef CONFIG_RETPOLINE
-	ANNOTATE_NOSPEC_ALTERNATIVE
 	ALTERNATIVE_2 __stringify(call *\reg),				\
 		__stringify(RETPOLINE_CALL \reg), X86_FEATURE_RETPOLINE,\
 		__stringify(lfence; call *\reg), X86_FEATURE_RETPOLINE_AMD
@@ -127,7 +112,6 @@
   */
 .macro FILL_RETURN_BUFFER reg:req nr:req ftr:req
 #ifdef CONFIG_RETPOLINE
-	ANNOTATE_NOSPEC_ALTERNATIVE
 	ALTERNATIVE "jmp .Lskip_rsb_\@",				\
 		__stringify(__FILL_RETURN_BUFFER(\reg,\nr,%_ASM_SP))	\
 		\ftr
@@ -137,12 +121,6 @@
 
 #else /* __ASSEMBLY__ */
 
-#define ANNOTATE_NOSPEC_ALTERNATIVE				\
-	"999:\n\t"						\
-	".pushsection .discard.nospec\n\t"			\
-	".long 999b - .\n\t"					\
-	".popsection\n\t"
-
 #if defined(CONFIG_X86_64) && defined(RETPOLINE)
 
 /*
@@ -150,7 +128,6 @@
  * the 64-bit one is dependent on RETPOLINE not CONFIG_RETPOLINE.
  */
 # define CALL_NOSPEC						\
-	ANNOTATE_NOSPEC_ALTERNATIVE				\
 	ALTERNATIVE(						\
 	"call *%[thunk_target]\n",				\
 	"call __x86_indirect_thunk_%V[thunk_target]\n",		\
@@ -208,8 +185,7 @@ static inline void vmexit_fill_RSB(void)
 #ifdef CONFIG_RETPOLINE
 	unsigned long loops;
 
-	asm volatile (ANNOTATE_NOSPEC_ALTERNATIVE
-		      ALTERNATIVE("jmp 910f",
+	asm volatile (ALTERNATIVE("jmp 910f",
 				  __stringify(__FILL_RETURN_BUFFER(%0, RSB_CLEAR_LOOPS, %1)),
 				  X86_FEATURE_RETPOLINE)
 		      "910:"
