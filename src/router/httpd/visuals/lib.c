@@ -141,6 +141,8 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, " OTAi DBDC344 (%s)", date);
 		} else if (nvram_match("DD_BOARD", "Yuncore XD3200")) {
 			websWrite(wp, " OTAi 9563-AC (%s)", date);
+		} else if (nvram_match("DD_BOARD", "Yuncore SR3200")) {
+			websWrite(wp, " OTAi 1200-AC (%s)", date);
 		} else if (nvram_match("DD_BOARD", "Alfa AP120C")) {
 			websWrite(wp, "OTAi 600dbdc (%s)", date);
 		} else {

@@ -509,7 +509,9 @@ ifeq ($(CONFIG_ONNET),y)
 	cp onnet/extra/reboot.startup $(INSTALLDIR)/etc/config/
 
   ifeq ($(CONFIG_XD3200),y)
+  ifneq ($(CONFIG_SR3200),y)
 	cp onnet/extra/xd3200.onnet $(INSTALLDIR)/etc/config/
+  endif
   endif
   ifeq ($(CONFIG_AP120C),y)
 	cp onnet/extra/ap120c.onnet $(INSTALLDIR)/etc/config/
