@@ -190,10 +190,6 @@ void start_hotplug_block(void)
 	int i;
 	int c;
 	char part[5];
-	char match[6];
-	char matchmmc[10];
-	char dev[5];
-	char devmmc[9];
 	char devname[32];
 	if (!(devpath = getenv("DEVPATH")))
 		return;
@@ -206,58 +202,47 @@ void start_hotplug_block(void)
 	//sysprintf("echo hotplug_block_block action %s devpath %s >> /tmp/hotplugs", action, devpath);
 	int len;
 	len = strlen(devpath);
-	char *devp = &devpath[len - 4];
-	for (i = 0; i < len; i++) {	// seek for last occurence
-		if (devpath[i] == '/')
-			devp = &devpath[i + 1];
-	}
-	strcpy(part, devp);
-	strcpy(dev, devp);
+	char *devp = strrchr(devpath, '/');
+	if (!devp)
+		return;
+	strcpy(part, devp + 1);
+	optimize_block_device(devp + 1);
 
-	char *slash = strrchr(devpath, '/');
-	optimize_block_device(slash + 1);
+	if (strncmp(part, "sd", 2) && strncmp(part, "mmc", 3) && strncmp(part, "hd", 2), && strncmp(part, "sr" ,2))
+		return;
 
-	for (c = 'a'; c < 'f'; c++) {	//support sda - sdf
+	if (strlen(part) == 4 || strlen(part) == 7) {	// example: sr0, sda, hda or mmcblock0
 
-		sprintf(dev, "sd%c", c);
-		sprintf(devmmc, "mmcblk%c", c);
-
-		if (strcmp(part, dev) == 0 || strcmp(part, devmmc) == 0)	//
-			if (!strcmp(action, "add")) {
-				usb_stop_services();
-				sleep(3);
-			}
-		if (strcmp(part, dev) == 0 || strcmp(part, devmmc) == 0) {
-			sysprintf("/usr/sbin/disktype /dev/%s", part);
-			sprintf(devname, "/dev/%s", part);
-			if (!strcmp(action, "add"))
-				usb_add_ufd(NULL, 0, devname, 1);
-			if (!strcmp(action, "remove"))
-				usb_unmount(devname);
+		if (!strcmp(action, "add")) {
+			usb_stop_services();
+			sleep(3);
 		}
-		for (i = 1; i < 7; i++) {	//support up to 6 partitions             
-			sprintf(match, "sd%c%d", c, i);
-			sprintf(matchmmc, "mmcblk%c%d", c, i);
-			if (strcmp(part, match) == 0 || strcmp(part, matchmmc) == 0) {
-				sprintf(devname, "/dev/%s", part);
-				//devices may come in unordered so lets do a little trick
-				sysprintf("echo  \"<b>Partition %s:</b>\" >> /tmp/disk/%s", part, part);
-				sysprintf("/usr/sbin/disktype %s >> /tmp/disk/%s", devname, part);
-				if (!strcmp(action, "add"))
-					usb_add_ufd(NULL, 0, devname, 1);
-				if (!strcmp(action, "remove"))
-					usb_unmount(devname);
 
-			}
+		sysprintf("/usr/sbin/disktype /dev/%s", part);
+		sprintf(devname, "/dev/%s", part);
+		if (!strcmp(action, "add"))
+			usb_add_ufd(NULL, 0, devname, 1);
+		if (!strcmp(action, "remove"))
+			usb_unmount(devname);
+
+		if (!strcmp(action, "add")) {
+			//runs user specified script
+			run_on_mount();
+
+			//finally start services again after mounting all partitions for this drive
+			usb_start_services();
 		}
-		if (strcmp(part, dev) == 0 || strcmp(part, devmmc) == 0)	//
-			if (!strcmp(action, "add")) {
-				//runs user specified script
-				run_on_mount();
 
-				//finally start services again after mounting all partitions for this drive
-				usb_start_services();
-			}
+	} else {
+		sprintf(devname, "/dev/%s", part);
+		//devices may come in unordered so lets do a little trick
+		sysprintf("echo  \"<b>Partition %s:</b>\" >> /tmp/disk/%s", part, part);
+		sysprintf("/usr/sbin/disktype %s >> /tmp/disk/%s", devname, part);
+		if (!strcmp(action, "add"))
+			usb_add_ufd(NULL, 0, devname, 1);
+		if (!strcmp(action, "remove"))
+			usb_unmount(devname);
+
 	}
 
 	return;
