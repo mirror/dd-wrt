@@ -263,6 +263,8 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	 .gpio = 1,
 #ifdef CONFIG_WPE72
 	 .active_low = 1,
+#elif CONFIG_XD3200
+	 .active_low = 1,
 #elif CONFIG_ERC
 	 .active_low = 1,
 #else
@@ -418,6 +420,8 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	 .name = "generic_19",
 	 .gpio = 19,
 #if defined(CONFIG_WR841V8) || defined(CONFIG_DAP3310)
+	 .active_low = 1,
+#elif defined(CONFIG_XD3200)
 	 .active_low = 1,
 #else
 	 .active_low = 0,
