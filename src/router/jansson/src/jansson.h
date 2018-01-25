@@ -302,7 +302,7 @@ json_t *json_vpack_ex(json_error_t *error, size_t flags, const char *fmt, va_lis
 #define JSON_VALIDATE_ONLY  0x1
 #define JSON_STRICT         0x2
 
-#define json_unpack dd_unjson_pack
+#define json_unpack dd_unjson_unpack
 #define json_unpack_ex dd_json_unpack_ex
 #define json_vunpack_ex dd_json_vunpack_ex
 
@@ -340,8 +340,8 @@ typedef size_t (*json_load_callback_t)(void *buffer, size_t buflen, void *data);
 #define json_loadb dd_json_loadb
 #define json_loadf dd_json_loadf
 #define json_loadfd dd_json_loadfd
-#define json_load_file dd_json_loadfile
-#define json_load_callback dd_json_loadcallback
+#define json_load_file dd_json_load_file
+#define json_load_callback dd_json_load_callback
 
 json_t *json_loads(const char *input, size_t flags, json_error_t *error);
 json_t *json_loadb(const char *buffer, size_t buflen, size_t flags, json_error_t *error);
