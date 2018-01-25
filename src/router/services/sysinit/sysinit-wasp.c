@@ -157,8 +157,13 @@ void start_sysinit(void)
 #elif defined (HAVE_XD3200)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+#ifndef HAVE_SR3200
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
+#else
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 2 3 4");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 5");
+#endif
 #elif defined (HAVE_E355AC)
 #elif defined (HAVE_WR810N)
 #elif defined (HAVE_WR615N)
@@ -449,6 +454,9 @@ void start_sysinit(void)
 #elif  HAVE_AP120C
 	setWirelessLed(0, 0);
 #elif  HAVE_XD3200
+#ifdef HAVE_SR3200
+	setWirelessLed(0, 19);
+#endif
 #elif  HAVE_E380AC
 	setWirelessLed(0, 0);
 	setWirelessLed(1, 2);
