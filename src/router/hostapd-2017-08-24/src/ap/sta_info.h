@@ -248,6 +248,7 @@ struct sta_info {
 	u8 *owe_pmk;
 	struct crypto_ecdh *owe_ecdh;
 #endif /* CONFIG_OWE */
+	int sig_drop_strikes;  /* Number of times signal was below threshold. */
 };
 
 
