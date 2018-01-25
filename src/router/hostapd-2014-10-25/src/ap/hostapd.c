@@ -680,6 +680,82 @@ hostapd_das_disconnect(void *ctx, struct radius_das_attrs *attr)
 #endif /* CONFIG_NO_RADIUS */
 
 
+
+
+
+static void
+hostapd_bss_signal_check(void *eloop_data, void *user_ctx)
+/* This is called by an eloop timeout.  All stations in the list are checked
+ * for signal level.  This requires calling the driver, since hostapd doesn't
+ * see packets from a station once it is fully authorized.
+ * Stations with signal level below the threshold will be dropped.
+ * Cases where the last RSSI is significantly less than the average are usually
+ * a bad reading and should not lead to a drop.
+ */
+ {   struct hostapd_data *hapd = user_ctx;
+	 struct hostap_sta_driver_data data;
+	 struct sta_info *sta, *sta_next;
+	 u8 addr[ETH_ALEN];  // Buffer the address for logging purposes, in case it is destroyed while dropping
+	 int strikes;        //    same with strike count on this station.
+	 int num_sta = 0;
+	 int num_drop = 0;
+	 int signal_inst;
+	 int signal_avg;
+	
+	 
+	 for (sta = hapd->sta_list; sta; sta = sta_next) {
+		 sta_next = sta->next;
+		 memcpy(addr, sta->addr, ETH_ALEN);
+		 if (!hostapd_drv_read_sta_data(hapd, &data, addr)) { 
+			signal_inst = data.last_rssi;
+			signal_avg = data.last_ack_rssi;
+			num_sta++;
+			strikes = sta->sig_drop_strikes;
+			if (signal_inst > signal_avg) 
+				signal_avg = signal_inst;
+			if (signal_inst > (signal_avg - 5)) {  // ignore unusually low instantaneous signal.
+				if (signal_avg < hapd->conf->signal_stay_min) { // signal bad.
+					strikes = ++sta->sig_drop_strikes;
+				    if (strikes >= hapd->conf->signal_strikes) {  // Struck out--, drop.
+						ap_sta_deauthenticate(hapd, sta, hapd->conf->signal_drop_reason); 
+						num_drop++;
+					}
+				}
+				else {
+					sta->sig_drop_strikes = 0;  // signal OK, reset the strike counter.
+					strikes = 0;
+					}				
+			}
+			hostapd_logger(hapd, addr, HOSTAPD_MODULE_IAPP, HOSTAPD_LEVEL_DEBUG, "%i %i (%i)",
+		        data.last_rssi, data.last_ack_rssi, strikes);
+		 }
+	 }
+	 hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IAPP, HOSTAPD_LEVEL_INFO, "signal poll: %i STAs, %i dropped", num_sta, num_drop); 
+	 
+	 eloop_register_timeout(hapd->conf->signal_poll_time, 0, hostapd_bss_signal_check, eloop_data, hapd); 
+ }
+
+int hostapd_signal_handle_event(struct hostapd_data *hapd, struct hostapd_frame_info *fi, int type, const u8 *addr)
+{
+	struct ubus_banned_client *ban;
+	const char *types[3] = {
+		[PROBE_REQ] = "probe",
+		[AUTH_REQ] = "auth",
+		[ASSOC_REQ] = "assoc",
+	};
+    
+		
+	if (type < ARRAY_SIZE(types) && fi && type != PROBE_REQ) {  // don't clutter the log with probes.
+    		hostapd_logger(hapd, addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_INFO, "%s request, signal %i %s", 
+            		type, fi->ssi_signal,
+            		(fi->ssi_signal >= hapd->conf->signal_auth_min) ? "(Accepted)" : "(DENIED)");
+// reject weak signals.   
+		if (fi->ssi_signal < hapd->conf->signal_auth_min) 
+    			return -2;   
+	}
+	return 0;
+}
+
 /**
  * hostapd_setup_bss - Per-BSS setup (initialization)
  * @hapd: Pointer to BSS data
@@ -911,6 +987,9 @@ static int hostapd_setup_bss(struct hostapd_data *hapd, int first)
 
 	hostapd_ubus_add_bss(hapd);
 
+	/* This should run after the config file has been read, I hope. */
+	if (hapd->conf->signal_stay_min > -128)
+	   eloop_register_timeout(3, 0, hostapd_bss_signal_check, NULL, hapd);  // Start up the poll timer.
 	return 0;
 }
 

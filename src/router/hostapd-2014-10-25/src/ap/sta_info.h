@@ -151,6 +151,7 @@ struct sta_info {
 #endif /* CONFIG_SAE */
 
 	u32 session_timeout; /* valid only if session_timeout_set == 1 */
+	int sig_drop_strikes;  /* Number of times signal was below threshold. */
 };
 
 
