@@ -204,6 +204,7 @@ struct sta_info {
 			      * received, starting from the Length field */
 
 	u8 rrm_enabled_capa[5];
+	int sig_drop_strikes;  /* Number of times signal was below threshold. */
 };
 
 
