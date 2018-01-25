@@ -1843,10 +1843,8 @@ static void parse_trigger_out(char *wordlist)
 			save2file("-A trigger_out -p %s -m %s --dport %s:%s "
 				  "-j TRIGGER --trigger-type out --trigger-proto %s --trigger-match %s-%s --trigger-relate %s-%s", proto, proto, wport0, wport1, proto, wport0, wport1, lport0, lport1);
 		} else if (!strcmp(proto, "both")) {
-			save2file("-A trigger_out -p tcp --dport %s:%s "
-				  "-j TRIGGER --trigger-type out --trigger-proto all --trigger-match %s-%s --trigger-relate %s-%s", wport0, wport1, wport0, wport1, lport0, lport1);
-			save2file("-A trigger_out -p udp --dport %s:%s "
-				  "-j TRIGGER --trigger-type out --trigger-proto all --trigger-match %s-%s --trigger-relate %s-%s", wport0, wport1, wport0, wport1, lport0, lport1);
+			save2file("-A trigger_out -p tcp --dport %s:%s " "-j TRIGGER --trigger-type out --trigger-proto all --trigger-match %s-%s --trigger-relate %s-%s", wport0, wport1, wport0, wport1, lport0, lport1);
+			save2file("-A trigger_out -p udp --dport %s:%s " "-j TRIGGER --trigger-type out --trigger-proto all --trigger-match %s-%s --trigger-relate %s-%s", wport0, wport1, wport0, wport1, lport0, lport1);
 		}
 	}
 }
@@ -1881,7 +1879,7 @@ static void add_bridges(char *chain, int forward)
 				eval("ifconfig", tag, "up");
 
 			}
-			if (forward && wan && strlen(wan) > 0 )
+			if (forward && wan && strlen(wan) > 0)
 				save2file("-A FORWARD -i %s -o %s -j %s", tag, wan, log_accept);
 			else {
 				if (!strcmp(chain, "OUTPUT"))
@@ -2472,7 +2470,7 @@ static void filter_forward(void)
  */
 static void mangle_table(void)
 {
-//	save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
+//      save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
 
 	if (strcmp(get_wan_face(), "wwan0")) {
 
@@ -2505,7 +2503,7 @@ static void mangle_table(void)
 	 */
 	// save2file("-A PREROUTING -i %s -m mark ! --mark 0 -j MARK --set-mark
 	// %d\n", lanface, MARK_LAN2WAN);
-//	save2file("COMMIT\n");
+//      save2file("COMMIT\n");
 }
 
 /*
