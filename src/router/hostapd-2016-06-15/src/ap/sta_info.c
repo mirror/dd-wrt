@@ -659,6 +659,7 @@ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr)
 	ap_sta_remove_in_other_bss(hapd, sta);
 	sta->last_seq_ctrl = WLAN_INVALID_MGMT_SEQ;
 	dl_list_init(&sta->ip6addr);
+	sta->sig_drop_strikes = 0;
 
 	return sta;
 }

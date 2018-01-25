@@ -1156,6 +1156,13 @@ static void handle_auth(struct hostapd_data *hapd,
 		goto fail;
 	}
 
+	if (hostapd_signal_handle_event(hapd, fi ,AUTH_REQ, mgmt->sa)) {
+		wpa_printf(MSG_DEBUG, "Station " MACSTR " rejected by signal handler.\n",
+			MAC2STR(mgmt->sa));
+		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
+		goto fail;
+	}
+
 	if (hostapd_ubus_handle_event(hapd, &req)) {
 		wpa_printf(MSG_DEBUG, "Station " MACSTR " rejected by ubus handler.\n",
 		       MAC2STR(mgmt->sa));
@@ -2296,6 +2303,13 @@ static void handle_assoc(struct hostapd_data *hapd,
 		resp = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;
 
 	reply_res = send_assoc_resp(hapd, sta, resp, reassoc, pos, left);
+
+	if (hostapd_signal_handle_event(hapd, fi, ASSOC_REQ, mgmt->sa)) {
+		wpa_printf(MSG_DEBUG, "Station " MACSTR " assoc rejected by signal handler.\n",
+		       MAC2STR(mgmt->sa));
+		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
+		goto fail;
+	}
 
 	/*
 	 * Remove the station in case tranmission of a success response fails
