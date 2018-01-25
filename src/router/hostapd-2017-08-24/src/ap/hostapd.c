@@ -971,6 +971,7 @@ hostapd_bss_signal_check(void *eloop_data, void *user_ctx)
 				if (signal_avg < hapd->conf->signal_stay_min) { // signal bad.
 					strikes = ++sta->sig_drop_strikes;
 				    if (strikes >= hapd->conf->signal_strikes) {  // Struck out--, drop.
+    						hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_INFO,"kick out station due low signal %s%s",sta->identity?"User:":"", sta->identity?sta->identity:"");
 						ap_sta_deauthenticate(hapd, sta, hapd->conf->signal_drop_reason); 
 						num_drop++;
 					}
@@ -1002,7 +1003,7 @@ int hostapd_signal_handle_event(struct hostapd_data *hapd, struct hostapd_frame_
 	if (type < ARRAY_SIZE(types) && fi && type != PROBE_REQ) {  // don't clutter the log with probes.
     		hostapd_logger(hapd, addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_INFO, "%s request, signal %i %s", 
             		type, fi->ssi_signal,
-            		(fi->ssi_signal >= hapd->conf->signal_auth_min) ? "(Accepted)" : "(DENIED)");
+            		(fi->ssi_signal >= hapd->conf->signal_auth_min) ? "(Accepted)" : "(DENIED) (signal too weak for authentication)");
 // reject weak signals.   
 		if (fi->ssi_signal < hapd->conf->signal_auth_min) 
     			return -2;   
