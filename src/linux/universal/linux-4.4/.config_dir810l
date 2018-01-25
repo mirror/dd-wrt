@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.4.112 Kernel Configuration
+# Linux/mips 4.4.113 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -248,6 +248,7 @@ CONFIG_GENERIC_SCHED_CLOCK=y
 # CONFIG_CRASHLOG is not set
 # CONFIG_BLK_DEV_INITRD is not set
 # CONFIG_CC_OPTIMIZE_FOR_SIZE is not set
+CONFIG_OPTIMIZE_INLINING=y
 CONFIG_SYSCTL=y
 CONFIG_ANON_INODES=y
 CONFIG_SYSCTL_EXCEPTION_TRACE=y

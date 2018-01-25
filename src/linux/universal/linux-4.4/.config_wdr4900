@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 4.4.112 Kernel Configuration
+# Linux/powerpc 4.4.113 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -149,6 +149,7 @@ CONFIG_PID_NS=y
 # CONFIG_CRASHLOG is not set
 # CONFIG_BLK_DEV_INITRD is not set
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+CONFIG_OPTIMIZE_INLINING=y
 CONFIG_SYSCTL=y
 CONFIG_ANON_INODES=y
 CONFIG_SYSCTL_EXCEPTION_TRACE=y
