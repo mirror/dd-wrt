@@ -840,9 +840,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 /* low signal drop */
 	char signal[32];
 	sprintf(signal, "%s_connect", prefix);
-	fprintf(fp, "signal_connect=%s\n", nvram_default_get(signal, "-127"));
+	fprintf(fp, "signal_connect=%s\n", nvram_default_get(signal, "-128"));
 	sprintf(signal, "%s_stay", prefix);
-	fprintf(fp, "signal_stay%s\n", nvram_default_get(signal, "-127"));
+	fprintf(fp, "signal_stay%s\n", nvram_default_get(signal, "-128"));
 	sprintf(signal, "%s_poll_time", prefix);
 	fprintf(fp, "signal_poll_time=%s\n", nvram_default_get(signal, "10"));
 	sprintf(signal, "%s_strikes", prefix);
