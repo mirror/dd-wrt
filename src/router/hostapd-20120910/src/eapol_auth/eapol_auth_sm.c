@@ -297,8 +297,8 @@ SM_STATE(AUTH_PAE, AUTHENTICATED)
 	else if (sm->flags & EAPOL_SM_FROM_PMKSA_CACHE)
 		extra = " (PMKSA cache)";
 	eapol_auth_vlogger(sm->eapol, sm->addr, EAPOL_LOGGER_INFO,
-			   "%s%s authenticated - EAP type: %d (%s)%s",
-			   sm->identity ? "User:": "", sm->identity ? sm->identity : "", sm->eap_type_authsrv,
+			   "authenticated - EAP type: %d (%s)%s",
+			   sm->eap_type_authsrv,
 			   eap_server_get_name(0, sm->eap_type_authsrv),
 			   extra);
 	sm->eapol->cb.finished(sm->eapol->conf.ctx, sm->sta, 1,
