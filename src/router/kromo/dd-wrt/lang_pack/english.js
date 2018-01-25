@@ -2785,6 +2785,12 @@ wl_basic.tbqam="TurboQAM";
 wl_basic.upper="upper";
 wl_basic.lower="lower";
 
+wl_basic.droplowsignal="Drop Clients with Low Signal";
+wl_basic.connect="Minimum Signal for authenticate"; 
+wl_basic.stay="Minimum Signal for connection"; 
+wl_basic.poll_time="Poll Time for signal lookup";
+wl_basic.strikes="Amount of allowed low signals";
+
 //help container
 var hwl_basic=new Object();
 hwl_basic.right2="Attention: It is recommended that you press <em>Apply Settings</em> after you change a value in order to update the fileds with the corresponding parameters.";

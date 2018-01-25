@@ -2352,6 +2352,12 @@ wl_basic.advanced_options="Erweiterte Optionen";
 wl_basic.rate_control="Datenratensteuerung";
 wl_basic.ap83_vap_note="Die Verwendung von mehr als drei virtuellen Schnittstellen kann zu Geschwindigkeitseinbusen bei einigen Ger&auml;ten f&uuml;hren (nur auf den zus&auml;tzlichen Schnittstellen).";
 
+wl_basic.droplowsignal="Clients mit niedrigem Signal verwerfen";
+wl_basic.connect="Minimum Signal f&uuml;r Authentifizierung"; 
+wl_basic.stay="Minimum Signal f&uuml;r Verbindung"; 
+wl_basic.poll_time="Interval f&uuml;r Analyse";
+wl_basic.strikes="Anzahl erlaubter niedriger Signale";
+
 //help container
 
 hwl_basic.right2="Wenn Sie G-Clients komplett ausschlie&szlig;en wollen, sollten Sie <em>Nur-B</em> w&auml;hlen. Wenn Sie den WLAN Zugriff abschalten wollen, w&auml;hlen Sie <em>abschalten</em>.";
