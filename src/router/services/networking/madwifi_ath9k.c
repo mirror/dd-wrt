@@ -837,16 +837,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	sprintf(bcn, "%s_bcn", prefix);
 	fprintf(fp, "beacon_int=%s\n", nvram_default_get(bcn, "100"));
 	fprintf(fp, "\n");
-	/* low signal drop */
-	char signal[32];
-	sprintf(signal, "%s_connect", prefix);
-	fprintf(fp, "signal_connect=%s\n", nvram_default_get(signal, "-128"));
-	sprintf(signal, "%s_stay", prefix);
-	fprintf(fp, "signal_stay%s\n", nvram_default_get(signal, "-128"));
-	sprintf(signal, "%s_poll_time", prefix);
-	fprintf(fp, "signal_poll_time=%s\n", nvram_default_get(signal, "10"));
-	sprintf(signal, "%s_strikes", prefix);
-	fprintf(fp, "signal_strikes=%s\n", nvram_default_get(signal, "3"));
 }
 
 static void setMacFilter(FILE * fp, char *iface)
@@ -1196,6 +1186,17 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		}
 		// fprintf (fp, "jumpstart_p1=1\n");
 	}
+	/* low signal drop */
+	char signal[32];
+	sprintf(signal, "%s_connect", ifname);
+	fprintf(fp, "signal_connect=%s\n", nvram_default_get(signal, "-128"));
+	sprintf(signal, "%s_stay", ifname);
+	fprintf(fp, "signal_stay%s\n", nvram_default_get(signal, "-128"));
+	sprintf(signal, "%s_poll_time", ifname);
+	fprintf(fp, "signal_poll_time=%s\n", nvram_default_get(signal, "10"));
+	sprintf(signal, "%s_strikes", ifname);
+	fprintf(fp, "signal_strikes=%s\n", nvram_default_get(signal, "3"));
+
 #ifdef HAVE_HOTSPOT20
 	setupHS20(fp, ifname);
 #endif
