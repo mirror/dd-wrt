@@ -135,6 +135,7 @@ struct sta_info {
 #ifdef CONFIG_SAE
 	struct sae_data *sae;
 #endif /* CONFIG_SAE */
+	int sig_drop_strikes;  /* Number of times signal was below threshold. */
 };
 
 
