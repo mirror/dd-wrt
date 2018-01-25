@@ -312,12 +312,13 @@ static u8 * hostapd_gen_probe_resp(struct hostapd_data *hapd,
 
 void handle_probe_req(struct hostapd_data *hapd,
 		      const struct ieee80211_mgmt *mgmt, size_t len,
-		      int ssi_signal)
+		      struct hostapd_frame_info *fi)
 {
 	u8 *resp;
 	struct ieee802_11_elems elems;
 	const u8 *ie;
 	size_t ie_len;
+	int ssi_signal = fi->ssi_signal;
 	struct sta_info *sta = NULL;
 	size_t i, resp_len;
 	int noack;
@@ -446,6 +447,12 @@ void handle_probe_req(struct hostapd_data *hapd,
 		}
 	}
 #endif /* CONFIG_INTERWORKING */
+
+	if (hostapd_signal_handle_event(hapd, fi, PROBE_REQ, mgmt->sa)) {
+		wpa_printf(MSG_DEBUG, "Probe request for " MACSTR " rejected by signal handler.\n",
+		       MAC2STR(mgmt->sa));
+		return;
+	}
 
 	/* TODO: verify that supp_rates contains at least one matching rate
 	 * with AP configuration */
