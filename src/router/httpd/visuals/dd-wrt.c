@@ -2442,7 +2442,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 
 #ifdef HAVE_ATH9K
-		if (is_ath9k(var)) {
+		if (is_ath9k(var) && (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))) {
 			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
 			char signal[32];
 			sprintf(signal, "%s_connect", var);
@@ -3494,7 +3494,7 @@ if (!is_ath9k(var)) {
 }
 #endif
 #ifdef HAVE_ATH9K
-if (is_ath9k(prefix)) {
+if (is_ath9k(prefix) && (nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix))) {
 	char signal[32];
 	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
 	sprintf(signal, "%s_connect", prefix);
@@ -4320,7 +4320,7 @@ if (!strcmp(prefix, "wl2"))
 	}
 #endif
 #ifdef HAVE_ATH9K
-	if (is_ath9k(prefix)) {
+	if (is_ath9k(prefix) && (nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix))) {
 		char signal[32];
 		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
 		sprintf(signal, "%s_connect", prefix);
