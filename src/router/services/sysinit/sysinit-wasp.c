@@ -453,10 +453,8 @@ void start_sysinit(void)
 	setWirelessLed(0, 0);
 #elif  HAVE_AP120C
 	setWirelessLed(0, 0);
-#elif  HAVE_XD3200
-#ifdef HAVE_SR3200
+#elif HAVE_SR3200
 	setWirelessLed(0, 19);
-#endif
 #elif  HAVE_E380AC
 	setWirelessLed(0, 0);
 	setWirelessLed(1, 2);
