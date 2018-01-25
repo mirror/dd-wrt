@@ -67,10 +67,6 @@ config HUGETLB_SUPER_PAGES
 config RWSEM_GENERIC_SPINLOCK
 	def_bool y
 
-# We only support gcc 4.4 and above, so this should work.
-config ARCH_SUPPORTS_OPTIMIZED_INLINING
-	def_bool y
-
 config ARCH_PHYS_ADDR_T_64BIT
 	def_bool y
 
