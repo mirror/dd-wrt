@@ -650,6 +650,13 @@ static void handle_auth(struct hostapd_data *hapd,
 		goto fail;
 	}
 
+	if (hostapd_signal_handle_event(hapd, fi ,AUTH_REQ, mgmt->sa)) {
+		wpa_printf(MSG_DEBUG, "Station " MACSTR " rejected by signal handler.\n",
+			MAC2STR(mgmt->sa));
+		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
+		goto fail;
+	}
+
 	if (hostapd_ubus_handle_event(hapd, &req)) {
 		wpa_printf(MSG_DEBUG, "Station " MACSTR " rejected by ubus handler.\n",
 		       MAC2STR(mgmt->sa));
@@ -2000,6 +2007,13 @@ static void handle_assoc_cb(struct hostapd_data *hapd,
 #ifdef CONFIG_IEEE80211W
 	sta->sa_query_timed_out = 0;
 #endif /* CONFIG_IEEE80211W */
+
+	if (hostapd_signal_handle_event(hapd, fi, ASSOC_REQ, mgmt->sa)) {
+		wpa_printf(MSG_DEBUG, "Station " MACSTR " assoc rejected by signal handler.\n",
+		       MAC2STR(mgmt->sa));
+		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
+		goto fail;
+	}
 
 	/*
 	 * Remove the STA entry in order to make sure the STA PS state gets
