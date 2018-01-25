@@ -5436,7 +5436,7 @@ void start_hotplug_net(void)
 #else
 	int cpucount = 1
 #endif
-	if (!strcmp(action, "add")) {
+	    if (!strcmp(action, "add")) {
 		int cpumask = 0;
 		if (cpucount > 1 && nvram_matchi("wshaper_enable", 0)) {
 			cpumask = (1 << cpucount) - 1;
@@ -5458,7 +5458,6 @@ void start_hotplug_net(void)
 		writenet("queues/tx-6/xps_cpus", cpumask, interface);
 		writenet("queues/tx-7/xps_cpus", cpumask, interface);
 	}
-
 #ifdef HAVE_MADWIFI
 	// sysprintf("echo \"Hotplug %s=%s\" > /dev/console\n",action,interface);
 	if (strncmp(interface, "ath", 3))
@@ -5472,7 +5471,7 @@ void start_hotplug_net(void)
 
 	if (!index)
 		return;
-	strncpy(ifname, index + 1,sizeof(ifname)-1);
+	strncpy(ifname, index + 1, sizeof(ifname) - 1);
 	if (strncmp(ifname, "sta", 3)) {
 		return;
 	}

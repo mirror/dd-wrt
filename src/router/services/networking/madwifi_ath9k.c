@@ -837,7 +837,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	sprintf(bcn, "%s_bcn", prefix);
 	fprintf(fp, "beacon_int=%s\n", nvram_default_get(bcn, "100"));
 	fprintf(fp, "\n");
-/* low signal drop */
+	/* low signal drop */
 	char signal[32];
 	sprintf(signal, "%s_connect", prefix);
 	fprintf(fp, "signal_connect=%s\n", nvram_default_get(signal, "-128"));
