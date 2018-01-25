@@ -2590,6 +2590,12 @@ wl_adv.table1="EDCA AP Parameters (AP to Client)";
 wl_adv.txchainmask="TX Antenna Chains";
 wl_adv.rxchainmask="RX Antenna Chains";
 
+wl_adv.droplowsignal="Drop Clients with Low Signal";
+wl_adv.connect="Minimum Signal for authenticate"; 
+wl_adv.stay="Minimum Signal for connection"; 
+wl_adv.poll_time="Poll Time for signal lookup";
+wl_adv.strikes="Amount of allowed low signals";
+
 
 
 wl_adv.col1="CWmin";
@@ -2785,11 +2791,6 @@ wl_basic.tbqam="TurboQAM";
 wl_basic.upper="upper";
 wl_basic.lower="lower";
 
-wl_basic.droplowsignal="Drop Clients with Low Signal";
-wl_basic.connect="Minimum Signal for authenticate"; 
-wl_basic.stay="Minimum Signal for connection"; 
-wl_basic.poll_time="Poll Time for signal lookup";
-wl_basic.strikes="Amount of allowed low signals";
 
 //help container
 var hwl_basic=new Object();
