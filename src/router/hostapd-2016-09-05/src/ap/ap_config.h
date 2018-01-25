@@ -300,6 +300,12 @@ struct hostapd_bss_config {
 	int wds_sta;
 	int isolate;
 	int start_disabled;
+	int	signal_auth_min;    /* Minimum signal a STA needs to authenticate */
+	int signal_stay_min;    /* Minimum signal needed to stay connected. */
+	int signal_poll_time;   /* Time in seconds between checks of connected STAs */
+	int signal_strikes;     /* Number of consecutive times signal can be low
+								before dropping the STA.  */
+	int signal_drop_reason; /* IEEE802.11 reason code transmitted when dropping a STA.  */
 
 	int auth_algs; /* bitfield of allowed IEEE 802.11 authentication
 			* algorithms, WPA_AUTH_ALG_{OPEN,SHARED,LEAP} */
