@@ -2247,6 +2247,12 @@ wl_adv.table2="EDCA STA Parameter (Client nach AP)";
 wl_adv.lng="Lang"; 					//************* don't use .long! *************
 wl_adv.shrt="Kurz"; 				//************* don't use .short! **************
 
+wl_adv.droplowsignal="Clients mit niedrigem Signal verwerfen";
+wl_adv.connect="Minimum Signal f&uuml;r Authentifizierung"; 
+wl_adv.stay="Minimum Signal f&uuml;r Verbindung"; 
+wl_adv.poll_time="Interval f&uuml;r Analyse";
+wl_adv.strikes="Anzahl erlaubter niedriger Signale";
+
 //help container
 
 hwl_adv.right2="Sie k&ouml;nnen Auto oder Shared Key w&auml;hlen. Die Shared Key Authentifizierung ist wesentlich sicherer, allerdings muss dazu jedes Ger&auml;t in Ihrem Netzwerk diesen Betriebsmodus unterst&uuml;tzen.";
@@ -2352,11 +2358,6 @@ wl_basic.advanced_options="Erweiterte Optionen";
 wl_basic.rate_control="Datenratensteuerung";
 wl_basic.ap83_vap_note="Die Verwendung von mehr als drei virtuellen Schnittstellen kann zu Geschwindigkeitseinbusen bei einigen Ger&auml;ten f&uuml;hren (nur auf den zus&auml;tzlichen Schnittstellen).";
 
-wl_basic.droplowsignal="Clients mit niedrigem Signal verwerfen";
-wl_basic.connect="Minimum Signal f&uuml;r Authentifizierung"; 
-wl_basic.stay="Minimum Signal f&uuml;r Verbindung"; 
-wl_basic.poll_time="Interval f&uuml;r Analyse";
-wl_basic.strikes="Anzahl erlaubter niedriger Signale";
 
 //help container
 
