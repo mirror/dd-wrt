@@ -245,13 +245,15 @@ static void detect_wireless_devices(void)
 				insmod("ath5k");
 			}
 #endif
-			insmod("ath9k_hw");
-			insmod("ath9k_common");
+			if (nvram_invmatch("no_ath9k", "1")) {
+				insmod("ath9k_hw");
+				insmod("ath9k_common");
 #ifdef HAVE_WZRG450
-			system("insmod ath9k blink=1");
+				system("insmod ath9k blink=1");
 #else
-			insmod("ath9k");
+				insmod("ath9k");
 #endif
+			}
 			delete_ath9k_devices(NULL);
 		}
 	} else {
