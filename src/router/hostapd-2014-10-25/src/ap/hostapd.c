@@ -731,7 +731,7 @@ hostapd_bss_signal_check(void *eloop_data, void *user_ctx)
 		        data.last_rssi, data.last_ack_rssi, strikes);
 		 }
 	 }
-	 hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IAPP, HOSTAPD_LEVEL_INFO, "signal poll: %i STAs, %i dropped", num_sta, num_drop); 
+//	 hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IAPP, HOSTAPD_LEVEL_INFO, "signal poll: %i STAs, %i dropped", num_sta, num_drop); 
 	 
 	 eloop_register_timeout(hapd->conf->signal_poll_time, 0, hostapd_bss_signal_check, eloop_data, hapd); 
  }
