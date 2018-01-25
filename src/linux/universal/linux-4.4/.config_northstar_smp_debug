@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.4.112 Kernel Configuration
+# Linux/arm 4.4.113 Kernel Configuration
 #
 CONFIG_ARM=y
 # CONFIG_ARM_HWCC_FLAG is not set
@@ -117,6 +117,7 @@ CONFIG_GENERIC_SCHED_CLOCK=y
 # CONFIG_RELAY is not set
 # CONFIG_BLK_DEV_INITRD is not set
 CONFIG_CC_OPTIMIZE_FOR_SIZE=y
+CONFIG_OPTIMIZE_INLINING=y
 CONFIG_SYSCTL=y
 CONFIG_ANON_INODES=y
 CONFIG_HAVE_UID16=y
