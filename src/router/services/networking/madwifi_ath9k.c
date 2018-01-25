@@ -1040,7 +1040,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			if (!strcmp(debug, "1"))
 				fprintf(fp, "logger_syslog_level=1\n");
 			else if (!strcmp(debug, "2"))
-				fprintf(fp, "logger_syslog_level=0\n");
+				fprintf(fp, "logger_syslog_level=2\n");
 			else if (!strcmp(debug, "3"))
 				fprintf(fp, "logger_syslog_level=0\n");
 		} else
@@ -1089,7 +1089,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			if (!strcmp(debug, "1"))
 				fprintf(fp, "logger_syslog_level=1\n");
 			else if (!strcmp(debug, "2"))
-				fprintf(fp, "logger_syslog_level=0\n");
+				fprintf(fp, "logger_syslog_level=2\n");
 			else if (!strcmp(debug, "3"))
 				fprintf(fp, "logger_syslog_level=0\n");
 		} else
