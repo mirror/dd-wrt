@@ -837,6 +837,16 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	sprintf(bcn, "%s_bcn", prefix);
 	fprintf(fp, "beacon_int=%s\n", nvram_default_get(bcn, "100"));
 	fprintf(fp, "\n");
+/* low signal drop */
+	char signal[32];
+	sprintf(signal, "%s_connect", prefix);
+	fprintf(fp, "signal_connect=%s\n", nvram_default_get(signal, "-127"));
+	sprintf(signal, "%s_stay", prefix);
+	fprintf(fp, "signal_stay%s\n", nvram_default_get(signal, "-127"));
+	sprintf(signal, "%s_poll_time", prefix);
+	fprintf(fp, "signal_poll_time=%s\n", nvram_default_get(signal, "10"));
+	sprintf(signal, "%s_strikes", prefix);
+	fprintf(fp, "signal_strikes=%s\n", nvram_default_get(signal, "3"));
 }
 
 static void setMacFilter(FILE * fp, char *iface)
@@ -891,7 +901,6 @@ static int ieee80211_aton(char *str, unsigned char mac[6])
 extern char *hostapd_eap_get_types(void);
 extern void addWPS(FILE * fp, char *prefix, int configured);
 extern void setupHS20(FILE * fp, char *prefix);
-
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 {
 #ifdef HAVE_REGISTER
@@ -949,7 +958,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	char *mode = nvram_nget("%s_mode", ifname);
 	if (!strcmp(mode, "wdsap"))
 		fprintf(fp, "wds_sta=1\n");
-
 	char wmm[32];
 	sprintf(wmm, "%s_wmm", ifname);
 	fprintf(fp, "wmm_enabled=%s\n", nvram_default_get(wmm, "1"));
@@ -973,7 +981,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	}
 	sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1], hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
 //              MAC_ADD(macaddr);
-
 	if (!has_ad(maininterface)) {
 		fprintf(fp, "bssid=%s\n", macaddr);
 	}
@@ -994,11 +1001,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "ignore_broadcast_ssid=0\n");
 	sprintf(maxassoc, "%s_maxassoc", ifname);
 	fprintf(fp, "max_num_sta=%s\n", nvram_default_get(maxassoc, "256"));
-
 	char dtim[32];
 	sprintf(dtim, "%s_dtim", ifname);
 	fprintf(fp, "dtim_period=%s\n", nvram_default_get(dtim, "2"));
-
 	if (aoss) {
 		if (!strncmp(ifname, "aossa", 5))
 			ssid = "ESSID-AOSS-1";
@@ -1124,7 +1129,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "ieee8021x=1\n");
 			// fprintf (fp, "accept_mac_file=/tmp/hostapd.accept\n");
 			// fprintf (fp, "deny_mac_file=/tmp/hostapd.deny\n");
-
 			char local_ip[32];
 			sprintf(local_ip, "%s_local_ip", ifname);
 			char *lip = nvram_default_get(local_ip, "0.0.0.0");
@@ -1200,7 +1204,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	if (v && strlen(v) > 0)
 		fprintf(fp, "%s", v);
 	fprintf(fp, "\n");
-
 	fclose(fp);
 }
 
@@ -1276,7 +1279,6 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	char cellidssid[5];
 	char mcr[32];
 	char *mrate;
-
 	sprintf(akm, "%s_akm", prefix);
 	if (nvram_match(akm, "psk") || nvram_match(akm, "psk2")
 	    || nvram_match(akm, "psk psk2")) {
@@ -1299,7 +1301,6 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		fprintf(fp, "network={\n");
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		char *channelbw = nvram_nget("%s_channelbw", prefix);
-
 		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "mixed")) {
 
 			fprintf(fp, "disable_vht=1\n");
@@ -1370,14 +1371,12 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		sprintf(psk, "%s_crypto", prefix);
 		if (nvram_match(psk, "aes")) {
 			fprintf(fp, "\tpairwise=CCMP\n");
-
 #if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
 			if (isadhoc)
 				fprintf(fp, "\tgroup=CCMP\n");
 			else
 #endif
 				fprintf(fp, "\tgroup=CCMP TKIP\n");
-
 		}
 		if (nvram_match(psk, "tkip")) {
 			fprintf(fp, "\tpairwise=TKIP\n");
@@ -1670,7 +1669,6 @@ void ath9k_start_supplicant(int count)
 	sprintf(psk, "-i%s", dev);
 	if (has_ad(dev))
 		sprintf(psk, "-igiwifi");
-
 	sprintf(wmode, "%s_mode", dev);
 	sprintf(bridged, "%s_bridged", dev);
 	debug = nvram_nget("%s_wpa_debug", dev);
