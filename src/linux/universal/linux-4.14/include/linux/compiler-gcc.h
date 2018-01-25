@@ -73,8 +73,7 @@
  * directives.  Suppress the warning in clang as well by using "unused"
  * function attribute, which is redundant but not harmful for gcc.
  */
-#if !defined(CONFIG_ARCH_SUPPORTS_OPTIMIZED_INLINING) ||		\
-    !defined(CONFIG_OPTIMIZE_INLINING) || (__GNUC__ < 4)
+#if !defined(CONFIG_OPTIMIZE_INLINING) || (__GNUC__ < 4)
 #define inline inline		__attribute__((always_inline,unused)) notrace
 #define __inline__ __inline__	__attribute__((always_inline,unused)) notrace
 #define __inline __inline	__attribute__((always_inline,unused)) notrace
