@@ -1058,6 +1058,9 @@ config CC_OPTIMIZE_FOR_SIZE
 
 	  If unsure, say N.
 
+
+endchoice
+
 config OPTIMIZE_INLINING
 	bool "Allow gcc to uninline functions marked 'inline'"
 	---help---
@@ -1071,8 +1074,6 @@ config OPTIMIZE_INLINING
 	  is there to test gcc for this.
 
 	  If unsure, say N.
-
-endchoice
 
 config SYSCTL
 	bool
