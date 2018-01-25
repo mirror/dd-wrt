@@ -286,6 +286,12 @@ skip_wpa_check:
 
 	ieee802_1x_notify_port_enabled(sta->eapol_sm, 1);
 
+	if (hostapd_signal_handle_event(hapd, NULL, ASSOC_REQ, addr)) {
+		wpa_printf(MSG_DEBUG, "Station " MACSTR " assoc rejected by signal handler.\n",
+			   MAC2STR(addr));
+		goto fail;
+	}
+
 #ifdef CONFIG_P2P
 	if (req_ies) {
 		p2p_group_notif_assoc(hapd->p2p_group, sta->addr,
