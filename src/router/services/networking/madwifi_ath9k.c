@@ -1191,7 +1191,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	sprintf(signal, "%s_connect", ifname);
 	fprintf(fp, "signal_connect=%s\n", nvram_default_get(signal, "-128"));
 	sprintf(signal, "%s_stay", ifname);
-	fprintf(fp, "signal_stay%s\n", nvram_default_get(signal, "-128"));
+	fprintf(fp, "signal_stay=%s\n", nvram_default_get(signal, "-128"));
 	sprintf(signal, "%s_poll_time", ifname);
 	fprintf(fp, "signal_poll_time=%s\n", nvram_default_get(signal, "10"));
 	sprintf(signal, "%s_strikes", ifname);
