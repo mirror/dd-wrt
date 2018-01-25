@@ -844,6 +844,12 @@ void handle_probe_req(struct hostapd_data *hapd,
 	}
 #endif /* CONFIG_P2P */
 
+	if (hostapd_signal_handle_event(hapd, fi, PROBE_REQ, mgmt->sa)) {
+		wpa_printf(MSG_DEBUG, "Probe request for " MACSTR " rejected by signal handler.\n",
+		       MAC2STR(mgmt->sa));
+		return;
+	}
+
 	if (hostapd_ubus_handle_event(hapd, &req)) {
 		wpa_printf(MSG_DEBUG, "Probe request for " MACSTR " rejected by ubus handler.\n",
 		       MAC2STR(mgmt->sa));
