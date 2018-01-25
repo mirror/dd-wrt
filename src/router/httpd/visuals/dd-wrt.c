@@ -2444,26 +2444,26 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #ifdef HAVE_ATH9K
 		if (is_ath9k(var)) {
 			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
-
-			sprintf(signal, "%s_connect", prefix);
+			char signal[32];
+			sprintf(signal, "%s_connect", var);
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.connect)</script></div>\n");
 			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.connect)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
 			websWrite(wp, "</div>\n");
 
-			sprintf(signal, "%s_stay", prefix);
+			sprintf(signal, "%s_stay", var);
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.stay)</script></div>\n");
 			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.stay)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
 			websWrite(wp, "</div>\n");
 
-			sprintf(signal, "%s_poll_time", prefix);
+			sprintf(signal, "%s_poll_time", var);
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.poll_time)</script></div>\n");
 			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,3600,wl_adv.poll_time)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "10"));
 			websWrite(wp, "</div>\n");
 
-			sprintf(signal, "%s_strikes", prefix);
+			sprintf(signal, "%s_strikes", var);
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.strikes)</script></div>\n");
 			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,1,60,wl_adv.strikes)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "3"));
@@ -3494,7 +3494,8 @@ if (!is_ath9k(var)) {
 }
 #endif
 #ifdef HAVE_ATH9K
-if (is_ath9k(var)) {
+if (is_ath9k(prefix)) {
+	char signal[32];
 	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
 	sprintf(signal, "%s_connect", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
@@ -4319,7 +4320,8 @@ if (!strcmp(prefix, "wl2"))
 	}
 #endif
 #ifdef HAVE_ATH9K
-	if (is_ath9k(var)) {
+	if (is_ath9k(prefix)) {
+		char signal[32];
 		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
 		sprintf(signal, "%s_connect", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
