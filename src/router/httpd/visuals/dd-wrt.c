@@ -2448,13 +2448,13 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			sprintf(signal, "%s_connect", prefix);
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.connect)</script></div>\n");
-			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-127,0,wl_adv.connect)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-127"));
+			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.connect)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
 			websWrite(wp, "</div>\n");
 
 			sprintf(signal, "%s_stay", prefix);
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.stay)</script></div>\n");
-			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-127,0,wl_adv.stay)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-127"));
+			websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.stay)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
 			websWrite(wp, "</div>\n");
 
 			sprintf(signal, "%s_poll_time", prefix);
@@ -3499,12 +3499,12 @@ if (is_ath9k(var)) {
 	sprintf(signal, "%s_connect", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.connect)</script></div>\n");
-	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-127,0,wl_adv.connect)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-127"));
+	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.connect)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
 	websWrite(wp, "</div>\n");
 	sprintf(signal, "%s_stay", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.stay)</script></div>\n");
-	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-127,0,wl_adv.stay)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-127"));
+	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.stay)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
 	websWrite(wp, "</div>\n");
 	sprintf(signal, "%s_poll_time", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
@@ -4324,12 +4324,12 @@ if (!strcmp(prefix, "wl2"))
 		sprintf(signal, "%s_connect", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.connect)</script></div>\n");
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-127,0,wl_adv.connect)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-127"));
+		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.connect)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
 		websWrite(wp, "</div>\n");
 		sprintf(signal, "%s_stay", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.stay)</script></div>\n");
-		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-127,0,wl_adv.stay)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-127"));
+		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,-128,0,wl_adv.stay)\" value=\"%s\" />\n", signal, nvram_default_get(signal, "-128"));
 		websWrite(wp, "</div>\n");
 		sprintf(signal, "%s_poll_time", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
