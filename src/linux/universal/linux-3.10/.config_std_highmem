@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.10.108 Kernel Configuration
+# Linux/mips 3.10.108-dd Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -230,6 +230,7 @@ CONFIG_UIDGID_CONVERTED=y
 # CONFIG_CRASHLOG is not set
 # CONFIG_BLK_DEV_INITRD is not set
 # CONFIG_CC_OPTIMIZE_FOR_SIZE is not set
+CONFIG_OPTIMIZE_INLINING=y
 CONFIG_SYSCTL=y
 CONFIG_ANON_INODES=y
 CONFIG_HOTPLUG=y
