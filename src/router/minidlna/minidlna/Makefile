@@ -49,7 +49,7 @@ BASEOBJS = minidlna.o upnphttp.o upnpdescgen.o upnpsoap.o \
            sql.o utils.o metadata.o scanner.o monitor.o \
            tivo_utils.o tivo_beacon.o tivo_commands.o \
            playlist.o image_utils.o albumart.o log.o \
-           containers.o avahi.o tagutils/tagutils.o
+           containers.o avahi.o tagutils/tagutils.o select.o
 
 ALLOBJS = $(BASEOBJS) $(LNXOBJS)
 
