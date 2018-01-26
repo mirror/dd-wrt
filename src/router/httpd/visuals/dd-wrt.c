@@ -5637,6 +5637,7 @@ char *getNetworkLabel(webs_t wp, char *var)
 #endif
 #include "macfilter.c"
 
+#ifdef HAVE_DNSCRYPT
 void ej_show_dnscrypt(webs_t wp, int argc, char_t ** argv)
 {
 	char line[512];
@@ -5677,7 +5678,7 @@ void ej_show_dnscrypt(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
 }
-
+#endif
 void ej_show_congestion(webs_t wp, int argc, char_t ** argv)
 {
 	char *next;
