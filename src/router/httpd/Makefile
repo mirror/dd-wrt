@@ -274,6 +274,9 @@ endif
 ifeq ($(CONFIG_MSTP),y)
   CFLAGS += -DHAVE_MSTP
 endif
+ifeq ($(CONFIG_DNSCRYPT),y)
+CFLAGS += -DHAVE_DNSCRYPT
+endif
 ifeq ($(CONFIG_GWMF54G2),y)
 CFLAGS += -DHAVE_GWMF54G2
 endif
