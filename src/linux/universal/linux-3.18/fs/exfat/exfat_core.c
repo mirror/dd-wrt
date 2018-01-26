@@ -929,6 +929,9 @@ s32 ffsMoveFile(struct inode *old_parent_inode, FILE_ID_T *fid, struct inode *ne
 	}
 
 	/* check the validity of directory name in the given new pathname */
+	if (strlen(new_path) >= MAX_NAME_LENGTH)
+		return FFS_NAMETOOLONG;
+
 	ret = resolve_path(new_parent_inode, new_path, &newdir, &uni_name);
 	if (ret)
 		return ret;
@@ -2106,6 +2109,9 @@ s32 exfat_count_used_clusters(struct super_block *sb)
 			map_b = 0;
 		}
 	}
+
+	if ((p_fs->num_clusters - 2) < (s32)count)
+		count = p_fs->num_clusters - 2;
 
 	return count;
 } /* end of exfat_count_used_clusters */
@@ -5057,8 +5063,10 @@ s32 sector_read(struct super_block *sb, sector_t sec, struct buffer_head **bh, s
 
 	if (!p_fs->dev_ejected) {
 		ret = bdev_read(sb, sec, bh, 1, read);
-		if (ret != FFS_SUCCESS)
+		if (ret != FFS_SUCCESS) {
+			fs_error(sb);
 			p_fs->dev_ejected = TRUE;
+		}
 	}
 
 	return ret;
@@ -5083,8 +5091,10 @@ s32 sector_write(struct super_block *sb, sector_t sec, struct buffer_head *bh, s
 
 	if (!p_fs->dev_ejected) {
 		ret = bdev_write(sb, sec, bh, 1, sync);
-		if (ret != FFS_SUCCESS)
+		if (ret != FFS_SUCCESS) {
+			fs_error(sb);
 			p_fs->dev_ejected = TRUE;
+		}
 	}
 
 	return ret;
@@ -5104,8 +5114,10 @@ s32 multi_sector_read(struct super_block *sb, sector_t sec, struct buffer_head *
 
 	if (!p_fs->dev_ejected) {
 		ret = bdev_read(sb, sec, bh, num_secs, read);
-		if (ret != FFS_SUCCESS)
+		if (ret != FFS_SUCCESS) {
+			fs_error(sb);
 			p_fs->dev_ejected = TRUE;
+		}
 	}
 
 	return ret;
@@ -5130,8 +5142,10 @@ s32 multi_sector_write(struct super_block *sb, sector_t sec, struct buffer_head 
 
 	if (!p_fs->dev_ejected) {
 		ret = bdev_write(sb, sec, bh, num_secs, sync);
-		if (ret != FFS_SUCCESS)
+		if (ret != FFS_SUCCESS) {
+			fs_error(sb);
 			p_fs->dev_ejected = TRUE;
+		}
 	}
 
 	return ret;
