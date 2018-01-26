@@ -245,7 +245,7 @@ static void detect_wireless_devices(void)
 				insmod("ath5k");
 			}
 #endif
-			if (nvram_invmatch("no_ath9k", "1")) {
+			if (!nvram_match("no_ath9k", "1")) {
 				insmod("ath9k_hw");
 				insmod("ath9k_common");
 #ifdef HAVE_WZRG450
