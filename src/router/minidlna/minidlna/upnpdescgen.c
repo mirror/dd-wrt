@@ -31,6 +31,7 @@
 #include <string.h>
 #include "upnpdescstrings.h"
 #include "config.h"
+#include "event.h"
 #include "getifaddr.h"
 #include "upnpdescgen.h"
 #include "minidlnapath.h"
