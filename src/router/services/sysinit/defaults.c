@@ -1075,6 +1075,8 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_MMS344
 	{"ath0_ssid", "OTAi2.4"},
 	{"ath1_ssid", "OTAi5.8"},
+#elif HAVE_CPE890
+	{"no_ath9k", "1"},
 #else
 	{"ath0_ssid", "Enterprise WIFI"},
 	{"ath1_ssid", "Enterprise WIFI_1"},
@@ -1084,6 +1086,8 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_MMS344
 	{"ath0_ssid", "OTAi2.4"},
 	{"ath1_ssid", "OTAi5.8"},
+#elif HAVE_CPE890
+	{"no_ath9k", "1"},
 #else
 	{"ath0_ssid", "OTAi"},
 	{"ath1_ssid", "OTAi_1"},
