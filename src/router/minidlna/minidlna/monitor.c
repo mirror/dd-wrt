@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
@@ -108,7 +109,7 @@ raise_watch_limit(unsigned int limit)
 	fclose(max_watches);
 }
 
-static int
+int
 add_watch(int fd, const char * path)
 {
 	struct watch *nw;
@@ -123,14 +124,14 @@ add_watch(int fd, const char * path)
 	if( wd < 0 )
 	{
 		DPRINTF(E_ERROR, L_INOTIFY, "inotify_add_watch(%s) [%s]\n", path, strerror(errno));
-		return -1;
+		return (errno);
 	}
 
 	nw = malloc(sizeof(struct watch));
 	if( nw == NULL )
 	{
 		DPRINTF(E_ERROR, L_INOTIFY, "malloc() error\n");
-		return -1;
+		return (ENOMEM);
 	}
 	nw->wd = wd;
 	nw->next = NULL;
@@ -147,7 +148,8 @@ add_watch(int fd, const char * path)
 	}
 	lastwatch = nw;
 
-	return wd;
+	DPRINTF(E_INFO, L_INOTIFY, "Added watch to %s [%d]\n", path, wd);
+	return (0);
 }
 
 static int
@@ -339,7 +341,7 @@ check_nfo(const char *path)
 				      " and MIME glob 'video/*' limit 1", file, file);
 }
 
-static int
+int
 monitor_insert_file(const char *name, const char *path)
 {
 	int len;
@@ -470,6 +472,30 @@ monitor_insert_file(const char *name, const char *path)
 	return depth;
 }
 
+static bool
+check_notsparse(const char *path)
+#ifdef SEEK_HOLE
+{
+	int fd;
+	bool rv;
+
+	if ((fd = open(path, O_RDONLY)) == -1)
+		return (false);
+	if (lseek(fd, 0, SEEK_HOLE) == lseek(fd, 0, SEEK_END))
+		rv = true;
+	else
+		rv = false;
+	close(fd);
+	return (rv);
+}
+#else
+{
+	struct stat st;
+
+	return (stat(path, &st) == 0 && (st.st_blocks << 9 >= st.st_size));
+}
+#endif
+
 int
 monitor_insert_directory(int fd, char *name, const char * path)
 {
@@ -479,7 +505,6 @@ monitor_insert_directory(int fd, char *name, const char * path)
 	char path_buf[PATH_MAX];
 	enum file_types type = TYPE_UNKNOWN;
 	media_types dir_types;
-	struct stat st;
 
 	if( access(path, R_OK|X_OK) != 0 )
 	{
@@ -504,20 +529,10 @@ monitor_insert_directory(int fd, char *name, const char * path)
 		free(parent_buf);
 	}
 
+#ifdef HAVE_WATCH
 	if( fd > 0 )
-	{
-		#ifdef HAVE_INOTIFY
-		int wd = add_watch(fd, path);
-		if( wd == -1 )
-		{
-			DPRINTF(E_ERROR, L_INOTIFY, "add_watch() failed\n");
-		}
-		else
-		{
-			DPRINTF(E_INFO, L_INOTIFY, "Added watch to %s [%d]\n", path, wd);
-		}
-		#endif
-	}
+		add_watch(fd, path);
+#endif
 
 	dir_types = valid_media_types(path);
 
@@ -527,7 +542,7 @@ monitor_insert_directory(int fd, char *name, const char * path)
 		DPRINTF(E_ERROR, L_INOTIFY, "opendir failed! [%s]\n", strerror(errno));
 		return -1;
 	}
-	while( (e = readdir(ds)) )
+	while( !quitting && (e = readdir(ds)) )
 	{
 		if( e->d_name[0] == '.' )
 			continue;
@@ -547,12 +562,8 @@ monitor_insert_directory(int fd, char *name, const char * path)
 		{
 			monitor_insert_directory(fd, esc_name, path_buf);
 		}
-		else if( type == TYPE_FILE )
-		{
-			if( (stat(path_buf, &st) == 0) && (st.st_blocks<<9 >= st.st_size) )
-			{
-				monitor_insert_file(esc_name, path_buf);
-			}
+		else if( type == TYPE_FILE && check_notsparse(path_buf)) {
+			monitor_insert_file(esc_name, path_buf);
 		}
 		free(esc_name);
 	}
@@ -571,12 +582,12 @@ monitor_remove_directory(int fd, const char * path)
 
 	/* Invalidate the scanner cache so we don't insert files into non-existent containers */
 	valid_cache = 0;
+	#ifdef HAVE_INOTIFY
 	if( fd > 0 )
 	{
-		#ifdef HAVE_INOTIFY
 		remove_watch(fd, path);
-		#endif
 	}
+	#endif
 	sql = sqlite3_mprintf("SELECT ID from DETAILS where (PATH > '%q/' and PATH <= '%q/%c')"
 	                      " or PATH = '%q'", path, path, 0xFF, path);
 	if( (sql_get_table(db, sql, &result, &rows, NULL) == SQLITE_OK) )
@@ -669,7 +680,7 @@ start_inotify(void)
 		}
 
 		i = 0;
-		while( i < length )
+		while( !quitting && i < length )
 		{
 			struct inotify_event * event = (struct inotify_event *) &buffer[i];
 			if( event->len )

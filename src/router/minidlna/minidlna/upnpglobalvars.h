@@ -68,6 +68,12 @@
 #define USE_FORK 1
 #define DB_VERSION 11
 
+#ifdef READYNAS
+# define LOGFILE_NAME "upnp-av.log"
+#else
+# define LOGFILE_NAME "minidlna.log"
+#endif
+
 #ifdef ENABLE_NLS
 #define _(string) gettext(string)
 #else
@@ -195,6 +201,8 @@ extern uint32_t runtime_flags;
 #endif
 #define SCANNING_MASK         0x0100
 #define RESCAN_MASK           0x0200
+#define SUBTITLES_MASK        0x0400
+#define FORCE_ALPHASORT_MASK  0x0800
 
 #define SETFLAG(mask)	runtime_flags |= mask
 #define GETFLAG(mask)	(runtime_flags & mask)
@@ -227,8 +235,8 @@ extern const char *minissdpdsocketpath;
 extern sqlite3 *db;
 #define FRIENDLYNAME_MAX_LEN 64
 extern char friendly_name[];
-extern char db_path[];
-extern char log_path[];
+extern char db_path[1024];
+extern char log_path[1024];
 extern struct media_dir_s *media_dirs;
 extern struct album_art_name_s *album_art_names;
 extern volatile short int quitting;

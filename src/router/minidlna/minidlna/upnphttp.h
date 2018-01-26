@@ -75,7 +75,7 @@ enum httpCommands {
 };
 
 struct upnphttp {
-	int socket;
+	struct event ev;
 	struct in_addr clientaddr;	/* client address */
 	int iface;
 	int state;
@@ -143,10 +143,6 @@ CloseSocket_upnphttp(struct upnphttp *);
 /* Delete_upnphttp() */
 void
 Delete_upnphttp(struct upnphttp *);
-
-/* Process_upnphttp() */
-void
-Process_upnphttp(struct upnphttp *);
 
 /* BuildHeader_upnphttp()
  * build the header for the HTTP Response
