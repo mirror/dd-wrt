@@ -2124,6 +2124,11 @@ static int exfat_statfs(struct dentry *dentry, struct kstatfs *buf)
 static int exfat_remount(struct super_block *sb, int *flags, char *data)
 {
 	*flags |= MS_NODIRATIME;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,16,00)
+	sync_filesystem(sb);
+#endif
+
 	return 0;
 }
 
@@ -2137,6 +2142,8 @@ static int exfat_show_options(struct seq_file *m, struct vfsmount *mnt)
 	struct exfat_sb_info *sbi = EXFAT_SB(mnt->mnt_sb);
 #endif
 	struct exfat_mount_options *opts = &sbi->options;
+	FS_INFO_T *p_fs = &(sbi->fs_info);
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0)
 	if (__kuid_val(opts->fs_uid))
 		seq_printf(m, ",uid=%u", __kuid_val(opts->fs_uid));
@@ -2167,6 +2174,9 @@ static int exfat_show_options(struct seq_file *m, struct vfsmount *mnt)
 	if (opts->discard)
 		seq_printf(m, ",discard");
 #endif
+	if (p_fs->dev_ejected)
+		seq_puts(m, ",ejected");
+
 	return 0;
 }
 
@@ -2688,6 +2698,7 @@ module_exit(exit_exfat);
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("exFAT Filesystem Driver");
+MODULE_VERSION(EXFAT_VERSION);
 #ifdef MODULE_ALIAS_FS
 #if defined(CONFIG_MACH_LGE) || defined(CONFIG_HTC_BATT_CORE)
 MODULE_ALIAS_FS("texfat");
