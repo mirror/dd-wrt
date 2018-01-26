@@ -43,6 +43,7 @@
 #endif
 
 #include "config.h"
+#include "event.h"
 #if HAVE_GETIFADDRS
 # include <ifaddrs.h>
 # ifdef __linux__
@@ -377,9 +378,10 @@ OpenAndConfMonitorSocket(void)
 }
 
 void
-ProcessMonitorEvent(int s)
+ProcessMonitorEvent(struct event *ev)
 {
 #ifdef HAVE_NETLINK
+	int s = ev->fd;
 	int len;
 	char buf[4096];
 	struct nlmsghdr *nlh;

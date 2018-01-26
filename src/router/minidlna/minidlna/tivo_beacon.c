@@ -47,6 +47,7 @@
 #include <sys/poll.h>
 #include <netdb.h>
 
+#include "event.h"
 #include "tivo_beacon.h"
 #include "upnpglobalvars.h"
 #include "log.h"
@@ -288,15 +289,16 @@ rcvBeaconMessage(char *beacon)
 	return 0;
 }
 
-void ProcessTiVoBeacon(int s)
+void ProcessTiVoBeacon(struct event *ev)
 {
-	int n;
+	int s, n;
 	char *cp;
 	struct sockaddr_in sendername;
 	socklen_t len_r;
 	char bufr[1500];
 	len_r = sizeof(struct sockaddr_in);
 
+	s = ev->fd;
 	/* We only expect to see beacon msgs from TiVo's and possibly other tivo servers */
 	n = recvfrom(s, bufr, sizeof(bufr), 0,
 	             (struct sockaddr *)&sendername, &len_r);

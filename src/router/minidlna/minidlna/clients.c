@@ -20,6 +20,7 @@
 #include <time.h>
 
 #include "clients.h"
+#include "event.h"
 #include "getifaddr.h"
 #include "log.h"
 
