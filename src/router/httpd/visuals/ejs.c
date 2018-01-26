@@ -559,6 +559,9 @@ static char *s_conditions[] = {
 #ifdef HAVE_DNSSEC
 	"DNSSEC",
 #endif
+#ifdef HAVE_DNSCRYPT
+	"DNSCRYPT",
+#endif
 #if defined(HAVE_BKM) || defined(HAVE_TMK)
 	"MULTISIM",
 #endif
