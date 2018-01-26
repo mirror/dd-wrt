@@ -2096,7 +2096,7 @@ int led_control(int type, int act)
 		connected_gpio = 0x003;
 		disconnected_gpio = 0x002;
 		break;
-#elif HAVE_SR3200
+#elif defined(HAVE_SR3200) || defined(HAVE_CP890)
 	case ROUTER_BOARD_WHRHPGN:
 		power_gpio = 0x001;
 		diag_gpio = 0x101;
