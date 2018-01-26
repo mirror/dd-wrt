@@ -17,6 +17,12 @@ do
 	    cp drivers/net/wireless/Kconfig.dir882 drivers/net/wireless/Kconfig
     fi
 
+    grep "CONFIG_CC_OPTIMIZE_FOR_SIZE=y" $i
+    if [ $? -eq 0 ] 
+	then
+	    sed -i 's/\CONFIG_OPTIMIZE_INLINING=y/# CONFIG_OPTIMIZE_INLINING is not set/g' .config	    
+    fi
+
     grep "CONFIG_X86=y" $i
     if [ $? -eq 0 ] 
 	then 

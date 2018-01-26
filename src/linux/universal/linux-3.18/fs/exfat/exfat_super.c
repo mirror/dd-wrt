@@ -95,6 +95,10 @@ static char exfat_default_iocharset[] = CONFIG_EXFAT_DEFAULT_IOCHARSET;
 
 extern struct timezone sys_tz;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,8,0)
+#define current_time(x)	(CURRENT_TIME_SEC)
+#endif
+
 #define CHECK_ERR(x)	BUG_ON(x)
 
 #define UNIX_SECS_1980    315532800L
@@ -349,7 +353,11 @@ static int exfat_d_hash(const struct dentry *dentry, const struct inode *inode,
 		struct qstr *qstr)
 #endif
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,8,0)
+	qstr->hash = full_name_hash(dentry, qstr->name, exfat_striptail_len(qstr));
+#else
 	qstr->hash = full_name_hash(qstr->name, exfat_striptail_len(qstr));
+#endif
 	return 0;
 }
 
@@ -370,7 +378,11 @@ static int exfat_d_hashi(const struct dentry *dentry, const struct inode *inode,
 	name = qstr->name;
 	len = exfat_striptail_len(qstr);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,8,0)
+	hash = init_name_hash(dentry);
+#else
 	hash = init_name_hash();
+#endif
 	while (len--)
 		hash = partial_name_hash(nls_upper(sb, *name++), hash);
 	qstr->hash = end_name_hash(hash);
@@ -378,7 +390,10 @@ static int exfat_d_hashi(const struct dentry *dentry, const struct inode *inode,
 	return 0;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,8,0)
+static int exfat_cmpi(const struct dentry *dentry,
+		unsigned int len, const char *str, const struct qstr *name)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
 static int exfat_cmpi(const struct dentry *parent, const struct dentry *dentry,
 		unsigned int len, const char *str, const struct qstr *name)
 #elif LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
@@ -389,7 +404,11 @@ static int exfat_cmpi(const struct dentry *parent, const struct inode *pinode,
 		unsigned int len, const char *str, const struct qstr *name)
 #endif
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,8,0)
+	struct nls_table *t = EXFAT_SB(dentry->d_sb)->nls_io;
+#else
 	struct nls_table *t = EXFAT_SB(parent->d_sb)->nls_io;
+#endif
 	unsigned int alen, blen;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
@@ -416,8 +435,10 @@ static int exfat_cmpi(const struct dentry *parent, const struct inode *pinode,
 	}
 	return 1;
 }
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,8,0)
+static int exfat_cmp(const struct dentry *dentry,
+		unsigned int len, const char *str, const struct qstr *name)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
 static int exfat_cmp(const struct dentry *parent, const struct dentry *dentry,
 		unsigned int len, const char *str, const struct qstr *name)
 #elif LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
@@ -704,7 +725,6 @@ static int exfat_create(struct inode *dir, struct dentry *dentry, int mode,
 {
 	struct super_block *sb = dir->i_sb;
 	struct inode *inode;
-	struct timespec ts;
 	FILE_ID_T fid;
 	loff_t i_pos;
 	int err;
@@ -712,8 +732,6 @@ static int exfat_create(struct inode *dir, struct dentry *dentry, int mode,
 	__lock_super(sb);
 
 	DPRINTK("exfat_create entered\n");
-
-	ts = CURRENT_TIME_SEC;
 
 	err = FsCreateFile(dir, (u8 *) dentry->d_name.name, FM_REGULAR, &fid);
 	if (err) {
@@ -730,7 +748,7 @@ static int exfat_create(struct inode *dir, struct dentry *dentry, int mode,
 		goto out;
 	}
 	dir->i_version++;
-	dir->i_ctime = dir->i_mtime = dir->i_atime = ts;
+	dir->i_ctime = dir->i_mtime = dir->i_atime = current_time(dir);
 	if (IS_DIRSYNC(dir))
 		(void) exfat_sync_inode(dir);
 	else
@@ -744,7 +762,7 @@ static int exfat_create(struct inode *dir, struct dentry *dentry, int mode,
 		goto out;
 	}
 	inode->i_version++;
-	inode->i_mtime = inode->i_atime = inode->i_ctime = ts;
+	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
 	/* timestamp is already written, so mark_inode_dirty() is unnecessary. */
 
 	dentry->d_time = dentry->d_parent->d_inode->i_version;
@@ -812,7 +830,7 @@ static struct dentry *exfat_lookup(struct inode *dir, struct dentry *dentry,
 	}
 
 	i_mode = inode->i_mode;
-	if (S_ISLNK(i_mode)) {
+	if (S_ISLNK(i_mode) && !EXFAT_I(inode)->target) {
 		EXFAT_I(inode)->target = kmalloc(i_size_read(inode)+1, GFP_KERNEL);
 		if (!EXFAT_I(inode)->target) {
 			err = -ENOMEM;
@@ -862,14 +880,11 @@ static int exfat_unlink(struct inode *dir, struct dentry *dentry)
 {
 	struct inode *inode = dentry->d_inode;
 	struct super_block *sb = dir->i_sb;
-	struct timespec ts;
 	int err;
 
 	__lock_super(sb);
 
 	DPRINTK("exfat_unlink entered\n");
-
-	ts = CURRENT_TIME_SEC;
 
 	EXFAT_I(inode)->fid.size = i_size_read(inode);
 
@@ -882,14 +897,14 @@ static int exfat_unlink(struct inode *dir, struct dentry *dentry)
 		goto out;
 	}
 	dir->i_version++;
-	dir->i_mtime = dir->i_atime = ts;
+	dir->i_mtime = dir->i_atime = current_time(dir);
 	if (IS_DIRSYNC(dir))
 		(void) exfat_sync_inode(dir);
 	else
 		mark_inode_dirty(dir);
 
 	clear_nlink(inode);
-	inode->i_mtime = inode->i_atime = ts;
+	inode->i_mtime = inode->i_atime = current_time(inode);
 	exfat_detach(inode);
 	remove_inode_hash(inode);
 
@@ -903,7 +918,6 @@ static int exfat_symlink(struct inode *dir, struct dentry *dentry, const char *t
 {
 	struct super_block *sb = dir->i_sb;
 	struct inode *inode;
-	struct timespec ts;
 	FILE_ID_T fid;
 	loff_t i_pos;
 	int err;
@@ -913,8 +927,6 @@ static int exfat_symlink(struct inode *dir, struct dentry *dentry, const char *t
 	__lock_super(sb);
 
 	DPRINTK("exfat_symlink entered\n");
-
-	ts = CURRENT_TIME_SEC;
 
 	err = FsCreateFile(dir, (u8 *) dentry->d_name.name, FM_SYMLINK, &fid);
 	if (err) {
@@ -942,7 +954,7 @@ static int exfat_symlink(struct inode *dir, struct dentry *dentry, const char *t
 	}
 
 	dir->i_version++;
-	dir->i_ctime = dir->i_mtime = dir->i_atime = ts;
+	dir->i_ctime = dir->i_mtime = dir->i_atime = current_time(dir);
 	if (IS_DIRSYNC(dir))
 		(void) exfat_sync_inode(dir);
 	else
@@ -956,7 +968,7 @@ static int exfat_symlink(struct inode *dir, struct dentry *dentry, const char *t
 		goto out;
 	}
 	inode->i_version++;
-	inode->i_mtime = inode->i_atime = inode->i_ctime = ts;
+	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
 	/* timestamp is already written, so mark_inode_dirty() is unneeded. */
 
 	EXFAT_I(inode)->target = kmalloc(len+1, GFP_KERNEL);
@@ -983,7 +995,6 @@ static int exfat_mkdir(struct inode *dir, struct dentry *dentry, int mode)
 {
 	struct super_block *sb = dir->i_sb;
 	struct inode *inode;
-	struct timespec ts;
 	FILE_ID_T fid;
 	loff_t i_pos;
 	int err;
@@ -991,8 +1002,6 @@ static int exfat_mkdir(struct inode *dir, struct dentry *dentry, int mode)
 	__lock_super(sb);
 
 	DPRINTK("exfat_mkdir entered\n");
-
-	ts = CURRENT_TIME_SEC;
 
 	err = FsCreateDir(dir, (u8 *) dentry->d_name.name, &fid);
 	if (err) {
@@ -1009,7 +1018,7 @@ static int exfat_mkdir(struct inode *dir, struct dentry *dentry, int mode)
 		goto out;
 	}
 	dir->i_version++;
-	dir->i_ctime = dir->i_mtime = dir->i_atime = ts;
+	dir->i_ctime = dir->i_mtime = dir->i_atime = current_time(dir);
 	if (IS_DIRSYNC(dir))
 		(void) exfat_sync_inode(dir);
 	else
@@ -1024,7 +1033,7 @@ static int exfat_mkdir(struct inode *dir, struct dentry *dentry, int mode)
 		goto out;
 	}
 	inode->i_version++;
-	inode->i_mtime = inode->i_atime = inode->i_ctime = ts;
+	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
 	/* timestamp is already written, so mark_inode_dirty() is unneeded. */
 
 	dentry->d_time = dentry->d_parent->d_inode->i_version;
@@ -1040,14 +1049,11 @@ static int exfat_rmdir(struct inode *dir, struct dentry *dentry)
 {
 	struct inode *inode = dentry->d_inode;
 	struct super_block *sb = dir->i_sb;
-	struct timespec ts;
 	int err;
 
 	__lock_super(sb);
 
 	DPRINTK("exfat_rmdir entered\n");
-
-	ts = CURRENT_TIME_SEC;
 
 	EXFAT_I(inode)->fid.size = i_size_read(inode);
 
@@ -1066,7 +1072,7 @@ static int exfat_rmdir(struct inode *dir, struct dentry *dentry)
 		goto out;
 	}
 	dir->i_version++;
-	dir->i_mtime = dir->i_atime = ts;
+	dir->i_mtime = dir->i_atime = current_time(dir);
 	if (IS_DIRSYNC(dir))
 		(void) exfat_sync_inode(dir);
 	else
@@ -1074,7 +1080,7 @@ static int exfat_rmdir(struct inode *dir, struct dentry *dentry)
 	drop_nlink(dir);
 
 	clear_nlink(inode);
-	inode->i_mtime = inode->i_atime = ts;
+	inode->i_mtime = inode->i_atime = current_time(inode);
 	exfat_detach(inode);
 	remove_inode_hash(inode);
 
@@ -1084,14 +1090,24 @@ out:
 	return err;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,9,0)
+static int exfat_rename(struct inode *old_dir, struct dentry *old_dentry,
+						struct inode *new_dir, struct dentry *new_dentry,
+						unsigned int flags)
+#else
 static int exfat_rename(struct inode *old_dir, struct dentry *old_dentry,
 						struct inode *new_dir, struct dentry *new_dentry)
+#endif
 {
 	struct inode *old_inode, *new_inode;
 	struct super_block *sb = old_dir->i_sb;
-	struct timespec ts;
 	loff_t i_pos;
 	int err;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,9,0)
+	if (flags)
+		return -EINVAL;
+#endif
 
 	__lock_super(sb);
 
@@ -1099,8 +1115,6 @@ static int exfat_rename(struct inode *old_dir, struct dentry *old_dentry,
 
 	old_inode = old_dentry->d_inode;
 	new_inode = new_dentry->d_inode;
-
-	ts = CURRENT_TIME_SEC;
 
 	EXFAT_I(old_inode)->fid.size = i_size_read(old_inode);
 
@@ -1121,7 +1135,7 @@ static int exfat_rename(struct inode *old_dir, struct dentry *old_dentry,
 		goto out;
 	}
 	new_dir->i_version++;
-	new_dir->i_ctime = new_dir->i_mtime = new_dir->i_atime = ts;
+	new_dir->i_ctime = new_dir->i_mtime = new_dir->i_atime = current_time(new_dir);
 	if (IS_DIRSYNC(new_dir))
 		(void) exfat_sync_inode(new_dir);
 	else
@@ -1144,7 +1158,7 @@ static int exfat_rename(struct inode *old_dir, struct dentry *old_dentry,
 	}
 
 	old_dir->i_version++;
-	old_dir->i_ctime = old_dir->i_mtime = ts;
+	old_dir->i_ctime = old_dir->i_mtime = current_time(old_dir);
 	if (IS_DIRSYNC(old_dir))
 		(void) exfat_sync_inode(old_dir);
 	else
@@ -1155,7 +1169,7 @@ static int exfat_rename(struct inode *old_dir, struct dentry *old_dentry,
 		drop_nlink(new_inode);
 		if (S_ISDIR(new_inode->i_mode))
 			drop_nlink(new_inode);
-		new_inode->i_ctime = ts;
+		new_inode->i_ctime = current_time(new_inode);
 	}
 
 out:
@@ -1174,7 +1188,7 @@ static int exfat_cont_expand(struct inode *inode, loff_t size)
 	if (err != 0)
 		return err;
 
-	inode->i_ctime = inode->i_mtime = CURRENT_TIME_SEC;
+	inode->i_ctime = inode->i_mtime = current_time(inode);
 	mark_inode_dirty(inode);
 
 	if (IS_SYNC(inode)) {
@@ -1276,7 +1290,11 @@ static int exfat_setattr(struct dentry *dentry, struct iattr *attr)
 		attr->ia_valid &= ~(ATTR_MTIME_SET | ATTR_ATIME_SET | ATTR_TIMES_SET);
 	}
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,9,0)
+	error = setattr_prepare(dentry, attr);
+#else
 	error = inode_change_ok(inode, attr);
+#endif
 	attr->ia_valid = ia_valid;
 	if (error)
 		return error;
@@ -1331,9 +1349,16 @@ static int exfat_setattr(struct dentry *dentry, struct iattr *attr)
 	return error;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+static int exfat_getattr(const struct path *path, struct kstat *stat,
+			 u32 request_mask, unsigned int flags)
+{
+	struct inode *inode = path->dentry->d_inode;
+#else
 static int exfat_getattr(struct vfsmount *mnt, struct dentry *dentry, struct kstat *stat)
 {
 	struct inode *inode = dentry->d_inode;
+#endif
 
 	DPRINTK("exfat_getattr entered\n");
 
@@ -1387,7 +1412,9 @@ static void *exfat_follow_link(struct dentry *dentry, struct nameidata *nd)
 #endif
 
 const struct inode_operations exfat_symlink_inode_operations = {
-	.readlink    = generic_readlink,
+	#if LINUX_VERSION_CODE < KERNEL_VERSION(4,10,0)
+		.readlink    = generic_readlink,
+	#endif
 	#if LINUX_VERSION_CODE < KERNEL_VERSION(4,5,0)
 		.follow_link = exfat_follow_link,
 	#endif
@@ -1455,7 +1482,7 @@ static void _exfat_truncate(struct inode *inode, loff_t old_size)
 	if (err)
 		goto out;
 
-	inode->i_ctime = inode->i_mtime = CURRENT_TIME_SEC;
+	inode->i_ctime = inode->i_mtime = current_time(inode);
 	if (IS_DIRSYNC(inode))
 		(void) exfat_sync_inode(inode);
 	else
@@ -1651,7 +1678,7 @@ static int exfat_write_end(struct file *file, struct address_space *mapping,
 #endif
 
 	if (!(err < 0) && !(fid->attr & ATTR_ARCHIVE)) {
-		inode->i_mtime = inode->i_ctime = CURRENT_TIME_SEC;
+		inode->i_mtime = inode->i_ctime = current_time(inode);
 		fid->attr |= ATTR_ARCHIVE;
 		mark_inode_dirty(inode);
 	}
@@ -2164,6 +2191,45 @@ const struct super_operations exfat_sops = {
 };
 
 /*======================================================================*/
+/*  Export Operations                                                   */
+/*======================================================================*/
+
+static struct inode *exfat_nfs_get_inode(struct super_block *sb,
+				       u64 ino, u32 generation)
+{
+	struct inode *inode = NULL;
+	if (ino < EXFAT_ROOT_INO)
+		return inode;
+	inode = ilookup(sb, ino);
+
+	if (inode && generation && (inode->i_generation != generation)) {
+		iput(inode);
+		inode = NULL;
+	}
+
+	return inode;
+}
+
+static struct dentry *exfat_fh_to_dentry(struct super_block *sb, struct fid *fid,
+				int fh_len, int fh_type)
+{
+	return generic_fh_to_dentry(sb, fid, fh_len, fh_type,
+				    exfat_nfs_get_inode);
+}
+
+static struct dentry *exfat_fh_to_parent(struct super_block *sb, struct fid *fid,
+				int fh_len, int fh_type)
+{
+	return generic_fh_to_parent(sb, fid, fh_len, fh_type,
+				    exfat_nfs_get_inode);
+}
+
+const struct export_operations exfat_export_ops = {
+	.fh_to_dentry   = exfat_fh_to_dentry,
+	.fh_to_parent   = exfat_fh_to_parent,
+};
+
+/*======================================================================*/
 /*  Super Block Read Operations                                         */
 /*======================================================================*/
 
@@ -2338,11 +2404,8 @@ static int exfat_read_root(struct inode *inode)
 {
 	struct super_block *sb = inode->i_sb;
 	struct exfat_sb_info *sbi = EXFAT_SB(sb);
-	struct timespec ts;
 	FS_INFO_T *p_fs = &(sbi->fs_info);
 	DIR_ENTRY_T info;
-
-	ts = CURRENT_TIME_SEC;
 
 	EXFAT_I(inode)->fid.dir.dir = p_fs->root_dir;
 	EXFAT_I(inode)->fid.dir.flags = 0x01;
@@ -2372,7 +2435,7 @@ static int exfat_read_root(struct inode *inode)
 	EXFAT_I(inode)->mmu_private = i_size_read(inode);
 
 	exfat_save_attr(inode, ATTR_SUBDIR);
-	inode->i_mtime = inode->i_atime = inode->i_ctime = ts;
+	inode->i_mtime = inode->i_atime = inode->i_ctime = current_time(inode);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,00)
 	set_nlink(inode, info.NumSubdirs + 2);
 #else
@@ -2416,6 +2479,7 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 	sb->s_flags |= MS_NODIRATIME;
 	sb->s_magic = EXFAT_SUPER_MAGIC;
 	sb->s_op = &exfat_sops;
+	sb->s_export_op = &exfat_export_ops;
 
 	error = parse_options(data, silent, &debug, &sbi->options);
 	if (error)
@@ -2531,6 +2595,13 @@ static int __init exfat_init_inodecache(void)
 
 static void __exit exfat_destroy_inodecache(void)
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0)
+	/*
+	 * Make sure all delayed rcu free inodes are flushed before we
+	 * destroy cache.
+	 */
+	rcu_barrier();
+#endif
 	kmem_cache_destroy(exfat_inode_cachep);
 }
 
