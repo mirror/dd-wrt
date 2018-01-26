@@ -1,4 +1,20 @@
 ------------------------------------------------------------------------
+r3811 | brainslayer | 2018-01-27 00:31:24 +0100 (Sat, 27 Jan 2018) | 1 line
+
+update mwlwifi driver
+------------------------------------------------------------------------
+r3810 | brainslayer | 2018-01-26 15:25:57 +0100 (Fri, 26 Jan 2018) | 1 line
+
+test new patch
+------------------------------------------------------------------------
+r3809 | brainslayer | 2018-01-26 12:42:53 +0100 (Fri, 26 Jan 2018) | 1 line
+
+revert calibration enhancement. works wrong
+------------------------------------------------------------------------
+r3808 | brainslayer | 2018-01-26 12:42:27 +0100 (Fri, 26 Jan 2018) | 1 line
+
+revert calibration enhancement. works wrong
+------------------------------------------------------------------------
 r3807 | brainslayer | 2018-01-23 23:08:22 +0100 (Tue, 23 Jan 2018) | 2 lines
 
 Sometimes the hardware will push small packets that trigger a WARN_ON
