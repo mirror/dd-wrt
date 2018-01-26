@@ -1146,7 +1146,7 @@ static void resetbtn_period_check(int sig)
 	sesgpio = 0x115;
 	val |= get_gpio(21) << 21;	//aoss pushbutton
 #elif defined(HAVE_SR3200)
-#elif defined(HAVE_CP890)
+#elif defined(HAVE_CPE890)
 #elif defined(HAVE_XD3200)
 	sesgpio = 0x101;
 	val |= get_gpio(1) << 1;	//aoss pushbutton
