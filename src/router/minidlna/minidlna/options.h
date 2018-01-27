@@ -58,6 +58,7 @@ enum upnpconfigoptions {
 	FORCE_SORT_CRITERIA,		/* force sorting by a given sort criteria */
 	MAX_CONNECTIONS,		/* maximum number of simultaneous connections */
 	MERGE_MEDIA_DIRS,		/* don't add an extra directory level when there are multiple media dirs */
+	RESIZE_COVER_ART,		/* resize cover art to comply with DLNA spec */
 	WIDE_LINKS,			/* allow following symlinks outside the defined media_dirs */
 	TIVO_DISCOVERY,			/* TiVo discovery protocol: bonjour or beacon. Defaults to bonjour if supported */
 	ENABLE_SUBTITLES,		/* Enable generic subtitle support for all clients by default */
