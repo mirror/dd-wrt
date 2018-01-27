@@ -586,6 +586,7 @@ init(int argc, char **argv)
 	runtime_vars.max_connections = 50;
 	runtime_vars.root_container = NULL;
 	runtime_vars.ifaces[0] = NULL;
+	runtime_vars.cover_size = 160; /* DLNA standart value */
 
 	/* read options file first since
 	 * command line arguments have final say */
@@ -805,6 +806,9 @@ init(int argc, char **argv)
 		case TIVO_DISCOVERY:
 			if (strcasecmp(ary_options[i].value, "beacon") == 0)
 				CLEARFLAG(TIVO_BONJOUR_MASK);
+			break;
+		case RESIZE_COVER_ART:
+			runtime_vars.cover_size = atoi(ary_options[i].value);
 			break;
 		case ENABLE_SUBTITLES:
 			if (!strtobool(ary_options[i].value))
