@@ -61,6 +61,10 @@
 				reg = <6>;
 				compatible = "marvell";
 			};
+			phy2: ethernet-phy@5 {
+				reg = <5>;
+				compatible = "marvell";
+			};
 		};
 
 		pip: pip@11800a0000000 {
@@ -91,8 +95,27 @@
 					compatible = "cavium,octeon-3860-pip-port";
 					reg = <0x2>; /* Port */
 					local-mac-address = [ 00 00 00 00 00 00 ];
+					phy-handle = <&phy2>;
 				};
 			};
+		};
+
+		twsi0: i2c@1180000001000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "cavium,octeon-3860-twsi";
+			reg = <0x11800 0x00001000 0x0 0x200>;
+			interrupts = <0 45>;
+			clock-frequency = <100000>;
+		};
+
+		twsi1: i2c@1180000001200 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "cavium,octeon-3860-twsi";
+			reg = <0x11800 0x00001200 0x0 0x200>;
+			interrupts = <0 59>;
+			clock-frequency = <100000>;
 		};
 
 		uart0: serial@1180000000800 {

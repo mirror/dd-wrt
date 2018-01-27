@@ -186,8 +186,7 @@ int cvmx_helper_board_get_mii_address(int ipd_port)
 			return 7;
 		} else if (ipd_port == 1) {
 			return 6;
-		} else if (ipd_port == 2
-			   && cvmx_sysinfo_get()->board_rev_major == 2) {
+		} else if (ipd_port == 2 && (cvmx_sysinfo_get()->board_rev_major == 2 || cvmx_sysinfo_get()->board_rev_major == 1)) {
 			return 5;
 		}
 		return -1;
