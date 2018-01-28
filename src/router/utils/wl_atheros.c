@@ -156,7 +156,7 @@ static char *UPTIME(int uptime)
 	return str;
 }
 
-static void showUptimeStr(char *base, char *ifname, char *rmac)
+static void showUptimeStr(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
 	int uptime;
 	if (wc && is_ath9k(ifname))
@@ -194,7 +194,7 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 {
 
 	int i;
-	void (*fnp) (char *base, char *ifname, char *rmac);
+	void (*fnp) (char *base, char *ifname, char *rmac, struct wifi_client_info * wc);
 	struct wifi_client_info *wc;
 
 	for (i = 0; i < sizeof(fn) / sizeof(fn[0]); i++) {
@@ -247,6 +247,8 @@ int main(int argc, char *argv[])
 	int i;
 	for (i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "-i")) {
+			if (i == (argc -1))
+				return -1;
 			ifname = argv[++i];
 			continue;
 		}
@@ -272,7 +274,7 @@ int main(int argc, char *argv[])
 					}
 				}
 			}
-			return;
+			return 0;
 		}
 		char *name = argv[i];
 		if (i == (argc - 1))
