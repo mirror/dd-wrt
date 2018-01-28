@@ -169,7 +169,7 @@ FN fn[] = {
 	 "txrate", &showTxRate}	//
 };
 
-void evaluate(char *keyname, char *ifdecl, char *macstr)
+static void evaluate(char *keyname, char *ifdecl, char *macstr)
 {
 
 	int i;
