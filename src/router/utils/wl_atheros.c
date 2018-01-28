@@ -14,6 +14,7 @@ static void showinterface(char *base, char *ifname)
 		mac80211_info = mac80211_assoclist(base);
 		for (wc = mac80211_info->wci; wc; wc = wc->next) {
 			if (!strcmp(ifname, wc->ifname))
+				// dd_syslog(LOG_INFO, "assoclist %s\n", wc->mac);
 				fprintf(stdout, "assoclist %s\n", wc->mac);
 		}
 		free_wifi_clients(mac80211_info->wci);
@@ -31,6 +32,7 @@ static void showinterface(char *base, char *ifname)
 		int a;
 		int pos = 0;
 		for (a = 0; a < cnt; a++) {
+			// dd_syslog(LOG_INFO, "assoclist %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X\n", p[pos], p[pos + 1], p[pos + 2], p[pos + 3], p[pos + 4], p[pos + 5]);
 			fprintf(stdout, "assoclist %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X\n", p[pos], p[pos + 1], p[pos + 2], p[pos + 3], p[pos + 4], p[pos + 5]);
 			pos += 6;
 		}
@@ -72,6 +74,7 @@ static void showRssi(char *base, char *ifname, char *rmac)
 {
 	int rssi = getRssi(ifname, rmac);
 	if (rssi != 0 && rssi != -1) {
+		// dd_syslog(LOG_INFO, "rssi %d\n",rssi);
 		fprintf(stdout, "rssi is %d\n", rssi);
 	}
 
@@ -82,6 +85,7 @@ static void showNoise(char *base, char *ifname, char *rmac)
 
 	int noise = getNoise(ifname, rmac);
 	if (noise != 0 && noise != -1) {
+		// dd_syslog(LOG_INFO, "noise %d\n",noise);
 		fprintf(stdout, "noise is %d\n", noise);
 	}
 
@@ -92,6 +96,7 @@ static void showRxRate(char *base, char *ifname, char *rmac)
 
 	int rxrate = getRxRate(ifname, rmac);
 	if (rxrate != 0 && rxrate != -1) {
+		// dd_syslog(LOG_INFO, "rxrate %d\n",rxrate);
 		fprintf(stdout, "rxrate is %d\n", rxrate);
 	}
 
@@ -102,6 +107,7 @@ static void showTxRate(char *base, char *ifname, char *rmac)
 
 	int txrate = getTxRate(ifname, rmac);
 	if (txrate != 0 && txrate != -1) {
+		// dd_syslog(LOG_INFO, "txrate %d\n",txrate);
 		fprintf(stdout, "txrate is %d\n", txrate);
 	}
 
@@ -117,6 +123,7 @@ static void showUptime(char *base, char *ifname, char *rmac)
 {
 	int uptime = getUptime(ifname, rmac);
 	if (uptime != 0 && uptime != -1) {
+		// dd_syslog(LOG_INFO, "uptime %d\n",uptime);
 		fprintf(stdout, "uptime is %d\n", uptime);
 	}
 }
@@ -143,7 +150,8 @@ static void showUptimeStr(char *base, char *ifname, char *rmac)
 {
 	int uptime = getUptime(ifname, rmac);
 	if (uptime != 0 && uptime != -1) {
-		fprintf(stdout, "uptime is %ys\n", UPTIME(uptime));
+		// dd_syslog(LOG_INFO, "uptime %s\n",UPTIME(uptime));
+		fprintf(stdout, "uptime is %s\n", UPTIME(uptime));
 	}
 }
 
@@ -223,12 +231,15 @@ int main(int argc, char *argv[])
 	}
 	char *ifname = NULL;
 	int i;
+	// dd_syslog(LOG_INFO, "Call wl_atheros, arguments %d\n",argc);
 	for (i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "-i")) {
 			ifname = argv[++i];
+			// dd_syslog(LOG_INFO, "interface %s\n",ifname);
 			continue;
 		}
-
+		
+		// dd_syslog(LOG_INFO, "call %s\n",argv[i]);
 		if (!strcmp(argv[i], "assoclist")) {
 			int ifcount = getdevicecount();
 			if (strcmp(argv[1], "-i") == 0)
