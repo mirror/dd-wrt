@@ -18,6 +18,7 @@ refresh() {
       getnext_13614120212553541332126="$place.3.54.1.3.32.1.26.1"
       getnext_13614120212553541332127="$place.3.54.1.3.32.1.27.1"
       getnext_13614120212553541332128="$place.3.54.1.3.32.1.28.1"
+      getnext_13614120212553541332129="$place.3.54.1.3.32.1.29.1"
     else
       eval getnext_1361412021255354133211${lastid}="$place.3.54.1.3.32.1.1.$id"
       eval getnext_1361412021255354133214${lastid}="$place.3.54.1.3.32.1.4.$id"
@@ -25,12 +26,14 @@ refresh() {
       eval getnext_13614120212553541332126${lastid}="$place.3.54.1.3.32.1.26.$id"
       eval getnext_13614120212553541332127${lastid}="$place.3.54.1.3.32.1.27.$id"
       eval getnext_13614120212553541332128${lastid}="$place.3.54.1.3.32.1.28.$id"
+      eval getnext_13614120212553541332129${lastid}="$place.3.54.1.3.32.1.29.$id"
     fi
   
     rssi=$(wl_atheros rssi $mac | cut -d" " -f3)
     noise_reference=$(wl_atheros noise $mac | cut -d" " -f3)
     uptime=$(wl_atheros uptime $mac | cut -d" " -f3)
     ifname=$(wl_atheros ifname $mac | cut -d" " -f3)
+    eap_identity="NONE";
     if test $rssi -eq 0
     then
       snr=0
@@ -38,6 +41,10 @@ refresh() {
       let snr=-1*$noise_reference+$rssi
     fi
     mac=$(echo $mac | tr : ' ')
+    if test -e "/tmp/eap_identities/$mac"
+    then
+	eap_identity=`cat /tmp/eap_identities/$mac`
+    fi
   
     eval value_1361412021255354133211${id}=$id;
     eval type_1361412021255354133211${id}='integer';
@@ -51,6 +58,8 @@ refresh() {
     eval type_13614120212553541332127${id}='integer';
     eval value_13614120212553541332128${id}=$ifname;
     eval type_13614120212553541332128${id}='octet';
+    eval value_13614120212553541332129${id}=$eap_identity;
+    eval type_13614120212553541332129${id}='octet';
 
     lastid=$id
     let id=$id+1
@@ -65,6 +74,7 @@ refresh() {
     eval getnext_13614120212553541332126${lastid}="$place.3.54.1.3.32.1.27.1"
     eval getnext_13614120212553541332127${lastid}="NONE"
     eval getnext_13614120212553541332128${lastid}="NONE"
+    eval getnext_13614120212553541332129${lastid}="NONE"
   fi
 } 
 
