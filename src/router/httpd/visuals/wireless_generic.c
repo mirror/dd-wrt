@@ -19,10 +19,9 @@
  *
  * $Id:
  */
-static char *UPTIME(int uptime)
+static char *UPTIME(int uptime, char *str)
 {
 	int days, minutes;
-	static char str[64] = { 0 };
 	char str2[64] = { 0 };
 	bzero(str, 64);
 	bzero(str2, 64);
