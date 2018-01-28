@@ -31,9 +31,9 @@ typedef struct {
     unsigned long ageout;
 } mcast_entry;
 
-mcast_entry mcast_tbl[MAX_MCAST_ENTRY];
-atomic_t mcast_entry_num=ATOMIC_INIT(0);
-DEFINE_SEMAPHORE(mtbl_lock);
+static mcast_entry mcast_tbl[MAX_MCAST_ENTRY];
+static atomic_t mcast_entry_num=ATOMIC_INIT(0);
+static DEFINE_SEMAPHORE(mtbl_lock);
 
 static inline uint32_t is_multicast_pkt(uint8_t *mac)
 {
