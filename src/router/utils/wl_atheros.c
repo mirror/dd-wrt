@@ -97,7 +97,7 @@ static void showRxRate(char *base, char *ifname, char *rmac)
 	int rxrate = getRxRate(ifname, rmac);
 	if (rxrate != 0 && rxrate != -1) {
 		// dd_syslog(LOG_INFO, "rxrate %d\n",rxrate);
-		fprintf(stdout, "rxrate is %d\n", rxrate);
+		fprintf(stdout, "rxrate is %d\n", rxrate / 10);
 	}
 
 }
@@ -108,7 +108,7 @@ static void showTxRate(char *base, char *ifname, char *rmac)
 	int txrate = getTxRate(ifname, rmac);
 	if (txrate != 0 && txrate != -1) {
 		// dd_syslog(LOG_INFO, "txrate %d\n",txrate);
-		fprintf(stdout, "txrate is %d\n", txrate);
+		fprintf(stdout, "txrate is %d\n", txrate / 10);
 	}
 
 }
