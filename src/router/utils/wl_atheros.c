@@ -40,9 +40,10 @@ static void showinterface(char *base, char *ifname)
 
 }
 
-static int matchmac(char *base, char *ifname, char *mac)
+static struct wifi_client_info *matchmac(char *base, char *ifname, char *mac)
 {
 	unsigned char rmac[32];
+	static struct wifi_client_info rwc;
 	ether_etoa(mac, rmac);
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
@@ -50,72 +51,88 @@ static int matchmac(char *base, char *ifname, char *mac)
 		struct wifi_client_info *wc;
 		mac80211_info = mac80211_assoclist(base);
 		for (wc = mac80211_info->wci; wc; wc = wc->next) {
-//                      fprintf(stderr,"%s == %s\n",wc->ifname,ifname);
-//                      fprintf(stderr,"%s == %s\n",wc->mac, mac);
 			if (!strcmp(ifname, wc->ifname)
 			    && !strcmp(rmac, wc->mac)) {
+				memcpy(&rwc, wc, sizeof(rwc));
 				free_wifi_clients(mac80211_info->wci);
 				free(mac80211_info);
-				return 1;
+				return &rwc;
 			}
 		}
-		return 0;
+		return NULL;
 	} else
 #endif
 	{
-		return 1;
+		return (struct wifi_client_info *)1;
 	}
 
 }
 
-static void showRssi(char *base, char *ifname, char *rmac)
+static void showRssi(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
-	int rssi = getRssi(ifname, rmac);
+	int rssi;
+	if (wc && is_ath9k(ifname))
+		rssi = wc->signal;
+	else
+		rssi = getRssi(ifname, rmac);
 	if (rssi != 0 && rssi != -1) {
 		fprintf(stdout, "rssi is %d\n", rssi);
 	}
 
 }
 
-static void showNoise(char *base, char *ifname, char *rmac)
+static void showNoise(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
-
-	int noise = getNoise(ifname, rmac);
+	int noise;
+	if (wc && is_ath9k(ifname))
+		noise = wc->noise;
+	else
+		noise = getNoise(ifname, rmac);
 	if (noise != 0 && noise != -1) {
 		fprintf(stdout, "noise is %d\n", noise);
 	}
 
 }
 
-static void showRxRate(char *base, char *ifname, char *rmac)
+static void showRxRate(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
-
-	int rxrate = getRxRate(ifname, rmac);
+	int rxrate;
+	if (wc && is_ath9k(ifname))
+		rxrate = wc->rxrate;
+	else
+		rxrate = getRxRate(ifname, rmac);
 	if (rxrate != 0 && rxrate != -1) {
 		fprintf(stdout, "rxrate is %d\n", rxrate / 10);
 	}
 
 }
 
-static void showTxRate(char *base, char *ifname, char *rmac)
+static void showTxRate(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
-
-	int txrate = getTxRate(ifname, rmac);
+	int txrate;
+	if (wc && is_ath9k(ifname))
+		txrate = wc->txrate;
+	else
+		txrate = getTxRate(ifname, rmac);
 	if (txrate != 0 && txrate != -1) {
 		fprintf(stdout, "txrate is %d\n", txrate / 10);
 	}
 
 }
 
-static void showIfname(char *base, char *ifname, char *rmac)
+static void showIfname(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
 	fprintf(stdout, "ifname is %s\n", ifname);
 
 }
 
-static void showUptime(char *base, char *ifname, char *rmac)
+static void showUptime(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
-	int uptime = getUptime(ifname, rmac);
+	int uptime;
+	if (wc && is_ath9k(ifname))
+		uptime = wc->uptime;
+	else
+		uptime = getUptime(ifname, rmac);
 	if (uptime != 0 && uptime != -1) {
 		fprintf(stdout, "uptime is %d\n", uptime);
 	}
@@ -141,7 +158,11 @@ static char *UPTIME(int uptime)
 
 static void showUptimeStr(char *base, char *ifname, char *rmac)
 {
-	int uptime = getUptime(ifname, rmac);
+	int uptime;
+	if (wc && is_ath9k(ifname))
+		uptime = wc->uptime;
+	else
+		uptime = getUptime(ifname, rmac);
 	if (uptime != 0 && uptime != -1) {
 		fprintf(stdout, "uptime is %s\n", UPTIME(uptime));
 	}
@@ -149,7 +170,7 @@ static void showUptimeStr(char *base, char *ifname, char *rmac)
 
 typedef struct functions {
 	char *fname;
-	void (*fn) (char *base, char *ifname, char *rmac);
+	void (*fn) (char *base, char *ifname, char *rmac, struct wifi_client_info * wc);
 } FN;
 
 FN fn[] = {
@@ -174,6 +195,7 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 
 	int i;
 	void (*fnp) (char *base, char *ifname, char *rmac);
+	struct wifi_client_info *wc;
 
 	for (i = 0; i < sizeof(fn) / sizeof(fn[0]); i++) {
 		if (!strcmp(fn[i].fname, keyname))
@@ -186,7 +208,7 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 	ether_atoe(macstr, rmac);
 
 	if (ifdecl) {
-		fnp(ifdecl, ifdecl, rmac);
+		fnp(ifdecl, ifdecl, rmac, NULL);
 	} else {
 		int ifcount = getdevicecount();
 
@@ -194,8 +216,8 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 		for (c = 0; c < ifcount; c++) {
 			char interface[32];
 			sprintf(interface, "ath%d", c);
-			if (matchmac(interface, interface, rmac)) {
-				fnp(interface, interface, rmac);
+			if ((wc = matchmac(interface, interface, rmac))) {
+				fnp(interface, interface, rmac, wc);
 				return;
 			}
 			char vif[32];
@@ -204,8 +226,8 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 			char *vifs = nvram_safe_get(vif);
 			if (vifs != NULL) {
 				foreach(var, vifs, next) {
-					if (matchmac(interface, var, rmac)) {
-						fnp(interface, var, rmac);
+					if ((wc = matchmac(interface, var, rmac))) {
+						fnp(interface, var, rmac, wc);
 						return;
 					}
 				}
