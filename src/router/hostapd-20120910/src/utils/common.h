@@ -83,6 +83,8 @@ typedef int socklen_t;
 #define close closesocket
 #endif /* _MSC_VER */
 
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+
 
 /* Define platform specific integer types */
 
