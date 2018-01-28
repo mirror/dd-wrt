@@ -1413,6 +1413,13 @@ static void handle_assoc(struct hostapd_data *hapd,
 	if (resp != WLAN_STATUS_SUCCESS)
 		goto fail;
 
+	if (hostapd_signal_handle_event(hapd, fi, ASSOC_REQ, mgmt->sa)) {
+		wpa_printf(MSG_DEBUG, "Station " MACSTR " assoc rejected by signal handler.\n",
+		       MAC2STR(mgmt->sa));
+		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
+		goto fail;
+	}
+
 	if (hostapd_get_aid(hapd, sta) < 0) {
 		hostapd_logger(hapd, mgmt->sa, HOSTAPD_MODULE_IEEE80211,
 			       HOSTAPD_LEVEL_INFO, "No room for more AIDs");
@@ -2007,13 +2014,6 @@ static void handle_assoc_cb(struct hostapd_data *hapd,
 #ifdef CONFIG_IEEE80211W
 	sta->sa_query_timed_out = 0;
 #endif /* CONFIG_IEEE80211W */
-
-	if (hostapd_signal_handle_event(hapd, fi, ASSOC_REQ, mgmt->sa)) {
-		wpa_printf(MSG_DEBUG, "Station " MACSTR " assoc rejected by signal handler.\n",
-		       MAC2STR(mgmt->sa));
-		resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
-		goto fail;
-	}
 
 	/*
 	 * Remove the STA entry in order to make sure the STA PS state gets
