@@ -350,6 +350,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	interface->freq = wrqfreq_to_int(&wrq);
 	return interface;
 }
+
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 int wifi_getchannel(char *ifname)
 {
@@ -1009,6 +1010,7 @@ int has_2ghz(char *prefix)
 
 	return 0;
 }
+
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
 
 int wifi_getchannel(char *ifn)
@@ -2256,6 +2258,152 @@ int getNoise(char *ifname, unsigned char *mac)
 	return 0;
 }
 
+int getRxRate(char *ifname, unsigned char *mac)
+{
+#ifdef HAVE_ATH9K
+	if (is_ath9k(ifname)) {
+		return getRxRate_ath9k(ifname, mac);
+	}
+#endif
+	unsigned char *buf = calloc(24 * 1024, 1);
+
+	unsigned char *cp;
+	int len;
+	struct iwreq iwr;
+	int s;
+	char nb[32];
+	sprintf(nb, "%s_bias", ifname);
+
+	s = socket(AF_INET, SOCK_DGRAM, 0);
+	if (s < 0) {
+		fprintf(stderr, "socket(SOCK_DRAGM)\n");
+		free(buf);
+		return 0;
+	}
+	(void)bzero(&iwr, sizeof(iwr));
+	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+	iwr.u.data.pointer = (void *)buf;
+	iwr.u.data.length = 24 * 1024;
+	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
+		close(s);
+		free(buf);
+		return 0;
+	}
+	len = iwr.u.data.length;
+	if (len < sizeof(struct ieee80211req_sta_info)) {
+		close(s);
+		free(buf);
+		return -1;
+	}
+
+	cp = buf;
+	char maccmp[6];
+
+	bzero(maccmp, 6);
+	do {
+		struct ieee80211req_sta_info *si;
+
+		si = (struct ieee80211req_sta_info *)cp;
+		if (!memcmp(&si->isi_macaddr[0], mac, 6)) {
+			close(s);
+			char turbo[32];
+			char *s = strchr(ifname, '.');
+			if (s) ;
+			*s = 0;
+			sprintf(turbo, "%s_channelbw", ifname);
+			int t;
+			if (nvram_matchi(turbo, 40))
+				t = 2;
+			else
+				t = 1;
+
+			int rxrate = ((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) / 2) * t;
+			return rxrate;
+		}
+		if (!memcmp(&si->isi_macaddr[0], mac, 6))
+			break;
+		cp += si->isi_len;
+		len -= si->isi_len;
+	}
+	while (len >= sizeof(struct ieee80211req_sta_info));
+	close(s);
+	free(buf);
+	return 0;
+}
+
+int getTxRate(char *ifname, unsigned char *mac)
+{
+#ifdef HAVE_ATH9K
+	if (is_ath9k(ifname)) {
+		return getTxRate_ath9k(ifname, mac);
+	}
+#endif
+	unsigned char *buf = calloc(24 * 1024, 1);
+
+	unsigned char *cp;
+	int len;
+	struct iwreq iwr;
+	int s;
+	char nb[32];
+	sprintf(nb, "%s_bias", ifname);
+
+	s = socket(AF_INET, SOCK_DGRAM, 0);
+	if (s < 0) {
+		fprintf(stderr, "socket(SOCK_DRAGM)\n");
+		free(buf);
+		return 0;
+	}
+	(void)bzero(&iwr, sizeof(iwr));
+	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+	iwr.u.data.pointer = (void *)buf;
+	iwr.u.data.length = 24 * 1024;
+	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
+		close(s);
+		free(buf);
+		return 0;
+	}
+	len = iwr.u.data.length;
+	if (len < sizeof(struct ieee80211req_sta_info)) {
+		close(s);
+		free(buf);
+		return -1;
+	}
+
+	cp = buf;
+	char maccmp[6];
+
+	bzero(maccmp, 6);
+	do {
+		struct ieee80211req_sta_info *si;
+
+		si = (struct ieee80211req_sta_info *)cp;
+		if (!memcmp(&si->isi_macaddr[0], mac, 6)) {
+			close(s);
+			char turbo[32];
+			char *s = strchr(ifname, '.');
+			if (s) ;
+			*s = 0;
+			sprintf(turbo, "%s_channelbw", ifname);
+			int t;
+			if (nvram_matchi(turbo, 40))
+				t = 2;
+			else
+				t = 1;
+
+			int txrate = ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) / 2) * t;
+			return txrate;
+		}
+		if (!memcmp(&si->isi_macaddr[0], mac, 6))
+			break;
+		cp += si->isi_len;
+		len -= si->isi_len;
+	}
+	while (len >= sizeof(struct ieee80211req_sta_info));
+	close(s);
+	free(buf);
+	return 0;
+}
+
 int getassoclist(char *ifname, unsigned char *list)
 {
 #ifdef HAVE_ATH9K
@@ -2863,7 +3011,7 @@ int has_airtime_fairness(char *prefix)
 	if (fp) {
 		fclose(fp);
 		RETURNVALUE(1);
-	} 
+	}
 	RETURNVALUE(0);
 	EXITVALUECACHE();
 	return ret;
