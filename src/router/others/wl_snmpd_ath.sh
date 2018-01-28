@@ -19,6 +19,9 @@ refresh() {
       getnext_13614120212553541332127="$place.3.54.1.3.32.1.27.1"
       getnext_13614120212553541332128="$place.3.54.1.3.32.1.28.1"
       getnext_13614120212553541332129="$place.3.54.1.3.32.1.29.1"
+      getnext_13614120212553541332130="$place.3.54.1.3.32.1.30.1"
+      getnext_13614120212553541332131="$place.3.54.1.3.32.1.31.1"
+      getnext_13614120212553541332132="$place.3.54.1.3.32.1.32.1"
     else
       eval getnext_1361412021255354133211${lastid}="$place.3.54.1.3.32.1.1.$id"
       eval getnext_1361412021255354133214${lastid}="$place.3.54.1.3.32.1.4.$id"
@@ -27,12 +30,18 @@ refresh() {
       eval getnext_13614120212553541332127${lastid}="$place.3.54.1.3.32.1.27.$id"
       eval getnext_13614120212553541332128${lastid}="$place.3.54.1.3.32.1.28.$id"
       eval getnext_13614120212553541332129${lastid}="$place.3.54.1.3.32.1.29.$id"
+      eval getnext_13614120212553541332130${lastid}="$place.3.54.1.3.32.1.30.$id"
+      eval getnext_13614120212553541332131${lastid}="$place.3.54.1.3.32.1.31.$id"
+      eval getnext_13614120212553541332132${lastid}="$place.3.54.1.3.32.1.32.$id"
     fi
   
     rssi=$(wl_atheros rssi $mac | cut -d" " -f3)
     noise_reference=$(wl_atheros noise $mac | cut -d" " -f3)
     uptime=$(wl_atheros uptime $mac | cut -d" " -f3)
     ifname=$(wl_atheros ifname $mac | cut -d" " -f3)
+    rxrate=$(wl_atheros rxrate $mac | cut -d" " -f3)
+    txrate=$(wl_atheros txrate $mac | cut -d" " -f3)
+    uptimestr=$(wl_atheros uptimestr $mac | cut -d" " -f3)
     eap_identity="NONE";
     if test $rssi -eq 0
     then
@@ -60,6 +69,12 @@ refresh() {
     eval type_13614120212553541332128${id}='octet';
     eval value_13614120212553541332129${id}=$eap_identity;
     eval type_13614120212553541332129${id}='octet';
+    eval value_13614120212553541332130${id}=$rxrate;
+    eval type_13614120212553541332130${id}='integer';
+    eval value_13614120212553541332131${id}=$txrate;
+    eval type_13614120212553541332131${id}='integer';
+    eval value_13614120212553541332132${id}=$uptimestr;
+    eval type_13614120212553541332132${id}='octet';
 
     lastid=$id
     let id=$id+1
@@ -75,6 +90,9 @@ refresh() {
     eval getnext_13614120212553541332127${lastid}="NONE"
     eval getnext_13614120212553541332128${lastid}="NONE"
     eval getnext_13614120212553541332129${lastid}="NONE"
+    eval getnext_13614120212553541332130${lastid}="NONE"
+    eval getnext_13614120212553541332131${lastid}="NONE"
+    eval getnext_13614120212553541332132${lastid}="NONE"
   fi
 } 
 
