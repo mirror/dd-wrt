@@ -2,9 +2,10 @@
 #include <malloc.h>
 #include <wlutils.h>
 #include <shutils.h>
+#include <utils.h>
 #include <bcmnvram.h>
 
-void showinterface(char *base, char *ifname)
+static void showinterface(char *base, char *ifname)
 {
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
@@ -39,7 +40,7 @@ void showinterface(char *base, char *ifname)
 
 }
 
-int matchmac(char *base, char *ifname, char *mac)
+static int matchmac(char *base, char *ifname, char *mac)
 {
 	unsigned char rmac[32];
 	ether_etoa(mac, rmac);
@@ -67,7 +68,7 @@ int matchmac(char *base, char *ifname, char *mac)
 
 }
 
-void showRssi(char *base, char *ifname, char *rmac)
+static void showRssi(char *base, char *ifname, char *rmac)
 {
 	int rssi = getRssi(ifname, rmac);
 	if (rssi != 0 && rssi != -1) {
@@ -76,7 +77,7 @@ void showRssi(char *base, char *ifname, char *rmac)
 
 }
 
-void showNoise(char *base, char *ifname, char *rmac)
+static void showNoise(char *base, char *ifname, char *rmac)
 {
 
 	int noise = getNoise(ifname, rmac);
@@ -86,13 +87,33 @@ void showNoise(char *base, char *ifname, char *rmac)
 
 }
 
-void showIfname(char *base, char *ifname, char *rmac)
+static void showRxRate(char *base, char *ifname, char *rmac)
+{
+
+	int rxrate = getRxRate(ifname, rmac);
+	if (rxrate != 0 && rxrate != -1) {
+		fprintf(stdout, "rxrate is %d\n", rxrate);
+	}
+
+}
+
+static void showTxRate(char *base, char *ifname, char *rmac)
+{
+
+	int txrate = getTxRate(ifname, rmac);
+	if (txrate != 0 && txrate != -1) {
+		fprintf(stdout, "txrate is %d\n", txrate);
+	}
+
+}
+
+static void showIfname(char *base, char *ifname, char *rmac)
 {
 	fprintf(stdout, "ifname is %s\n", ifname);
 
 }
 
-void showUptime(char *base, char *ifname, char *rmac)
+static void showUptime(char *base, char *ifname, char *rmac)
 {
 	int uptime = getUptime(ifname, rmac);
 	if (uptime != 0 && uptime != -1) {
@@ -100,20 +121,52 @@ void showUptime(char *base, char *ifname, char *rmac)
 	}
 }
 
+static char *UPTIME(int uptime)
+{
+	int days, minutes;
+	static char str[64] = { 0 };
+	char str2[64] = { 0 };
+	bzero(str, 64);
+	bzero(str2, 64);
+	days = uptime / (60 * 60 * 24);
+	if (days)
+		sprintf(str2, "%d day%s, ", days, (days == 1 ? "" : "s"));
+	minutes = uptime / 60;
+	if (strlen(str2) > 0)
+		sprintf(str, "%s %d:%02d:%02d", str2, (minutes / 60) % 24, minutes % 60, uptime % 60);
+	else
+		sprintf(str, "%d:%02d:%02d", (minutes / 60) % 24, minutes % 60, uptime % 60);
+	return str;
+}
+
+static void showUptimeStr(char *base, char *ifname, char *rmac)
+{
+	int uptime = getUptime(ifname, rmac);
+	if (uptime != 0 && uptime != -1) {
+		fprintf(stdout, "uptime is %ys\n", UPTIME(uptime));
+	}
+}
+
 typedef struct functions {
 	char *fname;
 	void (*fn) (char *base, char *ifname, char *rmac);
-}
+} FN;
 
-struct functions fn[] = {
+FN fn[] = {
 	{
-	"rssi", &showRssi},	//
+	 "rssi", &showRssi},	//
 	{
-	"noise", &showNoise},	//
+	 "noise", &showNoise},	//
 	{
-	"ifname", &showIfname},	//
+	 "ifname", &showIfname},	//
 	{
-	"uptime", &showUptime},	//
+	 "uptime", &showUptime},	//
+	{
+	 "uptimestr", &showUptimeStr},	//
+	{
+	 "rxrate", &showRxRate},	//
+	{
+	 "txrate", &showTxRate}	//
 };
 
 void evaluate(char *keyname, char *ifdecl, char *macstr)
@@ -201,9 +254,9 @@ int main(int argc, char *argv[])
 		}
 		char *name = argv[i];
 		if (i == (argc - 1))
-			return;
+			return -1;
 		evaluate(name, ifname, argv[++i]);
-		return;
+		return 0;
 
 	}
 }
