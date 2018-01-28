@@ -303,7 +303,7 @@ SM_STATE(AUTH_PAE, AUTHENTICATED)
 			   extra);
 	if (sm->identity) {
 		char fileout[64];
-		sprintf(fileout,"/tmp/eap_identities/%02X:%02X:%02X:%02X:%02X:%02X", MAC2STR(addr));
+		sprintf(fileout,"/tmp/eap_identities/%02X:%02X:%02X:%02X:%02X:%02X", MAC2STR(sm->addr));
 		FILE *out = fopen(fileout, "wb");
 		if (out) {
 			fprintf(out, "%s",sm->identity);
