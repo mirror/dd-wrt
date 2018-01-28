@@ -1,6 +1,6 @@
 #!/bin/sh
 
-place=".1.3.6.1.4.1.2021.255"
+place=".1.3.6.1.4.1.2021.255.3.54.1.3.32.1"
 
 refresh() {
 
@@ -11,28 +11,28 @@ refresh() {
   do
     if test $lastid -eq 0
     then
-      getnext_1361412021255="$place.3.54.1.3.32.1.1.1"
-      getnext_1361412021255354133211="$place.3.54.1.3.32.1.1.1"
-      getnext_1361412021255354133214="$place.3.54.1.3.32.1.4.1"
-      getnext_13614120212553541332113="$place.3.54.1.3.32.1.13.1"
-      getnext_13614120212553541332126="$place.3.54.1.3.32.1.26.1"
-      getnext_13614120212553541332127="$place.3.54.1.3.32.1.27.1"
-      getnext_13614120212553541332128="$place.3.54.1.3.32.1.28.1"
-      getnext_13614120212553541332129="$place.3.54.1.3.32.1.29.1"
-      getnext_13614120212553541332130="$place.3.54.1.3.32.1.30.1"
-      getnext_13614120212553541332131="$place.3.54.1.3.32.1.31.1"
-      getnext_13614120212553541332132="$place.3.54.1.3.32.1.32.1"
+      getnext_1361412021255="$place.1.1"
+      getnext_1="$place.1.1"
+      getnext_4="$place.4.1"
+      getnext_13="$place.13.1"
+      getnext_26="$place.26.1"
+      getnext_27="$place.27.1"
+      getnext_28="$place.28.1"
+      getnext_29="$place.29.1"
+      getnext_30="$place.30.1"
+      getnext_31="$place.31.1"
+      getnext_32="$place.32.1"
     else
-      eval getnext_1361412021255354133211${lastid}="$place.3.54.1.3.32.1.1.$id"
-      eval getnext_1361412021255354133214${lastid}="$place.3.54.1.3.32.1.4.$id"
-      eval getnext_13614120212553541332113${lastid}="$place.3.54.1.3.32.1.13.$id"
-      eval getnext_13614120212553541332126${lastid}="$place.3.54.1.3.32.1.26.$id"
-      eval getnext_13614120212553541332127${lastid}="$place.3.54.1.3.32.1.27.$id"
-      eval getnext_13614120212553541332128${lastid}="$place.3.54.1.3.32.1.28.$id"
-      eval getnext_13614120212553541332129${lastid}="$place.3.54.1.3.32.1.29.$id"
-      eval getnext_13614120212553541332130${lastid}="$place.3.54.1.3.32.1.30.$id"
-      eval getnext_13614120212553541332131${lastid}="$place.3.54.1.3.32.1.31.$id"
-      eval getnext_13614120212553541332132${lastid}="$place.3.54.1.3.32.1.32.$id"
+      eval getnext_1${lastid}="$place.1.$id"
+      eval getnext_4${lastid}="$place.4.$id"
+      eval getnext_13${lastid}="$place.13.$id"
+      eval getnext_26${lastid}="$place.26.$id"
+      eval getnext_27${lastid}="$place.27.$id"
+      eval getnext_28${lastid}="$place.28.$id"
+      eval getnext_29${lastid}="$place.29.$id"
+      eval getnext_30${lastid}="$place.30.$id"
+      eval getnext_31${lastid}="$place.31.$id"
+      eval getnext_32${lastid}="$place.32.$id"
     fi
   
     rssi=$(wl_atheros rssi $mac | cut -d" " -f3)
@@ -55,26 +55,26 @@ refresh() {
 	eap_identity=`cat /tmp/eap_identities/$mac`
     fi
   
-    eval value_1361412021255354133211${id}=$id;
-    eval type_1361412021255354133211${id}='integer';
-    eval value_1361412021255354133214${id}='$mac';
-    eval type_1361412021255354133214${id}='octet';
-    eval value_13614120212553541332113${id}=$noise_reference;
-    eval type_13614120212553541332113${id}='integer';
-    eval value_13614120212553541332126${id}=$snr;
-    eval type_13614120212553541332126${id}='integer';
-    eval value_13614120212553541332127${id}=$uptime;
-    eval type_13614120212553541332127${id}='integer';
-    eval value_13614120212553541332128${id}=$ifname;
-    eval type_13614120212553541332128${id}='octet';
-    eval value_13614120212553541332129${id}=$eap_identity;
-    eval type_13614120212553541332129${id}='octet';
-    eval value_13614120212553541332130${id}=$rxrate;
-    eval type_13614120212553541332130${id}='integer';
-    eval value_13614120212553541332131${id}=$txrate;
-    eval type_13614120212553541332131${id}='integer';
-    eval value_13614120212553541332132${id}=$uptimestr;
-    eval type_13614120212553541332132${id}='octet';
+    eval value_1${id}=$id;
+    eval type_1${id}='integer';
+    eval value_4${id}='$mac';
+    eval type_4${id}='octet';
+    eval value_13${id}=$noise_reference;
+    eval type_13${id}='integer';
+    eval value_26${id}=$snr;
+    eval type_26${id}='integer';
+    eval value_27${id}=$uptime;
+    eval type_27${id}='integer';
+    eval value_28${id}=$ifname;
+    eval type_28${id}='octet';
+    eval value_29${id}=$eap_identity;
+    eval type_29${id}='octet';
+    eval value_30${id}=$rxrate;
+    eval type_30${id}='integer';
+    eval value_31${id}=$txrate;
+    eval type_31${id}='integer';
+    eval value_32${id}=$uptimestr;
+    eval type_32${id}='octet';
 
     lastid=$id
     let id=$id+1
@@ -83,16 +83,16 @@ refresh() {
 
   if test $lastid -ne 0
   then
-    eval getnext_1361412021255354133211${lastid}="$place.3.54.1.3.32.1.4.1"
-    eval getnext_1361412021255354133214${lastid}="$place.3.54.1.3.32.1.13.1"
-    eval getnext_13614120212553541332113${lastid}="$place.3.54.1.3.32.1.26.1"
-    eval getnext_13614120212553541332126${lastid}="$place.3.54.1.3.32.1.27.1"
-    eval getnext_13614120212553541332127${lastid}="NONE"
-    eval getnext_13614120212553541332128${lastid}="NONE"
-    eval getnext_13614120212553541332129${lastid}="NONE"
-    eval getnext_13614120212553541332130${lastid}="NONE"
-    eval getnext_13614120212553541332131${lastid}="NONE"
-    eval getnext_13614120212553541332132${lastid}="NONE"
+    eval getnext_1${lastid}="$place.4.1"
+    eval getnext_4${lastid}="$place.13.1"
+    eval getnext_13${lastid}="$place.26.1"
+    eval getnext_26${lastid}="$place.27.1"
+    eval getnext_27${lastid}="NONE"
+    eval getnext_28${lastid}="NONE"
+    eval getnext_29${lastid}="NONE"
+    eval getnext_30${lastid}="NONE"
+    eval getnext_31${lastid}="NONE"
+    eval getnext_32${lastid}="NONE"
   fi
 } 
 
