@@ -131,8 +131,9 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 			sprintf(info, "%s80+80%s%s", vht ? "VHT" : "HT", wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
 		if (ht == 5)
 			sprintf(info, "LEGACY%s", wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
+		char str[64] = { 0 };
 
-		websWrite(wp, "'%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d'", mac, wc->ifname, UPTIME(wc->uptime), wc->txrate / 10 * mul / div, wc->rxrate / 10 * mul / div, info, wc->signal + bias,
+		websWrite(wp, "'%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d'", mac, wc->ifname, UPTIME(wc->uptime, str), wc->txrate / 10 * mul / div, wc->rxrate / 10 * mul / div, info, wc->signal + bias,
 			  wc->noise + bias, wc->signal - wc->noise, qual);
 		cnt++;
 //              }

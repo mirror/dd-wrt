@@ -288,6 +288,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 			buflen = strlen(buf) + 1;
 			param = (char *)(buf + buflen);
 			memcpy(param, (char *)&maclist->ea[i], ETHER_ADDR_LEN);
+			char str[64] = { 0 };
 			if (!wl_ioctl(iface, WLC_GET_VAR, &buf[0], WLC_IOCTL_MEDLEN)) {
 				/* display the sta info */
 				sta2 = (sta_info_compat2_t *) buf;
@@ -303,7 +304,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 
 						if (rx > 0)
 							sprintf(rxrate, "%dM", rx / 1000);
-						strcpy(time, UPTIME(sta2->in));
+						strcpy(time, UPTIME(sta2->in, str));
 					}
 					break;
 				case 3:
@@ -316,7 +317,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 
 						if (rx > 0)
 							sprintf(rxrate, "%dM", rx / 1000);
-						strcpy(time, UPTIME(sta3->in));
+						strcpy(time, UPTIME(sta3->in, str));
 					}
 					sprintf(info, "LEGACY");
 					if (sta3->flags & WL_STA_N_CAP)
@@ -336,7 +337,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 
 						if (rx > 0)
 							sprintf(rxrate, "%dM", rx / 1000);
-						strcpy(time, UPTIME(sta4->in));
+						strcpy(time, UPTIME(sta4->in, str));
 					}
 					info[0] = 0;
 					ht = 0;
