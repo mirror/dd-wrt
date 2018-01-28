@@ -67,19 +67,115 @@ int matchmac(char *base, char *ifname, char *mac)
 
 }
 
+void showRssi(char *base, char *ifname, char *rmac)
+{
+	int rssi = getRssi(ifname, rmac);
+	if (rssi != 0 && rssi != -1) {
+		fprintf(stdout, "rssi is %d\n", rssi);
+	}
+
+}
+
+void showNoise(char *base, char *ifname, char *rmac)
+{
+
+	int noise = getNoise(ifname, rmac);
+	if (noise != 0 && noise != -1) {
+		fprintf(stdout, "noise is %d\n", noise);
+	}
+
+}
+
+void showIfname(char *base, char *ifname, char *rmac)
+{
+	fprintf(stdout, "ifname is %s\n", ifname);
+
+}
+
+void showUptime(char *base, char *ifname, char *rmac)
+{
+	int uptime = getUptime(ifname, rmac);
+	if (uptime != 0 && uptime != -1) {
+		fprintf(stdout, "uptime is %d\n", uptime);
+	}
+}
+
+typedef struct functions {
+	char *fname;
+	void (*fn) (char *base, char *ifname, char *rmac);
+}
+
+struct functions fn[] = {
+	{
+	"rssi", &showRssi},	//
+	{
+	"noise", &showNoise},	//
+	{
+	"ifname", &showIfname},	//
+	{
+	"uptime", &showUptime},	//
+};
+
+void evaluate(char *keyname, char *ifdecl, char *macstr)
+{
+
+	int i;
+	void (*fnp) (char *base, char *ifname, char *rmac);
+
+	for (i = 0; i < sizeof(fn) / sizeof(fn[0]); i++) {
+		if (!strcmp(fn[i].fname, keyname))
+			fnp = fn[i].fn;
+	}
+	if (!fnp)
+		return;
+
+	unsigned char rmac[6];
+	ether_atoe(macstr, rmac);
+
+	if (ifdecl) {
+		fnp(ifdecl, ifdecl, rmac);
+	} else {
+		int ifcount = getdevicecount();
+
+		int c = 0;
+		for (c = 0; c < ifcount; c++) {
+			char interface[32];
+			sprintf(interface, "ath%d", c);
+			if (matchmac(interface, interface, rmac)) {
+				fnp(interface, interface, rmac);
+				return;
+			}
+			char vif[32];
+			sprintf(vif, "%s_vifs", interface);
+			char var[80], *next;
+			char *vifs = nvram_safe_get(vif);
+			if (vifs != NULL) {
+				foreach(var, vifs, next) {
+					if (matchmac(interface, var, rmac)) {
+						fnp(interface, var, rmac);
+						return;
+					}
+				}
+			}
+		}
+
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	if (argc < 2) {
 		fprintf(stderr, "invalid argument\n");
 		return 0;
 	}
-	char *ifname = "ath0";
+	char *ifname = NULL;
 	int i;
 	for (i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "-i")) {
 			ifname = argv[++i];
 			continue;
 		}
+
 		if (!strcmp(argv[i], "assoclist")) {
 			int ifcount = getdevicecount();
 			if (strcmp(argv[1], "-i") == 0)
@@ -103,142 +199,11 @@ int main(int argc, char *argv[])
 			}
 
 		}
-		if (!strcmp(argv[i], "rssi")) {
-			unsigned char rmac[6];
-			ether_atoe(argv[++i], rmac);
-			int ifcount = getdevicecount();
-			int rssi = -1;
-			if (strcmp(argv[1], "-i") == 0)
-				rssi = getRssi(ifname, rmac);
-			else {
-				int c = 0;
-				for (c = 0; c < ifcount; c++) {
-					char interface[32];
-					sprintf(interface, "ath%d", c);
-					rssi = getRssi(interface, rmac);
-					if (rssi != 0 && rssi != -1 && matchmac(interface, interface, rmac)) {
-						fprintf(stdout, "rssi is %d\n", rssi);
-						return 0;
-					}
-					char vif[32];
-					sprintf(vif, "%s_vifs", interface);
-					char var[80], *next;
-					char *vifs = nvram_safe_get(vif);
-					if (vifs != NULL) {
-						foreach(var, vifs, next) {
-							rssi = getRssi(var, rmac);
-							if (rssi != 0 && rssi != -1 && matchmac(interface, var, rmac)) {
-								fprintf(stdout, "rssi is %d\n", rssi);
-								return 0;
-							}
+		char *name = argv[i];
+		if (i == (argc - 1))
+			return;
+		evaluate(name, ifname, argv[++i]);
+		return;
 
-						}
-					}
-				}
-			}
-
-			fprintf(stdout, "rssi is %d\n", rssi);
-		}
-		if (!strcmp(argv[i], "noise")) {
-			unsigned char rmac[6];
-			ether_atoe(argv[++i], rmac);
-			int ifcount = getdevicecount();
-			int rssi = -1;
-			if (strcmp(argv[1], "-i") == 0)
-				rssi = getNoise(ifname, rmac);
-			else {
-				int c = 0;
-				for (c = 0; c < ifcount; c++) {
-					char interface[32];
-					sprintf(interface, "ath%d", c);
-
-					rssi = getNoise(interface, rmac);
-					if (rssi != 0 && rssi != -1 && matchmac(interface, interface, rmac)) {
-						fprintf(stdout, "noise is %d\n", rssi);
-						return 0;
-					}
-					char vif[32];
-					sprintf(vif, "%s_vifs", interface);
-					char var[80], *next;
-					char *vifs = nvram_safe_get(vif);
-					if (vifs != NULL) {
-						foreach(var, vifs, next) {
-							rssi = getNoise(var, rmac);
-							if (rssi != 0 && rssi != -1 && matchmac(interface, var, rmac)) {
-								fprintf(stdout, "noise is %d\n", rssi);
-								return 0;
-							}
-						}
-					}
-				}
-			}
-			fprintf(stdout, "noise is %d\n", rssi);
-		}
-		if (!strcmp(argv[i], "ifname")) {
-			unsigned char rmac[6];
-			ether_atoe(argv[++i], rmac);
-			int ifcount = getdevicecount();
-			int rssi = -1;
-			int c = 0;
-			for (c = 0; c < ifcount; c++) {
-				char interface[32];
-				sprintf(interface, "ath%d", c);
-
-				rssi = getNoise(interface, rmac);
-				if (rssi != 0 && rssi != -1 && matchmac(interface, interface, rmac)) {
-					fprintf(stdout, "ifname is %s\n", interface);
-					return 0;
-				}
-				char vif[32];
-				sprintf(vif, "%s_vifs", interface);
-				char var[80], *next;
-				char *vifs = nvram_safe_get(vif);
-				if (vifs != NULL) {
-					foreach(var, vifs, next) {
-						rssi = getNoise(var, rmac);
-						if (rssi != 0 && rssi != -1 && matchmac(interface, var, rmac)) {
-							fprintf(stdout, "ifname is %s\n", var);
-							return 0;
-						}
-					}
-				}
-			}
-			fprintf(stdout, "ifname is error\n");
-		}
-		if (!strcmp(argv[i], "uptime")) {
-			unsigned char rmac[6];
-			ether_atoe(argv[++i], rmac);
-			int ifcount = getdevicecount();
-			int uptime = -1;
-			if (strcmp(argv[1], "-i") == 0)
-				uptime = getUptime(ifname, rmac);
-			else {
-				int c = 0;
-				for (c = 0; c < ifcount; c++) {
-					char interface[32];
-					sprintf(interface, "ath%d", c);
-
-					uptime = getUptime(interface, rmac);
-					if (uptime != 0 && uptime != -1 && matchmac(interface, interface, rmac)) {
-						fprintf(stdout, "uptime is %d\n", uptime);
-						return 0;
-					}
-					char vif[32];
-					sprintf(vif, "%s_vifs", interface);
-					char var[80], *next;
-					char *vifs = nvram_safe_get(vif);
-					if (vifs != NULL) {
-						foreach(var, vifs, next) {
-							uptime = getUptime(var, rmac);
-							if (uptime != 0 && uptime != -1 && matchmac(interface, var, rmac)) {
-								fprintf(stdout, "uptime is %d\n", uptime);
-								return 0;
-							}
-						}
-					}
-				}
-			}
-			fprintf(stdout, "uptime is %d\n", uptime);
-		}
 	}
 }
