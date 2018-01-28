@@ -35,7 +35,7 @@ mcast_entry mcast_tbl[MAX_MCAST_ENTRY];
 atomic_t mcast_entry_num=ATOMIC_INIT(0);
 DEFINE_SEMAPHORE(mtbl_lock);
 
-uint32_t inline is_multicast_pkt(uint8_t *mac)
+static inline uint32_t is_multicast_pkt(uint8_t *mac)
 {
     if(mac[0]==0x01) {
 	return 1;
@@ -44,7 +44,7 @@ uint32_t inline is_multicast_pkt(uint8_t *mac)
     }
 }
 
-int32_t inline mcast_entry_get(uint16_t vlan_id, uint8_t *src_mac, uint8_t *dst_mac) 
+static inline int32_t mcast_entry_get(uint16_t vlan_id, uint8_t *src_mac, uint8_t *dst_mac) 
 {
     int i=0;
 
@@ -59,7 +59,7 @@ int32_t inline mcast_entry_get(uint16_t vlan_id, uint8_t *src_mac, uint8_t *dst_
     return -1;
 }
 
-int inline __add_mcast_entry(uint16_t vlan_id, uint8_t *src_mac, uint8_t *dst_mac)
+static inline int __add_mcast_entry(uint16_t vlan_id, uint8_t *src_mac, uint8_t *dst_mac)
 {
     int i=0;
 
@@ -86,7 +86,7 @@ int inline __add_mcast_entry(uint16_t vlan_id, uint8_t *src_mac, uint8_t *dst_ma
     return 0;
 }
 
-int inline mcast_entry_ins(uint16_t vlan_id, uint8_t *src_mac, uint8_t *dst_mac) 
+static inline int mcast_entry_ins(uint16_t vlan_id, uint8_t *src_mac, uint8_t *dst_mac) 
 {
     int entry_num=0, ret=0;
 
@@ -114,7 +114,7 @@ int inline mcast_entry_ins(uint16_t vlan_id, uint8_t *src_mac, uint8_t *dst_mac)
  *	    0: entry found
  *	    1: entry not found
  */
-int inline mcast_entry_del(uint16_t vlan_id, uint8_t *src_mac, uint8_t *dst_mac) 
+static inline int mcast_entry_del(uint16_t vlan_id, uint8_t *src_mac, uint8_t *dst_mac) 
 {
     int entry_num;
 
