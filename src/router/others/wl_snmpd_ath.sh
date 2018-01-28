@@ -57,7 +57,7 @@ refresh() {
     eval value_1361412021255354133211${id}=$id;
     eval type_1361412021255354133211${id}='integer';
     eval value_1361412021255354133214${id}='$mac';
-    eval type_1361412021255354133214${id}='octet';
+    eval type_1361412021255354133214${id}='string';
     eval value_13614120212553541332113${id}=$noise_reference;
     eval type_13614120212553541332113${id}='integer';
     eval value_13614120212553541332126${id}=$snr;
