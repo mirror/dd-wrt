@@ -54,8 +54,6 @@ refresh() {
 	eap_identity=`cat /tmp/eap_identities/$mac`
     fi
     mac=$(echo $mac | tr : ' ')
-    uptimestr=$(echo $uptimestr | tr : ' ')
-  
     eval value_1361412021255354133211${id}=$id;
     eval type_1361412021255354133211${id}='integer';
     eval value_1361412021255354133214${id}='$mac';
@@ -67,15 +65,15 @@ refresh() {
     eval value_13614120212553541332127${id}=$uptime;
     eval type_13614120212553541332127${id}='integer';
     eval value_13614120212553541332128${id}=$ifname;
-    eval type_13614120212553541332128${id}='octet';
+    eval type_13614120212553541332128${id}='string';
     eval value_13614120212553541332129${id}=$eap_identity;
-    eval type_13614120212553541332129${id}='octet';
+    eval type_13614120212553541332129${id}='string';
     eval value_13614120212553541332130${id}=$rxrate;
     eval type_13614120212553541332130${id}='integer';
     eval value_13614120212553541332131${id}=$txrate;
     eval type_13614120212553541332131${id}='integer';
     eval value_13614120212553541332132${id}=$uptimestr;
-    eval type_13614120212553541332132${id}='octet';
+    eval type_13614120212553541332132${id}='string';
 
     lastid=$id
     let id=$id+1
