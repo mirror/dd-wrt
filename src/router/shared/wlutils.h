@@ -90,6 +90,8 @@ int getassoclist(char *name, unsigned char *list);
 int getNoise(char *ifname, unsigned char *mac);
 int getUptime(char *ifname, unsigned char *mac);
 int getRssi(char *ifname, unsigned char *mac);
+int getTxRate(char *ifname, unsigned char *mac);
+int getRxRate(char *ifname, unsigned char *mac);
 
 int getassoclist_11n(char *name, unsigned char *list);
 int getNoise_11n(char *ifname, unsigned char *mac);
