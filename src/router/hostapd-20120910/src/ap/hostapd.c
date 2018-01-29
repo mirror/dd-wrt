@@ -33,6 +33,8 @@
 #include "ap_config.h"
 #include "p2p_hostapd.h"
 #include "gas_serv.h"
+#include "eapol_auth/eapol_auth_sm.h"
+#include "eapol_auth/eapol_auth_sm_i.h"
 
 
 static int hostapd_flush_old_stations(struct hostapd_data *hapd, u16 reason);
