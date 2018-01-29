@@ -2318,7 +2318,7 @@ int getRxRate(char *ifname, unsigned char *mac)
 				t = 1;
 
 			int rxrate = ((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) / 2) * t;
-			return rxrate;
+			return rxrate * 10;
 		}
 		if (!memcmp(&si->isi_macaddr[0], mac, 6))
 			break;
@@ -2391,7 +2391,7 @@ int getTxRate(char *ifname, unsigned char *mac)
 				t = 1;
 
 			int txrate = ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) / 2) * t;
-			return txrate;
+			return txrate * 10;
 		}
 		if (!memcmp(&si->isi_macaddr[0], mac, 6))
 			break;
