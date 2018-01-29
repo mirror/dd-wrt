@@ -5,7 +5,7 @@
 #include <utils.h>
 #include <bcmnvram.h>
 
-static void showinterface(char *base, char *ifname)
+static void showAssocList(char *base, char *ifname, char *mac, struct wifi_client_info *rwc)
 {
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
@@ -40,10 +40,9 @@ static void showinterface(char *base, char *ifname)
 
 }
 
-static struct wifi_client_info *matchmac(char *base, char *ifname, char *mac)
+static int matchmac(char *base, char *ifname, char *mac, struct wifi_client_info *rwc)
 {
 	unsigned char rmac[32];
-	static struct wifi_client_info rwc;
 	ether_etoa(mac, rmac);
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
@@ -53,17 +52,17 @@ static struct wifi_client_info *matchmac(char *base, char *ifname, char *mac)
 		for (wc = mac80211_info->wci; wc; wc = wc->next) {
 			if (!strcmp(ifname, wc->ifname)
 			    && !strcmp(rmac, wc->mac)) {
-				memcpy(&rwc, wc, sizeof(rwc));
+				memcpy(rwc, wc, sizeof(struct wifi_client_info));
 				free_wifi_clients(mac80211_info->wci);
 				free(mac80211_info);
-				return &rwc;
+				return 1;
 			}
 		}
-		return NULL;
+		return 0;
 	} else
 #endif
 	{
-		return (struct wifi_client_info *)1;
+		return 1;
 	}
 
 }
@@ -171,23 +170,18 @@ static void showUptimeStr(char *base, char *ifname, char *rmac, struct wifi_clie
 typedef struct functions {
 	char *fname;
 	void (*fn) (char *base, char *ifname, char *rmac, struct wifi_client_info * wc);
+	int matchmac;
 } FN;
 
 FN fn[] = {
-	{
-	 "rssi", &showRssi},	//
-	{
-	 "noise", &showNoise},	//
-	{
-	 "ifname", &showIfname},	//
-	{
-	 "uptime", &showUptime},	//
-	{
-	 "uptimestr", &showUptimeStr},	//
-	{
-	 "rxrate", &showRxRate},	//
-	{
-	 "txrate", &showTxRate}	//
+	{"rssi", &showRssi, 1},	//
+	{"noise", &showNoise, 1},	//
+	{"ifname", &showIfname, 1},	//
+	{"uptime", &showUptime, 1},	//
+	{"uptimestr", &showUptimeStr, 1},	//
+	{"rxrate", &showRxRate, 1},	//
+	{"txrate", &showTxRate, 1},	//
+	{"assoclist", &showAssocList, 0}	//
 };
 
 static void evaluate(char *keyname, char *ifdecl, char *macstr)
@@ -195,18 +189,21 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 
 	int i;
 	void (*fnp) (char *base, char *ifname, char *rmac, struct wifi_client_info * wc);
-	struct wifi_client_info *wc;
-
+	struct wifi_client_info wc;
+	int m;
 	for (i = 0; i < sizeof(fn) / sizeof(fn[0]); i++) {
-		if (!strcmp(fn[i].fname, keyname))
+		if (!strcmp(fn[i].fname, keyname)) {
 			fnp = fn[i].fn;
+			m = fn[i].matchmac;
+		}
 	}
 	if (!fnp)
 		return;
-
+	if (!macstr && m)
+		return;
 	unsigned char rmac[6];
-	ether_atoe(macstr, rmac);
-
+	if (macstr)
+		ether_atoe(macstr, rmac);
 	if (ifdecl) {
 		fnp(ifdecl, ifdecl, rmac, NULL);
 	} else {
@@ -216,9 +213,10 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 		for (c = 0; c < ifcount; c++) {
 			char interface[32];
 			sprintf(interface, "ath%d", c);
-			if ((wc = matchmac(interface, interface, rmac))) {
-				fnp(interface, interface, rmac, wc);
-				return;
+			if (!m || matchmac(interface, interface, rmac, &wc)) {
+				fnp(interface, interface, rmac, &wc);
+				if (m)
+					return;
 			}
 			char vif[32];
 			sprintf(vif, "%s_vifs", interface);
@@ -226,9 +224,10 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 			char *vifs = nvram_safe_get(vif);
 			if (vifs != NULL) {
 				foreach(var, vifs, next) {
-					if ((wc = matchmac(interface, var, rmac))) {
-						fnp(interface, var, rmac, wc);
-						return;
+					if (!m || matchmac(interface, var, rmac, &wc)) {
+						fnp(interface, var, rmac, &wc);
+						if (m)
+							return;
 					}
 				}
 			}
@@ -247,38 +246,12 @@ int main(int argc, char *argv[])
 	int i;
 	for (i = 1; i < argc; i++) {
 		if (!strcmp(argv[i], "-i")) {
-			if (i == (argc -1))
+			if (i == (argc - 1))
 				return -1;
 			ifname = argv[++i];
 			continue;
 		}
-
-		if (!strcmp(argv[i], "assoclist")) {
-			int ifcount = getdevicecount();
-			if (strcmp(argv[1], "-i") == 0)
-				showinterface(ifname, ifname);
-			else {
-				int c = 0;
-				for (c = 0; c < ifcount; c++) {
-					char interface[32];
-					sprintf(interface, "ath%d", c);
-					showinterface(interface, interface);
-					char vif[32];
-					sprintf(vif, "%s_vifs", interface);
-					char var[80], *next;
-					char *vifs = nvram_safe_get(vif);
-					if (vifs != NULL) {
-						foreach(var, vifs, next) {
-							showinterface(interface, var);
-						}
-					}
-				}
-			}
-			return 0;
-		}
 		char *name = argv[i];
-		if (i == (argc - 1))
-			return -1;
 		evaluate(name, ifname, argv[++i]);
 		return 0;
 
