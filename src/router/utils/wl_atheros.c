@@ -11,7 +11,7 @@ struct wifi_client_info {
 };
 #endif
 
-static void showAssocList(char *base, char *ifname, char *mac, struct wifi_client_info *rwc)
+static int showAssocList(char *base, char *ifname, char *mac, struct wifi_client_info *rwc)
 {
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
@@ -43,6 +43,7 @@ static void showAssocList(char *base, char *ifname, char *mac, struct wifi_clien
 		free(buf);
 
 	}
+	return 1;
 
 }
 
@@ -73,7 +74,7 @@ static int matchmac(char *base, char *ifname, char *mac, struct wifi_client_info
 
 }
 
-static void showRssi(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
+static int showRssi(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
 	int rssi;
 #ifdef HAVE_ATH9K
@@ -84,11 +85,13 @@ static void showRssi(char *base, char *ifname, char *rmac, struct wifi_client_in
 		rssi = getRssi(ifname, rmac);
 	if (rssi != 0 && rssi != -1) {
 		fprintf(stdout, "rssi is %d\n", rssi);
+		return 1;
 	}
+	return 0;
 
 }
 
-static void showNoise(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
+static int showNoise(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
 	int noise;
 #ifdef HAVE_ATH9K
@@ -99,11 +102,13 @@ static void showNoise(char *base, char *ifname, char *rmac, struct wifi_client_i
 		noise = getNoise(ifname, rmac);
 	if (noise != 0 && noise != -1) {
 		fprintf(stdout, "noise is %d\n", noise);
+		return 1;
 	}
+	return 0;
 
 }
 
-static void showRxRate(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
+static int showRxRate(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
 	int rxrate;
 #ifdef HAVE_ATH9K
@@ -114,11 +119,13 @@ static void showRxRate(char *base, char *ifname, char *rmac, struct wifi_client_
 		rxrate = getRxRate(ifname, rmac);
 	if (rxrate != 0 && rxrate != -1) {
 		fprintf(stdout, "rxrate is %d\n", rxrate / 10);
+		return 1;
 	}
+	return 0;
 
 }
 
-static void showTxRate(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
+static int showTxRate(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
 	int txrate;
 #ifdef HAVE_ATH9K
@@ -129,17 +136,19 @@ static void showTxRate(char *base, char *ifname, char *rmac, struct wifi_client_
 		txrate = getTxRate(ifname, rmac);
 	if (txrate != 0 && txrate != -1) {
 		fprintf(stdout, "txrate is %d\n", txrate / 10);
+		return 1;
 	}
+	return 0;
 
 }
 
-static void showIfname(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
+static int showIfname(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
 	fprintf(stdout, "ifname is %s\n", ifname);
-
+	return 1;
 }
 
-static void showUptime(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
+static int  showUptime(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
 	int uptime;
 #ifdef HAVE_ATH9K
@@ -150,7 +159,9 @@ static void showUptime(char *base, char *ifname, char *rmac, struct wifi_client_
 		uptime = getUptime(ifname, rmac);
 	if (uptime != 0 && uptime != -1) {
 		fprintf(stdout, "uptime is %d\n", uptime);
+		return 1;
 	}
+	return 0;
 }
 
 static char *UPTIME(int uptime)
@@ -171,7 +182,7 @@ static char *UPTIME(int uptime)
 	return str;
 }
 
-static void showUptimeStr(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
+static int showUptimeStr(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
 	int uptime;
 #ifdef HAVE_ATH9K
@@ -182,12 +193,14 @@ static void showUptimeStr(char *base, char *ifname, char *rmac, struct wifi_clie
 		uptime = getUptime(ifname, rmac);
 	if (uptime != 0 && uptime != -1) {
 		fprintf(stdout, "uptime is %s\n", UPTIME(uptime));
+		return 1;
 	}
+	return 0;
 }
 
 typedef struct functions {
 	char *fname;
-	void (*fn) (char *base, char *ifname, char *rmac, struct wifi_client_info * wc);
+	int (*fn) (char *base, char *ifname, char *rmac, struct wifi_client_info * wc);
 	int matchmac;
 } FN;
 
@@ -206,7 +219,7 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 {
 
 	int i;
-	void (*fnp) (char *base, char *ifname, char *rmac, struct wifi_client_info * wc);
+	int (*fnp) (char *base, char *ifname, char *rmac, struct wifi_client_info * wc);
 	struct wifi_client_info wc;
 	int m;
 	for (i = 0; i < sizeof(fn) / sizeof(fn[0]); i++) {
@@ -232,8 +245,8 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 			char interface[32];
 			sprintf(interface, "ath%d", c);
 			if (!m || matchmac(interface, interface, rmac, &wc)) {
-				fnp(interface, interface, rmac, &wc);
-				if (m)
+				int r = fnp(interface, interface, rmac, &wc);
+				if (m && r)
 					return;
 			}
 			char vif[32];
@@ -243,8 +256,8 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 			if (vifs != NULL) {
 				foreach(var, vifs, next) {
 					if (!m || matchmac(interface, var, rmac, &wc)) {
-						fnp(interface, var, rmac, &wc);
-						if (m)
+						int r  = fnp(interface, var, rmac, &wc);
+						if (m && r)
 							return;
 					}
 				}
