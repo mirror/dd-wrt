@@ -2308,8 +2308,8 @@ int getRxRate(char *ifname, unsigned char *mac)
 			close(s);
 			char turbo[32];
 			char *s = strchr(ifname, '.');
-			if (s) ;
-			*s = 0;
+			if (s)
+				*s = 0;
 			sprintf(turbo, "%s_channelbw", ifname);
 			int t;
 			if (nvram_matchi(turbo, 40))
@@ -2381,8 +2381,8 @@ int getTxRate(char *ifname, unsigned char *mac)
 			close(s);
 			char turbo[32];
 			char *s = strchr(ifname, '.');
-			if (s) ;
-			*s = 0;
+			if (s)
+			    *s = 0;
 			sprintf(turbo, "%s_channelbw", ifname);
 			int t;
 			if (nvram_matchi(turbo, 40))
