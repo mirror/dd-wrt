@@ -5,6 +5,12 @@
 #include <utils.h>
 #include <bcmnvram.h>
 
+#ifndef HAVE_ATH9K
+struct wifi_client_info {
+    void *dummy;
+};
+#endif
+
 static void showAssocList(char *base, char *ifname, char *mac, struct wifi_client_info *rwc)
 {
 #ifdef HAVE_ATH9K
@@ -70,9 +76,11 @@ static int matchmac(char *base, char *ifname, char *mac, struct wifi_client_info
 static void showRssi(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
 	int rssi;
+#ifdef HAVE_ATH9K
 	if (wc && is_ath9k(ifname))
 		rssi = wc->signal;
 	else
+#endif
 		rssi = getRssi(ifname, rmac);
 	if (rssi != 0 && rssi != -1) {
 		fprintf(stdout, "rssi is %d\n", rssi);
@@ -83,9 +91,11 @@ static void showRssi(char *base, char *ifname, char *rmac, struct wifi_client_in
 static void showNoise(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
 	int noise;
+#ifdef HAVE_ATH9K
 	if (wc && is_ath9k(ifname))
 		noise = wc->noise;
 	else
+#endif
 		noise = getNoise(ifname, rmac);
 	if (noise != 0 && noise != -1) {
 		fprintf(stdout, "noise is %d\n", noise);
@@ -96,9 +106,11 @@ static void showNoise(char *base, char *ifname, char *rmac, struct wifi_client_i
 static void showRxRate(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
 	int rxrate;
+#ifdef HAVE_ATH9K
 	if (wc && is_ath9k(ifname))
 		rxrate = wc->rxrate;
 	else
+#endif
 		rxrate = getRxRate(ifname, rmac);
 	if (rxrate != 0 && rxrate != -1) {
 		fprintf(stdout, "rxrate is %d\n", rxrate / 10);
@@ -109,9 +121,11 @@ static void showRxRate(char *base, char *ifname, char *rmac, struct wifi_client_
 static void showTxRate(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
 	int txrate;
+#ifdef HAVE_ATH9K
 	if (wc && is_ath9k(ifname))
 		txrate = wc->txrate;
 	else
+#endif
 		txrate = getTxRate(ifname, rmac);
 	if (txrate != 0 && txrate != -1) {
 		fprintf(stdout, "txrate is %d\n", txrate / 10);
@@ -128,9 +142,11 @@ static void showIfname(char *base, char *ifname, char *rmac, struct wifi_client_
 static void showUptime(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
 	int uptime;
+#ifdef HAVE_ATH9K
 	if (wc && is_ath9k(ifname))
 		uptime = wc->uptime;
 	else
+#endif
 		uptime = getUptime(ifname, rmac);
 	if (uptime != 0 && uptime != -1) {
 		fprintf(stdout, "uptime is %d\n", uptime);
@@ -158,9 +174,11 @@ static char *UPTIME(int uptime)
 static void showUptimeStr(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
 	int uptime;
+#ifdef HAVE_ATH9K
 	if (wc && is_ath9k(ifname))
 		uptime = wc->uptime;
 	else
+#endif
 		uptime = getUptime(ifname, rmac);
 	if (uptime != 0 && uptime != -1) {
 		fprintf(stdout, "uptime is %s\n", UPTIME(uptime));
