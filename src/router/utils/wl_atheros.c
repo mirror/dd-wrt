@@ -173,7 +173,7 @@ typedef struct functions {
 	int matchmac;
 } FN;
 
-FN fn[] = {
+static FN fn[] = {
 	{"rssi", &showRssi, 1},	//
 	{"noise", &showNoise, 1},	//
 	{"ifname", &showIfname, 1},	//
