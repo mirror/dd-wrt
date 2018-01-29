@@ -586,6 +586,8 @@ madwifi_read_sta_driver_data(void *priv, struct hostap_sta_driver_data *data,
 	data->rx_bytes = stats.is_stats.ns_rx_bytes;
 	data->tx_packets = stats.is_stats.ns_tx_data;
 	data->tx_bytes = stats.is_stats.ns_tx_bytes;
+
+
 	return 0;
 
 #else /* MADWIFI_BSD */
