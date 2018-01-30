@@ -7,7 +7,7 @@
 
 #ifndef HAVE_ATH9K
 struct wifi_client_info {
-    void *dummy;
+	void *dummy;
 };
 #endif
 
@@ -148,7 +148,7 @@ static int showIfname(char *base, char *ifname, char *rmac, struct wifi_client_i
 	return 1;
 }
 
-static int  showUptime(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
+static int showUptime(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
 {
 	int uptime;
 #ifdef HAVE_ATH9K
@@ -256,7 +256,7 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 			if (vifs != NULL) {
 				foreach(var, vifs, next) {
 					if (!m || matchmac(interface, var, rmac, &wc)) {
-						int r  = fnp(interface, var, rmac, &wc);
+						int r = fnp(interface, var, rmac, &wc);
 						if (m && r)
 							return;
 					}
