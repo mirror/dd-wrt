@@ -1507,6 +1507,8 @@ int internal_getRouterBrand()
 #elif HAVE_XD3200
 #ifdef HAVE_SR3200
 	setRouter("Yuncore SR3200");
+#elif HAVE_CPE890
+	setRouter("Yuncore CPE890");
 #else
 	setRouter("Yuncore XD3200");
 #endif
