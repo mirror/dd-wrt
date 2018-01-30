@@ -114,24 +114,19 @@ static inline u64 le64_to_cpuvp(const void *p)
 	return le64_to_cpup(p);
 }
 
-static inline u32 rotl32(u32 v, u8 n)
-{
-	return (v << n) | (v >> (sizeof(v) * 8 - n));
-}
-
 struct chacha20_ctx {
 	u32 state[CHACHA20_BLOCK_SIZE / sizeof(u32)];
 } __aligned(32);
 
 #define QUARTER_ROUND(x, a, b, c, d) ( \
 	x[a] += x[b], \
-	x[d] = rotl32((x[d] ^ x[a]), 16), \
+	x[d] = rol32((x[d] ^ x[a]), 16), \
 	x[c] += x[d], \
-	x[b] = rotl32((x[b] ^ x[c]), 12), \
+	x[b] = rol32((x[b] ^ x[c]), 12), \
 	x[a] += x[b], \
-	x[d] = rotl32((x[d] ^ x[a]), 8), \
+	x[d] = rol32((x[d] ^ x[a]), 8), \
 	x[c] += x[d], \
-	x[b] = rotl32((x[b] ^ x[c]), 7) \
+	x[b] = rol32((x[b] ^ x[c]), 7) \
 )
 
 #define C(i, j) (i * 4 + j)
@@ -162,10 +157,9 @@ struct chacha20_ctx {
 	DOUBLE_ROUND(x) \
 )
 
-static void chacha20_block_generic(struct chacha20_ctx *ctx, void *stream)
+static void chacha20_block_generic(struct chacha20_ctx *ctx, __le32 *stream)
 {
 	u32 x[CHACHA20_BLOCK_SIZE / sizeof(u32)];
-	__le32 *out = stream;
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(x); i++)
@@ -174,9 +168,9 @@ static void chacha20_block_generic(struct chacha20_ctx *ctx, void *stream)
 	TWENTY_ROUNDS(x);
 
 	for (i = 0; i < ARRAY_SIZE(x); i++)
-		out[i] = cpu_to_le32(x[i] + ctx->state[i]);
+		stream[i] = cpu_to_le32(x[i] + ctx->state[i]);
 
-	ctx->state[12]++;
+	++ctx->state[12];
 }
 
 static void hchacha20_generic(u8 derived_key[CHACHA20POLY1305_KEYLEN], const u8 nonce[16], const u8 key[CHACHA20POLY1305_KEYLEN])
@@ -222,7 +216,7 @@ static inline void hchacha20(u8 derived_key[CHACHA20POLY1305_KEYLEN], const u8 n
 
 static void chacha20_crypt(struct chacha20_ctx *ctx, u8 *dst, const u8 *src, u32 bytes, bool have_simd)
 {
-	u8 buf[CHACHA20_BLOCK_SIZE];
+	__le32 buf[CHACHA20_BLOCK_SIZE / sizeof(__le32)];
 
 	if (!have_simd
 #if defined(CONFIG_X86_64)
@@ -281,13 +275,13 @@ no_simd:
 
 	while (bytes >= CHACHA20_BLOCK_SIZE) {
 		chacha20_block_generic(ctx, buf);
-		crypto_xor(dst, buf, CHACHA20_BLOCK_SIZE);
+		crypto_xor(dst, (u8 *)buf, CHACHA20_BLOCK_SIZE);
 		bytes -= CHACHA20_BLOCK_SIZE;
 		dst += CHACHA20_BLOCK_SIZE;
 	}
 	if (bytes) {
 		chacha20_block_generic(ctx, buf);
-		crypto_xor(dst, buf, bytes);
+		crypto_xor(dst, (u8 *)buf, bytes);
 	}
 }
 
