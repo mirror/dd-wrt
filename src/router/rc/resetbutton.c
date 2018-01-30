@@ -216,6 +216,16 @@ static int getbuttonstate()
 	return !get_gpio(17);
 
 }
+#elif defined(HAVE_CPE880)
+static int getbuttonstate()
+{
+	return 0;
+	int ret = get_gpio(4);
+
+	if (ret == 0)
+		return 1;
+	return 0;
+}
 #elif defined(HAVE_MMS344)
 static int getbuttonstate()
 {

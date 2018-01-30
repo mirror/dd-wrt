@@ -157,7 +157,10 @@ void setRouter(char *name)
 	nvram_set("DD_BOARD", "SANSFIL");
 	nvram_set("DD_BOARD2", name);
 #elif HAVE_ONNET
-#ifdef HAVE_MMS344
+#if HAVE_CPE880
+	nvram_set("DD_BOARD", "5900AC");
+	nvram_set("DD_BOARD2", "5900AC");
+#elif HAVE_MMS344
 #ifdef HAVE_WILLY
 	nvram_set("DD_BOARD", "9342-AN4g");
 	nvram_set("DD_BOARD2", "9342-AN4g");
@@ -1424,6 +1427,13 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "7");
 	nvram_default_get("ath1_rxantenna", "7");
 	nvram_default_get("ath1_txantenna", "7");
+	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_CPE880
+	setRouter("Yuncore CPE880");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("ath1_rxantenna", "3");
+	nvram_default_get("ath1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WILLY
 	setRouter("Wallystech DR342-NAS");
