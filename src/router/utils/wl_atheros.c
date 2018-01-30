@@ -11,7 +11,17 @@ struct wifi_client_info {
 };
 #endif
 
-static int showAssocList(char *base, char *ifname, char *mac, struct wifi_client_info *rwc)
+struct wifi_info {
+	unsigned char mac[6];
+	char ifname[32];
+	int rssi;
+	int noise;
+	int rxrate;
+	int txrate;
+	int uptime;
+};
+
+static int showAssocList(char *base, char *ifname, char *mac, struct wifi_info *rwc)
 {
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
@@ -19,8 +29,24 @@ static int showAssocList(char *base, char *ifname, char *mac, struct wifi_client
 		struct wifi_client_info *wc;
 		mac80211_info = mac80211_assoclist(base);
 		for (wc = mac80211_info->wci; wc; wc = wc->next) {
-			if (!strcmp(ifname, wc->ifname))
+			if (!strcmp(ifname, wc->ifname)) {
+				char out[48];
+
+				sprintf(out, "/tmp/snmp_cache/%s", base);
+				mkdir(out, 0777);
+				sprintf(out, "/tmp/snmp_cache/%s/%s", base, wc->mac);
+				struct wifi_info data;
+				ether_atoe(wc->mac, data.mac);
+				strcpy(data.ifname, wc->ifname);
+				data.rssi = wc->signal;
+				data.noise = wc->noise;
+				data.rxrate = wc->rxrate;
+				data.txrate = wc->txrate;
+				FILE *fp = fopen(out, "wb");
+				fwrite(&data, 1, sizeof(data), fp);
+				fclose(fp);
 				fprintf(stdout, "assoclist %s\n", wc->mac);
+			}
 		}
 		free_wifi_clients(mac80211_info->wci);
 		free(mac80211_info);
@@ -37,7 +63,27 @@ static int showAssocList(char *base, char *ifname, char *mac, struct wifi_client
 		int a;
 		int pos = 0;
 		for (a = 0; a < cnt; a++) {
-			fprintf(stdout, "assoclist %2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X\n", p[pos], p[pos + 1], p[pos + 2], p[pos + 3], p[pos + 4], p[pos + 5]);
+			struct wifi_info data;
+			memcpy(&data.mac[0], &p[pos], 6);
+
+			strcpy(&data.ifname[0], ifname);
+			data.rssi = getRssi(ifname, &data.mac[0]);
+			data.noise = getNoise(ifname, &data.mac[0]);
+			char *ifx = strdup(ifname);
+			data.rxrate = getRxRate(ifx, &data.mac[0]);
+			data.txrate = getTxRate(ifx, &data.mac[0]);
+			free(ifx);
+			data.uptime = getUptime(ifname, &data.mac[0]);
+			char mstr[32];
+			sprintf(mstr, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X", p[pos], p[pos + 1], p[pos + 2], p[pos + 3], p[pos + 4], p[pos + 5]);
+			char out[48];
+			sprintf(out, "/tmp/snmp_cache/%s", base);
+			mkdir(out, 0777);
+			sprintf(out, "/tmp/snmp_cache/%s/%s", base, mstr);
+			FILE *fp = fopen(out, "wb");
+			fwrite(&data, 1, sizeof(data), fp);
+			fclose(fp);
+			fprintf(stdout, "assoclist %s\n", mstr);
 			pos += 6;
 		}
 		free(buf);
@@ -47,42 +93,30 @@ static int showAssocList(char *base, char *ifname, char *mac, struct wifi_client
 
 }
 
-static int matchmac(char *base, char *ifname, char *mac, struct wifi_client_info *rwc)
+static int matchmac(char *base, char *ifname, char *mac, struct wifi_info *rwc)
 {
 	unsigned char rmac[32];
 	ether_etoa(mac, rmac);
-#ifdef HAVE_ATH9K
-	if (is_ath9k(ifname)) {
-		struct mac80211_info *mac80211_info;
-		struct wifi_client_info *wc;
-		mac80211_info = mac80211_assoclist(base);
-		for (wc = mac80211_info->wci; wc; wc = wc->next) {
-			if (!strcmp(ifname, wc->ifname)
-			    && !strcmp(rmac, wc->mac)) {
-				memcpy(rwc, wc, sizeof(struct wifi_client_info));
-				free_wifi_clients(mac80211_info->wci);
-				free(mac80211_info);
-				return 1;
-			}
-		}
+	char out[48];
+	char mstr[32];
+
+	sprintf(out, "/tmp/snmp_cache/%s/%s", base, rmac);
+	FILE *in = fopen(out, "rb");
+	if (!in)
 		return 0;
-	} else
-#endif
-	{
+	struct wifi_info wc;
+	fread(&wc, 1, sizeof(wc), in);
+	fclose(in);
+	if (!strcmp(wc.ifname, ifname)) {
+		memcpy(rwc, &wc, sizeof(wc));
 		return 1;
 	}
-
+	return 0;
 }
 
-static int showRssi(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
+static int showRssi(char *base, char *ifname, char *rmac, struct wifi_info *wc)
 {
-	int rssi;
-#ifdef HAVE_ATH9K
-	if (wc && is_ath9k(ifname))
-		rssi = wc->signal;
-	else
-#endif
-		rssi = getRssi(ifname, rmac);
+	int rssi = wc->rssi;
 	if (rssi != 0 && rssi != -1) {
 		fprintf(stdout, "rssi is %d\n", rssi);
 		return 1;
@@ -91,15 +125,9 @@ static int showRssi(char *base, char *ifname, char *rmac, struct wifi_client_inf
 
 }
 
-static int showNoise(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
+static int showNoise(char *base, char *ifname, char *rmac, struct wifi_info *wc)
 {
-	int noise;
-#ifdef HAVE_ATH9K
-	if (wc && is_ath9k(ifname))
-		noise = wc->noise;
-	else
-#endif
-		noise = getNoise(ifname, rmac);
+	int noise = wc->noise;
 	if (noise != 0 && noise != -1) {
 		fprintf(stdout, "noise is %d\n", noise);
 		return 1;
@@ -108,15 +136,9 @@ static int showNoise(char *base, char *ifname, char *rmac, struct wifi_client_in
 
 }
 
-static int showRxRate(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
+static int showRxRate(char *base, char *ifname, char *rmac, struct wifi_info *wc)
 {
-	int rxrate;
-#ifdef HAVE_ATH9K
-	if (wc && is_ath9k(ifname))
-		rxrate = wc->rxrate;
-	else
-#endif
-		rxrate = getRxRate(ifname, rmac);
+	int rxrate = wc->rxrate;
 	if (rxrate != 0 && rxrate != -1) {
 		fprintf(stdout, "rxrate is %d\n", rxrate / 10);
 		return 1;
@@ -125,15 +147,9 @@ static int showRxRate(char *base, char *ifname, char *rmac, struct wifi_client_i
 
 }
 
-static int showTxRate(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
+static int showTxRate(char *base, char *ifname, char *rmac, struct wifi_info *wc)
 {
-	int txrate;
-#ifdef HAVE_ATH9K
-	if (wc && is_ath9k(ifname))
-		txrate = wc->txrate;
-	else
-#endif
-		txrate = getTxRate(ifname, rmac);
+	int txrate = wc->txrate;
 	if (txrate != 0 && txrate != -1) {
 		fprintf(stdout, "txrate is %d\n", txrate / 10);
 		return 1;
@@ -142,21 +158,15 @@ static int showTxRate(char *base, char *ifname, char *rmac, struct wifi_client_i
 
 }
 
-static int showIfname(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
+static int showIfname(char *base, char *ifname, char *rmac, struct wifi_info *wc)
 {
 	fprintf(stdout, "ifname is %s\n", ifname);
 	return 1;
 }
 
-static int showUptime(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
+static int showUptime(char *base, char *ifname, char *rmac, struct wifi_info *wc)
 {
-	int uptime;
-#ifdef HAVE_ATH9K
-	if (wc && is_ath9k(ifname))
-		uptime = wc->uptime;
-	else
-#endif
-		uptime = getUptime(ifname, rmac);
+	int uptime = wc->uptime;
 	if (uptime != 0 && uptime != -1) {
 		fprintf(stdout, "uptime is %d\n", uptime);
 		return 1;
@@ -182,15 +192,9 @@ static char *UPTIME(int uptime)
 	return str;
 }
 
-static int showUptimeStr(char *base, char *ifname, char *rmac, struct wifi_client_info *wc)
+static int showUptimeStr(char *base, char *ifname, char *rmac, struct wifi_info *wc)
 {
-	int uptime;
-#ifdef HAVE_ATH9K
-	if (wc && is_ath9k(ifname))
-		uptime = wc->uptime;
-	else
-#endif
-		uptime = getUptime(ifname, rmac);
+	int uptime = wc->uptime;
 	if (uptime != 0 && uptime != -1) {
 		fprintf(stdout, "uptime is %s\n", UPTIME(uptime));
 		return 1;
@@ -200,7 +204,7 @@ static int showUptimeStr(char *base, char *ifname, char *rmac, struct wifi_clien
 
 typedef struct functions {
 	char *fname;
-	int (*fn) (char *base, char *ifname, char *rmac, struct wifi_client_info * wc);
+	int (*fn) (char *base, char *ifname, char *rmac, struct wifi_info * wc);
 	int matchmac;
 } FN;
 
@@ -219,8 +223,8 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 {
 
 	int i;
-	int (*fnp) (char *base, char *ifname, char *rmac, struct wifi_client_info * wc);
-	struct wifi_client_info wc;
+	int (*fnp) (char *base, char *ifname, char *rmac, struct wifi_info * wc) = NULL;
+	struct wifi_info wc;
 	int m;
 	for (i = 0; i < sizeof(fn) / sizeof(fn[0]); i++) {
 		if (!strcmp(fn[i].fname, keyname)) {
@@ -269,6 +273,7 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 
 int main(int argc, char *argv[])
 {
+	mkdir("/tmp/snmp_cache", 0777);
 	if (argc < 2) {
 		fprintf(stderr, "invalid argument\n");
 		return 0;
