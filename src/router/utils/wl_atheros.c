@@ -71,6 +71,8 @@ static int showAssocList(char *base, char *ifname, char *mac, struct wifi_info *
 			data.noise = getNoise(ifname, &data.mac[0]);
 			char *ifx = strdup(ifname);
 			data.rxrate = getRxRate(ifx, &data.mac[0]);
+			free(ifx);
+			ifx = strdup(ifname);
 			data.txrate = getTxRate(ifx, &data.mac[0]);
 			free(ifx);
 			data.uptime = getUptime(ifname, &data.mac[0]);
