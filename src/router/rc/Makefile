@@ -532,6 +532,9 @@ endif
 ifeq ($(CONFIG_CPE890),y)
 CFLAGS += -DHAVE_CPE890
 endif
+ifeq ($(CONFIG_CPE880),y)
+CFLAGS += -DHAVE_CPE880
+endif
 
 
 ifeq ($(CONFIG_TFTP),y)
