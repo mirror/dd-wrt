@@ -301,7 +301,7 @@ SM_STATE(AUTH_PAE, AUTHENTICATED)
 			   sm->identity ? "User:": "", sm->identity ? sm->identity : "", sm->eap_type_authsrv,
 			   eap_server_get_name(0, sm->eap_type_authsrv),
 			   extra);
-	if (sm->identity) {
+	if (sm->identity && sm->identity_len > 0) {
 		char fileout[64];
 		sprintf(fileout,"/tmp/eap_identities/%02X:%02X:%02X:%02X:%02X:%02X", MAC2STR(sm->addr));
 		FILE *out = fopen(fileout, "wb");
