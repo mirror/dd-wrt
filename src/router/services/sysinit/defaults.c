@@ -1082,9 +1082,6 @@ struct nvram_param srouter_defaults[] = {
 	{"ath1_ssid", "Enterprise WIFI_1"},
 	{"ath2_ssid", "Enterprise WIFI_2"},
 #endif
-#ifdef HAVE_CPE890
-	{"no_ath9k", "1"},
-#endif
 #elif defined(HAVE_ONNET)
 #ifdef HAVE_MMS344
 	{"ath0_ssid", "OTAi2.4"},
@@ -1092,9 +1089,6 @@ struct nvram_param srouter_defaults[] = {
 #else
 	{"ath0_ssid", "OTAi"},
 	{"ath1_ssid", "OTAi_1"},
-#endif
-#ifdef HAVE_CPE890
-	{"no_ath9k", "1"},
 #endif
 #elif defined(HAVE_RAYTRONIK)
 	{"ath0_ssid", "raytronik"},
