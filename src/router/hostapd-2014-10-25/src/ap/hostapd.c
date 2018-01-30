@@ -719,11 +719,15 @@ hostapd_bss_signal_check(void *eloop_data, void *user_ctx)
 				if (signal_avg < hapd->conf->signal_stay_min) { // signal bad.
 					strikes = ++sta->sig_drop_strikes;
 				    if (strikes >= hapd->conf->signal_strikes) {  // Struck out--, drop.
-						if (sta->eapol_sm) {
-    						hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_INFO,"kick out station due low signal %s%s",sta->eapol_sm->identity?"User:":"", sta->eapol_sm->identity?sta->eapol_sm->identity:"");
-						}else{						    
-    						hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_INFO,"kick out station due low signal %s%s",sta->identity?"User:":"", sta->identity?sta->identity:"");
-						}
+					    char *ident = NULL;
+					    if (sta->eapol_sm && sta->eapol_sm->identity && sta->eapol_sm->identity_len > 0) {
+						    ident = malloc(sta->eapol_sm->identity_len+1);
+						    strncpy(ident, sta->eapol_sm->identity, sta->eapol_sm->identity_len);
+						    ident[sta->eapol_sm->identity_len] = 0;
+					    }
+    					    hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_MLME, HOSTAPD_LEVEL_INFO,"kick out station due low signal %s%s",ident?"User:":"", ident?ident:"");
+    					    if (ident)
+						free(ident);
 						ap_sta_deauthenticate(hapd, sta, hapd->conf->signal_drop_reason); 
 						num_drop++;
 					}
