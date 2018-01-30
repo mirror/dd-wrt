@@ -338,6 +338,10 @@ void start_sysinit(void)
 		eval("rm", "-f", "/tmp/ath10k-board.bin");
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
+#ifdef HAVE_CPE890
+	if (!nvram_safe_get("no_ath9k"))
+		nvram_set("no_ath9k", "1");
+#endif
 #elif defined(HAVE_E380AC)
 	FILE *fp = fopen("/dev/mtdblock/0", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
@@ -422,7 +426,6 @@ void start_sysinit(void)
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
 #endif
-
 	detect_wireless_devices();
 #ifndef HAVE_WR810N
 
