@@ -2173,7 +2173,7 @@ int getUptime(char *ifname, unsigned char *mac)
 		si = (struct ieee80211req_sta_info *)cp;
 		if (!memcmp(&si->isi_macaddr[0], mac, 6)) {
 			close(s);
-			int uptime = 0;	//si->isi_uptime;
+			int uptime = si->isi_uptime;
 
 			free(buf);
 			return uptime;
