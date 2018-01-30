@@ -1159,6 +1159,8 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "AP-9563AC");
 	} else if (nvram_match("DD_BOARD", "Yuncore SR3200")) {
 		websWrite(wp, "AP-1200AC");
+	} else if (nvram_match("DD_BOARD", "Yuncore CPE890")) {
+		websWrite(wp, "AP-5900AC");
 	} else if (nvram_match("DD_BOARD", "Alfa AP120C")) {
 		websWrite(wp, "AP-600dbdc");
 	} else {
@@ -1187,6 +1189,8 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "OTAi 9563-AC");
 	} else if (nvram_match("DD_BOARD", "Yuncore SR3200")) {
 		websWrite(wp, "OTAi 1200AC");
+	} else if (nvram_match("DD_BOARD", "Yuncore CPE890")) {
+		websWrite(wp, "OTAi 5900AC");
 	} else if (nvram_match("DD_BOARD", "Alfa AP120C")) {
 		websWrite(wp, "OTAi 600dbdc");
 	} else {
