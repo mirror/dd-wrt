@@ -2307,10 +2307,12 @@ int getRxRate(char *ifname, unsigned char *mac)
 		if (!memcmp(&si->isi_macaddr[0], mac, 6)) {
 			close(s);
 			char turbo[32];
-			char *s = strchr(ifname, '.');
+			char *ifn = strdup(ifname);
+			char *s = strchr(ifn, '.');
 			if (s)
 				*s = 0;
-			sprintf(turbo, "%s_channelbw", ifname);
+			sprintf(turbo, "%s_channelbw", ifn);
+			free(ifn);
 			int t;
 			if (nvram_matchi(turbo, 40))
 				t = 2;
@@ -2380,10 +2382,12 @@ int getTxRate(char *ifname, unsigned char *mac)
 		if (!memcmp(&si->isi_macaddr[0], mac, 6)) {
 			close(s);
 			char turbo[32];
-			char *s = strchr(ifname, '.');
+			char *ifn = strdup(ifname);
+			char *s = strchr(ifn, '.');
 			if (s)
 			    *s = 0;
-			sprintf(turbo, "%s_channelbw", ifname);
+			sprintf(turbo, "%s_channelbw", ifn);
+			free(ifn);
 			int t;
 			if (nvram_matchi(turbo, 40))
 				t = 2;
