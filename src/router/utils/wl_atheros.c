@@ -69,12 +69,8 @@ static int showAssocList(char *base, char *ifname, char *mac, struct wifi_info *
 			strcpy(&data.ifname[0], ifname);
 			data.rssi = getRssi(ifname, &data.mac[0]);
 			data.noise = getNoise(ifname, &data.mac[0]);
-			char *ifx = strdup(ifname);
-			data.rxrate = getRxRate(ifx, &data.mac[0]);
-			free(ifx);
-			ifx = strdup(ifname);
-			data.txrate = getTxRate(ifx, &data.mac[0]);
-			free(ifx);
+			data.rxrate = getRxRate(ifname, &data.mac[0]);
+			data.txrate = getTxRate(ifname, &data.mac[0]);
 			data.uptime = getUptime(ifname, &data.mac[0]);
 			char mstr[32];
 			sprintf(mstr, "%2.2X:%2.2X:%2.2X:%2.2X:%2.2X:%2.2X", p[pos], p[pos + 1], p[pos + 2], p[pos + 3], p[pos + 4], p[pos + 5]);
