@@ -320,7 +320,11 @@ SM_STATE(AUTH_PAE, AUTHENTICATED)
 		sprintf(fileout,"/tmp/eap_identities/%02X:%02X:%02X:%02X:%02X:%02X", MAC2STR(sm->addr));
 		FILE *out = fopen(fileout, "wb");
 		if (out) {
-			fprintf(out, "%s",sm->identity);
+			char *ident = malloc(sm->identity_len+1);
+			strncpy(ident, sm->identity, sm->identity_len);
+			ident[sm->identity_len] = 0;
+			fprintf(out, "%s",ident);
+			free(ident);
 			fclose(out);
 		}
 	}
