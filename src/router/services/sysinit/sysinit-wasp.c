@@ -478,6 +478,11 @@ void start_sysinit(void)
 #elif  HAVE_DIR825C1
 	setWirelessLed(0, 13);
 	setWirelessLed(1, 32);
+#elif  HAVE_CPE880
+	setWirelessLed(0, 12);
+
+        if (!nvram_matchi("wlanled", 0))
+                eval("/sbin/wlanled", "-l", "generic_17:-94", "-l", "generic_20:-80", "-l", "generic_21:-73", "-l", "generic_22:-65");
 #else
 	setWirelessLed(0, 0);
 #endif
