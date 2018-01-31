@@ -1062,6 +1062,9 @@ endif
 ifeq ($(CONFIG_ALFANX),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
 endif
+ifeq ($(CONFIG_CPE880),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
+endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc beep
 	cd $(INSTALLDIR)/sbin && ln -sf rc ledtracking
 ifeq ($(CONFIG_IPV6),y)
