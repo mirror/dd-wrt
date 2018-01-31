@@ -2024,6 +2024,10 @@ int led_control(int type, int act)
 		connected_gpio = 0x116;	// green
 		disconnected_gpio = 0x117;	// orange
 		break;
+#elif HAVE_CPE880
+	case ROUTER_BOARD_WHRHPGN:
+		connected_gpio = 0x10c;
+		break;
 #elif HAVE_MMS344
 	case ROUTER_BOARD_WHRHPGN:
 		diag_gpio = 0x10e;
