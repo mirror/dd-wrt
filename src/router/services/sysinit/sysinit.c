@@ -1628,7 +1628,7 @@ void start_restore_defaults(void)
 	struct nvram_param generic[] = {
 		{"lan_ifname", "br0"},
 		{"lan_ifnames", "vlan1 ath0"},
-		{"wan_ifname", ""},
+		{"wan_ifname", "vlan2"},
 		{"wan_ifname2", ""},
 		{"wan_ifnames", ""},
 		{"wan_default", ""},
