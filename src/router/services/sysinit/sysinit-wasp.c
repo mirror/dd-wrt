@@ -189,8 +189,8 @@ void start_sysinit(void)
 #elif defined (HAVE_CPE880)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1");
-	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 2");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 5");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 4");
 #elif defined (HAVE_MMS344)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
@@ -220,7 +220,7 @@ void start_sysinit(void)
 #endif
 #endif
 	eval("swconfig", "dev", "eth0", "set", "apply");
-#ifdef HAVE_WNDR3700V4
+#if defined(HAVE_WNDR3700V4) || defined(HAVE_CPE880)
 	FILE *fp = fopen("/dev/mtdblock/5", "rb");
 	if (fp) {
 		unsigned char buf2[256];
@@ -234,8 +234,7 @@ void start_sysinit(void)
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 	}
-#endif
-#if defined(HAVE_MMS344) && !defined(HAVE_DAP3662)
+#elif defined(HAVE_MMS344) && !defined(HAVE_DAP3662)
 	FILE *fp = fopen("/dev/mtdblock/6", "rb");
 	if (fp) {
 		unsigned char buf2[256];
@@ -244,27 +243,6 @@ void start_sysinit(void)
 #else
 		fseek(fp, 0x2e010, SEEK_SET);
 #endif
-		fread(buf2, 256, 1, fp);
-		fclose(fp);
-		if ((!memcmp(buf2, "\xff\xff\xff\xff\xff\xff", 6)
-		     || !memcmp(buf2, "\x00\x00\x00\x00\x00\x00", 6)))
-			goto out;
-		unsigned int copy[256];
-		int i;
-		for (i = 0; i < 256; i++)
-			copy[i] = buf2[i] & 0xff;
-		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
-		fprintf(stderr, "configure eth0 to %s\n", mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
-	      out:;
-	}
-#elif HAVE_CPE880
-	FILE *fp = fopen("/dev/mtdblock/6", "rb");
-	if (fp) {
-		unsigned char buf2[256];
-
-		fseek(fp, 0x7f0000, SEEK_SET);
-
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
 		if ((!memcmp(buf2, "\xff\xff\xff\xff\xff\xff", 6)
