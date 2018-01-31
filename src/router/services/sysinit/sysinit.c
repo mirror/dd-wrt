@@ -1624,6 +1624,16 @@ void start_restore_defaults(void)
 		{"wan_default", ""},
 		{0, 0}
 	};
+#elif HAVE_CPE880
+	struct nvram_param generic[] = {
+		{"lan_ifname", "br0"},
+		{"lan_ifnames", "vlan1 ath0"},
+		{"wan_ifname", ""},
+		{"wan_ifname2", ""},
+		{"wan_ifnames", ""},
+		{"wan_default", ""},
+		{0, 0}
+	};
 #elif HAVE_WILLY
 	struct nvram_param generic[] = {
 		{"lan_ifname", "br0"},
