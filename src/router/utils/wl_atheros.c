@@ -42,6 +42,7 @@ static int showAssocList(char *base, char *ifname, char *mac, struct wifi_info *
 				data.noise = wc->noise;
 				data.rxrate = wc->rxrate;
 				data.txrate = wc->txrate;
+				data.uptime = wc->uptime;
 				FILE *fp = fopen(out, "wb");
 				fwrite(&data, 1, sizeof(data), fp);
 				fclose(fp);
@@ -238,7 +239,16 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 	if (macstr)
 		ether_atoe(macstr, rmac);
 	if (ifdecl) {
-		fnp(ifdecl, ifdecl, rmac, NULL);
+		char *base = strdup(ifdecl);
+		char *s = strchr(base, '.');
+		if (s)
+			*s = 0;
+		if (!matchmac(base, ifdecl, rmac, &wc)) {
+			free(base);
+			return;
+		}
+		fnp(base, ifdecl, rmac, &wc);
+		free(base);
 	} else {
 		int ifcount = getdevicecount();
 
