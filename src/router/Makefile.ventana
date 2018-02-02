@@ -19,7 +19,8 @@ endif
 
 #
 # Paths
-#
+
+CONFIG_NOOPT=y
 OPENSER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops exec auth auth_db nathelper
 OPENSER_MODULE_FILES := $(foreach module,$(OPENSER_MODULES),openser/modules/$(module)/$(module).so)
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-rmd160 no-aes192
@@ -96,7 +97,7 @@ export COPTS:=$(BASEOPT) -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mn
 endif
 ifeq ($(ARCH),arm)
 #export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard
-export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=neon -mfloat-abi=hard
+export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=neon -mfloat-abi=hard -fno-caller-saves -fno-plt
 #-D_FILE_OFFSET_BITS=64
 endif
 ifeq ($(ARCH),mips)
@@ -267,7 +268,7 @@ endif
 ifneq ($(CONFIG_MUSL),y)
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uclibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
 else
-	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-arm.so.1
+	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-armhf.so.1
 endif
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
 ifeq ($(CONFIG_LIBDL),y)
@@ -379,7 +380,7 @@ else
 		--sysroot $(TARGETDIR) \
 		-L /lib \
 		-L /usr/lib \
-		--ldlib /lib/ld-musl-arm.so.1 \
+		--ldlib /lib/ld-musl-armhf.so.1 \
 		--target $(ARCH)-linux-uclibc \
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
 
