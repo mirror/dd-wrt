@@ -42,6 +42,12 @@ do
 	    make oldconfig ARCH=arm
     fi
 
+    grep "CONFIG_ARM64=y" $i
+    if [ $? -eq 0 ] 
+	then 
+	    make oldconfig ARCH=arm64
+    fi
+
     grep "CONFIG_ARCH_IXP4XX=y" $i
     if [ $? -eq 0 ] 
 	then 
