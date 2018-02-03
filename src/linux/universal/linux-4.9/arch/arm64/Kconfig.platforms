@@ -188,6 +188,19 @@ config ARCH_THUNDER
 	help
 	  This enables support for Cavium's Thunder Family of SoCs.
 
+config ARCH_GW6300
+	bool "Gateworks Newport 6300"
+	depends on ARCH_THUNDER
+	help
+	  This enables support for Cavium's Thunder Family of SoCs.
+
+config ARCH_GW6304
+	bool "Gateworks Newport 6304"
+	depends on ARCH_THUNDER
+	help
+	  This enables support for Cavium's Thunder Family of SoCs.
+
+
 config ARCH_UNIPHIER
 	bool "Socionext UniPhier SoC Family"
 	select ARCH_HAS_RESET_CONTROLLER
