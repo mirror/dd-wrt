@@ -145,8 +145,7 @@ static int start_services_main(int argc, char **argv)
 	start_service_f("olsrd");
 #endif
 
-	start_service("wshaper");
-	startstop_f("firewall");
+	start_service_f("wshaper");
 	start_service_f("wland");
 #ifndef HAVE_MICRO
 	start_service_f("cron");
@@ -719,8 +718,8 @@ static void handle_services(void)
 #endif
 		startstop_f("sshd");
 #endif
-	startstop("wshaper");
-	startstop_f("firewall");
+	startstop("firewall");
+	startstop_f("wshaper");
 #ifdef HAVE_SYSLOG
 	startstop_f("syslog");
 #endif
@@ -833,9 +832,9 @@ static void handle_management(void)
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_service_f("zebra");
 #endif
+	startstop("firewall");
 	stop_service("wland");
-	startstop("wshaper");
-	startstop_f("firewall");
+	startstop_f("wshaper");
 	start_service_f("wland");
 	startstop_fdelay("httpd", 2);
 #ifdef HAVE_NOCAT
@@ -932,8 +931,7 @@ static void handle_filters(void)
 	startstop_f("syslog");
 #endif
 	stop_service("wland");
-	startstop("wshaper");
-	startstop_f("firewall");
+	startstop_f("wshaper");
 	start_service_f("wland");
 #ifndef HAVE_MICRO
 	start_service_f("cron");
@@ -998,11 +996,11 @@ static void handle_forward(void)
 #ifdef HAVE_UPNP
 //    stop_service( "upnp");
 #endif
+	startstop("firewall");
 #ifdef HAVE_UPNP
 //    start_service( "upnp");
 #endif
-	start_service("wshaper");
-	startstop_f("firewall");
+	start_service_f("wshaper");
 	start_service_f("wland");
 //      start_service_f("anchorfreednat");
 #ifdef HAVE_NOCAT
@@ -1014,8 +1012,7 @@ static void handle_forward(void)
 static void handle_qos(void)
 {
 
-	startstop("wshaper");
-	startstop_f("firewall");
+	startstop_f("wshaper");
 	startstop_f("wland");
 #ifdef HAVE_NOCAT
 	startstop_f("splashd");
@@ -1034,12 +1031,12 @@ static void handle_forwardupnp(void)
 #ifdef HAVE_UPNP
 	stop_service("upnp");
 #endif
+	startstop("firewall");
 #ifdef HAVE_UPNP
 	start_service_f("upnp");
 #endif
 	stop_service("wland");
-	startstop("wshaper");
-	startstop_f("firewall");
+	startstop_f("wshaper");
 	start_service_f("wland");
 //      start_service_f("anchorfreednat");
 #ifdef HAVE_NOCAT

@@ -2470,26 +2470,26 @@ static void filter_forward(void)
  */
 static void mangle_table(void)
 {
-//      save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
+      save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
 
 	if (strcmp(get_wan_face(), "wwan0")) {
 
 		if (wanactive() && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
 			insmod("ipt_mark xt_mark ipt_CONNMARK xt_CONNMARK xt_connmark");
 
-			sysprintf("iptables -A PREROUTING -i ! %s -d %s -j MARK --set-mark %s", get_wan_face(), get_wan_ipaddr(), get_NFServiceMark("FORWARD", 1));
+			save2file("-A PREROUTING -i ! %s -d %s -j MARK --set-mark %s", get_wan_face(), get_wan_ipaddr(), get_NFServiceMark("FORWARD", 1));
 
-			sysprintf("iptables -A PREROUTING -j CONNMARK --save-mark");
+			save2file("-A PREROUTING -j CONNMARK --save-mark");
 		}
 	}
 	/*
 	 * Clamp TCP MSS to PMTU of WAN interface 
 	 */
-	sysprintf("iptables -I FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+	save2file("-I FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 
 #ifdef HAVE_PRIVOXY
 	if ((nvram_matchi("privoxy_enable", 1)) && (nvram_matchi("wshaper_enable", 1))) {
-		sysprintf("iptables -I OUTPUT -p tcp --sport 8118 -j IMQ --todev 0");
+		save2file("-I OUTPUT -p tcp --sport 8118 -j IMQ --todev 0");
 	}
 #endif
 
@@ -2503,7 +2503,7 @@ static void mangle_table(void)
 	 */
 	// save2file("-A PREROUTING -i %s -m mark ! --mark 0 -j MARK --set-mark
 	// %d\n", lanface, MARK_LAN2WAN);
-//      save2file("COMMIT\n");
+      save2file("COMMIT\n");
 }
 
 /*
