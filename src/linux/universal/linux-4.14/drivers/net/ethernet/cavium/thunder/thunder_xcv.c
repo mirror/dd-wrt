@@ -65,7 +65,7 @@ MODULE_LICENSE("GPL v2");
 MODULE_VERSION(DRV_VERSION);
 MODULE_DEVICE_TABLE(pci, xcv_id_table);
 
-void xcv_init_hw(void)
+void xcv_init_hw(int phy_mode)
 {
 	u64  cfg;
 
@@ -81,12 +81,31 @@ void xcv_init_hw(void)
 	/* Wait for DLL to lock */
 	msleep(1);
 
-	/* Configure DLL - enable or bypass
-	 * TX no bypass, RX bypass
-	 */
+	/* enable/bypass DLL providing MAC based internal TX/RX delays */
 	cfg = readq_relaxed(xcv->reg_base + XCV_DLL_CTL);
-	cfg &= ~0xFF03;
-	cfg |= CLKRX_BYP;
+	cfg &= ~0xffff00;
+	switch (phy_mode) {
+	/* RX and TX delays are added by the MAC */
+	case PHY_INTERFACE_MODE_RGMII:
+		break;
+	/* internal RX and TX delays provided by the PHY */
+	case PHY_INTERFACE_MODE_RGMII_ID:
+		cfg |= CLKRX_BYP;
+		cfg |= CLKTX_BYP;
+		break;
+	/* internal RX delay provided by the PHY, the MAC
+	 * should not add an RX delay in this case
+	 */
+	case PHY_INTERFACE_MODE_RGMII_RXID:
+		cfg |= CLKRX_BYP;
+		break;
+	/* internal TX delay provided by the PHY, the MAC
+	 * should not add an TX delay in this case
+	 */
+	case PHY_INTERFACE_MODE_RGMII_TXID:
+		cfg |= CLKRX_BYP;
+		break;
+	}
 	writeq_relaxed(cfg, xcv->reg_base + XCV_DLL_CTL);
 
 	/* Enable compensation controller and force the
