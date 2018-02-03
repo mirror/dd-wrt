@@ -8,7 +8,6 @@
  */
 
 typedef __uint128_t u128;
-
 static  u64 u64_eq_mask(u64 x, u64 y)
 {
 	x = ~(x ^ y);
@@ -64,19 +63,45 @@ static  void fproduct_copy_from_wide_(u64 *output, u128 *input)
 
 static  void fproduct_sum_scalar_multiplication_(u128 *output, u64 *input, u64 s)
 {
-	u32 i;
-	for (i = 0; i < 5; ++i) {
-		u128 xi = output[i];
-		u64 yi = input[i];
-		output[i] = ((xi) + (((u128)(yi) * (s))));
-	}
+	output[0] += (u128)input[0] * s;
+	output[1] += (u128)input[1] * s;
+	output[2] += (u128)input[2] * s;
+	output[3] += (u128)input[3] * s;
+	output[4] += (u128)input[4] * s;
 }
 
 static  void fproduct_carry_wide_(u128 *tmp)
 {
-	u32 i;
-	for (i = 0; i < 4; ++i) {
-		u32 ctr = i;
+	{
+		u32 ctr = 0;
+		u128 tctr = tmp[ctr];
+		u128 tctrp1 = tmp[ctr + 1];
+		u64 r0 = ((u64)(tctr)) & 0x7ffffffffffffLLU;
+		u128 c = ((tctr) >> (51));
+		tmp[ctr] = ((u128)(r0));
+		tmp[ctr + 1] = ((tctrp1) + (c));
+	}
+	{
+		u32 ctr = 1;
+		u128 tctr = tmp[ctr];
+		u128 tctrp1 = tmp[ctr + 1];
+		u64 r0 = ((u64)(tctr)) & 0x7ffffffffffffLLU;
+		u128 c = ((tctr) >> (51));
+		tmp[ctr] = ((u128)(r0));
+		tmp[ctr + 1] = ((tctrp1) + (c));
+	}
+
+	{
+		u32 ctr = 2;
+		u128 tctr = tmp[ctr];
+		u128 tctrp1 = tmp[ctr + 1];
+		u64 r0 = ((u64)(tctr)) & 0x7ffffffffffffLLU;
+		u128 c = ((tctr) >> (51));
+		tmp[ctr] = ((u128)(r0));
+		tmp[ctr + 1] = ((tctrp1) + (c));
+	}
+	{
+		u32 ctr = 3;
 		u128 tctr = tmp[ctr];
 		u128 tctrp1 = tmp[ctr + 1];
 		u64 r0 = ((u64)(tctr)) & 0x7ffffffffffffLLU;
@@ -149,7 +174,6 @@ static  void fmul_fmul(u64 *output, u64 *input, u64 *input21)
 	u64 tmp[5];
 	memcpy(tmp, input, 5 * sizeof(*input));
 	{
-		u128 t[5] = { 0 };
 		u128 b4;
 		u128 b0;
 		u128 b4_;
@@ -158,6 +182,7 @@ static  void fmul_fmul(u64 *output, u64 *input, u64 *input21)
 		u64 i1;
 		u64 i0_;
 		u64 i1_;
+		u128 t[5] = { 0 };
 		fmul_mul_shift_reduce_(t, tmp, input21);
 		fproduct_carry_wide_(t);
 		b4 = t[4];
@@ -227,26 +252,24 @@ static  void fsquare_fsquare_(u128 *tmp, u64 *output)
 	output[1] = i1_;
 }
 
-static  void fsquare_fsquare_times_(u64 *input, u128 *tmp, u32 count1)
+static  void fsquare_fsquare_times_(u64 *output, u128 *tmp, u32 count1)
 {
 	u32 i;
-	fsquare_fsquare_(tmp, input);
+	fsquare_fsquare_(tmp, output);
 	for (i = 1; i < count1; ++i)
-		fsquare_fsquare_(tmp, input);
+		fsquare_fsquare_(tmp, output);
 }
 
 static  void fsquare_fsquare_times(u64 *output, u64 *input, u32 count1)
 {
-	{
-		u128 t[5] = { 0 };
-		memcpy(output, input, 5 * sizeof(*input));
-		fsquare_fsquare_times_(output, t, count1);
-	}
+	u128 t[5];
+	memcpy(output, input, 5 * sizeof(*input));
+	fsquare_fsquare_times_(output, t, count1);
 }
 
 static  void fsquare_fsquare_times_inplace(u64 *output, u32 count1)
 {
-	u128 t[5] = { 0 };
+	u128 t[5];
 	fsquare_fsquare_times_(output, t, count1);
 }
 
@@ -296,12 +319,11 @@ static  void crecip_crecip(u64 *out, u64 *z)
 
 static  void fsum(u64 *a, u64 *b)
 {
-	u32 i;
-	for (i = 0; i < 5; ++i) {
-		u64 xi = a[i];
-		u64 yi = b[i];
-		a[i] = xi + yi;
-	}
+	a[0] += b[0];
+	a[1] += b[1];
+	a[2] += b[2];
+	a[3] += b[3];
+	a[4] += b[4];
 }
 
 static  void fdifference(u64 *a, u64 *b)
@@ -409,18 +431,20 @@ static  void point_swap_conditional_step(u64 *a, u64 *b, u64 swap1, u32 ctr)
 	b[i] = bi1;
 }
 
-static  void point_swap_conditional_(u64 *a, u64 *b, u64 swap1, u32 ctr)
+static  void point_swap_conditional5(u64 *a, u64 *b, u64 swap1)
 {
-	u32 i;
-	for (i = ctr; i > 0; --i)
-		point_swap_conditional_step(a, b, swap1, i);
+	point_swap_conditional_step(a, b, swap1, 5);
+	point_swap_conditional_step(a, b, swap1, 4);
+	point_swap_conditional_step(a, b, swap1, 3);
+	point_swap_conditional_step(a, b, swap1, 2);
+	point_swap_conditional_step(a, b, swap1, 1);
 }
 
 static  void point_swap_conditional(u64 *a, u64 *b, u64 iswap)
 {
 	u64 swap1 = 0 - iswap;
-	point_swap_conditional_(a, b, swap1, 5);
-	point_swap_conditional_(a + 5, b + 5, swap1, 5);
+	point_swap_conditional5(a, b, swap1);
+	point_swap_conditional5(a + 5, b + 5, swap1);
 }
 
 static  void point_copy(u64 *output, u64 *input)
