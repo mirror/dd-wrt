@@ -261,11 +261,11 @@ void start_splashd(void)
 	if (!strcmp(get_wan_ipaddr(), "0.0.0.0"))
 		return;
 	insmod("ipt_mark ipt_mac xt_mark xt_mac");
-	stop_wshaper();
 	stop_firewall();	// evil
 	stop_wland();
-	start_wshaper();
+	stop_wshaper();
 	start_firewall();
+	start_wshaper();
 	start_wland();
 
 	mk_nocat_conf();

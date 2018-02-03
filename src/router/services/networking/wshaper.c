@@ -1045,7 +1045,7 @@ void start_wshaper(void)
 	if ((ul_val = nvram_safe_get("wshaper_uplink")) == NULL && atoi(ul_val) > 0)
 		return;
 	int mtu_vali = get_mtu_val();
-	sprintf(mtu_val, "%d", mtu_vali);
+	sprintf(mtu_val,"%d",mtu_vali);
 #ifdef HAVE_SVQOS
 	aqd = nvram_safe_get("svqos_aqd");
 
@@ -1183,7 +1183,10 @@ void stop_wshaper(void)
 	foreach(var, vifs, next) {
 		eval("tc", "qdisc", "del", "dev", var, "root");
 	}
-	eval("iptables", "-t", "mangle", "-F");
+#ifndef TEST
+	stop_firewall();
+	start_firewall();
+#endif
 	// don't let packages pass to iptables without ebtables loaded
 	writeprocsysnet("bridge/bridge-nf-call-arptables", "0");
 	writeprocsysnet("bridge/bridge-nf-call-ip6tables", "0");

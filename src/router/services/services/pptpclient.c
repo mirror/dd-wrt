@@ -271,6 +271,7 @@ void start_pptp(int status)
 		}
 	}
 	stop_wland();
+	start_wshaper();
 	start_wland();
 	cprintf("done\n");
 	return;
