@@ -1385,7 +1385,7 @@ static int spi_nor_chunked_write(struct mtd_info *mtd, loff_t _to, size_t _len,
 {
 	struct spi_nor *nor = mtd_to_spi_nor(mtd);
 	int chunk_size;
-	int retlen = 0;
+	size_t retlen = 0;
 	int ret;
 
 	chunk_size = nor->chunk_size;
@@ -1428,7 +1428,7 @@ static int spi_nor_chunked_read(struct mtd_info *mtd, loff_t _from, size_t _len,
 		size_t len = min_t(int, chunk_size, _len - *_retlen);
 		u_char *buf = _buf + *_retlen;
 		loff_t from = _from + *_retlen;
-		int retlen = 0;
+		size_t retlen = 0;
 
 		ret = spi_nor_read(mtd, from, len, &retlen, buf);
 		if (ret)
