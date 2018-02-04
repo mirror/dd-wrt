@@ -1715,7 +1715,7 @@ int led_control(int type, int act)
 	case ROUTER_BOARD_GW2380:
 #ifdef HAVE_NEWPORT
 
-##elif defined(HAVE_VENTANA)
+#elif defined(HAVE_VENTANA)
 		power_gpio = 0x166;
 		diag_gpio = 0x06F;
 		connected_gpio = 0x066;
