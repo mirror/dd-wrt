@@ -46,6 +46,10 @@ ifeq ($(ARCH),x86_64)
 export OPENSSL_TARGET := linux-x86_64
 export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections 
 endif
+ifeq ($(ARCH),aarch64)
+export OPENSSL_TARGET := linux-aarch64
+export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections 
+endif
 
 
 openssl:
