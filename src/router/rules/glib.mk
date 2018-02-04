@@ -26,16 +26,16 @@ glib20-configure: libffi zlib util-linux
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 
-	cd glib20/libiconv && ./configure --enable-shared --enable-static --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS) -std=gnu89 $(MIPS16_OPT)  -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc"
+	cd glib20/libiconv && ./configure --enable-shared --enable-static --host=$(ARCH)-linux CFLAGS="$(COPTS) -std=gnu89 $(MIPS16_OPT)  -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc"
 	cd glib20/libiconv && touch *
 	$(MAKE) -C glib20/libiconv clean all
 
-	cd glib20/gettext && ./configure --disable-libmount --enable-shared --disable-static --disable-openmp --host=$(ARCH)-linux CC="ccache $(CC)" LDFLAGS="$(COPTS) -std=gnu89 $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc " CFLAGS="$(COPTS)  $(MIPS16_OPT)  -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/libiconv/include" CXXFLAGS="$(COPTS)  $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/libiconv/include"
+	cd glib20/gettext && ./configure --disable-libmount --enable-shared --disable-static --disable-openmp --host=$(ARCH)-linux  LDFLAGS="$(COPTS) -std=gnu89 $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc " CFLAGS="$(COPTS)  $(MIPS16_OPT)  -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/libiconv/include" CXXFLAGS="$(COPTS)  $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/libiconv/include"
 	cd glib20/gettext && touch *
 	$(MAKE) -C glib20/gettext clean all
 
 	-cd glib20/libglib && ./autogen.sh
-	cd glib20/libglib && ./configure --enable-shared --disable-static --disable-fam --disable-libelf --with-pcre=internal --disable-libmount --enable-debug=no --disable-selinux --disable-man --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS) -std=gnu89  -DNVALGRIND=1 $(MIPS16_OPT) -D_GNU_SOURCE=1  -I$(TOP)/zlib -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/gettext/gettext-runtime/intl  -I$(TOP)/glib20/libiconv/include -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include  -L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/glib20/gettext/gettext-runtime/intl/.libs -L$(TOP)/glib20/libglib/gmodule/.libs   -L$(TOP)/zlib -L$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/lib -pthread -lpthread -liconv -lz" --with-libiconv=gnu --disable-modular-tests \
+	cd glib20/libglib && ./configure --enable-shared --disable-static --disable-fam --disable-libelf --with-pcre=internal --disable-libmount --enable-debug=no --disable-selinux --disable-man --host=$(ARCH)-linux  CFLAGS="$(COPTS) -std=gnu89  -DNVALGRIND=1 $(MIPS16_OPT) -D_GNU_SOURCE=1  -I$(TOP)/zlib -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/gettext/gettext-runtime/intl  -I$(TOP)/glib20/libiconv/include -I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include  -L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/glib20/gettext/gettext-runtime/intl/.libs -L$(TOP)/glib20/libglib/gmodule/.libs   -L$(TOP)/zlib -L$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/lib -pthread -lpthread -liconv -lz" --with-libiconv=gnu --disable-modular-tests \
 	LIBFFI_CFLAGS="-I$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include" \
 	LIBFFI_LIBS="-L$(TOP)/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi" \
 	ZLIB_CFLAGS="-I$(TOP)/zlib" \
