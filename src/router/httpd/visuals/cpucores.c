@@ -304,6 +304,10 @@ static struct CPUFEATURES cpufeatures[] = {
 	{"Features", "sha1", "SHA1"},
 	{"Features", "sha2", "SHA2"},
 	{"Features", "java", "JAVA"},
+	{"Features", "pmull", "PMULL"},
+	{"Features", "asimd", "ASIMD"},
+	{"Features", "crc32", "CRC32"},
+	{"Features", "fp", "fp"},
 //mips
 
 /*	{"isa", "mips1", "MIPS1"},
