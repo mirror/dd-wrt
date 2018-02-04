@@ -126,6 +126,11 @@ static int getbuttonstate()
 	return get_gpio(6);
 #endif
 }
+#elif defined(HAVE_NEWPORT)
+static int getbuttonstate()
+{
+	return 0;//!get_gpio(496);
+}
 #elif defined(HAVE_VENTANA)
 static int getbuttonstate()
 {

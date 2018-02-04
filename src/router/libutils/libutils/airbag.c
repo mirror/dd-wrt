@@ -20,7 +20,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#if defined(HAVE_SYSLOG) && !defined(HAVE_MICRO)
+#if defined(HAVE_SYSLOG) && !defined(HAVE_MICRO) && !defined(__aarch64__)
+
 //#ifdef __ANDROID__
 #define AIRBAG_NO_BACKTRACE
 //#endif
