@@ -22,35 +22,11 @@ else
 CFLAGS += -DAPD_PLATFORM_WRT54GS -DAPD_PLATFORM=\"dd-wrt\" -DAPD_PLATFORM_DDWRT -DDEFAULT_MGMTJID=\"sputnik@wifi.sputnik.com\" -DAPD_SNE_MGMTJID=\"express@express.sputnik.com\" -DAPD_VERSION=\"3.3.7.9\"
 endif
 #CFLAGS += -DAPD_PLATFORM_WRT54GS -DAPD_PLATFORM=\"dd-wrt\" -DAPD_PLATFORM_DDWRT -DDEFAULT_MGMTJID=\"sputnik@wifi.sputnik.com\" -DAPD_SNE_MGMTJID=\"express@express.sputnik.com\" -DAPD_VERSION=\"3.3.6.6\"
+CFLAGS += $(MIPS16_OPT)
 
 # LDFLAGS += -L$(INSTALLDIR)/nvram/usr/lib -lnvram -lshared
-LDFLAGS =-L../libutils -lwireless -lutils -L../nvram -lnvram -lcrypt
-ifeq ($(CONFIG_MADWIFI),y)
-LDFLAGS += -lm
-endif
-ifeq ($(CONFIG_RT61),y)
-LDFLAGS += -lm
-endif
-ifeq ($(CONFIG_ATH9K),y)
-LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
-LDFLAGS += -lm
-endif
+LDFLAGS =-L../libutils -lutils -lshutils -L../nvram -lnvram -lcrypt -lm
 
-ifeq ($(CONFIG_TIEXTRA1),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-ifeq ($(CONFIG_TIEXTRA2),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-ifeq ($(CONFIG_SAMBA3),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-ifeq ($(CONFIG_FTP),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-ifeq ($(CONFIG_MINIDLNA),y)
-LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
 
 OBJS := src/apd.o
 IOBJS += iksemel/base64.o
@@ -116,6 +92,7 @@ libiksemel.so: $(IOBJS)
 ifeq ($(CONFIG_BCMMODERN),y)
 	$(CC) -fPIC -shared -o brcm26/$@ $^ $(LDFLAGS) 
 else
+	mkdir -p $(ARCH)
 	$(CC) -fPIC -shared -o $(ARCH)/$@ $^ $(LDFLAGS) 
 endif
 	
