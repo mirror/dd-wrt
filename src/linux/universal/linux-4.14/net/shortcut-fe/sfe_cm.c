@@ -917,7 +917,7 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 			u_int64_t reply_pkts = atomic64_read(&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].packets);
 
 			if (reply_pkts != 0) {
-				struct nf_conntrack_l4proto *l4proto;
+				const struct nf_conntrack_l4proto *l4proto;
 				unsigned int *timeouts;
 
 				set_bit(IPS_SEEN_REPLY_BIT, &ct->status);
