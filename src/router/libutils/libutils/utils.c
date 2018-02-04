@@ -1286,6 +1286,9 @@ char *cpustring(void)
 #elif HAVE_RB600
 	strcpy(buf, "FreeScale MPC8343");
 	return buf;
+#elif HAVE_NEWPORT
+	strcpy(buf, "Cavium CN88XX");
+	return buf;
 #elif HAVE_VENTANA
 	strcpy(buf, "FreeScale i.MX6 Quad/DualLite");
 	return buf;
@@ -1710,7 +1713,9 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_BOARD_GW2388:
 	case ROUTER_BOARD_GW2380:
-#ifdef HAVE_VENTANA
+#ifdef HAVE_NEWPORT
+
+##elif defined(HAVE_VENTANA)
 		power_gpio = 0x166;
 		diag_gpio = 0x06F;
 		connected_gpio = 0x066;

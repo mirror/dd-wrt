@@ -303,6 +303,9 @@ endif
 ifeq ($(CONFIG_VENTANA),y)
   CFLAGS += -DHAVE_VENTANA
 endif
+ifeq ($(CONFIG_NEWPORT),y)
+  CFLAGS += -DHAVE_NEWPORT
+endif
 ifeq ($(CONFIG_NEPTUNE),y)
 CFLAGS += -DHAVE_NEPTUNE
 endif

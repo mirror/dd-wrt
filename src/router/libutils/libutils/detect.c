@@ -635,6 +635,11 @@ int internal_getRouterBrand()
 
 	setRouter("Broadcom Northstar");
 	return ROUTER_BOARD_NORTHSTAR;
+	setRouter("Broadcom Northstar");
+	return ROUTER_BOARD_NORTHSTAR;
+#elif HAVE_NEWPORT
+	setRouter("Gateworks Newport");
+	return ROUTER_BOARD_GW2388;
 #elif HAVE_VENTANA
 	char *filename = "/sys/devices/soc0/soc.0/2100000.aips-bus/21a0000.i2c/i2c-0/0-0051/eeprom";	/* bank2=0x100 kernel 3.0 */
 	FILE *file = fopen(filename, "rb");
