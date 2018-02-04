@@ -112,7 +112,8 @@ php7-configure: libpng libgd libxml2 zlib curl
 	'CFLAGS=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/minidlna/jpeg-8 -I$(TOP)/libmcrypt -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -I$(TOP)/openssl/include -I$(TOP)/curl/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs' \
 	'LDFLAGS=-ffunction-sections -fdata-sections -Wl,--gc-sections  -L$(TOP)/minidlna/lib -L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs'
 	printf "#define HAVE_GLOB 1\n" >>$(TOP)/php7/main/php_config.h
-	sed -i 's/\-L/lib/ /g' $(TOP)/php7/Makefile
+	sed -i 's/-L\/lib/ /g' $(TOP)/php7/Makefile
+	sed -i 's/-lltdl/ /g' $(TOP)/php7/Makefile
 
 php7-clean:
 	if test -e "php7/Makefile"; then make -C php7 clean; fi
