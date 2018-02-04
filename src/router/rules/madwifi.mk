@@ -31,6 +31,24 @@ endif
 
 endif
 
+ifeq ($(ARCH),aarch64)
+ifeq ($(CONFIG_RAIEXTRA),y)
+	HAL_TARGET=arm64-raiextra-le-elf
+else
+	HAL_TARGET=arm64-le-elf
+endif
+madwifi:
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=arm64-le-elf ARCH=arm64 CROSS_COMPILE=aarch64-linux- 
+	make -j 4 -C madwifi.dev/madwifi.dev/tools CFLAGS="-DBOESE=1 $(COPTS)" TARGET=$(HAL_TARGET) BINDIR=$(INSTALLDIR)/madwifi/usr/sbin  ARCH=arm64 CROSS_COMPILE=aarch64-linux-
+
+madwifi-clean:
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=arm64-le-elf  ARCH=arm64 CROSS_COMPILE=aarch64-linux-
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean ARCH=arm64 CROSS_COMPILE=aarch64-linux-
+madwifi-install:
+	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install  ARCH=arm64 CROSS_COMPILE=aarch64-linux-
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=$(HAL_TARGET) install  ARCH=arm64  CROSS_COMPILE=aarch64-linux-
+endif
 
 ifeq ($(ARCH),mipsel)
 
@@ -160,6 +178,26 @@ madwifi-install:
 	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=$(HAL_TARGET) install
 endif
+
+ifeq ($(ARCHITECTURE),ventana)
+ifeq ($(CONFIG_RAIEXTRA),y)
+	HAL_TARGET=ventana-raiextra-le-elf
+else
+	HAL_TARGET=ventana-le-elf
+endif
+madwifi:
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=$(HAL_TARGET)  
+	make -j 4 -C madwifi.dev/madwifi.dev/tools CFLAGS="-DBOESE=1 $(COPTS)" TARGET=$(HAL_TARGET) BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
+
+madwifi-clean:
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=$(HAL_TARGET)
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
+
+madwifi-install:
+	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=$(HAL_TARGET) install
+endif
 ifeq ($(ARCHITECTURE),northstar)
 madwifi:
 	@true
@@ -172,45 +210,6 @@ madwifi-install:
 	@true
 
 endif
-ifeq ($(ARCHITECTURE),mvebu)
-madwifi:
-	@true
-
-
-madwifi-clean:
-	@true
-
-madwifi-install:
-	@true
-
-endif
-
-ifeq ($(ARCHITECTURE),ipq806x)
-madwifi:
-	@true
-
-
-madwifi-clean:
-	@true
-
-madwifi-install:
-	@true
-
-endif
-
-ifeq ($(ARCHITECTURE),alpine)
-madwifi:
-	@true
-
-
-madwifi-clean:
-	@true
-
-madwifi-install:
-	@true
-
-endif
-
 endif
 
 ifeq ($(ARCH),armeb)

@@ -48,8 +48,8 @@ java-configure:
 #	--with-junit-jar=$(TOP)/java/junit/junit4.jar
 
 java:
-	-make -C $(TOP)/java/classpath
-	-make -C $(TOP)/java/classpath
+	make -C $(TOP)/java/classpath
+	make -C $(TOP)/java/classpath
 	make -C $(TOP)/java/jamvm GLIBJ_ZIP=$(TOP)/java/classpath/lib/glibj.zip
 	#make -C $(TOP)/java/cacao
 

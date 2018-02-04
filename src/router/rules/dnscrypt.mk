@@ -24,7 +24,7 @@ DNSCRYPT_CONFIGURE_ARGS+= \
 
 dnscrypt-configure: libsodium-configure
 	cd dnscrypt && ./configure --host=$(ARCH)-linux --prefix=/usr \
-	CC="ccache $(CC)" $(DNSCRYPT_CONFIGURE_ARGS) \
+	$(DNSCRYPT_CONFIGURE_ARGS) \
 	CFLAGS="-fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/libsodium/src/libsodium/include/ -I$(TOP)/gmp -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libsodium/src/libsodium/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="-L$(TOP)/libsodium/src/libsodium/.libs $(LDFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections"
