@@ -125,6 +125,19 @@ static int insmod_ng_main(int argc, char **argv);
 #define USE_SINGLE
 #endif
 
+#if defined(__aarch64__)
+#define MATCH_MACHINE(x) (x == EM_AARCH64)
+#define SHT_RELM	SHT_REL
+//#define Elf32_RelM	Elf32_Rel
+#define Elf64_RelM	Elf64_Rel
+#define ELFCLASSM	ELFCLASS64
+#define USE_PLT_ENTRIES
+#define PLT_ENTRY_SIZE 8
+#define USE_GOT_ENTRIES
+#define GOT_ENTRY_SIZE 8
+#define USE_SINGLE
+#endif
+
 /* blackfin */
 #if defined(BFIN)
 #define MATCH_MACHINE(x) (x == EM_BLACKFIN)
@@ -872,7 +885,7 @@ arch_apply_relocation(struct obj_file *f,
 #if defined(__arm__) || defined(__H8300H__) || defined(__H8300S__) \
  || defined(__i386__) || defined(__mc68000__) || defined(__microblaze__) \
  || defined(__mips__) || defined(__nios2__) || defined(__powerpc__) \
- || defined(__s390__) || defined(__sh__) || defined(__x86_64__)
+ || defined(__s390__) || defined(__sh__) || defined(__x86_64__) || defined(__aarch64__)
 	ElfW(Addr) dot = targsec->header.sh_addr + rel->r_offset;
 #endif
 #if defined(USE_GOT_ENTRIES) || defined(USE_PLT_ENTRIES)
