@@ -223,6 +223,9 @@ export srctree objtree VPATH
 ifeq ($(ARCH),armeb)
 ARCH := arm
 endif
+ifeq ($(ARCH),aarch64)
+ARCH := arm64
+endif
 ifeq ($(ARCH),mips64)
 ARCH := mips
 endif
