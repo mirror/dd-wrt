@@ -247,6 +247,11 @@ endif
 endif
 endif
 endif
+ifeq ($(ARCH),aarch64)
+	cp busybox/.config_laguna busybox/.config
+	sed -i 's/\# CONFIG_UBIUPDATEVOL is not set/CONFIG_UBIUPDATEVOL=y/g' busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
+endif
 ifeq ($(ARCH),arm)
 	cp busybox/.config_xscale busybox/.config
 ifeq ($(ARCHITECTURE),storm)

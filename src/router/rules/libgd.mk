@@ -4,7 +4,7 @@ libgd: libpng minidlna
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/minidlna/jpeg-8 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -lm -L$(TOP)/zlib -L$(TOP)/libpng/.libs -lpng16 -L$(TOP)/minidlna/lib -ljpeg -fPIC -v -Wl,--verbose" \
 	$(MAKE) -C libgd
-	
+
 libgd-clean:
 	make -C libgd clean
 	
