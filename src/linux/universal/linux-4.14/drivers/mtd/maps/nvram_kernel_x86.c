@@ -442,7 +442,7 @@ done:
 	return ret;
 }
 
-static int dev_nvram_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+static long dev_nvram_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
 	if (cmd != NVRAM_MAGIC) {
 //          printk(KERN_EMERG "Invalid nvram magic %X %X\n",cmd,NVRAM_MAGIC);
