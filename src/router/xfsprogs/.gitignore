@@ -1,0 +1,74 @@
+# object files
+*.o
+.dep
+.ltdep
+
+# build system
+.census
+.gitcensus
+/include/platform_defs.h
+/include/builddefs
+/install-sh
+
+# magic directory symlinks
+/include/disk
+/include/xfs
+
+# packaging
+/doc/CHANGES.gz
+/xfsprogs-*
+/xfsprogs_*
+/xfslibs-dev_*
+
+# autoconf generated files
+/aclocal.m4
+/m4/libtool.m4
+/m4/ltoptions.m4
+/m4/ltsugar.m4
+/m4/ltversion.m4
+/m4/lt~obsolete.m4
+/autom4te.cache/
+/config.guess
+/config.log
+/config.status
+/config.sub
+/configure
+
+# libtool
+/libtool
+/ltmain.sh
+*.lo
+*.la
+.libs
+
+# gettext
+/po/de.mo
+/po/pl.mo
+/po/xfsprogs.pot
+
+# cscope stuff
+cscope.*
+
+# quilt stuff
+/.pc/
+/patches/
+
+# binaries
+/copy/xfs_copy
+/db/xfs_db
+/estimate/xfs_estimate
+/fsr/xfs_fsr
+/growfs/xfs_growfs
+/io/xfs_io
+/logprint/xfs_logprint
+/mdrestore/xfs_mdrestore
+/mkfs/fstyp
+/mkfs/mkfs.xfs
+/quota/xfs_quota
+/repair/xfs_repair
+/rtcp/xfs_rtcp
+
+# generated crc files
+/libxfs/crc32selftest
+/libxfs/crc32table.h
+/libxfs/gen_crc32table
