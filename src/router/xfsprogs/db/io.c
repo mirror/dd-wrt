@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include "command.h"
 #include "type.h"
 #include "faddr.h"
@@ -27,6 +27,7 @@
 #include "output.h"
 #include "init.h"
 #include "malloc.h"
+#include "crc.h"
 
 static int	pop_f(int argc, char **argv);
 static void     pop_help(void);
@@ -104,8 +105,14 @@ pop_cur(void)
 		dbprintf(_("can't pop anything from I/O stack\n"));
 		return;
 	}
-	if (iocur_top->buf)
-		xfree(iocur_top->buf);
+	if (iocur_top->bp) {
+		libxfs_putbuf(iocur_top->bp);
+		iocur_top->bp = NULL;
+	}
+	if (iocur_top->bbmap) {
+		free(iocur_top->bbmap);
+		iocur_top->bbmap = NULL;
+	}
 	if (--iocur_sp >= 0) {
 		iocur_top = iocur_base + iocur_sp;
 		cur_typ = iocur_top->typ;
@@ -145,12 +152,13 @@ print_iocur(
 	dbprintf("%s\n", tag);
 	dbprintf(_("\tbyte offset %lld, length %d\n"), ioc->off, ioc->len);
 	dbprintf(_("\tbuffer block %lld (fsbno %lld), %d bb%s\n"), ioc->bb,
-		(xfs_dfsbno_t)XFS_DADDR_TO_FSB(mp, ioc->bb), ioc->blen,
+		(xfs_fsblock_t)XFS_DADDR_TO_FSB(mp, ioc->bb), ioc->blen,
 		ioc->blen == 1 ? "" : "s");
-	if (ioc->use_bbmap) {
+	if (ioc->bbmap) {
 		dbprintf(_("\tblock map"));
-		for (i = 0; i < ioc->blen; i++)
-			dbprintf(" %d:%lld", i, ioc->bbmap.b[i]);
+		for (i = 0; i < ioc->bbmap->nmaps; i++)
+			dbprintf(" %lld:%d", ioc->bbmap->b[i].bm_bn,
+					     ioc->bbmap->b[i].bm_len);
 		dbprintf("\n");
 	}
 	dbprintf(_("\tinode %lld, dir inode %lld, type %s\n"), ioc->ino,
@@ -182,7 +190,7 @@ print_ring(void)
 			 ioc->typ == NULL ? "none" : ioc->typ->name,
 			 ioc->bb,
 			 ioc->blen,
-			 (xfs_dfsbno_t)XFS_DADDR_TO_FSB(mp, ioc->bb),
+			 (xfs_fsblock_t)XFS_DADDR_TO_FSB(mp, ioc->bb),
 			 ioc->ino
 			);
 
@@ -238,7 +246,7 @@ push_f(
 	else
 		set_cur(iocur_top[-1].typ, iocur_top[-1].bb,
 			iocur_top[-1].blen, DB_RING_IGN,
-			iocur_top[-1].use_bbmap ? &iocur_top[-1].bbmap : NULL);
+			iocur_top[-1].bbmap);
 
 	/* run requested command */
 	if (argc>1)
@@ -280,8 +288,7 @@ forward_f(
 		iocur_ring[ring_current].bb,
 		iocur_ring[ring_current].blen,
 		DB_RING_IGN,
-		iocur_ring[ring_current].use_bbmap ?
-			&iocur_ring[ring_current].bbmap : NULL);
+		iocur_ring[ring_current].bbmap);
 
 	return 0;
 }
@@ -321,8 +328,7 @@ back_f(
 		iocur_ring[ring_current].bb,
 		iocur_ring[ring_current].blen,
 		DB_RING_IGN,
-		iocur_ring[ring_current].use_bbmap ?
-			&iocur_ring[ring_current].bbmap : NULL);
+		iocur_ring[ring_current].bbmap);
 
 	return 0;
 }
@@ -353,8 +359,10 @@ ring_f(
 	}
 
 	index = (int)strtoul(argv[1], NULL, 0);
-	if (index < 0 || index >= RING_ENTRIES)
+	if (index < 0 || index >= RING_ENTRIES) {
 		dbprintf(_("invalid entry: %d\n"), index);
+		return 0;
+	}
 
 	ring_current = index;
 
@@ -362,7 +370,7 @@ ring_f(
 		iocur_ring[index].bb,
 		iocur_ring[index].blen,
 		DB_RING_IGN,
-		iocur_ring[index].use_bbmap ? &iocur_ring[index].bbmap : NULL);
+		iocur_ring[index].bbmap);
 
 	return 0;
 }
@@ -417,119 +425,90 @@ ring_add(void)
 	}
 }
 
-
-int
-write_bbs(
-	__int64_t       bbno,
-	int             count,
-	void            *bufp,
-	bbmap_t		*bbmap)
+static void
+write_cur_buf(void)
 {
-	int		c;
-	int		i;
-	int		j;
-	int		rval = EINVAL;	/* initialize for zero `count' case */
+	int ret;
 
-	for (j = 0; j < count; j += bbmap ? 1 : count) {
-		if (bbmap)
-			bbno = bbmap->b[j];
-		if (lseek64(x.dfd, bbno << BBSHIFT, SEEK_SET) < 0) {
-			rval = errno;
-			dbprintf(_("can't seek in filesystem at bb %lld\n"), bbno);
-			return rval;
-		}
-		c = BBTOB(bbmap ? 1 : count);
-		i = (int)write(x.dfd, (char *)bufp + BBTOB(j), c);
-		if (i < 0) {
-			rval = errno;
-		} else if (i < c) {
-			rval = -1;
-		} else
-			rval = 0;
-		if (rval)
-			break;
-	}
-	return rval;
+	ret = -libxfs_writebufr(iocur_top->bp);
+	if (ret != 0)
+		dbprintf(_("write error: %s\n"), strerror(ret));
+
+	/* re-read buffer from disk */
+	ret = -libxfs_readbufr(mp->m_ddev_targp, iocur_top->bb, iocur_top->bp,
+			      iocur_top->blen, 0);
+	if (ret != 0)
+		dbprintf(_("read error: %s\n"), strerror(ret));
 }
 
-int
-read_bbs(
-	__int64_t	bbno,
-	int		count,
-	void		**bufp,
-	bbmap_t		*bbmap)
+static void
+write_cur_bbs(void)
 {
-	void		*buf;
-	int		c;
-	int		i;
-	int		j;
-	int		rval = EINVAL;
+	int ret;
 
-	if (count <= 0)
-		count = 1;
+	ret = -libxfs_writebufr(iocur_top->bp);
+	if (ret != 0)
+		dbprintf(_("write error: %s\n"), strerror(ret));
 
-	c = BBTOB(count);
-	if (*bufp == NULL)
-		buf = xmalloc(c);
-	else
-		buf = *bufp;
-	for (j = 0; j < count; j += bbmap ? 1 : count) {
-		if (bbmap)
-			bbno = bbmap->b[j];
-		if (lseek64(x.dfd, bbno << BBSHIFT, SEEK_SET) < 0) {
-			rval = errno;
-			dbprintf(_("can't seek in filesystem at bb %lld\n"), bbno);
-			if (*bufp == NULL)
-				xfree(buf);
-			buf = NULL;
-		} else {
-			c = BBTOB(bbmap ? 1 : count);
-			i = (int)read(x.dfd, (char *)buf + BBTOB(j), c);
-			if (i < 0) {
-				rval = errno;
-				if (*bufp == NULL)
-					xfree(buf);
-				buf = NULL;
-			} else if (i < c) {
-				rval = -1;
-				if (*bufp == NULL)
-					xfree(buf);
-				buf = NULL;
-			} else
-				rval = 0;
-		}
-		if (buf == NULL)
-			break;
-	}
-	if (*bufp == NULL)
-		*bufp = buf;
-	return rval;
+
+	/* re-read buffer from disk */
+	ret = -libxfs_readbufr_map(mp->m_ddev_targp, iocur_top->bp, 0);
+	if (ret != 0)
+		dbprintf(_("read error: %s\n"), strerror(ret));
+}
+
+void
+xfs_dummy_verify(
+	struct xfs_buf *bp)
+{
+	return;
+}
+
+void
+xfs_verify_recalc_crc(
+	struct xfs_buf *bp)
+{
+	xfs_buf_update_cksum(bp, iocur_top->typ->crc_off);
 }
 
 void
 write_cur(void)
 {
-	int ret;
+	bool skip_crc = false;
 
 	if (iocur_sp < 0) {
 		dbprintf(_("nothing to write\n"));
 		return;
 	}
-	ret = write_bbs(iocur_top->bb, iocur_top->blen, iocur_top->buf,
-		iocur_top->use_bbmap ? &iocur_top->bbmap : NULL);
-	if (ret == -1)
-		dbprintf(_("incomplete write, block: %lld\n"),
-			 (iocur_base + iocur_sp)->bb);
-	else if (ret != 0)
-		dbprintf(_("write error: %s\n"), strerror(ret));
-	/* re-read buffer from disk */
-	ret = read_bbs(iocur_top->bb, iocur_top->blen, &iocur_top->buf,
-		iocur_top->use_bbmap ? &iocur_top->bbmap : NULL);
-	if (ret == -1)
-		dbprintf(_("incomplete read, block: %lld\n"),
-			 (iocur_base + iocur_sp)->bb);
-	else if (ret != 0)
-		dbprintf(_("read error: %s\n"), strerror(ret));
+
+	if (!xfs_sb_version_hascrc(&mp->m_sb) ||
+	    !iocur_top->bp->b_ops ||
+	    iocur_top->bp->b_ops->verify_write == xfs_dummy_verify)
+		skip_crc = true;
+
+	if (!skip_crc) {
+		if (iocur_top->ino_buf) {
+			libxfs_dinode_calc_crc(mp, iocur_top->data);
+			iocur_top->ino_crc_ok = 1;
+		} else if (iocur_top->dquot_buf) {
+			xfs_update_cksum(iocur_top->data,
+					 sizeof(struct xfs_dqblk),
+					 XFS_DQUOT_CRC_OFF);
+		}
+	}
+	if (iocur_top->bbmap)
+		write_cur_bbs();
+	else
+		write_cur_buf();
+
+	/* If we didn't write the crc automatically, re-check inode validity */
+	if (xfs_sb_version_hascrc(&mp->m_sb) &&
+	    skip_crc && iocur_top->ino_buf) {
+		iocur_top->ino_crc_ok = xfs_verify_cksum(iocur_top->data,
+						mp->m_sb.sb_inodesize,
+						XFS_DINODE_CRC_OFF);
+	}
+
 }
 
 void
@@ -537,29 +516,60 @@ set_cur(
 	const typ_t	*t,
 	__int64_t	d,
 	int		c,
-	int             ring_flag,
+	int		ring_flag,
 	bbmap_t		*bbmap)
 {
+	struct xfs_buf	*bp;
 	xfs_ino_t	dirino;
 	xfs_ino_t	ino;
 	__uint16_t	mode;
+	const struct xfs_buf_ops *ops = t ? t->bops : NULL;
 
 	if (iocur_sp < 0) {
 		dbprintf(_("set_cur no stack element to set\n"));
 		return;
 	}
 
-#ifdef DEBUG
-	if (bbmap)
-		printf(_("xfs_db got a bbmap for %lld\n"), (long long)d);
-#endif
+
 	ino = iocur_top->ino;
 	dirino = iocur_top->dirino;
 	mode = iocur_top->mode;
 	pop_cur();
 	push_cur();
-	if (read_bbs(d, c, &iocur_top->buf, bbmap))
+
+	if (bbmap) {
+#ifdef DEBUG_BBMAP
+		int i;
+		printf(_("xfs_db got a bbmap for %lld\n"), (long long)d);
+		printf(_("\tblock map"));
+		for (i = 0; i < bbmap->nmaps; i++)
+			printf(" %lld:%d", (long long)bbmap->b[i].bm_bn,
+					   bbmap->b[i].bm_len);
+		printf("\n");
+#endif
+		iocur_top->bbmap = malloc(sizeof(struct bbmap));
+		if (!iocur_top->bbmap)
+			return;
+		memcpy(iocur_top->bbmap, bbmap, sizeof(struct bbmap));
+		bp = libxfs_readbuf_map(mp->m_ddev_targp, bbmap->b,
+					bbmap->nmaps, 0, ops);
+	} else {
+		bp = libxfs_readbuf(mp->m_ddev_targp, d, c, 0, ops);
+		iocur_top->bbmap = NULL;
+	}
+
+	/*
+	 * Keep the buffer even if the verifier says it is corrupted.
+	 * We're a diagnostic tool, after all.
+	 */
+	if (!bp || (bp->b_error && bp->b_error != -EFSCORRUPTED &&
+				   bp->b_error != -EFSBADCRC))
 		return;
+	iocur_top->buf = bp->b_addr;
+	iocur_top->bp = bp;
+	if (!ops)
+		bp->b_flags |= LIBXFS_B_UNCHECKED;
+
 	iocur_top->bb = d;
 	iocur_top->blen = c;
 	iocur_top->boff = 0;
@@ -570,12 +580,36 @@ set_cur(
 	iocur_top->ino = ino;
 	iocur_top->dirino = dirino;
 	iocur_top->mode = mode;
-	if ((iocur_top->use_bbmap = (bbmap != NULL)))
-		iocur_top->bbmap = *bbmap;
+	iocur_top->ino_buf = 0;
+	iocur_top->dquot_buf = 0;
 
 	/* store location in ring */
 	if (ring_flag)
 		ring_add();
+}
+
+void
+set_iocur_type(
+	const typ_t	*t)
+{
+	struct xfs_buf	*bp = iocur_top->bp;
+
+	iocur_top->typ = t;
+
+	/* verify the buffer if the type has one. */
+	if (!bp)
+		return;
+	if (!t->bops) {
+		bp->b_ops = NULL;
+		bp->b_flags |= LIBXFS_B_UNCHECKED;
+		return;
+	}
+	if (!(bp->b_flags & LIBXFS_B_UPTODATE))
+		return;
+	bp->b_error = 0;
+	bp->b_ops = t->bops;
+	bp->b_ops->verify_read(bp);
+	bp->b_flags &= ~LIBXFS_B_UNCHECKED;
 }
 
 static void

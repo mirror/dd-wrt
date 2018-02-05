@@ -34,4 +34,3 @@ typedef	int64_t	atomic64_t;
 #define atomic64_set(x, v)	(*(x) = v)
 
 #endif /* __ATOMIC_H__ */
-

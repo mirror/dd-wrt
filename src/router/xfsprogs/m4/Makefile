@@ -14,7 +14,6 @@ CONFIGURE = \
 
 LSRCFILES = \
 	manual_format.m4 \
-	package_aiodev.m4 \
 	package_blkid.m4 \
 	package_globals.m4 \
 	package_libcdev.m4 \

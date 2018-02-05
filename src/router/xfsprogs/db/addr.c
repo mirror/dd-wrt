@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include "addr.h"
 #include "command.h"
 #include "type.h"
@@ -85,16 +85,14 @@ addr_f(
 	fl = flist_scan(argv[1]);
 	if (fl == NULL)
 		return 0;
-	if (!flist_parse(fld, fl, iocur_top->data, 0)) {
-		flist_free(fl);
-		return 0;
-	}
+	if (!flist_parse(fld, fl, iocur_top->data, 0))
+		goto out;
+
 	flist_print(fl);
 	for (tfl = fl; tfl->child != NULL; tfl = tfl->child) {
 		if ((tfl->flags & FL_OKLOW) && tfl->low < tfl->high) {
 			dbprintf(_("array not allowed for addr command\n"));
-			flist_free(fl);
-			return 0;
+			goto out;
 		}
 	}
 	fld = tfl->fld;
@@ -103,7 +101,7 @@ addr_f(
 		next = inode_next_type();
 	if (next == TYP_NONE) {
 		dbprintf(_("no next type for field %s\n"), fld->name);
-		return 0;
+		goto out;
 	}
 	fa = &ftattrtab[fld->ftyp];
 	ASSERT(fa->ftyp == fld->ftyp);
@@ -111,9 +109,10 @@ addr_f(
 	if (adf == NULL) {
 		dbprintf(_("no addr function for field %s (type %s)\n"),
 			fld->name, fa->name);
-		return 0;
+		goto out;
 	}
 	(*adf)(iocur_top->data, tfl->offset, next);
+out:
 	flist_free(fl);
 	return 0;
 }

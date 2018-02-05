@@ -23,9 +23,9 @@
  * Extent descriptor.
  */
 typedef struct bmap_ext {
-	xfs_dfiloff_t	startoff;
-	xfs_dfsbno_t	startblock;
-	xfs_dfilblks_t	blockcount;
+	xfs_fileoff_t	startoff;
+	xfs_fsblock_t	startblock;
+	xfs_filblks_t	blockcount;
 } bmap_ext_t;
 
 /*
@@ -53,17 +53,21 @@ typedef	struct blkmap {
 #define BLKMAP_NEXTS_MAX	INT_MAX
 #endif
 
+extern pthread_key_t dblkmap_key;
+extern pthread_key_t ablkmap_key;
+
 blkmap_t	*blkmap_alloc(xfs_extnum_t nex, int whichfork);
 void		blkmap_free(blkmap_t *blkmap);
+void		blkmap_free_final(void);
 
-int		blkmap_set_ext(blkmap_t **blkmapp, xfs_dfiloff_t o,
-			       xfs_dfsbno_t b, xfs_dfilblks_t c);
+int		blkmap_set_ext(blkmap_t **blkmapp, xfs_fileoff_t o,
+			       xfs_fsblock_t b, xfs_filblks_t c);
 
-xfs_dfsbno_t	blkmap_get(blkmap_t *blkmap, xfs_dfiloff_t o);
-int		blkmap_getn(blkmap_t *blkmap, xfs_dfiloff_t o,
-			    xfs_dfilblks_t nb, bmap_ext_t **bmpp,
+xfs_fsblock_t	blkmap_get(blkmap_t *blkmap, xfs_fileoff_t o);
+int		blkmap_getn(blkmap_t *blkmap, xfs_fileoff_t o,
+			    xfs_filblks_t nb, bmap_ext_t **bmpp,
 			    bmap_ext_t *bmpp_single);
-xfs_dfiloff_t	blkmap_last_off(blkmap_t *blkmap);
-xfs_dfiloff_t	blkmap_next_off(blkmap_t *blkmap, xfs_dfiloff_t o, int *t);
+xfs_fileoff_t	blkmap_last_off(blkmap_t *blkmap);
+xfs_fileoff_t	blkmap_next_off(blkmap_t *blkmap, xfs_fileoff_t o, int *t);
 
 #endif /* _XFS_REPAIR_BMAP_H */

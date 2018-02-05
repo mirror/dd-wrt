@@ -6,6 +6,8 @@ xfs_quota \- manage use of quota on XFS filesystems
 [
 .B \-x
 ] [
+.B \-f
+] [
 .B \-p
 .I prog
 ] [
@@ -15,7 +17,15 @@ xfs_quota \- manage use of quota on XFS filesystems
 .B \-d
 .I project
 ] ... [
+.B \-D
+.I projects_file
+] [
+.B \-P
+.I projid_file
+] [
 .IR path " ... ]"
+.br
+.B xfs_quota \-V
 .SH DESCRIPTION
 .B xfs_quota
 is a utility for reporting and editing various aspects of filesystem quota.
@@ -43,6 +53,11 @@ All of the administrative commands (see the ADMINISTRATOR COMMANDS
 section below) which allow modifications to the quota system are
 available only in expert mode.
 .TP
+.B \-f
+Enable foreign filesystem mode.
+A limited number of user and administrative commands are available for
+use on some foreign (non-XFS) filesystems.
+.TP
 .BI \-d " project"
 Project names or numeric identifiers may be specified with this option,
 which restricts the output of the individual
@@ -50,6 +65,21 @@ which restricts the output of the individual
 commands to the set of projects specified. Multiple
 .B \-d
 arguments may be given.
+.TP
+.BI \-D " projects_file"
+Specify a file containing the mapping of numeric project identifiers
+to directory trees.
+.I /etc/projects
+as default, if this option is none.
+.TP
+.BI \-P " projid_file"
+Specify a file containing the mapping of numeric project identifiers
+to project names.
+.I /etc/projid
+as default, if this option is none.
+.TP
+.B \-V
+Prints the version number and exits.
 .PP
 The optional
 .I path
@@ -164,7 +194,7 @@ command.
 .HP
 .B quota
 [
-.B \-gpu
+.BR \-g " | " \-p " | " \-u
 ] [
 .B \-bir
 ] [
@@ -319,7 +349,7 @@ path to the
 list entry (the current path is used by many
 of the commands described here, it identifies the filesystem toward
 which a command is directed).
-The patch list can come from several places \- the command line,
+The path list can come from several places \- the command line,
 the mount table, and the
 .I /etc/projects
 file.
@@ -330,7 +360,7 @@ file.
 ] [
 .B \-bir
 ] [
-.B \-ahntLNU
+.B \-ahntlLNU
 ] [
 .B \-f
 .I file
@@ -352,13 +382,19 @@ option outputs the report to
 .I file
 instead of stdout. The
 .B \-a
-option reports on all filesystems. The
+option reports on all filesystems. By default, outputs the name of
+the user/group/project. If no name is defined for a given ID, outputs
+the numeric ID instead. The
 .B \-n
 option outputs the numeric ID instead of the name. The
 .B \-L
 and
 .B \-U
-options specify lower and upper ID bounds to report on. The
+options specify lower and upper ID bounds to report on.  If upper/lower
+bounds are specified, then by default only the IDs will be displayed
+in output; with the
+.B \-l
+option, a lookup will be performed to translate these IDs to names. The
 .B \-N
 option reports information without the header line. The
 .B \-t
@@ -389,7 +425,7 @@ option reports state on all filesystems and not just the current path.
 .B
 limit
 [
-.B \-gpu
+.BR \-g " | " \-p " | " \-u
 ]
 .BI bsoft= N
 |
@@ -421,7 +457,7 @@ must be specified.
 .HP
 .B timer
 [
-.B \-gpu
+.BR \-g " | " \-p " | " \-u
 ] [
 .B \-bir
 ]
@@ -437,7 +473,7 @@ command. The value argument is a number of seconds, but units of
 .HP
 .B warn
 [
-.B \-gpu
+.BR \-g " | " \-p " | " \-u
 ] [
 .B \-bir
 ]
@@ -488,7 +524,7 @@ report an error.
 .B
 dump
 [
-.B \-gpu
+.BR \-g " | " \-p " | " \-u
 ] [
 .B \-f
 .I file
@@ -501,7 +537,7 @@ This is only the limits, not the usage information, of course.
 .HP
 .B restore
 [
-.B \-gpu
+.BR \-g " | " \-p " | " \-u
 ] [
 .B \-f
 .I file
@@ -516,7 +552,7 @@ command.
 .B
 quot
 [
-.B \-gpu
+.BR \-g " | " \-p " | " \-u
 ] [
 .B \-bir
 ] [
@@ -560,12 +596,7 @@ instead of stdout.
 .I name
 ]
 .br
-Without arguments, this command lists known project names and identifiers
-(based on entries in the
-.I /etc/projects
-and
-.I /etc/projid
-files). The
+The
 .BR \-c ,
 .BR \-C ,
 and
@@ -623,7 +654,7 @@ can be used to limit recursion level (\-1 is infinite, 0 is top level only,
 1 is first level ... ).
 Option
 .B \-p
-adds posibility to specify project paths in command line without a need
+adds possibility to specify project paths in command line without a need
 for
 .I /etc/projects
 to exist. Note that if projects file exists then it is also used.

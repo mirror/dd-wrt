@@ -15,8 +15,8 @@
  * along with this program; if not, write the Free Software Foundation,
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-
-#include <xfs/command.h>
+#include <stdbool.h>
+#include "command.h"
 #include <sys/types.h>
 #include <pwd.h>
 #include <grp.h>
@@ -30,7 +30,7 @@ static cmdinfo_t report_cmd;
 static void
 dump_help(void)
 {
-	dump_cmd.args = _("[-gpu] [-f file]");
+	dump_cmd.args = _("[-g|-p|-u] [-f file]");
 	dump_cmd.oneline = _("dump quota information for backup utilities");
 	printf(_(
 "\n"
@@ -45,7 +45,7 @@ dump_help(void)
 static void
 report_help(void)
 {
-	report_cmd.args = _("[-bir] [-gpu] [-ahntLNU] [-f file]");
+	report_cmd.args = _("[-bir] [-gpu] [-ahntlLNU] [-f file]");
 	report_cmd.oneline = _("report filesystem quota information");
 	printf(_(
 "\n"
@@ -63,6 +63,7 @@ report_help(void)
 " -t -- terse output format, hides rows which are all zero\n"
 " -L -- lower ID bound to report on\n"
 " -U -- upper ID bound to report on\n"
+" -l -- look up names for IDs in lower-upper range\n"
 " -g -- report group usage and quota information\n"
 " -p -- report project usage and quota information\n"
 " -u -- report user usage and quota information\n"
@@ -72,28 +73,47 @@ report_help(void)
 "\n"));
 }
 
-static void
+static int 
 dump_file(
 	FILE		*fp,
 	uint		id,
+	uint		*oid,
 	uint		type,
-	char		*dev)
+	char		*dev,
+	int		flags)
 {
 	fs_disk_quota_t	d;
+	int		cmd;
 
-	if (xfsquotactl(XFS_GETQUOTA, dev, type, id, (void *)&d) < 0) {
-		if (errno != ENOENT && errno != ENOSYS && errno != ESRCH)
+	if (flags & GETNEXTQUOTA_FLAG)
+		cmd = XFS_GETNEXTQUOTA;
+	else
+		cmd = XFS_GETQUOTA;
+
+	/* Fall back silently if XFS_GETNEXTQUOTA fails, warn on XFS_GETQUOTA */
+	if (xfsquotactl(cmd, dev, type, id, (void *)&d) < 0) {
+		if (errno != ENOENT && errno != ENOSYS && errno != ESRCH &&
+		    cmd == XFS_GETQUOTA)
 			perror("XFS_GETQUOTA");
-		return;
+		return 0;
 	}
+
+	if (oid) {
+		*oid = d.d_id;
+		/* Did kernelspace wrap? */
+		if (*oid < id)
+			return 0;
+	}
+
 	if (!d.d_blk_softlimit && !d.d_blk_hardlimit &&
 	    !d.d_ino_softlimit && !d.d_ino_hardlimit &&
 	    !d.d_rtb_softlimit && !d.d_rtb_hardlimit)
-		return;
+		return 1;
 	fprintf(fp, "fs = %s\n", dev);
 	/* this branch is for backward compatibility reasons */
 	if (d.d_rtb_softlimit || d.d_rtb_hardlimit)
-		fprintf(fp, "%-10d %7llu %7llu %7llu %7llu %7llu %7llu\n", id,
+		fprintf(fp, "%-10d %7llu %7llu %7llu %7llu %7llu %7llu\n",
+			d.d_id,
 			(unsigned long long)d.d_blk_softlimit,
 			(unsigned long long)d.d_blk_hardlimit,
 			(unsigned long long)d.d_ino_softlimit,
@@ -101,11 +121,14 @@ dump_file(
 			(unsigned long long)d.d_rtb_softlimit,
 			(unsigned long long)d.d_rtb_hardlimit);
 	else
-		fprintf(fp, "%-10d %7llu %7llu %7llu %7llu\n", id,
+		fprintf(fp, "%-10d %7llu %7llu %7llu %7llu\n",
+			d.d_id,
 			(unsigned long long)d.d_blk_softlimit,
 			(unsigned long long)d.d_blk_hardlimit,
 			(unsigned long long)d.d_ino_softlimit,
 			(unsigned long long)d.d_ino_hardlimit);
+
+	return 1;
 }
 
 static void
@@ -117,7 +140,7 @@ dump_limits_any_type(
 	uint		upper)
 {
 	fs_path_t	*mount;
-	uint		id;
+	uint		id = 0, oid;
 
 	if ((mount = fs_table_lookup(dir, FS_MOUNT_POINT)) == NULL) {
 		exitcode = 1;
@@ -126,18 +149,30 @@ dump_limits_any_type(
 		return;
 	}
 
+	/* Range was specified; query everything in it */
 	if (upper) {
 		for (id = lower; id <= upper; id++)
-			dump_file(fp, id, type, mount->fs_name);
+			dump_file(fp, id, NULL, type, mount->fs_name, 0);
 		return;
 	}
 
+	/* Use GETNEXTQUOTA if it's available */
+	if (dump_file(fp, id, &oid, type, mount->fs_name, GETNEXTQUOTA_FLAG)) {
+		id = oid + 1;
+		while (dump_file(fp, id, &oid, type, mount->fs_name,
+				 GETNEXTQUOTA_FLAG))
+			id = oid + 1;
+		return;
+        }
+
+	/* Otherwise fall back to iterating over each uid/gid/prjid */
 	switch (type) {
 	case XFS_GROUP_QUOTA: {
 			struct group *g;
 			setgrent();
 			while ((g = getgrent()) != NULL)
-				dump_file(fp, g->gr_gid, type, mount->fs_name);
+				dump_file(fp, g->gr_gid, NULL, type,
+					  mount->fs_name, 0);
 			endgrent();
 			break;
 		}
@@ -145,7 +180,8 @@ dump_limits_any_type(
 			struct fs_project *p;
 			setprent();
 			while ((p = getprent()) != NULL)
-				dump_file(fp, p->pr_prid, type, mount->fs_name);
+				dump_file(fp, p->pr_prid, NULL, type,
+					  mount->fs_name, 0);
 			endprent();
 			break;
 		}
@@ -153,7 +189,8 @@ dump_limits_any_type(
 			struct passwd *u;
 			setpwent();
 			while ((u = getpwent()) != NULL)
-				dump_file(fp, u->pw_uid, type, mount->fs_name);
+				dump_file(fp, u->pw_uid, NULL, type,
+					  mount->fs_name, 0);
 			endpwent();
 			break;
 		}
@@ -168,7 +205,7 @@ dump_f(
 	FILE		*fp;
 	char		*fname = NULL;
 	uint		lower = 0, upper = 0;
-	int		c, type = XFS_USER_QUOTA;
+	int		c, type = 0;
 
 	while ((c = getopt(argc, argv, "f:gpuL:U:")) != EOF) {
 		switch(c) {
@@ -176,13 +213,13 @@ dump_f(
 			fname = optarg;
 			break;
 		case 'g':
-			type = XFS_GROUP_QUOTA;
+			type |= XFS_GROUP_QUOTA;
 			break;
 		case 'p':
-			type = XFS_PROJ_QUOTA;
+			type |= XFS_PROJ_QUOTA;
 			break;
 		case 'u':
-			type = XFS_USER_QUOTA;
+			type |= XFS_USER_QUOTA;
 			break;
 		case 'L':
 			lower = (uint)atoi(optarg);
@@ -197,6 +234,14 @@ dump_f(
 
 	if (argc != optind)
 		return command_usage(&dump_cmd);
+
+	if (!type) {
+		type = XFS_USER_QUOTA;
+	} else if (type != XFS_GROUP_QUOTA &&
+	           type != XFS_PROJ_QUOTA &&
+	           type != XFS_USER_QUOTA) {
+		return command_usage(&dump_cmd);
+	}
 
 	if ((fp = fopen_write_secure(fname)) == NULL)
 		return 0;
@@ -290,6 +335,7 @@ report_mount(
 	FILE		*fp,
 	__uint32_t	id,
 	char		*name,
+	__uint32_t	*oid,
 	uint		form,
 	uint		type,
 	fs_path_t	*mount,
@@ -300,11 +346,26 @@ report_mount(
 	char		c[8], h[8], s[8];
 	uint		qflags;
 	int		count;
+	int		cmd;
 
-	if (xfsquotactl(XFS_GETQUOTA, dev, type, id, (void *)&d) < 0) {
-		if (errno != ENOENT && errno != ENOSYS && errno != ESRCH)
+	if (flags & GETNEXTQUOTA_FLAG)
+		cmd = XFS_GETNEXTQUOTA;
+	else
+		cmd = XFS_GETQUOTA;
+
+	/* Fall back silently if XFS_GETNEXTQUOTA fails, warn on XFS_GETQUOTA*/
+	if (xfsquotactl(cmd, dev, type, id, (void *)&d) < 0) {
+		if (errno != ENOENT && errno != ENOSYS && errno != ESRCH &&
+		    cmd == XFS_GETQUOTA)
 			perror("XFS_GETQUOTA");
 		return 0;
+	}
+
+	if (oid) {
+		*oid = d.d_id;
+		/* Did kernelspace wrap? */
+		if (* oid < id)
+			return 0;
 	}
 
 	if (flags & TERSE_FLAG) {
@@ -322,7 +383,31 @@ report_mount(
 	if (!(flags & NO_HEADER_FLAG))
 		report_header(fp, form, type, mount, flags);
 
-	fprintf(fp, "%-10s", name);
+	if (flags & NO_LOOKUP_FLAG) {
+		fprintf(fp, "#%-10u", d.d_id);
+	} else {
+		if (name == NULL) {
+			if (type == XFS_USER_QUOTA) {
+				struct passwd	*u = getpwuid(d.d_id);
+				if (u)
+					name = u->pw_name;
+			} else if (type == XFS_GROUP_QUOTA) {
+				struct group	*g = getgrgid(d.d_id);
+				if (g)
+					name = g->gr_name;
+			} else if (type == XFS_PROJ_QUOTA) {
+				fs_project_t	*p = getprprid(d.d_id);
+				if (p)
+					name = p->pr_name;
+			}
+		}
+		/* If no name is found, print the id #num instead of (null) */
+		if (name != NULL)
+			fprintf(fp, "%-10s", name);
+		else
+			fprintf(fp, "#%-9u", d.d_id);
+	}
+
 	if (form & XFS_BLOCK_QUOTA) {
 		qflags = (flags & HUMAN_FLAG);
 		if (d.d_blk_hardlimit && d.d_bcount > d.d_blk_hardlimit)
@@ -400,24 +485,28 @@ report_user_mount(
 	uint		flags)
 {
 	struct passwd	*u;
-	char		n[NMAX];
-	uint		id;
+	uint		id = 0, oid;
 
 	if (upper) {	/* identifier range specified */
 		for (id = lower; id <= upper; id++) {
-			snprintf(n, sizeof(n)-1, "#%u", id);
-			if (report_mount(fp, id, n,
+			if (report_mount(fp, id, NULL, NULL,
 					form, XFS_USER_QUOTA, mount, flags))
 				flags |= NO_HEADER_FLAG;
+		}
+	} else if (report_mount(fp, id, NULL, &oid, form,
+				XFS_USER_QUOTA, mount,
+				flags|GETNEXTQUOTA_FLAG)) {
+		id = oid + 1;
+		flags |= GETNEXTQUOTA_FLAG;
+		flags |= NO_HEADER_FLAG;
+		while (report_mount(fp, id, NULL, &oid, form, XFS_USER_QUOTA,
+				    mount, flags)) {
+			id = oid + 1;
 		}
 	} else {
 		setpwent();
 		while ((u = getpwent()) != NULL) {
-			if (flags & NO_LOOKUP_FLAG)
-				snprintf(n, sizeof(n)-1, "#%u", u->pw_uid);
-			else
-				strncpy(n, u->pw_name, sizeof(n)-1);
-			if (report_mount(fp, u->pw_uid, n,
+			if (report_mount(fp, u->pw_uid, u->pw_name, NULL,
 					form, XFS_USER_QUOTA, mount, flags))
 				flags |= NO_HEADER_FLAG;
 		}
@@ -438,24 +527,28 @@ report_group_mount(
 	uint		flags)
 {
 	struct group	*g;
-	char		n[NMAX];
-	uint		id;
+	uint		id = 0, oid;
 
 	if (upper) {	/* identifier range specified */
 		for (id = lower; id <= upper; id++) {
-			snprintf(n, sizeof(n)-1, "#%u", id);
-			if (report_mount(fp, id, n,
+			if (report_mount(fp, id, NULL, NULL,
 					form, XFS_GROUP_QUOTA, mount, flags))
 				flags |= NO_HEADER_FLAG;
+		}
+	} else if (report_mount(fp, id, NULL, &oid, form,
+				XFS_GROUP_QUOTA, mount,
+				flags|GETNEXTQUOTA_FLAG)) {
+		id = oid + 1;
+		flags |= GETNEXTQUOTA_FLAG;
+		flags |= NO_HEADER_FLAG;
+		while (report_mount(fp, id, NULL, &oid, form, XFS_GROUP_QUOTA,
+				    mount, flags)) {
+			id = oid + 1;
 		}
 	} else {
 		setgrent();
 		while ((g = getgrent()) != NULL) {
-			if (flags & NO_LOOKUP_FLAG)
-				snprintf(n, sizeof(n)-1, "#%u", g->gr_gid);
-		else
-			strncpy(n, g->gr_name, sizeof(n)-1);
-			if (report_mount(fp, g->gr_gid, n,
+			if (report_mount(fp, g->gr_gid, g->gr_name, NULL,
 					form, XFS_GROUP_QUOTA, mount, flags))
 				flags |= NO_HEADER_FLAG;
 		}
@@ -475,25 +568,38 @@ report_project_mount(
 	uint		flags)
 {
 	fs_project_t	*p;
-	char		n[NMAX];
-	uint		id;
+	uint		id = 0, oid;
 
 	if (upper) {	/* identifier range specified */
 		for (id = lower; id <= upper; id++) {
-			snprintf(n, sizeof(n)-1, "#%u", id);
-			if (report_mount(fp, id, n,
+			if (report_mount(fp, id, NULL, NULL,
 					form, XFS_PROJ_QUOTA, mount, flags))
 				flags |= NO_HEADER_FLAG;
 		}
+	} else if (report_mount(fp, id, NULL, &oid, form,
+				XFS_PROJ_QUOTA, mount,
+				flags|GETNEXTQUOTA_FLAG)) {
+		id = oid + 1;
+		flags |= GETNEXTQUOTA_FLAG;
+		flags |= NO_HEADER_FLAG;
+		while (report_mount(fp, id, NULL, &oid, form, XFS_PROJ_QUOTA,
+				    mount, flags)) {
+			id = oid + 1;
+		}
 	} else {
+		if (!getprprid(0)) {
+			/*
+			 * Print default project quota, even if projid 0
+			 * isn't defined
+			 */
+			if (report_mount(fp, 0, NULL, NULL,
+					form, XFS_PROJ_QUOTA, mount, flags))
+				flags |= NO_HEADER_FLAG;
+		}
+
 		setprent();
 		while ((p = getprent()) != NULL) {
-			if (flags & NO_LOOKUP_FLAG)
-				snprintf(n, sizeof(n)-1, "#%u",
-					 (unsigned int)p->pr_prid);
-			else
-				strncpy(n, p->pr_name, sizeof(n)-1);
-			if (report_mount(fp, p->pr_prid, n,
+			if (report_mount(fp, p->pr_prid, p->pr_name, NULL,
 					form, XFS_PROJ_QUOTA, mount, flags))
 				flags |= NO_HEADER_FLAG;
 		}
@@ -520,6 +626,8 @@ report_any_type(
 	if (type & XFS_USER_QUOTA) {
 		fs_cursor_initialise(dir, FS_MOUNT_POINT, &cursor);
 		while ((mount = fs_cursor_next_entry(&cursor))) {
+			if (!foreign_allowed && (mount->fs_flags & FS_FOREIGN))
+				continue;
 			if (xfsquotactl(XFS_QSYNC, mount->fs_name,
 						XFS_USER_QUOTA, 0, NULL) < 0
 					&& errno != ENOENT && errno != ENOSYS)
@@ -531,6 +639,8 @@ report_any_type(
 	if (type & XFS_GROUP_QUOTA) {
 		fs_cursor_initialise(dir, FS_MOUNT_POINT, &cursor);
 		while ((mount = fs_cursor_next_entry(&cursor))) {
+			if (!foreign_allowed && (mount->fs_flags & FS_FOREIGN))
+				continue;
 			if (xfsquotactl(XFS_QSYNC, mount->fs_name,
 						XFS_GROUP_QUOTA, 0, NULL) < 0
 					&& errno != ENOENT && errno != ENOSYS)
@@ -542,6 +652,8 @@ report_any_type(
 	if (type & XFS_PROJ_QUOTA) {
 		fs_cursor_initialise(dir, FS_MOUNT_POINT, &cursor);
 		while ((mount = fs_cursor_next_entry(&cursor))) {
+			if (!foreign_allowed && (mount->fs_flags & FS_FOREIGN))
+				continue;
 			if (xfsquotactl(XFS_QSYNC, mount->fs_name,
 						XFS_PROJ_QUOTA, 0, NULL) < 0
 					&& errno != ENOENT && errno != ENOSYS)
@@ -560,9 +672,10 @@ report_f(
 	FILE		*fp = NULL;
 	char		*fname = NULL;
 	uint		lower = 0, upper = 0;
+	bool		lookup = false;
 	int		c, flags = 0, type = 0, form = 0;
 
-	while ((c = getopt(argc, argv, "abf:ghiL:NnprtuU:")) != EOF) {
+	while ((c = getopt(argc, argv, "abdf:ghilL:NnprtuU:")) != EOF) {
 		switch (c) {
 		case 'f':
 			fname = optarg;
@@ -602,9 +715,14 @@ report_f(
 			break;
 		case 'L':
 			lower = (uint)atoi(optarg);
+			flags |= NO_LOOKUP_FLAG;
 			break;
 		case 'U':
 			upper = (uint)atoi(optarg);
+			flags |= NO_LOOKUP_FLAG;
+			break;
+		case 'l':
+			lookup = true;
 			break;
 		default:
 			return command_usage(&report_cmd);
@@ -617,6 +735,9 @@ report_f(
 	if (!type)
 		type = XFS_USER_QUOTA | XFS_GROUP_QUOTA | XFS_PROJ_QUOTA;
 
+	if (lookup)
+		flags &= ~NO_LOOKUP_FLAG;
+
 	if ((fp = fopen_write_secure(fname)) == NULL)
 		return 0;
 
@@ -624,7 +745,7 @@ report_f(
 		if (flags & ALL_MOUNTS_FLAG)
 			report_any_type(fp, form, type, NULL,
 					lower, upper, flags);
-		else if (fs_path->fs_flags & FS_MOUNT_POINT)
+		else if (fs_path && (fs_path->fs_flags & FS_MOUNT_POINT))
 			report_any_type(fp, form, type, fs_path->fs_dir,
 					lower, upper, flags);
 	} else while (argc > optind) {
@@ -644,9 +765,10 @@ report_init(void)
 	dump_cmd.cfunc = dump_f;
 	dump_cmd.argmin = 0;
 	dump_cmd.argmax = -1;
-	dump_cmd.args = _("[-gpu] [-f file]");
+	dump_cmd.args = _("[-g|-p|-u] [-f file]");
 	dump_cmd.oneline = _("dump quota information for backup utilities");
 	dump_cmd.help = dump_help;
+	dump_cmd.flags = CMD_FLAG_FOREIGN_OK;
 
 	report_cmd.name = "report";
 	report_cmd.altname = "repquota";
@@ -656,6 +778,7 @@ report_init(void)
 	report_cmd.args = _("[-bir] [-gpu] [-ahnt] [-f file]");
 	report_cmd.oneline = _("report filesystem quota information");
 	report_cmd.help = report_help;
+	report_cmd.flags = CMD_FLAG_GLOBAL | CMD_FLAG_FOREIGN_OK;
 
 	if (expert) {
 		add_command(&dump_cmd);

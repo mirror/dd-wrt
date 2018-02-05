@@ -9,9 +9,9 @@ LTCOMMAND = xfs_copy
 CFILES = xfs_copy.c
 HFILES = xfs_copy.h
 
-LLDLIBS = $(LIBXFS) $(LIBUUID) $(LIBPTHREAD) $(LIBRT)
-LTDEPENDENCIES = $(LIBXFS)
-LLDFLAGS = -static
+LLDLIBS = $(LIBXFS) $(LIBXLOG) $(LIBUUID) $(LIBPTHREAD) $(LIBRT)
+LTDEPENDENCIES = $(LIBXFS) $(LIBXLOG)
+LLDFLAGS = -static-libtool-libs
 
 default: depend $(LTCOMMAND)
 

@@ -24,13 +24,15 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <xfs/path.h>
-#include <xfs/input.h>
-#include <xfs/project.h>
+#include "path.h"
+#include "input.h"
+#include "project.h"
+#include <limits.h>
 
 extern char *progname;
 
 int fs_count;
+int xfs_fs_count;
 struct fs_path *fs_table;
 struct fs_path *fs_path;
 
@@ -42,9 +44,9 @@ fs_device_number(
 	const char	*name,
 	dev_t		*devnum)
 {
-	struct stat64	sbuf;
+	struct stat	sbuf;
 
-	if (stat64(name, &sbuf) < 0)
+	if (stat(name, &sbuf) < 0)
 		return errno;
 	/*
 	 * We want to match st_rdev if the path provided is a device
@@ -112,6 +114,9 @@ fs_table_insert(
 			goto out_nodev;
 	}
 
+	if (!platform_test_xfs_path(dir))
+		flags |= FS_FOREIGN;
+
 	/*
 	 * Make copies of the directory and data device path.
 	 * The log device and real-time device, if non-null,
@@ -134,7 +139,15 @@ fs_table_insert(
 		goto out_norealloc;
 	fs_table = tmp_fs_table;
 
-	fs_path = &fs_table[fs_count];
+	/* Put foreign filesystems at the end, xfs filesystems at the front */
+	if (flags & FS_FOREIGN || fs_count == 0) {
+		fs_path = &fs_table[fs_count];
+	} else {
+		/* move foreign fs entries down, insert new one just before */
+		memmove(&fs_table[xfs_fs_count + 1], &fs_table[xfs_fs_count],
+			sizeof(fs_path_t)*(fs_count - xfs_fs_count));
+		fs_path = &fs_table[xfs_fs_count];
+	}
 	fs_path->fs_dir = dir;
 	fs_path->fs_prid = prid;
 	fs_path->fs_flags = flags;
@@ -145,6 +158,8 @@ fs_table_insert(
 	fs_path->fs_logdev = logdev;
 	fs_path->fs_rtdev = rtdev;
 	fs_count++;
+	if (!(flags & FS_FOREIGN))
+		xfs_fs_count++;
 
 	return 0;
 
@@ -233,10 +248,17 @@ fs_extract_mount_options(
 {
 	char		*fslog, *fsrt;
 
-	/* Extract log device and realtime device from mount options */
-	if ((fslog = hasmntopt(mnt, "logdev=")))
+	/*
+	 * Extract log device and realtime device from mount options.
+	 *
+	 * Note: the glibc hasmntopt implementation requires that the
+	 * character in mnt_opts immediately after the search string
+	 * must be a NULL ('\0'), a comma (','), or an equals ('=').
+	 * Therefore we cannot search for 'logdev=' directly.
+	 */
+	if ((fslog = hasmntopt(mnt, "logdev")) && fslog[6] == '=')
 		fslog += 7;
-	if ((fsrt = hasmntopt(mnt, "rtdev=")))
+	if ((fsrt = hasmntopt(mnt, "rtdev")) && fsrt[5] == '=')
 		fsrt += 6;
 
 	/* Do this only after we've finished processing mount options */
@@ -265,6 +287,13 @@ out_nomem:
 	return ENOMEM;
 }
 
+/*
+ * If *path is NULL, initialize the fs table with all xfs mount points in mtab
+ * If *path is specified, search for that path in mtab
+ *
+ * Everything - path, devices, and mountpoints - are boiled down to realpath()
+ * for comparison, but fs_table is populated with what comes from getmntent.
+ */
 static int
 fs_table_initialise_mounts(
 	char		*path)
@@ -273,6 +302,7 @@ fs_table_initialise_mounts(
 	FILE		*mtp;
 	char		*fslog, *fsrt;
 	int		error, found;
+	char		rpath[PATH_MAX], rmnt_fsname[PATH_MAX], rmnt_dir[PATH_MAX];
 
 	error = found = 0;
 	fslog = fsrt = NULL;
@@ -286,12 +316,20 @@ fs_table_initialise_mounts(
 	if ((mtp = setmntent(mtab_file, "r")) == NULL)
 		return ENOENT;
 
+	/* Use realpath to resolve symlinks, relative paths, etc */
+	if (path)
+		if (!realpath(path, rpath))
+			return errno;
+
 	while ((mnt = getmntent(mtp)) != NULL) {
-		if (strcmp(mnt->mnt_type, "xfs") != 0)
+		if (!realpath(mnt->mnt_dir, rmnt_dir))
 			continue;
+		if (!realpath(mnt->mnt_fsname, rmnt_fsname))
+			continue;
+
 		if (path &&
-		    ((strcmp(path, mnt->mnt_dir) != 0) &&
-		     (strcmp(path, mnt->mnt_fsname) != 0)))
+		    ((strcmp(rpath, rmnt_dir) != 0) &&
+		     (strcmp(rpath, rmnt_fsname) != 0)))
 			continue;
 		if (fs_extract_mount_options(mnt, &fslog, &fsrt))
 			continue;
@@ -303,6 +341,7 @@ fs_table_initialise_mounts(
 		}
 	}
 	endmntent(mtp);
+
 	if (path && !found)
 		error = ENXIO;
 
@@ -312,12 +351,20 @@ fs_table_initialise_mounts(
 #elif defined(HAVE_GETMNTINFO)
 #include <sys/mount.h>
 
+/*
+ * If *path is NULL, initialize the fs table with all xfs mount points in mtab
+ * If *path is specified, search for that path in mtab
+ *
+ * Everything - path, devices, and mountpoints - are boiled down to realpath()
+ * for comparison, but fs_table is populated with what comes from getmntinfo.
+ */
 static int
 fs_table_initialise_mounts(
 	char		*path)
 {
 	struct statfs	*stats;
 	int		i, count, error, found;
+	char		rpath[PATH_MAX], rmntfromname[PATH_MAX], rmntonname[PATH_MAX];
 
 	error = found = 0;
 	if ((count = getmntinfo(&stats, 0)) < 0) {
@@ -326,12 +373,20 @@ fs_table_initialise_mounts(
 		return 0;
 	}
 
+	/* Use realpath to resolve symlinks, relative paths, etc */
+	if (path)
+		if (!realpath(path, rpath))
+			return errno;
+
 	for (i = 0; i < count; i++) {
-		if (strcmp(stats[i].f_fstypename, "xfs") != 0)
+		if (!realpath(stats[i].f_mntfromname, rmntfromname))
 			continue;
+		if (!realpath(stats[i].f_mntonname, rmntonname))
+			continue;
+
 		if (path &&
-		    ((strcmp(path, stats[i].f_mntonname) != 0) &&
-		     (strcmp(path, stats[i].f_mntfromname) != 0)))
+		    ((strcmp(rpath, rmntonname) != 0) &&
+		     (strcmp(rpath, rmntfromname) != 0)))
 			continue;
 		/* TODO: external log and realtime device? */
 		(void) fs_table_insert(stats[i].f_mntonname, 0,
@@ -477,7 +532,7 @@ out_error:
 		progname, strerror(error));
 }
 
-void 
+void
 fs_table_insert_project_path(
 	char		*dir,
 	prid_t		prid)
@@ -498,4 +553,3 @@ fs_table_insert_project_path(
 		exit(1);
 	}
 }
-

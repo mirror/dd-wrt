@@ -1,5 +1,5 @@
 
-#include <libxfs.h>
+#include "libxfs.h"
 #include "globals.h"
 #include "progress.h"
 #include "err_protos.h"
@@ -75,9 +75,9 @@ progress_rpt_t progress_rpt_reports[] = {
 {FMT2, N_("moving disconnected inodes to lost+found"),		/* 12 */
 	&rpt_fmts[FMT2], &rpt_types[TYPE_INODE]},
 {FMT1, N_("verify and correct link counts"),			/* 13 */
-	&rpt_fmts[FMT1], &rpt_types[TYPE_INODE]},
+	&rpt_fmts[FMT1], &rpt_types[TYPE_AG]},
 {FMT1, N_("verify link counts"),				/* 14 */
-	&rpt_fmts[FMT1], &rpt_types[TYPE_INODE]}
+	&rpt_fmts[FMT1], &rpt_types[TYPE_AG]}
 };
 
 pthread_t	report_thread;
@@ -124,6 +124,7 @@ init_progress_rpt (void)
 	 */
 
 	pthread_mutex_init(&global_msgs.mutex, NULL);
+	global_msgs.format = NULL;
 	global_msgs.count = glob_agcount;
 	global_msgs.interval = report_interval;
 	global_msgs.done   = prog_rpt_done;
@@ -169,6 +170,10 @@ progress_rpt_thread (void *p)
 	msg_block_t *msgp = (msg_block_t *)p;
 	__uint64_t percent;
 
+	/* It's possible to get here very early w/ no progress msg set */
+	if (!msgp->format)
+		return NULL;
+
 	if ((msgbuf = (char *)malloc(DURATION_BUF_SIZE)) == NULL)
 		do_error (_("progress_rpt: cannot malloc progress msg buffer\n"));
 
@@ -178,10 +183,9 @@ progress_rpt_thread (void *p)
 	 * Specify a repeating timer that fires each MSG_INTERVAL seconds.
 	 */
 
+	memset(&timespec, 0, sizeof(timespec));
 	timespec.it_value.tv_sec = msgp->interval;
-	timespec.it_value.tv_nsec = 0;
 	timespec.it_interval.tv_sec = msgp->interval;
-	timespec.it_interval.tv_nsec = 0;
 
 	if (timer_create (CLOCK_REALTIME, NULL, &timerid))
 		do_error(_("progress_rpt: cannot create timer\n"));
@@ -360,7 +364,7 @@ print_final_rpt(void)
 	return(sum);
 }
 
-void
+static void
 timediff(int phase)
 {
 	phase_times[phase].duration =

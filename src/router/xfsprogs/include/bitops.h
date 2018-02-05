@@ -5,6 +5,7 @@
  * fls: find last bit set.
  */
 
+#ifndef HAVE_FLS
 static inline int fls(int x)
 {
 	int r = 32;
@@ -28,11 +29,11 @@ static inline int fls(int x)
 		r -= 2;
 	}
 	if (!(x & 0x80000000u)) {
-		x <<= 1;
 		r -= 1;
 	}
 	return r;
 }
+#endif /* HAVE_FLS */
 
 static inline int fls64(__u64 x)
 {
@@ -48,5 +49,11 @@ static inline unsigned fls_long(unsigned long l)
                 return fls(l);
         return fls64(l);
 }
+
+/*
+ * ffz: find first zero bit.
+ * Result is undefined if no zero bit exists.
+ */
+#define ffz(x)	ffs(~(x))
 
 #endif

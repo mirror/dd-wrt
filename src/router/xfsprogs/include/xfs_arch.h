@@ -18,27 +18,180 @@
 #ifndef __XFS_ARCH_H__
 #define __XFS_ARCH_H__
 
-#ifndef XFS_BIG_INUMS
-# error XFS_BIG_INUMS must be defined true or false
-#endif
-
-#ifdef __KERNEL__
-
-#include <asm/byteorder.h>
-
-#ifdef __BIG_ENDIAN
-#define	XFS_NATIVE_HOST	1
-#else
-#undef XFS_NATIVE_HOST
-#endif
-
-#else /* __KERNEL__ */
-
 #if __BYTE_ORDER == __BIG_ENDIAN
 #define	XFS_NATIVE_HOST	1
 #else
 #undef XFS_NATIVE_HOST
 #endif
+
+#ifdef __CHECKER__
+#define __bitwise		__attribute__((bitwise))
+#define __force			__attribute__((force))
+#else
+#define __bitwise
+#define __force
+#endif
+
+typedef __u16	__bitwise	__le16;
+typedef __u32	__bitwise	__le32;
+typedef __u64	__bitwise	__le64;
+
+typedef __u16	__bitwise	__be16;
+typedef __u32	__bitwise	__be32;
+typedef __u64	__bitwise	__be64;
+
+/*
+ * Casts are necessary for constants, because we never know how for sure
+ * how U/UL/ULL map to __u16, __u32, __u64. At least not in a portable way.
+ */
+#define ___swab16(x) \
+({ \
+	__u16 __x = (x); \
+	((__u16)( \
+		(((__u16)(__x) & (__u16)0x00ffU) << 8) | \
+		(((__u16)(__x) & (__u16)0xff00U) >> 8) )); \
+})
+
+#define ___swab32(x) \
+({ \
+	__u32 __x = (x); \
+	((__u32)( \
+		(((__u32)(__x) & (__u32)0x000000ffUL) << 24) | \
+		(((__u32)(__x) & (__u32)0x0000ff00UL) <<  8) | \
+		(((__u32)(__x) & (__u32)0x00ff0000UL) >>  8) | \
+		(((__u32)(__x) & (__u32)0xff000000UL) >> 24) )); \
+})
+
+#define ___swab64(x) \
+({ \
+	__u64 __x = (x); \
+	((__u64)( \
+		(__u64)(((__u64)(__x) & (__u64)0x00000000000000ffULL) << 56) | \
+		(__u64)(((__u64)(__x) & (__u64)0x000000000000ff00ULL) << 40) | \
+		(__u64)(((__u64)(__x) & (__u64)0x0000000000ff0000ULL) << 24) | \
+		(__u64)(((__u64)(__x) & (__u64)0x00000000ff000000ULL) <<  8) | \
+		(__u64)(((__u64)(__x) & (__u64)0x000000ff00000000ULL) >>  8) | \
+		(__u64)(((__u64)(__x) & (__u64)0x0000ff0000000000ULL) >> 24) | \
+		(__u64)(((__u64)(__x) & (__u64)0x00ff000000000000ULL) >> 40) | \
+		(__u64)(((__u64)(__x) & (__u64)0xff00000000000000ULL) >> 56) )); \
+})
+
+#define ___constant_swab16(x) \
+	((__u16)( \
+		(((__u16)(x) & (__u16)0x00ffU) << 8) | \
+		(((__u16)(x) & (__u16)0xff00U) >> 8) ))
+#define ___constant_swab32(x) \
+	((__u32)( \
+		(((__u32)(x) & (__u32)0x000000ffUL) << 24) | \
+		(((__u32)(x) & (__u32)0x0000ff00UL) <<  8) | \
+		(((__u32)(x) & (__u32)0x00ff0000UL) >>  8) | \
+		(((__u32)(x) & (__u32)0xff000000UL) >> 24) ))
+#define ___constant_swab64(x) \
+	((__u64)( \
+		(__u64)(((__u64)(x) & (__u64)0x00000000000000ffULL) << 56) | \
+		(__u64)(((__u64)(x) & (__u64)0x000000000000ff00ULL) << 40) | \
+		(__u64)(((__u64)(x) & (__u64)0x0000000000ff0000ULL) << 24) | \
+		(__u64)(((__u64)(x) & (__u64)0x00000000ff000000ULL) <<  8) | \
+		(__u64)(((__u64)(x) & (__u64)0x000000ff00000000ULL) >>  8) | \
+		(__u64)(((__u64)(x) & (__u64)0x0000ff0000000000ULL) >> 24) | \
+		(__u64)(((__u64)(x) & (__u64)0x00ff000000000000ULL) >> 40) | \
+		(__u64)(((__u64)(x) & (__u64)0xff00000000000000ULL) >> 56) ))
+
+/*
+ * provide defaults when no architecture-specific optimization is detected
+ */
+#ifndef __arch__swab16
+#  define __arch__swab16(x) ({ __u16 __tmp = (x) ; ___swab16(__tmp); })
+#endif
+#ifndef __arch__swab32
+#  define __arch__swab32(x) ({ __u32 __tmp = (x) ; ___swab32(__tmp); })
+#endif
+#ifndef __arch__swab64
+#  define __arch__swab64(x) ({ __u64 __tmp = (x) ; ___swab64(__tmp); })
+#endif
+
+#ifndef __arch__swab16p
+#  define __arch__swab16p(x) __arch__swab16(*(x))
+#endif
+#ifndef __arch__swab32p
+#  define __arch__swab32p(x) __arch__swab32(*(x))
+#endif
+#ifndef __arch__swab64p
+#  define __arch__swab64p(x) __arch__swab64(*(x))
+#endif
+
+#ifndef __arch__swab16s
+#  define __arch__swab16s(x) do { *(x) = __arch__swab16p((x)); } while (0)
+#endif
+#ifndef __arch__swab32s
+#  define __arch__swab32s(x) do { *(x) = __arch__swab32p((x)); } while (0)
+#endif
+#ifndef __arch__swab64s
+#  define __arch__swab64s(x) do { *(x) = __arch__swab64p((x)); } while (0)
+#endif
+
+
+/*
+ * Allow constant folding
+ */
+#  define __swab16(x) \
+(__builtin_constant_p((__u16)(x)) ? \
+ ___constant_swab16((x)) : \
+ __fswab16((x)))
+#  define __swab32(x) \
+(__builtin_constant_p((__u32)(x)) ? \
+ ___constant_swab32((x)) : \
+ __fswab32((x)))
+#  define __swab64(x) \
+(__builtin_constant_p((__u64)(x)) ? \
+ ___constant_swab64((x)) : \
+ __fswab64((x)))
+
+
+static __inline__ __u16 __fswab16(__u16 x)
+{
+	return (__extension__ __arch__swab16(x));
+}
+static __inline__ __u16 __swab16p(__u16 *x)
+{
+	return (__extension__ __arch__swab16p(x));
+}
+static __inline__ void __swab16s(__u16 *addr)
+{
+	(__extension__ ({__arch__swab16s(addr);}));
+}
+
+static __inline__ __u32 __fswab32(__u32 x)
+{
+	return (__extension__ __arch__swab32(x));
+}
+static __inline__ __u32 __swab32p(__u32 *x)
+{
+	return (__extension__ __arch__swab32p(x));
+}
+static __inline__ void __swab32s(__u32 *addr)
+{
+	(__extension__ ({__arch__swab32s(addr);}));
+}
+
+static __inline__ __u64 __fswab64(__u64 x)
+{
+#  ifdef __SWAB_64_THRU_32__
+	__u32 h = x >> 32;
+	__u32 l = x & ((1ULL<<32)-1);
+	return (((__u64)__swab32(l)) << 32) | ((__u64)(__swab32(h)));
+#  else
+	return (__extension__ __arch__swab64(x));
+#  endif
+}
+static __inline__ __u64 __swab64p(__u64 *x)
+{
+	return (__extension__ __arch__swab64p(x));
+}
+static __inline__ void __swab64s(__u64 *addr)
+{
+	(__extension__ ({__arch__swab64s(addr);}));
+}
 
 #ifdef XFS_NATIVE_HOST
 #define cpu_to_be16(val)	((__force __be16)(__u16)(val))
@@ -47,6 +200,14 @@
 #define be16_to_cpu(val)	((__force __u16)(__be16)(val))
 #define be32_to_cpu(val)	((__force __u32)(__be32)(val))
 #define be64_to_cpu(val)	((__force __u64)(__be64)(val))
+
+#define cpu_to_le32(val)	((__force __be32)__swab32((__u32)(val)))
+#define le32_to_cpu(val)	(__swab32((__force __u32)(__le32)(val)))
+
+#define __constant_cpu_to_le32(val)	\
+	((__force __le32)___constant_swab32((__u32)(val)))
+#define __constant_cpu_to_be32(val)	\
+	((__force __be32)(__u32)(val))
 #else
 #define cpu_to_be16(val)	((__force __be16)__swab16((__u16)(val)))
 #define cpu_to_be32(val)	((__force __be32)__swab32((__u32)(val)))
@@ -54,6 +215,14 @@
 #define be16_to_cpu(val)	(__swab16((__force __u16)(__be16)(val)))
 #define be32_to_cpu(val)	(__swab32((__force __u32)(__be32)(val)))
 #define be64_to_cpu(val)	(__swab64((__force __u64)(__be64)(val)))
+
+#define cpu_to_le32(val)	((__force __le32)(__u32)(val))
+#define le32_to_cpu(val)	((__force __u32)(__le32)(val))
+
+#define __constant_cpu_to_le32(val)	\
+	((__force __le32)(__u32)(val))
+#define __constant_cpu_to_be32(val)	\
+	((__force __be32)___constant_swab32((__u32)(val)))
 #endif
 
 static inline void be16_add_cpu(__be16 *a, __s16 b)
@@ -71,66 +240,42 @@ static inline void be64_add_cpu(__be64 *a, __s64 b)
 	*a = cpu_to_be64(be64_to_cpu(*a) + b);
 }
 
-#endif	/* __KERNEL__ */
+static inline __uint16_t get_unaligned_be16(void *p)
+{
+	__uint8_t *__p = p;
+	return __p[0] << 8 | __p[1];
+}
 
-/*
- * get and set integers from potentially unaligned locations
- */
+static inline __uint32_t get_unaligned_be32(void *p)
+{
+	__uint8_t *__p = p;
+        return __p[0] << 24 | __p[1] << 16 | __p[2] << 8 | __p[3];
+}
 
-#define INT_GET_UNALIGNED_16_BE(pointer) \
-   ((__u16)((((__u8*)(pointer))[0] << 8) | (((__u8*)(pointer))[1])))
-#define INT_SET_UNALIGNED_16_BE(pointer,value) \
-    { \
-	((__u8*)(pointer))[0] = (((value) >> 8) & 0xff); \
-	((__u8*)(pointer))[1] = (((value)     ) & 0xff); \
-    }
+static inline __uint64_t get_unaligned_be64(void *p)
+{
+	return (__uint64_t)get_unaligned_be32(p) << 32 |
+			   get_unaligned_be32(p + 4);
+}
 
-/*
- * In directories inode numbers are stored as unaligned arrays of unsigned
- * 8bit integers on disk.
- *
- * For v1 directories or v2 directories that contain inode numbers that
- * do not fit into 32bit the array has eight members, but the first member
- * is always zero:
- *
- *  |unused|48-55|40-47|32-39|24-31|16-23| 8-15| 0- 7|
- *
- * For v2 directories that only contain entries with inode numbers that fit
- * into 32bits a four-member array is used:
- *
- *  |24-31|16-23| 8-15| 0- 7|
- */ 
+static inline void put_unaligned_be16(__uint16_t val, void *p)
+{
+	__uint8_t *__p = p;
+	*__p++ = val >> 8;
+	*__p++ = val;
+}
 
-#define XFS_GET_DIR_INO4(di) \
-	(((__u32)(di).i[0] << 24) | ((di).i[1] << 16) | ((di).i[2] << 8) | ((di).i[3]))
+static inline void put_unaligned_be32(__uint32_t val, void *p)
+{
+	__uint8_t *__p = p;
+	put_unaligned_be16(val >> 16, __p);
+	put_unaligned_be16(val, __p + 2);
+}
 
-#define XFS_PUT_DIR_INO4(from, di) \
-do { \
-	(di).i[0] = (((from) & 0xff000000ULL) >> 24); \
-	(di).i[1] = (((from) & 0x00ff0000ULL) >> 16); \
-	(di).i[2] = (((from) & 0x0000ff00ULL) >> 8); \
-	(di).i[3] = ((from) & 0x000000ffULL); \
-} while (0)
+static inline void put_unaligned_be64(__uint64_t val, void *p)
+{
+	put_unaligned_be32(val >> 32, p);
+	put_unaligned_be32(val, p + 4);
+}
 
-#define XFS_DI_HI(di) \
-	(((__u32)(di).i[1] << 16) | ((di).i[2] << 8) | ((di).i[3]))
-#define XFS_DI_LO(di) \
-	(((__u32)(di).i[4] << 24) | ((di).i[5] << 16) | ((di).i[6] << 8) | ((di).i[7]))
-
-#define XFS_GET_DIR_INO8(di)        \
-	(((xfs_ino_t)XFS_DI_LO(di) & 0xffffffffULL) | \
-	 ((xfs_ino_t)XFS_DI_HI(di) << 32))
-
-#define XFS_PUT_DIR_INO8(from, di) \
-do { \
-	(di).i[0] = 0; \
-	(di).i[1] = (((from) & 0x00ff000000000000ULL) >> 48); \
-	(di).i[2] = (((from) & 0x0000ff0000000000ULL) >> 40); \
-	(di).i[3] = (((from) & 0x000000ff00000000ULL) >> 32); \
-	(di).i[4] = (((from) & 0x00000000ff000000ULL) >> 24); \
-	(di).i[5] = (((from) & 0x0000000000ff0000ULL) >> 16); \
-	(di).i[6] = (((from) & 0x000000000000ff00ULL) >> 8); \
-	(di).i[7] = ((from) & 0x00000000000000ffULL); \
-} while (0)
-	
 #endif	/* __XFS_ARCH_H__ */

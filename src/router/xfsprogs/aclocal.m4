@@ -1,7 +1,7 @@
-# generated automatically by aclocal 1.10.1 -*- Autoconf -*-
+# generated automatically by aclocal 1.11.1 -*- Autoconf -*-
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-# 2005, 2006, 2007, 2008  Free Software Foundation, Inc.
+# 2005, 2006, 2007, 2008, 2009  Free Software Foundation, Inc.
 # This file is free software; the Free Software Foundation
 # gives unlimited permission to copy and/or distribute it,
 # with or without modifications, as long as this notice is preserved.
@@ -18,11 +18,11 @@ m4_include([m4/ltversion.m4])
 m4_include([m4/lt~obsolete.m4])
 m4_include([m4/manual_format.m4])
 m4_include([m4/multilib.m4])
-m4_include([m4/package_aiodev.m4])
 m4_include([m4/package_blkid.m4])
 m4_include([m4/package_globals.m4])
 m4_include([m4/package_libcdev.m4])
 m4_include([m4/package_pthread.m4])
+m4_include([m4/package_rt.m4])
 m4_include([m4/package_types.m4])
 m4_include([m4/package_utilies.m4])
 m4_include([m4/package_uuiddev.m4])

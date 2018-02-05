@@ -13,6 +13,8 @@ xfs_copy \- copy the contents of an XFS filesystem
 [
 .I target2
 \&... ]
+.br
+.B xfs_copy \-V
 .SH DESCRIPTION
 .B xfs_copy
 copies an XFS filesystem to one or more targets in parallel (see
@@ -87,6 +89,9 @@ Specifies the location of the
 if the default location of
 .I /var/tmp/xfs_copy.log.XXXXXX
 is not desired.
+.TP
+.B \-V
+Prints the version number and exits.
 .SH DIAGNOSTICS
 .B xfs_copy
 reports errors to both

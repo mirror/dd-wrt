@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include "bit.h"
 #include "bmap.h"
 #include "command.h"
@@ -33,9 +33,11 @@
 static int	dquot_f(int argc, char **argv);
 static void	dquot_help(void);
 
-static const cmdinfo_t	dquot_cmd =
-	{ "dquot", NULL, dquot_f, 1, 2, 1, N_("[projid|gid|uid]"),
-	  N_("set current address to project, group or user quota block"), dquot_help };
+static const cmdinfo_t	dquot_cmd = {
+	"dquot", NULL, dquot_f, 1, 2, 1, N_("[-g|-p|-u] id"),
+N_("set current address to a group, project or user quota block for given ID"),
+	dquot_help,
+};
 
 const field_t	dqblk_hfld[] = {
 	{ "", FLDT_DQBLK, OI(0), C1, 0, TYP_NONE },
@@ -48,6 +50,9 @@ const field_t	dqblk_flds[] = {
 	{ "diskdq", FLDT_DISK_DQUOT, OI(DDOFF(diskdq)), C1, 0, TYP_NONE },
 	{ "fill", FLDT_CHARS, OI(DDOFF(fill)), CI(DDSZC(fill)), FLD_SKIPALL,
 	  TYP_NONE },
+	{ "crc", FLDT_CRC, OI(DDOFF(crc)), C1, 0, TYP_NONE },
+	{ "lsn", FLDT_UINT64X, OI(DDOFF(lsn)), C1, 0, TYP_NONE },
+	{ "uuid", FLDT_UUID, OI(DDOFF(uuid)), C1, 0, TYP_NONE },
 	{ NULL }
 };
 
@@ -130,10 +135,13 @@ dquot_f(
 		dbprintf(_("dquot command requires one %s id argument\n"), s);
 		return 0;
 	}
-	ino = (dogrp || doprj) ? mp->m_sb.sb_gquotino : mp->m_sb.sb_uquotino;
-	if (ino == 0 || ino == NULLFSINO ||
-	    (dogrp && (mp->m_sb.sb_qflags & XFS_PQUOTA_ACCT)) ||
-	    (doprj && (mp->m_sb.sb_qflags & XFS_GQUOTA_ACCT))) {
+	ino = mp->m_sb.sb_uquotino;
+	if (doprj)
+		ino = mp->m_sb.sb_pquotino;
+	else if (dogrp)
+		ino = mp->m_sb.sb_gquotino;
+
+	if (ino == 0 || ino == NULLFSINO) {
 		dbprintf(_("no %s quota inode present\n"), s);
 		return 0;
 	}
@@ -156,6 +164,7 @@ dquot_f(
 	}
 	set_cur(&typtab[TYP_DQBLK], XFS_FSB_TO_DADDR(mp, bm.startblock), blkbb,
 		DB_RING_IGN, NULL);
+	iocur_top->dquot_buf = 1;
 	off_cur(qoff * (int)sizeof(xfs_dqblk_t), sizeof(xfs_dqblk_t));
 	ring_add();
 	return 0;

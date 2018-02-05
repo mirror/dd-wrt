@@ -1,11 +1,11 @@
 Source: xfsprogs
 Section: admin
 Priority: optional
-Maintainer: XFS Development Team <xfs@oss.sgi.com>
+Maintainer: XFS Development Team <linux-xfs@vger.kernel.org>
 Uploaders: Nathan Scott <nathans@debian.org>, Anibal Monsalve Salazar <anibal@debian.org>
-Build-Depends: uuid-dev, autoconf, debhelper (>= 5), gettext, libtool, libreadline5-dev | libreadline-gplv2-dev, libblkid-dev (>= 2.17)
+Build-Depends: uuid-dev, dh-autoreconf, debhelper (>= 5), gettext, libtool, libreadline-gplv2-dev | libreadline5-dev, libblkid-dev (>= 2.17), linux-libc-dev
 Standards-Version: 3.9.1
-Homepage: http://oss.sgi.com/projects/xfs/
+Homepage: http://xfs.org/
 
 Package: xfsprogs
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -44,7 +44,7 @@ Description: XFS filesystem-specific static libraries and headers
  Btrees (directories, extents, free space) to aid both performance
  and scalability.
  .
- Refer to the documentation at http://oss.sgi.com/projects/xfs/
+ Refer to the documentation at http://xfs.org/
  for complete details.
 
 Package: xfsprogs-udeb

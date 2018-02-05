@@ -15,7 +15,24 @@
  * along with this program; if not, write the Free Software Foundation,
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include <xfs.h>
+#include "libxfs_priv.h"
+#include "xfs_fs.h"
+#include "xfs_shared.h"
+#include "xfs_format.h"
+#include "xfs_log_format.h"
+#include "xfs_trans_resv.h"
+#include "xfs_bit.h"
+#include "xfs_mount.h"
+#include "xfs_inode.h"
+#include "xfs_btree.h"
+#include "xfs_ialloc.h"
+#include "xfs_ialloc_btree.h"
+#include "xfs_alloc.h"
+#include "xfs_trace.h"
+#include "xfs_cksum.h"
+#include "xfs_trans.h"
+#include "xfs_rmap.h"
+
 
 STATIC int
 xfs_inobt_get_minrecs(
@@ -30,7 +47,8 @@ xfs_inobt_dup_cursor(
 	struct xfs_btree_cur	*cur)
 {
 	return xfs_inobt_init_cursor(cur->bc_mp, cur->bc_tp,
-			cur->bc_private.a.agbp, cur->bc_private.a.agno);
+			cur->bc_private.a.agbp, cur->bc_private.a.agno,
+			cur->bc_btnum);
 }
 
 STATIC void
@@ -47,12 +65,26 @@ xfs_inobt_set_root(
 	xfs_ialloc_log_agi(cur->bc_tp, agbp, XFS_AGI_ROOT | XFS_AGI_LEVEL);
 }
 
+STATIC void
+xfs_finobt_set_root(
+	struct xfs_btree_cur	*cur,
+	union xfs_btree_ptr	*nptr,
+	int			inc)	/* level change */
+{
+	struct xfs_buf		*agbp = cur->bc_private.a.agbp;
+	struct xfs_agi		*agi = XFS_BUF_TO_AGI(agbp);
+
+	agi->agi_free_root = nptr->s;
+	be32_add_cpu(&agi->agi_free_level, inc);
+	xfs_ialloc_log_agi(cur->bc_tp, agbp,
+			   XFS_AGI_FREE_ROOT | XFS_AGI_FREE_LEVEL);
+}
+
 STATIC int
 xfs_inobt_alloc_block(
 	struct xfs_btree_cur	*cur,
 	union xfs_btree_ptr	*start,
 	union xfs_btree_ptr	*new,
-	int			length,
 	int			*stat)
 {
 	xfs_alloc_arg_t		args;		/* block allocation args */
@@ -64,6 +96,7 @@ xfs_inobt_alloc_block(
 	memset(&args, 0, sizeof(args));
 	args.tp = cur->bc_tp;
 	args.mp = cur->bc_mp;
+	xfs_rmap_ag_owner(&args.oinfo, XFS_RMAP_OWN_INOBT);
 	args.fsbno = XFS_AGB_TO_FSB(args.mp, cur->bc_private.a.agno, sbno);
 	args.minlen = 1;
 	args.maxlen = 1;
@@ -93,16 +126,12 @@ xfs_inobt_free_block(
 	struct xfs_btree_cur	*cur,
 	struct xfs_buf		*bp)
 {
-	xfs_fsblock_t		fsbno;
-	int			error;
+	struct xfs_owner_info	oinfo;
 
-	fsbno = XFS_DADDR_TO_FSB(cur->bc_mp, XFS_BUF_ADDR(bp));
-	error = xfs_free_extent(cur->bc_tp, fsbno, 1);
-	if (error)
-		return error;
-
-	xfs_trans_binval(cur->bc_tp, bp);
-	return error;
+	xfs_rmap_ag_owner(&oinfo, XFS_RMAP_OWN_INOBT);
+	return xfs_free_extent(cur->bc_tp,
+			XFS_DADDR_TO_FSB(cur->bc_mp, XFS_BUF_ADDR(bp)), 1,
+			&oinfo, XFS_AG_RESV_NONE);
 }
 
 STATIC int
@@ -122,20 +151,21 @@ xfs_inobt_init_key_from_rec(
 }
 
 STATIC void
-xfs_inobt_init_rec_from_key(
-	union xfs_btree_key	*key,
-	union xfs_btree_rec	*rec)
-{
-	rec->inobt.ir_startino = key->inobt.ir_startino;
-}
-
-STATIC void
 xfs_inobt_init_rec_from_cur(
 	struct xfs_btree_cur	*cur,
 	union xfs_btree_rec	*rec)
 {
 	rec->inobt.ir_startino = cpu_to_be32(cur->bc_rec.i.ir_startino);
-	rec->inobt.ir_freecount = cpu_to_be32(cur->bc_rec.i.ir_freecount);
+	if (xfs_sb_version_hassparseinodes(&cur->bc_mp->m_sb)) {
+		rec->inobt.ir_u.sp.ir_holemask =
+					cpu_to_be16(cur->bc_rec.i.ir_holemask);
+		rec->inobt.ir_u.sp.ir_count = cur->bc_rec.i.ir_count;
+		rec->inobt.ir_u.sp.ir_freecount = cur->bc_rec.i.ir_freecount;
+	} else {
+		/* ir_holemask/ir_count not supported on-disk */
+		rec->inobt.ir_u.f.ir_freecount =
+					cpu_to_be32(cur->bc_rec.i.ir_freecount);
+	}
 	rec->inobt.ir_free = cpu_to_be64(cur->bc_rec.i.ir_free);
 }
 
@@ -154,6 +184,17 @@ xfs_inobt_init_ptr_from_cur(
 	ptr->s = agi->agi_root;
 }
 
+STATIC void
+xfs_finobt_init_ptr_from_cur(
+	struct xfs_btree_cur	*cur,
+	union xfs_btree_ptr	*ptr)
+{
+	struct xfs_agi		*agi = XFS_BUF_TO_AGI(cur->bc_private.a.agbp);
+
+	ASSERT(cur->bc_private.a.agno == be32_to_cpu(agi->agi_seqno));
+	ptr->s = agi->agi_free_root;
+}
+
 STATIC __int64_t
 xfs_inobt_key_diff(
 	struct xfs_btree_cur	*cur,
@@ -163,7 +204,83 @@ xfs_inobt_key_diff(
 			  cur->bc_rec.i.ir_startino;
 }
 
-#ifdef DEBUG
+static int
+xfs_inobt_verify(
+	struct xfs_buf		*bp)
+{
+	struct xfs_mount	*mp = bp->b_target->bt_mount;
+	struct xfs_btree_block	*block = XFS_BUF_TO_BLOCK(bp);
+	unsigned int		level;
+
+	/*
+	 * During growfs operations, we can't verify the exact owner as the
+	 * perag is not fully initialised and hence not attached to the buffer.
+	 *
+	 * Similarly, during log recovery we will have a perag structure
+	 * attached, but the agi information will not yet have been initialised
+	 * from the on disk AGI. We don't currently use any of this information,
+	 * but beware of the landmine (i.e. need to check pag->pagi_init) if we
+	 * ever do.
+	 */
+	switch (block->bb_magic) {
+	case cpu_to_be32(XFS_IBT_CRC_MAGIC):
+	case cpu_to_be32(XFS_FIBT_CRC_MAGIC):
+		if (!xfs_sb_version_hascrc(&mp->m_sb))
+			return false;
+		if (!xfs_btree_sblock_v5hdr_verify(bp))
+			return false;
+		/* fall through */
+	case cpu_to_be32(XFS_IBT_MAGIC):
+	case cpu_to_be32(XFS_FIBT_MAGIC):
+		break;
+	default:
+		return 0;
+	}
+
+	/* level verification */
+	level = be16_to_cpu(block->bb_level);
+	if (level >= mp->m_in_maxlevels)
+		return false;
+
+	return xfs_btree_sblock_verify(bp, mp->m_inobt_mxr[level != 0]);
+}
+
+static void
+xfs_inobt_read_verify(
+	struct xfs_buf	*bp)
+{
+	if (!xfs_btree_sblock_verify_crc(bp))
+		xfs_buf_ioerror(bp, -EFSBADCRC);
+	else if (!xfs_inobt_verify(bp))
+		xfs_buf_ioerror(bp, -EFSCORRUPTED);
+
+	if (bp->b_error) {
+		trace_xfs_btree_corrupt(bp, _RET_IP_);
+		xfs_verifier_error(bp);
+	}
+}
+
+static void
+xfs_inobt_write_verify(
+	struct xfs_buf	*bp)
+{
+	if (!xfs_inobt_verify(bp)) {
+		trace_xfs_btree_corrupt(bp, _RET_IP_);
+		xfs_buf_ioerror(bp, -EFSCORRUPTED);
+		xfs_verifier_error(bp);
+		return;
+	}
+	xfs_btree_sblock_calc_crc(bp);
+
+}
+
+const struct xfs_buf_ops xfs_inobt_buf_ops = {
+	.name = "xfs_inobt",
+	.verify_read = xfs_inobt_read_verify,
+	.verify_write = xfs_inobt_write_verify,
+};
+
+#if defined(DEBUG) || defined(XFS_WARN)
 STATIC int
 xfs_inobt_keys_inorder(
 	struct xfs_btree_cur	*cur,
@@ -185,72 +302,6 @@ xfs_inobt_recs_inorder(
 }
 #endif	/* DEBUG */
 
-#ifdef XFS_BTREE_TRACE
-ktrace_t	*xfs_inobt_trace_buf;
-
-STATIC void
-xfs_inobt_trace_enter(
-	struct xfs_btree_cur	*cur,
-	const char		*func,
-	char			*s,
-	int			type,
-	int			line,
-	__psunsigned_t		a0,
-	__psunsigned_t		a1,
-	__psunsigned_t		a2,
-	__psunsigned_t		a3,
-	__psunsigned_t		a4,
-	__psunsigned_t		a5,
-	__psunsigned_t		a6,
-	__psunsigned_t		a7,
-	__psunsigned_t		a8,
-	__psunsigned_t		a9,
-	__psunsigned_t		a10)
-{
-	ktrace_enter(xfs_inobt_trace_buf, (void *)(__psint_t)type,
-		(void *)func, (void *)s, NULL, (void *)cur,
-		(void *)a0, (void *)a1, (void *)a2, (void *)a3,
-		(void *)a4, (void *)a5, (void *)a6, (void *)a7,
-		(void *)a8, (void *)a9, (void *)a10);
-}
-
-STATIC void
-xfs_inobt_trace_cursor(
-	struct xfs_btree_cur	*cur,
-	__uint32_t		*s0,
-	__uint64_t		*l0,
-	__uint64_t		*l1)
-{
-	*s0 = cur->bc_private.a.agno;
-	*l0 = cur->bc_rec.i.ir_startino;
-	*l1 = cur->bc_rec.i.ir_free;
-}
-
-STATIC void
-xfs_inobt_trace_key(
-	struct xfs_btree_cur	*cur,
-	union xfs_btree_key	*key,
-	__uint64_t		*l0,
-	__uint64_t		*l1)
-{
-	*l0 = be32_to_cpu(key->inobt.ir_startino);
-	*l1 = 0;
-}
-
-STATIC void
-xfs_inobt_trace_record(
-	struct xfs_btree_cur	*cur,
-	union xfs_btree_rec	*rec,
-	__uint64_t		*l0,
-	__uint64_t		*l1,
-	__uint64_t		*l2)
-{
-	*l0 = be32_to_cpu(rec->inobt.ir_startino);
-	*l1 = be32_to_cpu(rec->inobt.ir_freecount);
-	*l2 = be64_to_cpu(rec->inobt.ir_free);
-}
-#endif /* XFS_BTREE_TRACE */
-
 static const struct xfs_btree_ops xfs_inobt_ops = {
 	.rec_len		= sizeof(xfs_inobt_rec_t),
 	.key_len		= sizeof(xfs_inobt_key_t),
@@ -262,21 +313,34 @@ static const struct xfs_btree_ops xfs_inobt_ops = {
 	.get_minrecs		= xfs_inobt_get_minrecs,
 	.get_maxrecs		= xfs_inobt_get_maxrecs,
 	.init_key_from_rec	= xfs_inobt_init_key_from_rec,
-	.init_rec_from_key	= xfs_inobt_init_rec_from_key,
 	.init_rec_from_cur	= xfs_inobt_init_rec_from_cur,
 	.init_ptr_from_cur	= xfs_inobt_init_ptr_from_cur,
 	.key_diff		= xfs_inobt_key_diff,
-
-#ifdef DEBUG
+	.buf_ops		= &xfs_inobt_buf_ops,
+#if defined(DEBUG) || defined(XFS_WARN)
 	.keys_inorder		= xfs_inobt_keys_inorder,
 	.recs_inorder		= xfs_inobt_recs_inorder,
 #endif
+};
 
-#ifdef XFS_BTREE_TRACE
-	.trace_enter		= xfs_inobt_trace_enter,
-	.trace_cursor		= xfs_inobt_trace_cursor,
-	.trace_key		= xfs_inobt_trace_key,
-	.trace_record		= xfs_inobt_trace_record,
+static const struct xfs_btree_ops xfs_finobt_ops = {
+	.rec_len		= sizeof(xfs_inobt_rec_t),
+	.key_len		= sizeof(xfs_inobt_key_t),
+
+	.dup_cursor		= xfs_inobt_dup_cursor,
+	.set_root		= xfs_finobt_set_root,
+	.alloc_block		= xfs_inobt_alloc_block,
+	.free_block		= xfs_inobt_free_block,
+	.get_minrecs		= xfs_inobt_get_minrecs,
+	.get_maxrecs		= xfs_inobt_get_maxrecs,
+	.init_key_from_rec	= xfs_inobt_init_key_from_rec,
+	.init_rec_from_cur	= xfs_inobt_init_rec_from_cur,
+	.init_ptr_from_cur	= xfs_finobt_init_ptr_from_cur,
+	.key_diff		= xfs_inobt_key_diff,
+	.buf_ops		= &xfs_inobt_buf_ops,
+#if defined(DEBUG) || defined(XFS_WARN)
+	.keys_inorder		= xfs_inobt_keys_inorder,
+	.recs_inorder		= xfs_inobt_recs_inorder,
 #endif
 };
 
@@ -288,7 +352,8 @@ xfs_inobt_init_cursor(
 	struct xfs_mount	*mp,		/* file system mount point */
 	struct xfs_trans	*tp,		/* transaction pointer */
 	struct xfs_buf		*agbp,		/* buffer for agi structure */
-	xfs_agnumber_t		agno)		/* allocation group number */
+	xfs_agnumber_t		agno,		/* allocation group number */
+	xfs_btnum_t		btnum)		/* ialloc or free ino btree */
 {
 	struct xfs_agi		*agi = XFS_BUF_TO_AGI(agbp);
 	struct xfs_btree_cur	*cur;
@@ -297,11 +362,19 @@ xfs_inobt_init_cursor(
 
 	cur->bc_tp = tp;
 	cur->bc_mp = mp;
-	cur->bc_nlevels = be32_to_cpu(agi->agi_level);
-	cur->bc_btnum = XFS_BTNUM_INO;
+	cur->bc_btnum = btnum;
+	if (btnum == XFS_BTNUM_INO) {
+		cur->bc_nlevels = be32_to_cpu(agi->agi_level);
+		cur->bc_ops = &xfs_inobt_ops;
+	} else {
+		cur->bc_nlevels = be32_to_cpu(agi->agi_free_level);
+		cur->bc_ops = &xfs_finobt_ops;
+	}
+
 	cur->bc_blocklog = mp->m_sb.sb_blocklog;
 
-	cur->bc_ops = &xfs_inobt_ops;
+	if (xfs_sb_version_hascrc(&mp->m_sb))
+		cur->bc_flags |= XFS_BTREE_CRC_BLOCKS;
 
 	cur->bc_private.a.agbp = agbp;
 	cur->bc_private.a.agno = agno;
@@ -324,3 +397,85 @@ xfs_inobt_maxrecs(
 		return blocklen / sizeof(xfs_inobt_rec_t);
 	return blocklen / (sizeof(xfs_inobt_key_t) + sizeof(xfs_inobt_ptr_t));
 }
+
+/*
+ * Convert the inode record holemask to an inode allocation bitmap. The inode
+ * allocation bitmap is inode granularity and specifies whether an inode is
+ * physically allocated on disk (not whether the inode is considered allocated
+ * or free by the fs).
+ *
+ * A bit value of 1 means the inode is allocated, a value of 0 means it is free.
+ */
+uint64_t
+xfs_inobt_irec_to_allocmask(
+	struct xfs_inobt_rec_incore	*rec)
+{
+	uint64_t			bitmap = 0;
+	uint64_t			inodespbit;
+	int				nextbit;
+	uint				allocbitmap;
+
+	/*
+	 * The holemask has 16-bits for a 64 inode record. Therefore each
+	 * holemask bit represents multiple inodes. Create a mask of bits to set
+	 * in the allocmask for each holemask bit.
+	 */
+	inodespbit = (1 << XFS_INODES_PER_HOLEMASK_BIT) - 1;
+
+	/*
+	 * Allocated inodes are represented by 0 bits in holemask. Invert the 0
+	 * bits to 1 and convert to a uint so we can use xfs_next_bit(). Mask
+	 * anything beyond the 16 holemask bits since this casts to a larger
+	 * type.
+	 */
+	allocbitmap = ~rec->ir_holemask & ((1 << XFS_INOBT_HOLEMASK_BITS) - 1);
+
+	/*
+	 * allocbitmap is the inverted holemask so every set bit represents
+	 * allocated inodes. To expand from 16-bit holemask granularity to
+	 * 64-bit (e.g., bit-per-inode), set inodespbit bits in the target
+	 * bitmap for every holemask bit.
+	 */
+	nextbit = xfs_next_bit(&allocbitmap, 1, 0);
+	while (nextbit != -1) {
+		ASSERT(nextbit < (sizeof(rec->ir_holemask) * NBBY));
+
+		bitmap |= (inodespbit <<
+			   (nextbit * XFS_INODES_PER_HOLEMASK_BIT));
+
+		nextbit = xfs_next_bit(&allocbitmap, 1, nextbit + 1);
+	}
+
+	return bitmap;
+}
+
+#if defined(DEBUG) || defined(XFS_WARN)
+/*
+ * Verify that an in-core inode record has a valid inode count.
+ */
+int
+xfs_inobt_rec_check_count(
+	struct xfs_mount		*mp,
+	struct xfs_inobt_rec_incore	*rec)
+{
+	int				inocount = 0;
+	int				nextbit = 0;
+	uint64_t			allocbmap;
+	int				wordsz;
+
+	wordsz = sizeof(allocbmap) / sizeof(unsigned int);
+	allocbmap = xfs_inobt_irec_to_allocmask(rec);
+
+	nextbit = xfs_next_bit((uint *) &allocbmap, wordsz, nextbit);
+	while (nextbit != -1) {
+		inocount++;
+		nextbit = xfs_next_bit((uint *) &allocbmap, wordsz,
+				       nextbit + 1);
+	}
+
+	if (inocount != rec->ir_count)
+		return -EFSCORRUPTED;
+
+	return 0;
+}
+#endif	/* DEBUG */

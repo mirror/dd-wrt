@@ -31,24 +31,25 @@
 #include <ctype.h>
 #include <libgen.h>
 #include <paths.h>
-#include <xfs/swab.h>
-
-#define constpp	char * const *
+#include <mntent.h>
 
 #define EFSCORRUPTED	990	/* Filesystem is corrupted */
+#define EFSBADCRC	991	/* Bad CRC detected */
+
+typedef unsigned char		__u8;
+typedef signed char		__s8;
+typedef unsigned short		__u16;
+typedef signed short		__s16;
+typedef unsigned int		__u32;
+typedef signed int		__s32;
+typedef unsigned long long int	__u64;
+typedef signed long long int	__s64;
 
 typedef off_t		xfs_off_t;
 typedef __uint64_t	xfs_ino_t;
 typedef __uint32_t	xfs_dev_t;
 typedef __int64_t	xfs_daddr_t;
-typedef char*		xfs_caddr_t;
-typedef off_t		loff_t;
-
-#ifndef	_UCHAR_T_DEFINED
-typedef unsigned char	uchar_t;
-#define	_UCHAR_T_DEFINED	1
-#endif
-typedef enum { B_FALSE,B_TRUE }	boolean_t;
+typedef __u32		xfs_nlink_t;
 
 #define HAVE_FID	1
 
@@ -123,6 +124,33 @@ static __inline__ int
 platform_discard_blocks(int fd, uint64_t start, uint64_t len)
 {
 	return 0;
+}
+
+/**
+ * Abstraction of mountpoints.
+ */
+struct mntent_cursor {
+	FILE *mtabp;
+};
+
+static inline int platform_mntent_open(struct mntent_cursor * cursor, char *mtab)
+{
+	cursor->mtabp = setmntent(mtab, "r");
+	if (!cursor->mtabp) {
+		fprintf(stderr, "Error: cannot read %s\n", mtab);
+		return 1;
+	}
+	return 0;
+}
+
+static inline struct mntent * platform_mntent_next(struct mntent_cursor * cursor)
+{
+	return getmntent(cursor->mtabp);
+}
+
+static inline void platform_mntent_close(struct mntent_cursor * cursor)
+{
+	endmntent(cursor->mtabp);
 }
 
 #endif	/* __XFS_KFREEBSD_H__ */

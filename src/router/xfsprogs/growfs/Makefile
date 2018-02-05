@@ -19,7 +19,7 @@ LLDLIBS += $(LIBEDITLINE) $(LIBTERMCAP)
 endif
 
 LTDEPENDENCIES = $(LIBXFS) $(LIBXCMD)
-LLDFLAGS = -static
+LLDFLAGS = -static-libtool-libs
 LSRCFILES = xfs_info.sh
 
 default: depend $(LTCOMMAND)

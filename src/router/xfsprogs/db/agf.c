@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include "command.h"
 #include "type.h"
 #include "faddr.h"
@@ -55,6 +55,12 @@ const field_t	agf_flds[] = {
 	{ "cntroot", FLDT_AGBLOCK,
 	  OI(OFF(roots) + XFS_BTNUM_CNT * SZ(roots[XFS_BTNUM_CNT])), C1, 0,
 	  TYP_CNTBT },
+	{ "rmaproot", FLDT_AGBLOCKNZ,
+	  OI(OFF(roots) + XFS_BTNUM_RMAP * SZ(roots[XFS_BTNUM_RMAP])), C1, 0,
+	  TYP_RMAPBT },
+	{ "refcntroot", FLDT_AGBLOCKNZ,
+	  OI(OFF(refcount_root)), C1, 0,
+	  TYP_REFCBT },
 	{ "levels", FLDT_UINT32D, OI(OFF(levels)), CI(XFS_BTNUM_AGF),
 	  FLD_ARRAY|FLD_SKIPALL, TYP_NONE },
 	{ "bnolevel", FLDT_UINT32D,
@@ -63,12 +69,27 @@ const field_t	agf_flds[] = {
 	{ "cntlevel", FLDT_UINT32D,
 	  OI(OFF(levels) + XFS_BTNUM_CNT * SZ(levels[XFS_BTNUM_CNT])), C1, 0,
 	  TYP_NONE },
+	{ "rmaplevel", FLDT_UINT32D,
+	  OI(OFF(levels) + XFS_BTNUM_RMAP * SZ(levels[XFS_BTNUM_RMAP])), C1, 0,
+	  TYP_NONE },
+	{ "refcntlevel", FLDT_UINT32D,
+	  OI(OFF(refcount_level)), C1, 0,
+	  TYP_NONE },
+	{ "rmapblocks", FLDT_UINT32D,
+	  OI(OFF(rmap_blocks)), C1, 0,
+	  TYP_NONE },
+	{ "refcntblocks", FLDT_UINT32D,
+	  OI(OFF(refcount_blocks)), C1, 0,
+	  TYP_NONE },
 	{ "flfirst", FLDT_UINT32D, OI(OFF(flfirst)), C1, 0, TYP_NONE },
 	{ "fllast", FLDT_UINT32D, OI(OFF(fllast)), C1, 0, TYP_NONE },
 	{ "flcount", FLDT_UINT32D, OI(OFF(flcount)), C1, 0, TYP_NONE },
 	{ "freeblks", FLDT_EXTLEN, OI(OFF(freeblks)), C1, 0, TYP_NONE },
 	{ "longest", FLDT_EXTLEN, OI(OFF(longest)), C1, 0, TYP_NONE },
 	{ "btreeblks", FLDT_UINT32D, OI(OFF(btreeblks)), C1, 0, TYP_NONE },
+	{ "uuid", FLDT_UUID, OI(OFF(uuid)), C1, 0, TYP_NONE },
+	{ "lsn", FLDT_UINT64X, OI(OFF(lsn)), C1, 0, TYP_NONE },
+	{ "crc", FLDT_CRC, OI(OFF(crc)), C1, 0, TYP_NONE },
 	{ NULL }
 };
 

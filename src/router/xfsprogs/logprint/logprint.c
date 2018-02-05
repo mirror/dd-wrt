@@ -15,10 +15,13 @@
  * along with this program; if not, write the Free Software Foundation,
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-
-#include "logprint.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+
+#include "libxfs.h"
+#include "libxlog.h"
+
+#include "logprint.h"
 
 #define OP_PRINT	0
 #define OP_PRINT_TRANS	1
@@ -44,6 +47,7 @@ Options:\n\
     -c	            try to continue if error found in log\n\
     -C <filename>   copy the log from the filesystem to filename\n\
     -d	            dump the log in log-record format\n\
+    -e	            exit when an error is found in the log\n\
     -f	            specified device is actually a file\n\
     -l <device>     filename of external log\n\
     -n	            don't try and interpret log data\n\
@@ -76,7 +80,7 @@ logstat(xfs_mount_t *mp)
 			x.dname, strerror(errno));
 		exit(1);
 	}
-	lseek64(fd, 0, SEEK_SET);
+	lseek(fd, 0, SEEK_SET);
 	if (read(fd, buf, sizeof(buf)) != sizeof(buf)) {
 		fprintf(stderr, _("    read of XFS superblock failed\n"));
 		exit(1);
@@ -93,6 +97,10 @@ logstat(xfs_mount_t *mp)
 
 		x.logBBsize = XFS_FSB_TO_BB(mp, sb->sb_logblocks);
 		x.logBBstart = XFS_FSB_TO_DADDR(mp, sb->sb_logstart);
+		x.lbsize = BBSIZE;
+		if (xfs_sb_version_hassector(sb))
+			x.lbsize <<= (sb->sb_logsectlog - BBSHIFT);
+
 		if (!x.logname && sb->sb_logstart == 0) {
 			fprintf(stderr, _("    external log device not specified\n\n"));
 			usage();
@@ -104,6 +112,7 @@ logstat(xfs_mount_t *mp)
 		stat(x.dname, &s);
 		x.logBBsize = s.st_size >> 9;
 		x.logBBstart = 0;
+		x.lbsize = BBSIZE;
 	}
 
 
@@ -128,12 +137,13 @@ main(int argc, char **argv)
 	int		c;
 	int             logfd;
 	char		*copy_file = NULL;
-	xlog_t	        log = {0};
+	struct xlog     log = {0};
 	xfs_mount_t	mount;
 
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
+	memset(&mount, 0, sizeof(mount));
 
 	progname = basename(argv[0]);
 	while ((c = getopt(argc, argv, "bC:cdefl:iqnors:tDVv")) != EOF) {
@@ -214,6 +224,7 @@ main(int argc, char **argv)
 		exit(1);
 
 	logstat(&mount);
+	libxfs_buftarg_init(&mount, x.ddev, x.logdev, x.rtdev);
 
 	logfd = (x.logfd < 0) ? x.dfd : x.logfd;
 
@@ -230,10 +241,10 @@ main(int argc, char **argv)
 
 	ASSERT(x.logBBsize <= INT_MAX);
 
-	log.l_dev         = x.logdev;
-	log.l_logsize     = BBTOB(x.logBBsize);
+	log.l_dev = mount.m_logdev_targp;
 	log.l_logBBstart  = x.logBBstart;
 	log.l_logBBsize   = x.logBBsize;
+	log.l_sectBBsize  = BTOBB(x.lbsize);
 	log.l_mp          = &mount;
 
 	switch (print_operation) {

@@ -16,13 +16,12 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/xfs.h>
-#include <xfs/command.h>
-#include <xfs/input.h>
-#include <xfs/path.h>
-#include <xfs/parent.h>
-#include <xfs/handle.h>
-#include <xfs/jdm.h>
+#include "command.h"
+#include "input.h"
+#include "path.h"
+#include "parent.h"
+#include "handle.h"
+#include "jdm.h"
 #include "init.h"
 #include "io.h"
 
@@ -142,7 +141,7 @@ check_parents(parent_t *parentbuf, size_t *parentbuf_size,
 			break;
 		}
 	} while (error == ERANGE);
-	
+
 
 	if (count == 0) {
 		/* no links for inode - something wrong here */
@@ -258,7 +257,8 @@ parent_check(void)
 	if (!bstatbuf || !parentbuf) {
 		fprintf(stderr, _("unable to allocate buffers: %s\n"),
 			strerror(errno));
-		return 1;
+		err_status = 1;
+		goto out;
 	}
 
 	if (do_bulkstat(parentbuf, &parentbuf_size, bstatbuf, fsfd, fshandlep) != 0)
@@ -270,8 +270,10 @@ parent_check(void)
 		printf(_("succeeded checking %llu inodes\n"),
 			(unsigned long long) inodes_checked);
 
+out:
 	free(bstatbuf);
 	free(parentbuf);
+	free(fshandlep);
 	return err_status;
 }
 
@@ -290,7 +292,7 @@ print_parent_entry(parent_t *parent, int fullpath)
 static int
 parent_list(int fullpath)
 {
-	void *handlep;
+	void *handlep = NULL;
 	size_t handlen;
 	int error, i;
 	int retval = 1;
@@ -310,6 +312,7 @@ parent_list(int fullpath)
 				progname, path, strerror(errno));
 			goto error;
 		}
+		free_handle(fshandle, fshlen);
 	}
 
 	if (path_to_handle(path, &handlep, &handlen) != 0) {
@@ -322,7 +325,7 @@ parent_list(int fullpath)
 		if (!parentbuf) {
 			fprintf(stderr, _("%s: unable to allocate parent buffer: %s\n"),
 				progname, strerror(errno));
-			return 1;
+			goto error;
 		}
 
 		if (fullpath) {
@@ -362,6 +365,7 @@ parent_list(int fullpath)
 
 	retval = 0;
 error:
+	free(handlep);
 	free(parentbuf);
 	return retval;
 }

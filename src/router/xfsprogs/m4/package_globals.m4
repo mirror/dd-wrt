@@ -41,7 +41,7 @@ AC_DEFUN([AC_PACKAGE_GLOBALS],
     test -z "$DISTRIBUTION" || pkg_distribution="$DISTRIBUTION"
     AC_SUBST(pkg_distribution)
 
-    pkg_platform=`linux`
-    test -z "$PLATFORM" || pkg_platform="linux"
+    pkg_platform=`uname -s | tr 'A-Z' 'a-z' | tr -d / | sed -e 's/irix64/irix/'`
+    test -z "$PLATFORM" || pkg_platform="$PLATFORM"
     AC_SUBST(pkg_platform)
   ])

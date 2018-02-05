@@ -18,7 +18,8 @@
 
 void	xfs_init(libxfs_init_t *args);
 
-int	verify_sb(xfs_sb_t		*sb,
+int	verify_sb(char			*sb_buf,
+		xfs_sb_t		*sb,
 		int			is_primary_sb);
 int	verify_set_primary_sb(xfs_sb_t	*root_sb,
 			int		sb_index,
@@ -39,11 +40,18 @@ void	get_sb_geometry(struct fs_geometry	*geo,
 char	*alloc_ag_buf(int size);
 
 void	print_inode_list(xfs_agnumber_t i);
-char *	err_string(int err_code);
+char	*err_string(int err_code);
 
-extern void *ts_attr_freemap(void);
-extern void *ts_dir_freemap(void);
-extern void *ts_dirbuf(void);
-extern void ts_init(void);
-extern void thread_init(void);
+void	thread_init(void);
 
+void	phase1(struct xfs_mount *);
+void	phase2(struct xfs_mount *, int);
+void	phase3(struct xfs_mount *, int);
+void	phase4(struct xfs_mount *);
+void	phase5(struct xfs_mount *);
+void	phase6(struct xfs_mount *);
+void	phase7(struct xfs_mount *, int);
+
+int	verify_set_agheader(struct xfs_mount *, struct xfs_buf *,
+		struct xfs_sb *, struct xfs_agf *, struct xfs_agi *,
+		xfs_agnumber_t);

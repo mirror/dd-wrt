@@ -16,23 +16,22 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <libxfs.h>
-#include <libxlog.h>
+#include "libxfs.h"
+#include "libxcmd.h"
+#include "libxlog.h"
 #include "agheader.h"
 #include "globals.h"
 #include "protos.h"
 #include "err_protos.h"
+#include "xfs_multidisk.h"
 
 #define BSIZE	(1024 * 1024)
-
-#define XFS_AG_BYTES(bblog)	((long long)BBSIZE << (bblog))
-#define	XFS_AG_MIN_BYTES	((XFS_AG_BYTES(15)))	/* 16 MB */
 
 /*
  * copy the fields of a superblock that are present in primary and
  * secondaries -- preserve fields that are different in the primary.
  */
-void
+static void
 copy_sb(xfs_sb_t *source, xfs_sb_t *dest)
 {
 	xfs_ino_t	rootino;
@@ -40,6 +39,7 @@ copy_sb(xfs_sb_t *source, xfs_sb_t *dest)
 	xfs_ino_t	rsumino;
 	xfs_ino_t	uquotino;
 	xfs_ino_t	gquotino;
+	xfs_ino_t	pquotino;
 	__uint16_t	versionnum;
 
 	rootino = dest->sb_rootino;
@@ -47,6 +47,7 @@ copy_sb(xfs_sb_t *source, xfs_sb_t *dest)
 	rsumino = dest->sb_rsumino;
 	uquotino = dest->sb_uquotino;
 	gquotino = dest->sb_gquotino;
+	pquotino = dest->sb_pquotino;
 
 	versionnum = dest->sb_versionnum;
 
@@ -57,6 +58,7 @@ copy_sb(xfs_sb_t *source, xfs_sb_t *dest)
 	dest->sb_rsumino = rsumino;
 	dest->sb_uquotino = uquotino;
 	dest->sb_gquotino = gquotino;
+	dest->sb_pquotino = pquotino;
 
 	dest->sb_versionnum = versionnum;
 
@@ -81,11 +83,31 @@ copy_sb(xfs_sb_t *source, xfs_sb_t *dest)
 	memset(source->sb_fname, 0, 12);
 }
 
-/*
- * find a secondary superblock, copy it into the sb buffer
- */
 int
-find_secondary_sb(xfs_sb_t *rsb)
+verify_sb_blocksize(xfs_sb_t *sb)
+{
+	/* check to make sure blocksize is legal 2^N, 9 <= N <= 16 */
+	if (sb->sb_blocksize == 0)
+		return XR_BAD_BLOCKSIZE;
+	if (sb->sb_blocksize != (1 << sb->sb_blocklog))
+		return XR_BAD_BLOCKLOG;
+	if (sb->sb_blocklog < XFS_MIN_BLOCKSIZE_LOG ||
+	    sb->sb_blocklog > XFS_MAX_BLOCKSIZE_LOG)
+		return XR_BAD_BLOCKLOG;
+
+	return 0;
+}
+
+/*
+ * find a secondary superblock, copy it into the sb buffer.
+ * start is the point to begin reading BSIZE bytes.
+ * skip contains a byte-count of how far to advance for next read.
+ */
+static int
+__find_secondary_sb(
+	xfs_sb_t	*rsb,
+	__uint64_t	start,
+	__uint64_t	skip)
 {
 	xfs_off_t	off;
 	xfs_sb_t	*sb;
@@ -96,8 +118,6 @@ find_secondary_sb(xfs_sb_t *rsb)
 	int		dirty;
 	int		retval;
 	int		bsize;
-
-	do_warn(_("\nattempting to find secondary superblock...\n"));
 
 	sb = (xfs_sb_t *)memalign(libxfs_device_alignment(), BSIZE);
 	if (!sb) {
@@ -114,11 +134,11 @@ find_secondary_sb(xfs_sb_t *rsb)
 	/*
 	 * skip first sector since we know that's bad
 	 */
-	for (done = 0, off = XFS_AG_MIN_BYTES; !done ; off += bsize)  {
+	for (done = 0, off = start; !done ; off += skip)  {
 		/*
 		 * read disk 1 MByte at a time.
 		 */
-		if (lseek64(x.dfd, off, SEEK_SET) != off)  {
+		if (lseek(x.dfd, off, SEEK_SET) != off)  {
 			done = 1;
 		}
 
@@ -136,7 +156,7 @@ find_secondary_sb(xfs_sb_t *rsb)
 			c_bufsb = (char *)sb + i;
 			libxfs_sb_from_disk(&bufsb, (xfs_dsb_t *)c_bufsb);
 
-			if (verify_sb(&bufsb, 0) != XR_OK)
+			if (verify_sb(c_bufsb, &bufsb, 0) != XR_OK)
 				continue;
 
 			do_warn(_("found candidate secondary superblock...\n"));
@@ -147,7 +167,7 @@ find_secondary_sb(xfs_sb_t *rsb)
 			 */
 			memmove(rsb, &bufsb, sizeof(xfs_sb_t));
 			rsb->sb_inprogress = 0;
-			clear_sunit = 1;
+			copied_sunit = 1;
 
 			if (verify_set_primary_sb(rsb, 0, &dirty) == XR_OK)  {
 				do_warn(
@@ -162,21 +182,120 @@ find_secondary_sb(xfs_sb_t *rsb)
 	}
 
 	free(sb);
-	return(retval);
+	return retval;
+}
+
+static int
+guess_default_geometry(
+	__uint64_t		*agsize,
+	__uint64_t		*agcount,
+	libxfs_init_t		*x)
+{
+	struct fs_topology	ft;
+	int			blocklog;
+	__uint64_t		dblocks;
+	int			multidisk;
+
+	memset(&ft, 0, sizeof(ft));
+	get_topology(x, &ft, 1);
+
+	/*
+	 * get geometry from get_topology result.
+	 * Use default block size (2^12)
+	 */
+	blocklog = 12;
+	multidisk = ft.dswidth | ft.dsunit;
+	dblocks = x->dsize >> (blocklog - BBSHIFT);
+	calc_default_ag_geometry(blocklog, dblocks, multidisk,
+				 agsize, agcount);
+
+	return blocklog;
+}
+
+int
+find_secondary_sb(xfs_sb_t *rsb)
+{
+	int		retval = 0;
+	__uint64_t	agcount;
+	__uint64_t	agsize;
+	__uint64_t	skip;
+	int		blocklog;
+
+	/*
+	 * Attempt to find secondary sb with a coarse approach,
+	 * first trying agblocks and blocksize read from sb, providing
+	 * they're sane.
+	 */
+	do_warn(_("\nattempting to find secondary superblock...\n"));
+
+	if (verify_sb_blocksize(rsb) == 0) {
+		skip = (__uint64_t)rsb->sb_agblocks * rsb->sb_blocksize;
+		if (skip >= XFS_AG_MIN_BYTES && skip <= XFS_AG_MAX_BYTES)
+			retval = __find_secondary_sb(rsb, skip, skip);
+	}
+
+        /* If that failed, retry coarse approach, using default geometry */
+        if (!retval) {
+                blocklog = guess_default_geometry(&agsize, &agcount, &x);
+                skip = agsize << blocklog;
+                retval = __find_secondary_sb(rsb, skip, skip);
+        }
+
+        /* If that failed, fall back to the brute force method */
+        if (!retval)
+                retval = __find_secondary_sb(rsb, XFS_AG_MIN_BYTES, BSIZE);
+
+	return retval;
 }
 
 /*
- * calculate what inode alignment field ought to be
- * based on internal superblock info
+ * Calculate what the inode alignment field ought to be based on internal
+ * superblock info and determine if it is valid.
+ *
+ * For standard v5 superblocks, the inode alignment must either match
+ * XFS_INODE_BIG_CLUSTER_SIZE or a multiple based on the inode size. For v5
+ * superblocks with sparse inode chunks enabled, inode alignment must match the
+ * inode chunk size.
+ *
+ * Return true if the alignment is valid, false otherwise.
  */
-int
-calc_ino_align(xfs_sb_t *sb)
+static bool
+sb_validate_ino_align(struct xfs_sb *sb)
 {
-	xfs_extlen_t align;
+	xfs_extlen_t	align;
 
+	if (!xfs_sb_version_hasalign(sb))
+		return true;
+
+	/* standard cluster size alignment is always valid */
 	align = XFS_INODE_BIG_CLUSTER_SIZE >> sb->sb_blocklog;
+	if (align == sb->sb_inoalignmt)
+		return true;
 
-	return(align);
+	/* alignment scaled by inode size is v5 only for now */
+	if (!xfs_sb_version_hascrc(sb))
+		return false;
+
+	align = (XFS_INODE_BIG_CLUSTER_SIZE *
+		 sb->sb_inodesize / XFS_DINODE_MIN_SIZE) >> sb->sb_blocklog;
+	if (align == sb->sb_inoalignmt)
+		return true;
+
+	/*
+	 * Sparse inodes requires inoalignmt to match full inode chunk size and
+	 * spino_align to match the scaled alignment (as calculated above).
+	 */
+	if (xfs_sb_version_hassparseinodes(sb)) {
+		if (align != sb->sb_spino_align)
+			return false;
+
+		align = (sb->sb_inodesize * XFS_INODES_PER_CHUNK)
+			>> sb->sb_blocklog;
+		if (align == sb->sb_inoalignmt)
+			return true;
+	}
+
+	return false;
 }
 
 /*
@@ -222,11 +341,11 @@ calc_ino_align(xfs_sb_t *sb)
  */
 
 int
-verify_sb(xfs_sb_t *sb, int is_primary_sb)
+verify_sb(char *sb_buf, xfs_sb_t *sb, int is_primary_sb)
 {
 	__uint32_t	bsize;
-	xfs_extlen_t	align;
 	int		i;
+	int		ret;
 
 	/* check magic number and version number */
 
@@ -241,24 +360,37 @@ verify_sb(xfs_sb_t *sb, int is_primary_sb)
 	if (is_primary_sb && sb->sb_inprogress == 1)
 		return(XR_BAD_INPROGRESS);
 
-	/* check to make sure blocksize is legal 2^N, 9 <= N <= 16 */
+	/*
+	 * before going *any further*, validate the sector size and if the
+	 * version says we should have CRCs enabled, validate that.
+	 */
 
-	if (sb->sb_blocksize == 0)
-		return(XR_BAD_BLOCKSIZE);
+	/* check to make sure sectorsize is legal 2^N, 9 <= N <= 15 */
+	if (sb->sb_sectsize == 0)
+		return(XR_BAD_SECT_SIZE_DATA);
 
 	bsize = 1;
-
-	for (i = 0; bsize < sb->sb_blocksize &&
-		i < sizeof(sb->sb_blocksize) * NBBY; i++)
+	for (i = 0; bsize < sb->sb_sectsize &&
+		i < sizeof(sb->sb_sectsize) * NBBY; i++)  {
 		bsize <<= 1;
+	}
 
-	if (i < XFS_MIN_BLOCKSIZE_LOG || i > XFS_MAX_BLOCKSIZE_LOG)
-		return(XR_BAD_BLOCKSIZE);
+	if (i < XFS_MIN_SECTORSIZE_LOG || i > XFS_MAX_SECTORSIZE_LOG)
+		return(XR_BAD_SECT_SIZE_DATA);
 
-	/* check sb blocksize field against sb blocklog field */
+	/* check sb sectorsize field against sb sectlog field */
+	if (i != sb->sb_sectlog)
+		return(XR_BAD_SECT_SIZE_DATA);
 
-	if (i != sb->sb_blocklog)
-		return(XR_BAD_BLOCKLOG);
+	/* sector size in range - CRC check time */
+	if (xfs_sb_version_hascrc(sb) &&
+	    !libxfs_verify_cksum(sb_buf, sb->sb_sectsize, XFS_SB_CRC_OFF))
+		return XR_BAD_CRC;
+
+	/* check to ensure blocksize and blocklog are legal */
+	ret = verify_sb_blocksize(sb);
+	if (ret != 0)
+		return ret;
 
 	/* sanity check ag count, size fields against data size field */
 
@@ -277,26 +409,6 @@ verify_sb(xfs_sb_t *sb, int is_primary_sb)
 		sb->sb_inodesize > XFS_DINODE_MAX_SIZE ||
 		sb->sb_inopblock != howmany(sb->sb_blocksize,sb->sb_inodesize))
 		return(XR_BAD_INO_SIZE_DATA);
-
-	/* check to make sure sectorsize is legal 2^N, 9 <= N <= 15 */
-
-	if (sb->sb_sectsize == 0)
-		return(XR_BAD_SECT_SIZE_DATA);
-
-	bsize = 1;
-
-	for (i = 0; bsize < sb->sb_sectsize &&
-		i < sizeof(sb->sb_sectsize) * NBBY; i++)  {
-		bsize <<= 1;
-	}
-
-	if (i < XFS_MIN_SECTORSIZE_LOG || i > XFS_MAX_SECTORSIZE_LOG)
-		return(XR_BAD_SECT_SIZE_DATA);
-
-	/* check sb sectorsize field against sb sectlog field */
-
-	if (i != sb->sb_sectlog)
-		return(XR_BAD_SECT_SIZE_DATA);
 
 	if (xfs_sb_version_hassector(sb))  {
 
@@ -361,12 +473,8 @@ verify_sb(xfs_sb_t *sb, int is_primary_sb)
 	/*
 	 * verify correctness of inode alignment if it's there
 	 */
-	if (xfs_sb_version_hasalign(sb))  {
-		align = calc_ino_align(sb);
-
-		if (align != sb->sb_inoalignmt)
-			return(XR_BAD_INO_ALIGN);
-	}
+	if (!sb_validate_ino_align(sb))
+		return(XR_BAD_INO_ALIGN);
 
 	/*
 	 * verify max. % of inodes (sb_imax_pct)
@@ -384,61 +492,6 @@ verify_sb(xfs_sb_t *sb, int is_primary_sb)
 		if ((sb->sb_unit && !sb->sb_width) ||
 		    (sb->sb_width && sb->sb_unit && sb->sb_width % sb->sb_unit))
 			return(XR_BAD_SB_WIDTH);
-	}
-
-	/*
-	 * if shared bit is set, verify that the version number is sane
-	 */
-	if (xfs_sb_version_hasshared(sb))  {
-		if (sb->sb_shared_vn > XFS_SB_MAX_SHARED_VN)
-			return(XR_BAD_SVN);
-	}
-
-	/*
-	 * mkfs's that stamped a feature bit besides the ones in the
-	 * mask below could leave garbage in the secondary superblock
-	 * sectors.  Anything stamping the shared fs bit or better into
-	 * the secondaries is ok and should generate clean secondary
-	 * superblock sectors.
-	 *
-	 * check primary and clean secondary superblocks more strictly
-	 */
-	if (is_primary_sb || sb->sb_versionnum & XR_PART_SECSB_VNMASK)  {
-		/*
-		 * return errors if shared vn or alignment fields
-		 * are set without their feature bits being set
-		 */
-		if ((!pre_65_beta && (sb->sb_versionnum & XR_PART_SECSB_VNMASK)) ||
-		    (pre_65_beta && (sb->sb_versionnum & XR_ALPHA_SECSB_VNMASK))) {
-			/*
-			 * shared version # and inode alignment fields
-			 * should be valid
-			 */
-			if (sb->sb_shared_vn && !xfs_sb_version_hasshared(sb))
-				return(XR_BAD_SVN);
-			if (sb->sb_inoalignmt && !xfs_sb_version_hasalign(sb))
-				return(XR_BAD_INO_ALIGN);
-		}
-		if ((!pre_65_beta &&
-		     (sb->sb_versionnum & XR_GOOD_SECSB_VNMASK)) ||
-		    (pre_65_beta &&
-		     (sb->sb_versionnum & XFS_SB_VERSION_DALIGNBIT)))  {
-			/*
-			 * stripe alignment values should be valid
-			 */
-			if (sb->sb_unit && !xfs_sb_version_hasdalign(sb))
-				return(XR_BAD_SB_UNIT);
-			if (sb->sb_width && !xfs_sb_version_hasdalign(sb))
-				return(XR_BAD_SB_WIDTH);
-		}
-
-#if 0
-		/*
-		 * checks involving later superblock fields get added here...
-		 */
-		if (sb->sb_versionnum & XR_GOOD_SECSB_VNMASK)  {
-		}
-#endif
 	}
 
 	return(XR_OK);
@@ -459,13 +512,15 @@ write_primary_sb(xfs_sb_t *sbp, int size)
 	}
 	memset(buf, 0, size);
 
-	if (lseek64(x.dfd, 0LL, SEEK_SET) != 0LL) {
+	if (lseek(x.dfd, 0LL, SEEK_SET) != 0LL) {
 		free(buf);
 		do_error(_("couldn't seek to offset 0 in filesystem\n"));
 	}
 
-	
-	libxfs_sb_to_disk(buf, sbp, XFS_SB_ALL_BITS);
+	libxfs_sb_to_disk(buf, sbp);
+
+	if (xfs_sb_version_hascrc(sbp))
+		xfs_update_cksum((char *)buf, size, XFS_SB_CRC_OFF);
 
 	if (write(x.dfd, buf, size) != size) {
 		free(buf);
@@ -476,7 +531,7 @@ write_primary_sb(xfs_sb_t *sbp, int size)
 }
 
 /*
- * get a possible superblock -- don't check for internal consistency
+ * get a possible superblock -- checks for internal consistency
  */
 int
 get_sb(xfs_sb_t *sbp, xfs_off_t off, int size, xfs_agnumber_t agno)
@@ -492,13 +547,15 @@ get_sb(xfs_sb_t *sbp, xfs_off_t off, int size, xfs_agnumber_t agno)
 		exit(1);
 	}
 	memset(buf, 0, size);
+	memset(sbp, 0, sizeof(*sbp));
 
 	/* try and read it first */
 
-	if (lseek64(x.dfd, off, SEEK_SET) != off)  {
+	if (lseek(x.dfd, off, SEEK_SET) != off)  {
 		do_warn(
 	_("error reading superblock %u -- seek to offset %" PRId64 " failed\n"),
 			agno, off);
+		free(buf);
 		return(XR_EOF);
 	}
 
@@ -510,14 +567,14 @@ get_sb(xfs_sb_t *sbp, xfs_off_t off, int size, xfs_agnumber_t agno)
 		do_error("%s\n", strerror(error));
 	}
 	libxfs_sb_from_disk(sbp, buf);
-	free(buf);
 
-	return (verify_sb(sbp, 0));
+	rval = verify_sb((char *)buf, sbp, agno == 0);
+	free(buf);
+	return rval;
 }
 
 /* returns element on list with highest reference count */
-
-fs_geo_list_t *
+static fs_geo_list_t *
 get_best_geo(fs_geo_list_t *list)
 {
 	int cnt = 0;
@@ -537,8 +594,7 @@ get_best_geo(fs_geo_list_t *list)
 }
 
 /* adds geometry info to linked list.  returns (sometimes new) head of list */
-
-fs_geo_list_t *
+static fs_geo_list_t *
 add_geo(fs_geo_list_t *list, fs_geometry_t *geo_p, int index)
 {
 	fs_geo_list_t	*current = list;
@@ -565,13 +621,11 @@ add_geo(fs_geo_list_t *list, fs_geometry_t *geo_p, int index)
 	return(current);
 }
 
-void
+static void
 free_geo(fs_geo_list_t *list)
 {
 	fs_geo_list_t	*next;
 	fs_geo_list_t	*current;
-
-	current = list;
 
 	for (current = list; current != NULL; current = next)  {
 		next = current->next;
@@ -603,58 +657,13 @@ get_sb_geometry(fs_geometry_t *geo, xfs_sb_t *sbp)
 	if (xfs_sb_version_hasalign(sbp))
 		geo->sb_ialignbit = 1;
 
-	if (xfs_sb_version_hasshared(sbp) ||
-	    sbp->sb_versionnum & XR_PART_SECSB_VNMASK)
-		geo->sb_sharedbit = 1;
-
 	if (xfs_sb_version_hasdalign(sbp))
 		geo->sb_salignbit = 1;
 
 	if (xfs_sb_version_hasextflgbit(sbp))
 		geo->sb_extflgbit = 1;
 
-	/*
-	 * protect against pre-6.5 mkfs-generated garbaged
-	 * fields in the secondary superblocks.  pay attention
-	 * to those fields if and only if their corresponding
-	 * feature bits are set in the feature bits of the
-	 * version number or we can deduce from the version bits
-	 * that are set that our field was properly initialized
-	 * because a field after the field we care about was
-	 * properly initialized as well.
-	 */
-
-	/*
-	 * inode alignment field lives before the data alignment field
-	 */
-	if ((!pre_65_beta && (sbp->sb_versionnum & XR_PART_SECSB_VNMASK)) ||
-	    (pre_65_beta && (sbp->sb_versionnum & XR_ALPHA_SECSB_VNMASK)))
-		geo->sb_inoalignmt = sbp->sb_inoalignmt;
-
-	if ((!pre_65_beta && (sbp->sb_versionnum & XR_GOOD_SECSB_VNMASK)) ||
-	    (pre_65_beta && xfs_sb_version_hasdalign(sbp))) {
-		geo->sb_unit = sbp->sb_unit;
-		geo->sb_width = sbp->sb_width;
-	}
-
-	/*
-	 * shared vn always set if either ino or data alignment is on
-	 * since that field lives between the quota and inode alignment
-	 * fields
-	 */
-	if (sbp->sb_versionnum & XR_PART_SECSB_VNMASK)
-		geo->sb_shared_vn = sbp->sb_shared_vn;
-
-	/*
-	 * superblock fields located after sb_widthfields get set
-	 * into the geometry structure only if we can determine
-	 * from the features enabled in this superblock whether
-	 * or not the sector was zero'd at mkfs time.
-	 */
-	if ((!pre_65_beta && (sbp->sb_versionnum & XR_GOOD_SECSB_VNMASK)) ||
-	    (pre_65_beta && (sbp->sb_versionnum & XR_ALPHA_SECSB_VNMASK))) {
-		geo->sb_fully_zeroed = 1;
-	}
+	geo->sb_fully_zeroed = 1;
 }
 
 /*
@@ -663,7 +672,7 @@ get_sb_geometry(fs_geometry_t *geo, xfs_sb_t *sbp)
  * primary and compare the geometries in the secondaries against
  * the geometry indicated by the primary.
  *
- * returns 1 if bad, 0 if ok
+ * returns 0 if ok, else error code (XR_EOF, XR_INSUFF_SEC_SB, etc).
  */
 int
 verify_set_primary_sb(xfs_sb_t		*rsb,
@@ -675,20 +684,11 @@ verify_set_primary_sb(xfs_sb_t		*rsb,
 	xfs_sb_t	*sb;
 	fs_geo_list_t	*list;
 	fs_geo_list_t	*current;
-	char		*checked;
 	xfs_agnumber_t	agno;
 	int		num_sbs;
-	int		skip;
 	int		size;
 	int		num_ok;
 	int		retval;
-	int		round;
-
-	/*
-	 * select the number of secondaries to try for
-	 */
-	num_sbs = MIN(NUM_SBS, rsb->sb_agcount);
-	skip = howmany(num_sbs, rsb->sb_agcount);
 
 	/*
 	 * We haven't been able to validate the sector size yet properly
@@ -697,65 +697,52 @@ verify_set_primary_sb(xfs_sb_t		*rsb,
 	 * sector size rather than the sector size in @rsb.
 	 */
 	size = NUM_AGH_SECTS * (1 << (XFS_MAX_SECTORSIZE_LOG));
-	retval = 0;
 	list = NULL;
 	num_ok = 0;
 	*sb_modified = 0;
+	num_sbs = rsb->sb_agcount;
 
 	sb = (xfs_sb_t *) alloc_ag_buf(size);
-	checked = calloc(rsb->sb_agcount, sizeof(char));
-	if (!checked) {
-		do_error(_("calloc failed in verify_set_primary_sb\n"));
-		exit(1);
-	}
 
 	/*
 	 * put the primary sb geometry info onto the geometry list
 	 */
-	checked[sb_index] = 1;
 	get_sb_geometry(&geo, rsb);
 	list = add_geo(list, &geo, sb_index);
 
 	/*
-	 * grab N secondaries.  check them off as we get them
-	 * so we only process each one once
+	 * scan the secondaries and check them off as we get them so we only
+	 * process each one once
 	 */
-	for (round = 0; round < skip; round++)  {
-		for (agno = round; agno < rsb->sb_agcount; agno += skip)  {
-			if (checked[agno])
-				continue;
+	for (agno = 1; agno < rsb->sb_agcount; agno++) {
+		off = (xfs_off_t)agno * rsb->sb_agblocks << rsb->sb_blocklog;
 
-			off = (xfs_off_t)agno * rsb->sb_agblocks << rsb->sb_blocklog;
+		retval = get_sb(sb, off, size, agno);
+		if (retval == XR_EOF)
+			goto out_free_list;
 
-			checked[agno] = 1;
-
-			if (get_sb(sb, off, size, agno) == XR_EOF)  {
-				retval = 1;
-				goto out;
-			}
-
-			if (verify_sb(sb, 0) == XR_OK)  {
-				/*
-				 * save away geometry info.
-				 * don't bother checking the sb
-				 * against the agi/agf as the odds
-				 * of the sb being corrupted in a way
-				 * that it is internally consistent
-				 * but not consistent with the rest
-				 * of the filesystem is really really low.
-				 */
-				get_sb_geometry(&geo, sb);
-				list = add_geo(list, &geo, agno);
-				num_ok++;
-			}
+		if (retval == XR_OK) {
+			/*
+			 * save away geometry info. don't bother checking the
+			 * sb against the agi/agf as the odds of the sb being
+			 * corrupted in a way that it is internally consistent
+			 * but not consistent with the rest of the filesystem is
+			 * really really low.
+			 */
+			get_sb_geometry(&geo, sb);
+			list = add_geo(list, &geo, agno);
+			num_ok++;
 		}
 	}
 
 	/*
 	 * see if we have enough superblocks to bother with
 	 */
-	if (num_ok < num_sbs / 2)
-		return(XR_INSUFF_SEC_SB);
+	retval = 0;
+	if (num_ok < num_sbs / 2) {
+		retval = XR_INSUFF_SEC_SB;
+		goto out_free_list;
+	}
 
 	current = get_best_geo(list);
 
@@ -839,8 +826,6 @@ verify_set_primary_sb(xfs_sb_t		*rsb,
 
 out_free_list:
 	free_geo(list);
-out:
 	free(sb);
-	free(checked);
-	return(retval);
+	return retval;
 }

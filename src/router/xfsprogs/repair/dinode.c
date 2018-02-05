@@ -16,14 +16,13 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <libxfs.h>
+#include "libxfs.h"
 #include "avl.h"
 #include "globals.h"
 #include "agheader.h"
 #include "incore.h"
 #include "protos.h"
 #include "err_protos.h"
-#include "dir.h"
 #include "dir2.h"
 #include "dinode.h"
 #include "scan.h"
@@ -31,52 +30,45 @@
 #include "attr_repair.h"
 #include "bmap.h"
 #include "threads.h"
+#include "slab.h"
+#include "rmap.h"
+
+/*
+ * gettext lookups for translations of strings use mutexes internally to
+ * the library. Hence when we come through here doing parallel scans in
+ * multiple AGs, then all do concurrent text conversions and serialise
+ * on the translation string lookups. Let's avoid doing repeated lookups
+ * by making them static variables and only assigning the translation
+ * once.
+ */
+static char	*forkname_data;
+static char	*forkname_attr;
+static char	*ftype_real_time;
+static char	*ftype_regular;
+
+void
+dinode_bmbt_translation_init(void)
+{
+	forkname_data = _("data");
+	forkname_attr = _("attr");
+	ftype_real_time = _("real-time");
+	ftype_regular = _("regular");
+}
+
+char *
+get_forkname(int whichfork)
+{
+
+	if (whichfork == XFS_DATA_FORK)
+		return forkname_data;
+	return forkname_attr;
+}
 
 /*
  * inode clearing routines
  */
 
-/*
- * return the offset into the inode where the attribute fork starts
- */
-/* ARGSUSED */
-int
-calc_attr_offset(xfs_mount_t *mp, xfs_dinode_t *dino)
-{
-	int	offset = (__psint_t)XFS_DFORK_DPTR(dino) - (__psint_t)dino;
-	xfs_bmdr_block_t        *dfp;
-
-	/*
-	 * don't worry about alignment when calculating offset
-	 * because the data fork is already 8-byte aligned
-	 */
-	switch (dino->di_format)  {
-	case XFS_DINODE_FMT_DEV:
-		offset += sizeof(xfs_dev_t);
-		break;
-	case XFS_DINODE_FMT_LOCAL:
-		offset += be64_to_cpu(dino->di_size);
-		break;
-	case XFS_DINODE_FMT_EXTENTS:
-		offset += be32_to_cpu(dino->di_nextents) *
-						sizeof(xfs_bmbt_rec_t);
-		break;
-	case XFS_DINODE_FMT_BTREE:
-		dfp = (xfs_bmdr_block_t *)XFS_DFORK_DPTR(dino);
-		offset += be16_to_cpu(dfp->bb_numrecs) *
-						sizeof(xfs_bmbt_rec_t);
-		break;
-	default:
-		do_error(_("Unknown inode format.\n"));
-		abort();
-		break;
-	}
-
-	return(offset);
-}
-
-/* ARGSUSED */
-int
+static int
 clear_dinode_attr(xfs_mount_t *mp, xfs_dinode_t *dino, xfs_ino_t ino_num)
 {
 	ASSERT(dino->di_forkoff != 0);
@@ -125,145 +117,130 @@ _("would have cleared inode %" PRIu64 " attributes\n"), ino_num);
 	return(1);
 }
 
-/* ARGSUSED */
-int
-clear_dinode_core(xfs_dinode_t *dinoc, xfs_ino_t ino_num)
+static int
+clear_dinode_core(struct xfs_mount *mp, xfs_dinode_t *dinoc, xfs_ino_t ino_num)
 {
 	int dirty = 0;
+	int i;
+
+#define __dirty_no_modify_ret(dirty) \
+	({ (dirty) = 1; if (no_modify) return 1; })
 
 	if (be16_to_cpu(dinoc->di_magic) != XFS_DINODE_MAGIC)  {
-		dirty = 1;
-
-		if (no_modify)
-			return(1);
-
+		__dirty_no_modify_ret(dirty);
 		dinoc->di_magic = cpu_to_be16(XFS_DINODE_MAGIC);
 	}
 
-	if (!XFS_DINODE_GOOD_VERSION(dinoc->di_version) ||
-	    (!fs_inode_nlink && dinoc->di_version > 1))  {
-		dirty = 1;
-
-		if (no_modify)
-			return(1);
-
-		dinoc->di_version = (fs_inode_nlink) ? 2 : 1;
+	if (!libxfs_dinode_good_version(mp, dinoc->di_version)) {
+		__dirty_no_modify_ret(dirty);
+		if (xfs_sb_version_hascrc(&mp->m_sb))
+			dinoc->di_version = 3;
+		else
+			dinoc->di_version = 2;
 	}
 
 	if (be16_to_cpu(dinoc->di_mode) != 0)  {
-		dirty = 1;
-
-		if (no_modify)
-			return(1);
-
+		__dirty_no_modify_ret(dirty);
 		dinoc->di_mode = 0;
 	}
 
 	if (be16_to_cpu(dinoc->di_flags) != 0)  {
-		dirty = 1;
-
-		if (no_modify)
-			return(1);
-
+		__dirty_no_modify_ret(dirty);
 		dinoc->di_flags = 0;
 	}
 
 	if (be32_to_cpu(dinoc->di_dmevmask) != 0)  {
-		dirty = 1;
-
-		if (no_modify)
-			return(1);
-
+		__dirty_no_modify_ret(dirty);
 		dinoc->di_dmevmask = 0;
 	}
 
 	if (dinoc->di_forkoff != 0)  {
-		dirty = 1;
-
-		if (no_modify)
-			return(1);
-
+		__dirty_no_modify_ret(dirty);
 		dinoc->di_forkoff = 0;
 	}
 
 	if (dinoc->di_format != XFS_DINODE_FMT_EXTENTS)  {
-		dirty = 1;
-
-		if (no_modify)
-			return(1);
-
+		__dirty_no_modify_ret(dirty);
 		dinoc->di_format = XFS_DINODE_FMT_EXTENTS;
 	}
 
 	if (dinoc->di_aformat != XFS_DINODE_FMT_EXTENTS)  {
-		dirty = 1;
-
-		if (no_modify)
-			return(1);
-
+		__dirty_no_modify_ret(dirty);
 		dinoc->di_aformat = XFS_DINODE_FMT_EXTENTS;
 	}
 
 	if (be64_to_cpu(dinoc->di_size) != 0)  {
-		dirty = 1;
-
-		if (no_modify)
-			return(1);
-
+		__dirty_no_modify_ret(dirty);
 		dinoc->di_size = 0;
 	}
 
 	if (be64_to_cpu(dinoc->di_nblocks) != 0)  {
-		dirty = 1;
-
-		if (no_modify)
-			return(1);
-
+		__dirty_no_modify_ret(dirty);
 		dinoc->di_nblocks = 0;
 	}
 
 	if (be16_to_cpu(dinoc->di_onlink) != 0)  {
-		dirty = 1;
-
-		if (no_modify)
-			return(1);
-
+		__dirty_no_modify_ret(dirty);
 		dinoc->di_onlink = 0;
 	}
 
 	if (be32_to_cpu(dinoc->di_nextents) != 0)  {
-		dirty = 1;
-
-		if (no_modify)
-			return(1);
-
+		__dirty_no_modify_ret(dirty);
 		dinoc->di_nextents = 0;
 	}
 
 	if (be16_to_cpu(dinoc->di_anextents) != 0)  {
-		dirty = 1;
-
-		if (no_modify)
-			return(1);
-
+		__dirty_no_modify_ret(dirty);
 		dinoc->di_anextents = 0;
 	}
 
 	if (dinoc->di_version > 1 &&
 			be32_to_cpu(dinoc->di_nlink) != 0)  {
-		dirty = 1;
-
-		if (no_modify)
-			return(1);
-
+		__dirty_no_modify_ret(dirty);
 		dinoc->di_nlink = 0;
 	}
 
-	return(dirty);
+	/* we are done for version 1/2 inodes */
+	if (dinoc->di_version < 3)
+		return dirty;
+
+	if (be64_to_cpu(dinoc->di_ino) != ino_num) {
+		__dirty_no_modify_ret(dirty);
+		dinoc->di_ino = cpu_to_be64(ino_num);
+	}
+
+	if (platform_uuid_compare(&dinoc->di_uuid, &mp->m_sb.sb_meta_uuid)) {
+		__dirty_no_modify_ret(dirty);
+		platform_uuid_copy(&dinoc->di_uuid, &mp->m_sb.sb_meta_uuid);
+	}
+
+	for (i = 0; i < sizeof(dinoc->di_pad2)/sizeof(dinoc->di_pad2[0]); i++) {
+		if (dinoc->di_pad2[i] != 0) {
+			__dirty_no_modify_ret(dirty);
+			memset(dinoc->di_pad2, 0, sizeof(dinoc->di_pad2));
+			break;
+		}
+	}
+
+	if (be64_to_cpu(dinoc->di_flags2) != 0)  {
+		__dirty_no_modify_ret(dirty);
+		dinoc->di_flags2 = 0;
+	}
+
+	if (be64_to_cpu(dinoc->di_lsn) != 0)  {
+		__dirty_no_modify_ret(dirty);
+		dinoc->di_lsn = 0;
+	}
+
+	if (be64_to_cpu(dinoc->di_changecount) != 0)  {
+		__dirty_no_modify_ret(dirty);
+		dinoc->di_changecount = 0;
+	}
+
+	return dirty;
 }
 
-/* ARGSUSED */
-int
+static int
 clear_dinode_unlinked(xfs_mount_t *mp, xfs_dinode_t *dino)
 {
 
@@ -281,18 +258,19 @@ clear_dinode_unlinked(xfs_mount_t *mp, xfs_dinode_t *dino)
  * until after the agi unlinked lists are walked in phase 3.
  * returns > zero if the inode has been altered while being cleared
  */
-int
+static int
 clear_dinode(xfs_mount_t *mp, xfs_dinode_t *dino, xfs_ino_t ino_num)
 {
 	int dirty;
 
-	dirty = clear_dinode_core(dino, ino_num);
+	dirty = clear_dinode_core(mp, dino, ino_num);
 	dirty += clear_dinode_unlinked(mp, dino);
 
 	/* and clear the forks */
 
 	if (dirty && !no_modify)
-		memset(XFS_DFORK_DPTR(dino), 0, XFS_LITINO(mp));
+		memset(XFS_DFORK_DPTR(dino), 0,
+		       XFS_LITINO(mp, dino->di_version));
 
 	return(dirty);
 }
@@ -312,11 +290,11 @@ verify_ag_bno(xfs_sb_t *sbp,
 		xfs_agnumber_t agno,
 		xfs_agblock_t agbno)
 {
-	if (agno < (sbp->sb_agcount - 1)) 
+	if (agno < (sbp->sb_agcount - 1))
 		return (agbno >= sbp->sb_agblocks);
-	if (agno == (sbp->sb_agcount - 1)) 
+	if (agno == (sbp->sb_agcount - 1))
 		return (agbno >= (sbp->sb_dblocks -
-				((xfs_drfsbno_t)(sbp->sb_agcount - 1) *
+				((xfs_rfsblock_t)(sbp->sb_agcount - 1) *
 				 sbp->sb_agblocks)));
 	return 1;
 }
@@ -387,7 +365,7 @@ verify_aginum(xfs_mount_t	*mp,
  */
 int
 verify_dfsbno(xfs_mount_t	*mp,
-		xfs_dfsbno_t	fsbno)
+		xfs_fsblock_t	fsbno)
 {
 	xfs_agnumber_t	agno;
 	xfs_agblock_t	agbno;
@@ -408,8 +386,8 @@ verify_dfsbno(xfs_mount_t	*mp,
 
 static __inline int
 verify_dfsbno_range(xfs_mount_t	*mp,
-		xfs_dfsbno_t	fsbno,
-		xfs_dfilblks_t	count)
+		xfs_fsblock_t	fsbno,
+		xfs_filblks_t	count)
 {
 	xfs_agnumber_t	agno;
 	xfs_agblock_t	agbno;
@@ -445,41 +423,16 @@ verify_agbno(xfs_mount_t	*mp,
 	return verify_ag_bno(sbp, agno, agbno) == 0;
 }
 
-/*
- * return address of block fblock if it's within the range described
- * by the extent list.  Otherwise, returns a null address.
- */
-/* ARGSUSED */
-xfs_dfsbno_t
-get_bmbt_reclist(
-	xfs_mount_t		*mp,
-	xfs_bmbt_rec_t		*rp,
-	int			numrecs,
-	xfs_dfiloff_t		fblock)
-{
-	int			i;
-	xfs_bmbt_irec_t 	irec;
-
-	for (i = 0; i < numrecs; i++) {
-		libxfs_bmbt_disk_get_all(rp + i, &irec);
-		if (irec.br_startoff >= fblock &&
-				irec.br_startoff + irec.br_blockcount < fblock)
-			return (irec.br_startblock + fblock - irec.br_startoff);
-	}
-	return(NULLDFSBNO);
-}
-
-
 static int
 process_rt_rec(
 	xfs_mount_t		*mp,
 	xfs_bmbt_irec_t 	*irec,
 	xfs_ino_t		ino,
-	xfs_drfsbno_t		*tot,
+	xfs_rfsblock_t		*tot,
 	int			check_dups)
 {
-	xfs_dfsbno_t		b;
-	xfs_drtbno_t		ext;
+	xfs_fsblock_t		b;
+	xfs_rtblock_t		ext;
 	int			state;
 	int			pwe;		/* partially-written extent */
 
@@ -534,7 +487,7 @@ _("malformed rt inode extent [%" PRIu64 " %" PRIu64 "] (fs rtext size = %u)\n"),
 	 */
 	for (b = irec->br_startblock; b < irec->br_startblock +
 			irec->br_blockcount; b += mp->m_sb.sb_rextsize)  {
-		ext = (xfs_drtbno_t) b / mp->m_sb.sb_rextsize;
+		ext = (xfs_rtblock_t) b / mp->m_sb.sb_rextsize;
 		pwe = xfs_sb_version_hasextflgbit(&mp->m_sb) &&
 				irec->br_state == XFS_EXT_UNWRITTEN &&
 				(b % mp->m_sb.sb_rextsize != 0);
@@ -601,28 +554,27 @@ _("illegal state %d in rt block map %" PRIu64 "\n"),
  * file overlaps with any duplicate extents (in the
  * duplicate extent list).
  */
-/* ARGSUSED */
-int
+static int
 process_bmbt_reclist_int(
 	xfs_mount_t		*mp,
 	xfs_bmbt_rec_t		*rp,
-	int			numrecs,
+	int			*numrecs,
 	int			type,
 	xfs_ino_t		ino,
-	xfs_drfsbno_t		*tot,
+	xfs_rfsblock_t		*tot,
 	blkmap_t		**blkmapp,
-	xfs_dfiloff_t		*first_key,
-	xfs_dfiloff_t		*last_key,
+	xfs_fileoff_t		*first_key,
+	xfs_fileoff_t		*last_key,
 	int			check_dups,
 	int			whichfork)
 {
 	xfs_bmbt_irec_t		irec;
-	xfs_dfilblks_t		cp = 0;		/* prev count */
-	xfs_dfsbno_t		sp = 0;		/* prev start */
-	xfs_dfiloff_t		op = 0;		/* prev offset */
-	xfs_dfsbno_t		b;
+	xfs_filblks_t		cp = 0;		/* prev count */
+	xfs_fsblock_t		sp = 0;		/* prev start */
+	xfs_fileoff_t		op = 0;		/* prev offset */
+	xfs_fsblock_t		b;
 	char			*ftype;
-	char			*forkname;
+	char			*forkname = get_forkname(whichfork);
 	int			i;
 	int			state;
 	xfs_agnumber_t		agno;
@@ -632,18 +584,13 @@ process_bmbt_reclist_int(
 	xfs_agnumber_t		locked_agno = -1;
 	int			error = 1;
 
-	if (whichfork == XFS_DATA_FORK)
-		forkname = _("data");
-	else
-		forkname = _("attr");
-
 	if (type == XR_INO_RTDATA)
-		ftype = _("real-time");
+		ftype = ftype_real_time;
 	else
-		ftype = _("regular");
+		ftype = ftype_regular;
 
-	for (i = 0; i < numrecs; i++) {
-		libxfs_bmbt_disk_get_all(rp + i, &irec);
+	for (i = 0; i < *numrecs; i++) {
+		libxfs_bmbt_disk_get_all((rp +i), &irec);
 		if (i == 0)
 			*last_key = *first_key = irec.br_startoff;
 		else
@@ -721,19 +668,22 @@ _("inode %" PRIu64 " - bad extent overflows - start %" PRIu64 ", "
 					irec.br_startoff);
 				goto done;
 		}
-		if (irec.br_startoff >= fs_max_file_offset)  {
+		/* Ensure this extent does not extend beyond the max offset */
+		if (irec.br_startoff + irec.br_blockcount - 1 >
+							fs_max_file_offset) {
 			do_warn(
-_("inode %" PRIu64 " - extent offset too large - start %" PRIu64 ", "
-  "count %" PRIu64 ", offset %" PRIu64 "\n"),
-				ino, irec.br_startblock, irec.br_blockcount,
-				irec.br_startoff);
+_("inode %" PRIu64 " - extent exceeds max offset - start %" PRIu64 ", "
+  "count %" PRIu64 ", physical block %" PRIu64 "\n"),
+				ino, irec.br_startoff, irec.br_blockcount,
+				irec.br_startblock);
 			goto done;
 		}
 
 		if (blkmapp && *blkmapp) {
-			error = blkmap_set_ext(blkmapp, irec.br_startoff,
+			int	error2;
+			error2 = blkmap_set_ext(blkmapp, irec.br_startoff,
 					irec.br_startblock, irec.br_blockcount);
-			if (error) {
+			if (error2) {
 				/*
 				 * we don't want to clear the inode due to an
 				 * internal bmap tracking error, but if we've
@@ -745,7 +695,7 @@ _("inode %" PRIu64 " - extent offset too large - start %" PRIu64 ", "
 				do_abort(
 _("Fatal error: inode %" PRIu64 " - blkmap_set_ext(): %s\n"
   "\t%s fork, off - %" PRIu64 ", start - %" PRIu64 ", cnt %" PRIu64 "\n"),
-					ino, strerror(error), forkname,
+					ino, strerror(error2), forkname,
 					irec.br_startoff, irec.br_startblock,
 					irec.br_blockcount);
 			}
@@ -760,8 +710,8 @@ _("Fatal error: inode %" PRIu64 " - blkmap_set_ext(): %s\n"
 		ebno = agbno + irec.br_blockcount;
 		if (agno != locked_agno) {
 			if (locked_agno != -1)
-				pthread_mutex_unlock(&ag_locks[locked_agno]);
-			pthread_mutex_lock(&ag_locks[agno]);
+				pthread_mutex_unlock(&ag_locks[locked_agno].lock);
+			pthread_mutex_lock(&ag_locks[agno].lock);
 			locked_agno = agno;
 		}
 
@@ -772,7 +722,9 @@ _("Fatal error: inode %" PRIu64 " - blkmap_set_ext(): %s\n"
 			 * checking each entry without setting the
 			 * block bitmap
 			 */
-			if (search_dup_extent(agno, agbno, ebno)) {
+			if (!(type == XR_INO_DATA &&
+			    xfs_sb_version_hasreflink(&mp->m_sb)) &&
+			    search_dup_extent(agno, agbno, ebno)) {
 				do_warn(
 _("%s fork in ino %" PRIu64 " claims dup extent, "
   "off - %" PRIu64 ", start - %" PRIu64 ", cnt %" PRIu64 "\n"),
@@ -796,6 +748,7 @@ _("%s fork in ino %" PRIu64 " claims dup extent, "
 _("%s fork in ino %" PRIu64 " claims free block %" PRIu64 "\n"),
 					forkname, ino, (__uint64_t) b);
 				/* fall through ... */
+			case XR_E_INUSE1:	/* seen by rmap */
 			case XR_E_UNKNOWN:
 				set_bmap_ext(agno, agbno, blen, XR_E_INUSE);
 				break;
@@ -803,6 +756,11 @@ _("%s fork in ino %" PRIu64 " claims free block %" PRIu64 "\n"),
 			case XR_E_BAD_STATE:
 				do_error(_("bad state in block map %" PRIu64 "\n"), b);
 
+			case XR_E_FS_MAP1:
+			case XR_E_INO1:
+			case XR_E_INUSE_FS1:
+				do_warn(_("rmap claims metadata use!\n"));
+				/* fall through */
 			case XR_E_FS_MAP:
 			case XR_E_INO:
 			case XR_E_INUSE_FS:
@@ -814,6 +772,9 @@ _("%s fork in inode %" PRIu64 " claims metadata block %" PRIu64 "\n"),
 			case XR_E_INUSE:
 			case XR_E_MULT:
 				set_bmap_ext(agno, agbno, blen, XR_E_MULT);
+				if (type == XR_INO_DATA &&
+				    xfs_sb_version_hasreflink(&mp->m_sb))
+					break;
 				do_warn(
 _("%s fork in %s inode %" PRIu64 " claims used block %" PRIu64 "\n"),
 					forkname, ftype, ino, b);
@@ -825,12 +786,26 @@ _("illegal state %d in block map %" PRIu64 "\n"),
 					state, b);
 			}
 		}
+		if (collect_rmaps) { /* && !check_dups */
+			error = rmap_add_rec(mp, ino, whichfork, &irec);
+			if (error)
+				do_error(
+_("couldn't add reverse mapping\n")
+					);
+		}
 		*tot += irec.br_blockcount;
 	}
 	error = 0;
 done:
 	if (locked_agno != -1)
-		pthread_mutex_unlock(&ag_locks[locked_agno]);
+		pthread_mutex_unlock(&ag_locks[locked_agno].lock);
+
+	if (i != *numrecs) {
+		ASSERT(i < *numrecs);
+		do_warn(_("correcting nextents for inode %" PRIu64 "\n"), ino);
+		*numrecs = i;
+	}
+
 	return error;
 }
 
@@ -842,13 +817,13 @@ int
 process_bmbt_reclist(
 	xfs_mount_t		*mp,
 	xfs_bmbt_rec_t		*rp,
-	int			numrecs,
+	int			*numrecs,
 	int			type,
 	xfs_ino_t		ino,
-	xfs_drfsbno_t		*tot,
+	xfs_rfsblock_t		*tot,
 	blkmap_t		**blkmapp,
-	xfs_dfiloff_t		*first_key,
-	xfs_dfiloff_t		*last_key,
+	xfs_fileoff_t		*first_key,
+	xfs_fileoff_t		*last_key,
 	int			whichfork)
 {
 	return process_bmbt_reclist_int(mp, rp, numrecs, type, ino, tot,
@@ -863,294 +838,72 @@ int
 scan_bmbt_reclist(
 	xfs_mount_t		*mp,
 	xfs_bmbt_rec_t		*rp,
-	int			numrecs,
+	int			*numrecs,
 	int			type,
 	xfs_ino_t		ino,
-	xfs_drfsbno_t		*tot,
+	xfs_rfsblock_t		*tot,
 	int			whichfork)
 {
-	xfs_dfiloff_t		first_key = 0;
-	xfs_dfiloff_t		last_key = 0;
+	xfs_fileoff_t		first_key = 0;
+	xfs_fileoff_t		last_key = 0;
 
 	return process_bmbt_reclist_int(mp, rp, numrecs, type, ino, tot,
 				NULL, &first_key, &last_key, 1, whichfork);
 }
 
 /*
- * these two are meant for routines that read and work with inodes
- * one at a time where the inodes may be in any order (like walking
- * the unlinked lists to look for inodes).  the caller is responsible
- * for writing/releasing the buffer.
+ * Grab the buffer backing an inode.  This is meant for routines that
+ * work with inodes one at a time in any order (like walking the
+ * unlinked lists to look for inodes).  The caller is responsible for
+ * writing/releasing the buffer.
  */
-xfs_buf_t *
-get_agino_buf(xfs_mount_t	 *mp,
-		xfs_agnumber_t	agno,
-		xfs_agino_t	agino,
-		xfs_dinode_t	**dipp)
+struct xfs_buf *
+get_agino_buf(
+	struct xfs_mount	*mp,
+	xfs_agnumber_t		agno,
+	xfs_agino_t		agino,
+	struct xfs_dinode	**dipp)
 {
-	ino_tree_node_t *irec;
-	xfs_buf_t *bp;
-	int size;
+	struct xfs_buf		*bp;
+	int			cluster_size;
+	int			ino_per_cluster;
+	xfs_agino_t		cluster_agino;
+	xfs_daddr_t		cluster_daddr;
+	xfs_daddr_t		cluster_blks;
 
-	if ((irec = find_inode_rec(mp, agno, agino)) == NULL)
-		return(NULL);
+	/*
+	 * Inode buffers have been read into memory in inode_cluster_size
+	 * chunks (or one FSB).  To find the correct buffer for an inode,
+	 * we must find the buffer for its cluster, add the appropriate
+	 * offset, and return that.
+	 */
+	cluster_size = MAX(mp->m_inode_cluster_size, mp->m_sb.sb_blocksize);
+	ino_per_cluster = cluster_size / mp->m_sb.sb_inodesize;
+	cluster_agino = agino & ~(ino_per_cluster - 1);
+	cluster_blks = XFS_FSB_TO_DADDR(mp, MAX(1,
+			mp->m_inode_cluster_size >> mp->m_sb.sb_blocklog));
+	cluster_daddr = XFS_AGB_TO_DADDR(mp, agno,
+			XFS_AGINO_TO_AGBNO(mp, cluster_agino));
 
-	size = XFS_FSB_TO_BB(mp, MAX(1, XFS_INODES_PER_CHUNK/inodes_per_block));
-	bp = libxfs_readbuf(mp->m_dev, XFS_AGB_TO_DADDR(mp, agno,
-		XFS_AGINO_TO_AGBNO(mp, irec->ino_startnum)), size, 0);
+#ifdef XR_INODE_TRACE
+	printf("cluster_size %d ipc %d clusagino %d daddr %lld sectors %lld\n",
+		cluster_size, ino_per_cluster, cluster_agino, cluster_daddr,
+		cluster_blks);
+#endif
+
+	bp = libxfs_readbuf(mp->m_dev, cluster_daddr, cluster_blks,
+			0, &xfs_inode_buf_ops);
 	if (!bp) {
 		do_warn(_("cannot read inode (%u/%u), disk block %" PRIu64 "\n"),
-			agno, irec->ino_startnum,
-			XFS_AGB_TO_DADDR(mp, agno,
-				XFS_AGINO_TO_AGBNO(mp, irec->ino_startnum)));
-		return(NULL);
+			agno, cluster_agino, cluster_daddr);
+		return NULL;
 	}
 
-	*dipp = xfs_make_iptr(mp, bp, agino -
-		XFS_OFFBNO_TO_AGINO(mp, XFS_AGINO_TO_AGBNO(mp,
-						irec->ino_startnum),
-		0));
-
-	return(bp);
-}
-
-/*
- * these next routines return the filesystem blockno of the
- * block containing the block "bno" in the file whose bmap
- * tree (or extent list) is rooted by "rootblock".
- *
- * the next routines are utility routines for the third
- * routine, get_bmapi().
- *
- * NOTE: getfunc_extlist only used by dirv1 checking code
- */
-xfs_dfsbno_t
-getfunc_extlist(xfs_mount_t		*mp,
-		xfs_ino_t		ino,
-		xfs_dinode_t		*dip,
-		xfs_dfiloff_t		bno,
-		int			whichfork)
-{
-	xfs_bmbt_irec_t		irec;
-	xfs_dfsbno_t		final_fsbno = NULLDFSBNO;
-	xfs_bmbt_rec_t		*rootblock = (xfs_bmbt_rec_t *)
-						XFS_DFORK_PTR(dip, whichfork);
-	xfs_extnum_t		nextents = XFS_DFORK_NEXTENTS(dip, whichfork);
-	int			i;
-
-	for (i = 0; i < nextents; i++)  {
-		libxfs_bmbt_disk_get_all(rootblock + i, &irec);
-		if (irec.br_startoff <= bno &&
-				bno < irec.br_startoff + irec.br_blockcount) {
-			final_fsbno = bno - irec.br_startoff + irec.br_startblock;
-			break;
-		}
-	}
-
-	return(final_fsbno);
-}
-
-/*
- * NOTE: getfunc_btree only used by dirv1 checking code... 
- */
-xfs_dfsbno_t
-getfunc_btree(xfs_mount_t		*mp,
-		xfs_ino_t		ino,
-		xfs_dinode_t		*dip,
-		xfs_dfiloff_t		bno,
-		int			whichfork)
-{
-	int			i;
-#ifdef DEBUG
-	int			prev_level;
-#endif
-	int			found;
-	int			numrecs;
-	xfs_bmbt_rec_t		*rec;
-	xfs_bmbt_irec_t		irec;
-	xfs_bmbt_ptr_t		*pp;
-	xfs_bmbt_key_t		*key;
-	xfs_bmdr_key_t		*rkey;
-	xfs_bmdr_ptr_t		*rp;
-	xfs_dfsbno_t		fsbno;
-	xfs_buf_t		*bp;
-	xfs_dfsbno_t		final_fsbno = NULLDFSBNO;
-	struct xfs_btree_block	*block;
-	xfs_bmdr_block_t	*rootblock = (xfs_bmdr_block_t *)
-						XFS_DFORK_PTR(dip, whichfork);
-
-	ASSERT(rootblock->bb_level != 0);
-	/*
-	 * deal with root block, it's got a slightly different
-	 * header structure than interior nodes.  We know that
-	 * a btree should have at least 2 levels otherwise it
-	 * would be an extent list.
-	 */
-	rkey = XFS_BMDR_KEY_ADDR(rootblock, 1);
-	rp = XFS_BMDR_PTR_ADDR(rootblock, 1,
-		xfs_bmdr_maxrecs(mp, XFS_DFORK_SIZE(dip, mp, whichfork), 1));
-	found = -1;
-	for (i = 0; i < be16_to_cpu(rootblock->bb_numrecs) - 1; i++) {
-		if (be64_to_cpu(rkey[i].br_startoff) <= bno && 
-				bno < be64_to_cpu(rkey[i + 1].br_startoff)) {
-			found = i;
-			break;
-		}
-	}
-	if (i == be16_to_cpu(rootblock->bb_numrecs) - 1 && 
-				bno >= be64_to_cpu(rkey[i].br_startoff))
-		found = i;
-
-	ASSERT(found != -1);
-
-	fsbno = be64_to_cpu(rp[found]);
-
-	ASSERT(verify_dfsbno(mp, fsbno));
-
-	bp = libxfs_readbuf(mp->m_dev, XFS_FSB_TO_DADDR(mp, fsbno),
-				XFS_FSB_TO_BB(mp, 1), 0);
-	if (!bp) {
-		do_error(_("cannot read bmap block %" PRIu64 "\n"), fsbno);
-		return(NULLDFSBNO);
-	}
-	block = XFS_BUF_TO_BLOCK(bp);
-	numrecs = be16_to_cpu(block->bb_numrecs);
-
-	/*
-	 * ok, now traverse any interior btree nodes
-	 */
-#ifdef DEBUG
-	prev_level = be16_to_cpu(block->bb_level);
-#endif
-
-	while (be16_to_cpu(block->bb_level) > 0)  {
-#ifdef DEBUG
-		ASSERT(be16_to_cpu(block->bb_level) < prev_level);
-
-		prev_level = be16_to_cpu(block->bb_level);
-#endif
-		if (numrecs > mp->m_bmap_dmxr[1]) {
-			do_warn(
-_("# of bmap records in inode %" PRIu64 " exceeds max (%u, max - %u)\n"),
-				ino, numrecs,
-				mp->m_bmap_dmxr[1]);
-			libxfs_putbuf(bp);
-			return(NULLDFSBNO);
-		}
-		if (verbose && numrecs < mp->m_bmap_dmnr[1]) {
-			do_warn(
-_("- # of bmap records in inode %" PRIu64 " less than minimum (%u, min - %u), proceeding ...\n"),
-				ino, numrecs, mp->m_bmap_dmnr[1]);
-		}
-		key = XFS_BMBT_KEY_ADDR(mp, block, 1);
-		pp = XFS_BMBT_PTR_ADDR(mp, block, 1, mp->m_bmap_dmxr[1]);
-		for (found = -1, i = 0; i < numrecs - 1; i++) {
-			if (be64_to_cpu(key[i].br_startoff) <= bno && bno < 
-					be64_to_cpu(key[i + 1].br_startoff)) {
-				found = i;
-				break;
-			}
-		}
-		if (i == numrecs - 1 && bno >= be64_to_cpu(key[i].br_startoff))
-			found = i;
-
-		ASSERT(found != -1);
-		fsbno = be64_to_cpu(pp[found]);
-
-		ASSERT(verify_dfsbno(mp, fsbno));
-
-		/*
-		 * release current btree block and read in the
-		 * next btree block to be traversed
-		 */
-		libxfs_putbuf(bp);
-		bp = libxfs_readbuf(mp->m_dev, XFS_FSB_TO_DADDR(mp, fsbno),
-					XFS_FSB_TO_BB(mp, 1), 0);
-		if (!bp) {
-			do_error(_("cannot read bmap block %" PRIu64 "\n"),
-				fsbno);
-			return(NULLDFSBNO);
-		}
-		block = XFS_BUF_TO_BLOCK(bp);
-		numrecs = be16_to_cpu(block->bb_numrecs);
-	}
-
-	/*
-	 * current block must be a leaf block
-	 */
-	ASSERT(be16_to_cpu(block->bb_level) == 0);
-	if (numrecs > mp->m_bmap_dmxr[0]) {
-		do_warn(
-_("# of bmap records in inode %" PRIu64 " greater than maximum (%u, max - %u)\n"),
-			ino, numrecs, mp->m_bmap_dmxr[0]);
-		libxfs_putbuf(bp);
-		return(NULLDFSBNO);
-	}
-	if (verbose && numrecs < mp->m_bmap_dmnr[0])
-		do_warn(
-_("- # of bmap records in inode %" PRIu64 " less than minimum (%u, min - %u), continuing...\n"),
-			ino, numrecs, mp->m_bmap_dmnr[0]);
-
-	rec = XFS_BMBT_REC_ADDR(mp, block, 1);
-	for (i = 0; i < numrecs; i++)  {
-		libxfs_bmbt_disk_get_all(rec + i, &irec);
-		if (irec.br_startoff <= bno &&
-				bno < irec.br_startoff + irec.br_blockcount) {
-			final_fsbno = bno - irec.br_startoff +
-							irec.br_startblock;
-			break;
-		}
-	}
-	libxfs_putbuf(bp);
-
-	if (final_fsbno == NULLDFSBNO)
-		do_warn(_("could not map block %" PRIu64 "\n"), bno);
-
-	return(final_fsbno);
-}
-
-/*
- * this could be smarter.  maybe we should have an open inode
- * routine that would get the inode buffer and return back
- * an inode handle.  I'm betting for the moment that this
- * is used only by the directory and attribute checking code
- * and that the avl tree find and buffer cache search are
- * relatively cheap.  If they're too expensive, we'll just
- * have to fix this and add an inode handle to the da btree
- * cursor.
- *
- * caller is responsible for checking doubly referenced blocks
- * and references to holes
- *
- * NOTE: get_bmapi only used by dirv1 checking code
- */
-xfs_dfsbno_t
-get_bmapi(xfs_mount_t *mp, xfs_dinode_t *dino_p,
-		xfs_ino_t ino_num, xfs_dfiloff_t bno, int whichfork)
-{
-	xfs_dfsbno_t		fsbno;
-
-	switch (XFS_DFORK_FORMAT(dino_p, whichfork)) {
-	case XFS_DINODE_FMT_EXTENTS:
-		fsbno = getfunc_extlist(mp, ino_num, dino_p, bno, whichfork);
-		break;
-	case XFS_DINODE_FMT_BTREE:
-		fsbno = getfunc_btree(mp, ino_num, dino_p, bno, whichfork);
-		break;
-	case XFS_DINODE_FMT_LOCAL:
-		do_error(_("get_bmapi() called for local inode %" PRIu64 "\n"),
-			ino_num);
-		fsbno = NULLDFSBNO;
-		break;
-	default:
-		/*
-		 * shouldn't happen
-		 */
-		do_error(_("bad inode format for inode %" PRIu64 "\n"), ino_num);
-		fsbno = NULLDFSBNO;
-	}
-
-	return(fsbno);
+	*dipp = xfs_make_iptr(mp, bp, agino - cluster_agino);
+	ASSERT(!xfs_sb_version_hascrc(&mp->m_sb) ||
+			XFS_AGINO_TO_INO(mp, agno, agino) ==
+			be64_to_cpu((*dipp)->di_ino));
+	return bp;
 }
 
 /*
@@ -1161,8 +914,7 @@ get_bmapi(xfs_mount_t *mp, xfs_dinode_t *dino_p,
 /*
  * return 1 if inode should be cleared, 0 otherwise
  */
-/* ARGSUSED */
-int
+static int
 process_btinode(
 	xfs_mount_t		*mp,
 	xfs_agnumber_t		agno,
@@ -1170,33 +922,32 @@ process_btinode(
 	xfs_dinode_t		*dip,
 	int			type,
 	int			*dirty,
-	xfs_drfsbno_t		*tot,
+	xfs_rfsblock_t		*tot,
 	__uint64_t		*nex,
 	blkmap_t		**blkmapp,
 	int			whichfork,
 	int			check_dups)
 {
 	xfs_bmdr_block_t	*dib;
-	xfs_dfiloff_t		last_key;
-	xfs_dfiloff_t		first_key = 0;
+	xfs_fileoff_t		last_key;
+	xfs_fileoff_t		first_key = 0;
 	xfs_ino_t		lino;
 	xfs_bmbt_ptr_t		*pp;
 	xfs_bmbt_key_t		*pkey;
-	char			*forkname;
+	char			*forkname = get_forkname(whichfork);
 	int			i;
 	int			level;
 	int			numrecs;
 	bmap_cursor_t		cursor;
+	__uint64_t		magic;
 
 	dib = (xfs_bmdr_block_t *)XFS_DFORK_PTR(dip, whichfork);
 	lino = XFS_AGINO_TO_INO(mp, agno, ino);
 	*tot = 0;
 	*nex = 0;
 
-	if (whichfork == XFS_DATA_FORK)
-		forkname = _("data");
-	else
-		forkname = _("attr");
+	magic = xfs_sb_version_hascrc(&mp->m_sb) ? XFS_BMAP_CRC_MAGIC
+						 : XFS_BMAP_MAGIC;
 
 	level = be16_to_cpu(dib->bb_level);
 	numrecs = be16_to_cpu(dib->bb_numrecs);
@@ -1235,9 +986,9 @@ _("bad numrecs 0 in inode %" PRIu64 " bmap btree root block\n"),
 	init_bm_cursor(&cursor, level + 1);
 
 	pp = XFS_BMDR_PTR_ADDR(dib, 1,
-		xfs_bmdr_maxrecs(mp, XFS_DFORK_SIZE(dip, mp, whichfork), 0));
+		libxfs_bmdr_maxrecs(XFS_DFORK_SIZE(dip, mp, whichfork), 0));
 	pkey = XFS_BMDR_KEY_ADDR(dib, 1);
-	last_key = NULLDFILOFF;
+	last_key = NULLFILEOFF;
 
 	for (i = 0; i < numrecs; i++)  {
 		/*
@@ -1245,15 +996,17 @@ _("bad numrecs 0 in inode %" PRIu64 " bmap btree root block\n"),
 		 * btree, we'd do it right here.  For now, if there's a
 		 * problem, we'll bail out and presumably clear the inode.
 		 */
-		if (!verify_dfsbno(mp, be64_to_cpu(pp[i])))  {
-			do_warn(_("bad bmap btree ptr 0x%llx in ino %" PRIu64 "\n"),
-			       (unsigned long long) be64_to_cpu(pp[i]), lino);
+		if (!verify_dfsbno(mp, get_unaligned_be64(&pp[i])))  {
+			do_warn(
+_("bad bmap btree ptr 0x%" PRIx64 " in ino %" PRIu64 "\n"),
+				get_unaligned_be64(&pp[i]), lino);
 			return(1);
 		}
 
-		if (scan_lbtree(be64_to_cpu(pp[i]), level, scanfunc_bmap, type, 
-				whichfork, lino, tot, nex, blkmapp, &cursor,
-				1, check_dups))
+		if (scan_lbtree(get_unaligned_be64(&pp[i]), level, scan_bmapbt,
+				type, whichfork, lino, tot, nex, blkmapp,
+				&cursor, 1, check_dups, magic,
+				&xfs_bmbt_buf_ops))
 			return(1);
 		/*
 		 * fix key (offset) mismatches between the keys in root
@@ -1262,28 +1015,27 @@ _("bad numrecs 0 in inode %" PRIu64 " bmap btree root block\n"),
 		 * blocks but the parent hasn't been updated
 		 */
 		if (!check_dups && cursor.level[level-1].first_key !=
-					be64_to_cpu(pkey[i].br_startoff))  {
+				   get_unaligned_be64(&pkey[i].br_startoff)) {
 			if (!no_modify)  {
 				do_warn(
-	_("correcting key in bmbt root (was %llu, now %" PRIu64") in inode "
-	  "%" PRIu64" %s fork\n"),
-				       (unsigned long long)
-					       be64_to_cpu(pkey[i].br_startoff),
-					cursor.level[level-1].first_key,
-					XFS_AGINO_TO_INO(mp, agno, ino),
-					forkname);
+_("correcting key in bmbt root (was %" PRIu64 ", now %" PRIu64") in inode "
+  "%" PRIu64" %s fork\n"),
+				       get_unaligned_be64(&pkey[i].br_startoff),
+				       cursor.level[level-1].first_key,
+				       XFS_AGINO_TO_INO(mp, agno, ino),
+				       forkname);
 				*dirty = 1;
-				pkey[i].br_startoff = cpu_to_be64(
-					cursor.level[level-1].first_key);
+				put_unaligned_be64(
+					cursor.level[level-1].first_key,
+					&pkey[i].br_startoff);
 			} else  {
 				do_warn(
-	_("bad key in bmbt root (is %llu, would reset to %" PRIu64 ") in inode "
-	  "%" PRIu64 " %s fork\n"),
-				       (unsigned long long)
-					       be64_to_cpu(pkey[i].br_startoff),
-					cursor.level[level-1].first_key,
-					XFS_AGINO_TO_INO(mp, agno, ino),
-					forkname);
+_("bad key in bmbt root (is %" PRIu64 ", would reset to %" PRIu64 ") in inode "
+  "%" PRIu64 " %s fork\n"),
+				       get_unaligned_be64(&pkey[i].br_startoff),
+				       cursor.level[level-1].first_key,
+				       XFS_AGINO_TO_INO(mp, agno, ino),
+				       forkname);
 			}
 		}
 		/*
@@ -1291,7 +1043,7 @@ _("bad numrecs 0 in inode %" PRIu64 " bmap btree root block\n"),
 		 * inode if the ordering doesn't hold
 		 */
 		if (check_dups == 0)  {
-			if (last_key != NULLDFILOFF && last_key >=
+			if (last_key != NULLFILEOFF && last_key >=
 			    cursor.level[level-1].first_key)  {
 				do_warn(
 	_("out of order bmbt root key %" PRIu64 " in inode %" PRIu64 " %s fork\n"),
@@ -1320,9 +1072,9 @@ _("bad numrecs 0 in inode %" PRIu64 " bmap btree root block\n"),
 	 * is NULL.
 	 */
 	if (check_dups == 0 &&
-		cursor.level[0].right_fsbno != NULLDFSBNO)  {
+		cursor.level[0].right_fsbno != NULLFSBLOCK)  {
 		do_warn(
-	_("bad fwd (right) sibling pointer (saw %" PRIu64 " should be NULLDFSBNO)\n"),
+	_("bad fwd (right) sibling pointer (saw %" PRIu64 " should be NULLFSBLOCK)\n"),
 			cursor.level[0].right_fsbno);
 		do_warn(
 	_("\tin inode %" PRIu64 " (%s fork) bmap btree block %" PRIu64 "\n"),
@@ -1337,8 +1089,7 @@ _("bad numrecs 0 in inode %" PRIu64 " bmap btree root block\n"),
 /*
  * return 1 if inode should be cleared, 0 otherwise
  */
-/* ARGSUSED */
-int
+static int
 process_exinode(
 	xfs_mount_t		*mp,
 	xfs_agnumber_t		agno,
@@ -1346,7 +1097,7 @@ process_exinode(
 	xfs_dinode_t		*dip,
 	int			type,
 	int			*dirty,
-	xfs_drfsbno_t		*tot,
+	xfs_rfsblock_t		*tot,
 	__uint64_t		*nex,
 	blkmap_t		**blkmapp,
 	int			whichfork,
@@ -1354,25 +1105,40 @@ process_exinode(
 {
 	xfs_ino_t		lino;
 	xfs_bmbt_rec_t		*rp;
-	xfs_dfiloff_t		first_key;
-	xfs_dfiloff_t		last_key;
+	xfs_fileoff_t		first_key;
+	xfs_fileoff_t		last_key;
+	int32_t			numrecs;
+	int			ret;
 
 	lino = XFS_AGINO_TO_INO(mp, agno, ino);
 	rp = (xfs_bmbt_rec_t *)XFS_DFORK_PTR(dip, whichfork);
 	*tot = 0;
-	*nex = XFS_DFORK_NEXTENTS(dip, whichfork);
+	numrecs = XFS_DFORK_NEXTENTS(dip, whichfork);
+
+	/*
+	 * We've already decided on the maximum number of extents on the inode,
+	 * and numrecs may be corrupt. Hence make sure we only allow numrecs to
+	 * be in the range of valid on-disk numbers, which is:
+	 *	0 < numrecs < 2^31 - 1
+	 */
+	if (numrecs < 0)
+		numrecs = *nex;
+
 	/*
 	 * XXX - if we were going to fix up the btree record,
 	 * we'd do it right here.  For now, if there's a problem,
 	 * we'll bail out and presumably clear the inode.
 	 */
 	if (check_dups == 0)
-		return(process_bmbt_reclist(mp, rp, *nex, type, lino,
+		ret = process_bmbt_reclist(mp, rp, &numrecs, type, lino,
 					tot, blkmapp, &first_key, &last_key,
-					whichfork));
+					whichfork);
 	else
-		return(scan_bmbt_reclist(mp, rp, *nex, type, lino, tot,
-					whichfork));
+		ret = scan_bmbt_reclist(mp, rp, &numrecs, type, lino, tot,
+					whichfork);
+
+	*nex = numrecs;
+	return ret;
 }
 
 /*
@@ -1418,10 +1184,10 @@ process_lclinode(
 	return(0);
 }
 
-int
+static int
 process_symlink_extlist(xfs_mount_t *mp, xfs_ino_t lino, xfs_dinode_t *dino)
 {
-	xfs_dfiloff_t		expected_offset;
+	xfs_fileoff_t		expected_offset;
 	xfs_bmbt_rec_t		*rp;
 	xfs_bmbt_irec_t		irec;
 	int			numrecs;
@@ -1429,7 +1195,7 @@ process_symlink_extlist(xfs_mount_t *mp, xfs_ino_t lino, xfs_dinode_t *dino)
 	int			max_blocks;
 
 	if (be64_to_cpu(dino->di_size) <= XFS_DFORK_DSIZE(dino, mp)) {
-		if (dino->di_format == XFS_DINODE_FMT_LOCAL)  
+		if (dino->di_format == XFS_DINODE_FMT_LOCAL)
 			return 0;
 		do_warn(
 _("mismatch between format (%d) and size (%" PRId64 ") in symlink ino %" PRIu64 "\n"),
@@ -1439,7 +1205,7 @@ _("mismatch between format (%d) and size (%" PRId64 ") in symlink ino %" PRIu64 
 	}
 	if (dino->di_format == XFS_DINODE_FMT_LOCAL) {
 		do_warn(
-_("mismatch between format (%d) and size (%" PRId64 ") in symlink inode %" PRIu64 "n"),
+_("mismatch between format (%d) and size (%" PRId64 ") in symlink inode %" PRIu64 "\n"),
 			dino->di_format,
 			(__int64_t)be64_to_cpu(dino->di_size), lino);
 		return 1;
@@ -1463,8 +1229,7 @@ _("bad number of extents (%d) in symlink %" PRIu64 " data fork\n"),
 	expected_offset = 0;
 
 	for (i = 0; i < numrecs; i++)  {
-		libxfs_bmbt_disk_get_all(rp + i, &irec);
-
+		libxfs_bmbt_disk_get_all((rp +i), &irec);
 		if (irec.br_startoff != expected_offset)  {
 			do_warn(
 _("bad extent #%d offset (%" PRIu64 ") in symlink %" PRIu64 " data fork\n"),
@@ -1489,7 +1254,7 @@ _("bad extent #%d count (%" PRIu64 ") in symlink %" PRIu64 " data fork\n"),
  * takes a name and length and returns 1 if the name contains
  * a \0, returns 0 otherwise
  */
-int
+static int
 null_check(char *name, int length)
 {
 	int i;
@@ -1504,21 +1269,108 @@ null_check(char *name, int length)
 	return(0);
 }
 
+static int
+process_symlink_remote(
+	struct xfs_mount	*mp,
+	xfs_ino_t		lino,
+	struct xfs_dinode	*dino,
+	struct blkmap		*blkmap,
+	char			*dst)
+{
+	xfs_fsblock_t		fsbno;
+	struct xfs_buf		*bp;
+	char			*src;
+	int			pathlen;
+	int			offset;
+	int			i;
+
+	offset = 0;
+	pathlen = be64_to_cpu(dino->di_size);
+	i = 0;
+
+	while (pathlen > 0) {
+		int	blk_cnt = 1;
+		int	byte_cnt;
+		int	badcrc = 0;
+
+		fsbno = blkmap_get(blkmap, i);
+		if (fsbno == NULLFSBLOCK) {
+			do_warn(
+_("cannot read inode %" PRIu64 ", file block %d, NULL disk block\n"),
+				lino, i);
+			return 1;
+		}
+
+		/*
+		 * There's a symlink header for each contiguous extent. If
+		 * there are contiguous blocks, read them in one go.
+		 */
+		while (blk_cnt <= max_symlink_blocks) {
+			if (blkmap_get(blkmap, i + 1) != fsbno + 1)
+				break;
+			blk_cnt++;
+			i++;
+		}
+
+		byte_cnt = XFS_FSB_TO_B(mp, blk_cnt);
+
+		bp = libxfs_readbuf(mp->m_dev, XFS_FSB_TO_DADDR(mp, fsbno),
+				    BTOBB(byte_cnt), 0, &xfs_symlink_buf_ops);
+		if (!bp) {
+			do_warn(
+_("cannot read inode %" PRIu64 ", file block %d, disk block %" PRIu64 "\n"),
+				lino, i, fsbno);
+			return 1;
+		}
+		if (bp->b_error == -EFSBADCRC) {
+			do_warn(
+_("Bad symlink buffer CRC, block %" PRIu64 ", inode %" PRIu64 ".\n"
+  "Correcting CRC, but symlink may be bad.\n"), fsbno, lino);
+			badcrc = 1;
+		}
+
+		byte_cnt = XFS_SYMLINK_BUF_SPACE(mp, byte_cnt);
+		byte_cnt = MIN(pathlen, byte_cnt);
+
+		src = bp->b_addr;
+		if (xfs_sb_version_hascrc(&mp->m_sb)) {
+			if (!libxfs_symlink_hdr_ok(lino, offset,
+						   byte_cnt, bp)) {
+				do_warn(
+_("bad symlink header ino %" PRIu64 ", file block %d, disk block %" PRIu64 "\n"),
+					lino, i, fsbno);
+				libxfs_putbuf(bp);
+				return 1;
+			}
+			src += sizeof(struct xfs_dsymlink_hdr);
+		}
+
+		memmove(dst + offset, src, byte_cnt);
+
+		pathlen -= byte_cnt;
+		offset += byte_cnt;
+		i++;
+
+		if (badcrc && !no_modify)
+			libxfs_writebuf(bp, 0);
+		else
+			libxfs_putbuf(bp);
+	}
+	return 0;
+}
+
 /*
  * like usual, returns 0 if everything's ok and 1 if something's
  * bogus
  */
-int
+static int
 process_symlink(
 	xfs_mount_t	*mp,
 	xfs_ino_t	lino,
 	xfs_dinode_t	*dino,
 	blkmap_t 	*blkmap)
 {
-	xfs_dfsbno_t		fsbno;
-	xfs_buf_t		*bp = NULL;
-	char			*symlink, *cptr, *buf_data;
-	int			i, size, amountdone;
+	char			*symlink;
 	char			data[MAXPATHLEN];
 
 	/*
@@ -1543,39 +1395,16 @@ process_symlink(
 		 * local symlink, just copy the symlink out of the
 		 * inode into the data area
 		 */
-		memmove(symlink, XFS_DFORK_DPTR(dino), 
+		memmove(symlink, XFS_DFORK_DPTR(dino),
 						be64_to_cpu(dino->di_size));
 	} else {
-		/*
-		 * stored in a meta-data file, have to bmap one block
-		 * at a time and copy the symlink into the data area
-		 */
-		i = size = amountdone = 0;
-		cptr = symlink;
+		int error;
 
-		while (amountdone < be64_to_cpu(dino->di_size)) {
-			fsbno = blkmap_get(blkmap, i);
-			if (fsbno != NULLDFSBNO)
-				bp = libxfs_readbuf(mp->m_dev,
-						XFS_FSB_TO_DADDR(mp, fsbno),
-						XFS_FSB_TO_BB(mp, 1), 0);
-			if (!bp || fsbno == NULLDFSBNO) {
-				do_warn(
-_("cannot read inode %" PRIu64 ", file block %d, disk block %" PRIu64 "\n"),
-					lino, i, fsbno);
-				return(1);
-			}
-
-			buf_data = (char *)XFS_BUF_PTR(bp);
-			size = MIN(be64_to_cpu(dino->di_size) - amountdone, 
-						XFS_FSB_TO_BB(mp, 1) * BBSIZE);
-			memmove(cptr, buf_data, size);
-			cptr += size;
-			amountdone += size;
-			i++;
-			libxfs_putbuf(bp);
-		}
+		error = process_symlink_remote(mp, lino, dino, blkmap, symlink);
+		if (error)
+			return error;
 	}
+
 	data[be64_to_cpu(dino->di_size)] = '\0';
 
 	/*
@@ -1586,31 +1415,6 @@ _("cannot read inode %" PRIu64 ", file block %d, disk block %" PRIu64 "\n"),
 _("found illegal null character in symlink inode %" PRIu64 "\n"),
 			lino);
 		return(1);
-	}
-
-	/*
-	 * check for any component being too long
-	 */
-	if (be64_to_cpu(dino->di_size) >= MAXNAMELEN)  {
-		cptr = strchr(symlink, '/');
-
-		while (cptr != NULL)  {
-			if (cptr - symlink >= MAXNAMELEN)  {
-				do_warn(
-_("component of symlink in inode %" PRIu64 " too long\n"),
-					lino);
-				return(1);
-			}
-			symlink = cptr + 1;
-			cptr = strchr(symlink, '/');
-		}
-
-		if (strlen(symlink) >= MAXNAMELEN)  {
-			do_warn(
-_("component of symlink in inode %" PRIu64 " too long\n"),
-				lino);
-			return(1);
-		}
 	}
 
 	return(0);
@@ -1675,7 +1479,7 @@ _("size of fifo inode %" PRIu64 " != 0 (%" PRId64 " bytes)\n"), lino,
 }
 
 static int
-process_misc_ino_types_blocks(xfs_drfsbno_t totblocks, xfs_ino_t lino, int type)
+process_misc_ino_types_blocks(xfs_rfsblock_t totblocks, xfs_ino_t lino, int type)
 {
 	/*
 	 * you can not enforce all misc types have zero data fork blocks
@@ -1809,6 +1613,15 @@ process_check_sb_inodes(
 			do_warn(_("group quota inode %" PRIu64 " has bad type 0x%x\n"),
 				lino, dinode_fmt(dinoc));
 			mp->m_sb.sb_gquotino = NULLFSINO;
+			return 1;
+		}
+		return 0;
+	}
+	if (lino == mp->m_sb.sb_pquotino)  {
+		if (*type != XR_INO_DATA)  {
+			do_warn(_("project quota inode %" PRIu64 " has bad type 0x%x\n"),
+				lino, dinode_fmt(dinoc));
+			mp->m_sb.sb_pquotino = NULLFSINO;
 			return 1;
 		}
 		return 0;
@@ -1976,11 +1789,12 @@ _("bad attr fork offset %d in dev inode %" PRIu64 ", should be %d\n"),
 	case XFS_DINODE_FMT_LOCAL:	/* fall through ... */
 	case XFS_DINODE_FMT_EXTENTS:	/* fall through ... */
 	case XFS_DINODE_FMT_BTREE:
-		if (dino->di_forkoff >= (XFS_LITINO(mp) >> 3)) {
+		if (dino->di_forkoff >=
+				(XFS_LITINO(mp, dino->di_version) >> 3)) {
 			do_warn(
 _("bad attr fork offset %d in inode %" PRIu64 ", max=%d\n"),
 				dino->di_forkoff, lino,
-				XFS_LITINO(mp) >> 3);
+				XFS_LITINO(mp, dino->di_version) >> 3);
 			return 1;
 		}
 		break;
@@ -1997,7 +1811,7 @@ _("bad attr fork offset %d in inode %" PRIu64 ", max=%d\n"),
 static int
 process_inode_blocks_and_extents(
 	xfs_dinode_t	*dino,
-	xfs_drfsbno_t	nblocks,
+	xfs_rfsblock_t	nblocks,
 	__uint64_t	nextents,
 	__uint64_t	anextents,
 	xfs_ino_t	lino,
@@ -2063,6 +1877,17 @@ _("bad anextents %d for inode %" PRIu64 ", would reset to %" PRIu64 "\n"),
 				lino, anextents);
 		}
 	}
+
+	/*
+	 * We are comparing different units here, but that's fine given that
+	 * an extent has to have at least a block in it.
+	 */
+	if (nblocks < nextents + anextents) {
+		do_warn(
+_("nblocks (%" PRIu64 ") smaller than nextents for inode %" PRIu64 "\n"), nblocks, lino);
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -2077,17 +1902,29 @@ process_inode_data_fork(
 	xfs_dinode_t	*dino,
 	int		type,
 	int		*dirty,
-	xfs_drfsbno_t	*totblocks,
+	xfs_rfsblock_t	*totblocks,
 	__uint64_t	*nextents,
 	blkmap_t	**dblkmap,
 	int		check_dups)
 {
 	xfs_ino_t	lino = XFS_AGINO_TO_INO(mp, agno, ino);
 	int		err = 0;
+	int		nex;
 
-	*nextents = be32_to_cpu(dino->di_nextents);
+	/*
+	 * extent count on disk is only valid for positive values. The kernel
+	 * uses negative values in memory. hence if we see negative numbers
+	 * here, trash it!
+	 */
+	nex = be32_to_cpu(dino->di_nextents);
+	if (nex < 0)
+		*nextents = 1;
+	else
+		*nextents = nex;
+
 	if (*nextents > be64_to_cpu(dino->di_nblocks))
 		*nextents = 1;
+
 
 	if (dino->di_format != XFS_DINODE_FMT_LOCAL && type != XR_INO_RTDATA)
 		*dblkmap = blkmap_alloc(*nextents, XFS_DATA_FORK);
@@ -2133,7 +1970,7 @@ process_inode_data_fork(
 		 */
 		switch (dino->di_format) {
 		case XFS_DINODE_FMT_LOCAL:
-			err = process_lclinode(mp, agno, ino, dino, 
+			err = process_lclinode(mp, agno, ino, dino,
 						XFS_DATA_FORK);
 			break;
 		case XFS_DINODE_FMT_EXTENTS:
@@ -2174,7 +2011,7 @@ process_inode_attr_fork(
 	xfs_dinode_t	*dino,
 	int		type,
 	int		*dirty,
-	xfs_drfsbno_t	*atotblocks,
+	xfs_rfsblock_t	*atotblocks,
 	__uint64_t	*anextents,
 	int		check_dups,
 	int		extra_attr_check,
@@ -2267,7 +2104,7 @@ process_inode_attr_fork(
 	if (check_dups)  {
 		switch (dino->di_aformat) {
 		case XFS_DINODE_FMT_LOCAL:
-			err = process_lclinode(mp, agno, ino, dino, 
+			err = process_lclinode(mp, agno, ino, dino,
 						XFS_ATTR_FORK);
 			break;
 		case XFS_DINODE_FMT_EXTENTS:
@@ -2335,86 +2172,11 @@ process_check_inode_nlink_version(
 {
 	int		dirty = 0;
 
-	if (dino->di_version > 1 && !fs_inode_nlink)  {
-		/*
-		 * do we have a fs/inode version mismatch with a valid
-		 * version 2 inode here that has to stay version 2 or
-		 * lose links?
-		 */
-		if (be32_to_cpu(dino->di_nlink) > XFS_MAXLINK_1)  {
-			/*
-			 * yes.  are nlink inodes allowed?
-			 */
-			if (fs_inode_nlink_allowed)  {
-				/*
-				 * yes, update status variable which will
-				 * cause sb to be updated later.
-				 */
-				fs_inode_nlink = 1;
-				do_warn
-	(_("version 2 inode %" PRIu64 " claims > %u links, "),
-					lino, XFS_MAXLINK_1);
-				if (!no_modify)  {
-					do_warn(
-	_("updating superblock version number\n"));
-				} else  {
-					do_warn(
-	_("would update superblock version number\n"));
-				}
-			} else  {
-				/*
-				 * no, have to convert back to onlinks
-				 * even if we lose some links
-				 */
-				do_warn(
-	_("WARNING:  version 2 inode %" PRIu64 " claims > %u links, "),
-					lino, XFS_MAXLINK_1);
-				if (!no_modify)  {
-					do_warn(_("converting back to version 1,\n"
-						"this may destroy %d links\n"),
-						be32_to_cpu(dino->di_nlink) -
-							XFS_MAXLINK_1);
-
-					dino->di_version = 1;
-					dino->di_nlink = cpu_to_be32(XFS_MAXLINK_1);
-					dino->di_onlink = cpu_to_be16(XFS_MAXLINK_1);
-					dirty = 1;
-				} else  {
-					do_warn(_("would convert back to version 1,\n"
-						"\tthis might destroy %d links\n"),
-						be32_to_cpu(dino->di_nlink) -
-							XFS_MAXLINK_1);
-				}
-			}
-		} else  {
-			/*
-			 * do we have a v2 inode that we could convert back
-			 * to v1 without losing any links?  if we do and
-			 * we have a mismatch between superblock bits and the
-			 * version bit, alter the version bit in this case.
-			 *
-			 * the case where we lost links was handled above.
-			 */
-			do_warn(_("found version 2 inode %" PRIu64 ", "), lino);
-			if (!no_modify)  {
-				do_warn(_("converting back to version 1\n"));
-				dino->di_version = 1;
-				dino->di_onlink = cpu_to_be16(
-					be32_to_cpu(dino->di_nlink));
-				dirty = 1;
-			} else  {
-				do_warn(_("would convert back to version 1\n"));
-			}
-		}
-	}
-
 	/*
-	 * ok, if it's still a version 2 inode, it's going
-	 * to stay a version 2 inode.  it should have a zero
+	 * if it's a version 2 inode, it should have a zero
 	 * onlink field, so clear it.
 	 */
-	if (dino->di_version > 1 &&
-			dino->di_onlink != 0 && fs_inode_nlink > 0) {
+	if (dino->di_version > 1 && dino->di_onlink != 0) {
 		if (!no_modify) {
 			do_warn(
 _("clearing obsolete nlink field in version 2 inode %" PRIu64 ", was %d, now 0\n"),
@@ -2439,8 +2201,7 @@ _("would clear obsolete nlink field in version 2 inode %" PRIu64 ", currently %d
  *
  * for detailed, info, look at process_dinode() comments.
  */
-/* ARGSUSED */
-int
+static int
 process_dinode_int(xfs_mount_t *mp,
 		xfs_dinode_t *dino,
 		xfs_agnumber_t agno,
@@ -2457,8 +2218,8 @@ process_dinode_int(xfs_mount_t *mp,
 		int *isa_dir,		/* out == 1 if inode is a directory */
 		xfs_ino_t *parent)	/* out -- parent if ino is a dir */
 {
-	xfs_drfsbno_t		totblocks = 0;
-	xfs_drfsbno_t		atotblocks = 0;
+	xfs_rfsblock_t		totblocks = 0;
+	xfs_rfsblock_t		atotblocks = 0;
 	int			di_mode;
 	int			type;
 	int			retval = 0;
@@ -2490,6 +2251,30 @@ process_dinode_int(xfs_mount_t *mp,
 	 */
 	ASSERT(uncertain == 0 || verify_mode != 0);
 
+	/*
+	 * This is the only valid point to check the CRC; after this we may have
+	 * made changes which invalidate it, and the CRC is only updated again
+	 * when it gets written out.
+	 *
+	 * Of course if we make any modifications after this, the inode gets
+	 * rewritten, and the CRC is updated automagically.
+	 */
+	if (xfs_sb_version_hascrc(&mp->m_sb) &&
+	    !libxfs_verify_cksum((char *)dino, mp->m_sb.sb_inodesize,
+				XFS_DINODE_CRC_OFF)) {
+		retval = 1;
+		if (!uncertain)
+			do_warn(_("bad CRC for inode %" PRIu64 "%c"),
+				lino, verify_mode ? '\n' : ',');
+		if (!verify_mode) {
+			if (!no_modify) {
+				do_warn(_(" will rewrite\n"));
+				*dirty = 1;
+			} else
+				do_warn(_(" would rewrite\n"));
+		}
+	}
+
 	if (be16_to_cpu(dino->di_magic) != XFS_DINODE_MAGIC)  {
 		retval = 1;
 		if (!uncertain)
@@ -2506,8 +2291,7 @@ process_dinode_int(xfs_mount_t *mp,
 		}
 	}
 
-	if (!XFS_DINODE_GOOD_VERSION(dino->di_version) ||
-	    (!fs_inode_nlink && dino->di_version > 1))  {
+	if (!libxfs_dinode_good_version(mp, dino->di_version)) {
 		retval = 1;
 		if (!uncertain)
 			do_warn(_("bad version number 0x%x on inode %" PRIu64 "%c"),
@@ -2516,10 +2300,37 @@ process_dinode_int(xfs_mount_t *mp,
 		if (!verify_mode) {
 			if (!no_modify) {
 				do_warn(_(" resetting version number\n"));
-				dino->di_version = (fs_inode_nlink) ?  2 : 1;
+				dino->di_version =
+					xfs_sb_version_hascrc(&mp->m_sb) ? 3 : 2;
 				*dirty = 1;
 			} else
 				do_warn(_(" would reset version number\n"));
+		}
+	}
+
+	/*
+	 * We don't bother checking the CRC here - we cannot guarantee that when
+	 * we are called here that the inode has not already been modified in
+	 * memory and hence invalidated the CRC.
+	 */
+	if (xfs_sb_version_hascrc(&mp->m_sb)) {
+		if (be64_to_cpu(dino->di_ino) != lino) {
+			if (!uncertain)
+				do_warn(
+_("inode identifier %llu mismatch on inode %" PRIu64 "\n"),
+					be64_to_cpu(dino->di_ino), lino);
+			if (verify_mode)
+				return 1;
+			goto clear_bad_out;
+		}
+		if (platform_uuid_compare(&dino->di_uuid,
+					  &mp->m_sb.sb_meta_uuid)) {
+			if (!uncertain)
+				do_warn(
+			_("UUID mismatch on inode %" PRIu64 "\n"), lino);
+			if (verify_mode)
+				return 1;
+			goto clear_bad_out;
 		}
 	}
 
@@ -2599,16 +2410,22 @@ _("bad (negative) size %" PRId64 " on inode %" PRIu64 "\n"),
 		uint16_t flags = be16_to_cpu(dino->di_flags);
 
 		if (flags & ~XFS_DIFLAG_ANY) {
-			do_warn(_("Bad flags set in inode %" PRIu64), lino);
-			flags &= ~XFS_DIFLAG_ANY;
+			if (!uncertain) {
+				do_warn(
+	_("Bad flags set in inode %" PRIu64 "\n"),
+					lino);
+			}
+			flags &= XFS_DIFLAG_ANY;
 		}
 
 		if (flags & (XFS_DIFLAG_REALTIME | XFS_DIFLAG_RTINHERIT)) {
 			/* need an rt-dev! */
 			if (!rt_name) {
-				do_warn(
-	_("inode %" PRIu64 " has RT flag set but there is no RT device"),
-					lino);
+				if (!uncertain) {
+					do_warn(
+	_("inode %" PRIu64 " has RT flag set but there is no RT device\n"),
+						lino);
+				}
 				flags &= ~(XFS_DIFLAG_REALTIME |
 						XFS_DIFLAG_RTINHERIT);
 			}
@@ -2616,8 +2433,11 @@ _("bad (negative) size %" PRId64 " on inode %" PRIu64 "\n"),
 		if (flags & XFS_DIFLAG_NEWRTBM) {
 			/* must be a rt bitmap inode */
 			if (lino != mp->m_sb.sb_rbmino) {
-				do_warn(_("inode %" PRIu64 " not rt bitmap"),
-					lino);
+				if (!uncertain) {
+					do_warn(
+	_("inode %" PRIu64 " not rt bitmap\n"),
+						lino);
+				}
 				flags &= ~XFS_DIFLAG_NEWRTBM;
 			}
 		}
@@ -2627,32 +2447,127 @@ _("bad (negative) size %" PRId64 " on inode %" PRIu64 "\n"),
 			     XFS_DIFLAG_NOSYMLINKS)) {
 			/* must be a directory */
 			if (di_mode && !S_ISDIR(di_mode)) {
-				do_warn(
-	_("directory flags set on non-directory inode %" PRIu64 ),
-					lino);
+				if (!uncertain) {
+					do_warn(
+	_("directory flags set on non-directory inode %" PRIu64 "\n" ),
+						lino);
+				}
 				flags &= ~(XFS_DIFLAG_RTINHERIT |
 						XFS_DIFLAG_EXTSZINHERIT |
 						XFS_DIFLAG_PROJINHERIT |
 						XFS_DIFLAG_NOSYMLINKS);
 			}
 		}
-		if (flags & (XFS_DIFLAG_REALTIME | XFS_XFLAG_EXTSIZE)) {
+		if (flags & (XFS_DIFLAG_REALTIME | FS_XFLAG_EXTSIZE)) {
 			/* must be a file */
 			if (di_mode && !S_ISREG(di_mode)) {
-				do_warn(
-	_("file flags set on non-file inode %" PRIu64),
-					lino);
+				if (!uncertain) {
+					do_warn(
+	_("file flags set on non-file inode %" PRIu64 "\n"),
+						lino);
+				}
 				flags &= ~(XFS_DIFLAG_REALTIME |
-						XFS_XFLAG_EXTSIZE);
+						FS_XFLAG_EXTSIZE);
 			}
 		}
 		if (!verify_mode && flags != be16_to_cpu(dino->di_flags)) {
 			if (!no_modify) {
-				do_warn(_(", fixing bad flags.\n"));
+				do_warn(_("fixing bad flags.\n"));
 				dino->di_flags = cpu_to_be16(flags);
 				*dirty = 1;
 			} else
-				do_warn(_(", would fix bad flags.\n"));
+				do_warn(_("would fix bad flags.\n"));
+		}
+	}
+
+	/*
+	 * check that we only have valid flags2 set, and those that are set make
+	 * sense.
+	 */
+	if (dino->di_version >= 3) {
+		uint16_t flags = be16_to_cpu(dino->di_flags);
+		uint64_t flags2 = be64_to_cpu(dino->di_flags2);
+
+		if (flags2 & ~XFS_DIFLAG2_ANY) {
+			if (!uncertain) {
+				do_warn(
+	_("Bad flags2 set in inode %" PRIu64 "\n"),
+					lino);
+			}
+			flags2 &= XFS_DIFLAG2_ANY;
+		}
+
+		if ((flags2 & XFS_DIFLAG2_REFLINK) &&
+		    !xfs_sb_version_hasreflink(&mp->m_sb)) {
+			if (!uncertain) {
+				do_warn(
+	_("inode %" PRIu64 " is marked reflinked but file system does not support reflink\n"),
+					lino);
+			}
+			goto clear_bad_out;
+		}
+
+		if (flags2 & XFS_DIFLAG2_REFLINK) {
+			/* must be a file */
+			if (di_mode && !S_ISREG(di_mode)) {
+				if (!uncertain) {
+					do_warn(
+	_("reflink flag set on non-file inode %" PRIu64 "\n"),
+						lino);
+				}
+				goto clear_bad_out;
+			}
+		}
+
+		if ((flags2 & XFS_DIFLAG2_REFLINK) &&
+		    (flags & (XFS_DIFLAG_REALTIME | XFS_DIFLAG_RTINHERIT))) {
+			if (!uncertain) {
+				do_warn(
+	_("Cannot have a reflinked realtime inode %" PRIu64 "\n"),
+					lino);
+			}
+			goto clear_bad_out;
+		}
+
+		if ((flags2 & XFS_DIFLAG2_COWEXTSIZE) &&
+		    !xfs_sb_version_hasreflink(&mp->m_sb)) {
+			if (!uncertain) {
+				do_warn(
+	_("inode %" PRIu64 " has CoW extent size hint but file system does not support reflink\n"),
+					lino);
+			}
+			flags2 &= ~XFS_DIFLAG2_COWEXTSIZE;
+		}
+
+		if (flags2 & XFS_DIFLAG2_COWEXTSIZE) {
+			/* must be a directory or file */
+			if (di_mode && !S_ISDIR(di_mode) && !S_ISREG(di_mode)) {
+				if (!uncertain) {
+					do_warn(
+	_("CoW extent size flag set on non-file, non-directory inode %" PRIu64 "\n" ),
+						lino);
+				}
+				flags2 &= ~XFS_DIFLAG2_COWEXTSIZE;
+			}
+		}
+
+		if ((flags2 & XFS_DIFLAG2_COWEXTSIZE) &&
+		    (flags & (XFS_DIFLAG_REALTIME | XFS_DIFLAG_RTINHERIT))) {
+			if (!uncertain) {
+				do_warn(
+	_("Cannot have CoW extent size hint on a realtime inode %" PRIu64 "\n"),
+					lino);
+			}
+			flags2 &= ~XFS_DIFLAG2_COWEXTSIZE;
+		}
+
+		if (!verify_mode && flags2 != be64_to_cpu(dino->di_flags2)) {
+			if (!no_modify) {
+				do_warn(_("fixing bad flags2.\n"));
+				dino->di_flags2 = cpu_to_be64(flags2);
+				*dirty = 1;
+			} else
+				do_warn(_("would fix bad flags2.\n"));
 		}
 	}
 
@@ -2739,6 +2654,29 @@ _("bad non-zero extent size %u for non-realtime/extsize inode %" PRIu64 ", "),
 	}
 
 	/*
+	 * Only (regular files and directories) with COWEXTSIZE flags
+	 * set can have extsize set.
+	 */
+	if (dino->di_version >= 3 &&
+	    be32_to_cpu(dino->di_cowextsize) != 0) {
+		if ((type == XR_INO_DIR || type == XR_INO_DATA) &&
+		    (be64_to_cpu(dino->di_flags2) &
+					XFS_DIFLAG2_COWEXTSIZE)) {
+			/* s'okay */ ;
+		} else {
+			do_warn(
+_("Cannot have non-zero CoW extent size %u on non-cowextsize inode %" PRIu64 ", "),
+					be32_to_cpu(dino->di_cowextsize), lino);
+			if (!no_modify)  {
+				do_warn(_("resetting to zero\n"));
+				dino->di_cowextsize = 0;
+				*dirty = 1;
+			} else
+				do_warn(_("would reset to zero\n"));
+		}
+	}
+
+	/*
 	 * general size/consistency checks:
 	 */
 	if (process_check_inode_sizes(mp, dino, lino, type) != 0)
@@ -2749,6 +2687,12 @@ _("bad non-zero extent size %u for non-realtime/extsize inode %" PRIu64 ", "),
 	 */
 	if (process_check_inode_forkoff(mp, dino, lino) != 0)
 		goto clear_bad_out;
+
+	/*
+	 * record the state of the reflink flag
+	 */
+	if (collect_rmaps)
+		record_inode_reflink_flag(mp, dino, agno, ino, lino);
 
 	/*
 	 * check data fork -- if it's bad, clear the inode
@@ -2784,10 +2728,7 @@ _("bad non-zero extent size %u for non-realtime/extsize inode %" PRIu64 ", "),
 	 */
 	switch (type)  {
 	case XR_INO_DIR:
-		if (xfs_sb_version_hasdirv2(&mp->m_sb) ?
-				process_dir2(mp, lino, dino, ino_discovery,
-						dirty, "", parent, dblkmap) :
-				process_dir(mp, lino, dino, ino_discovery,
+		if (process_dir2(mp, lino, dino, ino_discovery,
 						dirty, "", parent, dblkmap)) {
 			do_warn(
 	_("problem with directory contents in inode %" PRIu64 "\n"),

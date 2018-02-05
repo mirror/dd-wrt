@@ -16,15 +16,17 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/xfs.h>
-#include <xfs/command.h>
-#include <xfs/input.h>
+#include <pthread.h>
+#include "platform_defs.h"
+#include "command.h"
+#include "input.h"
 #include "init.h"
 #include "io.h"
 
 char	*progname;
 int	exitcode;
 int	expert;
+int	idlethread;
 size_t	pagesize;
 struct timeval stopwatch;
 
@@ -32,7 +34,7 @@ void
 usage(void)
 {
 	fprintf(stderr,
-		_("Usage: %s [-adFfmrRstx] [-p prog] [-c cmd]... file\n"),
+		_("Usage: %s [-adfinrRstVx] [-m mode] [-p prog] [-c cmd]... file\n"),
 		progname);
 	exit(1);
 }
@@ -56,14 +58,17 @@ init_commands(void)
 {
 	attr_init();
 	bmap_init();
+	copy_range_init();
 	fadvise_init();
 	file_init();
+	flink_init();
 	freeze_init();
 	fsync_init();
 	getrusage_init();
 	help_init();
 	imap_init();
 	inject_init();
+	seek_init();
 	madvise_init();
 	mincore_init();
 	mmap_init();
@@ -74,10 +79,15 @@ init_commands(void)
 	fiemap_init();
 	pwrite_init();
 	quit_init();
+	readdir_init();
 	resblks_init();
 	sendfile_init();
 	shutdown_init();
+	sync_init();
+	sync_range_init();
 	truncate_init();
+	reflink_init();
+	cowextsize_init();
 }
 
 static int
@@ -133,7 +143,7 @@ init(
 	pagesize = getpagesize();
 	gettimeofday(&stopwatch, NULL);
 
-	while ((c = getopt(argc, argv, "ac:dFfmp:nrRstVx")) != EOF) {
+	while ((c = getopt(argc, argv, "ac:dFfim:p:nrRstTVx")) != EOF) {
 		switch (c) {
 		case 'a':
 			flags |= IO_APPEND;
@@ -145,10 +155,13 @@ init(
 			flags |= IO_DIRECT;
 			break;
 		case 'F':
-			flags |= IO_FOREIGN;
+			/* Ignored / deprecated now, handled automatically */
 			break;
 		case 'f':
 			flags |= IO_CREAT;
+			break;
+		case 'i':
+			idlethread = 1;
 			break;
 		case 'm':
 			mode = strtoul(optarg, &sp, 0);
@@ -176,6 +189,9 @@ init(
 		case 'R':
 			flags |= IO_REALTIME;
 			break;
+		case 'T':
+			flags |= IO_TMPFILE;
+			break;
 		case 'x':
 			expert = 1;
 			break;
@@ -188,9 +204,10 @@ init(
 	}
 
 	while (optind < argc) {
-		if ((c = openfile(argv[optind], flags & IO_FOREIGN ?
-					NULL : &geometry, flags, mode)) < 0)
+		if ((c = openfile(argv[optind], &geometry, flags, mode)) < 0)
 			exit(1);
+		if (!platform_test_xfs_fd(c))
+			flags |= IO_FOREIGN;
 		if (addfile(argv[optind], c, &geometry, flags) < 0)
 			exit(1);
 		optind++;
@@ -201,12 +218,38 @@ init(
 	add_check_command(init_check_command);
 }
 
+/*
+ * The purpose of this idle thread is to test io from a multi threaded process.
+ * With single threaded process, the file table is not shared and file structs
+ * are not reference counted. Spawning an idle thread can help detecting file
+ * struct reference leaks.
+ */
+void *
+idle_loop(void *arg)
+{
+	for (;;)
+		pause();
+}
+
+void
+start_idle_thread()
+{
+	pthread_t t;
+
+	if (pthread_create(&t, NULL, idle_loop, NULL)) {
+		fprintf(stderr, "Error creating idle thread\n");
+		exit(1);
+	}
+}
+
 int
 main(
 	int	argc,
 	char	**argv)
 {
 	init(argc, argv);
+	if (idlethread)
+		start_idle_thread();
 	command_loop();
 	return exitcode;
 }

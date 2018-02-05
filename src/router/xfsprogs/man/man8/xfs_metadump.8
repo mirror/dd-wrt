@@ -4,13 +4,19 @@ xfs_metadump \- copy XFS filesystem metadata to a file
 .SH SYNOPSIS
 .B xfs_metadump
 [
-.B \-efgow
+.B \-aefFgow
+] [
+.B \-m
+.I max_extents
+]
 ] [
 .B \-l
 .I logdev
 ]
 .I source
 .I target
+.br
+.B xfs_metadump \-V
 .SH DESCRIPTION
 .B xfs_metadump
 is a debugging tool that copies the metadata from an XFS filesystem to a file.
@@ -26,10 +32,8 @@ is \-, then the output is sent to stdout. This allows the output to be
 redirected to another program such as a compression application.
 .PP
 .B xfs_metadump
-should only be used to copy unmounted filesystems, read-only mounted
-filesystems, or frozen filesystems (see
-.BR xfs_freeze (8)).
-Otherwise, the generated dump could be inconsistent or corrupt.
+may only be used to copy unmounted filesystems, or read-only mounted
+filesystems.
 .PP
 .B xfs_metadump
 does not alter the source filesystem in any way. The
@@ -70,6 +74,14 @@ tool.
 .PP
 .SH OPTIONS
 .TP
+.B \-a
+Copies entire metadata blocks.  Normally,
+.B xfs_metadump
+will zero any stale
+bytes interspersed with in-use metadata.  Use this option to copy full metadata
+blocks, to provide more debugging information for a corrupted filesystem.  Note
+that the extra data will be unobfuscated.
+.TP
 .B \-e
 Stops the dump on a read error. Normally, it will ignore read errors and copy
 all the metadata that is accessible.
@@ -81,6 +93,11 @@ Specifies that the filesystem image to be processed is stored in a regular file
 file option). This can also happen if an image copy of a filesystem has
 been made into an ordinary file with
 .BR xfs_copy (8).
+.TP
+.B \-F
+Specifies that we want to continue even if the superblock magic is not correct.
+If the source is truly not an XFS filesystem, the resulting image will be useless,
+and xfs_metadump may crash.
 .TP
 .B \-g
 Shows dump progress. This is sent to stdout if the
@@ -94,12 +111,20 @@ For filesystems which use an external log, this specifies the device where the
 external log resides. The external log is not copied, only internal logs are
 copied.
 .TP
+.B \-m
+Set the maximum size of an allowed metadata extent.  Extremely large metadata
+extents are likely to be corrupt, and will be skipped if they exceed
+this value.  The default size is 1000 blocks.
+.TP
 .B \-o
 Disables obfuscation of file names and extended attributes.
 .TP
 .B \-w
 Prints warnings of inconsistent metadata encountered to stderr. Bad metadata
 is still copied.
+.TP
+.B \-V
+Prints the version number and exits.
 .SH DIAGNOSTICS
 .B xfs_metadump
 returns an exit code of 0 if all readable metadata is successfully copied or
@@ -129,4 +154,4 @@ command.
 .BR xfs (5)
 .SH BUGS
 Email bug reports to
-.BR xfs@oss.sgi.com .
+.BR linux-xfs@vger.kernel.org .

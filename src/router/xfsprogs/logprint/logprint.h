@@ -18,8 +18,6 @@
 #ifndef LOGPRINT_H
 #define LOGPRINT_H
 
-#include <xfs/libxlog.h>
-
 /* command line flags */
 extern int	print_data;
 extern int	print_only_data;
@@ -32,14 +30,12 @@ extern int	print_no_data;
 extern int	print_no_print;
 
 /* exports */
-extern char *trans_type[];
+extern void xlog_print_lseek(struct xlog *, int, xfs_daddr_t, int);
 
-extern void xlog_print_lseek(xlog_t *, int, xfs_daddr_t, int);
-
-extern void xfs_log_copy(xlog_t *, int, char *);
-extern void xfs_log_dump(xlog_t *, int, int);
-extern void xfs_log_print(xlog_t *, int, int);
-extern void xfs_log_print_trans(xlog_t *, int);
+extern void xfs_log_copy(struct xlog *, int, char *);
+extern void xfs_log_dump(struct xlog *, int, int);
+extern void xfs_log_print(struct xlog *, int, int);
+extern void xfs_log_print_trans(struct xlog *, int);
 
 extern void print_xlog_record_line(void);
 extern void print_xlog_op_line(void);
@@ -47,6 +43,25 @@ extern void print_stars(void);
 
 extern xfs_inode_log_format_t *
 	xfs_inode_item_format_convert(char *, uint, xfs_inode_log_format_t *);
-extern int xfs_efi_copy_format(char *, uint, xfs_efi_log_format_t *);
+
+extern int xlog_print_trans_efi(char **ptr, uint src_len, int continued);
+extern void xlog_recover_print_efi(xlog_recover_item_t *item);
+extern int xlog_print_trans_efd(char **ptr, uint len);
+extern void xlog_recover_print_efd(xlog_recover_item_t *item);
+
+extern int xlog_print_trans_rui(char **ptr, uint src_len, int continued);
+extern void xlog_recover_print_rui(struct xlog_recover_item *item);
+extern int xlog_print_trans_rud(char **ptr, uint len);
+extern void xlog_recover_print_rud(struct xlog_recover_item *item);
+
+extern int xlog_print_trans_cui(char **ptr, uint src_len, int continued);
+extern void xlog_recover_print_cui(struct xlog_recover_item *item);
+extern int xlog_print_trans_cud(char **ptr, uint len);
+extern void xlog_recover_print_cud(struct xlog_recover_item *item);
+
+extern int xlog_print_trans_bui(char **ptr, uint src_len, int continued);
+extern void xlog_recover_print_bui(struct xlog_recover_item *item);
+extern int xlog_print_trans_bud(char **ptr, uint len);
+extern void xlog_recover_print_bud(struct xlog_recover_item *item);
 
 #endif	/* LOGPRINT_H */

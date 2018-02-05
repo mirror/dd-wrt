@@ -16,9 +16,8 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/xfs.h>
-#include <xfs/command.h>
-#include <xfs/input.h>
+#include "command.h"
+#include "input.h"
 #include "init.h"
 #include "io.h"
 
@@ -75,7 +74,19 @@ error_tag(char *name)
 		{ XFS_ERRTAG_DIOWRITE_IOERR,		"diowrite" },
 #define XFS_ERRTAG_BMAPIFORMAT                          21
 		{ XFS_ERRTAG_BMAPIFORMAT,		"bmapifmt" },
-#define XFS_ERRTAG_MAX                                  22
+#define XFS_ERRTAG_FREE_EXTENT				22
+		{ XFS_ERRTAG_FREE_EXTENT,		"free_extent" },
+#define XFS_ERRTAG_RMAP_FINISH_ONE			23
+		{ XFS_ERRTAG_RMAP_FINISH_ONE,		"rmap_finish_one" },
+#define XFS_ERRTAG_REFCOUNT_CONTINUE_UPDATE		24
+		{ XFS_ERRTAG_REFCOUNT_CONTINUE_UPDATE,	"refcount_continue_update" },
+#define XFS_ERRTAG_REFCOUNT_FINISH_ONE			25
+		{ XFS_ERRTAG_REFCOUNT_FINISH_ONE,	"refcount_finish_one" },
+#define XFS_ERRTAG_BMAP_FINISH_ONE			26
+		{ XFS_ERRTAG_BMAP_FINISH_ONE,		"bmap_finish_one" },
+#define XFS_ERRTAG_AG_RESV_CRITICAL			27
+		{ XFS_ERRTAG_AG_RESV_CRITICAL,		"ag_resv_critical" },
+#define XFS_ERRTAG_MAX                                  28
 		{ XFS_ERRTAG_MAX,			NULL }
 	};
 	int	count;

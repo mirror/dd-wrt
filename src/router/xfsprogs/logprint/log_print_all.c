@@ -15,6 +15,8 @@
  * along with this program; if not, write the Free Software Foundation,
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include "libxfs.h"
+#include "libxlog.h"
 
 #include "logprint.h"
 
@@ -23,13 +25,13 @@
  */
 int
 xlog_print_find_oldest(
-	struct log	*log,
+	struct xlog	*log,
 	xfs_daddr_t	*last_blk)
 {
 	xfs_buf_t	*bp;
 	xfs_daddr_t	first_blk;
 	uint		first_half_cycle, last_half_cycle;
-	int		error;
+	int		error = 0;
 
 	if (xlog_find_zeroed(log, &first_blk))
 		return 0;
@@ -43,22 +45,19 @@ xlog_print_find_oldest(
 	last_half_cycle = xlog_get_cycle(XFS_BUF_PTR(bp));
 	ASSERT(last_half_cycle != 0);
 
-	if (first_half_cycle == last_half_cycle) { /* all cycle nos are same */
+	if (first_half_cycle == last_half_cycle) /* all cycle nos are same */
 		*last_blk = 0;
-	} else {		/* have 1st and last; look for middle cycle */
+	else		/* have 1st and last; look for middle cycle */
 		error = xlog_find_cycle_start(log, bp, first_blk,
 					      last_blk, last_half_cycle);
-		if (error)
-			return error;
-	}
 
 	xlog_put_bp(bp);
-	return 0;
+	return error;
 }
 
 void
 xlog_recover_print_data(
-	xfs_caddr_t	p,
+	char		*p,
 	int		len)
 {
 	if (print_data) {
@@ -86,13 +85,12 @@ xlog_recover_print_buffer(
 	xfs_agi_t		*agi;
 	xfs_agf_t		*agf;
 	xfs_buf_log_format_t	*f;
-	xfs_caddr_t		p;
+	char			*p;
 	int			len, num, i;
 	xfs_daddr_t		blkno;
 	xfs_disk_dquot_t	*ddq;
 
 	f = (xfs_buf_log_format_t *)item->ri_buf[0].i_addr;
-	len = item->ri_buf[0].i_len;
 	printf("	");
 	ASSERT(f->blf_type == XFS_LI_BUF);
 	printf(_("BUF:  #regs:%d   start blkno:0x%llx   len:%d   bmap size:%d   flags:0x%x\n"),
@@ -106,7 +104,7 @@ xlog_recover_print_buffer(
 		i++;
 		if (blkno == 0) { /* super block */
 			printf(_("	SUPER Block Buffer:\n"));
-			if (!print_buffer) 
+			if (!print_buffer)
 				continue;
 		       printf(_("              icount:%llu ifree:%llu  "),
 			       (unsigned long long)
@@ -122,9 +120,10 @@ xlog_recover_print_buffer(
 			       be32_to_cpu(*(__be32 *)(p+56)),
 			       be32_to_cpu(*(__be32 *)(p+60)));
 		} else if (be32_to_cpu(*(__be32 *)p) == XFS_AGI_MAGIC) {
+			int bucket, buckets;
 			agi = (xfs_agi_t *)p;
 			printf(_("	AGI Buffer: (XAGI)\n"));
-			if (!print_buffer) 
+			if (!print_buffer)
 				continue;
 			printf(_("		ver:%d  "),
 				be32_to_cpu(agi->agi_versionnum));
@@ -137,10 +136,28 @@ xlog_recover_print_buffer(
 				be32_to_cpu(agi->agi_level),
 				be32_to_cpu(agi->agi_freecount),
 				be32_to_cpu(agi->agi_newino));
+			if (len == 128) {
+				buckets = 17;
+			} else if (len == 256) {
+				buckets = 32 + 17;
+			} else {
+				buckets = XFS_AGI_UNLINKED_BUCKETS;
+			}
+			for (bucket = 0; bucket < buckets;) {
+				int col;
+				printf(_("bucket[%d - %d]: "), bucket, bucket+3);
+				for (col = 0; col < 4; col++, bucket++) {
+					if (bucket < buckets) {
+						printf("0x%x ",
+			be32_to_cpu(agi->agi_unlinked[bucket]));
+					}
+				}
+				printf("\n");
+			}
 		} else if (be32_to_cpu(*(__be32 *)p) == XFS_AGF_MAGIC) {
 			agf = (xfs_agf_t *)p;
 			printf(_("	AGF Buffer: (XAGF)\n"));
-			if (!print_buffer) 
+			if (!print_buffer)
 				continue;
 			printf(_("		ver:%d  seq#:%d  len:%d  \n"),
 				be32_to_cpu(agf->agf_versionnum),
@@ -162,7 +179,7 @@ xlog_recover_print_buffer(
 		} else if (*(uint *)p == XFS_DQUOT_MAGIC) {
 			ddq = (xfs_disk_dquot_t *)p;
 			printf(_("	DQUOT Buffer:\n"));
-			if (!print_buffer) 
+			if (!print_buffer)
 				continue;
 			printf(_("		UIDs 0x%lx-0x%lx\n"),
 			       (unsigned long)be32_to_cpu(ddq->d_id),
@@ -233,17 +250,17 @@ xlog_recover_print_dquot(
 
 STATIC void
 xlog_recover_print_inode_core(
-	xfs_icdinode_t		*di)
+	struct xfs_log_dinode	*di)
 {
 	printf(_("	CORE inode:\n"));
 	if (!print_inode)
 		return;
-	printf(_("		magic:%c%c  mode:0x%x  ver:%d  format:%d  "
-	     "onlink:%d\n"),
+	printf(_("		magic:%c%c  mode:0x%x  ver:%d  format:%d\n"),
 	       (di->di_magic>>8) & 0xff, di->di_magic & 0xff,
-	       di->di_mode, di->di_version, di->di_format, di->di_onlink);
-	printf(_("		uid:%d  gid:%d  nlink:%d projid:%u\n"),
-	       di->di_uid, di->di_gid, di->di_nlink, xfs_get_projid(*di));
+	       di->di_mode, di->di_version, di->di_format);
+	printf(_("		uid:%d  gid:%d  nlink:%d projid:0x%04x%04x\n"),
+	       di->di_uid, di->di_gid, di->di_nlink,
+	       di->di_projid_hi, di->di_projid_lo);
 	printf(_("		atime:%d  mtime:%d  ctime:%d\n"),
 	       di->di_atime.t_sec, di->di_mtime.t_sec, di->di_ctime.t_sec);
 	printf(_("		flushiter:%d\n"), di->di_flushiter);
@@ -255,6 +272,10 @@ xlog_recover_print_inode_core(
 	     "gen:%d\n"),
 	       (int)di->di_forkoff, di->di_dmevmask, (int)di->di_dmstate,
 	       (int)di->di_flags, di->di_gen);
+	if (di->di_version == 3) {
+		printf(_("flags2 0x%llx cowextsize 0x%x\n"),
+			(unsigned long long)di->di_flags2, di->di_cowextsize);
+	}
 }
 
 STATIC void
@@ -276,8 +297,9 @@ xlog_recover_print_inode(
 	       f->ilf_dsize);
 
 	/* core inode comes 2nd */
-	ASSERT(item->ri_buf[1].i_len == sizeof(xfs_icdinode_t));
-	xlog_recover_print_inode_core((xfs_icdinode_t *)
+	ASSERT(item->ri_buf[1].i_len == xfs_log_dinode_size(2) ||
+		item->ri_buf[1].i_len == xfs_log_dinode_size(3));
+	xlog_recover_print_inode_core((struct xfs_log_dinode *)
 				      item->ri_buf[1].i_addr);
 
 	hasdata = (f->ilf_fields & XFS_ILOG_DFORK) != 0;
@@ -354,65 +376,20 @@ xlog_recover_print_inode(
 	}
 }
 
-STATIC void
-xlog_recover_print_efd(
-	xlog_recover_item_t	*item)
-{
-	xfs_efd_log_format_t	*f;
-
-	f = (xfs_efd_log_format_t *)item->ri_buf[0].i_addr;
-	/*
-	 * An xfs_efd_log_format structure contains a variable length array
-	 * as the last field.
-	 * Each element is of size xfs_extent_32_t or xfs_extent_64_t.
-	 * However, the extents are never used and won't be printed.
-	 */
-	printf(_("	EFD:  #regs: %d    num_extents: %d  id: 0x%llx\n"),
-	       f->efd_size, f->efd_nextents, (unsigned long long)f->efd_efi_id);
-}
-
 
 STATIC void
-xlog_recover_print_efi(
-	xlog_recover_item_t	*item)
+xlog_recover_print_icreate(
+	struct xlog_recover_item	*item)
 {
-	xfs_efi_log_format_t	*f, *src_f;
-	xfs_extent_t		*ex;
-	int			i;
-	uint			src_len, dst_len;
+	struct xfs_icreate_log	*icl;
 
-	src_f = (xfs_efi_log_format_t *)item->ri_buf[0].i_addr;
-	src_len = item->ri_buf[0].i_len;
-	/*
-	 * An xfs_efi_log_format structure contains a variable length array
-	 * as the last field.
-	 * Each element is of size xfs_extent_32_t or xfs_extent_64_t.
-	 * Need to convert to native format.
-	 */
-	dst_len = sizeof(xfs_efi_log_format_t) + (src_f->efi_nextents - 1) * sizeof(xfs_extent_t);
-	if ((f = (xfs_efi_log_format_t *)malloc(dst_len)) == NULL) {
-	    fprintf(stderr, _("%s: xlog_recover_print_efi: malloc failed\n"), progname);
-	    exit(1);
-	}
-	if (xfs_efi_copy_format((char*)src_f, src_len, f)) {
-	    free(f);
-	    return;
-	}
+	icl = (struct xfs_icreate_log *)item->ri_buf[0].i_addr;
 
-	printf(_("	EFI:  #regs:%d    num_extents:%d  id:0x%llx\n"),
-	       f->efi_size, f->efi_nextents, (unsigned long long)f->efi_id);
-	ex = f->efi_extents;
-	printf("	");
-	for (i=0; i< f->efi_nextents; i++) {
-		printf("(s: 0x%llx, l: %d) ",
-			(unsigned long long)ex->ext_start, ex->ext_len);
-		if (i % 4 == 3)
-			printf("\n");
-		ex++;
-	}
-	if (i % 4 != 0)
-		printf("\n");
-	free(f);
+	printf(_("	ICR:  #ag: %d  agbno: 0x%x  len: %d\n"
+		 "	      cnt: %d  isize: %d    gen: 0x%x\n"),
+		be32_to_cpu(icl->icl_ag), be32_to_cpu(icl->icl_agbno),
+		be32_to_cpu(icl->icl_length), be32_to_cpu(icl->icl_count),
+		be32_to_cpu(icl->icl_isize), be32_to_cpu(icl->icl_gen));
 }
 
 void
@@ -423,6 +400,9 @@ xlog_recover_print_logitem(
 	case XFS_LI_BUF:
 		xlog_recover_print_buffer(item);
 		break;
+	case XFS_LI_ICREATE:
+		xlog_recover_print_icreate(item);
+		break;
 	case XFS_LI_INODE:
 		xlog_recover_print_inode(item);
 		break;
@@ -431,6 +411,24 @@ xlog_recover_print_logitem(
 		break;
 	case XFS_LI_EFI:
 		xlog_recover_print_efi(item);
+		break;
+	case XFS_LI_RUD:
+		xlog_recover_print_rud(item);
+		break;
+	case XFS_LI_RUI:
+		xlog_recover_print_rui(item);
+		break;
+	case XFS_LI_CUD:
+		xlog_recover_print_cud(item);
+		break;
+	case XFS_LI_CUI:
+		xlog_recover_print_cui(item);
+		break;
+	case XFS_LI_BUD:
+		xlog_recover_print_bud(item);
+		break;
+	case XFS_LI_BUI:
+		xlog_recover_print_bui(item);
 		break;
 	case XFS_LI_DQUOT:
 		xlog_recover_print_dquot(item);
@@ -454,6 +452,9 @@ xlog_recover_print_item(
 	case XFS_LI_BUF:
 		printf("BUF");
 		break;
+	case XFS_LI_ICREATE:
+		printf("ICR");
+		break;
 	case XFS_LI_INODE:
 		printf("INO");
 		break;
@@ -462,6 +463,24 @@ xlog_recover_print_item(
 		break;
 	case XFS_LI_EFI:
 		printf("EFI");
+		break;
+	case XFS_LI_RUD:
+		printf("RUD");
+		break;
+	case XFS_LI_RUI:
+		printf("RUI");
+		break;
+	case XFS_LI_CUD:
+		printf("CUD");
+		break;
+	case XFS_LI_CUI:
+		printf("CUI");
+		break;
+	case XFS_LI_BUD:
+		printf("BUD");
+		break;
+	case XFS_LI_BUI:
+		printf("BUI");
 		break;
 	case XFS_LI_DQUOT:
 		printf("DQ ");

@@ -18,7 +18,10 @@
 #ifndef __COMMAND_H__
 #define __COMMAND_H__
 
-#define CMD_FLAG_GLOBAL	((int)0x80000000)	/* don't iterate "args" */
+#include <sys/time.h>
+
+#define CMD_FLAG_GLOBAL		(1<<31)	/* don't iterate "args" */
+#define CMD_FLAG_FOREIGN_OK	(1<<30)	/* command not restricted to XFS */
 
 typedef int (*cfunc_t)(int argc, char **argv);
 typedef void (*helpfunc_t)(void);
@@ -55,5 +58,9 @@ extern const cmdinfo_t	*find_command(const char *cmd);
 extern void		command_loop(void);
 extern int		command_usage(const cmdinfo_t *ci);
 extern int		command(const cmdinfo_t *ci, int argc, char **argv);
+
+extern void		report_io_times(const char *verb, struct timeval *t2,
+					long long offset, long long count,
+					long long total, int ops, int compact);
 
 #endif	/* __COMMAND_H__ */

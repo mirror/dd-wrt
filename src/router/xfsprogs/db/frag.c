@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include <sys/time.h>
 #include "bmap.h"
 #include "command.h"
@@ -172,6 +172,10 @@ frag_f(
 		answer = 0.0;
 	dbprintf(_("actual %llu, ideal %llu, fragmentation factor %.2f%%\n"),
 		extcount_actual, extcount_ideal, answer);
+	dbprintf(_("Note, this number is largely meaningless.\n"));
+	answer = (double)extcount_actual / (double)extcount_ideal;
+	dbprintf(_("Files on this filesystem average %.2f extents per file\n"),
+		answer);
 	return 0;
 }
 
@@ -227,11 +231,11 @@ process_bmbt_reclist(
 	int			numrecs,
 	extmap_t		**extmapp)
 {
-	xfs_dfilblks_t		c;
+	xfs_filblks_t		c;
 	int			f;
 	int			i;
-	xfs_dfiloff_t		o;
-	xfs_dfsbno_t		s;
+	xfs_fileoff_t		o;
+	xfs_fsblock_t		s;
 
 	for (i = 0; i < numrecs; i++, rp++) {
 		convert_extent(rp, &o, &s, &c, &f);
@@ -256,10 +260,10 @@ process_btinode(
 		return;
 	}
 	pp = XFS_BMDR_PTR_ADDR(dib, 1,
-		xfs_bmdr_maxrecs(mp, XFS_DFORK_SIZE(dip, mp, whichfork), 0));
+		libxfs_bmdr_maxrecs(XFS_DFORK_SIZE(dip, mp, whichfork), 0));
 	for (i = 0; i < be16_to_cpu(dib->bb_numrecs); i++)
-		scan_lbtree(be64_to_cpu(pp[i]), be16_to_cpu(dib->bb_level), 
-			scanfunc_bmap, extmapp,
+		scan_lbtree(get_unaligned_be64(&pp[i]),
+			 be16_to_cpu(dib->bb_level), scanfunc_bmap, extmapp,
 			whichfork == XFS_DATA_FORK ? TYP_BMAPBTD : TYP_BMAPBTA);
 }
 
@@ -326,7 +330,8 @@ process_inode(
 			skipd = 1;
 		else if (!qflag &&
 			 (ino == mp->m_sb.sb_uquotino ||
-			  ino == mp->m_sb.sb_gquotino))
+			  ino == mp->m_sb.sb_gquotino ||
+			  ino == mp->m_sb.sb_pquotino))
 			skipd = 1;
 		else
 			skipd = !fflag;
@@ -376,7 +381,7 @@ scan_ag(
 		pop_cur();
 		return;
 	}
-	scan_sbtree(agf, be32_to_cpu(agi->agi_root), 
+	scan_sbtree(agf, be32_to_cpu(agi->agi_root),
 			be32_to_cpu(agi->agi_level), scanfunc_ino, TYP_INOBT);
 	pop_cur();
 	pop_cur();
@@ -456,7 +461,7 @@ scanfunc_bmap(
 	}
 	pp = XFS_BMBT_PTR_ADDR(mp, block, 1, mp->m_bmap_dmxr[0]);
 	for (i = 0; i < nrecs; i++)
-		scan_lbtree(be64_to_cpu(pp[i]), level, scanfunc_bmap, extmapp, 
+		scan_lbtree(be64_to_cpu(pp[i]), level, scanfunc_bmap, extmapp,
 									btype);
 }
 
@@ -483,7 +488,7 @@ scanfunc_ino(
 			set_cur(&typtab[TYP_INODE],
 				XFS_AGB_TO_DADDR(mp, seqno,
 						 XFS_AGINO_TO_AGBNO(mp, agino)),
-				XFS_FSB_TO_BB(mp, XFS_IALLOC_BLOCKS(mp)),
+				XFS_FSB_TO_BB(mp, mp->m_ialloc_blks),
 				DB_RING_IGN, NULL);
 			if (iocur_top->data == NULL) {
 				dbprintf(_("can't read inode block %u/%u\n"),
@@ -494,7 +499,7 @@ scanfunc_ino(
 				if (XFS_INOBT_IS_FREE_DISK(&rp[i], j))
 					continue;
 				process_inode(agf, agino + j, (xfs_dinode_t *)
-					((char *)iocur_top->data + 
+					((char *)iocur_top->data +
 					((off + j) << mp->m_sb.sb_inodelog)));
 			}
 			pop_cur();
@@ -503,6 +508,6 @@ scanfunc_ino(
 	}
 	pp = XFS_INOBT_PTR_ADDR(mp, block, 1, mp->m_inobt_mxr[1]);
 	for (i = 0; i < be16_to_cpu(block->bb_numrecs); i++)
-		scan_sbtree(agf, be32_to_cpu(pp[i]), level, scanfunc_ino, 
+		scan_sbtree(agf, be32_to_cpu(pp[i]), level, scanfunc_ino,
 								TYP_INOBT);
 }

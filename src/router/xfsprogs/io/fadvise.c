@@ -16,9 +16,8 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/xfs.h>
-#include <xfs/command.h>
-#include <xfs/input.h>
+#include "command.h"
+#include "input.h"
 #include "init.h"
 #include "io.h"
 
@@ -104,7 +103,7 @@ fadvise_f(
 		return command_usage(&fadvise_cmd);
 	}
 
-	if (posix_fadvise64(file->fd, offset, length, advise) < 0) {
+	if (posix_fadvise(file->fd, offset, length, advise) < 0) {
 		perror("fadvise");
 		return 0;
 	}

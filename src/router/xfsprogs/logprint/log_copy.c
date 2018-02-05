@@ -15,6 +15,8 @@
  * along with this program; if not, write the Free Software Foundation,
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include "libxfs.h"
+#include "libxlog.h"
 
 #include "logprint.h"
 
@@ -24,7 +26,7 @@
 
 void
 xfs_log_copy(
-	xlog_t		*log,
+	struct xlog	*log,
 	int		fd,
 	char		*filename)
 {

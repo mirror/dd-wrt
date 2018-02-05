@@ -32,6 +32,8 @@
 #define Q_XGETQSTAT	XQM_CMD(5)	/* get quota subsystem status */
 #define Q_XQUOTARM	XQM_CMD(6)	/* free disk space used by dquots */
 #define Q_XQUOTASYNC	XQM_CMD(7)	/* delalloc flush, updates dquots */
+#define Q_XGETQSTATV	XQM_CMD(8)	/* newer version of get quota */
+#define Q_XGETNEXTQUOTA	XQM_CMD(9)	/* get disk limits and usage */
 
 /*
  * fs_disk_quota structure:
@@ -55,14 +57,14 @@ typedef struct fs_disk_quota {
 	__s32		d_itimer;	/* zero if within inode limits */
 					/* if not, we refuse service */
 	__s32		d_btimer;	/* similar to above; for disk blocks */
-	__u16	  	d_iwarns;       /* # warnings issued wrt num inodes */
-	__u16	  	d_bwarns;       /* # warnings issued wrt disk blocks */
+	__u16		d_iwarns;	/* # warnings issued wrt num inodes */
+	__u16		d_bwarns;	/* # warnings issued wrt disk blocks */
 	__s32		d_padding2;	/* padding2 - for future use */
 	__u64		d_rtb_hardlimit;/* absolute limit on realtime blks */
 	__u64		d_rtb_softlimit;/* preferred limit on RT disk blks */
 	__u64		d_rtbcount;	/* # realtime blocks owned */
 	__s32		d_rtbtimer;	/* similar to above; for RT disk blks */
-	__u16	  	d_rtbwarns;     /* # warnings issued wrt RT disk blks */
+	__u16		d_rtbwarns;	/* # warnings issued wrt RT disk blks */
 	__s16		d_padding3;	/* padding3 - for future use */
 	char		d_padding4[8];	/* yet more padding */
 } fs_disk_quota_t;
@@ -73,7 +75,7 @@ typedef struct fs_disk_quota {
 #define FS_DQ_ISOFT	(1<<0)
 #define FS_DQ_IHARD	(1<<1)
 #define FS_DQ_BSOFT	(1<<2)
-#define FS_DQ_BHARD 	(1<<3)
+#define FS_DQ_BHARD	(1<<3)
 #define FS_DQ_RTBSOFT	(1<<4)
 #define FS_DQ_RTBHARD	(1<<5)
 #define FS_DQ_LIMIT_MASK	(FS_DQ_ISOFT | FS_DQ_IHARD | FS_DQ_BSOFT | \
@@ -87,7 +89,7 @@ typedef struct fs_disk_quota {
  */
 #define FS_DQ_BTIMER	(1<<6)
 #define FS_DQ_ITIMER	(1<<7)
-#define FS_DQ_RTBTIMER 	(1<<8)
+#define FS_DQ_RTBTIMER	(1<<8)
 #define FS_DQ_TIMER_MASK	(FS_DQ_BTIMER | FS_DQ_ITIMER | FS_DQ_RTBTIMER)
 
 /*
@@ -147,5 +149,36 @@ typedef struct fs_quota_stat {
 	__u16		qs_bwarnlimit;	/* limit for num warnings */
 	__u16		qs_iwarnlimit;	/* limit for num warnings */
 } fs_quota_stat_t;
+
+
+#ifndef FS_QSTATV_VERSION1
+#define FS_QSTATV_VERSION1	1	/* fs_quota_statv.qs_version */
+#endif
+
+/*
+ * Some basic information about 'quota files' for Q_XGETQSTATV command
+ */
+struct fs_qfilestatv {
+	__u64		qfs_ino;	/* inode number */
+	__u64		qfs_nblks;	/* number of BBs 512-byte-blks */
+	__u32		qfs_nextents;	/* number of extents */
+	__u32		qfs_pad;	/* pad for 8-byte alignment */
+};
+
+struct fs_quota_statv {
+	__s8			qs_version;	/* version for future changes */
+	__u8			qs_pad1;	/* pad for 16bit alignment */
+	__u16			qs_flags;	/* FS_QUOTA_.* flags */
+	__u32			qs_incoredqs;	/* number of dquots incore */
+	struct fs_qfilestatv	qs_uquota;	/* user quota information */
+	struct fs_qfilestatv	qs_gquota;	/* group quota information */
+	struct fs_qfilestatv	qs_pquota;	/* project quota information */
+	__s32			qs_btimelimit;	/* limit for blks timer */
+	__s32			qs_itimelimit;	/* limit for inodes timer */
+	__s32			qs_rtbtimelimit;/* limit for rt blks timer */
+	__u16			qs_bwarnlimit;	/* limit for num warnings */
+	__u16			qs_iwarnlimit;	/* limit for num warnings */
+	__u64			qs_pad2[8];	/* for future proofing */
+};
 
 #endif	/* __XQM_H__ */

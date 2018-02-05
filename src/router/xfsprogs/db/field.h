@@ -22,10 +22,13 @@ typedef enum fldt	{
 	FLDT_AGBLOCKNZ,
 	FLDT_AGF,
 	FLDT_AGFL,
+	FLDT_AGFL_CRC,
 	FLDT_AGI,
 	FLDT_AGINO,
 	FLDT_AGINONN,
 	FLDT_AGNUMBER,
+
+	/* attr fields */
 	FLDT_ATTR,
 	FLDT_ATTR_BLKINFO,
 	FLDT_ATTR_LEAF_ENTRY,
@@ -38,11 +41,19 @@ typedef enum fldt	{
 	FLDT_ATTR_SF_HDR,
 	FLDT_ATTRBLOCK,
 	FLDT_ATTRSHORT,
+
+	/* attr 3 specific fields */
+	FLDT_ATTR3,
+	FLDT_ATTR3_LEAF_HDR,
+	FLDT_ATTR3_NODE_HDR,
+
 	FLDT_BMAPBTA,
+	FLDT_BMAPBTA_CRC,
 	FLDT_BMAPBTAKEY,
 	FLDT_BMAPBTAPTR,
 	FLDT_BMAPBTAREC,
 	FLDT_BMAPBTD,
+	FLDT_BMAPBTD_CRC,
 	FLDT_BMAPBTDKEY,
 	FLDT_BMAPBTDPTR,
 	FLDT_BMAPBTDREC,
@@ -53,6 +64,7 @@ typedef enum fldt	{
 	FLDT_BMROOTDKEY,
 	FLDT_BMROOTDPTR,
 	FLDT_BNOBT,
+	FLDT_BNOBT_CRC,
 	FLDT_BNOBTKEY,
 	FLDT_BNOBTPTR,
 	FLDT_BNOBTREC,
@@ -63,10 +75,30 @@ typedef enum fldt	{
 	FLDT_CFSBLOCK,
 	FLDT_CHARNS,
 	FLDT_CHARS,
+	FLDT_REXTLEN,
+	FLDT_RFILEOFFD,
+	FLDT_REXTFLG,
+	FLDT_RATTRFORKFLG,
+	FLDT_RBMBTFLG,
+	FLDT_CAGBLOCK,
+	FLDT_CCOWFLG,
 	FLDT_CNTBT,
+	FLDT_CNTBT_CRC,
 	FLDT_CNTBTKEY,
 	FLDT_CNTBTPTR,
 	FLDT_CNTBTREC,
+	FLDT_RMAPBT_CRC,
+	FLDT_RMAPBTKEY,
+	FLDT_RMAPBTPTR,
+	FLDT_RMAPBTREC,
+	FLDT_REFCBT_CRC,
+	FLDT_REFCBTKEY,
+	FLDT_REFCBTPTR,
+	FLDT_REFCBTREC,
+
+	/* CRC field type */
+	FLDT_CRC,
+
 	FLDT_DEV,
 	FLDT_DFILOFFA,
 	FLDT_DFILOFFD,
@@ -75,7 +107,9 @@ typedef enum fldt	{
 	FLDT_DINODE_CORE,
 	FLDT_DINODE_FMT,
 	FLDT_DINODE_U,
-	FLDT_DIR,
+	FLDT_DINODE_V3,
+
+	/* dir v2 fields */
 	FLDT_DIR2,
 	FLDT_DIR2_BLOCK_TAIL,
 	FLDT_DIR2_DATA_FREE,
@@ -94,18 +128,25 @@ typedef enum fldt	{
 	FLDT_DIR2_SF_HDR,
 	FLDT_DIR2_SF_OFF,
 	FLDT_DIR2SF,
-	FLDT_DIR_BLKINFO,
-	FLDT_DIR_INO,
-	FLDT_DIR_LEAF_ENTRY,
-	FLDT_DIR_LEAF_HDR,
-	FLDT_DIR_LEAF_MAP,
-	FLDT_DIR_LEAF_NAME,
-	FLDT_DIR_NODE_ENTRY,
-	FLDT_DIR_NODE_HDR,
-	FLDT_DIR_SF_ENTRY,
-	FLDT_DIR_SF_HDR,
+
+	/* dir v3 fields */
+	FLDT_DIR3,
+	FLDT_DIR3_BLKHDR,
+	FLDT_DIR3_DATA_HDR,
+	FLDT_DIR3_FREE_HDR,
+	FLDT_DIR3_LEAF_HDR,
+	FLDT_DIR3_DATA_UNION,
+	FLDT_DIR3_SF_ENTRY,
+	FLDT_DIR3SF,
+
+	/* dir v2/3 node fields */
+	FLDT_DA_BLKINFO,
+	FLDT_DA_NODE_ENTRY,
+	FLDT_DA_NODE_HDR,
+	FLDT_DA3_BLKINFO,
+	FLDT_DA3_NODE_HDR,
+
 	FLDT_DIRBLOCK,
-	FLDT_DIRSHORT,
 	FLDT_DISK_DQUOT,
 	FLDT_DQBLK,
 	FLDT_DQID,
@@ -116,10 +157,14 @@ typedef enum fldt	{
 	FLDT_FSIZE,
 	FLDT_INO,
 	FLDT_INOBT,
+	FLDT_INOBT_CRC,
+	FLDT_INOBT_SPCRC,
 	FLDT_INOBTKEY,
 	FLDT_INOBTPTR,
 	FLDT_INOBTREC,
+	FLDT_INOBTSPREC,
 	FLDT_INODE,
+	FLDT_INODE_CRC,
 	FLDT_INOFREE,
 	FLDT_INT16D,
 	FLDT_INT32D,
@@ -129,6 +174,10 @@ typedef enum fldt	{
 	FLDT_QCNT,
 	FLDT_QWARNCNT,
 	FLDT_SB,
+
+	/* CRC enabled symlink */
+	FLDT_SYMLINK_CRC,
+
 	FLDT_TIME,
 	FLDT_TIMESTAMP,
 	FLDT_UINT1,
@@ -149,10 +198,10 @@ typedef enum fldt	{
 } fldt_t;
 
 typedef int (*offset_fnc_t)(void *obj, int startoff, int idx);
-#define	OI(o)	((offset_fnc_t)(__psint_t)(o))
+#define	OI(o)	((offset_fnc_t)(intptr_t)(o))
 
 typedef int (*count_fnc_t)(void *obj, int startoff);
-#define	CI(c)	((count_fnc_t)(__psint_t)(c))
+#define	CI(c)	((count_fnc_t)(intptr_t)(c))
 #define	C1	CI(1)
 
 typedef struct field
@@ -175,7 +224,7 @@ typedef struct field
 #define	FLD_COUNT	16	/* count value is a function pointer */
 
 typedef int (*size_fnc_t)(void *obj, int startoff, int idx);
-#define	SI(s)	((size_fnc_t)(__psint_t)(s))
+#define	SI(s)	((size_fnc_t)(intptr_t)(s))
 
 typedef struct ftattr
 {

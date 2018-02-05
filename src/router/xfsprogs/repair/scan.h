@@ -21,45 +21,49 @@
 struct blkmap;
 
 int scan_lbtree(
-	xfs_dfsbno_t	root,
+	xfs_fsblock_t	root,
 	int		nlevels,
 	int		(*func)(struct xfs_btree_block	*block,
 				int			level,
 				int			type,
 				int			whichfork,
-				xfs_dfsbno_t		bno,
+				xfs_fsblock_t		bno,
 				xfs_ino_t		ino,
-				xfs_drfsbno_t		*tot,
+				xfs_rfsblock_t		*tot,
 				__uint64_t		*nex,
 				struct blkmap		**blkmapp,
 				bmap_cursor_t		*bm_cursor,
 				int			isroot,
 				int			check_dups,
-				int			*dirty),
+				int			*dirty,
+				__uint64_t		magic),
 	int		type,
 	int		whichfork,
 	xfs_ino_t	ino,
-	xfs_drfsbno_t	*tot,
+	xfs_rfsblock_t	*tot,
 	__uint64_t	*nex,
 	struct blkmap	**blkmapp,
 	bmap_cursor_t	*bm_cursor,
 	int		isroot,
-	int		check_dups);
+	int		check_dups,
+	__uint64_t	magic,
+	const struct xfs_buf_ops *ops);
 
-int scanfunc_bmap(
+int scan_bmapbt(
 	struct xfs_btree_block	*block,
 	int			level,
 	int			type,
 	int			whichfork,
-	xfs_dfsbno_t		bno,
+	xfs_fsblock_t		bno,
 	xfs_ino_t		ino,
-	xfs_drfsbno_t		*tot,
+	xfs_rfsblock_t		*tot,
 	__uint64_t		*nex,
 	struct blkmap		**blkmapp,
 	bmap_cursor_t		*bm_cursor,
 	int			isroot,
 	int			check_dups,
-	int			*dirty);
+	int			*dirty,
+	__uint64_t		magic);
 
 void
 scan_ags(

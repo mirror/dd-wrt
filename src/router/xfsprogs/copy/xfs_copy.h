@@ -54,6 +54,7 @@ typedef struct {
 	int		id;		/* buffer ID */
 	size_t		size;		/* size of buffer -- fixed */
 	size_t		min_io_size;	/* for direct I/O */
+	int		data_align;	/* data buffer alignment */
 	xfs_off_t	position;	/* requested position (bytes) */
 	size_t		length;		/* requested length (bytes) */
 	char		*data;		/* pointer to data buffer */
@@ -86,4 +87,3 @@ typedef struct {
 	int		error;
 	int		err_type;
 } target_control;
-

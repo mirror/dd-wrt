@@ -28,8 +28,9 @@ SRCDIR = $(PKG_NAME)-$(PKG_VERSION)
 SRCTAR = $(PKG_NAME)-$(PKG_VERSION).tar.gz
 
 CONFIGURE = aclocal.m4 configure config.guess config.sub install-sh ltmain.sh
-LSRCFILES = configure.in release.sh README VERSION $(CONFIGURE)
-
+LSRCFILES = configure.ac release.sh README VERSION $(CONFIGURE)
+SRCTARINC = m4/libtool.m4 m4/lt~obsolete.m4 m4/ltoptions.m4 m4/ltsugar.m4 \
+           m4/ltversion.m4 po/xfsprogs.pot .gitcensus $(CONFIGURE)
 LDIRT = config.log .ltdep .dep config.status config.cache confdefs.h \
 	conftest* built .census install.* install-dev.* *.gz \
 	autom4te.cache/* libtool include/builddefs include/platform_defs.h
@@ -39,33 +40,53 @@ LDIRDIRT = $(SRCDIR)
 LDIRT += $(SRCTAR)
 endif
 
-LIB_SUBDIRS = libxfs libxlog libxcmd libhandle libdisk
-TOOL_SUBDIRS = copy db estimate fsck fsr growfs io logprint mkfs quota \
-		mdrestore repair rtcp m4 man doc po debian
+# header install rules to populate include/xfs correctly
+HDR_SUBDIRS = include libxfs
 
-SUBDIRS = include $(LIB_SUBDIRS) $(TOOL_SUBDIRS)
+DLIB_SUBDIRS = libxlog libxcmd libhandle
+LIB_SUBDIRS = libxfs $(DLIB_SUBDIRS)
+TOOL_SUBDIRS = copy db estimate fsck growfs io logprint mkfs quota \
+		mdrestore repair rtcp m4 man doc debian
+
+ifneq ("$(PKG_PLATFORM)","darwin")
+TOOL_SUBDIRS += fsr
+endif
+
+ifneq ("$(XGETTEXT)","")
+TOOL_SUBDIRS += po
+endif
+
+# If we are on OS X, use glibtoolize from MacPorts, as OS X doesn't have
+# libtoolize binary itself.
+LIBTOOLIZE_TEST=$(shell libtoolize --version >/dev/null 2>&1 && echo found)
+LIBTOOLIZE_BIN=libtoolize
+ifneq ("$(LIBTOOLIZE_TEST)","found")
+LIBTOOLIZE_BIN=glibtoolize
+endif
+
+# include is listed last so it is processed last in clean rules.
+SUBDIRS = $(LIB_SUBDIRS) $(TOOL_SUBDIRS) include
 
 default: include/builddefs include/platform_defs.h
 ifeq ($(HAVE_BUILDDEFS), no)
 	$(Q)$(MAKE) $(MAKEOPTS) -C . $@
 else
+	$(Q)$(MAKE) $(MAKEOPTS) headers
 	$(Q)$(MAKE) $(MAKEOPTS) $(SUBDIRS)
 endif
 
 # tool/lib dependencies
+# note: include/xfs is set up by libxfs, too, so everything is dependent on it.
 $(LIB_SUBDIRS) $(TOOL_SUBDIRS): include
-copy mdrestore: libxfs
-db logprint: libxfs libxlog
+$(DLIB_SUBDIRS) $(TOOL_SUBDIRS): libxfs
+db logprint: libxlog
 fsr: libhandle
-growfs: libxfs libxcmd
+growfs: libxcmd
 io: libxcmd libhandle
-mkfs: libxfs
 quota: libxcmd
-repair: libxfs libxlog
-
-ifneq ($(ENABLE_BLKID), yes)
-mkfs: libdisk
-endif
+repair: libxlog libxcmd
+copy: libxlog
+mkfs: libxcmd
 
 ifeq ($(HAVE_BUILDDEFS), yes)
 include $(BUILDRULES)
@@ -73,13 +94,14 @@ else
 clean:	# if configure hasn't run, nothing to clean
 endif
 
+
 # Recent versions of libtool require the -i option for copying auxiliary
 # files (config.sub, config.guess, install-sh, ltmain.sh), while older
 # versions will copy those files anyway, and don't understand -i.
-LIBTOOLIZE_INSTALL = `libtoolize -n -i >/dev/null 2>/dev/null && echo -i`
+LIBTOOLIZE_INSTALL = `$(LIBTOOLIZE_BIN) -n -i >/dev/null 2>/dev/null && echo -i`
 
 configure:
-	libtoolize -c $(LIBTOOLIZE_INSTALL) -f
+	$(LIBTOOLIZE_BIN) -c $(LIBTOOLIZE_INSTALL) -f
 	cp include/install-sh .
 	aclocal -I m4
 	autoconf
@@ -100,8 +122,6 @@ install: $(addsuffix -install,$(SUBDIRS))
 
 install-dev: $(addsuffix -install-dev,$(SUBDIRS))
 
-install-qa: install $(addsuffix -install-qa,$(SUBDIRS))
-
 %-install:
 	@echo "Installing $@"
 	$(Q)$(MAKE) $(MAKEOPTS) -C $* install
@@ -110,15 +130,11 @@ install-qa: install $(addsuffix -install-qa,$(SUBDIRS))
 	@echo "Installing $@"
 	$(Q)$(MAKE) $(MAKEOPTS) -C $* install-dev
 
-%-install-qa:
-	@echo "Installing $@"
-	$(Q)$(MAKE) $(MAKEOPTS) -C $* install-qa
-
 distclean: clean
 	$(Q)rm -f $(LDIRT)
 
 realclean: distclean
-	$(Q)rm -f $(CONFIGURE)
+	$(Q)rm -f $(CONFIGURE) .gitcensus
 
 #
 # All this gunk is to allow for a make dist on an unconfigured tree
@@ -134,17 +150,22 @@ deb: include/builddefs include/platform_defs.h
 ifeq ($(HAVE_BUILDDEFS), no)
 	$(Q)$(MAKE) $(MAKEOPTS) -C . $@
 else
-	$(Q)$(MAKE) $(MAKEOPTS) $(SRCDIR)
+	# need to build translations before the source tarball
 	$(Q)$(MAKE) $(MAKEOPTS) -C po
-	$(Q)$(MAKE) $(MAKEOPTS) source-link
+	$(Q)$(MAKE) $(MAKEOPTS) $(SRCDIR)
 	$(Q)cd $(SRCDIR) && dpkg-buildpackage
 endif
 
-$(SRCDIR) : $(_FORCE)
+$(SRCDIR) : $(_FORCE) $(SRCTAR)
 	rm -fr $@
-	mkdir -p $@
+	$(Q)$(TAR) -zxvf $(SRCTAR)
 
-$(SRCTAR) : default $(SRCDIR)
-	$(Q)$(MAKE) $(MAKEOPTS) source-link
-	unset TAPE; $(TAR) -cf - $(SRCDIR) | $(ZIP) --best > $@ && \
+$(SRCTAR) : default $(SRCTARINC) .gitcensus
+	$(Q)$(TAR) --transform "s,^,$(SRCDIR)/," -zcf $(SRCDIR).tar.gz  \
+	   `cat .gitcensus` $(SRCTARINC)
 	echo Wrote: $@
+
+.gitcensus: $(_FORCE)
+	$(Q)if test -d .git; then \
+	  git ls-files > .gitcensus && echo "new .gitcensus"; \
+	fi

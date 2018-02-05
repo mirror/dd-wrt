@@ -15,7 +15,7 @@ xfs_growfs, xfs_info \- expand an XFS filesystem
 .SH SYNOPSIS
 .B xfs_growfs
 [
-.B \-dilnrxV
+.B \-dilnrx
 ] [
 .B \-D
 .I size
@@ -37,12 +37,17 @@ xfs_growfs, xfs_info \- expand an XFS filesystem
 ]
 .I mount-point
 .br
+.B xfs_growfs \-V
+.PP
+.br
 .B xfs_info
 [
 .B \-t
 .I mtab
 ]
 .I mount-point
+.br
+.B xfs_info \-V
 .SH DESCRIPTION
 .B xfs_growfs
 expands an existing XFS filesystem (see

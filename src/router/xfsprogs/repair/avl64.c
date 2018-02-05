@@ -17,7 +17,7 @@
  */
 
 #include <stdio.h>
-#include <libxfs.h>
+#include "libxfs.h"
 #include "avl64.h"
 
 #define CERT	ASSERT
@@ -26,13 +26,13 @@
 
 static void
 avl64_checknode(
-	register avl64tree_desc_t *tree,
-	register avl64node_t *np)
+	avl64tree_desc_t *tree,
+	avl64node_t *np)
 {
-	register avl64node_t *back = np->avl_back;
-	register avl64node_t *forw = np->avl_forw;
-	register avl64node_t *nextino = np->avl_nextino;
-	register int bal = np->avl_balance;
+	avl64node_t *back = np->avl_back;
+	avl64node_t *forw = np->avl_forw;
+	avl64node_t *nextino = np->avl_nextino;
+	int bal = np->avl_balance;
 
 	ASSERT(bal != AVL_BALANCE || (!back && !forw) || (back && forw));
 	ASSERT(bal != AVL_FORW || forw);
@@ -66,10 +66,10 @@ avl64_checknode(
 
 static void
 avl64_checktree(
-	register avl64tree_desc_t *tree,
-	register avl64node_t *root)
+	avl64tree_desc_t *tree,
+	avl64node_t *root)
 {
-	register avl64node_t *nlast, *nnext, *np;
+	avl64node_t *nlast, *nnext, *np;
 	__uint64_t offset = 0;
 	__uint64_t end;
 
@@ -124,14 +124,14 @@ avl64_checktree(
 static void
 retreat(
 	avl64tree_desc_t *tree,
-	register avl64node_t *np,
-	register int direction)
+	avl64node_t *np,
+	int direction)
 {
-	register avl64node_t **rootp = &tree->avl_root;
-	register avl64node_t *parent;
-	register avl64node_t *child;
-	register avl64node_t *tmp;
-	register int	bal;
+	avl64node_t **rootp = &tree->avl_root;
+	avl64node_t *parent;
+	avl64node_t *child;
+	avl64node_t *tmp;
+	int	bal;
 
 	do {
 		ASSERT(direction == AVL_BACK || direction == AVL_FORW);
@@ -378,13 +378,13 @@ next:
  */
 void
 avl64_delete(
-	register avl64tree_desc_t *tree,
-	register avl64node_t *np)
+	avl64tree_desc_t *tree,
+	avl64node_t *np)
 {
-	register avl64node_t *forw = np->avl_forw;
-	register avl64node_t *back = np->avl_back;
-	register avl64node_t *parent = np->avl_parent;
-	register avl64node_t *nnext;
+	avl64node_t *forw = np->avl_forw;
+	avl64node_t *back = np->avl_back;
+	avl64node_t *parent = np->avl_parent;
+	avl64node_t *nnext;
 
 
 	if (np->avl_back) {
@@ -582,12 +582,12 @@ attach:
  */
 avl64node_t *
 avl64_findanyrange(
-	register avl64tree_desc_t *tree,
-	register __uint64_t start,
-	register __uint64_t end,
+	avl64tree_desc_t *tree,
+	__uint64_t start,
+	__uint64_t end,
 	int	checklen)
 {
-	register avl64node_t *np = tree->avl_root;
+	avl64node_t *np = tree->avl_root;
 
 	/* np = avl64_findadjacent(tree, start, AVL_SUCCEED); */
 	while (np) {
@@ -654,10 +654,10 @@ avl64_findanyrange(
  */
 avl64node_t *
 avl64_findrange(
-	register avl64tree_desc_t *tree,
-	register __uint64_t value)
+	avl64tree_desc_t *tree,
+	__uint64_t value)
 {
-	register avl64node_t *np = tree->avl_root;
+	avl64node_t *np = tree->avl_root;
 
 	while (np) {
 		if (value < AVL_START(tree, np)) {
@@ -681,11 +681,11 @@ avl64_findrange(
  */
 avl64node_t *
 avl64_find(
-	register avl64tree_desc_t *tree,
-	register __uint64_t value)
+	avl64tree_desc_t *tree,
+	__uint64_t value)
 {
-	register avl64node_t *np = tree->avl_root;
-	register __uint64_t nvalue;
+	avl64node_t *np = tree->avl_root;
+	__uint64_t nvalue;
 
 	while (np) {
 		nvalue = AVL_START(tree, np);
@@ -708,9 +708,9 @@ avl64_find(
  */
 static void
 avl64_balance(
-	register avl64node_t **rootp,
-	register avl64node_t *np,
-	register int growth)
+	avl64node_t **rootp,
+	avl64node_t *np,
+	int growth)
 {
 	/*
 	 * At this point, np points to the node to which
@@ -718,8 +718,8 @@ avl64_balance(
 	 * propagate avl_balance up the tree.
 	 */
 	for ( ; ; ) {
-		register avl64node_t *parent = np->avl_parent;
-		register avl64node_t *child;
+		avl64node_t *parent = np->avl_parent;
+		avl64node_t *child;
 
 		CERT(growth == AVL_BACK || growth == AVL_FORW);
 
@@ -799,7 +799,7 @@ avl64_balance(
 						D
 
 				 */
-				register avl64node_t *tmp = child->avl_forw;
+				avl64node_t *tmp = child->avl_forw;
 
 				CERT(child->avl_balance == AVL_FORW && tmp);
 
@@ -856,7 +856,7 @@ avl64_balance(
 				/*
 				 * double RL
 				 */
-				register avl64node_t *tmp = child->avl_back;
+				avl64node_t *tmp = child->avl_back;
 
 				ASSERT(child->avl_balance == AVL_BACK && tmp);
 
@@ -908,13 +908,13 @@ avl64_balance(
 static
 avl64node_t *
 avl64_insert_find_growth(
-		register avl64tree_desc_t *tree,
-		register __uint64_t start,	/* range start at start, */
-		register __uint64_t end,	/* exclusive */
-		register int   *growthp)	/* OUT */
+		avl64tree_desc_t *tree,
+		__uint64_t start,	/* range start at start, */
+		__uint64_t end,	/* exclusive */
+		int   *growthp)	/* OUT */
 {
 	avl64node_t *root = tree->avl_root;
-	register avl64node_t *np;
+	avl64node_t *np;
 
 	np = root;
 	ASSERT(np); /* caller ensures that there is atleast one node in tree */
@@ -957,13 +957,13 @@ avl64_insert_find_growth(
 
 static void
 avl64_insert_grow(
-	register avl64tree_desc_t *tree,
-	register avl64node_t *parent,
-	register avl64node_t *newnode,
-	register int growth)
+	avl64tree_desc_t *tree,
+	avl64node_t *parent,
+	avl64node_t *newnode,
+	int growth)
 {
-	register avl64node_t *nnext;
-	register __uint64_t start = AVL_START(tree, newnode);
+	avl64node_t *nnext;
+	__uint64_t start = AVL_START(tree, newnode);
 
 	if (growth == AVL_BACK) {
 
@@ -1001,12 +1001,12 @@ avl64_insert_grow(
 
 avl64node_t *
 avl64_insert(
-	register avl64tree_desc_t *tree,
-	register avl64node_t *newnode)
+	avl64tree_desc_t *tree,
+	avl64node_t *newnode)
 {
-	register avl64node_t *np;
-	register __uint64_t start = AVL_START(tree, newnode);
-	register __uint64_t end = AVL_END(tree, newnode);
+	avl64node_t *np;
+	__uint64_t start = AVL_START(tree, newnode);
+	__uint64_t end = AVL_END(tree, newnode);
 	int growth;
 
 	ASSERT(newnode);
@@ -1102,9 +1102,9 @@ avl64_insert_immediate(
  *	Returns first in order node
  */
 avl64node_t *
-avl64_firstino(register avl64node_t *root)
+avl64_firstino(avl64node_t *root)
 {
-	register avl64node_t *np;
+	avl64node_t *np;
 
 	if ((np = root) == NULL)
 		return NULL;
@@ -1118,9 +1118,9 @@ avl64_firstino(register avl64node_t *root)
  *	Returns last in order node
  */
 avl64node_t *
-avl64_lastino(register avl64node_t *root)
+avl64_lastino(avl64node_t *root)
 {
-	register avl64node_t *np;
+	avl64node_t *np;
 
 	if ((np = root) == NULL)
 		return NULL;
@@ -1303,11 +1303,11 @@ main()
  */
 avl64node_t *
 avl64_findadjacent(
-	register avl64tree_desc_t *tree,
-	register __uint64_t value,
-	register int		dir)
+	avl64tree_desc_t *tree,
+	__uint64_t value,
+	int		dir)
 {
-	register avl64node_t *np = tree->avl_root;
+	avl64node_t *np = tree->avl_root;
 
 	while (np) {
 		if (value < AVL_START(tree, np)) {
@@ -1377,13 +1377,13 @@ avl64_findadjacent(
 
 void
 avl64_findranges(
-	register avl64tree_desc_t *tree,
-	register __uint64_t start,
-	register __uint64_t end,
+	avl64tree_desc_t *tree,
+	__uint64_t start,
+	__uint64_t end,
 	avl64node_t	        **startp,
 	avl64node_t		**endp)
 {
-	register avl64node_t *np;
+	avl64node_t *np;
 
 	np = avl64_findadjacent(tree, start, AVL_SUCCEED);
 	if (np == NULL				/* nothing succeding start */

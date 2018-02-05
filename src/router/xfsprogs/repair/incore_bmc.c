@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <libxfs.h>
+#include "libxfs.h"
 #include "avl.h"
 #include "globals.h"
 #include "incore.h"
@@ -34,10 +34,10 @@ init_bm_cursor(bmap_cursor_t *cursor, int num_levels)
 	cursor->num_levels = num_levels;
 
 	for (i = 0; i < XR_MAX_BMLEVELS; i++)  {
-		cursor->level[i].fsbno = NULLDFSBNO;
-		cursor->level[i].right_fsbno = NULLDFSBNO;
-		cursor->level[i].left_fsbno = NULLDFSBNO;
-		cursor->level[i].first_key = NULLDFILOFF;
-		cursor->level[i].last_key = NULLDFILOFF;
+		cursor->level[i].fsbno = NULLFSBLOCK;
+		cursor->level[i].right_fsbno = NULLFSBLOCK;
+		cursor->level[i].left_fsbno = NULLFSBLOCK;
+		cursor->level[i].first_key = NULLFILEOFF;
+		cursor->level[i].last_key = NULLFILEOFF;
 	}
 }

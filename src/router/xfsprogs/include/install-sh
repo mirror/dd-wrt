@@ -56,7 +56,7 @@ _chown ()
 		    fi
 		fi
 	       _st=0
-	    fi     
+	    fi
 	fi
     fi
 
@@ -65,7 +65,7 @@ _chown ()
 
 
 _manifest ()
-{ 
+{
     echo $* | sed -e 's/\/\//\//g' >>${DIST_MANIFEST:-/dev/null}
 }
 
@@ -84,6 +84,8 @@ REAL_UID=$OWNER
 # default is to install and don't append manifest
 INSTALL=true
 MANIFEST=:
+
+: ${DIST_ROOT:=${DESTDIR}}
 
 [ -n "$DIST_MANIFEST" -a -z "$DIST_ROOT" ] && INSTALL=false
 [ -n "$DIST_MANIFEST" ] && MANIFEST="_manifest"
@@ -114,14 +116,14 @@ do
 	DIRMODE=`expr $OPTARG`
 	FILEMODE=$DIRMODE
 	;;
-   D) 
+   D)
 	Dflag=true
 	;;
-   S) 
+   S)
 	symlink=$OPTARG
 	Sflag=true
 	;;
-   d) 
+   d)
 	dir=$DIST_ROOT/$OPTARG
 	dflag=true
 	;;
@@ -143,7 +145,7 @@ then
     #
     # first usage
     #
-    $MKDIR -p $dir 
+    $MKDIR -p $dir
     status=$?
     if [ $status -eq 0 ]
     then
@@ -169,7 +171,7 @@ then
     fi
     $LN -s -f $symlink $target
     status=$?
-    $MANIFEST l $symlink ${target#$DIST_ROOT} 
+    $MANIFEST l $symlink ${target#$DIST_ROOT}
 elif $Tflag
 then
     #
@@ -287,7 +289,7 @@ else
 	$CP $f $dir
 	status=$?
 	if [ $status -eq 0 ]
-	then 
+	then
 	    if [ -f $dir/$f ]
 	    then
 		$CHMOD $FILEMODE $dir/$f

@@ -13,6 +13,19 @@ clean clobber : $(addsuffix -clean,$(SUBDIRS))
 	@echo "Cleaning $*"
 	$(Q)$(MAKE) $(MAKEOPTS) -C $* clean
 
+ifdef HDR_SUBDIRS
+.PHONY: .xfs
+
+headers: $(addsuffix -headers, $(HDR_SUBDIRS))
+
+%-headers: .xfs
+	@echo "   [HEADERS] $*"
+	$(Q)$(MAKE) $(MAKEOPTS) -C $* NODEP=1 install-headers
+
+.xfs:
+	@mkdir -p include/xfs
+endif
+
 # Never blow away subdirs
 ifdef SUBDIRS
 .PRECIOUS: $(SUBDIRS)
@@ -22,17 +35,6 @@ $(SUBDIRS):
 	@echo "Building $@"
 	$(Q)$(MAKE) $(MAKEOPTS) -q -C $@ || $(MAKE) $(MAKEOPTS) -C $@
 endif
-
-source-link: 
-	@test -z "$$DIR" && DIR="."; \
-	for f in `echo $(SRCFILES) $(SUBDIRS) $(POTHEAD)`; do \
-	    if test -d $$f ; then \
-		mkdir $(TOPDIR)/$(PKG_NAME)-$(PKG_VERSION)/$$DIR/$$f || exit $$?; \
-		$(MAKEF) DIR=$$DIR/$$f -C $$f $@ || exit $$?; \
-	    else \
-		ln $$f $(TOPDIR)/$(PKG_NAME)-$(PKG_VERSION)/$$DIR/$$f || exit $$?; \
-	    fi; \
-	done
 
 #
 # Standard targets
@@ -90,18 +92,30 @@ endif # _BUILDRULES_INCLUDED_
 $(_FORCE):
 
 # dependency build is automatic, relies on gcc -MM to generate.
-.PHONY : depend ltdepend install-qa
+#
+# This is a bit messy. It regenerates the dependencies on each build so
+# that we catch files being added and removed. There are other ways of doing
+# this (e.g. per-file dependency files) but that requires more in-depth changes
+# to the build system. Compile time is not an issue for us, so the
+# rebuild on every make invocation isn't a problem we need to care about. Just
+# do it silently so it doesn't make the build unnecessarily noisy.
+
+.PHONY : depend ltdepend
 
 MAKEDEP := $(MAKEDEPEND) $(CFLAGS)
 
-ltdepend: .ltdep
+ltdepend: rmltdep .ltdep
+
+rmltdep:
+	$(Q)rm -f .ltdep
 
 .ltdep: $(CFILES) $(HFILES)
-	@echo "    [LTDEP]"
 	$(Q)$(MAKEDEP) $(CFILES) | $(SED) -e 's,^\([^:]*\)\.o,\1.lo,' > .ltdep
 
-depend: .dep
+depend: rmdep .dep
+
+rmdep:
+	$(Q)rm -f .dep
 
 .dep: $(CFILES) $(HFILES)
-	@echo "    [DEP]"
 	$(Q)$(MAKEDEP) $(CFILES) > .dep

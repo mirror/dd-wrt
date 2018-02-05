@@ -7,6 +7,9 @@ mkfs.xfs \- construct an XFS filesystem
 .B \-b
 .I block_size
 ] [
+.B \-m
+.I global_metadata_options
+] [
 .B \-d
 .I data_section_options
 ] [
@@ -40,6 +43,8 @@ mkfs.xfs \- construct an XFS filesystem
 .B \-K
 ]
 .I device
+.br
+.B mkfs.xfs \-V
 .SH DESCRIPTION
 .B mkfs.xfs
 constructs an XFS filesystem by writing on a special
@@ -59,11 +64,11 @@ SCSI disk, use:
 .PP
 The metadata log can be placed on another device to reduce the number
 of disk seeks.  To create a filesystem on the first partition on the
-first SCSI disk with a 10000 block log located on the first partition
+first SCSI disk with a 10MiB log located on the first partition
 on the second SCSI disk, use:
 .RS
 .HP
-.B mkfs.xfs\ \-l\ logdev=/dev/sdb1,size=10000b /dev/sda1
+.B mkfs.xfs\ \-l\ logdev=/dev/sdb1,size=10m /dev/sda1
 .RE
 .PP
 Each of the
@@ -73,9 +78,9 @@ suboptions if multiple suboptions apply to the same option.
 Equivalently, each main option can be given multiple times with
 different suboptions.
 For example,
-.B \-l internal,size=10000b
+.B \-l internal,size=10m
 and
-.B \-l internal \-l size=10000b
+.B \-l internal \-l size=10m
 are equivalent.
 .PP
 In the descriptions below, sizes are given in sectors, bytes, blocks,
@@ -104,6 +109,18 @@ option below).
 .HP
 .BR e "\ \-\ multiply by one exabyte (1,048,576 terabytes)."
 .PD
+.RE
+.PP
+When specifying parameters in units of sectors or filesystem blocks, the
+.B \-s
+option or the
+.B \-b
+option first needs to be added to the command line.
+Failure to specify the size of the units will result in illegal value errors
+when parameters are quantified in those units.
+.PP
+Many feature options allow an optional argument of 0 or 1, to explicitly
+disable or enable the functionality.
 .SH OPTIONS
 .TP
 .BI \-b " block_size_options"
@@ -121,7 +138,110 @@ or in bytes with
 .BR size= .
 The default value is 4096 bytes (4 KiB), the minimum is 512, and the
 maximum is 65536 (64 KiB).
-XFS on Linux currently only supports pagesize or smaller blocks.
+.IP
+To specify any options on the command line in units of filesystem blocks, this
+option must be specified first so that the filesystem block size is
+applied consistently to all options.
+.IP
+Although
+.B mkfs.xfs
+will accept any of these values and create a valid filesystem,
+XFS on Linux can only mount filesystems with pagesize or smaller blocks.
+.TP
+.BI \-m " global_metadata_options"
+These options specify metadata format options that either apply to the entire
+filesystem or aren't easily characterised by a specific functionality group. The
+valid
+.I global_metadata_options
+are:
+.RS 1.2i
+.TP
+.BI crc= value
+This is used to create a filesystem which maintains and checks CRC information
+in all metadata objects on disk. The value is either 0 to disable the feature,
+or 1 to enable the use of CRCs.
+.IP
+CRCs enable enhanced error detection due to hardware issues, whilst the format
+changes also improves crash recovery algorithms and the ability of various tools
+to validate and repair metadata corruptions when they are found.  The CRC
+algorithm used is CRC32c, so the overhead is dependent on CPU architecture as
+some CPUs have hardware acceleration of this algorithm.  Typically the overhead
+of calculating and checking the CRCs is not noticeable in normal operation.
+.IP
+By default,
+.B mkfs.xfs
+will enable metadata CRCs.
+.TP
+.BI finobt= value
+This option enables the use of a separate free inode btree index in each
+allocation group. The value is either 0 to disable the feature, or 1 to create
+a free inode btree in each allocation group.
+.IP
+The free inode btree mirrors the existing allocated inode btree index which
+indexes both used and free inodes. The free inode btree does not index used
+inodes, allowing faster, more consistent inode allocation performance as
+filesystems age.
+.IP
+By default,
+.B mkfs.xfs
+will create free inode btrees for filesystems created with the (default)
+.B \-m crc=1
+option set. When the option
+.B \-m crc=0
+is used, the free inode btree feature is not supported and is disabled.
+.TP
+.BI uuid= value
+Use the given value as the filesystem UUID for the newly created filesystem.
+The default is to generate a random UUID.
+.TP
+.BI rmapbt= value
+This option enables the creation of a reverse-mapping btree index in each
+allocation group.  The value is either 0 to disable the feature, or 1 to
+create the btree.
+.IP
+The reverse mapping btree maps filesystem blocks to the owner of the
+filesystem block.  Most of the mappings will be to an inode number and an
+offset, though there will also be mappings to filesystem metadata.  This
+secondary metadata can be used to validate the primary metadata or to
+pinpoint exactly which data has been lost when a disk error occurs.
+.IP
+By default,
+.B mkfs.xfs
+will not create reverse mapping btrees.  This feature is only available
+for filesystems created with the (default)
+.B \-m crc=1
+option set. When the option
+.B \-m crc=0
+is used, the reverse mapping btree feature is not supported and is disabled.
+.TP
+.BI reflink= value
+This option enables the use of a separate reference count btree index in each
+allocation group. The value is either 0 to disable the feature, or 1 to create
+a reference count btree in each allocation group.
+.IP
+The reference count btree enables the sharing of physical extents between
+the data forks of different files, which is commonly known as "reflink".
+Unlike traditional Unix filesystems which assume that every inode and
+logical block pair map to a unique physical block, a reflink-capable
+XFS filesystem removes the uniqueness requirement, allowing up to four
+billion arbitrary inode/logical block pairs to map to a physical block.
+If a program tries to write to a multiply-referenced block in a file, the write
+will be redirected to a new block, and that file's logical-to-physical
+mapping will be changed to the new block ("copy on write").  This feature
+enables the creation of per-file snapshots and deduplication.  It is only
+available for the data forks of regular files.
+.IP
+By default,
+.B mkfs.xfs
+will not create reference count btrees and therefore will not enable the
+reflink feature.  This feature is only available for filesystems created with
+the (default)
+.B \-m crc=1
+option set. When the option
+.B \-m crc=0
+is used, the reference count btree feature is not supported and reflink is
+disabled.
+.RE
 .TP
 .BI \-d " data_section_options"
 These options specify the location, size, and other parameters of the
@@ -242,6 +362,11 @@ will automatically query the logical volume for appropriate
 and
 .B swidth
 values.
+.TP
+.BI noalign
+This option disables automatic geometry detection and creates the filesystem
+without stripe geometry alignment even if the underlying storage device provides
+this information.
 .RE
 .TP
 .B \-f
@@ -279,9 +404,9 @@ with
 .BR log= ,
 or as the number fitting in a filesystem block with
 .BR perblock= .
-The mininum (and default)
+The minimum (and default)
 .I value
-is 256 bytes.
+is 256 bytes without crc, 512 bytes with crc enabled.
 The maximum
 .I value
 is 2048 (2 KiB) subject to the restriction that
@@ -297,7 +422,7 @@ so if no inode size is given on the command line,
 .B mkfs.xfs
 will attempt to choose a size
 such that inode numbers will be < 32 bits.  If an inode size
-is specified, or if a filesystem is sufficently large,
+is specified, or if a filesystem is sufficiently large,
 .B mkfs.xfs
 will warn if this will create inode numbers > 32 significant
 bits.
@@ -355,7 +480,25 @@ than version 2.6.16.
 This is used to enable 32bit quota project identifiers. The
 .I value
 is either 0 or 1, with 1 signifying that 32bit projid are to be enabled.
-If the value is omitted, 0 is assumed.
+If the value is omitted, 1 is assumed.  (This default changed
+in release version 3.2.0.)
+.TP
+.BI sparse[= value ]
+Enable sparse inode chunk allocation. The
+.I value
+is either 0 or 1, with 1 signifying that sparse allocation is enabled.
+If the value is omitted, 1 is assumed. Sparse inode allocation is
+disabled by default. This feature is only available for filesystems
+formatted with
+.B \-m crc=1.
+.IP
+When enabled, sparse inode allocation allows the filesystem to allocate
+smaller than the standard 64-inode chunk when free space is severely
+limited. This feature is useful for filesystems that might fragment free
+space over time such that no free extents are large enough to
+accommodate a chunk of 64 inodes. Without this feature enabled, inode
+allocations can fail with out of space errors under severe fragmented
+free space conditions.
 .RE
 .TP
 .BI \-l " log_section_options"
@@ -450,7 +593,7 @@ suboption is specified.
 This changes the method of logging various persistent counters
 in the superblock.  Under metadata intensive workloads, these
 counters are updated and logged frequently enough that the superblock
-updates become a serialisation point in the filesystem. The
+updates become a serialization point in the filesystem. The
 .I value
 can be either 0 or 1.
 .IP
@@ -510,6 +653,23 @@ option enables ASCII only case-insensitive filename lookup and version
 are stored in directories using the case they were created with.
 .IP
 Note: Version 1 directories are not supported.
+.TP
+.BI ftype= value
+This feature allows the inode type to be stored in the directory
+structure so that the
+.BR readdir (3)
+and
+.BR getdents (2)
+do not need to look up the inode to determine the inode type.
+
+The
+.I value
+is either 0 or 1, with 1 signifying that filetype information
+will be stored in the directory structure.  The default value is 1.
+
+When CRCs are enabled (the default), the ftype functionality is always
+enabled, and cannot be turned off.
+.IP
 .RE
 .TP
 .BI \-p " protofile"
@@ -693,6 +853,10 @@ This is used to specify the size of the real-time section.
 This suboption is only needed if the real-time section of the
 filesystem should occupy less space than the size of the partition
 or logical volume containing the section.
+.TP
+.BI noalign
+This option disables stripe size detection, enforcing a realtime device with no
+stripe geometry.
 .RE
 .TP
 .BI \-s " sector_size"
@@ -710,6 +874,10 @@ is 512 bytes. The minimum value for sector size is
 .I sector_size
 must be a power of 2 size and cannot be made larger than the
 filesystem block size.
+.IP
+To specify any options on the command line in units of sectors, this
+option must be specified first so that the sector size is
+applied consistently to all options.
 .TP
 .BI \-L " label"
 Set the filesystem
@@ -728,6 +896,9 @@ creating the file system.
 .TP
 .B \-K
 Do not attempt to discard blocks at mkfs time.
+.TP
+.B \-V
+Prints the version number and exits.
 .SH SEE ALSO
 .BR xfs (5),
 .BR mkfs (8),

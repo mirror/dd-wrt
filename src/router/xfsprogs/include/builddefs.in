@@ -20,14 +20,12 @@
 ifndef _BUILDDEFS_INCLUDED_
 _BUILDDEFS_INCLUDED_ = 1
 
-SHELL = @SHELL@
-
 DEBUG = @debug_build@
 OPTIMIZER = @opt_build@
 MALLOCLIB = @malloc_lib@
 LOADERFLAGS = @LDFLAGS@
 LTLDFLAGS = @LDFLAGS@
-CFLAGS = @CFLAGS@
+CFLAGS = @CFLAGS@ -D_FILE_OFFSET_BITS=64
 
 LIBRT = @librt@
 LIBUUID = @libuuid@
@@ -39,7 +37,6 @@ LIBBLKID = @libblkid@
 LIBXFS = $(TOPDIR)/libxfs/libxfs.la
 LIBXCMD = $(TOPDIR)/libxcmd/libxcmd.la
 LIBXLOG = $(TOPDIR)/libxlog/libxlog.la
-LIBDISK = $(TOPDIR)/libdisk/libdisk.la
 LIBHANDLE = $(TOPDIR)/libhandle/libhandle.la
 
 PKG_NAME	= @pkg_name@
@@ -66,6 +63,7 @@ PKG_DOC_DIR	= @datadir@/doc/@pkg_name@
 PKG_LOCALE_DIR	= @datadir@/locale
 
 CC		= @cc@
+BUILD_CC	= @BUILD_CC@
 AWK		= @awk@
 SED		= @sed@
 TAR		= @tar@
@@ -103,20 +101,32 @@ HAVE_GETMNTENT = @have_getmntent@
 HAVE_GETMNTINFO = @have_getmntinfo@
 HAVE_FALLOCATE = @have_fallocate@
 HAVE_FIEMAP = @have_fiemap@
+HAVE_PREADV = @have_preadv@
+HAVE_COPY_FILE_RANGE = @have_copy_file_range@
+HAVE_SYNC_FILE_RANGE = @have_sync_file_range@
+HAVE_READDIR = @have_readdir@
+HAVE_MNTENT = @have_mntent@
+HAVE_FLS = @have_fls@
+HAVE_FSETXATTR = @have_fsetxattr@
+HAVE_MREMAP = @have_mremap@
+NEED_INTERNAL_FSXATTR = @need_internal_fsxattr@
 
-GCCFLAGS = -funsigned-char -fno-strict-aliasing -Wall 
+GCCFLAGS = -funsigned-char -fno-strict-aliasing -Wall
 #	   -Wbitwise -Wno-transparent-union -Wno-old-initializer -Wno-decl
 
 ifeq ($(PKG_PLATFORM),linux)
-PCFLAGS = -D_GNU_SOURCE -D_XOPEN_SOURCE=500 -D_FILE_OFFSET_BITS=64 $(GCCFLAGS)
+PCFLAGS = -D_GNU_SOURCE $(GCCFLAGS)
+ifeq ($(HAVE_UMODE_T),yes)
+PCFLAGS += -DHAVE_UMODE_T
+endif
 DEPENDFLAGS = -D__linux__
 endif
 ifeq ($(PKG_PLATFORM),gnukfreebsd)
 PCFLAGS = -D_GNU_SOURCE $(GCCFLAGS)
 endif
 ifeq ($(PKG_PLATFORM),darwin)
-PCFLAGS = -traditional-cpp $(GCCFLAGS)
-DEPENDFLAGS = -D__APPLE__
+PCFLAGS = $(GCCFLAGS)
+DEPENDFLAGS = -D__APPLE__ -D_DARWIN_FEATURE_64_BIT_INODE
 endif
 ifeq ($(PKG_PLATFORM),irix)
 PLDLIBS = -ldisk -lgen
@@ -127,10 +137,26 @@ PLDLIBS = -L/usr/local/lib -lintl
 PCFLAGS = -I/usr/local/include $(GCCFLAGS)
 DEPENDFLAGS = -D__FreeBSD__
 endif
+ifeq ($(HAVE_FLS),yes)
+LCFLAGS+= -DHAVE_FLS
+endif
+ifeq ($(HAVE_MNTENT),yes)
+PCFLAGS+= -DHAVE_MNTENT
+endif
+ifeq ($(HAVE_FSETXATTR),yes)
+PCFLAGS+= -DHAVE_FSETXATTR
+endif
+ifeq ($(ENABLE_BLKID),yes)
+PCFLAGS+= -DENABLE_BLKID
+endif
+ifeq ($(NEED_INTERNAL_FSXATTR),yes)
+PCFLAGS+= -DOVERRIDE_SYSTEM_FSXATTR
+endif
+
 
 GCFLAGS = $(OPTIMIZER) $(DEBUG) \
 	  -DVERSION=\"$(PKG_VERSION)\" -DLOCALEDIR=\"$(PKG_LOCALE_DIR)\"  \
-	  -DPACKAGE=\"$(PKG_NAME)\" -I$(TOPDIR)/include
+	  -DPACKAGE=\"$(PKG_NAME)\" -I$(TOPDIR)/include -I$(TOPDIR)/libxfs
 
 ifeq ($(ENABLE_GETTEXT),yes)
 GCFLAGS += -DENABLE_GETTEXT

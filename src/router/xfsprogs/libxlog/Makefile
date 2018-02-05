@@ -19,7 +19,6 @@ default: ltdepend $(LTLIBRARY)
 
 include $(BUILDRULES)
 
-install install-dev install-qa: default
-	$(INSTALL_LTLIB)
+install install-dev: default
 
 -include .ltdep

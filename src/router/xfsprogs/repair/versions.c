@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <libxfs.h>
+#include "libxfs.h"
 
 #define EXTERN
 #include "versions.h"
@@ -28,7 +28,6 @@ void
 update_sb_version(xfs_mount_t *mp)
 {
 	xfs_sb_t	*sb;
-	__uint16_t	vn;
 
 	sb = &mp->m_sb;
 
@@ -42,10 +41,9 @@ update_sb_version(xfs_mount_t *mp)
 		xfs_sb_version_addattr2(sb);
 	}
 
-	if (fs_inode_nlink && !xfs_sb_version_hasnlink(sb))  {
-		ASSERT(fs_inode_nlink_allowed);
-		xfs_sb_version_addnlink(sb);
-	}
+	/* V2 inode conversion is now always going to happen */
+	if (!(sb->sb_versionnum & XFS_SB_VERSION_NLINKBIT))
+		sb->sb_versionnum |= XFS_SB_VERSION_NLINKBIT;
 
 	/*
 	 * fix up the superblock version number and feature bits,
@@ -61,26 +59,16 @@ update_sb_version(xfs_mount_t *mp)
 		/*
 		 * protect against stray bits in the quota flag field
 		 */
-		if (sb->sb_qflags & ~(XFS_UQUOTA_ACCT|XFS_UQUOTA_ENFD|
-				XFS_UQUOTA_CHKD|XFS_GQUOTA_ACCT|
-				XFS_OQUOTA_ENFD|XFS_OQUOTA_CHKD|
-				XFS_PQUOTA_ACCT))  {
+		if (sb->sb_qflags & ~XFS_MOUNT_QUOTA_ALL) {
 			/*
 			 * update the incore superblock, if we're in
 			 * no_modify mode, it'll never get flushed out
 			 * so this is ok.
 			 */
 			do_warn(_("bogus quota flags 0x%x set in superblock"),
-				sb->sb_qflags & ~(XFS_UQUOTA_ACCT|
-				XFS_UQUOTA_ENFD|
-				XFS_UQUOTA_CHKD|XFS_GQUOTA_ACCT|
-				XFS_OQUOTA_ENFD|XFS_OQUOTA_CHKD|
-				XFS_PQUOTA_ACCT));
+				sb->sb_qflags & ~XFS_MOUNT_QUOTA_ALL);
 
-			sb->sb_qflags &= (XFS_UQUOTA_ACCT|XFS_UQUOTA_ENFD|
-				XFS_UQUOTA_CHKD|XFS_GQUOTA_ACCT|
-				XFS_OQUOTA_ENFD|XFS_OQUOTA_CHKD|
-				XFS_PQUOTA_ACCT);
+			sb->sb_qflags &= XFS_MOUNT_QUOTA_ALL;
 
 			if (!no_modify)
 				do_warn(_(", bogus flags will be cleared\n"));
@@ -92,18 +80,11 @@ update_sb_version(xfs_mount_t *mp)
 
 		if (xfs_sb_version_hasquota(sb))  {
 			lost_quotas = 1;
-			vn = sb->sb_versionnum;
-			vn &= ~XFS_SB_VERSION_QUOTABIT;
-
-			if (!(vn & XFS_SB_VERSION_ALLFBITS))
-				vn = xfs_sb_version_toold(vn);
-
-			ASSERT(vn != 0);
-			sb->sb_versionnum = vn;
+			sb->sb_versionnum &= ~XFS_SB_VERSION_QUOTABIT;
 		}
 	}
 
-	if (!fs_aligned_inodes && xfs_sb_version_hasalign(sb))  
+	if (!fs_aligned_inodes && xfs_sb_version_hasalign(sb))
 		sb->sb_versionnum &= ~XFS_SB_VERSION_ALIGNBIT;
 }
 
@@ -119,7 +100,7 @@ parse_sb_version(xfs_sb_t *sb)
 
 	fs_attributes = 0;
 	fs_attributes2 = 0;
-	fs_inode_nlink = 0;
+	fs_inode_nlink = 1;
 	fs_quotas = 0;
 	fs_aligned_inodes = 0;
 	fs_sb_feature_bits = 0;
@@ -127,7 +108,23 @@ parse_sb_version(xfs_sb_t *sb)
 	fs_has_extflgbit = 0;
 	have_uquotino = 0;
 	have_gquotino = 0;
+	have_pquotino = 0;
 	issue_warning = 0;
+
+	if (sb->sb_versionnum & XFS_SB_VERSION_SHAREDBIT) {
+		do_warn(_("Shared Version bit set. Not supported. Ever.\n"));
+		return 1;
+	}
+
+	if (sb->sb_versionnum & XFS_SB_VERSION_SHAREDBIT) {
+		do_warn(_("Shared Version bit set. Not supported. Ever.\n"));
+		return 1;
+	}
+
+	if (sb->sb_versionnum & XFS_SB_VERSION_SHAREDBIT) {
+		do_warn(_("Shared Version bit set. Not supported. Ever.\n"));
+		return 1;
+	}
 
 	/*
 	 * ok, check to make sure that the sb isn't newer
@@ -139,14 +136,6 @@ parse_sb_version(xfs_sb_t *sb)
 			issue_warning = 1;
 			do_warn(
 			_("This filesystem has uninitialized extent flags.\n"));
-		}
-	}
-
-	if (xfs_sb_version_hasshared(sb))  {
-		fs_shared = 1;
-		if (!fs_shared_allowed)  {
-			issue_warning = 1;
-			do_warn(_("This filesystem is marked shared.\n"));
 		}
 	}
 
@@ -165,7 +154,7 @@ _("This filesystem contains features not understood by this program.\n"));
 		return(1);
 	}
 
-	if (XFS_SB_VERSION_NUM(sb) == XFS_SB_VERSION_4)  {
+	if (XFS_SB_VERSION_NUM(sb) >= XFS_SB_VERSION_4)  {
 		if (!fs_sb_feature_bits_allowed)  {
 			if (!no_modify)  {
 				do_warn(
@@ -182,6 +171,20 @@ _("WARNING:  you have disallowed superblock-feature-bits-allowed\n"
 		} else   {
 			fs_sb_feature_bits = 1;
 		}
+	}
+
+	/* Look for V5 feature flags we don't know about */
+	if (XFS_SB_VERSION_NUM(sb) >= XFS_SB_VERSION_5 &&
+	    (xfs_sb_has_compat_feature(sb, XFS_SB_FEAT_COMPAT_UNKNOWN) ||
+	     xfs_sb_has_ro_compat_feature(sb, XFS_SB_FEAT_RO_COMPAT_UNKNOWN) ||
+	     xfs_sb_has_incompat_feature(sb, XFS_SB_FEAT_INCOMPAT_UNKNOWN))) {
+		do_warn(
+_("Superblock has unknown compat/rocompat/incompat features (0x%x/0x%x/0x%x).\n"
+  "Using a more recent xfs_repair is recommended.\n"),
+			sb->sb_features_compat & XFS_SB_FEAT_COMPAT_UNKNOWN,
+			sb->sb_features_ro_compat & XFS_SB_FEAT_RO_COMPAT_UNKNOWN,
+			sb->sb_features_incompat & XFS_SB_FEAT_INCOMPAT_UNKNOWN);
+		return 1;
 	}
 
 	if (xfs_sb_version_hasattr(sb))  {
@@ -220,23 +223,17 @@ _("WARNING:  you have disallowed attr2 attributes but this filesystem\n"
 		}
 	}
 
-	if (xfs_sb_version_hasnlink(sb))  {
-		if (!fs_inode_nlink_allowed)  {
-			if (!no_modify)  {
-				do_warn(
-_("WARNING:  you have disallowed version 2 inodes but this filesystem\n"
-  "\thas version 2 inodes.  The filesystem will be downgraded and\n"
-  "\tall version 2 inodes will be converted to version 1 inodes.\n"
-  "\tThis may cause some hard links to files to be destroyed\n"));
-			} else  {
-				do_warn(
-_("WARNING:  you have disallowed version 2 inodes but this filesystem\n"
-  "\thas version 2 inodes.  The filesystem would be downgraded and\n"
-  "\tall version 2 inodes would be converted to version 1 inodes.\n"
-  "\tThis might cause some hard links to files to be destroyed\n"));
-			}
-		} else   {
-			fs_inode_nlink = 1;
+	if (!(sb->sb_versionnum & XFS_SB_VERSION_NLINKBIT)) {
+		if (!no_modify) {
+			do_warn(
+_("WARNING: you have a V1 inode filesystem. It will be converted to a\n"
+  "\tversion 2 inode filesystem. If you do not want this, run an older\n"
+  "\tversion of xfs_repair.\n"));
+		} else  {
+			do_warn(
+_("WARNING: you have a V1 inode filesystem. It would be converted to a\n"
+  "\tversion 2 inode filesystem. If you do not want this, run an older\n"
+  "\tversion of xfs_repair.\n"));
 		}
 	}
 
@@ -263,6 +260,10 @@ _("WARNING:  you have disallowed quotas but this filesystem\n"
 			if (sb->sb_gquotino != 0 &&
 					sb->sb_gquotino != NULLFSINO)
 				have_gquotino = 1;
+
+			if (sb->sb_pquotino != 0 &&
+					sb->sb_pquotino != NULLFSINO)
+				have_pquotino = 1;
 		}
 	}
 
