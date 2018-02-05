@@ -144,10 +144,19 @@ print_flist_1(
 			if (fl->flags & FL_OKHIGH)
 				count = min(count, fl->high - low + 1);
 			if (fa->prfunc) {
+				int	fsz;
+				int	bitlen;
+
+				/* Don't read an array off the end of the buffer */
+				fsz = fsize(f, iocur_top->data, parentoff, 0);
+				bitlen = iocur_top->len * NBBY;
+				if ((f->flags & FLD_ARRAY) &&
+				    fl->offset + (count * fsz) > bitlen) {
+					count = (bitlen - fl->offset) / fsz;
+				}
+
 				neednl = fa->prfunc(iocur_top->data, fl->offset,
-					count, fa->fmtstr,
-					fsize(f, iocur_top->data, parentoff, 0),
-					fa->arg, low,
+					count, fa->fmtstr, fsz, fa->arg, low,
 					(f->flags & FLD_ARRAY) != 0);
 				if (neednl)
 					dbprintf("\n");

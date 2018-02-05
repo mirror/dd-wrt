@@ -1,4 +1,38 @@
 /*
+ * Use slice-by-8, which is the fastest variant.
+ *
+ * Calculate checksum 8 bytes at a time with a clever slicing algorithm.
+ * This is the fastest algorithm, but comes with a 8KiB lookup table.
+ * Most modern processors have enough cache to hold this table without
+ * thrashing the cache.
+ *
+ * The Linux kernel uses this as the default implementation "unless you
+ * have a good reason not to".  The reason why Kconfig urges you to pick
+ * SLICEBY8 is because people challenged the assertion that we should
+ * always use slice by 8, so Darrick wrote a crc microbenchmark utility
+ * and ran it on as many machines as he could get his hands on to show
+ * that sb8 was the fastest.
+ *
+ * Every 64-bit machine (and most of the 32-bit ones too) saw the best
+ * results with sb8.  Any machine with more than 4K of cache saw better
+ * results.  The spreadsheet still exists today[1]; note that
+ * 'crc32-kern-le' corresponds to the slice by 4 algorithm which is the
+ * default unless CRC_LE_BITS is defined explicitly.
+ *
+ * FWIW, there are a handful of board defconfigs in the kernel that
+ * don't pick sliceby8.  These are all embedded 32-bit mips/ppc systems
+ * with very small cache sizes which experience cache thrashing with the
+ * slice by 8 algorithm, and therefore chose to pick defaults that are
+ * saner for their particular board configuration.  For nearly all of
+ * XFS' perceived userbase (which we assume are 32 and 64-bit machines
+ * with sufficiently large CPU cache and largeish storage devices) slice
+ * by 8 is the right choice.
+ *
+ * [1] https://goo.gl/0LSzsG ("crc32c_bench")
+ */
+#define CRC_LE_BITS 64
+
+/*
  * There are multiple 16-bit CRC polynomials in common use, but this is
  * *the* standard CRC-32 polynomial, first popularized by Ethernet.
  * x^32+x^26+x^23+x^22+x^16+x^12+x^11+x^10+x^8+x^7+x^5+x^4+x^2+x^1+x^0

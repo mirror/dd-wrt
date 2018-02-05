@@ -9,9 +9,9 @@ LTCOMMAND = xfs_io
 LSRCFILES = xfs_bmap.sh xfs_freeze.sh xfs_mkfile.sh
 HFILES = init.h io.h
 CFILES = init.c \
-	attr.c bmap.c file.c freeze.c fsync.c getrusage.c imap.c link.c \
-	mmap.c open.c parent.c pread.c prealloc.c pwrite.c seek.c shutdown.c \
-	sync.c truncate.c reflink.c cowextsize.c
+	attr.c bmap.c cowextsize.c encrypt.c file.c freeze.c fsync.c \
+	getrusage.c imap.c link.c mmap.c open.c parent.c pread.c prealloc.c \
+	pwrite.c reflink.c seek.c shutdown.c stat.c sync.c truncate.c utimes.c
 
 LLDLIBS = $(LIBXCMD) $(LIBHANDLE) $(LIBPTHREAD)
 LTDEPENDENCIES = $(LIBXCMD) $(LIBHANDLE)
@@ -90,6 +90,10 @@ ifeq ($(HAVE_PREADV),yes)
 LCFLAGS += -DHAVE_PREADV -DHAVE_PWRITEV
 endif
 
+ifeq ($(HAVE_PWRITEV2),yes)
+LCFLAGS += -DHAVE_PWRITEV2
+endif
+
 ifeq ($(HAVE_READDIR),yes)
 CFILES += readdir.c
 LCFLAGS += -DHAVE_READDIR
@@ -97,6 +101,17 @@ endif
 
 ifeq ($(HAVE_MREMAP),yes)
 LCFLAGS += -DHAVE_MREMAP
+endif
+
+# On linux we get fsmap from the system or define it ourselves
+# so include this based on platform type.  If this reverts to only
+# the autoconf check w/o local definition, change to testing HAVE_GETFSMAP
+ifeq ($(PKG_PLATFORM),linux)
+CFILES += fsmap.c
+endif
+
+ifeq ($(HAVE_STATFS_FLAGS),yes)
+LCFLAGS += -DHAVE_STATFS_FLAGS
 endif
 
 default: depend $(LTCOMMAND)

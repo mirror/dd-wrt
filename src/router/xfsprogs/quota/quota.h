@@ -53,9 +53,9 @@ enum {
 extern char *type_to_string(uint __type);
 extern char *form_to_string(uint __form);
 extern char *time_to_string(time_t __time, uint __flags);
-extern char *bbs_to_string(__uint64_t __v, char *__c, uint __size);
-extern char *num_to_string(__uint64_t __v, char *__c, uint __size);
-extern char *pct_to_string(__uint64_t __v, __uint64_t __t, char *__c, uint __s);
+extern char *bbs_to_string(uint64_t __v, char *__c, uint __size);
+extern char *num_to_string(uint64_t __v, char *__c, uint __size);
+extern char *pct_to_string(uint64_t __v, uint64_t __t, char *__c, uint __s);
 
 extern FILE *fopen_write_secure(char *__filename);
 
@@ -81,7 +81,7 @@ enum {
  * Identifier (uid/gid/prid) cache routines
  */
 #define NMAX 32
-extern char *uid_to_name(__uint32_t __uid);
-extern char *gid_to_name(__uint32_t __gid);
-extern char *prid_to_name(__uint32_t __prid);
+extern char *uid_to_name(uint32_t __uid);
+extern char *gid_to_name(uint32_t __gid);
+extern char *prid_to_name(uint32_t __prid);
 extern bool isdigits_only(const char *);

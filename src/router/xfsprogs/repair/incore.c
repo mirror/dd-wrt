@@ -179,7 +179,7 @@ get_bmap_ext(
 static uint64_t		*rt_bmap;
 static size_t		rt_bmap_size;
 
-/* block records fit into __uint64_t's units */
+/* block records fit into uint64_t's units */
 #define XR_BB_UNIT	64			/* number of bits/unit */
 #define XR_BB		4			/* bits per block record */
 #define XR_BB_NUM	(XR_BB_UNIT/XR_BB)	/* number of records per unit */
@@ -203,8 +203,8 @@ set_rtbmap(
 {
 	*(rt_bmap + bno / XR_BB_NUM) =
 	 ((*(rt_bmap + bno / XR_BB_NUM) &
-	  (~((__uint64_t) XR_BB_MASK << ((bno % XR_BB_NUM) * XR_BB)))) |
-	 (((__uint64_t) state) << ((bno % XR_BB_NUM) * XR_BB)));
+	  (~((uint64_t) XR_BB_MASK << ((bno % XR_BB_NUM) * XR_BB)))) |
+	 (((uint64_t) state) << ((bno % XR_BB_NUM) * XR_BB)));
 }
 
 static void
@@ -222,9 +222,9 @@ init_rt_bmap(
 		return;
 
 	rt_bmap_size = roundup(mp->m_sb.sb_rextents / (NBBY / XR_BB),
-			       sizeof(__uint64_t));
+			       sizeof(uint64_t));
 
-	rt_bmap = memalign(sizeof(__uint64_t), rt_bmap_size);
+	rt_bmap = memalign(sizeof(uint64_t), rt_bmap_size);
 	if (!rt_bmap) {
 		do_error(
 	_("couldn't allocate realtime block map, size = %" PRIu64 "\n"),

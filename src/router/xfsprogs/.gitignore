@@ -67,6 +67,7 @@ cscope.*
 /quota/xfs_quota
 /repair/xfs_repair
 /rtcp/xfs_rtcp
+/spaceman/xfs_spaceman
 
 # generated crc files
 /libxfs/crc32selftest

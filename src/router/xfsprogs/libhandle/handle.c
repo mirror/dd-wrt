@@ -232,7 +232,7 @@ obj_to_handle(
 {
 	char		hbuf [MAXHANSIZ];
 	int		ret;
-	__uint32_t	handlen;
+	uint32_t	handlen;
 	xfs_fsop_handlereq_t hreq;
 
 	if (opcode == XFS_IOC_FD_TO_HANDLE) {

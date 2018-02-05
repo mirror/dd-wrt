@@ -30,8 +30,12 @@ extern const field_t	attr3_flds[];
 extern const field_t	attr3_hfld[];
 extern const field_t	attr3_leaf_hdr_flds[];
 extern const field_t	attr3_node_hdr_flds[];
+extern const field_t	attr3_blkinfo_flds[];
+extern const field_t	attr3_node_hdr_flds[];
+extern const field_t	attr3_remote_crc_flds[];
 
 extern int	attr_leaf_name_size(void *obj, int startoff, int idx);
 extern int	attr_size(void *obj, int startoff, int idx);
+extern void	xfs_attr3_set_crc(struct xfs_buf *bp);
 
 extern const struct xfs_buf_ops xfs_attr3_db_buf_ops;

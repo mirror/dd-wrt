@@ -143,6 +143,8 @@ err_string(int err_code)
 			_("bad shared version number in superblock");
 		err_message[XR_BAD_CRC] =
 			_("bad CRC in superblock");
+		err_message[XR_BAD_DIR_SIZE_DATA] =
+			_("inconsistent directory geometry information");
 		done = 1;
 	}
 
@@ -625,6 +627,40 @@ is_multidisk_filesystem(
 	return true;
 }
 
+/*
+ * if the sector size of the filesystem we are trying to repair is
+ * smaller than that of the underlying filesystem (i.e. we are repairing
+ * an image), the we have to turn off direct IO because we cannot do IO
+ * smaller than the host filesystem's sector size.
+ */
+static void
+check_fs_vs_host_sectsize(
+	struct xfs_sb	*sb)
+{
+	int	fd;
+	long	old_flags;
+	struct xfs_fsop_geom_v1 geom = { 0 };
+
+	fd = libxfs_device_to_fd(x.ddev);
+
+	if (ioctl(fd, XFS_IOC_FSGEOMETRY_V1, &geom) < 0) {
+		do_log(_("Cannot get host filesystem geometry.\n"
+	"Repair may fail if there is a sector size mismatch between\n"
+	"the image and the host filesystem.\n"));
+		geom.sectsize = BBSIZE;
+	}
+
+	if (sb->sb_sectsize < geom.sectsize) {
+		old_flags = fcntl(fd, F_GETFL, 0);
+		if (fcntl(fd, F_SETFL, old_flags & ~O_DIRECT) < 0) {
+			do_warn(_(
+	"Sector size on host filesystem larger than image sector size.\n"
+	"Cannot turn off direct IO, so exiting.\n"));
+			exit(1);
+		}
+	}
+}
+
 int
 main(int argc, char **argv)
 {
@@ -655,6 +691,25 @@ main(int argc, char **argv)
 	timestamp(PHASE_START, 0, NULL);
 	timestamp(PHASE_END, 0, NULL);
 
+	/* -f forces this, but let's be nice and autodetect it, as well. */
+	if (!isa_file) {
+		int		fd = libxfs_device_to_fd(x.ddev);
+		struct stat	statbuf;
+
+		if (fstat(fd, &statbuf) < 0)
+			do_warn(_("%s: couldn't stat \"%s\"\n"),
+				progname, fs_name);
+		else if (S_ISREG(statbuf.st_mode))
+			isa_file = 1;
+	}
+
+	if (isa_file) {
+		/* Best effort attempt to validate fs vs host sector size */
+		rval = get_sb(&psb, 0, XFS_MAX_SECTORSIZE, 0);
+		if (rval == XR_OK)
+			check_fs_vs_host_sectsize(&psb);
+	}
+
 	/* do phase1 to make sure we have a superblock */
 	phase1(temp_mp);
 	timestamp(PHASE_END, 1, NULL);
@@ -673,47 +728,12 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	/* -f forces this, but let's be nice and autodetect it, as well. */
-	if (!isa_file) {
-		int		fd = libxfs_device_to_fd(x.ddev);
-		struct stat	statbuf;
-
-		if (fstat(fd, &statbuf) < 0)
-			do_warn(_("%s: couldn't stat \"%s\"\n"),
-				progname, fs_name);
-		else if (S_ISREG(statbuf.st_mode))
-			isa_file = 1;
-	}
-
 	/*
-	 * if the sector size of the filesystem we are trying to repair is
-	 * smaller than that of the underlying filesystem (i.e. we are repairing
-	 * an image), the we have to turn off direct IO because we cannot do IO
-	 * smaller than the host filesystem's sector size.
+	 * Now that we have completely validated the superblock, geometry may
+	 * have changed; re-check geometry vs the host filesystem geometry
 	 */
-	if (isa_file) {
-		int     fd = libxfs_device_to_fd(x.ddev);
-		struct xfs_fsop_geom_v1 geom = { 0 };
-
-		if (ioctl(fd, XFS_IOC_FSGEOMETRY_V1, &geom) < 0) {
-			do_log(_("Cannot get host filesystem geometry.\n"
-		"Repair may fail if there is a sector size mismatch between\n"
-		"the image and the host filesystem.\n"));
-			geom.sectsize = BBSIZE;
-		}
-
-		if (psb.sb_sectsize < geom.sectsize) {
-			long	old_flags;
-
-			old_flags = fcntl(fd, F_GETFL, 0);
-			if (fcntl(fd, F_SETFL, old_flags & ~O_DIRECT) < 0) {
-				do_warn(_(
-		"Sector size on host filesystem larger than image sector size.\n"
-		"Cannot turn off direct IO, so exiting.\n"));
-				exit(1);
-			}
-		}
-	}
+	if (isa_file)
+		check_fs_vs_host_sectsize(&psb);
 
 	/*
 	 * Prepare the mount structure. Point the log reference to our local
@@ -741,7 +761,7 @@ main(int argc, char **argv)
 	glob_agcount = mp->m_sb.sb_agcount;
 
 	chunks_pblock = mp->m_sb.sb_inopblock / XFS_INODES_PER_CHUNK;
-	max_symlink_blocks = libxfs_symlink_blocks(mp, MAXPATHLEN);
+	max_symlink_blocks = libxfs_symlink_blocks(mp, XFS_SYMLINK_MAXLEN);
 	inodes_per_cluster = MAX(mp->m_sb.sb_inopblock,
 			mp->m_inode_cluster_size >> mp->m_sb.sb_inodelog);
 

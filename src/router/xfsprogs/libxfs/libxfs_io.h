@@ -76,6 +76,7 @@ typedef struct xfs_buf {
 	const struct xfs_buf_ops *b_ops;
 	struct xfs_perag	*b_pag;
 	struct xfs_buf_map	*b_maps;
+	struct xfs_buf_map	__b_map;
 	int			b_nmaps;
 #ifdef XFS_BUF_TRACING
 	struct list_head	b_lock_list;

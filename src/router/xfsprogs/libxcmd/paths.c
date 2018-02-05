@@ -65,6 +65,9 @@ fs_device_number(
  * Find the FS table entry for the given path.  The "flags" argument
  * is a mask containing FS_MOUNT_POINT or FS_PROJECT_PATH (or both)
  * to indicate the type of table entry sought.
+ * fs_table_lookup() finds the fs table entry for the filesystem hosting
+ * the file represented in the "dir" argument. To compare against actual
+ * mount point entries, use fs_table_lookup_mount() instead.
  */
 struct fs_path *
 fs_table_lookup(
@@ -81,6 +84,34 @@ fs_table_lookup(
 		if (flags && !(flags & fs_table[i].fs_flags))
 			continue;
 		if (fs_table[i].fs_datadev == dev)
+			return &fs_table[i];
+	}
+	return NULL;
+}
+
+/*
+ * Find the FS table entry describing an actual mount for the given path.
+ * Unlike fs_table_lookup(), fs_table_lookup_mount() compares the "dir"
+ * argument to actual mount point entries in the table. Accordingly, it
+ * will find matches only if the "dir" argument is indeed mounted.
+ */
+struct fs_path *
+fs_table_lookup_mount(
+	const char	*dir)
+{
+	uint		i;
+	dev_t		dev = 0;
+	char		rpath[PATH_MAX];
+
+	if (fs_device_number(dir, &dev))
+		return NULL;
+
+	for (i = 0; i < fs_count; i++) {
+		if (fs_table[i].fs_flags != FS_MOUNT_POINT)
+			continue;
+		if (!realpath(fs_table[i].fs_dir, rpath))
+			continue;
+		if (strcmp(rpath, dir) == 0)
 			return &fs_table[i];
 	}
 	return NULL;

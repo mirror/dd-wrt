@@ -98,7 +98,7 @@ ablock_f(
 	}
 	dfsbno = bm.startblock + (bno - bm.startoff);
 	ASSERT(typtab[TYP_ATTR].typnm == TYP_ATTR);
-	set_cur(&typtab[TYP_ATTR], (__int64_t)XFS_FSB_TO_DADDR(mp, dfsbno),
+	set_cur(&typtab[TYP_ATTR], (int64_t)XFS_FSB_TO_DADDR(mp, dfsbno),
 		blkbb, DB_RING_ADD, NULL);
 	return 0;
 }
@@ -128,14 +128,14 @@ daddr_f(
 	int		argc,
 	char		**argv)
 {
-	__int64_t	d;
+	int64_t		d;
 	char		*p;
 
 	if (argc == 1) {
 		dbprintf(_("current daddr is %lld\n"), iocur_top->off >> BBSHIFT);
 		return 0;
 	}
-	d = (__int64_t)strtoull(argv[1], &p, 0);
+	d = (int64_t)strtoull(argv[1], &p, 0);
 	if (*p != '\0' ||
 	    d >= mp->m_sb.sb_dblocks << (mp->m_sb.sb_blocklog - BBSHIFT)) {
 		dbprintf(_("bad daddr %s\n"), argv[1]);
@@ -197,7 +197,7 @@ dblock_f(
 	ASSERT(typtab[type].typnm == type);
 	if (nex > 1)
 		make_bbmap(&bbmap, nex, bmp);
-	set_cur(&typtab[type], (__int64_t)XFS_FSB_TO_DADDR(mp, dfsbno),
+	set_cur(&typtab[type], (int64_t)XFS_FSB_TO_DADDR(mp, dfsbno),
 		nb * blkbb, DB_RING_ADD, nex > 1 ? &bbmap : NULL);
 	free(bmp);
 	return 0;

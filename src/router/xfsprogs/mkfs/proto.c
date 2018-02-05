@@ -495,7 +495,8 @@ parseproto(
 		newdirent(mp, tp, pip, &xname, ip->i_ino, &first, &dfops);
 		libxfs_trans_log_inode(tp, ip, flags);
 
-		error = -libxfs_defer_finish(&tp, &dfops, ip);
+		libxfs_defer_ijoin(&dfops, ip);
+		error = -libxfs_defer_finish(&tp, &dfops);
 		if (error)
 			fail(_("Pre-allocated file creation failed"), error);
 		libxfs_trans_commit(tp);
@@ -577,7 +578,8 @@ parseproto(
 		}
 		newdirectory(mp, tp, ip, pip);
 		libxfs_trans_log_inode(tp, ip, flags);
-		error = -libxfs_defer_finish(&tp, &dfops, ip);
+		libxfs_defer_ijoin(&dfops, ip);
+		error = -libxfs_defer_finish(&tp, &dfops);
 		if (error)
 			fail(_("Directory creation failed"), error);
 		libxfs_trans_commit(tp);
@@ -603,7 +605,8 @@ parseproto(
 		fail(_("Unknown format"), EINVAL);
 	}
 	libxfs_trans_log_inode(tp, ip, flags);
-	error = -libxfs_defer_finish(&tp, &dfops, ip);
+	libxfs_defer_ijoin(&dfops, ip);
+	error = -libxfs_defer_finish(&tp, &dfops);
 	if (error) {
 		fail(_("Error encountered creating file from prototype file"),
 			error);
@@ -667,7 +670,7 @@ rtinit(
 	mp->m_sb.sb_rbmino = rbmip->i_ino;
 	rbmip->i_d.di_size = mp->m_sb.sb_rbmblocks * mp->m_sb.sb_blocksize;
 	rbmip->i_d.di_flags = XFS_DIFLAG_NEWRTBM;
-	*(__uint64_t *)&VFS_I(rbmip)->i_atime = 0;
+	*(uint64_t *)&VFS_I(rbmip)->i_atime = 0;
 	libxfs_trans_log_inode(tp, rbmip, XFS_ILOG_CORE);
 	libxfs_log_sb(tp);
 	mp->m_rbmip = rbmip;
@@ -712,7 +715,8 @@ rtinit(
 		}
 	}
 
-	error = -libxfs_defer_finish(&tp, &dfops, rbmip);
+	libxfs_defer_ijoin(&dfops, rbmip);
+	error = -libxfs_defer_finish(&tp, &dfops);
 	if (error) {
 		fail(_("Completion of the realtime bitmap failed"), error);
 	}
@@ -747,7 +751,8 @@ rtinit(
 			bno += ep->br_blockcount;
 		}
 	}
-	error = -libxfs_defer_finish(&tp, &dfops, rsumip);
+	libxfs_defer_ijoin(&dfops, rsumip);
+	error = -libxfs_defer_finish(&tp, &dfops);
 	if (error) {
 		fail(_("Completion of the realtime summary failed"), error);
 	}
@@ -770,7 +775,8 @@ rtinit(
 			fail(_("Error initializing the realtime space"),
 				error);
 		}
-		error = -libxfs_defer_finish(&tp, &dfops, rbmip);
+		libxfs_defer_ijoin(&dfops, rbmip);
+		error = -libxfs_defer_finish(&tp, &dfops);
 		if (error) {
 			fail(_("Error completing the realtime space"), error);
 		}

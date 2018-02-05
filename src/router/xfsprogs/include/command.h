@@ -20,8 +20,14 @@
 
 #include <sys/time.h>
 
-#define CMD_FLAG_GLOBAL		(1<<31)	/* don't iterate "args" */
-#define CMD_FLAG_FOREIGN_OK	(1<<30)	/* command not restricted to XFS */
+/*
+ * A "oneshot" command ony runs once per command execution. It does
+ * not iterate the command args function callout and so can be used
+ * for functions like "help" that should only ever be run once.
+ */
+#define CMD_FLAG_ONESHOT	(1u << 31)
+#define CMD_FLAG_FOREIGN_OK	(1u << 30) /* command not restricted to XFS */
+#define CMD_FLAG_LIBRARY	(1u << 29) /* command provided by libxcmd */
 
 typedef int (*cfunc_t)(int argc, char **argv);
 typedef void (*helpfunc_t)(void);
@@ -45,12 +51,13 @@ extern int		ncmds;
 extern void		help_init(void);
 extern void		quit_init(void);
 
-typedef int (*argsfunc_t)(int index);
+typedef int (*iterfunc_t)(int index);
 typedef int (*checkfunc_t)(const cmdinfo_t *ci);
 
 extern void		add_command(const cmdinfo_t *ci);
 extern void		add_user_command(char *optarg);
-extern void		add_args_command(argsfunc_t af);
+extern void		add_oneshot_user_command(char *optarg);
+extern void		add_command_iterator(iterfunc_t func);
 extern void		add_check_command(checkfunc_t cf);
 
 extern const cmdinfo_t	*find_command(const char *cmd);

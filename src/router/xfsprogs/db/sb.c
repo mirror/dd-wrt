@@ -606,7 +606,7 @@ version_help(void)
 }
 
 static int
-do_version(xfs_agnumber_t agno, __uint16_t version, __uint32_t features)
+do_version(xfs_agnumber_t agno, uint16_t version, uint32_t features)
 {
 	xfs_sb_t	tsb;
 
@@ -694,6 +694,8 @@ version_string(
 		strcat(s, ",SPARSE_INODES");
 	if (xfs_sb_version_hasmetauuid(sbp))
 		strcat(s, ",META_UUID");
+	if (xfs_sb_version_hasrmapbt(sbp))
+		strcat(s, ",RMAPBT");
 	if (xfs_sb_version_hasreflink(sbp))
 		strcat(s, ",REFLINK");
 	return s;
@@ -710,8 +712,8 @@ version_f(
 	int		argc,
 	char		**argv)
 {
-	__uint16_t	version = 0;
-	__uint32_t	features = 0;
+	uint16_t	version = 0;
+	uint32_t	features = 0;
 	xfs_agnumber_t	ag;
 
 	if (argc == 2) {	/* WRITE VERSION */

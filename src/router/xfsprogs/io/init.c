@@ -34,7 +34,7 @@ void
 usage(void)
 {
 	fprintf(stderr,
-		_("Usage: %s [-adfinrRstVx] [-m mode] [-p prog] [-c cmd]... file\n"),
+_("Usage: %s [-adfinrRstVx] [-m mode] [-p prog] [[-c|-C] cmd]... file\n"),
 		progname);
 	exit(1);
 }
@@ -59,16 +59,19 @@ init_commands(void)
 	attr_init();
 	bmap_init();
 	copy_range_init();
+	cowextsize_init();
+	encrypt_init();
 	fadvise_init();
+	fiemap_init();
 	file_init();
 	flink_init();
 	freeze_init();
+	fsmap_init();
 	fsync_init();
 	getrusage_init();
 	help_init();
 	imap_init();
 	inject_init();
-	seek_init();
 	madvise_init();
 	mincore_init();
 	mmap_init();
@@ -76,22 +79,28 @@ init_commands(void)
 	parent_init();
 	pread_init();
 	prealloc_init();
-	fiemap_init();
 	pwrite_init();
 	quit_init();
 	readdir_init();
+	reflink_init();
 	resblks_init();
+	seek_init();
 	sendfile_init();
 	shutdown_init();
+	stat_init();
 	sync_init();
 	sync_range_init();
 	truncate_init();
-	reflink_init();
-	cowextsize_init();
+	utimes_init();
 }
 
+/*
+ * This allows xfs_io commands specified on the command line to be run on every
+ * open file in the file table. Commands that should not be iterated across all
+ * open files need to specify CMD_FLAG_ONESHOT in their command flags.
+ */
 static int
-init_args_command(
+filetable_iterator(
 	int	index)
 {
 	if (index >= filecount)
@@ -104,9 +113,6 @@ static int
 init_check_command(
 	const cmdinfo_t	*ct)
 {
-	if (ct->flags & CMD_FLAG_GLOBAL)
-		return 1;
-
 	if (!file && !(ct->flags & CMD_NOFILE_OK)) {
 		fprintf(stderr, _("no files are open, try 'help open'\n"));
 		return 0;
@@ -134,6 +140,7 @@ init(
 	char		*sp;
 	mode_t		mode = 0600;
 	xfs_fsop_geom_t	geometry = { 0 };
+	struct fs_path	fsp;
 
 	progname = basename(argv[0]);
 	setlocale(LC_ALL, "");
@@ -143,13 +150,17 @@ init(
 	pagesize = getpagesize();
 	gettimeofday(&stopwatch, NULL);
 
-	while ((c = getopt(argc, argv, "ac:dFfim:p:nrRstTVx")) != EOF) {
+	fs_table_initialise(0, NULL, 0, NULL);
+	while ((c = getopt(argc, argv, "ac:C:dFfim:p:nrRstTVx")) != EOF) {
 		switch (c) {
 		case 'a':
 			flags |= IO_APPEND;
 			break;
 		case 'c':
 			add_user_command(optarg);
+			break;
+		case 'C':
+			add_oneshot_user_command(optarg);
 			break;
 		case 'd':
 			flags |= IO_DIRECT;
@@ -204,17 +215,18 @@ init(
 	}
 
 	while (optind < argc) {
-		if ((c = openfile(argv[optind], &geometry, flags, mode)) < 0)
+		c = openfile(argv[optind], &geometry, flags, mode, &fsp);
+		if (c < 0)
 			exit(1);
 		if (!platform_test_xfs_fd(c))
 			flags |= IO_FOREIGN;
-		if (addfile(argv[optind], c, &geometry, flags) < 0)
+		if (addfile(argv[optind], c, &geometry, flags, &fsp) < 0)
 			exit(1);
 		optind++;
 	}
 
 	init_commands();
-	add_args_command(init_args_command);
+	add_command_iterator(filetable_iterator);
 	add_check_command(init_check_command);
 }
 

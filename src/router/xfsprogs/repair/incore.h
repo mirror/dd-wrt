@@ -257,7 +257,7 @@ typedef xfs_ino_t parent_entry_t;
 struct nlink_ops;
 
 typedef struct parent_list  {
-	__uint64_t		pmask;
+	uint64_t		pmask;
 	parent_entry_t		*pentries;
 #ifdef DEBUG
 	short			cnt;
@@ -265,14 +265,14 @@ typedef struct parent_list  {
 } parent_list_t;
 
 union ino_nlink {
-	__uint8_t	*un8;
-	__uint16_t	*un16;
-	__uint32_t	*un32;
+	uint8_t		*un8;
+	uint16_t	*un16;
+	uint32_t	*un32;
 };
 
 typedef struct ino_ex_data  {
-	__uint64_t		ino_reached;	/* bit == 1 if reached */
-	__uint64_t		ino_processed;	/* reference checked bit mask */
+	uint64_t		ino_reached;	/* bit == 1 if reached */
+	uint64_t		ino_processed;	/* reference checked bit mask */
 	parent_list_t		*parents;
 	union ino_nlink		counted_nlinks;/* counted nlinks in P6 */
 } ino_ex_data_t;
@@ -281,22 +281,22 @@ typedef struct ino_tree_node  {
 	avlnode_t		avl_node;
 	xfs_agino_t		ino_startnum;	/* starting inode # */
 	xfs_inofree_t		ir_free;	/* inode free bit mask */
-	__uint64_t		ir_sparse;	/* sparse inode bitmask */
-	__uint64_t		ino_confirmed;	/* confirmed bitmask */
-	__uint64_t		ino_isa_dir;	/* bit == 1 if a directory */
-	__uint64_t		ino_was_rl;	/* bit == 1 if reflink flag set */
-	__uint64_t		ino_is_rl;	/* bit == 1 if reflink flag should be set */
-	__uint8_t		nlink_size;
+	uint64_t		ir_sparse;	/* sparse inode bitmask */
+	uint64_t		ino_confirmed;	/* confirmed bitmask */
+	uint64_t		ino_isa_dir;	/* bit == 1 if a directory */
+	uint64_t		ino_was_rl;	/* bit == 1 if reflink flag set */
+	uint64_t		ino_is_rl;	/* bit == 1 if reflink flag should be set */
+	uint8_t			nlink_size;
 	union ino_nlink		disk_nlinks;	/* on-disk nlinks, set in P3 */
 	union  {
 		ino_ex_data_t	*ex_data;	/* phases 6,7 */
 		parent_list_t	*plist;		/* phases 2-5 */
 	} ino_un;
-	__uint8_t		*ftypes;	/* phases 3,6 */
+	uint8_t			*ftypes;	/* phases 3,6 */
 } ino_tree_node_t;
 
-#define INOS_PER_IREC	(sizeof(__uint64_t) * NBBY)
-#define	IREC_MASK(i)	((__uint64_t)1 << (i))
+#define INOS_PER_IREC	(sizeof(uint64_t) * NBBY)
+#define	IREC_MASK(i)	((uint64_t)1 << (i))
 
 void		add_ino_ex_data(xfs_mount_t *mp);
 
@@ -543,10 +543,10 @@ static inline int inode_is_rl(struct ino_tree_node *irec, int offset)
  */
 void add_inode_ref(struct ino_tree_node *irec, int offset);
 void drop_inode_ref(struct ino_tree_node *irec, int offset);
-__uint32_t num_inode_references(struct ino_tree_node *irec, int offset);
+uint32_t num_inode_references(struct ino_tree_node *irec, int offset);
 
-void set_inode_disk_nlinks(struct ino_tree_node *irec, int offset, __uint32_t nlinks);
-__uint32_t get_inode_disk_nlinks(struct ino_tree_node *irec, int offset);
+void set_inode_disk_nlinks(struct ino_tree_node *irec, int offset, uint32_t nlinks);
+uint32_t get_inode_disk_nlinks(struct ino_tree_node *irec, int offset);
 
 static inline int is_inode_reached(struct ino_tree_node *irec, int offset)
 {
@@ -567,13 +567,13 @@ static inline void add_inode_reached(struct ino_tree_node *irec, int offset)
 static inline void
 set_inode_ftype(struct ino_tree_node *irec,
 	int		ino_offset,
-	__uint8_t	ftype)
+	uint8_t		ftype)
 {
 	if (irec->ftypes)
 		irec->ftypes[ino_offset] = ftype;
 }
 
-static inline __uint8_t
+static inline uint8_t
 get_inode_ftype(
 	struct ino_tree_node *irec,
 	int		ino_offset)
@@ -606,11 +606,11 @@ typedef struct bm_level_state  {
 	xfs_fsblock_t		fsbno;
 	xfs_fsblock_t		left_fsbno;
 	xfs_fsblock_t		right_fsbno;
-	__uint64_t		first_key;
-	__uint64_t		last_key;
+	uint64_t		first_key;
+	uint64_t		last_key;
 /*
 	int			level;
-	__uint64_t		prev_last_key;
+	uint64_t		prev_last_key;
 	xfs_buf_t		*bp;
 	xfs_bmbt_block_t	*block;
 */

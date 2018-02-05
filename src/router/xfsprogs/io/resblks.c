@@ -61,7 +61,7 @@ resblks_init(void)
 	resblks_cmd.cfunc = resblks_f;
 	resblks_cmd.argmin = 0;
 	resblks_cmd.argmax = 1;
-	resblks_cmd.flags = CMD_NOMAP_OK;
+	resblks_cmd.flags = CMD_NOMAP_OK | CMD_FLAG_ONESHOT;
 	resblks_cmd.args = _("[blocks]");
 	resblks_cmd.oneline =
 		_("get and/or set count of reserved filesystem blocks");

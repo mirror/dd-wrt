@@ -24,6 +24,10 @@
 #include <sys/types.h>
 #include <dirent.h>
 
+#ifndef _DIRENT_HAVE_D_RECLEN
+#include <string.h>
+#endif
+
 static struct cmdinfo readdir_cmd;
 
 const char *d_type_str(unsigned int type)
@@ -71,9 +75,10 @@ dump_dirent(
 	long long offset,
 	struct dirent *dirent)
 {
-	printf("%08llx: d_ino: 0x%08lx", offset, dirent->d_ino);
+	printf("%08llx: d_ino: 0x%08llx", offset,
+					(unsigned long long)dirent->d_ino);
 #ifdef _DIRENT_HAVE_D_OFF
-	printf(" d_off: 0x%08lx", dirent->d_off);
+	printf(" d_off: 0x%08llx", (unsigned long long)dirent->d_off);
 #endif
 #ifdef _DIRENT_HAVE_D_RECLEN
 	printf(" d_reclen: 0x%x", dirent->d_reclen);
@@ -106,7 +111,7 @@ read_directory(
 #ifdef _DIRENT_HAVE_D_RECLEN
 		*total += dirent->d_reclen;
 #else
-		*total += dirent->d_namlen + sizeof(*dirent);
+		*total += strlen(dirent->d_name) + sizeof(*dirent);
 #endif
 		count++;
 

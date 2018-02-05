@@ -54,6 +54,7 @@ static int	usage(void);
 
 static int		agcount;
 static xfs_agnumber_t	*aglist;
+static int		alignment;
 static int		countflag;
 static int		dumpflag;
 static int		equalsize;
@@ -67,7 +68,7 @@ static long long	totexts;
 
 static const cmdinfo_t	freesp_cmd =
 	{ "freesp", NULL, freesp_f, 0, -1, 0,
-	  "[-bcdfs] [-a agno]... [-e binsize] [-h h1]... [-m binmult]",
+	  "[-bcdfs] [-A alignment] [-a agno]... [-e binsize] [-h h1]... [-m binmult]",
 	  "summarize free space for filesystem", NULL };
 
 static int
@@ -147,8 +148,11 @@ init(
 	totblocks = totexts = 0;
 	aglist = NULL;
 	hist = NULL;
-	while ((c = getopt(argc, argv, "a:bcde:h:m:s")) != EOF) {
+	while ((c = getopt(argc, argv, "A:a:bcde:h:m:s")) != EOF) {
 		switch (c) {
+		case 'A':
+			alignment = atoi(optarg);
+			break;
 		case 'a':
 			aglistadd(optarg);
 			break;
@@ -371,6 +375,9 @@ addtohist(
 	xfs_extlen_t	len)
 {
 	int		i;
+
+	if (alignment && (XFS_AGB_TO_FSB(mp,agno,agbno) % alignment))
+		return;
 
 	if (dumpflag)
 		dbprintf("%8d %8d %8d\n", agno, agbno, len);

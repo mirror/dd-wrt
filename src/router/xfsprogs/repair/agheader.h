@@ -20,7 +20,7 @@ typedef struct fs_geometry  {
 	/*
 	 * these types should match the superblock types
 	 */
-	__uint32_t	sb_blocksize;	/* blocksize (bytes) */
+	uint32_t	sb_blocksize;	/* blocksize (bytes) */
 	xfs_rfsblock_t	sb_dblocks;	/* # data blocks */
 	xfs_rfsblock_t	sb_rblocks;	/* # realtime blocks */
 	xfs_rtblock_t	sb_rextents;	/* # realtime extents */
@@ -30,9 +30,9 @@ typedef struct fs_geometry  {
 	xfs_agnumber_t	sb_agcount;	/* # of ags */
 	xfs_extlen_t	sb_rbmblocks;	/* # of rt bitmap blocks */
 	xfs_extlen_t	sb_logblocks;	/* # of log blocks */
-	__uint16_t	sb_sectsize;	/* volume sector size (bytes) */
-	__uint16_t	sb_inodesize;	/* inode size (bytes) */
-	__uint8_t	sb_imax_pct;	/* max % of fs for inode space */
+	uint16_t	sb_sectsize;	/* volume sector size (bytes) */
+	uint16_t	sb_inodesize;	/* inode size (bytes) */
+	uint8_t		sb_imax_pct;	/* max % of fs for inode space */
 
 	/*
 	 * these don't have to match the superblock types but are placed
@@ -49,10 +49,10 @@ typedef struct fs_geometry  {
 	/*
 	 * fields after this point have to be checked manually in compare_sb()
 	 */
-	__uint8_t	sb_shared_vn;	/* shared version number */
+	uint8_t		sb_shared_vn;	/* shared version number */
 	xfs_extlen_t	sb_inoalignmt;	/* inode chunk alignment, fsblocks */
-	__uint32_t	sb_unit;	/* stripe or raid unit */
-	__uint32_t	sb_width;	/* stripe or width unit */
+	uint32_t	sb_unit;	/* stripe or raid unit */
+	uint32_t	sb_width;	/* stripe or width unit */
 
 	/*
 	 * these don't have to match, they track superblock properties

@@ -79,11 +79,11 @@ fa_attrblock(
 	typnm_t		next)
 {
 	bmap_ext_t	bm;
-	__uint32_t	bno;
+	uint32_t	bno;
 	xfs_fsblock_t	dfsbno;
 	int		nex;
 
-	bno = (__uint32_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
+	bno = (uint32_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
 	if (bno == 0) {
 		dbprintf(_("null attribute block number, cannot set new addr\n"));
 		return;
@@ -96,7 +96,7 @@ fa_attrblock(
 	}
 	dfsbno = bm.startblock + (bno - bm.startoff);
 	ASSERT(typtab[next].typnm == next);
-	set_cur(&typtab[next], (__int64_t)XFS_FSB_TO_DADDR(mp, dfsbno), blkbb,
+	set_cur(&typtab[next], (int64_t)XFS_FSB_TO_DADDR(mp, dfsbno), blkbb,
 		DB_RING_ADD, NULL);
 }
 
@@ -276,11 +276,11 @@ fa_dirblock(
 {
 	bbmap_t		bbmap;
 	bmap_ext_t	*bmp;
-	__uint32_t	bno;
+	uint32_t	bno;
 	xfs_fsblock_t	dfsbno;
 	int		nex;
 
-	bno = (__uint32_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
+	bno = (uint32_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
 	if (bno == 0) {
 		dbprintf(_("null directory block number, cannot set new addr\n"));
 		return;
@@ -297,7 +297,7 @@ fa_dirblock(
 	ASSERT(typtab[next].typnm == next);
 	if (nex > 1)
 		make_bbmap(&bbmap, nex, bmp);
-	set_cur(&typtab[next], (__int64_t)XFS_FSB_TO_DADDR(mp, dfsbno),
+	set_cur(&typtab[next], (int64_t)XFS_FSB_TO_DADDR(mp, dfsbno),
 		XFS_FSB_TO_BB(mp, mp->m_dir_geo->fsbcount), DB_RING_ADD,
 		nex > 1 ? &bbmap : NULL);
 	free(bmp);
@@ -317,7 +317,7 @@ fa_drfsbno(
 		return;
 	}
 	ASSERT(typtab[next].typnm == next);
-	set_cur(&typtab[next], (__int64_t)XFS_FSB_TO_BB(mp, bno), blkbb,
+	set_cur(&typtab[next], (int64_t)XFS_FSB_TO_BB(mp, bno), blkbb,
 		DB_RING_ADD, NULL);
 }
 

@@ -80,7 +80,7 @@ fp_num(
 	int		bitpos;
 	int		i;
 	int		isnull;
-	__int64_t	val;
+	int64_t		val;
 
 	for (i = 0, bitpos = bit;
 	     i < count && !seenint();
@@ -100,7 +100,7 @@ fp_num(
 		else if (size > 32)
 			dbprintf(fmtstr, val);
 		else
-			dbprintf(fmtstr, (__int32_t)val);
+			dbprintf(fmtstr, (int32_t)val);
 		if (i < count - 1)
 			dbprintf(" ");
 	}
@@ -203,7 +203,7 @@ fp_crc(
 {
 	int		bitpos;
 	int		i;
-	__int64_t	val;
+	int64_t		val;
 	char		*ok;
 
 	switch (iocur_crc_valid()) {
@@ -230,7 +230,7 @@ fp_crc(
 		if (size > 32)
 			dbprintf(fmtstr, val, ok);
 		else
-			dbprintf(fmtstr, (__int32_t)val, ok);
+			dbprintf(fmtstr, (int32_t)val, ok);
 		if (i < count - 1)
 			dbprintf(" ");
 	}

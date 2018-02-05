@@ -95,7 +95,7 @@ file_init(void)
 	file_cmd.cfunc = file_f;
 	file_cmd.argmin = 0;
 	file_cmd.argmax = 1;
-	file_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
+	file_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK | CMD_FLAG_ONESHOT;
 	file_cmd.oneline = _("set the current file");
 
 	print_cmd.name = "print";
@@ -104,7 +104,7 @@ file_init(void)
 	print_cmd.argmin = 0;
 	print_cmd.argmax = 0;
 	print_cmd.flags = CMD_NOMAP_OK | CMD_NOFILE_OK | CMD_FOREIGN_OK |
-				CMD_FLAG_GLOBAL;
+				CMD_FLAG_ONESHOT;
 	print_cmd.oneline = _("list current open files and memory mappings");
 
 	add_command(&file_cmd);

@@ -77,12 +77,11 @@ option is used.
 .BI \-n " num_extents"
 If this option is given,
 .B xfs_bmap
-obtains the extent list of the file in groups of
+will display at most
 .I num_extents
 extents. In the absence of
 .BR \-n ", " xfs_bmap
-queries the system for the number of extents in the file and uses that
-value to compute the group size.
+will display all extents in the file.
 .TP
 .B \-p
 If this option is used,

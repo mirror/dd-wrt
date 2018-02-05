@@ -26,17 +26,17 @@
 
 typedef struct du {
 	struct du	*next;
-	__uint64_t	blocks;
-	__uint64_t	blocks30;
-	__uint64_t	blocks60;
-	__uint64_t	blocks90;
-	__uint64_t	nfiles;
-	__uint32_t	id;
+	uint64_t	blocks;
+	uint64_t	blocks30;
+	uint64_t	blocks60;
+	uint64_t	blocks90;
+	uint64_t	nfiles;
+	uint32_t	id;
 } du_t;
 
 #define	TSIZE		500
-static __uint64_t	sizes[TSIZE];
-static __uint64_t	overflow;
+static uint64_t	sizes[TSIZE];
+static uint64_t	overflow;
 
 #define	NDU		60000
 #define	DUHASH		8209
@@ -84,8 +84,8 @@ quot_bulkstat_add(
 {
 	du_t		*dp;
 	du_t		**hp;
-	__uint64_t	size;
-	__uint32_t	i, id;
+	uint64_t	size;
+	uint32_t	i, id;
 
 	if ((p->bs_mode & S_IFMT) == 0)
 		return;
@@ -203,7 +203,7 @@ qcompare(
 	return 0;
 }
 
-typedef char *(*idtoname_t)(__uint32_t);
+typedef char *(*idtoname_t)(uint32_t);
 
 static void
 quot_report_mount_any_type(
@@ -291,7 +291,7 @@ quot_histogram_mount(
 	fs_path_t	*mount,
 	uint		flags)
 {
-	__uint64_t	t = 0;
+	uint64_t	t = 0;
 	int		i;
 
 	fprintf(fp, _("%s (%s):\n"), mount->fs_name, mount->fs_dir);

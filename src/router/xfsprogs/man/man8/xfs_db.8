@@ -332,6 +332,20 @@ and
 options are used to select the attribute or data
 area of the inode, if neither option is given then both areas are shown.
 .TP
+.B btdump [-a] [-i]
+If the cursor points to a btree node, dump the btree from that block downward.
+If instead the cursor points to an inode, dump the data fork block mapping btree if there is one.
+If the cursor points to a directory or extended attribute btree node, dump that.
+By default, only records stored in the btree are dumped.
+.RS 1.0i
+.TP 0.4i
+.B \-a
+If the cursor points at an inode, dump the extended attribute block mapping btree, if present.
+.TP
+.B \-i
+Dump all keys and pointers in intermediate btree nodes, and all records in leaf btree nodes.
+.RE
+.TP
 .B check
 See the
 .B blockget
@@ -512,12 +526,17 @@ enables processing of realtime control file data.
 enables processing of realtime file data.
 .RE
 .TP
-.BI "freesp [\-bcds] [\-a " ag "] ... [\-e " i "] [\-h " h1 "] ... [\-m " m ]
+.BI "freesp [\-bcds] [\-A " alignment "] [\-a " ag "] ... [\-e " i "] [\-h " h1 "] ... [\-m " m ]
 Summarize free space for the filesystem. The free blocks are examined
 and totalled, and displayed in the form of a histogram, with a count
 of extents in each range of free extent sizes.
 .RS 1.0i
 .TP 0.4i
+.B \-A
+reports only free extents with starting blocks aligned to
+.I alignment
+blocks.
+.TP
 .B \-a
 adds
 .I ag
@@ -593,6 +612,55 @@ regions that are unused.  All blocks, offsets, and lengths are specified
 in units of 512-byte blocks, no matter what the filesystem's block size is.
 .BI "The optional " start " and " end " arguments can be used to constrain
 the output to a particular range of disk blocks.
+.TP
+.BI "fuzz [\-c] [\-d] " "field action"
+Write garbage into a specific structure field on disk.
+Expert mode must be enabled to use this command.
+The operation happens immediately; there is no buffering.
+.IP
+The fuzz command can take the following
+.IR action "s"
+against a field:
+.RS 1.0i
+.TP 0.4i
+.B zeroes
+Clears all bits in the field.
+.TP 0.4i
+.B ones
+Sets all bits in the field.
+.TP 0.4i
+.B firstbit
+Flips the first bit in the field.
+For a scalar value, this is the highest bit.
+.TP 0.4i
+.B middlebit
+Flips the middle bit in the field.
+.TP 0.4i
+.B lastbit
+Flips the last bit in the field.
+For a scalar value, this is the lowest bit.
+.TP 0.4i
+.B add
+Adds a small value to a scalar field.
+.TP 0.4i
+.B sub
+Subtracts a small value from a scalar field.
+.TP 0.4i
+.B random
+Randomizes the contents of the field.
+.RE
+.IP
+The following switches affect the write behavior:
+.RS 1.0i
+.TP 0.4i
+.B \-c
+Skip write verifiers and CRC recalculation; allows invalid data to be written
+to disk.
+.TP 0.4i
+.B \-d
+Skip write verifiers but perform CRC recalculation; allows invalid data to be
+written to disk to test detection of invalid data.
+.RE
 .TP
 .BI hash " string
 Prints the hash value of
@@ -755,7 +823,7 @@ and
 bits respectively, and their string equivalent reported
 (but no modifications are made).
 .TP
-.BI "write [\-c] [" "field value" "] ..."
+.BI "write [\-c] [\-d] [" "field value" "] ..."
 Write a value to disk.
 Specific fields can be set in structures (struct mode),
 or a block can be set to data values (data mode),
@@ -778,6 +846,11 @@ with no arguments gives more information on the allowed commands.
 .B \-c
 Skip write verifiers and CRC recalculation; allows invalid data to be written
 to disk.
+.TP 0.4i
+.B \-d
+Skip write verifiers but perform CRC recalculation.
+This allows invalid data to be written to disk to
+test detection of invalid data.  (This is not possible for some types.)
 .RE
 .SH TYPES
 This section gives the fields in each structure type and their meanings.
@@ -916,8 +989,7 @@ version 1 and version 2 directories, see type
 .B dir
 for a description. Leaf blocks can refer to "local" or "remote" attribute
 values. Local values are stored directly in the leaf block.
-Remote values are stored in an independent block in the attribute fork
-(with no structure). Leaf blocks contain the following fields:
+Leaf blocks contain the following fields:
 .RS 1.4i
 .PD 0
 .TP 1.2i
@@ -963,6 +1035,41 @@ Fields present for local values:
 (value string). Fields present for remote values:
 .B valueblk
 (fork block number of containing the value).
+.PD
+.RE
+.IP
+Remote values are stored in an independent block in the attribute fork.
+Prior to v5, value blocks had no structure, but in v5 they acquired a header
+structure with the following fields:
+.RS 1.4i
+.PD 0
+.TP 1.2i
+.B magic
+attr3 remote block magic number, 0x5841524d ('XARM').
+.TP
+.B offset
+Byte offset of this data block within the overall attribute value.
+.TP
+.B bytes
+Number of bytes stored in this block.
+.TP
+.B crc
+Checksum of the attribute block contents.
+.TP
+.B uuid
+Filesystem UUID.
+.TP
+.B owner
+Inode that owns this attribute value.
+.TP
+.B bno
+Block offset of this block within the inode's attribute fork.
+.TP
+.B lsn
+Log serial number of the last time this block was logged.
+.TP
+.B data
+The attribute value data.
 .PD
 .RE
 .TP

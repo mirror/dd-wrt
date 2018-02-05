@@ -52,7 +52,7 @@ quota_help(void)
 static int
 quota_mount(
 	FILE		*fp,
-	__uint32_t	id,
+	uint32_t	id,
 	char		*name,
 	uint		form,
 	uint		type,
@@ -181,7 +181,7 @@ quota_mount(
 static void
 quota(
 	FILE		*fp,
-	__uint32_t	id,
+	uint32_t	id,
 	char		*name,
 	uint		form,
 	uint		type,

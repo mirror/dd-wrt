@@ -115,16 +115,16 @@ warn_help(void)
 
 static void
 set_limits(
-	__uint32_t	id,
+	uint32_t	id,
 	uint		type,
 	uint		mask,
 	char		*dev,
-	__uint64_t	*bsoft,
-	__uint64_t	*bhard,
-	__uint64_t	*isoft,
-	__uint64_t	*ihard,
-	__uint64_t	*rtbsoft,
-	__uint64_t	*rtbhard)
+	uint64_t	*bsoft,
+	uint64_t	*bhard,
+	uint64_t	*isoft,
+	uint64_t	*ihard,
+	uint64_t	*rtbsoft,
+	uint64_t	*rtbhard)
 {
 	fs_disk_quota_t	d;
 
@@ -152,12 +152,12 @@ set_user_limits(
 	char		*name,
 	uint		type,
 	uint		mask,
-	__uint64_t	*bsoft,
-	__uint64_t	*bhard,
-	__uint64_t	*isoft,
-	__uint64_t	*ihard,
-	__uint64_t	*rtbsoft,
-	__uint64_t	*rtbhard)
+	uint64_t	*bsoft,
+	uint64_t	*bhard,
+	uint64_t	*isoft,
+	uint64_t	*ihard,
+	uint64_t	*rtbsoft,
+	uint64_t	*rtbhard)
 {
 	uid_t		uid = uid_from_string(name);
 
@@ -175,12 +175,12 @@ set_group_limits(
 	char		*name,
 	uint		type,
 	uint		mask,
-	__uint64_t	*bsoft,
-	__uint64_t	*bhard,
-	__uint64_t	*isoft,
-	__uint64_t	*ihard,
-	__uint64_t	*rtbsoft,
-	__uint64_t	*rtbhard)
+	uint64_t	*bsoft,
+	uint64_t	*bhard,
+	uint64_t	*isoft,
+	uint64_t	*ihard,
+	uint64_t	*rtbsoft,
+	uint64_t	*rtbhard)
 {
 	gid_t		gid = gid_from_string(name);
 
@@ -198,12 +198,12 @@ set_project_limits(
 	char		*name,
 	uint		type,
 	uint		mask,
-	__uint64_t	*bsoft,
-	__uint64_t	*bhard,
-	__uint64_t	*isoft,
-	__uint64_t	*ihard,
-	__uint64_t	*rtbsoft,
-	__uint64_t	*rtbhard)
+	uint64_t	*bsoft,
+	uint64_t	*bhard,
+	uint64_t	*isoft,
+	uint64_t	*ihard,
+	uint64_t	*rtbsoft,
+	uint64_t	*rtbhard)
 {
 	prid_t		prid = prid_from_string(name);
 
@@ -224,7 +224,7 @@ extractb(
 	int		length,
 	uint		blocksize,
 	uint		sectorsize,
-	__uint64_t	*value)
+	uint64_t	*value)
 {
 	long long	v;
 	char		*s = string;
@@ -238,7 +238,7 @@ extractb(
 				progname, s);
 			return 0;
 		}
-		*value = (__uint64_t)v >> 9;	/* syscalls use basic blocks */
+		*value = (uint64_t)v >> 9;	/* syscalls use basic blocks */
 		if (v > 0 && *value == 0)
 			fprintf(stderr, _("%s: Warning: `%s' in quota blocks is 0 (unlimited).\n"), progname, s);
 		return 1;
@@ -252,7 +252,7 @@ extracti(
 	char		*string,
 	const char	*prefix,
 	int		length,
-	__uint64_t	*value)
+	uint64_t	*value)
 {
 	char		*sp, *s = string;
 
@@ -270,7 +270,7 @@ limit_f(
 	char		**argv)
 {
 	char		*name;
-	__uint64_t	bsoft, bhard, isoft, ihard, rtbsoft, rtbhard;
+	uint64_t	bsoft, bhard, isoft, ihard, rtbsoft, rtbhard;
 	int		c, type = 0, mask = 0, flags = 0;
 	uint		bsize, ssize, endoptions;
 
@@ -384,8 +384,8 @@ restore_file(
 	char		*dev = NULL;
 	uint		mask;
 	int		cnt;
-	__uint32_t	id;
-	__uint64_t	bsoft, bhard, isoft, ihard, rtbsoft, rtbhard;
+	uint32_t	id;
+	uint64_t	bsoft, bhard, isoft, ihard, rtbsoft, rtbhard;
 
 	while (fgets(buffer, sizeof(buffer), fp) != NULL) {
 		if (strncmp("fs = ", buffer, 5) == 0) {
@@ -546,7 +546,7 @@ timer_f(
 
 static void
 set_warnings(
-	__uint32_t	id,
+	uint32_t	id,
 	uint		type,
 	uint		mask,
 	char		*dev,

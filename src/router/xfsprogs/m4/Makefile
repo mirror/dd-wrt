@@ -18,6 +18,7 @@ LSRCFILES = \
 	package_globals.m4 \
 	package_libcdev.m4 \
 	package_pthread.m4 \
+	package_sanitizer.m4 \
 	package_types.m4 \
 	package_utilies.m4 \
 	package_uuiddev.m4 \

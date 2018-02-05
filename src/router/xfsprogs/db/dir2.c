@@ -981,6 +981,43 @@ const field_t	da3_node_hdr_flds[] = {
 	{ NULL }
 };
 
+/* Set the CRC. */
+void
+xfs_dir3_set_crc(
+	struct xfs_buf		*bp)
+{
+	__be32			magic32;
+	__be16			magic16;
+
+	magic32 = *(__be32 *)bp->b_addr;
+	magic16 = ((struct xfs_da_blkinfo *)bp->b_addr)->magic;
+
+	switch (magic32) {
+	case cpu_to_be32(XFS_DIR3_BLOCK_MAGIC):
+	case cpu_to_be32(XFS_DIR3_DATA_MAGIC):
+		xfs_buf_update_cksum(bp, XFS_DIR3_DATA_CRC_OFF);
+		return;
+	case cpu_to_be32(XFS_DIR3_FREE_MAGIC):
+		xfs_buf_update_cksum(bp, XFS_DIR3_FREE_CRC_OFF);
+		return;
+	default:
+		break;
+	}
+
+	switch (magic16) {
+	case cpu_to_be16(XFS_DIR3_LEAF1_MAGIC):
+	case cpu_to_be16(XFS_DIR3_LEAFN_MAGIC):
+		xfs_buf_update_cksum(bp, XFS_DIR3_LEAF_CRC_OFF);
+		return;
+	case cpu_to_be16(XFS_DA3_NODE_MAGIC):
+		xfs_buf_update_cksum(bp, XFS_DA3_NODE_CRC_OFF);
+		return;
+	default:
+		dbprintf(_("Unknown directory buffer type! %x %x\n"), magic32, magic16);
+		break;
+	}
+}
+
 /*
  * Special read verifier for directory buffers. Detect the magic number
  * appropriately and set the correct verifier and call it.

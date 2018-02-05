@@ -50,7 +50,8 @@
 #define XR_BAD_SB_WIDTH		18	/* bad stripe width */
 #define XR_BAD_SVN		19	/* bad shared version number */
 #define XR_BAD_CRC		20	/* Bad CRC */
-#define XR_BAD_ERR_CODE		21	/* Bad error code */
+#define XR_BAD_DIR_SIZE_DATA	21	/* Bad directory geometry */
+#define XR_BAD_ERR_CODE		22	/* Bad error code */
 
 /* XFS filesystem (il)legal values */
 
@@ -140,7 +141,7 @@ EXTERN int		inodes_per_cluster;
 EXTERN unsigned int	glob_agcount;
 EXTERN int		chunks_pblock;	/* # of 64-ino chunks per allocation */
 EXTERN int		max_symlink_blocks;
-EXTERN __int64_t	fs_max_file_offset;
+EXTERN int64_t		fs_max_file_offset;
 
 /* realtime info */
 
@@ -160,24 +161,24 @@ EXTERN int		full_ino_ex_data;/*
 
 /* superblock counters */
 
-EXTERN __uint64_t	sb_icount;	/* allocated (made) inodes */
-EXTERN __uint64_t	sb_ifree;	/* free inodes */
-EXTERN __uint64_t	sb_fdblocks;	/* free data blocks */
-EXTERN __uint64_t	sb_frextents;	/* free realtime extents */
+EXTERN uint64_t	sb_icount;	/* allocated (made) inodes */
+EXTERN uint64_t	sb_ifree;	/* free inodes */
+EXTERN uint64_t	sb_fdblocks;	/* free data blocks */
+EXTERN uint64_t	sb_frextents;	/* free realtime extents */
 
 /* superblock geometry info */
 
 EXTERN xfs_extlen_t	sb_inoalignmt;
-EXTERN __uint32_t	sb_unit;
-EXTERN __uint32_t	sb_width;
+EXTERN uint32_t	sb_unit;
+EXTERN uint32_t	sb_width;
 
 struct aglock {
 	pthread_mutex_t	lock __attribute__((__aligned__(64)));
 };
 EXTERN struct aglock	*ag_locks;
 
-EXTERN int 		report_interval;
-EXTERN __uint64_t 	*prog_rpt_done;
+EXTERN int		report_interval;
+EXTERN uint64_t		*prog_rpt_done;
 
 EXTERN int		ag_stride;
 EXTERN int		thread_count;

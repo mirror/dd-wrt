@@ -39,6 +39,7 @@
 #include "dir2.h"
 #include "text.h"
 #include "symlink.h"
+#include "fuzz.h"
 
 static const typ_t	*findtyp(char *name);
 static int		type_f(int argc, char **argv);
@@ -87,7 +88,7 @@ static const typ_t	__typtab_crc[] = {
 	{ TYP_AGI, "agi", handle_struct, agi_hfld, &xfs_agi_buf_ops,
 		XFS_AGI_CRC_OFF },
 	{ TYP_ATTR, "attr3", handle_struct, attr3_hfld,
-		&xfs_attr3_db_buf_ops, TYP_F_NO_CRC_OFF },
+		&xfs_attr3_db_buf_ops, TYP_F_CRC_FUNC, xfs_attr3_set_crc },
 	{ TYP_BMAPBTA, "bmapbta", handle_struct, bmapbta_crc_hfld,
 		&xfs_bmbt_buf_ops, XFS_BTREE_LBLOCK_CRC_OFF },
 	{ TYP_BMAPBTD, "bmapbtd", handle_struct, bmapbtd_crc_hfld,
@@ -102,14 +103,14 @@ static const typ_t	__typtab_crc[] = {
 		&xfs_refcountbt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
 	{ TYP_DATA, "data", handle_block, NULL, NULL, TYP_F_NO_CRC_OFF },
 	{ TYP_DIR2, "dir3", handle_struct, dir3_hfld,
-		&xfs_dir3_db_buf_ops, TYP_F_NO_CRC_OFF },
+		&xfs_dir3_db_buf_ops, TYP_F_CRC_FUNC, xfs_dir3_set_crc },
 	{ TYP_DQBLK, "dqblk", handle_struct, dqblk_hfld,
-		&xfs_dquot_buf_ops, TYP_F_NO_CRC_OFF },
+		&xfs_dquot_buf_ops, TYP_F_CRC_FUNC, xfs_dquot_set_crc },
 	{ TYP_INOBT, "inobt", handle_struct, inobt_crc_hfld,
 		&xfs_inobt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
 	{ TYP_INODATA, "inodata", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
 	{ TYP_INODE, "inode", handle_struct, inode_crc_hfld,
-		&xfs_inode_buf_ops, TYP_F_NO_CRC_OFF },
+		&xfs_inode_buf_ops, TYP_F_CRC_FUNC, xfs_inode_set_crc },
 	{ TYP_LOG, "log", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
 	{ TYP_RTBITMAP, "rtbitmap", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
 	{ TYP_RTSUMMARY, "rtsummary", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
@@ -131,7 +132,7 @@ static const typ_t	__typtab_spcrc[] = {
 	{ TYP_AGI, "agi", handle_struct, agi_hfld, &xfs_agi_buf_ops ,
 		XFS_AGI_CRC_OFF },
 	{ TYP_ATTR, "attr3", handle_struct, attr3_hfld,
-		&xfs_attr3_db_buf_ops, TYP_F_NO_CRC_OFF },
+		&xfs_attr3_db_buf_ops, TYP_F_CRC_FUNC, xfs_attr3_set_crc },
 	{ TYP_BMAPBTA, "bmapbta", handle_struct, bmapbta_crc_hfld,
 		&xfs_bmbt_buf_ops, XFS_BTREE_LBLOCK_CRC_OFF },
 	{ TYP_BMAPBTD, "bmapbtd", handle_struct, bmapbtd_crc_hfld,
@@ -146,14 +147,14 @@ static const typ_t	__typtab_spcrc[] = {
 		&xfs_refcountbt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
 	{ TYP_DATA, "data", handle_block, NULL, NULL, TYP_F_NO_CRC_OFF },
 	{ TYP_DIR2, "dir3", handle_struct, dir3_hfld,
-		&xfs_dir3_db_buf_ops, TYP_F_NO_CRC_OFF },
+		&xfs_dir3_db_buf_ops, TYP_F_CRC_FUNC, xfs_dir3_set_crc },
 	{ TYP_DQBLK, "dqblk", handle_struct, dqblk_hfld,
-		&xfs_dquot_buf_ops, TYP_F_NO_CRC_OFF },
+		&xfs_dquot_buf_ops, TYP_F_CRC_FUNC, xfs_dquot_set_crc },
 	{ TYP_INOBT, "inobt", handle_struct, inobt_spcrc_hfld,
 		&xfs_inobt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
 	{ TYP_INODATA, "inodata", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
 	{ TYP_INODE, "inode", handle_struct, inode_crc_hfld,
-		&xfs_inode_buf_ops, TYP_F_NO_CRC_OFF },
+		&xfs_inode_buf_ops, TYP_F_CRC_FUNC, xfs_inode_set_crc },
 	{ TYP_LOG, "log", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
 	{ TYP_RTBITMAP, "rtbitmap", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
 	{ TYP_RTSUMMARY, "rtsummary", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
@@ -254,10 +255,17 @@ handle_struct(
 	int           argc,
 	char          **argv)
 {
-	if (action == DB_WRITE)
+	switch (action) {
+	case DB_FUZZ:
+		fuzz_struct(fields, argc, argv);
+		break;
+	case DB_WRITE:
 		write_struct(fields, argc, argv);
-	else
+		break;
+	case DB_READ:
 		print_struct(fields, argc, argv);
+		break;
+	}
 }
 
 void
@@ -267,10 +275,17 @@ handle_string(
 	int           argc,
 	char          **argv)
 {
-	if (action == DB_WRITE)
+	switch (action) {
+	case DB_WRITE:
 		write_string(fields, argc, argv);
-	else
+		break;
+	case DB_READ:
 		print_string(fields, argc, argv);
+		break;
+	case DB_FUZZ:
+		dbprintf(_("string fuzzing not supported.\n"));
+		break;
+	}
 }
 
 void
@@ -280,10 +295,17 @@ handle_block(
 	int           argc,
 	char          **argv)
 {
-	if (action == DB_WRITE)
+	switch (action) {
+	case DB_WRITE:
 		write_block(fields, argc, argv);
-	else
+		break;
+	case DB_READ:
 		print_block(fields, argc, argv);
+		break;
+	case DB_FUZZ:
+		dbprintf(_("use 'blocktrash' or 'write' to fuzz a block.\n"));
+		break;
+	}
 }
 
 void
@@ -293,6 +315,14 @@ handle_text(
 	int           argc,
 	char          **argv)
 {
-	if (action != DB_WRITE)
+	switch (action) {
+	case DB_FUZZ:
+		/* fall through */
+	case DB_WRITE:
+		dbprintf(_("text writing/fuzzing not supported.\n"));
+		break;
+	case DB_READ:
 		print_text(fields, argc, argv);
+		break;
+	}
 }

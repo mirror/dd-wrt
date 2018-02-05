@@ -9,7 +9,7 @@ BUILDRULES = $(TOPDIR)/include/buildrules
 # $(CXXFILES), or $(HFILES) and is used to construct the manifest list
 # during the "dist" phase (packaging).
 
-LDFLAGS += $(LOADERFLAGS) $(LLDFLAGS)
+LDFLAGS += $(SANITIZER_LDFLAGS) $(LOADERFLAGS) $(LLDFLAGS)
 LTLDFLAGS += $(LOADERFLAGS)
 LDLIBS = $(LLDLIBS) $(PLDLIBS) $(MALLOCLIB)
 

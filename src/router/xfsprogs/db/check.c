@@ -114,8 +114,8 @@ typedef struct dirhash {
 
 static xfs_extlen_t	agffreeblks;
 static xfs_extlen_t	agflongest;
-static __uint64_t	agf_aggr_freeblks;	/* aggregate count over all */
-static __uint32_t	agfbtreeblks;
+static uint64_t	agf_aggr_freeblks;	/* aggregate count over all */
+static uint32_t	agfbtreeblks;
 static int		lazycount;
 static xfs_agino_t	agicount;
 static xfs_agino_t	agifreecount;
@@ -124,10 +124,10 @@ static int		blist_size;
 static char		**dbmap;	/* really dbm_t:8 */
 static dirhash_t	**dirhash;
 static int		error;
-static __uint64_t	fdblocks;
-static __uint64_t	frextents;
-static __uint64_t	icount;
-static __uint64_t	ifree;
+static uint64_t	fdblocks;
+static uint64_t	frextents;
+static uint64_t	icount;
+static uint64_t	ifree;
 static inodata_t	***inodata;
 static int		inodata_hash_size;
 static inodata_t	***inomap;
@@ -1187,7 +1187,7 @@ blocktrash_f(
 		goto out;
 	}
 	for (i = 0; i < count; i++) {
-		randb = (xfs_rfsblock_t)((((__int64_t)random() << 32) |
+		randb = (xfs_rfsblock_t)((((int64_t)random() << 32) |
 					 random()) % blocks);
 		for (bi = 0, agno = 0, done = 0;
 		     !done && agno < mp->m_sb.sb_agcount;
@@ -3032,7 +3032,7 @@ process_leaf_node_dir_v2(
 		}
 		if (v)
 			dbprintf(_("dir inode %lld block %u=%llu\n"), id->ino,
-				(__uint32_t)dbno,
+				(uint32_t)dbno,
 				(xfs_fsblock_t)bmp->startblock);
 		push_cur();
 		if (nex > 1)
@@ -3045,7 +3045,7 @@ process_leaf_node_dir_v2(
 			if (!sflag || v)
 				dbprintf(_("can't read block %u for directory "
 					 "inode %lld\n"),
-					(__uint32_t)dbno, id->ino);
+					(uint32_t)dbno, id->ino);
 			error++;
 			pop_cur();
 			dbno += mp->m_dir_geo->fsbcount - 1;
@@ -3192,9 +3192,7 @@ process_leaf_node_dir_v2_free(
 		return;
 	}
 	if (be32_to_cpu(free->hdr.nvalid) > maxent ||
-				be32_to_cpu(free->hdr.nvalid) < 0 ||
 				be32_to_cpu(free->hdr.nused) > maxent ||
-				be32_to_cpu(free->hdr.nused) < 0 ||
 				be32_to_cpu(free->hdr.nused) >
 					be32_to_cpu(free->hdr.nvalid)) {
 		if (!sflag || v)
@@ -3383,7 +3381,7 @@ process_quota(
 	int		cb;
 	xfs_dqblk_t	*dqb;
 	xfs_dqid_t	dqid;
-	u_int8_t	exp_flags = 0;
+	uint8_t		exp_flags = 0;
 	uint		i;
 	uint		perblock;
 	xfs_fileoff_t	qbno;

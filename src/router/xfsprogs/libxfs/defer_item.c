@@ -445,16 +445,23 @@ xfs_bmap_update_finish_item(
 	void				**state)
 {
 	struct xfs_bmap_intent		*bmap;
+	xfs_filblks_t			count;
 	int				error;
 
 	bmap = container_of(item, struct xfs_bmap_intent, bi_list);
+	count = bmap->bi_bmap.br_blockcount;
 	error = xfs_bmap_finish_one(tp, dop,
 			bmap->bi_owner,
 			bmap->bi_type, bmap->bi_whichfork,
 			bmap->bi_bmap.br_startoff,
 			bmap->bi_bmap.br_startblock,
-			bmap->bi_bmap.br_blockcount,
+			&count,
 			bmap->bi_bmap.br_state);
+	if (!error && count > 0) {
+		ASSERT(bmap->bi_type == XFS_BMAP_UNMAP);
+		bmap->bi_bmap.br_blockcount = count;
+		return -EAGAIN;
+	}
 	kmem_free(bmap);
 	return error;
 }

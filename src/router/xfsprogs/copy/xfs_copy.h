@@ -76,7 +76,7 @@ typedef struct {
 
 typedef int thread_id;
 typedef int tm_index;			/* index into thread mask array */
-typedef __uint32_t thread_mask;		/* a thread mask */
+typedef uint32_t thread_mask;		/* a thread mask */
 
 typedef struct {
 	char		*name;

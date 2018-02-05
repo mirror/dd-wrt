@@ -46,8 +46,8 @@ process_bmbt_reclist(xfs_mount_t	*mp,
 		xfs_ino_t		ino,
 		xfs_rfsblock_t		*tot,
 		struct blkmap		**blkmapp,
-		__uint64_t		*first_key,
-		__uint64_t		*last_key,
+		uint64_t		*first_key,
+		uint64_t		*last_key,
 		int			whichfork);
 
 int

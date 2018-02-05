@@ -41,6 +41,10 @@ static int	attr_leaf_nvlist_offset(void *obj, int startoff, int idx);
 static int	attr_node_btree_count(void *obj, int startoff);
 static int	attr_node_hdr_count(void *obj, int startoff);
 
+static int	attr_remote_data_count(void *obj, int startoff);
+static int	attr3_remote_hdr_count(void *obj, int startoff);
+static int	attr3_remote_data_count(void *obj, int startoff);
+
 const field_t	attr_hfld[] = {
 	{ "", FLDT_ATTR, OI(0), C1, 0, TYP_NONE },
 	{ NULL }
@@ -53,6 +57,8 @@ const field_t	attr_flds[] = {
 	  FLD_COUNT, TYP_NONE },
 	{ "hdr", FLDT_ATTR_NODE_HDR, OI(NOFF(hdr)), attr_node_hdr_count,
 	  FLD_COUNT, TYP_NONE },
+	{ "data", FLDT_CHARNS, OI(0), attr_remote_data_count, FLD_COUNT,
+	  TYP_NONE },
 	{ "entries", FLDT_ATTR_LEAF_ENTRY, OI(LOFF(entries)),
 	  attr_leaf_entries_count, FLD_ARRAY|FLD_COUNT, TYP_NONE },
 	{ "btree", FLDT_ATTR_NODE_ENTRY, OI(NOFF(__btree)), attr_node_btree_count,
@@ -77,16 +83,16 @@ const field_t	attr_leaf_entry_flds[] = {
 	{ "nameidx", FLDT_UINT16D, OI(LEOFF(nameidx)), C1, 0, TYP_NONE },
 	{ "flags", FLDT_UINT8X, OI(LEOFF(flags)), C1, FLD_SKIPALL, TYP_NONE },
 	{ "incomplete", FLDT_UINT1,
-	  OI(LEOFF(flags) + bitsz(__uint8_t) - XFS_ATTR_INCOMPLETE_BIT - 1), C1,
+	  OI(LEOFF(flags) + bitsz(uint8_t) - XFS_ATTR_INCOMPLETE_BIT - 1), C1,
 	  0, TYP_NONE },
 	{ "root", FLDT_UINT1,
-	  OI(LEOFF(flags) + bitsz(__uint8_t) - XFS_ATTR_ROOT_BIT - 1), C1, 0,
+	  OI(LEOFF(flags) + bitsz(uint8_t) - XFS_ATTR_ROOT_BIT - 1), C1, 0,
 	  TYP_NONE },
 	{ "secure", FLDT_UINT1,
-	  OI(LEOFF(flags) + bitsz(__uint8_t) - XFS_ATTR_SECURE_BIT - 1), C1, 0,
+	  OI(LEOFF(flags) + bitsz(uint8_t) - XFS_ATTR_SECURE_BIT - 1), C1, 0,
 	  TYP_NONE },
 	{ "local", FLDT_UINT1,
-	  OI(LEOFF(flags) + bitsz(__uint8_t) - XFS_ATTR_LOCAL_BIT - 1), C1, 0,
+	  OI(LEOFF(flags) + bitsz(uint8_t) - XFS_ATTR_LOCAL_BIT - 1), C1, 0,
 	  TYP_NONE },
 	{ "pad2", FLDT_UINT8X, OI(LEOFF(pad2)), C1, FLD_SKIPALL, TYP_NONE },
 	{ NULL }
@@ -195,6 +201,35 @@ attr3_leaf_hdr_count(
 
 	ASSERT(startoff == 0);
 	return be16_to_cpu(leaf->hdr.info.hdr.magic) == XFS_ATTR3_LEAF_MAGIC;
+}
+
+static int
+attr_remote_data_count(
+	void				*obj,
+	int				startoff)
+{
+	if (attr_leaf_hdr_count(obj, startoff) == 0 &&
+	    attr_node_hdr_count(obj, startoff) == 0)
+		return mp->m_sb.sb_blocksize;
+	return 0;
+}
+
+static int
+attr3_remote_data_count(
+	void				*obj,
+	int				startoff)
+{
+	struct xfs_attr3_rmt_hdr	*hdr = obj;
+	size_t				buf_space;
+
+	ASSERT(startoff == 0);
+
+	if (hdr->rm_magic != cpu_to_be32(XFS_ATTR3_RMT_MAGIC))
+		return 0;
+	buf_space = XFS_ATTR3_RMT_BUF_SPACE(mp, mp->m_sb.sb_blocksize);
+	if (be32_to_cpu(hdr->rm_bytes) > buf_space)
+		return buf_space;
+	return be32_to_cpu(hdr->rm_bytes);
 }
 
 typedef int (*attr_leaf_entry_walk_f)(struct xfs_attr_leafblock *,
@@ -477,6 +512,17 @@ attr3_node_hdr_count(
 	return be16_to_cpu(node->hdr.info.hdr.magic) == XFS_DA3_NODE_MAGIC;
 }
 
+static int
+attr3_remote_hdr_count(
+	void			*obj,
+	int			startoff)
+{
+	struct xfs_attr3_rmt_hdr	*node = obj;
+
+	ASSERT(startoff == 0);
+	return be32_to_cpu(node->rm_magic) == XFS_ATTR3_RMT_MAGIC;
+}
+
 int
 attr_size(
 	void	*obj,
@@ -499,8 +545,12 @@ const field_t	attr3_hfld[] = {
 const field_t	attr3_flds[] = {
 	{ "hdr", FLDT_ATTR3_LEAF_HDR, OI(L3OFF(hdr)), attr3_leaf_hdr_count,
 	  FLD_COUNT, TYP_NONE },
-	{ "hdr", FLDT_DA3_NODE_HDR, OI(N3OFF(hdr)), attr3_node_hdr_count,
+	{ "hdr", FLDT_ATTR3_NODE_HDR, OI(N3OFF(hdr)), attr3_node_hdr_count,
 	  FLD_COUNT, TYP_NONE },
+	{ "hdr", FLDT_ATTR3_REMOTE_HDR, OI(0), attr3_remote_hdr_count,
+	  FLD_COUNT, TYP_NONE },
+	{ "data", FLDT_CHARNS, OI(bitize(sizeof(struct xfs_attr3_rmt_hdr))),
+	  attr3_remote_data_count, FLD_COUNT, TYP_NONE },
 	{ "entries", FLDT_ATTR_LEAF_ENTRY, OI(L3OFF(entries)),
 	  attr3_leaf_entries_count, FLD_ARRAY|FLD_COUNT, TYP_NONE },
 	{ "btree", FLDT_ATTR_NODE_ENTRY, OI(N3OFF(__btree)),
@@ -512,7 +562,7 @@ const field_t	attr3_flds[] = {
 
 #define	LH3OFF(f)	bitize(offsetof(struct xfs_attr3_leaf_hdr, f))
 const field_t	attr3_leaf_hdr_flds[] = {
-	{ "info", FLDT_DA3_BLKINFO, OI(LH3OFF(info)), C1, 0, TYP_NONE },
+	{ "info", FLDT_ATTR3_BLKINFO, OI(LH3OFF(info)), C1, 0, TYP_NONE },
 	{ "count", FLDT_UINT16D, OI(LH3OFF(count)), C1, 0, TYP_NONE },
 	{ "usedbytes", FLDT_UINT16D, OI(LH3OFF(usedbytes)), C1, 0, TYP_NONE },
 	{ "firstused", FLDT_UINT16D, OI(LH3OFF(firstused)), C1, 0, TYP_NONE },
@@ -522,6 +572,71 @@ const field_t	attr3_leaf_hdr_flds[] = {
 	  CI(XFS_ATTR_LEAF_MAPSIZE), FLD_ARRAY, TYP_NONE },
 	{ NULL }
 };
+
+#define	B3OFF(f)	bitize(offsetof(struct xfs_da3_blkinfo, f))
+const field_t	attr3_blkinfo_flds[] = {
+	{ "hdr", FLDT_ATTR_BLKINFO, OI(B3OFF(hdr)), C1, 0, TYP_NONE },
+	{ "crc", FLDT_CRC, OI(B3OFF(crc)), C1, 0, TYP_NONE },
+	{ "bno", FLDT_DFSBNO, OI(B3OFF(blkno)), C1, 0, TYP_BMAPBTD },
+	{ "lsn", FLDT_UINT64X, OI(B3OFF(lsn)), C1, 0, TYP_NONE },
+	{ "uuid", FLDT_UUID, OI(B3OFF(uuid)), C1, 0, TYP_NONE },
+	{ "owner", FLDT_INO, OI(B3OFF(owner)), C1, 0, TYP_NONE },
+	{ NULL }
+};
+
+#define	H3OFF(f)	bitize(offsetof(struct xfs_da3_node_hdr, f))
+const field_t	attr3_node_hdr_flds[] = {
+	{ "info", FLDT_ATTR3_BLKINFO, OI(H3OFF(info)), C1, 0, TYP_NONE },
+	{ "count", FLDT_UINT16D, OI(H3OFF(__count)), C1, 0, TYP_NONE },
+	{ "level", FLDT_UINT16D, OI(H3OFF(__level)), C1, 0, TYP_NONE },
+	{ "pad", FLDT_UINT32D, OI(H3OFF(__pad32)), C1, 0, TYP_NONE },
+	{ NULL }
+};
+
+#define	RM3OFF(f)	bitize(offsetof(struct xfs_attr3_rmt_hdr, rm_ ## f))
+const struct field	attr3_remote_crc_flds[] = {
+	{ "magic", FLDT_UINT32X, OI(RM3OFF(magic)), C1, 0, TYP_NONE },
+	{ "offset", FLDT_UINT32D, OI(RM3OFF(offset)), C1, 0, TYP_NONE },
+	{ "bytes", FLDT_UINT32D, OI(RM3OFF(bytes)), C1, 0, TYP_NONE },
+	{ "crc", FLDT_CRC, OI(RM3OFF(crc)), C1, 0, TYP_NONE },
+	{ "uuid", FLDT_UUID, OI(RM3OFF(uuid)), C1, 0, TYP_NONE },
+	{ "owner", FLDT_INO, OI(RM3OFF(owner)), C1, 0, TYP_NONE },
+	{ "bno", FLDT_DFSBNO, OI(RM3OFF(blkno)), C1, 0, TYP_BMAPBTD },
+	{ "lsn", FLDT_UINT64X, OI(RM3OFF(lsn)), C1, 0, TYP_NONE },
+	{ NULL }
+};
+
+/* Set the CRC. */
+void
+xfs_attr3_set_crc(
+	struct xfs_buf		*bp)
+{
+	__be32			magic32;
+	__be16			magic16;
+
+	magic32 = *(__be32 *)bp->b_addr;
+	magic16 = ((struct xfs_da_blkinfo *)bp->b_addr)->magic;
+
+	switch (magic16) {
+	case cpu_to_be16(XFS_ATTR3_LEAF_MAGIC):
+		xfs_buf_update_cksum(bp, XFS_ATTR3_LEAF_CRC_OFF);
+		return;
+	case cpu_to_be16(XFS_DA3_NODE_MAGIC):
+		xfs_buf_update_cksum(bp, XFS_DA3_NODE_CRC_OFF);
+		return;
+	default:
+		break;
+	}
+
+	switch (magic32) {
+	case cpu_to_be32(XFS_ATTR3_RMT_MAGIC):
+		xfs_buf_update_cksum(bp, XFS_ATTR3_RMT_CRC_OFF);
+		return;
+	default:
+		dbprintf(_("Unknown attribute buffer type!\n"));
+		break;
+	}
+}
 
 /*
  * Special read verifier for attribute buffers. Detect the magic number

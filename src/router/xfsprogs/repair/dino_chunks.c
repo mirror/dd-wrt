@@ -826,8 +826,6 @@ next_readbuf:
 		 * we do now, this is where to start.
 		 */
 		if (is_used)  {
-			__uint16_t	di_mode;
-
 			if (is_inode_free(ino_rec, irec_offset))  {
 				if (verbose || no_modify)  {
 					do_warn(
@@ -846,10 +844,8 @@ next_readbuf:
 			 * store the on-disk file type for comparing in
 			 * phase 6.
 			 */
-			di_mode = be16_to_cpu(dino->di_mode);
-			di_mode = (di_mode & S_IFMT) >> S_SHIFT;
 			set_inode_ftype(ino_rec, irec_offset,
-					xfs_mode_to_ftype[di_mode]);
+				xfs_mode_to_ftype(be16_to_cpu(dino->di_mode)));
 
 			/*
 			 * store on-disk nlink count for comparing in phase 7

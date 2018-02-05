@@ -30,6 +30,7 @@ typedef enum typnm
 	TYP_TEXT, TYP_FINOBT, TYP_NONE
 } typnm_t;
 
+#define DB_FUZZ  2
 #define DB_WRITE 1
 #define DB_READ  0
 
@@ -45,6 +46,8 @@ typedef struct typ
 	const struct xfs_buf_ops *bops;
 	unsigned long		crc_off;
 #define TYP_F_NO_CRC_OFF	(-1UL)
+#define TYP_F_CRC_FUNC		(-2UL)
+	void			(*set_crc)(struct xfs_buf *);
 } typ_t;
 extern const typ_t	*typtab, *cur_typ;
 

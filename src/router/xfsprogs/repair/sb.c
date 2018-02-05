@@ -40,7 +40,7 @@ copy_sb(xfs_sb_t *source, xfs_sb_t *dest)
 	xfs_ino_t	uquotino;
 	xfs_ino_t	gquotino;
 	xfs_ino_t	pquotino;
-	__uint16_t	versionnum;
+	uint16_t	versionnum;
 
 	rootino = dest->sb_rootino;
 	rbmino = dest->sb_rbmino;
@@ -106,8 +106,8 @@ verify_sb_blocksize(xfs_sb_t *sb)
 static int
 __find_secondary_sb(
 	xfs_sb_t	*rsb,
-	__uint64_t	start,
-	__uint64_t	skip)
+	uint64_t	start,
+	uint64_t	skip)
 {
 	xfs_off_t	off;
 	xfs_sb_t	*sb;
@@ -187,13 +187,13 @@ __find_secondary_sb(
 
 static int
 guess_default_geometry(
-	__uint64_t		*agsize,
-	__uint64_t		*agcount,
+	uint64_t		*agsize,
+	uint64_t		*agcount,
 	libxfs_init_t		*x)
 {
 	struct fs_topology	ft;
 	int			blocklog;
-	__uint64_t		dblocks;
+	uint64_t		dblocks;
 	int			multidisk;
 
 	memset(&ft, 0, sizeof(ft));
@@ -216,9 +216,9 @@ int
 find_secondary_sb(xfs_sb_t *rsb)
 {
 	int		retval = 0;
-	__uint64_t	agcount;
-	__uint64_t	agsize;
-	__uint64_t	skip;
+	uint64_t	agcount;
+	uint64_t	agsize;
+	uint64_t	skip;
 	int		blocklog;
 
 	/*
@@ -229,7 +229,7 @@ find_secondary_sb(xfs_sb_t *rsb)
 	do_warn(_("\nattempting to find secondary superblock...\n"));
 
 	if (verify_sb_blocksize(rsb) == 0) {
-		skip = (__uint64_t)rsb->sb_agblocks * rsb->sb_blocksize;
+		skip = (uint64_t)rsb->sb_agblocks * rsb->sb_blocksize;
 		if (skip >= XFS_AG_MIN_BYTES && skip <= XFS_AG_MAX_BYTES)
 			retval = __find_secondary_sb(rsb, skip, skip);
 	}
@@ -343,7 +343,7 @@ sb_validate_ino_align(struct xfs_sb *sb)
 int
 verify_sb(char *sb_buf, xfs_sb_t *sb, int is_primary_sb)
 {
-	__uint32_t	bsize;
+	uint32_t	bsize;
 	int		i;
 	int		ret;
 
@@ -395,20 +395,22 @@ verify_sb(char *sb_buf, xfs_sb_t *sb, int is_primary_sb)
 	/* sanity check ag count, size fields against data size field */
 
 	if (sb->sb_dblocks == 0 ||
-		sb->sb_dblocks >
-			((__uint64_t)sb->sb_agcount * sb->sb_agblocks) ||
-		sb->sb_dblocks <
-			((__uint64_t)(sb->sb_agcount - 1) * sb->sb_agblocks
-			+ XFS_MIN_AG_BLOCKS))
+		sb->sb_dblocks > XFS_MAX_DBLOCKS(sb) ||
+		sb->sb_dblocks < XFS_MIN_DBLOCKS(sb))
 		return(XR_BAD_FS_SIZE_DATA);
 
-	if (sb->sb_agblklog != (__uint8_t)libxfs_log2_roundup(sb->sb_agblocks))
+	if (sb->sb_agblklog != (uint8_t)libxfs_log2_roundup(sb->sb_agblocks))
 		return(XR_BAD_FS_SIZE_DATA);
 
-	if (sb->sb_inodesize < XFS_DINODE_MIN_SIZE ||
-		sb->sb_inodesize > XFS_DINODE_MAX_SIZE ||
-		sb->sb_inopblock != howmany(sb->sb_blocksize,sb->sb_inodesize))
-		return(XR_BAD_INO_SIZE_DATA);
+	if (sb->sb_inodesize < XFS_DINODE_MIN_SIZE                     ||
+	    sb->sb_inodesize > XFS_DINODE_MAX_SIZE                     ||
+	    sb->sb_inodelog < XFS_DINODE_MIN_LOG                       ||
+	    sb->sb_inodelog > XFS_DINODE_MAX_LOG                       ||
+	    sb->sb_inodesize != (1 << sb->sb_inodelog)                 ||
+	    sb->sb_logsunit > XLOG_MAX_RECORD_BSIZE                    ||
+	    sb->sb_inopblock != howmany(sb->sb_blocksize, sb->sb_inodesize) ||
+	    (sb->sb_blocklog - sb->sb_inodelog != sb->sb_inopblog))
+		return XR_BAD_INO_SIZE_DATA;
 
 	if (xfs_sb_version_hassector(sb))  {
 
@@ -492,7 +494,12 @@ verify_sb(char *sb_buf, xfs_sb_t *sb, int is_primary_sb)
 		if ((sb->sb_unit && !sb->sb_width) ||
 		    (sb->sb_width && sb->sb_unit && sb->sb_width % sb->sb_unit))
 			return(XR_BAD_SB_WIDTH);
-	}
+	} else if (sb->sb_unit || sb->sb_width)
+		return XR_BAD_SB_WIDTH;
+
+	/* Directory block log */
+	if (sb->sb_blocklog + sb->sb_dirblklog > XFS_MAX_BLOCKSIZE_LOG)
+		return XR_BAD_DIR_SIZE_DATA;
 
 	return(XR_OK);
 }

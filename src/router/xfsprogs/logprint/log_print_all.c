@@ -269,7 +269,7 @@ xlog_recover_print_inode_core(
 	       di->di_size, (unsigned long long)di->di_nblocks,
 	       di->di_extsize, di->di_nextents, (int)di->di_anextents);
 	printf(_("		forkoff:%d  dmevmask:0x%x  dmstate:%d  flags:0x%x  "
-	     "gen:%d\n"),
+	     "gen:%u\n"),
 	       (int)di->di_forkoff, di->di_dmevmask, (int)di->di_dmstate,
 	       (int)di->di_flags, di->di_gen);
 	if (di->di_version == 3) {
@@ -288,8 +288,8 @@ xlog_recover_print_inode(
 	int			hasdata;
 	int			hasattr;
 
-	ASSERT(item->ri_buf[0].i_len == sizeof(xfs_inode_log_format_32_t) ||
-	       item->ri_buf[0].i_len == sizeof(xfs_inode_log_format_64_t));
+	ASSERT(item->ri_buf[0].i_len == sizeof(struct xfs_inode_log_format_32) ||
+	       item->ri_buf[0].i_len == sizeof(struct xfs_inode_log_format));
 	f = xfs_inode_item_format_convert(item->ri_buf[0].i_addr, item->ri_buf[0].i_len, &f_buf);
 
 	printf(_("	INODE: #regs:%d   ino:0x%llx  flags:0x%x   dsize:%d\n"),
