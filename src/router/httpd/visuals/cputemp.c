@@ -244,26 +244,28 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			sprintf(tempp, "%s/temp%d_input", path, idx);
 			sprintf(maxp, "%s/temp%d_max", path, idx);
 			hascore = 1;
+			TEMP_MUL = 1000;
 			fp = fopen(maxp, "rb");
 		}
-
-		if (!fp)
-			fp = fopen("/sys/class/hwmon/hwmon0/temp1_max", "rb");
-		if (!fp)
-			fp = fopen("/sys/class/hwmon/hwmon0/temp2_max", "rb");
-		if (!fp)
-			fp = fopen("/sys/class/hwmon/hwmon1/temp1_max", "rb");
-		if (fp) {	// some heuristic to detect unit 
-			char temp[32];
-			fscanf(fp, "%s", &temp[0]);
-			fclose(fp);
-			int l = strlen(temp);
-			if (l > 2) {
-				TEMP_MUL = 1;
-				for (i = 0; i < (l - 2); i++)
-					TEMP_MUL *= 10;
-			} else
-				TEMP_MUL = 1;
+		if (TEMP_MUL == 100) {
+			if (!fp)
+				fp = fopen("/sys/class/hwmon/hwmon0/temp1_max", "rb");
+			if (!fp)
+				fp = fopen("/sys/class/hwmon/hwmon0/temp2_max", "rb");
+			if (!fp)
+				fp = fopen("/sys/class/hwmon/hwmon1/temp1_max", "rb");
+			if (fp) {	// some heuristic to detect unit 
+				char temp[32];
+				fscanf(fp, "%s", &temp[0]);
+				fclose(fp);
+				int l = strlen(temp);
+				if (l > 2) {
+					TEMP_MUL = 1;
+					for (i = 0; i < (l - 2); i++)
+						TEMP_MUL *= 10;
+				} else
+					TEMP_MUL = 1;
+			}
 		}
 		fp = NULL;
 		if (hascore)
