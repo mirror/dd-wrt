@@ -227,7 +227,6 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #elif HAVE_VENTANA
 	int TEMP_MUL = 10;
 	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/temp0_input", "rb");
-
 #else
 	int TEMP_MUL = 1000;
 #ifdef HAVE_X86
@@ -317,10 +316,9 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			int temp;
 			fscanf(fp2, "%d", &temp);
 			fclose(fp2);
-			if ((i == 0 && cpufound) || found) {
+			if (cpufound || found) {
 				websWrite(wp, " / ");
 			}
-			found = 1;
 			websWrite(wp, "ath%d %d &#176;C", i, temp / 1000);
 		}
 	}
