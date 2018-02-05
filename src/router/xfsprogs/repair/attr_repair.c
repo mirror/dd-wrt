@@ -754,17 +754,22 @@ process_leaf_attr_level(xfs_mount_t	*mp,
 
 	da_bno = da_cursor->level[0].bno;
 	ino = da_cursor->ino;
+	/*
+	 * 0 is the root block and no block
+	 * pointer can point to the root block of the btree
+	 */
+	if (da_bno == 0) {
+		do_warn(
+	_("btree cycle detected in attribute fork for inode %" PRIu64 "\n"),
+			ino);
+		goto error_out;
+	}
+
 	prev_bno = 0;
 
 	do {
 		repair = 0;
 		dev_bno = blkmap_get(da_cursor->blkmap, da_bno);
-		/*
-		 * 0 is the root block and no block
-		 * pointer can point to the root block of the btree
-		 */
-		ASSERT(da_bno != 0);
-
 		if (dev_bno == NULLFSBLOCK) {
 			do_warn(
 	_("can't map block %u for attribute fork for inode %" PRIu64 "\n"),
@@ -938,14 +943,16 @@ __check_attr_header(
 	if (be64_to_cpu(info->owner) != ino) {
 		do_warn(
 _("expected owner inode %" PRIu64 ", got %llu, attr block %" PRIu64 "\n"),
-			ino, be64_to_cpu(info->owner), bp->b_bn);
+			ino, (unsigned long long)be64_to_cpu(info->owner),
+			bp->b_bn);
 		return 1;
 	}
 	/* verify block number */
 	if (be64_to_cpu(info->blkno) != bp->b_bn) {
 		do_warn(
 _("expected block %" PRIu64 ", got %llu, inode %" PRIu64 "attr block\n"),
-			bp->b_bn, be64_to_cpu(info->blkno), ino);
+			bp->b_bn, (unsigned long long)be64_to_cpu(info->blkno),
+			ino);
 		return 1;
 	}
 	/* verify uuid */

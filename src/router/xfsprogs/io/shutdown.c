@@ -54,7 +54,7 @@ shutdown_init(void)
 	shutdown_cmd.cfunc = shutdown_f;
 	shutdown_cmd.argmin = 0;
 	shutdown_cmd.argmax = 1;
-	shutdown_cmd.flags = CMD_NOMAP_OK;
+	shutdown_cmd.flags = CMD_NOMAP_OK | CMD_FLAG_ONESHOT | CMD_FLAG_FOREIGN_OK;
 	shutdown_cmd.args = _("[-f]");
 	shutdown_cmd.oneline =
 		_("shuts down the filesystem where the current file resides");

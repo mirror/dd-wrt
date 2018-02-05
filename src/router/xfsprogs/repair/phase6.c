@@ -82,7 +82,7 @@ typedef struct dir_hash_ent {
 	struct dir_hash_ent	*nextbyhash;	/* next in name bucket */
 	struct dir_hash_ent	*nextbyorder;	/* next in order added */
 	xfs_dahash_t		hashval;	/* hash value of name */
-	__uint32_t		address;	/* offset of data entry */
+	uint32_t		address;	/* offset of data entry */
 	xfs_ino_t 		inum;		/* inode num of entry */
 	short			junkit;		/* name starts with / */
 	short			seen;		/* have seen leaf entry */
@@ -170,11 +170,11 @@ static int
 dir_hash_add(
 	xfs_mount_t		*mp,
 	dir_hash_tab_t		*hashtab,
-	__uint32_t		addr,
+	uint32_t		addr,
 	xfs_ino_t		inum,
 	int			namelen,
 	unsigned char		*name,
-	__uint8_t		ftype)
+	uint8_t			ftype)
 {
 	xfs_dahash_t		hash = 0;
 	int			byaddr;
@@ -357,7 +357,7 @@ static void
 dir_hash_update_ftype(
 	dir_hash_tab_t		*hashtab,
 	xfs_dir2_dataptr_t	addr,
-	__uint8_t		ftype)
+	uint8_t			ftype)
 {
 	int			i;
 	dir_hash_ent_t		*p;
@@ -434,12 +434,10 @@ bmap_next_offset(
 	int		whichfork)		/* data or attr fork */
 {
 	xfs_fileoff_t	bno;			/* current block */
-	int		eof;			/* hit end of file */
 	int		error;			/* error return value */
 	xfs_bmbt_irec_t got;			/* current extent value */
 	xfs_ifork_t	*ifp;			/* inode fork pointer */
-	xfs_extnum_t	lastx;			/* last extent used */
-	xfs_bmbt_irec_t prev;			/* previous extent value */
+	xfs_extnum_t	idx;			/* last extent used */
 
 	if (XFS_IFORK_FORMAT(ip, whichfork) != XFS_DINODE_FMT_BTREE &&
 	    XFS_IFORK_FORMAT(ip, whichfork) != XFS_DINODE_FMT_EXTENTS &&
@@ -454,9 +452,7 @@ bmap_next_offset(
 	    (error = -libxfs_iread_extents(tp, ip, whichfork)))
 		return error;
 	bno = *bnop + 1;
-	libxfs_bmap_search_extents(ip, bno, whichfork, &eof, &lastx,
-				   &got, &prev);
-	if (eof)
+	if (!libxfs_iext_lookup_extent(ip, ifp, bno, &idx, &got))
 		*bnop = NULLFILEOFF;
 	else
 		*bnop = got.br_startoff < bno ? bno : got.br_startoff;
@@ -569,7 +565,8 @@ mk_rbmino(xfs_mount_t *mp)
 			bno += ep->br_blockcount;
 		}
 	}
-	error = -libxfs_defer_finish(&tp, &dfops, ip);
+	libxfs_defer_ijoin(&dfops, ip);
+	error = -libxfs_defer_finish(&tp, &dfops);
 	if (error) {
 		do_error(
 		_("allocation of the realtime bitmap failed, error = %d\n"),
@@ -821,7 +818,8 @@ mk_rsumino(xfs_mount_t *mp)
 			bno += ep->br_blockcount;
 		}
 	}
-	error = -libxfs_defer_finish(&tp, &dfops, ip);
+	libxfs_defer_ijoin(&dfops, ip);
+	error = -libxfs_defer_finish(&tp, &dfops);
 	if (error) {
 		do_error(
 	_("allocation of the realtime summary ino failed, error = %d\n"),
@@ -1025,7 +1023,8 @@ mk_orphanage(xfs_mount_t *mp)
 	libxfs_dir_init(tp, ip, pip);
 	libxfs_trans_log_inode(tp, ip, XFS_ILOG_CORE);
 
-	error = -libxfs_defer_finish(&tp, &dfops, ip);
+	libxfs_defer_ijoin(&dfops, ip);
+	error = -libxfs_defer_finish(&tp, &dfops);
 	if (error) {
 		do_error(_("%s directory creation failed -- bmapf error %d\n"),
 			ORPHANAGE, error);
@@ -1082,7 +1081,7 @@ mv_orphanage(
 	if ((err = -libxfs_iget(mp, NULL, ino, 0, &ino_p)))
 		do_error(_("%d - couldn't iget disconnected inode\n"), err);
 
-	xname.type = xfs_mode_to_ftype[(VFS_I(ino_p)->i_mode & S_IFMT)>>S_SHIFT];
+	xname.type = xfs_mode_to_ftype(VFS_I(ino_p)->i_mode);
 
 	if (isa_dir)  {
 		irec = find_inode_rec(mp, XFS_INO_TO_AGNO(mp, orphanage_ino),
@@ -1131,7 +1130,8 @@ mv_orphanage(
 			inc_nlink(VFS_I(ino_p));
 			libxfs_trans_log_inode(tp, ino_p, XFS_ILOG_CORE);
 
-			err = -libxfs_defer_finish(&tp, &dfops, ino_p);
+			libxfs_defer_ijoin(&dfops, ino_p);
+			err = -libxfs_defer_finish(&tp, &dfops);
 			if (err)
 				do_error(
 	_("bmap finish failed (err - %d), filesystem may be out of space\n"),
@@ -1178,7 +1178,8 @@ mv_orphanage(
 						err);
 			}
 
-			err = -libxfs_defer_finish(&tp, &dfops, ino_p);
+			libxfs_defer_ijoin(&dfops, ino_p);
+			err = -libxfs_defer_finish(&tp, &dfops);
 			if (err)
 				do_error(
 	_("bmap finish failed (%d), filesystem may be out of space\n"),
@@ -1217,7 +1218,8 @@ mv_orphanage(
 		set_nlink(VFS_I(ino_p), 1);
 		libxfs_trans_log_inode(tp, ino_p, XFS_ILOG_CORE);
 
-		err = -libxfs_defer_finish(&tp, &dfops, ino_p);
+		libxfs_defer_ijoin(&dfops, ino_p);
+		err = -libxfs_defer_finish(&tp, &dfops);
 		if (err)
 			do_error(
 	_("bmap finish failed (%d), filesystem may be out of space\n"),
@@ -1317,7 +1319,8 @@ longform_dir2_rebuild(
 		goto out_bmap_cancel;
 	}
 
-	error = -libxfs_defer_finish(&tp, &dfops, ip);
+	libxfs_defer_ijoin(&dfops, ip);
+	error = -libxfs_defer_finish(&tp, &dfops);
 
 	libxfs_trans_commit(tp);
 
@@ -1351,7 +1354,8 @@ _("name create failed in ino %" PRIu64 " (%d), filesystem may be out of space\n"
 			goto out_bmap_cancel;
 		}
 
-		error = -libxfs_defer_finish(&tp, &dfops, ip);
+		libxfs_defer_ijoin(&dfops, ip);
+		error = -libxfs_defer_finish(&tp, &dfops);
 		if (error) {
 			do_warn(
 	_("bmap finish failed (%d), filesystem may be out of space\n"),
@@ -1411,7 +1415,8 @@ dir2_kill_block(
 	if (error)
 		do_error(_("shrink_inode failed inode %" PRIu64 " block %u\n"),
 			ip->i_ino, da_bno);
-	libxfs_defer_finish(&tp, &dfops, ip);
+	libxfs_defer_ijoin(&dfops, ip);
+	libxfs_defer_finish(&tp, &dfops);
 	libxfs_trans_commit(tp);
 }
 
@@ -1795,8 +1800,8 @@ longform_dir2_entry_check_data(
 
 		/* validate ftype field if supported */
 		if (xfs_sb_version_hasftype(&mp->m_sb)) {
-			__uint8_t dir_ftype;
-			__uint8_t ino_ftype;
+			uint8_t dir_ftype;
+			uint8_t ino_ftype;
 
 			dir_ftype = M_DIROPS(mp)->data_get_ftype(dep);
 			ino_ftype = get_inode_ftype(irec, ino_offset);
@@ -1883,10 +1888,12 @@ _("entry \"%s\" in dir inode %" PRIu64 " inconsistent with .. value (%" PRIu64 "
 	}
 	*num_illegal += nbad;
 	if (needscan)
-		libxfs_dir2_data_freescan(mp->m_dir_geo, M_DIROPS(mp), d, &i);
+		libxfs_dir2_data_freescan_int(mp->m_dir_geo, M_DIROPS(mp),
+				d, &i);
 	if (needlog)
 		libxfs_dir2_data_log_header(&da, bp);
-	libxfs_defer_finish(&tp, &dfops, ip);
+	libxfs_defer_ijoin(&dfops, ip);
+	libxfs_defer_finish(&tp, &dfops);
 	libxfs_trans_commit(tp);
 
 	/* record the largest free space in the freetab for later checking */
@@ -1910,14 +1917,14 @@ __check_dir3_header(
 	if (be64_to_cpu(owner) != ino) {
 		do_warn(
 _("expected owner inode %" PRIu64 ", got %llu, directory block %" PRIu64 "\n"),
-			ino, be64_to_cpu(owner), bp->b_bn);
+			ino, (unsigned long long)be64_to_cpu(owner), bp->b_bn);
 		return 1;
 	}
 	/* verify block number */
 	if (be64_to_cpu(blkno) != bp->b_bn) {
 		do_warn(
 _("expected block %" PRIu64 ", got %llu, directory inode %" PRIu64 "\n"),
-			bp->b_bn, be64_to_cpu(blkno), ino);
+			bp->b_bn, (unsigned long long)be64_to_cpu(blkno), ino);
 		return 1;
 	}
 	/* verify uuid */
@@ -2706,8 +2713,8 @@ _("entry \"%s\" (ino %" PRIu64 ") in dir %" PRIu64 " is a duplicate name"),
 
 		/* validate ftype field if supported */
 		if (xfs_sb_version_hasftype(&mp->m_sb)) {
-			__uint8_t dir_ftype;
-			__uint8_t ino_ftype;
+			uint8_t dir_ftype;
+			uint8_t ino_ftype;
 
 			dir_ftype = M_DIROPS(mp)->sf_get_ftype(sfep);
 			ino_ftype = get_inode_ftype(irec, ino_offset);
@@ -2949,7 +2956,8 @@ process_dir_inode(
 
 		libxfs_trans_log_inode(tp, ip, XFS_ILOG_CORE);
 
-		error = -libxfs_defer_finish(&tp, &dfops, ip);
+		libxfs_defer_ijoin(&dfops, ip);
+		error = -libxfs_defer_finish(&tp, &dfops);
 		ASSERT(error == 0);
 		libxfs_trans_commit(tp);
 
@@ -3007,7 +3015,8 @@ process_dir_inode(
 
 			libxfs_trans_log_inode(tp, ip, XFS_ILOG_CORE);
 
-			error = -libxfs_defer_finish(&tp, &dfops, ip);
+			libxfs_defer_ijoin(&dfops, ip);
+			error = -libxfs_defer_finish(&tp, &dfops);
 			ASSERT(error == 0);
 			libxfs_trans_commit(tp);
 		}
@@ -3028,8 +3037,6 @@ mark_standalone_inodes(xfs_mount_t *mp)
 	irec = find_inode_rec(mp, XFS_INO_TO_AGNO(mp, mp->m_sb.sb_rbmino),
 			XFS_INO_TO_AGINO(mp, mp->m_sb.sb_rbmino));
 
-	ASSERT(irec != NULL);
-
 	offset = XFS_INO_TO_AGINO(mp, mp->m_sb.sb_rbmino) -
 			irec->ino_startnum;
 
@@ -3040,8 +3047,6 @@ mark_standalone_inodes(xfs_mount_t *mp)
 
 	offset = XFS_INO_TO_AGINO(mp, mp->m_sb.sb_rsumino) -
 			irec->ino_startnum;
-
-	ASSERT(irec != NULL);
 
 	add_inode_reached(irec, offset);
 

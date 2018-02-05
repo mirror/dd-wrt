@@ -85,8 +85,8 @@ pthread_t	report_thread;
 typedef struct msg_block_s {
 	pthread_mutex_t	mutex;
 	progress_rpt_t	*format;
-	__uint64_t	*done;
-	__uint64_t	*total;
+	uint64_t	*done;
+	uint64_t	*total;
 	int		count;
 	int		interval;
 } msg_block_t;
@@ -96,14 +96,14 @@ typedef struct phase_times_s {
 	time_t		start;
 	time_t		end;
 	time_t		duration;
-	__uint64_t	item_counts[4];
+	uint64_t	item_counts[4];
 } phase_times_t;
 static phase_times_t phase_times[8];
 
 static void *progress_rpt_thread(void *);
 static int current_phase;
 static int running;
-static __uint64_t prog_rpt_total;
+static uint64_t prog_rpt_total;
 
 void
 init_progress_rpt (void)
@@ -113,11 +113,11 @@ init_progress_rpt (void)
 	 *  allocate the done vector
 	 */
 
-	if ((prog_rpt_done = (__uint64_t *)
-		malloc(sizeof(__uint64_t)*glob_agcount)) == NULL ) {
+	if ((prog_rpt_done = (uint64_t *)
+		malloc(sizeof(uint64_t)*glob_agcount)) == NULL) {
 		do_error(_("cannot malloc pointer to done vector\n"));
 	}
-	bzero(prog_rpt_done, sizeof(__uint64_t)*glob_agcount);
+	bzero(prog_rpt_done, sizeof(uint64_t)*glob_agcount);
 
 	/*
 	 *  Setup comm block, start the thread
@@ -165,10 +165,10 @@ progress_rpt_thread (void *p)
 	timer_t timerid;
 	struct itimerspec timespec;
 	char *msgbuf;
-	__uint64_t *donep;
-	__uint64_t sum;
+	uint64_t *donep;
+	uint64_t sum;
 	msg_block_t *msgp = (msg_block_t *)p;
-	__uint64_t percent;
+	uint64_t percent;
 
 	/* It's possible to get here very early w/ no progress msg set */
 	if (!msgp->format)
@@ -286,7 +286,7 @@ progress_rpt_thread (void *p)
 }
 
 int
-set_progress_msg (int report, __uint64_t total)
+set_progress_msg(int report, uint64_t total)
 {
 
 	if (!ag_stride)
@@ -300,7 +300,7 @@ set_progress_msg (int report, __uint64_t total)
 
 	/* reset all the accumulative totals */
 	if (prog_rpt_done)
-		bzero(prog_rpt_done, sizeof(__uint64_t)*glob_agcount);
+		bzero(prog_rpt_done, sizeof(uint64_t)*glob_agcount);
 
 	if (pthread_mutex_unlock(&global_msgs.mutex))
 		do_error(_("set_progress_msg: cannot unlock progress mutex\n"));
@@ -308,14 +308,14 @@ set_progress_msg (int report, __uint64_t total)
 	return (0);
 }
 
-__uint64_t
+uint64_t
 print_final_rpt(void)
 {
 	int i;
 	struct tm *tmp;
 	time_t now;
-	__uint64_t *donep;
-	__uint64_t sum;
+	uint64_t *donep;
+	uint64_t sum;
 	msg_block_t 	*msgp = &global_msgs;
 	char		msgbuf[DURATION_BUF_SIZE];
 

@@ -32,7 +32,7 @@
 #include "field.h"
 #include "dir2.h"
 
-#define DEFAULT_MAX_EXT_SIZE	1000
+#define DEFAULT_MAX_EXT_SIZE	MAXEXTLEN
 
 /*
  * It's possible that multiple files in a directory (or attributes
@@ -78,6 +78,7 @@ static int		obfuscate = 1;
 static int		zero_stale_data = 1;
 static int		show_warnings = 0;
 static int		progress_since_warning = 0;
+static bool		stdout_metadump;
 
 void
 metadump_init(void)
@@ -137,7 +138,7 @@ print_progress(const char *fmt, ...)
 	va_end(ap);
 	buf[sizeof(buf)-1] = '\0';
 
-	f = (outf == stdout) ? stderr : stdout;
+	f = stdout_metadump ? stderr : stdout;
 	fprintf(f, "\r%-59s", buf);
 	fflush(f);
 	progress_since_warning = 1;
@@ -175,7 +176,7 @@ write_index(void)
 static int
 write_buf_segment(
 	char		*data,
-	__int64_t	off,
+	int64_t		off,
 	int		len)
 {
 	int		i;
@@ -1256,7 +1257,7 @@ process_sf_dir(
 {
 	struct xfs_dir2_sf_hdr	*sfp;
 	xfs_dir2_sf_entry_t	*sfep;
-	__uint64_t		ino_dir_size;
+	uint64_t		ino_dir_size;
 	int			i;
 
 	sfp = (struct xfs_dir2_sf_hdr *)XFS_DFORK_DPTR(dip);
@@ -1322,7 +1323,7 @@ process_sf_dir(
 static void
 obfuscate_path_components(
 	char			*buf,
-	__uint64_t		len)
+	uint64_t		len)
 {
 	unsigned char		*comp = (unsigned char *)buf;
 	unsigned char		*end = comp + len;
@@ -1359,7 +1360,7 @@ static void
 process_sf_symlink(
 	xfs_dinode_t		*dip)
 {
-	__uint64_t		len;
+	uint64_t		len;
 	char			*buf;
 
 	len = be64_to_cpu(dip->di_size);
@@ -1438,6 +1439,37 @@ process_sf_attr(
 	/* zero stale data in rest of space in attr fork, if any */
 	if (zero_stale_data && (ino_attr_size < XFS_DFORK_ASIZE(dip, mp)))
 		memset(asfep, 0, XFS_DFORK_ASIZE(dip, mp) - ino_attr_size);
+}
+
+static void
+process_dir_leaf_block(
+	char				*block)
+{
+	struct xfs_dir2_leaf		*leaf;
+	struct xfs_dir3_icleaf_hdr 	leafhdr;
+
+	if (!zero_stale_data)
+		return;
+
+	/* Yes, this works for dir2 & dir3.  Difference is padding. */
+	leaf = (struct xfs_dir2_leaf *)block;
+	M_DIROPS(mp)->leaf_hdr_from_disk(&leafhdr, leaf);
+
+	/* Zero out space from end of ents[] to bests */
+	if (leafhdr.magic == XFS_DIR2_LEAF1_MAGIC ||
+	    leafhdr.magic == XFS_DIR3_LEAF1_MAGIC) {
+		struct xfs_dir2_leaf_tail	*ltp;
+		__be16				*lbp;
+		struct xfs_dir2_leaf_entry	*ents;
+		char				*free; /* end of ents */
+
+		ents = M_DIROPS(mp)->leaf_ents_p(leaf);
+		free = (char *)&ents[leafhdr.count];
+		ltp = xfs_dir2_leaf_tail_p(mp->m_dir_geo, leaf);
+		lbp = xfs_dir2_leaf_bests_p(ltp);
+		memset(free, 0, (char *)lbp - free);
+		iocur_top->need_crc = 1;
+	}
 }
 
 static void
@@ -1609,7 +1641,7 @@ add_remote_vals(
 		attr_data.remote_vals[attr_data.remote_val_count] = blockidx;
 		attr_data.remote_val_count++;
 		blockidx++;
-		length -= mp->m_sb.sb_blocksize;
+		length -= XFS_ATTR3_RMT_BUF_SPACE(mp, mp->m_sb.sb_blocksize);
 	}
 
 	if (attr_data.remote_val_count >= MAX_REMOTE_VALS) {
@@ -1631,7 +1663,7 @@ process_attr_block(
 	xfs_attr_leaf_entry_t 		*entry;
 	xfs_attr_leaf_name_local_t 	*local;
 	xfs_attr_leaf_name_remote_t 	*remote;
-	__uint32_t			bs = mp->m_sb.sb_blocksize;
+	uint32_t			bs = mp->m_sb.sb_blocksize;
 	char				*first_name;
 
 
@@ -1654,7 +1686,8 @@ process_attr_block(
 	xfs_attr3_leaf_hdr_from_disk(mp->m_attr_geo, &hdr, leaf);
 
 	nentries = hdr.count;
-	if (nentries * sizeof(xfs_attr_leaf_entry_t) +
+	if (nentries == 0 ||
+	    nentries * sizeof(xfs_attr_leaf_entry_t) +
 			xfs_attr3_leaf_hdr_size(leaf) >
 				XFS_ATTR3_RMT_BUF_SPACE(mp, bs)) {
 		if (show_warnings)
@@ -1799,11 +1832,15 @@ process_single_fsb_objects(
 		dp = iocur_top->data;
 		switch (btype) {
 		case TYP_DIR2:
-			if (o >= mp->m_dir_geo->leafblk)
+			if (o >= mp->m_dir_geo->freeblk) {
+				/* TODO, zap any stale data */
 				break;
-
-			process_dir_data_block(dp, o,
+			} else if (o >= mp->m_dir_geo->leafblk) {
+				process_dir_leaf_block(dp);
+			} else {
+				process_dir_data_block(dp, o,
 					 last == mp->m_dir_geo->fsbcount);
+			}
 			iocur_top->need_crc = 1;
 			break;
 		case TYP_SYMLINK:
@@ -2269,7 +2306,7 @@ done:
 	return success;
 }
 
-static __uint32_t	inodes_copied = 0;
+static uint32_t	inodes_copied;
 
 static int
 copy_inode_chunk(
@@ -2725,7 +2762,9 @@ copy_log(void)
 		/* keep the dirty log */
 		if (obfuscate)
 			print_warning(
-_("Filesystem log is dirty; image will contain unobfuscated metadata in log."));
+_("Warning: log recovery of an obfuscated metadata image can leak "
+"unobfuscated metadata and/or cause image corruption.  If possible, "
+"please mount the filesystem to clean the log, or disable obfuscation."));
 		break;
 	case -1:
 		/* log detection error */
@@ -2747,6 +2786,8 @@ metadump_f(
 	xfs_agnumber_t	agno;
 	int		c;
 	int		start_iocur_sp;
+	int		outfd = -1;
+	int		ret;
 	char		*p;
 
 	exitcode = 1;
@@ -2757,6 +2798,16 @@ metadump_f(
 	if (mp->m_sb.sb_magicnum != XFS_SB_MAGIC) {
 		print_warning("bad superblock magic number %x, giving up",
 				mp->m_sb.sb_magicnum);
+		return 0;
+	}
+
+	/*
+	 * on load, we sanity-checked agcount and possibly set to 1
+	 * if it was corrupted and large.
+	 */
+	if (mp->m_sb.sb_agcount == 1 &&
+	    XFS_MAX_DBLOCKS(&mp->m_sb) < mp->m_sb.sb_dblocks) {
+		print_warning("truncated agcount, giving up");
 		return 0;
 	}
 
@@ -2804,6 +2855,28 @@ metadump_f(
 	metablock->mb_blocklog = BBSHIFT;
 	metablock->mb_magic = cpu_to_be32(XFS_MD_MAGIC);
 
+	/* Set flags about state of metadump */
+	metablock->mb_info = XFS_METADUMP_INFO_FLAGS;
+	if (obfuscate)
+		metablock->mb_info |= XFS_METADUMP_OBFUSCATED;
+	if (!zero_stale_data)
+		metablock->mb_info |= XFS_METADUMP_FULLBLOCKS;
+
+	/* If we'll copy the log, see if the log is dirty */
+	if (mp->m_sb.sb_logstart) {
+		push_cur();
+		set_cur(&typtab[TYP_LOG],
+			XFS_FSB_TO_DADDR(mp, mp->m_sb.sb_logstart),
+			mp->m_sb.sb_logblocks * blkbb, DB_RING_IGN, NULL);
+		if (iocur_top->data) {	/* best effort */
+			struct xlog	log;
+
+			if (xlog_is_dirty(mp, &log, &x, 0))
+				metablock->mb_info |= XFS_METADUMP_DIRTYLOG;
+		}
+		pop_cur();
+	}
+
 	block_index = (__be64 *)((char *)metablock + sizeof(xfs_metablock_t));
 	block_buffer = (char *)metablock + BBSIZE;
 	num_indices = (BBSIZE - sizeof(xfs_metablock_t)) / sizeof(__be64);
@@ -2829,13 +2902,40 @@ metadump_f(
 			free(metablock);
 			return 0;
 		}
-		outf = stdout;
+		/*
+		 * Redirect stdout to stderr for the duration of the
+		 * metadump operation so that dbprintf and other messages
+		 * are sent to the console instead of polluting the
+		 * metadump stream.
+		 *
+		 * We get to do this the hard way because musl doesn't
+		 * allow reassignment of stdout.
+		 */
+		fflush(stdout);
+		outfd = dup(STDOUT_FILENO);
+		if (outfd < 0) {
+			perror("opening dump stream");
+			goto out;
+		}
+		ret = dup2(STDERR_FILENO, STDOUT_FILENO);
+		if (ret < 0) {
+			perror("redirecting stdout");
+			close(outfd);
+			goto out;
+		}
+		outf = fdopen(outfd, "a");
+		if (outf == NULL) {
+			fprintf(stderr, "cannot create dump stream\n");
+			dup2(outfd, STDOUT_FILENO);
+			close(outfd);
+			goto out;
+		}
+		stdout_metadump = true;
 	} else {
 		outf = fopen(argv[optind], "wb");
 		if (outf == NULL) {
 			print_warning("cannot create dump file");
-			free(metablock);
-			return 0;
+			goto out;
 		}
 	}
 
@@ -2861,15 +2961,22 @@ metadump_f(
 		exitcode = write_index() < 0;
 
 	if (progress_since_warning)
-		fputc('\n', (outf == stdout) ? stderr : stdout);
+		fputc('\n', stdout_metadump ? stderr : stdout);
 
-	if (outf != stdout)
-		fclose(outf);
+	if (stdout_metadump) {
+		fflush(outf);
+		fflush(stdout);
+		ret = dup2(outfd, STDOUT_FILENO);
+		if (ret < 0)
+			perror("un-redirecting stdout");
+		stdout_metadump = false;
+	}
+	fclose(outf);
 
 	/* cleanup iocur stack */
 	while (iocur_sp > start_iocur_sp)
 		pop_cur();
-
+out:
 	free(metablock);
 
 	return 0;

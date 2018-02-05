@@ -25,7 +25,7 @@ typedef struct bbmap {
 } bbmap_t;
 
 typedef struct iocur {
-	__int64_t		bb;	/* BB number in filesystem of buf */
+	int64_t			bb;	/* BB number in filesystem of buf */
 	int			blen;	/* length of "buf", bb's */
 	int			boff;	/* data - buf */
 	void			*buf;	/* base address of buffer */
@@ -33,7 +33,7 @@ typedef struct iocur {
 	xfs_ino_t		dirino;	/* current directory inode number */
 	xfs_ino_t		ino;	/* current inode number */
 	int			len;	/* length of "data", bytes */
-	__uint16_t		mode;	/* current inode's mode */
+	uint16_t		mode;	/* current inode's mode */
 	xfs_off_t		off;	/* fs offset of "data" in bytes */
 	const struct typ	*typ;	/* type of "data" */
 	bbmap_t			*bbmap;	/* map daddr if fragmented */
@@ -57,12 +57,13 @@ extern void	off_cur(int off, int len);
 extern void	pop_cur(void);
 extern void	print_iocur(char *tag, iocur_t *ioc);
 extern void	push_cur(void);
-extern int	read_buf(__int64_t daddr, int count, void *bufp);
+extern void	push_cur_and_set_type(void);
+extern int	read_buf(int64_t daddr, int count, void *bufp);
 extern void     write_cur(void);
-extern void	set_cur(const struct typ *t, __int64_t d, int c, int ring_add,
-			bbmap_t *bbmap);
+extern void	set_cur(const struct typ *type, xfs_daddr_t blknum,
+			int len, int ring_add, bbmap_t *bbmap);
 extern void     ring_add(void);
-extern void	set_iocur_type(const struct typ *t);
+extern void	set_iocur_type(const struct typ *type);
 extern void	xfs_dummy_verify(struct xfs_buf *bp);
 extern void	xfs_verify_recalc_crc(struct xfs_buf *bp);
 

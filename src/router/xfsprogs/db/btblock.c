@@ -25,6 +25,8 @@
 #include "print.h"
 #include "bit.h"
 #include "init.h"
+#include "io.h"
+#include "output.h"
 
 /*
  * Definition of the possible btree block layouts.
@@ -113,22 +115,60 @@ struct xfs_db_btree {
 };
 
 /*
- * Find the right block defintion for a given ondisk block.
- *
- * We use the least significant bit of the magic number as index into
- * the array of block defintions.
+ * Find the right block definition for a given ondisk block.
  */
 static struct xfs_db_btree *
 block_to_bt(
 	struct xfs_btree_block	*bb)
 {
-	struct xfs_db_btree *btp = &btrees[0];
+	struct xfs_db_btree	*btp;
+	uint32_t		magic;
+	bool			crc;
 
-	do {
-		if (be32_to_cpu((bb)->bb_magic) == btp->magic)
+	magic = be32_to_cpu((bb)->bb_magic);
+	for (btp = &btrees[0]; btp->magic != 0; btp++) {
+		if (magic == btp->magic)
 			return btp;
-		btp++;
-	} while (btp->magic != 0);
+	}
+
+	/* Magic is invalid/unknown.  Guess based on iocur type */
+	crc = xfs_sb_version_hascrc(&mp->m_sb);
+	switch (iocur_top->typ->typnm) {
+	case TYP_BMAPBTA:
+	case TYP_BMAPBTD:
+		magic = crc ? XFS_BMAP_CRC_MAGIC : XFS_BMAP_MAGIC;
+		break;
+	case TYP_BNOBT:
+		magic = crc ? XFS_ABTB_CRC_MAGIC : XFS_ABTB_MAGIC;
+		break;
+	case TYP_CNTBT:
+		magic = crc ? XFS_ABTC_CRC_MAGIC : XFS_ABTC_MAGIC;
+		break;
+	case TYP_INOBT:
+		magic = crc ? XFS_IBT_CRC_MAGIC : XFS_IBT_MAGIC;
+		break;
+	case TYP_FINOBT:
+		magic = crc ? XFS_FIBT_CRC_MAGIC : XFS_FIBT_MAGIC;
+		break;
+	case TYP_RMAPBT:
+		magic = crc ? XFS_RMAP_CRC_MAGIC : 0;
+		break;
+	case TYP_REFCBT:
+		magic = crc ? XFS_REFC_CRC_MAGIC : 0;
+		break;
+	default:
+		ASSERT(0);
+	}
+
+	ASSERT(magic);
+	dbprintf(_("Bad btree magic 0x%x; coercing to %s.\n"),
+		be32_to_cpu((bb)->bb_magic),
+		iocur_top->typ->name);
+
+	for (btp = &btrees[0]; btp->magic != 0; btp++) {
+		if (magic == btp->magic)
+			return btp;
+	}
 
 	return NULL;
 }

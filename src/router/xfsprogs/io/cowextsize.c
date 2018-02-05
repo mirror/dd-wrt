@@ -50,7 +50,7 @@ get_cowextsize(const char *path, int fd)
 {
 	struct fsxattr	fsx;
 
-	if ((xfsctl(path, fd, XFS_IOC_FSGETXATTR, &fsx)) < 0) {
+	if ((xfsctl(path, fd, FS_IOC_FSGETXATTR, &fsx)) < 0) {
 		printf("%s: XFS_IOC_FSGETXATTR %s: %s\n",
 			progname, path, strerror(errno));
 		return 0;
@@ -69,7 +69,7 @@ set_cowextsize(const char *path, int fd, long extsz)
 		perror("fstat64");
 		return 0;
 	}
-	if ((xfsctl(path, fd, XFS_IOC_FSGETXATTR, &fsx)) < 0) {
+	if ((xfsctl(path, fd, FS_IOC_FSGETXATTR, &fsx)) < 0) {
 		printf("%s: XFS_IOC_FSGETXATTR %s: %s\n",
 			progname, path, strerror(errno));
 		return 0;
@@ -83,7 +83,7 @@ set_cowextsize(const char *path, int fd, long extsz)
 	}
 	fsx.fsx_cowextsize = extsz;
 
-	if ((xfsctl(path, fd, XFS_IOC_FSSETXATTR, &fsx)) < 0) {
+	if ((xfsctl(path, fd, FS_IOC_FSSETXATTR, &fsx)) < 0) {
 		printf("%s: XFS_IOC_FSSETXATTR %s: %s\n",
 			progname, path, strerror(errno));
 		return 0;

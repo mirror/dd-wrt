@@ -40,7 +40,8 @@ max_trans_res(
 	int		log_sunit,
 	int		finobt,
 	int		rmapbt,
-	int		reflink)
+	int		reflink,
+	int		inode_align)
 {
 	xfs_sb_t	*sbp;
 	xfs_mount_t	mount;
@@ -54,11 +55,19 @@ max_trans_res(
 	sbp->sb_blocklog = blocklog;
 	sbp->sb_blocksize = 1 << blocklog;
 	sbp->sb_agblocks = agsize;
+	sbp->sb_agblklog = (uint8_t)libxfs_log2_roundup((unsigned int)agsize);
 	sbp->sb_inodelog = inodelog;
 	sbp->sb_inopblog = blocklog - inodelog;
 	sbp->sb_inodesize = 1 << inodelog;
 	sbp->sb_inopblock = 1 << (blocklog - inodelog);
 	sbp->sb_dirblklog = dirblocklog - blocklog;
+
+	if (inode_align) {
+		int	cluster_size = XFS_INODE_BIG_CLUSTER_SIZE;
+		if (crcs_enabled)
+			cluster_size *= sbp->sb_inodesize / XFS_DINODE_MIN_SIZE;
+		sbp->sb_inoalignmt = cluster_size >> blocklog;
+	}
 
 	if (log_sunit > 0) {
 		log_sunit <<= blocklog;

@@ -32,8 +32,8 @@ typedef struct	avl64node {
  * avl-tree operations
  */
 typedef struct avl64ops {
-	__uint64_t	(*avl_start)(avl64node_t *);
-	__uint64_t	(*avl_end)(avl64node_t *);
+	uint64_t	(*avl_start)(avl64node_t *);
+	uint64_t	(*avl_end)(avl64node_t *);
 } avl64ops_t;
 
 /*
@@ -89,32 +89,32 @@ avl64_init_tree(
 avl64node_t *
 avl64_findrange(
 	avl64tree_desc_t *tree,
-	__uint64_t value);
+	uint64_t value);
 
 avl64node_t *
 avl64_find(
 	avl64tree_desc_t *tree,
-	__uint64_t value);
+	uint64_t value);
 
 avl64node_t *
 avl64_findanyrange(
 	avl64tree_desc_t *tree,
-	__uint64_t	start,
-	__uint64_t	end,
+	uint64_t	start,
+	uint64_t	end,
 	int     checklen);
 
 
 avl64node_t *
 avl64_findadjacent(
 	avl64tree_desc_t *tree,
-	__uint64_t	value,
+	uint64_t	value,
 	int		dir);
 
 void
 avl64_findranges(
 	avl64tree_desc_t *tree,
-	__uint64_t	start,
-	__uint64_t	end,
+	uint64_t	start,
+	uint64_t	end,
 	avl64node_t	        **startp,
 	avl64node_t		**endp);
 

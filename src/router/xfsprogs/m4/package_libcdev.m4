@@ -137,6 +137,7 @@ AC_DEFUN([AC_HAVE_PREADV],
   [ AC_MSG_CHECKING([for preadv])
     AC_TRY_LINK([
 #define _BSD_SOURCE
+#define _DEFAULT_SOURCE
 #include <sys/uio.h>
     ], [
          preadv(0, 0, 0, 0);
@@ -144,6 +145,22 @@ AC_DEFUN([AC_HAVE_PREADV],
        AC_MSG_RESULT(yes),
        AC_MSG_RESULT(no))
     AC_SUBST(have_preadv)
+  ])
+
+#
+# Check if we have a pwritev2 libc call (Linux)
+#
+AC_DEFUN([AC_HAVE_PWRITEV2],
+  [ AC_MSG_CHECKING([for pwritev2])
+    AC_TRY_LINK([
+#define _BSD_SOURCE
+#include <sys/uio.h>
+    ], [
+         pwritev2(0, 0, 0, 0, 0);
+    ], have_pwritev2=yes
+       AC_MSG_RESULT(yes),
+       AC_MSG_RESULT(no))
+    AC_SUBST(have_pwritev2)
   ])
 
 #
@@ -189,7 +206,7 @@ AC_DEFUN([AC_HAVE_SYNCFS],
 #include <unistd.h>
     ], [
          syncfs(0);
-    ], have_sync_fs=yes
+    ], have_syncfs=yes
        AC_MSG_RESULT(yes),
        AC_MSG_RESULT(no))
     AC_SUBST(have_syncfs)
@@ -276,4 +293,38 @@ AC_DEFUN([AC_NEED_INTERNAL_FSXATTR],
       [#include <linux/fs.h>]
     )
     AC_SUBST(need_internal_fsxattr)
+  ])
+
+#
+# Check if we have a FS_IOC_GETFSMAP ioctl (Linux)
+#
+AC_DEFUN([AC_HAVE_GETFSMAP],
+  [ AC_MSG_CHECKING([for GETFSMAP])
+    AC_TRY_LINK([
+#define _GNU_SOURCE
+#include <sys/syscall.h>
+#include <unistd.h>
+#include <linux/fs.h>
+#include <linux/fsmap.h>
+    ], [
+         unsigned long x = FS_IOC_GETFSMAP;
+         struct fsmap_head fh;
+    ], have_getfsmap=yes
+       AC_MSG_RESULT(yes),
+       AC_MSG_RESULT(no))
+    AC_SUBST(have_getfsmap)
+  ])
+
+AC_DEFUN([AC_HAVE_STATFS_FLAGS],
+  [
+    AC_CHECK_TYPE(struct statfs,
+      [
+        AC_CHECK_MEMBER(struct statfs.f_flags,
+          have_statfs_flags=yes,,
+          [#include <sys/vfs.h>]
+        )
+      ],,
+      [#include <sys/vfs.h>]
+    )
+    AC_SUBST(have_statfs_flags)
   ])

@@ -56,6 +56,7 @@ extern void fs_table_insert_project_path(char *__dir, uint __projid);
 
 
 extern fs_path_t *fs_table_lookup(const char *__dir, uint __flags);
+extern fs_path_t *fs_table_lookup_mount(const char *__dir);
 
 typedef struct fs_cursor {
 	uint		count;		/* total count of mount entries	*/

@@ -290,7 +290,7 @@ phase4(xfs_mount_t *mp)
 	do_log(_("Phase 4 - check for duplicate blocks...\n"));
 	do_log(_("        - setting up duplicate extent list...\n"));
 
-	set_progress_msg(PROG_FMT_DUP_EXTENT, (__uint64_t) glob_agcount);
+	set_progress_msg(PROG_FMT_DUP_EXTENT, (uint64_t) glob_agcount);
 
 	irec = find_inode_rec(mp, XFS_INO_TO_AGNO(mp, mp->m_sb.sb_rootino),
 				XFS_INO_TO_AGINO(mp, mp->m_sb.sb_rootino));
@@ -404,7 +404,7 @@ phase4(xfs_mount_t *mp)
 	reset_bmaps(mp);
 
 	do_log(_("        - check for inodes claiming duplicate blocks...\n"));
-	set_progress_msg(PROG_FMT_DUP_BLOCKS, (__uint64_t) mp->m_sb.sb_icount);
+	set_progress_msg(PROG_FMT_DUP_BLOCKS, (uint64_t) mp->m_sb.sb_icount);
 
 	/*
 	 * ok, now process the inodes -- signal 2-pass check per inode.

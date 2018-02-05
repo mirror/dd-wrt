@@ -32,6 +32,7 @@
 #define xfs_fs_cmn_err			libxfs_fs_cmn_err
 
 #define xfs_trans_alloc			libxfs_trans_alloc
+#define xfs_trans_alloc_empty		libxfs_trans_alloc_empty
 #define xfs_trans_add_item		libxfs_trans_add_item
 #define xfs_trans_bhold			libxfs_trans_bhold
 #define xfs_trans_binval		libxfs_trans_binval
@@ -49,7 +50,9 @@
 #define xfs_trans_init			libxfs_trans_init
 #define xfs_trans_inode_alloc_buf	libxfs_trans_inode_alloc_buf
 #define xfs_trans_log_buf		libxfs_trans_log_buf
+#define xfs_trans_ordered_buf		libxfs_trans_ordered_buf
 #define xfs_trans_log_inode		libxfs_trans_log_inode
+#define xfs_trans_roll_inode		libxfs_trans_roll_inode
 #define xfs_trans_mod_sb		libxfs_trans_mod_sb
 #define xfs_trans_read_buf		libxfs_trans_read_buf
 #define xfs_trans_read_buf_map		libxfs_trans_read_buf_map
@@ -67,6 +70,7 @@
 #define xfs_alloc_read_agf		libxfs_alloc_read_agf
 #define xfs_bmap_last_offset		libxfs_bmap_last_offset
 #define xfs_bmap_search_extents		libxfs_bmap_search_extents
+#define xfs_iext_lookup_extent		libxfs_iext_lookup_extent
 #define xfs_bmapi_write			libxfs_bmapi_write
 #define xfs_bmapi_read			libxfs_bmapi_read
 #define xfs_bunmapi			libxfs_bunmapi
@@ -75,6 +79,7 @@
 #define xfs_zero_extent			libxfs_zero_extent
 
 #define xfs_defer_init			libxfs_defer_init
+#define xfs_defer_ijoin			libxfs_defer_ijoin
 #define xfs_defer_finish		libxfs_defer_finish
 #define xfs_defer_cancel		libxfs_defer_cancel
 
@@ -88,7 +93,7 @@
 #define xfs_dir_replace			libxfs_dir_replace
 #define xfs_dir2_isblock		libxfs_dir2_isblock
 #define xfs_dir2_isleaf			libxfs_dir2_isleaf
-#define __xfs_dir2_data_freescan	libxfs_dir2_data_freescan
+#define xfs_dir2_data_freescan_int	libxfs_dir2_data_freescan_int
 #define xfs_dir2_data_log_entry		libxfs_dir2_data_log_entry
 #define xfs_dir2_data_log_header	libxfs_dir2_data_log_header
 #define xfs_dir2_data_make_free		libxfs_dir2_data_make_free
@@ -143,5 +148,6 @@
 #define xfs_refcount_get_rec		libxfs_refcount_get_rec
 #define xfs_rmap_lookup_le_range	libxfs_rmap_lookup_le_range
 #define xfs_refc_block			libxfs_refc_block
+#define xfs_rmap_compare		libxfs_rmap_compare
 
 #endif /* __LIBXFS_API_DEFS_H__ */

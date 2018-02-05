@@ -189,7 +189,7 @@ D - 0) look at usage of XFS_MAKE_IPTR().  It does the right
 
 
 D - 0) look at references to XFS_INODES_PER_CHUNK.  change the
-	ones that really mean sizeof(__uint64_t)*NBBY to
+	ones that really mean sizeof(uint64_t)*NBBY to
 	something else (like that only defined as a constant
 	INOS_PER_IREC. this isn't as important since
 	XFS_INODES_PER_CHUNK will never chang

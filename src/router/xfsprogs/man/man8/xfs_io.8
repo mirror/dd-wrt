@@ -9,10 +9,13 @@ xfs_io \- debug the I/O path of an XFS filesystem
 .B \-c
 .I cmd
 ] ... [
+.B \-C
+.I cmd
+] ... [
 .B \-p
 .I prog
 ]
-.I file
+.I [ file ]
 .br
 .B xfs_io \-V
 .SH DESCRIPTION
@@ -25,14 +28,39 @@ These code paths include not only the obvious read/write/mmap interfaces
 for manipulating files, but also cover all of the XFS extensions (such
 as space preallocation, additional inode flags, etc).
 .SH OPTIONS
+.B xfs_io
+commands may be run interactively (the default) or as arguments on the
+command line.
+Interactive mode always runs commands on the current open file, whilst commands
+run from the command line may be repeated on all open files rather than just the current
+open file.
+In general, open file iteration will occur for commands that operate on file
+content or state. In contrast, commands that operate on filesystem or
+system-wide state will only be run on the current file regardless of how many
+files are currently open.
+Multiple arguments may be given on the command line and they are run in the
+sequence given. The program exits one all commands have
+been run.
 .TP 1.0i
 .BI \-c " cmd"
-.B xfs_io
-commands may be run interactively (the default) or as arguments on
-the command line. Multiple
+Run the specified command on all currently open files.
+To maintain compatibility with historical usage, commands that can not be run on
+all open files will still be run but only execute once on the current open file.
+Multiple
 .B \-c
-arguments may be given. The commands are run in the sequence given,
-then the program exits.
+arguments may be given and may be interleaved on the command line in any order
+with
+.B \-C
+commands.
+.TP
+.BI \-C " cmd"
+Run the specified command only on the current open file. 
+Multiple
+.B \-C
+arguments may be given and may be interleaved on the command line in any order
+with
+.B \-c
+commands.
 .TP
 .BI \-p " prog"
 Set the program name for prompts and some error messages,
@@ -194,7 +222,7 @@ See the
 .B pread
 command.
 .TP
-.BI "pwrite [ \-i " file " ] [ \-d ] [ \-s " skip " ] [ \-b " size " ] [ \-S " seed " ] [ \-FBR [ \-Z " zeed " ] ] [ \-wW ] [ \-V " vectors " ] " "offset length"
+.BI "pwrite [ \-i " file " ] [ \-dwNOW ] [ \-s " skip " ] [ \-b " size " ] [ \-S " seed " ] [ \-FBR [ \-Z " zeed " ] ] [ \-V " vectors " ] " "offset length"
 Writes a range of bytes in a specified blocksize from the given
 .IR offset .
 The bytes written can be either a set pattern or read in from another
@@ -210,6 +238,25 @@ to be specified as the source of the data to be written.
 .B \-d
 causes direct I/O, rather than the usual buffered
 I/O, to be used when reading the input file.
+.TP
+.B \-w
+call
+.BR fdatasync (2)
+once all writes are complete (included in timing results)
+.TP
+.B \-N
+Perform the
+.BR pwritev2 (2)
+call with
+.I RWF_NOWAIT.
+.TP
+.B \-O
+perform pwrite once and return the (maybe partial) bytes written.
+.TP
+.B \-W
+call
+.BR fsync (2)
+once all writes are complete (included in timing results)
 .TP
 .B \-s
 specifies the number of bytes to
@@ -238,16 +285,6 @@ write the buffers in the give range in a random order.
 .B \-Z seed
 specify the random number seed used for random write
 .TP
-.B \-w
-call
-.BR fdatasync (2)
-once all writes are complete (included in timing results)
-.TP
-.B \-W
-call
-.BR fsync (2)
-once all writes are complete (included in timing results)
-.TP
 .B \-V vectors
 Use the vectored IO write syscall
 .BR pwritev (2)
@@ -272,6 +309,108 @@ Prints the block mapping for the current open file using the fiemap
 ioctl.  Options behave as described in the
 .BR xfs_bmap (8)
 manual page.
+.TP
+.BI "fsmap [ \-d | \-l | \-r ] [ \-m | \-v ] [ \-n " nx " ] [ " start " ] [ " end " ]
+Prints the mapping of disk blocks used by the filesystem hosting the current
+file.  The map lists each extent used by files, allocation group metadata,
+journalling logs, and static filesystem metadata, as well as any
+regions that are unused.
+Each line of the listings takes the following form:
+.PP
+.RS
+.IR extent ": " major ":" minor " [" startblock .. endblock "]: " owner " " startoffset .. endoffset " " length
+.PP
+Static filesystem metadata, allocation group metadata, btrees,
+journalling logs, and free space are marked by replacing the
+.IR startoffset .. endoffset
+with the appropriate marker.
+All blocks, offsets, and lengths are specified in units of 512-byte
+blocks, no matter what the filesystem's block size is.
+The optional
+.I start
+and
+.I end
+arguments can be used to constrain the output to a particular range of
+disk blocks.
+If these two options are specified, exactly one of
+.BR "-d" ", " "-l" ", or " "-r"
+must also be set.
+.RE
+.RS 1.0i
+.PD 0
+.TP
+.BI \-d
+Display only extents from the data device.
+This option only applies for XFS filesystems.
+.TP
+.BI \-l
+Display only extents from the external log device.
+This option only applies to XFS filesystems.
+.TP
+.BI \-r
+Display only extents from the realtime device.
+This option only applies to XFS filesystems.
+.TP
+.BI \-m
+Display results in a machine readable format (CSV).
+This option is not compatible with the
+.B \-v
+flag.
+The columns of the output are: extent number, device major, device minor,
+physical start, physical end, owner, offset start, offset end, length.
+The start, end, and length numbers are provided in units of 512b.
+The owner field is a special string that takes the form:
+
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.I inode_%lld_data
+for inode data.
+.TP
+.I inode_%lld_data_bmbt
+for inode data extent maps.
+.TP
+.I inode_%lld_attr
+for inode extended attribute data.
+.TP
+.I inode_%lld_attr_bmbt
+for inode extended attribute extent maps.
+.TP
+.I special_%u:%u
+for other filesystem metadata.
+.PD
+.RE
+
+.TP
+.BI \-n " num_extents"
+If this option is given,
+.B fsmap
+obtains the extent list of the file in groups of
+.I num_extents
+extents.
+In the absence of
+.BR "-n" ", " "fsmap"
+queries the system for extents in groups of 131,072 records.
+.TP
+.B \-v
+Shows verbose information.
+When this flag is specified, additional AG specific information is
+appended to each line in the following form:
+.IP
+.RS 1.2i
+.IR agno " (" startagblock .. endagblock ") " nblocks " " flags
+.RE
+.IP
+A second
+.B \-v
+option will print out the
+.I flags
+legend.
+This option is not compatible with the
+.B \-m
+flag.
+.RE
+.PD
 .TP
 .BI "extsize [ \-R | \-D ] [ " value " ]"
 Display and/or modify the preferred extent size used when allocating
@@ -486,7 +625,6 @@ to read (in bytes)
 .RE
 .PD
 .TP
-.TP
 .BI "seek  \-a | \-d | \-h [ \-r ] [ \-s ] offset"
 On platforms that support the
 .BR lseek (2)
@@ -527,10 +665,9 @@ both data and holes are displayed together or performing a recusively display.
 .RE
 .PD
 .TP
-.TP
 .BI "reflink  [ \-C ] [ \-q ] src_file [src_offset dst_offset length]"
 On filesystems that support the
-.B XFS_IOC_CLONE_RANGE
+.B FICLONERANGE
 or
 .B BTRFS_IOC_CLONE_RANGE
 ioctls, map
@@ -557,10 +694,9 @@ Do not print timing statistics at all.
 .RE
 .PD
 .TP
-.TP
 .BI "dedupe  [ \-C ] [ \-q ] src_file src_offset dst_offset length"
 On filesystems that support the
-.B XFS_IOC_FILE_EXTENT_SAME
+.B FIDEDUPERANGE
 or
 .B BTRFS_IOC_FILE_EXTENT_SAME
 ioctls, map
@@ -585,7 +721,6 @@ Print timing statistics in a condensed format.
 Do not print timing statistics at all.
 .RE
 .PD
-.TP
 .TP
 .BI "copy_range [ -s " src_offset " ] [ -d " dst_offset " ] [ -l " length " ] src_file"
 On filesystems that support the
@@ -616,6 +751,16 @@ Copy data into the open file beginning at
 Copy up to
 .I length
 bytes of data.
+.RE
+.PD
+.TP
+.BI utimes " atime_sec atime_nsec mtime_sec mtime_nsec"
+The utimes command changes the atime and mtime of the current file.
+sec uses UNIX timestamp notation and is the seconds elapsed since
+1970-01-01 00:00:00 UTC.
+nsec is the nanoseconds since the sec. This value needs to be in
+the range 0-999999999 with UTIME_NOW and UTIME_OMIT being exceptions.
+Each (sec, nsec) pair constitutes a single timestamp value.
 
 .SH MEMORY MAPPED I/O COMMANDS
 .TP
@@ -798,7 +943,7 @@ can be used to restrict the output to directories only).
 This is a depth first descent, it does not follow symlinks and
 it also does not cross mount points.
 .TP
-.BR chattr " [ " \-R " | " \-D " ] [ " + / \-riasAdtPneEfS " ]"
+.BR chattr " [ " \-R " | " \-D " ] [ " + / \-riasAdtPneEfSxC " ]"
 Change extended inode flags on the currently open file. The
 .B \-R
 and
@@ -838,13 +983,45 @@ Only available in expert mode and requires privileges.
 Force the filesystem to shutdown (with or without flushing the log).
 Only available in expert mode and requires privileges.
 .TP
-.BR stat " [ " \-v " ]"
+.BR stat " [ " \-v "|" \-r " ]"
 Selected statistics from
 .BR stat (2)
 and the XFS_IOC_GETXATTR system call on the current file. If the
 .B \-v
 option is specified, the atime (last access), mtime
-(last modify), and ctime (last change) timestamps are also displayed.
+(last modify), and ctime (last change) timestamps are also displayed.  The
+.B \-r
+option dumps raw fields from the stat structure.
+.TP
+.BI "statx [ \-v|\-r ][ \-m " basic " | \-m " all " | -m " <mask> " ][ \-FD ]"
+Selected statistics from
+.BR stat (2)
+and the XFS_IOC_GETXATTR system call on the current file.
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.B \-v
+Show timestamps.
+.TP
+.B \-r
+Dump raw statx structure values.
+.TP
+.B \-m basic
+Set the field mask for the statx call to STATX_BASIC_STATS.
+.TP
+.B \-m all
+Set the the field mask for the statx call to STATX_ALL (default).
+.TP
+.B \-m <mask>
+Specify a numeric field mask for the statx call.
+.TP
+.B \-F
+Force the attributes to be synced with the server.
+.TP
+.B \-D
+Don't sync attributes with the server.
+.PD
+.RE
 .TP
 .B statfs
 Selected statistics from
@@ -889,7 +1066,59 @@ verbose output will be printed.
 .RE
 .IP
 .B [NOTE: Not currently operational on Linux.]
+.RE
 .PD
+.TP
+.BI "inode  [ [ -n ] " number " ] [ -v ]"
+The inode command queries physical information about an inode. With
+no arguments, it will return 1 or 0, indicating whether or not any
+inode numbers greater than 32 bits are currently in use in the filesystem.
+If given an inode
+.I number
+as an argument, the command will return the same inode
+.I number
+if it is in use, or 0 if not. With
+.BI \-n " number"
+, the next used inode number after this
+.I number
+will be returned, or zero if the supplied inode number is the highest one
+in use. With
+.B \-v
+the command will also report the number of bits (32 or 64) used by the
+inode
+.I number
+printed in the result; if no inode
+.I number
+was specified on the command line, the maximum possible inode number in
+the system will be printed along with its size.
+.PD
+.TP
+.BI "set_encpolicy [ \-c " mode " ] [ \-n " mode " ] [ \-f " flags " ] [ \-v " version " ] [ " keydesc " ]"
+On filesystems that support encryption, assign an encryption policy to the
+current file.
+.I keydesc
+is a 16-byte hex string which identifies the encryption key to use.
+If not specified, a "default" key descriptor of all 0's will be used.
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.BI \-c " mode"
+contents encryption mode (e.g. AES-256-XTS)
+.TP
+.BI \-n " mode"
+filenames encryption mode (e.g. AES-256-CTS)
+.TP
+.BI \-f " flags"
+policy flags (numeric)
+.TP
+.BI \-v " version"
+version of policy structure (numeric)
+.RE
+.PD
+.TP
+.BR get_encpolicy
+On filesystems that support encryption, display the encryption policy of the
+current file.
 
 .SH SEE ALSO
 .BR mkfs.xfs (8),
@@ -902,6 +1131,7 @@ verbose output will be printed.
 .BR fstatfs (2),
 .BR fsync (2),
 .BR ftruncate (2),
+.BR futimens (3),
 .BR mmap (2),
 .BR msync (2),
 .BR open (2),

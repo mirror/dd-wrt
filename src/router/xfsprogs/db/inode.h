@@ -33,4 +33,5 @@ extern void	inode_init(void);
 extern typnm_t	inode_next_type(void);
 extern int	inode_size(void *obj, int startoff, int idx);
 extern int	inode_u_size(void *obj, int startoff, int idx);
+extern void	xfs_inode_set_crc(struct xfs_buf *);
 extern void	set_cur_inode(xfs_ino_t ino);

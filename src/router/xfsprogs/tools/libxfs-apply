@@ -66,6 +66,7 @@ PATCH=
 COMMIT_ID=
 VERBOSE=
 GUILT=0
+STGIT=0
 
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -93,6 +94,12 @@ check_repo Destination
 guilt top &> /dev/null
 if [ $? -eq 0 ]; then
 	GUILT=1
+fi
+
+# Are we using stgit? This works even if no patch is applied.
+stg top &> /dev/null
+if [ $? -eq 0 ]; then
+	STGIT=1
 fi
 
 #this is pulled from the guilt code to handle commit ids sanely.
@@ -281,6 +288,7 @@ apply_patch()
 	local _current_commit=$3
 	local _new_patch=`mktemp`
 	local _source="kernel"
+	local _target="xfsprogs"
 
 	# filter just the libxfs parts of the patch
 	if [ $SOURCE == "xfsprogs" ]; then
@@ -294,6 +302,7 @@ apply_patch()
 
 		filter_kernel_patch $_patch > $_new_patch
 		_source="xfsprogs"
+		_target="kernel"
 	elif [ $SOURCE == "kernel" ]; then
 
 		[ -n "$VERBOSE" ] || lsdiff $_patch | grep -q "[ab]/fs/xfs/libxfs/"
@@ -306,6 +315,13 @@ apply_patch()
 		filter_xfsprogs_patch $_patch > $_new_patch
 	else
 		fail "Unknown source repo type: $SOURCE"
+	fi
+
+	grep -q "Source $_target commit: " $_patch
+	if [ "$?" -eq "0" ]; then
+		echo "$_patch_name already synced up"
+		echo "$_skipping commit $_current_commit"
+		return
 	fi
 
 	# now munge the header to be in the correct format.
@@ -331,8 +347,29 @@ apply_patch()
 		if [ $? -eq 0 ]; then
 			guilt refresh
 		else
-			echo "Guilt push failed!"
-			read -r -p "Skip of Fail [s|F]? " response
+			echo "Guilt push of $_current_commit $_patch_name failed!"
+			read -r -p "Skip or Fail [s|F]? " response
+			if [ -z "$response" -o "$response" != "s" ]; then
+				echo "Force push patch, fix and refresh."
+				echo "Restart from commit $_current_commit"
+				fail "Manual cleanup required!"
+			else
+				echo "Skipping."
+				guilt delete -f $_patch_name
+			fi
+		fi
+	elif [ $STGIT -eq 1 ]; then
+		[ -n "$VERBOSE" ] || echo "$REPO looks like a stgit directory."
+		PATCHES=`stg series | wc -l`
+		if [ -n "$VERBOSE" -a $PATCHES -gt 0 ]; then
+			echo -n "Top patch is: "
+			stg top
+		fi
+
+		stg import -n $_patch_name $_new_patch.2
+		if [ $? -ne 0 ]; then
+			echo "stgit push failed!"
+			read -r -p "Skip or Fail [s|F]? " response
 			if [ -z "$response" -o "$response" != "s" ]; then
 				echo "Force push patch, fix and refresh."
 				echo "Restart from commit $_current_commit"

@@ -32,7 +32,7 @@ static void
 update_inode_nlinks(
 	xfs_mount_t 		*mp,
 	xfs_ino_t		ino,
-	__uint32_t		nlinks)
+	uint32_t		nlinks)
 {
 	xfs_trans_t		*tp;
 	xfs_inode_t		*ip;
@@ -104,7 +104,7 @@ do_link_updates(
 {
 	ino_tree_node_t		*irec;
 	int			j;
-	__uint32_t		nrefs;
+	uint32_t		nrefs;
 
 	for (irec = findfirst_inode_rec(agno); irec;
 	     irec = next_ino_rec(irec)) {
@@ -143,7 +143,7 @@ phase7(
 	else
 		do_log(_("Phase 7 - verify link counts...\n"));
 
-	set_progress_msg(PROGRESS_FMT_CORR_LINK, (__uint64_t) glob_agcount);
+	set_progress_msg(PROGRESS_FMT_CORR_LINK, (uint64_t) glob_agcount);
 
 	create_work_queue(&wq, mp, scan_threads);
 

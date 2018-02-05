@@ -72,7 +72,7 @@ imap_init(void)
 	imap_cmd.argmin = 0;
 	imap_cmd.argmax = 1;
 	imap_cmd.args = _("[nentries]");
-	imap_cmd.flags = CMD_NOMAP_OK;
+	imap_cmd.flags = CMD_NOMAP_OK | CMD_FLAG_ONESHOT;
 	imap_cmd.oneline = _("inode map for filesystem of current file");
 
 	if (expert)

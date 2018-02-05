@@ -60,6 +60,22 @@ are not obfuscated. Names between 5 and 8 characters in length inclusively
 are partially obfuscated.
 .PP
 .B xfs_metadump
+cannot obfuscate metadata in the filesystem log.  Log
+recovery of an obfuscated metadump image may expose clear-text
+metadata and/or cause filesystem corruption in the restored image.
+It is recommended that the source filesystem first be mounted and
+unmounted, if possible, to ensure that the log is clean.
+A subsequent invocation of
+.B xfs_metadump
+will capture a clean log and obfuscate all metadata correctly.
+.PP
+If a metadump must be produced from a filesystem with a dirty log,
+it is recommended that obfuscation be turned off with -o option, if
+metadata such as filenames is not considered sensitive.  If obfuscation
+is required on a metadump with a dirty log, please inform the recipient
+of the metadump image about this situation.
+.PP
+.B xfs_metadump
 should not be used for any purposes other than for debugging and reporting
 filesystem problems. The most common usage scenario for this tool is when
 .BR xfs_repair (8)
@@ -114,7 +130,7 @@ copied.
 .B \-m
 Set the maximum size of an allowed metadata extent.  Extremely large metadata
 extents are likely to be corrupt, and will be skipped if they exceed
-this value.  The default size is 1000 blocks.
+this value.  The default size is 2097151 blocks.
 .TP
 .B \-o
 Disables obfuscation of file names and extended attributes.

@@ -86,9 +86,9 @@ struct agi_stat {
 	xfs_agino_t		freecount;
 };
 
-static __uint64_t	*sb_icount_ag;		/* allocated inodes per ag */
-static __uint64_t	*sb_ifree_ag;		/* free inodes per ag */
-static __uint64_t	*sb_fdblocks_ag;	/* free data blocks per ag */
+static uint64_t	*sb_icount_ag;		/* allocated inodes per ag */
+static uint64_t	*sb_ifree_ag;		/* free inodes per ag */
+static uint64_t	*sb_fdblocks_ag;	/* free data blocks per ag */
 
 static int
 mk_incore_fstree(xfs_mount_t *mp, xfs_agnumber_t agno)
@@ -630,19 +630,15 @@ calculate_freespace_cursor(xfs_mount_t *mp, xfs_agnumber_t agno,
 static void
 prop_freespace_cursor(xfs_mount_t *mp, xfs_agnumber_t agno,
 		bt_status_t *btree_curs, xfs_agblock_t startblock,
-		xfs_extlen_t blockcount, int level, __uint32_t magic)
+		xfs_extlen_t blockcount, int level, xfs_btnum_t btnum)
 {
 	struct xfs_btree_block	*bt_hdr;
 	xfs_alloc_key_t		*bt_key;
 	xfs_alloc_ptr_t		*bt_ptr;
 	xfs_agblock_t		agbno;
 	bt_stat_level_t		*lptr;
-	__uint32_t		crc_magic;
 
-	if (magic == XFS_ABTB_MAGIC)
-		crc_magic = XFS_ABTB_CRC_MAGIC;
-	else
-		crc_magic = XFS_ABTC_CRC_MAGIC;
+	ASSERT(btnum == XFS_BTNUM_BNO || btnum == XFS_BTNUM_CNT);
 
 	level++;
 
@@ -658,7 +654,7 @@ prop_freespace_cursor(xfs_mount_t *mp, xfs_agnumber_t agno,
 		 * left-hand side of the tree.
 		 */
 		prop_freespace_cursor(mp, agno, btree_curs, startblock,
-				blockcount, level, magic);
+				blockcount, level, btnum);
 	}
 
 	if (be16_to_cpu(bt_hdr->bb_numrecs) ==
@@ -694,12 +690,8 @@ prop_freespace_cursor(xfs_mount_t *mp, xfs_agnumber_t agno,
 		lptr->buf_p->b_ops = &xfs_allocbt_buf_ops;
 		bt_hdr = XFS_BUF_TO_BLOCK(lptr->buf_p);
 		memset(bt_hdr, 0, mp->m_sb.sb_blocksize);
-		if (xfs_sb_version_hascrc(&mp->m_sb))
-			libxfs_btree_init_block(mp, lptr->buf_p, crc_magic, level,
-						0, agno, XFS_BTREE_CRC_BLOCKS);
-		else
-			libxfs_btree_init_block(mp, lptr->buf_p, magic, level,
-						0, agno, 0);
+		libxfs_btree_init_block(mp, lptr->buf_p, btnum, level,
+					0, agno, 0);
 
 		bt_hdr->bb_u.s.bb_leftsib = cpu_to_be32(lptr->prev_agbno);
 
@@ -707,7 +699,7 @@ prop_freespace_cursor(xfs_mount_t *mp, xfs_agnumber_t agno,
 		 * propagate extent record for first extent in new block up
 		 */
 		prop_freespace_cursor(mp, agno, btree_curs, startblock,
-				blockcount, level, magic);
+				blockcount, level, btnum);
 	}
 	/*
 	 * add extent info to current block
@@ -726,13 +718,13 @@ prop_freespace_cursor(xfs_mount_t *mp, xfs_agnumber_t agno,
 }
 
 /*
- * rebuilds a freespace tree given a cursor and magic number of type
+ * rebuilds a freespace tree given a cursor and type
  * of tree to build (bno or bcnt).  returns the number of free blocks
  * represented by the tree.
  */
 static xfs_extlen_t
 build_freespace_tree(xfs_mount_t *mp, xfs_agnumber_t agno,
-		bt_status_t *btree_curs, __uint32_t magic)
+		bt_status_t *btree_curs, xfs_btnum_t btnum)
 {
 	xfs_agnumber_t		i;
 	xfs_agblock_t		j;
@@ -743,7 +735,8 @@ build_freespace_tree(xfs_mount_t *mp, xfs_agnumber_t agno,
 	extent_tree_node_t	*ext_ptr;
 	bt_stat_level_t		*lptr;
 	xfs_extlen_t		freeblks;
-	__uint32_t		crc_magic;
+
+	ASSERT(btnum == XFS_BTNUM_BNO || btnum == XFS_BTNUM_CNT);
 
 #ifdef XR_BLD_FREE_TRACE
 	fprintf(stderr, "in build_freespace_tree, agno = %d\n", agno);
@@ -752,10 +745,6 @@ build_freespace_tree(xfs_mount_t *mp, xfs_agnumber_t agno,
 	freeblks = 0;
 
 	ASSERT(level > 0);
-	if (magic == XFS_ABTB_MAGIC)
-		crc_magic = XFS_ABTB_CRC_MAGIC;
-	else
-		crc_magic = XFS_ABTC_CRC_MAGIC;
 
 	/*
 	 * initialize the first block on each btree level
@@ -780,12 +769,7 @@ build_freespace_tree(xfs_mount_t *mp, xfs_agnumber_t agno,
 		lptr->buf_p->b_ops = &xfs_allocbt_buf_ops;
 		bt_hdr = XFS_BUF_TO_BLOCK(lptr->buf_p);
 		memset(bt_hdr, 0, mp->m_sb.sb_blocksize);
-		if (xfs_sb_version_hascrc(&mp->m_sb))
-			libxfs_btree_init_block(mp, lptr->buf_p, crc_magic, i,
-						0, agno, XFS_BTREE_CRC_BLOCKS);
-		else
-			libxfs_btree_init_block(mp, lptr->buf_p, magic, i,
-						0, agno, 0);
+		libxfs_btree_init_block(mp, lptr->buf_p, btnum, i, 0, agno, 0);
 	}
 	/*
 	 * run along leaf, setting up records.  as we have to switch
@@ -793,7 +777,7 @@ build_freespace_tree(xfs_mount_t *mp, xfs_agnumber_t agno,
 	 * pointers for the parent.  that can recurse up to the root
 	 * if required.  set the sibling pointers for leaf level here.
 	 */
-	if (magic == XFS_ABTB_MAGIC)
+	if (btnum == XFS_BTNUM_BNO)
 		ext_ptr = findfirst_bno_extent(agno);
 	else
 		ext_ptr = findfirst_bcnt_extent(agno);
@@ -812,12 +796,7 @@ build_freespace_tree(xfs_mount_t *mp, xfs_agnumber_t agno,
 		lptr->buf_p->b_ops = &xfs_allocbt_buf_ops;
 		bt_hdr = XFS_BUF_TO_BLOCK(lptr->buf_p);
 		memset(bt_hdr, 0, mp->m_sb.sb_blocksize);
-		if (xfs_sb_version_hascrc(&mp->m_sb))
-			libxfs_btree_init_block(mp, lptr->buf_p, crc_magic, 0,
-						0, agno, XFS_BTREE_CRC_BLOCKS);
-		else
-			libxfs_btree_init_block(mp, lptr->buf_p, magic, 0,
-						0, agno, 0);
+		libxfs_btree_init_block(mp, lptr->buf_p, btnum, 0, 0, agno, 0);
 
 		bt_hdr->bb_u.s.bb_leftsib = cpu_to_be32(lptr->prev_agbno);
 		bt_hdr->bb_numrecs = cpu_to_be16(lptr->num_recs_pb +
@@ -838,7 +817,7 @@ build_freespace_tree(xfs_mount_t *mp, xfs_agnumber_t agno,
 			prop_freespace_cursor(mp, agno, btree_curs,
 					ext_ptr->ex_startblock,
 					ext_ptr->ex_blockcount,
-					0, magic);
+					0, btnum);
 
 		bt_rec = (xfs_alloc_rec_t *)
 			  ((char *)bt_hdr + XFS_ALLOC_BLOCK_LEN(mp));
@@ -849,7 +828,7 @@ build_freespace_tree(xfs_mount_t *mp, xfs_agnumber_t agno,
 			bt_rec[j].ar_blockcount = cpu_to_be32(
 							ext_ptr->ex_blockcount);
 			freeblks += ext_ptr->ex_blockcount;
-			if (magic == XFS_ABTB_MAGIC)
+			if (btnum == XFS_BTNUM_BNO)
 				ext_ptr = findnext_bno_extent(ext_ptr);
 			else
 				ext_ptr = findnext_bcnt_extent(agno, ext_ptr);
@@ -907,10 +886,10 @@ build_freespace_tree(xfs_mount_t *mp, xfs_agnumber_t agno,
  */
 static void
 init_ino_cursor(xfs_mount_t *mp, xfs_agnumber_t agno, bt_status_t *btree_curs,
-		__uint64_t *num_inos, __uint64_t *num_free_inos, int finobt)
+		uint64_t *num_inos, uint64_t *num_free_inos, int finobt)
 {
-	__uint64_t		ninos;
-	__uint64_t		nfinos;
+	uint64_t		ninos;
+	uint64_t		nfinos;
 	int			rec_nfinos;
 	int			rec_ninos;
 	ino_tree_node_t		*ino_rec;
@@ -1074,13 +1053,8 @@ prop_ino_cursor(xfs_mount_t *mp, xfs_agnumber_t agno, bt_status_t *btree_curs,
 		lptr->buf_p->b_ops = &xfs_inobt_buf_ops;
 		bt_hdr = XFS_BUF_TO_BLOCK(lptr->buf_p);
 		memset(bt_hdr, 0, mp->m_sb.sb_blocksize);
-		if (xfs_sb_version_hascrc(&mp->m_sb))
-			libxfs_btree_init_block(mp, lptr->buf_p, XFS_IBT_CRC_MAGIC,
-						level, 0, agno,
-						XFS_BTREE_CRC_BLOCKS);
-		else
-			libxfs_btree_init_block(mp, lptr->buf_p, XFS_IBT_MAGIC,
-						level, 0, agno, 0);
+		libxfs_btree_init_block(mp, lptr->buf_p, XFS_BTNUM_INO,
+					level, 0, agno, 0);
 
 		bt_hdr->bb_u.s.bb_leftsib = cpu_to_be32(lptr->prev_agbno);
 
@@ -1157,8 +1131,8 @@ build_agi(xfs_mount_t *mp, xfs_agnumber_t agno, bt_status_t *btree_curs,
  */
 static void
 build_ino_tree(xfs_mount_t *mp, xfs_agnumber_t agno,
-		bt_status_t *btree_curs, __uint32_t magic,
-		struct agi_stat *agi_stat, int finobt)
+		bt_status_t *btree_curs, xfs_btnum_t btnum,
+		struct agi_stat *agi_stat)
 {
 	xfs_agnumber_t		i;
 	xfs_agblock_t		j;
@@ -1177,6 +1151,8 @@ build_ino_tree(xfs_mount_t *mp, xfs_agnumber_t agno,
 	int			spmask;
 	uint64_t		sparse;
 	uint16_t		holemask;
+
+	ASSERT(btnum == XFS_BTNUM_INO || btnum == XFS_BTNUM_FINO);
 
 	for (i = 0; i < level; i++)  {
 		lptr = &btree_curs->level[i];
@@ -1199,13 +1175,7 @@ build_ino_tree(xfs_mount_t *mp, xfs_agnumber_t agno,
 		lptr->buf_p->b_ops = &xfs_inobt_buf_ops;
 		bt_hdr = XFS_BUF_TO_BLOCK(lptr->buf_p);
 		memset(bt_hdr, 0, mp->m_sb.sb_blocksize);
-		if (xfs_sb_version_hascrc(&mp->m_sb))
-			libxfs_btree_init_block(mp, lptr->buf_p, magic,
-						i, 0, agno,
-						XFS_BTREE_CRC_BLOCKS);
-		else
-			libxfs_btree_init_block(mp, lptr->buf_p, magic,
-						i, 0, agno, 0);
+		libxfs_btree_init_block(mp, lptr->buf_p, btnum, i, 0, agno, 0);
 	}
 
 	/*
@@ -1214,7 +1184,7 @@ build_ino_tree(xfs_mount_t *mp, xfs_agnumber_t agno,
 	 * pointers for the parent.  that can recurse up to the root
 	 * if required.  set the sibling pointers for leaf level here.
 	 */
-	if (finobt)
+	if (btnum == XFS_BTNUM_FINO)
 		ino_rec = findfirst_free_inode_rec(agno);
 	else
 		ino_rec = findfirst_inode_rec(agno);
@@ -1233,13 +1203,7 @@ build_ino_tree(xfs_mount_t *mp, xfs_agnumber_t agno,
 		lptr->buf_p->b_ops = &xfs_inobt_buf_ops;
 		bt_hdr = XFS_BUF_TO_BLOCK(lptr->buf_p);
 		memset(bt_hdr, 0, mp->m_sb.sb_blocksize);
-		if (xfs_sb_version_hascrc(&mp->m_sb))
-			libxfs_btree_init_block(mp, lptr->buf_p, magic,
-						0, 0, agno,
-						XFS_BTREE_CRC_BLOCKS);
-		else
-			libxfs_btree_init_block(mp, lptr->buf_p, magic,
-						0, 0, agno, 0);
+		libxfs_btree_init_block(mp, lptr->buf_p, btnum, 0, 0, agno, 0);
 
 		bt_hdr->bb_u.s.bb_leftsib = cpu_to_be32(lptr->prev_agbno);
 		bt_hdr->bb_numrecs = cpu_to_be16(lptr->num_recs_pb +
@@ -1303,7 +1267,7 @@ nextrec:
 			freecount += finocnt;
 			count += inocnt;
 
-			if (finobt)
+			if (btnum == XFS_BTNUM_FINO)
 				ino_rec = next_free_ino_rec(ino_rec);
 			else
 				ino_rec = next_ino_rec(ino_rec);
@@ -1492,9 +1456,8 @@ prop_rmap_cursor(
 		lptr->buf_p->b_ops = &xfs_rmapbt_buf_ops;
 		bt_hdr = XFS_BUF_TO_BLOCK(lptr->buf_p);
 		memset(bt_hdr, 0, mp->m_sb.sb_blocksize);
-		libxfs_btree_init_block(mp, lptr->buf_p, XFS_RMAP_CRC_MAGIC,
-					level, 0, agno,
-					XFS_BTREE_CRC_BLOCKS);
+		libxfs_btree_init_block(mp, lptr->buf_p, XFS_BTNUM_RMAP,
+					level, 0, agno, 0);
 
 		bt_hdr->bb_u.s.bb_leftsib = cpu_to_be32(lptr->prev_agbno);
 
@@ -1605,9 +1568,8 @@ build_rmap_tree(
 		lptr->buf_p->b_ops = &xfs_rmapbt_buf_ops;
 		bt_hdr = XFS_BUF_TO_BLOCK(lptr->buf_p);
 		memset(bt_hdr, 0, mp->m_sb.sb_blocksize);
-		libxfs_btree_init_block(mp, lptr->buf_p, XFS_RMAP_CRC_MAGIC,
-					i, 0, agno,
-					XFS_BTREE_CRC_BLOCKS);
+		libxfs_btree_init_block(mp, lptr->buf_p, XFS_BTNUM_RMAP,
+					i, 0, agno, 0);
 	}
 
 	/*
@@ -1633,9 +1595,8 @@ _("Insufficient memory to construct reverse-map cursor."));
 		lptr->buf_p->b_ops = &xfs_rmapbt_buf_ops;
 		bt_hdr = XFS_BUF_TO_BLOCK(lptr->buf_p);
 		memset(bt_hdr, 0, mp->m_sb.sb_blocksize);
-		libxfs_btree_init_block(mp, lptr->buf_p, XFS_RMAP_CRC_MAGIC,
-					0, 0, agno,
-					XFS_BTREE_CRC_BLOCKS);
+		libxfs_btree_init_block(mp, lptr->buf_p, XFS_BTNUM_RMAP,
+					0, 0, agno, 0);
 
 		bt_hdr->bb_u.s.bb_leftsib = cpu_to_be32(lptr->prev_agbno);
 		bt_hdr->bb_numrecs = cpu_to_be16(numrecs);
@@ -1843,9 +1804,8 @@ prop_refc_cursor(
 		lptr->buf_p->b_ops = &xfs_refcountbt_buf_ops;
 		bt_hdr = XFS_BUF_TO_BLOCK(lptr->buf_p);
 		memset(bt_hdr, 0, mp->m_sb.sb_blocksize);
-		libxfs_btree_init_block(mp, lptr->buf_p, XFS_REFC_CRC_MAGIC,
-					level, 0, agno,
-					XFS_BTREE_CRC_BLOCKS);
+		libxfs_btree_init_block(mp, lptr->buf_p, XFS_BTNUM_REFC,
+					level, 0, agno, 0);
 
 		bt_hdr->bb_u.s.bb_leftsib = cpu_to_be32(lptr->prev_agbno);
 
@@ -1911,9 +1871,8 @@ build_refcount_tree(
 		lptr->buf_p->b_ops = &xfs_refcountbt_buf_ops;
 		bt_hdr = XFS_BUF_TO_BLOCK(lptr->buf_p);
 		memset(bt_hdr, 0, mp->m_sb.sb_blocksize);
-		libxfs_btree_init_block(mp, lptr->buf_p, XFS_REFC_CRC_MAGIC,
-					i, 0, agno,
-					XFS_BTREE_CRC_BLOCKS);
+		libxfs_btree_init_block(mp, lptr->buf_p, XFS_BTNUM_REFC,
+					i, 0, agno, 0);
 	}
 
 	/*
@@ -1939,9 +1898,8 @@ _("Insufficient memory to construct refcount cursor."));
 		lptr->buf_p->b_ops = &xfs_refcountbt_buf_ops;
 		bt_hdr = XFS_BUF_TO_BLOCK(lptr->buf_p);
 		memset(bt_hdr, 0, mp->m_sb.sb_blocksize);
-		libxfs_btree_init_block(mp, lptr->buf_p, XFS_REFC_CRC_MAGIC,
-					0, 0, agno,
-					XFS_BTREE_CRC_BLOCKS);
+		libxfs_btree_init_block(mp, lptr->buf_p, XFS_BTNUM_REFC,
+					0, 0, agno, 0);
 
 		bt_hdr->bb_u.s.bb_leftsib = cpu_to_be32(lptr->prev_agbno);
 		bt_hdr->bb_numrecs = cpu_to_be16(numrecs);
@@ -2235,10 +2193,10 @@ phase5_func(
 	xfs_agnumber_t	agno,
 	struct xfs_slab	*lost_fsb)
 {
-	__uint64_t	num_inos;
-	__uint64_t	num_free_inos;
-	__uint64_t	finobt_num_inos;
-	__uint64_t	finobt_num_free_inos;
+	uint64_t	num_inos;
+	uint64_t	num_free_inos;
+	uint64_t	finobt_num_inos;
+	uint64_t	finobt_num_free_inos;
 	bt_status_t	bno_btree_curs;
 	bt_status_t	bcnt_btree_curs;
 	bt_status_t	ino_btree_curs;
@@ -2252,7 +2210,6 @@ phase5_func(
 	xfs_extlen_t	freeblks2;
 #endif
 	xfs_agblock_t	num_extents;
-	__uint32_t	magic;
 	struct agi_stat	agi_stat = {0,};
 	int		error;
 
@@ -2379,7 +2336,7 @@ phase5_func(
 		 * now rebuild the freespace trees
 		 */
 		freeblks1 = build_freespace_tree(mp, agno,
-					&bno_btree_curs, XFS_ABTB_MAGIC);
+					&bno_btree_curs, XFS_BTNUM_BNO);
 #ifdef XR_BLD_FREE_TRACE
 		fprintf(stderr, "# of free blocks == %d\n", freeblks1);
 #endif
@@ -2387,10 +2344,10 @@ phase5_func(
 
 #ifdef DEBUG
 		freeblks2 = build_freespace_tree(mp, agno,
-					&bcnt_btree_curs, XFS_ABTC_MAGIC);
+					&bcnt_btree_curs, XFS_BTNUM_CNT);
 #else
 		(void) build_freespace_tree(mp, agno,
-					&bcnt_btree_curs, XFS_ABTC_MAGIC);
+					&bcnt_btree_curs, XFS_BTNUM_CNT);
 #endif
 		write_cursor(&bcnt_btree_curs);
 
@@ -2417,19 +2374,16 @@ phase5_func(
 		/*
 		 * build inode allocation tree.
 		 */
-		magic = xfs_sb_version_hascrc(&mp->m_sb) ?
-				XFS_IBT_CRC_MAGIC : XFS_IBT_MAGIC;
-		build_ino_tree(mp, agno, &ino_btree_curs, magic, &agi_stat, 0);
+		build_ino_tree(mp, agno, &ino_btree_curs, XFS_BTNUM_INO,
+				&agi_stat);
 		write_cursor(&ino_btree_curs);
 
 		/*
 		 * build free inode tree
 		 */
 		if (xfs_sb_version_hasfinobt(&mp->m_sb)) {
-			magic = xfs_sb_version_hascrc(&mp->m_sb) ?
-					XFS_FIBT_CRC_MAGIC : XFS_FIBT_MAGIC;
-			build_ino_tree(mp, agno, &fino_btree_curs, magic,
-					NULL, 1);
+			build_ino_tree(mp, agno, &fino_btree_curs,
+					XFS_BTNUM_FINO, NULL);
 			write_cursor(&fino_btree_curs);
 		}
 
@@ -2517,7 +2471,7 @@ phase5(xfs_mount_t *mp)
 	int			error;
 
 	do_log(_("Phase 5 - rebuild AG headers and trees...\n"));
-	set_progress_msg(PROG_FMT_REBUILD_AG, (__uint64_t )glob_agcount);
+	set_progress_msg(PROG_FMT_REBUILD_AG, (uint64_t)glob_agcount);
 
 #ifdef XR_BLD_FREE_TRACE
 	fprintf(stderr, "inobt level 1, maxrec = %d, minrec = %d\n",
@@ -2543,15 +2497,15 @@ phase5(xfs_mount_t *mp)
 	keep_fsinos(mp);
 
 	/* allocate per ag counters */
-	sb_icount_ag = calloc(mp->m_sb.sb_agcount, sizeof(__uint64_t));
+	sb_icount_ag = calloc(mp->m_sb.sb_agcount, sizeof(uint64_t));
 	if (sb_icount_ag == NULL)
 		do_error(_("cannot alloc sb_icount_ag buffers\n"));
 
-	sb_ifree_ag = calloc(mp->m_sb.sb_agcount, sizeof(__uint64_t));
+	sb_ifree_ag = calloc(mp->m_sb.sb_agcount, sizeof(uint64_t));
 	if (sb_ifree_ag == NULL)
 		do_error(_("cannot alloc sb_ifree_ag buffers\n"));
 
-	sb_fdblocks_ag = calloc(mp->m_sb.sb_agcount, sizeof(__uint64_t));
+	sb_fdblocks_ag = calloc(mp->m_sb.sb_agcount, sizeof(uint64_t));
 	if (sb_fdblocks_ag == NULL)
 		do_error(_("cannot alloc sb_fdblocks_ag buffers\n"));
 

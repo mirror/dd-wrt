@@ -29,27 +29,12 @@
 #include "xfs_trace.h"
 #include "xfs_quota_defs.h"
 
-/*
- * XXX: kernel implementation causes ndquots calc to go real
- * bad. Just leaving the existing userspace calc here right now.
- */
 int
 xfs_calc_dquots_per_chunk(
 	unsigned int		nbblks)	/* basic block units */
 {
-
 	ASSERT(nbblks > 0);
 	return BBTOB(nbblks) / sizeof(xfs_dqblk_t);
-
-#if 0	/* kernel code that goes wrong in userspace! */
-	unsigned int	ndquots;
-
-	ASSERT(nbblks > 0);
-	ndquots = BBTOB(nbblks);
-	do_div(ndquots, sizeof(xfs_dqblk_t));
-
-	return ndquots;
-#endif
 }
 
 /*

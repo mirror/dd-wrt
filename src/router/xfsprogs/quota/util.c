@@ -94,8 +94,8 @@ round_snprintf(
 	size_t		size,
 	const char	*fmt_round,
 	const char	*fmt_not_round,
-	__uint64_t	value,
-	__uint64_t	divisor)
+	uint64_t	value,
+	uint64_t	divisor)
 {
 	double		v = (double)value / divisor;
 
@@ -107,23 +107,23 @@ round_snprintf(
 }
 
 /* Basic blocks (512) bytes are returned from quotactl */
-#define BBS_TO_EXABYTES(bbs)	((__uint64_t)(bbs)>>51)
-#define BBS_TO_PETABYTES(bbs)	((__uint64_t)(bbs)>>41)
-#define BBS_TO_TERABYTES(bbs)	((__uint64_t)(bbs)>>31)
-#define BBS_TO_GIGABYTES(bbs)	((__uint64_t)(bbs)>>21)
-#define BBS_TO_MEGABYTES(bbs)	((__uint64_t)(bbs)>>11)
-#define BBS_TO_KILOBYTES(bbs)	((__uint64_t)(bbs)>>1)
+#define BBS_TO_EXABYTES(bbs)	((uint64_t)(bbs)>>51)
+#define BBS_TO_PETABYTES(bbs)	((uint64_t)(bbs)>>41)
+#define BBS_TO_TERABYTES(bbs)	((uint64_t)(bbs)>>31)
+#define BBS_TO_GIGABYTES(bbs)	((uint64_t)(bbs)>>21)
+#define BBS_TO_MEGABYTES(bbs)	((uint64_t)(bbs)>>11)
+#define BBS_TO_KILOBYTES(bbs)	((uint64_t)(bbs)>>1)
 
-#define BBEXABYTE		((__uint64_t)1<<51)
-#define BBPETABYTE		((__uint64_t)1<<41)
-#define BBTERABYTE		((__uint64_t)1<<31)
-#define BBGIGABYTE		((__uint64_t)1<<21)
-#define BBMEGABYTE		((__uint64_t)1<<11)
-#define BBKILOBYTE		((__uint64_t)1<< 1)
+#define BBEXABYTE		((uint64_t)1<<51)
+#define BBPETABYTE		((uint64_t)1<<41)
+#define BBTERABYTE		((uint64_t)1<<31)
+#define BBGIGABYTE		((uint64_t)1<<21)
+#define BBMEGABYTE		((uint64_t)1<<11)
+#define BBKILOBYTE		((uint64_t)1<< 1)
 
 char *
 bbs_to_string(
-	__uint64_t	v,
+	uint64_t	v,
 	char		*sp,
 	uint		size)
 {
@@ -146,17 +146,17 @@ bbs_to_string(
 	return sp;
 }
 
-#define THOUSAND		((__uint64_t)1000)
-#define MILLION			((__uint64_t)1000*1000)
-#define BILLION			((__uint64_t)1000*1000*1000)
-#define TRILLION		((__uint64_t)1000*1000*1000*1000)
-#define GAZILLION		((__uint64_t)1000*1000*1000*1000*1000)
-#define RIDICULOUS		((__uint64_t)1000*1000*1000*1000*1000*1000)
-#define STOPALREADY		((__uint64_t)1000*1000*1000*1000*1000*1000*1000)
+#define THOUSAND		((uint64_t)1000)
+#define MILLION			((uint64_t)1000*1000)
+#define BILLION			((uint64_t)1000*1000*1000)
+#define TRILLION		((uint64_t)1000*1000*1000*1000)
+#define GAZILLION		((uint64_t)1000*1000*1000*1000*1000)
+#define RIDICULOUS		((uint64_t)1000*1000*1000*1000*1000*1000)
+#define STOPALREADY		((uint64_t)1000*1000*1000*1000*1000*1000*1000)
 
 char *
 num_to_string(
-	__uint64_t	v,
+	uint64_t	v,
 	char		*sp,
 	uint		size)
 {
@@ -183,8 +183,8 @@ num_to_string(
 
 char *
 pct_to_string(
-	__uint64_t	portion,
-	__uint64_t	whole,
+	uint64_t	portion,
+	uint64_t	whole,
 	char		*buf,
 	uint		size)
 {
@@ -237,7 +237,7 @@ type_to_string(
 #define IDMASK		(NID-1)
 
 typedef struct {
-	__uint32_t	id;
+	uint32_t	id;
 	char		name[NMAX+1];
 } idcache_t;
 
@@ -250,7 +250,7 @@ static int		pentriesleft = NID;
 
 static idcache_t *
 getnextpwent(
-	__uint32_t	id,
+	uint32_t	id,
 	int		byid)
 {
 	struct passwd	*pw;
@@ -266,7 +266,7 @@ getnextpwent(
 
 static idcache_t *
 getnextgrent(
-	__uint32_t	id,
+	uint32_t	id,
 	int		byid)
 {
 	struct group	*gr;
@@ -281,7 +281,7 @@ getnextgrent(
 
 static idcache_t *
 getnextprent(
-	__uint32_t	id,
+	uint32_t	id,
 	int		byid)
 {
 	fs_project_t	*pr;
@@ -296,7 +296,7 @@ getnextprent(
 
 char *
 uid_to_name(
-	__uint32_t	id)
+	uint32_t	id)
 {
 	idcache_t	*ncp, *idp;
 
@@ -333,7 +333,7 @@ uid_to_name(
 
 char *
 gid_to_name(
-	__uint32_t	id)
+	uint32_t	id)
 {
 	idcache_t	*ncp, *idp;
 
@@ -370,7 +370,7 @@ gid_to_name(
 
 char *
 prid_to_name(
-	__uint32_t	id)
+	uint32_t	id)
 {
 	idcache_t	*ncp, *idp;
 

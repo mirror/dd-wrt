@@ -156,7 +156,7 @@ fetchline_internal(void)
 
 	rval = NULL;
 	for (rlen = iscont = 0; ; ) {
-		if (inputstacksize == 1) {
+		if (curinput == stdin) {
 			if (iscont)
 				dbprintf("... ");
 			else
@@ -181,18 +181,24 @@ fetchline_internal(void)
 		}
 		if (ferror(curinput) || feof(curinput) ||
 		    (len = strlen(buf)) == 0) {
-			popfile();
-			if (curinput == NULL) {
+			/*
+			 * No more input at this inputstack level; pop
+			 * our fd off and return so that a lower
+			 * level fetchline can handle us.  If this was
+			 * an interactive session, print a newline
+			 * because ^D doesn't emit one.
+			 */
+			if (curinput == stdin)
 				dbprintf("\n");
-				return NULL;
-			}
+
+			popfile();
 			iscont = 0;
 			rlen = 0;
 			if (rval) {
 				xfree(rval);
 				rval = NULL;
 			}
-			continue;
+			return NULL;
 		}
 		if (inputstacksize == 1)
 			logprintf("%s", buf);
@@ -225,7 +231,9 @@ fetchline(void)
 
 	if (inputstacksize == 1) {
 		line = readline(get_prompt());
-		if (line && *line) {
+		if (!line)
+			dbprintf("\n");
+		else if (line && *line) {
 			add_history(line);
 			logprintf("%s", line);
 		}
@@ -314,12 +322,27 @@ source_f(
 	char	**argv)
 {
 	FILE	*f;
+	int	c, done = 0;
+	char	*input;
+	char	**v;
 
 	f = fopen(argv[1], "r");
-	if (f == NULL)
+	if (f == NULL) {
 		dbprintf(_("can't open %s\n"), argv[0]);
-	else
-		pushfile(f);
+		return 0;
+	}
+
+	/* Run the sourced commands now. */
+	pushfile(f);
+	while (!done) {
+		if ((input = fetchline_internal()) == NULL)
+			break;
+		v = breakline(input, &c);
+		if (c)
+			done = command(c, v);
+		doneline(input, v);
+	}
+
 	return 0;
 }
 

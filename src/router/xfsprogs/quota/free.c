@@ -49,20 +49,20 @@ free_help(void)
 static int
 mount_free_space_data(
 	struct fs_path		*mount,
-	__uint64_t		*bcount,
-	__uint64_t		*bused,
-	__uint64_t		*bfree,
-	__uint64_t		*icount,
-	__uint64_t		*iused,
-	__uint64_t		*ifree,
-	__uint64_t		*rcount,
-	__uint64_t		*rused,
-	__uint64_t		*rfree)
+	uint64_t		*bcount,
+	uint64_t		*bused,
+	uint64_t		*bfree,
+	uint64_t		*icount,
+	uint64_t		*iused,
+	uint64_t		*ifree,
+	uint64_t		*rcount,
+	uint64_t		*rused,
+	uint64_t		*rfree)
 {
 	struct xfs_fsop_counts	fscounts;
 	struct xfs_fsop_geom	fsgeo;
 	struct statfs		st;
-	__uint64_t		logsize, count, free;
+	uint64_t		logsize, count, free;
 	int			fd;
 
 	if ((fd = open(mount->fs_dir, O_RDONLY)) < 0) {
@@ -132,15 +132,15 @@ mount_free_space_data(
 static int
 projects_free_space_data(
 	struct fs_path		*path,
-	__uint64_t		*bcount,
-	__uint64_t		*bused,
-	__uint64_t		*bfree,
-	__uint64_t		*icount,
-	__uint64_t		*iused,
-	__uint64_t		*ifree,
-	__uint64_t		*rcount,
-	__uint64_t		*rused,
-	__uint64_t		*rfree)
+	uint64_t		*bcount,
+	uint64_t		*bused,
+	uint64_t		*bfree,
+	uint64_t		*icount,
+	uint64_t		*iused,
+	uint64_t		*ifree,
+	uint64_t		*rcount,
+	uint64_t		*rused,
+	uint64_t		*rfree)
 {
 	fs_quota_stat_t		qfs;
 	fs_disk_quota_t		d;
@@ -226,9 +226,9 @@ free_space(
 	fs_path_t	*path,
 	uint		flags)
 {
-	__uint64_t	bcount, bused, bfree;
-	__uint64_t	icount, iused, ifree;
-	__uint64_t	rcount, rused, rfree;
+	uint64_t	bcount, bused, bfree;
+	uint64_t	icount, iused, ifree;
+	uint64_t	rcount, rused, rfree;
 	char		a[8], s[8], u[8], p[8];
 	int		count;
 

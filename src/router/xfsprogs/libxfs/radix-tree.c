@@ -66,21 +66,21 @@ static unsigned long height_to_maxindex[RADIX_TREE_MAX_PATH];
 static inline void tag_set(struct radix_tree_node *node, unsigned int tag,
 		int offset)
 {
-	*((__uint32_t *)node->tags[tag] + (offset >> 5)) |= (1 << (offset & 31));
+	*((uint32_t *)node->tags[tag] + (offset >> 5)) |= (1 << (offset & 31));
 }
 
 static inline void tag_clear(struct radix_tree_node *node, unsigned int tag,
 		int offset)
 {
-	__uint32_t 	*p = (__uint32_t*)node->tags[tag] + (offset >> 5);
-	__uint32_t 	m = 1 << (offset & 31);
+	uint32_t 	*p = (uint32_t*)node->tags[tag] + (offset >> 5);
+	uint32_t 	m = 1 << (offset & 31);
 	*p &= ~m;
 }
 
 static inline int tag_get(struct radix_tree_node *node, unsigned int tag,
 		int offset)
 {
-	return 1 & (((const __uint32_t *)node->tags[tag])[offset >> 5] >> (offset & 31));
+	return 1 & (((const uint32_t *)node->tags[tag])[offset >> 5] >> (offset & 31));
 }
 
 /*

@@ -122,7 +122,7 @@ phase3(
 	else
 		do_log(_("        - scan (but don't clear) agi unlinked lists...\n"));
 
-	set_progress_msg(PROG_FMT_AGI_UNLINKED, (__uint64_t) glob_agcount);
+	set_progress_msg(PROG_FMT_AGI_UNLINKED, (uint64_t) glob_agcount);
 
 	/* first clear the agi unlinked AGI list */
 	if (!no_modify) {
@@ -142,7 +142,7 @@ phase3(
 	do_log(_(
 	    "        - process known inodes and perform inode discovery...\n"));
 
-	set_progress_msg(PROG_FMT_PROCESS_INO, (__uint64_t) mp->m_sb.sb_icount);
+	set_progress_msg(PROG_FMT_PROCESS_INO, (uint64_t) mp->m_sb.sb_icount);
 
 	process_ags(mp);
 
@@ -152,7 +152,7 @@ phase3(
 	 * process newly discovered inode chunks
 	 */
 	do_log(_("        - process newly discovered inodes...\n"));
-	set_progress_msg(PROG_FMT_NEW_INODES, (__uint64_t) glob_agcount);
+	set_progress_msg(PROG_FMT_NEW_INODES, (uint64_t) glob_agcount);
 
 	counts = calloc(sizeof(*counts), mp->m_sb.sb_agcount);
 	if (!counts) {

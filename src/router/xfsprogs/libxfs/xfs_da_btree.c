@@ -258,7 +258,7 @@ xfs_da3_node_read(
 
 	err = xfs_da_read_buf(tp, dp, bno, mappedbno, bpp,
 					which_fork, &xfs_da3_node_buf_ops);
-	if (!err && tp) {
+	if (!err && tp && *bpp) {
 		struct xfs_da_blkinfo	*info = (*bpp)->b_addr;
 		int			type;
 
@@ -1277,7 +1277,7 @@ xfs_da3_fixhashpath(
 			return;
 		break;
 	case XFS_DIR2_LEAFN_MAGIC:
-		lasthash = xfs_dir2_leafn_lasthash(dp, blk->bp, &count);
+		lasthash = xfs_dir2_leaf_lasthash(dp, blk->bp, &count);
 		if (count == 0)
 			return;
 		break;
@@ -1497,8 +1497,8 @@ xfs_da3_node_lookup_int(
 		if (blk->magic == XFS_DIR2_LEAFN_MAGIC ||
 		    blk->magic == XFS_DIR3_LEAFN_MAGIC) {
 			blk->magic = XFS_DIR2_LEAFN_MAGIC;
-			blk->hashval = xfs_dir2_leafn_lasthash(args->dp,
-							       blk->bp, NULL);
+			blk->hashval = xfs_dir2_leaf_lasthash(args->dp,
+							      blk->bp, NULL);
 			break;
 		}
 
@@ -1924,8 +1924,8 @@ xfs_da3_path_shift(
 			blk->magic = XFS_DIR2_LEAFN_MAGIC;
 			ASSERT(level == path->active-1);
 			blk->index = 0;
-			blk->hashval = xfs_dir2_leafn_lasthash(args->dp,
-							       blk->bp, NULL);
+			blk->hashval = xfs_dir2_leaf_lasthash(args->dp,
+							      blk->bp, NULL);
 			break;
 		default:
 			ASSERT(0);
@@ -1947,7 +1947,7 @@ xfs_da3_path_shift(
  * This is implemented with some source-level loop unrolling.
  */
 xfs_dahash_t
-xfs_da_hashname(const __uint8_t *name, int namelen)
+xfs_da_hashname(const uint8_t *name, int namelen)
 {
 	xfs_dahash_t hash;
 
@@ -2628,7 +2628,7 @@ out_free:
 /*
  * Readahead the dir/attr block.
  */
-xfs_daddr_t
+int
 xfs_da_reada_buf(
 	struct xfs_inode	*dp,
 	xfs_dablk_t		bno,
@@ -2659,7 +2659,5 @@ out_free:
 	if (mapp != &map)
 		kmem_free(mapp);
 
-	if (error)
-		return -1;
-	return mappedbno;
+	return error;
 }

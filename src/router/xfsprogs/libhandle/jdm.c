@@ -36,7 +36,7 @@ typedef struct filehandle {
 	fshandle_t fh_fshandle;		/* handle of fs containing this inode */
 	int16_t fh_sz_following;	/* bytes in handle after this member */
 	char fh_pad[FILEHANDLE_SZ_PAD];	/* padding, must be zeroed */
-	__uint32_t fh_gen;		/* generation count */
+	uint32_t fh_gen;		/* generation count */
 	xfs_ino_t fh_ino;		/* 64 bit ino */
 } filehandle_t;
 

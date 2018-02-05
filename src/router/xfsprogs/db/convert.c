@@ -24,13 +24,13 @@
 
 #define	M(A)	(1 << CT_ ## A)
 #define	agblock_to_bytes(x)	\
-	((__uint64_t)(x) << mp->m_sb.sb_blocklog)
+	((uint64_t)(x) << mp->m_sb.sb_blocklog)
 #define	agino_to_bytes(x)	\
-	((__uint64_t)(x) << mp->m_sb.sb_inodelog)
+	((uint64_t)(x) << mp->m_sb.sb_inodelog)
 #define	agnumber_to_bytes(x)	\
-	agblock_to_bytes((__uint64_t)(x) * mp->m_sb.sb_agblocks)
+	agblock_to_bytes((uint64_t)(x) * mp->m_sb.sb_agblocks)
 #define	daddr_to_bytes(x)	\
-	((__uint64_t)(x) << BBSHIFT)
+	((uint64_t)(x) << BBSHIFT)
 #define	fsblock_to_bytes(x)	\
 	(agnumber_to_bytes(XFS_FSB_TO_AGNO(mp, (x))) + \
 	 agblock_to_bytes(XFS_FSB_TO_AGBNO(mp, (x))))
@@ -38,7 +38,7 @@
 	(agnumber_to_bytes(XFS_INO_TO_AGNO(mp, (x))) + \
 	 agino_to_bytes(XFS_INO_TO_AGINO(mp, (x))))
 #define	inoidx_to_bytes(x)	\
-	((__uint64_t)(x) << mp->m_sb.sb_inodelog)
+	((uint64_t)(x) << mp->m_sb.sb_inodelog)
 
 typedef enum {
 	CT_NONE = -1,
@@ -68,7 +68,7 @@ typedef union {
 	xfs_agnumber_t	agnumber;
 	int		bboff;
 	int		blkoff;
-	__uint64_t	byte;
+	uint64_t	byte;
 	xfs_daddr_t	daddr;
 	xfs_fsblock_t	fsblock;
 	xfs_ino_t	ino;
@@ -76,7 +76,7 @@ typedef union {
 	int		inooff;
 } cval_t;
 
-static __uint64_t		bytevalue(ctype_t ctype, cval_t *val);
+static uint64_t		bytevalue(ctype_t ctype, cval_t *val);
 static int		convert_f(int argc, char **argv);
 static int		getvalue(char *s, ctype_t ctype, cval_t *val);
 static ctype_t		lookupcty(char *ctyname);
@@ -118,7 +118,7 @@ static const cmdinfo_t	convert_cmd =
 	{ "convert", NULL, convert_f, 3, 9, 0, "type num [type num]... type",
 	  "convert from one address form to another", NULL };
 
-static __uint64_t
+static uint64_t
 bytevalue(ctype_t ctype, cval_t *val)
 {
 	switch (ctype) {
@@ -129,9 +129,9 @@ bytevalue(ctype_t ctype, cval_t *val)
 	case CT_AGNUMBER:
 		return agnumber_to_bytes(val->agnumber);
 	case CT_BBOFF:
-		return (__uint64_t)val->bboff;
+		return (uint64_t)val->bboff;
 	case CT_BLKOFF:
-		return (__uint64_t)val->blkoff;
+		return (uint64_t)val->blkoff;
 	case CT_BYTE:
 		return val->byte;
 	case CT_DADDR:
@@ -143,7 +143,7 @@ bytevalue(ctype_t ctype, cval_t *val)
 	case CT_INOIDX:
 		return inoidx_to_bytes(val->inoidx);
 	case CT_INOOFF:
-		return (__uint64_t)val->inooff;
+		return (uint64_t)val->inooff;
 	case CT_NONE:
 	case NCTS:
 		break;
@@ -160,7 +160,7 @@ convert_f(int argc, char **argv)
 	cval_t		cvals[NCTS] = {};
 	int		i;
 	int		mask;
-	__uint64_t	v;
+	uint64_t	v;
 	ctype_t		wtype;
 
 	/* move past the "convert" command */
@@ -262,7 +262,7 @@ static int
 getvalue(char *s, ctype_t ctype, cval_t *val)
 {
 	char		*p;
-	__uint64_t	v;
+	uint64_t	v;
 
 	v = strtoull(s, &p, 0);
 	if (*p != '\0') {
@@ -286,7 +286,7 @@ getvalue(char *s, ctype_t ctype, cval_t *val)
 		val->blkoff = (int)v;
 		break;
 	case CT_BYTE:
-		val->byte = (__uint64_t)v;
+		val->byte = (uint64_t)v;
 		break;
 	case CT_DADDR:
 		val->daddr = (xfs_daddr_t)v;

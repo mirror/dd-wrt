@@ -18,6 +18,7 @@
 
 #include "platform_defs.h"
 #include "command.h"
+#include "input.h"
 #include "init.h"
 #include "io.h"
 
@@ -51,18 +52,6 @@ bmap_help(void)
 " Note: the bmap for non-regular files can be obtained provided the file\n"
 " was opened appropriately (in particular, must be opened read-only).\n"
 "\n"));
-}
-
-static int
-numlen(
-	off64_t	val)
-{
-	off64_t	tmp;
-	int	len;
-
-	for (len = 0, tmp = val; tmp > 0; tmp = tmp/10)
-		len++;
-	return (len == 0 ? 1 : len);
 }
 
 int
@@ -323,7 +312,7 @@ bmap_f(
 			if (map[i + 1].bmv_block == -1) {
 				foff_w = max(foff_w, strlen(rbuf));
 				tot_w = max(tot_w,
-					numlen(map[i+1].bmv_length));
+					numlen(map[i+1].bmv_length, 10));
 			} else {
 				snprintf(bbuf, sizeof(bbuf), "%lld..%lld",
 					(long long) map[i + 1].bmv_block,
@@ -344,10 +333,10 @@ bmap_f(
 					aoff_w = 0;
 				foff_w = max(foff_w, strlen(rbuf));
 				tot_w = max(tot_w,
-					numlen(map[i+1].bmv_length));
+					numlen(map[i+1].bmv_length, 10));
 			}
 		}
-		agno_w = is_rt ? 0 : max(MINAG_WIDTH, numlen(fsgeo.agcount));
+		agno_w = is_rt ? 0 : max(MINAG_WIDTH, numlen(fsgeo.agcount, 10));
 		printf("%4s: %-*s %-*s %*s %-*s %*s%s\n",
 			_("EXT"),
 			foff_w, _("FILE-OFFSET"),

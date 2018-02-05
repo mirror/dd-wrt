@@ -44,7 +44,7 @@ extern int rmap_init_cursor(xfs_agnumber_t, struct xfs_slab_cursor **);
 extern void rmap_avoid_check(void);
 extern int rmaps_verify_btree(struct xfs_mount *, xfs_agnumber_t);
 
-extern __int64_t rmap_diffkeys(struct xfs_rmap_irec *kp1,
+extern int64_t rmap_diffkeys(struct xfs_rmap_irec *kp1,
 		struct xfs_rmap_irec *kp2);
 extern void rmap_high_key_from_rec(struct xfs_rmap_irec *rec,
 		struct xfs_rmap_irec *key);

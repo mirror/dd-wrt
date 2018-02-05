@@ -628,8 +628,8 @@ mremap_f(
 		switch (c) {
 		case 'f':
 			flags = MREMAP_FIXED|MREMAP_MAYMOVE;
-			new_addr = (void *)cvtnum(blocksize, sectsize,
-			                          optarg);
+			new_addr = (void *)(unsigned long)cvtnum(blocksize,
+			                          sectsize, optarg);
 			break;
 		case 'm':
 			flags = MREMAP_MAYMOVE;
@@ -674,7 +674,8 @@ mmap_init(void)
 	mmap_cmd.cfunc = mmap_f;
 	mmap_cmd.argmin = 0;
 	mmap_cmd.argmax = -1;
-	mmap_cmd.flags = CMD_NOMAP_OK | CMD_NOFILE_OK | CMD_FOREIGN_OK;
+	mmap_cmd.flags = CMD_NOMAP_OK | CMD_NOFILE_OK |
+			 CMD_FOREIGN_OK | CMD_FLAG_ONESHOT;
 	mmap_cmd.args = _("[N] | [-rwx] [-s size] [off len]");
 	mmap_cmd.oneline =
 		_("mmap a range in the current file, show mappings");

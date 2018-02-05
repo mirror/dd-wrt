@@ -39,7 +39,7 @@ quit_init(void)
 	quit_cmd.cfunc = quit_f;
 	quit_cmd.argmin = -1;
 	quit_cmd.argmax = -1;
-	quit_cmd.flags = CMD_FLAG_GLOBAL | CMD_ALL_FSTYPES;
+	quit_cmd.flags = CMD_FLAG_ONESHOT | CMD_FLAG_LIBRARY;
 	quit_cmd.oneline = _("exit the program");
 
 	add_command(&quit_cmd);

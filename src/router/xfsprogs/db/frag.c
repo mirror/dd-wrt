@@ -42,8 +42,8 @@ typedef	struct extmap {
 
 static int		aflag;
 static int		dflag;
-static __uint64_t	extcount_actual;
-static __uint64_t	extcount_ideal;
+static uint64_t	extcount_actual;
+static uint64_t	extcount_ideal;
 static int		fflag;
 static int		lflag;
 static int		qflag;
@@ -310,8 +310,8 @@ process_inode(
 	xfs_agino_t		agino,
 	xfs_dinode_t		*dip)
 {
-	__uint64_t		actual;
-	__uint64_t		ideal;
+	uint64_t		actual;
+	uint64_t		ideal;
 	xfs_ino_t		ino;
 	int			skipa;
 	int			skipd;

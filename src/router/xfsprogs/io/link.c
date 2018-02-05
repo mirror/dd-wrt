@@ -59,7 +59,7 @@ flink_init(void)
 	flink_cmd.cfunc = flink_f;
 	flink_cmd.argmin = 1;
 	flink_cmd.argmax = 1;
-	flink_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
+	flink_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK | CMD_FLAG_ONESHOT;
 	flink_cmd.args = _("filename");
 	flink_cmd.oneline =
 		_("link the open file descriptor to the supplied filename");

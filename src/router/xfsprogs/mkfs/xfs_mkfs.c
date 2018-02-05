@@ -18,9 +18,6 @@
 
 #include "libxfs.h"
 #include <ctype.h>
-#ifdef ENABLE_BLKID
-#  include <blkid/blkid.h>
-#endif /* ENABLE_BLKID */
 #include "xfs_multidisk.h"
 #include "libxcmd.h"
 
@@ -42,7 +39,7 @@ static int  ispow2(unsigned int i);
 unsigned int		blocksize;
 unsigned int		sectorsize;
 
-#define MAX_SUBOPTS	16
+#define MAX_SUBOPTS	17
 #define SUBOPT_NEEDS_VAL	(-1LL)
 #define MAX_CONFLICTS	8
 #define LAST_CONFLICT	(-1)
@@ -190,6 +187,8 @@ struct opt_params dopts = {
 		"projinherit",
 #define D_EXTSZINHERIT	14
 		"extszinherit",
+#define D_COWEXTSIZE	15
+		"cowextsize",
 		NULL
 	},
 	.subopt_params = {
@@ -301,6 +300,12 @@ struct opt_params dopts = {
 		  .defaultval = SUBOPT_NEEDS_VAL,
 		},
 		{ .index = D_EXTSZINHERIT,
+		  .conflicts = { LAST_CONFLICT },
+		  .minval = 0,
+		  .maxval = UINT_MAX,
+		  .defaultval = SUBOPT_NEEDS_VAL,
+		},
+		{ .index = D_COWEXTSIZE,
 		  .conflicts = { LAST_CONFLICT },
 		  .minval = 0,
 		  .maxval = UINT_MAX,
@@ -697,20 +702,20 @@ struct opt_params mopts = {
 		  .conflicts = { LAST_CONFLICT },
 		  .minval = 0,
 		  .maxval = 1,
-		  .defaultval = 0,
+		  .defaultval = 1,
 		},
 		{ .index = M_REFLINK,
 		  .conflicts = { LAST_CONFLICT },
 		  .minval = 0,
 		  .maxval = 1,
-		  .defaultval = 0,
+		  .defaultval = 1,
 		},
 	},
 };
 
-#define TERABYTES(count, blog)	((__uint64_t)(count) << (40 - (blog)))
-#define GIGABYTES(count, blog)	((__uint64_t)(count) << (30 - (blog)))
-#define MEGABYTES(count, blog)	((__uint64_t)(count) << (20 - (blog)))
+#define TERABYTES(count, blog)	((uint64_t)(count) << (40 - (blog)))
+#define GIGABYTES(count, blog)	((uint64_t)(count) << (30 - (blog)))
+#define MEGABYTES(count, blog)	((uint64_t)(count) << (20 - (blog)))
 
 /*
  * Use this macro before we have superblock and mount structure
@@ -881,7 +886,7 @@ fixup_log_stripe_unit(
 	xfs_rfsblock_t	*logblocks,
 	int		blocklog)
 {
-	__uint64_t	tmp_logblocks;
+	uint64_t	tmp_logblocks;
 
 	/*
 	 * Make sure that the log size is a multiple of the stripe unit
@@ -913,7 +918,7 @@ fixup_internal_log_stripe(
 	xfs_mount_t	*mp,
 	int		lsflag,
 	xfs_fsblock_t	logstart,
-	__uint64_t	agsize,
+	uint64_t	agsize,
 	int		sunit,
 	xfs_rfsblock_t	*logblocks,
 	int		blocklog,
@@ -937,7 +942,7 @@ fixup_internal_log_stripe(
 }
 
 void
-validate_log_size(__uint64_t logblocks, int blocklog, int min_logblocks)
+validate_log_size(uint64_t logblocks, int blocklog, int min_logblocks)
 {
 	if (logblocks < min_logblocks) {
 		fprintf(stderr,
@@ -962,7 +967,7 @@ validate_log_size(__uint64_t logblocks, int blocklog, int min_logblocks)
 static int
 calc_default_imaxpct(
 	int		blocklog,
-	__uint64_t	dblocks)
+	uint64_t	dblocks)
 {
 	/*
 	 * This returns the % of the disk space that is used for
@@ -984,9 +989,9 @@ calc_default_imaxpct(
 static void
 validate_ag_geometry(
 	int		blocklog,
-	__uint64_t	dblocks,
-	__uint64_t	agsize,
-	__uint64_t	agcount)
+	uint64_t	dblocks,
+	uint64_t	agsize,
+	uint64_t	agcount)
 {
 	if (agsize < XFS_AG_MIN_BLOCKS(blocklog)) {
 		fprintf(stderr,
@@ -1062,7 +1067,7 @@ zero_old_xfs_structures(
 {
 	void 			*buf;
 	xfs_sb_t 		sb;
-	__uint32_t		bsize;
+	uint32_t		bsize;
 	int			i;
 	xfs_off_t		off;
 
@@ -1115,8 +1120,8 @@ zero_old_xfs_structures(
 			i != sb.sb_blocklog)
 		goto done;
 
-	if (sb.sb_dblocks > ((__uint64_t)sb.sb_agcount * sb.sb_agblocks) ||
-			sb.sb_dblocks < ((__uint64_t)(sb.sb_agcount - 1) *
+	if (sb.sb_dblocks > ((uint64_t)sb.sb_agcount * sb.sb_agblocks) ||
+			sb.sb_dblocks < ((uint64_t)(sb.sb_agcount - 1) *
 					 sb.sb_agblocks + XFS_MIN_AG_BLOCKS))
 		goto done;
 
@@ -1136,7 +1141,7 @@ done:
 }
 
 static void
-discard_blocks(dev_t dev, __uint64_t nsectors)
+discard_blocks(dev_t dev, uint64_t nsectors)
 {
 	int fd;
 
@@ -1284,7 +1289,7 @@ check_opt(
 
 	if (sp->index != index) {
 		fprintf(stderr,
-	("Developer screwed up option parsing (%d/%d)! Please report!\n"),
+	_("Developer screwed up option parsing (%d/%d)! Please report!\n"),
 			sp->index, index);
 		reqval(opts->name, (char **)opts->subopts, index);
 	}
@@ -1398,11 +1403,11 @@ main(
 	int			argc,
 	char			**argv)
 {
-	__uint64_t		agcount;
+	uint64_t		agcount;
 	xfs_agf_t		*agf;
 	xfs_agi_t		*agi;
 	xfs_agnumber_t		agno;
-	__uint64_t		agsize;
+	uint64_t		agsize;
 	xfs_alloc_rec_t		*arec;
 	struct xfs_btree_block	*block;
 	int			blflag;
@@ -1422,6 +1427,7 @@ main(
 	int			dsw;
 	int			dsunit;
 	int			dswidth;
+	int			dsflag;
 	int			force_overwrite;
 	struct fsxattr		fsx;
 	int			ilflag;
@@ -1477,10 +1483,10 @@ main(
 	char			*rtsize;
 	xfs_sb_t		*sbp;
 	int			sectorlog;
-	__uint64_t		sector_mask;
+	uint64_t		sector_mask;
 	int			slflag;
 	int			ssflag;
-	__uint64_t		tmp_agsize;
+	uint64_t		tmp_agsize;
 	uuid_t			uuid;
 	int			worst_freelist;
 	libxfs_init_t		xi;
@@ -1524,7 +1530,7 @@ main(
 	dfile = logfile = rtfile = NULL;
 	dsize = logsize = rtsize = rtextsize = protofile = NULL;
 	dsu = dsw = dsunit = dswidth = lalign = lsu = lsunit = 0;
-	nodsflag = norsflag = 0;
+	dsflag = nodsflag = norsflag = 0;
 	force_overwrite = 0;
 	worst_freelist = 0;
 	memset(&fsx, 0, sizeof(fsx));
@@ -1590,16 +1596,20 @@ main(
 					break;
 				case D_SUNIT:
 					dsunit = getnum(value, &dopts, D_SUNIT);
+					dsflag = 1;
 					break;
 				case D_SWIDTH:
 					dswidth = getnum(value, &dopts,
 							 D_SWIDTH);
+					dsflag = 1;
 					break;
 				case D_SU:
 					dsu = getnum(value, &dopts, D_SU);
+					dsflag = 1;
 					break;
 				case D_SW:
 					dsw = getnum(value, &dopts, D_SW);
+					dsflag = 1;
 					break;
 				case D_NOALIGN:
 					nodsflag = getnum(value, &dopts,
@@ -1635,6 +1645,13 @@ main(
 								 D_EXTSZINHERIT);
 					fsx.fsx_xflags |=
 						XFS_DIFLAG_EXTSZINHERIT;
+					break;
+				case D_COWEXTSIZE:
+					fsx.fsx_cowextsize = getnum(value,
+							&dopts,
+							D_COWEXTSIZE);
+					fsx.fsx_xflags |=
+						FS_XFLAG_COWEXTSIZE;
 					break;
 				default:
 					unknown('d', value);
@@ -2140,6 +2157,11 @@ _("reflink not supported without CRC support\n"));
 		sb_feat.reflink = false;
 	}
 
+	if ((fsx.fsx_xflags & FS_XFLAG_COWEXTSIZE) && !sb_feat.reflink) {
+		fprintf(stderr,
+_("cowextsize not supported without reflink support\n"));
+		usage();
+	}
 
 	if (sb_feat.rmapbt && xi.rtname) {
 		fprintf(stderr,
@@ -2165,7 +2187,7 @@ _("rmapbt not supported with realtime devices\n"));
 
 
 	if (dsize) {
-		__uint64_t dbytes;
+		uint64_t dbytes;
 
 		dbytes = getnum(dsize, &dopts, D_SIZE);
 		if (dbytes % XFS_MIN_BLOCKSIZE) {
@@ -2197,7 +2219,7 @@ _("rmapbt not supported with realtime devices\n"));
 	}
 
 	if (logsize) {
-		__uint64_t logbytes;
+		uint64_t logbytes;
 
 		logbytes = getnum(logsize, &lopts, L_SIZE);
 		if (logbytes % XFS_MIN_BLOCKSIZE) {
@@ -2214,7 +2236,7 @@ _("rmapbt not supported with realtime devices\n"));
 				(long long)(logblocks << blocklog));
 	}
 	if (rtsize) {
-		__uint64_t rtbytes;
+		uint64_t rtbytes;
 
 		rtbytes = getnum(rtsize, &ropts, R_SIZE);
 		if (rtbytes % XFS_MIN_BLOCKSIZE) {
@@ -2234,7 +2256,7 @@ _("rmapbt not supported with realtime devices\n"));
 	 * If specified, check rt extent size against its constraints.
 	 */
 	if (rtextsize) {
-		__uint64_t rtextbytes;
+		uint64_t rtextbytes;
 
 		rtextbytes = getnum(rtextsize, &ropts, R_EXTSIZE);
 		if (rtextbytes % blocksize) {
@@ -2250,8 +2272,8 @@ _("rmapbt not supported with realtime devices\n"));
 		 * and the underlying volume is striped, then set rtextblocks
 		 * to the stripe width.
 		 */
-		__uint64_t	rswidth;
-		__uint64_t	rtextbytes;
+		uint64_t	rswidth;
+		uint64_t	rtextbytes;
 
 		if (!norsflag && !xi.risfile && !(!rtsize && xi.disfile))
 			rswidth = ft.rtswidth;
@@ -2306,6 +2328,10 @@ _("rmapbt not supported with realtime devices\n"));
 	calc_stripe_factors(dsu, dsw, sectorsize, lsu, lsectorsize,
 				&dsunit, &dswidth, &lsunit);
 
+	/* If sunit & swidth were manually specified as 0, same as noalign */
+	if (dsflag && !dsunit && !dswidth)
+		nodsflag = 1;
+
 	xi.setblksize = sectorsize;
 
 	/*
@@ -2329,10 +2355,10 @@ _("rmapbt not supported with realtime devices\n"));
 	 * multiple of the sector size, or 1024, whichever is larger.
 	 */
 
-	sector_mask = (__uint64_t)-1 << (MAX(sectorlog, 10) - BBSHIFT);
+	sector_mask = (uint64_t)-1 << (MAX(sectorlog, 10) - BBSHIFT);
 	xi.dsize &= sector_mask;
 	xi.rtsize &= sector_mask;
-	xi.logBBsize &= (__uint64_t)-1 << (MAX(lsectorlog, 10) - BBSHIFT);
+	xi.logBBsize &= (uint64_t)-1 << (MAX(lsectorlog, 10) - BBSHIFT);
 
 
 	/* don't do discards on print-only runs or on files */
@@ -2528,7 +2554,9 @@ reported by the device (%u).\n"),
 				}
 			}
 		}
-		if (dswidth && ((agsize % dswidth) == 0) && (agcount > 1)) {
+		if (dswidth && ((agsize % dswidth) == 0)
+			    && (dswidth != dsunit)
+			    && (agcount > 1)) {
 			/* This is a non-optimal configuration because all AGs
 			 * start on the same disk in the stripe.  Changing
 			 * the AG size by one sunit will guarantee that this
@@ -2622,7 +2650,8 @@ an AG size that is one stripe unit smaller, for example %llu.\n"),
 				   sb_feat.crcs_enabled, sb_feat.dir_version,
 				   sectorlog, blocklog, inodelog, dirblocklog,
 				   sb_feat.log_version, lsunit, sb_feat.finobt,
-				   sb_feat.rmapbt, sb_feat.reflink);
+				   sb_feat.rmapbt, sb_feat.reflink,
+				   sb_feat.inode_align);
 	ASSERT(min_logblocks);
 	min_logblocks = MAX(XFS_MIN_LOG_BLOCKS, min_logblocks);
 	if (!logsize && dblocks >= (1024*1024*1024) >> blocklog)
@@ -2689,9 +2718,9 @@ _("size %s specified for log subvolume is too large, maximum is %lld blocks\n"),
 	mp = &mbuf;
 	sbp = &mp->m_sb;
 	memset(mp, 0, sizeof(xfs_mount_t));
-	sbp->sb_blocklog = (__uint8_t)blocklog;
-	sbp->sb_sectlog = (__uint8_t)sectorlog;
-	sbp->sb_agblklog = (__uint8_t)libxfs_log2_roundup((unsigned int)agsize);
+	sbp->sb_blocklog = (uint8_t)blocklog;
+	sbp->sb_sectlog = (uint8_t)sectorlog;
+	sbp->sb_agblklog = (uint8_t)libxfs_log2_roundup((unsigned int)agsize);
 	sbp->sb_agblocks = (xfs_agblock_t)agsize;
 	mp->m_blkbb_log = sbp->sb_blocklog - BBSHIFT;
 	mp->m_sectbb_log = sbp->sb_sectlog - BBSHIFT;
@@ -2798,14 +2827,14 @@ _("size %s specified for log subvolume is too large, maximum is %lld blocks\n"),
 	sbp->sb_agcount = (xfs_agnumber_t)agcount;
 	sbp->sb_rbmblocks = nbmblocks;
 	sbp->sb_logblocks = (xfs_extlen_t)logblocks;
-	sbp->sb_sectsize = (__uint16_t)sectorsize;
-	sbp->sb_inodesize = (__uint16_t)isize;
-	sbp->sb_inopblock = (__uint16_t)(blocksize / isize);
-	sbp->sb_sectlog = (__uint8_t)sectorlog;
-	sbp->sb_inodelog = (__uint8_t)inodelog;
-	sbp->sb_inopblog = (__uint8_t)(blocklog - inodelog);
+	sbp->sb_sectsize = (uint16_t)sectorsize;
+	sbp->sb_inodesize = (uint16_t)isize;
+	sbp->sb_inopblock = (uint16_t)(blocksize / isize);
+	sbp->sb_sectlog = (uint8_t)sectorlog;
+	sbp->sb_inodelog = (uint8_t)inodelog;
+	sbp->sb_inopblog = (uint8_t)(blocklog - inodelog);
 	sbp->sb_rextslog =
-		(__uint8_t)(rtextents ?
+		(uint8_t)(rtextents ?
 			libxfs_highbit32((unsigned int)rtextents) : 0);
 	sbp->sb_inprogress = 1;	/* mkfs is in progress */
 	sbp->sb_imax_pct = imaxpct;
@@ -2833,8 +2862,8 @@ _("size %s specified for log subvolume is too large, maximum is %lld blocks\n"),
 	} else
 		sbp->sb_inoalignmt = 0;
 	if (lsectorsize != BBSIZE || sectorsize != BBSIZE) {
-		sbp->sb_logsectlog = (__uint8_t)lsectorlog;
-		sbp->sb_logsectsize = (__uint16_t)lsectorsize;
+		sbp->sb_logsectlog = (uint8_t)lsectorlog;
+		sbp->sb_logsectsize = (uint16_t)lsectorsize;
 	} else {
 		sbp->sb_logsectlog = 0;
 		sbp->sb_logsectsize = 0;
@@ -3038,12 +3067,7 @@ _("size %s specified for log subvolume is too large, maximum is %lld blocks\n"),
 		buf->b_ops = &xfs_allocbt_buf_ops;
 		block = XFS_BUF_TO_BLOCK(buf);
 		memset(block, 0, blocksize);
-		if (xfs_sb_version_hascrc(&mp->m_sb))
-			libxfs_btree_init_block(mp, buf, XFS_ABTB_CRC_MAGIC, 0, 1,
-						agno, XFS_BTREE_CRC_BLOCKS);
-		else
-			libxfs_btree_init_block(mp, buf, XFS_ABTB_MAGIC, 0, 1,
-						agno, 0);
+		libxfs_btree_init_block(mp, buf, XFS_BTNUM_BNO, 0, 1, agno, 0);
 
 		arec = XFS_ALLOC_REC_ADDR(mp, block, 1);
 		arec->ar_startblock = cpu_to_be32(libxfs_prealloc_blocks(mp));
@@ -3093,12 +3117,7 @@ _("size %s specified for log subvolume is too large, maximum is %lld blocks\n"),
 		buf->b_ops = &xfs_allocbt_buf_ops;
 		block = XFS_BUF_TO_BLOCK(buf);
 		memset(block, 0, blocksize);
-		if (xfs_sb_version_hascrc(&mp->m_sb))
-			libxfs_btree_init_block(mp, buf, XFS_ABTC_CRC_MAGIC, 0, 1,
-						agno, XFS_BTREE_CRC_BLOCKS);
-		else
-			libxfs_btree_init_block(mp, buf, XFS_ABTC_MAGIC, 0, 1,
-						agno, 0);
+		libxfs_btree_init_block(mp, buf, XFS_BTNUM_CNT, 0, 1, agno, 0);
 
 		arec = XFS_ALLOC_REC_ADDR(mp, block, 1);
 		arec->ar_startblock = cpu_to_be32(libxfs_prealloc_blocks(mp));
@@ -3141,8 +3160,8 @@ _("size %s specified for log subvolume is too large, maximum is %lld blocks\n"),
 
 			block = XFS_BUF_TO_BLOCK(buf);
 			memset(block, 0, blocksize);
-			libxfs_btree_init_block(mp, buf, XFS_REFC_CRC_MAGIC, 0,
-						0, agno, XFS_BTREE_CRC_BLOCKS);
+			libxfs_btree_init_block(mp, buf, XFS_BTNUM_REFC, 0,
+						0, agno, 0);
 
 			libxfs_writebuf(buf, LIBXFS_EXIT_ON_FAILURE);
 		}
@@ -3156,12 +3175,7 @@ _("size %s specified for log subvolume is too large, maximum is %lld blocks\n"),
 		buf->b_ops = &xfs_inobt_buf_ops;
 		block = XFS_BUF_TO_BLOCK(buf);
 		memset(block, 0, blocksize);
-		if (xfs_sb_version_hascrc(&mp->m_sb))
-			libxfs_btree_init_block(mp, buf, XFS_IBT_CRC_MAGIC, 0, 0,
-						agno, XFS_BTREE_CRC_BLOCKS);
-		else
-			libxfs_btree_init_block(mp, buf, XFS_IBT_MAGIC, 0, 0,
-						agno, 0);
+		libxfs_btree_init_block(mp, buf, XFS_BTNUM_INO, 0, 0, agno, 0);
 		libxfs_writebuf(buf, LIBXFS_EXIT_ON_FAILURE);
 
 		/*
@@ -3174,12 +3188,7 @@ _("size %s specified for log subvolume is too large, maximum is %lld blocks\n"),
 			buf->b_ops = &xfs_inobt_buf_ops;
 			block = XFS_BUF_TO_BLOCK(buf);
 			memset(block, 0, blocksize);
-			if (xfs_sb_version_hascrc(&mp->m_sb))
-				libxfs_btree_init_block(mp, buf, XFS_FIBT_CRC_MAGIC, 0, 0,
-							agno, XFS_BTREE_CRC_BLOCKS);
-			else
-				libxfs_btree_init_block(mp, buf, XFS_FIBT_MAGIC, 0, 0,
-							agno, 0);
+			libxfs_btree_init_block(mp, buf, XFS_BTNUM_FINO, 0, 0, agno, 0);
 			libxfs_writebuf(buf, LIBXFS_EXIT_ON_FAILURE);
 		}
 
@@ -3194,8 +3203,7 @@ _("size %s specified for log subvolume is too large, maximum is %lld blocks\n"),
 			block = XFS_BUF_TO_BLOCK(buf);
 			memset(block, 0, blocksize);
 
-			libxfs_btree_init_block(mp, buf, XFS_RMAP_CRC_MAGIC, 0, 0,
-						agno, XFS_BTREE_CRC_BLOCKS);
+			libxfs_btree_init_block(mp, buf, XFS_BTNUM_RMAP, 0, 0, agno, 0);
 
 			/*
 			 * mark the AG header regions as static metadata

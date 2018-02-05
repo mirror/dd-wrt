@@ -248,7 +248,7 @@ xfs_attr_rmtval_copyout(
 	xfs_ino_t	ino,
 	int		*offset,
 	int		*valuelen,
-	__uint8_t	**dst)
+	uint8_t		**dst)
 {
 	char		*src = bp->b_addr;
 	xfs_daddr_t	bno = bp->b_bn;
@@ -296,7 +296,7 @@ xfs_attr_rmtval_copyin(
 	xfs_ino_t	ino,
 	int		*offset,
 	int		*valuelen,
-	__uint8_t	**src)
+	uint8_t		**src)
 {
 	char		*dst = bp->b_addr;
 	xfs_daddr_t	bno = bp->b_bn;
@@ -350,7 +350,7 @@ xfs_attr_rmtval_get(
 	struct xfs_mount	*mp = args->dp->i_mount;
 	struct xfs_buf		*bp;
 	xfs_dablk_t		lblkno = args->rmtblkno;
-	__uint8_t		*dst = args->value;
+	uint8_t			*dst = args->value;
 	int			valuelen;
 	int			nmap;
 	int			error;
@@ -381,7 +381,8 @@ xfs_attr_rmtval_get(
 			       (map[i].br_startblock != HOLESTARTBLOCK));
 			dblkno = XFS_FSB_TO_DADDR(mp, map[i].br_startblock);
 			dblkcnt = XFS_FSB_TO_BB(mp, map[i].br_blockcount);
-			error = xfs_trans_read_buf(mp, NULL, mp->m_ddev_targp,
+			error = xfs_trans_read_buf(mp, args->trans,
+						   mp->m_ddev_targp,
 						   dblkno, dblkcnt, 0, &bp,
 						   &xfs_attr3_rmt_buf_ops);
 			if (error)
@@ -390,7 +391,7 @@ xfs_attr_rmtval_get(
 			error = xfs_attr_rmtval_copyout(mp, bp, args->dp->i_ino,
 							&offset, &valuelen,
 							&dst);
-			xfs_buf_relse(bp);
+			xfs_trans_brelse(args->trans, bp);
 			if (error)
 				return error;
 
@@ -416,7 +417,7 @@ xfs_attr_rmtval_set(
 	struct xfs_bmbt_irec	map;
 	xfs_dablk_t		lblkno;
 	xfs_fileoff_t		lfileoff = 0;
-	__uint8_t		*src = args->value;
+	uint8_t			*src = args->value;
 	int			blkcnt;
 	int			valuelen;
 	int			nmap;
@@ -461,13 +462,12 @@ xfs_attr_rmtval_set(
 		error = xfs_bmapi_write(args->trans, dp, (xfs_fileoff_t)lblkno,
 				  blkcnt, XFS_BMAPI_ATTRFORK, args->firstblock,
 				  args->total, &map, &nmap, args->dfops);
-		if (!error)
-			error = xfs_defer_finish(&args->trans, args->dfops, dp);
-		if (error) {
-			args->trans = NULL;
-			xfs_defer_cancel(args->dfops);
-			return error;
-		}
+		if (error)
+			goto out_defer_cancel;
+		xfs_defer_ijoin(args->dfops, dp);
+		error = xfs_defer_finish(&args->trans, args->dfops);
+		if (error)
+			goto out_defer_cancel;
 
 		ASSERT(nmap == 1);
 		ASSERT((map.br_startblock != DELAYSTARTBLOCK) &&
@@ -478,7 +478,7 @@ xfs_attr_rmtval_set(
 		/*
 		 * Start the next trans in the chain.
 		 */
-		error = xfs_trans_roll(&args->trans, dp);
+		error = xfs_trans_roll_inode(&args->trans, dp);
 		if (error)
 			return error;
 	}
@@ -533,6 +533,10 @@ xfs_attr_rmtval_set(
 	}
 	ASSERT(valuelen == 0);
 	return 0;
+out_defer_cancel:
+	xfs_defer_cancel(args->dfops);
+	args->trans = NULL;
+	return error;
 }
 
 /*
@@ -603,21 +607,23 @@ xfs_attr_rmtval_remove(
 		error = xfs_bunmapi(args->trans, args->dp, lblkno, blkcnt,
 				    XFS_BMAPI_ATTRFORK, 1, args->firstblock,
 				    args->dfops, &done);
-		if (!error)
-			error = xfs_defer_finish(&args->trans, args->dfops,
-						args->dp);
-		if (error) {
-			args->trans = NULL;
-			xfs_defer_cancel(args->dfops);
-			return error;
-		}
+		if (error)
+			goto out_defer_cancel;
+		xfs_defer_ijoin(args->dfops, args->dp);
+		error = xfs_defer_finish(&args->trans, args->dfops);
+		if (error)
+			goto out_defer_cancel;
 
 		/*
 		 * Close out trans and start the next one in the chain.
 		 */
-		error = xfs_trans_roll(&args->trans, args->dp);
+		error = xfs_trans_roll_inode(&args->trans, args->dp);
 		if (error)
 			return error;
 	}
 	return 0;
+out_defer_cancel:
+	xfs_defer_cancel(args->dfops);
+	args->trans = NULL;
+	return error;
 }

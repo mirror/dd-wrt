@@ -1,3 +1,39 @@
+xfsprogs (4.14.0) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Mon, 27 Nov 2017 10:52:38 -0600
+
+xfsprogs (4.13.1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 26 Sep 2017 20:42:32 -0500
+
+xfsprogs (4.13.0) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 26 Sep 2017 11:40:08 -0500
+
+xfsprogs (4.12.0) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 20 Jul 2017 10:54:03 -0500
+
+xfsprogs (4.11.0) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 05 May 2017 13:22:41 -0500
+
+xfsprogs (4.10.0) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Sun, 26 Feb 2017 14:02:20 -0600
+
 xfsprogs (4.9.0) unstable; urgency=low
 
   * New upstream release

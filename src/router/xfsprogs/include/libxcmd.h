@@ -42,10 +42,10 @@ get_topology(
 extern void
 calc_default_ag_geometry(
 	int		blocklog,
-	__uint64_t	dblocks,
+	uint64_t	dblocks,
 	int		multidisk,
-	__uint64_t	*agsize,
-	__uint64_t	*agcount);
+	uint64_t	*agsize,
+	uint64_t	*agcount);
 
 extern int
 check_overwrite(

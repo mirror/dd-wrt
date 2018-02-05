@@ -44,8 +44,10 @@ typedef enum fldt	{
 
 	/* attr 3 specific fields */
 	FLDT_ATTR3,
+	FLDT_ATTR3_BLKINFO,
 	FLDT_ATTR3_LEAF_HDR,
 	FLDT_ATTR3_NODE_HDR,
+	FLDT_ATTR3_REMOTE_HDR,
 
 	FLDT_BMAPBTA,
 	FLDT_BMAPBTA_CRC,

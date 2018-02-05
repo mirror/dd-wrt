@@ -18,11 +18,15 @@
 
 #include "platform_defs.h"
 #include "command.h"
+#include "input.h"
 #include <linux/fiemap.h>
 #include "init.h"
 #include "io.h"
 
+#define EXTENT_BATCH 32
+
 static cmdinfo_t fiemap_cmd;
+static int max_extents = -1;
 
 static void
 fiemap_help(void)
@@ -48,30 +52,47 @@ fiemap_help(void)
 "\n"));
 }
 
-static int
-numlen(
-	__u64	val,
-	int	base)
+static void
+print_hole(
+	   int		foff_w,
+	   int		boff_w,
+	   int		tot_w,
+	   int		cur_extent,
+	   int		lflag,
+	   bool		plain,
+	   __u64	llast,
+	   __u64	lstart)
 {
-	__u64	tmp;
-	int	len;
+	   char		lbuf[48];
 
-	for (len = 0, tmp = val; tmp > 0; tmp = tmp/base)
-		len++;
-	return (len == 0 ? 1 : len);
+	   if (plain) {
+		printf("\t%d: [%llu..%llu]: hole", cur_extent,
+		       (unsigned long long)llast, lstart - 1ULL);
+		if (lflag)
+			printf(_(" %llu blocks\n"),
+			       (unsigned long long)lstart - llast);
+		else
+			printf("\n");
+	   } else {
+		snprintf(lbuf, sizeof(lbuf), "[%llu..%llu]:",
+			 (unsigned long long)llast, lstart - 1ULL);
+		printf("%4d: %-*s %-*s %*llu\n", cur_extent, foff_w, lbuf,
+		       boff_w, _("hole"), tot_w,
+		       (unsigned long long)lstart - llast);
+	   }
+
+
 }
 
-static void
+static int
 print_verbose(
 	struct fiemap_extent	*extent,
-	int			blocksize,
 	int			foff_w,
 	int			boff_w,
 	int			tot_w,
 	int			flg_w,
-	int			max_extents,
-	int			*cur_extent,
-	__u64			*last_logical)
+	int			cur_extent,
+	__u64			last_logical)
 {
 	__u64			lstart;
 	__u64			llast;
@@ -81,15 +102,15 @@ print_verbose(
 	char			bbuf[48];
 	char			flgbuf[16];
 
-	llast = *last_logical / blocksize;
-	lstart = extent->fe_logical / blocksize;
-	len = extent->fe_length / blocksize;
-	block = extent->fe_physical / blocksize;
+	llast = BTOBBT(last_logical);
+	lstart = BTOBBT(extent->fe_logical);
+	len = BTOBBT(extent->fe_length);
+	block = BTOBBT(extent->fe_physical);
 
 	memset(lbuf, 0, sizeof(lbuf));
 	memset(bbuf, 0, sizeof(bbuf));
 
-	if (*cur_extent == 0) {
+	if (cur_extent == 0) {
 		printf("%4s: %-*s %-*s %*s %*s\n", _("EXT"),
 			foff_w, _("FILE-OFFSET"),
 			boff_w, _("BLOCK-RANGE"),
@@ -98,70 +119,59 @@ print_verbose(
 	}
 
 	if (lstart != llast) {
-		snprintf(lbuf, sizeof(lbuf), "[%llu..%llu]:", llast,
-			 lstart - 1ULL);
-		printf("%4d: %-*s %-*s %*llu\n", *cur_extent, foff_w, lbuf,
-		       boff_w, _("hole"), tot_w, lstart - llast);
-		(*cur_extent)++;
-		memset(lbuf, 0, sizeof(lbuf));
+		print_hole(foff_w, boff_w, tot_w, cur_extent, 0, false, llast,
+			   lstart);
+		cur_extent++;
 	}
 
-	if ((*cur_extent + 1) == max_extents)
-		return;
+	if (cur_extent == max_extents)
+		return 1;
 
-	snprintf(lbuf, sizeof(lbuf), "[%llu..%llu]:", lstart,
-		 lstart + len - 1ULL);
-	snprintf(bbuf, sizeof(bbuf), "%llu..%llu", block, block + len - 1ULL);
+	snprintf(lbuf, sizeof(lbuf), "[%llu..%llu]:",
+		 (unsigned long long)lstart, lstart + len - 1ULL);
+	snprintf(bbuf, sizeof(bbuf), "%llu..%llu",
+		 (unsigned long long)block, block + len - 1ULL);
 	snprintf(flgbuf, sizeof(flgbuf), "0x%x", extent->fe_flags);
-	printf("%4d: %-*s %-*s %*llu %*s\n", *cur_extent, foff_w, lbuf,
-	       boff_w, bbuf, tot_w, len, flg_w, flgbuf);
+	printf("%4d: %-*s %-*s %*llu %*s\n", cur_extent, foff_w, lbuf,
+	       boff_w, bbuf, tot_w, (unsigned long long)len, flg_w, flgbuf);
 
-	(*cur_extent)++;
-	*last_logical = extent->fe_logical + extent->fe_length;
+	return 2;
 }
 
-static void
+static int
 print_plain(
 	struct fiemap_extent	*extent,
 	int			lflag,
-	int			blocksize,
-	int			max_extents,
-	int			*cur_extent,
-	__u64			*last_logical)
+	int			cur_extent,
+	__u64			last_logical)
 {
 	__u64			lstart;
 	__u64			llast;
 	__u64			block;
 	__u64			len;
 
-	llast = *last_logical / blocksize;
-	lstart = extent->fe_logical / blocksize;
-	len = extent->fe_length / blocksize;
-	block = extent->fe_physical / blocksize;
+	llast = BTOBBT(last_logical);
+	lstart = BTOBBT(extent->fe_logical);
+	len = BTOBBT(extent->fe_length);
+	block = BTOBBT(extent->fe_physical);
 
 	if (lstart != llast) {
-		printf("\t%d: [%llu..%llu]: hole", *cur_extent,
-		       llast, lstart - 1ULL);
-		if (lflag)
-			printf(_(" %llu blocks\n"), lstart - llast);
-		else
-			printf("\n");
-		(*cur_extent)++;
+		print_hole(0, 0, 0, cur_extent, lflag, true, llast, lstart);
+		cur_extent++;
 	}
 
-	if ((*cur_extent + 1) == max_extents)
-		return;
+	if (cur_extent == max_extents)
+		return 1;
 
-	printf("\t%d: [%llu..%llu]: %llu..%llu", *cur_extent,
-	       lstart, lstart + len - 1ULL, block,
-	       block + len - 1ULL);
+	printf("\t%d: [%llu..%llu]: %llu..%llu", cur_extent,
+	       (unsigned long long)lstart, lstart + len - 1ULL,
+	       (unsigned long long)block, block + len - 1ULL);
 
 	if (lflag)
-		printf(_(" %llu blocks\n"), len);
+		printf(_(" %llu blocks\n"), (unsigned long long)len);
 	else
 		printf("\n");
-	(*cur_extent)++;
-	*last_logical = extent->fe_logical + extent->fe_length;
+	return 2;
 }
 
 /*
@@ -171,13 +181,12 @@ print_plain(
 static void
 calc_print_format(
 	struct fiemap		*fiemap,
-	__u64			blocksize,
 	int			*foff_w,
 	int			*boff_w,
 	int			*tot_w,
 	int			*flg_w)
 {
-	int 			i;
+	int			i;
 	char			lbuf[32];
 	char			bbuf[32];
 	__u64			logical;
@@ -188,14 +197,16 @@ calc_print_format(
 	for (i = 0; i < fiemap->fm_mapped_extents; i++) {
 
 		extent = &fiemap->fm_extents[i];
-		logical = extent->fe_logical / blocksize;
-		len = extent->fe_length / blocksize;
-		block = extent->fe_physical / blocksize;
+		logical = BTOBBT(extent->fe_logical);
+		len = BTOBBT(extent->fe_length);
+		block = BTOBBT(extent->fe_physical);
 
-		snprintf(lbuf, sizeof(lbuf), "[%llu..%llu]", logical,
-			 logical + len - 1);
-		snprintf(bbuf, sizeof(bbuf), "%llu..%llu", block,
-			 block + len - 1);
+		snprintf(lbuf, sizeof(lbuf), "[%llu..%llu]",
+			 (unsigned long long)logical,
+			 (unsigned long long)logical + len - 1);
+		snprintf(bbuf, sizeof(bbuf), "%llu..%llu",
+			 (unsigned long long)block,
+			 (unsigned long long)block + len - 1);
 		*foff_w = max(*foff_w, strlen(lbuf));
 		*boff_w = max(*boff_w, strlen(bbuf));
 		*tot_w = max(*tot_w, numlen(len, 10));
@@ -211,8 +222,6 @@ fiemap_f(
 	char		**argv)
 {
 	struct fiemap	*fiemap;
-	int		max_extents = 0;
-	int		num_extents = 32;
 	int		last = 0;
 	int		lflag = 0;
 	int		vflag = 0;
@@ -226,7 +235,6 @@ fiemap_f(
 	int		boff_w = 16;
 	int		tot_w = 5;	/* 5 since its just one number */
 	int		flg_w = 5;
-	__u64		blocksize = 512;
 	__u64		last_logical = 0;
 	struct stat	st;
 
@@ -249,10 +257,8 @@ fiemap_f(
 		}
 	}
 
-	if (max_extents)
-		num_extents = min(num_extents, max_extents);
 	map_size = sizeof(struct fiemap) +
-		(num_extents * sizeof(struct fiemap_extent));
+		(EXTENT_BATCH * sizeof(struct fiemap_extent));
 	fiemap = malloc(map_size);
 	if (!fiemap) {
 		fprintf(stderr, _("%s: malloc of %d bytes failed.\n"),
@@ -263,16 +269,13 @@ fiemap_f(
 
 	printf("%s:\n", file->name);
 
-	while (!last && ((cur_extent + 1) != max_extents)) {
-		if (max_extents)
-			num_extents = min(num_extents,
-					  max_extents - (cur_extent + 1));
+	while (!last && (cur_extent != max_extents)) {
 
 		memset(fiemap, 0, map_size);
 		fiemap->fm_flags = fiemap_flags;
 		fiemap->fm_start = last_logical;
 		fiemap->fm_length = -1LL;
-		fiemap->fm_extent_count = num_extents;
+		fiemap->fm_extent_count = EXTENT_BATCH;
 
 		ret = ioctl(file->fd, FS_IOC_FIEMAP, (unsigned long)fiemap);
 		if (ret < 0) {
@@ -289,35 +292,39 @@ fiemap_f(
 
 		for (i = 0; i < fiemap->fm_mapped_extents; i++) {
 			struct fiemap_extent	*extent;
+			int num_printed = 0;
 
 			extent = &fiemap->fm_extents[i];
 			if (vflag) {
 				if (cur_extent == 0) {
-					calc_print_format(fiemap, blocksize,
-							  &foff_w, &boff_w,
-							  &tot_w, &flg_w);
+					calc_print_format(fiemap, &foff_w,
+							  &boff_w, &tot_w,
+							  &flg_w);
 				}
 
-				print_verbose(extent, blocksize, foff_w,
-					      boff_w, tot_w, flg_w,
-					      max_extents, &cur_extent,
-					      &last_logical);
+				num_printed = print_verbose(extent, foff_w,
+							    boff_w, tot_w,
+							    flg_w, cur_extent,
+							    last_logical);
 			} else
-				print_plain(extent, lflag, blocksize,
-					    max_extents, &cur_extent,
-					    &last_logical);
+				num_printed = print_plain(extent, lflag,
+							  cur_extent,
+							  last_logical);
+
+			cur_extent += num_printed;
+			last_logical = extent->fe_logical + extent->fe_length;
 
 			if (extent->fe_flags & FIEMAP_EXTENT_LAST) {
 				last = 1;
 				break;
 			}
 
-			if ((cur_extent + 1) == max_extents)
+			if (cur_extent == max_extents)
 				break;
 		}
 	}
 
-	if ((cur_extent + 1) == max_extents)
+	if (cur_extent  == max_extents)
 		goto out;
 
 	memset(&st, 0, sizeof(st));
@@ -329,25 +336,9 @@ fiemap_f(
 		return 0;
 	}
 
-	if (cur_extent && last_logical < st.st_size) {
-		char	lbuf[32];
-
-		snprintf(lbuf, sizeof(lbuf), "[%llu..%llu]:",
-			 last_logical / blocksize, (st.st_size / blocksize) - 1);
-		if (vflag) {
-			printf("%4d: %-*s %-*s %*llu\n", cur_extent,
-			       foff_w, lbuf, boff_w, _("hole"), tot_w,
-			       (st.st_size - last_logical) / blocksize);
-		} else {
-			printf("\t%d: %s %s", cur_extent, lbuf,
-			       _("hole"));
-			if (lflag)
-				printf(_(" %llu blocks\n"),
-				       (st.st_size - last_logical) / blocksize);
-			else
-				printf("\n");
-		}
-	}
+	if (cur_extent && last_logical < st.st_size)
+		print_hole(foff_w, boff_w, tot_w, cur_extent, lflag, !vflag,
+			   BTOBBT(last_logical), BTOBBT(st.st_size));
 
 out:
 	free(fiemap);

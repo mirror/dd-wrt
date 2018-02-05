@@ -17,6 +17,7 @@
  */
 
 #include "xfs.h"
+#include "path.h"
 
 /*
  * Read/write patterns (default is always "forward")
@@ -24,6 +25,7 @@
 #define IO_RANDOM	( 0)
 #define IO_FORWARD	( 1)
 #define IO_BACKWARD	(-1)
+#define IO_ONCE		( 2)
 
 /*
  * File descriptor options
@@ -47,13 +49,14 @@ typedef struct fileio {
 	int		flags;		/* flags describing file state */
 	char		*name;		/* file name at time of open */
 	xfs_fsop_geom_t	geom;		/* XFS filesystem geometry */
+	struct fs_path	fs_path;	/* XFS path information */
 } fileio_t;
 
 extern fileio_t		*filetable;	/* open file table */
 extern int		filecount;	/* number of open files */
 extern fileio_t		*file;		/* active file in file table */
 extern int filelist_f(void);
-
+extern int stat_f(int argc, char **argv);
 /*
  * Memory mapped file regions
  */
@@ -76,8 +79,10 @@ extern void *check_mapping_range(mmap_region_t *, off64_t, size_t, int);
  */
 
 extern off64_t		filesize(void);
-extern int		openfile(char *, xfs_fsop_geom_t *, int, mode_t);
-extern int		addfile(char *, int , xfs_fsop_geom_t *, int);
+extern int		openfile(char *, xfs_fsop_geom_t *, int, mode_t,
+				 struct fs_path *);
+extern int		addfile(char *, int , xfs_fsop_geom_t *, int,
+				struct fs_path *);
 extern void		printxattr(uint, int, int, const char *, int, int);
 
 extern unsigned int	recurse_all;
@@ -94,6 +99,7 @@ extern void		dump_buffer(off64_t, ssize_t);
 
 extern void		attr_init(void);
 extern void		bmap_init(void);
+extern void		encrypt_init(void);
 extern void		file_init(void);
 extern void		flink_init(void);
 extern void		freeze_init(void);
@@ -111,8 +117,10 @@ extern void		pwrite_init(void);
 extern void		quit_init(void);
 extern void		seek_init(void);
 extern void		shutdown_init(void);
+extern void		stat_init(void);
 extern void		sync_init(void);
 extern void		truncate_init(void);
+extern void		utimes_init(void);
 
 #ifdef HAVE_FADVISE
 extern void		fadvise_init(void);
@@ -171,3 +179,9 @@ extern void		readdir_init(void);
 extern void		reflink_init(void);
 
 extern void		cowextsize_init(void);
+
+#ifdef HAVE_GETFSMAP
+extern void		fsmap_init(void);
+#else
+# define fsmap_init()	do { } while (0)
+#endif

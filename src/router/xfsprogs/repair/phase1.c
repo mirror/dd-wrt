@@ -138,6 +138,13 @@ _("Cannot disable lazy-counters on V5 fs\n"));
 		}
 	}
 
+	/* shared_vn should be zero */
+	if (sb->sb_shared_vn) {
+		do_warn(_("resetting shared_vn to zero\n"));
+		sb->sb_shared_vn = 0;
+		primary_sb_modified = 1;
+	}
+
 	if (primary_sb_modified)  {
 		if (!no_modify)  {
 			do_warn(_("writing modified primary superblock\n"));
