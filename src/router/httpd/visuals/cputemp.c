@@ -250,6 +250,8 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			if (!fp)
 				fp = fopen("/sys/class/hwmon/hwmon0/temp1_max", "rb");
 			if (!fp)
+				fp = fopen("/sys/class/hwmon/hwmon0/device/temp1_max", "rb");
+			if (!fp)
 				fp = fopen("/sys/class/hwmon/hwmon0/temp2_max", "rb");
 			if (!fp)
 				fp = fopen("/sys/class/hwmon/hwmon1/temp1_max", "rb");
@@ -271,6 +273,8 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			fp = fopen(tempp, "rb");
 		if (!fp)
 			fp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
+		if (!fp)
+			fp = fopen("/sys/class/hwmon/hwmon0/device/temp1_input", "rb");
 		if (!fp)
 			fp = fopen("/sys/class/hwmon/hwmon0/temp2_input", "rb");
 		if (!fp)
