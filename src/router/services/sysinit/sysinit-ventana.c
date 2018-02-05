@@ -140,19 +140,19 @@ void start_sysinit(void)
 	char *board2 = nvram_safe_get("DD_BOARD2");
 	if (!strncmp(board, "Gateworks Ventana GW54", 22)
 	    || !strncmp(board2, "Gateworks Ventana GW54", 22))
-		eval("gsp_updater", "-f", "/etc/gsc_54xx_v47.txt", "47");
+		eval("gsp_updater", "-f", "/etc/gsc_54xx_v50.txt", "50");
 
 	if (!strncmp(board, "Gateworks Ventana GW53", 22)
 	    || !strncmp(board2, "Gateworks Ventana GW53", 22))
-		eval("gsp_updater", "-f", "/etc/gsc_53xx_v47.txt", "47");
+		eval("gsp_updater", "-f", "/etc/gsc_53xx_v50.txt", "50");
 
 	if (!strncmp(board, "Gateworks Ventana GW52", 22)
 	    || !strncmp(board2, "Gateworks Ventana GW52", 22))
-		eval("gsp_updater", "-f", "/etc/gsc_52xx_v47.txt", "47");
+		eval("gsp_updater", "-f", "/etc/gsc_52xx_v50.txt", "50");
 
 	if (!strncmp(board, "Gateworks Ventana GW51", 22)
 	    || !strncmp(board2, "Gateworks Ventana GW51", 22))
-		eval("gsp_updater", "-f", "/etc/gsc_51xx_v47.txt", "47");
+		eval("gsp_updater", "-f", "/etc/gsc_51xx_v50.txt", "50");
 
 	sysprintf("echo ondemand > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
 
