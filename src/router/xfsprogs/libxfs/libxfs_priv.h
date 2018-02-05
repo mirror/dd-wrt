@@ -92,9 +92,6 @@ extern uint32_t crc32c_le(uint32_t crc, unsigned char const *p, size_t len);
 /* for all the support code that uses progname in error messages */
 extern char    *progname;
 
-#undef ASSERT
-#define ASSERT(ex) assert(ex)
-
 #ifndef EWRONGFS
 #define EWRONGFS	EINVAL
 #endif
