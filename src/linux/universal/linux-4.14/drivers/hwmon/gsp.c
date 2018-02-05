@@ -82,6 +82,7 @@ static int gsp_remove(struct i2c_client *client);
 
 static const struct i2c_device_id gsp_id[] = {
 	{ "gsp", 0 },
+	{ "gsc", 0 },
 	{ }
 };
 MODULE_DEVICE_TABLE(i2c, gsp_id);
