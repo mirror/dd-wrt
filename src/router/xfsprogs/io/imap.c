@@ -16,9 +16,8 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/xfs.h>
-#include <xfs/command.h>
-#include <xfs/input.h>
+#include "command.h"
+#include "input.h"
 #include "init.h"
 #include "io.h"
 
@@ -40,6 +39,8 @@ imap_f(int argc, char **argv)
 		nent = atoi(argv[1]);
 
 	t = malloc(nent * sizeof(*t));
+	if (!t)
+		return 0;
 
 	bulkreq.lastip  = &last;
 	bulkreq.icount  = nent;
@@ -48,7 +49,7 @@ imap_f(int argc, char **argv)
 
 	while (xfsctl(file->name, file->fd, XFS_IOC_FSINUMBERS, &bulkreq) == 0) {
 		if (count == 0)
-			return 0;
+			goto out_free;
 		for (i = 0; i < count; i++) {
 			printf(_("ino %10llu count %2d mask %016llx\n"),
 				(unsigned long long)t[i].xi_startino,
@@ -58,6 +59,8 @@ imap_f(int argc, char **argv)
 	}
 	perror("xfsctl(XFS_IOC_FSINUMBERS)");
 	exitcode = 1;
+out_free:
+	free(t);
 	return 0;
 }
 
@@ -67,7 +70,7 @@ imap_init(void)
 	imap_cmd.name = "imap";
 	imap_cmd.cfunc = imap_f;
 	imap_cmd.argmin = 0;
-	imap_cmd.argmax = 0;
+	imap_cmd.argmax = 1;
 	imap_cmd.args = _("[nentries]");
 	imap_cmd.flags = CMD_NOMAP_OK;
 	imap_cmd.oneline = _("inode map for filesystem of current file");

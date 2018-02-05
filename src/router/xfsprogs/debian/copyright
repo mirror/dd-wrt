@@ -12,8 +12,8 @@ the GNU General Public License.
 On Debian systems, the complete text of the GNU General Public
 License can be found in /usr/share/common-licenses/GPL file.
 
-The library named "libhandle" is licensed under Version 2.1
-of the GNU Lesser General Public License.
+The library named "libhandle" and the headers in "xfslibs-dev" are
+licensed under Version 2.1 of the GNU Lesser General Public License.
 On Debian systems, refer to /usr/share/common-licenses/LGPL-2.1
 for the complete text of the GNU Lesser General Public License.
 

@@ -18,11 +18,8 @@
 #ifndef __PROJECT_H__
 #define __PROJECT_H__
 
-#include <xfs/xfs.h>
-
-#if !defined(__sgi__)
-typedef __uint32_t	prid_t;
-#endif
+#include "platform_defs.h"
+#include "xfs.h"
 
 extern int setprojid(const char *__name, int __fd, prid_t __id);
 extern int getprojid(const char *__name, int __fd, prid_t *__id);

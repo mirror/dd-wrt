@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <libxfs.h>
+#include "libxfs.h"
 
 int rtcp(char *, char *, int);
 int xfsrtextsize(char *path);
@@ -25,17 +25,17 @@ int pflag;
 char *progname;
 
 void
-usage()
+usage(void)
 {
-	fprintf(stderr, _("%s [-e extsize] [-p] source target\n"), progname);
+	fprintf(stderr, _("%s [-e extsize] [-p] [-V] source target\n"), progname);
 	exit(2);
 }
 
 int
 main(int argc, char **argv)
 {
-	register int	c, i, r, errflg = 0;
-	struct stat64	s2;
+	int	c, i, r, errflg = 0;
+	struct stat	s2;
 	int		extsize = - 1;
 
 	progname = basename(argv[0]);
@@ -80,8 +80,8 @@ main(int argc, char **argv)
 	 * which really exists.
 	 */
 	if (argc > 2) {
-		if (stat64(argv[argc-1], &s2) < 0) {
-			fprintf(stderr, _("%s: stat64 of %s failed\n"),
+		if (stat(argv[argc-1], &s2) < 0) {
+			fprintf(stderr, _("%s: stat of %s failed\n"),
 				progname, argv[argc-1]);
 			exit(2);
 		}
@@ -115,7 +115,7 @@ rtcp( char *source, char *target, int fextsize)
 	int		remove = 0, rtextsize;
 	char		*sp, *fbuf, *ptr;
 	char		tbuf[ PATH_MAX ];
-	struct stat64	s1, s2;
+	struct stat	s1, s2;
 	struct fsxattr	fsxattr;
 	struct dioattr	dioattr;
 
@@ -134,8 +134,8 @@ rtcp( char *source, char *target, int fextsize)
 			*sp = '\0';
 	}
 
-	if ( stat64(source, &s1) ) {
-		fprintf(stderr, _("%s: failed stat64 on %s: %s\n"),
+	if ( stat(source, &s1) ) {
+		fprintf(stderr, _("%s: failed stat on %s: %s\n"),
 			progname, source, strerror(errno));
 		return( -1);
 	}
@@ -144,7 +144,7 @@ rtcp( char *source, char *target, int fextsize)
 	 * check for a realtime partition
 	 */
 	snprintf(tbuf, sizeof(tbuf), "%s", target);
-	if ( stat64(target, &s2) ) {
+	if ( stat(target, &s2) ) {
 		if (!S_ISDIR(s2.st_mode)) {
 			/* take out target file name */
 			if ((ptr = strrchr(tbuf, '/')) != NULL)
@@ -165,14 +165,14 @@ rtcp( char *source, char *target, int fextsize)
 	 * check if target is a directory
 	 */
 	snprintf(tbuf, sizeof(tbuf), "%s", target);
-	if ( !stat64(target, &s2) ) {
+	if ( !stat(target, &s2) ) {
 		if (S_ISDIR(s2.st_mode)) {
 			snprintf(tbuf, sizeof(tbuf), "%s/%s", target,
 				basename(source));
 		}
 	}
 
-	if ( stat64(tbuf, &s2) ) {
+	if ( stat(tbuf, &s2) ) {
 		/*
 		 * create the file if it does not exist
 		 */
@@ -186,13 +186,13 @@ rtcp( char *source, char *target, int fextsize)
 		/*
 		 * mark the file as a realtime file
 		 */
-		fsxattr.fsx_xflags = XFS_XFLAG_REALTIME;
+		fsxattr.fsx_xflags = FS_XFLAG_REALTIME;
 		if (fextsize != -1 )
 			fsxattr.fsx_extsize = fextsize;
 		else
 			fsxattr.fsx_extsize = 0;
 
-		if ( xfsctl(tbuf, tofd, XFS_IOC_FSSETXATTR, &fsxattr) ) {
+		if ( xfsctl(tbuf, tofd, FS_IOC_FSSETXATTR, &fsxattr) ) {
 			fprintf(stderr,
 				_("%s: set attributes on %s failed: %s\n"),
 				progname, tbuf, strerror(errno));
@@ -210,7 +210,7 @@ rtcp( char *source, char *target, int fextsize)
 			return( -1 );
 		}
 
-		if ( xfsctl(tbuf, tofd, XFS_IOC_FSGETXATTR, &fsxattr) ) {
+		if ( xfsctl(tbuf, tofd, FS_IOC_FSGETXATTR, &fsxattr) ) {
 			fprintf(stderr,
 				_("%s: get attributes of %s failed: %s\n"),
 				progname, tbuf, strerror(errno));
@@ -221,9 +221,10 @@ rtcp( char *source, char *target, int fextsize)
 		/*
 		 * check if the existing file is already a realtime file
 		 */
-		if ( !(fsxattr.fsx_xflags & XFS_XFLAG_REALTIME) ) {
+		if ( !(fsxattr.fsx_xflags & FS_XFLAG_REALTIME) ) {
 			fprintf(stderr, _("%s: %s is not a realtime file.\n"),
 				progname, tbuf);
+			close( tofd );
 			return( -1 );
 		}
 
@@ -234,6 +235,7 @@ rtcp( char *source, char *target, int fextsize)
 			fprintf(stderr, _("%s: %s file extent size is %d, "
 					"instead of %d.\n"),
 				progname, tbuf, fsxattr.fsx_extsize, fextsize);
+			close( tofd );
 			return( -1 );
 		}
 	}
@@ -253,10 +255,10 @@ rtcp( char *source, char *target, int fextsize)
 
 	fsxattr.fsx_xflags = 0;
 	fsxattr.fsx_extsize = 0;
-	if ( xfsctl(source, fromfd, XFS_IOC_FSGETXATTR, &fsxattr) ) {
+	if ( xfsctl(source, fromfd, FS_IOC_FSGETXATTR, &fsxattr) ) {
 		reopen = 1;
 	} else {
-		if (! (fsxattr.fsx_xflags & XFS_XFLAG_REALTIME) ){
+		if (! (fsxattr.fsx_xflags & FS_XFLAG_REALTIME) ){
 			fprintf(stderr, _("%s: %s is not a realtime file.\n"),
 				progname, source);
 			reopen = 1;

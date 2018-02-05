@@ -10,6 +10,8 @@ xfs_rtcp \- XFS realtime copy command
 .B -p
 ]
 .IR source " ... " target
+.br
+.B xfs_rtcp \-V
 .SH DESCRIPTION
 .B xfs_rtcp
 copies a file to the realtime partition on an XFS filesystem.
@@ -35,6 +37,9 @@ will pad the destination file to a size which is an even multiple
 of the filesystem block size.
 This is necessary since the realtime file is created using
 direct I/O and the minimum I/O is the filesystem block size.
+.TP
+.B \-V
+Prints the version number and exits.
 .SH SEE ALSO
 .BR xfs (5),
 .BR mkfs.xfs (8),

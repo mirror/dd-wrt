@@ -52,11 +52,15 @@ Mac OS X Instructions
 =====================
 
 0. Note:  since there is no XFS implementation on Mac OS X, you are
-   severely limited in what you can do.  mkfs.xfs(8), xfs_db(8) and 
+   severely limited in what you can do.  mkfs.xfs(8), xfs_db(8) and
    xfs_repair(8) are the only functional tools on this platform, as
    they do not interact with the XFS kernel code at all.  Still, it
    can be useful to have access to these utilities from Mac OS X in
    a dual boot configuration, for example.
+
+   However, keep on mind that mkfs.xfs on Mac OS X has disabled
+   device access, although you can create a filesystem in a file.
+   Also note that existing filesystem detection is disabled.
 
 1. Configure, build and install the package
 
@@ -65,7 +69,8 @@ Mac OS X Instructions
    and glibtool). 
 
    You will also need to have built and installed the UUID library which
-   is provided by the e2fsprogs source package.
+   is provided by the e2fsprogs source package. (Or use Homebrew, Macports
+   or any other 3rd party package manager.)
 
    Building libuuid:
 
@@ -84,7 +89,11 @@ Mac OS X Instructions
 	TAR=/usr/bin/gnutar
 	LIBTOOL=/usr/bin/glibtool
 	INSTALL_GROUP=wheel
-	LOCAL_CONFIGURE_OPTIONS="--enable-gettext=no"
+	LOCAL_CONFIGURE_OPTIONS="\
+				 --enable-gettext=no\
+				 --enable-blkid=no\
+				 --enable-librt=no\
+				 "
 
 	$ make
 	$ su root

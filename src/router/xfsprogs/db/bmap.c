@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include "command.h"
 #include "type.h"
 #include "fprint.h"
@@ -30,9 +30,9 @@
 
 static int		bmap_f(int argc, char **argv);
 static int		bmap_one_extent(xfs_bmbt_rec_t *ep,
-					xfs_dfiloff_t *offp, xfs_dfiloff_t eoff,
+					xfs_fileoff_t *offp, xfs_fileoff_t eoff,
 					int *idxp, bmap_ext_t *bep);
-static xfs_fsblock_t	select_child(xfs_dfiloff_t off, xfs_bmbt_key_t *kp,
+static xfs_fsblock_t	select_child(xfs_fileoff_t off, xfs_bmbt_key_t *kp,
 				     xfs_bmbt_ptr_t *pp, int nrecs);
 
 static const cmdinfo_t	bmap_cmd =
@@ -41,17 +41,17 @@ static const cmdinfo_t	bmap_cmd =
 
 void
 bmap(
-	xfs_dfiloff_t		offset,
-	xfs_dfilblks_t		len,
+	xfs_fileoff_t		offset,
+	xfs_filblks_t		len,
 	int			whichfork,
 	int			*nexp,
 	bmap_ext_t		*bep)
 {
 	struct xfs_btree_block	*block;
 	xfs_fsblock_t		bno;
-	xfs_dfiloff_t		curoffset;
+	xfs_fileoff_t		curoffset;
 	xfs_dinode_t		*dip;
-	xfs_dfiloff_t		eoffset;
+	xfs_fileoff_t		eoffset;
 	xfs_bmbt_rec_t		*ep;
 	xfs_dinode_fmt_t	fmt;
 	int			fsize;
@@ -88,12 +88,11 @@ bmap(
 		}
 	} else if (fmt == XFS_DINODE_FMT_BTREE) {
 		push_cur();
-		bno = NULLFSBLOCK;
 		rblock = (xfs_bmdr_block_t *)XFS_DFORK_PTR(dip, whichfork);
 		fsize = XFS_DFORK_SIZE(dip, mp, whichfork);
-		pp = XFS_BMDR_PTR_ADDR(rblock, 1, xfs_bmdr_maxrecs(mp, fsize, 0));
+		pp = XFS_BMDR_PTR_ADDR(rblock, 1, libxfs_bmdr_maxrecs(fsize, 0));
 		kp = XFS_BMDR_KEY_ADDR(rblock, 1);
-		bno = select_child(curoffset, kp, pp, 
+		bno = select_child(curoffset, kp, pp,
 					be16_to_cpu(rblock->bb_numrecs));
 		for (;;) {
 			set_cur(&typtab[typ], XFS_FSB_TO_DADDR(mp, bno),
@@ -101,9 +100,9 @@ bmap(
 			block = (struct xfs_btree_block *)iocur_top->data;
 			if (be16_to_cpu(block->bb_level) == 0)
 				break;
-			pp = XFS_BMDR_PTR_ADDR(block, 1,
-				xfs_bmbt_maxrecs(mp, mp->m_sb.sb_blocksize, 0));
-			kp = XFS_BMDR_KEY_ADDR(block, 1);
+			pp = XFS_BMBT_PTR_ADDR(mp, block, 1,
+				libxfs_bmbt_maxrecs(mp, mp->m_sb.sb_blocksize, 0));
+			kp = XFS_BMBT_KEY_ADDR(mp, block, 1);
 			bno = select_child(curoffset, kp, pp,
 					be16_to_cpu(block->bb_numrecs));
 		}
@@ -140,11 +139,11 @@ bmap_f(
 	int		afork = 0;
 	bmap_ext_t	be;
 	int		c;
-	xfs_dfiloff_t	co, cosave;
+	xfs_fileoff_t	co, cosave;
 	int		dfork = 0;
 	xfs_dinode_t	*dip;
-	xfs_dfiloff_t	eo;
-	xfs_dfilblks_t	len;
+	xfs_fileoff_t	eo;
+	xfs_filblks_t	len;
 	int		nex;
 	char		*p;
 	int		whichfork;
@@ -178,7 +177,7 @@ bmap_f(
 		pop_cur();
 	}
 	if (optind < argc) {
-		co = (xfs_dfiloff_t)strtoull(argv[optind], &p, 0);
+		co = (xfs_fileoff_t)strtoull(argv[optind], &p, 0);
 		if (*p != '\0') {
 			dbprintf(_("bad block number for bmap %s\n"),
 				argv[optind]);
@@ -186,7 +185,7 @@ bmap_f(
 		}
 		optind++;
 		if (optind < argc) {
-			len = (xfs_dfilblks_t)strtoull(argv[optind], &p, 0);
+			len = (xfs_filblks_t)strtoull(argv[optind], &p, 0);
 			if (*p != '\0') {
 				dbprintf(_("bad len for bmap %s\n"), argv[optind]);
 				return 0;
@@ -234,17 +233,17 @@ bmap_init(void)
 static int
 bmap_one_extent(
 	xfs_bmbt_rec_t		*ep,
-	xfs_dfiloff_t		*offp,
-	xfs_dfiloff_t		eoff,
+	xfs_fileoff_t		*offp,
+	xfs_fileoff_t		eoff,
 	int			*idxp,
 	bmap_ext_t		*bep)
 {
-	xfs_dfilblks_t		c;
-	xfs_dfiloff_t		curoffset;
+	xfs_filblks_t		c;
+	xfs_fileoff_t		curoffset;
 	int			f;
 	int			idx;
-	xfs_dfiloff_t		o;
-	xfs_dfsbno_t		s;
+	xfs_fileoff_t		o;
+	xfs_fsblock_t		s;
 
 	convert_extent(ep, &o, &s, &c, &f);
 	curoffset = *offp;
@@ -272,15 +271,14 @@ bmap_one_extent(
 void
 convert_extent(
 	xfs_bmbt_rec_t		*rp,
-	xfs_dfiloff_t		*op,
-	xfs_dfsbno_t		*sp,
-	xfs_dfilblks_t		*cp,
+	xfs_fileoff_t		*op,
+	xfs_fsblock_t		*sp,
+	xfs_filblks_t		*cp,
 	int			*fp)
 {
-	xfs_bmbt_irec_t		irec;
+	struct xfs_bmbt_irec	irec;
 
 	libxfs_bmbt_disk_get_all(rp, &irec);
-
 	*fp = irec.br_state == XFS_EXT_UNWRITTEN;
 	*op = irec.br_startoff;
 	*sp = irec.br_startblock;
@@ -293,25 +291,18 @@ make_bbmap(
 	int		nex,
 	bmap_ext_t	*bmp)
 {
-	int		d;
-	xfs_dfsbno_t	dfsbno;
 	int		i;
-	int		j;
-	int		k;
 
-	for (i = 0, d = 0; i < nex; i++) {
-		dfsbno = bmp[i].startblock;
-		for (j = 0; j < bmp[i].blockcount; j++, dfsbno++) {
-			for (k = 0; k < blkbb; k++)
-				bbmap->b[d++] =
-					XFS_FSB_TO_DADDR(mp, dfsbno) + k;
-		}
+	for (i = 0; i < nex; i++) {
+		bbmap->b[i].bm_bn = XFS_FSB_TO_DADDR(mp, bmp[i].startblock);
+		bbmap->b[i].bm_len = XFS_FSB_TO_BB(mp, bmp[i].blockcount);
 	}
+	bbmap->nmaps = nex;
 }
 
 static xfs_fsblock_t
 select_child(
-	xfs_dfiloff_t	off,
+	xfs_fileoff_t	off,
 	xfs_bmbt_key_t	*kp,
 	xfs_bmbt_ptr_t	*pp,
 	int		nrecs)

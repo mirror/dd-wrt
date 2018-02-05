@@ -3,8 +3,10 @@
 xfs_estimate \- estimate the space that an XFS filesystem will take
 .SH SYNOPSIS
 .nf
-\f3xfs_estimate\f1 [ \f3\-h?\f1 ] [ \f3\-b\f1 blocksize ] [ \f3\-i\f1 logsize ]
+\f3xfs_estimate\f1 [ \f3\-h\f1 ] [ \f3\-b\f1 blocksize ] [ \f3\-i\f1 logsize ]
 		   [ \f3\-e\f1 logsize ] [ \f3\-v\f1 ] directory ...
+.br
+.B xfs_estimate \-V
 .fi
 .SH DESCRIPTION
 For each \f2directory\f1 argument,
@@ -51,9 +53,6 @@ Display more information, formatted.
 .B \-h
 Display usage message.
 .TP
-.B \-?
-Display usage message.
-.TP
 \f3\-i, \-e\f1 \f2logsize\f1
 Use
 .I logsize
@@ -77,6 +76,9 @@ For example,
 .IP
 requests an estimate of the space required by the directory / on an
 XFS filesystem using an internal log of 1 megabyte.
+.TP
+.B \-V
+Print the version number and exits.
 .SH EXAMPLES
 .nf
 .sp 8v

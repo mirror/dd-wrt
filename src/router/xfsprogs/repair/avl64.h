@@ -112,9 +112,9 @@ avl64_findadjacent(
 
 void
 avl64_findranges(
-	register avl64tree_desc_t *tree,
-	register __uint64_t	start,
-	register __uint64_t	end,
+	avl64tree_desc_t *tree,
+	__uint64_t	start,
+	__uint64_t	end,
 	avl64node_t	        **startp,
 	avl64node_t		**endp);
 

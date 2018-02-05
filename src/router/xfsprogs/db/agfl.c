@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include "command.h"
 #include "type.h"
 #include "faddr.h"
@@ -41,8 +41,24 @@ const field_t	agfl_hfld[] = { {
 	{ NULL }
 };
 
+const field_t	agfl_crc_hfld[] = { {
+	"", FLDT_AGFL_CRC, OI(0), C1, 0, TYP_NONE, },
+	{ NULL }
+};
+
 #define	OFF(f)	bitize(offsetof(xfs_agfl_t, agfl_ ## f))
 const field_t	agfl_flds[] = {
+	{ "bno", FLDT_AGBLOCKNZ, OI(OFF(magicnum)), agfl_bno_size,
+	  FLD_ARRAY|FLD_COUNT, TYP_DATA },
+	{ NULL }
+};
+
+const field_t	agfl_crc_flds[] = {
+	{ "magicnum", FLDT_UINT32X, OI(OFF(magicnum)), C1, 0, TYP_NONE },
+	{ "seqno", FLDT_AGNUMBER, OI(OFF(seqno)), C1, 0, TYP_NONE },
+	{ "uuid", FLDT_UUID, OI(OFF(uuid)), C1, 0, TYP_NONE },
+	{ "lsn", FLDT_UINT64X, OI(OFF(lsn)), C1, 0, TYP_NONE },
+	{ "crc", FLDT_CRC, OI(OFF(crc)), C1, 0, TYP_NONE },
 	{ "bno", FLDT_AGBLOCKNZ, OI(OFF(bno)), agfl_bno_size,
 	  FLD_ARRAY|FLD_COUNT, TYP_DATA },
 	{ NULL }

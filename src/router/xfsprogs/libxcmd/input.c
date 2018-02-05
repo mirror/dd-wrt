@@ -16,9 +16,10 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/xfs.h>
-#include <xfs/input.h>
+#include "platform_defs.h"
+#include "input.h"
 #include <ctype.h>
+#include <stdbool.h>
 
 #if defined(ENABLE_READLINE)
 # include <readline/history.h>
@@ -88,7 +89,7 @@ fetchline(void)
 
 	if (!line)
 		return NULL;
-	printf(get_prompt());
+	printf("%s", get_prompt());
 	fflush(stdout);
 	if (!fgets(line, MAXREADLINESZ, stdin)) {
 		free(line);
@@ -365,7 +366,7 @@ uid_from_string(
 	char		*sp;
 
 	uid_long = strtoul(user, &sp, 10);
-	if (sp != user) {
+	if (sp != user && *sp == '\0') {
 		if ((uid_long == ULONG_MAX && errno == ERANGE)
 				|| (uid_long > (uid_t)-1))
 			return -1;
@@ -386,7 +387,7 @@ gid_from_string(
 	char		*sp;
 
 	gid_long = strtoul(group, &sp, 10);
-	if (sp != group) {
+	if (sp != group && *sp == '\0') {
 		if ((gid_long == ULONG_MAX && errno == ERANGE)
 				|| (gid_long > (gid_t)-1))
 			return -1;
@@ -396,6 +397,18 @@ gid_from_string(
 	if (grp)
 		return grp->gr_gid;
 	return -1;
+}
+
+bool isdigits_only(
+	const char *str)
+{
+	int i;
+
+	for (i = 0; i < strlen(str); i++) {
+		if (!isdigit(str[i]))
+			return false;
+	}
+	return true;
 }
 
 #define HAVE_FTW_H 1	/* TODO: configure me */

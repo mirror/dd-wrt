@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include "addr.h"
 #include "attrset.h"
 #include "block.h"
@@ -40,6 +40,7 @@
 #include "inode.h"
 #include "input.h"
 #include "io.h"
+#include "logformat.h"
 #include "metadump.h"
 #include "output.h"
 #include "print.h"
@@ -48,6 +49,8 @@
 #include "write.h"
 #include "malloc.h"
 #include "dquot.h"
+#include "fsmap.h"
+#include "crc.h"
 
 cmdinfo_t	*cmdtab;
 int		ncmds;
@@ -123,14 +126,17 @@ init_commands(void)
 	bmap_init();
 	check_init();
 	convert_init();
+	crc_init();
 	debug_init();
 	echo_init();
 	frag_init();
 	freesp_init();
+	fsmap_init();
 	help_init();
 	hash_init();
 	inode_init();
 	input_init();
+	logformat_init();
 	io_init();
 	metadump_init();
 	output_init();

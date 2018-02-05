@@ -16,7 +16,17 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs.h>
+#include "libxfs_priv.h"
+#include "xfs_fs.h"
+#include "xfs_shared.h"
+#include "xfs_format.h"
+#include "xfs_log_format.h"
+#include "xfs_trans_resv.h"
+#include "xfs_mount.h"
+#include "xfs_inode_buf.h"
+#include "xfs_inode_fork.h"
+#include "xfs_inode.h"
+#include "xfs_trans.h"
 
 kmem_zone_t	*xfs_buf_item_zone;
 kmem_zone_t	*xfs_ili_zone;		/* inode log item zone */
@@ -32,21 +42,27 @@ kmem_zone_t	*xfs_ili_zone;		/* inode log item zone */
 xfs_buf_t *
 xfs_trans_buf_item_match(
 	xfs_trans_t		*tp,
-	xfs_buftarg_t		*target,
-	xfs_daddr_t		blkno,
-	int			len)
+	struct xfs_buftarg	*btp,
+	struct xfs_buf_map	*map,
+	int			nmaps)
 {
         struct xfs_log_item_desc *lidp;
         struct xfs_buf_log_item *blip;
+	int			len = 0;
+	int			i;
 
-        len = BBTOB(len);
+	for (i = 0; i < nmaps; i++)
+		len += map[i].bm_len;
+
         list_for_each_entry(lidp, &tp->t_items, lid_trans) {
                 blip = (struct xfs_buf_log_item *)lidp->lid_item;
                 if (blip->bli_item.li_type == XFS_LI_BUF &&
-                    XFS_BUF_TARGET(blip->bli_buf) == target->dev &&
-                    XFS_BUF_ADDR(blip->bli_buf) == blkno &&
-                    XFS_BUF_COUNT(blip->bli_buf) == len)
+		    blip->bli_buf->b_target->dev == btp->dev &&
+		    XFS_BUF_ADDR(blip->bli_buf) == map[0].bm_bn &&
+		    blip->bli_buf->b_bcount == BBTOB(len)) {
+			ASSERT(blip->bli_buf->b_map_count == nmaps);
                         return blip->bli_buf;
+		}
         }
 
         return NULL;
@@ -106,7 +122,7 @@ xfs_buf_item_init(
 	bip->bli_buf = bp;
 	bip->bli_format.blf_type = XFS_LI_BUF;
 	bip->bli_format.blf_blkno = (__int64_t)XFS_BUF_ADDR(bp);
-	bip->bli_format.blf_len = (ushort)BTOBB(XFS_BUF_COUNT(bp));
+	bip->bli_format.blf_len = (unsigned short)BTOBB(XFS_BUF_COUNT(bp));
 	XFS_BUF_SET_FSPRIVATE(bp, bip);
 }
 

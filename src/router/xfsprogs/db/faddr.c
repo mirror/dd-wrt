@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include "type.h"
 #include "fprint.h"
 #include "faddr.h"
@@ -80,7 +80,7 @@ fa_attrblock(
 {
 	bmap_ext_t	bm;
 	__uint32_t	bno;
-	xfs_dfsbno_t	dfsbno;
+	xfs_fsblock_t	dfsbno;
 	int		nex;
 
 	bno = (__uint32_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
@@ -107,13 +107,13 @@ fa_cfileoffa(
 	typnm_t		next)
 {
 	bmap_ext_t	bm;
-	xfs_dfiloff_t	bno;
-	xfs_dfsbno_t	dfsbno;
+	xfs_fileoff_t	bno;
+	xfs_fsblock_t	dfsbno;
 	int		nex;
 
-	bno = (xfs_dfiloff_t)getbitval(obj, bit, BMBT_STARTOFF_BITLEN,
+	bno = (xfs_fileoff_t)getbitval(obj, bit, BMBT_STARTOFF_BITLEN,
 		BVUNSIGNED);
-	if (bno == NULLDFILOFF) {
+	if (bno == NULLFILEOFF) {
 		dbprintf(_("null block number, cannot set new addr\n"));
 		return;
 	}
@@ -137,18 +137,18 @@ fa_cfileoffd(
 {
 	bbmap_t		bbmap;
 	bmap_ext_t	*bmp;
-	xfs_dfiloff_t	bno;
-	xfs_dfsbno_t	dfsbno;
+	xfs_fileoff_t	bno;
+	xfs_fsblock_t	dfsbno;
 	int		nb;
 	int		nex;
 
-	bno = (xfs_dfiloff_t)getbitval(obj, bit, BMBT_STARTOFF_BITLEN,
+	bno = (xfs_fileoff_t)getbitval(obj, bit, BMBT_STARTOFF_BITLEN,
 		BVUNSIGNED);
-	if (bno == NULLDFILOFF) {
+	if (bno == NULLFILEOFF) {
 		dbprintf(_("null block number, cannot set new addr\n"));
 		return;
 	}
-	nex = nb = next == TYP_DIR2 ? mp->m_dirblkfsbs : 1;
+	nex = nb = next == TYP_DIR2 ? mp->m_dir_geo->fsbcount : 1;
 	bmp = malloc(nb * sizeof(*bmp));
 	bmap(bno, nb, XFS_DATA_FORK, &nex, bmp);
 	if (nex == 0) {
@@ -171,16 +171,16 @@ fa_cfsblock(
 	int		bit,
 	typnm_t		next)
 {
-	xfs_dfsbno_t	bno;
+	xfs_fsblock_t	bno;
 	int		nb;
 
-	bno = (xfs_dfsbno_t)getbitval(obj, bit, BMBT_STARTBLOCK_BITLEN,
+	bno = (xfs_fsblock_t)getbitval(obj, bit, BMBT_STARTBLOCK_BITLEN,
 		BVUNSIGNED);
-	if (bno == NULLDFSBNO) {
+	if (bno == NULLFSBLOCK) {
 		dbprintf(_("null block number, cannot set new addr\n"));
 		return;
 	}
-	nb = next == TYP_DIR2 ? mp->m_dirblkfsbs : 1;
+	nb = next == TYP_DIR2 ? mp->m_dir_geo->fsbcount : 1;
 	ASSERT(typtab[next].typnm == next);
 	set_cur(&typtab[next], XFS_FSB_TO_DADDR(mp, bno), nb * blkbb,
 		DB_RING_ADD, NULL);
@@ -193,12 +193,12 @@ fa_dfiloffa(
 	typnm_t		next)
 {
 	bmap_ext_t	bm;
-	xfs_dfiloff_t	bno;
-	xfs_dfsbno_t	dfsbno;
+	xfs_fileoff_t	bno;
+	xfs_fsblock_t	dfsbno;
 	int		nex;
 
-	bno = (xfs_dfiloff_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
-	if (bno == NULLDFILOFF) {
+	bno = (xfs_fileoff_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
+	if (bno == NULLFILEOFF) {
 		dbprintf(_("null block number, cannot set new addr\n"));
 		return;
 	}
@@ -222,17 +222,17 @@ fa_dfiloffd(
 {
 	bbmap_t		bbmap;
 	bmap_ext_t	*bmp;
-	xfs_dfiloff_t	bno;
-	xfs_dfsbno_t	dfsbno;
+	xfs_fileoff_t	bno;
+	xfs_fsblock_t	dfsbno;
 	int		nb;
 	int		nex;
 
-	bno = (xfs_dfiloff_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
-	if (bno == NULLDFILOFF) {
+	bno = (xfs_fileoff_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
+	if (bno == NULLFILEOFF) {
 		dbprintf(_("null block number, cannot set new addr\n"));
 		return;
 	}
-	nex = nb = next == TYP_DIR2 ? mp->m_dirblkfsbs : 1;
+	nex = nb = next == TYP_DIR2 ? mp->m_dir_geo->fsbcount : 1;
 	bmp = malloc(nb * sizeof(*bmp));
 	bmap(bno, nb, XFS_DATA_FORK, &nex, bmp);
 	if (nex == 0) {
@@ -255,10 +255,10 @@ fa_dfsbno(
 	int		bit,
 	typnm_t		next)
 {
-	xfs_dfsbno_t	bno;
+	xfs_fsblock_t	bno;
 
-	bno = (xfs_dfsbno_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
-	if (bno == NULLDFSBNO) {
+	bno = (xfs_fsblock_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
+	if (bno == NULLFSBLOCK) {
 		dbprintf(_("null block number, cannot set new addr\n"));
 		return;
 	}
@@ -277,7 +277,7 @@ fa_dirblock(
 	bbmap_t		bbmap;
 	bmap_ext_t	*bmp;
 	__uint32_t	bno;
-	xfs_dfsbno_t	dfsbno;
+	xfs_fsblock_t	dfsbno;
 	int		nex;
 
 	bno = (__uint32_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
@@ -285,9 +285,9 @@ fa_dirblock(
 		dbprintf(_("null directory block number, cannot set new addr\n"));
 		return;
 	}
-	nex = mp->m_dirblkfsbs;
+	nex = mp->m_dir_geo->fsbcount;
 	bmp = malloc(nex * sizeof(*bmp));
-	bmap(bno, mp->m_dirblkfsbs, XFS_DATA_FORK, &nex, bmp);
+	bmap(bno, mp->m_dir_geo->fsbcount, XFS_DATA_FORK, &nex, bmp);
 	if (nex == 0) {
 		dbprintf(_("directory block is unmapped\n"));
 		free(bmp);
@@ -298,7 +298,7 @@ fa_dirblock(
 	if (nex > 1)
 		make_bbmap(&bbmap, nex, bmp);
 	set_cur(&typtab[next], (__int64_t)XFS_FSB_TO_DADDR(mp, dfsbno),
-		XFS_FSB_TO_BB(mp, mp->m_dirblkfsbs), DB_RING_ADD,
+		XFS_FSB_TO_BB(mp, mp->m_dir_geo->fsbcount), DB_RING_ADD,
 		nex > 1 ? &bbmap : NULL);
 	free(bmp);
 }
@@ -309,10 +309,10 @@ fa_drfsbno(
 	int		bit,
 	typnm_t		next)
 {
-	xfs_drfsbno_t	bno;
+	xfs_rfsblock_t	bno;
 
-	bno = (xfs_drfsbno_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
-	if (bno == NULLDRFSBNO) {
+	bno = (xfs_rfsblock_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
+	if (bno == NULLRFSBLOCK) {
 		dbprintf(_("null block number, cannot set new addr\n"));
 		return;
 	}
@@ -328,10 +328,10 @@ fa_drtbno(
 	int	bit,
 	typnm_t	next)
 {
-	xfs_drtbno_t	bno;
+	xfs_rtblock_t	bno;
 
-	bno = (xfs_drtbno_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
-	if (bno == NULLDRTBNO) {
+	bno = (xfs_rtblock_t)getbitval(obj, bit, bitsz(bno), BVUNSIGNED);
+	if (bno == NULLRTBLOCK) {
 		dbprintf(_("null block number, cannot set new addr\n"));
 		return;
 	}
@@ -363,10 +363,9 @@ fa_ino4(
 	typnm_t		next)
 {
 	xfs_ino_t	ino;
-	xfs_dir2_ino4_t	ino4;
 
 	ASSERT(next == TYP_INODE);
-	ino = (xfs_ino_t)getbitval(obj, bit, bitsz(ino4), BVUNSIGNED);
+	ino = (xfs_ino_t)getbitval(obj, bit, bitsz(XFS_INO32_SIZE), BVUNSIGNED);
 	if (ino == NULLFSINO) {
 		dbprintf(_("null inode number, cannot set new addr\n"));
 		return;
@@ -381,10 +380,9 @@ fa_ino8(
 	typnm_t		next)
 {
 	xfs_ino_t	ino;
-	xfs_dir2_ino8_t	ino8;
 
 	ASSERT(next == TYP_INODE);
-	ino = (xfs_ino_t)getbitval(obj, bit, bitsz(ino8), BVUNSIGNED);
+	ino = (xfs_ino_t)getbitval(obj, bit, bitsz(XFS_INO64_SIZE), BVUNSIGNED);
 	if (ino == NULLFSINO) {
 		dbprintf(_("null inode number, cannot set new addr\n"));
 		return;

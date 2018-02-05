@@ -1,6 +1,6 @@
 
 
-#include <xfs/libxfs.h>
+#include "libxfs_priv.h"
 
 /*
  * Simple memory interface
@@ -13,7 +13,7 @@ kmem_zone_init(int size, char *name)
 
 	if (ptr == NULL) {
 		fprintf(stderr, _("%s: zone init failed (%s, %d bytes): %s\n"),
-			progname, name, (int)sizeof(kmem_zone_t), 
+			progname, name, (int)sizeof(kmem_zone_t),
 			strerror(errno));
 		exit(1);
 	}
@@ -70,7 +70,7 @@ kmem_zalloc(size_t size, int flags)
 }
 
 void *
-kmem_realloc(void *ptr, size_t new_size, size_t old_size, int flags)
+kmem_realloc(void *ptr, size_t new_size, int flags)
 {
 	ptr = realloc(ptr, new_size);
 	if (ptr == NULL) {
@@ -80,4 +80,3 @@ kmem_realloc(void *ptr, size_t new_size, size_t old_size, int flags)
 	}
 	return ptr;
 }
-

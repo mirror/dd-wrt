@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <libxfs.h>
+#include "libxfs.h"
 #include "avl.h"
 #include "globals.h"
 #include "agheader.h"
@@ -60,8 +60,8 @@ generate_rtinfo(xfs_mount_t	*mp,
 		xfs_rtword_t	*words,
 		xfs_suminfo_t	*sumcompute)
 {
-	xfs_drtbno_t	extno;
-	xfs_drtbno_t	start_ext;
+	xfs_rtblock_t	extno;
+	xfs_rtblock_t	start_ext;
 	int		bitsperblock;
 	int		bmbno;
 	xfs_rtword_t	freebit;
@@ -133,7 +133,7 @@ generate_rtinfo(xfs_mount_t	*mp,
 int
 check_summary(xfs_mount_t *mp)
 {
-	xfs_drfsbno_t	bno;
+	xfs_rfsblock_t	bno;
 	xfs_suminfo_t	*csp;
 	xfs_suminfo_t	*fsp;
 	int		log;
@@ -174,9 +174,9 @@ process_rtbitmap(xfs_mount_t	*mp,
 	int		bitsperblock;
 	int		bmbno;
 	int		end_bmbno;
-	xfs_dfsbno_t	bno;
+	xfs_fsblock_t	bno;
 	xfs_buf_t	*bp;
-	xfs_drtbno_t	extno;
+	xfs_rtblock_t	extno;
 	int		i;
 	int		len;
 	int		log;
@@ -199,14 +199,14 @@ process_rtbitmap(xfs_mount_t	*mp,
 	for (bmbno = 0; bmbno < end_bmbno; bmbno++) {
 		bno = blkmap_get(blkmap, bmbno);
 
-		if (bno == NULLDFSBNO) {
+		if (bno == NULLFSBLOCK) {
 			do_warn(_("can't find block %d for rtbitmap inode\n"),
 					bmbno);
 			error = 1;
 			continue;
 		}
 		bp = libxfs_readbuf(mp->m_dev, XFS_FSB_TO_DADDR(mp, bno),
-				XFS_FSB_TO_BB(mp, 1));
+				XFS_FSB_TO_BB(mp, 1), NULL);
 		if (!bp) {
 			do_warn(_("can't read block %d for rtbitmap inode\n"),
 					bmbno);
@@ -261,14 +261,14 @@ process_rtsummary(xfs_mount_t	*mp,
 
 	for (sumbno = 0; sumbno < blkmap->count; sumbno++) {
 		bno = blkmap_get(blkmap, sumbno);
-		if (bno == NULLDFSBNO) {
+		if (bno == NULLFSBLOCK) {
 			do_warn(_("block %d for rtsummary inode is missing\n"),
 					sumbno);
 			error++;
 			continue;
 		}
 		bp = libxfs_readbuf(mp->m_dev, XFS_FSB_TO_DADDR(mp, bno),
-				XFS_FSB_TO_BB(mp, 1));
+				XFS_FSB_TO_BB(mp, 1), NULL);
 		if (!bp) {
 			do_warn(_("can't read block %d for rtsummary inode\n"),
 					sumbno);

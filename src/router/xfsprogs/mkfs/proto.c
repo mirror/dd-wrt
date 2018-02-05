@@ -16,19 +16,18 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include <sys/stat.h>
-#include "xfs_mkfs.h"
+#include "xfs_multidisk.h"
 
 /*
  * Prototypes for internal functions.
  */
-static long getnum(char **pp);
 static char *getstr(char **pp);
 static void fail(char *msg, int i);
-static void getres(xfs_trans_t *tp, uint blocks);
+static struct xfs_trans * getres(struct xfs_mount *mp, uint blocks);
 static void rsvfile(xfs_mount_t *mp, xfs_inode_t *ip, long long len);
-static int newfile(xfs_trans_t *tp, xfs_inode_t *ip, xfs_bmap_free_t *flist,
+static int newfile(xfs_trans_t *tp, xfs_inode_t *ip, struct xfs_defer_ops *dfops,
 	xfs_fsblock_t *first, int dolocal, int logit, char *buf, int len);
 static char *newregfile(char **pp, int *len);
 static void rtinit(xfs_mount_t *mp);
@@ -39,17 +38,37 @@ static long filesize(int fd);
  * (basically no fragmentation).
  */
 #define	MKFS_BLOCKRES_INODE	\
-	((uint)(XFS_IALLOC_BLOCKS(mp) + ((mp)->m_in_maxlevels - 1)))
+	((uint)(mp->m_ialloc_blks + (mp->m_in_maxlevels - 1)))
 #define	MKFS_BLOCKRES(rb)	\
 	((uint)(MKFS_BLOCKRES_INODE + XFS_DA_NODE_MAXDEPTH + \
 	(XFS_BM_MAXLEVELS(mp, XFS_DATA_FORK) - 1) + (rb)))
 
+static long long
+getnum(
+	const char	*str,
+	unsigned int	blksize,
+	unsigned int	sectsize,
+	bool		convert)
+{
+	long long	i;
+	char		*sp;
+
+	if (convert)
+		return cvtnum(blksize, sectsize, str);
+
+	i = strtoll(str, &sp, 0);
+	if (i == 0 && sp == str)
+		return -1LL;
+	if (*sp != '\0')
+		return -1LL; /* trailing garbage */
+	return i;
+}
 
 char *
 setup_proto(
 	char	*fname)
 {
-	char		*buf;
+	char		*buf = NULL;
 	static char	dflt[] = "d--755 0 0 $";
 	int		fd;
 	long		size;
@@ -59,37 +78,35 @@ setup_proto(
 	if ((fd = open(fname, O_RDONLY)) < 0 || (size = filesize(fd)) < 0) {
 		fprintf(stderr, _("%s: failed to open %s: %s\n"),
 			progname, fname, strerror(errno));
-		exit(1);
+		goto out_fail;
 	}
+
 	buf = malloc(size + 1);
 	if (read(fd, buf, size) < size) {
 		fprintf(stderr, _("%s: read failed on %s: %s\n"),
 			progname, fname, strerror(errno));
-		exit(1);
+		goto out_fail;
 	}
 	if (buf[size - 1] != '\n') {
 		fprintf(stderr, _("%s: proto file %s premature EOF\n"),
 			progname, fname);
-		exit(1);
+		goto out_fail;
 	}
 	buf[size] = '\0';
 	/*
 	 * Skip past the stuff there for compatibility, a string and 2 numbers.
 	 */
 	(void)getstr(&buf);	/* boot image name */
-	(void)getnum(&buf);	/* block count */
-	(void)getnum(&buf);	/* inode count */
+	(void)getnum(getstr(&buf), 0, 0, false);	/* block count */
+	(void)getnum(getstr(&buf), 0, 0, false);	/* inode count */
+	close(fd);
 	return buf;
-}
 
-static long
-getnum(
-	char	**pp)
-{
-	char	*s;
-
-	s = getstr(pp);
-	return atol(s);
+out_fail:
+	if (fd >= 0)
+		close(fd);
+	free(buf);
+	exit(1);
 }
 
 static void
@@ -108,23 +125,25 @@ res_failed(
 	fail(_("cannot reserve space"), i);
 }
 
-static void
+static struct xfs_trans *
 getres(
-	xfs_trans_t	*tp,
+	struct xfs_mount *mp,
 	uint		blocks)
 {
+	struct xfs_trans *tp;
 	int		i;
-	xfs_mount_t	*mp;
 	uint		r;
 
-	mp = tp->t_mountp;
 	for (i = 0, r = MKFS_BLOCKRES(blocks); r >= blocks; r--) {
-		i = libxfs_trans_reserve(tp, r, 0, 0, 0, 0);
+		struct xfs_trans_res    tres = {0};
+
+		i = -libxfs_trans_alloc(mp, &tres, r, 0, 0, &tp);
 		if (i == 0)
-			return;
+			return tp;
 	}
 	res_failed(i);
 	/* NOTREACHED */
+	return NULL;
 }
 
 static char *
@@ -173,8 +192,9 @@ rsvfile(
 {
 	int		error;
 	xfs_trans_t	*tp;
+	struct xfs_trans_res tres = {0};
 
-	error = libxfs_alloc_file_space(ip, 0, llen, 1, 0);
+	error = -libxfs_alloc_file_space(ip, 0, llen, 1, 0);
 
 	if (error) {
 		fail(_("error reserving space for a file"), error);
@@ -184,12 +204,10 @@ rsvfile(
 	/*
 	 * update the inode timestamp, mode, and prealloc flag bits
 	 */
-	tp = libxfs_trans_alloc(mp, 0);
-
+	libxfs_trans_alloc(mp, &tres, 0, 0, 0, &tp);
 	libxfs_trans_ijoin(tp, ip, 0);
-	libxfs_trans_ihold(tp, ip);
 
-	ip->i_d.di_mode &= ~S_ISUID;
+	VFS_I(ip)->i_mode &= ~S_ISUID;
 
 	/*
 	 * Note that we don't have to worry about mandatory
@@ -198,22 +216,22 @@ rsvfile(
 	 * on, but if it was on then mandatory locking wouldn't
 	 * have been enabled.
 	 */
-	if (ip->i_d.di_mode & S_IXGRP)
-		ip->i_d.di_mode &= ~S_ISGID;
+	if (VFS_I(ip)->i_mode & S_IXGRP)
+		VFS_I(ip)->i_mode &= ~S_ISGID;
 
 	libxfs_trans_ichgtime(tp, ip, XFS_ICHGTIME_MOD | XFS_ICHGTIME_CHG);
 
 	ip->i_d.di_flags |= XFS_DIFLAG_PREALLOC;
 
 	libxfs_trans_log_inode(tp, ip, XFS_ILOG_CORE);
-	libxfs_trans_commit(tp, 0);
+	libxfs_trans_commit(tp);
 }
 
 static int
 newfile(
 	xfs_trans_t	*tp,
 	xfs_inode_t	*ip,
-	xfs_bmap_free_t	*flist,
+	struct xfs_defer_ops	*dfops,
 	xfs_fsblock_t	*first,
 	int		dolocal,
 	int		logit,
@@ -232,7 +250,7 @@ newfile(
 	flags = 0;
 	mp = ip->i_mount;
 	if (dolocal && len <= XFS_IFORK_DSIZE(ip)) {
-		xfs_idata_realloc(ip, len, XFS_DATA_FORK);
+		libxfs_idata_realloc(ip, len, XFS_DATA_FORK);
 		if (buf)
 			memmove(ip->i_df.if_u1.if_data, buf, len);
 		ip->i_d.di_size = len;
@@ -243,8 +261,8 @@ newfile(
 	} else if (len > 0) {
 		nb = XFS_B_TO_FSB(mp, len);
 		nmap = 1;
-		error = libxfs_bmapi(tp, ip, 0, nb, XFS_BMAPI_WRITE, first, nb,
-				&map, &nmap, flist);
+		error = -libxfs_bmapi_write(tp, ip, 0, nb, 0, first, nb,
+				&map, &nmap, dfops);
 		if (error) {
 			fail(_("error allocating space for a file"), error);
 		}
@@ -306,12 +324,14 @@ newdirent(
 	struct xfs_name	*name,
 	xfs_ino_t	inum,
 	xfs_fsblock_t	*first,
-	xfs_bmap_free_t	*flist,
-	xfs_extlen_t	total)
+	struct xfs_defer_ops	*dfops)
 {
 	int	error;
+	int	rsv;
 
-	error = libxfs_dir_createname(tp, pip, name, inum, first, flist, total);
+	rsv = XFS_DIRENTER_SPACE_RES(mp, name->len);
+
+	error = -libxfs_dir_createname(tp, pip, name, inum, first, dfops, rsv);
 	if (error)
 		fail(_("directory createname error"), error);
 }
@@ -325,7 +345,7 @@ newdirectory(
 {
 	int	error;
 
-	error = libxfs_dir_init(tp, dp, pdp);
+	error = -libxfs_dir_init(tp, dp, pdp);
 	if (error)
 		fail(_("directory create error"), error);
 }
@@ -347,11 +367,10 @@ parseproto(
 #define	IF_FIFO		6
 
 	char		*buf;
-	int		committed;
 	int		error;
 	xfs_fsblock_t	first;
 	int		flags;
-	xfs_bmap_free_t	flist;
+	struct xfs_defer_ops	dfops;
 	int		fmt;
 	int		i;
 	xfs_inode_t	*ip;
@@ -430,132 +449,138 @@ parseproto(
 		val = val * 8 + mstr[i] - '0';
 	}
 	mode |= val;
-	creds.cr_uid = (int)getnum(pp);
-	creds.cr_gid = (int)getnum(pp);
-	xname.name = (uchar_t *)name;
+	creds.cr_uid = (int)getnum(getstr(pp), 0, 0, false);
+	creds.cr_gid = (int)getnum(getstr(pp), 0, 0, false);
+	xname.name = (unsigned char *)name;
 	xname.len = name ? strlen(name) : 0;
-	tp = libxfs_trans_alloc(mp, 0);
+	xname.type = 0;
 	flags = XFS_ILOG_CORE;
-	xfs_bmap_init(&flist, &first);
+	libxfs_defer_init(&dfops, &first);
 	switch (fmt) {
 	case IF_REGULAR:
 		buf = newregfile(pp, &len);
-		getres(tp, XFS_B_TO_FSB(mp, len));
-		error = libxfs_inode_alloc(&tp, pip, mode|S_IFREG, 1, 0,
+		tp = getres(mp, XFS_B_TO_FSB(mp, len));
+		error = -libxfs_inode_alloc(&tp, pip, mode|S_IFREG, 1, 0,
 					   &creds, fsxp, &ip);
 		if (error)
 			fail(_("Inode allocation failed"), error);
-		flags |= newfile(tp, ip, &flist, &first, 0, 0, buf, len);
+		flags |= newfile(tp, ip, &dfops, &first, 0, 0, buf, len);
 		if (buf)
 			free(buf);
 		libxfs_trans_ijoin(tp, pip, 0);
-		newdirent(mp, tp, pip, &xname, ip->i_ino, &first, &flist, 1);
-		libxfs_trans_ihold(tp, pip);
+		xname.type = XFS_DIR3_FT_REG_FILE;
+		newdirent(mp, tp, pip, &xname, ip->i_ino, &first, &dfops);
 		break;
 
 	case IF_RESERVED:			/* pre-allocated space only */
 		value = getstr(pp);
-		llen = cvtnum(mp->m_sb.sb_blocksize, mp->m_sb.sb_sectsize, value);
-		getres(tp, XFS_B_TO_FSB(mp, llen));
+		llen = getnum(value, mp->m_sb.sb_blocksize,
+			      mp->m_sb.sb_sectsize, true);
+		if (llen < 0) {
+			fprintf(stderr,
+				_("%s: Bad value %s for proto file %s\n"),
+				progname, value, name);
+			exit(1);
+		}
+		tp = getres(mp, XFS_B_TO_FSB(mp, llen));
 
-		error = libxfs_inode_alloc(&tp, pip, mode|S_IFREG, 1, 0,
+		error = -libxfs_inode_alloc(&tp, pip, mode|S_IFREG, 1, 0,
 					  &creds, fsxp, &ip);
 		if (error)
 			fail(_("Inode pre-allocation failed"), error);
 
 		libxfs_trans_ijoin(tp, pip, 0);
 
-		newdirent(mp, tp, pip, &xname, ip->i_ino, &first, &flist, 1);
-		libxfs_trans_ihold(tp, pip);
+		xname.type = XFS_DIR3_FT_REG_FILE;
+		newdirent(mp, tp, pip, &xname, ip->i_ino, &first, &dfops);
 		libxfs_trans_log_inode(tp, ip, flags);
 
-		error = libxfs_bmap_finish(&tp, &flist, &committed);
+		error = -libxfs_defer_finish(&tp, &dfops, ip);
 		if (error)
 			fail(_("Pre-allocated file creation failed"), error);
-		libxfs_trans_commit(tp, 0);
+		libxfs_trans_commit(tp);
 		rsvfile(mp, ip, llen);
+		IRELE(ip);
 		return;
 
 	case IF_BLOCK:
-		getres(tp, 0);
-		majdev = (int)getnum(pp);
-		mindev = (int)getnum(pp);
-		error = libxfs_inode_alloc(&tp, pip, mode|S_IFBLK, 1,
+		tp = getres(mp, 0);
+		majdev = getnum(getstr(pp), 0, 0, false);
+		mindev = getnum(getstr(pp), 0, 0, false);
+		error = -libxfs_inode_alloc(&tp, pip, mode|S_IFBLK, 1,
 				IRIX_MKDEV(majdev, mindev), &creds, fsxp, &ip);
 		if (error) {
 			fail(_("Inode allocation failed"), error);
 		}
 		libxfs_trans_ijoin(tp, pip, 0);
-		newdirent(mp, tp, pip, &xname, ip->i_ino, &first, &flist, 1);
-		libxfs_trans_ihold(tp, pip);
+		xname.type = XFS_DIR3_FT_BLKDEV;
+		newdirent(mp, tp, pip, &xname, ip->i_ino, &first, &dfops);
 		flags |= XFS_ILOG_DEV;
 		break;
 
 	case IF_CHAR:
-		getres(tp, 0);
-		majdev = (int)getnum(pp);
-		mindev = (int)getnum(pp);
-		error = libxfs_inode_alloc(&tp, pip, mode|S_IFCHR, 1,
+		tp = getres(mp, 0);
+		majdev = getnum(getstr(pp), 0, 0, false);
+		mindev = getnum(getstr(pp), 0, 0, false);
+		error = -libxfs_inode_alloc(&tp, pip, mode|S_IFCHR, 1,
 				IRIX_MKDEV(majdev, mindev), &creds, fsxp, &ip);
 		if (error)
 			fail(_("Inode allocation failed"), error);
 		libxfs_trans_ijoin(tp, pip, 0);
-		newdirent(mp, tp, pip, &xname, ip->i_ino, &first, &flist, 1);
-		libxfs_trans_ihold(tp, pip);
+		xname.type = XFS_DIR3_FT_CHRDEV;
+		newdirent(mp, tp, pip, &xname, ip->i_ino, &first, &dfops);
 		flags |= XFS_ILOG_DEV;
 		break;
 
 	case IF_FIFO:
-		getres(tp, 0);
-		error = libxfs_inode_alloc(&tp, pip, mode|S_IFIFO, 1, 0,
+		tp = getres(mp, 0);
+		error = -libxfs_inode_alloc(&tp, pip, mode|S_IFIFO, 1, 0,
 				&creds, fsxp, &ip);
 		if (error)
 			fail(_("Inode allocation failed"), error);
 		libxfs_trans_ijoin(tp, pip, 0);
-		newdirent(mp, tp, pip, &xname, ip->i_ino, &first, &flist, 1);
-		libxfs_trans_ihold(tp, pip);
+		xname.type = XFS_DIR3_FT_FIFO;
+		newdirent(mp, tp, pip, &xname, ip->i_ino, &first, &dfops);
 		break;
 	case IF_SYMLINK:
 		buf = getstr(pp);
 		len = (int)strlen(buf);
-		getres(tp, XFS_B_TO_FSB(mp, len));
-		error = libxfs_inode_alloc(&tp, pip, mode|S_IFLNK, 1, 0,
+		tp = getres(mp, XFS_B_TO_FSB(mp, len));
+		error = -libxfs_inode_alloc(&tp, pip, mode|S_IFLNK, 1, 0,
 				&creds, fsxp, &ip);
 		if (error)
 			fail(_("Inode allocation failed"), error);
-		flags |= newfile(tp, ip, &flist, &first, 1, 1, buf, len);
+		flags |= newfile(tp, ip, &dfops, &first, 1, 1, buf, len);
 		libxfs_trans_ijoin(tp, pip, 0);
-		newdirent(mp, tp, pip, &xname, ip->i_ino, &first, &flist, 1);
-		libxfs_trans_ihold(tp, pip);
+		xname.type = XFS_DIR3_FT_SYMLINK;
+		newdirent(mp, tp, pip, &xname, ip->i_ino, &first, &dfops);
 		break;
 	case IF_DIRECTORY:
-		getres(tp, 0);
-		error = libxfs_inode_alloc(&tp, pip, mode|S_IFDIR, 1, 0,
+		tp = getres(mp, 0);
+		error = -libxfs_inode_alloc(&tp, pip, mode|S_IFDIR, 1, 0,
 				&creds, fsxp, &ip);
 		if (error)
 			fail(_("Inode allocation failed"), error);
-		ip->i_d.di_nlink++;		/* account for . */
+		inc_nlink(VFS_I(ip));		/* account for . */
 		if (!pip) {
 			pip = ip;
 			mp->m_sb.sb_rootino = ip->i_ino;
-			libxfs_mod_sb(tp, XFS_SB_ROOTINO);
-			mp->m_rootip = ip;
+			libxfs_log_sb(tp);
 			isroot = 1;
 		} else {
 			libxfs_trans_ijoin(tp, pip, 0);
+			xname.type = XFS_DIR3_FT_DIR;
 			newdirent(mp, tp, pip, &xname, ip->i_ino,
-				  &first, &flist, 1);
-			pip->i_d.di_nlink++;
-			libxfs_trans_ihold(tp, pip);
+				  &first, &dfops);
+			inc_nlink(VFS_I(pip));
 			libxfs_trans_log_inode(tp, pip, XFS_ILOG_CORE);
 		}
 		newdirectory(mp, tp, ip, pip);
 		libxfs_trans_log_inode(tp, ip, flags);
-		error = libxfs_bmap_finish(&tp, &flist, &committed);
+		error = -libxfs_defer_finish(&tp, &dfops, ip);
 		if (error)
 			fail(_("Directory creation failed"), error);
-		libxfs_trans_ihold(tp, ip);
-		libxfs_trans_commit(tp, 0);
+		libxfs_trans_commit(tp);
 		/*
 		 * RT initialization.  Do this here to ensure that
 		 * the RT inodes get placed after the root inode.
@@ -571,16 +596,20 @@ parseproto(
 				break;
 			parseproto(mp, ip, fsxp, pp, name);
 		}
-		libxfs_iput(ip, 0);
+		IRELE(ip);
 		return;
+	default:
+		ASSERT(0);
+		fail(_("Unknown format"), EINVAL);
 	}
 	libxfs_trans_log_inode(tp, ip, flags);
-	error = libxfs_bmap_finish(&tp, &flist, &committed);
+	error = -libxfs_defer_finish(&tp, &dfops, ip);
 	if (error) {
 		fail(_("Error encountered creating file from prototype file"),
 			error);
 	}
-	libxfs_trans_commit(tp, 0);
+	libxfs_trans_commit(tp);
+	IRELE(ip);
 }
 
 void
@@ -599,13 +628,12 @@ static void
 rtinit(
 	xfs_mount_t	*mp)
 {
-	xfs_dfiloff_t	bno;
-	int		committed;
-	xfs_dfiloff_t	ebno;
+	xfs_fileoff_t	bno;
+	xfs_fileoff_t	ebno;
 	xfs_bmbt_irec_t	*ep;
 	int		error;
 	xfs_fsblock_t	first;
-	xfs_bmap_free_t	flist;
+	struct xfs_defer_ops	dfops;
 	int		i;
 	xfs_bmbt_irec_t	map[XFS_BMAP_MAX_NMAP];
 	xfs_extlen_t	nsumblocks;
@@ -615,16 +643,18 @@ rtinit(
 	xfs_trans_t	*tp;
 	struct cred	creds;
 	struct fsxattr	fsxattrs;
+	struct xfs_trans_res tres = {0};
 
 	/*
 	 * First, allocate the inodes.
 	 */
-	tp = libxfs_trans_alloc(mp, 0);
-	if ((i = libxfs_trans_reserve(tp, MKFS_BLOCKRES_INODE, 0, 0, 0, 0)))
+	i = -libxfs_trans_alloc(mp, &tres, MKFS_BLOCKRES_INODE, 0, 0, &tp);
+	if (i)
 		res_failed(i);
+
 	memset(&creds, 0, sizeof(creds));
 	memset(&fsxattrs, 0, sizeof(fsxattrs));
-	error = libxfs_inode_alloc(&tp, NULL, S_IFREG, 1, 0,
+	error = -libxfs_inode_alloc(&tp, NULL, S_IFREG, 1, 0,
 					&creds, &fsxattrs, &rbmip);
 	if (error) {
 		fail(_("Realtime bitmap inode allocation failed"), error);
@@ -637,12 +667,11 @@ rtinit(
 	mp->m_sb.sb_rbmino = rbmip->i_ino;
 	rbmip->i_d.di_size = mp->m_sb.sb_rbmblocks * mp->m_sb.sb_blocksize;
 	rbmip->i_d.di_flags = XFS_DIFLAG_NEWRTBM;
-	*(__uint64_t *)&rbmip->i_d.di_atime = 0;
+	*(__uint64_t *)&VFS_I(rbmip)->i_atime = 0;
 	libxfs_trans_log_inode(tp, rbmip, XFS_ILOG_CORE);
-	libxfs_mod_sb(tp, XFS_SB_RBMINO);
-	libxfs_trans_ihold(tp, rbmip);
+	libxfs_log_sb(tp);
 	mp->m_rbmip = rbmip;
-	error = libxfs_inode_alloc(&tp, NULL, S_IFREG, 1, 0,
+	error = -libxfs_inode_alloc(&tp, NULL, S_IFREG, 1, 0,
 					&creds, &fsxattrs, &rsumip);
 	if (error) {
 		fail(_("Realtime summary inode allocation failed"), error);
@@ -650,102 +679,102 @@ rtinit(
 	mp->m_sb.sb_rsumino = rsumip->i_ino;
 	rsumip->i_d.di_size = mp->m_rsumsize;
 	libxfs_trans_log_inode(tp, rsumip, XFS_ILOG_CORE);
-	libxfs_mod_sb(tp, XFS_SB_RSUMINO);
-	libxfs_trans_ihold(tp, rsumip);
-	libxfs_trans_commit(tp, 0);
+	libxfs_log_sb(tp);
+	libxfs_trans_commit(tp);
 	mp->m_rsumip = rsumip;
 	/*
 	 * Next, give the bitmap file some zero-filled blocks.
 	 */
-	tp = libxfs_trans_alloc(mp, 0);
-	if ((i = libxfs_trans_reserve(tp, mp->m_sb.sb_rbmblocks +
-			(XFS_BM_MAXLEVELS(mp, XFS_DATA_FORK) - 1), 0, 0, 0, 0)))
+	i = -libxfs_trans_alloc(mp, &tres,
+		mp->m_sb.sb_rbmblocks + (XFS_BM_MAXLEVELS(mp,XFS_DATA_FORK) - 1),
+				0, 0, &tp);
+	if (i)
 		res_failed(i);
+
 	libxfs_trans_ijoin(tp, rbmip, 0);
-	libxfs_trans_ihold(tp, rbmip);
 	bno = 0;
-	xfs_bmap_init(&flist, &first);
+	libxfs_defer_init(&dfops, &first);
 	while (bno < mp->m_sb.sb_rbmblocks) {
 		nmap = XFS_BMAP_MAX_NMAP;
-		error = libxfs_bmapi(tp, rbmip, bno,
+		error = -libxfs_bmapi_write(tp, rbmip, bno,
 				(xfs_extlen_t)(mp->m_sb.sb_rbmblocks - bno),
-				XFS_BMAPI_WRITE, &first, mp->m_sb.sb_rbmblocks,
-				map, &nmap, &flist);
+				0, &first, mp->m_sb.sb_rbmblocks,
+				map, &nmap, &dfops);
 		if (error) {
 			fail(_("Allocation of the realtime bitmap failed"),
 				error);
 		}
 		for (i = 0, ep = map; i < nmap; i++, ep++) {
-			libxfs_device_zero(mp->m_dev,
+			libxfs_device_zero(mp->m_ddev_targp,
 				XFS_FSB_TO_DADDR(mp, ep->br_startblock),
 				XFS_FSB_TO_BB(mp, ep->br_blockcount));
 			bno += ep->br_blockcount;
 		}
 	}
 
-	error = libxfs_bmap_finish(&tp, &flist, &committed);
+	error = -libxfs_defer_finish(&tp, &dfops, rbmip);
 	if (error) {
 		fail(_("Completion of the realtime bitmap failed"), error);
 	}
-	libxfs_trans_commit(tp, 0);
+	libxfs_trans_commit(tp);
 
 	/*
 	 * Give the summary file some zero-filled blocks.
 	 */
-	tp = libxfs_trans_alloc(mp, 0);
 	nsumblocks = mp->m_rsumsize >> mp->m_sb.sb_blocklog;
-	if ((i = libxfs_trans_reserve(tp,
-			nsumblocks + (XFS_BM_MAXLEVELS(mp, XFS_DATA_FORK) - 1),
-			0, 0, 0, 0)))
+	i = -libxfs_trans_alloc(mp, &tres,
+			nsumblocks + (XFS_BM_MAXLEVELS(mp,XFS_DATA_FORK) - 1),
+				0, 0, &tp);
+	if (i)
 		res_failed(i);
 	libxfs_trans_ijoin(tp, rsumip, 0);
-	libxfs_trans_ihold(tp, rsumip);
 	bno = 0;
-	xfs_bmap_init(&flist, &first);
+	libxfs_defer_init(&dfops, &first);
 	while (bno < nsumblocks) {
 		nmap = XFS_BMAP_MAX_NMAP;
-		error = libxfs_bmapi(tp, rsumip, bno,
+		error = -libxfs_bmapi_write(tp, rsumip, bno,
 				(xfs_extlen_t)(nsumblocks - bno),
-				XFS_BMAPI_WRITE, &first, nsumblocks,
-				map, &nmap, &flist);
+				0, &first, nsumblocks,
+				map, &nmap, &dfops);
 		if (error) {
 			fail(_("Allocation of the realtime summary failed"),
 				error);
 		}
 		for (i = 0, ep = map; i < nmap; i++, ep++) {
-			libxfs_device_zero(mp->m_dev,
+			libxfs_device_zero(mp->m_ddev_targp,
 				XFS_FSB_TO_DADDR(mp, ep->br_startblock),
 				XFS_FSB_TO_BB(mp, ep->br_blockcount));
 			bno += ep->br_blockcount;
 		}
 	}
-	error = libxfs_bmap_finish(&tp, &flist, &committed);
+	error = -libxfs_defer_finish(&tp, &dfops, rsumip);
 	if (error) {
 		fail(_("Completion of the realtime summary failed"), error);
 	}
-	libxfs_trans_commit(tp, 0);
+	libxfs_trans_commit(tp);
 
 	/*
 	 * Free the whole area using transactions.
 	 * Do one transaction per bitmap block.
 	 */
 	for (bno = 0; bno < mp->m_sb.sb_rextents; bno = ebno) {
-		tp = libxfs_trans_alloc(mp, 0);
-		if ((i = libxfs_trans_reserve(tp, 0, 0, 0, 0, 0)))
+		i = -libxfs_trans_alloc(mp, &tres, 0, 0, 0, &tp);
+		if (i)
 			res_failed(i);
-		xfs_bmap_init(&flist, &first);
+		libxfs_trans_ijoin(tp, rbmip, 0);
+		libxfs_defer_init(&dfops, &first);
 		ebno = XFS_RTMIN(mp->m_sb.sb_rextents,
 			bno + NBBY * mp->m_sb.sb_blocksize);
-		error = libxfs_rtfree_extent(tp, bno, (xfs_extlen_t)(ebno-bno));
+		error = -libxfs_rtfree_extent(tp, bno, (xfs_extlen_t)(ebno-bno));
 		if (error) {
 			fail(_("Error initializing the realtime space"),
 				error);
 		}
-		error = libxfs_bmap_finish(&tp, &flist, &committed);
+		error = -libxfs_defer_finish(&tp, &dfops, rbmip);
 		if (error) {
 			fail(_("Error completing the realtime space"), error);
 		}
-		libxfs_trans_commit(tp, 0);
+		libxfs_trans_commit(tp);
 	}
 }
 
@@ -753,9 +782,9 @@ static long
 filesize(
 	int		fd)
 {
-	struct stat64	stb;
+	struct stat	stb;
 
-	if (fstat64(fd, &stb) < 0)
+	if (fstat(fd, &stb) < 0)
 		return -1;
 	return (long)stb.st_size;
 }

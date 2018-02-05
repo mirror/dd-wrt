@@ -21,11 +21,10 @@ typedef struct fs_geometry  {
 	 * these types should match the superblock types
 	 */
 	__uint32_t	sb_blocksize;	/* blocksize (bytes) */
-	xfs_drfsbno_t	sb_dblocks;	/* # data blocks */
-	xfs_drfsbno_t	sb_rblocks;	/* # realtime blocks */
-	xfs_drtbno_t	sb_rextents;	/* # realtime extents */
-	uuid_t		sb_uuid;	/* fs uuid */
-	xfs_dfsbno_t	sb_logstart;	/* starting log block # */
+	xfs_rfsblock_t	sb_dblocks;	/* # data blocks */
+	xfs_rfsblock_t	sb_rblocks;	/* # realtime blocks */
+	xfs_rtblock_t	sb_rextents;	/* # realtime extents */
+	xfs_fsblock_t	sb_logstart;	/* starting log block # */
 	xfs_agblock_t	sb_rextsize;	/* realtime extent size (blocks )*/
 	xfs_agblock_t	sb_agblocks;	/* # of blocks per ag */
 	xfs_agnumber_t	sb_agcount;	/* # of ags */

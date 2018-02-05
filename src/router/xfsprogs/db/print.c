@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include "command.h"
 #include "type.h"
 #include "faddr.h"
@@ -107,6 +107,7 @@ print_flist_1(
 	const ftattr_t	*fa;
 	flist_t		*fl;
 	int		low;
+	int		count;
 	int		neednl;
 	char		**pfx;
 
@@ -139,10 +140,12 @@ print_flist_1(
 				low = fl->low;
 			else
 				low = 0;
+			count = fcount(f, iocur_top->data, parentoff);
+			if (fl->flags & FL_OKHIGH)
+				count = min(count, fl->high - low + 1);
 			if (fa->prfunc) {
 				neednl = fa->prfunc(iocur_top->data, fl->offset,
-					fcount(f, iocur_top->data, parentoff),
-					fa->fmtstr,
+					count, fa->fmtstr,
 					fsize(f, iocur_top->data, parentoff, 0),
 					fa->arg, low,
 					(f->flags & FLD_ARRAY) != 0);
@@ -194,7 +197,7 @@ print_sarray(
 	     i < count && !seenint();
 	     i++, bitoff += size) {
 		if (array)
-			dbprintf("%d:", i + base);
+			dbprintf("\n%d:", i + base);
 		for (f = flds, first = 1; f->name; f++) {
 			if (f->flags & FLD_SKIPALL)
 				continue;

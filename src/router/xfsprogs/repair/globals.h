@@ -49,29 +49,15 @@
 #define XR_BAD_SB_UNIT		17	/* bad stripe unit */
 #define XR_BAD_SB_WIDTH		18	/* bad stripe width */
 #define XR_BAD_SVN		19	/* bad shared version number */
-#define XR_BAD_ERR_CODE		20	/* Bad error code */
+#define XR_BAD_CRC		20	/* Bad CRC */
+#define XR_BAD_ERR_CODE		21	/* Bad error code */
 
 /* XFS filesystem (il)legal values */
 
 #define XR_LOG2BSIZE_MIN	9	/* min/max fs blocksize (log2) */
 #define XR_LOG2BSIZE_MAX	16	/* 2^XR_* == blocksize */
 
-#define	NUM_SBS			8	/* max # of sbs to verify */
 #define NUM_AGH_SECTS		4	/* # of components in an ag header */
-
-/*
- * secondary sb mask -- if the secondary sb feature bits has a
- * the partial sb mask bit set, then you depend on the fields
- * in it up to and including sb_inoalignmt but the unused part of the
- * sector may have trash in it.  If the sb has any bits set that are in
- * the good mask, then the entire sb and sector are good (was zero'ed
- * by mkfs).  The third mask is for filesystems made by pre-6.5 campus
- * alpha mkfs's.  Those are rare so we'll check for those under
- * a special option.
- */
-#define XR_PART_SECSB_VNMASK	0x0F80	/* >= XFS_SB_VERSION_ALIGNBIT */
-#define XR_GOOD_SECSB_VNMASK	0x0F00	/* >= XFS_SB_VERSION_DALIGNBIT */
-#define XR_ALPHA_SECSB_VNMASK	0x0180	/* DALIGN|ALIGN bits */
 
 /* global variables for xfs_repair */
 
@@ -87,7 +73,6 @@ EXTERN char	*iobuf;			/* large buffer */
 EXTERN int	iobuf_size;
 EXTERN char	*smallbuf;		/* small (1-4 page) buffer */
 EXTERN int	smallbuf_size;
-EXTERN char	*sb_bufs[NUM_SBS];	/* superblock buffers */
 EXTERN int	sbbuf_size;
 
 /* direct I/O info */
@@ -123,7 +108,7 @@ EXTERN int	lazy_count;		/* What to set if to if converting */
 
 EXTERN int		primary_sb_modified;
 EXTERN int		bad_ino_btree;
-EXTERN int		clear_sunit;
+EXTERN int		copied_sunit;
 EXTERN int		fs_is_dirty;
 
 /* for hunting down the root inode */
@@ -137,6 +122,7 @@ EXTERN int		need_rsumino;
 EXTERN int		lost_quotas;
 EXTERN int		have_uquotino;
 EXTERN int		have_gquotino;
+EXTERN int		have_pquotino;
 EXTERN int		lost_uquotino;
 EXTERN int		lost_gquotino;
 EXTERN int		lost_pquotino;
@@ -185,11 +171,10 @@ EXTERN xfs_extlen_t	sb_inoalignmt;
 EXTERN __uint32_t	sb_unit;
 EXTERN __uint32_t	sb_width;
 
-extern size_t 		ts_dirbuf_size;
-extern size_t 		ts_dir_freemap_size;
-extern size_t 		ts_attr_freemap_size;
-
-EXTERN pthread_mutex_t	*ag_locks;
+struct aglock {
+	pthread_mutex_t	lock __attribute__((__aligned__(64)));
+};
+EXTERN struct aglock	*ag_locks;
 
 EXTERN int 		report_interval;
 EXTERN __uint64_t 	*prog_rpt_done;

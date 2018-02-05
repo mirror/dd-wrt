@@ -33,97 +33,20 @@
 #include <pthread.h>
 #include <ctype.h>
 #include <sys/types.h>
-
-#undef HAVE___U32
-#ifdef HAVE___U32
-#include <asm/types.h>
-#else
-typedef unsigned char		__u8;
-typedef signed char		__s8;
-typedef unsigned short		__u16;
-typedef signed short		__s16;
-typedef unsigned int		__u32;
-typedef signed int		__s32;
-typedef unsigned long long int	__u64;
-typedef signed long long int	__s64;
-#endif
-
-#ifdef __CHECKER__
-#define __bitwise		__attribute__((bitwise))
-#define __force			__attribute__((force))
-#else
-#define __bitwise
-#define __force
-#endif
-
-typedef __u16	__bitwise	__be16;
-typedef __u32	__bitwise	__be32;
-typedef __u64	__bitwise	__be64;
+#include <limits.h>
+#include <stdbool.h>
+#include <libgen.h>
 
 typedef struct filldir		filldir_t;
 
-#if defined(__linux__)
-#include <xfs/linux.h>
-#elif defined(__FreeBSD__)
-#include <xfs/freebsd.h>
-#elif defined(__FreeBSD_kernel__)
-#include <xfs/gnukfreebsd.h>
-#elif defined(__APPLE__)
-#include <xfs/darwin.h>
-#elif defined(__sgi__) || defined(__sgi)
-#include <xfs/irix.h>
-#else
-# error unknown platform... have fun porting!
-#endif
-
 /* long and pointer must be either 32 bit or 64 bit */
-#undef HAVE_32BIT_LONG
-#undef HAVE_64BIT_LONG
-#undef HAVE_32BIT_PTR
-#undef HAVE_64BIT_PTR
+#undef SIZEOF_LONG
+#undef SIZEOF_CHAR_P
+#define BITS_PER_LONG (SIZEOF_LONG * CHAR_BIT)
 
-#if defined(HAVE_32BIT_LONG)
-# define BITS_PER_LONG	32
-#elif defined(HAVE_64BIT_LONG)
-# define BITS_PER_LONG	64
-#else
-# error Unknown long size
-#endif
-
-/* Check if __psint_t is set to something meaningful */
-#undef HAVE___PSINT_T
-#ifndef HAVE___PSINT_T
-# ifdef HAVE_32BIT_PTR
-typedef int __psint_t;
-# elif defined HAVE_64BIT_PTR
-#  ifdef HAVE_64BIT_LONG
-typedef long __psint_t;
-#  else
-/* This is a very strange architecture, which has 64 bit pointers but */
-/* not 64 bit longs.  So, just punt here and assume long long is OK.  */
-typedef long long __psint_t;
-#  endif
-# else
-#  error Unknown pointer size
-# endif
-#endif
-
-/* Check if __psunsigned_t is set to something meaningful */
-#undef HAVE___PSUNSIGNED_T
-#ifndef HAVE___PSUNSIGNED_T
-# ifdef HAVE_32BIT_PTR
-typedef unsigned int __psunsigned_t;
-# elif defined HAVE_64BIT_PTR
-#  ifdef HAVE_64BIT_LONG
-typedef long __psunsigned_t;
-#  else
-/* This is a very strange architecture, which has 64 bit pointers but */
-/* not 64 bit longs.  So, just punt here and assume long long is OK.  */
-typedef unsigned long long __psunsigned_t;
-#  endif
-# else
-#  error Unknown pointer size
-# endif
+/* Check whether to define umode_t ourselves. */
+#ifndef HAVE_UMODE_T
+typedef unsigned short umode_t;
 #endif
 
 /* Define if you want gettext (I18N) support */
@@ -140,19 +63,6 @@ typedef unsigned long long __psunsigned_t;
 #endif
 #include <locale.h>
 
-#ifdef DEBUG
-# define ASSERT(EX)	assert(EX)
-#else
-# define ASSERT(EX)	((void) 0)
-#endif
-
-/*
- * sparse kernel source annotations
- */
-#ifndef __user
-#define __user
-#endif
-
 #define IRIX_DEV_BITSMAJOR      14
 #define IRIX_DEV_BITSMINOR      18
 #define IRIX_DEV_MAXMAJ         0x1ff
@@ -164,11 +74,19 @@ typedef unsigned long long __psunsigned_t;
 					| (minor&IRIX_DEV_MAXMIN)))
 #define IRIX_DEV_TO_KDEVT(dev)	makedev(IRIX_DEV_MAJOR(dev),IRIX_DEV_MINOR(dev))
 
-/* ARM old ABI has some weird alignment/padding */
-#if defined(__arm__) && !defined(__ARM_EABI__)
-#define __arch_pack __attribute__((packed))
+#ifndef min
+#define min(a,b)	(((a)<(b))?(a):(b))
+#define max(a,b)	(((a)>(b))?(a):(b))
+#endif
+
+#ifndef NBBY
+#define NBBY 8
+#endif
+
+#ifdef DEBUG
+# define ASSERT(EX)	assert(EX)
 #else
-#define __arch_pack
+# define ASSERT(EX)	((void) 0)
 #endif
 
 #endif	/* __XFS_PLATFORM_DEFS_H__ */

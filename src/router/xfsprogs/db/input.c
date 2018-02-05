@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include <signal.h>
 #include "command.h"
 #include "input.h"
@@ -238,11 +238,11 @@ fetchline(void)
 static char *el_get_prompt(EditLine *e) { return get_prompt(); }
 char *
 fetchline(void)
-{     
+{
 	static EditLine	*el;
 	static History	*hist;
 	HistEvent	hevent;
-	char		*line;    
+	char		*line;
 	int		count;
 
 	if (!el) {

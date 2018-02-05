@@ -16,14 +16,13 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <libxfs.h>
+#include "libxfs.h"
 #include "avl.h"
 #include "globals.h"
 #include "agheader.h"
 #include "incore.h"
 #include "protos.h"
 #include "err_protos.h"
-#include "dir.h"
 #include "dinode.h"
 #include "versions.h"
 #include "prefetch.h"
@@ -34,8 +33,7 @@
  * the dinodes are verified using verify_uncertain_dinode() which
  * means only the basic inode info is checked, no fork checks.
  */
-
-int
+static int
 check_aginode_block(xfs_mount_t	*mp,
 			xfs_agnumber_t	agno,
 			xfs_agblock_t	agbno)
@@ -54,7 +52,7 @@ check_aginode_block(xfs_mount_t	*mp,
 	 * so no one else will overlap them.
 	 */
 	bp = libxfs_readbuf(mp->m_dev, XFS_AGB_TO_DADDR(mp, agno, agbno),
-			XFS_FSB_TO_BB(mp, 1), 0);
+			XFS_FSB_TO_BB(mp, 1), 0, NULL);
 	if (!bp) {
 		do_warn(_("cannot read agbno (%u/%u), disk block %" PRId64 "\n"),
 			agno, agbno, XFS_AGB_TO_DADDR(mp, agno, agbno));
@@ -67,17 +65,11 @@ check_aginode_block(xfs_mount_t	*mp,
 				XFS_OFFBNO_TO_AGINO(mp, agbno, i)))
 			cnt++;
 	}
+	if (cnt)
+		bp->b_ops = &xfs_inode_buf_ops;
 
 	libxfs_putbuf(bp);
 	return(cnt);
-}
-
-int
-check_inode_block(xfs_mount_t		*mp,
-			xfs_ino_t	ino)
-{
-	return(check_aginode_block(mp, XFS_INO_TO_AGNO(mp, ino),
-					XFS_INO_TO_AGBNO(mp, ino)));
 }
 
 /*
@@ -93,7 +85,7 @@ check_inode_block(xfs_mount_t		*mp,
  * routines called by check_uncertain_aginodes() and
  * process_uncertain_aginodes().
  */
-int
+static int
 verify_inode_chunk(xfs_mount_t		*mp,
 			xfs_ino_t	ino,
 			xfs_ino_t	*start_ino)
@@ -125,11 +117,11 @@ verify_inode_chunk(xfs_mount_t		*mp,
 	agbno = XFS_INO_TO_AGBNO(mp, ino);
 	*start_ino = NULLFSINO;
 
-	ASSERT(XFS_IALLOC_BLOCKS(mp) > 0);
+	ASSERT(mp->m_ialloc_blks > 0);
 
 	if (agno == mp->m_sb.sb_agcount - 1)
 		max_agbno = mp->m_sb.sb_dblocks -
-			(xfs_drfsbno_t) mp->m_sb.sb_agblocks * agno;
+			(xfs_rfsblock_t) mp->m_sb.sb_agblocks * agno;
 	else
 		max_agbno = mp->m_sb.sb_agblocks;
 
@@ -143,14 +135,13 @@ verify_inode_chunk(xfs_mount_t		*mp,
 	 * check for the easy case, inodes per block >= XFS_INODES_PER_CHUNK
 	 * (multiple chunks per block)
 	 */
-	if (XFS_IALLOC_BLOCKS(mp) == 1)  {
+	if (mp->m_ialloc_blks == 1)  {
 		if (agbno > max_agbno)
-			return(0);
+			return 0;
+		if (check_aginode_block(mp, agno, agino) == 0)
+			return 0;
 
-		if (check_inode_block(mp, ino) == 0)
-			return(0);
-
-		pthread_mutex_lock(&ag_locks[agno]);
+		pthread_mutex_lock(&ag_locks[agno].lock);
 
 		state = get_bmap(agno, agbno);
 		switch (state) {
@@ -175,7 +166,7 @@ verify_inode_chunk(xfs_mount_t		*mp,
 		_("inode block %d/%d multiply claimed, (state %d)\n"),
 				agno, agbno, state);
 			set_bmap(agno, agbno, XR_E_MULT);
-			pthread_mutex_unlock(&ag_locks[agno]);
+			pthread_mutex_unlock(&ag_locks[agno].lock);
 			return(0);
 		default:
 			do_warn(
@@ -185,7 +176,7 @@ verify_inode_chunk(xfs_mount_t		*mp,
 			break;
 		}
 
-		pthread_mutex_unlock(&ag_locks[agno]);
+		pthread_mutex_unlock(&ag_locks[agno].lock);
 
 		start_agino = XFS_OFFBNO_TO_AGINO(mp, agbno, 0);
 		*start_ino = XFS_AGINO_TO_INO(mp, agno, start_agino);
@@ -217,7 +208,7 @@ verify_inode_chunk(xfs_mount_t		*mp,
 		 */
 		start_agbno = rounddown(XFS_INO_TO_AGBNO(mp, ino),
 					fs_ino_alignment);
-		end_agbno = start_agbno + XFS_IALLOC_BLOCKS(mp);
+		end_agbno = start_agbno + mp->m_ialloc_blks;
 
 		/*
 		 * if this fs has aligned inodes but the end of the
@@ -275,14 +266,14 @@ verify_inode_chunk(xfs_mount_t		*mp,
 	 * a discovered inode chunk completely within that range
 	 * would include the inode passed into us.
 	 */
-	if (XFS_IALLOC_BLOCKS(mp) > 1)  {
-		if (agino > XFS_IALLOC_INODES(mp))
-			start_agbno = agbno - XFS_IALLOC_BLOCKS(mp) + 1;
+	if (mp->m_ialloc_blks > 1)  {
+		if (agino > mp->m_ialloc_inos)
+			start_agbno = agbno - mp->m_ialloc_blks + 1;
 		else
 			start_agbno = 1;
 	}
 
-	end_agbno = agbno + XFS_IALLOC_BLOCKS(mp);
+	end_agbno = agbno + mp->m_ialloc_blks;
 
 	if (end_agbno > max_agbno)
 		end_agbno = max_agbno;
@@ -337,7 +328,7 @@ verify_inode_chunk(xfs_mount_t		*mp,
 
 			start_agbno = XFS_AGINO_TO_AGBNO(mp,
 						irec_p->ino_startnum) +
-						XFS_IALLOC_BLOCKS(mp);
+						mp->m_ialloc_blks;
 
 			/*
 			 * we know that the inode we're trying to verify isn't
@@ -345,7 +336,7 @@ verify_inode_chunk(xfs_mount_t		*mp,
 			 * of the gap -- is it within the search range?
 			 */
 			if (irec_next_p != NULL &&
-					agino + XFS_IALLOC_INODES(mp) >=
+					agino + mp->m_ialloc_inos >=
 						irec_next_p->ino_startnum)
 				end_agbno = XFS_AGINO_TO_AGBNO(mp,
 						irec_next_p->ino_startnum);
@@ -360,7 +351,7 @@ verify_inode_chunk(xfs_mount_t		*mp,
 	 * the inode in question and that the space between them
 	 * is too small for a legal inode chunk
 	 */
-	if (end_agbno - start_agbno < XFS_IALLOC_BLOCKS(mp))
+	if (end_agbno - start_agbno < mp->m_ialloc_blks)
 		return(0);
 
 	/*
@@ -404,8 +395,8 @@ verify_inode_chunk(xfs_mount_t		*mp,
 
 	num_blks = chunk_stop_agbno - chunk_start_agbno;
 
-	if (num_blks < XFS_IALLOC_BLOCKS(mp) || ino_cnt == 0)
-		return(0);
+	if (num_blks < mp->m_ialloc_blks || ino_cnt == 0)
+		return 0;
 
 	/*
 	 * XXX - later - if the entire range is selected and they're all
@@ -420,8 +411,8 @@ verify_inode_chunk(xfs_mount_t		*mp,
 	 * the chunk
 	 */
 
-	if (num_blks % XFS_IALLOC_BLOCKS(mp) != 0)  {
-		num_blks = rounddown(num_blks, XFS_IALLOC_BLOCKS(mp));
+	if (num_blks % mp->m_ialloc_blks != 0)  {
+		num_blks = rounddown(num_blks, mp->m_ialloc_blks);
 		chunk_stop_agbno = chunk_start_agbno + num_blks;
 	}
 
@@ -433,7 +424,7 @@ verify_inode_chunk(xfs_mount_t		*mp,
 	 * user data -- we're probably here as a result of a directory
 	 * entry or an iunlinked pointer
 	 */
-	pthread_mutex_lock(&ag_locks[agno]);
+	pthread_mutex_lock(&ag_locks[agno].lock);
 	for (cur_agbno = chunk_start_agbno;
 	     cur_agbno < chunk_stop_agbno;
 	     cur_agbno += blen)  {
@@ -447,7 +438,7 @@ verify_inode_chunk(xfs_mount_t		*mp,
 	_("inode block %d/%d multiply claimed, (state %d)\n"),
 				agno, cur_agbno, state);
 			set_bmap_ext(agno, cur_agbno, blen, XR_E_MULT);
-			pthread_mutex_unlock(&ag_locks[agno]);
+			pthread_mutex_unlock(&ag_locks[agno].lock);
 			return 0;
 		case XR_E_INO:
 			do_error(
@@ -458,7 +449,7 @@ verify_inode_chunk(xfs_mount_t		*mp,
 			break;
 		}
 	}
-	pthread_mutex_unlock(&ag_locks[agno]);
+	pthread_mutex_unlock(&ag_locks[agno].lock);
 
 	/*
 	 * ok, chunk is good.  put the record into the tree if required,
@@ -481,7 +472,7 @@ verify_inode_chunk(xfs_mount_t		*mp,
 
 	set_inode_used(irec_p, agino - start_agino);
 
-	pthread_mutex_lock(&ag_locks[agno]);
+	pthread_mutex_lock(&ag_locks[agno].lock);
 
 	for (cur_agbno = chunk_start_agbno;
 	     cur_agbno < chunk_stop_agbno;
@@ -514,7 +505,7 @@ verify_inode_chunk(xfs_mount_t		*mp,
 			break;
 		}
 	}
-	pthread_mutex_unlock(&ag_locks[agno]);
+	pthread_mutex_unlock(&ag_locks[agno].lock);
 
 	return(ino_cnt);
 }
@@ -522,7 +513,7 @@ verify_inode_chunk(xfs_mount_t		*mp,
 /*
  * same as above only for ag inode chunks
  */
-int
+static int
 verify_aginode_chunk(xfs_mount_t	*mp,
 			xfs_agnumber_t	agno,
 			xfs_agino_t	agino,
@@ -545,7 +536,7 @@ verify_aginode_chunk(xfs_mount_t	*mp,
  * this does the same as the two above only it returns a pointer
  * to the inode record in the good inode tree
  */
-ino_tree_node_t *
+static ino_tree_node_t *
 verify_aginode_chunk_irec(xfs_mount_t	*mp,
 			xfs_agnumber_t	agno,
 			xfs_agino_t	agino)
@@ -559,7 +550,42 @@ verify_aginode_chunk_irec(xfs_mount_t	*mp,
 	return(irec);
 }
 
+/*
+ * Set the state of an inode block during inode chunk processing. The block is
+ * expected to be in the free or inode state. If free, it transitions to the
+ * inode state. Warn if the block is in neither expected state as this indicates
+ * multiply claimed blocks.
+ */
+static void
+process_inode_agbno_state(
+	struct xfs_mount	*mp,
+	xfs_agnumber_t		agno,
+	xfs_agblock_t		agbno)
+{
+	int state;
 
+	pthread_mutex_lock(&ag_locks[agno].lock);
+	state = get_bmap(agno, agbno);
+	switch (state) {
+	case XR_E_INO:	/* already marked */
+		break;
+	case XR_E_UNKNOWN:
+	case XR_E_FREE:
+	case XR_E_FREE1:
+		set_bmap(agno, agbno, XR_E_INO);
+		break;
+	case XR_E_BAD_STATE:
+		do_error(_("bad state in block map %d\n"), state);
+		break;
+	default:
+		set_bmap(agno, agbno, XR_E_MULT);
+		do_warn(
+	_("inode block %" PRIu64 " multiply claimed, state was %d\n"),
+			XFS_AGB_TO_FSB(mp, agno, agbno), state);
+		break;
+	}
+	pthread_mutex_unlock(&ag_locks[agno].lock);
+}
 
 /*
  * processes an inode allocation chunk/block, returns 1 on I/O errors,
@@ -567,8 +593,6 @@ verify_aginode_chunk_irec(xfs_mount_t	*mp,
  *
  * *bogus is set to 1 if the entire set of inodes is bad.
  */
-
-/* ARGSUSED */
 static int
 process_inode_chunk(
 	xfs_mount_t 		*mp,
@@ -587,7 +611,6 @@ process_inode_chunk(
 	int			icnt;
 	int			status;
 	int			is_used;
-	int			state;
 	int			ino_dirty;
 	int			irec_offset;
 	int			ibuf_offset;
@@ -605,9 +628,9 @@ process_inode_chunk(
 	ASSERT(XFS_AGINO_TO_OFFSET(mp, first_irec->ino_startnum) == 0);
 
 	*bogus = 0;
-	ASSERT(XFS_IALLOC_BLOCKS(mp) > 0);
+	ASSERT(mp->m_ialloc_blks > 0);
 
-	blks_per_cluster = XFS_INODE_CLUSTER_SIZE(mp) >> mp->m_sb.sb_blocklog;
+	blks_per_cluster = mp->m_inode_cluster_size >> mp->m_sb.sb_blocklog;
 	if (blks_per_cluster == 0)
 		blks_per_cluster = 1;
 	cluster_count = XFS_INODES_PER_CHUNK / inodes_per_cluster;
@@ -624,6 +647,7 @@ process_inode_chunk(
 	 * set up first irec
 	 */
 	ino_rec = first_irec;
+	irec_offset = 0;
 
 	bplist = malloc(cluster_count * sizeof(xfs_buf_t *));
 	if (bplist == NULL)
@@ -631,12 +655,25 @@ process_inode_chunk(
 			cluster_count * sizeof(xfs_buf_t *));
 
 	for (bp_index = 0; bp_index < cluster_count; bp_index++) {
+		/*
+		 * Skip the cluster buffer if the first inode is sparse. The
+		 * remaining inodes in the cluster share the same state as
+		 * sparse inodes occur at cluster granularity.
+		 */
+		if (is_inode_sparse(ino_rec, irec_offset)) {
+			pftrace("skip sparse inode, startnum 0x%x idx %d",
+				ino_rec->ino_startnum, irec_offset);
+			bplist[bp_index] = NULL;
+			goto next_readbuf;
+		}
+
 		pftrace("about to read off %llu in AG %d",
 			XFS_AGB_TO_DADDR(mp, agno, agbno), agno);
 
 		bplist[bp_index] = libxfs_readbuf(mp->m_dev,
 					XFS_AGB_TO_DADDR(mp, agno, agbno),
-					XFS_FSB_TO_BB(mp, blks_per_cluster), 0);
+					XFS_FSB_TO_BB(mp, blks_per_cluster), 0,
+					&xfs_inode_buf_ops);
 		if (!bplist[bp_index]) {
 			do_warn(_("cannot read inode %" PRIu64 ", disk block %" PRId64 ", cnt %d\n"),
 				XFS_AGINO_TO_INO(mp, agno, first_irec->ino_startnum),
@@ -649,11 +686,16 @@ process_inode_chunk(
 			free(bplist);
 			return(1);
 		}
-		agbno += blks_per_cluster;
 
 		pftrace("readbuf %p (%llu, %d) in AG %d", bplist[bp_index],
 			(long long)XFS_BUF_ADDR(bplist[bp_index]),
 			XFS_BUF_COUNT(bplist[bp_index]), agno);
+
+		bplist[bp_index]->b_ops = &xfs_inode_buf_ops;
+
+next_readbuf:
+		irec_offset += mp->m_sb.sb_inopblock * blks_per_cluster;
+		agbno += blks_per_cluster;
 	}
 	agbno = XFS_AGINO_TO_AGBNO(mp, first_irec->ino_startnum);
 
@@ -672,30 +714,33 @@ process_inode_chunk(
 	 */
 	if (ino_discovery)  {
 		for (;;)  {
-			/*
-			 * make inode pointer
-			 */
-			dino = xfs_make_iptr(mp, bplist[bp_index], cluster_offset);
 			agino = irec_offset + ino_rec->ino_startnum;
 
-			/*
-			 * we always think that the root and realtime
-			 * inodes are verified even though we may have
-			 * to reset them later to keep from losing the
-			 * chunk that they're in
-			 */
-			if (verify_dinode(mp, dino, agno, agino) == 0 ||
-					(agno == 0 &&
-					(mp->m_sb.sb_rootino == agino ||
-					 mp->m_sb.sb_rsumino == agino ||
-					 mp->m_sb.sb_rbmino == agino)))
-				status++;
+			/* no buffers for sparse clusters */
+			if (bplist[bp_index]) {
+				/* make inode pointer */
+				dino = xfs_make_iptr(mp, bplist[bp_index],
+						     cluster_offset);
+
+				/*
+				 * we always think that the root and realtime
+				 * inodes are verified even though we may have
+				 * to reset them later to keep from losing the
+				 * chunk that they're in
+				 */
+				if (verify_dinode(mp, dino, agno, agino) == 0 ||
+						(agno == 0 &&
+						(mp->m_sb.sb_rootino == agino ||
+						 mp->m_sb.sb_rsumino == agino ||
+						 mp->m_sb.sb_rbmino == agino)))
+					status++;
+			}
 
 			irec_offset++;
 			icnt++;
 			cluster_offset++;
 
-			if (icnt == XFS_IALLOC_INODES(mp) &&
+			if (icnt == mp->m_ialloc_inos &&
 					irec_offset == XFS_INODES_PER_CHUNK)  {
 				/*
 				 * done! - finished up irec and block
@@ -723,7 +768,8 @@ process_inode_chunk(
 		if (!status)  {
 			*bogus = 1;
 			for (bp_index = 0; bp_index < cluster_count; bp_index++)
-				libxfs_putbuf(bplist[bp_index]);
+				if (bplist[bp_index])
+					libxfs_putbuf(bplist[bp_index]);
 			free(bplist);
 			return(0);
 		}
@@ -743,34 +789,19 @@ process_inode_chunk(
 	/*
 	 * mark block as an inode block in the incore bitmap
 	 */
-	pthread_mutex_lock(&ag_locks[agno]);
-	state = get_bmap(agno, agbno);
-	switch (state) {
-	case XR_E_INO:	/* already marked */
-		break;
-	case XR_E_UNKNOWN:
-	case XR_E_FREE:
-	case XR_E_FREE1:
-		set_bmap(agno, agbno, XR_E_INO);
-		break;
-	case XR_E_BAD_STATE:
-		do_error(_("bad state in block map %d\n"), state);
-		break;
-	default:
-		set_bmap(agno, agbno, XR_E_MULT);
-		do_warn(_("inode block %" PRIu64 " multiply claimed, state was %d\n"),
-			XFS_AGB_TO_FSB(mp, agno, agbno), state);
-		break;
-	}
-	pthread_mutex_unlock(&ag_locks[agno]);
+	if (!is_inode_sparse(ino_rec, irec_offset))
+		process_inode_agbno_state(mp, agno, agbno);
 
 	for (;;) {
-		/*
-		 * make inode pointer
-		 */
-		dino = xfs_make_iptr(mp, bplist[bp_index], cluster_offset);
 		agino = irec_offset + ino_rec->ino_startnum;
 		ino = XFS_AGINO_TO_INO(mp, agno, agino);
+
+		if (is_inode_sparse(ino_rec, irec_offset))
+			goto process_next;
+
+		/* make inode pointer */
+		dino = xfs_make_iptr(mp, bplist[bp_index], cluster_offset);
+
 
 		is_used = 3;
 		ino_dirty = 0;
@@ -782,8 +813,11 @@ process_inode_chunk(
 				extra_attr_check, &isa_dir, &parent);
 
 		ASSERT(is_used != 3);
-		if (ino_dirty)
+		if (ino_dirty) {
 			dirty = 1;
+			libxfs_dinode_calc_crc(mp, dino);
+		}
+
 		/*
 		 * XXX - if we want to try and keep
 		 * track of whether we need to bang on
@@ -792,6 +826,8 @@ process_inode_chunk(
 		 * we do now, this is where to start.
 		 */
 		if (is_used)  {
+			__uint16_t	di_mode;
+
 			if (is_inode_free(ino_rec, irec_offset))  {
 				if (verbose || no_modify)  {
 					do_warn(
@@ -805,6 +841,15 @@ process_inode_chunk(
 					do_warn(_("would correct imap\n"));
 			}
 			set_inode_used(ino_rec, irec_offset);
+
+			/*
+			 * store the on-disk file type for comparing in
+			 * phase 6.
+			 */
+			di_mode = be16_to_cpu(dino->di_mode);
+			di_mode = (di_mode & S_IFMT) >> S_SHIFT;
+			set_inode_ftype(ino_rec, irec_offset,
+					xfs_mode_to_ftype[di_mode]);
 
 			/*
 			 * store on-disk nlink count for comparing in phase 7
@@ -886,19 +931,24 @@ process_inode_chunk(
 				do_warn(_("would have cleared inode %" PRIu64 "\n"),
 					ino);
 			}
+			clear_inode_was_rl(ino_rec, irec_offset);
 		}
 
+process_next:
 		irec_offset++;
 		ibuf_offset++;
 		icnt++;
 		cluster_offset++;
 
-		if (icnt == XFS_IALLOC_INODES(mp) &&
+		if (icnt == mp->m_ialloc_inos &&
 				irec_offset == XFS_INODES_PER_CHUNK)  {
 			/*
 			 * done! - finished up irec and block simultaneously
 			 */
 			for (bp_index = 0; bp_index < cluster_count; bp_index++) {
+				if (!bplist[bp_index])
+					continue;
+
 				pftrace("put/writebuf %p (%llu) in AG %d",
 					bplist[bp_index], (long long)
 					XFS_BUF_ADDR(bplist[bp_index]), agno);
@@ -918,29 +968,8 @@ process_inode_chunk(
 			ibuf_offset = 0;
 			agbno++;
 
-			pthread_mutex_lock(&ag_locks[agno]);
-			state = get_bmap(agno, agbno);
-			switch (state) {
-			case XR_E_INO:	/* already marked */
-				break;
-			case XR_E_UNKNOWN:
-			case XR_E_FREE:
-			case XR_E_FREE1:
-				set_bmap(agno, agbno, XR_E_INO);
-				break;
-			case XR_E_BAD_STATE:
-				do_error(_("bad state in block map %d\n"),
-					state);
-				break;
-			default:
-				set_bmap(agno, agbno, XR_E_MULT);
-				do_warn(
-	_("inode block %" PRIu64 " multiply claimed, state was %d\n"),
-					XFS_AGB_TO_FSB(mp, agno, agbno), state);
-				break;
-			}
-			pthread_mutex_unlock(&ag_locks[agno]);
-
+			if (!is_inode_sparse(ino_rec, irec_offset))
+				process_inode_agbno_state(mp, agno, agbno);
 		} else if (irec_offset == XFS_INODES_PER_CHUNK)  {
 			/*
 			 * get new irec (multiple chunks per block fs)
@@ -995,7 +1024,7 @@ process_aginodes(
 		 * the next block before we call the processing routines.
 		 */
 		num_inos = XFS_INODES_PER_CHUNK;
-		while (num_inos < XFS_IALLOC_INODES(mp) && ino_rec != NULL)  {
+		while (num_inos < mp->m_ialloc_inos && ino_rec != NULL)  {
 			/*
 			 * inodes chunks will always be aligned and sized
 			 * correctly
@@ -1004,7 +1033,7 @@ process_aginodes(
 				num_inos += XFS_INODES_PER_CHUNK;
 		}
 
-		ASSERT(num_inos == XFS_IALLOC_INODES(mp));
+		ASSERT(num_inos == mp->m_ialloc_inos);
 
 		if (pf_args) {
 			sem_post(&pf_args->ra_count);
@@ -1036,7 +1065,7 @@ process_aginodes(
 			 */
 			num_inos = 0;
 			ino_rec = first_ino_rec;
-			while (num_inos < XFS_IALLOC_INODES(mp) &&
+			while (num_inos < mp->m_ialloc_inos &&
 					ino_rec != NULL)  {
 				prev_ino_rec = ino_rec;
 
@@ -1220,7 +1249,7 @@ process_uncertain_aginodes(xfs_mount_t *mp, xfs_agnumber_t agno)
 			 * processing may add more records to the
 			 * uncertain inode lists.
 			 */
-			if (process_inode_chunk(mp, agno, XFS_IALLOC_INODES(mp),
+			if (process_inode_chunk(mp, agno, mp->m_ialloc_inos,
 						nrec, 1, 0, 0, &bogus))  {
 				/* XXX - i/o error, we've got a problem */
 				abort();

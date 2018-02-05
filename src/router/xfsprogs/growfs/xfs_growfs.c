@@ -16,16 +16,8 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
-#include <xfs/path.h>
-
-/*
- * When growing a filesystem, this is the most significant
- * bits we'll accept in the resulting inode numbers
- * without warning the user.
- */
-
-#define XFS_MAX_INODE_SIG_BITS 32
+#include "libxfs.h"
+#include "path.h"
 
 static void
 usage(void)
@@ -37,7 +29,6 @@ Options:\n\
 	-l          grow log section\n\
 	-r          grow realtime section\n\
 	-n          don't change anything, just show geometry\n\
-	-I          allow inode numbers to exceed %d significant bits\n\
 	-i          convert log from external to internal format\n\
 	-t          alternate location for mount table (/etc/mtab)\n\
 	-x          convert log from internal to external format\n\
@@ -47,7 +38,7 @@ Options:\n\
 	-e size     set realtime extent size to size blks\n\
 	-m imaxpct  set inode max percent to imaxpct\n\
 	-V          print version information\n"),
-		progname, XFS_MAX_INODE_SIG_BITS);
+		progname);
 	exit(2);
 }
 
@@ -62,24 +53,35 @@ report_info(
 	int		dirversion,
 	int		logversion,
 	int		attrversion,
-	int		cimode)
+	int		projid32bit,
+	int		crcs_enabled,
+	int		cimode,
+	int		ftype_enabled,
+	int		finobt_enabled,
+	int		spinodes,
+	int		rmapbt_enabled,
+	int		reflink_enabled)
 {
 	printf(_(
 	    "meta-data=%-22s isize=%-6u agcount=%u, agsize=%u blks\n"
-	    "         =%-22s sectsz=%-5u attr=%u\n"
+	    "         =%-22s sectsz=%-5u attr=%u, projid32bit=%u\n"
+	    "         =%-22s crc=%-8u finobt=%u spinodes=%u rmapbt=%u\n"
+	    "         =%-22s reflink=%u\n"
 	    "data     =%-22s bsize=%-6u blocks=%llu, imaxpct=%u\n"
 	    "         =%-22s sunit=%-6u swidth=%u blks\n"
-	    "naming   =version %-14u bsize=%-6u ascii-ci=%d\n"
+	    "naming   =version %-14u bsize=%-6u ascii-ci=%d ftype=%d\n"
 	    "log      =%-22s bsize=%-6u blocks=%u, version=%u\n"
 	    "         =%-22s sectsz=%-5u sunit=%u blks, lazy-count=%u\n"
 	    "realtime =%-22s extsz=%-6u blocks=%llu, rtextents=%llu\n"),
 
 		mntpoint, geo.inodesize, geo.agcount, geo.agblocks,
-		"", geo.sectsize, attrversion,
+		"", geo.sectsize, attrversion, projid32bit,
+		"", crcs_enabled, finobt_enabled, spinodes, rmapbt_enabled,
+		"", reflink_enabled,
 		"", geo.blocksize, (unsigned long long)geo.datablocks,
 			geo.imaxpct,
 		"", geo.sunit, geo.swidth,
-  		dirversion, geo.dirblocksize, cimode,
+  		dirversion, geo.dirblocksize, cimode, ftype_enabled,
 		isint ? _("internal") : logname ? logname : _("external"),
 			geo.blocksize, geo.logblocks, logversion,
 		"", geo.logsectsize, geo.logsunit / geo.blocksize, lazycount,
@@ -124,6 +126,13 @@ main(int argc, char **argv)
 	char			*rtdev;	/*   RT device name */
 	fs_path_t		*fs;	/* mount point information */
 	libxfs_init_t		xi;	/* libxfs structure */
+	int			projid32bit;
+	int			crcs_enabled;
+	int			ftype_enabled = 0;
+	int			finobt_enabled;	/* free inode btree */
+	int			spinodes;
+	int			rmapbt_enabled;
+	int			reflink_enabled;
 
 	progname = basename(argv[0]);
 	setlocale(LC_ALL, "");
@@ -133,7 +142,6 @@ main(int argc, char **argv)
 	maxpct = esize = 0;
 	dsize = lsize = rsize = 0LL;
 	aflag = dflag = iflag = lflag = mflag = nflag = rflag = xflag = 0;
-	ci = 0;
 
 	while ((c = getopt(argc, argv, "dD:e:ilL:m:np:rR:t:xV")) != EOF) {
 		switch (c) {
@@ -190,7 +198,7 @@ main(int argc, char **argv)
 		usage();
 	if (iflag && xflag)
 		usage();
-	if (dflag + lflag + rflag == 0)
+	if (dflag + lflag + rflag + mflag == 0)
 		aflag = 1;
 
 	fs_table_initialise(0, NULL, 0, NULL);
@@ -243,10 +251,19 @@ main(int argc, char **argv)
 	attrversion = geo.flags & XFS_FSOP_GEOM_FLAGS_ATTR2 ? 2 : \
 			(geo.flags & XFS_FSOP_GEOM_FLAGS_ATTR ? 1 : 0);
 	ci = geo.flags & XFS_FSOP_GEOM_FLAGS_DIRV2CI ? 1 : 0;
+	projid32bit = geo.flags & XFS_FSOP_GEOM_FLAGS_PROJID32 ? 1 : 0;
+	crcs_enabled = geo.flags & XFS_FSOP_GEOM_FLAGS_V5SB ? 1 : 0;
+	ftype_enabled = geo.flags & XFS_FSOP_GEOM_FLAGS_FTYPE ? 1 : 0;
+	finobt_enabled = geo.flags & XFS_FSOP_GEOM_FLAGS_FINOBT ? 1 : 0;
+	spinodes = geo.flags & XFS_FSOP_GEOM_FLAGS_SPINODES ? 1 : 0;
+	rmapbt_enabled = geo.flags & XFS_FSOP_GEOM_FLAGS_RMAPBT ? 1 : 0;
+	reflink_enabled = geo.flags & XFS_FSOP_GEOM_FLAGS_REFLINK ? 1 : 0;
 	if (nflag) {
 		report_info(geo, datadev, isint, logdev, rtdev,
 				lazycount, dirversion, logversion,
-				attrversion, ci);
+				attrversion, projid32bit, crcs_enabled, ci,
+				ftype_enabled, finobt_enabled, spinodes,
+				rmapbt_enabled, reflink_enabled);
 		exit(0);
 	}
 
@@ -283,7 +300,9 @@ main(int argc, char **argv)
 
 	report_info(geo, datadev, isint, logdev, rtdev,
 			lazycount, dirversion, logversion,
-			attrversion, ci);
+			attrversion, projid32bit, crcs_enabled, ci, ftype_enabled,
+			finobt_enabled, spinodes, rmapbt_enabled,
+			reflink_enabled);
 
 	ddsize = xi.dsize;
 	dlsize = ( xi.logBBsize? xi.logBBsize :
@@ -302,12 +321,15 @@ main(int argc, char **argv)
 	drsize -= (drsize % 2);
 
 	error = 0;
-	if (dflag | aflag) {
+
+	if (dflag | mflag | aflag) {
 		xfs_growfs_data_t	in;
 
 		if (!mflag)
 			maxpct = geo.imaxpct;
-		if (!dsize)
+		if (!dflag && !aflag)	/* Only mflag, no data size change */
+			dsize = geo.datablocks;
+		else if (!dsize)
 			dsize = ddsize / (geo.blocksize / BBSIZE);
 		else if (dsize > ddsize / (geo.blocksize / BBSIZE)) {
 			fprintf(stderr, _(

@@ -19,14 +19,29 @@
 #if defined(HAVE_FALLOCATE)
 #include <linux/falloc.h>
 #endif
-#include <xfs/xfs.h>
-#include <xfs/command.h>
-#include <xfs/input.h>
+#include "command.h"
+#include "input.h"
 #include "init.h"
 #include "io.h"
 
 #ifndef FALLOC_FL_PUNCH_HOLE
 #define FALLOC_FL_PUNCH_HOLE	0x02
+#endif
+
+#ifndef FALLOC_FL_COLLAPSE_RANGE
+#define FALLOC_FL_COLLAPSE_RANGE 0x08
+#endif
+
+#ifndef FALLOC_FL_ZERO_RANGE
+#define FALLOC_FL_ZERO_RANGE 0x10
+#endif
+
+#ifndef FALLOC_FL_INSERT_RANGE
+#define FALLOC_FL_INSERT_RANGE 0x20
+#endif
+
+#ifndef FALLOC_FL_UNSHARE_RANGE
+#define FALLOC_FL_UNSHARE_RANGE 0x40
 #endif
 
 static cmdinfo_t allocsp_cmd;
@@ -37,6 +52,9 @@ static cmdinfo_t zero_cmd;
 #if defined(HAVE_FALLOCATE)
 static cmdinfo_t falloc_cmd;
 static cmdinfo_t fpunch_cmd;
+static cmdinfo_t fcollapse_cmd;
+static cmdinfo_t finsert_cmd;
+static cmdinfo_t fzero_cmd;
 #endif
 
 static int
@@ -150,6 +168,27 @@ zero_f(
 
 
 #if defined (HAVE_FALLOCATE)
+static void
+falloc_help(void)
+{
+	printf(_(
+"\n"
+" modifies space associated with part of a file via fallocate"
+"\n"
+" Example:\n"
+" 'falloc 0 1m' - fills all holes within the first megabyte\n"
+"\n"
+" falloc uses the fallocate system call to alter space allocations in the\n"
+" open file.  The following operations are supported:\n"
+" All the file offsets are in units of bytes.\n"
+" -c -- collapses the given range.\n"
+" -i -- inserts a hole into the given range of the file.\n"
+" -k -- do not change file size.\n"
+" -p -- unmap the given range from the file.\n"
+" -u -- unshare shared extents in the given range.\n"
+"\n"));
+}
+
 static int
 fallocate_f(
 	int		argc,
@@ -159,13 +198,22 @@ fallocate_f(
 	int		mode = 0;
 	int		c;
 
-	while ((c = getopt(argc, argv, "kp")) != EOF) {
+	while ((c = getopt(argc, argv, "cikpu")) != EOF) {
 		switch (c) {
+		case 'c':
+			mode = FALLOC_FL_COLLAPSE_RANGE;
+			break;
+		case 'i':
+			mode = FALLOC_FL_INSERT_RANGE;
+			break;
 		case 'k':
 			mode = FALLOC_FL_KEEP_SIZE;
 			break;
 		case 'p':
 			mode = FALLOC_FL_PUNCH_HOLE;
+			break;
+		case 'u':
+			mode = FALLOC_FL_UNSHARE_RANGE;
 			break;
 		default:
 			command_usage(&falloc_cmd);
@@ -194,6 +242,89 @@ fpunch_f(
 	int		mode = FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE;
 
 	if (!offset_length(argv[1], argv[2], &segment))
+		return 0;
+
+	if (fallocate(file->fd, mode,
+			segment.l_start, segment.l_len)) {
+		perror("fallocate");
+		return 0;
+	}
+	return 0;
+}
+
+static int
+fcollapse_f(
+	int		argc,
+	char		**argv)
+{
+	xfs_flock64_t	segment;
+	int		mode = FALLOC_FL_COLLAPSE_RANGE;
+
+	if (!offset_length(argv[1], argv[2], &segment))
+		return 0;
+
+	if (fallocate(file->fd, mode,
+			segment.l_start, segment.l_len)) {
+		perror("fallocate");
+		return 0;
+	}
+	return 0;
+}
+
+static int
+finsert_f(
+	int		argc,
+	char		**argv)
+{
+	xfs_flock64_t	segment;
+	int		mode = FALLOC_FL_INSERT_RANGE;
+
+	if (!offset_length(argv[1], argv[2], &segment))
+		return 0;
+
+	if (fallocate(file->fd, mode,
+			segment.l_start, segment.l_len)) {
+		perror("fallocate");
+		return 0;
+	}
+	return 0;
+}
+
+static int
+fzero_f(
+	int		argc,
+	char		**argv)
+{
+	xfs_flock64_t	segment;
+	int		mode = FALLOC_FL_ZERO_RANGE;
+	int		index = 1;
+
+	if (strncmp(argv[index], "-k", 3) == 0) {
+		mode |= FALLOC_FL_KEEP_SIZE;
+		index++;
+	}
+
+	if (!offset_length(argv[index], argv[index + 1], &segment))
+		return 0;
+
+	if (fallocate(file->fd, mode,
+			segment.l_start, segment.l_len)) {
+		perror("fallocate");
+		return 0;
+	}
+	return 0;
+}
+
+static int
+funshare_f(
+	int		argc,
+	char		**argv)
+{
+	xfs_flock64_t	segment;
+	int		mode = FALLOC_FL_UNSHARE_RANGE;
+	int		index = 1;
+
+	if (!offset_length(argv[index], argv[index + 1], &segment))
 		return 0;
 
 	if (fallocate(file->fd, mode,
@@ -263,9 +394,10 @@ prealloc_init(void)
 	falloc_cmd.argmin = 2;
 	falloc_cmd.argmax = -1;
 	falloc_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
-	falloc_cmd.args = _("[-k] [-p] off len");
+	falloc_cmd.args = _("[-c] [-k] [-p] [-u] off len");
 	falloc_cmd.oneline =
-		_("allocates space associated with part of a file via fallocate");
+	_("allocates space associated with part of a file via fallocate");
+	falloc_cmd.help = falloc_help;
 	add_command(&falloc_cmd);
 
 	fpunch_cmd.name = "fpunch";
@@ -275,7 +407,47 @@ prealloc_init(void)
 	fpunch_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
 	fpunch_cmd.args = _("off len");
 	fpunch_cmd.oneline =
-		_("de-allocates space assocated with part of a file via fallocate");
+	_("de-allocates space assocated with part of a file via fallocate");
 	add_command(&fpunch_cmd);
+
+	fcollapse_cmd.name = "fcollapse";
+	fcollapse_cmd.cfunc = fcollapse_f;
+	fcollapse_cmd.argmin = 2;
+	fcollapse_cmd.argmax = 2;
+	fcollapse_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
+	fcollapse_cmd.args = _("off len");
+	fcollapse_cmd.oneline =
+	_("de-allocates space and eliminates the hole by shifting extents");
+	add_command(&fcollapse_cmd);
+
+	finsert_cmd.name = "finsert";
+	finsert_cmd.cfunc = finsert_f;
+	finsert_cmd.argmin = 2;
+	finsert_cmd.argmax = 2;
+	finsert_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
+	finsert_cmd.args = _("off len");
+	finsert_cmd.oneline =
+	_("creates new space for writing within file by shifting extents");
+	add_command(&finsert_cmd);
+
+	fzero_cmd.name = "fzero";
+	fzero_cmd.cfunc = fzero_f;
+	fzero_cmd.argmin = 2;
+	fzero_cmd.argmax = 3;
+	fzero_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
+	fzero_cmd.args = _("[-k] off len");
+	fzero_cmd.oneline =
+	_("zeroes space and eliminates holes by preallocating");
+	add_command(&fzero_cmd);
+
+	fzero_cmd.name = "funshare";
+	fzero_cmd.cfunc = funshare_f;
+	fzero_cmd.argmin = 2;
+	fzero_cmd.argmax = 2;
+	fzero_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
+	fzero_cmd.args = _("off len");
+	fzero_cmd.oneline =
+	_("unshares shared blocks within the range");
+	add_command(&fzero_cmd);
 #endif	/* HAVE_FALLOCATE */
 }

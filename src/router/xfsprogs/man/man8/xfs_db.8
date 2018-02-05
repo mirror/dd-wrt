@@ -38,8 +38,7 @@ commands may be run interactively (the default) or as arguments
 on the command line. Multiple
 .B \-c
 arguments may be given. The commands are run in the sequence given,
-then the program exits. This is the mechanism used to implement
-.BR xfs_check (8).
+then the program exits.
 .TP
 .B \-f
 Specifies that the filesystem image to be processed is stored in a
@@ -56,15 +55,12 @@ an ordinary file with
 .B \-F
 Specifies that we want to continue even if the superblock magic is not
 correct.  For use in
-.BR xfs_check
-and
 .BR xfs_metadump .
 .TP
 .B \-i
 Allows execution on a mounted filesystem, provided it is mounted read-only.
-Useful for shell scripts such as
-.BR xfs_check (8),
-which must only operate on filesystems in a guarenteed consistent state
+Useful for shell scripts
+which must only operate on filesystems in a guaranteed consistent state
 (either unmounted or mounted read-only). These semantics are slightly
 different to that of the
 .B -r
@@ -91,19 +87,17 @@ or
 .I filename
 read-only. This option is required if the filesystem is mounted.
 It is only necessary to omit this flag if a command that changes data
-.RB ( write ", " blocktrash )
+.RB ( write ", " blocktrash ", " crc )
 is to be used.
 .TP
 .B \-x
 Specifies expert mode.
 This enables the
-.B write
-and
-.B blocktrash
-commands.
+.RB ( write ", " blocktrash ", " crc
+invalidate/revalidate) commands.
 .TP
 .B \-V
-Prints out the current version number and exits.
+Prints the version number and exits.
 .SH CONCEPTS
 .B xfs_db
 commands can be broken up into two classes. Most commands are for
@@ -204,9 +198,7 @@ command can be given, presumably with different arguments than the previous one.
 Get block usage and check filesystem consistency.
 The information is saved for use by a subsequent
 .BR blockuse ", " ncheck ", or " blocktrash
-command. See
-.BR xfs_check (8)
-for more information.
+command.
 .RS 1.0i
 .TP 0.4i
 .B \-b
@@ -238,13 +230,13 @@ enables verbose output. Messages will be printed for every block and
 inode processed.
 .RE
 .TP
-.BI "blocktrash [\-n " count "] [\-x " min "] [\-y " max "] [\-s " seed "] [\-0|1|2|3] [\-t " type "] ..."
+.BI "blocktrash [-z] [\-o " offset "] [\-n " count "] [\-x " min "] [\-y " max "] [\-s " seed "] [\-0|1|2|3] [\-t " type "] ..."
 Trash randomly selected filesystem metadata blocks.
 Trashing occurs to randomly selected bits in the chosen blocks.
 This command is available only in debugging versions of
 .BR xfs_db .
 It is useful for testing
-.BR xfs_repair "(8) and " xfs_check (8).
+.BR xfs_repair "(8).
 .RS 1.0i
 .TP 0.4i
 .BR \-0 " | " -1 " | " -2 " | " -3
@@ -264,6 +256,13 @@ changed bits are randomized.
 supplies the
 .I count
 of block-trashings to perform (default 1).
+.TP
+.B \-o
+supplies the bit
+.I offset
+at which to start trashing the block.  If the value is preceded by a '+', the
+trashing will start at a randomly chosen offset that is larger than the value
+supplied.  The default is to randomly choose an offset anywhere in the block.
 .TP
 .B \-s
 supplies a
@@ -288,6 +287,12 @@ size of bit range to be trashed. The default value is 1.
 sets the
 .I maximum
 size of bit range to be trashed. The default value is 1024.
+.TP
+.B \-z
+trashes the block at the top of the stack.  It is not necessary to
+run
+.BI blockget
+if this option is supplied.
 .RE
 .TP
 .BI "blockuse [\-n] [\-c " count ]
@@ -308,7 +313,7 @@ command must have also specified the
 option.
 .RE
 .TP
-.BI "bmap [\-a\] [\-d] [" block " [" len ]]
+.BI "bmap [\-a] [\-d] [" block " [" len ]]
 Show the block map for the current inode.
 The map display can be restricted to an area of the file with the
 .I block
@@ -415,6 +420,25 @@ conversions such as
 .I agb
 .BR fsblock .
 .TP
+.B crc [\-i|\-r|\-v]
+Invalidates, revalidates, or validates the CRC (checksum)
+field of the current structure, if it has one.
+This command is available only on CRC-enabled filesystems.
+With no argument, validation is performed.
+Each command will display the resulting CRC value and state.
+.RS 1.0i
+.TP 0.4i
+.B \-i
+Invalidate the structure's CRC value (incrementing it by one),
+and write it to disk.
+.TP
+.B \-r
+Recalculate the current structure's correct CRC value, and write it to disk.
+.TP
+.B \-v
+Validate and display the current value and state of the structure's CRC.
+.RE
+.TP
 .BI "daddr [" d ]
 Set current address to the daddr (512 byte block) given by
 .IR d .
@@ -437,8 +461,8 @@ If no value is given for
 .IR flagbits ,
 print the current debug option bits. These are for the use of the implementor.
 .TP
-.BI "dquot [" projectid_or_userid ]
-Set current address to a project or user quota block.
+.BI "dquot [" \-g | \-p | \-u ] " id"
+Set current address to a group, project or user quota block for the given ID. Defaults to user quota.
 .TP
 .BI "echo [" arg "] ..."
 Echo the arguments to the output.
@@ -561,6 +585,15 @@ command to convert to and from this form. Block numbers given for file blocks
 .B bmap
 command) are in this form.
 .TP
+.BI "fsmap [ " start " ] [ " end " ]
+Prints the mapping of disk blocks used by an XFS filesystem.  The map
+lists each extent used by files, allocation group metadata,
+journalling logs, and static filesystem metadata, as well as any
+regions that are unused.  All blocks, offsets, and lengths are specified
+in units of 512-byte blocks, no matter what the filesystem's block size is.
+.BI "The optional " start " and " end " arguments can be used to constrain
+the output to a particular range of disk blocks.
+.TP
 .BI hash " string
 Prints the hash value of
 .I string
@@ -666,11 +699,11 @@ If no argument is given, show the current data type.
 The possible data types are:
 .BR agf ", " agfl ", " agi ", " attr ", " bmapbta ", " bmapbtd ,
 .BR bnobt ", " cntbt ", " data ", " dir ", " dir2 ", " dqblk ,
-.BR inobt ", " inode ", " log ", " rtbitmap ", " rtsummary ,
-.BR sb ", " symlink " and " text .
+.BR inobt ", " inode ", " log ", " refcntbt ", " rmapbt ", " rtbitmap ,
+.BR rtsummary ", " sb ", " symlink " and " text .
 See the TYPES section below for more information on these data types.
 .TP
-.BI "uuid [" uuid " | " generate " | " rewrite ]
+.BI "uuid [" uuid " | " generate " | " rewrite " | " restore ]
 Set the filesystem universally unique identifier (UUID).
 The filesystem UUID can be used by
 .BR mount (8)
@@ -681,7 +714,12 @@ can be set directly to the desired UUID, or it can
 be automatically generated using the
 .B generate
 option. These options will both write the UUID into every copy of the
-superblock in the filesystem.
+superblock in the filesystem.  On a CRC-enabled filesystem, this will
+set an incompatible superblock flag, and the filesystem will not be
+mountable with older kernels.  This can be reverted with the
+.B restore
+option, which will copy the original UUID back into place and clear
+the incompatible flag as needed.
 .B rewrite
 copies the current UUID from the primary superblock
 to all secondary copies of the superblock.
@@ -717,7 +755,7 @@ and
 bits respectively, and their string equivalent reported
 (but no modifications are made).
 .TP
-.BI "write [" "field value" "] ..."
+.BI "write [\-c] [" "field value" "] ..."
 Write a value to disk.
 Specific fields can be set in structures (struct mode),
 or a block can be set to data values (data mode),
@@ -735,6 +773,12 @@ contents of the block can be shifted or rotated left or right, or filled
 with a sequence, a constant value, or a random value. In this mode
 .B write
 with no arguments gives more information on the allowed commands.
+.RS 1.0i
+.TP 0.4i
+.B \-c
+Skip write verifiers and CRC recalculation; allows invalid data to be written
+to disk.
+.RE
 .SH TYPES
 This section gives the fields in each structure type and their meanings.
 Note that some types of block cover multiple actual structures,
@@ -960,12 +1004,12 @@ and
 (1 if the extent is unwritten).
 .TP
 .B keys
-[nonleaf blocks only] array of key records. These are the first key
+[non-leaf blocks only] array of key records. These are the first key
 value of each block in the level below this one. Each record contains
 .BR startoff .
 .TP
 .B ptrs
-[nonleaf blocks only] array of child block pointers.
+[non-leaf blocks only] array of child block pointers.
 Each pointer is a filesystem block number to the next level in the Btree.
 .PD
 .RE
@@ -975,7 +1019,7 @@ There is one set of filesystem blocks forming the by-block-number
 allocation Btree for each allocation group. The root block of this
 Btree is designated by the
 .B bnoroot
-field in the coresponding AGF block.
+field in the corresponding AGF block.
 The blocks are linked to sibling left and right blocks at each level,
 as well as by pointers from parent to child blocks.
 Each block has the following fields:
@@ -1004,14 +1048,14 @@ and
 .BR blockcount .
 .TP
 .B keys
-[nonleaf blocks only] array of key records. These are the first value
+[non-leaf blocks only] array of key records. These are the first value
 of each block in the level below this one. Each record contains
 .B startblock
 and
 .BR blockcount .
 .TP
 .B ptrs
-[nonleaf blocks only] array of child block pointers. Each pointer is a
+[non-leaf blocks only] array of child block pointers. Each pointer is a
 block number within the allocation group to the next level in the Btree.
 .PD
 .RE
@@ -1021,7 +1065,7 @@ There is one set of filesystem blocks forming the by-block-count
 allocation Btree for each allocation group. The root block of this
 Btree is designated by the
 .B cntroot
-field in the coresponding AGF block. The blocks are linked to sibling
+field in the corresponding AGF block. The blocks are linked to sibling
 left and right blocks at each level, as well as by pointers from parent
 to child blocks. Each block has the following fields:
 .RS 1.4i
@@ -1049,14 +1093,14 @@ and
 .BR blockcount .
 .TP
 .B keys
-[nonleaf blocks only] array of key records. These are the first value
+[non-leaf blocks only] array of key records. These are the first value
 of each block in the level below this one. Each record contains
 .B blockcount
 and
 .BR startblock .
 .TP
 .B ptrs
-[nonleaf blocks only] array of child block pointers. Each pointer is a
+[non-leaf blocks only] array of child block pointers. Each pointer is a
 block number within the allocation group to the next level in the Btree.
 .PD
 .RE
@@ -1368,7 +1412,7 @@ number of warnings issued about realtime block limit violations.
 There is one set of filesystem blocks forming the inode allocation Btree for
 each allocation group. The root block of this Btree is designated by the
 .B root
-field in the coresponding AGI block.
+field in the corresponding AGI block.
 The blocks are linked to sibling left and right blocks at each level,
 as well as by pointers from parent to child blocks.
 Each block has the following fields:
@@ -1400,12 +1444,12 @@ count of free inodes in this chunk, and
 bitmap, LSB corresponds to inode 0.
 .TP
 .B keys
-[nonleaf blocks only] array of key records. These are the first value of each
+[non-leaf blocks only] array of key records. These are the first value of each
 block in the level below this one. Each record contains
 .BR startino .
 .TP
 .B ptrs
-[nonleaf blocks only] array of child block pointers. Each pointer is a
+[non-leaf blocks only] array of child block pointers. Each pointer is a
 block number within the allocation group to the next level in the Btree.
 .PD
 .RE
@@ -1640,6 +1684,103 @@ use
 .BR xfs_logprint (8)
 instead.
 .TP
+.B refcntbt
+There is one set of filesystem blocks forming the reference count Btree for
+each allocation group. The root block of this Btree is designated by the
+.B refcntroot
+field in the corresponding AGF block.  The blocks are linked to sibling left
+and right blocks at each level, as well as by pointers from parent to child
+blocks.  Each block has the following fields:
+.RS 1.4i
+.PD 0
+.TP 1.2i
+.B magic
+REFC block magic number, 0x52334643 ('R3FC').
+.TP
+.B level
+level number of this block, 0 is a leaf.
+.TP
+.B numrecs
+number of data entries in the block.
+.TP
+.B leftsib
+left (logically lower) sibling block, 0 if none.
+.TP
+.B rightsib
+right (logically higher) sibling block, 0 if none.
+.TP
+.B recs
+[leaf blocks only] array of reference count records. Each record contains
+.BR startblock ,
+.BR blockcount ,
+and
+.BR refcount .
+.TP
+.B keys
+[non-leaf blocks only] array of key records. These are the first value
+of each block in the level below this one. Each record contains
+.BR startblock .
+.TP
+.B ptrs
+[non-leaf blocks only] array of child block pointers. Each pointer is a
+block number within the allocation group to the next level in the Btree.
+.PD
+.RE
+.TP
+.B rmapbt
+There is one set of filesystem blocks forming the reverse mapping Btree for
+each allocation group. The root block of this Btree is designated by the
+.B rmaproot
+field in the corresponding AGF block.  The blocks are linked to sibling left
+and right blocks at each level, as well as by pointers from parent to child
+blocks.  Each block has the following fields:
+.RS 1.4i
+.PD 0
+.TP 1.2i
+.B magic
+RMAP block magic number, 0x524d4233 ('RMB3').
+.TP
+.B level
+level number of this block, 0 is a leaf.
+.TP
+.B numrecs
+number of data entries in the block.
+.TP
+.B leftsib
+left (logically lower) sibling block, 0 if none.
+.TP
+.B rightsib
+right (logically higher) sibling block, 0 if none.
+.TP
+.B recs
+[leaf blocks only] array of reference count records. Each record contains
+.BR startblock ,
+.BR blockcount ,
+.BR owner ,
+.BR offset ,
+.BR attr_fork ,
+.BR bmbt_block ,
+and
+.BR unwritten .
+.TP
+.B keys
+[non-leaf blocks only] array of double-key records. The first ("low") key
+contains the first value of each block in the level below this one. The second
+("high") key contains the largest key that can be used to identify any record
+in the subtree. Each record contains
+.BR startblock ,
+.BR owner ,
+.BR offset ,
+.BR attr_fork ,
+and
+.BR bmbt_block .
+.TP
+.B ptrs
+[non-leaf blocks only] array of child block pointers. Each pointer is a
+block number within the allocation group to the next level in the Btree.
+.PD
+.RE
+.TP
 .B rtbitmap
 If the filesystem has a realtime subvolume, then the
 .B rbmino
@@ -1856,12 +1997,60 @@ and printable ASCII chars.
 Many messages can come from the
 .B check
 .RB ( blockget )
-command; these are documented in
-.BR xfs_check (8).
+command.
+If the filesystem is completely corrupt, a core dump might
+be produced instead of the message
+.RS
+.I device
+.B is not a valid filesystem
+.RE
+.PP
+If the filesystem is very large (has many files) then
+.B check
+might run out of memory. In this case the message
+.RS
+.B out of memory
+.RE
+is printed.
+.PP
+The following is a description of the most likely problems and the associated
+messages.
+Most of the diagnostics produced are only meaningful with an understanding
+of the structure of the filesystem.
+.TP
+.BI "agf_freeblks " n ", counted " m " in ag " a
+The freeblocks count in the allocation group header for allocation group
+.I a
+doesn't match the number of blocks counted free.
+.TP
+.BI "agf_longest " n ", counted " m " in ag " a
+The longest free extent in the allocation group header for allocation group
+.I a
+doesn't match the longest free extent found in the allocation group.
+.TP
+.BI "agi_count " n ", counted " m " in ag " a
+The allocated inode count in the allocation group header for allocation group
+.I a
+doesn't match the number of inodes counted in the allocation group.
+.TP
+.BI "agi_freecount " n ", counted " m " in ag " a
+The free inode count in the allocation group header for allocation group
+.I a
+doesn't match the number of inodes counted free in the allocation group.
+.TP
+.BI "block " a/b " expected inum 0 got " i
+The block number is specified as a pair
+(allocation group number, block in the allocation group).
+The block is used multiple times (shared), between multiple inodes.
+This message usually follows a message of the next type.
+.TP
+.BI "block " a/b " expected type unknown got " y
+The block is used multiple times (shared).
+.TP
+.BI "block " a/b " type unknown not expected
 .SH SEE ALSO
 .BR mkfs.xfs (8),
 .BR xfs_admin (8),
-.BR xfs_check (8),
 .BR xfs_copy (8),
 .BR xfs_logprint (8),
 .BR xfs_metadump (8),

@@ -16,9 +16,10 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/xqm.h>
-#include <xfs/path.h>
-#include <xfs/project.h>
+#include "xqm.h"
+#include "path.h"
+#include "project.h"
+#include <stdbool.h>
 
 /*
  * Different forms of XFS quota
@@ -42,6 +43,8 @@ enum {
 	XFS_GETQSTAT,	/* get quota subsystem status */
 	XFS_QUOTARM,	/* free disk space used by dquots */
 	XFS_QSYNC,	/* flush delayed allocate space */
+	XFS_GETQSTATV,	/* newer version of quota stats */
+	XFS_GETNEXTQUOTA, /* get disk limits and usage */
 };
 
 /*
@@ -71,6 +74,7 @@ enum {
 	DEFAULTS_FLAG =		0x0100,	/* use value as a default */
 	ABSOLUTE_FLAG =		0x0200, /* absolute time, not related to now */
 	NO_LOOKUP_FLAG =	0x0400, /* skip name lookups, just report ID */
+	GETNEXTQUOTA_FLAG =	0x0800, /* use getnextquota quotactl */
 };
 
 /*
@@ -80,4 +84,4 @@ enum {
 extern char *uid_to_name(__uint32_t __uid);
 extern char *gid_to_name(__uint32_t __gid);
 extern char *prid_to_name(__uint32_t __prid);
-
+extern bool isdigits_only(const char *);

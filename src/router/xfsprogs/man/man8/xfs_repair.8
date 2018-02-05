@@ -130,12 +130,6 @@ The
 supported are:
 .RS 1.0i
 .TP
-.BI ihash= ihashsize
-overrides the default inode cache hash size. The total number of
-inode cache entries are limited to 8 times this amount. The default
-.I ihashsize
-is 1024 (for a total of 8192 entries).
-.TP
 .BI bhash= bhashsize
 overrides the default buffer cache hash size. The total number of
 buffer cache entries are limited to 8 times this amount. The default
@@ -150,7 +144,7 @@ reduce repair times on concat based filesystems.
 .BI force_geometry
 Check the filesystem even if geometry information could not be validated.
 Geometry information can not be validated if only a single allocation
-group and exist and thus we do not have a backup superblock available, or
+group exists and thus we do not have a backup superblock available, or
 if there are two allocation groups and the two superblocks do not
 agree on the filesystem geometry.  Only use this option if you validated
 the geometry yourself and know what you are doing.  If In doubt run
@@ -158,22 +152,22 @@ in no modify mode first.
 .RE
 .TP
 .B \-t " interval"
-Modify reporting interval. During long runs
+Modify reporting interval, specified in seconds. During long runs
 .B xfs_repair
 outputs its progress every 15 minutes. Reporting is only activated when
 ag_stride is enabled.
 .TP
 .B \-v
-Verbose output.
+Verbose output.  May be specified multiple times to increase verbosity.
 .TP
 .B \-d
 Repair dangerously. Allow
 .B xfs_repair
 to repair an XFS filesystem mounted read only. This is typically done
-on a root fileystem from single user mode, immediately followed by a reboot.
+on a root filesystem from single user mode, immediately followed by a reboot.
 .TP
 .B \-V
-Prints out the current version number and exits.
+Prints the version number and exits.
 .SS Checks Performed
 Inconsistencies corrected include the following:
 .IP 1.
@@ -239,7 +233,7 @@ The name assigned is the inode number.
 aborts on most disk I/O errors. Therefore, if you are trying
 to repair a filesystem that was damaged due to a disk drive failure,
 steps should be taken to ensure that all blocks in the filesystem are
-readable and writeable before attempting to use
+readable and writable before attempting to use
 .B xfs_repair
 to repair the filesystem. A possible method is using
 .BR dd (8)
@@ -554,6 +548,5 @@ fixed and/or improved.
 .BR mkfs.xfs (8),
 .BR umount (8),
 .BR xfs_admin (8),
-.BR xfs_check (8),
 .BR xfs_metadump (8),
 .BR xfs (5).

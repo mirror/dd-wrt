@@ -16,8 +16,9 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/xfs.h>
-#include <xfs/command.h>
+#include "platform_defs.h"
+#include "command.h"
+#include "../quota/init.h"
 
 static cmdinfo_t help_cmd;
 static void help_onecmd(const char *cmd, const cmdinfo_t *ct);
@@ -88,7 +89,7 @@ help_init(void)
 	help_cmd.cfunc = help_f;
 	help_cmd.argmin = 0;
 	help_cmd.argmax = 1;
-	help_cmd.flags = CMD_FLAG_GLOBAL;
+	help_cmd.flags = CMD_FLAG_GLOBAL | CMD_ALL_FSTYPES;
 	help_cmd.args = _("[command]");
 	help_cmd.oneline = _("help for one or all commands");
 

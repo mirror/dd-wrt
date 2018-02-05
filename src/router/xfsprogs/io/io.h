@@ -16,6 +16,8 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "xfs.h"
+
 /*
  * Read/write patterns (default is always "forward")
  */
@@ -35,6 +37,7 @@
 #define IO_TRUNC	(1<<6)
 #define IO_FOREIGN	(1<<7)
 #define IO_NONBLOCK	(1<<8)
+#define IO_TMPFILE	(1<<9)
 
 /*
  * Regular file I/O control
@@ -82,6 +85,8 @@ extern unsigned int	recurse_dir;
 
 extern void		*buffer;
 extern size_t		buffersize;
+extern int		vectors;
+extern struct iovec	*iov;
 extern int		alloc_buffer(size_t, int, unsigned int);
 extern int		read_buffer(int, off64_t, long long, long long *,
 					int, int);
@@ -90,6 +95,7 @@ extern void		dump_buffer(off64_t, ssize_t);
 extern void		attr_init(void);
 extern void		bmap_init(void);
 extern void		file_init(void);
+extern void		flink_init(void);
 extern void		freeze_init(void);
 extern void		fsync_init(void);
 extern void		getrusage_init(void);
@@ -103,7 +109,9 @@ extern void		pread_init(void);
 extern void		prealloc_init(void);
 extern void		pwrite_init(void);
 extern void		quit_init(void);
+extern void		seek_init(void);
 extern void		shutdown_init(void);
+extern void		sync_init(void);
 extern void		truncate_init(void);
 
 #ifdef HAVE_FADVISE
@@ -141,3 +149,25 @@ extern void		fiemap_init(void);
 #else
 #define fiemap_init()	do { } while (0)
 #endif
+
+#ifdef HAVE_COPY_FILE_RANGE
+extern void		copy_range_init(void);
+#else
+#define copy_range_init()	do { } while (0)
+#endif
+
+#ifdef HAVE_SYNC_FILE_RANGE
+extern void		sync_range_init(void);
+#else
+#define sync_range_init()	do { } while (0)
+#endif
+
+#ifdef HAVE_READDIR
+extern void		readdir_init(void);
+#else
+#define readdir_init()		do { } while (0)
+#endif
+
+extern void		reflink_init(void);
+
+extern void		cowextsize_init(void);

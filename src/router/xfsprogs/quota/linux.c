@@ -49,10 +49,14 @@ xcommand_to_qcommand(
 		return Q_XQUOTAOFF;
 	case XFS_GETQUOTA:
 		return Q_XGETQUOTA;
+	case XFS_GETNEXTQUOTA:
+		return Q_XGETNEXTQUOTA;
 	case XFS_SETQLIM:
 		return Q_XSETQLIM;
 	case XFS_GETQSTAT:
 		return Q_XGETQSTAT;
+	case XFS_GETQSTATV:
+		return Q_XGETQSTATV;
 	case XFS_QUOTARM:
 		return Q_XQUOTARM;
 	case XFS_QSYNC:

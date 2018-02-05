@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include <ctype.h>
 #include <time.h>
 #include "bit.h"
@@ -38,7 +38,7 @@ static int	write_f(int argc, char **argv);
 static void     write_help(void);
 
 static const cmdinfo_t	write_cmd =
-	{ "write", NULL, write_f, 0, -1, 0, N_("[field or value]..."),
+	{ "write", NULL, write_f, 0, -1, 0, N_("[-c] [field or value]..."),
 	  N_("write value to disk"), write_help };
 
 void
@@ -79,6 +79,10 @@ write_help(void)
 "  String mode: 'write \"This_is_a_filename\" - write null terminated string.\n"
 "\n"
 " In data mode type 'write' by itself for a list of specific commands.\n\n"
+" Specifying the -c option will allow writes of invalid (corrupt) data with\n"
+" an invalid CRC. Specifying the -d option will allow writes of invalid data,\n"
+" but still recalculate the CRC so we are forced to check and detect the\n"
+" invalid data appropriately.\n\n"
 ));
 
 }
@@ -90,6 +94,11 @@ write_f(
 {
 	pfunc_t	pf;
 	extern char *progname;
+	int c;
+	bool corrupt = false;	/* Allow write of bad data w/ invalid CRC */
+	bool invalid_data = false; /* Allow write of bad data w/ valid CRC */
+	struct xfs_buf_ops local_ops;
+	const struct xfs_buf_ops *stashed_ops = NULL;
 
 	if (x.isreadonly & LIBXFS_ISREADONLY) {
 		dbprintf(_("%s started in read only mode, writing disabled\n"),
@@ -109,11 +118,60 @@ write_f(
 		return 0;
 	}
 
-	/* move past the "write" command */
-	argc--;
-	argv++;
+	while ((c = getopt(argc, argv, "cd")) != EOF) {
+		switch (c) {
+		case 'c':
+			corrupt = true;
+			break;
+		case 'd':
+			invalid_data = true;
+			break;
+		default:
+			dbprintf(_("bad option for write command\n"));
+			return 0;
+		}
+	}
+
+	if (corrupt && invalid_data) {
+		dbprintf(_("Cannot specify both -c and -d options\n"));
+		return 0;
+	}
+
+	if (invalid_data && iocur_top->typ->crc_off == TYP_F_NO_CRC_OFF) {
+		dbprintf(_("Cannot recalculate CRCs on this type of object\n"));
+		return 0;
+	}
+
+	argc -= optind;
+	argv += optind;
+
+	/*
+	 * If the buffer has no verifier or we are using standard verifier
+	 * paths, then just write it out and return
+	 */
+	if (!iocur_top->bp->b_ops ||
+	    !(corrupt || invalid_data)) {
+		(*pf)(DB_WRITE, cur_typ->fields, argc, argv);
+		return 0;
+	}
+
+
+	/* Temporarily remove write verifier to write bad data */
+	stashed_ops = iocur_top->bp->b_ops;
+	local_ops.verify_read = stashed_ops->verify_read;
+	iocur_top->bp->b_ops = &local_ops;
+
+	if (corrupt) {
+		local_ops.verify_write = xfs_dummy_verify;
+		dbprintf(_("Allowing write of corrupted data and bad CRC\n"));
+	} else { /* invalid data */
+		local_ops.verify_write = xfs_verify_recalc_crc;
+		dbprintf(_("Allowing write of corrupted data with good CRC\n"));
+	}
 
 	(*pf)(DB_WRITE, cur_typ->fields, argc, argv);
+
+	iocur_top->bp->b_ops = stashed_ops;
 
 	return 0;
 }
@@ -233,6 +291,7 @@ bwrite_lrot(
 	memcpy(hold_region, base, shift);
 	memcpy(base, base+shift, len-shift);
 	memcpy(base+(len-shift), hold_region, shift);
+	free(hold_region);
 }
 
 /* ARGSUSED */
@@ -265,6 +324,7 @@ bwrite_rrot(
 	memcpy(hold_region, base+(len-shift), shift);
 	memmove(base+shift, base, len-shift);
 	memcpy(base, hold_region, shift);
+	free(hold_region);
 }
 
 /* ARGSUSED */
@@ -439,55 +499,78 @@ convert_oct(
 
 #define NYBBLE(x) (isdigit(x)?(x-'0'):(tolower(x)-'a'+0xa))
 
+/*
+ * convert_arg allows input in the following forms:
+ *
+ *	- A string ("ABTB") whose ASCII value is placed in an array in the order
+ *	matching the input.
+ *
+ *	- An even number of hex numbers. If the length is greater than 64 bits,
+ *	then the output is an array of bytes whose top nibble is the first hex
+ *	digit in the input, the lower nibble is the second hex digit in the
+ *	input. UUID entries are entered in this manner.
+ *
+ *	- A decimal or hexadecimal integer to be used with setbitval().
+ *
+ * Numbers that are passed to setbitval() need to be in big endian format and
+ * are adjusted in the buffer so that the first input bit is to be be written to
+ * the first bit in the output.
+ */
 static char *
 convert_arg(
-	char *arg,
-	int  bit_length)
+	char		*arg,
+	int		bit_length)
 {
-	int i;
-	static char *buf = NULL;
-	char *rbuf;
-	long long *value;
-	int alloc_size;
-	char *ostr;
-	int octval, ret;
+	int		i;
+	int		alloc_size;
+	int		octval;
+	int		offset;
+	int		ret;
+	static char	*buf = NULL;
+	char		*endp;
+	char		*rbuf;
+	char		*ostr;
+	__u64		*value;
+	__u64		val = 0;
 
 	if (bit_length <= 64)
 		alloc_size = 8;
 	else
-		alloc_size = (bit_length+7)/8;
+		alloc_size = (bit_length + 7) / 8;
 
 	buf = xrealloc(buf, alloc_size);
 	memset(buf, 0, alloc_size);
-	value = (long long *)buf;
+	value = (__u64 *)buf;
 	rbuf = buf;
 
 	if (*arg == '\"') {
-		/* handle strings */
+		/* input a string and output ASCII array of characters */
 
 		/* zap closing quote if there is one */
-		if ((ostr = strrchr(arg+1, '\"')) != NULL)
+		ostr = strrchr(arg + 1, '\"');
+		if (ostr)
 			*ostr = '\0';
 
-		ostr = arg+1;
+		ostr = arg + 1;
 		for (i = 0; i < alloc_size; i++) {
 			if (!*ostr)
 				break;
 
-			/* do octal */
+			/* do octal conversion */
 			if (*ostr == '\\') {
-				if (*(ostr+1) >= '0' || *(ostr+1) <= '7') {
-					ret = convert_oct(ostr+1, &octval);
+				if (*(ostr + 1) >= '0' || *(ostr + 1) <= '7') {
+					ret = convert_oct(ostr + 1, &octval);
 					*rbuf++ = octval;
-					ostr += ret+1;
+					ostr += ret + 1;
 					continue;
 				}
 			}
 			*rbuf++ = *ostr++;
 		}
-
 		return buf;
-	} else if (arg[0] == '#' || ((arg[0] != '-') && strchr(arg,'-'))) {
+	}
+
+	if (arg[0] == '#' || ((arg[0] != '-') && strchr(arg,'-'))) {
 		/*
 		 * handle hex blocks ie
 		 *    #00112233445566778899aabbccddeeff
@@ -496,48 +579,79 @@ convert_arg(
 		 *
 		 * (but if it starts with "-" assume it's just an integer)
 		 */
-		int bytes=bit_length/8;
+		int bytes = bit_length / NBBY;
+
+		/* is this an array of hec numbers? */
+		if (bit_length % NBBY)
+			return NULL;
 
 		/* skip leading hash */
-		if (*arg=='#') arg++;
+		if (*arg == '#')
+			arg++;
 
 		while (*arg && bytes--) {
-		    /* skip hypens */
-		    while (*arg=='-') arg++;
+			/* skip hypens */
+			while (*arg == '-')
+				arg++;
 
-		    /* get first nybble */
-		    if (!isxdigit((int)*arg)) return NULL;
-		    *rbuf=NYBBLE((int)*arg)<<4;
-		    arg++;
+			/* get first nybble */
+			if (!isxdigit((int)*arg))
+				return NULL;
+			*rbuf = NYBBLE((int)*arg) << 4;
+			arg++;
 
-		    /* skip more hyphens */
-		    while (*arg=='-') arg++;
+			/* skip more hyphens */
+			while (*arg == '-')
+				arg++;
 
-		    /* get second nybble */
-		    if (!isxdigit((int)*arg)) return NULL;
-		    *rbuf++|=NYBBLE((int)*arg);
-		    arg++;
+			/* get second nybble */
+			if (!isxdigit((int)*arg))
+				return NULL;
+			*rbuf++ |= NYBBLE((int)*arg);
+			arg++;
 		}
-		if (bytes<0&&*arg) return NULL;
+		if (bytes < 0 && *arg)
+			return NULL;
+
 		return buf;
-	} else {
-		/*
-		 * handle integers
-		 */
-		*value = strtoll(arg, NULL, 0);
-
-#if __BYTE_ORDER == BIG_ENDIAN
-		/* hackery for big endian */
-		if (bit_length <= 8) {
-			rbuf += 7;
-		} else if (bit_length <= 16) {
-			rbuf += 6;
-		} else if (bit_length <= 32) {
-			rbuf += 4;
-		}
-#endif
-		return rbuf;
 	}
+
+	/* handle decimal / hexadecimal integers */
+	val = strtoll(arg, &endp, 0);
+	/* return if not a clean number */
+	if (*endp != '\0')
+		return NULL;
+
+	/* Does the value fit into the range of the destination bitfield? */
+	if (bit_length < 64 && (val >> bit_length) > 0)
+		return NULL;
+	/*
+	 * If the length of the field is not a multiple of a byte, push
+	 * the bits up in the field, so the most signicant field bit is
+	 * the most significant bit in the byte:
+	 *
+	 * before:
+	 * val  |----|----|----|----|----|--MM|mmmm|llll|
+	 * after
+	 * val  |----|----|----|----|----|MMmm|mmll|ll00|
+	 */
+	offset = bit_length % NBBY;
+	if (offset)
+		val <<= (NBBY - offset);
+
+	/*
+	 * convert to big endian and copy into the array
+	 * rbuf |----|----|----|----|----|MMmm|mmll|ll00|
+	 */
+	*value = cpu_to_be64(val);
+
+	/*
+	 * Align the array to point to the field in the array.
+	 *  rbuf  = |MMmm|mmll|ll00|
+	 */
+	offset = sizeof(__be64) - 1 - ((bit_length - 1) / sizeof(__be64));
+	rbuf += offset;
+	return rbuf;
 }
 
 
@@ -550,9 +664,9 @@ write_struct(
 {
 	const ftattr_t	*fa;
 	flist_t		*fl;
-	flist_t         *sfl;
-	int             bit_length;
-	char            *buf;
+	flist_t		*sfl;
+	int		bit_length;
+	char		*buf;
 	int		parentoffset;
 
 	if (argc != 2) {
@@ -587,8 +701,24 @@ write_struct(
 		sfl = sfl->child;
 	}
 
+	/*
+	 * For structures, fsize * fcount tells us the size of the region we are
+	 * modifying, which is usually a single structure member and is pointed
+	 * to by the last child in the list.
+	 *
+	 * However, if the base structure is an array and we have a direct index
+	 * into the array (e.g. write bno[5]) then we are returned a single
+	 * flist object with the offset pointing directly at the location we
+	 * need to modify. The length of the object we are modifying is then
+	 * determined by the size of the individual array entry (fsize) and the
+	 * indexes defined in the object, not the overall size of the array
+	 * (which is what fcount returns).
+	 */
 	bit_length = fsize(sfl->fld, iocur_top->data, parentoffset, 0);
-	bit_length *= fcount(sfl->fld, iocur_top->data, parentoffset);
+	if (sfl->fld->flags & FLD_ARRAY)
+		bit_length *= sfl->high - sfl->low + 1;
+	else
+		bit_length *= fcount(sfl->fld, iocur_top->data, parentoffset);
 
 	/* convert this to a generic conversion routine */
 	/* should be able to handle str, num, or even labels */
@@ -596,6 +726,7 @@ write_struct(
 	buf = convert_arg(argv[1], bit_length);
 	if (!buf) {
 		dbprintf(_("unable to convert value '%s'.\n"), argv[1]);
+		flist_free(fl);
 		return;
 	}
 

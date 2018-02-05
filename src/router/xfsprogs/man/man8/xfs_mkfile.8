@@ -7,10 +7,14 @@ xfs_mkfile \- create an XFS file
 .B \-v
 ] [
 .B \-n
+] [
+.B \-p
 ]
 .I size\c
 .RB [ k | b | m | g ]
 .IR filename " ..."
+.br
+.B xfs_mkfile \-V
 .SH DESCRIPTION
 .B xfs_mkfile
 creates one or more files. The file is padded with zeroes by default.
@@ -30,3 +34,10 @@ Verbose. Report the names and sizes of created files.
 .B \-n
 No bytes. Create a holey file - that is, do not write out any data, just
 seek to end of file and write a block.
+.TP
+.B \-p
+Preallocate.  The file is preallocated, then overwritten with zeroes,
+then truncated to the desired size.
+.TP
+.B \-V
+Prints the version number and exits.

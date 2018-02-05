@@ -16,9 +16,8 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/xfs.h>
-#include <xfs/command.h>
-#include <xfs/input.h>
+#include "command.h"
+#include "input.h"
 #include <sys/mman.h>
 #include "init.h"
 #include "io.h"
@@ -36,7 +35,7 @@ print_fileio(
 	int		index,
 	int		braces)
 {
-	printf(_("%c%03d%c %-14s (%s,%s,%s,%s%s%s%s)\n"),
+	printf(_("%c%03d%c %-14s (%s,%s,%s,%s%s%s%s%s)\n"),
 		braces? '[' : ' ', index, braces? ']' : ' ', file->name,
 		file->flags & IO_FOREIGN ? _("foreign") : _("xfs"),
 		file->flags & IO_OSYNC ? _("sync") : _("non-sync"),
@@ -44,7 +43,8 @@ print_fileio(
 		file->flags & IO_READONLY ? _("read-only") : _("read-write"),
 		file->flags & IO_REALTIME ? _(",real-time") : "",
 		file->flags & IO_APPEND ? _(",append-only") : "",
-		file->flags & IO_NONBLOCK ? _(",non-block") : "");
+		file->flags & IO_NONBLOCK ? _(",non-block") : "",
+		file->flags & IO_TMPFILE ? _(",tmpfile") : "");
 }
 
 int

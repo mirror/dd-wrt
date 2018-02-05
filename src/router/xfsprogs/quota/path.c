@@ -16,8 +16,8 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/command.h>
-#include <xfs/input.h>
+#include "command.h"
+#include "input.h"
 #include "init.h"
 #include "quota.h"
 
@@ -36,12 +36,14 @@ printpath(
 	int		c;
 
 	if (index == 0) {
-		printf(_("%sFilesystem          Pathname\n"),
-			number ? _("      ") : "");
+		printf(_("%s%sFilesystem          Pathname\n"),
+		       number ? _("      ") : "",
+		       foreign_allowed ? _("    ") : "");
 	}
-	if (number) {
+	if (number)
 		printf(_("%c%03d%c "), braces? '[':' ', index, braces? ']':' ');
-	}
+	if (foreign_allowed)
+		printf("%s", (path->fs_flags & FS_FOREIGN) ? "(F) " : "    ");
 	printf(_("%-19s %s"), path->fs_dir, path->fs_name);
 	if (path->fs_flags & FS_PROJECT_PATH) {
 		prj = getprprid(path->fs_prid);
@@ -50,21 +52,21 @@ printpath(
 			printf(_(", %s"), prj->pr_name);
 		printf(")");
 	} else if (xfsquotactl(XFS_GETQSTAT, path->fs_name, 0, 0,
-				(void *)&qstat) == 0 && qstat.qs_flags) {
+			       (void *)&qstat) == 0 && qstat.qs_flags) {
 		c = 0;
 		printf(" (");
 		if (qstat.qs_flags & XFS_QUOTA_UDQ_ENFD)
-			c = printf("%suquota", c ? ", " : "");
+			c = printf("uquota");
 		else if (qstat.qs_flags & XFS_QUOTA_UDQ_ACCT)
-			c = printf("%suqnoenforce", c ? ", " : "");
+			c = printf("uqnoenforce");
 		if (qstat.qs_flags & XFS_QUOTA_GDQ_ENFD)
 			c = printf("%sgquota", c ? ", " : "");
 		else if (qstat.qs_flags & XFS_QUOTA_GDQ_ACCT)
 			c = printf("%sgqnoenforce", c ? ", " : "");
 		if (qstat.qs_flags & XFS_QUOTA_PDQ_ENFD)
-			c = printf("%spquota", c ? ", " : "");
+			printf("%spquota", c ? ", " : "");
 		else if (qstat.qs_flags & XFS_QUOTA_PDQ_ACCT)
-			c = printf("%spqnoenforce", c ? ", " : "");
+			printf("%spqnoenforce", c ? ", " : "");
 		printf(")");
 	}
 	printf("\n");
@@ -74,9 +76,15 @@ static int
 pathlist_f(void)
 {
 	int		i;
+	struct fs_path	*path;
 
-	for (i = 0; i < fs_count; i++)
-		printpath(&fs_table[i], i, 1, &fs_table[i] == fs_path);
+	for (i = 0; i < fs_count; i++) {
+		path = &fs_table[i];
+		/* Table is ordered xfs first, then foreign */
+		if (path->fs_flags & FS_FOREIGN && !foreign_allowed)
+			break;
+		printpath(path, i, 1, path == fs_path);
+	}
 	return 0;
 }
 
@@ -86,9 +94,14 @@ print_f(
 	char		**argv)
 {
 	int		i;
+	struct fs_path	*path;
 
-	for (i = 0; i < fs_count; i++)
-		printpath(&fs_table[i], i, 0, 0);
+	for (i = 0; i < fs_count; i++) {
+		path = &fs_table[i];
+		if (path->fs_flags & FS_FOREIGN && !foreign_allowed)
+			break;
+		printpath(path, i, 0, 0);
+	}
 	return 0;
 }
 
@@ -98,6 +111,7 @@ path_f(
 	char		**argv)
 {
 	int	i;
+	int	max = foreign_allowed ? fs_count : xfs_fs_count;
 
 	if (fs_count == 0) {
 		printf(_("No paths are available\n"));
@@ -108,9 +122,9 @@ path_f(
 		return pathlist_f();
 
 	i = atoi(argv[1]);
-	if (i < 0 || i >= fs_count) {
+	if (i < 0 || i >= max) {
 		printf(_("value %d is out of range (0-%d)\n"),
-			i, fs_count-1);
+			i, max - 1);
 	} else {
 		fs_path = &fs_table[i];
 		pathlist_f();
@@ -127,7 +141,7 @@ path_init(void)
 	path_cmd.cfunc = path_f;
 	path_cmd.argmin = 0;
 	path_cmd.argmax = 1;
-	path_cmd.flags = CMD_FLAG_GLOBAL;
+	path_cmd.flags = CMD_FLAG_GLOBAL | CMD_FLAG_FOREIGN_OK;
 	path_cmd.oneline = _("set current path, or show the list of paths");
 
 	print_cmd.name = "print";
@@ -135,7 +149,7 @@ path_init(void)
 	print_cmd.cfunc = print_f;
 	print_cmd.argmin = 0;
 	print_cmd.argmax = 0;
-	print_cmd.flags = CMD_FLAG_GLOBAL;
+	print_cmd.flags = CMD_FLAG_GLOBAL | CMD_FLAG_FOREIGN_OK;
 	print_cmd.oneline = _("list known mount points and projects");
 
 	if (expert)

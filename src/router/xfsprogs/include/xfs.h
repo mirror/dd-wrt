@@ -33,7 +33,40 @@
 #ifndef __XFS_H__
 #define __XFS_H__
 
-#include <xfs/platform_defs.h>
+#if defined(__linux__)
+#include <xfs/linux.h>
+#elif defined(__FreeBSD__)
+#include <xfs/freebsd.h>
+#elif defined(__FreeBSD_kernel__)
+#include <xfs/gnukfreebsd.h>
+#elif defined(__APPLE__)
+#include <xfs/darwin.h>
+#elif defined(__sgi__) || defined(__sgi)
+#include <xfs/irix.h>
+#else
+# error unknown platform... have fun porting!
+#endif
+
+/*
+ * make sure that any user of the xfs headers has a 64bit off_t type
+ */
+extern int xfs_assert_largefile[sizeof(off_t)-8];
+
+/*
+ * sparse kernel source annotations
+ */
+#ifndef __user
+#define __user
+#endif
+
+/*
+ * kernel struct packing shortcut
+ */
+#ifndef __packed
+#define __packed __attribute__((packed))
+#endif
+
+#include <xfs/xfs_types.h>
 #include <xfs/xfs_fs.h>
 
 #endif	/* __XFS_H__ */

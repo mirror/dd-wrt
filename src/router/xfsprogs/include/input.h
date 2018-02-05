@@ -21,7 +21,8 @@
 #include <pwd.h>
 #include <grp.h>
 #include <sys/types.h>
-#include <xfs/project.h>
+#include "project.h"
+#include <stdbool.h>
 
 extern char	**breakline(char *input, int *count);
 extern void	doneline(char *input, char **vec);
@@ -46,6 +47,7 @@ extern void	timestr(struct timeval *tv, char *str, size_t sz, int flags);
 extern uid_t	uid_from_string(char *user);
 extern gid_t	gid_from_string(char *group);
 extern prid_t	prid_from_string(char *project);
+extern bool	isdigits_only(const char *str);
 
 #define HAVE_FTW_H 1	/* TODO: configure me */
 

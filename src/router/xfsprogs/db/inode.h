@@ -18,8 +18,11 @@
 
 extern const struct field	inode_a_flds[];
 extern const struct field	inode_core_flds[];
+extern const struct field	inode_v3_flds[];
 extern const struct field	inode_flds[];
+extern const struct field	inode_crc_flds[];
 extern const struct field	inode_hfld[];
+extern const struct field	inode_crc_hfld[];
 extern const struct field	inode_u_flds[];
 extern const struct field	timestamp_flds[];
 

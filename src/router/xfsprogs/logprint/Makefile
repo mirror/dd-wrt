@@ -10,11 +10,11 @@ LTCOMMAND = xfs_logprint
 HFILES = logprint.h
 CFILES = logprint.c \
 	 log_copy.c log_dump.c log_misc.c \
-	 log_print_all.c log_print_trans.c
+	 log_print_all.c log_print_trans.c log_redo.c
 
 LLDLIBS	= $(LIBXFS) $(LIBXLOG) $(LIBUUID) $(LIBRT) $(LIBPTHREAD)
 LTDEPENDENCIES = $(LIBXFS) $(LIBXLOG)
-LLDFLAGS = -static
+LLDFLAGS = -static-libtool-libs
 
 default: depend $(LTCOMMAND)
 

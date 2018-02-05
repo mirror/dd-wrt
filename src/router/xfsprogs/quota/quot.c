@@ -16,7 +16,8 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/command.h>
+#include <stdbool.h>
+#include "command.h"
 #include <ctype.h>
 #include <pwd.h>
 #include <grp.h>
@@ -165,6 +166,7 @@ quot_bulkstat_mount(
 	buf = (xfs_bstat_t *)calloc(NBSTAT, sizeof(xfs_bstat_t));
 	if (!buf) {
 		perror("calloc");
+		close(fsfd);
 		return;
 	}
 
@@ -360,13 +362,13 @@ quot_f(
 			form |= XFS_RTBLOCK_QUOTA;
 			break;
 		case 'g':
-			type = XFS_GROUP_QUOTA;
+			type |= XFS_GROUP_QUOTA;
 			break;
 		case 'p':
-			type = XFS_PROJ_QUOTA;
+			type |= XFS_PROJ_QUOTA;
 			break;
 		case 'u':
-			type = XFS_USER_QUOTA;
+			type |= XFS_USER_QUOTA;
 			break;
 		case 'a':
 			flags |= ALL_MOUNTS_FLAG;
@@ -388,8 +390,13 @@ quot_f(
 	if (!form)
 		form = XFS_BLOCK_QUOTA;
 
-	if (!type)
+	if (!type) {
 		type = XFS_USER_QUOTA;
+	} else if (type != XFS_GROUP_QUOTA &&
+	           type != XFS_PROJ_QUOTA &&
+	           type != XFS_USER_QUOTA) {
+		return command_usage(&quot_cmd);
+	}
 
 	if ((fp = fopen_write_secure(fname)) == NULL)
 		return 0;
@@ -415,7 +422,7 @@ quot_init(void)
 	quot_cmd.cfunc = quot_f;
 	quot_cmd.argmin = 0;
 	quot_cmd.argmax = -1;
-	quot_cmd.args = _("[-bir] [-gpu] [-acv] [-f file]");
+	quot_cmd.args = _("[-bir] [-g|-p|-u] [-acv] [-f file]");
 	quot_cmd.oneline = _("summarize filesystem ownership");
 	quot_cmd.help = quot_help;
 

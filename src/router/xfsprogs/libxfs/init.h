@@ -18,12 +18,11 @@
 #ifndef LIBXFS_INIT_H
 #define LIBXFS_INIT_H
 
-struct stat64;
+struct stat;
 
 extern int platform_check_ismounted (char *path, char *block,
-					struct stat64 *sptr, int verbose);
-extern int platform_check_iswritable (char *path, char *block,
-					struct stat64 *sptr, int fatal);
+					struct stat *sptr, int verbose);
+extern int platform_check_iswritable (char *path, char *block, struct stat *sptr);
 extern int platform_set_blocksize (int fd, char *path, dev_t device, int bsz, int fatal);
 extern void platform_flush_device (int fd, dev_t device);
 extern char *platform_findrawpath(char *path);
@@ -31,7 +30,6 @@ extern char *platform_findrawpath (char *path);
 extern char *platform_findblockpath (char *path);
 extern int platform_direct_blockdev (void);
 extern int platform_align_blockdev (void);
-extern int platform_nproc(void);
 extern unsigned long platform_physmem(void);	/* in kilobytes */
 extern int platform_has_uuid;
 

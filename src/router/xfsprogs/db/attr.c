@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include "bit.h"
 #include "type.h"
 #include "faddr.h"
@@ -25,6 +25,7 @@
 #include "attr.h"
 #include "io.h"
 #include "init.h"
+#include "output.h"
 
 static int	attr_leaf_entries_count(void *obj, int startoff);
 static int	attr_leaf_hdr_count(void *obj, int startoff);
@@ -54,7 +55,7 @@ const field_t	attr_flds[] = {
 	  FLD_COUNT, TYP_NONE },
 	{ "entries", FLDT_ATTR_LEAF_ENTRY, OI(LOFF(entries)),
 	  attr_leaf_entries_count, FLD_ARRAY|FLD_COUNT, TYP_NONE },
-	{ "btree", FLDT_ATTR_NODE_ENTRY, OI(NOFF(btree)), attr_node_btree_count,
+	{ "btree", FLDT_ATTR_NODE_ENTRY, OI(NOFF(__btree)), attr_node_btree_count,
 	  FLD_ARRAY|FLD_COUNT, TYP_NONE },
 	{ "nvlist", FLDT_ATTR_LEAF_NAME, attr_leaf_nvlist_offset,
 	  attr_leaf_nvlist_count, FLD_ARRAY|FLD_OFFSET|FLD_COUNT, TYP_NONE },
@@ -143,37 +144,98 @@ const field_t	attr_node_entry_flds[] = {
 #define	HOFF(f)	bitize(offsetof(xfs_da_node_hdr_t, f))
 const field_t	attr_node_hdr_flds[] = {
 	{ "info", FLDT_ATTR_BLKINFO, OI(HOFF(info)), C1, 0, TYP_NONE },
-	{ "count", FLDT_UINT16D, OI(HOFF(count)), C1, 0, TYP_NONE },
-	{ "level", FLDT_UINT16D, OI(HOFF(level)), C1, 0, TYP_NONE },
+	{ "count", FLDT_UINT16D, OI(HOFF(__count)), C1, 0, TYP_NONE },
+	{ "level", FLDT_UINT16D, OI(HOFF(__level)), C1, 0, TYP_NONE },
 	{ NULL }
 };
 
-/*ARGSUSED*/
 static int
 attr_leaf_entries_count(
 	void			*obj,
 	int			startoff)
 {
-	xfs_attr_leafblock_t	*block;
+	struct xfs_attr_leafblock *leaf = obj;
 
 	ASSERT(startoff == 0);
-	block = obj;
-	if (be16_to_cpu(block->hdr.info.magic) != XFS_ATTR_LEAF_MAGIC) 
+	if (be16_to_cpu(leaf->hdr.info.magic) != XFS_ATTR_LEAF_MAGIC)
 		return 0;
-	return be16_to_cpu(block->hdr.count);
+	return be16_to_cpu(leaf->hdr.count);
 }
 
-/*ARGSUSED*/
+static int
+attr3_leaf_entries_count(
+	void			*obj,
+	int			startoff)
+{
+	struct xfs_attr3_leafblock *leaf = obj;
+
+	ASSERT(startoff == 0);
+	if (be16_to_cpu(leaf->hdr.info.hdr.magic) != XFS_ATTR3_LEAF_MAGIC)
+		return 0;
+	return be16_to_cpu(leaf->hdr.count);
+}
+
 static int
 attr_leaf_hdr_count(
 	void			*obj,
 	int			startoff)
 {
-	xfs_attr_leafblock_t	*block;
+	struct xfs_attr_leafblock *leaf = obj;
 
 	ASSERT(startoff == 0);
-	block = obj;
-	return be16_to_cpu(block->hdr.info.magic) == XFS_ATTR_LEAF_MAGIC;
+	return be16_to_cpu(leaf->hdr.info.magic) == XFS_ATTR_LEAF_MAGIC;
+}
+
+static int
+attr3_leaf_hdr_count(
+	void			*obj,
+	int			startoff)
+{
+	struct xfs_attr3_leafblock *leaf = obj;
+
+	ASSERT(startoff == 0);
+	return be16_to_cpu(leaf->hdr.info.hdr.magic) == XFS_ATTR3_LEAF_MAGIC;
+}
+
+typedef int (*attr_leaf_entry_walk_f)(struct xfs_attr_leafblock *,
+				      struct xfs_attr_leaf_entry *, int);
+static int
+attr_leaf_entry_walk(
+	void				*obj,
+	int				startoff,
+	attr_leaf_entry_walk_f		func)
+{
+	struct xfs_attr_leafblock	*leaf = obj;
+	struct xfs_attr3_icleaf_hdr	leafhdr;
+	struct xfs_attr_leaf_entry	*entries;
+	struct xfs_attr_leaf_entry	*e;
+	int				i;
+	int				off;
+
+	ASSERT(bitoffs(startoff) == 0);
+	if (be16_to_cpu(leaf->hdr.info.magic) != XFS_ATTR_LEAF_MAGIC &&
+	    be16_to_cpu(leaf->hdr.info.magic) != XFS_ATTR3_LEAF_MAGIC)
+		return 0;
+
+	off = byteize(startoff);
+	xfs_attr3_leaf_hdr_from_disk(mp->m_attr_geo, &leafhdr, leaf);
+	entries = xfs_attr3_leaf_entryp(leaf);
+
+	for (i = 0; i < leafhdr.count; i++) {
+		e = &entries[i];
+		if (be16_to_cpu(e->nameidx) == off)
+			return func(leaf, e, i);
+	}
+	return 0;
+}
+
+static int
+__attr_leaf_name_local_count(
+	struct xfs_attr_leafblock	*leaf,
+	struct xfs_attr_leaf_entry      *e,
+	int				i)
+{
+	return (e->flags & XFS_ATTR_LOCAL) != 0;
 }
 
 static int
@@ -181,22 +243,23 @@ attr_leaf_name_local_count(
 	void			*obj,
 	int			startoff)
 {
-	xfs_attr_leafblock_t	*block;
-	xfs_attr_leaf_entry_t	*e;
-	int			i;
-	int			off;
+	return attr_leaf_entry_walk(obj, startoff,
+				    __attr_leaf_name_local_count);
+}
 
-	ASSERT(bitoffs(startoff) == 0);
-	off = byteize(startoff);
-	block = obj;
-	if (be16_to_cpu(block->hdr.info.magic) != XFS_ATTR_LEAF_MAGIC)
+static int
+__attr_leaf_name_local_name_count(
+	struct xfs_attr_leafblock	*leaf,
+	struct xfs_attr_leaf_entry      *e,
+	int				i)
+{
+	struct xfs_attr_leaf_name_local	*l;
+
+	if (!(e->flags & XFS_ATTR_LOCAL))
 		return 0;
-	for (i = 0; i < be16_to_cpu(block->hdr.count); i++) {
-		e = &block->entries[i];
-		if (be16_to_cpu(e->nameidx) == off)
-			return (e->flags & XFS_ATTR_LOCAL) != 0;
-	}
-	return 0;
+
+	l = xfs_attr3_leaf_name_local(leaf, i);
+	return l->namelen;
 }
 
 static int
@@ -204,28 +267,23 @@ attr_leaf_name_local_name_count(
 	void				*obj,
 	int				startoff)
 {
-	xfs_attr_leafblock_t		*block;
-	xfs_attr_leaf_entry_t		*e;
-	int				i;
-	xfs_attr_leaf_name_local_t	*l;
-	int				off;
+	return attr_leaf_entry_walk(obj, startoff,
+				    __attr_leaf_name_local_name_count);
+}
 
-	ASSERT(bitoffs(startoff) == 0);
-	off = byteize(startoff);
-	block = obj;
-	if (be16_to_cpu(block->hdr.info.magic) != XFS_ATTR_LEAF_MAGIC)
+static int
+__attr_leaf_name_local_value_count(
+	struct xfs_attr_leafblock	*leaf,
+	struct xfs_attr_leaf_entry      *e,
+	int				i)
+{
+	struct xfs_attr_leaf_name_local	*l;
+
+	if (!(e->flags & XFS_ATTR_LOCAL))
 		return 0;
-	for (i = 0; i < be16_to_cpu(block->hdr.count); i++) {
-		e = &block->entries[i];
-		if (be16_to_cpu(e->nameidx) == off) {
-			if (e->flags & XFS_ATTR_LOCAL) {
-				l = xfs_attr_leaf_name_local(block, i);
-				return l->namelen;
-			} else
-				return 0;
-		}
-	}
-	return 0;
+
+	l = xfs_attr3_leaf_name_local(leaf, i);
+	return be16_to_cpu(l->valuelen);
 }
 
 static int
@@ -233,84 +291,66 @@ attr_leaf_name_local_value_count(
 	void				*obj,
 	int				startoff)
 {
-	xfs_attr_leafblock_t		*block;
-	xfs_attr_leaf_entry_t		*e;
-	int				i;
-	xfs_attr_leaf_name_local_t	*l;
-	int				off;
-
-	ASSERT(bitoffs(startoff) == 0);
-	off = byteize(startoff);
-	block = obj;
-	if (be16_to_cpu(block->hdr.info.magic) != XFS_ATTR_LEAF_MAGIC)
-		return 0;
-	for (i = 0; i < be16_to_cpu(block->hdr.count); i++) {
-		e = &block->entries[i];
-		if (be16_to_cpu(e->nameidx) == off) {
-			if (e->flags & XFS_ATTR_LOCAL) {
-				l = xfs_attr_leaf_name_local(block, i);
-				return be16_to_cpu(l->valuelen);
-			} else
-				return 0;
-		}
-	}
-	return 0;
+	return attr_leaf_entry_walk(obj, startoff,
+				    __attr_leaf_name_local_value_count);
 }
 
-/*ARGSUSED*/
+static int
+__attr_leaf_name_local_value_offset(
+	struct xfs_attr_leafblock	*leaf,
+	struct xfs_attr_leaf_entry      *e,
+	int				i)
+{
+	struct xfs_attr_leaf_name_local	*l;
+	char				*vp;
+
+	l = xfs_attr3_leaf_name_local(leaf, i);
+	vp = (char *)&l->nameval[l->namelen];
+
+	return (int)bitize(vp - (char *)l);
+}
+
 static int
 attr_leaf_name_local_value_offset(
 	void				*obj,
 	int				startoff,
 	int				idx)
 {
-	xfs_attr_leafblock_t		*block;
-	xfs_attr_leaf_name_local_t	*l;
-	char				*vp;
-	int				off;
-	xfs_attr_leaf_entry_t		*e;
-	int				i;
+	return attr_leaf_entry_walk(obj, startoff,
+				    __attr_leaf_name_local_value_offset);
+}
 
-	ASSERT(bitoffs(startoff) == 0);
-	off = byteize(startoff);
-	block = obj;
-	if (be16_to_cpu(block->hdr.info.magic) != XFS_ATTR_LEAF_MAGIC)
-		return 0;
-
-	for (i = 0; i < be16_to_cpu(block->hdr.count); i++) {
-		e = &block->entries[i];
-		if (be16_to_cpu(e->nameidx) == off)
-			break;
-	}
-	if (i >= be16_to_cpu(block->hdr.count)) 
-		return 0;
-
-	l = xfs_attr_leaf_name_local(block, i);
-	vp = (char *)&l->nameval[l->namelen];
-	return (int)bitize(vp - (char *)l);
+static int
+__attr_leaf_name_remote_count(
+	struct xfs_attr_leafblock	*leaf,
+	struct xfs_attr_leaf_entry      *e,
+	int				i)
+{
+	return (e->flags & XFS_ATTR_LOCAL) == 0;
 }
 
 static int
 attr_leaf_name_remote_count(
-	void			*obj,
-	int			startoff)
+	void				*obj,
+	int				startoff)
 {
-	xfs_attr_leafblock_t	*block;
-	xfs_attr_leaf_entry_t	*e;
-	int			i;
-	int			off;
+	return attr_leaf_entry_walk(obj, startoff,
+				    __attr_leaf_name_remote_count);
+}
 
-	ASSERT(bitoffs(startoff) == 0);
-	off = byteize(startoff);
-	block = obj;
-	if (be16_to_cpu(block->hdr.info.magic) != XFS_ATTR_LEAF_MAGIC)
+static int
+__attr_leaf_name_remote_name_count(
+	struct xfs_attr_leafblock	*leaf,
+	struct xfs_attr_leaf_entry      *e,
+	int				i)
+{
+	struct xfs_attr_leaf_name_remote *r;
+
+	if (e->flags & XFS_ATTR_LOCAL)
 		return 0;
-	for (i = 0; i < be16_to_cpu(block->hdr.count); i++) {
-		e = &block->entries[i];
-		if (be16_to_cpu(e->nameidx) == off)
-			return (e->flags & XFS_ATTR_LOCAL) == 0;
-	}
-	return 0;
+
+	r = xfs_attr3_leaf_name_remote(leaf, i);
+	return r->namelen;
 }
 
 static int
@@ -318,117 +358,125 @@ attr_leaf_name_remote_name_count(
 	void				*obj,
 	int				startoff)
 {
-	xfs_attr_leafblock_t		*block;
-	xfs_attr_leaf_entry_t		*e;
-	int				i;
-	int				off;
-	xfs_attr_leaf_name_remote_t	*r;
-
-	ASSERT(bitoffs(startoff) == 0);
-	off = byteize(startoff);
-	block = obj;
-	if (be16_to_cpu(block->hdr.info.magic) != XFS_ATTR_LEAF_MAGIC)
-		return 0;
-	for (i = 0; i < be16_to_cpu(block->hdr.count); i++) {
-		e = &block->entries[i];
-		if (be16_to_cpu(e->nameidx) == off) {
-			if (!(e->flags & XFS_ATTR_LOCAL)) {
-				r = xfs_attr_leaf_name_remote(block, i);
-				return r->namelen;
-			} else
-				return 0;
-		}
-	}
-	return 0;
+	return attr_leaf_entry_walk(obj, startoff,
+				    __attr_leaf_name_remote_name_count);
 }
 
-/*ARGSUSED*/
 int
 attr_leaf_name_size(
 	void				*obj,
 	int				startoff,
 	int				idx)
 {
-	xfs_attr_leafblock_t		*block;
-	xfs_attr_leaf_entry_t		*e;
-	xfs_attr_leaf_name_local_t	*l;
-	xfs_attr_leaf_name_remote_t	*r;
+	struct xfs_attr_leafblock	*leaf = obj;
+	struct xfs_attr_leaf_entry	*e;
+	struct xfs_attr_leaf_name_local	*l;
+	struct xfs_attr_leaf_name_remote *r;
 
 	ASSERT(startoff == 0);
-	block = obj;
-	if (be16_to_cpu(block->hdr.info.magic) != XFS_ATTR_LEAF_MAGIC)
+	if (be16_to_cpu(leaf->hdr.info.magic) != XFS_ATTR_LEAF_MAGIC &&
+	    be16_to_cpu(leaf->hdr.info.magic) != XFS_ATTR3_LEAF_MAGIC)
 		return 0;
-	e = &block->entries[idx];
+	e = &xfs_attr3_leaf_entryp(leaf)[idx];
 	if (e->flags & XFS_ATTR_LOCAL) {
-		l = xfs_attr_leaf_name_local(block, idx);
+		l = xfs_attr3_leaf_name_local(leaf, idx);
 		return (int)bitize(xfs_attr_leaf_entsize_local(l->namelen,
 					be16_to_cpu(l->valuelen)));
 	} else {
-		r = xfs_attr_leaf_name_remote(block, idx);
+		r = xfs_attr3_leaf_name_remote(leaf, idx);
 		return (int)bitize(xfs_attr_leaf_entsize_remote(r->namelen));
 	}
 }
 
-/*ARGSUSED*/
 static int
 attr_leaf_nvlist_count(
 	void			*obj,
 	int			startoff)
 {
-	xfs_attr_leafblock_t	*block;
+	struct xfs_attr_leafblock *leaf = obj;
 
 	ASSERT(startoff == 0);
-	block = obj;
-	if (be16_to_cpu(block->hdr.info.magic) != XFS_ATTR_LEAF_MAGIC)
+	if (be16_to_cpu(leaf->hdr.info.magic) != XFS_ATTR_LEAF_MAGIC)
 		return 0;
-	return be16_to_cpu(block->hdr.count);
+	return be16_to_cpu(leaf->hdr.count);
 }
 
-/*ARGSUSED*/
+static int
+attr3_leaf_nvlist_count(
+	void			*obj,
+	int			startoff)
+{
+	struct xfs_attr3_leafblock *leaf = obj;
+
+	ASSERT(startoff == 0);
+	if (be16_to_cpu(leaf->hdr.info.hdr.magic) != XFS_ATTR3_LEAF_MAGIC)
+		return 0;
+	return be16_to_cpu(leaf->hdr.count);
+}
+
 static int
 attr_leaf_nvlist_offset(
 	void			*obj,
 	int			startoff,
 	int			idx)
 {
-	xfs_attr_leafblock_t	*block;
-	xfs_attr_leaf_entry_t	*e;
+	struct xfs_attr_leafblock *leaf = obj;
+	struct xfs_attr_leaf_entry *e;
 
 	ASSERT(startoff == 0);
-	block = obj;
-	e = &block->entries[idx];
+	e = &xfs_attr3_leaf_entryp(leaf)[idx];
 	return bitize(be16_to_cpu(e->nameidx));
 }
 
-/*ARGSUSED*/
 static int
 attr_node_btree_count(
 	void			*obj,
 	int			startoff)
 {
-	xfs_da_intnode_t	*block;
+	struct xfs_da_intnode	*node = obj;
 
 	ASSERT(startoff == 0);		/* this is a base structure */
-	block = obj;
-	if (be16_to_cpu(block->hdr.info.magic) != XFS_DA_NODE_MAGIC)
+	if (be16_to_cpu(node->hdr.info.magic) != XFS_DA_NODE_MAGIC)
 		return 0;
-	return be16_to_cpu(block->hdr.count);
+	return be16_to_cpu(node->hdr.__count);
 }
 
-/*ARGSUSED*/
+static int
+attr3_node_btree_count(
+	void			*obj,
+	int			startoff)
+{
+	struct xfs_da3_intnode	*node = obj;
+
+	ASSERT(startoff == 0);
+	if (be16_to_cpu(node->hdr.info.hdr.magic) != XFS_DA3_NODE_MAGIC)
+		return 0;
+	return be16_to_cpu(node->hdr.__count);
+}
+
+
 static int
 attr_node_hdr_count(
 	void			*obj,
 	int			startoff)
 {
-	xfs_da_intnode_t	*block;
+	struct xfs_da_intnode	*node = obj;
 
 	ASSERT(startoff == 0);
-	block = obj;
-	return be16_to_cpu(block->hdr.info.magic) == XFS_DA_NODE_MAGIC;
+	return be16_to_cpu(node->hdr.info.magic) == XFS_DA_NODE_MAGIC;
 }
 
-/*ARGSUSED*/
+static int
+attr3_node_hdr_count(
+	void			*obj,
+	int			startoff)
+{
+	struct xfs_da3_intnode	*node = obj;
+
+	ASSERT(startoff == 0);
+	return be16_to_cpu(node->hdr.info.hdr.magic) == XFS_DA3_NODE_MAGIC;
+}
+
 int
 attr_size(
 	void	*obj,
@@ -437,3 +485,92 @@ attr_size(
 {
 	return bitize(mp->m_sb.sb_blocksize);
 }
+
+/*
+ * CRC enabled attribute block field definitions
+ */
+const field_t	attr3_hfld[] = {
+	{ "", FLDT_ATTR3, OI(0), C1, 0, TYP_NONE },
+	{ NULL }
+};
+
+#define	L3OFF(f)	bitize(offsetof(struct xfs_attr3_leafblock, f))
+#define	N3OFF(f)	bitize(offsetof(struct xfs_da3_intnode, f))
+const field_t	attr3_flds[] = {
+	{ "hdr", FLDT_ATTR3_LEAF_HDR, OI(L3OFF(hdr)), attr3_leaf_hdr_count,
+	  FLD_COUNT, TYP_NONE },
+	{ "hdr", FLDT_DA3_NODE_HDR, OI(N3OFF(hdr)), attr3_node_hdr_count,
+	  FLD_COUNT, TYP_NONE },
+	{ "entries", FLDT_ATTR_LEAF_ENTRY, OI(L3OFF(entries)),
+	  attr3_leaf_entries_count, FLD_ARRAY|FLD_COUNT, TYP_NONE },
+	{ "btree", FLDT_ATTR_NODE_ENTRY, OI(N3OFF(__btree)),
+	  attr3_node_btree_count, FLD_ARRAY|FLD_COUNT, TYP_NONE },
+	{ "nvlist", FLDT_ATTR_LEAF_NAME, attr_leaf_nvlist_offset,
+	  attr3_leaf_nvlist_count, FLD_ARRAY|FLD_OFFSET|FLD_COUNT, TYP_NONE },
+	{ NULL }
+};
+
+#define	LH3OFF(f)	bitize(offsetof(struct xfs_attr3_leaf_hdr, f))
+const field_t	attr3_leaf_hdr_flds[] = {
+	{ "info", FLDT_DA3_BLKINFO, OI(LH3OFF(info)), C1, 0, TYP_NONE },
+	{ "count", FLDT_UINT16D, OI(LH3OFF(count)), C1, 0, TYP_NONE },
+	{ "usedbytes", FLDT_UINT16D, OI(LH3OFF(usedbytes)), C1, 0, TYP_NONE },
+	{ "firstused", FLDT_UINT16D, OI(LH3OFF(firstused)), C1, 0, TYP_NONE },
+	{ "holes", FLDT_UINT8D, OI(LH3OFF(holes)), C1, 0, TYP_NONE },
+	{ "pad1", FLDT_UINT8X, OI(LH3OFF(pad1)), C1, FLD_SKIPALL, TYP_NONE },
+	{ "freemap", FLDT_ATTR_LEAF_MAP, OI(LH3OFF(freemap)),
+	  CI(XFS_ATTR_LEAF_MAPSIZE), FLD_ARRAY, TYP_NONE },
+	{ NULL }
+};
+
+/*
+ * Special read verifier for attribute buffers. Detect the magic number
+ * appropriately and set the correct verifier and call it.
+ */
+static void
+xfs_attr3_db_read_verify(
+	struct xfs_buf		*bp)
+{
+	__be32			magic32;
+	__be16			magic16;
+
+	magic32 = *(__be32 *)bp->b_addr;
+	magic16 = ((struct xfs_da_blkinfo *)bp->b_addr)->magic;
+
+	switch (magic16) {
+	case cpu_to_be16(XFS_ATTR3_LEAF_MAGIC):
+		bp->b_ops = &xfs_attr3_leaf_buf_ops;
+		goto verify;
+	case cpu_to_be16(XFS_DA3_NODE_MAGIC):
+		bp->b_ops = &xfs_da3_node_buf_ops;
+		goto verify;
+	default:
+		break;
+	}
+
+	switch (magic32) {
+	case cpu_to_be32(XFS_ATTR3_RMT_MAGIC):
+		bp->b_ops = &xfs_attr3_rmt_buf_ops;
+		break;
+	default:
+		dbprintf(_("Unknown attribute buffer type!\n"));
+		xfs_buf_ioerror(bp, -EFSCORRUPTED);
+		return;
+	}
+verify:
+	bp->b_ops->verify_read(bp);
+}
+
+static void
+xfs_attr3_db_write_verify(
+	struct xfs_buf		*bp)
+{
+	dbprintf(_("Writing unknown attribute buffer type!\n"));
+	xfs_buf_ioerror(bp, -EFSCORRUPTED);
+}
+
+const struct xfs_buf_ops xfs_attr3_db_buf_ops = {
+	.name = "xfs_attr3",
+	.verify_read = xfs_attr3_db_read_verify,
+	.verify_write = xfs_attr3_db_write_verify,
+};

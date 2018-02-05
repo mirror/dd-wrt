@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include "type.h"
 #include "faddr.h"
 #include "fprint.h"
@@ -29,13 +29,12 @@
 #include "agfl.h"
 #include "agi.h"
 #include "sb.h"
-#include "dir.h"
-#include "dirshort.h"
 #include "attr.h"
 #include "attrshort.h"
 #include "dquot.h"
 #include "dir2.h"
 #include "dir2sf.h"
+#include "symlink.h"
 
 const ftattr_t	ftattrtab[] = {
 	{ FLDT_AEXTNUM, "aextnum", fp_num, "%d", SI(bitsz(xfs_aextnum_t)),
@@ -48,6 +47,8 @@ const ftattr_t	ftattrtab[] = {
 	  agf_flds },
 	{ FLDT_AGFL, "agfl", NULL, (char *)agfl_flds, agfl_size, FTARG_SIZE,
 	  NULL, agfl_flds },
+	{ FLDT_AGFL_CRC, "agfl", NULL, (char *)agfl_crc_flds, agfl_size,
+	  FTARG_SIZE, NULL, agfl_crc_flds },
 	{ FLDT_AGI, "agi", NULL, (char *)agi_flds, agi_size, FTARG_SIZE, NULL,
 	  agi_flds },
 	{ FLDT_AGINO, "agino", fp_num, "%u", SI(bitsz(xfs_agino_t)),
@@ -56,6 +57,8 @@ const ftattr_t	ftattrtab[] = {
 	  FTARG_SKIPNULL, fa_agino, NULL },
 	{ FLDT_AGNUMBER, "agnumber", fp_num, "%u", SI(bitsz(xfs_agnumber_t)),
 	  FTARG_DONULL, NULL, NULL },
+
+/* attr fields */
 	{ FLDT_ATTR, "attr", NULL, (char *)attr_flds, attr_size, FTARG_SIZE,
 	  NULL, attr_flds },
 	{ FLDT_ATTR_BLKINFO, "attr_blkinfo", NULL, (char *)attr_blkinfo_flds,
@@ -84,8 +87,21 @@ const ftattr_t	ftattrtab[] = {
 	  fa_attrblock, NULL },
 	{ FLDT_ATTRSHORT, "attrshort", NULL, (char *)attr_shortform_flds,
 	  attrshort_size, FTARG_SIZE, NULL, attr_shortform_flds },
+
+/* attr3 specific fields */
+	{ FLDT_ATTR3, "attr3", NULL, (char *)attr3_flds, attr_size, FTARG_SIZE,
+	  NULL, attr3_flds },
+	{ FLDT_ATTR3_LEAF_HDR, "attr3_leaf_hdr", NULL,
+	  (char *)attr3_leaf_hdr_flds, SI(bitsz(struct xfs_attr3_leaf_hdr)),
+	  0, NULL, attr3_leaf_hdr_flds },
+	{ FLDT_ATTR3_NODE_HDR, "attr3_node_hdr", NULL,
+	  (char *)da3_node_hdr_flds, SI(bitsz(struct xfs_da3_node_hdr)),
+	  0, NULL, da3_node_hdr_flds },
+
 	{ FLDT_BMAPBTA, "bmapbta", NULL, (char *)bmapbta_flds, btblock_size,
 	  FTARG_SIZE, NULL, bmapbta_flds },
+	{ FLDT_BMAPBTA_CRC, "bmapbta", NULL, (char *)bmapbta_crc_flds,
+	  btblock_size, FTARG_SIZE, NULL, bmapbta_crc_flds },
 	{ FLDT_BMAPBTAKEY, "bmapbtakey", fp_sarray, (char *)bmapbta_key_flds,
 	  SI(bitsz(xfs_bmbt_key_t)), 0, NULL, bmapbta_key_flds },
 	{ FLDT_BMAPBTAPTR, "bmapbtaptr", fp_num, "%llu",
@@ -94,6 +110,8 @@ const ftattr_t	ftattrtab[] = {
 	  SI(bitsz(xfs_bmbt_rec_t)), 0, NULL, bmapbta_rec_flds },
 	{ FLDT_BMAPBTD, "bmapbtd", NULL, (char *)bmapbtd_flds, btblock_size,
 	  FTARG_SIZE, NULL, bmapbtd_flds },
+	{ FLDT_BMAPBTD_CRC, "bmapbtd", NULL, (char *)bmapbtd_crc_flds,
+	  btblock_size, FTARG_SIZE, NULL, bmapbtd_crc_flds },
 	{ FLDT_BMAPBTDKEY, "bmapbtdkey", fp_sarray, (char *)bmapbtd_key_flds,
 	  SI(bitsz(xfs_bmbt_key_t)), 0, NULL, bmapbtd_key_flds },
 	{ FLDT_BMAPBTDPTR, "bmapbtdptr", fp_num, "%llu",
@@ -114,6 +132,8 @@ const ftattr_t	ftattrtab[] = {
 	  SI(bitsz(xfs_bmdr_ptr_t)), 0, fa_dfsbno, NULL },
 	{ FLDT_BNOBT, "bnobt", NULL, (char *)bnobt_flds, btblock_size, FTARG_SIZE,
 	  NULL, bnobt_flds },
+	{ FLDT_BNOBT_CRC, "bnobt", NULL, (char *)bnobt_crc_flds, btblock_size,
+	  FTARG_SIZE, NULL, bnobt_crc_flds },
 	{ FLDT_BNOBTKEY, "bnobtkey", fp_sarray, (char *)bnobt_key_flds,
 	  SI(bitsz(xfs_alloc_key_t)), 0, NULL, bnobt_key_flds },
 	{ FLDT_BNOBTPTR, "bnobtptr", fp_num, "%u", SI(bitsz(xfs_alloc_ptr_t)),
@@ -133,20 +153,59 @@ const ftattr_t	ftattrtab[] = {
 	{ FLDT_CHARNS, "charns", fp_charns, NULL, SI(bitsz(char)), 0, NULL,
 	  NULL },
 	{ FLDT_CHARS, "chars", fp_num, "%c", SI(bitsz(char)), 0, NULL, NULL },
+	{ FLDT_REXTLEN, "rextlen", fp_num, "%u", SI(RMAPBT_BLOCKCOUNT_BITLEN),
+	  0, NULL, NULL },
+	{ FLDT_RFILEOFFD, "rfileoffd", fp_num, "%llu", SI(RMAPBT_OFFSET_BITLEN),
+	  0, NULL, NULL },
+	{ FLDT_REXTFLG, "rextflag", fp_num, "%u", SI(RMAPBT_EXNTFLAG_BITLEN), 0,
+	  NULL, NULL },
+	{ FLDT_RATTRFORKFLG, "rattrforkflag", fp_num, "%u", SI(RMAPBT_ATTRFLAG_BITLEN), 0,
+	  NULL, NULL },
+	{ FLDT_RBMBTFLG, "rbmbtflag", fp_num, "%u", SI(RMAPBT_BMBTFLAG_BITLEN), 0,
+	  NULL, NULL },
+	{ FLDT_CAGBLOCK, "cagblock", fp_num, "%u", SI(REFCNTBT_AGBLOCK_BITLEN),
+	  FTARG_DONULL, fa_agblock, NULL },
+	{ FLDT_CCOWFLG, "ccowflag", fp_num, "%u", SI(REFCNTBT_COWFLAG_BITLEN), 0,
+	  NULL, NULL },
 	{ FLDT_CNTBT, "cntbt", NULL, (char *)cntbt_flds, btblock_size, FTARG_SIZE,
 	  NULL, cntbt_flds },
+	{ FLDT_CNTBT_CRC, "cntbt", NULL, (char *)cntbt_crc_flds, btblock_size,
+	  FTARG_SIZE, NULL, cntbt_crc_flds },
 	{ FLDT_CNTBTKEY, "cntbtkey", fp_sarray, (char *)cntbt_key_flds,
 	  SI(bitsz(xfs_alloc_key_t)), 0, NULL, cntbt_key_flds },
 	{ FLDT_CNTBTPTR, "cntbtptr", fp_num, "%u", SI(bitsz(xfs_alloc_ptr_t)),
 	  0, fa_agblock, NULL },
 	{ FLDT_CNTBTREC, "cntbtrec", fp_sarray, (char *)cntbt_rec_flds,
 	  SI(bitsz(xfs_alloc_rec_t)), 0, NULL, cntbt_rec_flds },
+
+	{ FLDT_RMAPBT_CRC, "rmapbt", NULL, (char *)rmapbt_crc_flds, btblock_size,
+	  FTARG_SIZE, NULL, rmapbt_crc_flds },
+	{ FLDT_RMAPBTKEY, "rmapbtkey", fp_sarray, (char *)rmapbt_key_flds,
+	  SI(bitize(2 * sizeof(struct xfs_rmap_key))), 0, NULL, rmapbt_key_flds },
+	{ FLDT_RMAPBTPTR, "rmapbtptr", fp_num, "%u",
+	  SI(bitsz(xfs_rmap_ptr_t)), 0, fa_agblock, NULL },
+	{ FLDT_RMAPBTREC, "rmapbtrec", fp_sarray, (char *)rmapbt_rec_flds,
+	  SI(bitsz(struct xfs_rmap_rec)), 0, NULL, rmapbt_rec_flds },
+
+	{ FLDT_REFCBT_CRC, "refcntbt", NULL, (char *)refcbt_crc_flds, btblock_size,
+	  FTARG_SIZE, NULL, refcbt_crc_flds },
+	{ FLDT_REFCBTKEY, "refcntbtkey", fp_sarray, (char *)refcbt_key_flds,
+	  SI(bitsz(struct xfs_refcount_key)), 0, NULL, refcbt_key_flds },
+	{ FLDT_REFCBTPTR, "refcntbtptr", fp_num, "%u", SI(bitsz(xfs_refcount_ptr_t)),
+	  0, fa_agblock, NULL },
+	{ FLDT_REFCBTREC, "refcntbtrec", fp_sarray, (char *)refcbt_rec_flds,
+	  SI(bitsz(struct xfs_refcount_rec)), 0, NULL, refcbt_rec_flds },
+
+/* CRC field */
+	{ FLDT_CRC, "crc", fp_crc, "%#x (%s)", SI(bitsz(__uint32_t)),
+	  0, NULL, NULL },
+
 	{ FLDT_DEV, "dev", fp_num, "%#x", SI(bitsz(xfs_dev_t)), 0, NULL, NULL },
-	{ FLDT_DFILOFFA, "dfiloffa", fp_num, "%llu", SI(bitsz(xfs_dfiloff_t)),
+	{ FLDT_DFILOFFA, "dfiloffa", fp_num, "%llu", SI(bitsz(xfs_fileoff_t)),
 	  0, fa_dfiloffa, NULL },
-	{ FLDT_DFILOFFD, "dfiloffd", fp_num, "%llu", SI(bitsz(xfs_dfiloff_t)),
+	{ FLDT_DFILOFFD, "dfiloffd", fp_num, "%llu", SI(bitsz(xfs_fileoff_t)),
 	  0, fa_dfiloffd, NULL },
-	{ FLDT_DFSBNO, "dfsbno", fp_num, "%llu", SI(bitsz(xfs_dfsbno_t)),
+	{ FLDT_DFSBNO, "dfsbno", fp_num, "%llu", SI(bitsz(xfs_fsblock_t)),
 	  FTARG_DONULL, fa_dfsbno, NULL },
 	{ FLDT_DINODE_A, "dinode_a", NULL, (char *)inode_a_flds, inode_a_size,
 	  FTARG_SIZE|FTARG_OKEMPTY, NULL, inode_a_flds },
@@ -156,8 +215,10 @@ const ftattr_t	ftattrtab[] = {
 	  SI(bitsz(__int8_t)), 0, NULL, NULL },
 	{ FLDT_DINODE_U, "dinode_u", NULL, (char *)inode_u_flds, inode_u_size,
 	  FTARG_SIZE|FTARG_OKEMPTY, NULL, inode_u_flds },
-	{ FLDT_DIR, "dir", NULL, (char *)dir_flds, dir_size, FTARG_SIZE, NULL,
-	  dir_flds },
+	{ FLDT_DINODE_V3, "dinode_v3", NULL, (char *)inode_v3_flds,
+	  SI(bitsz(xfs_dinode_t)), 0, NULL, inode_v3_flds },
+
+/* dir v2 fields */
 	{ FLDT_DIR2, "dir2", NULL, (char *)dir2_flds, dir2_size, FTARG_SIZE,
 	  NULL, dir2_flds },
 	{ FLDT_DIR2_BLOCK_TAIL, "dir2_block_tail", NULL,
@@ -177,10 +238,10 @@ const ftattr_t	ftattrtab[] = {
 	  dir2_data_union_flds },
 	{ FLDT_DIR2_FREE_HDR, "dir2_free_hdr", NULL, (char *)dir2_free_hdr_flds,
 	  SI(bitsz(xfs_dir2_free_hdr_t)), 0, NULL, dir2_free_hdr_flds },
-	{ FLDT_DIR2_INO4, "dir2_ino4", fp_num, "%u", SI(bitsz(xfs_dir2_ino4_t)),
-	  0, fa_ino4, NULL },
+	{ FLDT_DIR2_INO4, "dir2_ino4", fp_num, "%u",
+	  SI(bitize(XFS_INO32_SIZE)), 0, fa_ino4, NULL },
 	{ FLDT_DIR2_INO8, "dir2_ino8", fp_num, "%llu",
-	  SI(bitsz(xfs_dir2_ino8_t)), 0, fa_ino8, NULL },
+	  SI(bitize(XFS_INO64_SIZE)), 0, fa_ino8, NULL },
 	{ FLDT_DIR2_INOU, "dir2_inou", NULL, (char *)dir2_inou_flds,
 	  dir2_inou_size, FTARG_SIZE, NULL, dir2_inou_flds },
 	{ FLDT_DIR2_LEAF_ENTRY, "dir2_leaf_entry", NULL,
@@ -196,45 +257,53 @@ const ftattr_t	ftattrtab[] = {
 	{ FLDT_DIR2_SF_HDR, "dir2_sf_hdr", NULL, (char *)dir2_sf_hdr_flds,
 	  dir2_sf_hdr_size, FTARG_SIZE, NULL, dir2_sf_hdr_flds },
 	{ FLDT_DIR2_SF_OFF, "dir2_sf_off", fp_num, "%#x",
-	  SI(bitsz(xfs_dir2_sf_off_t)), 0, NULL, NULL },
+	  SI(bitize(2*sizeof(__u8))), 0, NULL, NULL },
 	{ FLDT_DIR2SF, "dir2sf", NULL, (char *)dir2sf_flds, dir2sf_size,
 	  FTARG_SIZE, NULL, dir2sf_flds },
-	{ FLDT_DIR_BLKINFO, "dir_blkinfo", NULL, (char *)dir_blkinfo_flds,
-	  SI(bitsz(struct xfs_da_blkinfo)), 0, NULL, dir_blkinfo_flds },
-	{ FLDT_DIR_INO, "dir_ino", fp_num, "%llu", SI(bitsz(xfs_dir_ino_t)), 0,
-	  fa_ino, NULL },
-	{ FLDT_DIR_LEAF_ENTRY, "dir_leaf_entry", fp_sarray,
-	  (char *)dir_leaf_entry_flds, SI(bitsz(struct xfs_dir_leaf_entry)), 0,
-	  NULL, dir_leaf_entry_flds },
-	{ FLDT_DIR_LEAF_HDR, "dir_leaf_hdr", NULL, (char *)dir_leaf_hdr_flds,
-	  SI(bitsz(struct xfs_dir_leaf_hdr)), 0, NULL, dir_leaf_hdr_flds },
-	{ FLDT_DIR_LEAF_MAP, "dir_leaf_map", fp_sarray,
-	  (char *)dir_leaf_map_flds, SI(bitsz(struct xfs_dir_leaf_map)), 0,
-	  NULL, dir_leaf_map_flds },
-	{ FLDT_DIR_LEAF_NAME, "dir_leaf_name", NULL, (char *)dir_leaf_name_flds,
-	  dir_leaf_name_size, FTARG_SIZE, NULL, dir_leaf_name_flds },
-	{ FLDT_DIR_NODE_ENTRY, "dir_node_entry", fp_sarray,
-	  (char *)dir_node_entry_flds, SI(bitsz(struct xfs_da_node_entry)), 0,
-	  NULL, dir_node_entry_flds },
-	{ FLDT_DIR_NODE_HDR, "dir_node_hdr", NULL, (char *)dir_node_hdr_flds,
-	  SI(bitsz(struct xfs_da_node_hdr)), 0, NULL, dir_node_hdr_flds },
-	{ FLDT_DIR_SF_ENTRY, "dir_sf_entry", NULL, (char *)dir_sf_entry_flds,
-	  dir_sf_entry_size, FTARG_SIZE, NULL, dir_sf_entry_flds },
-	{ FLDT_DIR_SF_HDR, "dir_sf_hdr", NULL, (char *)dir_sf_hdr_flds,
-	  SI(bitsz(struct xfs_dir_sf_hdr)), 0, NULL, dir_sf_hdr_flds },
+
+/* dir v3 fields */
+	{ FLDT_DIR3, "dir3", NULL, (char *)dir3_flds, dir2_size, FTARG_SIZE,
+	  NULL, dir3_flds },
+	{ FLDT_DIR3_BLKHDR, "dir3_blk_hdr", NULL, (char *)dir3_blkhdr_flds,
+	  SI(bitsz(struct xfs_dir3_blk_hdr)), 0, NULL, dir3_blkhdr_flds },
+	{ FLDT_DIR3_DATA_HDR, "dir3_data_hdr", NULL, (char *)dir3_data_hdr_flds,
+	  SI(bitsz(struct xfs_dir3_data_hdr)), 0, NULL, dir3_data_hdr_flds },
+	{ FLDT_DIR3_FREE_HDR, "dir3_free_hdr", NULL, (char *)dir3_free_hdr_flds,
+	  SI(bitsz(struct xfs_dir3_free_hdr)), 0, NULL, dir3_free_hdr_flds },
+	{ FLDT_DIR3_LEAF_HDR, "dir3_leaf_hdr", NULL, (char *)dir3_leaf_hdr_flds,
+	  SI(bitsz(struct xfs_dir3_leaf_hdr)), 0, NULL, dir3_leaf_hdr_flds },
+	{ FLDT_DIR3_DATA_UNION, "dir3_data_union", NULL,
+	  (char *)dir3_data_union_flds, dir2_data_union_size, FTARG_SIZE, NULL,
+	  dir3_data_union_flds },
+	{ FLDT_DIR3_SF_ENTRY, "dir3_sf_entry", NULL, (char *)dir3_sf_entry_flds,
+	  dir2_sf_entry_size, FTARG_SIZE, NULL, dir3_sf_entry_flds },
+	{ FLDT_DIR3SF, "dir3sf", NULL, (char *)dir3sf_flds, dir2sf_size,
+	  FTARG_SIZE, NULL, dir3sf_flds },
+
+/* dir v2/3 node fields */
+	{ FLDT_DA_BLKINFO, "dir_blkinfo", NULL, (char *)da_blkinfo_flds,
+	  SI(bitsz(struct xfs_da_blkinfo)), 0, NULL, da_blkinfo_flds },
+	{ FLDT_DA_NODE_ENTRY, "dir_node_entry", fp_sarray,
+	  (char *)da_node_entry_flds, SI(bitsz(struct xfs_da_node_entry)), 0,
+	  NULL, da_node_entry_flds },
+	{ FLDT_DA_NODE_HDR, "dir_node_hdr", NULL, (char *)da_node_hdr_flds,
+	  SI(bitsz(struct xfs_da_node_hdr)), 0, NULL, da_node_hdr_flds },
+	{ FLDT_DA3_BLKINFO, "dir_blkinfo", NULL, (char *)da3_blkinfo_flds,
+	  SI(bitsz(struct xfs_da3_blkinfo)), 0, NULL, da3_blkinfo_flds },
+	{ FLDT_DA3_NODE_HDR, "dir_node_hdr", NULL, (char *)da3_node_hdr_flds,
+	  SI(bitsz(struct xfs_da3_node_hdr)), 0, NULL, da3_node_hdr_flds },
+
 	{ FLDT_DIRBLOCK, "dirblock", fp_num, "%u", SI(bitsz(__uint32_t)), 0,
 	  fa_dirblock, NULL },
-	{ FLDT_DIRSHORT, "dirshort", NULL, (char *)dir_shortform_flds,
-	  dirshort_size, FTARG_SIZE, NULL, dir_shortform_flds },
 	{ FLDT_DISK_DQUOT, "disk_dquot", NULL, (char *)disk_dquot_flds,
 	  SI(bitsz(xfs_disk_dquot_t)), 0, NULL, disk_dquot_flds },
 	{ FLDT_DQBLK, "dqblk", NULL, (char *)dqblk_flds, SI(bitsz(xfs_dqblk_t)),
 	  0, NULL, dqblk_flds },
 	{ FLDT_DQID, "dqid", fp_num, "%d", SI(bitsz(xfs_dqid_t)), 0, NULL,
 	  NULL },
-	{ FLDT_DRFSBNO, "drfsbno", fp_num, "%llu", SI(bitsz(xfs_drfsbno_t)),
+	{ FLDT_DRFSBNO, "drfsbno", fp_num, "%llu", SI(bitsz(xfs_rfsblock_t)),
 	  FTARG_DONULL, fa_drfsbno, NULL },
-	{ FLDT_DRTBNO, "drtbno", fp_num, "%llu", SI(bitsz(xfs_drtbno_t)),
+	{ FLDT_DRTBNO, "drtbno", fp_num, "%llu", SI(bitsz(xfs_rtblock_t)),
 	  FTARG_DONULL, fa_drtbno, NULL },
 	{ FLDT_EXTLEN, "extlen", fp_num, "%u", SI(bitsz(xfs_extlen_t)), 0, NULL,
 	  NULL },
@@ -246,14 +315,22 @@ const ftattr_t	ftattrtab[] = {
 	  fa_ino, NULL },
 	{ FLDT_INOBT, "inobt",  NULL, (char *)inobt_flds, btblock_size,
 	  FTARG_SIZE, NULL, inobt_flds },
+	{ FLDT_INOBT_CRC, "inobt",  NULL, (char *)inobt_crc_flds, btblock_size,
+	  FTARG_SIZE, NULL, inobt_crc_flds },
+	{ FLDT_INOBT_SPCRC, "inobt",  NULL, (char *)inobt_spcrc_flds,
+	  btblock_size, FTARG_SIZE, NULL, inobt_spcrc_flds },
 	{ FLDT_INOBTKEY, "inobtkey", fp_sarray, (char *)inobt_key_flds,
 	  SI(bitsz(xfs_inobt_key_t)), 0, NULL, inobt_key_flds },
 	{ FLDT_INOBTPTR, "inobtptr", fp_num, "%u", SI(bitsz(xfs_inobt_ptr_t)),
 	  0, fa_agblock, NULL },
 	{ FLDT_INOBTREC, "inobtrec", fp_sarray, (char *)inobt_rec_flds,
 	  SI(bitsz(xfs_inobt_rec_t)), 0, NULL, inobt_rec_flds },
+	{ FLDT_INOBTSPREC, "inobtsprec", fp_sarray, (char *) inobt_sprec_flds,
+	  SI(bitsz(xfs_inobt_rec_t)), 0, NULL, inobt_sprec_flds },
 	{ FLDT_INODE, "inode", NULL, (char *)inode_flds, inode_size, FTARG_SIZE,
 	  NULL, inode_flds },
+	{ FLDT_INODE_CRC, "inode", NULL, (char *)inode_crc_flds, inode_size,
+	  FTARG_SIZE, NULL, inode_crc_flds },
 	{ FLDT_INOFREE, "inofree", fp_num, "%#llx", SI(bitsz(xfs_inofree_t)), 0,
 	  NULL, NULL },
 	{ FLDT_INT16D, "int16d", fp_num, "%d", SI(bitsz(__int16_t)),
@@ -272,6 +349,11 @@ const ftattr_t	ftattrtab[] = {
 	  NULL, NULL },
 	{ FLDT_SB, "sb", NULL, (char *)sb_flds, sb_size, FTARG_SIZE, NULL,
 	  sb_flds },
+
+/* CRC enabled symlink */
+	{ FLDT_SYMLINK_CRC, "symlink", NULL, (char *)symlink_crc_flds,
+	  symlink_size, FTARG_SIZE, NULL, symlink_crc_flds },
+
 	{ FLDT_TIME, "time", fp_time, NULL, SI(bitsz(__int32_t)), FTARG_SIGNED,
 	  NULL, NULL },
 	{ FLDT_TIMESTAMP, "timestamp", NULL, (char *)timestamp_flds,
@@ -323,10 +405,10 @@ bitoffset(
 			abase = (f->flags & FLD_ABASE1) != 0;
 			ASSERT(fa->ftyp == f->ftyp);
 			ASSERT((fa->arg & FTARG_SIZE) == 0);
-			return (int)(__psint_t)f->offset +
+			return (int)(intptr_t)f->offset +
 				(idx - abase) * fsize(f, obj, startoff, idx);
 		} else
-			return (int)(__psint_t)f->offset;
+			return (int)(intptr_t)f->offset;
 	} else
 		return (*f->offset)(obj, startoff, idx);
 }
@@ -338,7 +420,7 @@ fcount(
 	int		startoff)
 {
 	if (!(f->flags & FLD_COUNT))
-		return (int)(__psint_t)f->count;
+		return (int)(intptr_t)f->count;
 	else
 		return (*f->count)(obj, startoff);
 }
@@ -371,7 +453,7 @@ fsize(
 	fa = &ftattrtab[f->ftyp];
 	ASSERT(fa->ftyp == f->ftyp);
 	if (!(fa->arg & FTARG_SIZE))
-		return (int)(__psint_t)fa->size;
+		return (int)(intptr_t)fa->size;
 	else
 		return (*fa->size)(obj, startoff, idx);
 }
