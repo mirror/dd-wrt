@@ -214,7 +214,7 @@ static void unmount_fs(void)
 	char dev[32];
 	char mpoint[128];
 	char fstype[32];
-	char flags[64];
+	char flags[128];
 	int a, b;
 	FILE *fp = fopen("/proc/mounts", "rb");
 	while (!feof(fp) && fscanf(fp, "%s %s %s %s %d %d", dev, mpoint, fstype, flags, &a, &b) == 6) {
