@@ -147,7 +147,10 @@ seek_f(
 	 * decide if we want to display that type of entry.
 	 */
 	if (flag & SEEK_HFLAG) {
+		current = HOLE;
 		offset = lseek(file->fd, start, SEEK_HOLE);
+		if (offset != -1 && offset < start)
+			goto bad_result;
 		if ((start == offset) || !(flag & SEEK_DFLAG)) {
 			/*
 			 * this offset is a hole or are only displaying holes.
@@ -155,7 +158,6 @@ seek_f(
 			 * data, then we will fall through below to
 			 * initialize the data search.
 			 */
-			current = HOLE;
 			goto found_hole;
 		}
 	}
@@ -163,6 +165,8 @@ seek_f(
 	/* The offset is not a hole, or we are looking just for data */
 	current = DATA;
 	offset = lseek(file->fd, start, SEEK_DATA);
+	if (offset != -1 && offset < start)
+		goto bad_result;
 
 found_hole:
 	/*
@@ -203,7 +207,14 @@ found_hole:
 		current ^= 1;		/* alternate between data and hole */
 		start = offset;
 		offset = lseek(file->fd, start, seekinfo[current].seektype);
+		if (offset != -1 && offset <= start)
+			goto bad_result;
 	}
+	return 0;
+
+bad_result:
+	fprintf(stderr, "Invalid seek result: lseek(<fd>, %lld, SEEK_%s) = %lld\n",
+		(long long)start, seekinfo[current].name, (long long)offset);
 	return 0;
 }
 

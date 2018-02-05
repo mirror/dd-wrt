@@ -210,7 +210,7 @@ fallocate_f(
 			mode = FALLOC_FL_KEEP_SIZE;
 			break;
 		case 'p':
-			mode = FALLOC_FL_PUNCH_HOLE;
+			mode = FALLOC_FL_PUNCH_HOLE|FALLOC_FL_KEEP_SIZE;
 			break;
 		case 'u':
 			mode = FALLOC_FL_UNSHARE_RANGE;

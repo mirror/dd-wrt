@@ -70,8 +70,8 @@ avl64_checktree(
 	avl64node_t *root)
 {
 	avl64node_t *nlast, *nnext, *np;
-	__uint64_t offset = 0;
-	__uint64_t end;
+	uint64_t offset = 0;
+	uint64_t end;
 
 	nlast = nnext = root;
 
@@ -583,8 +583,8 @@ attach:
 avl64node_t *
 avl64_findanyrange(
 	avl64tree_desc_t *tree,
-	__uint64_t start,
-	__uint64_t end,
+	uint64_t start,
+	uint64_t end,
 	int	checklen)
 {
 	avl64node_t *np = tree->avl_root;
@@ -655,7 +655,7 @@ avl64_findanyrange(
 avl64node_t *
 avl64_findrange(
 	avl64tree_desc_t *tree,
-	__uint64_t value)
+	uint64_t value)
 {
 	avl64node_t *np = tree->avl_root;
 
@@ -682,10 +682,10 @@ avl64_findrange(
 avl64node_t *
 avl64_find(
 	avl64tree_desc_t *tree,
-	__uint64_t value)
+	uint64_t value)
 {
 	avl64node_t *np = tree->avl_root;
-	__uint64_t nvalue;
+	uint64_t nvalue;
 
 	while (np) {
 		nvalue = AVL_START(tree, np);
@@ -909,8 +909,8 @@ static
 avl64node_t *
 avl64_insert_find_growth(
 		avl64tree_desc_t *tree,
-		__uint64_t start,	/* range start at start, */
-		__uint64_t end,	/* exclusive */
+		uint64_t start,	/* range start at start, */
+		uint64_t end,	/* exclusive */
 		int   *growthp)	/* OUT */
 {
 	avl64node_t *root = tree->avl_root;
@@ -963,7 +963,7 @@ avl64_insert_grow(
 	int growth)
 {
 	avl64node_t *nnext;
-	__uint64_t start = AVL_START(tree, newnode);
+	uint64_t start = AVL_START(tree, newnode);
 
 	if (growth == AVL_BACK) {
 
@@ -1005,8 +1005,8 @@ avl64_insert(
 	avl64node_t *newnode)
 {
 	avl64node_t *np;
-	__uint64_t start = AVL_START(tree, newnode);
-	__uint64_t end = AVL_END(tree, newnode);
+	uint64_t start = AVL_START(tree, newnode);
+	uint64_t end = AVL_END(tree, newnode);
 	int growth;
 
 	ASSERT(newnode);
@@ -1159,16 +1159,16 @@ avl64ops_t avl_debug_ops = {
 	avl_debug_end,
 }
 
-static __uint64_t
+static uint64_t
 avl64_debug_start(avl64node_t *node)
 {
-	return (__uint64_t)(struct avl_debug_node *)node->avl_start;
+	return (uint64_t)(struct avl_debug_node *)node->avl_start;
 }
 
-static __uint64_t
+static uint64_t
 avl64_debug_end(avl64node_t *node)
 {
-	return (__uint64_t)
+	return (uint64_t)
 		((struct avl_debug_node *)node->avl_start +
 		 (struct avl_debug_node *)node->avl_size);
 }
@@ -1304,7 +1304,7 @@ main()
 avl64node_t *
 avl64_findadjacent(
 	avl64tree_desc_t *tree,
-	__uint64_t value,
+	uint64_t value,
 	int		dir)
 {
 	avl64node_t *np = tree->avl_root;
@@ -1378,8 +1378,8 @@ avl64_findadjacent(
 void
 avl64_findranges(
 	avl64tree_desc_t *tree,
-	__uint64_t start,
-	__uint64_t end,
+	uint64_t start,
+	uint64_t end,
 	avl64node_t	        **startp,
 	avl64node_t		**endp)
 {

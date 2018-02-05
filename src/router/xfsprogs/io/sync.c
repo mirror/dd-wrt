@@ -52,7 +52,8 @@ sync_init(void)
 {
 	sync_cmd.name = "sync";
 	sync_cmd.cfunc = sync_f;
-	sync_cmd.flags = CMD_NOMAP_OK | CMD_NOFILE_OK | CMD_FOREIGN_OK;
+	sync_cmd.flags = CMD_NOMAP_OK | CMD_NOFILE_OK |
+			 CMD_FOREIGN_OK | CMD_FLAG_ONESHOT;
 	sync_cmd.oneline =
 		_("calls sync(2) to flush all in-core filesystem state to disk");
 

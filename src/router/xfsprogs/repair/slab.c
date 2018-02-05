@@ -469,7 +469,7 @@ bag_remove(
 {
 	ASSERT(nr < bag->bg_inuse);
 	memmove(&bag->bg_ptrs[nr], &bag->bg_ptrs[nr + 1],
-		(bag->bg_inuse - nr) * sizeof(void *));
+		(bag->bg_inuse - nr - 1) * sizeof(void *));
 	bag->bg_inuse--;
 	return 0;
 }

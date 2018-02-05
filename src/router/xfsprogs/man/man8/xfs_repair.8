@@ -65,7 +65,9 @@ Forces
 .B xfs_repair
 to zero the log even if it is dirty (contains metadata changes).
 When using this option the filesystem will likely appear to be corrupt,
-and can cause the loss of user files and/or data.
+and can cause the loss of user files and/or data.  See the
+.B "DIRTY LOGS"
+section for more information.
 .TP
 .BI \-l " logdev"
 Specifies the device special file where the filesystem's external
@@ -505,11 +507,38 @@ This message refers to a large directory.
 If the directory were small, the message would read "junking entry ...".
 .SH EXIT STATUS
 .B xfs_repair \-n
-(no modify node)
+(no modify mode)
 will return a status of 1 if filesystem corruption was detected and
 0 if no filesystem corruption was detected.
 .B xfs_repair
-run without the \-n option will always return a status code of 0.
+run without the \-n option will always return a status code of 0 if
+it completes without problems.  If a runtime error is encountered
+during operation, it will return a status of 1.  In this case,
+.B xfs_repair
+should be restarted.  If
+.B xfs_repair is unable
+to proceed due to a dirty log, it will return a status of 2.  See below.
+.SH DIRTY LOGS
+Due to the design of the XFS log, a dirty log can only be replayed 
+by the kernel, on a machine having the same CPU architecture as the
+machine which was writing to the log.
+.B xfs_repair
+cannot replay a dirty log and will exit with a status code of 2
+when it detects a dirty log.
+.PP
+In this situation, the log can be replayed by mounting and immediately
+unmounting the filesystem on the same class of machine that crashed.
+Please make sure that the machine's hardware is reliable before
+replaying to avoid compounding the problems.
+.PP
+If mounting fails, the log can be erased by running
+.B xfs_repair
+with the -L option.
+All metadata updates in progress at the time of the crash will be lost,
+which may cause significant filesystem damage.
+This should
+.B only
+be used as a last resort.
 .SH BUGS
 The filesystem to be checked and repaired must have been
 unmounted cleanly using normal system administration procedures

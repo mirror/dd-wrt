@@ -115,7 +115,7 @@ sendfile_f(
 
 	if (!infile)
 		fd = filetable[fd].fd;
-	else if ((fd = openfile(infile, NULL, IO_READONLY, 0)) < 0)
+	else if ((fd = openfile(infile, NULL, IO_READONLY, 0, NULL)) < 0)
 		return 0;
 
 	if (optind == argc - 2) {

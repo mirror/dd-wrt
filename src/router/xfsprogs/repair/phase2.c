@@ -86,15 +86,20 @@ zero_log(
 			exit(2);
 	} else {
 		if (verbose) {
-			do_warn(
+			do_log(
 	_("zero_log: head block %" PRId64 " tail block %" PRId64 "\n"),
 				head_blk, tail_blk);
 		}
-		if (!no_modify && head_blk != tail_blk) {
-			if (zap_log) {
+		if (head_blk != tail_blk) {
+			if (!no_modify && zap_log) {
 				do_warn(_(
 "ALERT: The filesystem has valuable metadata changes in a log which is being\n"
 "destroyed because the -L option was used.\n"));
+			} else if (no_modify) {
+				do_warn(_(
+"ALERT: The filesystem has valuable metadata changes in a log which is being\n"
+"ignored because the -n option was used.  Expect spurious inconsistencies\n"
+"which may be resolved by first mounting the filesystem to replay the log.\n"));
 			} else {
 				do_warn(_(
 "ERROR: The filesystem has valuable metadata changes in a log which needs to\n"
@@ -174,7 +179,7 @@ phase2(
 
 	bad_ino_btree = 0;
 
-	set_progress_msg(PROG_FMT_SCAN_AG, (__uint64_t) glob_agcount);
+	set_progress_msg(PROG_FMT_SCAN_AG, (uint64_t) glob_agcount);
 
 	scan_ags(mp, scan_threads);
 

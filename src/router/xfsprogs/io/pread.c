@@ -16,6 +16,8 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
 #include <sys/uio.h>
 #include "command.h"
 #include "input.h"
@@ -170,12 +172,12 @@ dump_buffer(
 }
 
 #ifdef HAVE_PREADV
-static int
+static ssize_t
 do_preadv(
 	int		fd,
 	off64_t		offset,
-	ssize_t		count,
-	ssize_t		buffer_size)
+	size_t		count,
+	size_t		buffer_size)
 {
 	int		vecs = 0;
 	ssize_t		oldlen = 0;
@@ -206,12 +208,12 @@ do_preadv(
 #define do_preadv(fd, offset, count, buffer_size) (0)
 #endif
 
-static int
+static ssize_t
 do_pread(
 	int		fd,
 	off64_t		offset,
-	ssize_t		count,
-	ssize_t		buffer_size)
+	size_t		count,
+	size_t		buffer_size)
 {
 	if (!vectors)
 		return pread(fd, buffer, min(count, buffer_size), offset);

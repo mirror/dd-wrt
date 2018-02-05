@@ -31,6 +31,7 @@ db/bmroot.c
 db/bmroot.h
 db/btblock.c
 db/btblock.h
+db/btdump.c
 db/check.c
 db/check.h
 db/command.c
@@ -63,6 +64,8 @@ db/freesp.c
 db/freesp.h
 db/fsmap.c
 db/fsmap.h
+db/fuzz.c
+db/fuzz.h
 db/hash.c
 db/hash.h
 db/help.c
@@ -120,8 +123,6 @@ doc/Makefile
 doc/sparse.txt
 estimate/Makefile
 estimate/xfs_estimate.c
-fs/xfs/xfs_rmap_item.c
-fs/xfs/xfs_rmap_item.h
 fsck/Makefile
 fsck/xfs_fsck.sh
 fsr/Makefile
@@ -144,7 +145,6 @@ include/handle.h
 include/hlist.h
 include/input.h
 include/install-sh
-include/irix.h
 include/jdm.h
 include/kmem.h
 include/libxcmd.h
@@ -173,10 +173,12 @@ io/attr.c
 io/bmap.c
 io/copy_file_range.c
 io/cowextsize.c
+io/encrypt.c
 io/fadvise.c
 io/fiemap.c
 io/file.c
 io/freeze.c
+io/fsmap.c
 io/fsync.c
 io/getrusage.c
 io/imap.c
@@ -199,9 +201,12 @@ io/resblks.c
 io/seek.c
 io/sendfile.c
 io/shutdown.c
+io/stat.c
+io/statx.h
 io/sync.c
 io/sync_file_range.c
 io/truncate.c
+io/utimes.c
 io/xfs_bmap.sh
 io/xfs_freeze.sh
 io/xfs_mkfile.sh
@@ -326,6 +331,7 @@ m4/package_globals.m4
 m4/package_libcdev.m4
 m4/package_pthread.m4
 m4/package_rt.m4
+m4/package_sanitizer.m4
 m4/package_types.m4
 m4/package_utilies.m4
 m4/package_uuiddev.m4
@@ -357,6 +363,7 @@ man/man8/xfs_ncheck.8
 man/man8/xfs_quota.8
 man/man8/xfs_repair.8
 man/man8/xfs_rtcp.8
+man/man8/xfs_spaceman.8
 mdrestore/Makefile
 mdrestore/xfs_mdrestore.c
 mkfs/Makefile
@@ -442,6 +449,15 @@ repair/versions.h
 repair/xfs_repair.c
 rtcp/Makefile
 rtcp/xfs_rtcp.c
+spaceman/Makefile
+spaceman/file.c
+spaceman/freesp.c
+spaceman/init.c
+spaceman/init.h
+spaceman/prealloc.c
+spaceman/space.h
+spaceman/trim.c
 tools/find-api-violations.sh
 tools/libxfs-apply
+tools/libxfs-diff
 tools/xfsbuflock.py

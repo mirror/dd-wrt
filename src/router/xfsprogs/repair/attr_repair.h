@@ -32,10 +32,10 @@
 #define ACL_WRITE	02
 #define ACL_EXECUTE	01
 
-typedef __uint16_t	xfs_acl_perm_t;
-typedef __int32_t	xfs_acl_type_t;
-typedef __int32_t	xfs_acl_tag_t;
-typedef __int32_t	xfs_acl_id_t;
+typedef uint16_t	xfs_acl_perm_t;
+typedef int32_t		xfs_acl_type_t;
+typedef int32_t		xfs_acl_tag_t;
+typedef int32_t		xfs_acl_id_t;
 
 /*
  * "icacl" = in-core ACL. There is no equivalent in the XFS kernel code,
@@ -50,7 +50,7 @@ struct xfs_icacl_entry {
 };
 
 struct xfs_icacl {
-	__int32_t		acl_cnt;
+	int32_t			acl_cnt;
 	struct xfs_icacl_entry	acl_entry[0];
 };
 
@@ -59,14 +59,14 @@ struct xfs_icacl {
  */
 #define XFS_MAC_MAX_SETS	250
 typedef struct xfs_mac_label {
-	__uint8_t       ml_msen_type;	/* MSEN label type */
-	__uint8_t       ml_mint_type;	/* MINT label type */
-	__uint8_t       ml_level;	/* Hierarchical level */
-	__uint8_t       ml_grade;	/* Hierarchical grade */
-	__uint16_t      ml_catcount;	/* Category count */
-	__uint16_t      ml_divcount;	/* Division count */
+	uint8_t       ml_msen_type;	/* MSEN label type */
+	uint8_t       ml_mint_type;	/* MINT label type */
+	uint8_t       ml_level;	/* Hierarchical level */
+	uint8_t       ml_grade;	/* Hierarchical grade */
+	uint16_t      ml_catcount;	/* Category count */
+	uint16_t      ml_divcount;	/* Division count */
 					/* Category set, then Division set */
-	__uint16_t      ml_list[XFS_MAC_MAX_SETS];
+	uint16_t      ml_list[XFS_MAC_MAX_SETS];
 } xfs_mac_label_t;
 
 /* MSEN label type names. Choose an upper case ASCII character.  */
@@ -93,7 +93,7 @@ typedef struct xfs_mac_label {
 /*
  * Capabilities (IRIX)
  */
-typedef __uint64_t xfs_cap_value_t;
+typedef uint64_t xfs_cap_value_t;
 
 typedef struct xfs_cap_set {
 	xfs_cap_value_t	cap_effective;  /* use in capability checks */

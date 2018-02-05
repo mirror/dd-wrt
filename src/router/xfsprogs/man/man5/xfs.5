@@ -133,6 +133,12 @@ CRC enabled filesystems always use the attr2 format, and so
 will reject the noattr2 mount option if it is set.
 .TP
 .BR barrier | nobarrier
+Note: This option has been
+.B deprecated
+as of kernel v4.10; in that version, integrity operations are
+always performed and the mount option is ignored.  These mount
+options will be removed no earlier than kernel v4.15.
+.sp
 Enables/disables the use of block layer write barriers for
 writes into the journal and for data integrity operations.
 This allows for drive level write caching to be enabled, for

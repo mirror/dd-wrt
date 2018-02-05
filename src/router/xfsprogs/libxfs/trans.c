@@ -100,20 +100,13 @@ libxfs_trans_del_item(
  */
 int
 libxfs_trans_roll(
-	struct xfs_trans	**tpp,
-	struct xfs_inode	*dp)
+	struct xfs_trans	**tpp)
 {
 	struct xfs_mount	*mp;
-	struct xfs_trans	*trans;
+	struct xfs_trans	*trans = *tpp;
 	struct xfs_trans_res	tres;
+	unsigned int		old_blk_res;
 	int			error;
-
-	/*
-	 * Ensure that the inode is always logged.
-	 */
-	trans = *tpp;
-	if (dp)
-		xfs_trans_log_inode(trans, dp, XFS_ILOG_CORE);
 
 	/*
 	 * Copy the critical parameters from one trans to the next.
@@ -121,6 +114,7 @@ libxfs_trans_roll(
 	mp = trans->t_mountp;
 	tres.tr_logres = trans->t_log_res;
 	tres.tr_logcount = trans->t_log_count;
+	old_blk_res = trans->t_blk_res;
 
 	/*
 	 * Commit the current transaction.
@@ -133,9 +127,8 @@ libxfs_trans_roll(
 	if (error)
 		return error;
 
-
 	/*
-	 * Reserve space in the log for th next transaction.
+	 * Reserve space in the log for the next transaction.
 	 * This also pushes items in the "AIL", the list of logged items,
 	 * out to disk if they are taking up space at the tail of the log
 	 * that we want to use.  This requires that either nothing be locked
@@ -145,14 +138,8 @@ libxfs_trans_roll(
 	tres.tr_logflags = XFS_TRANS_PERM_LOG_RES;
 	error = libxfs_trans_alloc(mp, &tres, 0, 0, 0, tpp);
 	trans = *tpp;
-	/*
-	 *  Ensure that the inode is in the new transaction and locked.
-	 */
-	if (error)
-		return error;
+	trans->t_blk_res = old_blk_res;
 
-	if (dp)
-		xfs_trans_ijoin(trans, dp, 0);
 	return 0;
 }
 
@@ -185,12 +172,35 @@ libxfs_trans_alloc(
 		exit(1);
 	}
 	ptr->t_mountp = mp;
+	ptr->t_blk_res = blocks;
 	INIT_LIST_HEAD(&ptr->t_items);
 #ifdef XACT_DEBUG
 	fprintf(stderr, "allocated new transaction %p\n", ptr);
 #endif
 	*tpp = ptr;
 	return 0;
+}
+
+/*
+ * Create an empty transaction with no reservation.  This is a defensive
+ * mechanism for routines that query metadata without actually modifying
+ * them -- if the metadata being queried is somehow cross-linked (think a
+ * btree block pointer that points higher in the tree), we risk deadlock.
+ * However, blocks grabbed as part of a transaction can be re-grabbed.
+ * The verifiers will notice the corrupt block and the operation will fail
+ * back to userspace without deadlocking.
+ *
+ * Note the zero-length reservation; this transaction MUST be cancelled
+ * without any dirty data.
+ */
+int
+libxfs_trans_alloc_empty(
+	struct xfs_mount		*mp,
+	struct xfs_trans		**tpp)
+{
+	struct xfs_trans_res		resv = {0};
+
+	return xfs_trans_alloc(mp, &resv, 0, 0, XFS_TRANS_NO_WRITECOUNT, tpp);
 }
 
 void
@@ -331,6 +341,21 @@ xfs_trans_log_inode(
 	ip->i_itemp->ili_fields |= flags;
 }
 
+int
+libxfs_trans_roll_inode(
+	struct xfs_trans	**tpp,
+	struct xfs_inode	*ip)
+{
+	int			error;
+
+	xfs_trans_log_inode(*tpp, ip, XFS_ILOG_CORE);
+	error = xfs_trans_roll(tpp);
+	if (!error)
+		xfs_trans_ijoin(*tpp, ip, 0);
+	return error;
+}
+
+
 /*
  * This is called to mark bytes first through last inclusive of the given
  * buffer as needing to be logged when the transaction is committed.
@@ -361,6 +386,26 @@ libxfs_trans_log_buf(
 	tp->t_flags |= XFS_TRANS_DIRTY;
 	bip->bli_item.li_desc->lid_flags |= XFS_LID_DIRTY;
 	xfs_buf_item_log(bip, first, last);
+}
+
+/*
+ * For userspace, ordered buffers just need to be marked dirty so
+ * the transaction commit will write them and mark them up-to-date.
+ * In essence, they are just like any other logged buffer in userspace.
+ *
+ * If the buffer is already dirty, trigger the "already logged" return condition.
+ */
+bool
+libxfs_trans_ordered_buf(
+	struct xfs_trans	*tp,
+	struct xfs_buf		*bp)
+{
+	struct xfs_buf_log_item	*bip = bp->b_fspriv;
+	bool			ret;
+
+	ret = (bip->bli_item.li_desc->lid_flags & XFS_LID_DIRTY);
+	libxfs_trans_log_buf(tp, bp, 0, bp->b_bcount);
+	return ret;
 }
 
 void
@@ -728,7 +773,7 @@ trans_committed(
         list_for_each_entry_safe(lidp, next, &tp->t_items, lid_trans) {
 		struct xfs_log_item *lip = lidp->lid_item;
 
-                xfs_trans_del_item(lip);
+		xfs_trans_del_item(lip);
 
 		if (lip->li_type == XFS_LI_BUF)
 			buf_item_done((xfs_buf_log_item_t *)lip);

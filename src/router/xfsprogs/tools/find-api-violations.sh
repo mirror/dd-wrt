@@ -6,7 +6,7 @@
 
 # NOTE: This script doesn't look for API violations in function parameters.
 
-tool_dirs="copy db estimate fs fsck fsr growfs io mdrestore mkfs quota repair rtcp"
+tool_dirs="copy db estimate fsck fsr growfs io logprint mdrestore mkfs quota repair rtcp"
 
 # Calls to xfs_* functions in libxfs/*.c without the libxfs_ prefix
 find_possible_api_calls() {

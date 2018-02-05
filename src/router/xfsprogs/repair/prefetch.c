@@ -679,11 +679,32 @@ static int
 pf_create_prefetch_thread(
 	prefetch_args_t		*args);
 
+/*
+ * If we fail to create the queuing thread or can't create even one
+ * prefetch thread, we need to let processing continue without it.
+ */
+static void
+pf_skip_prefetch_thread(prefetch_args_t *args)
+{
+	prefetch_args_t *next;
+
+	pthread_mutex_lock(&args->lock);
+	args->prefetch_done = 1;
+	pf_start_processing(args);
+	next = args->next_args;
+	args->next_args = NULL;
+	pthread_mutex_unlock(&args->lock);
+
+	if (next)
+		pf_create_prefetch_thread(next);
+}
+
 static void *
 pf_queuing_worker(
 	void			*param)
 {
 	prefetch_args_t		*args = param;
+	prefetch_args_t		*next_args;
 	int			num_inos;
 	ino_tree_node_t		*irec;
 	ino_tree_node_t		*cur_irec;
@@ -703,8 +724,11 @@ pf_queuing_worker(
 		if (err != 0) {
 			do_warn(_("failed to create prefetch thread: %s\n"),
 				strerror(err));
+			pftrace("failed to create prefetch thread for AG %d: %s",
+				args->agno, strerror(err));
+			args->io_threads[i] = 0;
 			if (i == 0) {
-				pf_start_processing(args);
+				pf_skip_prefetch_thread(args);
 				return NULL;
 			}
 			/*
@@ -795,10 +819,12 @@ pf_queuing_worker(
 	ASSERT(btree_is_empty(args->io_queue));
 
 	args->prefetch_done = 1;
-	if (args->next_args)
-		pf_create_prefetch_thread(args->next_args);
-
+	next_args = args->next_args;
+	args->next_args = NULL;
 	pthread_mutex_unlock(&args->lock);
+
+	if (next_args)
+		pf_create_prefetch_thread(next_args);
 
 	return NULL;
 }
@@ -816,7 +842,10 @@ pf_create_prefetch_thread(
 	if (err != 0) {
 		do_warn(_("failed to create prefetch thread: %s\n"),
 			strerror(err));
-		cleanup_inode_prefetch(args);
+		pftrace("failed to create prefetch thread for AG %d: %s",
+			args->agno, strerror(err));
+		args->queuing_thread = 0;
+		pf_skip_prefetch_thread(args);
 	}
 
 	return err == 0;
@@ -878,11 +907,15 @@ start_inode_prefetch(
 	} else {
 		pthread_mutex_lock(&prev_args->lock);
 		if (prev_args->prefetch_done) {
+			pthread_mutex_unlock(&prev_args->lock);
 			if (!pf_create_prefetch_thread(args))
 				args = NULL;
-		} else
+		} else {
 			prev_args->next_args = args;
-		pthread_mutex_unlock(&prev_args->lock);
+			pftrace("queued AG %d after AG %d",
+				args->agno, prev_args->agno);
+			pthread_mutex_unlock(&prev_args->lock);
+		}
 	}
 
 	return args;
@@ -1056,6 +1089,8 @@ cleanup_inode_prefetch(
 		pthread_join(args->queuing_thread, NULL);
 
 	pftrace("AG %d prefetch done", args->agno);
+
+	ASSERT(args->next_args == NULL);
 
 	pthread_mutex_destroy(&args->lock);
 	pthread_cond_destroy(&args->start_reading);

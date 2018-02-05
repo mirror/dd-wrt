@@ -27,6 +27,7 @@
 #include "xfs_cksum.h"
 #include "xfs_trans.h"
 #include "xfs_ialloc.h"
+#include "xfs_dir2.h"
 
 /*
  * Check that none of the inode's in the buffer have a next
@@ -102,8 +103,7 @@ xfs_inode_buf_verify(
 		di_ok = dip->di_magic == cpu_to_be16(XFS_DINODE_MAGIC) &&
 			xfs_dinode_good_version(mp, dip->di_version);
 		if (unlikely(XFS_TEST_ERROR(!di_ok, mp,
-						XFS_ERRTAG_ITOBP_INOTOBP,
-						XFS_RANDOM_ITOBP_INOTOBP))) {
+						XFS_ERRTAG_ITOBP_INOTOBP))) {
 			if (readahead) {
 				bp->b_flags &= ~XBF_DONE;
 				xfs_buf_ioerror(bp, -EIO);
@@ -384,10 +384,23 @@ xfs_dinode_verify(
 	xfs_ino_t		ino,
 	struct xfs_dinode	*dip)
 {
+	uint16_t		mode;
 	uint16_t		flags;
 	uint64_t		flags2;
 
 	if (dip->di_magic != cpu_to_be16(XFS_DINODE_MAGIC))
+		return false;
+
+	/* don't allow invalid i_size */
+	if (be64_to_cpu(dip->di_size) & (1ULL << 63))
+		return false;
+
+	mode = be16_to_cpu(dip->di_mode);
+	if (mode && xfs_mode_to_ftype(mode) == XFS_DIR3_FT_UNKNOWN)
+		return false;
+
+	/* No zero-length symlinks/dirs. */
+	if ((S_ISLNK(mode) || S_ISDIR(mode)) && dip->di_size == 0)
 		return false;
 
 	/* only version 3 or greater inodes are extensively verified here */
@@ -428,13 +441,13 @@ xfs_dinode_calc_crc(
 	struct xfs_mount	*mp,
 	struct xfs_dinode	*dip)
 {
-	__uint32_t		crc;
+	uint32_t		crc;
 
 	if (dip->di_version < 3)
 		return;
 
 	ASSERT(xfs_sb_version_hascrc(&mp->m_sb));
-	crc = xfs_start_cksum((char *)dip, mp->m_sb.sb_inodesize,
+	crc = xfs_start_cksum_update((char *)dip, mp->m_sb.sb_inodesize,
 			      XFS_DINODE_CRC_OFF);
 	dip->di_crc = xfs_end_cksum(crc);
 }
@@ -492,7 +505,7 @@ xfs_iread(
 
 	/* even unallocated inodes are verified */
 	if (!xfs_dinode_verify(mp, ip->i_ino, dip)) {
-		xfs_alert(mp, "%s: validation failed for inode %lld failed",
+		xfs_alert(mp, "%s: validation failed for inode %lld",
 				__func__, ip->i_ino);
 
 		XFS_CORRUPTION_ERROR(__func__, XFS_ERRLEVEL_LOW, mp, dip);
@@ -537,7 +550,6 @@ xfs_iread(
 	}
 
 	ASSERT(ip->i_d.di_version >= 2);
-
 	ip->i_delayed_blks = 0;
 
 	/*

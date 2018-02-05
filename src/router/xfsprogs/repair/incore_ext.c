@@ -721,13 +721,13 @@ search_rt_dup_extent(xfs_mount_t *mp, xfs_rtblock_t bno)
 	return(ret);
 }
 
-static __uint64_t
+static uint64_t
 avl64_rt_ext_start(avl64node_t *node)
 {
 	return(((rt_extent_tree_node_t *) node)->rt_startblock);
 }
 
-static __uint64_t
+static uint64_t
 avl64_ext_end(avl64node_t *node)
 {
 	return(((rt_extent_tree_node_t *) node)->rt_startblock +
@@ -834,7 +834,7 @@ count_extents(xfs_agnumber_t agno, avltree_desc_t *tree, int whichtree)
 int
 count_bno_extents_blocks(xfs_agnumber_t agno, uint *numblocks)
 {
-	__uint64_t nblocks;
+	uint64_t nblocks;
 	extent_tree_node_t *node;
 	int i = 0;
 

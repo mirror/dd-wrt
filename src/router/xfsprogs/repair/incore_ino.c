@@ -38,7 +38,7 @@ static avltree_desc_t	**inode_uncertain_tree_ptrs;
 /* memory optimised nlink counting for all inodes */
 
 static void *
-alloc_nlink_array(__uint8_t nlink_size)
+alloc_nlink_array(uint8_t nlink_size)
 {
 	void *ptr;
 
@@ -51,10 +51,10 @@ alloc_nlink_array(__uint8_t nlink_size)
 static void
 nlink_grow_8_to_16(ino_tree_node_t *irec)
 {
-	__uint16_t	*new_nlinks;
+	uint16_t	*new_nlinks;
 	int		i;
 
-	irec->nlink_size = sizeof(__uint16_t);
+	irec->nlink_size = sizeof(uint16_t);
 
 	new_nlinks = alloc_nlink_array(irec->nlink_size);
 	for (i = 0; i < XFS_INODES_PER_CHUNK; i++)
@@ -76,10 +76,10 @@ nlink_grow_8_to_16(ino_tree_node_t *irec)
 static void
 nlink_grow_16_to_32(ino_tree_node_t *irec)
 {
-	__uint32_t	*new_nlinks;
+	uint32_t	*new_nlinks;
 	int		i;
 
-	irec->nlink_size = sizeof(__uint32_t);
+	irec->nlink_size = sizeof(uint32_t);
 
 	new_nlinks = alloc_nlink_array(irec->nlink_size);
 	for (i = 0; i < XFS_INODES_PER_CHUNK; i++)
@@ -104,21 +104,21 @@ void add_inode_ref(struct ino_tree_node *irec, int ino_offset)
 	ASSERT(irec->ino_un.ex_data != NULL);
 
 	switch (irec->nlink_size) {
-	case sizeof(__uint8_t):
+	case sizeof(uint8_t):
 		if (irec->ino_un.ex_data->counted_nlinks.un8[ino_offset] < 0xff) {
 			irec->ino_un.ex_data->counted_nlinks.un8[ino_offset]++;
 			break;
 		}
 		nlink_grow_8_to_16(irec);
 		/*FALLTHRU*/
-	case sizeof(__uint16_t):
+	case sizeof(uint16_t):
 		if (irec->ino_un.ex_data->counted_nlinks.un16[ino_offset] < 0xffff) {
 			irec->ino_un.ex_data->counted_nlinks.un16[ino_offset]++;
 			break;
 		}
 		nlink_grow_16_to_32(irec);
 		/*FALLTHRU*/
-	case sizeof(__uint32_t):
+	case sizeof(uint32_t):
 		irec->ino_un.ex_data->counted_nlinks.un32[ino_offset]++;
 		break;
 	default:
@@ -128,20 +128,20 @@ void add_inode_ref(struct ino_tree_node *irec, int ino_offset)
 
 void drop_inode_ref(struct ino_tree_node *irec, int ino_offset)
 {
-	__uint32_t	refs = 0;
+	uint32_t	refs = 0;
 
 	ASSERT(irec->ino_un.ex_data != NULL);
 
 	switch (irec->nlink_size) {
-	case sizeof(__uint8_t):
+	case sizeof(uint8_t):
 		ASSERT(irec->ino_un.ex_data->counted_nlinks.un8[ino_offset] > 0);
 		refs = --irec->ino_un.ex_data->counted_nlinks.un8[ino_offset];
 		break;
-	case sizeof(__uint16_t):
+	case sizeof(uint16_t):
 		ASSERT(irec->ino_un.ex_data->counted_nlinks.un16[ino_offset] > 0);
 		refs = --irec->ino_un.ex_data->counted_nlinks.un16[ino_offset];
 		break;
-	case sizeof(__uint32_t):
+	case sizeof(uint32_t):
 		ASSERT(irec->ino_un.ex_data->counted_nlinks.un32[ino_offset] > 0);
 		refs = --irec->ino_un.ex_data->counted_nlinks.un32[ino_offset];
 		break;
@@ -153,16 +153,16 @@ void drop_inode_ref(struct ino_tree_node *irec, int ino_offset)
 		irec->ino_un.ex_data->ino_reached &= ~IREC_MASK(ino_offset);
 }
 
-__uint32_t num_inode_references(struct ino_tree_node *irec, int ino_offset)
+uint32_t num_inode_references(struct ino_tree_node *irec, int ino_offset)
 {
 	ASSERT(irec->ino_un.ex_data != NULL);
 
 	switch (irec->nlink_size) {
-	case sizeof(__uint8_t):
+	case sizeof(uint8_t):
 		return irec->ino_un.ex_data->counted_nlinks.un8[ino_offset];
-	case sizeof(__uint16_t):
+	case sizeof(uint16_t):
 		return irec->ino_un.ex_data->counted_nlinks.un16[ino_offset];
-	case sizeof(__uint32_t):
+	case sizeof(uint32_t):
 		return irec->ino_un.ex_data->counted_nlinks.un32[ino_offset];
 	default:
 		ASSERT(0);
@@ -171,24 +171,24 @@ __uint32_t num_inode_references(struct ino_tree_node *irec, int ino_offset)
 }
 
 void set_inode_disk_nlinks(struct ino_tree_node *irec, int ino_offset,
-		__uint32_t nlinks)
+		uint32_t nlinks)
 {
 	switch (irec->nlink_size) {
-	case sizeof(__uint8_t):
+	case sizeof(uint8_t):
 		if (nlinks < 0xff) {
 			irec->disk_nlinks.un8[ino_offset] = nlinks;
 			break;
 		}
 		nlink_grow_8_to_16(irec);
 		/*FALLTHRU*/
-	case sizeof(__uint16_t):
+	case sizeof(uint16_t):
 		if (nlinks < 0xffff) {
 			irec->disk_nlinks.un16[ino_offset] = nlinks;
 			break;
 		}
 		nlink_grow_16_to_32(irec);
 		/*FALLTHRU*/
-	case sizeof(__uint32_t):
+	case sizeof(uint32_t):
 		irec->disk_nlinks.un32[ino_offset] = nlinks;
 		break;
 	default:
@@ -196,14 +196,14 @@ void set_inode_disk_nlinks(struct ino_tree_node *irec, int ino_offset,
 	}
 }
 
-__uint32_t get_inode_disk_nlinks(struct ino_tree_node *irec, int ino_offset)
+uint32_t get_inode_disk_nlinks(struct ino_tree_node *irec, int ino_offset)
 {
 	switch (irec->nlink_size) {
-	case sizeof(__uint8_t):
+	case sizeof(uint8_t):
 		return irec->disk_nlinks.un8[ino_offset];
-	case sizeof(__uint16_t):
+	case sizeof(uint16_t):
 		return irec->disk_nlinks.un16[ino_offset];
-	case sizeof(__uint32_t):
+	case sizeof(uint32_t):
 		return irec->disk_nlinks.un32[ino_offset];
 	default:
 		ASSERT(0);
@@ -211,11 +211,11 @@ __uint32_t get_inode_disk_nlinks(struct ino_tree_node *irec, int ino_offset)
 	return 0;
 }
 
-static __uint8_t *
+static uint8_t *
 alloc_ftypes_array(
 	struct xfs_mount *mp)
 {
-	__uint8_t	*ptr;
+	uint8_t		*ptr;
 
 	if (!xfs_sb_version_hasftype(&mp->m_sb))
 		return NULL;
@@ -262,23 +262,23 @@ alloc_ino_node(
 	irec->ir_free = (xfs_inofree_t) - 1;
 	irec->ir_sparse = 0;
 	irec->ino_un.ex_data = NULL;
-	irec->nlink_size = sizeof(__uint8_t);
+	irec->nlink_size = sizeof(uint8_t);
 	irec->disk_nlinks.un8 = alloc_nlink_array(irec->nlink_size);
 	irec->ftypes = alloc_ftypes_array(mp);
 	return irec;
 }
 
 static void
-free_nlink_array(union ino_nlink nlinks, __uint8_t nlink_size)
+free_nlink_array(union ino_nlink nlinks, uint8_t nlink_size)
 {
 	switch (nlink_size) {
-	case sizeof(__uint8_t):
+	case sizeof(uint8_t):
 		free(nlinks.un8);
 		break;
-	case sizeof(__uint16_t):
+	case sizeof(uint16_t):
 		free(nlinks.un16);
 		break;
-	case sizeof(__uint32_t):
+	case sizeof(uint32_t):
 		free(nlinks.un32);
 		break;
 	default:
@@ -609,7 +609,7 @@ set_inode_parent(
 	int			i;
 	int			cnt;
 	int			target;
-	__uint64_t		bitmask;
+	uint64_t		bitmask;
 	parent_entry_t		*tmp;
 
 	if (full_ino_ex_data)
@@ -699,7 +699,7 @@ set_inode_parent(
 xfs_ino_t
 get_inode_parent(ino_tree_node_t *irec, int offset)
 {
-	__uint64_t	bitmask;
+	uint64_t	bitmask;
 	parent_list_t	*ptbl;
 	int		i;
 	int		target;
@@ -740,15 +740,15 @@ alloc_ex_data(ino_tree_node_t *irec)
 	irec->ino_un.ex_data->parents = ptbl;
 
 	switch (irec->nlink_size) {
-	case sizeof(__uint8_t):
+	case sizeof(uint8_t):
 		irec->ino_un.ex_data->counted_nlinks.un8 =
 			alloc_nlink_array(irec->nlink_size);
 		break;
-	case sizeof(__uint16_t):
+	case sizeof(uint16_t):
 		irec->ino_un.ex_data->counted_nlinks.un16 =
 			alloc_nlink_array(irec->nlink_size);
 		break;
-	case sizeof(__uint32_t):
+	case sizeof(uint32_t):
 		irec->ino_un.ex_data->counted_nlinks.un32 =
 			alloc_nlink_array(irec->nlink_size);
 		break;

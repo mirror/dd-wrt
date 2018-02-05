@@ -135,7 +135,7 @@ static void
 state_timelimit(
 	FILE		*fp,
 	uint		form,
-	__uint32_t	timelimit)
+	uint32_t	timelimit)
 {
 	fprintf(fp, _("%s grace time: %s\n"),
 		form_to_string(form),

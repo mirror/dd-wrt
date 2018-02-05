@@ -136,6 +136,171 @@ doneline(
 	free(vec);
 }
 
+size_t
+numlen(
+	uint64_t	val,
+	size_t		base)
+{
+	uint64_t	tmp;
+	size_t		len;
+
+	for (len = 0, tmp = val; tmp > 0; tmp = tmp / base)
+		len++;
+	return len == 0 ? 1 : len;
+}
+
+/*
+ * Convert string to int64_t, set errno if the conversion fails or
+ * doesn't fit.  Does not allow unit specifiers.  Sets errno to zero
+ * prior to conversion so you can check for bad inputs by examining
+ * errno immediately after the call.
+ */
+int64_t
+cvt_s64(
+	char		*s,
+	int		base)
+{
+	long long	i;
+	char		*sp;
+
+	errno = 0;
+	i = strtoll(s, &sp, base);
+	/*
+	 * If the input would over or underflow, return the clamped
+	 * value and let the user check errno.  If we went all the
+	 * way to the end of the input, return the converted value;
+	 * errno will be zero.
+	 */
+	if (errno || (*sp == '\0' && sp != s))
+		return i;
+
+	/* Not all the input was consumed, return error. */
+	errno = -ERANGE;
+	return INT64_MIN;
+}
+
+/*
+ * Convert string to int32_t, set errno if the conversion fails or
+ * doesn't fit.  Does not allow unit specifiers.  Sets errno to zero
+ * prior to conversion so you can check for bad inputs by examining
+ * errno immediately after the call.
+ */
+int32_t
+cvt_s32(
+	char		*s,
+	int		base)
+{
+	int64_t		i;
+
+	i = cvt_s64(s, base);
+	if (errno)
+		return i;
+	if (i > INT32_MAX || i < INT32_MIN) {
+		errno = -ERANGE;
+		return INT32_MIN;
+	}
+	return i;
+}
+
+/*
+ * Convert string to int16_t, set errno if the conversion fails or
+ * doesn't fit.  Does not allow unit specifiers.  Sets errno to zero
+ * prior to conversion so you can check for bad inputs by examining
+ * errno immediately after the call.
+ */
+int16_t
+cvt_s16(
+	char		*s,
+	int		base)
+{
+	int64_t		i;
+
+	i = cvt_s64(s, base);
+	if (errno)
+		return i;
+	if (i > INT16_MAX || i < INT16_MIN) {
+		errno = -ERANGE;
+		return INT16_MIN;
+	}
+	return i;
+}
+
+/*
+ * Convert string to uint64_t, set errno if the conversion fails or
+ * doesn't fit.  Does not allow unit specifiers.  Sets errno to zero
+ * prior to conversion so you can check for bad inputs by examining
+ * errno immediately after the call.
+ */
+uint64_t
+cvt_u64(
+	char		*s,
+	int		base)
+{
+	long long	i;
+	char		*sp;
+
+	errno = 0;
+	i = strtoll(s, &sp, base);
+	/*
+	 * If the input would over or underflow, return the clamped
+	 * value and let the user check errno.  If we went all the
+	 * way to the end of the input, return the converted value;
+	 * errno will be zero.
+	 */
+	if (errno || (*sp == '\0' && sp != s))
+		return i;
+
+	/* Not all the input was consumed, return error. */
+	errno = -ERANGE;
+	return UINT64_MAX;
+}
+
+/*
+ * Convert string to uint32_t, set errno if the conversion fails or
+ * doesn't fit.  Does not allow unit specifiers.  Sets errno to zero
+ * prior to conversion so you can check for bad inputs by examining
+ * errno immediately after the call.
+ */
+uint32_t
+cvt_u32(
+	char		*s,
+	int		base)
+{
+	uint64_t	i;
+
+	i = cvt_u64(s, base);
+	if (errno)
+		return i;
+	if (i > UINT32_MAX) {
+		errno = -ERANGE;
+		return UINT32_MAX;
+	}
+	return i;
+}
+
+/*
+ * Convert string to uint16_t, set errno if the conversion fails or
+ * doesn't fit.  Does not allow unit specifiers.  Sets errno to zero
+ * prior to conversion so you can check for bad inputs by examining
+ * errno immediately after the call.
+ */
+uint16_t
+cvt_u16(
+	char		*s,
+	int		base)
+{
+	uint64_t	i;
+
+	i = cvt_u64(s, base);
+	if (errno)
+		return i;
+	if (i > UINT16_MAX) {
+		errno = -ERANGE;
+		return UINT16_MAX;
+	}
+	return i;
+}
+
 #define EXABYTES(x)	((long long)(x) << 60)
 #define PETABYTES(x)	((long long)(x) << 50)
 #define TERABYTES(x)	((long long)(x) << 40)
@@ -324,6 +489,28 @@ timestr(
 	} else {
 		snprintf(ts, size, "0.%04u sec", (unsigned int) usec * 10000);
 	}
+}
+
+/*
+ * Convert from a pair of arbitrary user strings into a timespec.
+ */
+
+int
+timespec_from_string(
+	const char	* secs,
+	const char	* nsecs,
+	struct timespec	* ts)
+{
+	char* p;
+	if (!secs || !nsecs || !ts)
+		return 1;
+	ts->tv_sec = strtoull(secs, &p, 0);
+	if (*p)
+		return 1;
+	ts->tv_nsec = strtoull(nsecs, &p, 0);
+	if (*p)
+		return 1;
+	return 0;
 }
 
 /*

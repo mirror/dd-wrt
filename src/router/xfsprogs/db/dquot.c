@@ -171,6 +171,17 @@ dquot_f(
 }
 
 void
+xfs_dquot_set_crc(
+	struct xfs_buf *bp)
+{
+	ASSERT((iocur_top->dquot_buf));
+	ASSERT(iocur_top->bp == bp);
+
+	xfs_update_cksum(iocur_top->data, sizeof(struct xfs_dqblk),
+			 XFS_DQUOT_CRC_OFF);
+}
+
+void
 dquot_init(void)
 {
 	add_command(&dquot_cmd);

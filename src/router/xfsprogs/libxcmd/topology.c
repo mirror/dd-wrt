@@ -23,19 +23,19 @@
 #endif /* ENABLE_BLKID */
 #include "xfs_multidisk.h"
 
-#define TERABYTES(count, blog)	((__uint64_t)(count) << (40 - (blog)))
-#define GIGABYTES(count, blog)	((__uint64_t)(count) << (30 - (blog)))
-#define MEGABYTES(count, blog)	((__uint64_t)(count) << (20 - (blog)))
+#define TERABYTES(count, blog)	((uint64_t)(count) << (40 - (blog)))
+#define GIGABYTES(count, blog)	((uint64_t)(count) << (30 - (blog)))
+#define MEGABYTES(count, blog)	((uint64_t)(count) << (20 - (blog)))
 
 void
 calc_default_ag_geometry(
 	int		blocklog,
-	__uint64_t	dblocks,
+	uint64_t	dblocks,
 	int		multidisk,
-	__uint64_t	*agsize,
-	__uint64_t	*agcount)
+	uint64_t	*agsize,
+	uint64_t	*agcount)
 {
-	__uint64_t	blocks = 0;
+	uint64_t	blocks = 0;
 	int		shift = 0;
 
 	/*

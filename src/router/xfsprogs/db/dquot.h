@@ -20,4 +20,5 @@ extern const struct field	disk_dquot_flds[];
 extern const struct field	dqblk_flds[];
 extern const struct field	dqblk_hfld[];
 
+extern void	xfs_dquot_set_crc(struct xfs_buf *);
 extern void	dquot_init(void);

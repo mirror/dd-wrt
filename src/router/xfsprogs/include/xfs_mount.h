@@ -48,12 +48,12 @@ typedef struct xfs_mount {
 #define m_dev		m_ddev_targp
 #define m_logdev	m_logdev_targp
 #define m_rtdev		m_rtdev_targp
-	__uint8_t		m_dircook_elog;	/* log d-cookie entry bits */
-	__uint8_t		m_blkbit_log;	/* blocklog + NBBY */
-	__uint8_t		m_blkbb_log;	/* blocklog - BBSHIFT */
-	__uint8_t		m_sectbb_log;	/* sectorlog - BBSHIFT */
-	__uint8_t		m_agno_log;	/* log #ag's */
-	__uint8_t		m_agino_log;	/* #bits for agino in inum */
+	uint8_t			m_dircook_elog;	/* log d-cookie entry bits */
+	uint8_t			m_blkbit_log;	/* blocklog + NBBY */
+	uint8_t			m_blkbb_log;	/* blocklog - BBSHIFT */
+	uint8_t			m_sectbb_log;	/* sectorlog - BBSHIFT */
+	uint8_t			m_agno_log;	/* log #ag's */
+	uint8_t			m_agino_log;	/* #bits for agino in inum */
 	uint			m_inode_cluster_size;/* min inode buf size */
 	uint			m_blockmask;	/* sb_blocksize-1 */
 	uint			m_blockwsize;	/* sb_blocksize in words */
@@ -78,6 +78,7 @@ typedef struct xfs_mount {
 	uint			m_ag_max_usable; /* max space per AG */
 	struct radix_tree_root	m_perag_tree;
 	uint			m_flags;	/* global mount flags */
+	bool			m_inotbt_nores; /* no per-AG finobt resv. */
 	uint			m_qflags;	/* quota status flags */
 	uint			m_attroffset;	/* inode attribute offset */
 	int			m_ialloc_inos;	/* inodes in inode allocation */
@@ -87,7 +88,7 @@ typedef struct xfs_mount {
 	int			m_litino;	/* size of inode union area */
 	int			m_inoalign_mask;/* mask sb_inoalignmt if used */
 	struct xfs_trans_resv	m_resv;		/* precomputed res values */
-	__uint64_t		m_maxicount;	/* maximum inode count */
+	uint64_t		m_maxicount;	/* maximum inode count */
 	int			m_dalign;	/* stripe unit */
 	int			m_swidth;	/* stripe width */
 	int			m_sinoalign;	/* stripe unit inode alignmnt */
@@ -143,12 +144,12 @@ typedef struct xfs_perag {
 	char		pagi_init;	/* this agi's entry is initialized */
 	char		pagf_metadata;	/* the agf is preferred to be metadata */
 	char		pagi_inodeok;	/* The agi is ok for inodes */
-	__uint8_t	pagf_levels[XFS_BTNUM_AGF];
+	uint8_t		pagf_levels[XFS_BTNUM_AGF];
 					/* # of levels in bno & cnt btree */
-	__uint32_t	pagf_flcount;	/* count of blocks in freelist */
+	uint32_t	pagf_flcount;	/* count of blocks in freelist */
 	xfs_extlen_t	pagf_freeblks;	/* total free blocks */
 	xfs_extlen_t	pagf_longest;	/* longest free space */
-	__uint32_t	pagf_btreeblks;	/* # of blocks held in AGF btrees */
+	uint32_t	pagf_btreeblks;	/* # of blocks held in AGF btrees */
 	xfs_agino_t	pagi_freecount;	/* number of free inodes */
 	xfs_agino_t	pagi_count;	/* number of allocated inodes */
 
@@ -168,7 +169,7 @@ typedef struct xfs_perag {
 	struct xfs_ag_resv	pag_agfl_resv;
 
 	/* reference count */
-	__uint8_t	pagf_refcount_level;
+	uint8_t		pagf_refcount_level;
 } xfs_perag_t;
 
 static inline struct xfs_ag_resv *

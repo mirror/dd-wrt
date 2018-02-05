@@ -23,10 +23,16 @@
 cmdinfo_t	*cmdtab;
 int		ncmds;
 
-static argsfunc_t	args_func;
+static iterfunc_t	iter_func;
 static checkfunc_t	check_func;
-static int		ncmdline;
-static char		**cmdline;
+
+struct cmdline {
+	char	*cmdline;
+	bool	iterate;
+};
+
+static int	ncmdline;
+struct cmdline	*cmdline;
 
 static int
 compare(const void *a, const void *b)
@@ -48,6 +54,10 @@ static int
 check_command(
 	const cmdinfo_t	*ci)
 {
+	/* always run internal library supplied commands */
+	if (ci->flags & CMD_FLAG_LIBRARY)
+		return 1;
+
 	if (check_func)
 		return check_func(ci);
 	return 1;
@@ -116,81 +126,124 @@ void
 add_user_command(char *optarg)
 {
 	ncmdline++;
-	cmdline = realloc(cmdline, sizeof(char*) * (ncmdline));
+	cmdline = realloc(cmdline, sizeof(struct cmdline) * (ncmdline));
 	if (!cmdline) {
 		perror("realloc");
 		exit(1);
 	}
-	cmdline[ncmdline-1] = optarg;
-}
+	cmdline[ncmdline-1].cmdline = optarg;
+	cmdline[ncmdline-1].iterate = true;
 
-static int
-args_command(
-	int	index)
-{
-	if (args_func)
-		return args_func(index);
-	return 0;
 }
 
 void
-add_args_command(
-	argsfunc_t	af)
+add_oneshot_user_command(char *optarg)
 {
-	args_func = af;
+	ncmdline++;
+	cmdline = realloc(cmdline, sizeof(struct cmdline) * (ncmdline));
+	if (!cmdline) {
+		perror("realloc");
+		exit(1);
+	}
+	cmdline[ncmdline-1].cmdline = optarg;
+	cmdline[ncmdline-1].iterate = false;
+}
+
+/*
+ * Run a command, iterating as necessary. Return 0 for success, non-zero
+ * if an error occurred. Errors terminate loop iteration immediately.
+ */
+static int
+iterate_command(
+	const cmdinfo_t	*ct,
+	int		argc,
+	char		**argv)
+{
+	int		error = 0;
+	int		j;
+
+	/* if there's nothing to iterate, we're done! */
+	if (!iter_func)
+		return 0;
+
+	for (j = iter_func(0); j; j = iter_func(j)) {
+		error = command(ct, argc, argv);
+		if (error)
+			break;
+
+	}
+
+	return error;
+}
+
+void
+add_command_iterator(
+	iterfunc_t	func)
+{
+	iter_func = func;
+}
+
+static int
+process_input(
+	char		*input,
+	bool		iterate)
+{
+	char		**v;
+	const cmdinfo_t	*ct;
+	int		c = 0;
+	int		error = 0;
+
+	v = breakline(input, &c);
+	if (!c)
+		goto out;
+
+	ct = find_command(v[0]);
+	if (!ct) {
+		fprintf(stderr, _("command \"%s\" not found\n"), v[0]);
+		goto out;
+	}
+
+	/* oneshot commands don't iterate */
+	if (!iterate || (ct->flags & CMD_FLAG_ONESHOT))
+		error = command(ct, c, v);
+	else
+		error = iterate_command(ct, c, v);
+out:
+	doneline(input, v);
+	return error;
 }
 
 void
 command_loop(void)
 {
-	int		c, i, j = 0, done = 0;
-	char		*input;
-	char		**v;
-	const cmdinfo_t	*ct;
+	char	*input;
+	int	done = 0;
+	int	i;
 
+	if (!cmdline) {
+		/* interactive mode */
+		while (!done) {
+			input = fetchline();
+			if (!input)
+				break;
+			done = process_input(input, false);
+		}
+		return;
+	}
+
+	/* command line mode */
 	for (i = 0; !done && i < ncmdline; i++) {
-		input = strdup(cmdline[i]);
+		input = strdup(cmdline[i].cmdline);
 		if (!input) {
 			fprintf(stderr,
 				_("cannot strdup command '%s': %s\n"),
-				cmdline[i], strerror(errno));
+				cmdline[i].cmdline, strerror(errno));
 			exit(1);
 		}
-		v = breakline(input, &c);
-		if (c) {
-			ct = find_command(v[0]);
-			if (ct) {
-				if (ct->flags & CMD_FLAG_GLOBAL)
-					done = command(ct, c, v);
-				else {
-					j = 0;
-					while (!done && (j = args_command(j)))
-						done = command(ct, c, v);
-				}
-			} else
-				fprintf(stderr, _("command \"%s\" not found\n"),
-					v[0]);
-		}
-		doneline(input, v);
+		done = process_input(input, cmdline[i].iterate);
 	}
-	if (cmdline) {
-		free(cmdline);
-		return;
-	}
-	while (!done) {
-		if ((input = fetchline()) == NULL)
-			break;
-		v = breakline(input, &c);
-		if (c) {
-			ct = find_command(v[0]);
-			if (ct)
-				done = command(ct, c, v);
-			else
-				fprintf(stderr, _("command \"%s\" not found\n"),
-					v[0]);
-		}
-		doneline(input, v);
-	}
+	free(cmdline);
+	return;
 }
 
 void

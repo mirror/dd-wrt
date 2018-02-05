@@ -118,9 +118,9 @@ static void unmount_record(void *p)
 	xlog_op_header_t	*op = (xlog_op_header_t *)p;
 	/* the data section must be 32 bit size aligned */
 	struct {
-	    __uint16_t magic;
-	    __uint16_t pad1;
-	    __uint32_t pad2; /* may as well make it 64 bits */
+	    uint16_t magic;
+	    uint16_t pad1;
+	    uint32_t pad2; /* may as well make it 64 bits */
 	} magic = { XLOG_UNMOUNT_TYPE, 0, 0 };
 
 	memset(p, 0, BBSIZE);
@@ -591,6 +591,13 @@ __initbuf(xfs_buf_t *bp, struct xfs_buftarg *btp, xfs_daddr_t bno,
 	bp->b_holder = 0;
 	bp->b_recur = 0;
 	bp->b_ops = NULL;
+
+	if (!bp->b_maps) {
+		bp->b_nmaps = 1;
+		bp->b_maps = &bp->__b_map;
+		bp->b_maps[0].bm_bn = bp->b_bn;
+		bp->b_maps[0].bm_len = bp->b_length;
+	}
 }
 
 static void
@@ -654,7 +661,8 @@ __libxfs_getbufr(int blen)
 			list_del_init(&bp->b_node.cn_mru);
 			free(bp->b_addr);
 			bp->b_addr = NULL;
-			free(bp->b_maps);
+			if (bp->b_maps != &bp->__b_map)
+				free(bp->b_maps);
 			bp->b_maps = NULL;
 		}
 	} else

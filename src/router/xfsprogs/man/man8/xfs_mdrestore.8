@@ -4,10 +4,14 @@ xfs_mdrestore \- restores an XFS metadump image to a filesystem image
 .SH SYNOPSIS
 .B xfs_mdrestore
 [
-.B \-g
+.B \-gi
 ]
 .I source
 .I target
+.br
+.B xfs_mdrestore
+.B \-i
+.I source
 .br
 .B xfs_mdrestore \-V
 .SH DESCRIPTION
@@ -38,6 +42,12 @@ can be destroyed.
 .TP
 .B \-g
 Shows restore progress on stdout.
+.TP
+.B \-i
+Shows metadump information on stdout.  If no
+.I target
+is specified, exits after displaying information.  Older metadumps man not
+include any descriptive information.
 .TP
 .B \-V
 Prints the version number and exits.

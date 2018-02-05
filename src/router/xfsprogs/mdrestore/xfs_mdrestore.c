@@ -21,6 +21,7 @@
 
 char 		*progname;
 int		show_progress = 0;
+int		show_info = 0;
 int		progress_since_warning = 0;
 
 static void
@@ -65,7 +66,7 @@ perform_restore(
 	int			mb_count;
 	xfs_metablock_t		tmb;
 	xfs_sb_t		sb;
-	__int64_t		bytes_read;
+	int64_t			bytes_read;
 
 	/*
 	 * read in first blocks (superblock 0), set "inprogress" flag for it,
@@ -213,10 +214,13 @@ main(
 
 	progname = basename(argv[0]);
 
-	while ((c = getopt(argc, argv, "gV")) != EOF) {
+	while ((c = getopt(argc, argv, "giV")) != EOF) {
 		switch (c) {
 			case 'g':
 				show_progress = 1;
+				break;
+			case 'i':
+				show_info = 1;
 				break;
 			case 'V':
 				printf("%s version %s\n", progname, VERSION);
@@ -226,7 +230,11 @@ main(
 		}
 	}
 
-	if (argc - optind != 2)
+	if (argc - optind < 1 || argc - optind > 2)
+		usage();
+
+	/* show_info without a target is ok */
+	if (!show_info && argc - optind != 2)
 		usage();
 
 	/* open source */
@@ -239,6 +247,34 @@ main(
 		if (src_f == NULL)
 			fatal("cannot open source dump file\n");
 	}
+
+	if (show_info) {
+		xfs_metablock_t		mb;
+
+		if (fread(&mb, sizeof(mb), 1, src_f) != 1)
+			fatal("error reading from file: %s\n", strerror(errno));
+
+		if (be32_to_cpu(mb.mb_magic) != XFS_MD_MAGIC)
+			fatal("specified file is not a metadata dump\n");
+
+		if (mb.mb_info & XFS_METADUMP_INFO_FLAGS) {
+			printf("%s: %sobfuscated, %s log, %s metadata blocks\n",
+			argv[optind],
+			mb.mb_info & XFS_METADUMP_OBFUSCATED ? "":"not ",
+			mb.mb_info & XFS_METADUMP_DIRTYLOG ? "dirty":"clean",
+			mb.mb_info & XFS_METADUMP_FULLBLOCKS ? "full":"zeroed");
+		} else {
+			printf("%s: no informational flags present\n",
+				argv[optind]);
+		}
+
+		if (argc - optind == 1)
+			exit(0);
+
+		/* Go back to the beginning for the restore function */
+		fseek(src_f, 0L, SEEK_SET);
+	}
+
 	optind++;
 
 	/* check and open target */

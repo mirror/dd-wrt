@@ -333,9 +333,9 @@ report_header(
 static int
 report_mount(
 	FILE		*fp,
-	__uint32_t	id,
+	uint32_t	id,
 	char		*name,
-	__uint32_t	*oid,
+	uint32_t	*oid,
 	uint		form,
 	uint		type,
 	fs_path_t	*mount,
@@ -778,7 +778,7 @@ report_init(void)
 	report_cmd.args = _("[-bir] [-gpu] [-ahnt] [-f file]");
 	report_cmd.oneline = _("report filesystem quota information");
 	report_cmd.help = report_help;
-	report_cmd.flags = CMD_FLAG_GLOBAL | CMD_FLAG_FOREIGN_OK;
+	report_cmd.flags = CMD_FLAG_ONESHOT | CMD_FLAG_FOREIGN_OK;
 
 	if (expert) {
 		add_command(&dump_cmd);

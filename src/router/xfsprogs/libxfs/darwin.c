@@ -68,7 +68,7 @@ platform_flush_device(int fd, dev_t device)
 void
 platform_findsizes(char *path, int fd, long long *sz, int *bsz)
 {
-	__uint64_t	size;
+	uint64_t	size;
 	struct stat	st;
 
 	if (fstat(fd, &st) < 0) {

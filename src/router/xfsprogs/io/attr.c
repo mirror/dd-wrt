@@ -353,7 +353,7 @@ attr_init(void)
 	lsattr_cmd.args = _("[-R|-D|-a|-v]");
 	lsattr_cmd.argmin = 0;
 	lsattr_cmd.argmax = 1;
-	lsattr_cmd.flags = CMD_NOMAP_OK;
+	lsattr_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
 	lsattr_cmd.oneline =
 		_("list extended inode flags set on the currently open file");
 	lsattr_cmd.help = lsattr_help;

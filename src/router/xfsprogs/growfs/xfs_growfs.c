@@ -133,6 +133,7 @@ main(int argc, char **argv)
 	int			spinodes;
 	int			rmapbt_enabled;
 	int			reflink_enabled;
+	char			rpath[PATH_MAX];
 
 	progname = basename(argv[0]);
 	setlocale(LC_ALL, "");
@@ -202,7 +203,14 @@ main(int argc, char **argv)
 		aflag = 1;
 
 	fs_table_initialise(0, NULL, 0, NULL);
-	fs = fs_table_lookup(argv[optind], FS_MOUNT_POINT);
+
+	if (!realpath(argv[optind], rpath)) {
+		fprintf(stderr, _("%s: path resolution failed for %s: %s\n"),
+			progname, argv[optind], strerror(errno));
+		return 1;
+	}
+
+	fs = fs_table_lookup_mount(rpath);
 	if (!fs) {
 		fprintf(stderr, _("%s: %s is not a mounted XFS filesystem\n"),
 			progname, argv[optind]);

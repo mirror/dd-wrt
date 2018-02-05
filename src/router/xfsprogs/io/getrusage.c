@@ -113,7 +113,8 @@ getrusage_init(void)
 	getrusage_cmd.argmin = 0;
 	getrusage_cmd.argmax = -1;
 	getrusage_cmd.cfunc = getrusage_f;
-	getrusage_cmd.flags = CMD_NOFILE_OK | CMD_NOMAP_OK | CMD_FOREIGN_OK;
+	getrusage_cmd.flags = CMD_NOFILE_OK | CMD_NOMAP_OK |
+			      CMD_FOREIGN_OK | CMD_FLAG_ONESHOT;
 	getrusage_cmd.oneline = _("report process resource usage");
 
 	if (expert)

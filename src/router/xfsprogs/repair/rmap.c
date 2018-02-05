@@ -49,37 +49,9 @@ static struct xfs_ag_rmap *ag_rmaps;
 static bool rmapbt_suspect;
 static bool refcbt_suspect;
 
-/*
- * Compare rmap observations for array sorting.
- */
-static int
-rmap_compare(
-	const void		*a,
-	const void		*b)
+static inline int rmap_compare(const void *a, const void *b)
 {
-	const struct xfs_rmap_irec	*pa;
-	const struct xfs_rmap_irec	*pb;
-	__u64			oa;
-	__u64			ob;
-
-	pa = a; pb = b;
-	oa = libxfs_rmap_irec_offset_pack(pa);
-	ob = libxfs_rmap_irec_offset_pack(pb);
-
-	if (pa->rm_startblock < pb->rm_startblock)
-		return -1;
-	else if (pa->rm_startblock > pb->rm_startblock)
-		return 1;
-	else if (pa->rm_owner < pb->rm_owner)
-		return -1;
-	else if (pa->rm_owner > pb->rm_owner)
-		return 1;
-	else if (oa < ob)
-		return -1;
-	else if (oa > ob)
-		return 1;
-	else
-		return 0;
+	return libxfs_rmap_compare(a, b);
 }
 
 /*
@@ -371,7 +343,7 @@ err:
 
 static int
 find_first_zero_bit(
-	__uint64_t	mask)
+	uint64_t	mask)
 {
 	int		n;
 	int		b = 0;
@@ -384,7 +356,7 @@ find_first_zero_bit(
 
 static int
 popcnt(
-	__uint64_t	mask)
+	uint64_t	mask)
 {
 	int		n;
 	int		b = 0;
@@ -1092,14 +1064,14 @@ err:
  * Compare the key fields of two rmap records -- positive if key1 > key2,
  * negative if key1 < key2, and zero if equal.
  */
-__int64_t
+int64_t
 rmap_diffkeys(
 	struct xfs_rmap_irec	*kp1,
 	struct xfs_rmap_irec	*kp2)
 {
 	__u64			oa;
 	__u64			ob;
-	__int64_t		d;
+	int64_t			d;
 	struct xfs_rmap_irec	tmp;
 
 	tmp = *kp1;
@@ -1109,7 +1081,7 @@ rmap_diffkeys(
 	tmp.rm_flags &= ~XFS_RMAP_REC_FLAGS;
 	ob = libxfs_rmap_irec_offset_pack(&tmp);
 
-	d = (__int64_t)kp1->rm_startblock - kp2->rm_startblock;
+	d = (int64_t)kp1->rm_startblock - kp2->rm_startblock;
 	if (d)
 		return d;
 
@@ -1220,10 +1192,10 @@ fix_inode_reflink_flags(
 {
 	struct ino_tree_node	*irec;
 	int			bit;
-	__uint64_t		was;
-	__uint64_t		is;
-	__uint64_t		diff;
-	__uint64_t		mask;
+	uint64_t		was;
+	uint64_t		is;
+	uint64_t		diff;
+	uint64_t		mask;
 	int			error = 0;
 	xfs_agino_t		agino;
 
@@ -1387,7 +1359,8 @@ next_loop:
 
 err:
 	if (bt_cur)
-		libxfs_btree_del_cursor(bt_cur, XFS_BTREE_NOERROR);
+		libxfs_btree_del_cursor(bt_cur, error ? XFS_BTREE_ERROR :
+							XFS_BTREE_NOERROR);
 	if (agbp)
 		libxfs_putbuf(agbp);
 	free_slab_cursor(&rl_cur);

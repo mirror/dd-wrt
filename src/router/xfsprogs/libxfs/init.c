@@ -239,13 +239,11 @@ int
 libxfs_init(libxfs_init_t *a)
 {
 	char		*blockfile;
-	char		curdir[MAXPATHLEN];
 	char		*dname;
 	char		dpath[25];
 	int		fd;
 	char		*logname;
 	char		logpath[25];
-	int		needcd;
 	char		*rawfile;
 	char		*rtname;
 	char		rtpath[25];
@@ -261,8 +259,6 @@ libxfs_init(libxfs_init_t *a)
 	a->dsize = a->lbsize = a->rtbsize = 0;
 	a->dbsize = a->logBBsize = a->logBBstart = a->rtsize = 0;
 
-	(void)getcwd(curdir,MAXPATHLEN);
-	needcd = 0;
 	fd = -1;
 	flags = (a->isreadonly | a->isdirect);
 
@@ -276,14 +272,11 @@ libxfs_init(libxfs_init_t *a)
 	if (a->volname) {
 		if(!check_open(a->volname,flags,&rawfile,&blockfile))
 			goto done;
-		needcd = 1;
 		fd = open(rawfile, O_RDONLY);
 		dname = a->dname = a->volname;
 		a->volname = NULL;
 	}
 	if (dname) {
-		if (dname[0] != '/' && needcd)
-			chdir(curdir);
 		if (a->disfile) {
 			a->ddev= libxfs_device_open(dname, a->dcreat, flags,
 						    a->setblksize);
@@ -299,12 +292,9 @@ libxfs_init(libxfs_init_t *a)
 			platform_findsizes(rawfile, a->dfd,
 					   &a->dsize, &a->dbsize);
 		}
-		needcd = 1;
 	} else
 		a->dsize = 0;
 	if (logname) {
-		if (logname[0] != '/' && needcd)
-			chdir(curdir);
 		if (a->lisfile) {
 			a->logdev = libxfs_device_open(logname,
 					a->lcreat, flags, a->setblksize);
@@ -320,12 +310,9 @@ libxfs_init(libxfs_init_t *a)
 			platform_findsizes(rawfile, a->logfd,
 					   &a->logBBsize, &a->lbsize);
 		}
-		needcd = 1;
 	} else
 		a->logBBsize = 0;
 	if (rtname) {
-		if (rtname[0] != '/' && needcd)
-			chdir(curdir);
 		if (a->risfile) {
 			a->rtdev = libxfs_device_open(rtname,
 					a->rcreat, flags, a->setblksize);
@@ -341,7 +328,6 @@ libxfs_init(libxfs_init_t *a)
 			platform_findsizes(rawfile, a->rtfd,
 					   &a->rtsize, &a->rtbsize);
 		}
-		needcd = 1;
 	} else
 		a->rtsize = 0;
 	if (a->dsize < 0) {
@@ -359,8 +345,6 @@ libxfs_init(libxfs_init_t *a)
 			progname);
 		goto done;
 	}
-	if (needcd)
-		chdir(curdir);
 	if (!libxfs_bhash_size)
 		libxfs_bhash_size = LIBXFS_BHASHSIZE(sbp);
 	libxfs_bcache = cache_init(a->bcache_flags, libxfs_bhash_size,
@@ -546,7 +530,7 @@ libxfs_initialize_perag(
 		 * the max inode percentage.
 		 */
 		if (mp->m_maxicount) {
-			__uint64_t	icount;
+			uint64_t	icount;
 
 			icount = sbp->sb_dblocks * sbp->sb_imax_pct;
 			do_div(icount, 100);
@@ -705,6 +689,13 @@ libxfs_mount(
 		mp->m_maxicount = 0;
 
 	mp->m_inode_cluster_size = XFS_INODE_BIG_CLUSTER_SIZE;
+	if (xfs_sb_version_hascrc(&mp->m_sb)) {
+		int	new_size = mp->m_inode_cluster_size;
+
+		new_size *= mp->m_sb.sb_inodesize / XFS_DINODE_MIN_SIZE;
+		if (mp->m_sb.sb_inoalignmt >= XFS_B_TO_FSBT(mp, new_size))
+			mp->m_inode_cluster_size = new_size;
+	}
 
 	/*
 	 * Set whether we're using stripe alignment.
@@ -815,6 +806,29 @@ libxfs_mount(
 		fprintf(stderr, _("%s: realtime device init failed\n"),
 			progname);
 			return NULL;
+	}
+
+	/*
+	 * libxfs_initialize_perag will allocate a perag structure for each ag.
+	 * If agcount is corrupted and insanely high, this will OOM the box.
+	 * If the agount seems (arbitrarily) high, try to read what would be
+	 * the last AG, and if that fails for a relatively high agcount, just
+	 * read the first one and let the user know to check the geometry.
+	 */
+	if (sbp->sb_agcount > 1000000) {
+		bp = libxfs_readbuf(mp->m_dev,
+				XFS_AG_DADDR(mp, sbp->sb_agcount - 1, 0), 1,
+				!(flags & LIBXFS_MOUNT_DEBUGGER), NULL);
+		if (bp->b_error) {
+			fprintf(stderr, _("%s: read of AG %u failed\n"),
+						progname, sbp->sb_agcount);
+			if (!(flags & LIBXFS_MOUNT_DEBUGGER))
+				return NULL;
+			fprintf(stderr, _("%s: limiting reads to AG 0\n"),
+								progname);
+			sbp->sb_agcount = 1;
+		}
+		libxfs_putbuf(bp);
 	}
 
 	error = libxfs_initialize_perag(mp, sbp->sb_agcount, &mp->m_maxagi);

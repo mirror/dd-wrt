@@ -41,8 +41,6 @@
 #include <xfs/gnukfreebsd.h>
 #elif defined(__APPLE__)
 #include <xfs/darwin.h>
-#elif defined(__sgi__) || defined(__sgi)
-#include <xfs/irix.h>
 #else
 # error unknown platform... have fun porting!
 #endif

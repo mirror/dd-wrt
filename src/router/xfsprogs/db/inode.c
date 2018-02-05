@@ -119,49 +119,49 @@ const field_t	inode_core_flds[] = {
 	{ "dmstate", FLDT_UINT16D, OI(COFF(dmstate)), C1, 0, TYP_NONE },
 	{ "flags", FLDT_UINT16X, OI(COFF(flags)), C1, FLD_SKIPALL, TYP_NONE },
 	{ "newrtbm", FLDT_UINT1,
-	  OI(COFF(flags) + bitsz(__uint16_t) - XFS_DIFLAG_NEWRTBM_BIT - 1), C1,
+	  OI(COFF(flags) + bitsz(uint16_t) - XFS_DIFLAG_NEWRTBM_BIT - 1), C1,
 	  0, TYP_NONE },
 	{ "prealloc", FLDT_UINT1,
-	  OI(COFF(flags) + bitsz(__uint16_t) - XFS_DIFLAG_PREALLOC_BIT - 1), C1,
+	  OI(COFF(flags) + bitsz(uint16_t) - XFS_DIFLAG_PREALLOC_BIT - 1), C1,
 	  0, TYP_NONE },
 	{ "realtime", FLDT_UINT1,
-	  OI(COFF(flags) + bitsz(__uint16_t) - XFS_DIFLAG_REALTIME_BIT - 1), C1,
+	  OI(COFF(flags) + bitsz(uint16_t) - XFS_DIFLAG_REALTIME_BIT - 1), C1,
 	  0, TYP_NONE },
 	{ "immutable", FLDT_UINT1,
-	  OI(COFF(flags) + bitsz(__uint16_t) - XFS_DIFLAG_IMMUTABLE_BIT-1), C1,
+	  OI(COFF(flags) + bitsz(uint16_t) - XFS_DIFLAG_IMMUTABLE_BIT-1), C1,
 	  0, TYP_NONE },
 	{ "append", FLDT_UINT1,
-	  OI(COFF(flags) + bitsz(__uint16_t) - XFS_DIFLAG_APPEND_BIT - 1), C1,
+	  OI(COFF(flags) + bitsz(uint16_t) - XFS_DIFLAG_APPEND_BIT - 1), C1,
 	  0, TYP_NONE },
 	{ "sync", FLDT_UINT1,
-	  OI(COFF(flags) + bitsz(__uint16_t) - XFS_DIFLAG_SYNC_BIT - 1), C1,
+	  OI(COFF(flags) + bitsz(uint16_t) - XFS_DIFLAG_SYNC_BIT - 1), C1,
 	  0, TYP_NONE },
 	{ "noatime", FLDT_UINT1,
-	  OI(COFF(flags) + bitsz(__uint16_t) - XFS_DIFLAG_NOATIME_BIT - 1), C1,
+	  OI(COFF(flags) + bitsz(uint16_t) - XFS_DIFLAG_NOATIME_BIT - 1), C1,
 	  0, TYP_NONE },
 	{ "nodump", FLDT_UINT1,
-	  OI(COFF(flags) + bitsz(__uint16_t) - XFS_DIFLAG_NODUMP_BIT - 1), C1,
+	  OI(COFF(flags) + bitsz(uint16_t) - XFS_DIFLAG_NODUMP_BIT - 1), C1,
 	  0, TYP_NONE },
 	{ "rtinherit", FLDT_UINT1,
-	  OI(COFF(flags) + bitsz(__uint16_t) - XFS_DIFLAG_RTINHERIT_BIT-1), C1,
+	  OI(COFF(flags) + bitsz(uint16_t) - XFS_DIFLAG_RTINHERIT_BIT-1), C1,
 	  0, TYP_NONE },
 	{ "projinherit", FLDT_UINT1,
-	  OI(COFF(flags) + bitsz(__uint16_t) - XFS_DIFLAG_PROJINHERIT_BIT-1),C1,
+	  OI(COFF(flags) + bitsz(uint16_t) - XFS_DIFLAG_PROJINHERIT_BIT-1), C1,
 	  0, TYP_NONE },
 	{ "nosymlinks", FLDT_UINT1,
-	  OI(COFF(flags) + bitsz(__uint16_t) - XFS_DIFLAG_NOSYMLINKS_BIT-1), C1,
+	  OI(COFF(flags) + bitsz(uint16_t) - XFS_DIFLAG_NOSYMLINKS_BIT-1), C1,
 	  0, TYP_NONE },
 	{ "extsz", FLDT_UINT1,
-	  OI(COFF(flags) + bitsz(__uint16_t) - XFS_DIFLAG_EXTSIZE_BIT-1),C1,
+	  OI(COFF(flags) + bitsz(uint16_t) - XFS_DIFLAG_EXTSIZE_BIT-1), C1,
 	  0, TYP_NONE },
 	{ "extszinherit", FLDT_UINT1,
-	  OI(COFF(flags) + bitsz(__uint16_t) - XFS_DIFLAG_EXTSZINHERIT_BIT-1),C1,
+	  OI(COFF(flags) + bitsz(uint16_t) - XFS_DIFLAG_EXTSZINHERIT_BIT-1), C1,
 	  0, TYP_NONE },
 	{ "nodefrag", FLDT_UINT1,
-	  OI(COFF(flags) + bitsz(__uint16_t) - XFS_DIFLAG_NODEFRAG_BIT-1),C1,
+	  OI(COFF(flags) + bitsz(uint16_t) - XFS_DIFLAG_NODEFRAG_BIT-1), C1,
 	  0, TYP_NONE },
 	{ "filestream", FLDT_UINT1,
-	  OI(COFF(flags) + bitsz(__uint16_t) - XFS_DIFLAG_FILESTREAM_BIT-1),C1,
+	  OI(COFF(flags) + bitsz(uint16_t) - XFS_DIFLAG_FILESTREAM_BIT-1), C1,
 	  0, TYP_NONE },
 	{ "gen", FLDT_UINT32D, OI(COFF(gen)), C1, 0, TYP_NONE },
 	{ NULL }
@@ -177,10 +177,10 @@ const field_t	inode_v3_flds[] = {
 	{ "inumber", FLDT_INO, OI(COFF(ino)), C1, 0, TYP_NONE },
 	{ "uuid", FLDT_UUID, OI(COFF(uuid)), C1, 0, TYP_NONE },
 	{ "reflink", FLDT_UINT1,
-	  OI(COFF(flags2) + bitsz(__uint64_t) - XFS_DIFLAG2_REFLINK_BIT-1), C1,
+	  OI(COFF(flags2) + bitsz(uint64_t) - XFS_DIFLAG2_REFLINK_BIT-1), C1,
 	  0, TYP_NONE },
 	{ "cowextsz", FLDT_UINT1,
-	  OI(COFF(flags2) + bitsz(__uint64_t) - XFS_DIFLAG2_COWEXTSIZE_BIT-1), C1,
+	  OI(COFF(flags2) + bitsz(uint64_t) - XFS_DIFLAG2_COWEXTSIZE_BIT-1), C1,
 	  0, TYP_NONE },
 	{ NULL }
 };
@@ -238,7 +238,7 @@ fp_dinode_fmt(
 	int			i;
 
 	for (i = 0, bitpos = bit; i < count; i++, bitpos += size) {
-		f = (xfs_dinode_fmt_t)getbitval(obj, bitpos, size, BVSIGNED);
+		f = (xfs_dinode_fmt_t)getbitval(obj, bitpos, size, BVUNSIGNED);
 		if (array)
 			dbprintf("%d:", i + base);
 		if (f < 0 || f >= dinode_fmt_name_size)
@@ -710,4 +710,15 @@ _("Metadata CRC error detected for ino %lld\n"),
 
 	/* track updated info in ring */
 	ring_add();
+}
+
+void
+xfs_inode_set_crc(
+	struct xfs_buf *bp)
+{
+	ASSERT(iocur_top->ino_buf);
+	ASSERT(iocur_top->bp == bp);
+
+	libxfs_dinode_calc_crc(mp, iocur_top->data);
+	iocur_top->ino_crc_ok = 1;
 }

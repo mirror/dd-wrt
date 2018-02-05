@@ -166,12 +166,12 @@ xlog_print_trans_header(char **ptr, int len)
 {
     xfs_trans_header_t  *h;
     char		*cptr = *ptr;
-    __uint32_t          magic;
+    uint32_t          magic;
     char                *magic_c = (char *)&magic;
 
     *ptr += len;
 
-    magic=*(__uint32_t*)cptr; /* XXX be32_to_cpu soon */
+    magic = *(uint32_t *)cptr; /* XXX be32_to_cpu soon */
 
     if (len >= 4) {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -201,7 +201,7 @@ xlog_print_trans_buffer(char **ptr, int len, int *i, int num_ops)
     int			 num, skip;
     int			 super_block = 0;
     int			 bucket, col, buckets;
-    __int64_t		 blkno;
+    int64_t			 blkno;
     xfs_buf_log_format_t lbuf;
     int			 size, blen, map_size, struct_size;
     __be64		 x, y;
@@ -510,20 +510,21 @@ xlog_print_dir2_sf(
 
 int
 xlog_print_trans_inode(
-	struct xlog	*log,
-	char		**ptr,
-	int		len,
-	int		*i,
-	int		num_ops,
-	int		continued)
+	struct xlog		*log,
+	char			**ptr,
+	int			len,
+	int			*i,
+	int			num_ops,
+	int			continued)
 {
-    struct xfs_log_dinode dino;
-    xlog_op_header_t	   *op_head;
-    xfs_inode_log_format_t dst_lbuf;
-    xfs_inode_log_format_64_t src_lbuf; /* buffer of biggest one */
-    xfs_inode_log_format_t *f;
-    int			   mode;
-    int			   size;
+    struct xfs_log_dinode	dino;
+    struct xlog_op_header	*op_head;
+    struct xfs_inode_log_format	dst_lbuf;
+    struct xfs_inode_log_format	src_lbuf;
+    struct xfs_inode_log_format *f;
+    int				mode;
+    int				size;
+    int				skip_count;
 
     /*
      * print inode type header region
@@ -531,15 +532,15 @@ xlog_print_trans_inode(
      * memmove to ensure 8-byte alignment for the long longs in
      * xfs_inode_log_format_t structure
      *
-     * len can be smaller than xfs_inode_log_format_32|64_t
+     * len can be smaller than xfs_inode_log_format_t
      * if format data is split over operations
      */
-    memmove(&src_lbuf, *ptr, MIN(sizeof(xfs_inode_log_format_64_t), len));
+    memmove(&src_lbuf, *ptr, MIN(sizeof(src_lbuf), len));
     (*i)++;					/* bump index */
     *ptr += len;
     if (!continued &&
-	(len == sizeof(xfs_inode_log_format_32_t) ||
-	 len == sizeof(xfs_inode_log_format_64_t))) {
+	(len == sizeof(struct xfs_inode_log_format_32) ||
+	 len == sizeof(struct xfs_inode_log_format))) {
 	f = xfs_inode_item_format_convert((char*)&src_lbuf, len, &dst_lbuf);
 	printf(_("INODE: "));
 	printf(_("#regs: %d   ino: 0x%llx  flags: 0x%x   dsize: %d\n"),
@@ -555,15 +556,17 @@ xlog_print_trans_inode(
 	return f->ilf_size;
     }
 
+    skip_count = f->ilf_size-1;
+
     if (*i >= num_ops)			/* end of LR */
-	    return f->ilf_size-1;
+	    return skip_count;
 
     /* core inode comes 2nd */
     op_head = (xlog_op_header_t *)*ptr;
     xlog_print_op_header(op_head, *i, ptr);
 
     if (op_head->oh_flags & XLOG_CONTINUE_TRANS)  {
-	return f->ilf_size-1;
+        return skip_count;
     }
 
     memmove(&dino, *ptr, sizeof(dino));
@@ -571,13 +574,7 @@ xlog_print_trans_inode(
     size = (int)dino.di_size;
     xlog_print_trans_inode_core(&dino);
     *ptr += xfs_log_dinode_size(dino.di_version);
-
-    if (*i == num_ops-1 && f->ilf_size == 3)  {
-	return 1;
-    }
-
-    /* does anything come next */
-    op_head = (xlog_op_header_t *)*ptr;
+    skip_count--;
 
     switch (f->ilf_fields & (XFS_ILOG_DEV | XFS_ILOG_UUID)) {
     case XFS_ILOG_DEV:
@@ -595,7 +592,12 @@ xlog_print_trans_inode(
     ASSERT(f->ilf_size <= 4);
     ASSERT((f->ilf_size == 3) || (f->ilf_fields & XFS_ILOG_AFORK));
 
+    /* does anything come next */
+    op_head = (xlog_op_header_t *)*ptr;
+
     if (f->ilf_fields & XFS_ILOG_DFORK) {
+	    if (*i == num_ops-1)
+	        return skip_count;
 	    (*i)++;
 	    xlog_print_op_header(op_head, *i, ptr);
 
@@ -618,11 +620,14 @@ xlog_print_trans_inode(
 
 	    *ptr += be32_to_cpu(op_head->oh_len);
 	    if (op_head->oh_flags & XLOG_CONTINUE_TRANS)
-		return 1;
+	        return skip_count;
 	    op_head = (xlog_op_header_t *)*ptr;
+	    skip_count--;
     }
 
     if (f->ilf_fields & XFS_ILOG_AFORK) {
+	    if (*i == num_ops-1)
+	        return skip_count;
 	    (*i)++;
 	    xlog_print_op_header(op_head, *i, ptr);
 
@@ -644,8 +649,11 @@ xlog_print_trans_inode(
 	    }
 	    *ptr += be32_to_cpu(op_head->oh_len);
 	    if (op_head->oh_flags & XLOG_CONTINUE_TRANS)
-		return 1;
+	        return skip_count;
+	    skip_count--;
     }
+
+    ASSERT(skip_count == 0);
 
     return 0;
 }	/* xlog_print_trans_inode */
@@ -1469,48 +1477,31 @@ end:
 }
 
 /*
- * if necessary, convert an xfs_inode_log_format struct from 32bit or 64 bit versions
- * (which can have different field alignments) to the native version
+ * if necessary, convert an xfs_inode_log_format struct from the old 32bit version
+ * (which can have different field alignments) to the native 64 bit version
  */
 xfs_inode_log_format_t *
 xfs_inode_item_format_convert(char *src_buf, uint len, xfs_inode_log_format_t *in_f)
 {
+	struct xfs_inode_log_format_32	*in_f32;
+
 	/* if we have native format then just return buf without copying data */
 	if (len == sizeof(xfs_inode_log_format_t)) {
 		return (xfs_inode_log_format_t *)src_buf;
 	}
 
-	if (len == sizeof(xfs_inode_log_format_32_t)) {
-		xfs_inode_log_format_32_t *in_f32;
+	in_f32 = (struct xfs_inode_log_format_32 *)src_buf;
+	in_f->ilf_type = in_f32->ilf_type;
+	in_f->ilf_size = in_f32->ilf_size;
+	in_f->ilf_fields = in_f32->ilf_fields;
+	in_f->ilf_asize = in_f32->ilf_asize;
+	in_f->ilf_dsize = in_f32->ilf_dsize;
+	in_f->ilf_ino = in_f32->ilf_ino;
+	/* copy biggest field of ilf_u */
+	memcpy(&in_f->ilf_u.ilfu_uuid, &in_f32->ilf_u.ilfu_uuid, sizeof(uuid_t));
+	in_f->ilf_blkno = in_f32->ilf_blkno;
+	in_f->ilf_len = in_f32->ilf_len;
+	in_f->ilf_boffset = in_f32->ilf_boffset;
 
-		in_f32 = (xfs_inode_log_format_32_t *)src_buf;
-		in_f->ilf_type = in_f32->ilf_type;
-		in_f->ilf_size = in_f32->ilf_size;
-		in_f->ilf_fields = in_f32->ilf_fields;
-		in_f->ilf_asize = in_f32->ilf_asize;
-		in_f->ilf_dsize = in_f32->ilf_dsize;
-		in_f->ilf_ino = in_f32->ilf_ino;
-		/* copy biggest */
-		memcpy(&in_f->ilf_u.ilfu_uuid, &in_f32->ilf_u.ilfu_uuid, sizeof(uuid_t));
-		in_f->ilf_blkno = in_f32->ilf_blkno;
-		in_f->ilf_len = in_f32->ilf_len;
-		in_f->ilf_boffset = in_f32->ilf_boffset;
-	} else {
-		xfs_inode_log_format_64_t *in_f64;
-
-		ASSERT(len == sizeof(xfs_inode_log_format_64_t));
-		in_f64 = (xfs_inode_log_format_64_t *)src_buf;
-		in_f->ilf_type = in_f64->ilf_type;
-		in_f->ilf_size = in_f64->ilf_size;
-		in_f->ilf_fields = in_f64->ilf_fields;
-		in_f->ilf_asize = in_f64->ilf_asize;
-		in_f->ilf_dsize = in_f64->ilf_dsize;
-		in_f->ilf_ino = in_f64->ilf_ino;
-		/* copy biggest */
-		memcpy(&in_f->ilf_u.ilfu_uuid, &in_f64->ilf_u.ilfu_uuid, sizeof(uuid_t));
-		in_f->ilf_blkno = in_f64->ilf_blkno;
-		in_f->ilf_len = in_f64->ilf_len;
-		in_f->ilf_boffset = in_f64->ilf_boffset;
-	}
 	return in_f;
 }

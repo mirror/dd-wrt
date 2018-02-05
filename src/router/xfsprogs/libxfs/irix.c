@@ -22,7 +22,7 @@
 
 int platform_has_uuid = 0;
 extern char *progname;
-extern __int64_t findsize(char *);
+extern int64_t findsize(char *);
 
 int
 platform_check_ismounted(char *name, char *block, struct stat *s, int verbose)

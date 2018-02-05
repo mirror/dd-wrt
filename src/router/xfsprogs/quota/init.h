@@ -31,5 +31,3 @@ extern void	report_init(void);
 extern void	state_init(void);
 
 extern void init_cvtnum(unsigned int *, unsigned int *);
-
-#define CMD_ALL_FSTYPES	(1<<0) /* command is always available */

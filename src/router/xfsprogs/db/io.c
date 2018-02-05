@@ -22,12 +22,14 @@
 #include "faddr.h"
 #include "fprint.h"
 #include "field.h"
+#include "dquot.h"
 #include "inode.h"
 #include "io.h"
 #include "output.h"
 #include "init.h"
 #include "malloc.h"
 #include "crc.h"
+#include "bit.h"
 
 static int	pop_f(int argc, char **argv);
 static void     pop_help(void);
@@ -219,6 +221,19 @@ push_cur(void)
 	cur_typ = NULL;
 }
 
+void
+push_cur_and_set_type(void)
+{
+	/* save current state */
+	push_cur();
+	if (iocur_top[-1].typ && iocur_top[-1].typ->typnm == TYP_INODE)
+		set_cur_inode(iocur_top[-1].ino);
+	else
+		set_cur(iocur_top[-1].typ, iocur_top[-1].bb,
+			iocur_top[-1].blen, DB_RING_IGN,
+			iocur_top[-1].bbmap);
+}
+
 static int
 push_f(
 	int		argc,
@@ -239,14 +254,7 @@ push_f(
 		}
 	}
 
-	/* save current state */
-	push_cur();
-	if (iocur_top[-1].typ && iocur_top[-1].typ->typnm == TYP_INODE)
-		set_cur_inode(iocur_top[-1].ino);
-	else
-		set_cur(iocur_top[-1].typ, iocur_top[-1].bb,
-			iocur_top[-1].blen, DB_RING_IGN,
-			iocur_top[-1].bbmap);
+	push_cur_and_set_type();
 
 	/* run requested command */
 	if (argc>1)
@@ -487,14 +495,10 @@ write_cur(void)
 		skip_crc = true;
 
 	if (!skip_crc) {
-		if (iocur_top->ino_buf) {
-			libxfs_dinode_calc_crc(mp, iocur_top->data);
-			iocur_top->ino_crc_ok = 1;
-		} else if (iocur_top->dquot_buf) {
-			xfs_update_cksum(iocur_top->data,
-					 sizeof(struct xfs_dqblk),
-					 XFS_DQUOT_CRC_OFF);
-		}
+		if (iocur_top->ino_buf)
+			xfs_inode_set_crc(iocur_top->bp);
+		else if (iocur_top->dquot_buf)
+			xfs_dquot_set_crc(iocur_top->bp);
 	}
 	if (iocur_top->bbmap)
 		write_cur_bbs();
@@ -504,7 +508,7 @@ write_cur(void)
 	/* If we didn't write the crc automatically, re-check inode validity */
 	if (xfs_sb_version_hascrc(&mp->m_sb) &&
 	    skip_crc && iocur_top->ino_buf) {
-		iocur_top->ino_crc_ok = xfs_verify_cksum(iocur_top->data,
+		iocur_top->ino_crc_ok = libxfs_verify_cksum(iocur_top->data,
 						mp->m_sb.sb_inodesize,
 						XFS_DINODE_CRC_OFF);
 	}
@@ -513,23 +517,22 @@ write_cur(void)
 
 void
 set_cur(
-	const typ_t	*t,
-	__int64_t	d,
-	int		c,
+	const typ_t	*type,
+	xfs_daddr_t	blknum,
+	int		len,
 	int		ring_flag,
 	bbmap_t		*bbmap)
 {
 	struct xfs_buf	*bp;
 	xfs_ino_t	dirino;
 	xfs_ino_t	ino;
-	__uint16_t	mode;
-	const struct xfs_buf_ops *ops = t ? t->bops : NULL;
+	uint16_t	mode;
+	const struct xfs_buf_ops *ops = type ? type->bops : NULL;
 
 	if (iocur_sp < 0) {
 		dbprintf(_("set_cur no stack element to set\n"));
 		return;
 	}
-
 
 	ino = iocur_top->ino;
 	dirino = iocur_top->dirino;
@@ -540,7 +543,7 @@ set_cur(
 	if (bbmap) {
 #ifdef DEBUG_BBMAP
 		int i;
-		printf(_("xfs_db got a bbmap for %lld\n"), (long long)d);
+		printf(_("xfs_db got a bbmap for %lld\n"), (long long)blknum);
 		printf(_("\tblock map"));
 		for (i = 0; i < bbmap->nmaps; i++)
 			printf(" %lld:%d", (long long)bbmap->b[i].bm_bn,
@@ -554,7 +557,7 @@ set_cur(
 		bp = libxfs_readbuf_map(mp->m_ddev_targp, bbmap->b,
 					bbmap->nmaps, 0, ops);
 	} else {
-		bp = libxfs_readbuf(mp->m_ddev_targp, d, c, 0, ops);
+		bp = libxfs_readbuf(mp->m_ddev_targp, blknum, len, 0, ops);
 		iocur_top->bbmap = NULL;
 	}
 
@@ -570,13 +573,13 @@ set_cur(
 	if (!ops)
 		bp->b_flags |= LIBXFS_B_UNCHECKED;
 
-	iocur_top->bb = d;
-	iocur_top->blen = c;
+	iocur_top->bb = blknum;
+	iocur_top->blen = len;
 	iocur_top->boff = 0;
 	iocur_top->data = iocur_top->buf;
-	iocur_top->len = BBTOB(c);
-	iocur_top->off = d << BBSHIFT;
-	iocur_top->typ = cur_typ = t;
+	iocur_top->len = BBTOB(len);
+	iocur_top->off = blknum << BBSHIFT;
+	iocur_top->typ = cur_typ = type;
 	iocur_top->ino = ino;
 	iocur_top->dirino = dirino;
 	iocur_top->mode = mode;
@@ -590,16 +593,40 @@ set_cur(
 
 void
 set_iocur_type(
-	const typ_t	*t)
+	const typ_t	*type)
 {
 	struct xfs_buf	*bp = iocur_top->bp;
 
-	iocur_top->typ = t;
+	/* Inodes are special; verifier checks all inodes in the chunk */
+	if (type->typnm == TYP_INODE) {
+		xfs_daddr_t	b = iocur_top->bb;
+		xfs_ino_t	ino;
+
+		/*
+		 * Note that this will back up to the beginning of the inode
+ 		 * which contains the current disk location; daddr may change.
+ 		 */
+		ino = XFS_AGINO_TO_INO(mp, xfs_daddr_to_agno(mp, b),
+			((b << BBSHIFT) >> mp->m_sb.sb_inodelog) %
+			(mp->m_sb.sb_agblocks << mp->m_sb.sb_inopblog));
+		set_cur_inode(ino);
+		return;
+	}
+
+	/* adjust buffer size for types with fields & hence fsize() */
+	if (type->fields) {
+		int bb_count;	/* type's size in basic blocks */
+
+		bb_count = BTOBB(byteize(fsize(type->fields,
+					       iocur_top->data, 0, 0)));
+		set_cur(type, iocur_top->bb, bb_count, DB_RING_IGN, NULL);
+	}
+	iocur_top->typ = type;
 
 	/* verify the buffer if the type has one. */
 	if (!bp)
 		return;
-	if (!t->bops) {
+	if (!type->bops) {
 		bp->b_ops = NULL;
 		bp->b_flags |= LIBXFS_B_UNCHECKED;
 		return;
@@ -607,7 +634,7 @@ set_iocur_type(
 	if (!(bp->b_flags & LIBXFS_B_UPTODATE))
 		return;
 	bp->b_error = 0;
-	bp->b_ops = t->bops;
+	bp->b_ops = type->bops;
 	bp->b_ops->verify_read(bp);
 	bp->b_flags &= ~LIBXFS_B_UNCHECKED;
 }

@@ -279,6 +279,13 @@ and
 .B agsize
 suboptions are mutually exclusive.
 .TP
+.BI cowextsize= value
+Set the copy-on-write extent size hint on all inodes created by
+.BR mkfs.xfs "."
+The value must be provided in units of filesystem blocks.
+If the value is zero, the default value (currently 32 blocks) will be used.
+Directories will pass on this hint to newly created children.
+.TP
 .BI name= value
 This can be used to specify the name of the special file containing
 the filesystem. In this case, the log section must be specified as
@@ -367,6 +374,25 @@ values.
 This option disables automatic geometry detection and creates the filesystem
 without stripe geometry alignment even if the underlying storage device provides
 this information.
+.TP
+.BI rtinherit= value
+If set, all inodes created by
+.B mkfs.xfs
+will be created with the realtime flag set.
+Directories will pass on this flag to newly created children.
+.TP
+.BI projinherit= value
+All inodes created by
+.B mkfs.xfs
+will be assigned this project quota id.
+Directories will pass on the project id to newly created children.
+.TP
+.BI extszinherit= value
+All inodes created by
+.B mkfs.xfs
+will have this extent size hint applied.
+The value must be provided in units of filesystem blocks.
+Directories will pass on this hint to newly created children.
 .RE
 .TP
 .B \-f
@@ -507,6 +533,9 @@ log section of the filesystem. The valid
 .I log_section_options
 are:
 .RS 1.2i
+.TP
+.BI agnum= value
+If the log is internal, allocate it in this AG.
 .TP
 .BI internal[= value ]
 This is used to specify that the log section is a piece of the data
