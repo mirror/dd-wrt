@@ -1287,7 +1287,7 @@ char *cpustring(void)
 	strcpy(buf, "FreeScale MPC8343");
 	return buf;
 #elif HAVE_NEWPORT
-	strcpy(buf, "Cavium CN88XX");
+	strcpy(buf, "Cavium ThunderX CN81XX");
 	return buf;
 #elif HAVE_VENTANA
 	strcpy(buf, "FreeScale i.MX6 Quad/DualLite");

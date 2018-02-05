@@ -638,7 +638,28 @@ int internal_getRouterBrand()
 	setRouter("Broadcom Northstar");
 	return ROUTER_BOARD_NORTHSTAR;
 #elif HAVE_NEWPORT
-	setRouter("Gateworks Newport");
+	char *filename = "/sys/bus/devices/i2c/0-0051/eeprom";	/* bank2=0x100 kernel 3.0 */
+	FILE *file = fopen(filename, "rb");
+	if (!file) {
+		setRouter("Gateworks NewPort GW6XXX");
+	} else {
+		char gwid[9];
+		fseek(file, 0x30, SEEK_SET);
+		fread(&gwid[0], 9, 1, file);
+		fclose(file);
+		if (!strncmp(gwid, "GW6300", 6)) {
+			setRouter("Gateworks Newport GW6300");
+		} else if (!strncmp(gwid, "GW6200", 6)) {
+			setRouter("Gateworks Newport GW6200");
+		} else if (!strncmp(gwid, "GW6100", 6)) {
+			setRouter("Gateworks Newport GW6100");
+			return ROUTER_BOARD_GW2380;
+		} else if (!strncmp(gwid, "GW6400", 6)) {
+			setRouter("Gateworks Newport GW6400");
+			return ROUTER_BOARD_GW6400;
+		} else
+			setRouter("Gateworks Newport GW6XXX");
+	}
 	return ROUTER_BOARD_GW2388;
 #elif HAVE_VENTANA
 	char *filename = "/sys/devices/soc0/soc.0/2100000.aips-bus/21a0000.i2c/i2c-0/0-0051/eeprom";	/* bank2=0x100 kernel 3.0 */
