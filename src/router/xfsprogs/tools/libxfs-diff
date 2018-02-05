@@ -1,0 +1,25 @@
+#!/bin/bash
+
+if [ -z "$1" ] || [ ! -d "$1" ] || [ "$1" = "--help" ]; then
+	echo "Usage: $0 kernel_libxfs_dir"
+	exit 1
+fi
+
+if [ ! -d "libxfs/" ]; then
+	echo "$0: Must be run from the top level directory."
+	exit 2
+fi
+
+dir="$1"
+
+if [ ! -e "${dir}/xfs_format.h" ]; then
+	echo "${dir}: This doesn't seem to be a libxfs/ directory."
+	exit 3
+fi
+
+dir="$(readlink -m "${dir}/..")"
+
+for i in libxfs/xfs*.[ch]; do
+	kfile="${dir}/$i"
+	diff -Naurpw --label "$i" <(sed -e '/#include/d' "$i") --label "${kfile}" <(sed -e '/#include/d' "${kfile}")
+done
