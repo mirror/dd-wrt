@@ -13,7 +13,7 @@ CFILES = init.c \
 	getrusage.c imap.c link.c mmap.c open.c parent.c pread.c prealloc.c \
 	pwrite.c reflink.c seek.c shutdown.c stat.c sync.c truncate.c utimes.c
 
-LLDLIBS = $(LIBXCMD) $(LIBHANDLE) $(LIBPTHREAD)
+LLDLIBS = $(LIBXCMD) $(LIBHANDLE) $(LIBXFS) $(LIBPTHREAD) -luuid
 LTDEPENDENCIES = $(LIBXCMD) $(LIBHANDLE)
 LLDFLAGS = -static-libtool-libs
 
