@@ -18,8 +18,10 @@
 
 /*
  * Estimate space of an XFS filesystem
+ *
+ * XXX: assumes dirv1 format.
  */
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include <sys/stat.h>
 #include <ftw.h>
 
@@ -43,12 +45,12 @@ cvtnum(char *s)
 	return 0LL;
 }
 
-int ffn(const char *, const struct stat64 *, int, struct FTW *);
+int ffn(const char *, const struct stat *, int, struct FTW *);
 
 #define BLOCKSIZE	4096
 #define INODESIZE	256
 #define PERDIRENTRY	\
-	(sizeof(xfs_dir_leaf_entry_t) + sizeof(xfs_dir_leaf_name_t))
+	(sizeof(xfs_dir2_leaf_entry_t) + sizeof(xfs_dir2_data_entry_t))
 #define LOGSIZE		1000
 
 #define FBLOCKS(n)	((n)/blocksize)
@@ -78,6 +80,7 @@ usage(char *progname)
 		"\t-i logsize (internal log size)\n"
 		"\t-e logsize (external log size)\n"
 		"\t-v prints more verbose messages\n"
+		"\t-V prints version and exits\n"
 		"\t-h prints this usage message\n\n"
 	"Note:\tblocksize may have 'k' appended to indicate x1024\n"
 	"\tlogsize may also have 'm' appended to indicate (1024 x 1024)\n"),
@@ -165,7 +168,7 @@ main(int argc, char **argv)
 		ndirs=0LL;		/* number of directories */
 		nspecial=0LL;		/* number of special files */
 
-		nftw64(argv[optind], ffn, 40, FTW_PHYS | FTW_MOUNT);
+		nftw(argv[optind], ffn, 40, FTW_PHYS | FTW_MOUNT);
 
 		if (__debug) {
 			printf(_("dirsize=%llu\n"), dirsize);
@@ -211,7 +214,7 @@ main(int argc, char **argv)
 }
 
 int
-ffn(const char *path, const struct stat64 *stb, int flags, struct FTW *f)
+ffn(const char *path, const struct stat *stb, int flags, struct FTW *f)
 {
 	/* cases are in most-encountered to least-encountered order */
 	dirsize+=PERDIRENTRY+strlen(path);

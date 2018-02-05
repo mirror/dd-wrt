@@ -3,10 +3,12 @@
 xfs_fsr \- filesystem reorganizer for XFS
 .SH SYNOPSIS
 .nf
-\f3xfs_fsr\f1 [\f3\-v\f1] \c
-[\f3\-t\f1 seconds] [\f3\-f\f1 leftoff] [\f3\-m\f1 mtab]
-\f3xfs_fsr\f1 [\f3\-v\f1] \c
+\f3xfs_fsr\f1 [\f3\-vdg\f1] \c
+[\f3\-t\f1 seconds] [\f3\-p\f1 passes] [\f3\-f\f1 leftoff] [\f3\-m\f1 mtab]
+\f3xfs_fsr\f1 [\f3\-vdg\f1] \c
 [xfsdev | file] ...
+.br
+.B xfs_fsr \-V
 .fi
 .SH DESCRIPTION
 .I xfs_fsr
@@ -35,7 +37,11 @@ The default is to use
 .TP
 .BI \-t " seconds"
 How long to reorganize.
-The default is 7200 (2 hours).
+The default is 7200 seconds (2 hours).
+.TP
+.BI \-p " passes"
+Number of passes before terminating global re-org.
+The default is 10 passes.
 .TP
 .BI \-f " leftoff"
 Use this file instead of
@@ -47,6 +53,16 @@ to store the state of where reorganization left off.
 Verbose.
 Print cryptic information about
 each file being reorganized.
+.TP
+.B \-d
+Debug.  Print even more cryptic information.
+.TP
+.B \-g
+Print to syslog (default if stdout not a tty).
+.TP
+.B \-V
+Prints the version number and exits.
+
 .PP
 When invoked with no arguments
 .I xfs_fsr

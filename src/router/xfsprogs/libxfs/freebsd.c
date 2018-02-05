@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include <sys/stat.h>
 #include <sys/disk.h>
 #include <sys/mount.h>
@@ -27,14 +27,14 @@ int platform_has_uuid = 1;
 extern char *progname;
 
 int
-platform_check_ismounted(char *name, char *block, struct stat64 *s, int verbose)
+platform_check_ismounted(char *name, char *block, struct stat *s, int verbose)
 {
-	struct stat64	st;
+	struct stat	st;
         int cnt, i;
         struct statfs *fsinfo;
 
 	if (!s) {
-		if (stat64(block, &st) < 0)
+		if (stat(block, &st) < 0)
 			return 0;
 		s = &st;
 	}
@@ -62,11 +62,11 @@ platform_check_ismounted(char *name, char *block, struct stat64 *s, int verbose)
 		break;
 	}
 
-        return (i < cnt);
+        return i < cnt;
 }
 
 int
-platform_check_iswritable(char *name, char *block, struct stat64 *s, int fatal)
+platform_check_iswritable(char *name, char *block, struct stat *s)
 {
         int cnt, i;
         struct statfs *fsinfo;
@@ -74,7 +74,7 @@ platform_check_iswritable(char *name, char *block, struct stat64 *s, int fatal)
         if ((cnt = getmntinfo(&fsinfo, MNT_NOWAIT)) == 0) {
 		fprintf(stderr, _("%s: %s contains a possibly writable, "
 				"mounted filesystem\n"), progname, name);
-			return fatal;
+			return 1;
 	}
 
         for (i = 0; i < cnt; i++) {
@@ -88,7 +88,7 @@ platform_check_iswritable(char *name, char *block, struct stat64 *s, int fatal)
         if (i == cnt) {
 		fprintf(stderr, _("%s: %s contains a mounted and writable "
 				"filesystem\n"), progname, name);
-		return fatal;
+		return 1;
 	}
 	return 0;
 }
@@ -126,15 +126,13 @@ platform_findsizes(char *path, int fd, long long *sz, int *bsz)
 	}
 
 	if ((st.st_mode & S_IFMT) != S_IFCHR) {
-		fprintf(stderr, _("%s: "
-			"Not a device or file: \"%s\"n"),
+		fprintf(stderr, _("%s: Not a device or file: \"%s\"\n"),
 			progname, path);
 		exit(1);
 	}
 
 	if (ioctl(fd, DIOCGMEDIASIZE, &size) != 0) {
-		fprintf(stderr, _("%s: "
-			"DIOCGMEDIASIZE failed on \"%s\": %s\n"),
+		fprintf(stderr, _("%s: DIOCGMEDIASIZE failed on \"%s\": %s\n"),
 			progname, path, strerror(errno));
 		exit(1);
 	}
@@ -171,7 +169,7 @@ platform_direct_blockdev(void)
 int
 platform_align_blockdev(void)
 {
-	return (sizeof(void *));
+	return sizeof(void *);
 }
 
 int

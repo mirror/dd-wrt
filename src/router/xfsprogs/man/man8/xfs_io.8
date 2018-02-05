@@ -4,7 +4,7 @@ xfs_io \- debug the I/O path of an XFS filesystem
 .SH SYNOPSIS
 .B xfs_io
 [
-.B \-adFfmrRstx
+.B \-adfimrRstxT
 ] [
 .B \-c
 .I cmd
@@ -13,6 +13,8 @@ xfs_io \- debug the I/O path of an XFS filesystem
 .I prog
 ]
 .I file
+.br
+.B xfs_io \-V
 .SH DESCRIPTION
 .B xfs_io
 is a debugging tool like
@@ -37,12 +39,6 @@ Set the program name for prompts and some error messages,
 the default value is
 .BR xfs_io .
 .TP
-.B \-F
-Allow
-.I file
-to reside in non-XFS (foreign) filesystems.
-This mode has a restricted set of commands.
-.TP
 .B \-f
 Create
 .I file
@@ -55,9 +51,18 @@ read-only, initially. This is required if
 .I file
 is immutable or append-only.
 .TP
+.B \-i
+Start an idle thread. The purpose of this idle thread is to test io
+from a multi threaded process. With single threaded process,
+the file table is not shared and file structs are not reference counted.
+Spawning an idle thread can help detecting file struct reference leaks.
+.TP
 .B \-x
 Expert mode. Dangerous commands are only available in this mode.
 These commands also tend to require additional privileges.
+.TP
+.B \-V
+Prints the version number and exits.
 .PP
 The other
 .BR open (2)
@@ -89,7 +94,7 @@ command for more details on any command.
 Display a list of all open files and (optionally) switch to an alternate
 current open file.
 .TP
-.BI "open [[ \-FacdfrstR ] " path " ]"
+.BI "open [[ \-acdfrstRT ] " path " ]"
 Closes the current file, and opens the file specified by
 .I path
 instead. Without any arguments, displays statistics about the current
@@ -99,10 +104,6 @@ command.
 .RS 1.0i
 .PD 0
 .TP 0.4i
-.B \-F
-allows non-XFS (foreign) files to be opened and
-operated on with a restricted command set.
-.TP
 .B \-a
 opens append-only (O_APPEND).
 .TP
@@ -120,6 +121,17 @@ opens for synchronous I/O (O_SYNC).
 .TP
 .B \-t
 truncates on open (O_TRUNC).
+.TP
+.B \-n
+opens in non-blocking mode if possible (O_NONBLOCK).
+.TP
+.B \-T
+create a temporary file not linked into the filesystem namespace
+(O_TMPFILE).  The pathname passed must refer to a directory which
+is treated as virtual parent for the newly created invisible file.
+Can not be used together with the
+.B \-r
+option.
 .TP
 .B \-R
 marks the file as a realtime XFS file after
@@ -141,7 +153,7 @@ See the
 .B close
 command.
 .TP
-.BI "pread [ \-b " bsize " ] [ \-v ] " "offset length"
+.BI "pread [ \-b " bsize " ] [ \-v ] [ \-FBR [ \-Z " seed " ] ] [ \-V " vectors " ] " "offset length"
 Reads a range of bytes in a specified blocksize from the given
 .IR offset .
 .RS 1.0i
@@ -155,6 +167,25 @@ requests will be split. The default blocksize is 4096 bytes.
 .B \-v
 dump the contents of the buffer after reading,
 by default only the count of bytes actually read is dumped.
+.TP
+.B \-F
+read the buffers in a forwards sequential direction.
+.TP
+.B \-B
+read the buffers in a reserve sequential direction.
+.TP
+.B \-R
+read the buffers in the give range in a random order.
+.TP
+.B \-Z seed
+specify the random number seed used for random reads.
+.TP
+.B \-V vectors
+Use the vectored IO read syscall
+.BR preadv (2)
+with a number of blocksize length iovecs. The number of iovecs is set by the
+.I vectors
+parameter.
 .PD
 .RE
 .TP
@@ -163,7 +194,7 @@ See the
 .B pread
 command.
 .TP
-.BI "pwrite [ \-i " file " ] [ \-d ] [ \-s " skip " ] [ \-b " size " ] [ \-S " seed " ] " "offset length"
+.BI "pwrite [ \-i " file " ] [ \-d ] [ \-s " skip " ] [ \-b " size " ] [ \-S " seed " ] [ \-FBR [ \-Z " zeed " ] ] [ \-wW ] [ \-V " vectors " ] " "offset length"
 Writes a range of bytes in a specified blocksize from the given
 .IR offset .
 The bytes written can be either a set pattern or read in from another
@@ -194,6 +225,35 @@ requests will be split. The default blocksize is 4096 bytes.
 used to set the (repeated) fill pattern which
 is used when the data to write is not coming from a file.
 The default buffer fill pattern value is 0xcdcdcdcd.
+.TP
+.B \-F
+write the buffers in a forwards sequential direction.
+.TP
+.B \-B
+write the buffers in a reserve sequential direction.
+.TP
+.B \-R
+write the buffers in the give range in a random order.
+.TP
+.B \-Z seed
+specify the random number seed used for random write
+.TP
+.B \-w
+call
+.BR fdatasync (2)
+once all writes are complete (included in timing results)
+.TP
+.B \-W
+call
+.BR fsync (2)
+once all writes are complete (included in timing results)
+.TP
+.B \-V vectors
+Use the vectored IO write syscall
+.BR pwritev (2)
+with a number of blocksize length iovecs. The number of iovecs is set by the
+.I vectors
+parameter.
 .RE
 .PD
 .TP
@@ -202,10 +262,16 @@ See the
 .B pwrite
 command.
 .TP
-.BI "bmap [ \-adlpv ] [ \-n " nx " ]"
+.BI "bmap [ \-acdelpv ] [ \-n " nx " ]"
 Prints the block mapping for the current open file. Refer to the
 .BR xfs_bmap (8)
 manual page for complete documentation.
+.TP
+.BI "fiemap [ \-alv ] [ \-n " nx " ]"
+Prints the block mapping for the current open file using the fiemap
+ioctl.  Options behave as described in the
+.BR xfs_bmap (8)
+manual page.
 .TP
 .BI "extsize [ \-R | \-D ] [ " value " ]"
 Display and/or modify the preferred extent size used when allocating
@@ -218,6 +284,22 @@ can be used to restrict the output to directories only).
 If the target file is a directory, then the inherited extent size
 is set for that directory (new files created in that directory
 inherit that extent size).
+The
+.I value
+should be specified in bytes, or using one of the usual units suffixes
+(k, m, g, b, etc). The extent size is always reported in units of bytes.
+.TP
+.BI "cowextsize [ \-R | \-D ] [ " value " ]"
+Display and/or modify the preferred copy-on-write extent size used
+when allocating space for the currently open file. If the
+.B \-R
+option is specified, a recursive descent is performed
+for all directory entries below the currently open file
+.RB ( \-D
+can be used to restrict the output to directories only).
+If the target file is a directory, then the inherited CoW extent size
+is set for that directory (new files created in that directory
+inherit that CoW extent size).
 The
 .I value
 should be specified in bytes, or using one of the usual units suffixes
@@ -283,6 +365,35 @@ See the
 .B fsync
 command.
 .TP
+.BI "sync_range [ \-a | \-b | \-w ] offset length "
+On platforms which support it, allows control of syncing a range of the file to
+disk. With no options, SYNC_FILE_RANGE_WRITE is implied on the range supplied.
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.B \-a
+wait for IO in the given range to finish after writing
+(SYNC_FILE_RANGE_WAIT_AFTER).
+.TP
+.B \-b
+wait for IO in the given range to finish before writing
+(SYNC_FILE_RANGE_WAIT_BEFORE).
+.TP
+.B \-w
+start writeback of dirty data in the given range (SYNC_FILE_RANGE_WRITE).
+.RE
+.PD
+.TP
+.B sync
+Calls
+.BR sync (2)
+to flush all filesystems' in-core data to disk.
+.TP
+.B syncfs
+Calls
+.BR syncfs (2)
+to flush this filesystem's in-core data to disk.
+.TP
 .BI resvsp " offset length"
 Allocates reserved, unwritten space for part of a file using the
 XFS_IOC_RESVSP system call described in the
@@ -298,16 +409,50 @@ manual page.
 .BI "falloc [ \-k ]" " offset length"
 Allocates reserved, unwritten space for part of a file using the
 fallocate routine as described in the
-.BR fallocate (3)
+.BR fallocate (2)
 manual page.
 .RS 1.0i
 .PD 0
 .TP 0.4i
 .B \-k
 will set the FALLOC_FL_KEEP_SIZE flag as described in
-.BR fallocate (3).
+.BR fallocate (2).
 .PD
 .RE
+.TP
+.BI fcollapse " offset length"
+Call fallocate with FALLOC_FL_COLLAPSE_RANGE flag as described in the
+.BR fallocate (2)
+manual page to de-allocates blocks and eliminates the hole created in this process
+by shifting data blocks into the hole.
+.TP
+.BI finsert " offset length"
+Call fallocate with FALLOC_FL_INSERT_RANGE flag as described in the
+.BR fallocate (2)
+manual page to create the hole by shifting data blocks.
+.TP
+.BI fpunch " offset length"
+Punches (de-allocates) blocks in the file by calling fallocate with 
+the FALLOC_FL_PUNCH_HOLE flag as described in the
+.BR fallocate (2)
+manual page.
+.TP
+.BI funshare " offset length"
+Call fallocate with FALLOC_FL_UNSHARE_RANGE flag as described in the
+.BR fallocate (2)
+manual page to unshare all shared blocks within the range.
+.TP
+.BI fzero " offset length"
+Call fallocate with FALLOC_FL_ZERO_RANGE flag as described in the
+.BR fallocate (2)
+manual page to allocate and zero blocks within the range.
+.TP
+.BI zero " offset length"
+Call xfsctl with
+.B XFS_IOC_ZERO_RANGE
+as described in the
+.BR xfsctl (3)
+manual page to allocate and zero blocks within the range.
 .TP
 .BI truncate " offset"
 Truncates the current file at the given offset using
@@ -320,10 +465,161 @@ must be specified as another open file
 .RB ( \-f )
 or by path
 .RB ( \-i ).
+.TP
+.BI "readdir [ -v ] [ -o " offset " ] [ -l " length " ] "
+Read a range of directory entries from a given offset of a directory.
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.B \-v
+verbose mode - dump dirent content as defined in
+.BR readdir (3)
+.TP
+.B \-o
+specify starting
+.I offset
+.TP
+.B \-l
+specify total
+.I length
+to read (in bytes)
+.RE
+.PD
+.TP
+.TP
+.BI "seek  \-a | \-d | \-h [ \-r ] [ \-s ] offset"
+On platforms that support the
+.BR lseek (2)
+.B SEEK_DATA
+and
+.B SEEK_HOLE
+options, display the offsets of the specified segments.
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.B \-a
+Display both
+.B data
+and
+.B hole
+segments starting at the specified
+.B offset.
+.TP
+.B \-d
+Display the
+.B data
+segment starting at the specified
+.B offset.
+.TP
+.B \-h
+Display the
+.B hole
+segment starting at the specified
+.B offset.
+.TP
+.B \-r
+Recursively display all the specified segments starting at the specified
+.B offset.
+.TP
+.B \-s
+Display the starting lseek(2) offset. This offset will be a calculated value when
+both data and holes are displayed together or performing a recusively display.
+.RE
+.PD
+.TP
+.TP
+.BI "reflink  [ \-C ] [ \-q ] src_file [src_offset dst_offset length]"
+On filesystems that support the
+.B XFS_IOC_CLONE_RANGE
+or
+.B BTRFS_IOC_CLONE_RANGE
+ioctls, map
+.I length
+bytes at offset
+.I dst_offset
+in the open file to the same physical blocks that are mapped at offset
+.I src_offset
+in the file
+.I src_file
+, replacing any contents that may already have been there.  If a program
+writes into a reflinked block range of either file, the dirty blocks will be
+cloned, written to, and remapped ("copy on write") in the affected file,
+leaving the other file(s) unchanged.  If src_offset, dst_offset, and length
+are omitted, all contents of src_file will be reflinked into the open file.
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.B \-C
+Print timing statistics in a condensed format.
+.TP
+.B \-q
+Do not print timing statistics at all.
+.RE
+.PD
+.TP
+.TP
+.BI "dedupe  [ \-C ] [ \-q ] src_file src_offset dst_offset length"
+On filesystems that support the
+.B XFS_IOC_FILE_EXTENT_SAME
+or
+.B BTRFS_IOC_FILE_EXTENT_SAME
+ioctls, map
+.I length
+bytes at offset
+.I dst_offset
+in the open file to the same physical blocks that are mapped at offset
+.I src_offset
+in the file
+.I src_file
+, but only if the contents of both ranges are identical.  This is known as
+block-based deduplication.  If a program writes into a reflinked block range of
+either file, the dirty blocks will be cloned, written to, and remapped ("copy
+on write") in the affected file, leaving the other file(s) unchanged.
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.B \-C
+Print timing statistics in a condensed format.
+.TP
+.B \-q
+Do not print timing statistics at all.
+.RE
+.PD
+.TP
+.TP
+.BI "copy_range [ -s " src_offset " ] [ -d " dst_offset " ] [ -l " length " ] src_file"
+On filesystems that support the
+.BR copy_file_range (2)
+system call, copies data from the
+.I src_file
+into the open file.  If
+.IR src_offset ,
+.IR dst_offset ,
+and
+.I length
+are omitted the contents of src_file will be copied to the beginning of the
+open file, overwriting any data already there.
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.B \-s
+Copy data from
+.I src_file
+beginning from
+.IR src_offset .
+.TP
+.B \-d
+Copy data into the open file beginning at
+.IR dst_offset .
+.TP
+.B \-l
+Copy up to
+.I length
+bytes of data.
 
 .SH MEMORY MAPPED I/O COMMANDS
 .TP
-.BI "mmap [ " N " | [[ \-rwx ] " "offset length " ]]
+.BI "mmap [ " N " | [[ \-rwx ] [\-s " size " ] " "offset length " ]]
 With no arguments,
 .B mmap
 shows the current mappings. Specifying a single numeric argument
@@ -339,10 +635,42 @@ PROT_WRITE
 .RB ( \-w ),
 and PROT_EXEC
 .RB ( \-x ).
+.BI \-s " size"
+is used to do a mmap(size) && munmap(size) operation at first, try to reserve some
+extendible free memory space, if
+.I size
+is bigger than
+.I length
+parameter. But there's not guarantee that the memory after
+.I length
+( up to
+.I size
+) will stay free.
+.B e.g.
+"mmap -rw -s 8192 1024" will mmap 0 ~ 1024 bytes memory, but try to reserve 1024 ~ 8192
+free space(no guarantee). This free space will helpful for "mremap 8192" without
+MREMAP_MAYMOVE flag.
 .TP
 .B mm
 See the
 .B mmap
+command.
+.TP
+.BI "mremap [ \-f <new_address> ] [ \-m ] " new_length
+Changes the current mapping size to
+.IR new_length .
+Whether the mapping may be moved is controlled by the flags passed;
+MREMAP_FIXED
+.RB ( \-f ),
+or MREMAP_MAYMOVE
+.RB ( \-m ).
+.IR new_length
+specifies a page-aligned address to which the mapping must be moved. It
+can be setted to 139946004389888, 4096k or 1g etc.
+.TP
+.B mrm
+See the
+.B mremap
 command.
 .TP
 .B munmap
@@ -438,6 +766,9 @@ for the current memory mapping.
 
 .SH OTHER COMMANDS
 .TP
+.BR "help [ " command " ]"
+Display a brief description of one or all commands.
+.TP
 .B print
 Display a list of all open files and memory mapped regions.
 The current file and current mapping are distinguishable from
@@ -487,6 +818,9 @@ Only available in expert mode and requires privileges.
 Undo the effects of a filesystem freeze operation.
 Only available in expert mode and requires privileges.
 .TP
+.BI "flink " path
+Link the currently open file descriptor into the filesystem namespace.
+.TP
 .BI "inject [ " tag " ]"
 Inject errors into a filesystem to observe filesystem behavior at
 specific points under adverse conditions. Without the
@@ -517,6 +851,24 @@ Selected statistics from
 .BR statfs (2)
 and the XFS_IOC_FSGEOMETRY
 system call on the filesystem where the current file resides.
+.TP
+.BR chproj " [ " \-R | \-D " ]"
+Modifies the project identifier associated with the current path. The 
+.B \-R
+option will recursively descend if the current path is a directory. The 
+.B \-D
+option will also recursively descend, only setting modifying projects 
+on subdirectories.  See the
+.BR xfs_quota (8)
+manual page for more information about project identifiers.
+.TP
+.BR lsproj " [ " \-R | \-D " ]"
+Displays the project identifier associated with the current path. The 
+.B \-R
+and
+.B \-D
+options behave as described above, in
+.B chproj.
 .TP
 .BR parent " [ " \-cpv " ]"
 By default this command prints out the parent inode numbers,
@@ -554,4 +906,5 @@ verbose output will be printed.
 .BR msync (2),
 .BR open (2),
 .BR pread (2),
-.BR pwrite (2).
+.BR pwrite (2),
+.BR readdir (3).

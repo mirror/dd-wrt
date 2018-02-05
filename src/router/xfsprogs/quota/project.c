@@ -16,8 +16,8 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/command.h>
-#include <xfs/input.h>
+#include "command.h"
+#include "input.h"
 #include "init.h"
 #include "quota.h"
 
@@ -117,7 +117,7 @@ check_project(
 		exitcode = 1;
 		fprintf(stderr, _("%s: cannot open %s: %s\n"),
 			progname, path, strerror(errno));
-	} else if ((xfsctl(path, fd, XFS_IOC_FSGETXATTR, &fsx)) < 0) {
+	} else if ((xfsctl(path, fd, FS_IOC_FSGETXATTR, &fsx)) < 0) {
 		exitcode = 1;
 		fprintf(stderr, _("%s: cannot get flags on %s: %s\n"),
 			progname, path, strerror(errno));
@@ -126,7 +126,7 @@ check_project(
 			printf(_("%s - project identifier is not set"
 				 " (inode=%u, tree=%u)\n"),
 				path, fsx.fsx_projid, (unsigned int)prid);
-		if (!(fsx.fsx_xflags & XFS_XFLAG_PROJINHERIT))
+		if (!(fsx.fsx_xflags & FS_XFLAG_PROJINHERIT))
 			printf(_("%s - project inheritance flag is not set\n"),
 				path);
 	}
@@ -163,7 +163,7 @@ clear_project(
 		fprintf(stderr, _("%s: cannot open %s: %s\n"),
 			progname, path, strerror(errno));
 		return 0;
-	} else if (xfsctl(path, fd, XFS_IOC_FSGETXATTR, &fsx) < 0) {
+	} else if (xfsctl(path, fd, FS_IOC_FSGETXATTR, &fsx) < 0) {
 		exitcode = 1;
 		fprintf(stderr, _("%s: cannot get flags on %s: %s\n"),
 			progname, path, strerror(errno));
@@ -172,8 +172,8 @@ clear_project(
 	}
 
 	fsx.fsx_projid = 0;
-	fsx.fsx_xflags &= ~XFS_XFLAG_PROJINHERIT;
-	if (xfsctl(path, fd, XFS_IOC_FSSETXATTR, &fsx) < 0) {
+	fsx.fsx_xflags &= ~FS_XFLAG_PROJINHERIT;
+	if (xfsctl(path, fd, FS_IOC_FSSETXATTR, &fsx) < 0) {
 		exitcode = 1;
 		fprintf(stderr, _("%s: cannot clear project on %s: %s\n"),
 			progname, path, strerror(errno));
@@ -210,7 +210,7 @@ setup_project(
 		fprintf(stderr, _("%s: cannot open %s: %s\n"),
 			progname, path, strerror(errno));
 		return 0;
-	} else if (xfsctl(path, fd, XFS_IOC_FSGETXATTR, &fsx) < 0) {
+	} else if (xfsctl(path, fd, FS_IOC_FSGETXATTR, &fsx) < 0) {
 		exitcode = 1;
 		fprintf(stderr, _("%s: cannot get flags on %s: %s\n"),
 			progname, path, strerror(errno));
@@ -219,8 +219,8 @@ setup_project(
 	}
 
 	fsx.fsx_projid = prid;
-	fsx.fsx_xflags |= XFS_XFLAG_PROJINHERIT;
-	if (xfsctl(path, fd, XFS_IOC_FSSETXATTR, &fsx) < 0) {
+	fsx.fsx_xflags |= FS_XFLAG_PROJINHERIT;
+	if (xfsctl(path, fd, FS_IOC_FSSETXATTR, &fsx) < 0) {
 		exitcode = 1;
 		fprintf(stderr, _("%s: cannot set project on %s: %s\n"),
 			progname, path, strerror(errno));
@@ -355,6 +355,7 @@ project_init(void)
 	project_cmd.argmax = -1;
 	project_cmd.oneline = _("check, setup or clear project quota trees");
 	project_cmd.help = project_help;
+	project_cmd.flags = CMD_FLAG_FOREIGN_OK;
 
 	if (expert)
 		add_command(&project_cmd);

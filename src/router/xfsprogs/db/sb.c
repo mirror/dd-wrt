@@ -16,8 +16,8 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
-#include <xfs/libxlog.h>
+#include "libxfs.h"
+#include "libxlog.h"
 #include "command.h"
 #include "type.h"
 #include "faddr.h"
@@ -28,6 +28,8 @@
 #include "bit.h"
 #include "output.h"
 #include "init.h"
+
+#define uuid_equal(s,d)		(platform_uuid_compare((s),(d)) == 0)
 
 static int	sb_f(int argc, char **argv);
 static void     sb_help(void);
@@ -108,7 +110,21 @@ const field_t	sb_flds[] = {
 	{ "logsectsize", FLDT_UINT16D, OI(OFF(logsectsize)), C1, 0, TYP_NONE },
 	{ "logsunit", FLDT_UINT32D, OI(OFF(logsunit)), C1, 0, TYP_NONE },
 	{ "features2", FLDT_UINT32X, OI(OFF(features2)), C1, 0, TYP_NONE },
-	{ "bad_features2", FLDT_UINT32X, OI(OFF(bad_features2)), C1, 0, TYP_NONE },
+	{ "bad_features2", FLDT_UINT32X, OI(OFF(bad_features2)),
+		C1, 0, TYP_NONE },
+	{ "features_compat", FLDT_UINT32X, OI(OFF(features_compat)),
+		C1, 0, TYP_NONE },
+	{ "features_ro_compat", FLDT_UINT32X, OI(OFF(features_ro_compat)),
+		C1, 0, TYP_NONE },
+	{ "features_incompat", FLDT_UINT32X, OI(OFF(features_incompat)),
+		C1, 0, TYP_NONE },
+	{ "features_log_incompat", FLDT_UINT32X, OI(OFF(features_log_incompat)),
+		C1, 0, TYP_NONE },
+	{ "crc", FLDT_CRC, OI(OFF(crc)), C1, 0, TYP_NONE },
+	{ "spino_align", FLDT_EXTLEN, OI(OFF(spino_align)), C1, 0, TYP_NONE },
+	{ "pquotino", FLDT_INO, OI(OFF(pquotino)), C1, 0, TYP_INODE },
+	{ "lsn", FLDT_UINT64X, OI(OFF(lsn)), C1, 0, TYP_NONE },
+	{ "meta_uuid", FLDT_UUID, OI(OFF(meta_uuid)), C1, 0, TYP_NONE },
 	{ NULL }
 };
 
@@ -205,13 +221,15 @@ get_sb(xfs_agnumber_t agno, xfs_sb_t *sb)
 }
 
 /* workaround craziness in the xlog routines */
-int xlog_recover_do_trans(xlog_t *log, xlog_recover_t *t, int p) { return 0; }
+int xlog_recover_do_trans(struct xlog *log, xlog_recover_t *t, int p)
+{
+	return 0;
+}
 
 int
 sb_logcheck(void)
 {
-	xlog_t		log;
-	xfs_daddr_t	head_blk, tail_blk;
+	int		dirty;
 
 	if (mp->m_sb.sb_logstart) {
 		if (x.logdev && x.logdev != x.ddev) {
@@ -227,22 +245,13 @@ sb_logcheck(void)
 		}
 	}
 
-	memset(&log, 0, sizeof(log));
-	if (!x.logdev)
-		x.logdev = x.ddev;
-	x.logBBsize = XFS_FSB_TO_BB(mp, mp->m_sb.sb_logblocks);
-	x.logBBstart = XFS_FSB_TO_DADDR(mp, mp->m_sb.sb_logstart);
-	log.l_dev = (mp->m_sb.sb_logstart == 0) ? x.logdev : x.ddev;
-	log.l_logsize = BBTOB(log.l_logBBsize);
-	log.l_logBBsize = x.logBBsize;
-	log.l_logBBstart = x.logBBstart;
-	log.l_mp = mp;
+	libxfs_buftarg_init(mp, x.ddev, x.logdev, x.rtdev);
 
-	if (xlog_find_tail(&log, &head_blk, &tail_blk)) {
+	dirty = xlog_is_dirty(mp, mp->m_log, &x, 0);
+	if (dirty == -1) {
 		dbprintf(_("ERROR: cannot find log head/tail, run xfs_repair\n"));
 		return 0;
-	}
-	if (head_blk != tail_blk) {
+	} else if (dirty == 1) {
 		dbprintf(_(
 "ERROR: The filesystem has valuable metadata changes in a log which needs to\n"
 "be replayed.  Mount the filesystem to replay the log, and unmount it before\n"
@@ -252,27 +261,39 @@ sb_logcheck(void)
 "of the filesystem before doing this.\n"), progname);
 		return 0;
 	}
+	/* Log is clean */
 	return 1;
 }
 
 static int
 sb_logzero(uuid_t *uuidp)
 {
+	int	cycle = XLOG_INIT_CYCLE;
+	int	error;
+
 	if (!sb_logcheck())
 		return 0;
 
+	/*
+	 * The log must always move forward on v5 superblocks. Bump it to the
+	 * next cycle.
+	 */
+	if (xfs_sb_version_hascrc(&mp->m_sb))
+		cycle = mp->m_log->l_curr_cycle + 1;
+
 	dbprintf(_("Clearing log and setting UUID\n"));
 
-	if (libxfs_log_clear(
-			(mp->m_sb.sb_logstart == 0) ? x.logdev : x.ddev,
+	error =  libxfs_log_clear(mp->m_logdev_targp, NULL,
 			XFS_FSB_TO_DADDR(mp, mp->m_sb.sb_logstart),
 			(xfs_extlen_t)XFS_FSB_TO_BB(mp, mp->m_sb.sb_logblocks),
 			uuidp,
 			xfs_sb_version_haslogv2(&mp->m_sb) ? 2 : 1,
-			mp->m_sb.sb_logsunit, XLOG_FMT)) {
+			mp->m_sb.sb_logsunit, XLOG_FMT, cycle, true);
+	if (error) {
 		dbprintf(_("ERROR: cannot clear the log\n"));
 		return 0;
 	}
+
 	return 1;
 }
 
@@ -316,8 +337,34 @@ do_uuid(xfs_agnumber_t agno, uuid_t *uuid)
 		return &uu;
 	}
 	/* set uuid */
+	if (!xfs_sb_version_hascrc(&tsb))
+		goto write;
+	/*
+	 * If we have CRCs, and this UUID differs from that stamped in the
+	 * metadata, set the incompat flag and copy the old one to the
+	 * metadata-specific location.
+	 *
+	 * If we are setting the user-visible UUID back to match the metadata
+	 * UUID, clear the metadata-specific location and the incompat flag.
+	 */
+	if (!xfs_sb_version_hasmetauuid(&tsb) &&
+	    !uuid_equal(uuid, &mp->m_sb.sb_meta_uuid)) {
+		mp->m_sb.sb_features_incompat |= XFS_SB_FEAT_INCOMPAT_META_UUID;
+		tsb.sb_features_incompat |= XFS_SB_FEAT_INCOMPAT_META_UUID;
+		memcpy(&tsb.sb_meta_uuid, &tsb.sb_uuid, sizeof(uuid_t));
+	} else if (xfs_sb_version_hasmetauuid(&tsb) &&
+		   uuid_equal(uuid, &mp->m_sb.sb_meta_uuid)) {
+		memset(&tsb.sb_meta_uuid, 0, sizeof(uuid_t));
+		/* Write those zeros now; it's ignored once we clear the flag */
+		libxfs_sb_to_disk(iocur_top->data, &tsb);
+		mp->m_sb.sb_features_incompat &=
+						~XFS_SB_FEAT_INCOMPAT_META_UUID;
+		tsb.sb_features_incompat &= ~XFS_SB_FEAT_INCOMPAT_META_UUID;
+	}
+
+write:
 	memcpy(&tsb.sb_uuid, uuid, sizeof(uuid_t));
-	libxfs_sb_to_disk(iocur_top->data, &tsb, XFS_SB_UUID);
+	libxfs_sb_to_disk(iocur_top->data, &tsb);
 	write_cur();
 	return uuid;
 }
@@ -358,6 +405,17 @@ uuid_f(
 			memcpy(&uu, uup, sizeof(uuid_t));
 			platform_uuid_unparse(&uu, bp);
 			dbprintf(_("old UUID = %s\n"), bp);
+		} else if (!strcasecmp(argv[1], "restore")) {
+			xfs_sb_t	tsb;
+
+			if (!get_sb(0, &tsb))
+				return 0;
+
+			/* Not set; nothing to do.  Success! */
+			if (!xfs_sb_version_hasmetauuid(&tsb))
+				return 0;
+
+			memcpy(&uu, mp->m_sb.sb_meta_uuid, sizeof(uuid_t));
 		} else {
 			if (platform_uuid_parse(argv[1], &uu)) {
 				dbprintf(_("invalid UUID\n"));
@@ -470,7 +528,7 @@ do_label(xfs_agnumber_t agno, char *label)
 	memset(&tsb.sb_fname, 0, sizeof(tsb.sb_fname));
 	memcpy(&tsb.sb_fname, label, len);
 	memcpy(&lbl[0], &tsb.sb_fname, sizeof(tsb.sb_fname));
-	libxfs_sb_to_disk(iocur_top->data, &tsb, XFS_SB_FNAME);
+	libxfs_sb_to_disk(iocur_top->data, &tsb);
 	write_cur();
 	return &lbl[0];
 }
@@ -551,7 +609,6 @@ static int
 do_version(xfs_agnumber_t agno, __uint16_t version, __uint32_t features)
 {
 	xfs_sb_t	tsb;
-	__int64_t	fields = 0;
 
 	if (!get_sb(agno, &tsb))
 		return 0;
@@ -565,14 +622,12 @@ do_version(xfs_agnumber_t agno, __uint16_t version, __uint32_t features)
 	if ((version & XFS_SB_VERSION_LOGV2BIT) &&
 					!xfs_sb_version_haslogv2(&tsb)) {
 		tsb.sb_logsunit = 1;
-		fields |= (1LL << XFS_SBS_LOGSUNIT);
 	}
 
 	tsb.sb_versionnum = version;
 	tsb.sb_features2 = features;
 	tsb.sb_bad_features2 = features;
-	fields |= XFS_SB_VERSIONNUM | XFS_SB_FEATURES2 | XFS_SB_BAD_FEATURES2;
-	libxfs_sb_to_disk(iocur_top->data, &tsb, fields);
+	libxfs_sb_to_disk(iocur_top->data, &tsb);
 	write_cur();
 	return 1;
 }
@@ -591,21 +646,28 @@ version_string(
 		strcpy(s, "V3");
 	else if (XFS_SB_VERSION_NUM(sbp) == XFS_SB_VERSION_4)
 		strcpy(s, "V4");
+	else if (XFS_SB_VERSION_NUM(sbp) == XFS_SB_VERSION_5)
+		strcpy(s, "V5");
+
+	/*
+	 * We assume the state of these features now, so macros don't exist for
+	 * them any more.
+	 */
+	if (sbp->sb_versionnum & XFS_SB_VERSION_NLINKBIT)
+		strcat(s, ",NLINK");
+	if (sbp->sb_versionnum & XFS_SB_VERSION_SHAREDBIT)
+		strcat(s, ",SHARED");
+	if (sbp->sb_versionnum & XFS_SB_VERSION_DIRV2BIT)
+		strcat(s, ",DIRV2");
 
 	if (xfs_sb_version_hasattr(sbp))
 		strcat(s, ",ATTR");
-	if (xfs_sb_version_hasnlink(sbp))
-		strcat(s, ",NLINK");
 	if (xfs_sb_version_hasquota(sbp))
 		strcat(s, ",QUOTA");
 	if (xfs_sb_version_hasalign(sbp))
 		strcat(s, ",ALIGN");
 	if (xfs_sb_version_hasdalign(sbp))
 		strcat(s, ",DALIGN");
-	if (xfs_sb_version_hasshared(sbp))
-		strcat(s, ",SHARED");
-	if (xfs_sb_version_hasdirv2(sbp))
-		strcat(s, ",DIRV2");
 	if (xfs_sb_version_haslogv2(sbp))
 		strcat(s, ",LOGV2");
 	if (xfs_sb_version_hasextflgbit(sbp))
@@ -622,9 +684,27 @@ version_string(
 		strcat(s, ",LAZYSBCOUNT");
 	if (xfs_sb_version_hasprojid32bit(sbp))
 		strcat(s, ",PROJID32BIT");
+	if (xfs_sb_version_hascrc(sbp))
+		strcat(s, ",CRC");
+	if (xfs_sb_version_hasftype(sbp))
+		strcat(s, ",FTYPE");
+	if (xfs_sb_version_hasfinobt(sbp))
+		strcat(s, ",FINOBT");
+	if (xfs_sb_version_hassparseinodes(sbp))
+		strcat(s, ",SPARSE_INODES");
+	if (xfs_sb_version_hasmetauuid(sbp))
+		strcat(s, ",META_UUID");
+	if (xfs_sb_version_hasreflink(sbp))
+		strcat(s, ",REFLINK");
 	return s;
 }
 
+/*
+ * XXX: this only supports reading and writing to version 4 superblock fields.
+ * V5 superblocks always define certain V4 feature bits - they are blocked from
+ * being changed if a V5 sb is detected, but otherwise v5 superblock features
+ * are not handled here.
+ */
 static int
 version_f(
 	int		argc,
@@ -656,11 +736,15 @@ version_f(
 				break;
 			case XFS_SB_VERSION_4:
 				if (xfs_sb_version_hasextflgbit(&mp->m_sb))
-					dbprintf(_("unwritten extents flag"
-						 " is already enabled\n"));
+					dbprintf(
+		_("unwritten extents flag is already enabled\n"));
 				else
 					version = mp->m_sb.sb_versionnum |
 						  XFS_SB_VERSION_EXTFLGBIT;
+				break;
+			case XFS_SB_VERSION_5:
+				dbprintf(
+		_("unwritten extents always enabled for v5 superblocks.\n"));
 				break;
 			}
 		} else if (!strcasecmp(argv[1], "log2")) {
@@ -676,14 +760,24 @@ version_f(
 				break;
 			case XFS_SB_VERSION_4:
 				if (xfs_sb_version_haslogv2(&mp->m_sb))
-					dbprintf(_("version 2 log format"
-						 " is already in use\n"));
+					dbprintf(
+		_("version 2 log format is already in use\n"));
 				else
 					version = mp->m_sb.sb_versionnum |
 						  XFS_SB_VERSION_LOGV2BIT;
 				break;
+			case XFS_SB_VERSION_5:
+				dbprintf(
+		_("Version 2 logs always enabled for v5 superblocks.\n"));
+				break;
 			}
+		} else if (XFS_SB_VERSION_NUM(&mp->m_sb) == XFS_SB_VERSION_5) {
+			dbprintf(
+		_("%s: Cannot change %s on v5 superblocks.\n"),
+				progname, argv[1]);
+			return 0;
 		} else if (!strcasecmp(argv[1], "attr1")) {
+
 			if (xfs_sb_version_hasattr2(&mp->m_sb)) {
 				if (!(mp->m_sb.sb_features2 &=
 						~XFS_SB_VERSION2_ATTR2BIT))

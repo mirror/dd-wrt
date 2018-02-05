@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <libxfs.h>
+#include "libxfs.h"
 #include "xfs_metadump.h"
 
 char 		*progname;
@@ -60,7 +60,7 @@ perform_restore(
 	__be64			*block_index;
 	char			*block_buffer;
 	int			block_size;
-	int			max_indicies;
+	int			max_indices;
 	int			cur_index;
 	int			mb_count;
 	xfs_metablock_t		tmb;
@@ -80,14 +80,14 @@ perform_restore(
 		fatal("specified file is not a metadata dump\n");
 
 	block_size = 1 << tmb.mb_blocklog;
-	max_indicies = (block_size - sizeof(xfs_metablock_t)) / sizeof(__be64);
+	max_indices = (block_size - sizeof(xfs_metablock_t)) / sizeof(__be64);
 
-	metablock = (xfs_metablock_t *)calloc(max_indicies + 1, block_size);
+	metablock = (xfs_metablock_t *)calloc(max_indices + 1, block_size);
 	if (metablock == NULL)
 		fatal("memory allocation failure\n");
 
 	mb_count = be16_to_cpu(tmb.mb_count);
-	if (mb_count == 0 || mb_count > max_indicies)
+	if (mb_count == 0 || mb_count > max_indices)
 		fatal("bad block count: %u\n", mb_count);
 
 	block_index = (__be64 *)((char *)metablock + sizeof(xfs_metablock_t));
@@ -109,12 +109,22 @@ perform_restore(
 	if (sb.sb_magicnum != XFS_SB_MAGIC)
 		fatal("bad magic number for primary superblock\n");
 
+	/*
+	 * Normally the upper bound would be simply XFS_MAX_SECTORSIZE
+	 * but the metadump format has a maximum number of BBSIZE blocks
+	 * it can store in a single metablock.
+	 */
+	if (sb.sb_sectsize < XFS_MIN_SECTORSIZE ||
+	    sb.sb_sectsize > XFS_MAX_SECTORSIZE ||
+	    sb.sb_sectsize > max_indices * block_size)
+		fatal("bad sector size %u in metadump image\n", sb.sb_sectsize);
+
 	((xfs_dsb_t*)block_buffer)->sb_inprogress = 1;
 
 	if (is_target_file)  {
 		/* ensure regular files are correctly sized */
 
-		if (ftruncate64(dst_fd, sb.sb_dblocks * sb.sb_blocksize))
+		if (ftruncate(dst_fd, sb.sb_dblocks * sb.sb_blocksize))
 			fatal("cannot set filesystem image size: %s\n",
 				strerror(errno));
 	} else  {
@@ -124,7 +134,7 @@ perform_restore(
 		off64_t		off;
 
 		off = sb.sb_dblocks * sb.sb_blocksize - sizeof(lb);
-		if (pwrite64(dst_fd, lb, sizeof(lb), off) < 0)
+		if (pwrite(dst_fd, lb, sizeof(lb), off) < 0)
 			fatal("failed to write last block, is target too "
 				"small? (error: %s)\n", strerror(errno));
 	}
@@ -133,10 +143,10 @@ perform_restore(
 
 	for (;;) {
 		if (show_progress && (bytes_read & ((1 << 20) - 1)) == 0)
-			print_progress("%lld MB read\n", bytes_read >> 20);
+			print_progress("%lld MB read", bytes_read >> 20);
 
 		for (cur_index = 0; cur_index < mb_count; cur_index++) {
-			if (pwrite64(dst_fd, &block_buffer[cur_index <<
+			if (pwrite(dst_fd, &block_buffer[cur_index <<
 					tmb.mb_blocklog], block_size,
 					be64_to_cpu(block_index[cur_index]) <<
 						BBSHIFT) < 0)
@@ -144,7 +154,7 @@ perform_restore(
 					be64_to_cpu(block_index[cur_index]) << BBSHIFT,
 					strerror(errno));
 		}
-		if (mb_count < max_indicies)
+		if (mb_count < max_indices)
 			break;
 
 		if (fread(metablock, block_size, 1, src_f) != 1)
@@ -153,14 +163,14 @@ perform_restore(
 		mb_count = be16_to_cpu(metablock->mb_count);
 		if (mb_count == 0)
 			break;
-		if (mb_count > max_indicies)
+		if (mb_count > max_indices)
 			fatal("bad block count: %u\n", mb_count);
 
-		if (fread(block_buffer, mb_count << tmb.mb_blocklog, 
+		if (fread(block_buffer, mb_count << tmb.mb_blocklog,
 								1, src_f) != 1)
 			fatal("error reading from file: %s\n", strerror(errno));
 
-		bytes_read += block_size;
+		bytes_read += block_size + (mb_count << tmb.mb_blocklog);
 	}
 
 	if (progress_since_warning)
@@ -168,7 +178,12 @@ perform_restore(
 
 	memset(block_buffer, 0, sb.sb_sectsize);
 	sb.sb_inprogress = 0;
-	libxfs_sb_to_disk((xfs_dsb_t *)block_buffer, &sb, XFS_SB_ALL_BITS);
+	libxfs_sb_to_disk((xfs_dsb_t *)block_buffer, &sb);
+	if (xfs_sb_version_hascrc(&sb)) {
+		xfs_update_cksum(block_buffer, sb.sb_sectsize,
+				 offsetof(struct xfs_sb, sb_crc));
+	}
+
 	if (pwrite(dst_fd, block_buffer, sb.sb_sectsize, 0) < 0)
 		fatal("error writing primary superblock: %s\n", strerror(errno));
 
@@ -178,11 +193,11 @@ perform_restore(
 static void
 usage(void)
 {
-	fprintf(stderr, "Usage: %s [-bg] source target\n", progname);
+	fprintf(stderr, "Usage: %s [-V] [-g] source target\n", progname);
 	exit(1);
 }
 
-extern int	platform_check_ismounted(char *, char *, struct stat64 *, int);
+extern int	platform_check_ismounted(char *, char *, struct stat *, int);
 
 int
 main(
@@ -193,7 +208,7 @@ main(
 	int		dst_fd;
 	int		c;
 	int		open_flags;
-	struct stat64	statbuf;
+	struct stat	statbuf;
 	int		is_target_file;
 
 	progname = basename(argv[0]);
@@ -229,7 +244,7 @@ main(
 	/* check and open target */
 	open_flags = O_RDWR;
 	is_target_file = 0;
-	if (stat64(argv[optind], &statbuf) < 0)  {
+	if (stat(argv[optind], &statbuf) < 0)  {
 		/* ok, assume it's a file and create it */
 		open_flags |= O_CREAT;
 		is_target_file = 1;

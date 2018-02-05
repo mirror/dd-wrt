@@ -16,13 +16,13 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <libxfs.h>
+#include "libxfs.h"
 #include "globals.h"
 #include "agheader.h"
 #include "protos.h"
 #include "err_protos.h"
 
-void
+static void
 no_sb(void)
 {
 	do_warn(_("Sorry, could not find valid secondary superblock\n"));
@@ -70,13 +70,14 @@ phase1(xfs_mount_t *mp)
 	ag_bp = alloc_ag_buf(MAX_SECTSIZE);
 	sb = (xfs_sb_t *) ag_bp;
 
-	if (get_sb(sb, 0LL, MAX_SECTSIZE, 0) == XR_EOF)
+	rval = get_sb(sb, 0LL, MAX_SECTSIZE, 0);
+	if (rval == XR_EOF)
 		do_error(_("error reading primary superblock\n"));
 
 	/*
 	 * is this really an sb, verify internal consistency
 	 */
-	if ((rval = verify_sb(sb, 1)) != XR_OK)  {
+	if (rval != XR_OK)  {
 		do_warn(_("bad primary superblock - %s !!!\n"),
 			err_string(rval));
 		if (!find_secondary_sb(sb))
@@ -120,8 +121,12 @@ phase1(xfs_mount_t *mp)
 			sb->sb_bad_features2 |= XFS_SB_VERSION2_LAZYSBCOUNTBIT;
 			primary_sb_modified = 1;
 			printf(_("Enabling lazy-counters\n"));
-		} else
-		if (!lazy_count && xfs_sb_version_haslazysbcount(sb)) {
+		} else if (!lazy_count && xfs_sb_version_haslazysbcount(sb)) {
+			if (XFS_SB_VERSION_NUM(sb) == XFS_SB_VERSION_5) {
+				printf(
+_("Cannot disable lazy-counters on V5 fs\n"));
+				exit(1);
+			}
 			sb->sb_features2 &= ~XFS_SB_VERSION2_LAZYSBCOUNTBIT;
 			sb->sb_bad_features2 &= ~XFS_SB_VERSION2_LAZYSBCOUNTBIT;
 			printf(_("Disabling lazy-counters\n"));

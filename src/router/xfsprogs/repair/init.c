@@ -16,78 +16,23 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <libxfs.h>
+#include "libxfs.h"
 #include "globals.h"
 #include "agheader.h"
 #include "protos.h"
 #include "err_protos.h"
 #include "pthread.h"
 #include "avl.h"
-#include "dir.h"
 #include "bmap.h"
 #include "incore.h"
 #include "prefetch.h"
 #include <sys/resource.h>
 
-/* TODO: dirbuf/freemap key usage is completely b0rked - only used for dirv1 */
-static pthread_key_t dirbuf_key;
-static pthread_key_t dir_freemap_key;
-static pthread_key_t attr_freemap_key;
-
-extern pthread_key_t dblkmap_key;
-extern pthread_key_t ablkmap_key;
-
-static void
-ts_alloc(pthread_key_t key, unsigned n, size_t size)
-{
-	void *voidp;
-	voidp = calloc(n, size);
-	if (voidp == NULL) {
-		do_error(_("ts_alloc: cannot allocate thread specific storage\n"));
-		/* NO RETURN */
-		return;
-	}
-	pthread_setspecific(key,  voidp);
-}
-
 static void
 ts_create(void)
 {
-	/* create thread specific keys */
-	pthread_key_create(&dirbuf_key, NULL);
-	pthread_key_create(&dir_freemap_key, NULL);
-	pthread_key_create(&attr_freemap_key, NULL);
-
 	pthread_key_create(&dblkmap_key, NULL);
 	pthread_key_create(&ablkmap_key, NULL);
-}
-
-void
-ts_init(void)
-{
-
-	/* allocate thread specific storage */
-	ts_alloc(dirbuf_key, 1, ts_dirbuf_size);
-	ts_alloc(dir_freemap_key, 1, ts_dir_freemap_size);
-	ts_alloc(attr_freemap_key, 1, ts_attr_freemap_size);
-}
-
-void *
-ts_dirbuf(void)
-{
-	return pthread_getspecific(dirbuf_key);
-}
-
-void *
-ts_dir_freemap(void)
-{
-	return pthread_getspecific(dir_freemap_key);
-}
-
-void *
-ts_attr_freemap(void)
-{
-	return pthread_getspecific(attr_freemap_key);
 }
 
 static void
@@ -152,11 +97,19 @@ xfs_init(libxfs_init_t *args)
 	else
 		args->isreadonly = LIBXFS_EXCLUSIVELY;
 
-	if (!libxfs_init(args))
+	if (!libxfs_init(args)) {
+		/* would -d be an option? */
+		if (!no_modify && !dangerously) {
+			args->isreadonly = (LIBXFS_ISINACTIVE |
+					    LIBXFS_DANGEROUSLY);
+			if (libxfs_init(args))
+				fprintf(stderr,
+_("Unmount or use the dangerous (-d) option to repair a read-only mounted filesystem\n"));
+		}
 		do_error(_("couldn't initialize XFS library\n"));
+	}
 
 	ts_create();
-	ts_init();
 	increase_rlimit();
 	pftrace_init();
 }

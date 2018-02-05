@@ -16,7 +16,8 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/command.h>
+#include <stdbool.h>
+#include "command.h"
 #include <ctype.h>
 #include <pwd.h>
 #include <grp.h>
@@ -224,7 +225,7 @@ quota_user_type(
 	uid_t		id;
 
 	if (name) {
-		if (isdigit(name[0])) {
+		if (isdigits_only(name)) {
 			id = atoi(name);
 			name = getusername(id, flags & NO_LOOKUP_FLAG);
 		} else if ((u = getpwnam(name))) {
@@ -273,7 +274,7 @@ quota_group_type(
 	int		i, ngroups, dofree = 0;
 
 	if (name) {
-		if (isdigit(name[0])) {
+		if (isdigits_only(name)) {
 			gid = atoi(name);
 			name = getgroupname(gid, flags & NO_LOOKUP_FLAG);
 		} else {
@@ -289,15 +290,19 @@ quota_group_type(
 		}
 		gids = &gid;
 		ngroups = 1;
-	} else if ( ((ngroups = sysconf(_SC_NGROUPS_MAX)) < 0) ||
-		    ((gids = malloc(ngroups * sizeof(gid_t))) == NULL) ||
-		    ((ngroups = getgroups(ngroups, gids)) < 0)) {
-		dofree = (gids != NULL);
-		gid = getgid();
-		gids = &gid;
-		ngroups = 1;
 	} else {
-		dofree = (gids != NULL);
+		if ( ((ngroups = sysconf(_SC_NGROUPS_MAX)) < 0) ||
+		     ((gids = malloc(ngroups * sizeof(gid_t))) == NULL) ||
+		     ((ngroups = getgroups(ngroups, gids)) < 0)) {
+			/* something failed.  Fall back to 1 group */
+			free(gids);
+			gid = getgid();
+			gids = &gid;
+			ngroups = 1;
+		} else {
+			/* It all worked, and we allocated memory */
+			dofree = 1;
+		}
 	}
 
 	for (i = 0; i < ngroups; i++, name = NULL) {
@@ -344,7 +349,7 @@ quota_proj_type(
 		return;
 	}
 
-	if (isdigit(name[0])) {
+	if (isdigits_only(name)) {
 		id = atoi(name);
 		name = getprojectname(id, flags & NO_LOOKUP_FLAG);
 	} else if ((p = getprnam(name))) {
@@ -405,13 +410,13 @@ quota_f(
 			form |= XFS_RTBLOCK_QUOTA;
 			break;
 		case 'g':
-			type = XFS_GROUP_QUOTA;
+			type |= XFS_GROUP_QUOTA;
 			break;
 		case 'p':
-			type = XFS_PROJ_QUOTA;
+			type |= XFS_PROJ_QUOTA;
 			break;
 		case 'u':
-			type = XFS_USER_QUOTA;
+			type |= XFS_USER_QUOTA;
 			break;
 		case 'h':
 			flags |= HUMAN_FLAG;
@@ -433,8 +438,13 @@ quota_f(
 	if (!form)
 		form = XFS_BLOCK_QUOTA;
 
-	if (!type)
+	if (!type) {
 		type = XFS_USER_QUOTA;
+	} else if (type != XFS_GROUP_QUOTA &&
+	           type != XFS_PROJ_QUOTA &&
+	           type != XFS_USER_QUOTA) {
+		return command_usage(&quota_cmd);
+	}
 
 	if ((fp = fopen_write_secure(fname)) == NULL)
 		return 0;
@@ -457,9 +467,10 @@ quota_init(void)
 	quota_cmd.cfunc = quota_f;
 	quota_cmd.argmin = 0;
 	quota_cmd.argmax = -1;
-	quota_cmd.args = _("[-bir] [-gpu] [-hnNv] [-f file] [id|name]...");
+	quota_cmd.args = _("[-bir] [-g|-p|-u] [-hnNv] [-f file] [id|name]...");
 	quota_cmd.oneline = _("show usage and limits");
 	quota_cmd.help = quota_help;
+	quota_cmd.flags = CMD_FLAG_FOREIGN_OK;
 
 	add_command(&quota_cmd);
 }

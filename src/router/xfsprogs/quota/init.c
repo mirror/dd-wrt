@@ -16,14 +16,15 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/path.h>
-#include <xfs/command.h>
-#include <xfs/input.h>
+#include "path.h"
+#include "command.h"
+#include "input.h"
 #include "init.h"
 
 char	*progname;
 int	exitcode;
 int	expert;
+bool	foreign_allowed = false;
 
 static char **projopts;	/* table of project names (cmdline) */
 static int nprojopts;	/* number of entries in name table. */
@@ -45,7 +46,7 @@ static void
 usage(void)
 {
 	fprintf(stderr,
-		_("Usage: %s [-p prog] [-c cmd]... [-d project]... [path]\n"),
+		_("Usage: %s [-V] [-x] [-f] [-p prog] [-c cmd]... [-d project]... [path]\n"),
 		progname);
 	exit(1);
 }
@@ -83,13 +84,59 @@ init_args_command(
 
 	do {
 		fs_path = &fs_table[index++];
-	} while ((fs_path->fs_flags & FS_PROJECT_PATH) && index < fs_count);
+		/* skip project quota entries */
+		if ((fs_path->fs_flags & FS_PROJECT_PATH))
+			continue;
+
+		/* only consider foreign filesystems if told so */
+		if (!foreign_allowed && (fs_path->fs_flags & FS_FOREIGN))
+			continue;
+
+		/* We can use this one */
+		break;
+	} while (index < fs_count);
 
 	if (fs_path->fs_flags & FS_PROJECT_PATH)
+		return 0;
+	if (!foreign_allowed && (fs_path->fs_flags & FS_FOREIGN))
 		return 0;
 	if (index > fs_count)
 		return 0;
 	return index;
+}
+
+static int
+init_check_command(
+	const cmdinfo_t	*ct)
+{
+	if (!fs_path)
+		return 1;
+
+	/* Always run commands that are valid for all fs types. */
+	if (ct->flags & CMD_ALL_FSTYPES)
+		return 1;
+
+	/* If it's an XFS filesystem, always run the command. */
+	if (!(fs_path->fs_flags & FS_FOREIGN))
+		return 1;
+
+	/* If the user specified foreign filesystems are ok (-f), run cmd. */
+	if (foreign_allowed &&
+	    (ct->flags & CMD_FLAG_FOREIGN_OK))
+		return 1;
+
+	/* If cmd not allowed on foreign fs, regardless of -f flag, skip it. */
+	if (!(ct->flags & CMD_FLAG_FOREIGN_OK)) {
+		fprintf(stderr, _("%s: command is for XFS filesystems only\n"),
+			ct->name);
+		return 0;
+	}
+
+	/* foreign fs, but cmd only allowed via -f flag. Skip it. */
+	fprintf(stderr,
+		_("%s: foreign filesystem. Invoke xfs_quota with -f to enable.\n"),
+		ct->name);
+	return 0;
 }
 
 static void
@@ -104,13 +151,16 @@ init(
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
 
-	while ((c = getopt(argc, argv, "c:d:D:P:p:t:xV")) != EOF) {
+	while ((c = getopt(argc, argv, "c:d:D:fP:p:t:xV")) != EOF) {
 		switch (c) {
 		case 'c':	/* commands */
 			add_user_command(optarg);
 			break;
 		case 'd':
 			add_project_opt(optarg);
+			break;
+		case 'f':
+			foreign_allowed = true;
 			break;
 		case 't':
 			mtab_file = optarg;
@@ -140,6 +190,16 @@ init(
 
 	init_commands();
 	add_args_command(init_args_command);
+	add_check_command(init_check_command);
+
+	/*
+	 * Ensure that global commands don't end up with an invalid path pointer
+	 * by setting the default device at the first specified on the CLI
+	 */
+	if (argc != optind)
+		fs_path = fs_table_lookup(argv[optind], FS_MOUNT_POINT);
+	else
+		fs_path = &fs_table[0];
 }
 
 int

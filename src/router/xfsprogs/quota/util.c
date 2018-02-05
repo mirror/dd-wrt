@@ -17,6 +17,7 @@
  */
 
 #include <sys/types.h>
+#include <stdbool.h>
 #include <pwd.h>
 #include <grp.h>
 #include <utmp.h>
@@ -42,8 +43,18 @@ time_to_string(
 		time(&now);
 		timer = MAX(origin - now, 0);
 	}
-	if (timer > 60)	/* roundup */
-		timer += 30;
+
+	/*
+	 * If we are in verbose mode, or if less than a day remains, we
+	 * will show "X days hh:mm:ss" so the user knows the exact timer status.
+	 *
+	 * Otherwise, we round down to the nearest day - so we add 30s here
+	 * such that setting and reporting a limit in rapid succession will
+	 * show the limit which was just set, rather than immediately reporting
+	 * one day less.
+	 */
+	if ((timer > SECONDS_IN_A_DAY) && !(flags & VERBOSE_FLAG))
+		timer += 30;	/* seconds */
 
 	days = timer / SECONDS_IN_A_DAY;
 	if (days)

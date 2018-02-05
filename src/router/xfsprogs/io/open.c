@@ -16,30 +16,46 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/xfs.h>
-#include <xfs/command.h>
-#include <xfs/input.h>
+#include "command.h"
+#include "input.h"
 #include "init.h"
 #include "io.h"
+#include "libxfs.h"
+
+#ifndef __O_TMPFILE
+#if defined __alpha__
+#define __O_TMPFILE	0100000000
+#elif defined(__hppa__)
+#define __O_TMPFILE	 040000000
+#elif defined(__sparc__)
+#define __O_TMPFILE	 0x2000000
+#else
+#define __O_TMPFILE	 020000000
+#endif
+#endif /* __O_TMPFILE */
+
+#ifndef O_TMPFILE
+#define O_TMPFILE (__O_TMPFILE | O_DIRECTORY)
+#endif
 
 static cmdinfo_t open_cmd;
 static cmdinfo_t stat_cmd;
 static cmdinfo_t close_cmd;
-static cmdinfo_t setfl_cmd;
 static cmdinfo_t statfs_cmd;
 static cmdinfo_t chproj_cmd;
 static cmdinfo_t lsproj_cmd;
 static cmdinfo_t extsize_cmd;
+static cmdinfo_t inode_cmd;
 static prid_t prid;
 static long extsize;
 
 off64_t
 filesize(void)
 {
-	struct stat64	st;
+	struct stat	st;
 
-	if (fstat64(file->fd, &st) < 0) {
-		perror("fstat64");
+	if (fstat(file->fd, &st) < 0) {
+		perror("fstat");
 		return -1;
 	}
 	return st.st_size;
@@ -74,19 +90,20 @@ stat_f(
 {
 	struct dioattr	dio;
 	struct fsxattr	fsx, fsxa;
-	struct stat64	st;
+	struct stat	st;
 	int		verbose = (argc == 2 && !strcmp(argv[1], "-v"));
 
 	printf(_("fd.path = \"%s\"\n"), file->name);
-	printf(_("fd.flags = %s,%s,%s%s%s%s\n"),
+	printf(_("fd.flags = %s,%s,%s%s%s%s%s\n"),
 		file->flags & IO_OSYNC ? _("sync") : _("non-sync"),
 		file->flags & IO_DIRECT ? _("direct") : _("non-direct"),
 		file->flags & IO_READONLY ? _("read-only") : _("read-write"),
 		file->flags & IO_REALTIME ? _(",real-time") : "",
 		file->flags & IO_APPEND ? _(",append-only") : "",
-		file->flags & IO_NONBLOCK ? _(",non-block") : "");
-	if (fstat64(file->fd, &st) < 0) {
-		perror("fstat64");
+		file->flags & IO_NONBLOCK ? _(",non-block") : "",
+		file->flags & IO_TMPFILE ? _(",tmpfile") : "");
+	if (fstat(file->fd, &st) < 0) {
+		perror("fstat");
 	} else {
 		printf(_("stat.ino = %lld\n"), (long long)st.st_ino);
 		printf(_("stat.type = %s\n"), filetype(st.st_mode));
@@ -100,14 +117,15 @@ stat_f(
 	}
 	if (file->flags & IO_FOREIGN)
 		return 0;
-	if ((xfsctl(file->name, file->fd, XFS_IOC_FSGETXATTR, &fsx)) < 0 ||
+	if ((xfsctl(file->name, file->fd, FS_IOC_FSGETXATTR, &fsx)) < 0 ||
 	    (xfsctl(file->name, file->fd, XFS_IOC_FSGETXATTRA, &fsxa)) < 0) {
-		perror("XFS_IOC_FSGETXATTR");
+		perror("FS_IOC_FSGETXATTR");
 	} else {
 		printf(_("fsxattr.xflags = 0x%x "), fsx.fsx_xflags);
 		printxattr(fsx.fsx_xflags, verbose, 0, file->name, 1, 1);
 		printf(_("fsxattr.projid = %u\n"), fsx.fsx_projid);
 		printf(_("fsxattr.extsize = %u\n"), fsx.fsx_extsize);
+		printf(_("fsxattr.cowextsize = %u\n"), fsx.fsx_cowextsize);
 		printf(_("fsxattr.nextents = %u\n"), fsx.fsx_nextents);
 		printf(_("fsxattr.naextents = %u\n"), fsxa.fsx_nextents);
 	}
@@ -144,10 +162,13 @@ openfile(
 		oflags |= O_TRUNC;
 	if (flags & IO_NONBLOCK)
 		oflags |= O_NONBLOCK;
+	if (flags & IO_TMPFILE)
+		oflags |= O_TMPFILE;
 
 	fd = open(path, oflags, mode);
 	if (fd < 0) {
-		if ((errno == EISDIR) && (oflags & O_RDWR)) {
+		if (errno == EISDIR &&
+		    ((oflags & (O_RDWR|O_TMPFILE)) == O_RDWR)) {
 			/* make it as if we asked for O_RDONLY & try again */
 			oflags &= ~O_RDWR;
 			oflags |= O_RDONLY;
@@ -163,16 +184,8 @@ openfile(
 		}
 	}
 
-	if (!geom)
+	if (!geom || !platform_test_xfs_fd(fd))
 		return fd;
-
-	if (!platform_test_xfs_fd(fd)) {
-		fprintf(stderr, _("%s: specified file "
-			"[\"%s\"] is not on an XFS filesystem\n"),
-			progname, path);
-		close(fd);
-		return -1;
-	}
 
 	if (xfsctl(path, fd, XFS_IOC_FSGEOMETRY, geom) < 0) {
 		perror("XFS_IOC_FSGEOMETRY");
@@ -183,15 +196,15 @@ openfile(
 	if (!(flags & IO_READONLY) && (flags & IO_REALTIME)) {
 		struct fsxattr	attr;
 
-		if (xfsctl(path, fd, XFS_IOC_FSGETXATTR, &attr) < 0) {
-			perror("XFS_IOC_FSGETXATTR");
+		if (xfsctl(path, fd, FS_IOC_FSGETXATTR, &attr) < 0) {
+			perror("FS_IOC_FSGETXATTR");
 			close(fd);
 			return -1;
 		}
-		if (!(attr.fsx_xflags & XFS_XFLAG_REALTIME)) {
-			attr.fsx_xflags |= XFS_XFLAG_REALTIME;
-			if (xfsctl(path, fd, XFS_IOC_FSSETXATTR, &attr) < 0) {
-				perror("XFS_IOC_FSSETXATTR");
+		if (!(attr.fsx_xflags & FS_XFLAG_REALTIME)) {
+			attr.fsx_xflags |= FS_XFLAG_REALTIME;
+			if (xfsctl(path, fd, FS_IOC_FSSETXATTR, &attr) < 0) {
+				perror("FS_IOC_FSSETXATTR");
 				close(fd);
 				return -1;
 			}
@@ -248,7 +261,6 @@ open_help(void)
 "\n"
 " Opens a file for subsequent use by all of the other xfs_io commands.\n"
 " With no arguments, open uses the stat command to show the current file.\n"
-" -F -- foreign filesystem file, disallow XFS-specific commands\n"
 " -a -- open with the O_APPEND flag (append-only mode)\n"
 " -d -- open with O_DIRECT (non-buffered IO, note alignment constraints)\n"
 " -f -- open with O_CREAT (create the file if it doesn't exist)\n"
@@ -258,6 +270,7 @@ open_help(void)
 " -s -- open with O_SYNC\n"
 " -t -- open with O_TRUNC (truncate the file to zero length if it exists)\n"
 " -R -- mark the file as a realtime XFS file immediately after opening it\n"
+" -T -- open with O_TMPFILE (create a file not visible in the namespace)\n"
 " Note1: usually read/write direct IO requests must be blocksize aligned;\n"
 "        some kernels, however, allow sectorsize alignment for direct IO.\n"
 " Note2: the bmap for non-regular files can be obtained provided the file\n"
@@ -282,10 +295,10 @@ open_f(
 		return 0;
 	}
 
-	while ((c = getopt(argc, argv, "FRacdfm:nrstx")) != EOF) {
+	while ((c = getopt(argc, argv, "FRTacdfm:nrstx")) != EOF) {
 		switch (c) {
 		case 'F':
-			flags |= IO_FOREIGN;
+			/* Ignored / deprecated now, handled automatically */
 			break;
 		case 'a':
 			flags |= IO_APPEND;
@@ -320,6 +333,9 @@ open_f(
 		case 'x':	/* backwards compatibility */
 			flags |= IO_REALTIME;
 			break;
+		case 'T':
+			flags |= IO_TMPFILE;
+			break;
 		default:
 			return command_usage(&open_cmd);
 		}
@@ -328,10 +344,17 @@ open_f(
 	if (optind != argc - 1)
 		return command_usage(&open_cmd);
 
-	fd = openfile(argv[optind], flags & IO_FOREIGN ?
-					NULL : &geometry, flags, mode);
+	if ((flags & (IO_READONLY|IO_TMPFILE)) == (IO_READONLY|IO_TMPFILE)) {
+		fprintf(stderr, _("-T and -r options are incompatible\n"));
+		return -1;
+	}
+
+	fd = openfile(argv[optind], &geometry, flags, mode);
 	if (fd < 0)
 		return 0;
+
+	if (!platform_test_xfs_fd(fd))
+		flags |= IO_FOREIGN;
 
 	addfile(argv[optind], fd, &geometry, flags);
 	return 0;
@@ -539,8 +562,8 @@ get_extsize(const char *path, int fd)
 {
 	struct fsxattr	fsx;
 
-	if ((xfsctl(path, fd, XFS_IOC_FSGETXATTR, &fsx)) < 0) {
-		printf("%s: XFS_IOC_FSGETXATTR %s: %s\n",
+	if ((xfsctl(path, fd, FS_IOC_FSGETXATTR, &fsx)) < 0) {
+		printf("%s: FS_IOC_FSGETXATTR %s: %s\n",
 			progname, path, strerror(errno));
 		return 0;
 	}
@@ -552,30 +575,30 @@ static int
 set_extsize(const char *path, int fd, long extsz)
 {
 	struct fsxattr	fsx;
-	struct stat64	stat;
+	struct stat	stat;
 
-	if (fstat64(fd, &stat) < 0) {
-		perror("fstat64");
+	if (fstat(fd, &stat) < 0) {
+		perror("fstat");
 		return 0;
 	}
-	if ((xfsctl(path, fd, XFS_IOC_FSGETXATTR, &fsx)) < 0) {
-		printf("%s: XFS_IOC_FSGETXATTR %s: %s\n",
+	if ((xfsctl(path, fd, FS_IOC_FSGETXATTR, &fsx)) < 0) {
+		printf("%s: FS_IOC_FSGETXATTR %s: %s\n",
 			progname, path, strerror(errno));
 		return 0;
 	}
 
 	if (S_ISREG(stat.st_mode)) {
-		fsx.fsx_xflags |= XFS_XFLAG_EXTSIZE;
+		fsx.fsx_xflags |= FS_XFLAG_EXTSIZE;
 	} else if (S_ISDIR(stat.st_mode)) {
-		fsx.fsx_xflags |= XFS_XFLAG_EXTSZINHERIT;
+		fsx.fsx_xflags |= FS_XFLAG_EXTSZINHERIT;
 	} else {
 		printf(_("invalid target file type - file %s\n"), path);
 		return 0;
 	}
 	fsx.fsx_extsize = extsz;
 
-	if ((xfsctl(path, fd, XFS_IOC_FSSETXATTR, &fsx)) < 0) {
-		printf("%s: XFS_IOC_FSSETXATTR %s: %s\n",
+	if ((xfsctl(path, fd, FS_IOC_FSSETXATTR, &fsx)) < 0) {
+		printf("%s: FS_IOC_FSSETXATTR %s: %s\n",
 			progname, path, strerror(errno));
 		return 0;
 	}
@@ -675,45 +698,6 @@ extsize_f(
 }
 
 static int
-setfl_f(
-	int			argc,
-	char			**argv)
-{
-	int			c, flags;
-
-	flags = fcntl(file->fd, F_GETFL, 0);
-	if (flags < 0) {
-		perror("fcntl(F_GETFL)");
-		return 0;
-	}
-
-	while ((c = getopt(argc, argv, "ad")) != EOF) {
-		switch (c) {
-		case 'a':
-			if (flags & O_APPEND)
-				flags |= O_APPEND;
-			else
-				flags &= ~O_APPEND;
-			break;
-		case 'd':
-			if (flags & O_DIRECT)
-				flags |= O_DIRECT;
-			else
-				flags &= ~O_DIRECT;
-			break;
-		default:
-			printf(_("invalid setfl argument -- '%c'\n"), c);
-			return 0;
-		}
-	}
-
-	if (fcntl(file->fd, F_SETFL, flags)  < 0)
-		perror("fcntl(F_SETFL)");
-
-	return 0;
-}
-
-static int
 statfs_f(
 	int			argc,
 	char			**argv)
@@ -769,6 +753,163 @@ statfs_f(
 	return 0;
 }
 
+static void
+inode_help(void)
+{
+	printf(_(
+"\n"
+"Query physical information about an inode"
+"\n"
+" Default:	-- Return 1 if any inode number greater than 32 bits exists in\n"
+"		   the filesystem, or 0 if none exist\n"
+" num		-- Return inode number [num] if in use, or 0 if not in use\n"
+" -n num	-- Return the next used inode after [num]\n"
+" -v		-- Verbose mode - display returned inode number's size in bits\n"
+"\n"));
+}
+
+static __u64
+get_last_inode(void)
+{
+	__u64			lastip = 0;
+	__u64			lastgrp = 0;
+	__s32			ocount = 0;
+	__u64			last_ino;
+	struct xfs_inogrp	igroup[1024];
+	struct xfs_fsop_bulkreq	bulkreq;
+
+	bulkreq.lastip = &lastip;
+	bulkreq.ubuffer = &igroup;
+	bulkreq.icount = sizeof(igroup) / sizeof(struct xfs_inogrp);
+	bulkreq.ocount = &ocount;
+
+	for (;;) {
+		if (xfsctl(file->name, file->fd, XFS_IOC_FSINUMBERS,
+				&bulkreq)) {
+			perror("XFS_IOC_FSINUMBERS");
+			return 0;
+		}
+
+		/* Did we reach the last inode? */
+		if (ocount == 0)
+			break;
+
+		/* last inode in igroup table */
+		lastgrp = ocount;
+	}
+
+	lastgrp--;
+
+	/* The last inode number in use */
+	last_ino = igroup[lastgrp].xi_startino +
+		  libxfs_highbit64(igroup[lastgrp].xi_allocmask);
+
+	return last_ino;
+}
+
+static int
+inode_f(
+	  int			argc,
+	  char			**argv)
+{
+	__s32			count = 0;
+	__u64			result_ino = 0;
+	__u64			userino = NULLFSINO;
+	char			*p;
+	int			c;
+	int			verbose = 0;
+	int			ret_next = 0;
+	int			cmd = 0;
+	struct xfs_fsop_bulkreq	bulkreq;
+	struct xfs_bstat	bstat;
+
+	while ((c = getopt(argc, argv, "nv")) != EOF) {
+		switch (c) {
+		case 'v':
+			verbose = 1;
+			break;
+		case 'n':
+			ret_next = 1;
+			break;
+		default:
+			return command_usage(&inode_cmd);
+		}
+	}
+
+	/* Last arg (if present) should be an inode number */
+	if (optind < argc) {
+		userino = strtoull(argv[optind], &p, 10);
+		if ((*p != '\0')) {
+			printf(_("%s is not a numeric inode value\n"),
+				argv[optind]);
+			exitcode = 1;
+			return 0;
+		}
+		optind++;
+	}
+
+	/* Extra junk? */
+	if (optind < argc)
+		return command_usage(&inode_cmd);
+
+	/* -n option requires an inode number */
+	if (ret_next && userino == NULLFSINO)
+		return command_usage(&inode_cmd);
+
+	if (userino == NULLFSINO) {
+		/* We are finding last inode in use */
+		result_ino = get_last_inode();
+		if (!result_ino) {
+			exitcode = 1;
+			return 0;
+		}
+	} else {
+		if (ret_next)	/* get next inode */
+			cmd = XFS_IOC_FSBULKSTAT;
+		else		/* get this inode */
+			cmd = XFS_IOC_FSBULKSTAT_SINGLE;
+
+		bulkreq.lastip = &userino;
+		bulkreq.icount = 1;
+		bulkreq.ubuffer = &bstat;
+		bulkreq.ocount = &count;
+
+		if (xfsctl(file->name, file->fd, cmd, &bulkreq)) {
+			if (!ret_next && errno == EINVAL) {
+				/* Not in use */
+				result_ino = 0;
+			} else {
+				perror("xfsctl");
+				exitcode = 1;
+				return 0;
+			}
+		} else if (ret_next) {
+			/* The next inode in use, or 0 if none */
+			if (*bulkreq.ocount)
+				result_ino = bstat.bs_ino;
+			else
+				result_ino = 0;
+		} else {
+			/* The inode we asked about */
+			result_ino = userino;
+		}
+	}
+
+	if (verbose && result_ino) {
+		/* Requested verbose and we have an answer */
+		printf("%llu:%d\n", result_ino,
+			result_ino > XFS_MAXINUMBER_32 ? 64 : 32);
+	} else if (userino == NULLFSINO) {
+		/* Just checking 32 or 64 bit presence, non-verbose */
+		printf("%d\n", result_ino > XFS_MAXINUMBER_32 ? 1 : 0);
+	} else {
+		/* We asked about a specific inode, non-verbose */
+		printf("%llu\n", result_ino);
+	}
+
+	return 0;
+}
+
 void
 open_init(void)
 {
@@ -778,7 +919,7 @@ open_init(void)
 	open_cmd.argmin = 0;
 	open_cmd.argmax = -1;
 	open_cmd.flags = CMD_NOMAP_OK | CMD_NOFILE_OK | CMD_FOREIGN_OK;
-	open_cmd.args = _("[-acdrstx] [path]");
+	open_cmd.args = _("[-acdrstxT] [-m mode] [path]");
 	open_cmd.oneline = _("open the file specified by path");
 	open_cmd.help = open_help;
 
@@ -798,13 +939,6 @@ open_init(void)
 	close_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
 	close_cmd.oneline = _("close the current open file");
 
-	setfl_cmd.name = "setfl";
-	setfl_cmd.cfunc = setfl_f;
-	setfl_cmd.args = _("[-adx]");
-	setfl_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
-	setfl_cmd.oneline =
-		_("set/clear append/direct flags on the open file");
-
 	statfs_cmd.name = "statfs";
 	statfs_cmd.cfunc = statfs_f;
 	statfs_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
@@ -816,7 +950,7 @@ open_init(void)
 	chproj_cmd.args = _("[-D | -R] projid");
 	chproj_cmd.argmin = 1;
 	chproj_cmd.argmax = -1;
-	chproj_cmd.flags = CMD_NOMAP_OK;
+	chproj_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
 	chproj_cmd.oneline =
 		_("change project identifier on the currently open file");
 	chproj_cmd.help = chproj_help;
@@ -841,12 +975,22 @@ open_init(void)
 		_("get/set preferred extent size (in bytes) for the open file");
 	extsize_cmd.help = extsize_help;
 
+	inode_cmd.name = "inode";
+	inode_cmd.cfunc = inode_f;
+	inode_cmd.args = _("[-nv] [num]");
+	inode_cmd.argmin = 0;
+	inode_cmd.argmax = 3;
+	inode_cmd.flags = CMD_NOMAP_OK;
+	inode_cmd.oneline =
+		_("Query inode number usage in the filesystem");
+	inode_cmd.help = inode_help;
+
 	add_command(&open_cmd);
 	add_command(&stat_cmd);
 	add_command(&close_cmd);
-	add_command(&setfl_cmd);
 	add_command(&statfs_cmd);
 	add_command(&chproj_cmd);
 	add_command(&lsproj_cmd);
 	add_command(&extsize_cmd);
+	add_command(&inode_cmd);
 }

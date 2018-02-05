@@ -16,8 +16,10 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxlog.h>
+#include "libxfs.h"
+#include "libxlog.h"
 #include <sys/resource.h>
+#include "xfs_multidisk.h"
 #include "avl.h"
 #include "avl64.h"
 #include "globals.h"
@@ -29,16 +31,11 @@
 #include "prefetch.h"
 #include "threads.h"
 #include "progress.h"
+#include "dinode.h"
+#include "slab.h"
+#include "rmap.h"
 
 #define	rounddown(x, y)	(((x)/(y))*(y))
-
-extern void	phase1(xfs_mount_t *);
-extern void	phase2(xfs_mount_t *, int);
-extern void	phase3(xfs_mount_t *);
-extern void	phase4(xfs_mount_t *);
-extern void	phase5(xfs_mount_t *);
-extern void	phase6(xfs_mount_t *);
-extern void	phase7(xfs_mount_t *);
 
 #define		XR_MAX_SECT_SIZE	(64 * 1024)
 
@@ -49,8 +46,7 @@ extern void	phase7(xfs_mount_t *);
 /*
  * -o: user-supplied override options
  */
-
-char *o_opts[] = {
+static char *o_opts[] = {
 #define ASSUME_XFS	0
 	"assume_xfs",
 #define PRE_65_BETA	1
@@ -71,15 +67,13 @@ char *o_opts[] = {
 /*
  * -c: conversion options
  */
-
-char *c_opts[] = {
+static char *c_opts[] = {
 #define CONVERT_LAZY_COUNT	0
 	"lazycount",
 	NULL
 };
 
 
-static int	ihash_option_used;
 static int	bhash_option_used;
 static long	max_mem_specified;	/* in megabytes */
 static int	phase2_threads = 32;
@@ -101,7 +95,7 @@ usage(void)
 "  -v           Verbose output.\n"
 "  -c subopts   Change filesystem parameters - use xfs_admin.\n"
 "  -o subopts   Override default behaviour, refer to man page.\n"
-"  -t interval  Reporting interval in minutes.\n"
+"  -t interval  Reporting interval in seconds.\n"
 "  -d           Repair dangerously.\n"
 "  -V           Reports version and exits.\n"), progname);
 	exit(1);
@@ -147,6 +141,8 @@ err_string(int err_code)
 			_("bad stripe width in superblock");
 		err_message[XR_BAD_SVN] =
 			_("bad shared version number in superblock");
+		err_message[XR_BAD_CRC] =
+			_("bad CRC in superblock");
 		done = 1;
 	}
 
@@ -183,7 +179,7 @@ unknown(char opt, char *s)
 /*
  * sets only the global argument flags and variables
  */
-void
+static void
 process_args(int argc, char **argv)
 {
 	char *p;
@@ -201,13 +197,12 @@ process_args(int argc, char **argv)
 	delete_attr_ok = 1;
 	force_geo = 0;
 	assume_xfs = 0;
-	clear_sunit = 0;
+	copied_sunit = 0;
 	sb_inoalignmt = 0;
 	sb_unit = 0;
 	sb_width = 0;
 	fs_attributes_allowed = 1;
 	fs_attributes2_allowed = 1;
-	fs_inode_nlink_allowed = 1;
 	fs_quotas_allowed = 1;
 	fs_aligned_inodes_allowed = 1;
 	fs_sb_feature_bits_allowed = 1;
@@ -232,7 +227,7 @@ process_args(int argc, char **argv)
 			while (*p != '\0')  {
 				char *val;
 
-				switch (getsubopt(&p, (constpp)o_opts, &val))  {
+				switch (getsubopt(&p, o_opts, &val))  {
 				case ASSUME_XFS:
 					if (val)
 						noval('o', o_opts, ASSUME_XFS);
@@ -249,13 +244,13 @@ process_args(int argc, char **argv)
 					pre_65_beta = 1;
 					break;
 				case IHASH_SIZE:
-					libxfs_ihash_size = (int)strtol(val, NULL, 0);
-					ihash_option_used = 1;
+					do_warn(
+		_("-o ihash option has been removed and will be ignored\n"));
 					break;
 				case BHASH_SIZE:
 					if (max_mem_specified)
 						do_abort(
-			_("-o bhash option cannot be used with -m option\n"));
+		_("-o bhash option cannot be used with -m option\n"));
 					libxfs_bhash_size = (int)strtol(val, NULL, 0);
 					bhash_option_used = 1;
 					break;
@@ -283,7 +278,7 @@ process_args(int argc, char **argv)
 			while (*p) {
 				char *val;
 
-				switch (getsubopt(&p, (constpp)c_opts, &val)) {
+				switch (getsubopt(&p, c_opts, &val)) {
 				case CONVERT_LAZY_COUNT:
 					lazy_count = (int)strtol(val, NULL, 0);
 					convert_lazy_count = 1;
@@ -398,7 +393,7 @@ do_log(char const *msg, ...)
 	va_end(args);
 }
 
-void
+static void
 calc_mkfs(xfs_mount_t *mp)
 {
 	xfs_agblock_t	fino_bno;
@@ -407,22 +402,41 @@ calc_mkfs(xfs_mount_t *mp)
 	do_inoalign = mp->m_sinoalign;
 
 	/*
-	 * pre-calculate geometry of ag 0.  We know what it looks
-	 * like because we know what mkfs does -- 3 btree roots,
-	 * and some number of blocks to prefill the agfl.
+	 * Pre-calculate the geometry of ag 0. We know what it looks like
+	 * because we know what mkfs does: 2 allocation btree roots (by block
+	 * and by size), the inode allocation btree root, the free inode
+	 * allocation btree root (if enabled) and some number of blocks to
+	 * prefill the agfl.
+	 *
+	 * Because the current shape of the btrees may differ from the current
+	 * shape, we open code the mkfs freelist block count here. mkfs creates
+	 * single level trees, so the calculation is pertty straight forward for
+	 * the trees that use the AGFL.
 	 */
 	bnobt_root = howmany(4 * mp->m_sb.sb_sectsize, mp->m_sb.sb_blocksize);
 	bcntbt_root = bnobt_root + 1;
 	inobt_root = bnobt_root + 2;
-	fino_bno = inobt_root + XFS_MIN_FREELIST_RAW(1, 1, mp) + 1;
+	fino_bno = inobt_root + (2 * min(2, mp->m_ag_maxlevels)) + 1;
+	if (xfs_sb_version_hasfinobt(&mp->m_sb))
+		fino_bno++;
+	if (xfs_sb_version_hasrmapbt(&mp->m_sb)) {
+		fino_bno += min(2, mp->m_rmap_maxlevels); /* agfl blocks */
+		fino_bno++;
+	}
+	if (xfs_sb_version_hasreflink(&mp->m_sb))
+		fino_bno++;
 
 	/*
-	 * If we only have a single allocation group the log is also allocated
-	 * in the first allocation group and we need to add the number of
-	 * blocks used by the log to the above calculation.
-	 * All this of course doesn't apply if we have an external log.
+	 * If the log is allocated in the first allocation group we need to
+	 * add the number of blocks used by the log to the above calculation.
+	 *
+	 * This can happens with filesystems that only have a single
+	 * allocation group, or very odd geometries created by old mkfs
+	 * versions on very small filesystems.
 	 */
-	if (mp->m_sb.sb_agcount == 1 && mp->m_sb.sb_logstart) {
+	if (mp->m_sb.sb_logstart &&
+	    XFS_FSB_TO_AGNO(mp, mp->m_sb.sb_logstart) == 0) {
+
 		/*
 		 * XXX(hch): verify that sb_logstart makes sense?
 		 */
@@ -445,9 +459,9 @@ calc_mkfs(xfs_mount_t *mp)
 		first_prealloc_ino = XFS_OFFBNO_TO_AGINO(mp, fino_bno, 0);
 	}
 
-	ASSERT(XFS_IALLOC_BLOCKS(mp) > 0);
+	ASSERT(mp->m_ialloc_blks > 0);
 
-	if (XFS_IALLOC_BLOCKS(mp) > 1)
+	if (mp->m_ialloc_blks > 1)
 		last_prealloc_ino = first_prealloc_ino + XFS_INODES_PER_CHUNK;
 	else
 		last_prealloc_ino = XFS_OFFBNO_TO_AGINO(mp, fino_bno + 1, 0);
@@ -526,6 +540,91 @@ _("sb realtime summary inode %" PRIu64 " %sinconsistent with calculated value %u
 
 }
 
+/*
+ * v5 superblock metadata track the LSN of last modification and thus require
+ * that the current LSN is always moving forward. The current LSN is reset if
+ * the log has been cleared, which puts the log behind parts of the filesystem
+ * on-disk and can disrupt log recovery.
+ *
+ * We have tracked the maximum LSN of every piece of metadata that has been read
+ * in via the read verifiers. Compare the max LSN with the log and if the log is
+ * behind, bump the cycle number and reformat the log.
+ */
+static void
+format_log_max_lsn(
+	struct xfs_mount	*mp)
+{
+	struct xlog		*log = mp->m_log;
+	int			max_cycle;
+	int			max_block;
+	int			new_cycle;
+	xfs_daddr_t		logstart;
+	xfs_daddr_t		logblocks;
+	int			logversion;
+
+	if (!xfs_sb_version_hascrc(&mp->m_sb))
+		return;
+
+	/*
+	 * If the log is ahead of the highest metadata LSN we've seen, we're
+	 * safe and there's nothing to do.
+	 */
+	max_cycle = CYCLE_LSN(libxfs_max_lsn);
+	max_block = BLOCK_LSN(libxfs_max_lsn);
+	if (max_cycle < log->l_curr_cycle ||
+	    (max_cycle == log->l_curr_cycle && max_block < log->l_curr_block))
+		return;
+
+	/*
+	 * Going to the next cycle should be sufficient but we bump by a few
+	 * counts to help cover any metadata LSNs we could have missed.
+	 */
+	new_cycle = max_cycle + 3;
+	logstart = XFS_FSB_TO_DADDR(mp, mp->m_sb.sb_logstart);
+	logblocks = XFS_FSB_TO_BB(mp, mp->m_sb.sb_logblocks);
+	logversion = xfs_sb_version_haslogv2(&mp->m_sb) ? 2 : 1;
+
+	do_warn(_("Maximum metadata LSN (%d:%d) is ahead of log (%d:%d).\n"),
+		max_cycle, max_block, log->l_curr_cycle, log->l_curr_block);
+
+	if (no_modify) {
+		do_warn(_("Would format log to cycle %d.\n"), new_cycle);
+		return;
+	}
+
+	do_warn(_("Format log to cycle %d.\n"), new_cycle);
+	libxfs_log_clear(log->l_dev, NULL, logstart, logblocks,
+			 &mp->m_sb.sb_uuid, logversion, mp->m_sb.sb_logsunit,
+			 XLOG_FMT, new_cycle, true);
+}
+
+/*
+ * mkfs increases the AG count for "multidisk" configurations, we want
+ * to target these for an increase in thread count. Hence check the superlock
+ * geometry information to determine if mkfs considered this a multidisk
+ * configuration.
+ */
+static bool
+is_multidisk_filesystem(
+	struct xfs_mount	*mp)
+{
+	struct xfs_sb		*sbp = &mp->m_sb;
+
+	/* High agcount filesystems are always considered "multidisk" */
+	if (sbp->sb_agcount >= XFS_MULTIDISK_AGCOUNT)
+		return true;
+
+	/*
+	 * If it doesn't have a sunit/swidth, mkfs didn't consider it a
+	 * multi-disk array, so we don't either.
+	 */
+	if (!sbp->sb_unit)
+		return false;
+
+	ASSERT(sbp->sb_width);
+	return true;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -534,12 +633,16 @@ main(int argc, char **argv)
 	xfs_dsb_t	*dsb;
 	xfs_buf_t	*sbp;
 	xfs_mount_t	xfs_m;
+	struct xlog	log = {0};
 	char		*msgbuf;
+	struct xfs_sb	psb;
+	int		rval;
 
 	progname = basename(argv[0]);
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
+	dinode_bmbt_translation_init();
 
 	temp_mp = &xfs_m;
 	setbuf(stdout, NULL);
@@ -563,11 +666,24 @@ main(int argc, char **argv)
 		exit(1);
 	}
 
-	/* prepare the mount structure */
-	sbp = libxfs_readbuf(x.ddev, XFS_SB_DADDR,
-				1 << (XFS_MAX_SECTORSIZE_LOG - BBSHIFT), 0);
-	memset(&xfs_m, 0, sizeof(xfs_mount_t));
-	libxfs_sb_from_disk(&xfs_m.m_sb, XFS_BUF_TO_SBP(sbp));
+	rval = get_sb(&psb, 0, XFS_MAX_SECTORSIZE, 0);
+	if (rval != XR_OK) {
+		do_warn(_("Primary superblock bad after phase 1!\n"
+			  "Exiting now.\n"));
+		exit(1);
+	}
+
+	/* -f forces this, but let's be nice and autodetect it, as well. */
+	if (!isa_file) {
+		int		fd = libxfs_device_to_fd(x.ddev);
+		struct stat	statbuf;
+
+		if (fstat(fd, &statbuf) < 0)
+			do_warn(_("%s: couldn't stat \"%s\"\n"),
+				progname, fs_name);
+		else if (S_ISREG(statbuf.st_mode))
+			isa_file = 1;
+	}
 
 	/*
 	 * if the sector size of the filesystem we are trying to repair is
@@ -580,13 +696,13 @@ main(int argc, char **argv)
 		struct xfs_fsop_geom_v1 geom = { 0 };
 
 		if (ioctl(fd, XFS_IOC_FSGEOMETRY_V1, &geom) < 0) {
-			do_warn(_("Cannot get host filesystem geometry.\n"
+			do_log(_("Cannot get host filesystem geometry.\n"
 		"Repair may fail if there is a sector size mismatch between\n"
 		"the image and the host filesystem.\n"));
 			geom.sectsize = BBSIZE;
 		}
 
-		if (xfs_m.m_sb.sb_sectsize < geom.sectsize) {
+		if (psb.sb_sectsize < geom.sectsize) {
 			long	old_flags;
 
 			old_flags = fcntl(fd, F_GETFL, 0);
@@ -598,7 +714,14 @@ main(int argc, char **argv)
 			}
 		}
 	}
-	mp = libxfs_mount(&xfs_m, &xfs_m.m_sb, x.ddev, x.logdev, x.rtdev, 0);
+
+	/*
+	 * Prepare the mount structure. Point the log reference to our local
+	 * copy so it's available to the various phases. The log bits are
+	 * initialized in phase 2.
+	 */
+	memset(&xfs_m, 0, sizeof(xfs_mount_t));
+	mp = libxfs_mount(&xfs_m, &psb, x.ddev, x.logdev, x.rtdev, 0);
 
 	if (!mp)  {
 		fprintf(stderr,
@@ -606,8 +729,11 @@ main(int argc, char **argv)
 			progname);
 		exit(1);
 	}
-	libxfs_putbuf(sbp);
-	libxfs_purgebuf(sbp);
+	mp->m_log = &log;
+
+	/* Spit out function & line on these corruption macros */
+	if (verbose > 2)
+		mp->m_flags |= LIBXFS_MOUNT_WANT_CORRUPTED;
 
 	/*
 	 * set XFS-independent status vars from the mount/sb structure
@@ -615,13 +741,61 @@ main(int argc, char **argv)
 	glob_agcount = mp->m_sb.sb_agcount;
 
 	chunks_pblock = mp->m_sb.sb_inopblock / XFS_INODES_PER_CHUNK;
-	max_symlink_blocks = howmany(MAXPATHLEN - 1, mp->m_sb.sb_blocksize);
+	max_symlink_blocks = libxfs_symlink_blocks(mp, MAXPATHLEN);
 	inodes_per_cluster = MAX(mp->m_sb.sb_inopblock,
-			XFS_INODE_CLUSTER_SIZE(mp) >> mp->m_sb.sb_inodelog);
+			mp->m_inode_cluster_size >> mp->m_sb.sb_inodelog);
+
+	/*
+	 * Automatic striding for high agcount filesystems.
+	 *
+	 * More AGs indicates that the filesystem is either large or can handle
+	 * more IO parallelism. Either way, we should try to process multiple
+	 * AGs at a time in such a configuration to try to saturate the
+	 * underlying storage and speed the repair process. Only do this if
+	 * prefetching is enabled.
+	 *
+	 * Given mkfs defaults for 16AGs for "multidisk" configurations, we want
+	 * to target these for an increase in thread count. Hence a stride value
+	 * of 15 is chosen to ensure we get at least 2 AGs being scanned at once
+	 * on such filesystems.
+	 *
+	 * Limit the maximum thread count based on the available CPU power that
+	 * is available. If we use too many threads, we might run out of memory
+	 * and CPU power before we run out of IO concurrency. We limit to 8
+	 * threads/CPU as this is enough threads to saturate a CPU on fast
+	 * devices, yet few enough that it will saturate but won't overload slow
+	 * devices.
+	 *
+	 * Multidisk filesystems can handle more IO parallelism so we should try
+	 * to process multiple AGs at a time in such a configuration to try to
+	 * saturate the underlying storage and speed the repair process. Only do
+	 * this if prefetching is enabled.
+	 */
+	if (!ag_stride && do_prefetch && is_multidisk_filesystem(mp)) {
+		/*
+		 * For small agcount multidisk systems, just double the
+		 * parallelism. For larger AG count filesystems (32 and above)
+		 * use more parallelism, and linearly increase the parallelism
+		 * with the number of AGs.
+		 */
+		ag_stride = min(glob_agcount, XFS_MULTIDISK_AGCOUNT / 2) - 1;
+	}
 
 	if (ag_stride) {
+		int max_threads = platform_nproc() * 8;
+
 		thread_count = (glob_agcount + ag_stride - 1) / ag_stride;
-		thread_init();
+		while (thread_count > max_threads) {
+			ag_stride *= 2;
+			thread_count = (glob_agcount + ag_stride - 1) /
+								ag_stride;
+		}
+		if (thread_count > 0)
+			thread_init();
+		else {
+			thread_count = 1;
+			ag_stride = 0;
+		}
 	}
 
 	if (ag_stride && report_interval) {
@@ -652,9 +826,7 @@ main(int argc, char **argv)
 		unsigned long	max_mem;
 		struct rlimit	rlim;
 
-		libxfs_icache_purge();
 		libxfs_bcache_purge();
-		cache_destroy(libxfs_icache);
 		cache_destroy(libxfs_bcache);
 
 		mem_used = (mp->m_sb.sb_icount >> (10 - 2)) +
@@ -681,44 +853,41 @@ main(int argc, char **argv)
 				mp->m_sb.sb_dblocks >> (10 + 1));
 
 		if (max_mem <= mem_used) {
-			/*
-			 * Turn off prefetch and minimise libxfs cache if
-			 * physical memory is deemed insufficient
-			 */
 			if (max_mem_specified) {
 				do_abort(
 	_("Required memory for repair is greater that the maximum specified\n"
 	  "with the -m option. Please increase it to at least %lu.\n"),
 					mem_used / 1024);
-			} else {
-				do_warn(
-	_("Not enough RAM available for repair to enable prefetching.\n"
-	  "This will be _slow_.\n"
-	  "You need at least %luMB RAM to run with prefetching enabled.\n"),
-					mem_used * 1280 / (1024 * 1024));
 			}
-			do_prefetch = 0;
-			libxfs_bhash_size = 64;
-		} else {
-			max_mem -= mem_used;
-			if (max_mem >= (1 << 30))
-				max_mem = 1 << 30;
-			libxfs_bhash_size = max_mem / (HASH_CACHE_RATIO *
-					(mp->m_inode_cluster_size >> 10));
-			if (libxfs_bhash_size < 512)
-				libxfs_bhash_size = 512;
+			do_log(
+	_("Memory available for repair (%luMB) may not be sufficient.\n"
+	  "At least %luMB is needed to repair this filesystem efficiently\n"
+	  "If repair fails due to lack of memory, please\n"),
+				max_mem / 1024, mem_used / 1024);
+			if (do_prefetch)
+				do_log(
+	_("turn prefetching off (-P) to reduce the memory footprint.\n"));
+			else
+				do_log(
+	_("increase system RAM and/or swap space to at least %luMB.\n"),
+			mem_used * 2 / 1024);
+
+			max_mem = mem_used;
 		}
+
+		max_mem -= mem_used;
+		if (max_mem >= (1 << 30))
+			max_mem = 1 << 30;
+		libxfs_bhash_size = max_mem / (HASH_CACHE_RATIO *
+				(mp->m_inode_cluster_size >> 10));
+		if (libxfs_bhash_size < 512)
+			libxfs_bhash_size = 512;
 
 		if (verbose)
 			do_log(_("        - block cache size set to %d entries\n"),
 				libxfs_bhash_size * HASH_CACHE_RATIO);
 
-		if (!ihash_option_used)
-			libxfs_ihash_size = libxfs_bhash_size;
-
-		libxfs_icache = cache_init(libxfs_ihash_size,
-						&libxfs_icache_operations);
-		libxfs_bcache = cache_init(libxfs_bhash_size,
+		libxfs_bcache = cache_init(0, libxfs_bhash_size,
 						&libxfs_bcache_operations);
 	}
 
@@ -733,6 +902,7 @@ main(int argc, char **argv)
 	init_bmaps(mp);
 	incore_ino_init(mp);
 	incore_ext_init(mp);
+	rmaps_init(mp);
 
 	/* initialize random globals now that we know the fs geometry */
 	inodes_per_block = mp->m_sb.sb_inopblock;
@@ -750,7 +920,7 @@ main(int argc, char **argv)
 	if (do_prefetch)
 		init_prefetch(mp);
 
-	phase3(mp);
+	phase3(mp, phase2_threads);
 	timestamp(PHASE_END, 3, NULL);
 
 	phase4(mp);
@@ -766,20 +936,21 @@ main(int argc, char **argv)
 	/*
 	 * Done with the block usage maps, toss them...
 	 */
+	rmaps_free(mp);
 	free_bmaps(mp);
 
 	if (!bad_ino_btree)  {
 		phase6(mp);
 		timestamp(PHASE_END, 6, NULL);
 
-		phase7(mp);
+		phase7(mp, phase2_threads);
 		timestamp(PHASE_END, 7, NULL);
 	} else  {
 		do_warn(
 _("Inode allocation btrees are too corrupted, skipping phases 6 and 7\n"));
 	}
 
-	if (lost_quotas && !have_uquotino && !have_gquotino)  {
+	if (lost_quotas && !have_uquotino && !have_gquotino && !have_pquotino) {
 		if (!no_modify)  {
 			do_warn(
 _("Warning:  no quota inodes were found.  Quotas disabled.\n"));
@@ -837,6 +1008,12 @@ _("Warning:  project quota information would be cleared.\n"
 		stop_progress_rpt();
 
 	if (no_modify)  {
+		/*
+		 * Warn if the current LSN is problematic and the log requires a
+		 * reformat.
+		 */
+		format_log_max_lsn(mp);
+
 		do_log(
 	_("No modify flag set, skipping filesystem flush and exiting.\n"));
 		if (verbose)
@@ -856,30 +1033,30 @@ _("Warning:  project quota information would be cleared.\n"
 
 	dsb = XFS_BUF_TO_SBP(sbp);
 
-	if (be16_to_cpu(dsb->sb_qflags) & (XFS_UQUOTA_CHKD | XFS_OQUOTA_CHKD)) {
+	if (be16_to_cpu(dsb->sb_qflags) & XFS_ALL_QUOTA_CHKD) {
 		do_warn(_("Note - quota info will be regenerated on next "
 			"quota mount.\n"));
-		dsb->sb_qflags &= cpu_to_be16(~(XFS_UQUOTA_CHKD |
-							XFS_OQUOTA_CHKD));
+		dsb->sb_qflags &= cpu_to_be16(~XFS_ALL_QUOTA_CHKD);
 	}
 
-	if (clear_sunit) {
+	if (copied_sunit) {
 		do_warn(
-_("Note - stripe unit (%d) and width (%d) fields have been reset.\n"
-  "Please set with mount -o sunit=<value>,swidth=<value>\n"),
+_("Note - stripe unit (%d) and width (%d) were copied from a backup superblock.\n"
+  "Please reset with mount -o sunit=<value>,swidth=<value> if necessary\n"),
 			be32_to_cpu(dsb->sb_unit), be32_to_cpu(dsb->sb_width));
-		dsb->sb_unit = 0;
-		dsb->sb_width = 0;
 	}
 
 	libxfs_writebuf(sbp, 0);
 
 	/*
-	 * Done, flush all cached buffers and inodes.
+	 * Done. Flush all cached buffers and inodes first to ensure all
+	 * verifiers are run (where we discover the max metadata LSN), reformat
+	 * the log if necessary and unmount.
 	 */
 	libxfs_bcache_flush();
-
+	format_log_max_lsn(mp);
 	libxfs_umount(mp);
+
 	if (x.rtdev)
 		libxfs_device_close(x.rtdev);
 	if (x.logdev && x.logdev != x.ddev)
@@ -889,7 +1066,14 @@ _("Note - stripe unit (%d) and width (%d) fields have been reset.\n"
 	if (verbose)
 		summary_report();
 	do_log(_("done\n"));
+
+	if (dangerously && !no_modify)
+		do_warn(
+_("Repair of readonly mount complete.  Immediate reboot encouraged.\n"));
+
 	pftrace_done();
+
+	free(msgbuf);
 
 	return (0);
 }

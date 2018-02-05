@@ -150,6 +150,15 @@ value returned indicates that a preferred extent size was previously
 set on the file, a
 .B fsx_extsize
 of zero indicates that the defaults for that filesystem will be used.
+A
+.B fsx_cowextsize
+value returned indicates that a preferred copy on write extent size was
+previously set on the file, whereas a
+.B fsx_cowextsize
+of zero indicates that the defaults for that filesystem will be used.
+The current default for
+.B fsx_cowextsize
+is 128 blocks.
 Currently the meaningful bits for the
 .B fsx_xflags
 field are:
@@ -225,6 +234,24 @@ group and so files within different directories will not interleave
 extents on disk. The reservation is only active while files are being
 created and written into the directory.
 .TP
+.SM "Bit 15 (0x8000) \- XFS_XFLAG_DAX"
+If the filesystem lives on directly accessible persistent memory, reads and
+writes to this file will go straight to the persistent memory, bypassing the
+page cache.
+A file cannot be reflinked and have the
+.BR XFS_XFLAG_DAX
+set at the same time.
+That is to say that DAX files cannot share blocks.
+.TP
+.SM "Bit 16 (0x10000) \- XFS_XFLAG_COWEXTSIZE"
+Copy on Write Extent size bit - if a CoW extent size value is set on the file,
+the allocator will allocate extents for staging a copy on write operation
+in multiples of the set size for this file (see
+.B XFS_IOC_FSSETXATTR
+below).
+If the CoW extent size is set on a directory, then new file and directories
+created in the directory will inherit the parent's CoW extent size value.
+.TP
 .SM "Bit 31 (0x80000000) \- XFS_XFLAG_HASATTR"
 The file has extended attributes associated with it.
 .RE
@@ -245,9 +272,11 @@ Set additional attributes associated with files in XFS file systems.
 The final argument points to a variable of type
 .BR "struct fsxattr" ,
 but only the following fields are used in this call:
-.B fsx_xflags
+.BR fsx_xflags ,
+.BR fsx_extsize ,
+.BR fsx_cowextsize ,
 and
-.BR fsx_extsize .
+.BR fsx_projid .
 The
 .B fsx_xflags
 realtime file bit and the file's extent size may be changed only
@@ -255,6 +284,9 @@ when the file is empty, except in the case of a directory where
 the extent size can be set at any time (this value is only used
 for regular file allocations, so should only be set on a directory
 in conjunction with the XFS_XFLAG_EXTSZINHERIT flag).
+The copy on write extent size,
+.BR fsx_cowextsize ,
+can be set at any time.
 
 .TP
 .B XFS_IOC_GETBMAP

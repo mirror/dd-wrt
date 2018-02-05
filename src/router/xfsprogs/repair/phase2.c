@@ -16,7 +16,8 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxlog.h>
+#include "libxfs.h"
+#include "libxlog.h"
 #include "avl.h"
 #include "globals.h"
 #include "agheader.h"
@@ -29,49 +30,67 @@
 void	set_mp(xfs_mount_t *mpp);
 
 /* workaround craziness in the xlog routines */
-int xlog_recover_do_trans(xlog_t *log, xlog_recover_t *t, int p) { return 0; }
+int xlog_recover_do_trans(struct xlog *log, xlog_recover_t *t, int p)
+{
+	return 0;
+}
 
 static void
-zero_log(xfs_mount_t *mp)
+zero_log(
+	struct xfs_mount	*mp)
 {
-	int error;
-	xlog_t	log;
-	xfs_daddr_t head_blk, tail_blk;
-	dev_t logdev = (mp->m_sb.sb_logstart == 0) ? x.logdev : x.ddev;
+	int			error;
+	xfs_daddr_t		head_blk;
+	xfs_daddr_t		tail_blk;
+	struct xlog		*log = mp->m_log;
 
-	memset(&log, 0, sizeof(log));
-	if (!x.logdev)
-		x.logdev = x.ddev;
+	memset(log, 0, sizeof(struct xlog));
 	x.logBBsize = XFS_FSB_TO_BB(mp, mp->m_sb.sb_logblocks);
 	x.logBBstart = XFS_FSB_TO_DADDR(mp, mp->m_sb.sb_logstart);
+	x.lbsize = BBSIZE;
+	if (xfs_sb_version_hassector(&mp->m_sb))
+		x.lbsize <<= (mp->m_sb.sb_logsectlog - BBSHIFT);
 
-	log.l_dev = logdev;
-	log.l_logsize = BBTOB(x.logBBsize);
-	log.l_logBBsize = x.logBBsize;
-	log.l_logBBstart = x.logBBstart;
-	log.l_mp = mp;
+	log->l_dev = mp->m_logdev_targp;
+	log->l_logBBsize = x.logBBsize;
+	log->l_logBBstart = x.logBBstart;
+	log->l_sectBBsize  = BTOBB(x.lbsize);
+	log->l_mp = mp;
 	if (xfs_sb_version_hassector(&mp->m_sb)) {
-		log.l_sectbb_log = mp->m_sb.sb_logsectlog - BBSHIFT;
-		ASSERT(log.l_sectbb_log <= mp->m_sectbb_log);
+		log->l_sectbb_log = mp->m_sb.sb_logsectlog - BBSHIFT;
+		ASSERT(log->l_sectbb_log <= mp->m_sectbb_log);
 		/* for larger sector sizes, must have v2 or external log */
-		ASSERT(log.l_sectbb_log == 0 ||
-			log.l_logBBstart == 0 ||
+		ASSERT(log->l_sectbb_log == 0 ||
+			log->l_logBBstart == 0 ||
 			xfs_sb_version_haslogv2(&mp->m_sb));
 		ASSERT(mp->m_sb.sb_logsectlog >= BBSHIFT);
 	}
-	log.l_sectbb_mask = (1 << log.l_sectbb_log) - 1;
+	log->l_sectbb_mask = (1 << log->l_sectbb_log) - 1;
 
-	if ((error = xlog_find_tail(&log, &head_blk, &tail_blk))) {
-		do_warn(_("zero_log: cannot find log head/tail "
-			  "(xlog_find_tail=%d), zeroing it anyway\n"),
+	/*
+	 * Find the log head and tail and alert the user to the situation if the
+	 * log appears corrupted or contains data. In either case, we do not
+	 * proceed past this point unless the user explicitly requests to zap
+	 * the log.
+	 */
+	error = xlog_find_tail(log, &head_blk, &tail_blk);
+	if (error) {
+		do_warn(
+		_("zero_log: cannot find log head/tail (xlog_find_tail=%d)\n"),
 			error);
+		if (!no_modify && !zap_log)
+			do_warn(_(
+"ERROR: The log head and/or tail cannot be discovered. Attempt to mount the\n"
+"filesystem to replay the log or use the -L option to destroy the log and\n"
+"attempt a repair.\n"));
+			exit(2);
 	} else {
 		if (verbose) {
 			do_warn(
 	_("zero_log: head block %" PRId64 " tail block %" PRId64 "\n"),
 				head_blk, tail_blk);
 		}
-		if (head_blk != tail_blk) {
+		if (!no_modify && head_blk != tail_blk) {
 			if (zap_log) {
 				do_warn(_(
 "ALERT: The filesystem has valuable metadata changes in a log which is being\n"
@@ -89,12 +108,32 @@ zero_log(xfs_mount_t *mp)
 		}
 	}
 
-	libxfs_log_clear(logdev,
-		XFS_FSB_TO_DADDR(mp, mp->m_sb.sb_logstart),
-		(xfs_extlen_t)XFS_FSB_TO_BB(mp, mp->m_sb.sb_logblocks),
-		&mp->m_sb.sb_uuid,
-		xfs_sb_version_haslogv2(&mp->m_sb) ? 2 : 1,
-		mp->m_sb.sb_logsunit, XLOG_FMT);
+	/*
+	 * Only clear the log when explicitly requested. Doing so is unnecessary
+	 * unless something is wrong. Further, this resets the current LSN of
+	 * the filesystem and creates more work for repair of v5 superblock
+	 * filesystems.
+	 */
+	if (!no_modify && zap_log) {
+		libxfs_log_clear(log->l_dev, NULL,
+			XFS_FSB_TO_DADDR(mp, mp->m_sb.sb_logstart),
+			(xfs_extlen_t)XFS_FSB_TO_BB(mp, mp->m_sb.sb_logblocks),
+			&mp->m_sb.sb_uuid,
+			xfs_sb_version_haslogv2(&mp->m_sb) ? 2 : 1,
+			mp->m_sb.sb_logsunit, XLOG_FMT, XLOG_INIT_CYCLE, true);
+
+		/* update the log data structure with new state */
+		error = xlog_find_tail(log, &head_blk, &tail_blk);
+		if (error || head_blk != tail_blk)
+			do_error(_("failed to clear log"));
+	}
+
+	/*
+	 * Finally, seed the max LSN from the current state of the log if this
+	 * is a v5 filesystem.
+	 */
+	if (xfs_sb_version_hascrc(&mp->m_sb))
+		libxfs_max_lsn = log->l_last_sync_lsn;
 }
 
 /*
@@ -128,10 +167,8 @@ phase2(
 		do_log(_("Phase 2 - using internal log\n"));
 
 	/* Zero log if applicable */
-	if (!no_modify)  {
-		do_log(_("        - zero log...\n"));
-		zero_log(mp);
-	}
+	do_log(_("        - zero log...\n"));
+	zero_log(mp);
 
 	do_log(_("        - scan filesystem freespace and inode maps...\n"));
 

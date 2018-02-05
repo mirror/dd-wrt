@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include "type.h"
 #include "faddr.h"
 #include "fprint.h"
@@ -91,13 +91,13 @@ bmroota_key_offset(
 	int			idx)
 {
 	xfs_bmdr_block_t	*block;
-	/* REFERENCED */
-	xfs_dinode_t		*dip;
+#ifdef DEBUG
+	xfs_dinode_t		*dip = obj;
+#endif
 	xfs_bmdr_key_t		*kp;
 
 	ASSERT(bitoffs(startoff) == 0);
 	ASSERT(obj == iocur_top->data);
-	dip = obj;
 	block = (xfs_bmdr_block_t *)((char *)obj + byteize(startoff));
 	ASSERT(XFS_DFORK_Q(dip) && (char *)block == XFS_DFORK_APTR(dip));
 	ASSERT(be16_to_cpu(block->bb_level) > 0);
@@ -140,7 +140,7 @@ bmroota_ptr_offset(
 	ASSERT(XFS_DFORK_Q(dip) && (char *)block == XFS_DFORK_APTR(dip));
 	ASSERT(be16_to_cpu(block->bb_level) > 0);
 	pp = XFS_BMDR_PTR_ADDR(block, idx,
-		xfs_bmdr_maxrecs(mp, XFS_DFORK_ASIZE(dip, mp), 0));
+		libxfs_bmdr_maxrecs(XFS_DFORK_ASIZE(dip, mp), 0));
 	return bitize((int)((char *)pp - (char *)block));
 }
 
@@ -235,7 +235,7 @@ bmrootd_ptr_offset(
 	block = (xfs_bmdr_block_t *)((char *)obj + byteize(startoff));
 	ASSERT(be16_to_cpu(block->bb_level) > 0);
 	pp = XFS_BMDR_PTR_ADDR(block, idx,
-		xfs_bmdr_maxrecs(mp, XFS_DFORK_DSIZE(dip, mp), 0));
+		libxfs_bmdr_maxrecs(XFS_DFORK_DSIZE(dip, mp), 0));
 	return bitize((int)((char *)pp - (char *)block));
 }
 

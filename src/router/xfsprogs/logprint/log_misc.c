@@ -15,6 +15,8 @@
  * along with this program; if not, write the Free Software Foundation,
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include "libxfs.h"
+#include "libxlog.h"
 
 #include "logprint.h"
 
@@ -25,59 +27,12 @@
 #define BAD_HEADER	(-1)
 #define NO_ERROR	(0)
 
-#define XLOG_SET(f,b)	(((f) & (b)) == (b))
-
 static int logBBsize;
-char *trans_type[] = {
-	"",
-	"SETATTR",
-	"SETATTR_SIZE",
-	"INACTIVE",
-	"CREATE",
-	"CREATE_TRUNC",
-	"TRUNCATE_FILE",
-	"REMOVE",
-	"LINK",
-	"RENAME",
-	"MKDIR",
-	"RMDIR",
-	"SYMLINK",
-	"SET_DMATTRS",
-	"GROWFS",
-	"STRAT_WRITE",
-	"DIOSTRAT",
-	"WRITE_SYNC",
-	"WRITEID",
-	"ADDAFORK",
-	"ATTRINVAL",
-	"ATRUNCATE",
-	"ATTR_SET",
-	"ATTR_RM",
-	"ATTR_FLAG",
-	"CLEAR_AGI_BUCKET",
-	"QM_SBCHANGE",
-	"DUMMY1",
-	"DUMMY2",
-	"QM_QUOTAOFF",
-	"QM_DQALLOC",
-	"QM_SETQLIM",
-	"QM_DQCLUSTER",
-	"QM_QINOCREATE",
-	"QM_QUOTAOFF_END",
-	"SB_UNIT",
-	"FSYNC_TS",
-	"GROWFSRT_ALLOC",
-	"GROWFSRT_ZERO",
-	"GROWFSRT_FREE",
-	"SWAPEXT",
-	"SB_COUNT",
-	"CHECKPOINT",
-};
 
 typedef struct xlog_split_item {
 	struct xlog_split_item	*si_next;
 	struct xlog_split_item	*si_prev;
-	xlog_tid_t		si_tid;
+	xlog_tid_t		si_xtid;
 	int			si_skip;
 } xlog_split_item_t;
 
@@ -118,7 +73,7 @@ print_stars(void)
 void
 xlog_print_op_header(xlog_op_header_t	*op_head,
 		     int		i,
-		     xfs_caddr_t	*ptr)
+		     char		**ptr)
 {
     xlog_op_header_t hbuf;
 
@@ -162,7 +117,7 @@ xlog_print_add_to_trans(xlog_tid_t	tid,
     xlog_split_item_t *item;
 
     item	  = (xlog_split_item_t *)calloc(sizeof(xlog_split_item_t), 1);
-    item->si_tid  = tid;
+    item->si_xtid  = tid;
     item->si_skip = skip;
     item->si_next = split_list;
     item->si_prev = NULL;
@@ -184,7 +139,7 @@ xlog_print_find_tid(xlog_tid_t tid, uint was_cont)
 	    return 0;
     }
     while (listp) {
-	if (listp->si_tid == tid)
+	if (listp->si_xtid == tid)
 	    break;
 	listp = listp->si_next;
     }
@@ -207,10 +162,10 @@ xlog_print_find_tid(xlog_tid_t tid, uint was_cont)
 }	/* xlog_print_find_tid */
 
 int
-xlog_print_trans_header(xfs_caddr_t *ptr, int len)
+xlog_print_trans_header(char **ptr, int len)
 {
     xfs_trans_header_t  *h;
-    xfs_caddr_t		cptr = *ptr;
+    char		*cptr = *ptr;
     __uint32_t          magic;
     char                *magic_c = (char *)&magic;
 
@@ -232,19 +187,16 @@ xlog_print_trans_header(xfs_caddr_t *ptr, int len)
 	return 1;
     }
     h = (xfs_trans_header_t *)cptr;
-    printf(_("    type: %s       tid: %x       num_items: %d\n"),
-	   trans_type[h->th_type], h->th_tid, h->th_num_items);
+    printf(_("     tid: %x  num_items: %d\n"),
+	   h->th_tid, h->th_num_items);
     return 0;
 }	/* xlog_print_trans_header */
 
 
 int
-xlog_print_trans_buffer(xfs_caddr_t *ptr, int len, int *i, int num_ops)
+xlog_print_trans_buffer(char **ptr, int len, int *i, int num_ops)
 {
     xfs_buf_log_format_t *f;
-    xfs_agi_t		 *agi;
-    xfs_agf_t		 *agf;
-    xfs_disk_dquot_t	 *dq;
     xlog_op_header_t	 *head = NULL;
     int			 num, skip;
     int			 super_block = 0;
@@ -253,7 +205,7 @@ xlog_print_trans_buffer(xfs_caddr_t *ptr, int len, int *i, int num_ops)
     xfs_buf_log_format_t lbuf;
     int			 size, blen, map_size, struct_size;
     __be64		 x, y;
-    ushort		 flags;
+    unsigned short	 flags;
 
     /*
      * memmove to ensure 8-byte alignment for the long longs in
@@ -270,7 +222,13 @@ xlog_print_trans_buffer(xfs_caddr_t *ptr, int len, int *i, int num_ops)
     blen = f->blf_len;
     map_size = f->blf_map_size;
     flags = f->blf_flags;
-    struct_size = sizeof(xfs_buf_log_format_t);
+
+    /*
+     * size of the format header is dependent on the size of the bitmap, not
+     * the size of the in-memory structure. Hence the slightly obtuse
+     * calculation.
+     */
+    struct_size = offsetof(struct xfs_buf_log_format, blf_map_size) + map_size;
 
     if (len >= struct_size) {
 	ASSERT((len - sizeof(struct_size)) % sizeof(int) == 0);
@@ -318,9 +276,21 @@ xlog_print_trans_buffer(xfs_caddr_t *ptr, int len, int *i, int num_ops)
 		}
 		super_block = 0;
 	} else if (be32_to_cpu(*(__be32 *)(*ptr)) == XFS_AGI_MAGIC) {
-		agi = (xfs_agi_t *)(*ptr);
+  	  	struct xfs_agi	*agi, agi_s;
+
+		/* memmove because *ptr may not be 8-byte aligned */
+		agi = &agi_s;
+		memmove(agi, *ptr, sizeof(struct xfs_agi));
 		printf(_("AGI Buffer: XAGI  "));
-		if (be32_to_cpu(head->oh_len) < sizeof(xfs_agi_t) -
+		/*
+		 * v4 filesystems only contain the fields before the uuid.
+		 * Even v5 filesystems don't log any field beneath it. That
+		 * means that the size that is logged is almost always going to
+		 * be smaller than the structure itself. Hence we need to make
+		 * sure that the buffer contains all the data we want to print
+		 * rather than just check against the structure size.
+		 */
+		if (be32_to_cpu(head->oh_len) < offsetof(xfs_agi_t, agi_uuid) -
 				XFS_AGI_UNLINKED_BUCKETS*sizeof(xfs_agino_t)) {
 			printf(_("out of space\n"));
 		} else {
@@ -360,9 +330,21 @@ xlog_print_trans_buffer(xfs_caddr_t *ptr, int len, int *i, int num_ops)
 			}
 		}
 	} else if (be32_to_cpu(*(__be32 *)(*ptr)) == XFS_AGF_MAGIC) {
-		agf = (xfs_agf_t *)(*ptr);
+    		struct xfs_agf	*agf, agf_s;
+
+		/* memmove because *ptr may not be 8-byte aligned */
+		agf = &agf_s;
+		memmove(agf, *ptr, sizeof(struct xfs_agf));
 		printf(_("AGF Buffer: XAGF  "));
-		if (be32_to_cpu(head->oh_len) < sizeof(xfs_agf_t)) {
+		/*
+		 * v4 filesystems only contain the fields before the uuid.
+		 * Even v5 filesystems don't log any field beneath it. That
+		 * means that the size that is logged is almost always going to
+		 * be smaller than the structure itself. Hence we need to make
+		 * sure that the buffer contains all the data we want to print
+		 * rather than just check against the structure size.
+		 */
+		if (be32_to_cpu(head->oh_len) < offsetof(xfs_agf_t, agf_uuid)) {
 			printf(_("Out of space\n"));
 		} else {
 			printf("\n");
@@ -385,7 +367,11 @@ xlog_print_trans_buffer(xfs_caddr_t *ptr, int len, int *i, int num_ops)
 				be32_to_cpu(agf->agf_longest));
 		}
 	} else if (be32_to_cpu(*(__be32 *)(*ptr)) == XFS_DQUOT_MAGIC) {
-		dq = (xfs_disk_dquot_t *)(*ptr);
+		struct xfs_disk_dquot *dq, dq_s;
+
+		/* memmove because *ptr may not be 8-byte aligned */
+		dq = &dq_s;
+		memmove(dq, *ptr, sizeof(struct xfs_disk_dquot));
 		printf(_("DQUOT Buffer: DQ  "));
 		if (be32_to_cpu(head->oh_len) <
 				sizeof(xfs_disk_dquot_t)) {
@@ -443,84 +429,7 @@ xlog_print_trans_buffer(xfs_caddr_t *ptr, int len, int *i, int num_ops)
 
 
 int
-xlog_print_trans_efd(xfs_caddr_t *ptr, uint len)
-{
-    xfs_efd_log_format_t *f;
-    xfs_efd_log_format_t lbuf;
-    /* size without extents at end */
-    uint core_size = sizeof(xfs_efd_log_format_t) - sizeof(xfs_extent_t);
-
-    /*
-     * memmove to ensure 8-byte alignment for the long longs in
-     * xfs_efd_log_format_t structure
-     */
-    memmove(&lbuf, *ptr, MIN(core_size, len));
-    f = &lbuf;
-    *ptr += len;
-    if (len >= core_size) {
-	printf(_("EFD:  #regs: %d    num_extents: %d  id: 0x%llx\n"),
-	       f->efd_size, f->efd_nextents, (unsigned long long)f->efd_efi_id);
-
-	/* don't print extents as they are not used */
-
-	return 0;
-    } else {
-	printf(_("EFD: Not enough data to decode further\n"));
-	return 1;
-    }
-}	/* xlog_print_trans_efd */
-
-
-int
-xlog_print_trans_efi(xfs_caddr_t *ptr, uint src_len)
-{
-    xfs_efi_log_format_t *src_f, *f;
-    uint		 dst_len;
-    xfs_extent_t	 *ex;
-    int			 i;
-    int			 error = 0;
-
-    /*
-     * memmove to ensure 8-byte alignment for the long longs in
-     * xfs_efi_log_format_t structure
-     */
-    if ((src_f = (xfs_efi_log_format_t *)malloc(src_len)) == NULL) {
-	fprintf(stderr, _("%s: xlog_print_trans_efi: malloc failed\n"), progname);
-	exit(1);
-    }
-    memmove((char*)src_f, *ptr, src_len);
-    *ptr += src_len;
-
-    /* convert to native format */
-    dst_len = sizeof(xfs_efi_log_format_t) + (src_f->efi_nextents - 1) * sizeof(xfs_extent_t);
-    if ((f = (xfs_efi_log_format_t *)malloc(dst_len)) == NULL) {
-	fprintf(stderr, _("%s: xlog_print_trans_efi: malloc failed\n"), progname);
-	exit(1);
-    }
-    if (xfs_efi_copy_format((char*)src_f, src_len, f)) {
-	error = 1;
-	goto error;
-    }
-
-    printf(_("EFI:  #regs: %d    num_extents: %d  id: 0x%llx\n"),
-	   f->efi_size, f->efi_nextents, (unsigned long long)f->efi_id);
-    ex = f->efi_extents;
-    for (i=0; i < f->efi_nextents; i++) {
-	    printf("(s: 0x%llx, l: %d) ",
-		    (unsigned long long)ex->ext_start, ex->ext_len);
-	    if (i % 4 == 3) printf("\n");
-	    ex++;
-    }
-    if (i % 4 != 0) printf("\n");
-error:
-    free(src_f);
-    free(f);
-    return error;
-}	/* xlog_print_trans_efi */
-
-
-int
-xlog_print_trans_qoff(xfs_caddr_t *ptr, uint len)
+xlog_print_trans_qoff(char **ptr, uint len)
 {
     xfs_qoff_logformat_t *f;
     xfs_qoff_logformat_t lbuf;
@@ -539,7 +448,8 @@ xlog_print_trans_qoff(xfs_caddr_t *ptr, uint len)
 
 
 void
-xlog_print_trans_inode_core(xfs_icdinode_t *ip)
+xlog_print_trans_inode_core(
+	struct xfs_log_dinode	*ip)
 {
     printf(_("INODE CORE\n"));
     printf(_("magic 0x%hx mode 0%ho version %d format %d\n"),
@@ -557,19 +467,23 @@ xlog_print_trans_inode_core(xfs_icdinode_t *ip)
 	   ip->di_dmstate);
     printf(_("flags 0x%x gen 0x%x\n"),
 	   ip->di_flags, ip->di_gen);
+    if (ip->di_version == 3) {
+        printf(_("flags2 0x%llx cowextsize 0x%x\n"),
+            (unsigned long long)ip->di_flags2, ip->di_cowextsize);
+    }
 }
 
 void
-xlog_print_dir_sf(xfs_dir_shortform_t *sfp, int size)
+xlog_print_dir2_sf(
+	struct xlog	*log,
+	xfs_dir2_sf_hdr_t *sfp,
+	int		size)
 {
 	xfs_ino_t	ino;
 	int		count;
 	int		i;
 	char		namebuf[257];
-	xfs_dir_sf_entry_t	*sfep;
-
-	/* XXX need to determine whether this is v1 or v2, then
-	   print appropriate structure */
+	xfs_dir2_sf_entry_t	*sfep;
 
 	printf(_("SHORTFORM DIRECTORY size %d\n"),
 		size);
@@ -578,26 +492,32 @@ xlog_print_dir_sf(xfs_dir_shortform_t *sfp, int size)
 	return;
 
 	printf(_("SHORTFORM DIRECTORY size %d count %d\n"),
-	       size, sfp->hdr.count);
-	memmove(&ino, &(sfp->hdr.parent), sizeof(ino));
-       printf(_(".. ino 0x%llx\n"), (unsigned long long) be64_to_cpu(ino));
+	       size, sfp->count);
+	memmove(&ino, &(sfp->parent), sizeof(ino));
+	printf(_(".. ino 0x%llx\n"), (unsigned long long) be64_to_cpu(ino));
 
-	count = (uint)(sfp->hdr.count);
-	sfep = &(sfp->list[0]);
+	count = sfp->count;
+	sfep = xfs_dir2_sf_firstentry(sfp);
 	for (i = 0; i < count; i++) {
-		memmove(&ino, &(sfep->inumber), sizeof(ino));
+		ino = M_DIROPS(log->l_mp)->sf_get_ino(sfp, sfep);
 		memmove(namebuf, (sfep->name), sfep->namelen);
 		namebuf[sfep->namelen] = '\0';
 		printf(_("%s ino 0x%llx namelen %d\n"),
 		       namebuf, (unsigned long long)ino, sfep->namelen);
-		sfep = xfs_dir_sf_nextentry(sfep);
+		sfep = M_DIROPS(log->l_mp)->sf_nextentry(sfp, sfep);
 	}
 }
 
 int
-xlog_print_trans_inode(xfs_caddr_t *ptr, int len, int *i, int num_ops)
+xlog_print_trans_inode(
+	struct xlog	*log,
+	char		**ptr,
+	int		len,
+	int		*i,
+	int		num_ops,
+	int		continued)
 {
-    xfs_icdinode_t	   dino;
+    struct xfs_log_dinode dino;
     xlog_op_header_t	   *op_head;
     xfs_inode_log_format_t dst_lbuf;
     xfs_inode_log_format_64_t src_lbuf; /* buffer of biggest one */
@@ -617,8 +537,9 @@ xlog_print_trans_inode(xfs_caddr_t *ptr, int len, int *i, int num_ops)
     memmove(&src_lbuf, *ptr, MIN(sizeof(xfs_inode_log_format_64_t), len));
     (*i)++;					/* bump index */
     *ptr += len;
-    if (len == sizeof(xfs_inode_log_format_32_t) ||
-	len == sizeof(xfs_inode_log_format_64_t)) {
+    if (!continued &&
+	(len == sizeof(xfs_inode_log_format_32_t) ||
+	 len == sizeof(xfs_inode_log_format_64_t))) {
 	f = xfs_inode_item_format_convert((char*)&src_lbuf, len, &dst_lbuf);
 	printf(_("INODE: "));
 	printf(_("#regs: %d   ino: 0x%llx  flags: 0x%x   dsize: %d\n"),
@@ -641,7 +562,7 @@ xlog_print_trans_inode(xfs_caddr_t *ptr, int len, int *i, int num_ops)
     op_head = (xlog_op_header_t *)*ptr;
     xlog_print_op_header(op_head, *i, ptr);
 
-    if (XLOG_SET(op_head->oh_flags, XLOG_CONTINUE_TRANS))  {
+    if (op_head->oh_flags & XLOG_CONTINUE_TRANS)  {
 	return f->ilf_size-1;
     }
 
@@ -649,7 +570,7 @@ xlog_print_trans_inode(xfs_caddr_t *ptr, int len, int *i, int num_ops)
     mode = dino.di_mode & S_IFMT;
     size = (int)dino.di_size;
     xlog_print_trans_inode_core(&dino);
-    *ptr += sizeof(xfs_icdinode_t);
+    *ptr += xfs_log_dinode_size(dino.di_version);
 
     if (*i == num_ops-1 && f->ilf_size == 3)  {
 	return 1;
@@ -657,103 +578,81 @@ xlog_print_trans_inode(xfs_caddr_t *ptr, int len, int *i, int num_ops)
 
     /* does anything come next */
     op_head = (xlog_op_header_t *)*ptr;
-    switch (f->ilf_fields & XFS_ILOG_NONCORE) {
-	case XFS_ILOG_DEXT: {
-	    ASSERT(f->ilf_size == 3);
-	    (*i)++;
-	    xlog_print_op_header(op_head, *i, ptr);
-	    printf(_("EXTENTS inode data\n"));
-	    *ptr += be32_to_cpu(op_head->oh_len);
-	    if (XLOG_SET(op_head->oh_flags, XLOG_CONTINUE_TRANS))  {
-		return 1;
-	    }
-	    break;
-	}
-	case XFS_ILOG_DBROOT: {
-	    ASSERT(f->ilf_size == 3);
-	    (*i)++;
-	    xlog_print_op_header(op_head, *i, ptr);
-	    printf(_("BTREE inode data\n"));
-	    *ptr += be32_to_cpu(op_head->oh_len);
-	    if (XLOG_SET(op_head->oh_flags, XLOG_CONTINUE_TRANS))  {
-		return 1;
-	    }
-	    break;
-	}
-	case XFS_ILOG_DDATA: {
-	    ASSERT(f->ilf_size == 3);
-	    (*i)++;
-	    xlog_print_op_header(op_head, *i, ptr);
-	    printf(_("LOCAL inode data\n"));
-	    if (mode == S_IFDIR) {
-		xlog_print_dir_sf((xfs_dir_shortform_t*)*ptr, size);
-	    }
-	    *ptr += be32_to_cpu(op_head->oh_len);
-	    if (XLOG_SET(op_head->oh_flags, XLOG_CONTINUE_TRANS)) {
-		return 1;
-	    }
-	    break;
-	}
-	case XFS_ILOG_AEXT: {
-	    ASSERT(f->ilf_size == 3);
-	    (*i)++;
-	    xlog_print_op_header(op_head, *i, ptr);
-	    printf(_("EXTENTS inode attr\n"));
-	    *ptr += be32_to_cpu(op_head->oh_len);
-	    if (XLOG_SET(op_head->oh_flags, XLOG_CONTINUE_TRANS))  {
-		return 1;
-	    }
-	    break;
-	}
-	case XFS_ILOG_ABROOT: {
-	    ASSERT(f->ilf_size == 3);
-	    (*i)++;
-	    xlog_print_op_header(op_head, *i, ptr);
-	    printf(_("BTREE inode attr\n"));
-	    *ptr += be32_to_cpu(op_head->oh_len);
-	    if (XLOG_SET(op_head->oh_flags, XLOG_CONTINUE_TRANS))  {
-		return 1;
-	    }
-	    break;
-	}
-	case XFS_ILOG_ADATA: {
-	    ASSERT(f->ilf_size == 3);
-	    (*i)++;
-	    xlog_print_op_header(op_head, *i, ptr);
-	    printf(_("LOCAL inode attr\n"));
-	    if (mode == S_IFDIR) {
-		xlog_print_dir_sf((xfs_dir_shortform_t*)*ptr, size);
-	    }
-	    *ptr += be32_to_cpu(op_head->oh_len);
-	    if (XLOG_SET(op_head->oh_flags, XLOG_CONTINUE_TRANS)) {
-		return 1;
-	    }
-	    break;
-	}
-	case XFS_ILOG_DEV: {
-	    ASSERT(f->ilf_size == 2);
-	    printf(_("DEV inode: no extra region\n"));
-	    break;
-	}
-	case XFS_ILOG_UUID: {
-	    ASSERT(f->ilf_size == 2);
-	    printf(_("UUID inode: no extra region\n"));
-	    break;
-	}
-	case 0: {
-	    ASSERT(f->ilf_size == 2);
-	    break;
-	}
-	default: {
-	    xlog_panic(_("xlog_print_trans_inode: illegal inode type"));
-	}
+
+    switch (f->ilf_fields & (XFS_ILOG_DEV | XFS_ILOG_UUID)) {
+    case XFS_ILOG_DEV:
+	printf(_("DEV inode: no extra region\n"));
+	break;
+    case XFS_ILOG_UUID:
+	printf(_("UUID inode: no extra region\n"));
+	break;
     }
+
+    /* Only the inode core is logged */
+    if (f->ilf_size == 2)
+	return 0;
+
+    ASSERT(f->ilf_size <= 4);
+    ASSERT((f->ilf_size == 3) || (f->ilf_fields & XFS_ILOG_AFORK));
+
+    if (f->ilf_fields & XFS_ILOG_DFORK) {
+	    (*i)++;
+	    xlog_print_op_header(op_head, *i, ptr);
+
+	    switch (f->ilf_fields & XFS_ILOG_DFORK) {
+	    case XFS_ILOG_DEXT:
+		printf(_("EXTENTS inode data\n"));
+		break;
+	    case XFS_ILOG_DBROOT:
+		printf(_("BTREE inode data\n"));
+		break;
+	    case XFS_ILOG_DDATA:
+		printf(_("LOCAL inode data\n"));
+		if (mode == S_IFDIR)
+		    xlog_print_dir2_sf(log, (xfs_dir2_sf_hdr_t *)*ptr, size);
+		break;
+	    default:
+		ASSERT((f->ilf_fields & XFS_ILOG_DFORK) == 0);
+		break;
+	    }
+
+	    *ptr += be32_to_cpu(op_head->oh_len);
+	    if (op_head->oh_flags & XLOG_CONTINUE_TRANS)
+		return 1;
+	    op_head = (xlog_op_header_t *)*ptr;
+    }
+
+    if (f->ilf_fields & XFS_ILOG_AFORK) {
+	    (*i)++;
+	    xlog_print_op_header(op_head, *i, ptr);
+
+	    switch (f->ilf_fields & XFS_ILOG_AFORK) {
+	    case XFS_ILOG_AEXT:
+		printf(_("EXTENTS attr data\n"));
+		break;
+	    case XFS_ILOG_ABROOT:
+		printf(_("BTREE attr data\n"));
+		break;
+	    case XFS_ILOG_ADATA:
+		printf(_("LOCAL attr data\n"));
+		if (mode == S_IFDIR)
+		    xlog_print_dir2_sf(log, (xfs_dir2_sf_hdr_t *)*ptr, size);
+		break;
+	    default:
+		ASSERT((f->ilf_fields & XFS_ILOG_AFORK) == 0);
+		break;
+	    }
+	    *ptr += be32_to_cpu(op_head->oh_len);
+	    if (op_head->oh_flags & XLOG_CONTINUE_TRANS)
+		return 1;
+    }
+
     return 0;
 }	/* xlog_print_trans_inode */
 
 
 int
-xlog_print_trans_dquot(xfs_caddr_t *ptr, int len, int *i, int num_ops)
+xlog_print_trans_dquot(char **ptr, int len, int *i, int num_ops)
 {
     xfs_dq_logformat_t	*f;
     xfs_dq_logformat_t	lbuf = {0};
@@ -807,6 +706,34 @@ xlog_print_trans_dquot(xfs_caddr_t *ptr, int len, int *i, int num_ops)
 }	/* xlog_print_trans_dquot */
 
 
+STATIC int
+xlog_print_trans_icreate(
+	char		**ptr,
+	int		len,
+	int		*i,
+	int		num_ops)
+{
+	struct xfs_icreate_log	icl_buf = {0};
+	struct xfs_icreate_log	*icl;
+
+	memmove(&icl_buf, *ptr, MIN(sizeof(struct xfs_icreate_log), len));
+	icl = &icl_buf;
+	*ptr += len;
+
+	/* handle complete header only */
+	if (len != sizeof(struct xfs_icreate_log)) {
+		printf(_("ICR: split header, not printing\n"));
+		return 1; /* to skip leftover in next region */
+	}
+
+	printf(_("ICR:  #ag: %d  agbno: 0x%x  len: %d\n"
+		 "      cnt: %d  isize: %d    gen: 0x%x\n"),
+		be32_to_cpu(icl->icl_ag), be32_to_cpu(icl->icl_agbno),
+		be32_to_cpu(icl->icl_length), be32_to_cpu(icl->icl_count),
+		be32_to_cpu(icl->icl_isize), be32_to_cpu(icl->icl_gen));
+	return 0;
+}
+
 /******************************************************************************
  *
  *		Log print routines
@@ -815,7 +742,7 @@ xlog_print_trans_dquot(xfs_caddr_t *ptr, int len, int *i, int num_ops)
  */
 
 void
-xlog_print_lseek(xlog_t *log, int fd, xfs_daddr_t blkno, int whence)
+xlog_print_lseek(struct xlog *log, int fd, xfs_daddr_t blkno, int whence)
 {
 #define BBTOOFF64(bbs)	(((xfs_off_t)(bbs)) << BBSHIFT)
 	xfs_off_t offset;
@@ -824,8 +751,8 @@ xlog_print_lseek(xlog_t *log, int fd, xfs_daddr_t blkno, int whence)
 		offset = BBTOOFF64(blkno+log->l_logBBstart);
 	else
 		offset = BBTOOFF64(blkno);
-	if (lseek64(fd, offset, whence) < 0) {
-		fprintf(stderr, _("%s: lseek64 to %lld failed: %s\n"),
+	if (lseek(fd, offset, whence) < 0) {
+		fprintf(stderr, _("%s: lseek to %lld failed: %s\n"),
 			progname, (long long)offset, strerror(errno));
 		exit(1);
 	}
@@ -833,7 +760,7 @@ xlog_print_lseek(xlog_t *log, int fd, xfs_daddr_t blkno, int whence)
 
 
 void
-print_lsn(xfs_caddr_t	string,
+print_lsn(char		*string,
 	  __be64	*lsn)
 {
     printf("%s: %u,%u", string,
@@ -842,16 +769,19 @@ print_lsn(xfs_caddr_t	string,
 
 
 int
-xlog_print_record(int			  fd,
-		 int			  num_ops,
-		 int			  len,
-		 int			  *read_type,
-		 xfs_caddr_t		  *partial_buf,
-		 xlog_rec_header_t	  *rhead,
-		 xlog_rec_ext_header_t	  *xhdrs)
+xlog_print_record(
+	struct xlog		*log,
+	int			fd,
+	int			num_ops,
+	int			len,
+	int			*read_type,
+	char			**partial_buf,
+	xlog_rec_header_t	*rhead,
+	xlog_rec_ext_header_t	*xhdrs,
+	int			bad_hdr_warn)
 {
-    xfs_caddr_t		buf, ptr;
-    int			read_len, skip;
+    char		*buf, *ptr;
+    int			read_len, skip, lost_context = 0;
     int			ret, n, i, j, k;
 
     if (print_no_print)
@@ -867,13 +797,13 @@ xlog_print_record(int			  fd,
 
     /* read_type => don't malloc() new buffer, use old one */
     if (*read_type == FULL_READ) {
-	if ((ptr = buf = (xfs_caddr_t)malloc(read_len)) == NULL) {
+	if ((ptr = buf = malloc(read_len)) == NULL) {
 	    fprintf(stderr, _("%s: xlog_print_record: malloc failed\n"), progname);
 	    exit(1);
 	}
     } else {
 	read_len -= *read_type;
-	buf = (xfs_caddr_t)((__psint_t)(*partial_buf) + (__psint_t)(*read_type));
+	buf = (char *)((intptr_t)(*partial_buf) + (intptr_t)(*read_type));
 	ptr = *partial_buf;
     }
     if ((ret = (int) read(fd, buf, read_len)) == -1) {
@@ -920,11 +850,12 @@ xlog_print_record(int			  fd,
 	     */
 	    if (be32_to_cpu(rhead->h_cycle) !=
 			be32_to_cpu(*(__be32 *)ptr)) {
-		if (*read_type == FULL_READ)
-		    return -1;
-		else if (be32_to_cpu(rhead->h_cycle) + 1 !=
-			be32_to_cpu(*(__be32 *)ptr))
-		    return -1;
+		if ((*read_type == FULL_READ) ||
+		    (be32_to_cpu(rhead->h_cycle) + 1 !=
+				be32_to_cpu(*(__be32 *)ptr))) {
+			free(buf);
+			return -1;
+		}
 	    }
 	}
 
@@ -945,29 +876,40 @@ xlog_print_record(int			  fd,
 
     ptr = buf;
     for (i=0; i<num_ops; i++) {
+	int continued;
+
 	xlog_op_header_t *op_head = (xlog_op_header_t *)ptr;
 
 	print_xlog_op_line();
 	xlog_print_op_header(op_head, i, &ptr);
+	continued = ((op_head->oh_flags & XLOG_WAS_CONT_TRANS) ||
+		     (op_head->oh_flags & XLOG_CONTINUE_TRANS));
 
-	/* print transaction data */
-	if (print_no_data ||
-	    ((XLOG_SET(op_head->oh_flags, XLOG_WAS_CONT_TRANS) ||
-	      XLOG_SET(op_head->oh_flags, XLOG_CONTINUE_TRANS)) &&
-	     be32_to_cpu(op_head->oh_len) == 0)) {
+	if (continued && be32_to_cpu(op_head->oh_len) == 0)
+		continue;
+
+	if (print_no_data) {
 	    for (n = 0; n < be32_to_cpu(op_head->oh_len); n++) {
-		printf("%c", *ptr);
+		printf("0x%02x ", (unsigned int)*ptr);
+		if (n % 16 == 15)
+			printf("\n");
 		ptr++;
 	    }
 	    printf("\n");
 	    continue;
 	}
+
+	/* print transaction data */
 	if (xlog_print_find_tid(be32_to_cpu(op_head->oh_tid),
 				op_head->oh_flags & XLOG_WAS_CONT_TRANS)) {
 	    printf(_("Left over region from split log item\n"));
+	    /* Skip this leftover bit */
 	    ptr += be32_to_cpu(op_head->oh_len);
+	    /* We've lost context; don't complain if next one looks bad too */
+	    lost_context = 1;
 	    continue;
 	}
+
 	if (be32_to_cpu(op_head->oh_len) != 0) {
 	    if (*(uint *)ptr == XFS_TRANS_HEADER_MAGIC) {
 		skip = xlog_print_trans_header(&ptr,
@@ -980,10 +922,16 @@ xlog_print_record(int			  fd,
 					&i, num_ops);
 			break;
 		    }
-		    case XFS_LI_INODE: {
-			skip = xlog_print_trans_inode(&ptr,
+		    case XFS_LI_ICREATE: {
+			skip = xlog_print_trans_icreate(&ptr,
 					be32_to_cpu(op_head->oh_len),
 					&i, num_ops);
+			break;
+		    }
+		    case XFS_LI_INODE: {
+			skip = xlog_print_trans_inode(log, &ptr,
+					be32_to_cpu(op_head->oh_len),
+					&i, num_ops, continued);
 			break;
 		    }
 		    case XFS_LI_DQUOT: {
@@ -994,11 +942,45 @@ xlog_print_record(int			  fd,
 		    }
 		    case XFS_LI_EFI: {
 			skip = xlog_print_trans_efi(&ptr,
-					be32_to_cpu(op_head->oh_len));
+					be32_to_cpu(op_head->oh_len),
+					continued);
 			break;
 		    }
 		    case XFS_LI_EFD: {
 			skip = xlog_print_trans_efd(&ptr,
+					be32_to_cpu(op_head->oh_len));
+			break;
+		    }
+		    case XFS_LI_RUI: {
+			skip = xlog_print_trans_rui(&ptr,
+					be32_to_cpu(op_head->oh_len),
+					continued);
+			break;
+		    }
+		    case XFS_LI_RUD: {
+			skip = xlog_print_trans_rud(&ptr,
+					be32_to_cpu(op_head->oh_len));
+			break;
+		    }
+		    case XFS_LI_CUI: {
+			skip = xlog_print_trans_cui(&ptr,
+					be32_to_cpu(op_head->oh_len),
+					continued);
+			break;
+		    }
+		    case XFS_LI_CUD: {
+			skip = xlog_print_trans_cud(&ptr,
+					be32_to_cpu(op_head->oh_len));
+			break;
+		    }
+		    case XFS_LI_BUI: {
+			skip = xlog_print_trans_bui(&ptr,
+					be32_to_cpu(op_head->oh_len),
+					continued);
+			break;
+		    }
+		    case XFS_LI_BUD: {
+			skip = xlog_print_trans_bud(&ptr,
 					be32_to_cpu(op_head->oh_len));
 			break;
 		    }
@@ -1013,14 +995,21 @@ xlog_print_record(int			  fd,
 			break;
 		    }
 		    default: {
-			fprintf(stderr, _("%s: unknown log operation type (%x)\n"),
-				progname, *(unsigned short *)ptr);
-			if (print_exit) {
-				free(buf);
-				return BAD_HEADER;
+			if (bad_hdr_warn && !lost_context) {
+				fprintf(stderr,
+			_("%s: unknown log operation type (%x)\n"),
+					progname, *(unsigned short *)ptr);
+				if (print_exit) {
+					free(buf);
+					return BAD_HEADER;
+				}
+			} else {
+				printf(
+			_("Left over region from split log item\n"));
 			}
 			skip = 0;
 			ptr += be32_to_cpu(op_head->oh_len);
+			lost_context = 0;
 		    }
 		} /* switch */
 	    } /* else */
@@ -1035,7 +1024,7 @@ xlog_print_record(int			  fd,
 
 
 int
-xlog_print_rec_head(xlog_rec_header_t *head, int *len)
+xlog_print_rec_head(xlog_rec_header_t *head, int *len, int bad_hdr_warn)
 {
     int i;
     char uub[64];
@@ -1048,14 +1037,15 @@ xlog_print_rec_head(xlog_rec_header_t *head, int *len)
 	return ZEROED_LOG;
 
     if (be32_to_cpu(head->h_magicno) != XLOG_HEADER_MAGIC_NUM) {
-	printf(_("Header 0x%x wanted 0x%x\n"),
-		be32_to_cpu(head->h_magicno),
-		XLOG_HEADER_MAGIC_NUM);
+	if (bad_hdr_warn)
+		printf(_("Header 0x%x wanted 0x%x\n"),
+			be32_to_cpu(head->h_magicno),
+			XLOG_HEADER_MAGIC_NUM);
 	return BAD_HEADER;
     }
 
     /* check for cleared blocks written by xlog_clear_stale_blocks() */
-    if (!head->h_len && !head->h_chksum && !head->h_prev_block &&
+    if (!head->h_len && !head->h_crc && !head->h_prev_block &&
 	!head->h_num_logops && !head->h_size)
 	return CLEARED_BLKS;
 
@@ -1137,7 +1127,7 @@ print_xlog_bad_zeroed(xfs_daddr_t blkno)
 }	/* print_xlog_bad_zeroed */
 
 static void
-print_xlog_bad_header(xfs_daddr_t blkno, xfs_caddr_t buf)
+print_xlog_bad_header(xfs_daddr_t blkno, char *buf)
 {
 	print_stars();
 	printf(_("* ERROR: header cycle=%-11d block=%-21lld        *\n"),
@@ -1202,6 +1192,8 @@ xlog_print_extended_headers(
 
 	num_required = howmany(len, XLOG_HEADER_CYCLE_SIZE);
 	num_hdrs = be32_to_cpu(hdr->h_size) / XLOG_HEADER_CYCLE_SIZE;
+	if (be32_to_cpu(hdr->h_size) % XLOG_HEADER_CYCLE_SIZE)
+		num_hdrs++;
 
 	if (num_required > num_hdrs) {
 	    print_xlog_bad_reqd_hdrs((*blkno)-1, num_required, num_hdrs);
@@ -1264,7 +1256,7 @@ xlog_print_extended_headers(
 /*
  * This code is gross and needs to be rewritten.
  */
-void xfs_log_print(xlog_t       *log,
+void xfs_log_print(struct xlog  *log,
 		   int          fd,
 		   int		print_block_start)
 {
@@ -1275,9 +1267,10 @@ void xfs_log_print(xlog_t       *log,
     xfs_daddr_t			block_end = 0, block_start, blkno, error;
     xfs_daddr_t			zeroed_blkno = 0, cleared_blkno = 0;
     int				read_type = FULL_READ;
-    xfs_caddr_t			partial_buf;
-    int         		zeroed = 0;
-    int         		cleared = 0;
+    char			*partial_buf;
+    int				zeroed = 0;
+    int				cleared = 0;
+    int				first_hdr_found = 0;
 
     logBBsize = log->l_logBBsize;
 
@@ -1309,7 +1302,7 @@ void xfs_log_print(xlog_t       *log,
 	    blkno++;
 	    goto loop;
 	}
-	num_ops = xlog_print_rec_head(hdr, &len);
+	num_ops = xlog_print_rec_head(hdr, &len, first_hdr_found);
 	blkno++;
 
 	if (zeroed && num_ops != ZEROED_LOG) {
@@ -1335,7 +1328,10 @@ void xfs_log_print(xlog_t       *log,
 		    cleared_blkno = blkno-1;
 		cleared++;
 	    } else {
-		print_xlog_bad_header(blkno-1, hbuf);
+		if (!first_hdr_found)
+			block_start = blkno;
+		else
+			print_xlog_bad_header(blkno-1, hbuf);
 	    }
 
 	    goto loop;
@@ -1346,7 +1342,9 @@ void xfs_log_print(xlog_t       *log,
 		break;
 	}
 
-	error =	xlog_print_record(fd, num_ops, len, &read_type, &partial_buf, hdr, xhdrs);
+	error =	xlog_print_record(log, fd, num_ops, len, &read_type, &partial_buf,
+				  hdr, xhdrs, first_hdr_found);
+	first_hdr_found++;
 	switch (error) {
 	    case 0: {
 		blkno += BTOBB(len);
@@ -1422,7 +1420,7 @@ loop:
 		blkno++;
 		goto loop2;
 	    }
-	    num_ops = xlog_print_rec_head(hdr, &len);
+	    num_ops = xlog_print_rec_head(hdr, &len, first_hdr_found);
 	    blkno++;
 
 	    if (num_ops == ZEROED_LOG ||
@@ -1445,13 +1443,9 @@ loop:
 	    }
 
 partial_log_read:
-	    error= xlog_print_record(fd,
-				    num_ops,
-				    len,
-				    &read_type,
-				    &partial_buf,
-				    (xlog_rec_header_t *)hbuf,
-				    xhdrs);
+	    error= xlog_print_record(log, fd, num_ops, len, &read_type,
+				    &partial_buf, (xlog_rec_header_t *)hbuf,
+				    xhdrs, first_hdr_found);
 	    if (read_type != FULL_READ)
 		len -= read_type;
 	    read_type = FULL_READ;
@@ -1519,50 +1513,4 @@ xfs_inode_item_format_convert(char *src_buf, uint len, xfs_inode_log_format_t *i
 		in_f->ilf_boffset = in_f64->ilf_boffset;
 	}
 	return in_f;
-}
-
-int
-xfs_efi_copy_format(char *buf, uint len, xfs_efi_log_format_t *dst_efi_fmt)
-{
-        uint i;
-	uint nextents = ((xfs_efi_log_format_t *)buf)->efi_nextents;
-        uint dst_len = sizeof(xfs_efi_log_format_t) + (nextents - 1) * sizeof(xfs_extent_t);
-        uint len32 = sizeof(xfs_efi_log_format_32_t) + (nextents - 1) * sizeof(xfs_extent_32_t);
-        uint len64 = sizeof(xfs_efi_log_format_64_t) + (nextents - 1) * sizeof(xfs_extent_64_t);
-
-        if (len == dst_len) {
-                memcpy((char *)dst_efi_fmt, buf, len);
-                return 0;
-        } else if (len == len32) {
-                xfs_efi_log_format_32_t *src_efi_fmt_32 = (xfs_efi_log_format_32_t *)buf;
-
-                dst_efi_fmt->efi_type     = src_efi_fmt_32->efi_type;
-                dst_efi_fmt->efi_size     = src_efi_fmt_32->efi_size;
-                dst_efi_fmt->efi_nextents = src_efi_fmt_32->efi_nextents;
-                dst_efi_fmt->efi_id       = src_efi_fmt_32->efi_id;
-                for (i = 0; i < dst_efi_fmt->efi_nextents; i++) {
-                        dst_efi_fmt->efi_extents[i].ext_start =
-                                src_efi_fmt_32->efi_extents[i].ext_start;
-                        dst_efi_fmt->efi_extents[i].ext_len =
-                                src_efi_fmt_32->efi_extents[i].ext_len;
-                }
-                return 0;
-        } else if (len == len64) {
-                xfs_efi_log_format_64_t *src_efi_fmt_64 = (xfs_efi_log_format_64_t *)buf;
-
-                dst_efi_fmt->efi_type     = src_efi_fmt_64->efi_type;
-                dst_efi_fmt->efi_size     = src_efi_fmt_64->efi_size;
-                dst_efi_fmt->efi_nextents = src_efi_fmt_64->efi_nextents;
-                dst_efi_fmt->efi_id       = src_efi_fmt_64->efi_id;
-                for (i = 0; i < dst_efi_fmt->efi_nextents; i++) {
-                        dst_efi_fmt->efi_extents[i].ext_start =
-                                src_efi_fmt_64->efi_extents[i].ext_start;
-                        dst_efi_fmt->efi_extents[i].ext_len =
-                                src_efi_fmt_64->efi_extents[i].ext_len;
-                }
-                return 0;
-        }
-	fprintf(stderr, _("%s: bad size of efi format: %u; expected %u or %u; nextents = %u\n"),
-		progname, len, len32, len64, nextents);
-        return 1;
 }

@@ -16,9 +16,8 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/xfs.h>
-#include <xfs/command.h>
-#include <xfs/input.h>
+#include "command.h"
+#include "input.h"
 #include "init.h"
 #include "io.h"
 
@@ -34,23 +33,25 @@ static struct xflags {
 	char	*shortname;
 	char	*longname;
 } xflags[] = {
-	{ XFS_XFLAG_REALTIME,		"r", "realtime"		},
-	{ XFS_XFLAG_PREALLOC,		"p", "prealloc"		},
-	{ XFS_XFLAG_IMMUTABLE,		"i", "immutable"	},
-	{ XFS_XFLAG_APPEND,		"a", "append-only"	},
-	{ XFS_XFLAG_SYNC,		"s", "sync"		},
-	{ XFS_XFLAG_NOATIME,		"A", "no-atime"		},
-	{ XFS_XFLAG_NODUMP,		"d", "no-dump"		},
-	{ XFS_XFLAG_RTINHERIT,		"t", "rt-inherit"	},
-	{ XFS_XFLAG_PROJINHERIT,	"P", "proj-inherit"	},
-	{ XFS_XFLAG_NOSYMLINKS,		"n", "nosymlinks"	},
-	{ XFS_XFLAG_EXTSIZE,		"e", "extsize"		},
-	{ XFS_XFLAG_EXTSZINHERIT,	"E", "extsz-inherit"	},
-	{ XFS_XFLAG_NODEFRAG,		"f", "no-defrag"	},
-	{ XFS_XFLAG_FILESTREAM,		"S", "filestream"	},
+	{ FS_XFLAG_REALTIME,		"r", "realtime"		},
+	{ FS_XFLAG_PREALLOC,		"p", "prealloc"		},
+	{ FS_XFLAG_IMMUTABLE,		"i", "immutable"	},
+	{ FS_XFLAG_APPEND,		"a", "append-only"	},
+	{ FS_XFLAG_SYNC,		"s", "sync"		},
+	{ FS_XFLAG_NOATIME,		"A", "no-atime"		},
+	{ FS_XFLAG_NODUMP,		"d", "no-dump"		},
+	{ FS_XFLAG_RTINHERIT,		"t", "rt-inherit"	},
+	{ FS_XFLAG_PROJINHERIT,		"P", "proj-inherit"	},
+	{ FS_XFLAG_NOSYMLINKS,		"n", "nosymlinks"	},
+	{ FS_XFLAG_EXTSIZE,		"e", "extsize"		},
+	{ FS_XFLAG_EXTSZINHERIT,	"E", "extsz-inherit"	},
+	{ FS_XFLAG_NODEFRAG,		"f", "no-defrag"	},
+	{ FS_XFLAG_FILESTREAM,		"S", "filestream"	},
+	{ FS_XFLAG_DAX,			"x", "dax"		},
+	{ FS_XFLAG_COWEXTSIZE,		"C", "cowextsize"	},
 	{ 0, NULL, NULL }
 };
-#define CHATTR_XFLAG_LIST	"r"/*p*/"iasAdtPneEfS"
+#define CHATTR_XFLAG_LIST	"r"/*p*/"iasAdtPneEfSxC"
 
 static void
 lsattr_help(void)
@@ -74,6 +75,8 @@ lsattr_help(void)
 " E -- children created in this directory inherit the extent size value\n"
 " f -- do not include this file when defragmenting the filesystem\n"
 " S -- enable filestreams allocator for this directory\n"
+" x -- Use direct access (DAX) for data in this file\n"
+" C -- for files with shared blocks, observe the inode CoW extent size value\n"
 "\n"
 " Options:\n"
 " -R -- recursively descend (useful when current file is a directory)\n"
@@ -109,6 +112,8 @@ chattr_help(void)
 " +/-E -- set/clear the extent-size inheritance flag\n"
 " +/-f -- set/clear the no-defrag flag\n"
 " +/-S -- set/clear the filestreams allocator flag\n"
+" +/-x -- set/clear the direct access (DAX) flag\n"
+" +/-C -- set/clear the CoW extent-size flag\n"
 " Note1: user must have certain capabilities to modify immutable/append-only.\n"
 " Note2: immutable/append-only files cannot be deleted; removing these files\n"
 "        requires the immutable/append-only flag to be cleared first.\n"
@@ -170,7 +175,7 @@ lsattr_callback(
 	if ((fd = open(path, O_RDONLY)) == -1)
 		fprintf(stderr, _("%s: cannot open %s: %s\n"),
 			progname, path, strerror(errno));
-	else if ((xfsctl(path, fd, XFS_IOC_FSGETXATTR, &fsx)) < 0)
+	else if ((xfsctl(path, fd, FS_IOC_FSGETXATTR, &fsx)) < 0)
 		fprintf(stderr, _("%s: cannot get flags on %s: %s\n"),
 			progname, path, strerror(errno));
 	else
@@ -217,7 +222,7 @@ lsattr_f(
 	if (recurse_all || recurse_dir) {
 		nftw(name, lsattr_callback,
 			100, FTW_PHYS | FTW_MOUNT | FTW_DEPTH);
-	} else if ((xfsctl(name, file->fd, XFS_IOC_FSGETXATTR, &fsx)) < 0) {
+	} else if ((xfsctl(name, file->fd, FS_IOC_FSGETXATTR, &fsx)) < 0) {
 		fprintf(stderr, _("%s: cannot get flags on %s: %s\n"),
 			progname, name, strerror(errno));
 	} else {
@@ -246,13 +251,13 @@ chattr_callback(
 	if ((fd = open(path, O_RDONLY)) == -1) {
 		fprintf(stderr, _("%s: cannot open %s: %s\n"),
 			progname, path, strerror(errno));
-	} else if (xfsctl(path, fd, XFS_IOC_FSGETXATTR, &attr) < 0) {
+	} else if (xfsctl(path, fd, FS_IOC_FSGETXATTR, &attr) < 0) {
 		fprintf(stderr, _("%s: cannot get flags on %s: %s\n"),
 			progname, path, strerror(errno));
 	} else {
 		attr.fsx_xflags |= orflags;
 		attr.fsx_xflags &= ~andflags;
-		if (xfsctl(path, fd, XFS_IOC_FSSETXATTR, &attr) < 0)
+		if (xfsctl(path, fd, FS_IOC_FSSETXATTR, &attr) < 0)
 			fprintf(stderr, _("%s: cannot set flags on %s: %s\n"),
 				progname, path, strerror(errno));
 	}
@@ -317,13 +322,13 @@ chattr_f(
 	if (recurse_all || recurse_dir) {
 		nftw(name, chattr_callback,
 			100, FTW_PHYS | FTW_MOUNT | FTW_DEPTH);
-	} else if (xfsctl(name, file->fd, XFS_IOC_FSGETXATTR, &attr) < 0) {
+	} else if (xfsctl(name, file->fd, FS_IOC_FSGETXATTR, &attr) < 0) {
 		fprintf(stderr, _("%s: cannot get flags on %s: %s\n"),
 			progname, name, strerror(errno));
 	} else {
 		attr.fsx_xflags |= orflags;
 		attr.fsx_xflags &= ~andflags;
-		if (xfsctl(name, file->fd, XFS_IOC_FSSETXATTR, &attr) < 0)
+		if (xfsctl(name, file->fd, FS_IOC_FSSETXATTR, &attr) < 0)
 			fprintf(stderr, _("%s: cannot set flags on %s: %s\n"),
 				progname, name, strerror(errno));
 	}
@@ -338,7 +343,7 @@ attr_init(void)
 	chattr_cmd.args = _("[-R|-D] [+/-"CHATTR_XFLAG_LIST"]");
 	chattr_cmd.argmin = 1;
 	chattr_cmd.argmax = -1;
-	chattr_cmd.flags = CMD_NOMAP_OK;
+	chattr_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
 	chattr_cmd.oneline =
 		_("change extended inode flags on the currently open file");
 	chattr_cmd.help = chattr_help;

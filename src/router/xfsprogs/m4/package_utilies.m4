@@ -1,3 +1,6 @@
+# Path to search an utility
+PATH=/bin:/usr/bin:/usr/local/bin:/usr/freeware/bin:/opt/local/bin
+
 #
 # Check for specified utility (env var) - if unset, fail.
 #
@@ -40,22 +43,22 @@ AC_DEFUN([AC_PACKAGE_UTILITIES],
     AC_PACKAGE_NEED_UTILITY($1, "$cc", cc, [C compiler])
 
     if test -z "$MAKE"; then
-        AC_PATH_PROG(MAKE, gmake,, /usr/bin:/usr/local/bin:/usr/freeware/bin)
+        AC_PATH_PROG(MAKE, gmake,, $PATH)
     fi
     if test -z "$MAKE"; then
-        AC_PATH_PROG(MAKE, make,, /usr/bin)
+        AC_PATH_PROG(MAKE, make,, $PATH)
     fi
     make=$MAKE
     AC_SUBST(make)
     AC_PACKAGE_NEED_UTILITY($1, "$make", make, [GNU make])
 
     if test -z "$TAR"; then
-        AC_PATH_PROG(TAR, tar,, /usr/freeware/bin:/bin:/usr/local/bin:/usr/bin)
+        AC_PATH_PROG(TAR, tar,, $PATH)
     fi
     tar=$TAR
     AC_SUBST(tar)
     if test -z "$ZIP"; then
-        AC_PATH_PROG(ZIP, gzip,, /bin:/usr/bin:/usr/local/bin:/usr/freeware/bin)
+        AC_PATH_PROG(ZIP, gzip,, $PATH)
     fi
 
     zip=$ZIP
@@ -97,21 +100,21 @@ AC_DEFUN([AC_PACKAGE_UTILITIES],
 
     if test "$enable_gettext" = yes; then
         if test -z "$MSGFMT"; then
-                AC_PATH_PROG(MSGFMT, msgfmt,, /usr/bin:/usr/local/bin:/usr/freeware/bin)
+                AC_PATH_PROG(MSGFMT, msgfmt,, $PATH)
         fi
         msgfmt=$MSGFMT
         AC_SUBST(msgfmt)
         AC_PACKAGE_NEED_UTILITY($1, "$msgfmt", msgfmt, gettext)
 
         if test -z "$MSGMERGE"; then
-                AC_PATH_PROG(MSGMERGE, msgmerge,, /usr/bin:/usr/local/bin:/usr/freeware/bin)
+                AC_PATH_PROG(MSGMERGE, msgmerge,, $PATH)
         fi
         msgmerge=$MSGMERGE
         AC_SUBST(msgmerge)
         AC_PACKAGE_NEED_UTILITY($1, "$msgmerge", msgmerge, gettext)
 
         if test -z "$XGETTEXT"; then
-                AC_PATH_PROG(XGETTEXT, xgettext,, /usr/bin:/usr/local/bin:/usr/freeware/bin)
+                AC_PATH_PROG(XGETTEXT, xgettext,, $PATH)
         fi
         xgettext=$XGETTEXT
         AC_SUBST(xgettext)
@@ -119,7 +122,7 @@ AC_DEFUN([AC_PACKAGE_UTILITIES],
     fi
 
     if test -z "$RPM"; then
-        AC_PATH_PROG(RPM, rpm,, /bin:/usr/bin:/usr/freeware/bin)
+        AC_PATH_PROG(RPM, rpm,, $PATH)
     fi
     rpm=$RPM
     AC_SUBST(rpm)

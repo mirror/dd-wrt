@@ -10,19 +10,20 @@ LSRCFILES = README
 LTCOMMAND = xfs_repair
 
 HFILES = agheader.h attr_repair.h avl.h avl64.h bmap.h btree.h \
-	dinode.h dir.h dir2.h err_protos.h globals.h incore.h protos.h rt.h \
-	progress.h scan.h versions.h prefetch.h threads.h
+	da_util.h dinode.h dir2.h err_protos.h globals.h incore.h protos.h \
+	rt.h progress.h scan.h versions.h prefetch.h rmap.h slab.h threads.h
 
 CFILES = agheader.c attr_repair.c avl.c avl64.c bmap.c btree.c \
-	dino_chunks.c dinode.c dir.c dir2.c globals.c incore.c \
+	da_util.c dino_chunks.c dinode.c dir2.c globals.c incore.c \
 	incore_bmc.c init.c incore_ext.c incore_ino.c phase1.c \
 	phase2.c phase3.c phase4.c phase5.c phase6.c phase7.c \
-	progress.c prefetch.c rt.c sb.c scan.c threads.c \
+	progress.c prefetch.c rmap.c rt.c sb.c scan.c slab.c threads.c \
 	versions.c xfs_repair.c
 
-LLDLIBS = $(LIBXFS) $(LIBXLOG) $(LIBUUID) $(LIBRT) $(LIBPTHREAD)
-LTDEPENDENCIES = $(LIBXFS) $(LIBXLOG)
-LLDFLAGS = -static
+LLDLIBS = $(LIBXFS) $(LIBXLOG) $(LIBXCMD) $(LIBUUID) \
+	$(LIBRT) $(LIBPTHREAD) $(LIBBLKID)
+LTDEPENDENCIES = $(LIBXFS) $(LIBXLOG) $(LIBXCMD)
+LLDFLAGS = -static-libtool-libs
 
 default: depend $(LTCOMMAND)
 

@@ -4,7 +4,7 @@
 #
 
 OPTS=""
-USAGE="Usage: xfs_freeze -f | -u <mountpoint>"
+USAGE="Usage: xfs_freeze [-V] [-f | -u] <mountpoint>"
 DIRNAME=`dirname $0`
 VERSION=false
 FREEZE=false

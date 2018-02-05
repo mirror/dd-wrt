@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include "command.h"
 #include "freesp.h"
 #include "io.h"
@@ -96,6 +96,10 @@ freesp_f(
 
 	if (!init(argc, argv))
 		return 0;
+
+	if (dumpflag)
+		dbprintf("%8s %8s %8s\n", "agno", "agbno", "len");
+
 	for (agno = 0; agno < mp->m_sb.sb_agcount; agno++)  {
 		if (inaglist(agno))
 			scan_ag(agno);
@@ -231,6 +235,7 @@ scan_freelist(
 	xfs_agfl_t	*agfl;
 	xfs_agblock_t	bno;
 	int		i;
+	__be32		*agfl_bno;
 
 	if (be32_to_cpu(agf->agf_flcount) == 0)
 		return;
@@ -239,8 +244,22 @@ scan_freelist(
 				XFS_FSS_TO_BB(mp, 1), DB_RING_IGN, NULL);
 	agfl = iocur_top->data;
 	i = be32_to_cpu(agf->agf_flfirst);
+
+	/* open coded XFS_BUF_TO_AGFL_BNO */
+	agfl_bno = xfs_sb_version_hascrc(&mp->m_sb) ? &agfl->agfl_bno[0]
+						   : (__be32 *)agfl;
+
+	/* verify agf values before proceeding */
+	if (be32_to_cpu(agf->agf_flfirst) >= XFS_AGFL_SIZE(mp) ||
+	    be32_to_cpu(agf->agf_fllast) >= XFS_AGFL_SIZE(mp)) {
+		dbprintf(_("agf %d freelist blocks bad, skipping "
+			  "freelist scan\n"), i);
+		pop_cur();
+		return;
+	}
+
 	for (;;) {
-		bno = be32_to_cpu(agfl->agfl_bno[i]);
+		bno = be32_to_cpu(agfl_bno[i]);
 		addtohist(seqno, bno, 1);
 		if (i == be32_to_cpu(agf->agf_fllast))
 			break;
@@ -286,7 +305,8 @@ scanfunc_bno(
 	xfs_alloc_ptr_t		*pp;
 	xfs_alloc_rec_t		*rp;
 
-	if (be32_to_cpu(block->bb_magic) != XFS_ABTB_MAGIC)
+	if (!(be32_to_cpu(block->bb_magic) == XFS_ABTB_MAGIC ||
+	      be32_to_cpu(block->bb_magic) == XFS_ABTB_CRC_MAGIC))
 		return;
 
 	if (level == 0) {
@@ -313,7 +333,8 @@ scanfunc_cnt(
 	xfs_alloc_ptr_t		*pp;
 	xfs_alloc_rec_t		*rp;
 
-	if (be32_to_cpu(block->bb_magic) != XFS_ABTC_MAGIC)
+	if (!(be32_to_cpu(block->bb_magic) == XFS_ABTC_MAGIC ||
+	      be32_to_cpu(block->bb_magic) == XFS_ABTC_CRC_MAGIC))
 		return;
 
 	if (level == 0) {

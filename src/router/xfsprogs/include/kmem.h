@@ -44,11 +44,11 @@ kmem_zone_free(kmem_zone_t *zone, void *ptr)
 extern void	*kmem_alloc(size_t, int);
 extern void	*kmem_zalloc(size_t, int);
 
-static inline void 
+static inline void
 kmem_free(void *ptr) {
 	free(ptr);
 }
 
-extern void	*kmem_realloc(void *, size_t, size_t, int);
+extern void	*kmem_realloc(void *, size_t, int);
 
 #endif

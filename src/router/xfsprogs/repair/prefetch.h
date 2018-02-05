@@ -4,6 +4,7 @@
 #include <semaphore.h>
 #include "incore.h"
 
+struct work_queue;
 
 extern int 	do_prefetch;
 
@@ -39,6 +40,15 @@ start_inode_prefetch(
 	xfs_agnumber_t		agno,
 	int			dirs_only,
 	prefetch_args_t		*prev_args);
+
+void
+do_inode_prefetch(
+	struct xfs_mount	*mp,
+	int			stride,
+	void			(*func)(struct work_queue *,
+					xfs_agnumber_t, void *),
+	bool			check_cache,
+	bool			dirs_only);
 
 void
 wait_for_inode_prefetch(

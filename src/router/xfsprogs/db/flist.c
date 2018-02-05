@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include "type.h"
 #include "faddr.h"
 #include "fprint.h"
@@ -409,6 +409,41 @@ flist_split(
 	v[nv].tok = NULL;
 	v[nv].tokty = TT_END;
 	return v;
+}
+
+/*
+ * Given a set of fields, scan for a field of the given type.
+ * Return an flist leading to the first found field
+ * of that type.
+ * Return NULL if no field of the given type is found.
+ */
+flist_t *
+flist_find_ftyp(
+	const field_t *fields,
+	fldt_t	type)
+{
+	flist_t	*fl;
+	const field_t	*f;
+	const ftattr_t  *fa;
+
+	for (f = fields; f->name; f++) {
+		fl = flist_make(f->name);
+		fl->fld = f;
+		if (f->ftyp == type)
+			return fl;
+		fa = &ftattrtab[f->ftyp];
+		if (fa->subfld) {
+			flist_t *nfl;
+
+			nfl = flist_find_ftyp(fa->subfld, type);
+			if (nfl) {
+				fl->child = nfl;
+				return fl;
+			}
+		}
+		flist_free(fl);
+	}
+	return NULL;
 }
 
 static void

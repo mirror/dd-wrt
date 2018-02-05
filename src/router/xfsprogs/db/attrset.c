@@ -16,7 +16,7 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/libxfs.h>
+#include "libxfs.h"
 #include "command.h"
 #include "attrset.h"
 #include "io.h"
@@ -146,12 +146,12 @@ attr_set_f(
 			dbprintf(_("cannot allocate buffer (%d)\n"), valuelen);
 			goto out;
 		}
-		memset(value, 0xfeedface, valuelen);
+		memset(value, 'v', valuelen);
 	} else {
 		value = NULL;
 	}
 
-	if (libxfs_iget(mp, NULL, iocur_top->ino, 0, &ip, 0)) {
+	if (libxfs_iget(mp, NULL, iocur_top->ino, 0, &ip)) {
 		dbprintf(_("failed to iget inode %llu\n"),
 			(unsigned long long)iocur_top->ino);
 		goto out;
@@ -170,7 +170,7 @@ attr_set_f(
 out:
 	mp->m_flags &= ~LIBXFS_MOUNT_COMPAT_ATTR;
 	if (ip)
-		libxfs_iput(ip, 0);
+		IRELE(ip);
 	if (value)
 		free(value);
 	return 0;
@@ -226,7 +226,7 @@ attr_remove_f(
 
 	name = argv[optind];
 
-	if (libxfs_iget(mp, NULL, iocur_top->ino, 0, &ip, 0)) {
+	if (libxfs_iget(mp, NULL, iocur_top->ino, 0, &ip)) {
 		dbprintf(_("failed to iget inode %llu\n"),
 			(unsigned long long)iocur_top->ino);
 		goto out;
@@ -244,6 +244,6 @@ attr_remove_f(
 out:
 	mp->m_flags &= ~LIBXFS_MOUNT_COMPAT_ATTR;
 	if (ip)
-		libxfs_iput(ip, 0);
+		IRELE(ip);
 	return 0;
 }

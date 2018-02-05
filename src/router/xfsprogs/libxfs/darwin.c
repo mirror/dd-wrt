@@ -20,20 +20,20 @@
 #include <sys/stat.h>
 #include <sys/mount.h>
 #include <sys/ioctl.h>
-#include <xfs/libxfs.h>
 #include <sys/sysctl.h>
+#include "libxfs.h"
 
 int platform_has_uuid = 1;
 extern char *progname;
 
 int
-platform_check_ismounted(char *name, char *block, struct stat64 *s, int verbose)
+platform_check_ismounted(char *name, char *block, struct stat *s, int verbose)
 {
 	return 0;
 }
 
 int
-platform_check_iswritable(char *name, char *block, struct stat64 *s, int fatal)
+platform_check_iswritable(char *name, char *block, struct stat *s)
 {
 	int	fd, writable;
 
@@ -50,7 +50,7 @@ platform_check_iswritable(char *name, char *block, struct stat64 *s, int fatal)
 		exit(1);
 	}
 	close(fd);
-	return (writable == 0);
+	return writable == 0;
 }
 
 int
@@ -69,9 +69,9 @@ void
 platform_findsizes(char *path, int fd, long long *sz, int *bsz)
 {
 	__uint64_t	size;
-	struct stat64	st;
+	struct stat	st;
 
-	if (fstat64(fd, &st) < 0) {
+	if (fstat(fd, &st) < 0) {
 		fprintf(stderr,
 			_("%s: cannot stat the device file \"%s\": %s\n"),
 			progname, path, strerror(errno));
@@ -112,7 +112,7 @@ platform_direct_blockdev(void)
 int
 platform_align_blockdev(void)
 {
-	return (sizeof(void *));
+	return sizeof(void *);
 }
 
 int
@@ -142,4 +142,3 @@ platform_physmem(void)
 	}
 	return physmem >> 10;
 }
-

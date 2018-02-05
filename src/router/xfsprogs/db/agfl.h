@@ -18,6 +18,8 @@
 
 extern const struct field	agfl_flds[];
 extern const struct field	agfl_hfld[];
+extern const struct field	agfl_crc_flds[];
+extern const struct field	agfl_crc_hfld[];
 
 extern void	agfl_init(void);
 extern int	agfl_size(void *obj, int startoff, int idx);

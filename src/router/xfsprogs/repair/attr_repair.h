@@ -37,35 +37,22 @@ typedef __int32_t	xfs_acl_type_t;
 typedef __int32_t	xfs_acl_tag_t;
 typedef __int32_t	xfs_acl_id_t;
 
-typedef struct xfs_acl_entry {
+/*
+ * "icacl" = in-core ACL. There is no equivalent in the XFS kernel code,
+ * so they are magic names just for repair. The "acl" types are what the kernel
+ * code uses for the on-disk format names, so use them here too for the on-disk
+ * ACL format definitions.
+ */
+struct xfs_icacl_entry {
 	xfs_acl_tag_t	ae_tag;
 	xfs_acl_id_t	ae_id;
 	xfs_acl_perm_t	ae_perm;
-} xfs_acl_entry_t;
+};
 
-#define XFS_ACL_MAX_ENTRIES	25
-typedef struct xfs_acl {
-	__int32_t	acl_cnt;
-	xfs_acl_entry_t	acl_entry[XFS_ACL_MAX_ENTRIES];
-} xfs_acl_t;
-
-typedef struct xfs_acl_entry_disk {
-	__be32		ae_tag;
-	__be32		ae_id;
-	__be16		ae_perm;
-} xfs_acl_entry_disk_t;
-
-typedef struct xfs_acl_disk {
-	__be32		acl_cnt;
-	xfs_acl_entry_disk_t	acl_entry[XFS_ACL_MAX_ENTRIES];
-} xfs_acl_disk_t;
-
-
-#define SGI_ACL_FILE	"SGI_ACL_FILE"
-#define SGI_ACL_DEFAULT	"SGI_ACL_DEFAULT"
-#define SGI_ACL_FILE_SIZE	(sizeof(SGI_ACL_FILE)-1)
-#define SGI_ACL_DEFAULT_SIZE	(sizeof(SGI_ACL_DEFAULT)-1)
-
+struct xfs_icacl {
+	__int32_t		acl_cnt;
+	struct xfs_icacl_entry	acl_entry[0];
+};
 
 /*
  * Mandatory Access Control Labels (IRIX)

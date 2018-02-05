@@ -2,10 +2,15 @@
 .SH NAME
 xfs_freeze \- suspend access to an XFS filesystem
 .SH SYNOPSIS
-.B xfs_freeze \-f
+.B xfs_freeze
+[
+.B \-f
 |
 .B \-u
+]
 .I mount-point
+.br
+.B xfs_freeze \-V
 .fi
 .SH DESCRIPTION
 .B xfs_freeze
@@ -24,6 +29,7 @@ argument is the pathname of the directory where the filesystem
 is mounted.
 The filesystem must be mounted to be frozen (see
 .BR mount (8)).
+.PP
 .PP
 The
 .B \-f
@@ -48,7 +54,13 @@ operations to continue.
 Any filesystem modifications that were blocked by the freeze are
 unblocked and allowed to complete.
 .PP
-One of
+The
+.B \-V
+flag prints the version number and exits.
+.PP
+Unless
+.B \-V
+is specified, one of
 .B \-f
 or
 .B \-u

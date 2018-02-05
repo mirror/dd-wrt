@@ -37,20 +37,32 @@
 #include <sys/sysmacros.h>
 #include <sys/fs/xfs_fsops.h>
 #include <sys/fs/xfs_itable.h>
+#include <mntent.h>
 
 #define __int8_t	char
 #define __int16_t	short
 #define __uint8_t	unsigned char
 #define __uint16_t	unsigned short
-#define loff_t		off64_t
-typedef off64_t		xfs_off_t;
+
+typedef unsigned char		__u8;
+typedef signed char		__s8;
+typedef unsigned short		__u16;
+typedef signed short		__s16;
+typedef unsigned int		__u32;
+typedef signed int		__s32;
+typedef unsigned long long int	__u64;
+typedef signed long long int	__s64;
+
+typedef off_t		xfs_off_t;
 typedef __int64_t	xfs_ino_t;
 typedef __int32_t	xfs_dev_t;
 typedef __int64_t	xfs_daddr_t;
-typedef char*		xfs_caddr_t;
+typedef __u32		xfs_nlink_t;
 
 #define xfs_flock64	flock64
 #define xfs_flock64_t	struct flock64
+
+#define EFSBADCRC	991	/* Bad CRC detected */
 
 typedef struct xfs_error_injection {
 	__int32_t	fd;
@@ -174,8 +186,6 @@ typedef struct xfs_efd_log_format_32 {
 #define inline		__inline
 #endif
 
-#define constpp		char * const *
-
 /*ARGSUSED*/
 static __inline__ int xfsctl(const char *path, int fd, int cmd, void *arg)
 {
@@ -292,13 +302,13 @@ static __inline__ void platform_getoptreset(void)
 
 static __inline__ int platform_uuid_compare(uuid_t *uu1, uuid_t *uu2)
 {
-	uint_t status;
+	__uint32_t status;
 	return uuid_compare(uu1, uu2, &status);
 }
 
 static __inline__ void platform_uuid_unparse(uuid_t *uu, char *buffer)
 {
-	uint_t status;
+	__uint32_t status;
 	char *s;
 	uuid_to_string(uu, &s, &status);
 	if (status == uuid_s_ok)
@@ -309,7 +319,7 @@ static __inline__ void platform_uuid_unparse(uuid_t *uu, char *buffer)
 
 static __inline__ int platform_uuid_parse(char *buffer, uuid_t *uu)
 {
-	uint_t status;
+	__uint32_t status;
 	uuid_from_string(buffer, uu, &status);
 	return (status == uuid_s_ok);
 }
@@ -322,13 +332,13 @@ static __inline__ int platform_uuid_is_null(uuid_t *uu)
 
 static __inline__ void platform_uuid_generate(uuid_t *uu)
 {
-	uint_t status;
+	__uint32_t status;
 	uuid_create(uu, &status);
 }
 
 static __inline__ void platform_uuid_clear(uuid_t *uu)
 {
-	uint_t status;
+	__uint32_t status;
 	uuid_create_nil(uu, &status);
 }
 
@@ -368,8 +378,6 @@ static __inline__ char * strsep(char **s, const char *ct)
 #define __XFS_FS_H__	1
 
 #define XFS_IOC_DIOINFO			F_DIOINFO
-#define XFS_IOC_FSGETXATTR		F_FSGETXATTR
-#define XFS_IOC_FSSETXATTR		F_FSSETXATTR
 #define XFS_IOC_ALLOCSP64		F_ALLOCSP64
 #define XFS_IOC_FREESP64		F_FREESP64
 #define XFS_IOC_GETBMAP			F_GETBMAP
@@ -412,6 +420,72 @@ static __inline__ char * strsep(char **s, const char *ct)
 
 #define	_AIOCB64_T_DEFINED		1
 
-#define	XFS_XFLAG_NODEFRAG		0x00002000
+/* check whether we have to define FS_IOC_FS[GS]ETXATTR ourselves */
+#ifndef HAVE_FSXATTR
+struct fsxattr {
+	__u32		fsx_xflags;	/* xflags field value (get/set) */
+	__u32		fsx_extsize;	/* extsize field value (get/set)*/
+	__u32		fsx_nextents;	/* nextents field value (get)	*/
+	__u32		fsx_projid;	/* project identifier (get/set) */
+	__u32		fsx_cowextsize;	/* cow extsize field value (get/set) */
+	unsigned char	fsx_pad[8];
+};
+
+/*
+ * Flags for the fsx_xflags field
+ */
+#define FS_XFLAG_REALTIME	0x00000001	/* data in realtime volume */
+#define FS_XFLAG_PREALLOC	0x00000002	/* preallocated file extents */
+#define FS_XFLAG_IMMUTABLE	0x00000008	/* file cannot be modified */
+#define FS_XFLAG_APPEND		0x00000010	/* all writes append */
+#define FS_XFLAG_SYNC		0x00000020	/* all writes synchronous */
+#define FS_XFLAG_NOATIME	0x00000040	/* do not update access time */
+#define FS_XFLAG_NODUMP		0x00000080	/* do not include in backups */
+#define FS_XFLAG_RTINHERIT	0x00000100	/* create with rt bit set */
+#define FS_XFLAG_PROJINHERIT	0x00000200	/* create with parents projid */
+#define FS_XFLAG_NOSYMLINKS	0x00000400	/* disallow symlink creation */
+#define FS_XFLAG_EXTSIZE	0x00000800	/* extent size allocator hint */
+#define FS_XFLAG_EXTSZINHERIT	0x00001000	/* inherit inode extent size */
+#define FS_XFLAG_NODEFRAG	0x00002000	/* do not defragment */
+#define FS_XFLAG_FILESTREAM	0x00004000	/* use filestream allocator */
+#define FS_XFLAG_DAX		0x00008000	/* use DAX for IO */
+#define FS_XFLAG_HASATTR	0x80000000	/* no DIFLAG for this	*/
+
+#define FS_IOC_FSGETXATTR		F_FSGETXATTR
+#define FS_IOC_FSSETXATTR		F_FSSETXATTR
+
+#endif
+
+#ifndef FS_XFLAG_COWEXTSIZE
+#define FS_XFLAG_COWEXTSIZE	0x00010000	/* CoW extent size allocator hint */
+#endif
+
+/**
+ * Abstraction of mountpoints.
+ */
+struct mntent_cursor {
+	FILE *mtabp;
+};
+
+static inline int platform_mntent_open(struct mntent_cursor * cursor, char *mtab)
+{
+	cursor->mtabp = setmntent(mtab, "r");
+	if (!cursor->mtabp) {
+		fprintf(stderr, "Error: cannot read %s\n", mtab);
+		return 1;
+	}
+	return 0;
+}
+
+static inline struct mntent * platform_mntent_next(struct mntent_cursor * cursor)
+{
+	return getmntent(cursor->mtabp);
+}
+
+static inline void platform_mntent_close(struct mntent_cursor * cursor)
+{
+	endmntent(cursor->mtabp);
+}
+
 
 #endif	/* __XFS_IRIX_H__ */

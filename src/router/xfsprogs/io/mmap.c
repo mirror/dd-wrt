@@ -16,9 +16,8 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/xfs.h>
-#include <xfs/command.h>
-#include <xfs/input.h>
+#include "command.h"
+#include "input.h"
 #include <sys/mman.h>
 #include <signal.h>
 #include "init.h"
@@ -29,6 +28,9 @@ static cmdinfo_t mread_cmd;
 static cmdinfo_t msync_cmd;
 static cmdinfo_t munmap_cmd;
 static cmdinfo_t mwrite_cmd;
+#ifdef HAVE_MREMAP
+static cmdinfo_t mremap_cmd;
+#endif /* HAVE_MREMAP */
 
 mmap_region_t	*maptable;
 int		mapcount;
@@ -144,6 +146,7 @@ mmap_help(void)
 " -r -- map with PROT_READ protection\n"
 " -w -- map with PROT_WRITE protection\n"
 " -x -- map with PROT_EXEC protection\n"
+" -s <size> -- first do mmap(size)/munmap(size), try to reserve some free space\n"
 " If no protection mode is specified, all are used by default.\n"
 "\n"));
 }
@@ -154,8 +157,8 @@ mmap_f(
 	char		**argv)
 {
 	off64_t		offset;
-	ssize_t		length;
-	void		*address;
+	ssize_t		length = 0, length2 = 0;
+	void		*address = NULL;
 	char		*filename;
 	size_t		blocksize, sectsize;
 	int		c, prot = 0;
@@ -164,7 +167,7 @@ mmap_f(
 		if (mapping)
 			return maplist_f();
 		fprintf(stderr, file ?
-			_("no mapped regions, try 'help mmap'\n") : 
+			_("no mapped regions, try 'help mmap'\n") :
 			_("no files are open, try 'help open'\n"));
 		return 0;
 	} else if (argc == 2) {
@@ -179,7 +182,9 @@ mmap_f(
 		return 0;
 	}
 
-	while ((c = getopt(argc, argv, "rwx")) != EOF) {
+	init_cvtnum(&blocksize, &sectsize);
+
+	while ((c = getopt(argc, argv, "rwxs:")) != EOF) {
 		switch (c) {
 		case 'r':
 			prot |= PROT_READ;
@@ -189,6 +194,9 @@ mmap_f(
 			break;
 		case 'x':
 			prot |= PROT_EXEC;
+			break;
+		case 's':
+			length2 = cvtnum(blocksize, sectsize, optarg);
 			break;
 		default:
 			return command_usage(&mmap_cmd);
@@ -200,7 +208,6 @@ mmap_f(
 	if (optind != argc - 2)
 		return command_usage(&mmap_cmd);
 
-	init_cvtnum(&blocksize, &sectsize);
 	offset = cvtnum(blocksize, sectsize, argv[optind]);
 	if (offset < 0) {
 		printf(_("non-numeric offset argument -- %s\n"), argv[optind]);
@@ -219,7 +226,19 @@ mmap_f(
 		return 0;
 	}
 
-	address = mmap(NULL, length, prot, MAP_SHARED, file->fd, offset);
+	/*
+	 * mmap and munmap memory area of length2 region is helpful to
+	 * make a region of extendible free memory. It's generally used
+	 * for later mremap operation(no MREMAP_MAYMOVE flag). But there
+	 * isn't guarantee that the memory after length (up to length2)
+	 * will stay free.
+	 */
+	if (length2 > length) {
+		address = mmap(NULL, length2, prot,
+		               MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+		munmap(address, length2);
+	}
+	address = mmap(address, length, prot, MAP_SHARED, file->fd, offset);
 	if (address == MAP_FAILED) {
 		perror("mmap");
 		free(filename);
@@ -574,6 +593,79 @@ mwrite_f(
 	return 0;
 }
 
+#ifdef HAVE_MREMAP
+static void
+mremap_help(void)
+{
+	printf(_(
+"\n"
+" resizes the current memory mapping\n"
+"\n"
+" Examples:\n"
+" 'mremap 8192' - resizes the current mapping to 8192 bytes.\n"
+"\n"
+" Resizes the mappping, growing or shrinking from the current size.\n"
+" The default stored value is 'X', repeated to fill the range specified.\n"
+" -f <new_address> -- use MREMAP_FIXED flag to mremap on new_address\n"
+" -m -- use the MREMAP_MAYMOVE flag\n"
+"\n"));
+}
+
+int
+mremap_f(
+	int		argc,
+	char		**argv)
+{
+	ssize_t		new_length;
+	void		*new_addr = NULL;
+	int		flags = 0;
+	int		c;
+	size_t		blocksize, sectsize;
+
+	init_cvtnum(&blocksize, &sectsize);
+
+	while ((c = getopt(argc, argv, "f:m")) != EOF) {
+		switch (c) {
+		case 'f':
+			flags = MREMAP_FIXED|MREMAP_MAYMOVE;
+			new_addr = (void *)cvtnum(blocksize, sectsize,
+			                          optarg);
+			break;
+		case 'm':
+			flags = MREMAP_MAYMOVE;
+			break;
+		default:
+			return command_usage(&mremap_cmd);
+		}
+	}
+
+	if (optind != argc - 1)
+		return command_usage(&mremap_cmd);
+
+	new_length = cvtnum(blocksize, sectsize, argv[optind]);
+	if (new_length < 0) {
+		printf(_("non-numeric offset argument -- %s\n"),
+			argv[optind]);
+		return 0;
+	}
+
+	if (!new_addr)
+		new_addr = mremap(mapping->addr, mapping->length,
+		                  new_length, flags);
+	else
+		new_addr = mremap(mapping->addr, mapping->length,
+		                  new_length, flags, new_addr);
+	if (new_addr == MAP_FAILED)
+		perror("mremap");
+	else {
+		mapping->addr = new_addr;
+		mapping->length = new_length;
+	}
+
+	return 0;
+}
+#endif /* HAVE_MREMAP */
+
 void
 mmap_init(void)
 {
@@ -583,7 +675,7 @@ mmap_init(void)
 	mmap_cmd.argmin = 0;
 	mmap_cmd.argmax = -1;
 	mmap_cmd.flags = CMD_NOMAP_OK | CMD_NOFILE_OK | CMD_FOREIGN_OK;
-	mmap_cmd.args = _("[N] | [-rwx] [off len]");
+	mmap_cmd.args = _("[N] | [-rwx] [-s size] [off len]");
 	mmap_cmd.oneline =
 		_("mmap a range in the current file, show mappings");
 	mmap_cmd.help = mmap_help;
@@ -628,9 +720,25 @@ mmap_init(void)
 		_("writes data into a region in the current memory mapping");
 	mwrite_cmd.help = mwrite_help;
 
+#ifdef HAVE_MREMAP
+	mremap_cmd.name = "mremap";
+	mremap_cmd.altname = "mrm";
+	mremap_cmd.cfunc = mremap_f;
+	mremap_cmd.argmin = 1;
+	mremap_cmd.argmax = 3;
+	mremap_cmd.flags = CMD_NOFILE_OK | CMD_FOREIGN_OK;
+	mremap_cmd.args = _("[-m|-f <new_address>] newsize");
+	mremap_cmd.oneline =
+		_("alters the size of the current memory mapping");
+	mremap_cmd.help = mremap_help;
+#endif /* HAVE_MREMAP */
+
 	add_command(&mmap_cmd);
 	add_command(&mread_cmd);
 	add_command(&msync_cmd);
 	add_command(&munmap_cmd);
 	add_command(&mwrite_cmd);
+#ifdef HAVE_MREMAP
+	add_command(&mremap_cmd);
+#endif /* HAVE_MREMAP */
 }

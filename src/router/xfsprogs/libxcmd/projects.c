@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <xfs/project.h>
+#include "project.h"
 
 #define PROJID		"/etc/projid"
 #define PROJECT_PATHS	"/etc/projects"
@@ -176,8 +176,8 @@ getprojid(
 {
 	struct fsxattr	fsx;
 
-	if (xfsctl(name, fd, XFS_IOC_FSGETXATTR, &fsx)) {
-		perror("XFS_IOC_FSGETXATTR");
+	if (xfsctl(name, fd, FS_IOC_FSGETXATTR, &fsx)) {
+		perror("FS_IOC_FSGETXATTR");
 		return -1;
 	}
 	*projid = fsx.fsx_projid;
@@ -193,9 +193,9 @@ setprojid(
 	struct fsxattr	fsx;
 	int		error;
 
-	if ((error = xfsctl(name, fd, XFS_IOC_FSGETXATTR, &fsx)) == 0) {
+	if ((error = xfsctl(name, fd, FS_IOC_FSGETXATTR, &fsx)) == 0) {
 		fsx.fsx_projid = projid;
-		error = xfsctl(name, fd, XFS_IOC_FSSETXATTR, &fsx);
+		error = xfsctl(name, fd, FS_IOC_FSSETXATTR, &fsx);
 	}
 	return error;
 }

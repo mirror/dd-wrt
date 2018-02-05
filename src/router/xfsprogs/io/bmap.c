@@ -16,8 +16,8 @@
  * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <xfs/xfs.h>
-#include <xfs/command.h>
+#include "platform_defs.h"
+#include "command.h"
 #include "init.h"
 #include "io.h"
 
@@ -41,7 +41,9 @@ bmap_help(void)
 " Holes are marked by replacing the startblock..endblock with 'hole'.\n"
 " All the file offsets and disk blocks are in units of 512-byte blocks.\n"
 " -a -- prints the attribute fork map instead of the data fork.\n"
+" -c -- prints the copy-on-write fork map instead of the data fork.\n"
 " -d -- suppresses a DMAPI read event, offline portions shown as holes.\n"
+" -e -- print delayed allocation extents.\n"
 " -l -- also displays the length of each extent in 512-byte blocks.\n"
 " -n -- query n extents.\n"
 " -p -- obtain all unwritten extents as well (w/ -v show which are unwritten.)\n"
@@ -75,6 +77,7 @@ bmap_f(
 	int			loop = 0;
 	int			flg = 0;
 	int			aflag = 0;
+	int			cflag = 0;
 	int			lflag = 0;
 	int			nflag = 0;
 	int			pflag = 0;
@@ -85,11 +88,18 @@ bmap_f(
 	int			c;
 	int			egcnt;
 
-	while ((c = getopt(argc, argv, "adln:pv")) != EOF) {
+	while ((c = getopt(argc, argv, "acdeln:pv")) != EOF) {
 		switch (c) {
 		case 'a':	/* Attribute fork. */
 			bmv_iflags |= BMV_IF_ATTRFORK;
 			aflag = 1;
+			break;
+		case 'c':	/* CoW fork. */
+			bmv_iflags |= BMV_IF_COWFORK | BMV_IF_DELALLOC;
+			cflag = 1;
+			break;
+		case 'e':
+			bmv_iflags |= BMV_IF_DELALLOC;
 			break;
 		case 'l':	/* list number of blocks with each extent */
 			lflag = 1;
@@ -113,7 +123,7 @@ bmap_f(
 			return command_usage(&bmap_cmd);
 		}
 	}
-	if (aflag)
+	if (aflag || cflag)
 		bmv_iflags &= ~(BMV_IF_PREALLOC|BMV_IF_NO_DMAPI_READ);
 
 	if (vflag) {
@@ -125,7 +135,7 @@ bmap_f(
 			exitcode = 1;
 			return 0;
 		}
-		c = xfsctl(file->name, file->fd, XFS_IOC_FSGETXATTR, &fsx);
+		c = xfsctl(file->name, file->fd, FS_IOC_FSGETXATTR, &fsx);
 		if (c < 0) {
 			fprintf(stderr,
 				_("%s: cannot read attrs on \"%s\": %s\n"),
@@ -134,7 +144,7 @@ bmap_f(
 			return 0;
 		}
 
-		if (fsx.fsx_xflags == XFS_XFLAG_REALTIME) {
+		if (fsx.fsx_xflags == FS_XFLAG_REALTIME) {
 			/*
 			 * ag info not applicable to rt, continue
 			 * without ag output.
@@ -157,7 +167,7 @@ bmap_f(
  *	by nflag, or the initial guess number of extents (32).
  *
  *	If there are more extents than we guessed, use xfsctl
- *	(XFS_IOC_FSGETXATTR[A]) to get the extent count, realloc some more
+ *	(FS_IOC_FSGETXATTR[A]) to get the extent count, realloc some more
  *	space based on this count, and try again.
  *
  *	If the initial FGETBMAPX attempt returns EINVAL, this may mean
@@ -165,13 +175,13 @@ bmap_f(
  *	EINVAL, check the length with fstat() and return "no extents"
  *	if the length == 0.
  *
- *	Why not do the xfsctl(XFS_IOC_FSGETXATTR[A]) first?  Two reasons:
+ *	Why not do the xfsctl(FS_IOC_FSGETXATTR[A]) first?  Two reasons:
  *	(1)	The extent count may be wrong for a file with delayed
  *		allocation blocks.  The XFS_IOC_GETBMAPX forces the real
  *		allocation and fixes up the extent count.
  *	(2)	For XFS_IOC_GETBMAP[X] on a DMAPI file that has been moved
  *		offline by a DMAPI application (e.g., DMF) the
- *		XFS_IOC_FSGETXATTR only reflects the extents actually online.
+ *		FS_IOC_FSGETXATTR only reflects the extents actually online.
  *		Doing XFS_IOC_GETBMAPX call first forces that data blocks online
  *		and then everything proceeds normally (see PV #545725).
  *
@@ -207,13 +217,13 @@ bmap_f(
 			break;
 		if (map->bmv_entries < map->bmv_count-1)
 			break;
-		/* Get number of extents from xfsctl XFS_IOC_FSGETXATTR[A]
+		/* Get number of extents from xfsctl FS_IOC_FSGETXATTR[A]
 		 * syscall.
 		 */
 		i = xfsctl(file->name, file->fd, aflag ?
-				XFS_IOC_FSGETXATTRA : XFS_IOC_FSGETXATTR, &fsx);
+				XFS_IOC_FSGETXATTRA : FS_IOC_FSGETXATTR, &fsx);
 		if (i < 0) {
-			fprintf(stderr, "%s: xfsctl(XFS_IOC_FSGETXATTR%s) "
+			fprintf(stderr, "%s: xfsctl(FS_IOC_FSGETXATTR%s) "
 				"[\"%s\"]: %s\n", progname, aflag ? "A" : "",
 				file->name, strerror(errno));
 			free(map);
@@ -249,6 +259,8 @@ bmap_f(
 				map[i + 1].bmv_length - 1LL));
 			if (map[i + 1].bmv_block == -1)
 				printf(_("hole"));
+			else if (map[i + 1].bmv_block == -2)
+				printf(_("delalloc"));
 			else {
 				printf("%lld..%lld",
 					(long long) map[i + 1].bmv_block,
@@ -271,13 +283,14 @@ bmap_f(
 #define MINRANGE_WIDTH	16
 #define MINAG_WIDTH	2
 #define MINTOT_WIDTH	5
-#define NFLG		5	/* count of flags */
-#define	FLG_NULL	000000	/* Null flag */
-#define	FLG_PRE		010000	/* Unwritten extent */
-#define	FLG_BSU		001000	/* Not on begin of stripe unit  */
-#define	FLG_ESU		000100	/* Not on end   of stripe unit  */
-#define	FLG_BSW		000010	/* Not on begin of stripe width */
-#define	FLG_ESW		000001	/* Not on end   of stripe width */
+#define NFLG		6	/* count of flags */
+#define	FLG_NULL	0000000	/* Null flag */
+#define	FLG_SHARED	0100000	/* shared extent */
+#define	FLG_PRE		0010000	/* Unwritten extent */
+#define	FLG_BSU		0001000	/* Not on begin of stripe unit  */
+#define	FLG_ESU		0000100	/* Not on end   of stripe unit  */
+#define	FLG_BSW		0000010	/* Not on begin of stripe width */
+#define	FLG_ESW		0000001	/* Not on end   of stripe width */
 		int	agno;
 		off64_t agoff, bbperag;
 		int	foff_w, boff_w, aoff_w, tot_w, agno_w;
@@ -348,6 +361,10 @@ bmap_f(
 			if (map[i + 1].bmv_oflags & BMV_OF_PREALLOC) {
 				flg |= FLG_PRE;
 			}
+			if (map[i + 1].bmv_oflags & BMV_OF_SHARED)
+				flg |= FLG_SHARED;
+			if (map[i + 1].bmv_oflags & BMV_OF_DELALLOC)
+				map[i + 1].bmv_block = -2;
 			/*
 			 * If striping enabled, determine if extent starts/ends
 			 * on a stripe unit boundary.
@@ -377,6 +394,14 @@ bmap_f(
 					i,
 					foff_w, rbuf,
 					boff_w, _("hole"),
+					agno_w, "",
+					aoff_w, "",
+					tot_w, (long long)map[i+1].bmv_length);
+			} else if (map[i + 1].bmv_block == -2) {
+				printf("%4d: %-*s %-*s %*s %-*s %*lld\n",
+					i,
+					foff_w, rbuf,
+					boff_w, _("delalloc"),
 					agno_w, "",
 					aoff_w, "",
 					tot_w, (long long)map[i+1].bmv_length);
@@ -411,6 +436,8 @@ bmap_f(
 		}
 		if ((flg || pflag) && vflag > 1) {
 			printf(_(" FLAG Values:\n"));
+			printf(_("    %*.*o Shared extent\n"),
+				NFLG+1, NFLG+1, FLG_SHARED);
 			printf(_("    %*.*o Unwritten preallocated extent\n"),
 				NFLG+1, NFLG+1, FLG_PRE);
 			printf(_("    %*.*o Doesn't begin on stripe unit\n"),
