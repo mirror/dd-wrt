@@ -45,7 +45,7 @@ PKG_USER	= @pkg_user@
 PKG_GROUP	= @pkg_group@
 PKG_RELEASE	= @pkg_release@
 PKG_VERSION	= @pkg_version@
-PKG_PLATFORM	= @pkg_platform@
+PKG_PLATFORM	= linux
 PKG_DISTRIBUTION= @pkg_distribution@
 
 prefix		= @prefix@
