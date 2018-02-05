@@ -1134,6 +1134,16 @@ void start_restore_defaults(void)
 		{"wan_default", "eth0"},
 		{0, 0}
 	};
+#elif HAVE_NEWPORT
+	struct nvram_param generic[] = {
+		{"lan_ifname", "br0"},
+		{"lan_ifnames", "eth0 eth1 eth3 eth4 eth5 ath0 ath1 ath2 ath3"},
+		{"wan_ifname", "eth0"},
+		{"wan_ifname2", "eth0"},
+		{"wan_ifnames", "eth0"},
+		{"wan_default", "eth0"},
+		{0, 0}
+	};
 #elif HAVE_VENTANA
 	struct nvram_param generic[] = {
 		{"lan_ifname", "br0"},
