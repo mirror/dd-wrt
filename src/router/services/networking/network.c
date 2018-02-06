@@ -4920,8 +4920,8 @@ void start_wan_done(char *wan_ifname)
 	 * Restart DNS proxy 
 	 */
 
-	//stop_dnsmasq (); 
-	//start_dnsmasq (); 
+	stop_dnsmasq (); 
+	start_dnsmasq (); 
 
 	cprintf("start firewall\n");
 	/*
@@ -4935,23 +4935,8 @@ void start_wan_done(char *wan_ifname)
 
 	start_set_routes();
 	cprintf("routes done\n");
-	if (nvram_match("wan_proto", "pppoe")
-	    || nvram_match("wan_proto", "pppoe_dual")
-	    || nvram_match("wan_proto", "pptp")
-	    || nvram_match("wan_proto", "pppoa")
-	    || nvram_match("wan_proto", "l2tp")
-	    || nvram_match("wan_proto", "3g")) {
-		if (nvram_matchi("ppp_demand", 1)) {	// ntp and ddns will trigger DOD, so we must
-			// stop them when wan is unavaile.
-			if (f_exists("/tmp/ppp/link")) {
-				start_wan_service();
-			}
-		} else {
-			start_wan_service();
-		}
-	} else {
-		start_wan_service();
-	}
+
+	start_wan_service();
 
 #ifdef HAVE_UPNP
 	stop_upnp();
