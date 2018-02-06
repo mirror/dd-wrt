@@ -88,12 +88,12 @@ static int do_ntp(void)		// called from ntp_main and
 	if (((servers = nvram_get("ntp_server")) == NULL)
 	    || (*servers == 0)
 	    || nvram_matchi("dns_crypt", 1)) {
-		servers = "216.239.35.4 216.239.35.8 pool.ntp.org";
+		servers = "212.18.3.19 88.99.174.22 pool.ntp.org";
 	}
 
 	char *argv[] = { "ntpclient", servers, NULL };
 	if (_evalpid(argv, NULL, 20, NULL) != 0) {
-		// fprintf (stderr, "ntp returned a error\n");
+		dd_syslog(LOG_ERR, "cyclic NTP Update failed (servers %s)\n", servers);
 		return 1;
 	}
 
@@ -103,6 +103,7 @@ static int do_ntp(void)		// called from ntp_main and
 	eval("hwclock", "-w");
 	eval("hwclock", "-f", "/dev/rtc0", "-w");
 #endif
+	dd_syslog(LOG_ERR, "cyclic NTP Update success (servers %s)\n", servers);
 
 	return 0;
 }
