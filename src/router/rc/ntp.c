@@ -101,6 +101,7 @@ static int do_ntp(void)		// called from ntp_main and
 
 #if defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_LAGUNA) || defined(HAVE_STORM) || (defined(HAVE_GATEWORX) && !defined(HAVE_NOP8670))
 	eval("hwclock", "-w");
+	eval("hwclock", "-f", "/dev/rtc0", "-w");
 #endif
 
 	return 0;
