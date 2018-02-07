@@ -199,7 +199,7 @@ void start_dhcp6s(void)
 		fclose(fp);
 	}
 
-	eval("dhcp6s", "-c", "/tmp/dhcp6s.conf", "-D", nvram_get("lan_ifname"));
+	eval("dhcp6s", "-c", "/tmp/dhcp6s.conf", nvram_get("lan_ifname"));
 }
 
 void stop_dhcp6s(void)
