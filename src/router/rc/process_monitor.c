@@ -60,7 +60,7 @@ static int process_monitor_main(int argc, char **argv)
 		 * init ntp timer 
 		 */
 
-		if (do_ntp() != 0) {
+		if (nvram_geti("ntp_success") != 1 && do_ntp() != 0) {
 			dd_syslog(LOG_ERR, "Last update failed, we need to re-update after %d seconds\n", NTP_N_TIMER);
 			time = NTP_N_TIMER;
 
@@ -71,6 +71,7 @@ static int process_monitor_main(int argc, char **argv)
 			dd_timer_connect(ntp1_id, ntp_main, FIRST);
 			dd_timer_settime(ntp1_id, 0, &t4, NULL);
 		}
+		nvram_seti("ntp_success", 0);
 
 		dd_syslog(LOG_DEBUG, "We need to re-update after %d seconds\n", NTP_M_TIMER);
 
