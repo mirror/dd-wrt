@@ -278,7 +278,6 @@ void start_init_stop(void)
 	cprintf("STOP WAN\n");
 	stop_ttraff();
 	stop_wan();
-	stop_mkfiles();
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	stop_wlconf();
 #endif
@@ -626,7 +625,7 @@ int redial_main(int argc, char **argv)
 
 #ifdef HAVE_HEARTBEAT
 				if (nvram_match("wan_proto", "heartbeat")) {
-					if (is_running("bpalogin") == 0) {
+					if (pidof("bpalogin") == -1) {
 						stop_heartbeat_redial();
 						sleep(1);
 						start_heartbeat_redial();
