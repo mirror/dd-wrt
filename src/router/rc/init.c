@@ -259,12 +259,10 @@ void shutdown_system(void)
 	fprintf(stderr, "Sending SIGTERM to all processes\n");
 	kill(-1, SIGTERM);
 	sync();
-	sleep(5);
 	unmount_fs();		// try to unmount a first time
 	fprintf(stderr, "Sending SIGKILL to all processes\n");
 	kill(-1, SIGKILL);
 	sync();
-	sleep(1);
 	unmount_fs();		// try it a second time, but consider that kill already could have reached init process
 }
 
@@ -332,7 +330,6 @@ void fatal_signal(int sig)
 		cprintf("Caught signal %d.......................................\n", sig);
 
 	shutdown_system();
-	sleep(2);
 
 	/* 
 	 * Halt on SIGUSR1 
