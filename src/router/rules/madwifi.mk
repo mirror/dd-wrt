@@ -1090,6 +1090,49 @@ endif
 
 
 ifeq ($(ARCH),powerpc)
+ifeq ($(CONFIG_UNIWIP),y)
+
+madwifi:
+ifeq ($(CONFIG_BOESE),y)
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=powerpc-boese-be-elf
+else
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=powerpc-be-elf
+endif
+	make -j 4 -C madwifi.dev/madwifi.dev/tools TARGET=powerpc-be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
+
+madwifi-clean:
+ifeq ($(CONFIG_BOESE),y)
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=powerpc-boese-be-elf
+else
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=powerpc-be-elf
+endif
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
+
+madwifi-install:
+	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+ifneq ($(CONFIG_NOWIFI),y)
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install TARGET=powerpc-be-elf install
+ifeq ($(CONFIG_BOESE),y)
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=powerpc-boese-be-elf install
+else
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=powerpc-be-elf install
+endif
+endif
+else
+
+
+ifeq ($(CONFIG_WDR4900),y)
+
+madwifi:
+	@true
+
+madwifi-clean:
+	@true
+
+madwifi-install:
+	@true
+
+else
 madwifi:
 ifeq ($(CONFIG_BOESE),y)
 	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=powerpc-boese-be-elf
@@ -1117,6 +1160,6 @@ else
 endif
 endif
 endif
-
-
+endif
+endif
 
