@@ -210,6 +210,18 @@ madwifi-install:
 	@true
 
 endif
+ifeq ($(ARCHITECTURE),alpine)
+madwifi:
+	@true
+
+
+madwifi-clean:
+	@true
+
+madwifi-install:
+	@true
+
+endif
 endif
 
 ifeq ($(ARCH),armeb)
