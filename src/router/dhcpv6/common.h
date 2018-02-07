@@ -157,7 +157,11 @@ extern char *addr2str __P((struct sockaddr *));
 extern char *in6addr2str __P((struct in6_addr *, int));
 extern int in6_addrscopebyif __P((struct in6_addr *, char *));
 extern int in6_scope __P((struct in6_addr *));
+#if 0 //def NEED_PRINTF
 extern void setloglevel __P((int));
+#else
+#define setloglevel(level) do {} while(0)
+#endif
 extern int get_duid __P((char *, struct duid *));
 extern void dhcp6_init_options __P((struct dhcp6_optinfo *));
 extern void dhcp6_clear_options __P((struct dhcp6_optinfo *));
@@ -181,7 +185,11 @@ extern void duidfree __P((struct duid *));
 extern int ifaddrconf __P((ifaddrconf_cmd_t, char *, struct sockaddr_in6 *,
 			   int, int, int));
 extern int safefile __P((const char *));
+#if 0
 extern int dumpfile __P((const char *));
+#else
+#define dumpfile(f) do {} while(0)
+#endif
 
 /* missing */
 #ifndef HAVE_STRLCAT
