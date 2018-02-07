@@ -129,7 +129,7 @@ static int do_ntp(void)		// called from ntp_main and
 	if (((servers = nvram_get("ntp_server")) == NULL)
 	    || (*servers == 0)
 	    || nvram_matchi("dns_crypt", 1)) {
-		servers = "212.18.3.19 88.99.174.22 pool.ntp.org";
+		servers = "2.pool.ntp.org 212.18.3.19 88.99.174.22";
 	}
 
 	char *argv[] = { "ntpclient", servers, NULL };
