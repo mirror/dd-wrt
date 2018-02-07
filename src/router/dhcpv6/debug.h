@@ -8,8 +8,16 @@
 /* First include stdio.h, which may contain the prototype for the external dprintf.
  * We do not want that. We redefine dprintf to our local implementation. */
 #include <stdio.h>
+
+#if 0 //def NEED_PRINTF
+
 #define dprintf(level, args...) \
 	( { if ((level) <= MAX_DEBUG_LEVEL) my_dprintf((level), args); } )
+
+
+#else
+#define dprintf(level, args...) do {} while(0)
+#endif
 
 #ifndef __P
 # define __P(x) x
