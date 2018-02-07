@@ -75,14 +75,59 @@ static void check_udhcpd(timer_t t, int arg)
 	}
 }
 
+struct syncservice {
+	char *nvram;
+	char *service;
+};
+
+static struct syncservice service[] = {
+	{"cron_enable", "cron"},
+#ifdef HAVE_SNMP
+	{"snmpd_enable", "snmp"},
+#endif
+#ifdef HAVE_CHILLI
+	{"chilli_enable", "chilli"},
+	{"hotss_enable", "chilli"},
+#endif
+#ifdef HAVE_WIFIDOG
+	{"wd_enable", "wifidog"},
+#endif
+#ifdef HAVE_UNBOUND
+	{"recursive_dns", "unbound"},
+#endif
+#ifdef HAVE_DNSCRYPT
+	{"dns_crypt", "dnsmasq"},
+#endif
+};
+
+static void sync_daemons(void)
+{
+
+	int i;
+	for (i = 0; i < sizeof(service) / sizeof(struct syncservice); i++) {
+
+		if (nvram_matchi(service[i].nvram, 1)) {
+			eval("stopservice", service[i].service);
+			sleep(1);
+			dd_syslog(LOG_DEBUG, "Restarting %s (time sync change)\n", service[i].service);
+			eval("startservice_f", service[i].service);
+
+		}
+	}
+
+}
+
 // <<tofu
 static int do_ntp(void)		// called from ntp_main and
 				// process_monitor_main; (now really) called every hour!
 {
 	char *servers;
+	struct timeval now;
+	struct timeval then;
 
 	if (!nvram_matchi("ntp_enable", 1))
 		return 0;
+	gettimeofday(&now, NULL);
 	update_timezone();
 
 	if (((servers = nvram_get("ntp_server")) == NULL)
@@ -104,6 +149,13 @@ static int do_ntp(void)		// called from ntp_main and
 	eval("hwclock", "-f", "/dev/rtc0", "-w");
 #endif
 	dd_syslog(LOG_ERR, "cyclic NTP Update success (servers %s)\n", servers);
+	gettimeofday(&then, NULL);
+
+	if ((abs(now.tv_sec - then.tv_sec) > 100000000)) {
+		sync_daemons();
+		eval("stopservice", "process_monitor");
+		eval("startservice", "process_monitor");
+	}
 
 	return 0;
 }
@@ -125,18 +177,11 @@ static void ntp_main(timer_t t, int arg)
 {
 	if (check_action() != ACT_IDLE)
 		return;		// don't execute while upgrading
-	if (!check_wan_link(0) && nvram_invmatch("wan_proto", "disabled"))
-		return;		// don't execute if not online
 
-	//dd_syslog(LOG_INFO, "time updated: %s\n", ctime(&now));
 	eval("stopservice", "ntpc", "-f");
 	if (do_ntp() == 0) {
 		if (arg == FIRST)
 			dd_timer_cancel(t);
 		eval("filtersync");
-		nvram_seti("timer_interval", NTP_M_TIMER);	// are these used??
-	} else {
-		nvram_seti("timer_interval", NTP_N_TIMER);
 	}
-
 }
