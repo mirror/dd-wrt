@@ -86,7 +86,6 @@
 #include "gratarp.c"
 #include "ntp.c"
 
-
 #ifdef HAVE_IPV6
 static int dhcp6c_state_main(int argc, char **argv)
 {
@@ -147,9 +146,8 @@ static int redial_main(int argc, char **argv)
 		if (nvram_match("wan_proto", "3g")
 		    && nvram_match("3gdata", "sierradirectip")) {
 			start_service_force("check_sierradirectip");
-		}
-		else if (nvram_match("wan_proto", "3g")
-		    && nvram_match("3gnmvariant", "1")) {
+		} else if (nvram_match("wan_proto", "3g")
+			   && nvram_match("3gnmvariant", "1")) {
 			start_service_force("check_sierrappp");
 		}
 		if (nvram_match("wan_proto", "3g")
@@ -618,23 +616,23 @@ int main(int argc, char **argv)
 		char fmt;
 		struct in_addr addr, msk, outfmt;
 		int valid;
-		const char usage[] = "" 
-			"ipfmt <print option> <addr> <netmask>\n"
-			"ipfmt <print option> <addr/cidr>\n"
-			"\n"
-			"print options:\n"
-			"        b  : broadcast\n"
-			"        n  : network\n"
-			"        c  : cidr\n"
-			"        N  : netmask\n"
-			"\n";
+		const char usage[] = ""	//
+		    "ipfmt <print option> <addr> <netmask>\n"	//
+		    "ipfmt <print option> <addr/cidr>\n"	//
+		    "\n"	//
+		    "print options:\n"	//
+		    "        b  : broadcast\n"	//
+		    "        n  : network\n"	//
+		    "        c  : cidr\n"	//
+		    "        N  : netmask\n"	//
+		    "\n";	//
 
 		if (argc < 3) {
 			puts(usage);
 			return 0;
 		}
 
- 		fmt = argv[1][0];
+		fmt = argv[1][0];
 		if (argc == 3) {
 			valid = inet_cidr_to_addr(argv[2], &addr, &msk);
 			if (valid == -EINVAL) {
@@ -654,13 +652,9 @@ int main(int argc, char **argv)
 			}
 		}
 
-	
 		switch (fmt) {
 		case 'b':
-			outfmt = inet_bcastaddr_of(
-					inet_netaddr_of(addr, msk),
-					msk
-					);
+			outfmt = inet_bcastaddr_of(inet_netaddr_of(addr, msk), msk);
 			break;
 		case 'n':
 			outfmt = inet_netaddr_of(addr, msk);
