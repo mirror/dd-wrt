@@ -897,15 +897,15 @@ static void nat_postrouting(void)
 		if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))
 			writeprocsysnet("ipv4/conf/br0/loop", "1");
 
-//		if (!nvram_match("wan_proto", "pptp") && !nvram_match("wan_proto", "l2tp") && nvram_matchi("wshaper_enable", 0)) {
-			//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems 
-			//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems 
-//		}
+//              if (!nvram_match("wan_proto", "pptp") && !nvram_match("wan_proto", "l2tp") && nvram_matchi("wshaper_enable", 0)) {
+		//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems 
+		//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems 
+//              }
 	} else {
-//		if (!nvram_match("wan_proto", "pptp") && !nvram_match("wan_proto", "l2tp") && nvram_matchi("wshaper_enable", 0)) {
-			//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems 
-			//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems 
-//		}
+//              if (!nvram_match("wan_proto", "pptp") && !nvram_match("wan_proto", "l2tp") && nvram_matchi("wshaper_enable", 0)) {
+		//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems 
+		//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems 
+//              }
 		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "NOTRACK");	//this speeds up networking alot on slow systems 
 		/* the following code must be used in future kernel versions, not yet used. we still need to test it */
 //              eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "CT","--notrack");      //this speeds up networking alot on slow systems 
@@ -1754,24 +1754,31 @@ static int update_filter(int mode, int seq)
 	return 0;
 }
 
-void start_filter_add(int seq)
+int filter_main(int argc, char *argv[])
 {
-	DEBUG("filter_add:\n");
-	update_filter(1, seq);
+
+	if (argc > 2) {
+		int num = 0;
+
+		if ((num = atoi(argv[2])) > 0) {
+			if (strcmp(argv[1], "add") == 0) {
+				update_filter(1, num);
+				goto out;
+			} else if (strcmp(argv[1], "del") == 0) {
+				update_filter(0, num);
+				goto out;
+			}
+		}
+	} else {
+		fprintf(stderr, "usage: filter [add|del] number\n");
+		return -1;
+	}
+      out:;
+	return 0;
 
 }
 
-void start_filter_del(int seq)
-{
-	DEBUG("filter_del:\n");
-	update_filter(0, seq);
-}
-
-void stop_filtersync(void)
-{
-}
-
-void start_filtersync(void)
+int filtersync_main(int argc, char *argv[])
 {
 	time_t ct;		/* Calendar time */
 	struct tm *bt;		/* Broken time */
@@ -1791,11 +1798,12 @@ void start_filtersync(void)
 
 	for (seq = 1; seq <= NR_RULES; seq++) {
 		if (if_tod_intime(seq) > 0)
-			start_filter_add(seq);
+			update_filter(1, seq);
 		else
-			start_filter_del(seq);
+			update_filter(0, seq);
 		DEBUG("seq=%d, ret=%d\n", seq, ret);
 	}
+	return 0;
 }
 
 static void parse_trigger_out(char *wordlist)
@@ -2470,7 +2478,7 @@ static void filter_forward(void)
  */
 static void mangle_table(void)
 {
-      save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
+	save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
 
 	if (strcmp(get_wan_face(), "wwan0")) {
 
@@ -2503,7 +2511,7 @@ static void mangle_table(void)
 	 */
 	// save2file("-A PREROUTING -i %s -m mark ! --mark 0 -j MARK --set-mark
 	// %d\n", lanface, MARK_LAN2WAN);
-      save2file("COMMIT\n");
+	save2file("COMMIT\n");
 }
 
 /*

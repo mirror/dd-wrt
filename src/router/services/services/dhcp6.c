@@ -206,3 +206,40 @@ void stop_dhcp6s(void)
 {
 	stop_process("dhcp6s", "dhcp6s");
 }
+
+int dhcp6c_state_main(int argc, char **argv)
+{
+	char prefix[INET6_ADDRSTRLEN];
+	struct in6_addr addr;
+	int i, r;
+
+	nvram_set("ipv6_rtr_addr", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
+
+	// extract prefix from configured IPv6 address
+	if (inet_pton(AF_INET6, nvram_safe_get("ipv6_rtr_addr"), &addr) > 0) {
+
+		r = nvram_geti("ipv6_pf_len") ? : 64;
+		for (r = 128 - r, i = 15; r > 0; r -= 8) {
+			if (r >= 8)
+				addr.s6_addr[i--] = 0;
+			else
+				addr.s6_addr[i--] &= (0xff << r);
+		}
+		inet_ntop(AF_INET6, &addr, prefix, sizeof(prefix));
+
+		nvram_set("ipv6_prefix", prefix);
+	}
+
+	nvram_set("ipv6_get_dns", getenv("new_domain_name_servers"));
+	nvram_set("ipv6_get_domain", getenv("new_domain_name"));
+	nvram_set("ipv6_get_sip_name", getenv("new_sip_name"));
+	nvram_set("ipv6_get_sip_servers", getenv("new_sip_servers"));
+
+	dns_to_resolv();
+
+	stop_radvd();
+	start_radvd();
+	stop_dhcp6s();
+	start_dhcp6s();
+	return 0;
+}

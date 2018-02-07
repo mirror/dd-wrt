@@ -439,8 +439,8 @@ void start_sysinit(void)
 	setWirelessLed(0, 12);
 	setSwitchLED(19, "0x01");
 
-        if (!nvram_matchi("wlanled", 0))
-                eval("/sbin/wlanled", "-l", "generic_17:-94", "-l", "generic_20:-80", "-l", "generic_21:-73", "-l", "generic_22:-65");
+	if (!nvram_matchi("wlanled", 0))
+		eval("/sbin/wlanled", "-l", "generic_17:-94", "-l", "generic_20:-80", "-l", "generic_21:-73", "-l", "generic_22:-65");
 #elif  HAVE_JWAP606
 //      setWirelessLed(0, 14);
 	setWirelessLed(1, 14);
