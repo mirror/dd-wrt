@@ -1,22 +1,21 @@
+/* Read, and possibly modify, the Linux kernel `timex' variables.
+ *
+ * Copyright (C) 1997, 2000, 2003  Larry Doolittle <larry@doolittle.boa.org>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License (Version 2,
+ * June 1991) as published by the Free Software Foundation.  At the
+ * time of writing, that license was published by the FSF with the URL
+ * http://www.gnu.org/copyleft/gpl.html, and is incorporated herein by
+ * reference.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
 /*
- * adjtimex_1.c - read, and possibly modify, the Linux kernel `timex' variables.
- *
- * Originally written: October 1997
- * Last hack: May 2003
- * Copyright 1997, 2000, 2003 Larry Doolittle <larry@doolittle.boa.org>
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License (Version 2,
- *  June 1991) as published by the Free Software Foundation.  At the
- *  time of writing, that license was published by the FSF with the URL
- *  http://www.gnu.org/copyleft/gpl.html, and is incorporated herein by
- *  reference.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
  * This adjtimex(1) is very similar in intent to adjtimex(8) by Steven
  * Dick <ssd@nevets.oau.org> and Jim Van Zandt <jrv@vanzandt.mv.com>
  * (see http://metalab.unc.edu/pub/Linux/system/admin/time/adjtimex*).
@@ -42,25 +41,40 @@
 #include <unistd.h>
 #include <sys/timex.h>
 
+/* Status codes (timex.status) */
 static struct {
 	int bit;
 	const char *name;
 } statlist[] = {
 	{
-	STA_PLL, "PLL"}, {
-	STA_PPSFREQ, "PPSFREQ"}, {
-	STA_PPSTIME, "PPSTIME"}, {
-	STA_FLL, "FFL"}, {
-	STA_INS, "INS"}, {
-	STA_DEL, "DEL"}, {
-	STA_UNSYNC, "UNSYNC"}, {
-	STA_FREQHOLD, "FREQHOLD"}, {
-	STA_PPSSIGNAL, "PPSSIGNAL"}, {
-	STA_PPSJITTER, "PPSJITTER"}, {
-	STA_PPSWANDER, "PPSWANDER"}, {
-	STA_PPSERROR, "PPSERROR"}, {
-	STA_CLOCKERR, "CLOCKERR"}, {
-0, NULL}};
+	STA_PLL, "PLL"},	/* enable PLL updates (rw)           */
+	{
+	STA_PPSFREQ, "PPSFREQ"},	/* enable PPS freq discipline (rw)   */
+	{
+	STA_PPSTIME, "PPSTIME"},	/* enable PPS time discipline (rw)   */
+	{
+	STA_FLL, "FFL"},	/* select frequency-lock mode (rw)   */
+	{
+	STA_INS, "INS"},	/* insert leap (rw)                  */
+	{
+	STA_DEL, "DEL"},	/* delete leap (rw)                  */
+	{
+	STA_UNSYNC, "UNSYNC"},	/* clock unsynchronized (rw)         */
+	{
+	STA_FREQHOLD, "FREQHOLD"},	/* hold frequency (rw)               */
+	{
+	STA_PPSSIGNAL, "PPSSIGNAL"},	/* PPS signal present (ro)           */
+	{
+	STA_PPSJITTER, "PPSJITTER"},	/* PPS signal jitter exceeded (ro)   */
+	{
+	STA_PPSWANDER, "PPSWANDER"},	/* PPS signal wander exceeded (ro)   */
+	{
+	STA_PPSERROR, "PPSERROR"},	/* PPS signal calibration error (ro) */
+	{
+	STA_CLOCKERR, "CLOCKERR"},	/* clock hardware fault (ro)         */
+	{
+	0, NULL}
+};
 
 static const char *ret_code_descript[] = {
 	"clock synchronized",
@@ -71,9 +85,11 @@ static const char *ret_code_descript[] = {
 	"clock not synchronized"
 };
 
-static void usage(char *prog)
+static int usage(int code)
 {
-	fprintf(stderr, "Usage: %s [ -q ] [ -o offset ] [ -f frequency ] [ -p timeconstant ] [ -t tick ]\n", prog);
+	fprintf(stderr, "Usage: adjtimex [-q] [-o offset] [-f frequency] [-p timeconstant] [-t tick]\n");
+
+	return code;
 }
 
 int main(int argc, char **argv)
@@ -81,43 +97,51 @@ int main(int argc, char **argv)
 	struct timex txc;
 	int quiet = 0;
 	int c, i, ret, sep;
+
 	txc.modes = 0;
-	for (;;) {
-		c = getopt(argc, argv, "qo:f:p:t:");
+	while (1) {
+		c = getopt(argc, argv, "f:ho:p:qt:");
 		if (c == EOF)
 			break;
+
 		switch (c) {
-		case 'q':
-			quiet = 1;
-			break;
-		case 'o':
-			txc.offset = atoi(optarg);
-			txc.modes |= ADJ_OFFSET_SINGLESHOT;
-			break;
 		case 'f':
 			txc.freq = atoi(optarg);
 			txc.modes |= ADJ_FREQUENCY;
 			break;
+
+		case 'h':
+			return usage(0);
+
+		case 'o':
+			txc.offset = atoi(optarg);
+			txc.modes |= ADJ_OFFSET_SINGLESHOT;
+			break;
+
 		case 'p':
 			txc.constant = atoi(optarg);
 			txc.modes |= ADJ_TIMECONST;
 			break;
+
+		case 'q':
+			quiet = 1;
+			break;
+
 		case 't':
 			txc.tick = atoi(optarg);
 			txc.modes |= ADJ_TICK;
 			break;
+
 		default:
-			usage(argv[0]);
-			exit(1);
+			return usage(1);
 		}
 	}
-	if (argc != optind) {	/* no valid non-option parameters */
-		usage(argv[0]);
-		exit(1);
-	}
+
+	/* Check for valid non-option parameters */
+	if (argc != optind)
+		return usage(1);
 
 	ret = adjtimex(&txc);
-
 	if (ret < 0)
 		perror("adjtimex");
 
@@ -126,8 +150,10 @@ int main(int argc, char **argv)
 		       "-o  offset:       %ld\n"
 		       "-f  frequency:    %ld\n" "    maxerror:     %ld\n" "    esterror:     %ld\n" "    status:       %d ( ", txc.modes, txc.offset, txc.freq, txc.maxerror, txc.esterror, txc.status);
 
-		/* representative output of next code fragment:
-		   "PLL | PPSTIME" */
+		/*
+		 * representative output of next code fragment:
+		 * "PLL | PPSTIME"
+		 */
 		sep = 0;
 		for (i = 0; statlist[i].name; i++) {
 			if (txc.status & statlist[i].bit) {
@@ -147,5 +173,14 @@ int main(int argc, char **argv)
 		       "    time.tv_usec: %ld\n"
 		       "    return value: %d (%s)\n", txc.constant, txc.precision, txc.tolerance, txc.tick, txc.time.tv_sec, txc.time.tv_usec, ret, (ret >= 0 && ret <= 5) ? ret_code_descript[ret] : "error");
 	}
-	return (ret < 0);
+
+	return ret < 0;
 }
+
+/**
+ * Local Variables:
+ *  compile-command: "make adjtimex"
+ *  indent-tabs-mode: t
+ *  c-file-style: "linux"
+ * End:
+ */
