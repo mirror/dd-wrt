@@ -27,11 +27,6 @@ static void check_udhcpd(timer_t t, int arg);
 extern void init_event_queue(int n);
 extern int timer_connect(timer_t timerid, void (*routine) (timer_t, int), int arg);
 
-struct syncservice {
-	char *nvram;
-	char *service;
-};
-
 #define NTP_M_TIMER 3600
 #define NTP_N_TIMER 30
 
@@ -65,10 +60,6 @@ static int process_monitor_main(int argc, char **argv)
 		 * init ntp timer 
 		 */
 
-		struct timeval now;
-
-		gettimeofday(&now, NULL);
-
 		if (do_ntp() != 0) {
 			dd_syslog(LOG_ERR, "Last update failed, we need to re-update after %d seconds\n", NTP_N_TIMER);
 			time = NTP_N_TIMER;
@@ -81,44 +72,6 @@ static int process_monitor_main(int argc, char **argv)
 			dd_timer_settime(ntp1_id, 0, &t4, NULL);
 		}
 
-		struct timeval then;
-
-		gettimeofday(&then, NULL);
-		struct syncservice service[] = {
-			{"cron_enable", "cron"},
-#ifdef HAVE_SNMP
-			{"snmpd_enable", "snmp"},
-#endif
-#ifdef HAVE_CHILLI
-			{"chilli_enable", "chilli"},
-			{"hotss_enable", "chilli"},
-#endif
-#ifdef HAVE_WIFIDOG
-			{"wd_enable", "wifidog"},
-#endif
-#ifdef HAVE_UNBOUND
-			{"recursive_dns", "unbound"},
-#endif
-#ifdef HAVE_DNSCRYPT
-			{"dns_crypt", "dnsmasq"},
-#endif
-		};
-
-		if ((abs(now.tv_sec - then.tv_sec) > 100000000)) {
-
-			int i;
-			for (i = 0; i < sizeof(service) / sizeof(struct syncservice); i++) {
-
-				if (nvram_matchi(service[i].nvram, 1)) {
-					eval("stopservice", service[i].service);
-					sleep(1);
-					dd_syslog(LOG_DEBUG, "Restarting %s (time sync change)\n", service[i].service);
-					eval("startservice_f", service[i].service);
-
-				}
-			}
-
-		}
 		dd_syslog(LOG_DEBUG, "We need to re-update after %d seconds\n", NTP_M_TIMER);
 
 		time = NTP_M_TIMER;

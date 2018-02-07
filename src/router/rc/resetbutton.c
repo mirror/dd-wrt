@@ -129,7 +129,7 @@ static int getbuttonstate()
 #elif defined(HAVE_NEWPORT)
 static int getbuttonstate()
 {
-	return 0;//!get_gpio(496);
+	return 0;		//!get_gpio(496);
 }
 #elif defined(HAVE_VENTANA)
 static int getbuttonstate()
@@ -820,9 +820,9 @@ static void handle_reset(void)
 
 		// nvram_set ("sv_restore_defaults", "1");
 		// nvram_commit ();
-		
+
 		setWifiPass();
-	
+
 		kill(1, SIGTERM);
 #endif
 	}
