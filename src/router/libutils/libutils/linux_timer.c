@@ -41,6 +41,7 @@
 #include <stdio.h>		// for printf, etc.
 #include <sys/time.h>
 #include <time.h>
+#include <utils.h>
 
 #include <typedefs.h>
 
@@ -441,7 +442,7 @@ static void print_event_queue()
 	int i = 0;
 
 	for (event = event_queue; event; event = event->next) {
-		dd_syslog(LOG_INFO, "#%d (0x%x)->0x%x: \t%d sec %d usec\t%p\n", i++, (unsigned int)event, (unsigned int)event->next, (int)
+		dd_syslog(LOG_INFO, "#%d (0x%lx)->0x%lx: \t%d sec %d usec\t%p\n", i++, (unsigned long)event, (unsigned long)event->next, (int)
 		       event->it_value.tv_sec, (int)event->it_value.tv_usec, event->func);
 		if (i > g_maxevents) {
 			dd_syslog(LOG_INFO, "...(giving up)\n");
