@@ -61,6 +61,66 @@
 #define POLL 4
 #define PREC -6
 
+
+static int getaddrbyname(char *host, struct sockaddr_storage *ss)
+{
+	int err;
+	static int netdown = 0;
+	struct addrinfo hints;
+	struct addrinfo *result;
+	struct addrinfo *rp;
+
+	if (!host || !ss) {
+		errno = EINVAL;
+		return 1;
+	}
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = 0;
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_protocol = 0;
+	hints.ai_canonname = NULL;
+	hints.ai_addr = NULL;
+	hints.ai_next = NULL;
+
+	memset(ss, 0, sizeof(struct sockaddr_storage));
+	err = getaddrinfo(host, NULL, &hints, &result);
+	if (err) {
+		syslog(LOG_ERR, "Failed resolving address to hostname %s: %s", host, gai_strerror(err));
+		netdown = errno = ENETDOWN;
+		return 1;
+	}
+
+	/* The first result will be used. IPV4 has higher priority */
+	err = 1;
+	for (rp = result; rp; rp = rp->ai_next) {
+		if (rp->ai_family == AF_INET) {
+			memcpy(ss, (struct sockaddr_in *)(rp->ai_addr), sizeof(struct sockaddr_in));
+			err = 0;
+			break;
+		}
+		if (rp->ai_family == AF_INET6) {
+			memcpy(ss, (struct sockaddr_in6 *)(rp->ai_addr), sizeof(struct sockaddr_in6));
+			err = 0;
+			break;
+		}
+	}
+	freeaddrinfo(result);
+
+	if (err) {
+		errno = EAGAIN;
+		return 1;
+	}
+
+	if (netdown) {
+		syslog(LOG_NOTICE, "Network up, resolved address to hostname %s", host);
+		netdown = 0;
+	}
+
+	return 0;
+}
+
 struct ntptime {
 	unsigned int coarse;
 	unsigned int fine;
@@ -89,7 +149,7 @@ static void send_packet(int sd)
 	send(sd, data, 48, 0);
 }
 
-static int set_time(char *srv, struct in_addr addr, uint32_t * data)
+static int set_time(char *srv, char *addr, uint32_t * data)
 {
 	struct timeval tv;
 
@@ -100,40 +160,56 @@ static int set_time(char *srv, struct in_addr addr, uint32_t * data)
 		return 1;	/* Ouch, this should not happen :-( */
 	}
 
-	syslog(LOG_DAEMON | LOG_INFO, "Time set from %s [%s].", srv, inet_ntoa(addr));
+	syslog(LOG_DAEMON | LOG_INFO, "Time set from %s [%s].\n", srv, addr);
 
 	return 0;		/* All good, time set! */
 }
 
 static int query_server(char *srv)
 {
-	int sd, rc;
+	int sd, rc, len;
 	struct pollfd pfd;
-	struct hostent *he;
-	struct sockaddr_in sa;
+	struct sockaddr_storage ss;
+	struct sockaddr_in *ipv4 = NULL;
+	struct sockaddr_in6 *ipv6 = NULL;
 
-	sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	sd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
 	if (sd == -1) {
 		perror("Failed opening UDP socket");
 		return -1;	/* Fatal error, cannot even create a socket? */
 	}
-
-	he = gethostbyname(srv);
-	if (!he) {
-		syslog(LOG_DAEMON | LOG_ERR, "Failed resolving server %s: %s", srv, strerror(errno));
+	int he = getaddrbyname(srv, &ss);
+	if (he) {
+		syslog(LOG_DAEMON | LOG_ERR, "Failed resolving server %s: %s\n", srv, strerror(errno));
 		close(sd);
 
 		return usage(1);	/* Failure in name resolution. */
 	}
+	memset(&ipv4, 0, sizeof(ipv4));
+	memset(&ipv6, 0, sizeof(ipv6));
+	char deststr[INET6_ADDRSTRLEN];
 
-	memset(&sa, 0, sizeof(sa));
-	memcpy(&sa.sin_addr, he->h_addr_list[0], sizeof(sa.sin_addr));
-	sa.sin_port = htons(NTP_PORT);
-	sa.sin_family = AF_INET;
+	/* Prefer IPv4 over IPv6, for now */
+	if (ss.ss_family == AF_INET) {
+		ipv4 = (struct sockaddr_in *)(&ss);
+		ipv4->sin_port = htons(NTP_PORT);
+		len = sizeof(struct sockaddr_in);
+		inet_ntop(AF_INET, &ipv4->sin_addr, deststr, sizeof(deststr));
+		syslog(LOG_DAEMON | LOG_DEBUG, "Connecting to %s [%s] ...\n", srv, deststr);
+	} else if (ss.ss_family == AF_INET6) {
+		ipv6 = (struct sockaddr_in6 *)(&ss);
+		ipv6->sin6_port = htons(NTP_PORT);
+		len = sizeof(struct sockaddr_in6);
+		inet_ntop(AF_INET6, &ipv6->sin6_addr, deststr, sizeof(deststr));
+		syslog(LOG_DAEMON | LOG_DEBUG, "Connecting to %s [%s] ...\n", srv, deststr);
+	} else {
+		syslog(LOG_ERR, "Unsupported address family for %s\n", srv);
+		return -1;
+	}
 
-	syslog(LOG_DAEMON | LOG_DEBUG, "Connecting to %s [%s] ...", srv, inet_ntoa(sa.sin_addr));
-	if (connect(sd, (struct sockaddr *)&sa, sizeof(sa)) == -1) {
-		syslog(LOG_DAEMON | LOG_ERR, "Failed connecting to %s [%s]: %s", srv, inet_ntoa(sa.sin_addr), strerror(errno));
+
+	if (connect(sd, (struct sockaddr *)&ss, len) == -1) {
+		syslog(LOG_DAEMON | LOG_ERR, "Failed connecting to %s [%s]: %s", srv, deststr, strerror(errno));
 		close(sd);
 
 		return 1;	/* Cannot connect to server, try next. */
@@ -156,13 +232,13 @@ static int query_server(char *srv)
 			close(sd);
 
 			/* Looks good, try setting time on host ... */
-			if (set_time(srv, sa.sin_addr, packet))
+			if (set_time(srv, deststr, packet))
 				return -1;	/* Fatal error */
 
 			return 0;	/* All done! :) */
 		}
 	} else if (rc == 0) {
-		syslog(LOG_DAEMON | LOG_DEBUG, "Timed out waiting for %s [%s].", srv, inet_ntoa(sa.sin_addr));
+		syslog(LOG_DAEMON | LOG_DEBUG, "Timed out waiting for %s [%s].", srv, deststr);
 	}
 
 	close(sd);
@@ -204,10 +280,3 @@ int main(int argc, char *argv[])
 	return 1;
 }
 
-/**
- * Local Variables:
- *  compile-command: "make mini-ntpclient"
- *  indent-tabs-mode: t
- *  c-file-style: "linux"
- * End:
- */
