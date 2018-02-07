@@ -29,17 +29,13 @@
 //#define NTP_N_TIMER 30
 
 extern void dd_timer_cancel(timer_t timerid);
-static int isRunning(char *name)
-{
-	return eval("pidof", name) == 0 ? 1 : 0;
-}
 
 static void check_udhcpd(timer_t t, int arg)
 {
 	if (nvram_invmatchi("router_disable", 1)
 	    || nvram_match("lan_proto", "dhcp")) {
 		if (nvram_matchi("dhcp_dnsmasq", 1)) {
-			if (!isRunning("dnsmasq")) {
+			if (pidof("dnsmasq") == -1) {
 				// killps("dnsmasq","-9");
 				// killps("udhcpd","-9");
 				killall("dnsmasq", SIGKILL);
@@ -57,7 +53,7 @@ static void check_udhcpd(timer_t t, int arg)
 				eval("startservice", "dnsmasq");
 			}
 		} else {
-			if (!isRunning("udhcpd")) {
+			if (pidof("udhcpd") == -1) {
 				killall("dnsmasq", SIGKILL);
 				killall("udhcpd", SIGKILL);
 #ifdef HAVE_UDHCPD
@@ -107,9 +103,8 @@ static void sync_daemons(void)
 	for (i = 0; i < sizeof(service) / sizeof(struct syncservice); i++) {
 
 		if (nvram_matchi(service[i].nvram, 1)) {
-			eval("stopservice", service[i].service);
-			sleep(1);
 			dd_syslog(LOG_DEBUG, "Restarting %s (time sync change)\n", service[i].service);
+			eval("stopservice", service[i].service);
 			eval("startservice_f", service[i].service);
 
 		}
