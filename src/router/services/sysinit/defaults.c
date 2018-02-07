@@ -122,11 +122,6 @@ struct nvram_param srouter_defaults[] = {
 	/*
 	 * Miscellaneous parameters 
 	 */
-#ifdef HAVE_IDEXX
-	{"timer_interval", "30"},	/* Timer interval in seconds */
-#else
-	{"timer_interval", "3600"},	/* Timer interval in seconds */
-#endif
 #ifdef BUFFALO_JP
 	{"time_zone", "Asia/Tokyo"},
 #elif HAVE_AXTEL
