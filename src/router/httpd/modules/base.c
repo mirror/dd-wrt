@@ -511,10 +511,10 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 	if (!f_exists("/tmp/bigfilemem.bin")) {
 		char *test = malloc(65536);
 		srand(time(NULL));
-		for (i = 0; i < 65536; i++) 
+		for (i = 0; i < 65536; i++)
 			test[i] = rand() % 255;
-		fp = fopen("/tmp/bigfilemem.bin","wb");
-		fwrite(test,1,65536,fp);
+		fp = fopen("/tmp/bigfilemem.bin", "wb");
+		fwrite(test, 1, 65536, fp);
 		fclose(fp);
 		free(test);
 	}
@@ -537,7 +537,7 @@ static void do_filtertable(unsigned char method, struct mime_handler *handler, c
 	char ifname[32];
 	char *temp2;
 	bzero(ifname, sizeof(ifname));
-	char  *idx = strchr(path, '-');
+	char *idx = strchr(path, '-');
 	if (idx) {
 		temp2 = idx + 1;
 		strncpy(ifname, temp2, sizeof(ifname));
@@ -1946,12 +1946,12 @@ static void do_mypage(unsigned char method, struct mime_handler *handler, char *
 
 			if ((fp = popen(sname, "rb")) != NULL) {
 				while (fgets(buf, 512, fp) != NULL)
-						fprintf(out, "%s", buf);
+					fprintf(out, "%s", buf);
 				pclose(fp);
 			}
-			
+
 			fclose(out);
-			
+
 			do_file_attach(handler, "/tmp/mypage.tmp", stream, "MyPage.asp");
 			unlink("/tmp/mypage.tmp");
 		}
