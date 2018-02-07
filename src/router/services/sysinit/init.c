@@ -28,6 +28,13 @@
 #include <cyutils.h>
 #include <revision.h>
 #include <sys/stat.h>
+#include <utils.h>
+#include <stdio.h>
+#include <arpa/inet.h>
+#include <getopt.h>
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
 
 extern int file2nvram(char *filename, char *varname);
 extern int nvram2file(char *varname, char *filename);
@@ -431,3 +438,261 @@ void start_init_start(void)
 	}
 #endif
 }
+
+void restart_dns_main(int argc, char argv[])
+{
+	stop_dnsmasq();
+#ifdef HAVE_UDHCPD
+	stop_udhcpd();
+	start_udhcpd();
+#endif
+	start_dnsmasq();
+}
+
+int ipfmt_main(int argc, char *argv[])
+{
+		char cidr[24];
+		char fmt;
+		struct in_addr addr, msk, outfmt;
+		int valid;
+		const char usage[] = ""	//
+		    "ipfmt <print option> <addr> <netmask>\n"	//
+		    "ipfmt <print option> <addr/cidr>\n"	//
+		    "\n"	//
+		    "print options:\n"	//
+		    "        b  : broadcast\n"	//
+		    "        n  : network\n"	//
+		    "        c  : cidr\n"	//
+		    "        N  : netmask\n"	//
+		    "\n";	//
+
+		if (argc < 3) {
+			puts(usage);
+			return 0;
+		}
+
+		fmt = argv[1][0];
+		if (argc == 3) {
+			valid = inet_cidr_to_addr(argv[2], &addr, &msk);
+			if (valid == -EINVAL) {
+				fprintf(stderr, "invalid cidr string\n");
+				return 1;
+			}
+		} else {
+			valid = inet_aton(argv[2], &addr);
+			if (valid == -EINVAL) {
+				fprintf(stderr, "invalid address\n");
+				return 1;
+			}
+			valid = inet_aton(argv[3], &msk);
+			if (valid == -EINVAL) {
+				fprintf(stderr, "invalid netmask\n");
+				return 1;
+			}
+		}
+
+		switch (fmt) {
+		case 'b':
+			outfmt = inet_bcastaddr_of(inet_netaddr_of(addr, msk), msk);
+			break;
+		case 'n':
+			outfmt = inet_netaddr_of(addr, msk);
+			break;
+		case 'N':
+			outfmt = msk;
+			break;
+		case 'c':
+			inet_addr_to_cidr(addr, msk, cidr);
+			puts(cidr);
+			return 0;
+		default:
+			fprintf(stderr, "invalid option\n%s", usage);
+			break;
+		}
+		puts(inet_ntoa(outfmt));
+		return 0;
+
+}
+
+
+/* 
+ * Call when keepalive mode
+ */
+int redial_main(int argc, char **argv)
+{
+	int need_redial = 0;
+	int status;
+	pid_t pid;
+	int _count = 1;
+	int num;
+
+	while (1) {
+#if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
+		if (nvram_match("wan_proto", "3g")
+		    && nvram_match("3gdata", "mbim")) {
+			start_check_mbim();
+		}
+#endif
+#if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
+		if (nvram_match("wan_proto", "3g")
+		    && nvram_match("3gdata", "sierradirectip")) {
+			start_check_sierradirectip();
+		} else if (nvram_match("wan_proto", "3g")
+			   && nvram_match("3gnmvariant", "1")) {
+			start_check_sierrappp();
+		}
+		if (nvram_match("wan_proto", "3g")
+		    && nvram_match("3gdata", "qmi") && _count == 1) {
+			start_check_qmi();
+		}
+#endif
+		sleep(atoi(argv[1]));
+		num = 0;
+		_count++;
+
+		// fprintf(stderr, "check PPPoE %d\n", num);
+		if (!check_wan_link(num)) {
+			// fprintf(stderr, "PPPoE %d need to redial\n", num);
+			need_redial = 1;
+		} else {
+			// fprintf(stderr, "PPPoE %d not need to redial\n", num);
+			continue;
+		}
+
+
+		if (need_redial) {
+			pid = fork();
+			switch (pid) {
+			case -1:
+				perror("fork failed");
+				exit(1);
+			case 0:
+#ifdef HAVE_PPPOE
+				if (nvram_match("wan_proto", "pppoe")) {
+					sleep(1);
+					start_wan_redial();
+				}
+#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || defined(HAVE_PPPOATM) || defined(HAVE_PPPOEDUAL)
+				else
+#endif
+#endif
+
+#ifdef HAVE_PPPOEDUAL
+				if (nvram_match("wan_proto", "pppoe_dual")) {
+					sleep(1);
+					start_wan_redial();
+				}
+#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || defined(HAVE_PPPOATM)
+				else
+#endif
+#endif
+
+#ifdef HAVE_PPPOATM
+				if (nvram_match("wan_proto", "pppoa")) {
+					sleep(1);
+					start_wan_redial();
+				}
+#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT)
+				else
+#endif
+#endif
+
+#ifdef HAVE_PPTP
+				if (nvram_match("wan_proto", "pptp")) {
+					stop_pptp();
+					unlink("/tmp/services/pptp.stop");
+					sleep(1);
+					start_wan_redial();
+				}
+#if defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT)
+				else
+#endif
+#endif
+#ifdef HAVE_L2TP
+				if (nvram_match("wan_proto", "l2tp")) {
+					stop_l2tp();
+					unlink("/tmp/services/l2tp.stop");
+					sleep(1);
+					start_wan_redial();
+				}
+#ifdef HAVE_HEARTBEAT
+				else
+#endif
+#endif
+					// Moded by Boris Bakchiev
+					// We dont need this at all.
+					// But if this code is executed by any of pppX programs
+					// we might have to do this.
+
+#ifdef HAVE_HEARTBEAT
+				if (nvram_match("wan_proto", "heartbeat")) {
+					if (is_running("bpalogin") == 0) {
+						stop_heartbeat_redial();
+						sleep(1);
+						start_heartbeat_redial();
+					}
+
+				}
+#endif
+#ifdef HAVE_3G
+				else if (nvram_match("wan_proto", "3g")) {
+					sleep(1);
+					start_wan_redial();
+				}
+#endif
+#ifdef HAVE_IPETH
+				else if (nvram_match("wan_proto", "iphone")) {
+					sleep(1);
+					start_wan_redial();
+				}
+#endif
+				exit(0);
+				break;
+			default:
+				waitpid(pid, &status, 0);
+				// dprintf("parent\n");
+				break;
+			}
+		}
+	}
+}
+
+int get_wanface_main(int argc, char **argv)
+{
+	fprintf(stdout, "%s", get_wan_face());
+	return 0;
+}
+
+int get_nfmark_main(int argc, char **argv)
+{
+	if (argc < 3) {
+		fprintf(stderr, "usage: get_nfmark <service> <mark>\n\n" "	services: FORWARD\n" "		  HOTSPOT\n" "		  QOS\n\n" "	eg: get_nfmark QOS 10\n");
+		return 1;
+	}
+
+	fprintf(stdout, "%s\n", get_NFServiceMark(argv[1], atol(argv[2])));
+	return 0;
+}
+
+#ifdef HAVE_PPTPD
+int pptpd_main(int argc, char **argv)
+{
+
+	if (!argv[1]) {
+		fprintf(stderr, "usage: poptop [start|stop|restart]\n");
+		return EINVAL;
+	} else if (strstr(argv[1], "start"))
+		start_pptpd();
+	else if (strstr(argv[1], "stop"))
+		stop_pptpd();
+	else if (strstr(argv[1], "restart")) {
+		stop_pptpd();
+		start_pptpd();
+		return 0;
+	} else {
+		fprintf(stderr, "usage: poptop [start|stop|restart]\n");
+		return EINVAL;
+	}
+	return 0;
+}
+#endif

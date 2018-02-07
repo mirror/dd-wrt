@@ -68,10 +68,6 @@ void setPassword(char *passwd)
 	fclose(fp);
 }
 
-void stop_mkfiles(void)
-{
-}
-
 void start_mkfiles(void)
 {
 	FILE *fp;
@@ -168,4 +164,10 @@ void start_mkfiles(void)
 	cprintf("%s:%d", __func__, __LINE__);
 
 	return;
+}
+
+int setpasswd_main(int argc, char *argv[])
+{
+       start_mkfiles();
+       return 0;
 }

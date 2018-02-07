@@ -55,7 +55,6 @@
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
 
-
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -108,7 +107,7 @@ void start_sysinit(void)
 	 */
 	stime(&tm);
 	nvram_set("wl0_ifname", "ath0");
- 	eval("hwclock", "-s");
+	eval("hwclock", "-s");
 	eval("i2cset", "-f", "-y", "0", "0x20", "0", "0x0");
 	eval("i2cset", "-f", "-y", "0", "0x20", "11", "0x10");
 

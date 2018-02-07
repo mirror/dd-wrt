@@ -281,3 +281,18 @@ void start_jffs2(void);
 void start_speedchecker(void);
 void stop_speedchecker(void);
 void start_speedchecker_init(void);
+
+void stop_pppoeserver(void);
+void start_pppoeserver(void);
+
+void stop_heartbeat_redial(void);
+void start_heartbeat_redial(void);
+
+void start_check_sierradirectip(void);
+void start_check_sierrappp(void);
+void start_check_mbim(void);
+void start_check_qmi(void);
+
+
+void runStartup(char *folder, char *extension);
+

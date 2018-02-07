@@ -2663,7 +2663,7 @@ void start_sysinit(void)
 		//set_gpio(10, 0);
 		set_gpio(20, 0);
 		break;
-		case ROUTER_NETGEAR_R7000P:
+	case ROUTER_NETGEAR_R7000P:
 		if (nvram_get("0:ddwrt") == NULL) {
 			char mac[20];
 			strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -2755,7 +2755,7 @@ void start_sysinit(void)
 				{"temps_period", "5"},
 				{0, 0}
 			};
-			
+
 			struct nvram_param r7000p_1params[] = {
 				{"ulbpdoffs5gb2a1", "65535"},
 				{"pa5g80a3", "0x1c6c,0xf246,0x5dc4,0x2794,0x1d20,0xef79,0x5d3e,0x277e,0x1df4,0xdd2f,0x4ce6,0x2698,0x1ca2,0xd464,0x4256,0x2776,0x1ccc,0xd528,0x3dd9,0x2613"},
@@ -3031,19 +3031,19 @@ void start_sysinit(void)
 				{"pa5g80a2", "0x1e37,0xe3bc,0x489d,0x2733,0x1d47,0xef49,0x5c4f,0x282d,0x1d61,0xe1de,0x5f91,0x290d,0x1c5b,0xd464,0x4256,0x2776,0x1b97,0xd645,0x4969,0x286e"},
 				{0, 0}
 			};
-			
-			extra_params = r7000p_0params; 
+
+			extra_params = r7000p_0params;
 			while (extra_params->name) {
 				nvram_nset(extra_params->value, "0:%s", extra_params->name);
 				extra_params++;
 			}
-			
-			extra_params = r7000p_1params; 
+
+			extra_params = r7000p_1params;
 			while (extra_params->name) {
 				nvram_nset(extra_params->value, "1:%s", extra_params->name);
 				extra_params++;
 			}
-			nvram_set("devpath0", "pcie/1/1"); 
+			nvram_set("devpath0", "pcie/1/1");
 			nvram_set("devpath1", "pcie/2/1");
 			setcaldata();
 			nvram_commit();
@@ -3052,7 +3052,7 @@ void start_sysinit(void)
 		nvram_unset("et1macaddr");
 		nvram_unset("et2macaddr");
 		set_gpio(0, 1);	//USB
-		set_gpio(13, 1);//WIFI LED
+		set_gpio(13, 1);	//WIFI LED
 		set_gpio(6, 1);
 		break;
 	case ROUTER_ASUS_AC87U:
@@ -6436,8 +6436,6 @@ void start_sysinit(void)
 #ifdef HAVE_DHDAP
 	insmod("dhd");
 #endif
-
-
 
 	set_smp_affinity(163, 1);	//eth1 and eth2  on core 0
 	set_smp_affinity(169, 2);	//eth3 or eth2 core 1
