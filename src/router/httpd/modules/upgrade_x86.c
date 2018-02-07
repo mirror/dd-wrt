@@ -81,7 +81,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 {
 	lcdmessage("System Upgrade");
 #ifndef ANTI_FLASH
-	char upload_fifo[] = "/tmp/uploadXXXXXX";
 	FILE *fifo = NULL;
 	char *write_argv[4];
 	pid_t pid;
@@ -91,27 +90,49 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	int size = BUFSIZ;
 	int i = 0;
 
-	{
-		write_argv[0] = "write";
-		write_argv[1] = upload_fifo;
-		write_argv[2] = "linux";
-		write_argv[3] = NULL;
-	}
-
 	// diag_led(DIAG, START_LED); // blink the diag led
 	if (DO_SSL(stream))
 		ACTION("ACT_WEBS_UPGRADE");
 	else
 		ACTION("ACT_WEB_UPGRADE");
 
+	char *drv = getdisc();
+	char drive[64];
+	sprintf(drive, "/dev/%s", drv);
+
+#ifndef HAVE_EROUTER
+	fprintf(stderr, "backup nvram\n");
+	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
+	if (in) {
+		char *mem = malloc(65536);
+		fread(mem, 65536, 1, in);
+		fclose(in);
+		FILE *in = fopen(drive, "r+b");
+		int f_flags = fcntl(fileno(in), F_GETFL);
+		f_flags |= O_SYNC;
+		fcntl(fileno(in), F_SETFL, f_flags);
+		fseeko(in, 0, SEEK_END);
+		off_t mtdlen = ftello(in);
+		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
+		fwrite(mem, 65536, 1, in);
+		fflush(in);
+		fsync(fileno(in));
+		fclose(in);
+		free(mem);
+	}
+#endif
+
 	/*
 	 * Feed write from a temporary FIFO 
 	 */
-	if (!mktemp(upload_fifo) || !(fifo = fopen(upload_fifo, "w"))) {
+	if (!drv || !(fifo = fopen(drive, "wb"))) {
 		if (!ret)
 			ret = errno;
 		goto err;
 	}
+	int f_flags = fcntl(fileno(fifo), F_GETFL);
+	f_flags |= O_SYNC;
+	fcntl(fileno(fifo), F_SETFL, f_flags);
 
 	/*
 	 * Set nonblock on the socket so we can timeout 
@@ -143,7 +164,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	{
 		wfread(&buf[0], 1, 5, stream);
 		*total -= 5;
-		if (buf[0] != 'W' || buf[1] != 'R' || buf[2] != 'A' || buf[3] != 'P' || buf[4] != '1') {
+		if (memcmp(buf, "WRAP1", 5)) {
 			ret = -1;
 			goto err;
 		}
@@ -158,87 +179,17 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		for (i = 0; i < linuxsize / MIN_BUF_SIZE; i++) {
 			wfread(&buf[0], 1, MIN_BUF_SIZE, stream);
 			fwrite(&buf[0], 1, MIN_BUF_SIZE, fifo);
+			fprintf(stderr, "%d bytes written\n", i * 65536);
+			fsync(fileno(fifo));
 		}
 
 		wfread(&buf[0], 1, linuxsize % MIN_BUF_SIZE, stream);
 		fwrite(&buf[0], 1, linuxsize % MIN_BUF_SIZE, fifo);
+		fsync(fileno(fifo));
 		*total -= linuxsize;
 
 	}
 	fclose(fifo);
-	fifo = NULL;
-	fifo = fopen(upload_fifo, "rb");
-	unsigned long linuxsize;
-
-	linuxsize = 0;
-	linuxsize += getc(fifo);
-	linuxsize += getc(fifo) * 256;
-	linuxsize += getc(fifo) * 256 * 256;
-	linuxsize += getc(fifo) * 256 * 256 * 256;
-
-	char drive[64];
-	char *drv = getdisc();
-	if (!drv)
-		return -1;
-	sprintf(drive, "/dev/%s", drv);
-	fprintf(stderr, "Write Linux %d to %s\n", linuxsize, drive);
-	//backup nvram
-#ifndef HAVE_EROUTER
-	fprintf(stderr, "backup nvram\n");
-	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
-	if (in) {
-		char *mem = malloc(65536);
-		fread(mem, 65536, 1, in);
-		fclose(in);
-		FILE *in = fopen(drive, "r+b");
-		int f_flags = fcntl(fileno(in), F_GETFL);
-		f_flags |= O_SYNC;
-		fcntl(fileno(in), F_SETFL, f_flags);
-		fseeko(in, 0, SEEK_END);
-		off_t mtdlen = ftello(in);
-		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
-		fwrite(mem, 65536, 1, in);
-		fflush(in);
-		fsync(fileno(in));
-		fclose(in);
-		free(mem);
-	}
-#endif
-	fprintf(stderr, "write system\n");
-	FILE *out = fopen(drive, "r+b");
-	int f_flags = fcntl(fileno(out), F_GETFL);
-	f_flags |= O_SYNC;
-	fcntl(fileno(out), F_SETFL, f_flags);
-	fprintf(stderr, "new file flags %X\n", f_flags);
-	if (out == -1) {
-		ret = ENOMEM;
-		fprintf(stderr, "cannot open file descriptor for %s\n", drive);
-		goto err;
-	}
-	char *flashbuf = (char *)malloc(linuxsize);
-	if (!flashbuf)		// not enough memory, use direct way
-	{
-		fprintf(stderr, "writing %d bytes without caching\n", linuxsize);
-		for (i = 0; i < linuxsize; i++)
-			putc(getc(fifo), out);
-	} else {
-		//read into temp buffer
-		int elements = fread(flashbuf, 1, linuxsize, fifo);
-		if (elements != linuxsize) {
-			fclose(out);
-			free(flashbuf);
-			ret = ENOMEM;
-			goto err;
-		}
-		fprintf(stderr, "writing %d bytes\n", linuxsize);
-		int written = fwrite(flashbuf, 1, linuxsize, out);
-		fprintf(stderr, "%d bytes written\n", written);
-		free(flashbuf);
-	}
-	fprintf(stderr, "flush and sync descriptor\n");
-	fflush(out);
-	fsync(fileno(out));
-	fclose(out);
 	killall("watchdog", SIGKILL);
 	/*
 	 * Wait for write to terminate 
@@ -251,7 +202,6 @@ err:
 		free(buf);
 	if (fifo)
 		fclose(fifo);
-	unlink(upload_fifo);
 
 	// diag_led(DIAG, STOP_LED);
 	// C_led (0);
