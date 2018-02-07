@@ -61,7 +61,6 @@
 #define POLL 4
 #define PREC -6
 
-
 static int getaddrbyname(char *host, struct sockaddr_storage *ss)
 {
 	int err;
@@ -207,7 +206,6 @@ static int query_server(char *srv)
 		return -1;
 	}
 
-
 	if (connect(sd, (struct sockaddr *)&ss, len) == -1) {
 		syslog(LOG_DAEMON | LOG_ERR, "Failed connecting to %s [%s]: %s", srv, deststr, strerror(errno));
 		close(sd);
@@ -254,6 +252,7 @@ int main(int argc, char *argv[])
 	prognm = argv[0];
 	if (argc <= 1)
 		return usage(1);
+	openlog("ntpclient", LOG_PID | LOG_NDELAY, LOG_DAEMON);
 
 	for (i = 1; i < argc; ++i) {
 		char *srv;
@@ -266,17 +265,20 @@ int main(int argc, char *argv[])
 
 			/* Done, time set! */
 			if (0 == rc)
-				return 0;
+				goto ok;
 
 			/* Fatal error, exit now. */
 			if (-1 == rc)
-				return 1;
+				goto err;
 
 			/* No response, or other error, try next server */
 			srv = strtok(NULL, " ");
 		}
 	}
-
+      err:;
+	closelog();
 	return 1;
+      ok:;
+	closelog();
+	return 0;
 }
-
