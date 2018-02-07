@@ -3194,6 +3194,7 @@ char *dhcp6_event_statestr(ev)
 		return ("???"); /* XXX */
 	}
 }
+#if 0  //def NEED_PRINTF
 
 void
 setloglevel(debuglevel)
@@ -3222,7 +3223,6 @@ setloglevel(debuglevel)
 		}
 	}
 }
-
 void
 my_dprintf(int level, const char *fname, const char *fmt, ...)
 {
@@ -3260,7 +3260,7 @@ my_dprintf(int level, const char *fname, const char *fmt, ...)
 		syslog(level > LOG_NOTICE ? LOG_NOTICE : level, "%s%s%s", fname, printfname ? ": " : "", logbuf);
 #endif
 }
-
+#endif
 int
 ifaddrconf(cmd, ifname, addr, plen, pltime, vltime)
 	ifaddrconf_cmd_t cmd;
@@ -3409,6 +3409,7 @@ safefile(path)
 	return (0);
 }
 
+#if 0
 int
 dumpfile(path)
 	const char *path;
@@ -3433,3 +3434,4 @@ dumpfile(path)
 
 	return 0;
 }
+#endif
