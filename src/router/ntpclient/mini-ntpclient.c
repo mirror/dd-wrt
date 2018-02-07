@@ -3,7 +3,7 @@
  * mini-ntpclient: a stripped-down & simplified ntpclient -- tofu
  *
  */
- 
+
 /* 
  *
  * ntpclient.c - NTP client
@@ -56,7 +56,7 @@
 #include <sys/time.h>
 #include <sys/timex.h>
 
-#define JAN_1970        0x83aa7e80      /* 2208988800 1970 - 1900 in seconds */
+#define JAN_1970        0x83aa7e80	/* 2208988800 1970 - 1900 in seconds */
 #define NTP_PORT (123)
 
 /* How to multiply by 4294.967296 quickly (and not quite exactly)
@@ -79,14 +79,12 @@
  */
 #define sec2u(x) ( (x) * 15.2587890625 )
 
-
 typedef u_int32_t __u32;
 
 struct ntptime {
 	unsigned int coarse;
 	unsigned int fine;
 };
-
 
 void send_packet(int usd)
 {
@@ -96,19 +94,17 @@ void send_packet(int usd)
 #define VN 3
 #define MODE 3
 #define STRATUM 0
-#define POLL 4 
+#define POLL 4
 #define PREC -6
 
-	bzero((char *) data,sizeof(data));
-	data[0] = htonl (
-		( LI << 30 ) | ( VN << 27 ) | ( MODE << 24 ) |
-		( STRATUM << 16) | ( POLL << 8 ) | ( PREC & 0xff ) );
-	data[1] = htonl(1<<16);  /* Root Delay (seconds) */
-	data[2] = htonl(1<<16);  /* Root Dispersion (seconds) */
-	gettimeofday(&now,NULL);
-	data[10] = htonl(now.tv_sec + JAN_1970); /* Transmit Timestamp coarse */
-	data[11] = htonl(NTPFRAC(now.tv_usec));  /* Transmit Timestamp fine   */
-	send(usd,data,48,0);
+	bzero((char *)data, sizeof(data));
+	data[0] = htonl((LI << 30) | (VN << 27) | (MODE << 24) | (STRATUM << 16) | (POLL << 8) | (PREC & 0xff));
+	data[1] = htonl(1 << 16);	/* Root Delay (seconds) */
+	data[2] = htonl(1 << 16);	/* Root Dispersion (seconds) */
+	gettimeofday(&now, NULL);
+	data[10] = htonl(now.tv_sec + JAN_1970);	/* Transmit Timestamp coarse */
+	data[11] = htonl(NTPFRAC(now.tv_usec));	/* Transmit Timestamp fine   */
+	send(usd, data, 48, 0);
 }
 
 /*
@@ -129,7 +125,7 @@ double ntpdiff( struct ntptime *start, struct ntptime *stop)
 }
 */
 
-void rfc1305(uint32_t *data)
+void rfc1305(uint32_t * data)
 {
 /*
 	struct ntptime *arrival;
@@ -179,8 +175,8 @@ void rfc1305(uint32_t *data)
 */
 
 	struct timeval tv_set;
-	tv_set.tv_sec  = ntohl(((uint32_t *)data)[10]) - JAN_1970;
-	tv_set.tv_usec = USEC(ntohl(((uint32_t *)data)[11]));
+	tv_set.tv_sec = ntohl(((uint32_t *) data)[10]) - JAN_1970;
+	tv_set.tv_usec = USEC(ntohl(((uint32_t *) data)[11]));
 	if (settimeofday(&tv_set, NULL) < 0) {
 		perror("settimeofday");
 		exit(1);
@@ -205,7 +201,7 @@ int main(int argc, char *argv[])
 	char *srv;
 	char buf[256];
 
-//	printf("mini ntpclient\n");
+//      printf("mini ntpclient\n");
 
 	if (argc <= 1) {
 		printf("Usage: %s <server> [server [...]]\n", argv[0]);
@@ -227,12 +223,12 @@ int main(int argc, char *argv[])
 				memcpy(&sa.sin_addr, he->h_addr_list[0], sizeof(sa.sin_addr));
 				sa.sin_port = htons(NTP_PORT);
 				sa.sin_family = AF_INET;
-	
+
 				//printf("trying %s [%s]\n", argv[i], inet_ntoa(sa.sin_addr));
-	
-				if (connect(usd, (struct sockaddr*)&sa, sizeof(sa)) != -1) {
+
+				if (connect(usd, (struct sockaddr *)&sa, sizeof(sa)) != -1) {
 					send_packet(usd);
-	
+
 					tv.tv_sec = 3;
 					tv.tv_usec = 0;
 					FD_ZERO(&fds);
@@ -240,7 +236,7 @@ int main(int argc, char *argv[])
 					if (select(usd + 1, &fds, NULL, NULL, &tv) == 1) {
 						int len;
 						uint32_t packet[12];
-	
+
 						len = recv(usd, packet, sizeof(packet), 0);
 						if (len == sizeof(packet)) {
 							rfc1305(packet);
@@ -249,16 +245,14 @@ int main(int argc, char *argv[])
 							return 0;
 						}
 					}
-				}
-				else {
+				} else {
 					perror("connect");
 				}
-			}
-			else {
+			} else {
 				perror("gethostbyname");
 			}
 			close(usd);
-	
+
 			srv = strtok(NULL, " ");
 		}
 	}
