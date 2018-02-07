@@ -160,11 +160,11 @@ madwifi-install:
 	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=armv9tdmi-boese-le-elf install
 endif
 ifeq ($(ARCHITECTURE),laguna)
-ifeq ($(CONFIG_RAIEXTRA),y)
-	HAL_TARGET=laguna-raiextra-le-elf
-else
+#ifeq ($(CONFIG_RAIEXTRA),y)
+#	HAL_TARGET=laguna-raiextra-le-elf
+#else
 	HAL_TARGET=laguna-le-elf
-endif
+#endif
 madwifi:
 	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=$(HAL_TARGET)  
 	make -j 4 -C madwifi.dev/madwifi.dev/tools CFLAGS="-DBOESE=1 $(COPTS)" TARGET=$(HAL_TARGET) BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
