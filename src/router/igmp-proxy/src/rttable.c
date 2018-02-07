@@ -227,8 +227,8 @@ int insertRoute(uint32_t group, int ifx) {
 
     // Sanitycheck the group adress...
     if( ! IN_MULTICAST( ntohl(group) )) {
-        my_log(LOG_WARNING, 0, "The group address %s is not a valid Multicast group. Table insert failed.",
-            inetFmt(group, s1));
+//        my_log(LOG_WARNING, 0, "The group address %s is not a valid Multicast group. Table insert failed.",
+//            inetFmt(group, s1));
         return 0;
     }
 
