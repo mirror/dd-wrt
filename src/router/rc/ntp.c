@@ -125,6 +125,7 @@ static int do_ntp(void)		// called from ntp_main and
 	struct timeval now;
 	struct timeval then;
 
+	nvram_seti("ntp_success", 0);
 	if (!nvram_matchi("ntp_enable", 1))
 		return 0;
 	gettimeofday(&now, NULL);
@@ -153,6 +154,7 @@ static int do_ntp(void)		// called from ntp_main and
 
 	if ((abs(now.tv_sec - then.tv_sec) > 100000000)) {
 		sync_daemons();
+		nvram_seti("ntp_success", 1);
 		eval("stopservice", "process_monitor");
 		eval("startservice", "process_monitor");
 	}
