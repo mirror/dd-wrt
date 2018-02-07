@@ -27,8 +27,8 @@ static void check_udhcpd(timer_t t, int arg);
 extern void init_event_queue(int n);
 extern int timer_connect(timer_t timerid, void (*routine) (timer_t, int), int arg);
 
-#define NTP_M_TIMER 3600
-#define NTP_N_TIMER 30
+static unsigned int NTP_M_TIMER = 3600;
+static unsigned int NTP_N_TIMER = 30;
 
 static int process_monitor_main(int argc, char **argv)
 {
@@ -38,7 +38,7 @@ static int process_monitor_main(int argc, char **argv)
 	long int leasetime = 0;
 
 	init_event_queue(40);
-
+	NTP_M_TIMER = nvram_default_geti("ntp_timer", 3600);
 	openlog("process_monitor", LOG_PID | LOG_NDELAY, LOG_DAEMON);
 
 	if (nvram_invmatchi("dhcp_dnsmasq", 1)) {
