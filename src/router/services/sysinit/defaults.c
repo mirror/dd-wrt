@@ -212,8 +212,8 @@ struct nvram_param srouter_defaults[] = {
 	{"ath0_regdomain", "GERMANY_BFWA"},	/* LAN IP address */
 	{"ath0_channelbw", "10"},	/* LAN IP address */
 #else
-	{"ath0_regdomain", "GERMANY"},	
-	{"ath1_regdomain", "GERMANY"},	
+	{"ath0_regdomain", "GERMANY"},
+	{"ath1_regdomain", "GERMANY"},
 #endif
 	{"lan_ipaddr", "192.168.1.1"},	/* LAN IP address */
 #elif HAVE_IDEXX

@@ -72,9 +72,6 @@
 #ifdef HAVE_WPS
 #include "wpswatcher.c"
 #endif
-#ifdef HAVE_PPTPD
-#include "pptpd.c"
-#endif
 #ifdef HAVE_WIVIZ
 #include "autokill_wiviz.c"
 #include "run_wiviz.c"
@@ -86,217 +83,6 @@
 #include "gratarp.c"
 #include "ntp.c"
 
-#ifdef HAVE_IPV6
-static int dhcp6c_state_main(int argc, char **argv)
-{
-	char prefix[INET6_ADDRSTRLEN];
-	struct in6_addr addr;
-	int i, r;
-
-	nvram_set("ipv6_rtr_addr", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
-
-	// extract prefix from configured IPv6 address
-	if (inet_pton(AF_INET6, nvram_safe_get("ipv6_rtr_addr"), &addr) > 0) {
-
-		r = nvram_geti("ipv6_pf_len") ? : 64;
-		for (r = 128 - r, i = 15; r > 0; r -= 8) {
-			if (r >= 8)
-				addr.s6_addr[i--] = 0;
-			else
-				addr.s6_addr[i--] &= (0xff << r);
-		}
-		inet_ntop(AF_INET6, &addr, prefix, sizeof(prefix));
-
-		nvram_set("ipv6_prefix", prefix);
-	}
-
-	nvram_set("ipv6_get_dns", getenv("new_domain_name_servers"));
-	nvram_set("ipv6_get_domain", getenv("new_domain_name"));
-	nvram_set("ipv6_get_sip_name", getenv("new_sip_name"));
-	nvram_set("ipv6_get_sip_servers", getenv("new_sip_servers"));
-
-	dns_to_resolv();
-
-	eval("stopservice", "radvd", "-f");
-	eval("startservice", "radvd", "-f");
-	eval("stopservice", "dhcp6s", "-f");
-	eval("startservice", "dhcp6s", "-f");
-	return 0;
-}
-#endif
-/* 
- * Call when keepalive mode
- */
-static int redial_main(int argc, char **argv)
-{
-	int need_redial = 0;
-	int status;
-	pid_t pid;
-	int _count = 1;
-	int num;
-
-	while (1) {
-#if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
-		if (nvram_match("wan_proto", "3g")
-		    && nvram_match("3gdata", "mbim")) {
-			start_service_force("check_mbim");
-		}
-#endif
-#if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
-		if (nvram_match("wan_proto", "3g")
-		    && nvram_match("3gdata", "sierradirectip")) {
-			start_service_force("check_sierradirectip");
-		} else if (nvram_match("wan_proto", "3g")
-			   && nvram_match("3gnmvariant", "1")) {
-			start_service_force("check_sierrappp");
-		}
-		if (nvram_match("wan_proto", "3g")
-		    && nvram_match("3gdata", "qmi") && _count == 1) {
-			start_service_force("check_qmi");
-		}
-#endif
-		sleep(atoi(argv[1]));
-		num = 0;
-		_count++;
-
-		// fprintf(stderr, "check PPPoE %d\n", num);
-		if (!check_wan_link(num)) {
-			// fprintf(stderr, "PPPoE %d need to redial\n", num);
-			need_redial = 1;
-		} else {
-			// fprintf(stderr, "PPPoE %d not need to redial\n", num);
-			continue;
-		}
-
-#if 0
-		cprintf("Check pppx if exist: ");
-		if ((fp = fopen("/proc/net/dev", "r")) == NULL) {
-			return -1;
-		}
-
-		while (fgets(line, sizeof(line), fp) != NULL) {
-			if (strstr(line, "ppp")) {
-				match = 1;
-				break;
-			}
-		}
-		fclose(fp);
-		cprintf("%s", match == 1 ? "have exist\n" : "ready to dial\n");
-#endif
-
-		if (need_redial) {
-			pid = fork();
-			switch (pid) {
-			case -1:
-				perror("fork failed");
-				exit(1);
-			case 0:
-#ifdef HAVE_PPPOE
-				if (nvram_match("wan_proto", "pppoe")) {
-					sleep(1);
-					start_service_force("wan_redial");
-				}
-#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || defined(HAVE_PPPOATM) || defined(HAVE_PPPOEDUAL)
-				else
-#endif
-#endif
-
-#ifdef HAVE_PPPOEDUAL
-				if (nvram_match("wan_proto", "pppoe_dual")) {
-					sleep(1);
-					start_service_force("wan_redial");
-				}
-#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || defined(HAVE_PPPOATM)
-				else
-#endif
-#endif
-
-#ifdef HAVE_PPPOATM
-				if (nvram_match("wan_proto", "pppoa")) {
-					sleep(1);
-					start_service_force("wan_redial");
-				}
-#if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT)
-				else
-#endif
-#endif
-
-#ifdef HAVE_PPTP
-				if (nvram_match("wan_proto", "pptp")) {
-					stop_service_force("pptp");
-					unlink("/tmp/services/pptp.stop");
-					sleep(1);
-					start_service_force("wan_redial");
-				}
-#if defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT)
-				else
-#endif
-#endif
-#ifdef HAVE_L2TP
-				if (nvram_match("wan_proto", "l2tp")) {
-					stop_service_force("l2tp");
-					unlink("/tmp/services/l2tp.stop");
-					sleep(1);
-					start_service_force("wan_redial");
-				}
-#ifdef HAVE_HEARTBEAT
-				else
-#endif
-#endif
-					// Moded by Boris Bakchiev
-					// We dont need this at all.
-					// But if this code is executed by any of pppX programs
-					// we might have to do this.
-
-#ifdef HAVE_HEARTBEAT
-				if (nvram_match("wan_proto", "heartbeat")) {
-					if (is_running("bpalogin") == 0) {
-						stop_service_force("heartbeat_redial");
-						sleep(1);
-						start_service_force("heartbeat_redial");
-					}
-
-				}
-#endif
-#ifdef HAVE_3G
-				else if (nvram_match("wan_proto", "3g")) {
-					sleep(1);
-					start_service_force("wan_redial");
-				}
-#endif
-#ifdef HAVE_IPETH
-				else if (nvram_match("wan_proto", "iphone")) {
-					sleep(1);
-					start_service_force("wan_redial");
-				}
-#endif
-				exit(0);
-				break;
-			default:
-				waitpid(pid, &status, 0);
-				// dprintf("parent\n");
-				break;
-			}	// end switch
-		}		// end if
-	}			// end while
-}				// end main
-
-int get_wanface(int argc, char **argv)
-{
-	fprintf(stdout, "%s", get_wan_face());
-	return 0;
-}
-
-int get_nfmark(int argc, char **argv)
-{
-	if (argc < 3) {
-		fprintf(stderr, "usage: get_nfmark <service> <mark>\n\n" "	services: FORWARD\n" "		  HOTSPOT\n" "		  QOS\n\n" "	eg: get_nfmark QOS 10\n");
-		return 1;
-	}
-
-	fprintf(stdout, "%s\n", get_NFServiceMark(argv[1], atol(argv[2])));
-	return 0;
-}
 
 struct MAIN {
 	char *callname;
@@ -321,6 +107,11 @@ static struct MAIN maincalls[] = {
 	{"hotplug", NULL, hotplug_main},
 	{"nvram", NULL, nvram_main},
 	{"ttraff", NULL, ttraff_main},
+	{"filtersync", "filtersync", NULL},
+	{"filter", "filter", NULL},
+	{"setpasswd", "setpasswd", NULL},
+	{"ipfmt", "ipfmt", NULL},	
+	{"restart_dns", "restart_dns", NULL},	
 	{"ledtool", NULL, ledtool_main},
 	{"check_ps", NULL, check_ps_main},
 //      {"resetbutton", NULL, resetbutton_main},
@@ -340,9 +131,9 @@ static struct MAIN maincalls[] = {
 	{"wpswatcher", NULL, wpswatcher_main},
 #endif
 #ifdef HAVE_PPTPD
-	{"poptop", NULL, &pptpd_main},
+	{"poptop", "pptpd_main", NULL},
 #endif
-	{"redial", NULL, &redial_main},
+	{"redial", "redial", NULL},
 #ifndef HAVE_RB500
 	// {"resetbutton", NULL, &resetbutton_main},
 #endif
@@ -398,7 +189,7 @@ static struct MAIN maincalls[] = {
 //      {"roaming_daemon", NULL, &roaming_daemon_main},
 	{"supplicant", "supplicant", NULL},
 #endif
-	{"get_wanface", NULL, &get_wanface},
+	{"get_wanface", "get_wanface", NULL},
 #ifndef HAVE_XSCALE
 	// {"ledtool", NULL, &ledtool_main},
 #endif
@@ -406,9 +197,9 @@ static struct MAIN maincalls[] = {
 	{"regshell", NULL, &reg_main},
 #endif
 	{"gratarp", NULL, &gratarp_main},
-	{"get_nfmark", NULL, &get_nfmark},
+	{"get_nfmark", "get_nfmark", NULL},
 #ifdef HAVE_IPV6
-	{"dhcp6c-state", NULL, &dhcp6c_state_main},
+	{"dhcp6c-state", "dhcp6c_state", },
 #endif
 #ifdef HAVE_QTN
 	{"qtn_monitor", NULL, &qtn_monitor_main},
@@ -485,27 +276,10 @@ int main(int argc, char **argv)
 	if (strstr(base, "erase")) {
 		int brand = getRouterBrand();
 
-		if (brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_MOTOROLA_WE800G || brand == ROUTER_RT210W || brand == ROUTER_BUFFALO_WZRRSG54)	// these 
-			// 
-			// 
-			// 
-			// 
-			// 
-			// 
-			// 
-			// routers 
-			// have 
-			// problem 
-			// erasing 
-			// nvram,
-			// we 
-			// only 
-			// software 
-			// restore 
-			// defaults
+		if (brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_MOTOROLA_WE800G || brand == ROUTER_RT210W || brand == ROUTER_BUFFALO_WZRRSG54)
 		{
 			if (argv[1] && strcmp(argv[1], "nvram")) {
-				fprintf(stderr, "Sorry, erasing nvram will get this router unuseable\n");
+				fprintf(stderr, "Sorry, erasing nvram will turn this router into a brick\n");
 				goto out;
 			}
 		} else {
@@ -550,48 +324,6 @@ int main(int argc, char **argv)
 #endif
 #endif
 
-	// ////////////////////////////////////////////////////
-	// 
-	if (strstr(base, "filtersync")) {
-		startstop("filtersync");
-		goto out;
-	}
-	/* 
-	 * filter [add|del] number 
-	 */
-	if (strstr(base, "filter")) {
-		if (argv[1] && argv[2]) {
-			int num = 0;
-
-			if ((num = atoi(argv[2])) > 0) {
-				if (strcmp(argv[1], "add") == 0) {
-					start_servicei("filter_add", num);
-					goto out;
-				} else if (strcmp(argv[1], "del") == 0) {
-					start_servicei("filter_del", num);
-					goto out;
-				}
-			}
-		} else {
-			fprintf(stderr, "usage: filter [add|del] number\n");
-			ret = EINVAL;
-		}
-		goto out;
-	}
-
-	if (strstr(base, "restart_dns")) {
-		stop_service("dnsmasq");
-#ifdef HAVE_UDHCPD
-		stop_service("udhcpd");
-		start_service("udhcpd");
-#endif
-		start_service("dnsmasq");
-		goto out;
-	}
-	if (strstr(base, "setpasswd")) {
-		startstop("mkfiles");
-		goto out;
-	}
 	/* 
 	 * rc [stop|start|restart ] 
 	 */
@@ -610,68 +342,6 @@ int main(int argc, char **argv)
 			ret = EINVAL;
 			goto out;
 		}
-	}
-	if (strstr(base, "ipfmt")) {
-		char cidr[24];
-		char fmt;
-		struct in_addr addr, msk, outfmt;
-		int valid;
-		const char usage[] = ""	//
-		    "ipfmt <print option> <addr> <netmask>\n"	//
-		    "ipfmt <print option> <addr/cidr>\n"	//
-		    "\n"	//
-		    "print options:\n"	//
-		    "        b  : broadcast\n"	//
-		    "        n  : network\n"	//
-		    "        c  : cidr\n"	//
-		    "        N  : netmask\n"	//
-		    "\n";	//
-
-		if (argc < 3) {
-			puts(usage);
-			return 0;
-		}
-
-		fmt = argv[1][0];
-		if (argc == 3) {
-			valid = inet_cidr_to_addr(argv[2], &addr, &msk);
-			if (valid == -EINVAL) {
-				fprintf(stderr, "invalid cidr string\n");
-				return 1;
-			}
-		} else {
-			valid = inet_aton(argv[2], &addr);
-			if (valid == -EINVAL) {
-				fprintf(stderr, "invalid address\n");
-				return 1;
-			}
-			valid = inet_aton(argv[3], &msk);
-			if (valid == -EINVAL) {
-				fprintf(stderr, "invalid netmask\n");
-				return 1;
-			}
-		}
-
-		switch (fmt) {
-		case 'b':
-			outfmt = inet_bcastaddr_of(inet_netaddr_of(addr, msk), msk);
-			break;
-		case 'n':
-			outfmt = inet_netaddr_of(addr, msk);
-			break;
-		case 'N':
-			outfmt = msk;
-			break;
-		case 'c':
-			inet_addr_to_cidr(addr, msk, cidr);
-			puts(cidr);
-			return 0;
-		default:
-			fprintf(stderr, "invalid option\n%s", usage);
-			break;
-		}
-		puts(inet_ntoa(outfmt));
-		return 0;
 	}
 
 	ret = 1;

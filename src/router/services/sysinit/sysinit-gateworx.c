@@ -459,91 +459,110 @@ void start_sysinit(void)
 #endif
 
 #ifdef HAVE_STATUS_GPIO
-	char *var,*next, *gpio_value;
+	char *var, *next, *gpio_value;
 	char nvgpio[32];
-	int gpio_need_commit=0;
+	int gpio_need_commit = 0;
 
 #if defined(HAVE_TMK) || defined(HAVE_BKM)
-fprintf(stderr,"DEBUG _%d_\n",__LINE__);
-nvram_unset("wan_3g_signal");
-nvram_unset("wan_3g_mode");
-nvram_unset("wan_3g_status");
+	fprintf(stderr, "DEBUG _%d_\n", __LINE__);
+	nvram_unset("wan_3g_signal");
+	nvram_unset("wan_3g_mode");
+	nvram_unset("wan_3g_status");
 	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2358-4")
 	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2358-4")) {
-			fprintf(stderr, "GPIO INIT for 2358\n");
-			if (nvram_get("gpio_outputs") == NULL) nvram_set("gpio_outputs","16 17");
-			if (nvram_get("gpio_inputs")  == NULL) nvram_set("gpio_inputs","18 19");
-			if (nvram_get("gpio16_name")  == NULL) nvram_set("gpio16_name","Output 1");
-			if (nvram_get("gpio17_name")  == NULL) nvram_set("gpio17_name","Output 2");
-			if (nvram_get("gpio18_name")  == NULL) nvram_set("gpio18_name","Input 1");
-			if (nvram_get("gpio19_name")  == NULL) nvram_set("gpio19_name","Input 2");
-			// wan verbindung ueber ethernet
-			if (nvram_get("gpiowancable") == NULL) nvram_set("gpiowancable","36");
-			set_gpio(36, 0);
-			if (nvram_get("gpio3g")       == NULL) nvram_set("gpio3g","37");
-			set_gpio(37, 0);
-			if (nvram_get("gpiovpn")      == NULL) nvram_set("gpiovpn","38");
-			set_gpio(38, 0);
-			if (nvram_get("gpiohisecmesh") == NULL) nvram_set("gpiohisecmesh","39");
-			set_gpio(39, 0);			gpio_need_commit=1;
+		fprintf(stderr, "GPIO INIT for 2358\n");
+		if (nvram_get("gpio_outputs") == NULL)
+			nvram_set("gpio_outputs", "16 17");
+		if (nvram_get("gpio_inputs") == NULL)
+			nvram_set("gpio_inputs", "18 19");
+		if (nvram_get("gpio16_name") == NULL)
+			nvram_set("gpio16_name", "Output 1");
+		if (nvram_get("gpio17_name") == NULL)
+			nvram_set("gpio17_name", "Output 2");
+		if (nvram_get("gpio18_name") == NULL)
+			nvram_set("gpio18_name", "Input 1");
+		if (nvram_get("gpio19_name") == NULL)
+			nvram_set("gpio19_name", "Input 2");
+		// wan verbindung ueber ethernet
+		if (nvram_get("gpiowancable") == NULL)
+			nvram_set("gpiowancable", "36");
+		set_gpio(36, 0);
+		if (nvram_get("gpio3g") == NULL)
+			nvram_set("gpio3g", "37");
+		set_gpio(37, 0);
+		if (nvram_get("gpiovpn") == NULL)
+			nvram_set("gpiovpn", "38");
+		set_gpio(38, 0);
+		if (nvram_get("gpiohisecmesh") == NULL)
+			nvram_set("gpiohisecmesh", "39");
+		set_gpio(39, 0);
+		gpio_need_commit = 1;
 	}
 
 	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2350")
 	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2350")) {
-			if (nvram_match("gpiowancable", "36")) {
-fprintf(stderr,"DEBUG _%d_\n",__LINE__);
-				nvram_safe_unset("gpio_outputs");
-				nvram_safe_unset("gpio_inputs");
-				nvram_safe_unset("gpio8_name");
-				nvram_safe_unset("gpio9_name");
-				nvram_safe_unset("gpio5_name");
-				nvram_safe_unset("gpio16_name");
-				nvram_safe_unset("gpio17_name");
-				nvram_safe_unset("gpio18_name");
-				nvram_safe_unset("gpio19_name");
-				nvram_safe_unset("gpio3g");
-				nvram_safe_unset("gpiovpn");
-				nvram_safe_unset("gpiowancable");
-fprintf(stderr,"DEBUG _%d_\n",__LINE__);
-			}
-			fprintf(stderr, "GPIO INIT for 2350\n");
-			if (nvram_get("gpio_outputs") == NULL) nvram_set("gpio_outputs","8 9");
-fprintf(stderr,"DEBUG _%d_\n",__LINE__);
-			if (nvram_get("gpio_inputs")  == NULL) nvram_set("gpio_inputs","5");
-			if (nvram_get("gpio8_name")  == NULL) nvram_set("gpio8_name","Output 1");
-			if (nvram_get("gpio9_name")  == NULL) nvram_set("gpio9_name","Output 2");
-			if (nvram_get("gpio5_name")  == NULL) nvram_set("gpio5_name","Input 1");
-			/* if (nvram_get("gpio9_name")  == NULL) nvram_set("gpio19_name","Input 2");*/
-			if (nvram_get("gpio3g")       == NULL) nvram_set("gpio3g","0");
-			set_gpio(0, 0);
-			// wan verbindung ueber ethernet
-			/* if (nvram_get("gpiowancable") == NULL) nvram_set("gpiowancable","1");
-			set_gpio(1, 0);*/ 
+		if (nvram_match("gpiowancable", "36")) {
+			fprintf(stderr, "DEBUG _%d_\n", __LINE__);
+			nvram_safe_unset("gpio_outputs");
+			nvram_safe_unset("gpio_inputs");
+			nvram_safe_unset("gpio8_name");
+			nvram_safe_unset("gpio9_name");
+			nvram_safe_unset("gpio5_name");
+			nvram_safe_unset("gpio16_name");
+			nvram_safe_unset("gpio17_name");
+			nvram_safe_unset("gpio18_name");
+			nvram_safe_unset("gpio19_name");
+			nvram_safe_unset("gpio3g");
+			nvram_safe_unset("gpiovpn");
 			nvram_safe_unset("gpiowancable");
-fprintf(stderr,"DEBUG _%d_\n",__LINE__);
-			if (nvram_get("gpiovpn")      == NULL) nvram_set("gpiovpn","2");
-			set_gpio(2, 0);
-			gpio_need_commit=1;
+			fprintf(stderr, "DEBUG _%d_\n", __LINE__);
+		}
+		fprintf(stderr, "GPIO INIT for 2350\n");
+		if (nvram_get("gpio_outputs") == NULL)
+			nvram_set("gpio_outputs", "8 9");
+		fprintf(stderr, "DEBUG _%d_\n", __LINE__);
+		if (nvram_get("gpio_inputs") == NULL)
+			nvram_set("gpio_inputs", "5");
+		if (nvram_get("gpio8_name") == NULL)
+			nvram_set("gpio8_name", "Output 1");
+		if (nvram_get("gpio9_name") == NULL)
+			nvram_set("gpio9_name", "Output 2");
+		if (nvram_get("gpio5_name") == NULL)
+			nvram_set("gpio5_name", "Input 1");
+		/* if (nvram_get("gpio9_name")  == NULL) nvram_set("gpio19_name","Input 2"); */
+		if (nvram_get("gpio3g") == NULL)
+			nvram_set("gpio3g", "0");
+		set_gpio(0, 0);
+		// wan verbindung ueber ethernet
+		/* if (nvram_get("gpiowancable") == NULL) nvram_set("gpiowancable","1");
+		   set_gpio(1, 0); */
+		nvram_safe_unset("gpiowancable");
+		fprintf(stderr, "DEBUG _%d_\n", __LINE__);
+		if (nvram_get("gpiovpn") == NULL)
+			nvram_set("gpiovpn", "2");
+		set_gpio(2, 0);
+		gpio_need_commit = 1;
 	}
 #endif
- 
+
 	fprintf(stderr, "GPIO START\n");
 
 	char *gpios = nvram_safe_get("gpio_outputs");
 	if (gpios != NULL) {
-		var = (char *)malloc(strlen(gpios)+1);
+		var = (char *)malloc(strlen(gpios) + 1);
 		if (var != NULL) {
 			foreach(var, gpios, next) {
 				sprintf(nvgpio, "gpio%s", var);
 				fprintf(stderr, "GPIO foreach  %s\n", var);
-				if (nvram_default_match(nvgpio, "1", "0")) 
+				if (nvram_default_match(nvgpio, "1", "0"))
 					set_gpio(atoi(var), 1);
 				else
 					set_gpio(atoi(var), 0);
 			}
-		free(var);
+			free(var);
 		}
-	if (gpio_need_commit) nvram_commit();
+		if (gpio_need_commit)
+			nvram_commit();
 	}
 #endif
 
