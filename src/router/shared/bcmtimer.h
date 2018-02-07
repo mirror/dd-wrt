@@ -25,8 +25,8 @@
 /*
  * timer ID 
  */
-typedef unsigned int bcm_timer_module_id;
-typedef unsigned int bcm_timer_id;
+typedef unsigned long bcm_timer_module_id;
+typedef unsigned long bcm_timer_id;
 
 /*
  * timer callback 
