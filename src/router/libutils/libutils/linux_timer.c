@@ -84,7 +84,7 @@ typedef void (*event_callback_t) (timer_t, int);
 	if ((t)->tv_sec == 0) (t)->tv_usec=ROUNDUP((t)->tv_usec, g); \
     } while (0)
 
-typedef long uclock_t;
+typedef int uclock_t;
 
 #define TFLAG_NONE	0
 #define TFLAG_CANCELLED	(1<<0)
