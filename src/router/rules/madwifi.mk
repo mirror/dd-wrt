@@ -210,6 +210,31 @@ madwifi-install:
 	@true
 
 endif
+ifeq ($(ARCHITECTURE),mvebu)
+madwifi:
+	@true
+
+
+madwifi-clean:
+	@true
+
+madwifi-install:
+	@true
+
+endif
+
+ifeq ($(ARCHITECTURE),ipq806x)
+madwifi:
+	@true
+
+
+madwifi-clean:
+	@true
+
+madwifi-install:
+	@true
+
+endif
 ifeq ($(ARCHITECTURE),alpine)
 madwifi:
 	@true
