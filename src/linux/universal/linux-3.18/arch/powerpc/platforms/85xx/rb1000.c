@@ -76,7 +76,7 @@ static void add_of_property(struct device_node *np, struct property *pp,
 	pp->length = size;
 	pp->value = value;
 
-	prom_add_property(np, pp);
+	of_add_property(np, pp);
 }
 
 static void add_crypto_of_node(void)
