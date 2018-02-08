@@ -141,8 +141,8 @@ static int do_ntp(void)		// called from ntp_main and
 	nvram_set("ntp_done", "1");
 
 #if defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_LAGUNA) || defined(HAVE_STORM) || (defined(HAVE_GATEWORX) && !defined(HAVE_NOP8670))
-	eval("hwclock", "-w");
-	eval("hwclock", "-f", "/dev/rtc0", "-w");
+	eval("hwclock", "-w", "-u");
+	eval("hwclock", "-f", "/dev/rtc0", "-w", "-u");
 #endif
 	dd_syslog(LOG_ERR, "cyclic NTP Update success (servers %s)\n", servers);
 	gettimeofday(&then, NULL);
