@@ -1,6 +1,6 @@
 
 #CC = mipsel-linux-uclibc-gcc
-CFLAGS += $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections  -Wall
+CFLAGS += $(COPTS) $(MIPS16_OPT) -DPHASELOCKING -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections  -Wall
 
 all: ntpclient
 
