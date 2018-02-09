@@ -120,11 +120,6 @@ static int getaddrbyname(char *host, struct sockaddr_storage *ss)
 	return 0;
 }
 
-struct ntptime {
-	unsigned int coarse;
-	unsigned int fine;
-};
-
 static char *prognm = NULL;
 
 static int usage(int code)
@@ -184,8 +179,6 @@ static int query_server(char *srv)
 
 		return usage(1);	/* Failure in name resolution. */
 	}
-	memset(&ipv4, 0, sizeof(ipv4));
-	memset(&ipv6, 0, sizeof(ipv6));
 	char deststr[INET6_ADDRSTRLEN];
 
 	/* Prefer IPv4 over IPv6, for now */
@@ -194,17 +187,16 @@ static int query_server(char *srv)
 		ipv4->sin_port = htons(NTP_PORT);
 		len = sizeof(struct sockaddr_in);
 		inet_ntop(AF_INET, &ipv4->sin_addr, deststr, sizeof(deststr));
-		syslog(LOG_DAEMON | LOG_DEBUG, "Connecting to %s [%s] ...\n", srv, deststr);
 	} else if (ss.ss_family == AF_INET6) {
 		ipv6 = (struct sockaddr_in6 *)(&ss);
 		ipv6->sin6_port = htons(NTP_PORT);
 		len = sizeof(struct sockaddr_in6);
 		inet_ntop(AF_INET6, &ipv6->sin6_addr, deststr, sizeof(deststr));
-		syslog(LOG_DAEMON | LOG_DEBUG, "Connecting to %s [%s] ...\n", srv, deststr);
 	} else {
 		syslog(LOG_ERR, "Unsupported address family for %s\n", srv);
 		return -1;
 	}
+	syslog(LOG_DAEMON | LOG_DEBUG, "Connecting to %s [%s] ...\n", srv, deststr);
 
 	if (connect(sd, (struct sockaddr *)&ss, len) == -1) {
 		syslog(LOG_DAEMON | LOG_ERR, "Failed connecting to %s [%s]: %s", srv, deststr, strerror(errno));
