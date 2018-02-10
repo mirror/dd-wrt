@@ -570,7 +570,8 @@ static void cert_file_out(unsigned char method, struct mime_handler *handler, ch
 	char *idx = strrchr(path, '/');
 	if (!idx)
 		return;
-	char *temp2 = *idx + 1;
+
+	char *temp2 = idx + 1;
 	char link[128];
 	if (!strcmp(temp2, "ca.pem"))
 		sprintf(link, "/jffs/etc/freeradius/certs/ca.pem");
