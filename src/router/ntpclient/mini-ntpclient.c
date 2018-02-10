@@ -169,8 +169,11 @@ static int query_server(char *srv)
 
 	sd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
 	if (sd == -1) {
-		perror("Failed opening UDP socket");
-		return -1;	/* Fatal error, cannot even create a socket? */
+		sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+		if (sd == -1) {
+			perror("Failed opening UDP socket");
+			return -1;	/* Fatal error, cannot even create a socket? */
+		}
 	}
 	int he = getaddrbyname(srv, &ss);
 	if (he) {
