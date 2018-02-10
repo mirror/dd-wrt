@@ -1942,7 +1942,7 @@ static void do_mypage(unsigned char method, struct mime_handler *handler, char *
 		qnum = 1;
 	foreach(sname, snamelist, next) {
 		if (qnum == i) {
-			FILE *fp = popen(sname, "rb");
+			FILE *fp;
 			FILE *out = fopen("/tmp/mypage.tmp", "wb");
 
 			if ((fp = popen(sname, "rb")) != NULL) {
