@@ -304,6 +304,7 @@ ifeq ($(ARCH),powerpc)
 endif
 ifneq ($(CONFIG_DIST),"micro")
 	sed -i 's/\# CONFIG_FEATURE_WGET_TIMEOUT is not set/CONFIG_FEATURE_WGET_TIMEOUT=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_CP_LONG_OPTIONS is not set/CONFIG_FEATURE_CP_LONG_OPTIONS=y/g' busybox/.config
 endif
 
 #ifeq ($(CONFIG_BUSYBOX_UDHCPC),y)
@@ -458,13 +459,15 @@ endif
 	sed -i 's/\# CONFIG_IPLINK is not set/CONFIG_IPLINK=y/g' busybox/.config
 	sed -i 's/\# CONFIG_IPROUTE is not set/CONFIG_IPROUTE=y/g' busybox/.config
 	sed -i 's/\# CONFIG_IPTUNNEL is not set/CONFIG_IPTUNNEL=y/g' busybox/.config
+	sed -i 's/\# CONFIG_IPRULE is not set/CONFIG_IPRULE=y/g' busybox/.config
 
 	sed -i 's/\# CONFIG_FEATURE_IP_ADDRESS is not set/CONFIG_FEATURE_IP_ADDRESS=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_IP_LINK is not set/CONFIG_FEATURE_IP_LINK=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_IP_ROUTE is not set/CONFIG_FEATURE_IP_ROUTE=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_IP_TUNNEL is not set/CONFIG_FEATURE_IP_TUNNEL=y/g' busybox/.config
-	echo "# CONFIG_ZCAT is not set" >> busybox/.config
-	echo "# CONFIG_BZCAT is not set" >> busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_IP_RULE is not set/CONFIG_FEATURE_IP_RULE=y/g' busybox/.config
+	echo "CONFIG_ZCAT=y" >> busybox/.config
+	echo "CONFIG_BZCAT=y" >> busybox/.config
 	echo "# CONFIG_LZCAT is not set" >> busybox/.config
 	echo "# CONFIG_XZCAT is not set" >> busybox/.config
 	echo "# CONFIG_UNLZOP is not set" >> busybox/.config
@@ -472,7 +475,7 @@ endif
 	echo "# CONFIG_TEST1 is not set" >> busybox/.config
 	echo "# CONFIG_TEST2 is not set" >> busybox/.config
 	echo "# CONFIG_EGREP is not set" >> busybox/.config
-	echo "# CONFIG_FGREP is not set" >> busybox/.config
+	echo "CONFIG_FGREP=y" >> busybox/.config
 	echo "# CONFIG_POWEROFF is not set" >> busybox/.config
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 	echo "# CONFIG_MKDOSFS is not set" >> busybox/.config
