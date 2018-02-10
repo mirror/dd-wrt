@@ -35,23 +35,23 @@ jiffies = jiffies_64;
 	 */						\
 	. = ALIGN(SZ_4K);				\
 	VMLINUX_SYMBOL(__hyp_idmap_text_start) = .;	\
-	*(.hyp.idmap.text)				\
+	KEEP(*(.hyp.idmap.text))				\
 	VMLINUX_SYMBOL(__hyp_idmap_text_end) = .;	\
 	VMLINUX_SYMBOL(__hyp_text_start) = .;		\
-	*(.hyp.text)					\
+	KEEP(*(.hyp.text))					\
 	VMLINUX_SYMBOL(__hyp_text_end) = .;
 
 #define IDMAP_TEXT					\
 	. = ALIGN(SZ_4K);				\
 	VMLINUX_SYMBOL(__idmap_text_start) = .;		\
-	*(.idmap.text)					\
+	KEEP(*(.idmap.text))					\
 	VMLINUX_SYMBOL(__idmap_text_end) = .;
 
 #ifdef CONFIG_HIBERNATION
 #define HIBERNATE_TEXT					\
 	. = ALIGN(SZ_4K);				\
 	VMLINUX_SYMBOL(__hibernate_exit_text_start) = .;\
-	*(.hibernate_exit.text)				\
+	KEEP(*(.hibernate_exit.text))				\
 	VMLINUX_SYMBOL(__hibernate_exit_text_end) = .;
 #else
 #define HIBERNATE_TEXT
@@ -100,7 +100,7 @@ SECTIONS
 	.text : {			/* Real text segment		*/
 		_stext = .;		/* Text and read-only data	*/
 			__exception_text_start = .;
-			*(.exception.text)
+			KEEP(*(.exception.text))
 			__exception_text_end = .;
 			IRQENTRY_TEXT
 			SOFTIRQENTRY_TEXT
@@ -138,7 +138,7 @@ SECTIONS
 	. = ALIGN(4);
 	.altinstructions : {
 		__alt_instructions = .;
-		*(.altinstructions)
+		KEEP(*(.altinstructions))
 		__alt_instructions_end = .;
 	}
 	.altinstr_replacement : {
