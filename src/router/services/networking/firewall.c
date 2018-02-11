@@ -3092,6 +3092,8 @@ void stop_firewall(void)
 	int i;
 
 	eval("iptables", "-F");
+	eval("iptables", "-t", "nat" "-F");
+	eval("iptables", "-t", "mangle" "-F");
 	rmmod("ipt_webstr");
 	rmmod("ipt_layer7");
 	rmmod("xt_layer7");
