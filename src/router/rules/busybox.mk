@@ -475,7 +475,7 @@ endif
 	echo "# CONFIG_TEST1 is not set" >> busybox/.config
 	echo "# CONFIG_TEST2 is not set" >> busybox/.config
 	echo "# CONFIG_EGREP is not set" >> busybox/.config
-	echo "CONFIG_FGREP=y" >> busybox/.config
+	echo "# CONFIG_FGREP is not set" >> busybox/.config
 	echo "# CONFIG_POWEROFF is not set" >> busybox/.config
 	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
 	echo "# CONFIG_MKDOSFS is not set" >> busybox/.config
