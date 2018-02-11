@@ -766,6 +766,7 @@
 #define ROUTER_LINKSYS_EA9500 0x10410f
 
 #define NVROUTER "DD_BOARD"
+#define NVROUTER_ALT "alternate_name"
 
 static inline int startswith(char *source, char *cmp)
 {
