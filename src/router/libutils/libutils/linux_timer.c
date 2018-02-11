@@ -184,8 +184,8 @@ int clock_gettime(clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
 }
 
 int dd_timer_create(clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
-		 struct sigevent *evp,	/* user event handler */
-		 timer_t * pTimer	/* ptr to return value */
+		    struct sigevent *evp,	/* user event handler */
+		    timer_t * pTimer	/* ptr to return value */
     )
 {
 	struct event *event;
@@ -241,9 +241,10 @@ int dd_timer_delete(timer_t timerid	/* timer ID */
 }
 
 int dd_timer_connect(timer_t timerid,	/* timer ID */
-		  void (*routine) (timer_t, int),	/* user routine */
-		  int arg	/* user argument */
-    ) {
+		     void (*routine) (timer_t, int),	/* user routine */
+		     int arg	/* user argument */
+    )
+{
 	struct event *event = (struct event *)timerid;
 
 	assert(routine != NULL);
@@ -258,8 +259,9 @@ int dd_timer_connect(timer_t timerid,	/* timer ID */
  * This is just a hack
  */
 int dd_timer_change_settime(timer_t timerid,	/* timer ID */
-			 const struct itimerspec *value	/* time to be set */
-    ) {
+			    const struct itimerspec *value	/* time to be set */
+    )
+{
 	struct event *event = (struct event *)timerid;
 
 	TIMESPEC_TO_TIMEVAL(&event->it_interval, &value->it_interval);
@@ -269,10 +271,11 @@ int dd_timer_change_settime(timer_t timerid,	/* timer ID */
 }
 
 int dd_timer_settime(timer_t timerid,	/* timer ID */
-		  int flags,	/* absolute or relative */
-		  const struct itimerspec *value,	/* time to be set */
-		  struct itimerspec *ovalue	/* previous time set (NULL=no result) */
-    ) {
+		     int flags,	/* absolute or relative */
+		     const struct itimerspec *value,	/* time to be set */
+		     struct itimerspec *ovalue	/* previous time set (NULL=no result) */
+    )
+{
 	struct itimerval itimer;
 	struct event *event = (struct event *)timerid;
 	struct event **ppevent;
@@ -445,7 +448,7 @@ static void print_event_queue()
 
 	for (event = event_queue; event; event = event->next) {
 		dd_syslog(LOG_INFO, "#%d (0x%lx)->0x%lx: \t%d sec %d usec\t%p\n", i++, (unsigned long)event, (unsigned long)event->next, (int)
-		       event->it_value.tv_sec, (int)event->it_value.tv_usec, event->func);
+			  event->it_value.tv_sec, (int)event->it_value.tv_usec, event->func);
 		if (i > g_maxevents) {
 			dd_syslog(LOG_INFO, "...(giving up)\n");
 			break;

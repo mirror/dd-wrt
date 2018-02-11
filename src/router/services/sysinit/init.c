@@ -450,69 +450,68 @@ void restart_dns_main(int argc, char argv[])
 
 int ipfmt_main(int argc, char *argv[])
 {
-		char cidr[24];
-		char fmt;
-		struct in_addr addr, msk, outfmt;
-		int valid;
-		const char usage[] = ""	//
-		    "ipfmt <print option> <addr> <netmask>\n"	//
-		    "ipfmt <print option> <addr/cidr>\n"	//
-		    "\n"	//
-		    "print options:\n"	//
-		    "        b  : broadcast\n"	//
-		    "        n  : network\n"	//
-		    "        c  : cidr\n"	//
-		    "        N  : netmask\n"	//
-		    "\n";	//
+	char cidr[24];
+	char fmt;
+	struct in_addr addr, msk, outfmt;
+	int valid;
+	const char usage[] = ""	//
+	    "ipfmt <print option> <addr> <netmask>\n"	//
+	    "ipfmt <print option> <addr/cidr>\n"	//
+	    "\n"		//
+	    "print options:\n"	//
+	    "        b  : broadcast\n"	//
+	    "        n  : network\n"	//
+	    "        c  : cidr\n"	//
+	    "        N  : netmask\n"	//
+	    "\n";		//
 
-		if (argc < 3) {
-			puts(usage);
-			return 0;
-		}
-
-		fmt = argv[1][0];
-		if (argc == 3) {
-			valid = inet_cidr_to_addr(argv[2], &addr, &msk);
-			if (valid == -EINVAL) {
-				fprintf(stderr, "invalid cidr string\n");
-				return 1;
-			}
-		} else {
-			valid = inet_aton(argv[2], &addr);
-			if (valid == -EINVAL) {
-				fprintf(stderr, "invalid address\n");
-				return 1;
-			}
-			valid = inet_aton(argv[3], &msk);
-			if (valid == -EINVAL) {
-				fprintf(stderr, "invalid netmask\n");
-				return 1;
-			}
-		}
-
-		switch (fmt) {
-		case 'b':
-			outfmt = inet_bcastaddr_of(inet_netaddr_of(addr, msk), msk);
-			break;
-		case 'n':
-			outfmt = inet_netaddr_of(addr, msk);
-			break;
-		case 'N':
-			outfmt = msk;
-			break;
-		case 'c':
-			inet_addr_to_cidr(addr, msk, cidr);
-			puts(cidr);
-			return 0;
-		default:
-			fprintf(stderr, "invalid option\n%s", usage);
-			break;
-		}
-		puts(inet_ntoa(outfmt));
+	if (argc < 3) {
+		puts(usage);
 		return 0;
+	}
+
+	fmt = argv[1][0];
+	if (argc == 3) {
+		valid = inet_cidr_to_addr(argv[2], &addr, &msk);
+		if (valid == -EINVAL) {
+			fprintf(stderr, "invalid cidr string\n");
+			return 1;
+		}
+	} else {
+		valid = inet_aton(argv[2], &addr);
+		if (valid == -EINVAL) {
+			fprintf(stderr, "invalid address\n");
+			return 1;
+		}
+		valid = inet_aton(argv[3], &msk);
+		if (valid == -EINVAL) {
+			fprintf(stderr, "invalid netmask\n");
+			return 1;
+		}
+	}
+
+	switch (fmt) {
+	case 'b':
+		outfmt = inet_bcastaddr_of(inet_netaddr_of(addr, msk), msk);
+		break;
+	case 'n':
+		outfmt = inet_netaddr_of(addr, msk);
+		break;
+	case 'N':
+		outfmt = msk;
+		break;
+	case 'c':
+		inet_addr_to_cidr(addr, msk, cidr);
+		puts(cidr);
+		return 0;
+	default:
+		fprintf(stderr, "invalid option\n%s", usage);
+		break;
+	}
+	puts(inet_ntoa(outfmt));
+	return 0;
 
 }
-
 
 /* 
  * Call when keepalive mode
@@ -557,7 +556,6 @@ int redial_main(int argc, char **argv)
 			// fprintf(stderr, "PPPoE %d not need to redial\n", num);
 			continue;
 		}
-
 
 		if (need_redial) {
 			pid = fork();

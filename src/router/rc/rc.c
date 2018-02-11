@@ -83,7 +83,6 @@
 #include "gratarp.c"
 #include "ntp.c"
 
-
 struct MAIN {
 	char *callname;
 	char *execname;
@@ -110,8 +109,8 @@ static struct MAIN maincalls[] = {
 	{"filtersync", "filtersync", NULL},
 	{"filter", "filter", NULL},
 	{"setpasswd", "setpasswd", NULL},
-	{"ipfmt", "ipfmt", NULL},	
-	{"restart_dns", "restart_dns", NULL},	
+	{"ipfmt", "ipfmt", NULL},
+	{"restart_dns", "restart_dns", NULL},
 	{"ledtool", NULL, ledtool_main},
 	{"check_ps", NULL, check_ps_main},
 //      {"resetbutton", NULL, resetbutton_main},
@@ -199,7 +198,7 @@ static struct MAIN maincalls[] = {
 	{"gratarp", NULL, &gratarp_main},
 	{"get_nfmark", "get_nfmark", NULL},
 #ifdef HAVE_IPV6
-	{"dhcp6c-state", "dhcp6c_state", },
+	{"dhcp6c-state", "dhcp6c_state",},
 #endif
 #ifdef HAVE_QTN
 	{"qtn_monitor", NULL, &qtn_monitor_main},
@@ -276,8 +275,7 @@ int main(int argc, char **argv)
 	if (strstr(base, "erase")) {
 		int brand = getRouterBrand();
 
-		if (brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_MOTOROLA_WE800G || brand == ROUTER_RT210W || brand == ROUTER_BUFFALO_WZRRSG54)
-		{
+		if (brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_MOTOROLA_WE800G || brand == ROUTER_RT210W || brand == ROUTER_BUFFALO_WZRRSG54) {
 			if (argv[1] && strcmp(argv[1], "nvram")) {
 				fprintf(stderr, "Sorry, erasing nvram will turn this router into a brick\n");
 				goto out;

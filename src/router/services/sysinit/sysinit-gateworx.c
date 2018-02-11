@@ -271,9 +271,11 @@ void start_sysinit(void)
 		fclose(file);
 	}
 #endif
+	int routerbrand = getRouterBrand();
+	char *modelname = nvram_safe_get("DD_BOARD");
 	eval("ifconfig", "ixp0", "0.0.0.0", "up");
 	eval("ifconfig", "ixp1", "0.0.0.0", "up");
-	if (getRouterBrand() == ROUTER_BOARD_GATEWORX_GW2345)	// lets load
+	if (routerbrand == ROUTER_BOARD_GATEWORX_GW2345)	// lets load
 		// the spi
 		// drivers
 		// for this
@@ -281,7 +283,7 @@ void start_sysinit(void)
 	{
 		fprintf(stderr, "Load SPI Kendin Switch Driver\n");
 		insmod("spi-algo-bit");
-		if (nvram_match("DD_BOARD", "Gateworks Avila GW2355"))
+		if (!strcmp(modelname, "Gateworks Avila GW2355"))
 			insmod("spi-ixp4xx-gw2355");
 		else
 			insmod("spi-ixp4xx");
@@ -333,8 +335,7 @@ void start_sysinit(void)
 		}
 		fclose(file);
 	}
-	if (nvram_match("DD_BOARD2", "ADI Engineering Pronghorn Metro")
-	    || nvram_match("DD_BOARD", "ADI Engineering Pronghorn Metro")) {
+	if (!strcmp(modelname, "ADI Engineering Pronghorn Metro")) {
 		fprintf(stderr, "Pronghorn Metro detected\n");
 		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r", "npe_eth0_esa");
 		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "1", "-r", "npe_eth1_esa");
@@ -436,8 +437,7 @@ void start_sysinit(void)
 #endif
 
 #ifdef HAVE_CAMBRIA
-	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2358-4")
-	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2358-4")) {
+	if (!strcmp(modelname, "Gateworks Cambria GW2358-4")) {
 		insmod("8250_gw2358");
 		writeprocsys("dev/wifi0/ledpin", "0");
 		writeprocsys("dev/wifi0/softled", "1");
@@ -448,8 +448,7 @@ void start_sysinit(void)
 		writeprocsys("dev/wifi3/ledpin", "3");
 		writeprocsys("dev/wifi3/softled", "1");
 	}
-	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2350")
-	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2350")) {
+	if (!strcmp(modelname, "Gateworks Cambria GW2350")) {
 		insmod("8250_gw2350");
 	}
 	set_gpio(26, 0);
@@ -468,8 +467,7 @@ void start_sysinit(void)
 	nvram_unset("wan_3g_signal");
 	nvram_unset("wan_3g_mode");
 	nvram_unset("wan_3g_status");
-	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2358-4")
-	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2358-4")) {
+	if (!strcmp(modelname, "Gateworks Cambria GW2358-4")) {
 		fprintf(stderr, "GPIO INIT for 2358\n");
 		if (nvram_get("gpio_outputs") == NULL)
 			nvram_set("gpio_outputs", "16 17");
@@ -499,8 +497,7 @@ void start_sysinit(void)
 		gpio_need_commit = 1;
 	}
 
-	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2350")
-	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2350")) {
+	if (!strcmp(modelname, "Gateworks Cambria GW2350")) {
 		if (nvram_match("gpiowancable", "36")) {
 			fprintf(stderr, "DEBUG _%d_\n", __LINE__);
 			nvram_safe_unset("gpio_outputs");
@@ -567,9 +564,6 @@ void start_sysinit(void)
 #endif
 
 	/* cf capability ? */
-	char *modelname = nvram_get("DD_BOARD2");
-	if (!modelname || strncmp(modelname, "Gateworks", 9))
-		modelname = nvram_safe_get("DD_BOARD");
 	if (!strcmp(modelname, "Gateworks Avila GW2348-4")
 	    || !strcmp(modelname, "Gateworks Cambria GW2358-4")
 	    || !strcmp(modelname, "Gateworks Avila GW2355")

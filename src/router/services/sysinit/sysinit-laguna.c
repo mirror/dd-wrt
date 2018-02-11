@@ -121,35 +121,26 @@ void start_sysinit(void)
 	stime(&tm);
 	nvram_set("wl0_ifname", "ath0");
 	eval("hwclock", "-s");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2391")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2391"))
+	char *modelname = nvram_safe_get("DD_BOARD");
+	if (!strcmp(modelname, "Gateworks Laguna GW2391"))
 		eval("gsp_updater", "-f", "/etc/gsc_2391_v50.txt", "50");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2393")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2393"))
+	if (!strcmp(modelname, "Gateworks Laguna GW2393"))
 		eval("gsp_updater", "-f", "/etc/gsc_2391_v50.txt", "50");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2389")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2389"))
+	if (!strcmp(modelname, "Gateworks Laguna GW2389"))
 		eval("gsp_updater", "-f", "/etc/gsc_2388_v50.txt", "50");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2388")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2388"))
+	if (!strcmp(modelname, "Gateworks Laguna GW2388"))
 		eval("gsp_updater", "-f", "/etc/gsc_2388_v50.txt", "50");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2387")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2387"))
+	if (!strcmp(modelname, "Gateworks Laguna GW2387"))
 		eval("gsp_updater", "-f", "/etc/gsc_2387_v50.txt", "50");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2386")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2386"))
+	if (!strcmp(modelname, "Gateworks Laguna GW2386"))
 		eval("gsp_updater", "-f", "/etc/gsc_2386_v50.txt", "50");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2384")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2384"))
+	if (!strcmp(modelname, "Gateworks Laguna GW2384"))
 		eval("gsp_updater", "-f", "/etc/gsc_2384_v35.txt", "35");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2383")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2383"))
+	if (!strcmp(modelname, "Gateworks Laguna GW2383"))
 		eval("gsp_updater", "-f", "/etc/gsc_2383_v50.txt", "50");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2382")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2382"))
+	if (!strcmp(modelname, "Gateworks Laguna GW2382"))
 		eval("gsp_updater", "-f", "/etc/gsc_2382_v50.txt", "50");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2380")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2380"))
+	if (!strcmp(modelname, "Gateworks Laguna GW2380"))
 		eval("gsp_updater", "-f", "/etc/gsc_2380_v50.txt", "50");
 
 	set_smp_affinity(51, 2);
