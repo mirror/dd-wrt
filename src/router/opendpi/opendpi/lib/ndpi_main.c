@@ -819,7 +819,7 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 				ndpi_build_default_ports(ports_b, 2049, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SSDP, no_master, no_master, "SSDP", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
-	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_BGP, no_master, no_master, "BGP", ndpi_build_default_ports(ports_a, 2605, 0, 0, 0, 0) /* TCP */ ,
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_BGP, no_master, no_master, "BGP", ndpi_build_default_ports(ports_a, 179, 2605, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SNMP, no_master, no_master, "SNMP", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 161, 162, 0, 0, 0) /* UDP */ );

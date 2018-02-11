@@ -60,7 +60,7 @@ struct diameter_header_t {
 };
 
 // Check packet
-int is_diameter(struct ndpi_packet_struct *packet, int size_payload)
+static int is_diameter(struct ndpi_packet_struct *packet, int size_payload)
 {
 	// check param
 	if (!packet || size_payload == 0)
@@ -81,7 +81,7 @@ int is_diameter(struct ndpi_packet_struct *packet, int size_payload)
 	return -2;
 }
 
-void ndpi_search_diameter(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+static void ndpi_search_diameter(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 
@@ -103,7 +103,7 @@ void ndpi_search_diameter(struct ndpi_detection_module_struct *ndpi_struct, stru
 	}
 }
 
-void init_diameter_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
+static void init_diameter_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
 {
 	ndpi_set_bitmask_protocol_detection("Diameter", ndpi_struct, detection_bitmask, *id,
 					    NDPI_PROTOCOL_DIAMETER, ndpi_search_diameter, NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_UDP_WITH_PAYLOAD, SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
