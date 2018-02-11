@@ -831,6 +831,18 @@ static int ndpi_mt_check(const struct xt_mtchk_param *par)
 {
 	const struct xt_ndpi_mtinfo *info = par->matchinfo;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0)
+	{
+		int ret;
+
+		ret = nf_ct_netns_get(par->net, par->family);
+		if (ret < 0) {
+			pr_info("cannot load conntrack support for proto=%u\n", par->family);
+			return ret;
+		}
+	}
+#endif
+
 	if (NDPI_BITMASK_IS_ZERO(info->flags)) {
 		pr_info("None selected protocol.\n");
 		return -EINVAL;
@@ -843,6 +855,9 @@ static int ndpi_mt_check(const struct xt_mtchk_param *par)
 static void ndpi_mt_destroy(const struct xt_mtdtor_param *par)
 {
 	const struct xt_ndpi_mtinfo *info = par->matchinfo;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0)
+	nf_ct_netns_put(par->net, par->family);
+#endif
 
 	ndpi_disable_protocols(ndpi_pernet(par->net), info);
 	nf_ct_l3proto_module_put(par->family);
@@ -875,12 +890,10 @@ static void ndpi_cleanup(struct net *net)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 1)
 	nf_ct_iterate_cleanup(net, __ndpi_free_flow, n);
-#else
-#if LINUX_VERSION_CODE > KERNEL_VERSION(4,10,0)
-	nf_ct_iterate_cleanup_net(net, __ndpi_free_flow, n, 0, 0);
-#else
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(4, 13, 0)
 	nf_ct_iterate_cleanup(net, __ndpi_free_flow, n, 0, 0);
-#endif
+#else
+	nf_ct_iterate_cleanup_net(net, __ndpi_free_flow, n, 0, 0);
 #endif
 	/* free all objects before destroying caches */
 
