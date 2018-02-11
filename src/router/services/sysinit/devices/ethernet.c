@@ -175,7 +175,7 @@ static char *usbdrivers[] = {
 	NULL
 };
 
-static int detect_driver(char **drivers, char *list, int delay)
+static int detect_driver(char **drivers, char *list, int delay, int insmod)
 {
 	int basecount = getifcount("eth");
 	int ret;
@@ -184,7 +184,10 @@ static int detect_driver(char **drivers, char *list, int delay)
 	int cnt = 0;
 	char *driver;
 	while ((driver = drivers[cnt++]) != NULL) {
-		ret = eval("modprobe", driver);
+		if (insmod)
+		    ret = eval("insmod", driver);
+		else
+		    ret = eval("modprobe", driver);
 		if (delay)
 			sleep(delay);
 		if (!ret && (newcount = getifcount("eth")) > basecount) {
@@ -199,7 +202,10 @@ static int detect_driver(char **drivers, char *list, int delay)
 			free(newdriver);
 			rcc |= 1;
 		} else {
-			eval("modprobe", "-r", driver);
+			if (insmod)
+			    eval("rmmod", driver);
+			else
+			    eval("modprobe", "-r", driver);
 		}
 	}
 	return rcc;
@@ -233,6 +239,7 @@ static int detect_pcidrivers(void)
 
 static int detect_usbdrivers(void)
 {
+	insmod("usb-common usbcore usbnet cdc_ether cdc_ncm dcd-wdm");
 	return detect_drivers("usb_detected", "usbdrivers", usbdrivers, 0);
 }
 
