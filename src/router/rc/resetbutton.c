@@ -625,8 +625,7 @@ static int isGW2369(void)
 
 static int isGW2350(void)
 {
-	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2350")
-	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2350"))
+	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2350"))
 		return 1;
 	return 0;
 }

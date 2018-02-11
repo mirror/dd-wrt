@@ -137,21 +137,16 @@ void start_sysinit(void)
 	eval("i2cset", "-f", "-y", "0", "0x20", "0", "0x0");
 	eval("i2cset", "-f", "-y", "0", "0x20", "11", "0x10");
 	char *board = nvram_safe_get("DD_BOARD");
-	char *board2 = nvram_safe_get("DD_BOARD2");
-	if (!strncmp(board, "Gateworks Ventana GW54", 22)
-	    || !strncmp(board2, "Gateworks Ventana GW54", 22))
+	if (!strncmp(board, "Gateworks Ventana GW54", 22))
 		eval("gsp_updater", "-f", "/etc/gsc_54xx_v50.txt", "50");
 
-	if (!strncmp(board, "Gateworks Ventana GW53", 22)
-	    || !strncmp(board2, "Gateworks Ventana GW53", 22))
+	if (!strncmp(board, "Gateworks Ventana GW53", 22))
 		eval("gsp_updater", "-f", "/etc/gsc_53xx_v50.txt", "50");
 
-	if (!strncmp(board, "Gateworks Ventana GW52", 22)
-	    || !strncmp(board2, "Gateworks Ventana GW52", 22))
+	if (!strncmp(board, "Gateworks Ventana GW52", 22))
 		eval("gsp_updater", "-f", "/etc/gsc_52xx_v50.txt", "50");
 
-	if (!strncmp(board, "Gateworks Ventana GW51", 22)
-	    || !strncmp(board2, "Gateworks Ventana GW51", 22))
+	if (!strncmp(board, "Gateworks Ventana GW51", 22))
 		eval("gsp_updater", "-f", "/etc/gsc_51xx_v50.txt", "50");
 
 	sysprintf("echo ondemand > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");

@@ -1131,87 +1131,89 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
+#define getRouterName() nvram_get(NVROUTER_ALT)?nvram_safe_get(NVROUTER_ALT):nvram_safe_get(NVROUTER)
 void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_XIOCOM
 	websWrite(wp, "XWR");
 #elif HAVE_ONNET
 #ifdef HAVE_ONNET_BLANK
-	if (nvram_match("DD_BOARD", "Atheros Hornet")) {
+	if (nvram_match(NVROUTER, "Atheros Hornet")) {
 		websWrite(wp, "9331");
-	} else if (nvram_match("DD_BOARD", "Compex WPE72")) {
+	} else if (nvram_match(NVROUTER, "Compex WPE72")) {
 		websWrite(wp, "E72");
-	} else if (nvram_match("DD_BOARD", "ACCTON AC622")) {
+	} else if (nvram_match(NVROUTER, "ACCTON AC622")) {
 		if (iscpe()) {
 			websWrite(wp, "7240-2");
 		} else {
 			websWrite(wp, "7240-2");
 		}
-	} else if (nvram_match("DD_BOARD", "ACCTON AC722")) {
+	} else if (nvram_match(NVROUTER, "ACCTON AC722")) {
 		if (iscpe()) {
 			websWrite(wp, "OTAi 7240-5");
 		} else {
 			websWrite(wp, "OTAi 7240-5");
 		}
-	} else if (nvram_match("DD_BOARD", "Compex WP546")) {
+	} else if (nvram_match(NVROUTER, "Compex WP546")) {
 		websWrite(wp, "546");
-	} else if (nvram_match("DD_BOARD", "Yuncore XD3200")) {
+	} else if (nvram_match(NVROUTER, "Yuncore XD3200")) {
 		websWrite(wp, "AP-9563AC");
-	} else if (nvram_match("DD_BOARD", "Yuncore SR3200")) {
+	} else if (nvram_match(NVROUTER, "Yuncore SR3200")) {
 		websWrite(wp, "AP-1200AC");
-	} else if (nvram_match("DD_BOARD", "Yuncore CPE890")) {
+	} else if (nvram_match(NVROUTER, "Yuncore CPE890")) {
 		websWrite(wp, "AP-5900AC");
-	} else if (nvram_match("DD_BOARD", "Alfa AP120C")) {
+	} else if (nvram_match(NVROUTER, "Alfa AP120C")) {
 		websWrite(wp, "AP-600dbdc");
 	} else {
-		websWrite(wp, "%s", nvram_get("DD_BOARD"));
+		websWrite(wp, "%s", nvram_get(NVROUTER));
 	}
 #else
-	if (nvram_match("DD_BOARD", "Atheros Hornet")) {
+	if (nvram_match(NVROUTER, "Atheros Hornet")) {
 		websWrite(wp, "OTAi 9331");
-	} else if (nvram_match("DD_BOARD", "Compex WPE72")) {
+	} else if (nvram_match(NVROUTER, "Compex WPE72")) {
 		websWrite(wp, "OTAi 724");
-	} else if (nvram_match("DD_BOARD", "ACCTON AC622")) {
+	} else if (nvram_match(NVROUTER, "ACCTON AC622")) {
 		if (iscpe()) {
 			websWrite(wp, "OTAi 724S");
 		} else {
 			websWrite(wp, "OTAi 724AP");
 		}
-	} else if (nvram_match("DD_BOARD", "ACCTON AC722")) {
+	} else if (nvram_match(NVROUTER, "ACCTON AC722")) {
 		if (iscpe()) {
 			websWrite(wp, "OTAi 724S");
 		} else {
 			websWrite(wp, "OTAi 724AP");
 		}
-	} else if (nvram_match("DD_BOARD", "Compex WP546")) {
+	} else if (nvram_match(NVROUTER, "Compex WP546")) {
 		websWrite(wp, "OTAi 724S");
-	} else if (nvram_match("DD_BOARD", "Yuncore XD3200")) {
+	} else if (nvram_match(NVROUTER, "Yuncore XD3200")) {
 		websWrite(wp, "OTAi 9563-AC");
-	} else if (nvram_match("DD_BOARD", "Yuncore SR3200")) {
+	} else if (nvram_match(NVROUTER, "Yuncore SR3200")) {
 		websWrite(wp, "OTAi 1200AC");
-	} else if (nvram_match("DD_BOARD", "Yuncore CPE890")) {
+	} else if (nvram_match(NVROUTER, "Yuncore CPE890")) {
 		websWrite(wp, "OTAi 5900AC");
-	} else if (nvram_match("DD_BOARD", "Alfa AP120C")) {
+	} else if (nvram_match(NVROUTER, "Alfa AP120C")) {
 		websWrite(wp, "OTAi 600dbdc");
 	} else {
-		websWrite(wp, "OTAi %s", nvram_get("DD_BOARD"));
+		websWrite(wp, "OTAi %s", getRouterName());
 	}
 #endif
 #elif HAVE_SANSFIL
 	websWrite(wp, "%s", "SANSFIL");
 #elif HAVE_KORENRON
-	websWrite(wp, "KORENRON %s", nvram_get("DD_BOARD"));
+	websWrite(wp, "KORENRON %s", getRouterName());
 #elif HAVE_TESTEM
-	websWrite(wp, "TESTEM %s", nvram_get("DD_BOARD"));
+	websWrite(wp, "TESTEM %s", getRouterName());
 #elif HAVE_HOBBIT
-	websWrite(wp, "HQ-NDS %s", nvram_get("DD_BOARD"));
+	websWrite(wp, "HQ-NDS %s", getRouterName());
 #elif HAVE_RAYTRONIK
-	websWrite(wp, "RN-150M %s", nvram_get("DD_BOARD"));
+	websWrite(wp, "RN-150M %s", getRouterName());
 #else
-	websWrite(wp, "%s", nvram_safe_get("DD_BOARD"));
+	websWrite(wp, "%s", getRouterName());
 #endif
 }
 
+#undef getRouterName()
 void ej_get_syskernel(webs_t wp, int argc, char_t ** argv)
 {
 	struct utsname name;

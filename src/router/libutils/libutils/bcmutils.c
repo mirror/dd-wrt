@@ -876,7 +876,6 @@ int check_hw_type(void)
 		return NO_DEFINE_CHIP;
 }
 
-
 static char *device_name[] = {
 	"eth0", "qos0"
 };
