@@ -448,7 +448,6 @@ int nvram_restore(char *filename)
 				free(value);
 				free(name);
 			}
-			fclose(fp);
 			if (c) {
 				nvram_close();
 				nvram_commit();
