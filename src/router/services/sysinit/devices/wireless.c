@@ -201,10 +201,10 @@ static void detect_wireless_devices(void)
 	}
 #endif
 #ifdef HAVE_ATH5K
-      if (nvram_match("use_ath5k", "1")) {
-	loadath5k = loadlegacy;
-	loadlegacy = 0;
-                }
+	if (nvram_match("use_ath5k", "1")) {
+		loadath5k = loadlegacy;
+		loadlegacy = 0;
+	}
 #endif
 #ifndef HAVE_NOWIFI
 	nvram_default_get("rate_control", "minstrel");
@@ -233,7 +233,7 @@ static void detect_wireless_devices(void)
 		if (loadath9k || loadath5k) {
 			fprintf(stderr, "load ATH9K 802.11n Driver\n");
 			// some are just for future use and not (yet) there
-			
+
 			insmod("compat");
 			insmod("compat_firmware_class");
 			insmod("cfg80211");
@@ -285,7 +285,7 @@ static void detect_wireless_devices(void)
 	insmod("ath10k_pci");
 #endif
 #ifdef HAVE_WIL6210
-	eval("insmod","wil6210","led_id=2");
+	eval("insmod", "wil6210", "led_id=2");
 #endif
 
 #endif
