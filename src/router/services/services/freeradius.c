@@ -43,7 +43,7 @@ static void prep(void)
 		//prepare files
 		mkdir("/jffs/etc", 0700);
 		mkdir("/jffs/etc/freeradius", 0700);
-		system("cp -r /etc/freeradius /jffs/etc");
+		system("cp -R /etc/freeradius /jffs/etc");
 	}
 
 }
