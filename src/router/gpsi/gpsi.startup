@@ -12,11 +12,7 @@ elif [ "$(nvram get gps_gpsd)" = "1" ]; then
 fi
 
 if [ x$GPS_NEED_SETUP = x1 ]; then
-	BOARD=$(nvram get DD_BOARD2 | cut -c11-17)
-	if test -z $BOARD
-	then
         BOARD=$(nvram get DD_BOARD | cut -c11-17) 
-	fi                                             
 	if [ x$BOARD = xCambria ]; then                     
         TTY=/dev/ttyS1
         BAUD=4800
