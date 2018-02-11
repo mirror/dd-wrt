@@ -36,6 +36,10 @@ static void hostapd_config_free_vlan(struct hostapd_bss_config *bss)
 }
 
 
+#ifndef DEFAULT_WPA_DISABLE_EAPOL_KEY_RETRIES
+#define DEFAULT_WPA_DISABLE_EAPOL_KEY_RETRIES 0
+#endif /* DEFAULT_WPA_DISABLE_EAPOL_KEY_RETRIES */
+
 void hostapd_config_defaults_bss(struct hostapd_bss_config *bss)
 {
 	bss->logger_syslog_level = HOSTAPD_LEVEL_INFO;
@@ -57,6 +61,8 @@ void hostapd_config_defaults_bss(struct hostapd_bss_config *bss)
 	bss->wpa_pairwise = WPA_CIPHER_TKIP;
 	bss->wpa_group = WPA_CIPHER_TKIP;
 	bss->rsn_pairwise = 0;
+	bss->wpa_disable_eapol_key_retries =
+		DEFAULT_WPA_DISABLE_EAPOL_KEY_RETRIES;
 
 	bss->max_num_sta = MAX_STA_COUNT;
 
