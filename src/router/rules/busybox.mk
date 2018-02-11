@@ -304,7 +304,6 @@ ifeq ($(ARCH),powerpc)
 endif
 ifneq ($(CONFIG_DIST),"micro")
 	sed -i 's/\# CONFIG_FEATURE_WGET_TIMEOUT is not set/CONFIG_FEATURE_WGET_TIMEOUT=y/g' busybox/.config
-	sed -i 's/\# CONFIG_FEATURE_CP_LONG_OPTIONS is not set/CONFIG_FEATURE_CP_LONG_OPTIONS=y/g' busybox/.config
 endif
 
 #ifeq ($(CONFIG_BUSYBOX_UDHCPC),y)
