@@ -39,6 +39,7 @@ static void hostapd_wpa_auth_conf(struct hostapd_bss_config *conf,
 	wconf->wpa_strict_rekey = conf->wpa_strict_rekey;
 	wconf->wpa_gmk_rekey = conf->wpa_gmk_rekey;
 	wconf->wpa_ptk_rekey = conf->wpa_ptk_rekey;
+	wconf->wpa_disable_eapol_key_retries = conf->wpa_disable_eapol_key_retries;
 	wconf->rsn_pairwise = conf->rsn_pairwise;
 	wconf->rsn_preauth = conf->rsn_preauth;
 	wconf->eapol_version = conf->eapol_version;

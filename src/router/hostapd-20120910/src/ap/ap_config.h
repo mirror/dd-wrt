@@ -268,6 +268,7 @@ struct hostapd_bss_config {
 	int wpa_ptk_rekey;
 	int rsn_pairwise;
 	int rsn_preauth;
+	int wpa_disable_eapol_key_retries;
 	char *rsn_preauth_interfaces;
 	int peerkey;
 

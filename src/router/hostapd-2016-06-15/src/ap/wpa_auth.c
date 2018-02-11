@@ -58,6 +58,7 @@ static const u32 dot11RSNAConfigPairwiseUpdateCount = 4;
 static const u32 eapol_key_timeout_first = 100; /* ms */
 static const u32 eapol_key_timeout_subseq = 1000; /* ms */
 static const u32 eapol_key_timeout_first_group = 500; /* ms */
+static const u32 eapol_key_timeout_no_retrans = 4000; /* ms */
 
 /* TODO: make these configurable */
 static const int dot11RSNAConfigPMKLifetime = 43200;
@@ -1627,6 +1628,9 @@ static void wpa_send_eapol(struct wpa_authenticator *wpa_auth,
 			eapol_key_timeout_first_group;
 	else
 		timeout_ms = eapol_key_timeout_subseq;
+	if (wpa_auth->conf.wpa_disable_eapol_key_retries &&
+	    (!pairwise || (key_info & WPA_KEY_INFO_MIC)))
+		timeout_ms = eapol_key_timeout_no_retrans;
 	if (pairwise && ctr == 1 && !(key_info & WPA_KEY_INFO_MIC))
 		sm->pending_1_of_4_timeout = 1;
 	wpa_printf(MSG_DEBUG, "WPA: Use EAPOL-Key timeout of %u ms (retry "
@@ -2211,6 +2215,11 @@ SM_STATE(WPA_PTK, PTKINITNEGOTIATING)
 	sm->TimeoutEvt = FALSE;
 
 	sm->TimeoutCtr++;
+	if (sm->wpa_auth->conf.wpa_disable_eapol_key_retries &&
+	    sm->TimeoutCtr > 1) {
+		/* Do not allow retransmission of EAPOL-Key msg 3/4 */
+		return;
+	}
 	if (sm->TimeoutCtr > (int) dot11RSNAConfigPairwiseUpdateCount) {
 		/* No point in sending the EAPOL-Key - we will disconnect
 		 * immediately following this. */
@@ -2533,7 +2542,9 @@ SM_STEP(WPA_PTK)
 			 sm->EAPOLKeyPairwise && sm->MICVerified)
 			SM_ENTER(WPA_PTK, PTKINITDONE);
 		else if (sm->TimeoutCtr >
-			 (int) dot11RSNAConfigPairwiseUpdateCount) {
+			 (int) dot11RSNAConfigPairwiseUpdateCount||
+			 (sm->wpa_auth->conf.wpa_disable_eapol_key_retries &&
+			  sm->TimeoutCtr > 1)) {
 			wpa_auth->dot11RSNA4WayHandshakeFailures++;
 			wpa_auth_vlogger(sm->wpa_auth, sm->addr, LOGGER_DEBUG,
 					 "PTKINITNEGOTIATING: Retry limit %d "
@@ -2573,6 +2584,11 @@ SM_STATE(WPA_PTK_GROUP, REKEYNEGOTIATING)
 	SM_ENTRY_MA(WPA_PTK_GROUP, REKEYNEGOTIATING, wpa_ptk_group);
 
 	sm->GTimeoutCtr++;
+	if (sm->wpa_auth->conf.wpa_disable_eapol_key_retries &&
+	    sm->GTimeoutCtr > 1) {
+		/* Do not allow retransmission of EAPOL-Key group msg 1/2 */
+		return;
+	}
 	if (sm->GTimeoutCtr > (int) dot11RSNAConfigGroupUpdateCount) {
 		/* No point in sending the EAPOL-Key - we will disconnect
 		 * immediately following this. */
@@ -2670,7 +2686,9 @@ SM_STEP(WPA_PTK_GROUP)
 		    !sm->EAPOLKeyPairwise && sm->MICVerified)
 			SM_ENTER(WPA_PTK_GROUP, REKEYESTABLISHED);
 		else if (sm->GTimeoutCtr >
-			 (int) dot11RSNAConfigGroupUpdateCount)
+			 (int) dot11RSNAConfigGroupUpdateCount ||
+			 (sm->wpa_auth->conf.wpa_disable_eapol_key_retries &&
+			  sm->GTimeoutCtr > 1))
 			SM_ENTER(WPA_PTK_GROUP, KEYERROR);
 		else if (sm->TimeoutEvt)
 			SM_ENTER(WPA_PTK_GROUP, REKEYNEGOTIATING);
