@@ -322,7 +322,8 @@ int nvram_critical(char *name)
 			return 1;
 		}
 	}
-	if (strncmp(name, "sb/", 3) && strncmp(name, "pci/", 4) && strncmp(name, "pcie/", 5) && strncmp(name, "0:", 2) && strncmp(name, "1:", 2) && strncmp(name, "2:", 2) && strncmp(name, "3:", 2) && !strstr(name, "_hwaddr"))
+	if (strncmp(name, "sb/", 3) && strncmp(name, "pci/", 4) && strncmp(name, "pcie/", 5) && strncmp(name, "0:", 2) && strncmp(name, "1:", 2) && strncmp(name, "2:", 2) && strncmp(name, "3:", 2)
+	    && !strstr(name, "_hwaddr"))
 		return 0;
 	else
 		return 1;
@@ -355,7 +356,7 @@ static void save(FILE * fp, char *p, int not)
 	int i;
 	while (strlen(p) != 0) {
 		int len = strlen(p);
-		if (len > 2 && (! !strncmp(p, "wl_", 3)) == not) {
+		if (len > 2 && (!!strncmp(p, "wl_", 3)) == not) {
 			p += len + 1;
 			continue;
 		}
@@ -412,14 +413,14 @@ int nvram_restore(char *filename)
 
 			for (i = 0; i < count && len > 0; i++) {
 				unsigned short l = 0;
-				unsigned char c = 0;
+				unsigned char cl = 0;
 
-				fread((char *)&c, 1, 1, fp);
-				char *name = (char *)malloc(c + 1);
+				fread((char *)&cl, 1, 1, fp);
+				char *name = (char *)malloc(cl + 1);
 
-				fread(name, c, 1, fp);
-				name[c] = 0;
-				len -= (c + 1);
+				fread(name, cl, 1, fp);
+				name[cl] = 0;
+				len -= (cl + 1);
 
 				fread((char *)&b, 1, 1, fp);
 				l = b;
@@ -434,8 +435,8 @@ int nvram_restore(char *filename)
 				// cprintf("setting %s to %s\n",name,value);
 				if (!strcmp(name, "nvram_ver"))
 					nvram_ver = value;
-
 				if (!c && !strcmp(name, "DD_BOARD")) {
+					fprintf(stdout, "backup is for board %s, board is %s\n", value, nvram_safe_get("DD_BOARD"));
 					if (!nvram_match("DD_BOARD", value)) {
 						fprintf(stderr, "incompatible backup file!\n");
 						fclose(fp);
