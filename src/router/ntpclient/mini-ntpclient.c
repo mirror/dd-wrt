@@ -171,7 +171,6 @@ static int query_server(char *srv)
 	if (sd == -1) {
 		sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 		if (sd == -1) {
-			perror("Failed opening UDP socket");
 			return -1;	/* Fatal error, cannot even create a socket? */
 		}
 	}
