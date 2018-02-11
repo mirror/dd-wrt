@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3822 | brainslayer | 2018-02-11 10:38:04 +0100 (Sun, 11 Feb 2018) | 1 line
+
+touble tip nvram and check for plausible backup until reboot
+------------------------------------------------------------------------
 r3821 | brainslayer | 2018-02-09 11:41:55 +0100 (Fri, 09 Feb 2018) | 1 line
 
 rollback again, doesnt seem to be a firmware problem
