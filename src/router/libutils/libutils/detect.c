@@ -105,98 +105,75 @@ static void getBoardMAC(char *mac)
 
 void setRouter(char *name)
 {
+	if (name)
+		nvram_set(NVROUTER, name);
 #ifdef HAVE_POWERNOC_WORT54G
-	nvram_set(NVROUTER, "WORT54G");
+	nvram_set(NVROUTER_ALT, "WORT54G");
 #elif HAVE_POWERNOC_WOAP54G
-	nvram_set(NVROUTER, "WOAP54G");
+	nvram_set(NVROUTER_ALT, "WOAP54G");
 #elif HAVE_ERC
 	char *pic = NULL;
 	pic = nvram_safe_get("ree_pic");
 
 	if (!strncmp(pic, "1", 1))
-		nvram_set(NVROUTER, "ServiceGate v1.0");
+		nvram_set(NVROUTER_ALT, "ServiceGate v1.0");
 	else
-		nvram_set(NVROUTER, "ServiceGate Lite v2.0");
+		nvram_set(NVROUTER_ALT, "ServiceGate Lite v2.0");
 #elif HAVE_OMNI
-	nvram_set(NVROUTER, "Omni Wifi Router");
+	nvram_set(NVROUTER_ALT, "Omni Wifi Router");
 #elif HAVE_ALFA_BRANDING
-	nvram_set(NVROUTER, "WLAN base-station");
-	if (name)
-		nvram_set("DD_BOARD2", name);
+	nvram_set(NVROUTER_ALT, "WLAN base-station");
 #elif HAVE_MAKSAT
-	if (name)
-		nvram_set("DD_BOARD2", name);
 #ifdef HAVE_MAKSAT_BLANK
-	nvram_set(NVROUTER, "default");
+	nvram_set(NVROUTER_ALT, "default");
 #else
-	nvram_set(NVROUTER, "MAKSAT");
+	nvram_set(NVROUTER_ALT, "MAKSAT");
 #endif
 #elif HAVE_TMK
-	if (name)
-		nvram_set("DD_BOARD2", name);
-	nvram_set(NVROUTER, "KMT-WAS");
+	nvram_set(NVROUTER_ALT, "KMT-WAS");
 #elif HAVE_BKM
-	if (name)
-		nvram_set("DD_BOARD2", name);
-	nvram_set(NVROUTER, "BKM-HSDL");
+	nvram_set(NVROUTER_ALT, "BKM-HSDL");
 #elif HAVE_TRIMAX
-	if (name)
-		nvram_set("DD_BOARD2", name);
-	nvram_set(NVROUTER, "M2M Dynamics");
+	nvram_set(NVROUTER_ALT, "M2M Dynamics");
 #elif HAVE_WIKINGS
-	if (name)
-		nvram_set("DD_BOARD2", name);
 #ifdef HAVE_SUB3
-	nvram_set(NVROUTER, "ExcelMin");
+	nvram_set(NVROUTER_ALT, "ExcelMin");
 #elif HAVE_SUB6
-	nvram_set(NVROUTER, "ExcelMed");
+	nvram_set(NVROUTER_ALT, "ExcelMed");
 #else
-	nvram_set(NVROUTER, "Excellent");
+	nvram_set(NVROUTER_ALT, "Excellent");
 #endif
 #elif HAVE_SANSFIL
-	nvram_set("DD_BOARD", "SANSFIL");
-	nvram_set("DD_BOARD2", name);
+	nvram_set(NVROUTER_ALT, "SANSFIL");
 #elif HAVE_ONNET
 #if HAVE_CPE880
-	nvram_set("DD_BOARD", "5900AC");
-	nvram_set("DD_BOARD2", "5900AC");
+	nvram_set(NVROUTER_ALT, "5900AC");
 #elif HAVE_MMS344
 #ifdef HAVE_WILLY
-	nvram_set("DD_BOARD", "9342-AN4g");
-	nvram_set("DD_BOARD2", "9342-AN4g");
+	nvram_set(NVROUTER_ALT, "9342-AN4g");
 #else
-	nvram_set("DD_BOARD", "DBDC344");
-	nvram_set("DD_BOARD2", "DBDC344");
+	nvram_set(NVROUTER_ALT, "DBDC344");
 #endif
 #else
-	if (name)
-		nvram_set(NVROUTER, name);
 #endif
 #elif HAVE_RAYTRONIK
 #ifdef HAVE_AC722
-	nvram_set("DD_BOARD", "RN-150M");
-	nvram_set("DD_BOARD2", "RN-150M");
+	nvram_set("NVROUTER_ALT", "RN-150M");
 #else
-	if (name)
-		nvram_set(NVROUTER, name);
 #endif
 #elif HAVE_ESPOD
-	if (name)
-		nvram_set("DD_BOARD2", name);
 #ifdef HAVE_SUB3
-	nvram_set(NVROUTER, "ESPOD ES-3680");
+	nvram_set(NVROUTER_ALT, "ESPOD ES-3680");
 #elif HAVE_SUB6
-	nvram_set(NVROUTER, "ESPOD ES-3680");
+	nvram_set(NVROUTER_ALT, "ESPOD ES-3680");
 #else
-	nvram_set(NVROUTER, "ESPOD ES-3680");
+	nvram_set(NVROUTER_ALT, "ESPOD ES-3680");
 #endif
 #elif HAVE_CARLSONWIRELESS
-	nvram_set(NVROUTER, "LH-135/270 ST");
+	nvram_set(NVROUTER_ALT, "LH-135/270 ST");
 #elif HAVE_IPR
-	nvram_set(NVROUTER, "IPR-DATKS-501");
+	nvram_set(NVROUTER_ALT, "IPR-DATKS-501");
 #else
-	if (name)
-		nvram_set(NVROUTER, name);
 #endif
 	cprintf("router is %s\n", getRouter());
 }
