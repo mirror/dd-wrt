@@ -466,8 +466,8 @@ endif
 	sed -i 's/\# CONFIG_FEATURE_IP_ROUTE is not set/CONFIG_FEATURE_IP_ROUTE=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_IP_TUNNEL is not set/CONFIG_FEATURE_IP_TUNNEL=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_IP_RULE is not set/CONFIG_FEATURE_IP_RULE=y/g' busybox/.config
-	echo "CONFIG_ZCAT=y" >> busybox/.config
-	echo "CONFIG_BZCAT=y" >> busybox/.config
+	echo "# CONFIG_ZCAT is not set" >> busybox/.config
+	echo "# CONFIG_BZCAT is not set" >> busybox/.config
 	echo "# CONFIG_LZCAT is not set" >> busybox/.config
 	echo "# CONFIG_XZCAT is not set" >> busybox/.config
 	echo "# CONFIG_UNLZOP is not set" >> busybox/.config
