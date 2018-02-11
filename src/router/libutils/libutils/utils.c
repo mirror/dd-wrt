@@ -114,7 +114,7 @@ void setWifiPass(void)
 	case ROUTER_NETGEAR_R6300V2:
 //              case ROUTER_NETGEAR_R6400:
 	case ROUTER_NETGEAR_R7000:
-		case ROUTER_NETGEAR_R7000P:
+	case ROUTER_NETGEAR_R7000P:
 	case ROUTER_NETGEAR_R8000:
 	case ROUTER_NETGEAR_R8500:
 		mtd = getMTD("board_data");
@@ -2830,7 +2830,7 @@ int led_control(int type, int act)
 		power_gpio = 0x102;	// power led *
 		diag_gpio = 0x103;	// power led orange *    
 		connected_gpio = 0x108;	// wan led
-		//usb_power = 0x000;	// usb enable
+		//usb_power = 0x000;    // usb enable
 		wlan0_gpio = 0x109;	// radio 0 *
 		wlan1_gpio = 0x10a;	// radio 1 *
 		ses_gpio = 0x10b;	// wps led * //13 is wifi
