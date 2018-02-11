@@ -57,7 +57,7 @@ PACK_ON struct ndpi_rx_header {
 #define	PARAM_2           10
 #define	PARAM_3           11
 #define	PARAMS_4          12
-#define	S_VERSION	          13
+#define	VERS	          13
 
 /* Flags values */
 #define EMPTY              0
@@ -101,7 +101,7 @@ static void ndpi_check_rx(struct ndpi_detection_module_struct *ndpi_struct, stru
   **/
 
 	/* TYPE field */
-	if ((header->type < DATA) || (header->type > S_VERSION)) {
+	if ((header->type < DATA) || (header->type > VERS)) {
 		NDPI_LOG(NDPI_PROTOCOL_RX, ndpi_struct, NDPI_LOG_DEBUG, "excluding RX\n");
 		NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_RX);
 		return;
@@ -140,7 +140,7 @@ static void ndpi_check_rx(struct ndpi_detection_module_struct *ndpi_struct, stru
 			goto security;
 		case PARAM_3:
 			goto security;
-		case S_VERSION:
+		case VERS:
 			goto security;
 		default:
 			NDPI_LOG(NDPI_PROTOCOL_RX, ndpi_struct, NDPI_LOG_DEBUG, "excluding RX\n");
