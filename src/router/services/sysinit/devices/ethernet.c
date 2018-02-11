@@ -185,9 +185,9 @@ static int detect_driver(char **drivers, char *list, int delay, int insmod)
 	char *driver;
 	while ((driver = drivers[cnt++]) != NULL) {
 		if (insmod)
-		    ret = eval("insmod", driver);
+			ret = eval("insmod", driver);
 		else
-		    ret = eval("modprobe", driver);
+			ret = eval("modprobe", driver);
 		if (delay)
 			sleep(delay);
 		if (!ret && (newcount = getifcount("eth")) > basecount) {
@@ -203,21 +203,21 @@ static int detect_driver(char **drivers, char *list, int delay, int insmod)
 			rcc |= 1;
 		} else {
 			if (insmod)
-			    eval("rmmod", driver);
+				eval("rmmod", driver);
 			else
-			    eval("modprobe", "-r", driver);
+				eval("modprobe", "-r", driver);
 		}
 	}
 	return rcc;
 }
 
-static int detect_drivers(char *enabled, char *list, char **driverset,int delay)
+static int detect_drivers(char *enabled, char *list, char **driverset, int delay, int insmod)
 {
 	char word[256];
 	char *next, *wordlist;
 	int rcc = 0;
 	if (!nvram_matchi(enabled, 1)) {
-		rcc = detect_driver(driverset, list, delay);
+		rcc = detect_driver(driverset, list, delay, insmod);
 		nvram_seti(enabled, 1);
 		nvram_commit();
 	} else {
@@ -225,7 +225,10 @@ static int detect_drivers(char *enabled, char *list, char **driverset,int delay)
 		if (!strlen(wordlist))
 			return 0;
 		foreach(word, wordlist, next) {
-			eval("modprobe", word);
+			if (insmod)
+				eval("insmod", word);
+			else
+				eval("modprobe", word);
 		}
 		rcc = 1;
 	}
@@ -234,13 +237,13 @@ static int detect_drivers(char *enabled, char *list, char **driverset,int delay)
 
 static int detect_pcidrivers(void)
 {
-	return detect_drivers("pci_detected", "pcidrivers", pcidrivers, 0);
+	return detect_drivers("pci_detected", "pcidrivers", pcidrivers, 0, 0);
 }
 
 static int detect_usbdrivers(void)
 {
 	insmod("usb-common usbcore usbnet cdc_ether cdc_ncm dcd-wdm");
-	return detect_drivers("usb_detected", "usbdrivers", usbdrivers, 0);
+	return detect_drivers("usb_detected", "usbdrivers", usbdrivers, 0, 1);
 }
 
 static int detect_ethernet_devices(void)
