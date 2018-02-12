@@ -31,6 +31,8 @@
 
 #include <broadcom.h>
 
+void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type);
+
 void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 {
 
