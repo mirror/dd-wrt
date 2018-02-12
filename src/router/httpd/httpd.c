@@ -985,7 +985,7 @@ static void *handle_request(void *arg)
 		conn_fp->isregistered = conn_fp->isregistered_real;
 #endif
 #ifdef HAVE_SUPERCHANNEL
-	if (!conn_fp->issuperchannel == -1)
+	if (conn_fp->issuperchannel == -1)
 	    conn_fp->issuperchannel = issuperchannel();
 #endif
 
