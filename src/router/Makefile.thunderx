@@ -77,7 +77,7 @@ export KERNELRELEASE = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> 
 #endif
 
 #ifeq ($(PLATFORM),mipsel-uclibc)
-export CROSS_COMPILE := $(ARCH)-linux-uclibc-
+export CROSS_COMPILE := aarch64-linux-uclibc-
 export CONFIGURE := ./configure $(ARCH)-linux --build=$(BUILD)
 export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/.. && pwd -P)
 #endif
@@ -98,6 +98,11 @@ endif
 ifeq ($(ARCH),arm)
 #export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard
 export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=neon -mfloat-abi=hard -fno-caller-saves -fno-plt
+#-D_FILE_OFFSET_BITS=64
+endif
+ifeq ($(ARCH),aarch64)
+#export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard
+export COPTS:=$(BASEOPT) -pipe -mtune=thunderx -march=armv8-a -fno-caller-saves -fno-plt
 #-D_FILE_OFFSET_BITS=64
 endif
 ifeq ($(ARCH),mips)
@@ -157,16 +162,16 @@ include kernel-features.mk
 
 kernel:
 	# Also build kernel
-	cp $(LINUXDIR)/.config_ventana $(LINUXDIR)/.config
+	cp $(LINUXDIR)/.config_newport $(LINUXDIR)/.config
 
 	$(kernelfeatures)
-	$(MAKE) -C $(LINUXDIR) oldconfig	
+	$(MAKE) -C $(LINUXDIR) ARCH=arm64 oldconfig	
 
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) Image ARCH=arm64 dtbs CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules ARCH=arm64 CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
 
 	rm -rf $(TARGETDIR)/lib/modules
@@ -174,34 +179,34 @@ kernel:
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 
-	-$(MAKE) -f Makefile.ventana ath9k
-	-$(MAKE) -f Makefile.ventana ath9k-install
-	-$(MAKE) -f Makefile.ventana libutils
-	-$(MAKE) -f Makefile.ventana madwifi
-	-$(MAKE) -f Makefile.ventana madwifi-install
-	-$(MAKE) -f Makefile.ventana batman-adv
-	-$(MAKE) -f Makefile.ventana batman-adv-install
-	-$(MAKE) -f Makefile.ventana opendpi
-	-$(MAKE) -f Makefile.ventana opendpi-install
+	-$(MAKE) -f Makefile.thunderx ath9k
+	-$(MAKE) -f Makefile.thunderx ath9k-install
+	-$(MAKE) -f Makefile.thunderx libutils
+	-$(MAKE) -f Makefile.thunderx madwifi
+	-$(MAKE) -f Makefile.thunderx madwifi-install
+	-$(MAKE) -f Makefile.thunderx batman-adv
+	-$(MAKE) -f Makefile.thunderx batman-adv-install
+	-$(MAKE) -f Makefile.thunderx opendpi
+	-$(MAKE) -f Makefile.thunderx opendpi-install
 ifeq ($(CONFIG_ZFS),y)
-	-$(MAKE) -f Makefile.ventana spl
-	-$(MAKE) -f Makefile.ventana spl-install
-	-$(MAKE) -f Makefile.ventana zfs
-	-$(MAKE) -f Makefile.ventana zfs-install
+	-$(MAKE) -f Makefile.thunderx spl
+	-$(MAKE) -f Makefile.thunderx spl-install
+	-$(MAKE) -f Makefile.thunderx zfs
+	-$(MAKE) -f Makefile.thunderx zfs-install
 endif
 ifeq ($(CONFIG_WIREGUARD),y)
-	-$(MAKE) -f Makefile.ventana wireguard
-	-$(MAKE) -f Makefile.ventana wireguard-install
+	-$(MAKE) -f Makefile.thunderx wireguard
+	-$(MAKE) -f Makefile.thunderx wireguard-install
 endif
-	-$(MAKE) -f Makefile.ventana uniwip-gpio
-	-$(MAKE) -f Makefile.ventana uniwip-gpio-install
+	-$(MAKE) -f Makefile.thunderx uniwip-gpio
+	-$(MAKE) -f Makefile.thunderx uniwip-gpio-install
 
 	find $(ARCH)-uclibc/install $(ARCH)-uclibc/target  -name \*.ko | \
 		xargs $(ARCH)-linux-nm | \
 		awk '$$1 == "U" { print $$2 } ' | \
 		sort -u > $(LINUXDIR)/mod_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
-	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' R __ksymtab' | sed -e 's,........ R __ksymtab_,,' >> $(LINUXDIR)/kernel_symtab.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,................ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' R __ksymtab' | sed -e 's,................ R __ksymtab_,,' >> $(LINUXDIR)/kernel_symtab.txt
 	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
 	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
 	( \
@@ -223,7 +228,7 @@ endif
 		echo; \
 	) > $(LINUXDIR)/symtab.h
 	rm -f $(LINUXDIR)/vmlinux
-	$(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
+	$(MAKE) -j 4 -C $(LINUXDIR) Image dtbs  ARCH=arm64 EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 	
 
 
@@ -232,7 +237,7 @@ endif
 install_headers:
 # important step, required for new kernels
 	-mkdir -p $(TOP)/kernel_headers/$(KERNELRELEASE)
-	$(MAKE) -C $(LINUXDIR) headers_install ARCH=arm INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KERNELRELEASE)
+	$(MAKE) -C $(LINUXDIR) headers_install ARCH=arm64 INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KERNELRELEASE)
 
 	
 realclean: $(obj-clean)
@@ -274,7 +279,7 @@ endif
 ifneq ($(CONFIG_MUSL),y)
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uclibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
 else
-	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-armhf.so.1
+	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-aarch64.so.1
 endif
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
 ifeq ($(CONFIG_LIBDL),y)
@@ -386,7 +391,7 @@ else
 		--sysroot $(TARGETDIR) \
 		-L /lib \
 		-L /usr/lib \
-		--ldlib /lib/ld-musl-armhf.so.1 \
+		--ldlib /lib/ld-musl-aarch64.so.1 \
 		--target $(ARCH)-linux-uclibc \
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
 
@@ -418,9 +423,9 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 	ln -sf ../tmp/smbshare $(ARCH)-uclibc/target/www/smb
 	# optimize the crypto library by removing unneeded symbols
 	# Install (and possibly optimize) C library
-#	$(MAKE) -f Makefile.ventana lib.$(ARCH)-install
+#	$(MAKE) -f Makefile.thunderx lib.$(ARCH)-install
 	# optimize the others library by removing unneeded symbols
-	$(MAKE) -f Makefile.ventana optimize-lib
+	$(MAKE) -f Makefile.thunderx optimize-lib
 	# Install modules into filesystem
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
@@ -438,7 +443,7 @@ ifeq ($(CONFIG_WP18),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/sunrpc
 endif
 ifeq ($(CONFIG_WAVESAT),y)
-	make -f Makefile.ventana wavesat-install
+	make -f Makefile.thunderx wavesat-install
 endif
 #	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
 	find $(TARGETDIR) -name "wl_*.o"  | xargs rm -rf
@@ -470,34 +475,22 @@ endif
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
 	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
-	mkdir $(TARGETDIR)/boot
-	mkimage -A arm -O linux -T kernel -C none -a 0x10008000 -e 0x10008000 -n 'DD-WRT' -d $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/uImage
-	cp $(ARCH)-uclibc/uImage $(TARGETDIR)/boot 
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw54xx.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw53xx.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw52xx.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw51xx.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw54xx.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw53xx.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw52xx.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw51xx.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw5400-a.dtb $(TARGETDIR)/boot
-#	-cp tools/imx6q-gw54xx.dtb $(TARGETDIR)/boot
-#	-cp tools/imx6q-gw5400-a.dtb $(TARGETDIR)/boot
-	mkfs.ubifs -F -m 2048 -e 124KiB -c 1912 -x favor_lzo -X 10 -o $(ARCH)-uclibc/root.ubifs -d $(TARGETDIR)
-	cp tools/ubinize.cfg $(ARCH)-uclibc
-	cd $(ARCH)-uclibc && ubinize -m 2048 -p 128KiB -s 2048 -o root.ubi ubinize.cfg && cd ..
-	dd if=$(ARCH)-uclibc/root.ubi of=$(ARCH)-uclibc/root-aligned.ubi bs=128k conv=sync
+	mkdir -p $(TARGETDIR)/boot
+	cp $(LINUXDIR)/arch/arm64/boot/Image $(TARGETDIR)/boot
+	./tools/ext2/genext2fs -d $(ARCH)-uclibc/target -b 256000 -i 65536 -N 65536 -q $(ARCH)-uclibc/disc_emmc.img
+	gzip -9 $(ARCH)-uclibc/disc_emmc.img
+	
+	
 	
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le
 #	mkfs.jffs2 --pad --big-endian --squash -e 0x20000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
 #	echo -ne '\xde\xad\xc0\xde' >> $(ARCH)-uclibc/dd-wrt.jffs2
-#	dd if=$(LINUXDIR)/arch/arm/boot/uImage of=$(ARCH)-uclibc/ventana-firmware.raw1 bs=131072 conv=sync
-#	dd if=$(LINUXDIR)/arch/arm/boot/uImage of=$(ARCH)-uclibc/ventana-firmware.raw2 bs=131072 conv=sync
-#	cat $(ARCH)-uclibc/dd-wrt.jffs2>>$(ARCH)-uclibc/ventana-firmware.raw1
-#	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/ventana-firmware.raw2
-#	-./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/ventana-firmware-jffs.bin $(ARCH)-uclibc/ventana-firmware.raw1
-#	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/ventana-firmware-squashfs.bin $(ARCH)-uclibc/ventana-firmware.raw2
+#	dd if=$(LINUXDIR)/arch/arm/boot/uImage of=$(ARCH)-uclibc/thunderx-firmware.raw1 bs=131072 conv=sync
+#	dd if=$(LINUXDIR)/arch/arm/boot/uImage of=$(ARCH)-uclibc/thunderx-firmware.raw2 bs=131072 conv=sync
+#	cat $(ARCH)-uclibc/dd-wrt.jffs2>>$(ARCH)-uclibc/thunderx-firmware.raw1
+#	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/thunderx-firmware.raw2
+#	-./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/thunderx-firmware-jffs.bin $(ARCH)-uclibc/thunderx-firmware.raw1
+#	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/thunderx-firmware-squashfs.bin $(ARCH)-uclibc/thunderx-firmware.raw2
 
 
 

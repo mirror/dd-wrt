@@ -179,6 +179,12 @@ endif
 	-$(MAKE) -f Makefile.x86 batman-adv-install
 	-$(MAKE) -f Makefile.x86 opendpi
 	-$(MAKE) -f Makefile.x86 opendpi-install
+ifeq ($(CONFIG_ZFS),y)
+	-$(MAKE) -f Makefile.x86 spl
+	-$(MAKE) -f Makefile.x86 spl-install
+	-$(MAKE) -f Makefile.x86 zfs
+	-$(MAKE) -f Makefile.x86 zfs-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.x86 wireguard
 	-$(MAKE) -f Makefile.x86 wireguard-install
