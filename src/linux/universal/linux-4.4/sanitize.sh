@@ -72,6 +72,7 @@ do
 	    echo CONFIG_WR1043V2=y >> .config
 	    echo CONFIG_ARCHERC7=y >> .config
 	    echo CONFIG_DIR859=y >> .config
+	    echo CONFIG_CPE880=y >> .config
 	    echo CONFIG_MMS344=y >> .config
 	    echo CONFIG_DIR862=y >> .config
 	    echo CONFIG_ERC=y >> .config
@@ -114,6 +115,7 @@ do
 	    sed -i 's/\CONFIG_WR1043V2=y/ /g' .config	    
 	    sed -i 's/\CONFIG_ARCHERC7=y/ /g' .config	    
 	    sed -i 's/\CONFIG_DIR859=y/ /g' .config	    
+	    sed -i 's/\CONFIG_CPE880=y/ /g' .config	    
 	    sed -i 's/\CONFIG_MMS344=y/ /g' .config	    
 	    sed -i 's/\CONFIG_DIR862=y/ /g' .config	    
 	    sed -i 's/\CONFIG_ERC=y/ /g' .config	    

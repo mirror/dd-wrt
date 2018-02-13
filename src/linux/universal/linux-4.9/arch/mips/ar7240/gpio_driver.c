@@ -209,8 +209,20 @@ void ar71xx_gpio_function_enable(u32 mask)
 	unsigned long flags;
 
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
+	if (soc_is_ar934x() ||
+		 soc_is_qca953x() ||
+		 soc_is_qca955x() ||
+		 soc_is_qca956x() ||
+		 soc_is_tp9343()) {
 
-	__raw_writel(__raw_readl(base + AR71XX_GPIO_REG_FUNC) | mask, base + AR71XX_GPIO_REG_FUNC);
+	__raw_writel(__raw_readl(base + AR934X_GPIO_REG_FUNC) | mask, base + AR934X_GPIO_REG_FUNC);
+	/* flush write */
+	(void)__raw_readl(base + AR934X_GPIO_REG_FUNC);
+	}else{
+	__raw_writel(__raw_readl(base + AR71XX_GPIO_REG_FUNC) | mask, base + AR71XX_GPIO_REG_FUNC);	
+	/* flush write */
+	(void)__raw_readl(base + AR71XX_GPIO_REG_FUNC);
+	}
 	/* flush write */
 	(void)__raw_readl(base + AR71XX_GPIO_REG_FUNC);
 
@@ -224,9 +236,20 @@ void ar71xx_gpio_function_disable(u32 mask)
 
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
-	__raw_writel(__raw_readl(base + AR71XX_GPIO_REG_FUNC) & ~mask, base + AR71XX_GPIO_REG_FUNC);
+	if (soc_is_ar934x() ||
+		 soc_is_qca953x() ||
+		 soc_is_qca955x() ||
+		 soc_is_qca956x() ||
+		 soc_is_tp9343()) {
+
+	__raw_writel(__raw_readl(base + AR934X_GPIO_REG_FUNC) & ~mask, base + AR934X_GPIO_REG_FUNC);
+	/* flush write */
+	(void)__raw_readl(base + AR934X_GPIO_REG_FUNC);
+	}else{
+	__raw_writel(__raw_readl(base + AR71XX_GPIO_REG_FUNC) & ~mask, base + AR71XX_GPIO_REG_FUNC);	
 	/* flush write */
 	(void)__raw_readl(base + AR71XX_GPIO_REG_FUNC);
+	}
 
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 }
@@ -238,9 +261,20 @@ void ar71xx_gpio_function_setup(u32 set, u32 clear)
 
 	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
 
+	if (soc_is_ar934x() ||
+		 soc_is_qca953x() ||
+		 soc_is_qca955x() ||
+		 soc_is_qca956x() ||
+		 soc_is_tp9343()) {
+	__raw_writel((__raw_readl(base + AR934X_GPIO_REG_FUNC) & ~clear) | set, base + AR934X_GPIO_REG_FUNC);
+	/* flush write */
+	(void)__raw_readl(base + AR934X_GPIO_REG_FUNC);
+	}else{
 	__raw_writel((__raw_readl(base + AR71XX_GPIO_REG_FUNC) & ~clear) | set, base + AR71XX_GPIO_REG_FUNC);
+	
 	/* flush write */
 	(void)__raw_readl(base + AR71XX_GPIO_REG_FUNC);
+	}
 
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 }
@@ -344,6 +378,8 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	 .gpio = 12,
 #if defined(CONFIG_WR841V8)
 	 .active_low = 1,
+#elif defined(CONFIG_CPE880)
+	 .active_low = 1,
 #else
 	 .active_low = 0,
 #endif
@@ -410,6 +446,8 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	 .gpio = 18,
 #if defined(CONFIG_WR841V8) || defined(CONFIG_DAP3310)
 	 .active_low = 1,
+#elif defined(CONFIG_CPE880)
+	 .active_low = 1,
 #else
 	 .active_low = 0,
 #endif
@@ -418,6 +456,8 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	 .name = "generic_19",
 	 .gpio = 19,
 #if defined(CONFIG_WR841V8) || defined(CONFIG_DAP3310)
+	 .active_low = 1,
+#elif defined(CONFIG_CPE880)
 	 .active_low = 1,
 #else
 	 .active_low = 0,
@@ -844,6 +884,16 @@ void __init ar71xx_gpio_init(void)
 				  AR724X_GPIO_FUNC_ETH_SWITCH_LED2_EN |
 				  AR724X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
 				  AR724X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
+#endif
+#ifdef CONFIG_XD3200
+	printk(KERN_INFO "Yuncore Fix\n");
+	ar71xx_gpio_function_enable(AR934X_GPIO_FUNC_JTAG_DISABLE);
+
+	ar71xx_gpio_direction_output(NULL, 14, 1);
+	ar71xx_gpio_direction_output(NULL, 15, 1);
+	ar71xx_gpio_direction_output(NULL, 16, 1);
+	ar71xx_gpio_direction_output(NULL, 17, 1);
+
 #endif
 #ifdef CONFIG_MACH_HORNET
 	t = ar71xx_reset_rr(AR933X_RESET_REG_BOOTSTRAP);
