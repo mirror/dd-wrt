@@ -37,6 +37,11 @@
 typedef unsigned __bitwise__ fmode_t;
 #endif /* HAVE_FMODE_T */
 
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
+#define HAVE_BLK_QUEUE_WRITE_CACHE_GPL_ONLY 1
+#endif
+
 /*
  * 4.7 - 4.x API,
  * The blk_queue_write_cache() interface has replaced blk_queue_flush()
