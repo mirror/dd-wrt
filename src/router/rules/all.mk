@@ -311,6 +311,9 @@ include rules/wireguard.mk
 %-distclean:
 	[ ! -d $* ] || $(MAKE) -C $* clean
 
+%-configure:
+	[ ! -d $* ] || $(MAKE) -C $* configure
+
 %-clean:
 	[ ! -d $* ] || $(MAKE) -C $* clean
 
