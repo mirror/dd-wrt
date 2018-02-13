@@ -2385,7 +2385,7 @@ int getTxRate(char *ifname, unsigned char *mac)
 			char *ifn = strdup(ifname);
 			char *s = strchr(ifn, '.');
 			if (s)
-			    *s = 0;
+				*s = 0;
 			sprintf(turbo, "%s_channelbw", ifn);
 			free(ifn);
 			int t;
@@ -2910,7 +2910,8 @@ int get_ath9k_phy_idx(int idx)
 int get_ath9k_phy_ifname(const char *ifname)
 {
 	int devnum;
-	if (!ifname ) return -1;
+	if (!ifname)
+		return -1;
 	if (is_wil6210(ifname))
 		return 2;
 	if (strncmp(ifname, "ath", 3))
@@ -2926,6 +2927,8 @@ int is_ath9k(const char *prefix)
 #ifdef HAVE_MVEBU
 	return 1;
 #endif
+	if (strncmp(prefix, "ath", 3))
+		return 0;
 	INITVALUECACHE();
 	glob_t globbuf;
 	char *globstring;
