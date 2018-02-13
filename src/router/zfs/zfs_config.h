@@ -122,9 +122,6 @@
 /* blk_queue_max_segments() is available */
 #define HAVE_BLK_QUEUE_MAX_SEGMENTS 1
 
-/* blk_queue_write_cache() exists */
-#define HAVE_BLK_QUEUE_WRITE_CACHE 1
-
 /* blk_queue_write_cache() is GPL-only */
 
 /* struct block_device_operations.release returns void */
