@@ -45,7 +45,7 @@ AC_DEFUN([ZFS_AC_CONFIG_ALWAYS], [
 ])
 
 AC_DEFUN([ZFS_AC_CONFIG], [
-	ZFS_CONFIG=all
+	ZFS_CONFIG=user
 	AC_ARG_WITH([config],
 		AS_HELP_STRING([--with-config=CONFIG],
 		[Config file 'kernel|user|all|srpm']),
@@ -63,10 +63,8 @@ AC_DEFUN([ZFS_AC_CONFIG], [
 	ZFS_AC_CONFIG_ALWAYS
 
 	case "$ZFS_CONFIG" in
-		kernel) ZFS_AC_CONFIG_KERNEL ;;
 		user)	ZFS_AC_CONFIG_USER   ;;
-		all)    ZFS_AC_CONFIG_USER
-			ZFS_AC_CONFIG_KERNEL ;;
+		all)    ZFS_AC_CONFIG_USER   ;;
 		srpm)                        ;;
 		*)
 		AC_MSG_RESULT([Error!])
