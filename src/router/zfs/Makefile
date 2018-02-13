@@ -37,7 +37,10 @@ install:
 	make -C tools install DESTDIR=$(INSTALLDIR)
 	rm -rf $(INSTALLDIR)/usr/include
 	rm -rf $(INSTALLDIR)/usr/lib/pkgconfig
-	rm -rf $(INSTALLDIR)/usr/lib/share
+	rm -rf $(INSTALLDIR)/usr/share
+	rm -f $(INSTALLDIR)/usr/lib/*.a
+	rm -f $(INSTALLDIR)/usr/lib/*.la
+
 
 clean:
 	$(MAKE) -C $(LINUXDIR) SUBDIRS=`pwd` CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" O=$(LINUXDIR) $@
