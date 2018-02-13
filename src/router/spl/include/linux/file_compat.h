@@ -116,6 +116,11 @@ spl_kernel_read(struct file *file, void *buf, size_t count, loff_t *pos)
 	return (ret);
 #endif
 }
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
+#define HAVE_INODE_LOCK_SHARED 1
+#endif
 
 #ifdef HAVE_2ARGS_VFS_FSYNC
 #define	spl_filp_fsync(fp, sync)	vfs_fsync(fp, sync)
