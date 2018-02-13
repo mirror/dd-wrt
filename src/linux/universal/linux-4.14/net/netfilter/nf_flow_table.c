@@ -151,7 +151,10 @@ int flow_offload_add(struct nf_flowtable *flow_table, struct flow_offload *flow)
 }
 EXPORT_SYMBOL_GPL(flow_offload_add);
 
-static inline bool nf_flow_in_hw(const struct flow_offload *flow);
+static inline bool nf_flow_in_hw(const struct flow_offload *flow)
+{
+	return flow->flags & FLOW_OFFLOAD_HW;
+}
 
 static void flow_offload_del(struct nf_flowtable *flow_table,
 			     struct flow_offload *flow)
@@ -226,11 +229,6 @@ static inline bool nf_flow_has_expired(const struct flow_offload *flow)
 static inline bool nf_flow_is_dying(const struct flow_offload *flow)
 {
 	return flow->flags & FLOW_OFFLOAD_DYING;
-}
-
-static inline bool nf_flow_in_hw(const struct flow_offload *flow)
-{
-	return flow->flags & FLOW_OFFLOAD_HW;
 }
 
 static int nf_flow_offload_gc_step(struct nf_flowtable *flow_table)
