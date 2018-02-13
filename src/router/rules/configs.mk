@@ -291,7 +291,7 @@ obj-$(CONFIG_WOLFSSL) += wolfssl
 obj-$(CONFIG_MIKROTIK_BTEST) += mikrotik_btest
 obj-$(CONFIG_BKM) += multisim
 obj-$(CONFIG_TMK) += multisim
-obj-$(CONFIG_ZFS) += spl zfs
+obj-$(CONFIG_ZFS) += util-linux spl zlib zfs
 obj-y+=configs
 
 

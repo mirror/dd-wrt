@@ -17,8 +17,10 @@ ifneq ($(CONFIG_ASTERISK),y)
 ifneq ($(CONFIG_ZABBIX),y)
 ifneq ($(CONFIG_MC),y)
 ifneq ($(CONFIG_LIBQMI),y)
+ifneq ($(CONFIG_ZFS),y)
 ifneq ($(CONFIG_WEBSERVER),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
+endif
 endif
 endif
 endif
@@ -46,7 +48,9 @@ ifneq ($(CONFIG_ZABBIX),y)
 ifneq ($(CONFIG_MC),y)
 ifneq ($(CONFIG_LIBQMI),y)
 ifneq ($(CONFIG_WEBSERVER),y)
+ifneq ($(CONFIG_ZFS),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
+endif
 endif
 endif
 endif
@@ -67,8 +71,10 @@ ifneq ($(CONFIG_ASTERISK),y)
 ifneq ($(CONFIG_ZABBIX),y)
 ifneq ($(CONFIG_MC),y)
 ifneq ($(CONFIG_LIBQMI),y)
+ifneq ($(CONFIG_ZFS),y)
 ifneq ($(CONFIG_WEBSERVER),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
+endif
 endif
 endif
 endif
@@ -101,8 +107,10 @@ ifneq ($(CONFIG_ASTERISK),y)
 ifneq ($(CONFIG_ZABBIX),y)
 ifneq ($(CONFIG_MC),y)
 ifneq ($(CONFIG_LIBQMI),y)
+ifneq ($(CONFIG_ZFS),y)
 ifneq ($(CONFIG_WEBSERVER),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
+endif
 endif
 endif
 endif
