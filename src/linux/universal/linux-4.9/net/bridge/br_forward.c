@@ -173,7 +173,7 @@ static int deliver_clone(const struct net_bridge_port *prev,
 void br_forward(const struct net_bridge_port *to,
 		struct sk_buff *skb, bool local_rcv, bool local_orig)
 {
-	if (to->flags & BR_ISOLATE_MODE)
+	if (to->flags & BR_ISOLATE_MODE && !local_orig)
 		to = NULL;
 
 	if (to && should_deliver(to, skb)) {
