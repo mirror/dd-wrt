@@ -230,6 +230,7 @@ obj-$(CONFIG_LIBNLTINY) += libnltiny
 obj-$(CONFIG_HOTPLUG2) += hotplug2 udev
 obj-$(CONFIG_UBOOTENV) += ubootenv
 obj-$(CONFIG_DSL_CPE_CONTROL) += dsl_cpe_control atm
+obj-$(CONFIG_NLD) += libubox nld
 obj-$(CONFIG_OPENDPI) += opendpi
 obj-$(CONFIG_LLTD) += lltd
 obj-$(CONFIG_USBIP) += ncurses util-linux usbip
@@ -284,7 +285,7 @@ endif
 obj-$(CONFIG_80211AC) += emf
 #obj-y+=anchorfree
 obj-y+=ttraff
-#obj-y+=speedtest
+obj-y+=speedtest
 obj-$(CONFIG_MKIMAGE) += mkimage
 obj-$(CONFIG_SPEEDCHECKER) += speedchecker shownf
 obj-$(CONFIG_WOLFSSL) += wolfssl

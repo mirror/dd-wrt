@@ -258,6 +258,7 @@ include rules/swconfig.mk
 include rules/dlna.mk
 include rules/polarssl.mk
 include rules/libubox.mk
+include rules/nld.mk
 include rules/json-c.mk
 #include rules/ubus.mk
 include rules/uqmi.mk
