@@ -37,6 +37,11 @@
 #include <linux/uaccess.h>
 #include <linux/version.h>
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)
+#define HAVE_WAIT_QUEUE_ENTRY_T 1
+#define HAVE_WAIT_QUEUE_HEAD_ENTRY 1
+#endif
+
 #if defined(CONSTIFY_PLUGIN) && LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0)
 typedef struct ctl_table __no_const spl_ctl_table;
 #else
