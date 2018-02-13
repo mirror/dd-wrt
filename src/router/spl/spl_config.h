@@ -37,8 +37,6 @@
 /* vfs_unlink() wants 3 args */
 #define HAVE_3ARGS_VFS_UNLINK 1
 
-/* vfs_getattr wants 4 args */
-#define HAVE_4ARGS_VFS_GETATTR 1
 
 /* vfs_rename() wants 4 args */
 /* #undef HAVE_4ARGS_VFS_RENAME */
@@ -79,14 +77,8 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
 
-/* kernel_read() take loff_t pointer */
-#define HAVE_KERNEL_READ_PPOS 1
-
 /* timer_list.function gets a timer_list */
 /* #undef HAVE_KERNEL_TIMER_FUNCTION_TIMER_LIST */
-
-/* kernel_write() take loff_t pointer */
-#define HAVE_KERNEL_WRITE_PPOS 1
 
 /* struct kmem_cache has allocflags */
 /* #undef HAVE_KMEM_CACHE_ALLOCFLAGS */
@@ -116,7 +108,6 @@
 #define HAVE_SCHED_RT_HEADER 1
 
 /* linux/sched/signal.h exists */
-#define HAVE_SCHED_SIGNAL_HEADER 1
 
 /* set_fs_pwd() needs const path * */
 #define HAVE_SET_FS_PWD_WITH_CONST 1
@@ -155,10 +146,6 @@
 /* #undef HAVE_WAIT_ON_BIT_ACTION */
 
 /* wait_queue_entry_t exists */
-#define HAVE_WAIT_QUEUE_ENTRY_T 1
-
-/* wq_head->head and wq_entry->entry exist */
-#define HAVE_WAIT_QUEUE_HEAD_ENTRY 1
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */

@@ -27,6 +27,12 @@
 
 #include <linux/sched.h>
 #include <linux/wait.h>
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)
+#define HAVE_WAIT_QUEUE_ENTRY_T 1
+#endif
+
 
 #ifndef HAVE_WAIT_ON_BIT_ACTION
 #  define spl_wait_on_bit(word, bit, mode) wait_on_bit(word, bit, mode)

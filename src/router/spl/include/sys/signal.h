@@ -26,6 +26,11 @@
 #define _SPL_SIGNAL_H
 
 #include <linux/sched.h>
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#define HAVE_SCHED_SIGNAL_HEADER 1
+#endif
 
 #ifdef HAVE_SCHED_SIGNAL_HEADER
 #include <linux/sched/signal.h>
