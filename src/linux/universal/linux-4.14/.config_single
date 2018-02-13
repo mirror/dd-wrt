@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.14.17 Kernel Configuration
+# Linux/i386 4.14.19-rc1 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -1188,6 +1188,7 @@ CONFIG_NET_SCH_FIFO=y
 # CONFIG_BATMAN_ADV is not set
 # CONFIG_OPENVSWITCH is not set
 CONFIG_VSOCKETS=y
+CONFIG_VMWARE_VMCI_VSOCKETS=m
 # CONFIG_NETLINK_DIAG is not set
 CONFIG_MPLS=y
 # CONFIG_NET_MPLS_GSO is not set
