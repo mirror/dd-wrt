@@ -416,6 +416,8 @@ endif
 
 	find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
 	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
+	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/extra -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/extra
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net
 	#e2fsck -y -f $(ARCH)-uclibc/root.fs
