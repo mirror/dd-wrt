@@ -83,7 +83,6 @@
 #define HAVE_BIO_BI_OPF 1
 
 /* bio->bi_status exists */
-#define HAVE_BIO_BI_STATUS 1
 
 /* bio has bi_iter */
 #define HAVE_BIO_BVEC_ITER 1
@@ -97,9 +96,6 @@
 /* BIO_RW_FAILFAST_* are defined */
 /* #undef HAVE_BIO_RW_FAILFAST_DTD */
 
-/* bio_set_dev() exists */
-#define HAVE_BIO_SET_DEV 1
-
 /* bio_set_op_attrs is available */
 #define HAVE_BIO_SET_OP_ATTRS 1
 
@@ -107,7 +103,6 @@
 #define HAVE_BLKDEV_GET_BY_PATH 1
 
 /* blk queue backing_dev_info is dynamic */
-#define HAVE_BLK_QUEUE_BDI_DYNAMIC 1
 
 /* blk_queue_flush() is available */
 /* #undef HAVE_BLK_QUEUE_FLUSH */
@@ -244,12 +239,6 @@
 /* fops->fsync() with dentry */
 /* #undef HAVE_FSYNC_WITH_DENTRY */
 
-/* generic_start_io_acct()/generic_end_io_acct() available */
-/* #undef HAVE_GENERIC_IO_ACCT_3ARG */
-
-/* generic_start_io_acct()/generic_end_io_acct() 4 arg available */
-#define HAVE_GENERIC_IO_ACCT_4ARG 1
-
 /* generic_readlink is global */
 /* #undef HAVE_GENERIC_READLINK */
 
@@ -364,8 +353,6 @@
 /* open_bdev_exclusive() is available */
 /* #undef HAVE_OPEN_BDEV_EXCLUSIVE */
 
-/* iops->getattr() takes a path */
-#define HAVE_PATH_IOPS_GETATTR 1
 
 /* iops->permission() exists */
 #define HAVE_PERMISSION 1
@@ -465,9 +452,6 @@
 
 /* Define to 1 if you have the <string.h> header file. */
 #define HAVE_STRING_H 1
-
-/* super_setup_bdi_name() exits */
-#define HAVE_SUPER_SETUP_BDI_NAME 1
 
 /* super_block->s_user_ns exists */
 #define HAVE_SUPER_USER_NS 1

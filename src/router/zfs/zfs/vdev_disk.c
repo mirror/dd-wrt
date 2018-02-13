@@ -497,6 +497,11 @@ vdev_submit_bio_impl(struct bio *bio)
 	submit_bio(0, bio);
 #endif
 }
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
+#define HAVE_BIO_SET_DEV 1
+#endif
 
 #ifndef HAVE_BIO_SET_DEV
 static inline void
