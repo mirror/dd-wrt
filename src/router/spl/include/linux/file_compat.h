@@ -70,6 +70,12 @@ spl_filp_fallocate(struct file *fp, int mode, loff_t offset, loff_t len)
 
 	return (error);
 }
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
+#define HAVE_KERNEL_WRITE_PPOS 1
+#define HAVE_KERNEL_READ_PPOS 1
+#endif
 
 static inline ssize_t
 spl_kernel_write(struct file *file, const void *buf, size_t count, loff_t *pos)

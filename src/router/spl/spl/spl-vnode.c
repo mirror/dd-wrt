@@ -117,6 +117,14 @@ vn_free(vnode_t *vp)
 } /* vn_free() */
 EXPORT_SYMBOL(vn_free);
 
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#define HAVE_4ARGS_VFS_GETATTR 1
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
+#define HAVE_2ARGS_VFS_GETATTR 1
+#endif
+
 int
 vn_open(const char *path, uio_seg_t seg, int flags, int mode,
 	vnode_t **vpp, int x1, void *x2)
