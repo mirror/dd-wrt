@@ -99,6 +99,12 @@ crgetngroups(const cred_t *cr)
 	return rc;
 }
 
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+#define HAVE_GROUP_INFO_GID 1
+#endif
+
 /*
  * Return an array of supplemental gids.  The returned address is safe
  * to use as long as the caller has taken a reference with crhold().
