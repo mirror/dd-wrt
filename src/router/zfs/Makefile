@@ -6,7 +6,7 @@ subdir-m += zfs
 subdir-m += zpios
 subdir-m += icp
 
-INSTALL_MOD_DIR ?= extra
+INSTALL_MOD_DIR = kernel/extra
 
 
 ZFS_MODULE_CFLAGS += -include $(TOP)/spl/spl_config.h
