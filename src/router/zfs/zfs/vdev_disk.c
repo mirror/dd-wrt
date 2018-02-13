@@ -488,6 +488,12 @@ bio_map_abd_off(struct bio *bio, abd_t *abd, unsigned int size, size_t off)
 	return (abd_scatter_bio_map_off(bio, abd, size, off));
 }
 
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
+#define HAVE_1ARG_SUBMIT_BIO 1
+#endif
+
 static inline void
 vdev_submit_bio_impl(struct bio *bio)
 {

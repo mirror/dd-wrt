@@ -4003,6 +4003,10 @@ arc_all_memory(void)
 #endif /* _KERNEL */
 }
 
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
+#define ZFS_GLOBAL_NODE_PAGE_STATE 1
+#endif
 /*
  * Return the amount of memory that is considered free.  In user space
  * which is primarily used for testing we pretend that free memory ranges

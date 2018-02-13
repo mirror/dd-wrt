@@ -13,9 +13,6 @@
 /* lookup_bdev() wants 1 arg */
 #define HAVE_1ARG_LOOKUP_BDEV 1
 
-/* submit_bio() wants 1 arg */
-#define HAVE_1ARG_SUBMIT_BIO 1
-
 /* bdi_setup_and_register() wants 2 args */
 /* #undef HAVE_2ARGS_BDI_SETUP_AND_REGISTER */
 
@@ -79,8 +76,6 @@
 /* bdev_physical_block_size() is available */
 #define HAVE_BDEV_PHYSICAL_BLOCK_SIZE 1
 
-/* bio->bi_opf is defined */
-#define HAVE_BIO_BI_OPF 1
 
 /* bio->bi_status exists */
 
@@ -97,7 +92,7 @@
 /* #undef HAVE_BIO_RW_FAILFAST_DTD */
 
 /* bio_set_op_attrs is available */
-#define HAVE_BIO_SET_OP_ATTRS 1
+//#define HAVE_BIO_SET_OP_ATTRS 1
 
 /* blkdev_get_by_path() is available */
 #define HAVE_BLKDEV_GET_BY_PATH 1
@@ -156,9 +151,6 @@
 
 /* current->bio_tail exists */
 /* #undef HAVE_CURRENT_BIO_TAIL */
-
-/* current_time() exists */
-#define HAVE_CURRENT_TIME 1
 
 /* DECLARE_EVENT_CLASS() is available */
 /* #undef HAVE_DECLARE_EVENT_CLASS */
@@ -255,9 +247,6 @@
 
 /* iops->get_link() cookie */
 /* #undef HAVE_GET_LINK_COOKIE */
-
-/* iops->get_link() delayed */
-#define HAVE_GET_LINK_DELAYED 1
 
 /* fops->fallocate() exists */
 /* #undef HAVE_INODE_FALLOCATE */
@@ -386,23 +375,9 @@
 /* qat is enabled and existed */
 /* #undef HAVE_QAT */
 
-/* iops->rename() wants flags */
-#define HAVE_RENAME_WANTS_FLAGS 1
-
 /* REQ_FAILFAST_MASK is defined */
 #define HAVE_REQ_FAILFAST_MASK 1
 
-/* REQ_OP_DISCARD is defined */
-#define HAVE_REQ_OP_DISCARD 1
-
-/* REQ_OP_FLUSH is defined */
-#define HAVE_REQ_OP_FLUSH 1
-
-/* REQ_OP_SECURE_ERASE is defined */
-#define HAVE_REQ_OP_SECURE_ERASE 1
-
-/* setattr_prepare() is available */
-#define HAVE_SETATTR_PREPARE 1
 
 /* iops->set_acl() exists */
 #define HAVE_SET_ACL 1
@@ -449,9 +424,6 @@
 /* Define to 1 if you have the <string.h> header file. */
 #define HAVE_STRING_H 1
 
-/* super_block->s_user_ns exists */
-#define HAVE_SUPER_USER_NS 1
-
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #define HAVE_SYS_STAT_H 1
 
@@ -478,10 +450,6 @@
 
 /* fops->iterate() is available */
 /* #undef HAVE_VFS_ITERATE */
-
-/* fops->iterate_shared() is available */
-#define HAVE_VFS_ITERATE_SHARED 1
-
 /* fops->readdir() is available */
 /* #undef HAVE_VFS_READDIR */
 
@@ -492,7 +460,6 @@
 /* #undef HAVE_XATTR_GET_DENTRY */
 
 /* xattr_handler->get() wants both dentry and inode */
-#define HAVE_XATTR_GET_DENTRY_INODE 1
 
 /* xattr_handler->get() wants xattr_handler */
 /* #undef HAVE_XATTR_GET_HANDLER */
@@ -501,7 +468,6 @@
 /* #undef HAVE_XATTR_GET_INODE */
 
 /* xattr_handler has name */
-#define HAVE_XATTR_HANDLER_NAME 1
 
 /* xattr_handler->list() wants dentry */
 /* #undef HAVE_XATTR_LIST_DENTRY */
@@ -512,14 +478,10 @@
 /* xattr_handler->list() wants inode */
 /* #undef HAVE_XATTR_LIST_INODE */
 
-/* xattr_handler->list() wants simple */
-#define HAVE_XATTR_LIST_SIMPLE 1
-
 /* xattr_handler->set() wants dentry */
 /* #undef HAVE_XATTR_SET_DENTRY */
 
 /* xattr_handler->set() wants both dentry and inode */
-#define HAVE_XATTR_SET_DENTRY_INODE 1
 
 /* xattr_handler->set() wants xattr_handler */
 /* #undef HAVE_XATTR_SET_HANDLER */
@@ -551,9 +513,6 @@
 
 /* zfs debugging enabled */
 /* #undef ZFS_DEBUG */
-
-/* using global_node_page_state() */
-#define ZFS_GLOBAL_NODE_PAGE_STATE 1
 
 /* Define to 1 if GPL-only symbols can be used */
 /* #undef ZFS_IS_GPL_COMPATIBLE */

@@ -80,6 +80,12 @@ out:
 
 	return (error);
 }
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
+#define HAVE_VFS_ITERATE_SHARED 1
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+#define HAVE_VFS_ITERATE 1
+#endif
 
 #if !defined(HAVE_VFS_ITERATE) && !defined(HAVE_VFS_ITERATE_SHARED)
 static int
@@ -321,6 +327,10 @@ zpl_snapdir_rename2(struct inode *sdip, struct dentry *sdentry,
 
 	return (error);
 }
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+#define HAVE_RENAME_WANTS_FLAGS 1
+#endif
 
 #ifndef HAVE_RENAME_WANTS_FLAGS
 static int
