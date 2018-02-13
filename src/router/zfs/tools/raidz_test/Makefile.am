@@ -19,4 +19,6 @@ raidz_test_LDADD = \
 	$(top_builddir)/lib/libuutil/libuutil.la \
 	$(top_builddir)/lib/libzpool/libzpool.la
 
-raidz_test_LDADD += -lm -ldl
+raidz_test_LDADD += -lm -ldl -ltirpc
+
+raidz_test_LDFLAGS = -rpath $(TOP)/util-linux/.libs
