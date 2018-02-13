@@ -154,6 +154,12 @@ kernel:
 	-$(MAKE) -f Makefile.alpine batman-adv-install
 	-$(MAKE) -f Makefile.alpine opendpi
 	-$(MAKE) -f Makefile.alpine opendpi-install
+ifeq ($(CONFIG_ZFS),y)
+	-$(MAKE) -f Makefile.alpine spl
+	-$(MAKE) -f Makefile.alpine spl-install
+	-$(MAKE) -f Makefile.alpine zfs
+	-$(MAKE) -f Makefile.alpine zfs-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.alpine wireguard
 	-$(MAKE) -f Makefile.alpine wireguard-install
