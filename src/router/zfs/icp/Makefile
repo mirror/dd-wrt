@@ -3,29 +3,6 @@ obj = $(TOP)/zfs/icp
 
 MODULE := icp
 
-ifeq ($(CONFIG_X86_64),y)
-TARGET_ASM_DIR = asm-x86_64
-else
-TARGET_ASM_DIR = asm-generic
-endif
-ifeq ($(TARGET_ASM_DIR), asm-x86_64)
-ASM_SOURCES := asm-x86_64/aes/aeskey.o
-ASM_SOURCES += asm-x86_64/aes/aes_amd64.o
-ASM_SOURCES += asm-x86_64/aes/aes_intel.o
-ASM_SOURCES += asm-x86_64/modes/gcm_intel.o
-ASM_SOURCES += asm-x86_64/sha1/sha1-x86_64.o
-ASM_SOURCES += asm-x86_64/sha2/sha256_impl.o
-ASM_SOURCES += asm-x86_64/sha2/sha512_impl.o
-endif
-
-ifeq ($(TARGET_ASM_DIR), asm-i386)
-ASM_SOURCES :=
-endif
-
-ifeq ($(TARGET_ASM_DIR), asm-generic)
-ASM_SOURCES :=
-endif
-
 EXTRA_CFLAGS = $(ZFS_MODULE_CFLAGS)  -std=gnu99 -Wno-declaration-after-statement -Wno-unused-but-set-variable  -DHAVE_SPL -D_KERNEL -DTEXT_DOMAIN=\"zfs-linux-kernel\" -DNDEBUG 
 EXTRA_AFLAGS = $(ZFS_MODULE_CFLAGS)  -std=gnu99 -Wno-declaration-after-statement -Wno-unused-but-set-variable  -DHAVE_SPL -D_KERNEL -DTEXT_DOMAIN=\"zfs-linux-kernel\" -DNDEBUG 
 
@@ -70,6 +47,15 @@ $(MODULE)-objs += algs/skein/skein.o
 $(MODULE)-objs += algs/skein/skein_block.o
 $(MODULE)-objs += algs/skein/skein_iv.o
 $(MODULE)-objs += $(ASM_SOURCES)
+
+
+$(MODULE)-$(CONFIG_X86_64) += asm-x86_64/aes/aeskey.o
+$(MODULE)-$(CONFIG_X86_64) += asm-x86_64/aes/aes_amd64.o
+$(MODULE)-$(CONFIG_X86_64) += asm-x86_64/aes/aes_intel.o
+$(MODULE)-$(CONFIG_X86_64) += asm-x86_64/modes/gcm_intel.o
+$(MODULE)-$(CONFIG_X86_64) += asm-x86_64/sha1/sha1-x86_64.o
+$(MODULE)-$(CONFIG_X86_64) += asm-x86_64/sha2/sha256_impl.o
+$(MODULE)-$(CONFIG_X86_64) += asm-x86_64/sha2/sha512_impl.o
 
 ICP_DIRS = \
 	api \
