@@ -11,7 +11,7 @@ INSTALL_MOD_DIR ?= extra
 
 ZFS_MODULE_CFLAGS += -include $(TOP)/spl/spl_config.h
 ZFS_MODULE_CFLAGS += -include $(TOP)/zfs/zfs_config.h
-ZFS_MODULE_CFLAGS += -I$(TOP)/zfs/include -I$(TOP)/spl/include -I$(TOP)/spl
+ZFS_MODULE_CFLAGS += -I$(TOP)/zfs/tools/include -I$(TOP)/spl/include -I$(TOP)/spl
 export ZFS_MODULE_CFLAGS
 
 modules:
