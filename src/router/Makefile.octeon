@@ -221,6 +221,12 @@ ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.octeon opendpi
 	-$(MAKE) -f Makefile.octeon opendpi-install
 endif
+ifeq ($(CONFIG_ZFS),y)
+	-$(MAKE) -f Makefile.octeon spl
+	-$(MAKE) -f Makefile.octeon spl-install
+	-$(MAKE) -f Makefile.octeon zfs
+	-$(MAKE) -f Makefile.octeon zfs-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.octeon wireguard
 	-$(MAKE) -f Makefile.octeon wireguard-install
@@ -622,6 +628,8 @@ endif
 	find $(TARGETDIR)/lib -name *.ko -exec mips64-linux-strip --strip-unneeded --remove-section=.comment {} +		
 	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
 	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
+	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/extra -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/extra
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net
 	#e2fsck -y -f $(ARCH)-uclibc/root.fs
