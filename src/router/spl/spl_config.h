@@ -62,15 +62,10 @@
 /* struct fs_struct uses spinlock_t */
 #define HAVE_FS_STRUCT_SPINLOCK 1
 
-/* group_info->gid exists */
-#define HAVE_GROUP_INFO_GID 1
-
 /* fops->fallocate() exists */
 /* #undef HAVE_INODE_FALLOCATE */
 
 /* yes */
-#define HAVE_INODE_LOCK_SHARED 1
-
 /* truncate_range() inode operation is available */
 /* #undef HAVE_INODE_TRUNCATE_RANGE */
 
@@ -100,9 +95,6 @@
 
 /* struct rw_semaphore has member activity */
 /* #undef HAVE_RWSEM_ACTIVITY */
-
-/* struct rw_semaphore has atomic_long_t member count */
-#define HAVE_RWSEM_ATOMIC_LONG_COUNT 1
 
 /* linux/sched/rt.h exists */
 #define HAVE_SCHED_RT_HEADER 1

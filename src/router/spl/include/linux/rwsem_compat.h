@@ -38,6 +38,13 @@
 #define	SPL_RWSEM_SINGLE_WRITER_VALUE	(RWSEM_ACTIVE_WRITE_BIAS)
 #endif
 
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
+#define HAVE_RWSEM_ATOMIC_LONG_COUNT 1
+#endif
+
+
 /* Linux 3.16 changed activity to count for rwsem-spinlock */
 #if defined(CONFIG_PREEMPT_RT_FULL)
 #define	RWSEM_COUNT(sem)	sem->read_depth
