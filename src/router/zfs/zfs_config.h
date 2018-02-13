@@ -126,7 +126,6 @@
 #define HAVE_BLK_QUEUE_WRITE_CACHE 1
 
 /* blk_queue_write_cache() is GPL-only */
-#define HAVE_BLK_QUEUE_WRITE_CACHE_GPL_ONLY 1
 
 /* struct block_device_operations.release returns void */
 #define HAVE_BLOCK_DEVICE_OPERATIONS_RELEASE_VOID 1
