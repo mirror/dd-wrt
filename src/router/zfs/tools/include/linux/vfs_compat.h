@@ -67,6 +67,16 @@ truncate_setsize(struct inode *ip, loff_t new)
 }
 #endif /* HAVE_TRUNCATE_SETSIZE */
 
+
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
+#define HAVE_SUPER_SETUP_BDI_NAME 1
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
+#define HAVE_2ARGS_BDI_SETUP_AND_REGISTER 1
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 34)
+#define HAVE_3ARGS_BDI_SETUP_AND_REGISTER 1
+#endif
 /*
  * 2.6.32 - 2.6.33, bdi_setup_and_register() is not available.
  * 2.6.34 - 3.19, bdi_setup_and_register() takes 3 arguments.
@@ -544,7 +554,13 @@ setattr_prepare(struct dentry *dentry, struct iattr *ia)
  * 4.11 API change
  * 4.11 takes struct path *, < 4.11 takes vfsmount *
  */
+#include <linux/version.h>
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#define HAVE_PATH_IOPS_GETATTR 1
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0)
+#define HAVE_VFSMOUNT_IOPS_GETATTR
+#endif
 #ifdef HAVE_VFSMOUNT_IOPS_GETATTR
 #define	ZPL_GETATTR_WRAPPER(func)					\
 static int								\
