@@ -158,6 +158,12 @@ endif
 	-$(MAKE) -f Makefile.ipq806x batman-adv-install
 	-$(MAKE) -f Makefile.ipq806x opendpi
 	-$(MAKE) -f Makefile.ipq806x opendpi-install
+ifeq ($(CONFIG_ZFS),y)
+	-$(MAKE) -f Makefile.ipq806x spl
+	-$(MAKE) -f Makefile.ipq806x spl-install
+	-$(MAKE) -f Makefile.ipq806x zfs
+	-$(MAKE) -f Makefile.ipq806x zfs-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.ipq806x wireguard
 	-$(MAKE) -f Makefile.ipq806x wireguard-install
