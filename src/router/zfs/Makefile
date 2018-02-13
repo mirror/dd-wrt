@@ -6,7 +6,7 @@ subdir-m += zfs
 subdir-m += zpios
 subdir-m += icp
 
-INSTALL_MOD_DIR = kernel/extra
+INSTALL_MOD_DIR = extra
 
 
 ZFS_MODULE_CFLAGS += -include $(TOP)/spl/spl_config.h
@@ -31,7 +31,7 @@ modules:
 
 
 install:
-	$(MAKE) -C $(LINUXDIR) SUBDIRS=`pwd` CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" O=$(LINUXDIR) INSTALL_MOD_PATH=$(INSTALLDIR) INSTALL_MOD_DIR=kernel/extra modules_install
+	$(MAKE) -C $(LINUXDIR) SUBDIRS=`pwd` CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" O=$(LINUXDIR) INSTALL_MOD_PATH=$(INSTALLDIR) INSTALL_MOD_DIR=extra modules_install
 	rm -f $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/modules.*
 	make -C tools/libtirpc install DESTDIR=$(INSTALLDIR)
 	make -C tools install DESTDIR=$(INSTALLDIR)
