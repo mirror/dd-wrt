@@ -129,6 +129,12 @@ __blk_queue_max_segments(struct request_queue *q, unsigned short max_segments)
 }
 #endif
 
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
+#define HAVE_BLK_QUEUE_BDI_DYNAMIC 1
+#endif
+
 static inline void
 blk_queue_set_read_ahead(struct request_queue *q, unsigned long ra_pages)
 {
@@ -220,6 +226,12 @@ bio_set_flags_failfast(struct block_device *bdev, int *flags)
 #ifndef DISK_NAME_LEN
 #define	DISK_NAME_LEN	32
 #endif /* DISK_NAME_LEN */
+
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 13, 0)
+#define HAVE_BIO_BI_STATUS 1
+#endif
 
 #ifdef HAVE_BIO_BI_STATUS
 static inline int
@@ -597,6 +609,15 @@ blk_queue_discard_granularity(struct request_queue *q, unsigned int dg)
  * currently required for the correct operation of hot spares.
  */
 #define	VDEV_HOLDER			((void *)0x2401de7)
+
+
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
+#define HAVE_GENERIC_IO_ACCT_4ARG 1
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
+#define HAVE_GENERIC_IO_ACCT_3ARG 1
+#endif
 
 static inline void
 blk_generic_start_io_acct(struct request_queue *q, int rw,
