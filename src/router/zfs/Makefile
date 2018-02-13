@@ -20,7 +20,7 @@ all: modules
 
 configure:
 	cd tools/libtirpc && ./bootstrap
-	cd tools/libtirpc && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF" LDFLAGS="-L$(TOP)/zlib" --disable-gssapi --prefix=/usr
+	cd tools/libtirpc && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF" LDFLAGS="-L$(TOP)/zlib" --disable-gssapi --disable-static --prefix=/usr
 	make -C tools/libtirpc
 # for bootstrapping
 	cd tools && ./autogen.sh
