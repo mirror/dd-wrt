@@ -423,6 +423,11 @@ zpl_rename2(struct inode *sdip, struct dentry *sdentry,
 	return (error);
 }
 
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+#define HAVE_RENAME_WANTS_FLAGS 1
+#endif
+
 #ifndef HAVE_RENAME_WANTS_FLAGS
 static int
 zpl_rename(struct inode *sdip, struct dentry *sdentry,
@@ -518,6 +523,11 @@ zpl_get_link_common(struct dentry *dentry, struct inode *ip, char **link)
 
 	return (error);
 }
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+#define HAVE_GET_LINK_DELAYED 1
+#endif
 
 #if defined(HAVE_GET_LINK_DELAYED)
 const char *

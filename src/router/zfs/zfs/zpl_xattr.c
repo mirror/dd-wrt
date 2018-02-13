@@ -92,6 +92,15 @@ typedef struct xattr_filldir {
 } xattr_filldir_t;
 
 static const struct xattr_handler *zpl_xattr_handler(const char *);
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+#define HAVE_XATTR_LIST_SIMPLE 1
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+#define HAVE_XATTR_LIST_HANDLER 1
+#else
+#define HAVE_XATTR_LIST_DENTRY 1
+#endif
 
 static int
 zpl_xattr_permission(xattr_filldir_t *xf, const char *name, int name_len)
@@ -687,6 +696,11 @@ __zpl_xattr_user_list(struct inode *ip, char *list, size_t list_size,
 	return (ITOZSB(ip)->z_flags & ZSB_XATTR);
 }
 ZPL_XATTR_LIST_WRAPPER(zpl_xattr_user_list);
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+#define HAVE_XATTR_HANDLER_NAME 1
+#endif
 
 static int
 __zpl_xattr_user_get(struct inode *ip, const char *name,
