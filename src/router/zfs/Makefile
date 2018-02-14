@@ -17,6 +17,8 @@ export ZFS_MODULE_CFLAGS
 
 all: modules
 	$(MAKE) -C tools
+	find . -name *.la -exec sed -i 's/relink_command/# relink_command/g' {} +
+	find . -name *.la -exec touch {} +
 
 configure:
 	cd tools/libtirpc && ./bootstrap
@@ -25,6 +27,9 @@ configure:
 # for bootstrapping
 	cd tools && ./autogen.sh
 	cd tools && ./configure --enable-fast-install --with-sysroot=yes --libdir=/usr/lib --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/zlib -I$(TOP)/zfs/tools/include -I$(TOP)/zfs/tools/libtirpc  -I$(TOP)/zfs/tools/libtirpc/tirpc" LDFLAGS="-L$(TOP)/zlib -L$(TOP)/e2fsprogs/lib/uuid -L$(TOP)/zfs/tools/libtirpc/src/.libs -L$(TOP)/util-linux/.libs" --prefix=/usr
+	find . -name *.la -exec sed -i 's/relink_command/# relink_command/g' {} +
+	find . -name *.la -exec touch {} +
+
 
 modules:
 	$(MAKE) -C $(LINUXDIR) SUBDIRS=`pwd` CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" O=$(LINUXDIR) CONFIG_ZFS=m $@
