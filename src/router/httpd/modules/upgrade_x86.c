@@ -53,7 +53,6 @@ do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, we
 	 * Reboot if successful 
 	 */
 	if (stream->upgrade_ret == 0) {
-		sleep(4);
 		eval("umount", "/usr/local");
 		sys_reboot();
 	}
