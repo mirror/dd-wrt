@@ -35,6 +35,7 @@ install:
 	rm -f $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/modules.*
 	make -C tools/libtirpc install DESTDIR=$(INSTALLDIR)
 	make -C tools install DESTDIR=$(INSTALLDIR)
+	mv -f $(INSTALLDIR)/usr/lib64/* $(INSTALLDIR)/usr/lib
 	rm -rf $(INSTALLDIR)/usr/include
 	rm -rf $(INSTALLDIR)/usr/lib/pkgconfig
 	rm -rf $(INSTALLDIR)/usr/share
