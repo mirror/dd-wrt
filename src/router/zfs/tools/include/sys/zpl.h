@@ -122,6 +122,12 @@ extern const struct inode_operations zpl_ops_snapdirs;
 
 extern const struct file_operations zpl_fops_shares;
 extern const struct inode_operations zpl_ops_shares;
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
+#define HAVE_VFS_ITERATE_SHARED 1
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+#define HAVE_VFS_ITERATE 1
+#endif
 
 #if defined(HAVE_VFS_ITERATE) || defined(HAVE_VFS_ITERATE_SHARED)
 
