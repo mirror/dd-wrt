@@ -200,8 +200,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 err:
 	if (buf)
 		free(buf);
-	if (fifo)
-		fclose(fifo);
 
 	// diag_led(DIAG, STOP_LED);
 	// C_led (0);
