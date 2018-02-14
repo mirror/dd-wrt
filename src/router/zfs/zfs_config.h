@@ -34,38 +34,6 @@
 /* dops->automount() exists */
 #define HAVE_AUTOMOUNT 1
 
-/* Define if host toolchain supports AVX */
-#define HAVE_AVX 1
-
-/* Define if host toolchain supports AVX2 */
-#define HAVE_AVX2 1
-
-/* Define if host toolchain supports AVX512BW */
-#define HAVE_AVX512BW 1
-
-/* Define if host toolchain supports AVX512CD */
-#define HAVE_AVX512CD 1
-
-/* Define if host toolchain supports AVX512DQ */
-#define HAVE_AVX512DQ 1
-
-/* Define if host toolchain supports AVX512ER */
-#define HAVE_AVX512ER 1
-
-/* Define if host toolchain supports AVX512F */
-#define HAVE_AVX512F 1
-
-/* Define if host toolchain supports AVX512IFMA */
-#define HAVE_AVX512IFMA 1
-
-/* Define if host toolchain supports AVX512PF */
-#define HAVE_AVX512PF 1
-
-/* Define if host toolchain supports AVX512VBMI */
-#define HAVE_AVX512VBMI 1
-
-/* Define if host toolchain supports AVX512VL */
-#define HAVE_AVX512VL 1
 
 /* struct block_device_operations use bdevs */
 #define HAVE_BDEV_BLOCK_DEVICE_OPERATIONS 1
@@ -393,24 +361,6 @@
 
 /* struct super_block has s_shrink */
 /* #undef HAVE_SHRINK */
-
-/* Define if host toolchain supports SSE */
-#define HAVE_SSE 1
-
-/* Define if host toolchain supports SSE2 */
-#define HAVE_SSE2 1
-
-/* Define if host toolchain supports SSE3 */
-#define HAVE_SSE3 1
-
-/* Define if host toolchain supports SSE4.1 */
-#define HAVE_SSE4_1 1
-
-/* Define if host toolchain supports SSE4.2 */
-#define HAVE_SSE4_2 1
-
-/* Define if host toolchain supports SSSE3 */
-#define HAVE_SSSE3 1
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
