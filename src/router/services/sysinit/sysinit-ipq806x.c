@@ -506,6 +506,10 @@ void start_sysinit(void)
 		break;
 	}
 
+
+	detect_wireless_devices();
+
+
 	switch (board) {
 	case ROUTER_NETGEAR_R7800:	// why is this extra? looks like the default one
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
@@ -557,8 +561,6 @@ void start_sysinit(void)
 
 	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth0", "up");
-
-	detect_wireless_devices();
 
 //      writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
 //      writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
