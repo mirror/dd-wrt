@@ -515,6 +515,8 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "switch0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
+		sysprintf("echo phy0tpt > /sys/class/leds/ath10k-phy0/trigger");
+		sysprintf("echo phy1tpt > /sys/class/leds/ath10k-phy1/trigger");
 		break;
 	case ROUTER_ASROCK_G10:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
@@ -526,6 +528,8 @@ void start_sysinit(void)
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth1", "1");
 		eval("vconfig", "add", "eth1", "2");
+		sysprintf("echo phy0tpt > /sys/class/leds/ath10k-phy0/trigger");
+		sysprintf("echo phy1tpt > /sys/class/leds/ath10k-phy1/trigger");
 		break;
 	case ROUTER_LINKSYS_EA8500:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
@@ -537,6 +541,8 @@ void start_sysinit(void)
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
+		sysprintf("echo phy0tpt > /sys/class/leds/ath10k-phy0/trigger");
+		sysprintf("echo phy1tpt > /sys/class/leds/ath10k-phy1/trigger");
 		break;
 	default:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
