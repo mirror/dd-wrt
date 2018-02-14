@@ -40,7 +40,7 @@
  * SOFTWARE.
  */
 
-#if defined(HAVE_AVX) && defined(HAVE_AVX2)
+#if defined(CONFIG_X86)
 
 #include <linux/simd_x86.h>
 #include <sys/spa_checksum.h>
