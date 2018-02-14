@@ -41,7 +41,7 @@
  * SOFTWARE.
  */
 
-#if defined(CONFIG_X86)
+#if defined(__i386__) || defined(__x86_64)
 
 #include <linux/simd_x86.h>
 #include <sys/spa_checksum.h>
@@ -173,7 +173,7 @@ const fletcher_4_ops_t fletcher_4_sse2_ops = {
 
 #endif /* defined(HAVE_SSE2) */
 
-#if defined(CONFIG_X86)
+#if defined(__i386__) || defined(__x86_64)
 static void
 fletcher_4_ssse3_byteswap(fletcher_4_ctx_t *ctx, const void *buf, uint64_t size)
 {
