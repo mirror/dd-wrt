@@ -21,19 +21,6 @@
 
 #define MAX_PATCH_LEN (255-1)
 
-#ifdef CONFIG_HOTPLUG_CPU
-static int smp_alt_once;
-
-static int __init bootonly(char *str)
-{
-	smp_alt_once = 1;
-	return 1;
-}
-__setup("smp-alt-boot", bootonly);
-#else
-#define smp_alt_once 1
-#endif
-
 static int __initdata_or_module debug_alternative;
 
 static int __init debug_alt(char *str)
@@ -420,7 +407,6 @@ static void alternatives_smp_lock(const s32 *start, const s32 *end,
 {
 	const s32 *poff;
 
-	mutex_lock(&text_mutex);
 	for (poff = start; poff < end; poff++) {
 		u8 *ptr = (u8 *)poff + *poff;
 
@@ -430,7 +416,6 @@ static void alternatives_smp_lock(const s32 *start, const s32 *end,
 		if (*ptr == 0x3e)
 			text_poke(ptr, ((unsigned char []){0xf0}), 1);
 	};
-	mutex_unlock(&text_mutex);
 }
 
 static void alternatives_smp_unlock(const s32 *start, const s32 *end,
@@ -438,10 +423,6 @@ static void alternatives_smp_unlock(const s32 *start, const s32 *end,
 {
 	const s32 *poff;
 
-	if (noreplace_smp)
-		return;
-
-	mutex_lock(&text_mutex);
 	for (poff = start; poff < end; poff++) {
 		u8 *ptr = (u8 *)poff + *poff;
 
@@ -451,7 +432,6 @@ static void alternatives_smp_unlock(const s32 *start, const s32 *end,
 		if (*ptr == 0xf0)
 			text_poke(ptr, ((unsigned char []){0x3E}), 1);
 	};
-	mutex_unlock(&text_mutex);
 }
 
 struct smp_alt_module {
@@ -470,8 +450,7 @@ struct smp_alt_module {
 	struct list_head next;
 };
 static LIST_HEAD(smp_alt_modules);
-static DEFINE_MUTEX(smp_alt);
-static int smp_mode = 1;	/* protected by smp_alt */
+static bool uniproc_patched = false;	/* protected by text_mutex */
 
 void __init_or_module alternatives_smp_module_add(struct module *mod,
 						  char *name,
@@ -480,19 +459,18 @@ void __init_or_module alternatives_smp_module_add(struct module *mod,
 {
 	struct smp_alt_module *smp;
 
-	if (noreplace_smp)
-		return;
+	mutex_lock(&text_mutex);
+	if (!uniproc_patched)
+		goto unlock;
 
-	if (smp_alt_once) {
-		if (boot_cpu_has(X86_FEATURE_UP))
-			alternatives_smp_unlock(locks, locks_end,
-						text, text_end);
-		return;
-	}
+	if (num_possible_cpus() == 1)
+		/* Don't bother remembering, we'll never have to undo it. */
+		goto smp_unlock;
 
 	smp = kzalloc(sizeof(*smp), GFP_KERNEL);
 	if (NULL == smp)
-		return; /* we'll run the (safe but slow) SMP code then ... */
+		/* we'll run the (safe but slow) SMP code then ... */
+		goto unlock;
 
 	smp->mod	= mod;
 	smp->name	= name;
@@ -504,36 +482,29 @@ void __init_or_module alternatives_smp_module_add(struct module *mod,
 		smp->locks, smp->locks_end,
 		smp->text, smp->text_end, smp->name);
 
-	mutex_lock(&smp_alt);
 	list_add_tail(&smp->next, &smp_alt_modules);
-	if (boot_cpu_has(X86_FEATURE_UP))
-		alternatives_smp_unlock(smp->locks, smp->locks_end,
-					smp->text, smp->text_end);
-	mutex_unlock(&smp_alt);
+smp_unlock:
+	alternatives_smp_unlock(locks, locks_end, text, text_end);
+unlock:
+	mutex_unlock(&text_mutex);
 }
 
 void __init_or_module alternatives_smp_module_del(struct module *mod)
 {
 	struct smp_alt_module *item;
 
-	if (smp_alt_once || noreplace_smp)
-		return;
-
-	mutex_lock(&smp_alt);
+	mutex_lock(&text_mutex);
 	list_for_each_entry(item, &smp_alt_modules, next) {
 		if (mod != item->mod)
 			continue;
 		list_del(&item->next);
-		mutex_unlock(&smp_alt);
-		DPRINTK("%s\n", item->name);
 		kfree(item);
-		return;
+		break;
 	}
-	mutex_unlock(&smp_alt);
+	mutex_unlock(&text_mutex);
 }
 
-bool skip_smp_alternatives;
-void alternatives_smp_switch(int smp)
+void alternatives_enable_smp(void)
 {
 	struct smp_alt_module *mod;
 
@@ -548,44 +519,36 @@ void alternatives_smp_switch(int smp)
 	printk("lockdep: fixing up alternatives.\n");
 #endif
 
-	if (noreplace_smp || smp_alt_once || skip_smp_alternatives)
-		return;
-	BUG_ON(!smp && (num_online_cpus() > 1));
+	/* Why bother if there are no other CPUs? */
+	BUG_ON(num_possible_cpus() == 1);
 
-	mutex_lock(&smp_alt);
+	mutex_lock(&text_mutex);
 
-	/*
-	 * Avoid unnecessary switches because it forces JIT based VMs to
-	 * throw away all cached translations, which can be quite costly.
-	 */
-	if (smp == smp_mode) {
-		/* nothing */
-	} else if (smp) {
+	if (uniproc_patched) {
 		printk(KERN_INFO "SMP alternatives: switching to SMP code\n");
+		BUG_ON(num_online_cpus() != 1);
 		clear_cpu_cap(&boot_cpu_data, X86_FEATURE_UP);
 		clear_cpu_cap(&cpu_data(0), X86_FEATURE_UP);
 		list_for_each_entry(mod, &smp_alt_modules, next)
 			alternatives_smp_lock(mod->locks, mod->locks_end,
 					      mod->text, mod->text_end);
-	} else {
-		printk(KERN_INFO "SMP alternatives: switching to UP code\n");
-		set_cpu_cap(&boot_cpu_data, X86_FEATURE_UP);
-		set_cpu_cap(&cpu_data(0), X86_FEATURE_UP);
-		list_for_each_entry(mod, &smp_alt_modules, next)
-			alternatives_smp_unlock(mod->locks, mod->locks_end,
-						mod->text, mod->text_end);
+		uniproc_patched = false;
 	}
-	smp_mode = smp;
-	mutex_unlock(&smp_alt);
+	mutex_unlock(&text_mutex);
 }
 
-/* Return 1 if the address range is reserved for smp-alternatives */
+/*
+ * Return 1 if the address range is reserved for SMP-alternatives.
+ * Must hold text_mutex.
+ */
 int alternatives_text_reserved(void *start, void *end)
 {
 	struct smp_alt_module *mod;
 	const s32 *poff;
 	u8 *text_start = start;
 	u8 *text_end = end;
+
+	lockdep_assert_held(&text_mutex);
 
 	list_for_each_entry(mod, &smp_alt_modules, next) {
 		if (mod->text > text_end || mod->text_end < text_start)
@@ -652,40 +615,22 @@ void __init alternative_instructions(void)
 
 	apply_alternatives(__alt_instructions, __alt_instructions_end);
 
-	/* switch to patch-once-at-boottime-only mode and free the
-	 * tables in case we know the number of CPUs will never ever
-	 * change */
-#ifdef CONFIG_HOTPLUG_CPU
-	if (num_possible_cpus() < 2)
-		smp_alt_once = 1;
-#endif
-
 #ifdef CONFIG_SMP
-	if (smp_alt_once) {
-		if (1 == num_possible_cpus()) {
-			printk(KERN_INFO "SMP alternatives: switching to UP code\n");
-			set_cpu_cap(&boot_cpu_data, X86_FEATURE_UP);
-			set_cpu_cap(&cpu_data(0), X86_FEATURE_UP);
-
-			alternatives_smp_unlock(__smp_locks, __smp_locks_end,
-						_text, _etext);
-		}
-	} else {
+	/* Patch to UP if other cpus not imminent. */
+	if (!noreplace_smp && (num_present_cpus() == 1 || setup_max_cpus <= 1)) {
+		uniproc_patched = true;
 		alternatives_smp_module_add(NULL, "core kernel",
 					    __smp_locks, __smp_locks_end,
 					    _text, _etext);
-
-		/* Only switch to UP mode if we don't immediately boot others */
-		if (num_present_cpus() == 1 || setup_max_cpus <= 1)
-			alternatives_smp_switch(0);
 	}
-#endif
- 	apply_paravirt(__parainstructions, __parainstructions_end);
 
-	if (smp_alt_once)
+	if (!uniproc_patched || num_possible_cpus() == 1)
 		free_init_pages("SMP alternatives",
 				(unsigned long)__smp_locks,
 				(unsigned long)__smp_locks_end);
+#endif
+
+	apply_paravirt(__parainstructions, __parainstructions_end);
 
 	restart_nmi();
 }
