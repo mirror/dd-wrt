@@ -91,7 +91,7 @@ typedef union fletcher_4_ctx {
 	zio_cksum_t scalar;
 	zfs_fletcher_superscalar_t superscalar[4];
 
-#if defined(CONFIG_X86)
+#if defined(__i386__) || defined(__x86_64)
 	zfs_fletcher_sse_t sse[4];
 	zfs_fletcher_avx_t avx[4];
 #endif
@@ -125,7 +125,7 @@ typedef struct fletcher_4_func {
 extern const fletcher_4_ops_t fletcher_4_superscalar_ops;
 extern const fletcher_4_ops_t fletcher_4_superscalar4_ops;
 
-#if defined(CONFIG_X86)
+#if defined(__i386__) || defined(__x86_64)
 extern const fletcher_4_ops_t fletcher_4_sse2_ops;
 extern const fletcher_4_ops_t fletcher_4_ssse3_ops;
 extern const fletcher_4_ops_t fletcher_4_avx2_ops;
