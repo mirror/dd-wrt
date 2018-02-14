@@ -171,16 +171,12 @@ static const fletcher_4_ops_t *fletcher_4_impls[] = {
 	&fletcher_4_scalar_ops,
 	&fletcher_4_superscalar_ops,
 	&fletcher_4_superscalar4_ops,
-#if defined(HAVE_SSE2)
+#if defined(CONFIG_X86)
 	&fletcher_4_sse2_ops,
-#endif
-#if defined(HAVE_SSE2) && defined(HAVE_SSSE3)
 	&fletcher_4_ssse3_ops,
-#endif
-#if defined(HAVE_AVX) && defined(HAVE_AVX2)
 	&fletcher_4_avx2_ops,
 #endif
-#if defined(__x86_64) && defined(HAVE_AVX512F)
+#if defined(__x86_64)
 	&fletcher_4_avx512f_ops,
 #endif
 #if defined(__aarch64__)

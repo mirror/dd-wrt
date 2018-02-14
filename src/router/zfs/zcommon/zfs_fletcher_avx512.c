@@ -22,7 +22,7 @@
  * Copyright (C) 2016 Gvozden Nešković. All rights reserved.
  */
 
-#if defined(__x86_64) && defined(HAVE_AVX512F)
+#if defined(__x86_64)
 
 #include <linux/simd_x86.h>
 #include <sys/byteorder.h>
