@@ -442,6 +442,7 @@ void start_sysinit(void)
 	if (!nvram_matchi("wlanled", 0))
 		eval("/sbin/wlanled", "-l", "generic_17:-94", "-l", "generic_20:-80", "-l", "generic_21:-73", "-l", "generic_22:-65");
 #elif HAVE_CPE890
+	sysprintf("echo phy0tpt > /sys/class/leds/ath10k-phy0/trigger");
 	if (!nvram_matchi("wlanled", 0))
 		eval("/sbin/wlanled", "-L", "generic_17:-94", "-L", "generic_16:-80", "-L", "generic_15:-73", "-L", "generic_14:-65");
 #elif  HAVE_JWAP606
