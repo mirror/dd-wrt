@@ -171,7 +171,7 @@ static const fletcher_4_ops_t *fletcher_4_impls[] = {
 	&fletcher_4_scalar_ops,
 	&fletcher_4_superscalar_ops,
 	&fletcher_4_superscalar4_ops,
-#if defined(CONFIG_X86)
+#if defined(__i386__) || defined(__x86_64)
 	&fletcher_4_sse2_ops,
 	&fletcher_4_ssse3_ops,
 	&fletcher_4_avx2_ops,
