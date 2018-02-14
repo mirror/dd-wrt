@@ -172,14 +172,14 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 		wfread(&linuxsize, 1, 4, stream);
 		*total -= 4;
-		safe_fwrite(&linuxsize, 1, 4, fifo);
+//		safe_fwrite(&linuxsize, 1, 4, fifo);
 #ifdef HAVE_RB600
 		linuxsize = swap(linuxsize);
 #endif
 		for (i = 0; i < linuxsize / MIN_BUF_SIZE; i++) {
 			wfread(&buf[0], 1, MIN_BUF_SIZE, stream);
 			fwrite(&buf[0], 1, MIN_BUF_SIZE, fifo);
-			fprintf(stderr, "%d bytes written\n", i * 65536);
+			fprintf(stderr, "%d bytes written\n", i * 4096);
 			fsync(fileno(fifo));
 		}
 
