@@ -179,7 +179,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		for (i = 0; i < linuxsize / MIN_BUF_SIZE; i++) {
 			wfread(&buf[0], 1, MIN_BUF_SIZE, stream);
 			fwrite(&buf[0], 1, MIN_BUF_SIZE, fifo);
-			fprintf(stderr, "%d bytes written\n", i * 4096);
+			fprintf(stderr, "%d bytes written\n", i * MIN_BUF_SIZE);
 			fsync(fileno(fifo));
 		}
 
