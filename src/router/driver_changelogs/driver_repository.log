@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3846 | brainslayer | 2018-02-14 22:56:54 +0100 (Wed, 14 Feb 2018) | 1 line
+
+register changes mbim needs to be 27
+------------------------------------------------------------------------
 r3845 | brainslayer | 2018-02-14 20:23:58 +0100 (Wed, 14 Feb 2018) | 1 line
 
 read temperature without barrier from chipset
