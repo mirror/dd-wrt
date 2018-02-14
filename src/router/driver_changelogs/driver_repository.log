@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3845 | brainslayer | 2018-02-14 20:23:58 +0100 (Wed, 14 Feb 2018) | 1 line
+
+read temperature without barrier from chipset
+------------------------------------------------------------------------
 r3844 | brainslayer | 2018-02-14 19:33:45 +0100 (Wed, 14 Feb 2018) | 1 line
 
 remove preempt blocker
