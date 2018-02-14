@@ -54,6 +54,15 @@ typedef struct xattr_handler		xattr_handler_t;
 #define	XATTR_NAME_POSIX_ACL_ACCESS	POSIX_ACL_XATTR_ACCESS
 #endif
 
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+#define HAVE_XATTR_LIST_SIMPLE 1
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+#define HAVE_XATTR_LIST_HANDLER 1
+#else
+#define HAVE_XATTR_LIST_DENTRY 1
+#endif
 /*
  * 4.5 API change,
  */
@@ -99,6 +108,19 @@ fn(struct inode *ip, char *list, size_t list_size,			\
 {									\
 	return (__ ## fn(ip, list, list_size, name, name_len));		\
 }
+#endif
+
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
+#define HAVE_XATTR_GET_DENTRY_INODE 1
+#define HAVE_XATTR_SET_DENTRY_INODE 1
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
+#define HAVE_XATTR_GET_HANDLER 1
+#define HAVE_XATTR_SET_HANDLER 1
+#else
+#define HAVE_XATTR_GET_DENTRY 1
+#define HAVE_XATTR_SET_DENTRY 1
 #endif
 
 /*

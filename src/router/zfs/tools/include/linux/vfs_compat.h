@@ -443,6 +443,13 @@ static inline struct dentry *file_dentry(const struct file *f)
 }
 #endif /* HAVE_FILE_DENTRY */
 
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
+#define HAVE_SUPER_USER_NS 1
+#endif
+
+
 #ifdef HAVE_KUID_HELPERS
 static inline uid_t zfs_uid_read_impl(struct inode *ip)
 {
@@ -523,6 +530,12 @@ static inline void zfs_gid_write(struct inode *ip, gid_t gid)
 #define	zpl_follow_up(path)			follow_up(path)
 #endif
 
+#include <linux/version.h>
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+#define HAVE_SETATTR_PREPARE 1
+#endif
+
 /*
  * 4.9 API change
  */
@@ -581,7 +594,9 @@ func(const struct path *path, struct kstat *stat, u32 request_mask,	\
 #else
 #error
 #endif
-
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)
+#define HAVE_CURRENT_TIME 1
+#endif
 /*
  * 4.9 API change
  * Preferred interface to get the current FS time.

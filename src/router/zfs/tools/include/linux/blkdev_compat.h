@@ -40,6 +40,18 @@ typedef unsigned __bitwise__ fmode_t;
 #include <linux/version.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 7, 0)
 #define HAVE_BLK_QUEUE_WRITE_CACHE_GPL_ONLY 1
+#else
+#define HAVE_BLK_QUEUE_FLUSH_GPL_ONLY 1
+#endif
+
+
+#include <linux/version.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
+#define HAVE_BIO_SET_OP_ATTRS 1
+#define HAVE_REQ_OP_FLUSH 1
+#define HAVE_BIO_BI_OPF 1
+#define HAVE_REQ_OP_DISCARD 1
+#define HAVE_REQ_OP_SECURE_ERASE 1
 #endif
 
 /*
