@@ -285,7 +285,7 @@ endif
 obj-$(CONFIG_80211AC) += emf
 #obj-y+=anchorfree
 obj-y+=ttraff
-obj-y+=speedtest
+#obj-y+=speedtest
 obj-$(CONFIG_MKIMAGE) += mkimage
 obj-$(CONFIG_SPEEDCHECKER) += speedchecker shownf
 obj-$(CONFIG_WOLFSSL) += wolfssl
