@@ -1181,7 +1181,9 @@ void stop_wshaper(void)
 	char var[80];
 	char *vifs = eths;
 	foreach(var, vifs, next) {
-		eval("tc", "qdisc", "del", "dev", var, "root");
+		if (ifexists(var)) {
+			eval("tc", "qdisc", "del", "dev", var, "root");
+		}
 	}
 #ifndef TEST
 	stop_firewall();
