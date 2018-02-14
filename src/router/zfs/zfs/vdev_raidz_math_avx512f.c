@@ -25,7 +25,7 @@
 
 #include <sys/isa_defs.h>
 
-#if defined(__x86_64) && defined(HAVE_AVX512F)
+#if defined(__x86_64)
 
 #include <sys/types.h>
 #include <linux/simd_x86.h>
