@@ -533,7 +533,7 @@ ifeq ($(CONFIG_SR3200),y)
 CFLAGS += -DHAVE_SR3200
 endif
 ifeq ($(CONFIG_CPE890),y)
-CFLAGS += -DHAVE_CPE890
+CFLAGS += -DHAVE_CPE890 -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox  -I$(TOP)/libnl-tiny/include
 endif
 ifeq ($(CONFIG_CPE880),y)
 CFLAGS += -DHAVE_CPE880
@@ -1066,6 +1066,9 @@ ifeq ($(CONFIG_ALFANX),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
 endif
 ifeq ($(CONFIG_CPE880),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
+endif
+ifeq ($(CONFIG_CPE890),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
 endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc beep
