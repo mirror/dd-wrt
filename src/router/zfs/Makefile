@@ -24,7 +24,7 @@ configure:
 	make -C tools/libtirpc
 # for bootstrapping
 	cd tools && ./autogen.sh
-	cd tools && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/zlib -I$(TOP)/zfs/tools/include -I$(TOP)/zfs/tools/libtirpc  -I$(TOP)/zfs/tools/libtirpc/tirpc" LDFLAGS="-L$(TOP)/zlib -L$(TOP)/e2fsprogs/lib/uuid -L$(TOP)/zfs/tools/libtirpc/src/.libs -L$(TOP)/util-linux/.libs " --prefix=/usr
+	cd tools && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/zlib -I$(TOP)/zfs/tools/include -I$(TOP)/zfs/tools/libtirpc  -I$(TOP)/zfs/tools/libtirpc/tirpc" LDFLAGS="-L$(TOP)/zlib -L$(TOP)/e2fsprogs/lib/uuid -L$(TOP)/zfs/tools/libtirpc/src/.libs -L$(TOP)/util-linux/.libs" --prefix=/usr
 
 modules:
 	$(MAKE) -C $(LINUXDIR) SUBDIRS=`pwd` CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" O=$(LINUXDIR) CONFIG_ZFS=m $@
