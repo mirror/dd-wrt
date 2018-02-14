@@ -471,6 +471,7 @@ void start_sysinit(void)
 	setWirelessLed(0, 0);
 #elif HAVE_SR3200
 	setWirelessLed(0, 19);
+	sysprintf("echo phy1tpt > /sys/class/leds/ath10k-phy1/trigger");
 #elif  HAVE_E380AC
 	setWirelessLed(0, 0);
 	setWirelessLed(1, 2);
