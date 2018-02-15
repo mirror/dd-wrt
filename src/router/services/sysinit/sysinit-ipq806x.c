@@ -595,6 +595,12 @@ void start_sysinit(void)
 	nvram_set("wl1_ifname", "ath1");
 }
 
+void start_postnetwork(void)
+{
+	set_gpio(448 + 17, 1);  // reset wifi card gpio pin
+	set_gpio(480 + 17, 1);  // reset wifi card gpio pin
+}
+
 int check_cfe_nv(void)
 {
 	return 0;
