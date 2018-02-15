@@ -293,6 +293,7 @@ void start_check_sierrappp(void);
 void start_check_mbim(void);
 void start_check_qmi(void);
 
+void start_postnetwork(void);
 
 void runStartup(char *folder, char *extension);
 
