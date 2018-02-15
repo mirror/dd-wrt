@@ -3011,6 +3011,9 @@ void start_lan(void)
 		}
 	}
 #endif
+#ifdef HAVE_R9000
+	start_postnetwork();
+#endif
 }
 
 void stop_lan(void)

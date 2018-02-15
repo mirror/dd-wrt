@@ -270,8 +270,6 @@ void start_sysinit(void)
 		set_gpio(29, 1);	//WIFI button led
 		set_gpio(30, 1);	//10G led
 		set_gpio(440, 1);
-		set_gpio(448 + 17, 1);  // reset wifi card gpio pin
-		set_gpio(480 + 17, 1);  // reset wifi card gpio pin
 		sysprintf("echo phy0tpt > /sys/class/leds/ath10k-phy0/trigger");
 		sysprintf("echo phy1tpt > /sys/class/leds/ath10k-phy1/trigger");
 		break;
@@ -285,6 +283,12 @@ void start_sysinit(void)
 	stime(&tm);
 	nvram_set("wl0_ifname", "ath0");
 	nvram_set("wl1_ifname", "ath1");
+}
+
+void start_postnetwork(void)
+{
+	set_gpio(448 + 17, 1);  // reset wifi card gpio pin
+	set_gpio(480 + 17, 1);  // reset wifi card gpio pin
 }
 
 int check_cfe_nv(void)
