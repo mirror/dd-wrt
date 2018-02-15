@@ -3669,7 +3669,7 @@ void start_wan(int status)
 		char wsbuf[30];
 		sprintf(wsel, "");
 
-#if defined(HAVE_CAMBRIA) || defined(HAVE_LAGUNA)
+// #if defined(HAVE_CAMBRIA) || defined(HAVE_LAGUNA)
 		int wan_select = 1;
 		if (strlen(nvram_safe_get("wan_select"))) {
 			wan_select = atoi(nvram_safe_get("wan_select"));
@@ -3681,6 +3681,8 @@ void start_wan(int status)
 		if (controldevice && !strcmp(controldevice, "mbim")) {
 #ifdef HAVE_REGISTER
 			if (registered_has_cap(27))
+#else
+			if (0)
 #endif
 			{
 				if (pidof("mbim-connect.sh") < 0) {
@@ -3696,7 +3698,7 @@ void start_wan(int status)
 			}
 		} else
 #endif
-#endif
+// #endif
 #ifdef HAVE_UQMI
 		if (controldevice && (!strcmp(controldevice, "qmi") || !strcmp(controldevice, "qmiraw"))) {
 			/* disconnect network */
