@@ -847,6 +847,34 @@ extern void getWirelessMac(char *newmac, int instance);
 extern void getWANMac(char *newmac);
 extern char *cpustring(void);
 extern int isap8x(void);
+
+struct ledconfig {
+	int power_gpio;
+	int beeper_gpio;
+	int diag_gpio;
+	int diag_gpio_disabled;
+	int dmz_gpio;
+	int connected_gpio;
+	int disconnected_gpio;
+	int bridge_gpio;
+	int vpn_gpio;
+	int ses_gpio;	// use for SES1 (Linksys), AOSS (Buffalo)
+	int ses2_gpio;
+	int wlan_gpio;	// wlan button led R7000
+	int wlan0_gpio;	// use this only if wlan led is not controlled by hardware!
+	int wlan1_gpio;
+	int wlan2_gpio;
+	int usb_gpio;
+	int usb_gpio1;
+	int sec0_gpio;	// security leds, wrt600n
+	int sec1_gpio;
+	int usb_power;
+	int usb_power1;
+	int v1func;
+	int connblue;
+
+};
+
 extern int led_control(int type, int act);
 enum { LED_POWER, LED_DIAG, LED_DIAG_DISABLED, LED_DMZ, LED_CONNECTED, LED_DISCONNECTED, LED_BRIDGE, LED_VPN,
 	LED_SES, LED_SES2, LED_WLAN, LED_WLAN0, LED_WLAN1, LED_WLAN2, LED_USB, LED_USB1, LED_SEC0, LED_SEC1, USB_POWER, USB_POWER1, BEEPER
