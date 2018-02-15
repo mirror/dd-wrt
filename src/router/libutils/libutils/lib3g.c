@@ -52,7 +52,7 @@ struct DEVICES {
 	unsigned char driver;
 	unsigned char controldevice;
 	unsigned char datadevice;
-	unsigned char modeswitch;
+	unsigned short modeswitch;
 	void (*customsetup) (int needreset, int devicecount);
 	char *name;
 };
@@ -418,15 +418,15 @@ static void modeswitch_others(int needreset, int devicecount)
 	eval("usb_modeswitch", "-v", "0x1e0e", "-p", "0xf000", "-M", "555342431234567800000000000006bd000000020000000000000000000000");
 }
 
-#define SIERRADIP 0xb0		// usbnet, qmi_wwan, cdc_wdm, rawip
-#define QMIRAW 0xa0		// usbnet, qmi_wwan, cdc_wdm, rawip
-#define H_NCM 0x90		// usbnet, cdc_ncm, huawei_cdc_ncm, cdc_wdm
-#define NCM 0x80		// usbnet, cdc_ncm, cdc_wdm
-#define MBIM 0x70		// usbnet, cdc_ncm, cdc_mbim,
-#define RNDIS 0x60		// usbnet, cdc_ether, rndis_host,
-#define S_NET 0x50		// usbnet, sierra_net (direct ip)
-#define QMI 0x40		// usbnet, qmi_wwan, cdc_wdm
-#define ETH 0x30		// usbnet, cdc_ether
+#define SIERRADIP 0x4000		// usbnet, qmi_wwan, cdc_wdm, rawip
+#define QMIRAW 0x2000		// usbnet, qmi_wwan, cdc_wdm, rawip
+#define H_NCM 0x1000		// usbnet, cdc_ncm, huawei_cdc_ncm, cdc_wdm
+#define NCM 0x800		// usbnet, cdc_ncm, cdc_wdm
+#define MBIM 0x400		// usbnet, cdc_ncm, cdc_mbim,
+#define RNDIS 0x200		// usbnet, cdc_ether, rndis_host,
+#define S_NET 0x100		// usbnet, sierra_net (direct ip)
+#define QMI 0x80		// usbnet, qmi_wwan, cdc_wdm
+#define ETH 0x40		// usbnet, cdc_ether
 #define GENERIC 0x20		// option new_id on-the-fly
 #define ACM 0x10		// cdc_acm
 
