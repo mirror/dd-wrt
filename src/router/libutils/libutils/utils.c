@@ -961,49 +961,6 @@ static int diag_led_4712(int type, int act)
 #endif
 }
 
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-static int C_led_4712(int i)
-{
-	if (i == 1)
-		return diag_led(DIAG, START_LED);
-	else
-		return diag_led(DIAG, STOP_LED);
-}
-
-int C_led(int i)
-{
-	int brand = getRouterBrand();
-
-	if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
-		return C_led_4702(i);
-	else if (brand == ROUTER_WRT54G)
-		return C_led_4712(i);
-	else
-		return 0;
-}
-
-int diag_led(int type, int act)
-{
-	int brand = getRouterBrand();
-
-	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G3G || brand == ROUTER_WRT300NV11)
-		return diag_led_4712(type, act);
-	else if (brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
-		return diag_led_4702(type, act);
-	else if ((brand == ROUTER_WRTSL54GS || brand == ROUTER_WRT310N || brand == ROUTER_WRT350N || brand == ROUTER_BUFFALO_WZRG144NH) && type == DIAG)
-		return diag_led_4704(type, act);
-	else {
-		if (type == DMZ) {
-			if (act == START_LED)
-				return led_control(LED_DMZ, LED_ON);
-			if (act == STOP_LED)
-				return led_control(LED_DMZ, LED_OFF);
-			return 1;
-		}
-	}
-	return 0;
-}
-#endif
 // note - broadcast addr returned in ipaddr
 void get_broadcast(char *ipaddr, char *netmask)
 {
@@ -1384,7 +1341,6 @@ int isap8x(void)
 }
 
 #endif
-
 
 int insmod(char *module)
 {
