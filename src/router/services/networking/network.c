@@ -3011,7 +3011,7 @@ void start_lan(void)
 		}
 	}
 #endif
-#ifdef HAVE_R9000
+#if defined(HAVE_R9000) || defined(HAVE_IPQ806X)
 	start_postnetwork();
 #endif
 }
