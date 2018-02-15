@@ -418,7 +418,7 @@ static void modeswitch_others(int needreset, int devicecount)
 	eval("usb_modeswitch", "-v", "0x1e0e", "-p", "0xf000", "-M", "555342431234567800000000000006bd000000020000000000000000000000");
 }
 
-#define SIERRADIP 0x4000		// usbnet, qmi_wwan, cdc_wdm, rawip
+#define SIERRADIP 0x4000	// usbnet, qmi_wwan, cdc_wdm, rawip
 #define QMIRAW 0x2000		// usbnet, qmi_wwan, cdc_wdm, rawip
 #define H_NCM 0x1000		// usbnet, cdc_ncm, huawei_cdc_ncm, cdc_wdm
 #define NCM 0x800		// usbnet, cdc_ncm, cdc_wdm
