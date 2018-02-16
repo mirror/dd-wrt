@@ -1635,14 +1635,6 @@ int led_control(int type, int act)
 		cfg = &led_cfg;
 		getledconfig(cfg);
 	}
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	if (type == LED_DIAG && cfg->v1func == 1) {
-		if (act == LED_ON)
-			C_led(1);
-		else
-			C_led(0);
-	}
-#endif
 
 	switch (type) {
 	case LED_POWER:
@@ -1658,6 +1650,14 @@ int led_control(int type, int act)
 		use_gpio = cfg->usb_power1;
 		break;
 	case LED_DIAG:
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+	if (cfg->v1func == 1) {
+		if (act == LED_ON)
+			C_led(1);
+		else
+			C_led(0);
+	}
+#endif
 		if (act == LED_ON)
 			led_control(LED_DIAG_DISABLED, LED_OFF);
 		else
@@ -1741,6 +1741,147 @@ int led_control(int type, int act)
 	}
 	return 1;
 
+#endif
+}
+
+static int diag_led_4702(int type, int act)
+{
+
+#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_FONERA) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
+	return 0;
+#else
+	if (act == START_LED) {
+		switch (type) {
+		case DMZ:
+			writeprocsys("diag", "1");
+			break;
+		}
+	} else {
+		switch (type) {
+		case DMZ:
+			writeprocsys("diag", "0");
+			break;
+		}
+	}
+	return 0;
+#endif
+}
+
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+
+static int C_led_4702(int i)
+{
+#if defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE)  || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
+	return 0;
+#else
+	FILE *fp;
+	char string[10];
+	int flg;
+
+	bzero(string, 10);
+	/*
+	 * get diag before set 
+	 */
+	if ((fp = fopen("/proc/sys/diag", "r"))) {
+		fgets(string, sizeof(string), fp);
+		fclose(fp);
+	} else
+		perror("/proc/sys/diag");
+
+	if (i)
+		flg = atoi(string) | 0x10;
+	else
+		flg = atoi(string) & 0xef;
+
+	bzero(string, 10);
+	sprintf(string, "%d", flg);
+	writeprocsys("diag", string);
+
+	return 0;
+#endif
+}
+#endif
+
+static int diag_led_4704(int type, int act)
+{
+#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI)|| defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC) || defined(HAVE_ALPINE)
+	return 0;
+#else
+	unsigned int control, in, outen, out;
+
+#ifdef BCM94712AGR
+	/*
+	 * The router will crash, if we load the code into broadcom demo board. 
+	 */
+	return 1;
+#endif
+	static char hw_error = 0;
+	// int brand;
+	control = read_gpio("/dev/gpio/control");
+	in = read_gpio("/dev/gpio/in");
+	out = read_gpio("/dev/gpio/out");
+	outen = read_gpio("/dev/gpio/outen");
+
+	write_gpio("/dev/gpio/outen", (outen & 0x7c) | 0x83);
+	switch (type) {
+	case DIAG:		// GPIO 1
+		if (hw_error) {
+			write_gpio("/dev/gpio/out", (out & 0x7c) | 0x00);
+			return 1;
+		}
+
+		if (act == STOP_LED) {	// stop blinking
+			write_gpio("/dev/gpio/out", (out & 0x7c) | 0x83);
+			// cprintf("tallest:=====( DIAG STOP_LED !!)=====\n");
+		} else if (act == START_LED) {	// start blinking
+			write_gpio("/dev/gpio/out", (out & 0x7c) | 0x81);
+			// cprintf("tallest:=====( DIAG START_LED !!)=====\n");
+		} else if (act == MALFUNCTION_LED) {	// start blinking
+			write_gpio("/dev/gpio/out", (out & 0x7c) | 0x00);
+			hw_error = 1;
+			// cprintf("tallest:=====( DIAG MALFUNCTION_LED !!)=====\n");
+		}
+		break;
+
+	}
+	return 1;
+#endif
+}
+
+static int diag_led_4712(int type, int act)
+{
+
+#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA)|| defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC) | defined(HAVE_ALPINE)
+	return 0;
+#else
+	unsigned int control, in, outen, out, ctr_mask, out_mask;
+
+#ifdef BCM94712AGR
+	/*
+	 * The router will crash, if we load the code into broadcom demo board. 
+	 */
+	return 1;
+#endif
+	control = read_gpio("/dev/gpio/control");
+	in = read_gpio("/dev/gpio/in");
+	out = read_gpio("/dev/gpio/out");
+	outen = read_gpio("/dev/gpio/outen");
+
+	ctr_mask = ~(1 << type);
+	out_mask = (1 << type);
+
+	write_gpio("/dev/gpio/control", control & ctr_mask);
+	write_gpio("/dev/gpio/outen", outen | out_mask);
+
+	if (act == STOP_LED) {	// stop blinking
+		// cprintf("%s: Stop GPIO %d\n", __FUNCTION__, type);
+		write_gpio("/dev/gpio/out", out | out_mask);
+	} else if (act == START_LED) {	// start blinking
+		// cprintf("%s: Start GPIO %d\n", __FUNCTION__, type);
+		write_gpio("/dev/gpio/out", out & ctr_mask);
+	}
+
+	return 1;
 #endif
 }
 
