@@ -2358,3 +2358,44 @@ CONFIG_SBITMAP=y
 # CONFIG_STRING_SELFTEST is not set
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
+# CONFIG_EXFAT_FS is not set
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
