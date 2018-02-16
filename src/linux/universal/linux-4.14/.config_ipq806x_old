@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.14.19-rc1 Kernel Configuration
+# Linux/arm 4.14.20-rc1 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -3986,4 +3986,3 @@ CONFIG_ARCH_HAS_SG_CHAIN=y
 CONFIG_SBITMAP=y
 # CONFIG_STRING_SELFTEST is not set
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_EXFAT_FS is not set

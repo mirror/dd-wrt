@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.14.19-rc1 Kernel Configuration
+# Linux/mips 4.14.20-rc1 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -2177,44 +2177,3 @@ CONFIG_SBITMAP=y
 # CONFIG_STRING_SELFTEST is not set
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_EXFAT_FS is not set
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
