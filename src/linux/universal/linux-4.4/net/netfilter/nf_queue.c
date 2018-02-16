@@ -47,19 +47,18 @@ EXPORT_SYMBOL_GPL(nf_unregister_queue_imq_handler);
 
 /* return EBUSY when somebody else is registered, return EEXIST if the
  * same handler is registered, return 0 in case of success. */
-void nf_register_queue_handler(const struct nf_queue_handler *qh)
+void nf_register_queue_handler(struct net *net, const struct nf_queue_handler *qh)
 {
 	/* should never happen, we only have one queueing backend in kernel */
-	WARN_ON(rcu_access_pointer(queue_handler));
-	rcu_assign_pointer(queue_handler, qh);
+	WARN_ON(rcu_access_pointer(net->nf.queue_handler));
+	rcu_assign_pointer(net->nf.queue_handler, qh);
 }
 EXPORT_SYMBOL(nf_register_queue_handler);
 
 /* The caller must flush their queue before this */
-void nf_unregister_queue_handler(void)
+void nf_unregister_queue_handler(struct net *net)
 {
-	RCU_INIT_POINTER(queue_handler, NULL);
-	synchronize_rcu();
+	RCU_INIT_POINTER(net->nf.queue_handler, NULL);
 }
 EXPORT_SYMBOL(nf_unregister_queue_handler);
 
@@ -141,6 +140,7 @@ int nf_queue(struct sk_buff *skb,
 	struct nf_queue_entry *entry = NULL;
 	const struct nf_afinfo *afinfo;
 	const struct nf_queue_handler *qh;
+	struct net *net = state->net;
 
 	/* QUEUE == DROP if no one is waiting, to be safe. */
 	if (queuetype == NF_IMQ_QUEUE) {
@@ -151,7 +151,7 @@ int nf_queue(struct sk_buff *skb,
 		goto err_unlock;
 #endif
 	} else {
-		qh = rcu_dereference(queue_handler);
+		qh = rcu_dereference(net->nf.queue_handler);
 	}
 
 	if (!qh) {
