@@ -926,18 +926,16 @@ ar8327_setup_port(struct ar8xxx_priv *priv, int port, u32 members)
 
 	t = pvid << AR8327_PORT_VLAN0_DEF_SVID_S;
 	t |= pvid << AR8327_PORT_VLAN0_DEF_CVID_S;
-
 	if (priv->vlan && priv->port_vlan_prio[port] > 0) {
-		u32 prio = priv->port_vlan_prio[port] & AR8327_PORT_VLAN0_DEF_PRI_MASK;
+		u32 prio = priv->port_vlan_prio[port];
+
 		t |= prio << AR8327_PORT_VLAN0_DEF_SPRI_S;
 		t |= prio << AR8327_PORT_VLAN0_DEF_CPRI_S;
 	}
-
 	ar8xxx_write(priv, AR8327_REG_PORT_VLAN0(port), t);
 
 	t = AR8327_PORT_VLAN1_PORT_VLAN_PROP;
 	t |= egress << AR8327_PORT_VLAN1_OUT_MODE_S;
-
 	if (priv->vlan && priv->port_vlan_prio[port] > 0)
 		t |= AR8327_PORT_VLAN1_VLAN_PRI_PROP;
 
@@ -1290,6 +1288,8 @@ ar8327_sw_set_port_vlan_prio(struct switch_dev *dev, const struct switch_attr *a
 		return -EINVAL;
 	if (port == 0 || port == 6)
 		return -EOPNOTSUPP;
+	if (val->value.i < 0 || val->value.i > 7)
+		return -EINVAL;
 
 	priv->port_vlan_prio[port] = val->value.i;
 
