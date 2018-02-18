@@ -36,13 +36,27 @@
 #endif
 #include <sys/select.h>
 #include <sys/socket.h>
-#define _GNU_SOURCE
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
 #include <netinet/tcp.h>
 
 #if defined(HAVE_CPUSET_SETAFFINITY)
 #include <sys/param.h>
 #include <sys/cpuset.h>
 #endif /* HAVE_CPUSET_SETAFFINITY */
+
+#if defined(HAVE_INTTYPES_H)
+# include <inttypes.h>
+#else
+# ifndef PRIu64
+#  if sizeof(long) == 8
+#   define PRIu64		"lu"
+#  else
+#   define PRIu64		"llu"
+#  endif
+# endif
+#endif
 
 #include "timer.h"
 #include "queue.h"

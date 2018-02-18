@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014-2017, The Regents of the University of
+ * iperf, Copyright (c) 2014-2018, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -54,6 +54,9 @@ int
 iperf_create_streams(struct iperf_test *test)
 {
     int i, s;
+#if defined(HAVE_TCP_CONGESTION)
+    int saved_errno;
+#endif /* HAVE_TCP_CONGESTION */
     struct iperf_stream *sp;
 
     int orig_bind_port = test->bind_port;
@@ -69,7 +72,9 @@ iperf_create_streams(struct iperf_test *test)
 	if (test->protocol->id == Ptcp) {
 	    if (test->congestion) {
 		if (setsockopt(s, IPPROTO_TCP, TCP_CONGESTION, test->congestion, strlen(test->congestion)) < 0) {
+		    saved_errno = errno;
 		    close(s);
+		    errno = saved_errno;
 		    i_errno = IESETCONGESTION;
 		    return -1;
 		} 
@@ -78,7 +83,9 @@ iperf_create_streams(struct iperf_test *test)
 		socklen_t len = TCP_CA_NAME_MAX;
 		char ca[TCP_CA_NAME_MAX + 1];
 		if (getsockopt(s, IPPROTO_TCP, TCP_CONGESTION, ca, &len) < 0) {
+		    saved_errno = errno;
 		    close(s);
+		    errno = saved_errno;
 		    i_errno = IESETCONGESTION;
 		    return -1;
 		}
@@ -418,12 +425,12 @@ iperf_client_end(struct iperf_test *test)
     /* show final summary */
     test->reporter_callback(test);
 
+    if (iperf_set_send_state(test, IPERF_DONE) != 0)
+        return -1;
+
     /* Close control socket */
     if (test->ctrl_sck)
         close(test->ctrl_sck);
-
-    if (iperf_set_send_state(test, IPERF_DONE) != 0)
-        return -1;
 
     return 0;
 }
