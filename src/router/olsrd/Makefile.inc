@@ -48,13 +48,13 @@
 #
 
 # activate debugging with 1 or deactivate with 0
-DEBUG ?= 1
+DEBUG = 0
 
 # set NOSTRIP to non-zero to inhibit stripping the binaries
 NOSTRIP ?= 0
 
 # compile OLSR_PRINTF out
-NO_DEBUG_MESSAGES ?= 0
+NO_DEBUG_MESSAGES = 1
 
 include $(TOP)/.config
 
@@ -139,7 +139,7 @@ SGW_POLICY_SCRIPT ?= sgw_policy_routing_setup.sh
 DOCDIR_OLSRD ?= $(DOCDIR)/$(EXENAME)
 
 
-CPPFLAGS  = -I$(TOPDIR)/src -I$(TOPDIR)/lib -I$(TOPDIR)/lib/pud/nmealib/include -I$(TOPDIR)/lib/pud/wireformat/include
+CPPFLAGS  = -I$(TOPDIR)/src -I$(TOPDIR)/lib -I$(TOPDIR)/lib/pud/nmealib/include -I$(TOPDIR)/lib/pud/wireformat/include -D_GNU_SOURCE
 
 # include OS specific compiler settings
 -include $(TOPDIR)/make/Makefile.$(OS).compiler
@@ -238,6 +238,7 @@ WARNINGS :=	$(shell CC="$(CC)" "$(TOPDIR)/gcc-warnings" $(WARNINGS))
 endif
 CFLAGS +=	$(WARNINGS)
 CFLAGS +=	$(OPTIMIZE)
+CPPFLAGS +=	$(OPTIMIZE)
 CFLAGS +=	$(EXTRA_CFLAGS)
 
 endif
@@ -330,8 +331,8 @@ OBJS +=		$(SRCS:%.c=%.o)
 
 # debugging or non-debugging flags
 ifeq ($(DEBUG),1)
-CPPFLAGS +=	-DDEBUG
-CFLAGS +=	-ggdb
+CPPFLAGS +=	-DDEBUG -DNEED_PRINTF
+CFLAGS +=	-g
 ifeq ($(OS),linux)
 LDFLAGS  += -rdynamic
 endif

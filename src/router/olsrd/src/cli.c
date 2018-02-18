@@ -65,7 +65,7 @@ void print_version(void) {
  * Print the command line usage
  */
 void print_usage(bool error) {
-  fprintf(
+/*  fprintf(
       stderr,
         "%s"
         "usage: olsrd [-f <configfile>] [ -i interface1 interface2 ... ]\n"
@@ -77,7 +77,8 @@ void print_usage(bool error) {
         "  [-T <Polling Rate (secs)>] [-nofork] [-hemu <ip_address>]\n"
         "  [-lql <LQ level>] [-lqa <LQ aging factor>]\n"
         "  [-pidfile <pid file>]\n",
-        error ? "Error in command line parameters!\n" : "");
+        error ? "Error in command line parameters!\n" : "");*/
+
 }
 
 #define NEXT_ARG do { argv++;argc--; } while (0)

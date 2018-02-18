@@ -538,10 +538,6 @@ int main(int argc, char *argv[]) {
 
   olsrd_cfgfile_init();
 
-  /* Print configuration */
-  if (olsr_cnf->debug_level > 1) {
-    olsrd_print_cnf(olsr_cnf);
-  }
 
   /* configuration loaded and sane */
 
