@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2017 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2018 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -272,14 +272,13 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
 	  while (forward->blocking_query)
 	    forward = forward->blocking_query;
 	   
-	  forward->flags |= FREC_TEST_PKTSZ;
-	  
 	  blockdata_retrieve(forward->stash, forward->stash_len, (void *)header);
 	  plen = forward->stash_len;
 	  
+	  forward->flags |= FREC_TEST_PKTSZ;
 	  if (find_pseudoheader(header, plen, NULL, &pheader, &is_sign, NULL) && !is_sign)
 	    PUTSHORT(SAFE_PKTSZ, pheader);
-
+	  
 	  if (forward->sentto->addr.sa.sa_family == AF_INET) 
 	    log_query(F_NOEXTRA | F_DNSSEC | F_IPV4, "retry", (struct all_addr *)&forward->sentto->addr.in.sin_addr, "dnssec");
 #ifdef HAVE_IPV6
@@ -401,7 +400,8 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
       int subnet, forwarded = 0;
       size_t edns0_len;
       unsigned char *oph = find_pseudoheader(header, plen, NULL, NULL, NULL, NULL);
-
+      unsigned char *pheader;
+      
       /* If a query is retried, use the log_id for the retry when logging the answer. */
       forward->log_id = daemon->log_id;
       
@@ -423,7 +423,7 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
 	}
 #endif
 
-      if (find_pseudoheader(header, plen, &edns0_len, NULL, NULL, NULL))
+      if (find_pseudoheader(header, plen, &edns0_len, &pheader, NULL, NULL))
 	{
 	  /* If there wasn't a PH before, and there is now, we added it. */
 	  if (!oph)
@@ -432,6 +432,10 @@ static int forward_query(int udpfd, union mysockaddr *udpaddr,
 	  /* If we're sending an EDNS0 with any options, we can't recreate the query from a reply. */
 	  if (edns0_len > 11)
 	    forward->flags |= FREC_HAS_EXTRADATA;
+
+	  /* Reduce udp size on retransmits. */
+	  if (forward->flags & FREC_TEST_PKTSZ)
+	    PUTSHORT(SAFE_PKTSZ, pheader);
 	}
       
       while (1)
@@ -560,7 +564,7 @@ static size_t process_reply(struct dns_header *header, time_t now, struct server
   char **sets = 0;
   int munged = 0, is_sign;
   size_t plen; 
-
+  
   (void)ad_reqd;
   (void)do_bit;
   (void)bogusanswer;
@@ -764,7 +768,11 @@ void reply_query(int fd, int family, time_t now)
   
   if (!server)
     return;
-  
+
+  /* If sufficient time has elapsed, try and expand UDP buffer size again. */
+  if (difftime(now, server->pktsz_reduced) > UDP_TEST_TIME)
+    server->edns_pktsz = daemon->edns_pktsz;
+
 #ifdef HAVE_DNSSEC
   hash = hash_questions(header, n, daemon->namebuff);
 #else
@@ -794,10 +802,20 @@ void reply_query(int fd, int family, time_t now)
       unsigned char *pheader;
       size_t plen;
       int is_sign;
-      
+
+      /* In strict order mode, there must be a server later in the chain
+	 left to send to, otherwise without the forwardall mechanism,
+	 code further on will cycle around the list forwever if they
+	 all return REFUSED. Note that server is always non-NULL before 
+	 this executes. */
+      if (option_bool(OPT_ORDER))
+	for (server = forward->sentto->next; server; server = server->next)
+	  if (!(server->flags & (SERV_LITERAL_ADDRESS | SERV_HAS_DOMAIN | SERV_FOR_NODOTS | SERV_NO_ADDR | SERV_LOOP)))
+	    break;
+
       /* recreate query from reply */
       pheader = find_pseudoheader(header, (size_t)n, &plen, NULL, &is_sign, NULL);
-      if (!is_sign)
+      if (!is_sign && server)
 	{
 	  header->ancount = htons(0);
 	  header->nscount = htons(0);
@@ -841,12 +859,18 @@ void reply_query(int fd, int family, time_t now)
     }
  
   /* We tried resending to this server with a smaller maximum size and got an answer.
-     Make that permanent. To avoid reduxing the packet size for an single dropped packet,
+     Make that permanent. To avoid reduxing the packet size for a single dropped packet,
      only do this when we get a truncated answer, or one larger than the safe size. */
-  if (server && (forward->flags & FREC_TEST_PKTSZ) && 
+  if (server && server->edns_pktsz > SAFE_PKTSZ && (forward->flags & FREC_TEST_PKTSZ) && 
       ((header->hb3 & HB3_TC) || n >= SAFE_PKTSZ))
-    server->edns_pktsz = SAFE_PKTSZ;
-  
+    {
+      server->edns_pktsz = SAFE_PKTSZ;
+      server->pktsz_reduced = now;
+      prettyprint_addr(&server->addr, daemon->addrbuff);
+      my_syslog(LOG_WARNING, _("reducing DNS packet size for nameserver %s to %d"), daemon->addrbuff, SAFE_PKTSZ);
+    }
+
+    
   /* If the answer is an error, keep the forward record in place in case
      we get a good reply from another server. Kill it when we've
      had replies from all to avoid filling the forwarding table when
@@ -855,7 +879,7 @@ void reply_query(int fd, int family, time_t now)
       (RCODE(header) != REFUSED && RCODE(header) != SERVFAIL))
     {
       int check_rebind = 0, no_cache_dnssec = 0, cache_secure = 0, bogusanswer = 0;
-
+      
       if (option_bool(OPT_NO_REBIND))
 	check_rebind = !(forward->flags & FREC_NOREBIND);
       
@@ -895,7 +919,8 @@ void reply_query(int fd, int family, time_t now)
 		    status = dnssec_validate_ds(now, header, n, daemon->namebuff, daemon->keyname, forward->class);
 		  else
 		    status = dnssec_validate_reply(now, header, n, daemon->namebuff, daemon->keyname, &forward->class, 
-						   option_bool(OPT_DNSSEC_NO_SIGN) && (server->flags & SERV_DO_DNSSEC), NULL, NULL);
+						   option_bool(OPT_DNSSEC_NO_SIGN) && (server->flags & SERV_DO_DNSSEC),
+						   NULL, NULL);
 		}
 	      
 	      /* Can't validate, as we're missing key data. Put this
@@ -1479,7 +1504,8 @@ static int tcp_key_recurse(time_t now, int status, struct dns_header *header, si
 	new_status = dnssec_validate_ds(now, header, n, name, keyname, class);
       else 
 	new_status = dnssec_validate_reply(now, header, n, name, keyname, &class,
-					   option_bool(OPT_DNSSEC_NO_SIGN) && (server->flags & SERV_DO_DNSSEC), NULL, NULL);
+					   option_bool(OPT_DNSSEC_NO_SIGN) && (server->flags & SERV_DO_DNSSEC),
+					   NULL, NULL);
       
       if (new_status != STAT_NEED_DS && new_status != STAT_NEED_KEY)
 	break;
