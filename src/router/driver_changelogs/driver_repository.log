@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r3867 | brainslayer | 2018-02-18 20:23:54 +0100 (Sun, 18 Feb 2018) | 1 line
+
+improve ath9k performance with some restructuring
+------------------------------------------------------------------------
+r3866 | brainslayer | 2018-02-18 18:41:08 +0100 (Sun, 18 Feb 2018) | 1 line
+
+optimize ath9k for better size, lets compile it as single driver
+------------------------------------------------------------------------
 r3865 | brainslayer | 2018-02-18 18:20:21 +0100 (Sun, 18 Feb 2018) | 1 line
 
 fix power correction
