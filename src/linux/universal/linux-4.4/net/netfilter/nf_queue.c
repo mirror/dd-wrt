@@ -26,7 +26,6 @@
  * Once the queue is registered it must reinject all packets it
  * receives, no matter what.
  */
-static const struct nf_queue_handler __rcu *queue_handler __read_mostly;
 
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 static const struct nf_queue_handler __rcu *queue_imq_handler __read_mostly;
@@ -120,7 +119,7 @@ void nf_queue_nf_hook_drop(struct net *net, struct nf_hook_ops *ops)
 	const struct nf_queue_handler *qh;
 
 	rcu_read_lock();
-	qh = rcu_dereference(queue_handler);
+	qh = rcu_dereference(net->nf.queue_handler);
 	if (qh)
 		qh->nf_hook_drop(net, ops);
 	rcu_read_unlock();
