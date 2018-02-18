@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3861 | brainslayer | 2018-02-18 15:12:17 +0100 (Sun, 18 Feb 2018) | 1 line
+
+card power overdrive support for ath9k
+------------------------------------------------------------------------
 r3860 | brainslayer | 2018-02-16 18:21:40 +0100 (Fri, 16 Feb 2018) | 1 line
 
 allow  to compile ath10k without gpiolib and leds_class support
