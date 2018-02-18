@@ -1,3 +1,48 @@
+/*
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
+ *
+ */
+
 #include "speedFile.h"
 
 /* Plugin includes */
@@ -45,7 +90,11 @@ static bool started = false;
 
 /** type to hold the cached stat result */
 typedef struct _CachedStat {
-	time_t timeStamp; /* Time of last modification (second resolution) */
+#if defined(__linux__) && !defined(__ANDROID__)
+  struct timespec timeStamp; /* Time of last modification (full resolution) */
+#else
+  time_t timeStamp; /* Time of last modification (second resolution) */
+#endif
 } CachedStat;
 
 /** the cached stat result */
@@ -121,7 +170,7 @@ bool startSpeedFile(void) {
 		return false;
 	}
 
-	cachedStat.timeStamp = -1;
+	memset(&cachedStat, 0, sizeof(cachedStat));
 
 	started = true;
 	return true;
@@ -178,9 +227,12 @@ void readSpeedFile(char * fileName) {
 	int fd;
 	struct stat statBuf;
 	FILE * fp = NULL;
+	void * mtim;
 	unsigned int lineNumber = 0;
+
 	char * name = NULL;
 	char * value = NULL;
+
 	unsigned long uplink = DEF_UPLINK_SPEED;
 	unsigned long downlink = DEF_DOWNLINK_SPEED;
 	bool uplinkSet = false;
@@ -189,26 +241,35 @@ void readSpeedFile(char * fileName) {
 
 	fd = open(fileName, O_RDONLY);
 	if (fd < 0) {
-		/* could not access the file */
+		/* could not open the file */
+		memset(&cachedStat.timeStamp, 0, sizeof(cachedStat.timeStamp));
 		goto out;
 	}
 
 	if (fstat(fd, &statBuf)) {
-		/* could not access the file */
+		/* could not stat the file */
+		memset(&cachedStat.timeStamp, 0, sizeof(cachedStat.timeStamp));
 		goto out;
 	}
 
-	if (!memcmp(&cachedStat.timeStamp, &statBuf.st_mtime, sizeof(cachedStat.timeStamp))) {
+#if defined(__linux__) && !defined(__ANDROID__)
+	mtim = &statBuf.st_mtim;
+#else
+	mtim = &statBuf.st_mtime;
+#endif
+
+	if (!memcmp(&cachedStat.timeStamp, mtim, sizeof(cachedStat.timeStamp))) {
 		/* file did not change since last read */
 		goto out;
 	}
 
 	fp = fdopen(fd, "r");
 	if (!fp) {
+		/* could not open the file */
 		goto out;
 	}
 
-	memcpy(&cachedStat.timeStamp, &statBuf.st_mtime, sizeof(cachedStat.timeStamp));
+	memcpy(&cachedStat.timeStamp, mtim, sizeof(cachedStat.timeStamp));
 
 	while (fgets(line, LINE_LENGTH, fp)) {
 		regmatch_t pmatch[regexNameValuematchCount];
@@ -260,9 +321,6 @@ void readSpeedFile(char * fileName) {
 
 	reportedErrorsPrevious = reportedErrors;
 
-	fclose(fp);
-	fp = NULL;
-
 	if (uplinkSet) {
 	  smartgw_set_uplink(olsr_cnf, uplink);
 	}
@@ -273,7 +331,10 @@ void readSpeedFile(char * fileName) {
 	  refresh_smartgw_netmask();
 	}
 
-	out: if (fd >= 0) {
+	out: if (fp) {
+		fclose(fp);
+	}
+	if (fd >= 0) {
 		close(fd);
 	}
 }

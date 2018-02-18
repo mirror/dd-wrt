@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2008 Henning Rogge <rogge@fgan.de>
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,7 +78,7 @@ static void default_lq_clear_ffeth(void *target);
 static void default_lq_clear_ffeth_hello(void *target);
 
 static const char *default_lq_print_ffeth(void *ptr, char separator, struct lqtextbuffer *buffer);
-static const char *default_lq_print_cost_ffeth(olsr_linkcost cost, struct lqtextbuffer *buffer);
+static double default_lq_get_cost_scaled(olsr_linkcost cost);
 
 /* etx lq plugin (freifunk fpm version) settings */
 struct lq_handler lq_etx_ffeth_handler = {
@@ -97,7 +101,7 @@ struct lq_handler lq_etx_ffeth_handler = {
 
   &default_lq_print_ffeth,
   &default_lq_print_ffeth,
-  &default_lq_print_cost_ffeth,
+  &default_lq_get_cost_scaled,
 
   sizeof(struct default_lq_ffeth_hello),
   sizeof(struct default_lq_ffeth),
@@ -327,7 +331,7 @@ default_lq_calc_cost_ffeth(const void *ptr)
     cost /= 10;
   }
 
-  if (cost > LINK_COST_BROKEN)
+  if (cost >= LINK_COST_BROKEN)
     return LINK_COST_BROKEN;
   if (cost == 0)
     return 1;
@@ -462,11 +466,10 @@ default_lq_print_ffeth(void *ptr, char separator, struct lqtextbuffer *buffer)
   return buffer->buf;
 }
 
-static const char *
-default_lq_print_cost_ffeth(olsr_linkcost cost, struct lqtextbuffer *buffer)
+static double
+default_lq_get_cost_scaled(olsr_linkcost cost)
 {
-  snprintf(buffer->buf, sizeof(buffer->buf), "%s", fpmtoa(cost));
-  return buffer->buf;
+  return fpmtod(cost);
 }
 
 /*

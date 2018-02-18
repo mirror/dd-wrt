@@ -1,8 +1,46 @@
 /*
- * gateway.h
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
  *
- *  Created on: 05.01.2010
- *      Author: henning
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
+ *
  */
 
 #ifndef GATEWAY_H_
@@ -15,6 +53,7 @@
 #include "scheduler.h"
 #include "gateway_list.h"
 #include <net/if.h>
+#include <stdbool.h>
 
 /** used to signal to olsr_delete_gateway_entry to force deletion */
 #define FORCE_DELETE_GW_ENTRY 255
@@ -25,7 +64,7 @@
 /**
  * @return true if multi-gateway mode is enabled
  */
-static inline bool multi_gateway_mode(void) {
+static INLINE bool multi_gateway_mode(void) {
   return (olsr_cnf->smart_gw_use_count > 1);
 }
 
@@ -38,11 +77,11 @@ static inline bool multi_gateway_mode(void) {
 
 /** gateway HNA flags */
 enum gateway_hna_flags {
-  GW_HNA_FLAG_LINKSPEED   = 1 << 0,
-  GW_HNA_FLAG_IPV4        = 1 << 1,
-  GW_HNA_FLAG_IPV4_NAT    = 1 << 2,
-  GW_HNA_FLAG_IPV6        = 1 << 3,
-  GW_HNA_FLAG_IPV6PREFIX  = 1 << 4
+  GW_HNA_FLAG_LINKSPEED   = 1u << 0,
+  GW_HNA_FLAG_IPV4        = 1u << 1,
+  GW_HNA_FLAG_IPV4_NAT    = 1u << 2,
+  GW_HNA_FLAG_IPV6        = 1u << 3,
+  GW_HNA_FLAG_IPV6PREFIX  = 1u << 4
 };
 
 /** gateway HNA field byte offsets in the netmask field of the HNA */
@@ -90,7 +129,7 @@ struct interfaceName {
 #endif /* __linux__ */
 
 /**
- * static inline struct gateway_entry * node2gateway (struct avl_node *ptr)
+ * static INLINE struct gateway_entry * node2gateway (struct avl_node *ptr)
  *
  * Converts a node into a gateway entry
  */
@@ -105,8 +144,9 @@ AVLNODE2STRUCT(node2gateway, struct gateway_entry, node);
   for (gw_node = avl_walk_first(&gateway_tree); \
     gw_node; gw_node = next_gw_node) { \
     next_gw_node = avl_walk_next(gw_node); \
-    gw = node2gateway(gw_node);
-#define OLSR_FOR_ALL_GATEWAY_ENTRIES_END(gw) }}
+    gw = node2gateway(gw_node); \
+    if (gw) {
+#define OLSR_FOR_ALL_GATEWAY_ENTRIES_END(gw) }}}
 
 /** the gateway tree */
 extern struct avl_tree gateway_tree;
@@ -215,5 +255,6 @@ struct gateway_entry *olsr_get_inet_gateway(bool ipv6);
  */
 
 void doRoutesMultiGw(bool egressChanged, bool olsrChanged, enum sgw_multi_change_phase phase);
+bool isEgressSelected(struct sgw_egress_if * egress_if);
 
 #endif /* GATEWAY_H_ */

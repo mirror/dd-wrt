@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -115,9 +119,9 @@ reltime_to_me(const olsr_reltime interval)
        */
 
       if (b >= 5) {
-        a = (interval - (125 << (b - 1))) / (125 << (b - 5));
+        a = (interval - (125u << (b - 1))) / (125u << (b - 5));
       } else {
-        a = (interval - (125 << (b - 1))) * (1 << (5 - b)) / 125;
+        a = (interval - (125u << (b - 1))) * (1u << (5 - b)) / 125;
       }
 
       b += a >> 4;

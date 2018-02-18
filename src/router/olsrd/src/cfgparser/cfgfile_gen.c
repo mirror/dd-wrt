@@ -1,6 +1,11 @@
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2005, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,10 +45,11 @@
 
 #include "olsrd_conf.h"
 #include "builddata.h"
-#include "../ipcalc.h"
-#include "../net_olsr.h"
-#include "../common/autobuf.h"
-#include "../egressTypes.h"
+#include "ipcalc.h"
+#include "net_olsr.h"
+#include "common/autobuf.h"
+#include "egressTypes.h"
+#include "lock_file.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -53,6 +59,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+void olsrd_cfgfile_init(void) {
+}
+void olsrd_cfgfile_cleanup(void) {
+}
 
 int olsrd_write_cnf(struct olsrd_config *cnf, const char *fname) {
   return 1;
@@ -62,6 +72,10 @@ int olsrd_write_cnf(struct olsrd_config *cnf, const char *fname) {
 
 void olsrd_write_cnf_autobuf(struct autobuf *out, struct olsrd_config *cnf) {
 }
+
+void olsrd_write_cnf_autobuf_uncached(struct autobuf *out, struct olsrd_config *cnf) {
+}
+
 /*
  * Local Variables:
  * c-basic-offset: 2

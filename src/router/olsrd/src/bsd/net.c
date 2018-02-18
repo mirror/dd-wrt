@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,13 +50,13 @@
 /* comment: we need this otherwise it does not include the proper files to find IPv6_PKTINFO */
 #define __APPLE_USE_RFC_2292
 
-#include "../defs.h"
-#include "../net_os.h"
-#include "../ipcalc.h"
-#include "../parser.h"          /* dnc: needed for call to packet_parser() */
-#include "../olsr_protocol.h"
-#include "../olsr_cfg.h"
-#include "../olsr.h"
+#include "defs.h"
+#include "net_os.h"
+#include "ipcalc.h"
+#include "parser.h"          /* dnc: needed for call to packet_parser() */
+#include "olsr_protocol.h"
+#include "olsr_cfg.h"
+#include "olsr.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>

@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,6 +62,8 @@
 
 #else
 void olsr_openlog(const char *ident);
+
+void olsr_closelog(void);
 
 #if defined SYSLOG_NUMBERING && SYSLOG_NUMBERING
 void olsr_syslog_real(int level, const char *format, ...) __attribute__ ((format(printf, 2, 3)));

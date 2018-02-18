@@ -1,3 +1,48 @@
+/*
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
+ *
+ */
+
 #include "pud.h"
 
 /* Plugin includes */
@@ -18,9 +63,6 @@
 #include "log.h"
 
 /* System includes */
-
-/** The size of the buffer in which the received NMEA string is stored */
-#define BUFFER_SIZE_RX_NMEA		2048
 
 /** The size of the buffer in which the received downlink message is stored */
 #define BUFFER_SIZE_RX_DOWNLINK	2048
@@ -260,52 +302,6 @@ static void packetReceivedFromDownlink(int skfd, void *data __attribute__ ((unus
 }
 
 /**
- Called by OLSR core when a packet for the plugin is received from the non-OLSR
- network. It converts the packet into the internal OLSR wire format for a
- position update and transmits it over all OLSR network interfaces.
-
- @param skfd
- the socket file descriptor on which the packet is received
- @param data
- a pointer to the network interface structure on which the packet was received
- @param flags
- unused
- */
-static void packetReceivedForOlsr(int skfd, void *data __attribute__ ((unused)), unsigned int flags __attribute__ ((unused))) {
-	if (skfd >= 0) {
-		unsigned char rxBuffer[BUFFER_SIZE_RX_NMEA];
-		ssize_t rxCount;
-		union olsr_sockaddr sender;
-		socklen_t senderSize = sizeof(sender);
-
-		assert(data != NULL);
-
-		/* Receive the captured Ethernet frame */
-		memset(&sender, 0, senderSize);
-		errno = 0;
-		rxCount = recvfrom(skfd, &rxBuffer[0], (sizeof(rxBuffer) - 1), 0,
-				(struct sockaddr *)&sender, &senderSize);
-		if (rxCount < 0) {
-			pudError(true, "Receive error in %s, ignoring message.", __func__);
-			return;
-		}
-
-		/* make sure the string is null-terminated */
-		rxBuffer[rxCount] = '\0';
-
-		/* only accept messages from configured IP addresses */
-		if (!isRxAllowedSourceIpAddress(&sender)) {
-			return;
-		}
-
-		/* we have the received string in the rxBuffer now */
-
-		/* hand the NMEA information to the receiver */
-		(void) receiverUpdateGpsInformation(&rxBuffer[0], rxCount);
-	}
-}
-
-/**
  * Timer callback that reads the pud position file
  */
 static void pud_read_position_file(void *context __attribute__ ((unused))) {
@@ -356,8 +352,7 @@ bool initPud(void) {
 	 * Creates receive and transmit sockets and register the receive sockets
 	 * with the OLSR stack
 	 */
-	if (!createNetworkInterfaces(&packetReceivedForOlsr,
-			&packetReceivedFromDownlink)) {
+	if (!createNetworkInterfaces(&packetReceivedFromDownlink)) {
 		pudError(false, "Could not create require network interfaces");
 		goto error;
 	}

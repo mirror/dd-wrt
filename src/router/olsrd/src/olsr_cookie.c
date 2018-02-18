@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2008, Hannes Gredler (hannes@gredler.at)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +40,7 @@
  * If you find this software useful feel free to make a donation
  * to the project. For more information see the website or contact
  * the copyright holders.
+ *
  */
 
 #include "olsr.h"
@@ -67,7 +72,12 @@ olsr_alloc_cookie(const char *cookie_name, olsr_cookie_type cookie_type)
     }
   }
 
-  assert(ci_index < COOKIE_ID_MAX);     /* increase COOKIE_ID_MAX */
+  /* 1 <= ci_index <= COOKIE_ID_MAX */
+
+  if (ci_index == COOKIE_ID_MAX) {
+    olsr_exit("No more cookies available", EXIT_FAILURE);
+    return NULL;
+  }
 
   ci = calloc(1, sizeof(struct olsr_cookie_info));
   cookies[ci_index] = ci;
@@ -226,10 +236,9 @@ olsr_cookie_malloc(struct olsr_cookie_info *ci)
     ptr = calloc(1, ci->ci_size + sizeof(struct olsr_cookie_mem_brand));
 
     if (!ptr) {
-      const char *const err_msg = strerror(errno);
-      OLSR_PRINTF(1, "OUT OF MEMORY: %s\n", err_msg);
-      olsr_syslog(OLSR_LOG_ERR, "olsrd: out of memory!: %s\n", err_msg);
-      olsr_exit(ci->ci_name, EXIT_FAILURE);
+      char buf[1024];
+      snprintf(buf, sizeof(buf), "%s: out of memory: %s", ci->ci_name, strerror(errno));
+      olsr_exit(buf, EXIT_FAILURE);
     }
     assert(ptr);
   } else {
@@ -287,7 +296,8 @@ olsr_cookie_free(struct olsr_cookie_info *ci, void *ptr)
    * Verify if there has been a memory overrun, or
    * the wrong owner is trying to free this.
    */
-  assert(!memcmp(&branding->cmb_sig, "cookie", 6) && branding->cmb_id == ci->ci_id);
+  assert(!memcmp(&branding->cmb_sig, "cookie", 6));
+  assert(branding->cmb_id == ci->ci_id);
 
   /* Kill the brand */
   memset(branding, 0, sizeof(*branding));

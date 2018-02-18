@@ -8,24 +8,29 @@ with providing missing filesfrom Android NDK.)
 Building olsrd for Android
 --------------------------
 
+Currently the makefiles are setup for NDK r10.
+
 In order to build olsrd and the plugins for Android, you will need to
-download the free (as in beer, and mostly as in speech) Android NDK.  NDK r10
-or later is the best to have.
+download the free (as in beer, and mostly as in speech) Android NDK.
 
 http://developer.android.com/sdk/ndk/index.html
 
 Once you have that installed, run this in your terminal:
 
-  make OS=android NDK_BASE=/path/to/your/android-ndk-r10 build_all
+  make OS=android NDK_BASE=/path/to/your/android-ndk build_all
 
 Then you can find olsrd in the root, and the plugin files in lib/*/*.so*
 
-If using NDK older than r10, you will need to set the NDK_COMPILER_VERSION to
-4.4.3 since the default compiler version, 4.8, was not included until NDK r9.
-Here's how:
+If using a different NDK then you will need to adjust the NDK_COMPILER_VERSION
+setting in the file
+
+  make/Makefile.android.compiler
+
+or (preferably) by setting it on the make command-line invocation, like
 
   make OS=android NDK_BASE=/path/to/your/android-ndk-r7 \
        NDK_COMPILER_VERSION=4.4.3 build_all
+
 
 Android App
 -----------

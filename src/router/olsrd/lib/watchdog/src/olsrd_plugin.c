@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004-2009, the olsr.org team - see HISTORY file
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,31 +43,48 @@
  *
  */
 
-
- /*
-  * Example plugin for olsrd.org OLSR daemon
-  * Only the bare minimum
-  */
-
-
 #include "olsrd_plugin.h"
 #include "plugin_util.h"
 #include "olsr.h"
 #include "defs.h"
 #include "scheduler.h"
 #include "olsr_cookie.h"
-
+#include "builddata.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+
+#define PLUGIN_NAME              "OLSRD watchdog plugin"
 #define PLUGIN_INTERFACE_VERSION 5
 
 static struct olsr_cookie_info *watchdog_timer_cookie;
 
 static char watchdog_filename[FILENAME_MAX + 1] = "/tmp/olsr.watchdog";
 static int watchdog_interval = 5;
+
+
+static void my_init(void) __attribute__ ((constructor));
+static void my_fini(void) __attribute__ ((destructor));
+
+/**
+ *Constructor
+ */
+static void
+my_init(void)
+{
+  /* Print plugin info to stdout */
+  olsr_printf(0, "%s (%s)\n", PLUGIN_NAME, git_descriptor);
+}
+
+/**
+ *Destructor
+ */
+static void
+my_fini(void)
+{
+}
 
 /**
  * Plugin interface version

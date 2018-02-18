@@ -1,3 +1,48 @@
+/*
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
+ *
+ */
+
 #include "gpsConversion.h"
 
 /* Plugin includes */
@@ -9,9 +54,9 @@
 #include "olsr.h"
 
 /* System includes */
-#include <nmea/info.h>
-#include <nmea/tok.h>
-#include <nmea/gmath.h>
+#include <nmealib/info.h>
+#include <nmealib/nmath.h>
+#include <nmealib/util.h>
 #include <arpa/inet.h>
 #include <OlsrdPudWireFormat/nodeIdConversion.h>
 
@@ -86,7 +131,7 @@ unsigned int gpsFromOlsr(union olsr_message *olsrMessage,
 	/* time is ALWAYS present so we can just use it */
 	getPositionUpdateTime(olsrGpsMessage, time(NULL), &timeStruct);
 
-	if (likely(nmea_INFO_is_present(present, LAT))) {
+	if (likely(nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_LAT))) {
 		double latitude = getPositionUpdateLatitude(olsrGpsMessage);
 
 		if (latitude >= 0) {
@@ -95,7 +140,7 @@ unsigned int gpsFromOlsr(union olsr_message *olsrMessage,
 			latitudeHemisphere = "S";
 			latitude = -latitude;
 		}
-		latitude = nmea_degree2ndeg(latitude);
+		latitude = nmeaMathDegreeToNdeg(latitude);
 
 		snprintf(&latitudeString[0], PUD_TX_LATITUDE_DIGITS, "%." PUD_TX_LATITUDE_DECIMALS "f", latitude);
 	} else {
@@ -103,7 +148,7 @@ unsigned int gpsFromOlsr(union olsr_message *olsrMessage,
 		latitudeString[0] = '\0';
 	}
 
-	if (likely(nmea_INFO_is_present(present, LON))) {
+	if (likely(nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_LON))) {
 		double longitude = getPositionUpdateLongitude(olsrGpsMessage);
 
 		if (longitude >= 0) {
@@ -112,7 +157,7 @@ unsigned int gpsFromOlsr(union olsr_message *olsrMessage,
 			longitudeHemisphere = "W";
 			longitude = -longitude;
 		}
-		longitude = nmea_degree2ndeg(longitude);
+		longitude = nmeaMathDegreeToNdeg(longitude);
 
 		snprintf(&longitudeString[0], PUD_TX_LONGITUDE_DIGITS, "%." PUD_TX_LONGITUDE_DECIMALS "f", longitude);
 	} else {
@@ -120,27 +165,27 @@ unsigned int gpsFromOlsr(union olsr_message *olsrMessage,
 		longitudeString[0] = '\0';
 	}
 
-	if (likely(nmea_INFO_is_present(present, ELV))) {
+	if (likely(nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_ELV))) {
 		snprintf(&altitudeString[0], PUD_TX_ALTITUDE_DIGITS, "%ld", getPositionUpdateAltitude(olsrGpsMessage));
 	} else {
 		altitudeString[0] = '\0';
 	}
 
-	if (likely(nmea_INFO_is_present(present, SPEED))) {
+	if (likely(nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_SPEED))) {
 		snprintf(&speedString[0], PUD_TX_SPEED_DIGITS, "%lu", getPositionUpdateSpeed(olsrGpsMessage));
 	} else {
 		speedString[0] = '\0';
 	}
 
-	if (likely(nmea_INFO_is_present(present, TRACK))) {
+	if (likely(nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_TRACK))) {
 		snprintf(&trackString[0], PUD_TX_TRACK_DIGITS, "%lu", getPositionUpdateTrack(olsrGpsMessage));
 	} else {
 		trackString[0] = '\0';
 	}
 
-	if (likely(nmea_INFO_is_present(present, HDOP))) {
+	if (likely(nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_HDOP))) {
 		snprintf(&hdopString[0], PUD_TX_HDOP_DIGITS, "%." PUD_TX_HDOP_DECIMALS "f",
-				nmea_meters2dop(getPositionUpdateHdop(olsrGpsMessage)));
+		    nmeaMathMetersToDop(getPositionUpdateHdop(olsrGpsMessage)));
 	} else {
 		hdopString[0] = '\0';
 	}
@@ -150,7 +195,7 @@ unsigned int gpsFromOlsr(union olsr_message *olsrMessage,
 	getNodeIdStringFromOlsr(olsr_cnf->ip_version, olsrMessage, &nodeId,
 			&nodeIdString[0], sizeof(nodeIdString));
 
-	transmitStringLength = nmea_printf((char *) txGpsBuffer, txGpsBufferSize
+	transmitStringLength = nmeaPrintf((char *) txGpsBuffer, txGpsBufferSize
 			- 1, "$P%s," /* prefix (always) */
 		"%u," /* sentence version (always) */
 		"%s," /* gateway flag (always) */
@@ -209,7 +254,7 @@ unsigned int gpsFromOlsr(union olsr_message *olsrMessage,
  - the aligned size of the converted information
  - 0 (zero) in case of an error
  */
-unsigned int gpsToOlsr(nmeaINFO *nmeaInfo, union olsr_message *olsrMessage,
+unsigned int gpsToOlsr(NmeaInfo *nmeaInfo, union olsr_message *olsrMessage,
 		unsigned int olsrMessageSize, unsigned long long validityTime) {
 	unsigned int aligned_size;
 	unsigned int aligned_size_remainder;
@@ -232,38 +277,38 @@ unsigned int gpsToOlsr(nmeaINFO *nmeaInfo, union olsr_message *olsrMessage,
 	setPositionUpdateTime(olsrGpsMessage, nmeaInfo->utc.hour, nmeaInfo->utc.min,
 			nmeaInfo->utc.sec);
 
-	if (likely(nmea_INFO_is_present(nmeaInfo->present, LAT))) {
-		setPositionUpdateLatitude(olsrGpsMessage, nmeaInfo->lat);
+	if (likely(nmeaInfoIsPresentAll(nmeaInfo->present, NMEALIB_PRESENT_LAT))) {
+		setPositionUpdateLatitude(olsrGpsMessage, nmeaInfo->latitude);
 	} else {
 		setPositionUpdateLatitude(olsrGpsMessage, 0.0);
 	}
 
-	if (likely(nmea_INFO_is_present(nmeaInfo->present, LON))) {
-		setPositionUpdateLongitude(olsrGpsMessage, nmeaInfo->lon);
+	if (likely(nmeaInfoIsPresentAll(nmeaInfo->present, NMEALIB_PRESENT_LON))) {
+		setPositionUpdateLongitude(olsrGpsMessage, nmeaInfo->longitude);
 	} else {
 		setPositionUpdateLongitude(olsrGpsMessage, 0.0);
 	}
 
-	if (likely(nmea_INFO_is_present(nmeaInfo->present, ELV))) {
-		setPositionUpdateAltitude(olsrGpsMessage, nmeaInfo->elv);
+	if (likely(nmeaInfoIsPresentAll(nmeaInfo->present, NMEALIB_PRESENT_ELV))) {
+		setPositionUpdateAltitude(olsrGpsMessage, nmeaInfo->elevation);
 	} else {
 		setPositionUpdateAltitude(olsrGpsMessage, 0.0);
 	}
 
-	if (likely(nmea_INFO_is_present(nmeaInfo->present, SPEED))) {
+	if (likely(nmeaInfoIsPresentAll(nmeaInfo->present, NMEALIB_PRESENT_SPEED))) {
 		setPositionUpdateSpeed(olsrGpsMessage, nmeaInfo->speed);
 	} else {
 		setPositionUpdateSpeed(olsrGpsMessage, 0.0);
 	}
 
-	if (likely(nmea_INFO_is_present(nmeaInfo->present, TRACK))) {
+	if (likely(nmeaInfoIsPresentAll(nmeaInfo->present, NMEALIB_PRESENT_TRACK))) {
 		setPositionUpdateTrack(olsrGpsMessage, nmeaInfo->track);
 	} else {
 		setPositionUpdateTrack(olsrGpsMessage, 0);
 	}
 
-	if (likely(nmea_INFO_is_present(nmeaInfo->present, HDOP))) {
-		setPositionUpdateHdop(olsrGpsMessage, nmeaInfo->HDOP);
+	if (likely(nmeaInfoIsPresentAll(nmeaInfo->present, NMEALIB_PRESENT_HDOP))) {
+		setPositionUpdateHdop(olsrGpsMessage, nmeaInfo->hdop);
 	} else {
 		setPositionUpdateHdop(olsrGpsMessage, PUD_HDOP_MAX);
 	}

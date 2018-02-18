@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -384,7 +388,7 @@ net_output(struct interface_olsr *ifp)
         0) {
       perror("sendto(v4)");
 #ifndef _WIN32
-      olsr_syslog(OLSR_LOG_ERR, "OLSR: sendto IPv4 %m");
+      olsr_syslog(OLSR_LOG_ERR, "OLSR: sendto IPv4 '%s' on interface %s", strerror(errno), ifp->int_name);
 #endif /* _WIN32 */
       retval = -1;
     }
@@ -395,7 +399,7 @@ net_output(struct interface_olsr *ifp)
       struct ipaddr_str buf;
       perror("sendto(v6)");
 #ifndef _WIN32
-      olsr_syslog(OLSR_LOG_ERR, "OLSR: sendto IPv6 %m");
+      olsr_syslog(OLSR_LOG_ERR, "OLSR: sendto IPv6 '%s' on interface %s", strerror(errno), ifp->int_name);
 #endif /* _WIN32 */
       fprintf(stderr, "Socket: %d interface: %d\n", ifp->olsr_socket, ifp->if_index);
       fprintf(stderr, "To: %s (size: %u)\n", ip6_to_string(&buf, &sin6->sin6_addr), (unsigned int)sizeof(*sin6));
@@ -442,7 +446,7 @@ olsr_validate_address(const union olsr_ip_addr *adr)
       OLSR_PRINTF(1, "Validation of address %s failed!\n", olsr_ip_to_string(&buf, adr));
       return false;
     }
-    if (deny_entry == (struct deny_address_entry *)&olsr_cnf->main_addr)
+    if (&deny_entry->addr == &olsr_cnf->main_addr)
       break;
   }
   return true;

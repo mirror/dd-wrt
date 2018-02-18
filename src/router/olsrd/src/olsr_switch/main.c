@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2005, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -113,7 +117,7 @@ ohs_close(int signo __attribute__ ((unused)))
 #ifndef _WIN32
   errno = errNr;
 #endif
-  exit(0);
+  exit(EXIT_SUCCESS);
 }
 
 struct ohs_connection *
@@ -286,13 +290,13 @@ ohs_init_connect_sockets(void)
 
   if ((srv_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     printf("Could not initialize socket(%d): %s\n", srv_socket, strerror(errno));
-    exit(0);
+    exit(EXIT_FAILURE);
   }
 
   if (setsockopt(srv_socket, SOL_SOCKET, SO_REUSEADDR, (char *)&yes, sizeof(yes)) < 0) {
     printf("SO_REUSEADDR failed for socket: %s\n", strerror(errno));
     close(srv_socket);
-    exit(0);
+    exit(EXIT_FAILURE);
   }
 
   /* complete the socket structure */
@@ -305,14 +309,14 @@ ohs_init_connect_sockets(void)
   if (bind(srv_socket, (struct sockaddr *)&sin, sizeof(sin)) == -1) {
     printf("bind failed for socket: %s\n", strerror(errno));
     close(srv_socket);
-    exit(0);
+    exit(EXIT_FAILURE);
   }
 
   /* show that we are willing to listen */
   if (listen(srv_socket, 5) == -1) {
     printf("listen failed for socket: %s\n", strerror(errno));
     close(srv_socket);
-    exit(0);
+    exit(EXIT_FAILURE);
   }
   return 1;
 }

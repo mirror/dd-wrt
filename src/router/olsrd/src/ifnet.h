@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,8 +58,6 @@
 
 #include "olsr_cfg.h"
 
-int set_flag(char *, short);
-
 void check_interface_updates(void *);
 
 int chk_if_changed(struct olsr_if *);
@@ -63,6 +65,18 @@ int chk_if_changed(struct olsr_if *);
 int chk_if_up(struct olsr_if *, int);
 
 int add_hemu_if(struct olsr_if *);
+
+typedef enum {
+  LINKSTATE_UNKNOWN, LINKSTATE_UP, LINKSTATE_DOWN
+} LinkState;
+
+#if defined(__linux__) && !defined(__ANDROID__)
+  LinkState getInterfaceLinkState(const char * iface);
+#else
+  static INLINE LinkState getInterfaceLinkState(__attribute__((unused)) const char * iface) {
+    return LINKSTATE_UNKNOWN;
+  }
+#endif /* defined(__linux__) && !defined(__ANDROID__) */
 
 #endif /* _OLSR_IFNET */
 

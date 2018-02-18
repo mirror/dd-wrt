@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -445,14 +449,25 @@ olsr_input(int fd, void *data __attribute__ ((unused)), unsigned int flags __att
       }
       break;
     }
-    if (olsr_cnf->ip_version == AF_INET) {
-      /* IPv4 sender address */
-      void * src = &((struct sockaddr_in *)&from)->sin_addr;
-      memcpy(&from_addr.v4, src, sizeof(from_addr.v4));
-    } else {
-      /* IPv6 sender address */
-      void * src = &((struct sockaddr_in6 *)&from)->sin6_addr;
-      memcpy(&from_addr.v6, src, sizeof(from_addr.v6));
+
+    {
+      void * src;
+      void * dst;
+      size_t size;
+      if (olsr_cnf->ip_version == AF_INET) {
+        /* IPv4 sender address */
+        struct sockaddr_in * x = (struct sockaddr_in *) &from;
+        src = &x->sin_addr;
+        dst = &from_addr.v4;
+        size = sizeof(from_addr.v4);
+      } else {
+        /* IPv6 sender address */
+        struct sockaddr_in6 * x = (struct sockaddr_in6 *) &from;
+        src = &x->sin6_addr;
+        dst = &from_addr.v6;
+        size = sizeof(from_addr.v6);
+      }
+      memcpy(dst, src, size);
     }
 
 #ifdef DEBUG
@@ -535,8 +550,9 @@ olsr_input_hostemu(int fd, void *data __attribute__ ((unused)), unsigned int fla
   /* Extract size */
   if ((cc = recv(fd, (void *)&pcklen, 2, MSG_PEEK)) != 2) {     /* Win needs a cast */
     if (cc <= 0) {
-      fprintf(stderr, "Lost olsr_switch connection - exit!\n");
-      olsr_exit(__func__, EXIT_FAILURE);
+      char buf[1024];
+      snprintf(buf, sizeof(buf), "%s: Lost olsr_switch connection", __func__);
+      olsr_exit(buf, EXIT_FAILURE);
     }
     fprintf(stderr, "[hust-emu] error extracting size(%d) %s!\n", cc, strerror(errno));
     return;

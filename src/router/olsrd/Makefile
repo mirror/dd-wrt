@@ -1,32 +1,37 @@
-# The olsr.org Optimized Link-State Routing daemon(olsrd)
-# Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+# The olsr.org Optimized Link-State Routing daemon (olsrd)
+#
+# (c) by the OLSR project
+#
+# See our Git repository to find out who worked on this file
+# and thus is a copyright holder on it.
+#
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without 
-# modification, are permitted provided that the following conditions 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
 # are met:
 #
-# * Redistributions of source code must retain the above copyright 
+# * Redistributions of source code must retain the above copyright
 #   notice, this list of conditions and the following disclaimer.
-# * Redistributions in binary form must reproduce the above copyright 
-#   notice, this list of conditions and the following disclaimer in 
-#   the documentation and/or other materials provided with the 
+# * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in
+#   the documentation and/or other materials provided with the
 #   distribution.
-# * Neither the name of olsr.org, olsrd nor the names of its 
-#   contributors may be used to endorse or promote products derived 
+# * Neither the name of olsr.org, olsrd nor the names of its
+#   contributors may be used to endorse or promote products derived
 #   from this software without specific prior written permission.
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
-# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
-# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
-# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
-# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
-# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
 # Visit http://www.olsr.org for more information.
@@ -39,7 +44,7 @@
 # Please also write a new version to:
 # gui/win32/Main/Frontend.rc (line 71, around "CAPTION [...]")
 # gui/win32/Inst/installer.nsi (line 57, around "MessageBox MB_YESNO [...]")
-VERS =		0.9.0.3
+VERS =		0.9.6.2
 
 TOPDIR = $(shell pwd)
 INSTALLOVERWRITE ?=
@@ -219,15 +224,15 @@ rpm:
 
 # This is quite ugly but at least it works
 ifeq ($(OS),linux)
-SUBDIRS := arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo jsoninfo mdns mini nameservice p2pd pgraph pud quagga secure sgwdynspeed txtinfo watchdog
+SUBDIRS := arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo info jsoninfo mdns mini nameservice netjson p2pd pgraph pud quagga secure sgwdynspeed txtinfo watchdog
 else
 ifeq ($(OS),win32)
-SUBDIRS := dot_draw httpinfo jsoninfo mini pgraph secure txtinfo
+SUBDIRS := dot_draw httpinfo info jsoninfo mini netjson pgraph secure txtinfo
 else
 ifeq ($(OS),android)
-SUBDIRS := arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo jsoninfo mdns mini nameservice p2pd pgraph pud secure sgwdynspeed txtinfo watchdog
+SUBDIRS := arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo info jsoninfo mdns mini nameservice netjson p2pd pgraph secure sgwdynspeed txtinfo watchdog
 else
-SUBDIRS := dot_draw httpinfo jsoninfo mini nameservice pgraph secure txtinfo watchdog
+SUBDIRS := dot_draw httpinfo info jsoninfo mini nameservice netjson pgraph secure txtinfo watchdog
 endif
 endif
 endif
@@ -251,6 +256,9 @@ libs_uninstall uninstall_libs:
 .PHONY: doc doc_clean
 doc:
 		$(MAKECMDPREFIX)$(MAKECMD) -C doc OS=$(OS)
+
+doc-pdf:
+		$(MAKECMDPREFIX)$(MAKECMD) -C doc-pdf OS=$(OS)
 
 doc_clean:
 		$(MAKECMDPREFIX)$(MAKECMD) -C doc OS=$(OS) clean
@@ -331,16 +339,34 @@ httpinfo_install:
 httpinfo_uninstall:
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/httpinfo DESTDIR=$(DESTDIR) uninstall
 
-jsoninfo:
+info:
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/info
+
+info_clean:
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/info DESTDIR=$(DESTDIR) clean
+
+info_install:
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/info DESTDIR=$(DESTDIR) install
+
+info_uninstall:
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/info DESTDIR=$(DESTDIR) uninstall
+
+info_java:
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/info.java
+
+info_java_clean:
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/info.java DESTDIR=$(DESTDIR) clean
+
+jsoninfo: info
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/jsoninfo
 
-jsoninfo_clean:
+jsoninfo_clean: info_clean
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/jsoninfo DESTDIR=$(DESTDIR) clean
 
-jsoninfo_install:
+jsoninfo_install: info_install
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/jsoninfo DESTDIR=$(DESTDIR) install
 
-jsoninfo_uninstall:
+jsoninfo_uninstall: info_uninstall
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/jsoninfo DESTDIR=$(DESTDIR) uninstall
 
 mdns:
@@ -371,6 +397,18 @@ nameservice_install:
 
 nameservice_uninstall:
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/nameservice DESTDIR=$(DESTDIR) uninstall
+
+netjson: info
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/netjson
+
+netjson_clean: info_clean
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/netjson DESTDIR=$(DESTDIR) clean
+
+netjson_install: info_install
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/netjson DESTDIR=$(DESTDIR) install
+
+netjson_uninstall: info_uninstall
+		$(MAKECMDPREFIX)$(MAKECMD) -C lib/netjson DESTDIR=$(DESTDIR) uninstall
 
 p2pd:
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/p2pd
@@ -453,16 +491,16 @@ sgwdynspeed_install:
 sgwdynspeed_uninstall:
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/sgwdynspeed DESTDIR=$(DESTDIR) uninstall
 
-txtinfo:
+txtinfo: info
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/txtinfo
 
-txtinfo_clean:
+txtinfo_clean: info_clean
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/txtinfo DESTDIR=$(DESTDIR) clean
 
-txtinfo_install:
+txtinfo_install: info_install
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/txtinfo DESTDIR=$(DESTDIR) install
 
-txtinfo_uninstall:
+txtinfo_uninstall: info_uninstall
 		$(MAKECMDPREFIX)$(MAKECMD) -C lib/txtinfo DESTDIR=$(DESTDIR) uninstall
 
 watchdog:

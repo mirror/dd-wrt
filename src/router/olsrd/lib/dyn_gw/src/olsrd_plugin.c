@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,12 +45,12 @@
 
 #include "olsrd_plugin.h"
 #include "olsrd_dyn_gw.h"
+#include "olsr.h"
+#include "builddata.h"
+#include "olsrd_dyn_gw.h"
 #include <stdio.h>
 
-#define PLUGIN_NAME    "OLSRD dynamic gateway plugin"
-#define PLUGIN_VERSION "0.4"
-#define PLUGIN_AUTHOR   "Various artists"
-#define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION " by " PLUGIN_AUTHOR
+#define PLUGIN_NAME              "OLSRD dyn_gw plugin"
 #define PLUGIN_INTERFACE_VERSION 5
 
 /**
@@ -54,6 +58,7 @@
  */
 
 static void my_init(void) __attribute__ ((constructor));
+static void my_fini(void) __attribute__ ((destructor));
 
 /*
  * Defines the version of the plugin interface that is used
@@ -73,7 +78,16 @@ void
 my_init(void)
 {
   /* Print plugin info to stdout */
-  printf("%s\n", MOD_DESC);
+  olsr_printf(0, "%s (%s)\n", PLUGIN_NAME, git_descriptor);
+}
+
+/**
+ *Destructor
+ */
+void
+my_fini(void)
+{
+  olsrd_plugin_fini();
 }
 
 /*

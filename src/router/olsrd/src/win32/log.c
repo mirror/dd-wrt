@@ -1,7 +1,11 @@
-
 /*
  * The olsr.org Optimized Link-State Routing daemon (olsrd)
- * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,11 +45,14 @@
 
 #ifdef _WIN32
 
-#include "../log.h"
+#include "log.h"
 
 void
 olsr_openlog(const char *Id __attribute__ ((unused)))
 {
+}
+
+void olsr_closelog(void) {
 }
 
 void

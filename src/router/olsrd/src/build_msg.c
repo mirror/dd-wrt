@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -231,9 +235,9 @@ static void
 check_buffspace(int msgsize, int buffsize, const char *type)
 {
   if (msgsize > buffsize) {
-    OLSR_PRINTF(1, "%s build, outputbuffer to small(%d/%u)!\n", type, msgsize, buffsize);
-    olsr_syslog(OLSR_LOG_ERR, "%s build, outputbuffer to small(%d/%u)!\n", type, msgsize, buffsize);
-    olsr_exit(__func__, EXIT_FAILURE);
+    char buf[1024];
+    snprintf(buf, sizeof(buf), "%s: %s build, output buffer too small (%d/%u)", __func__, type, msgsize, buffsize);
+    olsr_exit(buf, EXIT_FAILURE);
   }
 }
 
@@ -1030,7 +1034,9 @@ __attribute__((unused))
 /**
  *IP version 4
  *
+ *@param h the list of HNAs
  *@param ifp the interface to send on
+ *@param is_zero_bw true when the HNA is a 'de-announcing zero-bandwidth' HNA
  *@return nada
  */
 static bool
@@ -1192,7 +1198,9 @@ __attribute__((unused))
 /**
  *IP version 6
  *
+ *@param h the list of HNAs
  *@param ifp the interface to send on
+ *@param is_zero_bw true when the HNA is a 'de-announcing zero-bandwidth' HNA
  *@return nada
  */
 static bool

@@ -1,8 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
- * IPv4 performance optimization (c) 2006, sven-ola(gmx.de)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +46,9 @@
 #ifndef _LIST_H
 #define _LIST_H
 
-#include "stddef.h"
+#include <stddef.h>
+#include "compiler.h"
+#include "defs.h"
 
 struct list_node {
   struct list_node *next;
@@ -64,7 +69,7 @@ void list_remove(struct list_node *);
  * Merge elements of list_head2 at the end of list_head1.
  * list_head2 will be left empty.
  */
-static inline void
+static INLINE void
 list_merge(struct list_node *list_head1, struct list_node *list_head2)
 {
   if (!list_is_empty(list_head2)) {
@@ -77,11 +82,11 @@ list_merge(struct list_node *list_head1, struct list_node *list_head2)
 }
 
 /*
- * Macro to define an inline function to map from a list_node offset back to the
+ * Macro to define an INLINE function to map from a list_node offset back to the
  * base of the datastructure. That way you save an extra data pointer.
  */
 #define LISTNODE2STRUCT(funcname, structname, listnodename) \
-static inline structname * funcname (struct list_node *ptr)\
+static INLINE structname * funcname (struct list_node *ptr)\
 {\
   return( \
     ptr ? \

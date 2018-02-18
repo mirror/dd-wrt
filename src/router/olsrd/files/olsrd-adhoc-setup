@@ -75,8 +75,8 @@ fi
 
 echo -n "Setting up ad-hoc networking: "
 
-# ifconfig down before setting ad-hoc mode because some chips require that
-/sbin/ifconfig $wlan down
+# link down before setting ad-hoc mode because some chips require that
+/sbin/ip link set $wlan down
 
 # disassociate from current BSSID in case an ad-hoc BSSID already stuck there
 /sbin/iwconfig $wlan ap $bssid
@@ -93,7 +93,7 @@ sleep 1
 /sbin/iwconfig $wlan modu auto  > /dev/null 2>&1
 /sbin/iwconfig $wlan commit     > /dev/null 2>&1
 
-/sbin/ifconfig $wlan up
+/sbin/ip link set $wlan up
 
 # some cards want to be configured after the interface is up
 sleep 5
@@ -113,7 +113,7 @@ echo -n "Setting up IP address: "
 # get MAC to generate hopefully unique IP address with, by using the last two
 # hex pairs as the last two hex pairs for the IP address, converting the hex
 # to decimal first.
-MAC=`/sbin/ifconfig | grep $wlan | sed 's|.*HWaddr ||'`
+MAC=`/sbin/ip address show $wlan | grep -i "link/ether" | awk '{ print $2 }'`
 MAC5=`echo $MAC | cut -d : -f 5`
 MAC6=`echo $MAC | cut -d : -f 6`
 ip3=`printf %d 0x$MAC5`
@@ -121,7 +121,7 @@ ip4=`printf %d 0x$MAC6`
 net=172.29
 ip=$net.$ip3.$ip4
 
-/sbin/ifconfig $wlan inet $ip broadcast $net.255.255
+/sbin/ip address replace $ip/16 broadcast $net.255.255 dev $wlan
 echo "done"
 
 echo "OLSR ad-hoc setup on $wlan using $essid on channel $channel with IP $ip"

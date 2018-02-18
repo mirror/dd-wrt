@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004-2009, the olsr.org team - see HISTORY file
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,20 +51,26 @@
 #include "net_os.h"
 #include "mpr_selector_set.h"
 #include "olsr_random.h"
+#include "common/avl.h"
 
 #include <sys/times.h>
 
 #include <unistd.h>
 #include <assert.h>
+#include <time.h>
+
+#ifdef __MACH__
+#include "mach/clock_gettime.h"
+#endif
 
 #ifdef _WIN32
 #define close(x) closesocket(x)
 #endif /* _WIN32 */
 
 /* Timer data, global. Externed in scheduler.h */
-uint32_t now_times;                    /* relative time compared to startup (in milliseconds */
-struct timeval first_tv;               /* timevalue during startup */
-struct timeval last_tv;                /* timevalue used for last olsr_times() calculation */
+uint32_t now_times;                    /* relative time compared to startup (in milliseconds) */
+struct timespec first_tv;              /* timevalue during startup */
+struct timespec last_tv;               /* timevalue used for last olsr_times() calculation */
 
 /* Hashed root of all timers */
 static struct list_node timer_wheel[TIMER_WHEEL_SLOTS];
@@ -74,8 +84,44 @@ static struct list_node socket_head = { &socket_head, &socket_head };
 
 /* Prototypes */
 static void walk_timers(uint32_t *);
+static void walk_timers_cleanup(void);
 static void poll_sockets(void);
 static uint32_t calc_jitter(unsigned int rel_time, uint8_t jitter_pct, unsigned int random_val);
+static void olsr_cleanup_timer(struct timer_entry *timer);
+
+struct avl_tree timer_cleanup_tree;
+
+struct timer_cleanup_entry {
+  struct avl_node avl;
+  struct timer_entry * timer;
+};
+
+/* static INLINE struct timer_cleanup_entry * node2timercleanup(struct avl_node *ptr) */
+AVLNODE2STRUCT(node2timercleanup, struct timer_cleanup_entry, avl);
+
+/**
+ * Loop over all timer cleanup entries and put the iterated entry in timer
+ */
+#define OLSR_FOR_ALL_TIMERS_CLEANUP(timer) \
+{ \
+  struct avl_node *timer_avl_node, *timer_avl_node_next; \
+  for (timer_avl_node = avl_walk_first(&timer_cleanup_tree); \
+  timer_avl_node; timer_avl_node = timer_avl_node_next) { \
+	  timer_avl_node_next = avl_walk_next(timer_avl_node); \
+    timer = node2timercleanup(timer_avl_node);
+#define OLSR_FOR_ALL_TIMER_CLEANUP_END(timer) }}
+
+static int avl_comp_timer(const void *entry1, const void *entry2) {
+  if (entry1 < entry2) {
+    return -1;
+  }
+
+  if (entry1 > entry2) {
+    return 1;
+  }
+
+  return 0;
+}
 
 /*
  * A wrapper around times(2). Note, that this function has some
@@ -84,38 +130,45 @@ static uint32_t calc_jitter(unsigned int rel_time, uint8_t jitter_pct, unsigned 
  * in kernel/sys.c and will only return an error if the tms_buf is
  * not writeable.
  */
-static uint32_t
+uint32_t
 olsr_times(void)
 {
-  struct timeval tv;
-  uint32_t t;
+  struct timespec tv;
 
-  if (gettimeofday(&tv, NULL) != 0) {
-    olsr_exit("OS clock is not working, have to shut down OLSR", 1);
+  if (clock_gettime(CLOCK_MONOTONIC, &tv) != 0) {
+    olsr_exit("OS clock is not working, have to shut down OLSR", EXIT_FAILURE);
   }
 
   /* test if time jumped backward or more than 60 seconds forward */
-  if (tv.tv_sec < last_tv.tv_sec || (tv.tv_sec == last_tv.tv_sec && tv.tv_usec < last_tv.tv_usec)
-      || tv.tv_sec - last_tv.tv_sec > 60) {
-    OLSR_PRINTF(1, "Time jump (%d.%06d to %d.%06d)\n",
-              (int32_t) (last_tv.tv_sec), (int32_t) (last_tv.tv_usec), (int32_t) (tv.tv_sec), (int32_t) (tv.tv_usec));
+  if ((tv.tv_sec < last_tv.tv_sec) //
+      || ((tv.tv_sec == last_tv.tv_sec) //
+          && tv.tv_nsec < last_tv.tv_nsec) //
+      || ((tv.tv_sec - last_tv.tv_sec) > 60)) {
+    uint64_t nsec;
 
-    t = (last_tv.tv_sec - first_tv.tv_sec) * 1000 + (last_tv.tv_usec - first_tv.tv_usec) / 1000;
-    t++;                        /* advance time by one millisecond */
+    OLSR_PRINTF(1, "Time jump (%ld.%09ld to %ld.%09ld)\n", //
+        (long int) last_tv.tv_sec,//
+        (long int) last_tv.tv_nsec,//
+        (long int) tv.tv_sec,//
+        (long int) tv.tv_nsec);
+
+    nsec = (last_tv.tv_sec - first_tv.tv_sec) * 1000000000 + (last_tv.tv_nsec - first_tv.tv_nsec);
+    nsec += 1000000; /* advance time by one millisecond */
 
     first_tv = tv;
-    first_tv.tv_sec -= (t / 1000);
-    first_tv.tv_usec -= ((t % 1000) * 1000);
+    first_tv.tv_sec -= (nsec / 1000000000);
+    first_tv.tv_nsec -= (nsec % 1000000000);
 
-    if (first_tv.tv_usec < 0) {
+    if (first_tv.tv_nsec < 0) {
       first_tv.tv_sec--;
-      first_tv.tv_usec += 1000000;
+      first_tv.tv_nsec += 1000000000;
     }
     last_tv = tv;
-    return t;
+    return (nsec / 1000000);
   }
+
   last_tv = tv;
-  return (tv.tv_sec - first_tv.tv_sec) * 1000 + (tv.tv_usec - first_tv.tv_usec) / 1000;
+  return (uint32_t)((tv.tv_sec - first_tv.tv_sec) * 1000 + (tv.tv_nsec - first_tv.tv_nsec) / 1000000);
 }
 
 /**
@@ -452,6 +505,24 @@ handle_fds(uint32_t next_interval)
   } OLSR_FOR_ALL_SOCKETS_END(entry);
 }
 
+typedef enum {
+  INIT, RUNNING, STOPPING, ENDED
+} state_t;
+
+static volatile state_t state = INIT;
+
+static bool olsr_scheduler_is_stopped(void) {
+  return ((state == INIT) || (state == ENDED));
+}
+
+void olsr_scheduler_stop(void) {
+  if (olsr_scheduler_is_stopped()) {
+    return;
+  }
+
+  state = STOPPING;
+}
+
 /**
  * Main scheduler event loop. Polls at every
  * sched_poll_interval and calls all functions
@@ -461,13 +532,13 @@ handle_fds(uint32_t next_interval)
  *
  * @return nada
  */
-void __attribute__ ((noreturn))
-olsr_scheduler(void)
+void olsr_scheduler(void)
 {
+  state = RUNNING;
   OLSR_PRINTF(1, "Scheduler started - polling every %d ms\n", (int)(olsr_cnf->pollrate*1000));
 
   /* Main scheduler loop */
-  while (true) {
+  while (state == RUNNING) {
     uint32_t next_interval;
 
     /*
@@ -480,11 +551,24 @@ olsr_scheduler(void)
     /* Read incoming data */
     poll_sockets();
 
+    if (state != RUNNING) {
+      break;
+    }
+
     /* Process timers */
     walk_timers(&timer_last_run);
+    walk_timers_cleanup();
+
+    if (state != RUNNING) {
+      break;
+    }
 
     /* Update */
     olsr_process_changes();
+
+    if (state != RUNNING) {
+      break;
+    }
 
     /* Check for changes in topology */
     if (link_changes) {
@@ -493,15 +577,16 @@ olsr_scheduler(void)
       link_changes = false;
     }
 
+    if (state != RUNNING) {
+      break;
+    }
+
     /* Read incoming data and handle it immediiately */
     handle_fds(next_interval);
-
-#ifdef _WIN32
-    if (olsr_win32_end_request) {
-      olsr_win32_end_flag = true;
-    }
-#endif /* _WIN32 */
   }
+  walk_timers_cleanup();
+
+  state = ENDED;
 }
 
 /**
@@ -521,7 +606,7 @@ calc_jitter(unsigned int rel_time, uint8_t jitter_pct, unsigned int random_val)
    * No jitter or, jitter larger than 99% does not make sense.
    * Also protect against overflows resulting from > 25 bit timers.
    */
-  if (jitter_pct == 0 || jitter_pct > 99 || rel_time > (1 << 24)) {
+  if (jitter_pct == 0 || jitter_pct > 99 || rel_time > (1u << 24)) {
     return GET_TIMESTAMP(rel_time);
   }
 
@@ -529,7 +614,7 @@ calc_jitter(unsigned int rel_time, uint8_t jitter_pct, unsigned int random_val)
    * Play some tricks to avoid overflows with integer arithmetic.
    */
   jitter_time = (jitter_pct * rel_time) / 100;
-  jitter_time = random_val / (1 + RAND_MAX / (jitter_time + 1));
+  jitter_time = random_val / (1 + OLSR_RANDOM_MAX / (jitter_time + 1));
 
   OLSR_PRINTF(3, "TIMER: jitter %u%% rel_time %ums to %ums\n", jitter_pct, rel_time, rel_time - jitter_time);
 
@@ -547,11 +632,13 @@ olsr_init_timers(void)
   OLSR_PRINTF(3, "Initializing scheduler.\n");
 
   /* Grab initial timestamp */
-  if (gettimeofday(&first_tv, NULL)) {
-    olsr_exit("OS clock is not working, have to shut down OLSR", 1);
+  if (clock_gettime(CLOCK_MONOTONIC, &first_tv)) {
+    olsr_exit("OS clock is not working, have to shut down OLSR", EXIT_FAILURE);
   }
   last_tv = first_tv;
   now_times = olsr_times();
+
+  avl_init(&timer_cleanup_tree, avl_comp_timer);
 
   for (idx = 0; idx < TIMER_WHEEL_SLOTS; idx++) {
     list_head_init(&timer_wheel[idx]);
@@ -562,7 +649,7 @@ olsr_init_timers(void)
    */
   timer_last_run = now_times;
 
-  /* Allocate a cookie for the block based memeory manager. */
+  /* Allocate a cookie for the block based memory manager. */
   timer_mem_cookie = olsr_alloc_cookie("timer_entry", OLSR_COOKIE_TYPE_MEMORY);
   olsr_cookie_set_memory_size(timer_mem_cookie, sizeof(struct timer_entry));
 }
@@ -601,12 +688,16 @@ walk_timers(uint32_t * last_run)
 
       /*
        * Dequeue and insert to a temporary list.
-       * We do this to avoid loosing our walking context when
+       * We do this to avoid losing our walking context when
        * multiple timers fire.
        */
       list_remove(timer_node);
       list_add_after(&tmp_head_node, timer_node);
       timers_walked++;
+
+      if (timer->timer_flags & OLSR_TIMER_REMOVED) {
+        continue;
+      }
 
       /* Ready to fire ? */
       if (TIMED_OUT(timer->timer_clock)) {
@@ -664,6 +755,16 @@ walk_timers(uint32_t * last_run)
   *last_run = now_times;
 }
 
+static void walk_timers_cleanup(void) {
+  struct timer_cleanup_entry * timer;
+
+  OLSR_FOR_ALL_TIMERS_CLEANUP(timer) {
+    olsr_cleanup_timer(timer->timer);
+    avl_delete(&timer_cleanup_tree, &timer->avl);
+    free(timer);
+  } OLSR_FOR_ALL_TIMER_CLEANUP_END(slot)
+}
+
 /**
  * Stop and delete all timers.
  */
@@ -671,16 +772,40 @@ void
 olsr_flush_timers(void)
 {
   struct list_node *timer_head_node;
+  struct list_node tmp_head_node;
   unsigned int wheel_slot = 0;
+
+  list_head_init(&tmp_head_node);
+
+  walk_timers_cleanup();
 
   for (wheel_slot = 0; wheel_slot < TIMER_WHEEL_SLOTS; wheel_slot++) {
     timer_head_node = &timer_wheel[wheel_slot & TIMER_WHEEL_MASK];
 
-    /* Kill all entries hanging off this hash bucket. */
+    /* stop all entries hanging off this hash bucket. */
     while (!list_is_empty(timer_head_node)) {
-      olsr_stop_timer(list2timer(timer_head_node->next));
+      /* the top element */
+      struct list_node *const timer_node = timer_head_node->next;
+      struct timer_entry *const timer = list2timer(timer_node);
+
+      /*
+       * Dequeue and insert to a temporary list.
+       * We do this to avoid losing our walking context when
+       * multiple timers fire.
+       */
+      list_remove(timer_node);
+      list_add_after(&tmp_head_node, timer_node);
+
+      olsr_stop_timer(timer);
     }
   }
+
+  /*
+   * Now merge the temporary list back to the old bucket.
+   */
+  list_merge(timer_head_node, &tmp_head_node);
+
+  walk_timers_cleanup();
 }
 
 /**
@@ -839,7 +964,8 @@ void
 olsr_stop_timer(struct timer_entry *timer)
 {
   /* It's okay to get a NULL here */
-  if (!timer) {
+  if (!timer //
+      || !(timer->timer_flags & OLSR_TIMER_RUNNING)) {
     return;
   }
 
@@ -849,11 +975,45 @@ olsr_stop_timer(struct timer_entry *timer)
              timer->timer_cookie->ci_name, timer, timer->timer_cb_context);
 
 
+  timer->timer_flags &= ~OLSR_TIMER_RUNNING;
+  timer->timer_flags |= OLSR_TIMER_REMOVED;
+
+  {
+    struct timer_cleanup_entry * node = olsr_malloc(sizeof(struct timer_cleanup_entry), "timer cleanup entry");
+    node->avl.key = timer;
+    node->timer = timer;
+    if (avl_insert(&timer_cleanup_tree, &node->avl, AVL_DUP_NO) == -1) {
+      /* duplicate */
+      free(node);
+    }
+  }
+}
+
+/**
+ * Clean up a timer.
+ *
+ * @param timer the timer_entry that shall be cleaned up
+ */
+static void
+olsr_cleanup_timer(struct timer_entry *timer)
+{
+  /* It's okay to get a NULL here */
+  if (!timer //
+      || !(timer->timer_flags & OLSR_TIMER_REMOVED)) {
+    return;
+  }
+
+  assert(timer->timer_cookie);     /* we want timer cookies everywhere */
+
+  OLSR_PRINTF(7, "TIMER: cleanup %s timer %p, ctx %p\n",
+             timer->timer_cookie->ci_name, timer, timer->timer_cb_context);
+
+
   /*
    * Carve out of the existing wheel_slot and free.
    */
   list_remove(&timer->timer_list);
-  timer->timer_flags &= ~OLSR_TIMER_RUNNING;
+  timer->timer_flags &= ~OLSR_TIMER_REMOVED;
   olsr_cookie_usage_decr(timer->timer_cookie->ci_id);
 
   olsr_cookie_free(timer_mem_cookie, timer);

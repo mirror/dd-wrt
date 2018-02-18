@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2012 Fox-IT B.V. <opensource@fox-it.com>
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,6 +67,7 @@
 #include "olsr.h"
 #include "log.h"
 #include "fpm.h"
+#include "defs.h"
 
 
 // Static values for testing
@@ -70,12 +75,12 @@
 
 #if !defined(CONFIG_LIBNL20) && !defined(CONFIG_LIBNL30)
 #define nl_sock nl_handle
-static inline struct nl_handle *nl_socket_alloc(void)
+static INLINE struct nl_handle *nl_socket_alloc(void)
 {
 	return nl_handle_alloc();
 }
 
-static inline void nl_socket_free(struct nl_sock *sock)
+static INLINE void nl_socket_free(struct nl_sock *sock)
 {
 	nl_handle_destroy(sock);
 }
@@ -253,8 +258,7 @@ static void nl80211_link_info_for_interface(struct interface_olsr *iface, struct
 	genlmsg_put(request_message, NL_AUTO_PID, NL_AUTO_SEQ, netlink_id, 0, NLM_F_DUMP, NL80211_CMD_GET_STATION, 0);
 
 	if (nla_put_u32(request_message, NL80211_ATTR_IFINDEX, iface->if_index) == -1) {
-		olsr_syslog(OLSR_LOG_ERR, "Failed to add interface index to netlink message");
-		exit(1);
+		olsr_exit("Failed to add interface index to netlink message", 1);
 	}
 
 #ifdef NL_DEBUG
@@ -266,8 +270,7 @@ static void nl80211_link_info_for_interface(struct interface_olsr *iface, struct
 	}
 
 	if (nl_cb_set(request_cb, NL_CB_VALID, NL_CB_CUSTOM, parse_nl80211_message, &link_context) != 0) {
-		olsr_syslog(OLSR_LOG_ERR, "Failed to set netlink message callback");
-		exit(1);
+		olsr_exit("Failed to set netlink message callback", 1);
 	}
 
 	nl_cb_err(request_cb, NL_CB_CUSTOM, error_handler, &finish);
@@ -275,8 +278,7 @@ static void nl80211_link_info_for_interface(struct interface_olsr *iface, struct
 	nl_cb_set(request_cb, NL_CB_ACK, NL_CB_CUSTOM, ack_handler, &finish);
 
 	if (nl_send_auto_complete(gen_netlink_socket, request_message) < 0) {
-		olsr_syslog(OLSR_LOG_ERR, "Failed sending the request message with netlink");
-		exit(1);
+		olsr_exit("Failed sending the request message with netlink", 1);
 	}
 
 	while (! finish) {

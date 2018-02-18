@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,11 +56,9 @@
 #include "olsr.h"
 #include "olsrd_plugin.h"
 #include "olsrd_dot_draw.h"
+#include "builddata.h"
 
-#define PLUGIN_NAME    "OLSRD dot draw plugin"
-#define PLUGIN_VERSION "0.3"
-#define PLUGIN_AUTHOR   "Andreas Tonnesen"
-#define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION " by " PLUGIN_AUTHOR
+#define PLUGIN_NAME              "OLSRD dot_draw plugin"
 #define PLUGIN_INTERFACE_VERSION 5
 
 union olsr_ip_addr ipc_accept_ip;
@@ -73,7 +75,7 @@ static void
 my_init(void)
 {
   /* Print plugin info to stdout */
-  printf("%s\n", MOD_DESC);
+  olsr_printf(0, "%s (%s)\n", PLUGIN_NAME, git_descriptor);
 
   /* defaults for parameters */
   ipc_port = 2004;

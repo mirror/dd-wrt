@@ -1,35 +1,40 @@
 %{
 
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright 
+ * * Redistributions of source code must retain the above copyright
  *   notice, this list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above copyright
- *   notice, this list of conditions and the following disclaimer in 
- *   the documentation and/or other materials provided with the 
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
  *   distribution.
- * * Neither the name of olsr.org, olsrd nor the names of its 
- *   contributors may be used to endorse or promote products derived 
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
  *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
  * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
  * Visit http://www.olsr.org for more information.
@@ -40,15 +45,14 @@
  *
  */
 
-
 #include "olsrd_conf.h"
-#include "../defs.h"
-#include "../ipcalc.h"
-#include "../net_olsr.h"
-#include "../link_set.h"
-#include "../olsr.h"
-#include "../egressTypes.h"
-#include "../gateway.h"
+#include "defs.h"
+#include "ipcalc.h"
+#include "net_olsr.h"
+#include "link_set.h"
+#include "olsr.h"
+#include "egressTypes.h"
+#include "gateway.h"
 
 #include <stddef.h>
 #include <stdio.h>
@@ -222,6 +226,7 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_SMART_GW_ALWAYS_REMOVE_SERVER_TUNNEL
 %token TOK_SMART_GW_USE_COUNT
 %token TOK_SMART_GW_TAKEDOWN_PERCENTAGE
+%token TOK_SMART_GW_INSTANCE_ID
 %token TOK_SMART_GW_POLICYROUTING_SCRIPT
 %token TOK_SMART_GW_EGRESS_IFS
 %token TOK_SMART_GW_EGRESS_FILE
@@ -237,6 +242,7 @@ static int add_ipv6_addr(YYSTYPE ipaddr_arg, YYSTYPE prefixlen_arg)
 %token TOK_SMART_GW_WEIGHT_EXITLINK_DOWN
 %token TOK_SMART_GW_WEIGHT_ETX
 %token TOK_SMART_GW_DIVIDER_ETX
+%token TOK_SMART_GW_MAX_COST_MAX_ETX
 %token TOK_SMART_GW_UPLINK
 %token TOK_SMART_GW_UPLINK_NAT
 %token TOK_SMART_GW_SPEED
@@ -320,6 +326,7 @@ stmt:       idebug
           | bsmart_gw_always_remove_server_tunnel
           | ismart_gw_use_count
           | ismart_gw_takedown_percentage
+          | ssmart_gw_instance_id
           | ssmart_gw_policyrouting_script
           | ssmart_gw_egress_file
           | ismart_gw_egress_file_period
@@ -1300,6 +1307,7 @@ alock_file: TOK_LOCK_FILE TOK_STRING
 ;
 alq_plugin: TOK_LQ_PLUGIN TOK_STRING
 {
+  if (olsr_cnf->lq_algorithm) free(olsr_cnf->lq_algorithm);
   olsr_cnf->lq_algorithm = $2->string;
   PARSER_DEBUG_PRINTF("LQ Algorithm: %s\n", $2->string);
   free($2);
@@ -1362,9 +1370,19 @@ ismart_gw_takedown_percentage: TOK_SMART_GW_TAKEDOWN_PERCENTAGE TOK_INTEGER
 }
 ;
 
+ssmart_gw_instance_id: TOK_SMART_GW_INSTANCE_ID TOK_STRING
+{
+  PARSER_DEBUG_PRINTF("Smart gateway instance id: %s\n", $2->string);
+  if (olsr_cnf->smart_gw_instance_id) free(olsr_cnf->smart_gw_instance_id);
+  olsr_cnf->smart_gw_instance_id = $2->string;
+  free($2);
+}
+;
+
 ssmart_gw_policyrouting_script: TOK_SMART_GW_POLICYROUTING_SCRIPT TOK_STRING
 {
   PARSER_DEBUG_PRINTF("Smart gateway policy routing script: %s\n", $2->string);
+  if (olsr_cnf->smart_gw_policyrouting_script) free(olsr_cnf->smart_gw_policyrouting_script);
   olsr_cnf->smart_gw_policyrouting_script = $2->string;
   free($2);
 }
@@ -1431,7 +1449,8 @@ sgw_egress_if: TOK_STRING
       }
       memset(in, 0, sizeof(*in));
 
-      in->name = str;
+      in->name = strdup(str);
+      free ($1->string);
     }
 
     last = olsr_cnf->smart_gw_egress_interfaces;
@@ -1453,6 +1472,7 @@ sgw_egress_if: TOK_STRING
 ssmart_gw_egress_file: TOK_SMART_GW_EGRESS_FILE TOK_STRING
 {
   PARSER_DEBUG_PRINTF("Smart gateway egress file: %s\n", $2->string);
+  if (olsr_cnf->smart_gw_egress_file) free(olsr_cnf->smart_gw_egress_file);
   olsr_cnf->smart_gw_egress_file = $2->string;
   free($2);
 }
@@ -1469,6 +1489,7 @@ ismart_gw_egress_file_period: TOK_SMART_GW_EGRESS_FILE_PERIOD TOK_INTEGER
 ssmart_gw_status_file: TOK_SMART_GW_STATUS_FILE TOK_STRING
 {
   PARSER_DEBUG_PRINTF("Smart gateway status file: %s\n", $2->string);
+  if (olsr_cnf->smart_gw_status_file) free(olsr_cnf->smart_gw_status_file);
   olsr_cnf->smart_gw_status_file = $2->string;
   free($2);
 }
@@ -1550,6 +1571,14 @@ asmart_gw_divider_etx: TOK_SMART_GW_DIVIDER_ETX TOK_INTEGER
 {
   PARSER_DEBUG_PRINTF("Smart gateway ETX divider: %d\n", $2->integer);
   olsr_cnf->smart_gw_divider_etx = $2->integer;
+  free($2);
+}
+;
+
+asmart_gw_divider_etx: TOK_SMART_GW_MAX_COST_MAX_ETX TOK_INTEGER
+{
+  PARSER_DEBUG_PRINTF("Smart gateway max cost max ETX: %d\n", $2->integer);
+  olsr_cnf->smart_gw_path_max_cost_etx_max = $2->integer;
   free($2);
 }
 ;
@@ -1716,6 +1745,7 @@ plblock: TOK_PLUGIN TOK_STRING
 plparam: TOK_PLPARAM TOK_STRING TOK_STRING
 {
   struct plugin_param *pp = malloc(sizeof(*pp));
+  char *p;
   
   if (pp == NULL) {
     fprintf(stderr, "Out of memory(ADD PP)\n");
@@ -1726,6 +1756,11 @@ plparam: TOK_PLPARAM TOK_STRING TOK_STRING
   
   pp->key = $2->string;
   pp->value = $3->string;
+
+  /* Lower-case the key */
+  for (p = pp->key; *p; p++) {
+    *p = tolower(*p);
+  }
 
   /* Queue */
   pp->next = olsr_cnf->plugins->params;

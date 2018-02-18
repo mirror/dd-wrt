@@ -1,7 +1,11 @@
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
- * Copyright (c) 2007, Sven-Ola for the policy routing stuff
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -117,31 +121,33 @@ static void netlink_process_link(struct nlmsghdr *h)
   struct interface_olsr *iface;
   struct olsr_if *oif;
   char namebuffer[IF_NAMESIZE];
+  char * ifaceName = NULL;
+  bool up;
 
   iface = if_ifwithindex(ifi->ifi_index);
-  oif = NULL;
 
-  if (iface == NULL && (ifi->ifi_flags & IFF_UP) == IFF_UP) {
-    if (if_indextoname(ifi->ifi_index, namebuffer)) {
-      if ((oif = olsrif_ifwithname(namebuffer)) != NULL) {
-        /* try to take interface up, will trigger ifchange */
-        chk_if_up(oif, 3);
-      }
-    }
+  if (!iface) {
+    ifaceName = if_indextoname(ifi->ifi_index, namebuffer);
+  } else {
+    ifaceName = iface->int_name;
   }
-  else if (iface != NULL && (ifi->ifi_flags & IFF_UP) == 0) {
+
+  oif = ifaceName ? olsrif_ifwithname(ifaceName) : NULL;
+  up = (getInterfaceLinkState(ifaceName) != LINKSTATE_DOWN) && ((ifi->ifi_flags & IFF_UP) != 0);
+
+  if (!iface && up) {
+    if (oif) {
+      /* try to take interface up, will trigger ifchange */
+      chk_if_up(oif, 3);
+    }
+  } else if (iface && !up) {
     /* try to take interface down, will trigger ifchange */
     olsr_remove_interface(iface->olsr_if);
   }
 
-  if (iface == NULL && oif == NULL) {
+  if (!iface && !oif) {
     /* this is not an OLSR interface */
-    if ((ifi->ifi_flags & IFF_UP) != 0) {
-      olsr_trigger_ifchange(ifi->ifi_index, NULL, IFCHG_IF_ADD);
-    }
-    else if ((ifi->ifi_flags & IFF_UP) == 0){
-      olsr_trigger_ifchange(ifi->ifi_index, NULL, IFCHG_IF_REMOVE);
-    }
+    olsr_trigger_ifchange(ifi->ifi_index, NULL, up ? IFCHG_IF_ADD : IFCHG_IF_REMOVE);
   }
 }
 

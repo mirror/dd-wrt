@@ -1,14 +1,45 @@
 /*
- * OLSRd Quagga plugin
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
  *
- * Copyright (C) 2006-2008 Immo 'FaUl' Wehrenberg <immo@chaostreff-dortmund.de>
- * Copyright (C) 2007-2013 Vasilis Tsiligiannis <acinonyxs@yahoo.gr>
+ * (c) by the OLSR project
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation or - at your option - under
- * the terms of the GNU General Public Licence version 2 but can be
- * linked to any BSD-Licenced Software with public available sourcecode
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
  *
  */
 
@@ -33,8 +64,8 @@ zebra_init(void)
 {
 
   memset(&zebra, 0, sizeof zebra);
-  zebra.sockpath = olsr_malloc(sizeof ZEBRA_SOCKPATH  + 1, "QUAGGA: New socket path");
-  strscpy(zebra.sockpath, ZEBRA_SOCKPATH, sizeof ZEBRA_SOCKPATH);
+  zebra.sockpath = olsr_malloc(sizeof (ZEBRA_SOCKPATH), "QUAGGA: New socket path");
+  strscpy(zebra.sockpath, ZEBRA_SOCKPATH, sizeof (ZEBRA_SOCKPATH));
 
 }
 
@@ -171,7 +202,7 @@ zebra_redistribute(uint16_t cmd)
   for (type = 0; type < ZEBRA_ROUTE_MAX; type++)
     if (zebra.redistribute[type]) {
       if (zclient_write(zpacket_redistribute(cmd, type)) < 0)
-        olsr_exit("(QUAGGA) Could not write redistribute packet!", EXIT_FAILURE);
+        olsr_exit("QUAGGA: Could not write redistribute packet", EXIT_FAILURE);
     }
 
 }
@@ -181,7 +212,7 @@ zebra_hello(uint16_t cmd)
 {
 
   if (zclient_write(zpacket_redistribute(cmd, ZEBRA_ROUTE_OLSR)) < 0)
-    olsr_exit("(QUAGGA) Could not write hello packet!", EXIT_FAILURE);
+    olsr_exit("QUAGGA: Could not write hello packet", EXIT_FAILURE);
 
 }
 

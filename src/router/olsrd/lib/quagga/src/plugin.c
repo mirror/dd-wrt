@@ -1,14 +1,45 @@
 /*
- * OLSRd Quagga plugin
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
  *
- * Copyright (C) 2006-2008 Immo 'FaUl' Wehrenberg <immo@chaostreff-dortmund.de>
- * Copyright (C) 2007-2012 Vasilis Tsiligiannis <acinonyxs@yahoo.gr>
+ * (c) by the OLSR project
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation or - at your option - under
- * the terms of the GNU General Public Licence version 2 but can be
- * linked to any BSD-Licenced Software with public available sourcecode
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
  *
  */
 
@@ -29,21 +60,7 @@
 #include "packet.h"
 #include "plugin.h"
 
-static void *my_realloc(void *, size_t, const char *);
-
-static void
-*my_realloc(void *buf, size_t s, const char *c)
-{
-
-  buf = realloc(buf, s);
-  if (!buf) {
-    OLSR_PRINTF(1, "(QUAGGA) Out of memory: %s!\n", strerror(errno));
-    olsr_syslog(OLSR_LOG_ERR, "(QUAGGA) Out of memory!\n");
-    olsr_exit(c, EXIT_FAILURE);
-  }
-
-  return buf;
-}
+#include <stdbool.h>
 
 int
 zplugin_redistribute(const char *value, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
@@ -54,7 +71,8 @@ zplugin_redistribute(const char *value, void *data __attribute__ ((unused)), set
   };
   unsigned int i;
 
-  for (i = 0; i < ARRAYSIZE(zroute_types) && i < ZEBRA_ROUTE_MAX; i++) {
+  unsigned int max = MIN(ARRAYSIZE(zroute_types), ZEBRA_ROUTE_MAX);
+  for (i = 0; i < max; i++) {
     if (!strcmp(value, zroute_types[i]))
       zebra.redistribute[i] = 1;
   }
@@ -103,7 +121,7 @@ zplugin_distance(const char *value, void *data __attribute__ ((unused)), set_plu
 int
 zplugin_localpref(const char *value, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
 {
-  int b;
+  bool b;
 
   if (set_plugin_boolean(value, &b, addon))
     return 1;
@@ -122,7 +140,7 @@ zplugin_sockpath(const char *value, void *data __attribute__ ((unused)), set_plu
   if (set_plugin_string(value, &sockpath, addon))
     return 1;
   len = strlen(sockpath) + 1;
-  zebra.sockpath = my_realloc(zebra.sockpath, len, "QUAGGA: Grow socket path");
+  zebra.sockpath = olsr_realloc(zebra.sockpath, len, "QUAGGA: grow socket path");
   memcpy(zebra.sockpath, sockpath, len);
 
   return 0;

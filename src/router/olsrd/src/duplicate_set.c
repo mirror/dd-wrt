@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2008 Henning Rogge <rogge@fgan.de>
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -172,7 +176,7 @@ olsr_message_is_duplicate(union olsr_message *m)
 
   entry->too_low_counter = 0;
   if (diff <= 0) {
-    uint32_t bitmask = 1 << ((uint32_t) (-diff));
+    uint32_t bitmask = 1u << ((uint32_t) (-diff));
 
     if ((entry->array & bitmask) != 0) {
       OLSR_PRINTF(9, "blocked 0x%x (diff=%d,mask=%08x) from %s\n", seqnr, diff, entry->array, olsr_ip_to_string(&buf, mainIp));

@@ -95,6 +95,12 @@ define Package/olsrd-stable-git-mod-nameservice
   TITLE:=Lightweight hostname resolver plugin
 endef
 
+define Package/olsrd-stable-git-mod-netjson
+  $(call Package/olsrd-stable-git/template)
+  DEPENDS:=olsrd-stable-git
+  TITLE:=netjson output information plugin
+endef
+
 define Package/olsrd-stable-git-mod-p2pd
   $(call Package/olsrd-stable-git/template)
   DEPENDS:=olsrd-stable-git
@@ -135,7 +141,7 @@ MAKE_FLAGS+= \
 	DESTDIR="$(PKG_INSTALL_DIR)" \
 	STRIP="true" \
 	INSTALL_LIB="true" \
-	SUBDIRS="arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo jsoninfo mdns nameservice quagga secure txtinfo watchdog"
+	SUBDIRS="arprefresh bmf dot_draw dyn_gw dyn_gw_plain httpinfo jsoninfo mdns nameservice netjson quagga secure txtinfo watchdog"
 
 define Build/Compile
 	$(call Build/Compile/Default,clean)
@@ -203,6 +209,11 @@ define Package/olsrd-stable-git-mod-nameservice/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/lib/nameservice/olsrd_nameservice.so.* $(1)/usr/lib/
 endef
 
+define Package/olsrd-stable-git-mod-netjson/install
+	$(INSTALL_DIR) $(1)/usr/lib
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/lib/netjson/olsrd_netjson.so.* $(1)/usr/lib/
+endef
+
 define Package/olsrd-stable-git-mod-quagga/install
 	$(INSTALL_DIR) $(1)/usr/lib
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/lib/quagga/olsrd_quagga.so.* $(1)/usr/lib/
@@ -235,6 +246,7 @@ $(eval $(call BuildPackage,olsrd-stable-git-mod-httpinfo))
 $(eval $(call BuildPackage,olsrd-stable-git-mod-jsoninfo))
 $(eval $(call BuildPackage,olsrd-stable-git-mod-mdns))
 $(eval $(call BuildPackage,olsrd-stable-git-mod-nameservice))
+$(eval $(call BuildPackage,olsrd-stable-git-mod-netjson))
 $(eval $(call BuildPackage,olsrd-stable-git-mod-quagga))
 $(eval $(call BuildPackage,olsrd-stable-git-mod-secure))
 $(eval $(call BuildPackage,olsrd-stable-git-mod-txtinfo))

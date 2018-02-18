@@ -1,6 +1,11 @@
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,29 +47,20 @@
  * Dynamic linked library for the olsr.org olsr daemon
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-
 #include "olsrd_plugin.h"
+#include "info/olsrd_info.h"
 #include "olsrd_jsoninfo.h"
-#include "defs.h"
+#include "olsr.h"
+#include "builddata.h"
 
-#define PLUGIN_NAME    "JSON info and dyn_gw plugin"
-#define PLUGIN_VERSION "0.0"
-#define PLUGIN_AUTHOR   "Hans-Christoph Steiner"
-#define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION " by " PLUGIN_AUTHOR
+#define PLUGIN_NAME              "JSONINFO"
+#define PLUGIN_TITLE             "OLSRD jsoninfo plugin"
 #define PLUGIN_INTERFACE_VERSION 5
 
-union olsr_ip_addr jsoninfo_accept_ip;
-union olsr_ip_addr jsoninfo_listen_ip;
-int ipc_port;
-int nompr;
-bool http_headers;
-int jsoninfo_ipv6_only;
+info_plugin_functions_t functions;
+info_plugin_config_t config;
+char uuidfile[FILENAME_MAX];
+bool pretty = false;
 
 static void my_init(void) __attribute__ ((constructor));
 static void my_fini(void) __attribute__ ((destructor));
@@ -74,23 +70,10 @@ static void my_fini(void) __attribute__ ((destructor));
  */
 static void my_init(void) {
   /* Print plugin info to stdout */
-  printf("%s\n", MOD_DESC);
+  olsr_printf(0, "%s (%s)\n", PLUGIN_TITLE, git_descriptor);
 
-  /* defaults for parameters */
-  ipc_port = 9090;
-  http_headers = false;
-  jsoninfo_ipv6_only = false;
-
-  if (olsr_cnf->ip_version == AF_INET) {
-    jsoninfo_accept_ip.v4.s_addr = htonl(INADDR_LOOPBACK);
-    jsoninfo_listen_ip.v4.s_addr = htonl(INADDR_ANY);
-  } else {
-    jsoninfo_accept_ip.v6 = in6addr_loopback;
-    jsoninfo_listen_ip.v6 = in6addr_any;
-  }
-
-  /* highlite neighbours by default */
-  nompr = 0;
+  info_plugin_config_init(&config, 9090);
+  memset(uuidfile, 0, sizeof(uuidfile));
 }
 
 /**
@@ -106,36 +89,60 @@ static void my_fini(void) {
   olsr_plugin_exit();
 }
 
+/**
+ *Do initialization here
+ *
+ *This function is called by the my_init
+ *function in uolsrd_plugin.c
+ */
+int olsrd_plugin_init(void) {
+  memset(&functions, 0, sizeof(functions));
+
+  functions.supportsCompositeCommands = true;
+  functions.init = plugin_init;
+  functions.supported_commands_mask = get_supported_commands_mask;
+  functions.is_command = isCommand;
+  functions.cache_timeout = cache_timeout_generic;
+  functions.determine_mime_type = determine_mime_type;
+  functions.output_start = output_start;
+  functions.output_end = output_end;
+  functions.output_error = output_error;
+
+  functions.neighbors = ipc_print_neighbors;
+  functions.links = ipc_print_links;
+  functions.routes = ipc_print_routes;
+  functions.topology = ipc_print_topology;
+  functions.hna = ipc_print_hna;
+  functions.mid = ipc_print_mid;
+  functions.gateways = ipc_print_gateways;
+  functions.sgw = ipc_print_sgw;
+  functions.pudPosition = ipc_print_pud_position;
+  functions.version = ipc_print_version;
+  functions.olsrd_conf = ipc_print_olsrd_conf;
+  functions.interfaces = ipc_print_interfaces;
+  functions.twohop = ipc_print_twohop;
+  functions.config = ipc_print_config;
+  functions.plugins = ipc_print_plugins;
+
+  return info_plugin_init(PLUGIN_NAME, &functions, &config);
+}
+
+/**
+ * destructor - called at unload
+ */
+void olsr_plugin_exit(void) {
+  info_plugin_exit();
+}
+
 int olsrd_plugin_interface_version(void) {
   return PLUGIN_INTERFACE_VERSION;
 }
 
-static int store_string(const char *value, void *data, set_plugin_parameter_addon addon __attribute__ ((unused))) {
-  char *str = data;
-  snprintf(str, FILENAME_MAX, "%s", value);
-  return 0;
-}
-
-static int store_boolean(const char *value, void *data, set_plugin_parameter_addon addon __attribute__ ((unused))) {
-  bool *dest = data;
-  if (strcmp(value, "yes") == 0)
-    *dest = true;
-  else if (strcmp(value, "no") == 0)
-    *dest = false;
-  else
-    return 1; //error
-
-  return 0;
-}
-
 static const struct olsrd_plugin_parameters plugin_parameters[] = { //
     //
-        { .name = "port", .set_plugin_parameter = &set_plugin_port, .data = &ipc_port }, //
-        { .name = "accept", .set_plugin_parameter = &set_plugin_ipaddress, .data = &jsoninfo_accept_ip }, //
-        { .name = "listen", .set_plugin_parameter = &set_plugin_ipaddress, .data = &jsoninfo_listen_ip }, //
-        { .name = "uuidfile", .set_plugin_parameter = &store_string, .data = uuidfile }, //
-        { .name = "httpheaders", .set_plugin_parameter = &store_boolean, .data = &http_headers }, //
-        { .name = "ipv6only", .set_plugin_parameter = &set_plugin_boolean, .data = &jsoninfo_ipv6_only } //
+        INFO_PLUGIN_CONFIG_PLUGIN_PARAMETERS(config), //
+        { .name = "uuidfile", .set_plugin_parameter = &set_plugin_string, .data = uuidfile, .addon = { .ui = FILENAME_MAX - 1 } }, //
+        { .name = "pretty", .set_plugin_parameter = set_plugin_boolean, .data = &pretty, .addon = { .pc = NULL } } //
     };
 
 void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size) {

@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,11 +63,13 @@ struct conf_token {
 #define DEFAULT_STR(val) \
 (((!defcnf) && ((*((uint8_t *)(&cnfi->val)))==0))?" (d)":"")
 
+bool loadConfig(int *argc, char *argv[]);
+
 void set_default_cnf(struct olsrd_config *, char * configuration_file);
 
-void set_derived_cnf(struct olsrd_config * olsr_cnf);
+void ip_prefix_list_clear(struct ip_prefix_list **list);
 
-char * olsrd_get_default_lockfile(struct olsrd_config *cnf);
+void set_derived_cnf(struct olsrd_config * olsr_cnf);
 
 #endif /* _OLSRD_CONF_H */
 
