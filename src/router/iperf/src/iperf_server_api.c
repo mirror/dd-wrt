@@ -40,7 +40,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <pthread.h>
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
@@ -57,7 +56,6 @@
 #include "timer.h"
 #include "net.h"
 #include "units.h"
-#include "tcp_window_size.h"
 #include "iperf_util.h"
 #include "iperf_locale.h"
 
@@ -224,71 +222,6 @@ iperf_handle_message_server(struct iperf_test *test)
     return 0;
 }
 
-/* XXX: This function is not used anymore */
-void
-iperf_test_reset(struct iperf_test *test)
-{
-    struct iperf_stream *sp;
-
-    close(test->ctrl_sck);
-
-    /* Free streams */
-    while (!SLIST_EMPTY(&test->streams)) {
-        sp = SLIST_FIRST(&test->streams);
-        SLIST_REMOVE_HEAD(&test->streams, streams);
-        iperf_free_stream(sp);
-    }
-    if (test->timer != NULL) {
-	tmr_cancel(test->timer);
-	test->timer = NULL;
-    }
-    if (test->stats_timer != NULL) {
-	tmr_cancel(test->stats_timer);
-	test->stats_timer = NULL;
-    }
-    if (test->reporter_timer != NULL) {
-	tmr_cancel(test->reporter_timer);
-	test->reporter_timer = NULL;
-    }
-    test->done = 0;
-
-    SLIST_INIT(&test->streams);
-
-    test->role = 's';
-    set_protocol(test, Ptcp);
-    test->omit = OMIT;
-    test->duration = DURATION;
-    test->diskfile_name = (char*) 0;
-    test->affinity = -1;
-    test->server_affinity = -1;
-    test->title = NULL;
-    test->congestion = NULL;
-    test->state = 0;
-    test->server_hostname = NULL;
-
-    test->ctrl_sck = -1;
-    test->prot_listener = -1;
-
-    test->bytes_sent = 0;
-
-    test->reverse = 0;
-    test->sender = 0;
-    test->sender_has_retransmits = 0;
-    test->no_delay = 0;
-
-    FD_ZERO(&test->read_set);
-    FD_ZERO(&test->write_set);
-    FD_SET(test->listener, &test->read_set);
-    test->max_fd = test->listener;
-    
-    test->num_streams = 1;
-    test->settings->socket_bufsize = 0;
-    test->settings->blksize = DEFAULT_TCP_BLKSIZE;
-    test->settings->rate = 0;
-    test->settings->mss = 0;
-    memset(test->cookie, 0, COOKIE_SIZE); 
-}
-
 static void
 server_timer_proc(TimerClientData client_data, struct timeval *nowP)
 {
@@ -453,6 +386,9 @@ int
 iperf_run_server(struct iperf_test *test)
 {
     int result, s, streams_accepted;
+#if defined(HAVE_TCP_CONGESTION)
+    int saved_errno;
+#endif /* HAVE_TCP_CONGESTION */
     fd_set read_set, write_set;
     struct iperf_stream *sp;
     struct timeval now;
@@ -543,8 +479,10 @@ iperf_run_server(struct iperf_test *test)
 				    warning("TCP congestion control algorithm not supported");
 				}
 				else {
+				    saved_errno = errno;
 				    close(s);
 				    cleanup_server(test);
+				    errno = saved_errno;
 				    i_errno = IESETCONGESTION;
 				    return -1;
 				}
@@ -554,8 +492,10 @@ iperf_run_server(struct iperf_test *test)
 			    socklen_t len = TCP_CA_NAME_MAX;
 			    char ca[TCP_CA_NAME_MAX + 1];
 			    if (getsockopt(s, IPPROTO_TCP, TCP_CONGESTION, ca, &len) < 0) {
+				saved_errno = errno;
 				close(s);
 				cleanup_server(test);
+				errno = saved_errno;
 				i_errno = IESETCONGESTION;
 				return -1;
 			    }

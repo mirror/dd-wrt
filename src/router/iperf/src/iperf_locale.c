@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------- 
- * iperf, Copyright (c) 2014, 2016, 2017, The Regents of the University of
+ * iperf, Copyright (c) 2014-2018, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -143,7 +143,7 @@ const char usage_longstr[] = "Usage: iperf3 [-s|-c host] [options]\n"
                            "  -t, --time      #         time in seconds to transmit for (default %d secs)\n"
                            "  -n, --bytes     #[KMG]    number of bytes to transmit (instead of -t)\n"
                            "  -k, --blockcount #[KMG]   number of blocks (packets) to transmit (instead of -t or -n)\n"
-                           "  -l, --len       #[KMG]    length of buffer to read or write\n"
+                           "  -l, --length    #[KMG]    length of buffer to read or write\n"
 			   "                            (default %d KB for TCP, dynamic or %d for UDP)\n"
                            "  --cport         <port>    bind to a specific client port (TCP and UDP, default: ephemeral port)\n"
                            "  -P, --parallel  #         number of parallel client streams to run\n"
@@ -156,8 +156,13 @@ const char usage_longstr[] = "Usage: iperf3 [-s|-c host] [options]\n"
                            "  -N, --no-delay            set TCP/SCTP no delay, disabling Nagle's Algorithm\n"
                            "  -4, --version4            only use IPv4\n"
                            "  -6, --version6            only use IPv6\n"
-                           "  -S, --tos N               set the IP type of service, 0-255\n"
-                           "  --dscp N or --dscp val    set the IP dscp value, either 0-63 or symbolic\n"
+                           "  -S, --tos N               set the IP type of service, 0-255.\n"
+                           "                            The usual prefixes for octal and hex can be used,\n"
+                           "                            i.e. 52, 064 and 0x34 all specify the same value.\n"
+
+                           "  --dscp N or --dscp val    set the IP dscp value, either 0-63 or symbolic.\n"
+                           "                            Numeric values can be specified in decimal,\n"
+                           "                            octal and hex (see --tos above).\n"
 #if defined(HAVE_FLOWLABEL)
                            "  -L, --flowlabel N         set the IPv6 flow label (only supported on Linux)\n"
 #endif /* HAVE_FLOWLABEL */
@@ -386,6 +391,7 @@ const char report_remote[] = "remote";
 const char report_sender[] = "sender";
 const char report_receiver[] = "receiver";
 const char report_sender_not_available_format[] = "[%3d] (sender statistics not available)\n";
+const char report_sender_not_available_summary_format[] = "[%3s] (sender statistics not available)\n";
 const char report_receiver_not_available_format[] = "[%3d] (receiver statistics not available)\n";
 
 #if defined(linux)

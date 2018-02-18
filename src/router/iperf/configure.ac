@@ -24,7 +24,7 @@
 # file for complete information.
 
 # Initialize the autoconf system for the specified tool, version and mailing list
-AC_INIT(iperf, 3.3, https://github.com/esnet/iperf, iperf, http://software.es.net/iperf/)
+AC_INIT(iperf, 3.4, https://github.com/esnet/iperf, iperf, http://software.es.net/iperf/)
 m4_include([config/ax_check_openssl.m4])
 AC_LANG(C)
 
@@ -64,12 +64,6 @@ echo "floor()"
 exit 1
 ])
 
-# Solaris puts nanosleep in -lrt
-AC_SEARCH_LIBS(nanosleep, [rt], [], [
-echo "nanosleep() required for timing operations."
-exit 1
-])
-
 # On illumos we need -lsocket
 AC_SEARCH_LIBS(socket, [socket], [], [
 echo "socket()"
@@ -100,6 +94,14 @@ AC_CHECK_HEADERS([netinet/sctp.h],
 #include <sys/socket.h>
 #endif
 ])
+
+AC_CHECK_HEADER([endian.h],
+		AC_DEFINE([HAVE_ENDIAN_H], [1], [Define to 1 if you have the <endian.h> header file.]),
+		AC_CHECK_HEADER([sys/endian.h],
+				AC_DEFINE([HAVE_SYS_ENDIAN_H], [1], [Define to 1 if you have the <sys/endian.h> header file.]),
+				AC_MSG_WARN([Couldn't find endian.h or sys/endian.h files: doing compile-time tests.])
+				)
+		)
 
 if test "x$with_openssl" = "xno"; then
     AC_MSG_WARN( [Building without OpenSSL; disabling iperf_auth functionality.] )
@@ -151,14 +153,21 @@ fi
 # FreeBSD uses cpuset_setaffinity while Linux uses sched_setaffinity.
 # Define HAVE_CPU_AFFINITY to indicate the CPU affinity setting as a
 # generic concept is available.
-AC_CHECK_FUNCS([cpuset_setaffinity sched_setaffinity],
+AC_CHECK_FUNCS([cpuset_setaffinity sched_setaffinity SetProcessAffinityMask],
 	       AC_DEFINE([HAVE_CPU_AFFINITY], [1], 
 	 	         [Have CPU affinity support.]))
+
+# Check for daemon().  Most systems have this but a few (IRIX) don't.
+AC_CHECK_FUNCS([daemon])
 
 # Check for sendfile support.  FreeBSD, Linux, and MacOS all support
 # this system call, but they're all different in terms of what headers
 # it needs and what arguments it expects.
 AC_CHECK_FUNCS([sendfile])
+
+# Check for getline support, used as a part of authenticated
+# connections.
+AC_CHECK_FUNCS([getline])
 
 # Check for packet pacing socket option (Linux only for now).
 AC_CACHE_CHECK([SO_MAX_PACING_RATE socket option],
