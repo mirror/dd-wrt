@@ -1127,10 +1127,6 @@ int talitos_sg_map(struct device *dev, struct scatterlist *src,
 	to_talitos_ptr_len(ptr, len, is_sec1);
 	to_talitos_ptr_ext_set(ptr, 0, is_sec1);
 
-	if (!src) {
-		to_talitos_ptr(ptr, 0, 0, is_sec1);
-		return 1;
-	}
 	if (sg_count == 1) {
 		to_talitos_ptr(ptr, sg_dma_address(src) + offset, is_sec1);
 		return sg_count;
