@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014, 2015, 2017, The Regents of the University of
+ * iperf, Copyright (c) 2014-2018, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -31,13 +31,13 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <sys/errno.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <assert.h>
 #include <netdb.h>
 #include <string.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
+#include <limits.h>
 
 #ifdef HAVE_SENDFILE
 #ifdef linux
@@ -116,7 +116,7 @@ int
 netdial(int domain, int proto, char *local, int local_port, char *server, int port, int timeout)
 {
     struct addrinfo hints, *local_res, *server_res;
-    int s;
+    int s, saved_errno;
 
     if (local) {
         memset(&hints, 0, sizeof(hints));
@@ -140,27 +140,66 @@ netdial(int domain, int proto, char *local, int local_port, char *server, int po
         return -1;
     }
 
+    /* Bind the local address if given a name (with or without --cport) */
     if (local) {
         if (local_port) {
             struct sockaddr_in *lcladdr;
             lcladdr = (struct sockaddr_in *)local_res->ai_addr;
             lcladdr->sin_port = htons(local_port);
-            local_res->ai_addr = (struct sockaddr *)lcladdr;
         }
 
         if (bind(s, (struct sockaddr *) local_res->ai_addr, local_res->ai_addrlen) < 0) {
+	    saved_errno = errno;
 	    close(s);
 	    freeaddrinfo(local_res);
 	    freeaddrinfo(server_res);
+	    errno = saved_errno;
             return -1;
 	}
         freeaddrinfo(local_res);
     }
+    /* No local name, but --cport given */
+    else if (local_port) {
+	size_t addrlen;
+	struct sockaddr_storage lcl;
+
+	/* IPv4 */
+	if (server_res->ai_family == AF_INET) {
+	    struct sockaddr_in *lcladdr = (struct sockaddr_in *) &lcl;
+	    lcladdr->sin_family = AF_INET;
+	    lcladdr->sin_port = htons(local_port);
+	    lcladdr->sin_addr.s_addr = INADDR_ANY;
+	    addrlen = sizeof(struct sockaddr_in);
+	}
+	/* IPv6 */
+	else if (server_res->ai_family == AF_INET6) {
+	    struct sockaddr_in6 *lcladdr = (struct sockaddr_in6 *) &lcl;
+	    lcladdr->sin6_family = AF_INET6;
+	    lcladdr->sin6_port = htons(local_port);
+	    lcladdr->sin6_addr = in6addr_any;
+	    addrlen = sizeof(struct sockaddr_in6);
+	}
+	/* Unknown protocol */
+	else {
+	    errno = EAFNOSUPPORT;
+            return -1;
+	}
+
+        if (bind(s, (struct sockaddr *) &lcl, addrlen) < 0) {
+	    saved_errno = errno;
+	    close(s);
+	    freeaddrinfo(server_res);
+	    errno = saved_errno;
+            return -1;
+        }
+    }
 
     ((struct sockaddr_in *) server_res->ai_addr)->sin_port = htons(port);
     if (timeout_connect(s, (struct sockaddr *) server_res->ai_addr, server_res->ai_addrlen, timeout) < 0 && errno != EINPROGRESS) {
+	saved_errno = errno;
 	close(s);
 	freeaddrinfo(server_res);
+	errno = saved_errno;
         return -1;
     }
 
@@ -175,7 +214,7 @@ netannounce(int domain, int proto, char *local, int port)
 {
     struct addrinfo hints, *res;
     char portstr[6];
-    int s, opt;
+    int s, opt, saved_errno;
 
     snprintf(portstr, 6, "%d", port);
     memset(&hints, 0, sizeof(hints));
@@ -211,8 +250,10 @@ netannounce(int domain, int proto, char *local, int port)
     opt = 1;
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, 
 		   (char *) &opt, sizeof(opt)) < 0) {
+	saved_errno = errno;
 	close(s);
 	freeaddrinfo(res);
+	errno = saved_errno;
 	return -1;
     }
     /*
@@ -231,24 +272,30 @@ netannounce(int domain, int proto, char *local, int port)
 	    opt = 1;
 	if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, 
 		       (char *) &opt, sizeof(opt)) < 0) {
+	    saved_errno = errno;
 	    close(s);
 	    freeaddrinfo(res);
+	    errno = saved_errno;
 	    return -1;
 	}
     }
 #endif /* IPV6_V6ONLY */
 
     if (bind(s, (struct sockaddr *) res->ai_addr, res->ai_addrlen) < 0) {
+        saved_errno = errno;
         close(s);
 	freeaddrinfo(res);
+        errno = saved_errno;
         return -1;
     }
 
     freeaddrinfo(res);
     
     if (proto == SOCK_STREAM) {
-        if (listen(s, 5) < 0) {
+        if (listen(s, INT_MAX) < 0) {
+	    saved_errno = errno;
 	    close(s);
+	    errno = saved_errno;
             return -1;
         }
     }
@@ -398,84 +445,6 @@ Nsendfile(int fromfd, int tofd, const char *buf, size_t count)
 }
 
 /*************************************************************************/
-
-/**
- * getsock_tcp_mss - Returns the MSS size for TCP
- *
- */
-
-int
-getsock_tcp_mss(int inSock)
-{
-    int             mss = 0;
-
-    int             rc;
-    socklen_t       len;
-
-    assert(inSock >= 0); /* print error and exit if this is not true */
-
-    /* query for mss */
-    len = sizeof(mss);
-    rc = getsockopt(inSock, IPPROTO_TCP, TCP_MAXSEG, (char *)&mss, &len);
-    if (rc == -1) {
-	perror("getsockopt TCP_MAXSEG");
-	return -1;
-    }
-
-    return mss;
-}
-
-
-
-/*************************************************************/
-
-/* sets TCP_NODELAY and TCP_MAXSEG if requested */
-// XXX: This function is not being used.
-
-int
-set_tcp_options(int sock, int no_delay, int mss)
-{
-    socklen_t len;
-    int rc;
-    int new_mss;
-
-    if (no_delay == 1) {
-        len = sizeof(no_delay);
-        rc = setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *)&no_delay, len);
-        if (rc == -1) {
-            perror("setsockopt TCP_NODELAY");
-            return -1;
-        }
-    }
-#ifdef TCP_MAXSEG
-    if (mss > 0) {
-        len = sizeof(new_mss);
-        assert(sock != -1);
-
-        /* set */
-        new_mss = mss;
-        len = sizeof(new_mss);
-        rc = setsockopt(sock, IPPROTO_TCP, TCP_MAXSEG, (char *)&new_mss, len);
-        if (rc == -1) {
-            perror("setsockopt TCP_MAXSEG");
-            return -1;
-        }
-        /* verify results */
-        rc = getsockopt(sock, IPPROTO_TCP, TCP_MAXSEG, (char *)&new_mss, &len);
-        if (rc == -1) {
-            perror("getsockopt TCP_MAXSEG");
-            return -1;
-        }
-        if (new_mss != mss) {
-            perror("setsockopt value mismatch");
-            return -1;
-        }
-    }
-#endif
-    return 0;
-}
-
-/****************************************************************************/
 
 int
 setnonblocking(int fd, int nonblocking)

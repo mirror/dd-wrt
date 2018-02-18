@@ -32,6 +32,7 @@
 #include "iperf_config.h"
 
 #include <stdio.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -43,6 +44,7 @@
 #include <sys/utsname.h>
 #include <time.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #include "cjson.h"
 #include "iperf.h"
@@ -162,43 +164,6 @@ timeval_diff(struct timeval * tv0, struct timeval * tv1)
         time1 = -time1;
     return time1;
 }
-
-
-int
-delay(int64_t ns)
-{
-    struct timespec req, rem;
-
-    req.tv_sec = 0;
-
-    while (ns >= 1000000000L) {
-        ns -= 1000000000L;
-        req.tv_sec += 1;
-    }
-
-    req.tv_nsec = ns;
-
-    while (nanosleep(&req, &rem) == -1)
-        if (EINTR == errno)
-            memcpy(&req, &rem, sizeof(rem));
-        else
-            return -1;
-    return 0;
-}
-
-# ifdef DELAY_SELECT_METHOD
-int
-delay(int us)
-{
-    struct timeval tv;
-
-    tv.tv_sec = 0;
-    tv.tv_usec = us;
-    (void) select(1, (fd_set *) 0, (fd_set *) 0, (fd_set *) 0, &tv);
-    return 1;
-}
-#endif
-
 
 void
 cpu_util(double pcpu[3])
@@ -432,3 +397,149 @@ iperf_dump_fdset(FILE *fp, char *str, int nfds, fd_set *fds)
     }
     fprintf(fp, "]\n");
 }
+
+/*
+ * daemon(3) implementation for systems lacking one.
+ * Cobbled together from various daemon(3) implementations,
+ * not intended to be general-purpose. */
+#ifndef HAVE_DAEMON
+int daemon(int nochdir, int noclose)
+{
+    pid_t pid = 0;
+    pid_t sid = 0;
+    int fd;
+
+    /*
+     * Ignore any possible SIGHUP when the parent process exits.
+     * Note that the iperf3 server process will eventually install
+     * its own signal handler for SIGHUP, so we can be a little
+     * sloppy about not restoring the prior value.  This does not
+     * generalize.
+     */
+    signal(SIGHUP, SIG_IGN);
+
+    pid = fork();
+    if (pid < 0) {
+	    return -1;
+    }
+    if (pid > 0) {
+	/* Use _exit() to avoid doing atexit() stuff. */
+	_exit(0);
+    }
+
+    sid = setsid();
+    if (sid < 0) {
+	return -1;
+    }
+
+    /*
+     * Fork again to avoid becoming a session leader.
+     * This might only matter on old SVr4-derived OSs. 
+     * Note in particular that glibc and FreeBSD libc 
+     * only fork once.
+     */
+    pid = fork();
+    if (pid == -1) {
+	return -1;
+    } else if (pid != 0) {
+	_exit(0);
+    }
+
+    if (!nochdir) {
+	chdir("/");
+    }
+
+    if (!noclose && (fd = open("/dev/null", O_RDWR, 0)) != -1) {
+	dup2(fd, STDIN_FILENO);
+	dup2(fd, STDOUT_FILENO);
+	dup2(fd, STDERR_FILENO);
+	if (fd > 2) {
+	    close(fd);
+	}
+    }
+    return (0);
+}
+#endif /* HAVE_DAEMON */
+
+/* Compatibility version of getline(3) for systems that don't have it.. */
+#ifndef HAVE_GETLINE
+/* The following code adopted from NetBSD's getline.c, which is: */
+
+/*-
+ * Copyright (c) 2011 The NetBSD Foundation, Inc.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to The NetBSD Foundation
+ * by Christos Zoulas.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE NETBSD FOUNDATION, INC. AND CONTRIBUTORS
+ * ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+ * TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE FOUNDATION OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+ssize_t
+getdelim(char **buf, size_t *bufsiz, int delimiter, FILE *fp)
+{
+	char *ptr, *eptr;
+
+
+	if (*buf == NULL || *bufsiz == 0) {
+		*bufsiz = BUFSIZ;
+		if ((*buf = malloc(*bufsiz)) == NULL)
+			return -1;
+	}
+
+	for (ptr = *buf, eptr = *buf + *bufsiz;;) {
+		int c = fgetc(fp);
+		if (c == -1) {
+			if (feof(fp)) {
+				ssize_t diff = (ssize_t)(ptr - *buf);
+				if (diff != 0) {
+					*ptr = '\0';
+					return diff;
+				}
+			}
+			return -1;
+		}
+		*ptr++ = c;
+		if (c == delimiter) {
+			*ptr = '\0';
+			return ptr - *buf;
+		}
+		if (ptr + 2 >= eptr) {
+			char *nbuf;
+			size_t nbufsiz = *bufsiz * 2;
+			ssize_t d = ptr - *buf;
+			if ((nbuf = realloc(*buf, nbufsiz)) == NULL)
+				return -1;
+			*buf = nbuf;
+			*bufsiz = nbufsiz;
+			eptr = nbuf + nbufsiz;
+			ptr = nbuf + d;
+		}
+	}
+}
+
+ssize_t
+getline(char **buf, size_t *bufsiz, FILE *fp)
+{
+	return getdelim(buf, bufsiz, '\n', fp);
+}
+
+#endif

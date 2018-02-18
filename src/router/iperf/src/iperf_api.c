@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014-2017, The Regents of the University of
+ * iperf, Copyright (c) 2014-2018, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -24,7 +24,9 @@
  * This code is distributed under a BSD style license, see the LICENSE file
  * for complete information.
  */
-#define _GNU_SOURCE
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE
+#endif
 #define __USE_GNU
 
 #include "iperf_config.h"
@@ -32,6 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <getopt.h>
 #include <errno.h>
 #include <signal.h>
@@ -43,7 +46,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <pthread.h>
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
@@ -61,6 +63,10 @@
 #include <sys/cpuset.h>
 #endif /* HAVE_CPUSET_SETAFFINITY */
 
+#if defined(HAVE_SETPROCESSAFFINITYMASK)
+#include <Windows.h>
+#endif /* HAVE_SETPROCESSAFFINITYMASK */
+
 #include "net.h"
 #include "iperf.h"
 #include "iperf_api.h"
@@ -73,7 +79,6 @@
 
 #include "cjson.h"
 #include "units.h"
-#include "tcp_window_size.h"
 #include "iperf_util.h"
 #include "iperf_locale.h"
 #include "version.h"
@@ -105,7 +110,7 @@ usage()
 void
 usage_long(FILE *f)
 {
-    fprintf(f, usage_longstr, UDP_RATE / (1024*1024), DURATION, DEFAULT_TCP_BLKSIZE / 1024, DEFAULT_UDP_BLKSIZE / 1024);
+    fprintf(f, usage_longstr, UDP_RATE / (1024*1024), DURATION, DEFAULT_TCP_BLKSIZE / 1024, DEFAULT_UDP_BLKSIZE);
 }
 
 
@@ -1110,10 +1115,6 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
         return -1;
     }
 #endif //HAVE_SSL
-    if (!test->bind_address && test->bind_port) {
-        i_errno = IEBIND;
-        return -1;
-    }
     if (blksize == 0) {
 	if (test->protocol->id == Pudp)
 	    blksize = 0;	/* try to dynamically determine from MSS */
@@ -2482,7 +2483,7 @@ iperf_print_intermediate(struct iperf_test *test)
 	    double interval_len = timeval_diff(&irp->interval_start_time,
 					       &irp->interval_end_time);
 	    if (test->debug) {
-		printf("interval_len %f bytes_transferred %lu\n", interval_len, irp->bytes_transferred);
+		printf("interval_len %f bytes_transferred %" PRIu64 "\n", interval_len, irp->bytes_transferred);
 	    }
 
 	    /*
@@ -2874,7 +2875,7 @@ iperf_print_results(struct iperf_test *test)
 		else
 		    if (test->role == 's' && !test->sender) {
 		        if (test->verbose)
-			    iperf_printf(test, report_sender_not_available_format, sp->socket);
+			    iperf_printf(test, report_sender_not_available_summary_format, "SUM");
 		    }
 		    else {
 		      iperf_printf(test, report_sum_bw_retrans_format, start_time, sender_time, ubuf, nbuf, total_retransmits, report_sender);
@@ -2886,7 +2887,7 @@ iperf_print_results(struct iperf_test *test)
 		else
 		    if (test->role == 's' && !test->sender) {
 		        if (test->verbose) 
-			    iperf_printf(test, report_sender_not_available_format, sp->socket);
+			    iperf_printf(test, report_sender_not_available_summary_format, "SUM");
 		    }
 		    else {
 		        iperf_printf(test, report_sum_bw_format, start_time, sender_time, ubuf, nbuf, report_sender);
@@ -3543,7 +3544,7 @@ iperf_json_finish(struct iperf_test *test)
 }
 
 
-/* CPU affinity stuff - Linux and FreeBSD only. */
+/* CPU affinity stuff - Linux, FreeBSD, and Windows only. */
 
 int
 iperf_setaffinity(struct iperf_test *test, int affinity)
@@ -3576,10 +3577,19 @@ iperf_setaffinity(struct iperf_test *test, int affinity)
         return -1;
     }
     return 0;
-#else /* neither HAVE_SCHED_SETAFFINITY nor HAVE_CPUSET_SETAFFINITY */
+#elif defined(HAVE_SETPROCESSAFFINITYMASK)
+	HANDLE process = GetCurrentProcess();
+	DWORD_PTR processAffinityMask = 1 << affinity;
+
+	if (SetProcessAffinityMask(process, processAffinityMask) == 0) {
+		i_errno = IEAFFINITY;
+		return -1;
+	}
+	return 0;
+#else /* neither HAVE_SCHED_SETAFFINITY nor HAVE_CPUSET_SETAFFINITY nor HAVE_SETPROCESSAFFINITYMASK */
     i_errno = IEAFFINITY;
     return -1;
-#endif /* neither HAVE_SCHED_SETAFFINITY nor HAVE_CPUSET_SETAFFINITY */
+#endif /* neither HAVE_SCHED_SETAFFINITY nor HAVE_CPUSET_SETAFFINITY nor HAVE_SETPROCESSAFFINITYMASK */
 }
 
 int
@@ -3604,10 +3614,21 @@ iperf_clearaffinity(struct iperf_test *test)
         return -1;
     }
     return 0;
-#else /* neither HAVE_SCHED_SETAFFINITY nor HAVE_CPUSET_SETAFFINITY */
+#elif defined(HAVE_SETPROCESSAFFINITYMASK)
+	HANDLE process = GetCurrentProcess();
+	DWORD_PTR processAffinityMask;
+	DWORD_PTR lpSystemAffinityMask;
+
+	if (GetProcessAffinityMask(process, &processAffinityMask, &lpSystemAffinityMask) == 0
+			|| SetProcessAffinityMask(process, lpSystemAffinityMask) == 0) {
+		i_errno = IEAFFINITY;
+		return -1;
+	}
+	return 0;
+#else /* neither HAVE_SCHED_SETAFFINITY nor HAVE_CPUSET_SETAFFINITY nor HAVE_SETPROCESSAFFINITYMASK */
     i_errno = IEAFFINITY;
     return -1;
-#endif /* neither HAVE_SCHED_SETAFFINITY nor HAVE_CPUSET_SETAFFINITY */
+#endif /* neither HAVE_SCHED_SETAFFINITY nor HAVE_CPUSET_SETAFFINITY nor HAVE_SETPROCESSAFFINITYMASK */
 }
 
 int
