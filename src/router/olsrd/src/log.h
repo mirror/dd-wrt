@@ -59,6 +59,7 @@
 
 #define olsr_openlog(ident) do { } while(0)
 #define olsr_syslog(level, format, ...) do { } while(0)
+#define olsr_closelog() do { } while(0)
 
 #else
 void olsr_openlog(const char *ident);

@@ -511,11 +511,7 @@ static bool readEgressFile(const char * fileName) {
     goto outerror;
   }
 
-#if defined(__linux__) && !defined(__ANDROID__)
-  mtim = &statBuf.st_mtim;
-#else
   mtim = &statBuf.st_mtime;
-#endif
 
   if (!memcmp(&cachedStat.timeStamp, mtim, sizeof(cachedStat.timeStamp))) {
     /* file did not change since last read */
