@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2017 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2018 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@ int main (int argc, char **argv)
   long i, max_fd = sysconf(_SC_OPEN_MAX);
   char *baduser = NULL;
   int log_err;
+  int chown_warn = 0;
 #if defined(HAVE_LINUX_NETWORK)
   cap_user_header_t hdr = NULL;
   cap_user_data_t data = NULL;
@@ -77,7 +78,8 @@ int main (int argc, char **argv)
   sigaction(SIGTERM, &sigact, NULL);
   sigaction(SIGALRM, &sigact, NULL);
   sigaction(SIGCHLD, &sigact, NULL);
-
+  sigaction(SIGINT, &sigact, NULL);
+  
   /* ignore SIGPIPE */
   sigact.sa_handler = SIG_IGN;
   sigaction(SIGPIPE, &sigact, NULL);
@@ -118,6 +120,9 @@ int main (int argc, char **argv)
       daemon->namebuff = safe_malloc(MAXDNAME * 2);
       daemon->keyname = safe_malloc(MAXDNAME * 2);
       daemon->workspacename = safe_malloc(MAXDNAME * 2);
+      /* one char flag per possible RR in answer section (may get extended). */
+      daemon->rr_status_sz = 64;
+      daemon->rr_status = safe_malloc(daemon->rr_status_sz);
     }
 #endif
 
@@ -219,9 +224,6 @@ int main (int argc, char **argv)
   if (option_bool(OPT_LOOP_DETECT))
     die(_("loop detection not available: set HAVE_LOOP in src/config.h"), NULL, EC_BADCONF);
 #endif
-
-  if (daemon->max_port != MAX_PORT && daemon->min_port == 0)
-    daemon->min_port = 1024u;
 
   if (daemon->max_port < daemon->min_port)
     die(_("max_port cannot be smaller than min_port"), NULL, EC_BADCONF);
@@ -358,7 +360,8 @@ int main (int argc, char **argv)
     }
 
 #ifdef HAVE_INOTIFY
-  if (daemon->port != 0 || daemon->dhcp || daemon->doing_dhcp6)
+  if ((daemon->port != 0 || daemon->dhcp || daemon->doing_dhcp6)
+      && (!option_bool(OPT_NO_RESOLV) || daemon->dynamic_dirs))
     inotify_dnsmasq_init();
   else
     daemon->inotifyfd = -1;
@@ -386,10 +389,12 @@ int main (int argc, char **argv)
       daemon->scriptuser && 
       (daemon->lease_change_command || daemon->luascript))
     {
-      if ((ent_pw = getpwnam(daemon->scriptuser)))
+      struct passwd *scr_pw;
+      
+      if ((scr_pw = getpwnam(daemon->scriptuser)))
 	{
-	  script_uid = ent_pw->pw_uid;
-	  script_gid = ent_pw->pw_gid;
+	  script_uid = scr_pw->pw_uid;
+	  script_gid = scr_pw->pw_gid;
 	 }
       else
 	baduser = daemon->scriptuser;
@@ -537,9 +542,18 @@ int main (int argc, char **argv)
 	    }
 	  else
 	    {
+	      /* We're still running as root here. Change the ownership of the PID file
+		 to the user we will be running as. Note that this is not to allow
+		 us to delete the file, since that depends on the permissions 
+		 of the directory containing the file. That directory will
+		 need to by owned by the dnsmasq user, and the ownership of the
+		 file has to match, to keep systemd >273 happy. */
+	      if (getuid() == 0 && ent_pw && ent_pw->pw_uid != 0 && fchown(fd, ent_pw->pw_uid, ent_pw->pw_gid) == -1)
+		chown_warn = errno;
+
 	      if (!read_write(fd, (unsigned char *)daemon->namebuff, strlen(daemon->namebuff), 0))
 		err = 1;
-	      else 
+	      else
 		{
 		  while (retry_send(close(fd)));
 		  if (errno != 0)
@@ -726,6 +740,9 @@ int main (int argc, char **argv)
     }
   
   my_syslog(LOG_INFO, _("compile time options: %s"), compile_opts);
+
+  if (chown_warn != 0)
+    my_syslog(LOG_WARNING, "chown of PID file %s failed: %s", daemon->runfile, strerror(chown_warn));
   
 #ifdef HAVE_DBUS
   if (option_bool(OPT_DBUS))
@@ -755,7 +772,7 @@ int main (int argc, char **argv)
       
       daemon->dnssec_no_time_check = option_bool(OPT_DNSSEC_TIME);
       if (option_bool(OPT_DNSSEC_TIME) && !daemon->back_to_the_future)
-	my_syslog(LOG_INFO, _("DNSSEC signature timestamps not checked until first cache reload"));
+	my_syslog(LOG_INFO, _("DNSSEC signature timestamps not checked until receipt of SIGINT"));
       
       if (rc == 1)
 	my_syslog(LOG_INFO, _("DNSSEC signature timestamps not checked until system time valid"));
@@ -1079,7 +1096,7 @@ static void sig_handler(int sig)
     {
       /* ignore anything other than TERM during startup
 	 and in helper proc. (helper ignore TERM too) */
-      if (sig == SIGTERM)
+      if (sig == SIGTERM || sig == SIGINT)
 	exit(EC_MISC);
     }
   else if (pid != getpid())
@@ -1105,6 +1122,15 @@ static void sig_handler(int sig)
 	event = EVENT_DUMP;
       else if (sig == SIGUSR2)
 	event = EVENT_REOPEN;
+      else if (sig == SIGINT)
+	{
+	  /* Handle SIGINT normally in debug mode, so
+	     ctrl-c continues to operate. */
+	  if (option_bool(OPT_DEBUG))
+	    exit(EC_MISC);
+	  else
+	    event = EVENT_TIME;
+	}
       else
 	return;
 
@@ -1232,14 +1258,7 @@ static void async_event(int pipe, time_t now)
       {
       case EVENT_RELOAD:
 	daemon->soa_sn++; /* Bump zone serial, as it may have changed. */
-
-#ifdef HAVE_DNSSEC
-	if (daemon->dnssec_no_time_check && option_bool(OPT_DNSSEC_VALID) && option_bool(OPT_DNSSEC_TIME))
-	  {
-	    my_syslog(LOG_INFO, _("now checking DNSSEC signature timestamps"));
-	    daemon->dnssec_no_time_check = 0;
-	  } 
-#endif
+	
 	/* fall through */
 	
       case EVENT_INIT:
@@ -1348,6 +1367,17 @@ static void async_event(int pipe, time_t now)
 	poll_resolv(0, 1, now);
 	break;
 
+      case EVENT_TIME:
+#ifdef HAVE_DNSSEC
+	if (daemon->dnssec_no_time_check && option_bool(OPT_DNSSEC_VALID) && option_bool(OPT_DNSSEC_TIME))
+	  {
+	    my_syslog(LOG_INFO, _("now checking DNSSEC signature timestamps"));
+	    daemon->dnssec_no_time_check = 0;
+	    clear_cache_and_reload(now);
+	  }
+#endif
+	break;
+	
       case EVENT_TERM:
 	/* Knock all our children on the head. */
 	for (i = 0; i < MAX_PROCS; i++)

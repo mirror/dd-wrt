@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2017 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2018 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -2733,15 +2733,24 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	      
     case LOPT_BRIDGE:   /* --bridge-interface */
       {
-	struct dhcp_bridge *new = opt_malloc(sizeof(struct dhcp_bridge));
+	struct dhcp_bridge *new;
+
 	if (!(comma = split(arg)) || strlen(arg) > IF_NAMESIZE - 1 )
 	  ret_err(_("bad bridge-interface"));
-	
-	strcpy(new->iface, arg);
-	new->alias = NULL;
-	new->next = daemon->bridges;
-	daemon->bridges = new;
 
+	for (new = daemon->bridges; new; new = new->next)
+	  if (strcmp(new->iface, arg) == 0)
+	    break;
+
+	if (!new)
+	  {
+	     new = opt_malloc(sizeof(struct dhcp_bridge));
+	     strcpy(new->iface, arg);
+	     new->alias = NULL;
+	     new->next = daemon->bridges;
+	     daemon->bridges = new;
+	  }
+	
 	do {
 	  arg = comma;
 	  comma = split(arg);
@@ -4612,6 +4621,8 @@ void reread_dhcp(void)
     
 void read_opts(int argc, char **argv, char *compile_opts)
 {
+  size_t argbuf_size = MAXDNAME;
+  char *argbuf = opt_malloc(argbuf_size);
   char *buff = opt_malloc(MAXDNAME);
   int option, conffile_opt = '7', testmode = 0;
   char *arg, *conffile = CONFFILE;
@@ -4642,6 +4653,7 @@ void read_opts(int argc, char **argv, char *compile_opts)
   daemon->soa_retry = SOA_RETRY;
   daemon->soa_expiry = SOA_EXPIRY;
   daemon->max_port = MAX_PORT;
+  daemon->min_port = MIN_PORT;
 
 #ifndef NO_ID
   add_txt("version.bind", "dnsmasq-" VERSION, 0 );
@@ -4681,9 +4693,15 @@ void read_opts(int argc, char **argv, char *compile_opts)
       /* Copy optarg so that argv doesn't get changed */
       if (optarg)
 	{
-	  strncpy(buff, optarg, MAXDNAME);
-	  buff[MAXDNAME-1] = 0;
-	  arg = buff;
+	  if (strlen(optarg) >= argbuf_size)
+	    {
+	      free(argbuf);
+	      argbuf_size = strlen(optarg) + 1;
+	      argbuf = opt_malloc(argbuf_size);
+	    }
+	  strncpy(argbuf, optarg, argbuf_size);
+	  argbuf[argbuf_size-1] = 0;
+	  arg = argbuf;
 	}
       else
 	arg = NULL;
@@ -4730,6 +4748,8 @@ void read_opts(int argc, char **argv, char *compile_opts)
 	    die(_("bad command line options: %s"), daemon->namebuff, EC_BADCONF);
 	}
     }
+
+  free(argbuf);
 
   if (conffile)
     {

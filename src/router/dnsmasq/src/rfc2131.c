@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2017 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2018 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -916,7 +916,7 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
 		  
 		  if (!workaround && boot)
 		    {
-		      /* Provide the bootfile here, for gPXE, and in case we have no menu items
+		      /* Provide the bootfile here, for iPXE, and in case we have no menu items
 			 and set discovery_control = 8 */
 		      if (boot->next_server.s_addr) 
 			mess->siaddr = boot->next_server;
@@ -2293,7 +2293,7 @@ static void do_options(struct dhcp_context *context,
   /* See if we can send the boot stuff as options.
      To do this we need a requested option list, BOOTP
      and very old DHCP clients won't have this, we also 
-     provide an manual option to disable it.
+     provide a manual option to disable it.
      Some PXE ROMs have bugs (surprise!) and need zero-terminated 
      names, so we always send those.  */
   if ((boot = find_boot(tagif)))

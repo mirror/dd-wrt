@@ -6,6 +6,46 @@ version 2.79
 	upstream servers to an interface, rather than SO_BINDTODEVICE.
 	Thanks to Beniamino Galvani for the patch.
 
+	Always return a SERVFAIL answer to DNS queries without the
+	recursion desired bit set, UNLESS acting as an authoritative
+	DNS server. This avoids a potential route to cache snooping.
+
+	Add support for Ed25519 signatures in DNSSEC validation.
+
+	No longer support RSA/MD5 signatures in DNSSEC validation,
+	since these are not secure. This behaviour is mandated in
+	RFC-6944.
+
+	Fix incorrect error exit code from dhcp_release6 utility.
+	Thanks Gaudenz Steinlin for the bug report.
+
+	Use SIGINT (instead of overloading SIGHUP) to turn on DNSSEC
+	time validation when --dnssec-no-timecheck is in use.
+	Note that this is an incompatible change from earlier releases.
+
+	Allow more than one --bridge-interface option to refer to an
+	interface, so that we can use
+	--bridge-interface=int1,alias1
+	--bridge-interface=int1,alias2
+	as an alternative to
+	--bridge-interface=int1,alias1,alias2
+	Thanks to Neil Jerram for work on this.
+
+	Fix for DNSSEC with wildcard-derived NSEC records.
+	It's OK for NSEC records to be expanded from wildcards,
+	but in that case, the proof of non-existence is only valid
+	starting at the wildcard name, *.<domain> NOT the name expanded
+	from the wildcard. Without this check it's possible for an
+	attacker to craft an NSEC which wrongly proves non-existence.
+	Thanks to Ralph Dolmans for finding this, and co-ordinating 
+	the vulnerability tracking and fix release.
+	CVE-2017-15107 applies.
+
+	Remove special handling of A-for-A DNS queries. These
+	are no longer a significant problem in the global DNS.
+	http://cs.northwestern.edu/~ychen/Papers/DNS_ToN15.pdf
+	Thanks to Mattias Hellström for the initial patch.
+	
 
 version 2.78
         Fix logic of appending ".<layer>" to PXE basename. Thanks to Chris
@@ -1535,7 +1575,7 @@ version 2.56
 
 	By default, setting an IPv4 address for a domain but not
 	an IPv6 address causes dnsmasq to return
-	an NODATA reply for IPv6 (or vice-versa). So
+	a NODATA reply for IPv6 (or vice-versa). So
 	--address=/google.com/1.2.3.4 stops IPv6 queries for
 	*google.com from being forwarded. Make it possible to
 	override this behaviour by defining the semantics if the
@@ -2041,13 +2081,13 @@ version 2.47
 
 	Support arbitrarily encapsulated DHCP options, suggestion
 	and initial patch from Samium Gromoff. This is useful for
-	(eg) gPXE, which expect all its private options to be
+	(eg) iPXE, which expect all its private options to be
 	encapsulated inside a single option 175. So, eg, 
 
 	dhcp-option = encap:175, 190, "iscsi-client0"
 	dhcp-option = encap:175, 191, "iscsi-client0-secret"
 
-	will provide iSCSI parameters to gPXE.
+	will provide iSCSI parameters to iPXE.
 
 	Enhance --dhcp-match to allow testing of the contents of a
 	client-sent option, as well as its presence. This
