@@ -1,0 +1,128 @@
+=======
+WARNING
+=======
+
+This is NOT a plugin.
+
+This is common code for the jsoninfo and txtinfo plugins.
+
+
+============
+INTRODUCTION
+============
+
+An info plugin aims to deliver all of the information about the runtime status
+and configuration of olsrd.
+
+Information that can be requested:
+* specific parts of runtime data or startup configuration
+* overview of runtime data
+* overview of startup configuration
+* all of the information in one report
+
+Additionally, an info plugin can dump the current olsrd configuration in the
+in the olsrd.conf format.
+
+
+============
+PLUGIN USAGE
+============
+
+There are a number of commands for getting information from an info plugin.
+They are designed to be part of a URL, but can also be sent directly via a
+network socket.
+
+If there is no command or no recognized command, then the command '/all' is
+assumed.
+
+Check the README of the actual info plugin to see the supported commands.
+
+
+================
+REQUEST PREFIXES
+================
+
+All info plugins support a number of request prefixes:
+- /http : forces output WITH    http headers, temporarily overriding the
+          configured "httpheaders" value.
+- /plain: forces output WITHOUT http headers, temporarily overriding the
+          configured "httpheaders" value.
+
+These prefixes have to be at the start of the request string, can occur
+only there, and can occur only once.
+
+Note that this will NOT work when there is an internal error (only occurs
+when the connection is not ready to be read, which is very unlikely).
+
+
+====================
+PLUGIN CONFIGURATION
+====================
+
+An info plugin is configured with the generic info plugin configuration
+parameters shown below.
+
+The port in the generic info plugin configuration is setup by the actual
+info plugin.
+
+LoadPlugin "an_info_plugin.so.0.0"
+{
+  # The port on which the info plugin will be listening
+  # PlParam "port"           "<defined by the actual info plugin>"
+
+  # Controls which IP address is allowed to connect to the info plugin.
+  # Use 0.0.0.0 to accept all connections
+  # Default: localhost (127.0.0.1 / ::1)
+  # PlParam "accept"         "127.0.0.1"
+
+  # Controls of which IP address the info plugin will listen for requests.
+  # Only the last specified setting will be used, others will be ignored.
+  # Default: any (0.0.0.0 / ::)
+  # PlParam "listen"         "0.0.0.0"
+
+  # Set to true to first send HTTP headers
+  # Default: true
+  # PlParam "httpheaders"    "true"
+
+  # Set to true to always allow connections from localhost (127.0.0.1 / ::1)
+  # Default: false
+  # PlParam "allowlocalhost" "false"
+
+  # Set to true to only listen on IPv6 addresses when running in IPv6 mode.
+  # Default: false
+  # PlParam "ipv6only"       "false"
+
+  # The time (in milliseconds) after which cached information times out.
+  # A negative value or a value of zero effectively disables caching.
+  # Caching is on by default since it provides some protection again DoS
+  # attacks, therefore it is strongly recommended to keep caching switched
+  # on by configuring a positive value here.
+  # Note: startup information (version, config and plugins) is cached forever
+  #       by default.
+  # Default: 1000
+  # PlParam "cachetimeout"       "1000"
+
+  # The maximum time (in milliseconds) to wait for a request (data) to arrive
+  # after accepting a connection. When waiting for a request to arrive olsrd
+  # will not perform any other tasks (will block), therefore do not set this
+  # to a high value.
+  # Default: 20
+  # PlParam "requesttimeout"       "20"
+}
+
+
+=============
+Example Usage
+=============
+
+The examples shown here assume an info plugin on port 9090.
+
+Provided an info plugin is configured to send http headers (which is the
+default case), then http URLs can be used with various web tools to access the
+information, for example by using curl or wget (or even a web browser):
+  curl http://localhost:9090/all
+  wget http://localhost:9090/all
+
+Commands can also be sent directly to an info plugin to access the information,
+for example by using netcat:
+  echo "/all" | nc localhost 9090
