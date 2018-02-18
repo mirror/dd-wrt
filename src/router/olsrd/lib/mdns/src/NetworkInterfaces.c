@@ -1,6 +1,11 @@
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004-2009, the olsr.org team - see HISTORY file
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -60,7 +65,7 @@
 #include <netinet/ip.h>         /* struct ip */
 #include <netinet/udp.h>        /* SOL_UDP */
 #include <stdlib.h>             /* atoi, malloc */
-#include <strings.h>    /* strcasecmp */
+#include <strings.h>            /* strcasecmp */
 
 /* OLSRD includes */
 #include "olsr.h"               /* OLSR_PRINTF() */
@@ -79,7 +84,7 @@
 #include "plugin_util.h"
 
 int my_MDNS_TTL = 0;
-int my_TTL_Check = 1;
+bool my_TTL_Check = true;
 
 /* List of network interface objects used by BMF plugin */
 struct TBmfInterface *BmfInterfaces = NULL;
@@ -285,7 +290,10 @@ CreateRouterElectionSocket(const char *ifName)
 			BmfPError("Could not get ipv4 address of %s interface", ifName);
 			goto bail;
 		}
-		ipv4_addr = ((struct sockaddr_in *)(void *) &req.ifr_addr)->sin_addr;
+		{
+      struct sockaddr* ifra = &req.ifr_addr;
+		  ipv4_addr = ((struct sockaddr_in *)(void *) ifra)->sin_addr;
+		}
 		mc_settings.imr_interface = ipv4_addr;
 		errno = 0;
 		if (setsockopt(rxSocket, ipProtoSetting, ipAddMembershipSetting,
@@ -380,7 +388,10 @@ static int CreateHelloSocket(const char *ifName) {
 			BmfPError("Could not get ipv4 address of %s interface", ifName);
 			goto bail;
 		}
-		ipv4_addr = ((struct sockaddr_in *)(void *) &req.ifr_addr)->sin_addr;
+		{
+      struct sockaddr * ifra = &req.ifr_addr;
+      ipv4_addr = ((struct sockaddr_in *)(void *) ifra)->sin_addr;
+		}
 		address.in4.sin_addr = ipv4_addr;
 		address.in4.sin_family = ipFamilySetting;
 		address.in4.sin_port = ipPort;
@@ -467,7 +478,7 @@ CreateInterface(const char *ifName, struct interface_olsr *olsrIntf)
 
   /* Create socket for capturing and sending of multicast packets on
    * non-OLSR interfaces, and on OLSR-interfaces if configured. */
-  if ((olsrIntf == NULL)) {
+  if (!olsrIntf) {
     capturingSkfd = CreateCaptureSocket(ifName);
     electionSkfd = CreateRouterElectionSocket(ifName);
     helloSkfd = CreateHelloSocket(ifName);
@@ -538,7 +549,8 @@ CreateInterface(const char *ifName, struct interface_olsr *olsrIntf)
       newIf->intAddr.v4.s_addr = inet_addr("0.0.0.0");
     } else {
       /* Downcast to correct sockaddr subtype */
-      newIf->intAddr.v4 = ((struct sockaddr_in *)ARM_NOWARN_ALIGN(&ifr.ifr_addr))->sin_addr;
+      struct sockaddr* ifra = &ifr.ifr_addr;
+      newIf->intAddr.v4 = ((struct sockaddr_in *)ARM_NOWARN_ALIGN(ifra))->sin_addr;
     }
 
     /* For a non-OLSR interface, retrieve the IP broadcast address ourselves */
@@ -551,7 +563,8 @@ CreateInterface(const char *ifName, struct interface_olsr *olsrIntf)
       newIf->broadAddr.v4.s_addr = inet_addr("0.0.0.0");
     } else {
       /* Downcast to correct sockaddr subtype */
-      newIf->broadAddr.v4 = ((struct sockaddr_in *)ARM_NOWARN_ALIGN(&ifr.ifr_broadaddr))->sin_addr;
+      struct sockaddr* ifrb = &ifr.ifr_broadaddr;
+      newIf->broadAddr.v4 = ((struct sockaddr_in *)ARM_NOWARN_ALIGN(ifrb))->sin_addr;
     }
   }
 
@@ -626,7 +639,7 @@ CreateBmfNetworkInterfaces(struct interface_olsr *skipThisIntf)
   ifc.ifc_buf = NULL;
   for (;;) {
     ifc.ifc_len = sizeof(struct ifreq) * numreqs;
-    ifc.ifc_buf = realloc(ifc.ifc_buf, ifc.ifc_len);
+    ifc.ifc_buf = olsr_realloc(ifc.ifc_buf, ifc.ifc_len, "MDNS: CreateBmfNetworkInterfaces ifc");
 
     if (ioctl(skfd, SIOCGIFCONF, &ifc) < 0) {
       BmfPError("ioctl(SIOCGIFCONF) error");
@@ -659,7 +672,10 @@ CreateBmfNetworkInterfaces(struct interface_olsr *skipThisIntf)
     //}
 
     /* ...find the OLSR interface structure, if any */
-    ipAddr.v4 = ((struct sockaddr_in *)ARM_NOWARN_ALIGN(&ifr->ifr_addr))->sin_addr;
+    {
+      struct sockaddr* ifra = &ifr->ifr_addr;
+      ipAddr.v4 = ((struct sockaddr_in *)ARM_NOWARN_ALIGN(ifra))->sin_addr;
+    }
     olsrIntf = if_ifwithaddr(&ipAddr);
 
     if (skipThisIntf != NULL && olsrIntf == skipThisIntf) {

@@ -11,20 +11,23 @@ include Makefile.inc
 # Settings
 #
 
-LIBNAME = libnmea.so
-LIBNAMESTATIC = libnmea.a
-
 DESTDIR ?=
 USRDIR ?= $(DESTDIR)/usr
 INCLUDEDIR ?= $(DESTDIR)/usr/include
 LIBDIR ?= $(USRDIR)/lib
 
+H_FILES = $(wildcard include/nmealib/*.h)
+C_FILES = $(wildcard src/*.c)
 
-MODULES = context conversions generate generator gmath info parse parser sentence tok
+MODULES = $(C_FILES:src/%.c=%)
+
 OBJ = $(MODULES:%=build/%.o)
 
 LIBRARIES = -lm
 INCLUDES = -I ./include
+
+
+.PRECIOUS: $(OBJ)
 
 
 #
@@ -49,27 +52,35 @@ ifeq ($(VERBOSE),0)
 endif
 	$(MAKECMDPREFIX)$(CC) $(LDFLAGS) -Wl,-soname=$(LIBNAME) -o "$@" $(LIBRARIES) $(OBJ)
 
-build/%.o: src/%.c Makefile Makefile.inc
+build/%.o: src/%.c $(H_FILES) Makefile Makefile.inc
 ifeq ($(VERBOSE),0)
 	@echo "[CC] $<"
 endif
 	$(MAKECMDPREFIX)$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+full : all
 
 
 #
 # Phony Targets
 #
 
-.PHONY: all default_target all-before clean doc install install-headers uninstall uninstall-headers
+.PHONY: all-before clean doc doc-pdf doc-all doc-clean install install-headers uninstall uninstall-headers
 
 all-before:
 	$(MAKECMDPREFIX)mkdir -p build lib
 
 clean:
 	$(MAKECMDPREFIX)$(MAKE) -C doc clean
-	$(MAKECMDPREFIX)rm -frv build lib
+	$(MAKECMDPREFIX)rm -fr build lib
 
 doc:
+	$(MAKECMDPREFIX)$(MAKE) -C doc doc
+
+doc-pdf:
+	$(MAKECMDPREFIX)$(MAKE) -C doc doc-pdf
+
+doc-all:
 	$(MAKECMDPREFIX)$(MAKE) -C doc all
 
 doc-clean:
@@ -83,8 +94,8 @@ install: all
 
 install-headers: all
 	$(MAKECMDPREFIX)mkdir -v -p "$(INCLUDEDIR)"
-	$(MAKECMDPREFIX)rm -fr "$(INCLUDEDIR)/nmea"
-	$(MAKECMDPREFIX)cp -rv include/nmea "$(INCLUDEDIR)"
+	$(MAKECMDPREFIX)rm -fr "$(INCLUDEDIR)/nmealib"
+	$(MAKECMDPREFIX)cp -rv include/nmealib "$(INCLUDEDIR)"
 
 uninstall:
 	$(MAKECMDPREFIX)rm -fv "$(LIBDIR)/$(LIBNAME)" "$(LIBDIR)/$(LIBNAME).$(VERSION)"
@@ -92,5 +103,6 @@ uninstall:
 	$(MAKECMDPREFIX)rmdir -v -p --ignore-fail-on-non-empty "$(LIBDIR)"
 
 uninstall-headers:
-	$(MAKECMDPREFIX)rm -frv "$(INCLUDEDIR)/nmea"
+	$(MAKECMDPREFIX)rm -frv "$(INCLUDEDIR)/nmealib"
 	$(MAKECMDPREFIX)rmdir -v -p --ignore-fail-on-non-empty "$(INCLUDEDIR)"
+

@@ -1,8 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
- *                     includes code by Bruno Randolf
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,39 +43,28 @@
  *
  */
 
-/*
- * Dynamic linked library for the olsr.org olsr daemon
- */
+#ifndef LIB_TXTINFO_SRC_OLSRD_TXTINFO_H_
+#define LIB_TXTINFO_SRC_OLSRD_TXTINFO_H_
 
-#ifndef _OLSRD_TXTINFO
-#define _OLSRD_TXTINFO
+#include <stdbool.h>
 
-#include "olsr_types.h"
-#include "olsrd_plugin.h"
-#include "plugin_util.h"
+#include "common/autobuf.h"
 
-/* uncomment this to include VTime values into Link/Topology command */
-/* #define ACTIVATE_VTIME_TXTINFO */
+unsigned long long get_supported_commands_mask(void);
+bool isCommand(const char *str, unsigned long long siw);
+void output_error(struct autobuf *abuf, unsigned int status, const char * req, bool http_headers);
 
-/* uncomment this to allow connections from 127.0.0.1 regardless of olsrd.conf (useful to allow externel ip/network + localhost) (ipv4 only)*/
-/* #define TXTINFO_ALLOW_LOCALHOST */
+void ipc_print_neighbors(struct autobuf *abuf);
+void ipc_print_links(struct autobuf *abuf);
+void ipc_print_routes(struct autobuf *abuf);
+void ipc_print_topology(struct autobuf *abuf);
+void ipc_print_hna(struct autobuf *abuf);
+void ipc_print_mid(struct autobuf *abuf);
+void ipc_print_gateways(struct autobuf *abuf);
+void ipc_print_sgw(struct autobuf *abuf);
+void ipc_print_version(struct autobuf *abuf);
+void ipc_print_olsrd_conf(struct autobuf *abuf);
+void ipc_print_interfaces(struct autobuf *abuf);
+void ipc_print_twohop(struct autobuf *abuf);
 
-extern union olsr_ip_addr txtinfo_accept_ip;
-extern union olsr_ip_addr txtinfo_listen_ip;
-extern int ipc_port;
-extern int nompr;
-extern int txtinfo_ipv6_only;
-
-int olsrd_plugin_interface_version(void);
-int olsrd_plugin_init(void);
-void olsr_plugin_exit(void);
-void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size);
-
-#endif /* _OLSRD_TXTINFO */
-
-/*
- * Local Variables:
- * c-basic-offset: 2
- * indent-tabs-mode: nil
- * End:
- */
+#endif /* LIB_TXTINFO_SRC_OLSRD_TXTINFO_H_ */

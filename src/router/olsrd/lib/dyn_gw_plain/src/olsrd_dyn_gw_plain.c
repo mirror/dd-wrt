@@ -1,7 +1,11 @@
-
 /*
- * Copyright (c) 2006, Sven-Ola Tuecke <sven-ola-aet-gmx.de>
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +40,7 @@
  * If you find this software useful feel free to make a donation
  * to the project. For more information see the website or contact
  * the copyright holders.
+ *
  */
 
 #include "olsrd_dyn_gw_plain.h"
@@ -43,6 +48,7 @@
 #include "ipcalc.h"
 #include "scheduler.h"
 #include "olsr.h"
+#include "builddata.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -53,9 +59,31 @@
 
 #define DEBUGLEV 1
 
+#define PLUGIN_NAME              "OLSRD dyn_gw_plain plugin"
 #define PLUGIN_INTERFACE_VERSION 5
 
 static int has_inet_gateway;
+
+static void my_init(void) __attribute__ ((constructor));
+static void my_fini(void) __attribute__ ((destructor));
+
+/**
+ *Constructor
+ */
+static void
+my_init(void)
+{
+  /* Print plugin info to stdout */
+  olsr_printf(0, "%s (%s)\n", PLUGIN_NAME, git_descriptor);
+}
+
+/**
+ *Destructor
+ */
+static void
+my_fini(void)
+{
+}
 
 /**
  * Plugin interface version
@@ -84,8 +112,6 @@ olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *
 int
 olsrd_plugin_init(void)
 {
-  printf("OLSRD dyn_gw_plain plugin by Sven-Ola\n");
-
   gw_net.v4.s_addr = INET_NET;
   gw_netmask.v4.s_addr = INET_PREFIX;
 

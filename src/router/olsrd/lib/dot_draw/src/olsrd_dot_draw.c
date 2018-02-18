@@ -1,8 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
- *                     includes code by Bruno Randolf
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -271,7 +274,7 @@ ipc_action(int fd __attribute__ ((unused)), void *data __attribute__ ((unused)),
 #endif /* _WRS_KERNEL */
   olsr_printf(1, "(DOT DRAW)IPC: Connection from %s\n", inet_ntoa(pin.sin_addr));
 
-  abuf_init(&outbuffer, 4096);
+  abuf_init(&outbuffer, AUTOBUFCHUNK);
   outbuffer_socket = ipc_connection;
 
   pcf_event(1, 1, 1);

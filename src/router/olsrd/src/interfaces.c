@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -345,6 +349,10 @@ olsr_remove_ifchange_handler(void (*f) (int if_index, struct interface_olsr *, e
 {
   struct ifchgf *tmp_ifchgf, *prev;
 
+  if (!f) {
+    return 0;
+  }
+
   tmp_ifchgf = ifchgf_list;
   prev = NULL;
 
@@ -423,8 +431,7 @@ olsr_remove_interface(struct olsr_if * iface)
   free(ifp);
 
   if ((ifnet == NULL) && (!olsr_cnf->allow_no_interfaces)) {
-    olsr_syslog(OLSR_LOG_INFO, "No more active interfaces - exiting.\n");
-    olsr_exit("No more active interfaces - exiting.\n", EXIT_FAILURE);
+    olsr_exit("No more active interfaces", EXIT_FAILURE);
   }
 }
 

@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -558,21 +562,27 @@ olsr_status_to_string(uint8_t status)
 void
 olsr_exit(const char *msg, int val)
 {
-  OLSR_PRINTF(1, "OLSR EXIT: %s\n", msg);
-  olsr_syslog(OLSR_LOG_ERR, "olsrd exit: %s\n", msg);
+  if (msg) {
+    OLSR_PRINTF(1, "OLSR EXIT: %s\n", msg);
+    olsr_syslog(OLSR_LOG_ERR, "olsrd exit: %s\n", msg);
+  }
   fflush(stdout);
-  olsr_cnf->exit_value = val;
+  fflush(stderr);
+
+  if (olsr_cnf) {
+    olsr_cnf->exit_value = val;
+  }
 
   raise(SIGTERM);
 
-  /* just to be sure */
+  /* in case the signal handler was not setup yet */
   exit(val);
 }
 
 /**
  * Wrapper for malloc(3) that does error-checking
  *
- * @param size the number of bytes to allocalte
+ * @param size the number of bytes to allocate
  * @param id a string identifying the caller for
  * use in error messaging
  *
@@ -590,10 +600,32 @@ olsr_malloc(size_t size, const char *id)
   ptr = calloc(1, size);
 
   if (!ptr) {
-    const char *const err_msg = strerror(errno);
-    OLSR_PRINTF(1, "OUT OF MEMORY: %s\n", err_msg);
-    olsr_syslog(OLSR_LOG_ERR, "olsrd: out of memory!: %s\n", err_msg);
-    olsr_exit(id, EXIT_FAILURE);
+    char buf[1024];
+    snprintf(buf, sizeof(buf), "%s: out of memory!: %s\n", id, strerror(errno));
+    olsr_exit(buf, EXIT_FAILURE);
+  }
+
+  return ptr;
+}
+
+/**
+ * Wrapper for realloc(3) that does error-checking
+ *
+ * @param ptr pointer to the buffer
+ * @param size the number of bytes to (re)allocate
+ * @param id a string identifying the caller for
+ * use in error messaging
+ *
+ * @return a void pointer to the memory allocated
+ */
+void *
+olsr_realloc(void * ptr, size_t size, const char *id)
+{
+  ptr = realloc(ptr, size);
+  if (!ptr) {
+    char buf[1024];
+    snprintf(buf, sizeof(buf), "%s: out of memory!: %s\n", id, strerror(errno));
+    olsr_exit(buf, EXIT_FAILURE);
   }
 
   return ptr;

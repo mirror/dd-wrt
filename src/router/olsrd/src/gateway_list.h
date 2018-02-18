@@ -1,7 +1,11 @@
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
- * IPv4 performance optimization (c) 2006, sven-ola(gmx.de)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,6 +49,7 @@
 #ifdef __linux__
 
 #include "gateway.h"
+#include "defs.h"
 #include "common/list.h"
 #include "kernel_tunnel.h"
 #include <stdint.h>
@@ -74,14 +79,15 @@ LISTNODE2STRUCT(olsr_gw_list_node2entry, struct gw_container_entry, list_node);
   struct list_node * _next_list_node; \
   for (_list_node = (head)->next; _list_node != (head); _list_node = _next_list_node) { \
     _next_list_node = _list_node->next; \
-    gw = olsr_gw_list_node2entry(_list_node);
-#define OLSR_FOR_ALL_GWS_END(gw) }}
+    gw = olsr_gw_list_node2entry(_list_node); \
+    if (gw) {
+#define OLSR_FOR_ALL_GWS_END(gw) }}}
 
 /**
  * @param list a pointer to the list
  * @return true when multiple gateways mode is enabled
  */
-static inline bool olsr_gw_list_isModeMulti(struct gw_list * list) {
+static INLINE bool olsr_gw_list_isModeMulti(struct gw_list * list) {
 	assert(list);
 	return (list->count_max > 1);
 }
@@ -93,7 +99,7 @@ void olsr_gw_list_cleanup(struct gw_list * list);
  * @param list a pointer to the list
  * @return true if the list is empty
  */
-static inline bool olsr_gw_list_empty(struct gw_list * list) {
+static INLINE bool olsr_gw_list_empty(struct gw_list * list) {
 	assert(list);
 	return (list->count == 0);
 }
@@ -102,7 +108,7 @@ static inline bool olsr_gw_list_empty(struct gw_list * list) {
  * @param list a pointer to the list
  * @return true if the list is full
  */
-static inline bool olsr_gw_list_full(struct gw_list * list) {
+static INLINE bool olsr_gw_list_full(struct gw_list * list) {
 	assert(list);
 	return (list->count >= list->count_max);
 }
@@ -113,7 +119,7 @@ static inline bool olsr_gw_list_full(struct gw_list * list) {
  * @param list a pointer to the list
  * @return a pointer to the best entry, or NULL when the list is empty
  */
-static inline struct gw_container_entry * olsr_gw_list_get_best_entry(struct gw_list * list) {
+static INLINE struct gw_container_entry * olsr_gw_list_get_best_entry(struct gw_list * list) {
 	assert(list);
 
 	if (olsr_gw_list_empty(list)) {
@@ -130,7 +136,7 @@ static inline struct gw_container_entry * olsr_gw_list_get_best_entry(struct gw_
  * @param list a pointer to the list
  * @return a pointer to the worst entry
  */
-static inline struct gw_container_entry * olsr_gw_list_get_worst_entry(struct gw_list * list) {
+static INLINE struct gw_container_entry * olsr_gw_list_get_worst_entry(struct gw_list * list) {
 	assert(list);
 
 	if (olsr_gw_list_empty(list)) {

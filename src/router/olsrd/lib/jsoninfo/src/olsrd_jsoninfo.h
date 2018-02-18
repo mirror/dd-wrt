@@ -1,7 +1,11 @@
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
- *                     includes code by Bruno Randolf
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,41 +43,41 @@
  *
  */
 
-/*
- * Dynamic linked library for the olsr.org olsr daemon
- */
+#ifndef LIB_JSONINFO_SRC_OLSRD_JSONINFO_H_
+#define LIB_JSONINFO_SRC_OLSRD_JSONINFO_H_
 
-#ifndef _OLSRD_JSONINFO
-#define _OLSRD_JSONINFO
+#include <stdbool.h>
+#include <time.h>
 
-#include "olsr_types.h"
-#include "olsrd_plugin.h"
-#include "plugin_util.h"
+#include "common/autobuf.h"
 
-/* uncomment this to allow connections from 127.0.0.1 regardless of olsrd.conf (useful to allow externel ip/network + localhost) (ipv4 only)*/
-/* #define JSONINFO_ALLOW_LOCALHOST */
+extern struct timeval start_time;
 
-#define UUIDLEN 256
-extern char uuid[UUIDLEN + 1];
-extern char uuidfile[FILENAME_MAX];
+void plugin_init(const char * plugin_name);
 
-extern union olsr_ip_addr jsoninfo_accept_ip;
-extern union olsr_ip_addr jsoninfo_listen_ip;
-extern int ipc_port;
-extern int nompr;
-extern bool http_headers;
-extern int jsoninfo_ipv6_only;
+unsigned long long get_supported_commands_mask(void);
+bool isCommand(const char *str, unsigned long long siw);
 
-int olsrd_plugin_interface_version(void);
-int olsrd_plugin_init(void);
-void olsr_plugin_exit(void);
-void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size);
+const char * determine_mime_type(unsigned int send_what);
 
-#endif /* _OLSRD_JSONINFO */
+void output_start(struct autobuf *abuf);
+void output_end(struct autobuf *abuf);
+void output_error(struct autobuf *abuf, unsigned int status, const char * req, bool http_headers);
 
-/*
- * Local Variables:
- * c-basic-offset: 2
- * indent-tabs-mode: nil
- * End:
- */
+void ipc_print_neighbors(struct autobuf *abuf);
+void ipc_print_links(struct autobuf *abuf);
+void ipc_print_routes(struct autobuf *abuf);
+void ipc_print_topology(struct autobuf *abuf);
+void ipc_print_hna(struct autobuf *abuf);
+void ipc_print_mid(struct autobuf *abuf);
+void ipc_print_gateways(struct autobuf *abuf);
+void ipc_print_sgw(struct autobuf *abuf);
+void ipc_print_pud_position(struct autobuf *abuf);
+void ipc_print_version(struct autobuf *abuf);
+void ipc_print_olsrd_conf(struct autobuf *abuf);
+void ipc_print_interfaces(struct autobuf *abuf);
+void ipc_print_twohop(struct autobuf *abuf);
+void ipc_print_config(struct autobuf *abuf);
+void ipc_print_plugins(struct autobuf *abuf);
+
+#endif /* LIB_JSONINFO_SRC_OLSRD_JSONINFO_H_ */

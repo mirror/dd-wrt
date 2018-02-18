@@ -1,3 +1,48 @@
+/*
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
+ *
+ */
+
 #include "receiver.h"
 
 /* Plugin includes */
@@ -14,18 +59,13 @@
 #include "net_olsr.h"
 
 /* System includes */
-#include <nmea/parser.h>
-#include <nmea/gmath.h>
-#include <nmea/sentence.h>
-#include <nmea/context.h>
+#include <nmealib/context.h>
+#include <nmealib/nmath.h>
+#include <nmealib/sentence.h>
 #include <OlsrdPudWireFormat/wireFormat.h>
+#include <unistd.h>
 
-/*
- * NMEA parser
- */
-
-/** The NMEA string parser */
-static nmeaPARSER nmeaParser;
+static void receiverProcessIncomingEntry(PositionUpdateEntry * incomingEntry);
 
 /*
  * State
@@ -71,6 +111,21 @@ static TransmitGpsInformation transmitGpsInformation;
 /** The size of the buffer in which the OLSR and uplink messages are assembled */
 #define TX_BUFFER_SIZE_FOR_OLSR 1024
 
+/** the prefix of all parameters written to the position output file */
+#define PUD_POSOUT_FILE_PARAM_PREFIX "OLSRD_PUD_"
+
+/** the position output file */
+static char * positionOutputFile = NULL;
+
+/** true when a postion output file error was already reported */
+static bool positionOutputFileError = false;
+
+/** gpsd daemon data */
+struct gps_data_t gpsdata;
+
+/** gpsd daemon connection tracking */
+static struct GpsdConnectionState connectionTracking;
+
 /*
  * Functions
  */
@@ -105,8 +160,8 @@ static void clearMovementType(MovementType * result) {
  - false otherwise
  */
 static bool positionValid(PositionUpdateEntry * position) {
-	return (nmea_INFO_is_present(position->nmeaInfo.present, FIX)
-			&& (position->nmeaInfo.fix != NMEA_FIX_BAD));
+	return (nmeaInfoIsPresentAll(position->nmeaInfo.present, NMEALIB_PRESENT_FIX)
+			&& (position->nmeaInfo.fix != NMEALIB_FIX_BAD));
 }
 
 /**
@@ -136,13 +191,13 @@ static void txToAllOlsrInterfaces(TimedTxInterface interfaces) {
 	unsigned int pu_size = 0;
 	union olsr_ip_addr gateway;
 	MovementState externalState;
-	nmeaINFO nmeaInfo;
+	NmeaInfo nmeaInfo;
 
 	externalState = getExternalState();
 
-	/* only fixup timestamp when the position is valid _and_ when the position was not updated */
-	if (positionValid(&transmitGpsInformation.txPosition) && !transmitGpsInformation.positionUpdated) {
-		nmea_time_now(&transmitGpsInformation.txPosition.nmeaInfo.utc, &transmitGpsInformation.txPosition.nmeaInfo.present);
+	/* only update the timestamp when the position is invalid AND when the position was not updated */
+	if (!positionValid(&transmitGpsInformation.txPosition) && !transmitGpsInformation.positionUpdated) {
+	  nmeaTimeSet(&transmitGpsInformation.txPosition.nmeaInfo.utc, &transmitGpsInformation.txPosition.nmeaInfo.present, NULL);
 	}
 
 	nmeaInfo = transmitGpsInformation.txPosition.nmeaInfo;
@@ -253,15 +308,176 @@ static void txToAllOlsrInterfaces(TimedTxInterface interfaces) {
 
 			errno = 0;
 			if (sendto(fd, &txBuffer, txBufferBytesUsed, 0, addr, addrSize) < 0) {
-				pudError(true, "Could not send to uplink (size=%u)", txBufferBytesUsed);
+				/* do not report send errors, they're not really relevant */
 			}
 		}
 	}
 }
 
+/**
+ * Write the position output file (if so configured)
+ *
+ * @return true on success
+ */
+static bool writePositionOutputFile(void) {
+  FILE * fp = NULL;
+  NmeaInfo * nmeaInfo;
+  const char * signal;
+  const char * fix;
+
+  if (!positionOutputFile) {
+    return true;
+  }
+
+  fp = fopen(positionOutputFile, "w");
+  if (!fp) {
+    /* could not open the file */
+    if (!positionOutputFileError) {
+      pudError(true, "Could not write to the position output file \"%s\"", positionOutputFile);
+      positionOutputFileError = true;
+    }
+    return false;
+  }
+  positionOutputFileError = false;
+
+  nmeaInfo = &transmitGpsInformation.txPosition.nmeaInfo;
+
+  /* node id */
+  fprintf(fp, "%s%s=\"%s\"\n", PUD_POSOUT_FILE_PARAM_PREFIX, "NODE_ID", transmitGpsInformation.nodeId);
+
+  /* sig */
+  switch (nmeaInfo->sig) {
+    case 0:
+      signal = "INVALID";
+      break;
+
+    case 1:
+      signal = "FIX";
+      break;
+
+    case 2:
+      signal = "DIFFERENTIAL";
+      break;
+
+    case 3:
+      signal = "SENSITIVE";
+      break;
+
+    case 4:
+      signal = "REALTIME";
+      break;
+
+    case 5:
+      signal = "FLOAT";
+      break;
+
+    case 6:
+      signal = "ESTIMATED";
+      break;
+
+    case 7:
+      signal = "MANUAL";
+      break;
+
+    case 8:
+      signal = "SIMULATED";
+      break;
+
+    default:
+      signal = NULL;
+      break;
+  }
+  if (!signal) {
+    fprintf(fp, "%s%s=%d\n", PUD_POSOUT_FILE_PARAM_PREFIX, "SIGNAL", nmeaInfo->sig);
+  } else {
+    fprintf(fp, "%s%s=%s\n", PUD_POSOUT_FILE_PARAM_PREFIX, "SIGNAL", signal);
+  }
+
+  /* fix */
+  switch (nmeaInfo->fix) {
+    case 1:
+      fix = "NONE";
+      break;
+
+    case 2:
+      fix = "2D";
+      break;
+
+    case 3:
+      fix = "3D";
+      break;
+
+    default:
+      fix = NULL;
+      break;
+  }
+  if (!fix) {
+    fprintf(fp, "%s%s=%d\n", PUD_POSOUT_FILE_PARAM_PREFIX, "FIX", nmeaInfo->fix);
+  } else {
+    fprintf(fp, "%s%s=%s\n", PUD_POSOUT_FILE_PARAM_PREFIX, "FIX", fix);
+  }
+
+  /* utc */
+  fprintf(fp, "%s%s=%04d\n", PUD_POSOUT_FILE_PARAM_PREFIX, "YEAR", nmeaInfo->utc.year);
+  fprintf(fp, "%s%s=%02d\n", PUD_POSOUT_FILE_PARAM_PREFIX, "MONTH", nmeaInfo->utc.mon);
+  fprintf(fp, "%s%s=%02d\n", PUD_POSOUT_FILE_PARAM_PREFIX, "DAY", nmeaInfo->utc.day);
+  fprintf(fp, "%s%s=%02d\n", PUD_POSOUT_FILE_PARAM_PREFIX, "HOUR", nmeaInfo->utc.hour);
+  fprintf(fp, "%s%s=%02d\n", PUD_POSOUT_FILE_PARAM_PREFIX, "MINUTE", nmeaInfo->utc.min);
+  fprintf(fp, "%s%s=%02d\n", PUD_POSOUT_FILE_PARAM_PREFIX, "SECONDS", nmeaInfo->utc.sec);
+  fprintf(fp, "%s%s=%03d\n", PUD_POSOUT_FILE_PARAM_PREFIX, "MILLISECONDS", nmeaInfo->utc.hsec * 10);
+
+  /* DOPs */
+  fprintf(fp, "%s%s=%f\n", PUD_POSOUT_FILE_PARAM_PREFIX, "PDOP", nmeaInfo->pdop);
+  fprintf(fp, "%s%s=%f\n", PUD_POSOUT_FILE_PARAM_PREFIX, "HDOP", nmeaInfo->hdop);
+  fprintf(fp, "%s%s=%f\n", PUD_POSOUT_FILE_PARAM_PREFIX, "VDOP", nmeaInfo->vdop);
+
+  /* lat, lon, ... */
+  fprintf(fp, "%s%s=%f\n", PUD_POSOUT_FILE_PARAM_PREFIX, "LATTITUDE", nmeaInfo->latitude);
+  fprintf(fp, "%s%s=%f\n", PUD_POSOUT_FILE_PARAM_PREFIX, "LONGITUDE", nmeaInfo->longitude);
+  fprintf(fp, "%s%s=%f\n", PUD_POSOUT_FILE_PARAM_PREFIX, "ELEVATION", nmeaInfo->elevation);
+  fprintf(fp, "%s%s=%f\n", PUD_POSOUT_FILE_PARAM_PREFIX, "SPEED", nmeaInfo->speed);
+  fprintf(fp, "%s%s=%f\n", PUD_POSOUT_FILE_PARAM_PREFIX, "TRACK", nmeaInfo->track);
+  fprintf(fp, "%s%s=%f\n", PUD_POSOUT_FILE_PARAM_PREFIX, "MAGNETIC_TRACK", nmeaInfo->mtrack);
+  fprintf(fp, "%s%s=%f\n", PUD_POSOUT_FILE_PARAM_PREFIX, "MAGNETIC_VARIATION", nmeaInfo->magvar);
+
+  fclose(fp);
+  return true;
+}
+
 /*
  * Timer Callbacks
  */
+
+/**
+ The gpsd fetch timer callback
+
+ @param context
+ unused
+ */
+static void pud_gpsd_fetch_timer_callback(void *context __attribute__ ((unused))) {
+  static char cnt = 0;
+
+  PositionUpdateEntry * incomingEntry;
+  GpsDaemon *gpsd = getGpsd();
+  if (!gpsd) {
+    return;
+  }
+
+  /* fetch info from gpsd daemon into the incoming entry */
+  incomingEntry = getPositionAverageEntry(&positionAverageList, INCOMING);
+  if (!cnt) {
+    nmeaInfoClear(&incomingEntry->nmeaInfo);
+    nmeaTimeSet(&incomingEntry->nmeaInfo.utc, &incomingEntry->nmeaInfo.present, NULL);
+  }
+  readFromGpsd(gpsd, &gpsdata, &connectionTracking, &incomingEntry->nmeaInfo);
+
+  if (cnt >= (TIMER_GPSD_READS_PER_SEC - 1)) {
+    receiverProcessIncomingEntry(incomingEntry);
+    cnt = 0;
+  } else {
+    cnt++;
+  }
+}
 
 /**
  The OLSR tx timer callback
@@ -281,6 +497,19 @@ static void pud_olsr_tx_timer_callback(void *context __attribute__ ((unused))) {
  */
 static void pud_uplink_timer_callback(void *context __attribute__ ((unused))) {
 	txToAllOlsrInterfaces(TX_INTERFACE_UPLINK);
+}
+
+/**
+ Restart the gpsd fetch timer
+ */
+static void restartGpsdTimer(void) {
+  if (!getGpsd()) {
+    return;
+  }
+
+  if (!restartGpsdFetchTimer(&pud_gpsd_fetch_timer_callback)) {
+    pudError(0, "Could not restart gpsd fetch timer, no position information will be available");
+  }
 }
 
 /**
@@ -319,6 +548,9 @@ static void doImmediateTransmit(MovementState externalState) {
 
 	/* do an immediate transmit */
 	txToAllOlsrInterfaces(interfaces);
+
+	/* write the position output file */
+	writePositionOutputFile();
 }
 
 /**
@@ -347,7 +579,7 @@ static void pud_gateway_timer_callback(void *context __attribute__ ((unused))) {
 	 * State Determination
 	 */
 
-	determineStateWithHysteresis(SUBSTATE_GATEWAY, movingNow, &externalState, &externalStateChange, NULL);
+	determineStateWithHysteresis(SUBSTATE_GATEWAY, movingNow, &externalState, &externalStateChange, NULL, false);
 
 	/*
 	 * Update transmitGpsInformation
@@ -383,7 +615,8 @@ static void detemineMovingFromPosition(PositionUpdateEntry * avg, PositionUpdate
 	bool avgHasElv;
 	bool avgHasVdop;
 
-	/* lastTx field presence booleans */bool lastTxHasPos;
+	/* lastTx field presence booleans */
+	bool lastTxHasPos;
 	bool lastTxHasHdop;
 	bool lastTxHasElv;
 	bool lastTxHasVdop;
@@ -432,26 +665,26 @@ static void detemineMovingFromPosition(PositionUpdateEntry * avg, PositionUpdate
 	/* both avg and lastTx are valid here */
 
 	/* avg field presence booleans */
-	avgHasSpeed = nmea_INFO_is_present(avg->nmeaInfo.present, SPEED);
-	avgHasPos = nmea_INFO_is_present(avg->nmeaInfo.present, LAT)
-			&& nmea_INFO_is_present(avg->nmeaInfo.present, LON);
-	avgHasHdop = nmea_INFO_is_present(avg->nmeaInfo.present, HDOP);
-	avgHasElv = nmea_INFO_is_present(avg->nmeaInfo.present, ELV);
-	avgHasVdop = nmea_INFO_is_present(avg->nmeaInfo.present, VDOP);
+	avgHasSpeed = nmeaInfoIsPresentAll(avg->nmeaInfo.present, NMEALIB_PRESENT_SPEED);
+	avgHasPos = nmeaInfoIsPresentAll(avg->nmeaInfo.present, NMEALIB_PRESENT_LAT)
+			&& nmeaInfoIsPresentAll(avg->nmeaInfo.present, NMEALIB_PRESENT_LON);
+	avgHasHdop = nmeaInfoIsPresentAll(avg->nmeaInfo.present, NMEALIB_PRESENT_HDOP);
+	avgHasElv = nmeaInfoIsPresentAll(avg->nmeaInfo.present, NMEALIB_PRESENT_ELV);
+	avgHasVdop = nmeaInfoIsPresentAll(avg->nmeaInfo.present, NMEALIB_PRESENT_VDOP);
 
 	/* lastTx field presence booleans */
-	lastTxHasPos = nmea_INFO_is_present(lastTx->nmeaInfo.present, LAT)
-			&& nmea_INFO_is_present(lastTx->nmeaInfo.present, LON);
-	lastTxHasHdop = nmea_INFO_is_present(lastTx->nmeaInfo.present, HDOP);
-	lastTxHasElv = nmea_INFO_is_present(lastTx->nmeaInfo.present, ELV);
-	lastTxHasVdop = nmea_INFO_is_present(lastTx->nmeaInfo.present, VDOP);
+	lastTxHasPos = nmeaInfoIsPresentAll(lastTx->nmeaInfo.present, NMEALIB_PRESENT_LAT)
+			&& nmeaInfoIsPresentAll(lastTx->nmeaInfo.present, NMEALIB_PRESENT_LON);
+	lastTxHasHdop = nmeaInfoIsPresentAll(lastTx->nmeaInfo.present, NMEALIB_PRESENT_HDOP);
+	lastTxHasElv = nmeaInfoIsPresentAll(lastTx->nmeaInfo.present, NMEALIB_PRESENT_ELV);
+	lastTxHasVdop = nmeaInfoIsPresentAll(lastTx->nmeaInfo.present, NMEALIB_PRESENT_VDOP);
 
 	/* fill in some values _or_ defaults */
 	dopMultiplier = getDopMultiplier();
-	avgHdop = avgHasHdop ? avg->nmeaInfo.HDOP : getDefaultHdop();
-	lastTxHdop = lastTxHasHdop ? lastTx->nmeaInfo.HDOP : getDefaultHdop();
-	avgVdop = avgHasVdop ? avg->nmeaInfo.VDOP : getDefaultVdop();
-	lastTxVdop = lastTxHasVdop ? lastTx->nmeaInfo.VDOP : getDefaultVdop();
+	avgHdop = avgHasHdop ? avg->nmeaInfo.hdop : getDefaultHdop();
+	lastTxHdop = lastTxHasHdop ? lastTx->nmeaInfo.hdop : getDefaultHdop();
+	avgVdop = avgHasVdop ? avg->nmeaInfo.vdop : getDefaultVdop();
+	lastTxVdop = lastTxHasVdop ? lastTx->nmeaInfo.vdop: getDefaultVdop();
 
 	/*
 	 * Calculations
@@ -459,16 +692,16 @@ static void detemineMovingFromPosition(PositionUpdateEntry * avg, PositionUpdate
 
 	/* hDistance */
 	if (avgHasPos && lastTxHasPos) {
-		nmeaPOS avgPos;
-		nmeaPOS lastTxPos;
+		NmeaPosition avgPos;
+		NmeaPosition lastTxPos;
 
-		avgPos.lat = nmea_degree2radian(avg->nmeaInfo.lat);
-		avgPos.lon = nmea_degree2radian(avg->nmeaInfo.lon);
+		avgPos.lat = nmeaMathDegreeToRadian(avg->nmeaInfo.latitude);
+		avgPos.lon = nmeaMathDegreeToRadian(avg->nmeaInfo.longitude);
 
-		lastTxPos.lat = nmea_degree2radian(lastTx->nmeaInfo.lat);
-		lastTxPos.lon = nmea_degree2radian(lastTx->nmeaInfo.lon);
+		lastTxPos.lat = nmeaMathDegreeToRadian(lastTx->nmeaInfo.latitude);
+		lastTxPos.lon = nmeaMathDegreeToRadian(lastTx->nmeaInfo.longitude);
 
-		hDistance = fabs(nmea_distance_ellipsoid(&avgPos, &lastTxPos, NULL, NULL));
+		hDistance = fabs(nmeaMathDistanceEllipsoid(&avgPos, &lastTxPos, NULL, NULL));
 		hDistanceValid = true;
 	} else {
 		hDistanceValid = false;
@@ -485,7 +718,7 @@ static void detemineMovingFromPosition(PositionUpdateEntry * avg, PositionUpdate
 
 	/* vDistance */
 	if (avgHasElv && lastTxHasElv) {
-		vDistance = fabs(lastTx->nmeaInfo.elv - avg->nmeaInfo.elv);
+		vDistance = fabs(lastTx->nmeaInfo.elevation - avg->nmeaInfo.elevation);
 		vDistanceValid = true;
 	} else {
 		vDistanceValid = false;
@@ -643,61 +876,30 @@ static void detemineMovingFromPosition(PositionUpdateEntry * avg, PositionUpdate
 	return;
 }
 
-/**
- Update the latest GPS information. This function is called when a packet is
- received from a rxNonOlsr interface, containing one or more NMEA strings with
- GPS information.
+static void receiverProcessIncomingEntry(PositionUpdateEntry * incomingEntry) {
+	static bool gpnonPrev = false;
 
- @param rxBuffer
- the receive buffer with the received NMEA string(s)
- @param rxCount
- the number of bytes in the receive buffer
-
- @return
- - false on failure
- - true otherwise
- */
-bool receiverUpdateGpsInformation(unsigned char * rxBuffer, size_t rxCount) {
-	static const char * rxBufferPrefix = "$GP";
-	static const size_t rxBufferPrefixLength = 3;
-
-	bool retval = false;
-	PositionUpdateEntry * incomingEntry;
 	PositionUpdateEntry * posAvgEntry;
 	MovementType movementResult;
 	bool subStateExternalStateChange;
 	bool externalStateChange;
 	bool updateTransmitGpsInformation = false;
 	MovementState externalState;
-
-	/* do not process when the message does not start with $GP */
-	if ((rxCount < rxBufferPrefixLength) || (strncmp((char *) rxBuffer,
-			rxBufferPrefix, rxBufferPrefixLength) != 0)) {
-		return true;
-	}
-
-	/* parse all NMEA strings in the rxBuffer into the incoming entry */
-	incomingEntry = getPositionAverageEntry(&positionAverageList, INCOMING);
-	nmea_zero_INFO(&incomingEntry->nmeaInfo);
-	nmea_parse(&nmeaParser, (char *) rxBuffer, rxCount,
-			&incomingEntry->nmeaInfo);
-
-	/* ignore when no useful information */
-	if (incomingEntry->nmeaInfo.smask == GPNON) {
-		retval = true;
-		goto end;
-	}
-
-	nmea_INFO_sanitise(&incomingEntry->nmeaInfo);
+	bool gpnon;
+	bool gpnonChanged;
 
 	/* we always work with latitude, longitude in degrees and DOPs in meters */
-	nmea_INFO_unit_conversion(&incomingEntry->nmeaInfo);
+	nmeaInfoUnitConversion(&incomingEntry->nmeaInfo, true);
+
+	gpnon = !nmeaInfoIsPresentAll(incomingEntry->nmeaInfo.present, NMEALIB_PRESENT_SMASK) || (incomingEntry->nmeaInfo.smask == NMEALIB_SENTENCE_GPNON);
+	gpnonChanged = gpnon != gpnonPrev;
+	gpnonPrev = gpnon;
 
 	/*
 	 * Averaging
 	 */
 
-	if (getInternalState(SUBSTATE_POSITION) == MOVEMENT_STATE_MOVING) {
+	if ((getInternalState(SUBSTATE_POSITION) == MOVEMENT_STATE_MOVING) || gpnonChanged) {
 		/* flush average: keep only the incoming entry */
 		flushPositionAverageList(&positionAverageList);
 	}
@@ -717,7 +919,7 @@ bool receiverUpdateGpsInformation(unsigned char * rxBuffer, size_t rxCount) {
 	 */
 
 	determineStateWithHysteresis(SUBSTATE_POSITION, movementResult.moving, &externalState, &externalStateChange,
-			&subStateExternalStateChange);
+			&subStateExternalStateChange, gpnonChanged);
 
 	/*
 	 * Update transmitGpsInformation
@@ -746,20 +948,15 @@ bool receiverUpdateGpsInformation(unsigned char * rxBuffer, size_t rxCount) {
 	if (externalStateChange) {
 		doImmediateTransmit(externalState);
 	}
-
-	retval = true;
-
-	end:
-	return retval;
 }
 
 /**
  * Log nmea library errors as plugin errors
  * @param str
- * @param str_size
+ * @param sz
  */
-static void nmea_errors(const char *str, int str_size __attribute__((unused))) {
-	pudError(false, "NMEA library error: %s", str);
+static void nmea_errors(const char *s, size_t sz __attribute__((unused))) {
+	pudError(false, "NMEA library error: %s", s);
 }
 
 /**
@@ -782,25 +979,29 @@ void updatePositionFromFile(void) {
 bool startReceiver(void) {
 	MovementState externalState;
 
-	if (!nmea_parser_init(&nmeaParser)) {
-		pudError(false, "Could not initialise NMEA parser");
-		return false;
-	}
-
 	/* hook up the NMEA library error callback */
-	nmea_context_set_error_func(&nmea_errors);
+	nmeaContextSetErrorFunction(&nmea_errors);
 
-	nmea_zero_INFO(&transmitGpsInformation.txPosition.nmeaInfo);
+	nmeaInfoClear(&transmitGpsInformation.txPosition.nmeaInfo);
+	nmeaTimeSet(&transmitGpsInformation.txPosition.nmeaInfo.utc, &transmitGpsInformation.txPosition.nmeaInfo.present, NULL);
 	updatePositionFromFile();
 
 	transmitGpsInformation.txGateway = olsr_cnf->main_addr;
 	transmitGpsInformation.positionUpdated = false;
 	transmitGpsInformation.nodeId = getNodeId(NULL);
 
-#ifdef HTTPINFO_PUD
 	olsr_cnf->pud_position = &transmitGpsInformation;
-#endif /* HTTPINFO_PUD */
+
 	initPositionAverageList(&positionAverageList, getAverageDepth());
+
+	memset(&gpsdata, 0, sizeof(gpsdata));
+	gpsdata.gps_fd = -1;
+	memset(&connectionTracking, 0, sizeof(connectionTracking));
+
+	if (!initGpsdFetchTimer()) {
+	  stopReceiver();
+	  return false;
+	}
 
 	if (!initOlsrTxTimer()) {
 		stopReceiver();
@@ -817,7 +1018,16 @@ bool startReceiver(void) {
 		return false;
 	}
 
+	positionOutputFile = getPositionOutputFile();
+	positionOutputFileError = false;
+
+	/* write the position output file */
+	if (!writePositionOutputFile()) {
+	  return false;
+	}
+
 	externalState = getExternalState();
+	restartGpsdTimer();
 	restartOlsrTimer(externalState);
 	restartUplinkTimer(externalState);
 	if (!restartGatewayTimer(getGatewayDeterminationInterval(), &pud_gateway_timer_callback)) {
@@ -833,13 +1043,23 @@ bool startReceiver(void) {
  Stop the receiver
  */
 void stopReceiver(void) {
+	if (positionOutputFile) {
+	  unlink(positionOutputFile);
+	}
+
 	destroyGatewayTimer();
 	destroyUplinkTxTimer();
 	destroyOlsrTxTimer();
+	destroyGpsdFetchTimer();
 
 	destroyPositionAverageList(&positionAverageList);
 
-	nmea_zero_INFO(&transmitGpsInformation.txPosition.nmeaInfo);
+	gpsdDisconnect(&gpsdata, &connectionTracking);
+	memset(&connectionTracking, 0, sizeof(connectionTracking));
+	memset(&gpsdata, 0, sizeof(gpsdata));
+	gpsdata.gps_fd = -1;
+
+	nmeaInfoClear(&transmitGpsInformation.txPosition.nmeaInfo);
 	transmitGpsInformation.txGateway = olsr_cnf->main_addr;
 	transmitGpsInformation.positionUpdated = false;
 }

@@ -1,76 +1,61 @@
+============
+INTRODUCTION
+============
 
-   PLUGIN USAGE
+The txtinfo plugin is an info plugin.
+
+Please first read what's written in the file lib/info/README_INFO.
+
+
+==================
+SUPPORTED COMMANDS
 ==================
 
-installation:
-make
-make install
+Grouped information:
+* /all
+* /runtime
+* /startup
 
-echo /all | nc 127.0.0.1 2006
- or
-telnet 127.0.0.1 2006 (and type /all then enter)
- or
-wget http://localhost:2006/all -qO -
- or
-curl http://localhost:2006/all
+Runtime information:
+* /nei
+* /lin
+* /rou
+* /hna
+* /mid
+* /top
+* /gat
+* /int
+* /2ho
+* /sgw
 
-Or in a web browser: http://localhost:2006/all
+A special case for Freifunk, combining /nei and /lin:
+* /neighbours
 
-The output shows the links of the node, its neighbors, the topology
-table, HNA (Host and Network Association) and MID (Multiple Interface
-Declaration) tables and the actual routing table.
+Start-up information:
+* /ver
+* /config  (not supported, will output nothing)
+* /plugins (not supported, will output nothing)
 
-So what commands does the txtinfo plugin accept?
-
-    * Config: "/config" -> send_what=SIW_CONFIG
-    * Gateways: "/gateway" -> send_what=SIW_GATEWAY
-    * HNA: "/hna" -> send_what=SIW_HNA
-    * Interfaces: "/interface" -> send_what=SIW_INTERFACE
-    * Links: "/link" -> send_what=SIW_LINK
-    * MID: "/mid" -> send_what=SIW_MID
-    * Neighbors: "/neigh" -> send_what=SIW_NEIGH
-    * Routes: "/route" -> send_what=SIW_ROUTE
-    * Topology: "/topo" -> send_what=SIW_TOPO
-    * 2-hop neighbors: "/2hop" -> send_what=SIW_2HOP
-    * Version: "/ver" -> send_what=version of olsrd
-    * (Smart) Gateway Information: "/sgw" -> send_what=information on all active (smart) gateways
-
-This is the same as the "/neigh" and "/link" commands combined:
-
-    * "/neighbours" -> send_what = SIW_NEIGHLINK -> neighbours and links
-
-Then there is "/all" which returns all of the most commonly used
-commands above (but not every command above). "/all" is the same as
-"/links/neigh/topo/hna/mid/routes".
-
-http://www.olsr.org/?q=node/26
+The current configuration, formatted for writing directly to a configuration
+file, like /etc/olsrd/olsrd.conf:
+* /con
 
 
-   PLUGIN CONFIGURATION
-==========================
+====================
+PLUGIN CONFIGURATION
+====================
 
-The plugin accepts two parameters: "port" and "accept". There are no
-futher parameters.  Here's an example configuration for UNIX systems
-(for Windows, change the plugin to end in .dll):
+The plugin is configured with the generic info plugin configuration parameters
+and with 1 extra parameter.
 
-LoadPlugin "olsrd_txtinfo.so.0.1"
+The port in the generic info plugin configuration is set to 2006.
+
+LoadPlugin "olsrd_txtinfo.so.1.1"
 {
-    # The port number on which the plugin will be listening
-    # PlParam     "port"               "2006"
+  # <generic info plugin configuration>
+  # The option "httpheaders" is overridden to "false" by default
 
-    # You can set an "accept" IP address that is allowed to connect to
-    # the plugin. If no address is specified, then localhost (127.0.0.1)
-    # is allowed by default.  Only the last parameter specified will be used,
-    # others will be ignored.
-    # Use 0.0.0.0 to accept all connections
-    # PlParam     "accept"             "127.0.0.1"
-
-    # You can set a "listen" IP address that is used to determine the interface
-    # on which the plugin will be listening. If no address is specified, then
-    # the plugin will listen on all interfaes. Only the last parameter specified
-    # will be used, others will be ignored.
-    # PlParam     "listen"             "0.0.0.0"
-
-    # Set to true to only listen on IPv6 addresses when running in IPv6 mode.
-    # PlParam     "ipv6only"           "false"
+  # Set to true to include VTime values into Link/Topology commands
+  # Default: false
+  # PlParam "vtime" "false"
 }

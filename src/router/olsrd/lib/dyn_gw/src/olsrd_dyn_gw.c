@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -214,7 +218,7 @@ set_plugin_cmd(const char *value, void *data __attribute__ ((unused)), set_plugi
   size_t len = strlen(value);
 
   if (len < PING_CMD_MAX_LEN) {
-    strncpy(ping_cmd, value, MAX(sizeof(ping_cmd), PING_CMD_MAX_LEN - 1));
+    strncpy(ping_cmd, value, PING_CMD_MAX_LEN - 1);
     ping_cmd[PING_CMD_MAX_LEN - 1] = '\0';
     return 0;
   }
@@ -305,6 +309,29 @@ olsrd_plugin_init(void)
   olsr_start_timer(hna_check_interval, 0, OLSR_TIMER_PERIODIC, &olsr_event_doing_hna, NULL, 0);
   return 1;
 }
+
+void olsrd_plugin_fini(void) {
+  if (!hna_groups) {
+    return;
+  }
+
+  while (hna_groups->ping_hosts) {
+    struct ping_list* next = hna_groups->ping_hosts->next;
+    free(hna_groups->ping_hosts->ping_address);
+    free(hna_groups->ping_hosts);
+    hna_groups->ping_hosts = next;
+  }
+
+  while (hna_groups->hna_list) {
+    struct hna_list * next = hna_groups->hna_list->next;
+    free(hna_groups->hna_list);
+    hna_groups->hna_list = next;
+  }
+
+  free(hna_groups);
+  hna_groups = NULL;
+}
+
 
 /**
  * Scheduled event to update the hna table,
@@ -581,9 +608,7 @@ add_to_ping_list(const char *ping_address, struct ping_list *the_ping_list)
 {
   struct ping_list *new = calloc(1, sizeof(struct ping_list));
   if (!new) {
-    fprintf(stderr, "DYN GW: Out of memory!\n");
-    olsr_syslog(OLSR_LOG_ERR, "DYN GW: Out of memory!\n");
-    exit(0);
+    olsr_exit("DYN GW: Out of memory", EXIT_FAILURE);
   }
   new->ping_address = strdup(ping_address);
   new->next = the_ping_list;
@@ -605,9 +630,7 @@ add_to_hna_list(struct hna_list *list_root, union olsr_ip_addr *hna_addr, uint8_
 {
   struct hna_list *new = calloc(1, sizeof(struct hna_list));
   if (new == NULL) {
-    fprintf(stderr, "DYN GW: Out of memory!\n");
-    olsr_syslog(OLSR_LOG_ERR, "DYN GW: Out of memory!\n");
-    exit(0);
+    olsr_exit("DYN GW: Out of memory", EXIT_FAILURE);
   }
 
   new->hna_addr.v4 = hna_addr->v4;
@@ -630,9 +653,7 @@ add_to_hna_group(struct hna_group *list_root)
 {
   struct hna_group *new = calloc(1, sizeof(struct hna_group));
   if (new == NULL) {
-    fprintf(stderr, "DYN GW: Out of memory!\n");
-    olsr_syslog(OLSR_LOG_ERR, "DYN GW: Out of memory!\n");
-    exit(0);
+    olsr_exit("DYN GW: Out of memory", EXIT_FAILURE);
   }
 	
   new->next =  list_root;

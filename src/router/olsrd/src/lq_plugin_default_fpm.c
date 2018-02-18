@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2008 Henning Rogge <rogge@fgan.de>
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,7 +63,7 @@ static void default_lq_deserialize_tc_lq_pair_fpm(const uint8_t ** curr, void *l
 static void default_lq_copy_link2tc_fpm(void *target, void *source);
 static void default_lq_clear_fpm(void *target);
 static const char *default_lq_print_fpm(void *ptr, char separator, struct lqtextbuffer *buffer);
-static const char *default_lq_print_cost_fpm(olsr_linkcost cost, struct lqtextbuffer *buffer);
+static double default_lq_get_cost_scaled(olsr_linkcost cost);
 
 
 /* etx lq plugin (fpm version) settings */
@@ -83,7 +87,7 @@ struct lq_handler lq_etx_fpm_handler = {
 
   &default_lq_print_fpm,
   &default_lq_print_fpm,
-  &default_lq_print_cost_fpm,
+  &default_lq_get_cost_scaled,
 
   sizeof(struct default_lq_fpm),
   sizeof(struct default_lq_fpm),
@@ -116,7 +120,7 @@ default_lq_calc_cost_fpm(const void *ptr)
 
   cost = LQ_FPM_LINKCOST_MULTIPLIER * 255 / (int)lq->valueLq * 255 / (int)lq->valueNlq;
 
-  if (cost > LINK_COST_BROKEN)
+  if (cost >= LINK_COST_BROKEN)
     return LINK_COST_BROKEN;
   if (cost == 0)
     return 1;
@@ -235,11 +239,10 @@ default_lq_print_fpm(void *ptr, char separator, struct lqtextbuffer *buffer)
   return buffer->buf;
 }
 
-static const char *
-default_lq_print_cost_fpm(olsr_linkcost cost, struct lqtextbuffer *buffer)
+static double
+default_lq_get_cost_scaled(olsr_linkcost cost)
 {
-  snprintf(buffer->buf, sizeof(buffer->buf), "%.3f", (double)(cost) / (double)LQ_FPM_LINKCOST_MULTIPLIER);
-  return buffer->buf;
+  return ((double) cost) / LQ_FPM_LINKCOST_MULTIPLIER;
 }
 
 /*

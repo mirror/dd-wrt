@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,9 +59,11 @@
 #endif /* _WIN32 */
 
 #include "olsrd_httpinfo.h"
+#include "olsr.h"
+#include "builddata.h"
 
 int http_port = 0;
-int resolve_ip_addresses = 0;
+bool resolve_ip_addresses = false;
 struct allowed_net *allowed_nets = NULL;
 union olsr_ip_addr httpinfo_listen_ip;
 
@@ -84,7 +90,8 @@ static void
 my_init(void)
 {
   /* Print plugin info to stdout */
-  printf("%s\n", MOD_DESC);
+  olsr_printf(0, "%s (%s)\n", PLUGIN_NAME, git_descriptor);
+
   httpinfo_listen_ip.v4.s_addr = htonl(INADDR_ANY);
 }
 
@@ -125,14 +132,14 @@ add_plugin_access(const char *value, void *data, set_plugin_parameter_addon addo
   struct allowed_net *an;
 
   if (olsr_string_to_prefix(olsr_cnf->ip_version, &prefix, value)) {
-    fprintf(stderr, "(HTTPINFO) unknown access restriction parameter: %s!\n", value);
-    exit(0);
+    char buf[1024];
+    snprintf(buf, sizeof(buf), "HTTPINFO: unknown access restriction parameter: %s", value);
+    olsr_exit(buf, EXIT_FAILURE);
   }
 
   an = olsr_malloc(sizeof(*an), __func__);
   if (an == NULL) {
-    fprintf(stderr, "(HTTPINFO) register param net out of memory!\n");
-    exit(0);
+    olsr_exit("HTTPINFO: register param net out of memory", EXIT_FAILURE);
   }
 
   an->prefix = prefix;

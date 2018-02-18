@@ -1,8 +1,46 @@
 /*
- * gateway_default_handler.c
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
  *
- *  Created on: Jan 29, 2010
- *      Author: rogge
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
+ *
  */
 #ifdef __linux__
 
@@ -18,7 +56,6 @@ static uint32_t gw_def_stablecount;
 static bool gw_def_choose_new_ipv4_gw;
 static bool gw_def_choose_new_ipv6_gw;
 static struct timer_entry *gw_def_timer;
-static struct costs_weights gw_costs_weights;
 
 /* forward declarations */
 static void gw_default_init(void);
@@ -52,7 +89,7 @@ struct olsr_gw_handler gw_def_handler = {
  * @param path_cost the path cost
  * @return the threshold path cost
  */
-static inline int64_t gw_default_calc_threshold(int64_t path_cost) {
+static INLINE int64_t gw_default_calc_threshold(int64_t path_cost) {
   if (olsr_cnf->smart_gw_thresh == 0) {
     return path_cost;
   }
@@ -99,9 +136,7 @@ static void gw_default_choose_gateway(void) {
     }
 
     if (gw_def_choose_new_ipv4_gw) {
-      bool gw_eligible_v4 = gw->ipv4
-          /* && (olsr_cnf->ip_version == AF_INET || olsr_cnf->use_niit) *//* contained in gw_def_choose_new_ipv4_gw */
-          && (olsr_cnf->smart_gw_allow_nat || !gw->ipv4nat);
+      bool gw_eligible_v4 = isGwSelectable(gw, false) ;
       if (gw_eligible_v4 && gw_cost < (chosen_gw_ipv4 ? chosen_gw_ipv4->path_cost : INT64_MAX)
           && (!cost_ipv4_threshold_valid || (gw_cost < cost_ipv4_threshold))) {
         chosen_gw_ipv4 = gw;
@@ -109,8 +144,7 @@ static void gw_default_choose_gateway(void) {
     }
 
     if (gw_def_choose_new_ipv6_gw) {
-      bool gw_eligible_v6 = gw->ipv6
-          /* && olsr_cnf->ip_version == AF_INET6 *//* contained in gw_def_choose_new_ipv6_gw */;
+      bool gw_eligible_v6 = isGwSelectable(gw, true);
       if (gw_eligible_v6 && gw_cost < (chosen_gw_ipv6 ? chosen_gw_ipv6->path_cost : INT64_MAX)
           && (!cost_ipv6_threshold_valid || (gw_cost < cost_ipv6_threshold))) {
         chosen_gw_ipv6 = gw;
@@ -209,11 +243,6 @@ static void gw_default_init(void) {
   gw_def_choose_new_ipv4_gw = true;
   gw_def_choose_new_ipv6_gw = true;
   gw_def_timer = NULL;
-
-  gw_costs_weights.WexitU = olsr_cnf->smart_gw_weight_exitlink_up;
-  gw_costs_weights.WexitD = olsr_cnf->smart_gw_weight_exitlink_down;
-  gw_costs_weights.Wetx = olsr_cnf->smart_gw_weight_etx;
-  gw_costs_weights.Detx = olsr_cnf->smart_gw_divider_etx;
 }
 
 /**
@@ -259,7 +288,7 @@ static int64_t gw_default_getcosts(struct gateway_entry *gw) {
 
   tc = olsr_lookup_tc_entry(&gw->originator);
 
-  if (!tc || (tc->path_cost == ROUTE_COST_BROKEN) || (!gw->uplink || !gw->downlink)) {
+  if (!tc || (tc->path_cost >= ROUTE_COST_BROKEN) || (!gw->uplink || !gw->downlink)) {
     /* gateways should not exist without tc entry */
     /* do not consider nodes with an infinite ETX */
     /* do not consider nodes without bandwidth or with a uni-directional link */
@@ -267,7 +296,7 @@ static int64_t gw_default_getcosts(struct gateway_entry *gw) {
   }
 
   /* determine the path cost */
-  return gw_costs_weigh(true, gw_costs_weights, tc->path_cost, gw->uplink, gw->downlink);
+  return gw_costs_weigh(true, tc->path_cost, gw->uplink, gw->downlink);
 }
 
 /**

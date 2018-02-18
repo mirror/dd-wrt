@@ -1,3 +1,48 @@
+/*
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
+ *
+ */
+
 #include "networkInterfaces.h"
 
 /* Plugin includes */
@@ -47,236 +92,6 @@ unsigned char * getMainIpMacAddress(void) {
 	}
 
 	return &mac[0];
-}
-
-/*
- * RX interfaces
- */
-
-/** The list of network interface objects, receiving GPS NMEA sentences */
-static TRxTxNetworkInterface *rxNetworkInterfacesListHead = NULL;
-
-/** Pointer to the last network interface object, receiving GPS NMEA sentences */
-static TRxTxNetworkInterface *lastRxNetworkInterface = NULL;
-
-/**
- @return
- The list of network interface objects, receiving GPS NMEA sentences
- */
-TRxTxNetworkInterface *getRxNetworkInterfaces(void) {
-	return rxNetworkInterfacesListHead;
-}
-
-/**
- Create a receive socket for a network interface
-
- @param networkInterface
- The network interface object. This function expects it to be filled with all
- information, except for the socket descriptor.
- @param rxSocketHandlerFunction
- The function that handles reception of data on the network interface
- @param rxMcAddr
- The receive multicast address
-
- @return
- - the socket descriptor (>= 0)
- - -1 if an error occurred
- */
-static int createRxSocket(TRxTxNetworkInterface * networkInterface,
-		socket_handler_func rxSocketHandlerFunction, union olsr_sockaddr * rxMcAddr) {
-	int ipFamilySetting;
-	int ipProtoSetting;
-	int ipMcLoopSetting;
-	int ipAddMembershipSetting;
-
-	union olsr_sockaddr address;
-	void * addr;
-	size_t addrSize;
-
-	int rxSocket = -1;
-
-	int socketReuseFlagValue = 1;
-	int mcLoopValue = 1;
-
-	assert(networkInterface != NULL);
-	assert(rxSocketHandlerFunction != NULL);
-	assert(strncmp((char *) &networkInterface->name[0], "",
-					sizeof(networkInterface->name)) != 0);
-
-	memset(&address, 0, sizeof(address));
-	if (rxMcAddr->in.sa_family == AF_INET) {
-		assert(rxMcAddr->in4.sin_addr.s_addr != INADDR_ANY);
-
-		ipFamilySetting = AF_INET;
-		ipProtoSetting = IPPROTO_IP;
-		ipMcLoopSetting = IP_MULTICAST_LOOP;
-		ipAddMembershipSetting = IP_ADD_MEMBERSHIP;
-
-		address.in4.sin_family = ipFamilySetting;
-		address.in4.sin_addr.s_addr = INADDR_ANY;
-		address.in4.sin_port = getRxMcPort();
-		addr = &address.in4;
-		addrSize = sizeof(struct sockaddr_in);
-	} else {
-		assert(rxMcAddr->in6.sin6_addr.s6_addr != in6addr_any.s6_addr);
-
-		ipFamilySetting = AF_INET6;
-		ipProtoSetting = IPPROTO_IPV6;
-		ipMcLoopSetting = IPV6_MULTICAST_LOOP;
-		ipAddMembershipSetting = IPV6_ADD_MEMBERSHIP;
-
-		address.in6.sin6_family = ipFamilySetting;
-		address.in6.sin6_addr = in6addr_any;
-		address.in6.sin6_port = getRxMcPort();
-		addr = &address.in6;
-		addrSize = sizeof(struct sockaddr_in6);
-	}
-
-	/* Create a datagram socket on which to receive. */
-	errno = 0;
-	rxSocket = socket(ipFamilySetting, SOCK_DGRAM, 0);
-	if (rxSocket < 0) {
-		pudError(true, "Could not create a receive socket for interface %s",
-				networkInterface->name);
-		goto bail;
-	}
-
-	/* Enable SO_REUSEADDR to allow multiple applications to receive the same
-	 * multicast messages */
-	errno = 0;
-	if (setsockopt(rxSocket, SOL_SOCKET, SO_REUSEADDR, &socketReuseFlagValue,
-			sizeof(socketReuseFlagValue)) < 0) {
-		pudError(true, "Could not set the reuse flag on the receive socket for"
-			" interface %s", networkInterface->name);
-		goto bail;
-	}
-
-	/* Bind to the proper port number with the IP address INADDR_ANY
-	 * (INADDR_ANY is really required here, do not change it) */
-	errno = 0;
-	if (bind(rxSocket, addr, addrSize) < 0) {
-		pudError(true, "Could not bind the receive socket for interface"
-			" %s to port %u", networkInterface->name, ntohs(getRxMcPort()));
-		goto bail;
-	}
-
-	/* Enable multicast local loopback */
-	errno = 0;
-	if (setsockopt(rxSocket, ipProtoSetting, ipMcLoopSetting, &mcLoopValue,
-			sizeof(mcLoopValue)) < 0) {
-		pudError(true, "Could not enable multicast loopback on the"
-			" receive socket for interface %s", networkInterface->name);
-		goto bail;
-	}
-
-	/* Join the multicast group on the local interface. Note that this
-	 * ADD_MEMBERSHIP option must be called for each local interface over
-	 * which the multicast datagrams are to be received. */
-	if (ipFamilySetting == AF_INET) {
-		struct ip_mreq mc_settings;
-
-		struct ifreq ifr;
-		struct in_addr * ifAddr = getIPv4Address(networkInterface->name, &ifr);
-		if (!ifAddr) {
-			pudError(true, "Could not get interface address of %s", networkInterface->name);
-			goto bail;
-		}
-
-		(void) memset(&mc_settings, 0, sizeof(mc_settings));
-		mc_settings.imr_multiaddr = rxMcAddr->in4.sin_addr;
-		mc_settings.imr_interface = *ifAddr;
-		errno = 0;
-		if (setsockopt(rxSocket, ipProtoSetting, ipAddMembershipSetting,
-				&mc_settings, sizeof(mc_settings)) < 0) {
-			pudError(true, "Could not subscribe interface %s to the configured"
-				" multicast group", networkInterface->name);
-			goto bail;
-		}
-	} else {
-		struct ipv6_mreq mc6_settings;
-		(void) memset(&mc6_settings, 0, sizeof(mc6_settings));
-		mc6_settings.ipv6mr_multiaddr = rxMcAddr->in6.sin6_addr;
-		mc6_settings.ipv6mr_interface = if_nametoindex(networkInterface->name);
-		errno = 0;
-		if (setsockopt(rxSocket, ipProtoSetting, ipAddMembershipSetting,
-				&mc6_settings, sizeof(mc6_settings)) < 0) {
-			pudError(true, "Could not subscribe interface %s to the configured"
-				" multicast group", networkInterface->name);
-			goto bail;
-		}
-	}
-
-	add_olsr_socket(rxSocket, rxSocketHandlerFunction, NULL, networkInterface,
-			SP_PR_READ);
-
-	return rxSocket;
-
-	bail: if (rxSocket >= 0) {
-		close(rxSocket);
-	}
-	return -1;
-
-}
-
-/**
- Create a receive interface and add it to the list of receive network interface
- objects
-
- @param ifName
- the network interface name
- @param rxSocketHandlerFunction
- the function that handles reception of data on the network interface
- @param rxMcAddr
- The receive multicast address
-
- @return
- - true on success
- - false on failure
- */
-static bool createRxInterface(const char * ifName,
-		socket_handler_func rxSocketHandlerFunction, union olsr_sockaddr * rxMcAddr) {
-	int socketFd = -1;
-	TRxTxNetworkInterface * networkInterface = NULL;
-
-	if (ifName == NULL) {
-		goto bail;
-	}
-
-	networkInterface = olsr_malloc(sizeof(TRxTxNetworkInterface),
-			"TRxTxNetworkInterface (PUD)");
-	if (networkInterface == NULL) {
-		goto bail;
-	}
-
-	memcpy(networkInterface->name, ifName, sizeof(networkInterface->name));
-	networkInterface->name[IFNAMSIZ] = '\0';
-	networkInterface->handler = NULL;
-	networkInterface->next = NULL;
-
-	/* networkInterface needs to be filled in when calling createRxSocket */
-	socketFd = createRxSocket(networkInterface, rxSocketHandlerFunction, rxMcAddr);
-	if (socketFd < 0) {
-		goto bail;
-	}
-	networkInterface->socketFd = socketFd;
-	networkInterface->handler = rxSocketHandlerFunction;
-
-	/* Add new object to the end of the global list. */
-	if (rxNetworkInterfacesListHead == NULL) {
-		rxNetworkInterfacesListHead = networkInterface;
-		lastRxNetworkInterface = networkInterface;
-	} else {
-		lastRxNetworkInterface->next = networkInterface;
-		lastRxNetworkInterface = networkInterface;
-	}
-
-	return true;
-
-	bail: if (networkInterface != NULL) {
-		free(networkInterface);
-	}
-	return false;
-
 }
 
 /*
@@ -577,8 +392,6 @@ static int createDownlinkSocket(int ipVersion, socket_handler_func rxSocketHandl
  Creates receive and transmit sockets and register the receive sockets with
  the OLSR stack
 
- @param rxSocketHandlerFunction
- The function to call upon reception of data on a receive socket
  @param rxSocketHandlerFunctionDownlink
  The function to call upon reception of data on a downlink receive socket
 
@@ -586,20 +399,9 @@ static int createDownlinkSocket(int ipVersion, socket_handler_func rxSocketHandl
  - true on success
  - false on failure
  */
-bool createNetworkInterfaces(socket_handler_func rxSocketHandlerFunction,
-		socket_handler_func rxSocketHandlerFunctionDownlink) {
-	union olsr_sockaddr * rxMcAddr = getRxMcAddr();
+bool createNetworkInterfaces(socket_handler_func rxSocketHandlerFunctionDownlink) {
 	union olsr_sockaddr * txMcAddr = getTxMcAddr();
 	unsigned int count = 0;
-
-	/* loop over all configured rx interfaces */
-	count = getRxNonOlsrInterfaceCount();
-	while (count--) {
-		if (!createRxInterface((char *)getRxNonOlsrInterfaceName(count), rxSocketHandlerFunction, rxMcAddr)) {
-			/* creating a receive interface failed */
-			return false;
-		}
-	}
 
 	/* loop over all configured tx interfaces */
 	count = getTxNonOlsrInterfaceCount();
@@ -651,11 +453,6 @@ static void closeInterfaces(TRxTxNetworkInterface * networkInterface) {
  Close and cleanup all receive and transmit network interfaces
  */
 void closeNetworkInterfaces(void) {
-	if (rxNetworkInterfacesListHead != NULL) {
-		closeInterfaces(rxNetworkInterfacesListHead);
-		rxNetworkInterfacesListHead = NULL;
-	}
-
 	if (txNetworkInterfacesListHead != NULL) {
 		closeInterfaces(txNetworkInterfacesListHead);
 		txNetworkInterfacesListHead = NULL;

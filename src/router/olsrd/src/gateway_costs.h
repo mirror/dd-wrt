@@ -1,3 +1,48 @@
+/*
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
+ *
+ */
+
 #ifndef GATEWAY_COSTS_H_
 #define GATEWAY_COSTS_H_
 
@@ -55,21 +100,15 @@
  * signed 64 bits number.
  */
 
-#include "stdint.h"
-#include "stdbool.h"
+#include <stdint.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-  /**
-   * Structure to keep weighing factors for the gw_costs_weigh function
-   */
-  struct costs_weights {
-      uint8_t WexitU;
-      uint8_t WexitD;
-      uint8_t Wetx;
-      uint32_t Detx;
+  struct gwtextbuffer {
+    char buf[16];
   };
 
   /**
@@ -78,14 +117,21 @@ extern "C" {
    * If the ETX divider is zero, then no weighing is performed and only the path
    * costs are considered (classic behaviour), but scaled to a 64 bit number.
    *
+   * If path_cost is the maximum AND path_cost < max_cost_etx_max then
+   * the gateway costs are equal to path_cost.
+   *
    * @param up true when the relevant interface is up
-   * @param weights the weights for the calculation
    * @param path_cost the (ETX) path cost to the gateway
+   * to take the calculation shortcut.
    * @param exitUk the gateway exit link uplink bandwidth (in kbps)
    * @param exitDk the gateway exit link downlink bandwidth (in kbps)
    * @return the weighed path cost, INT64_MAX when up is false or when exitUk and/or exitDk are zero
    */
-  int64_t gw_costs_weigh(bool up, const struct costs_weights weights, uint32_t path_cost, uint32_t exitUk, uint32_t exitDk);
+  int64_t gw_costs_weigh(bool up, uint32_t path_cost, uint32_t exitUk, uint32_t exitDk);
+
+  double get_gwcost_scaled(int64_t cost);
+
+  const char * get_gwcost_text(int64_t cost, struct gwtextbuffer *buffer);
 
 #ifdef __cplusplus
 }

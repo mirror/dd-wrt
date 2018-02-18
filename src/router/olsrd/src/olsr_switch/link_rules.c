@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2005, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -65,7 +69,7 @@ ohs_check_link(struct ohs_connection *oc, union olsr_ip_addr *dst)
       return 0;
     }
 
-    r = 1 + (int)(100.0 / (RAND_MAX + 1.0) * olsr_random());
+    r = 1 + (int)(100.0 / (OLSR_RANDOM_MAX + 1.0) * olsr_random());
 
     if (logbits & LOG_LINK) {
       struct ipaddr_str addrstr, dststr;

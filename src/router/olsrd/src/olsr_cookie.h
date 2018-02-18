@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2008, Hannes Gredler (hannes@gredler.at)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +40,7 @@
  * If you find this software useful feel free to make a donation
  * to the project. For more information see the website or contact
  * the copyright holders.
+ *
  */
 
 #include "olsr_types.h"

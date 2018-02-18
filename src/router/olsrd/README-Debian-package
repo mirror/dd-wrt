@@ -6,7 +6,7 @@ First, get the latest debian/ folder from Subversion, which contains all the
 files needed to build the Debian package, then run dpkg-buildpackage:
 
   sudo apt-get install build-essential dpkg-dev
-  git clone http://olsr.org/git/olsrd.git
+  git clone https://github.com/OLSR/olsrd.git
   cd olsrd
   svn checkout svn://svn.debian.org/svn/collab-maint/deb-maint/olsrd/trunk/debian
   echo "1.0" > debian/source/format

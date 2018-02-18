@@ -15,202 +15,115 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <nmea/generator.h>
+#include <nmealib/generator.h>
 
-#include <nmea/context.h>
-#include <nmea/gmath.h>
-#include <nmea/generate.h>
-
-#include "random.h"
-
+#include <nmealib/context.h>
+#include <nmealib/nmath.h>
+#include <nmealib/sentence.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
-/**
- * Initialise the generator
- *
- * @param gen a pointer to the generator
- * @param info a pointer to an nmeaINFO structure to use during generation
- * (present and smask are preserved, other fields are reset before generation starts)
- * @return 1 (true) on success, 0 (false) otherwise
+/*
+ * Forward declarations
  */
-int nmea_gen_init(nmeaGENERATOR *gen, nmeaINFO *info) {
-	int retval = 1;
-	int present = info->present;
-	int smask = info->smask;
-	nmeaGENERATOR *igen = gen;
 
-	nmea_init_random();
+bool nmeaGeneratorInvokeNoise(NmeaGenerator *gen, NmeaInfo *info);
 
-	nmea_zero_INFO(info);
-	info->present = present;
-	info->smask = smask;
-	nmea_INFO_set_present(&info->present, SMASK);
+bool nmeaGeneratorInitStatic(NmeaGenerator *gen, NmeaInfo *info);
+bool nmeaGeneratorInvokeStatic(NmeaGenerator *gen, NmeaInfo *info);
+bool nmeaGeneratorResetStatic(NmeaGenerator *gen, NmeaInfo *info);
 
-	info->lat = NMEA_DEF_LAT;
-	info->lon = NMEA_DEF_LON;
-	nmea_INFO_set_present(&info->present, LAT);
-	nmea_INFO_set_present(&info->present, LON);
+bool nmeaGeneratorInitRotate(NmeaGenerator *gen, NmeaInfo *info);
+bool nmeaGeneratorInvokeRotate(NmeaGenerator *gen, NmeaInfo *info);
+bool nmeaGeneratorResetRotate(NmeaGenerator *gen, NmeaInfo *info);
 
-	while (retval && igen) {
-		if (igen->init_call)
-			retval = (*igen->init_call)(igen, info);
-		igen = igen->next;
-	}
-
-	return retval;
-}
-
-/**
- * Loop the generator.
- *
- * @param gen a pointer to the generator
- * @param info a pointer to an nmeaINFO structure to use during generation
- * @return 1 (true) on success, 0 (false) otherwise
- */
-int nmea_gen_loop(nmeaGENERATOR *gen, nmeaINFO *info) {
-	int retVal = 1;
-
-	if (gen->loop_call)
-		retVal = (*gen->loop_call)(gen, info);
-
-	if (retVal && gen->next)
-		retVal = nmea_gen_loop(gen->next, info);
-
-	return retVal;
-}
-
-/**
- * Reset the generator.
- *
- * @param gen a pointer to the generator
- * @param info a pointer to an nmeaINFO structure to use during generation
- * @return 1 (true) on success, 0 (false) otherwise
- */
-int nmea_gen_reset(nmeaGENERATOR *gen, nmeaINFO *info) {
-	int RetVal = 1;
-
-	if (gen->reset_call)
-		RetVal = (*gen->reset_call)(gen, info);
-
-	return RetVal;
-}
-
-/**
- * Destroy the generator.
- *
- * @param gen a pointer to the generator
- */
-void nmea_gen_destroy(nmeaGENERATOR *gen) {
-	if (gen->next) {
-		nmea_gen_destroy(gen->next);
-		gen->next = 0;
-	}
-
-	if (gen->destroy_call)
-		(*gen->destroy_call)(gen);
-
-	free(gen);
-}
-
-/**
- * Add a generator to the existing ones.
- *
- * @param to the generators to add to
- * @param gen the generator to add
- */
-void nmea_gen_add(nmeaGENERATOR *to, nmeaGENERATOR *gen) {
-	nmeaGENERATOR * next = to;
-	while (next->next)
-		next = to->next;
-
-	next->next = gen;
-}
-
-/**
- * Run a new generation loop on the generator
- *
- * @param s a pointer to the string buffer in which to generate
- * @param len the size of the buffer
- * @param info a pointer to an nmeaINFO structure to use during generation
- * @param gen a pointer to the generator
- * @param generate_mask the smask of sentences to generate
- * @return the total length of the generated sentences
- */
-int nmea_generate_from(char *s, int len, nmeaINFO *info, nmeaGENERATOR *gen, int generate_mask) {
-	int retval;
-
-	if ((retval = nmea_gen_loop(gen, info)))
-		retval = nmea_generate(s, len, info, generate_mask);
-
-	return retval;
-}
+bool nmeaGeneratorInitRandomMove(NmeaGenerator *gen, NmeaInfo *info);
+bool nmeaGeneratorInvokeRandomMove(NmeaGenerator *gen, NmeaInfo *info);
 
 /*
  * NOISE generator
  */
 
 /**
- * NOISE Generator loop function.
- * Does not touch smask and utc in info.
+ * NOISE Generator invoke function
  *
- * @param gen a pointer to the generator
- * @param info a pointer to an nmeaINFO structure to use during generation
- * @return 1 (true) on success, 0 (false) otherwise
+ * Does not touch smask nor utc in info.
+ *
+ * @param gen The generator
+ * @param info The info structure to use during generation
+ * @return True on success
  */
-static int nmea_igen_noise_loop(nmeaGENERATOR *gen __attribute__ ((unused)), nmeaINFO *info) {
-	int it;
-	int in_use;
+bool nmeaGeneratorInvokeNoise(NmeaGenerator *gen __attribute__ ((unused)), NmeaInfo *info) {
+  size_t i;
+  size_t inUseCount;
 
-	info->sig = lrint(nmea_random(1, 3));
-	info->fix = lrint(nmea_random(2, 3));
-	info->PDOP = nmea_random(0, 9);
-	info->HDOP = nmea_random(0, 9);
-	info->VDOP = nmea_random(0, 9);
-	info->lat = nmea_random(0, 100);
-	info->lon = nmea_random(0, 100);
-	info->elv = lrint(nmea_random(-100, 100));
-	info->speed = nmea_random(0, 100);
-	info->track = nmea_random(0, 360);
-	info->mtrack = nmea_random(0, 360);
-	info->magvar = nmea_random(0, 360);
+  if (!info) {
+    return false;
+  }
 
-	nmea_INFO_set_present(&info->present, SIG);
-	nmea_INFO_set_present(&info->present, FIX);
-	nmea_INFO_set_present(&info->present, PDOP);
-	nmea_INFO_set_present(&info->present, HDOP);
-	nmea_INFO_set_present(&info->present, VDOP);
-	nmea_INFO_set_present(&info->present, LAT);
-	nmea_INFO_set_present(&info->present, LON);
-	nmea_INFO_set_present(&info->present, ELV);
-	nmea_INFO_set_present(&info->present, SPEED);
-	nmea_INFO_set_present(&info->present, TRACK);
-	nmea_INFO_set_present(&info->present, MTRACK);
-	nmea_INFO_set_present(&info->present, MAGVAR);
+  info->sig = (int) lrint(nmeaRandom(NMEALIB_SIG_FIX, NMEALIB_SIG_SENSITIVE));
+  info->fix = (int) lrint(nmeaRandom(NMEALIB_FIX_2D, NMEALIB_FIX_3D));
+  info->pdop = nmeaRandom(0.0, 9.0);
+  info->hdop = nmeaRandom(0.0, 9.0);
+  info->vdop = nmeaRandom(0.0, 9.0);
+  info->latitude = nmeaRandom(0.0, 100.0);
+  info->longitude = nmeaRandom(0.0, 100.0);
+  info->elevation = nmeaRandom(-100.0, 100.0);
+  info->height = nmeaRandom(-100.0, 100.0);
+  info->speed = nmeaRandom(0.0, 100.0);
+  info->track = nmeaRandom(0.0, 360.0);
+  info->mtrack = nmeaRandom(0.0, 360.0);
+  info->magvar = nmeaRandom(0.0, 360.0);
+  info->dgpsAge = nmeaRandom(0.0, 100.0);
+  info->dgpsSid = (unsigned int) lrint(nmeaRandom(0.0, 100.0));
 
-	info->satinfo.inuse = 0;
-	info->satinfo.inview = 0;
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SIG);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_FIX);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_PDOP);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_HDOP);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_VDOP);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_LAT);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_LON);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_ELV);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_HEIGHT);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SPEED);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_TRACK);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_MTRACK);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_MAGVAR);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_DGPSAGE);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_DGPSSID);
 
-	for (it = 0; it < NMEA_MAXSAT; it++) {
-		in_use = lrint(nmea_random(0, 3));
-		info->satinfo.in_use[it] = in_use ? it : 0;
-		info->satinfo.sat[it].id = it;
-		info->satinfo.sat[it].elv = lrint(nmea_random(0, 90));
-		info->satinfo.sat[it].azimuth = lrint(nmea_random(0, 359));
-		info->satinfo.sat[it].sig = (int) (in_use ? nmea_random(40, 99) : nmea_random(0, 40));
+  info->satellites.inUseCount = 0;
+  info->satellites.inViewCount = 0;
 
-		if (in_use)
-			info->satinfo.inuse++;
-		if (info->satinfo.sat[it].sig > 0)
-			info->satinfo.inview++;
-	}
+  for (i = 0; i < NMEALIB_MAX_SATELLITES; i++) {
+    inUseCount = (size_t) labs(lrint(nmeaRandom(0.0, 3.0)));
 
-	nmea_INFO_set_present(&info->present, SATINUSECOUNT);
-	nmea_INFO_set_present(&info->present, SATINUSE);
-	nmea_INFO_set_present(&info->present, SATINVIEW);
+    info->satellites.inUse[i] = inUseCount ?
+        (unsigned int) i :
+        0;
+    if (inUseCount) {
+      info->satellites.inUseCount++;
+    }
 
-	return 1;
+    info->satellites.inView[i].prn = (unsigned int) i;
+    info->satellites.inView[i].elevation = (int) lrint(nmeaRandom(0.0, 90.0));
+    info->satellites.inView[i].azimuth = (unsigned int) lrint(nmeaRandom(0.0, 359.0));
+    info->satellites.inView[i].snr = inUseCount ?
+        (unsigned int) lrint(nmeaRandom(40.0, 99.0)) :
+        (unsigned int) lrint(nmeaRandom(0.0, 40.0));
+    if (info->satellites.inView[i].snr) {
+      info->satellites.inViewCount++;
+    }
+  }
+
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SATINUSECOUNT);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SATINUSE);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SATINVIEWCOUNT);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SATINVIEW);
+
+  return true;
 }
 
 /*
@@ -218,79 +131,97 @@ static int nmea_igen_noise_loop(nmeaGENERATOR *gen __attribute__ ((unused)), nme
  */
 
 /**
- * STATIC Generator loop function.
- * Only touches utc in info.
+ * STATIC Generator initialiser function
  *
- * @param gen a pointer to the generator
- * @param info a pointer to an nmeaINFO structure to use during generation
- * @return 1 (true) on success, 0 (false) otherwise
- */
-static int nmea_igen_static_loop(nmeaGENERATOR *gen __attribute__ ((unused)), nmeaINFO *info) {
-	nmea_time_now(&info->utc, &info->present);
-	return 1;
-}
-
-/**
- * STATIC Generator reset function.
- * Resets only the satinfo to 4 sats in use and in view.
- *
- * @param gen a pointer to the generator
- * @param info a pointer to an nmeaINFO structure to use during generation
- * @return 1 (true) on success, 0 (false) otherwise
- */
-static int nmea_igen_static_reset(nmeaGENERATOR *gen __attribute__ ((unused)), nmeaINFO *info) {
-	info->satinfo.inuse = 4;
-	info->satinfo.inview = 4;
-
-	info->satinfo.in_use[0] = 1;
-	info->satinfo.sat[0].id = 1;
-	info->satinfo.sat[0].elv = 50;
-	info->satinfo.sat[0].azimuth = 0;
-	info->satinfo.sat[0].sig = 99;
-
-	info->satinfo.in_use[1] = 2;
-	info->satinfo.sat[1].id = 2;
-	info->satinfo.sat[1].elv = 50;
-	info->satinfo.sat[1].azimuth = 90;
-	info->satinfo.sat[1].sig = 99;
-
-	info->satinfo.in_use[2] = 3;
-	info->satinfo.sat[2].id = 3;
-	info->satinfo.sat[2].elv = 50;
-	info->satinfo.sat[2].azimuth = 180;
-	info->satinfo.sat[2].sig = 99;
-
-	info->satinfo.in_use[3] = 4;
-	info->satinfo.sat[3].id = 4;
-	info->satinfo.sat[3].elv = 50;
-	info->satinfo.sat[3].azimuth = 270;
-	info->satinfo.sat[3].sig = 99;
-
-	nmea_INFO_set_present(&info->present, SATINUSECOUNT);
-	nmea_INFO_set_present(&info->present, SATINUSE);
-	nmea_INFO_set_present(&info->present, SATINVIEW);
-
-	return 1;
-}
-
-/**
- * STATIC Generator initialiser function.
  * Only touches sig, fix and satinfo in info.
  *
- * @param gen a pointer to the generator
- * @param info a pointer to an nmeaINFO structure to use during generation
- * @return 1 (true) on success, 0 (false) otherwise
+ * @param gen The generator
+ * @param info The info structure to use during generation
+ * @return True on success
  */
-static int nmea_igen_static_init(nmeaGENERATOR *gen, nmeaINFO *info) {
-	info->sig = 3;
-	info->fix = 3;
+bool nmeaGeneratorInitStatic(NmeaGenerator *gen, NmeaInfo *info) {
+  if (!gen //
+      || !info) {
+    return false;
+  }
 
-	nmea_INFO_set_present(&info->present, SIG);
-	nmea_INFO_set_present(&info->present, FIX);
+  info->sig = NMEALIB_SIG_SENSITIVE;
+  info->fix = NMEALIB_FIX_3D;
 
-	nmea_igen_static_reset(gen, info);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SIG);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_FIX);
 
-	return 1;
+  nmeaGeneratorResetStatic(gen, info);
+
+  return true;
+}
+
+/**
+ * STATIC Generator invoke function
+ *
+ * Only touches utc in info.
+ *
+ * @param gen The generator
+ * @param info The info structure to use during generation
+ * @return True on success
+ */
+bool nmeaGeneratorInvokeStatic(NmeaGenerator *gen __attribute__ ((unused)), NmeaInfo *info) {
+  if (!info) {
+    return false;
+  }
+
+  nmeaTimeSet(&info->utc, &info->present, NULL);
+
+  return true;
+}
+
+/**
+ * STATIC Generator reset function
+ *
+ * Only resets the satinfo to 4 sats in inUse and in inView.
+ *
+ * @param gen The generator
+ * @param info The info structure to use during generation
+ * @return True on success
+ */
+bool nmeaGeneratorResetStatic(NmeaGenerator *gen __attribute__ ((unused)), NmeaInfo *info) {
+  if (!info) {
+    return false;
+  }
+
+  info->satellites.inUseCount = 4;
+  info->satellites.inViewCount = 4;
+
+  info->satellites.inUse[0] = 1;
+  info->satellites.inView[0].prn = 1;
+  info->satellites.inView[0].elevation = 50;
+  info->satellites.inView[0].azimuth = 0;
+  info->satellites.inView[0].snr = 99;
+
+  info->satellites.inUse[1] = 2;
+  info->satellites.inView[1].prn = 2;
+  info->satellites.inView[1].elevation = 50;
+  info->satellites.inView[1].azimuth = 90;
+  info->satellites.inView[1].snr = 99;
+
+  info->satellites.inUse[2] = 3;
+  info->satellites.inView[2].prn = 3;
+  info->satellites.inView[2].elevation = 50;
+  info->satellites.inView[2].azimuth = 180;
+  info->satellites.inView[2].snr = 99;
+
+  info->satellites.inUse[3] = 4;
+  info->satellites.inView[3].prn = 4;
+  info->satellites.inView[3].elevation = 50;
+  info->satellites.inView[3].azimuth = 270;
+  info->satellites.inView[3].snr = 99;
+
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SATINUSECOUNT);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SATINUSE);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SATINVIEWCOUNT);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SATINVIEW);
+
+  return true;
 }
 
 /*
@@ -298,79 +229,106 @@ static int nmea_igen_static_init(nmeaGENERATOR *gen, nmeaINFO *info) {
  */
 
 /**
- * SAT_ROTATE Generator loop function.
+ * SAT_ROTATE Generator initialiser function
  *
- * @param gen a pointer to the generator
- * @param info a pointer to an nmeaINFO structure to use during generation
- * @return 1 (true) on success, 0 (false) otherwise
+ * Only touches sig, fix and satinfo in info.
+ *
+ * @param gen The generator
+ * @param info The info structure to use during generation
+ * @return True on success
  */
-static int nmea_igen_rotate_loop(nmeaGENERATOR *gen __attribute__ ((unused)), nmeaINFO *info) {
-	int it;
-	int count = info->satinfo.inview;
-	double deg = 360.0 / (count ? count : 1);
-	double srt = (count ? (info->satinfo.sat[0].azimuth) : 0) + 5;
+bool nmeaGeneratorInitRotate(NmeaGenerator *gen, NmeaInfo *info) {
+  if (!gen //
+      || !info) {
+    return false;
+  }
 
-	nmea_time_now(&info->utc, &info->present);
+  info->sig = NMEALIB_SIG_SENSITIVE;
+  info->fix = NMEALIB_FIX_3D;
 
-	for (it = 0; it < count; it++) {
-		info->satinfo.sat[it].azimuth = (int) ((srt >= 360) ? srt - 360 : srt);
-		srt += deg;
-	}
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SIG);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_FIX);
 
-	nmea_INFO_set_present(&info->present, SATINVIEW);
+  nmeaGeneratorResetRotate(gen, info);
 
-	return 1;
+  return true;
+}
+
+/**
+ * SAT_ROTATE Generator invoke function.
+ *
+ * @param gen The generator
+ * @param info The info structure to use during generation
+ * @return True on success
+ */
+bool nmeaGeneratorInvokeRotate(NmeaGenerator *gen __attribute__ ((unused)), NmeaInfo *info) {
+  size_t i;
+  size_t inViewCount;
+  double degreesPerSatellite;
+  double azimuth;
+
+  if (!info) {
+    return false;
+  }
+
+  inViewCount = info->satellites.inViewCount;
+  degreesPerSatellite = 360.0 / (inViewCount ?
+      (double) inViewCount :
+      1.0);
+  azimuth = (inViewCount ?
+      (info->satellites.inView[0].azimuth) :
+      0) + 5;
+
+  nmeaTimeSet(&info->utc, &info->present, NULL);
+
+  for (i = 0; i < inViewCount; i++) {
+    while (azimuth >= 360.0) {
+      azimuth -= 360.0;
+    }
+    info->satellites.inView[i].azimuth = (unsigned int) azimuth;
+    azimuth += degreesPerSatellite;
+  }
+
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SATINVIEWCOUNT);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SATINVIEW);
+
+  return true;
 }
 
 /**
  * SAT_ROTATE Generator reset function.
  *
- * @param gen a pointer to the generator
- * @param info a pointer to an nmeaINFO structure to use during generation
- * @return 1 (true) on success, 0 (false) otherwise
+ * @param gen The generator
+ * @param info The info structure to use during generation
+ * @return True on success
  */
-static int nmea_igen_rotate_reset(nmeaGENERATOR *gen __attribute__ ((unused)), nmeaINFO *info) {
-	int it;
-	double deg = 360 / 8;
-	double srt = 0;
+bool nmeaGeneratorResetRotate(NmeaGenerator *gen __attribute__ ((unused)), NmeaInfo *info) {
+  size_t i;
+  double degrees = 360 / 8;
+  double azimuth = 0;
 
-	info->satinfo.inuse = 8;
-	info->satinfo.inview = 8;
+  if (!info) {
+    return false;
+  }
 
-	for (it = 0; it < info->satinfo.inview; it++) {
-		info->satinfo.in_use[it] = it + 1;
-		info->satinfo.sat[it].id = it + 1;
-		info->satinfo.sat[it].elv = 5;
-		info->satinfo.sat[it].azimuth = (int) srt;
-		info->satinfo.sat[it].sig = 80;
-		srt += deg;
-	}
+  info->satellites.inUseCount = 8;
+  info->satellites.inViewCount = 8;
 
-	nmea_INFO_set_present(&info->present, SATINUSECOUNT);
-	nmea_INFO_set_present(&info->present, SATINUSE);
-	nmea_INFO_set_present(&info->present, SATINVIEW);
+  for (i = 0; i < info->satellites.inViewCount; i++) {
+    info->satellites.inUse[i] = (unsigned int) (i + 1);
+    info->satellites.inView[i].prn = (unsigned int) (i + 1);
+    info->satellites.inView[i].elevation = 5;
+    info->satellites.inView[i].azimuth = (unsigned int) azimuth;
+    info->satellites.inView[i].snr = 80;
+    azimuth += degrees;
+  }
 
-	return 1;
-}
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SATINUSECOUNT);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SATINUSE);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SATINVIEWCOUNT);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SATINVIEW);
 
-/**
- * SAT_ROTATE Generator initialiser function.
- * Only touches sig, fix and satinfo in info.
- *
- * @param gen a pointer to the generator
- * @param info a pointer to an nmeaINFO structure to use during generation
- * @return 1 (true) on success, 0 (false) otherwise
- */
-static int nmea_igen_rotate_init(nmeaGENERATOR *gen, nmeaINFO *info) {
-	info->sig = 3;
-	info->fix = 3;
-
-	nmea_INFO_set_present(&info->present, SIG);
-	nmea_INFO_set_present(&info->present, FIX);
-
-	nmea_igen_rotate_reset(gen, info);
-
-	return 1;
+  return true;
 }
 
 /*
@@ -378,150 +336,270 @@ static int nmea_igen_rotate_init(nmeaGENERATOR *gen, nmeaINFO *info) {
  */
 
 /**
- * POS_RANDMOVE Generator initialiser function.
+ * POS_RANDMOVE Generator initialiser function
+ *
  * Only touches sig, fix, track, mtrack, magvar and speed in info.
  *
- * @param gen a pointer to the generator
- * @param info a pointer to an nmeaINFO structure to use during generation
- * @return 1 (true) on success, 0 (false) otherwise
+ * @param gen The generator
+ * @param info The info structure to use during generation
+ * @return True on success
  */
-static int nmea_igen_pos_rmove_init(nmeaGENERATOR *gen __attribute__ ((unused)), nmeaINFO *info) {
-	info->sig = 3;
-	info->fix = 3;
-	info->speed = 20;
-	info->track = 0;
-	info->mtrack = 0;
-	info->magvar = 0;
+bool nmeaGeneratorInitRandomMove(NmeaGenerator *gen __attribute__ ((unused)), NmeaInfo *info) {
+  if (!info) {
+    return false;
+  }
 
-	nmea_INFO_set_present(&info->present, SIG);
-	nmea_INFO_set_present(&info->present, FIX);
-	nmea_INFO_set_present(&info->present, SPEED);
-	nmea_INFO_set_present(&info->present, TRACK);
-	nmea_INFO_set_present(&info->present, MTRACK);
-	nmea_INFO_set_present(&info->present, MAGVAR);
+  info->sig = NMEALIB_SIG_SENSITIVE;
+  info->fix = NMEALIB_FIX_3D;
+  info->speed = 20.0;
+  info->track = 0.0;
+  info->mtrack = 0.0;
+  info->magvar = 0.0;
 
-	return 1;
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SIG);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_FIX);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SPEED);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_TRACK);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_MTRACK);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_MAGVAR);
+
+  return true;
 }
 
 /**
- * POS_RANDMOVE Generator loop function.
+ * POS_RANDMOVE Generator invoke function
  *
- * @param gen a pointer to the generator
- * @param info a pointer to an nmeaINFO structure to use during generation
- * @return 1 (true) on success, 0 (false) otherwise
+ * @param gen The generator
+ * @param info The info structure to use during generation
+ * @return True on success
  */
-static int nmea_igen_pos_rmove_loop(nmeaGENERATOR *gen __attribute__ ((unused)), nmeaINFO *info) {
-	nmeaPOS crd;
+bool nmeaGeneratorInvokeRandomMove(NmeaGenerator *gen __attribute__ ((unused)), NmeaInfo *info) {
+  NmeaPosition pos;
 
-	info->track += nmea_random(-10, 10);
-	info->mtrack += nmea_random(-10, 10);
-	info->speed += nmea_random(-2, 3);
+  if (!info) {
+    return false;
+  }
 
-	if (info->track < 0) {
-		info->track = 359 + info->track;
-	}
-	if (info->track > 359) {
-		info->track -= 359;
-	}
-	if (info->mtrack < 0) {
-		info->mtrack = 359 + info->mtrack;
-	}
-	if (info->mtrack > 359) {
-		info->mtrack -= 359;
-	}
+  info->track += nmeaRandom(-10.0, 10.0);
+  info->mtrack += nmeaRandom(-10.0, 10.0);
+  info->speed += nmeaRandom(-2.0, 3.0);
 
-	if (info->speed > 40)
-		info->speed = 40;
-	if (info->speed < 1)
-		info->speed = 1;
+  if (info->track < 0.0) {
+    info->track = 360.0 + info->track;
+  }
+  if (info->track >= 360.0) {
+    info->track -= 360.0;
+  }
 
-	nmea_info2pos(info, &crd);
-	nmea_move_horz(&crd, &crd, info->track, info->speed / 3600);
-	nmea_pos2info(&crd, info);
+  if (info->mtrack < 0.0) {
+    info->mtrack = 360.0 + info->mtrack;
+  }
+  if (info->mtrack >= 360.0) {
+    info->mtrack -= 360.0;
+  }
 
-	info->magvar = info->track;
+  if (info->speed < 1.0) {
+    info->speed = 1.0;
+  }
+  if (info->speed > 40.0) {
+    info->speed = 40.0;
+  }
 
-	nmea_INFO_set_present(&info->present, LAT);
-	nmea_INFO_set_present(&info->present, LON);
-	nmea_INFO_set_present(&info->present, SPEED);
-	nmea_INFO_set_present(&info->present, TRACK);
-	nmea_INFO_set_present(&info->present, MTRACK);
-	nmea_INFO_set_present(&info->present, MAGVAR);
 
-	return 1;
+  nmeaMathInfoToPosition(info, &pos);
+  nmeaMathMoveFlat(&pos, &pos, info->track, info->speed / 3600.0);
+  nmeaMathPositionToInfo(&pos, info);
+
+  info->magvar = info->track;
+
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_LAT);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_LON);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SPEED);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_TRACK);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_MTRACK);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_MAGVAR);
+
+  return true;
 }
 
-/**
- * Create the generator.
- *
- * @param type the type of the generator to create (see nmeaGENTYPE)
- * @param info a pointer to an nmeaINFO structure to use during generation
- * @return the generator
+/*
+ * Generator
  */
-static nmeaGENERATOR * __nmea_create_generator(const int type, nmeaINFO *info) {
-	nmeaGENERATOR *gen = 0;
 
-	switch (type) {
-	case NMEA_GEN_NOISE:
-		if (!(gen = malloc(sizeof(nmeaGENERATOR))))
-			nmea_error("__nmea_create_generator: insufficient memory!");
-		else {
-			memset(gen, 0, sizeof(nmeaGENERATOR));
-			gen->loop_call = &nmea_igen_noise_loop;
-		}
-		break;
-	case NMEA_GEN_STATIC:
-	case NMEA_GEN_SAT_STATIC:
-		if (!(gen = malloc(sizeof(nmeaGENERATOR))))
-			nmea_error("__nmea_create_generator: insufficient memory!");
-		else {
-			memset(gen, 0, sizeof(nmeaGENERATOR));
-			gen->init_call = &nmea_igen_static_init;
-			gen->loop_call = &nmea_igen_static_loop;
-			gen->reset_call = &nmea_igen_static_reset;
-		}
-		break;
-	case NMEA_GEN_SAT_ROTATE:
-		if (!(gen = malloc(sizeof(nmeaGENERATOR))))
-			nmea_error("__nmea_create_generator: insufficient memory!");
-		else {
-			memset(gen, 0, sizeof(nmeaGENERATOR));
-			gen->init_call = &nmea_igen_rotate_init;
-			gen->loop_call = &nmea_igen_rotate_loop;
-			gen->reset_call = &nmea_igen_rotate_reset;
-		}
-		break;
-	case NMEA_GEN_POS_RANDMOVE:
-		if (!(gen = malloc(sizeof(nmeaGENERATOR))))
-			nmea_error("__nmea_create_generator: insufficient memory!");
-		else {
-			memset(gen, 0, sizeof(nmeaGENERATOR));
-			gen->init_call = &nmea_igen_pos_rmove_init;
-			gen->loop_call = &nmea_igen_pos_rmove_loop;
-		}
-		break;
-	default:
-		/* case NMEA_GEN_ROTATE: */
-		gen = __nmea_create_generator(NMEA_GEN_SAT_ROTATE, info);
-		nmea_gen_add(gen, __nmea_create_generator(NMEA_GEN_POS_RANDMOVE, info));
-		break;
-	};
+bool nmeaGeneratorInit(NmeaGenerator *gen, NmeaInfo *info) {
+  bool r;
+  uint32_t present;
+  uint32_t smask;
+  NmeaGenerator *g;
 
-	return gen;
+  if (!gen //
+      || !info) {
+    return false;
+  }
+
+  r = true;
+  present = info->present;
+  smask = info->smask;
+  g = gen;
+
+  nmeaInfoClear(info);
+  nmeaTimeSet(&info->utc, &info->present, NULL);
+
+  info->present = present;
+  info->smask = smask;
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_SMASK);
+
+  info->latitude = NMEALIB_LATITUDE_DEFAULT_NDEG;
+  info->longitude = NMEALIB_LONGITUDE_DEFAULT_NDEG;
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_LAT);
+  nmeaInfoSetPresent(&info->present, NMEALIB_PRESENT_LON);
+
+  while (r && g) {
+    if (g->init) {
+      r = (*g->init)(g, info);
+    }
+    g = g->next;
+  }
+
+  return r;
 }
 
-/**
- * Create the generator and initialise it.
- *
- * @param type the type of the generator to create (see nmeaGENTYPE)
- * @param info a pointer to an nmeaINFO structure to use during generation
- * @return the generator
- */
-nmeaGENERATOR * nmea_create_generator(const int type, nmeaINFO *info) {
-	nmeaGENERATOR *gen = __nmea_create_generator(type, info);
+NmeaGenerator *nmeaGeneratorCreate(NmeaGeneratorType type, NmeaInfo *info) {
+  NmeaGenerator *gen = 0;
 
-	if (gen)
-		nmea_gen_init(gen, info);
+  if (!info) {
+    return NULL;
+  }
 
-	return gen;
+  gen = calloc(1, sizeof(NmeaGenerator));
+  if (!gen) {
+    /* can't be covered in a test */
+    return NULL;
+  }
+
+  switch (type) {
+    case NMEALIB_GENERATOR_NOISE:
+      gen->invoke = nmeaGeneratorInvokeNoise;
+      break;
+
+    case NMEALIB_GENERATOR_STATIC:
+    case NMEALIB_GENERATOR_SAT_STATIC:
+      gen->init = nmeaGeneratorInitStatic;
+      gen->invoke = nmeaGeneratorInvokeStatic;
+      gen->reset = nmeaGeneratorResetStatic;
+      break;
+
+    case NMEALIB_GENERATOR_ROTATE:
+    case NMEALIB_GENERATOR_SAT_ROTATE:
+      gen->init = nmeaGeneratorInitRotate;
+      gen->invoke = nmeaGeneratorInvokeRotate;
+      gen->reset = nmeaGeneratorResetRotate;
+
+      if (type == NMEALIB_GENERATOR_ROTATE) {
+        nmeaGeneratorAppend(gen, nmeaGeneratorCreate(NMEALIB_GENERATOR_POS_RANDMOVE, info));
+      }
+      break;
+
+    case NMEALIB_GENERATOR_POS_RANDMOVE:
+      gen->init = nmeaGeneratorInitRandomMove;
+      gen->invoke = nmeaGeneratorInvokeRandomMove;
+      break;
+
+    default:
+      free(gen);
+      return NULL;
+  };
+
+  nmeaGeneratorInit(gen, info);
+
+  return gen;
+}
+
+bool nmeaGeneratorReset(NmeaGenerator *gen, NmeaInfo *info) {
+  bool r = true;
+
+  if (!gen //
+      || !info) {
+    return false;
+  }
+
+  if (gen->reset) {
+    r = (*gen->reset)(gen, info);
+  }
+
+  return r;
+}
+
+void nmeaGeneratorDestroy(NmeaGenerator *gen) {
+  if (!gen) {
+    return;
+  }
+
+  if (gen->next) {
+    nmeaGeneratorDestroy(gen->next);
+    gen->next = NULL;
+  }
+
+  free(gen);
+}
+
+bool nmeaGeneratorInvoke(NmeaGenerator *gen, NmeaInfo *info) {
+  bool r = true;
+
+  if (!gen //
+      || !info) {
+    return false;
+  }
+
+  if (gen->invoke) {
+    r = (*gen->invoke)(gen, info);
+  }
+
+  if (r //
+      && gen->next) {
+    r = nmeaGeneratorInvoke(gen->next, info);
+  }
+
+  return r;
+}
+
+void nmeaGeneratorAppend(NmeaGenerator *to, NmeaGenerator *gen) {
+  NmeaGenerator *next;
+
+  if (!to //
+      || !gen //
+      || (to == gen)) {
+    return;
+  }
+
+  next = to;
+  while (next->next) {
+    next = next->next;
+    if ((next == to) //
+        || (next == gen)) {
+      return;
+    }
+  }
+
+  next->next = gen;
+}
+
+size_t nmeaGeneratorGenerateFrom(NmeaMallocedBuffer *buf, NmeaInfo *info, NmeaGenerator *gen, NmeaSentence mask) {
+  size_t r;
+
+  if (!buf //
+      || (!buf->buffer && buf->bufferSize) //
+      || (buf->buffer && !buf->bufferSize) //
+      || !info //
+      || !gen //
+      || !mask) {
+    return 0;
+  }
+
+  r = nmeaGeneratorInvoke(gen, info);
+  if (!r) {
+    return 0;
+  }
+
+  return nmeaSentenceFromInfo(buf, info, mask);
 }

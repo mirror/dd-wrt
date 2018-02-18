@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,7 +65,7 @@
 /* head node for all link sets */
 struct list_node link_entry_head;
 
-bool link_changes;                     /* is set if changes occur in MPRS set */
+bool link_changes = false; /* is set if changes occur in MPRS set */
 
 void
 signal_link_changes(bool val)
@@ -309,8 +313,8 @@ get_best_link_to_neighbor(const union olsr_ip_addr *remote)
 static void
 set_loss_link_multiplier(struct link_entry *entry)
 {
-  struct interface_olsr *inter;
-  struct olsr_if *cfg_inter;
+  struct interface_olsr *inter = NULL;
+  struct olsr_if *cfg_inter = NULL;
   struct olsr_lq_mult *mult;
   uint32_t val = 0;
   union olsr_ip_addr null_addr;
@@ -320,26 +324,29 @@ set_loss_link_multiplier(struct link_entry *entry)
   assert(entry->if_name);
   inter = if_ifwithname(entry->if_name);
 
-  /* find the interface configuration for the interface */
-  for (cfg_inter = olsr_cnf->interfaces; cfg_inter; cfg_inter = cfg_inter->next) {
-    if (cfg_inter->interf == inter) {
-      break;
+  if (inter) {
+    /* find the interface configuration for the interface */
+    for (cfg_inter = olsr_cnf->interfaces; cfg_inter; cfg_inter = cfg_inter->next) {
+      if (cfg_inter->interf == inter) {
+        break;
+      }
     }
   }
-  assert(cfg_inter);
 
-  /* create a null address for comparison */
-  memset(&null_addr, 0, sizeof(union olsr_ip_addr));
+  if (cfg_inter) {
+    /* create a null address for comparison */
+    memset(&null_addr, 0, sizeof(union olsr_ip_addr));
 
-  /* loop through the multiplier entries */
-  for (mult = cfg_inter->cnf->lq_mult; mult != NULL; mult = mult->next) {
+    /* loop through the multiplier entries */
+    for (mult = cfg_inter->cnf->lq_mult; mult != NULL; mult = mult->next) {
 
-    /*
-     * use the default multiplier only if there isn't any entry that
-     * has a matching IP address.
-     */
-    if ((ipequal(&mult->addr, &null_addr) && val == 0) || ipequal(&mult->addr, &entry->neighbor_iface_addr)) {
-      val = mult->value;
+      /*
+       * use the default multiplier only if there isn't any entry that
+       * has a matching IP address.
+       */
+      if ((ipequal(&mult->addr, &null_addr) && val == 0) || ipequal(&mult->addr, &entry->neighbor_iface_addr)) {
+        val = mult->value;
+      }
     }
   }
 
@@ -352,7 +359,7 @@ set_loss_link_multiplier(struct link_entry *entry)
   entry->loss_link_multiplier = val;
 
   OLSR_PRINTF(1, "Set linkloss multiplier for %s on %s to %d\n",
-      olsr_ip_to_string(&buf, &entry->neighbor_iface_addr), cfg_inter->name, val);
+      olsr_ip_to_string(&buf, &entry->neighbor_iface_addr), entry->if_name, val);
 }
 
 /*

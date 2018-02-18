@@ -1,7 +1,11 @@
-
 /*
  * The olsr.org Optimized Link-State Routing daemon (olsrd)
- * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -69,6 +73,9 @@
       (result)->tv_usec += 1000000;               \
     }                       \
   } while (0)
+
+
+int getpid(void);
 
 #endif /* COMPAT_H_ */
 

@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2005, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,6 +43,7 @@
  *
  */
 
+#include "common/string_handling.h"
 #include "olsr_host_switch.h"
 #include "olsr_types.h"
 #include "commands.h"
@@ -149,7 +154,7 @@ ohs_cmd_olsrd(const char *args)
 
     if (execve(olsrd_path, (char *const *)olsrd_args, NULL) < 0) {
       printf("Error executing olsrd: %s\n", strerror(errno));
-      exit(1);
+      exit(EXIT_FAILURE);
     }
   }
   /* Stop olsrd instance */
@@ -534,7 +539,9 @@ ohs_parse_command(void)
     ohs_cmd_exit(NULL);
   }
 
-  for (cmd_len = 0; cmd_line[cmd_len] != 0 && cmd_line[cmd_len] != '\n'; cmd_len++);
+  for (cmd_len = 0; cmd_line[cmd_len] != 0 && cmd_line[cmd_len] != '\n'; cmd_len++) {
+    // Avoid: error: this ‘for’ clause does not guard... [-Werror=misleading-indentation]
+  }
 #endif /* defined _WIN32 */
 
   {

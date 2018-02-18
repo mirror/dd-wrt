@@ -1,8 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
- * IPv4 performance optimization (c) 2006, sven-ola(gmx.de)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,10 +47,8 @@
 #define _AVL_H
 
 #include <stddef.h>
-
-/* must be declared here because of circular dependency through "defs.h" */
-
-#define INLINE inline __attribute__((always_inline))
+#include "compiler.h"
+#include "defs.h"
 
 struct avl_node {
   struct avl_node *parent;
@@ -81,21 +82,37 @@ void avl_delete(struct avl_tree *, struct avl_node *);
 static INLINE struct avl_node *
 avl_walk_first(struct avl_tree *tree)
 {
+  if (!tree) {
+    return NULL;
+  }
+
   return tree->first;
 }
 static INLINE struct avl_node *
 avl_walk_last(struct avl_tree *tree)
 {
+  if (!tree) {
+    return NULL;
+  }
+
   return tree->last;
 }
 static INLINE struct avl_node *
 avl_walk_next(struct avl_node *node)
 {
+  if (!node) {
+    return NULL;
+  }
+
   return node->next;
 }
 static INLINE struct avl_node *
 avl_walk_prev(struct avl_node *node)
 {
+  if (!node) {
+    return NULL;
+  }
+
   return node->prev;
 }
 
@@ -103,21 +120,37 @@ avl_walk_prev(struct avl_node *node)
 static INLINE const struct avl_node *
 avl_walk_first_c(const struct avl_tree *tree)
 {
+  if (!tree) {
+    return NULL;
+  }
+
   return tree->first;
 }
 static INLINE const struct avl_node *
 avl_walk_last_c(const struct avl_tree *tree)
 {
+  if (!tree) {
+    return NULL;
+  }
+
   return tree->last;
 }
 static INLINE const struct avl_node *
 avl_walk_next_c(const struct avl_node *node)
 {
+  if (!node) {
+    return NULL;
+  }
+
   return node->next;
 }
 static INLINE const struct avl_node *
 avl_walk_prev_c(const struct avl_node *node)
 {
+  if (!node) {
+    return NULL;
+  }
+
   return node->prev;
 }
 
@@ -128,11 +161,11 @@ extern int avl_comp_ipv6(const void *, const void *);
 extern int avl_comp_mac(const void *, const void *);
 
 /*
- * Macro to define an inline function to map from a list_node offset back to the
+ * Macro to define an INLINE function to map from a list_node offset back to the
  * base of the datastructure. That way you save an extra data pointer.
  */
 #define AVLNODE2STRUCT(funcname, structname, avlnodename) \
-static inline structname * funcname (struct avl_node *ptr)\
+static INLINE structname * funcname (struct avl_node *ptr)\
 {\
   return( \
     ptr ? \

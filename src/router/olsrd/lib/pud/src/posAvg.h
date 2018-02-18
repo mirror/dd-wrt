@@ -1,3 +1,48 @@
+/*
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
+ *
+ */
+
 #ifndef _PUD_POSAVG_H_
 #define _PUD_POSAVG_H_
 
@@ -6,7 +51,7 @@
 /* OLSR includes */
 
 /* System includes */
-#include <nmea/info.h>
+#include <nmealib/info.h>
 #include <stdbool.h>
 
 /** Stores angle components */
@@ -17,7 +62,7 @@ typedef struct _AngleComponents {
 
 /** Stores an nmeaINFO entry, used in the averaging */
 typedef struct _PositionUpdateEntry {
-		nmeaINFO nmeaInfo; /**< the position information */
+		NmeaInfo nmeaInfo; /**< the position information */
 
 		/* used for averaging of angles */
 		AngleComponents track; /**< the track angle components */
@@ -50,7 +95,11 @@ typedef struct _PositionUpdateCounters {
 		unsigned long long magvar; /**< the number of entries with MAGVAR present */
 		unsigned long long satinusecount; /**< the number of entries with SATINUSECOUNT present */
 		unsigned long long satinuse; /**< the number of entries with SATINUSE present */
+		unsigned long long satinviewcount; /**< the number of entries with SATINVIEWCOUNT present */
 		unsigned long long satinview; /**< the number of entries with SATINVIEW present */
+		unsigned long long height; /**< the number of entries with HEIGHT present */
+		unsigned long long dgpsage; /**< the number of entries with DGPSAGE present */
+		unsigned long long dgpssid; /**< the number of entries with DGPSSID present */
 
 		/* smask */
 		unsigned long long gpgga; /**< the number of GPGGA based entries */

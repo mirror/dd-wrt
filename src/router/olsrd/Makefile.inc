@@ -1,3 +1,46 @@
+# The olsr.org Optimized Link-State Routing daemon (olsrd)
+#
+# (c) by the OLSR project
+#
+# See our Git repository to find out who worked on this file
+# and thus is a copyright holder on it.
+#
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# * Redistributions of source code must retain the above copyright
+#   notice, this list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in
+#   the documentation and/or other materials provided with the
+#   distribution.
+# * Neither the name of olsr.org, olsrd nor the names of its
+#   contributors may be used to endorse or promote products derived
+#   from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+# Visit http://www.olsr.org for more information.
+#
+# If you find this software useful feel free to make a donation
+# to the project. For more information see the website or contact
+# the copyright holders.
+#
+
 ######################
 #
 # Highlevel configuration options for all
@@ -5,10 +48,13 @@
 #
 
 # activate debugging with 1 or deactivate with 0
-DEBUG = 0
+DEBUG ?= 1
+
+# set NOSTRIP to non-zero to inhibit stripping the binaries
+NOSTRIP ?= 0
 
 # compile OLSR_PRINTF out
-NO_DEBUG_MESSAGES ?= 1
+NO_DEBUG_MESSAGES ?= 0
 
 include $(TOP)/.config
 
@@ -24,16 +70,16 @@ OPTIMIZE += -DNEED_NOPRINTF
 CFLAGS += -DNEED_NOPRINTF
 endif
 
-#-ffunction-sections -fdata-sections -Wl,--gc-sections
-#CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 # enable mudflap with 1 or deactivate with 0
 # you need a recent enough gcc and the libmudflap installed
 MUDFLAP ?= 0
 
 # shows full compiler/linker calls if activated
-VERBOSE ?= 1
+VERBOSE ?= 0
 
-SANITIZE_ADDRESS ?= 0
+SANITIZE_ADDRESS   ?= 0
+SANITIZE_LEAK      ?= 0
+SANITIZE_UNDEFINED ?= 0
 
 ifeq ($(VERBOSE),0)
 MAKECMDPREFIX = @
@@ -61,10 +107,15 @@ CC = 		$(CCACHE) gcc
 else
 CC ?= 		$(CCACHE) gcc
 endif
+CC := $(strip $(CC))
 ifeq ($(DEBUG),0)
-STRIP ?=	strip
+  ifeq ($(NOSTRIP),0)
+  STRIP ?=  strip
+  else
+  STRIP ?=  :
+  endif
 else
-STRIP ?=	:
+STRIP ?=  :
 endif
 BISON ?=	bison
 FLEX ?=		flex
@@ -88,85 +139,105 @@ SGW_POLICY_SCRIPT ?= sgw_policy_routing_setup.sh
 DOCDIR_OLSRD ?= $(DOCDIR)/$(EXENAME)
 
 
-CPPFLAGS =	-Isrc -D_GNU_SOURCE
-ifneq ($(TOPDIR),.)
-CPPFLAGS +=	-I$(TOPDIR)/src
-endif
+CPPFLAGS  = -I$(TOPDIR)/src -I$(TOPDIR)/lib -I$(TOPDIR)/lib/pud/nmealib/include -I$(TOPDIR)/lib/pud/wireformat/include
+
+# include OS specific compiler settings
+-include $(TOPDIR)/make/Makefile.$(OS).compiler
 
 # add gcc warnings and optimizations if CFLAGS not set
 ifndef CFLAGS
 ifndef WARNINGS
-WARNINGS +=	-Wall
-WARNINGS +=	-Wextra
-WARNINGS +=	-Wold-style-definition
-WARNINGS +=	-Wdeclaration-after-statement
-WARNINGS +=	-Wmissing-prototypes
-WARNINGS +=	-Wstrict-prototypes
-WARNINGS +=	-Wmissing-declarations
-WARNINGS +=	-Wsign-compare
-WARNINGS +=	-Waggregate-return
-WARNINGS +=	-Wmissing-noreturn
-WARNINGS +=	-Wmissing-format-attribute
-WARNINGS +=	-Wno-multichar
-WARNINGS +=	-Wno-deprecated-declarations
-WARNINGS +=	-Wendif-labels
-WARNINGS +=	-Wwrite-strings
-WARNINGS +=	-Wbad-function-cast
-WARNINGS +=	-Wpointer-arith
+#
+# warning flags to add if supported (sorted)
+#
+WARNINGS += -fearly-inlining
+WARNINGS += -finline-functions-called-once
+WARNINGS += -funit-at-a-time
+WARNINGS += -Waggregate-return
+WARNINGS += -Wall
+WARNINGS += -Wbad-function-cast
+WARNINGS += -Wcast-align
+WARNINGS += -Wdeclaration-after-statement
+WARNINGS += -Wdisabled-optimization
+WARNINGS += -Wendif-labels
+#WARNINGS += -Werror
+WARNINGS += -Werror=format-security
+WARNINGS += -Wextra
+WARNINGS += -Wformat
+WARNINGS += -Wformat-security
+WARNINGS += -Wformat-y2k
+WARNINGS += -Winit-self
+WARNINGS += -Winline
+WARNINGS += -Wmissing-declarations
+WARNINGS += -Wmissing-format-attribute
+WARNINGS += -Wmissing-noreturn
+WARNINGS += -Wmissing-prototypes
+WARNINGS += -Wno-deprecated-declarations
+WARNINGS += -Wno-multichar
+WARNINGS += -Wnull-dereference
+WARNINGS += -Wold-style-definition
+WARNINGS += -Wpointer-arith
+WARNINGS += -Wsequence-point
+WARNINGS += -Wshadow
+WARNINGS += -Wshift-negative-value
+WARNINGS += -Wshift-overflow
+WARNINGS += -Wsign-compare
+WARNINGS += -Wstrict-prototypes
+WARNINGS += -Wswitch-default
+WARNINGS += -Wtautological-compare
+WARNINGS += -Wundef
+WARNINGS += -Wunused-parameter
+WARNINGS += -Wwrite-strings
+
+ifneq ($(CC),clang)
+# clang doesn't report these as errors or warnings in the gcc-warnings script
+WARNINGS += -Wdouble-promotion
+WARNINGS += -Wduplicated-cond
+WARNINGS += -Wjump-misses-init
+WARNINGS += -Wlogical-op
+WARNINGS += -Wmisleading-indentation
+WARNINGS += -Wsync-nand
+WARNINGS += -Wtrampolines
+endif
+
 ifneq ($(OS),win32)
-WARNINGS +=	-Wcast-qual
+# triggers many warnings for inet_ntop in src/win32/compat.h
+WARNINGS += -Wcast-qual
 endif
-WARNINGS +=	-Wshadow
-WARNINGS +=	-Wformat
-WARNINGS +=	-Wsequence-point
-WARNINGS +=	-Wcast-align
-WARNINGS +=	-Wformat-security
-WARNINGS +=	-Wformat-y2k
-WARNINGS +=     -Werror=format-security
-WARNINGS +=	-Winit-self
-WARNINGS +=	-Wswitch-default
-WARNINGS +=	-Wsync-nand
-WARNINGS +=	-Wundef
-WARNINGS +=	-Wlogical-op
-ifneq ($(OS),android)
-WARNINGS +=	-Wdouble-promotion
-WARNINGS +=	-Wjump-misses-init
-WARNINGS +=	-Wtrampolines
-endif
-WARNINGS +=	-Wunused-parameter
-# the following 2 do not work yet and need more work on it
-#WARNINGS +=	-Wconversion
-#WARNINGS +=	-Wredundant-decls
-ifeq ($(MUDFLAP),0)
-# work around a bug in gcc-4.*
-WARNINGS +=	-Wnested-externs
-endif
-# Alas, htons() triggers this so we can't seriously activate it.
-#WARNINGS +=	-Wunreachable-code
-WARNINGS +=	-Winline
-WARNINGS +=	-Wdisabled-optimization
-# WARNINGS +=	-Werror
-WARNINGS +=	-finline-functions-called-once
-WARNINGS +=	-funit-at-a-time
-WARNINGS +=	-fearly-inlining
-ifeq ($(DEBUG),0)
-WARNINGS +=	-fomit-frame-pointer
-endif
+
 # we have small inline functions in src/lq_route.h which should always be inlined
-WARNINGS +=	-finline-limit=350
+WARNINGS += -finline-limit=350
+
+# only in non-debug builds
+ifeq ($(DEBUG),0)
+WARNINGS += -fomit-frame-pointer
+endif
+
+# the following 2 do not work yet and need more work on it
+#WARNINGS += -Wconversion
+#WARNINGS += -Wredundant-decls
+
+# Alas, htons() triggers this so we can't seriously activate it.
+#WARNINGS += -Wunreachable-code
+
 # These tell gcc to put each function and global variable in a separate section.
-# The linker can than remove all unreferenced section. But in the olsrd binary
+# The linker can then remove all unreferenced sections. But in the olsrd binary
 # unused doesn't imply unused at all since the function may be used by plugins,
 # e.g. the ones in src/plugin_utils.c.
-# So we can use that featuer at most to identify unused functions and remove them
-# from the source by hand.
-#WARNINGS +=	-ffunction-sections
-#WARNINGS +=	-fdata-sections
+# So we can use that featuer at most to identify unused functions and remove
+# them from the source by hand.
+#WARNINGS += -ffunction-sections
+#WARNINGS += -fdata-sections
+
+ifeq ($(MUDFLAP),0)
+# work around a bug in gcc-4.*
+WARNINGS += -Wnested-externs
+endif
+
 WARNINGS :=	$(shell CC="$(CC)" "$(TOPDIR)/gcc-warnings" $(WARNINGS))
 endif
 CFLAGS +=	$(WARNINGS)
 CFLAGS +=	$(OPTIMIZE)
-CPPFLAGS += 	$(OPTIMIZE)
 CFLAGS +=	$(EXTRA_CFLAGS)
 
 endif
@@ -193,8 +264,7 @@ endif
 LDFLAGS +=	-Wl,-rpath,$(LIBDIR)
 endif
 # LDFLAGS for all 
-LDFLAGS +=	-Wl,--warn-common  #
-#-ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS +=	-Wl,--warn-common
 # See above at "-ffunction-sections" for an explanation (and why it is disabled).
 #LDOPTS +=	-Wl,--gc-sections
 #LDOPTS +=	-Wl,--print-gc-sections
@@ -205,8 +275,16 @@ endif
 
 ifeq ($(OS),linux)
   ifneq ($(SANITIZE_ADDRESS),0)
-    CFLAGS  += -fsanitize=address -fno-omit-frame-pointer
-    LDFLAGS += -fsanitize=address -static-libasan
+    CFLAGS  += -fsanitize=address -fsanitize-recover -fno-omit-frame-pointer
+    LDFLAGS += -fsanitize=address -fsanitize-recover -static-libasan
+  endif
+  ifneq ($(SANITIZE_LEAK),0)
+    CFLAGS  += -fsanitize=leak -fsanitize-recover
+    LDFLAGS += -fsanitize=leak -fsanitize-recover -static-liblsan
+  endif
+  ifneq ($(SANITIZE_UNDEFINED),0)
+    CFLAGS  += -fsanitize=undefined -fsanitize-recover
+    LDFLAGS += -fsanitize=undefined -fsanitize-recover -static-libubsan
   endif
 endif
 
@@ -252,8 +330,8 @@ OBJS +=		$(SRCS:%.c=%.o)
 
 # debugging or non-debugging flags
 ifeq ($(DEBUG),1)
-CPPFLAGS +=	-DDEBUG -DNEED_PRINTF
-CFLAGS +=	-g
+CPPFLAGS +=	-DDEBUG
+CFLAGS +=	-ggdb
 ifeq ($(OS),linux)
 LDFLAGS  += -rdynamic
 endif
@@ -267,8 +345,9 @@ ifeq ($(NO_DEBUG_MESSAGES),1)
 CPPFLAGS +=	-DNODEBUG
 endif
 
-ifeq ($(OS),linux)
-CPPFLAGS+=-DHTTPINFO_PUD -I$(TOPDIR)/lib -I$(TOPDIR)/lib/pud/nmealib/include -I$(TOPDIR)/lib/pud/wireformat/include
+# preserve debugging info when NOSTRIP is set
+ifneq ($(NOSTRIP),0)
+CFLAGS +=	-ggdb
 endif
 
 # a make function to quote "/" and "."

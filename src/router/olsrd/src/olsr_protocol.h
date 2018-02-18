@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,6 +55,7 @@ struct olsr;
 
 #include "olsr_types.h"
 #include "olsr_cfg.h"
+#include "compiler.h"
 
 #include <string.h>
 
@@ -105,6 +110,28 @@ struct olsr;
 #define LOST_LINK             3
 #define HIDE_LINK             4
 #define MAX_LINK              4
+
+#define HELLO_LINK_ORDER_ARRAY { UNSPEC_LINK, LOST_LINK, ASYM_LINK, SYM_LINK }
+
+static INLINE const char * linkTypeToString(int type) {
+  switch (type) {
+    case ASYM_LINK:
+      return "ASYMMETRIC";
+
+    case SYM_LINK:
+      return "SYMMETRIC";
+
+    case LOST_LINK:
+      return "LOST";
+
+    case HIDE_LINK:
+      return "HIDE";
+
+    case UNSPEC_LINK:
+    default:
+      return "UNSPECIFIED";
+  }
+}
 
 /*
  *Neighbor Types

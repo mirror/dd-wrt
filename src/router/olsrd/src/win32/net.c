@@ -1,7 +1,11 @@
-
 /*
  * The olsr.org Optimized Link-State Routing daemon (olsrd)
- * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,6 +62,7 @@
 #include "net_os.h"
 #include "net_olsr.h"
 #include "ipcalc.h"
+#include "olsr.h"
 
 #if defined WINCE
 #define WIDE_STRING(s) L##s
@@ -324,7 +329,7 @@ DisableIcmpRedirects(void)
   fprintf(stderr, "I have disabled ICMP redirect processing in the registry for you.\n");
   fprintf(stderr, "REBOOT NOW, so that these changes take effect. Exiting...\n\n");
 
-  exit(0);
+  olsr_exit(NULL, EXIT_SUCCESS);
 }
 
 int

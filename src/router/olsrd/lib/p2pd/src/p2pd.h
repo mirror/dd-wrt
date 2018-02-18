@@ -1,6 +1,11 @@
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004-2009, the olsr.org team - see HISTORY file
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,11 +62,10 @@
 #define P2PD_VALID_TIME           180		/* seconds */
 
 /* P2PD plugin data */
-#define PLUGIN_NAME               "OLSRD P2PD plugin"
-#define PLUGIN_NAME_SHORT         "OLSRD P2PD"
-#define PLUGIN_VERSION            "0.1.0 (" __DATE__ " " __TIME__ ")"
-#define MOD_DESC PLUGIN_NAME      " " PLUGIN_VERSION
+#define PLUGIN_NAME               "OLSRD p2pd plugin"
+#define PLUGIN_NAME_SHORT         "P2PD"
 #define PLUGIN_INTERFACE_VERSION  5
+
 #define IPHDR_FRAGMENT_MASK       0xC000
 
 /* Forward declaration of OLSR interface type */

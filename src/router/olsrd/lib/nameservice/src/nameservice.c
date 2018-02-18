@@ -1,34 +1,45 @@
-
 /*
- * Copyright (c) 2006, Jens Nachtigall <nachtigall@web.de>
- * Copyright (c) 2005, Bruno Randolf <bruno.randolf@4g-systems.biz>
- * Copyright (c) 2004, Andreas Tonnesen(andreto-at-olsr.org)
- * Copyright (c) 2007, Sven-Ola <sven-ola@gmx.de>
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
  *
- * * Redistributions of source code must retain the above copyright notice,
- *   this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright notice,
- *   this list of conditions and the following disclaimer in the documentation
- *   and/or other materials provided with the distribution.
- * * Neither the name of the UniK olsr daemon nor the names of its contributors
- *   may be used to endorse or promote products derived from this software
- *   without specific prior written permission.
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
- * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
- * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
- * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
- * OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
  *
  */
 
@@ -73,6 +84,7 @@ static bool nameservice_configured = false;
 /* config parameters */
 static char my_hosts_file[MAX_FILE + 1];
 static char my_sighup_pid_file[MAX_FILE + 1];
+static int my_filewrite_interval = 5;
 
 static char my_add_hosts[MAX_FILE + 1];
 static char my_suffix[MAX_SUFFIX];
@@ -257,6 +269,7 @@ static const struct olsrd_plugin_parameters plugin_parameters[] = {
   { .name = "interval",               .set_plugin_parameter = &set_plugin_int,         .data = &my_interval },
   { .name = "timeout",                .set_plugin_parameter = &set_nameservice_float,  .data = &my_timeout },
   { .name = "sighup-pid-file",        .set_plugin_parameter = &set_plugin_string,      .data = &my_sighup_pid_file,        .addon = {sizeof(my_sighup_pid_file)} },
+  { .name = "filewrite-interval",     .set_plugin_parameter = &set_plugin_int,         .data = &my_filewrite_interval },
   { .name = "hosts-file",             .set_plugin_parameter = &set_plugin_string,      .data = &my_hosts_file,             .addon = {sizeof(my_hosts_file)} },
   { .name = "name-change-script",     .set_plugin_parameter = &set_plugin_string,      .data = &my_name_change_script,     .addon = {sizeof(my_name_change_script)} },
   { .name = "services-change-script", .set_plugin_parameter = &set_plugin_string,      .data = &my_services_change_script, .addon = {sizeof(my_services_change_script)} },
@@ -552,7 +565,7 @@ olsr_start_write_file_timer(void)
     return;
   }
 
-  write_file_timer = olsr_start_timer(5 * MSEC_PER_SEC, 5, OLSR_TIMER_ONESHOT, olsr_expire_write_file_timer, NULL, 0);
+  write_file_timer = olsr_start_timer(my_filewrite_interval * MSEC_PER_SEC, 5, OLSR_TIMER_ONESHOT, olsr_expire_write_file_timer, NULL, 0);
 }
 
 /*
