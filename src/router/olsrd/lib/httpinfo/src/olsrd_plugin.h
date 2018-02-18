@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,9 +58,10 @@
 #include <sys/time.h>
 #include <time.h>
 #include <math.h>
+#include <stdbool.h>
 
 #include "olsr_types.h"
-#include "../../../src/olsrd_plugin.h"
+#include "../../../src/olsrd_plugin.h" /* really needed with the ../../../ */
 #include "neighbor_table.h"
 #include "two_hop_neighbor_table.h"
 #include "tc_set.h"
@@ -65,14 +70,11 @@
 #include "mpr_selector_set.h"
 #include "routing_table.h"
 
-#define PLUGIN_NAME    "Httpinfo olsrd plugin"
-#define PLUGIN_VERSION "0.1"
-#define PLUGIN_AUTHOR   "Andreas Tonnesen"
-#define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION " by " PLUGIN_AUTHOR
+#define PLUGIN_NAME              "OLSRD httpinfo plugin"
 #define PLUGIN_INTERFACE_VERSION 5
 
 extern int http_port;
-extern int resolve_ip_addresses;
+extern bool resolve_ip_addresses;
 
 /* Allowed hosts stuff */
 

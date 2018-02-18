@@ -26,7 +26,7 @@ LoadPlugin "olsrd_dyn_gw.so.0.5"
 {
 }
 
-LoadPlugin "olsrd_nameservice.so.0.3"
+LoadPlugin "olsrd_nameservice.so.0.4"
 {
     # you should set this to your own node name
     PlParam "name"             "commotion-7814921"
@@ -41,12 +41,15 @@ LoadPlugin "olsrd_p2pd.so.0.1.0"
     PlParam "UdpDestPort"      "224.0.0.251 5353"
 }
 
-LoadPlugin "olsrd_jsoninfo.so.0.0"
+LoadPlugin "olsrd_jsoninfo.so.1.1"
 {
     # PlParam "accept"         "0.0.0.0"
+
+    # for the configuration generation script
+    PlParam "port" "56789"
 }
 
-LoadPlugin "olsrd_txtinfo.so.0.1"
+LoadPlugin "olsrd_txtinfo.so.1.1"
 {
     # PlParam "accept"         "0.0.0.0"
 }

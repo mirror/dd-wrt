@@ -1,6 +1,11 @@
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004-2009, the olsr.org team - see HISTORY file
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,6 +49,7 @@
 
 /* System includes */
 #include <netinet/in.h>         /* struct in_addr */
+#include <stdbool.h>            /* bool */
 
 /* OLSR includes */
 #include "olsr_types.h"         /* olsr_ip_addr */
@@ -116,7 +122,7 @@ struct TBmfInterface {
 extern struct TBmfInterface *BmfInterfaces;
 
 extern int my_MDNS_TTL;
-extern int my_TTL_Check;
+extern bool my_TTL_Check;
 
 extern int HighestSkfd;
 extern fd_set InputSet;

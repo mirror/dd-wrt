@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2008 Henning Rogge <rogge@fgan.de>
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,6 +62,7 @@
 #endif
 
 #include <assert.h>
+#include <math.h>
 
 struct avl_tree lq_handler_tree;
 struct lq_handler *active_lq_handler = NULL;
@@ -85,8 +90,9 @@ activate_lq_handler(const char *name)
 
   node = (struct lq_handler_node *)avl_find(&lq_handler_tree, name);
   if (node == NULL) {
-    OLSR_PRINTF(1, "Error, unknown lq_handler '%s'\n", name);
-    olsr_exit("", 1);
+    char buf[1024];
+    snprintf(buf, sizeof(buf), "Error, unknown lq_handler '%s'", name);
+    olsr_exit(buf, EXIT_FAILURE);
   }
 
   OLSR_PRINTF(1, "Using '%s' algorithm for lq calculation.\n", name);
@@ -133,9 +139,9 @@ void
 register_lq_handler(struct lq_handler *handler, const char *name)
 {
   struct lq_handler_node *node;
-  size_t name_size = sizeof(*node) + strlen(name) + 1;
+  size_t name_size = strlen(name) + 1;
 
-  node = olsr_malloc(name_size, "olsr lq handler");
+  node = olsr_malloc(sizeof(*node) + name_size, "olsr lq handler");
 
   strscpy(node->name, name, name_size);
   node->node.key = node->name;
@@ -316,18 +322,25 @@ get_tc_edge_entry_text(struct tc_edge_entry *entry, char separator, struct lqtex
 const char *
 get_linkcost_text(olsr_linkcost cost, bool route, struct lqtextbuffer *buffer)
 {
-  static const char *infinite = "INFINITE";
-
-  if (route) {
-    if (cost == ROUTE_COST_BROKEN) {
-      return infinite;
-    }
-  } else {
-    if (cost >= LINK_COST_BROKEN) {
-      return infinite;
-    }
+  olsr_linkcost limit = route ? ROUTE_COST_BROKEN : LINK_COST_BROKEN;
+  if (cost >= limit) {
+    return "INFINITE";
   }
-  return active_lq_handler->print_cost(cost, buffer);
+
+  snprintf(buffer->buf, sizeof(buffer->buf), "%.3f", active_lq_handler->get_cost_scaled(cost));
+  buffer->buf[sizeof(buffer->buf) - 1] = '\0';
+  return buffer->buf;
+}
+
+double
+get_linkcost_scaled(olsr_linkcost cost, bool route)
+{
+  olsr_linkcost limit = route ? ROUTE_COST_BROKEN : LINK_COST_BROKEN;
+  if (cost >= limit) {
+    return (double) limit;
+  }
+
+  return active_lq_handler->get_cost_scaled(cost);
 }
 
 /**

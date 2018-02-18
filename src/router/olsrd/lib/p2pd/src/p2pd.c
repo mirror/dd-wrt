@@ -1,6 +1,11 @@
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004-2009, the olsr.org team - see HISTORY file
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -153,7 +158,7 @@ PacketReceivedFromOLSR(unsigned char *encapsulationUdpData, int len)
       }
 
       // Sven-Ola: Don't know how to handle the "stripped_len is uninitialized"
-      // condition, maybe exit(1) is better...?
+      // condition, maybe olsr_exit is better...?
       if (0 == stripped_len)
         return;
 

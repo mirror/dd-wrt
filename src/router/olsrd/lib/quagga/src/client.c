@@ -1,14 +1,45 @@
 /*
- * OLSRd Quagga plugin
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
  *
- * Copyright (C) 2006-2008 Immo 'FaUl' Wehrenberg <immo@chaostreff-dortmund.de>
- * Copyright (C) 2007-2012 Vasilis Tsiligiannis <acinonyxs@yahoo.gr>
+ * (c) by the OLSR project
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation or - at your option - under
- * the terms of the GNU General Public Licence version 2 but can be
- * linked to any BSD-Licenced Software with public available sourcecode
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
  *
  */
 
@@ -26,28 +57,14 @@
 #include "olsr.h"
 #include "log.h"
 #include "routing_table.h"
+#include "common/autobuf.h"
 
 #include "common.h"
 #include "quagga.h"
 #include "packet.h"
 #include "client.h"
 
-static void *my_realloc(void *, size_t, const char *);
 static void zclient_connect(void);
-
-static void *
-my_realloc(void *buf, size_t s, const char *c)
-{
-
-  buf = realloc(buf, s);
-  if (!buf) {
-    OLSR_PRINTF(1, "(QUAGGA) Out of memory: %s!\n", strerror(errno));
-    olsr_syslog(OLSR_LOG_ERR, "(QUAGGA) Out of memory!\n");
-    olsr_exit(c, EXIT_FAILURE);
-  }
-
-  return buf;
-}
 
 static void
 zclient_connect(void)
@@ -60,11 +77,12 @@ zclient_connect(void)
   } sockaddr;
 
   if (close(zebra.sock) < 0)
-    olsr_exit("(QUAGGA) Could not close socket!", EXIT_FAILURE);
+    olsr_exit("QUAGGA: Could not close socket", EXIT_FAILURE);
+
   zebra.sock = socket(zebra.port ? AF_INET : AF_UNIX, SOCK_STREAM, 0);
 
   if (zebra.sock < 0)
-    olsr_exit("(QUAGGA) Could not create socket!", EXIT_FAILURE);
+    olsr_exit("QUAGGA: Could not create socket", EXIT_FAILURE);
 
   memset(&sockaddr, 0, sizeof sockaddr);
 
@@ -147,69 +165,70 @@ zclient_write(unsigned char *options)
 unsigned char *
 zclient_read(ssize_t * size)
 {
-  unsigned char *buf;
-  ssize_t bytes, bufsize;
-  uint16_t length, offset;
-  int sockstatus;
+  unsigned char *buf = NULL;
+  ssize_t bufsize = 0;
+  uint16_t offset = 0;
+  int socket_flags_saved = fcntl(zebra.sock, F_GETFL);
 
-  /* initialize variables */
-  buf = NULL;
-  offset = 0;
+  /* initialise size */
   *size = 0;
-  bufsize = 0;
 
-  /* save socket status and set non-blocking for read */
-  sockstatus = fcntl(zebra.sock, F_GETFL);
-  (void)fcntl(zebra.sock, F_SETFL, sockstatus|O_NONBLOCK);
+  /* set non-blocking on the socket */
+  (void) fcntl(zebra.sock, F_SETFL, socket_flags_saved | O_NONBLOCK);
 
-  /* read whole packages */
+  /* read complete packets */
   do {
+    ssize_t bytes_received;
+    uint16_t packet_length;
 
     /* (re)allocate buffer */
     if (*size == bufsize) {
-      bufsize += BUFSIZE;
-      buf = my_realloc(buf, bufsize, "QUAGGA: Grow read buffer");
+      ssize_t start = bufsize;
+      bufsize += AUTOBUFCHUNK;
+      buf = olsr_realloc(buf, bufsize, "QUAGGA: grow read buffer");
+      memset(&buf[start], 0, AUTOBUFCHUNK);
     }
 
     /* read from socket */
-    bytes = read(zebra.sock, buf + *size, bufsize - *size);
-    /* handle broken packet */
-    if (!bytes) {
-      free(buf);
-      return NULL;
+    bytes_received = read(zebra.sock, &buf[*size], bufsize - *size);
+
+    /* handle invalid packet */
+    if (!bytes_received) {
+      goto error_out;
     }
+
     /* handle no data available */
-    if (bytes < 0) {
+    if (bytes_received < 0) {
       /* handle disconnect */
-      if (errno != EAGAIN) {    // oops - we got disconnected
+#if EWOULDBLOCK == EAGAIN
+      if (errno != EAGAIN) { // oops - we got disconnected
+#else
+      if ((errno != EAGAIN) && (errno != EWOULDBLOCK)) { // oops - we got disconnected
+#endif
         OLSR_PRINTF(1, "(QUAGGA) Disconnected from zebra\n");
         zebra.status &= ~STATUS_CONNECTED;
         /* TODO: Remove HNAs added from redistribution */
       }
-      free(buf);
-      return NULL;
+
+      goto error_out;
     }
 
-    *size += bytes;
+    *size += bytes_received;
 
     /* detect zebra packet fragmentation */
-    do {
-      memcpy(&length, buf + offset, sizeof(length));
-      length = ntohs(length);
-      offset += length;
+    while (*size >= (ssize_t) (offset + sizeof(packet_length))) {
+      packet_length = ntohs(*((uint16_t *)(void *) &buf[offset]));
+      offset += packet_length;
     }
-    while (*size >= (ssize_t) (offset + sizeof(length)));
-    /* set blocking socket on fragmented packet */
-    if (*size != offset)
-      (void)fcntl(zebra.sock, F_SETFL, sockstatus);
+  } while (*size != offset);
 
-  }
-  while (*size != offset);
-
-  /* restore socket status */
-  (void)fcntl(zebra.sock, F_SETFL, sockstatus);
-
+  out: (void) fcntl(zebra.sock, F_SETFL, socket_flags_saved);
   return buf;
+
+  error_out: free(buf);
+  buf = NULL;
+  *size = 0;
+  goto out;
 }
 
 /*

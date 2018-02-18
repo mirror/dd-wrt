@@ -1,7 +1,11 @@
-
 /*
  * The olsr.org Optimized Link-State Routing daemon (olsrd)
- * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -546,8 +550,7 @@ add_hemu_if(struct olsr_if *iface)
     ifp->olsr_socket = gethemusocket(&sin);
 
     if (ifp->olsr_socket < 0) {
-      fprintf(stderr, "Could not initialize socket... exiting!\n\n");
-      exit(1);
+      olsr_exit("Could not initialize socket", EXIT_FAILURE);
     }
 
   } else {
@@ -842,8 +845,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl __attribute__ ((unused)))
   New->send_socket = getsocket(0, New);
 
   if (New->olsr_socket < 0) {
-    fprintf(stderr, "Could not initialize socket... exiting!\n\n");
-    exit(1);
+    olsr_exit("Could not initialize socket", EXIT_FAILURE);
   }
 
   add_olsr_socket(New->olsr_socket, &olsr_input, NULL, NULL, SP_PR_READ);

@@ -1,3 +1,1023 @@
+0.9.6.2 -------------------------------------------------------------------
+
+Ferry Huberts (2):
+      link_set: fix typo in f8d4e24
+      Release v0.9.6.2
+
+Henning Rogge (1):
+      Update version after release of v0.9.6.1
+
+0.9.6.1 -------------------------------------------------------------------
+
+Ferry Huberts (6):
+      changelog: fixup
+      info: java: upgrade gradle wrapper
+      info: automatically detect whether the reply should have HTTP headers
+      lq_packet: make the hello link order a define
+      hello reception: use link status ordering
+      hello reception: only remove UNSPEC duplicates
+
+Henning Rogge (2):
+      Update version after release of v0.9.6
+      Release v0.9.6.1
+
+Iwan G. Flameling (2):
+      lq_packet: do not report duplicate neighbours in HELLO messages
+      hello reception: remove duplicate neighbors
+
+0.9.6 -------------------------------------------------------------------
+
+* The versions of the following plugins have changed:
+  - jsoninfo    :   0.0 -->   1.1
+  - nameservice :   0.3 -->   0.4
+  - netjson     :   1.0 -->   1.1
+  - pud         : 2.0.0 --> 3.0.0 (including its extra libraries)
+  - txtinfo     :   0.1 -->   1.1
+
+* All info plugins (jsoninfo, netjson and txtinfo) now support a number of
+  request prefixes:
+  - /http : forces output WITH    http headers, temporarily overriding the
+            configured "httpheaders" value.
+  - /plain: forces output WITHOUT http headers, temporarily overriding the
+            configured "httpheaders" value.
+
+  These prefixes have to be at the start of the request string, can occur
+  only there, and can occur only once.
+
+Bastian Bittorf (1):
+      logging: show interface name during blocked socket error
+
+Ferry Huberts (79):
+      Update version after branch of v0.9.5
+      changelog: adjust to put notes on top
+      release: adjust script to create multiple tar files
+      Merge branch 'release-0.9.5'
+      mach: add wrapper for clock_gettime
+      sgw: fix interface monitor for single-sgw mode
+      Merge branch 'release-0.9.5'
+      txtinfo: do not use http headers by default
+      info: fix json Content-Type header
+      Merge branch 'release-0.9.5'
+      main: improve EXECINFO include handling a bit
+      Merge branch 'release-0.9.5'
+      main: blacklist UCLIBC for OLSR_HAVE_EXECINFO_H
+      Merge branch 'release-0.9.5'
+      info: java: upgrade gradle wrapper
+      info: ensure the request is initially empty
+      info: rework HTTP request detection and request sanitation
+      info: send everything on empty requests
+      info: drain the request when there are too many requests in flight
+      info: trivial comment fix
+      info: trival debug output fix
+      info: improve readability of the 'empty request' check
+      info: protect stripEOLs against invalid input and zero length
+      info: protect skipMultipleSlashes against invalid input and zero length
+      info: protect skipLeadingWhitespace against invalid input and zero length
+      info: protect stripTrailingSlashes against invalid input and zero length
+      info: protect cutAtFirstEOL against invalid input and zero length
+      info: rename stripEOLs to stripTrailingWhitespace
+      info: be explicit about adding headers
+      info: fix a comment and add a comment
+      info: read the request as early as possible
+      info: sanitise the request right after it's been received
+      info: introduce command prefixes '/http' and '/plain'
+      conf: clear allocated default config before filling it.
+      conf: ensure the correct configuration file is stored in the configuration
+      conf: calculate the checksum over the effective configuration
+      main: save argc and argv for later use
+      jsoninfo: always output the configuration checksum
+      jsoninfo: add cli arguments to the config object
+      info: fix levels of a few debug messages
+      info: move a comment
+      info: add a comment about the size of the receive buffer
+      info: fix drain_request to not block
+      info: allow a small delay between connection accept and request arrival
+      info: do not block when receiving the request
+      info: return 'REQUEST TIMEOUT' when receiving the request did not work
+      info: release changed java OSGi bundles
+      info: add sanitation of the configuration
+      info: add request timeout configuration parameter
+      changelog: add a note about the '/http' and '/plain' request prefixes
+      info: update java dependency bundles
+      doc: upgrade doxygen configuration
+      doc: minor adjustment of the makefile
+      doc: fix warnings
+      doc: move pdf generation into new doc-pdf make target
+      gui: clean-ups
+      make: remove -Wmissing-include-dirs
+      files: get rid of net-tools usage
+      files: update configuration generation script
+      Merge pull request #12 from booo/sighup-interval
+      Merge pull request #14 from bittorf/master
+      cfgparser: use correct SHA256_DIGEST_LENGTH
+      cfgparser: pull in openssl sha256 code to avoid linking to it
+      cfgparser: use superfasthash for the configuration checksum
+      logging: work around bogus Coverity warning
+      Merge pull request #16 from SvenRoederer/rename_sighup-interval
+      Merge pull request #18 from SvenRoederer/olsr-nameservice-version
+      nameservice: fix plugin versions
+      nameservice: fix typos of filewrite-interval plugin parameter
+      pud: bump version
+      jsoninfo: bump version
+      netjson: bump version
+      txtinfo: bump version
+      changelog: add a remark about updated plugin versions
+      lq_packet: change link status ordering in hello messages
+      Branch v0.9.6
+      changelog: minor layout fixes
+      release: minor improvements to the release script
+      release: insert changelog just before the marker of the previous release
+
+Henning Rogge (2):
+      Update version after release of v0.9.5
+      Release v0.9.6
+
+Philipp Borgers (1):
+      nameservice: add new sighup-interval parameter
+
+Sebastian Wiedenroth (1):
+      fix timing issues on systems where RAND_MAX is not INT32_MAX
+
+Sven Roederer (2):
+      nameservice: rename parameter "sighup_interval" to "filewrite_interval"
+      nameservice: bump version to 0.4
+
+Thorsten Maerz (1):
+      make: strip CC
+
+0.9.5 -------------------------------------------------------------------
+
+Note: The txtinfo and jsoninfo plugins were 'merged' to use a common
+      codebase for receiving requests and dispatching replies. Also,
+      these plugins were subjected to review and fixes. As a result:
+      - request handling has become much stricter, e.g. a txtinfo
+        request '/links' will no longer work since the correct request is
+        (and has always been) '/lin'.
+      - some fixes change the format and/or content of txtinfo and/or
+        jsoninfo output. An example is the txtinfo output of the request
+        '/mid' when 'vtime' is enabled on txtinfo; this has been broken
+        since the end of 2009 (c555a44).
+      - invalid requests will return HTTP error status code
+        "Not Found" (404) when HTTP headers are enabled, and report
+        an error in the output when they are not enabled.
+      - requests without output will return HTTP error status code
+        "No Content" (204) when HTTP headers are enabled, and report
+        an error in the output when they are not enabled.
+
+      It is VERY strongly advised to check your scripts and applications
+      interfacing with olsrd txtinfo and/or jsoninfo before switching
+      to this version of olsrd.
+
+
+Ferry Huberts (824):
+      Update version after branch of v0.9.0
+      Merge branch 'release-0.9.0'
+      neighbors: signal link changes when deleting a neighbor
+      Merge branch 'release-0.6.8'
+      Merge branch 'release-0.9.0'
+      conf: lock_file is derived config.
+      jsoninfo: fix a crash when there are no gateways
+      txtinfo: fix a crash when there are no gateways
+      Merge branch 'release-0.9.0'
+      Merge branch 'release-0.9.0'
+      Merge branch 'release-0.9.0'
+      files: regenerate the generated default full configuration
+      Fixup CHANGELOG file
+      Merge branch 'release-0.6.8'
+      Merge branch 'release-0.9.0'
+      jsoninfo: fix a Coverity warning
+      txtinfo: similar fix as the previous commit
+      make: add NOSTRIP option
+      files: minor improvement to config file generation script
+      sgw: add SmartGatewayMaxCostMaxEtx configuration setting
+      jsoninfo: fix a Coverity warning
+      txtinfo: similar fix as the previous commit
+      Merge branch 'release-0.9.0'
+      files: regenerate the generated default full configuration
+      files: minor improvement to config file generation script
+      sgw: add SmartGatewayMaxCostMaxEtx configuration setting
+      Merge branch 'release-0.9.0'
+      egressFile: use a define for the line length
+      pud: clear the cached timestamp when the position file can't be read
+      pud: increase the resolution of the cached timestamp of the position file
+      pud: minor fix in the function reading the position file
+      pud: cache the correct timestamp
+      sgwdynspeed: clear the cached timestamp when the speed file can't be read
+      sgwdynspeed: increase the resolution of the cached timestamp
+      sgwdynspeed: properly close the speed file
+      sgwdynspeed: cache the correct timestamp
+      sgw: cache timestamp of egress file earlier
+      sgw: cache the correct timestamp
+      sgw: remove unneeded check against 0 for cached timestamp
+      sgw: properly close the egress file
+      sgw: do not clear egress data in the read race
+      sgw: properly open and stat the egress file
+      Merge branch 'release-0.9.0'
+      sgwdynspeed: let the out block close the file
+      sgw: fix EOL stripping of the egress file
+      Merge branch 'release-0.9.0'
+      quagga: zero-out the extra allocated buffer size
+      conf: clean up interface names on config file read failure
+      cookie: fix loop invariant assert and exit on cookie exhaustion
+      quagga: zero-out the extra allocated buffer size
+      quagga: restore socket status on error paths in zclient_read function
+      Merge branch 'release-0.9.0'
+      sgw: do not program routes on interfaces that are not up
+      sgw: policy script: fix error reports when too many arguments
+      sgw: policy script: fix some comparisons
+      sgw: policy script: move some declarations
+      sgw: policy script: minor improvement
+      sgw: policy script: fix cosmetic rebase  issue of the previous commit
+      cfg: minor fixup to printing of SmartGatewayPolicyRoutingScript
+      dyn_gw: fix a mistake in 36111ca
+      cfg: fix printing of a few <not set> settings
+      sgw: add SmartGatewayInstanceId setting
+      sgw: policy script: add the instance id to the script
+      sgw: policy script: log invocations and add cleanup mode
+      sgw: invoke the cleanup mode of the policy script on start and stop
+      jsoninfo: also output SmartGatewayInstanceId
+      olsr_exit: protect against a NULL olsr_cnf
+      olsr_exit: protect against a NULL message
+      olsr_exit: also flush stderr on exit
+      olsr_exit: clarify why the explicit exit is needed
+      olsr: make sure olsr_cnf is initialised
+      mdns: update a comment about exit
+      p2pd: update a comment about exit
+      dyngw: call olsr_exit() instead of exit()
+      httpinfo: call olsr_exit() instead of exit()
+      pgraph: call olsr_exit() instead of exit()
+      secure: call olsr_exit() instead of exit()
+      linux: call olsr_exit() instead of exit()
+      unix: call olsr_exit() instead of exit()
+      win32: call olsr_exit() instead of exit()
+      olsr: call olsr_exit() instead of exit()
+      plugin_loader: call olsr_exit() instead of exit()
+      quagga: clean up invocation of olsr_exit
+      build_msg: clean up invocation of olsr_exit
+      cookie: clean up invocation of olsr_exit
+      interfaces: clean up invocation of olsr_exit
+      lq_plugin: clean up invocation of olsr_exit
+      main: clean up invocation of olsr_exit
+      olsr: clean up invocation of olsr_exit
+      parser: clean up invocation of olsr_exit
+      quagga: clean up olsr_exit messages
+      linux: clean up olsr_exit messages
+      ipc_frontend: clean up olsr_exit messages
+      main: clean up olsr_exit messages
+      httpinfo: remove unused copyright_string
+      conf: remove unused copyright_string
+      main: remove unused copyright_string
+      main: remove pointless type size asserts
+      main: make sure all variables are initialised
+      main: move some initialisation to the beginning of main
+      main: always store argv
+      random: remove pointless olsr_init_random, only invoked in main
+      conf: fix determining the lock file, mirror what main does
+      main: no need to re-determine lock_file; already setup by set_derived_cnf
+      main: use olsr_cnf->lock_file directly
+      lock_file: move olsrd_get_default_lockfile into its own file
+      main: move olsr_create_lock_file into its own file
+      lock_file: add olsr_remove_lock_file function
+      main: remove the lock file in olsr_shutdown
+      main: move printing of version into a function
+      main: move loading the config into the loadConfig function
+      main: minor improvements to loadConfig
+      main: initialise timers after processing the configuration
+      main: process olsrd options in a block
+      main: minor improvements
+      conf: remove an unneeded printf
+      conf: move loadConfig function here from main
+      pid: move pid file handling into its own file
+      main: move lock file creation into the lock_file file
+      main: move conf_file_name variable into cfgparser
+      main: limit the scope of 2 variables to where they are needed
+      main: invoke olsr_exit at the end of main
+      main: minor update
+      main: initialise IPC a bit earlier
+      main: call olsr_exit when writing the PID file fails
+      main: minor update
+      link_set: make sure link_changes is initialised
+      main: minor update
+      main: call olsr_exit in olsr_reconfigure
+      main: track the heartbeat timer
+      main: stop the heartbeat timer during shutdown
+      pid_file: add removePidFile function
+      log: add olsr_closelog function
+      main: close the log in olsr_shutdown
+      main: stop the scheduler in olsr_shutdown
+      main: move CLI related function into their own file
+      main: move some functions around
+      lock_file: explicitly ignore failure of file removal
+      conf: avoid memory leaks during parsing
+      conf: make sure debug_handle is initialised
+      conf: ensure all config fields are explicitly initialised
+      conf: add ip_prefix_list_clear function
+      conf: olsrd_free_cnf: set pointers back to NULL after freeing
+      conf: olsrd_free_cnf: refactor a bit to use the lists directly
+      conf: olsrd_free_cnf: reorder a bit
+      conf: olsrd_free_cnf: free everything
+      conf: do not leak the configuration when freeing it
+      conf: initialise sgw uplink & downlink before setting them
+      main: open syslog right at the start
+      main: minor update
+      sgw: only select an olsr or egress interface when it is up
+      jsoninfo: sgw field in /sgw response is not an array
+      jsoninfo: sgw: simplify prefix output
+      jsoninfo: sgw: show tableNr, ruleNr and bypassRuleNr too
+      jsoninfo: sgw: show entries without tc too
+      jsoninfo: sgw: minor simplification reducing memory usage
+      txtinfo: sgw: show entries without tc too
+      txtinfo: sgw: line-up to jsoninfo
+      txtinfo: sgw: do not access uninitialised memory
+      txtinfo: sgw: print the prefix length for IPv6
+      txtinfo: format code
+      txtinfo: use the same c-basic-offset: 2 as jsoninfo
+      txtinfo: simplify an ifdef
+      txtinfo: simplify some string comparisons
+      txtinfo: simplify some send_what checks
+      txtinfo: use a define for the plugin name
+      txtinfo: rename some functions
+      txtinfo: use defines for some variables
+      txtinfo: use a define to rename TXTINFO_ALLOW_LOCALHOST
+      txtinfo: rename some SIW_x flags
+      txtinfo: move ipc_print_mid function up a bit
+      txtinfo: move ipc_print_gateways function up a bit
+      txtinfo: move ipc_print_version function up a bit
+      txtinfo: rename txtinfo_write_data function
+      txtinfo: use the plugin name in a malloc call
+      txtinfo: re-order the sent information
+      txtinfo: simplify some comparisons
+      txtinfo: add httpheaders configuration parameter
+      txtinfo: http headers must use \r\n line endings
+      txtinfo: use HTTP/1.1
+      txtinfo: use a bigger (2 CPU pages) initial buffer
+      txtinfo: renumber SIW_x defines and put them in 'groups'
+      txtinfo: the configuration is a special case
+      txtinfo: send everything on an unknown option
+      txtinfo: some more formatting
+      txtinfo: remove superfluous forward declarations
+      txtinfo: expand SIW_RUNTIME_ALL to include all runtime information
+      txtinfo: remove personal copyrights, just check the git log
+      jsoninfo: use a define for the plugin name
+      jsoninfo: use defines for some variables
+      jsoninfo: use a define to rename TXTINFO_ALLOW_LOCALHOST
+      jsoninfo: use the set_plugin_boolean function
+      jsoninfo: initialise outbuffer_count
+      jsoninfo: update some comments
+      jsoninfo: move some functions around
+      jsoninfo: use the plugin name in a malloc call
+      jsoninfo: use a smaller (2 CPU pages) initial buffer
+      jsoninfo: limit the number of in-flight connection to 3, like txtinfo
+      jsoninfo: rename a function
+      jsoninfo: more formatting
+      jsoninfo: fix content type of http headers for /olsr.conf
+      jsoninfo: remove personal copyrights, just check the git log
+      jsoninfo: move some variables around
+      jsoninfo: move json support functions into their own file
+      txtinfo: fixup the Content-Type http header
+      jsoninfo: ensure date in http header is in GMT, as advertised
+      jsoninfo: fixup the Server http header
+      jsoninfo: fixup the Connection http header
+      jsoninfo: fixup the Content-Type http header
+      jsoninfo: fixup the Content-Length http header
+      txtinfo: remove a pointless assert
+      txtinfo: also send the (UTF-8) charset in the content type
+      txtinfo: avoid a memcpy: just move the abuf.buf pointer and clear abuf
+      jsoninfo: refactor generation of the headers
+      jsoninfo: also send the (UTF-8) charset in the content type
+      jsoninfo: avoid a memcpy: just move the abuf.buf pointer and clear abuf
+      jsoninfo: send http headers by default
+      txtinfo: bring over proper http header support from jsoninfo
+      olsr_exit: use EXIT_SUCCESS or EXIT_FAILURE exclusively
+      olsr_exit: fix some exit codes
+      exit: use EXIT_SUCCESS or EXIT_FAILURE exclusively
+      exit: fix some exit codes
+      txtinfo: undo output re-ordering of 4563faa
+      jsoninfo: use the same order as txtinfo
+      jsoninfo: remove an unused define
+      src: add some forgotten includes
+      txtinfo: use the same 'c-basic-offset: 2' as jsoninfo
+      txtinfo: treat the olsrd configuration differently
+      txtinfo: catch '/all' earlier when determining the action
+      txtinfo: send the information in the runtime and startup groups for '/all'
+      txtinfo: '/ver' and '/neighbours' are specials when determining the action
+      txtinfo: add (unsupported) commands '/config' and '/plugins'
+      txtinfo: add /runtime and /startup commands
+      jsoninfo: INADDR_LOOPBACK is in host format and the socket address is not
+      jsoninfo: fix PLUGIN_NAME that is reported on plugin init
+      jsoninfo: initialise uuidfile as well
+      jsoninfo: use standard set_plugin_string function for uuidfile parameter
+      jsoninfo: reorder some includes
+      jsoninfo: fix some indents
+      jsoninfo: add Freifunk neighbours special case, like txtinfo
+      txtinfo: move http header related functions into common code
+      jsoninfo: move http header related functions into common code
+      txtinfo: move determining the action into a separate function
+      jsoninfo: move determining the action into a separate function
+      txtinfo: add plugin_init hook
+      jsoninfo: add plugin_init hook
+      txtinfo: move ipc_print_* functions into a 'printers' unit
+      jsoninfo: move ipc_print_* functions into a 'printers' unit
+      txtinfo: use a table of function pointers in send_info
+      jsoninfo: use a table of function pointers in send_info
+      txtinfo: move SIW_x defines into common code
+      jsoninfo: move SIW_x defines into common code
+      txtinfo: wrap the outbuffer in a struct for easier usage
+      jsoninfo: wrap the outbuffer in a struct for easier usage
+      jsoninfo: only need to reset entry number for json output
+      txtinfo: determine the mime type via the functions table
+      jsoninfo: determine the mime type via the functions table
+      txtinfo: put the plugin init hook in the functions table
+      jsoninfo: put the plugin init hook in the functions table
+      txtinfo: put command parsing in the functions table
+      jsoninfo: put command parsing in the functions table
+      txtinfo: put output start/end in the functions table
+      jsoninfo: put output start/end in the functions table
+      txtinfo: convert INFO_ALLOW_LOCALHOST define into a plugin parameter
+      jsoninfo: convert INFO_ALLOW_LOCALHOST define into a plugin parameter
+      txtinfo: convert ACTIVATE_VTIME_TXTINFO into a plugin parameter
+      txtinfo: wrap generic info plugin configuration in a struct
+      jsoninfo: wrap generic info plugin configuration in a struct
+      info: merge jsoninfo and txtinfo common code
+      Makefile: add pseudo plugin info
+      txtinfo: move code from olsr_txtinfo into olsr_plugin
+      jsoninfo: move code from olsr_jsoninfo into olsr_plugin
+      info: code formatting
+      info: rename some http header function parameters
+      info: rename type printer_functions_t to info_plugin_functions_t
+      info: rename variable printer_functions to functions
+      txtinfo: rename variable printer_functions to functions
+      jsoninfo: rename variable printer_functions to functions
+      info: rename type outbuffer_t to info_plugin_outbuffer_t
+      info: do not export info_plugin_outbuffer_t, only used internally
+      info: rename header files recursive include guards
+      info: rename a http header function
+      info: update copyrights
+      jsoninfo: rename info_plugin_config to config
+      txtinfo: rename info_plugin_config to config
+      info: rename a function parameter
+      info: rename info_plugin_config to config
+      info: rename PLUGIN_NAME to name
+      info: rename a function
+      info: add some asserts
+      info: remove some comments
+      info: ensure all variables are correctly initialised and cleaned up
+      info: use a define for the info_plugin_config_t plugin parameters
+      jsoninfo: rename 'printers' unit
+      txtinfo: rename 'printers' unit
+      info: split out neighbors and 2hop printer functions
+      info: rename a function prototype
+      info: minor formatting fix
+      info: there can only be a single command, optimise determine_action
+      info: write_data: exit early if there is nothing to send
+      info: write_data: do not add invalid sockets to the FD set
+      info: write_data: add a comment
+      info: write_data: properly clean up an output buffer
+      info: write_data: do not consider an invalid socket for send
+      info: write_data: use a safer 'close the socket' condition
+      info: write_data: do not move buffers around
+      info: ipc_action: rename 2 variables
+      info: ipc_action: move inet_ntop out of condition blocks
+      info: ipc_action: only use addr in debug builds
+      info: ipc_action: minor simplification
+      info: ipc_action: merge 2 if statements
+      info: ipc_action: make the IPv6 if statement like the IPv4 one
+      info: ipc_action: use a static sink buffer
+      info: ipc_action: use a safer 'oversize' comparison
+      info: ipc_action: minor fix
+      info: plugin_ipc_init: rename 2 variables
+      info: plugin_ipc_init: 'unelse' an else branch, the if already returns
+      info: plugin_ipc_init: close the ipc_socket on the error paths
+      info: plugin_ipc_init: fix a perror message
+      info: plugin_ipc_init: merge 2 if statements
+      info: http headers: add some asserts
+      info: check against the correct __linux__ define
+      txtinfo: rename header files recursive include guards
+      jsoninfo: rename header files recursive include guards
+      txtinfo: remove some unused includes
+      jsoninfo: remove some unused includes
+      info: add a function to initialise the config
+      txtinfo: use the function to initialise the config
+      jsoninfo: use the function to initialise the config
+      jsoninfo: helpers: minor simplification of abuf_json_new_indent
+      jsoninfo: helpers: firm up asserts on currentjsondepth
+      jsoninfo: helpers: use abuf_json_insert_comma
+      jsoninfo: helpers: output floats in full precision
+      jsoninfo: helpers: fix output format for int/long
+      jsoninfo: helpers: use an actual bool as parameter for abuf_json_boolean
+      jsoninfo: helpers: get_string_from_file ensures '\0' in the first byte
+      jsoninfo: helpers: use sizeof() for buffers
+      jsoninfo: helpers: use a double as parameter for abuf_json_float
+      jsoninfo: helpers: use sizeof() for uuid size
+      txtinfo: define the vtime extern in the proper place
+      jsoninfo: define the uuidfile extern in the proper place
+      info: minor reordering in send_info to reflect SIW_x order
+      info: simplify use of the functions table
+      txtinfo: simplify setup of the functions table
+      jsoninfo: simplify setup of the functions table
+      info: simplify use of the functions table further
+      info: simplify determine_action
+      info: update README
+      txtinfo: update README
+      jsoninfo: update README
+      info: remove unused nompr field from the configuration
+      txtinfo: minor improvements to /sgw printing
+      jsoninfo: helpers: add abuf_json_ip_address
+      jsoninfo: use the new ip address helper in /sgw printing
+      jsoninfo: minor improvement to /sgw printing
+      lq plugins: ensure string termination in lq_print_cost functions
+      jsoninfo: minor field reordering for /sgw
+      jsoninfo: add 'selectable' field to /sgw
+      jsoninfo: refactor /gateways
+      jsoninfo: move duplicated 'selectable' code into a function
+      txtinfo: simplify some code for /gat
+      txtinfo: minor formatting in /gat
+      txtinfo: also print gateways without a tc in /gat
+      txtinfo: do not use tabs in the /gat table, use fixed widths
+      txtinfo: minor scope change of 2 variable in /gat
+      jsoninfo: only show gateways of the request IP version in /gateways
+      jsoninfo: neighbors/2hop: show more information
+      files: clarify why jsoninfo is in the example configuration files
+      make: support building with clang (on Linux)
+      all: fixes resulting from building with clang
+      txtinfo: use strcmp instead of strstr
+      jsoninfo: use strcmp instead of strstr
+      jsoninfo: review of /hna
+      txtinfo: review of /hna
+      info: strip EOLs from the command
+      CHANGELOG: add a note about txtinfo and jsoninfo being merged
+      cookie: split assert to see which part actually triggers the assert
+      info: do not try to interpret the request when it is too large
+      info: fix processing of command per HTTP request
+      main: add & enable a new SEGV handler (Linux only)
+      Add a safety net in the segfault handler
+      ifnet: remove unused function set_flag
+      linux: netlink_process_link: simplify NULL comparisons and add some braces
+      linux: netlink_process_link: always determine the interface name
+      linux: netlink_process_link: always determine the oif
+      linux: netlink_process_link: simplify a comparison
+      linux: netlink_process_link: compute up status only once
+      linux: netlink_process_link: simplify an if/else
+      ifnet: add getInterfaceLinkState function
+      all: use the getInterfaceLinkState function
+      Fix 2 Coverity warnings
+      ifnet: ensure string termination
+      pud: nmealib: be less strict about satellite elevation
+      txtinfo: review /lin
+      txtinfo: review /nei and /2ho
+      txtinfo: review /hna
+      txtinfo: add forgotten 2hop  in function table
+      jsoninfo: add forgotten 2hop  in function table
+      jsoninfo: protect abuf_json_ip_address against a NULL IP address
+      jsoninfo: protect against a possible null-deref in ipc_print_neighbors
+      jsoninfo: also show the hops for /sgw, like for /gateways
+      jsoninfo: also show local HNAs, like txtinfo does
+      jsoninfo: review /links and show more information
+      jsoninfo: extract printing a gateway to a function
+      info: minor update to the README
+      info: fix send result error check in write_data
+      info: do not send buffers of zero length, wget can't handle that
+      info: introduce and use ARRAY_SIZE define
+      info: simplify send_info function
+      jsoninfo: simplify isCommand function
+      jsoninfo / sgw: isGwSelectable function is common, use it as such
+      jsoninfo: minor improvements
+      jsoninfo: be a bit more explicit in determine_mime_type
+      txtinfo: minor fixes to the README
+      txtinfo: simplify isCommand function
+      txinfo: fix 2-hop output
+      txtinfo: avoid a potential null deref in 2-hop
+      txtinfo: simplify printing links
+      txtinfo: avoid a potential null deref in links
+      txtinfo: simplify printing routes
+      txtinfo: avoid a potential null deref in routes
+      txtinfo: simplify printing topology
+      txtinfo: simplify printing HNAs
+      txtinfo: simplify and fix printing MIDs
+      txtinfo: clarify that using /gat and /sgw on non-Linux is an error
+      txtinfo: simplify gateways
+      txtinfo: simplify sgw
+      txtinfo: add an empty line after the version, like all other tables
+      txtinfo: simplify interfaces
+      changelog: update the warning about txtinfo/jsoninfo
+      main: musl does not support execinfo.h (the backtrace functions)
+      make: preserve debugging info when NOSTRIP is set
+      info: requests that are too large must set s to < 0
+      info: also handle empty requests
+      info: rename an HTTP status define
+      info: requesting / now is equivalent to /all
+      info: prepare for more HTTP status codes
+      info: add function to the function table to output an error
+      info: respond with "not found" (404) on invalid commands
+      info: respond with "no content" (204) on empty output
+      txtinfo: /config & /plugins are not implemented: return "not found" (404)
+      changelog: update for info/jsoninfo/txtinfo changes
+      make: add more recognised formats to the gcc-warnings script
+      make: need to load the OS specific makefile before evaluating WARNINGS
+      make: remove conditionals in WARNINGS section, no longer needed
+      make: sort warnings flags and make that section a bit easier to read
+      unix: fix GCC 6 warnings
+      link_set: fix GCC 6 warnings
+      sgw: fix GCC 6 warnings
+      parser: fix GCC 6 warnings
+      bmf: fix GCC 6 warnings
+      mdns: fix GCC 6 warnings
+      p2pd: fix GCC 6 warnings
+      pud: fix GCC 6 warnings
+      quagga: fix GCC 6 warnings
+      make: add new GCC 6 warning flags
+      scheduler: fix a typo
+      scheduler: mark timers for removal and only remove them in a cleanup walk
+      main: ensure all timers are stopped in shutdown
+      cfgparser: remove some unreachable code
+      scheduler: mark timers for removal and only remove them in a cleanup walk
+      main: ensure all timers are stopped in shutdown
+      scheduler: fix olsr_flush_timers to not hang
+      main: print the received signal name instead of the signal number
+      main: cleanup the gateways earlier on shutdown
+      scheduler: fix olsr_flush_timers to not hang
+      main: cleanup the gateways earlier on shutdown
+      txtinfo: output an error on unknown status codes too
+      txtinfo: move a function
+      jsoninfo: output an error on unknown status codes too
+      jsoninfo: re-arrange some imports
+      jsoninfo: all neighbour entries now have twoHopNeighborCount
+      jsoninfo: add hysteresis to /links
+      jsoninfo: add etx to /routes
+      jsoninfo: improve /topology, show more information
+      jsoninfo: improve /hna
+      info: add a comment about why info_plugin_outbuffer_t is there
+      info: try to send the response immediately
+      info: speed up sending pending responses
+      info: check for retry after trying to send
+      jsoninfo: remove some dead code
+      txtinfo: check INFO_HTTP_OK upon entry of the function
+      main: add noreturn attribute on olsr_segv_handler
+      make: improve clang support
+      make: do not add -Wcast-qual on Windows
+      make: move -Werror flag into the normal list of warnings
+      make: fix compiler flags probing
+      gui: fix a few clang warnings
+      jsoninfo: improve /mid and add validityTime of mid entry itself
+      jsoninfo: improve printing a gateway entry, and add expiry/cleanup timers
+      jsoninfo: improve the ipc_print_gateways_ipvx function
+      jsoninfo: improve the skip condition in ipc_print_gateways_ipvx
+      builddata: generate more build information
+      jsoninfo: show more information in /version
+      config: always lower-case plugin parameter names
+      bmf: ignore case on the BmfMechanism plugin parameter value
+      jsoninfo: make abuf_json_int take a long long value
+      jsoninfo: simplify /plugins
+      jsoninfo: fix a windows compile error
+      scheduler: fix a typo
+      scheduler: do not stop timers that are not running
+      scheduler: make olsr_flush_timers more robust
+      main: do not allow nested shutdown
+      scheduler: fix a typo
+      scheduler: do not stop timers that are not running
+      scheduler: make olsr_flush_timers more robust
+      jsoninfo: minor improvement to /2hop
+      jsoninfo: helpers: move a static string declaration
+      jsoninfo: helpers: add asserts
+      jsoninfo: helpers: output an empty string when the string is null
+      jsoninfo: helpers: account for NaN and INF in float printing
+      jsoninfo: add some comments
+      jsoninfo: simplify output_error by using an abuf
+      jsoninfo: minor improvements
+      jsoninfo: put printing a hna entry into a function and use it
+      jsoninfo: improve and update /config
+      jsoninfo: use the abuf_json_ip_address helper
+      jsoninfo: use print_link_quality_multipliers_array_entry in /interfaces
+      jsoninfo: add print_interface_config function and use it
+      jsoninfo: improve /interfaces
+      jsoninfo: do not show interface /sys/class/net/data in /interfaces
+      jsoninfo: move some static functions around
+      info: strip trailing slashes from the command
+      info: skip multiple leading slashes on the command
+      info: re-introduce composite commands
+      jsoninfo: add some asserts
+      jsoninfo: protect against nulll-deref in print_interface_config
+      jsoninfo: protect against out-of-bounds accesses of TXT array
+      jsoninfo: in /plugins list plugin parameters as array entries
+      jsoninfo: in /plugins show parameters as name/value
+      jsoninfo: simplify /mid output
+      jsoninfo: in /plugins list plugin parameters as map entries
+      jsoninfo: allow key to be NULL when printing an IP address
+      jsoninfo: print the 2-hops neighbors as a simple list of IP addresses
+      jsoninfo: minor simplification in /2hop
+      info: create more space for more info commands
+      jsoninfo: add a function to directly convert an IP address
+      jsoninfo: in /interfaces show 'state' text as 'up' boolean
+      jsoninfo: in /interfaces use the new IP address helper function
+      jsoninfo: remove an obsolete comment
+      jsoninfo: in /interfaces show message times like validity times
+      jsoninfo: allow key to be NULL when printing a string
+      jsoninfo: improve /config
+      jsoninfo: in /config rename sgw weight section to costsCalculation
+      jsoninfo: remove a derived field from the /config output
+      jsoninfo: fix a typo in /config
+      sgw: fix a mask in the sgw status file
+      Revert "sgw: fix a mask in the sgw status file"
+      sgw: update a comment
+      info: move json helpers here from jsoninfo
+      info: add abuf_json_prefix json helper
+      info: minor layout improvements
+      info: move iterating over a table of siw/function entries into a function
+      info: rename json helpers files
+      sgw: add isEgressSelected function
+      jsoninfo: also show egress information in /sgw
+      jsoninfo: do not null-deref prefix in abuf_json_prefix
+      jsoninfo: in /sgw separate prefixes and their lengths
+      make: improve jsoninfo and txtinfo dependencies on info
+      sgw: do not show unused tunnels in the status file
+      sgw: remove some dead code left over in the previous commit
+      info: minor layout improvements
+      info: use AUTOBUFCHUNK instead of hard-coding it
+      info: fix a type
+      info: move some type delcarations up in a header file
+      info: make the INFO_PLUGIN_CONFIG_PLUGIN_PARAMETERS a bit safer
+      info: make SIW_ENTRIES accessible from other functions
+      plugin util: make set_plugin_boolean actually set a bool
+      plugin util: add set_plugin_long function
+      abuf: add abuf_concat function
+      cfgfile: cache the generated configuration file
+      scheduler: export the olsr_times function
+      info: add support for caching and use it
+      info: minor fix
+      info: reflect that the SIW defines are 64 bit wide
+      info: completely switch of caching for timeouts <= 0
+      info: lazily initialise the cache
+      sgw: remove struct costs_weights and max_cost_etx_max from the costs API
+      spf: tc->path_cost is a route cost, fix level 2 OLSR_PRINTF messages
+      spf: safer checking against LINK_COST_BROKEN and ROUTE_COST_BROKEN
+      routing table: safer checking against LINK_COST_BROKEN & ROUTE_COST_BROKEN
+      pud: safer checking against LINK_COST_BROKEN and ROUTE_COST_BROKEN
+      sgw: safer checking against LINK_COST_BROKEN and ROUTE_COST_BROKEN
+      lq plugins: safer checking against LINK_COST_BROKEN and ROUTE_COST_BROKEN
+      lq plugins: explicit unsigned for LINK_COST_BROKEN and ROUTE_COST_BROKEN
+      fpm: add fpmtod function
+      lq plugins: add get_cost_scaled function
+      lq plugins: make the print_cost_float functions behave the same
+      lq plugins: remove print_cost, use get_cost_scaled in generic function
+      lq: add get_linkcost_scaled function
+      lq: minor optimisation
+      main: initialise sgw system after the tables
+      bmf: fix currEtx type and link/route confusion
+      sgw: show the route costs text in log messages
+      sgw: add get_gwcost_scaled and get_gwcost_text functions
+      sgw: show the scaled route cost in the program status file
+      sgw: show the scaled gw cost in the program status file
+      httpinfo: show the scaled route cost in the sgw pane
+      httpinfo: show the scaled gw cost in the sgw pane
+      txtinfo: show the scaled route cost in the sgw output
+      txtinfo: show the scaled gw cost in the sgw output
+      jsoninfo: show scaled route/link cost in
+         gateways|sgw|links|routes|topology
+      jsoninfo: show the scaled gw cost in gateways|sgw
+      sgw: simplify get_gwcost_scaled
+      info: make defines for SIW_* constants a bit clearer
+      info: add the define SIW_EVERYTHING
+      info: fix send_what for empty requests
+      info: stop evaluating send_what when all information has been processed
+      info: only try to match supported commands
+      arprefresh: show Git SHA in plugin constructor
+      bmf: use PLUGIN_NAME_SHORT in logs
+      bmf: do no show version in plugin constructor
+      bmf: remove PLUGIN_AUTHOR, Git shows who worked on it
+      bmf: plugin name like other plugins and minor layout change
+      bmf: show Git SHA in plugin constructor
+      bmf: do not show copyright in constructor, Git shows who has copyright
+      dot_draw: remove PLUGIN_AUTHOR, Git shows who worked on it
+      dot_draw: do no show version in plugin constructor
+      dot_draw: show Git SHA in plugin constructor
+      dyn_gw: remove PLUGIN_AUTHOR, Git shows who worked on it
+      dyn_gw: show Git SHA and no version in plugin constructor
+      dyn_gw_plain: show Git SHA and no author in plugin constructor
+      httpinfo: remove PLUGIN_AUTHOR, Git shows who worked on it
+      httpinfo: show Git SHA and no version and no author in plugin constructor
+      jsoninfo: remove PLUGIN_AUTHOR, Git shows who worked on it
+      jsoninfo: show Git SHA and no version in plugin constructor
+      mdns: remove PLUGIN_AUTHOR, Git shows who worked on it
+      mdns: show Git SHA and no version and no copyright in plugin constructor
+      mini: cleanup
+      nameservice: remove PLUGIN_AUTHOR, Git shows who worked on it
+      nameservice: show Git SHA and no version in plugin constructor
+      p2pd: show Git SHA and no version in plugin constructor
+      pgraph: remove PLUGIN_AUTHOR, Git shows who worked on it
+      pgraph: show Git SHA and no version in plugin constructor
+      pud: use Git SHA from builddata
+      quagga: remove PLUGIN_AUTHOR, Git shows who worked on it
+      quagga: show plugin name and Git SHA in plugin constructor
+      sgwdynspeed: use Git SHA from builddata
+      secure: remove PLUGIN_AUTHOR, Git shows who worked on it
+      secure: show Git SHA and no version in plugin constructor
+      txtinfo: remove PLUGIN_AUTHOR, Git shows who worked on it
+      txtinfo: show Git SHA and no version in plugin constructor
+      watchdog: show plugin name and Git SHA in plugin constructor
+      jsoninfo: simplify setup of plugin functions
+      txtinfo: simplify setup of plugin functions
+      all: ensure all files have the same license header
+      Remove list-excludes
+      all: avoid includes with relative paths whenever possible
+      info: be more paranoid when handling received data
+      info: fix mistake in previous commit
+      quagga: fixup include files
+      quagga: use AUTOBUFCHUNK as allocation unit
+      info: do not include INFO_HTTP_VERSION in httpStatusToReply return
+      info: add INFO_HTTP_REQUEST_ENTITY_TOO_LARGE http code
+      info: add INFO_HTTP_INTERNAL_SERVER_ERROR http code
+      info: add INFO_HTTP_FORBIDDEN http code
+      info: add INFO_HTTP_SERVICE_UNAVAILABLE http code
+      jsoninfo: use httpStatusToReply in output_error
+      txtinfo: use httpStatusToReply in output_error
+      info: refactor ipc_action to be much clearer and safer
+      info: add netjson commands
+      netjson: add plugin
+      info: use a session struct in the JSON helpers
+      netjson: various fixes
+      all: allocate autobuf memory in AUTOBUFCHUNK sized chunks
+      httpinfo: reduce memory usage
+      info: start with a single AUTOBUFCHUNK sized chunk of memory
+      autobuf: work around a warning
+      autobuf: simplify abuf_vappendf
+      android: minor improvements to the Makefile and README
+      info: fail info_plugin_init when plugin_ipc_init fails
+      link_set: fix a crash: use the entry name in a printf
+      olsr: add olsr_realloc function
+      quagga: refactor zclient_read to be much more readable and safer
+      quagga: improve zparse function a bit
+      bmf: use the new olsr_realloc function
+      mdns: use the new olsr_realloc function
+      p2pd: use the new olsr_realloc function
+      quagga: use the new olsr_realloc function
+      scheduler: use the monotonic clock
+      spf: use the monotonic clock in profiling code
+      scheduler: fix Debian compilation problem
+      make: need to link with -lrt on Debian for clock_gettime
+      make: only link to -lrt on Linux
+      openwrt: fixup the git repository link to point to GitHub
+      make: add defines for leak and undefined sanitize compiler warnings
+      all: ensure unsigned numbers are used in shifts
+      all: use the INLINE define
+      all: move definitions of INLINE into compiler.h
+      config: fix memory leaks on the shutdown path
+      dyn_gw: fix memory leaks on the shutdown path
+      sgw: fix memory leaks on the shutdown path
+      make: continue running when a sanitizer reports an error
+      info: increase the number of in-flight replies to 8
+      info: fix a use-after-free for incomplete immediate sends
+      info: fix detection of whether the reply was fully sent
+      info: fix outbuffer slot determination
+      info: fix an assert
+      info: make a bit of code more defensive
+      info: saved_count is used as 'this is the first reply', so rename it
+      info: send 'service unavailable' when there are too many replies in-flight
+      netjson: clear allocated memory before setting fields in it
+      netjson: do not duplicate nodes when adding a mid
+      netjson: improve node_self detection for cleanup
+      netjson: fix NetworkGraph output
+      info: add 'pretty' parameter to jsoninfo and netjson modules
+      info: only set the 'name' const once
+      info: make cache_timeout_generic more robust
+      info: better initialisation of the cache structures
+      info: ensure all cache structures are always initialised
+      avl: protect against NULL pointers
+      interfaces: protect against a NULL pointer
+      main: separate shutdown and cleanup up gateways
+      egress: clear a variable after freeing it
+      sgw: do not iterate over NULL gw entries in OLSR_FOR_ALL_GATEWAY_ENTRIES
+      sgw: do not iterate over NULL gw entries in OLSR_FOR_ALL_GWS
+      sgw: gw NULL check no longer needed when using OLSR_FOR_ALL_GWS
+      info: add some asserts
+      info: disable caching for now, it somehow causes memory corruption
+      sgw: harden isGwSelectable function
+      Revert "autobuf: simplify abuf_vappendf"
+      Revert "info: disable caching for now, it somehow causes memory
+         corruption"
+      autobuf: make 2 functions more robust
+      sgw: use iptables '-w' option
+      sgw: preserve egress interface ordering in iptables rules
+      sgw: preserve sgw tunnel ordering in iptables rules
+      sgw: optimise iptables rule ordering
+      linux: merge 2 functions
+      linux: export os_ip_tunnel function
+      sgw: remove any left-over sgw tunnels during startup and shutdown
+      sgw: add a policy rule for the server-end tunnel
+      sgw: egress interface routes must also be programmed on interface up/down
+      sgw: egress interface routes must always be present when interface is up
+      sgw: track whether network/gateway are required per egress interfaces
+      sgw: fix egress route programming
+      jsoninfo: output require(Network|Gateway) status for egress interfaces
+      sgw: adjust egress to include requireNetwork and requireGateway settings
+      sgw: fix use of uninitialised value
+      info: fix cache age calculation
+      quagga: fix some clang alignment warnings
+      pud: only update the timestamp if the position is invalid and not updated
+      pud: do not report uplink send errors, they're not really relevant
+      pud: write the position to an output file when so configured
+      pud: remove satellite info from the position output file
+      pud: fixup of the README
+      ipcalc: protect prefix_to_netmask against invalid input
+      cfgparser: simplify Makefile a bit
+      Move strscat/cpy to a file of their own and clean them up
+      defs: remove an unused include
+      common: fix file headers
+      common: fix an include file guard
+      common: code formatting
+      common: add a comment
+      common: more asserts
+      common: make an exit condition in strscat more readable
+      common: remove some comments on asserts
+      common: make the paranoid check exit a bit friendlier
+      ipcalc: protect prefix_to_netmask against invalid input
+      cfgparser: simplify Makefile a bit
+      common: move strscat/cpy to a file of their own
+      common: add comments to strscat/cpy functions
+      common: strscat/cpy are simple wrappers around the same function
+      common: add some asserts to strscat/cpy
+      common: rename a variable in strscat/cpy
+      common: let the compiler decide how to place variables in strscat/cpy
+      common: do not invoke _internal_strscpy in strscat when not enough space
+      common: rename a variable in strscat/cpy
+      common: be paranoid about incoming parameters in strscat/cpy
+      common: refactor _internal_strscpy in strscat/cpy
+      autobuf: just use memcpy instead of strcpy
+      quagga: improve some strscy() calls
+      linux: improve some strscy() calls
+      lq_plugin: do not confuse malloc size with name size
+      Merge branch 'fixes-pulled-apart' into fixes
+      autobuf: format code
+      abuf: no need to set buf[0] to '\0', calloc already did that
+      abuf: use a define for the maximum size
+      README-Olsr-Extensions: add the -w option to the iptables examples
+      Merge branch 'release-0.9.0'
+      jsoninfo: always output the PID
+      nmealib: fix an extern C
+      nmealib: make nmea_INFO_is_present an INLINE function
+      nmealib: add some *_to_string helper functions
+      build: get rid of HTTPINFO_PUD define
+      httpinfo: use the normal nmea_INFO_is_present function
+      httpinfo: use new nmealib *_to_string helper functions
+      jsoninfo: allow all 'type' helpers without a key
+      nmealib: fix a warning
+      jsoninfo: be a bit more lenient in the helpers w.r.t. NULL values
+      info: add support for the pud plugin position
+      jsoninfo: add support for the pud plugin position
+      build: add -Wmissing-include-path
+      build: fix GCC 6 warning about EAGAIN and EWOULDBLOCK being equal
+      autobuf: let's limit the maximum size to 16MB
+      pud: update nmealib to 3.0.0
+      pud: nmealib: minor update
+      pud: nmealib now sets year and month correctly
+      pud: further adjustments for new nmealib
+      jsoninfo: nmealib now sets year and month correctly
+      jsoninfo: further adjustments for new nmealib
+      httpinfo: nmealib now sets year and month correctly
+      httpinfo: further adjustments for new nmealib
+      jsoninfo: fix mistakes introduced in 0db233f
+      pud: minor layout improvement
+      pud: minor layout fix
+      pud: move to stationary on undetermined moving state
+      pud: force a state change to moving when 'no info received' changes
+      pud: split a function
+      pud: add gpsd related configuration parameters
+      pud: timers: add gpsd fetch timer functions
+      pud: use gpsd fetch timer
+      pud: add gpsd functions
+      pud: hook up gpsd timer
+      pud: remove rx path
+      pud: update documentation
+      pud: make sure to actually count inUse satellites (on older gpsd)
+      pud: fix extracting position information from gpsd
+      pud: remove the instance of the nmea parser, no longer used
+      info: integrate java OSGi bundles
+      info: release java OSGi bundles
+      Merge pull request #2 from kakru/fix-shadow-error-in-pud
+      ohs_cmd: avoid compiler warning
+      release: fix the release script's git repository check
+      Branch v0.9.5
+
+Henning Rogge (15):
+      Handle interface broadcast/multicast address zero
+      Handle interface broadcast/multicast address zero
+      Release v0.6.8.1
+      Update version after release of v0.6.8.1
+      Update version after release of v0.9.0.3
+      Configuration file cleanup
+      Merge branch 'master' of git://olsr.org/olsrd
+      Modify .gitignore file to keep full default example
+      Change README Git on Github
+      Don't use strcpy, we don't need checks there anyways.
+      Allow for a "soft fail" in non-debug builds
+      Fix some strscy() calls or make them more readable
+      Buffer for quagga was too long (1 byte)
+      Fix cfgparser makefile
+      Release v0.9.5
+
+Karol Kruzelecki (1):
+      pud: fix of 'time' shadowing a global declaration (that causes a
+         compilation error on older Ubuntu)
+
 0.9.0.3 -------------------------------------------------------------------
 
 Alex Dunn (1):
@@ -158,6 +1178,20 @@ Sebastian Kürten (2):
 
 Teco Boot (1):
       arprefresh: README adjusted for plugin name
+
+0.6.8.1 -------------------------------------------------------------------
+
+Ferry Huberts (4):
+      pud: wireformat-java: improve java detection
+      release: stricter matching of release tags
+      autobuf: fix warning in Windows release builds
+      neighbors: signal link changes when deleting a neighbor
+
+Henning Rogge (4):
+      Update version after release of v0.6.8
+      tc: properly initialise the path_costs field in a new tc
+      Handle interface broadcast/multicast address zero
+      Release v0.6.8.1
 
 0.6.8 -------------------------------------------------------------------
 

@@ -1,3 +1,48 @@
+/*
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
+ *
+ */
+
 #ifdef __linux__
 
 #include "egressFile.h"
@@ -20,9 +65,8 @@
 #include <assert.h>
 #include <net/if.h>
 
-/** the weights for the cost calculation */
-static struct costs_weights gw_costs_weights_storage;
-static struct costs_weights * gw_costs_weights = NULL;
+/** the maximum length of a line that is read from the file */
+#define LINE_LENGTH 256
 
 /** regular expression describing a comment */
 static const char * regexComment = "^([[:space:]]*|[[:space:]#]+.*)$";
@@ -35,25 +79,29 @@ static const char * regexComment = "^([[:space:]]*|[[:space:]#]+.*)$";
 static const char * regexEgress = "^[[:space:]]*" //
         "([^[:space:]=]+)"                     /* 01: interface, mandatory, can NOT be empty */
         "[[:space:]]*=[[:space:]]*"            /* --: field separator */
-        "([[:digit:]]*)"                       /* 02: uplink, mandatory, can be empty */
+        "([[:digit:]]*)"                       /* 02: requireNetwork, mandatory, can be empty */
         "[[:space:]]*,[[:space:]]*"            /* --: field separator */
-        "([[:digit:]]*)"                       /* 03: downlink, mandatory, can be empty */
-        "("                                    /* 04: (the rest is optional) */
+        "([[:digit:]]*)"                       /* 03: requireGateway, mandatory, can be empty */
         "[[:space:]]*,[[:space:]]*"            /* --: field separator */
-        "([[:digit:]]*)"                       /* 05: path cost, optional, can be empty */
+        "([[:digit:]]*)"                       /* 04: uplink, mandatory, can be empty */
+        "[[:space:]]*,[[:space:]]*"            /* --: field separator */
+        "([[:digit:]]*)"                       /* 05: downlink, mandatory, can be empty */
         "("                                    /* 06: (the rest is optional) */
         "[[:space:]]*,[[:space:]]*"            /* --: field separator */
-        "(|([[:digit:]\\.:]+)/([[:digit:]]+))" /* 07: network, optional, can be empty, 07=ip/x 08=ip 09=x */
-        "("                                    /* 10: (the rest is optional) */
+        "([[:digit:]]*)"                       /* 07: path cost, optional, can be empty */
+        "("                                    /* 08: (the rest is optional) */
         "[[:space:]]*,[[:space:]]*"            /* --: field separator */
-        "([[:digit:]\\.:]*)"                   /* 11: gateway, optional, can be empty */
-        ")?"                                   /* 10 */
+        "(|([[:digit:]\\.:]+)/([[:digit:]]+))" /* 09: network, optional, can be empty, 09=ip/x 10=ip 11=x */
+        "("                                    /* 12: (the rest is optional) */
+        "[[:space:]]*,[[:space:]]*"            /* --: field separator */
+        "([[:digit:]\\.:]*)"                   /* 13: gateway, optional, can be empty */
+        ")?"                                   /* 12 */
+        ")?"                                   /* 08 */
         ")?"                                   /* 06 */
-        ")?"                                   /* 04 */
         "[[:space:]]*$";
 
 /** the number of matches in regexEgress */
-#define REGEX_EGRESS_LINE_MATCH_COUNT (1 /* 00 */ + 11)
+#define REGEX_EGRESS_LINE_MATCH_COUNT (1 /* 00 */ + 13)
 
 /** the compiled regular expression describing a comment */
 static regex_t compiledRegexComment;
@@ -75,13 +123,9 @@ typedef struct _CachedStat {
 
 /** the cached stat result */
 static CachedStat cachedStat;
-static CachedStat cachedStatClear;
 
 /** the malloc-ed buffer in which to store a line read from the file */
 static char * line = NULL;
-
-/** the maximum length of a line that is read from the file */
-static size_t line_length = 256;
 
 /* forward declaration */
 static bool readEgressFile(const char * fileName);
@@ -144,41 +188,6 @@ static void egressFileError(bool useErrno, int lineNo, const char *format, ...) 
 /*
  * Helpers
  */
-
-#ifdef __ANDROID__
-static ssize_t getline(char **lineptr, size_t *n, FILE *stream)
-{
-    char *ptr;
-    size_t len;
-
-    ptr = fgetln(stream, n);
-
-    if (ptr == NULL) {
-        return -1;
-    }
-
-    /* Free the original ptr */
-    if (*lineptr != NULL) free(*lineptr);
-
-    /* Add one more space for '\0' */
-    len = n[0] + 1;
-
-    /* Update the length */
-    n[0] = len;
-
-    /* Allocate a new buffer */
-    *lineptr = malloc(len);
-
-    /* Copy over the string */
-    memcpy(*lineptr, ptr, len-1);
-
-    /* Write the NULL character */
-    (*lineptr)[len-1] = '\0';
-
-    /* Return the length of the new buffer */
-    return len;
-}
-#endif
 
 /**
  * Read an (olsr_ip_addr) IP address from a string:
@@ -275,10 +284,9 @@ static bool readULL(const char * value, unsigned long long * valueNumber) {
  * Strip EOL characters from the end of a string
  *
  * @param str the string to strip
- * @param length the length of the string
  */
-static void stripEols(char * str, ssize_t length) {
-  ssize_t len = length;
+static void stripEols(char * str) {
+  ssize_t len = strlen(str);
   while ((len > 0) && ((str[len - 1] == '\n') || (str[len - 1] == '\r'))) {
     len--;
   }
@@ -333,19 +341,9 @@ struct sgw_egress_if * findEgressInterfaceByIndex(int if_index) {
  * @return true when the costs changed
  */
 bool egressBwCalculateCosts(struct egress_if_bw * bw, bool up) {
-  if (!gw_costs_weights) {
-    gw_costs_weights_storage.WexitU = olsr_cnf->smart_gw_weight_exitlink_up;
-    gw_costs_weights_storage.WexitD = olsr_cnf->smart_gw_weight_exitlink_down;
-    gw_costs_weights_storage.Wetx = olsr_cnf->smart_gw_weight_etx;
-    gw_costs_weights_storage.Detx = olsr_cnf->smart_gw_divider_etx;
-    gw_costs_weights = &gw_costs_weights_storage;
-  }
-
-  {
-    int64_t costsPrevious = bw->costs;
-    bw->costs = gw_costs_weigh(up, gw_costs_weights_storage, bw->path_cost, bw->egressUk, bw->egressDk);
-    return (costsPrevious != bw->costs);
-  }
+  int64_t costsPrevious = bw->costs;
+  bw->costs = gw_costs_weigh(up, bw->path_cost, bw->egressUk, bw->egressDk);
+  return (costsPrevious != bw->costs);
 }
 
 /**
@@ -354,6 +352,8 @@ bool egressBwCalculateCosts(struct egress_if_bw * bw, bool up) {
  * @param up true when the interface is up
  */
 void egressBwClear(struct egress_if_bw * bw, bool up) {
+  bw->requireNetwork = true;
+  bw->requireGateway = true;
   bw->egressUk = 0;
   bw->egressDk = 0;
   bw->path_cost = 0;
@@ -402,7 +402,7 @@ bool startEgressFile(void) {
     return true;
   }
 
-  line = malloc(line_length);
+  line = malloc(LINE_LENGTH);
   if (!line) {
     egressFileError(false, __LINE__, "Could not allocate a line buffer");
     return false;
@@ -411,7 +411,7 @@ bool startEgressFile(void) {
 
   r = regcomp(&compiledRegexComment, regexComment, REG_EXTENDED);
   if (r) {
-    regerror(r, &compiledRegexComment, line, line_length);
+    regerror(r, &compiledRegexComment, line, LINE_LENGTH);
     egressFileError(false, __LINE__, "Could not compile regex \"%s\" (%d = %s)", regexComment, r, line);
 
     free(line);
@@ -421,7 +421,7 @@ bool startEgressFile(void) {
 
   r = regcomp(&compiledRegexEgress, regexEgress, REG_EXTENDED);
   if (r) {
-    regerror(r, &compiledRegexEgress, line, line_length);
+    regerror(r, &compiledRegexEgress, line, LINE_LENGTH);
     egressFileError(false, __LINE__, "Could not compile regex \"%s\" (%d = %s)", regexEgress, r, line);
 
     regfree(&compiledRegexComment);
@@ -431,7 +431,6 @@ bool startEgressFile(void) {
   }
 
   memset(&cachedStat.timeStamp, 0, sizeof(cachedStat.timeStamp));
-  memset(&cachedStatClear.timeStamp, 0, sizeof(cachedStatClear.timeStamp));
 
   readEgressFile(olsr_cnf->smart_gw_egress_file);
 
@@ -452,6 +451,7 @@ void stopEgressFile(void) {
     regfree(&compiledRegexEgress);
     regfree(&compiledRegexComment);
     free(line);
+    line = NULL;
 
     started = false;
   }
@@ -486,50 +486,57 @@ static void readEgressFileClear(void) {
  * @return true to indicate changes (any egress_if->bwChanged is true)
  */
 static bool readEgressFile(const char * fileName) {
-  bool changed = false;
-
-  FILE * fp = NULL;
+  int fd;
   struct stat statBuf;
+  FILE * fp = NULL;
+  void * mtim;
   unsigned int lineNumber = 0;
-  ssize_t length = -1;
+
+  bool changed = false;
   bool reportedErrorsLocal = false;
   const char * filepath = !fileName ? DEF_GW_EGRESS_FILE : fileName;
-  void * mtim;
 
-  if (memcmp(&cachedStat.timeStamp, &cachedStatClear.timeStamp, sizeof(cachedStat.timeStamp))) {
-    /* read the file before */
-
-    if (stat(filepath, &statBuf)) {
-      /* could not stat the file */
-      memset(&cachedStat.timeStamp, 0, sizeof(cachedStat.timeStamp));
-      readEgressFileClear();
-      goto outerror;
-    }
-
-//#if defined(__linux__) && !defined(__ANDROID__)
-//    mtim = &statBuf.st_mtim;
-//#else
-    mtim = &statBuf.st_mtime;
-//#endif
-    if (!memcmp(&cachedStat.timeStamp, mtim, sizeof(cachedStat.timeStamp))) {
-      /* file did not change since last read */
-      return false;
-    }
-  }
-
-  fp = fopen(filepath, "r");
-  if (!fp) {
+  fd = open(filepath, O_RDONLY);
+  if (fd < 0) {
     /* could not open the file */
     memset(&cachedStat.timeStamp, 0, sizeof(cachedStat.timeStamp));
     readEgressFileClear();
     goto outerror;
   }
 
+  if (fstat(fd, &statBuf)) {
+    /* could not stat the file */
+    memset(&cachedStat.timeStamp, 0, sizeof(cachedStat.timeStamp));
+    readEgressFileClear();
+    goto outerror;
+  }
+
+#if defined(__linux__) && !defined(__ANDROID__)
+  mtim = &statBuf.st_mtim;
+#else
+  mtim = &statBuf.st_mtime;
+#endif
+
+  if (!memcmp(&cachedStat.timeStamp, mtim, sizeof(cachedStat.timeStamp))) {
+    /* file did not change since last read */
+    goto out;
+  }
+
+  fp = fdopen(fd, "r");
+  if (!fp) {
+    /* could not open the file */
+    goto out;
+  }
+
+  memcpy(&cachedStat.timeStamp, mtim, sizeof(cachedStat.timeStamp));
+
   /* copy 'current' egress interfaces into 'previous' field */
   readEgressFileClear();
 
-  while ((length = getline(&line, &line_length, fp)) != -1) {
+  while (fgets(line, LINE_LENGTH, fp)) {
     struct sgw_egress_if * egress_if = NULL;
+    bool requireNetwork = true;
+    bool requireGateway = true;
     unsigned long long uplink = DEF_EGRESS_UPLINK_KBPS;
     unsigned long long downlink = DEF_EGRESS_DOWNLINK_KBPS;
     unsigned long long pathCosts = DEF_EGRESS_PATH_COSTS;
@@ -550,7 +557,7 @@ static bool readEgressFile(const char * fileName) {
     memset(&network, 0, sizeof(network));
     memset(&gateway, 0, sizeof(gateway));
 
-    stripEols(line, length);
+    stripEols(line);
 
     memset(pmatch, 0, sizeof(pmatch));
     if (regexec(&compiledRegexEgress, line, REGEX_EGRESS_LINE_MATCH_COUNT, pmatch, 0)) {
@@ -583,11 +590,45 @@ static bool readEgressFile(const char * fileName) {
     }
     assert(egress_if);
 
-    /* uplink: mandatory presence, guaranteed through regex match */
+    /* requireNetwork: mandatory presence, guaranteed through regex match */
     {
       regoff_t len = pmatch[2].rm_eo - pmatch[2].rm_so;
-      char * uplinkString = &line[pmatch[2].rm_so];
+      char * requireNetworkString = &line[pmatch[2].rm_so];
+      unsigned long long value = 1;
       line[pmatch[2].rm_eo] = '\0';
+
+      if ((len > 0) && !readULL(requireNetworkString, &value)) {
+        egressFileError(false, __LINE__, "Egress speed file line %d: requireNetwork \"%s\" is not a valid number: line is ignored", lineNumber,
+            requireNetworkString);
+        reportedErrorsLocal = true;
+        continue;
+      } else {
+        requireNetwork = (value != 0);
+      }
+    }
+
+    /* requireGateway: mandatory presence, guaranteed through regex match */
+    {
+      regoff_t len = pmatch[3].rm_eo - pmatch[3].rm_so;
+      char * requireGatewayString = &line[pmatch[3].rm_so];
+      unsigned long long value = 1;
+      line[pmatch[3].rm_eo] = '\0';
+
+      if ((len > 0) && !readULL(requireGatewayString, &value)) {
+        egressFileError(false, __LINE__, "Egress speed file line %d: requireGateway \"%s\" is not a valid number: line is ignored", lineNumber,
+            requireGatewayString);
+        reportedErrorsLocal = true;
+        continue;
+      } else {
+        requireGateway = (value != 0);
+      }
+    }
+
+    /* uplink: mandatory presence, guaranteed through regex match */
+    {
+      regoff_t len = pmatch[4].rm_eo - pmatch[4].rm_so;
+      char * uplinkString = &line[pmatch[4].rm_so];
+      line[pmatch[4].rm_eo] = '\0';
 
       if ((len > 0) && !readULL(uplinkString, &uplink)) {
         egressFileError(false, __LINE__, "Egress speed file line %d: uplink bandwidth \"%s\" is not a valid number: line is ignored", lineNumber, uplinkString);
@@ -599,9 +640,9 @@ static bool readEgressFile(const char * fileName) {
 
     /* downlink: mandatory presence, guaranteed through regex match */
     {
-      regoff_t len = pmatch[3].rm_eo - pmatch[3].rm_so;
-      char * downlinkString = &line[pmatch[3].rm_so];
-      line[pmatch[3].rm_eo] = '\0';
+      regoff_t len = pmatch[5].rm_eo - pmatch[5].rm_so;
+      char * downlinkString = &line[pmatch[5].rm_so];
+      line[pmatch[5].rm_eo] = '\0';
 
       if ((len > 0) && !readULL(downlinkString, &downlink)) {
         egressFileError(false, __LINE__, "Egress speed file line %d: downlink bandwidth \"%s\" is not a valid number: line is ignored", lineNumber,
@@ -613,10 +654,10 @@ static bool readEgressFile(const char * fileName) {
     downlink = MIN(downlink, MAX_SMARTGW_SPEED);
 
     /* path costs: optional presence */
-    if (pmatch[5].rm_so != -1) {
-      regoff_t len = pmatch[5].rm_eo - pmatch[5].rm_so;
-      char * pathCostsString = &line[pmatch[5].rm_so];
-      line[pmatch[5].rm_eo] = '\0';
+    if (pmatch[7].rm_so != -1) {
+      regoff_t len = pmatch[7].rm_eo - pmatch[7].rm_so;
+      char * pathCostsString = &line[pmatch[7].rm_so];
+      line[pmatch[7].rm_eo] = '\0';
 
       if ((len > 0) && !readULL(pathCostsString, &pathCosts)) {
         egressFileError(false, __LINE__, "Egress speed file line %d: path costs \"%s\" is not a valid number: line is ignored", lineNumber, pathCostsString);
@@ -627,13 +668,13 @@ static bool readEgressFile(const char * fileName) {
     pathCosts = MIN(pathCosts, UINT32_MAX);
 
     /* network: optional presence */
-    if ((pmatch[7].rm_so != -1) && ((pmatch[7].rm_eo - pmatch[7].rm_so) > 0)) {
+    if ((pmatch[9].rm_so != -1) && ((pmatch[9].rm_eo - pmatch[9].rm_so) > 0)) {
       /* network is present: guarantees IP and prefix presence */
       unsigned long long prefix_len;
-      char * networkString = &line[pmatch[8].rm_so];
-      char * prefixlenString = &line[pmatch[9].rm_so];
-      line[pmatch[8].rm_eo] = '\0';
-      line[pmatch[9].rm_eo] = '\0';
+      char * networkString = &line[pmatch[10].rm_so];
+      char * prefixlenString = &line[pmatch[11].rm_so];
+      line[pmatch[10].rm_eo] = '\0';
+      line[pmatch[11].rm_eo] = '\0';
 
       if (!readIPAddress(networkString, &network.prefix, &networkSet, &networkIpVersion)) {
         egressFileError(false, __LINE__, "Egress speed file line %d: network IP address \"%s\" is not a valid IP address: line is ignored", lineNumber,
@@ -660,10 +701,10 @@ static bool readEgressFile(const char * fileName) {
     }
 
     /* gateway: optional presence */
-    if (pmatch[11].rm_so != -1) {
-      regoff_t len = pmatch[11].rm_eo - pmatch[11].rm_so;
-      char * gatewayString = &line[pmatch[11].rm_so];
-      line[pmatch[11].rm_eo] = '\0';
+    if (pmatch[13].rm_so != -1) {
+      regoff_t len = pmatch[13].rm_eo - pmatch[13].rm_so;
+      char * gatewayString = &line[pmatch[13].rm_so];
+      line[pmatch[13].rm_eo] = '\0';
 
       if ((len > 0) && !readIPAddress(gatewayString, &gateway, &gatewaySet, &gatewayIpVersion)) {
         egressFileError(false, __LINE__, "Egress speed file line %d: gateway IP address \"%s\" is not a valid IP address: line is ignored", lineNumber,
@@ -700,6 +741,8 @@ static bool readEgressFile(const char * fileName) {
     if (!uplink || !downlink) {
       egressBwClear(&egress_if->bwCurrent, egress_if->upCurrent);
     } else {
+      egress_if->bwCurrent.requireNetwork = requireNetwork;
+      egress_if->bwCurrent.requireGateway = requireGateway;
       egress_if->bwCurrent.egressUk = uplink;
       egress_if->bwCurrent.egressDk = downlink;
       egress_if->bwCurrent.path_cost = pathCosts;
@@ -717,13 +760,6 @@ static bool readEgressFile(const char * fileName) {
 
   fclose(fp);
   fp = NULL;
-
-//#if defined(__linux__) && !defined(__ANDROID__)
-//    mtim = &statBuf.st_mtim;
-//#else
-    mtim = &statBuf.st_mtime;
-//#endif
-  memcpy(&cachedStat.timeStamp, mtim, sizeof(cachedStat.timeStamp));
 
   reportedErrors = reportedErrorsLocal;
 
@@ -749,6 +785,12 @@ static bool readEgressFile(const char * fileName) {
     }
   }
 
+  out: if (fp) {
+    fclose(fp);
+  }
+  if (fd >= 0) {
+    close(fd);
+  }
   return changed;
 }
 

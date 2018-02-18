@@ -1,9 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2003, Andreas Tonnesen (andreto@olsr.org)
- *               2004, Thomas Lopatic (thomas@lopatic.de)
- *               2006, for some fixups, sven-ola(gmx.de)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -66,6 +68,21 @@ bool lq_tc_pending = false;
 static uint32_t msg_buffer_aligned[(MAXMESSAGESIZE - OLSR_HEADERSIZE) / sizeof(uint32_t) + 1];
 static unsigned char *const msg_buffer = (unsigned char *)msg_buffer_aligned;
 
+static struct lq_hello_neighbor *neigh_find(struct lq_hello_message *lq_hello, struct link_entry *walker) {
+  struct lq_hello_neighbor *neigh;
+
+  assert(lq_hello);
+  assert(walker);
+
+  for (neigh = lq_hello->neigh; neigh; neigh = neigh->next) {
+    if (ipequal(&neigh->addr, &walker->neighbor_iface_addr)) {
+      return neigh;
+    }
+  }
+
+  return NULL;
+}
+
 static void
 create_lq_hello(struct lq_hello_message *lq_hello, struct interface_olsr *outif)
 {
@@ -90,46 +107,59 @@ create_lq_hello(struct lq_hello_message *lq_hello, struct interface_olsr *outif)
   // loop through the link set
 
   OLSR_FOR_ALL_LINK_ENTRIES(walker) {
+    struct lq_hello_neighbor *neigh;
+    bool neigh_is_new = false;
+    uint8_t link_type;
 
     // allocate a neighbour entry
-    struct lq_hello_neighbor *neigh = olsr_malloc_lq_hello_neighbor("Build LQ_HELLO");
+    neigh = neigh_find(lq_hello, walker);
+    if (!neigh) {
+      neigh = olsr_malloc_lq_hello_neighbor("Build LQ_HELLO");
+      neigh_is_new = true;
+    }
 
     // a) this neighbor interface IS NOT visible via the output interface
     if (!ipequal(&walker->local_iface_addr, &outif->ip_addr))
-      neigh->link_type = UNSPEC_LINK;
+      link_type = UNSPEC_LINK;
 
     // b) this neighbor interface IS visible via the output interface
 
     else
-      neigh->link_type = lookup_link_status(walker);
+      link_type = lookup_link_status(walker);
 
-    // set the entry's link quality
-    olsr_copy_hello_lq(neigh, walker);
+    if (neigh_is_new || ((neigh->link_type == UNSPEC_LINK) && (link_type != UNSPEC_LINK))) {
+      neigh->link_type = link_type;
 
-    // set the entry's neighbour type
+      // set the entry's link quality
+      olsr_copy_hello_lq(neigh, walker);
 
-    if (walker->neighbor->is_mpr)
-      neigh->neigh_type = MPR_NEIGH;
+      // set the entry's neighbour type
 
-    else if (walker->neighbor->status == SYM)
-      neigh->neigh_type = SYM_NEIGH;
+      if (walker->neighbor->is_mpr)
+        neigh->neigh_type = MPR_NEIGH;
 
-    else if (walker->neighbor->status == NOT_SYM)
-      neigh->neigh_type = NOT_NEIGH;
+      else if (walker->neighbor->status == SYM)
+        neigh->neigh_type = SYM_NEIGH;
 
-    else {
-      OLSR_PRINTF(0, "Error: neigh_type undefined");
-      neigh->neigh_type = NOT_NEIGH;
+      else if (walker->neighbor->status == NOT_SYM)
+        neigh->neigh_type = NOT_NEIGH;
+
+      else {
+        OLSR_PRINTF(0, "Error: neigh_type undefined");
+        neigh->neigh_type = NOT_NEIGH;
+      }
+
+      // set the entry's neighbour interface address
+
+      neigh->addr = walker->neighbor_iface_addr;
+
+      if (neigh_is_new) {
+        // queue the neighbour entry
+        neigh->next = lq_hello->neigh;
+        lq_hello->neigh = neigh;
+
+      }
     }
-
-    // set the entry's neighbour interface address
-
-    neigh->addr = walker->neighbor_iface_addr;
-
-    // queue the neighbour entry
-    neigh->next = lq_hello->neigh;
-    lq_hello->neigh = neigh;
-
   }
   OLSR_FOR_ALL_LINK_ENTRIES_END(walker);
 }
@@ -324,7 +354,7 @@ serialize_common(struct olsr_common *comm)
 static void
 serialize_lq_hello(struct lq_hello_message *lq_hello, struct interface_olsr *outif)
 {
-  static const int LINK_ORDER[] = { SYM_LINK, UNSPEC_LINK, ASYM_LINK, LOST_LINK };
+  static const int LINK_ORDER[] = HELLO_LINK_ORDER_ARRAY;
   int rem, size, req, expected_size = 0;
   struct lq_hello_info_header *info_head;
   struct lq_hello_neighbor *neigh;

@@ -1,3 +1,48 @@
+/*
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
+ *
+ */
+
 #include "posAvg.h"
 
 /* Plugin includes */
@@ -9,9 +54,9 @@
 #include <assert.h>
 #include <math.h>
 #include <string.h>
-#include <nmea/info.h>
-#include <nmea/sentence.h>
-#include <nmea/gmath.h>
+#include <nmealib/info.h>
+#include <nmealib/nmath.h>
+#include <nmealib/sentence.h>
 
 /* Defines */
 
@@ -34,12 +79,14 @@ void flushPositionAverageList(PositionAverageList * positionAverageList) {
 	memset(&positionAverageList->counters, 0,
 			sizeof(positionAverageList->counters));
 
-	nmea_zero_INFO(&positionAverageList->positionAverageCumulative.nmeaInfo);
+	nmeaInfoClear(&positionAverageList->positionAverageCumulative.nmeaInfo);
+	nmeaTimeSet(&positionAverageList->positionAverageCumulative.nmeaInfo.utc, &positionAverageList->positionAverageCumulative.nmeaInfo.present, NULL);
 	memset(&positionAverageList->positionAverageCumulative.track, 0, sizeof(positionAverageList->positionAverageCumulative.track));
 	memset(&positionAverageList->positionAverageCumulative.mtrack, 0, sizeof(positionAverageList->positionAverageCumulative.mtrack));
 	memset(&positionAverageList->positionAverageCumulative.magvar, 0, sizeof(positionAverageList->positionAverageCumulative.magvar));
 
-	nmea_zero_INFO(&positionAverageList->positionAverage.nmeaInfo);
+	nmeaInfoClear(&positionAverageList->positionAverage.nmeaInfo);
+	nmeaTimeSet(&positionAverageList->positionAverage.nmeaInfo.utc, &positionAverageList->positionAverage.nmeaInfo.present, NULL);
 }
 
 /**
@@ -173,110 +220,126 @@ static void updateCounters(PositionAverageList * positionAverageList,
 	int amount = (add ? 1 : -1);
 
 	/* present */
-	if (nmea_INFO_is_present(present, SMASK)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_SMASK)) {
 		assert(add ? (counters->smask < maxCount):(counters->smask > 0));
 		counters->smask += amount;
 	}
-	if (nmea_INFO_is_present(present, UTCDATE)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_UTCDATE)) {
 		assert(add ? (counters->utcdate < maxCount):(counters->utcdate > 0));
 		counters->utcdate += amount;
 	}
-	if (nmea_INFO_is_present(present, UTCTIME)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_UTCTIME)) {
 		assert(add ? (counters->utctime < maxCount):(counters->utctime > 0));
 		counters->utctime += amount;
 	}
-	if (nmea_INFO_is_present(present, SIG)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_SIG)) {
 		assert(add ? (counters->sig < maxCount):(counters->sig > 0));
 		counters->sig += amount;
 	}
-	if (nmea_INFO_is_present(present, FIX)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_FIX)) {
 		assert(add ? (counters->fix < maxCount):(counters->fix > 0));
 		counters->fix += amount;
 	}
-	if (nmea_INFO_is_present(present, PDOP)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_PDOP)) {
 		assert(add ? (counters->pdop < maxCount):(counters->pdop > 0));
 		counters->pdop += amount;
 	}
-	if (nmea_INFO_is_present(present, HDOP)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_HDOP)) {
 		assert(add ? (counters->hdop < maxCount):(counters->hdop > 0));
 		counters->hdop += amount;
 	}
-	if (nmea_INFO_is_present(present, VDOP)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_VDOP)) {
 		assert(add ? (counters->vdop < maxCount):(counters->vdop > 0));
 		counters->vdop += amount;
 	}
-	if (nmea_INFO_is_present(present, LAT)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_LAT)) {
 		assert(add ? (counters->lat < maxCount):(counters->lat > 0));
 		counters->lat += amount;
 	}
-	if (nmea_INFO_is_present(present, LON)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_LON)) {
 		assert(add ? (counters->lon < maxCount):(counters->lon > 0));
 		counters->lon += amount;
 	}
-	if (nmea_INFO_is_present(present, ELV)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_ELV)) {
 		assert(add ? (counters->elv < maxCount):(counters->elv > 0));
 		counters->elv += amount;
 	}
-	if (nmea_INFO_is_present(present, SPEED)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_SPEED)) {
 		assert(add ? (counters->speed < maxCount):(counters->speed > 0));
 		counters->speed += amount;
 	}
-	if (nmea_INFO_is_present(present, TRACK)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_TRACK)) {
 		assert(add ? (counters->track < maxCount):(counters->track > 0));
 		counters->track += amount;
 	}
-	if (nmea_INFO_is_present(present, MTRACK)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_MTRACK)) {
 		assert(add ? (counters->mtrack < maxCount):(counters->mtrack > 0));
 		counters->mtrack += amount;
 	}
-	if (nmea_INFO_is_present(present, MAGVAR)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_MAGVAR)) {
 		assert(add ? (counters->magvar < maxCount):(counters->magvar > 0));
 		counters->magvar += amount;
 	}
-	if (nmea_INFO_is_present(present, SATINUSECOUNT)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_SATINUSECOUNT)) {
 		assert(add ? (counters->satinusecount < maxCount):(counters->satinusecount > 0));
 		counters->satinusecount += amount;
 	}
-	if (nmea_INFO_is_present(present, SATINUSE)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_SATINUSE)) {
 		assert(add ? (counters->satinuse < maxCount):(counters->satinuse > 0));
 		counters->satinuse += amount;
 	}
-	if (nmea_INFO_is_present(present, SATINVIEW)) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_SATINVIEWCOUNT)) {
+	  assert(add ? (counters->satinviewcount < maxCount) : (counters->satinviewcount > 0));
+	  counters->satinviewcount += amount;
+	}
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_SATINVIEW)) {
 		assert(add ? (counters->satinview < maxCount):(counters->satinview > 0));
 		counters->satinview += amount;
 	}
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_HEIGHT)) {
+	  assert(add ? (counters->height < maxCount) : (counters->height > 0));
+	  counters->height += amount;
+	}
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_DGPSAGE)) {
+	  assert(add ? (counters->dgpsage < maxCount) : (counters->dgpsage > 0));
+	  counters->dgpsage += amount;
+	}
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_DGPSSID)) {
+	  assert(add ? (counters->dgpssid < maxCount) : (counters->dgpssid > 0));
+	  counters->dgpssid += amount;
+	}
 
 	/* smask */
-	if ((smask & GPGGA) != 0) {
+	if ((smask & NMEALIB_SENTENCE_GPGGA) != 0) {
 		assert(add ? (counters->gpgga < maxCount):(counters->gpgga > 0));
 		counters->gpgga += amount;
 	}
-	if ((smask & GPGSA) != 0) {
+	if ((smask & NMEALIB_SENTENCE_GPGSA) != 0) {
 		assert(add ? (counters->gpgsa < maxCount):(counters->gpgsa > 0));
 		counters->gpgsa += amount;
 	}
-	if ((smask & GPGSV) != 0) {
+	if ((smask & NMEALIB_SENTENCE_GPGSV) != 0) {
 		assert(add ? (counters->gpgsv < maxCount):(counters->gpgsv > 0));
 		counters->gpgsv += amount;
 	}
-	if ((smask & GPRMC) != 0) {
+	if ((smask & NMEALIB_SENTENCE_GPRMC) != 0) {
 		assert(add ? (counters->gprmc < maxCount):(counters->gprmc > 0));
 		counters->gprmc += amount;
 	}
-	if ((smask & GPVTG) != 0) {
+	if ((smask & NMEALIB_SENTENCE_GPVTG) != 0) {
 		assert(add ? (counters->gpvtg < maxCount):(counters->gpvtg > 0));
 		counters->gpvtg += amount;
 	}
 
 	/* sig */
-	if (nmea_INFO_is_present(present, SIG)) {
-		if (entry->nmeaInfo.sig == NMEA_SIG_HIGH) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_SIG)) {
+		if (entry->nmeaInfo.sig == NMEALIB_SIG_SENSITIVE) {
 			assert(add ? (counters->sigHigh < maxCount):(counters->sigHigh > 0));
 			counters->sigHigh += amount;
-		} else if (entry->nmeaInfo.sig == NMEA_SIG_MID) {
+		} else if (entry->nmeaInfo.sig == NMEALIB_SIG_DIFFERENTIAL) {
 			assert(add ? (counters->sigMid < maxCount):(counters->sigMid > 0));
 			counters->sigMid += amount;
-		} else if (entry->nmeaInfo.sig == NMEA_SIG_LOW) {
+		} else if (entry->nmeaInfo.sig == NMEALIB_SIG_FIX) {
 			assert(add ? (counters->sigLow < maxCount):(counters->sigLow > 0));
 			counters->sigLow += amount;
 		} else {
@@ -286,11 +349,11 @@ static void updateCounters(PositionAverageList * positionAverageList,
 	}
 
 	/* fix */
-	if (nmea_INFO_is_present(present, FIX)) {
-		if (entry->nmeaInfo.fix == NMEA_FIX_3D) {
+	if (nmeaInfoIsPresentAll(present, NMEALIB_PRESENT_FIX)) {
+		if (entry->nmeaInfo.fix == NMEALIB_FIX_3D) {
 			assert(add ? (counters->fix3d < maxCount):(counters->fix3d > 0));
 			counters->fix3d += amount;
-		} else if (entry->nmeaInfo.fix == NMEA_FIX_2D) {
+		} else if (entry->nmeaInfo.fix == NMEALIB_FIX_2D) {
 			assert(add ? (counters->fix2d < maxCount):(counters->fix2d > 0));
 			counters->fix2d += amount;
 		} else {
@@ -321,101 +384,113 @@ static void determineCumulativePresentSmaskSigFix(
 	cumulative->nmeaInfo.present = 0;
 
 	if (counters->smask >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, SMASK);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_SMASK);
 	}
 	if (counters->utcdate >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, UTCDATE);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_UTCDATE);
 	}
 	if (counters->utctime >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, UTCTIME);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_UTCTIME);
 	}
 	if (counters->sig >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, SIG);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_SIG);
 	}
 	if (counters->fix >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, FIX);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_FIX);
 	}
 	if (counters->pdop >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, PDOP);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_PDOP);
 	}
 	if (counters->hdop >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, HDOP);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_HDOP);
 	}
 	if (counters->vdop >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, VDOP);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_VDOP);
 	}
 	if (counters->lat >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, LAT);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_LAT);
 	}
 	if (counters->lon >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, LON);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_LON);
 	}
 	if (counters->elv >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, ELV);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_ELV);
 	}
 	if (counters->speed >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, SPEED);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_SPEED);
 	}
 	if (counters->track >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, TRACK);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_TRACK);
 	}
 	if (counters->mtrack >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, MTRACK);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_MTRACK);
 	}
 	if (counters->magvar >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, MAGVAR);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_MAGVAR);
 	}
 	if (counters->satinusecount >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, SATINUSECOUNT);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_SATINUSECOUNT);
 	}
 	if (counters->satinuse >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, SATINUSE);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_SATINUSE);
+	}
+	if (counters->satinviewcount >= count) {
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_SATINVIEWCOUNT);
 	}
 	if (counters->satinview >= count) {
-	  nmea_INFO_set_present(&cumulative->nmeaInfo.present, SATINVIEW);
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_SATINVIEW);
+	}
+	if (counters->height >= count) {
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_HEIGHT);
+	}
+	if (counters->dgpsage >= count) {
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_DGPSAGE);
+	}
+	if (counters->dgpssid >= count) {
+	  nmeaInfoSetPresent(&cumulative->nmeaInfo.present, NMEALIB_PRESENT_DGPSSID);
 	}
 
 	/* smask */
 	cumulative->nmeaInfo.smask = 0;
 
 	if (counters->gpgga >= count) {
-		cumulative->nmeaInfo.smask |= GPGGA;
+		cumulative->nmeaInfo.smask |= NMEALIB_SENTENCE_GPGGA;
 	}
 	if (counters->gpgsa >= count) {
-		cumulative->nmeaInfo.smask |= GPGSA;
+		cumulative->nmeaInfo.smask |= NMEALIB_SENTENCE_GPGSA;
 	}
 	if (counters->gpgsv >= count) {
-		cumulative->nmeaInfo.smask |= GPGSV;
+		cumulative->nmeaInfo.smask |= NMEALIB_SENTENCE_GPGSV;
 	}
 	if (counters->gprmc >= count) {
-		cumulative->nmeaInfo.smask |= GPRMC;
+		cumulative->nmeaInfo.smask |= NMEALIB_SENTENCE_GPRMC;
 	}
 	if (counters->gpvtg >= count) {
-		cumulative->nmeaInfo.smask |= GPVTG;
+		cumulative->nmeaInfo.smask |= NMEALIB_SENTENCE_GPVTG;
 	}
 
 	/* sig */
-	cumulative->nmeaInfo.sig = NMEA_SIG_BAD;
-	if (nmea_INFO_is_present(cumulative->nmeaInfo.present, SIG)) {
+	cumulative->nmeaInfo.sig = NMEALIB_SIG_INVALID;
+	if (nmeaInfoIsPresentAll(cumulative->nmeaInfo.present, NMEALIB_PRESENT_SIG)) {
 		if (counters->sigBad == 0) {
 			if (counters->sigHigh >= count) {
-				cumulative->nmeaInfo.sig = NMEA_SIG_HIGH;
+				cumulative->nmeaInfo.sig = NMEALIB_SIG_SENSITIVE;
 			} else if (counters->sigMid > 0) {
-				cumulative->nmeaInfo.sig = NMEA_SIG_MID;
+				cumulative->nmeaInfo.sig = NMEALIB_SIG_DIFFERENTIAL;
 			} else if (counters->sigLow > 0) {
-				cumulative->nmeaInfo.sig = NMEA_SIG_LOW;
+				cumulative->nmeaInfo.sig = NMEALIB_SIG_FIX;
 			}
 		}
 	}
 
 	/* fix */
-	cumulative->nmeaInfo.fix = NMEA_FIX_BAD;
-	if (nmea_INFO_is_present(cumulative->nmeaInfo.present, FIX)) {
+	cumulative->nmeaInfo.fix = NMEALIB_FIX_BAD;
+	if (nmeaInfoIsPresentAll(cumulative->nmeaInfo.present, NMEALIB_PRESENT_FIX)) {
 		if (counters->fixBad == 0) {
 			if (counters->fix3d >= count) {
-				cumulative->nmeaInfo.fix = NMEA_FIX_3D;
+				cumulative->nmeaInfo.fix = NMEALIB_FIX_3D;
 			} else if (counters->fix2d > 0) {
-				cumulative->nmeaInfo.fix = NMEA_FIX_2D;
+				cumulative->nmeaInfo.fix = NMEALIB_FIX_2D;
 			}
 		}
 	}
@@ -439,8 +514,8 @@ static void calculateAngleComponents(AngleComponents * components, double * angl
 		return;
 	}
 
-	components->x = cos(nmea_degree2radian(*angle));
-	components->y = sin(nmea_degree2radian(*angle));
+	components->x = cos(nmeaMathDegreeToRadian(*angle));
+	components->y = sin(nmeaMathDegreeToRadian(*angle));
 }
 
 /**
@@ -453,7 +528,7 @@ static double calculateAngle(AngleComponents * components) {
 	if (!components)
 		return 0;
 
-	return nmea_radian2degree(atan2(components->y, components->x));
+	return nmeaMathRadianToDegree(atan2(components->y, components->x));
 }
 
 /**
@@ -516,26 +591,26 @@ static void addOrRemoveEntryToFromCumulativeAverage(
 		/* fix at the end */
 
 		/* use the latest satinfo */
-		cumulative->nmeaInfo.satinfo = entry->nmeaInfo.satinfo;
+		cumulative->nmeaInfo.satellites = entry->nmeaInfo.satellites;
 	}
 
 	/* PDOP, HDOP, VDOP */
-	cumulative->nmeaInfo.PDOP += add ? entry->nmeaInfo.PDOP
-			: -entry->nmeaInfo.PDOP;
-	cumulative->nmeaInfo.HDOP += add ? entry->nmeaInfo.HDOP
-			: -entry->nmeaInfo.HDOP;
-	cumulative->nmeaInfo.VDOP += add ? entry->nmeaInfo.VDOP
-			: -entry->nmeaInfo.VDOP;
+	cumulative->nmeaInfo.pdop += add ? entry->nmeaInfo.pdop
+			: -entry->nmeaInfo.pdop;
+	cumulative->nmeaInfo.hdop += add ? entry->nmeaInfo.hdop
+			: -entry->nmeaInfo.hdop;
+	cumulative->nmeaInfo.vdop += add ? entry->nmeaInfo.vdop
+			: -entry->nmeaInfo.vdop;
 
 	/* lat, lon */
-	cumulative->nmeaInfo.lat += add ? entry->nmeaInfo.lat
-			: -entry->nmeaInfo.lat;
-	cumulative->nmeaInfo.lon += add ? entry->nmeaInfo.lon
-			: -entry->nmeaInfo.lon;
+	cumulative->nmeaInfo.latitude += add ? entry->nmeaInfo.latitude
+			: -entry->nmeaInfo.latitude;
+	cumulative->nmeaInfo.longitude += add ? entry->nmeaInfo.longitude
+			: -entry->nmeaInfo.longitude;
 
 	/* elv, speed */
-	cumulative->nmeaInfo.elv += add ? entry->nmeaInfo.elv
-			: -entry->nmeaInfo.elv;
+	cumulative->nmeaInfo.elevation += add ? entry->nmeaInfo.elevation
+			: -entry->nmeaInfo.elevation;
 	cumulative->nmeaInfo.speed += add ? entry->nmeaInfo.speed
 			: -entry->nmeaInfo.speed;
 
@@ -577,14 +652,14 @@ static void updatePositionAverageFromCumulative(
 	/* fix: use from cumulative average */
 
 	if (divider > 1.0) {
-		positionAverageList->positionAverage.nmeaInfo.PDOP /= divider;
-		positionAverageList->positionAverage.nmeaInfo.HDOP /= divider;
-		positionAverageList->positionAverage.nmeaInfo.VDOP /= divider;
+		positionAverageList->positionAverage.nmeaInfo.pdop /= divider;
+		positionAverageList->positionAverage.nmeaInfo.hdop /= divider;
+		positionAverageList->positionAverage.nmeaInfo.vdop /= divider;
 
-		positionAverageList->positionAverage.nmeaInfo.lat /= divider;
-		positionAverageList->positionAverage.nmeaInfo.lon /= divider;
+		positionAverageList->positionAverage.nmeaInfo.latitude /= divider;
+		positionAverageList->positionAverage.nmeaInfo.longitude /= divider;
 
-		positionAverageList->positionAverage.nmeaInfo.elv /= divider;
+		positionAverageList->positionAverage.nmeaInfo.elevation /= divider;
 		positionAverageList->positionAverage.nmeaInfo.speed /= divider;
 
 		positionAverageList->positionAverage.nmeaInfo.track = calculateAngle(&positionAverageList->positionAverageCumulative.track);
@@ -617,9 +692,9 @@ void addNewPositionToAverage(PositionAverageList * positionAverageList,
 	}
 
 	/* calculate the angle components */
-	calculateAngleComponents(&newEntry->track, nmea_INFO_is_present(newEntry->nmeaInfo.present, TRACK) ? &newEntry->nmeaInfo.track : NULL);
-	calculateAngleComponents(&newEntry->mtrack, nmea_INFO_is_present(newEntry->nmeaInfo.present, MTRACK) ? &newEntry->nmeaInfo.mtrack : NULL);
-	calculateAngleComponents(&newEntry->magvar, nmea_INFO_is_present(newEntry->nmeaInfo.present, MAGVAR) ? &newEntry->nmeaInfo.magvar : NULL);
+	calculateAngleComponents(&newEntry->track, nmeaInfoIsPresentAll(newEntry->nmeaInfo.present, NMEALIB_PRESENT_TRACK) ? &newEntry->nmeaInfo.track : NULL);
+	calculateAngleComponents(&newEntry->mtrack, nmeaInfoIsPresentAll(newEntry->nmeaInfo.present, NMEALIB_PRESENT_MTRACK) ? &newEntry->nmeaInfo.mtrack : NULL);
+	calculateAngleComponents(&newEntry->magvar, nmeaInfoIsPresentAll(newEntry->nmeaInfo.present, NMEALIB_PRESENT_MAGVAR) ? &newEntry->nmeaInfo.magvar : NULL);
 
 	/* now just add the new position */
 	addOrRemoveEntryToFromCumulativeAverage(positionAverageList, newEntry, true);

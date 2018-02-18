@@ -1,6 +1,11 @@
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,7 +47,12 @@
 #define _OLSR_BUILDDATA_H
 
 extern const char olsrd_version[];
+
 extern const char build_date[];
 extern const char build_host[];
+extern const char git_descriptor[];
+extern const char git_sha[];
+extern const char release_version[];
+extern const char source_hash[];
 
 #endif /* _OLSR_BUILDDATA_H */

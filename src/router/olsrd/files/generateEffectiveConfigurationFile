@@ -1,5 +1,48 @@
 #!/bin/bash
 
+# The olsr.org Optimized Link-State Routing daemon (olsrd)
+#
+# (c) by the OLSR project
+#
+# See our Git repository to find out who worked on this file
+# and thus is a copyright holder on it.
+#
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# * Redistributions of source code must retain the above copyright
+#   notice, this list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in
+#   the documentation and/or other materials provided with the
+#   distribution.
+# * Neither the name of olsr.org, olsrd nor the names of its
+#   contributors may be used to endorse or promote products derived
+#   from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+# Visit http://www.olsr.org for more information.
+#
+# If you find this software useful feel free to make a donation
+# to the project. For more information see the website or contact
+# the copyright holders.
+#
+
 set -e
 set -u
 
@@ -35,13 +78,13 @@ dyngwLib="$baseDir/lib/dyn_gw/olsrd_dyn_gw.so.0.5"
 dyngwLibDir="$(dirname "$dyngwLib")"
 httpinfoLib="$baseDir/lib/httpinfo/olsrd_httpinfo.so.0.1"
 httpinfoLibDir="$(dirname "$httpinfoLib")"
-jsoninfoLib="$baseDir/lib/jsoninfo/olsrd_jsoninfo.so.0.0"
+jsoninfoLib="$baseDir/lib/jsoninfo/olsrd_jsoninfo.so.1.1"
 jsoninfoLibDir="$(dirname "$jsoninfoLib")"
-nameserviceLib="$baseDir/lib/nameservice/olsrd_nameservice.so.0.3"
+nameserviceLib="$baseDir/lib/nameservice/olsrd_nameservice.so.0.4"
 nameserviceLibDir="$(dirname "$nameserviceLib")"
 p2pdinfoLib="$baseDir/lib/p2pd/olsrd_p2pd.so.0.1.0"
 p2pdinfoLibDir="$(dirname "$p2pdinfoLib")"
-txtinfoLib="$baseDir/lib/txtinfo/olsrd_txtinfo.so.0.1"
+txtinfoLib="$baseDir/lib/txtinfo/olsrd_txtinfo.so.1.1"
 txtinfoLibDir="$(dirname "$txtinfoLib")"
 
 
@@ -141,12 +184,17 @@ echo ""
 
 echo "Generating effective configuration file"
 echo "  $configFile.txt"
-echo "/olsrd.conf" | \
-  nc localhost 9090 | \
+set +e
+echo "/plain/olsrd.conf" | \
+  nc 127.0.0.1 56789 | \
   tail -n +6 | \
-  sed -r "s/$regex\"$nwif\"/\1\"wlan0\"/" \
+  sed -r \
+    -e "s/$regex\"$nwif\"/\1\"wlan0\"/" \
+    -e '/^[[:space:]]*PlParam[[:space:]]+"port"[[:space:]]+"56789"[[:space:]]*$/ d' \
+    -e 's/^[[:space:]]*MainIp[[:space:]]+.*$/MainIp 10.0.0.1/' \
   > "$configFile.txt"
 chown --reference="$configFile" "$configFile.txt"
+set -e
 
 
 echo "Stopping all $(basename "$olsrd") instances"

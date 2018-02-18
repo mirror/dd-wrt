@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2008 Henning Rogge <rogge@fgan.de>
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,9 +53,9 @@
 #include "packet.h"
 #include "common/avl.h"
 
-#define LINK_COST_BROKEN (1<<22)
-#define ROUTE_COST_BROKEN (0xffffffff)
-#define ZERO_ROUTE_COST 0
+#define LINK_COST_BROKEN (1u<<22)
+#define ROUTE_COST_BROKEN (0xffffffffu)
+#define ZERO_ROUTE_COST 0u
 
 #define MINIMAL_USEFUL_LQ 0.1
 #define LQ_PLUGIN_RELEVANT_COSTCHANGE 16
@@ -84,7 +88,7 @@ struct lq_handler {
 
   const char *(*print_hello_lq) (void *ptr, char separator, struct lqtextbuffer * buffer);
   const char *(*print_tc_lq) (void *ptr, char separator, struct lqtextbuffer * buffer);
-  const char *(*print_cost) (olsr_linkcost cost, struct lqtextbuffer * buffer);
+  double (*get_cost_scaled) (olsr_linkcost cost);
 
   size_t hello_lq_size;
   size_t tc_lq_size;
@@ -127,6 +131,7 @@ void olsr_memorize_foreign_hello_lq(struct link_entry *local, struct hello_neigh
 const char *get_link_entry_text(struct link_entry *entry, char separator, struct lqtextbuffer *buffer);
 const char *get_tc_edge_entry_text(struct tc_edge_entry *entry, char separator, struct lqtextbuffer *buffer);
 const char *get_linkcost_text(olsr_linkcost cost, bool route, struct lqtextbuffer *buffer);
+double get_linkcost_scaled(olsr_linkcost cost, bool route);
 
 void olsr_clear_hello_lq(struct link_entry */*link*/);
 void olsr_copy_hello_lq(struct lq_hello_neighbor *target, struct link_entry *source);

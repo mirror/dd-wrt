@@ -1,6 +1,11 @@
 /*
- * PacketBB handler library (see RFC 5444)
- * Copyright (c) 2010 Henning Rogge <hrogge@googlemail.com>
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,17 +35,19 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * Visit http://www.olsr.org/git for more information.
+ * Visit http://www.olsr.org for more information.
  *
  * If you find this software useful feel free to make a donation
  * to the project. For more information see the website or contact
  * the copyright holders.
+ *
  */
 
 #ifndef CONTAINER_OF_H_
 #define CONTAINER_OF_H_
 
 #include <stddef.h>
+#include "defs.h"
 
 /* allow compilation with c99 mode */
 #ifndef typeof
@@ -60,7 +67,7 @@
 /**
  * Helper function for NULL safe container_of macro
  */
-static inline void *
+static INLINE void *
 __container_of_if_notnull(void *ptr, size_t offset) {
   return ptr == NULL ? NULL : (((char *)ptr) - offset);
 }

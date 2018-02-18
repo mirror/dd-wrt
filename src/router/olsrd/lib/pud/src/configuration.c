@@ -1,3 +1,48 @@
+/*
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ *   notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in
+ *   the documentation and/or other materials provided with the
+ *   distribution.
+ * * Neither the name of olsr.org, olsrd nor the names of its
+ *   contributors may be used to endorse or promote products derived
+ *   from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Visit http://www.olsr.org for more information.
+ *
+ * If you find this software useful feel free to make a donation
+ * to the project. For more information see the website or contact
+ * the copyright holders.
+ *
+ */
+
 #include "configuration.h"
 
 /* Plugin includes */
@@ -13,7 +58,7 @@
 
 /* System includes */
 #include <unistd.h>
-#include <nmea/parse.h>
+#include <nmealib/validate.h>
 #include <OlsrdPudWireFormat/nodeIdConversion.h>
 #include <limits.h>
 
@@ -335,15 +380,15 @@ static bool intSetupNodeIdBinaryDoubleLongLong(
  - false on failure
  */
 static bool intSetupNodeIdBinaryString(void) {
-  const char * invalidCharName;
+  const NmeaInvalidCharacter * invalidCharName;
   size_t nodeidlength;
   char * nodeid = (char *) getNodeId(&nodeidlength);
 
-  invalidCharName = nmea_parse_sentence_has_invalid_chars(nodeid, nodeidlength);
+  invalidCharName = nmeaValidateSentenceHasInvalidCharacters(nodeid, nodeidlength);
   if (invalidCharName) {
     char report[256];
     snprintf(report, sizeof(report), "Configured %s (%s),"
-        " contains invalid NMEA characters (%s)", PUD_NODE_ID_NAME, nodeid, invalidCharName);
+        " contains invalid NMEA character '%c' (%s)", PUD_NODE_ID_NAME, nodeid, invalidCharName->character, invalidCharName->description);
     pudError(false, "%s", &report[0]);
     return false;
   }
@@ -450,236 +495,6 @@ static bool setupNodeIdBinaryAndValidate(NodeIdType nodeIdTypeNumber) {
 		  pudError(false, "nodeId type %u is not supported", nodeIdTypeNumber);
 		  return false;
 	}
-
-	return false;
-}
-
-/*
- * rxNonOlsrIf
- */
-
-/** The maximum number of RX non-OLSR interfaces */
-#define PUD_RX_NON_OLSR_IF_MAX 32
-
-/** Array with RX non-OLSR interface names */
-static unsigned char rxNonOlsrInterfaceNames[PUD_RX_NON_OLSR_IF_MAX][IFNAMSIZ + 1];
-
-/** The number of RX non-OLSR interface names in the array */
-static unsigned int rxNonOlsrInterfaceCount = 0;
-
-/**
- Determine whether a give interface name is configured as a receive non-OLSR
- interface.
-
- @param ifName
- The interface name to check
-
- @return
- - true when the given interface name is configured as a receive non-OLSR
- interface
- - false otherwise
- */
-bool isRxNonOlsrInterface(const char *ifName) {
-	unsigned int i;
-
-	assert (ifName != NULL);
-
-	for (i = 0; i < rxNonOlsrInterfaceCount; i++) {
-		if (strncmp((char *) &rxNonOlsrInterfaceNames[i][0], ifName, IFNAMSIZ
-				+ 1) == 0) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-int addRxNonOlsrInterface(const char *value, void *data __attribute__ ((unused)),
-		set_plugin_parameter_addon addon __attribute__ ((unused))) {
-	size_t valueLength;
-
-	if (rxNonOlsrInterfaceCount >= PUD_RX_NON_OLSR_IF_MAX) {
-		pudError(false, "Can't configure more than %u receive interfaces",
-				PUD_RX_NON_OLSR_IF_MAX);
-		return true;
-	}
-
-	assert (value != NULL);
-
-	valueLength = strlen(value);
-	if (valueLength > IFNAMSIZ) {
-		pudError(false, "Value of parameter %s (%s) is too long,"
-			" maximum length is %u, current length is %lu",
-				PUD_RX_NON_OLSR_IF_NAME, value, IFNAMSIZ, (long unsigned int)valueLength);
-		return true;
-	}
-
-	if (!isRxNonOlsrInterface(value)) {
-		strcpy((char *) &rxNonOlsrInterfaceNames[rxNonOlsrInterfaceCount][0],
-				value);
-		rxNonOlsrInterfaceCount++;
-	}
-
-	return false;
-}
-
-/**
- * @return the number of configured non-olsr receive interfaces
- */
-unsigned int getRxNonOlsrInterfaceCount(void) {
-	return rxNonOlsrInterfaceCount;
-}
-
-/**
- * @param idx the index of the configured non-olsr receive interface
- * @return the index-th interface name
- */
-unsigned char * getRxNonOlsrInterfaceName(unsigned int idx) {
-	return &rxNonOlsrInterfaceNames[idx][0];
-}
-
-/*
- * rxAllowedSourceIpAddress
- */
-
-/** The maximum number of RX allowed source IP addresses */
-#define PUD_RX_ALLOWED_SOURCE_IP_MAX 32
-
-/** Array with RX allowed source IP addresses */
-static union olsr_sockaddr rxAllowedSourceIpAddresses[PUD_RX_ALLOWED_SOURCE_IP_MAX];
-
-/** The number of RX allowed source IP addresses in the array */
-static unsigned int rxAllowedSourceIpAddressesCount = 0;
-
-/**
- Determine whether a give IP address is configured as an allowed source IP
- address.
-
- @param sender
- The IP address to check
-
- @return
- - true when the given IP address is configured as an allowed source IP
- address
- - false otherwise
- */
-bool isRxAllowedSourceIpAddress(union olsr_sockaddr * sender) {
-	unsigned int i;
-
-	if (rxAllowedSourceIpAddressesCount == 0) {
-		return true;
-	}
-
-	if (sender == NULL) {
-		return false;
-	}
-
-	for (i = 0; i < rxAllowedSourceIpAddressesCount; i++) {
-		if (sender->in.sa_family != rxAllowedSourceIpAddresses[i].in.sa_family) {
-			continue;
-		}
-
-		if (sender->in.sa_family == AF_INET) {
-			if (memcmp(&rxAllowedSourceIpAddresses[i].in4.sin_addr, &sender->in4.sin_addr, sizeof(struct in_addr))
-					== 0) {
-				return true;
-			}
-		} else {
-			if (memcmp(&rxAllowedSourceIpAddresses[i].in6.sin6_addr, &sender->in6.sin6_addr, sizeof(struct in6_addr))
-					== 0) {
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-
-int addRxAllowedSourceIpAddress(const char *value, void *data __attribute__ ((unused)),
-		set_plugin_parameter_addon addon __attribute__ ((unused))) {
-	static const char * valueName = PUD_RX_ALLOWED_SOURCE_IP_NAME;
-	union olsr_sockaddr addr;
-	bool addrSet = false;
-
-	if (rxAllowedSourceIpAddressesCount >= PUD_RX_ALLOWED_SOURCE_IP_MAX) {
-		pudError(false, "Can't configure more than %u allowed source IP"
-			" addresses", PUD_RX_ALLOWED_SOURCE_IP_MAX);
-		return true;
-	}
-
-	if (!readIPAddress(valueName, value, 0, &addr, &addrSet)) {
-		return true;
-	}
-
-	if (!isRxAllowedSourceIpAddress(&addr)) {
-		rxAllowedSourceIpAddresses[rxAllowedSourceIpAddressesCount] = addr;
-		rxAllowedSourceIpAddressesCount++;
-	}
-
-	return false;
-}
-
-/*
- * rxMcAddr + rxMcPort
- */
-
-/** The rx multicast address */
-static union olsr_sockaddr rxMcAddr;
-
-/** True when the rx multicast address is set */
-static bool rxMcAddrSet = false;
-
-/**
- @return
- The receive multicast address (in network byte order). Sets both the address
- and the port to their default values when the address was not yet set.
- */
-union olsr_sockaddr * getRxMcAddr(void) {
-	if (!rxMcAddrSet) {
-		setRxMcAddr((olsr_cnf->ip_version == AF_INET) ? PUD_RX_MC_ADDR_4_DEFAULT : PUD_RX_MC_ADDR_6_DEFAULT,
-				NULL, ((set_plugin_parameter_addon) {.pc = NULL}));
-	}
-	return &rxMcAddr;
-}
-
-int setRxMcAddr(const char *value, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused))) {
-	static const char * valueName = PUD_RX_MC_ADDR_NAME;
-
-	if (!readIPAddress(valueName, value, PUD_RX_MC_PORT_DEFAULT, &rxMcAddr, &rxMcAddrSet)) {
-			return true;
-	}
-
-	if (!isMulticast(&rxMcAddr)) {
-		pudError(false, "Value of parameter %s (%s) is not a multicast address",
-				valueName, value);
-		return true;
-	}
-
-	return false;
-}
-
-/**
- @return
- The receive multicast port (in network byte order)
- */
-unsigned short getRxMcPort(void) {
-	return getOlsrSockaddrPort(getRxMcAddr(), PUD_RX_MC_PORT_DEFAULT);
-}
-
-int setRxMcPort(const char *value, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused))) {
-	static const char * valueName = PUD_RX_MC_PORT_NAME;
-	unsigned short rxMcPortNew;
-
-	if (!readUS(valueName, value, &rxMcPortNew)) {
-		return true;
-	}
-
-	if (rxMcPortNew < 1) {
-		pudError(false, "Value of parameter %s (%u) is outside of valid range 1-65535", valueName, rxMcPortNew);
-		return true;
-	}
-
-	setOlsrSockaddrPort(getRxMcAddr(), htons((in_port_t) rxMcPortNew));
 
 	return false;
 }
@@ -980,7 +795,7 @@ unsigned char * getTxNmeaMessagePrefix(void) {
 
 int setTxNmeaMessagePrefix(const char *value, void *data __attribute__ ((unused)),
 		set_plugin_parameter_addon addon __attribute__ ((unused))) {
-	const char * invalidCharName;
+	const NmeaInvalidCharacter * invalidCharName;
 	static const char * valueName = PUD_TX_NMEAMESSAGEPREFIX_NAME;
 	size_t valueLength;
 
@@ -993,11 +808,11 @@ int setTxNmeaMessagePrefix(const char *value, void *data __attribute__ ((unused)
 		return true;
 	}
 
-  invalidCharName = nmea_parse_sentence_has_invalid_chars(value, valueLength);
+  invalidCharName = nmeaValidateSentenceHasInvalidCharacters(value, valueLength);
   if (invalidCharName) {
     char report[256];
     snprintf(report, sizeof(report), "Configured %s (%s),"
-        " contains invalid NMEA characters (%s)", valueName, value, invalidCharName);
+        " contains invalid NMEA character '%c' (%s)", valueName, value, invalidCharName->character, invalidCharName->description);
     pudError(false, "%s", report);
     return true;
   }
@@ -1011,6 +826,47 @@ int setTxNmeaMessagePrefix(const char *value, void *data __attribute__ ((unused)
 	strcpy((char *) &txNmeaMessagePrefix[0], value);
 	txNmeaMessagePrefixSet = true;
 	return false;
+}
+
+/*
+ * positionOutputFile
+ */
+
+/** The positionOutputFile buffer */
+static char positionOutputFile[PATH_MAX + 1];
+
+/** True when the positionOutputFile is set */
+static bool positionOutputFileSet = false;
+
+/**
+ @return
+ The positionOutputFile (NULL when not set)
+ */
+char * getPositionOutputFile(void) {
+  if (!positionOutputFileSet) {
+    return NULL;
+  }
+
+  return &positionOutputFile[0];
+}
+
+int setPositionOutputFile(const char *value, void *data __attribute__ ((unused)),
+    set_plugin_parameter_addon addon __attribute__ ((unused))) {
+  size_t valueLength;
+
+  assert(value != NULL);
+
+  valueLength = strlen(value);
+  if (valueLength > PATH_MAX) {
+    pudError(false, "Value of parameter %s is too long, maximum length is"
+        " %u, current length is %lu", PUD_POSFILE_NAME, PATH_MAX, (unsigned long) valueLength);
+    return true;
+  }
+
+  strcpy((char *) &positionOutputFile[0], value);
+  positionOutputFileSet = true;
+
+  return false;
 }
 
 /*
@@ -1570,6 +1426,71 @@ int setUseLoopback(const char *value, void *data __attribute__ ((unused)),
 }
 
 /*
+ * gpsdUse
+ */
+
+/** True when the gps daemon should be used */
+static bool gpsdUse = PUD_USE_GPSD_DEFAULT;
+
+bool getGpsdUse(void) {
+  return gpsdUse;
+}
+
+int setGpsdUse(const char *value, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused))) {
+  return !readBool(PUD_GPSD_USE_NAME, value, &gpsdUse);
+}
+
+/*
+ * gpsd
+ */
+
+/** The gpsd plugin parameter */
+static char gpsd[PATH_MAX];
+
+/** The gpsd plugin parameter as gpsd source spec */
+static GpsDaemon gpsDaemon;
+
+/** True when the gpsd is set */
+static bool gpsdSet = false;
+
+/**
+ @return
+ The gpsd plugin parameter (NULL when not set)
+ */
+GpsDaemon *getGpsd(void) {
+  if (!gpsdSet || !gpsdUse) {
+    return NULL ;
+  }
+
+  return &gpsDaemon;
+}
+
+int setGpsd(const char *value, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused))) {
+  static const char * valueName = PUD_GPSD_NAME;
+  size_t valueLength;
+
+  assert(value != NULL);
+
+  valueLength = strlen(value);
+
+  if (!valueLength) {
+    pudError(false, "No value specified for parameter %s", valueName);
+    return true;
+  }
+  if (valueLength > PATH_MAX) {
+    pudError(false, "Value of parameter %s is too long, maximum length is"
+        " %u, current length is %lu", valueName, PATH_MAX, (unsigned long) valueLength);
+    return true;
+  }
+
+  strcpy((char *) &gpsd[0], value);
+  gpsdParseSourceSpec(gpsd, &gpsDaemon);
+  gpsdSet = true;
+
+  return false;
+}
+
+/*
  * Check Functions
  */
 
@@ -1583,9 +1504,9 @@ int setUseLoopback(const char *value, void *data __attribute__ ((unused)),
 unsigned int checkConfig(void) {
 	int retval = true;
 
-	if (rxNonOlsrInterfaceCount == 0) {
-		pudError(false, "No receive non-OLSR interfaces configured");
-		retval = false;
+	if (!gpsdSet) {
+	  set_plugin_parameter_addon addon;
+	  setGpsd(PUD_GPSD_DEFAULT, NULL, addon);
 	}
 
 	if (txNonOlsrInterfaceCount == 0) {

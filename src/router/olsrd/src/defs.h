@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,6 +47,8 @@
 #define _OLSR_DEFS
 
 /* Common includes */
+#include "common/string_handling.h"
+
 #include <sys/time.h>
 #include <sys/times.h>
 #include <sys/socket.h>
@@ -57,6 +63,7 @@
 #include "compat.h"
 #endif /* _WIN32 */
 
+#include "compiler.h"
 #include "olsr_protocol.h"
 #include "olsr_cfg.h"
 
@@ -110,54 +117,6 @@ extern FILE *debug_handle;
 #define MIN(x,y)	((x) < (y) ? (x) : (y))
 #endif /* MIN */
 
-#define INLINE inline __attribute__((always_inline))
-
-/*
- * On ARM, the compiler spits out additional warnings if called
- * with -Wcast-align if you cast e.g. char* -> int*. While this
- * is fine, most of that warnings are un-critical. Also the ARM
- * CPU will throw BUS_ERROR if alignment does not fit. For this,
- * we add an additional cast to (void *) to prevent the warning.
- */
-#define ARM_NOWARN_ALIGN(x) ((void *)(x))
-#define CONST_ARM_NOWARN_ALIGN(x) ((const void *)(x))
-
-/*
- * A somewhat safe version of strncpy and strncat. Note, that
- * BSD/Solaris strlcpy()/strlcat() differ in implementation, while
- * the BSD compiler prints out a warning if you use plain strcpy().
- */
-
-static INLINE char *
-strscpy(char *dest, const char *src, size_t size)
-{
-  register size_t l = 0;
-#if !defined(NODEBUG) && defined(DEBUG)
-  if (NULL == dest)
-    fprintf(stderr, "Warning: dest is NULL in strscpy!\n");
-  if (NULL == src)
-    fprintf(stderr, "Warning: src is NULL in strscpy!\n");
-#endif /* !defined(NODEBUG) && defined(DEBUG) */
-  if (!dest || !src) {
-    return NULL;
-  }
-
-  /* src does not need to be null terminated */
-  if (0 < size--)
-    while (l < size && 0 != src[l])
-      l++;
-  dest[l] = 0;
-
-  return strncpy(dest, src, l);
-}
-
-static INLINE char *
-strscat(char *dest, const char *src, size_t size)
-{
-  register size_t l = strlen(dest);
-  return strscpy(dest + l, src, size > l ? size - l : 0);
-}
-
 /*
  * Queueing macros
  */
@@ -186,11 +145,6 @@ extern struct olsrd_config *olsr_cnf;
 /* Timer data */
 extern uint32_t now_times;              /* current idea of times(2) reported uptime */
 extern struct olsr_cookie_info *def_timer_ci;
-
-#if defined _WIN32
-extern bool olsr_win32_end_request;
-extern bool olsr_win32_end_flag;
-#endif /* defined _WIN32 */
 
 /*
  *IPC functions

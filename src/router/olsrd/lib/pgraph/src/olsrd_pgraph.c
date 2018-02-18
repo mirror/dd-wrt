@@ -1,8 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
- *                     includes code by Bruno Randolf
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,20 +52,20 @@
 #include "olsrd_plugin.h"
 #include "plugin_util.h"
 #include "net_olsr.h"
+#include "olsr.h"
+#include "builddata.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <signal.h>
 #ifdef _WIN32
 #define close(x) closesocket(x)
 #endif /* _WIN32 */
 
-#define PLUGIN_NAME    "OLSRD pgraph plugin"
-#define PLUGIN_VERSION "0.1"
-#define PLUGIN_AUTHOR   "Richard Gopaul"
-#define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION " by " PLUGIN_AUTHOR
+#define PLUGIN_NAME              "OLSRD pgraph plugin"
 #define PLUGIN_INTERFACE_VERSION 5
 
 static union olsr_ip_addr ipc_accept_ip;
@@ -93,7 +96,7 @@ void
 my_init(void)
 {
   /* Print plugin info to stdout */
-  printf("%s\n", MOD_DESC);
+  olsr_printf(0, "%s (%s)\n", PLUGIN_NAME, git_descriptor);
 
   /* defaults for parameters */
   ipc_port = 2004;
@@ -271,8 +274,9 @@ ipc_action(int fd __attribute__ ((unused)), void *data __attribute__ ((unused)),
   addrlen = sizeof(struct sockaddr_in);
 
   if ((ipc_connection = accept(ipc_socket, (struct sockaddr *)&pin, &addrlen)) == -1) {
-    olsr_printf(1, "(DOT DRAW)IPC accept: %s\n", strerror(errno));
-    exit(1);
+    char buf2[1024];
+    snprintf(buf2, sizeof(buf2), "(DOT DRAW)IPC accept error: %s", strerror(errno));
+    olsr_exit(buf2, EXIT_FAILURE);
   } else {
     struct ipaddr_str main_addr;
     addr = inet_ntoa(pin.sin_addr);

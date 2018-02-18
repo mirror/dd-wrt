@@ -1,8 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2007, Bernd Petrovitsch <bernd@firmix.at>
- * Copyright (c) 2007, Sven-Ola <sven-ola@gmx.de>
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -95,7 +98,7 @@ set_plugin_ipaddress(const char *value, void *data, set_plugin_parameter_addon a
 int
 set_plugin_boolean(const char *value, void *data, set_plugin_parameter_addon addon __attribute__ ((unused)))
 {
-  int *v = data;
+  bool *v = data;
   if (strcasecmp(value, "yes") == 0 || strcasecmp(value, "true") == 0) {
     *v = 1;
   } else if (strcasecmp(value, "no") == 0 || strcasecmp(value, "false") == 0) {
@@ -121,6 +124,25 @@ set_plugin_int(const char *value, void *data, set_plugin_parameter_addon addon _
     OLSR_PRINTF(1, "%s int %d\n", "Got", theint);
   } else {
     OLSR_PRINTF(0, "%s int %d\n", "Ignored", theint);
+  }
+  return 0;
+}
+
+int
+set_plugin_long(const char *value, void *data, set_plugin_parameter_addon addon __attribute__ ((unused)))
+{
+  char *endptr;
+  const long thelong = strtol(value, &endptr, 0);
+  if (*endptr != '\0' || endptr == value) {
+    OLSR_PRINTF(0, "Illegal long \"%s\"", value);
+    return 1;
+  }
+  if (data != NULL) {
+    long *v = data;
+    *v = thelong;
+    OLSR_PRINTF(1, "%s long %ld\n", "Got", thelong);
+  } else {
+    OLSR_PRINTF(0, "%s long %ld\n", "Ignored", thelong);
   }
   return 0;
 }

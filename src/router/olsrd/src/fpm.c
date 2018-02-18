@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2008, Sven-Ola Tuecke (sven-ola@gmx.de)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -74,6 +78,13 @@ float
 fpmtof(fpm a)
 {
   float r = fpmtof_def((sfpm) a);
+  return r;
+}
+
+double
+fpmtod(fpm a)
+{
+  double r = fpmtod_def((sfpm) a);
   return r;
 }
 

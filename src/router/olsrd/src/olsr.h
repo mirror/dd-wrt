@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,6 +56,8 @@ extern bool changes_force;
 
 extern union olsr_ip_addr all_zero;
 
+void get_argc_argv(int *argc, char **argv[]);
+
 void olsr_startup_sleep(int);
 void olsr_do_startup_sleep(void);
 
@@ -86,6 +92,8 @@ const char *olsr_status_to_string(uint8_t);
 void olsr_exit(const char *, int) __attribute__((noreturn));
 
 void *olsr_malloc(size_t, const char *);
+
+void *olsr_realloc(void *, size_t, const char *);
 
 int olsr_printf(int, const char *, ...) __attribute__ ((format(printf, 2, 3)));
 

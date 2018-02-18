@@ -1,7 +1,11 @@
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
- * Copyright (c) 2007, Sven-Ola for the policy routing stuff
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -125,7 +129,7 @@ void olsr_os_cleanup_iptunnel(const char * dev) {
  * @return 0 if an error happened,
  *   if_index for successful created tunnel, 1 for successful deleted tunnel
  */
-static int os_ip_tunnel(const char *name, void *target) {
+int os_ip_tunnel(const char *name, void *target) {
 	struct ifreq ifr;
 	int err;
 	void * p;
@@ -152,7 +156,7 @@ static int os_ip_tunnel(const char *name, void *target) {
 		if (target) {
 			p4.iph.daddr = *((in_addr_t *) target);
 		}
-		strscpy(p4.name, name, IFNAMSIZ);
+		strscpy(p4.name, name, sizeof(p4.name));
 	} else {
 #ifdef LINUX_IPV6_TUNNEL
 		p = (void *) &p6;
@@ -163,13 +167,13 @@ static int os_ip_tunnel(const char *name, void *target) {
 		if (target) {
 			p6.raddr = *((struct in6_addr *) target);
 		}
-		strscpy(p6.name, name, IFNAMSIZ);
+		strscpy(p6.name, name, sizeof(p6.name));
 #else /* LINUX_IPV6_TUNNEL */
 		return 0;
 #endif /* LINUX_IPV6_TUNNEL */
 	}
 
-	strscpy(ifr.ifr_name, target != NULL ? tunName : name, IFNAMSIZ);
+	strscpy(ifr.ifr_name, target != NULL ? tunName : name, sizeof(ifr.ifr_name));
 	ifr.ifr_ifru.ifru_data = p;
 
 	if ((err = ioctl(olsr_cnf->ioctl_s, target != NULL ? SIOCADDTUNNEL : SIOCDELTUNNEL, &ifr))) {
@@ -221,7 +225,7 @@ struct olsr_iptunnel_entry *olsr_os_add_ipip_tunnel(union olsr_ip_addr *target, 
     memcpy(&t->target, target, sizeof(*target));
     t->node.key = &t->target;
 
-    strscpy(t->if_name, name, IFNAMSIZ);
+    strscpy(t->if_name, name, sizeof(t->if_name));
     t->if_index = if_idx;
 
     avl_insert(&tunnel_tree, &t->node, AVL_DUP_NO);
@@ -235,30 +239,21 @@ struct olsr_iptunnel_entry *olsr_os_add_ipip_tunnel(union olsr_ip_addr *target, 
  * Release an olsr ipip tunnel. Tunnel will be deleted
  * if this was the last user
  * @param t pointer to olsr_iptunnel_entry
- * @param cleanup true to free t's memory
  */
-static void internal_olsr_os_del_ipip_tunnel(struct olsr_iptunnel_entry *t, bool cleanup) {
-  if (!cleanup) {
-    if (t->usage == 0) {
-      return;
-    }
-    t->usage--;
+void olsr_os_del_ipip_tunnel(struct olsr_iptunnel_entry *t) {
+  if (t->usage == 0) {
+    return;
+  }
+  t->usage--;
 
-    if (t->usage > 0) {
-      return;
-    }
+  if (t->usage > 0) {
+    return;
   }
 
   olsr_if_set_state(t->if_name, false);
   os_ip_tunnel(t->if_name, NULL);
 
   avl_delete(&tunnel_tree, &t->node);
-  if (!cleanup) {
-    olsr_cookie_free(tunnel_cookie, t);
-  }
-}
-
-void olsr_os_del_ipip_tunnel(struct olsr_iptunnel_entry *t) {
-  internal_olsr_os_del_ipip_tunnel(t, false);
+  olsr_cookie_free(tunnel_cookie, t);
 }
 #endif /* __linux__ */

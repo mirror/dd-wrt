@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,28 +47,19 @@
  * Dynamic linked library for the olsr.org olsr daemon
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-
-#include "olsrd_plugin.h"
 #include "olsrd_txtinfo.h"
-#include "defs.h"
+#include "olsrd_plugin.h"
+#include "info/olsrd_info.h"
+#include "olsr.h"
+#include "builddata.h"
 
-#define PLUGIN_NAME    "OLSRD txtinfo plugin"
-#define PLUGIN_VERSION "0.1"
-#define PLUGIN_AUTHOR   "Lorenz Schori"
-#define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION " by " PLUGIN_AUTHOR
+#define PLUGIN_NAME              "TXTINFO"
+#define PLUGIN_TITLE             "OLSRD txtinfo plugin"
 #define PLUGIN_INTERFACE_VERSION 5
 
-union olsr_ip_addr txtinfo_accept_ip;
-union olsr_ip_addr txtinfo_listen_ip;
-int ipc_port;
-int nompr;
-int txtinfo_ipv6_only;
+info_plugin_functions_t functions;
+info_plugin_config_t config;
+bool vtime;
 
 static void my_init(void) __attribute__ ((constructor));
 static void my_fini(void) __attribute__ ((destructor));
@@ -72,34 +67,19 @@ static void my_fini(void) __attribute__ ((destructor));
 /**
  *Constructor
  */
-static void
-my_init(void)
-{
+static void my_init(void) {
   /* Print plugin info to stdout */
-  printf("%s\n", MOD_DESC);
+  olsr_printf(0, "%s (%s)\n", PLUGIN_TITLE, git_descriptor);
 
-  /* defaults for parameters */
-  ipc_port = 2006;
-  txtinfo_ipv6_only = false;
-
-  if (olsr_cnf->ip_version == AF_INET) {
-    txtinfo_accept_ip.v4.s_addr = htonl(INADDR_LOOPBACK);
-    txtinfo_listen_ip.v4.s_addr = htonl(INADDR_ANY);
-  } else {
-    txtinfo_accept_ip.v6 = in6addr_loopback;
-    txtinfo_listen_ip.v6 = in6addr_any;
-  }
-
-  /* highlite neighbours by default */
-  nompr = 0;
+  info_plugin_config_init(&config, 2006);
+  config.http_headers = false;
+  vtime = false;
 }
 
 /**
  *Destructor
  */
-static void
-my_fini(void)
-{
+static void my_fini(void) {
   /* Calls the destruction function
    * olsr_plugin_exit()
    * This function should be present in your
@@ -109,22 +89,55 @@ my_fini(void)
   olsr_plugin_exit();
 }
 
-int
-olsrd_plugin_interface_version(void)
-{
+/**
+ *Do initialization here
+ *
+ *This function is called by the my_init
+ *function in uolsrd_plugin.c
+ */
+int olsrd_plugin_init(void) {
+  memset(&functions, 0, sizeof(functions));
+
+  functions.supportsCompositeCommands = true;
+  functions.supported_commands_mask = get_supported_commands_mask;
+  functions.is_command = isCommand;
+  functions.cache_timeout = cache_timeout_generic;
+  functions.output_error = output_error;
+
+  functions.neighbors = ipc_print_neighbors;
+  functions.links = ipc_print_links;
+  functions.routes = ipc_print_routes;
+  functions.topology = ipc_print_topology;
+  functions.hna = ipc_print_hna;
+  functions.mid = ipc_print_mid;
+  functions.gateways = ipc_print_gateways;
+  functions.sgw = ipc_print_sgw;
+  functions.version = ipc_print_version;
+  functions.olsrd_conf = ipc_print_olsrd_conf;
+  functions.interfaces = ipc_print_interfaces;
+  functions.twohop = ipc_print_twohop;
+
+  return info_plugin_init(PLUGIN_NAME, &functions, &config);
+}
+
+/**
+ * destructor - called at unload
+ */
+void olsr_plugin_exit(void) {
+  info_plugin_exit();
+}
+
+int olsrd_plugin_interface_version(void) {
   return PLUGIN_INTERFACE_VERSION;
 }
 
-static const struct olsrd_plugin_parameters plugin_parameters[] = {
-  {.name = "port",.set_plugin_parameter = &set_plugin_port,.data = &ipc_port},
-  {.name = "accept",.set_plugin_parameter = &set_plugin_ipaddress,.data = &txtinfo_accept_ip},
-  {.name = "listen",.set_plugin_parameter = &set_plugin_ipaddress,.data = &txtinfo_listen_ip},
-  {.name = "ipv6only", .set_plugin_parameter = &set_plugin_boolean, .data = &txtinfo_ipv6_only},
-};
+static const struct olsrd_plugin_parameters plugin_parameters[] = { //
+    //
+        INFO_PLUGIN_CONFIG_PLUGIN_PARAMETERS(config), //
+        { .name = "vtime", .set_plugin_parameter = &set_plugin_boolean, .data = &vtime } //
+    };
 
-void
-olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size)
-{
+void olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *size) {
   *params = plugin_parameters;
   *size = sizeof(plugin_parameters) / sizeof(*plugin_parameters);
 }
@@ -133,7 +146,7 @@ olsrd_get_plugin_parameters(const struct olsrd_plugin_parameters **params, int *
  * Local Variables:
  * mode: c
  * style: linux
- * c-basic-offset: 4
+ * c-basic-offset: 2
  * indent-tabs-mode: nil
  * End:
  */

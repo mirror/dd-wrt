@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004-2009, the olsr.org team - see HISTORY file
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -82,14 +86,15 @@ struct timer_entry {
   void *timer_cb_context;              /* context pointer */
 };
 
-/* inline to recast from timer_list back to timer_entry */
+/* INLINE to recast from timer_list back to timer_entry */
 LISTNODE2STRUCT(list2timer, struct timer_entry, timer_list);
 
 #define OLSR_TIMER_ONESHOT    0 /* One shot timer */
 #define OLSR_TIMER_PERIODIC   1 /* Periodic timer */
 
 /* Timer flags */
-#define OLSR_TIMER_RUNNING  ( 1 << 0)   /* this timer is running */
+#define OLSR_TIMER_RUNNING  ( 1u << 0)   /* this timer is running */
+#define OLSR_TIMER_REMOVED  ( 1u << 1)   /* this timer is tagged for removal */
 
 /* Timers */
 void olsr_init_timers(void);
@@ -105,6 +110,7 @@ const char *olsr_wallclock_string(void);
 
 /* Main scheduler loop */
 void olsr_scheduler(void);
+void olsr_scheduler_stop(void);
 
 /*
  * Provides a timestamp s1 milliseconds in the future
@@ -153,6 +159,7 @@ LISTNODE2STRUCT(list2socket, struct olsr_socket_entry, socket_node);
     socket = list2socket(_socket_node);
 #define OLSR_FOR_ALL_SOCKETS_END(socket) }}
 
+uint32_t olsr_times(void);
 uint32_t olsr_getTimestamp (uint32_t s);
 int32_t olsr_getTimeDue (uint32_t s);
 bool olsr_isTimedOut (uint32_t s);

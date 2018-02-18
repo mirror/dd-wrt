@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Andreas Tonnesen(andreto@olsr.org)
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,11 +46,11 @@
 #ifndef _OLSRD_CFGPARSER_H
 #define _OLSRD_CFGPARSER_H
 
+#include "compiler.h"
+#include "defs.h"
 #include "olsr_types.h"
 #include "common/autobuf.h"
-#ifdef HTTPINFO_PUD
 #include "pud/src/receiver.h"
-#endif /* HTTPINFO_PUD */
 
 /* set to 1 to collect all startup sleep into one sleep
  * (just as long as the longest sleep)
@@ -117,6 +121,7 @@
 #define DEF_GW_WEIGHT_EXITLINK_DOWN 1
 #define DEF_GW_WEIGHT_ETX           1
 #define DEF_GW_DIVIDER_ETX          0
+#define DEF_GW_MAX_COST_MAX_ETX     2560
 #define DEF_GW_TYPE          GW_UPLINK_IPV46
 #define DEF_GW_UPLINK_NAT    true
 #define DEF_UPLINK_SPEED     128
@@ -281,9 +286,13 @@ struct olsrd_config {
   bool allow_no_interfaces;
   uint8_t tos;
   uint8_t rt_proto;
-  uint8_t rt_table, rt_table_default, rt_table_tunnel;
-  int32_t rt_table_pri, rt_table_tunnel_pri;
-  int32_t rt_table_defaultolsr_pri, rt_table_default_pri;
+  uint8_t rt_table;
+  uint8_t rt_table_default;
+  uint8_t rt_table_tunnel;
+  int32_t rt_table_pri;
+  int32_t rt_table_tunnel_pri;
+  int32_t rt_table_defaultolsr_pri;
+  int32_t rt_table_default_pri;
   uint8_t willingness;
   bool willingness_auto;
   int ipc_connections;
@@ -313,9 +322,13 @@ struct olsrd_config {
   char *lock_file;
   bool use_niit;
 
-  bool smart_gw_active, smart_gw_always_remove_server_tunnel, smart_gw_allow_nat, smart_gw_uplink_nat;
+  bool smart_gw_active;
+  bool smart_gw_always_remove_server_tunnel;
+  bool smart_gw_allow_nat;
+  bool smart_gw_uplink_nat;
   uint8_t smart_gw_use_count;
   uint8_t smart_gw_takedown_percentage;
+  char *smart_gw_instance_id;
   char *smart_gw_policyrouting_script;
   struct sgw_egress_if * smart_gw_egress_interfaces;
   uint8_t smart_gw_egress_interfaces_count;
@@ -331,13 +344,16 @@ struct olsrd_config {
   uint8_t smart_gw_weight_exitlink_down;
   uint8_t smart_gw_weight_etx;
   uint32_t smart_gw_divider_etx;
+  uint32_t smart_gw_path_max_cost_etx_max;
   enum smart_gw_uplinktype smart_gw_type;
-  uint32_t smart_gw_uplink, smart_gw_downlink;
+  uint32_t smart_gw_uplink;
+  uint32_t smart_gw_downlink;
   bool smart_gateway_bandwidth_zero;
   struct olsr_ip_prefix smart_gw_prefix;
 
   /* Main address of this node */
-  union olsr_ip_addr main_addr, unicast_src_ip;
+  union olsr_ip_addr main_addr;
+  union olsr_ip_addr unicast_src_ip;
   bool use_src_ip_routes;
 
   /* Stuff set by olsrd */
@@ -349,10 +365,12 @@ struct olsrd_config {
   int exit_value;                      /* Global return value for process termination */
   float max_tc_vtime;
 
-  int niit4to6_if_index, niit6to4_if_index;
+  int niit4to6_if_index;
+  int niit6to4_if_index;
 
   /*many potential parameters or helper variables for smartgateway*/
-  bool has_ipv4_gateway, has_ipv6_gateway;
+  bool has_ipv4_gateway;
+  bool has_ipv6_gateway;
 
   int ioctl_s;                         /* Socket used for ioctl calls */
 #ifdef __linux__
@@ -365,9 +383,7 @@ struct olsrd_config {
 #endif /* defined __FreeBSD__ || defined __FreeBSD_kernel__ || defined __APPLE__ || defined __NetBSD__ || defined __OpenBSD__ */
   float lq_nat_thresh;
 
-#ifdef HTTPINFO_PUD
   TransmitGpsInformation * pud_position;
-#endif /* HTTPINFO_PUD */
 };
 
 #if defined __cplusplus
@@ -387,7 +403,7 @@ extern "C" {
    *
    * @return the number of olsr interfaces
    */
-  static inline unsigned int getNrOfOlsrInterfaces(struct olsrd_config * cfg) {
+  static INLINE unsigned int getNrOfOlsrInterfaces(struct olsrd_config * cfg) {
     struct olsr_if * ifn;
     unsigned int i = 0;
 
@@ -410,11 +426,17 @@ extern "C" {
 
   int olsrd_sanity_check_cnf(struct olsrd_config *);
 
-  void olsrd_free_cnf(struct olsrd_config *);
+  void olsrd_free_cnf(struct olsrd_config **);
 
   void olsrd_print_cnf(struct olsrd_config *);
 
+  void olsrd_cfgfile_init(void);
+
+  void olsrd_cfgfile_cleanup(void);
+
   void olsrd_write_cnf_autobuf(struct autobuf *out, struct olsrd_config *cnf);
+
+  void olsrd_write_cnf_autobuf_uncached(struct autobuf *out, struct olsrd_config *cnf);
 
   int olsrd_write_cnf(struct olsrd_config *, const char *);
 
@@ -434,21 +456,21 @@ extern "C" {
    * Smart-Gateway uplink/downlink accessors
    */
 
-  static inline void set_smart_gateway_bandwidth_zero(struct olsrd_config *cnf) {
+  static INLINE void set_smart_gateway_bandwidth_zero(struct olsrd_config *cnf) {
     cnf->smart_gateway_bandwidth_zero = !cnf->smart_gw_uplink || !cnf->smart_gw_downlink;
   }
 
-  static inline void smartgw_set_uplink(struct olsrd_config *cnf, uint32_t uplink) {
+  static INLINE void smartgw_set_uplink(struct olsrd_config *cnf, uint32_t uplink) {
     cnf->smart_gw_uplink = uplink;
     set_smart_gateway_bandwidth_zero(cnf);
   }
 
-  static inline void smartgw_set_downlink(struct olsrd_config *cnf, uint32_t downlink) {
+  static INLINE void smartgw_set_downlink(struct olsrd_config *cnf, uint32_t downlink) {
     cnf->smart_gw_downlink = downlink;
     set_smart_gateway_bandwidth_zero(cnf);
   }
 
-  static inline bool smartgw_is_zero_bandwidth(struct olsrd_config *cnf) {
+  static INLINE bool smartgw_is_zero_bandwidth(struct olsrd_config *cnf) {
     return cnf->smart_gateway_bandwidth_zero;
   }
 

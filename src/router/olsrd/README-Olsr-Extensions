@@ -256,7 +256,13 @@ All other parameters will be ignored if SmartGateway is set to "no"
    effects of breaking connections (due to the selection of a new gateway) on
    a dynamic network.
    The default setting is 1.
-2- SmartGatewayTakeDownPercentage determines the take-down percentage for a
+2- SmartGatewayInstanceId is the olsrd instance id, which is needed for proper
+   cleanup of multi-gateway iptables and ip rules when running multiple olsrd
+   instances on a node. This setting MUST be configured when the multi-gateway
+   mode is enabled and must be unique between the olsrd instances running on
+   the node. It may not contain whitespace and may not be empty.
+   The default setting is <not set>.
+3- SmartGatewayTakeDownPercentage determines the take-down percentage for a
    non-current smart gateway tunnel. If the cost of the current smart gateway
    tunnel is less than this percentage of the cost of the non-current smart
    gateway tunnel, then the non-current smart gateway tunnel is taken down
@@ -266,27 +272,30 @@ All other parameters will be ignored if SmartGateway is set to "no"
    only when a new tunnel is created while then are already
    'SmartGatewayUseCount' tunnels.
    The default setting is 0.
-3- SmartGatewayPolicyRoutingScript controls the policy routing script that is
+4- SmartGatewayPolicyRoutingScript controls the policy routing script that is
    executed during startup and shutdown of olsrd. The script is only executed
    when SmartGatewayUseCount is set to a value larger than 1. The script must
    setup policy routing rules such that multi-gateway mode works. A reference
    script is included.
    The default setting is <not set>.
-4- SmartGatewayEgressInterfaces determines the egress interfaces that are part
+5- SmartGatewayEgressInterfaces determines the egress interfaces that are part
    of the multi-gateway setup and therefore only relevant when
    SmartGatewayUseCount is larger than 1 (in which case it must be explicitly
    set). This setting can contain multiple interfaces, for example
      SmartGatewayEgressInterfaces "eth0" "eth1" "ppp0"
    The default setting is <not set>.
-5- SmartGatewayEgressFile declares the file that contains the bandwidth
+6- SmartGatewayEgressFile declares the file that contains the bandwidth
    parameters of the egress interfaces declared by SmartGatewayEgressInterfaces.
    Every line in the file declares bandwidth parameters of an egress interface,
    with the format:
      # this is a comment
-     interface=upstream,downstream,pathcost,network/prefix,gateway
-   Only the upstream and downstream fields are mandatory, the other fields are
-   optional. An empty field signifies that its default should be used.
+     interface=requireNetwork,requireGateway,upstream,downstream,pathcost,network/prefix,gateway
+   Only the requireNetwork, requireGateway, upstream and downstream fields are
+   mandatory, the other fields are optional. An empty field signifies that its
+   default should be used.
    The field defaults are:
+     requireNetwork     = 1 (true)
+     requireGateway     = 1 (true)
      upstream           = 0 (Kbps)
      downstream         = 0 (Kbps)
      pathcost           = 0 (dimensionless, 1024 is equivalent to 1 hop)
@@ -296,43 +305,49 @@ All other parameters will be ignored if SmartGateway is set to "no"
                             and in the range [0, 128] for IPv6
      gateway            = no default / not set (IP address)
    Note that when an interface needs a gateway to properly transport traffic
-   then the gateway IP address field MUST be set; doing otherwise will
-   result in non-functional routes being programmed. When an interface doesn't
-   need a gateway (for example a ppp interface) then the gateway IP address
-   field must be left empty.
+   then the gateway IP address field MUST be set AND requireGateway MUST be
+   non-zero; doing otherwise will result in non-functional routes being
+   programmed. When an interface doesn't  need a gateway (for example a PPP
+   interface) then the gateway IP address field MUST be left empty AND
+   requireGateway MUST be set to zero.
    Also note that when an interface has an attached network (like an Ethernet
-   interface, but not like a ppp interface) then the network/prefix field must
-   be set in order for a network route to be programmed.
+   interface, but not like a PPP interface) then the network/prefix field MUST
+   be set AND requireNetwork MUST be non-zero in order for a network route to
+   be programmed.
    The default setting is "/var/run/olsrd-sgw-egress.conf".
-6- SmartGatewayEgressFilePeriod determines the period (in milliseconds) on which
+7- SmartGatewayEgressFilePeriod determines the period (in milliseconds) on which
    the SmartGatewayEgressFile is checked for changes and processed if changed.
    The default setting is 5000.
-7- SmartGatewayStatusFile declares the file that is written by olsrd to contain
+8- SmartGatewayStatusFile declares the file that is written by olsrd to contain
    the status of the smart gateways and is only relevant when
    SmartGatewayUseCount is larger than 1.
    The default setting is <not set>
-8- SmartGatewayTablesOffset and SmartGatewayRulesOffset determine the ranges of
+9- SmartGatewayTablesOffset and SmartGatewayRulesOffset determine the ranges of
    policy routing rule markings that are used in a multi-gateway setup (see the
    policy routing script for an explanation).
    The default settings are 90 and 0 respectively. The value of 0 for
    SmartGatewayRulesOffset will automatically align the table and rule numbers
    for the server tunnel, egress interfaces and gateway tunnel interfaces.
-9- SmartGatewayAllowNAT controls whether you want to allow the selection
+10-SmartGatewayAllowNAT controls whether you want to allow the selection
    of an outgoing ipv4 gateway with NAT (Network Address Translation).
    The default setting is "yes".
-10-SmartGatewayPeriod determines the period (in milliseconds) on which
+11-SmartGatewayPeriod determines the period (in milliseconds) on which
    a new smart gateway selection is performed.
    The default setting is 10000 milliseconds.
-11-SmartGatewayStableCount determines the number of times the same new gateway
+12-SmartGatewayStableCount determines the number of times the same new gateway
    must be chosen before that new smart gateway is actually selected.
    The default setting is 6.
-12-SmartGatewayThreshold (percentage) controls whether you want to allow
+13-SmartGatewayThreshold (percentage) controls whether you want to allow
    re-selection of a new outgoing gateway if its routing cost is lower or equal
    to the configured percentage of the routing cost of the current gateway.
    The default setting is 0, which disables it.
-13-SmartGatewayWeightExitLinkUp, SmartGatewayWeightExitLinkDown,
+14-SmartGatewayWeightExitLinkUp, SmartGatewayWeightExitLinkDown,
    SmartGatewayWeightEtx and SmartGatewayDividerEtx control the weighing
    of gateway bandwidth and ETX costs.
+15-SmartGatewayMaxCostMaxEtx: When a node advertises the maximum bandwidth
+   and its ETX is below the value of this setting then the resulting gateway
+   costs are equal to the ETX, otherwise the normal calculation of the
+   gateway costs applies (default is 2560).
 
    If SmartGatewayDividerEtx is zero then no weighing is performed (classical
    behaviour). Classical behaviour only takes ETX costs into account when
@@ -447,13 +462,13 @@ e) For a standalone client (a notebook user running OLSRd in order to browse)
    interface created by OLSRd. Because OLSRd uses an arbitrary name for the
    tunnel interface (e.g. tnl_7c41c668) you may want to include a wildcard
    iptables rule. Example:
-     iptables -A FORWARD -o tnl_+ -p tcp --tcp-flags SYN,RST SYN \
+     iptables -w -A FORWARD -o tnl_+ -p tcp --tcp-flags SYN,RST SYN \
               -j TCPMSS --clamp-mss-to-pmtu
 
 Furthermore (or alternatively) you might consider (on your gateway nodes)
 clamping all traffic leaving your mesh to your ipip mtu (regardless if the
 traffic comes out of the smart gateway tunnel or not!). Example:
-  iptables -A FORWARD -o [your_gateway_interface] -p tcp \
+  iptables -w -A FORWARD -o [your_gateway_interface] -p tcp \
            --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1480
 
 Especially as during OLSRd startup, before an smart gateway is chosen (which is

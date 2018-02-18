@@ -1,5 +1,48 @@
 #!/bin/bash
 
+# The olsr.org Optimized Link-State Routing daemon (olsrd)
+#
+# (c) by the OLSR project
+#
+# See our Git repository to find out who worked on this file
+# and thus is a copyright holder on it.
+#
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# * Redistributions of source code must retain the above copyright
+#   notice, this list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in
+#   the documentation and/or other materials provided with the
+#   distribution.
+# * Neither the name of olsr.org, olsrd nor the names of its
+#   contributors may be used to endorse or promote products derived
+#   from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+# Visit http://www.olsr.org for more information.
+#
+# If you find this software useful feel free to make a donation
+# to the project. For more information see the website or contact
+# the copyright holders.
+#
+
 set -e
 set -u
 
@@ -138,7 +181,7 @@ function gitIsGitDirectory() {
 function checkIsOlsrdGitCheckout() {
   if [[ "$(gitIsGitDirectory ".")" == "0" ]] || \
      [[ ! -r ./Makefile.inc ]] || \
-     [[ ! -r ./files/olsrd.conf.default.full ]]; then
+     [[ ! -r ./files/olsrd.conf.default ]]; then
     echo "* You do not appear to be running the script from an olsrd git checkout"
     exit 1
   fi
@@ -447,6 +490,7 @@ function signTextFile() {
 declare script="$(pathCanonicalPath "${0}")"
 declare scriptDir="$(dirname "${script}")"
 declare baseDir="$(dirname "${scriptDir}")"
+declare scriptDirRel="${scriptDir#$baseDir/}"
 
 cd "${baseDir}"
 
@@ -657,15 +701,33 @@ else
   #
   echo "Generating the changelog..."
   declare src="CHANGELOG"
-  declare dst="mktemp -q -p . -t "${src}.XXXXXXXXXX""
+  declare dst="$(mktemp -q -p . -t "${src}.XXXXXXXXXX")"
+
+  declare separatorLineNr="$(
+    grep -nhE ' -------------------------------------------------------------------+$' "$src" | \
+    head -1 | \
+    awk -F ':' '{print $1}'
+    )"
+
+  if [ -z "$separatorLineNr" ]; then
+    separatorLineNr="1"
+  fi
+
   cat > "${dst}" << EOF
 ${relBranchVersionDigits} -------------------------------------------------------------------
 
 EOF
+
+  declare -i insertLineNr=$(( $separatorLineNr - 1 ))
+  head -$insertLineNr "$src" >> "$dst"
+
   git rev-list --pretty=short "${prevRelTagVersion}..HEAD" | \
     git shortlog -w80 -- >> "${dst}"
-  cat "${src}" >> "${dst}"
+
+  tail -n +$separatorLineNr "$src" >> "$dst"
+
   mv "${dst}" "${src}"
+
   set +e
   git add "${src}"
   set -e
@@ -719,21 +781,63 @@ EOF
   # Make the release tarballs
   #
   echo "Generating the release tarballs..."
-  declare tarFile="${scriptDir}/olsrd-${relBranchVersionDigits}.tar"
-  declare tarGzFile="${tarFile}.gz"
-  declare tarBz2File="${tarFile}.bz2"
-  git archive --format=tar --prefix="olsrd-${relBranchVersionDigits}/" --output="${tarFile}" "${relTagVersion}"
-  gzip   -c "${tarFile}" > "${tarGzFile}"
-  bzip2  -c "${tarFile}" > "${tarBz2File}"
-  rm -f "${tarFile}"
+  declare tarFile="olsrd-$relBranchVersionDigits.tar"
+  declare tarFileJava="olsrd-$relBranchVersionDigits-java.tar"
+  declare tarFileFull="olsrd-$relBranchVersionDigits-full.tar"
+
+  declare tarGzFile="$tarFile.gz"
+  declare tarGzFileJava="$tarFileJava.gz"
+  declare tarGzFileFull="$tarFileFull.gz"
+
+  declare tarBz2File="$tarFile.bz2"
+  declare tarBz2FileJava="$tarFileJava.bz2"
+  declare tarBz2FileFull="$tarFileFull.bz2"
+
+  mkdir -p "$scriptDir/$relBranchVersionDigits"
+
+  git archive \
+      --format=tar \
+      --prefix="olsrd-$relBranchVersionDigits/" \
+      --output="$scriptDir/$relBranchVersionDigits/$tarFile" \
+      "$relTagVersion"
+
+  git archive \
+      --format=tar \
+      --prefix="olsrd-$relBranchVersionDigits/" \
+      --output="$scriptDir/$relBranchVersionDigits/$tarFileJava" \
+      "$relTagVersion" \
+      "lib/info.java" \
+      "lib/pud/wireformat-java"
+
+  cp "$scriptDir/$relBranchVersionDigits/$tarFile" "$scriptDir/$relBranchVersionDigits/$tarFileFull"
+
+  pushd "$scriptDir/$relBranchVersionDigits" &> /dev/null
+
+  tar f "$tarFile" \
+      --delete "olsrd-$relBranchVersionDigits/lib/info.java" \
+      --delete "olsrd-$relBranchVersionDigits/lib/pud/wireformat-java"
+
+  gzip   -c "$tarFile" > "$tarGzFile"
+  gzip   -c "$tarFileJava" > "$tarGzFileJava"
+  gzip   -c "$tarFileFull" > "$tarGzFileFull"
+
+  bzip2  -c "$tarFile" > "$tarBz2File"
+  bzip2  -c "$tarFileJava" > "$tarBz2FileJava"
+  bzip2  -c "$tarFileFull" > "$tarBz2FileFull"
+
+  rm -f "$tarFile" "$tarFileJava" "$tarFileFull"
+
   echo "Generating the release tarball checksums..."
-  declare md5File="${scriptDir}/MD5SUM-${relBranchVersionDigits}"
-  declare sha256File="${scriptDir}/SHA256SUM-${relBranchVersionDigits}"
-  md5sum    "${tarGzFile}" "${tarBz2File}" > "${md5File}"
-  sha256sum "${tarGzFile}" "${tarBz2File}" > "${sha256File}"
+  declare md5File="MD5SUM-$relBranchVersionDigits"
+  declare sha256File="SHA256SUM-$relBranchVersionDigits"
+  md5sum    "$tarGzFile" "$tarGzFileJava" "$tarGzFileFull" "$tarBz2File" "$tarBz2FileJava" "$tarBz2FileFull" > "$md5File"
+  sha256sum "$tarGzFile" "$tarGzFileJava" "$tarGzFileFull" "$tarBz2File" "$tarBz2FileJava" "$tarBz2FileFull" > "$sha256File"
+
   echo "Signing the release tarball checksums..."
-  signTextFile "${md5File}"
-  signTextFile "${sha256File}"
+  signTextFile "$md5File"
+  signTextFile "$sha256File"
+
+  popd &> /dev/null
 fi
 
 
@@ -759,10 +863,14 @@ if [[ "${mode}" == "${MODE_RELEASE}" ]]; then
   echo "= Generated Files ="
   echo "==================="
   cat >&1 << EOF
-${tarGzFile}
-${tarBz2File}
-${md5File}
-${sha256File}"
+$scriptDirRel/$relBranchVersionDigits/$tarGzFile
+$scriptDirRel/$relBranchVersionDigits/$tarGzFileJava
+$scriptDirRel/$relBranchVersionDigits/$tarGzFileFull
+$scriptDirRel/$relBranchVersionDigits/$tarBz2File
+$scriptDirRel/$relBranchVersionDigits/$tarBz2FileJava
+$scriptDirRel/$relBranchVersionDigits/$tarBz2FileFull
+$scriptDirRel/$relBranchVersionDigits/$md5File
+$scriptDirRel/$relBranchVersionDigits/$sha256File
 EOF
 fi
 
@@ -788,6 +896,7 @@ if [[ "${mode}" == "${MODE_RELEASE}" ]]; then
   echo "3. Upload the generated files to"
   echo "     http://www.olsr.org/releases/${relBranchVersionDigits}"
   echo "4. Add a release article on olsr.org."
+  echo "5. Announce the release on the olsr-dev and olsr-users mailing lists."
   echo ""
 else
   echo "1. Check that everything is in order. For example, run:"

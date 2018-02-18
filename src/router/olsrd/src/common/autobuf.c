@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004-2009, the olsr.org team - see HISTORY file
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,28 +50,24 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <limits.h>
 #include <assert.h>
 
-
-static int autobuf_enlarge(struct autobuf *autobuf, int new_size);
+static int autobuf_enlarge(struct autobuf *autobuf, unsigned int new_size);
 
 static int ROUND_UP_TO_POWER_OF_2(int val, int pow2) {
   assert(val >= 0);
   assert(pow2 > 0);
 
-  if (val <= (INT32_MAX - (pow2 - 1))) {
+  if (val <= (AUTOBUFSIZEMAX - (pow2 - 1))) {
     /* no overflow */
     return ((val + (pow2 - 1)) & ~(pow2 - 1));
   }
 
   /* overflow */
-  return (INT32_MAX & ~(pow2 - 1));
+  return (AUTOBUFSIZEMAX & ~(pow2 - 1));
 }
 
-int
-abuf_init(struct autobuf *autobuf, int initial_size)
-{
+int abuf_init(struct autobuf *autobuf, int initial_size) {
   autobuf->len = 0;
   if (initial_size <= 0) {
     autobuf->size = 0;
@@ -80,29 +80,25 @@ abuf_init(struct autobuf *autobuf, int initial_size)
     autobuf->size = 0;
     return -1;
   }
-  *autobuf->buf = '\0';
   return 0;
 }
 
-void
-abuf_free(struct autobuf *autobuf)
-{
+void abuf_free(struct autobuf *autobuf) {
   free(autobuf->buf);
   autobuf->buf = NULL;
   autobuf->len = 0;
   autobuf->size = 0;
 }
 
-static int
-autobuf_enlarge(struct autobuf *autobuf, int new_size)
-{
+static int autobuf_enlarge(struct autobuf *autobuf, unsigned int new_size) {
+  /* for the the string terminator */
   new_size++;
 
-  if (autobuf->size >= INT_MAX) {
+  if (autobuf->size >= AUTOBUFSIZEMAX) {
     return -1;
   }
 
-  if (new_size > autobuf->size) {
+  if (new_size > (unsigned int) autobuf->size) {
     char *p;
     int roundUpSize = ROUND_UP_TO_POWER_OF_2(new_size, AUTOBUFCHUNK);
     p = realloc(autobuf->buf, roundUpSize);
@@ -122,9 +118,7 @@ autobuf_enlarge(struct autobuf *autobuf, int new_size)
   return 0;
 }
 
-int
-abuf_vappendf(struct autobuf *autobuf, const char *format, va_list ap)
-{
+int abuf_vappendf(struct autobuf *autobuf, const char *format, va_list ap) {
   int rc;
   int min_size;
   va_list ap2;
@@ -145,9 +139,7 @@ abuf_vappendf(struct autobuf *autobuf, const char *format, va_list ap)
   return 0;
 }
 
-int
-abuf_appendf(struct autobuf *autobuf, const char *fmt, ...)
-{
+int abuf_appendf(struct autobuf *autobuf, const char *fmt, ...) {
   int rv;
   va_list ap;
   va_start(ap, fmt);
@@ -156,24 +148,40 @@ abuf_appendf(struct autobuf *autobuf, const char *fmt, ...)
   return rv;
 }
 
-int
-abuf_puts(struct autobuf *autobuf, const char *s)
-{
-  int len; 
+int abuf_puts(struct autobuf *autobuf, const char *s) {
+  int len;
 
-  if (NULL == s) return 0;
+  if (!autobuf || !s)
+    return 0;
   len = strlen(s);
+  if (!len)
+    return 0;
   if (autobuf_enlarge(autobuf, autobuf->len + len + 1) < 0) {
     return -1;
   }
-  strcpy(autobuf->buf + autobuf->len, s);
+  /* we already checked length of source and destination buffer */
+  memcpy(autobuf->buf + autobuf->len, s, len + 1);
   autobuf->len += len;
   return len;
 }
 
-int
-abuf_strftime(struct autobuf *autobuf, const char *format, const struct tm *tm)
-{
+int abuf_concat(struct autobuf *autobuf, struct autobuf *s) {
+  int len;
+
+  if (!autobuf || !s)
+    return 0;
+  len = s->len;
+  if (!len)
+    return 0;
+  if (autobuf_enlarge(autobuf, autobuf->len + len + 1) < 0) {
+    return -1;
+  }
+  strncpy(autobuf->buf + autobuf->len, s->buf, len + 1);
+  autobuf->len += len;
+  return len;
+}
+
+int abuf_strftime(struct autobuf *autobuf, const char *format, const struct tm *tm) {
   int rc = strftime(autobuf->buf + autobuf->len, autobuf->size - autobuf->len, format, tm);
   if (rc == 0) {
     /* we had an error! Probably the buffer too small. So we add some bytes. */
@@ -187,9 +195,7 @@ abuf_strftime(struct autobuf *autobuf, const char *format, const struct tm *tm)
   return rc;
 }
 
-int
-abuf_memcpy(struct autobuf *autobuf, const void *p, const unsigned int len)
-{
+int abuf_memcpy(struct autobuf *autobuf, const void *p, const unsigned int len) {
   if (autobuf_enlarge(autobuf, autobuf->len + len) < 0) {
     return -1;
   }
@@ -198,9 +204,7 @@ abuf_memcpy(struct autobuf *autobuf, const void *p, const unsigned int len)
   return len;
 }
 
-int
-abuf_memcpy_prefix(struct autobuf *autobuf, const void *p, const unsigned int len)
-{
+int abuf_memcpy_prefix(struct autobuf *autobuf, const void *p, const unsigned int len) {
   if (autobuf_enlarge(autobuf, autobuf->len + len) < 0) {
     return -1;
   }
@@ -210,8 +214,7 @@ abuf_memcpy_prefix(struct autobuf *autobuf, const void *p, const unsigned int le
   return len;
 }
 
-int
-abuf_pull(struct autobuf * autobuf, int len) {
+int abuf_pull(struct autobuf * autobuf, int len) {
   char *p;
   size_t newsize;
 

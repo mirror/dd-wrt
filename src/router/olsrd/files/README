@@ -1,15 +1,18 @@
 This directory contains a set of configuration files:
 * olsrd.conf.commotion
-* olsrd.conf.default.full
+* olsrd.conf.default
 * olsrd.conf.default.lq
 * olsrd.conf.default.rfc
 * olsrd.conf.funkfeuer
 
+both the commotion and funkfeuer example are quite old,
+so they might be outdated. If in doubt, use the olsrd.conf.default
+file to start experimentation.
 
 To generate the corresponding effective configuration file (*.txt) with
 comments on the parameters, run olsrd with the configuration file or your
 choice and then use either of the following plugins:
- * HTTPINFO
-   - run: wget -O olsrd.conf  http://localhost:1978/cfgfile
  * JSONINFO
-   - run: echo "/olsrd.conf" | nc localhost 9090'
+   - run: echo "/olsrd.conf" | nc localhost 9090
+ * TXTINFO
+   - run: echo "/con" | nc localhost 2006

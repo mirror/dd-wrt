@@ -1,7 +1,11 @@
-
 /*
- * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2007, Bernd Petrovitsch <berndæfirmix.at>
+ * The olsr.org Optimized Link-State Routing daemon (olsrd)
+ *
+ * (c) by the OLSR project
+ *
+ * See our Git repository to find out who worked on this file
+ * and thus is a copyright holder on it.
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -84,6 +88,10 @@ prefix_to_netmask(uint8_t * a, int len, uint8_t prefixlen)
 #endif /* !defined(NODEBUG) && defined(DEBUG) */
   int p;
   const uint8_t *a_end;
+
+  if (len <= 0 || !a) {
+    return 0;
+  }
 
   a_end = a + len;
   for (p = prefixlen; a < a_end && p > 8; p -= 8) {
