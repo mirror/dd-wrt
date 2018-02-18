@@ -249,12 +249,10 @@ static void detect_wireless_devices(void)
 				int od = nvram_default_geti("power_overdrive", 0);
 				char overdrive[32];
 				sprintf(overdrive, "overdrive=%d", od);
-				eval("insmod", "ath9k_hw", overdrive);
-				insmod("ath9k_common");
 #ifdef HAVE_WZRG450
-				system("insmod ath9k blink=1");
+				eval("insmod", "ath9k", overdrive, "blink=1");
 #else
-				insmod("ath9k");
+				eval("insmod", "ath9k", overdrive);
 #endif
 			}
 			delete_ath9k_devices(NULL);
