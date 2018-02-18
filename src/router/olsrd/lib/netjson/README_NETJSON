@@ -1,0 +1,37 @@
+============
+INTRODUCTION
+============
+
+The netjson plugin is an info plugin.
+
+Please first read what's written in the file lib/info/README_INFO.
+
+
+==================
+SUPPORTED COMMANDS
+==================
+
+* /NetworkRoutes
+* /NetworkGraph
+* /DeviceConfiguration (not currently supported)
+* /DeviceMonitoring    (not currently supported)
+* /NetworkCollection
+
+====================
+PLUGIN CONFIGURATION
+====================
+
+The plugin is configured with the generic info plugin configuration parameters.
+
+The port in the generic info plugin configuration is set to 2005.
+
+LoadPlugin "olsrd_netjson.so.1.1"
+{
+  # <generic info plugin configuration>
+
+  # When set to 'true' or 'yes' then the output will be pretty-printed
+  # (multi-line indented). Otherwise the output will not contain
+  # line-breaks and indentation.
+  # Default: false
+  # PlParam "pretty" "false"
+}
