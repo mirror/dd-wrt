@@ -124,11 +124,10 @@ void setWifiPass(void)
 		strcpy(var, "default_passphrase");
 		break;
 	default:
-		mtd = getMTD("board_data");
-		break;
+	        return;
 	}
 	if (mtd == -1)
-	    return;
+		return;
 	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
 
 	if (offset != 0) {
