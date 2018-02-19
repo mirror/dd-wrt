@@ -106,6 +106,11 @@ int main(int argc, char **argv)
 	    exit(0);
 	    }
 
+	if (!parse_data_file(prog_filename, data, address, length)) {
+	    printf("problem with the file\n");
+		exit(-1);
+	}
+
 	if (ioctl(file, I2C_SLAVE, GSP_UPDATER) < 0) {
 		printf("couldn't set gsp_updater address\n");
 		exit(1);
@@ -113,10 +118,6 @@ int main(int argc, char **argv)
 	i2c_smbus_write_byte_data(file, 0, GSP_PASSWORD | GSP_UNLOCK);
 	ret = i2c_smbus_read_byte_data(file, 0);
 
-	if (!parse_data_file(prog_filename, data, address, length)) {
-	    printf("problem with the file\n");
-		exit(-1);
-	}
 
 	/* ##### Stage 1 Upgrader ##### */
 	// Erase all of main flash
