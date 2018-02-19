@@ -127,7 +127,8 @@ void setWifiPass(void)
 		mtd = getMTD("board_data");
 		break;
 	}
-
+	if (mtd == -1)
+	    return;
 	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);
 
 	if (offset != 0) {
