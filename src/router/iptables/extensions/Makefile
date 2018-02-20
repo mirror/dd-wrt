@@ -27,6 +27,7 @@ endif
 ifeq ($(CONFIG_HOTPLUG2),y)
 PF_EXT_SLIB += CT
 endif
+PF_EXT_SLIB += FLOWOFFLOAD
 
 #random nth ROUTE
 
