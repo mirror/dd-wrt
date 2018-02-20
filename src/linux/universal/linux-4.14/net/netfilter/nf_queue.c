@@ -15,8 +15,6 @@
 #include <linux/netfilter_bridge.h>
 #include <linux/seq_file.h>
 #include <linux/rcupdate.h>
-#include <linux/netfilter_ipv4.h>
-#include <linux/netfilter_ipv6.h>
 #include <net/protocol.h>
 #include <net/netfilter/nf_queue.h>
 #include <net/dst.h>
@@ -169,9 +167,9 @@ static int __nf_queue(struct sk_buff *skb, const struct nf_hook_state *state,
 	struct nf_queue_entry *entry = NULL;
 	const struct nf_queue_handler *qh;
 	struct net *net = state->net;
-	unsigned int route_key_size;
 	unsigned int queuetype = verdict & NF_VERDICT_MASK;
 	unsigned int queuenum  = verdict >> NF_VERDICT_QBITS;
+	unsigned int route_key_size;
 
 	/* QUEUE == DROP if no one is waiting, to be safe. */
 	if (queuetype == NF_IMQ_QUEUE) {
