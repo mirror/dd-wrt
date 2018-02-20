@@ -6,6 +6,7 @@
 #include <linux/netdevice.h>
 #include <linux/rhashtable.h>
 #include <linux/rcupdate.h>
+#include <linux/netfilter/nf_conntrack_tuple_common.h>
 #include <net/dst.h>
 
 struct nf_flowtable;
@@ -13,10 +14,8 @@ struct nf_flowtable;
 struct nf_flowtable_type {
 	struct list_head		list;
 	int				family;
-	void				(*gc)(struct work_struct *work);
 	int				(*init)(struct nf_flowtable *ft);
 	void				(*free)(struct nf_flowtable *ft);
-	const struct rhashtable_params	*params;
 	nf_hookfn			*hook;
 	struct module			*owner;
 };
@@ -26,6 +25,7 @@ enum nf_flowtable_flags {
 };
 
 struct nf_flowtable {
+	struct list_head		list;
 	struct rhashtable		rhashtable;
 	const struct nf_flowtable_type	*type;
 	u32				flags;
@@ -34,11 +34,10 @@ struct nf_flowtable {
 };
 
 enum flow_offload_tuple_dir {
-	FLOW_OFFLOAD_DIR_ORIGINAL,
-	FLOW_OFFLOAD_DIR_REPLY,
-	__FLOW_OFFLOAD_DIR_MAX		= FLOW_OFFLOAD_DIR_REPLY,
+	FLOW_OFFLOAD_DIR_ORIGINAL = IP_CT_DIR_ORIGINAL,
+	FLOW_OFFLOAD_DIR_REPLY = IP_CT_DIR_REPLY,
+	FLOW_OFFLOAD_DIR_MAX = IP_CT_DIR_MAX
 };
-#define FLOW_OFFLOAD_DIR_MAX	(__FLOW_OFFLOAD_DIR_MAX + 1)
 
 struct flow_offload_tuple {
 	union {
@@ -61,6 +60,8 @@ struct flow_offload_tuple {
 	u8				dir;
 
 	int				oifidx;
+
+	u16				mtu;
 
 	struct dst_entry		*dst_cache;
 };
@@ -108,8 +109,6 @@ void nf_flow_table_cleanup(struct net *net, struct net_device *dev);
 
 int nf_flow_table_init(struct nf_flowtable *flow_table);
 void nf_flow_table_free(struct nf_flowtable *flow_table);
-void nf_flow_offload_work_gc(struct work_struct *work);
-extern const struct rhashtable_params nf_flow_offload_rhash_params;
 
 void flow_offload_dead(struct flow_offload *flow);
 
