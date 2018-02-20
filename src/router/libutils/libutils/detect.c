@@ -270,19 +270,19 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WZR600DHP2;
 	}
 	if (nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1102") && boardnum == 1) {
-		setRouter("TPLINK Archer C9");
+		setRouter("TP-Link Archer C9");
 
 		return ROUTER_TPLINK_ARCHERC9;
 	}
 
 	if (nvram_match("boardtype", "0x0646") && nvram_match("boardrev", "0x1112") && boardnum == 1) {
-		setRouter("TPLINK Archer C8");
+		setRouter("TP-Link Archer C8");
 
 		return ROUTER_TPLINK_ARCHERC9;
 	}
 
 	if (nvram_match("boardtype", "0x072F") && nvram_match("boardrev", "0x1101") && (boardnum == 1234 || boardnum == 10)) {
-		setRouter("TPLINK Archer C3150");
+		setRouter("TP-Link Archer C3150");
 
 		return ROUTER_TPLINK_ARCHERC3150;
 	}
@@ -1345,26 +1345,26 @@ int internal_getRouterBrand()
 	nvram_default_get("ath1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WDR2543
-	setRouter("TPLINK TL-WR2543");
+	setRouter("TP-Link TL-WR2543");
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WDR3500
-	setRouter("TPLINK TL-WDR3500 v1");
+	setRouter("TP-Link TL-WDR3500 v1");
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	nvram_default_get("ath1_rxantenna", "3");
 	nvram_default_get("ath1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WDR3600
-	setRouter("TPLINK TL-WDR3600 v1");
+	setRouter("TP-Link TL-WDR3600 v1");
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	nvram_default_get("ath1_rxantenna", "3");
 	nvram_default_get("ath1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WDR4300
-	setRouter("TPLINK TL-WDR4300 v1");
+	setRouter("TP-Link TL-WDR4300 v1");
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	nvram_default_get("ath1_rxantenna", "7");
@@ -1451,40 +1451,40 @@ int internal_getRouterBrand()
 	nvram_default_get("ath1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WDR4900V2
-	setRouter("TPLINK WDR4900 v2");
+	setRouter("TP-Link WDR4900 v2");
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
 	nvram_default_get("ath1_rxantenna", "7");
 	nvram_default_get("ath1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_ARCHERC5
-	setRouter("TPLINK ARCHER-C5 v1");
+	setRouter("TP-Link ARCHER-C5 v1");
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
 	nvram_default_get("ath1_rxantenna", "7");
 	nvram_default_get("ath1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_ARCHERC7V4
-	setRouter("TPLINK ARCHER-C7 v4");
+	setRouter("TP-Link ARCHER-C7 v4");
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
 	nvram_default_get("ath1_rxantenna", "7");
 	nvram_default_get("ath1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_ARCHERC7
-	setRouter("TPLINK ARCHER-C7 v2");
+	setRouter("TP-Link ARCHER-C7 v2");
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
 	nvram_default_get("ath1_rxantenna", "7");
 	nvram_default_get("ath1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WR1043V3
-	setRouter("TPLINK WR1043ND V3");
+	setRouter("TP-Link WR1043ND V3");
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WR1043V2
-	setRouter("TPLINK WR1043ND V2");
+	setRouter("TP-Link WR1043ND V2");
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
