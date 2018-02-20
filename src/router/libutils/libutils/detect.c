@@ -2057,7 +2057,7 @@ int internal_getRouterBrand()
 #elif HAVE_WR940V4
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
-	setRouter("TP-Link TL-WR940ND v4");
+	setRouter("TP-Link TL-WR940ND v4/v5");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR941V6
 	nvram_default_get("ath0_rxantenna", "7");
