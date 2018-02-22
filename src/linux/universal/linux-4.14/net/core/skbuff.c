@@ -41,7 +41,6 @@
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/kernel.h>
-#include <linux/kmemcheck.h>
 #include <linux/mm.h>
 #include <linux/interrupt.h>
 #include <linux/in.h>
@@ -326,14 +325,12 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 	shinfo = skb_shinfo(skb);
 	memset(shinfo, 0, offsetof(struct skb_shared_info, dataref));
 	atomic_set(&shinfo->dataref, 1);
-	kmemcheck_annotate_variable(shinfo->destructor_arg);
 
 	if (flags & SKB_ALLOC_FCLONE) {
 		struct sk_buff_fclones *fclones;
 
 		fclones = container_of(skb, struct sk_buff_fclones, skb1);
 
-		kmemcheck_annotate_bitfield(&fclones->skb2, flags1);
 		skb->fclone = SKB_FCLONE_ORIG;
 		refcount_set(&fclones->fclone_ref, 1);
 
@@ -393,7 +390,6 @@ struct sk_buff *__build_skb(void *data, unsigned int frag_size)
 	shinfo = skb_shinfo(skb);
 	memset(shinfo, 0, offsetof(struct skb_shared_info, dataref));
 	atomic_set(&shinfo->dataref, 1);
-	kmemcheck_annotate_variable(shinfo->destructor_arg);
 
 	return skb;
 }
@@ -1422,7 +1418,6 @@ struct sk_buff *skb_clone(struct sk_buff *skb, gfp_t gfp_mask)
 		if (!n)
 			return NULL;
 
-		kmemcheck_annotate_bitfield(n, flags1);
 		n->fclone = SKB_FCLONE_UNAVAILABLE;
 	}
 
