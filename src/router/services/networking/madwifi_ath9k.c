@@ -1265,6 +1265,62 @@ static void addvhtcaps(char *prefix, FILE * fp)
 #endif
 }
 
+static char *makescanlist(char *value)
+{
+	char *clone = strdup(value);
+	int len = strlen(clone);
+	int i;
+	char *new = NULL;
+/* format list */
+	for (i = 0; i < len; i++) {
+		if (clone[i] == ';')
+			clone[i] = ' ';
+		if (clone[i] == ',')
+			clone[i] = ' ';
+	}
+	char *next;
+	char var[128];
+	int first = 1;
+	foreach(var, clone, next) {
+		char *sep = strchr(var, '-');
+		if (!sep) {
+			char *old = new;
+			if (first)
+				asprintf(&new, "%s", var);
+			else {
+				asprintf(&new, "%s %s", old, var);
+				free(old);
+			}
+			first = 0;
+		} else {
+			*sep = 0;
+			int start = atoi(var);
+			int end = atoi(sep + 1);
+			if (end < start) {
+				int tmp = end;
+				end = start;
+				start = tmp;
+			}
+			if (end == start)
+				continue;
+			for (i = start; i < end; i += 5) {
+				char *old = new;
+				if (first)
+					asprintf(&new, "%d", i);
+				else {
+					asprintf(&new, "%s %d", old, i);
+					free(old);
+				}
+				first = 0;
+
+			}
+		}
+	}
+	free(clone);
+	return new;
+
+}
+
 void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 {
 #ifdef HAVE_REGISTER
@@ -1361,7 +1417,9 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		sprintf(scanlist, "%s_scanlist", prefix);
 		char *sl = nvram_default_get(scanlist, "default");
 		if (strcmp(sl, "default")) {
-			fprintf(fp, "\tscan_freq=%s\n", sl);
+			char *scanlist = makescanlist(sl);
+			fprintf(fp, "\tscan_freq=%s\n", scanlist);
+			free(scanlist);
 		}
 #ifdef HAVE_UNIWIP
 		fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
