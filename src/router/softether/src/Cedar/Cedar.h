@@ -135,10 +135,10 @@
 
 
 // Version number
-#define	CEDAR_VER					424
+#define	CEDAR_VER					425
 
 // Build Number
-#define	CEDAR_BUILD					9651
+#define	CEDAR_BUILD					9656
 
 // Beta number
 //#define	BETA_NUMBER					3
@@ -157,12 +157,12 @@
 #endif	// BUILD_PLACE
 
 // Specifies the build date
-#define	BUILD_DATE_Y		2017
-#define	BUILD_DATE_M		10
-#define	BUILD_DATE_D		23
-#define	BUILD_DATE_HO		1
-#define	BUILD_DATE_MI		4
-#define	BUILD_DATE_SE		19
+#define	BUILD_DATE_Y		2018
+#define	BUILD_DATE_M		1
+#define	BUILD_DATE_D		15
+#define	BUILD_DATE_HO		9
+#define	BUILD_DATE_MI		33
+#define	BUILD_DATE_SE		22
 
 // Tolerable time difference
 #define	ALLOW_TIMESTAMP_DIFF		(UINT64)(3 * 24 * 60 * 60 * 1000)
