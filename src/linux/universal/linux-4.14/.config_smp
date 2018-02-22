@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.14.20 Kernel Configuration
+# Linux/i386 4.14.21-rc1 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -4300,7 +4300,6 @@ CONFIG_HAVE_DEBUG_KMEMLEAK=y
 CONFIG_ARCH_HAS_DEBUG_VIRTUAL=y
 # CONFIG_DEBUG_MEMORY_INIT is not set
 CONFIG_HAVE_DEBUG_STACKOVERFLOW=y
-CONFIG_HAVE_ARCH_KMEMCHECK=y
 
 #
 # Debug Lockups and Hangs
