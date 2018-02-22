@@ -1249,6 +1249,51 @@ static int handle_port_flow_enable_write(void *driver, char *buf, int nr)
 	return 0;
 }
 
+// Added by quarkysg 3 Dec 17
+static int handle_port_vlanpcp_read(void *driver, char *buf, int nr)
+{
+	if (nr > 4) {
+		return sprintf(buf, "Port[%d] VLAN priority confiuration unsupported!\n", nr);
+	}
+
+	int vlanTag = robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_PORT0_DEF_TAG + (nr << 1));
+	int vlanId = vlanTag & 4095;	// VLAN ID is the from bit 11 - 0
+	int vlanPcp = (vlanTag & 57344) >> 13;	// VLAN PCP is from bit 15 - 13
+
+	return sprintf(buf, "Port [%d]: VLAN ID[%d], VLAN PCP[%d], VLAN Tag[%d]\n", nr, vlanId, vlanPcp, vlanTag);
+}
+
+static int handle_port_vlanpcp_write(void *driver, char *buf, int nr)
+{
+	if (nr > 4) {
+		printk(KERN_WARNING "Port[%d] VLAN configuration unsupported!\n", nr);
+		return 0;
+	}
+
+	int vlanTag = robo_read16(ROBO_VLAN_PAGE, ROBO_VLAN_PORT0_DEF_TAG + (nr << 1));
+	long longVlanPcp;
+	int vlanPcp;
+
+	if (kstrtol(buf, 10, &longVlanPcp) == 0) {
+		//printk(KERN_INFO "Port [%d] VLAN PCP[%d] write requested\n", nr, longVlanPcp);
+		if (longVlanPcp > -1 && longVlanPcp < 8) {
+			vlanPcp = longVlanPcp << 13;
+			vlanTag = (vlanTag & 8191) | vlanPcp;
+
+			robo_write16(ROBO_VLAN_PAGE, ROBO_VLAN_PORT0_DEF_TAG + (nr << 1), (__u16) vlanTag);
+		}
+		else {
+			printk(KERN_WARNING "[%d] is not a valid VLAN PCP\n", (int) longVlanPcp);
+		}
+	}
+	else {
+		printk(KERN_WARNING "[%s] is not a valid VLAN PCP number\n", buf);
+	}
+
+	return 0;
+}
+// End add by quarkysg, 3 Dec 2017
+
 static int __init robo_init(void)
 {
 	int notfound = 1;
@@ -1315,6 +1360,11 @@ static int __init robo_init(void)
 			{.name = "flow",
 			 .read = handle_port_flow_enable_read,
 			 .write = handle_port_flow_enable_write},	// 
+			// Added by quarkysg, 3 Dec 17
+			{.name = "vlanpcp",
+			 .read = handle_port_vlanpcp_read,
+			 .write = handle_port_vlanpcp_write},
+			// End add by quarkysg, 3 Dec 17
 			{NULL,},
 		};
 		static const switch_config vlan[] = {
@@ -1329,7 +1379,8 @@ static int __init robo_init(void)
 			.interface = device,
 			.cpuport = 5,
 			.ports = 6,
-			.vlans = 16,
+			//.vlans = 16,
+			.vlans = 4096,	// Modified by quarkysg, 13 Sep 2017
 			.driver_handlers = cfg,
 			.port_handlers = port,
 			.vlan_handlers = vlan,
