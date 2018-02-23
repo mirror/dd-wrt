@@ -1024,6 +1024,10 @@ endif
 ifeq ($(CONFIG_QTN),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc qtn_monitor
 endif
+ifeq ($(CONFIG_VENTANA),y)
+	install update-prepare.sh $(INSTALLDIR)/usr/sbin	
+	install update-after-pivot.sh $(INSTALLDIR)/usr/sbin	
+endif
 ifneq ($(CONFIG_TW6600),y)
 ifeq ($(CONFIG_DIST),"micro")
 	cd $(INSTALLDIR)/sbin && ln -sf rc brctl

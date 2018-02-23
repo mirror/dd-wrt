@@ -171,7 +171,14 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	int brand = getRouterBrand();
 
 #ifndef ANTI_FLASH
+#ifdef HAVE_VENTANA
+#define HAVE_VENTANA_NEW_UPGRADE
+#endif
+#ifdef HAVE_VENTANA_NEW_UPGRADE
+	char upload_fifo[] = "/tmp/new_root/tmp/uploadXXXXXX";
+#else
 	char upload_fifo[] = "/tmp/uploadXXXXXX";
+#endif
 	FILE *fifo = NULL;
 	FILE *fifo2 = NULL;
 	char *write_argv[4];
@@ -255,6 +262,26 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 		if (i == 0) {	// check code pattern, the first data must
 #ifdef HAVE_VENTANA
+#ifdef HAVE_VENTANA_NEW_UPGRADE
+			if (!strncmp(buf, "UBI#", 4)) {	// check for "UBI#"
+				char *write_argv_buf[8];
+				eval("mkdir", "-p", "/tmp/new_root");
+				eval("mount","-n","-t","tmpfs","none","/tmp/new_root");
+				eval("mkdir", "-p", "/tmp/new_root/tmp");
+				write_argv_buf[0] = "update-prepare.sh";
+				write_argv_buf[1] = upload_fifo;
+				write_argv_buf[2] = "rootfs";
+				write_argv_buf[3] = "nomount";
+				write_argv_buf[4] = NULL;
+				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
+				    || !(fifo = fopen(upload_fifo, "w"))) {
+					if (!ret)
+						ret = errno;
+					goto err;
+				}
+				goto write_data;
+			}
+#else
 			if (!strncmp(buf, "UBI#", 4)) {	// check for "UBI#"
 				eval("mount", "-o", "remount,ro", "/");
 				char *write_argv_buf[8];
@@ -275,6 +302,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				}
 				goto write_data;
 			}
+#endif
 #endif
 //0x1200000 0x70000 RN67
 #ifdef HAVE_IPQ806X
