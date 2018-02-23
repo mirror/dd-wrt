@@ -54,7 +54,7 @@
 #else
 #include <linux/mtd/mtd.h>
 #endif
-#include <shuils.h>
+#include <shutils.h>
 
 #define TRX_MAGIC       0x30524448	/* "HDR0" */
 #define BUFSIZE (16 * 1024)
