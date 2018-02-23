@@ -504,6 +504,7 @@ static int mtd_main(int argc, char **argv)
 		if (quiet < 2)
 			fprintf(stderr, "Writing from %s to %s ... ", imagefile, device);
 		s_mtd_write(imagefp, device, quiet);
+		fclose(imagefp);
 		if (quiet < 2)
 			fprintf(stderr, "\n");
 		break;
