@@ -263,7 +263,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		if (i == 0) {	// check code pattern, the first data must
 #ifdef HAVE_VENTANA
 #ifdef HAVE_VENTANA_NEW_UPGRADE
-			if (!strncmp(buf, "UBI#", 4)) {	// check for "UBI#"
+			if (!strncmp(buf, "HDR0", 4)) {	// check for "trx"
 				char *write_argv_buf[8];
 				eval("mkdir", "-p", "/tmp/new_root");
 				eval("mount","-n","-t","tmpfs","none","/tmp/new_root");
