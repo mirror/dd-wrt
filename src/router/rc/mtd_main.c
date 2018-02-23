@@ -79,13 +79,13 @@ struct trx_header2 {
 char buf[BUFSIZE];
 int buflen;
 
-static int image_check_bcom(int imagefd, const char *mtd)
+static int image_check_bcom(FILE *imagefp, const char *mtd)
 {
 	struct trx_header2 *trx = (struct trx_header2 *)buf;
 	struct mtd_info_user mtdInfo;
 	int fd;
 
-	buflen = read(imagefd, buf, 32);
+	buflen = safe_fread(buf, 32, 1, imagefp);
 	if (buflen < 32) {
 		fprintf(stdout, "Could not get image header, file too small (%d bytes)\n", buflen);
 		return 0;
@@ -100,7 +100,7 @@ static int image_check_bcom(int imagefd, const char *mtd)
 		/* 
 		 * ignore the first 32 bytes 
 		 */
-		buflen = read(imagefd, buf, sizeof(struct trx_header2));
+		buflen = safe_fread(buf, sizeof(struct trx_header2), 1, imagefp);
 		break;
 	}
 
@@ -134,7 +134,7 @@ static int image_check_bcom(int imagefd, const char *mtd)
 	return 1;
 }
 
-static int image_check(int imagefd, const char *mtd)
+static int image_check(FILE *imagefp, const char *mtd)
 {
 	int fd, systype;
 	size_t count;
@@ -155,7 +155,7 @@ static int image_check(int imagefd, const char *mtd)
 
 	switch (systype) {
 	case SYSTYPE_BROADCOM:
-		return image_check_bcom(imagefd, mtd);
+		return image_check_bcom(imagefp, mtd);
 	default:
 		return 1;
 	}
@@ -183,7 +183,7 @@ static int mtd_check(char *mtd)
 	return 1;
 }
 
-static int s_mtd_write(int imagefd, const char *mtd, int quiet)
+static int s_mtd_write(FILE *imagefp, const char *mtd, int quiet)
 {
 	int fd, i, result;
 	size_t r, w, e, skip_bad_blocks = 0;
@@ -212,7 +212,7 @@ static int s_mtd_write(int imagefd, const char *mtd, int quiet)
 		 * buffer may contain data already (from trx check) 
 		 */
 		r = buflen;
-		r += read(imagefd, buf + buflen, BUFSIZE - buflen);
+		r += safe_read(buf + buflen, BUFSIZE - buflen, 1, imagefp);
 		w += r;
 
 		/* 
@@ -382,8 +382,9 @@ static void usage(void)
 
 static int mtd_main(int argc, char **argv)
 {
-	int ch, i, boot, unlock, imagefd = 0, force, quiet, unlocked;
+	int ch, i, boot, unlock, force, quiet, unlocked;
 	char *erase[MAX_ARGS], *device, *imagefile = NULL;
+	FILE *imagefp;
 	enum {
 		CMD_ERASE,
 		CMD_WRITE,
@@ -441,10 +442,10 @@ static int mtd_main(int argc, char **argv)
 
 		if (strcmp(argv[1], "-") == 0) {
 			imagefile = "<stdin>";
-			imagefd = 0;
+			imagefp = stdin;
 		} else {
 			imagefile = argv[1];
-			if ((imagefd = open(argv[1], O_RDONLY)) < 0) {
+			if ((imagefp = fopen(argv[1], "rb")) < 0) {
 				fprintf(stderr, "Couldn't open image file: %s!\n", imagefile);
 				exit(1);
 			}
@@ -453,7 +454,7 @@ static int mtd_main(int argc, char **argv)
 		/* 
 		 * check trx file before erasing or writing anything 
 		 */
-		if (!image_check(imagefd, device)) {
+		if (!image_check(imagefp, device)) {
 			if ((quiet < 2) || !force)
 				fprintf(stderr, "TRX check failed!\n");
 			if (!force)
@@ -501,7 +502,7 @@ static int mtd_main(int argc, char **argv)
 	case CMD_WRITE:
 		if (quiet < 2)
 			fprintf(stderr, "Writing from %s to %s ... ", imagefile, device);
-		s_mtd_write(imagefd, device, quiet);
+		s_mtd_write(imagefp, device, quiet);
 		if (quiet < 2)
 			fprintf(stderr, "\n");
 		break;
