@@ -213,7 +213,7 @@ static int s_mtd_write(FILE *imagefp, const char *mtd, int quiet)
 		 * buffer may contain data already (from trx check) 
 		 */
 		r = buflen;
-		r += safe_read(buf + buflen, BUFSIZE - buflen, 1, imagefp);
+		r += safe_fread(buf + buflen, BUFSIZE - buflen, 1, imagefp);
 		w += r;
 
 		/* 
