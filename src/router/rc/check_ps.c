@@ -239,6 +239,8 @@ static void checkupgrade(void)
 		sleep(30);
 #if defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_LS5)
 		eval("write", "/tmp/firmware.bin", "rootfs");
+#elif defined(HAVE_VENTANA)
+		eval("update-prepare.sh", "/tmp/firmware.bin", "rootfs", "usefile");
 #else
 		eval("write", "/tmp/firmware.bin", "linux");
 #endif
