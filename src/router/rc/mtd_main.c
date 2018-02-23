@@ -78,7 +78,7 @@ struct trx_header2 {
 };
 
 char buf[BUFSIZE];
-int buflen;
+int buflen=0;
 
 static int image_check_bcom(FILE *imagefp, const char *mtd)
 {
@@ -86,7 +86,7 @@ static int image_check_bcom(FILE *imagefp, const char *mtd)
 	struct mtd_info_user mtdInfo;
 	int fd;
 
-	buflen = safe_fread(buf, 32, 1, imagefp);
+	buflen = safe_fread(buf, 1, 32, imagefp);
 	if (buflen < 32) {
 		fprintf(stdout, "Could not get image header, file too small (%d bytes)\n", buflen);
 		return 0;
@@ -101,7 +101,7 @@ static int image_check_bcom(FILE *imagefp, const char *mtd)
 		/* 
 		 * ignore the first 32 bytes 
 		 */
-		buflen = safe_fread(buf, sizeof(struct trx_header2), 1, imagefp);
+		buflen = safe_fread(buf, 1, sizeof(struct trx_header2), imagefp);
 		break;
 	}
 
@@ -203,7 +203,7 @@ static int s_mtd_write(FILE *imagefp, const char *mtd, int quiet)
 		close(fd);
 		exit(1);
 	}
-
+	char *writebuf = malloc(mtdInfo.erasesize);
 	r = w = e = 0;
 	if (!quiet)
 		fprintf(stderr, " [ ]");
@@ -213,7 +213,7 @@ static int s_mtd_write(FILE *imagefp, const char *mtd, int quiet)
 		 * buffer may contain data already (from trx check) 
 		 */
 		r = buflen;
-		r += safe_fread(buf + buflen, BUFSIZE - buflen, 1, imagefp);
+		r += safe_fread(writebuf + buflen, 1, mtdInfo.erasesize - buflen, imagefp);
 		w += r;
 
 		/* 
@@ -255,7 +255,7 @@ static int s_mtd_write(FILE *imagefp, const char *mtd, int quiet)
 		if (!quiet)
 			fprintf(stderr, "\b\b\b[w]");
 
-		if ((result = write(fd, buf, r)) < r) {
+		if ((result = write(fd, writebuf, r)) < r) {
 			if (result < 0) {
 				fprintf(stderr, "Error writing image.\n");
 				exit(1);
@@ -271,6 +271,7 @@ static int s_mtd_write(FILE *imagefp, const char *mtd, int quiet)
 		fprintf(stderr, "\b\b\b\b");
 
 	close(fd);
+	free(writebuf);
 	return 0;
 }
 
