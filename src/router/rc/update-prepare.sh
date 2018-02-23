@@ -54,27 +54,30 @@ then
 	mkdir -p ${R}/tmp
 fi
 
-B=${R}/bin
 for i in etc bin lib usr/lib sbin proc dev sys usr/sbin oldroot
 do
 	mkdir -p ${R}/$i
 done
 #cp -a /lib/ld-musl-armhf.so.1 ${R}/lib
-for i in /bin/busybox /sbin/mtd /sbin/ledtool /usr/sbin/httpd
+for i in /bin/busybox /sbin/mtd /sbin/rc /usr/sbin/httpd /lib/services.so /usr/lib/validate.so /usr/lib/visuals.so
 do
-	cp $i $B
+	cp $i $R/$i
 	copylibs $i $R
 done
 #for httpd:
 # for big mem routers ok, this is mostly 2.xMB
 cp /etc/www $R/etc
-for i in validate.so visuals.so
+for i in event startservice stopservice write ledtool
 do
-		cp /usr/lib/$i $R/usr/lib/
+	(cd $R/sbin/ ; ln -s rc $i )
 done
-for i in sh mount umount sync ls cat reboot ps cp mv
+for i in sh mount umount sync ls cat ps cp mv
 do
-	(cd $B ; ln -s busybox $i )
+	(cd $R/bin/ ; ln -s busybox $i )
+done
+for i in reboot
+do
+	(cd $R/sbin/ ; ln -s ../bin/busybox $i )
 done
 (cd $R/usr/sbin/ ; ln -s ../../bin/busybox chroot )
 (cd $R/sbin/ ; ln -s ../bin/busybox pivot_root )
