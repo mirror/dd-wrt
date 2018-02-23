@@ -78,9 +78,9 @@ struct trx_header2 {
 };
 
 char buf[BUFSIZE];
-int buflen=0;
+int buflen = 0;
 
-static int image_check_bcom(FILE *imagefp, const char *mtd)
+static int image_check_bcom(FILE * imagefp, const char *mtd)
 {
 	struct trx_header2 *trx = (struct trx_header2 *)buf;
 	struct mtd_info_user mtdInfo;
@@ -135,7 +135,7 @@ static int image_check_bcom(FILE *imagefp, const char *mtd)
 	return 1;
 }
 
-static int image_check(FILE *imagefp, const char *mtd)
+static int image_check(FILE * imagefp, const char *mtd)
 {
 	int fd, systype;
 	size_t count;
@@ -184,7 +184,7 @@ static int mtd_check(char *mtd)
 	return 1;
 }
 
-static int s_mtd_write(FILE *imagefp, const char *mtd, int quiet)
+static int s_mtd_write(FILE * imagefp, const char *mtd, int quiet)
 {
 	int fd, i, result;
 	size_t r, w, e, skip_bad_blocks = 0;
@@ -254,8 +254,10 @@ static int s_mtd_write(FILE *imagefp, const char *mtd, int quiet)
 
 		if (!quiet)
 			fprintf(stderr, "\b\b\b[w]");
-
-		if ((result = write(fd, writebuf, r)) < r) {
+		if (r < mtdInfo.erasesize) {
+			fprintf(stderr, "\nWarning unaligned data, we use manual padding to avoid errors. size was %d!!!\n", r);
+		}
+		if ((result = write(fd, writebuf, mtdInfo.erasesize)) < r) {
 			if (result < 0) {
 				fprintf(stderr, "Error writing image.\n");
 				exit(1);
