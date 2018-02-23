@@ -1280,18 +1280,16 @@ static char *makescanlist(char *value)
 	}
 	char *next;
 	char var[128];
-	int first = 1;
 	foreach(var, clone, next) {
 		char *sep = strchr(var, '-');
 		if (!sep) {
 			char *old = new;
-			if (first)
+			if (!new)
 				asprintf(&new, "%s", var);
 			else {
 				asprintf(&new, "%s %s", old, var);
 				free(old);
 			}
-			first = 0;
 		} else {
 			*sep = 0;
 			int start = atoi(var);
@@ -1305,13 +1303,12 @@ static char *makescanlist(char *value)
 				continue;
 			for (i = start; i < end; i += 5) {
 				char *old = new;
-				if (first)
+				if (!new)
 					asprintf(&new, "%d", i);
 				else {
 					asprintf(&new, "%s %d", old, i);
 					free(old);
 				}
-				first = 0;
 
 			}
 		}
