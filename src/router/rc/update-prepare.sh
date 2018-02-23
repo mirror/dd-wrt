@@ -81,4 +81,4 @@ then
 fi
 cd ${R}
 pivot_root . oldroot
-exec chroot . /bin/sh /bin/update-after-pivot.sh ${FIFO} ${MTDPART}<dev/console >dev/console 2>&1
+exec chroot . /bin/sh /bin/update-after-pivot.sh ${FIFO} ${MTDPART} <dev/console >dev/console 2>&1
