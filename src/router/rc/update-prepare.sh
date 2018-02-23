@@ -12,7 +12,20 @@ else
 	FIFO=`basename $1`
 fi
 
+if [ x$4 = xnoreboot ]
+then
+	REBOOT=0
+else
+	REBOOT=1
+fi
+
+if [ x$2 = x ]
+then
+	echo "No mtd partition given, exit"
+	exit
+fi
 MTDPART=$2
+
 
 copylibs(){
 P=$2
@@ -53,6 +66,8 @@ do
 	copylibs $i $R
 done
 #for httpd:
+# for big mem routers ok, this is mostly 2.xMB
+cp /etc/www $R/etc
 for i in validate.so visuals.so
 do
 		cp /usr/lib/$i $R/usr/lib/
@@ -81,4 +96,4 @@ then
 fi
 cd ${R}
 pivot_root . oldroot
-exec chroot . /bin/sh /bin/update-after-pivot.sh ${FIFO} ${MTDPART} <dev/console >dev/console 2>&1
+exec chroot . /bin/sh /bin/update-after-pivot.sh ${FIFO} ${MTDPART} ${REBOOT} <dev/console >dev/console 2>&1

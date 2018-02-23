@@ -272,7 +272,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				write_argv_buf[1] = upload_fifo;
 				write_argv_buf[2] = "rootfs";
 				write_argv_buf[3] = "nomount";
-				write_argv_buf[4] = NULL;
+				write_argv_buf[4] = "noreboot";
+				write_argv_buf[5] = NULL;
 				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
 				    || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
