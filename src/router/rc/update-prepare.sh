@@ -8,10 +8,8 @@ if [ x$3 = xusefile ]
 then
 	UPDATEFILE=`basename $1`
 	FIFO=${UPDATEFILE}
-	USEFILE=1
 else
 	FIFO=`basename $1`
-	USEFILE=0
 fi
 
 MTDPART=$2
@@ -83,4 +81,4 @@ then
 fi
 cd ${R}
 pivot_root . oldroot
-exec chroot . /bin/sh /bin/update-after-pivot.sh ${FIFO} ${MTDPART} ${USEFILE} <dev/console >dev/console 2>&1
+exec chroot . /bin/sh /bin/update-after-pivot.sh ${FIFO} ${MTDPART}<dev/console >dev/console 2>&1
