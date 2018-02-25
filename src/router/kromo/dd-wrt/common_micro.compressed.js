@@ -985,28 +985,6 @@ win.close();
 });
 win.focus();
 };
-function getTimeOut(clk,_66,_67){
-var _68=60;
-var _69=(_68/5)-3;
-var _6a=1;
-if(clk<200||clk==240){
-_6a=2;
-}
-if(_66==1){
-_6a=_6a*2;
-}
-if(_67==1){
-_6a=_6a*3;
-}
-if(_67==2){
-_6a=_6a*1.8;
-}
-if(_67==3){
-_6a=_6a*1.3;
-}
-this.wait_time=_6a*_68;
-this.scroll_count=this.wait_time/5-3;
-};
 function setElementMask(id,_6b){
 var _6c=document.getElementById(id);
 if(!_6c){

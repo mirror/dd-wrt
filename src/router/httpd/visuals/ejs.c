@@ -2096,43 +2096,14 @@ void ej_nvram_selected_js(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_getrebootflags(webs_t wp, int argc, char_t ** argv)
+void ej_getboottime(webs_t wp, int argc, char_t ** argv)
 {
-#ifdef HAVE_RB500
-	websWrite(wp, "1");
-#elif HAVE_MAGICBOX
-	websWrite(wp, "2");
-#elif HAVE_RB600
-	websWrite(wp, "2");
-#elif HAVE_FONERA
-	websWrite(wp, "2");
-#elif HAVE_MERAKI
-	websWrite(wp, "2");
-#elif HAVE_LS2
-	websWrite(wp, "2");
-#elif HAVE_LS5
-	websWrite(wp, "2");
-#elif HAVE_WHRAG108
-	websWrite(wp, "2");
-#elif HAVE_TW6600
-	websWrite(wp, "2");
-#elif HAVE_CA8
-	websWrite(wp, "2");
-#elif HAVE_GATEWORX
-	websWrite(wp, "1");
-#elif HAVE_X86
-	websWrite(wp, "1");
-#elif HAVE_WHR300HP
-	websWrite(wp, "3");
-#elif HAVE_WZR300HP
-	websWrite(wp, "3");
-#elif HAVE_WZR600DHP
-	websWrite(wp, "3");
-#elif HAVE_NORTHSTAR
-	websWrite(wp, "4");
-#else
-	websWrite(wp, "0");
-#endif
+time_t endtime = nvram_default_geti("end_time", 0);
+time_t starttime = nvram_default_geti("start_time", 0);
+if (start_time <= end_time)
+	websWrite(wp, "30");
+else
+	websWrite(wp, "%ld", starttime - enddtime); //aprox boot time
 }
 
 char *tran_string(char *buf, char *str)
