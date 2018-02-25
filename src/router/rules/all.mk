@@ -313,7 +313,7 @@ include rules/wireguard.mk
 	[ ! -d $* ] || $(MAKE) -C $* clean
 
 %-configure:
-	[ ! -d $* ] || $(MAKE) -C $* configure
+	-[ ! -d $* ] || $(MAKE) -C $* configure
 
 %-clean:
 	[ ! -d $* ] || $(MAKE) -C $* clean
