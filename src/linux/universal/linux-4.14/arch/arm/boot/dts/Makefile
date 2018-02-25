@@ -1041,7 +1041,8 @@ dtb-$(CONFIG_MACH_ARMADA_38X) += \
 	armada-385-linksys-cobra.dtb \
 	armada-385-linksys-rango.dtb \
 	armada-385-linksys-shelby.dtb \
-	armada-385-linksys-venom.dtb
+	armada-385-linksys-venom.dtb \
+	armada-385-turris-omnia.dtb
 dtb-$(CONFIG_MACH_ARMADA_39X) += \
 	armada-398-db.dtb
 dtb-$(CONFIG_MACH_ARMADA_XP) += \
