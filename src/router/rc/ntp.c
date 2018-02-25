@@ -139,6 +139,7 @@ static int do_ntp(void)		// called from ntp_main and
 	}
 
 	nvram_set("ntp_done", "1");
+	nvram_seti("start_time", gettime(NULL));
 
 #if defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_LAGUNA) || defined(HAVE_STORM) || (defined(HAVE_GATEWORX) && !defined(HAVE_NOP8670))
 	eval("hwclock", "-w", "-u");

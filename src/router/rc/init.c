@@ -264,6 +264,8 @@ void shutdown_system(void)
 	kill(-1, SIGKILL);
 	sync();
 	unmount_fs();		// try it a second time, but consider that kill already could have reached init process
+	nvram_seti("end_time", gettime(NULL));
+	nvram_commit();
 }
 
 static int fatal_signals[] = {
