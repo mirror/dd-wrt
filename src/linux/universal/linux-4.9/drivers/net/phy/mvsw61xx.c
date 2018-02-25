@@ -32,6 +32,8 @@ MODULE_AUTHOR("Nikita Nazarenko <nnazarenko@radiofid.com>");
 MODULE_LICENSE("GPL v2");
 MODULE_ALIAS("platform:mvsw61xx");
 
+static void mvsw6176_quirks(struct switch_dev *dev);
+
 /*
  * Register access is done through direct or indirect addressing,
  * depending on how the switch is physically connected.

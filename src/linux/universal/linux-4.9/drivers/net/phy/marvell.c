@@ -598,7 +598,7 @@ static int m88e1510_config_aneg(struct phy_device *phydev)
 	/* Configure the copper link first */
 	err = m88e1318_config_aneg(phydev);
 	if (err < 0)
-		goto error;
+		return err;
 
 	err = marvell_of_reg_init(phydev);
 	if (err < 0)
