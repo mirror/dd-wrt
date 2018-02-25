@@ -6,9 +6,8 @@
 
 var clk = <% get_clkfreq(); %>;
 var rest_default = <% nvg("sv_restore_defaults"); %>;
-my_tab = new getTimeOut(clk, rest_default, <% getrebootflags(); %>);
 var submit_button = "<% get_web_page_name(); %>";
-var timer = setTimeout("message()", my_tab.wait_time * 1000);
+var timer = setTimeout("message()", < % getboottime(); %> * 1000);
 var browserName=navigator.appName;
 
 function to_submit()
@@ -54,7 +53,7 @@ addEvent(window, "unload", function() {
 						<script type="text/javascript">
 						//<![CDATA[
 
-							var bar1 = createBar(500,15,100,15,my_tab.scroll_count,"to_submit()");
+							var bar1 = createBar(500,15,100,15,< % getboottime(); %> / 5 - 3,"to_submit()");
 							bar1.togglePause();
 						//]]>
 						</script>

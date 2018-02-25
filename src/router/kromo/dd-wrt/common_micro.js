@@ -1031,35 +1031,6 @@ function openBW(iface) {
 	win.focus();
 }
  
-function getTimeOut(clk, rest_default, flags) {
-
-	var wait_time = 60;
-	var scroll_count = (wait_time / 5) - 3;
-	var coef = 1;
-
-    if (clk < 200 || clk == 240) {
-		coef = 2.0;
-	}
-	
-	if (rest_default == 1) {
-		coef = coef * 2;
-	}
-	if (flags == 1) {
-		coef = coef * 3;
-	}
-	if (flags == 2) {
-		coef = coef * 1.8;
-	}
-	if (flags == 3) {
-		coef = coef * 1.3;
-	}
-
-	this.wait_time = coef * wait_time;
-	this.scroll_count = this.wait_time / 5 - 3;
-
-}
-
-
 function setElementMask(id, state) {
 
 	var OldInput = document.getElementById(id);
