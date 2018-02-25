@@ -636,6 +636,13 @@ config LEDS_IS31FL32XX
 
 comment "LED driver for blink(1) USB RGB LED is under Special HID drivers (HID_THINGM)"
 
+config LEDS_OMNIA
+       tristate "LED support for the Turris Omnia board"
+       depends on LEDS_CLASS
+       help
+         Say Y here to include support for the LED driver on Turris Omnia
+         board.
+
 config LEDS_BLINKM
 	tristate "LED support for the BlinkM I2C RGB LED"
 	depends on LEDS_CLASS
