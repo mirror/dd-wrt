@@ -593,30 +593,37 @@ static int marvell_config_aneg_fiber(struct phy_device *phydev)
 static int m88e1510_config_aneg(struct phy_device *phydev)
 {
 	int err;
-
-	err = phy_write(phydev, MII_MARVELL_PHY_PAGE, MII_M1111_COPPER);
-	if (err < 0)
-		goto error;
+	u16 addrreg, reg;
 
 	/* Configure the copper link first */
 	err = m88e1318_config_aneg(phydev);
 	if (err < 0)
 		goto error;
 
-	/* Then the fiber link */
-	err = phy_write(phydev, MII_MARVELL_PHY_PAGE, MII_M1111_FIBER);
+	err = marvell_of_reg_init(phydev);
 	if (err < 0)
-		goto error;
+		return err;
 
-	err = marvell_config_aneg_fiber(phydev);
-	if (err < 0)
-		goto error;
+	/* 88E1514 LEDs in Turris */
+	addrreg = phy_read(phydev, 22);
+	phy_write(phydev, 22, 3);
+/*	reg = phy_read(phydev, 16);
+	printk("reg before LED hack: 0x%04x\n",reg); */
 
-	return phy_write(phydev, MII_MARVELL_PHY_PAGE, MII_M1111_COPPER);
+	/* Set LED0 mode */
+	phy_write(phydev, 16, 0x1aa1);
 
-error:
-	phy_write(phydev, MII_MARVELL_PHY_PAGE, MII_M1111_COPPER);
-	return err;
+	/* Set IRQ enable */
+	reg = phy_read(phydev, 18);
+	reg |= 0x40;
+	phy_write(phydev, 18, reg);
+
+/*	reg = phy_read(phydev, 16);
+	printk("reg after LED hack: 0x%04x\n",reg); */
+
+	phy_write(phydev, 22, addrreg);
+
+	return 0;
 }
 
 static int marvell_config_init(struct phy_device *phydev)
@@ -823,39 +830,45 @@ static int m88e1121_config_init(struct phy_device *phydev)
 	return marvell_config_init(phydev);
 }
 
+void phy_writebits(struct phy_device *phydev,
+	   u8 reg_num, u16 offset, u16 len, u16 data)
+{
+	u16 reg, mask;
+
+	if ((len + offset) >= 16)
+		mask = 0 - (1 << offset);
+	else
+		mask = (1 << (len + offset)) - (1 << offset);
+
+	reg = phy_read(phydev, reg_num);
+
+	reg &= ~mask;
+	reg |= data << offset;
+
+	phy_write(phydev, reg_num, reg);
+}
+
 static int m88e1510_config_init(struct phy_device *phydev)
 {
-	int err;
-	int temp;
+	/* Turris hack for 88E1514 - taken from U-Boot */
+	phy_write(phydev, 22, 0x00ff);
+	phy_write(phydev, 17, 0x214B);
+	phy_write(phydev, 16, 0x2144);
+	phy_write(phydev, 17, 0x0C28);
+	phy_write(phydev, 16, 0x2146);
+	phy_write(phydev, 17, 0xB233);
+	phy_write(phydev, 16, 0x214D);
+	phy_write(phydev, 17, 0xCC0C);
+	phy_write(phydev, 16, 0x2159);
+	phy_write(phydev, 22, 0x0000); 
+	phy_write(phydev, 22, 18);
+	phy_writebits(phydev, 20, 0, 3, 1);
 
-	/* SGMII-to-Copper mode initialization */
-	if (phydev->interface == PHY_INTERFACE_MODE_SGMII) {
-		/* Select page 18 */
-		err = phy_write(phydev, MII_MARVELL_PHY_PAGE, 18);
-		if (err < 0)
-			return err;
+	phy_writebits(phydev, 20, 15, 1, 1);
+	phy_write(phydev, 22, 0);
+	/* End of turris hack */
 
-		/* In reg 20, write MODE[2:0] = 0x1 (SGMII to Copper) */
-		temp = phy_read(phydev, MII_88E1510_GEN_CTRL_REG_1);
-		temp &= ~MII_88E1510_GEN_CTRL_REG_1_MODE_MASK;
-		temp |= MII_88E1510_GEN_CTRL_REG_1_MODE_SGMII;
-		err = phy_write(phydev, MII_88E1510_GEN_CTRL_REG_1, temp);
-		if (err < 0)
-			return err;
-
-		/* PHY reset is necessary after changing MODE[2:0] */
-		temp |= MII_88E1510_GEN_CTRL_REG_1_RESET;
-		err = phy_write(phydev, MII_88E1510_GEN_CTRL_REG_1, temp);
-		if (err < 0)
-			return err;
-
-		/* Reset page selection */
-		err = phy_write(phydev, MII_MARVELL_PHY_PAGE, 0);
-		if (err < 0)
-			return err;
-	}
-
-	return m88e1121_config_init(phydev);
+	return m88e1111_config_init(phydev);
 }
 
 static int m88e1118_config_aneg(struct phy_device *phydev)

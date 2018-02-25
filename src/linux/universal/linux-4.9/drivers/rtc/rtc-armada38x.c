@@ -32,6 +32,8 @@
 #define RTC_TIME	    0xC
 #define RTC_ALARM1	    0x10
 #define RTC_ALARM2	    0x14
+#define RTC_CLOCK_CORR	    0x18
+#define RTC_TEST_CONFIG	    0x1C
 
 /* Armada38x SoC registers  */
 #define RTC_38X_BRIDGE_TIMING_CTL   0x0
@@ -59,6 +61,10 @@
 #define SOC_RTC_ALARM2			BIT(1)
 #define SOC_RTC_ALARM1_MASK		BIT(2)
 #define SOC_RTC_ALARM2_MASK		BIT(3)
+
+#define RTC_NOMINAL_TIMING 0x0
+#define RTC_SZ_STATUS_ALARM1_MASK	0x1
+#define RTC_SZ_STATUS_ALARM2_MASK	0x2
 
 #define SAMPLE_NR 100
 
@@ -343,6 +349,46 @@ static irqreturn_t armada38x_rtc_alarm_irq(int irq, void *data)
 	return IRQ_HANDLED;
 }
 
+static bool rtc_init_state(struct armada38x_rtc *rtc)
+{
+	uint32_t stat, alrm1, alrm2, int1, int2, tstcfg;
+
+	/* Update RTC-MBUS bridge timing parameters */
+	writel(0xFD4D4CFA, rtc->regs_soc);
+
+	/* Make sure we are not in any test mode */
+	writel(0, rtc->regs + RTC_TEST_CONFIG);
+	msleep_interruptible(500);
+
+	/* Setup nominal register access timing */
+	writel(RTC_NOMINAL_TIMING, rtc->regs + RTC_CLOCK_CORR);
+
+	/* Turn off Int1 sources & clear the Alarm count */
+	writel(0, rtc->regs + RTC_IRQ1_CONF);
+	writel(0, rtc->regs + RTC_ALARM1);
+
+	/* Turn off Int2 sources & clear the Periodic count */
+	writel(0, rtc->regs + RTC_IRQ2_CONF);
+	writel(0, rtc->regs + RTC_ALARM2);
+
+	/* Clear any pending Status bits */
+	writel((RTC_SZ_STATUS_ALARM1_MASK | RTC_SZ_STATUS_ALARM2_MASK), rtc->regs + RTC_STATUS);
+
+	stat   = readl(rtc->regs + RTC_STATUS) & 0xFF;
+	alrm1  = readl(rtc->regs + RTC_ALARM1);
+	int1   = readl(rtc->regs + RTC_IRQ1_CONF) & 0xFF;
+	alrm2  = readl(rtc->regs + RTC_ALARM2);
+	int2   = readl(rtc->regs + RTC_IRQ2_CONF) & 0xFF;
+	tstcfg = readl(rtc->regs + RTC_TEST_CONFIG) & 0xFF;
+
+	if ((0xFC == stat) && (0 == alrm1) && (0xC0 == int1) &&
+	    (0 == alrm2) && (0xC0 == int2) && (0 == tstcfg)) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 static const struct rtc_class_ops armada38x_rtc_ops = {
 	.read_time = armada38x_rtc_read_time,
 	.set_time = armada38x_rtc_set_time,
@@ -395,6 +441,7 @@ static __init int armada38x_rtc_probe(struct platform_device *pdev)
 	struct armada38x_rtc *rtc;
 	const struct of_device_id *match;
 	int ret;
+	uint32_t init_count = 3;
 
 	match = of_match_device(armada38x_rtc_of_match_table, &pdev->dev);
 	if (!match)
@@ -456,6 +503,13 @@ static __init int armada38x_rtc_probe(struct platform_device *pdev)
 		ret = PTR_ERR(rtc->rtc_dev);
 		dev_err(&pdev->dev, "Failed to register RTC device: %d\n", ret);
 		return ret;
+	}
+
+	while (!rtc_init_state(rtc) && --init_count);
+
+	if (init_count == 0) {
+		dev_err(&pdev->dev, "%probe: Error in rtc_init_state\n", __func__);
+		return -ENODEV;
 	}
 	return 0;
 }
