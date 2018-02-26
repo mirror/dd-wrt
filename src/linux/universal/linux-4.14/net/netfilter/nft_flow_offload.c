@@ -110,9 +110,6 @@ static void nft_flow_offload_eval(const struct nft_expr *expr,
 	if (ret < 0)
 		goto err_flow_add;
 
-	if (flowtable->flags & NF_FLOWTABLE_F_HW)
-		nf_flow_offload_hw_add(nft_net(pkt), flow, ct);
-
 	return;
 
 err_flow_add:
