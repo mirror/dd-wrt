@@ -93,6 +93,7 @@ int cp_main(int argc, char **argv)
 		"no-dereference\0" No_argument "P"
 		"recursive\0"      No_argument "R"
 		"symbolic-link\0"  No_argument "s"
+		"no-target-directory\0" No_argument "T"
 		"verbose\0"        No_argument "v"
 		"update\0"         No_argument "u"
 		"remove-destination\0" No_argument "\xff"
