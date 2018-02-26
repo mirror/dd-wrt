@@ -836,13 +836,6 @@ struct xfrmdev_ops {
 };
 #endif
 
-struct flow_offload;
-
-enum flow_offload_type {
-	FLOW_OFFLOAD_ADD	= 0,
-	FLOW_OFFLOAD_DEL,
-};
-
 /*
  * This structure defines the management hooks for network devices.
  * The following hooks can be defined; unless noted otherwise, they are
@@ -1074,10 +1067,6 @@ enum flow_offload_type {
  * int (*ndo_bridge_dellink)(struct net_device *dev, struct nlmsghdr *nlh,
  *			     u16 flags);
  *
- * int (*ndo_flow_offload)(enum flow_offload_type type,
- *			   struct flow_offload *flow);
- *	Adds/deletes flow entry to/from net device flowtable.
- *
  * int (*ndo_change_carrier)(struct net_device *dev, bool new_carrier);
  *	Called to change device carrier. Soft-devices (like dummy, team, etc)
  *	which do not represent real hardware may define this to allow their
@@ -1305,8 +1294,6 @@ struct net_device_ops {
 	int			(*ndo_bridge_dellink)(struct net_device *dev,
 						      struct nlmsghdr *nlh,
 						      u16 flags);
-	int			(*ndo_flow_offload)(enum flow_offload_type type,
-						    struct flow_offload *flow);
 	int			(*ndo_change_carrier)(struct net_device *dev,
 						      bool new_carrier);
 	int			(*ndo_get_phys_port_id)(struct net_device *dev,
