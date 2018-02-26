@@ -252,11 +252,11 @@ void readSpeedFile(char * fileName) {
 		goto out;
 	}
 
-#if defined(__linux__) && !defined(__ANDROID__)
-	mtim = &statBuf.st_mtim;
-#else
+//#if defined(__linux__) && !defined(__ANDROID__)
+//	mtim = &statBuf.st_mtim;
+//#else
 	mtim = &statBuf.st_mtime;
-#endif
+//#endif
 
 	if (!memcmp(&cachedStat.timeStamp, mtim, sizeof(cachedStat.timeStamp))) {
 		/* file did not change since last read */
