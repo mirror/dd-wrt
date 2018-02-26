@@ -310,12 +310,10 @@ static int ct_seq_show(struct seq_file *s, void *v)
 	WARN_ON(!l4proto);
 
 	ret = -ENOSPC;
-	seq_printf(s, "%-8s %u %-8s %u ",
+	seq_printf(s, "%-8s %u %-8s %u %ld ",
 		   l3proto_name(l3proto->l3proto), nf_ct_l3num(ct),
-		   l4proto_name(l4proto->l4proto), nf_ct_protonum(ct));
-
-	if (!test_bit(IPS_OFFLOAD_BIT, &ct->status))
-		seq_printf(s, "%ld ", nf_ct_expires(ct)  / HZ);
+		   l4proto_name(l4proto->l4proto), nf_ct_protonum(ct),
+		   nf_ct_expires(ct)  / HZ);
 
 	if (l4proto->print_conntrack)
 		l4proto->print_conntrack(s, ct);
@@ -342,9 +340,7 @@ static int ct_seq_show(struct seq_file *s, void *v)
 	if (nf_ct_ext_seq_print(s,ct,IP_CT_DIR_REPLY))
 		goto release;
 
-	if (test_bit(IPS_OFFLOAD_BIT, &ct->status))
-		seq_puts(s, "[OFFLOAD] ");
-	else if (test_bit(IPS_ASSURED_BIT, &ct->status))
+	if (test_bit(IPS_ASSURED_BIT, &ct->status))
 		seq_puts(s, "[ASSURED] ");
 
 	if (seq_has_overflowed(s))

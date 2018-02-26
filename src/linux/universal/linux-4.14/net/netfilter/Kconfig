@@ -535,13 +535,6 @@ config NFT_CT
 	  This option adds the "ct" expression that you can use to match
 	  connection tracking information such as the flow state.
 
-config NFT_FLOW_OFFLOAD
-	depends on NF_CONNTRACK
-	tristate "Netfilter nf_tables hardware flow offload module"
-	help
-	  This option adds the "flow_offload" expression that you can use to
-	  choose what flows are placed into the hardware.
-
 config NFT_SET_RBTREE
 	tristate "Netfilter nf_tables rbtree set module"
 	help
@@ -692,33 +685,7 @@ config NFT_FIB_NETDEV
 
 endif # NF_TABLES_NETDEV
 
-config NF_FLOW_TABLE_INET
-	tristate "Netfilter flow table mixed IPv4/IPv6 module"
-	depends on NF_FLOW_TABLE
-	help
-          This option adds the flow table mixed IPv4/IPv6 support.
-
-	  To compile it as a module, choose M here.
-
 endif # NF_TABLES
-
-config NF_FLOW_TABLE
-	tristate "Netfilter flow table module"
-	depends on NETFILTER_INGRESS
-	depends on NF_CONNTRACK
-	help
-	  This option adds the flow table core infrastructure.
-
-	  To compile it as a module, choose M here.
-
-config NF_FLOW_TABLE_HW
-	tristate "Netfilter flow table hardware offload module"
-	depends on NF_FLOW_TABLE
-	help
-	  This option adds hardware offload support for the flow table core
-	  infrastructure.
-
-	  To compile it as a module, choose M here.
 
 config NETFILTER_XTABLES
 	tristate "Netfilter Xtables support (required for ip_tables)"
@@ -1005,15 +972,6 @@ config NETFILTER_XT_TARGET_NOTRACK
 	depends on IP_NF_RAW || IP6_NF_RAW
 	depends on NETFILTER_ADVANCED
 	select NETFILTER_XT_TARGET_CT
-
-config NETFILTER_XT_TARGET_FLOWOFFLOAD
-	tristate '"FLOWOFFLOAD" target support'
-	depends on NF_FLOW_TABLE
-	depends on NETFILTER_INGRESS
-	help
-	  This option adds a `FLOWOFFLOAD' target, which uses the nf_flow_offload
-	  module to speed up processing of packets by bypassing the usual
-	  netfilter chains
 
 config NETFILTER_XT_TARGET_RATEEST
 	tristate '"RATEEST" target support'
