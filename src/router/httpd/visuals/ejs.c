@@ -2098,7 +2098,10 @@ void ej_nvram_selected_js(webs_t wp, int argc, char_t ** argv)
 
 void ej_getboottime(webs_t wp, int argc, char_t ** argv)
 {
-	time_t endtime = nvram_default_geti("end_time", 0);
+	char *end = nvram_get("end_time");
+	if (!end)
+	    return 30;
+	time_t endtime = atol(end);
 	time_t starttime = nvram_default_geti("start_time", 0);
 	if (starttime <= endtime)
 		websWrite(wp, "30");
