@@ -20,8 +20,6 @@ umount /oldroot/dev/pts
 umount /oldroot/proc
 umount -l /oldroot
 cd /tmp
-#mtd erase ${MTDPART}
-#mtd -f write ${FIFO} ${MTDPART}
 write ${FIFO} ${MTDPART}
 busybox sync
 busybox sync
