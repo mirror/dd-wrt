@@ -74,7 +74,6 @@ static const struct nf_hook_ops nf_nat_ipv6_ops[] = {
 	{
 		.hook		= ip6table_nat_in,
 		.pf		= NFPROTO_IPV6,
-		.nat_hook	= true,
 		.hooknum	= NF_INET_PRE_ROUTING,
 		.priority	= NF_IP6_PRI_NAT_DST,
 	},
@@ -82,7 +81,6 @@ static const struct nf_hook_ops nf_nat_ipv6_ops[] = {
 	{
 		.hook		= ip6table_nat_out,
 		.pf		= NFPROTO_IPV6,
-		.nat_hook	= true,
 		.hooknum	= NF_INET_POST_ROUTING,
 		.priority	= NF_IP6_PRI_NAT_SRC,
 	},
@@ -90,14 +88,12 @@ static const struct nf_hook_ops nf_nat_ipv6_ops[] = {
 	{
 		.hook		= ip6table_nat_local_fn,
 		.pf		= NFPROTO_IPV6,
-		.nat_hook	= true,
 		.hooknum	= NF_INET_LOCAL_OUT,
 		.priority	= NF_IP6_PRI_NAT_DST,
 	},
 	/* After packet filtering, change source */
 	{
 		.hook		= ip6table_nat_fn,
-		.nat_hook	= true,
 		.pf		= NFPROTO_IPV6,
 		.hooknum	= NF_INET_LOCAL_IN,
 		.priority	= NF_IP6_PRI_NAT_SRC,
