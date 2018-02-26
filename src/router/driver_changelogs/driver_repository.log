@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3891 | brainslayer | 2018-02-27 00:35:00 +0100 (Tue, 27 Feb 2018) | 1 line
+
+fix sifs and airtime calculation for half and quarter channels
+------------------------------------------------------------------------
 r3890 | brainslayer | 2018-02-26 12:26:33 +0100 (Mon, 26 Feb 2018) | 1 line
 
 fix possible firmware assert in ath10k
