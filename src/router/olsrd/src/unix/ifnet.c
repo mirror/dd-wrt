@@ -74,6 +74,7 @@
 #include <netdb.h>
 #include <unistd.h>
 #if defined(__linux__) && !defined(__ANDROID__)
+#include <asm/types.h>
 #include <linux/ethtool.h>
 #include <linux/sockios.h>
 #endif /* defined(__linux__) && !defined(__ANDROID__) */
