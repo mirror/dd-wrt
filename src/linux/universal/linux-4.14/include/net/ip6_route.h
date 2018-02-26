@@ -252,4 +252,26 @@ static inline bool rt6_duplicate_nexthop(struct rt6_info *a, struct rt6_info *b)
 	       ipv6_addr_equal(&a->rt6i_gateway, &b->rt6i_gateway) &&
 	       !lwtunnel_cmp_encap(a->dst.lwtstate, b->dst.lwtstate);
 }
+
+static inline unsigned int ip6_dst_mtu_forward(const struct dst_entry *dst)
+{
+	unsigned int mtu;
+	struct inet6_dev *idev;
+
+	if (dst_metric_locked(dst, RTAX_MTU)) {
+		mtu = dst_metric_raw(dst, RTAX_MTU);
+		if (mtu)
+			return mtu;
+	}
+
+	mtu = IPV6_MIN_MTU;
+	rcu_read_lock();
+	idev = __in6_dev_get(dst->dev);
+	if (idev)
+		mtu = idev->cnf.mtu6;
+	rcu_read_unlock();
+
+	return mtu;
+}
+
 #endif
