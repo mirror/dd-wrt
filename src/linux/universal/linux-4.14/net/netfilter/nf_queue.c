@@ -165,7 +165,6 @@ static int __nf_queue(struct sk_buff *skb, const struct nf_hook_state *state,
 {
 	int status = -ENOENT;
 	struct nf_queue_entry *entry = NULL;
-	const struct nf_afinfo *afinfo;
 	const struct nf_queue_handler *qh;
 	struct net *net = state->net;
 	unsigned int queuetype = verdict & NF_VERDICT_MASK;
