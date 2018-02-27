@@ -107,7 +107,7 @@ int wl_hwaddr(char *name, unsigned char *hwaddr)
 	int ret = 0;
 	int s;
 	if (is_wil6210(name))
-		name = "giwifi";
+		name = "giwifi0";
 #ifdef HAVE_DIR862
 	if (!strcmp(name, "ath1"))
 		name = "ath0";
