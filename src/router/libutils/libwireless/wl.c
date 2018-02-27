@@ -3002,7 +3002,7 @@ int has_airtime_fairness(char *prefix)
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1)
 		RETURNVALUE(0);
-	asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/airtime_flags", devnum);
+	asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/airtime_flags", devnum);
 	FILE *fp = fopen(globstring, "rb");
 	free(globstring);
 	if (fp) {
