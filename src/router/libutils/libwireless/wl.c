@@ -3071,7 +3071,7 @@ int is_ath10k(const char *prefix)
 #ifdef HAVE_WIL6210
 int is_wil6210(const char *prefix)
 {
-	if (!strcmp(prefix, "giwifi"))
+	if (!strcmp(prefix, "giwifi0"))
 		return 1;
 	if (!strcmp(prefix, "ath2"))
 		return 1;
