@@ -1121,14 +1121,14 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < count; i++) {
 		sprintf(var, "ath%d", i);
 		if (has_ad(var))
-			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", "giwifi") ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
+			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", "giwifi0") ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		else
 			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		char *names = nvram_nget("ath%d_vifs", i);
 
 		foreach(var, names, next) {
 			if (has_ad(var))
-				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", "giwifi") ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
+				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", "giwifi0") ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 			else
 				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		}
