@@ -170,6 +170,7 @@ static int __nf_queue(struct sk_buff *skb, const struct nf_hook_state *state,
 	struct net *net = state->net;
 	unsigned int queuetype = verdict & NF_VERDICT_MASK;
 	unsigned int queuenum  = verdict >> NF_VERDICT_QBITS;
+	unsigned int route_key_size;
 
 	/* QUEUE == DROP if no one is waiting, to be safe. */
 	if (queuetype == NF_IMQ_QUEUE) {
