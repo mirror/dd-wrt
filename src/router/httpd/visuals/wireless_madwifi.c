@@ -231,7 +231,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_ATH9K
 		if (is_ath9k(devs)) {
 			if (has_ad(devs))
-				cnt = ej_active_wireless_if_ath9k(wp, argc, argv, "giwifi", cnt, t, macmask);
+				cnt = ej_active_wireless_if_ath9k(wp, argc, argv, "giwifi0", cnt, t, macmask);
 			else
 				cnt = ej_active_wireless_if_ath9k(wp, argc, argv, devs, cnt, t, macmask);
 			gotassocs = 1;
