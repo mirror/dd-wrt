@@ -13,7 +13,7 @@
 #ifndef __ASM_MACH_AR71XX_GPIO_H
 #define __ASM_MACH_AR71XX_GPIO_H
 
-#define ARCH_NR_GPIOS	64
+#define ARCH_NR_GPIOS	128
 #include <asm-generic/gpio.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
