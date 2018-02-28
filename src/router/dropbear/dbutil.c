@@ -83,7 +83,7 @@ void (*_dropbear_exit)(int exitcode, const char* format, va_list param) ATTRIB_N
 void (*_dropbear_log)(int priority, const char* format, va_list param)
 						= generic_dropbear_log;
 
-#ifdef DEBUG_TRACE
+#if DEBUG_TRACE
 int debug_trace = 0;
 #endif
 
@@ -153,7 +153,7 @@ void dropbear_log(int priority, const char* format, ...) {
 }
 
 
-#ifdef DEBUG_TRACE
+#if DEBUG_TRACE
 
 static double debug_start_time = -1;
 
@@ -218,7 +218,7 @@ void dropbear_trace2(const char* format, ...) {
 #endif /* DEBUG_TRACE */
 
 /* Connect to a given unix socket. The socket is blocking */
-#ifdef ENABLE_CONNECT_UNIX
+#if ENABLE_CONNECT_UNIX
 int connect_unix(const char* path) {
 	struct sockaddr_un addr;
 	int fd = -1;
@@ -245,7 +245,7 @@ int connect_unix(const char* path) {
  * it will be run after the child has fork()ed, and is passed exec_data.
  * If ret_errfd == NULL then stderr will not be captured.
  * ret_pid can be passed as  NULL to discard the pid. */
-int spawn_command(void(*exec_fn)(void *user_data), void *exec_data,
+int spawn_command(void(*exec_fn)(const void *user_data), const void *exec_data,
 		int *ret_writefd, int *ret_readfd, int *ret_errfd, pid_t *ret_pid) {
 	int infds[2];
 	int outfds[2];
@@ -266,7 +266,7 @@ int spawn_command(void(*exec_fn)(void *user_data), void *exec_data,
 		return DROPBEAR_FAILURE;
 	}
 
-#ifdef USE_VFORK
+#if DROPBEAR_VFORK
 	pid = vfork();
 #else
 	pid = fork();
@@ -375,7 +375,7 @@ void run_shell_command(const char* cmd, unsigned int maxfd, char* usershell) {
 	execv(usershell, argv);
 }
 
-#ifdef DEBUG_TRACE
+#if DEBUG_TRACE
 void printhex(const char * label, const unsigned char * buf, int len) {
 
 	int i;
@@ -469,7 +469,7 @@ out:
  * authkeys file.
  * Will return DROPBEAR_SUCCESS if data is read, or DROPBEAR_FAILURE on EOF.*/
 /* Only used for ~/.ssh/known_hosts and ~/.ssh/authorized_keys */
-#if defined(DROPBEAR_CLIENT) || defined(ENABLE_SVR_PUBKEY_AUTH)
+#if DROPBEAR_CLIENT || DROPBEAR_SVR_PUBKEY_AUTH
 int buf_getline(buffer * line, FILE * authfile) {
 
 	int c = EOF;
@@ -510,7 +510,7 @@ out:
 void m_close(int fd) {
 	int val;
 
-	if (fd == -1) {
+	if (fd < 0) {
 		return;
 	}
 
@@ -637,6 +637,10 @@ int constant_time_memcmp(const void* a, const void *b, size_t n)
 reach userspace include headers */
 #ifndef CLOCK_MONOTONIC_COARSE
 #define CLOCK_MONOTONIC_COARSE 6
+#endif
+/* Some old toolchains know SYS_clock_gettime but not CLOCK_MONOTONIC */
+#ifndef CLOCK_MONOTONIC
+#define CLOCK_MONOTONIC 1
 #endif
 static clockid_t get_linux_clock_source() {
 	struct timespec ts;
