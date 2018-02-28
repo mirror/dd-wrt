@@ -1,7 +1,8 @@
 DROPBEAR_OPTS = $(MIPS16_OPT) -DDISABLE_X11FWD
 
 dropbear-configure:
-	cd dropbear && ./configure --host=$(ARCH)-linux --disable-pam --disable-lastlog --disable-utmp --disable-zlib --disable-utmpx --disable-wtmp --disable-wtmpx --enable-bundled-libtom --disable-pututxline CC="$(CC)" CFLAGS="-DNEED_PRINTF -I../zlib $(COPTS) $(DROPBEAR_OPTS) -DARGTYPE=3 -L../zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" host_alias=$(ARCH)-linux
+	cd dropbear && autoconf
+	cd dropbear && ./configure --host=$(ARCH)-linux --disable-pam --disable-harden --disable-lastlog --disable-utmp --disable-zlib --disable-utmpx --disable-wtmp --disable-wtmpx --enable-bundled-libtom --disable-pututxline CC="$(CC)" CFLAGS="-DNEED_PRINTF -I../zlib $(COPTS) $(DROPBEAR_OPTS) -DARGTYPE=3 -DXFREE=free -L../zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections" host_alias=$(ARCH)-linux ac_cv_func_getpass=yes
 
 dropbear:
 	$(MAKE) -j 4 -C dropbear PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" SCPPROGRESS=1 MULTI=1
