@@ -100,12 +100,12 @@ much traffic. */
 
 /* Enable CBC mode for ciphers. This has security issues though
  * is the most compatible with older SSH implementations */
-#define DROPBEAR_DROPBEAR_CBC_MODE 1
+#define DROPBEAR_ENABLE_CBC_MODE 1
 
 /* Enable "Counter Mode" for ciphers. This is more secure than normal
  * CBC mode against certain attacks. It is recommended for security
  * and forwards compatibility */
-#define DROPBEAR_DROPBEAR_CTR_MODE 1
+#define DROPBEAR_ENABLE_CTR_MODE 1
 
 /* Twofish counter mode is disabled by default because it 
 has not been tested for interoperability with other SSH implementations.
@@ -175,7 +175,7 @@ If you test it please contact the Dropbear author */
 #define DROPBEAR_DH_GROUP1 1
 #define DROPBEAR_DH_GROUP16 0
 #define DROPBEAR_DH_GROUP14_SHA1 1
-#define DROPBEAR_DH_GROUP14_SHA256 1
+#define DROPBEAR_DH_GROUP14_SHA256 0
 
 
 
