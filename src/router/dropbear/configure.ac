@@ -175,15 +175,8 @@ AC_CHECK_DECL(__UCLIBC__,
 	AC_MSG_NOTICE([Using uClibc - login() and logout() probably don't work, so we won't use them.])
 	],,)
 
-dnl We test for crypt() specially. On Linux (and others?) it resides in libcrypt
-dnl but we don't want link all binaries to -lcrypt, just dropbear server.
-dnl OS X doesn't need -lcrypt 
-AC_CHECK_FUNC(crypt, found_crypt_func=here)
-AC_CHECK_LIB(crypt, crypt, 
-	[
-	CRYPTLIB="-lcrypt"
-	found_crypt_func=here
-	])
+found_crypt_func=here
+CRYPTLIB="-lcrypt"
 AC_SUBST(CRYPTLIB)	
 if test "t$found_crypt_func" = there; then
 AC_DEFINE(HAVE_CRYPT, 1, [crypt() function])
