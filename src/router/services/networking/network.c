@@ -1649,7 +1649,7 @@ void start_lan(void)
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		PORTSETUPWAN("");
 	} else {
-		PORTSETUPWAN("eth0");
+		PORTSETUPWAN("eth1");
 	}
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCGIFHWADDR, &ifr);
@@ -3308,7 +3308,7 @@ void start_wan(int status)
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
 #elif HAVE_WR941V6
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
-						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
 #elif HAVE_DIR615I
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
