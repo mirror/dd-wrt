@@ -233,9 +233,6 @@ If you test it please contact the Dropbear author */
 #error "DROPBEAR_SVR_PATM_AUTH requires PAM headers. Perhaps ./configure --enable-pam ?"
 #endif
 
-#if DROPBEAR_SVR_PASSWORD_AUTH && !HAVE_CRYPT
-	#error "DROPBEAR_SVR_PASSWORD_AUTH requires `crypt()'."
-#endif
 
 #if !(DROPBEAR_SVR_PASSWORD_AUTH || DROPBEAR_SVR_PAM_AUTH || DROPBEAR_SVR_PUBKEY_AUTH)
 	#error "At least one server authentication type must be enabled. DROPBEAR_SVR_PUBKEY_AUTH and DROPBEAR_SVR_PASSWORD_AUTH are recommended."
