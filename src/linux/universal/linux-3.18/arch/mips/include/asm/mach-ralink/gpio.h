@@ -13,7 +13,7 @@
 #ifndef __ASM_MACH_RALINK_GPIO_H
 #define __ASM_MACH_RALINK_GPIO_H
 
-#define ARCH_NR_GPIOS	128
+#define ARCH_NR_GPIOS	64
 #include <asm-generic/gpio.h>
 
 #define gpio_get_value	__gpio_get_value

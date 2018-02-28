@@ -278,6 +278,7 @@ void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 	case AR71XX_SOC_AR9330:
 	case AR71XX_SOC_AR9331:
 	case AR71XX_SOC_QCA9533:
+	case AR71XX_SOC_TP9343:
 		mdio_dev = &ar71xx_mdio1_device;
 		mdio_data = &ar71xx_mdio1_data;
 		break;
@@ -288,7 +289,6 @@ void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 	case AR71XX_SOC_QCA9556:
 	case AR71XX_SOC_QCA9558:
 	case AR71XX_SOC_QCA9563:
-	case AR71XX_SOC_TP9343:
 		if (id == 0) {
 			mdio_dev = &ar71xx_mdio0_device;
 			mdio_data = &ar71xx_mdio0_data;
@@ -334,12 +334,13 @@ void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 		mdio_data->is_ar934x = 1;
 		break;
 	case AR71XX_SOC_QCA9533:
+	case AR71XX_SOC_TP9343:
 		mdio_data->builtin_switch = 1;
 		break;
 	case AR71XX_SOC_QCA9556:
 	case AR71XX_SOC_QCA9558:
-	case AR71XX_SOC_TP9343:
 		mdio_data->is_ar934x = 1;
+
 	case AR71XX_SOC_QCA9563:
 		if (id == 1)
 			mdio_data->builtin_switch = 1;
@@ -1083,7 +1084,6 @@ void __init ar71xx_add_device_eth(unsigned int id)
 
 			if (!pdata->phy_mask)
 				pdata->phy_mask = BIT(4);
-			pdata->use_flow_control = 1;
 		} else {
 			pdata->reset_bit = AR933X_RESET_GE1_MAC |
 					   AR933X_RESET_GE1_MDIO;
@@ -1092,11 +1092,12 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			pdata->speed = SPEED_1000;
 			pdata->duplex = DUPLEX_FULL;
 			pdata->switch_data = &ar71xx_switch_data;
+			pdata->use_flow_control = 1;
 
 			ar71xx_switch_data.phy_poll_mask |= BIT(4);
 		}
-
 		pdata->ddr_flush = ar71xx_ddr_no_flush;
+
 		pdata->has_gbit = 1;
 		pdata->is_ar724x = 1;
 
@@ -1224,12 +1225,12 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		case AR71XX_SOC_AR9330:
 		case AR71XX_SOC_AR9331:
 		case AR71XX_SOC_QCA9533:
+		case AR71XX_SOC_TP9343:
 			pdata->mii_bus_dev = &ar71xx_mdio1_device.dev;
 			break;
 
 		case AR71XX_SOC_QCA9556:
 		case AR71XX_SOC_QCA9558:
-		case AR71XX_SOC_TP9343:
 			/* don't assign any MDIO device by default */
 			break;
 		case AR71XX_SOC_QCA9563:
