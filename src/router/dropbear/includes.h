@@ -99,9 +99,7 @@
 #include <libutil.h>
 #endif
 
-#ifdef HAVE_CRYPT_H
 #include <crypt.h>
-#endif
 
 #ifndef DISABLE_ZLIB
 #include <zlib.h>
