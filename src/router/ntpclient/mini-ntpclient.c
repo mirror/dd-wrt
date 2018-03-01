@@ -61,7 +61,7 @@
 #define POLL 4
 #define PREC -6
 
-static int getaddrbyname(char *host, struct sockaddr_storage *ss)
+static int getaddrbyname(char *host, struct sockaddr_storage *ss, int isipv6)
 {
 	int err;
 	static int netdown = 0;
@@ -99,7 +99,7 @@ static int getaddrbyname(char *host, struct sockaddr_storage *ss)
 			err = 0;
 			break;
 		}
-		if (rp->ai_family == AF_INET6) {
+		if (isipv6 && rp->ai_family == AF_INET6) {
 			memcpy(ss, (struct sockaddr_in6 *)(rp->ai_addr), sizeof(struct sockaddr_in6));
 			err = 0;
 			break;
@@ -177,7 +177,7 @@ static int query_server(char *srv)
 			return -1;	/* Fatal error, cannot even create a socket? */
 		}
 	}
-	int he = getaddrbyname(srv, &ss);
+	int he = getaddrbyname(srv, &ss, isipv6);
 	if (he) {
 		syslog(LOG_DAEMON | LOG_ERR, "Failed resolving server %s: %s\n", srv, strerror(errno));
 		close(sd);
