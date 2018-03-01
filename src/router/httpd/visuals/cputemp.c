@@ -325,6 +325,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, " / ");
 			}
 			websWrite(wp, "ath%d %d &#176;C", i, temp / 1000);
+			found = 1;
 		}
 	}
 	if (!found && !cpufound)
