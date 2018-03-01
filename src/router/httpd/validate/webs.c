@@ -1563,7 +1563,6 @@ static void deltunvalue(char *valuename, int tun)
 	nvram_unset(name);
 }
 
-
 void add_tunnel(webs_t wp)
 {
 	int tunnels = nvram_geti("oet_tunnels");
@@ -1581,7 +1580,6 @@ void add_tunnel(webs_t wp)
 	default_set("peers", "0");
 #undef default_set
 }
-
 
 void del_tunnel(webs_t wp)
 {
@@ -1632,6 +1630,7 @@ void del_tunnel(webs_t wp)
 	nvram_seti("oet_tunnels", tunnels);
 
 }
+
 #ifdef HAVE_WIREGUARD
 void del_peer(webs_t wp)
 {

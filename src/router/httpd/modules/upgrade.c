@@ -266,7 +266,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			if (!strncmp(buf, "HDR0", 4)) {	// check for "trx"
 				char *write_argv_buf[8];
 				eval("mkdir", "-p", "/tmp/new_root");
-				eval("mount","-n","-t","tmpfs","none","/tmp/new_root");
+				eval("mount", "-n", "-t", "tmpfs", "none", "/tmp/new_root");
 				eval("mkdir", "-p", "/tmp/new_root/tmp");
 				write_argv_buf[0] = "update-prepare.sh";
 				write_argv_buf[1] = upload_fifo;
