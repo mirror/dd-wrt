@@ -1,0 +1,151 @@
+From bargi@dots.physics.orst.edu Thu Aug 31 23:42 MET 1995
+Received: from faui45.informatik.uni-erlangen.de (root@faui45.informatik.uni-erlangen.de [131.188.34.45]) by immd4.informatik.uni-erlangen.de with ESMTP
+	id XAA14775 (8.6.12/7.4f-FAU);; Thu, 31 Aug 1995 23:42:15 +0200
+Received: from dots.physics.orst.edu (bargi@dots.PHYSICS.ORST.EDU [128.193.96.106]) by uni-erlangen.de with ESMTP
+	id XAA03048 (8.6.12/7.4f-FAU); for <screen@uni-erlangen.de>; Thu, 31 Aug 1995 23:42:03 +0200
+Received: (from bargi@localhost) by dots.physics.orst.edu (8.6.11/8.6.9) id OAA15627; Thu, 31 Aug 1995 14:41:47 -0700
+From: Hadi Bargi Rangin <bargi@dots.physics.orst.edu>
+Message-Id: <199508312141.OAA15627@dots.physics.orst.edu>
+Subject: README.DOTSCREEN
+To: screen@uni-erlangen.de
+Date: Thu, 31 Aug 1995 14:41:47 -0700 (PDT)
+Cc: bargi@dots.physics.orst.edu (Hadi Bargi Rangin)
+X-Mailer: ELM [version 2.4 PL24]
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset=US-ASCII
+Content-Length: 5423
+Status: RO
+
+Hallo,
+
+   leider war readme file fuer dotscreen nicht in unserem dotscreen-Packet, 
+deshalb schicke ich es Euch nachtraeglich.  Nachdem Ihr unseren packet
+getestet habt, koennen wir Euch anrufen und vielleicht mehr ueber die
+Einzelnheiten sprechen, ob wir unsere Weiterentwicklung koordinieren
+wollen.
+
+Danke,
+
+Gruss,
+Hadi
+
+===============================================================================
+Quick introduction to dotscreen
+-------------------------------
+
+1. Introduction
+2. Is dotscreen different as screen?
+3. Installation instructions
+4. Functions description
+5. Further development
+
+
+1. Introduction
+=============== 
+
+Dotscreen, is a system which allow a person direct access to unix via
+a braille display. The emphasis is on direct, because the braille
+display is connected directly to the serial port on the unix
+machine. You no longer must use a dos machine running a terminal
+emulation logged into a unix machine.  Dotscreen is built on top of
+screen, a powerful full-screen window manager for unix tty terminals.
+Screen keeps track of what is being displayed in each window that it
+is managing so that it can easily switch back and forth between these
+windows. Dotscreen makes this stored window information available via
+a braille display. Dotscreen only allows access to tty terminal
+sessions, it does not allow access to X-Windows, however, it will run
+in an xterm window. Currently, it works with the TSI Navigator 40 and
+the TSI PowerBraille 40 braille displays. We plan to support other
+displays as demand and information about other displays is made
+available to us
+
+2. Is dotscreen different than screen?
+======================================
+
+All of screens functions still work in dotscreen. A few of the
+functions are not accessible via braille, but we expect to remedy that
+in future releases.
+
+3. Installation instructions
+============================
+
+Please read the INSTALL file for full installation instructions.
+In addition to those instructions, note that you must create
+a .screenrc file and that file must contain the type of braille
+display that you are using and the serial device that the display
+is connected to. A minimal .screenrc file should contain something
+like the following four lines, (these are only examples, please
+customize them for your configuration)
+
+
+# example of .screenrc when using  braille display
+bd_start_braille on
+bd_type  powerbraille_40
+bd_port  /dev/ttyS0
+bd_braille_table /home/gardner/us-braille.tbl
+# end of example
+
+
+4. Functions description
+========================
+
+The basic operation of screen is described in README.  The braille
+navigation commands are similar to commands usually found on dos
+braille screenreaders. Also, because dotscreen is built on top of
+screen, the user can switch back and forth easily between many running
+applications.  The braille commands can be changed any time after
+starting screen using the internal screen "C-a :" command line.  All
+braille commands begin with "bd_"; following is the list of braille
+commands:
+
+bd_start_braille on/off      # Starts/stops using braille features on screen
+bd_link on/off               # links/unlinks braille cursor to/from screen cursor
+bd_bell on/off               # turn on/off sending bell-signal to terminal
+bd_scroll on/off             # enables/disables scrolling
+bd_skip on/off               # skip/don't skip balnk lines
+bd_width <integer-value>     # number of braille cells that user want to use,
+                             # this value is always <= total number of cells
+bd_ncrc <interger-value>     # number of cells displayed on the right side 
+                             # of physical cursor (default = 1)   
+bd_info  <integer-value>     # displays braille/screen cursor position 
+                             # depending on its value, (no info: 0, only 
+                             # bc-info: 1, only sc-info: 2, bc- and sc-info: 3
+bd_port <serial-device>      # serial port which braille display is connected to
+bd_braille_table <bl-table>  # braille table to be used. German, US and GS 
+                             # braille tables are provided
+bd_type <braille-display-type> 
+                             # braille display type being used     
+
+Note: currently valid value for some parameters:
+bd_type: 
+ 1. navigator_40 
+ 2. powerbraille_40.
+
+bd_braille_table:
+ 1. gr-braille.tbl     German braille code
+ 2. us-braille.tbl     US computer braille code
+ 3. gs-braille.tbl     GS braille code
+
+Since the braille tables are in files, you should give the full
+pathnames of the files either in .screenrc or using the
+internal screen "C-a :" command line.
+
+5. Further development
+======================
+
+As mentioned above, currently Dotscreen works with Telesensory braille
+displays the PowerBraille and the Navigator because Telesensory has
+given us the information needed to program their braille display. We
+plan to add support for other braille displays when and if we get the
+requisite information from the braille display manufacturer. 
+Also some things such as cursor navigation from the braille display
+have not been implemented. If you find a feature missing that
+you wish to have, please contact us.
+
+This software has been developed within the Science Access Project at
+Oregon State University under the direction of John Gardner.
+
+Authors:   Hadi Bargi Rangin (bargi@dots.physics.orst.edu)
+	   Bill Barry (barryb@dots.physics.orst.edu)
+

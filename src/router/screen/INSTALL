@@ -1,0 +1,114 @@
+Installation of GNU screen.
+
+
+0.) This instruction is quite lengthy
+-------------------------------------
+... and there are still important items near the end. Start here:
+Unpack. Screen comes as a compressed tar archive. You need gzip to 
+uncompress.  And... well, you probably already managed that step, 
+when you are reading this.
+
+For general documentation on the coding and usage standards this
+distributions follows, see the GNU standards document on
+https://www.gnu.org/prep/standards/, especially the `Makefile
+Conventions', `Configuration', and `User Interfaces' sections.
+
+0.) autogen.sh
+--------------
+First, run ./autogen.sh. This will create configure file that you can use.
+This should be already done, so you can skip this step.
+
+1.) configure & config.status
+-----------------------------
+Run ./configure. This should create a reasonable Makefile and a config.h file
+suited for your machine. Rename config.status to reflect the architecture 
+(hostname) where it was built. To reconfigure quickly for that architecture
+just run that config.status file.
+If this process fails, try to find out what configure did do and what it
+should have checked.
+And then please report a bug (https://savannah.gnu.org/bugs/?group=screen
+or mail screen-devel@gnu.org).
+Actually the initial Makefile that comes with the distribution just runs
+configure -- thus you can start by typing 'make' right after unpacking.
+You will be prompted to run 'make' again, which will really make screen.
+
+2.) Makefile & config.h
+-----------------------
+Look through the Makefile & user configuration section in config.h and check
+pathnames. Change them to suit your installation requirements. Usually 
+sysadmins discuss the location of SOCKDIR, whether it should be in /tmp or 
+not. At least it must be on a filesystem that supports sockets/fifos.
+SOCKDIR must not point into an AFS (Andrew File System) mounted directory. 
+If you are uncertain about your NFS implementation, use a UFS directory for 
+SOCKDIR. Personally, I favour a users home directory and recommend the the 
+/tmp/ area. 
+The path for ETCSCREENRC may also need to be adapted.
+
+3.) how to actually compile 
+---------------------------
+Run 'make'. Screen should compile without too many warnings :)
+The creation of term.h, comm.h, tty.c or osdef.h may fail on some machines
+for some odd reason. (E.g. the sed under SCO-unix is known to be 
+case-insensitive and breaks term.h.) If so, please mail a short description 
+of the problem to screen-devel@gnu.org and use the files ending in .dist 
+as a replacement (or in case of osdef.h retry with an empty file).
+You can then try 'make install' (if you dare).
+
+4.) where to install
+--------------------
+You may well run screen from your private binary directory and with a 
+private socket directory like $HOME/.screen. But to have a full featured
+screen and (from a users point of view) more secure pty's you should
+consult a system administrator and discuss installing screen setuid-root
+in some globally accessible directory like /usr/local/bin.
+
+Consider this, when deciding whether you install screen setuid-root:
+- On some machines root privileges are required to open pty's. 
+- Pty's should be owned by the user, so that she can do chmod to prevent
+  intruder attacks. The PTYs used by screen will remain world read-writable
+  if screen is not installed setuid-root.
+- Some commands only work properly when the pty is owned by the user.
+  These include mesg and biff.
+- The ^At feature may need to lseek and read the kernel file to retrieve 
+  the load average. 
+- On most machines utmp slots can only be created/manipulated with root
+  privileges. Users will appear to be logged on the primary terminal
+  instead of the screen windows, if screen is not installed setuid-root.
+- Multi-user screen sessions are only allowed when screen has a root-s-bit.
+- If screen sockets of multiple users are kept in one directory (e.g. 
+  /tmp/screens), this directory must be world writable when screen is not
+  installed setuid-root. Any user can remove or abuse any socket then.
+  
+
+5.) doc/screen.1 & doc/screen.texinfo
+-------------------------------------
+The man page doc/screen.1 should go to /usr/local/man/man1, or some similar
+directory. It should format nicely with nroff -man. If it does not, then
+try removing extra dots with: sed -e 's/^\.\././' < screen.1 | nroff -man 
+The info page doc/screen.texinfo contains basically the same information as
+the man-page, we may have missed one or another thing in one of the files.
+If so, mail me.
+
+6.) etc/screenrc & etc/etcscreenrc
+----------------------------------
+The files screenrc and etc/etcscreenrc are instructive samples that
+demonstrate what can/should be done from your private .screenrc and from
+$ETCSCREENRC -- do not just copy them. Read them.  Look through the 
+etcscreenrc file for system wide defaults that you like to set. e.g. 
+autodetach off, startup_message off, vbell on, ...
+Since version 3.2.15 the screenrc file syntax changed slightly. All rc files
+from previous versions should be run through the 'newsyntax' script that comes 
+with this package.
+If and only if you want to install screen as a console multiplexer, look
+at the *.sample files and what 'make cscreen' suggests.
+
+7.) terminfo/screeninfo.src & terminfo/screencap
+------------------------------------------------
+Every now and then we update the termcap/terminfo entries for screen. 
+E.g. keycodes were added in 3.6.0 -- thus you check that your termcap/terminfo
+database is up to date. See the README in the terminfo subdirectory.
+
+8.) have fun
+------------
+To get an idea what the basic screen commands are, read the file README.
+Request snail mail address for liquid and solid donations. :-)

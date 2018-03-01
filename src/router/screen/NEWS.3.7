@@ -1,0 +1,39 @@
+
+
+                  ----------------------------
+                   What's new in screen-3.7 ?
+                  ----------------------------
+
+* Color support. Screen understands the following capabilities:
+      AF (setaf) = Set foreground color (ANSI compatible)
+      AB (setab) = Set background color (ANSI compatible)
+      AX         = Does understand ANSI set default fg/bg color
+                   (\E[39m / \E[49m)
+    The tweaks for the color xterm would be:
+      termcap  xterm 'AF=\E[3%dm:AB=\E[4%dm'
+      terminfo xterm 'AF=\E[3%p1%dm:AB=\E[4%p1%dm'
+
+* New 'digraph' command (bound to ^A^V)
+  ^A^Va" or ^A^V0344 input an a-umlaut
+
+* activity/bell message strings can now include the window title:
+    %t - title
+    %n - number (a single % still works)
+
+* 'defhstatus' command to give everey window a default
+  hardstatus line. ^E is used as a string escape instead of %
+  (see above). Try 'defhstatus "Screen: window ^E (^Et)"'
+
+* Input parser changed to understand '^' (see ^E above).
+
+Note that the linux color xterm has a stupid bug: the characters
+get the color of the cursor, therefore if you change color and move
+the cursor around all the characters will get the new color...
+Here is a patch:
+    pub/utilities/screen/color_xterm_patch
+Btw.: rxvt works fine.
+
+* Optional Braille support. If you can read Braille and have one of
+  the devices listed in README.DOTSCREEN, please compile with
+  -DHAVE_BRAILLE and let us know if this feature is useful.
+

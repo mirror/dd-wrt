@@ -1,0 +1,205 @@
+                  -------------------------------
+                   What's new in screen-3.9.15 ?
+                  -------------------------------
+
+* unicode combining character support
+
+* new encoding: chinese GBK
+
+* new 'backtick' command and string escape to embed command
+  output into e.g. the hardstatus line
+
+
+                  -------------------------------
+                   What's new in screen-3.9.13 ?
+                  -------------------------------
+
+* altscreen support from Gurusamy Sarathy
+
+* new command "maxwin" to set a limit on the number of windows
+
+* new keys in copy&paste mode: 'B' and 'E'
+
+
+                  -------------------------------
+                   What's new in screen-3.9.11 ?
+                  -------------------------------
+
+* windowlist, bound to ^A"
+
+* support for other encodings, e.g. big5, koi8r, cp1251
+    new commands 'encoding', 'defencoding'
+    'register', 'readreg', 'readbuf', 'writebuf' now understand
+    an extra encoding parameter
+
+* support for double utf-8 characters
+
+* lots of new string escapes and extensions to existsing ones:
+    %LD, %LM, %Lw, %W, %-w, %+w, %H, %f, %F, %l, %=, %<, %>
+
+* new commands: 'source', 'eval', 'deflog', 'ignorecase', 'setsid'
+
+* command key classes: 'bind', 'command' and 'help' understand
+  a '-c <class>' parameter. See the man page for examples
+
+* new login state: always - don't remove slot even if screen gets
+  detached
+
+* 256 color support (experimental)
+
+* configurable time format string (for ^At)
+
+* config option to use localized month/week names
+
+* new option '-h' for hardcopy: also dump the scrollback buffer
+
+
+                  ------------------------------
+                   What's new in screen-3.9.9 ?
+                  ------------------------------
+
+* new '-X' option to send commands to screen sessions.
+
+    screen -X echo Hi...
+
+* added a possibility to change the attributes/color in caption or
+  hardstatus strings:
+
+    caption always "%3n %{r}%t%{-}%? @%u%?%? %{g}[%h]%{-}%?"
+
+* new 'dinfo' command to show what screen thinks about your terminal.
+
+* new 'attrcolor' command to map attributes to color codes:
+    attrcolor u "-u b"
+    attrcolor b "r"
+
+* support for UTF-8: new commands 'utf8', 'defutf8' to change the
+  encoding of a window, plus a '-U' option to tell screen that
+  your terminal sends/receives UTF-8 codes.
+
+* support for 16 colors.
+
+
+                  ------------------------------
+                   What's new in screen-3.9.8 ?
+                  ------------------------------
+
+* new command 'resize' to resize regions (aka split windows), try:
+    bind = resize =
+    bind + resize +1
+    bind - resize -1
+    bind _ resize max
+
+* new argument for 'focus': up, down, top, bottom
+
+* X11 mouse tracking support
+
+* Support for the "new color model", aka "background color erase":
+    the bce/defbce commands change the color model of the current
+    window/new windows.
+
+* experimental rxvt OSC sequence support (used to set a background
+  picture or to change the default colors), disabled by default.
+
+
+                  ----------------------------
+                   What's new in screen-3.9 ?
+                  ----------------------------
+
+* real multiuser support
+    A window can now be displayed on more than one attached displays.
+    Screen does all the necessary clipping if the window size doesn't
+    fit the display.
+    New command:
+      ^AF - fit the window size into the display size.
+
+* split screen support
+    A display may now host multiple windows.
+    New commands:
+      ^AS - split horizontally. This add another region to the display
+      ^A<Tab> - move the focus to the next region
+      ^AX - kill the current region
+      ^AQ - kill all other regions
+
+* hardstatus emulation support
+    The last line of the display may now be used as a hardstatus
+    line if the terminal doesn't have the 'hs' capability.
+    New commands:
+      hardstatus [always]lastline
+      hardstatus [always]message
+      hardstatus [always]ignore
+
+* configurable window seperator and hardstatus strings
+    The window (region) seperator and the hardstatus can be set to an
+    arbitrary string containing screen's % escape sequences.
+    The window's hardstatus is just another escape sequence, '%h'.
+    New commands:
+      hardstatus string [string]
+      caption string [string]
+    The default strings are "%h" (hardstatus) and "%3n %t" (caption).
+
+* permanent window seperator
+    The window seperator can be set to stay on screen even if
+    the display contains only one region
+    New commands:
+      caption always
+      caption splitonly
+
+* many new escapes
+    %c - current time HH:MM (*CHANGE*: this was %w in screen-3.7)
+    %C - current time HH:MM in 24h format
+    %l - the load of the system
+    %h - hardstatus of the window
+    %w - all window names
+    %W - all window names except the current window
+    %u - all other users on this window
+    %? - the part to the next %? is displayed only if an escape
+         expands to an nonempty string.
+    %: - "else" part of %?
+    Some escapes like %c may be qualified with a '0' (like %0c)
+    to make screen use '0' instead of space as a filler.
+    Others understand a length qualifier, like %3n.
+    If escapes like the current time are used as hardstatus/caption
+    string screen will update them so that you can always have
+    the current time onscreen.
+    *CHANGE* ~ is no longer used as bell character, use ^G instead!
+
+* logfile timestamps and flush timeout
+    New commands:
+      logfile flush <secs>
+      logtstamp [on|off]
+      logtstamp string [string]
+      logtstamp after [secs]
+
+* configurable breaktype
+    You can now choose one of TIOCSBRK, TCSBRK, tcsendbreak.
+    New commands:
+      breaktype
+      defbreaktype
+
+* other new commands:
+    hstatus - set the window's hardstatus
+    defslowpaste
+    defsilence
+
+* optional builtin telnet.
+    This is useful if screen is used as frontend to a terminal
+    multiplexor. Use //telnet to access the builtin telnet program,
+    as in: 'screen //telnet host [port]'
+
+* remote detach and reattach change:
+    '-d' is now ignored if the screen is already detached and you
+    want to reattach. You can also use '-RR' to make screen use
+    the first session found if more than one session is available.
+    Thus '-d -RR' or '-x -RR' always gets you a screen.
+
+* support for history compaction
+    You can tell screen to suppress trailing blank lines when
+    scolling up text into the history buffer. (Wayne Davison)
+    New command:
+      compacthist
+
+* optional Braille support. If you can read Braille and have one of
+    the devices listed in README.DOTSCREEN, please compile with
+    -DHAVE_BRAILLE and let us know if this feature is useful.
+

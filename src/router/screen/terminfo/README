@@ -1,0 +1,20 @@
+
+This directory contains various file for termcap/terminfo installation
+and testing:
+
+screencap		Termcap entry for screen. Add it to /etc/termcap.
+			On NetBSD, you should run /usr/bin/cap_mkdb afterwards.
+
+screeninfo.src		Terminfo entry. Use 'tic screeninfo.src'
+			to install (Sun: /usr/5bin/tic).
+
+checktc.c		Termcap/info test program. Checks margin
+			handling and other things.
+
+8bits			Some chars from the ISO 8859-1 charset.
+
+test.txt		Test file for alternate charset.
+
+tetris.c		The popular game, by John Tromp. This is one of
+			the winners of the 1989 IOCCC contest.
+

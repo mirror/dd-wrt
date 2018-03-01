@@ -1,0 +1,46 @@
+#!/bin/sh
+cd /tmp
+umask 022
+
+CC=cc
+CPP=cpp
+PATH="$PATH:/lib"
+
+TEMP=def$$
+trap 'rm -f ${TEMP}*; trap 0; exit' 0 1 2 3 15
+
+set `type $CC`
+q=$#
+set x `type $CC`
+shift $q
+cc=$1
+
+set `type $CPP`
+q=$#
+set x `type $CPP`
+shift $q
+cpp=$1
+
+strings - "$cc" 2>/dev/null | tr ' ' '\012' > ${TEMP}.x
+
+if test -x "$cpp"; then
+strings - "$cpp" 2>/dev/null | tr ' ' '\012' >> ${TEMP}.x
+else
+echo "Warning: cpp not found."
+fi
+
+sort < ${TEMP}.x | uniq | awk '
+/^-D[A-Za-z_][A-Za-z_0-9]*$/ {
+		printf("#ifdef %s\n", substr($0,3))
+		printf("\"%s\": %s\n", substr($0,3), substr($0,3))
+		print "#endif"
+	}
+/^[A-Za-z_][A-Za-z_0-9]*$/ {
+		printf("#ifdef %s\n", $0)
+		printf("\"%s\": %s\n", $0, $0)
+		print "#endif"
+	}
+' > ${TEMP}.c
+
+echo "Defines in cc are:"
+cc -E ${TEMP}.c | sed -n -e 's/"\([^:]*\)":/\1:/p' | sort | uniq

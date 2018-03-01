@@ -1,0 +1,102 @@
+
+  [If you just got the screen package, it pays to read the file INSTALL]
+  [This intro only describes the most common features to get you started]
+  [A full description of all features is contained in the source package]
+
+
+
+Short introduction to GNU screen.
+
+Send bugreports, fixes, enhancements, t-shirts, money, beer & pizza to 
+                          screen-devel@gnu.org
+
+Screen provides you with an ANSI/vt100 terminal emulator, which can multiplex
+up to 10 pseudo-terminals. On startup, it executes $SHELL in window 0.
+Then it reads $HOME/.screenrc to learn configuration, keybindings, and
+possibly open more windows.
+
+  C-a ?		(help)		Show all keybindings.
+
+  C-a c		(screen)	Create new windows.
+
+  C-a SPACE	(next)		Advance to next window (with wraparound).
+
+  C-a C-a	(other)		Toggle between the current and previously
+				displayed windows.
+
+  C-a 0		(select n)	Switch to window n=0 ... 9.
+   ...
+  C-a 9		
+
+  C-a w		(windows)	Show a list of window names in the status line.
+
+  C-a a		(meta)		Send a literal C-a/C-s/C-q to the
+  C-a s		(xoff)		process in the window.
+  C-a q		(xon)		For instance, emacs uses C-a and C-s.
+
+  C-a l		(redisplay)	Redraw this window.
+
+  C-a W		(width)		Toggle between 80 & 132 columns mode. 
+
+  C-a L		(login)		Try to toggle the window's utmp-slot.
+
+  C-a z		(suspend)	Suspend the whole screen session.
+
+  C-a x		(lockscreen)	Execute /usr/bin/lock, $LOCKCMD or a 
+				built-in terminal lock.
+
+  C-a H		(log)		Log stdout of window n to screenlog.n.
+
+  C-a C-[	(copy)		Start copy mode.  Move cursor with h,j,k,l.
+				Set 2 marks with SPACE or y.  Abort with ESC.
+				(C-[ is ESC.)  Preceeding second mark with
+				an a appends the text to the copy buffer.
+
+  C-a C-]	(paste)		Output copy buffer to current window's stdin.
+
+  C-a <		(readbuf) 	Read the copy buffer from /tmp/screen-exchange.
+  C-a >		(writebuf)	Write the copy buffer to /tmp/screen-exchange.
+
+  C-a d		(detach)	Detach screen. All processes continue and may
+				spool output to their pty's, but screen
+				disconnects from your terminal.  
+
+  C-a D D	(pow_detach)	Power detach.  Disconnect like C-a d but also
+				kill the parent shell.
+
+  C-a K		(kill)		Kill a window and send SIGHUP to its process
+				group.  Per default this would be C-a C-k,
+				but it is redefined in the demo .screenrc
+				(think of killing a whole line in emacs).
+
+  C-a : 	(colon)		Online configuration change.
+
+See the man page or TeXinfo manual for many more keybindings and commands.
+
+screen -r [pid.tty.host|tty.host]
+  Reattach to a specific detached session. The terminal emulator
+  reconfigures according to your $TERMCAP or $TERM settings.
+  When you have multiple screens detached, you must supply the session
+  name.
+
+screen -R reattaches to a detached session or (if none) creates a new
+  session.
+
+screen -d [pid.tty.host|tty.host]
+  Detach a screen session remotely. Has the same effect as typing 'C-a d'
+  on the controlling terminal. 'screen -D' will power-detach.
+
+screen -list
+screen -ls
+screen -wipe
+  Show all available sessions and their status.  Use -wipe to remove
+  DEAD sessions.
+
+  If sockets are missing, you may send a SIGCHLD to its 'SCREEN'
+  process and the process will re-establish the socket (think of 
+  someone cleaning /tmp thoroughly).
+
+screen -h 200
+  Starts a new screen session and sets the number of lines in the scrollback
+  buffer to 200. The default is 100 lines.
+

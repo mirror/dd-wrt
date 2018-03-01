@@ -1,0 +1,119 @@
+
+                  ----------------------------
+                   What's new in screen-3.5 ?
+                  ----------------------------
+
+
+* Texinfo manpage! Thanks to Jason Merrill.
+
+* Screen now has a very large 'configure' script. If you have
+  problems with the resulting configuration please send mail to
+  screen@uni-erlangen.de.
+
+* Stackable overlay planes.
+  All commands are available even if you work with an overlay. Thus
+  you can be in copy/paste mode on several windows!
+
+* Unification of key bindings and screen commands. All keys now generate
+  commands.
+
+* Screen now reads/writes only in asyncronous mode.
+
+* Ansi parser speedup code resulting in much faster output of text.
+
+* Changed the rc file syntax. Commands now directly affect the current
+  window. The default settings are changed with 'def...' commands.
+  The 'set' keyword no longer exists.
+  Please run the 'newsyntax' script on your old screenrc files!
+
+* Emacs style isearch added to copy mode. Try ^A ESC ^R screen ^R ^R
+  to locate the last three occurences of the word 'screen' in the
+  history buffer.
+
+* New command 'silence'. Alarms the user whenever there was inactivity
+  for a specified amount of time on a certain window.
+  Useful if you want to wait for a compilation to end.
+
+* Much better margin handling:
+  Screen now handles autowrapped lines correctly in the redisplay and
+  copy/paste functions.
+
+* New commands for pastebuffer management:
+  'copy_reg' copies the pastebuffer to a register,
+  'ins_reg' pastes a register,
+  'register' fills a register with a string,
+  'process' stuffs a register into strings input queue.
+
+* Autonuke feature. Flush the output buffer if the window gets
+  cleared. Enable this with 'autonuke on'.
+
+* Modifications to save memory: Empty attribute and font lines don't
+  get allocated. This is very useful if you have a lage scrollback.
+
+* Multi display support:
+  You can now attach from more than one terminal to a session with
+  the '-x' option.
+
+* New option '-S' to specify socket name.
+
+* Experimental multiuser support added:
+  You can start screen in multiuser Mode by prepending the socket
+  name with a '/' (or by the command 'multiuser on').
+  If another user wants to attach to the screen session, he can do
+  this by prepending the socketname with 'screenuser/'.
+  Of course he must be in the access control list for a successful
+  attach (see the acladd/acldel command).
+  
+* Extension to the 'screen' command: You can now specify tty lines
+  instead of programs. This can be used for console management.
+  Added the command 'break' to send a break to the tty line.
+  Not really a new feature, but terminal initialisation  now works
+  on suns.
+
+* Input/output filters added. This has been implemented to allow the
+  user to configure an open tty line, but got soon exended to allow
+  all sorts of filters. For more information read the explanation
+  of the 'exec' command in the man page and check the 'fdpat.ps'
+  document.
+
+* Screen can now be started detached (screen -d -m -S sockname).
+  This is useful if you want to start screen in your /etc/rc file
+  (e.g. as a console multiplexer)
+
+* Console grabbing added ('console on' command). 
+
+* Windows can now be selected by akas, too. (Per default bound to the
+  >'< key.)
+
+* New terminal capabiliteise CS/CE for cursorkey control.
+
+* setenv/unsetenv commands added.
+
+* Expansion of environment variables ($VAR) and terminal capabilities
+  ($:TC:) in the screenrc files and detach messages.
+  Example: pow_detach_msg "Session of \$LOGNAME \$:cr:\$:nl:ended."
+   
+* New commands:
+  'hardcopydir' and 'logdir' to change the output directories,
+  'partial' and 'allpartial' to make screen only refresh the line
+  containing the cursor if a window is selected (useful for slow
+  modem connections).
+
+* Cleanup of the provided termcap/terminfo file. Please install
+  the new one!
+
+* The program 'terminfo/checktc.c' does a visual check of a
+  termcap/terminfo entry. Please try it before calling screen and
+  in a screen session.
+
+* LOTS of bugfixes and code cleanup.
+
+Thanks to all the beta testers who helped porting screen to at least
+the following platforms: Ultrix, SunOS, Solaris, BSD43, linux, NEWSOS,
+Irix, OSF/1, Harris CX/UX, hpux, dynix/ptx, AIX.
+And even more thanks to the brave who attempted to use the 'exec'
+command features.
+
+    Donnate patches, bugreports, suggestions, money, beer & pizza to
+            screen@uni-erlangen.de
+
