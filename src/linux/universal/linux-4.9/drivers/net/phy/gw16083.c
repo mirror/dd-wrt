@@ -121,13 +121,15 @@ static int gw16083_read_port_sfp(struct i2c_client *client,
 /* read switch port register from port0-6 */
 u16 read_switch_port(struct phy_device *pdev, int port, u8 regaddr)
 {
-	return pdev->bus->read(pdev->bus, MV_BASE + port, regaddr);
+	struct mii_bus *bus = pdev->mdio.bus;
+	return bus->read(bus, MV_BASE + port, regaddr);
 }
 
 /* write switch port register to port0-6 */
 int write_switch_port(struct phy_device *pdev, int port, u8 regaddr, u16 val)
 {
-	return pdev->bus->write(pdev->bus, MV_BASE + port, regaddr, val);
+	struct mii_bus *bus = pdev->mdio.bus;
+	return bus->write(bus, MV_BASE + port, regaddr, val);
 }
 
 /*
@@ -137,7 +139,8 @@ int write_switch_port(struct phy_device *pdev, int port, u8 regaddr, u16 val)
  */
 int read_switch_port_phy(struct phy_device *pdev, int port, u8 regaddr)
 {
-	struct mv88e1111_priv *priv = dev_get_drvdata(&pdev->dev);
+	struct mii_bus *bus = pdev->mdio.bus;
+	struct mv88e1111_priv *priv = dev_get_drvdata(&bus->dev);
 	u16 reg;
 	int i;
 
@@ -146,9 +149,9 @@ int read_switch_port_phy(struct phy_device *pdev, int port, u8 regaddr)
 	reg = SMIBUSY | SMIMODE22 | SMIOP_READ;
 	reg |= port << DEVADDR;
 	reg |= regaddr << REGADDR;
-	pdev->bus->write(pdev->bus, MV_GLOBAL2, MV_SMI_PHY_COMMAND, reg);
+	bus->write(bus, MV_GLOBAL2, MV_SMI_PHY_COMMAND, reg);
 	for (i = 0; i < 10; i++) {
-		reg = pdev->bus->read(pdev->bus, MV_GLOBAL2,
+		reg = bus->read(bus, MV_GLOBAL2,
 				      MV_SMI_PHY_COMMAND);
 		if (!(reg & (1<<15)))
 			break;
@@ -157,7 +160,7 @@ int read_switch_port_phy(struct phy_device *pdev, int port, u8 regaddr)
 	/* timeout */
 	if (i == 10)
 		return 0xffff;
-	reg = pdev->bus->read(pdev->bus, MV_GLOBAL2, MV_SMI_PHY_DATA);
+	reg = bus->read(bus, MV_GLOBAL2, MV_SMI_PHY_DATA);
 	return reg;
 }
 
@@ -168,18 +171,19 @@ int read_switch_port_phy(struct phy_device *pdev, int port, u8 regaddr)
  */
 int write_switch_port_phy(struct phy_device *pdev, int port, u8 addr, u16 reg)
 {
-	struct mv88e1111_priv *priv = dev_get_drvdata(&pdev->dev);
+	struct mii_bus *bus = pdev->mdio.bus;
+	struct mv88e1111_priv *priv = dev_get_drvdata(&bus->dev);
 	int i;
 
 	dev_dbg(&priv->client->dev, "write_phy: port%d reg=0x%02x val=0x%04x\n",
 		port, addr, reg);
-	pdev->bus->write(pdev->bus, MV_GLOBAL2, MV_SMI_PHY_DATA, reg);
+	bus->write(bus, MV_GLOBAL2, MV_SMI_PHY_DATA, reg);
 	reg = SMIBUSY | SMIMODE22 | SMIOP_WRITE;
 	reg |= port << DEVADDR;
 	reg |= addr << REGADDR;
-	pdev->bus->write(pdev->bus, MV_GLOBAL2, MV_SMI_PHY_COMMAND, reg);
+	bus->write(bus, MV_GLOBAL2, MV_SMI_PHY_COMMAND, reg);
 	for (i = 0; i < 10; i++) {
-		reg = pdev->bus->read(pdev->bus, MV_GLOBAL2,
+		reg = bus->read(bus, MV_GLOBAL2,
 				      MV_SMI_PHY_COMMAND);
 		if (!(reg & (1<<15)))
 			break;
@@ -195,21 +199,25 @@ int write_switch_port_phy(struct phy_device *pdev, int port, u8 addr, u16 reg)
 /* read a scratch register from switch */
 inline u8 read_switch_scratch(struct phy_device *pdev, u8 reg)
 {
-	pdev->bus->write(pdev->bus, MV_GLOBAL2, MV_SCRATCH_MISC, (reg << 8));
-	return pdev->bus->read(pdev->bus, MV_GLOBAL2, MV_SCRATCH_MISC) & 0xff;
+	struct mii_bus *bus = pdev->mdio.bus;
+
+	bus->write(bus, MV_GLOBAL2, MV_SCRATCH_MISC, (reg << 8));
+	return bus->read(bus, MV_GLOBAL2, MV_SCRATCH_MISC) & 0xff;
 }
 
 /* write a scratch register to switch */
 inline void write_switch_scratch(struct phy_device *pdev, u8 reg, u8 val)
 {
-	pdev->bus->write(pdev->bus, MV_GLOBAL2, MV_SCRATCH_MISC,
+	struct mii_bus *bus = pdev->mdio.bus;
+	bus->write(bus, MV_GLOBAL2, MV_SCRATCH_MISC,
 			 (1 << 15) | (reg << 8) | val);
 }
 
 /* enable or disable an SFP's TXEN signal */
 static int enable_sfp_txen(struct phy_device *pdev, int port, bool enable)
 {
-	struct mv88e1111_priv *priv = dev_get_drvdata(&pdev->dev);
+	struct mii_bus *bus = pdev->mdio.bus;
+	struct mv88e1111_priv *priv = dev_get_drvdata(&bus->dev);
 	u8 gpio;
 	int bit;
 
@@ -236,7 +244,8 @@ static int enable_sfp_txen(struct phy_device *pdev, int port, bool enable)
 static int config_mv88e1111_port_sfp(struct phy_device *pdev, int port,
 				     bool sfp)
 {
-	struct mv88e1111_priv *priv = dev_get_drvdata(&pdev->dev);
+	struct mii_bus *bus = pdev->mdio.bus;
+	struct mv88e1111_priv *priv = dev_get_drvdata(&bus->dev);
 	u16 reg;
 
 	if (port != 5 && port != 6)
@@ -284,7 +293,8 @@ static int config_mv88e1111_port_sfp(struct phy_device *pdev, int port,
 #if !IS_ENABLED(CONFIG_NET_DSA_MV88E6352) && defined(PORT_POWER_CONTROL)
 static int enable_switch_port(struct phy_device *pdev, int port, bool enable)
 {
-	struct mv88e1111_priv *priv = dev_get_drvdata(&pdev->dev);
+	struct mii_bus *bus = pdev->mdio.bus;
+	struct mv88e1111_priv *priv = dev_get_drvdata(&bus->dev);
 	u16 reg;
 
 	/* power up port */
@@ -578,23 +588,24 @@ mv88e6176_config_init(struct phy_device *pdev)
 static void
 mv88e6176_remove(struct phy_device *pdev)
 {
-	struct mv88e1111_priv *priv = dev_get_drvdata(&pdev->dev);
+	struct mii_bus *bus = pdev->mdio.bus;
+	struct mv88e1111_priv *priv = dev_get_drvdata(&bus->dev);
 
 	dev_dbg(&priv->client->dev, "%s", __func__);
 
 	destroy_workqueue(priv->workq);
 #if !IS_ENABLED(CONFIG_NET_DSA_MV88E6352)
-	device_remove_file(&pdev->dev, &dev_attr_lan1);
-	device_remove_file(&pdev->dev, &dev_attr_lan2);
-	device_remove_file(&pdev->dev, &dev_attr_lan3);
-	device_remove_file(&pdev->dev, &dev_attr_lan4);
-	device_remove_file(&pdev->dev, &dev_attr_lan5);
-	device_remove_file(&pdev->dev, &dev_attr_lan6);
+	device_remove_file(&bus->dev, &dev_attr_lan1);
+	device_remove_file(&bus->dev, &dev_attr_lan2);
+	device_remove_file(&bus->dev, &dev_attr_lan3);
+	device_remove_file(&bus->dev, &dev_attr_lan4);
+	device_remove_file(&bus->dev, &dev_attr_lan5);
+	device_remove_file(&bus->dev, &dev_attr_lan6);
 #endif
-	device_remove_file(&pdev->dev, &dev_attr_lan5_sfp);
-	device_remove_file(&pdev->dev, &dev_attr_lan6_sfp);
-	device_remove_file(&pdev->dev, &dev_attr_lan5_mode);
-	device_remove_file(&pdev->dev, &dev_attr_lan6_mode);
+	device_remove_file(&bus->dev, &dev_attr_lan5_sfp);
+	device_remove_file(&bus->dev, &dev_attr_lan6_sfp);
+	device_remove_file(&bus->dev, &dev_attr_lan5_mode);
+	device_remove_file(&bus->dev, &dev_attr_lan6_mode);
 	sysfs_remove_link(kernel_kobj, "gw16083");
 }
 
@@ -612,6 +623,7 @@ mv88e6176_remove(struct phy_device *pdev)
 static int
 mv88e6176_probe(struct phy_device *pdev)
 {
+	struct mii_bus *bus = pdev->mdio.bus;
 	int port;
 	int ret = 0;
 	u32 id, reg;
@@ -621,12 +633,12 @@ mv88e6176_probe(struct phy_device *pdev)
 	struct net_device *netdev = NULL;
 #endif
 
-	dev_dbg(&pdev->dev, "%s: addr=0x%02x bus=%s:%s gw16083_client=%p\n",
-		__func__, pdev->addr, pdev->bus->name, pdev->bus->id,
+	dev_dbg(&bus->dev, "%s: addr=0x%02x bus=%s:%s gw16083_client=%p\n",
+		__func__, pdev->mdio.addr, bus->name, bus->id,
 		gw16083_client);
 
 	/* In single-chip addressing mode the MV88E6176 shows up on 0x10-0x16 */
-	if (pdev->addr != MV_BASE)
+	if (pdev->mdio.addr != MV_BASE)
 		return 0;
 
 	/* i2c driver needs to be loaded first */
@@ -635,7 +647,7 @@ mv88e6176_probe(struct phy_device *pdev)
 	dev = &gw16083_client->dev;
 
 	/* gw16083 has MV88E1676 hanging off of i210 mdio bus */
-	if (strcmp(pdev->bus->name, "igb_enet_mii_bus") != 0)
+	if (strcmp(bus->name, "igb_enet_mii_bus") != 0)
 		return 0;
 
 	/* verify Port5/Port6 have an MV88E1111 PHY hanging off them */
@@ -663,7 +675,7 @@ mv88e6176_probe(struct phy_device *pdev)
 		    (netdev->perm_addr[2] == 0x12))
 		{
 			switch_plat_data.netdev = &netdev->dev;
-			switch_plat_data.chip[0].host_dev = &pdev->bus->dev;
+			switch_plat_data.chip[0].host_dev = &bus->dev;
 			break;
 		}
 	}
@@ -723,7 +735,7 @@ mv88e6176_probe(struct phy_device *pdev)
 
 	pdev->irq = PHY_POLL;
 
-	priv = devm_kzalloc(&pdev->dev, sizeof(*priv), GFP_KERNEL);
+	priv = devm_kzalloc(&bus->dev, sizeof(*priv), GFP_KERNEL);
 	if (!priv)
 		return -ENOMEM;
 	memset(priv, 0, sizeof(*priv));
@@ -731,27 +743,27 @@ mv88e6176_probe(struct phy_device *pdev)
 	priv->client = gw16083_client;
 	priv->port5.port = 5;
 	priv->port6.port = 6;
-	dev_set_drvdata(&pdev->dev, priv);
+	dev_set_drvdata(&bus->dev, priv);
 
 	/* register sysfs API */
 #if !IS_ENABLED(CONFIG_NET_DSA_MV88E6352)
-	ret |= device_create_file(&pdev->dev, &dev_attr_lan1);
-	ret |= device_create_file(&pdev->dev, &dev_attr_lan2);
-	ret |= device_create_file(&pdev->dev, &dev_attr_lan3);
-	ret |= device_create_file(&pdev->dev, &dev_attr_lan4);
-	ret |= device_create_file(&pdev->dev, &dev_attr_lan5);
-	ret |= device_create_file(&pdev->dev, &dev_attr_lan6);
+	ret |= device_create_file(&bus->dev, &dev_attr_lan1);
+	ret |= device_create_file(&bus->dev, &dev_attr_lan2);
+	ret |= device_create_file(&bus->dev, &dev_attr_lan3);
+	ret |= device_create_file(&bus->dev, &dev_attr_lan4);
+	ret |= device_create_file(&bus->dev, &dev_attr_lan5);
+	ret |= device_create_file(&bus->dev, &dev_attr_lan6);
 #endif
-	ret |= device_create_file(&pdev->dev, &dev_attr_lan5_sfp);
-	ret |= device_create_file(&pdev->dev, &dev_attr_lan6_sfp);
-	ret |= device_create_file(&pdev->dev, &dev_attr_lan5_mode);
-	ret |= device_create_file(&pdev->dev, &dev_attr_lan6_mode);
+	ret |= device_create_file(&bus->dev, &dev_attr_lan5_sfp);
+	ret |= device_create_file(&bus->dev, &dev_attr_lan6_sfp);
+	ret |= device_create_file(&bus->dev, &dev_attr_lan5_mode);
+	ret |= device_create_file(&bus->dev, &dev_attr_lan6_mode);
 
 	if (unlikely(ret))
-		dev_err(&pdev->dev, "Failed creating attrs\n");
+		dev_err(&bus->dev, "Failed creating attrs\n");
 
 	/* Add a nice symlink to the real device */
-	ret = sysfs_create_link(kernel_kobj, &pdev->dev.kobj, "gw16083");
+	ret = sysfs_create_link(kernel_kobj, &bus->dev.kobj, "gw16083");
 
 	INIT_DELAYED_WORK(&priv->work, mv88e6176_work);
 	priv->workq = create_singlethread_workqueue("gw16083");
@@ -780,7 +792,6 @@ static struct phy_driver mv88e6176_phy_driver = {
 	.config_init	= &mv88e6176_config_init,
 	.config_aneg	= &mv88e6176_config_aneg,
 	.read_status	= &mv88e6176_read_status,
-	.driver		= { .owner = THIS_MODULE },
 };
 
 /*
@@ -993,7 +1004,7 @@ static int gw16083_probe(struct i2c_client *client,
 	}
 	gw16083_client = client;
 
-	ret = phy_driver_register(&mv88e6176_phy_driver);
+	ret = phy_driver_register(&mv88e6176_phy_driver, THIS_MODULE);
 	if (ret)
 		dev_err(&client->dev,
 			"failed to register mv88e6176 phy driver: %d\n", ret);
