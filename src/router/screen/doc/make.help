@@ -1,0 +1,51 @@
+######
+######
+###### The following lines should be obsolete because of the 'configure' script.
+###### It is here only for reference if 'configure' needs human help.
+######
+
+
+### If you choose to compile with the tried and true:
+#CC= cc
+#CFLAGS= -O
+#CFLAGS= -g 
+### gcc specific CFLAGS:
+#CC= gcc
+# If your system include files are bad, don't use -Wall
+#CFLAGS= -O6 -g #-Wall 
+#CFLAGS = -g -fstrength-reduce -fcombine-regs -finline-functions #-Wall
+
+### On some machines special CFLAGS are required:
+#M_CFLAGS=
+#M_CFLAGS= -D__NetBSD__	# NetBsd Machines like this (a.kalb@rrze)
+#M_CFLAGS= -Dapollo -A cpu,mathchip -A nansi	# Apollo DN3000/4000/4500
+#M_CFLAGS= -DISC -D_POSIX_SOURCE		# isc
+#M_CFLAGS= -systype bsd43 -DMIPS		# mips
+#M_CFLAGS= -fforce-mem -fforce-addr\
+# -fomit-frame-pointer -finline-functions -bsd 	# NeXT
+#M_CFLAGS= -qlanglvl=ansi			# RS6000/AIX
+#M_CFLAGS= -qlanglvl=ansi -D_AIX32		# RS6000/AIX 3.2
+#M_CFLAGS= -ansi				# sgi/IRIX 3.x ansi 
+#M_CFLAGS= -xansi				# sgi/IRIX 4.x ext ansi 
+#M_CFLAGS= -YBSD				# Ultrix 4.x
+#M_CFLAGS= -DSVR4=1	# Bob Kline rvk@blink.att.com 80386 Unix SVR4.0
+#M_CFLAGS= -D_CX_UX	# Ken Beal kbeal@amber.ssd.csd.harris.com Harris CX/UX
+#M_CFLAGS= -K pentium	# Thanh Ma tma@encore.com Unixware, SVR4-2
+
+### Choose one of the LIBS setting below:
+#LIBS= -ltermcap -lc -lsocket -linet -lsec -lseq	# Sequent/ptx
+#LIBS= -lcurses -lelf -lcrypt -lsocket -lnsl		# Solaris, when it sucks
+#LIBS= -ltermcap 			# SunOS, Linux, Apollo,
+#					  gould_np1, NeXT, Ultrix
+#LIBS= -ltermcap -lelf			# SVR4
+#LIBS= -ltermlib -linet -lcposix	# isc
+#LIBS= -ltermcap -lmld			# mips (nlist is in mld)
+#LIBS= -ltermlib -lsun -lmld #-lc_s	# sgi/IRIX
+#LIBS= -lcurses				# RS6000/AIX
+#LIBS= -lcrypt_d -ltinfo		# sco32
+#LIBS= -lcrypt_i -ltinfo		# sco32
+#LIBS= -lcrypt -lsec			# sco322 (msilano@sra.com)
+#LIBS= -ltermcap -lcrypt.o -ldir -lx	# SCO XENIX 2.3.4
+#LIBS= -ltermcap -lcrypt -ldir -l2.3 -lx	# SCO UNIX XENIX cross dev.
+#LIBS= -ltermcap -lelf -lcrypt -lsocket -lnet -lnsl	# Bob Kline SVR4
+#LIBS= -lcurses  -lelf -lcrypt -lgen	# Thanh Ma, Unixware, SVR4-2

@@ -1,0 +1,595 @@
+Version 4.6.2 (23/10/2017):
+  * Fixes:
+	- revert changes to cursor position restore behavour (bug #51832)
+	- set freed pointer to NULL (bug #52133)
+	- documentation fixes
+	- fix windowlist crashes (bug #43054 & #51500)
+
+Version 4.6.1 (10/07/2017):
+  * Fixes:
+	- problems with starting session in some cases
+	- parallel make install
+	- segfault when querying info on nonUTF locale (bug #51402)
+
+Version 4.6.0 (28/06/2017):
+  * Update Unicode wide tables to 9.0 (bug #50044)
+  * Support more serial speeds
+  * Improved namespaces support
+  * Migrate from fifos to sockets
+  * Start viewing scrollback at first line of output (bug #49377)
+
+Version 4.5.1 (25/02/2017):
+  * Fixes:
+	- logfile permissions problem (CVE-2017-5618)
+	- SunOS build problem (bug #50089)
+	- FreeBSD core dumps (bug #50143)
+
+Version 4.5.0 (10/12/2016):
+  * Allow specifying logfile's name via command line parameter '-L'
+  * Fixes:
+	- broken handling of "bind u digraph U+" (bug #48691)
+	- crash with long $TERM (bug #48983)
+	- crash when bumping blank window
+	- build for AIX (bug #49149)
+	- %x improperly separating arguments
+	- install with custom DESTDIR (bug #48370)
+
+Version 4.4.0 (19/06/2016):
+  * Support up to 24 function keys
+  * Fix runtime issues
+  * 'logfile' command, starts logging into new file upon changing
+
+Version 4.3.1 (28/06/2015):
+  * Fix resize bug
+
+Version 4.3.0 (13/06/2015):
+  * Introduce Xx string escape showing the executed command of a window
+  * Implement dead/zombie window polling, allowing for auto reconnecting
+  * Allow setting hardstatus on first line
+
+  New Commands:
+  * 'sort' command sorting windows by title
+  * 'bumpleft', 'bumpright' - manually move windows on window list
+  * 'collapse' removing numbering 'gaps' between windows, by renumbering
+  * 'windows' command now accepts arguments for use with querying
+
+Version 4.2.1 (28/04/2014):
+  * allow for terminal with long $TERM (up to 32 characters)
+  * allow to use long logins
+  * documentation fixes
+  * runtime fixes
+
+Version 4.2.0 (17/04/2014):
+  New Commands:
+  * 'unbindall' to unbind all commands
+  * 'up', 'down', 'left', 'right' sub-commands for 'focus'
+  * 'rendition' to specify rendition to use in caption/hardstatus for
+    window-names that have bell/monitor/silence/so turned on.
+  * 'layout', with the following sub-commands
+	- 'title'
+	- 'number'
+	- 'autosave' ('autosave on' or 'autosave off')
+	- 'new'
+	- 'save' ('save <name>')
+	- 'select'
+	- 'next'
+	- 'prev'
+	- 'attach'
+	- 'show'
+	- 'remove'
+	- 'dump'
+  * 'group' for moving window(s) into a group.
+  * 'defmousetrack' and 'mousetrack', to turn on/off mouse-tracking for
+    displays. It's turned off by default. With mouse-tracking turned on, it's
+    possible to switch to a region ('focus') using mouse clicks. It's also
+    possible to select a text region in copy-mode using a mouse click to place
+    a mark and the scroll wheel to scroll through the buffer. Additional
+    features might be to allow clicking on window-titles in the caption to
+    switch to that window.
+  * All commands prefixed '@' are treated as 'quiet', i.e. '@'-prefixed commands
+    do not trigger any display messages.
+
+  Changed Commands:
+  * '-v' parameter to 'split' command for vertical splits.
+  * 'sorendition' deprecated in favour of 'rendition so'.
+  * 'digraph' can take a second parameter to specify custom digraphs. For
+    example,
+	'digraph >= ≥' or 'digraph >= U+2265'
+    Using '0' as the second parameter will remove the digraph.
+  * 'stuff' will prompt for input if there's nothing to stuff.
+  * The argument to ":number" can be prefixed with '+' or '-' to use it as a
+    relative argument.
+  * '-g' parameter to 'windowlist' to show nested list of windows.
+  * '//group' parameter to 'screen' to create a grouped window.
+  * 'blankerprg' shows the currently set command on no argument.
+  * 'maxwin' can now be used to increase the number of maximum windows.
+
+  .screenrc:
+  * $PID expands to the PID of the screen session.
+  * $PWD expands to the current working directory of the session.
+  * $STY expands to the session name.
+  * Tilde-expansion in pathnames (e.g. for the 'source' command)
+  * C-style escapes can be used (e.g. "\n" to get a newline with 'stuff')
+  * '%p' in caption/hardstatus string expands to the PID of the backend, and
+    '%+p' expands to the PID of the frontend (display).
+  * '%S' in caption/hardstatus string expands to the session name.
+  * '%P' in the caption string evaluates to true if the region is in copy mode.
+  * '%E' in the caption string evaluates to true if the escape character has
+    currently been pressed.
+
+  Window List:
+  * Nested views when there are window groups (with 'windowlist -g').
+  * Press 'm' to toggle the most-recent view.
+  * Press 'g' to toggle nestedness.
+  * Press 'a' to view all windows in the list.
+  * Press '/' to search in the list.
+  * Press ',' and '.' to re-order windows in the list.
+  * Press 'K' to kill a window (requires confirmation).
+
+  Display List:
+  * Press 'd' to detach a display, 'D' to power-detach.
+
+  Others:
+  * Start using 'ChangeLog' for logging changes again.
+  * Terminfo update for 256-color support.
+  * Multiple input history (partially from Romain Francoise).
+  * vi-like fFtT;, searching in copy mode.
+  * In copy mode, search in reverse direction when 'N' is pressed.
+  * Tab-completion for command input.
+  * Some more readline-like bindings in input mode (e.g. ^W, ^D, ^P, ^N etc.)
+  * Fix displaying unicode characters in the caption/hardstatus on UTF8 locale.
+  * A revamped displays list (for 'displays' command)
+  * Increased default maximum number of windows from 40 to 100.
+  * Increased number color/attribute changes in caption/hardstatus string from 16 to 256.
+  * Some commands can be remotely queried using the -Q command-line flag.
+
+  In-Progress:
+  * Scripting support (thanks to Google Summer of Code 2009 project by Rui Guo)
+
+  Developers:
+  * Alexander Naumov <alexander_naumov@opensuse.org>
+  * Amadeusz Sławiński <amade@asmblr.net>
+  * Juergen Weigert <jw@suse.de>
+  * Michael Schroeder <mls@suse.de>
+  * Micah Cowan <micah@cowan.name>
+  * Sadrul Habib Chowdhury <sadrul@users.sourceforge.net>
+
+  Contributors:
+  * Clavelito <maromomo@hotmail.com>
+  * Dick <dick@mrns.nl>
+  * Gabriel <g2p.code@gmail.com>
+  * Benjamin Andresen <bandresen@gmail.com>
+  * Takeshi Banse <takebi@laafc.net>
+  * Maarten Billemont <lhunath@gmail.com>
+  * Curtis Brown <mrbrown8@juno.com>
+  * Cyril Brulebois <kibi@debian.org>
+  * Trent W Buck <trentbuck@gmail.com>
+  * Stephane Chazelas <stephane_chazelas@yahoo.fr>
+  * Kees Cook <kees@ubuntu.com>
+  * Thomas Dickey <tom@invisible-island.net>
+  * Christian Ebert <blacktrash@gmx.net>
+  * Geraint Edwards <gedge-lists-screen@yadn.org>
+  * Romain Francoise <romain@orebokech.com>
+  * Alexander Gattin <xrgtn@yandex.ru>
+  * Emanuele Giaquinta <e.giaquinta@glauco.it>
+  * Yi-Hsuan Hsin <mhsin@mhsin.org>
+  * Kipling Inscore <kinscore@synaptics.com>
+  * Chris Jones <cjns1989@gmail.com>
+  * Max Kalashnikov <mmt@maxkalashnikov.com>
+  * Steve Kemp <steve@steve.org.uk>
+  * Ryan Niebur <ryan@debian.org>
+  * Jan Christoph Nordholz <hesso@pool.math.tu-berlin.de>
+  * William Pursell <bill.pursell@gmail.com>
+  * Michael Scherer <misc@mandriva.org>
+  * Enrico Scholz <enrico.scholz@informatik.tu-chemnitz.de>
+  * Peter Teichman <peter@teichman.org>
+
+30.10.94
+
+This is a quick overview of screen's life story. But it is not up
+to date.  You'll find more details about the revision history in
+patchlevel.h and newer changes are only documented there. 
+
+31.7.93	-- 3.5.1
+================
+
+* writelock, number, paste with arg, at, zombie and wall commands added.
+
+* Access Control Lists and more multi-user support added.
+
+* select and setenv commands enhanced.
+
+* socket.c: motorola bugfix.
+
+* configure.in: --srcdir support.
+
+* configure.in: recognize alpha and SUNOS3 correctly.
+
+* doc/screen.texinfo: Documentation by Jason Merrill.
+
+13.05.93 -- 3.3.3
+=================
+
+* defautonuke, silence commands added.
+
+* exec command added.
+
+* hardcopydir, logdir commands added.
+
+* Made a superb configure script.
+
+* BROKEN_PIPE, SOCK_NOT_IN_FS added for braindamaged systems.
+
+* multi display, multi user support.
+
+* process command. CS, CE switch cursorkeycap in application mode.
+
+* lockprg pow_detaches on SIGHUP
+
+* ins_reg copy_reg commands.
+
+* new screenrc syntax.
+
+* split up screen.c and ansi.c
+
+21.10.92 -- 3.2.9
+================
+
+* ChangeLog: replaces CHANGES and is in GNUish format.
+
+* Makefile (CFLAGS, M_CFLAGS, LIBS, OPTIONS): moved user config here, 
+	merged all Makefiles, GNUified
+
+* socket.c (FindSocket): ignoring bad files in $SCREENDIR
+
+* config/config.linux: ported.
+
+* utmp.c, exec.c, loadav.c: split apart from screen.c/fileio.c
+
+15.07.92 -- 3.2.8
+=================
+
+* ansi.c (WriteString): automatic character set switching for 8bit support
+
+3.2.3-3.2.7
+===========
+
+* concept changes: Display structure, Multi attacher 
+
+...
+
+3.2.2
+=====
+
+* screen.c (main): -m option, "_M_ake always new session", ignore $STY
+
+* screen.c (main):  -Ssessionname 
+* fileio.c (RcLine): ^A:sessionname give your session a nicer name.
+
+* screen.c (main): supporting detached startup via screen -d -m -Ssockname
+
+* fileio.c (stripdev): moved, could not compile
+
+* overlay.h: "stackable overlay concept"
+
+* search.c: vi-like / and ? search AND emacs-like ^S and ^R incremental search
+	in scrollback
+
+* mark.c: I meant BSDI not BSD
+
+* concept change: struct display and struct newwin introduced.
+
+* screen.c (main): -v option prints version.
+
+* screen.c (MakeWindow): ^A:screen /dev/ttya opens a character device 
+	instead of forking ShellProg with a pty pair.
+
+3.2.0
+=====
+
+Ultrix port
+
+Irix 3.3 SGI port
+
+shadow password suite supported
+
+data loss on stdin overflow fixed
+
+"refresh off" keyword added.
+
+3.1.1
+------
+
+Screen is now under the GNU copyleft license. See file COPYING.
+
+command line option -A. $LINES, $COLUMNS improved.
+
+C-A : vbellwait <sec>
+
+XENIX support (Ronald Khoo)
+
+SYSV has uname() instead of gethostname().
+
+hpux has setresuid.
+
+ClearScreen now saves image to scrollback buffer.
+
+mips has setenv.
+
+numerous bugfixes.
+
+3.1 finally released version.
+=============================
+
+3.0.99: last minute changes:
+----------------------------
+
+MIPS support (J{rvinen Markku)
+
+SVR4 support (Marc Boucher)
+
+secopen() secfopen() calls replace stat/access/open.
+C-a : echo improved.
+'register int'
+
+Changes up to Screen 3.0 Patchlevel 7
+=====================================
+
+Better terminfo support: Screen now checks if a termcap/info
+entry which the name "screen.$TERM" does exist. Look in the
+"VIRTUAL TERMINAL" section of the manual for more details.
+
+Many security improvements.
+
+ScrollRegion() bug fixed which caused slow scrolling if AL
+or DL was used.
+
+Pyramid and Ultrix support added. (Tim and Larry)
+  
+ENVIRONMENT support.
+  /local/etc/screenrc checks for $SYSSCREENRC
+  $HOME/.screenrc checks for $ISCREENRC and $SCREENRC
+  /local/screens checks for $ISCREENDIR and $SCREENDIR
+  .screenrc understands ${VAR} and $VAR .
+
+screen 3.0 Patchlevel 6
+=======================
+
+.screenrc:
+  screen now only opens the windows you explicitly ask for. if you 
+  specify none, you still get one window, of course.
+
+screen 3.0. Patchlevel 5
+========================
+
+Ansi prototyping by Christos.
+
+copy mode: CTRL-U / CTRL-D exchanged. code cleanup.
+
+changes to screen 3.0 patchlevel 4
+==================================
+
+markkeys "string"
+  allows to rebind the keys used in copy/history mode.
+  string is made up of pairs "<oldchar>=<newchar>" which are separated
+  by a colon. Oldchar and newchar are either single ascii characters, 
+  or the two character sequence ^x, where x is an ascii character, or
+  a 3 digit octal value prepended with '\'. the string "\040=.:^M=q"
+  rebinds '.' to set marks, and the return rey will abort copy mode.
+
+set scrollback 100
+  resizes the scrollback history buffer to 100 lines. a default of 50
+  is installed. 
+
+A Howard Chu like scrollback history is installed. Many vi-like keys
+  are added to the copy mode. The '?' key reports on cursor position.
+
+screen 3.0 Patchlevel 3
+=======================
+
+WriteString fixed, it did kill the display variable.
+
+Yet another LP bugfix.
+
+non vt100 semi-graphics character support.
+
+waynes patch fixed
+
+screen 3.0 Patchlevel 2
+=======================
+
+wayne patches cursor motion outside scrollregions.
+
+.screenrc 
+  monitor on|off
+
+changes in Screen 3.0 Patchlevel 1
+==================================
+
+screen -wipe
+
+^A : set vbell_msg "Wuff Wuff"
+
+Thousand enhancements: help resizible, copy'n'paste in main
+  socket loop, and no more '\0' hackin'. :WS=\E8;%d;%dt:
+
+screen can now resize windows under sunview.
+
+^A : set crlf on|off
+  effects markroutine join.
+
+screen learned about sized windows under X
+
+screen -ls (-d) -q
+  quiet option. We count the number of detached (attached) sessions and set
+  a return value of 10+n. The -q option inhibits all startup
+  warnings/messages. i.e. screen -R -q may return with code 12 or higher
+  or start a new/old session.
+
+pow_detach_msg "text string"
+  new command, allows messages, terminal reset, etc. on logout caused
+  by pow_detach.
+
+^A : learned a new keyword "set":
+  commands like "login on" , "vbell off", ... affect the default for
+  windows to be created. But commands like "set login off" affect
+  the actual setting of this window. and not the default.
+  such commands may be bound to keys. example: 
+  bind 'O' set login off
+  is valid in your .screenrc as well as typed at the ':' prompt.
+  a bonus is ":set all" which is synonym to ":help".
+  At the Colon prompt also KeyNames can be entered, alothough that makes
+  not always sense.
+
+^A x uses a builtin lockprg, if 
+  a) we don't find our lockprg, or
+  b) user supplies us with the environmet variable LOCKPRG set to "builtin"
+  the builtin locks until your login password is typed. on systems using
+  "shadow password files" you are prompted for a password.
+
+markroutine can append joined.
+
+screen removes the "controlling tty" from utmp while ptys are attached.
+
+markroutine performs CR+NL when '\n' is pressed
+
+screen may die quietly, when no TERMCAP entry for "screen" is
+found, and screen is run under X-windows
+
+_SEQUENT_ marks sequent386_ptx
+
+screen runs now under SunOS4.1.1 (we need setsid()!).
+
+bug in SetForeWindow fixed.
+
+rare markroutine bug fixed.
+
+we dont open every file the attacher tells us.
+
+we have now our wonderful "Wuff, Wuff" visual_bell
+
+we have now the interprocess-communication-buffer. secure version.
+
+'^A =' removes the interprocess-communication-buffer.
+
+markroutine as in 2.1
+
+markroutine: 'a' toggles append mode,
+             '>' like ' ', but immediately WriteFile(DUMP_EXCHANGE) then.
+             'A' like ' ', but first switch to append mode.
+
+.screenrc understands "screen 2:faui09 rlogin faui09 -l jnweiger"
+                  and "password none"
+                  and "vbell [on|off]"
+
+'^A :' allows .screenrc commands "online".
+
+screen now receives new $TERM from attacher, when it is reattached 
+
+MakeClientSocket() fifo version does now test for access.
+
+.screenrc learns "hardstatus {on|off}"
+
+termcap's VB is used for vbell if available.
+
+Attach() code rewritten:
+	screen now lists socket directory, if it does not find a suitable socket
+	screen -d [host.tty] detaches a running screen. 
+
+screen -[ls|list]
+	list all sockets that we find in our sockdir
+
+when the socket has been removed, send a SIGCHLD to the poor SCREEN 
+process and it will try to recover. then try a 'screen -r' again.
+all the socket stuff lives now in an extra file.
+
+Major changes in version 2.4:
+=============================
+
+*  Test version that presents the erlangen extensions from 2.0 in a 2.3
+   screen.
+
+*  window resize support
+
+*  screen locking C-a x
+
+*  support for SYSV
+
+*  password protection
+
+*  copy & paste across screens
+
+*  remote detach and power detach
+
+Major changes in version 2.3:
+
+*  Terminal emulation has been significantly enhanced and bugfixed.
+
+*  We now fully update the last character on the screen for true auto-
+   margin terminals, though there may be some delay before the character
+   can be safely added to the screen.  If your terminal has character
+   insert it will be used to shorten the delay.
+
+*  Added the "termcap" .screenrc command to tweak your terminal's termcap
+   entry AND to customize the termcap generated for the virtual terminals.
+   See also the -L and -O command-line options, and the SCREENCAP environ-
+   ment variable.
+
+*  Fixed screen's character handling when detached or suspended to NOT block
+   the child processes in their windows -- output continues to be processed
+   in the background.
+
+*  Added a.k.a.s (window-name aliases) that allow you to customize the
+   window-information line, including being able to change the name on-
+   the-fly to reflect what's currently running in the window (see the
+   -k option, shellaka command, and ALSO KNOWN AS discussion in the doc).
+
+*  Added the ability to log the output of a window to a file (see the
+   "C-a H" (log) command).
+
+*  Flow-control can now be set for each window and switched interactively
+   (see the "flow" command, -f option, and FLOW CONTROL discussion).
+
+*  Individual windows can be included or excluded from mention in the
+   /etc/utmp file (see the "login" command and -l option).
+
+*  Added an activity monitor, which allows you to have a window watched for
+   the start of any output and alert you when it occurs (see the "C-a M"
+   (monitor) command).
+
+*  Enhanced the information in the window-information line to keep track of
+   windows that have: logging turned on '(L)'; beeped in the background '!';
+   became active while being monitored '@' (see the "C-a w" (windows) command).
+
+*  Added an on-line help display that lists all the commands and their
+   key bindings (see the "C-a ?" (help) command).
+
+*  Extended handling of the beep message (and also the new activity message)
+   to allow '~' to specify a literal beep (see the "beep" and "activity"
+   .screenrc commands).
+
+*  You can now set the default action on receipt of a hangup signal:  detach
+   or terminate (see the "autodetach" .screenrc command).
+
+*  Routing of characters to their virtual terminals has been enhanced to
+   not drop characters nor (in rare circumstances) hang up screen.
+
+*  The NFS compatibility has been enhanced.
+
+Major changes in version 2.0a:
+
+*  Screen allows you to `detach' the "screen" session from the physical
+   terminal and resume it at a later point in time (possibly on a
+   different terminal or in a different login session).
+
+  To get an impression of this functionality do the following:
+
+     - call "screen" and create a couple of windows
+     - type Control-A Control-D (screen terminates; you are back
+       in the shell)
+     - call "screen -r" to resume the detached screen
+
+*  Screen supports multiple character sets and the ISO 2022 control
+   functions to designate and switch between character sets.
+   This allows you, for instance, to make use of the VT100 graphics
+   character set or national character sets.

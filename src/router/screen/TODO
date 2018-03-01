@@ -1,0 +1,7 @@
+- display size adaption (Activate)
+- process.c cleanup via comm splitting
+- writelocks?
+- partial?
+- type into several windows at once (for cluster admins)
+- configurable digraph table
+- command line options should overwrite config files.

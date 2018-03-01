@@ -1,0 +1,71 @@
+#! /bin/sh
+#
+# newsyntax38 -- update a screenrc file from 3.3 to 3.8 syntax
+#
+# Please bring your scripts up to syntax level 3.3 before running this script.
+# Please check all comments after running this script and watch out 
+# for funny passages.
+#
+# * aka and shellaka are replaced by title and shelltitle.
+# 
+# * Pairs of termcap and terminfo commands are folded into a single 
+#   termcapinfo command where possible.
+#
+# * trailing blanks are zapped. Unintentionally.
+#
+# 12.10.95, jnweiger, use at your own risk.
+#
+if [ $# != 1 ]; then
+  echo "usage $0 screenrcfile"
+  echo ""
+  echo "The named file will be updated in place to the syntax of screen 3.8"
+  echo "A backup copy will be written to <screenrcfile>.bak"
+  exit 1;
+fi
+
+#Ultrix 4.2 /bin/sh does not handle "read a < $1" 
+#Dean Gaudet <dgaudet@watdragon.uwaterloo.ca>
+exec < $1
+read a
+
+if [ "$a" = "#3.8" ]; then
+  echo "$1 already updated"
+  exit 0
+fi
+
+rm -f $1.old $1.dups
+
+cp $1 $1.old
+echo "#3.8" > $1
+echo "# Do not remove the above line. This screen rc file was updated" >> $1
+echo "# by the newsyntax script." >> $1
+
+# termcap and terminfo lines can only be folded when there is no parameter
+# expansion in the codes. Parameters are denoted differently in 
+# termcap and termcap syntax. Everything else is identical, I assume.
+# Thus codes not containing '%' can be savely folded.
+
+sed < $1.old > $1.dups \
+-e 's/^\([	 #]*\)aka/\1title/' \
+-e 's/^\([	 #]*\)shellaka/\1shelltitle/' \
+-e 's/^\([	 #]*\)termcap[	 ][	 ]*\([^%]*$\)/\1termcapinfo \2/' \
+-e 's/^\([	 #]*\)terminfo[	 ][	 ]*\([^%]*$\)/\1termcapinfo \2/' \
+-e 's/\\/\\\\/g'
+
+# Oh, my bourne shell seems to gobble backslashes while reading.
+# Thus the sed above duplicates them in advance. 
+# Hope this is not just another silly bash featureism.
+# It still zaps trailing blanks. I do not know why. But that is nice.
+
+exec < $1.dups
+while read a ; do
+  if [ "$a" = "$b" ]; then
+    case "$a" in
+      *termcapinfo*) continue ;;
+    esac
+  fi
+  echo "$a" >> $1
+  b="$a"
+done
+
+rm -f $1.dups

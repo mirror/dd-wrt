@@ -1,0 +1,28 @@
+                  ------------------------------
+                   What's new in screen-4.0.3 ?
+                  ------------------------------
+
+* zombie command has new option 'onerror'
+
+* buffer overflow in resize.c fixed
+
+* minor docu update
+
+* more robust startup
+
+* use setresuid; SendAttachMsg() for fd-passing added; DoCSI enhanced.
+
+                  ------------------------------
+                   What's new in screen-4.0.0 ?
+                  ------------------------------
+
+* new screenrc parser, not 100% compatible.
+
+* screenblanker support: new 'idle', 'blanker', 'blankerprg'
+  commands.
+
+* zmodem support via the 'zmodem' command.
+
+* nonblock code rewritten, nonblock now understands a timeout.
+  new command 'defnonblock'.
+

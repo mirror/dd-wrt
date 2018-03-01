@@ -1,0 +1,17 @@
+
+We test some umlauts and other characters coded in
+the ISO 8859-1 (Latin 1) standard:
+
+umlaut A          Ä                  umlaut a          ä
+umlaut O          Ö                  umlaut o          ö
+umlaut U          Ü                  umlaut u          ü
+sharp s           ß                  paragraph         §
+e + /             é                  e + \             è
+e + ^             ê                  a + \             à
+u + \             ù                  degree            °
+log. not          ¬                  + over -          ±
+<<                «                  >>                »
+fraction 1/2      ½                  fraction 1/4      ¼
+power of 2        ²                  middle dot        ·
+
+---

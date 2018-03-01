@@ -1,0 +1,67 @@
+#!/usr/bin/perl
+
+sub countmsgs {
+  return -1 unless open(M, "<$mbox");
+  my $inhdr = 0;
+  my $cl = undef;
+  my $msgread = 0;
+  my $count = 0;
+  while(<M>) {
+    if (!$inhdr && /^From\s+\S+\s+(?i:sun|mon|tue|wed|thu|fri|sat)\s+(?i:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d+\s/) {
+      $inhdr = 1;
+      $msgread = 0;
+      undef $cl;
+      next;
+    }
+    if ($inhdr) {
+      if (/^content-length:\s+(\d+)/i) {
+	$cl = 0+$1;
+	next;
+      }
+      if (/^status:\s+(\S)/i) {
+	$msgread = 1 unless $1 eq 'N' || $1 eq 'U';
+	next;
+      }
+      if ($_ eq "\n") {
+	$count++ if !$msgread;
+	seek(M, $cl, 1) if defined $cl;
+	$inhdr = 0;
+      }
+    }
+  }
+  close M;
+  return $count;
+}
+
+$| = 1;
+$mbox = $ARGV[0] || $ENV{'MAIL'};
+$oldfmt = $ARGV[1] || "%4d ";
+$newfmt = $ARGV[2] || "\005{Rk}%4d \005{-}";
+
+@oldstat = stat($mbox);
+if (!@oldstat) {
+  print "\005{Rk} ??? \005{-}\n";
+  exit 1;
+}
+$oldcount = 0;
+while(1) {
+  $count = countmsgs($mbox);
+  if ($count == -1) {
+    print "\005{Rk} ??? \005{-}\n";
+  } elsif ($count < $oldcount || $count == 0) {
+    printf "$oldfmt\n", $count;
+  } else {
+    printf "$newfmt\n", $count;
+  }
+  $oldcount = $count;
+  while (1) {
+    @newstat = stat($mbox);
+    if (!@newstat) {
+      print "\005{Rk} ??? \005{-}\n";
+      exit 1;
+    }
+    last if $newstat[7] != $oldstat[7] || $newstat[9] != $oldstat[9];
+    sleep 1;
+  }
+  @oldstat = @newstat;
+}
