@@ -2100,7 +2100,7 @@ void ej_getboottime(webs_t wp, int argc, char_t ** argv)
 {
 	char *end = nvram_get("end_time");
 	if (!end)
-	    return 30;
+		return 30;
 	time_t endtime = atol(end);
 	time_t starttime = nvram_default_geti("start_time", 0);
 	if (starttime <= endtime)
