@@ -303,6 +303,7 @@ include rules/powertop.mk
 include rules/libmbim.mk
 include rules/libmnl.mk
 include rules/wireguard.mk
+include rules/screen.mk
 
 #
 # Generic rules
