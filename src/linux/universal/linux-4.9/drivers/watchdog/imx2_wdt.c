@@ -362,7 +362,7 @@ static void imx2_wdt_shutdown(struct platform_device *pdev)
 		 * We are running, configure max timeout before reboot
 		 * will take place.
 		 */
-		imx2_wdt_set_timeout(wdog, IMX2_WDT_MAX_TIME);
+		imx2_wdt_set_timeout(wdog, 1);
 		imx2_wdt_ping(wdog);
 		dev_crit(&pdev->dev, "Device shutdown: Expect reboot!\n");
 	}
