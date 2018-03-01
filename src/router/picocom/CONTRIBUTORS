@@ -1,0 +1,72 @@
+
+The following people contributed improvements, fixes, suggestions, and
+comments:
+
+- Oliver Kurth (oku@debian.org) contributed bug fixes and the manual
+  page for picocm.
+
+- Julius P. Malkiewicz (julius@sonartech.com.au) contributed FreeBSD
+  portablity fixes, the C-\ command implementation, the UUCP locks
+  implementation, and other minor fixes.
+
+- Pavel Vymetalek (pvymetalek@seznam.cz) contributed the higher
+  baudrates support.
+
+- Niels Moller (nisse@lysator.liu.se) contributed support for
+  non-alphabetic escape keys.
+
+- (lwithers@gmail.com) contributed fixes to select(2) and read(2) error
+  handling.
+
+- (bob.dunlop@xyzzy.org.uk) suggested fix to prevent serial port form
+  becoming controlling terminal.
+
+- Edgar Johansen (edgar@storteig.com) suggested conditionals to enable
+  compilation without UUCP_LOCK_DIR
+
+- Scott Tsai (scott.tw@gmail.com) suggested better UUCP_LOCK_DIR definition
+
+- Josh Handley (https://github.com/jhandley) added support for
+  line-editing, autocompletion and history when entering "send" and
+  "receive" file names. Editing support uses the "linenoise"
+  library. See: https://github.com/jhandley/picocom
+
+- Salvatore Sanfilippo (https://github.com/antirez) is the author of
+  the linenoise line-editing library. See:
+  https://github.com/antirez/linenoise
+
+- From Cody Schafer's (https://gitbub.com/jmesmon) fork originated the
+  idea to add custom baudrate support to picocom. See:
+  https://github.com/jmesmon/picocom
+
+- From Paul Chakravarti's (https://github.com/paulchakravarti) fork
+  orignated the idea to add support for disabling the send- and
+  rceive-file commands, and for not using the shell when executing
+  external programs (to avoid shell escapes). See:
+  https://github.com/paulchakravarti/picocom-noexec
+
+- Vicente Olivert Riera (Vincent.Riera@imgtec.com) contribiuted minor
+  patches
+
+- Peter Bradstreet (peter.bradstreet@oracle.com) helped diagnose
+  input performance problems on overloaded / slow systems.
+
+- Cody Planteen (https://github.com/planteen) contributed the
+  implementation of the toggle-RTS command.
+
+- Joe Merten (https://github.com/JoeMerten) contributed the
+  --lower-rts and --lower-dtr options, custom baudrate support for
+  FreeBSD and macOS, the --logfile option implementation, and several
+  bug-fixes.
+
+- Maciej Grela (https://github.com/mgrela) contributed the initial
+  --initstring  option implementation.
+
+- Baruch Siach (https://github.com/baruchsiach) contributed
+  improvements to the Makefile
+
+- Christopher N. Hesse (https://github.com/raymanfx) contributed the
+  initial Android makefile
+
+- Ben (https://github.com/the-dem) contributed backward compatibility
+  fixes.
