@@ -1,0 +1,260 @@
+# U.S. BRAILLE TABLE
+#
+# Dec  Hex    Braille      Description
+# ------------------------------------------------------------------------
+   0   00    (---4--78)    NUL
+   1   01    (1-----78)    SOH
+   2   02    (12----78)    STX
+   3   03    (1--4--78)    ETX
+   4   04    (1--45-78)    EOT
+   5   05    (1---5-78)    ENQ
+   6   06    (12-4--78)    ACK
+   7   07    (12-45-78)    BEL
+   8   08    (12--5-78)    BS
+   9   09    (-2-4--78)    HT
+  10   OA    (-2-45-78)    LF
+  11   0B    (1-3---78)    VT
+  12   OC    (123---78)    FF
+  13   0D    (1-34--78)    CR
+  14   0E    (1-345-78)    SO
+  15   OF    (1-3-5-78)    SI
+  16   10    (1234--78)    DLE
+  17   11    (12345-78)    DC1
+  18   12    (123-5-78)    DC2
+  19   13    (-234--78)    DC3
+  20   14    (-2345-78)    DC4
+  21   15    (1-3--678)    NAK
+  22   16    (123--678)    SYN
+  23   17    (-2-45678)    ETB
+  24   18    (1-34-678)    CAN
+  25   19    (1-345678)    EM
+  26   1A    (1-3-5678)    SUB
+  27   lB    (-2-4-678)    ESC
+  28   lC    (12--5678)    FS
+  29   1D    (12-45678)    GS
+  30   lE    (---45-78)    RS
+  31   1F    (---45678)    US
+  32   20    (--------)    Space
+  33   21    (-234-6--)    !
+  34   22    (----5---)    "
+  35   23    (--3456--)    #
+  36   24    (12-4-6--)    $
+  37   25    (1--4-6--)    %
+  38   26    (1234-6--)    &
+  39   27    (--3-----)    '
+  40   28    (123-56--)    (
+  41   29    (-23456--)    )
+  42   2A    (1----6--)    *
+  43   2B    (--34-6--)    +
+  44   2C    (-----6--)    ,
+  45   2D    (--3--6--)    -
+  46   2E    (---4-6--)    .
+  47   2F    (--34----)    /
+  48   30    (--3-56--)    0
+  49   31    (-2------)    1
+  50   32    (-23-----)    2 
+  51   33    (-2--5---)    3
+  52   34    (-2--56--)    4
+  53   35    (-2---6--)    5
+  54   36    (-23-5---)    6
+  55   37    (-23-56--)    7
+  56   38    (-23--6--)    8
+  57   39    (--3-5---)    9
+  58   3A    (1---56--)    :
+  59   3B    (----56--)    ;
+  60   3C    (12---6--)    <
+  61   3D    (123456--)    -
+  62   3E    (--345---)    >
+  63   3F    (1--456--)    ?
+  64   40    (---4--7-)    @
+  65   41    (1-----7-)    A
+  66   42    (12----7-)    B
+  67   43    (1--4--7-)    C
+  68   44    (1--45-7-)    D
+  69   45    (1---5-7-)    E
+  70   46    (12-4--7-)    F
+  71   47    (12-45-7-)    G
+  72   48    (12--5-7-)    H
+  73   49    (-2-4--7-)    I
+  74   4A    (-2-45-7-)    J
+  75   4B    (1-3---7-)    K
+  76   4C    (123---7-)    L
+  77   4D    (1-34--7-)    M
+  78   4E    (1-345-7-)    N
+  79   4F    (1-3-5-7-)    O
+  80   50    (1234--7-)    P
+  81   51    (12345-7-)    Q
+  82   52    (123-5-7-)    R
+  83   53    (-234--7-)    S
+  84   54    (-2345-7-)    T
+  85   55    (1-3--67-)    U
+  86   56    (123--67-)    V
+  87   57    (-2-4567-)    W
+  88   58    (1-34-67-)    X
+  89   59    (1-34567-)    Y
+  90   5A    (1-3-567-)    Z
+  91   5B    (-2-4-67-)    [
+  92   5C    (12--567-)    \
+  93   5D    (12-4567-)    ]
+  94   5E    (---45-7-)    ^
+  95   5F    (---4567-)    _
+  96   60    (---4----)    '
+  97   61    (1-------)    a
+  98   62    (12------)    b
+  99   63    (1--4----)    c
+ 100   64    (1--45---)    d
+ 101   65    (1---5---)    e
+ 102   66    (12-4----)    f
+ 103   67    (12-45---)    g
+ 104   68    (12--5---)    h
+ 105   69    (-2-4----)    i
+ 106   6A    (-2-45---)    j
+ 107   6B    (1-3-----)    k
+ 108   6C    (123-----)    l
+ 109   6D    (1-34----)    m
+ 110   6E    (1-345---)    n
+ 111   6F    (1-3-5---)    o
+ 112   70    (1234----)    p
+ 113   71    (12345---)    q
+ 114   72    (123-5---)    r
+ 115   73    (-234----)    s
+ 116   74    (-2345---)    t
+ 117   75    (1-3--6--)    u
+ 118   76    (123--6--)    v
+ 119   77    (-2-456--)    w
+ 120   78    (1-34-6--)    x
+ 121   79    (1-3456--)    y
+ 122   7A    (1-3-56--)    z
+ 123   7B    (-2-4-6--)    {
+ 124   7C    (12--56--)    |
+ 125   7D    (12-456--)    }
+ 126   7E    (---45---)    ~
+ 127   7F    (---456--)    DEL
+ 128   80    (---4---8)    C Cedilla (upper case)
+ 129   81    (1------8)    u Umlaut (lower case)
+ 130   82    (12-----8)    e Acute (lower case)
+ 131   83    (1--4---8)    a Circumflex
+ 132   84    (1--45--8)    a Umlaut (lower case)
+ 133   85    (1---5--8)    a Grave
+ 134   86    (12-4---8)    a Ring (lower case)
+ 135   87    (12-45--8)    c Cedilla (lower case)
+ 136   88    (12--5--8)    e Circumflex
+ 137   89    (-2-4---8)    e Umlaut (lower case)
+ 138   8A    (--2-45-8)    e Grave
+ 139   8B    (1-3----8)    i Umlaut (lower case)
+ 140   8C    (123----8)    i Circumflex
+ 141   8D    (1-34---8)    I Grave
+ 142   8E    (1-345--8)    A Umlaut (upper case)
+ 143   8F    (1-3-5--8)    A Ring (upper case)
+ 144   90    (1234---8)    E Acute (upper case)
+ 145   91    (12345--8)    ae Digraph (lower case)
+ 146   92    (123-5--8)    AE Digraph (upper case)
+ 147   93    (-234---8)    o Circumflex
+ 148   94    (-2345--8)    o Umlaut (lower case)
+ 149   95    (1-3--6-8)    o Grave
+ 150   96    (123--6-8)    u Circumflex
+ 151   97    (-2-456-8)    u Grave
+ 152   98    (1-34-6-8)    y Umlaut
+ 153   99    (1-3456-8)    O Umlaut (upper case)
+ 154   9A    (1-3-56-8)    U Umlaut (upper case)
+ 155   9B    (-2-4-6-8)    Cent
+ 156   9C    (12--56-8)    Pound/Sterling
+ 157   9D    (12-456-8)    Yen
+ 158   9E    (---45--8)    Peseta
+ 159   9F    (---456-8)    Franc
+ 160   A0    (------7-)    a Acute (lower case)
+ 161   Al    (-234-67-)    i Acute (lower case)
+ 162   A2    (----5-7-)    o Acute (lower case)
+ 163   A3    (--34567-)    u Acute (lower case)
+ 164   A4    (12-4-67-)    n Tilde (lower case)
+ 165   A5    (1--4-67-)    N Tilde (upper case)
+ 166   A6    (1234-67-)    Feminine Spanish Ordinal
+ 167   A7    (--3---7-)    Masculine Spanish Ordinal
+ 168   A8    (123-567-)    Inverted Question Mark
+ 169   A9    (-234567-)    Left square corner
+ 170   AA    (1----67-)    Right square corner
+ 171   AB    (--34-67-)    1/2
+ 172   AC    (-----67-)    1/4
+ 173   AD    (--3--67-)    Inverted Exclamation Mark
+ 174   AE    (---4-67-)    Left Double Guillemet
+ 175   AF    (--34--7-)    Right Double Guillemet
+ 176   B0    (--3-567-)    Box [Shade 1]
+ 177   B1    (-2----7-)    Box [Shade 2]
+ 178   B2    (-23---7-)    Box [Shade 3]
+ 179   B3    (-2--5-7-)    Box [top bottom]
+ 180   B4    (-2--567-)    Box [left top bottom]
+ 181   B5    (-2---67-)    Box [LEFT top bottom]
+ 182   B6    (-23-5-7-)    Box [left TOP BOTTOM]
+ 183   B7    (-23-567-)    Box [left BOTTOM]
+ 184   B8    (-23--67-)    Box [LEFT bottom]
+ 185   B9    (--3-5-7-)    Box [LEFT TOP BOTTOM]
+ 186   BA    (1---567-)    Box [TOP BOTTOM]
+ 187   BB    (----567-)    Box [LEFT BOTTOM]
+ 188   BC    (12---67-)    Box [LEFT TOP]
+ 189   BD    (1234567-)    Box [left TOP]
+ 190   BE    (--345-7-)    Box [LEFT top]
+ 191   BF    (1--4567-)    Box [left bottom]
+ 192   CO    (------78)    Box [top right]
+ 193   C1    (-234-678)    Box [left top right]
+ 194   C2    (----5-78)    Box [left right bottom]
+ 195   C3    (--345678)    Box [top right bottom]
+ 196   C4    (12-4-678)    Box [left right]
+ 197   C5    (1--4-678)    Box [left top right bottom]
+ 198   C6    (1234-678)    Box [top RIGHT bottom]
+ 199   C7    (--3---78)    Box [TOP right BOTTOM]
+ 200   C8    (123-5678)    Box [TOP RIGHT]
+ 201   C9    (-2345678)    Box [RIGHT BOTTOM]
+ 202   CA    (1----678)    Box [LEFT TOP RIGHT]
+ 203   CB    (--34-678)    Box [LEFT RIGHT BOTTOM]
+ 204   CC    (-----678)    Box [TOP RIGHT BOTTOM]
+ 205   CD    (--3--678)    Box [LEFT RIGHT]
+ 206   CE    (---4-678)    Box [LEFT TOP RIGHT BOTTOM]
+ 207   CF    (--34--78)    Box [LEFT top RIGHT]
+ 208   DO    (--3-5678)    Box [left TOP right]
+ 209   D1    (-2----78)    Box [LEFT RIGHT bottom]
+ 210   D2    (-23---78)    Box [left right BOTTOM]
+ 211   D3    (-2--5-78)    Box [TOP right]
+ 212   D4    (-2--5678)    Box [top RIGHT]
+ 213   D5    (-2---678)    Box [RIGHT bottom]
+ 214   D6    (-23-5-78)    Box [right BOTTOM]
+ 215   D7    (-23-5678)    Box [left TOP right BOTTOM]
+ 216   D8    (-23--678)    Box [LEFT top RIGHT bottom]
+ 217   D9    (--3-5-78)    Box [left top]
+ 218   DA    (1---5678)    Box [right bottom]
+ 219   DB    (----5678)    Box [Shade 4]
+ 220   DC    (12---678)    Box [box bottom]
+ 221   DD    (12345678)    Box [box right]
+ 222   DE    (--345-78)    Box [box left]
+ 223   DF    (1--45678)    Box [box top]
+ 224   E0    (-------8)    Alpha (lower case)
+ 225   E1    (-234-6-8)    Beta (lower case)
+ 226   E2    (----5--8)    Gamma (upper case)
+ 227   E3    (--3456-8)    Pi (lower case)
+ 228   E4    (12-4-6-8)    Sigma (upper case)
+ 229   E5    (1--4-6-8)    Sigma (lower case)
+ 230   E6    (1234-6-8)    Mu (lower case)
+ 231   E7    (--3----8)    Tau (lower case)
+ 232   E8    (123-56-8)    Phi (upper case)
+ 233   E9    (-23456-8)    Theta (lower case)
+ 234   EA    (1----6-8)    Omega (upper case)
+ 235   EB    (--34-6-8)    Delta (lower case)
+ 236   EC    (-----6-8)    infinity
+ 237   ED    (--3--6-8)    Phi (lower case)
+ 238   EE    (---4-6-8)    Epsilon (lower case)
+ 239   EF    (--34---8)    Intersection
+ 240   F0    (--3-56-8)    Equivalent (Member)
+ 241   F1    (-2-----8)    Plus or minus
+ 242   F2    (-23----8)    Greater than or equal
+ 243   F3    (-2--5--8)    Less than or equal
+ 244   F4    (-2--56-8)    Integral [top]
+ 245   F5    (-2---6-8)    Integral [bottom]
+ 246   F6    (-23-5--8)    Division
+ 247   F7    (-23-56-8)    Approximately equal
+ 248   F8    (-23--6-8)    Small circle
+ 249   F9    (--3-5--8)    Bullet
+ 250   FA    (1---56-8)    Small bullet
+ 251   FB    (----56-8)    Bent Radical
+ 252   FC    (12---6-8)    Power of n
+ 253   FD    (123456-8)    Power of 2
+ 254   FE    (--345--8)    Large square bullet
+ 255   FF    (1--456-8)    blank (hard space)

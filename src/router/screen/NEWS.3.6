@@ -1,0 +1,48 @@
+
+                  ----------------------------
+                   What's new in screen-3.6 ?
+                  ----------------------------
+
+* Input translation! This makes the vt100 emulation complete.
+  As an addition it is now possible to bind any command to any
+  (function-) key. See the man page for more details (bindkey
+  command).
+
+* Status line support. Each window can have a different status line. 
+  Use the ANSI APC string to set the status line, i.e.:
+  <ESC>_<status string><ESC>\
+  (For convenience the xterm sequence is also accepted.)
+  You may want to add
+    termcap  * '' ':hs:ts=\E_:fs=\E\\:ds=\E_\E\\:'
+    terminfo * '' ':hs:ts=\E_:fs=\E\\:ds=\E_\E\\:'
+  to your ~/.screenrc to make screen advertise the hardstatus
+  support.
+  
+* Zombie feature added. Windows now may generate a message (with a
+  timestamp) if they die and stay around until the user presses
+  a key.
+
+* New paste syntax: Paste can now concatenate registers and paste
+  either on screen or in anouther register.
+  This makes the old "ins_reg", "copy_reg" commands obsolete.
+
+* More architecures supported. Screen now runs on AIX3.2.5,
+  Solaris, NeXT and some other exotic platforms.
+
+* Kanji support added. Screen understands JIS, EUC and SJIS coding.
+  This is an experimental feature.
+
+* GR charset switching (ISO 2022) implemented. Can be enabled with
+  the "gr" command.
+
+* C1 sequences implemented (see the "c1" command).
+
+* Tek support from Xiaoguang Zhang. Apply tek.patch if you want to
+  make screen pass tek sequences.
+
+* List of new commands:
+    bindkey, c1, command, defc1, defgr, defkanji, gr, kanji, mapdefault,
+    mapnotnext, maptimeout, pastefont, printcmd, readreg, stuff, zombie
+
+* Lots of other bugs fixed.
+

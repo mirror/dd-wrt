@@ -1,0 +1,64 @@
+#!/bin/sh
+#
+# newsyntax -- update a screenrc file from 3.2 to 3.3 syntax
+#
+# please check all comments after running this script and watch out 
+# for funny passages.
+#
+if [ $# != 1 ]; then
+  echo "usage $0 screenrcfile"
+  exit 1;
+fi
+
+#Ultrix 4.2 /bin/sh does not handle "read a < $1" 
+#Dean Gaudet <dgaudet@watdragon.uwaterloo.ca>
+exec < $1
+read a
+
+if [ ."$a" = '.#3.3' ]; then
+  echo "$1 already updated"
+  exit 0
+fi
+
+cp $1 $1.old
+echo "#3.3" > $1
+echo "# Do not remove the above line. This screen rc file was updated" >> $1
+echo "# by the newsyntax script." >> $1
+sed < $1.old >> $1 \
+-e 's/\([	 #]\)flow/\1defflow/g' \
+-e 's/^flow/defflow/g' \
+-e 's/\([	 #]\)set[ 	]*defflow/\1flow/g' \
+-e 's/^set[ 	]*defflow/flow/g' \
+-e 's/\([	 #]\)mode/\1defmode/g' \
+-e 's/^mode/defmode/g' \
+-e 's/\([	 #]\)set[ 	]*defmode/\1defmode/g' \
+-e 's/^set[ 	]*defmode/defmode/g' \
+-e 's/\([	 #]\)monitor/\1defmonitor/g' \
+-e 's/^monitor/defmonitor/g' \
+-e 's/\([	 #]\)set[	 ]*defmonitor/\1monitor/g' \
+-e 's/^set[	 ]*defmonitor/monitor/g' \
+-e 's/\([	 #]\)login/\1deflogin/g' \
+-e 's/^login/deflogin/g' \
+-e 's/\([	 #]\)set[	 ]*deflogin/\1login/g' \
+-e 's/^set[	 ]*deflogin/login/g' \
+-e 's/\([	 #]\)wrap/\1defwrap/g' \
+-e 's/^wrap/defwrap/g' \
+-e 's/\([	 #]\)set[	 ]*defwrap/\1wrap/g' \
+-e 's/^set[	 ]*defwrap/wrap/g' \
+-e 's/\([	 #]\)scrollback/\1defscrollback/g' \
+-e 's/^scrollback/defscrollback/g' \
+-e 's/\([	 #]\)set[	 ]*defscrollback/\1scrollback/g' \
+-e 's/^set[	 ]*defscrollback/scrollback/g' \
+-e 's/\([	 #]\)refresh/\1allPARtial/g' \
+-e 's/^refresh/allPARtial/g' \
+-e 's/\([	 #]\)redraw/\1allPARtial/g' \
+-e 's/^redraw/allPARtial/g' \
+-e 's/\([	 #]\)set[	 ]*allPARtial/\1PARtial/g' \
+-e 's/^set[	 ]*allPARtial/PARtial/g' \
+-e 's/\([	 #]\)visualbell/\1vbell/g' \
+-e 's/^visualbell/vbell/g' \
+-e 's/PARtial\([ 	]*\)on/partial\1off/g' \
+-e 's/PARtial\([ 	]*\)off/partial\1on/g' \
+-e 's/allPARtial/refresh/g' \
+-e 's/^set[ 	]//g'
+

@@ -1,0 +1,261 @@
+# GS BRAILLE TABLE
+#
+# Dec  Hex    Braille      Description
+# ------------------------------------------------------------------------
+   0   0     (--------)    NUL
+   1   1     (--------)    SOH
+   2   2     (--------)    STX
+   3   3     (--------)    ETX
+   4   4     (--------)    EOT
+   5   5     (--------)    ENQ
+   6   6     (--------)    ACK
+   7   7     (--------)    BEL
+   8   8     (--------)    BS
+   9   9     (--------)    HT
+  10   A     (--------)    LF
+  11   B     (--------)    VT
+  12   C     (--------)    FF
+  13   D     (--------)    CR
+  14   E     (--------)    SO
+  15   F     (--------)    SI
+  16   10    (--------)    DLE
+  17   11    (--------)    DC1
+  18   12    (--------)    DC2
+  19   13    (--------)    DC3
+  20   14    (--------)    DC4
+  21   15    (--------)    NAK
+  22   16    (--------)    SYN
+  23   17    (--------)    ETB
+  24   18    (--------)    CAN
+  25   19    (--------)    EM
+  26   1A    (--------)    SUB
+  27   1B    (--------)    ESC
+  28   1C    (--------)    FS
+  29   1D    (--------)    GS
+  30   1E    (--------)    RS
+  31   1F    (--------)    US
+  32   20    (--------)    space
+  33   21    (-23-5---)    bang
+  34   22    (--3--678)    unidirectional double quote
+  35   23    (----5678)    # (number or hash) symbol
+  36   24    (--34567-)    $
+  37   25    (--34---8)    % symbol
+  38   26    (-23-5-78)    & symbol
+  39   27    (--3-----)    apostrophe
+  40   28    (-23----8)    left parenthesis symbol
+  41   29    (----567-)    right parenthesis symbol
+  42   2A    (--34--7-)    asterisk
+  43   2B    (-2--5-7-)    plus symbol
+  44   2C    (-2------)    comma
+  45   2D    (--3--6--)    dash, also used as over/under bar.
+  46   2E    (-2--56--)    period, decimal point
+  47   2F    (--34--78)    / symbol
+  48   30    (-2-45-78)    zero
+  49   31    (1-----78)    one
+  50   32    (12----78)    two
+  51   33    (1--4--78)    three
+  52   34    (1--45-78)    four
+  53   35    (1---5-78)    five
+  54   36    (12-4--78)    six
+  55   37    (12-45-78)    seven
+  56   38    (12--5-78)    eight
+  57   39    (-2-4--78)    nine
+  58   3A    (-2--5---)    colon
+  59   3B    (-23-----)    semicolon
+  60   3C    (1234567-)    open angle bracket
+  61   3D    (-2--5-78)    equals symbol
+  62   3E    (123456-8)    close angle bracket
+  63   3F    (-23--6--)    question mark
+  64   40    (--345-78)    @ sign
+  65   41    (1-----7-)    A
+  66   42    (12----7-)    B
+  67   43    (1--4--7-)    C
+  68   44    (1--45-7-)    D
+  69   45    (1---5-7-)    E
+  70   46    (12-4--7-)    F
+  71   47    (12-45-7-)    G
+  72   48    (12--5-7-)    H
+  73   49    (-2-4--7-)    I
+  74   4A    (-2-45-7-)    J
+  75   4B    (1-3---7-)    K
+  76   4C    (123---7-)    L
+  77   4D    (1-34--7-)    M
+  78   4E    (1-345-7-)    N
+  79   4F    (1-3-5-7-)    O
+  80   50    (1234--7-)    P
+  81   51    (12345-7-)    Q
+  82   52    (123-5-7-)    R
+  83   53    (-234--7-)    S
+  84   54    (-2345-7-)    T
+  85   55    (1-3--67-)    U
+  86   56    (123--67-)    V
+  87   57    (-2-4567-)    W
+  88   58    (1-34-67-)    X
+  89   59    (1-34567-)    Y
+  90   5A    (1-3-567-)    Z
+  91   5B    (-23--678)    [ symbol
+  92   5C    (1----678)    \ symbol
+  93   5D    (--3-5678)    ] symbol
+  94   5E    (--345-7-)    ^
+  95   5F    (-2---6-8)    _
+  96   60    (--3----8)    opening single quote
+  97   61    (1-------)    a
+  98   62    (12------)    b
+  99   63    (1--4----)    c
+ 100   64    (1--45---)    d
+ 101   65    (1---5---)    e
+ 102   66    (12-4----)    f
+ 103   67    (12-45---)    g
+ 104   68    (12--5---)    h
+ 105   69    (-2-4----)    i
+ 106   6A    (-2-45---)    j
+ 107   6B    (1-3-----)    k
+ 108   6C    (123-----)    l
+ 109   6D    (1-34----)    m
+ 110   6E    (1-345---)    n
+ 111   6F    (1-3-5---)    o
+ 112   70    (1234----)    p
+ 113   71    (12345---)    q
+ 114   72    (123-5---)    r
+ 115   73    (-234----)    s
+ 116   74    (-2345---)    t
+ 117   75    (1-3--6--)    u
+ 118   76    (123--6--)    v
+ 119   77    (-2-456--)    w
+ 120   78    (1-34-6--)    x
+ 121   79    (1-3456--)    y
+ 122   7A    (1-3-56--)    z
+ 123   7B    (123-5678)    { symbol
+ 124   7C    (--34-678)    |
+ 125   7D    (-2345678)    } symbol
+ 126   7E    (--34-67-)    ~
+ 127   7F    (1--4-678)    del, nabla sign
+ 128   80    (--3-5-7-)    negative power indicator
+ 129   81    (--34-67-)    ~
+ 130   82    (--3---78)    opening double quote
+ 131   83    (--34----)    complex fraction line indicator
+ 132   84    (--3-5-78)    left superscript
+ 133   85    (--345678)    start extended math mode
+ 134   86    (-23---7-)    end of line in 2-D array
+ 135   87    (-23--67-)    right arrow sign
+ 136   88    (-23-567-)    proportional to sign
+ 137   89    (-23---78)    ` (grave accent)
+ 138   8A    (-234-678)    integral sign
+ 139   8B    (-23-5678)    identically equals sign
+ 140   8C    (--3-5--8)    < (less) symbol
+ 141   8D    (-2---67-)    > (greater) symbol
+ 142   8E    (123--678)    end extended math mode.
+ 143   8F    (12345678)    infinity sign
+ 144   90    (1--4-6--)    overscript indicator
+ 145   91    (1---56--)    slashed symbol or NOT indicator
+ 146   92    (1--456--)    function indicator
+ 147   93    (---45-7-)    bold symbol indicator
+ 148   94    (---4-67-)    italic symbol indicator
+ 149   95    (---4567-)    special (text default=underlined) symbol indicator
+ 150   96    (------78)    minus sign
+ 151   97    (---4--78)    gothic font symbol indicator
+ 152   98    (----5-78)    divide by sign
+ 153   99    (---45-78)    special font 1 symbol indicator
+ 154   9A    (-----678)    closing double quote
+ 155   9B    (---4-678)    special font 2 symbol indicator
+ 156   9C    (---45678)    special font 3 symbol indicator
+ 157   9D    (-2----78)    times cross sign
+ 158   9E    (-2---678)    left subscript
+ 159   9F    (--3---7-)    end of element in 2-D array
+ 160   A0    (-2-4-6--)    radical indicator
+ 161   A1    (-----67-)    closing single quote
+ 162   A2    (----5---)    In 8 dot code in shapes and as a soft hyphen.
+ 163   A3    (---45---)    To be used for foreign indicators and/or phonetic indicators.
+ 164   A4    (-----6--)    04 never appears in 8 dot code except shapes.
+ 165   A5    (---4-6--)    05 never appears in 8 dot code except shapes.
+ 166   A6    (----56--)    grade 1 indicator in both codes.
+ 167   A7    (---456--)    Converts upper cell to cell + dot-67, other root to root + dot-78.
+ 168   A8    (-------8)    Under user control can indicate hyperlinks or font enhancements or...
+ 169   A9    (---4---8)    start shape beginning with 01 and ending at first root cell
+ 170   AA    (----5--8)    start shape beginning with 02
+ 171   AB    (---45--8)    start shape beginning with 03
+ 172   AC    (-----6-8)    start shape beginning with 04
+ 173   AD    (---4-6-8)    start shape beginning with 05
+ 174   AE    (----56-8)    start shape beginning with 06
+ 175   AF    (---456-8)    start shape beginning with 07
+ 176   B0    (1--4---8)    Copyright sign
+ 177   B1    (1--4-6-8)    partial differential sign
+ 178   B2    (-2---6--)    subscript indicator
+ 179   B3    (1------8)    alpha
+ 180   B4    (12-----8)    beta
+ 181   B5    (12-45--8)    gamma
+ 182   B6    (1--45--8)    delta
+ 183   B7    (1---5--8)    epsilon
+ 184   B8    (1-3-56-8)    zeta
+ 185   B9    (1---56-8)    eta
+ 186   BA    (1--456-8)    theta
+ 187   BB    (-2-4---8)    iota
+ 188   BC    (1-3----8)    kappa
+ 189   BD    (123----8)    lambda
+ 190   BE    (1-34---8)    mu
+ 191   BF    (1-345--8)    nu
+ 192   C0    (1-34-6-8)    xi
+ 193   C1    (1-3-5--8)    omichron
+ 194   C2    (1234---8)    pi
+ 195   C3    (123-5--8)    rho
+ 196   C4    (-234---8)    sigma
+ 197   C5    (-2345--8)    tau
+ 198   C6    (1-3--6-8)    upsilon
+ 199   C7    (12-4---8)    phi
+ 200   C8    (1234-6-8)    chi
+ 201   C9    (1-3456-8)    psi
+ 202   CA    (-2-456-8)    omega
+ 203   CB    (1----67-)    cap Alpha
+ 204   CC    (12---67-)    cap Beta
+ 205   CD    (12-4567-)    cap Gamma
+ 206   CE    (1--4567-)    cap Delta
+ 207   CF    (1---567-)    cap Epsilon
+ 208   D0    (1-3-5678)    cap zeta
+ 209   D1    (1---5678)    cap Eta
+ 210   D2    (1--45678)    cap Theta
+ 211   D3    (-2-4-67-)    cap Iota
+ 212   D4    (1-3---78)    cap kappa 
+ 213   D5    (123---78)    cap lambda
+ 214   D6    (1-34--78)    cap mu 
+ 215   D7    (1-345-78)    cap nu 
+ 216   D8    (1-34-678)    cap xi 
+ 217   D9    (1-3-5-78)    cap omichron 
+ 218   DA    (1234--78)    cap pi
+ 219   DB    (123-5-78)    cap rho
+ 220   DC    (-234--78)    cap sigma
+ 221   DD    (-2345-78)    cap tau
+ 222   DE    (1-3--678)    cap upsilon 
+ 223   DF    (12-4-67-)    cap Phi
+ 224   E0    (1234-678)    cap chi 
+ 225   E1    (1-345678)    cap psi
+ 226   E2    (-2-45678)    cap omega
+ 227   E3    (-2--5--8)    times dot sign
+ 228   E4    (-2-45--8)    small circle sign
+ 229   E5    (-2-4-6-8)    radical sign, not operator
+ 230   E6    (12---6--)    open braille bracket
+ 231   E7    (12-4-6--)    horizontal combination symbol indicator
+ 232   E8    (12--56--)    vertical stack symbol indicator
+ 233   E9    (12-456--)    superimposed combination symbol indicator
+ 234   EA    (12--56-8)    absolute value bar sign
+ 235   EB    (--3-5---)    superscript indicator
+ 236   EC    (--345---)    close braille bracket
+ 237   ED    (--34-6--)    underscript indicator
+ 238   EE    (--3-56--)    start math word indicator
+ 239   EF    (--3456--)    Number indicator (6 dot code)
+ 240   F0    (---4----)    Accent mark
+ 241   F1    (--3--6-8)    ellipses sign
+ 242   F2    (--34-6-8)    dagger, transpose sign
+ 243   F3    (--3-56-8)    left arrow sign
+ 244   F4    (--3456-8)    UK pound
+ 245   F5    (-234-6--)    two dimensional array indicator
+ 246   F6    (1----6--)    simple fraction line indicator
+ 247   F7    (-23-56--)    contraction indicator.
+ 248   F8    (-23456--)    close fraction indicator
+ 249   F9    (-234-6-8)    end of two dimensional array
+ 250   FA    (-23-56-8)    approximately equals sign, single tilde over single bar.
+ 251   FB    (1234-6--)    Large symbol indicator.
+ 252   FC    (123-56--)    open fraction indicator
+ 253   FD    (123456--)    quantity indicator
+ 254   FE    (------7-)    prime mark
+ 255   FF    (---4--7-)    script font symbol indicator
+

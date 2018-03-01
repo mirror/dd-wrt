@@ -1,0 +1,253 @@
+                                                                    jw  21.10.93
+								    	05.05.94
+
+   screen: frequently asked questions -- known problems -- unimplemented bugs
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+
+Q:   Why is it  impossible to download  a file with Kermit/sz/rz  when  
+     screen is running? Do I need to set some special variables?
+ 
+A:   Screen  always   interprets   control-sequences   sent   by   the
+     applications   and  translates/optimizes  them  for  the  current
+     terminal type.  Screen always  parses  the  user  input  for  its
+     escape  character  (CTRL-A).   Both are basic screen features and
+     cannot be switched off.  Even  if  it  were  possible  to  switch
+     screen into a completely transparent mode, you could never switch
+     between windows, while kermit/sz/rz is downloading  a  file.  You  
+     must  wait til  the end as  kermit/sz/rz will  not transmit  your 
+     input during  a file transfer and as kermit/sz/rz would  be  very  
+     confused  if  screen switched  away  the  window  containing  the
+     other  kermit/sz/rz.  Simply detach your screen session  for each 
+     file transfer and start the  transfer program only from the shell 
+     where you started screen. 
+
+Q:   I  am using screen with  a  YYY terminal, which supports  the XXX
+     graphic language.  I  am very happy with  it, except one thing: I 
+     cannot render graphics into screen windows.
+  
+A:   You are out of luck there. Screen provides  a fixed set of escape
+     sequences in order to make  it possible to switch terminal types.
+     Screen has  to know exactly what the escape sequences  do  to the
+     terminal because  it  must hold  an  image  in  memory. Otherwise 
+     screen could  not  restore  the  image  if  you switch to another 
+     window.  Because  of  this  you  have  to  change screens  escape
+     sequence parser (ansi.c)  to  pass the XXX graphics sequences  to 
+     the terminal.  Of course the graphics will  be lost if you switch
+     to  another window. Screen  will only  honour graphics  sequences 
+     that are demanded by an overwhelming majority.
+
+Q:   For some unknown reason, the  fifo  in  /tmp/screens/S-myname  is
+     gone,  and  i  can't  resume my screen session. Is there a way to
+     recreate the fifo?
+ 
+A:   Screen checks the fifo/socket  whenever  it  receives  a  SIGCHLD
+     signal.  If missing, the fifo/socket is recreated then. If screen
+     is  running  non  set-uid  the  user  can  issue  a  'kill  -CHLD
+     screenpid'  directly (it is -CHILD on some systems). Screenpid is
+     the process-id of the screen process found in a 'ps -x'  listing.
+     But  usually  this won't work, as screen should be installed set-
+     uid root. In this case you will not be able to send it a  signal,
+     but  the  kernel  will.  It  does  so, whenever a child of screen
+     changes its state. Find the process-id (shellpid  below)  of  the
+     "least  important"  shell  running  inside  screen. The try 'kill
+     -STOP shellpid'.  If the fifo/socket does not  reappear,  destroy
+     the  shell  process.  You  sacrify one shell to save the rest. If
+     nothing works, please do  not  forget  to  remove  all  processes
+     running in the lost screen session.
+
+Q:   When you start "screen" a page of text comes up to  start  you
+     off.   Is  there  a way to get rid of this text as a command line
+     argument or by using a switch of some sort.  
+  
+A:   Just  put  the following line in your ~/.screenrc:
+         startup_message off
+     Many peole ask this, although  it  is  in the man page, too :-)
+
+Q:   Start "screen emacs"  and  run   emacs   function   suspend-emacs
+     (ctrl-z). The window containing emacs vanishes. 
+ 
+A:   This is a known  bug.  Unfortunatly  there   is   no   easy   fix
+     because  this  is specified in the POSIX  standard.  When  a  new
+     window is created Screen opens  up  a  new  session  because  the
+     window    has    to  get   the  pty  as a controlling terminal (a
+     session  can  only  have  one  controlling  terminal).  With  the
+     setsid()   call the   process also    creates   a   new   process
+     group.  This process  group is orphaned,   because  there  is  no
+     process  in   the  session    which is  not   in   the    process
+     group.   Now if the process group  leader  (i.e.  your   program)
+     gets   a  TTIN/TTOU/TSTP,   POSIX  states that  the  kernel  must
+     send   a   KILL signal to the process group because there is   no
+     one  left  to  continue  the process.  Even    if   screen  would
+     try to restart the program, that would be after it  received  the
+     KILL signal which  cannot  be caught  or ignored.
+     
+     tromey@klab.caltech.edu (Tom Tromey):  I've  noticed  this  exact
+     same problem.  I put this in my .emacs file.  It seems to work:
+        
+	;; If running under screen, disable C-z.
+	(if (and (getenv "STY") (not window-system))
+		(global-unset-key "\C-z"))
+
+Q:   Screen gets the terminal size wrong and messes up.
+ 
+A:   Before you start screen: Check with 'stty -a' what  the  terminal
+     driver  thinks  about  rows  and  columns.  Check the environment
+     variables LINES and COLUMNS.  Then from within screen check  with
+     the info command (CTRL-A i) what size screen thinks your terminal
+     is. If correcting tty driver setting  and  environment  variables
+     does  not help, look up the terminal capability definition. First
+     the TERMCAP environment variable. If this is not set, look up the
+     terminals  name  as  defined  in the environment variable TERM in
+     /etc/termcap or in the terminfo database with untic  or  infocmp.
+     There  may  be  :li=...:  and  :co=...:  or even :ll=...: entries
+     (cols#... and lines#...  when it's terminfo) defined incorrectly.
+     Either  construct  your  own  TERMCAP  environment variables with
+     correct settings, use screens terminfo/termcap  command  in  your
+     .screenrc  file  or  have  the  database  corrected by the system
+     administrator.
+
+Q:   Screen messes up the terminal output when I use my favourite  ap-
+     plication. Setting the terminal size does not help.
+ 
+A:   Probably you got the termcap/terminfo entries wrong. Fixing  this
+     is  a  three  stage  procedure.  First,  find  out if terminfo or
+     termcap is  used.  If  your   system   only   has   /etc/termcap,
+     but    not  /usr/lib/terminfo/...   then  you  are using termcap.
+     Easy. But if your system has both, then it depends how the appli-
+     cation and how  screen  were  linked.  Beware,  if  your applica-
+     tion runs on another host via rlogin, telnet  or  the  like,  you
+     should check the terminfo/termcap  databases there. If you cannot
+     tell if terminfo or termcap is used (or  you  just  want  to   be
+     save),   the   do   all  steps  in  stage  3 in parallel for both
+     systems (on all envolved hosts).  Second:  Understand  the  basic
+     rules  how  screen  does its terminal  emulation.  When screen is
+     started or reattached, it relies on the TERM environment variable
+     to  correctly  reflect  the  terminal type  you  have  physically
+     in front of you. And the entry should either exist in the  system
+     terminfo/termcap  database  or  be  specified via the TERMCAP en-
+     vironment variable (if screen is using the  termcap  system).  On
+     the  other  end,  screen understands one set of control codes. It
+     relies on the application using these codes. This means  applica-
+     tions   that  run  under screen  must be able to adapt their con-
+     trol codes to screen. The application should use the  TERM  vari-
+     able  and  termcap or  terminfo  library to find out how to drive
+     its terminal. When running under screen, the terminal is  virtual
+     and  is  only defined by  the  set  of  control codes that screen
+     understands.  The  TERM  variable  is  automatically    set    to
+     "screen"  and  the  "screen"-entries  should  exist  in the data-
+     bases. If your application uses hardcoded  control  codes  rather
+     than  a database, you are  on  your own.  Hint:  The codes under-
+     stood by screen are a superset  of  the  very  common  definition
+     named  "vt100".  Look  at   the   documentation  of  screen.  The
+     codes  are  listed there. Third:  Have  the  entry  "screen"  in-
+     stalled  on  all hosts or make sure you  can  live  with "vt100".
+     Check the codes sent by your application, when the TERM  variable
+     is  set  to "screen". Do not try to set the TERM  variable inside
+     screen  to anything other than "screen"  or "vt100"  or  compati-
+     ble.  Thus your application can drive screen correctly. Also take
+     care that  a good entry is installed  for your physical  terminal
+     that   screen   has  to drive.  Even if the entry was good enough
+     for your application to drive the terminal  directly, screen  may
+     find   flaws,   as  it tries to use other capabilities while  op-
+     timizing   the   screen   output.    The    screenrc     commands
+     "termcap"  and/or  "terminfo"  may help to fine-tune capabilities
+     without calling the supervisor to change the database.
+
+Q:   I cannot configure screen. Sed does not work.
+ 
+A:   The  regular expressions used  in  our  configure scrip  are  too
+     complicated for GNU sed version 2.03.  In  this regard it is  bug
+     compatible with  Ultrix 3.1 "sed":  GNU  sed  version 2.03  dumps
+     core with our configure script.  Try an older release.  E.g. from
+     ftp.uni-erlangen.de:/pub/utilities/screen/sed-2.02b.tar.gz
+
+Q:   When reattaching a session  from  a  different  Workstation,  the
+     DISPLAY   environment  variable  should be updated. Even ``CTLR-A
+     : setenv DISPLAY newhost:0'' does not work as expected.
+ 
+A:   Under unix every process  has its own environment.  The  environ-
+     ment  of the SCREEN process can be changed with the `setenv' com-
+     mand.  This  however  cannot  affect the   environment   of   the
+     shells or applications already running under screen. Subsequently
+     spawned processes will reflect the changes.  One should be  aware
+     of  this  problem when running applications from very old shells.
+     Screen is a means for keeping processes alive.
+
+Q:   About once every 5 times  I ran the program,  rather than getting
+     a "screen," I got someone elses IRC output/input.
+ 
+A:   What probably happened is that an IRC process was left running on
+     a pseudo tty  in such a way that the  kernel thought  the tty was
+     available  for reallocation.   You  can  fix  this  behaviour  by
+     applying the SunOS 4.1.x tty jumbo patch (100513-04).
+ 
+Q:   Screen compiled on SunOS 5.3 cannot reattach a detached session.
+ 
+A:   You are  using /usr/ucb/cc, this compiler  is wrong.  Actually it 
+     links  with  a  C-library that  mis-interprets dirent.  Try again
+     with /opt/SUNWspro/bin/cc!
+
+Q:   The "talk" command does not work when Screen is active.
+ 
+A:   Talk  and several  other programs  rely on entries  in the  Utmp-
+     Database  (/etc/utmp).  On some  systems this  Database is  world 
+     writable,  on others  it is not.  If it  is not,  screen must  be 
+     installed with the appropriate  permissions (user or group s-bit)
+     just like any  program that uses  PTYs (rlogin, xterm, ...). When
+     screen cannot write to utmp, you will see messages on you display
+     which do not belong to any screen window. 
+     When screen can update utmp, it is not guaranteed that it does as
+     you  expect.  First this depends  on  the config.h  file defining 
+     UTMPOK, LOGINDEFAULT, and perhaps CAREFULUTMP.  Second it depends
+     on the screenrc files (system wide and per user), if utmp entries
+     are done.  Third, you can control  whether windows are logged  in
+     with screens ``login'' command.
+
+Q:   Seteuid()  does not work as expected in AIX.  Attempting a multi-
+     user-attach results in a screen-panic: "seteuid: not owner".
+ 
+A:   This   is  not  a   screen  problem.   According  to  Kay  Nettle
+     (pkn@cs.utexas.edu) you need the AIX patch PTF 423674.
+
+Q:   When  I  type  cd directory (any directory  or just  blank)  from 
+     within one of the windows in screen, the whole thing just freezes
+     up.
+ 
+A:   You display the  current working directory  in xterm's title bar,
+     This may be caused by hardcoded ESC-sequences in the shell prompt
+     or in an cd alias.  In Xterm the coding is 
+     		ESC ] n ; string_to_display ^G 
+     where n = 1, 2, 3  selects the location of the  displayed string.
+     Screen misinterprets  this as the ansi  operating system  comment
+     sequence:
+     		ESC ] osc_string 
+     and waits (according to ansi) for the string terminator
+     		ESC \
+     Screen versions after 3.5.12 may provide a workaround.
+
+Q:   Mesg or biff cannot be turned on or off while running screen.
+ 
+A:   Screen failed to change the owner of the pty it uses. You need to
+     install screen setuid-root. See the file INSTALL for details.
+
+Q:   The cursor left key deletes the characters instead of just moving the
+     cursor. A redisplay (^Al) brings everything back.
+
+A:   Your terminal emulator treats the backspace as "destructive". You
+     can probably change this somewhere in the setup. We can't think
+     of a reason why anybody would want a destructive backspace, but
+     if you really must have it, add the lines
+	termcap  <TERM> 'bc@:bs@'
+	terminfo <TERM> 'bc@:bs@'
+     to your ~/.screenrc (replace <TERM> with the terminal type your
+     emulator uses).
+
+Q:   I have an old SysV OS (like Motorola SysV68) and sometimes screen
+     doesn't reset the attributes correctly. A redisplay (^Al) doesn't
+     make things better.
+
+A:   The libcurses library has a bug if attributes are cleared with
+     the special ue/se capabilities. As a workaround (other than upgrading
+     your system) modify 'rmul' (and 'rmso'?) in screen's terminfo entry:
+	rmul=\E[m, rmso=\E[m
