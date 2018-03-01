@@ -165,7 +165,6 @@ int server_port;
 char pid_file[80];
 char *server_dir = NULL;
 
-
 extern char *get_mac_from_ip(char *mac, char *ip);
 
 /* Forwards. */
@@ -440,7 +439,7 @@ void send_authenticate(webs_t conn_fp)
 
 static void send_error(webs_t conn_fp, int status, char *title, char *extra_header, char *text)
 {
-
+	dd_syslog(LOG_ERR, "Request Error Code %d: %s\n", status, text);
 	// jimmy, https, 8/4/2003, fprintf -> wfprintf, fflush -> wfflush
 	send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
 	(void)wfprintf(conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
@@ -770,7 +769,7 @@ static void *handle_request(void *arg)
 	method = path = line;
 	strsep(&path, " ");
 	if (!path) {		// Avoid http server crash, added by honor 2003-12-08
-		send_error(conn_fp, 400, "Bad Request", NULL, "Can't parse request.");
+		send_error(conn_fp, 400, "Bad Request", NULL, "Can't parse request. (no path given)");
 		goto out;
 	}
 	while (*path == ' ')
@@ -778,7 +777,7 @@ static void *handle_request(void *arg)
 	protocol = path;
 	strsep(&protocol, " ");
 	if (!protocol) {	// Avoid http server crash, added by honor 2003-12-08
-		send_error(conn_fp, 400, "Bad Request", NULL, "Can't parse request.");
+		send_error(conn_fp, 400, "Bad Request", NULL, "Can't parse request. (no protocol given)");
 		goto out;
 	}
 	while (*protocol == ' ')
@@ -842,18 +841,18 @@ static void *handle_request(void *arg)
 		method_type = METHOD_OPTIONS;
 
 	if (method_type == METHOD_INVALID) {
-		send_error(conn_fp, 501, "Not Implemented", NULL, "That method is not implemented.");
+		send_error(conn_fp, 501, "Not Implemented", NULL, "Method is not implemented.");
 		goto out;
 	}
 
 	if (path[0] != '/') {
-		send_error(conn_fp, 400, "Bad Request", NULL, "Bad filename.");
+		send_error(conn_fp, 400, "Bad Request", NULL, "Bad filename. (no leading slash)");
 		goto out;
 	}
 	file = &(path[1]);
 	len = strlen(file);
 	if (file[0] == '/' || strcmp(file, "..") == 0 || strncmp(file, "../", 3) == 0 || strstr(file, "/../") != NULL || strcmp(&(file[len - 3]), "/..") == 0) {
-		send_error(conn_fp, 400, "Bad Request", NULL, "Illegal filename.");
+		send_error(conn_fp, 400, "Bad Request", NULL, "Illegal filename. (filename will treat local filesystem)");
 		goto out;
 	}
 
@@ -986,7 +985,7 @@ static void *handle_request(void *arg)
 #endif
 #ifdef HAVE_SUPERCHANNEL
 	if (conn_fp->issuperchannel == -1)
-	    conn_fp->issuperchannel = issuperchannel();
+		conn_fp->issuperchannel = issuperchannel();
 #endif
 
 	// save the originally requested url
@@ -1451,6 +1450,7 @@ int main(int argc, char **argv)
 		default:
 			break;
 		}
+	openlog("httpd", LOG_PID | LOG_NDELAY, LOG_DAEMON);
 #ifdef HAVE_HTTPS
 	dd_syslog(LOG_INFO, "httpd server %sstarted at port %d\n", do_ssl ? "(ssl support) " : "", server_port);
 #else
@@ -1679,9 +1679,9 @@ int main(int argc, char **argv)
 			SSL_CTX_set_cipher_list(ctx, allowedCiphers);
 
 			// Enforce our desired cipher order, disable obsolete protocols
-			#ifndef SSL_OP_SAFARI_ECDHE_ECDSA_BUG
-			#define SSL_OP_SAFARI_ECDHE_ECDSA_BUG 0
-			#endif
+#ifndef SSL_OP_SAFARI_ECDHE_ECDSA_BUG
+#define SSL_OP_SAFARI_ECDHE_ECDSA_BUG 0
+#endif
 
 			SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1 | SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_SAFARI_ECDHE_ECDSA_BUG);
 
