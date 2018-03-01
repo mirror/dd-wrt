@@ -171,7 +171,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 		wfread(&linuxsize, 1, 4, stream);
 		*total -= 4;
-//		safe_fwrite(&linuxsize, 1, 4, fifo);
+//              safe_fwrite(&linuxsize, 1, 4, fifo);
 #ifdef HAVE_RB600
 		linuxsize = swap(linuxsize);
 #endif
