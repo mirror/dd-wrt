@@ -704,11 +704,43 @@ static const struct dw_pcie_ops dw_pcie_ops = {
 	.link_up = imx6_pcie_link_up,
 };
 
+/* TI XIO2001 PCIe-to-PCI bridge on GW16082 exp card has IRQs reversed */
+u8 ventana_swizzle(struct pci_dev *dev, u8 *pin)
+{
+	u8 i = 0;
+	struct pci_dev *pdev = dev;
+
+	/* count number of TI XIO2001 bridges on bus */
+	while (!pci_is_root_bus(pdev->bus)) {
+		if (pdev->bus && pdev->bus->self &&
+		    (pdev->bus->self->vendor == PCI_VENDOR_ID_TI) &&
+		    (pdev->bus->self->device == PCI_DEVICE_ID_TI_XIO2001)) {
+			i++;
+		}
+		pdev = pdev->bus->self;
+	}
+	while (!pci_is_root_bus(dev->bus)) {
+		/* if we are directly downstream from 1st TI XIO2001 bridge */
+		if (dev->bus && dev->bus->self &&
+		    (dev->bus->self->vendor == PCI_VENDOR_ID_TI) &&
+		    (dev->bus->self->device == PCI_DEVICE_ID_TI_XIO2001)) {
+			if (--i == 0) {
+				/* swap IRQs and swizzle backwards */
+				*pin = (15 - PCI_SLOT(dev->devfn)) + 1;
+				dev = dev->bus->self;
+				continue;
+			}
+		}
+		*pin = pci_swizzle_interrupt_pin(dev, *pin);
+		dev = dev->bus->self;
+	}
+	return PCI_SLOT(dev->devfn);
+}
+
 static int imx6_pcie_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct dw_pcie *pci;
-	struct imx6_pcie *imx6_pcie;
 	struct resource *dbi_base;
 	struct device_node *node = dev->of_node;
 	int ret;
@@ -840,7 +872,11 @@ static int imx6_pcie_probe(struct platform_device *pdev)
 		imx6_pcie->vpcie = NULL;
 	}
 
+	if (of_machine_is_compatible("gw,ventana"))
+		pci->swizzle = ventana_swizzle;
+
 	platform_set_drvdata(pdev, imx6_pcie);
+
 
 	ret = imx6_add_pcie_port(imx6_pcie, pdev);
 	if (ret < 0)
