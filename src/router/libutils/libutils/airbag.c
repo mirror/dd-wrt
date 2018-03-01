@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2011-2014 Chuck Coffing <clc@alum.mit.edu>
- * Copyright (C) 2017 Sebastian Gottschall <gottschall@dd-wrt.com> (mips64, powerpc, x86_64 changes, specific code for dd-wrt)
+ * Copyright (C) 2018 Sebastian Gottschall <gottschall@dd-wrt.com> (aarch64, mips64, powerpc, x86_64 changes, specific code for dd-wrt)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -20,7 +20,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-#if defined(HAVE_SYSLOG) && !defined(HAVE_MICRO) && !defined(__aarch64__)
+#if defined(HAVE_SYSLOG) && !defined(HAVE_MICRO)
 
 //#ifdef __ANDROID__
 #define AIRBAG_NO_BACKTRACE
@@ -186,6 +186,19 @@ static const char *mctxRegNames[NMCTXREGS] = {
 
 #define FMTLEN "06"
 #define FMTBIT "08"
+#elif defined(__aarch64__)
+#define NMCTXREGS 31
+#define MCTXREG(uc, i) (uc->uc_mcontext.regs[i])
+#define MCTX_PC(uc) (uc->uc_mcontext.pc)
+static const char *mctxRegNames[NMCTXREGS] = {
+	"X0", "X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "X9", "X10",
+	"X11", "X12", "X13", "X14", "X15", "X16", "X17", "X18", "X19",
+	"X20", "X21", "X22", "X23", "X24", "X25", "X26", "X27", "X28",
+	"X29", "X30"
+};
+
+#define FMTLEN "03"
+#define FMTBIT "016"
 #elif defined(__arm__)
 #define NMCTXREGS 21
 #define MCTXREG(uc, i) (((unsigned long *)(&uc->uc_mcontext))[i])
@@ -778,6 +791,8 @@ backward:
 				MCTX_PC(uc) = MCTXREG(uc, 31);	/* RA */
 #elif defined(__arm__)
 				MCTX_PC(uc) = MCTXREG(uc, 17);	/* LR */
+#elif defined(__aarch64__)
+				MCTX_PC(uc) = MCTXREG(uc, 30);	/* LR */
 #elif defined(__powerpc__)
 				MCTX_PC(uc) = MCTXREG(uc, 37);	/* LINK */
 #elif defined(__i386__)
