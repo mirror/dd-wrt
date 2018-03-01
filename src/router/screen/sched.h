@@ -27,6 +27,11 @@
  * $Id$ GNU
  */
 
+#ifndef __SCHED_H
+#define __SCHED_H
+
+#include <sys/time.h>
+
 struct event
 {
   struct event *next;
@@ -46,3 +51,5 @@ struct event
 #define EV_READ		1
 #define EV_WRITE	2
 #define EV_ALWAYS	3
+
+#endif

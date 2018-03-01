@@ -414,7 +414,7 @@ as_fn_error ()
     $as_echo "$as_me:${as_lineno-$LINENO}: error: $2" >&$4
   fi
   $as_echo "$as_me: error: $2" >&2
-  as_fn_exit $as_status
+  # as_fn_exit $as_status
 } # as_fn_error
 
 if expr a : '\(a\)' >/dev/null 2>&1 &&
@@ -4155,44 +4155,6 @@ fi
 rm -f conftest*
 
 
-oldlibs="$LIBS"
-LIBS="$LIBS -lelf"
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking SVR4..." >&5
-$as_echo "$as_me: checking SVR4..." >&6;}
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <utmpx.h>
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_fn_c_check_header_mongrel "$LINENO" "dwarf.h" "ac_cv_header_dwarf_h" "$ac_includes_default"
-if test "x$ac_cv_header_dwarf_h" = xyes; then :
-  $as_echo "#define SVR4 1" >>confdefs.h
- $as_echo "#define BUGGYGETLOGIN 1" >>confdefs.h
-
-else
-  ac_fn_c_check_header_mongrel "$LINENO" "elf.h" "ac_cv_header_elf_h" "$ac_includes_default"
-if test "x$ac_cv_header_elf_h" = xyes; then :
-  $as_echo "#define SVR4 1" >>confdefs.h
- $as_echo "#define BUGGYGETLOGIN 1" >>confdefs.h
-
-fi
-
-
-fi
-
-
-
-else
-  LIBS="$oldlibs"
-fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 for ac_header in stropts.h string.h strings.h
@@ -5909,8 +5871,6 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-test -f /lib/libsec.a || test -f /usr/lib/libsec.a && LIBS="$LIBS -lsec"
-test -f /lib/libshadow.a || test -f /usr/lib/libshadow.a && LIBS="$LIBS -lshadow"
 oldlibs="$LIBS"
 LIBS="$LIBS -lsun"
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking IRIX sun library..." >&5
@@ -6991,7 +6951,7 @@ as_fn_error ()
     $as_echo "$as_me:${as_lineno-$LINENO}: error: $2" >&$4
   fi
   $as_echo "$as_me: error: $2" >&2
-  as_fn_exit $as_status
+  # as_fn_exit $as_status
 } # as_fn_error
 
 

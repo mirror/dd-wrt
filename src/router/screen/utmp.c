@@ -33,6 +33,7 @@
 #include "config.h"
 #include "screen.h"
 #include "extern.h"
+#include "os.h"
 
 #ifdef HAVE_UTEMPTER
 #include <utempter.h>
