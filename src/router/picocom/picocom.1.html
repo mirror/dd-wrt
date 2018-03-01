@@ -1,0 +1,268 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title>PICOCOM(1)</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link href="data:text/css;charset=utf-8,%0A%0Ahtml%20%7B%0Afont%2Dfamily%3A%20sans%2Dserif%3B%20%0A%2Dms%2Dtext%2Dsize%2Dadjust%3A%20100%25%3B%20%0A%2Dwebkit%2Dtext%2Dsize%2Dadjust%3A%20100%25%3B%20%0A%7D%0A%0Abody%20%7B%0Amargin%3A%200%3B%0A%7D%0A%0A%0Aarticle%2C%0Aaside%2C%0Adetails%2C%0Afigcaption%2C%0Afigure%2C%0Afooter%2C%0Aheader%2C%0Ahgroup%2C%0Amain%2C%0Amenu%2C%0Anav%2C%0Asection%2C%0Asummary%20%7B%0Adisplay%3A%20block%3B%0A%7D%0A%0Aaudio%2C%0Acanvas%2C%0Aprogress%2C%0Avideo%20%7B%0Adisplay%3A%20inline%2Dblock%3B%20%0Avertical%2Dalign%3A%20baseline%3B%20%0A%7D%0A%0Aaudio%3Anot%28%5Bcontrols%5D%29%20%7B%0Adisplay%3A%20none%3B%0Aheight%3A%200%3B%0A%7D%0A%0A%5Bhidden%5D%2C%0Atemplate%20%7B%0Adisplay%3A%20none%3B%0A%7D%0A%0A%0Aa%20%7B%0Abackground%2Dcolor%3A%20transparent%3B%0A%7D%0A%0Aa%3Aactive%2C%0Aa%3Ahover%20%7B%0Aoutline%3A%200%3B%0A%7D%0A%0A%0Aabbr%5Btitle%5D%20%7B%0Aborder%2Dbottom%3A%201px%20dotted%3B%0A%7D%0A%0Ab%2C%0Astrong%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0A%0Adfn%20%7B%0Afont%2Dstyle%3A%20italic%3B%0A%7D%0A%0Ah1%20%7B%0Afont%2Dsize%3A%202em%3B%0Amargin%3A%200%2E67em%200%3B%0A%7D%0A%0Amark%20%7B%0Abackground%3A%20%23ff0%3B%0Acolor%3A%20%23000%3B%0A%7D%0A%0Asmall%20%7B%0Afont%2Dsize%3A%2080%25%3B%0A%7D%0A%0Asub%2C%0Asup%20%7B%0Afont%2Dsize%3A%2075%25%3B%0Aline%2Dheight%3A%200%3B%0Aposition%3A%20relative%3B%0Avertical%2Dalign%3A%20baseline%3B%0A%7D%0Asup%20%7B%0Atop%3A%20%2D0%2E5em%3B%0A%7D%0Asub%20%7B%0Abottom%3A%20%2D0%2E25em%3B%0A%7D%0A%0A%0Aimg%20%7B%0Aborder%3A%200%3B%0A%7D%0A%0Asvg%3Anot%28%3Aroot%29%20%7B%0Aoverflow%3A%20hidden%3B%0A%7D%0A%0A%0Afigure%20%7B%0Amargin%3A%201em%2040px%3B%0A%7D%0A%0Ahr%20%7B%0A%2Dmoz%2Dbox%2Dsizing%3A%20content%2Dbox%3B%0Abox%2Dsizing%3A%20content%2Dbox%3B%0Aheight%3A%200%3B%0A%7D%0A%0Apre%20%7B%0Aoverflow%3A%20auto%3B%0A%7D%0A%0Acode%2C%0Akbd%2C%0Apre%2C%0Asamp%20%7B%0Afont%2Dfamily%3A%20monospace%2C%20monospace%3B%0Afont%2Dsize%3A%201em%3B%0A%7D%0A%0A%0Atable%20%7B%0Aborder%2Dcollapse%3A%20collapse%3B%0Aborder%2Dspacing%3A%200%3B%0A%7D%0Atd%2C%0Ath%20%7B%0Apadding%3A%200%3B%0A%7D%0A" rel="stylesheet" type="text/css" />
+  <link href="data:text/css;charset=utf-8,%0Ahtml%20%7B%0Abackground%3A%20%23cccccc%3B%0A%7D%0Abody%20%7B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20sans%2Dserif%3B%0Amax%2Dwidth%3A45em%3B%0Apadding%3A%201em%203em%201em%203em%3B%0Amargin%3A%201em%203em%201em%203em%3B%0Abackground%3A%20%23ffffff%3B%0A%7D%0Apre%2Ccode%2Ckbd%2Csamp%2Ctt%20%7B%0Afont%2Dfamily%3A%20%22Inconsolata%22%2C%20monospace%3B%0A%7D%0Ap%2Cpre%20%7B%0Amargin%2Dtop%3A%2E5em%3B%0Amargin%2Dbottom%3A%2E5em%3B%0A%7D%0Apre%2Cblockquote%20%7B%0Aborder%3A1px%20solid%20%23ddd%3B%0Abackground%2Dcolor%3A%23f1f1f1%3B%0A%2Dwebkit%2Dborder%2Dradius%3A6px%3B%0A%2Dmoz%2Dborder%2Dradius%3A6px%3B%0Aborder%2Dradius%3A6px%3B%0Apadding%3A10px%3B%0A%7D%0Ablockquote%20%7B%0Amargin%3A1em%202%2E5em%3B%0A%7D%0Apre%20%7B%0Amargin%2Dtop%3A%201em%3B%0Amargin%2Dbottom%3A%201em%3B%0A%7D%0Acode%20%7B%0Acolor%3A%2320639b%3B%0Abackground%3A%23f1f1f1%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20blue%3B%0A%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20darkblue%3B%0A%7D%0Ah1%2Ch2%2Ch3%2Ch4%2Ch5%2Ch6%20%7B%0Afont%2Dweight%3A%20bold%3B%0Acolor%3A%20%2320639b%3B%0Amargin%3A%201em%200%3B%0A%7D%0Ah1%20%7B%0Afont%2Dsize%3A140%25%3B%0Aborder%2Dbottom%3A2px%20dotted%20%23ddd%3B%0A%7D%0Ah2%20%7B%0Afont%2Dsize%3A120%25%3B%0A%7D%0Ah3%20%7B%0Afont%2Dsize%3A110%25%3B%0A%7D%0Ah4%20%7B%0Afont%2Dsize%3A100%25%3B%0A%7D%0Ah5%20%7B%0Afont%2Dsize%3A95%25%3B%0A%7D%0Ah6%20%7B%0Afont%2Dsize%3A90%25%3B%0Acolor%3A%23999%3B%0A%7D%0Adiv%23pgname%20%7B%0Adisplay%3Ainline%2Dblock%3B%0Awidth%3A50%25%0A%7D%0Adiv%23version%20%7B%0Adisplay%3Ainline%2Dblock%3B%0Awidth%3A50%25%3B%0Atext%2Dalign%3Aright%3B%0Afont%2Dsize%3A65%25%3B%0A%7D%0Aol%2Cul%20%7B%0Alist%2Dstyle%3Anone%3B%0Apadding%3A%200%3B%0Amargin%3A1em%3B%0Amargin%2Dleft%3A2em%3B%0A%7D%0Aol%20%7B%0Alist%2Dstyle%3Adecimal%20outside%3B%0A%7D%0Aul%20%7B%0Alist%2Dstyle%3Adisc%20outside%3B%0A%7D%0Adl%20%7B%0Amargin%3A0%200%201%2E125em%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dleft%3A2em%3B%0A%7D%0Adt%20%7B%0Aline%2Dheight%3A1%2E125em%3B%0A%7D%0A%0Aol%5Btype%3D1%5D%20%7B%0Alist%2Dstyle%2Dtype%3Adecimal%3B%0A%7D%0Aol%5Btype%3Da%5D%20%7B%0Alist%2Dstyle%2Dtype%3Alower%2Dalpha%3B%0A%7D%0Aol%5Btype%3DA%5D%20%7B%0Alist%2Dstyle%2Dtype%3Aupper%2Dalpha%3B%0A%7D%0Aol%5Btype%3DI%5D%20%7B%0Alist%2Dstyle%2Dtype%3Aupper%2Droman%3B%0A%7D%0Aol%5Btype%3Di%5D%20%7B%0Alist%2Dstyle%2Dtype%3Alower%2Droman%3B%0A%7D%0A" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="header">
+  <h1 class="title"><div id="pgname">PICOCOM(1)</div><div id="version">v3.1 / 2018-02-01</div></h1>
+</div>
+<h1 id="name">NAME</h1>
+<p>picocom - minimal dumb-terminal emulation program</p>
+<h1 id="synopsis">SYNOPSIS</h1>
+<p><strong>picocom</strong> [ <em>options</em> ] <em>device</em></p>
+<h1 id="description">DESCRIPTION</h1>
+<p>As its name suggests, <strong>picocom(1)</strong> is a minimal dumb-terminal emulation program. It is, in principle, very much like <strong>minicom(1)</strong>, only it's &quot;pico&quot; instead of &quot;mini&quot;! It was designed to serve as a simple, manual, modem configuration, testing, and debugging tool. It has also served (quite well) as a low-tech serial communications program to allow access to all types of devices that provide serial consoles. It could also prove useful in many other similar tasks.</p>
+<p>In effect, picocom is not an &quot;emulator&quot; per-se. It is a simple program that opens, configures, manages a serial port (tty device) and its settings, and connects to it the terminal emulator you are, most likely, already using (the terminal window application, xterm, rxvt, system console, etc).</p>
+<p>When picocom starts it opens the tty (serial port) given as its non-option argument. Unless the <strong>--noinit</strong> option is given, it configures the port to the settings specified by the option-arguments (or to some default settings), and sets it to &quot;raw&quot; mode. If <strong>--noinit</strong> is given, the initialization and configuration is skipped; the port is just opened. Following this, if standard input is a tty, picocom sets the tty to raw mode. Then it goes in a loop where it listens for input from stdin, or from the serial port. Input from the serial port is copied to the standard output while input from the standard input is copied to the serial port. Picocom also scans its input stream for a user-specified control character, called the <em>escape character</em> (being by default <strong>C-a</strong>). If the escape character is seen, then instead of sending it to the serial-device, the program enters &quot;command mode&quot; and waits for the next character (which is called the &quot;function character&quot;). Depending on the value of the function character, picocom performs one of the operations described in the <strong><a href="#commands">COMMANDS</a></strong> section below.</p>
+<h1 id="commands">COMMANDS</h1>
+<p>Commands are given to picocom by first keying the <em>espace character</em> which by default is <strong>C-a</strong> (see <strong><a href="#options">OPTIONS</a></strong> below for how to change it), and then keying one of the function (command) characters shown here.</p>
+<dl>
+<dt><em>escape character</em></dt>
+<dd><p>Send the escape character to the serial port and return to &quot;transparent&quot; mode. This means that if the escape character (<strong>C-a</strong>, by default) is typed twice, the program sends the escape character to the serial port, and remains in transparent mode.</p>
+</dd>
+<dt><strong>C-x</strong></dt>
+<dd><p>Exit the program. If the <strong>--noreset</strong> option is <em>not</em> given, then the serial port is reset to its original settings before exiting, and the modem control lines (typically DTR and RTS) are cleared (lowered) signaling a modem hangup. If <strong>--noreset</strong> is given (and <strong>--hangup</strong> is not), then the serial port settings are not reset, and the modem control lines remain unaffected. If both <strong>--noreset</strong> and <strong>--hangup</strong> are given, then the serial port settings are not reset, but the modem-control lines <em>are</em> cleared.</p>
+</dd>
+<dt><strong>C-q</strong></dt>
+<dd><p>Quit the program <em>without</em> resetting the serial port to its original settings. Terminating with the Quit command, picocom behaves <em>exactly</em> as if the <strong>--noreset</strong> option was given. The serial port is <em>not</em> reset to its original settings, and the modem control lines remain unaffected or are cleared, subject to the <strong>--hangup</strong> option.</p>
+</dd>
+<dt><strong>C-p</strong></dt>
+<dd><p>Pulse the DTR line. Lower it for 1 sec, and then raise it again.</p>
+</dd>
+<dt><strong>C-t</strong></dt>
+<dd><p>Toggle the DTR line. If DTR is up, then lower it. If it is down, then raise it. May not be supported on some systems.</p>
+</dd>
+<dt><strong>C-g</strong></dt>
+<dd><p>Toggle the RTS line. If RTS is up, then lower it. If it is down, then raise it. Not supported if the flow control mode is RTS/CTS. May not be supported on some systems.</p>
+</dd>
+<dt><strong>C-backslash</strong></dt>
+<dd><p>Generate a break sequence on the serial line. A break sequence is usually generated by marking (driving to logical one) the serial Tx line for an amount of time coresponding to several character durations.</p>
+</dd>
+<dt><strong>C-b</strong></dt>
+<dd><p>Set baudrate. Prompts you to enter a baudrate numerically (in bps) and configures the serial port accordingly.</p>
+</dd>
+<dt><strong>C-u</strong></dt>
+<dd><p>Baud up. Increase the baud-rate. The list of baud-rates stepped-through by this command is: 50, 75, 110, 134, 150, 200, 300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200. If <code>HIGH_BAUD</code> support is compiled-in, then the following baud-rates are also added to the list: 230400, 460800, 500000, 576000, 921600, 1000000, 1152000, 1500000, 2000000, 2500000, 3000000, 3500000, 4000000. Depending on you system, any of the higher baud rates may be missing.</p>
+</dd>
+<dt><strong>C-d</strong></dt>
+<dd><p>Baud down. Decrease the baud-rate. The list of baud-rates stepped-through by this command is the same as for the &quot;baud-up&quot; command.</p>
+</dd>
+<dt><strong>C-f</strong></dt>
+<dd><p>Cycle through flow-control settings (RTS/CTS, XON/XOFF, none).</p>
+</dd>
+<dt><strong>C-y</strong></dt>
+<dd><p>Cycle through parity settings (even, odd, none).</p>
+</dd>
+<dt><strong>C-i</strong></dt>
+<dd><p>Cycle through databits-number settings (5, 6, 7, 8).</p>
+</dd>
+<dt><strong>C-j</strong></dt>
+<dd><p>Cycle through stopbits-number settings (1, 2).</p>
+</dd>
+<dt><strong>C-c</strong></dt>
+<dd><p>Toggle local-echo mode.</p>
+</dd>
+<dt><strong>C-w</strong></dt>
+<dd><p>Write hex. Picococm prompts the user for a string of hexadecimal values. Values can be entered with or without delimeters (separators). The hexadecimal values are translated to binary and sent to the port, exactly as if input at the terminal (i.e. the <strong>--omap</strong>, <strong>--echo</strong> and <strong>--emap</strong> options are observed). Example: The following sends the characters &quot;ABCD&quot; to the port.</p>
+<pre><code>C-a C-w
+*** hex: 41 4243:44
+*** wrote 4 bytes ***</code></pre>
+</dd>
+<dt><strong>C-s</strong></dt>
+<dd><p>Send (upload) a file. See <strong><a href="#sending-and-receiving-files">SENDING AND RECEIVING FILES</a></strong> below.</p>
+</dd>
+<dt><strong>C-r</strong></dt>
+<dd><p>Receive (download) a file. See <strong><a href="#sending-and-receiving-files">SENDING AND RECEIVING FILES</a></strong> below.</p>
+</dd>
+<dt><strong>C-v</strong></dt>
+<dd><p>Show program options (like baud rate, data bits, etc) as well as the actual serial port settings. Only the options and port settings that can be modified online (through commands) are shown, not those that can only be set at the command-line. See <strong><a href="#display-of-options-and-port-settings">DISPLAY OF OPTIONS AND PORT SETTINGS</a></strong> for details.</p>
+</dd>
+<dt><strong>C-h</strong> or <strong>C-k</strong></dt>
+<dd><p>Show help, or show keys. Prints a short description of all available function (command) keys.</p>
+</dd>
+</dl>
+<p>After performing one of the above operations, the program leaves the command mode and enters transparent mode. Example: To increase the baud-rate by two steps, you have to type:</p>
+<blockquote>
+<p><strong>C-a</strong>, <strong>C-u</strong>, <strong>C-a</strong>, <strong>C-u</strong></p>
+</blockquote>
+<p>assuming of-course that <strong>C-a</strong> is the escape character.</p>
+<h1 id="options">OPTIONS</h1>
+<p>Picocom accepts the following command-line options.</p>
+<dl>
+<dt><strong>--baud</strong> | <strong>-b</strong></dt>
+<dd><p>Defines the baud-rate to set the serial-port (terminal) to.</p>
+</dd>
+<dt><strong>--flow</strong> | <strong>-f</strong></dt>
+<dd><p>Defines the flow-control mode to set the serial-port to. Must be one of: <strong>x</strong> for xon/xoff (software) mode, <strong>h</strong> for hardware flow control (RTS/CTS), <strong>n</strong> for no flow control. (Default: <strong>n</strong>)</p>
+</dd>
+<dt><strong>--parity</strong> | <strong>-y</strong></dt>
+<dd><p>Defines the parity mode to set the serial-port to. Must be one of: <strong>o</strong> for odd parity mode, <strong>e</strong> for even parity mode, <strong>n</strong> for no parity mode. (Default: <strong>n</strong>)</p>
+</dd>
+<dt><strong>--databits</strong> | <strong>-d</strong></dt>
+<dd><p>Defines the number of data bits in every character. Must be one of: <strong>5</strong>, <strong>6</strong>, <strong>7</strong>, <strong>8</strong>. (Default: <strong>8</strong>)</p>
+</dd>
+<dt><strong>--stopbits</strong> | <strong>-p</strong></dt>
+<dd><p>Defines the number of stop bits in every character. Must be one of: <strong>1</strong>, or <strong>2</strong>. (Default: <strong>1</strong>)</p>
+</dd>
+<dt><strong>--escape</strong> | <strong>-e</strong></dt>
+<dd><p>Defines the character that will make picocom enter command-mode (see description above). If <strong>x</strong> is given, then <strong>C-x</strong> will make picocom enter command mode. See also the <strong>--no-escape</strong> option. (Default: <strong>a</strong>)</p>
+</dd>
+<dt><strong>--no-escape</strong> | <strong>-n</strong></dt>
+<dd><p>Disables the escape character. Picocom will never enter command-mode if this option is given. To exit picocom, in this case, you must either close its standard input, or send it the TERM or INT signal. (Default: Disabled).</p>
+</dd>
+<dt><strong>--echo</strong> | <strong>-c</strong></dt>
+<dd><p>Enable local echo. Every character being read from the terminal (standard input) is echoed to the terminal (standard output) subject to the echo-mapping configuration (see <strong>--emap</strong> option). (Default: Disabled)</p>
+</dd>
+<dt><strong>--noinit</strong> | <strong>-i</strong></dt>
+<dd><p>If given, picocom will not initialize, configure, or otherwise mess with the serial port at start-up. It will just open it. This is useful, for example, for connecting picocom to already-connected modems, or already configured ports without terminating the connection, or altering their settings. If required, serial port parameters can then be adjusted at run-time by commands. See also the <strong>--noreset</strong> and <strong>--hangup</strong> options. (Default: Disabled)</p>
+</dd>
+<dt><strong>--noreset</strong> | <strong>-r</strong></dt>
+<dd><p>If given, picocom will not reset the serial port when exiting. It will just close the respective file descriptor and do nothing more. The serial port settings will <em>not</em> be restored to their original values and, unless the <strong>--hangup</strong> option is also given, the modem-control lines will <em>not</em> be affected. This is useful, for example, for leaving modems connected when exiting picocom. Regardless whether the <strong>--noreset</strong> option is given, the user can exit picocom using the &quot;Quit&quot; command (instead of &quot;Exit&quot;), which makes picocom behave <em>exactly</em> as if <strong>--noreset</strong> was given. See also the <strong>--hangup</strong> option. (Default: Disabled)</p>
+<p>NOTICE: Picocom clears the modem control lines on exit by setting the <em>HUPCL</em> control bit of the respective port. Picocom always sets HUPCL according to the <strong>--noreset</strong> and <strong>--hangup</strong> options. If <strong>--noreset</strong> is given and <strong>--hangup</strong> is not, then HUPCL for the port is cleared and will remain so after exiting picocom. If <strong>--noreset</strong> is <em>not</em> given, or if both <strong>--noreset</strong> and <strong>--hangup</strong> are given, then HUPCL is set for the port and will remain so after exiting picocom. This is true, regardless of the way picocom terminates (command, read zero-bytes from standard input, killed by signal, fatal error, etc), and regardless of the <strong>--noinit</strong> option.</p>
+</dd>
+<dt><strong>--hangup</strong> | <strong>-u</strong></dt>
+<dd><p>If given together with <strong>--noreset</strong>, picocom will not reset the serial port to it's original settings on exit, but it <em>will</em> clear the modem control lines (typically DTR and RTS) to signal a modem hangup. Without the <strong>--noreset</strong> option (explicitly given, or implied by extiting with the &quot;Quit&quot; command) <strong>--hangup</strong> has no effect (without <strong>--noreset</strong> picocom always clears the modem control lines on exit, anyway).</p>
+</dd>
+<dt><strong>--nolock</strong> | <strong>-l</strong></dt>
+<dd><p>If given, picocom will <em>not</em> attempt to lock the serial port before opening it. Normally, depending on how it's compiled, picocom attempts to get a UUCP-style lock-file (e.g. '/var/lock/LCK..ttyS0') before opening the port, or attempts to lock the port device-node using <strong>flock(2)</strong>. Failing to do so, results in the program exiting after emitting an error-message. It is possible that your picocom binary is compiled without support for locking. In this case the <strong>--nolock</strong> option is accepted, but has no effect. (Default: Disabled)</p>
+</dd>
+<dt><strong>--send-cmd</strong> | <strong>-s</strong></dt>
+<dd><p>Specifies the external program (and any arguments to it) that will be used for transmitting files. If the argument to <strong>--send-cmd</strong> is the empty string (''), the send-file command is disabled. See <strong><a href="#sending-and-receiving-files">SENDING AND RECEIVING FILES</a></strong>. (Default: <strong>sz -vv</strong>)</p>
+</dd>
+<dt><strong>--receive-cmd</strong> | <strong>-v</strong></dt>
+<dd><p>Specifies the external program (and any arguments to it) that will be used for receiving files. If the argument to <strong>--receive-cmd</strong> is the empty string (''), the receive-file command is disabled. See <strong><a href="#sending-and-receiving-files">SENDING AND RECEIVING FILES</a></strong>. (Default: <strong>rz -vv</strong>)</p>
+</dd>
+<dt><strong>--imap</strong></dt>
+<dd><p>Specifies the input character map (i.e. special characters to be replaced when read from the serial port). See <strong><a href="#input-output-and-echo-mapping">INPUT, OUTPUT, AND ECHO MAPPING</a></strong>. (Defaul: Empty)</p>
+</dd>
+<dt><strong>--omap</strong></dt>
+<dd><p>Specifies the output character map (i.e. special characters to be replaced before being written to serial port). See <strong><a href="#input-output-and-echo-mapping">INPUT, OUTPUT, AND ECHO MAPPING</a></strong>. (Defaul: Empty)</p>
+</dd>
+<dt><strong>--emap</strong></dt>
+<dd><p>Specifies the local-echo character map (i.e. special characters to be replaced before being echoed-back to the terminal, if local-echo is enabled). See <strong><a href="#input-output-and-echo-mapping">INPUT, OUTPUT, AND ECHO MAPPING</a></strong>. (Defaul: <strong>delbs,crcrlf</strong>)</p>
+</dd>
+<dt><strong>--logfile</strong> | <strong>-g</strong></dt>
+<dd><p>Use specified file for logging (recording) serial input, and possibly serial output. If the file exists, it is appended to. Every character read from the serial port is written to the specified file (before input mapping is performed). If local-echo mode is is enabled (see <strong>--echo</strong> option and <strong>C-c</strong> command), then every character written to the serial port (after output mapping is performed) is also logged to the same file. (Default: no logging)</p>
+</dd>
+<dt><strong>--initstring</strong> | <strong>-t</strong></dt>
+<dd><p>Send the provided string after opening and configuring the serial port. The init string is sent exactly as if it was input at the terminal. Sending the init string, picocom observes the <strong>--omap</strong> output mapping, the <strong>--echo</strong> local-echo setting, and the <strong>--emap</strong> local-echo mapping. This feature is useful, for example, if the serial device needs some special magic strings to start responding. Use <strong>echo(1)</strong> or <strong>xxd(1)</strong> to generate special characters like a CR or binary data. Example:</p>
+<pre><code>picocom -t &quot;$(echo -ne 'AAATZ\r\n')&quot; /dev/ttyS0</code></pre>
+<p>Note, that the init string is not sent if <strong>--noinit</strong> is given. (Default: empty).</p>
+</dd>
+<dt><strong>--lower-rts</strong></dt>
+<dd><p>Lower the RTS modem control signal after opening the serial port. Only supported when flow-control mode is not set to RTS/CTS, ignored otherwise. Only supported on some systems.</p>
+<p>If neither <strong>--lower-rts</strong> nor <strong>--raise-rts</strong> are given, the state of the RTS signal, after opening and configuring the port, is system dependent. On most systems the signal is raised.</p>
+</dd>
+<dt><strong>--raise-rts</strong></dt>
+<dd><p>Raise the RTS modem control signal after opening the serial port. Only supported when flow-control mode is not set to RTS/CTS, ignored otherwise. Only supported on some systems.</p>
+<p>If neither <strong>--raise-rts</strong> nor <strong>--lower-rts</strong> are given, the state of the RTS signal, after opening and configuring the port, is system dependent. On most systems the signal is raised.</p>
+</dd>
+<dt><strong>--lower-dtr</strong></dt>
+<dd><p>Lower the DTR control signal after opening the serial port. Only supported on some systems.</p>
+<p>If neither <strong>--lower-dtr</strong> nor <strong>--raise-dtr</strong> are given, the state of the DTR signal, after opening and configuring the port, is system dependent. On most systems the signal is raised.</p>
+</dd>
+<dt><strong>--raise-dtr</strong></dt>
+<dd><p>Raise the DTR control signal after opening the serial port. Only supported on some systems.</p>
+<p>If neither <strong>--raise-dtr</strong> nor <strong>--lower-dtr</strong> are given, the state of the DTR signal, after opening and configuring the port, is system dependent. On most systems the signal is raised.</p>
+</dd>
+<dt><strong>--exit-aftrer</strong> | <strong>-x</strong></dt>
+<dd><p>Exit picocom if it remains idle for the specified time (in milliseconds). Picocom is considered idle if: Nothing is read (received) from the serial port, AND there is nothing to write (send) to the serial port, AND nothing is read from the standard input (terminal). If <strong>--exit-after</strong> is set to zero, then picocom exits after opening and configuring the serial port, after sending the init string (if any, see option <strong>--initstring</strong>) and imediatelly when it becomes idle. When exiting after being idle, picocom drains the O/S serial port ouput buffer (i.e. waits for data already written to the port to be transmitted) and observes the <strong>--noreset</strong> and <strong>--hangup</strong> options as usual. (Default: not set).</p>
+<p>NOTICE: If <strong>--exit-after</strong> is set, reading zero bytes from the standard input (which usually means that whatever was connected there has been closed), will <em>not</em> cause picocom to exit. Instead, picocom will keep running, <em>without</em> reading from stdin, and will exit only when it becomes idle for the specified time, or if it is killed by a signal. If <strong>--exit-after</strong> is <em>not</em> set, then reading zero bytes from the standard input causes picocom to exit, after the contents of its output queue have been transmitted.</p>
+</dd>
+<dt><strong>--exit</strong> | <strong>-X</strong></dt>
+<dd><p>Exit picocom immediatelly after opening and configuring the serial port. Do <em>not</em> read <em>anything</em> from the standard input or from the serial port. When exiting the <strong>--noreset</strong> and <strong>--hangup</strong> options are observed as usual. With <strong>--exit</strong> and <strong>--noreset</strong> (and possibly <strong>--hangup</strong>) picocom can be used as a very crude replacement of <strong>stty(1)</strong>. If an init string is also given (see <strong>--initstring</strong> option), picocom exits imediatelly after sending (writing) the init string to the serial port and draining the O/S serial port output buffer (i.e. waiting for data written to the port to be transmitted). Again, nothing is read from the standard input, or from the serial port. The <strong>--exit</strong> option, overrides the <strong>--exit-after</strong> option. (Default: Disabled)</p>
+</dd>
+<dt><strong>--quiet</strong> | <strong>-q</strong></dt>
+<dd><p>Forces picocom to be quiet. Suppresses the output of the initial status and options information, as well as any other information or messages not explicitly requested by the user. Responses to user commands and any error or warning messages are still printed.</p>
+</dd>
+<dt><strong>--help</strong> | <strong>-h</strong></dt>
+<dd><p>Print a short help message describing the command-line options. Picocom's version, compile-time options, and enabled features are also shown.</p>
+</dd>
+</dl>
+<h1 id="display-of-options-and-port-settings">DISPLAY OF OPTIONS AND PORT SETTINGS</h1>
+<p>The &quot;show program options&quot; command (<strong>C-v</strong>), as well as the commands that change program options (<strong>C-b</strong>, <strong>C-u</strong>, <strong>C-d</strong>, <strong>C-f</strong>, etc) print messages showing the current values (or the new values, if they were changed) for the respective options. If picocom determines that an actual serial-port setting differs from the current value of the respective option (for whatever reason), then the value of the option is shown followed by the value of the actual serial-port setting in parenthesis. Example:</p>
+<pre><code>*** baud: 115200 (9600)</code></pre>
+<p>This means that a baud rate of 115200bps has been selected (from the command line, or using commands that change the baudrate) but the serial-port is actually operating at 9600bps (the driver may not support the higher setting, and has silently replaced it with a safe default, or the setting may have been changed from outside picocom). If the option and the corresponding serial-port setting are the same, only a single value is shown. Example:</p>
+<pre><code>*** baud: 9600</code></pre>
+<p>This behavior was introduced in picocom 2.0. Older releases displayed only the option values, not the actual serial-port settings corresponding to them.</p>
+<p>On startup, after the serial port is opened and configured (and assuming that neither the <strong>--noinit</strong>, nor the <strong>--quiet</strong> command line options have been given), the port settings are silently checked. If any mismatch is detected between the requested and the actual port settings, a warning message is displayed. You may then use the <strong>[C-v]</strong> command to determine the exact mismatch or mismatches.</p>
+<h1 id="sending-and-receiving-files">SENDING AND RECEIVING FILES</h1>
+<p>Picocom can send and receive files over the serial port using external programs that implement the respective protocols. In Linux typical programs for this purpose are:</p>
+<ul>
+<li><strong>rx(1)</strong> - receive using the X-MODEM protocol</li>
+<li><strong>rb(1)</strong> - receive using the Y-MODEM protocol</li>
+<li><strong>rz(1)</strong> - receive using the Z-MODEM protocol</li>
+<li><strong>sx(1)</strong> - send using the X-MODEM protocol</li>
+<li><strong>sb(1)</strong> - send using the Y-MODEM protocol</li>
+<li><strong>sz(1)</strong> - send using the Z-MODEM protocol</li>
+<li><strong>ascii-xfr(1)</strong> - receive or transmit ASCII files</li>
+</ul>
+<p>The name of, and the command-line options to, the program to be used for transmitting files are given by the <strong>--send-cmd</strong> option. Similarly the program to receive files, and its arguments, are given by the <strong>--receive-cmd</strong> option. For example, in order to start a picocom session that uses <strong>sz(1)</strong> to transmit files, and <strong>rz(1)</strong> to receive files, you have to say something like this:</p>
+<pre><code>picocom --send-cmd &quot;sz -vv&quot; --receive-cmd &quot;rz -vv&quot; ...</code></pre>
+<p>If the argument to the <strong>-send-cmd</strong> option, or the argument to the <strong>--receive-cmd</strong> option is the empty string, then the respective command is disabled. For example, in order to disable both the &quot;send&quot; and the &quot;receive&quot; commands you can invoke picocom like this:</p>
+<pre><code>picocom --send-cmd '' --receive-cmd '' ...</code></pre>
+<p>A picocom session with both, the send- and the receive-file commands disabled does not <strong>fork(2)</strong> and does not run any external programs.</p>
+<p>During the picocom session, if you key the &quot;send&quot; or &quot;receive&quot; commands (e.g. by pressing <strong>C-a</strong>, <strong>C-s</strong>, or <strong>C-a</strong>, <strong>C-r</strong>) you will be prompted for a filename. At this prompt you can enter one or more file-names, and any additional arguments to the transmission or reception program. Command-line editing and rudimentary pathname completion are available at this prompt, if you have compiled picocom with support for the linenoise library. Pressing <strong>C-c</strong> at this prompt will cancel the file transfer command and return to normal picocom operation. After entering a filename (and / or additional transmission or reception program arguments) and assuming you have not canceled the operation by pressing <strong>C-c</strong>, picocom will start the external program as specified by the <strong>--send-cmd</strong>, or <strong>--receive-cmd</strong> option, and with any filenames and additional arguments you may have supplied. The standard input and output of the external program will be connected to the serial port. The standard error of the external program will be connected to the terminal which---while the program is running---will revert to canonical mode. Pressing <strong>C-c</strong> while the external program is running will prematurely terminate it (assuming that the program itself does not ignore SIGINT), and return control to picocom. Pressing <strong>C-c</strong> at any other time, has no special effect; the character is normally passed to the serial port.</p>
+<h1 id="input-output-and-echo-mapping">INPUT, OUTPUT, AND ECHO MAPPING</h1>
+<p>Using the <strong>--imap</strong>, <strong>--omap</strong>, and <strong>--emap</strong> options you can make picocom map (translate, replace) certain special characters after being read from the serial port (with <strong>--imap</strong>), before being written to the serial port (with <strong>--omap</strong>), and before being locally echoed to the terminal (standard output) if local echo is enabled (with <strong>--emap</strong>). These mapping options take, each, a single argument which is a comma-separated list of one or more of the following identifiers:</p>
+<ul>
+<li><strong>crlf</strong> (map CR to LF),</li>
+<li><strong>crcrlf</strong> (map CR to CR + LF),</li>
+<li><strong>igncr</strong> (ignore CR),</li>
+<li><strong>lfcr</strong> (map LF to CR),</li>
+<li><strong>lfcrlf</strong> (map LF to CR + LF),</li>
+<li><strong>ignlf</strong> (ignore LF),</li>
+<li><strong>bsdel</strong> (map BS to DEL),</li>
+<li><strong>delbs</strong> (map DEL to BS)</li>
+<li><strong>spchex</strong> (map special chars (&lt; 0x20 || 0x7f), excl. CR, LF, and TAB to hex)</li>
+<li><strong>tabhex</strong> (map TAB to hex)</li>
+<li><strong>crhex</strong> (map CR to hex)</li>
+<li><strong>lfhex</strong> (map LF to hex)</li>
+<li><strong>8bithex</strong> (map chars with 8th-bit set to hex)</li>
+<li><strong>nrmhex</strong> (map normal ascii chars (0x20 &lt;= c &lt; 0x7f) to hex)</li>
+</ul>
+<p>The &quot;to hex&quot; mappings (<strong>???hex</strong>) replace the respective characters with their hexadecimal representation (in square brackets), like this:</p>
+<pre><code>CR --&gt; [0d]</code></pre>
+<p>If more than one mappings are provided that apply to the same character, then only the first mapping, in the order listed above, is applied.</p>
+<p>For example the command:</p>
+<pre><code>picocom --omap crlf,delbs --imap ignlf,bsdel --emap crcrlf ...</code></pre>
+<p>will:</p>
+<ul>
+<li><p>Replace every CR (carriage return, 0x0d) character with LF (line feed, 0x0a) and every DEL (delete, 0x7f) character with BS (backspace, 0x08) before writing it to the serial port.</p></li>
+<li><p>Ignore (not write to the terminal) every LF character read from the serial port, and replace every BS character read from the serial port with DEL.</p></li>
+<li><p>Replace every CR character with CR and LF when echoing to the terminal (if local-echo is enabled).</p></li>
+</ul>
+<h1 id="exiting-picocom">EXITING PICOCOM</h1>
+<p>This section summarizes the conditions in which picocom terminates its operation and what happens in each such condition:</p>
+<ul>
+<li><p>The exit command is seen in the standard input. That is, the escape character is seen (default <strong>C-a</strong>), followed by the exit command character (default <strong>C-x</strong>). In this case: The contents of the output queue (data read from the standard input, but not yet written to the port) as well as the contents of the O/S serial port output buffer (data already written to the port, but not yet transmitted) are discarded (flushed). Then the serial port is reset to it's original settings, and the modem-control lines are cleared signaling a modem reset, subject to the <strong>--noreset</strong> and the <strong>--hangup</strong> options. After that picocom exits with a success status.</p></li>
+<li><p>The quit command is seen in the standard input. That is, the escape character is seen (default <strong>C-a</strong>), followed by the quit command character (default <strong>C-q</strong>). The behavior in this case is similar to that of the exit command, with one difference: Picocom behaves as if the <strong>--noreset</strong> option is given (regardless if it actualy is, or not).</p></li>
+<li><p>The <strong>--exit</strong> option is given. See the documentation of this option for a description of what exactly happens in this case. Picocom exits with a success exit status.</p></li>
+<li><p>The <strong>--exit-after</strong> option is given. See the documentation of this option for a description of what exactly happens in this case. Picocom exits with a success exit status.</p></li>
+<li><p>Zero bytes are read from the standard input. This usually means that whatever was connected to picocom's standard input has been closed or, if a file was connected, then picocom has read up to the end of the file. In this case, if the <strong>--exit-after</strong> option is <em>not</em> given, picocom stops reading from the standard input, and keeps operating normally (i.e. writing to, and reading from, the serial port) until its output queue empties. When this happens, picocom waits for the O/S serial port output buffer to drain and then (subject to the <strong>--noreset</strong> and <strong>--hangup</strong> options) resets the serial port to it's initial settings, clears the modem-control lines, and exits. If the <strong>--exit-after</strong> option is given then, again, picocom stops reading from the standard input and continues operating normally but, in this case, it does so until it becomes idle for the specified amount of time, before exiting. Picocom exits with a success exit status.</p></li>
+<li><p>Picocom is killed by the TERM or INT signal, or an unrecoverable error occurs. In this case picocom behaves as if it had received the exit command, that is: The contents of the output queue and the contents of the O/S serial port output buffer are discarded (flushed). Then, subject to the <strong>--noreset</strong> and <strong>--hangup</strong> options, the serial port is reset to its original settings, the modem control lines are cleared, and picocom exits with a failure status.</p></li>
+</ul>
+<h1 id="author">AUTHOR</h1>
+<p>Written by Nick Patavalis <script type="text/javascript">
+<!--
+h='&#x65;&#102;&#x61;&#x75;&#108;&#116;&#46;&#110;&#x65;&#116;';a='&#64;';n='&#110;&#112;&#x61;&#116;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'" clas'+'s="em' + 'ail">'+e+'<\/'+'a'+'>');
+// -->
+</script><noscript>npat at efault dot net</noscript></p>
+<h1 id="availability">AVAILABILITY</h1>
+<p>Download the latest release from: <a href="https://github.com/npat-efault/picocom/releases" class="uri">https://github.com/npat-efault/picocom/releases</a></p>
+<h1 id="copyright">COPYRIGHT</h1>
+<p>Copyright (c) 2003-2018 Nick Patavalis</p>
+<p>This file is part of Picocom.</p>
+<p>Picocom is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.</p>
+<p>Picocom is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.</p>
+<p>You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA</p>
+</body>
+</html>
