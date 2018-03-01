@@ -295,6 +295,7 @@ obj-$(CONFIG_MIKROTIK_BTEST) += mikrotik_btest
 obj-$(CONFIG_BKM) += multisim
 obj-$(CONFIG_TMK) += multisim
 obj-$(CONFIG_ZFS) += util-linux spl zlib zfs
+obj-$(CONFIG_SCREEN) += ncurses screen
 obj-y+=configs
 
 
