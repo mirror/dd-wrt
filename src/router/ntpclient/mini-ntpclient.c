@@ -166,9 +166,12 @@ static int query_server(char *srv)
 	struct sockaddr_storage ss;
 	struct sockaddr_in *ipv4 = NULL;
 	struct sockaddr_in6 *ipv6 = NULL;
+	int isipv6 = 1;
 
 	sd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
 	if (sd == -1) {
+	      again:;
+		isipv6 = 0;
 		sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 		if (sd == -1) {
 			return -1;	/* Fatal error, cannot even create a socket? */
@@ -201,9 +204,10 @@ static int query_server(char *srv)
 	syslog(LOG_DAEMON | LOG_DEBUG, "Connecting to %s [%s] ...\n", srv, deststr);
 
 	if (connect(sd, (struct sockaddr *)&ss, len) == -1) {
-		syslog(LOG_DAEMON | LOG_ERR, "Failed connecting to %s [%s]: %s", srv, deststr, strerror(errno));
 		close(sd);
-
+		if (isipv6)
+			goto again;
+		syslog(LOG_DAEMON | LOG_ERR, "Failed connecting to %s [%s]: %s", srv, deststr, strerror(errno));
 		return 1;	/* Cannot connect to server, try next. */
 	}
 
