@@ -645,9 +645,6 @@ int dw_pcie_host_init(struct pcie_port *pp)
 		}
 	}
 
-	if (pp->swizzle)
-		dw_pci.swizzle = pp->swizzle;
-
 	pp->root_bus_nr = pp->busn->start;
 	if (IS_ENABLED(CONFIG_PCI_MSI)) {
 		bus = pci_scan_root_bus_msi(pp->dev, pp->root_bus_nr,
