@@ -126,6 +126,10 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
+	char *eth1addr = getUEnv("eth1addr");
+	if (eth1addr)
+		eval("ifconfig", "eth1", "hw", "ether", eth1addr);
+
 	eval("ifconfig", "eth0", "promisc");
 	eval("ifconfig", "eth1", "promisc");
 	/*
