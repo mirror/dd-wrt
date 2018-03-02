@@ -124,7 +124,7 @@ void setWifiPass(void)
 		strcpy(var, "default_passphrase");
 		break;
 	default:
-	        return;
+		return;
 	}
 	if (mtd == -1)
 		return;
@@ -688,6 +688,7 @@ void *getUEnv(char *name)
 #else
 #define UOFFSET 0x3E000
 #endif
+	int try = 0;
 //      static char res[64];
 	static char res[256];
 	bzero(res, sizeof(res));
@@ -713,8 +714,16 @@ void *getUEnv(char *name)
 	snprintf(newname, 64, "%s=", name);
 	fseek(fp, UOFFSET, SEEK_SET);
 	char *mem = safe_malloc(0x2000);
+      again:;
 	fread(mem, 0x2000, 1, fp);
 	fclose(fp);
+#ifdef HAVE_VENTANA
+	if (try == 0 && mem[0] == 0xff) {
+		try = 1;
+		fp = fopen("/dev/mtdblock/2", "rb");
+		goto again;
+	}
+#endif
 	int s = (0x2000 - 1) - strlen(newname);
 	int i;
 	int l = strlen(newname);
@@ -824,7 +833,6 @@ unsigned int write_gpio(char *device, unsigned int val)
 		return 0;
 	}
 }
-
 
 // note - broadcast addr returned in ipaddr
 void get_broadcast(char *ipaddr, char *netmask)
