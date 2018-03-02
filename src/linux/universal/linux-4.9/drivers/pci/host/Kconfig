@@ -51,7 +51,6 @@ config PCIE_DW_PLAT
 
 config PCIE_DW
 	bool
-	depends on PCI_MSI_IRQ_DOMAIN
 
 config PCI_EXYNOS
 	bool "Samsung Exynos PCIe controller"
@@ -63,7 +62,6 @@ config PCI_EXYNOS
 config PCI_IMX6
 	bool "Freescale i.MX6 PCIe controller"
 	depends on SOC_IMX6Q
-	depends on PCI_MSI_IRQ_DOMAIN
 	select PCIEPORTBUS
 	select PCIE_DW
 
