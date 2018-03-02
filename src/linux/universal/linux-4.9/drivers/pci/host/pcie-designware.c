@@ -645,6 +645,9 @@ int dw_pcie_host_init(struct pcie_port *pp)
 		}
 	}
 
+	if (pp->swizzle)
+		dw_pci.swizzle = pp->swizzle;
+
 	pp->root_bus_nr = pp->busn->start;
 	if (IS_ENABLED(CONFIG_PCI_MSI)) {
 		bus = pci_scan_root_bus_msi(pp->dev, pp->root_bus_nr,
@@ -866,7 +869,7 @@ void dw_pcie_setup_rc(struct pcie_port *pp)
 	/* setup bus numbers */
 	val = dw_pcie_readl_rc(pp, PCI_PRIMARY_BUS);
 	val &= 0xff000000;
-	val |= 0x00010100;
+	val |= 0x00ff0100;
 	dw_pcie_writel_rc(pp, PCI_PRIMARY_BUS, val);
 
 	/* setup command register */
