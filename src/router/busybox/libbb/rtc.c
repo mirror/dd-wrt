@@ -64,8 +64,8 @@ int FAST_FUNC rtc_xopen(const char **default_rtc, int flags)
 {
 	int rtc;
 	const char *name =
-		"/dev/rtc""\0"
 		"/dev/rtc0""\0"
+		"/dev/rtc""\0"
 		"/dev/misc/rtc""\0";
 
 	if (!*default_rtc)
