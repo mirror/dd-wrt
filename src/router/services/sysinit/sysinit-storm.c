@@ -111,7 +111,7 @@ void start_sysinit(void)
 	set_gpio(3, 0);
 	set_gpio(5, 0);
 
-	eval("hwclock", "-s");
+	eval("hwclock", "-s", "-u");
 
 	return;
 	cprintf("done\n");
