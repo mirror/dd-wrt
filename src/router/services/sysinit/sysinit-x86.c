@@ -243,6 +243,8 @@ void start_sysinit(void)
 	 * Set a sane date 
 	 */
 	stime(&tm);
+	eval("hwclock", "-s", "-u");
+	eval("hwclock", "-f", "/dev/rtc0", "-s", "-u");
 	cprintf("done\n");
 	return;
 }

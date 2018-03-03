@@ -120,7 +120,7 @@ void start_sysinit(void)
 	 */
 	stime(&tm);
 	nvram_set("wl0_ifname", "ath0");
-	eval("hwclock", "-s");
+	eval("hwclock", "-s", "-u");
 	char *modelname = nvram_safe_get("DD_BOARD");
 	if (!strcmp(modelname, "Gateworks Laguna GW2391"))
 		eval("gsp_updater", "-f", "/etc/gsc_2391_v50.txt", "50");

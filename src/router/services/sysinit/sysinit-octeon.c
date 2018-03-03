@@ -122,7 +122,7 @@ void start_sysinit(void)
 	stime(&tm);
 	nvram_set("wl0_ifname", "ath0");
 
-	eval("hwclock", "-s");
+	eval("hwclock", "-s", "-u");
 
 	return;
 	cprintf("done\n");

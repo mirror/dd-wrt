@@ -592,7 +592,7 @@ void start_sysinit(void)
 	stime(&tm);
 	nvram_set("wl0_ifname", "ath0");
 #ifndef HAVE_NOP8670
-	eval("hwclock", "-s");
+	eval("hwclock", "-s", "-u");
 #endif
 	nvram_seti("use_crypto", 0);
 	cprintf("done\n");
