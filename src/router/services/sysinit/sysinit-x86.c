@@ -244,7 +244,6 @@ void start_sysinit(void)
 	 */
 	stime(&tm);
 	eval("hwclock", "-s", "-u");
-	eval("hwclock", "-f", "/dev/rtc0", "-s", "-u");
 	cprintf("done\n");
 	return;
 }
