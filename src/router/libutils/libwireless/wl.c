@@ -2663,12 +2663,12 @@ char *getWifiDeviceName(char *prefix)
 	}
 	int i;
 	for (i = 0; i < sizeof(wdevices) / sizeof(wdevices[0]); i++) {
-		if (wdevices[i].vendor == vendor && wdevices[i].device == device && wdevices[i].subvendor == subvendor && wdevices[i].subdevice == subdevice)
+		if (wdevices[i].subvendor && wdevices[i].vendor == vendor && wdevices[i].device == device && wdevices[i].subvendor == subvendor && wdevices[i].subdevice == subdevice)
 			return wdevices[i].name;
 	}
 
 	for (i = 0; i < sizeof(wdevices) / sizeof(wdevices[0]); i++) {
-		if (wdevices[i].vendor == vendor && wdevices[i].device == device && !wdevices[i].subvendor)
+		if (!wdevices[i].subvendor && wdevices[i].vendor == vendor && wdevices[i].device == device)
 			return wdevices[i].name;
 	}
 	return NULL;
