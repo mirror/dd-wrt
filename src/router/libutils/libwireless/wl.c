@@ -2462,9 +2462,50 @@ struct wifidevices {
 	char *name;
 	int vendor;
 	int device;
+	int subvendor;		//optional
+	int subdevice;
 };
 
 static struct wifidevices wdevices[] = {
+	{"Ubiquiti XR5", 0x168c, 0x001b, 0x0777, 0x3005},	//UBNT XR5 offset 10
+	{"Ubiquiti XR5", 0x168c, 0x001b, 0x7777, 0x3005},	//UBNT XR5 offset 10
+	{"Ubiquiti XR4", 0x168c, 0x001b, 0x0777, 0x3004},	//UBNT XR4
+	{"Ubiquiti XR7", 0x168c, 0x001b, 0x0777, 0x3007},	//UBNT XR7 offset 10
+	{"Ubiquiti XR2-2.3", 0x168c, 0x001b, 0x0777, 0x3b02},	//UBNT XR2.3
+	{"Ubiquiti XR2", 0x168c, 0x001b, 0x0777, 0x3c02},	//UBNT XR2.6 offset 10
+	{"Ubiquiti XR2", 0x168c, 0x001b, 0x0777, 0x3002},	//UBNT XR2
+	{"Ubiquiti XR2", 0x168c, 0x001b, 0x7777, 0x3002},	//UBNT XR2
+	{"Ubiquiti XR3", 0x168c, 0x001b, 0x0777, 0x3003},	//UBNT XR3 offset 10
+	{"Ubiquiti XR3-3.6", 0x168c, 0x001b, 0x0777, 0x3c03},	//UBNT XR3-3.6 offset 10
+	{"Ubiquiti XR3-2.8", 0x168c, 0x001b, 0x0777, 0x3b03},	//UBNT XR3-2.8
+	{"Ubiquiti XR9", 0x168c, 0x001b, 0x0777, 0x3009},	//UBNT XR9 offset 10
+	{"Ubiquiti UB5", 0x168c, 0x001b, 0x0777, 0x1107},	//UBNT UB5 
+	{"Ubiquiti SR71A", 0x168c, 0x0027, 0x0777, 0x4082},	//UBNT SR71A offset 10
+	{"Ubiquiti SR71", 0x168c, 0x0027, 0x168c, 0x2082},	//UBNT SR71 offset 10
+	{"Ubiquiti SR71-E", 0x168c, 0x0027, 0x168c, 0x4e05},	//UBNT SR71-E offset 10
+	{"Ubiquiti SR71-15", 0x168c, 0x0027, 0x168c, 0x4005},	//UBNT SR71-15 offset 10
+	{"Ubiquiti SR71-12", 0x168c, 0x0027, 0x168c, 0x4002},	//UBNT SR71-12 offset 10
+	{"Ubiquiti SR9", 0x168c, 0x0013, 0x0777, 0x2009},	//UBNT SR9 
+	{"Ubiquiti SR9", 0x168c, 0x0013, 0x7777, 0x2009},	//UBNT SR9 offset 12 
+	{"Ubiquiti SR4", 0x168c, 0x0013, 0x7777, 0x2004},	//UBNT SR4 offset 6
+	{"Ubiquiti SR4", 0x168c, 0x0013, 0x0777, 0x2004},	//UBNT SR4 offset 6
+	{"Ubiquiti SR4C", 0x168c, 0x0013, 0x0777, 0x1004},	//UBNT SR4C offset 6
+	{"Ubiquiti SR4C", 0x168c, 0x0013, 0x7777, 0x1004},	//UBNT SR4C offset 6
+	{"Ubiquiti SRC", 0x168c, 0x0013, 0x168c, 0x1042},	//UBNT SRC offset 1
+	{"Ubiquiti SR2", 0x168c, 0x0013, 0x168c, 0x2041},	//UBNT SR2 offset 10
+	{"Ubiquiti SR5", 0x168c, 0x0013, 0x168c, 0x2042},	//UBNT SR5 offset 7
+	{"Ubiquiti SR2", 0x168c, 0x0013, 0x168c, 0x2051},	//UBNT SR2
+	{"Senao NMP8601 / AR5413", 0x168c, 0x001b, 0x168c, 0x2063},	//NMP
+	{"Alfa Networks / AR5413", 0x168c, 0x001b, 0x17f9, 0x000d},	//alfa
+	{"Seano NMP8601 / AR5413", 0x168c, 0x001b, 0x168c, 0x2062},	//NMP
+	{"Gigabyte / AR5413", 0x168c, 0x001b, 0x1458, 0xe901},	//Gigabyte
+	{"Alfa Networks / AR5413", 0x168c, 0x001b, 0x168d, 0x1031},	//Alfa
+	{"Alfa Networks / AR5413", 0x168c, 0x001b, 0x168d, 0x10a2},	//Alfa
+	{"DoodleLabs DB-F15-PRO", 0x168c, 0x001b, 0xdb11, 0xf50},	//dbii F50-pro-i
+	{"Mikrotik R52nM", 0x168c, 0x0029, 0x198c, 0x4201},
+	{"Mikrotik R52nM", 0x168c, 0x0029, 0x19b6, 0x5201},
+	{"Mikrotik R5H", 0x168c, 0x001b, 0x19b6, 0x2201},
+	{"Mikrotik R5H", 0x168c, 0x001b, 0x19b6, 0x2203},
 	{"AR5210 802.11a", 0x168c, 0x0007},
 	{"AR5210 802.11a", 0x168c, 0x0207},
 	{"AR5211 802.11a", 0x168c, 0x0011},
@@ -2518,7 +2559,7 @@ char *getWifiDeviceName(char *prefix)
 {
 	char *globstring;
 	int devnum;
-	int device = 0, vendor = 0;
+	int device = 0, vendor = 0, subdevice = 0, subvendor = 0;
 	int devcount;
 	FILE *fp;
 	sscanf(prefix, "ath%d", &devcount);
@@ -2533,6 +2574,20 @@ char *getWifiDeviceName(char *prefix)
 	fp = fopen(globstring, "rb");
 	if (fp) {
 		fscanf(fp, "%d", &device);
+		fclose(fp);
+	}
+	free(globstring);
+	asprintf(&globstring, "/proc/sys/dev/wifi%d/idvendor", devcount);
+	fp = fopen(globstring, "rb");
+	if (fp) {
+		fscanf(fp, "%d", &subvendor);
+		fclose(fp);
+	}
+	free(globstring);
+	asprintf(&globstring, "/proc/sys/dev/wifi%d/idproduct", devcount);
+	fp = fopen(globstring, "rb");
+	if (fp) {
+		fscanf(fp, "%d", &subdevice);
 		fclose(fp);
 	}
 	free(globstring);
@@ -2552,6 +2607,22 @@ char *getWifiDeviceName(char *prefix)
 		fp = fopen(globstring, "rb");
 		if (fp) {
 			fscanf(fp, "0x%x", &device);
+			fclose(fp);
+		}
+		free(globstring);
+
+		asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/subsystem_device", devnum);
+		fp = fopen(globstring, "rb");
+		if (fp) {
+			fscanf(fp, "0x%x", &subdevice);
+			fclose(fp);
+		}
+		free(globstring);
+
+		asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/subsystem_vendor", devnum);
+		fp = fopen(globstring, "rb");
+		if (fp) {
+			fscanf(fp, "0x%x", &subvendor);
 			fclose(fp);
 		}
 		free(globstring);
@@ -2592,7 +2663,12 @@ char *getWifiDeviceName(char *prefix)
 	}
 	int i;
 	for (i = 0; i < sizeof(wdevices) / sizeof(wdevices[0]); i++) {
-		if (wdevices[i].vendor == vendor && wdevices[i].device == device)
+		if (wdevices[i].vendor == vendor && wdevices[i].device == device && wdevices[i].subvendor == subvendor && wdevices[i].subdevice == subdevice)
+			return wdevices[i].name;
+	}
+
+	for (i = 0; i < sizeof(wdevices) / sizeof(wdevices[0]); i++) {
+		if (wdevices[i].vendor == vendor && wdevices[i].device == device && !wdevices[i].subvendor)
 			return wdevices[i].name;
 	}
 	return NULL;
