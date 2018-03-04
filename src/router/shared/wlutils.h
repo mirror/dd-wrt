@@ -87,11 +87,21 @@ int getNoiseIndex_qtn(char *ifname, int index);
 int getRssiIndex_qtn(char *ifname, int index);
 #endif
 int getassoclist(char *name, unsigned char *list);
-int getNoise(char *ifname, unsigned char *mac);
-int getUptime(char *ifname, unsigned char *mac);
-int getRssi(char *ifname, unsigned char *mac);
-int getTxRate(char *ifname, unsigned char *mac);
-int getRxRate(char *ifname, unsigned char *mac);
+
+#define INFO_UPTIME 0
+#define INFO_RSSI 1
+#define INFO_NOISE 2
+#define INFO_RXRATE 3
+#define INFO_TXRATE 4
+
+int getWifiInfo_ath9k(char *ifname, unsigned char *mac, int field);	// only used internal
+int getWifiInfo(char *ifname, unsigned char *mac, int field);
+
+#define getNoise(ifname, mac) getWifiInfo(ifname, mac, INFO_NOISE)
+#define getRssi(ifname, mac) getWifiInfo(ifname, mac, INFO_RSSI)
+#define getTxRate(ifname, mac) getWifiInfo(ifname, mac, INFO_TXRATE)
+#define getRxRate(ifname, mac) getWifiInfo(ifname, mac, INFO_RXRATE)
+#define getUptime(ifname, mac) getWifiInfo(ifname, mac, INFO_UPTIME)
 
 int getassoclist_11n(char *name, unsigned char *list);
 int getNoise_11n(char *ifname, unsigned char *mac);
@@ -148,7 +158,6 @@ struct wifi_interface {
 	int center2;
 };
 
-
 typedef struct STAINFO {
 	char mac[6];
 	char rssi;
@@ -157,7 +166,6 @@ typedef struct STAINFO {
 } STAINFO;
 
 extern STAINFO *getRaStaInfo(char *ifname);
-
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 #include <stdint.h>
@@ -171,8 +179,6 @@ extern struct mac80211_info *mac80211_assoclist(char *interface);
 extern char *mac80211_get_caps(char *interface, int shortgi, int greenfield);
 extern int has_shortgi(char *interface);
 extern int has_greenfield(char *interface);
-
-
 
 #ifdef HAVE_ATH10K
 extern int has_vht160(char *interface);
@@ -213,26 +219,7 @@ struct wifi_channels {
 	int noise;
 	int max_eirp;
 	int hw_eirp;
-	unsigned int no_outdoor:1,
-			no_indoor:1,
-			no_ofdm:1,
-			no_cck:1,
-			ptp_only:1,
-			ptmp_only:1, 
-			passive_scan:1, 
-			no_ibss:1, 
-			lll:1, 
-			llu:1, 
-			lul:1, 
-			luu:1, 
-			ull:1, 
-			ulu:1, 
-			uul:1, 
-			uuu:1, 
-			ht40:1,
-			vht80:1,
-			vht160:1,
-			dfs:1;
+	unsigned int no_outdoor:1, no_indoor:1, no_ofdm:1, no_cck:1, ptp_only:1, ptmp_only:1, passive_scan:1, no_ibss:1, lll:1, llu:1, lul:1, luu:1, ull:1, ulu:1, uul:1, uuu:1, ht40:1, vht80:1, vht160:1, dfs:1;
 };
 
 struct mac80211_info {

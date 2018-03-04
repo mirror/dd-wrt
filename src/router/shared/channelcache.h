@@ -93,7 +93,6 @@ static struct wifi_channels *getcache(const char *ifname, const char *country)
 	sscanf(prefix, "ath%d", &dn); \
 	if (dn > -1 && (dn > 7 || devs[dn] == -1)) {
 
-
 #endif
 #define EXITVALUECACHE() \
 	} else { \

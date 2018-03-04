@@ -858,15 +858,15 @@ struct ledconfig {
 	int disconnected_gpio;
 	int bridge_gpio;
 	int vpn_gpio;
-	int ses_gpio;	// use for SES1 (Linksys), AOSS (Buffalo)
+	int ses_gpio;		// use for SES1 (Linksys), AOSS (Buffalo)
 	int ses2_gpio;
-	int wlan_gpio;	// wlan button led R7000
-	int wlan0_gpio;	// use this only if wlan led is not controlled by hardware!
+	int wlan_gpio;		// wlan button led R7000
+	int wlan0_gpio;		// use this only if wlan led is not controlled by hardware!
 	int wlan1_gpio;
 	int wlan2_gpio;
 	int usb_gpio;
 	int usb_gpio1;
-	int sec0_gpio;	// security leds, wrt600n
+	int sec0_gpio;		// security leds, wrt600n
 	int sec1_gpio;
 	int usb_power;
 	int usb_power1;
