@@ -2409,7 +2409,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		for (i = 0; i < c; i++) {
 			char path[42];
 			sprintf(path, "/tmp/ath%d_configured", i);
-			*check = fopen(path, "rb");
+			FILE *check = fopen(path, "rb");
 			if (check) {
 				cnf++;
 				fclose(check);
