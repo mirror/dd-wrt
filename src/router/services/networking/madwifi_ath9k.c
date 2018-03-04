@@ -47,6 +47,11 @@
 #include <glob.h>
 
 #include <services.h>
+
+#include "unl.h"
+#include <nl80211.h>
+
+
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc);
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss);
@@ -597,7 +602,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_ALL);
 				}
 				if (acs != NULL) {
-					struct wifi_channels *chan = mac80211_get_channels(prefix, country, usebw, 0xff);
+					struct wifi_channels *chan = mac80211_get_channels_simple(prefix, country, usebw, 0xff);
 					freq = acs->freq;
 					channel = ieee80211_mhz2ieee(freq);
 					fprintf(stderr, "mac80211autochannel interface: %s frequency: %d\n", prefix, freq);
