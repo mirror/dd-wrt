@@ -115,7 +115,7 @@ static void usbip_dump_usb_device(struct usb_device *udev)
 		break;
 	}
 
-	pr_debug("tt %p, ttport %d\n", udev->tt, udev->ttport);
+	pr_debug("tt hub ttport %d\n", udev->ttport);
 
 	dev_dbg(dev, "                    ");
 	for (i = 0; i < 16; i++)
@@ -148,11 +148,8 @@ static void usbip_dump_usb_device(struct usb_device *udev)
 	}
 	pr_debug("\n");
 
-	dev_dbg(dev, "parent %p, bus %p\n", udev->parent, udev->bus);
-
-	dev_dbg(dev, "descriptor %p, config %p, actconfig %p, "
-		"rawdescriptors %p\n", &udev->descriptor, udev->config,
-		udev->actconfig, udev->rawdescriptors);
+	dev_dbg(dev, "parent %s, bus %s\n", dev_name(&udev->parent->dev),
+		udev->bus->bus_name);
 
 	dev_dbg(dev, "have_langid %d, string_langid %d\n",
 		udev->have_langid, udev->string_langid);
@@ -261,9 +258,6 @@ void usbip_dump_urb(struct urb *urb)
 
 	dev = &urb->dev->dev;
 
-	dev_dbg(dev, "   urb                   :%p\n", urb);
-	dev_dbg(dev, "   dev                   :%p\n", urb->dev);
-
 	usbip_dump_usb_device(urb->dev);
 
 	dev_dbg(dev, "   pipe                  :%08x ", urb->pipe);
@@ -272,11 +266,9 @@ void usbip_dump_urb(struct urb *urb)
 
 	dev_dbg(dev, "   status                :%d\n", urb->status);
 	dev_dbg(dev, "   transfer_flags        :%08X\n", urb->transfer_flags);
-	dev_dbg(dev, "   transfer_buffer       :%p\n", urb->transfer_buffer);
 	dev_dbg(dev, "   transfer_buffer_length:%d\n",
 						urb->transfer_buffer_length);
 	dev_dbg(dev, "   actual_length         :%d\n", urb->actual_length);
-	dev_dbg(dev, "   setup_packet          :%p\n", urb->setup_packet);
 
 	if (urb->setup_packet && usb_pipetype(urb->pipe) == PIPE_CONTROL)
 		usbip_dump_usb_ctrlrequest(
@@ -286,8 +278,6 @@ void usbip_dump_urb(struct urb *urb)
 	dev_dbg(dev, "   number_of_packets     :%d\n", urb->number_of_packets);
 	dev_dbg(dev, "   interval              :%d\n", urb->interval);
 	dev_dbg(dev, "   error_count           :%d\n", urb->error_count);
-	dev_dbg(dev, "   context               :%p\n", urb->context);
-	dev_dbg(dev, "   complete              :%p\n", urb->complete);
 }
 EXPORT_SYMBOL_GPL(usbip_dump_urb);
 
@@ -334,9 +324,8 @@ void usbip_dump_header(struct usbip_header *pdu)
 }
 EXPORT_SYMBOL_GPL(usbip_dump_header);
 
-/* Send/receive messages over TCP/IP. I refer drivers/block/nbd.c */
-int usbip_xmit(int send, struct socket *sock, char *buf, int size,
-	       int msg_flags)
+/* Receive data over TCP/IP. */
+int usbip_recv(struct socket *sock, void *buf, int size)
 {
 	int result;
 	struct msghdr msg;
@@ -347,26 +336,10 @@ int usbip_xmit(int send, struct socket *sock, char *buf, int size,
 	char *bp = buf;
 	int osize = size;
 
-	usbip_dbg_xmit("enter\n");
-
-	if (!sock || !buf || !size) {
-		pr_err("invalid arg, sock %p buff %p size %d\n", sock, buf,
-		       size);
+	if (!sock || !buf || !size)
 		return -EINVAL;
-	}
 
-	if (usbip_dbg_flag_xmit) {
-		if (send) {
-			if (!in_interrupt())
-				pr_debug("%-10s:", current->comm);
-			else
-				pr_debug("interrupt  :");
-
-			pr_debug("sending... , sock %p, buf %p, size %d, "
-				 "msg_flags %d\n", sock, buf, size, msg_flags);
-			usbip_dump_buffer(buf, size);
-		}
-	}
+	usbip_dbg_xmit("enter\n");
 
 	do {
 		sock->sk->sk_allocation = GFP_NOIO;
@@ -377,42 +350,27 @@ int usbip_xmit(int send, struct socket *sock, char *buf, int size,
 		msg.msg_control = NULL;
 		msg.msg_controllen = 0;
 		msg.msg_namelen    = 0;
-		msg.msg_flags      = msg_flags | MSG_NOSIGNAL;
+		msg.msg_flags      = MSG_NOSIGNAL;
 
-		if (send)
-			result = kernel_sendmsg(sock, &msg, &iov, 1, size);
-		else
-			result = kernel_recvmsg(sock, &msg, &iov, 1, size,
-						MSG_WAITALL);
-
-		if (result <= 0) {
-			pr_debug("%s sock %p buf %p size %u ret %d total %d\n",
-				 send ? "send" : "receive", sock, buf, size,
-				 result, total);
+		result = kernel_recvmsg(sock, &msg, &iov, 1, size, MSG_WAITALL);
+		if (result <= 0)
 			goto err;
-		}
 
 		size -= result;
 		buf += result;
 		total += result;
-
 	} while (size > 0);
 
 	if (usbip_dbg_flag_xmit) {
-		if (!send) {
-			if (!in_interrupt())
-				pr_debug("%-10s:", current->comm);
-			else
-				pr_debug("interrupt  :");
+		if (!in_interrupt())
+			pr_debug("%-10s:", current->comm);
+		else
+			pr_debug("interrupt  :");
 
-			pr_debug("receiving....\n");
-			usbip_dump_buffer(bp, osize);
-			pr_debug("received, osize %d ret %d size %d total %d\n",
-				 osize, result, size, total);
-		}
-
-		if (send)
-			pr_debug("send, total %d\n", total);
+		pr_debug("receiving....\n");
+		usbip_dump_buffer(bp, osize);
+		pr_debug("received, osize %d ret %d size %d total %d\n",
+			osize, result, size, total);
 	}
 
 	return total;
@@ -420,7 +378,7 @@ int usbip_xmit(int send, struct socket *sock, char *buf, int size,
 err:
 	return result;
 }
-EXPORT_SYMBOL_GPL(usbip_xmit);
+EXPORT_SYMBOL_GPL(usbip_recv);
 
 struct socket *sockfd_to_socket(unsigned int sockfd)
 {
@@ -712,7 +670,7 @@ int usbip_recv_iso(struct usbip_device *ud, struct urb *urb)
 	if (!buff)
 		return -ENOMEM;
 
-	ret = usbip_xmit(0, ud->tcp_socket, buff, size, 0);
+	ret = usbip_recv(ud->tcp_socket, buff, size);
 	if (ret != size) {
 		dev_err(&urb->dev->dev, "recv iso_frame_descriptor, %d\n",
 			ret);
@@ -831,8 +789,7 @@ int usbip_recv_xbuff(struct usbip_device *ud, struct urb *urb)
 		}
 	}
 
-	ret = usbip_xmit(0, ud->tcp_socket, (char *)urb->transfer_buffer,
-			 size, 0);
+	ret = usbip_recv(ud->tcp_socket, urb->transfer_buffer, size);
 	if (ret != size) {
 		dev_err(&urb->dev->dev, "recv xbuf, %d\n", ret);
 		if (ud->side == USBIP_STUB) {
