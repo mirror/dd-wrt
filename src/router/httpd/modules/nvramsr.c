@@ -74,7 +74,7 @@ void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 	wfread(mem, len, 1, wp);
 	fwrite(mem, len, 1, fp);
 	fclose(fp);
-	int ret = nvram_restore("/tmp/restore.bin");
+	int ret = nvram_restore("/tmp/restore.bin", 0);
 	if (ret < 0)
 		wp->restore_ret = 99;
 	else
