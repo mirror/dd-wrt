@@ -86,6 +86,7 @@ int getassoclist_qtn(char *name, unsigned char *list);
 int getNoiseIndex_qtn(char *ifname, int index);
 int getRssiIndex_qtn(char *ifname, int index);
 #endif
+
 int getassoclist(char *name, unsigned char *list);
 
 #define INFO_UPTIME 0
@@ -110,9 +111,6 @@ int getUptime_11n(char *ifname, unsigned char *mac);
 int getRssi_11n(char *ifname, unsigned char *mac);
 
 extern int getassoclist_ath9k(char *name, unsigned char *list);
-extern int getNoise_ath9k(char *ifname, unsigned char *mac);
-extern int getUptime_ath9k(char *ifname, unsigned char *mac);
-extern int getRssi_ath9k(char *ifname, unsigned char *mac);
 
 extern int has_mimo(char *prefix);
 extern int has_ac(char *prefix);
