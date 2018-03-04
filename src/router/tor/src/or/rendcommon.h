@@ -30,7 +30,7 @@ void rend_encoded_v2_service_descriptor_free(
                                rend_encoded_v2_service_descriptor_t *desc);
 void rend_intro_point_free(rend_intro_point_t *intro);
 
-int rend_valid_service_id(const char *query);
+int rend_valid_v2_service_id(const char *query);
 int rend_valid_descriptor_id(const char *query);
 int rend_valid_client_name(const char *client_name);
 int rend_encode_v2_descriptors(smartlist_t *descs_out,
@@ -60,8 +60,15 @@ int rend_auth_decode_cookie(const char *cookie_in,
 int rend_allow_non_anonymous_connection(const or_options_t* options);
 int rend_non_anonymous_mode_enabled(const or_options_t *options);
 
-void assert_circ_anonymity_ok(origin_circuit_t *circ,
+void assert_circ_anonymity_ok(const origin_circuit_t *circ,
                               const or_options_t *options);
 
-#endif
+#ifdef RENDCOMMON_PRIVATE
+
+STATIC int
+rend_desc_v2_is_parsable(rend_encoded_v2_service_descriptor_t *desc);
+
+#endif /* defined(RENDCOMMON_PRIVATE) */
+
+#endif /* !defined(TOR_RENDCOMMON_H) */
 

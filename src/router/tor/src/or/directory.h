@@ -12,6 +12,8 @@
 #ifndef TOR_DIRECTORY_H
 #define TOR_DIRECTORY_H
 
+#include "hs_ident.h"
+
 int directories_have_accepted_server_descriptor(void);
 void directory_post_to_dirservers(uint8_t dir_purpose, uint8_t router_purpose,
                                   dirinfo_type_t type, const char *payload,
@@ -71,6 +73,10 @@ void directory_request_set_if_modified_since(directory_request_t *req,
                                              time_t if_modified_since);
 void directory_request_set_rend_query(directory_request_t *req,
                                       const rend_data_t *query);
+void directory_request_upload_set_hs_ident(directory_request_t *req,
+                                           const hs_ident_dir_conn_t *ident);
+void directory_request_fetch_set_hs_ident(directory_request_t *req,
+                                          const hs_ident_dir_conn_t *ident);
 
 void directory_request_set_routerstatus(directory_request_t *req,
                                         const routerstatus_t *rs);
@@ -81,6 +87,9 @@ MOCK_DECL(void, directory_initiate_request, (directory_request_t *request));
 
 int parse_http_response(const char *headers, int *code, time_t *date,
                         compress_method_t *compression, char **response);
+int parse_http_command(const char *headers,
+                       char **command_out, char **url_out);
+char *http_get_header(const char *headers, const char *which);
 
 int connection_dir_is_encrypted(const dir_connection_t *conn);
 int connection_dir_reached_eof(dir_connection_t *conn);
@@ -123,12 +132,19 @@ time_t download_status_increment_attempt(download_status_t *dls,
 void download_status_reset(download_status_t *dls);
 static int download_status_is_ready(download_status_t *dls, time_t now,
                                     int max_failures);
+time_t download_status_get_next_attempt_at(const download_status_t *dls);
+
 /** Return true iff, as of <b>now</b>, the resource tracked by <b>dls</b> is
  * ready to get its download reattempted. */
 static inline int
 download_status_is_ready(download_status_t *dls, time_t now,
                          int max_failures)
 {
+  /* dls wasn't reset before it was used */
+  if (dls->next_attempt_at == 0) {
+    download_status_reset(dls);
+  }
+
   if (dls->backoff == DL_SCHED_DETERMINISTIC) {
     /* Deterministic schedules can hit an endpoint; exponential backoff
      * schedules just wait longer and longer. */
@@ -137,7 +153,7 @@ download_status_is_ready(download_status_t *dls, time_t now,
     if (!under_failure_limit)
       return 0;
   }
-  return dls->next_attempt_at <= now;
+  return download_status_get_next_attempt_at(dls) <= now;
 }
 
 static void download_status_mark_impossible(download_status_t *dl);
@@ -151,12 +167,63 @@ download_status_mark_impossible(download_status_t *dl)
 
 int download_status_get_n_failures(const download_status_t *dls);
 int download_status_get_n_attempts(const download_status_t *dls);
-time_t download_status_get_next_attempt_at(const download_status_t *dls);
 
 int purpose_needs_anonymity(uint8_t dir_purpose, uint8_t router_purpose,
                             const char *resource);
 
 #ifdef DIRECTORY_PRIVATE
+
+/** A structure to hold arguments passed into each directory response
+ * handler */
+typedef struct response_handler_args_t {
+  int status_code;
+  const char *reason;
+  const char *body;
+  size_t body_len;
+  const char *headers;
+} response_handler_args_t;
+
+struct directory_request_t {
+  /**
+   * These fields specify which directory we're contacting.  Routerstatus,
+   * if present, overrides the other fields.
+   *
+   * @{ */
+  tor_addr_port_t or_addr_port;
+  tor_addr_port_t dir_addr_port;
+  char digest[DIGEST_LEN];
+
+  const routerstatus_t *routerstatus;
+  /** @} */
+  /** One of DIR_PURPOSE_* other than DIR_PURPOSE_SERVER. Describes what
+   * kind of operation we'll be doing (upload/download), and of what kind
+   * of document. */
+  uint8_t dir_purpose;
+  /** One of ROUTER_PURPOSE_*; used for uploads and downloads of routerinfo
+   * and extrainfo docs.  */
+  uint8_t router_purpose;
+  /** Enum: determines whether to anonymize, and whether to use dirport or
+   * orport. */
+  dir_indirection_t indirection;
+  /** Alias to the variable part of the URL for this request */
+  const char *resource;
+  /** Alias to the payload to upload (if any) */
+  const char *payload;
+  /** Number of bytes to upload from payload</b> */
+  size_t payload_len;
+  /** Value to send in an if-modified-since header, or 0 for none. */
+  time_t if_modified_since;
+  /** Hidden-service-specific information v2. */
+  const rend_data_t *rend_query;
+  /** Extra headers to append to the request */
+  config_line_t *additional_headers;
+  /** Hidden-service-specific information for v3+. */
+  const hs_ident_dir_conn_t *hs_ident;
+  /** Used internally to directory.c: gets informed when the attempt to
+   * connect to the directory succeeds or fails, if that attempt bears on the
+   * directory's usability as a directory guard. */
+  struct circuit_guard_state_t *guard_state;
+};
 
 struct get_handler_args_t;
 STATIC int handle_get_hs_descriptor_v3(dir_connection_t *conn,
@@ -166,10 +233,15 @@ STATIC char *accept_encoding_header(void);
 STATIC int allowed_anonymous_connection_compression_method(compress_method_t);
 STATIC void warn_disallowed_anonymous_compression_method(compress_method_t);
 
-#endif
+STATIC int handle_response_fetch_hsdesc_v3(dir_connection_t *conn,
+                                          const response_handler_args_t *args);
+STATIC int handle_response_fetch_microdesc(dir_connection_t *conn,
+                                 const response_handler_args_t *args);
+
+#endif /* defined(DIRECTORY_PRIVATE) */
 
 #ifdef TOR_UNIT_TESTS
-/* Used only by test_dir.c */
+/* Used only by test_dir.c and test_hs_cache.c */
 
 STATIC int parse_http_url(const char *headers, char **url);
 STATIC dirinfo_type_t dir_fetch_type(int dir_purpose, int router_purpose,
@@ -193,18 +265,36 @@ STATIC char* authdir_type_to_string(dirinfo_type_t auth);
 STATIC const char * dir_conn_purpose_to_string(int purpose);
 STATIC int should_use_directory_guards(const or_options_t *options);
 STATIC compression_level_t choose_compression_level(ssize_t n_bytes);
-STATIC const smartlist_t *find_dl_schedule(download_status_t *dls,
+STATIC const smartlist_t *find_dl_schedule(const download_status_t *dls,
                                            const or_options_t *options);
 STATIC void find_dl_min_and_max_delay(download_status_t *dls,
                                       const or_options_t *options,
                                       int *min, int *max);
-STATIC int next_random_exponential_delay(int delay, int max_delay);
+
+STATIC int next_random_exponential_delay(int delay,
+                                         int base_delay,
+                                         int max_delay);
+
+STATIC void next_random_exponential_delay_range(int *low_bound_out,
+                                                int *high_bound_out,
+                                                int delay,
+                                                int base_delay);
 
 STATIC int parse_hs_version_from_post(const char *url, const char *prefix,
                                       const char **end_pos);
 
 STATIC unsigned parse_accept_encoding_header(const char *h);
-#endif
+#endif /* defined(TOR_UNIT_TESTS) */
 
-#endif
+#if defined(TOR_UNIT_TESTS) || defined(DIRECTORY_PRIVATE)
+/* Used only by directory.c and test_dir.c */
+
+/* no more than quadruple the previous delay (multiplier + 1) */
+#define DIR_DEFAULT_RANDOM_MULTIPLIER (3)
+/* no more than triple the previous delay */
+#define DIR_TEST_NET_RANDOM_MULTIPLIER (2)
+
+#endif /* defined(TOR_UNIT_TESTS) || defined(DIRECTORY_PRIVATE) */
+
+#endif /* !defined(TOR_DIRECTORY_H) */
 

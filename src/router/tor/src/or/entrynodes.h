@@ -272,22 +272,28 @@ struct guard_selection_s {
 
 struct entry_guard_handle_t;
 
+/** Types of restrictions we impose when picking guard nodes */
+typedef enum guard_restriction_type_t {
+  /* Don't pick the same guard node as our exit node (or its family) */
+  RST_EXIT_NODE = 0,
+  /* Don't pick dirguards that have previously shown to be outdated */
+  RST_OUTDATED_MD_DIRSERVER = 1
+} guard_restriction_type_t;
+
 /**
  * A restriction to remember which entry guards are off-limits for a given
  * circuit.
- *
- * Right now, we only use restrictions to block a single guard and its family
- * from being selected; this mechanism is designed to be more extensible in
- * the future, however.
  *
  * Note: This mechanism is NOT for recording which guards are never to be
  * used: only which guards cannot be used on <em>one particular circuit</em>.
  */
 struct entry_guard_restriction_t {
-  /**
-   * The guard's RSA identity digest must not equal this; and it must not
-   * be in the same family as any node with this digest.
-   */
+  /* What type of restriction are we imposing? */
+  guard_restriction_type_t type;
+
+  /* In case of restriction type RST_EXIT_NODE, the guard's RSA identity
+   * digest must not equal this; and it must not be in the same family as any
+   * node with this digest. */
   uint8_t exclude_id[DIGEST_LEN];
 };
 
@@ -310,13 +316,14 @@ struct circuit_guard_state_t {
    */
   entry_guard_restriction_t *restrictions;
 };
-#endif
+#endif /* defined(ENTRYNODES_PRIVATE) */
 
 /* Common entry points for old and new guard code */
 int guards_update_all(void);
 const node_t *guards_choose_guard(cpath_build_state_t *state,
                                   circuit_guard_state_t **guard_state_out);
-const node_t *guards_choose_dirguard(circuit_guard_state_t **guard_state_out);
+const node_t *guards_choose_dirguard(uint8_t dir_purpose,
+                                     circuit_guard_state_t **guard_state_out);
 
 #if 1
 /* XXXX NM I would prefer that all of this stuff be private to
@@ -335,7 +342,7 @@ int num_live_entry_guards_for_guard_selection(
     guard_selection_t *gs,
     int for_directory);
 int num_live_entry_guards(int for_directory);
-#endif
+#endif /* 1 */
 
 const node_t *entry_guard_find_node(const entry_guard_t *guard);
 const char *entry_guard_get_rsa_id_digest(const entry_guard_t *guard);
@@ -376,8 +383,7 @@ void entry_guards_note_internet_connectivity(guard_selection_t *gs);
 
 int update_guard_selection_choice(const or_options_t *options);
 
-/* Used by bridges.c only. */
-int num_bridges_usable(void);
+MOCK_DECL(int,num_bridges_usable,(int use_maybe_reachable));
 
 #ifdef ENTRYNODES_PRIVATE
 /**
@@ -514,7 +520,7 @@ STATIC void entry_guard_consider_retry(entry_guard_t *guard);
 STATIC void make_guard_confirmed(guard_selection_t *gs, entry_guard_t *guard);
 STATIC void entry_guards_update_confirmed(guard_selection_t *gs);
 STATIC void entry_guards_update_primary(guard_selection_t *gs);
-STATIC int num_reachable_filtered_guards(guard_selection_t *gs,
+STATIC int num_reachable_filtered_guards(const guard_selection_t *gs,
                                          const entry_guard_restriction_t *rst);
 STATIC void sampled_guards_update_from_consensus(guard_selection_t *gs);
 /**
@@ -550,7 +556,15 @@ STATIC unsigned entry_guards_note_guard_success(guard_selection_t *gs,
                                                 unsigned old_state);
 STATIC int entry_guard_has_higher_priority(entry_guard_t *a, entry_guard_t *b);
 STATIC char *getinfo_helper_format_single_entry_guard(const entry_guard_t *e);
-#endif
+
+STATIC entry_guard_restriction_t *guard_create_exit_restriction(
+                                                      const uint8_t *exit_id);
+
+STATIC entry_guard_restriction_t *guard_create_dirserver_md_restriction(void);
+
+STATIC void entry_guard_restriction_free(entry_guard_restriction_t *rst);
+
+#endif /* defined(ENTRYNODES_PRIVATE) */
 
 void remove_all_entry_guards_for_guard_selection(guard_selection_t *gs);
 void remove_all_entry_guards(void);
@@ -572,9 +586,11 @@ int getinfo_helper_entry_guards(control_connection_t *conn,
 int entries_known_but_down(const or_options_t *options);
 void entries_retry_all(const or_options_t *options);
 
-int guard_selection_have_enough_dir_info_to_build_circuits(
-                                                    guard_selection_t *gs);
-int entry_guards_have_enough_dir_info_to_build_circuits(void);
+char *entry_guards_get_err_str_if_dir_info_missing(int using_mds,
+                                           int num_present, int num_usable);
+char *guard_selection_get_err_str_if_dir_info_missing(guard_selection_t *gs,
+                                              int using_mds,
+                                              int num_present, int num_usable);
 
 void entry_guards_free_all(void);
 
@@ -597,5 +613,5 @@ guard_get_guardfraction_bandwidth(guardfraction_bandwidth_t *guardfraction_bw,
                                   int orig_bandwidth,
                                   uint32_t guardfraction_percentage);
 
-#endif
+#endif /* !defined(TOR_ENTRYNODES_H) */
 

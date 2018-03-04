@@ -64,7 +64,7 @@
 #include <process.h>
 #include <direct.h>
 #include <windows.h>
-#endif
+#endif /* defined(_WIN32) */
 
 #include "crypto.h"
 #include "crypto_format.h"
@@ -226,8 +226,10 @@ typedef enum {
 #define CONN_TYPE_EXT_OR 16
 /** Type for sockets listening for Extended ORPort connections. */
 #define CONN_TYPE_EXT_OR_LISTENER 17
+/** Type for sockets listening for HTTP CONNECT tunnel connections. */
+#define CONN_TYPE_AP_HTTP_CONNECT_LISTENER 18
 
-#define CONN_TYPE_MAX_ 17
+#define CONN_TYPE_MAX_ 19
 /* !!!! If _CONN_TYPE_MAX is ever over 31, we must grow the type field in
  * connection_t. */
 
@@ -348,7 +350,9 @@ typedef enum {
 /** State for a transparent natd connection: waiting for original
  * destination. */
 #define AP_CONN_STATE_NATD_WAIT 12
-#define AP_CONN_STATE_MAX_ 12
+/** State for an HTTP tunnel: waiting for an HTTP CONNECT command. */
+#define AP_CONN_STATE_HTTP_CONNECT_WAIT 13
+#define AP_CONN_STATE_MAX_ 13
 
 /** True iff the AP_CONN_STATE_* value <b>s</b> means that the corresponding
  * edge connection is not attached to any circuit. */
@@ -421,15 +425,23 @@ typedef enum {
 #define DIR_PURPOSE_FETCH_RENDDESC_V2 18
 /** A connection to a directory server: download a microdescriptor. */
 #define DIR_PURPOSE_FETCH_MICRODESC 19
-#define DIR_PURPOSE_MAX_ 19
+/** A connection to a hidden service directory: upload a v3 descriptor. */
+#define DIR_PURPOSE_UPLOAD_HSDESC 20
+/** A connection to a hidden service directory: fetch a v3 descriptor. */
+#define DIR_PURPOSE_FETCH_HSDESC 21
+/** A connection to a directory server: set after a hidden service descriptor
+ * is downloaded. */
+#define DIR_PURPOSE_HAS_FETCHED_HSDESC 22
+#define DIR_PURPOSE_MAX_ 22
 
 /** True iff <b>p</b> is a purpose corresponding to uploading
  * data to a directory server. */
 #define DIR_PURPOSE_IS_UPLOAD(p)                \
   ((p)==DIR_PURPOSE_UPLOAD_DIR ||               \
    (p)==DIR_PURPOSE_UPLOAD_VOTE ||              \
-   (p)==DIR_PURPOSE_UPLOAD_SIGNATURES || \
-   (p)==DIR_PURPOSE_UPLOAD_RENDDESC_V2)
+   (p)==DIR_PURPOSE_UPLOAD_SIGNATURES ||        \
+   (p)==DIR_PURPOSE_UPLOAD_RENDDESC_V2 ||       \
+   (p)==DIR_PURPOSE_UPLOAD_HSDESC)
 
 #define EXIT_PURPOSE_MIN_ 1
 /** This exit stream wants to do an ordinary connect. */
@@ -640,6 +652,10 @@ typedef enum {
 /** The target address is in a private network (like 127.0.0.1 or 10.0.0.1);
  * you don't want to do that over a randomly chosen exit */
 #define END_STREAM_REASON_PRIVATE_ADDR 262
+/** This is an HTTP tunnel connection and the client used or misused HTTP in a
+ * way we can't handle.
+ */
+#define END_STREAM_REASON_HTTPPROTOCOL 263
 
 /** Bitwise-and this value with endreason to mask out all flags. */
 #define END_STREAM_REASON_MASK 511
@@ -731,15 +747,15 @@ typedef enum {
 #define REND_NUMBER_OF_CONSECUTIVE_REPLICAS 3
 
 /** Length of v2 descriptor ID (32 base32 chars = 160 bits). */
-#define REND_DESC_ID_V2_LEN_BASE32 32
+#define REND_DESC_ID_V2_LEN_BASE32 BASE32_DIGEST_LEN
 
 /** Length of the base32-encoded secret ID part of versioned hidden service
  * descriptors. */
-#define REND_SECRET_ID_PART_LEN_BASE32 32
+#define REND_SECRET_ID_PART_LEN_BASE32 BASE32_DIGEST_LEN
 
 /** Length of the base32-encoded hash of an introduction point's
  * identity key. */
-#define REND_INTRO_POINT_ID_LEN_BASE32 32
+#define REND_INTRO_POINT_ID_LEN_BASE32 BASE32_DIGEST_LEN
 
 /** Length of the descriptor cookie that is used for client authorization
  * to hidden services. */
@@ -845,6 +861,13 @@ rend_data_v2_t *TO_REND_DATA_V2(const rend_data_t *d)
   tor_assert(d->version == 2);
   return DOWNCAST(rend_data_v2_t, d);
 }
+
+/* Stub because we can't include hs_ident.h. */
+struct hs_ident_edge_conn_t;
+struct hs_ident_dir_conn_t;
+struct hs_ident_circuit_t;
+/* Stub because we can't include hs_common.h. */
+struct hsdir_index_t;
 
 /** Time interval for tracking replays of DH public keys received in
  * INTRODUCE2 cells.  Used only to avoid launching multiple
@@ -1155,6 +1178,21 @@ typedef struct cell_queue_t {
   int n; /**< The number of cells in the queue. */
 } cell_queue_t;
 
+/** A single queued destroy cell. */
+typedef struct destroy_cell_t {
+  TOR_SIMPLEQ_ENTRY(destroy_cell_t) next;
+  circid_t circid;
+  uint32_t inserted_time; /** Timestamp when this was queued. */
+  uint8_t reason;
+} destroy_cell_t;
+
+/** A queue of destroy cells on a channel. */
+typedef struct destroy_cell_queue_t {
+  /** Linked list of packed_cell_t */
+  TOR_SIMPLEQ_HEAD(dcell_simpleq, destroy_cell_t) head;
+  int n; /**< The number of cells in the queue. */
+} destroy_cell_queue_t;
+
 /** Beginning of a RELAY cell payload. */
 typedef struct {
   uint8_t command; /**< The end-to-end relay command. */
@@ -1164,10 +1202,7 @@ typedef struct {
   uint16_t length; /**< How long is the payload body? */
 } relay_header_t;
 
-typedef struct buf_t buf_t;
 typedef struct socks_request_t socks_request_t;
-
-#define buf_t buf_t
 
 typedef struct entry_port_cfg_t {
   /* Client port types (socks, dns, trans, natd) only: */
@@ -1227,6 +1262,8 @@ typedef struct server_port_cfg_t {
 #define DIR_CONNECTION_MAGIC 0x9988ffeeu
 #define CONTROL_CONNECTION_MAGIC 0x8abc765du
 #define LISTENER_CONNECTION_MAGIC 0x1a1ac741u
+
+struct buf_t;
 
 /** Description of a connection to another host or process, and associated
  * data.
@@ -1299,8 +1336,9 @@ typedef struct connection_t {
 
   struct event *read_event; /**< Libevent event structure. */
   struct event *write_event; /**< Libevent event structure. */
-  buf_t *inbuf; /**< Buffer holding data read over this connection. */
-  buf_t *outbuf; /**< Buffer holding data to write over this connection. */
+  struct buf_t *inbuf; /**< Buffer holding data read over this connection. */
+  struct buf_t *outbuf; /**< Buffer holding data to write over this
+                         * connection. */
   size_t outbuf_flushlen; /**< How much data should we try to flush from the
                            * outbuf? */
   time_t timestamp_lastread; /**< When was the last time libevent said we could
@@ -1395,7 +1433,7 @@ typedef struct listener_connection_t {
  * session as described in RFC 5705.
  *
  * Not used by today's tors, since everything that supports this
- * also supports ED25519_SHA3_5705, which is better.
+ * also supports ED25519_SHA256_5705, which is better.
  **/
 #define AUTHTYPE_RSA_SHA256_RFC5705 2
 /** As AUTHTYPE_RSA_SHA256_RFC5705, but uses an Ed25519 identity key to
@@ -1578,6 +1616,10 @@ typedef struct or_connection_t {
   /** True iff this connection has had its bootstrap failure logged with
    * control_event_bootstrap_problem. */
   unsigned int have_noted_bootstrap_problem:1;
+  /** True iff this is a client connection and its address has been put in the
+   * geoip cache and handled by the DoS mitigation subsystem. We use this to
+   * insure we have a coherent count of concurrent connection. */
+  unsigned int tracked_for_dos_mitigation : 1;
 
   uint16_t link_proto; /**< What protocol version are we using? 0 for
                         * "none negotiated yet." */
@@ -1632,6 +1674,11 @@ typedef struct edge_connection_t {
   /** What rendezvous service are we querying for (if an AP) or providing (if
    * an exit)? */
   rend_data_t *rend_data;
+
+  /* Hidden service connection identifier for edge connections. Used by the HS
+   * client-side code to identify client SOCKS connections and by the
+   * service-side code to match HS circuits with their streams. */
+  struct hs_ident_edge_conn_t *hs_ident;
 
   uint32_t address_ttl; /**< TTL for address-to-addr mapping on exit
                          * connection.  Exit connections only. */
@@ -1702,11 +1749,11 @@ typedef struct entry_connection_t {
   /** For AP connections only: buffer for data that we have sent
    * optimistically, which we might need to re-send if we have to
    * retry this connection. */
-  buf_t *pending_optimistic_data;
+  struct buf_t *pending_optimistic_data;
   /* For AP connections only: buffer for data that we previously sent
   * optimistically which we are currently re-sending as we retry this
   * connection. */
-  buf_t *sending_optimistic_data;
+  struct buf_t *sending_optimistic_data;
 
   /** If this is a DNSPort connection, this field holds the pending DNS
    * request that we're going to try to answer.  */
@@ -1783,6 +1830,11 @@ typedef struct dir_connection_t {
   /** What rendezvous service are we querying for? */
   rend_data_t *rend_data;
 
+  /* Hidden service connection identifier for dir connections: Used by HS
+     client-side code to fetch HS descriptors, and by the service-side code to
+     upload descriptors. */
+  struct hs_ident_dir_conn_t *hs_ident;
+
   /** If this is a one-hop connection, tracks the state of the directory guard
    * for this connection (if any). */
   struct circuit_guard_state_t *guard_state;
@@ -1801,7 +1853,7 @@ typedef struct dir_connection_t {
 
   /** Number of RELAY_DATA cells sent. */
   uint32_t data_cells_sent;
-#endif
+#endif /* defined(MEASUREMENTS_21206) */
 } dir_connection_t;
 
 /** Subtype of connection_t for an connection to a controller. */
@@ -2058,7 +2110,9 @@ typedef struct download_status_t {
                                         * or after each failure? */
   download_schedule_backoff_bitfield_t backoff : 1; /**< do we use the
                                         * deterministic schedule, or random
-                                        * exponential backoffs? */
+                                        * exponential backoffs?
+                                        * Increment on failure schedules
+                                        * always use exponential backoff. */
   uint8_t last_backoff_position; /**< number of attempts/failures, depending
                                   * on increment_on, when we last recalculated
                                   * the delay.  Only updated if backoff
@@ -2294,6 +2348,11 @@ typedef struct routerstatus_t {
    * requires HSDir=2. */
   unsigned int supports_v3_hsdir : 1;
 
+  /** True iff this router has a protocol list that allows it to be an hidden
+   * service rendezvous point supporting version 3 as seen in proposal 224.
+   * This requires HSRend=2. */
+  unsigned int supports_v3_rendezvous_point: 1;
+
   unsigned int has_bandwidth:1; /**< The vote/consensus had bw info */
   unsigned int has_exitsummary:1; /**< The vote/consensus had exit summaries */
   unsigned int bw_is_unmeasured:1; /**< This is a consensus entry, with
@@ -2419,12 +2478,21 @@ typedef struct node_t {
 
   /** Used to look up the node_t by its identity digest. */
   HT_ENTRY(node_t) ht_ent;
+  /** Used to look up the node_t by its ed25519 identity digest. */
+  HT_ENTRY(node_t) ed_ht_ent;
   /** Position of the node within the list of nodes */
   int nodelist_idx;
 
   /** The identity digest of this node_t.  No more than one node_t per
    * identity may exist at a time. */
   char identity[DIGEST_LEN];
+
+  /** The ed25519 identity of this node_t. This field is nonzero iff we
+   * currently have an ed25519 identity for this node in either md or ri,
+   * _and_ this node has been inserted to the ed25519-to-node map in the
+   * nodelist.
+   */
+  ed25519_public_key_t ed25519_id;
 
   microdesc_t *md;
   routerinfo_t *ri;
@@ -2473,6 +2541,10 @@ typedef struct node_t {
   time_t last_reachable;        /* IPv4. */
   time_t last_reachable6;       /* IPv6. */
 
+  /* Hidden service directory index data. This is used by a service or client
+   * in order to know what's the hs directory index for this node at the time
+   * the consensus is set. */
+  struct hsdir_index_t *hsdir_index;
 } node_t;
 
 /** Linked list of microdesc hash lines for a single router in a directory
@@ -3186,6 +3258,10 @@ typedef struct origin_circuit_t {
   /** Holds all rendezvous data on either client or service side. */
   rend_data_t *rend_data;
 
+  /** Holds hidden service identifier on either client or service side. This
+   * is for both introduction and rendezvous circuit. */
+  struct hs_ident_circuit_t *hs_ident;
+
   /** Holds the data that the entry guard system uses to track the
    * status of the guard this circuit is using, and thereby to determine
    * whether this circuit can be used. */
@@ -3416,9 +3492,6 @@ typedef struct or_circuit_t {
   /* We have already received an INTRODUCE1 cell on this circuit. */
   unsigned int already_received_introduce1 : 1;
 
-  /** True iff this circuit was made with a CREATE_FAST cell. */
-  unsigned int is_first_hop : 1;
-
   /** If set, this circuit carries HS traffic. Consider it in any HS
    *  statistics. */
   unsigned int circuit_carries_hs_traffic_stats : 1;
@@ -3567,7 +3640,8 @@ typedef struct {
   enum {
     CMD_RUN_TOR=0, CMD_LIST_FINGERPRINT, CMD_HASH_PASSWORD,
     CMD_VERIFY_CONFIG, CMD_RUN_UNITTESTS, CMD_DUMP_CONFIG,
-    CMD_KEYGEN
+    CMD_KEYGEN,
+    CMD_KEY_EXPIRATION,
   } command;
   char *command_arg; /**< Argument for command-line option. */
 
@@ -3649,8 +3723,8 @@ typedef struct {
   config_line_t *SocksPort_lines;
   /** Ports to listen on for transparent pf/netfilter connections. */
   config_line_t *TransPort_lines;
-  const char *TransProxyType; /**< What kind of transparent proxy
-                               * implementation are we using? */
+  char *TransProxyType; /**< What kind of transparent proxy
+                         * implementation are we using? */
   /** Parsed value of TransProxyType. */
   enum {
     TPT_DEFAULT,
@@ -3660,6 +3734,8 @@ typedef struct {
   } TransProxyType_parsed;
   config_line_t *NATDPort_lines; /**< Ports to listen on for transparent natd
                             * connections. */
+  /** Ports to listen on for HTTP Tunnel connections. */
+  config_line_t *HTTPTunnelPort_lines;
   config_line_t *ControlPort_lines; /**< Ports to listen on for control
                                * connections. */
   config_line_t *ControlSocket; /**< List of Unix Domain Sockets to listen on
@@ -3686,7 +3762,8 @@ typedef struct {
    * configured in one of the _lines options above.
    * For client ports, also true if there is a unix socket configured.
    * If you are checking for client ports, you may want to use:
-   *   SocksPort_set || TransPort_set || NATDPort_set || DNSPort_set
+   *   SocksPort_set || TransPort_set || NATDPort_set || DNSPort_set ||
+   *   HTTPTunnelPort_set
    * rather than SocksPort_set.
    *
    * @{
@@ -3699,6 +3776,7 @@ typedef struct {
   unsigned int DirPort_set : 1;
   unsigned int DNSPort_set : 1;
   unsigned int ExtORPort_set : 1;
+  unsigned int HTTPTunnelPort_set : 1;
   /**@}*/
 
   int AssumeReachable; /**< Whether to publish our descriptor regardless. */
@@ -3710,6 +3788,10 @@ typedef struct {
                                    * versions? */
   int BridgeAuthoritativeDir; /**< Boolean: is this an authoritative directory
                                * that aggregates bridge descriptors? */
+
+  /** If set on a bridge relay, it will include this value on a new
+   * "bridge-distribution-request" line in its bridge descriptor. */
+  char *BridgeDistribution;
 
   /** If set on a bridge authority, it will answer requests on its dirport
    * for bridge statuses -- but only if the requests use this password. */
@@ -4020,8 +4102,6 @@ typedef struct {
   int Sandbox; /**< Boolean: should sandboxing be enabled? */
   int SafeSocks; /**< Boolean: should we outright refuse application
                   * connections that use socks4 or socks5-with-local-dns? */
-#define LOG_PROTOCOL_WARN (get_options()->ProtocolWarnings ? \
-                           LOG_WARN : LOG_INFO)
   int ProtocolWarnings; /**< Boolean: when other parties screw up the Tor
                          * protocol, is it a warn or an info in our logs? */
   int TestSocks; /**< Boolean: when we get a socks connection, do we loudly
@@ -4106,13 +4186,6 @@ typedef struct {
   /** If true, we try to download extra-info documents (and we serve them,
    * if we are a cache).  For authorities, this is always true. */
   int DownloadExtraInfo;
-
-  /** If true, we convert "www.google.com.foo.exit" addresses on the
-   * socks/trans/natd ports into "www.google.com" addresses that
-   * exit from the node "foo". Disabled by default since attacking
-   * websites and exit relays can use it to manipulate your path
-   * selection. */
-  int AllowDotExit;
 
   /** If true, we're configured to collect statistics on clients
    * requesting network statuses from us as directory. */
@@ -4277,6 +4350,10 @@ typedef struct {
   /** Schedule for when clients should download bridge descriptors.  Only
    * altered on testing networks. */
   smartlist_t *TestingBridgeDownloadSchedule;
+
+  /** Schedule for when clients should download bridge descriptors when they
+   * have no running bridges.  Only altered on testing networks. */
+  smartlist_t *TestingBridgeBootstrapDownloadSchedule;
 
   /** When directory clients have only a few descriptors to request, they
    * batch them until they have more, or until this amount of time has
@@ -4482,19 +4559,6 @@ typedef struct {
   /** How long (seconds) do we keep a guard before picking a new one? */
   int GuardLifetime;
 
-  /** Low-water mark for global scheduler - start sending when estimated
-   * queued size falls below this threshold.
-   */
-  uint64_t SchedulerLowWaterMark__;
-  /** High-water mark for global scheduler - stop sending when estimated
-   * queued size exceeds this threshold.
-   */
-  uint64_t SchedulerHighWaterMark__;
-  /** Flush size for global scheduler - flush this many cells at a time
-   * when sending.
-   */
-  int SchedulerMaxFlushCells__;
-
   /** Is this an exit node?  This is a tristate, where "1" means "yes, and use
    * the default exit policy if none is given" and "0" means "no; exit policy
    * is 'reject *'" and "auto" (-1) means "same as 1, but warn the user."
@@ -4563,7 +4627,57 @@ typedef struct {
    * consensuses around so that we can generate diffs from them.  If 0,
    * use the default. */
   int MaxConsensusAgeForDiffs;
+
+  /** Bool (default: 0). Tells Tor to never try to exec another program.
+   */
+  int NoExec;
+
+  /** Have the KIST scheduler run every X milliseconds. If less than zero, do
+   * not use the KIST scheduler but use the old vanilla scheduler instead. If
+   * zero, do what the consensus says and fall back to using KIST as if this is
+   * set to "10 msec" if the consensus doesn't say anything. */
+  int KISTSchedRunInterval;
+
+  /** A multiplier for the KIST per-socket limit calculation. */
+  double KISTSockBufSizeFactor;
+
+  /** The list of scheduler type string ordered by priority that is first one
+   * has to be tried first. Default: KIST,KISTLite,Vanilla */
+  smartlist_t *Schedulers;
+  /* An ordered list of scheduler_types mapped from Schedulers. */
+  smartlist_t *SchedulerTypes_;
+
+  /** Autobool: Is the circuit creation DoS mitigation subsystem enabled? */
+  int DoSCircuitCreationEnabled;
+  /** Minimum concurrent connection needed from one single address before any
+   * defense is used. */
+  int DoSCircuitCreationMinConnections;
+  /** Circuit rate used to refill the token bucket. */
+  int DoSCircuitCreationRate;
+  /** Maximum allowed burst of circuits. Reaching that value, the address is
+   * detected as malicious and a defense might be used. */
+  int DoSCircuitCreationBurst;
+  /** When an address is marked as malicous, what defense should be used
+   * against it. See the dos_cc_defense_type_t enum. */
+  int DoSCircuitCreationDefenseType;
+  /** For how much time (in seconds) the defense is applicable for a malicious
+   * address. A random time delta is added to the defense time of an address
+   * which will be between 1 second and half of this value. */
+  int DoSCircuitCreationDefenseTimePeriod;
+
+  /** Autobool: Is the DoS connection mitigation subsystem enabled? */
+  int DoSConnectionEnabled;
+  /** Maximum concurrent connection allowed per address. */
+  int DoSConnectionMaxConcurrentCount;
+  /** When an address is reaches the maximum count, what defense should be
+   * used against it. See the dos_conn_defense_type_t enum. */
+  int DoSConnectionDefenseType;
+
+  /** Autobool: Do we refuse single hop client rendezvous? */
+  int DoSRefuseSingleHopClientRendezvous;
 } or_options_t;
+
+#define LOG_PROTOCOL_WARN (get_protocol_warning_severity_level())
 
 /** Persistent state for an onion router, as saved to disk. */
 typedef struct {
@@ -4594,6 +4708,9 @@ typedef struct {
 
   config_line_t *TransportProxies;
 
+  /** Cached revision counters for active hidden services on this host */
+  config_line_t *HidServRevCounter;
+
   /** These fields hold information on the history of bandwidth usage for
    * servers.  The "Ends" fields hold the time when we last updated the
    * bandwidth usage. The "Interval" fields hold the granularity, in seconds,
@@ -4621,8 +4738,8 @@ typedef struct {
 
   /** Build time histogram */
   config_line_t * BuildtimeHistogram;
-  unsigned int TotalBuildTimes;
-  unsigned int CircuitBuildAbandonedCount;
+  int TotalBuildTimes;
+  int CircuitBuildAbandonedCount;
 
   /** What version of Tor wrote this state file? */
   char *TorVersion;
@@ -4983,7 +5100,7 @@ typedef struct measured_bw_line_t {
   long int bw_kb;
 } measured_bw_line_t;
 
-#endif
+#endif /* defined(DIRSERV_PRIVATE) */
 
 /********************************* dirvote.c ************************/
 
@@ -5338,7 +5455,10 @@ typedef enum {
   CRN_PREF_ADDR = 1<<7,
   /* On clients, only provide nodes that we can connect to directly, based on
    * our firewall rules */
-  CRN_DIRECT_CONN = 1<<8
+  CRN_DIRECT_CONN = 1<<8,
+  /* On clients, only provide nodes with HSRend >= 2 protocol version which
+   * is required for hidden service version >= 3. */
+  CRN_RENDEZVOUS_V3 = 1<<9,
 } router_crn_flags_t;
 
 /** Return value for router_add_to_routerlist() and dirserv_add_descriptor() */
@@ -5393,5 +5513,5 @@ typedef struct tor_version_t {
   char git_tag[DIGEST_LEN];
 } tor_version_t;
 
-#endif
+#endif /* !defined(TOR_OR_H) */
 

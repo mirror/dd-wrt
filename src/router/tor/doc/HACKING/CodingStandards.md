@@ -6,8 +6,8 @@ tl;dr:
    - Run configure with `--enable-fatal-warnings`
    - Document your functions
    - Write unit tests
-   - Run `make test-full` to test against all unit and integration tests.
-   - Run `make distcheck` to ensure the distribution works
+   - Run `make check` before submitting a patch
+   - Run `make distcheck` if you have made changes to build system components
    - Add a file in `changes` for your branch.
 
 Patch checklist
@@ -32,6 +32,16 @@ Did you remember...
    - To base your code on the appropriate branch?
    - To include a file in the `changes` directory as appropriate?
 
+If you are submitting a major patch or new feature, or want to in the future...
+
+   - Set up Chutney and Stem, see HACKING/WritingTests.md
+   - Run `make test-full` to test against all unit and integration tests.
+
+If you have changed build system components:
+   - Please run `make distcheck`
+   - For example, if you have changed Makefiles, autoconf files, or anything
+     else that affects the build system.
+
 How we use Git branches
 =======================
 
@@ -52,8 +62,17 @@ before it gets merged into maint, but that's rare.
 
 If you're working on a bugfix for a bug that occurs in a particular version,
 base your bugfix branch on the "maint" branch for the first supported series
-that has that bug.  (As of June 2013, we're supporting 0.2.3 and later.) If
-you're working on a new feature, base it on the master branch.
+that has that bug.  (As of June 2013, we're supporting 0.2.3 and later.)
+
+If you're working on a new feature, base it on the master branch. If you're
+working on a new feature and it will take a while to implement and/or you'd
+like to avoid the possibility of unrelated bugs in Tor while you're
+implementing your feature, consider branching off of the latest maint- branch.
+_Never_ branch off a relase- branch. Don't branch off a tag either: they come
+from release branches. Doing so will likely produce a nightmare of merge
+conflicts in the ChangeLog when it comes time to merge your branch into Tor.
+Best advice: don't try to keep an independent branch forked for more than 6
+months and expect it to merge cleanly. Try to merge pieces early and often.
 
 
 How we log changes
@@ -77,16 +96,33 @@ you can use `git describe --contains <sha1 of commit>`.
 If at all possible, try to create this file in the same commit where you are
 making the change.  Please give it a distinctive name that no other branch will
 use for the lifetime of your change. To verify the format of the changes file,
-you can use `make check-changes`.
+you can use `make check-changes`.  This is run automatically as part of
+`make check` -- if it fails, we must fix it before we release.  These
+checks are implemented in `scripts/maint/lintChanges.py`.
+
+Changes file style guide:
+  * Changes files begin with "  o Header (subheading):".  The header
+    should usually be "Minor/Major bugfixes/features". The subheading is a
+    particular area within Tor.  See the ChangeLog for examples.
+
+  * Make everything terse.
+
+  * Write from the user's point of view: describe the user-visible changes
+    right away.
+
+  * Mention configuration options by name.  If they're rare or unusual,
+    remind people what they're for.
+
+  * Describe changes in the present tense and in the imperative: not past.
+
+  * Every bugfix should have a sentence of the form "Fixes bug 1234; bugfix
+    on 0.1.2.3-alpha", describing what bug was fixed and where it came from.
+
+  * "Relays", not "servers", "nodes", or "Tor relays".
 
 When we go to make a release, we will concatenate all the entries
 in changes to make a draft changelog, and clear the directory. We'll
 then edit the draft changelog into a nice readable format.
-
-To make sure that stuff is in the right format, we use
-scripts/maint/lintChanges.py to check the changes files for
-(superficial) validity.  You can run this script on your own changes
-files!
 
 What needs a changes file?
 
@@ -156,6 +192,79 @@ old C functions.  Use `strlcat`, `strlcpy`, or `tor_snprintf/tor_asprintf` inste
 We don't call `memcmp()` directly.  Use `fast_memeq()`, `fast_memneq()`,
 `tor_memeq()`, or `tor_memneq()` for most purposes.
 
+Also see a longer list of functions to avoid in:
+https://people.torproject.org/~nickm/tor-auto/internal/this-not-that.html
+
+Floating point math is hard
+---------------------------
+
+Floating point arithmetic as typically implemented by computers is
+very counterintuitive.  Failure to adequately analyze floating point
+usage can result in surprising behavior and even security
+vulnerabilities!
+
+General advice:
+
+   - Don't use floating point.
+   - If you must use floating point, document how the limits of
+     floating point precision and calculation accuracy affect function
+     outputs.
+   - Try to do as much as possible of your calculations using integers
+     (possibly acting as fixed-point numbers) and convert to floating
+     point for display.
+   - If you must send floating point numbers on the wire, serialize
+     them in a platform-independent way.  Tor avoids exchanging
+     floating-point values, but when it does, it uses ASCII numerals,
+     with a decimal point (".").
+   - Binary fractions behave very differently from decimal fractions.
+     Make sure you understand how these differences affect your
+     calculations.
+   - Every floating point arithmetic operation is an opportunity to
+     lose precision, overflow, underflow, or otherwise produce
+     undesired results.  Addition and subtraction tend to be worse
+     than multiplication and division (due to things like catastrophic
+     cancellation).  Try to arrange your calculations to minimize such
+     effects.
+   - Changing the order of operations changes the results of many
+     floating-point calculations.  Be careful when you simplify
+     calculations!  If the order is significant, document it using a
+     code comment.
+   - Comparing most floating point values for equality is unreliable.
+     Avoid using `==`, instead, use `>=` or `<=`.  If you use an
+     epsilon value, make sure it's appropriate for the ranges in
+     question.
+   - Different environments (including compiler flags and per-thread
+     state on a single platform!) can get different results from the
+     same floating point calculations.  This means you can't use
+     floats in anything that needs to be deterministic, like consensus
+     generation.  This also makes reliable unit tests of
+     floating-point outputs hard to write.
+
+For additional useful advice (and a little bit of background), see
+[What Every Programmer Should Know About Floating-Point
+Arithmetic](http://floating-point-gui.de/).
+
+A list of notable (and surprising) facts about floating point
+arithmetic is at [Floating-point
+complexities](https://randomascii.wordpress.com/2012/04/05/floating-point-complexities/).
+Most of that [series of posts on floating
+point](https://randomascii.wordpress.com/category/floating-point/) is
+helpful.
+
+For more detailed (and math-intensive) background, see [What Every
+Computer Scientist Should Know About Floating-Point
+Arithmetic](https://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html).
+
+Other C conventions
+-------------------
+
+The `a ? b : c` trinary operator only goes inside other expressions;
+don't use it as a replacement for if. (You can ignore this inside macro
+definitions when necessary.)
+
+Assignment operators shouldn't nest inside other expressions.  (You can
+ignore this inside macro definitions when necessary.)
+
 Functions not to write
 ----------------------
 
@@ -217,7 +326,25 @@ end-users that they aren't expected to understand the message (perhaps
 with a string like "internal error"). Option (A) is to be preferred to
 option (B).
 
+Assertions In Tor
+-----------------
 
+Assertions should be used for bug-detection only.  Don't use assertions to
+detect bad user inputs, network errors, resource exhaustion, or similar
+issues.
+
+Tor is always built with assertions enabled, so try to only use
+`tor_assert()` for cases where you are absolutely sure that crashing is the
+least bad option.  Many bugs have been caused by use of `tor_assert()` when
+another kind of check would have been safer.
+
+If you're writing an assertion to test for a bug that you _can_ recover from,
+use `tor_assert_nonfatal()` in place of `tor_assert()`.  If you'd like to
+write a conditional that incorporates a nonfatal assertion, use the `BUG()`
+macro, as in:
+
+	if (BUG(ptr == NULL))
+		return -1;
 
 Doxygen comment conventions
 ---------------------------

@@ -38,13 +38,18 @@
  * used for authorities and fallback directories.)
  */
 
+#define NODELIST_PRIVATE
+
 #include "or.h"
 #include "address.h"
+#include "address_set.h"
 #include "config.h"
 #include "control.h"
 #include "dirserv.h"
 #include "entrynodes.h"
 #include "geoip.h"
+#include "hs_common.h"
+#include "hs_client.h"
 #include "main.h"
 #include "microdesc.h"
 #include "networkstatus.h"
@@ -54,6 +59,7 @@
 #include "rendservice.h"
 #include "router.h"
 #include "routerlist.h"
+#include "routerparse.h"
 #include "routerset.h"
 #include "torcert.h"
 
@@ -80,6 +86,7 @@ static void count_usable_descriptors(int *num_present,
 static void update_router_have_minimum_dir_info(void);
 static double get_frac_paths_needed_for_circs(const or_options_t *options,
                                               const networkstatus_t *ns);
+static void node_add_to_address_set(const node_t *node);
 
 /** A nodelist_t holds a node_t object for every router we're "willing to use
  * for something".  Specifically, it should hold a node_t for every node that
@@ -90,7 +97,16 @@ typedef struct nodelist_t {
   smartlist_t *nodes;
   /* Hash table to map from node ID digest to node. */
   HT_HEAD(nodelist_map, node_t) nodes_by_id;
-
+  /* Hash table to map from node Ed25519 ID to node.
+   *
+   * Whenever a node's routerinfo or microdescriptor is about to change,
+   * you should remove it from this map with node_remove_from_ed25519_map().
+   * Whenever a node's routerinfo or microdescriptor has just chaned,
+   * you should add it to this map with node_add_to_ed25519_map().
+   */
+  HT_HEAD(nodelist_ed_map, node_t) nodes_by_ed_id;
+  /* Set of addresses that belong to nodes we believe in. */
+  address_set_t *node_addrs;
 } nodelist_t;
 
 static inline unsigned int
@@ -109,6 +125,23 @@ HT_PROTOTYPE(nodelist_map, node_t, ht_ent, node_id_hash, node_id_eq)
 HT_GENERATE2(nodelist_map, node_t, ht_ent, node_id_hash, node_id_eq,
              0.6, tor_reallocarray_, tor_free_)
 
+static inline unsigned int
+node_ed_id_hash(const node_t *node)
+{
+  return (unsigned) siphash24g(node->ed25519_id.pubkey, ED25519_PUBKEY_LEN);
+}
+
+static inline unsigned int
+node_ed_id_eq(const node_t *node1, const node_t *node2)
+{
+  return ed25519_pubkey_eq(&node1->ed25519_id, &node2->ed25519_id);
+}
+
+HT_PROTOTYPE(nodelist_ed_map, node_t, ed_ht_ent, node_ed_id_hash,
+             node_ed_id_eq)
+HT_GENERATE2(nodelist_ed_map, node_t, ed_ht_ent, node_ed_id_hash,
+             node_ed_id_eq, 0.6, tor_reallocarray_, tor_free_)
+
 /** The global nodelist. */
 static nodelist_t *the_nodelist=NULL;
 
@@ -119,6 +152,7 @@ init_nodelist(void)
   if (PREDICT_UNLIKELY(the_nodelist == NULL)) {
     the_nodelist = tor_malloc_zero(sizeof(nodelist_t));
     HT_INIT(nodelist_map, &the_nodelist->nodes_by_id);
+    HT_INIT(nodelist_ed_map, &the_nodelist->nodes_by_ed_id);
     the_nodelist->nodes = smartlist_new();
   }
 }
@@ -136,12 +170,35 @@ node_get_mutable_by_id(const char *identity_digest)
   return node;
 }
 
+/** As node_get_by_ed25519_id, but returns a non-const pointer */
+node_t *
+node_get_mutable_by_ed25519_id(const ed25519_public_key_t *ed_id)
+{
+  node_t search, *node;
+  if (PREDICT_UNLIKELY(the_nodelist == NULL))
+    return NULL;
+  if (BUG(ed_id == NULL) || BUG(ed25519_public_key_is_zero(ed_id)))
+    return NULL;
+
+  memcpy(&search.ed25519_id, ed_id, sizeof(search.ed25519_id));
+  node = HT_FIND(nodelist_ed_map, &the_nodelist->nodes_by_ed_id, &search);
+  return node;
+}
+
 /** Return the node_t whose identity is <b>identity_digest</b>, or NULL
  * if no such node exists. */
 MOCK_IMPL(const node_t *,
 node_get_by_id,(const char *identity_digest))
 {
   return node_get_mutable_by_id(identity_digest);
+}
+
+/** Return the node_t whose ed25519 identity is <b>ed_id</b>, or NULL
+ * if no such node exists. */
+MOCK_IMPL(const node_t *,
+node_get_by_ed25519_id,(const ed25519_public_key_t *ed_id))
+{
+  return node_get_mutable_by_ed25519_id(ed_id);
 }
 
 /** Internal: return the node_t whose identity_digest is
@@ -164,10 +221,179 @@ node_get_or_create(const char *identity_digest)
 
   smartlist_add(the_nodelist->nodes, node);
   node->nodelist_idx = smartlist_len(the_nodelist->nodes) - 1;
+  node->hsdir_index = tor_malloc_zero(sizeof(hsdir_index_t));
 
   node->country = -1;
 
   return node;
+}
+
+/** Remove <b>node</b> from the ed25519 map (if it present), and
+ * set its ed25519_id field to zero. */
+static int
+node_remove_from_ed25519_map(node_t *node)
+{
+  tor_assert(the_nodelist);
+  tor_assert(node);
+
+  if (ed25519_public_key_is_zero(&node->ed25519_id)) {
+    return 0;
+  }
+
+  int rv = 0;
+  node_t *search =
+    HT_FIND(nodelist_ed_map, &the_nodelist->nodes_by_ed_id, node);
+  if (BUG(search != node)) {
+    goto clear_and_return;
+  }
+
+  search = HT_REMOVE(nodelist_ed_map, &the_nodelist->nodes_by_ed_id, node);
+  tor_assert(search == node);
+  rv = 1;
+
+ clear_and_return:
+  memset(&node->ed25519_id, 0, sizeof(node->ed25519_id));
+  return rv;
+}
+
+/** If <b>node</b> has an ed25519 id, and it is not already in the ed25519 id
+ * map, set its ed25519_id field, and add it to the ed25519 map.
+ */
+static int
+node_add_to_ed25519_map(node_t *node)
+{
+  tor_assert(the_nodelist);
+  tor_assert(node);
+
+  if (! ed25519_public_key_is_zero(&node->ed25519_id)) {
+    return 0;
+  }
+
+  const ed25519_public_key_t *key = node_get_ed25519_id(node);
+  if (!key) {
+    return 0;
+  }
+
+  node_t *old;
+  memcpy(&node->ed25519_id, key, sizeof(node->ed25519_id));
+  old = HT_FIND(nodelist_ed_map, &the_nodelist->nodes_by_ed_id, node);
+  if (BUG(old)) {
+    /* XXXX order matters here, and this may mean that authorities aren't
+     * pinning. */
+    if (old != node)
+      memset(&node->ed25519_id, 0, sizeof(node->ed25519_id));
+    return 0;
+  }
+
+  HT_INSERT(nodelist_ed_map, &the_nodelist->nodes_by_ed_id, node);
+  return 1;
+}
+
+/* For a given <b>node</b> for the consensus <b>ns</b>, set the hsdir index
+ * for the node, both current and next if possible. This can only fails if the
+ * node_t ed25519 identity key can't be found which would be a bug. */
+STATIC void
+node_set_hsdir_index(node_t *node, const networkstatus_t *ns)
+{
+  time_t now = approx_time();
+  const ed25519_public_key_t *node_identity_pk;
+  uint8_t *fetch_srv = NULL, *store_first_srv = NULL, *store_second_srv = NULL;
+  uint64_t next_time_period_num, current_time_period_num;
+  uint64_t fetch_tp, store_first_tp, store_second_tp;
+
+  tor_assert(node);
+  tor_assert(ns);
+
+  if (!networkstatus_is_live(ns, now)) {
+    static struct ratelim_t live_consensus_ratelim = RATELIM_INIT(30 * 60);
+    log_fn_ratelim(&live_consensus_ratelim, LOG_INFO, LD_GENERAL,
+                   "Not setting hsdir index with a non-live consensus.");
+    goto done;
+  }
+
+  node_identity_pk = node_get_ed25519_id(node);
+  if (node_identity_pk == NULL) {
+    log_debug(LD_GENERAL, "ed25519 identity public key not found when "
+                          "trying to build the hsdir indexes for node %s",
+              node_describe(node));
+    goto done;
+  }
+
+  /* Get the current and next time period number. */
+  current_time_period_num = hs_get_time_period_num(0);
+  next_time_period_num = hs_get_next_time_period_num(0);
+
+  /* We always use the current time period for fetching descs */
+  fetch_tp = current_time_period_num;
+
+  /* Now extract the needed SRVs and time periods for building hsdir indices */
+  if (hs_in_period_between_tp_and_srv(ns, now)) {
+    fetch_srv = hs_get_current_srv(fetch_tp, ns);
+
+    store_first_tp = hs_get_previous_time_period_num(0);
+    store_second_tp = current_time_period_num;
+  } else {
+    fetch_srv = hs_get_previous_srv(fetch_tp, ns);
+
+    store_first_tp = current_time_period_num;
+    store_second_tp = next_time_period_num;
+  }
+
+  /* We always use the old SRV for storing the first descriptor and the latest
+   * SRV for storing the second descriptor */
+  store_first_srv = hs_get_previous_srv(store_first_tp, ns);
+  store_second_srv = hs_get_current_srv(store_second_tp, ns);
+
+  /* Build the fetch index. */
+  hs_build_hsdir_index(node_identity_pk, fetch_srv, fetch_tp,
+                       node->hsdir_index->fetch);
+
+  /* If we are in the time segment between SRV#N and TP#N, the fetch index is
+     the same as the first store index */
+  if (!hs_in_period_between_tp_and_srv(ns, now)) {
+    memcpy(node->hsdir_index->store_first, node->hsdir_index->fetch,
+           sizeof(node->hsdir_index->store_first));
+  } else {
+    hs_build_hsdir_index(node_identity_pk, store_first_srv, store_first_tp,
+                         node->hsdir_index->store_first);
+  }
+
+  /* If we are in the time segment between TP#N and SRV#N+1, the fetch index is
+     the same as the second store index */
+  if (hs_in_period_between_tp_and_srv(ns, now)) {
+    memcpy(node->hsdir_index->store_second, node->hsdir_index->fetch,
+           sizeof(node->hsdir_index->store_second));
+  } else {
+    hs_build_hsdir_index(node_identity_pk, store_second_srv, store_second_tp,
+                         node->hsdir_index->store_second);
+  }
+
+ done:
+  tor_free(fetch_srv);
+  tor_free(store_first_srv);
+  tor_free(store_second_srv);
+  return;
+}
+
+/** Recompute all node hsdir indices. */
+void
+nodelist_recompute_all_hsdir_indices(void)
+{
+  networkstatus_t *consensus;
+  if (!the_nodelist) {
+    return;
+  }
+
+  /* Get a live consensus. Abort if not found */
+  consensus = networkstatus_get_live_consensus(approx_time());
+  if (!consensus) {
+    return;
+  }
+
+  /* Recompute all hsdir indices */
+  SMARTLIST_FOREACH_BEGIN(the_nodelist->nodes, node_t *, node) {
+    node_set_hsdir_index(node, consensus);
+  } SMARTLIST_FOREACH_END(node);
 }
 
 /** Called when a node's address changes. */
@@ -176,6 +402,50 @@ node_addrs_changed(node_t *node)
 {
   node->last_reachable = node->last_reachable6 = 0;
   node->country = -1;
+}
+
+/** Add all address information about <b>node</b> to the current address
+ * set (if there is one).
+ */
+static void
+node_add_to_address_set(const node_t *node)
+{
+  if (!the_nodelist || !the_nodelist->node_addrs)
+    return;
+
+  /* These various address sources can be redundant, but it's likely faster
+   * to add them all than to compare them all for equality. */
+
+  if (node->rs) {
+    if (node->rs->addr)
+      address_set_add_ipv4h(the_nodelist->node_addrs, node->rs->addr);
+    if (!tor_addr_is_null(&node->rs->ipv6_addr))
+      address_set_add(the_nodelist->node_addrs, &node->rs->ipv6_addr);
+  }
+  if (node->ri) {
+    if (node->ri->addr)
+      address_set_add_ipv4h(the_nodelist->node_addrs, node->ri->addr);
+    if (!tor_addr_is_null(&node->ri->ipv6_addr))
+      address_set_add(the_nodelist->node_addrs, &node->ri->ipv6_addr);
+  }
+  if (node->md) {
+    if (!tor_addr_is_null(&node->md->ipv6_addr))
+      address_set_add(the_nodelist->node_addrs, &node->md->ipv6_addr);
+  }
+}
+
+/** Return true if <b>addr</b> is the address of some node in the nodelist.
+ * If not, probably return false. */
+int
+nodelist_probably_contains_address(const tor_addr_t *addr)
+{
+  if (BUG(!addr))
+    return 0;
+
+  if (!the_nodelist || !the_nodelist->node_addrs)
+    return 0;
+
+  return address_set_probably_contains(the_nodelist->node_addrs, addr);
 }
 
 /** Add <b>ri</b> to an appropriate node in the nodelist.  If we replace an
@@ -194,6 +464,8 @@ nodelist_set_routerinfo(routerinfo_t *ri, routerinfo_t **ri_old_out)
   id_digest = ri->cache_info.identity_digest;
   node = node_get_or_create(id_digest);
 
+  node_remove_from_ed25519_map(node);
+
   if (node->ri) {
     if (!routers_have_same_or_addrs(node->ri, ri)) {
       node_addrs_changed(node);
@@ -207,6 +479,8 @@ nodelist_set_routerinfo(routerinfo_t *ri, routerinfo_t **ri_old_out)
   }
   node->ri = ri;
 
+  node_add_to_ed25519_map(node);
+
   if (node->country == -1)
     node_set_country(node);
 
@@ -215,6 +489,16 @@ nodelist_set_routerinfo(routerinfo_t *ri, routerinfo_t **ri_old_out)
     uint32_t status = dirserv_router_get_status(ri, &discard, LOG_INFO);
     dirserv_set_node_flags_from_authoritative_status(node, status);
   }
+
+  /* Setting the HSDir index requires the ed25519 identity key which can
+   * only be found either in the ri or md. This is why this is called here.
+   * Only nodes supporting HSDir=2 protocol version needs this index. */
+  if (node->rs && node->rs->supports_v3_hsdir) {
+    node_set_hsdir_index(node,
+                         networkstatus_get_latest_consensus());
+  }
+
+  node_add_to_address_set(node);
 
   return node;
 }
@@ -242,12 +526,35 @@ nodelist_add_microdesc(microdesc_t *md)
     return NULL;
   node = node_get_mutable_by_id(rs->identity_digest);
   if (node) {
+    node_remove_from_ed25519_map(node);
     if (node->md)
       node->md->held_by_nodes--;
+
     node->md = md;
     md->held_by_nodes++;
+    /* Setting the HSDir index requires the ed25519 identity key which can
+     * only be found either in the ri or md. This is why this is called here.
+     * Only nodes supporting HSDir=2 protocol version needs this index. */
+    if (rs->supports_v3_hsdir) {
+      node_set_hsdir_index(node, ns);
+    }
+    node_add_to_ed25519_map(node);
   }
+
+  node_add_to_address_set(node);
+
   return node;
+}
+
+/* Default value. */
+#define ESTIMATED_ADDRESS_PER_NODE 2
+
+/* Return the estimated number of address per node_t. This is used for the
+ * size of the bloom filter in the nodelist (node_addrs). */
+MOCK_IMPL(int,
+get_estimated_address_per_node, (void))
+{
+  return ESTIMATED_ADDRESS_PER_NODE;
 }
 
 /** Tell the nodelist that the current usable consensus is <b>ns</b>.
@@ -268,21 +575,32 @@ nodelist_set_consensus(networkstatus_t *ns)
   SMARTLIST_FOREACH(the_nodelist->nodes, node_t *, node,
                     node->rs = NULL);
 
+  /* Conservatively estimate that every node will have 2 addresses. */
+  const int estimated_addresses = smartlist_len(ns->routerstatus_list) *
+                                  get_estimated_address_per_node();
+  address_set_free(the_nodelist->node_addrs);
+  the_nodelist->node_addrs = address_set_new(estimated_addresses);
+
   SMARTLIST_FOREACH_BEGIN(ns->routerstatus_list, routerstatus_t *, rs) {
     node_t *node = node_get_or_create(rs->identity_digest);
     node->rs = rs;
     if (ns->flavor == FLAV_MICRODESC) {
       if (node->md == NULL ||
           tor_memneq(node->md->digest,rs->descriptor_digest,DIGEST256_LEN)) {
+        node_remove_from_ed25519_map(node);
         if (node->md)
           node->md->held_by_nodes--;
         node->md = microdesc_cache_lookup_by_digest256(NULL,
                                                        rs->descriptor_digest);
         if (node->md)
           node->md->held_by_nodes++;
+        node_add_to_ed25519_map(node);
       }
     }
 
+    if (rs->supports_v3_hsdir) {
+      node_set_hsdir_index(node, ns);
+    }
     node_set_country(node);
 
     /* If we're not an authdir, believe others. */
@@ -305,6 +623,11 @@ nodelist_set_consensus(networkstatus_t *ns)
   } SMARTLIST_FOREACH_END(rs);
 
   nodelist_purge();
+
+  /* Now add all the nodes we have to the address set. */
+  SMARTLIST_FOREACH_BEGIN(the_nodelist->nodes, node_t *, node) {
+    node_add_to_address_set(node);
+  } SMARTLIST_FOREACH_END(node);
 
   if (! authdir) {
     SMARTLIST_FOREACH_BEGIN(the_nodelist->nodes, node_t *, node) {
@@ -341,6 +664,9 @@ nodelist_remove_microdesc(const char *identity_digest, microdesc_t *md)
   if (node && node->md == md) {
     node->md = NULL;
     md->held_by_nodes--;
+    if (! node_get_ed25519_id(node)) {
+      node_remove_from_ed25519_map(node);
+    }
   }
 }
 
@@ -369,6 +695,7 @@ nodelist_drop_node(node_t *node, int remove_from_ht)
     tmp = HT_REMOVE(nodelist_map, &the_nodelist->nodes_by_id, node);
     tor_assert(tmp == node);
   }
+  node_remove_from_ed25519_map(node);
 
   idx = node->nodelist_idx;
   tor_assert(idx >= 0);
@@ -410,6 +737,7 @@ node_free(node_t *node)
   if (node->md)
     node->md->held_by_nodes--;
   tor_assert(node->nodelist_idx == -1);
+  tor_free(node->hsdir_index);
   tor_free(node);
 }
 
@@ -451,12 +779,16 @@ nodelist_free_all(void)
     return;
 
   HT_CLEAR(nodelist_map, &the_nodelist->nodes_by_id);
+  HT_CLEAR(nodelist_ed_map, &the_nodelist->nodes_by_ed_id);
   SMARTLIST_FOREACH_BEGIN(the_nodelist->nodes, node_t *, node) {
     node->nodelist_idx = -1;
     node_free(node);
   } SMARTLIST_FOREACH_END(node);
 
   smartlist_free(the_nodelist->nodes);
+
+  address_set_free(the_nodelist->node_addrs);
+  the_nodelist->node_addrs = NULL;
 
   tor_free(the_nodelist);
 }
@@ -515,8 +847,26 @@ nodelist_assert_ok(void)
     tor_assert(node_sl_idx == node->nodelist_idx);
   } SMARTLIST_FOREACH_END(node);
 
+  /* Every node listed with an ed25519 identity should be listed by that
+   * identity.
+   */
+  SMARTLIST_FOREACH_BEGIN(the_nodelist->nodes, node_t *, node) {
+    if (!ed25519_public_key_is_zero(&node->ed25519_id)) {
+      tor_assert(node == node_get_by_ed25519_id(&node->ed25519_id));
+    }
+  } SMARTLIST_FOREACH_END(node);
+
+  node_t **idx;
+  HT_FOREACH(idx, nodelist_ed_map, &the_nodelist->nodes_by_ed_id) {
+    node_t *node = *idx;
+    tor_assert(node == node_get_by_ed25519_id(&node->ed25519_id));
+  }
+
   tor_assert((long)smartlist_len(the_nodelist->nodes) ==
              (long)HT_SIZE(&the_nodelist->nodes_by_id));
+
+  tor_assert((long)smartlist_len(the_nodelist->nodes) >=
+             (long)HT_SIZE(&the_nodelist->nodes_by_ed_id));
 
   digestmap_free(dm, NULL);
 }
@@ -534,28 +884,23 @@ nodelist_get_list,(void))
 /** Given a hex-encoded nickname of the format DIGEST, $DIGEST, $DIGEST=name,
  * or $DIGEST~name, return the node with the matching identity digest and
  * nickname (if any).  Return NULL if no such node exists, or if <b>hex_id</b>
- * is not well-formed. */
+ * is not well-formed. DOCDOC flags */
 const node_t *
-node_get_by_hex_id(const char *hex_id)
+node_get_by_hex_id(const char *hex_id, unsigned flags)
 {
   char digest_buf[DIGEST_LEN];
   char nn_buf[MAX_NICKNAME_LEN+1];
   char nn_char='\0';
 
+  (void) flags; // XXXX
+
   if (hex_digest_nickname_decode(hex_id, digest_buf, &nn_char, nn_buf)==0) {
     const node_t *node = node_get_by_id(digest_buf);
     if (!node)
       return NULL;
-    if (nn_char) {
-      const char *real_name = node_get_nickname(node);
-      if (!real_name || strcasecmp(real_name, nn_buf))
-        return NULL;
-      if (nn_char == '=') {
-        const char *named_id =
-          networkstatus_get_router_digest_by_nickname(nn_buf);
-        if (!named_id || tor_memneq(named_id, digest_buf, DIGEST_LEN))
-          return NULL;
-      }
+    if (nn_char == '=') {
+      /* "=" indicates a Named relay, but there aren't any of those now. */
+      return NULL;
     }
     return node;
   }
@@ -564,41 +909,26 @@ node_get_by_hex_id(const char *hex_id)
 }
 
 /** Given a nickname (possibly verbose, possibly a hexadecimal digest), return
- * the corresponding node_t, or NULL if none exists.  Warn the user if
- * <b>warn_if_unnamed</b> is set, and they have specified a router by
- * nickname, but the Named flag isn't set for that router. */
+ * the corresponding node_t, or NULL if none exists. Warn the user if they
+ * have specified a router by nickname, unless the NNF_NO_WARN_UNNAMED bit is
+ * set in <b>flags</b>. */
 MOCK_IMPL(const node_t *,
-node_get_by_nickname,(const char *nickname, int warn_if_unnamed))
+node_get_by_nickname,(const char *nickname, unsigned flags))
 {
+  const int warn_if_unnamed = !(flags & NNF_NO_WARN_UNNAMED);
+
   if (!the_nodelist)
     return NULL;
 
   /* Handle these cases: DIGEST, $DIGEST, $DIGEST=name, $DIGEST~name. */
   {
     const node_t *node;
-    if ((node = node_get_by_hex_id(nickname)) != NULL)
+    if ((node = node_get_by_hex_id(nickname, flags)) != NULL)
       return node;
   }
 
   if (!strcasecmp(nickname, UNNAMED_ROUTER_NICKNAME))
     return NULL;
-
-  /* Okay, so if we get here, the nickname is just a nickname.  Is there
-   * a binding for it in the consensus? */
-  {
-    const char *named_id =
-      networkstatus_get_router_digest_by_nickname(nickname);
-    if (named_id)
-      return node_get_by_id(named_id);
-  }
-
-  /* Is it marked as owned-by-someone-else? */
-  if (networkstatus_nickname_is_unnamed(nickname)) {
-    log_info(LD_GENERAL, "The name %s is listed as Unnamed: there is some "
-             "router that holds it, but not one listed in the current "
-             "consensus.", escaped(nickname));
-    return NULL;
-  }
 
   /* Okay, so the name is not canonical for anybody. */
   {
@@ -630,11 +960,9 @@ node_get_by_nickname,(const char *nickname, int warn_if_unnamed))
       if (! node->name_lookup_warned) {
         base16_encode(fp, sizeof(fp), node->identity, DIGEST_LEN);
         log_warn(LD_CONFIG,
-                 "You specified a server \"%s\" by name, but the directory "
-                 "authorities do not have any key registered for this "
-                 "nickname -- so it could be used by any server, not just "
-                 "the one you meant. "
-                 "To make sure you get the same server in the future, refer "
+                 "You specified a relay \"%s\" by name, but nicknames can be "
+                 "used by any relay, not just the one you meant. "
+                 "To make sure you get the same relay in the future, refer "
                  "to it by key, as \"$%s\".", nickname, fp);
         node->name_lookup_warned = 1;
       }
@@ -653,22 +981,37 @@ node_get_by_nickname,(const char *nickname, int warn_if_unnamed))
 const ed25519_public_key_t *
 node_get_ed25519_id(const node_t *node)
 {
+  const ed25519_public_key_t *ri_pk = NULL;
+  const ed25519_public_key_t *md_pk = NULL;
   if (node->ri) {
     if (node->ri->cache_info.signing_key_cert) {
-      const ed25519_public_key_t *pk =
-        &node->ri->cache_info.signing_key_cert->signing_key;
-      if (BUG(ed25519_public_key_is_zero(pk)))
-        goto try_the_md;
-      return pk;
+      ri_pk = &node->ri->cache_info.signing_key_cert->signing_key;
+      if (BUG(ed25519_public_key_is_zero(ri_pk)))
+        ri_pk = NULL;
     }
   }
- try_the_md:
+
   if (node->md) {
     if (node->md->ed25519_identity_pkey) {
-      return node->md->ed25519_identity_pkey;
+      md_pk = node->md->ed25519_identity_pkey;
     }
   }
-  return NULL;
+
+  if (ri_pk && md_pk) {
+    if (ed25519_pubkey_eq(ri_pk, md_pk)) {
+      return ri_pk;
+    } else {
+      /* This can happen if the relay gets flagged NoEdConsensus which will be
+       * triggered on all relays of the network. Thus a protocol warning. */
+      log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
+             "Inconsistent ed25519 identities in the nodelist");
+      return NULL;
+    }
+  } else if (ri_pk) {
+    return ri_pk;
+  } else {
+    return md_pk;
+  }
 }
 
 /** Return true iff this node's Ed25519 identity matches <b>id</b>.
@@ -707,6 +1050,79 @@ node_supports_ed25519_link_authentication(const node_t *node)
   return 0;
 }
 
+/** Return true iff <b>node</b> supports the hidden service directory version
+ * 3 protocol (proposal 224). */
+int
+node_supports_v3_hsdir(const node_t *node)
+{
+  tor_assert(node);
+
+  if (node->rs) {
+    return node->rs->supports_v3_hsdir;
+  }
+  if (node->ri) {
+    if (node->ri->protocol_list == NULL) {
+      return 0;
+    }
+    /* Bug #22447 forces us to filter on tor version:
+     * If platform is a Tor version, and older than 0.3.0.8, return False.
+     * Else, obey the protocol list. */
+    if (node->ri->platform) {
+      if (!strcmpstart(node->ri->platform, "Tor ") &&
+          !tor_version_as_new_as(node->ri->platform, "0.3.0.8")) {
+        return 0;
+      }
+    }
+    return protocol_list_supports_protocol(node->ri->protocol_list,
+                                           PRT_HSDIR, PROTOVER_HSDIR_V3);
+  }
+  tor_assert_nonfatal_unreached_once();
+  return 0;
+}
+
+/** Return true iff <b>node</b> supports ed25519 authentication as an hidden
+ * service introduction point.*/
+int
+node_supports_ed25519_hs_intro(const node_t *node)
+{
+  tor_assert(node);
+
+  if (node->rs) {
+    return node->rs->supports_ed25519_hs_intro;
+  }
+  if (node->ri) {
+    if (node->ri->protocol_list == NULL) {
+      return 0;
+    }
+    return protocol_list_supports_protocol(node->ri->protocol_list,
+                                           PRT_HSINTRO, PROTOVER_HS_INTRO_V3);
+  }
+  tor_assert_nonfatal_unreached_once();
+  return 0;
+}
+
+/** Return true iff <b>node</b> supports to be a rendezvous point for hidden
+ * service version 3 (HSRend=2). */
+int
+node_supports_v3_rendezvous_point(const node_t *node)
+{
+  tor_assert(node);
+
+  if (node->rs) {
+    return node->rs->supports_v3_rendezvous_point;
+  }
+  if (node->ri) {
+    if (node->ri->protocol_list == NULL) {
+      return 0;
+    }
+    return protocol_list_supports_protocol(node->ri->protocol_list,
+                                           PRT_HSREND,
+                                           PROTOVER_HS_RENDEZVOUS_POINT_V3);
+  }
+  tor_assert_nonfatal_unreached_once();
+  return 0;
+}
+
 /** Return the RSA ID key's SHA1 digest for the provided node. */
 const uint8_t *
 node_get_rsa_id_digest(const node_t *node)
@@ -726,21 +1142,6 @@ node_get_nickname(const node_t *node)
     return node->ri->nickname;
   else
     return NULL;
-}
-
-/** Return true iff the nickname of <b>node</b> is canonical, based on the
- * latest consensus. */
-int
-node_is_named(const node_t *node)
-{
-  const char *named_id;
-  const char *nickname = node_get_nickname(node);
-  if (!nickname)
-    return 0;
-  named_id = networkstatus_get_router_digest_by_nickname(nickname);
-  if (!named_id)
-    return 0;
-  return tor_memeq(named_id, node->identity, DIGEST_LEN);
 }
 
 /** Return true iff <b>node</b> appears to be a directory authority or
@@ -790,13 +1191,12 @@ node_get_verbose_nickname(const node_t *node,
                           char *verbose_name_out)
 {
   const char *nickname = node_get_nickname(node);
-  int is_named = node_is_named(node);
   verbose_name_out[0] = '$';
   base16_encode(verbose_name_out+1, HEX_DIGEST_LEN+1, node->identity,
                 DIGEST_LEN);
   if (!nickname)
     return;
-  verbose_name_out[1+HEX_DIGEST_LEN] = is_named ? '=' : '~';
+  verbose_name_out[1+HEX_DIGEST_LEN] = '~';
   strlcpy(verbose_name_out+1+HEX_DIGEST_LEN+1, nickname, MAX_NICKNAME_LEN+1);
 }
 
@@ -1356,8 +1756,7 @@ node_nickname_matches(const node_t *node, const char *nickname)
     return 1;
   return hex_digest_nickname_matches(nickname,
                                      node->identity,
-                                     n,
-                                     node_is_named(node));
+                                     n);
 }
 
 /** Return true iff <b>node</b> is named by some nickname in <b>lst</b>. */
@@ -1459,7 +1858,7 @@ nodelist_add_node_and_family(smartlist_t *sl, const node_t *node)
     SMARTLIST_FOREACH_BEGIN(declared_family, const char *, name) {
       const node_t *node2;
       const smartlist_t *family2;
-      if (!(node2 = node_get_by_nickname(name, 0)))
+      if (!(node2 = node_get_by_nickname(name, NNF_NO_WARN_UNNAMED)))
         continue;
       if (!(family2 = node_get_declared_family(node2)))
         continue;
@@ -1611,8 +2010,8 @@ static char dir_info_status[512] = "";
  * no exits in the consensus."
  * To obtain the final weighted bandwidth, we multiply the
  * weighted bandwidth fraction for each position (guard, middle, exit). */
-int
-router_have_minimum_dir_info(void)
+MOCK_IMPL(int,
+router_have_minimum_dir_info,(void))
 {
   static int logged_delay=0;
   const char *delay_fetches_msg = NULL;
@@ -1659,6 +2058,8 @@ router_dir_info_changed(void)
 {
   need_to_update_have_min_dir_info = 1;
   rend_hsdir_routers_changed();
+  hs_service_dir_info_changed();
+  hs_client_dir_info_changed();
 }
 
 /** Return a string describing what we're missing before we have enough
@@ -1968,6 +2369,7 @@ update_router_have_minimum_dir_info(void)
 {
   time_t now = time(NULL);
   int res;
+  int num_present=0, num_usable=0;
   const or_options_t *options = get_options();
   const networkstatus_t *consensus =
     networkstatus_get_reasonably_live_consensus(now,usable_consensus_flavor());
@@ -1986,17 +2388,9 @@ update_router_have_minimum_dir_info(void)
 
   using_md = consensus->flavor == FLAV_MICRODESC;
 
-  if (! entry_guards_have_enough_dir_info_to_build_circuits()) {
-    strlcpy(dir_info_status, "We're missing descriptors for some of our "
-            "primary entry guards", sizeof(dir_info_status));
-    res = 0;
-    goto done;
-  }
-
   /* Check fraction of available paths */
   {
     char *status = NULL;
-    int num_present=0, num_usable=0;
     double paths = compute_frac_paths_available(consensus, options, now,
                                                 &num_present, &num_usable,
                                                 &status);
@@ -2015,6 +2409,18 @@ update_router_have_minimum_dir_info(void)
 
     tor_free(status);
     res = 1;
+  }
+
+  { /* Check entry guard dirinfo status */
+    char *guard_error = entry_guards_get_err_str_if_dir_info_missing(using_md,
+                                                             num_present,
+                                                             num_usable);
+    if (guard_error) {
+      strlcpy(dir_info_status, guard_error, sizeof(dir_info_status));
+      tor_free(guard_error);
+      res = 0;
+      goto done;
+    }
   }
 
  done:

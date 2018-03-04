@@ -33,7 +33,8 @@ int connection_edge_finished_connecting(edge_connection_t *conn);
 void connection_ap_about_to_close(entry_connection_t *edge_conn);
 void connection_exit_about_to_close(edge_connection_t *edge_conn);
 
-int connection_ap_handshake_send_begin(entry_connection_t *ap_conn);
+MOCK_DECL(int,
+          connection_ap_handshake_send_begin,(entry_connection_t *ap_conn));
 int connection_ap_handshake_send_resolve(entry_connection_t *ap_conn);
 
 entry_connection_t  *connection_ap_make_link(connection_t *partner,
@@ -88,16 +89,18 @@ int connection_ap_process_transparent(entry_connection_t *conn);
 
 int address_is_invalid_destination(const char *address, int client);
 
-int connection_ap_rewrite_and_attach_if_allowed(entry_connection_t *conn,
-                                                origin_circuit_t *circ,
-                                                crypt_path_t *cpath);
+MOCK_DECL(int, connection_ap_rewrite_and_attach_if_allowed,
+                                                (entry_connection_t *conn,
+                                                 origin_circuit_t *circ,
+                                                 crypt_path_t *cpath));
 int connection_ap_handshake_rewrite_and_attach(entry_connection_t *conn,
                                                origin_circuit_t *circ,
                                                crypt_path_t *cpath);
 
 /** Possible return values for parse_extended_hostname. */
 typedef enum hostname_type_t {
-  NORMAL_HOSTNAME, ONION_HOSTNAME, EXIT_HOSTNAME, BAD_HOSTNAME
+  NORMAL_HOSTNAME, ONION_V2_HOSTNAME, ONION_V3_HOSTNAME,
+  EXIT_HOSTNAME, BAD_HOSTNAME
 } hostname_type_t;
 hostname_type_t parse_extended_hostname(char *address);
 
@@ -186,7 +189,9 @@ typedef struct {
 
 STATIC void connection_ap_handshake_rewrite(entry_connection_t *conn,
                                             rewrite_result_t *out);
-#endif
 
-#endif
+STATIC int connection_ap_process_http_connect(entry_connection_t *conn);
+#endif /* defined(CONNECTION_EDGE_PRIVATE) */
+
+#endif /* !defined(TOR_CONNECTION_EDGE_H) */
 

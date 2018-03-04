@@ -522,7 +522,7 @@ channel_tls_get_remote_addr_method(channel_t *chan, tor_addr_t *addr_out)
   tor_assert(addr_out);
 
   if (tlschan->conn) {
-    tor_addr_copy(addr_out, &(TO_CONN(tlschan->conn)->addr));
+    tor_addr_copy(addr_out, &(tlschan->conn->real_addr));
     rv = 1;
   } else tor_addr_make_unspec(addr_out);
 
@@ -847,7 +847,7 @@ channel_tls_write_packed_cell_method(channel_t *chan,
   tor_assert(packed_cell);
 
   if (tlschan->conn) {
-    connection_write_to_buf(packed_cell->body, cell_network_size,
+    connection_buf_add(packed_cell->body, cell_network_size,
                             TO_CONN(tlschan->conn));
 
     /* This is where the cell is finished; used to be done from relay.c */
@@ -993,7 +993,7 @@ channel_tls_handle_state_change_on_orconn(channel_tls_t *chan,
      * We can go to CHANNEL_STATE_OPEN from CHANNEL_STATE_OPENING or
      * CHANNEL_STATE_MAINT on this.
      */
-    channel_change_state(base_chan, CHANNEL_STATE_OPEN);
+    channel_change_state_open(base_chan);
     /* We might have just become writeable; check and tell the scheduler */
     if (connection_or_num_cells_writeable(conn) > 0) {
       scheduler_channel_wants_writes(base_chan);
@@ -1044,7 +1044,7 @@ channel_tls_time_process_cell(cell_t *cell, channel_tls_t *chan, int *time,
 
   *time += time_passed;
 }
-#endif
+#endif /* defined(KEEP_TIMING_STATS) */
 
 /**
  * Handle an incoming cell on a channel_tls_t
@@ -1072,9 +1072,9 @@ channel_tls_handle_cell(cell_t *cell, or_connection_t *conn)
     channel_tls_time_process_cell(cl, cn, & tp ## time ,            \
                              channel_tls_process_ ## tp ## _cell);  \
     } STMT_END
-#else
+#else /* !(defined(KEEP_TIMING_STATS)) */
 #define PROCESS_CELL(tp, cl, cn) channel_tls_process_ ## tp ## _cell(cl, cn)
-#endif
+#endif /* defined(KEEP_TIMING_STATS) */
 
   tor_assert(cell);
   tor_assert(conn);
@@ -1204,7 +1204,7 @@ channel_tls_handle_var_cell(var_cell_t *var_cell, or_connection_t *conn)
     /* remember which second it is, for next time */
     current_second = now;
   }
-#endif
+#endif /* defined(KEEP_TIMING_STATS) */
 
   tor_assert(var_cell);
   tor_assert(conn);
@@ -1579,7 +1579,7 @@ channel_tls_process_versions_cell(var_cell_t *cell, channel_tls_t *chan)
       connection_or_close_normally(chan->conn, 1);
       return;
     }
-#endif
+#endif /* defined(DISABLE_V3_LINKPROTO_SERVERSIDE) */
 
     if (send_versions) {
       if (connection_or_send_versions(chan->conn, 1) < 0) {
@@ -1680,6 +1680,8 @@ channel_tls_process_netinfo_cell(cell_t *cell, channel_tls_t *chan)
 
   long apparent_skew = 0;
   tor_addr_t my_apparent_addr = TOR_ADDR_NULL;
+  int started_here = 0;
+  const char *identity_digest = NULL;
 
   tor_assert(cell);
   tor_assert(chan);
@@ -1699,10 +1701,12 @@ channel_tls_process_netinfo_cell(cell_t *cell, channel_tls_t *chan)
   }
   tor_assert(chan->conn->handshake_state &&
              chan->conn->handshake_state->received_versions);
+  started_here = connection_or_nonopen_was_started_here(chan->conn);
+  identity_digest = chan->conn->identity_digest;
 
   if (chan->conn->base_.state == OR_CONN_STATE_OR_HANDSHAKING_V3) {
     tor_assert(chan->conn->link_proto >= 3);
-    if (chan->conn->handshake_state->started_here) {
+    if (started_here) {
       if (!(chan->conn->handshake_state->authenticated)) {
         log_fn(LOG_PROTOCOL_WARN, LD_OR,
                "Got a NETINFO cell from server, "
@@ -1789,12 +1793,11 @@ channel_tls_process_netinfo_cell(cell_t *cell, channel_tls_t *chan)
       return;
     }
     /* A relay can connect from anywhere and be canonical, so
-     * long as it tells you from where it came. This may be a bit
-     * concerning.. Luckily we have another check in
-     * channel_tls_matches_target_method() to ensure that extends
-     * only go to the IP they ask for.
-     *
-     * XXX: Bleh. That check is not used if the connection is canonical.
+     * long as it tells you from where it came. This may sound a bit
+     * concerning... but that's what "canonical" means: that the
+     * address is one that the relay itself has claimed.  The relay
+     * might be doing something funny, but nobody else is doing a MITM
+     * on the relay's TCP.
      */
     if (tor_addr_eq(&addr, &(chan->conn->real_addr))) {
       connection_or_set_canonical(chan->conn, 1);
@@ -1813,7 +1816,7 @@ channel_tls_process_netinfo_cell(cell_t *cell, channel_tls_t *chan)
              "they will not consider this connection canonical. They "
              "think we are at %s, but we think its %s.",
              safe_str(descr),
-             safe_str(hex_str(chan->conn->identity_digest, DIGEST_LEN)),
+             safe_str(hex_str(identity_digest, DIGEST_LEN)),
              safe_str(tor_addr_is_null(&my_apparent_addr) ?
              "<none>" : fmt_and_decorate_addr(&my_apparent_addr)),
              safe_str(fmt_addr32(me->addr)));
@@ -1823,7 +1826,8 @@ channel_tls_process_netinfo_cell(cell_t *cell, channel_tls_t *chan)
   /** Warn when we get a netinfo skew with at least this value. */
 #define NETINFO_NOTICE_SKEW 3600
   if (labs(apparent_skew) > NETINFO_NOTICE_SKEW &&
-      connection_or_digest_is_known_relay(chan->conn->identity_digest)) {
+      (started_here ||
+       connection_or_digest_is_known_relay(chan->conn->identity_digest))) {
     int trusted = router_digest_is_trusted_dir(chan->conn->identity_digest);
     clock_skew_warning(TO_CONN(chan->conn), apparent_skew, trusted, LD_GENERAL,
                        "NETINFO cell", "OR");
@@ -1857,8 +1861,7 @@ channel_tls_process_netinfo_cell(cell_t *cell, channel_tls_t *chan)
              safe_str_client(chan->conn->base_.address),
              chan->conn->base_.port,
              (int)(chan->conn->link_proto),
-             hex_str(TLS_CHAN_TO_BASE(chan)->identity_digest,
-                     DIGEST_LEN),
+             hex_str(identity_digest, DIGEST_LEN),
              tor_addr_is_null(&my_apparent_addr) ?
              "<none>" : fmt_and_decorate_addr(&my_apparent_addr));
   }
@@ -1915,7 +1918,6 @@ certs_cell_typenum_to_cert_type(int typenum)
  * of the connection, we then authenticate the server or mark the connection.
  * If it's the server side, wait for an AUTHENTICATE cell.
  */
-
 STATIC void
 channel_tls_process_certs_cell(var_cell_t *cell, channel_tls_t *chan)
 {
@@ -1930,7 +1932,7 @@ channel_tls_process_certs_cell(var_cell_t *cell, channel_tls_t *chan)
   int n_certs, i;
   certs_cell_t *cc = NULL;
 
-  int send_netinfo = 0;
+  int send_netinfo = 0, started_here = 0;
 
   memset(x509_certs, 0, sizeof(x509_certs));
   memset(ed_certs, 0, sizeof(ed_certs));
@@ -1947,6 +1949,11 @@ channel_tls_process_certs_cell(var_cell_t *cell, channel_tls_t *chan)
     connection_or_close_for_error(chan->conn, 0);               \
     goto err;                                                   \
   } while (0)
+
+  /* Can't use connection_or_nonopen_was_started_here(); its conn->tls
+   * check looks like it breaks
+   * test_link_handshake_recv_certs_ok_server().  */
+  started_here = chan->conn->handshake_state->started_here;
 
   if (chan->conn->base_.state != OR_CONN_STATE_OR_HANDSHAKING_V3)
     ERR("We're not doing a v3 handshake!");
@@ -2061,7 +2068,7 @@ channel_tls_process_certs_cell(var_cell_t *cell, channel_tls_t *chan)
   /* Note that this warns more loudly about time and validity if we were
    * _trying_ to connect to an authority, not necessarily if we _did_ connect
    * to one. */
-  if (chan->conn->handshake_state->started_here &&
+  if (started_here &&
       router_digest_is_trusted_dir(TLS_CHAN_TO_BASE(chan)->identity_digest))
     severity = LOG_WARN;
   else
@@ -2079,7 +2086,7 @@ channel_tls_process_certs_cell(var_cell_t *cell, channel_tls_t *chan)
   if (!checked_rsa_id)
     ERR("Invalid certificate chain!");
 
-  if (chan->conn->handshake_state->started_here) {
+  if (started_here) {
     /* No more information is needed. */
 
     chan->conn->handshake_state->authenticated = 1;

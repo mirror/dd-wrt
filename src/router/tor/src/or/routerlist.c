@@ -150,7 +150,8 @@ typedef struct cert_list_t cert_list_t;
 /* static function prototypes */
 static int compute_weighted_bandwidths(const smartlist_t *sl,
                                        bandwidth_weight_rule_t rule,
-                                       double **bandwidths_out);
+                                       double **bandwidths_out,
+                                       double *total_bandwidth_out);
 static const routerstatus_t *router_pick_trusteddirserver_impl(
                 const smartlist_t *sourcelist, dirinfo_type_t auth,
                 int flags, int *n_busy_out);
@@ -1872,7 +1873,7 @@ router_picked_poor_directory_log(const routerstatus_t *rs)
       || !router_have_minimum_dir_info()) {
     return;
   }
-#endif
+#endif /* !LOG_FALSE_POSITIVES_DURING_BOOTSTRAP */
 
   /* We couldn't find a node, or the one we have doesn't fit our preferences.
    * Sometimes this is normal, sometimes it can be a reachability issue. */
@@ -2306,7 +2307,7 @@ routerlist_add_node_and_family(smartlist_t *sl, const routerinfo_t *router)
 {
   /* XXXX MOVE ? */
   node_t fake_node;
-  const node_t *node = node_get_by_id(router->cache_info.identity_digest);;
+  const node_t *node = node_get_by_id(router->cache_info.identity_digest);
   if (node == NULL) {
     memset(&fake_node, 0, sizeof(fake_node));
     fake_node.ri = (routerinfo_t *)router;
@@ -2506,7 +2507,7 @@ smartlist_choose_node_by_bandwidth_weights(const smartlist_t *sl,
   double *bandwidths_dbl=NULL;
   uint64_t *bandwidths_u64=NULL;
 
-  if (compute_weighted_bandwidths(sl, rule, &bandwidths_dbl) < 0)
+  if (compute_weighted_bandwidths(sl, rule, &bandwidths_dbl, NULL) < 0)
     return NULL;
 
   bandwidths_u64 = tor_calloc(smartlist_len(sl), sizeof(uint64_t));
@@ -2526,18 +2527,24 @@ smartlist_choose_node_by_bandwidth_weights(const smartlist_t *sl,
  * smartlist_choose_node_by_bandwidth_weights, compute weighted bandwidth
  * values for each node and store them in a freshly allocated
  * *<b>bandwidths_out</b> of the same length as <b>sl</b>, and holding results
- * as doubles. Return 0 on success, -1 on failure. */
+ * as doubles. If <b>total_bandwidth_out</b> is non-NULL, set it to the total
+ * of all the bandwidths.
+ * Return 0 on success, -1 on failure. */
 static int
 compute_weighted_bandwidths(const smartlist_t *sl,
                             bandwidth_weight_rule_t rule,
-                            double **bandwidths_out)
+                            double **bandwidths_out,
+                            double *total_bandwidth_out)
 {
   int64_t weight_scale;
   double Wg = -1, Wm = -1, We = -1, Wd = -1;
   double Wgb = -1, Wmb = -1, Web = -1, Wdb = -1;
-  uint64_t weighted_bw = 0;
   guardfraction_bandwidth_t guardfraction_bw;
-  double *bandwidths;
+  double *bandwidths = NULL;
+  double total_bandwidth = 0.0;
+
+  tor_assert(sl);
+  tor_assert(bandwidths_out);
 
   /* Can't choose exit and guard at same time */
   tor_assert(rule == NO_WEIGHTING ||
@@ -2545,6 +2552,12 @@ compute_weighted_bandwidths(const smartlist_t *sl,
              rule == WEIGHT_FOR_GUARD ||
              rule == WEIGHT_FOR_MID ||
              rule == WEIGHT_FOR_DIR);
+
+  *bandwidths_out = NULL;
+
+  if (total_bandwidth_out) {
+    *total_bandwidth_out = 0.0;
+  }
 
   if (smartlist_len(sl) == 0) {
     log_info(LD_CIRC,
@@ -2706,16 +2719,21 @@ compute_weighted_bandwidths(const smartlist_t *sl,
       final_weight = weight*this_bw;
     }
 
-    bandwidths[node_sl_idx] = final_weight + 0.5;
+    bandwidths[node_sl_idx] = final_weight;
+    total_bandwidth += final_weight;
   } SMARTLIST_FOREACH_END(node);
 
   log_debug(LD_CIRC, "Generated weighted bandwidths for rule %s based "
             "on weights "
-            "Wg=%f Wm=%f We=%f Wd=%f with total bw "U64_FORMAT,
+            "Wg=%f Wm=%f We=%f Wd=%f with total bw %f",
             bandwidth_weight_rule_to_string(rule),
-            Wg, Wm, We, Wd, U64_PRINTF_ARG(weighted_bw));
+            Wg, Wm, We, Wd, total_bandwidth);
 
   *bandwidths_out = bandwidths;
+
+  if (total_bandwidth_out) {
+    *total_bandwidth_out = total_bandwidth;
+  }
 
   return 0;
 }
@@ -2733,7 +2751,8 @@ frac_nodes_with_descriptors(const smartlist_t *sl,
   if (smartlist_len(sl) == 0)
     return 0.0;
 
-  if (compute_weighted_bandwidths(sl, rule, &bandwidths) < 0) {
+  if (compute_weighted_bandwidths(sl, rule, &bandwidths, &total) < 0 ||
+      total <= 0.0) {
     int n_with_descs = 0;
     SMARTLIST_FOREACH(sl, const node_t *, node, {
       if (node_has_descriptor(node))
@@ -2742,18 +2761,13 @@ frac_nodes_with_descriptors(const smartlist_t *sl,
     return ((double)n_with_descs) / (double)smartlist_len(sl);
   }
 
-  total = present = 0.0;
+  present = 0.0;
   SMARTLIST_FOREACH_BEGIN(sl, const node_t *, node) {
-    const double bw = bandwidths[node_sl_idx];
-    total += bw;
     if (node_has_descriptor(node))
-      present += bw;
+      present += bandwidths[node_sl_idx];
   } SMARTLIST_FOREACH_END(node);
 
   tor_free(bandwidths);
-
-  if (total < 1.0)
-    return 0;
 
   return present / total;
 }
@@ -2799,6 +2813,7 @@ router_choose_random_node(smartlist_t *excludedsmartlist,
   const int need_desc = (flags & CRN_NEED_DESC) != 0;
   const int pref_addr = (flags & CRN_PREF_ADDR) != 0;
   const int direct_conn = (flags & CRN_DIRECT_CONN) != 0;
+  const int rendezvous_v3 = (flags & CRN_RENDEZVOUS_V3) != 0;
 
   smartlist_t *sl=smartlist_new(),
     *excludednodes=smartlist_new();
@@ -2810,12 +2825,19 @@ router_choose_random_node(smartlist_t *excludedsmartlist,
   rule = weight_for_exit ? WEIGHT_FOR_EXIT :
     (need_guard ? WEIGHT_FOR_GUARD : WEIGHT_FOR_MID);
 
-  /* Exclude relays that allow single hop exit circuits. This is an obsolete
-   * option since 0.2.9.2-alpha and done by default in 0.3.1.0-alpha. */
-  SMARTLIST_FOREACH(nodelist_get_list(), node_t *, node,
+  SMARTLIST_FOREACH_BEGIN(nodelist_get_list(), node_t *, node) {
     if (node_allows_single_hop_exits(node)) {
+      /* Exclude relays that allow single hop exit circuits. This is an
+       * obsolete option since 0.2.9.2-alpha and done by default in
+       * 0.3.1.0-alpha. */
       smartlist_add(excludednodes, node);
-    });
+    } else if (rendezvous_v3 &&
+               !node_supports_v3_rendezvous_point(node)) {
+      /* Exclude relays that do not support to rendezvous for a hidden service
+       * version 3. */
+      smartlist_add(excludednodes, node);
+    }
+  } SMARTLIST_FOREACH_END(node);
 
   /* If the node_t is not found we won't be to exclude ourself but we
    * won't be able to pick ourself in router_choose_random_node() so
@@ -2929,7 +2951,7 @@ hex_digest_nickname_decode(const char *hexdigest,
  * <b>hexdigest</b> is malformed, or it doesn't match.  */
 int
 hex_digest_nickname_matches(const char *hexdigest, const char *identity_digest,
-                            const char *nickname, int is_named)
+                            const char *nickname)
 {
   char digest[DIGEST_LEN];
   char nn_char='\0';
@@ -2938,28 +2960,18 @@ hex_digest_nickname_matches(const char *hexdigest, const char *identity_digest,
   if (hex_digest_nickname_decode(hexdigest, digest, &nn_char, nn_buf) == -1)
     return 0;
 
-  if (nn_char == '=' || nn_char == '~') {
-    if (!nickname)
+  if (nn_char == '=') {
+    return 0;
+  }
+
+  if (nn_char == '~') {
+    if (!nickname)     // XXX This seems wrong. -NM
       return 0;
     if (strcasecmp(nn_buf, nickname))
-      return 0;
-    if (nn_char == '=' && !is_named)
       return 0;
   }
 
   return tor_memeq(digest, identity_digest, DIGEST_LEN);
-}
-
-/** Return true iff <b>router</b> is listed as named in the current
- * consensus. */
-int
-router_is_named(const routerinfo_t *router)
-{
-  const char *digest =
-    networkstatus_get_router_digest_by_nickname(router->nickname);
-
-  return (digest &&
-          tor_memeq(digest, router->cache_info.identity_digest, DIGEST_LEN));
 }
 
 /** Return true iff <b>digest</b> is the digest of the identity key of a
@@ -4057,7 +4069,7 @@ routerlist_remove_old_cached_routers_with_id(time_t now,
     signed_descriptor_t *r = smartlist_get(lst, i);
     tor_assert(tor_memeq(ident, r->identity_digest, DIGEST_LEN));
   }
-#endif
+#endif /* 1 */
   /* Check whether we need to do anything at all. */
   {
     int mdpr = directory_caches_dir_info(get_options()) ? 2 : 1;
@@ -4974,8 +4986,9 @@ max_dl_per_request(const or_options_t *options, int purpose)
 }
 
 /** Don't split our requests so finely that we are requesting fewer than
- * this number per server. */
-#define MIN_DL_PER_REQUEST 4
+ * this number per server. (Grouping more than this at once leads to
+ * diminishing returns.) */
+#define MIN_DL_PER_REQUEST 32
 /** To prevent a single screwy cache from confusing us by selective reply,
  * try to split our requests into at least this many requests. */
 #define MIN_REQUESTS 3
@@ -5014,6 +5027,11 @@ launch_descriptor_downloads(int purpose,
       log_debug(LD_DIR,
                 "There are enough downloadable %ss to launch requests.",
                 descname);
+    } else if (! router_have_minimum_dir_info()) {
+      log_debug(LD_DIR,
+                "We are only missing %d %ss, but we'll fetch anyway, since "
+                "we don't yet have enough directory info.",
+                n_downloadable, descname);
     } else {
 
       /* should delay */
@@ -5036,7 +5054,7 @@ launch_descriptor_downloads(int purpose,
     }
   }
 
-  if (!authdir_mode_any_nonhidserv(options)) {
+  if (!authdir_mode(options)) {
     /* If we wind up going to the authorities, we want to only open one
      * connection to each authority at a time, so that we don't overload
      * them.  We do this by setting PDS_NO_EXISTING_SERVERDESC_FETCH
@@ -5058,8 +5076,9 @@ launch_descriptor_downloads(int purpose,
   if (n_per_request > max_dl_per_req)
     n_per_request = max_dl_per_req;
 
-  if (n_per_request < MIN_DL_PER_REQUEST)
-    n_per_request = MIN_DL_PER_REQUEST;
+  if (n_per_request < MIN_DL_PER_REQUEST) {
+    n_per_request = MIN(MIN_DL_PER_REQUEST, n_downloadable);
+  }
 
   if (n_downloadable > n_per_request)
     req_plural = rtr_plural = "s";
@@ -5167,7 +5186,7 @@ update_consensus_router_descriptor_downloads(time_t now, int is_vote,
       smartlist_add(downloadable, rs->descriptor_digest);
   } SMARTLIST_FOREACH_END(rsp);
 
-  if (!authdir_mode_handles_descs(options, ROUTER_PURPOSE_GENERAL)
+  if (!authdir_mode_v3(options)
       && smartlist_len(no_longer_old)) {
     routerlist_t *rl = router_get_routerlist();
     log_info(LD_DIR, "%d router descriptors listed in consensus are "

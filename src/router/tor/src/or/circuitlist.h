@@ -13,6 +13,7 @@
 #define TOR_CIRCUITLIST_H
 
 #include "testsupport.h"
+#include "hs_ident.h"
 
 MOCK_DECL(smartlist_t *, circuit_get_global_list, (void));
 smartlist_t *circuit_get_global_origin_circuit_list(void);
@@ -48,6 +49,8 @@ origin_circuit_t *circuit_get_ready_rend_circ_by_rend_data(
 origin_circuit_t *circuit_get_next_by_pk_and_purpose(origin_circuit_t *start,
                                      const uint8_t *digest, uint8_t purpose);
 origin_circuit_t *circuit_get_next_service_intro_circ(origin_circuit_t *start);
+origin_circuit_t *circuit_get_next_service_rp_circ(origin_circuit_t *start);
+origin_circuit_t *circuit_get_next_service_hsdir_circ(origin_circuit_t *start);
 origin_circuit_t *circuit_find_to_cannibalize(uint8_t purpose,
                                               extend_info_t *info, int flags);
 void circuit_mark_all_unused_circs(void);
@@ -65,7 +68,7 @@ int circuit_count_pending_on_channel(channel_t *chan);
   circuit_mark_for_close_((c), (reason), __LINE__, SHORT_FILE__)
 
 void assert_cpath_layer_ok(const crypt_path_t *cp);
-void assert_circuit_ok(const circuit_t *c);
+MOCK_DECL(void, assert_circuit_ok,(const circuit_t *c));
 void circuit_free_all(void);
 void circuits_handle_oom(size_t current_allocation);
 
@@ -83,7 +86,7 @@ STATIC size_t n_cells_in_circ_queues(const circuit_t *c);
 STATIC uint32_t circuit_max_queued_data_age(const circuit_t *c, uint32_t now);
 STATIC uint32_t circuit_max_queued_cell_age(const circuit_t *c, uint32_t now);
 STATIC uint32_t circuit_max_queued_item_age(const circuit_t *c, uint32_t now);
-#endif
+#endif /* defined(CIRCUITLIST_PRIVATE) */
 
-#endif
+#endif /* !defined(TOR_CIRCUITLIST_H) */
 

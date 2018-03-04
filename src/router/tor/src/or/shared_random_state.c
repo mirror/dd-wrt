@@ -40,10 +40,14 @@ static const char dstate_commit_key[] = "Commit";
 static const char dstate_prev_srv_key[] = "SharedRandPreviousValue";
 static const char dstate_cur_srv_key[] = "SharedRandCurrentValue";
 
+/** dummy instance of sr_disk_state_t, used for type-checking its
+ * members with CONF_CHECK_VAR_TYPE. */
+DUMMY_TYPECHECK_INSTANCE(sr_disk_state_t);
+
 /* These next two are duplicates or near-duplicates from config.c */
 #define VAR(name, conftype, member, initvalue)                              \
-  { name, CONFIG_TYPE_ ## conftype, STRUCT_OFFSET(sr_disk_state_t, member), \
-    initvalue }
+  { name, CONFIG_TYPE_ ## conftype, offsetof(sr_disk_state_t, member),      \
+      initvalue CONF_TEST_MEMBERS(sr_disk_state_t, conftype, member) }
 /* As VAR, but the option name and member name are the same. */
 #define V(member, conftype, initvalue) \
   VAR(#member, conftype, member, initvalue)
@@ -70,21 +74,22 @@ static config_var_t state_vars[] = {
   V(SharedRandValues,           LINELIST_V, NULL),
   VAR("SharedRandPreviousValue",LINELIST_S, SharedRandValues, NULL),
   VAR("SharedRandCurrentValue", LINELIST_S, SharedRandValues, NULL),
-  { NULL, CONFIG_TYPE_OBSOLETE, 0, NULL }
+  END_OF_CONFIG_VARS
 };
 
 /* "Extra" variable in the state that receives lines we can't parse. This
  * lets us preserve options from versions of Tor newer than us. */
 static config_var_t state_extra_var = {
   "__extra", CONFIG_TYPE_LINELIST,
-  STRUCT_OFFSET(sr_disk_state_t, ExtraLines), NULL
+  offsetof(sr_disk_state_t, ExtraLines), NULL
+  CONF_TEST_MEMBERS(sr_disk_state_t, LINELIST, ExtraLines)
 };
 
 /* Configuration format of sr_disk_state_t. */
 static const config_format_t state_format = {
   sizeof(sr_disk_state_t),
   SR_DISK_STATE_MAGIC,
-  STRUCT_OFFSET(sr_disk_state_t, magic_),
+  offsetof(sr_disk_state_t, magic_),
   NULL,
   NULL,
   state_vars,
@@ -133,27 +138,56 @@ get_voting_interval(void)
 /* Given the time <b>now</b>, return the start time of the current round of
  * the SR protocol. For example, if it's 23:47:08, the current round thus
  * started at 23:47:00 for a voting interval of 10 seconds. */
-static time_t
-get_start_time_of_current_round(time_t now)
+STATIC time_t
+get_start_time_of_current_round(void)
 {
   const or_options_t *options = get_options();
   int voting_interval = get_voting_interval();
-  voting_schedule_t *new_voting_schedule =
-    get_voting_schedule(options, now, LOG_INFO);
-  tor_assert(new_voting_schedule);
-
   /* First, get the start time of the next round */
-  time_t next_start = new_voting_schedule->interval_starts;
+  time_t next_start = dirvote_get_next_valid_after_time();
   /* Now roll back next_start by a voting interval to find the start time of
      the current round. */
   time_t curr_start = dirvote_get_start_of_next_interval(
                                      next_start - voting_interval - 1,
                                      voting_interval,
                                      options->TestingV3AuthVotingStartOffset);
-
-  voting_schedule_free(new_voting_schedule);
-
   return curr_start;
+}
+
+/** Return the start time of the current SR protocol run. For example, if the
+ *  time is 23/06/2017 23:47:08 and a full SR protocol run is 24 hours, this
+ *  function should return 23/06/2017 00:00:00. */
+time_t
+sr_state_get_start_time_of_current_protocol_run(time_t now)
+{
+  int total_rounds = SHARED_RANDOM_N_ROUNDS * SHARED_RANDOM_N_PHASES;
+  int voting_interval = get_voting_interval();
+  /* Find the time the current round started. */
+  time_t beginning_of_current_round = get_start_time_of_current_round();
+
+  /* Get current SR protocol round */
+  int current_round = (now / voting_interval) % total_rounds;
+
+  /* Get start time by subtracting the time elapsed from the beginning of the
+     protocol run */
+  time_t time_elapsed_since_start_of_run = current_round * voting_interval;
+  return beginning_of_current_round - time_elapsed_since_start_of_run;
+}
+
+/** Return the time (in seconds) it takes to complete a full SR protocol phase
+ *  (e.g. the commit phase). */
+unsigned int
+sr_state_get_phase_duration(void)
+{
+  return SHARED_RANDOM_N_ROUNDS * get_voting_interval();
+}
+
+/** Return the time (in seconds) it takes to complete a full SR protocol run */
+unsigned int
+sr_state_get_protocol_run_duration(void)
+{
+  int total_protocol_rounds = SHARED_RANDOM_N_ROUNDS * SHARED_RANDOM_N_PHASES;
+  return total_protocol_rounds * get_voting_interval();
 }
 
 /* Return the time we should expire the state file created at <b>now</b>.
@@ -167,7 +201,7 @@ get_state_valid_until_time(time_t now)
 
   voting_interval = get_voting_interval();
   /* Find the time the current round started. */
-  beginning_of_current_round = get_start_time_of_current_round(now);
+  beginning_of_current_round = get_start_time_of_current_round();
 
   /* Find how many rounds are left till the end of the protocol run */
   current_round = (now / voting_interval) % total_rounds;
@@ -1329,7 +1363,7 @@ sr_state_init(int save_to_disk, int read_from_disk)
   /* We have a state in memory, let's make sure it's updated for the current
    * and next voting round. */
   {
-    time_t valid_after = get_next_valid_after_time(now);
+    time_t valid_after = dirvote_get_next_valid_after_time();
     sr_state_update(valid_after);
   }
   return 0;
@@ -1355,5 +1389,5 @@ get_sr_state(void)
   return sr_state;
 }
 
-#endif /* TOR_UNIT_TESTS */
+#endif /* defined(TOR_UNIT_TESTS) */
 

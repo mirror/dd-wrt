@@ -338,7 +338,7 @@ dirserv_router_get_status(const routerinfo_t *router, const char **msg,
         }
         return FP_REJECT;
       }
-#endif
+#endif /* defined(DISABLE_DISABLING_ED25519) */
     }
   }
 
@@ -417,7 +417,10 @@ dirserv_get_status_impl(const char *id_digest, const char *nickname,
 
   if (result & FP_REJECT) {
     if (msg)
-      *msg = "Fingerprint is marked rejected -- please contact us?";
+      *msg = "Fingerprint is marked rejected -- if you think this is a "
+             "mistake please set a valid email address in ContactInfo and "
+             "send an email to bad-relays@lists.torproject.org mentioning "
+             "your fingerprint(s)?";
     return FP_REJECT;
   } else if (result & FP_INVALID) {
     if (msg)
@@ -435,7 +438,10 @@ dirserv_get_status_impl(const char *id_digest, const char *nickname,
     log_fn(severity, LD_DIRSERV, "Rejecting '%s' because of address '%s'",
                nickname, fmt_addr32(addr));
     if (msg)
-      *msg = "Suspicious relay address range -- please contact us?";
+      *msg = "Suspicious relay address range -- if you think this is a "
+             "mistake please set a valid email address in ContactInfo and "
+             "send an email to bad-relays@lists.torproject.org mentioning "
+             "your address(es) and fingerprint(s)?";
     return FP_REJECT;
   }
   if (!authdir_policy_valid_address(addr, or_port)) {
@@ -673,9 +679,6 @@ dirserv_add_descriptor(routerinfo_t *ri, const char **msg, const char *source)
                ri->nickname, source, (int)ri->cache_info.signed_descriptor_len,
                MAX_DESCRIPTOR_UPLOAD_SIZE);
     *msg = "Router descriptor was too large.";
-    control_event_or_authdir_new_descriptor("REJECTED",
-               ri->cache_info.signed_descriptor_body,
-                                            desclen, *msg);
     r = ROUTER_AUTHDIR_REJECTS;
     goto fail;
   }
@@ -694,9 +697,6 @@ dirserv_add_descriptor(routerinfo_t *ri, const char **msg, const char *source)
              router_describe(ri), source);
     *msg = "Not replacing router descriptor; no information has changed since "
       "the last one with this identity.";
-    control_event_or_authdir_new_descriptor("DROPPED",
-                         ri->cache_info.signed_descriptor_body,
-                                            desclen, *msg);
     r = ROUTER_IS_ALREADY_KNOWN;
     goto fail;
   }
@@ -704,10 +704,19 @@ dirserv_add_descriptor(routerinfo_t *ri, const char **msg, const char *source)
   /* Do keypinning again ... this time, to add the pin if appropriate */
   int keypin_status;
   if (ri->cache_info.signing_key_cert) {
+    ed25519_public_key_t *pkey = &ri->cache_info.signing_key_cert->signing_key;
+    /* First let's validate this pubkey before pinning it */
+    if (ed25519_validate_pubkey(pkey) < 0) {
+      log_warn(LD_DIRSERV, "Received bad key from %s (source %s)",
+               router_describe(ri), source);
+      routerinfo_free(ri);
+      return ROUTER_AUTHDIR_REJECTS;
+    }
+
+    /* Now pin it! */
     keypin_status = keypin_check_and_add(
       (const uint8_t*)ri->cache_info.identity_digest,
-      ri->cache_info.signing_key_cert->signing_key.pubkey,
-      ! key_pinning);
+      pkey->pubkey, ! key_pinning);
   } else {
     keypin_status = keypin_check_lone_rsa(
       (const uint8_t*)ri->cache_info.identity_digest);
@@ -742,14 +751,11 @@ dirserv_add_descriptor(routerinfo_t *ri, const char **msg, const char *source)
   r = router_add_to_routerlist(ri, msg, 0, 0);
   if (!WRA_WAS_ADDED(r)) {
     /* unless the routerinfo was fine, just out-of-date */
-    if (WRA_WAS_REJECTED(r))
-      control_event_or_authdir_new_descriptor("REJECTED", desc, desclen, *msg);
     log_info(LD_DIRSERV,
              "Did not add descriptor from '%s' (source: %s): %s.",
              nickname, source, *msg ? *msg : "(no message)");
   } else {
     smartlist_t *changed;
-    control_event_or_authdir_new_descriptor("ACCEPTED", desc, desclen, *msg);
 
     changed = smartlist_new();
     smartlist_add(changed, ri);
@@ -2693,7 +2699,7 @@ measured_bw_line_parse(measured_bw_line_t *out, const char *orig_line)
       }
       cp+=strlen("bw=");
 
-      out->bw_kb = tor_parse_long(cp, 0, 0, LONG_MAX, &parse_ok, &endptr);
+      out->bw_kb = tor_parse_long(cp, 10, 0, LONG_MAX, &parse_ok, &endptr);
       if (!parse_ok || (*endptr && !TOR_ISSPACE(*endptr))) {
         log_warn(LD_DIRSERV, "Invalid bandwidth in bandwidth file line: %s",
                  escaped(orig_line));
@@ -3605,9 +3611,9 @@ spooled_resource_flush_some(spooled_resource_t *spooled,
       return SRFS_DONE;
     }
     if (conn->compress_state) {
-      connection_write_to_buf_compress((const char*)body, bodylen, conn, 0);
+      connection_buf_add_compress((const char*)body, bodylen, conn, 0);
     } else {
-      connection_write_to_buf((const char*)body, bodylen, TO_CONN(conn));
+      connection_buf_add((const char*)body, bodylen, TO_CONN(conn));
     }
     return SRFS_DONE;
   } else {
@@ -3644,11 +3650,11 @@ spooled_resource_flush_some(spooled_resource_t *spooled,
       return SRFS_ERR;
     ssize_t bytes = (ssize_t) MIN(DIRSERV_CACHED_DIR_CHUNK_SIZE, remaining);
     if (conn->compress_state) {
-      connection_write_to_buf_compress(
+      connection_buf_add_compress(
               ptr + spooled->cached_dir_offset,
               bytes, conn, 0);
     } else {
-      connection_write_to_buf(ptr + spooled->cached_dir_offset,
+      connection_buf_add(ptr + spooled->cached_dir_offset,
                               bytes, TO_CONN(conn));
     }
     spooled->cached_dir_offset += bytes;
@@ -3913,7 +3919,7 @@ connection_dirserv_flushed_some(dir_connection_t *conn)
   if (conn->compress_state) {
     /* Flush the compression state: there could be more bytes pending in there,
      * and we don't want to omit bytes. */
-    connection_write_to_buf_compress("", 0, conn, 1);
+    connection_buf_add_compress("", 0, conn, 1);
     tor_compress_free(conn->compress_state);
     conn->compress_state = NULL;
   }

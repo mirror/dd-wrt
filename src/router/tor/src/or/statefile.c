@@ -34,6 +34,7 @@
 #include "config.h"
 #include "confparse.h"
 #include "connection.h"
+#include "control.h"
 #include "entrynodes.h"
 #include "hibernate.h"
 #include "rephist.h"
@@ -53,10 +54,14 @@ static config_abbrev_t state_abbrevs_[] = {
   { NULL, NULL, 0, 0},
 };
 
+/** dummy instance of or_state_t, used for type-checking its
+ * members with CONF_CHECK_VAR_TYPE. */
+DUMMY_TYPECHECK_INSTANCE(or_state_t);
+
 /*XXXX these next two are duplicates or near-duplicates from config.c */
 #define VAR(name,conftype,member,initvalue)                             \
-  { name, CONFIG_TYPE_ ## conftype, STRUCT_OFFSET(or_state_t, member),  \
-      initvalue }
+  { name, CONFIG_TYPE_ ## conftype, offsetof(or_state_t, member),       \
+      initvalue CONF_TEST_MEMBERS(or_state_t, conftype, member) }
 /** As VAR, but the option name and member name are the same. */
 #define V(member,conftype,initvalue)                                    \
   VAR(#member, conftype, member, initvalue)
@@ -84,6 +89,8 @@ static config_var_t state_vars_[] = {
 
   VAR("TransportProxy",               LINELIST_S, TransportProxies, NULL),
   V(TransportProxies,                 LINELIST_V, NULL),
+
+  V(HidServRevCounter,            LINELIST, NULL),
 
   V(BWHistoryReadEnds,                ISOTIME,  NULL),
   V(BWHistoryReadInterval,            UINT,     "900"),
@@ -113,7 +120,8 @@ static config_var_t state_vars_[] = {
   V(CircuitBuildAbandonedCount,       UINT,     "0"),
   VAR("CircuitBuildTimeBin",          LINELIST_S, BuildtimeHistogram, NULL),
   VAR("BuildtimeHistogram",           LINELIST_V, BuildtimeHistogram, NULL),
-  { NULL, CONFIG_TYPE_OBSOLETE, 0, NULL }
+
+  END_OF_CONFIG_VARS
 };
 
 #undef VAR
@@ -131,14 +139,15 @@ static int or_state_validate_cb(void *old_options, void *options,
 /** "Extra" variable in the state that receives lines we can't parse. This
  * lets us preserve options from versions of Tor newer than us. */
 static config_var_t state_extra_var = {
-  "__extra", CONFIG_TYPE_LINELIST, STRUCT_OFFSET(or_state_t, ExtraLines), NULL
+  "__extra", CONFIG_TYPE_LINELIST, offsetof(or_state_t, ExtraLines), NULL
+  CONF_TEST_MEMBERS(or_state_t, LINELIST, ExtraLines)
 };
 
 /** Configuration format for or_state_t. */
 static const config_format_t state_format = {
   sizeof(or_state_t),
   OR_STATE_MAGIC,
-  STRUCT_OFFSET(or_state_t, magic_),
+  offsetof(or_state_t, magic_),
   state_abbrevs_,
   NULL,
   state_vars_,
@@ -402,10 +411,15 @@ or_state_load(void)
     log_info(LD_GENERAL, "Loaded state from \"%s\"", fname);
     /* Warn the user if their clock has been set backwards,
      * they could be tricked into using old consensuses */
-    time_t apparent_skew = new_state->LastWritten - time(NULL);
-    if (apparent_skew > 0)
+    time_t apparent_skew = time(NULL) - new_state->LastWritten;
+    if (apparent_skew < 0) {
+      /* Initialize bootstrap event reporting because we might call
+       * clock_skew_warning() before the bootstrap state is
+       * initialized, causing an assertion failure. */
+      control_event_bootstrap(BOOTSTRAP_STATUS_STARTING, 0);
       clock_skew_warning(NULL, (long)apparent_skew, 1, LD_GENERAL,
                          "local state file", fname);
+    }
   } else {
     log_info(LD_GENERAL, "Initialized state");
   }
@@ -657,8 +671,6 @@ save_transport_to_state(const char *transport,
     *next = line = tor_malloc_zero(sizeof(config_line_t));
     line->key = tor_strdup("TransportProxy");
     tor_asprintf(&line->value, "%s %s", transport, fmt_addrport(addr, port));
-
-    next = &(line->next);
   }
 
   if (!get_options()->AvoidDiskWrites)

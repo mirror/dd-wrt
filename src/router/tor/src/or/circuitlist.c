@@ -65,8 +65,9 @@
 #include "control.h"
 #include "entrynodes.h"
 #include "main.h"
+#include "hs_circuit.h"
 #include "hs_circuitmap.h"
-#include "hs_common.h"
+#include "hs_ident.h"
 #include "networkstatus.h"
 #include "nodelist.h"
 #include "onion.h"
@@ -924,13 +925,23 @@ circuit_clear_testing_cell_stats(circuit_t *circ)
 STATIC void
 circuit_free(circuit_t *circ)
 {
+  circid_t n_circ_id = 0;
   void *mem;
   size_t memlen;
   int should_free = 1;
   if (!circ)
     return;
 
+  /* We keep a copy of this so we can log its value before it gets unset. */
+  n_circ_id = circ->n_circ_id;
+
   circuit_clear_testing_cell_stats(circ);
+
+  /* Cleanup circuit from anything HS v3 related. We also do this when the
+   * circuit is closed. This is to avoid any code path that free registered
+   * circuits without closing them before. This needs to be done before the
+   * hs identifier is freed. */
+  hs_circ_cleanup(circ);
 
   if (CIRCUIT_IS_ORIGIN(circ)) {
     origin_circuit_t *ocirc = TO_ORIGIN_CIRCUIT(circ);
@@ -957,6 +968,11 @@ circuit_free(circuit_t *circ)
 
     crypto_pk_free(ocirc->intro_key);
     rend_data_free(ocirc->rend_data);
+
+    /* Finally, free the identifier of the circuit and nullify it so multiple
+     * cleanup will work. */
+    hs_ident_circuit_free(ocirc->hs_ident);
+    ocirc->hs_ident = NULL;
 
     tor_free(ocirc->dest_address);
     if (ocirc->socks_username) {
@@ -1015,14 +1031,14 @@ circuit_free(circuit_t *circ)
   /* Remove from map. */
   circuit_set_n_circid_chan(circ, 0, NULL);
 
-  /* Clear HS circuitmap token from this circ (if any) */
-  if (circ->hs_token) {
-    hs_circuitmap_remove_circuit(circ);
-  }
-
   /* Clear cell queue _after_ removing it from the map.  Otherwise our
    * "active" checks will be violated. */
   cell_queue_clear(&circ->n_chan_cells);
+
+  log_info(LD_CIRC, "Circuit %u (id: %" PRIu32 ") has been freed.",
+           n_circ_id,
+           CIRCUIT_IS_ORIGIN(circ) ?
+              TO_ORIGIN_CIRCUIT(circ)->global_identifier : 0);
 
   if (should_free) {
     memwipe(mem, 0xAA, memlen); /* poison memory */
@@ -1431,7 +1447,7 @@ circuit_unlink_all_from_channel(channel_t *chan, int reason)
       smartlist_free(detached_2);
     }
   }
-#endif
+#endif /* defined(DEBUG_CIRCUIT_UNLINK_ALL) */
 
   SMARTLIST_FOREACH_BEGIN(detached, circuit_t *, circ) {
     int mark = 0;
@@ -1530,6 +1546,41 @@ circuit_get_next_service_intro_circ(origin_circuit_t *start)
   return NULL;
 }
 
+/** Return the first service rendezvous circuit originating from the global
+ * circuit list after <b>start</b> or at the start of the list if <b>start</b>
+ * is NULL. Return NULL if no circuit is found.
+ *
+ * A service rendezvous point circuit has a purpose of either
+ * CIRCUIT_PURPOSE_S_CONNECT_REND or CIRCUIT_PURPOSE_S_REND_JOINED. This does
+ * not return a circuit marked for close and its state must be open. */
+origin_circuit_t *
+circuit_get_next_service_rp_circ(origin_circuit_t *start)
+{
+  int idx = 0;
+  smartlist_t *lst = circuit_get_global_list();
+
+  if (start) {
+    idx = TO_CIRCUIT(start)->global_circuitlist_idx + 1;
+  }
+
+  for ( ; idx < smartlist_len(lst); ++idx) {
+    circuit_t *circ = smartlist_get(lst, idx);
+
+    /* Ignore a marked for close circuit or purpose not matching a service
+     * intro point or if the state is not open. */
+    if (circ->marked_for_close || circ->state != CIRCUIT_STATE_OPEN ||
+        (circ->purpose != CIRCUIT_PURPOSE_S_CONNECT_REND &&
+         circ->purpose != CIRCUIT_PURPOSE_S_REND_JOINED)) {
+      continue;
+    }
+    /* The purposes we are looking for are only for origin circuits so the
+     * following is valid. */
+    return TO_ORIGIN_CIRCUIT(circ);
+  }
+  /* Not found. */
+  return NULL;
+}
+
 /** Return the first circuit originating here in global_circuitlist after
  * <b>start</b> whose purpose is <b>purpose</b>, and where <b>digest</b> (if
  * set) matches the private key digest of the rend data associated with the
@@ -1569,6 +1620,30 @@ circuit_get_next_by_pk_and_purpose(origin_circuit_t *start,
     }
   }
   return NULL;
+}
+
+/** We might cannibalize this circuit: Return true if its last hop can be used
+ *  as a v3 rendezvous point. */
+static int
+circuit_can_be_cannibalized_for_v3_rp(const origin_circuit_t *circ)
+{
+  if (!circ->build_state) {
+    return 0;
+  }
+
+  extend_info_t *chosen_exit = circ->build_state->chosen_exit;
+  if (BUG(!chosen_exit)) {
+    return 0;
+  }
+
+  const node_t *rp_node = node_get_by_id(chosen_exit->identity_digest);
+  if (rp_node) {
+    if (node_supports_v3_rendezvous_point(rp_node)) {
+      return 1;
+    }
+  }
+
+  return 0;
 }
 
 /** Return a circuit that is open, is CIRCUIT_PURPOSE_C_GENERAL,
@@ -1653,6 +1728,14 @@ circuit_find_to_cannibalize(uint8_t purpose, extend_info_t *info,
             hop = hop->next;
           } while (hop != circ->cpath);
         }
+
+        if ((flags & CIRCLAUNCH_IS_V3_RP) &&
+            !circuit_can_be_cannibalized_for_v3_rp(circ)) {
+          log_debug(LD_GENERAL, "Skipping uncannibalizable circuit for v3 "
+                    "rendezvous point.");
+          goto next;
+        }
+
         if (!best || (best->build_state->need_uptime && !need_uptime))
           best = circ;
       next: ;
@@ -1838,10 +1921,20 @@ circuit_mark_for_close_, (circuit_t *circ, int reason, int line,
     }
   }
 
+  /* Notify the HS subsystem that this circuit is closing. */
+  hs_circ_cleanup(circ);
+
   if (circuits_pending_close == NULL)
     circuits_pending_close = smartlist_new();
 
   smartlist_add(circuits_pending_close, circ);
+
+  log_info(LD_GENERAL, "Circuit %u (id: %" PRIu32 ") marked for close at "
+                       "%s:%d (orig reason: %d, new reason: %d)",
+           circ->n_circ_id,
+           CIRCUIT_IS_ORIGIN(circ) ?
+              TO_ORIGIN_CIRCUIT(circ)->global_identifier : 0,
+           file, line, orig_reason, reason);
 }
 
 /** Called immediately before freeing a marked circuit <b>circ</b> from
@@ -1916,8 +2009,8 @@ circuit_about_to_free(circuit_t *circ)
     int timed_out = (reason == END_CIRC_REASON_TIMEOUT);
     tor_assert(circ->state == CIRCUIT_STATE_OPEN);
     tor_assert(ocirc->build_state->chosen_exit);
-    tor_assert(ocirc->rend_data);
-    if (orig_reason != END_CIRC_REASON_IP_NOW_REDUNDANT) {
+    if (orig_reason != END_CIRC_REASON_IP_NOW_REDUNDANT &&
+        ocirc->rend_data) {
       /* treat this like getting a nack from it */
       log_info(LD_REND, "Failed intro circ %s to %s (awaiting ack). %s",
           safe_str_client(rend_data_get_address(ocirc->rend_data)),
@@ -1933,7 +2026,8 @@ circuit_about_to_free(circuit_t *circ)
              reason != END_CIRC_REASON_TIMEOUT) {
     origin_circuit_t *ocirc = TO_ORIGIN_CIRCUIT(circ);
     if (ocirc->build_state->chosen_exit && ocirc->rend_data) {
-      if (orig_reason != END_CIRC_REASON_IP_NOW_REDUNDANT) {
+      if (orig_reason != END_CIRC_REASON_IP_NOW_REDUNDANT &&
+          ocirc->rend_data) {
         log_info(LD_REND, "Failed intro circ %s to %s "
             "(building circuit to intro point). "
             "Marking intro point as possibly unreachable.",
@@ -2387,8 +2481,8 @@ assert_cpath_ok(const crypt_path_t *cp)
 /** Verify that circuit <b>c</b> has all of its invariants
  * correct. Trigger an assert if anything is invalid.
  */
-void
-assert_circuit_ok(const circuit_t *c)
+MOCK_IMPL(void,
+assert_circuit_ok,(const circuit_t *c))
 {
   edge_connection_t *conn;
   const or_circuit_t *or_circ = NULL;

@@ -24,15 +24,11 @@ int rend_client_introduction_acked(origin_circuit_t *circ,
 void rend_client_refetch_v2_renddesc(rend_data_t *rend_query);
 int rend_client_fetch_v2_desc(rend_data_t *query, smartlist_t *hsdirs);
 void rend_client_cancel_descriptor_fetches(void);
-void rend_client_purge_last_hid_serv_requests(void);
 
 int rend_client_report_intro_point_failure(extend_info_t *failed_intro,
                                            rend_data_t *rend_data,
                                            unsigned int failure_type);
 
-int rend_client_rendezvous_acked(origin_circuit_t *circ,
-                                 const uint8_t *request,
-                                 size_t request_len);
 int rend_client_receive_rendezvous(origin_circuit_t *circ,
                                    const uint8_t *request,
                                    size_t request_len);
@@ -54,5 +50,5 @@ void rend_service_authorization_free_all(void);
 int rend_client_allow_non_anonymous_connection(const or_options_t *options);
 int rend_client_non_anonymous_mode_enabled(const or_options_t *options);
 
-#endif
+#endif /* !defined(TOR_RENDCLIENT_H) */
 

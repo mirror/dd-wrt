@@ -185,18 +185,12 @@ relay_digest_matches(crypto_digest_t *digest, cell_t *cell)
 /** Apply <b>cipher</b> to CELL_PAYLOAD_SIZE bytes of <b>in</b>
  * (in place).
  *
- * If <b>encrypt_mode</b> is 1 then encrypt, else decrypt.
- *
- * Returns 0.
+ * Note that we use the same operation for encrypting and for decrypting.
  */
-static int
-relay_crypt_one_payload(crypto_cipher_t *cipher, uint8_t *in,
-                        int encrypt_mode)
+static void
+relay_crypt_one_payload(crypto_cipher_t *cipher, uint8_t *in)
 {
-  (void)encrypt_mode;
   crypto_cipher_crypt_inplace(cipher, (char*) in, CELL_PAYLOAD_SIZE);
-
-  return 0;
 }
 
 /**
@@ -450,8 +444,8 @@ relay_crypt(circuit_t *circ, cell_t *cell, cell_direction_t cell_direction,
       do { /* Remember: cpath is in forward order, that is, first hop first. */
         tor_assert(thishop);
 
-        if (relay_crypt_one_payload(thishop->b_crypto, cell->payload, 0) < 0)
-          return -1;
+        /* decrypt one layer */
+        relay_crypt_one_payload(thishop->b_crypto, cell->payload);
 
         relay_header_unpack(&rh, cell->payload);
         if (rh.recognized == 0) {
@@ -468,19 +462,14 @@ relay_crypt(circuit_t *circ, cell_t *cell, cell_direction_t cell_direction,
       log_fn(LOG_PROTOCOL_WARN, LD_OR,
              "Incoming cell at client not recognized. Closing.");
       return -1;
-    } else { /* we're in the middle. Just one crypt. */
-      if (relay_crypt_one_payload(TO_OR_CIRCUIT(circ)->p_crypto,
-                                  cell->payload, 1) < 0)
-        return -1;
-//      log_fn(LOG_DEBUG,"Skipping recognized check, because we're not "
-//             "the client.");
+    } else {
+      /* We're in the middle. Encrypt one layer. */
+      relay_crypt_one_payload(TO_OR_CIRCUIT(circ)->p_crypto, cell->payload);
     }
   } else /* cell_direction == CELL_DIRECTION_OUT */ {
-    /* we're in the middle. Just one crypt. */
+    /* We're in the middle. Decrypt one layer. */
 
-    if (relay_crypt_one_payload(TO_OR_CIRCUIT(circ)->n_crypto,
-                                cell->payload, 0) < 0)
-      return -1;
+    relay_crypt_one_payload(TO_OR_CIRCUIT(circ)->n_crypto, cell->payload);
 
     relay_header_unpack(&rh, cell->payload);
     if (rh.recognized == 0) {
@@ -516,7 +505,15 @@ circuit_package_relay_cell(cell_t *cell, circuit_t *circ,
     chan = circ->n_chan;
     if (!chan) {
       log_warn(LD_BUG,"outgoing relay cell sent from %s:%d has n_chan==NULL."
-               " Dropping.", filename, lineno);
+               " Dropping. Circuit is in state %s (%d), and is "
+               "%smarked for close. (%s:%d, %d)", filename, lineno,
+               circuit_state_to_string(circ->state), circ->state,
+               circ->marked_for_close ? "" : "not ",
+               circ->marked_for_close_file?circ->marked_for_close_file:"",
+               circ->marked_for_close, circ->marked_for_close_reason);
+      if (CIRCUIT_IS_ORIGIN(circ)) {
+        circuit_log_path(LOG_WARN, LD_BUG, TO_ORIGIN_CIRCUIT(circ));
+      }
       log_backtrace(LOG_WARN,LD_BUG,"");
       return 0; /* just drop it */
     }
@@ -533,11 +530,8 @@ circuit_package_relay_cell(cell_t *cell, circuit_t *circ,
     /* moving from farthest to nearest hop */
     do {
       tor_assert(thishop);
-      /* XXXX RD This is a bug, right? */
-      log_debug(LD_OR,"crypting a layer of the relay cell.");
-      if (relay_crypt_one_payload(thishop->f_crypto, cell->payload, 1) < 0) {
-        return -1;
-      }
+      log_debug(LD_OR,"encrypting a layer of the relay cell.");
+      relay_crypt_one_payload(thishop->f_crypto, cell->payload);
 
       thishop = thishop->prev;
     } while (thishop != TO_ORIGIN_CIRCUIT(circ)->cpath->prev);
@@ -554,8 +548,8 @@ circuit_package_relay_cell(cell_t *cell, circuit_t *circ,
     or_circ = TO_OR_CIRCUIT(circ);
     chan = or_circ->p_chan;
     relay_set_digest(or_circ->p_digest, cell);
-    if (relay_crypt_one_payload(or_circ->p_crypto, cell->payload, 1) < 0)
-      return -1;
+    /* encrypt one layer */
+    relay_crypt_one_payload(or_circ->p_crypto, cell->payload);
   }
   ++stats_n_relay_cells_relayed;
 
@@ -843,7 +837,7 @@ connection_edge_send_command(edge_connection_t *fromconn,
   if (linked_conn && linked_conn->type == CONN_TYPE_DIR) {
     ++(TO_DIR_CONN(linked_conn)->data_cells_sent);
   }
-#endif
+#endif /* defined(MEASUREMENTS_21206) */
 
   return relay_send_command_from_edge(fromconn->stream_id, circ,
                                       relay_command, payload,
@@ -1495,8 +1489,9 @@ connection_edge_process_relay_cell_not_open(
     circuit_log_path(LOG_INFO,LD_APP,TO_ORIGIN_CIRCUIT(circ));
     /* don't send a socks reply to transparent conns */
     tor_assert(entry_conn->socks_request != NULL);
-    if (!entry_conn->socks_request->has_finished)
+    if (!entry_conn->socks_request->has_finished) {
       connection_ap_handshake_socks_reply(entry_conn, NULL, 0, 0);
+    }
 
     /* Was it a linked dir conn? If so, a dir request just started to
      * fetch something; this could be a bootstrap status milestone. */
@@ -1698,7 +1693,7 @@ connection_edge_process_relay_cell(cell_t *cell, circuit_t *circ,
       }
 
       stats_n_data_bytes_received += rh.length;
-      connection_write_to_buf((char*)(cell->payload + RELAY_HEADER_SIZE),
+      connection_buf_add((char*)(cell->payload + RELAY_HEADER_SIZE),
                               rh.length, TO_CONN(conn));
 
 #ifdef MEASUREMENTS_21206
@@ -1709,7 +1704,7 @@ connection_edge_process_relay_cell(cell_t *cell, circuit_t *circ,
       if (linked_conn && linked_conn->type == CONN_TYPE_DIR) {
         ++(TO_DIR_CONN(linked_conn)->data_cells_received);
       }
-#endif
+#endif /* defined(MEASUREMENTS_21206) */
 
       if (!optimistic_data) {
         /* Only send a SENDME if we're not getting optimistic data; otherwise
@@ -2066,13 +2061,13 @@ connection_edge_package_raw_inbuf(edge_connection_t *conn, int package_partial,
     /* XXXX We could be more efficient here by sometimes packing
      * previously-sent optimistic data in the same cell with data
      * from the inbuf. */
-    fetch_from_buf(payload, length, entry_conn->sending_optimistic_data);
+    buf_get_bytes(entry_conn->sending_optimistic_data, payload, length);
     if (!buf_datalen(entry_conn->sending_optimistic_data)) {
         buf_free(entry_conn->sending_optimistic_data);
         entry_conn->sending_optimistic_data = NULL;
     }
   } else {
-    connection_fetch_from_buf(payload, length, TO_CONN(conn));
+    connection_buf_get_bytes(payload, length, TO_CONN(conn));
   }
 
   log_debug(domain,TOR_SOCKET_T_FORMAT": Packaging %d bytes (%d waiting).",
@@ -2084,7 +2079,7 @@ connection_edge_package_raw_inbuf(edge_connection_t *conn, int package_partial,
        retry */
     if (!entry_conn->pending_optimistic_data)
       entry_conn->pending_optimistic_data = buf_new();
-    write_to_buf(payload, length, entry_conn->pending_optimistic_data);
+    buf_add(entry_conn->pending_optimistic_data, payload, length);
   }
 
   if (connection_edge_send_command(conn, RELAY_COMMAND_DATA,
@@ -2407,7 +2402,7 @@ circuit_consider_sending_sendme(circuit_t *circ, crypt_path_t *layer_hint)
      assert_circuit_mux_okay(chan)
 #else
 #define assert_cmux_ok_paranoid(chan)
-#endif
+#endif /* defined(ACTIVE_CIRCUITS_PARANOIA) */
 
 /** The total number of cells we have allocated. */
 static size_t total_cells_allocated = 0;
@@ -2526,6 +2521,72 @@ cell_queue_pop(cell_queue_t *queue)
   return cell;
 }
 
+/** Initialize <b>queue</b> as an empty cell queue. */
+void
+destroy_cell_queue_init(destroy_cell_queue_t *queue)
+{
+  memset(queue, 0, sizeof(destroy_cell_queue_t));
+  TOR_SIMPLEQ_INIT(&queue->head);
+}
+
+/** Remove and free every cell in <b>queue</b>. */
+void
+destroy_cell_queue_clear(destroy_cell_queue_t *queue)
+{
+  destroy_cell_t *cell;
+  while ((cell = TOR_SIMPLEQ_FIRST(&queue->head))) {
+    TOR_SIMPLEQ_REMOVE_HEAD(&queue->head, next);
+    tor_free(cell);
+  }
+  TOR_SIMPLEQ_INIT(&queue->head);
+  queue->n = 0;
+}
+
+/** Extract and return the cell at the head of <b>queue</b>; return NULL if
+ * <b>queue</b> is empty. */
+STATIC destroy_cell_t *
+destroy_cell_queue_pop(destroy_cell_queue_t *queue)
+{
+  destroy_cell_t *cell = TOR_SIMPLEQ_FIRST(&queue->head);
+  if (!cell)
+    return NULL;
+  TOR_SIMPLEQ_REMOVE_HEAD(&queue->head, next);
+  --queue->n;
+  return cell;
+}
+
+/** Append a destroy cell for <b>circid</b> to <b>queue</b>. */
+void
+destroy_cell_queue_append(destroy_cell_queue_t *queue,
+                          circid_t circid,
+                          uint8_t reason)
+{
+  destroy_cell_t *cell = tor_malloc_zero(sizeof(destroy_cell_t));
+  cell->circid = circid;
+  cell->reason = reason;
+  /* Not yet used, but will be required for OOM handling. */
+  cell->inserted_time = (uint32_t) monotime_coarse_absolute_msec();
+
+  TOR_SIMPLEQ_INSERT_TAIL(&queue->head, cell, next);
+  ++queue->n;
+}
+
+/** Convert a destroy_cell_t to a newly allocated cell_t. Frees its input. */
+static packed_cell_t *
+destroy_cell_to_packed_cell(destroy_cell_t *inp, int wide_circ_ids)
+{
+  packed_cell_t *packed = packed_cell_new();
+  cell_t cell;
+  memset(&cell, 0, sizeof(cell));
+  cell.circ_id = inp->circid;
+  cell.command = CELL_DESTROY;
+  cell.payload[0] = inp->reason;
+  cell_pack(packed, &cell, wide_circ_ids);
+
+  tor_free(inp);
+  return packed;
+}
+
 /** Return the total number of bytes used for each packed_cell in a queue.
  * Approximate. */
 size_t
@@ -2552,21 +2613,31 @@ static time_t last_time_under_memory_pressure = 0;
 STATIC int
 cell_queues_check_size(void)
 {
+  time_t now = time(NULL);
   size_t alloc = cell_queues_get_total_allocation();
   alloc += buf_get_total_allocation();
   alloc += tor_compress_get_total_allocation();
   const size_t rend_cache_total = rend_cache_get_total_allocation();
   alloc += rend_cache_total;
+  const size_t geoip_client_cache_total =
+    geoip_client_cache_total_allocation();
+  alloc += geoip_client_cache_total;
   if (alloc >= get_options()->MaxMemInQueues_low_threshold) {
     last_time_under_memory_pressure = approx_time();
     if (alloc >= get_options()->MaxMemInQueues) {
       /* If we're spending over 20% of the memory limit on hidden service
-       * descriptors, free them until we're down to 10%.
-       */
+       * descriptors, free them until we're down to 10%. Do the same for geoip
+       * client cache. */
       if (rend_cache_total > get_options()->MaxMemInQueues / 5) {
         const size_t bytes_to_remove =
           rend_cache_total - (size_t)(get_options()->MaxMemInQueues / 10);
         alloc -= hs_cache_handle_oom(time(NULL), bytes_to_remove);
+      }
+      if (geoip_client_cache_total > get_options()->MaxMemInQueues / 5) {
+        const size_t bytes_to_remove =
+          geoip_client_cache_total -
+          (size_t)(get_options()->MaxMemInQueues / 10);
+        alloc -= geoip_client_cache_handle_oom(now, bytes_to_remove);
       }
       circuits_handle_oom(alloc);
       return 1;
@@ -2733,7 +2804,8 @@ channel_flush_from_first_active_circuit, (channel_t *chan, int max))
 {
   circuitmux_t *cmux = NULL;
   int n_flushed = 0;
-  cell_queue_t *queue, *destroy_queue=NULL;
+  cell_queue_t *queue;
+  destroy_cell_queue_t *destroy_queue=NULL;
   circuit_t *circ;
   or_circuit_t *or_circ;
   int streams_blocked;
@@ -2748,9 +2820,17 @@ channel_flush_from_first_active_circuit, (channel_t *chan, int max))
   while (n_flushed < max) {
     circ = circuitmux_get_first_active_circuit(cmux, &destroy_queue);
     if (destroy_queue) {
+      destroy_cell_t *dcell;
       /* this code is duplicated from some of the logic below. Ugly! XXXX */
+      /* If we are given a destroy_queue here, then it is required to be
+       * nonempty... */
       tor_assert(destroy_queue->n > 0);
-      cell = cell_queue_pop(destroy_queue);
+      dcell = destroy_cell_queue_pop(destroy_queue);
+      /* ...and pop() will always yield a cell from a nonempty queue. */
+      tor_assert(dcell);
+      /* frees dcell */
+      cell = destroy_cell_to_packed_cell(dcell, chan->wide_circ_ids);
+      /* frees cell */
       channel_write_packed_cell(chan, cell);
       /* Update the cmux destroy counter */
       circuitmux_notify_xmit_destroy(cmux);
@@ -2875,7 +2955,7 @@ get_max_middle_cells(void)
 {
   return ORCIRC_MAX_MIDDLE_CELLS;
 }
-#endif
+#endif /* 0 */
 
 /** Add <b>cell</b> to the queue of <b>circ</b> writing to <b>chan</b>
  * transmitting in <b>direction</b>. */
@@ -2985,7 +3065,7 @@ append_cell_to_circuit_queue(circuit_t *circ, channel_t *chan,
       }
     }
   }
-#endif
+#endif /* 0 */
 
   cell_queue_append_packed_copy(circ, queue, exitward, cell,
                                 chan->wide_circ_ids, 1);

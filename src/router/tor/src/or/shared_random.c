@@ -1333,13 +1333,7 @@ sr_act_post_consensus(const networkstatus_t *consensus)
   }
 
   /* Prepare our state so that it's ready for the next voting period. */
-  {
-    voting_schedule_t *voting_schedule =
-      get_voting_schedule(options,time(NULL), LOG_NOTICE);
-    time_t interval_starts = voting_schedule->interval_starts;
-    sr_state_update(interval_starts);
-    voting_schedule_free(voting_schedule);
-  }
+  sr_state_update(dirvote_get_next_valid_after_time());
 }
 
 /* Initialize shared random subsystem. This MUST be called early in the boot
@@ -1390,6 +1384,52 @@ sr_get_previous_for_control(void)
   return srv_str;
 }
 
+/* Return current shared random value from the latest consensus. Caller can
+ * NOT keep a reference to the returned pointer. Return NULL if none. */
+const sr_srv_t *
+sr_get_current(const networkstatus_t *ns)
+{
+  const networkstatus_t *consensus;
+
+  /* Use provided ns else get a live one */
+  if (ns) {
+    consensus = ns;
+  } else {
+    consensus = networkstatus_get_live_consensus(approx_time());
+  }
+  /* Ideally we would never be asked for an SRV without a live consensus. Make
+   * sure this assumption is correct. */
+  tor_assert_nonfatal(consensus);
+
+  if (consensus) {
+    return consensus->sr_info.current_srv;
+  }
+  return NULL;
+}
+
+/* Return previous shared random value from the latest consensus. Caller can
+ * NOT keep a reference to the returned pointer. Return NULL if none. */
+const sr_srv_t *
+sr_get_previous(const networkstatus_t *ns)
+{
+  const networkstatus_t *consensus;
+
+  /* Use provided ns else get a live one */
+  if (ns) {
+    consensus = ns;
+  } else {
+    consensus = networkstatus_get_live_consensus(approx_time());
+  }
+  /* Ideally we would never be asked for an SRV without a live consensus. Make
+   * sure this assumption is correct. */
+  tor_assert_nonfatal(consensus);
+
+  if (consensus) {
+    return consensus->sr_info.previous_srv;
+  }
+  return NULL;
+}
+
 #ifdef TOR_UNIT_TESTS
 
 /* Set the global value of number of SRV agreements so the test can play
@@ -1401,5 +1441,5 @@ set_num_srv_agreements(int32_t value)
   num_srv_agreements_from_vote = value;
 }
 
-#endif /* TOR_UNIT_TESTS */
+#endif /* defined(TOR_UNIT_TESTS) */
 

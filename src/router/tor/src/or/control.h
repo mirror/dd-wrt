@@ -33,7 +33,6 @@ void connection_control_closed(control_connection_t *conn);
 
 int connection_control_process_inbuf(control_connection_t *conn);
 
-#define EVENT_AUTHDIR_NEWDESCS 0x000D
 #define EVENT_NS 0x000F
 int control_event_is_interesting(int event);
 
@@ -64,10 +63,6 @@ int control_event_descriptors_changed(smartlist_t *routers);
 int control_event_address_mapped(const char *from, const char *to,
                                  time_t expires, const char *error,
                                  const int cached);
-int control_event_or_authdir_new_descriptor(const char *action,
-                                            const char *desc,
-                                            size_t desclen,
-                                            const char *msg);
 int control_event_my_descriptor_changed(void);
 int control_event_network_liveness_update(int liveness);
 int control_event_networkstatus_changed(smartlist_t *statuses);
@@ -104,9 +99,11 @@ void enable_control_logging(void);
 void monitor_owning_controller_process(const char *process_spec);
 
 int control_event_bootstrap(bootstrap_status_t status, int progress);
-MOCK_DECL(void, control_event_bootstrap_problem,(const char *warn,
+MOCK_DECL(void, control_event_bootstrap_prob_or,(const char *warn,
                                                  int reason,
                                                  or_connection_t *or_conn));
+void control_event_bootstrap_problem(const char *warn, const char *reason,
+                                     const connection_t *conn, int dowarn);
 
 void control_event_clients_seen(const char *controller_str);
 void control_event_transport_launched(const char *mode,
@@ -169,8 +166,8 @@ void control_free_all(void);
 #define EVENT_WARN_MSG                0x000A
 #define EVENT_ERR_MSG                 0x000B
 #define EVENT_ADDRMAP                 0x000C
-/* Exposed above */
-// #define EVENT_AUTHDIR_NEWDESCS     0x000D
+/* There was an AUTHDIR_NEWDESCS event, but it no longer exists.  We
+   can reclaim 0x000D. */
 #define EVENT_DESCCHANGED             0x000E
 /* Exposed above */
 // #define EVENT_NS                   0x000F
@@ -228,7 +225,7 @@ MOCK_DECL(STATIC void,
           queue_control_event_string,(uint16_t event, char *msg));
 
 void control_testing_set_global_event_mask(uint64_t mask);
-#endif
+#endif /* defined(TOR_UNIT_TESTS) */
 
 /** Helper structure: temporarily stores cell statistics for a circuit. */
 typedef struct cell_stats_t {
@@ -295,7 +292,7 @@ STATIC int getinfo_helper_dir(
     const char *question, char **answer,
     const char **errmsg);
 
-#endif
+#endif /* defined(CONTROL_PRIVATE) */
 
-#endif
+#endif /* !defined(TOR_CONTROL_H) */
 

@@ -306,7 +306,6 @@ format_networkstatus_vote(crypto_pk_t *private_signing_key,
                            signing_key_fingerprint);
   }
 
-  note_crypto_pk_op(SIGN_DIR);
   {
     char *sig = router_get_dirobj_signature(digest, DIGEST_LEN,
                                             private_signing_key);
@@ -542,8 +541,8 @@ compute_routerstatus_consensus(smartlist_t *votes, int consensus_method,
   if (cur_n > most_n ||
       (cur && cur_n == most_n && cur->status.published_on > most_published)) {
     most = cur;
-    most_n = cur_n;
-    most_published = cur->status.published_on;
+    // most_n = cur_n; // unused after this point.
+    // most_published = cur->status.published_on; // unused after this point.
   }
 
   tor_assert(most);
@@ -737,12 +736,12 @@ dirvote_get_intermediate_param_value(const smartlist_t *param_list,
     }
   } SMARTLIST_FOREACH_END(k_v_pair);
 
-  if (n_found == 1)
+  if (n_found == 1) {
     return value;
-  else if (BUG(n_found > 1))
+  } else {
+    tor_assert_nonfatal(n_found == 0);
     return default_val;
-  else
-    return default_val;
+  }
 }
 
 /** Minimum number of directory authorities voting for a parameter to
@@ -2788,48 +2787,10 @@ dirvote_get_start_of_next_interval(time_t now, int interval, int offset)
   return next;
 }
 
-/* Using the time <b>now</b>, return the next voting valid-after time. */
-time_t
-get_next_valid_after_time(time_t now)
-{
-  time_t next_valid_after_time;
-  const or_options_t *options = get_options();
-  voting_schedule_t *new_voting_schedule =
-    get_voting_schedule(options, now, LOG_INFO);
-  tor_assert(new_voting_schedule);
-
-  next_valid_after_time = new_voting_schedule->interval_starts;
-  voting_schedule_free(new_voting_schedule);
-
-  return next_valid_after_time;
-}
-
-static voting_schedule_t voting_schedule;
-
-/** Set voting_schedule to hold the timing for the next vote we should be
- * doing. */
-void
-dirvote_recalculate_timing(const or_options_t *options, time_t now)
-{
-  voting_schedule_t *new_voting_schedule;
-
-  if (!authdir_mode_v3(options)) {
-    return;
-  }
-
-  /* get the new voting schedule */
-  new_voting_schedule = get_voting_schedule(options, now, LOG_NOTICE);
-  tor_assert(new_voting_schedule);
-
-  /* Fill in the global static struct now */
-  memcpy(&voting_schedule, new_voting_schedule, sizeof(voting_schedule));
-  voting_schedule_free(new_voting_schedule);
-}
-
 /* Populate and return a new voting_schedule_t that can be used to schedule
  * voting. The object is allocated on the heap and it's the responsibility of
  * the caller to free it. Can't fail. */
-voting_schedule_t *
+static voting_schedule_t *
 get_voting_schedule(const or_options_t *options, time_t now, int severity)
 {
   int interval, vote_delay, dist_delay;
@@ -2884,12 +2845,46 @@ get_voting_schedule(const or_options_t *options, time_t now, int severity)
 
 /** Frees a voting_schedule_t. This should be used instead of the generic
  * tor_free. */
-void
+static void
 voting_schedule_free(voting_schedule_t *voting_schedule_to_free)
 {
   if (!voting_schedule_to_free)
     return;
   tor_free(voting_schedule_to_free);
+}
+
+static voting_schedule_t voting_schedule;
+
+/* Using the time <b>now</b>, return the next voting valid-after time. */
+time_t
+dirvote_get_next_valid_after_time(void)
+{
+  /* This is a safe guard in order to make sure that the voting schedule
+   * static object is at least initialized. Using this function with a zeroed
+   * voting schedule can lead to bugs. */
+  if (tor_mem_is_zero((const char *) &voting_schedule,
+                      sizeof(voting_schedule))) {
+    dirvote_recalculate_timing(get_options(), time(NULL));
+    voting_schedule.created_on_demand = 1;
+  }
+  return voting_schedule.interval_starts;
+}
+
+/** Set voting_schedule to hold the timing for the next vote we should be
+ * doing. All type of tor do that because HS subsystem needs the timing as
+ * well to function properly. */
+void
+dirvote_recalculate_timing(const or_options_t *options, time_t now)
+{
+  voting_schedule_t *new_voting_schedule;
+
+  /* get the new voting schedule */
+  new_voting_schedule = get_voting_schedule(options, now, LOG_INFO);
+  tor_assert(new_voting_schedule);
+
+  /* Fill in the global static struct now */
+  memcpy(&voting_schedule, new_voting_schedule, sizeof(voting_schedule));
+  voting_schedule_free(new_voting_schedule);
 }
 
 /** Entry point: Take whatever voting actions are pending as of <b>now</b>. */
@@ -2898,7 +2893,13 @@ dirvote_act(const or_options_t *options, time_t now)
 {
   if (!authdir_mode_v3(options))
     return;
-  if (!voting_schedule.voting_starts) {
+  tor_assert_nonfatal(voting_schedule.voting_starts);
+  /* If we haven't initialized this object through this codeflow, we need to
+   * recalculate the timings to match our vote. The reason to do that is if we
+   * have a voting schedule initialized 1 minute ago, the voting timings might
+   * not be aligned to what we should expect with "now". This is especially
+   * true for TestingTorNetwork using smaller timings.  */
+  if (voting_schedule.created_on_demand) {
     char *keys = list_v3_auth_ids();
     authority_cert_t *c = get_my_v3_authority_cert();
     log_notice(LD_DIR, "Scheduling voting.  Known authority IDs are %s. "
@@ -3994,14 +3995,15 @@ dirvote_format_all_microdesc_vote_lines(const routerinfo_t *ri, time_t now,
   while ((ep = entries)) {
     char buf[128];
     vote_microdesc_hash_t *h;
-    dirvote_format_microdesc_vote_line(buf, sizeof(buf), ep->md,
-                                       ep->low, ep->high);
-    h = tor_malloc_zero(sizeof(vote_microdesc_hash_t));
-    h->microdesc_hash_line = tor_strdup(buf);
-    h->next = result;
-    result = h;
-    ep->md->last_listed = now;
-    smartlist_add(microdescriptors_out, ep->md);
+    if (dirvote_format_microdesc_vote_line(buf, sizeof(buf), ep->md,
+                                           ep->low, ep->high) >= 0) {
+      h = tor_malloc_zero(sizeof(vote_microdesc_hash_t));
+      h->microdesc_hash_line = tor_strdup(buf);
+      h->next = result;
+      result = h;
+      ep->md->last_listed = now;
+      smartlist_add(microdescriptors_out, ep->md);
+    }
     entries = ep->next;
     tor_free(ep);
   }
