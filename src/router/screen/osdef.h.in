@@ -28,7 +28,9 @@
  ****************************************************************
  */
 
+#if 0
 extern int   printf __P((char *, ...));
+#endif
 extern int   fprintf __P((FILE *, char *, ...));
 extern int   sprintf __P((char *, char *, ...));
 #ifdef USEVARARGS
