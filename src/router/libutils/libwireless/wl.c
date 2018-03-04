@@ -24,6 +24,26 @@
 #include <fcntl.h>
 #include <glob.h>
 #include <channelcache.h>
+
+int getValueFromPath(char *path, int dev, char *fmt, int *err)
+{
+	char *globstring;
+	int value = 0;
+	if (err)
+		*err = -1;
+	asprintf(&globstring, path, dev);
+	FILE *fp = fopen(globstring, "rb");
+	if (fp) {
+		if (err)
+			*err = 0;
+		fscanf(fp, fmt, &value);
+		fclose(fp);
+	}
+	free(globstring);
+	return value;
+}
+
+
 /*
  * DD-WRT addition (loaned from radauth) 
  */
@@ -1309,24 +1329,6 @@ int iw_mwatt2dbm(int in)
 		fin /= LOG10_MAGIC;
 	}
 	return (res);
-}
-
-int getValueFromPath(char *path, int dev, char *fmt, int *err)
-{
-	char *globstring;
-	int value = 0;
-	if (err)
-		*err = -1;
-	asprintf(&globstring, path, dev);
-	FILE *fp = fopen(globstring, "rb");
-	if (fp) {
-		if (err)
-			*err = 0;
-		fscanf(fp, fmt, &value);
-		fclose(fp);
-	}
-	free(globstring);
-	return value;
 }
 
 static int checkid(char *ifname, int vendorid, int productid)	//checks if its usually a emp card (no concrete detection possible)
