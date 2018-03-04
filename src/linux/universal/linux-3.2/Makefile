@@ -1,8 +1,8 @@
 VERSION = 3
 PATCHLEVEL = 2
-SUBLEVEL = 99
+SUBLEVEL = 100
 EXTRAVERSION =
-NAME = Saber-toothed Squirrel
+NAME = Sleepy Otter
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
@@ -636,6 +636,9 @@ KBUILD_CFLAGS += $(call cc-disable-warning, pointer-sign)
 
 # disable invalid "can't wrap" optimizations for signed / pointers
 KBUILD_CFLAGS	+= $(call cc-option,-fno-strict-overflow)
+
+# Make sure -fstack-check isn't enabled (like gentoo apparently did)
+KBUILD_CFLAGS  += $(call cc-option,-fno-stack-check,)
 
 # conserve stack if available
 KBUILD_CFLAGS   += $(call cc-option,-fconserve-stack)
