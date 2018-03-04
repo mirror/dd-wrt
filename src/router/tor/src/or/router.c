@@ -1073,7 +1073,7 @@ init_keys(void)
   /* 4. Build our router descriptor. */
   /* Must be called after keys are initialized. */
   mydesc = router_get_my_descriptor();
-  if (authdir_mode_handles_descs(options, ROUTER_PURPOSE_GENERAL)) {
+  if (authdir_mode_v3(options)) {
     const char *m = NULL;
     routerinfo_t *ri;
     /* We need to add our own fingerprint so it gets recognized. */
@@ -1604,32 +1604,19 @@ authdir_mode_v3(const or_options_t *options)
 {
   return authdir_mode(options) && options->V3AuthoritativeDir != 0;
 }
-/** Return true iff we are a v3 directory authority. */
-int
-authdir_mode_any_main(const or_options_t *options)
-{
-  return options->V3AuthoritativeDir;
-}
-/** Return true if we believe ourselves to be any kind of
- * authoritative directory beyond just a hidserv authority. */
-int
-authdir_mode_any_nonhidserv(const or_options_t *options)
-{
-  return options->BridgeAuthoritativeDir ||
-         authdir_mode_any_main(options);
-}
 /** Return true iff we are an authoritative directory server that is
  * authoritative about receiving and serving descriptors of type
- * <b>purpose</b> on its dirport.  Use -1 for "any purpose". */
+ * <b>purpose</b> on its dirport.
+ */
 int
 authdir_mode_handles_descs(const or_options_t *options, int purpose)
 {
-  if (purpose < 0)
-    return authdir_mode_any_nonhidserv(options);
+  if (BUG(purpose < 0)) /* Deprecated. */
+    return authdir_mode(options);
   else if (purpose == ROUTER_PURPOSE_GENERAL)
-    return authdir_mode_any_main(options);
+    return authdir_mode_v3(options);
   else if (purpose == ROUTER_PURPOSE_BRIDGE)
-    return (options->BridgeAuthoritativeDir);
+    return authdir_mode_bridge(options);
   else
     return 0;
 }
@@ -1641,7 +1628,7 @@ authdir_mode_publishes_statuses(const or_options_t *options)
 {
   if (authdir_mode_bridge(options))
     return 0;
-  return authdir_mode_any_nonhidserv(options);
+  return authdir_mode(options);
 }
 /** Return true iff we are an authoritative directory server that
  * tests reachability of the descriptors it learns about.
@@ -1649,7 +1636,7 @@ authdir_mode_publishes_statuses(const or_options_t *options)
 int
 authdir_mode_tests_reachability(const or_options_t *options)
 {
-  return authdir_mode_handles_descs(options, -1);
+  return authdir_mode(options);
 }
 /** Return true iff we believe ourselves to be a bridge authoritative
  * directory server.
@@ -1877,7 +1864,7 @@ static const char *desc_gen_reason = NULL;
  * now. */
 static time_t desc_clean_since = 0;
 /** Why did we mark the descriptor dirty? */
-static const char *desc_dirty_reason = NULL;
+static const char *desc_dirty_reason = "Tor just started";
 /** Boolean: do we need to regenerate the above? */
 static int desc_needs_upload = 0;
 
@@ -1958,7 +1945,7 @@ router_compare_to_my_exit_policy(const tor_addr_t *addr, uint16_t port)
       desc_routerinfo->ipv6_exit_policy &&
       compare_tor_addr_to_short_policy(addr, port,
                                me->ipv6_exit_policy) != ADDR_POLICY_ACCEPTED;
-#endif
+#endif /* 0 */
   } else {
     return -1;
   }
@@ -2300,7 +2287,7 @@ router_build_fresh_descriptor(routerinfo_t **r, extrainfo_t **e)
        if (!strcasecmp(name, options->Nickname))
          continue; /* Don't list ourself, that's redundant */
        else
-         member = node_get_by_nickname(name, 1);
+         member = node_get_by_nickname(name, 0);
        if (!member) {
          int is_legal = is_legal_nickname_or_hexdigest(name);
          if (!smartlist_contains_string(warned_nonexistent_family, name) &&
@@ -2526,7 +2513,7 @@ mark_my_descriptor_dirty(const char *reason)
 /** How frequently will we republish our descriptor because of large (factor
  * of 2) shifts in estimated bandwidth? Note: We don't use this constant
  * if our previous bandwidth estimate was exactly 0. */
-#define MAX_BANDWIDTH_CHANGE_FREQ (20*60)
+#define MAX_BANDWIDTH_CHANGE_FREQ (3*60*60)
 
 /** Check whether bandwidth has changed a lot since the last time we announced
  * bandwidth. If so, mark our descriptor dirty. */
@@ -2971,10 +2958,13 @@ router_dump_router_to_string(routerinfo_t *router,
 
   if (options->BridgeRelay) {
     const char *bd;
-    if (options->PublishServerDescriptor_ & BRIDGE_DIRINFO)
+    if (options->BridgeDistribution && strlen(options->BridgeDistribution)) {
+      bd = options->BridgeDistribution;
+    } else {
       bd = "any";
-    else
-      bd = "none";
+    }
+    if (strchr(bd, '\n') || strchr(bd, '\r'))
+      bd = escaped(bd);
     smartlist_add_asprintf(chunks, "bridge-distribution-request %s\n", bd);
   }
 
@@ -3039,7 +3029,6 @@ router_dump_router_to_string(routerinfo_t *router,
 
   crypto_digest_smartlist(digest, DIGEST_LEN, chunks, "", DIGEST_SHA1);
 
-  note_crypto_pk_op(SIGN_RTR);
   {
     char *sig;
     if (!(sig = router_get_dirobj_signature(digest, DIGEST_LEN, ident_key))) {
@@ -3070,7 +3059,7 @@ router_dump_router_to_string(routerinfo_t *router,
     tor_free(s_dup);
     routerinfo_free(ri_tmp);
   }
-#endif
+#endif /* defined(DEBUG_ROUTER_DUMP_ROUTER_TO_STRING) */
 
   goto done;
 
@@ -3520,7 +3509,7 @@ router_get_description(char *buf, const routerinfo_t *ri)
     return "<null>";
   return format_node_description(buf,
                                  ri->cache_info.identity_digest,
-                                 router_is_named(ri),
+                                 0,
                                  ri->nickname,
                                  NULL,
                                  ri->addr);
@@ -3630,7 +3619,7 @@ routerstatus_describe(const routerstatus_t *rs)
   return routerstatus_get_description(buf, rs);
 }
 
-/** Return a human-readable description of the extend_info_t <b>ri</b>.
+/** Return a human-readable description of the extend_info_t <b>ei</b>.
  *
  * This function is not thread-safe.  Each call to this function invalidates
  * previous values returned by this function.
@@ -3646,21 +3635,16 @@ extend_info_describe(const extend_info_t *ei)
  * verbose representation of the identity of <b>router</b>.  The format is:
  *  A dollar sign.
  *  The upper-case hexadecimal encoding of the SHA1 hash of router's identity.
- *  A "=" if the router is named; a "~" if it is not.
+ *  A "=" if the router is named (no longer implemented); a "~" if it is not.
  *  The router's nickname.
  **/
 void
 router_get_verbose_nickname(char *buf, const routerinfo_t *router)
 {
-  const char *good_digest = networkstatus_get_router_digest_by_nickname(
-                                                         router->nickname);
-  int is_named = good_digest && tor_memeq(good_digest,
-                                        router->cache_info.identity_digest,
-                                        DIGEST_LEN);
   buf[0] = '$';
   base16_encode(buf+1, HEX_DIGEST_LEN+1, router->cache_info.identity_digest,
                 DIGEST_LEN);
-  buf[1+HEX_DIGEST_LEN] = is_named ? '=' : '~';
+  buf[1+HEX_DIGEST_LEN] = '~';
   strlcpy(buf+1+HEX_DIGEST_LEN+1, router->nickname, MAX_NICKNAME_LEN+1);
 }
 

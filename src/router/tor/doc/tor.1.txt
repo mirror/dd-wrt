@@ -128,6 +128,16 @@ COMMAND-LINE OPTIONS
     the passphrase, including any trailing newlines.
     Default: read from the terminal.
 
+[[opt-key-expiration]] **--key-expiration** [**purpose**]::
+    The **purpose** specifies which type of key certificate to determine
+    the expiration of.  The only currently recognised **purpose** is
+    "sign". +
+ +
+    Running "tor --key-expiration sign" will attempt to find your signing
+    key certificate and will output, both in the logs as well as to stdout,
+    the signing key certificate's expiration time in ISO-8601 format.
+    For example, the output sent to stdout will be of the form:
+    "signing-cert-expiry: 2017-07-25 08:30:15 UTC"
 
 Other options can be specified on the command-line in the format "--option
 value", in the format "option value", or in a configuration file.  For
@@ -241,7 +251,9 @@ GENERAL OPTIONS
 [[ClientTransportPlugin]] **ClientTransportPlugin** __transport__ socks4|socks5 __IP__:__PORT__::
 **ClientTransportPlugin** __transport__ exec __path-to-binary__ [options]::
     In its first form, when set along with a corresponding Bridge line, the Tor
-    client forwards its traffic to a SOCKS-speaking proxy on "IP:PORT". It's the
+    client forwards its traffic to a SOCKS-speaking proxy on "IP:PORT".
+    (IPv4 addresses should written as-is; IPv6 addresses should be wrapped in
+    square brackets.) It's the
     duty of that proxy to properly forward the traffic to the bridge. +
  +
     In its second form, when set along with a corresponding Bridge line, the Tor
@@ -258,7 +270,8 @@ GENERAL OPTIONS
 [[ServerTransportListenAddr]] **ServerTransportListenAddr** __transport__ __IP__:__PORT__::
     When this option is set, Tor will suggest __IP__:__PORT__ as the
     listening address of any pluggable transport proxy that tries to
-    launch __transport__.
+    launch __transport__. (IPv4 addresses should written as-is; IPv6
+    addresses should be wrapped in square brackets.)
 
 [[ServerTransportOptions]] **ServerTransportOptions** __transport__ __k=v__ __k=v__ ...::
     When this option is set, Tor will pass the __k=v__ parameters to
@@ -402,7 +415,7 @@ GENERAL OPTIONS
     DataDirectory. If the option is set to 1, make the DataDirectory readable
     by the default GID. (Default: 0)
 
-[[FallbackDir]] **FallbackDir** __address__:__port__ orport=__port__ id=__fingerprint__ [weight=__num__] [ipv6=__address__:__orport__]::
+[[FallbackDir]] **FallbackDir** __ipv4address__:__port__ orport=__port__ id=__fingerprint__ [weight=__num__] [ipv6=**[**__ipv6address__**]**:__orport__]::
     When we're unable to connect to any directory cache for directory info
     (usually because we don't know about any yet) we try a directory authority.
     Clients also simultaneously try a FallbackDir, to avoid hangs on client
@@ -418,7 +431,7 @@ GENERAL OPTIONS
     FallbackDir line is present, it replaces the hard-coded FallbackDirs,
     regardless of the value of UseDefaultFallbackDirs.) (Default: 1)
 
-[[DirAuthority]] **DirAuthority** [__nickname__] [**flags**] __address__:__port__ __fingerprint__::
+[[DirAuthority]] **DirAuthority** [__nickname__] [**flags**] __ipv4address__:__port__ __fingerprint__::
     Use a nonstandard authoritative directory server at the provided address
     and port, with the specified key fingerprint. This option can be repeated
     many times, for multiple authoritative directory servers. Flags are
@@ -432,13 +445,16 @@ GENERAL OPTIONS
     with probability proportional to that weight (default 1.0). If a
     flag "v3ident=**fp**" is given, the dirserver is a v3 directory authority
     whose v3 long-term signing key has the fingerprint **fp**. Lastly,
-    if an "ipv6=__address__:__orport__" flag is present, then the directory
+    if an "ipv6=**[**__ipv6address__**]**:__orport__" flag is present, then
+    the directory
     authority is listening for IPv6 connections on the indicated IPv6 address
     and OR Port. +
  +
-    Tor will contact the authority at __address__:__port__ (the DirPort) to
-    download directory documents. If an IPv6 address is supplied, Tor will
-    also download directory documents at the IPv6 address on the DirPort. +
+    Tor will contact the authority at __ipv4address__ to
+    download directory documents. The provided __port__ value is a dirport;
+    clients ignore this in favor of the specified "orport=" value.  If an
+    IPv6 ORPort is supplied, Tor will
+    also download directory documents at the IPv6 ORPort. +
  +
     If no **DirAuthority** line is given, Tor will use the default directory
     authorities. NOTE: this option is intended for setting up a private Tor
@@ -450,11 +466,12 @@ GENERAL OPTIONS
     When configured to use both directory authorities and fallback
     directories, the directory authorities also work as fallbacks. They are
     chosen with their regular weights, multiplied by this number, which
-    should be 1.0 or less. (Default: 1.0)
+    should be 1.0 or less. The default is less than 1, to reduce load on
+    authorities. (Default: 0.1)
 
-[[AlternateDirAuthority]] **AlternateDirAuthority** [__nickname__] [**flags**] __address__:__port__ __fingerprint__ +
+[[AlternateDirAuthority]] **AlternateDirAuthority** [__nickname__] [**flags**] __ipv4address__:__port__ __fingerprint__ +
 
-[[AlternateBridgeAuthority]] **AlternateBridgeAuthority** [__nickname__] [**flags**] __address__:__port__ __ fingerprint__::
+[[AlternateBridgeAuthority]] **AlternateBridgeAuthority** [__nickname__] [**flags**] __ipv4address__:__port__ __ fingerprint__::
     These options behave as DirAuthority, but they replace fewer of the
     default directory authorities. Using
     AlternateDirAuthority replaces the default Tor directory authorities, but
@@ -521,13 +538,14 @@ GENERAL OPTIONS
 [[HTTPProxy]] **HTTPProxy** __host__[:__port__]::
     Tor will make all its directory requests through this host:port (or host:80
     if port is not specified), rather than connecting directly to any directory
-    servers.
+    servers. (DEPRECATED: As of 0.3.1.0-alpha you should use HTTPSProxy.)
 
 [[HTTPProxyAuthenticator]] **HTTPProxyAuthenticator** __username:password__::
     If defined, Tor will use this username:password for Basic HTTP proxy
     authentication, as in RFC 2617. This is currently the only form of HTTP
     proxy authentication that Tor supports; feel free to submit a patch if you
-    want it to support others.
+    want it to support others. (DEPRECATED: As of 0.3.1.0-alpha you should use
+    HTTPSProxyAuthenticator.)
 
 [[HTTPSProxy]] **HTTPSProxy** __host__[:__port__]::
     Tor will make all its OR (SSL) connections through this host:port (or
@@ -545,8 +563,10 @@ GENERAL OPTIONS
 [[Sandbox]] **Sandbox** **0**|**1**::
     If set to 1, Tor will run securely through the use of a syscall sandbox.
     Otherwise the sandbox will be disabled. The option is currently an
-    experimental feature. Can not be changed while tor is running.
-
+    experimental feature. It only works on Linux-based operating systems,
+    and only when Tor has been built with the libseccomp library. This option
+    can not be changed while tor is running.
+ +
     When the Sandbox is 1, the following options can not be changed when tor
     is running:
     Address
@@ -641,6 +661,7 @@ GENERAL OPTIONS
     is only useful when you have multiple network interfaces, and you want all
     of Tor's outgoing connections to use a single one. This option may
     be used twice, once with an IPv4 address and once with an IPv6 address.
+    IPv6 addresses should be wrapped in square brackets.
     This setting will be ignored for connections to the loopback addresses
     (127.0.0.0/8 and ::1).
 
@@ -649,14 +670,17 @@ GENERAL OPTIONS
     originate from the IP address specified. This option overrides
     **OutboundBindAddress** for the same IP version. This option may
     be used twice, once with an IPv4 address and once with an IPv6
-    address. This setting will be ignored for connections to the loopback
+    address. IPv6 addresses should be wrapped in square brackets.
+    This setting will be ignored for connections to the loopback
     addresses (127.0.0.0/8 and ::1).
 
 [[OutboundBindAddressExit]] **OutboundBindAddressExit** __IP__::
     Make all outbound exit connections originate from the IP address
     specified. This option overrides **OutboundBindAddress** for the
     same IP version. This option may be used twice, once with an IPv4
-    address and once with an IPv6 address. This setting will be ignored
+    address and once with an IPv6 address.
+    IPv6 addresses should be wrapped in square brackets.
+    This setting will be ignored
     for connections to the loopback addresses (127.0.0.0/8 and ::1).
 
 [[PidFile]] **PidFile** __FILE__::
@@ -760,11 +784,57 @@ GENERAL OPTIONS
     circuits.  If the option is set to "default", we obey a
     parameter in the consensus document. (Default: auto)
 
+[[NoExec]] **NoExec** **0**|**1**::
+    If this option is set to 1, then Tor will never launch another
+    executable, regardless of the settings of PortForwardingHelper,
+    ClientTransportPlugin, or ServerTransportPlugin.  Once this
+    option has been set to 1, it cannot be set back to 0 without
+    restarting Tor. (Default: 0)
+
+[[Schedulers]] **Schedulers** **KIST**|**KISTLite**|**Vanilla**::
+    Specify the scheduler type that tor should use. The scheduler is
+    responsible for moving data around within a Tor process. This is an ordered
+    list by priority which means that the first value will be tried first and if
+    unavailable, the second one is tried and so on. It is possible to change
+    these values at runtime. This option mostly effects relays, and most
+    operators should leave it set to its default value.
+    (Default: KIST,KISTLite,Vanilla)
+ +
+    The possible scheduler types are:
+ +
+    **KIST**: Kernel-Informed Socket Transport. Tor will use TCP information
+    from the kernel to make informed decisions regarding how much data to send
+    and when to send it. KIST also handles traffic in batches (see
+    KISTSchedRunInterval) in order to improve traffic prioritization decisions.
+    As implemented, KIST will only work on Linux kernel version 2.6.39 or
+    higher.
+ +
+    **KISTLite**: Same as KIST but without kernel support. Tor will use all
+    the same mechanics as with KIST, including the batching, but its decisions
+    regarding how much data to send will not be as good. KISTLite will work on
+    all kernels and operating systems, and the majority of the benefits of KIST
+    are still realized with KISTLite.
+ +
+    **Vanilla**: The scheduler that Tor used before KIST was implemented. It
+    sends as much data as possible, as soon as possible. Vanilla will work on
+    all kernels and operating systems.
+
+[[KISTSchedRunInterval]] **KISTSchedRunInterval** __NUM__ **msec**::
+    If KIST or KISTLite is used in the Schedulers option, this controls at which
+    interval the scheduler tick is. If the value is 0 msec, the value is taken
+    from the consensus if possible else it will fallback to the default 10
+    msec. Maximum possible value is 100 msec. (Default: 0 msec)
+
+[[KISTSockBufSizeFactor]] **KISTSockBufSizeFactor** __NUM__::
+    If KIST is used in Schedulers, this is a multiplier of the per-socket
+    limit calculation of the KIST algorithm. (Default: 1.0)
+
 CLIENT OPTIONS
 --------------
 
 The following options are useful only for clients (that is, if
-**SocksPort**, **TransPort**, **DNSPort**, or **NATDPort** is non-zero):
+**SocksPort**, **HTTPTunnelPort**, **TransPort**, **DNSPort**, or
+**NATDPort** is non-zero):
 
 [[Bridge]] **Bridge** [__transport__] __IP__:__ORPort__ [__fingerprint__]::
     When set along with UseBridges, instructs Tor to use the relay at
@@ -901,7 +971,7 @@ The following options are useful only for clients (that is, if
     The ExcludeNodes option overrides this option: any node listed in both
     ExitNodes and ExcludeNodes is treated as excluded. +
  +
-    The .exit address notation, if enabled via AllowDotExit, overrides
+    The .exit address notation, if enabled via MapAddress, overrides
     this option.
 
 [[EntryNodes]] **EntryNodes** __node__,__node__,__...__::
@@ -941,7 +1011,7 @@ The following options are useful only for clients (that is, if
     **FascistFirewall** is set. This option is deprecated; use ReachableAddresses
     instead. (Default: 80, 443)
 
-[[ReachableAddresses]] **ReachableAddresses** __ADDR__[/__MASK__][:__PORT__]...::
+[[ReachableAddresses]] **ReachableAddresses** __IP__[/__MASK__][:__PORT__]...::
     A comma-separated list of IP addresses and ports that your firewall allows
     you to connect to. The format is as for the addresses in ExitPolicy, except
     that "accept" is understood unless "reject" is explicitly provided. For
@@ -950,14 +1020,15 @@ The following options are useful only for clients (that is, if
     99, rejects port 80 connections to net 18, and accepts connections to port
     80 otherwise. (Default: \'accept \*:*'.)
 
-[[ReachableDirAddresses]] **ReachableDirAddresses** __ADDR__[/__MASK__][:__PORT__]...::
+[[ReachableDirAddresses]] **ReachableDirAddresses** __IP__[/__MASK__][:__PORT__]...::
     Like **ReachableAddresses**, a list of addresses and ports. Tor will obey
     these restrictions when fetching directory information, using standard HTTP
     GET requests. If not set explicitly then the value of
     **ReachableAddresses** is used. If **HTTPProxy** is set then these
-    connections will go through that proxy.
+    connections will go through that proxy.   (DEPRECATED: This option has
+    had no effect for some time.)
 
-[[ReachableORAddresses]] **ReachableORAddresses** __ADDR__[/__MASK__][:__PORT__]...::
+[[ReachableORAddresses]] **ReachableORAddresses** __IP__[/__MASK__][:__PORT__]...::
     Like **ReachableAddresses**, a list of addresses and ports. Tor will obey
     these restrictions when connecting to Onion Routers, using TLS/SSL. If not
     set explicitly then the value of **ReachableAddresses** is used. If
@@ -1088,7 +1159,9 @@ The following options are useful only for clients (that is, if
         Unsupported and force-disabled when using Unix domain sockets.)
     **IsolateSOCKSAuth**;;
         Don't share circuits with streams for which different
-        SOCKS authentication was provided. (On by default;
+        SOCKS authentication was provided. (For HTTPTunnelPort
+        connections, this option looks at the Proxy-Authorization and
+        X-Tor-Stream-Isolation headers. On by default;
         you can disable it with **NoIsolateSOCKSAuth**.)
     **IsolateClientProtocol**;;
         Don't share circuits with streams using a different protocol.
@@ -1252,11 +1325,10 @@ The following options are useful only for clients (that is, if
     default to 1 if the consensus parameter isn't set. (Default: 0)
 
 [[NumDirectoryGuards]] **NumDirectoryGuards** __NUM__::
-    If UseEntryGuardsAsDirectoryGuards is enabled, we try to make sure we have
-    at least NUM routers to use as directory guards. If this option is set to
-    0, use the value from the guard-n-primary-dir-guards-to-use consensus
-    parameter, and default to 3 if the consensus parameter isn't set.
-    (Default: 0)
+    If UseEntryGuards is set to 1, we try to make sure we have at least NUM
+    routers to use as directory guards. If this option is set to 0, use the
+    value from the guard-n-primary-dir-guards-to-use consensus parameter, and
+    default to 3 if the consensus parameter isn't set.  (Default: 0)
 
 [[GuardLifetime]] **GuardLifetime**  __N__ **days**|**weeks**|**months**::
     If nonzero, and UseEntryGuards is set, minimum time to keep a guard before
@@ -1278,9 +1350,9 @@ The following options are useful only for clients (that is, if
     helps to determine whether an application using Tor is possibly leaking
     DNS requests. (Default: 0)
 
-[[VirtualAddrNetworkIPv4]] **VirtualAddrNetworkIPv4** __Address__/__bits__ +
+[[VirtualAddrNetworkIPv4]] **VirtualAddrNetworkIPv4** __IPv4Address__/__bits__ +
 
-[[VirtualAddrNetworkIPv6]] **VirtualAddrNetworkIPv6** [__Address__]/__bits__::
+[[VirtualAddrNetworkIPv6]] **VirtualAddrNetworkIPv6** [__IPv6Address__]/__bits__::
     When Tor needs to assign a virtual (unused) address because of a MAPADDRESS
     command from the controller or the AutomapHostsOnResolve feature, Tor
     picks an unassigned address from this range. (Defaults:
@@ -1303,11 +1375,13 @@ The following options are useful only for clients (that is, if
     resolved. This helps trap accidental attempts to resolve URLs and so on.
     (Default: 0)
 
-[[AllowDotExit]] **AllowDotExit** **0**|**1**::
-    If enabled, we convert "www.google.com.foo.exit" addresses on the
-    SocksPort/TransPort/NATDPort into "www.google.com" addresses that exit from
-    the node "foo". Disabled by default since attacking websites and exit
-    relays can use it to manipulate your path selection. (Default: 0)
+[[HTTPTunnelPort]] **HTTPTunnelPort**  \['address':]__port__|**auto** [_isolation flags_]::
+    Open this port to listen for proxy connections using the "HTTP CONNECT"
+    protocol instead of SOCKS. Set this to 0
+    0 if you don't want to allow "HTTP CONNECT" connections. Set the port
+    to "auto" to have Tor pick a port for you. This directive can be
+    specified multiple times to bind to multiple addresses/ports.  See
+    SOCKSPort for an explanation of isolation flags. (Default: 0)
 
 [[TransPort]] **TransPort**  \['address':]__port__|**auto** [_isolation flags_]::
     Open this port to listen for transparent proxy connections.  Set this to
@@ -1378,12 +1452,12 @@ The following options are useful only for clients (that is, if
 [[ClientDNSRejectInternalAddresses]] **ClientDNSRejectInternalAddresses** **0**|**1**::
     If true, Tor does not believe any anonymously retrieved DNS answer that
     tells it that an address resolves to an internal address (like 127.0.0.1 or
-    192.168.0.1). This option prevents certain browser-based attacks; don't
-    turn it off unless you know what you're doing. (Default: 1)
+    192.168.0.1). This option prevents certain browser-based attacks; it
+    is not allowed to be set on the default network. (Default: 1)
 
 [[ClientRejectInternalAddresses]] **ClientRejectInternalAddresses** **0**|**1**::
     If true, Tor does not try to fulfill requests to connect to an internal
-    address (like 127.0.0.1 or 192.168.0.1) __unless a exit node is
+    address (like 127.0.0.1 or 192.168.0.1) __unless an exit node is
     specifically requested__ (for example, via a .exit hostname, or a
     controller request).  If true, multicast DNS hostnames for machines on the
     local network (of the form *.local) are also rejected.  (Default: 1)
@@ -1520,7 +1594,8 @@ The following options are useful only for clients (that is, if
     server has both. (Tor also prefers an IPv6 DirPort if IPv4Client is set to
     0.) If this option is set to auto, clients prefer IPv4. Other things may
     influence the choice. This option breaks a tie to the favor of IPv6.
-    (Default: auto)
+    (Default: auto)  (DEPRECATED: This option has had no effect for some
+    time.)
 
 [[ClientPreferIPv6ORPort]] **ClientPreferIPv6ORPort** **0**|**1**|**auto**::
     If this option is set to 1, Tor prefers an OR port with an IPv6
@@ -1549,8 +1624,8 @@ The following options are useful only for clients (that is, if
     live consensus). Only used by clients fetching from a list of fallback
     directory mirrors. This schedule is advanced by (potentially concurrent)
     connection attempts, unlike other schedules, which are advanced by
-    connection failures. (Default: 10, 11, 3600, 10800, 25200, 54000,
-    111600, 262800)
+    connection failures. (Default: 6, 11, 3600, 10800, 25200, 54000, 111600,
+    262800)
 
 [[ClientBootstrapConsensusFallbackDownloadSchedule]] **ClientBootstrapConsensusFallbackDownloadSchedule** __N__,__N__,__...__::
     Schedule for when clients should download consensuses from fallback
@@ -1580,7 +1655,7 @@ The following options are useful only for clients (that is, if
 
 [[ClientBootstrapConsensusMaxInProgressTries]] **ClientBootstrapConsensusMaxInProgressTries** __NUM__::
     Try this many simultaneous connections to download a consensus before
-    waiting for one to complete, timeout, or error out. (Default: 4)
+    waiting for one to complete, timeout, or error out. (Default: 3)
 
 SERVER OPTIONS
 --------------
@@ -1589,12 +1664,13 @@ The following options are useful only for servers (that is, if ORPort
 is non-zero):
 
 [[Address]] **Address** __address__::
-    The IP address or fully qualified domain name of this server (e.g.
-    moria.mit.edu). You can leave this unset, and Tor will guess your IP
-    address.  This IP address is the one used to tell clients and other
-    servers where to find your Tor server; it doesn't affect the IP that your
-    Tor client binds to.  To bind to a different address, use the
-    *ListenAddress and OutboundBindAddress options.
+    The IPv4 address of this server, or a fully qualified domain name of
+    this server that resolves to an IPv4 address.  You can leave this
+    unset, and Tor will try to guess your IPv4 address.  This IPv4
+    address is the one used to tell clients and other servers where to
+    find your Tor server; it doesn't affect the address that your server
+    binds to.  To bind to a different address, use the ORPort and
+    OutboundBindAddress options.
 
 [[AssumeReachable]] **AssumeReachable** **0**|**1**::
     This option is used when bootstrapping a new Tor network. If set to 1,
@@ -1609,6 +1685,17 @@ is non-zero):
     server descriptor to the bridge database, rather than
     to the public directory authorities.
 
+[[BridgeDistribution]] **BridgeDistribution** __string__::
+    If set along with BridgeRelay, Tor will include a new line in its
+    bridge descriptor which indicates to the BridgeDB service how it
+    would like its bridge address to be given out. Set it to "none" if
+    you want BridgeDB to avoid distributing your bridge address, or "any" to
+    let BridgeDB decide. (Default: any)
+ +
+    Note: as of Oct 2017, the BridgeDB part of this option is not yet
+    implemented.  Until BridgeDB is updated to obey this option, your
+    bridge will make this request, but it will not (yet) be obeyed.
+
 [[ContactInfo]] **ContactInfo** __email_address__::
     Administrative contact information for this relay or bridge. This line
     can be used to contact you if your relay or bridge is misconfigured or
@@ -1616,7 +1703,12 @@ is non-zero):
     descriptors containing these lines and that Google indexes them, so
     spammers might also collect them. You may want to obscure the fact
     that it's an email address and/or generate a new address for this
-    purpose.
+    purpose. +
+ +
+    ContactInfo **must** be set to a working address if you run more than one
+    relay or bridge.  (Really, everybody running a relay or bridge should set
+    it.)
+
 
 [[ExitRelay]] **ExitRelay** **0**|**1**|**auto**::
     Tells Tor whether to run as an exit relay.  If Tor is running as a
@@ -1744,7 +1836,10 @@ is non-zero):
     compromise its concealment. +
  +
     When listing a node, it's better to list it by fingerprint than by
-    nickname: fingerprints are more reliable.
+    nickname: fingerprints are more reliable. +
+ +
+    If you run more than one relay, the MyFamily option on each relay
+    **must** list all other relays, as described above.
 
 [[Nickname]] **Nickname** __name__::
     Set the server's nickname to \'name'. Nicknames must be between 1 and 19
@@ -1802,11 +1897,13 @@ is non-zero):
  +
     If this option is set to 0, Tor will not publish its
     descriptors to any directories. (This is useful if you're testing
-    out your server, or if you're using a Tor controller that handles directory
-    publishing for you.) Otherwise, Tor will publish its descriptors of all
-    type(s) specified. The default is "1",
-    which means "if running as a server, publish the
-    appropriate descriptors to the authorities".
+    out your server, or if you're using a Tor controller that handles
+    directory publishing for you.) Otherwise, Tor will publish its
+    descriptors of all type(s) specified. The default is "1", which
+    means "if running as a relay or bridge, publish descriptors to the
+    appropriate authorities". Other possibilities are "v3", meaning
+    "publish as if you're a relay", and "bridge", meaning "publish as
+    if you're a bridge".
 
 [[ShutdownWaitLength]] **ShutdownWaitLength** __NUM__::
     When we get a SIGINT and we're a server, we begin shutting down:
@@ -1900,7 +1997,7 @@ is non-zero):
     correct this. This option only affects name lookups that your server does
     on behalf of clients. (Default: 1)
 
-[[ServerDNSTestAddresses]] **ServerDNSTestAddresses** __address__,__address__,__...__::
+[[ServerDNSTestAddresses]] **ServerDNSTestAddresses** __hostname__,__hostname__,__...__::
     When we're detecting DNS hijacking, make sure that these __valid__ addresses
     aren't getting redirected. If they are, then our DNS is completely useless,
     and we'll reset our exit policy to "reject \*:*". This option only affects
@@ -2327,7 +2424,7 @@ The following options are used to configure a hidden service.
 
 [[HiddenServiceVersion]] **HiddenServiceVersion** __version__,__version__,__...__::
     A list of rendezvous service descriptor versions to publish for the hidden
-    service. Currently, only version 2 is supported. (Default: 2)
+    service. Currently, versions 2 and 3 are supported. (Default: 2)
 
 [[HiddenServiceAuthorizeClient]] **HiddenServiceAuthorizeClient** __auth-type__ __client-name__,__client-name__,__...__::
     If configured, the hidden service is accessible for authorized clients
@@ -2371,7 +2468,7 @@ The following options are used to configure a hidden service.
 
 [[HiddenServiceNumIntroductionPoints]] **HiddenServiceNumIntroductionPoints** __NUM__::
     Number of introduction points the hidden service will have. You can't
-    have more than 10. (Default: 3)
+    have more than 10 for v2 service and 20 for v3. (Default: 3)
 
 [[HiddenServiceSingleHopMode]] **HiddenServiceSingleHopMode** **0**|**1**::
     **Experimental - Non Anonymous** Hidden Services on a tor instance in
@@ -2406,6 +2503,101 @@ The following options are used to configure a hidden service.
     you need to disable all client-side services on your Tor instance,
     including setting SOCKSPort to "0". Can not be changed while tor is
     running. (Default: 0)
+
+DENIAL OF SERVICE MITIGATION OPTIONS
+------------------------------------
+
+The following options are useful only for a public relay. They control the
+Denial of Service mitigation subsystem.
+
+[[DoSCircuitCreationEnabled]] **DoSCircuitCreationEnabled** **0**|**1**|**auto**::
+
+    Enable circuit creation DoS mitigation. If enabled, tor will cache client
+    IPs along with statistics in order to detect circuit DoS attacks. If an
+    address is positively identified, tor will activate defenses against the
+    address. See the DoSCircuitCreationDefenseType option for more details.
+    This is a client to relay detection only. "auto" means use the consensus
+    parameter. If not defined in the consensus, the value is 0.
+    (Default: auto)
+
+[[DoSCircuitCreationMinConnections]] **DoSCircuitCreationMinConnections** __NUM__::
+
+    Minimum threshold of concurrent connections before a client address can be
+    flagged as executing a circuit creation DoS. In other words, once a client
+    address reaches the circuit rate and has a minimum of NUM concurrent
+    connections, a detection is positive. "0" means use the consensus
+    parameter. If not defined in the consensus, the value is 3.
+    (Default: 0)
+
+[[DoSCircuitCreationRate]] **DoSCircuitCreationRate** __NUM__::
+
+    The allowed circuit creation rate per second applied per client IP
+    address. If this option is 0, it obeys a consensus parameter. If not
+    defined in the consensus, the value is 3.
+    (Default: 0)
+
+[[DoSCircuitCreationBurst]] **DoSCircuitCreationBurst** __NUM__::
+
+    The allowed circuit creation burst per client IP address. If the circuit
+    rate and the burst are reached, a client is marked as executing a circuit
+    creation DoS. "0" means use the consensus parameter. If not defined in the
+    consensus, the value is 90.
+    (Default: 0)
+
+[[DoSCircuitCreationDefenseType]] **DoSCircuitCreationDefenseType** __NUM__::
+
+    This is the type of defense applied to a detected client address. The
+    possible values are:
+
+      1: No defense.
+      2: Refuse circuit creation for the DoSCircuitCreationDefenseTimePeriod period of time.
++
+    "0" means use the consensus parameter. If not defined in the consensus,
+    the value is 2.
+    (Default: 0)
+
+[[DoSCircuitCreationDefenseTimePeriod]] **DoSCircuitCreationDefenseTimePeriod** __N__ **seconds**|**minutes**|**hours**::
+
+    The base time period in seconds that the DoS defense is activated for. The
+    actual value is selected randomly for each activation from N+1 to 3/2 * N.
+    "0" means use the consensus parameter. If not defined in the consensus,
+    the value is 3600 seconds (1 hour).  (Default: 0)
+
+[[DoSConnectionEnabled]] **DoSConnectionEnabled** **0**|**1**|**auto**::
+
+    Enable the connection DoS mitigation. For client address only, this allows
+    tor to mitigate against large number of concurrent connections made by a
+    single IP address. "auto" means use the consensus parameter. If not
+    defined in the consensus, the value is 0.
+    (Default: auto)
+
+[[DoSConnectionMaxConcurrentCount]] **DoSConnectionMaxConcurrentCount** __NUM__::
+
+    The maximum threshold of concurrent connection from a client IP address.
+    Above this limit, a defense selected by DoSConnectionDefenseType is
+    applied. "0" means use the consensus parameter. If not defined in the
+    consensus, the value is 100.
+    (Default: 0)
+
+[[DoSConnectionDefenseType]] **DoSConnectionDefenseType** __NUM__::
+
+    This is the type of defense applied to a detected client address for the
+    connection mitigation. The possible values are:
+
+      1: No defense.
+      2: Immediately close new connections.
++
+    "0" means use the consensus parameter. If not defined in the consensus,
+    the value is 2.
+    (Default: 0)
+
+[[DoSRefuseSingleHopClientRendezvous]] **DoSRefuseSingleHopClientRendezvous** **0**|**1**|**auto**::
+
+    Refuse establishment of rendezvous points for single hop clients. In other
+    words, if a client directly connects to the relay and sends an
+    ESTABLISH_RENDEZVOUS cell, it is silently dropped. "auto" means use the
+    consensus parameter. If not defined in the consensus, the value is 0.
+    (Default: auto)
 
 TESTING NETWORK OPTIONS
 -----------------------
@@ -2451,7 +2643,8 @@ The following options are used for running a testing Tor network.
        TestingClientDownloadSchedule 0, 0, 5, 10, 15, 20, 30, 60
        TestingServerConsensusDownloadSchedule 0, 0, 5, 10, 15, 20, 30, 60
        TestingClientConsensusDownloadSchedule 0, 0, 5, 10, 15, 20, 30, 60
-       TestingBridgeDownloadSchedule 60, 30, 30, 60
+       TestingBridgeDownloadSchedule 10, 30, 60
+       TestingBridgeBootstrapDownloadSchedule 0, 0, 5, 10, 15, 20, 30, 60
        TestingClientMaxIntervalWithoutRequest 5 seconds
        TestingDirConnectionMaxStall 30 seconds
        TestingConsensusMaxDownloadTries 80
@@ -2516,8 +2709,16 @@ The following options are used for running a testing Tor network.
     1800, 3600, 3600, 3600, 10800, 21600, 43200)
 
 [[TestingBridgeDownloadSchedule]] **TestingBridgeDownloadSchedule** __N__,__N__,__...__::
-    Schedule for when clients should download bridge descriptors. Changing this
-    requires that **TestingTorNetwork** is set. (Default: 3600, 900, 900, 3600)
+    Schedule for when clients should download each bridge descriptor when they
+    know that one or more of their configured bridges are running. Changing
+    this requires that **TestingTorNetwork** is set. (Default: 10800, 25200,
+    54000, 111600, 262800)
+
+[[TestingBridgeBootstrapDownloadSchedule]] **TestingBridgeBootstrapDownloadSchedule** __N__,__N__,__...__::
+    Schedule for when clients should download each bridge descriptor when they
+    have just started, or when they can not contact any of their bridges.
+    Changing this requires that **TestingTorNetwork** is set. (Default: 0, 30,
+    90, 600, 3600, 10800, 25200, 54000, 111600, 262800)
 
 [[TestingClientMaxIntervalWithoutRequest]] **TestingClientMaxIntervalWithoutRequest** __N__ **seconds**|**minutes**::
     When directory clients have only a few descriptors to request, they batch
@@ -2844,6 +3045,16 @@ __DataDirectory__**/hashed-fingerprint**::
     Only used by bridges. Holds the hashed fingerprint of the bridge's
     identity key. (That is, the hash of the hash of the identity key.)
 
+__DataDirectory__**/approved-routers**::
+    Only used by authoritative directory servers. This file lists
+    the status of routers by their identity fingerprint.
+    Each line lists a status and a fingerprint separated by
+    whitespace. See your **fingerprint** file in the __DataDirectory__ for an
+    example line. If the status is **!reject** then descriptors from the
+    given identity (fingerprint) are rejected by this server. If it is
+    **!invalid** then descriptors are accepted but marked in the directory as
+    not valid, that is, not recommended.
+
 __DataDirectory__**/v3-status-votes**::
     Only for v3 authoritative directory servers. This file contains
     status votes from all the authoritative directory servers.
@@ -2908,6 +3119,11 @@ __HiddenServiceDirectory__**/hostname**::
     The <base32-encoded-fingerprint>.onion domain name for this hidden service.
     If the hidden service is restricted to authorized clients only, this file
     also contains authorization data for all clients.
+ +
+    Note that clients will ignore any extra subdomains prepended to a hidden
+    service hostname. So if you have "xyz.onion" as your hostname, you
+    can tell clients to connect to "www.xyz.onion" or "irc.xyz.onion"
+    for virtual-hosting purposes.
 
 __HiddenServiceDirectory__**/private_key**::
     The private key for this hidden service.

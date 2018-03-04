@@ -487,7 +487,7 @@ STATIC void cell_queue_entry_free(cell_queue_entry_t *q, int handed_off);
 
 void channel_write_cell_generic_(channel_t *chan, const char *cell_type,
                                  void *cell, cell_queue_entry_t *q);
-#endif
+#endif /* defined(CHANNEL_PRIVATE_) */
 
 /* Channel operations for subclasses and internal use only */
 
@@ -522,6 +522,7 @@ void channel_listener_free(channel_listener_t *chan_l);
 /* State/metadata setters */
 
 void channel_change_state(channel_t *chan, channel_state_t to_state);
+void channel_change_state_open(channel_t *chan);
 void channel_clear_identity_digest(channel_t *chan);
 void channel_clear_remote_end(channel_t *chan);
 void channel_mark_local(channel_t *chan);
@@ -567,7 +568,7 @@ MOCK_DECL(ssize_t, channel_flush_some_cells,
           (channel_t *chan, ssize_t num_cells));
 
 /* Query if data available on this channel */
-int channel_more_to_flush(channel_t *chan);
+MOCK_DECL(int, channel_more_to_flush, (channel_t *chan));
 
 /* Notify flushed outgoing for dirreq handling */
 void channel_notify_flushed(channel_t *chan);
@@ -579,7 +580,7 @@ void channel_do_open_actions(channel_t *chan);
 extern uint64_t estimated_total_queue_size;
 #endif
 
-#endif
+#endif /* defined(TOR_CHANNEL_INTERNAL_) */
 
 /* Helper functions to perform operations on channels */
 
@@ -658,18 +659,20 @@ MOCK_DECL(void, channel_dump_statistics, (channel_t *chan, int severity));
 void channel_dump_transport_statistics(channel_t *chan, int severity);
 const char * channel_get_actual_remote_descr(channel_t *chan);
 const char * channel_get_actual_remote_address(channel_t *chan);
-int channel_get_addr_if_possible(channel_t *chan, tor_addr_t *addr_out);
+MOCK_DECL(int, channel_get_addr_if_possible, (channel_t *chan,
+                                              tor_addr_t *addr_out));
 const char * channel_get_canonical_remote_descr(channel_t *chan);
 int channel_has_queued_writes(channel_t *chan);
 int channel_is_bad_for_new_circs(channel_t *chan);
 void channel_mark_bad_for_new_circs(channel_t *chan);
 int channel_is_canonical(channel_t *chan);
 int channel_is_canonical_is_reliable(channel_t *chan);
-int channel_is_client(channel_t *chan);
+int channel_is_client(const channel_t *chan);
 int channel_is_local(channel_t *chan);
 int channel_is_incoming(channel_t *chan);
 int channel_is_outgoing(channel_t *chan);
 void channel_mark_client(channel_t *chan);
+void channel_clear_client(channel_t *chan);
 int channel_matches_extend_info(channel_t *chan, extend_info_t *extend_info);
 int channel_matches_target_addr_for_extend(channel_t *chan,
                                            const tor_addr_t *target);
@@ -718,5 +721,5 @@ int packed_cell_is_destroy(channel_t *chan,
 /* Declare the handle helpers */
 HANDLE_DECL(channel, channel_s,)
 
-#endif
+#endif /* !defined(TOR_CHANNEL_H) */
 

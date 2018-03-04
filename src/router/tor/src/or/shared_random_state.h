@@ -77,7 +77,7 @@ typedef struct sr_state_t {
 typedef struct sr_disk_state_t {
   uint32_t magic_;
   /* Version of the protocol. */
-  uint32_t Version;
+  int Version;
   /* Version of our running tor. */
   char *TorVersion;
   /* Creation time of this state */
@@ -121,11 +121,16 @@ int sr_state_is_initialized(void);
 void sr_state_save(void);
 void sr_state_free(void);
 
+time_t sr_state_get_start_time_of_current_protocol_run(time_t now);
+unsigned int sr_state_get_phase_duration(void);
+unsigned int sr_state_get_protocol_run_duration(void);
+
 #ifdef SHARED_RANDOM_STATE_PRIVATE
 
 STATIC int disk_state_load_from_disk_impl(const char *fname);
 
 STATIC sr_phase_t get_sr_protocol_phase(time_t valid_after);
+STATIC time_t get_start_time_of_current_round(void);
 
 STATIC time_t get_state_valid_until_time(time_t now);
 STATIC const char *get_phase_str(sr_phase_t phase);
@@ -134,14 +139,14 @@ STATIC void new_protocol_run(time_t valid_after);
 STATIC void state_rotate_srv(void);
 STATIC int is_phase_transition(sr_phase_t next_phase);
 
-#endif /* SHARED_RANDOM_STATE_PRIVATE */
+#endif /* defined(SHARED_RANDOM_STATE_PRIVATE) */
 
 #ifdef TOR_UNIT_TESTS
 
 STATIC void set_sr_phase(sr_phase_t phase);
 STATIC sr_state_t *get_sr_state(void);
 
-#endif /* TOR_UNIT_TESTS */
+#endif /* defined(TOR_UNIT_TESTS) */
 
-#endif /* TOR_SHARED_RANDOM_STATE_H */
+#endif /* !defined(TOR_SHARED_RANDOM_STATE_H) */
 

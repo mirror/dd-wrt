@@ -13,6 +13,10 @@
 #include "backtrace.h"
 #include "container.h"
 
+#ifdef __COVERITY__
+int bug_macro_deadcode_dummy__ = 0;
+#endif
+
 #ifdef TOR_UNIT_TESTS
 static void (*failed_assertion_cb)(void) = NULL;
 static int n_bugs_to_capture = 0;
@@ -55,10 +59,10 @@ tor_set_failed_assertion_callback(void (*fn)(void))
 {
   failed_assertion_cb = fn;
 }
-#else
+#else /* !(defined(TOR_UNIT_TESTS)) */
 #define capturing_bugs() (0)
 #define add_captured_bug(s) do { } while (0)
-#endif
+#endif /* defined(TOR_UNIT_TESTS) */
 
 /** Helper for tor_assert: report the assertion failure. */
 void

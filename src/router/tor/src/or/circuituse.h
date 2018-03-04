@@ -44,6 +44,9 @@ void circuit_build_failed(origin_circuit_t *circ);
 /** Flag to set when the last hop of a circuit doesn't need to be an
  * exit node. */
 #define CIRCLAUNCH_IS_INTERNAL    (1<<3)
+/** Flag to set when we are trying to launch a v3 rendezvous circuit. We need
+ *  to apply some additional filters on the node picked. */
+#define CIRCLAUNCH_IS_V3_RP (1<<4)
 origin_circuit_t *circuit_launch_by_extend_info(uint8_t purpose,
                                                 extend_info_t *info,
                                                 int flags);
@@ -68,7 +71,8 @@ STATIC int circuit_is_available_for_use(const circuit_t *circ);
 STATIC int needs_exit_circuits(time_t now,
                                int *port_needs_uptime,
                                int *port_needs_capacity);
-STATIC int needs_hs_server_circuits(int num_uptime_internal);
+STATIC int needs_hs_server_circuits(time_t now,
+                                    int num_uptime_internal);
 
 STATIC int needs_hs_client_circuits(time_t now,
                                     int *needs_uptime,
@@ -78,7 +82,7 @@ STATIC int needs_hs_client_circuits(time_t now,
 
 STATIC int needs_circuits_for_build(int num);
 
-#endif
+#endif /* defined(TOR_UNIT_TESTS) */
 
-#endif
+#endif /* !defined(TOR_CIRCUITUSE_H) */
 

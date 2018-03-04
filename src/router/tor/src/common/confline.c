@@ -288,7 +288,7 @@ config_process_include(const char *path, int recursion_level, int extended,
     return -1;
   }
   tor_free(unquoted_path);
-#endif
+#endif /* 0 */
   smartlist_t *config_files = config_get_file_list(path);
   if (!config_files) {
     return -1;
@@ -342,7 +342,8 @@ config_lines_dup(const config_line_t *inp)
 }
 
 /** Return a newly allocated deep copy of the lines in <b>inp</b>,
- * but only the ones that match <b>key</b>. */
+ * but only the ones whose keys begin with <b>key</b> (case-insensitive).
+ * If <b>key</b> is NULL, do not filter. */
 config_line_t *
 config_lines_dup_and_filter(const config_line_t *inp,
                             const char *key)

@@ -18,26 +18,35 @@
 
 node_t *node_get_mutable_by_id(const char *identity_digest);
 MOCK_DECL(const node_t *, node_get_by_id, (const char *identity_digest));
-const node_t *node_get_by_hex_id(const char *identity_digest);
+node_t *node_get_mutable_by_ed25519_id(const ed25519_public_key_t *ed_id);
+MOCK_DECL(const node_t *, node_get_by_ed25519_id,
+          (const ed25519_public_key_t *ed_id));
+
+#define NNF_NO_WARN_UNNAMED (1u<<0)
+
+const node_t *node_get_by_hex_id(const char *identity_digest,
+                                 unsigned flags);
 node_t *nodelist_set_routerinfo(routerinfo_t *ri, routerinfo_t **ri_old_out);
 node_t *nodelist_add_microdesc(microdesc_t *md);
 void nodelist_set_consensus(networkstatus_t *ns);
+int nodelist_probably_contains_address(const tor_addr_t *addr);
 
 void nodelist_remove_microdesc(const char *identity_digest, microdesc_t *md);
 void nodelist_remove_routerinfo(routerinfo_t *ri);
 void nodelist_purge(void);
 smartlist_t *nodelist_find_nodes_with_microdesc(const microdesc_t *md);
 
+void nodelist_recompute_all_hsdir_indices(void);
+
 void nodelist_free_all(void);
 void nodelist_assert_ok(void);
 
 MOCK_DECL(const node_t *, node_get_by_nickname,
-    (const char *nickname, int warn_if_unnamed));
+          (const char *nickname, unsigned flags));
 void node_get_verbose_nickname(const node_t *node,
                                char *verbose_name_out);
 void node_get_verbose_nickname_by_id(const char *id_digest,
                                 char *verbose_name_out);
-int node_is_named(const node_t *node);
 int node_is_dir(const node_t *node);
 int node_has_descriptor(const node_t *node);
 int node_get_purpose(const node_t *node);
@@ -58,6 +67,9 @@ const ed25519_public_key_t *node_get_ed25519_id(const node_t *node);
 int node_ed25519_id_matches(const node_t *node,
                             const ed25519_public_key_t *id);
 int node_supports_ed25519_link_authentication(const node_t *node);
+int node_supports_v3_hsdir(const node_t *node);
+int node_supports_ed25519_hs_intro(const node_t *node);
+int node_supports_v3_rendezvous_point(const node_t *node);
 const uint8_t *node_get_rsa_id_digest(const node_t *node);
 
 int node_has_ipv6_addr(const node_t *node);
@@ -103,7 +115,7 @@ int addrs_in_same_network_family(const tor_addr_t *a1,
  * no exits in the consensus, we wait for enough info to create internal
  * paths, and should avoid creating exit paths, as they will simply fail.
  * We make sure we create all available circuit types at the same time. */
-int router_have_minimum_dir_info(void);
+MOCK_DECL(int, router_have_minimum_dir_info,(void));
 
 /** Set to CONSENSUS_PATH_EXIT if there is at least one exit node
  * in the consensus. We update this flag in compute_frac_paths_available if
@@ -131,5 +143,18 @@ void router_dir_info_changed(void);
 const char *get_dir_info_status_string(void);
 int count_loading_descriptors_progress(void);
 
-#endif
+#ifdef NODELIST_PRIVATE
+
+#ifdef TOR_UNIT_TESTS
+
+STATIC void
+node_set_hsdir_index(node_t *node, const networkstatus_t *ns);
+
+#endif /* defined(TOR_UNIT_TESTS) */
+
+#endif /* defined(NODELIST_PRIVATE) */
+
+MOCK_DECL(int, get_estimated_address_per_node, (void));
+
+#endif /* !defined(TOR_NODELIST_H) */
 

@@ -7,13 +7,16 @@
  */
 
 #define CONNECTION_PRIVATE
+#define DIRECTORY_PRIVATE
 #define HS_CACHE_PRIVATE
 
 #include "ed25519_cert.h"
 #include "hs_cache.h"
 #include "rendcache.h"
 #include "directory.h"
+#include "networkstatus.h"
 #include "connection.h"
+#include "proto_http.h"
 
 #include "hs_test_helpers.h"
 #include "test_helpers.h"
@@ -54,7 +57,7 @@ test_directory(void *arg)
   init_test();
   /* Generate a valid descriptor with normal values. */
   ret = ed25519_keypair_generate(&signing_kp1, 0);
-  tt_int_op(ret, ==, 0);
+  tt_int_op(ret, OP_EQ, 0);
   desc1 = hs_helper_build_hs_desc_with_ip(&signing_kp1);
   tt_assert(desc1);
   ret = hs_desc_encode_descriptor(desc1, &signing_kp1, &desc1_str);
@@ -78,7 +81,7 @@ test_directory(void *arg)
     /* Tell our OOM to run and to at least remove a byte which will result in
      * removing the descriptor from our cache. */
     oom_size = hs_cache_handle_oom(time(NULL), 1);
-    tt_int_op(oom_size, >=, 1);
+    tt_int_op(oom_size, OP_GE, 1);
     ret = hs_cache_lookup_as_dir(3, helper_get_hsdir_query(desc1), NULL);
     tt_int_op(ret, OP_EQ, 0);
   }
@@ -87,7 +90,7 @@ test_directory(void *arg)
   {
     ed25519_keypair_t signing_kp_zero;
     ret = ed25519_keypair_generate(&signing_kp_zero, 0);
-    tt_int_op(ret, ==, 0);
+    tt_int_op(ret, OP_EQ, 0);
     hs_descriptor_t *desc_zero_lifetime;
     desc_zero_lifetime = hs_helper_build_hs_desc_with_ip(&signing_kp_zero);
     tt_assert(desc_zero_lifetime);
@@ -115,7 +118,7 @@ test_directory(void *arg)
     tt_int_op(ret, OP_EQ, 0);
     /* Cleanup our entire cache. */
     oom_size = hs_cache_handle_oom(time(NULL), 1);
-    tt_int_op(oom_size, >=, 1);
+    tt_int_op(oom_size, OP_GE, 1);
     hs_descriptor_free(desc_zero_lifetime);
     tor_free(desc_zero_lifetime_str);
   }
@@ -177,7 +180,7 @@ test_clean_as_dir(void *arg)
 
   /* Generate a valid descriptor with values. */
   ret = ed25519_keypair_generate(&signing_kp1, 0);
-  tt_int_op(ret, ==, 0);
+  tt_int_op(ret, OP_EQ, 0);
   desc1 = hs_helper_build_hs_desc_with_ip(&signing_kp1);
   tt_assert(desc1);
   ret = hs_desc_encode_descriptor(desc1, &signing_kp1, &desc1_str);
@@ -187,21 +190,21 @@ test_clean_as_dir(void *arg)
 
   /* With the lifetime being 3 hours, a cleanup shouldn't remove it. */
   ret = cache_clean_v3_as_dir(now, 0);
-  tt_int_op(ret, ==, 0);
+  tt_int_op(ret, OP_EQ, 0);
   /* Should be present after clean up. */
   ret = hs_cache_lookup_as_dir(3, helper_get_hsdir_query(desc1), NULL);
   tt_int_op(ret, OP_EQ, 1);
   /* Set a cutoff 100 seconds in the past. It should not remove the entry
    * since the entry is still recent enough. */
   ret = cache_clean_v3_as_dir(now, now - 100);
-  tt_int_op(ret, ==, 0);
+  tt_int_op(ret, OP_EQ, 0);
   /* Should be present after clean up. */
   ret = hs_cache_lookup_as_dir(3, helper_get_hsdir_query(desc1), NULL);
   tt_int_op(ret, OP_EQ, 1);
   /* Set a cutoff of 100 seconds in the future. It should remove the entry
    * that we've just added since it's not too old for the cutoff. */
   ret = cache_clean_v3_as_dir(now, now + 100);
-  tt_int_op(ret, >, 0);
+  tt_int_op(ret, OP_GT, 0);
   /* Shouldn't be present after clean up. */
   ret = hs_cache_lookup_as_dir(3, helper_get_hsdir_query(desc1), NULL);
   tt_int_op(ret, OP_EQ, 0);
@@ -231,7 +234,7 @@ helper_fetch_desc_from_hsdir(const ed25519_public_key_t *blinded_key)
 
     retval = ed25519_public_to_base64(hsdir_cache_key,
                                       blinded_key);
-    tt_int_op(retval, ==, 0);
+    tt_int_op(retval, OP_EQ, 0);
     tor_asprintf(&hsdir_query_str, GET("/tor/hs/3/%s"), hsdir_cache_key);
   }
 
@@ -290,7 +293,7 @@ test_upload_and_download_hs_desc(void *arg)
   {
     ed25519_keypair_t signing_kp;
     retval = ed25519_keypair_generate(&signing_kp, 0);
-    tt_int_op(retval, ==, 0);
+    tt_int_op(retval, OP_EQ, 0);
     published_desc = hs_helper_build_hs_desc_with_ip(&signing_kp);
     tt_assert(published_desc);
     retval = hs_desc_encode_descriptor(published_desc, &signing_kp,
@@ -301,7 +304,7 @@ test_upload_and_download_hs_desc(void *arg)
   /* Publish descriptor to the HSDir */
   {
     retval = handle_post_hs_descriptor("/tor/hs/3/publish",published_desc_str);
-    tt_int_op(retval, ==, 200);
+    tt_int_op(retval, OP_EQ, 200);
   }
 
   /* Simulate a fetch of the previously published descriptor */
@@ -342,6 +345,7 @@ test_hsdir_revision_counter_check(void *arg)
   hs_descriptor_t *published_desc = NULL;
   char *published_desc_str = NULL;
 
+  uint8_t subcredential[DIGEST256_LEN];
   char *received_desc_str = NULL;
   hs_descriptor_t *received_desc = NULL;
 
@@ -353,7 +357,7 @@ test_hsdir_revision_counter_check(void *arg)
   /* Generate a valid descriptor with normal values. */
   {
     retval = ed25519_keypair_generate(&signing_kp, 0);
-    tt_int_op(retval, ==, 0);
+    tt_int_op(retval, OP_EQ, 0);
     published_desc = hs_helper_build_hs_desc_with_ip(&signing_kp);
     tt_assert(published_desc);
     retval = hs_desc_encode_descriptor(published_desc, &signing_kp,
@@ -364,13 +368,13 @@ test_hsdir_revision_counter_check(void *arg)
   /* Publish descriptor to the HSDir */
   {
     retval = handle_post_hs_descriptor("/tor/hs/3/publish",published_desc_str);
-    tt_int_op(retval, ==, 200);
+    tt_int_op(retval, OP_EQ, 200);
   }
 
   /* Try publishing again with the same revision counter: Should fail. */
   {
     retval = handle_post_hs_descriptor("/tor/hs/3/publish",published_desc_str);
-    tt_int_op(retval, ==, 400);
+    tt_int_op(retval, OP_EQ, 400);
   }
 
   /* Fetch the published descriptor and validate the revision counter. */
@@ -378,14 +382,16 @@ test_hsdir_revision_counter_check(void *arg)
     const ed25519_public_key_t *blinded_key;
 
     blinded_key = &published_desc->plaintext_data.blinded_pubkey;
+    hs_get_subcredential(&signing_kp.pubkey, blinded_key, subcredential);
     received_desc_str = helper_fetch_desc_from_hsdir(blinded_key);
 
-    retval = hs_desc_decode_descriptor(received_desc_str,NULL, &received_desc);
-    tt_int_op(retval, ==, 0);
+    retval = hs_desc_decode_descriptor(received_desc_str,
+                                       subcredential, &received_desc);
+    tt_int_op(retval, OP_EQ, 0);
     tt_assert(received_desc);
 
     /* Check that the revision counter is correct */
-    tt_u64_op(received_desc->plaintext_data.revision_counter, ==, 42);
+    tt_u64_op(received_desc->plaintext_data.revision_counter, OP_EQ, 42);
 
     hs_descriptor_free(received_desc);
     received_desc = NULL;
@@ -401,7 +407,7 @@ test_hsdir_revision_counter_check(void *arg)
     tt_int_op(retval, OP_EQ, 0);
 
     retval = handle_post_hs_descriptor("/tor/hs/3/publish",published_desc_str);
-    tt_int_op(retval, ==, 200);
+    tt_int_op(retval, OP_EQ, 200);
   }
 
   /* Again, fetch the published descriptor and perform the revision counter
@@ -412,12 +418,13 @@ test_hsdir_revision_counter_check(void *arg)
     blinded_key = &published_desc->plaintext_data.blinded_pubkey;
     received_desc_str = helper_fetch_desc_from_hsdir(blinded_key);
 
-    retval = hs_desc_decode_descriptor(received_desc_str,NULL, &received_desc);
-    tt_int_op(retval, ==, 0);
+    retval = hs_desc_decode_descriptor(received_desc_str,
+                                       subcredential, &received_desc);
+    tt_int_op(retval, OP_EQ, 0);
     tt_assert(received_desc);
 
     /* Check that the revision counter is the latest */
-    tt_u64_op(received_desc->plaintext_data.revision_counter, ==, 1313);
+    tt_u64_op(received_desc->plaintext_data.revision_counter, OP_EQ, 1313);
   }
 
  done:
@@ -425,6 +432,115 @@ test_hsdir_revision_counter_check(void *arg)
   hs_descriptor_free(received_desc);
   tor_free(received_desc_str);
   tor_free(published_desc_str);
+}
+
+static networkstatus_t mock_ns;
+
+static networkstatus_t *
+mock_networkstatus_get_live_consensus(time_t now)
+{
+  (void) now;
+  return &mock_ns;
+}
+
+/** Test that we can store HS descriptors in the client HS cache. */
+static void
+test_client_cache(void *arg)
+{
+  int retval;
+  ed25519_keypair_t signing_kp;
+  hs_descriptor_t *published_desc = NULL;
+  char *published_desc_str = NULL;
+  uint8_t wanted_subcredential[DIGEST256_LEN];
+  response_handler_args_t *args = NULL;
+  dir_connection_t *conn = NULL;
+
+  (void) arg;
+
+  /* Initialize HSDir cache subsystem */
+  init_test();
+
+  MOCK(networkstatus_get_live_consensus,
+       mock_networkstatus_get_live_consensus);
+
+  /* Set consensus time */
+  parse_rfc1123_time("Sat, 26 Oct 1985 13:00:00 UTC",
+                           &mock_ns.valid_after);
+  parse_rfc1123_time("Sat, 26 Oct 1985 14:00:00 UTC",
+                           &mock_ns.fresh_until);
+  parse_rfc1123_time("Sat, 26 Oct 1985 16:00:00 UTC",
+                           &mock_ns.valid_until);
+
+  /* Generate a valid descriptor with normal values. */
+  {
+    retval = ed25519_keypair_generate(&signing_kp, 0);
+    tt_int_op(retval, OP_EQ, 0);
+    published_desc = hs_helper_build_hs_desc_with_ip(&signing_kp);
+    tt_assert(published_desc);
+    retval = hs_desc_encode_descriptor(published_desc, &signing_kp,
+                                       &published_desc_str);
+    tt_int_op(retval, OP_EQ, 0);
+    memcpy(wanted_subcredential, published_desc->subcredential, DIGEST256_LEN);
+    tt_assert(!tor_mem_is_zero((char*)wanted_subcredential, DIGEST256_LEN));
+  }
+
+  /* Test handle_response_fetch_hsdesc_v3() */
+  {
+    args = tor_malloc_zero(sizeof(response_handler_args_t));
+    args->status_code = 200;
+    args->reason = NULL;
+    args->body = published_desc_str;
+    args->body_len = strlen(published_desc_str);
+
+    conn = tor_malloc_zero(sizeof(dir_connection_t));
+    conn->hs_ident = tor_malloc_zero(sizeof(hs_ident_dir_conn_t));
+    ed25519_pubkey_copy(&conn->hs_ident->identity_pk, &signing_kp.pubkey);
+  }
+
+  /* store the descriptor! */
+  retval = handle_response_fetch_hsdesc_v3(conn, args);
+  tt_int_op(retval, == , 0);
+
+  /* Progress time a bit and attempt to clean cache: our desc should not be
+   * cleaned since we still in the same TP. */
+  {
+    parse_rfc1123_time("Sat, 27 Oct 1985 02:00:00 UTC",
+                       &mock_ns.valid_after);
+    parse_rfc1123_time("Sat, 27 Oct 1985 03:00:00 UTC",
+                       &mock_ns.fresh_until);
+    parse_rfc1123_time("Sat, 27 Oct 1985 05:00:00 UTC",
+                       &mock_ns.valid_until);
+
+    /* fetch the descriptor and make sure it's there */
+    const hs_descriptor_t *cached_desc = NULL;
+    cached_desc = hs_cache_lookup_as_client(&signing_kp.pubkey);
+    tt_assert(cached_desc);
+    tt_mem_op(cached_desc->subcredential, OP_EQ, wanted_subcredential,
+              DIGEST256_LEN);
+  }
+
+  /* Progress time to next TP and check that desc was cleaned */
+  {
+    parse_rfc1123_time("Sat, 27 Oct 1985 12:00:00 UTC",
+                       &mock_ns.valid_after);
+    parse_rfc1123_time("Sat, 27 Oct 1985 13:00:00 UTC",
+                       &mock_ns.fresh_until);
+    parse_rfc1123_time("Sat, 27 Oct 1985 15:00:00 UTC",
+                       &mock_ns.valid_until);
+
+    const hs_descriptor_t *cached_desc = NULL;
+    cached_desc = hs_cache_lookup_as_client(&signing_kp.pubkey);
+    tt_assert(!cached_desc);
+  }
+
+ done:
+  tor_free(args);
+  hs_descriptor_free(published_desc);
+  tor_free(published_desc_str);
+  if (conn) {
+    tor_free(conn->hs_ident);
+    tor_free(conn);
+  }
 }
 
 struct testcase_t hs_cache[] = {
@@ -436,6 +552,8 @@ struct testcase_t hs_cache[] = {
   { "hsdir_revision_counter_check", test_hsdir_revision_counter_check, TT_FORK,
     NULL, NULL },
   { "upload_and_download_hs_desc", test_upload_and_download_hs_desc, TT_FORK,
+    NULL, NULL },
+  { "client_cache", test_client_cache, TT_FORK,
     NULL, NULL },
 
   END_OF_TESTCASES

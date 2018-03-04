@@ -1239,9 +1239,9 @@ rep_hist_load_mtbf_data(time_t now)
  * totals? */
 #define NUM_SECS_ROLLING_MEASURE 10
 /** How large are the intervals for which we track and report bandwidth use? */
-#define NUM_SECS_BW_SUM_INTERVAL (4*60*60)
+#define NUM_SECS_BW_SUM_INTERVAL (24*60*60)
 /** How far in the past do we remember and publish bandwidth use? */
-#define NUM_SECS_BW_SUM_IS_VALID (24*60*60)
+#define NUM_SECS_BW_SUM_IS_VALID (5*24*60*60)
 /** How many bandwidth usage intervals do we remember? (derived) */
 #define NUM_TOTALS (NUM_SECS_BW_SUM_IS_VALID/NUM_SECS_BW_SUM_INTERVAL)
 
@@ -1811,7 +1811,7 @@ static time_t last_prediction_add_time=0;
 int
 predicted_ports_prediction_time_remaining(time_t now)
 {
-  time_t idle_delta = now - last_prediction_add_time;
+  time_t idle_delta;
 
   /* Protect against overflow of return value. This can happen if the clock
    * jumps backwards in time. Update the last prediction time (aka last
@@ -1821,6 +1821,8 @@ predicted_ports_prediction_time_remaining(time_t now)
   if (last_prediction_add_time > now) {
     last_prediction_add_time = now;
     idle_delta = 0;
+  } else {
+    idle_delta = now - last_prediction_add_time;
   }
 
   /* Protect against underflow of the return value. This can happen for very
@@ -2062,105 +2064,6 @@ rep_hist_circbuilding_dormant(time_t now)
     return 0;
 
   return 1;
-}
-
-/** Structure to track how many times we've done each public key operation. */
-static struct {
-  /** How many directory objects have we signed? */
-  unsigned long n_signed_dir_objs;
-  /** How many routerdescs have we signed? */
-  unsigned long n_signed_routerdescs;
-  /** How many directory objects have we verified? */
-  unsigned long n_verified_dir_objs;
-  /** How many routerdescs have we verified */
-  unsigned long n_verified_routerdescs;
-  /** How many onionskins have we encrypted to build circuits? */
-  unsigned long n_onionskins_encrypted;
-  /** How many onionskins have we decrypted to do circuit build requests? */
-  unsigned long n_onionskins_decrypted;
-  /** How many times have we done the TLS handshake as a client? */
-  unsigned long n_tls_client_handshakes;
-  /** How many times have we done the TLS handshake as a server? */
-  unsigned long n_tls_server_handshakes;
-  /** How many PK operations have we done as a hidden service client? */
-  unsigned long n_rend_client_ops;
-  /** How many PK operations have we done as a hidden service midpoint? */
-  unsigned long n_rend_mid_ops;
-  /** How many PK operations have we done as a hidden service provider? */
-  unsigned long n_rend_server_ops;
-} pk_op_counts = {0,0,0,0,0,0,0,0,0,0,0};
-
-/** Increment the count of the number of times we've done <b>operation</b>. */
-void
-note_crypto_pk_op(pk_op_t operation)
-{
-  switch (operation)
-    {
-    case SIGN_DIR:
-      pk_op_counts.n_signed_dir_objs++;
-      break;
-    case SIGN_RTR:
-      pk_op_counts.n_signed_routerdescs++;
-      break;
-    case VERIFY_DIR:
-      pk_op_counts.n_verified_dir_objs++;
-      break;
-    case VERIFY_RTR:
-      pk_op_counts.n_verified_routerdescs++;
-      break;
-    case ENC_ONIONSKIN:
-      pk_op_counts.n_onionskins_encrypted++;
-      break;
-    case DEC_ONIONSKIN:
-      pk_op_counts.n_onionskins_decrypted++;
-      break;
-    case TLS_HANDSHAKE_C:
-      pk_op_counts.n_tls_client_handshakes++;
-      break;
-    case TLS_HANDSHAKE_S:
-      pk_op_counts.n_tls_server_handshakes++;
-      break;
-    case REND_CLIENT:
-      pk_op_counts.n_rend_client_ops++;
-      break;
-    case REND_MID:
-      pk_op_counts.n_rend_mid_ops++;
-      break;
-    case REND_SERVER:
-      pk_op_counts.n_rend_server_ops++;
-      break;
-    default:
-      log_warn(LD_BUG, "Unknown pk operation %d", operation);
-  }
-}
-
-/** Log the number of times we've done each public/private-key operation. */
-void
-dump_pk_ops(int severity)
-{
-  tor_log(severity, LD_HIST,
-      "PK operations: %lu directory objects signed, "
-      "%lu directory objects verified, "
-      "%lu routerdescs signed, "
-      "%lu routerdescs verified, "
-      "%lu onionskins encrypted, "
-      "%lu onionskins decrypted, "
-      "%lu client-side TLS handshakes, "
-      "%lu server-side TLS handshakes, "
-      "%lu rendezvous client operations, "
-      "%lu rendezvous middle operations, "
-      "%lu rendezvous server operations.",
-      pk_op_counts.n_signed_dir_objs,
-      pk_op_counts.n_verified_dir_objs,
-      pk_op_counts.n_signed_routerdescs,
-      pk_op_counts.n_verified_routerdescs,
-      pk_op_counts.n_onionskins_encrypted,
-      pk_op_counts.n_onionskins_decrypted,
-      pk_op_counts.n_tls_client_handshakes,
-      pk_op_counts.n_tls_server_handshakes,
-      pk_op_counts.n_rend_client_ops,
-      pk_op_counts.n_rend_mid_ops,
-      pk_op_counts.n_rend_server_ops);
 }
 
 /*** Exit port statistics ***/
@@ -2651,7 +2554,7 @@ rep_hist_format_buffer_stats(time_t now)
                processed_cells_string,
                queued_cells_string,
                time_in_queue_string,
-               (number_of_circuits + SHARES - 1) / SHARES);
+               CEIL_DIV(number_of_circuits, SHARES));
   tor_free(processed_cells_string);
   tor_free(queued_cells_string);
   tor_free(time_in_queue_string);

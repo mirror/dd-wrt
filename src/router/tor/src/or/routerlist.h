@@ -80,7 +80,6 @@ const node_t *router_choose_random_node(smartlist_t *excludedsmartlist,
                                         struct routerset_t *excludedset,
                                         router_crn_flags_t flags);
 
-int router_is_named(const routerinfo_t *router);
 int router_digest_is_trusted_dir_type(const char *digest,
                                       dirinfo_type_t type);
 #define router_digest_is_trusted_dir(d) \
@@ -228,7 +227,7 @@ int hex_digest_nickname_decode(const char *hexdigest,
                                char *nickname_out);
 int hex_digest_nickname_matches(const char *hexdigest,
                                 const char *identity_digest,
-                                const char *nickname, int is_named);
+                                const char *nickname);
 
 #ifdef ROUTERLIST_PRIVATE
 STATIC int choose_array_element_by_weight(const uint64_t *entries,
@@ -252,7 +251,7 @@ MOCK_DECL(STATIC void, initiate_descriptor_downloads,
 STATIC int router_is_already_dir_fetching(const tor_addr_port_t *ap,
                                           int serverdesc, int microdesc);
 
-#endif
+#endif /* defined(ROUTERLIST_PRIVATE) */
 
-#endif
+#endif /* !defined(TOR_ROUTERLIST_H) */
 

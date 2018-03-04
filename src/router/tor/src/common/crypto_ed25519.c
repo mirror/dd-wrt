@@ -28,6 +28,7 @@
 #include "crypto_format.h"
 #include "torlog.h"
 #include "util.h"
+#include "util_format.h"
 
 #include "ed25519/ref10/ed25519_ref10.h"
 #include "ed25519/donna/ed25519_donna_tor.h"
@@ -57,6 +58,9 @@ typedef struct {
 
   int (*pubkey_from_curve25519_pubkey)(unsigned char *, const unsigned char *,
                                        int);
+
+  int (*ed25519_scalarmult_with_group_order)(unsigned char *,
+                                             const unsigned char *);
 } ed25519_impl_t;
 
 /** The Ref10 Ed25519 implementation. This one is pure C and lightly
@@ -77,6 +81,7 @@ static const ed25519_impl_t impl_ref10 = {
   ed25519_ref10_blind_public_key,
 
   ed25519_ref10_pubkey_from_curve25519_pubkey,
+  ed25519_ref10_scalarmult_with_group_order,
 };
 
 /** The Ref10 Ed25519 implementation. This one is heavily optimized, but still
@@ -97,6 +102,7 @@ static const ed25519_impl_t impl_donna = {
   ed25519_donna_blind_public_key,
 
   ed25519_donna_pubkey_from_curve25519_pubkey,
+  ed25519_donna_scalarmult_with_group_order,
 };
 
 /** Which Ed25519 implementation are we using?  NULL if we haven't decided
@@ -145,7 +151,7 @@ crypto_ed25519_testing_restore_impl(void)
   ed25519_impl = saved_ed25519_impl;
   saved_ed25519_impl = NULL;
 }
-#endif
+#endif /* defined(TOR_UNIT_TESTS) */
 
 /**
  * Initialize a new ed25519 secret key in <b>seckey_out</b>.  If
@@ -287,9 +293,12 @@ ed25519_sign_prefixed,(ed25519_signature_t *signature_out,
 
   prefixed_msg = get_prefixed_msg(msg, msg_len, prefix_str,
                                   &prefixed_msg_len);
-  if (!prefixed_msg) {
+  if (BUG(!prefixed_msg)) {
+    /* LCOV_EXCL_START -- only possible when the message and prefix are
+     * ridiculously huge */
     log_warn(LD_GENERAL, "Failed to get prefixed msg.");
     return -1;
+    /* LCOV_EXCL_STOP */
   }
 
   retval = ed25519_sign(signature_out,
@@ -332,9 +341,12 @@ ed25519_checksig_prefixed(const ed25519_signature_t *signature,
 
   prefixed_msg = get_prefixed_msg(msg, msg_len, prefix_str,
                                   &prefixed_msg_len);
-  if (!prefixed_msg) {
+  if (BUG(!prefixed_msg)) {
+    /* LCOV_EXCL_START -- only possible when the message and prefix are
+     * ridiculously huge */
     log_warn(LD_GENERAL, "Failed to get prefixed msg.");
     return -1;
+    /* LCOV_EXCL_STOP */
   }
 
   retval = ed25519_checksig(signature,
@@ -462,7 +474,6 @@ ed25519_keypair_from_curve25519_keypair(ed25519_keypair_t *out,
   tor_assert(fast_memeq(pubkey_check.pubkey, out->pubkey.pubkey, 32));
 
   memwipe(&pubkey_check, 0, sizeof(pubkey_check));
-  memwipe(&ctx, 0, sizeof(ctx));
   memwipe(sha512_output, 0, sizeof(sha512_output));
 
   return 0;
@@ -491,7 +502,8 @@ ed25519_public_key_from_curve25519_public_key(ed25519_public_key_t *pubkey,
  * service descriptors are encrypted with a key derived from the service's
  * long-term public key, and then signed with (and stored at a position
  * indexed by) a short-term key derived by blinding the long-term keys.
- */
+ *
+ * Return 0 if blinding was successful, else return -1. */
 int
 ed25519_keypair_blind(ed25519_keypair_t *out,
                       const ed25519_keypair_t *inp,
@@ -502,7 +514,9 @@ ed25519_keypair_blind(ed25519_keypair_t *out,
   get_ed_impl()->blind_secret_key(out->seckey.seckey,
                                   inp->seckey.seckey, param);
 
-  ed25519_public_blind(&pubkey_check, &inp->pubkey, param);
+  if (ed25519_public_blind(&pubkey_check, &inp->pubkey, param) < 0) {
+    return -1;
+  }
   ed25519_public_key_generate(&out->pubkey, &out->seckey);
 
   tor_assert(fast_memeq(pubkey_check.pubkey, out->pubkey.pubkey, 32));
@@ -522,8 +536,7 @@ ed25519_public_blind(ed25519_public_key_t *out,
                      const ed25519_public_key_t *inp,
                      const uint8_t *param)
 {
-  get_ed_impl()->blind_public_key(out->pubkey, inp->pubkey, param);
-  return 0;
+  return get_ed_impl()->blind_public_key(out->pubkey, inp->pubkey, param);
 }
 
 /**
@@ -711,8 +724,11 @@ ed25519_impl_spot_check,(void))
    */
   goto end;
 
+ // LCOV_EXCL_START -- We can only reach this if our ed25519 implementation is
+ // broken.
  fail:
   r = -1;
+ // LCOV_EXCL_STOP
  end:
   return r;
 }
@@ -752,5 +768,49 @@ void
 ed25519_init(void)
 {
   pick_ed25519_impl();
+}
+
+/* Return true if <b>point</b> is the identity element of the ed25519 group. */
+static int
+ed25519_point_is_identity_element(const uint8_t *point)
+{
+  /* The identity element in ed25159 is the point with coordinates (0,1). */
+  static const uint8_t ed25519_identity[32] = {
+    0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+  tor_assert(sizeof(ed25519_identity) == ED25519_PUBKEY_LEN);
+  return tor_memeq(point, ed25519_identity, sizeof(ed25519_identity));
+}
+
+/** Validate <b>pubkey</b> to ensure that it has no torsion component.
+ *  Return 0 if <b>pubkey</b> is valid, else return -1. */
+int
+ed25519_validate_pubkey(const ed25519_public_key_t *pubkey)
+{
+  uint8_t result[32] = {9};
+
+  /* First check that we were not given the identity element */
+  if (ed25519_point_is_identity_element(pubkey->pubkey)) {
+    log_warn(LD_CRYPTO, "ed25519 pubkey is the identity");
+    return -1;
+  }
+
+  /* For any point on the curve, doing l*point should give the identity element
+   * (where l is the group order). Do the computation and check that the
+   * identity element is returned. */
+  if (get_ed_impl()->ed25519_scalarmult_with_group_order(result,
+                                                         pubkey->pubkey) < 0) {
+    log_warn(LD_CRYPTO, "ed25519 group order scalarmult failed");
+    return -1;
+  }
+
+  if (!ed25519_point_is_identity_element(result)) {
+    log_warn(LD_CRYPTO, "ed25519 validation failed");
+    return -1;
+  }
+
+  return 0;
 }
 

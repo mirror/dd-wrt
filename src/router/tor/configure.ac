@@ -4,7 +4,7 @@ dnl Copyright (c) 2007-2017, The Tor Project, Inc.
 dnl See LICENSE for licensing information
 
 AC_PREREQ([2.63])
-AC_INIT([tor],[0.3.1.9])
+AC_INIT([tor],[0.3.2.10])
 AC_CONFIG_SRCDIR([src/or/main.c])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -258,64 +258,6 @@ dnl List all external rust crates we depend on here. Include the version
 rust_crates="libc-0.2.22"
 AC_SUBST(rust_crates)
 
-if test "x$enable_rust" = "xyes"; then
-  AC_ARG_VAR([RUSTC], [path to the rustc binary])
-  AC_CHECK_PROG([RUSTC], [rustc], [rustc],[no])
-  if test "x$RUSTC" = "xno"; then
-    AC_MSG_ERROR([rustc unavailable but rust integration requested.])
-  fi
-
-  AC_ARG_VAR([CARGO], [path to the cargo binary])
-  AC_CHECK_PROG([CARGO], [cargo], [cargo],[no])
-  if test "x$CARGO" = "xno"; then
-    AC_MSG_ERROR([cargo unavailable but rust integration requested.])
-  fi
-
-  AC_DEFINE([HAVE_RUST], 1, [have Rust])
-  if test "x$enable_cargo_online_mode" = "xyes"; then
-    CARGO_ONLINE=
-    RUST_DL=#
-  else
-    CARGO_ONLINE=--frozen
-    RUST_DL=
-
-    dnl When we're not allowed to touch the network, we need crate dependencies
-    dnl locally available.
-    AC_MSG_CHECKING([rust crate dependencies])
-    AC_ARG_VAR([RUST_DEPENDENCIES], [path to directory with local crate mirror])
-    if test "x$RUST_DEPENDENCIES" = "x"; then
-      RUST_DEPENDENCIES="$srcdir/src/ext/rust/"
-      NEED_MOD=1
-    fi
-    if test ! -d "$RUST_DEPENDENCIES"; then
-      AC_MSG_ERROR([Rust dependency directory $RUST_DEPENDENCIES does not exist. Specify a dependency directory using the RUST_DEPENDENCIES variable or allow cargo to fetch crates using --enable-cargo-online-mode.])
-    fi
-    for dep in $rust_crates; do
-      if test ! -d "$RUST_DEPENDENCIES"/"$dep"; then
-        AC_MSG_ERROR([Failure to find rust dependency $RUST_DEPENDENCIES/$dep. Specify a dependency directory using the RUST_DEPENDENCIES variable or allow cargo to fetch crates using --enable-cargo-online-mode.])
-      fi
-    done
-    if test "x$NEED_MOD" = "x1"; then
-      dnl When looking for dependencies from cargo, pick right directory
-      RUST_DEPENDENCIES="../../src/ext/rust"
-    fi
-  fi
-
-  AC_SUBST(CARGO_ONLINE)
-  AC_SUBST(RUST_DL)
-
-dnl Let's check the rustc version, too
-  AC_MSG_CHECKING([rust version])
-  RUSTC_VERSION_MAJOR=`$RUSTC --version | cut -d ' ' -f 2 | cut -d '.' -f 1`
-  RUSTC_VERSION_MINOR=`$RUSTC --version | cut -d ' ' -f 2 | cut -d '.' -f 2`
-  if test "x$RUSTC_VERSION_MAJOR" = "x" -o "x$RUSTC_VERSION_MINOR" = "x"; then
-    AC_MSG_ERROR([rustc version couldn't be identified])
-  fi
-  if test "$RUSTC_VERSION_MAJOR" -lt 2 -a "$RUSTC_VERSION_MINOR" -lt 14; then
-    AC_MSG_ERROR([rustc must be at least version 1.14])
-  fi
-fi
-
 ifdef([AC_C_FLEXIBLE_ARRAY_MEMBER], [
 AC_C_FLEXIBLE_ARRAY_MEMBER
 ], [
@@ -451,6 +393,84 @@ fi
 
 AC_C_BIGENDIAN
 
+if test "x$enable_rust" = "xyes"; then
+  AC_ARG_VAR([RUSTC], [path to the rustc binary])
+  AC_CHECK_PROG([RUSTC], [rustc], [rustc],[no])
+  if test "x$RUSTC" = "xno"; then
+    AC_MSG_ERROR([rustc unavailable but rust integration requested.])
+  fi
+
+  AC_ARG_VAR([CARGO], [path to the cargo binary])
+  AC_CHECK_PROG([CARGO], [cargo], [cargo],[no])
+  if test "x$CARGO" = "xno"; then
+    AC_MSG_ERROR([cargo unavailable but rust integration requested.])
+  fi
+
+  AC_DEFINE([HAVE_RUST], 1, [have Rust])
+  if test "x$enable_cargo_online_mode" = "xyes"; then
+    CARGO_ONLINE=
+    RUST_DL=#
+  else
+    CARGO_ONLINE=--frozen
+    RUST_DL=
+
+    dnl When we're not allowed to touch the network, we need crate dependencies
+    dnl locally available.
+    AC_MSG_CHECKING([rust crate dependencies])
+    AC_ARG_VAR([RUST_DEPENDENCIES], [path to directory with local crate mirror])
+    if test "x$RUST_DEPENDENCIES" = "x"; then
+      RUST_DEPENDENCIES="$srcdir/src/ext/rust/"
+      NEED_MOD=1
+    fi
+    if test ! -d "$RUST_DEPENDENCIES"; then
+      AC_MSG_ERROR([Rust dependency directory $RUST_DEPENDENCIES does not exist. Specify a dependency directory using the RUST_DEPENDENCIES variable or allow cargo to fetch crates using --enable-cargo-online-mode.])
+    fi
+    for dep in $rust_crates; do
+      if test ! -d "$RUST_DEPENDENCIES"/"$dep"; then
+        AC_MSG_ERROR([Failure to find rust dependency $RUST_DEPENDENCIES/$dep. Specify a dependency directory using the RUST_DEPENDENCIES variable or allow cargo to fetch crates using --enable-cargo-online-mode.])
+      fi
+    done
+    if test "x$NEED_MOD" = "x1"; then
+      dnl When looking for dependencies from cargo, pick right directory
+      RUST_DEPENDENCIES="../../src/ext/rust"
+    fi
+  fi
+
+  dnl This is a workaround for #46797
+  dnl (a.k.a https://github.com/rust-lang/rust/issues/46797 ).  Once the
+  dnl upstream bug is fixed, we can remove this workaround.
+  case "$host_os" in
+      darwin*)
+        TOR_RUST_EXTRA_LIBS="-lresolv"
+	;;
+  esac
+
+  dnl For now both MSVC and MinGW rust libraries will output static libs with
+  dnl the MSVC naming convention.
+  if test "$bwin32" = "true"; then
+    TOR_RUST_UTIL_STATIC_NAME=tor_util.lib
+  else
+    TOR_RUST_UTIL_STATIC_NAME=libtor_util.a
+  fi
+
+  AC_SUBST(TOR_RUST_UTIL_STATIC_NAME)
+  AC_SUBST(CARGO_ONLINE)
+  AC_SUBST(RUST_DL)
+
+  dnl Let's check the rustc version, too
+  AC_MSG_CHECKING([rust version])
+  RUSTC_VERSION_MAJOR=`$RUSTC --version | cut -d ' ' -f 2 | cut -d '.' -f 1`
+  RUSTC_VERSION_MINOR=`$RUSTC --version | cut -d ' ' -f 2 | cut -d '.' -f 2`
+  if test "x$RUSTC_VERSION_MAJOR" = "x" -o "x$RUSTC_VERSION_MINOR" = "x"; then
+    AC_MSG_ERROR([rustc version couldn't be identified])
+  fi
+  if test "$RUSTC_VERSION_MAJOR" -lt 2 -a "$RUSTC_VERSION_MINOR" -lt 14; then
+    AC_MSG_ERROR([rustc must be at least version 1.14])
+  fi
+fi
+
+AC_SUBST(TOR_RUST_EXTRA_LIBS)
+
 AC_SEARCH_LIBS(socket, [socket network])
 AC_SEARCH_LIBS(gethostbyname, [nsl])
 AC_SEARCH_LIBS(dlopen, [dl])
@@ -481,12 +501,14 @@ AC_CHECK_FUNCS(
 	timingsafe_memcmp \
         flock \
         ftime \
+        get_current_dir_name \
         getaddrinfo \
         getifaddrs \
         getpass \
         getrlimit \
         gettimeofday \
         gmtime_r \
+	gnu_get_libc_version \
 	htonll \
         inet_aton \
         ioctl \
@@ -573,13 +595,16 @@ if test "$bwin32" = "true"; then
   # Some of the cargo-cults recommend -lwsock32 as well, but I don't
   # think it's actually necessary.
   TOR_LIB_GDI=-lgdi32
+  TOR_LIB_USERENV=-luserenv
 else
   TOR_LIB_WS32=
   TOR_LIB_GDI=
+  TOR_LIB_USERENV=
 fi
 AC_SUBST(TOR_LIB_WS32)
 AC_SUBST(TOR_LIB_GDI)
 AC_SUBST(TOR_LIB_IPHLPAPI)
+AC_SUBST(TOR_LIB_USERENV)
 
 tor_libevent_pkg_redhat="libevent"
 tor_libevent_pkg_debian="libevent-dev"
@@ -611,7 +636,7 @@ struct event_base *event_base_new(void);],
 #ifdef _WIN32
 {WSADATA d; WSAStartup(0x101,&d); }
 #endif
-event_base_new();
+event_base_free(event_base_new());
 ], [--with-libevent-dir], [/opt/libevent])
 
 dnl Determine the incantation needed to link libevent.
@@ -709,11 +734,12 @@ AC_ARG_WITH(ssl-dir,
       fi
   ])
 
-TOR_SEARCH_LIBRARY(openssl, $tryssldir, [-lssl -lcrypto $TOR_LIB_GDI],
-    [#include <openssl/rand.h>],
-    [void RAND_add(const void *buf, int num, double entropy);],
-    [RAND_add((void*)0,0,0);], [],
-    [/usr/local/openssl /usr/lib/openssl /usr/local/ssl /usr/lib/ssl /usr/local /usr/athena /opt/openssl])
+AC_MSG_NOTICE([Now, we'll look for OpenSSL >= 1.0.1])
+TOR_SEARCH_LIBRARY(openssl, $tryssldir, [-lssl -lcrypto $TOR_LIB_GDI $TOR_LIB_WS32],
+    [#include <openssl/ssl.h>],
+    [struct ssl_method_st; const struct ssl_method_st *TLSv1_1_method(void);],
+    [TLSv1_1_method();], [],
+    [/usr/local/opt/openssl /usr/local/openssl /usr/lib/openssl /usr/local/ssl /usr/lib/ssl /usr/local /usr/athena /opt/openssl])
 
 dnl XXXX check for OPENSSL_VERSION_NUMBER == SSLeay()
 
@@ -778,6 +804,34 @@ dnl Check if OpenSSL structures are opaque
 AC_CHECK_MEMBERS([SSL.state], , ,
 [#include <openssl/ssl.h>
 ])
+
+dnl Define the set of checks for KIST scheduler support.
+AC_DEFUN([CHECK_KIST_SUPPORT],[
+  dnl KIST needs struct tcp_info and for certain members to exist.
+  AC_CHECK_MEMBERS(
+    [struct tcp_info.tcpi_unacked, struct tcp_info.tcpi_snd_mss],
+    , ,[[#include <netinet/tcp.h>]])
+  dnl KIST needs SIOCOUTQNSD to exist for an ioctl call.
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [
+                     #include <linux/sockios.h>
+                     #ifndef SIOCOUTQNSD
+                     #error
+                     #endif
+                     ])], have_siocoutqnsd=yes, have_siocoutqnsd=no)
+  if test "x$have_siocoutqnsd" = "xyes"; then
+    if test "x$ac_cv_member_struct_tcp_info_tcpi_unacked" = "xyes"; then
+      if test "x$ac_cv_member_struct_tcp_info_tcpi_snd_mss" = "xyes"; then
+        have_kist_support=yes
+      fi
+    fi
+  fi
+])
+dnl Now, trigger the check.
+CHECK_KIST_SUPPORT
+AS_IF([test "x$have_kist_support" = "xyes"],
+      [AC_DEFINE(HAVE_KIST_SUPPORT, 1, [Defined if KIST scheduler is supported
+                                        on this system])],
+      [AC_MSG_NOTICE([KIST scheduler can't be used. Missing support.])])
 
 LIBS="$save_LIBS"
 LDFLAGS="$save_LDFLAGS"
@@ -893,7 +947,7 @@ dnl since sometimes the linker will like an option but not be willing to
 dnl use it with a build of a library.
 
 all_ldflags_for_check="$TOR_LDFLAGS_zlib $TOR_LDFLAGS_openssl $TOR_LDFLAGS_libevent"
-all_libs_for_check="$TOR_ZLIB_LIBS $TOR_LIB_MATH $TOR_LIBEVENT_LIBS $TOR_OPENSSL_LIBS $TOR_SYSTEMD_LIBS $TOR_LIB_WS32 $TOR_LIB_GDI $TOR_CAP_LIBS"
+all_libs_for_check="$TOR_ZLIB_LIBS $TOR_LIB_MATH $TOR_LIBEVENT_LIBS $TOR_OPENSSL_LIBS $TOR_SYSTEMD_LIBS $TOR_LIB_WS32 $TOR_LIB_GDI $TOR_LIB_USERENV $TOR_CAP_LIBS"
 
 CFLAGS_FTRAPV=
 CFLAGS_FWRAPV=
@@ -1173,6 +1227,7 @@ AC_CHECK_HEADERS([assert.h \
                   arpa/inet.h \
                   crt_externs.h \
                   execinfo.h \
+                  gnu/libc-version.h \
                   grp.h \
                   ifaddrs.h \
                   inttypes.h \
@@ -1550,6 +1605,24 @@ fi
 if test "$tor_cv_sign_extend" != "no"; then
   AC_DEFINE([RSHIFT_DOES_SIGN_EXTEND], 1,
             [Define to 1 iff right-shifting a negative value performs sign-extension])
+fi
+
+# Is uint8_t the same type as unsigned char?
+AC_CACHE_CHECK([whether uint8_t is the same type as unsigned char], tor_cv_uint8_uchar,
+[AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#include <stdint.h>
+extern uint8_t c;
+unsigned char c;]])],
+       [tor_cv_uint8_uchar=yes],
+       [tor_cv_uint8_uchar=no],
+       [tor_cv_uint8_uchar=cross])])
+
+if test "$tor_cv_uint8_uchar" = "cross"; then
+  AC_MSG_NOTICE([Cross-compiling: we'll assume that uint8_t is the same type as unsigned char])
+fi
+
+if test "$tor_cv_uint8_uchar" = "no"; then
+  AC_MSG_ERROR([We assume that uint8_t is the same type as unsigned char, but your compiler disagrees.])
 fi
 
 # Whether we should use the dmalloc memory allocation debugging library.

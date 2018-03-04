@@ -54,6 +54,8 @@ struct bridge_info_t {
 };
 
 static void bridge_free(bridge_info_t *bridge);
+static void rewrite_node_address_for_bridge(const bridge_info_t *bridge,
+                                            node_t *node);
 
 /** A list of configured bridges. Whenever we actually get a descriptor
  * for one, we add it as an entry guard.  Note that the order of bridges
@@ -310,7 +312,7 @@ learned_router_identity(const tor_addr_t *addr, uint16_t port,
     memcpy(&bridge->ed25519_identity, ed_id, sizeof(*ed_id));
     learned = 1;
   }
-#endif
+#endif /* 0 */
   if (learned) {
     char *transport_info = NULL;
     const char *transport_name =
@@ -454,6 +456,9 @@ bridge_add_from_config(bridge_line_t *bridge_line)
     b->transport_name = bridge_line->transport_name;
   b->fetch_status.schedule = DL_SCHED_BRIDGE;
   b->fetch_status.backoff = DL_SCHED_RANDOM_EXPONENTIAL;
+  b->fetch_status.increment_on = DL_SCHED_INCREMENT_ATTEMPT;
+  /* We can't reset the bridge's download status here, because UseBridges
+   * might be 0 now, and it might be changed to 1 much later. */
   b->socks_args = bridge_line->socks_args;
   if (!bridge_list)
     bridge_list = smartlist_new();
@@ -571,6 +576,12 @@ launch_direct_bridge_descriptor_fetch(bridge_info_t *bridge)
     return;
   }
 
+  /* If we already have a node_t for this bridge, rewrite its address now. */
+  node_t *node = node_get_mutable_by_id(bridge->identity);
+  if (node) {
+    rewrite_node_address_for_bridge(bridge, node);
+  }
+
   tor_addr_port_t bridge_addrport;
   memcpy(&bridge_addrport.addr, &bridge->addr, sizeof(tor_addr_t));
   bridge_addrport.port = bridge->port;
@@ -622,6 +633,7 @@ fetch_bridge_descriptors(const or_options_t *options, time_t now)
 
   SMARTLIST_FOREACH_BEGIN(bridge_list, bridge_info_t *, bridge)
     {
+      /* This resets the download status on first use */
       if (!download_status_is_ready(&bridge->fetch_status, now,
                                     IMPOSSIBLE_TO_DOWNLOAD))
         continue; /* don't bother, no need to retry yet */
@@ -632,8 +644,13 @@ fetch_bridge_descriptors(const or_options_t *options, time_t now)
         continue;
       }
 
-      /* schedule another fetch as if this one will fail, in case it does */
-      download_status_failed(&bridge->fetch_status, 0);
+      /* schedule the next attempt
+       * we can't increment after a failure, because sometimes we use the
+       * bridge authority, and sometimes we use the bridge direct */
+      download_status_increment_attempt(
+                        &bridge->fetch_status,
+                        safe_str_client(fmt_and_decorate_addr(&bridge->addr)),
+                        now);
 
       can_use_bridge_authority = !tor_digest_is_zero(bridge->identity) &&
                                  num_bridge_auths;
@@ -779,7 +796,11 @@ learned_bridge_descriptor(routerinfo_t *ri, int from_cache)
   tor_assert(ri);
   tor_assert(ri->purpose == ROUTER_PURPOSE_BRIDGE);
   if (get_options()->UseBridges) {
-    int first = num_bridges_usable() <= 1;
+    /* Retry directory downloads whenever we get a bridge descriptor:
+     * - when bootstrapping, and
+     * - when we aren't sure if any of our bridges are reachable.
+     * Keep on retrying until we have at least one reachable bridge. */
+    int first = num_bridges_usable(0) < 1;
     bridge_info_t *bridge = get_configured_bridge_by_routerinfo(ri);
     time_t now = time(NULL);
     router_set_status(ri->cache_info.identity_digest, 1);
@@ -787,8 +808,12 @@ learned_bridge_descriptor(routerinfo_t *ri, int from_cache)
     if (bridge) { /* if we actually want to use this one */
       node_t *node;
       /* it's here; schedule its re-fetch for a long time from now. */
-      if (!from_cache)
+      if (!from_cache) {
+        /* This schedules the re-fetch at a constant interval, which produces
+         * a pattern of bridge traffic. But it's better than trying all
+         * configured briges several times in the first few minutes. */
         download_status_reset(&bridge->fetch_status);
+      }
 
       node = node_get_mutable_by_id(ri->cache_info.identity_digest);
       tor_assert(node);
@@ -805,39 +830,13 @@ learned_bridge_descriptor(routerinfo_t *ri, int from_cache)
 
       log_notice(LD_DIR, "new bridge descriptor '%s' (%s): %s", ri->nickname,
                  from_cache ? "cached" : "fresh", router_describe(ri));
-      /* set entry->made_contact so if it goes down we don't drop it from
-       * our entry node list */
+      /* If we didn't have a reachable bridge before this one, try directory
+       * documents again. */
       if (first) {
         routerlist_retry_directory_downloads(now);
       }
     }
   }
-}
-
-/** Return the number of bridges that have descriptors that
- * are marked with purpose 'bridge' and are running.
- *
- * We use this function to decide if we're ready to start building
- * circuits through our bridges, or if we need to wait until the
- * directory "server/authority" requests finish. */
-int
-any_bridge_descriptors_known(void)
-{
-  tor_assert(get_options()->UseBridges);
-
-  if (!bridge_list)
-    return 0;
-
-  SMARTLIST_FOREACH_BEGIN(bridge_list, bridge_info_t *, bridge) {
-    const node_t *node;
-    if (!tor_digest_is_zero(bridge->identity) &&
-        (node = node_get_by_id(bridge->identity)) != NULL &&
-        node->ri) {
-      return 1;
-    }
-  } SMARTLIST_FOREACH_END(bridge);
-
-  return 0;
 }
 
 /** Return a smartlist containing all bridge identity digests */

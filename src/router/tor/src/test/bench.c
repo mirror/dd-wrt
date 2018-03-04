@@ -58,7 +58,7 @@ perftime(void)
   return timespec_to_nsec(&ts) - nanostart;
 }
 
-#else
+#else /* !(defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_PROCESS_CPUTIME_ID)) */
 static struct timeval tv_start = { 0, 0 };
 static void
 reset_perftime(void)
@@ -73,7 +73,7 @@ perftime(void)
   timersub(&now, &tv_start, &out);
   return ((uint64_t)out.tv_sec)*1000000000 + out.tv_usec*1000;
 }
-#endif
+#endif /* defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_PROCESS_CPUTIME_ID) */
 
 #define NANOCOUNT(start,end,iters) \
   ( ((double)((end)-(start))) / (iters) )
@@ -200,6 +200,7 @@ bench_onion_ntor_impl(void)
   curve25519_public_key_generate(&keypair2.pubkey, &keypair2.seckey);
   dimap_add_entry(&keymap, keypair1.pubkey.public_key, &keypair1);
   dimap_add_entry(&keymap, keypair2.pubkey.public_key, &keypair2);
+  crypto_rand((char *)nodeid, sizeof(nodeid));
 
   reset_perftime();
   start = perftime();

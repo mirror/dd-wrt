@@ -527,12 +527,12 @@ launch_managed_proxy(managed_proxy_t *mp)
                                 (const char **)mp->argv,
                                 env,
                                 &mp->process_handle);
-#else
+#else /* !(defined(_WIN32)) */
   retval = tor_spawn_background(mp->argv[0],
                                 (const char **)mp->argv,
                                 env,
                                 &mp->process_handle);
-#endif
+#endif /* defined(_WIN32) */
 
   process_environment_free(env);
 
@@ -1094,8 +1094,6 @@ parse_smethod_line(const char *line, managed_proxy_t *mp)
 
   transport = transport_new(&tor_addr, port, method_name,
                             PROXY_NONE, args_string);
-  if (!transport)
-    goto err;
 
   smartlist_add(mp->transports, transport);
 
@@ -1186,8 +1184,6 @@ parse_cmethod_line(const char *line, managed_proxy_t *mp)
   }
 
   transport = transport_new(&tor_addr, port, method_name, socks_ver, NULL);
-  if (!transport)
-    goto err;
 
   smartlist_add(mp->transports, transport);
 

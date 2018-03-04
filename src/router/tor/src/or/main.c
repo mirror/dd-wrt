@@ -52,6 +52,7 @@
 #include "backtrace.h"
 #include "bridges.h"
 #include "buffers.h"
+#include "buffers_tls.h"
 #include "channel.h"
 #include "channeltls.h"
 #include "channelpadding.h"
@@ -75,11 +76,13 @@
 #include "dirvote.h"
 #include "dns.h"
 #include "dnsserv.h"
+#include "dos.h"
 #include "entrynodes.h"
 #include "geoip.h"
 #include "hibernate.h"
 #include "hs_cache.h"
 #include "hs_circuitmap.h"
+#include "hs_client.h"
 #include "keypin.h"
 #include "main.h"
 #include "microdesc.h"
@@ -120,9 +123,9 @@
  * Coverity. Here's a kludge to unconfuse it.
  */
 #   define __INCLUDE_LEVEL__ 2
-#   endif
+#endif /* defined(__COVERITY__) && !defined(__INCLUDE_LEVEL__) */
 #include <systemd/sd-daemon.h>
-#endif
+#endif /* defined(HAVE_SYSTEMD) */
 
 void evdns_shutdown(int);
 
@@ -740,7 +743,7 @@ conn_read_callback(evutil_socket_t fd, short event, void *_conn)
                "(fd %d); removing",
                conn_type_to_string(conn->type), (int)conn->s);
       tor_fragile_assert();
-#endif
+#endif /* !defined(_WIN32) */
       if (CONN_IS_EDGE(conn))
         connection_edge_end_errno(TO_EDGE_CONN(conn));
       connection_mark_for_close(conn);
@@ -835,7 +838,7 @@ conn_close_if_marked(int i)
                (int)conn->outbuf_flushlen,
                 conn->marked_for_close_file, conn->marked_for_close);
     if (conn->linked_conn) {
-      retval = move_buf_to_buf(conn->linked_conn->inbuf, conn->outbuf,
+      retval = buf_move_to_buf(conn->linked_conn->inbuf, conn->outbuf,
                                &conn->outbuf_flushlen);
       if (retval >= 0) {
         /* The linked conn will notice that it has data when it notices that
@@ -849,12 +852,13 @@ conn_close_if_marked(int i)
                 connection_wants_to_flush(conn));
     } else if (connection_speaks_cells(conn)) {
       if (conn->state == OR_CONN_STATE_OPEN) {
-        retval = flush_buf_tls(TO_OR_CONN(conn)->tls, conn->outbuf, sz,
+        retval = buf_flush_to_tls(conn->outbuf, TO_OR_CONN(conn)->tls, sz,
                                &conn->outbuf_flushlen);
       } else
         retval = -1; /* never flush non-open broken tls connections */
     } else {
-      retval = flush_buf(conn->s, conn->outbuf, sz, &conn->outbuf_flushlen);
+      retval = buf_flush_to_socket(conn->outbuf, conn->s, sz,
+                                   &conn->outbuf_flushlen);
     }
     if (retval >= 0 && /* Technically, we could survive things like
                           TLS_WANT_WRITE here. But don't bother for now. */
@@ -968,6 +972,15 @@ directory_info_has_arrived(time_t now, int from_cache, int suppress_logs)
 {
   const or_options_t *options = get_options();
 
+  /* if we have enough dir info, then update our guard status with
+   * whatever we just learned. */
+  int invalidate_circs = guards_update_all();
+
+  if (invalidate_circs) {
+    circuit_mark_all_unused_circs();
+    circuit_mark_all_dirty_circs_as_unusable();
+  }
+
   if (!router_have_minimum_dir_info()) {
     int quiet = suppress_logs || from_cache ||
                 directory_too_idle_to_fetch_descriptors(options, now);
@@ -979,15 +992,6 @@ directory_info_has_arrived(time_t now, int from_cache, int suppress_logs)
   } else {
     if (directory_fetches_from_authorities(options)) {
       update_all_descriptor_downloads(now);
-    }
-
-    /* if we have enough dir info, then update our guard status with
-     * whatever we just learned. */
-    int invalidate_circs = guards_update_all();
-
-    if (invalidate_circs) {
-      circuit_mark_all_unused_circs();
-      circuit_mark_all_dirty_circs_as_unusable();
     }
 
     /* Don't even bother trying to get extrainfo until the rest of our
@@ -1142,7 +1146,7 @@ signewnym_impl(time_t now)
 
   circuit_mark_all_dirty_circs_as_unusable();
   addressmap_clear_transient();
-  rend_client_purge_state();
+  hs_client_purge_state();
   time_of_last_signewnym = now;
   signewnym_is_pending = 0;
 
@@ -1194,6 +1198,7 @@ CALLBACK(heartbeat);
 CALLBACK(clean_consdiffmgr);
 CALLBACK(reset_padding_counts);
 CALLBACK(check_canonical_channels);
+CALLBACK(hs_service);
 
 #undef CALLBACK
 
@@ -1229,6 +1234,7 @@ static periodic_event_item_t periodic_events[] = {
   CALLBACK(clean_consdiffmgr),
   CALLBACK(reset_padding_counts),
   CALLBACK(check_canonical_channels),
+  CALLBACK(hs_service),
   END_OF_PERIODIC_EVENTS
 };
 #undef CALLBACK
@@ -1460,12 +1466,6 @@ run_scheduled_events(time_t now)
 
   /* 6. And remove any marked circuits... */
   circuit_close_all_marked();
-
-  /* 7. And upload service descriptors if necessary. */
-  if (have_completed_a_circuit() && !net_is_disabled()) {
-    rend_consider_services_upload(now);
-    rend_consider_descriptor_republication();
-  }
 
   /* 8. and blow away any connections that need to die. have to do this now,
    * because if we marked a conn for close and left its socket -1, then
@@ -1713,7 +1713,7 @@ check_expired_networkstatus_callback(time_t now, const or_options_t *options)
    * networkstatus_get_reasonably_live_consensus(), but that value is way
    * way too high.  Arma: is the bridge issue there resolved yet? -NM */
 #define NS_EXPIRY_SLOP (24*60*60)
-  if (ns && ns->valid_until < now+NS_EXPIRY_SLOP &&
+  if (ns && ns->valid_until < (now - NS_EXPIRY_SLOP) &&
       router_have_minimum_dir_info()) {
     router_dir_info_changed();
   }
@@ -1831,8 +1831,8 @@ clean_caches_callback(time_t now, const or_options_t *options)
 {
   /* Remove old information from rephist and the rend cache. */
   rep_history_clean(now - options->RephistTrackTime);
-  rend_cache_clean(now, REND_CACHE_TYPE_CLIENT);
   rend_cache_clean(now, REND_CACHE_TYPE_SERVICE);
+  hs_cache_clean_as_client(now);
   hs_cache_clean_as_dir(now);
   microdesc_cache_rebuild(NULL, 0);
 #define CLEAN_CACHES_INTERVAL (30*60)
@@ -1851,6 +1851,7 @@ rend_cache_failure_clean_callback(time_t now, const or_options_t *options)
    * clean it as soon as we can since we want to make sure the client waits
    * as little as possible for reachability reasons. */
   rend_cache_failure_clean(now);
+  hs_cache_client_intro_state_clean(now);
   return 30;
 }
 
@@ -2040,7 +2041,8 @@ check_fw_helper_app_callback(time_t now, const or_options_t *options)
 {
   if (net_is_disabled() ||
       ! server_mode(options) ||
-      ! options->PortForwarding) {
+      ! options->PortForwarding ||
+      options->NoExec) {
     return PERIODIC_EVENT_NO_UPDATE;
   }
   /* 11. check the port forwarding app */
@@ -2060,6 +2062,9 @@ check_fw_helper_app_callback(time_t now, const or_options_t *options)
 
 /**
  * Periodic callback: write the heartbeat message in the logs.
+ *
+ * If writing the heartbeat message to the logs fails for some reason, retry
+ * again after <b>MIN_HEARTBEAT_PERIOD</b> seconds.
  */
 static int
 heartbeat_callback(time_t now, const or_options_t *options)
@@ -2071,14 +2076,20 @@ heartbeat_callback(time_t now, const or_options_t *options)
     return PERIODIC_EVENT_NO_UPDATE;
   }
 
-  /* Write the heartbeat message */
+  /* Skip the first one. */
   if (first) {
-    first = 0; /* Skip the first one. */
-  } else {
-    log_heartbeat(now);
+    first = 0;
+    return options->HeartbeatPeriod;
   }
 
-  return options->HeartbeatPeriod;
+  /* Write the heartbeat message */
+  if (log_heartbeat(now) == 0) {
+    return options->HeartbeatPeriod;
+  } else {
+    /* If we couldn't write the heartbeat log message, try again in the minimum
+     * interval of time. */
+    return MIN_HEARTBEAT_PERIOD;
+  }
 }
 
 #define CDM_CLEAN_CALLBACK_INTERVAL 600
@@ -2090,6 +2101,29 @@ clean_consdiffmgr_callback(time_t now, const or_options_t *options)
     consdiffmgr_cleanup();
   }
   return CDM_CLEAN_CALLBACK_INTERVAL;
+}
+
+/*
+ * Periodic callback: Run scheduled events for HS service. This is called
+ * every second.
+ */
+static int
+hs_service_callback(time_t now, const or_options_t *options)
+{
+  (void) options;
+
+  /* We need to at least be able to build circuits and that we actually have
+   * a working network. */
+  if (!have_completed_a_circuit() || net_is_disabled() ||
+      networkstatus_get_live_consensus(now) == NULL) {
+    goto end;
+  }
+
+  hs_service_run_scheduled_events(now);
+
+ end:
+  /* Every 1 second. */
+  return 1;
 }
 
 /** Timer: used to invoke second_elapsed_callback() once per second. */
@@ -2194,7 +2228,7 @@ systemd_watchdog_callback(periodic_timer_t *timer, void *arg)
   (void)arg;
   sd_notify(0, "WATCHDOG=1");
 }
-#endif
+#endif /* defined(HAVE_SYSTEMD_209) */
 
 /** Timer: used to invoke refill_callback(). */
 static periodic_timer_t *refill_timer = NULL;
@@ -2258,7 +2292,7 @@ got_libevent_error(void)
   }
   return 0;
 }
-#endif
+#endif /* !defined(_WIN32) */
 
 #define UPTIME_CUTOFF_FOR_NEW_BANDWIDTH_TEST (6*60*60)
 
@@ -2355,7 +2389,7 @@ do_hup(void)
       tor_free(msg);
     }
   }
-  if (authdir_mode_handles_descs(options, -1)) {
+  if (authdir_mode(options)) {
     /* reload the approved-routers file */
     if (dirserv_load_fingerprint_file() < 0) {
       /* warnings are logged from dirserv_load_fingerprint_file() directly */
@@ -2499,9 +2533,6 @@ do_main_loop(void)
     }
   }
 
-  /* Initialize relay-side HS circuitmap */
-  hs_circuitmap_init();
-
   /* set up once-a-second callback. */
   if (! second_timer) {
     struct timeval one_second;
@@ -2535,7 +2566,7 @@ do_main_loop(void)
       tor_assert(systemd_watchdog_timer);
     }
   }
-#endif
+#endif /* defined(HAVE_SYSTEMD_209) */
 
   if (!refill_timer) {
     struct timeval refill_interval;
@@ -2563,7 +2594,7 @@ do_main_loop(void)
       log_info(LD_GENERAL, "Systemd NOTIFY_SOCKET not present.");
     }
   }
-#endif
+#endif /* defined(HAVE_SYSTEMD) */
 
   return run_main_loop_until_done();
 }
@@ -2616,7 +2647,7 @@ run_main_loop_once(void)
       log_warn(LD_NET, "EINVAL from libevent: should you upgrade libevent?");
       if (got_libevent_error())
         return -1;
-#endif
+#endif /* !defined(_WIN32) */
     } else {
       tor_assert_nonfatal_once(! ERRNO_IS_EINPROGRESS(e));
       log_debug(LD_NET,"libevent call interrupted.");
@@ -2877,7 +2908,6 @@ dumpstats(int severity)
 
   rep_hist_dump_stats(now,severity);
   rend_service_dump_stats(severity);
-  dump_pk_ops(severity);
   dump_distinct_digest_count(severity);
 }
 
@@ -2973,7 +3003,7 @@ handle_signals(int is_parent)
 #ifdef SIGXFSZ
     sigaction(SIGXFSZ, &action, NULL);
 #endif
-#endif
+#endif /* !defined(_WIN32) */
   }
 }
 
@@ -3014,9 +3044,10 @@ tor_init(int argc, char *argv[])
   rep_hist_init();
   /* Initialize the service cache. */
   rend_cache_init();
-  hs_cache_init();
   addressmap_init(); /* Init the client dns cache. Do it always, since it's
                       * cheap. */
+  /* Initialize the HS subsystem. */
+  hs_init();
 
   {
   /* We search for the "quiet" option first, since it decides whether we
@@ -3216,10 +3247,8 @@ tor_free_all(int postfork)
   networkstatus_free_all();
   addressmap_free_all();
   dirserv_free_all();
-  rend_service_free_all();
   rend_cache_free_all();
   rend_service_authorization_free_all();
-  hs_cache_free_all();
   rep_hist_free_all();
   dns_free_all();
   clear_pending_onions();
@@ -3232,7 +3261,6 @@ tor_free_all(int postfork)
   connection_edge_free_all();
   scheduler_free_all();
   nodelist_free_all();
-  hs_circuitmap_free_all();
   microdesc_free_all();
   routerparse_free_all();
   ext_orport_free_all();
@@ -3241,6 +3269,8 @@ tor_free_all(int postfork)
   protover_free_all();
   bridges_free_all();
   consdiffmgr_free_all();
+  hs_free_all();
+  dos_free_all();
   if (!postfork) {
     config_free_all();
     or_state_free_all();
@@ -3478,7 +3508,7 @@ sandbox_init_filter(void)
   if (options->BridgeAuthoritativeDir)
     OPEN_DATADIR_SUFFIX("networkstatus-bridges", ".tmp");
 
-  if (authdir_mode_handles_descs(options, -1))
+  if (authdir_mode(options))
     OPEN_DATADIR("approved-routers");
 
   if (options->ServerDNSResolvConfFile)
@@ -3550,7 +3580,7 @@ sandbox_init_filter(void)
   {
     smartlist_t *files = smartlist_new();
     smartlist_t *dirs = smartlist_new();
-    rend_services_add_filenames_to_lists(files, dirs);
+    hs_service_lists_fnames_for_sandbox(files, dirs);
     SMARTLIST_FOREACH(files, char *, file_name, {
       char *tmp_name = NULL;
       tor_asprintf(&tmp_name, "%s.tmp", file_name);
@@ -3702,7 +3732,7 @@ tor_main(int argc, char *argv[])
       setdeppolicy(3);
     }
   }
-#endif
+#endif /* defined(_WIN32) */
 
   configure_backtrace_handler(get_version());
 
@@ -3718,14 +3748,14 @@ tor_main(int argc, char *argv[])
     int r = crypto_use_tor_alloc_functions();
     tor_assert(r == 0);
   }
-#endif
+#endif /* defined(USE_DMALLOC) */
 #ifdef NT_SERVICE
   {
      int done = 0;
      result = nt_service_parse_options(argc, argv, &done);
      if (done) return result;
   }
-#endif
+#endif /* defined(NT_SERVICE) */
   if (tor_init(argc, argv)<0)
     return -1;
 
@@ -3753,6 +3783,10 @@ tor_main(int argc, char *argv[])
     break;
   case CMD_KEYGEN:
     result = load_ed_keys(get_options(), time(NULL)) < 0;
+    break;
+  case CMD_KEY_EXPIRATION:
+    init_keys();
+    result = log_cert_expiration();
     break;
   case CMD_LIST_FINGERPRINT:
     result = do_list_fingerprint();

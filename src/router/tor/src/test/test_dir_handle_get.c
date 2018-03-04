@@ -28,6 +28,7 @@
 #include "entrynodes.h"
 #include "routerparse.h"
 #include "networkstatus.h"
+#include "proto_http.h"
 #include "geoip.h"
 #include "dirserv.h"
 #include "dirvote.h"
@@ -38,7 +39,7 @@
 #include <direct.h>
 #else
 #include <dirent.h>
-#endif
+#endif /* defined(_WIN32) */
 
 #ifdef HAVE_CFLAG_WOVERLENGTH_STRINGS
 DISABLE_GCC_WARNING(overlength-strings)
@@ -869,7 +870,7 @@ test_dir_handle_get_server_descriptors_authority(void* data)
   mock_routerinfo->cache_info.signed_descriptor_body =
     tor_strdup(TEST_DESCRIPTOR);
   mock_routerinfo->cache_info.signed_descriptor_len =
-    strlen(TEST_DESCRIPTOR) - annotation_len;;
+    strlen(TEST_DESCRIPTOR) - annotation_len;
   mock_routerinfo->cache_info.annotations_len = annotation_len;
   mock_routerinfo->cache_info.published_on = time(NULL);
 
@@ -1794,7 +1795,7 @@ status_vote_current_consensus_ns_test(char **header, char **body,
   dirserv_set_cached_consensus_networkstatus(NETWORK_STATUS, "ns", &digests,
                                              sha3,
                                              time(NULL));
-#endif
+#endif /* 0 */
   networkstatus_t *ns = tor_malloc_zero(sizeof(networkstatus_t));
   ns->type = NS_TYPE_CONSENSUS;
   ns->flavor = FLAV_NS;

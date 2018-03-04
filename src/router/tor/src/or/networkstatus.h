@@ -62,11 +62,6 @@ const routerstatus_t *router_get_consensus_status_by_descriptor_digest(
 MOCK_DECL(routerstatus_t *,
           router_get_mutable_consensus_status_by_descriptor_digest,
           (networkstatus_t *consensus, const char *digest));
-const routerstatus_t *router_get_consensus_status_by_nickname(
-                                   const char *nickname,
-                                   int warn_if_unnamed);
-const char *networkstatus_get_router_digest_by_nickname(const char *nickname);
-int networkstatus_nickname_is_unnamed(const char *nickname);
 int we_want_to_fetch_flavor(const or_options_t *options, int flavor);
 int we_want_to_fetch_unknown_auth_certs(const or_options_t *options);
 void networkstatus_consensus_download_failed(int status_code,
@@ -81,6 +76,7 @@ MOCK_DECL(networkstatus_t *,networkstatus_get_latest_consensus,(void));
 MOCK_DECL(networkstatus_t *,networkstatus_get_latest_consensus_by_flavor,
           (consensus_flavor_t f));
 MOCK_DECL(networkstatus_t *, networkstatus_get_live_consensus,(time_t now));
+int networkstatus_is_live(const networkstatus_t *ns, time_t now);
 int networkstatus_consensus_reasonably_live(const networkstatus_t *consensus,
                                             time_t now);
 int networkstatus_valid_until_is_reasonably_live(time_t valid_until,
@@ -113,10 +109,9 @@ void signed_descs_update_status_from_consensus_networkstatus(
 char *networkstatus_getinfo_helper_single(const routerstatus_t *rs);
 char *networkstatus_getinfo_by_purpose(const char *purpose_string, time_t now);
 void networkstatus_dump_bridge_status_to_file(time_t now);
-int32_t networkstatus_get_param(const networkstatus_t *ns,
-                                const char *param_name,
-                                int32_t default_val, int32_t min_val,
-                                int32_t max_val);
+MOCK_DECL(int32_t, networkstatus_get_param,
+          (const networkstatus_t *ns, const char *param_name,
+           int32_t default_val, int32_t min_val, int32_t max_val));
 int32_t networkstatus_get_overridable_param(const networkstatus_t *ns,
                                             int32_t torrc_value,
                                             const char *param_name,
@@ -142,8 +137,8 @@ STATIC int networkstatus_set_current_consensus_from_ns(networkstatus_t *c,
                                                 const char *flavor);
 extern networkstatus_t *current_ns_consensus;
 extern networkstatus_t *current_md_consensus;
-#endif
-#endif
+#endif /* defined(TOR_UNIT_TESTS) */
+#endif /* defined(NETWORKSTATUS_PRIVATE) */
 
-#endif
+#endif /* !defined(TOR_NETWORKSTATUS_H) */
 
