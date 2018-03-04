@@ -961,7 +961,7 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 					channelbw = 160;
 				if (nvram_nmatch("40", "%s_channelbw", prefix))
 					channelbw = 40;
-				chan = mac80211_get_channels(prefix, getIsoName(country), channelbw, 0xff);
+				chan = mac80211_get_channels_simple(prefix, getIsoName(country), channelbw, 0xff);
 				/* if (chan == NULL)
 				   chan =
 				   list_channels_ath9k(dev, "DE", 40,

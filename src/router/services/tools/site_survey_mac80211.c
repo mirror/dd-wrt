@@ -174,9 +174,9 @@ static void lgetnoise(struct unl *unl, int wdev)
 {
 	static struct nl_msg *surveymsg;
 
-	surveymsg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
+	surveymsg = unl_genl_msg(unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(surveymsg, NL80211_ATTR_IFINDEX, wdev);
-	unl_genl_request(&unl, surveymsg, cb_survey, NULL);
+	unl_genl_request(unl, surveymsg, cb_survey, NULL);
 	return;
 
 nla_put_failure:
@@ -1496,9 +1496,9 @@ void mac80211_scan(struct unl *unl,char *interface)
 	lgetnoise(unl, wdev);
 	bzero(&scan_params, sizeof(scan_params));
 	scan_params.type = PRINT_SCAN;
-	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SCAN, true);
+	msg = unl_genl_msg(unl, NL80211_CMD_GET_SCAN, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
-	unl_genl_request(&unl, msg, print_bss_handler, &scan_params);
+	unl_genl_request(unl, msg, print_bss_handler, &scan_params);
 	// nlmsg_free(surveymsg);
 	return;
 nla_put_failure:
