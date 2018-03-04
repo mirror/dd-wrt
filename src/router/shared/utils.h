@@ -1176,7 +1176,7 @@ int writestr(char *path, char *a);
 
 int nvram_backup(char *filename);
 
-int nvram_restore(char *filename);
+int nvram_restore(char *filename, int force);
 
 void nvram_clear(void);
 int nvram_critical(char *name);
