@@ -13,11 +13,9 @@
 #define TOR_RENDSERVICE_H
 
 #include "or.h"
+#include "hs_service.h"
 
 typedef struct rend_intro_cell_s rend_intro_cell_t;
-typedef struct rend_service_port_config_s rend_service_port_config_t;
-
-#ifdef RENDSERVICE_PRIVATE
 
 /* This can be used for both INTRODUCE1 and INTRODUCE2 */
 
@@ -62,6 +60,8 @@ struct rend_intro_cell_s {
   /* Diffie-Hellman data */
   uint8_t dh[DH_KEY_LEN];
 };
+
+#ifdef RENDSERVICE_PRIVATE
 
 /** Represents a single hidden service running at this OP. */
 typedef struct rend_service_t {
@@ -119,37 +119,32 @@ typedef struct rend_service_t {
 
 STATIC void rend_service_free(rend_service_t *service);
 STATIC char *rend_service_sos_poison_path(const rend_service_t *service);
-STATIC int rend_service_check_dir_and_add(smartlist_t *service_list,
-                                          const or_options_t *options,
-                                          rend_service_t *service,
-                                          int validate_only);
 STATIC int rend_service_verify_single_onion_poison(
                                                   const rend_service_t *s,
                                                   const or_options_t *options);
 STATIC int rend_service_poison_new_single_onion_dir(
                                                   const rend_service_t *s,
                                                   const or_options_t* options);
-STATIC ssize_t encode_establish_intro_cell_legacy(char *cell_body_out,
-                                                  size_t cell_body_out_len,
-                                                  crypto_pk_t *intro_key,
-                                                  char *rend_circ_nonce);
 #ifdef TOR_UNIT_TESTS
 
 STATIC void set_rend_service_list(smartlist_t *new_list);
 STATIC void set_rend_rend_service_staging_list(smartlist_t *new_list);
 STATIC void rend_service_prune_list_impl_(void);
 
-#endif /* TOR_UNIT_TESTS */
+#endif /* defined(TOR_UNIT_TESTS) */
 
-#endif /* RENDSERVICE_PRIVATE */
+#endif /* defined(RENDSERVICE_PRIVATE) */
 
-int num_rend_services(void);
-int rend_config_services(const or_options_t *options, int validate_only);
+int rend_num_services(void);
+int rend_config_service(const config_line_t *line_,
+                        const or_options_t *options,
+                        hs_service_config_t *config);
 void rend_service_prune_list(void);
+void rend_service_free_staging_list(void);
 int rend_service_load_all_keys(const smartlist_t *service_list);
 void rend_services_add_filenames_to_lists(smartlist_t *open_lst,
                                           smartlist_t *stat_lst);
-void rend_consider_services_intro_points(void);
+void rend_consider_services_intro_points(time_t now);
 void rend_consider_services_upload(time_t now);
 void rend_hsdir_routers_changed(void);
 void rend_consider_descriptor_republication(void);
@@ -172,6 +167,10 @@ rend_intro_cell_t * rend_service_begin_parse_intro(const uint8_t *request,
                                                    char **err_msg_out);
 int rend_service_parse_intro_plaintext(rend_intro_cell_t *intro,
                                        char **err_msg_out);
+ssize_t rend_service_encode_establish_intro_cell(char *cell_body_out,
+                                                 size_t cell_body_out_len,
+                                                 crypto_pk_t *intro_key,
+                                                 const char *rend_circ_nonce);
 int rend_service_validate_intro_late(const rend_intro_cell_t *intro,
                                      char **err_msg_out);
 void rend_service_relaunch_rendezvous(origin_circuit_t *oldcirc);
@@ -179,6 +178,7 @@ int rend_service_set_connection_addr_port(edge_connection_t *conn,
                                           origin_circuit_t *circ);
 void rend_service_dump_stats(int severity);
 void rend_service_free_all(void);
+void rend_service_init(void);
 
 rend_service_port_config_t *rend_service_parse_port_config(const char *string,
                                                            const char *sep,
@@ -214,5 +214,5 @@ int rend_service_allow_non_anonymous_connection(const or_options_t *options);
 int rend_service_reveal_startup_time(const or_options_t *options);
 int rend_service_non_anonymous_mode_enabled(const or_options_t *options);
 
-#endif
+#endif /* !defined(TOR_RENDSERVICE_H) */
 

@@ -46,6 +46,7 @@
 #include "microdesc.h"
 #include "networkstatus.h"
 #include "nodelist.h"
+#include "proto_cell.h"
 #include "reasons.h"
 #include "relay.h"
 #include "rephist.h"
@@ -472,7 +473,7 @@ var_cell_pack_header(const var_cell_t *cell, char *hdr_out, int wide_circ_ids)
 var_cell_t *
 var_cell_new(uint16_t payload_len)
 {
-  size_t size = STRUCT_OFFSET(var_cell_t, payload) + payload_len;
+  size_t size = offsetof(var_cell_t, payload) + payload_len;
   var_cell_t *cell = tor_malloc_zero(size);
   cell->payload_len = payload_len;
   cell->command = 0;
@@ -491,7 +492,7 @@ var_cell_copy(const var_cell_t *src)
   size_t size = 0;
 
   if (src != NULL) {
-    size = STRUCT_OFFSET(var_cell_t, payload) + src->payload_len;
+    size = offsetof(var_cell_t, payload) + src->payload_len;
     copy = tor_malloc_zero(size);
     copy->payload_len = src->payload_len;
     copy->command = src->command;
@@ -726,7 +727,7 @@ connection_or_about_to_close(or_connection_t *or_conn)
         control_event_or_conn_status(or_conn, OR_CONN_EVENT_FAILED,
                                      reason);
         if (!authdir_mode_tests_reachability(options))
-          control_event_bootstrap_problem(
+          control_event_bootstrap_prob_or(
                 orconn_end_reason_to_control_string(reason),
                 reason, or_conn);
       }
@@ -1112,7 +1113,7 @@ connection_or_connect_failed(or_connection_t *conn,
 {
   control_event_or_conn_status(conn, OR_CONN_EVENT_FAILED, reason);
   if (!authdir_mode_tests_reachability(get_options()))
-    control_event_bootstrap_problem(msg, reason, conn);
+    control_event_bootstrap_prob_or(msg, reason, conn);
 }
 
 /** <b>conn</b> got an error in connection_handle_read_impl() or
@@ -1235,7 +1236,7 @@ connection_or_connect, (const tor_addr_t *_addr, uint16_t port,
                fmt_addrport(&TO_CONN(conn)->addr, TO_CONN(conn)->port),
                transport_name, transport_name);
 
-      control_event_bootstrap_problem(
+      control_event_bootstrap_prob_or(
                                 "Can't connect to bridge",
                                 END_OR_CONN_REASON_PT_MISSING,
                                 conn);
@@ -1369,7 +1370,6 @@ connection_tls_start_handshake,(or_connection_t *conn, int receiving))
   connection_start_reading(TO_CONN(conn));
   log_debug(LD_HANDSHAKE,"starting TLS handshake on fd "TOR_SOCKET_T_FORMAT,
             conn->base_.s);
-  note_crypto_pk_op(receiving ? TLS_HANDSHAKE_S : TLS_HANDSHAKE_C);
 
   if (connection_tls_continue_handshake(conn) < 0)
     return -1;
@@ -1550,6 +1550,7 @@ connection_or_check_valid_tls_handshake(or_connection_t *conn,
 
   if (identity_rcvd) {
     if (crypto_pk_get_digest(identity_rcvd, digest_rcvd_out) < 0) {
+      crypto_pk_free(identity_rcvd);
       return -1;
     }
   } else {
@@ -1713,7 +1714,7 @@ connection_or_client_learned_peer_id(or_connection_t *conn,
     control_event_or_conn_status(conn, OR_CONN_EVENT_FAILED,
                                  END_OR_CONN_REASON_OR_IDENTITY);
     if (!authdir_mode_tests_reachability(options))
-      control_event_bootstrap_problem(
+      control_event_bootstrap_prob_or(
                                 "Unexpected identity in router certificate",
                                 END_OR_CONN_REASON_OR_IDENTITY,
                                 conn);
@@ -1742,8 +1743,9 @@ connection_or_client_learned_peer_id(or_connection_t *conn,
   return 0;
 }
 
-/** Return when a client used this, for connection.c, since client_used
- * is now one of the timestamps of channel_t */
+/** Return when we last used this channel for client activity (origin
+ * circuits). This is called from connection.c, since client_used is now one
+ * of the timestamps in channel_t */
 
 time_t
 connection_or_client_used(or_connection_t *conn)
@@ -1757,7 +1759,7 @@ connection_or_client_used(or_connection_t *conn)
 
 /** The v1/v2 TLS handshake is finished.
  *
- * Make sure we are happy with the person we just handshaked with.
+ * Make sure we are happy with the peer we just handshaked with.
  *
  * If they initiated the connection, make sure they're not already connected,
  * then initialize conn from the information in router.
@@ -1952,6 +1954,12 @@ connection_or_set_state_open(or_connection_t *conn)
   connection_or_change_state(conn, OR_CONN_STATE_OPEN);
   control_event_or_conn_status(conn, OR_CONN_EVENT_CONNECTED, 0);
 
+  /* Link protocol 3 appeared in Tor 0.2.3.6-alpha, so any connection
+   * that uses an earlier link protocol should not be treated as a relay. */
+  if (conn->link_proto < 3) {
+    channel_mark_client(TLS_CHAN_TO_BASE(conn->chan));
+  }
+
   or_handshake_state_free(conn->handshake_state);
   conn->handshake_state = NULL;
   connection_start_reading(TO_CONN(conn));
@@ -1978,7 +1986,7 @@ connection_or_write_cell_to_buf(const cell_t *cell, or_connection_t *conn)
   if (cell->command == CELL_PADDING)
     rep_hist_padding_count_write(PADDING_TYPE_CELL);
 
-  connection_write_to_buf(networkcell.body, cell_network_size, TO_CONN(conn));
+  connection_buf_add(networkcell.body, cell_network_size, TO_CONN(conn));
 
   /* Touch the channel's active timestamp if there is one */
   if (conn->chan) {
@@ -2008,8 +2016,8 @@ connection_or_write_var_cell_to_buf,(const var_cell_t *cell,
   tor_assert(cell);
   tor_assert(conn);
   n = var_cell_pack_header(cell, hdr, conn->wide_circ_ids);
-  connection_write_to_buf(hdr, n, TO_CONN(conn));
-  connection_write_to_buf((char*)cell->payload,
+  connection_buf_add(hdr, n, TO_CONN(conn));
+  connection_buf_add((char*)cell->payload,
                           cell->payload_len, TO_CONN(conn));
   if (conn->base_.state == OR_CONN_STATE_OR_HANDSHAKING_V3)
     or_handshake_state_record_var_cell(conn, conn->handshake_state, cell, 0);
@@ -2084,7 +2092,7 @@ connection_or_process_cells_from_inbuf(or_connection_t *conn)
         channel_timestamp_active(TLS_CHAN_TO_BASE(conn->chan));
 
       circuit_build_times_network_is_live(get_circuit_build_times_mutable());
-      connection_fetch_from_buf(buf, cell_network_size, TO_CONN(conn));
+      connection_buf_get_bytes(buf, cell_network_size, TO_CONN(conn));
 
       /* retrieve cell info from buf (create the host-order struct from the
        * network-order string) */

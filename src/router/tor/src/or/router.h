@@ -54,8 +54,6 @@ int net_is_disabled(void);
 
 int authdir_mode(const or_options_t *options);
 int authdir_mode_v3(const or_options_t *options);
-int authdir_mode_any_main(const or_options_t *options);
-int authdir_mode_any_nonhidserv(const or_options_t *options);
 int authdir_mode_handles_descs(const or_options_t *options, int purpose);
 int authdir_mode_publishes_statuses(const or_options_t *options);
 int authdir_mode_tests_reachability(const or_options_t *options);
@@ -162,5 +160,5 @@ STATIC void get_platform_str(char *platform, size_t len);
 STATIC int router_write_fingerprint(int hashed);
 #endif
 
-#endif
+#endif /* !defined(TOR_ROUTER_H) */
 

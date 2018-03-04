@@ -5,6 +5,32 @@
 
 /**
  * \file util_bug.h
+ *
+ * \brief Macros to manage assertions, fatal and non-fatal.
+ *
+ * Guidelines: All the different kinds of assertion in this file are for
+ * bug-checking only. Don't write code that can assert based on bad inputs.
+ *
+ * We provide two kinds of assertion here: "fatal" and "nonfatal". Use
+ * nonfatal assertions for any bug you can reasonably recover from -- and
+ * please, try to recover!  Many severe bugs in Tor have been caused by using
+ * a regular assertion when a nonfatal assertion would have been better.
+ *
+ * If you need to check a condition with a nonfatal assertion, AND recover
+ * from that same condition, consider using the BUG() macro inside a
+ * conditional.  For example:
+ *
+ * <code>
+ *  // wrong -- use tor_assert_nonfatal() if you just want an assertion.
+ *  BUG(ptr == NULL);
+ *
+ *  // okay, but needlessly verbose
+ *  tor_assert_nonfatal(ptr != NULL);
+ *  if (ptr == NULL) { ... }
+ *
+ *  // this is how we do it:
+ *  if (BUG(ptr == NULL)) { ... }
+ * </code>
  **/
 
 #ifndef TOR_UTIL_BUG_H
@@ -27,7 +53,7 @@
  * security-critical properties.
  */
 #error "Sorry; we don't support building with NDEBUG."
-#endif
+#endif /* defined(NDEBUG) */
 
 /* Sometimes we don't want to use assertions during branch coverage tests; it
  * leads to tons of unreached branches which in reality are only assertions we
@@ -44,7 +70,7 @@
     tor_assertion_failed_(SHORT_FILE__, __LINE__, __func__, #expr);     \
     abort();                                                            \
   } STMT_END
-#endif
+#endif /* defined(TOR_UNIT_TESTS) && defined(DISABLE_ASSERTS_IN_UNIT_TESTS) */
 
 #define tor_assert_unreached() tor_assert(0)
 
@@ -59,11 +85,14 @@
  */
 
 #ifdef __COVERITY__
+extern int bug_macro_deadcode_dummy__;
 #undef BUG
 // Coverity defines this in global headers; let's override it.  This is a
 // magic coverity-only preprocessor thing.
-#nodef BUG(x) ((x)?(__coverity_panic__(),1):0)
-#endif
+// We use this "deadcode_dummy__" trick to prevent coverity from
+// complaining about unreachable bug cases.
+#nodef BUG(x) ((x)?(__coverity_panic__(),1):(0+bug_macro_deadcode_dummy__))
+#endif /* defined(__COVERITY__) */
 
 #if defined(__COVERITY__) || defined(__clang_analyzer__)
 // We're running with a static analysis tool: let's treat even nonfatal
@@ -114,7 +143,7 @@
   (PREDICT_UNLIKELY(cond) ?                                             \
    (tor_bug_occurred_(SHORT_FILE__,__LINE__,__func__,"!("#cond")",0), 1) \
    : 0)
-#endif
+#endif /* defined(ALL_BUGS_ARE_FATAL) || ... */
 
 #ifdef __GNUC__
 #define IF_BUG_ONCE__(cond,var)                                         \
@@ -127,7 +156,7 @@
                           "!("#cond")", 1);                             \
       }                                                                 \
       PREDICT_UNLIKELY(bool_result); } ))
-#else
+#else /* !(defined(__GNUC__)) */
 #define IF_BUG_ONCE__(cond,var)                                         \
   static int var = 0;                                                   \
   if (PREDICT_UNLIKELY(cond) ?                                          \
@@ -137,7 +166,7 @@
                            "!("#cond")", 1),                            \
         1))                                                             \
       : 0)
-#endif
+#endif /* defined(__GNUC__) */
 #define IF_BUG_ONCE_VARNAME_(a)               \
   warning_logged_on_ ## a ## __
 #define IF_BUG_ONCE_VARNAME__(a)              \
@@ -167,7 +196,7 @@ void tor_capture_bugs_(int n);
 void tor_end_capture_bugs_(void);
 const struct smartlist_t *tor_get_captured_bug_log_(void);
 void tor_set_failed_assertion_callback(void (*fn)(void));
-#endif
+#endif /* defined(TOR_UNIT_TESTS) */
 
-#endif
+#endif /* !defined(TOR_UTIL_BUG_H) */
 

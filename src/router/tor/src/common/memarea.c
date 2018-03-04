@@ -7,6 +7,7 @@
  */
 
 #include "orconfig.h"
+#include <stddef.h>
 #include <stdlib.h>
 #include "memarea.h"
 #include "util.h"
@@ -32,7 +33,7 @@
 #define MEMAREA_ALIGN_MASK ((uintptr_t)7)
 #else
 #error "void* is neither 4 nor 8 bytes long. I don't know how to align stuff."
-#endif
+#endif /* MEMAREA_ALIGN == 4 || ... */
 
 #if defined(__GNUC__) && defined(FLEXIBLE_ARRAY_MEMBER)
 #define USE_ALIGNED_ATTRIBUTE
@@ -40,7 +41,7 @@
 #define U_MEM mem
 #else
 #define U_MEM u.mem
-#endif
+#endif /* defined(__GNUC__) && defined(FLEXIBLE_ARRAY_MEMBER) */
 
 #ifdef USE_SENTINELS
 /** Magic value that we stick at the end of a memarea so we can make sure
@@ -60,11 +61,11 @@
   uint32_t sent_val = get_uint32(&(chunk)->U_MEM[chunk->mem_size]);     \
   tor_assert(sent_val == SENTINEL_VAL);                                 \
   STMT_END
-#else
+#else /* !(defined(USE_SENTINELS)) */
 #define SENTINEL_LEN 0
 #define SET_SENTINEL(chunk) STMT_NIL
 #define CHECK_SENTINEL(chunk) STMT_NIL
-#endif
+#endif /* defined(USE_SENTINELS) */
 
 /** Increment <b>ptr</b> until it is aligned to MEMAREA_ALIGN. */
 static inline void *
@@ -96,12 +97,12 @@ typedef struct memarea_chunk_t {
     void *void_for_alignment_; /**< Dummy; used to make sure mem is aligned. */
   } u; /**< Union used to enforce alignment when we don't have support for
         * doing it right. */
-#endif
+#endif /* defined(USE_ALIGNED_ATTRIBUTE) */
 } memarea_chunk_t;
 
 /** How many bytes are needed for overhead before we get to the memory part
  * of a chunk? */
-#define CHUNK_HEADER_SIZE STRUCT_OFFSET(memarea_chunk_t, U_MEM)
+#define CHUNK_HEADER_SIZE offsetof(memarea_chunk_t, U_MEM)
 
 /** What's the smallest that we'll allocate a chunk? */
 #define CHUNK_SIZE 4096
@@ -307,7 +308,7 @@ memarea_assert_ok(memarea_t *area)
   }
 }
 
-#else
+#else /* !(!defined(DISABLE_MEMORY_SENTINELS)) */
 
 struct memarea_t {
   smartlist_t *pieces;
@@ -393,5 +394,5 @@ memarea_assert_ok(memarea_t *area)
   (void)area;
 }
 
-#endif
+#endif /* !defined(DISABLE_MEMORY_SENTINELS) */
 

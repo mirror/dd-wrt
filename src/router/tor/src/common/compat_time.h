@@ -28,13 +28,13 @@
 #include <time.h>
 #endif
 
-#if !defined(HAVE_GETTIMEOFDAY) && !defined(HAVE_STRUCT_TIMEVAL_TV_SEC)
+#if !defined(HAVE_STRUCT_TIMEVAL_TV_SEC)
 /** Implementation of timeval for platforms that don't have it. */
 struct timeval {
   time_t tv_sec;
   unsigned int tv_usec;
 };
-#endif
+#endif /* !defined(HAVE_STRUCT_TIMEVAL_TV_SEC) */
 
 /** Represents a monotonic timer in a platform-dependent way. */
 typedef struct monotime_t {
@@ -51,10 +51,11 @@ typedef struct monotime_t {
 #define MONOTIME_USING_GETTIMEOFDAY
   /* Otherwise, we will be stuck using gettimeofday. */
   struct timeval tv_;
-#endif
+#endif /* defined(__APPLE__) || ... */
 } monotime_t;
 
-#if defined(HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC_COARSE)
+#if defined(CLOCK_MONOTONIC_COARSE) && \
+  defined(HAVE_CLOCK_GETTIME)
 #define MONOTIME_COARSE_FN_IS_DIFFERENT
 #define monotime_coarse_t monotime_t
 #elif defined(_WIN32)
@@ -66,7 +67,7 @@ typedef struct monotime_coarse_t {
 } monotime_coarse_t;
 #else
 #define monotime_coarse_t monotime_t
-#endif
+#endif /* defined(CLOCK_MONOTONIC_COARSE) && ... || ... */
 
 /**
  * Initialize the timing subsystem. This function is idempotent.
@@ -109,12 +110,12 @@ void monotime_coarse_get(monotime_coarse_t *out);
 uint64_t monotime_coarse_absolute_nsec(void);
 uint64_t monotime_coarse_absolute_usec(void);
 uint64_t monotime_coarse_absolute_msec(void);
-#else
+#else /* !(defined(MONOTIME_COARSE_FN_IS_DIFFERENT)) */
 #define monotime_coarse_get monotime_get
 #define monotime_coarse_absolute_nsec monotime_absolute_nsec
 #define monotime_coarse_absolute_usec monotime_absolute_usec
 #define monotime_coarse_absolute_msec monotime_absolute_msec
-#endif
+#endif /* defined(MONOTIME_COARSE_FN_IS_DIFFERENT) */
 
 #if defined(MONOTIME_COARSE_TYPE_IS_DIFFERENT)
 int64_t monotime_coarse_diff_nsec(const monotime_coarse_t *start,
@@ -123,11 +124,11 @@ int64_t monotime_coarse_diff_usec(const monotime_coarse_t *start,
     const monotime_coarse_t *end);
 int64_t monotime_coarse_diff_msec(const monotime_coarse_t *start,
     const monotime_coarse_t *end);
-#else
+#else /* !(defined(MONOTIME_COARSE_TYPE_IS_DIFFERENT)) */
 #define monotime_coarse_diff_nsec monotime_diff_nsec
 #define monotime_coarse_diff_usec monotime_diff_usec
 #define monotime_coarse_diff_msec monotime_diff_msec
-#endif
+#endif /* defined(MONOTIME_COARSE_TYPE_IS_DIFFERENT) */
 
 void tor_gettimeofday(struct timeval *timeval);
 
@@ -142,7 +143,7 @@ void monotime_coarse_set_mock_time_nsec(int64_t);
 #else
 #define monotime_coarse_set_mock_time_nsec monotime_set_mock_time_nsec
 #endif
-#endif
+#endif /* defined(TOR_UNIT_TESTS) */
 
 #ifdef COMPAT_TIME_PRIVATE
 #if defined(_WIN32) || defined(TOR_UNIT_TESTS)
@@ -156,7 +157,7 @@ STATIC void ratchet_timeval(const struct timeval *timeval_raw,
 #ifdef TOR_UNIT_TESTS
 void monotime_reset_ratchets_for_testing(void);
 #endif
-#endif
+#endif /* defined(COMPAT_TIME_PRIVATE) */
 
-#endif
+#endif /* !defined(TOR_COMPAT_TIME_H) */
 

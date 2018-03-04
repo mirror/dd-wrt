@@ -21,22 +21,6 @@ static const int TIME_IN_THE_PAST = -(REND_CACHE_MAX_AGE + \
                                       REND_CACHE_MAX_SKEW + 60);
 static const int TIME_IN_THE_FUTURE = REND_CACHE_MAX_SKEW + 60;
 
-static rend_data_t *
-mock_rend_data(const char *onion_address)
-{
-  rend_data_v2_t *v2_data = tor_malloc_zero(sizeof(*v2_data));
-  rend_data_t *rend_query = &v2_data->base_;
-  rend_query->version = 2;
-
-  strlcpy(v2_data->onion_address, onion_address,
-          sizeof(v2_data->onion_address));
-  v2_data->auth_type = REND_NO_AUTH;
-  rend_query->hsdirs_fp = smartlist_new();
-  smartlist_add(rend_query->hsdirs_fp, tor_memdup("aaaaaaaaaaaaaaaaaaaaaaaa",
-                                                 DIGEST_LEN));
-  return rend_query;
-}
-
 static void
 test_rend_cache_lookup_entry(void *data)
 {
@@ -74,6 +58,7 @@ test_rend_cache_lookup_entry(void *data)
   tt_int_op(ret, OP_EQ, 0);
 
   ret = rend_cache_lookup_entry(service_id, 2, &entry);
+  tt_int_op(ret, OP_EQ, 0);
   tt_assert(entry);
   tt_int_op(entry->len, OP_EQ, strlen(desc_holder->desc_str));
   tt_str_op(entry->desc, OP_EQ, desc_holder->desc_str);
@@ -962,9 +947,9 @@ test_rend_cache_free_all(void *data)
 
   rend_cache_free_all();
 
-  tt_assert(!rend_cache);
-  tt_assert(!rend_cache_v2_dir);
-  tt_assert(!rend_cache_failure);
+  tt_ptr_op(rend_cache, OP_EQ, NULL);
+  tt_ptr_op(rend_cache_v2_dir, OP_EQ, NULL);
+  tt_ptr_op(rend_cache_failure, OP_EQ, NULL);
   tt_assert(!rend_cache_total_allocation);
 
  done:

@@ -18,17 +18,26 @@
 #include "crypto_ed25519.h"
 #include "torcert.h"
 
+/* Trunnel */
+struct link_specifier_t;
+
 /* The earliest descriptor format version we support. */
 #define HS_DESC_SUPPORTED_FORMAT_VERSION_MIN 3
 /* The latest descriptor format version we support. */
 #define HS_DESC_SUPPORTED_FORMAT_VERSION_MAX 3
 
+/* Default lifetime of a descriptor in seconds. The valus is set at 3 hours
+ * which is 180 minutes or 10800 seconds. */
+#define HS_DESC_DEFAULT_LIFETIME (3 * 60 * 60)
 /* Maximum lifetime of a descriptor in seconds. The value is set at 12 hours
  * which is 720 minutes or 43200 seconds. */
 #define HS_DESC_MAX_LIFETIME (12 * 60 * 60)
 /* Lifetime of certificate in the descriptor. This defines the lifetime of the
- * descriptor signing key and the cross certification cert of that key. */
-#define HS_DESC_CERT_LIFETIME (24 * 60 * 60)
+ * descriptor signing key and the cross certification cert of that key. It is
+ * set to 54 hours because a descriptor can be around for 48 hours and because
+ * consensuses are used after the hour, add an extra 6 hours to give some time
+ * for the service to stop using it. */
+#define HS_DESC_CERT_LIFETIME (54 * 60 * 60)
 /* Length of the salt needed for the encrypted section of a descriptor. */
 #define HS_DESC_ENCRYPTED_SALT_LEN 16
 /* Length of the secret input needed for the KDF construction which derives
@@ -65,12 +74,14 @@ typedef struct hs_desc_link_specifier_t {
    * specification. */
   uint8_t type;
 
-  /* It's either an address/port or a legacy identity fingerprint. */
+  /* It must be one of these types, can't be more than one. */
   union {
     /* IP address and port of the relay use to extend. */
     tor_addr_port_t ap;
     /* Legacy identity. A 20-byte SHA1 identity fingerprint. */
     uint8_t legacy_id[DIGEST_LEN];
+    /* ed25519 identity. A 32-byte key. */
+    uint8_t ed25519_id[ED25519_PUBKEY_LEN];
   } u;
 } hs_desc_link_specifier_t;
 
@@ -79,6 +90,10 @@ typedef struct hs_desc_intro_point_t {
   /* Link specifier(s) which details how to extend to the relay. This list
    * contains hs_desc_link_specifier_t object. It MUST have at least one. */
   smartlist_t *link_specifiers;
+
+  /* Onion key of the introduction point used to extend to it for the ntor
+   * handshake. */
+  curve25519_public_key_t onion_key;
 
   /* Authentication key used to establish the introduction point circuit and
    * cross-certifies the blinded public key for the replica thus signed by
@@ -197,9 +212,15 @@ void hs_descriptor_free(hs_descriptor_t *desc);
 void hs_desc_plaintext_data_free(hs_desc_plaintext_data_t *desc);
 void hs_desc_encrypted_data_free(hs_desc_encrypted_data_t *desc);
 
-int hs_desc_encode_descriptor(const hs_descriptor_t *desc,
-                              const ed25519_keypair_t *signing_kp,
-                              char **encoded_out);
+void hs_desc_link_specifier_free(hs_desc_link_specifier_t *ls);
+hs_desc_link_specifier_t *hs_desc_link_specifier_new(
+                                  const extend_info_t *info, uint8_t type);
+void hs_descriptor_clear_intro_points(hs_descriptor_t *desc);
+
+MOCK_DECL(int,
+          hs_desc_encode_descriptor,(const hs_descriptor_t *desc,
+                                     const ed25519_keypair_t *signing_kp,
+                                     char **encoded_out));
 
 int hs_desc_decode_descriptor(const char *encoded,
                               const uint8_t *subcredential,
@@ -209,7 +230,14 @@ int hs_desc_decode_plaintext(const char *encoded,
 int hs_desc_decode_encrypted(const hs_descriptor_t *desc,
                              hs_desc_encrypted_data_t *desc_out);
 
+size_t hs_desc_obj_size(const hs_descriptor_t *data);
 size_t hs_desc_plaintext_obj_size(const hs_desc_plaintext_data_t *data);
+
+hs_desc_intro_point_t *hs_desc_intro_point_new(void);
+void hs_desc_intro_point_free(hs_desc_intro_point_t *ip);
+
+link_specifier_t *hs_desc_lspec_to_trunnel(
+                                   const hs_desc_link_specifier_t *spec);
 
 #ifdef HS_DESCRIPTOR_PRIVATE
 
@@ -223,21 +251,23 @@ STATIC smartlist_t *decode_link_specifiers(const char *encoded);
 STATIC hs_desc_intro_point_t *decode_introduction_point(
                                 const hs_descriptor_t *desc,
                                 const char *text);
-STATIC int decode_intro_points(const hs_descriptor_t *desc,
-                               hs_desc_encrypted_data_t *desc_enc,
-                               const char *data);
 STATIC int encrypted_data_length_is_valid(size_t len);
 STATIC int cert_is_valid(tor_cert_t *cert, uint8_t type,
                          const char *log_obj_type);
 STATIC int desc_sig_is_valid(const char *b64_sig,
                              const ed25519_public_key_t *signing_pubkey,
                              const char *encoded_desc, size_t encoded_len);
-STATIC void desc_intro_point_free(hs_desc_intro_point_t *ip);
 STATIC size_t decode_superencrypted(const char *message, size_t message_len,
                                    uint8_t **encrypted_out);
 STATIC void desc_plaintext_data_free_contents(hs_desc_plaintext_data_t *desc);
 
-#endif /* HS_DESCRIPTOR_PRIVATE */
+MOCK_DECL(STATIC size_t, decrypt_desc_layer,(const hs_descriptor_t *desc,
+                                             const uint8_t *encrypted_blob,
+                                             size_t encrypted_blob_size,
+                                             int is_superencrypted_layer,
+                                             char **decrypted_out));
 
-#endif /* TOR_HS_DESCRIPTOR_H */
+#endif /* defined(HS_DESCRIPTOR_PRIVATE) */
+
+#endif /* !defined(TOR_HS_DESCRIPTOR_H) */
 

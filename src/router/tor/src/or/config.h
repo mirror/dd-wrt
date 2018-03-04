@@ -18,6 +18,10 @@
 #define KERNEL_MAY_SUPPORT_IPFW
 #endif
 
+/** Lowest allowable value for HeartbeatPeriod; if this is too low, we might
+ * expose more information than we're comfortable with. */
+#define MIN_HEARTBEAT_PERIOD (30*60)
+
 MOCK_DECL(const char*, get_dirportfrontpage, (void));
 MOCK_DECL(const or_options_t *, get_options, (void));
 MOCK_DECL(or_options_t *, get_options_mutable, (void));
@@ -27,6 +31,7 @@ const char *safe_str_client(const char *address);
 const char *safe_str(const char *address);
 const char *escaped_safe_str_client(const char *address);
 const char *escaped_safe_str(const char *address);
+int get_protocol_warning_severity_level(void);
 const char *get_version(void);
 const char *get_short_version(void);
 setopt_err_t options_trial_assign(config_line_t *list, unsigned flags,
@@ -198,7 +203,9 @@ STATIC int parse_port_config(smartlist_t *out,
                   const char *defaultaddr,
                   int defaultport,
                   const unsigned flags);
-#endif
 
-#endif
+STATIC int check_bridge_distribution_setting(const char *bd);
+#endif /* defined(CONFIG_PRIVATE) */
+
+#endif /* !defined(TOR_CONFIG_H) */
 

@@ -123,6 +123,10 @@ for my $fn (@ARGV) {
             if (/([^\s'])\{/) {
                 msg "       $1\{:$fn:$.\n";
             }
+            ## Warn about double semi-colons at the end of a line.
+            if (/;;$/) {
+                msg "       double semi-colons at the end of $. in $fn\n"
+            }            
             ## Warn about multiple internal spaces.
             #if (/[^\s,:]\s{2,}[^\s\\=]/) {
             #    msg "     X  X:$fn:$.\n";
@@ -140,7 +144,7 @@ for my $fn (@ARGV) {
                     $1 ne "switch" and $1 ne "return" and $1 ne "int" and
                     $1 ne "elsif" and $1 ne "WINAPI" and $2 ne "WINAPI" and
                     $1 ne "void" and $1 ne "__attribute__" and $1 ne "op" and
-                    $1 ne "size_t" and $1 ne "double" and
+                    $1 ne "size_t" and $1 ne "double" and $1 ne "uint64_t" and
                     $1 ne "workqueue_reply_t") {
                     msg "     fn ():$fn:$.\n";
                 }

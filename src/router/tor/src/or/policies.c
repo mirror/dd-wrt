@@ -865,6 +865,8 @@ fascist_firewall_choose_address_base(const tor_addr_t *ipv4_addr,
     ap->port = result->port;
     return 1;
   } else {
+    tor_addr_make_null(&ap->addr, AF_UNSPEC);
+    ap->port = 0;
     return 0;
   }
 }
@@ -2186,21 +2188,16 @@ exit_policy_is_general_exit_helper(smartlist_t *policy, int port)
 }
 
 /** Return true iff <b>ri</b> is "useful as an exit node", meaning
- * it allows exit to at least one /8 address space for at least
- * two of ports 80, 443, and 6667. */
+ * it allows exit to at least one /8 address space for each of ports 80
+ * and 443. */
 int
 exit_policy_is_general_exit(smartlist_t *policy)
 {
-  static const int ports[] = { 80, 443, 6667 };
-  int n_allowed = 0;
-  int i;
   if (!policy) /*XXXX disallow NULL policies? */
     return 0;
 
-  for (i = 0; i < 3; ++i) {
-    n_allowed += exit_policy_is_general_exit_helper(policy, ports[i]);
-  }
-  return n_allowed >= 2;
+  return (exit_policy_is_general_exit_helper(policy, 80) &&
+          exit_policy_is_general_exit_helper(policy, 443));
 }
 
 /** Return false if <b>policy</b> might permit access to some addr:port;
@@ -2731,7 +2728,7 @@ parse_short_policy(const char *summary)
   }
 
   {
-    size_t size = STRUCT_OFFSET(short_policy_t, entries) +
+    size_t size = offsetof(short_policy_t, entries) +
       sizeof(short_policy_entry_t)*(n_entries);
     result = tor_malloc_zero(size);
 

@@ -388,9 +388,9 @@ static int check_signature_token(const char *digest,
   log_debug(LD_MM, "Area for %s has %lu allocated; using %lu.",   \
             name, (unsigned long)alloc, (unsigned long)used);     \
   STMT_END
-#else
+#else /* !(defined(DEBUG_AREA_ALLOC)) */
 #define DUMP_AREA(a,name) STMT_NIL
-#endif
+#endif /* defined(DEBUG_AREA_ALLOC) */
 
 /* Dump mechanism for unparseable descriptors */
 
@@ -701,7 +701,7 @@ dump_desc_populate_one_file, (const char *dirname, const char *f))
     goto done;
     /* LCOV_EXCL_STOP */
   }
-#endif
+#endif /* SIZE_MAX > UINT64_MAX */
   if (BUG(st.st_size < 0)) {
     /* LCOV_EXCL_START
      * Should be impossible, since the OS isn't supposed to be b0rken. */
@@ -1425,9 +1425,9 @@ dump_distinct_digest_count(int severity)
     verified_digests = digestmap_new();
   tor_log(severity, LD_GENERAL, "%d *distinct* router digests verified",
       digestmap_size(verified_digests));
-#else
+#else /* !(defined(COUNT_DISTINCT_DIGESTS)) */
   (void)severity; /* suppress "unused parameter" warning */
-#endif
+#endif /* defined(COUNT_DISTINCT_DIGESTS) */
 }
 
 /** Try to find an IPv6 OR port in <b>list</b> of directory_token_t's
@@ -1996,7 +1996,6 @@ router_parse_entry_from_string(const char *s, const char *end,
   }
 
   tok = find_by_keyword(tokens, K_ROUTER_SIGNATURE);
-  note_crypto_pk_op(VERIFY_RTR);
 #ifdef COUNT_DISTINCT_DIGESTS
   if (!verified_digests)
     verified_digests = digestmap_new();
@@ -2231,7 +2230,6 @@ extrainfo_parse_entry_from_string(const char *s, const char *end,
   }
 
   if (key) {
-    note_crypto_pk_op(VERIFY_RTR);
     if (check_signature_token(digest, DIGEST_LEN, tok, key, 0,
                               "extra-info") < 0)
       goto err;
@@ -2708,7 +2706,11 @@ routerstatus_parse_entry_from_string(memarea_t *area,
     rs->supports_ed25519_hs_intro =
       protocol_list_supports_protocol(tok->args[0], PRT_HSINTRO, 4);
     rs->supports_v3_hsdir =
-      protocol_list_supports_protocol(tok->args[0], PRT_HSDIR, 2);
+      protocol_list_supports_protocol(tok->args[0], PRT_HSDIR,
+                                      PROTOVER_HSDIR_V3);
+    rs->supports_v3_rendezvous_point =
+      protocol_list_supports_protocol(tok->args[0], PRT_HSREND,
+                                      PROTOVER_HS_RENDEZVOUS_POINT_V3);
   }
   if ((tok = find_opt_by_keyword(tokens, K_V))) {
     tor_assert(tok->n_args == 1);
@@ -2719,6 +2721,12 @@ routerstatus_parse_entry_from_string(memarea_t *area,
       rs->supports_extend2_cells =
         tor_version_as_new_as(tok->args[0], "0.2.4.8-alpha");
       rs->protocols_known = 1;
+    }
+    if (!strcmpstart(tok->args[0], "Tor ") && found_protocol_list) {
+      /* Bug #22447 forces us to filter on this version. */
+      if (!tor_version_as_new_as(tok->args[0], "0.3.0.8")) {
+        rs->supports_v3_hsdir = 0;
+      }
     }
     if (vote_rs) {
       vote_rs->version = tor_strdup(tok->args[0]);
@@ -2856,7 +2864,6 @@ compare_vote_routerstatus_entries(const void **_a, const void **_b)
 int
 networkstatus_verify_bw_weights(networkstatus_t *ns, int consensus_method)
 {
-  int64_t weight_scale;
   int64_t G=0, M=0, E=0, D=0, T=0;
   double Wgg, Wgm, Wgd, Wmg, Wmm, Wme, Wmd, Weg, Wem, Wee, Wed;
   double Gtotal=0, Mtotal=0, Etotal=0;
@@ -2864,7 +2871,8 @@ networkstatus_verify_bw_weights(networkstatus_t *ns, int consensus_method)
   int valid = 1;
   (void) consensus_method;
 
-  weight_scale = networkstatus_get_weight_scale_param(ns);
+  const int64_t weight_scale = networkstatus_get_weight_scale_param(ns);
+  tor_assert(weight_scale >= 1);
   Wgg = networkstatus_get_bw_weight(ns, "Wgg", -1);
   Wgm = networkstatus_get_bw_weight(ns, "Wgm", -1);
   Wgd = networkstatus_get_bw_weight(ns, "Wgd", -1);
@@ -2926,7 +2934,7 @@ networkstatus_verify_bw_weights(networkstatus_t *ns, int consensus_method)
   }
 
   Wgg /= weight_scale;
-  Wgm /= weight_scale;
+  Wgm /= weight_scale; (void) Wgm; // unused from here on.
   Wgd /= weight_scale;
 
   Wmg /= weight_scale;
@@ -2934,8 +2942,8 @@ networkstatus_verify_bw_weights(networkstatus_t *ns, int consensus_method)
   Wme /= weight_scale;
   Wmd /= weight_scale;
 
-  Weg /= weight_scale;
-  Wem /= weight_scale;
+  Weg /= weight_scale; (void) Weg; // unused from here on.
+  Wem /= weight_scale; (void) Wem; // unused from here on.
   Wee /= weight_scale;
   Wed /= weight_scale;
 
@@ -3360,8 +3368,8 @@ extract_shared_random_srvs(networkstatus_t *ns, smartlist_t *tokens)
     voter_identity = "consensus";
   }
 
-  /* We extract both and on error, everything is stopped because it means
-   * the votes is malformed for the shared random value(s). */
+  /* We extract both, and on error everything is stopped because it means
+   * the vote is malformed for the shared random value(s). */
   if (extract_one_srv(tokens, K_PREVIOUS_SRV, &ns->sr_info.previous_srv) < 0) {
     log_warn(LD_DIR, "SR: Unable to parse previous SRV from %s",
              voter_identity);
@@ -5288,7 +5296,6 @@ rend_parse_v2_service_descriptor(rend_service_descriptor_t **parsed_out,
   }
   /* Parse and verify signature. */
   tok = find_by_keyword(tokens, R_SIGNATURE);
-  note_crypto_pk_op(VERIFY_RTR);
   if (check_signature_token(desc_hash, DIGEST_LEN, tok, result->pk, 0,
                             "v2 rendezvous service descriptor") < 0)
     goto err;

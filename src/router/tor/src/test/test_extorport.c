@@ -78,7 +78,7 @@ connection_write_to_buf_impl_replacement(const char *string, size_t len,
 
   tor_assert(string);
   tor_assert(conn);
-  write_to_buf(string, len, conn->outbuf);
+  buf_add(conn->outbuf, string, len);
 }
 
 static char *
@@ -89,7 +89,7 @@ buf_get_contents(buf_t *buf, size_t *sz_out)
   if (*sz_out >= ULONG_MAX)
     return NULL; /* C'mon, really? */
   out = tor_malloc(*sz_out + 1);
-  if (fetch_from_buf(out, (unsigned long)*sz_out, buf) != 0) {
+  if (buf_get_bytes(buf, out, (unsigned long)*sz_out) != 0) {
     tor_free(out);
     return NULL;
   }
@@ -399,14 +399,14 @@ handshake_start(or_connection_t *conn, int receiving)
 
 #define WRITE(s,n)                                                      \
   do {                                                                  \
-    write_to_buf((s), (n), TO_CONN(conn)->inbuf);                       \
+    buf_add(TO_CONN(conn)->inbuf, (s), (n));                           \
   } while (0)
 #define CONTAINS(s,n)                                           \
   do {                                                          \
     tt_int_op((n), OP_LE, sizeof(b));                              \
     tt_int_op(buf_datalen(TO_CONN(conn)->outbuf), OP_EQ, (n));     \
     if ((n)) {                                                  \
-      fetch_from_buf(b, (n), TO_CONN(conn)->outbuf);            \
+      buf_get_bytes(TO_CONN(conn)->outbuf, b, (n));                \
       tt_mem_op(b, OP_EQ, (s), (n));                               \
     }                                                           \
   } while (0)
@@ -497,14 +497,14 @@ test_ext_or_handshake(void *arg)
            "te road There is always another ", 64);
   /* Send the wrong response. */
   WRITE("not with a bang but a whimper...", 32);
-  MOCK(control_event_bootstrap_problem, ignore_bootstrap_problem);
+  MOCK(control_event_bootstrap_prob_or, ignore_bootstrap_problem);
   tt_int_op(-1, OP_EQ, connection_ext_or_process_inbuf(conn));
   CONTAINS("\x00", 1);
   tt_assert(TO_CONN(conn)->marked_for_close);
   /* XXXX Hold-open-until-flushed. */
   close_closeable_connections();
   conn = NULL;
-  UNMOCK(control_event_bootstrap_problem);
+  UNMOCK(control_event_bootstrap_prob_or);
 
   MOCK(connection_start_reading, note_read_started);
   MOCK(connection_stop_reading, note_read_stopped);
@@ -552,26 +552,26 @@ test_ext_or_handshake(void *arg)
   do_ext_or_handshake(conn);
   /* USERADDR command with an extra NUL byte */
   WRITE("\x00\x01\x00\x0d""1.2.3.4:5678\x00", 17);
-  MOCK(control_event_bootstrap_problem, ignore_bootstrap_problem);
+  MOCK(control_event_bootstrap_prob_or, ignore_bootstrap_problem);
   tt_int_op(-1, OP_EQ, connection_ext_or_process_inbuf(conn));
   CONTAINS("", 0);
   tt_assert(TO_CONN(conn)->marked_for_close);
   close_closeable_connections();
   conn = NULL;
-  UNMOCK(control_event_bootstrap_problem);
+  UNMOCK(control_event_bootstrap_prob_or);
 
   /* Now fail the TRANSPORT command. */
   conn = or_connection_new(CONN_TYPE_EXT_OR, AF_INET);
   do_ext_or_handshake(conn);
   /* TRANSPORT command with an extra NUL byte */
   WRITE("\x00\x02\x00\x08""rfc1149\x00", 12);
-  MOCK(control_event_bootstrap_problem, ignore_bootstrap_problem);
+  MOCK(control_event_bootstrap_prob_or, ignore_bootstrap_problem);
   tt_int_op(-1, OP_EQ, connection_ext_or_process_inbuf(conn));
   CONTAINS("", 0);
   tt_assert(TO_CONN(conn)->marked_for_close);
   close_closeable_connections();
   conn = NULL;
-  UNMOCK(control_event_bootstrap_problem);
+  UNMOCK(control_event_bootstrap_prob_or);
 
   /* Now fail the TRANSPORT command. */
   conn = or_connection_new(CONN_TYPE_EXT_OR, AF_INET);
@@ -579,13 +579,13 @@ test_ext_or_handshake(void *arg)
   /* TRANSPORT command with transport name with symbols (not a
      C-identifier) */
   WRITE("\x00\x02\x00\x07""rf*1149", 11);
-  MOCK(control_event_bootstrap_problem, ignore_bootstrap_problem);
+  MOCK(control_event_bootstrap_prob_or, ignore_bootstrap_problem);
   tt_int_op(-1, OP_EQ, connection_ext_or_process_inbuf(conn));
   CONTAINS("", 0);
   tt_assert(TO_CONN(conn)->marked_for_close);
   close_closeable_connections();
   conn = NULL;
-  UNMOCK(control_event_bootstrap_problem);
+  UNMOCK(control_event_bootstrap_prob_or);
 
  done:
   UNMOCK(connection_write_to_buf_impl_);

@@ -17,6 +17,13 @@
 /* This is a guess. */
 #define FIRST_TOR_VERSION_TO_ADVERTISE_PROTOCOLS "0.2.9.3-alpha"
 
+/** The protover version number that signifies HSDir support for HSv3 */
+#define PROTOVER_HSDIR_V3 2
+/** The protover version number that signifies HSv3 intro point support */
+#define PROTOVER_HS_INTRO_V3 4
+/** The protover version number that signifies HSv3 rendezvous point support */
+#define PROTOVER_HS_RENDEZVOUS_POINT_V3 2
+
 /** List of recognized subprotocols. */
 typedef enum protocol_type_t {
   PRT_LINK,
@@ -68,7 +75,7 @@ STATIC void proto_entry_free(proto_entry_t *entry);
 STATIC char *encode_protocol_list(const smartlist_t *sl);
 STATIC const char *protocol_type_to_str(protocol_type_t pr);
 STATIC int str_to_protocol_type(const char *s, protocol_type_t *pr_out);
-#endif
+#endif /* defined(PROTOVER_PRIVATE) */
 
-#endif
+#endif /* !defined(TOR_PROTOVER_H) */
 

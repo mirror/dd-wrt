@@ -201,20 +201,21 @@ tor_cond_init(tor_cond_t *cond)
   }
 
 #if defined(HAVE_CLOCK_GETTIME)
-#if defined(CLOCK_MONOTONIC) && defined(HAVE_PTHREAD_CONDATTR_SETCLOCK)
+#if defined(HAVE_PTHREAD_CONDATTR_SETCLOCK) && \
+  defined(CLOCK_MONOTONIC)
   /* Use monotonic time so when we timedwait() on it, any clock adjustment
    * won't affect the timeout value. */
   if (pthread_condattr_setclock(&condattr, CLOCK_MONOTONIC)) {
     return -1;
   }
 #define USE_COND_CLOCK CLOCK_MONOTONIC
-#else /* !defined HAVE_PTHREAD_CONDATTR_SETCLOCK */
+#else /* !(defined(HAVE_PTHREAD_CONDATTR_SETCLOCK) && ...) */
   /* On OSX Sierra, there is no pthread_condattr_setclock, so we are stuck
    * with the realtime clock.
    */
 #define USE_COND_CLOCK CLOCK_REALTIME
-#endif /* which clock to use */
-#endif /* HAVE_CLOCK_GETTIME */
+#endif /* defined(HAVE_PTHREAD_CONDATTR_SETCLOCK) && ... */
+#endif /* defined(HAVE_CLOCK_GETTIME) */
   if (pthread_cond_init(&cond->cond, &condattr)) {
     return -1;
   }
@@ -266,11 +267,11 @@ tor_cond_wait(tor_cond_t *cond, tor_mutex_t *mutex, const struct timeval *tv)
       tvnow.tv_sec = ts.tv_sec;
       tvnow.tv_usec = (int)(ts.tv_nsec / 1000);
       timeradd(tv, &tvnow, &tvsum);
-#else
+#else /* !(defined(HAVE_CLOCK_GETTIME) && defined(USE_COND_CLOCK)) */
       if (gettimeofday(&tvnow, NULL) < 0)
         return -1;
       timeradd(tv, &tvnow, &tvsum);
-#endif /* HAVE_CLOCK_GETTIME, CLOCK_MONOTONIC */
+#endif /* defined(HAVE_CLOCK_GETTIME) && defined(USE_COND_CLOCK) */
 
       ts.tv_sec = tvsum.tv_sec;
       ts.tv_nsec = tvsum.tv_usec * 1000;

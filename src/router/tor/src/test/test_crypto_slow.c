@@ -164,10 +164,10 @@ test_libscrypt_eq_openssl(void *arg)
   EVP_PBE_scrypt((const char *)"", 0, (const unsigned char *)"", 0,
                   N, r, p, maxmem, buf2, dk_len);
 
-  tt_int_op(libscrypt_retval, ==, 0);
-  tt_int_op(openssl_retval, ==, 1);
+  tt_int_op(libscrypt_retval, OP_EQ, 0);
+  tt_int_op(openssl_retval, OP_EQ, 1);
 
-  tt_mem_op(buf1, ==, buf2, 64);
+  tt_mem_op(buf1, OP_EQ, buf2, 64);
 
   memset(buf1,0,64);
   memset(buf2,0,64);
@@ -185,10 +185,10 @@ test_libscrypt_eq_openssl(void *arg)
                  (const unsigned char *)"NaCl", strlen("NaCl"),
                  N, r, p, maxmem, buf2, dk_len);
 
-  tt_int_op(libscrypt_retval, ==, 0);
-  tt_int_op(openssl_retval, ==, 1);
+  tt_int_op(libscrypt_retval, OP_EQ, 0);
+  tt_int_op(openssl_retval, OP_EQ, 1);
 
-  tt_mem_op(buf1, ==, buf2, 64);
+  tt_mem_op(buf1, OP_EQ, buf2, 64);
 
   memset(buf1,0,64);
   memset(buf2,0,64);
@@ -210,10 +210,10 @@ test_libscrypt_eq_openssl(void *arg)
                  strlen("SodiumChloride"),
                  N, r, p, maxmem, buf2, dk_len);
 
-  tt_int_op(libscrypt_retval, ==, 0);
-  tt_int_op(openssl_retval, ==, 1);
+  tt_int_op(libscrypt_retval, OP_EQ, 0);
+  tt_int_op(openssl_retval, OP_EQ, 1);
 
-  tt_mem_op(buf1, ==, buf2, 64);
+  tt_mem_op(buf1, OP_EQ, buf2, 64);
 
   memset(buf1,0,64);
   memset(buf2,0,64);
@@ -234,15 +234,15 @@ test_libscrypt_eq_openssl(void *arg)
                  strlen("SodiumChloride"),
                  N, r, p, maxmem, buf2, dk_len);
 
-  tt_int_op(libscrypt_retval, ==, 0);
-  tt_int_op(openssl_retval, ==, 1);
+  tt_int_op(libscrypt_retval, OP_EQ, 0);
+  tt_int_op(openssl_retval, OP_EQ, 1);
 
-  tt_mem_op(buf1, ==, buf2, 64);
+  tt_mem_op(buf1, OP_EQ, buf2, 64);
 
   done:
   return;
 }
-#endif
+#endif /* defined(HAVE_LIBSCRYPT) && defined(HAVE_EVP_PBE_SCRYPT) */
 
 static void
 test_crypto_s2k_errors(void *arg)
@@ -283,7 +283,7 @@ test_crypto_s2k_errors(void *arg)
                                                  "ABC", 3, 0));
   tt_int_op(S2K_TRUNCATED, OP_EQ, secret_to_key_new(buf, 50, &sz,
                                                  "ABC", 3, S2K_FLAG_LOW_MEM));
-#endif
+#endif /* defined(HAVE_LIBSCRYPT) */
   tt_int_op(S2K_TRUNCATED, OP_EQ, secret_to_key_new(buf, 37, &sz,
                                               "ABC", 3, S2K_FLAG_USE_PBKDF2));
   tt_int_op(S2K_TRUNCATED, OP_EQ, secret_to_key_new(buf, 29, &sz,
@@ -318,7 +318,7 @@ test_crypto_s2k_errors(void *arg)
   tt_int_op(S2K_BAD_PARAMS, OP_EQ,
             secret_to_key_derivekey(buf2, sizeof(buf2),
                                     buf, 19, "ABC", 3));
-#endif
+#endif /* defined(HAVE_LIBSCRYPT) */
 
  done:
   ;
@@ -516,7 +516,7 @@ test_crypto_ed25519_fuzz_donna(void *arg)
   unsigned i;
   (void)arg;
 
-  tt_assert(sizeof(msg) == iters);
+  tt_uint_op(iters, OP_EQ, sizeof(msg));
   crypto_rand((char*) msg, sizeof(msg));
 
   /* Fuzz Ed25519-donna vs ref10, alternating the implementation used to
@@ -600,7 +600,7 @@ struct testcase_t slow_crypto_tests[] = {
 #ifdef HAVE_EVP_PBE_SCRYPT
   { "libscrypt_eq_openssl", test_libscrypt_eq_openssl, 0, NULL, NULL },
 #endif
-#endif
+#endif /* defined(HAVE_LIBSCRYPT) */
   { "s2k_pbkdf2", test_crypto_s2k_general, 0, &passthrough_setup,
     (void*)"pbkdf2" },
   { "s2k_rfc2440_general", test_crypto_s2k_general, 0, &passthrough_setup,

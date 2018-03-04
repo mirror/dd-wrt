@@ -123,8 +123,8 @@ void connection_bucket_refill(int seconds_elapsed, time_t now);
 
 int connection_handle_read(connection_t *conn);
 
-int connection_fetch_from_buf(char *string, size_t len, connection_t *conn);
-int connection_fetch_from_buf_line(connection_t *conn, char *data,
+int connection_buf_get_bytes(char *string, size_t len, connection_t *conn);
+int connection_buf_get_line(connection_t *conn, char *data,
                                    size_t *data_len);
 int connection_fetch_from_buf_http(connection_t *conn,
                                char **headers_out, size_t max_headerlen,
@@ -139,18 +139,18 @@ int connection_flush(connection_t *conn);
 MOCK_DECL(void, connection_write_to_buf_impl_,
           (const char *string, size_t len, connection_t *conn, int zlib));
 /* DOCDOC connection_write_to_buf */
-static void connection_write_to_buf(const char *string, size_t len,
+static void connection_buf_add(const char *string, size_t len,
                                     connection_t *conn);
 /* DOCDOC connection_write_to_buf_compress */
-static void connection_write_to_buf_compress(const char *string, size_t len,
+static void connection_buf_add_compress(const char *string, size_t len,
                                              dir_connection_t *conn, int done);
 static inline void
-connection_write_to_buf(const char *string, size_t len, connection_t *conn)
+connection_buf_add(const char *string, size_t len, connection_t *conn)
 {
   connection_write_to_buf_impl_(string, len, conn, 0);
 }
 static inline void
-connection_write_to_buf_compress(const char *string, size_t len,
+connection_buf_add_compress(const char *string, size_t len,
                                  dir_connection_t *conn, int done)
 {
   connection_write_to_buf_impl_(string, len, TO_CONN(conn), done ? -1 : 1);
@@ -182,6 +182,8 @@ MOCK_DECL(connection_t *,connection_get_by_type_addr_port_purpose,(int type,
 connection_t *connection_get_by_type_state(int type, int state);
 connection_t *connection_get_by_type_state_rendquery(int type, int state,
                                                      const char *rendquery);
+smartlist_t *connection_list_by_type_state(int type, int state);
+smartlist_t *connection_list_by_type_purpose(int type, int purpose);
 smartlist_t *connection_dir_list_by_purpose_and_resource(
                                                   int purpose,
                                                   const char *resource);
@@ -284,7 +286,7 @@ MOCK_DECL(STATIC int,connection_connect_sockaddr,
 MOCK_DECL(STATIC void, kill_conn_list_for_oos, (smartlist_t *conns));
 MOCK_DECL(STATIC smartlist_t *, pick_oos_victims, (int n));
 
-#endif
+#endif /* defined(CONNECTION_PRIVATE) */
 
-#endif
+#endif /* !defined(TOR_CONNECTION_H) */
 

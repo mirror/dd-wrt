@@ -63,6 +63,7 @@ MOCK_DECL(int, check_tap_onion_key_crosscert,(const uint8_t *crosscert,
                                   const ed25519_public_key_t *master_id_pkey,
                                   const uint8_t *rsa_id_digest));
 
+int log_cert_expiration(void);
 int load_ed_keys(const or_options_t *options, time_t now);
 int should_make_new_ed_keys(const or_options_t *options, const time_t now);
 
@@ -80,5 +81,5 @@ const ed25519_keypair_t *get_master_identity_keypair(void);
 void init_mock_ed_keys(const crypto_pk_t *rsa_identity_key);
 #endif
 
-#endif
+#endif /* !defined(TOR_ROUTERKEYS_H) */
 

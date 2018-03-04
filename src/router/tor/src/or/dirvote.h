@@ -168,12 +168,14 @@ typedef struct {
   int have_fetched_missing_signatures;
   /* True iff we have published our consensus. */
   int have_published_consensus;
+
+  /* True iff this voting schedule was set on demand meaning not through the
+   * normal vote operation of a dirauth or when a consensus is set. This only
+   * applies to a directory authority that needs to recalculate the voting
+   * timings only for the first vote even though this object was initilized
+   * prior to voting. */
+  int created_on_demand;
 } voting_schedule_t;
-
-voting_schedule_t *get_voting_schedule(const or_options_t *options,
-                                       time_t now, int severity);
-
-void voting_schedule_free(voting_schedule_t *voting_schedule_to_free);
 
 void dirvote_get_preferred_voting_intervals(vote_timing_t *timing_out);
 time_t dirvote_get_start_of_next_interval(time_t now,
@@ -181,7 +183,7 @@ time_t dirvote_get_start_of_next_interval(time_t now,
                                           int offset);
 void dirvote_recalculate_timing(const or_options_t *options, time_t now);
 void dirvote_act(const or_options_t *options, time_t now);
-time_t get_next_valid_after_time(time_t now);
+time_t dirvote_get_next_valid_after_time(void);
 
 /* invoked on timers and by outside triggers. */
 struct pending_vote_t * dirvote_add_vote(const char *vote_body,
@@ -242,7 +244,7 @@ STATIC int
 networkstatus_compute_bw_weights_v10(smartlist_t *chunks, int64_t G,
                                      int64_t M, int64_t E, int64_t D,
                                      int64_t T, int64_t weight_scale);
-#endif
+#endif /* defined(DIRVOTE_PRIVATE) */
 
-#endif
+#endif /* !defined(TOR_DIRVOTE_H) */
 

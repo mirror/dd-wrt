@@ -26,7 +26,8 @@ TESTING_TOR_BINARY=$(top_builddir)/src/or/tor$(EXEEXT)
 endif
 
 if USE_RUST
-rust_ldadd=$(top_builddir)/src/rust/target/release/libtor_util.a
+rust_ldadd=$(top_builddir)/src/rust/target/release/@TOR_RUST_UTIL_STATIC_NAME@ \
+	@TOR_RUST_EXTRA_LIBS@
 else
 rust_ldadd=
 endif
@@ -96,7 +97,7 @@ doxygen:
 test: all
 	$(top_builddir)/src/test/test
 
-check-local: check-spaces
+check-local: check-spaces check-changes
 
 need-chutney-path:
 	@if test ! -d "$$CHUTNEY_PATH"; then \
@@ -216,13 +217,19 @@ check-logs:
 
 .PHONY: check-changes
 check-changes:
+if USEPYTHON
 	@if test -d "$(top_srcdir)/changes"; then \
-		$(PYTHON) $(top_srcdir)/scripts/maint/lintChanges.py $(top_srcdir)/changes/*; \
+		$(PYTHON) $(top_srcdir)/scripts/maint/lintChanges.py $(top_srcdir)/changes; \
 		fi
+endif
 
 .PHONY: update-versions
 update-versions:
 	$(PERL) $(top_builddir)/scripts/maint/updateVersions.pl
+
+.PHONY: callgraph
+callgraph:
+	$(top_builddir)/scripts/maint/run_calltool.sh
 
 version:
 	@echo "Tor @VERSION@"

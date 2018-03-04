@@ -174,8 +174,17 @@
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
 
+/* Define to 1 if you have the `get_current_dir_name' function. */
+#undef HAVE_GET_CURRENT_DIR_NAME
+
 /* Define to 1 if you have the `gmtime_r' function. */
 #undef HAVE_GMTIME_R
+
+/* Define to 1 if you have the `gnu_get_libc_version' function. */
+#undef HAVE_GNU_GET_LIBC_VERSION
+
+/* Define to 1 if you have the <gnu/libc-version.h> header file. */
+#undef HAVE_GNU_LIBC_VERSION_H
 
 /* Define to 1 if you have the <grp.h> header file. */
 #undef HAVE_GRP_H
@@ -197,6 +206,9 @@
 
 /* Define to 1 if you have the `issetugid' function. */
 #undef HAVE_ISSETUGID
+
+/* Defined if KIST scheduler is supported on this system */
+#undef HAVE_KIST_SUPPORT
 
 /* Define to 1 if you have the `cap' library (-lcap). */
 #undef HAVE_LIBCAP
@@ -422,6 +434,12 @@
 /* Define to 1 if `get_cipher_by_char' is a member of `struct ssl_method_st'.
    */
 #undef HAVE_STRUCT_SSL_METHOD_ST_GET_CIPHER_BY_CHAR
+
+/* Define to 1 if `tcpi_snd_mss' is a member of `struct tcp_info'. */
+#undef HAVE_STRUCT_TCP_INFO_TCPI_SND_MSS
+
+/* Define to 1 if `tcpi_unacked' is a member of `struct tcp_info'. */
+#undef HAVE_STRUCT_TCP_INFO_TCPI_UNACKED
 
 /* Define to 1 if `tv_sec' is a member of `struct timeval'. */
 #undef HAVE_STRUCT_TIMEVAL_TV_SEC
