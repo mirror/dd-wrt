@@ -96,12 +96,14 @@ static void deconfigure_single(int count)
 #ifdef HAVE_ATH9K
 	if (is_ath9k(dev)) {
 		deconfigure_single_ath9k(count);
+		sysprintf("rm -f /tmp/ath%d_configured", count);
 		return;
 	}
 #endif
 #ifdef HAVE_MADWIFI_MIMO
 	if (is_ar5008(dev)) {
 		deconfigure_single_11n(count);
+		sysprintf("rm -f /tmp/ath%d_configured", count);
 		return;
 	}
 #endif
@@ -138,6 +140,7 @@ static void deconfigure_single(int count)
 		}
 	}
 #endif
+	sysprintf("rm -f /tmp/ath%d_configured", count);
 }
 
 void deconfigure_wifi(void)
@@ -1473,12 +1476,14 @@ static void configure_single(int count)
 	if (is_ath9k(dev)) {
 		configure_single_ath9k(count);
 		ath9k_start_supplicant(count);
+		sysprintf("touch /tmp/ath%d_configured", count);
 		return;
 	}
 #endif
 #ifdef HAVE_MADWIFI_MIMO
 	if (is_ar5008(dev)) {
 		configure_single_11n(count);
+		sysprintf("touch /tmp/ath%d_configured", count);
 		return;
 	}
 #endif
@@ -1505,8 +1510,10 @@ static void configure_single(int count)
 	// create base device
 	cprintf("configure base interface %d\n", count);
 	sprintf(net, "%s_net_mode", dev);
-	if (nvram_match(net, "disabled"))
+	if (nvram_match(net, "disabled")) {
+		sysprintf("touch /tmp/ath%d_configured", count);
 		return;
+	}
 //    set_compression( count );
 	// create wds interface(s)
 	int s;
@@ -2239,6 +2246,7 @@ static void configure_single(int count)
 		eval("ifconfig", dev, "0.0.0.0", "up");
 	}
 #endif
+	sysprintf("touch /tmp/ath%d_configured", count);
 }
 
 void start_vifs(void)
@@ -2390,59 +2398,29 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 
 	for (i = 0; i < c; i++)
 		adjust_regulatory(i);
-
 	for (i = 0; i < c; i++) {
-#ifdef REGDOMAIN_OVERRIDE
-		// SeG's dirty hack to make everything possible without any channel
-		// restrictions. regdomain 0x60 seems to be the best way
-		char regdomain[16];
+		sysprintf("rm -f /tmp/ath%d_configured", i);
+		FORK(configure_single(i));
 
-		sprintf(regdomain, "ath%d_regdomain", i);
+	}
 
-		// read current reg domain from atheros card
-		// the base io 0x50010000 is hardcoded here and can be different on
-		// non RB500 ports
-		// @fixme: detect io by reading pci data
-
-		cprintf("get reg domain()\n");
-		int reg_domain = get_regdomain((0x50010000) + (0x10000 * i));
-
-		if (reg_domain > -1)	// reg domain was successfully readed 
-		{
-			if (nvram_get(regdomain) != NULL)	// reg domain is
-				// defined in nvram
-			{
-				int destination = nvram_geti(regdomain);	// read 
-
-				// new 
-				// target 
-				// regdomain
-				if (destination != reg_domain)	// check if changed
-				{
-					if (set_regdomain((0x50010000) + (0x10000 * i), destination) == 0)	// modifiy 
-						// eeprom 
-						// with 
-						// new 
-						// regdomain
-						changed = 1;
-				}
+	while (1) {
+		int cnf = 0;
+		for (i = 0; i < c; i++) {
+			char path[42];
+			sprintf(path, "/tmp/ath%d_configured", i);
+			*check = fopen(path, "rb");
+			if (check) {
+				cnf++;
+				fclose(check);
 			}
-
 		}
-		cprintf("configure next\n");
-		if (!changed)	// if regdomain not changed, configure it
-#endif
-		{
-			configure_single(i);
-		}
+		fprintf(stderr,"waiting for %d interfaces, %d finished\n",c, cnf);
+		if (cnf == c)
+			break;
+		sleep(1);
 	}
 
-	if (changed)		// if changed, deconfigure myself and
-		// reconfigure me in the same way. 
-	{
-		deconfigure_wifi();
-		configure_wifi();
-	}
 #ifdef HAVE_NLD
 #ifdef HAVE_REGISTER
 	if (registered_has_cap(21))
