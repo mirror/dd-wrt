@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r3910 | brainslayer | 2018-03-04 02:16:29 +0100 (Sun, 04 Mar 2018) | 1 line
+
+latest minstrel performance fixes
+------------------------------------------------------------------------
+r3909 | brainslayer | 2018-03-04 01:44:23 +0100 (Sun, 04 Mar 2018) | 1 line
+
+improve minstrel sampling performance which should gain some speed in ath9k. thx nbd
+------------------------------------------------------------------------
 r3908 | brainslayer | 2018-03-03 15:05:04 +0100 (Sat, 03 Mar 2018) | 1 line
 
 nsmd changes
