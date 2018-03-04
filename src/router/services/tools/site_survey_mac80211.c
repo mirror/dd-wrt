@@ -63,17 +63,6 @@
 
 #include "mac80211site_survey.h"
 
-extern struct unl unl;
-extern bool bunl;
-
-static void __attribute__((constructor)) mac80211_init(void)
-{
-	if (!bunl) {
-		unl_genl_init(&unl, "nl80211");
-		bunl = 1;
-	}
-
-}
 
 static int sscount = 0;
 static int rate_count = 0;
@@ -181,7 +170,7 @@ out:
 	return NL_SKIP;
 }
 
-static void lgetnoise(int wdev)
+static void lgetnoise(struct unl *unl, int wdev)
 {
 	static struct nl_msg *surveymsg;
 
@@ -1499,12 +1488,12 @@ static void print_capabilities(const uint8_t type, uint8_t len, const uint8_t * 
 }
 
 //  end of iw copied code
-void mac80211_scan(char *interface)
+void mac80211_scan(struct unl *unl,char *interface)
 {
 	struct nl_msg *msg;
 	int wdev;
 	wdev = if_nametoindex(interface);
-	lgetnoise(wdev);
+	lgetnoise(unl, wdev);
 	bzero(&scan_params, sizeof(scan_params));
 	scan_params.type = PRINT_SCAN;
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SCAN, true);
@@ -1521,6 +1510,8 @@ static int open_site_survey(void);
 
 void mac80211_site_survey(char *interface)
 {
+	struct unl unl;
+	unl_genl_init(&unl, "nl80211");
 	site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
 	int i;
 	int phy, wdev;
@@ -1529,7 +1520,7 @@ void mac80211_site_survey(char *interface)
 	unsigned char hwbuff[16];
 	bzero(site_survey_lists, sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
 	eval("iw", "dev", interface, "scan");
-	mac80211_scan(interface);
+	mac80211_scan(&unl, interface);
 	write_site_survey();
 	open_site_survey();
 	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].BSSID[0]; i++) {
@@ -1550,6 +1541,7 @@ void mac80211_site_survey(char *interface)
 			site_survey_lists[i].beacon_period, site_survey_lists[i].capability, site_survey_lists[i].dtim_period, site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO);
 	}
 	free(site_survey_lists);
+	unl_free(&unl);
 }
 
 static int write_site_survey(void)
