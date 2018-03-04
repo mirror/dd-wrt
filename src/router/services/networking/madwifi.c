@@ -2400,10 +2400,10 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		adjust_regulatory(i);
 	for (i = 0; i < c; i++) {
 		sysprintf("rm -f /tmp/ath%d_configured", i);
-		FORK(configure_single(i));
-
+		configure_single(i);
 	}
 
+#if 0
 	while (1) {
 		int cnf = 0;
 		for (i = 0; i < c; i++) {
@@ -2420,7 +2420,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			break;
 		sleep(1);
 	}
-
+#endif
 #ifdef HAVE_NLD
 #ifdef HAVE_REGISTER
 	if (registered_has_cap(21))

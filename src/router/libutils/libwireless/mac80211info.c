@@ -1152,7 +1152,7 @@ static struct wifi_channels ghz60channels[] = {
 	{.channel = -1,.freq = -1,.max_eirp = -1,.hw_eirp = -1},
 };
 
-struct wifi_channels *mac80211_get_channels(char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband)
+struct wifi_channels *mac80211_get_channels(struct unl *unl, char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct nlattr *tb_band[NL80211_BAND_ATTR_MAX + 1];
@@ -1177,15 +1177,12 @@ struct wifi_channels *mac80211_get_channels(char *interface, const char *country
 	if (has_ad(interface)) {
 		return ghz60channels;
 	}
-	lock();
 	list = getcache(interface, country);
 	if (list) {
-		unlock();
 		return list;
 	}
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1) {
-		unlock();
 		return NULL;
 	}
 #ifdef HAVE_SUPERCHANNEL
@@ -1199,18 +1196,16 @@ struct wifi_channels *mac80211_get_channels(char *interface, const char *country
 	rd = mac80211_get_regdomain(country);
 	// for now just leave 
 	if (rd == NULL) {
-		unlock();
 		return NULL;
 	}
 
-	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	msg = unl_genl_msg(unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
-		unlock();
+	if (unl_genl_request_single(unl, msg, &msg) < 0) {
 		return NULL;
 	}
 
-	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
+	bands = unl_find_attr(unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands) {
 		goto out;
 	}
@@ -1441,15 +1436,20 @@ struct wifi_channels *mac80211_get_channels(char *interface, const char *country
 	nlmsg_free(msg);
 	check_validchannels(list, max_bandwidth_khz);
 	addcache(interface, country, list);
-	unlock();
 	return list;
 out:
 nla_put_failure:
 	nlmsg_free(msg);
-	unlock();
 	return NULL;
 }
-
+struct wifi_channels *mac80211_get_channels_simple(char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband)
+{
+	struct unl unl;
+	unl_genl_init(&unl, "nl80211");
+	struct wifi_channels *chan = mac80211_get_channels(&unl, interface, country, max_bandwidth_khz, checkband);
+	unl_free(&unl);
+	return chan;
+}
 int has_ht40(char *interface)
 {
 	struct wifi_channels *chan;
@@ -1461,7 +1461,9 @@ int has_ht40(char *interface)
 		return (0);
 	sprintf(regdomain, "%s_regdomain", interface);
 	country = nvram_default_get(regdomain, "UNITED_STATES");
-	chan = mac80211_get_channels(interface, getIsoName(country), 40, 0xff);
+	lock();
+	chan = mac80211_get_channels(&unl, interface, getIsoName(country), 40, 0xff);
+	unlock();
 	if (chan) {
 		while (chan[i].freq != -1) {
 			if (chan[i].luu || chan[i].ull) {
@@ -1478,7 +1480,9 @@ int mac80211_check_valid_frequency(char *interface, char *country, int freq)
 	struct wifi_channels *chan;
 	int found = 0;
 	int i = 0;
-	chan = mac80211_get_channels(interface, country, 40, 0xff);
+	lock();
+	chan = mac80211_get_channels(&unl, interface, country, 40, 0xff);
+	unlock();
 	if (chan) {
 		while (chan[i].freq != -1) {
 			if (freq == chan[i].freq) {

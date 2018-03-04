@@ -37,8 +37,6 @@
 static struct mac80211_ac *add_to_mac80211_ac(struct mac80211_ac *list_root);
 void free_mac80211_ac(struct mac80211_ac *acs);
 
-static const char *freq_range;
-
 struct frequency {
 	struct list_head list;
 	unsigned int freq;
@@ -51,7 +49,6 @@ struct frequency {
 	int eirp;
 };
 
-static LIST_HEAD(frequencies);
 
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
 	[NL80211_SURVEY_INFO_FREQUENCY] = {.type = NLA_U32},
@@ -68,7 +65,7 @@ static int bias_2g[] = { 100, 50, 75, 50, 100, 50, 75, 50, 100, 50, 75, 50, 100 
 static int bias_2g_ht40[] = { 50, 50, 100, 50, 50, 50, 50, 50, 50, 50, 100, 50, 50 };
 #endif
 
-static bool in_range(unsigned long freq)
+static bool in_range(unsigned long freq, const char *freq_range)
 {
 	const char *s = freq_range;
 	unsigned long start, stop;
@@ -107,7 +104,7 @@ static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
 	[NL80211_FREQUENCY_ATTR_FREQ] = {.type = NLA_U32},
 };
 
-static int freq_list(struct unl *unl, int phy)
+static int freq_list(struct unl *unl, int phy, const char *freq_range, struct list_head *frequencies)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct frequency *f;
@@ -138,7 +135,7 @@ static int freq_list(struct unl *unl, int phy)
 				continue;
 
 			freq_mhz = nla_get_u32(tb[NL80211_FREQUENCY_ATTR_FREQ]);
-			if (!in_range(freq_mhz))
+			if (!in_range(freq_mhz, freq_range))
 				continue;
 #if defined(HAVE_BUFFALO_SA) && defined(HAVE_ATH9K)
 			if ((!strcmp(getUEnv("region"), "AP") || !strcmp(getUEnv("region"), "US"))
@@ -157,7 +154,7 @@ static int freq_list(struct unl *unl, int phy)
 			INIT_LIST_HEAD(&f->list);
 
 			f->freq = freq_mhz;
-			list_add_tail(&f->list, &frequencies);
+			list_add_tail(&f->list, frequencies);
 			if (tb[NL80211_FREQUENCY_ATTR_PASSIVE_SCAN])
 				f->passive = true;
 		}
@@ -171,11 +168,11 @@ nla_put_failure:
 
 int mac80211_parse_survey(struct nl_msg *msg, struct nlattr **sinfo);
 
-static struct frequency *get_freq(int freq)
+static struct frequency *get_freq(int freq, struct list_head *frequencies)
 {
 	struct frequency *f;
 
-	list_for_each_entry(f, &frequencies, list) {
+	list_for_each_entry(f, frequencies, list) {
 		if (f->freq != freq)
 			continue;
 
@@ -188,12 +185,13 @@ static int freq_add_stats(struct nl_msg *msg, void *data)
 {
 	struct nlattr *sinfo[NL80211_SURVEY_INFO_MAX + 1];
 	struct frequency *f;
+	struct list_head *frequencies = data;
 	int freq;
 	if (mac80211_parse_survey(msg, sinfo))
 		goto out;
-
+	
 	freq = nla_get_u32(sinfo[NL80211_SURVEY_INFO_FREQUENCY]);
-	f = get_freq(freq);
+	f = get_freq(freq, frequencies);
 	if (!f)
 		goto out;
 
@@ -219,13 +217,13 @@ out:
 	return NL_SKIP;
 }
 
-static void survey(struct unl *unl, int wdev, unl_cb cb)
+static void survey(struct unl *unl, int wdev, unl_cb cb, struct list_head *frequencies)
 {
 	struct nl_msg *msg;
 
 	msg = unl_genl_msg(unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
-	unl_genl_request(unl, msg, cb, NULL);
+	unl_genl_request(unl, msg, cb, frequencies);
 	return;
 
 nla_put_failure:
@@ -246,17 +244,18 @@ static int scan_event_cb(struct nl_msg *msg, void *data)
 	}
 }
 
-static void scan(struct unl *unl, int wdev)
+static int scan(struct unl *unl, int wdev, struct list_head *frequencies)
 {
 	struct frequency *f;
 	struct nlattr *opts;
 	struct nl_msg *msg;
 	int i = 0;
+	int ret = 0;
 	msg = unl_genl_msg(unl, NL80211_CMD_TRIGGER_SCAN, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 
 	opts = nla_nest_start(msg, NL80211_ATTR_SCAN_FREQUENCIES);
-	list_for_each_entry(f, &frequencies, list) {
+	list_for_each_entry(f, frequencies, list) {
 		NLA_PUT_U32(msg, ++i, f->freq);
 	}
 	nla_nest_end(msg, opts);
@@ -264,14 +263,14 @@ static void scan(struct unl *unl, int wdev)
 	unl_genl_subscribe(unl, "scan");
 	if ((i = unl_genl_request(unl, msg, NULL, NULL)) < 0) {
 		fprintf(stderr, "Scan request failed: %s\n", strerror(-i));
+		ret = -1;
 		goto out;
 	}
 
 	unl_genl_loop(unl, scan_event_cb, unl);
-
 out:
 	unl_genl_unsubscribe(unl, "scan");
-	return;
+	return ret;
 
 nla_put_failure:
 	nlmsg_free(msg);
@@ -280,10 +279,7 @@ nla_put_failure:
 struct sort_data {
 	int lowest_noise;
 };
-static int _htflags;
-static struct wifi_channels *wifi_channels;
-static int _max_eirp;
-static int get_max_eirp(void)
+static int get_max_eirp(struct wifi_channels *wifi_channels)
 {
 	int eirp = 0;
 	int i = 0;
@@ -300,7 +296,7 @@ static int get_max_eirp(void)
 	return eirp;
 }
 
-static int get_eirp(int freq)
+static int get_eirp(struct wifi_channels *wifi_channels,int freq)
 {
 	int i = 0;
 	struct wifi_channels *chan = NULL;
@@ -315,7 +311,7 @@ static int get_eirp(int freq)
 	return 0;
 }
 
-static int freq_quality(struct frequency *f, struct sort_data *s)
+static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int _htflags, struct frequency *f, struct sort_data *s)
 {
 	int c;
 	int idx;
@@ -363,7 +359,7 @@ static int freq_quality(struct frequency *f, struct sort_data *s)
 		return 0;
 	}
 
-	int eirp = get_eirp(f->freq);
+	int eirp = get_eirp(wifi_channels, f->freq);
 	/* subtract noise delta to lowest noise. */
 	c -= (f->noise - s->lowest_noise);
 	/* subtract max capable output power (regulatory limited by hw caps) delta from maximum eirp possible */
@@ -397,24 +393,27 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	struct unl unl;
 	int ret = unl_genl_init(&unl, "nl80211");
 	unsigned int count = ammount;
-	_htflags = htflags;
+	int _htflags = htflags;
 	int bw = 20;
+	struct wifi_channels *wifi_channels;
+	int _max_eirp;
+	LIST_HEAD(frequencies);
+
 	if (htflags & AUTO_FORCEVHT80)
 		bw = 80;
 	else if (htflags & AUTO_FORCEVHT160)
 		bw = 160;
 	else if (htflags & AUTO_FORCEHT40)
 		bw = 40;
-
 	const char *country = getIsoName(nvram_default_get("ath0_regdomain", "UNITED_STATES"));
 	if (!country)
 		country = "DE";
 
-	wifi_channels = mac80211_get_channels(interface, country, bw, 0xff);
+	wifi_channels = mac80211_get_channels(&unl, interface, country, bw, 0xff);
 	if (scans == 0)
 		scans = 2;
 	/* get maximum eirp possible in channel list */
-	_max_eirp = get_max_eirp();
+	_max_eirp = get_max_eirp(wifi_channels);
 	wdev = if_nametoindex(interface);
 	if (wdev < 0) {
 		fprintf(stderr, "mac80211autochannel Interface not found\n");
@@ -427,10 +426,15 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 		goto out;
 	}
 
-	freq_list(&unl, phy);
+	freq_list(&unl, phy, freq_range, &frequencies);
 	for (i = 0; i < scans; i++) {
-		scan(&unl, wdev);
-		survey(&unl, wdev, freq_add_stats);
+		int x = 0;
+		while(x++ < 10) {
+		    if (!scan(&unl, wdev, &frequencies))
+			break;
+		    sleep(1); // try again
+		}
+		survey(&unl, wdev, freq_add_stats, &frequencies);
 	}
 	bzero(&sdata, sizeof(sdata));
 	list_for_each_entry(f, &frequencies, list) {
@@ -451,13 +455,13 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 		/* in case noise calibration fails, we assume -95 as default here */
 		if (!f->noise)
 			f->noise = -95;
-		f->quality = freq_quality(f, &sdata);
+		f->quality = freq_quality(wifi_channels, _max_eirp, _htflags, f, &sdata);
 	}
 
 	list_sort(&sdata, &frequencies, sort_cmp);
 
 	list_for_each_entry(f, &frequencies, list) {
-		fprintf(stderr, "freq:%d qual:%d noise:%d eirp: %d\n", f->freq, f->quality, f->noise, f->eirp);
+		fprintf(stderr, "%s: freq:%d qual:%d noise:%d eirp: %d\n", interface, f->freq, f->quality, f->noise, f->eirp);
 	}
 
 	list_for_each_entry(f, &frequencies, list) {
