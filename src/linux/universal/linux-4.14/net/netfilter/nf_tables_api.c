@@ -5186,8 +5186,10 @@ static int nf_tables_dump_flowtable_done(struct netlink_callback *cb)
 	if (!filter)
 		return 0;
 
-	kfree(filter->table);
-	kfree(filter);
+	if (filter) {
+		kfree(filter->table);
+		kfree(filter);
+	}
 
 	return 0;
 }
