@@ -33,18 +33,7 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 #endif
 
-extern struct unl unl;
-extern bool bunl;
 
-#if 0
-static void __attribute__((constructor)) mac80211_init(void)
-{
-	if (!bunl) {
-		unl_genl_init(&unl, "nl80211");
-		bunl = 1;
-	}
-}
-#endif
 static struct mac80211_ac *add_to_mac80211_ac(struct mac80211_ac *list_root);
 void free_mac80211_ac(struct mac80211_ac *acs);
 
@@ -405,7 +394,8 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	int i, ch;
 	struct sort_data sdata;
 	int wdev, phy;
-
+	struct unl unl;
+	int ret = unl_genl_init(&unl, "nl80211");
 	unsigned int count = ammount;
 	_htflags = htflags;
 	int bw = 20;
@@ -488,6 +478,7 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	}
 
 out:
+	unl_free(&unl);
 	return acs;
 }
 

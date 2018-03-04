@@ -116,8 +116,8 @@ static char *lastunlock;
 #define unlock()
 #endif
 
-struct unl unl;
-bool bunl = false;
+static struct unl unl;
+static bool bunl = false;
 
 static void print_wifi_clients(struct wifi_client_info *wci);
 void free_wifi_clients(struct wifi_client_info *wci);
