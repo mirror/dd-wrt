@@ -102,6 +102,7 @@ int getWifiInfo(char *ifname, unsigned char *mac, int field);
 #define getTxRate(ifname, mac) getWifiInfo(ifname, mac, INFO_TXRATE)
 #define getRxRate(ifname, mac) getWifiInfo(ifname, mac, INFO_RXRATE)
 #define getUptime(ifname, mac) getWifiInfo(ifname, mac, INFO_UPTIME)
+int getValueFromPath(char *path, int dev, char *fmt, int *err); // internal
 
 int getassoclist_11n(char *name, unsigned char *list);
 int getNoise_11n(char *ifname, unsigned char *mac);

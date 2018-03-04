@@ -1329,32 +1329,36 @@ int iw_mwatt2dbm(int in)
 	return (res);
 }
 
+int getValueFromPath(char *path, int dev, char *fmt, int *err)
+{
+	char *globstring;
+	int value = 0;
+	if (err)
+		*err = -1;
+	asprintf(&globstring, path, dev);
+	FILE *fp = fopen(globstring, "rb");
+	if (fp) {
+		if (err)
+			*err = 0;
+		fscanf(fp, fmt, &value);
+		fclose(fp);
+	}
+	free(globstring);
+	return value;
+}
+
 static int checkid(char *ifname, int vendorid, int productid)	//checks if its usually a emp card (no concrete detection possible)
 {
 #ifdef HAVE_MVEBU
 	return 0;
 #endif
-	int vendor;
-	int product;
 	int devcount;
 	char readid[64];
 
 	strcpy(readid, ifname);
 	sscanf(readid, "ath%d", &devcount);
-	sprintf(readid, "/proc/sys/dev/wifi%d/idvendor", devcount);
-	FILE *in = fopen(readid, "rb");
-	vendor = 0;
-	if (in) {
-		fscanf(in, "%d", &vendor);
-		fclose(in);
-	}
-	sprintf(readid, "/proc/sys/dev/wifi%d/idproduct", devcount);
-	in = fopen(readid, "rb");
-	product = 0;
-	if (in) {
-		fscanf(in, "%d", &product);
-		fclose(in);
-	}
+	int vendor = getValueFromPath("/proc/sys/dev/wifi%d/idvendor", devcount, "%d", NULL);
+	int product = getValueFromPath("/proc/sys/dev/wifi%d/idproduct", devcount, "%d", NULL);
 	if (vendor == vendorid && product == productid)	//XR3.3/XR3.6/XR3.7 share the same pci id's
 		return 1;
 	return 0;
@@ -1378,29 +1382,16 @@ int isXR36(char *ifname)	//checks if its usually a emp card (no concrete detecti
 
 int isFXXN_PRO(char *ifname)	//checks if its usualla a DBII Networks FxxN-PRO card (no correct detection possible)
 {
-	char cproduct[30];
-	char cvendor[30];
 	char readid[64];
 	int devcount;
 
 	strcpy(readid, ifname);
 	sscanf(readid, "ath%d", &devcount);
-	sprintf(readid, "/sys/class/ieee80211/phy%d/device/subsystem_vendor", devcount);
-	FILE *in = fopen(readid, "rb");
-	if (in) {
-		fscanf(in, "%s\n", cvendor);
-		fclose(in);
-	}
-	sprintf(readid, "/sys/class/ieee80211/phy%d/device/subsystem_device", devcount);
-	in = fopen(readid, "rb");
-	if (in) {
-		fscanf(in, "%s\n", cproduct);
-		fclose(in);
-	}
-
-	if (!strcmp(cvendor, "0x168c") && !strcmp(cproduct, "0x2096")) {	//F36N-PRO / F64N-PRO shares the same id's
+	int cvendor = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_vendor", devcount, "0x%x", NULL);
+	int cproduct = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_device", devcount, "0x%x", NULL);
+	if (cvendor == 0x168c && cproduct == 0x2096) {	//F36N-PRO / F64N-PRO shares the same id's
 		return 1;
-	} else if (!strcmp(cvendor, "0xdb11") && !strcmp(cproduct, "0x0f50")) {	// F50N-PRO
+	} else if (cvendor == 0xdb11 && cproduct == 0x0f50) {	// F50N-PRO
 		return 2;
 	}
 	return 0;
@@ -1409,39 +1400,28 @@ int isFXXN_PRO(char *ifname)	//checks if its usualla a DBII Networks FxxN-PRO ca
 int isSR71E(char *ifname)
 {
 
-	char cproduct[30];
-	char cvendor[30];
 	char readid[64];
 	int devcount;
 
 	strcpy(readid, ifname);
 	sscanf(readid, "ath%d", &devcount);
-	sprintf(readid, "/sys/class/ieee80211/phy%d/device/subsystem_vendor", devcount);
-	FILE *in = fopen(readid, "rb");
-	if (in) {
-		fscanf(in, "%s\n", cvendor);
-		fclose(in);
-	}
-	sprintf(readid, "/sys/class/ieee80211/phy%d/device/subsystem_device", devcount);
-	in = fopen(readid, "rb");
-	if (in) {
-		fscanf(in, "%s\n", cproduct);
-		fclose(in);
-	}
 
-	if (!strcmp(cvendor, "0x0777") && !strcmp(cproduct, "0x4e05")) {	// SR71-E
+	int cvendor = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_vendor", devcount, "0x%x", NULL);
+	int cproduct = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_device", devcount, "0x%x", NULL);
+
+	if (cvendor == 0x0777 && cproduct == 0x4e05) {	// SR71-E
 		return 1;
 	}
-	if (!strcmp(cvendor, "0x0777") && !strcmp(cproduct, "0x4082")) {	// SR71
+	if (cvendor == 0x0777 && cproduct == 0x4082) {	// SR71
 		return 1;
 	}
-	if (!strcmp(cvendor, "0x168c") && !strcmp(cproduct, "0x2082")) {	// SR71-A
+	if (cvendor == 0x168c && cproduct == 0x2082) {	// SR71-A
 		return 1;
 	}
-	if (!strcmp(cvendor, "0x0777") && !strcmp(cproduct, "0x4005")) {	// SR71-15
+	if (cvendor == 0x0777 && cproduct == 0x4005) {	// SR71-15
 		return 1;
 	}
-	if (!strcmp(cvendor, "0x0777") && !strcmp(cproduct, "0x4002")) {	// SR71-12
+	if (cvendor == 0x0777 && cproduct == 0x4002) {	// SR71-12
 		return 1;
 	}
 	return 0;
@@ -1450,27 +1430,13 @@ int isSR71E(char *ifname)
 
 int isDL4600(char *ifname)
 {
-	int vendor;
-	int product;
 	int devcount;
 	char readid[64];
 
 	strcpy(readid, ifname);
 	sscanf(readid, "ath%d", &devcount);
-	sprintf(readid, "/proc/sys/dev/wifi%d/idvendor", devcount);
-	FILE *in = fopen(readid, "rb");
-	vendor = 0;
-	if (in) {
-		fscanf(in, "%d", &vendor);
-		fclose(in);
-	}
-	sprintf(readid, "/proc/sys/dev/wifi%d/idproduct", devcount);
-	in = fopen(readid, "rb");
-	product = 0;
-	if (in) {
-		fscanf(in, "%d", &product);
-		fclose(in);
-	}
+	int vendor = getValueFromPath("/proc/sys/dev/wifi%d/idvendor", devcount, "%d", NULL);
+	int product = getValueFromPath("/proc/sys/dev/wifi%d/idproduct", devcount, "%d", NULL);
 	if (vendor == 0x1C14 && product == 0x19)
 		return 1;
 	return 0;
@@ -1581,22 +1547,14 @@ int wifi_gettxpoweroffset(char *ifname)
 	else if (isSR71E(ifname))
 		return 7;
 #endif
-	int vendor;
 	int devcount;
+	int err;
 	char readid[64];
 
 	strcpy(readid, ifname);
 	sscanf(readid, "ath%d", &devcount);
-	sprintf(readid, "/proc/sys/dev/wifi%d/poweroffset", devcount);
-	FILE *in = fopen(readid, "rb");
-
-	vendor = 0;
-	if (in) {
-		vendor = atoi(fgets(readid, sizeof(readid), in));
-		fclose(in);
-	}
-	poweroffset = vendor;
-	if (poweroffset < 0 || poweroffset > 20)
+	poweroffset = getValueFromPath("/proc/sys/dev/wifi%d/poweroffset", devcount, "%d", &err);
+	if (err || poweroffset < 0 || poweroffset > 20)
 		poweroffset = 0;
 #endif
 	char *manpoweroffset;
@@ -1647,14 +1605,8 @@ int get_freqoffset(char *ifname)
 
 	strcpy(readid, ifname);
 	sscanf(readid, "ath%d", &devcount);
-	sprintf(readid, "/proc/sys/dev/wifi%d/vendor", devcount);
-	FILE *in = fopen(readid, "rb");
+	vendor = getValueFromPath("/proc/sys/dev/wifi%d/vendor", devcount, "%d", NULL);
 
-	vendor = 0;
-	if (in) {
-		vendor = atoi(fgets(readid, sizeof(readid), in));
-		fclose(in);
-	}
 	switch (vendor) {
 	case 9:		// ubnt xr9
 		return -(2427 - 907);
@@ -1742,20 +1694,9 @@ int get_radiostate(char *ifname)
 	if (!has_ad(ifname)) {
 #ifdef HAVE_ATH9K
 		if (is_ath9k(ifname)) {
-			char debugstring[64];
-			FILE *fp;
-			int idx;
-			char state[11];
-
-			sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag", get_ath9k_phy_ifname(ifname));
-			fp = fopen(debugstring, "r");
-			if (fp) {
-				fread(state, sizeof(state) - 1, 1, fp);
-				fclose(fp);
-				state[10] = '\0';
-				if (!strncmp(state, "0x00000003", 10))
-					return 0;
-			}
+			int state = getValueFromPath("/sys/class/ieee80211/phy%d/ath9k/diag", get_ath9k_phy_ifname(ifname), "0x%x", NULL);
+			if (state == 0x00000003)
+				return 0;
 		}
 #endif
 	}
@@ -1835,7 +1776,7 @@ void radio_on_off_ath9k(int idx, int on)
 	char secmode[16];
 	char tpt[8];
 
-	sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag", get_ath9k_phy_idx(idx));
+	sprintf(debugstring, "/sys/class/ieee80211/phy%d/ath9k/diag", get_ath9k_phy_idx(idx));
 	fp = open(debugstring, O_WRONLY);
 	if (fp) {
 		if (on)
@@ -1912,17 +1853,9 @@ int is_ath11n(char *prefix)
 
 int has_athmask(int devnum, int mask)
 {
-	char sys[64];
-	int modes;
-
-	sprintf(sys, "/proc/sys/dev/wifi%d/wirelessmodes", devnum);
-	FILE *tmp = fopen(sys, "rb");
-
-	if (tmp == NULL)
-		return 0;
-	fscanf(tmp, "%d", &modes);
-	fclose(tmp);
-	if ((modes & mask) == mask)
+	int err;
+	int modes = getValueFromPath("/proc/sys/dev/wifi%d/wirelessmodes", devnum, "%d", &err);
+	if (!err && (modes & mask) == mask)
 		return 1;
 	else
 		return 0;
@@ -2502,6 +2435,7 @@ static struct wifidevices wdevices[] = {
 	{"Alfa Networks / AR5413", 0x168c, 0x001b, 0x168d, 0x1031},	//Alfa
 	{"Alfa Networks / AR5413", 0x168c, 0x001b, 0x168d, 0x10a2},	//Alfa
 	{"DoodleLabs DB-F15-PRO", 0x168c, 0x001b, 0xdb11, 0xf50},	//dbii F50-pro-i
+	{"DoodleLabs DL4600", 0x168c, 0x001b, 0x1c14, 0x19},	//dl4600
 	{"Mikrotik R52nM", 0x168c, 0x0029, 0x198c, 0x4201},
 	{"Mikrotik R52nM", 0x168c, 0x0029, 0x19b6, 0x5201},
 	{"Mikrotik R5H", 0x168c, 0x001b, 0x19b6, 0x2201},
@@ -2557,75 +2491,23 @@ static struct wifidevices wdevices[] = {
 
 char *getWifiDeviceName(char *prefix)
 {
-	char *globstring;
 	int devnum;
 	int device = 0, vendor = 0, subdevice = 0, subvendor = 0;
 	int devcount;
-	FILE *fp;
 	sscanf(prefix, "ath%d", &devcount);
-	asprintf(&globstring, "/proc/sys/dev/wifi%d/dev_vendor", devcount);
-	fp = fopen(globstring, "rb");
-	if (fp) {
-		fscanf(fp, "%d", &vendor);
-		fclose(fp);
-	}
-	free(globstring);
-	asprintf(&globstring, "/proc/sys/dev/wifi%d/dev_device", devcount);
-	fp = fopen(globstring, "rb");
-	if (fp) {
-		fscanf(fp, "%d", &device);
-		fclose(fp);
-	}
-	free(globstring);
-	asprintf(&globstring, "/proc/sys/dev/wifi%d/idvendor", devcount);
-	fp = fopen(globstring, "rb");
-	if (fp) {
-		fscanf(fp, "%d", &subvendor);
-		fclose(fp);
-	}
-	free(globstring);
-	asprintf(&globstring, "/proc/sys/dev/wifi%d/idproduct", devcount);
-	fp = fopen(globstring, "rb");
-	if (fp) {
-		fscanf(fp, "%d", &subdevice);
-		fclose(fp);
-	}
-	free(globstring);
+	vendor = getValueFromPath("/proc/sys/dev/wifi%d/dev_vendor", devcount, "%d", NULL);
+	device = getValueFromPath("/proc/sys/dev/wifi%d/dev_device", devcount, "%d", NULL);
+	subvendor = getValueFromPath("/proc/sys/dev/wifi%d/idvendor", devcount, "%d", NULL);
+	subdevice = getValueFromPath("/proc/sys/dev/wifi%d/idproduct", devcount, "%d", NULL);
 #ifdef HAVE_ATH9K
 	if (!vendor || !device) {
 		devnum = get_ath9k_phy_ifname(prefix);
 		if (devnum == -1)
 			return NULL;
-		asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/vendor", devnum);
-		fp = fopen(globstring, "rb");
-		if (fp) {
-			fscanf(fp, "0x%x", &vendor);
-			fclose(fp);
-		}
-		free(globstring);
-		asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/device", devnum);
-		fp = fopen(globstring, "rb");
-		if (fp) {
-			fscanf(fp, "0x%x", &device);
-			fclose(fp);
-		}
-		free(globstring);
-
-		asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/subsystem_device", devnum);
-		fp = fopen(globstring, "rb");
-		if (fp) {
-			fscanf(fp, "0x%x", &subdevice);
-			fclose(fp);
-		}
-		free(globstring);
-
-		asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/subsystem_vendor", devnum);
-		fp = fopen(globstring, "rb");
-		if (fp) {
-			fscanf(fp, "0x%x", &subvendor);
-			fclose(fp);
-		}
-		free(globstring);
+		vendor = getValueFromPath("/sys/class/ieee80211/phy%d/device/vendor", devnum, "0x%x", NULL);
+		device = getValueFromPath("/sys/class/ieee80211/phy%d/device/device", devnum, "0x%x", NULL);
+		subvendor = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_vendor", devnum, "0x%x", NULL);
+		subdevice = getValueFromPath("/sys/class/ieee80211/phy%d/device/subsystem_device", devnum, "0x%x", NULL);
 	}
 #endif
 #ifdef HAVE_RT2880
@@ -2787,10 +2669,10 @@ int has_spectralscanning(const char *prefix)
 		RETURNVALUE(0);
 #ifdef HAVE_ATH10K
 	if (is_ath10k(prefix))
-		asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath10k/spectral_count", devnum);
+		asprintf(&globstring, "/sys/class/ieee80211/phy%d/ath10k/spectral_count", devnum);
 	else
 #endif
-		asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/spectral_count", devnum);
+		asprintf(&globstring, "/sys/class/ieee80211/phy%d/ath9k/spectral_count", devnum);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	free(globstring);
 	if (globresult == 0)
@@ -2811,14 +2693,14 @@ int has_airtime_fairness(char *prefix)
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1)
 		RETURNVALUE(0);
-	asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/airtime_flags", devnum);
+	asprintf(&globstring, "/sys/class/ieee80211/phy%d/ath9k/airtime_flags", devnum);
 	FILE *fp = fopen(globstring, "rb");
 	free(globstring);
 	if (fp) {
 		fclose(fp);
 		RETURNVALUE(1);
 	}
-	asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath10k/atf", devnum);
+	asprintf(&globstring, "/sys/class/ieee80211/phy%d/ath10k/atf", devnum);
 	fp = fopen(globstring, "rb");
 	free(globstring);
 	if (fp) {
@@ -3587,13 +3469,9 @@ char *getWET()
 
 struct wl_assoc_mac *get_wl_assoc_mac(int instance, int *c)
 {
-	FILE *fp;
 	struct wl_assoc_mac *wlmac = NULL;
 	int count;
-	char line[80];
-	char list[2][20];
 	char checkif[12];
-	char assoccmd[32];
 
 	wlmac = NULL;
 	count = *c = 0;
@@ -3611,9 +3489,9 @@ struct wl_assoc_mac *get_wl_assoc_mac(int instance, int *c)
 			sprintf(checkif, "wl%d.%d", instance, i);
 		if (!ifexists(checkif))
 			break;
-		char *buf = malloc(8192);
+		unsigned char *buf = malloc(8192);
 		struct maclist *maclist = (struct maclist *)buf;
-		int cnt = getassoclist(buf, checkif);
+		int cnt = getassoclist(checkif, buf);
 		if (cnt > 0) {
 			gotit = 1;
 			wlmac = realloc(wlmac, sizeof(struct wl_assoc_mac) * (count + cnt));

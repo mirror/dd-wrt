@@ -135,22 +135,11 @@ static void __attribute__((constructor)) mac80211_init(void)
 
 static int phy_lookup_by_number(int idx)
 {
-	char buf[200];
-	int fd, pos;
-
-	snprintf(buf, sizeof(buf), "/sys/class/ieee80211/phy%d/index", idx);
-
-	fd = open(buf, O_RDONLY);
-	if (fd < 0)
+	int err;
+	int phy = getValueFromPath("/sys/class/ieee80211/phy%d/index", idx, "%d", &err);
+	if (err)
 		return -1;
-	pos = read(fd, buf, sizeof(buf) - 1);
-	if (pos < 0) {
-		close(fd);
-		return -1;
-	}
-	buf[pos] = '\0';
-	close(fd);
-	return atoi(buf);
+	return phy;
 }
 
 int mac80211_get_phyidx_by_vifname(char *vif)
@@ -281,16 +270,8 @@ int is_beeliner(const char *prefix)
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1)
 		return 0;
-
-	asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/device", devnum);
-	FILE *fp = fopen(globstring, "rb");
-	free(globstring);
-	if (!fp)
-		return 0;
-	char buf[32];
-	fscanf(fp, "%s", buf);
-	fclose(fp);
-	if (!strcmp(buf, "0x0040") || !strcmp(buf, "0x0046"))
+	int device = getValueFromPath("/sys/class/ieee80211/phy%d/device/device", devnum, "0x%x", NULL);
+	if (device == 0x0040 || device == 0x0046)
 		return 1;
 	return 0;
 }
@@ -300,13 +281,13 @@ unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 	unsigned int baseaddress = is_beeliner(ifname) ? 0x30000 : 0x20000;
 	int phy = get_ath9k_phy_ifname(ifname);
 	char file[64];
-	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
+	sprintf(file, "/sys/class/ieee80211/phy%d/ath10k/reg_addr", phy);
 	FILE *fp = fopen(file, "wb");
 	if (fp == NULL)
 		return 0;
 	fprintf(fp, "0x%x", baseaddress + reg);
 	fclose(fp);
-	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
+	sprintf(file, "/sys/class/ieee80211/phy%d/ath10k/reg_value", phy);
 	fp = fopen(file, "rb");
 	if (fp == NULL)
 		return 0;
@@ -321,13 +302,13 @@ void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 	unsigned int baseaddress = is_beeliner(ifname) ? 0x30000 : 0x20000;
 	char file[64];
 	int phy = get_ath9k_phy_ifname(ifname);
-	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
+	sprintf(file, "/sys/class/ieee80211/phy%d/ath10k/reg_addr", phy);
 	FILE *fp = fopen(file, "wb");
 	if (fp == NULL)
 		return;
 	fprintf(fp, "0x%x", baseaddress + reg);
 	fclose(fp);
-	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
+	sprintf(file, "/sys/class/ieee80211/phy%d/ath10k/reg_value", phy);
 	fp = fopen(file, "wb");
 	if (fp == NULL)
 		return;
@@ -1562,10 +1543,10 @@ static int get_ht_mcs(const __u8 *mcs)
 	unsigned int tx_max_num_spatial_streams, max_rx_supp_data_rate;
 	bool tx_mcs_set_defined, tx_mcs_set_equal, tx_unequal_modulation;
 	max_rx_supp_data_rate = ((mcs[10] >> 8) & ((mcs[11] & 0x3) << 8));
-	tx_mcs_set_defined = !!(mcs[12] & (1 << 0));
+	tx_mcs_set_defined = ! !(mcs[12] & (1 << 0));
 	tx_mcs_set_equal = !(mcs[12] & (1 << 1));
 	tx_max_num_spatial_streams = ((mcs[12] >> 2) & 3) + 1;
-	tx_unequal_modulation = !!(mcs[12] & (1 << 4));
+	tx_unequal_modulation = ! !(mcs[12] & (1 << 4));
 	/* XXX: else see 9.6.0e.5.3 how to get this I think */
 	return get_max_mcs_index(mcs);
 }
