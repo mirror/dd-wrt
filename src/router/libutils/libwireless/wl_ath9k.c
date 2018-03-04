@@ -67,7 +67,7 @@ int getassoclist_ath9k(char *ifname, unsigned char *list)
 }
 
 // dummy TBD 
-int getRssi_ath9k(char *ifname, unsigned char *mac)
+int getWifiInfo_ath9k(char *ifname, unsigned char *mac, int field)
 {
 	unsigned char rmac[32];
 	ether_etoa(mac, rmac);
@@ -79,85 +79,20 @@ int getRssi_ath9k(char *ifname, unsigned char *mac)
 		if (!strcmp(wc->mac, rmac)) {
 			free_wifi_clients(mac80211_info->wci);
 			free(mac80211_info);
-			return wc->signal;
-		}
-	}
-	free_wifi_clients(mac80211_info->wci);
-	free(mac80211_info);
-	return 0;
-}
-
-// dummy TBD 
-int getUptime_ath9k(char *ifname, unsigned char *mac)
-{
-	unsigned char rmac[32];
-	ether_etoa(mac, rmac);
-	struct mac80211_info *mac80211_info;
-	struct wifi_client_info *wc;
-	mac80211_info = mac80211_assoclist(ifname);
-	for (wc = mac80211_info->wci; wc; wc = wc->next) {
-		if (!strcmp(wc->mac, rmac)) {
-			free_wifi_clients(mac80211_info->wci);
-			free(mac80211_info);
-			return wc->uptime;
-		}
-	}
-	free_wifi_clients(mac80211_info->wci);
-	free(mac80211_info);
-	return 0;
-}
-
-// dummy TBD 
-int getNoise_ath9k(char *ifname, unsigned char *mac)
-{
-	unsigned char rmac[32];
-	ether_etoa(mac, rmac);
-	struct mac80211_info *mac80211_info;
-	struct wifi_client_info *wc;
-	mac80211_info = mac80211_assoclist(ifname);
-	for (wc = mac80211_info->wci; wc; wc = wc->next) {
-		if (!strcmp(wc->mac, rmac)) {
-			free_wifi_clients(mac80211_info->wci);
-			free(mac80211_info);
-			return wc->noise;
-		}
-	}
-	free_wifi_clients(mac80211_info->wci);
-	free(mac80211_info);
-	return 0;
-}
-
-int getTxRate_ath9k(char *ifname, unsigned char *mac)
-{
-	unsigned char rmac[32];
-	ether_etoa(mac, rmac);
-	struct mac80211_info *mac80211_info;
-	struct wifi_client_info *wc;
-	mac80211_info = mac80211_assoclist(ifname);
-	for (wc = mac80211_info->wci; wc; wc = wc->next) {
-		if (!strcmp(wc->mac, rmac)) {
-			free_wifi_clients(mac80211_info->wci);
-			free(mac80211_info);
-			return wc->txrate;
-		}
-	}
-	free_wifi_clients(mac80211_info->wci);
-	free(mac80211_info);
-	return 0;
-}
-
-int getRxRate_ath9k(char *ifname, unsigned char *mac)
-{
-	unsigned char rmac[32];
-	ether_etoa(mac, rmac);
-	struct mac80211_info *mac80211_info;
-	struct wifi_client_info *wc;
-	mac80211_info = mac80211_assoclist(ifname);
-	for (wc = mac80211_info->wci; wc; wc = wc->next) {
-		if (!strcmp(wc->mac, rmac)) {
-			free_wifi_clients(mac80211_info->wci);
-			free(mac80211_info);
-			return wc->rxrate;
+			switch (field) {
+			case INFO_RSSI:
+				return wc->signal;
+			case INFO_NOISE:
+				return wc->noise;
+			case INFO_UPTIME:
+				return wc->uptime;
+			case INFO_RXRATE:
+				return wc->rxrate;
+			case INFO_TXRATE:
+				return wc->txrate;
+			default:
+				return 0;
+			}
 		}
 	}
 	free_wifi_clients(mac80211_info->wci);
