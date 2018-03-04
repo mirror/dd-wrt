@@ -375,7 +375,7 @@ static void save(FILE * fp, char *p, int not)
 
 }
 
-int nvram_restore(char *filename)
+int nvram_restore(char *filename, int force)
 {
 	char sign[7];
 	char *nvram_ver = NULL;
@@ -438,9 +438,13 @@ int nvram_restore(char *filename)
 				if (!c && !strcmp(name, "DD_BOARD")) {
 					fprintf(stdout, "backup is for board %s, board is %s\n", value, nvram_safe_get("DD_BOARD"));
 					if (!nvram_match("DD_BOARD", value)) {
-						fprintf(stderr, "incompatible backup file!\n");
-						fclose(fp);
-						return -2;
+						if (!force) {
+							fprintf(stderr, "incompatible backup file!\n");
+							fclose(fp);
+							return -2;
+						} else {
+							fprintf(stderr, "WARNING: incompatible backup file!\n");
+						}
 					}
 				}
 				if (c && !nvram_critical(name)) {
@@ -510,7 +514,7 @@ int main(int argc, char *argv[])
 {
 
 	nvram_backup("/tmp/fixup.bin");
-	nvram_restore("/tmp/fixup.bin");
+	nvram_restore("/tmp/fixup.bin", 0);
 }
 
 #endif
