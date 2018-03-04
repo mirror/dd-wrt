@@ -29,19 +29,19 @@
  * MD5 context. 
  */
 #include <string.h>
-# include <byteswap.h>
-# include <endian.h>
-# include <sys/types.h>
+#include <byteswap.h>
+#include <endian.h>
+#include <sys/types.h>
 
 #ifdef __BIG_ENDIAN__
-# define BB_BIG_ENDIAN 1
-# define BB_LITTLE_ENDIAN 0
+#define BB_BIG_ENDIAN 1
+#define BB_LITTLE_ENDIAN 0
 #elif __BYTE_ORDER == __BIG_ENDIAN
-# define BB_BIG_ENDIAN 1
-# define BB_LITTLE_ENDIAN 0
+#define BB_BIG_ENDIAN 1
+#define BB_LITTLE_ENDIAN 0
 #else
-# define BB_BIG_ENDIAN 0
-# define BB_LITTLE_ENDIAN 1
+#define BB_BIG_ENDIAN 0
+#define BB_LITTLE_ENDIAN 1
 #endif
 
 #if BB_BIG_ENDIAN
