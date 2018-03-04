@@ -45,6 +45,22 @@ To add:
 #include <unistd.h>
 #include <stdint.h>
 
+
+#define INFO_UPTIME 0
+#define INFO_RSSI 1
+#define INFO_NOISE 2
+#define INFO_RXRATE 3
+#define INFO_TXRATE 4
+
+int getWifiInfo_ath9k(char *ifname, unsigned char *mac, int field);	// only used internal
+int getWifiInfo(char *ifname, unsigned char *mac, int field);
+
+#define getNoise(ifname, mac) getWifiInfo(ifname, mac, INFO_NOISE)
+#define getRssi(ifname, mac) getWifiInfo(ifname, mac, INFO_RSSI)
+#define getTxRate(ifname, mac) getWifiInfo(ifname, mac, INFO_TXRATE)
+#define getRxRate(ifname, mac) getWifiInfo(ifname, mac, INFO_RXRATE)
+#define getUptime(ifname, mac) getWifiInfo(ifname, mac, INFO_UPTIME)
+
 #define HOST_TIMEOUT 300
 
 #include "wl_access.h"
