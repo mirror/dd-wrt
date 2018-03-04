@@ -568,10 +568,9 @@ int getassoclist(char *ifname, unsigned char *list)
 	return count[0];
 }
 
-int getRssi(char *ifname, unsigned char *mac)
+int getWifiInfo(char *ifname, unsigned char *mac, int field)
 {
 	struct iwreq iwr;
-
 	RT_802_11_MAC_TABLE table = { 0 };
 	int s, i;
 
@@ -600,34 +599,29 @@ int getRssi(char *ifname, unsigned char *mac)
 	}
 
 	STAINFO *sta = getRaStaInfo(ifname);
+	switch (field) {
+	case INFO_RSSI:
+		if (sta != NULL) {
+			if (!memcmp(mac, sta->mac, 6)) {
+				int retu = sta->rssi;
 
-	if (sta != NULL) {
-		if (!memcmp(mac, sta->mac, 6)) {
-			int retu = sta->rssi;
-
-			free(sta);
-			return -95 + retu;
-		}
-		free(sta);
-	}
-	if (!ignore && table.Num < 128)
-		for (i = 0; i < table.Num; i++) {
-			if (!memcmp(mac, &table.Entry[i].Addr, 6)) {
-				return -95 + table.Entry[i].AvgRssi0;
+				free(sta);
+				return -95 + retu;
 			}
+			free(sta);
 		}
-	return 0;
-}
-
-int getNoise(char *ifname, unsigned char *mac)
-{
-
-	return -95;
-
-}
-
-int getUptime(char *ifname, unsigned char *mac)
-{
+		if (!ignore && table.Num < 128)
+			for (i = 0; i < table.Num; i++) {
+				if (!memcmp(mac, &table.Entry[i].Addr, 6)) {
+					return -95 + table.Entry[i].AvgRssi0;
+				}
+			}
+		return 0;
+	case INFO_NOISE:
+		return -95;
+	case INFO_UPTIME:
+		return 0;
+	}
 	return 0;
 }
 
@@ -1097,29 +1091,17 @@ int getwdslist(char *name, unsigned char *list)
 }
 
 #if !defined(HAVE_RT2880) && !defined(HAVE_RT61)
-int getNoise(char *ifname, unsigned char *macname)
+
+int getWifiInfo(char *ifname, unsigned char *macname, int field)
 {
 	unsigned int noise;
 
-	// rssi = 0;
-	// char buf[WLC_IOCTL_MAXLEN];
-	wl_ioctl(ifname, WLC_GET_PHY_NOISE, &noise, sizeof(noise));
-
-	/*
-	 * wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
-	 * bzero(buf,WLC_IOCTL_MAXLEN);
-	 * 
-	 * wl_ioctl(name, WLC_GET_BSS_INFO, bss_info, WLC_IOCTL_MAXLEN); if
-	 * ((wl_ioctl(name, WLC_GET_AP, &ap, sizeof(ap)) < 0) || ap) { if
-	 * (wl_ioctl(name, WLC_GET_PHY_NOISE, &noise, sizeof(noise)) < 0) noise = 
-	 * 0; } else { // somehow the structure doesn't fit here rssi = buf[82];
-	 * noise = buf[84]; } 
-	 */
-	return noise;
-}
-
-int getUptime(char *ifname, unsigned char *mac)
-{
+	switch (field) {
+	case INFO_NOISE:
+		wl_ioctl(ifname, WLC_GET_PHY_NOISE, &noise, sizeof(noise));
+		return noise;
+		break;
+	}
 	return 0;
 }
 
