@@ -1656,12 +1656,12 @@ int led_control(int type, int act)
 		break;
 	case LED_DIAG:
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	if (cfg->v1func == 1) {
-		if (act == LED_ON)
-			C_led(1);
-		else
-			C_led(0);
-	}
+		if (cfg->v1func == 1) {
+			if (act == LED_ON)
+				C_led(1);
+			else
+				C_led(0);
+		}
 #endif
 		if (act == LED_ON)
 			led_control(LED_DIAG_DISABLED, LED_OFF);
