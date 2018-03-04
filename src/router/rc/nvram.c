@@ -103,6 +103,7 @@ static int nvram_main(int argc, char **argv)
 	/* 
 	 * Process the remaining arguments. 
 	 */
+	int force;
 	for (; *argv; argv++) {
 		if (!strncmp(*argv, "get", 3)) {
 			if (*++argv) {
@@ -139,9 +140,11 @@ static int nvram_main(int argc, char **argv)
 					return 1;
 				}
 			}
+		} else if (!strncmp(*argv, "--force", 7)) {
+			force = 1;
 		} else if (!strncmp(*argv, "restore", 7)) {
 			if (*++argv) {
-				int ret = nvram_restore(*argv);
+				int ret = nvram_restore(*argv, force);
 				if (ret == -1) {
 					fprintf(stderr, "can't write %s\n", *argv);
 					free(buf);
