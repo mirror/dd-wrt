@@ -74,8 +74,15 @@ int FAST_FUNC rtc_xopen(const char **default_rtc, int flags)
 
 	for (;;) {
 		rtc = open_loop_on_busy(*default_rtc, flags);
-		if (rtc >= 0)
+		if (rtc >= 0) {
+			struct tm test;
+			memset(&test, 0, sizeof(test));
+			if (ioctl(rtc, RTC_RD_TIME, &test) < 0) {
+				xclose(rtc);
+				goto try_name;
+			}
 			return rtc;
+		}
 		if (!name[0])
 			return xopen(*default_rtc, flags);
  try_name:
