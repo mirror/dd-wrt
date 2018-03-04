@@ -19,7 +19,6 @@
 
 #define MAX_NVPARSE 256
 
-
 /*
  * Reads file and returns contents
  * @param       path    path to file
