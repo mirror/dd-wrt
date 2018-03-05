@@ -154,10 +154,10 @@ void start_sysinit(void)
 #endif
 #ifdef HAVE_WR940V4
 	setEthLED(14, "eth1");
-	setSwitchLED(8, 0x2);
-	setSwitchLED(6, 0x4);
-	setSwitchLED(18, 0x8);
-	setSwitchLED(4, 0x10);
+	setSwitchLED(4, 0x2);
+	setSwitchLED(18, 0x4); 
+	setSwitchLED(6, 0x8); 
+	setSwitchLED(8, 0x10);  
 #elif HAVE_WR941V6
 	setEthLED(14, "eth1");
 	setSwitchLED(7, 0x2);
