@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.80 Kernel Configuration
+# Linux/arm 4.9.86 Kernel Configuration
 #
 CONFIG_ARM=y
 # CONFIG_ARM_HWCC_FLAG is not set
@@ -2147,6 +2147,7 @@ CONFIG_LEDS_GPIO=y
 #
 # LED driver for blink(1) USB RGB LED is under Special HID drivers (HID_THINGM)
 #
+# CONFIG_LEDS_OMNIA is not set
 # CONFIG_LEDS_BLINKM is not set
 
 #
@@ -2888,4 +2889,3 @@ CONFIG_SG_POOL=y
 # CONFIG_ARCH_HAS_SG_CHAIN is not set
 CONFIG_SBITMAP=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_LEDS_OMNIA is not set
