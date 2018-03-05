@@ -952,13 +952,15 @@ static void *handle_request(void *arg)
 				if (host[a] == ' ' || host[a] == '\r' || host[a] == '\n' || host[a] == '\t')
 					host[a] = 0;
 			hlen = strlen(host);
+			char crosssite[128]
+			snprintf(crosssite, sizeof(crosssize), "Cross Site Action detected! (referer %s)", referer)
 			for (a = i; a < rlen; a++) {
 				if (referer[a] == '/') {
-					send_error(conn_fp, 400, "Bad Request", NULL, "Cross Site Action detected!");
+					send_error(conn_fp, 400, "Bad Request", NULL, crosssite);
 					goto out;
 				}
 				if (host[c++] != referer[a]) {
-					send_error(conn_fp, 400, "Bad Request", NULL, "Cross Site Action detected!");
+					send_error(conn_fp, 400, "Bad Request", NULL, crosssite);
 					goto out;
 				}
 				if (c == hlen) {
@@ -967,7 +969,7 @@ static void *handle_request(void *arg)
 				}
 			}
 			if (c != hlen || referer[a] != '/') {
-				send_error(conn_fp, 400, "Bad Request", NULL, "Cross Site Action detected!");
+				send_error(conn_fp, 400, "Bad Request", NULL, crosssite);
 				goto out;
 			}
 		}
