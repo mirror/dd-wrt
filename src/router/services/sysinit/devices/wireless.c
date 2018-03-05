@@ -282,8 +282,7 @@ static void detect_wireless_devices(void)
 	fprintf(stderr, "load ATH/QCA 802.11ac Driver\n");
 	insmod("hwmon");
 	insmod("thermal_sys");
-	insmod("ath10k_core");
-	insmod("ath10k_pci");
+	insmod("ath10k");
 #endif
 #ifdef HAVE_WIL6210
 	eval("insmod", "wil6210", "led_id=2");
