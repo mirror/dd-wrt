@@ -952,7 +952,7 @@ static void *handle_request(void *arg)
 				if (host[a] == ' ' || host[a] == '\r' || host[a] == '\n' || host[a] == '\t')
 					host[a] = 0;
 			hlen = strlen(host);
-			char crosssite[128]
+			char crosssite[128];
 			snprintf(crosssite, sizeof(crosssite), "Cross Site Action detected! (referer %s)", referer)
 			for (a = i; a < rlen; a++) {
 				if (referer[a] == '/') {
