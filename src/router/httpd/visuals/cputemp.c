@@ -225,8 +225,8 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	int TEMP_MUL = 1000;
 	FILE *fp = fopen("/sys/bus/i2c/devices/0-0049/temp1_input", "rb");
 #elif HAVE_VENTANA
-	int TEMP_MUL = 10;
-	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/temp0_input", "rb");
+	int TEMP_MUL = 1000;
+	FILE *fp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
 #else
 	int TEMP_MUL = 1000;
 #ifdef HAVE_X86
