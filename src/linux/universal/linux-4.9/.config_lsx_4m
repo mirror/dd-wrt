@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.80 Kernel Configuration
+# Linux/mips 4.9.86 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1455,6 +1455,7 @@ CONFIG_LEDS_GPIO=y
 #
 # LED driver for blink(1) USB RGB LED is under Special HID drivers (HID_THINGM)
 #
+# CONFIG_LEDS_OMNIA is not set
 
 #
 # LED Triggers
@@ -2057,4 +2058,3 @@ CONFIG_GENERIC_ATOMIC64=y
 CONFIG_SBITMAP=y
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_LEDS_OMNIA is not set

@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.9.80 Kernel Configuration
+# Linux/i386 4.9.86 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -3370,6 +3370,7 @@ CONFIG_LEDS_WRAP=m
 #
 # LED driver for blink(1) USB RGB LED is under Special HID drivers (HID_THINGM)
 #
+# CONFIG_LEDS_OMNIA is not set
 # CONFIG_LEDS_BLINKM is not set
 
 #
@@ -4354,4 +4355,3 @@ CONFIG_SG_POOL=y
 CONFIG_ARCH_HAS_SG_CHAIN=y
 CONFIG_ARCH_HAS_MMIO_FLUSH=y
 CONFIG_SBITMAP=y
-# CONFIG_LEDS_OMNIA is not set
