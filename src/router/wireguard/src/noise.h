@@ -54,10 +54,10 @@ struct noise_keypairs {
 };
 
 struct noise_static_identity {
-	bool has_identity;
 	u8 static_public[NOISE_PUBLIC_KEY_LEN];
 	u8 static_private[NOISE_PUBLIC_KEY_LEN];
 	struct rw_semaphore lock;
+	bool has_identity;
 };
 
 enum noise_handshake_state {
@@ -109,7 +109,7 @@ static bool noise_precompute_static_static(struct wireguard_peer *peer);
 static bool noise_handshake_create_initiation(struct message_handshake_initiation *dst, struct noise_handshake *handshake);
 static struct wireguard_peer *noise_handshake_consume_initiation(struct message_handshake_initiation *src, struct wireguard_device *wg);
 
-static bool noise_handshake_create_response(struct message_handshake_response *dst, struct noise_handshake *peer);
+static bool noise_handshake_create_response(struct message_handshake_response *dst, struct noise_handshake *handshake);
 static struct wireguard_peer *noise_handshake_consume_response(struct message_handshake_response *src, struct wireguard_device *wg);
 
 static bool noise_handshake_begin_session(struct noise_handshake *handshake, struct noise_keypairs *keypairs);
