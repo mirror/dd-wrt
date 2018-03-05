@@ -324,7 +324,11 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			if (cpufound || found) {
 				websWrite(wp, " / ");
 			}
-			websWrite(wp, "ath%d %d &#176;C", i, temp / 1000);
+			int temperature = temp / 1000;
+			if (temperature < 0 || temperature > 200)
+				websWrite(wp, "ath%d %s", i, live_translate("status_router.notavail"));
+			else
+				websWrite(wp, "ath%d %d &#176;C", i, temp / 1000);
 			found = 1;
 		}
 	}
