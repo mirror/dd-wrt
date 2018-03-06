@@ -283,7 +283,7 @@ void lease_update_file(time_t now)
 	  inet_ntop(AF_INET, &lease->addr, daemon->addrbuff, ADDRSTRLEN); 
 
 	  ourprintf(&err, " %s ", daemon->addrbuff);
-	sprintf(syscall,"echo ADD %s %.2x:%.2x:%.2x:%.2x:%.2x:%.2x > /proc/net/arp_spoofing_table",daemon->addrbuff, lease->hwaddr[0],lease->hwaddr[1],lease->hwaddr[2],lease->hwaddr[3],lease->hwaddr[4],lease->hwaddr[5]);
+	sprintf(syscall,"echo ADD %s %s > /proc/net/arp_spoofing_table",daemon->addrbuf,ether_ntoa((const struct ether_addr *)&lease->hwaddr[0]));
 	system(syscall);
 	  ourprintf(&err, "%s ", lease->hostname ? lease->hostname : "*");
     	  	  
