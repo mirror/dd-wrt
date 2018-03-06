@@ -1506,11 +1506,11 @@ ssize_t arp_spoofing_table_read(struct file *file,  char __user *buffer, size_t 
 
 ssize_t arp_spoofing_table_write(struct file *file, const char __user *buffer, size_t count, loff_t *ppos)
 {
-	char *buf = kmalloc(count, GFP_KERNEL);
+	char *buf = kmalloc(count + 1, GFP_KERNEL);
 	int i = 0;
-	char szAction[16] = { 0 };
-	char szIPaddr[16] = { 0 };
-	char szMac[18] = { 0 };
+	char szAction[32] = { 0 };
+	char szIPaddr[32] = { 0 };
+	char szMac[32] = { 0 };
 	unsigned char szUCMac[ETH_ALEN] = { 0 };
 	__be32 ui_ip;
 	int iFlag = 0;
@@ -1525,7 +1525,7 @@ ssize_t arp_spoofing_table_write(struct file *file, const char __user *buffer, s
 		memset(szIPaddr, 0, sizeof(szIPaddr));
 		memset(szMac, 0, sizeof(szMac));
 		
-		i = sscanf(buf, "%s %s %s",  szAction, szIPaddr, szMac);
+		i = sscanf(buf, "%15s %15s %17s",  szAction, szIPaddr, szMac);
 
 		if(!strcmp(szAction, "ADD"))
                 {
@@ -1627,10 +1627,9 @@ ssize_t arp_spoofing_table_write(struct file *file, const char __user *buffer, s
 			}
 		}
 						
+		kfree(buf);
 	}
 exit:
-	if(NULL != buf)
-		kfree(buf);
 
 	return count;
 }
