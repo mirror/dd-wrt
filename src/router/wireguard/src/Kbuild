@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
 
-ccflags-y := -fvisibility=hidden
+ccflags-y := -O3 -fvisibility=hidden
 ccflags-$(CONFIG_WIREGUARD_DEBUG) += -DDEBUG -g
 ccflags-y += -Wframe-larger-than=8192
 ccflags-y += -D'pr_fmt(fmt)=KBUILD_MODNAME ": " fmt'
