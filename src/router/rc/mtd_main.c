@@ -257,15 +257,14 @@ static int s_mtd_write(FILE * imagefp, const char *mtd, int quiet)
 		if (r < mtdInfo.erasesize) {
 			fprintf(stderr, "\nWarning unaligned data, we use manual padding to avoid errors. size was %d!!!\n", r);
 
-		} else {
-			if ((result = write(fd, writebuf, mtdInfo.erasesize)) < r) {
-				if (result < 0) {
-					fprintf(stderr, "Error writing image.\n");
-					exit(1);
-				} else {
-					fprintf(stderr, "Insufficient space.\n");
-					exit(1);
-				}
+		}
+		if ((result = write(fd, writebuf, mtdInfo.erasesize)) < r) {
+			if (result < 0) {
+				fprintf(stderr, "Error writing image.\n");
+				exit(1);
+			} else {
+				fprintf(stderr, "Insufficient space.\n");
+				exit(1);
 			}
 		}
 		buflen = 0;
