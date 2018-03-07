@@ -242,6 +242,7 @@ static void checkupgrade(void)
 #elif defined(HAVE_VENTANA)
 		eval("update-prepare.sh", "/tmp/firmware.bin", "rootfs", "usefile");
 #else
+		eval("fischecksum");
 		eval("write", "/tmp/firmware.bin", "linux");
 #endif
 		fprintf(stderr, "done. rebooting now\n");
