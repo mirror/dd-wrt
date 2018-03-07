@@ -752,10 +752,10 @@ static void do_spectral_scan(unsigned char method, struct mime_handler *handler,
 
 #ifdef HAVE_ATH10K
 	if (is_ath10k(ifname))
-		asprintf(&path, "/sys/class/ieee80211/phy%d/ath10k", phy);
+		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath10k", phy);
 	else
 #endif
-		asprintf(&path, "/sys/class/ieee80211/phy%d/ath9k", phy);
+		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath9k", phy);
 
 	char dest[64];
 	sprintf(dest, "%s/spectral_count", path);
