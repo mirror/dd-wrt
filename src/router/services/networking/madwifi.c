@@ -2355,7 +2355,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	    // cards
 {
 #ifdef HAVE_NLD
-	eval("nldstop.sh");
+	eval("/usr/sbin/nldstop.sh");
 #endif
 	deconfigure_wifi();
 	int c = getdevicecount();
@@ -2426,11 +2426,11 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	if (registered_has_cap(21))
 #endif
 	{
-		eval("nldstart.sh");
+		eval("/usr/sbin/nldstart.sh");
+		dd_syslog(LOG_INFO, "NLD: Startup\n");
 	}
 #endif
 #if defined(HAVE_TMK) || defined(HAVE_BKM)
-	eval("/jffs/bin/r1x_startup.sh");
 	eval("/sbin/r1x_startup.sh");
 #endif
 #ifdef HAVE_WPS
