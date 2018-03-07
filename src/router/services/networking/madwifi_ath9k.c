@@ -76,8 +76,8 @@ void delete_ath9k_devices(char *physical_iface)
 		char dev[32];
 		sprintf(dev, "%s", ifname + 1);
 		if (has_ad(dev)) {
-			sysprintf("echo 0 > /sys/class/ieee80211/phy2/wil6210/led_cfg");
-			sysprintf("echo 10000 0 10000 0 10000 0 > /sys/class/ieee80211/phy2/wil6210/led_blink_time");
+			sysprintf("echo 0 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_cfg");
+			sysprintf("echo 10000 0 10000 0 10000 0 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_blink_time");
 			br_del_interface(getBridge("ath2", tmp), dev);
 		} else
 			br_del_interface(getBridge(dev, tmp), dev);
@@ -159,29 +159,29 @@ void configure_single_ath9k(int count)
 		sprintf(atf, "%s_atf", dev);
 #ifdef HAVE_ATH10K
 		if (is_ath10k(dev))
-			sysprintf("echo %d > /sys/class/ieee80211/%s/ath10k/atf", nvram_default_match(atf, "1", "0") ? 1 : 0, wif);
+			sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/ath10k/atf", nvram_default_match(atf, "1", "0") ? 1 : 0, wif);
 		else
 #endif
-			sysprintf("echo %d > /sys/class/ieee80211/%s/ath9k/airtime_flags", nvram_default_match(atf, "1", "1") ? 3 : 0, wif);
+			sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/ath9k/airtime_flags", nvram_default_match(atf, "1", "1") ? 3 : 0, wif);
 	}
 	// set channelbw ht40 is also 20!
 	sprintf(bw, "%s_channelbw", dev);
 	if (isath5k) {
 		if (nvram_matchi(bw, 5))
-			sysprintf("echo 5 > /sys/class/ieee80211/%s/ath5k/bwmode", wif);
+			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
 		else if (nvram_matchi(bw, 10))
-			sysprintf("echo 10 > /sys/class/ieee80211/%s/ath5k/bwmode", wif);
+			sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
 		else if (nvram_matchi(bw, 40))
-			sysprintf("echo 40 > /sys/class/ieee80211/%s/ath5k/bwmode", wif);
+			sysprintf("echo 40 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
 		else
-			sysprintf("echo 20 > /sys/class/ieee80211/%s/ath5k/bwmode", wif);
+			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
 	} else {
 		if (nvram_matchi(bw, 5))
-			sysprintf("echo 5 > /sys/class/ieee80211/%s/ath9k/chanbw", wif);
+			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
 		else if (nvram_matchi(bw, 10))
-			sysprintf("echo 10 > /sys/class/ieee80211/%s/ath9k/chanbw", wif);
+			sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
 		else
-			sysprintf("echo 20 > /sys/class/ieee80211/%s/ath9k/chanbw", wif);
+			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
 	}
 	char wl_intmit[32];
 
@@ -189,10 +189,10 @@ void configure_single_ath9k(int count)
 
 #ifdef HAVE_ATH10K
 	if (is_ath10k(dev))
-		sysprintf("echo %s > /sys/class/ieee80211/%s/ath10k/ani_enable", nvram_default_get(wl_intmit, "0"), wif);
+		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/ani_enable", nvram_default_get(wl_intmit, "0"), wif);
 	else
 #endif
-		sysprintf("echo %s > /sys/class/ieee80211/%s/ath9k/ani", nvram_default_get(wl_intmit, "1"), wif);
+		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/ani", nvram_default_get(wl_intmit, "1"), wif);
 #ifdef HAVE_REGISTER
 	int cpeonly = iscpe();
 #else
@@ -326,9 +326,9 @@ void configure_single_ath9k(int count)
 		counter++;
 		}
 	if (has_ad(dev)) {
-		sysprintf("echo 0 > /sys/class/ieee80211/phy2/wil6210/led_polarity");
-		sysprintf("echo 1 > /sys/class/ieee80211/phy2/wil6210/led_cfg");
-		sysprintf("echo 10000 0 200 200 100 100 > /sys/class/ieee80211/phy2/wil6210/led_blink_time");
+		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_polarity");
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_cfg");
+		sysprintf("echo 10000 0 200 200 100 100 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_blink_time");
 
 	}
 
