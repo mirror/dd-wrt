@@ -1678,7 +1678,7 @@ int get_radiostate(char *ifname)
 	if (!has_ad(ifname)) {
 #ifdef HAVE_ATH9K
 		if (is_ath9k(ifname)) {
-			int state = getValueFromPath("/sys/class/ieee80211/phy%d/ath9k/diag", get_ath9k_phy_ifname(ifname), "0x%x", NULL);
+			int state = getValueFromPath("/sys/kernel/debug/ieee80211/phy%d/ath9k/diag", get_ath9k_phy_ifname(ifname), "0x%x", NULL);
 			if (state == 0x00000003)
 				return 0;
 		}
@@ -1760,7 +1760,7 @@ void radio_on_off_ath9k(int idx, int on)
 	char secmode[16];
 	char tpt[8];
 
-	sprintf(debugstring, "/sys/class/ieee80211/phy%d/ath9k/diag", get_ath9k_phy_idx(idx));
+	sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag", get_ath9k_phy_idx(idx));
 	fp = open(debugstring, O_WRONLY);
 	if (fp) {
 		if (on)
@@ -2620,7 +2620,7 @@ int is_ath9k(const char *prefix)
 	if (devnum == -1) {
 		RETURNVALUE(0);
 	}
-	asprintf(&globstring, "/sys/class/ieee80211/phy%d", devnum);
+	asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d", devnum);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	free(globstring);
 	if (globresult == 0) {
@@ -2653,10 +2653,10 @@ int has_spectralscanning(const char *prefix)
 		RETURNVALUE(0);
 #ifdef HAVE_ATH10K
 	if (is_ath10k(prefix))
-		asprintf(&globstring, "/sys/class/ieee80211/phy%d/ath10k/spectral_count", devnum);
+		asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath10k/spectral_count", devnum);
 	else
 #endif
-		asprintf(&globstring, "/sys/class/ieee80211/phy%d/ath9k/spectral_count", devnum);
+		asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/spectral_count", devnum);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	free(globstring);
 	if (globresult == 0)
@@ -2677,14 +2677,14 @@ int has_airtime_fairness(char *prefix)
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1)
 		RETURNVALUE(0);
-	asprintf(&globstring, "/sys/class/ieee80211/phy%d/ath9k/airtime_flags", devnum);
+	asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/airtime_flags", devnum);
 	FILE *fp = fopen(globstring, "rb");
 	free(globstring);
 	if (fp) {
 		fclose(fp);
 		RETURNVALUE(1);
 	}
-	asprintf(&globstring, "/sys/class/ieee80211/phy%d/ath10k/atf", devnum);
+	asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath10k/atf", devnum);
 	fp = fopen(globstring, "rb");
 	free(globstring);
 	if (fp) {

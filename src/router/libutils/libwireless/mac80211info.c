@@ -281,13 +281,13 @@ unsigned int get_ath10kreg(char *ifname, unsigned int reg)
 	unsigned int baseaddress = is_beeliner(ifname) ? 0x30000 : 0x20000;
 	int phy = get_ath9k_phy_ifname(ifname);
 	char file[64];
-	sprintf(file, "/sys/class/ieee80211/phy%d/ath10k/reg_addr", phy);
+	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
 	FILE *fp = fopen(file, "wb");
 	if (fp == NULL)
 		return 0;
 	fprintf(fp, "0x%x", baseaddress + reg);
 	fclose(fp);
-	sprintf(file, "/sys/class/ieee80211/phy%d/ath10k/reg_value", phy);
+	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
 	fp = fopen(file, "rb");
 	if (fp == NULL)
 		return 0;
@@ -302,13 +302,13 @@ void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value)
 	unsigned int baseaddress = is_beeliner(ifname) ? 0x30000 : 0x20000;
 	char file[64];
 	int phy = get_ath9k_phy_ifname(ifname);
-	sprintf(file, "/sys/class/ieee80211/phy%d/ath10k/reg_addr", phy);
+	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_addr", phy);
 	FILE *fp = fopen(file, "wb");
 	if (fp == NULL)
 		return;
 	fprintf(fp, "0x%x", baseaddress + reg);
 	fclose(fp);
-	sprintf(file, "/sys/class/ieee80211/phy%d/ath10k/reg_value", phy);
+	sprintf(file, "/sys/kernel/debug/ieee80211/phy%d/ath10k/reg_value", phy);
 	fp = fopen(file, "wb");
 	if (fp == NULL)
 		return;
