@@ -60,3 +60,6 @@ endif
 ifeq ($(CONFIG_LIBMBIM),y)
 CFLAGS += -DHAVE_LIBMBIM
 endif
+ifeq ($(CONFIG_NLD),y)
+CFLAGS += -DHAVE_NLD
+endif
