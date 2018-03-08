@@ -906,6 +906,7 @@ dev_nvram_ioctl(
 	switch (cmd) {
 	case NVRAM_MAGIC:
 		nvram_commit();
+		return 0;
 		break;
 	case NVRAM_SPACE_MAGIC:
 		return nvram_space;
