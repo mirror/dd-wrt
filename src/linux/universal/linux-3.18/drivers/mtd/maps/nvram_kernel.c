@@ -369,11 +369,19 @@ done:
 
 static long dev_nvram_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
-	if (cmd != NVRAM_MAGIC) {
-//          printk(KERN_EMERG "Invalid nvram magic %X %X\n",cmd,NVRAM_MAGIC);
+
+	switch (cmd) {
+	case NVRAM_MAGIC:
+		nvram_commit();
+		break;
+	case NVRAM_SPACE_MAGIC:
+		return NVRAM_SPACE;
+		break;
+	default:
 		return -EINVAL;
+		break;
+
 	}
-	return nvram_commit();
 }
 
 //int remap_pfn_range(struct vm_area_struct *vma, unsigned long addr,
