@@ -209,7 +209,7 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		hidden1 = "<!--";
 		hidden2 = "-->";
 	}
-
+	char buf[128];
 	if (!strcmp(type, "wan_ipaddr")) {
 		if (getWET() || !strcmp(wan_proto, "disabled")) {
 			websWrite(wp, "%s", trans == 2 ? tran_string(buf, "share.disabled") : live_translate("share.disabled"));
