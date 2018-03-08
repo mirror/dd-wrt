@@ -234,7 +234,6 @@ Section "Nmap Core Files" SecCore
   File /r /x .svn ..\..\docs\licenses
   File libeay32.dll
   File ssleay32.dll
-  File libssh2.dll
   File /r /x mswin32 /x .svn /x ncat ..\..\scripts
   File /r /x mswin32 /x .svn ..\Release\nselib
   File ..\icon1.ico

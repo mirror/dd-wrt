@@ -4,6 +4,9 @@
 -- These functions will build strings and process buffers. Socket communication
 -- is left to the script to implement.
 --
+-- @args tls.servername Hostname to use in the Server Name Indication (SNI)
+--                      extension. Overrides the target name given on the
+--                      command line and affects all targets.
 -- @author Daniel Miller
 
 local stdnse = require "stdnse"
@@ -158,6 +161,14 @@ ELLIPTIC_CURVES = {
   arbitrary_explicit_char2_curves = 0xFF02,
 }
 
+-- Most likely set, supported by Firefox and Chrome
+DEFAULT_ELLIPTIC_CURVES = {
+  "secp256r1",
+  "secp384r1",
+  "secp521r1",
+  "ecdh_x25519",
+}
+
 ---
 -- RFC 4492 section 5.1.2 "Supported Point Formats Extension".
 EC_POINT_FORMATS = {
@@ -259,6 +270,13 @@ EXTENSION_HELPERS = {
         HashAlgorithms[pair[1]] or pair[1],
         SignatureAlgorithms[pair[2]] or pair[2]
         )
+    end
+    return pack(">s2", table.concat(list))
+  end,
+  ["application_layer_protocol_negotiation"] = function(protocols)
+    local list = {}
+    for _, proto in ipairs(protocols) do
+      list[#list+1] = pack(">s1", proto)
     end
     return pack(">s2", table.concat(list))
   end,
@@ -640,6 +658,10 @@ CIPHERS = {
 ["TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256"]    =  0xCCAC,
 ["TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256"]      =  0xCCAD,
 ["TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256"]      =  0xCCAE,
+["TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256"]          = 0xD001, -- draft-ietf-tls-ecdhe-psk-aead-05
+["TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384"]          = 0xD002, -- draft-ietf-tls-ecdhe-psk-aead-05
+["TLS_ECDHE_PSK_WITH_AES_128_CCM_8_SHA256"]        = 0xD003, -- draft-ietf-tls-ecdhe-psk-aead-05
+["TLS_ECDHE_PSK_WITH_AES_128_CCM_SHA256"]          = 0xD005, -- draft-ietf-tls-ecdhe-psk-aead-05
 ["SSL_RSA_FIPS_WITH_DES_CBC_SHA"]                  =  0xFEFE,
 ["SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA"]             =  0xFEFF,
 }
@@ -765,6 +787,10 @@ local function unpack_ecdhparams (blob, pos)
     local size = ret.curve_params.curve:match("(%d+)[rk]%d$")
     if size then
       strength = tonumber(size)
+    elseif ret.curve_params.curve == "ecdh_x25519" then
+      strength = 256
+    elseif ret.curve_params.curve == "ecdh_x448" then
+      strength = 448
     end
   end
   ret.public, pos = unpack("s1", blob, pos)
@@ -1369,22 +1395,28 @@ function record_write(type, protocol, b)
   })
 end
 
--- Claim to support every hash and signature algorithm combination (TLSv1.2 only)
+-- Claim to support common hash and signature algorithm combinations (TLSv1.2 only)
 --
-local signature_algorithms_all
+local DEFAULT_SIGALGS
 do
-  local sigalgs = {}
-  for hash, _ in pairs(HashAlgorithms) do
-    for sig, _ in pairs(SignatureAlgorithms) do
-      -- RFC 5246 7.4.1.4.1.
-      -- The "anonymous" value is meaningless in this context but used in
-      -- Section 7.4.3.  It MUST NOT appear in this extension.
-      if sig ~= "anonymous" then
-        sigalgs[#sigalgs+1] = {hash, sig}
-      end
-    end
-  end
-  signature_algorithms_all = EXTENSION_HELPERS["signature_algorithms"](sigalgs)
+  local sigalgs = {
+    -- most likely signature is rsa, so even use it for weak hashes
+    {"md5","rsa"},
+    {"sha1","rsa"},
+    {"sha224","rsa"},
+    -- most likely are sha256 and sha512.
+    {"sha256","rsa"},
+    {"sha256","dsa"},
+    {"sha256","ecdsa"},
+    {"sha256","ed25519"},
+    {"sha256","ed448"},
+    {"sha512","rsa"},
+    {"sha512","dsa"},
+    {"sha512","ecdsa"},
+    {"sha512","ed25519"},
+    {"sha512","ed448"},
+  }
+  DEFAULT_SIGALGS = EXTENSION_HELPERS["signature_algorithms"](sigalgs)
 end
 
 ---
@@ -1471,7 +1503,7 @@ function client_hello(t)
       end
       if need_sigalg then
         table.insert(extensions, pack(">I2", EXTENSIONS["signature_algorithms"]))
-        table.insert(extensions, pack(">s2", signature_algorithms_all))
+        table.insert(extensions, pack(">s2", DEFAULT_SIGALGS))
       end
     end
     -- Extensions are optional

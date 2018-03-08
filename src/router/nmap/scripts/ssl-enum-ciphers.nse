@@ -19,6 +19,9 @@ strength of the connection. The grade is based on the cryptographic strength of
 the key exchange and of the stream cipher. The message integrity (hash)
 algorithm choice is not a factor.  The output line beginning with
 <code>Least strength</code> shows the strength of the weakest cipher offered.
+The scoring is based on the Qualys SSL Labs SSL Server Rating Guide, but does
+not take protocol support (TLS version) into account, which makes up 30% of the
+SSL Labs rating.
 
 SSLv3/TLSv1 requires more effort to determine which ciphers and compression
 methods a server supports than SSLv2. A client lists the ciphers and compressors
@@ -43,6 +46,9 @@ It is recommended to use this script in conjunction with version detection
 (<code>-sV</code>) in order to discover SSL/TLS services running on unexpected
 ports. For the most common SSL ports like 443, 25 (with STARTTLS), 3389, etc.
 the script is smart enough to run on its own.
+
+References:
+* Qualys SSL Labs Rating Guide - https://www.ssllabs.com/projects/rating-guide/
 ]]
 
 ---
@@ -509,10 +515,8 @@ end
 local function base_extensions(host)
   local tlsname = tls.servername(host)
   return {
-    -- Claim to support every elliptic curve
-    ["elliptic_curves"] = tls.EXTENSION_HELPERS["elliptic_curves"](sorted_keys(tls.ELLIPTIC_CURVES)),
-    -- Claim to support every EC point format
-    ["ec_point_formats"] = tls.EXTENSION_HELPERS["ec_point_formats"](sorted_keys(tls.EC_POINT_FORMATS)),
+    -- Claim to support common elliptic curves
+    ["elliptic_curves"] = tls.EXTENSION_HELPERS["elliptic_curves"](tls.DEFAULT_ELLIPTIC_CURVES),
     -- Enable SNI if a server name is available
     ["server_name"] = tlsname and tls.EXTENSION_HELPERS["server_name"](tlsname),
   }

@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2017 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2018 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -55,7 +55,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_ssl.c 36887 2017-07-29 05:55:30Z dmiller $ */
+/* $Id$ */
 
 
 #include "nsock.h"
@@ -71,7 +71,7 @@
  *  OpenSSL. To see exactly what ciphers are enabled, use the command
  *   openssl ciphers -v '...'
  * where ... is the string below. */
-#define CIPHERS_SECURE "ALL:!aNULL:!eNULL:!LOW:!EXP:!MD5:@STRENGTH"
+#define CIPHERS_SECURE "ALL:!aNULL:!eNULL:!LOW:!EXP:!RC4:!MD5:@STRENGTH"
 
 /* This list of ciphers is for speed and compatibility, not security. Any cipher
  *  is accepted, and the list is sorted by speed based on Brian Hatch's

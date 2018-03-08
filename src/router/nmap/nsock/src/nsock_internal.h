@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2017 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2018 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -54,7 +54,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_internal.h 36788 2017-06-07 12:32:38Z dmiller $ */
+/* $Id$ */
 
 #ifndef NSOCK_INTERNAL_H
 #define NSOCK_INTERNAL_H
@@ -361,7 +361,7 @@ struct nevent {
    * that other crap */
   unsigned int event_done: 1;
   unsigned int eof: 1;
-  
+
 #if HAVE_IOCP
   struct extended_overlapped *eov;
 #endif

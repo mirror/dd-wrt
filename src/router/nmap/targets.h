@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -89,12 +89,12 @@
  * Covered Software without special permission from the copyright holders. *
  *                                                                         *
  * If you have any questions about the licensing restrictions on using     *
- * Nmap in other works, are happy to help.  As mentioned above, we also    *
- * offer alternative license to integrate Nmap into proprietary            *
+ * Nmap in other works, we are happy to help.  As mentioned above, we also *
+ * offer an alternative license to integrate Nmap into proprietary         *
  * applications and appliances.  These contracts have been sold to dozens  *
  * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@nmap.com for further *
+ * as providing support and updates.  They also fund the continued         *
+ * development of Nmap.  Please email sales@nmap.com for further           *
  * information.                                                            *
  *                                                                         *
  * If you have received a written license agreement or contract for        *
@@ -128,46 +128,14 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: targets.h 36788 2017-06-07 12:32:38Z dmiller $ */
+/* $Id$ */
 
 #ifndef TARGETS_H
 #define TARGETS_H
 
 #include <list>
-class NetBlock;
+#include "TargetGroup.h"
 class Target;
-
-class TargetGroup {
-public:
-  NetBlock *netblock;
-
-  TargetGroup() {
-    this->netblock = NULL;
-  }
-
-  ~TargetGroup();
-
-  /* Initializes (or reinitializes) the object with a new expression,
-     such as 192.168.0.0/16 , 10.1.0-5.1-254 , or
-     fe80::202:e3ff:fe14:1102 .  The af parameter is AF_INET or
-     AF_INET6 Returns 0 for success */
-  int parse_expr(const char *target_expr, int af);
-  /* Grab the next host from this expression (if any).  Returns 0 and
-     fills in ss if successful.  ss must point to a pre-allocated
-     sockaddr_storage structure */
-  int get_next_host(struct sockaddr_storage *ss, size_t *sslen);
-  /* Returns true iff the given address is the one that was resolved to create
-     this target group; i.e., not one of the addresses derived from it with a
-     netmask. */
-  bool is_resolved_address(const struct sockaddr_storage *ss) const;
-  /* Return a string of the name or address that was resolved for this group. */
-  const char *get_resolved_name(void) const;
-  /* Return the list of addresses that the name for this group resolved to, if
-     it came from a name resolution. */
-  const std::list<struct sockaddr_storage> &get_resolved_addrs(void) const;
-  /* is the current expression a named host */
-  int get_namedhost() const;
-};
 
 class HostGroupState {
 public:

@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -88,12 +88,12 @@
  * Covered Software without special permission from the copyright holders. *
  *                                                                         *
  * If you have any questions about the licensing restrictions on using     *
- * Nmap in other works, are happy to help.  As mentioned above, we also    *
- * offer alternative license to integrate Nmap into proprietary            *
+ * Nmap in other works, we are happy to help.  As mentioned above, we also *
+ * offer an alternative license to integrate Nmap into proprietary         *
  * applications and appliances.  These contracts have been sold to dozens  *
  * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@nmap.com for further *
+ * as providing support and updates.  They also fund the continued         *
+ * development of Nmap.  Please email sales@nmap.com for further           *
  * information.                                                            *
  *                                                                         *
  * If you have received a written license agreement or contract for        *
@@ -648,17 +648,28 @@ static int parse_ssl_cert(lua_State *L, X509 *cert)
 #endif
   if (pkey_type == EVP_PKEY_RSA) {
     RSA *rsa = EVP_PKEY_get1_RSA(pubkey);
+    /* exponent */
     bignum_data_t * data = (bignum_data_t *) lua_newuserdata( L, sizeof(bignum_data_t));
     luaL_getmetatable( L, "BIGNUM" );
     lua_setmetatable( L, -2 );
   #if HAVE_OPAQUE_STRUCTS
-    const BIGNUM *n, *e, *d;
-    RSA_get0_key(rsa, &n, &e, &d);
+    const BIGNUM *n, *e;
+    RSA_get0_key(rsa, &n, &e, NULL);
     data->bn = (BIGNUM*) e;
   #else
     data->bn = rsa->e;
   #endif
     lua_setfield(L, -2, "exponent");
+    /* modulus */
+    data = (bignum_data_t *) lua_newuserdata( L, sizeof(bignum_data_t));
+    luaL_getmetatable( L, "BIGNUM" );
+    lua_setmetatable( L, -2 );
+  #if HAVE_OPAQUE_STRUCTS
+    data->bn = (BIGNUM*) n;
+  #else
+    data->bn = rsa->n;
+  #endif
+    lua_setfield(L, -2, "modulus");
   }
   lua_pushstring(L, pkey_type_to_string(pkey_type));
   lua_setfield(L, -2, "type");

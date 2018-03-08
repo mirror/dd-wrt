@@ -95,7 +95,7 @@ function SSHConnection:password_auth (username, password)
 end
 
 ---
--- Attempts to authenticate using provided publickey.
+-- Attempts to authenticate using provided private key.
 --
 -- @param username A username to authenticate as.
 -- @param privatekey_file A path to a privatekey.
@@ -105,10 +105,7 @@ function SSHConnection:publickey_auth (username, privatekey_file, passphrase)
   if not self.session then
     return false
   end
-  print(self.session)
-  print(username)
-  print(privatekey_file)
-  if libssh2.userauth_publickey(self.session, username, privatekey_file, passphrase) then
+  if libssh2.userauth_publickey(self.session, username, privatekey_file, passphrase or "") then
     self.authenticated = true
     return true
   else
@@ -155,23 +152,33 @@ end
 --
 -- @param publickey An SSH public key file.
 -- @return true on success or false on error.
--- @return publick key data on success or error code on error.
+-- @return public key data on success or error code on error.
 function SSHConnection:read_publickey (publickey)
   local status, result = pcall(libssh2.read_publickey, publickey)
   return status, result
 end
 
 ---
--- Attempts authentication with publick key
+-- Attempts authentication with public key
 --
 -- @param username A username to authenticate as.
 -- @param key Base64 decrypted public key.
+-- @return true if the public key can be used to authenticate as the user, false otherwise
+-- @return Error message if an error occurs.
 function SSHConnection:publickey_canauth (username, key)
+  local status, err
   if self.session then
-    libssh2.publickey_canauth(self.session, username, key)
+    status, err = pcall(libssh2.publickey_canauth, self.session, username, key)
+    if status then
+      -- no error thrown; return the actual result
+      status = err
+      err = nil
+    end
+  else
+    status = false
+    err = "No session established"
   end
+  return status, err
 end
 
 return _ENV
-
-

@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: nmap
 .\"    Author: [see the "Autor" section]
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 31/07/2017
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 13/06/2017
 .\"    Manual: [FIXME: manual]
 .\"    Source: [FIXME: source]
 .\"  Language: Spanish
 .\"
-.TH "NMAP" "1" "31/07/2017" "[FIXME: source]" "[FIXME: manual]"
+.TH "NMAP" "1" "13/06/2017" "[FIXME: source]" "[FIXME: manual]"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -844,8 +844,7 @@ Exclude\&.
 \fB\-\-version\-intensity <intensidad>\fR (Fijar la intensidad de la detección de versiones)
 .RS 4
 Nmap envía una serie de sondas cuando se activa la detección de versiones (\fB\-sV\fR) con un nivel de rareza preasignado y variable de 1 a 9\&. Las sondas con un número bajo son efectivas contra un amplio número de servicios comunes, mientras que las de números más altos se utilizan rara vez\&. El nivel de intensidad indica que sondas deberían utilizarse\&. Cuanto más alto sea el número, mayor las probabilidades de identificar el servicio\&. Sin embargo, los sondeos de alta intensidad tardan más tiempo\&. El valor de intensidad puede variar de 0 a 9\&. El valor por omisión es 7\&. Se probará una sonda independientemente del nivel de intensidad cuando ésta se registra para el puerto objetivo a través de la directiva
-nmap\-service\-probes
-ports\&. De esta forma se asegura que las sondas de DNS se probarán contra cualquier puerto abierto 53, las sondas SSL contra el puerto 443, etc\&.
+nmap\-service\-probesports\&. De esta forma se asegura que las sondas de DNS se probarán contra cualquier puerto abierto 53, las sondas SSL contra el puerto 443, etc\&.
 .RE
 .PP
 \fB\-\-version\-light\fR (Activar modo ligero)
