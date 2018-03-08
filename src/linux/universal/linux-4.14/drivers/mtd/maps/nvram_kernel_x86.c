@@ -76,6 +76,8 @@ static void early_nvram_init(void)
 	for (i = 0; i < (NVRAM_SPACE / PAGE_SIZE); i++) {
 		loff_t offset = srcf->f_pos + offs;
 		len = kernel_read(srcf, wr, PAGE_SIZE, &offset);
+		if (!len)
+			break;
 		offs += len;
 		wr += PAGE_SIZE;
 	}
@@ -169,10 +171,12 @@ int _nvram_read(char *buf)
 	for (i = 0; i < (NVRAM_SPACE / PAGE_SIZE); i++) {
 		loff_t offset = srcf->f_pos + offs;
 		len = kernel_read(srcf, wr, PAGE_SIZE, &offset);
+		if (!len)
+		    break;
 		offs += len;
 		wr += PAGE_SIZE;
 	}
-	if (offs != NVRAM_SPACE || header->magic != NVRAM_MAGIC) {
+	if (!offs || header->magic != NVRAM_MAGIC) {
 		printk(KERN_EMERG "Broken NVRAM found, recovering it (header error) len = %d\n",offs);
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
@@ -277,7 +281,7 @@ int nvram_unset(const char *name)
 
 int nvram_commit(void)
 {
-	char *buf,*wr;
+	char *buf, *wr;
 	size_t erasesize, len;
 	int ret;
 	int i;
@@ -458,7 +462,6 @@ static long dev_nvram_ioctl(struct file *file, unsigned int cmd, unsigned long a
 
 	}
 }
-
 
 static DEFINE_MUTEX(mtd_mutex);
 
