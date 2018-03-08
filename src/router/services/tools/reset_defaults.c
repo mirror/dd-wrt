@@ -34,22 +34,13 @@ extern struct nvram_param *srouter_defaults;
 extern void load_defaults(void);
 extern void free_defaults(void);
 
-#ifdef NVRAM_SPACE_256
-#define NVRAMSPACE NVRAM_SPACE_256
-#elif HAVE_NVRAM_128
-#define NVRAMSPACE 0x20000
-#elif HAVE_MVEBU
-#define NVRAMSPACE 0x10000
-#elif HAVE_IPQ806X
-#define NVRAMSPACE 0x10000
-#else
-#define NVRAMSPACE NVRAM_SPACE
-#endif
 
 extern int nvram_critical(char *name);
 
+int nvram_size(void);
 void start_defaults(void)
 {
+	int NVRAMSPACE = nvram_size();
 	fprintf(stderr, "restore nvram to defaults\n");
 	char *buf = (char *)malloc(NVRAMSPACE);
 	int i;
