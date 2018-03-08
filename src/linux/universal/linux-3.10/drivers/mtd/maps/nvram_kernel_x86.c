@@ -441,6 +441,7 @@ static int dev_nvram_ioctl(struct file *file, unsigned int cmd, unsigned long ar
 	switch (cmd) {
 	case NVRAM_MAGIC:
 		nvram_commit();
+		return 0;
 		break;
 	case NVRAM_SPACE_MAGIC:
 		return NVRAM_SPACE;
