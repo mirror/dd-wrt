@@ -47,7 +47,6 @@ void start_recover(void)
 
 	unsigned char *mem = malloc(65536 * 2);
 	fread(mem, 65536 * 2, 1, in);
-	unsigned int *magic = mem;
 	if (mem[0] != 0x46 || mem[1] != 0x4c || mem[2] != 0x53 || mem[3] != 0x48) {
 		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
 		fread(mem, 65536, 1, in);
