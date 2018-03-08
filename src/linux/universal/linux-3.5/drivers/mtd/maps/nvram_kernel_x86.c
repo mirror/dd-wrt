@@ -149,7 +149,7 @@ int _nvram_read(char *buf)
 	}			/* End of if */
 	len = srcf->f_op->read(srcf, buf, NVRAM_SPACE, &srcf->f_pos);
 
-	if (len != NVRAM_SPACE || header->magic != NVRAM_MAGIC) {
+	if (!len || header->magic != NVRAM_MAGIC) {
 		printk(KERN_EMERG "Broken NVRAM found, recovering it (header error)\n");
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
@@ -435,7 +435,6 @@ static int dev_nvram_ioctl(struct file *file, unsigned int cmd, unsigned long ar
 
 	}
 }
-
 
 static DEFINE_MUTEX(mtd_mutex);
 
