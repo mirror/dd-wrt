@@ -79,18 +79,18 @@ int nvram_init(void *unused)
 		fprintf(stderr, "cannot open /dev/nvram\n");
 		goto err;
 	}
+	fcntl(nvram_fd, F_SETFD, FD_CLOEXEC);
+	NVRAMSPACE = ioctl(nvram_fd, NVRAM_SPACE_MAGIC, NULL);
+	if (NVRAMSPACE < 0) {
+		fprintf(stderr, "nvram driver returns bogus space\n");
+		goto err;
+	}
 	/* Map kernel string buffer into user space */
 	nvram_buf = mmap(NULL, NVRAMSPACE, PROT_READ, MAP_SHARED, nvram_fd, 0);
 	if (nvram_buf == MAP_FAILED) {
 		close(nvram_fd);
 		fprintf(stderr, "%s(): failed\n", __func__);
 		nvram_fd = -1;
-		goto err;
-	}
-	fcntl(nvram_fd, F_SETFD, FD_CLOEXEC);
-	NVRAMSPACE = ioctl(nvram_fd, NVRAM_SPACE_MAGIC, NULL);
-	if (NVRAMSPACE < 0) {
-		fprintf(stderr, "nvram driver returns bogus space\n");
 		goto err;
 	}
 	return 0;
