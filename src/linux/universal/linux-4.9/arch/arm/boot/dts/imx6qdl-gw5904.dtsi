@@ -210,7 +210,7 @@
 	};
 
 	gsc: gsc@20 {
-		compatible = "gw,gsc";
+		compatible = "gw,gsp";
 		reg = <0x20>;
 		interrupt-parent = <&gpio1>;
 		interrupts = <4 1>;
@@ -233,7 +233,7 @@
 		};
 	};
 
-	gsc_gpio: pca9555@23 {
+	gpio: pca9555@23 {
 		compatible = "nxp,pca9555";
 		reg = <0x23>;
 		gpio-controller;
@@ -242,12 +242,12 @@
 		interrupts = <4>;
 	};
 
-	gsc_hwmon: hwmon@29 {
-		compatible = "gw,gsc_hwmon";
+	hwmon: hwmon@29 {
+		compatible = "gw,gsp";
 		reg = <0x29>;
 	};
 
-	gsc_rtc: ds1672@68 {
+	rtc: ds1672@68 {
 		compatible = "dallas,ds1672";
 		reg = <0x68>;
 	};
