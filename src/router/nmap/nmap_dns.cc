@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -88,12 +88,12 @@
  * Covered Software without special permission from the copyright holders. *
  *                                                                         *
  * If you have any questions about the licensing restrictions on using     *
- * Nmap in other works, are happy to help.  As mentioned above, we also    *
- * offer alternative license to integrate Nmap into proprietary            *
+ * Nmap in other works, we are happy to help.  As mentioned above, we also *
+ * offer an alternative license to integrate Nmap into proprietary         *
  * applications and appliances.  These contracts have been sold to dozens  *
  * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@nmap.com for further *
+ * as providing support and updates.  They also fund the continued         *
+ * development of Nmap.  Please email sales@nmap.com for further           *
  * information.                                                            *
  *                                                                         *
  * If you have received a written license agreement or contract for        *
@@ -1162,7 +1162,7 @@ static void nmap_mass_rdns_core(Target **targets, int num_targets) {
   // Set up the request structure
   for(hostI = targets; hostI < targets+num_targets; hostI++)
   {
-    if (!((*hostI)->flags & HOST_UP) && !o.resolve_all) continue;
+    if (!((*hostI)->flags & HOST_UP) && !o.always_resolve) continue;
 
     // See if it's cached
     std::string res;
@@ -1278,7 +1278,7 @@ static void nmap_system_rdns_core(Target **targets, int num_targets) {
   for(hostI = targets; hostI < targets+num_targets; hostI++) {
     currenths = *hostI;
 
-    if (((currenths->flags & HOST_UP) || o.resolve_all) && !o.noresolve) stat_actual++;
+    if (((currenths->flags & HOST_UP) || o.always_resolve) && !o.noresolve) stat_actual++;
   }
 
   Snprintf(spmobuf, sizeof(spmobuf), "System DNS resolution of %d host%s.", num_targets, num_targets-1 ? "s" : "");
@@ -1290,7 +1290,7 @@ static void nmap_system_rdns_core(Target **targets, int num_targets) {
     if (keyWasPressed())
       SPM->printStats((double) i / stat_actual, NULL);
 
-    if (((currenths->flags & HOST_UP) || o.resolve_all) && !o.noresolve) {
+    if (((currenths->flags & HOST_UP) || o.always_resolve) && !o.noresolve) {
       if (currenths->TargetSockAddr(&ss, &sslen) != 0)
         fatal("Failed to get target socket address.");
       if (getnameinfo((struct sockaddr *)&ss, sslen, hostname,

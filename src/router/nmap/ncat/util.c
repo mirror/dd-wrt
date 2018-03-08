@@ -2,7 +2,7 @@
  * util.c -- Various utility functions.                                    *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -86,12 +86,12 @@
  * Covered Software without special permission from the copyright holders. *
  *                                                                         *
  * If you have any questions about the licensing restrictions on using     *
- * Nmap in other works, are happy to help.  As mentioned above, we also    *
- * offer alternative license to integrate Nmap into proprietary            *
+ * Nmap in other works, we are happy to help.  As mentioned above, we also *
+ * offer an alternative license to integrate Nmap into proprietary         *
  * applications and appliances.  These contracts have been sold to dozens  *
  * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@nmap.com for further *
+ * as providing support and updates.  They also fund the continued         *
+ * development of Nmap.  Please email sales@nmap.com for further           *
  * information.                                                            *
  *                                                                         *
  * If you have received a written license agreement or contract for        *
@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: util.c 36893 2017-07-30 04:09:48Z dmiller $ */
+/* $Id$ */
 
 #include "sys_wrap.h"
 #include "util.h"
@@ -235,7 +235,18 @@ void logtest(const char *fmt, ...)
 /* Exit status 2 indicates a program error other than a network error. */
 void die(char *err)
 {
+#ifdef WIN32
+  int error_number;
+  char *strerror_s;
+  error_number = GetLastError();
+  FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM,
+      NULL, error_number, MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
+      (LPTSTR) &strerror_s,  0, NULL);
+  fprintf(stderr, "%s: %s\n", err, strerror_s);
+  HeapFree(GetProcessHeap(), 0, strerror_s);
+#else
     perror(err);
+#endif
     fflush(stderr);
     exit(2);
 }

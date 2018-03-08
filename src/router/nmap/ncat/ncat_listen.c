@@ -2,7 +2,7 @@
  * ncat_listen.c -- --listen mode.                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -86,12 +86,12 @@
  * Covered Software without special permission from the copyright holders. *
  *                                                                         *
  * If you have any questions about the licensing restrictions on using     *
- * Nmap in other works, are happy to help.  As mentioned above, we also    *
- * offer alternative license to integrate Nmap into proprietary            *
+ * Nmap in other works, we are happy to help.  As mentioned above, we also *
+ * offer an alternative license to integrate Nmap into proprietary         *
  * applications and appliances.  These contracts have been sold to dozens  *
  * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@nmap.com for further *
+ * as providing support and updates.  They also fund the continued         *
+ * development of Nmap.  Please email sales@nmap.com for further           *
  * information.                                                            *
  *                                                                         *
  * If you have received a written license agreement or contract for        *
@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_listen.c 36887 2017-07-29 05:55:30Z dmiller $ */
+/* $Id$ */
 
 #include "ncat.h"
 
@@ -264,9 +264,11 @@ static int ncat_listen_stream(int proto)
 
 #ifdef HAVE_OPENSSL
     if (o.ssl)
+    {
         if (o.sslalpn)
             bye("ALPN is not supported in listen mode\n");
         setup_ssl_listen();
+    }
 #endif
 
 /* Not sure if this problem exists on Windows, but fcntl and /dev/null don't */
@@ -335,7 +337,7 @@ static int ncat_listen_stream(int proto)
         /* We pass these temporary descriptor sets to fselect, since fselect
            modifies the sets it receives. */
         fd_set readfds = master_readfds, writefds = master_writefds;
-        
+
 
         if (o.debug > 1)
             logdebug("selecting, fdmax %d\n", client_fdlist.fdmax);
@@ -896,8 +898,8 @@ static int ncat_listen_dgram(int proto)
             ncat_log_recv(buf, nbytes);
         }
 
-        if (o.debug > 1)
-            logdebug("Valid Connection from %d\n", socket_n);
+        if (o.verbose)
+            loguser("Connection from %s.\n", inet_socktop(&remotess));
 
         conn_inc++;
 
@@ -915,6 +917,7 @@ static int ncat_listen_dgram(int proto)
             struct fdinfo info = { 0 };
 
             info.fd = socket_n;
+            info.remoteaddr = remotess;
             if (o.keepopen)
                 netrun(&info, o.cmdexec);
             else
@@ -1152,7 +1155,7 @@ static int chat_announce_connect(int fd, const union sockaddr_u *su)
 
     strbuf_sprintf(&buf, &size, &offset, "<announce> already connected: ");
     count = 0;
-    for (i = 0; i < client_fdlist.fdmax; i++) {
+    for (i = 0; i <= client_fdlist.fdmax; i++) {
         union sockaddr_u su;
         socklen_t len = sizeof(su.storage);
 
