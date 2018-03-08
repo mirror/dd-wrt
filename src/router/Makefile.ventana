@@ -475,7 +475,7 @@ endif
 	mkdir $(TARGETDIR)/boot
 	mkimage -A arm -O linux -T kernel -C none -a 0x10008000 -e 0x10008000 -n 'DD-WRT' -d $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/uImage
 	cp $(ARCH)-uclibc/uImage $(TARGETDIR)/boot 
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw610x.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw560x.dtb $(TARGETDIR)/boot
 	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw5903.dtb $(TARGETDIR)/boot
 	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw5904.dtb $(TARGETDIR)/boot
 	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw551x.dtb $(TARGETDIR)/boot
@@ -485,7 +485,7 @@ endif
 	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw53xx.dtb $(TARGETDIR)/boot
 	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw52xx.dtb $(TARGETDIR)/boot
 	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6q-gw51xx.dtb $(TARGETDIR)/boot
-	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw610x.dtb $(TARGETDIR)/boot
+	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw560x.dtb $(TARGETDIR)/boot
 	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw5903.dtb $(TARGETDIR)/boot
 	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw5904.dtb $(TARGETDIR)/boot
 	-cp $(LINUXDIR)/arch/arm/boot/dts/imx6dl-gw551x.dtb $(TARGETDIR)/boot
