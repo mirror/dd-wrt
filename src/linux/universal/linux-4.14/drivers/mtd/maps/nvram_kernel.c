@@ -58,11 +58,12 @@ static struct mtd_info *nvram_mtd = NULL;
 int _nvram_read(char *buf)
 {
 	size_t len;
+	struct nvram_header *header = (struct nvram_header *)buf;
 	if (nvram_mtd) {
 		mtd_read(nvram_mtd, nvram_mtd->size - NVRAM_SPACE, NVRAM_SPACE, &len, buf);
-		if (!buf[0]) {
+		if (header->magic != NVRAM_MAGIC) {
 			mtd_read(nvram_mtd, nvram_mtd->size - (NVRAM_SPACE / 2), (NVRAM_SPACE / 2), &len, buf);
-			if (buf[0])
+			if (header->magic == NVRAM_MAGIC)
 				printk(KERN_INFO "convert old nvram to new one\n");
 			else
 				printk(KERN_INFO "nvram empty\n");
