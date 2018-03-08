@@ -170,6 +170,7 @@ struct pcie_port {
 	struct irq_domain	*irq_domain;
 	unsigned long		msi_data;
 	DECLARE_BITMAP(msi_irq_in_use, MAX_MSI_IRQS);
+	u8			(*swizzle)(struct pci_dev *, u8 *);
 };
 
 enum dw_pcie_as_type {
