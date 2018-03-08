@@ -7,22 +7,7 @@
 #include <bcmnvram.h>
 #include <utils.h>
 
-#ifdef NVRAM_SPACE_256
-#define NVRAMSPACE NVRAM_SPACE_256
-#elif HAVE_NVRAM_128
-#define NVRAMSPACE 0x20000
-#elif HAVE_MVEBU
-#define NVRAMSPACE 0x10000
-#elif HAVE_WDR4900
-#define NVRAMSPACE 0x20000
-#elif HAVE_ALPINE
-#define NVRAMSPACE 0x20000
-#elif HAVE_IPQ806X
-#define NVRAMSPACE 0x10000
-#else
-#define NVRAMSPACE NVRAM_SPACE
-#endif
-
+static int NVRAMSPACE;
 #define VALUE_TO_STRING(x) #x
 #define VALUE(x) VALUE_TO_STRING(x)
 #define VAR_NAME_VALUE(var) #var "="  VALUE(var)
@@ -87,6 +72,11 @@ static int nvram_main(int argc, char **argv)
 {
 	char *name, *value, *buf;
 	int size;
+	NVRAMSPACE = nvram_size();
+	if (NVRAMSPACE < 0) {
+		fprintf(stderr, "error in nvram driver\n");
+		return -1;
+	}
 	buf = malloc(NVRAMSPACE);
 
 	/* 

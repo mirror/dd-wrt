@@ -162,6 +162,8 @@ extern int nvram_commit(void);
  */
 extern int nvram_getall(char *buf, int count);
 
+extern int nvram_size(void);
+
 extern int file2nvram(char *filename, char *varname);
 extern int nvram2file(char *varname, char *filename);
 
