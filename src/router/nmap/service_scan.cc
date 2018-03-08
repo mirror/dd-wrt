@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -90,12 +90,12 @@
  * Covered Software without special permission from the copyright holders. *
  *                                                                         *
  * If you have any questions about the licensing restrictions on using     *
- * Nmap in other works, are happy to help.  As mentioned above, we also    *
- * offer alternative license to integrate Nmap into proprietary            *
+ * Nmap in other works, we are happy to help.  As mentioned above, we also *
+ * offer an alternative license to integrate Nmap into proprietary         *
  * applications and appliances.  These contracts have been sold to dozens  *
  * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@nmap.com for further *
+ * as providing support and updates.  They also fund the continued         *
+ * development of Nmap.  Please email sales@nmap.com for further           *
  * information.                                                            *
  *                                                                         *
  * If you have received a written license agreement or contract for        *
@@ -129,7 +129,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: service_scan.cc 36788 2017-06-07 12:32:38Z dmiller $ */
+/* $Id$ */
 
 
 #include "service_scan.h"
@@ -828,6 +828,54 @@ static char *substvar(char *tmplvar, char **tmplvarend,
         i += findstrlen;
       }
     }
+  } else if (strcmp(substcommand, "I") == 0 ){
+    // Parse an unsigned int
+    u64 val = 0;
+    bool bigendian = true;
+    char buf[24]; //0xffffffffffffffff = 18446744073709551615, 20 chars
+    int buflen;
+    if (command_args.num_args != 2 ||
+        command_args.arg_types[0] != SUBSTARGS_ARGTYPE_INT ||
+        command_args.arg_types[1] != SUBSTARGS_ARGTYPE_STRING ||
+        command_args.str_args_len[1] != 1) {
+      return NULL;
+    }
+    subnum = command_args.int_args[0];
+    if (subnum > 9 || subnum <= 0) return NULL;
+    if (subnum >= nummatches) return NULL;
+    offstart = ovector[subnum * 2];
+    offend = ovector[subnum * 2 + 1];
+    assert(offstart >= 0 && offstart < subjectlen);
+
+    // overflow
+    if (offend - offstart > 8) {
+      return NULL;
+    }
+    switch (command_args.str_args[1][0]) {
+      case '>':
+        bigendian = true;
+        break;
+      case '<':
+        bigendian = false;
+        break;
+      default:
+        return NULL;
+        break;
+    }
+    if (bigendian) {
+      for(i=offstart; i < offend; i++) {
+        val = (val<<8) + subject[i];
+      }
+    } else {
+      for(i=offend - 1; i > offstart - 1; i--) {
+        val = (val<<8) + subject[i];
+      }
+    }
+    buflen = Snprintf(buf, sizeof(buf), "%lu", val);
+    if (buflen < 0 || buflen > (int) sizeof(buf)) {
+      return NULL;
+    }
+    strbuf_append(&result, &n, &len, buf, buflen);
   } else return NULL; // Unknown command
 
   strbuf_finish(&result, &n, &len);
@@ -1462,7 +1510,9 @@ AllProbes::~AllProbes() {
 }
 
   // Tries to find the probe in this AllProbes class which have the
-  // given name and protocol.  It can return the NULL probe.
+  // given name and protocol. If no match is found for the requested
+  // protocol it will try to find matches on any protocol.
+  // It can return the NULL probe.
 ServiceProbe *AllProbes::getProbeByName(const char *name, int proto) {
   std::vector<ServiceProbe *>::iterator vi;
 
@@ -1472,6 +1522,13 @@ ServiceProbe *AllProbes::getProbeByName(const char *name, int proto) {
   for(vi = probes.begin(); vi != probes.end(); vi++) {
     if ((*vi)->getProbeProtocol() == proto &&
         strcmp(name, (*vi)->getName()) == 0)
+      return *vi;
+  }
+
+  // Since the probe wasn't matched for the requested protocol, now try to
+  // find a match regardless of protocol
+  for(vi = probes.begin(); vi != probes.end(); vi++) {
+    if (strcmp(name, (*vi)->getName()) == 0)
       return *vi;
   }
 
@@ -1789,7 +1846,10 @@ bool dropdown = false;
    while (current_probe != AP->probes.end()) {
      // For the first run, we only do probes that match this port number
      if ((proto == (*current_probe)->getProbeProtocol()) &&
-         (*current_probe)->portIsProbable(tunnel, portno)) {
+         (*current_probe)->portIsProbable(tunnel, portno) &&
+         // Skip the probe if we softmatched and the service isn't available via this probe.
+         // --version-all avoids this optimization here and in PROBESTATE_NONMATCHINGPROBES below.
+         (!softMatchFound || o.version_intensity >= 9 || (*current_probe)->serviceIsPossible(probe_matched))) {
        // This appears to be a valid probe.  Let's do it!
        return *current_probe;
      }
@@ -1810,8 +1870,10 @@ bool dropdown = false;
      // version detection intensity level.
      if ((proto == (*current_probe)->getProbeProtocol()) &&
          !(*current_probe)->portIsProbable(tunnel, portno) &&
-         (*current_probe)->getRarity() <= o.version_intensity &&
-         (!softMatchFound || (*current_probe)->serviceIsPossible(probe_matched))) {
+         // No softmatch so obey intensity, or
+         ((!softMatchFound && (*current_probe)->getRarity() <= o.version_intensity) ||
+         // Softmatch, so only require service match (no rarity check)
+         (softMatchFound && (o.version_intensity >= 9 || (*current_probe)->serviceIsPossible(probe_matched))))) {
        // Valid, probe.  Let's do it!
        return *current_probe;
      }

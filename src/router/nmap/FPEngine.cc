@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -90,12 +90,12 @@
  * Covered Software without special permission from the copyright holders. *
  *                                                                         *
  * If you have any questions about the licensing restrictions on using     *
- * Nmap in other works, are happy to help.  As mentioned above, we also    *
- * offer alternative license to integrate Nmap into proprietary            *
+ * Nmap in other works, we are happy to help.  As mentioned above, we also *
+ * offer an alternative license to integrate Nmap into proprietary         *
  * applications and appliances.  These contracts have been sold to dozens  *
  * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@nmap.com for further *
+ * as providing support and updates.  They also fund the continued         *
+ * development of Nmap.  Please email sales@nmap.com for further           *
  * information.                                                            *
  *                                                                         *
  * If you have received a written license agreement or contract for        *
@@ -320,7 +320,7 @@ int FPNetworkControl::cc_report_drop() {
    value of ssthresh is held constant.
  */
   int probes_outstanding = this->probes_sent - this->responses_recv - this->probes_timedout;
-  this->cc_ssthresh = MAX(probes_outstanding, OSSCAN_INITIAL_CWND);
+  this->cc_ssthresh = (float)MAX(probes_outstanding, OSSCAN_INITIAL_CWND);
   this->cc_cwnd = OSSCAN_INITIAL_CWND;
   return OP_SUCCESS;
 }
@@ -1495,8 +1495,8 @@ int FPHost::update_RTO(int measured_rtt_usecs, bool retransmission) {
   *
   *  RTO <- SRTT + max (G, K*RTTVAR)
   */
-    this->rttvar = ((1.0 - 0.25) * this->rttvar) + (0.25 * ABS(this->srtt - measured_rtt_usecs));
-    this->srtt = ((1.0 - 0.125) * this->srtt) + (0.125 * measured_rtt_usecs);
+    this->rttvar += (ABS(this->srtt - measured_rtt_usecs) - this->rttvar) >> 2;
+    this->srtt += (measured_rtt_usecs - this->srtt) >> 3;
     this->rto = this->srtt + MAX(500000, 4*this->rttvar);
   }
 

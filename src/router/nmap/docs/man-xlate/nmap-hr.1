@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: nmap
 .\"    Author: [see the "Author" section]
-.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 07/31/2017
+.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
+.\"      Date: 06/13/2017
 .\"    Manual: [FIXME: manual]
 .\"    Source: [FIXME: source]
 .\"  Language: Croatian
 .\"
-.TH "NMAP" "1" "07/31/2017" "[FIXME: source]" "[FIXME: manual]"
+.TH "NMAP" "1" "06/13/2017" "[FIXME: source]" "[FIXME: manual]"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -769,8 +769,7 @@ naredbu u nmap\-services\-probes\&.
 \fB\-\-version\-intensity <intensity>\fR (podesite intenzitet otkrivanja verzije servisa)
 .RS 4
 Kad radite scan otkrivanja verzije (\fB\-sV\fR), Nmap šalje seriju upita od kojih je svakom dodijeljen broj od 1 do 9\&. Oni upiti koji imaju niže brojeve u efikasni kod većine često korištenih servisa, dok su oni s višim brojevima rijetko korisni\&. Nivo nntenziteta skeniranja određuje koji upiti će biti korišteni\&. Što je veći broj, to je veća vjerovatnost da će servis biti ispravno identificiran\&. No, takvi skenovi traju duže\&. Intenzitet mora biti između 0 i 9\&. Preddefinirana vrijednost je 7\&. Ukoliko je upit registriran u
-nmap\-service\-probes
-ports
+nmap\-service\-probesports
 naredbi, bit će isproban bez obzira na nivo intenziteta\&. To garantira da će DNS upiti uvijek biti odrađeni na portu 53, SSL na portu 443 itd\&.
 .RE
 .PP
@@ -799,7 +798,7 @@ Ova metoda radi u sprezi s različitim port scan metodama Nmap\-a\&. Uzme sve TC
 \fB\-sR\fR
 se rijetko koristi\&.
 .RE
-.SH "OTKRIVANJE OS\-A"
+.SH "OTKRIVANJE OS-A"
 .PP
 Jedna od najpoznatijih odlika Nmapa je otkrivanje OS\-a na ciljanom računalu korištenjem TCP/IP stack otiska (engl\&. fingerprint)\&. Nmap šalje mnoštvo TCP i UDP paketa na udaljeno računalo i istražuje svaki bit vraćenih paketa\&. Nakon što je učinio hrpu testova poput TCP ISN sampling, podrška i redosljed TCP opcija, IPID sampling i provjeru veličine inicijalnog TCP prozora, Nmap uspoređuje rezultate s
 nmap\-os\-fingerprints
@@ -1012,7 +1011,7 @@ je isto kao i
 \fB\-\-max\-rtt\-timeout 300 \-\-min_rtt_timeout 50 \-\-initial\-rtt\-timeout 250 \-\-max\-retries 2 \-\-host\-timeout 900000\fR
 kao i postavljanje maksimalnog TCP sken kaš njenja na 5ms\&.
 .RE
-.SH "IZBJEGAVANJE I ZAVARAVANJE VATROZIDA I IDS\-A"
+.SH "IZBJEGAVANJE I ZAVARAVANJE VATROZIDA I IDS-A"
 .PP
 Mnogo pionira interneta zu zamislili globalnu otvorenu mrežu univerzalnog adresnog prostora u kojoj je dozvoljeno spajanje bilo koja dva čvora\&. To bi omogućilo hostovima da šalju i primaju informacije jedan od drugog\&. Ljudi bi mogli pristupiti svim svojim sustavima s posla i mijenjati postavke grijanja i hlađenja, pa čak i otključavati vrata gostima koji su uranili\&.Ta verzija univerzalne povezanosti je ugušena nedovoljnim adresnim prostorom i ponajviše iz sigurnosnih razloga\&. U ranim 90\-tima, firme su počele uvoditi vatrozide s primarnom namjenom da smanje mogućnosti povezivanja koje su postojale\&. Ogromne mreže su ofgrađene od nefiltriranog interneta korištenjem aplikacijskih proxy\-a, NAT uređajai paket filtera\&. Otvoreno kolanje informacija predalo je tron kontroliranim komunikacijskim kanalima i sadržajem koji je njima prolazio\&.
 .PP

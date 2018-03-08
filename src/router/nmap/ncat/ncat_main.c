@@ -3,7 +3,7 @@
  * to mode-specific functions.                                             *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -87,12 +87,12 @@
  * Covered Software without special permission from the copyright holders. *
  *                                                                         *
  * If you have any questions about the licensing restrictions on using     *
- * Nmap in other works, are happy to help.  As mentioned above, we also    *
- * offer alternative license to integrate Nmap into proprietary            *
+ * Nmap in other works, we are happy to help.  As mentioned above, we also *
+ * offer an alternative license to integrate Nmap into proprietary         *
  * applications and appliances.  These contracts have been sold to dozens  *
  * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@nmap.com for further *
+ * as providing support and updates.  They also fund the continued         *
+ * development of Nmap.  Please email sales@nmap.com for further           *
  * information.                                                            *
  *                                                                         *
  * If you have received a written license agreement or contract for        *
@@ -126,7 +126,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_main.c 36887 2017-07-29 05:55:30Z dmiller $ */
+/* $Id$ */
 
 #include "nsock.h"
 #include "ncat.h"
@@ -138,6 +138,7 @@
 #ifndef WIN32
 #include <unistd.h>
 #endif
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -159,30 +160,45 @@
 static int ncat_connect_mode(void);
 static int ncat_listen_mode(void);
 
-/* Determines if it's parsing HTTP or SOCKS by looking at defport */
+/* Parses proxy address/port combo */
 static size_t parseproxy(char *str, struct sockaddr_storage *ss,
     size_t *sslen, unsigned short *portno)
 {
-    char *c = strrchr(str, ':'), *ptr;
+    char *p = strrchr(str, ':');
+    char *q;
+    long pno;
     int rc;
 
-    ptr = str;
+    if (p != NULL) {
+        *p++ = '\0';
+        pno = strtol(p, &q, 10);
+        if (pno < 1 || pno > 0xFFFF || *q)
+            bye("Invalid proxy port number \"%s\".", p);
+        *portno = (unsigned short) pno;
+    }
 
-    if (c)
-        *c = 0;
-
-    if (c && strlen((c + 1)))
-        *portno = (unsigned short) atoi(c + 1);
-
-    rc = resolve(ptr, *portno, ss, sslen, o.af);
+    rc = resolve(str, *portno, ss, sslen, o.af);
     if (rc != 0) {
-        loguser("Could not resolve proxy \"%s\": %s.\n", ptr, gai_strerror(rc));
-        if (o.af == AF_INET6 && *portno)
+        loguser("Could not resolve proxy \"%s\": %s.\n", str, gai_strerror(rc));
+        if (o.af == AF_INET6)
             loguser("Did you specify the port number? It's required for IPv6.\n");
         exit(EXIT_FAILURE);
     }
 
     return *sslen;
+}
+
+static int parse_timespec (const char *const tspec, const char *const optname)
+{
+    const long l = tval2msecs(tspec);
+    if (l <= 0 || l > INT_MAX)
+        bye("Invalid %s \"%s\" (must be greater than 0 and less than %ds).",
+            optname, tspec, INT_MAX / 1000);
+    if (l >= 100 * 1000 && tval_unit(tspec) == NULL)
+        bye("Since April 2010, the default unit for %s is seconds, so your "
+            "time of \"%s\" is %.1f minutes. Use \"%sms\" for %s milliseconds.",
+            optname, optarg, l / 1000.0 / 60, optarg, optarg);
+    return (int)l;
 }
 
 /* These functions implement a simple linked list to hold allow/deny
@@ -261,7 +277,7 @@ int main(int argc, char *argv[])
     struct host_list_node *allow_host_list = NULL;
     struct host_list_node *deny_host_list = NULL;
 
-	unsigned short proxyport = DEFAULT_PROXY_PORT;
+	unsigned short proxyport;
     int srcport = -1;
     char *source = NULL;
 
@@ -414,11 +430,7 @@ int main(int argc, char *argv[])
             o.conn_limit = atoi(optarg);
             break;
         case 'd':
-            o.linedelay = tval2msecs(optarg);
-            if (o.linedelay <= 0)
-                bye("Invalid -d delay \"%s\" (must be greater than 0).", optarg);
-            if (o.linedelay >= 100 * 1000 && tval_unit(optarg) == NULL)
-                bye("Since April 2010, the default unit for -d is seconds, so your time of \"%s\" is %.1f minutes. Use \"%sms\" for %g milliseconds.", optarg, o.linedelay / 1000.0 / 60, optarg, o.linedelay / 1000.0);
+            o.linedelay = parse_timespec(optarg, "-d delay");
             break;
         case 'o':
             o.normlog = optarg;
@@ -432,11 +444,7 @@ int main(int argc, char *argv[])
                 bye("Invalid source port %d.", srcport);
             break;
         case 'i':
-            o.idletimeout = tval2msecs(optarg);
-            if (o.idletimeout <= 0)
-                bye("Invalid -i timeout (must be greater than 0).");
-            if (o.idletimeout >= 100 * 1000 && tval_unit(optarg) == NULL)
-                bye("Since April 2010, the default unit for -i is seconds, so your time of \"%s\" is %.1f minutes. Use \"%sms\" for %g milliseconds.", optarg, o.idletimeout / 1000.0 / 60, optarg, o.idletimeout / 1000.0);
+            o.idletimeout = parse_timespec(optarg, "-i timeout");
             break;
         case 's':
             source = optarg;
@@ -458,11 +466,7 @@ int main(int argc, char *argv[])
             o.nodns = 1;
             break;
         case 'w':
-            o.conntimeout = tval2msecs(optarg);
-            if (o.conntimeout <= 0)
-                bye("Invalid -w timeout (must be greater than 0).");
-            if (o.conntimeout >= 100 * 1000 && tval_unit(optarg) == NULL)
-                bye("Since April 2010, the default unit for -w is seconds, so your time of \"%s\" is %.1f minutes. Use \"%sms\" for %g milliseconds.", optarg, o.conntimeout / 1000.0 / 60, optarg, o.conntimeout / 1000.0);
+            o.conntimeout = parse_timespec(optarg, "-w timeout");
             break;
         case 't':
             o.telnet = 1;
@@ -720,24 +724,28 @@ int main(int argc, char *argv[])
         if (!o.proxytype)
             o.proxytype = Strdup("http");
 
-        if (!strcmp(o.proxytype, "http") ||
-            !strcmp(o.proxytype, "socks4") || !strcmp(o.proxytype, "4") ||
-            !strcmp(o.proxytype, "socks5") || !strcmp(o.proxytype, "5")) {
-            /* Parse HTTP/SOCKS proxy address and store it in targetss.
-             * If the proxy server is given as an IPv6 address (not hostname),
-             * the port number MUST be specified as well or parsing will break
-             * (due to the colons in the IPv6 address and host:port separator).
-             */
-
-            targetaddrs->addrlen = parseproxy(o.proxyaddr,
-                &targetaddrs->addr.storage, &targetaddrs->addrlen, &proxyport);
-            if (o.af == AF_INET) {
-                targetaddrs->addr.in.sin_port = htons(proxyport);
-            } else { // might modify to else if and test AF_{INET6|UNIX|UNSPEC}
-                targetaddrs->addr.in6.sin6_port = htons(proxyport);
-            }
-        } else {
+        /* validate proxy type and configure its default port */
+        if (!strcmp(o.proxytype, "http"))
+            proxyport = DEFAULT_PROXY_PORT;
+        else if (!strcmp(o.proxytype, "socks4") || !strcmp(o.proxytype, "4"))
+            proxyport = DEFAULT_SOCKS4_PORT;
+        else if (!strcmp(o.proxytype, "socks5") || !strcmp(o.proxytype, "5"))
+            proxyport = DEFAULT_SOCKS5_PORT;
+        else 
             bye("Invalid proxy type \"%s\".", o.proxytype);
+
+        /* Parse HTTP/SOCKS proxy address and store it in targetss.
+         * If the proxy server is given as an IPv6 address (not hostname),
+         * the port number MUST be specified as well or parsing will break
+         * (due to the colons in the IPv6 address and host:port separator).
+         */
+
+        targetaddrs->addrlen = parseproxy(o.proxyaddr,
+            &targetaddrs->addr.storage, &targetaddrs->addrlen, &proxyport);
+        if (o.af == AF_INET) {
+            targetaddrs->addr.in.sin_port = htons(proxyport);
+        } else { // might modify to else if and test AF_{INET6|UNIX|UNSPEC}
+            targetaddrs->addr.in6.sin6_port = htons(proxyport);
         }
 
         if (o.listen)

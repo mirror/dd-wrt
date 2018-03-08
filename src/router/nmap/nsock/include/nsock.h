@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2017 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2018 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -53,7 +53,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock.h 36887 2017-07-29 05:55:30Z dmiller $ */
+/* $Id$ */
 
 #ifndef NSOCK_H
 #define NSOCK_H

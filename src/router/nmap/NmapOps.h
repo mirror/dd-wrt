@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -89,12 +89,12 @@
  * Covered Software without special permission from the copyright holders. *
  *                                                                         *
  * If you have any questions about the licensing restrictions on using     *
- * Nmap in other works, are happy to help.  As mentioned above, we also    *
- * offer alternative license to integrate Nmap into proprietary            *
+ * Nmap in other works, we are happy to help.  As mentioned above, we also *
+ * offer an alternative license to integrate Nmap into proprietary         *
  * applications and appliances.  These contracts have been sold to dozens  *
  * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@nmap.com for further *
+ * as providing support and updates.  They also fund the continued         *
+ * development of Nmap.  Please email sales@nmap.com for further           *
  * information.                                                            *
  *                                                                         *
  * If you have received a written license agreement or contract for        *
@@ -128,7 +128,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: NmapOps.h 36788 2017-06-07 12:32:38Z dmiller $ */
+/* $Id$ */
 
 #ifndef NMAP_OPS_H
 #define NMAP_OPS_H
@@ -228,14 +228,14 @@ class NmapOps {
   float max_packet_send_rate;
   /* The requested auto stats printing interval, or 0.0 if unset. */
   float stats_interval;
-  int randomize_hosts;
-  int randomize_ports;
-  int spoofsource; /* -S used */
-  int fastscan;
+  bool randomize_hosts;
+  bool randomize_ports;
+  bool spoofsource; /* -S used */
+  bool fastscan;
   char device[64];
   int ping_group_sz;
-  int nogcc; /* Turn off group congestion control with --nogcc */
-  int generate_random_ips; /* -iR option */
+  bool nogcc; /* Turn off group congestion control with --nogcc */
+  bool generate_random_ips; /* -iR option */
   FingerPrintDB *reference_FPs; /* Used in the new OS scan system. */
   std::vector<FingerMatch> os_labels_ipv6;
   u16 magic_port; /* The source port set by -g or --source-port. */
@@ -308,11 +308,11 @@ class NmapOps {
                     FIN scan into a PSH scan.  Sort of a hack, but can
                     be very useful sometimes. */
 
-  int defeat_rst_ratelimit; /* Solaris 9 rate-limits RSTs so scanning is very
+  bool defeat_rst_ratelimit; /* Solaris 9 rate-limits RSTs so scanning is very
             slow against it. If we don't distinguish between closed and filtered ports,
             we can get the list of open ports very fast */
 
-  int defeat_icmp_ratelimit; /* If a host rate-limits ICMP responses, then scanning
+  bool defeat_icmp_ratelimit; /* If a host rate-limits ICMP responses, then scanning
             is very slow against it. This option prevents Nmap to adjust timing
             when it changes the port's state because of ICMP response, as the latter
             might be rate-limited. Doing so we can get scan results faster. */
@@ -324,19 +324,18 @@ class NmapOps {
                                to 0. */
 
   // Version Detection Options
-  int override_excludeports;
+  bool override_excludeports;
   int version_intensity;
 
   struct sockaddr_storage decoys[MAX_DECOYS];
-  int osscan_limit; /* Skip OS Scan if no open or no closed TCP ports */
-  int osscan_guess;   /* Be more aggressive in guessing OS type */
+  bool osscan_limit; /* Skip OS Scan if no open or no closed TCP ports */
+  bool osscan_guess;   /* Be more aggressive in guessing OS type */
   int numdecoys;
   int decoyturn;
-  int osscan;
-  int servicescan;
+  bool osscan;
+  bool servicescan;
   int pingtype;
   int listscan;
-  int allowall;
   int fragscan; /* 0 or MTU (without IPv4 header size) */
   int ackscan;
   int bouncescan;
@@ -353,13 +352,13 @@ class NmapOps {
   int sctpcookieechoscan;
   int windowscan;
   int xmasscan;
-  int noresolve;
-  int noportscan;
-  int append_output; /* Append to any output files rather than overwrite */
+  bool noresolve;
+  bool noportscan;
+  bool append_output; /* Append to any output files rather than overwrite */
   FILE *logfd[LOG_NUM_FILES];
   FILE *nmap_stdout; /* Nmap standard output */
   int ttl; // Time to live
-  int badsum;
+  bool badsum;
   char *datadir;
   /* A map from abstract data file names like "nmap-services" and "nmap-os-db"
      to paths which have been requested by the user. nmap_fetchfile will return
@@ -370,7 +369,8 @@ class NmapOps {
      Only files that were actually read should be in this map. */
   std::map<std::string, std::string> loaded_data_files;
   bool mass_dns;
-  int resolve_all;
+  bool always_resolve;
+  bool resolve_all;
   char *dns_servers;
 
   /* Do IPv4 ARP or IPv6 ND scan of directly connected Ethernet hosts, even if
@@ -397,12 +397,12 @@ class NmapOps {
   nsock_proxychain proxy_chain;
 
 #ifndef NOLUA
-  int script;
+  bool script;
   char *scriptargs;
   char *scriptargsfile;
-  int scriptversion;
-  int scripttrace;
-  int scriptupdatedb;
+  bool scriptversion;
+  bool scripttrace;
+  bool scriptupdatedb;
   bool scripthelp;
   double scripttimeout;
   void chooseScripts(char* argument);

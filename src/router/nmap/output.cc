@@ -9,7 +9,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -93,12 +93,12 @@
  * Covered Software without special permission from the copyright holders. *
  *                                                                         *
  * If you have any questions about the licensing restrictions on using     *
- * Nmap in other works, are happy to help.  As mentioned above, we also    *
- * offer alternative license to integrate Nmap into proprietary            *
+ * Nmap in other works, we are happy to help.  As mentioned above, we also *
+ * offer an alternative license to integrate Nmap into proprietary         *
  * applications and appliances.  These contracts have been sold to dozens  *
  * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@nmap.com for further *
+ * as providing support and updates.  They also fund the continued         *
+ * development of Nmap.  Please email sales@nmap.com for further           *
  * information.                                                            *
  *                                                                         *
  * If you have received a written license agreement or contract for        *
@@ -132,7 +132,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: output.cc 36788 2017-06-07 12:32:38Z dmiller $ */
+/* $Id$ */
 
 #include "nmap.h"
 #include "output.h"
@@ -718,7 +718,7 @@ void printportoutput(Target *currenths, PortList *plist) {
           first = 0;
         if (o.reason) {
           if (current->reason.ttl)
-            Tbl->addItemFormatted(rowno, reasoncol, false, "%s ttl %d", 
+            Tbl->addItemFormatted(rowno, reasoncol, false, "%s ttl %d",
                                 port_reason_str(current->reason), current->reason.ttl);
           else
             Tbl->addItem(rowno, reasoncol, true, port_reason_str(current->reason));
@@ -783,7 +783,7 @@ void printportoutput(Target *currenths, PortList *plist) {
         Tbl->addItem(rowno, servicecol, true, serviceinfo);
         if (o.reason) {
           if (current->reason.ttl)
-            Tbl->addItemFormatted(rowno, reasoncol, false, "%s ttl %d", 
+            Tbl->addItemFormatted(rowno, reasoncol, false, "%s ttl %d",
                                   port_reason_str(current->reason), current->reason.ttl);
           else
             Tbl->addItem(rowno, reasoncol, true, port_reason_str(current->reason));
@@ -1112,9 +1112,9 @@ void log_flush_all() {
 }
 
 /* Open a log descriptor of the type given to the filename given.  If
-   append is nonzero, the file will be appended instead of clobbered if
+   append is true, the file will be appended instead of clobbered if
    it already exists.  If the file does not exist, it will be created */
-int log_open(int logt, int append, char *filename) {
+int log_open(int logt, bool append, char *filename) {
   int i = 0;
   if (logt <= 0 || logt > LOG_FILE_MASK)
     return -1;
@@ -1431,7 +1431,7 @@ static char *num_to_string_sigdigits(double d, int digits) {
 /* Writes a heading for a full scan report ("Nmap scan report for..."),
    including host status and DNS records. */
 void write_host_header(Target *currenths) {
-  if ((currenths->flags & HOST_UP) || o.verbose || o.resolve_all) {
+  if ((currenths->flags & HOST_UP) || o.verbose || o.always_resolve) {
     if (currenths->flags & HOST_UP) {
       log_write(LOG_PLAIN, "Nmap scan report for %s\n", currenths->NameIP());
     } else if (currenths->flags & HOST_DOWN) {
@@ -1443,17 +1443,14 @@ void write_host_header(Target *currenths) {
   }
   write_host_status(currenths);
   if (currenths->TargetName() != NULL
-      && currenths->resolved_addrs.size() > 1) {
-    const struct sockaddr_storage *hs_ss = currenths->TargetSockAddr();
+      && !currenths->unscanned_addrs.empty()) {
 
     log_write(LOG_PLAIN, "Other addresses for %s (not scanned):",
       currenths->TargetName());
-    for (std::list<struct sockaddr_storage>::const_iterator it = currenths->resolved_addrs.begin(), end = currenths->resolved_addrs.end();
+    for (std::list<struct sockaddr_storage>::const_iterator it = currenths->unscanned_addrs.begin(), end = currenths->unscanned_addrs.end();
         it != end; it++) {
       struct sockaddr_storage ss = *it;
-      if (!sockaddr_storage_equal(&ss, hs_ss)) {
-        log_write(LOG_PLAIN, " %s", inet_ntop_ez(&ss, sizeof(ss)));
-      }
+      log_write(LOG_PLAIN, " %s", inet_ntop_ez(&ss, sizeof(ss)));
     }
     log_write(LOG_PLAIN, "\n");
   }
@@ -2537,7 +2534,7 @@ void printfinaloutput() {
 
   if (o.numhosts_scanned == 0
 #ifndef NOLUA
-      && o.scriptupdatedb == 0
+      && !o.scriptupdatedb
 #endif
       )
     error("WARNING: No targets were specified, so 0 hosts scanned.");

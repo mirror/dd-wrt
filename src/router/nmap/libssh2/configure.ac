@@ -111,22 +111,22 @@ AC_ARG_WITH(libz,
 
 support_clear_memory=no
 
-## Look for OpenSSL
-#if test "$found_crypto" = "none" && test "$use_openssl" != "no"; then
- # AC_LIB_HAVE_LINKFLAGS([ssl], [crypto], [#include <openssl/ssl.h>])
-#fi
-#if test "$ac_cv_libssl" = "yes"; then
+# Look for OpenSSL
+if test "$found_crypto" = "none" && test "$use_openssl" != "no"; then
+  AC_LIB_HAVE_LINKFLAGS([ssl], [crypto], [#include <openssl/ssl.h>])
+fi
+if test "$ac_cv_libssl" = "yes"; then
   AC_DEFINE(LIBSSH2_OPENSSL, 1, [Use OpenSSL])
   LIBSREQUIRED=libssl,libcrypto
 
-#  # Not all OpenSSL have AES-CTR functions.
-save_LIBS="$LIBS"
-LIBS="$LIBS $LIBSSL"
-#  AC_CHECK_FUNCS(EVP_aes_128_ctr)
-LIBS="$save_LIBS"
-#
+  # Not all OpenSSL have AES-CTR functions.
+  save_LIBS="$LIBS"
+  LIBS="$LIBS $LIBSSL"
+  AC_CHECK_FUNCS(EVP_aes_128_ctr)
+  LIBS="$save_LIBS"
+
   found_crypto="OpenSSL (AES-CTR: ${ac_cv_func_EVP_aes_128_ctr:-N/A})"
-#fi
+fi
 
 AM_CONDITIONAL(OPENSSL, test "$ac_cv_libssl" = "yes")
 AM_CONDITIONAL(WINCNG, test "$ac_cv_libbcrypt" = "yes")

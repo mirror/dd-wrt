@@ -2,7 +2,7 @@ dnl # -*- mode: fundamental; -*-
 dnl # Autoconf configuration file for Nbase
 dnl #
 dnl # Process this file with autoconf to produce a configure script.
-dnl # $Id: configure.ac 32559 2013-12-11 23:17:42Z dmiller $
+dnl # $Id$
 
 # Because nbase is usually distributed with Nmap, the necessary files
 # config.guess, config.guess, and install-sh are not distributed with
@@ -129,7 +129,7 @@ AC_CACHE_CHECK(if sockaddr{} has sa_len member, ac_cv_sockaddr_has_sa_len,
         ac_cv_sockaddr_has_sa_len=yes,
         ac_cv_sockaddr_has_sa_len=no))
 if test $ac_cv_sockaddr_has_sa_len = yes ; then
-        AC_DEFINE(HAVE_SOCKADDR_SA_LEN)
+        AC_DEFINE(HAVE_SOCKADDR_SA_LEN, 1, [define if sockaddr has sa_len member])
 fi
 
 dnl check endedness
@@ -225,7 +225,7 @@ AC_LIBOBJ([getnameinfo])
 fi
 
 if test "$have_ipv6" = "1"; then
-  AC_DEFINE(HAVE_IPV6)
+  AC_DEFINE(HAVE_IPV6, 1, [define if IPv6 is available])
 fi
 
 # First we test whether they specified openssl desires explicitly
@@ -286,7 +286,7 @@ talled you can try the --with-openssl=DIR argument]) ])
 fi
 
 if test "$use_openssl" = "yes"; then
-  AC_DEFINE(HAVE_OPENSSL)
+  AC_DEFINE(HAVE_OPENSSL, 1, [define if libssl is available])
 fi
 
 CHECK_PROC_SELF_EXE

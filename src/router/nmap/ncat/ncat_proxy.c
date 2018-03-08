@@ -2,7 +2,7 @@
  * ncat_proxy.c -- HTTP proxy server.                                      *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2018 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -86,12 +86,12 @@
  * Covered Software without special permission from the copyright holders. *
  *                                                                         *
  * If you have any questions about the licensing restrictions on using     *
- * Nmap in other works, are happy to help.  As mentioned above, we also    *
- * offer alternative license to integrate Nmap into proprietary            *
+ * Nmap in other works, we are happy to help.  As mentioned above, we also *
+ * offer an alternative license to integrate Nmap into proprietary         *
  * applications and appliances.  These contracts have been sold to dozens  *
  * of software vendors, and generally include a perpetual license as well  *
- * as providing for priority support and updates.  They also fund the      *
- * continued development of Nmap.  Please email sales@nmap.com for further *
+ * as providing support and updates.  They also fund the continued         *
+ * development of Nmap.  Please email sales@nmap.com for further           *
  * information.                                                            *
  *                                                                         *
  * If you have received a written license agreement or contract for        *
@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_proxy.c 36788 2017-06-07 12:32:38Z dmiller $ */
+/* $Id$ */
 
 #include "base64.h"
 #include "http.h"
@@ -888,12 +888,13 @@ static int check_auth(const struct http_request *request,
 
         /* Split up the proxy auth argument. */
         proxy_auth = Strdup(o.proxy_auth);
-        username = strtok(proxy_auth, ":");
-        password = strtok(NULL, ":");
+        username = proxy_auth;
+        password = strchr(proxy_auth, ':');
         if (password == NULL) {
             free(proxy_auth);
             return 0;
         }
+        *password++ = '\0';
         ret = http_digest_check_credentials(username, "Ncat", password,
             request->method, credentials);
         free(proxy_auth);
