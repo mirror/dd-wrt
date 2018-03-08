@@ -103,8 +103,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	fprintf(stderr, "backup nvram\n");
 	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in) {
-		char *mem = malloc(65536);
-		fread(mem, 65536, 1, in);
+		char *mem = malloc(65536 * 2);
+		fread(mem, 65536 * 2, 1, in);
 		fclose(in);
 		FILE *in = fopen(drive, "r+b");
 		int f_flags = fcntl(fileno(in), F_GETFL);
@@ -112,8 +112,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		fcntl(fileno(in), F_SETFL, f_flags);
 		fseeko(in, 0, SEEK_END);
 		off_t mtdlen = ftello(in);
-		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
-		fwrite(mem, 65536, 1, in);
+		fseeko(in, mtdlen - (65536 * 3), SEEK_SET);
+		fwrite(mem, 65536 * 2, 1, in);
 		fflush(in);
 		fsync(fileno(in));
 		fclose(in);
@@ -284,9 +284,9 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 		FILE *in = fopen(drive, "r+b");
 		fseeko(in, 0, SEEK_END);
 		off_t mtdlen = ftell(in);
-		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
+		fseeko(in, mtdlen - (65536 * 3), SEEK_SET);
 		int i;
-		for (i = 0; i < 65536; i++)
+		for (i = 0; i < 65536 * 2; i++)
 			putc(0, in);	// erase backup area
 		fflush(in);
 		fsync(fileno(in));
