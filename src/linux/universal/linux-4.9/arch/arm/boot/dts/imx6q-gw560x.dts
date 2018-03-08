@@ -46,10 +46,14 @@
  */
 
 /dts-v1/;
-#include "imx6dl.dtsi"
-#include "imx6qdl-gw5904.dtsi"
+#include "imx6q.dtsi"
+#include "imx6qdl-gw560x.dtsi"
 
 / {
-	model = "Gateworks Ventana i.MX6 DualLite/Solo GW5904";
-	compatible = "gw,imx6dl-gw5904", "gw,ventana", "fsl,imx6dl";
+	model = "Gateworks Ventana i.MX6 Dual/Quad GW560X";
+	compatible = "gw,imx6q-gw560x", "gw,ventana", "fsl,imx6q";
+};
+
+&sata {
+	status = "okay";
 };
