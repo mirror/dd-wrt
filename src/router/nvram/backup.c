@@ -38,21 +38,7 @@
 //#include <shutils.h>
 //#include <utils.h>
 
-#ifdef NVRAM_SPACE_256
-#define NVRAMSPACE NVRAM_SPACE_256
-#elif HAVE_NVRAM_128
-#define NVRAMSPACE 0x20000
-#elif HAVE_MVEBU
-#define NVRAMSPACE 0x10000
-#elif HAVE_WDR4900
-#define NVRAMSPACE 0x20000
-#elif HAVE_ALPINE
-#define NVRAMSPACE 0x20000
-#elif HAVE_IPQ806X
-#define NVRAMSPACE 0x10000
-#else
-#define NVRAMSPACE NVRAM_SPACE
-#endif
+static int NVRAMSPACE = NVRAM_SPACE;
 
 static char *filter[] = {
 	"ATEMODE",
@@ -356,7 +342,7 @@ static void save(FILE * fp, char *p, int not)
 	int i;
 	while (strlen(p) != 0) {
 		int len = strlen(p);
-		if (len > 2 && (!!strncmp(p, "wl_", 3)) == not) {
+		if (len > 2 && (! !strncmp(p, "wl_", 3)) == not) {
 			p += len + 1;
 			continue;
 		}
@@ -467,6 +453,7 @@ int nvram_restore(char *filename, int force)
 
 }
 
+int nvram_size(void);
 int nvram_backup(char *filename)
 {
 
@@ -477,6 +464,11 @@ int nvram_backup(char *filename)
 		return -1;
 	}
 #endif
+	NVRAMSPACE = nvram_size();
+	if (NVRAMSPACE < 0) {
+		fprintf(stderr, "nvram driver returns bogus space\n");
+		return -1;
+	}
 	char *buf = (char *)malloc(NVRAMSPACE);
 	memset(buf, 0, NVRAMSPACE);
 
@@ -492,8 +484,9 @@ int nvram_backup(char *filename)
 			backupcount++;
 	}
 	FILE *fp = fopen(filename, "wb");
-	if (!fp)
+	if (!fp) {
 		return -1;
+	}
 
 	fwrite(sign, 6, 1, fp);
 	fputc(backupcount & 255, fp);	// high byte
