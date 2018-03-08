@@ -1,9 +1,6 @@
 #ifndef __MTK_NAND_H
 #define __MTK_NAND_H
 
-#define RALINK_NAND_CTRL_BASE         0xBE003000
-#define RALINK_SYSCTL_BASE            0xBE000000
-#define RALINK_NANDECC_CTRL_BASE      0xBE003800
 /*******************************************************************************
  * NFI Register Definition 
  *******************************************************************************/
