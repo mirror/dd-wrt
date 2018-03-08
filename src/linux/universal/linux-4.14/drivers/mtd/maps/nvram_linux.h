@@ -142,9 +142,10 @@ extern int nvram_commit(void);
 extern int nvram_getall(char *buf, int count);
 
 #define NVRAM_MAGIC			0x48534C46	/* 'NVFL' */
+#define NVRAM_SPACE_MAGIC			0x50534341	/* 'SPAC' */
 #define NVRAM_VERSION		1
 #define NVRAM_HEADER_SIZE	sizeof(struct nvram_header)
-#if defined(CONFIG_WZR_HP_G300NH) || defined(CONFIG_ARCH_ALPINE) || defined(CONFIG_TL_WDR4900_V1)
+#if defined(CONFIG_WZR_HP_G300NH) || defined(CONFIG_ARCH_ALPINE) || defined(CONFIG_X86) || defined(CONFIG_SOC_IMX6) || defined(CONFIG_ARCH_QCOM) || defined(CONFIG_TL_WDR4900_V1)
 #define NVRAM_SPACE			0x20000
 #else
 #define NVRAM_SPACE			0x10000
