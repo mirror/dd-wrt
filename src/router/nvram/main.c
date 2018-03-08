@@ -25,26 +25,23 @@ static void usage(void)
 	exit(0);
 }
 
-#ifdef NVRAM_SPACE_256
-#define NVRAMSPACE NVRAM_SPACE_256
-#elif HAVE_NVRAM_128
-#define NVRAMSPACE 0x20000
-#elif HAVE_MVEBU
-#define NVRAMSPACE 0x10000
-#elif HAVE_ALPINE
-#define NVRAMSPACE 0x20000
-#elif HAVE_IPQ806X
-#define NVRAMSPACE 0x10000
-#else
-#define NVRAMSPACE NVRAM_SPACE
-#endif
+static int NVRAMSPACE = NVRAM_SPACE;
+
+#define NVRAM_SPACE_MAGIC			0x50534341	/* 'SPAC' */
+
+int nvram_size(void);
 
 /* NVRAM utility */
 int main(int argc, char **argv)
 {
-	char *name, *value, buf[NVRAMSPACE];
+	char *name, *value, *buf;
 	int size;
-
+	NVRAMSPACE = nvram_size();
+	if (NVRAMSPACE < 0) {
+		fprintf(stderr, "nvram driver returns bogus space\n");
+		goto err;
+	}
+	buf = (char *)malloc(NVRAMSPACE);
 	/* Skip program name */
 	--argc;
 	++argv;
@@ -81,6 +78,7 @@ int main(int argc, char **argv)
 		if (!*argv)
 			break;
 	}
-
+	free(buf);
+      err:;
 	return 0;
 }

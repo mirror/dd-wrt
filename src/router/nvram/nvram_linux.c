@@ -29,22 +29,9 @@
 #include <nvram_convert.h>
 
 #define PATH_DEV_NVRAM "/dev/nvram"
+#define NVRAM_SPACE_MAGIC			0x50534341	/* 'SPAC' */
 
-#ifdef NVRAM_SPACE_256
-#define NVRAMSPACE NVRAM_SPACE_256
-#elif HAVE_NVRAM_128
-#define NVRAMSPACE 0x20000
-#elif HAVE_MVEBU
-#define NVRAMSPACE 0x10000
-#elif HAVE_WDR4900
-#define NVRAMSPACE 0x20000
-#elif HAVE_ALPINE
-#define NVRAMSPACE 0x20000
-#elif HAVE_IPQ806X
-#define NVRAMSPACE 0x10000
-#else
-#define NVRAMSPACE NVRAM_SPACE
-#endif
+static int NVRAMSPACE = NVRAM_SPACE;
 
 /* Globals */
 static int nvram_fd = -1;
@@ -96,12 +83,16 @@ int nvram_init(void *unused)
 	nvram_buf = mmap(NULL, NVRAMSPACE, PROT_READ, MAP_SHARED, nvram_fd, 0);
 	if (nvram_buf == MAP_FAILED) {
 		close(nvram_fd);
-		fprintf(stderr, "nvram_init(): failed\n");
+		fprintf(stderr, "%s(): failed\n", __func__);
 		nvram_fd = -1;
 		goto err;
 	}
 	fcntl(nvram_fd, F_SETFD, FD_CLOEXEC);
-
+	NVRAMSPACE = ioctl(nvram_fd, NVRAM_SPACE_MAGIC, NULL);
+	if (NVRAMSPACE < 0) {
+		fprintf(stderr, "nvram driver returns bogus space\n");
+		goto err;
+	}
 	return 0;
 
 err:
@@ -285,7 +276,7 @@ int nvram_commit(void)
 	int ret;
 	if (nvram_fd < 0) {
 		if ((ret = nvram_init(NULL))) {
-			fprintf(stderr, "nvram_commit(): failed\n");
+			fprintf(stderr, "%s(): failed\n", __func__);
 			return ret;
 		}
 	}
@@ -294,7 +285,7 @@ int nvram_commit(void)
 	ret = ioctl(nvram_fd, NVRAM_MAGIC, NULL);
 
 	if (ret < 0) {
-		fprintf(stderr, "nvram_commit(): failed\n");
+		fprintf(stderr, "%s(): failed\n", __func__);
 		perror(PATH_DEV_NVRAM);
 	}
 	sync();
@@ -366,9 +357,28 @@ int nvram2file(char *varname, char *filename)
 	return i;
 }
 
+int nvram_size(void)
+{
+	int ret;
+	if (nvram_fd < 0) {
+		if ((ret = nvram_init(NULL))) {
+			fprintf(stderr, "%s(): failed\n", __func__);
+			return -1;
+		}
+	}
+	return NVRAMSPACE;
+}
+
 int nvram_used(int *space)
 {
 	char *name, *buf;
+	int ret;
+	if (nvram_fd < 0) {
+		if ((ret = nvram_init(NULL))) {
+			fprintf(stderr, "%s(): failed\n", __func__);
+			return ret;
+		}
+	}
 
 	*space = NVRAMSPACE;
 
