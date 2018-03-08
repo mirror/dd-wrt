@@ -1,17 +1,5 @@
-/******************************************************************************
-* mtk_nand.c - MTK NAND Flash Device Driver
- *
-* Copyright 2009-2012 MediaTek Co.,Ltd.
- *
-* DESCRIPTION:
-* 	This file provid the other drivers nand relative functions
- *
-* modification history
-* ----------------------------------------
-* v3.0, 11 Feb 2010, mtk
-* ----------------------------------------
-******************************************************************************/
 #include "nand_def.h"
+#if defined(__KERNEL_NAND__)
 #include <linux/slab.h>
 #include <linux/init.h>
 #include <linux/module.h>
@@ -36,22 +24,102 @@
 #include <asm/cacheflush.h>
 #include <asm/uaccess.h>
 #include <linux/miscdevice.h>
+#include <asm/mach-ralink/rt_mmap.h>
+#include <asm/mach-ralink/surfboardint.h>
+
+//#include <mach/mtk_nand.h>
 #include "mtk_nand.h"
 #include "nand_device_list.h"
 
+#if 0
+#include <mach/dma.h>
+#include <mach/mt_devs.h>
+#include <mach/mt_reg_base.h>
+#include <mach/mt_typedefs.h>
+#include <mach/mt_clock_manager.h>
+#include <mach/mtk_nand.h>
+#include <mach/bmt.h>
+#include <mach/mt_irq.h>
+#endif
+#elif defined(__UBOOT_NAND__)
+#include <linux/errno.h>
+#include <linux/mtd/mtd.h>
+#include <linux/mtd/nand.h>
+#include <rt_mmap.h>
+#include "mtk_nand.h"
+#include "mt6575_typedefs.h"
+#include "nand_device_list.h"
+#elif defined(__BOOT_NAND__)
+#include <asm/system.h>
+#include <asm/bitops.h>
+#include <linux/bitops.h>
+#include <linux/errno.h>
+#include <linux/mtd/mtd.h>
+#include <linux/mtd/nand.h>
+#include <rt_mmap.h>
+#include "mtk_nand.h"
+#include "mt6575_typedefs.h"
+#include "nand_device_list.h"
+#include <image.h>
+#else
+#error "NAND driver only supports KERNEL/Uboot/romcode"
+#endif
+
 #include "bmt.h"
+#if defined(__KERNEL_NAND__)
 #include "partition.h"
+#endif
+//#include <asm/system.h>
 
+#ifdef PMT
+#include "partition_define.h"
+#endif
+//#include <mach/mt_boot.h>
+//#include "../../../../../../source/kernel/drivers/aee/ipanic/ipanic.h"
+//#include <linux/rtc.h>
+
+#include <linux/version.h>
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
+#include <uapi/mtd/mtd-abi.h>
+#include "mtdcore.h"
+#define __devinit
+#define __devexit
+#endif
+
+#if defined(__UBOOT_NAND__)
+#include <common.h>
+#include <command.h>
+static struct nand_buffers chip_buffers;
+#endif
+#if defined (__UBOOT_NAND__)|| defined (__KERNEL_NAND__)
 unsigned int CFG_BLOCKSIZE;
+#endif
 
+#if defined(SKIP_BAD_BLOCK)
+#ifdef RW_ROOTFS
+#define FILE_SYSTEM_START_ADDRESS	(LARGE_MTD_BOOT_PART_SIZE +  LARGE_MTD_CONFIG_PART_SIZE + LARGE_MTD_FACTORY_PART_SIZE)
+#else
+#define FILE_SYSTEM_START_ADDRESS	IMAGE1_SIZE
+#endif
+#ifdef CONFIG_RT2880_ROOTFS_IN_FLASH
+#define NAND_MTD_ROOTFS_PARTITION_NO            5
+#endif
 static int shift_on_bbt = 0;
+static int is_skip_bad_block(struct mtd_info *mtd, int page);
 extern void nand_bbt_set(struct mtd_info *mtd, int page, int flag);
 extern int nand_bbt_get(struct mtd_info *mtd, int page);
 int mtk_nand_read_oob_hw(struct mtd_info *mtd, struct nand_chip *chip, int page);
+#endif
 
-static const char *const probe_types[] = { "cmdlinepart", "ofpart", NULL };
+#if defined(CONFIG_SUPPORT_OPENWRT)
+int OpenWRT_rootfs_upgrading = 0;
+unsigned int rootfs_data_offset = 0;
+unsigned int rootfs_offset = 0;
+#endif
 
-#define NAND_CMD_STATUS_MULTI  0x71
+//#define PMT                                                   1
+//#define _MTK_NAND_DUMMY_DRIVER_
+//#define __INTERNAL_USE_AHB_MODE__     (1)
 
 void show_stack(struct task_struct *tsk, unsigned long *sp);
 extern void mt_irq_set_sens(unsigned int irq, unsigned int sens);
@@ -69,9 +137,93 @@ struct mtk_nand_host_hw mt7621_nand_hw = {
 	.nand_ecc_mode = NAND_ECC_HW,
 };
 
+//OTP support
+#ifndef NAND_OTP_SUPPORT
+#define NAND_OTP_SUPPORT 0
+#endif
+
+#if NAND_OTP_SUPPORT
+
+#define SAMSUNG_OTP_SUPPORT     1
+#define OTP_MAGIC_NUM           0x4E3AF28B
+#define SAMSUNG_OTP_PAGE_NUM    6
+
+static const unsigned int Samsung_OTP_Page[SAMSUNG_OTP_PAGE_NUM] = { 0x15, 0x16, 0x17, 0x18, 0x19, 0x1b };
+
+static struct mtk_otp_config g_mtk_otp_fuc;
+static spinlock_t g_OTPLock;
+
+#define OTP_MAGIC           'k'
+
+/* NAND OTP IO control number */
+#define OTP_GET_LENGTH 		_IOW(OTP_MAGIC, 1, int)
+#define OTP_READ 	        _IOW(OTP_MAGIC, 2, int)
+#define OTP_WRITE 			_IOW(OTP_MAGIC, 3, int)
+
+#define FS_OTP_READ         0
+#define FS_OTP_WRITE        1
+
+/* NAND OTP Error codes */
+#define OTP_SUCCESS                   0
+#define OTP_ERROR_OVERSCOPE          -1
+#define OTP_ERROR_TIMEOUT            -2
+#define OTP_ERROR_BUSY               -3
+#define OTP_ERROR_NOMEM              -4
+#define OTP_ERROR_RESET              -5
+
+struct mtk_otp_config {
+	u32 (*OTPRead) (u32 PageAddr, void *BufferPtr, void *SparePtr);
+	u32 (*OTPWrite) (u32 PageAddr, void *BufferPtr, void *SparePtr);
+	u32 (*OTPQueryLength) (u32 *Length);
+};
+
+struct otp_ctl {
+	unsigned int QLength;
+	unsigned int Offset;
+	unsigned int Length;
+	char *BufferPtr;
+	unsigned int status;
+};
+#endif
 /*******************************************************************************
  * Gloable Varible Definition
  *******************************************************************************/
+#ifdef NAND_PFM
+static suseconds_t g_PFM_R = 0;
+static suseconds_t g_PFM_W = 0;
+static suseconds_t g_PFM_E = 0;
+static u32 g_PFM_RNum = 0;
+static u32 g_PFM_RD = 0;
+static u32 g_PFM_WD = 0;
+static struct timeval g_now;
+
+#define PFM_BEGIN(time) \
+do_gettimeofday(&g_now); \
+(time) = g_now;
+
+#define PFM_END_R(time, n) \
+do_gettimeofday(&g_now); \
+g_PFM_R += (g_now.tv_sec * 1000000 + g_now.tv_usec) - (time.tv_sec * 1000000 + time.tv_usec); \
+g_PFM_RNum += 1; \
+g_PFM_RD += n; \
+MSG(PERFORMANCE, "%s - Read PFM: %lu, data: %d, ReadOOB: %d (%d, %d)\n", MODULE_NAME , g_PFM_R, g_PFM_RD, g_kCMD.pureReadOOB, g_kCMD.pureReadOOBNum, g_PFM_RNum);
+
+#define PFM_END_W(time, n) \
+do_gettimeofday(&g_now); \
+g_PFM_W += (g_now.tv_sec * 1000000 + g_now.tv_usec) - (time.tv_sec * 1000000 + time.tv_usec); \
+g_PFM_WD += n; \
+MSG(PERFORMANCE, "%s - Write PFM: %lu, data: %d\n", MODULE_NAME, g_PFM_W, g_PFM_WD);
+
+#define PFM_END_E(time) \
+do_gettimeofday(&g_now); \
+g_PFM_E += (g_now.tv_sec * 1000000 + g_now.tv_usec) - (time.tv_sec * 1000000 + time.tv_usec); \
+MSG(PERFORMANCE, "%s - Erase PFM: %lu\n", MODULE_NAME, g_PFM_E);
+#else
+#define PFM_BEGIN(time)
+#define PFM_END_R(time, n)
+#define PFM_END_W(time, n)
+#define PFM_END_E(time)
+#endif
 
 #define NFI_ISSUE_COMMAND(cmd, col_addr, row_addr, col_num, row_num) \
    do { \
@@ -84,34 +236,97 @@ struct mtk_nand_host_hw mt7621_nand_hw = {
    }while(0);
 
 //-------------------------------------------------------------------------------
+#if defined (__INTERNAL_USE_AHB_MODE__) && defined (__KERNEL_NAND__)
+static struct completion g_comp_AHB_Done;
+#endif
 static struct NAND_CMD g_kCMD;
 static u32 g_u4ChipVer;
 bool g_bInitDone;
+static int g_i4Interrupt;
 static bool g_bcmdstatus;
 static u32 g_value = 0;
 static int g_page_size;
 
+#if ECC_ENABLE
 BOOL g_bHwEcc = true;
+#else
+BOOL g_bHwEcc = false;
+#endif
 
 static u8 *local_buffer_16_align;	// 16 byte aligned buffer, for HW issue
 static u8 local_buffer[4096 + 512];
 
 extern void nand_release_device(struct mtd_info *mtd);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
+extern int nand_get_device(struct mtd_info *mtd, int new_state);
+#else
 extern int nand_get_device(struct nand_chip *chip, struct mtd_info *mtd, int new_state);
-
-#if defined(MTK_NAND_BMT)
-static bmt_struct *g_bmt;
 #endif
+
+static bmt_struct *g_bmt;
 struct mtk_nand_host *host;
+static u8 g_running_dma = 0;
+#ifdef DUMP_NATIVE_BACKTRACE
+static u32 g_dump_count = 0;
+#endif
+#if defined (__KERNEL_NAND__)
 extern struct mtd_partition g_pasStatic_Partition[];
 int part_num = NUM_PARTITIONS;
+#endif
+#ifdef PMT
+extern void part_init_pmt(struct mtd_info *mtd, u8 *buf);
+extern struct mtd_partition g_exist_Partition[];
+#endif
 int manu_id;
 int dev_id;
 
 static u8 local_oob_buf[NAND_MAX_OOBSIZE];
 
+#ifdef _MTK_NAND_DUMMY_DRIVER_
+int dummy_driver_debug;
+#endif
+
+static u32 nand_ecc_bit = 4;
+static u8 nand_ecc_offset = 8;
 static u8 nand_badblock_offset = 0;
 
+#if defined(__BOOT_NAND__)||defined(__UBOOT_NAND__)
+#define min(X, Y)                               \
+        ({ typeof (X) __x = (X), __y = (Y);     \
+                (__x < __y) ? __x : __y; })
+
+static u32 __swab32__(u32 x)
+{
+	u32 __x;
+	__x = ((u32)((((u32)(x) & (u32)0x000000ffUL) << 24) | (((u32)(x) & (u32)0x0000ff00UL) << 8) | (((u32)(x) & (u32)0x00ff0000UL) >> 8) | (((u32)(x) & (u32)0xff000000UL) >> 24)));
+	return __x;
+}
+
+static void NFI_SET_REG32(u32 reg, u32 value)
+{
+	u32 g_value = (DRV_Reg32(reg) | (value));
+	DRV_WriteReg32(reg, g_value);
+}
+
+static void NFI_SET_REG16(u32 reg, u16 value)
+{
+	u16 g_value = (DRV_Reg16(reg) | (value));
+	DRV_WriteReg16(reg, g_value);
+}
+
+static void NFI_CLN_REG32(u32 reg, u32 value)
+{
+	u32 g_value = (DRV_Reg32(reg) & (~(value)));
+	DRV_WriteReg32(reg, g_value);
+}
+
+static void NFI_CLN_REG16(u32 reg, u16 value)
+{
+	u16 g_value = (DRV_Reg16(reg) & (~(value)));
+	DRV_WriteReg16(reg, g_value);
+}
+
+#endif
 void nand_enable_clock(void)
 {
 	//enable_clock(MT65XX_PDN_PERI_NFI, "NAND");
@@ -155,12 +370,94 @@ flashdev_info devinfo;
 
 void dump_nfi(void)
 {
+#if __DEBUG_NAND
+	printk("\n==========================NFI DUMP==================================\n");
+	printk(KERN_INFO "NFI_ACCCON(%08X): 0x%x\n", (unsigned int)NFI_ACCCON_REG32, (unsigned int)DRV_Reg32(NFI_ACCCON_REG32));
+	printk(KERN_INFO "NFI_PAGEFMT(%08X): 0x%x\n", (unsigned int)NFI_PAGEFMT_REG16, (unsigned int)DRV_Reg16(NFI_PAGEFMT_REG16));
+	printk(KERN_INFO "NFI_CNFG(%08X): 0x%x\n", (unsigned int)NFI_CNFG_REG16, (unsigned int)DRV_Reg16(NFI_CNFG_REG16));
+	printk(KERN_INFO "NFI_CON(%08X): 0x%x\n", (unsigned int)NFI_CON_REG16, (unsigned int)DRV_Reg16(NFI_CON_REG16));
+	printk(KERN_INFO "NFI_STRDATA(%08X): 0x%x\n", (unsigned int)NFI_STRDATA_REG16, (unsigned int)DRV_Reg16(NFI_STRDATA_REG16));
+	printk(KERN_INFO "NFI_ADDRCNTR(%08X): 0x%x\n", (unsigned int)NFI_ADDRCNTR_REG16, (unsigned int)DRV_Reg16(NFI_ADDRCNTR_REG16));
+	printk(KERN_INFO "NFI_FIFOSTA(%08X): 0x%x\n", (unsigned int)NFI_FIFOSTA_REG16, (unsigned int)DRV_Reg16(NFI_FIFOSTA_REG16));
+	printk(KERN_INFO "NFI_INTR_EN(%08X): 0x%x\n", (unsigned int)NFI_INTR_EN_REG16, (unsigned int)DRV_Reg16(NFI_INTR_EN_REG16));
+	//printk(KERN_INFO "NFI_INTR(%08X): 0x%x\n", NFI_INTR_REG16, DRV_Reg16(NFI_INTR_REG16));    
+	printk(KERN_INFO "NFI_CMD(%08X): 0x%x\n", (unsigned int)NFI_CMD_REG16, (unsigned int)DRV_Reg16(NFI_CMD_REG16));
+	printk(KERN_INFO "NFI_ADDRNOB(%08X): 0x%x\n", (unsigned int)NFI_ADDRNOB_REG16, (unsigned int)DRV_Reg16(NFI_ADDRNOB_REG16));
+	printk(KERN_INFO "NFI_FDM_0L(%08X): 0x%x\n", (unsigned int)NFI_FDM0L_REG32, (unsigned int)DRV_Reg32(NFI_FDM0L_REG32));
+	printk(KERN_INFO "NFI_STA(%08X): 0x%x\n", (unsigned int)NFI_STA_REG32, (unsigned int)DRV_Reg32(NFI_STA_REG32));
+	printk(KERN_INFO "NFI_FDM_0M(%08X): 0x%x\n", (unsigned int)NFI_FDM0M_REG32, (unsigned int)DRV_Reg32(NFI_FDM0M_REG32));
+	printk(KERN_INFO "NFI_IOCON(%08X): 0x%x\n", (unsigned int)NFI_IOCON_REG16, (unsigned int)DRV_Reg16(NFI_IOCON_REG16));
+	printk(KERN_INFO "NFI_BYTELEN(%08X): 0x%x\n", (unsigned int)NFI_BYTELEN_REG16, (unsigned int)DRV_Reg16(NFI_BYTELEN_REG16));
+	printk(KERN_INFO "NFI_COLADDR(%08X): 0x%x\n", (unsigned int)NFI_COLADDR_REG32, (unsigned int)DRV_Reg32(NFI_COLADDR_REG32));
+	printk(KERN_INFO "NFI_ROWADDR(%08X): 0x%x\n", (unsigned int)NFI_ROWADDR_REG32, (unsigned int)DRV_Reg32(NFI_ROWADDR_REG32));
+	printk(KERN_INFO "ECC_ENCCNFG(%08X): 0x%x\n", (unsigned int)ECC_ENCCNFG_REG32, (unsigned int)DRV_Reg32(ECC_ENCCNFG_REG32));
+	printk(KERN_INFO "ECC_ENCCON(%08X): 0x%x\n", (unsigned int)ECC_ENCCON_REG16, (unsigned int)DRV_Reg16(ECC_ENCCON_REG16));
+	printk(KERN_INFO "ECC_DECCNFG(%08X): 0x%x\n", (unsigned int)ECC_DECCNFG_REG32, (unsigned int)DRV_Reg32(ECC_DECCNFG_REG32));
+	printk(KERN_INFO "ECC_DECCON(%08X): 0x%x\n", (unsigned int)ECC_DECCON_REG16, (unsigned int)DRV_Reg16(ECC_DECCON_REG16));
+	printk(KERN_INFO "NFI_CSEL(%08X): 0x%x\n", (unsigned int)NFI_CSEL_REG16, (unsigned int)DRV_Reg16(NFI_CSEL_REG16));
+	// printk(KERN_INFO "NFI clock register: 0x%x: %s\n", DRV_Reg32((volatile u32 *)0x00000000),
+	//         (DRV_Reg32((volatile u32 *)0xF0039300) & (1 << 17)) ? "miss" : "OK");
+	printk("==========================================================================\n");
+#endif
 }
 
 void dump_ecc(void)
 {
+#if __DEBUG_NAND
+	printk("\n==========================NFIECC DUMP==================================\n");
+	printk(KERN_INFO "ECC_ENCCON_REG16(%08X): 0x%x\n", (unsigned int)ECC_ENCCON_REG16, (unsigned int)DRV_Reg16(ECC_ENCCON_REG16));
+	printk(KERN_INFO "ECC_ENCCNFG_REG32(%08X): 0x%x\n", (unsigned int)ECC_ENCCNFG_REG32, (unsigned int)DRV_Reg32(ECC_ENCCNFG_REG32));
+	printk(KERN_INFO "ECC_ENCDIADDR_REG32(%08X): 0x%x\n", (unsigned int)ECC_ENCDIADDR_REG32, (unsigned int)DRV_Reg32(ECC_ENCDIADDR_REG32));
+	printk(KERN_INFO "ECC_ENCIDLE_REG32(%08X): 0x%x\n", (unsigned int)ECC_ENCIDLE_REG32, (unsigned int)DRV_Reg32(ECC_ENCIDLE_REG32));
+	printk(KERN_INFO "ECC_ENCPAR0_REG32(%08X): 0x%x\n", (unsigned int)ECC_ENCPAR0_REG32, (unsigned int)DRV_Reg32(ECC_ENCPAR0_REG32));
+	printk(KERN_INFO "ECC_ENCPAR1_REG32(%08X): 0x%x\n", (unsigned int)ECC_ENCPAR1_REG32, (unsigned int)DRV_Reg32(ECC_ENCPAR1_REG32));
+	printk(KERN_INFO "ECC_ENCPAR2_REG32(%08X): 0x%x\n", (unsigned int)ECC_ENCPAR2_REG32, (unsigned int)DRV_Reg32(ECC_ENCPAR2_REG32));
+	printk(KERN_INFO "ECC_ENCPAR3_REG32(%08X): 0x%x\n", (unsigned int)ECC_ENCPAR3_REG32, (unsigned int)DRV_Reg32(ECC_ENCPAR3_REG32));
+	printk(KERN_INFO "ECC_ENCPAR4_REG32(%08X): 0x%x\n", (unsigned int)ECC_ENCPAR4_REG32, (unsigned int)DRV_Reg32(ECC_ENCPAR4_REG32));
+	printk(KERN_INFO "ECC_ENCSTA_REG32(%08X): 0x%x\n", (unsigned int)ECC_ENCSTA_REG32, (unsigned int)DRV_Reg32(ECC_ENCSTA_REG32));
+	printk(KERN_INFO "ECC_ENCIRQEN_REG16(%08X): 0x%x\n", (unsigned int)ECC_ENCIRQEN_REG16, (unsigned int)DRV_Reg16(ECC_ENCIRQEN_REG16));
+	printk(KERN_INFO "ECC_ENCIRQSTA_REG16(%08X): 0x%x\n", (unsigned int)ECC_ENCIRQSTA_REG16, (unsigned int)DRV_Reg16(ECC_ENCIRQSTA_REG16));
+	printk(KERN_INFO "ECC_DECCON_REG16(%08X): 0x%x\n", (unsigned int)ECC_DECCON_REG16, (unsigned int)DRV_Reg16(ECC_DECCON_REG16));
+	printk(KERN_INFO "ECC_DECCNFG_REG32(%08X): 0x%x\n", (unsigned int)ECC_DECCNFG_REG32, (unsigned int)DRV_Reg32(ECC_DECCNFG_REG32));
+	printk(KERN_INFO "ECC_DECDIADDR_REG32(%08X): 0x%x\n", (unsigned int)ECC_DECDIADDR_REG32, (unsigned int)DRV_Reg32(ECC_DECDIADDR_REG32));
+	printk(KERN_INFO "ECC_DECIDLE_REG16(%08X): 0x%x\n", (unsigned int)ECC_DECIDLE_REG16, (unsigned int)DRV_Reg16(ECC_DECIDLE_REG16));
+	printk(KERN_INFO "ECC_DECFER_REG16(%08X): 0x%x\n", (unsigned int)ECC_DECFER_REG16, (unsigned int)DRV_Reg16(ECC_DECFER_REG16));
+	printk(KERN_INFO "ECC_DECENUM_REG32(%08X): 0x%x\n", (unsigned int)ECC_DECENUM_REG32, (unsigned int)DRV_Reg32(ECC_DECENUM_REG32));
+	printk(KERN_INFO "ECC_DECDONE_REG16(%08X): 0x%x\n", (unsigned int)ECC_DECDONE_REG16, (unsigned int)DRV_Reg16(ECC_DECDONE_REG16));
+	printk(KERN_INFO "ECC_DECEL0_REG32(%08X): 0x%x\n", (unsigned int)ECC_DECEL0_REG32, (unsigned int)DRV_Reg32(ECC_DECEL0_REG32));
+	printk(KERN_INFO "ECC_DECEL1_REG32(%08X): 0x%x\n", (unsigned int)ECC_DECEL1_REG32, (unsigned int)DRV_Reg32(ECC_DECEL1_REG32));
+	printk(KERN_INFO "ECC_DECEL2_REG32(%08X): 0x%x\n", (unsigned int)ECC_DECEL2_REG32, (unsigned int)DRV_Reg32(ECC_DECEL2_REG32));
+	printk(KERN_INFO "ECC_DECEL3_REG32(%08X): 0x%x\n", (unsigned int)ECC_DECEL3_REG32, (unsigned int)DRV_Reg32(ECC_DECEL3_REG32));
+	printk(KERN_INFO "ECC_DECEL4_REG32(%08X): 0x%x\n", (unsigned int)ECC_DECEL2_REG32, (unsigned int)DRV_Reg32(ECC_DECEL4_REG32));
+	printk(KERN_INFO "ECC_DECEL5_REG32(%08X): 0x%x\n", (unsigned int)ECC_DECEL3_REG32, (unsigned int)DRV_Reg32(ECC_DECEL5_REG32));
+	printk(KERN_INFO "ECC_DECIRQEN_REG16(%08X): 0x%x\n", (unsigned int)ECC_DECIRQEN_REG16, (unsigned int)DRV_Reg16(ECC_DECIRQEN_REG16));
+	printk(KERN_INFO "ECC_DECIRQSTA_REG16(%08X): 0x%x\n", (unsigned int)ECC_DECIRQSTA_REG16, (unsigned int)DRV_Reg16(ECC_DECIRQSTA_REG16));
+	printk(KERN_INFO "ECC_FDMADDR_REG32(%08X): 0x%x\n", (unsigned int)ECC_FDMADDR_REG32, (unsigned int)DRV_Reg32(ECC_FDMADDR_REG32));
+	printk(KERN_INFO "ECC_DECFSM_REG32(%08X): 0x%x\n", (unsigned int)ECC_DECFSM_REG32, (unsigned int)DRV_Reg32(ECC_DECFSM_REG32));
+	printk(KERN_INFO "ECC_SYNSTA_REG32(%08X): 0x%x\n", (unsigned int)ECC_SYNSTA_REG32, (unsigned int)DRV_Reg32(ECC_SYNSTA_REG32));
+	printk(KERN_INFO "ECC_DECNFIDI_REG32(%08X): 0x%x\n", (unsigned int)ECC_DECNFIDI_REG32, (unsigned int)DRV_Reg32(ECC_DECNFIDI_REG32));
+	printk(KERN_INFO "ECC_SYN0_REG32(%08X): 0x%x\n", (unsigned int)ECC_SYN0_REG32, (unsigned int)DRV_Reg32(ECC_SYN0_REG32));
+
+	// printk(KERN_INFO "NFI clock register: 0x%x: %s\n", DRV_Reg32((volatile u32 *)0x00000000),
+	//         (DRV_Reg32((volatile u32 *)0xF0039300) & (1 << 17)) ? "miss" : "OK");
+	printk("==========================================================================\n");
+#endif
 }
 
+u8 NFI_DMA_status(void)
+{
+	return g_running_dma;
+}
+
+u32 NFI_DMA_address(void)
+{
+	return DRV_Reg32(NFI_STRADDR_REG32);
+}
+
+EXPORT_SYMBOL(NFI_DMA_status);
+EXPORT_SYMBOL(NFI_DMA_address);
+
+#if defined (__KERNEL_NAND__)
 u32 nand_virt_to_phys_add(u32 va)
 {
 	u32 pageOffset = (va & (PAGE_SIZE - 1));
@@ -169,8 +466,9 @@ u32 nand_virt_to_phys_add(u32 va)
 	pte_t *pte;
 	u32 pa;
 
-	if (virt_addr_valid(va))
+	if (virt_addr_valid(va)) {
 		return __virt_to_phys(va);
+	}
 
 	if (NULL == current) {
 		printk(KERN_ERR "[nand_virt_to_phys_add] ERROR ,current is NULL! \n");
@@ -205,6 +503,12 @@ u32 nand_virt_to_phys_add(u32 va)
 }
 
 EXPORT_SYMBOL(nand_virt_to_phys_add);
+#else
+u32 nand_virt_to_phys_add(u32 va)
+{
+	return ((u32)va & 0x7fffffff);
+}
+#endif
 
 bool get_device_info(u16 id, u32 ext_id, flashdev_info * pdevinfo)
 {
@@ -237,6 +541,111 @@ find:
 	}
 }
 
+#ifdef DUMP_NATIVE_BACKTRACE
+#define NFI_NATIVE_LOG_SD    "/sdcard/NFI_native_log_%s-%02d-%02d-%02d_%02d-%02d-%02d.log"
+#define NFI_NATIVE_LOG_DATA "/data/NFI_native_log_%s-%02d-%02d-%02d_%02d-%02d-%02d.log"
+static int nfi_flush_log(char *s)
+{
+	mm_segment_t old_fs;
+	struct rtc_time tm;
+	struct timeval tv = { 0 };
+	struct file *filp = NULL;
+	char name[256];
+	unsigned int re = 0;
+	int data_write = 0;
+
+	do_gettimeofday(&tv);
+	rtc_time_to_tm(tv.tv_sec, &tm);
+	memset(name, 0, sizeof(name));
+	sprintf(name, NFI_NATIVE_LOG_DATA, s, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+	old_fs = get_fs();
+	set_fs(KERNEL_DS);
+	filp = filp_open(name, O_WRONLY | O_CREAT, 0777);
+	if (IS_ERR(filp)) {
+		printk("[NFI_flush_log]error create file in %s, IS_ERR:%ld, PTR_ERR:%ld\n", name, IS_ERR(filp), PTR_ERR(filp));
+		memset(name, 0, sizeof(name));
+		sprintf(name, NFI_NATIVE_LOG_SD, s, tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+		filp = filp_open(name, O_WRONLY | O_CREAT, 0777);
+		if (IS_ERR(filp)) {
+			printk("[NFI_flush_log]error create file in %s, IS_ERR:%ld, PTR_ERR:%ld\n", name, IS_ERR(filp), PTR_ERR(filp));
+			set_fs(old_fs);
+			return -1;
+		}
+	}
+	printk("[NFI_flush_log]log file:%s\n", name);
+	set_fs(old_fs);
+
+	if (!(filp->f_op) || !(filp->f_op->write)) {
+		printk("[NFI_flush_log] No operation\n");
+		re = -1;
+		goto ClOSE_FILE;
+	}
+
+	DumpNativeInfo();
+	old_fs = get_fs();
+	set_fs(KERNEL_DS);
+	data_write = vfs_write(filp, (char __user *)NativeInfo, strlen(NativeInfo), &filp->f_pos);
+	if (!data_write) {
+		printk("[nfi_flush_log] write fail\n");
+		re = -1;
+	}
+	set_fs(old_fs);
+
+ClOSE_FILE:
+	if (filp) {
+		filp_close(filp, current->files);
+		filp = NULL;
+	}
+	return re;
+}
+#endif
+#if defined (__INTERNAL_USE_AHB_MODE__) && defined (__KERNEL_NAND__)
+/******************************************************************************
+ * mtk_nand_irq_handler
+ * 
+ * DESCRIPTION:
+ *   NAND interrupt handler!
+ * 
+ * PARAMETERS: 
+ *   int irq
+ *   void *dev_id
+ * 
+ * RETURNS: 
+ *   IRQ_HANDLED : Successfully handle the IRQ  
+ * 
+ * NOTES: 
+ *   None
+ * 
+ ******************************************************************************/
+/* Modified for TCM used */
+static irqreturn_t mtk_nand_irq_handler(int irqno, void *dev_id)
+{
+	u16 u16IntStatus = DRV_Reg16(NFI_INTR_REG16);
+	(void)irqno;
+
+	if (u16IntStatus & (u16)INTR_AHB_DONE_EN) {
+		complete(&g_comp_AHB_Done);
+	}
+	return IRQ_HANDLED;
+}
+#endif
+/******************************************************************************
+ * ECC_Config
+ * 
+ * DESCRIPTION:
+ *   Configure HW ECC!
+ * 
+ * PARAMETERS: 
+ *   struct mtk_nand_host_hw *hw
+ * 
+ * RETURNS: 
+ *   None  
+ * 
+ * NOTES: 
+ *   None
+ * 
+ ******************************************************************************/
 static void ECC_Config(struct mtk_nand_host_hw *hw, u32 ecc_bit)
 {
 	u32 u4ENCODESize;
@@ -258,14 +667,17 @@ static void ECC_Config(struct mtk_nand_host_hw *hw, u32 ecc_bit)
 		break;
 	default:
 		break;
+
 	}
 	DRV_WriteReg16(ECC_DECCON_REG16, DEC_DE);
-	do {
-	} while (!DRV_Reg16(ECC_DECIDLE_REG16));
+	do {;
+	}
+	while (!DRV_Reg16(ECC_DECIDLE_REG16));
 
 	DRV_WriteReg16(ECC_ENCCON_REG16, ENC_DE);
-	do {
-	} while (!DRV_Reg32(ECC_ENCIDLE_REG32));
+	do {;
+	}
+	while (!DRV_Reg32(ECC_ENCIDLE_REG32));
 
 	/* setup FDM register base */
 	DRV_WriteReg32(ECC_FDMADDR_REG32, NFI_FDM0L_REG32);
@@ -279,28 +691,99 @@ static void ECC_Config(struct mtk_nand_host_hw *hw, u32 ecc_bit)
 	DRV_WriteReg32(ECC_DECCNFG_REG32, ecc_bit_cfg | DEC_CNFG_NFI | DEC_CNFG_EMPTY_EN | (u4DECODESize << DEC_CNFG_CODE_SHIFT));
 
 	DRV_WriteReg32(ECC_ENCCNFG_REG32, ecc_bit_cfg | ENC_CNFG_NFI | (u4ENCODESize << ENC_CNFG_MSG_SHIFT));
+#ifndef MANUAL_CORRECT
+	NFI_SET_REG32(ECC_DECCNFG_REG32, DEC_CNFG_CORRECT);
+#else
 	NFI_SET_REG32(ECC_DECCNFG_REG32, DEC_CNFG_EL);
+#endif
 }
 
+/******************************************************************************
+ * ECC_Decode_Start
+ * 
+ * DESCRIPTION:
+ *   HW ECC Decode Start !
+ * 
+ * PARAMETERS: 
+ *   None
+ * 
+ * RETURNS: 
+ *   None  
+ * 
+ * NOTES: 
+ *   None
+ * 
+ ******************************************************************************/
 static void ECC_Decode_Start(void)
 {
+	/* wait for device returning idle */
 	while (!(DRV_Reg16(ECC_DECIDLE_REG16) & DEC_IDLE)) ;
 	DRV_WriteReg16(ECC_DECCON_REG16, DEC_EN);
 }
 
+/******************************************************************************
+ * ECC_Decode_End
+ * 
+ * DESCRIPTION:
+ *   HW ECC Decode End !
+ * 
+ * PARAMETERS: 
+ *   None
+ * 
+ * RETURNS: 
+ *   None  
+ * 
+ * NOTES: 
+ *   None
+ * 
+ ******************************************************************************/
 static void ECC_Decode_End(void)
 {
+	/* wait for device returning idle */
 	while (!(DRV_Reg16(ECC_DECIDLE_REG16) & DEC_IDLE)) ;
 	DRV_WriteReg16(ECC_DECCON_REG16, DEC_DE);
 }
 
+/******************************************************************************
+ * ECC_Encode_Start
+ * 
+ * DESCRIPTION:
+ *   HW ECC Encode Start !
+ * 
+ * PARAMETERS: 
+ *   None
+ * 
+ * RETURNS: 
+ *   None  
+ * 
+ * NOTES: 
+ *   None
+ * 
+ ******************************************************************************/
 static void ECC_Encode_Start(void)
 {
+	/* wait for device returning idle */
 	while (!(DRV_Reg32(ECC_ENCIDLE_REG32) & ENC_IDLE)) ;
 	mb();
 	DRV_WriteReg16(ECC_ENCCON_REG16, ENC_EN);
 }
 
+/******************************************************************************
+ * ECC_Encode_End
+ * 
+ * DESCRIPTION:
+ *   HW ECC Encode End !
+ * 
+ * PARAMETERS: 
+ *   None
+ * 
+ * RETURNS: 
+ *   None  
+ * 
+ * NOTES: 
+ *   None
+ * 
+ ******************************************************************************/
 static void ECC_Encode_End(void)
 {
 	/* wait for device returning idle */
@@ -309,23 +792,74 @@ static void ECC_Encode_End(void)
 	DRV_WriteReg16(ECC_ENCCON_REG16, ENC_DE);
 }
 
+/******************************************************************************
+ * mtk_nand_check_bch_error
+ * 
+ * DESCRIPTION:
+ *   Check BCH error or not !
+ * 
+ * PARAMETERS: 
+ *   struct mtd_info *mtd
+ *	 u8* pDataBuf
+ *	 u32 u4SecIndex
+ *	 u32 u4PageAddr
+ * 
+ * RETURNS: 
+ *   None  
+ * 
+ * NOTES: 
+ *   None
+ * 
+ ******************************************************************************/
 static bool mtk_nand_check_bch_error(struct mtd_info *mtd, u8 *pDataBuf, u32 u4SecIndex, u32 u4PageAddr)
 {
 	bool bRet = true;
 	u16 u2SectorDoneMask = 1 << u4SecIndex;
 	u32 u4ErrorNumDebug, i, u4ErrNum;
 	u32 timeout = 0xFFFF;
+	u32 correct_count = 0;
 	// int el;
+#ifdef MANUAL_CORRECT
 	u32 au4ErrBitLoc[6];
 	u32 u4ErrByteLoc, u4BitOffset;
 	u32 u4ErrBitLoc1th, u4ErrBitLoc2nd;
+#endif
 
 	//4 // Wait for Decode Done
 	while (0 == (u2SectorDoneMask & DRV_Reg16(ECC_DECDONE_REG16))) {
 		timeout--;
-		if (0 == timeout)
+		if (0 == timeout) {
 			return false;
+		}
 	}
+#ifndef MANUAL_CORRECT
+	u4ErrorNumDebug = DRV_Reg32(ECC_DECENUM_REG32);
+	if (0 != (u4ErrorNumDebug & 0xFFFF)) {
+		for (i = 0; i <= u4SecIndex; ++i) {
+			u4ErrNum = DRV_Reg32(ECC_DECENUM_REG32) >> (i << 2);
+			u4ErrNum &= 0xF;
+			correct_count += u4ErrNum;
+
+			if (0xF == u4ErrNum) {
+				mtd->ecc_stats.failed++;
+				bRet = false;
+				printk(KERN_ERR "UnCorrectable at PageAddr=%d, Sector=%d\n", u4PageAddr, i);
+			} else {
+				if (u4ErrNum) {
+					printk(KERN_ERR " In kernel Correct %d at PageAddr=%d, Sector=%d\n", u4ErrNum, u4PageAddr, i);
+				}
+			}
+		}
+		if ((correct_count > 2) && bRet) {
+#if defined(SKIP_BAD_BLOCK)
+			if (!is_skip_bad_block(mtd, u4PageAddr))
+#endif
+				mtd->ecc_stats.corrected++;
+		} else {
+			printk(KERN_INFO "Less than 2 bit error, ignore\n");
+		}
+	}
+#else
 	/* We will manually correct the error bits in the last sector, not all the sectors of the page! */
 	memset(au4ErrBitLoc, 0x0, sizeof(au4ErrBitLoc));
 	u4ErrorNumDebug = DRV_Reg32(ECC_DECENUM_REG32);
@@ -341,13 +875,21 @@ static bool mtk_nand_check_bch_error(struct mtd_info *mtd, u8 *pDataBuf, u32 u4S
 			for (i = 0; i < ((u4ErrNum + 1) >> 1); ++i) {
 				au4ErrBitLoc[i] = DRV_Reg32(ECC_DECEL0_REG32 + i);
 				u4ErrBitLoc1th = au4ErrBitLoc[i] & 0x1FFF;
+
 				if (u4ErrBitLoc1th < 0x1000) {
 					u4ErrByteLoc = u4ErrBitLoc1th / 8;
 					u4BitOffset = u4ErrBitLoc1th % 8;
 					pDataBuf[u4ErrByteLoc] = pDataBuf[u4ErrByteLoc] ^ (1 << u4BitOffset);
-					mtd->ecc_stats.corrected++;
+#if defined(SKIP_BAD_BLOCK)
+					if (!is_skip_bad_block(mtd, u4PageAddr))
+#endif
+						mtd->ecc_stats.corrected++;
 				} else {
-					mtd->ecc_stats.failed++;
+#if defined(SKIP_BAD_BLOCK)
+					if (!is_skip_bad_block(mtd, u4PageAddr))
+#endif
+						mtd->ecc_stats.corrected++;
+					//printk(KERN_ERR"UnCorrectable ErrLoc=%d\n", au4ErrBitLoc[i]);
 				}
 				u4ErrBitLoc2nd = (au4ErrBitLoc[i] >> 16) & 0x1FFF;
 				if (0 != u4ErrBitLoc2nd) {
@@ -355,65 +897,141 @@ static bool mtk_nand_check_bch_error(struct mtd_info *mtd, u8 *pDataBuf, u32 u4S
 						u4ErrByteLoc = u4ErrBitLoc2nd / 8;
 						u4BitOffset = u4ErrBitLoc2nd % 8;
 						pDataBuf[u4ErrByteLoc] = pDataBuf[u4ErrByteLoc] ^ (1 << u4BitOffset);
-						mtd->ecc_stats.corrected++;
+#if defined(SKIP_BAD_BLOCK)
+						if (!is_skip_bad_block(mtd, u4PageAddr))
+#endif
+							mtd->ecc_stats.corrected++;
 					} else {
-						mtd->ecc_stats.failed++;
+#if defined(SKIP_BAD_BLOCK)
+						if (!is_skip_bad_block(mtd, u4PageAddr))
+#endif
+							mtd->ecc_stats.corrected++;
 						//printk(KERN_ERR"UnCorrectable High ErrLoc=%d\n", au4ErrBitLoc[i]);
 					}
 				}
 			}
 		}
-		if (0 == (DRV_Reg16(ECC_DECFER_REG16) & (1 << u4SecIndex)))
+		if (0 == (DRV_Reg16(ECC_DECFER_REG16) & (1 << u4SecIndex))) {
 			bRet = false;
+		}
 	}
+#endif
 	return bRet;
 }
 
+/******************************************************************************
+ * mtk_nand_RFIFOValidSize
+ * 
+ * DESCRIPTION:
+ *   Check the Read FIFO data bytes !
+ * 
+ * PARAMETERS: 
+ *   u16 u2Size
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static bool mtk_nand_RFIFOValidSize(u16 u2Size)
 {
 	u32 timeout = 0xFFFF;
 	while (FIFO_RD_REMAIN(DRV_Reg16(NFI_FIFOSTA_REG16)) < u2Size) {
 		timeout--;
-		if (0 == timeout)
+		if (0 == timeout) {
 			return false;
+		}
 	}
 	return true;
 }
 
+/******************************************************************************
+ * mtk_nand_WFIFOValidSize
+ * 
+ * DESCRIPTION:
+ *   Check the Write FIFO data bytes !
+ * 
+ * PARAMETERS: 
+ *   u16 u2Size
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static bool mtk_nand_WFIFOValidSize(u16 u2Size)
 {
 	u32 timeout = 0xFFFF;
-
 	while (FIFO_WR_REMAIN(DRV_Reg16(NFI_FIFOSTA_REG16)) > u2Size) {
 		timeout--;
-		if (0 == timeout)
+		if (0 == timeout) {
 			return false;
+		}
 	}
 	return true;
 }
 
+/******************************************************************************
+ * mtk_nand_status_ready
+ * 
+ * DESCRIPTION:
+ *   Indicate the NAND device is ready or not ! 
+ * 
+ * PARAMETERS: 
+ *   u32 u4Status
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static bool mtk_nand_status_ready(u32 u4Status)
 {
 	u32 timeout = 0xFFFF;
-
 	while ((DRV_Reg32(NFI_STA_REG32) & u4Status) != 0) {
 		timeout--;
-		if (0 == timeout)
+		if (0 == timeout) {
 			return false;
+		}
 	}
 	return true;
 }
 
+/******************************************************************************
+ * mtk_nand_reset
+ * 
+ * DESCRIPTION:
+ *   Reset the NAND device hardware component ! 
+ * 
+ * PARAMETERS: 
+ *   struct mtk_nand_host *host (Initial setting data)
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static bool mtk_nand_reset(void)
 {
+	// HW recommended reset flow
 	int timeout = 0xFFFF;
-	if (DRV_Reg16(NFI_MASTERSTA_REG16)) {
+	if (DRV_Reg16(NFI_MASTERSTA_REG16))	// master is busy
+	{
 		mb();
 		DRV_WriteReg16(NFI_CON_REG16, CON_FIFO_FLUSH | CON_NFI_RST);
 		while (DRV_Reg16(NFI_MASTERSTA_REG16)) {
 			timeout--;
-			if (!timeout)
+			if (!timeout) {
 				MSG(INIT, "Wait for NFI_MASTERSTA timeout\n");
+			}
 		}
 	}
 	/* issue reset operation */
@@ -423,6 +1041,22 @@ static bool mtk_nand_reset(void)
 	return mtk_nand_status_ready(STA_NFI_FSM_MASK | STA_NAND_BUSY) && mtk_nand_RFIFOValidSize(0) && mtk_nand_WFIFOValidSize(0);
 }
 
+/******************************************************************************
+ * mtk_nand_set_mode
+ * 
+ * DESCRIPTION:
+ *    Set the oepration mode ! 
+ * 
+ * PARAMETERS: 
+ *   u16 u2OpMode (read/write) 
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static void mtk_nand_set_mode(u16 u2OpMode)
 {
 	u16 u2Mode = DRV_Reg16(NFI_CNFG_REG16);
@@ -431,14 +1065,47 @@ static void mtk_nand_set_mode(u16 u2OpMode)
 	DRV_WriteReg16(NFI_CNFG_REG16, u2Mode);
 }
 
+/******************************************************************************
+ * mtk_nand_set_autoformat
+ * 
+ * DESCRIPTION:
+ *    Enable/Disable hardware autoformat ! 
+ * 
+ * PARAMETERS: 
+ *   bool bEnable (Enable/Disable)
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static void mtk_nand_set_autoformat(bool bEnable)
 {
-	if (bEnable)
+	if (bEnable) {
 		NFI_SET_REG16(NFI_CNFG_REG16, CNFG_AUTO_FMT_EN);
-	else
+	} else {
 		NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_AUTO_FMT_EN);
+	}
 }
 
+/******************************************************************************
+ * mtk_nand_configure_fdm
+ * 
+ * DESCRIPTION:
+ *   Configure the FDM data size ! 
+ * 
+ * PARAMETERS: 
+ *   u16 u2FDMSize
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static void mtk_nand_configure_fdm(u16 u2FDMSize)
 {
 	NFI_CLN_REG16(NFI_PAGEFMT_REG16, PAGEFMT_FDM_MASK | PAGEFMT_FDM_ECC_MASK);
@@ -446,6 +1113,22 @@ static void mtk_nand_configure_fdm(u16 u2FDMSize)
 	NFI_SET_REG16(NFI_PAGEFMT_REG16, u2FDMSize << PAGEFMT_FDM_ECC_SHIFT);
 }
 
+/******************************************************************************
+ * mtk_nand_configure_lock
+ * 
+ * DESCRIPTION:
+ *   Configure the NAND lock ! 
+ * 
+ * PARAMETERS: 
+ *   u16 u2FDMSize
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static void mtk_nand_configure_lock(void)
 {
 	u32 u4WriteColNOB = 2;
@@ -480,15 +1163,49 @@ static bool mtk_nand_pio_ready(void)
 	return true;
 }
 
+/******************************************************************************
+ * mtk_nand_set_command
+ * 
+ * DESCRIPTION:
+ *    Send hardware commands to NAND devices ! 
+ * 
+ * PARAMETERS: 
+ *   u16 command 
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static bool mtk_nand_set_command(u16 command)
 {
+	/* Write command to device */
 	mb();
 	DRV_WriteReg16(NFI_CMD_REG16, command);
 	return mtk_nand_status_ready(STA_CMD_STATE);
 }
 
+/******************************************************************************
+ * mtk_nand_set_address
+ * 
+ * DESCRIPTION:
+ *    Set the hardware address register ! 
+ * 
+ * PARAMETERS: 
+ *   struct nand_chip *nand, u32 u4RowAddr 
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static bool mtk_nand_set_address(u32 u4ColAddr, u32 u4RowAddr, u16 u2ColNOB, u16 u2RowNOB)
 {
+	/* fill cycle addr */
 	mb();
 	DRV_WriteReg32(NFI_COLADDR_REG32, u4ColAddr);
 	DRV_WriteReg32(NFI_ROWADDR_REG32, u4RowAddr);
@@ -496,6 +1213,22 @@ static bool mtk_nand_set_address(u32 u4ColAddr, u32 u4RowAddr, u16 u2ColNOB, u16
 	return mtk_nand_status_ready(STA_ADDR_STATE);
 }
 
+/******************************************************************************
+ * mtk_nand_check_RW_count
+ * 
+ * DESCRIPTION:
+ *    Check the RW how many sectors ! 
+ * 
+ * PARAMETERS: 
+ *   u16 u2WriteSize 
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static bool mtk_nand_check_RW_count(u16 u2WriteSize)
 {
 	u32 timeout = 0xFFFF;
@@ -511,6 +1244,77 @@ static bool mtk_nand_check_RW_count(u16 u2WriteSize)
 	return true;
 }
 
+/**
+ * nand_wait - [DEFAULT]  wait until the command is done
+ * @mtd:	MTD device structure
+ * @chip:	NAND chip structure
+ *
+ * Wait for command done. This applies to erase and program only
+ * Erase can take up to 400ms and program up to 20ms according to
+ * general NAND and SmartMedia specs
+ */
+static int mtk_nand_wait(struct mtd_info *mtd, struct nand_chip *chip)
+{
+	unsigned long timeo = 0;	//jiffies;
+
+	int status, state = chip->state;
+
+//      if (state == FL_ERASING)
+//              timeo += (HZ * 400) / 1000;
+//      else
+//              timeo += (HZ * 20) / 1000;
+
+	//led_trigger_event(nand_led_trigger, LED_FULL);
+
+	/* Apply this short delay always to ensure that we do wait tWB in
+	 * any case on any machine. */
+	if (state == FL_ERASING)
+		udelay(100);
+	else
+		udelay(5);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
+	chip->cmdfunc(mtd, NAND_CMD_STATUS, -1, -1);
+#else
+	if ((state == FL_ERASING) && (chip->options & NAND_IS_AND))
+		chip->cmdfunc(mtd, NAND_CMD_STATUS_MULTI, -1, -1);
+	else
+		chip->cmdfunc(mtd, NAND_CMD_STATUS, -1, -1);
+#endif
+
+#if 0
+	while (time_before(jiffies, timeo)) {
+		if (chip->dev_ready) {
+			if (chip->dev_ready(mtd))
+				break;
+		} else {
+			if (chip->read_byte(mtd) & NAND_STATUS_READY)
+				break;
+		}
+		cond_resched();
+	}
+	led_trigger_event(nand_led_trigger, LED_OFF);
+#endif
+
+	status = (int)chip->read_byte(mtd);
+	return status;
+}
+
+/******************************************************************************
+ * mtk_nand_ready_for_read
+ * 
+ * DESCRIPTION:
+ *    Prepare hardware environment for read ! 
+ * 
+ * PARAMETERS: 
+ *   struct nand_chip *nand, u32 u4RowAddr 
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static bool mtk_nand_ready_for_read(struct nand_chip *nand, u32 u4RowAddr, u32 u4ColAddr, bool full, u8 *buf)
 {
 	/* Reset NFI HW internal state machine and flush NFI in/out FIFO */
@@ -518,12 +1322,17 @@ static bool mtk_nand_ready_for_read(struct nand_chip *nand, u32 u4RowAddr, u32 u
 	u16 sec_num = 1 << (nand->page_shift - 9);
 	u32 col_addr = u4ColAddr;
 	u32 colnob = 2, rownob = devinfo.addr_cycle - 2;
+#if defined (__INTERNAL_USE_AHB_MODE__)
+	u32 phys = 0;
+#endif
 	if (nand->options & NAND_BUSWIDTH_16)
 		col_addr /= 2;
 
-	if (!mtk_nand_reset())
+	if (!mtk_nand_reset()) {
 		goto cleanup;
+	}
 	if (g_bHwEcc) {
+		/* Enable HW ECC */
 		NFI_SET_REG16(NFI_CNFG_REG16, CNFG_HW_ECC_EN);
 	} else {
 		NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_HW_ECC_EN);
@@ -534,29 +1343,50 @@ static bool mtk_nand_ready_for_read(struct nand_chip *nand, u32 u4RowAddr, u32 u
 	DRV_WriteReg16(NFI_CON_REG16, sec_num << CON_NFI_SEC_SHIFT);
 
 	if (full) {
+#if defined (__INTERNAL_USE_AHB_MODE__)
+		NFI_SET_REG16(NFI_CNFG_REG16, CNFG_AHB);
+		phys = nand_virt_to_phys_add((u32)buf);
+		if (!phys) {
+			printk(KERN_ERR "[mt6577_nand_ready_for_read]convert virt addr (%x) to phys add (%x)fail!!!", (u32)buf, phys);
+			return false;
+		} else {
+			DRV_WriteReg32(NFI_STRADDR_REG32, phys);
+		}
+#else
 		NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_AHB);
+#endif
 
-		if (g_bHwEcc)
+		if (g_bHwEcc) {
 			NFI_SET_REG16(NFI_CNFG_REG16, CNFG_HW_ECC_EN);
-		else
+		} else {
 			NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_HW_ECC_EN);
+		}
+
 	} else {
 		NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_HW_ECC_EN);
 		NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_AHB);
 	}
 
 	mtk_nand_set_autoformat(full);
-	if (full)
-		if (g_bHwEcc)
+	if (full) {
+		if (g_bHwEcc) {
 			ECC_Decode_Start();
-	if (!mtk_nand_set_command(NAND_CMD_READ0))
+		}
+	}
+	if (!mtk_nand_set_command(NAND_CMD_READ0)) {
 		goto cleanup;
-	if (!mtk_nand_set_address(col_addr, u4RowAddr, colnob, rownob))
+	}
+	if (!mtk_nand_set_address(col_addr, u4RowAddr, colnob, rownob)) {
 		goto cleanup;
-	if (!mtk_nand_set_command(NAND_CMD_READSTART))
+	}
+
+	if (!mtk_nand_set_command(NAND_CMD_READSTART)) {
 		goto cleanup;
-	if (!mtk_nand_status_ready(STA_NAND_BUSY))
+	}
+
+	if (!mtk_nand_status_ready(STA_NAND_BUSY)) {
 		goto cleanup;
+	}
 
 	bRet = true;
 
@@ -564,17 +1394,38 @@ cleanup:
 	return bRet;
 }
 
+/******************************************************************************
+ * mtk_nand_ready_for_write
+ * 
+ * DESCRIPTION:
+ *    Prepare hardware environment for write ! 
+ * 
+ * PARAMETERS: 
+ *   struct nand_chip *nand, u32 u4RowAddr 
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static bool mtk_nand_ready_for_write(struct nand_chip *nand, u32 u4RowAddr, u32 col_addr, bool full, u8 *buf)
 {
 	bool bRet = false;
 	u32 sec_num = 1 << (nand->page_shift - 9);
 	u32 colnob = 2, rownob = devinfo.addr_cycle - 2;
+#if defined (__INTERNAL_USE_AHB_MODE__)
+	u32 phys = 0;
+	//u32 T_phys=0;
+#endif
 	if (nand->options & NAND_BUSWIDTH_16)
 		col_addr /= 2;
 
 	/* Reset NFI HW internal state machine and flush NFI in/out FIFO */
-	if (!mtk_nand_reset())
+	if (!mtk_nand_reset()) {
 		return false;
+	}
 
 	mtk_nand_set_mode(CNFG_OP_PRGM);
 
@@ -583,11 +1434,33 @@ static bool mtk_nand_ready_for_write(struct nand_chip *nand, u32 u4RowAddr, u32 
 	DRV_WriteReg16(NFI_CON_REG16, sec_num << CON_NFI_SEC_SHIFT);
 
 	if (full) {
+#if defined (__INTERNAL_USE_AHB_MODE__)
+		NFI_SET_REG16(NFI_CNFG_REG16, CNFG_AHB);
+		phys = nand_virt_to_phys_add((u32)buf);
+		//T_phys=__virt_to_phys(buf);
+		if (!phys) {
+			printk(KERN_ERR "[mt6575_nand_ready_for_write]convert virt addr (%x) to phys add fail!!!", (u32)buf);
+			return false;
+		} else {
+			DRV_WriteReg32(NFI_STRADDR_REG32, phys);
+		}
+#if 0
+		if ((T_phys > 0x700000 && T_phys < 0x800000) || (phys > 0x700000 && phys < 0x800000)) {
+			{
+				printk("[NFI_WRITE]ERROR: Forbidden AHB address wrong phys address =0x%x , right phys address=0x%x, virt  address= 0x%x (count = %d)\n", T_phys, phys, (u32)buf, g_dump_count++);
+				show_stack(NULL, NULL);
+			}
+			BUG_ON(1);
+		}
+#endif
+#else
 		NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_AHB);
-		if (g_bHwEcc)
+#endif
+		if (g_bHwEcc) {
 			NFI_SET_REG16(NFI_CNFG_REG16, CNFG_HW_ECC_EN);
-		else
+		} else {
 			NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_HW_ECC_EN);
+		}
 	} else {
 		NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_HW_ECC_EN);
 		NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_AHB);
@@ -595,29 +1468,33 @@ static bool mtk_nand_ready_for_write(struct nand_chip *nand, u32 u4RowAddr, u32 
 
 	mtk_nand_set_autoformat(full);
 
-	if (full)
-		if (g_bHwEcc)
+	if (full) {
+		if (g_bHwEcc) {
 			ECC_Encode_Start();
+		}
+	}
 
-	if (!mtk_nand_set_command(NAND_CMD_SEQIN))
+	if (!mtk_nand_set_command(NAND_CMD_SEQIN)) {
 		goto cleanup;
+	}
 	//1 FIXED ME: For Any Kind of AddrCycle
-	if (!mtk_nand_set_address(col_addr, u4RowAddr, colnob, rownob))
+	if (!mtk_nand_set_address(col_addr, u4RowAddr, colnob, rownob)) {
 		goto cleanup;
+	}
 
-	if (!mtk_nand_status_ready(STA_NAND_BUSY))
+	if (!mtk_nand_status_ready(STA_NAND_BUSY)) {
 		goto cleanup;
+	}
 
 	bRet = true;
-
 cleanup:
+
 	return bRet;
 }
 
 static bool mtk_nand_check_dececc_done(u32 u4SecNum)
 {
 	u32 timeout, dec_mask;
-
 	timeout = 0xffff;
 	dec_mask = (1 << u4SecNum) - 1;
 	while ((dec_mask != DRV_Reg(ECC_DECDONE_REG16)) && timeout > 0)
@@ -629,11 +1506,113 @@ static bool mtk_nand_check_dececc_done(u32 u4SecNum)
 	return true;
 }
 
+#if defined (__INTERNAL_USE_AHB_MODE__)
+/******************************************************************************
+ * mtk_nand_read_page_data
+ * 
+ * DESCRIPTION:
+ *   Fill the page data into buffer ! 
+ * 
+ * PARAMETERS: 
+ *   u8* pDataBuf, u32 u4Size
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
+static bool mtk_nand_dma_read_data(struct mtd_info *mtd, u8 *buf, u32 length)
+{
+	int interrupt_en = g_i4Interrupt;
+	int timeout = 0xffff;
+#if defined (__KERNEL_NAND__)
+	struct scatterlist sg;
+	enum dma_data_direction dir = DMA_FROM_DEVICE;
+
+	sg_init_one(&sg, buf, length);
+	dma_map_sg(&(mtd->dev), &sg, 1, dir);
+#endif
+	NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_BYTE_RW);
+	// DRV_WriteReg32(NFI_STRADDR_REG32, __virt_to_phys(pDataBuf));
+
+	if ((unsigned int)buf % 16)	// TODO: can not use AHB mode here
+	{
+		printk(KERN_INFO "Un-16-aligned address\n");
+		NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_DMA_BURST_EN);
+	} else {
+		NFI_SET_REG16(NFI_CNFG_REG16, CNFG_DMA_BURST_EN);
+	}
+
+	DRV_Reg16(NFI_INTR_REG16);
+	DRV_WriteReg16(NFI_INTR_EN_REG16, INTR_AHB_DONE_EN);
+
+	if (interrupt_en) {
+#if defined (__INTERNAL_USE_AHB_MODE__) && defined (__KERNEL_NAND__)
+		init_completion(&g_comp_AHB_Done);
+#endif
+	}
+	//dmac_inv_range(pDataBuf, pDataBuf + u4Size);
+	mb();
+	NFI_SET_REG16(NFI_CON_REG16, CON_NFI_BRD);
+	g_running_dma = 1;
+#if defined (__INTERNAL_USE_AHB_MODE__) && defined (__KERNEL_NAND__)
+	if (interrupt_en) {
+		if (!wait_for_completion_timeout(&g_comp_AHB_Done, 2)) {
+			MSG(READ, "wait for completion timeout happened @ [%s]: %d\n", __FUNCTION__, __LINE__);
+			dump_nfi();
+			g_running_dma = 0;
+			return false;
+		}
+		g_running_dma = 0;
+		while ((length >> 9) > ((DRV_Reg16(NFI_BYTELEN_REG16) & 0xf000) >> 12)) {
+			timeout--;
+			if (0 == timeout) {
+				printk(KERN_ERR "[%s] poll BYTELEN error\n", __FUNCTION__);
+				g_running_dma = 0;
+				return false;	//4  // AHB Mode Time Out!
+			}
+		}
+	} else
+#endif
+	{
+		while (!DRV_Reg16(NFI_INTR_REG16)) {
+			timeout--;
+			if (0 == timeout) {
+				printk(KERN_ERR "[%s] poll nfi_intr error\n", __FUNCTION__);
+				dump_nfi();
+				g_running_dma = 0;
+				return false;	//4  // AHB Mode Time Out!
+			}
+		}
+		g_running_dma = 0;
+		while ((length >> 9) > ((DRV_Reg16(NFI_BYTELEN_REG16) & 0xf000) >> 12)) {
+			timeout--;
+			if (0 == timeout) {
+				printk(KERN_ERR "[%s] poll BYTELEN error\n", __FUNCTION__);
+				dump_nfi();
+				g_running_dma = 0;
+				return false;	//4  // AHB Mode Time Out!
+			}
+		}
+	}
+#if defined (__KERNEL_NAND__)
+	dma_cache_sync(&(mtd->dev), sg_virt(&sg), length, dir);
+	dma_unmap_sg(&(mtd->dev), &sg, 1, dir);
+#endif
+	return true;
+}
+#endif
 static bool mtk_nand_mcu_read_data(u8 *buf, u32 length)
 {
 	int timeout = 0xffff;
 	u32 i;
 	u32 *buf32 = (u32 *)buf;
+#ifdef TESTTIME
+	unsigned long long time1, time2;
+	time1 = sched_clock();
+#endif
 	if ((u32)buf % 4 || length % 4)
 		NFI_SET_REG16(NFI_CNFG_REG16, CNFG_BYTE_RW);
 	else
@@ -645,6 +1624,7 @@ static bool mtk_nand_mcu_read_data(u8 *buf, u32 length)
 
 	if ((u32)buf % 4 || length % 4) {
 		for (i = 0; (i < (length)) && (timeout > 0);) {
+			//if (FIFO_RD_REMAIN(DRV_Reg16(NFI_FIFOSTA_REG16)) >= 4)
 			if (DRV_Reg16(NFI_PIO_DIRDY_REG16) & 1) {
 				*buf++ = (u8)DRV_Reg32(NFI_DATAR_REG32);
 				i++;
@@ -658,7 +1638,9 @@ static bool mtk_nand_mcu_read_data(u8 *buf, u32 length)
 			}
 		}
 	} else {
+
 		for (i = 0; (i < (length >> 2)) && (timeout > 0);) {
+			//if (FIFO_RD_REMAIN(DRV_Reg16(NFI_FIFOSTA_REG16)) >= 4)
 			if (DRV_Reg16(NFI_PIO_DIRDY_REG16) & 1) {
 				*buf32++ = DRV_Reg32(NFI_DATAR_REG32);
 				i++;
@@ -672,14 +1654,105 @@ static bool mtk_nand_mcu_read_data(u8 *buf, u32 length)
 			}
 		}
 	}
+#ifdef TESTTIME
+	time2 = sched_clock() - time1;
+	if (!readdatatime) {
+		readdatatime = (time2);
+	}
+#endif
 	return true;
 }
 
 static bool mtk_nand_read_page_data(struct mtd_info *mtd, u8 *pDataBuf, u32 u4Size)
 {
+#if defined (__INTERNAL_USE_AHB_MODE__)
+	return mtk_nand_dma_read_data(mtd, pDataBuf, u4Size);
+#else
 	return mtk_nand_mcu_read_data(pDataBuf, u4Size);
+#endif
 }
 
+#if defined (__INTERNAL_USE_AHB_MODE__)
+/******************************************************************************
+ * mtk_nand_write_page_data
+ * 
+ * DESCRIPTION:
+ *   Fill the page data into buffer ! 
+ * 
+ * PARAMETERS: 
+ *   u8* pDataBuf, u32 u4Size
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
+static bool mtk_nand_dma_write_data(struct mtd_info *mtd, u8 *pDataBuf, u32 u4Size)
+{
+	int i4Interrupt = 0;	//g_i4Interrupt;
+	u32 timeout = 0xFFFF;
+#if defined (__KERNEL_NAND__)
+	struct scatterlist sg;
+	enum dma_data_direction dir = DMA_TO_DEVICE;
+
+	sg_init_one(&sg, pDataBuf, u4Size);
+	dma_map_sg(&(mtd->dev), &sg, 1, dir);
+#endif
+	NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_BYTE_RW);
+	DRV_Reg16(NFI_INTR_REG16);
+	DRV_WriteReg16(NFI_INTR_EN_REG16, 0);
+	// DRV_WriteReg32(NFI_STRADDR_REG32, (u32*)virt_to_phys(pDataBuf));
+
+	if ((unsigned int)pDataBuf % 16)	// TODO: can not use AHB mode here
+	{
+		printk(KERN_INFO "Un-16-aligned address\n");
+		NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_DMA_BURST_EN);
+	} else {
+		NFI_SET_REG16(NFI_CNFG_REG16, CNFG_DMA_BURST_EN);
+	}
+
+	if (i4Interrupt) {
+#if defined (__KERNEL_NAND__)
+		init_completion(&g_comp_AHB_Done);
+#endif
+		DRV_Reg16(NFI_INTR_REG16);
+		DRV_WriteReg16(NFI_INTR_EN_REG16, INTR_AHB_DONE_EN);
+	}
+	//dmac_clean_range(pDataBuf, pDataBuf + u4Size);
+	mb();
+	NFI_SET_REG16(NFI_CON_REG16, CON_NFI_BWR);
+	g_running_dma = 3;
+#if defined (__KERNEL_NAND__)
+	if (i4Interrupt) {
+		if (!wait_for_completion_timeout(&g_comp_AHB_Done, 2)) {
+			MSG(READ, "wait for completion timeout happened @ [%s]: %d\n", __FUNCTION__, __LINE__);
+			dump_nfi();
+			g_running_dma = 0;
+			return false;
+		}
+		g_running_dma = 0;
+		// wait_for_completion(&g_comp_AHB_Done);
+	} else
+#endif
+	{
+		while ((u4Size >> 9) > ((DRV_Reg16(NFI_BYTELEN_REG16) & 0xf000) >> 12)) {
+			timeout--;
+			if (0 == timeout) {
+				printk(KERN_ERR "[%s] poll BYTELEN error\n", __FUNCTION__);
+				g_running_dma = 0;
+				return false;	//4  // AHB Mode Time Out!
+			}
+		}
+		g_running_dma = 0;
+	}
+#if defined (__KERNEL_NAND__)
+	dma_unmap_sg(&(mtd->dev), &sg, 1, dir);
+#endif
+	return true;
+}
+#endif
 static bool mtk_nand_mcu_write_data(struct mtd_info *mtd, const u8 *buf, u32 length)
 {
 	u32 timeout = 0xFFFF;
@@ -711,6 +1784,7 @@ static bool mtk_nand_mcu_write_data(struct mtd_info *mtd, const u8 *buf, u32 len
 		}
 	} else {
 		for (i = 0; (i < (length >> 2)) && (timeout > 0);) {
+			// if (FIFO_WR_REMAIN(DRV_Reg16(NFI_FIFOSTA_REG16)) <= 12)
 			if (DRV_Reg16(NFI_PIO_DIRDY_REG16) & 1) {
 				DRV_WriteReg32(NFI_DATAW_REG32, *pBuf32++);
 				i++;
@@ -730,9 +1804,29 @@ static bool mtk_nand_mcu_write_data(struct mtd_info *mtd, const u8 *buf, u32 len
 
 static bool mtk_nand_write_page_data(struct mtd_info *mtd, u8 *buf, u32 size)
 {
+#if defined (__INTERNAL_USE_AHB_MODE__)
+	return mtk_nand_dma_write_data(mtd, buf, size);
+#else
 	return mtk_nand_mcu_write_data(mtd, buf, size);
+#endif
 }
 
+/******************************************************************************
+ * mtk_nand_read_fdm_data
+ * 
+ * DESCRIPTION:
+ *   Read a fdm data ! 
+ * 
+ * PARAMETERS: 
+ *   u8* pDataBuf, u32 u4SecNum
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static void mtk_nand_read_fdm_data(u8 *pDataBuf, u32 u4SecNum)
 {
 	u32 i;
@@ -742,10 +1836,28 @@ static void mtk_nand_read_fdm_data(u8 *pDataBuf, u32 u4SecNum)
 		for (i = 0; i < u4SecNum; ++i) {
 			*pBuf32++ = DRV_Reg32(NFI_FDM0L_REG32 + (i << 1));
 			*pBuf32++ = DRV_Reg32(NFI_FDM0M_REG32 + (i << 1));
+			//*pBuf32++ = DRV_Reg32((u32)NFI_FDM0L_REG32 + (i<<3));
+			//*pBuf32++ = DRV_Reg32((u32)NFI_FDM0M_REG32 + (i<<3));
 		}
 	}
 }
 
+/******************************************************************************
+ * mtk_nand_write_fdm_data
+ * 
+ * DESCRIPTION:
+ *   Write a fdm data ! 
+ * 
+ * PARAMETERS: 
+ *   u8* pDataBuf, u32 u4SecNum
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static u8 fdm_buf[64];
 static void mtk_nand_write_fdm_data(struct nand_chip *chip, u8 *pDataBuf, u32 u4SecNum)
 {
@@ -774,60 +1886,169 @@ static void mtk_nand_write_fdm_data(struct nand_chip *chip, u8 *pDataBuf, u32 u4
 	for (i = 0; i < u4SecNum; ++i) {
 		DRV_WriteReg32(NFI_FDM0L_REG32 + (i << 1), *pBuf32++);
 		DRV_WriteReg32(NFI_FDM0M_REG32 + (i << 1), *pBuf32++);
+		//DRV_WriteReg32((u32)NFI_FDM0L_REG32 + (i<<3), *pBuf32++);
+		//DRV_WriteReg32((u32)NFI_FDM0M_REG32 + (i<<3), *pBuf32++);
 	}
 }
 
+/******************************************************************************
+ * mtk_nand_stop_read
+ * 
+ * DESCRIPTION:
+ *   Stop read operation ! 
+ * 
+ * PARAMETERS: 
+ *   None
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static void mtk_nand_stop_read(void)
 {
 	NFI_CLN_REG16(NFI_CON_REG16, CON_NFI_BRD);
 	mtk_nand_reset();
-	if (g_bHwEcc)
+	if (g_bHwEcc) {
 		ECC_Decode_End();
+	}
 	DRV_WriteReg16(NFI_INTR_EN_REG16, 0);
 }
 
+/******************************************************************************
+ * mtk_nand_stop_write
+ * 
+ * DESCRIPTION:
+ *   Stop write operation ! 
+ * 
+ * PARAMETERS: 
+ *   None
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static void mtk_nand_stop_write(void)
 {
 	NFI_CLN_REG16(NFI_CON_REG16, CON_NFI_BWR);
-	if (g_bHwEcc)
+	if (g_bHwEcc) {
 		ECC_Encode_End();
+	}
 	DRV_WriteReg16(NFI_INTR_EN_REG16, 0);
 }
 
+/******************************************************************************
+ * mtk_nand_exec_read_page
+ * 
+ * DESCRIPTION:
+ *   Read a page data ! 
+ * 
+ * PARAMETERS: 
+ *   struct mtd_info *mtd, u32 u4RowAddr, u32 u4PageSize, 
+ *   u8* pPageBuf, u8* pFDMBuf
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 bool mtk_nand_exec_read_page(struct mtd_info *mtd, u32 u4RowAddr, u32 u4PageSize, u8 *pPageBuf, u8 *pFDMBuf)
 {
 	u8 *buf;
 	bool bRet = true;
 	struct nand_chip *nand = mtd->priv;
 	u32 u4SecNum = u4PageSize >> 9;
+#ifdef NAND_PFM
+	struct timeval pfm_time_read;
+#endif
+	unsigned short PageFmt_Reg = 0;
+	unsigned int NAND_ECC_Enc_Reg = 0;
+	unsigned int NAND_ECC_Dec_Reg = 0;
+	PFM_BEGIN(pfm_time_read);
 
-	if (((u32)pPageBuf % 16) && local_buffer_16_align)
+	if (((u32)pPageBuf % 16) && local_buffer_16_align) {
 		buf = local_buffer_16_align;
-	else
+	} else
 		buf = pPageBuf;
+
 	if (mtk_nand_ready_for_read(nand, u4RowAddr, 0, true, buf)) {
 		int j;
+#if (MANUAL_CORRECT && ECC_ENABLE)
 		for (j = 0; j < u4SecNum; j++) {
-			if (!mtk_nand_read_page_data(mtd, buf + j * 512, 512))
+			if (!mtk_nand_read_page_data(mtd, buf + j * 512, 512)) {
 				bRet = false;
-			if (g_bHwEcc && !mtk_nand_check_dececc_done(j + 1))
-				bRet = false;
-			if (g_bHwEcc && !mtk_nand_check_bch_error(mtd, buf + j * 512, j, u4RowAddr))
-				bRet = false;
+			}
+			if (g_bHwEcc) {
+				if (!mtk_nand_check_dececc_done(j + 1)) {
+					bRet = false;
+				}
+			}
+			if (g_bHwEcc) {
+				if (!mtk_nand_check_bch_error(mtd, buf + j * 512, j, u4RowAddr)) {
+					bRet = false;
+				}
+			}
+
 		}
-		if (!mtk_nand_status_ready(STA_NAND_BUSY))
+		if (!mtk_nand_status_ready(STA_NAND_BUSY)) {
 			bRet = false;
+		}
 
 		mtk_nand_read_fdm_data(pFDMBuf, u4SecNum);
+#else
+		if (!mtk_nand_read_page_data(mtd, buf, u4PageSize)) {
+			bRet = false;
+		}
+
+		if (!mtk_nand_status_ready(STA_NAND_BUSY)) {
+			bRet = false;
+		}
+		if (g_bHwEcc) {
+			if (!mtk_nand_check_dececc_done(u4SecNum)) {
+				bRet = false;
+			}
+		}
+		mtk_nand_read_fdm_data(pFDMBuf, u4SecNum);
+		if (g_bHwEcc) {
+			if (!mtk_nand_check_bch_error(mtd, buf, u4SecNum - 1, u4RowAddr)) {
+				bRet = false;
+			}
+		}
+#endif
 		mtk_nand_stop_read();
 	}
 
 	if (buf == local_buffer_16_align)
 		memcpy(pPageBuf, buf, u4PageSize);
 
+	PFM_END_R(pfm_time_read, u4PageSize + 32);
 	return bRet;
 }
 
+/******************************************************************************
+ * mtk_nand_exec_write_page
+ * 
+ * DESCRIPTION:
+ *   Write a page data ! 
+ * 
+ * PARAMETERS: 
+ *   struct mtd_info *mtd, u32 u4RowAddr, u32 u4PageSize, 
+ *   u8* pPageBuf, u8* pFDMBuf
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 int mtk_nand_exec_write_page(struct mtd_info *mtd, u32 u4RowAddr, u32 u4PageSize, u8 *pPageBuf, u8 *pFDMBuf)
 {
 	struct nand_chip *chip = mtd->priv;
@@ -837,6 +2058,20 @@ int mtk_nand_exec_write_page(struct mtd_info *mtd, u32 u4RowAddr, u32 u4PageSize
 
 	MSG(WRITE, "mtk_nand_exec_write_page, page: 0x%x\n", u4RowAddr);
 
+#ifdef _MTK_NAND_DUMMY_DRIVER_
+	if (dummy_driver_debug) {
+		unsigned long long time = sched_clock();
+		if (!((time * 123 + 59) % 32768)) {
+			printk(KERN_INFO "[NAND_DUMMY_DRIVER] Simulate write error at page: 0x%x\n", u4RowAddr);
+			return -EIO;
+		}
+	}
+#endif
+
+#ifdef NAND_PFM
+	struct timeval pfm_time_write;
+#endif
+	PFM_BEGIN(pfm_time_write);
 	if (((u32)pPageBuf % 16) && local_buffer_16_align) {
 		printk(KERN_INFO "Data buffer not 16 bytes aligned: %p\n", pPageBuf);
 		memcpy(local_buffer_16_align, pPageBuf, mtd->writesize);
@@ -852,12 +2087,16 @@ int mtk_nand_exec_write_page(struct mtd_info *mtd, u32 u4RowAddr, u32 u4PageSize
 		(void)mtk_nand_set_command(NAND_CMD_PAGEPROG);
 		while (DRV_Reg32(NFI_STA_REG32) & STA_NAND_BUSY) ;
 	}
+	PFM_END_W(pfm_time_write, u4PageSize + 32);
 
 	status = chip->waitfunc(mtd, chip);
 	if (status & NAND_STATUS_FAIL)
 		return -EIO;
-	return 0;
+	else
+		return 0;
 }
+
+#if defined(SKIP_BAD_BLOCK)
 
 static int get_start_end_block(struct mtd_info *mtd, int block, int *start_blk, int *end_blk)
 {
@@ -879,8 +2118,17 @@ static int get_start_end_block(struct mtd_info *mtd, int block, int *start_blk, 
 			continue;
 		}
 		*end_blk = *start_blk + (g_pasStatic_Partition[i].size >> chip->phys_erase_shift) - 1;
-		if ((block >= *start_blk) && (block <= *end_blk))
+		if ((block >= *start_blk) && (block <= *end_blk)) {
+#ifdef CONFIG_RT2880_ROOTFS_IN_FLASH
+			if (i == (NAND_MTD_ROOTFS_PARTITION_NO - 1)) {
+				*end_blk += (g_pasStatic_Partition[i + 1].size >> chip->phys_erase_shift);
+			}
+			if (i == NAND_MTD_ROOTFS_PARTITION_NO) {
+				*start_blk -= (g_pasStatic_Partition[i - 1].size >> chip->phys_erase_shift);
+			}
+#endif
 			break;
+		}
 		*start_blk = *end_blk + 1;
 	}
 	if (*start_blk > *end_blk) {
@@ -905,6 +2153,17 @@ static int block_remap(struct mtd_info *mtd, int block)
 		printk("ERROR!! can not find start_blk and end_blk\n");
 		return -1;
 	}
+#if defined(CONFIG_SUPPORT_OPENWRT)
+	if ((block >= (rootfs_offset >> chip->phys_erase_shift)) && (block < (rootfs_data_offset >> chip->phys_erase_shift))) {
+		if (OpenWRT_rootfs_upgrading) {
+			//printk("OpenWRT_rootfs_upgrading = 1 force unmap block %x\n", block);
+			return block;
+		}
+		start_blk = rootfs_offset >> chip->phys_erase_shift;
+		end_blk = rootfs_data_offset >> chip->phys_erase_shift;
+	} else
+		return block;
+#endif
 
 	block_offset = block - start_blk;
 	for (j = start_blk; j <= end_blk; j++) {
@@ -935,7 +2194,10 @@ static int block_remap(struct mtd_info *mtd, int block)
 
 int check_block_remap(struct mtd_info *mtd, int block)
 {
-	if (shift_on_bbt)
+	struct nand_chip *chip = mtd->priv;
+	int page_per_block_bit = chip->phys_erase_shift - chip->page_shift;
+
+	if ((shift_on_bbt) && (is_skip_bad_block(mtd, (block << page_per_block_bit))))
 		return block_remap(mtd, block);
 	else
 		return block;
@@ -968,6 +2230,7 @@ static int write_next_on_fail(struct mtd_info *mtd, char *write_buf, int page, i
 	for ((*to_blk) = block + 1; (*to_blk) <= end_blk; (*to_blk)++) {
 		if (nand_bbt_get(mtd, (*to_blk) << page_per_block_bit) == 0) {
 			int status;
+
 			status = mtk_nand_erase_hw(mtd, (*to_blk) << page_per_block_bit);
 			if (status & NAND_STATUS_FAIL) {
 				mtk_nand_block_markbad_hw(mtd, (*to_blk) << chip->phys_erase_shift);
@@ -989,9 +2252,11 @@ static int write_next_on_fail(struct mtd_info *mtd, char *write_buf, int page, i
 	for (i = 0; i < (1 << page_per_block_bit); i++) {
 		if ((first_page + i) != page) {
 			mtk_nand_read_oob_hw(mtd, chip, (first_page + i));
-			for (j = 0; j < mtd->oobsize; j++)
-				if (chip->oob_poi[j] != (unsigned char)0xff)
+			for (j = 0; j < mtd->oobsize; j++) {
+				if (chip->oob_poi[j] != (unsigned char)0xff) {
 					break;
+				}
+			}
 			if (j < mtd->oobsize) {
 				mtk_nand_exec_read_page(mtd, (first_page + i), mtd->writesize, buf, oob);
 				memset(oob, 0xff, mtd->oobsize);
@@ -1008,6 +2273,7 @@ static int write_next_on_fail(struct mtd_info *mtd, char *write_buf, int page, i
 					*to_blk = new_blk;
 					to_page = ((*to_blk) << page_per_block_bit);
 				}
+
 			}
 		} else {
 			memset(chip->oob_poi, 0xff, mtd->oobsize);
@@ -1023,6 +2289,7 @@ static int write_next_on_fail(struct mtd_info *mtd, char *write_buf, int page, i
 				mtk_nand_block_markbad_hw(mtd, to_page << chip->page_shift);
 				*to_blk = new_blk;
 				to_page = ((*to_blk) << page_per_block_bit);
+
 			}
 		}
 	}
@@ -1030,44 +2297,226 @@ static int write_next_on_fail(struct mtd_info *mtd, char *write_buf, int page, i
 	kfree(buf);
 
 	return 0;
+
 }
 
+static int count = 0;
+static int is_skip_bad_block(struct mtd_info *mtd, int page)
+{
+	struct nand_chip *chip = mtd->priv;
+
+	count++;
+	if ((page << chip->page_shift) >= FILE_SYSTEM_START_ADDRESS) {
+		return 0;
+	}
+	return 1;
+}
+
+#endif
+
+#ifdef UBIFS_ECC_0_PATCH
+static int mtk_nand_read_oob_raw(struct mtd_info *mtd, uint8_t * buf, int page_addr, int len);
+static int check_ecc_0(struct mtd_info *mtd, int page)
+{
+	struct nand_chip *chip = mtd->priv;
+	u8 local_oob[NAND_MAX_OOBSIZE];
+
+	// for 4 bits ecc protection, the all 0xff is 26 20 98 1b 87 6e fc
+	if (chip->ecc.layout->eccbytes == 32) {
+		if (mtk_nand_read_oob_raw(mtd, local_oob, page, mtd->oobsize) == 0) {
+			int i;
+#if 0
+			for (i = 0; i < 64; i++) {
+				printk("%02X ", local_oob[i]);
+				if (((i + 1) & 0x1f) == 0x0)
+					printk("\n");
+			}
+#endif
+			for (i = 0; i < 64; i++) {
+				switch (i & 0xf) {
+				case 8:
+					if (local_oob[i] != 0x26)
+						return 0;
+					else
+						break;
+				case 9:
+					if (local_oob[i] != 0x20)
+						return 0;
+					else
+						break;
+				case 10:
+					if (local_oob[i] != 0x98)
+						return 0;
+					else
+						break;
+				case 11:
+					if (local_oob[i] != 0x1b)
+						return 0;
+					else
+						break;
+				case 12:
+					if (local_oob[i] != 0x87)
+						return 0;
+					else
+						break;
+				case 13:
+					if (local_oob[i] != 0x6e)
+						return 0;
+					else
+						break;
+				case 14:
+					if (local_oob[i] != 0xfc)
+						return 0;
+					else
+						break;
+				default:
+					break;
+				}
+			}
+		}
+	} else {
+		printk("Not support FIX_ECC_0 now\n");
+		return 0;
+	}
+	//printk("clean page with ECC at %x\n", page);
+	return 1;
+}
+
+static void fix_ecc_0(struct mtd_info *mtd, int page)
+{
+	struct nand_chip *chip = mtd->priv;
+	u8 *block_buf;
+	u8 oob_buf[NAND_MAX_OOBSIZE];
+	int i, j, page_is_empty, status;
+	int page_per_block_shift = chip->phys_erase_shift - chip->page_shift;
+	int page_per_block = 1 << page_per_block_shift;
+	int start_page = (page >> page_per_block_shift) << page_per_block_shift;
+
+	//printk("fix ecc 0 in page %x\n", page);
+	block_buf = (unsigned char *)kzalloc((mtd->writesize + mtd->oobsize) * page_per_block, GFP_KERNEL | GFP_DMA);
+	if (!block_buf) {
+		printk("%s:can not allocate buffer\n", __func__);
+		return;
+	}
+	memset(block_buf, 0xff, (mtd->writesize + mtd->oobsize) * page_per_block);
+
+	// read all pages in the block
+	for (i = 0; i < page_per_block; i++) {
+		if (mtk_nand_exec_read_page(mtd, start_page + i, mtd->writesize, block_buf + (i * (mtd->writesize + mtd->oobsize)), oob_buf)) {
+#if 0
+			if (i < 10) {
+				printk("data: ");
+				for (j = 0; j < 32; j++)
+					printk("%02x ", *(block_buf + (i * (mtd->writesize + mtd->oobsize)) + j));
+				printk("\noob: ");
+				for (j = 32; j < 64; j++)
+					printk("%02x ", *(block_buf + (i * (mtd->writesize + mtd->oobsize)) + mtd->writesize + j));
+				printk("\n");
+			}
+#endif
+		} else {
+			printk("%s: fix_ecc_0 0x%x read error\n", __func__, start_page + i);
+			kfree(block_buf);
+			return;
+		}
+
+	}
+
+	// erase the block
+	mtk_nand_erase_hw(mtd, start_page);
+	if (status & NAND_STATUS_FAIL) {
+
+		mtk_nand_block_markbad_hw(mtd, start_page << chip->page_shift);
+		nand_bbt_set(mtd, start_page, 0x3);
+		kfree(block_buf);
+		return -EIO;
+	}
+	// program, skip all 0xff pages
+	for (i = 0; i < page_per_block; i++) {
+		page_is_empty = 1;
+		for (j = 0; j < mtd->writesize; j++) {
+			if (*(block_buf + j + (i * (mtd->writesize + mtd->oobsize))) != (unsigned char)0xff) {
+				page_is_empty = 0;
+				break;
+			}
+		}
+		if (!page_is_empty) {
+			// write page
+			if (mtk_nand_exec_write_page(mtd, start_page + i, mtd->writesize, block_buf + (i * (mtd->writesize + mtd->oobsize)), block_buf + (i * (mtd->writesize + mtd->oobsize)) + mtd->writesize)) {
+				printk("%s: fix_ecc_0 0x%x write error \n", __func__, start_page + i);
+				kfree(block_buf);
+				return;
+			} else {
+				printk("fixed page %x\n", start_page + i);
+			}
+		}
+	}
+
+	kfree(block_buf);
+	return;
+}
+#endif
+
+/******************************************************************************
+ *
+ * Write a page to a logical address
+ *
+ *****************************************************************************/
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
 static int mtk_nand_write_page(struct mtd_info *mtd, struct nand_chip *chip, uint32_t offset, int data_len, const u8 *buf, int oob_required, int page, int cached, int raw)
+#else
+static int mtk_nand_write_page(struct mtd_info *mtd, struct nand_chip *chip, const u8 *buf, int page, int cached, int raw)
+#endif
 {
 	int page_per_block = 1 << (chip->phys_erase_shift - chip->page_shift);
 	int block = page / page_per_block;
 	u16 page_in_block = page % page_per_block;
 	int mapped_block = block;
 
+#if defined(SKIP_BAD_BLOCK)
+	if (!is_skip_bad_block(mtd, page)) {
 #if defined(MTK_NAND_BMT)
-	mapped_block = get_mapping_block_index(block);
-	// write bad index into oob
-	if (mapped_block != block)
-		set_bad_index_to_oob(chip->oob_poi, block);
-	else
-		set_bad_index_to_oob(chip->oob_poi, FAKE_INDEX);
-#else
-	if (shift_on_bbt) {
-		mapped_block = block_remap(mtd, block);
-		if (mapped_block == -1)
-			return NAND_STATUS_FAIL;
-		if (nand_bbt_get(mtd, mapped_block << (chip->phys_erase_shift - chip->page_shift)) != 0x0)
-			return NAND_STATUS_FAIL;
+		mapped_block = get_mapping_block_index(block);
+		// write bad index into oob
+		if (mapped_block != block) {
+			set_bad_index_to_oob(chip->oob_poi, block);
+		} else {
+			set_bad_index_to_oob(chip->oob_poi, FAKE_INDEX);
+		}
+#endif
+	} else {
+		if (shift_on_bbt) {
+			mapped_block = block_remap(mtd, block);
+			if (mapped_block == -1)
+				return NAND_STATUS_FAIL;
+			if (nand_bbt_get(mtd, mapped_block << (chip->phys_erase_shift - chip->page_shift)) != 0x0)
+				return NAND_STATUS_FAIL;
+		}
+	}
+#endif
+
+#ifdef UBIFS_ECC_0_PATCH
+	if (check_ecc_0(mtd, page_in_block + mapped_block * page_per_block)) {
+		fix_ecc_0(mtd, page_in_block + mapped_block * page_per_block);
 	}
 #endif
 	do {
 		if (mtk_nand_exec_write_page(mtd, page_in_block + mapped_block * page_per_block, mtd->writesize, (u8 *)buf, chip->oob_poi)) {
 			MSG(INIT, "write fail at block: 0x%x, page: 0x%x\n", mapped_block, page_in_block);
+#if defined(SKIP_BAD_BLOCK)
+			if (!is_skip_bad_block(mtd, page)) {
 #if defined(MTK_NAND_BMT)
-			if (update_bmt((page_in_block + mapped_block * page_per_block) << chip->page_shift, UPDATE_WRITE_FAIL, (u8 *)buf, chip->oob_poi)) {
-				MSG(INIT, "Update BMT success\n");
-				return 0;
-			} else {
-				MSG(INIT, "Update BMT fail\n");
-				return -EIO;
-			}
+				if (update_bmt((page_in_block + mapped_block * page_per_block) << chip->page_shift, UPDATE_WRITE_FAIL, (u8 *)buf, chip->oob_poi)) {
+					MSG(INIT, "Update BMT success\n");
+					return 0;
+				} else {
+					MSG(INIT, "Update BMT fail\n");
+					return -EIO;
+				}
 #else
-			{
+				return -EIO;
+#endif
+			} else {
 				int new_blk;
 				nand_bbt_set(mtd, page_in_block + mapped_block * page_per_block, 0x3);
 				if (write_next_on_fail(mtd, (char *)buf, page_in_block + mapped_block * page_per_block, &new_blk) != 0) {
@@ -1077,22 +2526,73 @@ static int mtk_nand_write_page(struct mtd_info *mtd, struct nand_chip *chip, uin
 				mtk_nand_block_markbad_hw(mtd, (page_in_block + mapped_block * page_per_block) << chip->page_shift);
 				break;
 			}
+#else
+			return -EIO;
 #endif
 		} else
 			break;
 	} while (1);
-
 	return 0;
 }
 
+//-------------------------------------------------------------------------------
+/*
+static void mtk_nand_command_sp(
+	struct mtd_info *mtd, unsigned int command, int column, int page_addr)
+{
+	g_u4ColAddr	= column;	
+	g_u4RowAddr	= page_addr;
+
+	switch(command)
+	{
+	case NAND_CMD_STATUS:
+		break;
+			
+	case NAND_CMD_READID:
+		break;
+
+	case NAND_CMD_RESET:
+		break;
+			
+	case NAND_CMD_RNDOUT:
+	case NAND_CMD_RNDOUTSTART:
+	case NAND_CMD_RNDIN:
+	case NAND_CMD_CACHEDPROG:
+	case NAND_CMD_STATUS_MULTI:
+	default:
+		break;
+	}
+
+}
+*/
+
+/******************************************************************************
+ * mtk_nand_command_bp
+ * 
+ * DESCRIPTION:
+ *   Handle the commands from MTD ! 
+ * 
+ * PARAMETERS: 
+ *   struct mtd_info *mtd, unsigned int command, int column, int page_addr
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static void mtk_nand_command_bp(struct mtd_info *mtd, unsigned int command, int column, int page_addr)
 {
 	struct nand_chip *nand = mtd->priv;
-
+#ifdef NAND_PFM
+	struct timeval pfm_time_erase;
+#endif
 	switch (command) {
 	case NAND_CMD_SEQIN:
 		memset(g_kCMD.au1OOB, 0xFF, sizeof(g_kCMD.au1OOB));
 		g_kCMD.pDataBuf = NULL;
+		//}
 		g_kCMD.u4RowAddr = page_addr;
 		g_kCMD.u4ColAddr = column;
 		break;
@@ -1109,15 +2609,23 @@ static void mtk_nand_command_bp(struct mtd_info *mtd, unsigned int command, int 
 	case NAND_CMD_READOOB:
 		g_kCMD.u4RowAddr = page_addr;
 		g_kCMD.u4ColAddr = column + mtd->writesize;
+#ifdef NAND_PFM
+		g_kCMD.pureReadOOB = 1;
+		g_kCMD.pureReadOOBNum += 1;
+#endif
 		break;
 
 	case NAND_CMD_READ0:
 		g_kCMD.u4RowAddr = page_addr;
 		g_kCMD.u4ColAddr = column;
+#ifdef NAND_PFM
+		g_kCMD.pureReadOOB = 0;
+#endif
 		break;
 
 	case NAND_CMD_ERASE1:
 		nand->state = FL_ERASING;
+		PFM_BEGIN(pfm_time_erase);
 		(void)mtk_nand_reset();
 		mtk_nand_set_mode(CNFG_OP_ERASE);
 		(void)mtk_nand_set_command(NAND_CMD_ERASE1);
@@ -1127,6 +2635,7 @@ static void mtk_nand_command_bp(struct mtd_info *mtd, unsigned int command, int 
 	case NAND_CMD_ERASE2:
 		(void)mtk_nand_set_command(NAND_CMD_ERASE2);
 		while (DRV_Reg32(NFI_STA_REG32) & STA_NAND_BUSY) ;
+		PFM_END_E(pfm_time_erase);
 		break;
 
 	case NAND_CMD_STATUS:
@@ -1152,10 +2661,22 @@ static void mtk_nand_command_bp(struct mtd_info *mtd, unsigned int command, int 
 		break;
 
 	case NAND_CMD_READID:
+		/* Issue NAND chip reset command */
+		//NFI_ISSUE_COMMAND (NAND_CMD_RESET, 0, 0, 0, 0);
+
+		//timeout = TIMEOUT_4;
+
+		//while (timeout)
+		//timeout--;
+
 		mtk_nand_reset();
 		/* Disable HW ECC */
 		NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_HW_ECC_EN);
 		NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_AHB);
+
+		/* Disable 16-bit I/O */
+		//NFI_CLN_REG16(NFI_PAGEFMT_REG16, PAGEFMT_DBYTE_EN);
+
 		NFI_SET_REG16(NFI_CNFG_REG16, CNFG_READ_EN | CNFG_BYTE_RW);
 		(void)mtk_nand_reset();
 		mb();
@@ -1172,10 +2693,27 @@ static void mtk_nand_command_bp(struct mtd_info *mtd, unsigned int command, int 
 	}
 }
 
+/******************************************************************************
+ * mtk_nand_select_chip
+ * 
+ * DESCRIPTION:
+ *   Select a chip ! 
+ * 
+ * PARAMETERS: 
+ *   struct mtd_info *mtd, int chip
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static void mtk_nand_select_chip(struct mtd_info *mtd, int chip)
 {
 	if ((chip == -1) && (false == g_bInitDone)) {
 		struct nand_chip *nand = mtd->priv;
+
 		struct mtk_nand_host *host = nand->priv;
 		struct mtk_nand_host_hw *hw = host->hw;
 		u32 spare_per_sector = mtd->oobsize / (mtd->writesize / 512);
@@ -1202,6 +2740,9 @@ static void mtk_nand_select_chip(struct mtd_info *mtd, int chip)
 			MSG(INIT, "[NAND]: NFI not support oobsize: %x\n", spare_per_sector);
 			ASSERT(0);
 		}
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
+		nand->ecc.strength = ecc_bit;
+#endif
 		mtd->oobsize = spare_per_sector * (mtd->writesize / 512);
 		MSG(INIT, "[NAND]select ecc bit:%d, sparesize :%d spare_per_sector=%d\n", ecc_bit, mtd->oobsize, spare_per_sector);
 		/* Setup PageFormat */
@@ -1211,7 +2752,10 @@ static void mtk_nand_select_chip(struct mtd_info *mtd, int chip)
 		} else if (2048 == mtd->writesize) {
 			NFI_SET_REG16(NFI_PAGEFMT_REG16, (spare_bit << PAGEFMT_SPARE_SHIFT) | PAGEFMT_2K);
 			nand->cmdfunc = mtk_nand_command_bp;
-		}
+		}		/* else if (512 == mtd->writesize) {
+				   NFI_SET_REG16(NFI_PAGEFMT_REG16, (PAGEFMT_SPARE_16 << PAGEFMT_SPARE_SHIFT) | PAGEFMT_512);
+				   nand->cmdfunc = mtk_nand_command_sp;
+				   } */
 		ECC_Config(hw, ecc_bit);
 		g_bInitDone = true;
 	}
@@ -1228,8 +2772,42 @@ static void mtk_nand_select_chip(struct mtd_info *mtd, int chip)
 	}
 }
 
+/******************************************************************************
+ * mtk_nand_read_byte
+ * 
+ * DESCRIPTION:
+ *   Read a byte of data ! 
+ * 
+ * PARAMETERS: 
+ *   struct mtd_info *mtd
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static uint8_t mtk_nand_read_byte(struct mtd_info *mtd)
 {
+#if 0
+	//while(0 == FIFO_RD_REMAIN(DRV_Reg16(NFI_FIFOSTA_REG16)));
+	/* Check the PIO bit is ready or not */
+	u32 timeout = TIMEOUT_4;
+	uint8_t retval = 0;
+	WAIT_NFI_PIO_READY(timeout);
+
+	retval = DRV_Reg8(NFI_DATAR_REG32);
+	MSG(INIT, "mtk_nand_read_byte (0x%x)\n", retval);
+
+	if (g_bcmdstatus) {
+		NFI_SET_REG16(NFI_CNFG_REG16, CNFG_AHB);
+		NFI_SET_REG16(NFI_CNFG_REG16, CNFG_HW_ECC_EN);
+		g_bcmdstatus = false;
+	}
+
+	return retval;
+#endif
 	uint8_t retval = 0;
 
 	if (!mtk_nand_pio_ready()) {
@@ -1241,6 +2819,9 @@ static uint8_t mtk_nand_read_byte(struct mtd_info *mtd)
 		retval = DRV_Reg8(NFI_DATAR_REG32);
 		NFI_CLN_REG16(NFI_CON_REG16, CON_NFI_NOB_MASK);
 		mtk_nand_reset();
+#if defined (__INTERNAL_USE_AHB_MODE__)
+		NFI_SET_REG16(NFI_CNFG_REG16, CNFG_AHB);
+#endif
 		if (g_bHwEcc) {
 			NFI_SET_REG16(NFI_CNFG_REG16, CNFG_HW_ECC_EN);
 		} else {
@@ -1253,6 +2834,22 @@ static uint8_t mtk_nand_read_byte(struct mtd_info *mtd)
 	return retval;
 }
 
+/******************************************************************************
+ * mtk_nand_read_buf
+ * 
+ * DESCRIPTION:
+ *   Read NAND data ! 
+ * 
+ * PARAMETERS: 
+ *   struct mtd_info *mtd, uint8_t *buf, int len
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static void mtk_nand_read_buf(struct mtd_info *mtd, uint8_t * buf, int len)
 {
 	struct nand_chip *nand = (struct nand_chip *)mtd->priv;
@@ -1284,6 +2881,22 @@ static void mtk_nand_read_buf(struct mtd_info *mtd, uint8_t * buf, int len)
 	pkCMD->u4ColAddr += len;
 }
 
+/******************************************************************************
+ * mtk_nand_write_buf
+ * 
+ * DESCRIPTION:
+ *   Write NAND data !  
+ * 
+ * PARAMETERS: 
+ *   struct mtd_info *mtd, const uint8_t *buf, int len
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static void mtk_nand_write_buf(struct mtd_info *mtd, const uint8_t * buf, int len)
 {
 	struct NAND_CMD *pkCMD = &g_kCMD;
@@ -1295,6 +2908,7 @@ static void mtk_nand_write_buf(struct mtd_info *mtd, const uint8_t * buf, int le
 		u32 u4Offset = u4ColAddr - u4PageSize;
 		u8 *pOOB = pkCMD->au1OOB + u4Offset;
 		i4Size = min(len, (int)(sizeof(pkCMD->au1OOB) - u4Offset));
+
 		for (i = 0; i < i4Size; i++) {
 			pOOB[i] &= buf[i];
 		}
@@ -1305,15 +2919,59 @@ static void mtk_nand_write_buf(struct mtd_info *mtd, const uint8_t * buf, int le
 	pkCMD->u4ColAddr += len;
 }
 
+/******************************************************************************
+ * mtk_nand_write_page_hwecc
+ * 
+ * DESCRIPTION:
+ *   Write NAND data with hardware ecc ! 
+ * 
+ * PARAMETERS: 
+ *   struct mtd_info *mtd, struct nand_chip *chip, const uint8_t *buf
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
 static int mtk_nand_write_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip, const uint8_t * buf, int oob_required)
+#else
+static void mtk_nand_write_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip, const uint8_t * buf)
+#endif
 {
 	mtk_nand_write_buf(mtd, buf, mtd->writesize);
 	mtk_nand_write_buf(mtd, chip->oob_poi, mtd->oobsize);
 	return 0;
 }
 
+/******************************************************************************
+ * mtk_nand_read_page_hwecc
+ * 
+ * DESCRIPTION:
+ *   Read NAND data with hardware ecc ! 
+ * 
+ * PARAMETERS: 
+ *   struct mtd_info *mtd, struct nand_chip *chip, uint8_t *buf
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
 static int mtk_nand_read_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip, uint8_t * buf, int oob_required, int page)
+#else
+static int mtk_nand_read_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip, uint8_t * buf, int page)
+#endif
 {
+#if 0
+	mtk_nand_read_buf(mtd, buf, mtd->writesize);
+	mtk_nand_read_buf(mtd, chip->oob_poi, mtd->oobsize);
+#else
 	struct NAND_CMD *pkCMD = &g_kCMD;
 	u32 u4ColAddr = pkCMD->u4ColAddr;
 	u32 u4PageSize = mtd->writesize;
@@ -1322,10 +2980,15 @@ static int mtk_nand_read_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip
 		mtk_nand_exec_read_page(mtd, pkCMD->u4RowAddr, u4PageSize, buf, chip->oob_poi);
 		pkCMD->u4ColAddr += u4PageSize + mtd->oobsize;
 	}
-
+#endif
 	return 0;
 }
 
+/******************************************************************************
+ *
+ * Read a page to a logical address
+ *
+ *****************************************************************************/
 static int mtk_nand_read_page(struct mtd_info *mtd, struct nand_chip *chip, u8 *buf, int page)
 {
 	int page_per_block = 1 << (chip->phys_erase_shift - chip->page_shift);
@@ -1333,29 +2996,60 @@ static int mtk_nand_read_page(struct mtd_info *mtd, struct nand_chip *chip, u8 *
 	u16 page_in_block = page % page_per_block;
 	int mapped_block = block;
 
+#if defined(SKIP_BAD_BLOCK)
+	if (!is_skip_bad_block(mtd, page)) {
 #if defined (MTK_NAND_BMT)
-	mapped_block = get_mapping_block_index(block);
-	if (mtk_nand_exec_read_page(mtd, page_in_block + mapped_block * page_per_block, mtd->writesize, buf, chip->oob_poi))
-		return 0;
-#else
-	if (shift_on_bbt) {
-		mapped_block = block_remap(mtd, block);
-		if (mapped_block == -1)
-			return NAND_STATUS_FAIL;
-		if (nand_bbt_get(mtd, mapped_block << (chip->phys_erase_shift - chip->page_shift)) != 0x0)
-			return NAND_STATUS_FAIL;
-	}
+		mapped_block = get_mapping_block_index(block);
+		if (mtk_nand_exec_read_page(mtd, page_in_block + mapped_block * page_per_block, mtd->writesize, buf, chip->oob_poi))
+			return 0;
+		/* else
+		   return -EIO; */
+#endif
+		if (mtk_nand_exec_read_page(mtd, page_in_block + mapped_block * page_per_block, mtd->writesize, buf, chip->oob_poi))
+			return 0;
+		else
+			return -EIO;
+	} else {
+		if (shift_on_bbt) {
+			mapped_block = block_remap(mtd, block);
+			if (mapped_block == -1)
+				return NAND_STATUS_FAIL;
+			if (nand_bbt_get(mtd, mapped_block << (chip->phys_erase_shift - chip->page_shift)) != 0x0)
+				return NAND_STATUS_FAIL;
+		}
 
+		if (mtk_nand_exec_read_page(mtd, page_in_block + mapped_block * page_per_block, mtd->writesize, buf, chip->oob_poi))
+			return 0;
+		else
+			return -EIO;
+	}
+#else
 	if (mtk_nand_exec_read_page(mtd, page_in_block + mapped_block * page_per_block, mtd->writesize, buf, chip->oob_poi))
 		return 0;
 	else
 		return -EIO;
 #endif
+	return 0;
 }
 
+/******************************************************************************
+ *
+ * Erase a block at a logical address
+ *
+ *****************************************************************************/
 int mtk_nand_erase_hw(struct mtd_info *mtd, int page)
 {
 	struct nand_chip *chip = (struct nand_chip *)mtd->priv;
+
+#ifdef _MTK_NAND_DUMMY_DRIVER_
+	if (dummy_driver_debug) {
+		unsigned long long time = sched_clock();
+		if (!((time * 123 + 59) % 1024)) {
+			printk(KERN_INFO "[NAND_DUMMY_DRIVER] Simulate erase error at page: 0x%x\n", page);
+			return NAND_STATUS_FAIL;
+		}
+	}
+#endif
 
 	chip->erase_cmd(mtd, page);
 
@@ -1371,15 +3065,29 @@ static int mtk_nand_erase(struct mtd_info *mtd, int page)
 	int block = page / page_per_block;
 	int mapped_block = block;
 
+#if defined(CONFIG_SUPPORT_OPENWRT)
+	if (((page << chip->page_shift) >= (int)rootfs_offset) && ((page << chip->page_shift) < (int)rootfs_data_offset)) {
+		if (!OpenWRT_rootfs_upgrading) {
+			OpenWRT_rootfs_upgrading = 1;
+			//printk("OpenWRT_rootfs_upgrading = 1\n");
+		}
+		//printk("Erasing page = %x\n", page);
+	}
+#endif
+
+#if defined(SKIP_BAD_BLOCK)
+	if (!is_skip_bad_block(mtd, page)) {
 #if defined(MTK_NAND_BMT)
-	mapped_block = get_mapping_block_index(block);
-#else
-	if (shift_on_bbt) {
-		mapped_block = block_remap(mtd, block);
-		if (mapped_block == -1)
-			return NAND_STATUS_FAIL;
-		if (nand_bbt_get(mtd, mapped_block << (chip->phys_erase_shift - chip->page_shift)) != 0x0)
-			return NAND_STATUS_FAIL;
+		mapped_block = get_mapping_block_index(block);
+#endif
+	} else {
+		if (shift_on_bbt) {
+			mapped_block = block_remap(mtd, block);
+			if (mapped_block == -1)
+				return NAND_STATUS_FAIL;
+			if (nand_bbt_get(mtd, mapped_block << (chip->phys_erase_shift - chip->page_shift)) != 0x0)
+				return NAND_STATUS_FAIL;
+		}
 	}
 #endif
 
@@ -1387,25 +3095,34 @@ static int mtk_nand_erase(struct mtd_info *mtd, int page)
 		int status = mtk_nand_erase_hw(mtd, page_in_block + page_per_block * mapped_block);
 
 		if (status & NAND_STATUS_FAIL) {
+#if defined(SKIP_BAD_BLOCK)
+			if (!is_skip_bad_block(mtd, page)) {
 #if defined (MTK_NAND_BMT)
-			if (update_bmt((page_in_block + mapped_block * page_per_block) << chip->page_shift, UPDATE_ERASE_FAIL, NULL, NULL)) {
-				MSG(INIT, "Erase fail at block: 0x%x, update BMT success\n", mapped_block);
-				return 0;
+				if (update_bmt((page_in_block + mapped_block * page_per_block) << chip->page_shift, UPDATE_ERASE_FAIL, NULL, NULL)) {
+					MSG(INIT, "Erase fail at block: 0x%x, update BMT success\n", mapped_block);
+					return 0;
+				} else {
+					MSG(INIT, "Erase fail at block: 0x%x, update BMT fail\n", mapped_block);
+					return NAND_STATUS_FAIL;
+				}
+#endif
+				mtk_nand_block_markbad_hw(mtd, (page_in_block + mapped_block * page_per_block) << chip->page_shift);
+				nand_bbt_set(mtd, page_in_block + mapped_block * page_per_block, 0x3);
+				return -EIO;
 			} else {
-				MSG(INIT, "Erase fail at block: 0x%x, update BMT fail\n", mapped_block);
-				return NAND_STATUS_FAIL;
+				mtk_nand_block_markbad_hw(mtd, (page_in_block + mapped_block * page_per_block) << chip->page_shift);
+				nand_bbt_set(mtd, page_in_block + mapped_block * page_per_block, 0x3);
+				if (shift_on_bbt) {
+					mapped_block = block_remap(mtd, block);
+					if (mapped_block == -1)
+						return NAND_STATUS_FAIL;
+					if (nand_bbt_get(mtd, mapped_block << (chip->phys_erase_shift - chip->page_shift)) != 0x0)
+						return NAND_STATUS_FAIL;
+				} else
+					return NAND_STATUS_FAIL;
 			}
 #else
-			mtk_nand_block_markbad_hw(mtd, (page_in_block + mapped_block * page_per_block) << chip->page_shift);
-			nand_bbt_set(mtd, page_in_block + mapped_block * page_per_block, 0x3);
-			if (shift_on_bbt) {
-				mapped_block = block_remap(mtd, block);
-				if (mapped_block == -1)
-					return NAND_STATUS_FAIL;
-				if (nand_bbt_get(mtd, mapped_block << (chip->phys_erase_shift - chip->page_shift)) != 0x0)
-					return NAND_STATUS_FAIL;
-			} else
-				return NAND_STATUS_FAIL;
+			return NAND_STATUS_FAIL;
 #endif
 		} else
 			break;
@@ -1414,6 +3131,110 @@ static int mtk_nand_erase(struct mtd_info *mtd, int page)
 	return 0;
 }
 
+/******************************************************************************
+ * mtk_nand_read_multi_page_cache
+ *
+ * description:
+ *   read multi page data using cache read
+ *
+ * parameters:
+ *   struct mtd_info *mtd, struct nand_chip *chip, int page, struct mtd_oob_ops *ops
+ *
+ * returns:
+ *   none
+ *
+ * notes:
+ *   only available for nand flash support cache read.
+ *   read main data only.
+ *
+ *****************************************************************************/
+#if 0
+static int mtk_nand_read_multi_page_cache(struct mtd_info *mtd, struct nand_chip *chip, int page, struct mtd_oob_ops *ops)
+{
+	int res = -EIO;
+	int len = ops->len;
+	struct mtd_ecc_stats stat = mtd->ecc_stats;
+	uint8_t *buf = ops->datbuf;
+
+	if (!mtk_nand_ready_for_read(chip, page, 0, true, buf))
+		return -EIO;
+
+	while (len > 0) {
+		mtk_nand_set_mode(CNFG_OP_CUST);
+		DRV_WriteReg16(NFI_CON_REG16, 8 << CON_NFI_SEC_SHIFT);
+
+		if (len > mtd->writesize)	// remained more than one page
+		{
+			if (!mtk_nand_set_command(0x31))	// todo: add cache read command
+				goto ret;
+		} else {
+			if (!mtk_nand_set_command(0x3f))	// last page remained
+				goto ret;
+		}
+
+		mtk_nand_status_ready(STA_NAND_BUSY);
+
+#if defined (__INTERNAL_USE_AHB_MODE__)
+		//if (!mtk_nand_dma_read_data(buf, mtd->writesize))
+		if (!mtk_nand_read_page_data(mtd, buf, mtd->writesize))
+			goto ret;
+#else
+		if (!mtk_nand_mcu_read_data(buf, mtd->writesize))
+			goto ret;
+#endif
+
+		// get ecc error info
+		mtk_nand_check_bch_error(mtd, buf, 3, page);
+		ECC_Decode_End();
+
+		page++;
+		len -= mtd->writesize;
+		buf += mtd->writesize;
+		ops->retlen += mtd->writesize;
+
+		if (len > 0) {
+			ECC_Decode_Start();
+			mtk_nand_reset();
+		}
+
+	}
+
+	res = 0;
+
+ret:
+	mtk_nand_stop_read();
+
+	if (res)
+		return res;
+
+	if (mtd->ecc_stats.failed > stat.failed) {
+		printk(KERN_INFO "ecc fail happened\n");
+		return -EBADMSG;
+	}
+
+	return mtd->ecc_stats.corrected - stat.corrected ? -EUCLEAN : 0;
+}
+#endif
+
+/******************************************************************************
+ * mtk_nand_read_oob_raw
+ *
+ * DESCRIPTION:
+ *   Read oob data
+ *
+ * PARAMETERS:
+ *   struct mtd_info *mtd, const uint8_t *buf, int addr, int len 
+ *
+ * RETURNS:
+ *   None
+ *
+ * NOTES:
+ *   this function read raw oob data out of flash, so need to re-organise 
+ *   data format before using.
+ *   len should be times of 8, call this after nand_get_device.
+ *   Should notice, this function read data without ECC protection.
+ *
+ *****************************************************************************/
 static int mtk_nand_read_oob_raw(struct mtd_info *mtd, uint8_t * buf, int page_addr, int len)
 {
 	struct nand_chip *chip = (struct nand_chip *)mtd->priv;
@@ -1430,8 +3251,9 @@ static int mtk_nand_read_oob_raw(struct mtd_info *mtd, uint8_t * buf, int page_a
 		printk(KERN_WARNING "[%s] invalid parameter, len: %d, buf: %p\n", __FUNCTION__, len, buf);
 		return -EINVAL;
 	}
-	if (len > spare_per_sector)
+	if (len > spare_per_sector) {
 		randomread = 1;
+	}
 	if (!randomread || !(devinfo.advancedmode & RAMDOM_READ)) {
 		while (len > 0) {
 			read_len = min(len, spare_per_sector);
@@ -1441,22 +3263,35 @@ static int mtk_nand_read_oob_raw(struct mtd_info *mtd, uint8_t * buf, int page_a
 				res = -EIO;
 				goto error;
 			}
-			if (!mtk_nand_mcu_read_data(buf + spare_per_sector * sector, read_len)) {
+
+			if (!mtk_nand_mcu_read_data(buf + spare_per_sector * sector, read_len))	// TODO: and this 8
+			{
 				printk(KERN_WARNING "mtk_nand_mcu_read_data return failed\n");
 				res = -EIO;
 				goto error;
 			}
 			mtk_nand_check_RW_count(read_len);
 			mtk_nand_stop_read();
+			//printf("\n");
+			//dump_data(buf + 16 * sector,16);
+			//for (i = 0; i < spare_per_sector; i++)
+			//      printf("%02x%c", buf[spare_per_sector * sector+i], (i%spare_per_sector == spare_per_sector-1)? '\n':' ');
+			//printf("\n");
 			sector++;
 			len -= read_len;
+
 		}
-	} else {
+	} else			//should be 64
+	{
 		col_addr = NAND_SECTOR_SIZE;
-		if (chip->options & NAND_BUSWIDTH_16)
+		if (chip->options & NAND_BUSWIDTH_16) {
 			col_addr /= 2;
-		if (!mtk_nand_reset())
+		}
+
+		if (!mtk_nand_reset()) {
 			goto error;
+		}
+
 		mtk_nand_set_mode(0x6000);
 		NFI_SET_REG16(NFI_CNFG_REG16, CNFG_READ_EN);
 		DRV_WriteReg16(NFI_CON_REG16, 4 << CON_NFI_SEC_SHIFT);
@@ -1466,17 +3301,24 @@ static int mtk_nand_read_oob_raw(struct mtd_info *mtd, uint8_t * buf, int page_a
 
 		mtk_nand_set_autoformat(false);
 
-		if (!mtk_nand_set_command(NAND_CMD_READ0))
+		if (!mtk_nand_set_command(NAND_CMD_READ0)) {
 			goto error;
+		}
 		//1 FIXED ME: For Any Kind of AddrCycle
-		if (!mtk_nand_set_address(col_addr, page_addr, colnob, rawnob))
+		if (!mtk_nand_set_address(col_addr, page_addr, colnob, rawnob)) {
 			goto error;
-		if (!mtk_nand_set_command(NAND_CMD_READSTART))
+		}
+
+		if (!mtk_nand_set_command(NAND_CMD_READSTART)) {
 			goto error;
-		if (!mtk_nand_status_ready(STA_NAND_BUSY))
+		}
+		if (!mtk_nand_status_ready(STA_NAND_BUSY)) {
 			goto error;
+		}
+
 		read_len = min(len, spare_per_sector);
-		if (!mtk_nand_mcu_read_data(buf + spare_per_sector * sector, read_len)) {
+		if (!mtk_nand_mcu_read_data(buf + spare_per_sector * sector, read_len))	// TODO: and this 8
+		{
 			printk(KERN_WARNING "mtk_nand_mcu_read_data return failed first 16\n");
 			res = -EIO;
 			goto error;
@@ -1486,21 +3328,30 @@ static int mtk_nand_read_oob_raw(struct mtd_info *mtd, uint8_t * buf, int page_a
 		mtk_nand_stop_read();
 		while (len > 0) {
 			read_len = min(len, spare_per_sector);
-			if (!mtk_nand_set_command(0x05))
+			if (!mtk_nand_set_command(0x05)) {
 				goto error;
+			}
+
 			col_addr = NAND_SECTOR_SIZE + sector * (NAND_SECTOR_SIZE + spare_per_sector);
-			if (chip->options & NAND_BUSWIDTH_16)
+			if (chip->options & NAND_BUSWIDTH_16) {
 				col_addr /= 2;
+			}
 			DRV_WriteReg32(NFI_COLADDR_REG32, col_addr);
 			DRV_WriteReg16(NFI_ADDRNOB_REG16, 2);
 			DRV_WriteReg16(NFI_CON_REG16, 4 << CON_NFI_SEC_SHIFT);
-			if (!mtk_nand_status_ready(STA_ADDR_STATE))
+
+			if (!mtk_nand_status_ready(STA_ADDR_STATE)) {
 				goto error;
-			if (!mtk_nand_set_command(0xE0))
+			}
+
+			if (!mtk_nand_set_command(0xE0)) {
 				goto error;
-			if (!mtk_nand_status_ready(STA_NAND_BUSY))
+			}
+			if (!mtk_nand_status_ready(STA_NAND_BUSY)) {
 				goto error;
-			if (!mtk_nand_mcu_read_data(buf + spare_per_sector * sector, read_len)) {
+			}
+			if (!mtk_nand_mcu_read_data(buf + spare_per_sector * sector, read_len))	// TODO: and this 8
+			{
 				printk(KERN_WARNING "mtk_nand_mcu_read_data return failed first 16\n");
 				res = -EIO;
 				goto error;
@@ -1509,12 +3360,15 @@ static int mtk_nand_read_oob_raw(struct mtd_info *mtd, uint8_t * buf, int page_a
 			sector++;
 			len -= read_len;
 		}
+		//dump_data(&testbuf[16],16);
+		//printk(KERN_ERR "\n");
 	}
 error:
 	NFI_CLN_REG16(NFI_CON_REG16, CON_NFI_BRD);
 	return res;
 }
 
+#if !defined (__BOOT_NAND__)
 static int mtk_nand_write_oob_raw(struct mtd_info *mtd, const uint8_t * buf, int page_addr, int len)
 {
 	struct nand_chip *chip = mtd->priv;
@@ -1533,19 +3387,26 @@ static int mtk_nand_write_oob_raw(struct mtd_info *mtd, const uint8_t * buf, int
 	while (len > 0) {
 		write_len = min(len, spare_per_sector);
 		col_addr = sector * (NAND_SECTOR_SIZE + spare_per_sector) + NAND_SECTOR_SIZE;
-		if (!mtk_nand_ready_for_write(chip, page_addr, col_addr, false, NULL))
+		if (!mtk_nand_ready_for_write(chip, page_addr, col_addr, false, NULL)) {
 			return -EIO;
-		if (!mtk_nand_mcu_write_data(mtd, buf + sector * spare_per_sector, write_len))
+		}
+
+		if (!mtk_nand_mcu_write_data(mtd, buf + sector * spare_per_sector, write_len)) {
 			return -EIO;
+		}
+
 		(void)mtk_nand_check_RW_count(write_len);
 		NFI_CLN_REG16(NFI_CON_REG16, CON_NFI_BWR);
 		(void)mtk_nand_set_command(NAND_CMD_PAGEPROG);
+
 		while (DRV_Reg32(NFI_STA_REG32) & STA_NAND_BUSY) ;
+
 		status = chip->waitfunc(mtd, chip);
 		if (status & NAND_STATUS_FAIL) {
 			printk(KERN_INFO "status: %d\n", status);
 			return -EIO;
 		}
+
 		len -= write_len;
 		sector++;
 	}
@@ -1556,6 +3417,7 @@ static int mtk_nand_write_oob_raw(struct mtd_info *mtd, const uint8_t * buf, int
 static int mtk_nand_write_oob_hw(struct mtd_info *mtd, struct nand_chip *chip, int page)
 {
 	int i, iter;
+
 	int sec_num = 1 << (chip->page_shift - 9);
 	int spare_per_sector = mtd->oobsize / sec_num;
 
@@ -1568,8 +3430,9 @@ static int mtk_nand_write_oob_hw(struct mtd_info *mtd, struct nand_chip *chip, i
 	}
 
 	// copy FDM data
-	for (i = 0; i < sec_num; i++)
+	for (i = 0; i < sec_num; i++) {
 		memcpy(&local_oob_buf[i * spare_per_sector], &chip->oob_poi[i * OOB_AVAI_PER_SECTOR], OOB_AVAI_PER_SECTOR);
+	}
 
 	return mtk_nand_write_oob_raw(mtd, local_oob_buf, page, mtd->oobsize);
 }
@@ -1581,45 +3444,58 @@ static int mtk_nand_write_oob(struct mtd_info *mtd, struct nand_chip *chip, int 
 	u16 page_in_block = page % page_per_block;
 	int mapped_block = block;
 
+#if defined(SKIP_BAD_BLOCK)
+	if (!is_skip_bad_block(mtd, page)) {
 #if defined(MTK_NAND_BMT)
-	mapped_block = get_mapping_block_index(block);
-	// write bad index into oob
-	if (mapped_block != block)
-		set_bad_index_to_oob(chip->oob_poi, block);
-	else
-		set_bad_index_to_oob(chip->oob_poi, FAKE_INDEX);
-#else
-	if (shift_on_bbt) {
-		mapped_block = block_remap(mtd, block);
-		if (mapped_block == -1)
-			return NAND_STATUS_FAIL;
-		if (nand_bbt_get(mtd, mapped_block << (chip->phys_erase_shift - chip->page_shift)) != 0x0)
-			return NAND_STATUS_FAIL;
+		mapped_block = get_mapping_block_index(block);
+		// write bad index into oob
+		if (mapped_block != block) {
+			set_bad_index_to_oob(chip->oob_poi, block);
+		} else {
+			set_bad_index_to_oob(chip->oob_poi, FAKE_INDEX);
+		}
+#endif
+	} else {
+		if (shift_on_bbt) {
+			mapped_block = block_remap(mtd, block);
+			if (mapped_block == -1)
+				return NAND_STATUS_FAIL;
+			if (nand_bbt_get(mtd, mapped_block << (chip->phys_erase_shift - chip->page_shift)) != 0x0)
+				return NAND_STATUS_FAIL;
+		}
 	}
 #endif
 	do {
 		if (mtk_nand_write_oob_hw(mtd, chip, page_in_block + mapped_block * page_per_block /* page */ )) {
 			MSG(INIT, "write oob fail at block: 0x%x, page: 0x%x\n", mapped_block, page_in_block);
+#if defined (SKIP_BAD_BLOCK)
+			if (!is_skip_bad_block(mtd, page)) {
 #if defined(MTK_NAND_BMT)
-			if (update_bmt((page_in_block + mapped_block * page_per_block) << chip->page_shift, UPDATE_WRITE_FAIL, NULL, chip->oob_poi)) {
-				MSG(INIT, "Update BMT success\n");
-				return 0;
-			} else {
-				MSG(INIT, "Update BMT fail\n");
+				if (update_bmt((page_in_block + mapped_block * page_per_block) << chip->page_shift, UPDATE_WRITE_FAIL, NULL, chip->oob_poi)) {
+					MSG(INIT, "Update BMT success\n");
+					return 0;
+				} else {
+					MSG(INIT, "Update BMT fail\n");
+					return -EIO;
+				}
+#endif
+				mtk_nand_block_markbad_hw(mtd, (page_in_block + mapped_block * page_per_block) << chip->page_shift);
+				nand_bbt_set(mtd, page_in_block + mapped_block * page_per_block, 0x3);
 				return -EIO;
+			} else {
+				mtk_nand_block_markbad_hw(mtd, (page_in_block + mapped_block * page_per_block) << chip->page_shift);
+				nand_bbt_set(mtd, page_in_block + mapped_block * page_per_block, 0x3);
+				if (shift_on_bbt) {
+					mapped_block = block_remap(mtd, mapped_block);
+					if (mapped_block == -1)
+						return NAND_STATUS_FAIL;
+					if (nand_bbt_get(mtd, mapped_block << (chip->phys_erase_shift - chip->page_shift)) != 0x0)
+						return NAND_STATUS_FAIL;
+				} else
+					return NAND_STATUS_FAIL;
 			}
 #else
-			mtk_nand_block_markbad_hw(mtd, (page_in_block + mapped_block * page_per_block) << chip->page_shift);
-			nand_bbt_set(mtd, page_in_block + mapped_block * page_per_block, 0x3);
-			if (shift_on_bbt) {
-				mapped_block = block_remap(mtd, mapped_block);
-				if (mapped_block == -1)
-					return NAND_STATUS_FAIL;
-				if (nand_bbt_get(mtd, mapped_block << (chip->phys_erase_shift - chip->page_shift)) != 0x0)
-					return NAND_STATUS_FAIL;
-			} else {
-				return NAND_STATUS_FAIL;
-			}
+			return -EIO;
 #endif
 		} else
 			break;
@@ -1633,11 +3509,14 @@ int mtk_nand_block_markbad_hw(struct mtd_info *mtd, loff_t offset)
 	struct nand_chip *chip = mtd->priv;
 	int block = (int)offset >> chip->phys_erase_shift;
 	int page = block * (1 << (chip->phys_erase_shift - chip->page_shift));
-	u8 buf[8];
+	int ret;
 
+	u8 buf[8];
 	memset(buf, 0xFF, 8);
 	buf[0] = 0;
-	return mtk_nand_write_oob_raw(mtd, buf, page, 8);
+
+	ret = mtk_nand_write_oob_raw(mtd, buf, page, 8);
+	return ret;
 }
 
 static int mtk_nand_block_markbad(struct mtd_info *mtd, loff_t offset)
@@ -1646,27 +3525,34 @@ static int mtk_nand_block_markbad(struct mtd_info *mtd, loff_t offset)
 	int block = (int)offset >> chip->phys_erase_shift;
 	int ret;
 	int mapped_block = block;
-
-	nand_get_device(chip, mtd, FL_WRITING);
-
-#if defined(MTK_NAND_BMT)
-	mapped_block = get_mapping_block_index(block);
-	ret = mtk_nand_block_markbad_hw(mtd, mapped_block << chip->phys_erase_shift);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
+	nand_get_device(mtd, FL_WRITING);
 #else
-	if (shift_on_bbt) {
-		mapped_block = block_remap(mtd, block);
-		if (mapped_block == -1) {
-			printk("NAND mark bad failed\n");
-			nand_release_device(mtd);
-			return NAND_STATUS_FAIL;
+	nand_get_device(chip, mtd, FL_WRITING);
+#endif
+
+#if defined(SKIP_BAD_BLOCK)
+	if (!is_skip_bad_block(mtd, offset >> chip->page_shift)) {
+#if defined(MTK_NAND_BMT)
+		mapped_block = get_mapping_block_index(block);
+#endif
+	} else {
+		if (shift_on_bbt) {
+			mapped_block = block_remap(mtd, block);
+			if (mapped_block == -1) {
+				printk("NAND mark bad failed\n");
+				nand_release_device(mtd);
+				return NAND_STATUS_FAIL;
+			}
 		}
 	}
-	ret = mtk_nand_block_markbad_hw(mtd, mapped_block << chip->phys_erase_shift);
 #endif
+	ret = mtk_nand_block_markbad_hw(mtd, mapped_block << chip->phys_erase_shift);
 	nand_release_device(mtd);
 
 	return ret;
 }
+#endif				/* !__BOOT_NAND__ */
 
 int mtk_nand_read_oob_hw(struct mtd_info *mtd, struct nand_chip *chip, int page)
 {
@@ -1675,16 +3561,29 @@ int mtk_nand_read_oob_hw(struct mtd_info *mtd, struct nand_chip *chip, int page)
 
 	int sec_num = 1 << (chip->page_shift - 9);
 	int spare_per_sector = mtd->oobsize / sec_num;
+#ifdef TESTTIME
+	unsigned long long time1, time2;
+
+	time1 = sched_clock();
+#endif
 
 	if (mtk_nand_read_oob_raw(mtd, chip->oob_poi, page, mtd->oobsize)) {
 		printk(KERN_ERR "[%s]mtk_nand_read_oob_raw return failed\n", __FUNCTION__);
 		return -EIO;
 	}
+#ifdef TESTTIME
+	time2 = sched_clock() - time1;
+	if (!readoobflag) {
+		readoobflag = 1;
+		printk(KERN_ERR "[%s] time is %llu", __FUNCTION__, time2);
+	}
+#endif
+
 	// adjust to ecc physical layout to memory layout
-	/*********************************************************/
+    /*********************************************************/
 	/* FDM0 | ECC0 | FDM1 | ECC1 | FDM2 | ECC2 | FDM3 | ECC3 */
 	/*  8B  |  8B  |  8B  |  8B  |  8B  |  8B  |  8B  |  8B  */
-	/*********************************************************/
+    /*********************************************************/
 
 	memcpy(local_oob_buf, chip->oob_poi, mtd->oobsize);
 	// copy ecc data
@@ -1701,27 +3600,36 @@ int mtk_nand_read_oob_hw(struct mtd_info *mtd, struct nand_chip *chip, int page)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
 static int mtk_nand_read_oob(struct mtd_info *mtd, struct nand_chip *chip, int page)
+#else
+static int mtk_nand_read_oob(struct mtd_info *mtd, struct nand_chip *chip, int page, int sndcmd)
+#endif
 {
 	int page_per_block = 1 << (chip->phys_erase_shift - chip->page_shift);
 	int block = page / page_per_block;
 	u16 page_in_block = page % page_per_block;
 	int mapped_block = block;
 
+#if defined(SKIP_BAD_BLOCK)
+	if (!is_skip_bad_block(mtd, page)) {
 #if defined (MTK_NAND_BMT)
-	mapped_block = get_mapping_block_index(block);
-	mtk_nand_read_oob_hw(mtd, chip, page_in_block + mapped_block * page_per_block);
-#else
-	if (shift_on_bbt) {
-		mapped_block = block_remap(mtd, block);
-		if (mapped_block == -1)
-			return NAND_STATUS_FAIL;
-		// allow to read oob even if the block is bad
+		mapped_block = get_mapping_block_index(block);
+		mtk_nand_read_oob_hw(mtd, chip, page_in_block + mapped_block * page_per_block);
+#endif
+	} else {
+		if (shift_on_bbt) {
+			mapped_block = block_remap(mtd, block);
+			if (mapped_block == -1) {
+				return NAND_STATUS_FAIL;
+			}
+			// allow to read oob even if the block is bad
+		}
 	}
+#endif
 	if (mtk_nand_read_oob_hw(mtd, chip, page_in_block + mapped_block * page_per_block) != 0)
 		return -1;
-#endif
-	return 0;
+	return 0;		// the return value is sndcmd
 }
 
 int mtk_nand_block_bad_hw(struct mtd_info *mtd, loff_t ofs)
@@ -1729,9 +3637,10 @@ int mtk_nand_block_bad_hw(struct mtd_info *mtd, loff_t ofs)
 	struct nand_chip *chip = (struct nand_chip *)mtd->priv;
 	int page_addr = (int)(ofs >> chip->page_shift);
 	unsigned int page_per_block = 1 << (chip->phys_erase_shift - chip->page_shift);
-	unsigned char oob_buf[8];
 
+	unsigned char oob_buf[8];
 	page_addr &= ~(page_per_block - 1);
+
 	if (mtk_nand_read_oob_raw(mtd, oob_buf, page_addr, sizeof(oob_buf))) {
 		printk(KERN_WARNING "mtk_nand_read_oob_raw return error\n");
 		return 1;
@@ -1743,61 +3652,97 @@ int mtk_nand_block_bad_hw(struct mtd_info *mtd, loff_t ofs)
 		return 1;
 	}
 
-	return 0;
+	return 0;		// everything is OK, good block
 }
 
 static int mtk_nand_block_bad(struct mtd_info *mtd, loff_t ofs, int getchip)
 {
 	int chipnr = 0;
+
 	struct nand_chip *chip = (struct nand_chip *)mtd->priv;
 	int block = (int)ofs >> chip->phys_erase_shift;
 	int mapped_block = block;
+
 	int ret;
 
 	if (getchip) {
 		chipnr = (int)(ofs >> chip->chip_shift);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
+		nand_get_device(mtd, FL_READING);
+#else
 		nand_get_device(chip, mtd, FL_READING);
+#endif
 		/* Select the NAND device */
 		chip->select_chip(mtd, chipnr);
 	}
+#if defined(SKIP_BAD_BLOCK)
+	if (!is_skip_bad_block(mtd, ofs >> chip->page_shift)) {
 #if defined(MTK_NAND_BMT)
-	mapped_block = get_mapping_block_index(block);
-#else
-	if (shift_on_bbt) {
-		mapped_block = block_remap(mtd, block);
-		if (mapped_block == -1) {
-			if (getchip)
-				nand_release_device(mtd);
-			return NAND_STATUS_FAIL;
+		mapped_block = get_mapping_block_index(block);
+#endif
+	} else {
+		if (shift_on_bbt) {
+			mapped_block = block_remap(mtd, block);
+			if (mapped_block == -1) {
+				if (getchip)
+					nand_release_device(mtd);
+				return NAND_STATUS_FAIL;
+			}
 		}
 	}
 #endif
 
-	ret = mtk_nand_block_bad_hw(mtd, mapped_block << chip->phys_erase_shift);
+	do {
+		ret = mtk_nand_block_bad_hw(mtd, mapped_block << chip->phys_erase_shift);
+#if defined(SKIP_BAD_BLOCK)
+		if (!is_skip_bad_block(mtd, ofs >> chip->page_shift)) {
 #if defined (MTK_NAND_BMT)
-	if (ret) {
-		MSG(INIT, "Unmapped bad block: 0x%x\n", mapped_block);
-		if (update_bmt(mapped_block << chip->phys_erase_shift, UPDATE_UNMAPPED_BLOCK, NULL, NULL)) {
-			MSG(INIT, "Update BMT success\n");
-			ret = 0;
-		} else {
-			MSG(INIT, "Update BMT fail\n");
-			ret = 1;
-		}
-	}
+			if (ret) {
+				MSG(INIT, "Unmapped bad block: 0x%x\n", mapped_block);
+				if (update_bmt(mapped_block << chip->phys_erase_shift, UPDATE_UNMAPPED_BLOCK, NULL, NULL)) {
+					MSG(INIT, "Update BMT success\n");
+					ret = 0;
+				} else {
+					MSG(INIT, "Update BMT fail\n");
+					ret = 1;
+				}
+			}
 #endif
+		}
+		break;
+#endif
+	} while (1);
 
-	if (getchip)
+	if (getchip) {
 		nand_release_device(mtd);
+	}
 
 	return ret;
 }
 
+/******************************************************************************
+ * mtk_nand_verify_buf
+ * 
+ * DESCRIPTION:
+ *   Verify the NAND write data is correct or not ! 
+ * 
+ * PARAMETERS: 
+ *   struct mtd_info *mtd, const uint8_t *buf, int len
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 #ifdef CONFIG_MTD_NAND_VERIFY_WRITE
+
 char gacBuf[4096 + 288];
 
 static int mtk_nand_verify_buf(struct mtd_info *mtd, const uint8_t * buf, int len)
 {
+#if 1
 	struct nand_chip *chip = (struct nand_chip *)mtd->priv;
 	struct NAND_CMD *pkCMD = &g_kCMD;
 	u32 u4PageSize = mtd->writesize;
@@ -1821,18 +3766,50 @@ static int mtk_nand_verify_buf(struct mtd_info *mtd, const uint8_t * buf, int le
 	pSrc = (u32 *)chip->oob_poi;
 	pDst = (u32 *)(gacBuf + u4PageSize);
 
-	if ((pSrc[0] != pDst[0]) || (pSrc[1] != pDst[1]) || (pSrc[2] != pDst[2]) || (pSrc[3] != pDst[3]) || (pSrc[4] != pDst[4]) || (pSrc[5] != pDst[5])) {
+	if ((pSrc[0] != pDst[0]) || (pSrc[1] != pDst[1]) || (pSrc[2] != pDst[2]) || (pSrc[3] != pDst[3]) || (pSrc[4] != pDst[4]) || (pSrc[5] != pDst[5]))
 		// TODO: Ask Designer Why?
 		//(pSrc[6] != pDst[6]) || (pSrc[7] != pDst[7])) 
+	{
 		MSG(VERIFY, "mtk_nand_verify_buf oob fail at page %d\n", pkCMD->u4RowAddr);
 		MSG(VERIFY, "0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n", pSrc[0], pSrc[1], pSrc[2], pSrc[3], pSrc[4], pSrc[5], pSrc[6], pSrc[7]);
 		MSG(VERIFY, "0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n", pDst[0], pDst[1], pDst[2], pDst[3], pDst[4], pDst[5], pDst[6], pDst[7]);
 		return -1;
 	}
+	/*
+	   for (i = 0; i < len; ++i) {
+	   if (*pSrc != *pDst) {
+	   printk(KERN_ERR"mtk_nand_verify_buf oob fail at page %d\n", g_kCMD.u4RowAddr);
+	   return -1;
+	   }
+	   pSrc++;
+	   pDst++;
+	   }
+	 */
+	//printk(KERN_INFO"mtk_nand_verify_buf OK at page %d\n", g_kCMD.u4RowAddr);
+
 	return 0;
+#else
+	return 0;
+#endif
 }
 #endif
 
+/******************************************************************************
+ * mtk_nand_init_hw
+ * 
+ * DESCRIPTION:
+ *   Initial NAND device hardware component ! 
+ * 
+ * PARAMETERS: 
+ *   struct mtk_nand_host *host (Initial setting data)
+ * 
+ * RETURNS: 
+ *   None   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
 static void mtk_nand_init_hw(struct mtk_nand_host *host)
 {
 	struct mtk_nand_host_hw *hw = host->hw;
@@ -1860,21 +3837,152 @@ static void mtk_nand_init_hw(struct mtk_nand_host *host)
 	/* Set the ECC engine */
 	if (hw->nand_ecc_mode == NAND_ECC_HW) {
 		MSG(INIT, "%s : Use HW ECC\n", MODULE_NAME);
-		if (g_bHwEcc)
+		if (g_bHwEcc) {
 			NFI_SET_REG32(NFI_CNFG_REG16, CNFG_HW_ECC_EN);
+		}
 		ECC_Config(host->hw, 4);
 		mtk_nand_configure_fdm(8);
 		mtk_nand_configure_lock();
 	}
+#if defined (__INTERNAL_USE_AHB_MODE__)
+	/* Initilize interrupt. Clear interrupt, read clear. */
+	DRV_Reg16(NFI_INTR_REG16);
+
+	/* Interrupt arise when read data or program data to/from AHB is done. */
+	DRV_WriteReg16(NFI_INTR_EN_REG16, 0);
+#endif
 
 	NFI_SET_REG16(NFI_IOCON_REG16, 0x47);
+
 }
 
+//-------------------------------------------------------------------------------
 static int mtk_nand_dev_ready(struct mtd_info *mtd)
 {
 	return !(DRV_Reg32(NFI_STA_REG32) & STA_NAND_BUSY);
 }
 
+/******************************************************************************
+ * mtk_nand_proc_read
+ * 
+ * DESCRIPTION: 
+ *   Read the proc file to get the interrupt scheme setting ! 
+ * 
+ * PARAMETERS: 
+ *   char *page, char **start, off_t off, int count, int *eof, void *data
+ * 
+ * RETURNS: 
+ *   None
+ * 
+ * NOTES: 
+ *   None
+ * 
+ ******************************************************************************/
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
+static int mtk_nand_proc_read(struct file *file, __user char *buffer, size_t count, loff_t * data)
+#else
+static int mtk_nand_proc_read(char *page, char **start, off_t off, int count, int *eof, void *data)
+#endif
+{
+	int len;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
+	char buf[128];
+	// return sprintf(page, "Interrupt-Scheme is %d\n", g_i4Interrupt);
+	len = sprintf(buf, "ID: 0x%x, total size: %dMiB\n", devinfo.id, devinfo.totalsize);
+	len += sprintf(buf + len, "Current working in %s mode\n", g_i4Interrupt ? "interrupt" : "polling");
+	copy_to_user(buffer, buf, len);
+#else
+	if (off > 0) {
+		return 0;
+	}
+	// return sprintf(page, "Interrupt-Scheme is %d\n", g_i4Interrupt);
+	len = sprintf(page, "ID: 0x%x, total size: %dMiB\n", devinfo.id, devinfo.totalsize);
+	len += sprintf(page + len, "Current working in %s mode\n", g_i4Interrupt ? "interrupt" : "polling");
+#endif
+
+	return len;
+}
+
+/******************************************************************************
+ * mtk_nand_proc_write
+ * 
+ * DESCRIPTION: 
+ *   Write the proc file to set the interrupt scheme ! 
+ * 
+ * PARAMETERS: 
+ *   struct file* file, const char* buffer,	unsigned long count, void *data
+ * 
+ * RETURNS: 
+ *   None
+ * 
+ * NOTES: 
+ *   None
+ * 
+ ******************************************************************************/
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
+static int mtk_nand_proc_write(struct file *file, const char __user * buffer, size_t count, loff_t * data)
+#else
+static int mtk_nand_proc_write(struct file *file, const char *buffer, unsigned long count, void *data)
+#endif
+{
+	struct mtd_info *mtd = &host->mtd;
+	char buf[16];
+	int len = count, n;
+
+	if (len >= sizeof(buf)) {
+		len = sizeof(buf) - 1;
+	}
+
+	if (copy_from_user(buf, buffer, len)) {
+		return -EFAULT;
+	}
+
+	buf[len] = '\0';
+	if (buf[0] == 'I') {
+		// sync before switching between polling and interrupt, 
+		n = simple_strtol(buf + 1, NULL, 10);
+
+		if ((n > 0 && !g_i4Interrupt) || (n == 0 && g_i4Interrupt)) {
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
+			nand_get_device(mtd, FL_READING);
+#else
+			nand_get_device((struct nand_chip *)mtd->priv, mtd, FL_READING);
+#endif
+			g_i4Interrupt = n;
+
+#if defined (__INTERNAL_USE_AHB_MODE__) && defined (__KERNEL_NAND__)
+			if (g_i4Interrupt) {
+				DRV_Reg16(NFI_INTR_REG16);
+				enable_irq(SURFBOARDINT_NAND);
+			} else
+				disable_irq(SURFBOARDINT_NAND);
+#endif
+			nand_release_device(mtd);
+		}
+	}
+
+	if (buf[0] == 'D') {
+#ifdef _MTK_NAND_DUMMY_DRIVER_
+		printk(KERN_INFO "Enable dummy driver\n");
+		dummy_driver_debug = 1;
+#endif
+	}
+#ifdef NAND_PFM
+	if (buf[0] == 'P') {
+		/* Reset values */
+		g_PFM_R = 0;
+		g_PFM_W = 0;
+		g_PFM_E = 0;
+		g_PFM_RD = 0;
+		g_PFM_WD = 0;
+		g_kCMD.pureReadOOBNum = 0;
+	}
+#endif
+
+	return len;
+}
+
+#ifdef FACT_BBT
 #define FACT_BBT_BLOCK_NUM  32	// use the latest 32 BLOCK for factory bbt table
 #define FACT_BBT_OOB_SIGNATURE  1
 #define FACT_BBT_SIGNATURE_LEN  7
@@ -1910,7 +4018,8 @@ static int read_fact_bbt(struct mtd_info *mtd, unsigned int page)
 static int load_fact_bbt(struct mtd_info *mtd)
 {
 	struct nand_chip *chip = mtd->priv;
-	int i;
+	int i, j;
+	unsigned int page;
 	u32 total_block;
 
 	total_block = 1 << (chip->chip_shift - chip->phys_erase_shift);
@@ -1932,35 +4041,89 @@ static int load_fact_bbt(struct mtd_info *mtd)
 	return -1;
 }
 
+#endif
+
+/******************************************************************************
+ * mtk_nand_probe
+ * 
+ * DESCRIPTION:
+ *   register the nand device file operations ! 
+ * 
+ * PARAMETERS: 
+ *   struct platform_device *pdev : device structure
+ * 
+ * RETURNS: 
+ *   0 : Success   
+ * 
+ * NOTES: 
+ *   None
+ *
+ ******************************************************************************/
+#if defined (__KERNEL_NAND__)
 static int mtk_nand_probe(struct platform_device *pdev)
+#else
+extern void single_erase_cmd(struct mtd_info *mtd, int page);
+int mtk_nand_probe()
+#endif
 {
-	struct mtd_part_parser_data ppdata;
+
 	struct mtk_nand_host_hw *hw;
 	struct mtd_info *mtd;
 	struct nand_chip *nand_chip;
-	u8 ext_id1, ext_id2, ext_id3;
+#if defined(MTK_NAND_IOMEM)
+	struct resource *res = pdev->resource;
+#endif
 	int err = 0;
 	int id;
 	u32 ext_id;
+	u8 ext_id1, ext_id2, ext_id3;
 	int i;
-	u32 data;
 
-	data = DRV_Reg32(RALINK_SYSCTL_BASE + 0x60);
-	data &= ~((0x3 << 18) | (0x3 << 16));
-	data |= ((0x2 << 18) | (0x2 << 16));
-	DRV_WriteReg32(RALINK_SYSCTL_BASE + 0x60, data);
+	{
+		u32 data;
+		data = DRV_Reg32(RALINK_SYSCTL_BASE + 0x60);
+		data &= ~((0x3 << 18) | (0x3 << 16));
+		data |= ((0x2 << 18) | (0x2 << 16));
+		DRV_WriteReg32(RALINK_SYSCTL_BASE + 0x60, data);
+	}
+#if defined (__KERNEL_NAND__)
+	hw = (struct mtk_nand_host_hw *)pdev->dev.platform_data;
+#else
+	hw = (struct mtk_nand_host_hw *)&mt7621_nand_hw;
+#endif
+	BUG_ON(!hw);
+#if defined(MTK_NAND_IOMEM)
+	if (pdev->num_resources != 4 || res[0].flags != IORESOURCE_MEM || res[1].flags != IORESOURCE_MEM || res[2].flags != IORESOURCE_IRQ || res[3].flags != IORESOURCE_IRQ) {
+		MSG(INIT, "%s: invalid resource type\n", __FUNCTION__);
+		return -ENODEV;
+	}
 
-	hw = &mt7621_nand_hw, BUG_ON(!hw);
+	/* Request IO memory */
+	if (!request_mem_region(res[0].start, res[0].end - res[0].start + 1, pdev->name)) {
+		return -EBUSY;
+	}
+	if (!request_mem_region(res[1].start, res[1].end - res[1].start + 1, pdev->name)) {
+		return -EBUSY;
+	}
+#endif
 	/* Allocate memory for the device structure (and zero it) */
+#if defined (__KERNEL_NAND__)
 	host = kzalloc(sizeof(struct mtk_nand_host), GFP_KERNEL);
+#else
+	host = &mtk_nand_host;
+	memset(host, 0, sizeof(struct mtk_nand_host));
+#endif
 	if (!host) {
 		MSG(INIT, "mtk_nand: failed to allocate device structure.\n");
 		return -ENOMEM;
 	}
-
+#if defined (__BOOT_NAND__)
+	local_buffer_16_align = NULL;
+#else
 	/* Allocate memory for 16 byte aligned buffer */
 	local_buffer_16_align = local_buffer + 16 - ((u32)local_buffer % 16);
 	printk(KERN_INFO "Allocate 16 byte aligned buffer: %p\n", local_buffer_16_align);
+#endif
 	host->hw = hw;
 
 	/* init mtd data structure */
@@ -1969,7 +4132,9 @@ static int mtk_nand_probe(struct platform_device *pdev)
 
 	mtd = &host->mtd;
 	mtd->priv = nand_chip;
+#if defined (__KERNEL_NAND__)
 	mtd->owner = THIS_MODULE;
+#endif
 	mtd->name = "MT7621-NAND";
 
 	hw->nand_ecc_mode = NAND_ECC_HW;
@@ -1979,7 +4144,7 @@ static int mtk_nand_probe(struct platform_device *pdev)
 	nand_chip->IO_ADDR_W = (void __iomem *)NFI_DATAW_REG32;
 	nand_chip->chip_delay = 20;	/* 20us command delay time */
 	nand_chip->ecc.mode = hw->nand_ecc_mode;	/* enable ECC */
-	nand_chip->ecc.strength = 1;
+
 	nand_chip->read_byte = mtk_nand_read_byte;
 	nand_chip->read_buf = mtk_nand_read_buf;
 	nand_chip->write_buf = mtk_nand_write_buf;
@@ -1996,16 +4161,31 @@ static int mtk_nand_probe(struct platform_device *pdev)
 	nand_chip->ecc.size = hw->nand_ecc_size;	//2048
 	nand_chip->ecc.bytes = hw->nand_ecc_bytes;	//32
 
+#if !defined(SKIP_BAD_BLOCK)
+	nand_chip->options = NAND_SKIP_BBTSCAN;
+#endif
+
 	// For BMT, we need to revise driver architecture
+#if !defined (__BOOT_NAND__)
 	nand_chip->write_page = mtk_nand_write_page;
+#ifndef NAND_JFFS2_WORKAROUND
 	nand_chip->ecc.write_oob = mtk_nand_write_oob;
+#else
+	nand_chip->ecc.write_oob = NULL;
+#endif
 	nand_chip->block_markbad = mtk_nand_block_markbad;	// need to add nand_get_device()/nand_release_device().
-	//      nand_chip->erase = mtk_nand_erase;      
-	//    nand_chip->read_page = mtk_nand_read_page;
+	nand_chip->erase = mtk_nand_erase;
+#endif
+	nand_chip->read_page = mtk_nand_read_page;
 	nand_chip->ecc.read_oob = mtk_nand_read_oob;
 	nand_chip->block_bad = mtk_nand_block_bad;
 
 	//Qwert:Add for Uboot
+#if defined(__UBOOT_NAND__) || defined (__BOOT_NAND__)
+	nand_chip->waitfunc = mtk_nand_wait;
+	nand_chip->buffers = &chip_buffers;
+	nand_chip->options |= NAND_OWN_BUFFERS;
+#endif
 	mtk_nand_init_hw(host);
 	/* Select the device */
 	nand_chip->select_chip(mtd, NFI_DEFAULT_CS);
@@ -2014,6 +4194,7 @@ static int mtk_nand_probe(struct platform_device *pdev)
 	 * Reset the chip, required by some chips (e.g. Micron MT29FxGxxxxx)
 	 * after power-up
 	 */
+
 	nand_chip->cmdfunc(mtd, NAND_CMD_RESET, -1, -1);
 
 	memset(&devinfo, 0, sizeof(flashdev_info));
@@ -2025,15 +4206,21 @@ static int mtk_nand_probe(struct platform_device *pdev)
 	/* Read manufacturer and device IDs */
 	manu_id = nand_chip->read_byte(mtd);
 	dev_id = nand_chip->read_byte(mtd);
-	id = dev_id | (manu_id << 8);
+
 	ext_id1 = nand_chip->read_byte(mtd);
 	ext_id2 = nand_chip->read_byte(mtd);
 	ext_id3 = nand_chip->read_byte(mtd);
 	ext_id = ext_id1 << 16 | ext_id2 << 8 | ext_id3;
-	if (!get_device_info(id, ext_id, &devinfo)) {
+	id = dev_id | (manu_id << 8);
+	printk("NAND ID [%02X %02X %02X %02X %02X, %08x]\n", manu_id, dev_id, ext_id1, ext_id2, ext_id3, ext_id);
+	if (!get_device_info(id, ext_id, &devinfo))
+	{
 		u32 chip_mode = RALINK_REG(RALINK_SYSCTL_BASE + 0x010) & 0x0F;
+
 		MSG(INIT, "Not Support this Device! \r\n");
+
 		memset(&devinfo, 0, sizeof(flashdev_info));
+
 		MSG(INIT, "chip_mode=%08X\n", chip_mode);
 
 		/* apply bootstrap first */
@@ -2083,17 +4270,24 @@ static int mtk_nand_probe(struct platform_device *pdev)
 	nand_chip->chip_shift = ffs(nand_chip->chipsize) - 1;	//0x1C;//ffs(nand_chip->chipsize) - 1;
 	nand_chip->oob_poi = nand_chip->buffers->databuf + mtd->writesize;
 	nand_chip->badblockpos = 0;
+#if !defined (__KERNEL_NAND__)
+	nand_chip->erase_cmd = single_erase_cmd;
+#endif
 
-	if (devinfo.pagesize == 4096)
+	if (devinfo.pagesize == 4096) {
 		nand_chip->ecc.layout = &nand_oob_128;
-	else if (devinfo.pagesize == 2048)
+	} else if (devinfo.pagesize == 2048) {
 		nand_chip->ecc.layout = &nand_oob_64;
-	else if (devinfo.pagesize == 512)
+	} else if (devinfo.pagesize == 512) {
 		nand_chip->ecc.layout = &nand_oob_16;
+	}
 
 	nand_chip->ecc.layout->eccbytes = devinfo.sparesize - OOB_AVAI_PER_SECTOR * (devinfo.pagesize / NAND_SECTOR_SIZE);
-	for (i = 0; i < nand_chip->ecc.layout->eccbytes; i++)
+	for (i = 0; i < nand_chip->ecc.layout->eccbytes; i++) {
 		nand_chip->ecc.layout->eccpos[i] = OOB_AVAI_PER_SECTOR * (devinfo.pagesize / NAND_SECTOR_SIZE) + i;
+	}
+	//MSG(INIT, "[NAND] pagesz:%d , oobsz: %d,eccbytes: %d\n", 
+	//devinfo.pagesize,  sizeof(g_kCMD.au1OOB),nand_chip->ecc.layout->eccbytes);
 
 	MSG(INIT, "Support this Device in MTK table! %x \r\n", id);
 	hw->nfi_bus_width = devinfo.iowidth;
@@ -2104,18 +4298,50 @@ static int mtk_nand_probe(struct platform_device *pdev)
 		MSG(INIT, "%s : Set the 16-bit I/O settings!\n", MODULE_NAME);
 		nand_chip->options |= NAND_BUSWIDTH_16;
 	}
+#if defined (__INTERNAL_USE_AHB_MODE__) && defined (__KERNEL_NAND__)
+	/*  register NFI IRQ handler. */
+	/* Koshi, 2011.03.10 { */
+	//mt65xx_irq_set_sens(SURFBOARDINT_NAND, MT65xx_EDGE_SENSITIVE);
+	//mt65xx_irq_set_polarity(SURFBOARDINT_NAND, MT65xx_POLARITY_LOW);
+	err = request_irq(SURFBOARDINT_NAND, mtk_nand_irq_handler, IRQF_DISABLED, "MT7621-NAND", NULL);
+	/* Koshi, 2011.03.10 } */
+	if (0 != err) {
+		MSG(INIT, "%s : Request IRQ fail: err = %d\n", MODULE_NAME, err);
+		goto out;
+	}
+
+	if (g_i4Interrupt)
+		enable_irq(SURFBOARDINT_NAND);
+	else
+		disable_irq(SURFBOARDINT_NAND);
+#endif
+#if 0
+	if (devinfo.advancedmode & CACHE_READ) {
+		nand_chip->ecc.read_multi_page_cache = NULL;
+		// nand_chip->ecc.read_multi_page_cache = mtk_nand_read_multi_page_cache;
+		// MSG(INIT, "Device %x support cache read \r\n",id);
+	} else
+		nand_chip->ecc.read_multi_page_cache = NULL;
+#endif
+
 	mtd->oobsize = devinfo.sparesize;
 	hw->nfi_cs_num = 1;
 
 	/* Scan to find existance of the device */
+#if !defined (__KERNEL_NAND__)
+	nand_scan_tail(mtd);
+#else
 	if (nand_scan(mtd, hw->nfi_cs_num)) {
 		MSG(INIT, "%s : nand_scan fail.\n", MODULE_NAME);
 		err = -ENXIO;
 		goto out;
 	}
+#endif
 
 	g_page_size = mtd->writesize;
+#if defined (__KERNEL_NAND__)
 	platform_set_drvdata(pdev, host);
+#endif
 	if (hw->nfi_bus_width == 16) {
 		NFI_SET_REG16(NFI_PAGEFMT_REG16, PAGEFMT_DBYTE_EN);
 	}
@@ -2124,9 +4350,40 @@ static int mtk_nand_probe(struct platform_device *pdev)
 #if defined(MTK_NAND_BMT)
 	nand_chip->chipsize -= (BMT_POOL_SIZE) << nand_chip->phys_erase_shift;
 #endif
+#if defined(FACT_BBT)
+	nand_chip->chipsize -= (FACT_BBT_POOL_SIZE) << nand_chip->phys_erase_shift;
+#endif
 	mtd->size = nand_chip->chipsize;
 
+#if defined (__UBOOT_NAND__)|| defined (__KERNEL_NAND__)
 	CFG_BLOCKSIZE = mtd->erasesize;
+#endif
+
+#ifdef FACT_BBT
+	if (load_fact_bbt(mtd) == 0) {
+		int i;
+		int total_block, bbt_size;
+
+		total_block = 1 << (nand_chip->chip_shift - nand_chip->phys_erase_shift);
+		bbt_size = total_block >> 2;
+
+		//for (i = 0; i < 0x100; i++)
+		//{
+		//      printk("%02x ", fact_bbt[i]);
+		//      if (!((i+1) & 0x1f))
+		//              printk("\n");
+		//}
+		for (i = 0; i < bbt_size; i++) {
+			nand_chip->bbt[i] |= fact_bbt[i];
+		}
+		//printk("\n");
+		for (i = 0; i < bbt_size; i++) {
+			printk("%02x ", nand_chip->bbt[i]);
+			if (!((i + 1) & 0x1f))
+				printk("\n");
+		}
+	}
+#endif
 
 #if defined(MTK_NAND_BMT)
 	if (!g_bmt) {
@@ -2137,71 +4394,1162 @@ static int mtk_nand_probe(struct platform_device *pdev)
 	}
 #endif
 
-	ppdata.of_node = pdev->dev.of_node;
-	err = mtd_device_parse_register(mtd, probe_types, &ppdata, NULL, 0);
+#ifdef PMT
+	nand_chip->chipsize -= (PMT_POOL_SIZE) << nand_chip->phys_erase_shift;
+	mtd->size = nand_chip->chipsize;
+	part_init_pmt(mtd, (u8 *)&g_exist_Partition[0]);
+#if defined (__KERNEL_NAND__)
+	err = add_mtd_partitions(mtd, g_exist_Partition, part_num);
+	//err = mtd_device_register(mtd, g_exist_Partition, part_num);
+#endif
+#else
+#if defined (__KERNEL_NAND__)
+	/* modify partition table */
+	g_pasStatic_Partition[1].size = LARGE_MTD_BOOT_PART_SIZE;
+	g_pasStatic_Partition[2].size = LARGE_MTD_CONFIG_PART_SIZE;
+	g_pasStatic_Partition[3].size = LARGE_MTD_FACTORY_PART_SIZE;
+#ifdef CONFIG_RT2880_ROOTFS_IN_FLASH
+	//g_pasStatic_Partition[4].size = CONFIG_MTD_KERNEL_PART_SIZ;
+	g_pasStatic_Partition[5].size = IMAGE1_SIZE - (LARGE_MTD_BOOT_PART_SIZE + LARGE_MTD_CONFIG_PART_SIZE + LARGE_MTD_FACTORY_PART_SIZE + CONFIG_MTD_KERNEL_PART_SIZ) - MTD_ROOTFS_RESERVED_BLOCK;
+#ifdef RW_ROOTFS
+	g_pasStatic_Partition[5].size = IMAGE1_SIZE - (LARGE_MTD_BOOT_PART_SIZE + LARGE_MTD_CONFIG_PART_SIZE
+						       + LARGE_MTD_FACTORY_PART_SIZE + CONFIG_MTD_KERNEL_PART_SIZ) - MTD_ROOTFS_RESERVED_BLOCK - (FACT_BBT_POOL_SIZE * mtd->erasesize);
+	g_pasStatic_Partition[6].offset = (LARGE_MTD_BOOT_PART_SIZE + LARGE_MTD_CONFIG_PART_SIZE + LARGE_MTD_FACTORY_PART_SIZE);
+	g_pasStatic_Partition[6].size = g_pasStatic_Partition[4].size + g_pasStatic_Partition[5].size + MTD_ROOTFS_RESERVED_BLOCK;
+	// calculate how many bad blocks in kernel partition
+	{
+		int i;
+		int kn_size = CONFIG_MTD_KERNEL_PART_SIZ;	// kernel size
+		int bad_block_no = 0;	// bad block number
+
+		for (i = (LARGE_MTD_BOOT_PART_SIZE + LARGE_MTD_CONFIG_PART_SIZE + LARGE_MTD_FACTORY_PART_SIZE); kn_size > 0; i += mtd->erasesize) {
+			if (mtk_nand_block_bad(mtd, i, 0))
+				bad_block_no++;
+			else
+				kn_size -= mtd->erasesize;
+		}
+		if (bad_block_no) {
+			printk("the bad block number of kernel is %x\n", bad_block_no);
+			if ((bad_block_no * mtd->erasesize) <= MTD_ROOTFS_RESERVED_BLOCK) {
+				g_pasStatic_Partition[4].size += bad_block_no * mtd->erasesize;
+
+			} else
+				printk("Error! Bad block exceed reserve block size, bad block number= %d\n", bad_block_no);
+		}
+	}
+
+#endif
+
+#ifndef CONFIG_SUPPORT_OPENWRT
+#ifdef CONFIG_ROOTFS_IN_FLASH_NO_PADDING
+#error "No code to handle this case in MTK NAND Driver.."
+#endif
+#endif
+
+#else				//CONFIG_RT2880_ROOTFS_IN_RAM
+	g_pasStatic_Partition[4].size = IMAGE1_SIZE - (LARGE_MTD_BOOT_PART_SIZE + LARGE_MTD_CONFIG_PART_SIZE + LARGE_MTD_FACTORY_PART_SIZE);
+#endif
+#ifdef CONFIG_DUAL_IMAGE
+	g_pasStatic_Partition[5].size = g_pasStatic_Partition[4].size;
+	g_pasStatic_Partition[5].offset = IMAGE1_SIZE + (LARGE_MTD_BOOT_PART_SIZE + LARGE_MTD_CONFIG_PART_SIZE + LARGE_MTD_FACTORY_PART_SIZE);
+#ifdef CONFIG_RT2880_ROOTFS_IN_FLASH
+#error "No cpde to handle this case in MTK NAND Driver..."
+#endif
+#endif
+	err = add_mtd_partitions(mtd, g_pasStatic_Partition, part_num);
+	//err = mtd_device_register(mtd, g_pasStatic_Partition, part_num);
+#endif
+#endif
+
+#ifdef _MTK_NAND_DUMMY_DRIVER_
+	dummy_driver_debug = 0;
+#endif
+
+	/* Successfully!! */
 	if (!err) {
 		MSG(INIT, "[mtk_nand] probe successfully!\n");
 		nand_disable_clock();
+#if defined(SKIP_BAD_BLOCK)
 		shift_on_bbt = 1;
-		if (load_fact_bbt(mtd) == 0) {
-			int i;
-			for (i = 0; i < 0x100; i++)
-				nand_chip->bbt[i] |= fact_bbt[i];
-		}
+#if defined(CONFIG_SUPPORT_OPENWRT)
+		printk("rootfs = %x to %x\n", (int)rootfs_offset, (int)rootfs_data_offset);
+#endif
+		// for debug
+		//{
+		//      int i;
+		//      for (i = 0; i < 0x100; i++)
+		//      {
+		//              printk("%02x ", nand_chip->bbt[i]);
+		//              if (!((i+1) & 0x1f))
+		//                      printk("\n");
+		//      }
+		//}
+#endif
 
 		return err;
 	}
 
+	/* Fail!! */
 out:
 	MSG(INIT, "[NFI] mtk_nand_probe fail, err = %d!\n", err);
+#if defined (__KERNEL_NAND__)
 	nand_release(mtd);
 	platform_set_drvdata(pdev, NULL);
 	kfree(host);
+#endif
 	nand_disable_clock();
 	return err;
 }
 
-static int mtk_nand_remove(struct platform_device *pdev)
+#if defined (__KERNEL_NAND__)
+/******************************************************************************
+ * mtk_nand_suspend
+ * 
+ * DESCRIPTION:
+ *   Suspend the nand device! 
+ * 
+ * PARAMETERS: 
+ *   struct platform_device *pdev : device structure
+ * 
+ * RETURNS: 
+ *   0 : Success
+ * 
+ * NOTES: 
+ *   None
+ * 
+ ******************************************************************************/
+static int mtk_nand_suspend(struct platform_device *pdev, pm_message_t state)
+{
+	if (DRV_Reg32(NFI_STA_REG32) & STA_NAND_BUSY) {
+		MSG(POWERCTL, "[NFI] Busy, Suspend Fail !\n");
+		return 1;	// BUSY
+	}
+
+	MSG(POWERCTL, "[NFI] Suspend !\n");
+	return 0;
+}
+
+/******************************************************************************
+ * mtk_nand_resume
+ * 
+ * DESCRIPTION:
+ *   Resume the nand device! 
+ * 
+ * PARAMETERS: 
+ *   struct platform_device *pdev : device structure
+ * 
+ * RETURNS: 
+ *   0 : Success
+ * 
+ * NOTES: 
+ *   None
+ * 
+ ******************************************************************************/
+static int mtk_nand_resume(struct platform_device *pdev)
+{
+	MSG(POWERCTL, "[NFI] Resume !\n");
+	return 0;
+}
+
+/******************************************************************************
+ * mtk_nand_remove
+ * 
+ * DESCRIPTION:
+ *   unregister the nand device file operations ! 
+ * 
+ * PARAMETERS: 
+ *   struct platform_device *pdev : device structure
+ * 
+ * RETURNS: 
+ *   0 : Success
+ * 
+ * NOTES: 
+ *   None
+ * 
+ ******************************************************************************/
+
+static int __devexit mtk_nand_remove(struct platform_device *pdev)
 {
 	struct mtk_nand_host *host = platform_get_drvdata(pdev);
 	struct mtd_info *mtd = &host->mtd;
 
 	nand_release(mtd);
+
 	kfree(host);
+
 	nand_disable_clock();
 
 	return 0;
 }
+#endif				/* __KERNEL_NAND__ */
+/******************************************************************************
+ * NAND OTP operations
+ * ***************************************************************************/
+#if (NAND_OTP_SUPPORT && SAMSUNG_OTP_SUPPORT)
+unsigned int samsung_OTPQueryLength(unsigned int *QLength)
+{
+	*QLength = SAMSUNG_OTP_PAGE_NUM * g_page_size;
+	return 0;
+}
 
-static const struct of_device_id mt7621_nand_match[] = {
-	{.compatible = "mtk,mt7621-nand"},
-	{},
+unsigned int samsung_OTPRead(unsigned int PageAddr, void *BufferPtr, void *SparePtr)
+{
+	struct mtd_info *mtd = &host->mtd;
+	unsigned int rowaddr, coladdr;
+	unsigned int u4Size = g_page_size;
+	unsigned int timeout = 0xFFFF;
+	unsigned int bRet;
+	unsigned int sec_num = mtd->writesize >> 9;
+
+	if (PageAddr >= SAMSUNG_OTP_PAGE_NUM) {
+		return OTP_ERROR_OVERSCOPE;
+	}
+
+	/* Col -> Row; LSB first */
+	coladdr = 0x00000000;
+	rowaddr = Samsung_OTP_Page[PageAddr];
+
+	MSG(OTP, "[%s]:(COLADDR) [0x%08x]/(ROWADDR)[0x%08x]\n", __func__, coladdr, rowaddr);
+
+	/* Power on NFI HW component. */
+	//nand_enable_clock();
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
+	nand_get_device(mtd, FL_READING);
+#else
+	nand_get_device((struct nand_chip *)mtd->priv, mtd, FL_READING);
+#endif
+	mtk_nand_reset();
+	(void)mtk_nand_set_command(0x30);
+	mtk_nand_reset();
+	(void)mtk_nand_set_command(0x65);
+
+	MSG(OTP, "[%s]: Start to read data from OTP area\n", __func__);
+
+	if (!mtk_nand_reset()) {
+		bRet = OTP_ERROR_RESET;
+		goto cleanup;
+	}
+
+	mtk_nand_set_mode(CNFG_OP_READ);
+	NFI_SET_REG16(NFI_CNFG_REG16, CNFG_READ_EN);
+	DRV_WriteReg16(NFI_CON_REG16, sec_num << CON_NFI_SEC_SHIFT);
+
+	DRV_WriteReg32(NFI_STRADDR_REG32, __virt_to_phys(BufferPtr));
+	NFI_SET_REG16(NFI_CNFG_REG16, CNFG_AHB);
+
+	if (g_bHwEcc) {
+		NFI_SET_REG16(NFI_CNFG_REG16, CNFG_HW_ECC_EN);
+	} else {
+		NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_HW_ECC_EN);
+	}
+	mtk_nand_set_autoformat(true);
+	if (g_bHwEcc) {
+		ECC_Decode_Start();
+	}
+	if (!mtk_nand_set_command(NAND_CMD_READ0)) {
+		bRet = OTP_ERROR_BUSY;
+		goto cleanup;
+	}
+
+	if (!mtk_nand_set_address(coladdr, rowaddr, 2, 3)) {
+		bRet = OTP_ERROR_BUSY;
+		goto cleanup;
+	}
+
+	if (!mtk_nand_set_command(NAND_CMD_READSTART)) {
+		bRet = OTP_ERROR_BUSY;
+		goto cleanup;
+	}
+
+	if (!mtk_nand_status_ready(STA_NAND_BUSY)) {
+		bRet = OTP_ERROR_BUSY;
+		goto cleanup;
+	}
+
+	if (!mtk_nand_read_page_data(mtd, BufferPtr, u4Size)) {
+		bRet = OTP_ERROR_BUSY;
+		goto cleanup;
+	}
+
+	if (!mtk_nand_status_ready(STA_NAND_BUSY)) {
+		bRet = OTP_ERROR_BUSY;
+		goto cleanup;
+	}
+
+	mtk_nand_read_fdm_data(SparePtr, sec_num);
+
+	mtk_nand_stop_read();
+
+	MSG(OTP, "[%s]: End to read data from OTP area\n", __func__);
+
+	bRet = OTP_SUCCESS;
+
+cleanup:
+
+	mtk_nand_reset();
+	(void)mtk_nand_set_command(0xFF);
+	nand_release_device(mtd);
+	return bRet;
+}
+
+unsigned int samsung_OTPWrite(unsigned int PageAddr, void *BufferPtr, void *SparePtr)
+{
+	struct mtd_info *mtd = &host->mtd;
+	unsigned int rowaddr, coladdr;
+	unsigned int u4Size = g_page_size;
+	unsigned int timeout = 0xFFFF;
+	unsigned int bRet;
+	unsigned int sec_num = mtd->writesize >> 9;
+
+	if (PageAddr >= SAMSUNG_OTP_PAGE_NUM) {
+		return OTP_ERROR_OVERSCOPE;
+	}
+
+	/* Col -> Row; LSB first */
+	coladdr = 0x00000000;
+	rowaddr = Samsung_OTP_Page[PageAddr];
+
+	MSG(OTP, "[%s]:(COLADDR) [0x%08x]/(ROWADDR)[0x%08x]\n", __func__, coladdr, rowaddr);
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
+	nand_get_device(mtd, FL_READING);
+#else
+	nand_get_device((struct nand_chip *)mtd->priv, mtd, FL_READING);
+#endif
+	mtk_nand_reset();
+	(void)mtk_nand_set_command(0x30);
+	mtk_nand_reset();
+	(void)mtk_nand_set_command(0x65);
+
+	MSG(OTP, "[%s]: Start to write data to OTP area\n", __func__);
+
+	if (!mtk_nand_reset()) {
+		bRet = OTP_ERROR_RESET;
+		goto cleanup;
+	}
+
+	mtk_nand_set_mode(CNFG_OP_PRGM);
+
+	NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_READ_EN);
+
+	DRV_WriteReg16(NFI_CON_REG16, sec_num << CON_NFI_SEC_SHIFT);
+
+	DRV_WriteReg32(NFI_STRADDR_REG32, __virt_to_phys(BufferPtr));
+	NFI_SET_REG16(NFI_CNFG_REG16, CNFG_AHB);
+
+	if (g_bHwEcc) {
+		NFI_SET_REG16(NFI_CNFG_REG16, CNFG_HW_ECC_EN);
+	} else {
+		NFI_CLN_REG16(NFI_CNFG_REG16, CNFG_HW_ECC_EN);
+	}
+	mtk_nand_set_autoformat(true);
+
+	ECC_Encode_Start();
+
+	if (!mtk_nand_set_command(NAND_CMD_SEQIN)) {
+		bRet = OTP_ERROR_BUSY;
+		goto cleanup;
+	}
+
+	if (!mtk_nand_set_address(coladdr, rowaddr, 2, 3)) {
+		bRet = OTP_ERROR_BUSY;
+		goto cleanup;
+	}
+
+	if (!mtk_nand_status_ready(STA_NAND_BUSY)) {
+		bRet = OTP_ERROR_BUSY;
+		goto cleanup;
+	}
+
+	mtk_nand_write_fdm_data((struct nand_chip *)mtd->priv, BufferPtr, sec_num);
+	(void)mtk_nand_write_page_data(mtd, BufferPtr, u4Size);
+	if (!mtk_nand_check_RW_count(u4Size)) {
+		MSG(OTP, "[%s]: Check RW count timeout !\n", __func__);
+		bRet = OTP_ERROR_TIMEOUT;
+		goto cleanup;
+	}
+
+	mtk_nand_stop_write();
+	(void)mtk_nand_set_command(NAND_CMD_PAGEPROG);
+	while (DRV_Reg32(NFI_STA_REG32) & STA_NAND_BUSY) ;
+
+	bRet = OTP_SUCCESS;
+
+	MSG(OTP, "[%s]: End to write data to OTP area\n", __func__);
+
+cleanup:
+	mtk_nand_reset();
+	(void)mtk_nand_set_command(0xFF);
+	nand_release_device(mtd);
+	return bRet;
+}
+
+static int mt_otp_open(struct inode *inode, struct file *filp)
+{
+	MSG(OTP, "[%s]:(MAJOR)%d:(MINOR)%d\n", __func__, MAJOR(inode->i_rdev), MINOR(inode->i_rdev));
+	filp->private_data = (int *)OTP_MAGIC_NUM;
+	return 0;
+}
+
+static int mt_otp_release(struct inode *inode, struct file *filp)
+{
+	MSG(OTP, "[%s]:(MAJOR)%d:(MINOR)%d\n", __func__, MAJOR(inode->i_rdev), MINOR(inode->i_rdev));
+	return 0;
+}
+
+static int mt_otp_access(unsigned int access_type, unsigned int offset, void *buff_ptr, unsigned int length, unsigned int *status)
+{
+	unsigned int i = 0, ret = 0;
+	char *BufAddr = (char *)buff_ptr;
+	unsigned int PageAddr, AccessLength = 0;
+	int Status = 0;
+
+	static char *p_D_Buff = NULL;
+	char S_Buff[64];
+
+	if (!(p_D_Buff = kmalloc(g_page_size, GFP_KERNEL))) {
+		ret = -ENOMEM;
+		*status = OTP_ERROR_NOMEM;
+		goto exit;
+	}
+
+	MSG(OTP, "[%s]: %s (0x%x) length:(%d bytes) !\n", __func__, access_type ? "WRITE" : "READ", offset, length);
+
+	while (1) {
+		PageAddr = offset / g_page_size;
+		if (FS_OTP_READ == access_type) {
+			memset(p_D_Buff, 0xff, g_page_size);
+			memset(S_Buff, 0xff, (sizeof(char) * 64));
+
+			MSG(OTP, "[%s]: Read Access of page (%d)\n", __func__, PageAddr);
+
+			Status = g_mtk_otp_fuc.OTPRead(PageAddr, p_D_Buff, &S_Buff);
+			*status = Status;
+
+			if (OTP_SUCCESS != Status) {
+				MSG(OTP, "[%s]: Read status (%d)\n", __func__, Status);
+				break;
+			}
+
+			AccessLength = g_page_size - (offset % g_page_size);
+
+			if (length >= AccessLength) {
+				memcpy(BufAddr, (p_D_Buff + (offset % g_page_size)), AccessLength);
+			} else {
+				//last time
+				memcpy(BufAddr, (p_D_Buff + (offset % g_page_size)), length);
+			}
+		} else if (FS_OTP_WRITE == access_type) {
+			AccessLength = g_page_size - (offset % g_page_size);
+			memset(p_D_Buff, 0xff, g_page_size);
+			memset(S_Buff, 0xff, (sizeof(char) * 64));
+
+			if (length >= AccessLength) {
+				memcpy((p_D_Buff + (offset % g_page_size)), BufAddr, AccessLength);
+			} else {
+				//last time
+				memcpy((p_D_Buff + (offset % g_page_size)), BufAddr, length);
+			}
+
+			Status = g_mtk_otp_fuc.OTPWrite(PageAddr, p_D_Buff, &S_Buff);
+			*status = Status;
+
+			if (OTP_SUCCESS != Status) {
+				MSG(OTP, "[%s]: Write status (%d)\n", __func__, Status);
+				break;
+			}
+		} else {
+			MSG(OTP, "[%s]: Error, not either read nor write operations !\n", __func__);
+			break;
+		}
+
+		offset += AccessLength;
+		BufAddr += AccessLength;
+		if (length <= AccessLength) {
+			length = 0;
+			break;
+		} else {
+			length -= AccessLength;
+			MSG(OTP, "[%s]: Remaining %s (%d) !\n", __func__, access_type ? "WRITE" : "READ", length);
+		}
+	}
+error:
+	kfree(p_D_Buff);
+exit:
+	return ret;
+}
+
+static long mt_otp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
+{
+	int ret = 0, i = 0;
+	static char *pbuf = NULL;
+
+	void __user *uarg = (void __user *)arg;
+	struct otp_ctl otpctl;
+
+	/* Lock */
+	spin_lock(&g_OTPLock);
+
+	if (copy_from_user(&otpctl, uarg, sizeof(struct otp_ctl))) {
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	if (false == g_bInitDone) {
+		MSG(OTP, "ERROR: NAND Flash Not initialized !!\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	if (!(pbuf = kmalloc(sizeof(char) * otpctl.Length, GFP_KERNEL))) {
+		ret = -ENOMEM;
+		goto exit;
+	}
+
+	switch (cmd) {
+	case OTP_GET_LENGTH:
+		MSG(OTP, "OTP IOCTL: OTP_GET_LENGTH\n");
+		g_mtk_otp_fuc.OTPQueryLength(&otpctl.QLength);
+		otpctl.status = OTP_SUCCESS;
+		MSG(OTP, "OTP IOCTL: The Length is %d\n", otpctl.QLength);
+		break;
+	case OTP_READ:
+		MSG(OTP, "OTP IOCTL: OTP_READ Offset(0x%x), Length(0x%x) \n", otpctl.Offset, otpctl.Length);
+		memset(pbuf, 0xff, sizeof(char) * otpctl.Length);
+
+		mt_otp_access(FS_OTP_READ, otpctl.Offset, pbuf, otpctl.Length, &otpctl.status);
+
+		if (copy_to_user(otpctl.BufferPtr, pbuf, (sizeof(char) * otpctl.Length))) {
+			MSG(OTP, "OTP IOCTL: Copy to user buffer Error !\n");
+			goto error;
+		}
+		break;
+	case OTP_WRITE:
+		MSG(OTP, "OTP IOCTL: OTP_WRITE Offset(0x%x), Length(0x%x) \n", otpctl.Offset, otpctl.Length);
+		if (copy_from_user(pbuf, otpctl.BufferPtr, (sizeof(char) * otpctl.Length))) {
+			MSG(OTP, "OTP IOCTL: Copy from user buffer Error !\n");
+			goto error;
+		}
+		mt_otp_access(FS_OTP_WRITE, otpctl.Offset, pbuf, otpctl.Length, &otpctl.status);
+		break;
+	default:
+		ret = -EINVAL;
+	}
+
+	ret = copy_to_user(uarg, &otpctl, sizeof(struct otp_ctl));
+
+error:
+	kfree(pbuf);
+exit:
+	spin_unlock(&g_OTPLock);
+	return ret;
+}
+
+static struct file_operations nand_otp_fops = {
+	.owner = THIS_MODULE,
+	.unlocked_ioctl = mt_otp_ioctl,
+	.open = mt_otp_open,
+	.release = mt_otp_release,
 };
 
-MODULE_DEVICE_TABLE(of, mt7621_nand_match);
+static struct miscdevice nand_otp_dev = {
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = "otp",
+	.fops = &nand_otp_fops,
+};
+#endif
 
+#if defined (__KERNEL_NAND__)
+/******************************************************************************
+Device driver structure
+******************************************************************************/
 static struct platform_driver mtk_nand_driver = {
 	.probe = mtk_nand_probe,
 	.remove = mtk_nand_remove,
+	.suspend = mtk_nand_suspend,
+	.resume = mtk_nand_resume,
 	.driver = {
 		   .name = "MT7621-NAND",
 		   .owner = THIS_MODULE,
-		   .of_match_table = mt7621_nand_match,
 		   },
 };
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
+static const struct file_operations mtk_nand_proc_ops = {
+	.read = mtk_nand_proc_read,
+	.write = mtk_nand_proc_write,
+};
+#endif
+/******************************************************************************
+ * mtk_nand_init
+ * 
+ * DESCRIPTION: 
+ *   Init the device driver ! 
+ * 
+ * PARAMETERS: 
+ *   None
+ * 
+ * RETURNS: 
+ *   None
+ * 
+ * NOTES: 
+ *   None
+ * 
+ ******************************************************************************/
 static int __init mtk_nand_init(void)
 {
+	struct proc_dir_entry *entry;
+#if defined (__INTERNAL_USE_AHB_MODE__)
+	g_i4Interrupt = 1;
+#else
+	g_i4Interrupt = 0;
+#endif
+
+	if (ra_check_flash_type() != BOOT_FROM_NAND) {	/* NAND */
+		return 0;
+	}
+#if NAND_OTP_SUPPORT
+	int err = 0;
+	MSG(OTP, "OTP: register NAND OTP device ...\n");
+	err = misc_register(&nand_otp_dev);
+	if (unlikely(err)) {
+		MSG(OTP, "OTP: failed to register NAND OTP device!\n");
+		return err;
+	}
+	spin_lock_init(&g_OTPLock);
+#endif
+
+#if (NAND_OTP_SUPPORT && SAMSUNG_OTP_SUPPORT)
+	g_mtk_otp_fuc.OTPQueryLength = samsung_OTPQueryLength;
+	g_mtk_otp_fuc.OTPRead = samsung_OTPRead;
+	g_mtk_otp_fuc.OTPWrite = samsung_OTPWrite;
+#endif
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3,10,13)
+	entry = proc_create(PROCNAME, 0666, NULL, &mtk_nand_proc_ops);
+	if (entry == NULL) {
+		MSG(INIT, "MediaTek Nand : unable to create /proc entry\n");
+		return -ENOMEM;
+	}
+#else
+	entry = create_proc_entry(PROCNAME, 0666, NULL);
+	if (entry == NULL) {
+		MSG(INIT, "MediaTek Nand : unable to create /proc entry\n");
+		return -ENOMEM;
+	}
+	entry->read_proc = mtk_nand_proc_read;
+	entry->write_proc = mtk_nand_proc_write;
+#endif
 	printk("MediaTek Nand driver init, version %s\n", VERSION);
 
 	return platform_driver_register(&mtk_nand_driver);
 }
 
+/******************************************************************************
+ * mtk_nand_exit
+ * 
+ * DESCRIPTION: 
+ *   Free the device driver ! 
+ * 
+ * PARAMETERS: 
+ *   None
+ * 
+ * RETURNS: 
+ *   None
+ * 
+ * NOTES: 
+ *   None
+ * 
+ ******************************************************************************/
 static void __exit mtk_nand_exit(void)
 {
+	MSG(INIT, "MediaTek Nand driver exit, version %s\n", VERSION);
+#if NAND_OTP_SUPPORT
+	misc_deregister(&nand_otp_dev);
+#endif
+
+#ifdef SAMSUNG_OTP_SUPPORT
+	g_mtk_otp_fuc.OTPQueryLength = NULL;
+	g_mtk_otp_fuc.OTPRead = NULL;
+	g_mtk_otp_fuc.OTPWrite = NULL;
+#endif
+
 	platform_driver_unregister(&mtk_nand_driver);
+	remove_proc_entry(PROCNAME, NULL);
 }
 
 module_init(mtk_nand_init);
 module_exit(mtk_nand_exit);
 MODULE_LICENSE("GPL");
+#endif
+
+#if defined(__UBOOT_NAND__) || defined (__BOOT_NAND__)
+int ranand_read(char *buf, unsigned int from, int datalen)
+{
+	int page, i = 0;
+	size_t retlen = 0;
+	loff_t addr = from;
+	char *buffers, *buffers_orig;
+	struct mtd_info *mtd;
+	struct nand_chip *nand_chip;
+
+	if (buf == 0)
+		return 0;
+
+	mtd = &host->mtd;
+	nand_chip = &host->nand_chip;
+
+	buffers_orig = (u8 *)malloc(mtd->writesize + mtd->oobsize + 32);
+
+	if (buffers_orig == NULL)
+		return 0;
+
+	buffers = (((u32)buffers_orig + 15) / 16) * 16;
+
+/* while (datalen || ooblen) {*/
+	while (datalen) {
+		int len;
+		int ret;
+		int offs;
+		page = (unsigned int)(addr >> nand_chip->page_shift);
+#ifdef CONFIG_BADBLOCK_CHECK
+		ret = mtk_nand_block_bad_hw(mtd, addr);
+		/* if we have a bad block, read from next block instead */
+		if (ret) {
+			printf("%s: skip reading a bad block %x ->", __func__, (unsigned int)addr);
+			addr += mtd->erasesize;
+			printf(" %x\n", (unsigned int)addr);
+			continue;
+		}
+#endif
+
+		if ((datalen > mtd->writesize) && ((page & 0x1f) == 0))
+			printf(".");
+
+		//FIXME, something strange here, some page needs 2 more tries to guarantee read success.
+
+		mtk_nand_command_bp(mtd, NAND_CMD_READ0, 0, page);
+
+		//ret = mtk_nand_read_page_hwecc(mtd, (struct nand_chip *)&host->nand_chip, buffers, page);
+		ret = mtk_nand_read_page(mtd, (struct nand_chip *)&host->nand_chip, buffers, page);
+
+		if (ret) {
+			addr += mtd->erasesize;
+			printf("jump to %x\n", (unsigned int)addr);
+			continue;
+		}
+		// data read
+		offs = addr & (mtd->writesize - 1);
+		len = min(datalen, mtd->writesize - offs);
+
+		if (buf && len > 0) {
+			memcpy(buf, buffers + offs, len);	// we can not sure ops->buf wether is DMA-able.
+
+			buf += len;
+			datalen -= len;
+			retlen += len;
+
+		}
+		// address go further to next page, instead of increasing of length of write. This avoids some special cases wrong.
+		addr = (page + 1) << (nand_chip->page_shift);
+	}
+	if (datalen > (mtd->writesize + mtd->oobsize))
+		printf("\n");
+#if !defined (__BOOT_NAND__)
+	free(buffers_orig);
+#endif
+	return retlen;
+}
+#endif
+#if defined(__UBOOT_NAND__)
+int ranand_erase(unsigned int offs, u32 len)
+{
+	int page, status;
+	int ret = 0;
+	int result;
+	struct mtd_info *mtd;
+	struct nand_chip *nand_chip;
+	int lowlevel_erase = 0;
+
+	ra_dbg("%s: start:%x, len:%x \n", __func__, offs, len);
+
+	mtd = &host->mtd;
+	nand_chip = &host->nand_chip;
+
+	len = max(len, mtd->erasesize);
+
+#define BLOCK_ALIGNED(a) ((a) & (mtd->erasesize - 1))
+
+	if (BLOCK_ALIGNED(offs) || BLOCK_ALIGNED(len)) {
+		ra_dbg("%s: erase block not aligned, addr:%x len:%x %x\n", __func__, offs, len, mtd->erasesize);
+		return -1;
+	}
+
+	while (len) {
+		page = (int)(offs >> nand_chip->page_shift);
+		/* select device and check wp */
+#ifdef CONFIG_BADBLOCK_CHECK
+		/* if we have a bad block, we do not erase bad blocks */
+		result = mtk_nand_block_bad_hw(mtd, offs);
+		if (result) {
+			printf("%s: attempt to erase a bad block at 0x%08x\n", __func__, offs);
+			ret++;
+			offs += mtd->erasesize;
+			continue;
+		}
+#endif
+
+		status = mtk_nand_erase(mtd, page);
+
+		/* See if block erase succeeded */
+		if (status & NAND_STATUS_FAIL) {
+			printf("%s: failed erase, page 0x%08x status=%08X\n", __func__, page, status);
+			//return -1;
+			ret = -1;
+		}
+		printf(".");
+		/* Increment page address and decrement length */
+		len -= mtd->erasesize;
+		offs += mtd->erasesize;
+	}
+
+	return ret;
+}
+
+int ranand_write(char *buf, unsigned int to, int datalen)
+{
+	int page, i = 0;
+	size_t retlen = 0;
+	unsigned int addr = to;
+	char *buffers, *buffers_orig;
+	struct mtd_info *mtd;
+	struct nand_chip *nand_chip;
+
+	mtd = &host->mtd;
+	nand_chip = &host->nand_chip;
+
+	if (buf == 0)
+		datalen = 0;
+
+	buffers_orig = (u8 *)malloc(mtd->writesize + mtd->oobsize + 32);
+	memset(buffers_orig, 0x0ff, mtd->writesize + mtd->oobsize + 32);
+	if (buffers_orig == NULL)
+		return -1;
+
+	buffers = (((u32)buffers_orig + 15) / 16) * 16;
+	// page write
+	while (datalen) {
+		int len;
+		int ret;
+		int offs;
+
+		page = (int)(addr >> nand_chip->page_shift);
+
+		memset(buffers_orig, 0x0ff, mtd->writesize + mtd->oobsize + 32);
+
+		// data write
+		offs = addr & (mtd->writesize - 1);
+
+		//len = min(datalen, CFG_PAGESIZE - offs);
+		len = min(datalen, mtd->writesize - offs);
+
+		if (buf && len > 0) {
+			memcpy(buffers + offs, buf, len);	// we can not sure ops->buf wether is DMA-able.
+
+			buf += len;
+			datalen -= len;
+			retlen += len;
+		}
+		ret = mtk_nand_write_page(mtd, nand_chip, buffers, page, 0, 0);
+
+		if (ret) {
+			free(buffers_orig);
+			/* nand_bbt_set(ra, addr >> ra->erase_shift, BBT_TAG_BAD); */
+			return -1;
+		}
+#ifdef CONFIG_BADBLOCK_CHECK
+		mtk_nand_command_bp(mtd, NAND_CMD_READ0, 0, page);
+
+		ret = mtk_nand_verify_buf(mtd, buffers, len);
+		if (ret) {
+			mtk_nand_block_markbad(mtd, addr);
+			free(buffers_orig);
+			/* nand_bbt_set(ra, addr >> ra->erase_shift, BBT_TAG_BAD); */
+			return -1;
+		}
+#endif
+		addr = (page + 1) << (nand_chip->page_shift);
+	}
+	free(buffers_orig);
+	return retlen;
+}
+
+int ranand_erase_write(char *buf, unsigned int offs, int count)
+{
+	int blocksize;
+	int blockmask;
+	int rc;
+	struct mtd_info *mtd;
+	struct nand_chip *nand_chip;
+
+	mtd = &host->mtd;
+	nand_chip = &host->nand_chip;
+	blocksize = mtd->erasesize;
+	blockmask = blocksize - 1;
+
+	if ((uint64_t) count > (nand_chip->chipsize - (uint64_t) (CFG_BOOTLOADER_SIZE + CFG_CONFIG_SIZE + CFG_FACTORY_SIZE))) {
+		printf("Abort: image size larger than %lld!\n\n", nand_chip->chipsize - (uint64_t) (CFG_BOOTLOADER_SIZE + CFG_CONFIG_SIZE + CFG_FACTORY_SIZE));
+		return -1;
+	}
+
+	while (count > 0) {
+#define BLOCK_ALIGNED(a) ((a) & (blocksize - 1))
+		int i;
+		if (BLOCK_ALIGNED(offs) || (count < blocksize)) {
+			char *block;
+			unsigned int piece, blockaddr;
+			int piece_size;
+			char *block_orig;
+
+			block_orig = malloc(blocksize + 64);
+			if (!block_orig) {
+				printf("%s: malloc block failed,blocksize=%d\n", __func__, blocksize);
+				return -1;
+			}
+
+			block = (((u32)block_orig + 15) / 16) * 16;
+			blockaddr = offs & ~blockmask;
+			printf("erase_write to %08X buf=%08X\n", blockaddr, block);
+		      try_next_0:
+			if (ranand_read(block, blockaddr, blocksize) != blocksize) {
+				printf("%s : ranand_read failed\n");
+				free(block_orig);
+				return -2;
+			}
+
+			piece = offs & blockmask;
+			piece_size = min(count, blocksize - piece);
+			memcpy(block + piece, buf, piece_size);
+
+			rc = ranand_erase(blockaddr, blocksize);
+			ra_dbg("(%d)offs=%d piece=%d piece_size=%d rc=%d\n", __LINE__, offs, piece, piece_size, rc);
+
+#ifdef CONFIG_BADBLOCK_CHECK
+			if (rc >= 1) {
+				printf("bad block: %x, try next: ", blockaddr);
+				blockaddr += blocksize;
+				printf("%x\n", blockaddr);
+				goto try_next_0;
+			} else
+#endif
+			if (rc != 0) {
+				free(block_orig);
+				return -3;
+			}
+
+			if (ranand_write(block, blockaddr, blocksize) != blocksize) {
+				free(block_orig);
+				return -4;
+			}
+
+			free(block_orig);
+
+			buf += piece_size;
+			offs += piece_size;
+			count -= piece_size;
+		} else {
+			unsigned int aligned_size = blocksize;
+
+		      try_next_1:
+			rc = ranand_erase(offs, aligned_size);
+#ifdef CONFIG_BADBLOCK_CHECK
+			if (rc >= 1) {
+				printf("bad block: %x, try next: ", offs);
+				offs += blocksize;
+				printf("%x\n", offs);
+				goto try_next_1;
+			} else
+#endif
+			if (rc != 0) {
+				return -1;
+			}
+			if (ranand_write(buf, offs, aligned_size) != aligned_size) {
+				return -1;
+			}
+
+			printf(".");
+
+			buf += aligned_size;
+			offs += aligned_size;
+			count -= aligned_size;
+		}
+	}
+
+	printf("Done!\n");
+	return 0;
+}
+
+#define NAND_FLASH_DBG_CMD
+#ifdef NAND_FLASH_DBG_CMD
+int ralink_nand_command(cmd_tbl_t * cmdtp, int flag, int argc, char *argv[])
+{
+	unsigned int addr;
+	int len, i;
+	u8 *p = NULL;
+	struct mtd_info *mtd;
+	struct nand_chip *nand_chip;
+	int column, page_addr;
+
+	mtd = &host->mtd;
+	nand_chip = &host->nand_chip;
+
+	if (!strncmp(argv[1], "id", 3)) {
+		u8 id[4];
+		/* Send the command for reading device ID */
+		mtk_nand_command_bp(mtd, NAND_CMD_READID, 0x00, -1);
+
+		/* Read manufacturer and device IDs */
+		id[0] = mtk_nand_read_byte(mtd);
+		id[1] = mtk_nand_read_byte(mtd);
+		id[2] = mtk_nand_read_byte(mtd);
+		id[3] = mtk_nand_read_byte(mtd);
+		mtk_nand_read_byte(mtd);
+		printf("flash id: %x %x %x %x\n", id[0], id[1], id[2], id[3]);
+	} else if (!strncmp(argv[1], "read", 5)) {
+		addr = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+
+		printf("pagemask=%08X, chipize=%08X\n", nand_chip->pagemask, nand_chip->chipsize);
+		printf("(%d) chip->page_shift=%d\n", __LINE__, nand_chip->page_shift);
+
+		len = (int)simple_strtoul(argv[3], NULL, 16);
+		p = (u8 *)malloc(len);
+		if (!p) {
+			printf("malloc error\n");
+			return 0;
+		}
+		len = ranand_read(p, addr, len);	//reuse len
+		printf("read len: %d\n", len);
+		for (i = 0; i < len; i++) {
+			printf("%02x ", p[i]);
+		}
+		printf("\n");
+		free(p);
+	} else if (!strncmp(argv[1], "page", 5)) {
+		int j;
+		u8 *p2;
+		page_addr = (unsigned int)simple_strtoul(argv[2], NULL, 16);	//page
+		column = 0;
+		p = (u8 *)malloc(mtd->writesize);
+		len = ranand_read(p, page_addr << nand_chip->page_shift, mtd->writesize);
+		printf("page 0x%x:\n", page_addr);
+		p2 = p;
+		for (j = 0; j < mtd->writesize / 512; j++) {
+			for (i = 0; i < 512; i++)
+				printf("%02x%c", p2[i], (i % 32 == 31) ? '\n' : ' ');
+			p2 += 512;
+			printf("\n");
+		}
+		printf("oob:\n");
+		mtk_nand_read_oob(mtd, nand_chip, page_addr, 0);
+		for (i = 0; i < mtd->oobsize; i++)
+			printf("%02x%c", nand_chip->oob_poi[i], (i % 32 == 31) ? '\n' : ' ');
+
+		free(p);
+		printf("\n");
+
+	} else if (!strncmp(argv[1], "erase", 6)) {
+		addr = (unsigned int)simple_strtoul(argv[2], NULL, 16);
+		len = (int)simple_strtoul(argv[3], NULL, 16);
+		printf("erase addr=%08X, len=%d\n", addr, len);
+		if (ranand_erase(addr, len) == -1)
+			printf("erase failed\n");
+		else
+			printf("erase finish\n");
+	} else if (!strncmp(argv[1], "write", 6)) {
+		unsigned int addr, l;
+		u8 *porig = NULL;
+		u8 t[3] = { 0 };
+		u8 oob_poi[288];
+
+		addr = simple_strtoul(argv[2], NULL, 16);
+		page_addr = addr >> nand_chip->page_shift;
+		l = strlen(argv[3]) / 2;
+
+		porig = malloc(mtd->writesize + 32);
+		if (!porig) {
+			printf("malloc error\n");
+			return 0;
+		}
+		p = (((u32)porig + 31) / 32) * 32;
+		for (i = 0; i < l; i++) {
+			t[0] = argv[3][2 * i];
+			t[1] = argv[3][2 * i + 1];
+			*(p + i) = simple_strtoul(t, NULL, 16);
+		}
+#ifndef ECC_ENABLE
+		mtk_nand_read_oob(mtd, nand_chip, page_addr, 0);
+		memcpy(oob_poi, nand_chip->oob_poi, mtd->oobsize);
+		printf("oob [page %x]:\n", page_addr);
+		for (i = 0; i < mtd->oobsize; i++)
+			printf("%02x%c", nand_chip->oob_poi[i], (i % 32 == 31) ? '\n' : ' ');
+#endif
+		printf("write offs 0x%x, len 0x%x\n", addr, l);
+		if (ranand_erase_write(p, addr, l) == -1)
+			printf("write failed\n");
+		else
+			printf("write succeed\n");
+#ifndef ECC_ENABLE
+		memcpy(nand_chip->oob_poi, oob_poi, mtd->oobsize);
+		mtk_nand_write_oob(mtd, nand_chip, page_addr);
+#endif
+		free(porig);
+	} else if (!strncmp(argv[1], "oob", 4)) {
+		int sec_num = 1 << (nand_chip->page_shift - 9);
+		int spare_per_sector = mtd->oobsize / sec_num;
+
+		page_addr = (unsigned int)simple_strtoul(argv[2], NULL, 16);	//page
+		addr = (int)(page_addr << nand_chip->page_shift);
+		printf("oob page %x (addr %x):\n", page_addr, addr);
+		mtk_nand_read_oob(mtd, nand_chip, page_addr, 0);
+
+		for (i = 0; i < mtd->oobsize; i++)
+			printf("%02x%c", nand_chip->oob_poi[i], (i % spare_per_sector == spare_per_sector - 1) ? '\n' : ' ');
+		printf("\n");
+	} else if (!strncmp(argv[1], "woob", 5)) {
+		u8 oob_poi[288];
+		u8 t[3] = { 0 };
+		u32 offset, l;
+		page_addr = (unsigned int)simple_strtoul(argv[2], NULL, 16);	//page
+		addr = (int)(page_addr << nand_chip->page_shift);
+		l = strlen(argv[4]) / 2;
+
+		mtk_nand_read_oob(mtd, nand_chip, page_addr, 0);
+		memcpy(oob_poi, nand_chip->oob_poi, mtd->oobsize);
+		offset = (unsigned int)simple_strtoul(argv[3], NULL, 16);
+		p = oob_poi + offset;
+		for (i = 0; i < l; i++) {
+			t[0] = argv[4][2 * i];
+			t[1] = argv[4][2 * i + 1];
+			*(p + i) = simple_strtoul(t, NULL, 16);
+		}
+
+		memcpy(nand_chip->oob_poi, oob_poi, mtd->oobsize);
+		printf("oob page %x (addr %x):\n", page_addr, addr);
+		for (i = 0; i < mtd->oobsize; i++)
+			printf("%02x%c", nand_chip->oob_poi[i], (i % 32 == 31) ? '\n' : ' ');
+		mtk_nand_write_oob(mtd, nand_chip, page_addr);
+	} else if (!strncmp(argv[1], "dump", 5)) {
+		dump_nfi();
+		dump_ecc();
+	} else if (!strncmp(argv[1], "init", 5)) {
+		mtk_nand_probe();
+	} else
+		printf("Usage:\n%s\n use \"help nand\" for detail!\n", cmdtp->usage);
+	return 0;
+}
+
+U_BOOT_CMD(nand, 5, 1, ralink_nand_command,
+	   "nand	- nand command\n",
+	   "nand usage:\n" "  nand id\n" "  nand read <addr> <len>\n" "  nand write <addr> <data...>\n" "  nand page <number>\n" "  nand erase <addr> <len>\n" "  nand oob <number>\n" "  nand dump\n" "  nand init\n");
+
+#endif
+#endif				/* __UBOOT_NAND__ */
