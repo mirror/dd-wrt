@@ -890,6 +890,8 @@ done:
 	return ret;
 }
 
+#define NVRAM_SPACE_MAGIC			0x50534341	/* 'SPAC' */
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
 static int
 #else
@@ -901,10 +903,18 @@ dev_nvram_ioctl(
 #endif
 		       struct file *file, unsigned int cmd, unsigned long arg)
 {
-	if (cmd != NVRAM_MAGIC)
+	switch (cmd) {
+	case NVRAM_MAGIC:
+		nvram_commit();
+		break;
+	case NVRAM_SPACE_MAGIC:
+		return nvram_space;
+		break;
+	default:
 		return -EINVAL;
+		break;
 
-	return nvram_commit();
+	}
 }
 
 static int dev_nvram_mmap(struct file *file, struct vm_area_struct *vma)

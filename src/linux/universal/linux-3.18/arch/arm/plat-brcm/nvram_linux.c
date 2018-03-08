@@ -782,6 +782,8 @@ done:
 	return ret;
 }
 
+#define NVRAM_SPACE_MAGIC			0x50534341	/* 'SPAC' */
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
 static int
 #else
@@ -795,9 +797,19 @@ dev_nvram_ioctl(
 	unsigned int cmd, 
 	unsigned long arg)
 {
-	if (cmd != NVRAM_MAGIC)
+
+	switch (cmd) {
+	case NVRAM_MAGIC:
+		nvram_commit();
+		break;
+	case NVRAM_SPACE_MAGIC:
+		return nvram_space;
+		break;
+	default:
 		return -EINVAL;
-	return nvram_commit();
+		break;
+
+	}
 }
 
 static int
