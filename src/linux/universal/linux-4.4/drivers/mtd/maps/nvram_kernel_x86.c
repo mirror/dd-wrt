@@ -74,7 +74,7 @@ static void early_nvram_init(void)
 	wr = buffer;
 	offs = 0;
 	for (i = 0; i < (NVRAM_SPACE / PAGE_SIZE); i++) {
-		len = kernel_read(srcf,  srcf->f_pos + offs, wr, PAGE_SIZE);
+		len = kernel_read(srcf, srcf->f_pos + offs, wr, PAGE_SIZE);
 		offs += len;
 		wr += PAGE_SIZE;
 	}
@@ -166,12 +166,14 @@ int _nvram_read(char *buf)
 	wr = buf;
 	offs = 0;
 	for (i = 0; i < (NVRAM_SPACE / PAGE_SIZE); i++) {
-		len = kernel_read(srcf,  srcf->f_pos + offs, wr, PAGE_SIZE);
+		len = kernel_read(srcf, srcf->f_pos + offs, wr, PAGE_SIZE);
+		if (!len)
+			break;
 		offs += len;
 		wr += PAGE_SIZE;
 	}
-	if (offs != NVRAM_SPACE || header->magic != NVRAM_MAGIC) {
-		printk(KERN_EMERG "Broken NVRAM found, recovering it (header error) len = %d\n",offs);
+	if (!offs || header->magic != NVRAM_MAGIC) {
+		printk(KERN_EMERG "Broken NVRAM found, recovering it (header error) len = %d\n", offs);
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf, 0, NVRAM_SPACE);
@@ -275,7 +277,7 @@ int nvram_unset(const char *name)
 
 int nvram_commit(void)
 {
-	char *buf,*wr;
+	char *buf, *wr;
 	size_t erasesize, len;
 	int ret;
 	int i;
@@ -455,7 +457,6 @@ static int dev_nvram_ioctl(struct file *file, unsigned int cmd, unsigned long ar
 
 	}
 }
-
 
 static DEFINE_MUTEX(mtd_mutex);
 
