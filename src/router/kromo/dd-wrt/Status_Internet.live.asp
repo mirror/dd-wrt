@@ -3,7 +3,7 @@
 {wan_uptime::<% get_wan_uptime(); %>}
 {pppoe_ac_name::<% nvram_get("pppoe_ac_name"); %>}
 {wan_3g_signal::<% nvram_status_get("wan_3g_signal"); %>}
-{wan_ipaddr::<% nvram_status_get("wan_ipaddr"); %>}
+{wan_ipaddr::<% nvram_status_get("wan_ipaddr","0"); %>}
 {wan_netmask::<% nvram_status_get("wan_netmask"); %>}
 {wan_gateway::<% nvram_status_get("wan_gateway"); %>}
 {wan_dns0::<% nvram_status_get("wan_dns0"); %>}
