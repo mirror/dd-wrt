@@ -371,11 +371,19 @@ done:
 
 static long dev_nvram_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
-	if (cmd != NVRAM_MAGIC) {
-//          printk(KERN_EMERG "Invalid nvram magic %X %X\n",cmd,NVRAM_MAGIC);
+
+	switch (cmd) {
+	case NVRAM_MAGIC:
+		nvram_commit();
+		break;
+	case NVRAM_SPACE_MAGIC:
+		return NVRAM_SPACE;
+		break;
+	default:
 		return -EINVAL;
+		break;
+
 	}
-	return nvram_commit();
 }
 
 //int remap_pfn_range(struct vm_area_struct *vma, unsigned long addr,
@@ -397,10 +405,10 @@ static long nvram_unlocked_ioctl(struct file *file, u_int cmd, u_long arg)
 static int dev_nvram_mmap(struct file *file, struct vm_area_struct *vma)
 {
 	unsigned long offset = virt_to_phys(nvram_buf);
-//	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
-//	printk(KERN_EMERG "vma size %d\n",offset);
+//      vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+//      printk(KERN_EMERG "vma size %d\n",offset);
 	if (remap_pfn_range(vma, vma->vm_start, offset >> PAGE_SHIFT, vma->vm_end - vma->vm_start, vma->vm_page_prot)) {
-	
+
 		return -EAGAIN;
 	}
 	return 0;
