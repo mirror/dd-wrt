@@ -140,7 +140,7 @@ addEvent(window, "unload", function() {
 										</div>
 										 <div class="setting">
 											<div class="label"><% tran("status_inet.wanuptime"); %></div>
-											<span id="wan_uptime"><% get_wan_uptime(); %></span>&nbsp;
+											<span id="wan_uptime"><% get_wan_uptime("1"); %></span>&nbsp;
 										</div>
 										<div class="setting">
 											<div class="label"><% tran("share.ip"); %></div>
