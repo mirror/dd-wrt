@@ -361,6 +361,7 @@ int mtd_write(const char *path, const char *mtd)
 	} else
 		return -1;
 	memcpy(&trx, &etrx.trx, sizeof(struct trx_header));
+	trx.len += sizeof(struct code_header2);
 #else
 
 	if ((fp = fopen(path, "r"))) {
@@ -639,11 +640,7 @@ int mtd_write(const char *path, const char *mtd)
 		/* 
 		 * Check CRC before writing if possible 
 		 */
-#ifdef HAVE_WRT160NL
-		if (count == trx.len + sizeof(struct code_header2)) {
-#else
 		if (count == trx.len) {
-#endif
 			if (crc != trx.crc32) {
 				fprintf(stderr, "%s: Bad CRC\n", path);
 				goto fail;
