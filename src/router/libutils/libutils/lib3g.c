@@ -174,8 +174,15 @@ static void checkreset(unsigned char tty)
 		}
 		if (check)
 			fclose(check);
-		else
+		else {
 			fprintf(stderr, "reset error\n");
+#ifdef HAVE_UNIWIP
+			rmmod("fsl-mph-dr-of");
+			sleep(1);
+			insmod("fsl-mph-dr-of");
+			sleep(5);
+#endif
+		}
 		unlink(SIERRA_DETECTION_FN);
 		detectcontrol_and_data_port();
 		fprintf(stderr, "wakeup card\n");
@@ -184,17 +191,6 @@ static void checkreset(unsigned char tty)
 		insmod("sierra_net");
 	}
 
-	if (check)
-		fclose(check);
-	else {
-		fprintf(stderr, "reset error\n");
-#ifdef HAVE_UNIWIP
-		rmmod("fsl-mph-dr-of");
-		sleep(1);
-		insmod("fsl-mph-dr-of");
-		sleep(5);
-#endif
-	}
 	fprintf(stderr, "wakeup card\n");
 	eval("comgt", "-d", tts, "-s", "/etc/comgt/wakeup.comgt");
 #ifdef HAVE_UNIWIP
