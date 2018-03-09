@@ -5294,7 +5294,7 @@ void ej_get_wan_uptime(webs_t wp, int argc, char_t ** argv)
 	int fmt = 0;
 	char buf[128];
 	if (argc)
-		fmt = atoi(argv[1]);
+		fmt = atoi(argv[0]);
 	if (nvram_match("wan_proto", "disabled"))
 		return;
 	if (nvram_match("wan_ipaddr", "0.0.0.0")) {
