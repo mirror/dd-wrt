@@ -319,7 +319,6 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	FILE *fp2 = NULL;
 #ifdef HAVE_ATH10K
 	int c = getdevicecount();
-	int found = 0;
 	for (i = 0; i < c; i++) {
 		if (nvram_nmatch("disabled", "ath%d_net_mode", i)) {
 			continue;
@@ -337,7 +336,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			int temp;
 			fscanf(fp2, "%d", &temp);
 			fclose(fp2);
-			if (cpufound || found) {
+			if (cpufound) {
 				websWrite(wp, " / ");
 			}
 			int temperature = temp / 1000;
@@ -345,7 +344,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "ath%d %s", i, live_translate("status_router.notavail"));
 			else
 				websWrite(wp, "ath%d %d &#176;C", i, temp / 1000);
-			found = 1;
+			cpufound = 1;
 		}
 	}
 	if (!found && !cpufound)
