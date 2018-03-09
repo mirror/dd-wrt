@@ -65,7 +65,7 @@ char *rfctime(const time_t * timep, char *s)
 /*
  * Report time in RFC-822 format 
  */
-void ej_localtime(webs_t wp, int argc, char_t ** argv)
+static void get_localtime(webs_t wp, int argc, char_t ** argv, int fmt)
 {
 	time_t tm;
 
@@ -76,8 +76,22 @@ void ej_localtime(webs_t wp, int argc, char_t ** argv)
 		char t[64];
 
 		websWrite(wp, rfctime(&tm, t));
-	} else
-		websWrite(wp, "%s", live_translate("status_router.notavail"));
+	} else {
+		if (fmt)
+			websWrite(wp, "<script type=\"text/javascript\">Capture(%s)</script>&nbsp;", live_translate("status_router.notavail"));
+		else
+			websWrite(wp, "%s", live_translate("status_router.notavail"));
+	}
+}
+
+void ej_localtime(webs_t wp, int argc, char_t ** argv)
+{
+	get_localtime(wp, argc, argv, 0);
+}
+
+void ej_localtimejs(webs_t wp, int argc, char_t ** argv)
+{
+	get_localtime(wp, argc, argv, 1);
 }
 
 void ej_dhcp_remaining_time(webs_t wp, int argc, char_t ** argv)
