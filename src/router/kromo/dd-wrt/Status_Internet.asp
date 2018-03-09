@@ -136,7 +136,7 @@ addEvent(window, "unload", function() {
 										</div>
 										<div class="setting" id="wan_acname">
 											<div class="label"><% tran("status_inet.acname"); %></div>
-											<span id="pppoe_ac_name"><% nvram_get("pppoe_ac_name"); %></span>
+											<span id="pppoe_ac_name"><% nvram_get("pppoe_ac_name"); %></span>&nbsp;
 										</div>
 										 <div class="setting">
 											<div class="label"><% tran("status_inet.wanuptime"); %></div>
