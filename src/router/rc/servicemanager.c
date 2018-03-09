@@ -109,8 +109,8 @@ static void _stopcondition(char *method, char *name)
 
 static int handle_service(const char *method, const char *name)
 {
-
-	if (strcmp(name, "hotplug_block")) {
+	int ret = 0;
+	if (strcmp(name, "hotplug_block") && strcmp(method, "restart")) {
 		if (!strcmp(method, "start"))
 			RELEASESTOPPED("stop");
 		if (!strcmp(method, "stop"))
@@ -142,8 +142,12 @@ static int handle_service(const char *method, const char *name)
 	fptr = (void (*)(void))dlsym(handle, service);
 	if (fptr)
 		(*fptr) ();
-	else
-		fprintf(stderr, "function %s not found \n", service);
+	else {
+		if (nvram_matchi("service_debug", 1)) {
+			fprintf(stderr, "function %s not found \n", service);
+		}
+		ret = -1;
+	}
 	dlclose(handle);
 	if (!strcmp(method, "stop")) {
 		if (stops_running)
@@ -157,7 +161,7 @@ static int handle_service(const char *method, const char *name)
 			fprintf(stderr, "calling done %s_%s\n", method, name);
 	}
 #endif
-	return 0;
+	return ret;
 }
 
 static void start_service(char *name)
@@ -293,47 +297,49 @@ static void stop_service_force_f(char *name)
 	FORK(handle_service("stop", name));
 }
 
-static void startstop_delay(char *name, int delay)
+static void _restart_delay(char *name, int delay)
 {
-	void *handle = NULL;
 	if (delay)
 		sleep(delay);
-	RELEASESTOPPED("stop");
-	RELEASESTOPPED("start");
-	handle_service("stop", name);
-	handle_service("start", name);
-	if (handle)
-		dlclose(handle);
+	if (handle_service("restart", name)) {
+		RELEASESTOPPED("stop");
+		RELEASESTOPPED("start");
+		handle_service("stop", name);
+		handle_service("start", name);
+	} else {
+		if (stops_running)
+			stops_running[0]--;
+	}
 }
 
-static void startstop(char *name)
+static void restart(char *name)
 {
 	init_shared();
 	if (stops_running)
 		stops_running[0]++;
-	startstop_delay(name, 0);
+	_restart_delay(name, 0);
 }
 
-static void startstop_fdelay(char *name, int delay)
+static void restart_fdelay(char *name, int delay)
 {
 	init_shared();
 	if (stops_running)
 		stops_running[0]++;
-	FORK(startstop_delay(name, delay));
+	FORK(_restart_delay(name, delay));
 }
 
-static void startstop_f(char *name)
+static void restart_f(char *name)
 {
-	startstop_fdelay(name, 0);
+	restart_fdelay(name, 0);
 }
 
-static int startstop_main(int argc, char **argv)
+static int restart_main(int argc, char **argv)
 {
-	startstop(argv[1]);
+	restart(argv[1]);
 	return 0;
 }
 
-static int startstop_main_f(int argc, char **argv)
+static int restart_main_f(int argc, char **argv)
 {
 	char *name = argv[1];
 	RELEASESTOPPED("stop");
@@ -341,6 +347,6 @@ static int startstop_main_f(int argc, char **argv)
 	init_shared();
 	if (stops_running)
 		stops_running[0]++;
-	FORK(startstop_delay(name, 0));
+	FORK(_restart_delay(name, 0));
 	return 0;
 }

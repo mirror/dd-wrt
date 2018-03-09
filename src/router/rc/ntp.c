@@ -150,7 +150,7 @@ static int do_ntp(void)		// called from ntp_main and
 	if ((abs(now.tv_sec - then.tv_sec) > 100000000)) {
 		sync_daemons();
 		nvram_seti("ntp_success", 1);
-		eval("startstop", "process_monitor");
+		eval("restart", "process_monitor");
 	}
 
 	return 0;

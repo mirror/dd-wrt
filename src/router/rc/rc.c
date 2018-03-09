@@ -176,8 +176,8 @@ static struct MAIN maincalls[] = {
 #endif
 	{"startservices", NULL, start_services_main},
 	{"start_single_service", NULL, start_single_service_main},
-	{"startstop_f", NULL, startstop_main_f},
-	{"startstop", NULL, startstop_main},
+	{"restart_f", NULL, restart_main_f},
+	{"restart", NULL, restart_main},
 	{"stop_running", NULL, stop_running_main},
 	{"softwarerevision", NULL, softwarerevision_main},
 #if !defined(HAVE_MICRO) || defined(HAVE_ADM5120) || defined(HAVE_WRK54G)

@@ -842,7 +842,7 @@ static void handle_wifi(void)
 #endif
 #endif
 		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
-		sysprintf("startstop radio_on");
+		sysprintf("restart radio_on");
 		wifi_mode = 0;
 		break;
 	case 0:
@@ -854,7 +854,7 @@ static void handle_wifi(void)
 #endif
 		// (AOSS) led
 		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) off\n");
-		sysprintf("startstop radio_off");
+		sysprintf("restart radio_off");
 		wifi_mode = 1;
 		break;
 	}
@@ -869,13 +869,13 @@ static void handle_wifi24(void)
 	switch (wifi_mode) {
 	case 1:
 		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
-		sysprintf("startstop radio_on_0");
+		sysprintf("restart radio_on_0");
 		wifi_mode = 0;
 		break;
 	case 0:
 		// (AOSS) led
 		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) off\n");
-		sysprintf("startstop radio_off_0");
+		sysprintf("restart radio_off_0");
 		wifi_mode = 1;
 		break;
 	}
@@ -890,13 +890,13 @@ static void handle_wifi5(void)
 	switch (wifi_mode) {
 	case 1:
 		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
-		sysprintf("startstop radio_on_1");
+		sysprintf("restart radio_on_1");
 		wifi_mode = 0;
 		break;
 	case 0:
 		// (AOSS) led
 		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) off\n");
-		sysprintf("startstop radio_off_1");
+		sysprintf("restart radio_off_1");
 		wifi_mode = 1;
 		break;
 	}
@@ -933,7 +933,7 @@ static void handle_ses(void)
 			dd_syslog(LOG_DEBUG, "AOSS button: turning radio(s) on\n");
 #endif
 #ifndef HAVE_ERC
-			sysprintf("startstop radio_on");
+			sysprintf("restart radio_on");
 #endif
 #endif
 #ifdef HAVE_ERC
@@ -956,7 +956,7 @@ static void handle_ses(void)
 			dd_syslog(LOG_DEBUG, "AOSS button: turning radio(s) off\n");
 #endif
 #ifndef HAVE_ERC
-			sysprintf("startstop radio_off");
+			sysprintf("restart radio_off");
 #endif
 #endif
 #ifdef HAVE_ERC
@@ -973,7 +973,7 @@ static void handle_ses(void)
 	}
 #if defined(HAVE_AOSS) || defined(HAVE_WPS)
 	else if (nvram_matchi("radiooff_button", 2)) {
-		sysprintf("startstop aoss");
+		sysprintf("restart aoss");
 	}
 #endif
 
