@@ -1383,7 +1383,7 @@ status_router.net_conntrack="Active IP Connections";
 status_router.notavail="Not available";
 status_router.legend6="Space Usage";
 status_router.inpvolt="Board Input Voltage";
-status_router.cputemp="CPU Temperature";
+status_router.cputemp="Temperatures";
 
 //help container
 

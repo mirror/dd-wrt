@@ -1441,7 +1441,7 @@ status_router.net_conntrack="Aktiva IP Sessioner";
 status_router.notavail="Ej tillg&auml;nglig";
 status_router.legend6="Anv&auml;nt Utrymme";
 status_router.inpvolt="Inkommande Sp&auml;nning";
-status_router.cputemp="CPU Temperatur";
+status_router.cputemp="Temperatur";
 
 //help container
 hstatus_router.right2="Routerns specifika namn, Som du st&auml;ller in i inst&auml;llnigar (fliken).";
