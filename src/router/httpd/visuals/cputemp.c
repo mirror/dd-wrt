@@ -208,30 +208,30 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 #else
+	FILE *fp = NULL;
+	FILE *fpsys = NULL int TEMP_MUL = 1000;
+	int SYSTEMP_MUL = 1000;
 #ifdef HAVE_GATEWORX
-	int TEMP_MUL = 100;
-
+	TEMP_MUL = 100;
 	if (getRouterBrand() == ROUTER_BOARD_GATEWORX_SWAP)
 		TEMP_MUL = 200;
 
-	FILE *fp = fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input",
-			 "rb");
+	fp = fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-adapter:i2c-0/0-0028/temp_input", "rb");
 	if (!fp)
 		fp = fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/temp1_input", "rb");
 #elif HAVE_LAGUNA
-	int TEMP_MUL = 10;
-	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/temp0_input", "rb");
+	TEMP_MUL = 10;
+	fp = fopen("/sys/bus/i2c/devices/0-0029/temp0_input", "rb");
 #elif HAVE_UNIWIP
-	int TEMP_MUL = 1000;
-	FILE *fp = fopen("/sys/bus/i2c/devices/0-0049/temp1_input", "rb");
+	SYSTEMP_MUL = 10;
+	fp = fopen("/sys/bus/i2c/devices/0-0049/temp1_input", "rb");
 #elif HAVE_VENTANA
-	int TEMP_MUL = 1000;
-	FILE *fp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
+	fp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
+	fpsys = fopen("/sys/class/hwmon/hwmon0/device/temp0_input", "rb");
 #else
-	int TEMP_MUL = 1000;
 #ifdef HAVE_X86
 
-	FILE *fp = fopen("/sys/devices/platform/i2c-1/1-0048/temp1_input", "rb");
+	fp = fopen("/sys/devices/platform/i2c-1/1-0048/temp1_input", "rb");
 	if (!fp) {
 		TEMP_MUL = 100;
 
@@ -297,7 +297,23 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			low = (temp - (high * TEMP_MUL)) / (TEMP_MUL / 10);
 		else
 			low = 0;
-		websWrite(wp, "%d.%d &#176;C", high, low);	// no i2c lm75 found
+		websWrite(wp, "CPU %d.%d &#176;C", high, low);	// no i2c lm75 found
+	}
+	if (fpsys != NULL) {
+		if (cpufound) {
+			websWrite(wp, " / ");
+		}
+		cpufound = 1;
+		int temp;
+		fscanf(fpsys, "%d", &temp);
+		fclose(fpsys);
+		int high = temp / SYSTEMP_MUL;
+		int low;
+		if (SYSTEMP_MUL > 10)
+			low = (temp - (high * SYSTEMP_MUL)) / (SYSTEMP_MUL / 10);
+		else
+			low = 0;
+		websWrite(wp, "SYS %d.%d &#176;C", high, low);	// no i2c lm75 found
 	}
 #endif
 	FILE *fp2 = NULL;
