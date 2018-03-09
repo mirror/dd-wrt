@@ -209,7 +209,8 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	}
 #else
 	FILE *fp = NULL;
-	FILE *fpsys = NULL int TEMP_MUL = 1000;
+	FILE *fpsys = NULL;
+	int TEMP_MUL = 1000;
 	int SYSTEMP_MUL = 1000;
 #ifdef HAVE_GATEWORX
 	TEMP_MUL = 100;
