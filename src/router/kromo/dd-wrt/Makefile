@@ -630,6 +630,9 @@ ifeq ($(CONFIG_TMK),y)
 	cp -f kmt/defaults/config/* $(INSTALLDIR)/etc/config
 	mkdir -p $(INSTALLDIR)/sbin
 	cp -f kmt/defaults/sbin/* $(INSTALLDIR)/sbin/
+ifeq ($(CONFIG_VENTANA),y)
+	rm $(INSTALLDIR)/etc/config/kmtdefaults.startup		
+endif
 endif
 ifeq ($(CONFIG_BKM),y)
 	cp -f bkm/SuperChannel.asp $(INSTALLDIR)/www
