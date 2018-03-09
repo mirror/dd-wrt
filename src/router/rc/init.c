@@ -41,8 +41,8 @@
 #define stop_service_f(a) eval("stopservice_f",a);
 #define stop_service_force_f(a) eval("stopservice_f",a,"-f");
 #define stop_services() eval("stopservices");
-#define startstop(a) eval("startstop",a);
-#define startstop_f(a) eval("startstop_f",a);
+#define restart(a) eval("restart",a);
+#define restart_f(a) eval("restart_f",a);
 
 static void set_term(int fd)
 {

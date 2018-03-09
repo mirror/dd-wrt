@@ -1129,8 +1129,8 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservices
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_single_service
 	cd $(INSTALLDIR)/sbin && ln -sf rc stopservices
-	cd $(INSTALLDIR)/sbin && ln -sf rc startstop
-	cd $(INSTALLDIR)/sbin && ln -sf rc startstop_f
+	cd $(INSTALLDIR)/sbin && ln -sf rc restart
+	cd $(INSTALLDIR)/sbin && ln -sf rc restart_f
 	cd $(INSTALLDIR)/sbin && ln -sf rc stop_running
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns
 	cd $(INSTALLDIR)/sbin && ln -sf rc get_nfmark
