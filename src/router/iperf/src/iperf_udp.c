@@ -54,6 +54,35 @@
 # define PRIu64		"llu"
 #endif
 
+
+#ifndef be64toh
+#	include <endian.h>
+#if BYTE_ORDER == BIG_ENDIAN
+#define HTONLL(n) (n)
+#define NTOHLL(n) (n)
+#else
+#define HTONLL(n) ((((unsigned long long)(n) & 0xFF) << 56) | \
+                   (((unsigned long long)(n) & 0xFF00) << 40) | \
+                   (((unsigned long long)(n) & 0xFF0000) << 24) | \
+                   (((unsigned long long)(n) & 0xFF000000) << 8) | \
+                   (((unsigned long long)(n) & 0xFF00000000) >> 8) | \
+                   (((unsigned long long)(n) & 0xFF0000000000) >> 24) | \
+                   (((unsigned long long)(n) & 0xFF000000000000) >> 40) | \
+                   (((unsigned long long)(n) & 0xFF00000000000000) >> 56))
+
+#define NTOHLL(n) ((((unsigned long long)(n) & 0xFF) << 56) | \
+                   (((unsigned long long)(n) & 0xFF00) << 40) | \
+                   (((unsigned long long)(n) & 0xFF0000) << 24) | \
+                   (((unsigned long long)(n) & 0xFF000000) << 8) | \
+                   (((unsigned long long)(n) & 0xFF00000000) >> 8) | \
+                   (((unsigned long long)(n) & 0xFF0000000000) >> 24) | \
+                   (((unsigned long long)(n) & 0xFF000000000000) >> 40) | \
+                   (((unsigned long long)(n) & 0xFF00000000000000) >> 56))
+#endif
+
+#define htobe64(n) HTONLL(n)
+#define be64toh(n) NTOHLL(n)
+#endif
 /* iperf_udp_recv
  *
  * receives the data for UDP
