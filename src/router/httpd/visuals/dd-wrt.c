@@ -5291,14 +5291,24 @@ void ej_get_wan_uptime(webs_t wp, int argc, char_t ** argv)
 	unsigned uptime;
 	int days, minutes;
 	FILE *fp, *fp2;
+	int fmt = 0;
+	char buf[128];
+	if (argc)
+		fmt = atoi(argv[1]);
 	if (nvram_match("wan_proto", "disabled"))
 		return;
 	if (nvram_match("wan_ipaddr", "0.0.0.0")) {
-		websWrite(wp, "%s", live_translate("status_router.notavail"));
+		if (fmt)
+			websWrite(wp, "%s", tran_string(buf, "status_router.notavail"));
+		else
+			websWrite(wp, "%s", live_translate("status_router.notavail"));
 		return;
 	}
 	if (!(fp = fopen("/tmp/.wanuptime", "r"))) {
-		websWrite(wp, "%s", live_translate("status_router.notavail"));
+		if (fmt)
+			websWrite(wp, "%s", tran_string(buf, "status_router.notavail"));
+		else
+			websWrite(wp, "%s", live_translate("status_router.notavail"));
 		return;
 	}
 	if (!feof(fp) && fscanf(fp, "%u", &uptime) == 1) {
