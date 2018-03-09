@@ -114,6 +114,8 @@ int getCoreTemp(char *p, int *ridx)
 void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
 	int i, cpufound = 0;
+	FILE *fp = NULL;
+	FILE *fpsys = NULL;
 #ifdef HAVE_MVEBU
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
 		show_temp(wp, 0, 1, "CPU %d.%d &#176;C");
@@ -189,7 +191,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	int cputemp = 1;
 #ifdef HAVE_NORTHSTAR
 	cputemp = 0;
-	FILE *fp = fopen("/proc/dmu/temperature", "rb");
+	fp = fopen("/proc/dmu/temperature", "rb");
 	if (fp) {
 		fscanf(fp, "%d", &cputemp);
 		fclose(fp);
@@ -208,8 +210,6 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 #else
-	FILE *fp = NULL;
-	FILE *fpsys = NULL;
 	int TEMP_MUL = 1000;
 	int SYSTEMP_MUL = 1000;
 #ifdef HAVE_GATEWORX
@@ -282,7 +282,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			fp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
 	}
 #else
-	FILE *fp = fopen("/sys/devices/platform/i2c-0/0-0048/temp1_input", "rb");
+	fp = fopen("/sys/devices/platform/i2c-0/0-0048/temp1_input", "rb");
 #endif
 #endif
 
