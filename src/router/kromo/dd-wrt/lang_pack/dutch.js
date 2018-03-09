@@ -1491,7 +1491,7 @@ status_router.net_conntrack="Actieve Aantal IP-Verbindingen";
 status_router.notavail="Niet Beschikbaar";
 status_router.legend6="Ruimte Gebruik";
 status_router.inpvolt="Bord Input Voltage";
-status_router.cputemp="CPU Temperatuur"; 
+status_router.cputemp="Temperatuur"; 
 
 //help container
 
