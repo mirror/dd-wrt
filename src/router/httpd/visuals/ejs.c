@@ -2607,7 +2607,7 @@ void ej_get_radio_statejs(webs_t wp, int argc, char_t ** argv)
 	char buf[64];
 	bzero(buf, sizeof(buf));
 	get_radio_state(buf);
-	websWrite(wp, "<script type=\"text/javascript\">Capture(%s)</script>&nbsp;");
+	websWrite(wp, "<script type=\"text/javascript\">Capture(%s)</script>&nbsp;", buf);
 }
 
 void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
