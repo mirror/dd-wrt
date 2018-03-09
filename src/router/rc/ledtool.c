@@ -101,7 +101,7 @@ static int ledtool_main(int argc, char **argv)
 		count++;
 	}
 	if (type == 3) {
-		eval("startstop", "ses_led_control");
+		eval("restart", "ses_led_control");
 	}
 
 	return 0;

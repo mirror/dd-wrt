@@ -128,7 +128,7 @@ static int start_services_main(int argc, char **argv)
 #ifdef HAVE_TFTP
 	start_service_f("tftpd");
 #endif
-	startstop_fdelay("httpd", 2);
+	restart_fdelay("httpd", 2);
 #ifdef HAVE_UDHCPD
 	start_service_f("udhcpd");
 #endif
@@ -273,7 +273,7 @@ static int stop_services_main(int argc, char **argv)
 #ifdef HAVE_UDHCPD
 	stop_service_f("udhcpd");
 #endif
-	startstop_f("dns_clear_resolv");
+	restart_f("dns_clear_resolv");
 #ifndef HAVE_MICRO
 	stop_service_f("cron");
 #endif
@@ -387,9 +387,9 @@ static int stop_services_main(int argc, char **argv)
 static void handle_dhcpd(void)
 {
 #ifdef HAVE_UDHCPD
-	startstop_f("udhcpd");
+	restart_f("udhcpd");
 #endif
-	startstop_f("dnsmasq");
+	restart_f("dnsmasq");
 }
 
 static void handle_index(void)
@@ -447,19 +447,19 @@ static void handle_index(void)
 	start_service_f("stabridge");
 #endif
 #ifdef HAVE_UDHCPD
-	startstop_f("udhcpd");
+	restart_f("udhcpd");
 #endif
 #ifdef HAVE_UNBOUND
-	startstop_f("unbound");
+	restart_f("unbound");
 #endif
 #ifdef HAVE_DNSMASQ
-	startstop_f("dnsmasq");
+	restart_f("dnsmasq");
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	startstop_f("zebra");
+	restart_f("zebra");
 #endif
 #ifdef HAVE_OLSRD
-	startstop_f("olsrd");
+	restart_f("olsrd");
 #endif
 #ifdef HAVE_VLANTAGGING
 	start_service("vlantagging");
@@ -477,18 +477,18 @@ static void handle_index(void)
 #endif
 
 	start_service_f("radio_timer");
-	startstop("firewall");
+	restart("firewall");
 	// httpd will not
 	// accept connection
 	// anymore on wan/lan 
 	// ip changes changes
-	startstop_fdelay("httpd", 2);
+	restart_fdelay("httpd", 2);
 #ifndef HAVE_MICRO
-	startstop_f("cron");
+	restart_f("cron");
 #endif
 //      start_service_f("anchorfreednat");
 #ifdef HAVE_NOCAT
-	startstop_f("splashd");
+	restart_f("splashd");
 #endif
 
 }
@@ -497,17 +497,17 @@ static void handle_router(void)
 {
 
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	startstop_f("zebra");
+	restart_f("zebra");
 #endif
 #ifdef HAVE_OLSRD
-	startstop_f("olsrd");
+	restart_f("olsrd");
 #endif
 }
 
 /*static void handle_anchorfree(void)
 {
 
-	startstop_f("anchorfree");
+	restart_f("anchorfree");
 	start_service_f("anchorfreednat");
 }
 */
@@ -550,16 +550,16 @@ static void handle_hotspot(void)
 	stop_running_main(0, NULL);
 
 #ifdef HAVE_WIFIDOG
-	startstop_f("wifidog");
+	restart_f("wifidog");
 #endif
 #ifdef HAVE_NOCAT
-	startstop_f("splashd");
+	restart_f("splashd");
 #endif
 #ifdef HAVE_SPUTNIK_APD
-	startstop_f("sputnik");
+	restart_f("sputnik");
 #endif
 #ifdef HAVE_CHILLI
-	startstop_f("chilli");
+	restart_f("chilli");
 #endif
 #ifdef HAVE_VLANTAGGING
 	start_service("bridging");
@@ -593,19 +593,19 @@ static void handle_hotspot(void)
 	start_service_f("radio_timer");
 	//restart dhcp as well, to fix repeater bridge save issue (dhcp disables itself here)
 #ifdef HAVE_UDHCPD
-	startstop_f("udhcpd");
+	restart_f("udhcpd");
 #endif
 #ifdef HAVE_UNBOUND
-	startstop_f("unbound");
+	restart_f("unbound");
 #endif
 #ifdef HAVE_DNSMASQ
-	startstop_f("dnsmasq");
+	restart_f("dnsmasq");
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_service("zebra");
 #endif
 	//since start/stop is faster now we need to sleep, otherwise httpd is stopped/started while response is sent to client
-	startstop_fdelay("httpd", 2);	// httpd will not accept connection anymore
+	restart_fdelay("httpd", 2);	// httpd will not accept connection anymore
 
 	FORK(eval("/etc/config/http-redirect.firewall"));
 	FORK(eval("/etc/config/smtp-redirect.firewall"));
@@ -636,72 +636,72 @@ static void handle_pptp(void)
 #ifdef HAVE_SPEEDCHECKER
 static void handle_speedchecker(void)
 {
-	startstop_f("speedchecker");
+	restart_f("speedchecker");
 }
 #endif
 static void handle_services(void)
 {
 #ifdef HAVE_GPSI
-	startstop_f("gps");
+	restart_f("gps");
 #endif
 #ifdef HAVE_P910ND
-	startstop_f("printer");
+	restart_f("printer");
 #endif
 #ifdef HAVE_AP_SERV
-	startstop_f("apserv");
+	restart_f("apserv");
 #endif
 #ifdef HAVE_PPPOERELAY
-	startstop_f("pppoerelay");
+	restart_f("pppoerelay");
 #endif
 #ifdef HAVE_UDHCPD
-	startstop_f("udhcpd");
+	restart_f("udhcpd");
 #endif
 #ifdef HAVE_SYSLOG
-	startstop_f("syslog");
+	restart_f("syslog");
 #endif
 #ifdef HAVE_RSTATS
-	startstop_f("rstats");
+	restart_f("rstats");
 #endif
-	startstop_f("ttraff");
+	restart_f("ttraff");
 #ifdef HAVE_NSTX
-	startstop_f("nstxd");
+	restart_f("nstxd");
 #endif
 #ifdef HAVE_PPPOESERVER
-	startstop("firewall");
-	startstop_f("pppoeserver");
+	restart("firewall");
+	restart_f("pppoeserver");
 #endif
 #ifdef HAVE_UNBOUND
-	startstop_f("unbound");
+	restart_f("unbound");
 #endif
 #ifdef HAVE_DNSMASQ
-	startstop_f("dnsmasq");
+	restart_f("dnsmasq");
 #endif
 #ifdef HAVE_UDHCPD
-	startstop_f("udhcpd");
+	restart_f("udhcpd");
 #endif
 #ifdef HAVE_CPUTEMP
-	startstop_f("hwmon");
+	restart_f("hwmon");
 #endif
 #ifdef HAVE_TOR
-	startstop_f("tor");
+	restart_f("tor");
 #endif
 #ifdef HAVE_SOFTETHER
-	startstop_f("softether");
+	restart_f("softether");
 #endif
 #ifdef HAVE_TELNET
-	startstop_f("telnetd");
+	restart_f("telnetd");
 #endif
 #ifdef HAVE_MACTELNET
-	startstop_f("mactelnetd");
+	restart_f("mactelnetd");
 #endif
 #ifdef HAVE_SNMP
-	startstop_f("snmp");
+	restart_f("snmp");
 #endif
 #ifdef HAVE_LLTD
-	startstop_f("lltd");
+	restart_f("lltd");
 #endif
 #ifdef HAVE_PPTPD
-	startstop_f("pptpd");
+	restart_f("pptpd");
 #endif
 #ifdef HAVE_PPTP
 	FORK(eval("/etc/config/pptpd_client.startup"));
@@ -716,15 +716,15 @@ static void handle_services(void)
 #ifdef HAVE_REGISTER
 	if (isregistered_real())
 #endif
-		startstop_f("sshd");
+		restart_f("sshd");
 #endif
-	startstop("firewall");
-	startstop_f("wshaper");
+	restart("firewall");
+	restart_f("wshaper");
 #ifdef HAVE_SYSLOG
-	startstop_f("syslog");
+	restart_f("syslog");
 #endif
 #ifdef HAVE_VNCREPEATER
-	startstop_f("vncrepeater");
+	restart_f("vncrepeater");
 #endif
 #ifdef HAVE_OPENVPN
 	stop_service("openvpnserver");
@@ -733,10 +733,10 @@ static void handle_services(void)
 	start_service_f("openvpn");
 #endif
 #ifdef HAVE_NOCAT
-	startstop_f("splashd");
+	restart_f("splashd");
 #endif
 #ifdef HAVE_ZABBIX
-	startstop_f("zabbix");
+	restart_f("zabbix");
 #endif
 //      start_service_f("anchorfreednat");
 
@@ -772,7 +772,7 @@ static void handle_nassrv(void)
 #ifdef HAVE_TRANSMISSION
 	start_service_f("transmission");
 #endif
-	startstop_f("firewall");
+	restart_f("firewall");
 
 }
 
@@ -823,25 +823,25 @@ static void handle_management(void)
 #ifdef HAVE_IPV6
 	start_service_f("ipv6");
 #ifdef HAVE_RADVD
-	startstop_f("radvd");
+	restart_f("radvd");
 #endif
 #endif
 #ifdef HAVE_PPTPD
-	startstop_f("pptpd");
+	restart_f("pptpd");
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_service_f("zebra");
 #endif
-	startstop("firewall");
+	restart("firewall");
 	stop_service("wland");
-	startstop_f("wshaper");
+	restart_f("wshaper");
 	start_service_f("wland");
-	startstop_fdelay("httpd", 2);
+	restart_fdelay("httpd", 2);
 #ifdef HAVE_NOCAT
-	startstop_f("splashd");
+	restart_f("splashd");
 #endif
 #ifdef HAVE_WOL
-	startstop_f("wol");
+	restart_f("wol");
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	start_service("nas");
@@ -926,24 +926,24 @@ static void handle_filters(void)
 #ifndef HAVE_MICRO
 	stop_service("cron");
 #endif
-	startstop("firewall");
+	restart("firewall");
 #ifdef HAVE_SYSLOG
-	startstop_f("syslog");
+	restart_f("syslog");
 #endif
 	stop_service("wland");
-	startstop_f("wshaper");
+	restart_f("wshaper");
 	start_service_f("wland");
 #ifndef HAVE_MICRO
 	start_service_f("cron");
 #endif
 #ifdef HAVE_NOCAT
-	startstop_f("splashd");
+	restart_f("splashd");
 #endif
 #ifdef HAVE_MULTICAST
-	startstop_f("igmprt");
+	restart_f("igmprt");
 #endif
 #ifdef HAVE_UDPXY
-	startstop_f("udpxy");
+	restart_f("udpxy");
 #endif
 //      start_service_f("anchorfreednat");
 }
@@ -954,16 +954,16 @@ static void handle_routing(void)
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	stop_service("zebra");
 #endif
-	startstop("firewall");
+	restart("firewall");
 	start_service_force_f("set_routes");
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_service_f("zebra");
 #endif
 #ifdef HAVE_OLSRD
-	startstop_f("olsrd");
+	restart_f("olsrd");
 #endif
 #ifdef HAVE_NOCAT
-	startstop_f("splashd");
+	restart_f("splashd");
 #endif
 //      start_service_f("anchorfreednat");
 
@@ -996,7 +996,7 @@ static void handle_forward(void)
 #ifdef HAVE_UPNP
 //    stop_service( "upnp");
 #endif
-	startstop("firewall");
+	restart("firewall");
 #ifdef HAVE_UPNP
 //    start_service( "upnp");
 #endif
@@ -1004,7 +1004,7 @@ static void handle_forward(void)
 	start_service_f("wland");
 //      start_service_f("anchorfreednat");
 #ifdef HAVE_NOCAT
-	startstop_f("splashd");
+	restart_f("splashd");
 #endif
 
 }
@@ -1012,10 +1012,10 @@ static void handle_forward(void)
 static void handle_qos(void)
 {
 
-	startstop_f("wshaper");
-	startstop_f("wland");
+	restart_f("wshaper");
+	restart_f("wland");
 #ifdef HAVE_NOCAT
-	startstop_f("splashd");
+	restart_f("splashd");
 #endif
 #ifdef HAVE_OPENVPN
 	stop_service("openvpnserver");
@@ -1031,16 +1031,16 @@ static void handle_forwardupnp(void)
 #ifdef HAVE_UPNP
 	stop_service("upnp");
 #endif
-	startstop("firewall");
+	restart("firewall");
 #ifdef HAVE_UPNP
 	start_service_f("upnp");
 #endif
 	stop_service("wland");
-	startstop_f("wshaper");
+	restart_f("wshaper");
 	start_service_f("wland");
 //      start_service_f("anchorfreednat");
 #ifdef HAVE_NOCAT
-	startstop_f("splashd");
+	restart_f("splashd");
 #endif
 
 }
@@ -1054,7 +1054,7 @@ static void handle_routedel(void)
 #ifdef HAVE_SPOTPASS
 static void handle_spotpass(void)
 {
-	startstop("spotpass");
+	restart("spotpass");
 }
 #endif
 
@@ -1065,7 +1065,7 @@ struct SERVICES {
 
 static void handle_ddns(void)
 {
-	startstop("ddns");
+	restart("ddns");
 	nvram_set("ddns_change", "update");
 
 }
@@ -1074,7 +1074,7 @@ static void handle_ddns(void)
 
 static void handle_freeradius(void)
 {
-	startstop_f("freeradius");
+	restart_f("freeradius");
 }
 #endif
 
@@ -1115,7 +1115,7 @@ static void handle_upgrade(void)
 #ifdef HAVE_MILKFISH
 static void handle_milkfish(void)
 {
-	startstop("milkfish");
+	restart("milkfish");
 }
 #endif
 
@@ -1197,13 +1197,13 @@ static void handle_wireless(void)
 	start_service_f("radio_timer");
 	//restart dhcp as well, to fix repeater bridge save issue (dhcp disables itself here)
 #ifdef HAVE_UDHCPD
-	startstop_f("udhcpd");
+	restart_f("udhcpd");
 #endif
 #ifdef HAVE_UNBOUND
-	startstop_f("unbound");
+	restart_f("unbound");
 #endif
 #ifdef HAVE_DNSMASQ
-	startstop_f("dnsmasq");
+	restart_f("dnsmasq");
 #endif
 
 	if (getSTA() || getWET() || wanchanged
@@ -1223,13 +1223,13 @@ static void handle_wireless(void)
 	start_service("zebra");
 #endif
 #ifdef HAVE_IPV6
-	startstop_f("dhcp6c");
+	restart_f("dhcp6c");
 #endif
 	//since start/stop is faster now we need to sleep, otherwise httpd is stopped/started while response is sent to client
 #ifdef HAVE_80211AC
-	startstop_fdelay("httpd", 2);	// httpd will not accept connection anymore on wan/lan ip changes changes
+	restart_fdelay("httpd", 2);	// httpd will not accept connection anymore on wan/lan ip changes changes
 #else
-	startstop_fdelay("httpd", 4);	// httpd will not accept connection anymore on wan/lan ip changes changes
+	restart_fdelay("httpd", 4);	// httpd will not accept connection anymore on wan/lan ip changes changes
 #endif
 
 }
@@ -1319,7 +1319,7 @@ static void handle_wireless_2(void)
 #ifdef HAVE_3G
 		if (!nvram_match("wan_proto", "3g"))
 #endif
-			startstop_fdelay("httpd", 2);	// httpd will not accept connection anymore
+			restart_fdelay("httpd", 2);	// httpd will not accept connection anymore
 	}
 	// on wan/lan ip changes changes
 #ifdef HAVE_MADWIFI
@@ -1342,7 +1342,7 @@ static void handle_wireless_2(void)
 	start_service_f("zebra");
 #endif
 #ifdef HAVE_IPV6
-	startstop_f("dhcp6c");
+	restart_f("dhcp6c");
 #endif
 
 }
@@ -1357,9 +1357,9 @@ static void handle_dhcp_release(void)
 #ifdef HAVE_USB
 static void handle_usbdrivers(void)
 {
-	startstop("drivers");	//stop is not yet implemented but we dont care about yet
+	restart("drivers");	//stop is not yet implemented but we dont care about yet
 #ifdef HAVE_P910ND
-	startstop("printer");
+	restart("printer");
 #endif
 }
 #endif
