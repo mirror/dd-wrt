@@ -348,11 +348,8 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			cpufound = 1;
 		}
 	}
-	if (!found && !cpufound)
-		websWrite(wp, "%s", live_translate("status_router.notavail"));
-	else
 #endif
-	if (!cpufound && fp2 == NULL)
+	if (!cpufound)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
 
 #endif
