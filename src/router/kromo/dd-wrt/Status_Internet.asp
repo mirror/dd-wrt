@@ -128,7 +128,7 @@ addEvent(window, "unload", function() {
 									<div id="wan_info" style="display:none">
 										<div class="setting" id="wan_connection">
 											<div class="label"><% tran("status_inet.www_loginstatus"); %></div>
-											<span id="wan_status"><% nvram_status_get("status2","2"); %>&nbsp;<input type="button" value="<% nvram_status_get("button1","2"); %>" onclick="connect(this.form, '<% nvram_status_get("button1","0"); %>_<% nvg("wan_proto"); %>');" /></span>
+											<span id="wan_status"><% nvram_status_get("status2","2"); %>&nbsp;<input type="button" value="<% nvram_status_get("button1","0"); %>" onclick="connect(this.form, '<% nvram_status_get("button1","0"); %>_<% nvg("wan_proto"); %>');" ><% nvram_status_get("button1","2"); %></input></span>
 										</div>
 										<div class="setting" id="wan_signal">
 											<div class="label">Signal Status</div>
