@@ -642,10 +642,10 @@ int mtd_write(const char *path, const char *mtd)
 		 */
 		if (count == trx.len) {
 			if (crc != trx.crc32) {
-				fprintf(stderr, "%s: Bad CRC\n", path);
+				fprintf(stderr, "%s: Bad CRC (0x%08X expected, but 0x%08X calculated)\n", path, trx.crc32, crc);
 				goto fail;
 			} else {
-				fprintf(stderr, "%s: CRC OK\n", mtd);
+				fprintf(stderr, "%s: CRC OK (0x%08X)\n", mtd, crc);
 				fprintf(stderr, "Writing image to flash, waiting a moment...\n");
 			}
 		}
