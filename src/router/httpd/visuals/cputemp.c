@@ -224,9 +224,9 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	TEMP_MUL = 10;
 	fp = fopen("/sys/bus/i2c/devices/0-0029/temp0_input", "rb");
 #elif HAVE_UNIWIP
-	SYSTEMP_MUL = 10;
 	fp = fopen("/sys/bus/i2c/devices/0-0049/temp1_input", "rb");
 #elif HAVE_VENTANA
+	SYSTEMP_MUL = 10;
 	fp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
 	fpsys = fopen("/sys/class/hwmon/hwmon0/device/temp0_input", "rb");
 #else
