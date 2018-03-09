@@ -1766,7 +1766,7 @@ status_router.net_conntrack="Aktive IP-Verbindungen";
 status_router.notavail="Nicht verf&uuml;gbar";
 status_router.legend6="Verwendung";
 status_router.inpvolt="Spannung am Platineneingang";
-status_router.cputemp="CPU Temperatur";
+status_router.cputemp="Temperaturen";
 
 //help container
 
