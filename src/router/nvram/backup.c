@@ -317,6 +317,11 @@ int nvram_critical(char *name)
 
 void nvram_clear(void)
 {
+	NVRAMSPACE = nvram_size();
+	if (NVRAMSPACE < 0) {
+		fprintf(stderr, "nvram driver returns bogus space\n");
+		return -1;
+	}
 	char *buf = (char *)malloc(NVRAMSPACE);
 
 	nvram_getall(buf, NVRAMSPACE);
