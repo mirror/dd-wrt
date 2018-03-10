@@ -616,13 +616,25 @@ done:
 	return ret;
 }
 
+#define NVRAM_SPACE_MAGIC			0x50534341	/* 'SPAC' */
+
 static int
 dev_nvram_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
-	if (cmd != NVRAM_MAGIC)
-		return -EINVAL;
 
-	return nvram_commit();
+	switch (cmd) {
+	case NVRAM_MAGIC:
+		nvram_commit();
+		return 0;
+		break;
+	case NVRAM_SPACE_MAGIC:
+		return NVRAM_SPACE;
+		break;
+	default:
+		return -EINVAL;
+		break;
+
+	}
 }
 
 static int
