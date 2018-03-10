@@ -40,6 +40,7 @@ extern int nvram_critical(char *name);
 int nvram_size(void);
 void start_defaults(void)
 {
+	struct nvram_param *t;
 	fprintf(stderr, "restore nvram to defaults\n");
 	nvram_clear();
 	load_defaults();
