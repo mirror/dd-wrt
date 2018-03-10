@@ -40,33 +40,12 @@ extern int nvram_critical(char *name);
 int nvram_size(void);
 void start_defaults(void)
 {
-	int NVRAMSPACE = nvram_size();
 	fprintf(stderr, "restore nvram to defaults\n");
-	char *buf = (char *)malloc(NVRAMSPACE);
-	int i;
-	struct nvram_param *t;
-
-	nvram_getall(buf, NVRAMSPACE);
-	char *p = buf;
-
-	//clean old values
-	while (strlen(p) != 0) {
-		int len = strlen(p);
-
-		for (i = 0; i < len; i++)
-			if (p[i] == '=')
-				p[i] = 0;
-		char *name = p;
-
-		if (!nvram_critical(name))
-			nvram_unset(name);
-		p += len + 1;
-	}
+	nvram_clear();
 	load_defaults();
 	for (t = srouter_defaults; t->name; t++) {
 		nvram_set(t->name, t->value);
 	}
 	free_defaults();
-	free(buf);
 	nvram_commit();
 }
