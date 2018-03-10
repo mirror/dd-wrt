@@ -21,7 +21,7 @@ struct wifi_info {
 	int uptime;
 };
 
-static int showAssocList(char *base, char *ifname, char *mac, struct wifi_info *rwc)
+static int _showAssocList(char *base, char *ifname, char *mac, struct wifi_info *rwc, int silent)
 {
 #ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
@@ -45,7 +45,8 @@ static int showAssocList(char *base, char *ifname, char *mac, struct wifi_info *
 				FILE *fp = fopen(out, "wb");
 				fwrite(&data, 1, sizeof(data), fp);
 				fclose(fp);
-				fprintf(stdout, "assoclist %s\n", wc->mac);
+				if (!silent)
+					fprintf(stdout, "assoclist %s\n", wc->mac);
 			}
 		}
 		free_wifi_clients(mac80211_info->wci);
@@ -81,7 +82,8 @@ static int showAssocList(char *base, char *ifname, char *mac, struct wifi_info *
 			FILE *fp = fopen(out, "wb");
 			fwrite(&data, 1, sizeof(data), fp);
 			fclose(fp);
-			fprintf(stdout, "assoclist %s\n", mstr);
+			if (!silent)
+				fprintf(stdout, "assoclist %s\n", mstr);
 			pos += 6;
 		}
 		free(buf);
@@ -91,17 +93,26 @@ static int showAssocList(char *base, char *ifname, char *mac, struct wifi_info *
 
 }
 
+static int showAssocList(char *base, char *ifname, char *mac, struct wifi_info *rwc)
+{
+	_showAssocList(base, ifname, mac, rwc, 0);
+}
+
 static int matchmac(char *base, char *ifname, char *mac, struct wifi_info *rwc)
 {
 	unsigned char rmac[32];
 	ether_etoa(mac, rmac);
 	char out[48];
 	char mstr[32];
-
+	int assoclist = 0;
 	sprintf(out, "/tmp/snmp_cache/%s/%s", base, rmac);
 	FILE *in = fopen(out, "rb");
-	if (!in)
+	if (!in) {
+		if (!assoclist) {
+			_showAssocList(base, ifname, mac, rwc, 1);
+		}
 		return 0;
+	}
 	struct wifi_info wc;
 	fread(&wc, 1, sizeof(wc), in);
 	fclose(in);
