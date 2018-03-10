@@ -909,7 +909,7 @@ dev_nvram_ioctl(
 		return 0;
 		break;
 	case NVRAM_SPACE_MAGIC:
-		return nvram_space;
+		return NVRAMSIZEREAL;
 		break;
 	default:
 		return -EINVAL;

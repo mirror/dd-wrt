@@ -28,7 +28,7 @@ static char r4kwar[] __initdata =
 static char daddiwar[] __initdata =
 	"Enable CPU_DADDI_WORKAROUNDS to rectify.";
 
-static inline void align_mod(const int align, const int mod)
+static __always_inline void align_mod(const int align, const int mod)
 {
 	asm volatile(
 		".set	push\n\t"
@@ -42,7 +42,7 @@ static inline void align_mod(const int align, const int mod)
 		: GCC_IMM_ASM() (align), GCC_IMM_ASM() (mod));
 }
 
-static inline void mult_sh_align_mod(long *v1, long *v2, long *w,
+static __always_inline void mult_sh_align_mod(long *v1, long *v2, long *w,
 				     const int align, const int mod)
 {
 	unsigned long flags;

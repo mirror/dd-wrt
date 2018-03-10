@@ -62,3 +62,5 @@ obj-$(CONFIG_MDIO_BCM_IPROC)	+= mdio-bcm-iproc.o
 ifeq ($(CONFIG_ARCH_ALPINE),y)
 obj-m				+= mii_gpio.o
 endif
+
+obj-m				+= mii_gpio_octeon.o
