@@ -106,10 +106,13 @@ static int matchmac(char *base, char *ifname, char *mac, struct wifi_info *rwc)
 	char mstr[32];
 	int assoclist = 0;
 	sprintf(out, "/tmp/snmp_cache/%s/%s", base, rmac);
+	retry:;
 	FILE *in = fopen(out, "rb");
 	if (!in) {
 		if (!assoclist) {
 			_showAssocList(base, ifname, mac, rwc, 1);
+			assoclist = 1;
+			goto retry;
 		}
 		return 0;
 	}
