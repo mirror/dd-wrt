@@ -105,7 +105,7 @@ static int matchmac(char *base, char *ifname, char *mac, struct wifi_info *rwc)
 	struct wifi_info wc;
 	fread(&wc, 1, sizeof(wc), in);
 	fclose(in);
-	if (!strcmp(wc.ifname, ifname)) {
+	if (!strncmp(wc.ifname, ifname, strlen(ifname))) {
 		memcpy(rwc, &wc, sizeof(wc));
 		return 1;
 	}
