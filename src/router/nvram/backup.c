@@ -340,6 +340,7 @@ void nvram_clear(void)
 		p += len + 1;
 	}
 	nvram_close();
+	free(buf);
 }
 
 static void save(FILE * fp, char *p, int not)
@@ -502,8 +503,8 @@ int nvram_backup(char *filename)
 	p = buf;
 	//now save anything else (this should prevent problems with backups, since wl0 parameters are getting higher priority now which solves restore problems with wds etc.
 	save(fp, p, 0);
-	free(buf);
 	fclose(fp);
+	free(buf);
 	return 0;
 }
 
