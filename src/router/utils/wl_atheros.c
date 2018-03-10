@@ -29,9 +29,8 @@ static int showAssocList(char *base, char *ifname, char *mac, struct wifi_info *
 		struct wifi_client_info *wc;
 		mac80211_info = mac80211_assoclist(base);
 		for (wc = mac80211_info->wci; wc; wc = wc->next) {
-			if (!strcmp(ifname, wc->ifname)) {
+			if (!strncmp(ifname, wc->ifname, strlen(ifname))) {
 				char out[48];
-
 				sprintf(out, "/tmp/snmp_cache/%s", base);
 				mkdir(out, 0777);
 				sprintf(out, "/tmp/snmp_cache/%s/%s", base, wc->mac);
@@ -243,7 +242,7 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 		char *s = strchr(base, '.');
 		if (s)
 			*s = 0;
-		if (!matchmac(base, ifdecl, rmac, &wc)) {
+		if (macstr && !matchmac(base, ifdecl, rmac, &wc)) {
 			free(base);
 			return;
 		}
