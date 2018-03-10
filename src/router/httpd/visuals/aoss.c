@@ -57,7 +57,7 @@ int aoss_status(void)
 void start_aoss(void)
 {
 	if (!aoss_status()) {
-		eval("startstop", "aoss");
+		eval("restart", "aoss");
 	}
 }
 

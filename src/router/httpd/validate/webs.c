@@ -3901,7 +3901,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	if (reg) {
 		if (strcmp(nvram_safe_get("wl_regdomain"), reg)) {
 			setRegulationDomain(reg);
-			eval("startstop", "lan");
+			eval("restart", "lan");
 		}
 	}
 	copytonv(wp, "wl_regdomain");

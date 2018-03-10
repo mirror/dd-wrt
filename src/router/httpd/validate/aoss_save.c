@@ -93,7 +93,7 @@ void aoss_start(webs_t wp)
 {
 	fprintf(stderr, "[AOSS] start\n");
 	if (!aoss_status()) {
-		eval("startstop_f", "aoss");
+		eval("restart_f", "aoss");
 		fprintf(stderr, "[AOSS] start\n");
 	}
 	return;
