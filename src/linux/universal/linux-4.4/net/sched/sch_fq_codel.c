@@ -311,6 +311,21 @@ begin:
 	flow->dropped += q->cstats.drop_count - prev_drop_count;
 	flow->dropped += q->cstats.ecn_mark - prev_ecn_mark;
 
+	/* If our qlen is 0 qdisc_tree_reduce_backlog() will deactivate
+	 * parent class, dequeue in parent qdisc will do the same if we
+	 * return skb. Temporary increment qlen if we have skb.
+	 */
+	if (q->cstats.drop_count) {
+		if (skb)
+			sch->q.qlen++;
+		qdisc_tree_reduce_backlog(sch, q->cstats.drop_count,
+					  q->cstats.drop_len);
+		if (skb)
+			sch->q.qlen--;
+		q->cstats.drop_count = 0;
+		q->cstats.drop_len = 0;
+	}
+
 	if (!skb) {
 		/* force a pass through old_flows to prevent starvation */
 		if ((head == &q->new_flows) && !list_empty(&q->old_flows))
@@ -321,15 +336,6 @@ begin:
 	}
 	qdisc_bstats_update(sch, skb);
 	flow->deficit -= qdisc_pkt_len(skb);
-	/* We cant call qdisc_tree_reduce_backlog() if our qlen is 0,
-	 * or HTB crashes. Defer it for next round.
-	 */
-	if (q->cstats.drop_count && sch->q.qlen) {
-		qdisc_tree_reduce_backlog(sch, q->cstats.drop_count,
-					  q->cstats.drop_len);
-		q->cstats.drop_count = 0;
-		q->cstats.drop_len = 0;
-	}
 	return skb;
 }
 
