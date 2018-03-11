@@ -233,7 +233,8 @@ static void detect_wireless_devices(void)
 		if (loadath9k || loadath5k) {
 			fprintf(stderr, "load ATH9K 802.11n Driver\n");
 			// some are just for future use and not (yet) there
-
+			insmod("lzo_compress");
+			insmod("lzo_decompress");
 			insmod("compat");
 			insmod("compat_firmware_class");
 			insmod("cfg80211");
