@@ -1,4 +1,4 @@
-.TH IPERF3 1 "February 2018" ESnet "User Manuals"
+.TH IPERF3 1 "March 2018" ESnet "User Manuals"
 .SH NAME
 iperf3 \- perform network throughput tests
 .SH SYNOPSIS
@@ -138,7 +138,9 @@ to a single CPU (as opposed to a set containing potentialy multiple
 CPUs).
 .TP
 .BR -B ", " --bind " \fIhost\fR"
-bind to a specific interface. If the host has multiple interfaces, it will use the first interface by default.
+bind to the specific interface associated with address \fIhost\fR.
+If the host has multiple interfaces, it will use the first interface
+by default.
 .TP
 .BR -V ", " --verbose " "
 give more detailed output 
