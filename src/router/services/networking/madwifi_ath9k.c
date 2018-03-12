@@ -51,7 +51,6 @@
 #include "unl.h"
 #include <nl80211.h>
 
-
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc);
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss);
@@ -282,6 +281,17 @@ void configure_single_ath9k(int count)
 //              set_ath10kdistance(dev, distance);
 //      }
 #endif
+//      experimental frame compression for internal testing only right now
+	char compr[32];
+	sprintf(compr, "%s_compr", dev);
+	if (nvram_default_match(compr, "1", "0")) {
+		sprintf(compr, "%s_compr_th", dev);
+		char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
+		eval("iw", "dev", dev, "set", "compr", "on", threshold);
+	} else {
+		eval("iw", "dev", dev, "set", "compr", "off");
+	}
+
 // das scheint noch aerger zu machen
 	eval("iw", "dev", dev, "set", "power_save", "off");
 
