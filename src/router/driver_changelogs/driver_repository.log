@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3964 | brainslayer | 2018-03-13 00:55:59 +0100 (Tue, 13 Mar 2018) | 1 line
+
+do not initialize mem that early
+------------------------------------------------------------------------
 r3963 | brainslayer | 2018-03-13 00:26:36 +0100 (Tue, 13 Mar 2018) | 1 line
 
 ignore compressed frames on station side if not enabled
