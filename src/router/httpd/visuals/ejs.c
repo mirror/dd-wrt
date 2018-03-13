@@ -2107,8 +2107,12 @@ void ej_getboottime(webs_t wp, int argc, char_t ** argv)
 	time_t starttime = nvram_default_geti("start_time", 0);
 	if (starttime <= endtime)
 		websWrite(wp, "30");
-	else
-		websWrite(wp, "%ld", starttime - endtime);	//aprox boot time
+	else {
+		time_t boottime = starttime - endtime;
+		if (boottime > 300)
+			boottime = 20;	//something is strange
+		websWrite(wp, "%ld", boottime+10);	//aprox boot time
+	}
 }
 
 char *tran_string(char *buf, char *str)
