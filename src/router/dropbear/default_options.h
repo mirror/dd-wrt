@@ -175,7 +175,7 @@ If you test it please contact the Dropbear author */
 #define DROPBEAR_DH_GROUP1 1
 #define DROPBEAR_DH_GROUP16 0
 #define DROPBEAR_DH_GROUP14_SHA1 1
-#define DROPBEAR_DH_GROUP14_SHA256 0
+#define DROPBEAR_DH_GROUP14_SHA256 1
 
 
 
