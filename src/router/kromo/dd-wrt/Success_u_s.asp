@@ -52,8 +52,7 @@ addEvent(window, "unload", function() {
 					<div align="center">
 						<script type="text/javascript">
 						//<![CDATA[
-
-							var bar1 = createBar(500,15,100,15,< % getboottime(); %> / 5 - 3,"to_submit()");
+							var bar1 = createBar(500,15,100,15,<% getboottime(); %> / 5 - 3,"to_submit()");
 							bar1.togglePause();
 						//]]>
 						</script>
