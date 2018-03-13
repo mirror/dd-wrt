@@ -631,6 +631,7 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
         {"format", required_argument, NULL, 'f'},
         {"interval", required_argument, NULL, 'i'},
         {"daemon", no_argument, NULL, 'D'},
+        {"noentropy", no_argument, NULL, 'E'},
         {"one-off", no_argument, NULL, '1'},
         {"verbose", no_argument, NULL, 'V'},
         {"json", no_argument, NULL, 'J'},
@@ -709,8 +710,8 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 #if defined(HAVE_SSL)
     char *client_username = NULL, *client_rsa_public_key = NULL;
 #endif /* HAVE_SSL */
-
-    while ((flag = getopt_long(argc, argv, "p:f:i:D1VJvsc:ub:t:n:k:l:P:Rw:B:M:N46S:L:ZO:F:A:T:C:dI:hX:", longopts, NULL)) != -1) {
+    test->settings->noentropy = 0;
+    while ((flag = getopt_long(argc, argv, "p:f:i:DE1VJvsc:ub:t:n:k:l:P:Rw:B:M:N46S:L:ZO:F:A:T:C:dI:hX:", longopts, NULL)) != -1) {
         switch (flag) {
             case 'p':
                 test->server_port = atoi(optarg);
@@ -749,6 +750,9 @@ iperf_parse_arguments(struct iperf_test *test, int argc, char **argv)
 		test->daemon = 1;
 		server_flag = 1;
 	        break;
+	    case 'E':
+		test->settings->noentropy = 1;
+		break;
             case '1':
 		test->one_off = 1;
 		server_flag = 1;
@@ -3247,9 +3251,15 @@ iperf_new_stream(struct iperf_test *test, int s)
     } else
         sp->diskfile_fd = -1;
 
+    int ret = 0;
     /* Initialize stream */
-    if ((readentropy(sp->buffer, test->settings->blksize) < 0) ||
-        (iperf_init_stream(sp, test) < 0)) {
+    if (test->settings->noentropy) {
+	    memset(sp->buffer, 0, test->settings->blksize);
+    }else{
+	    ret = readentropy(sp->buffer, test->settings->blksize);
+    }
+
+    if ((ret < 0) || (iperf_init_stream(sp, test) < 0)) {
         close(sp->buffer_fd);
         munmap(sp->buffer, sp->test->settings->blksize);
         free(sp->result);
