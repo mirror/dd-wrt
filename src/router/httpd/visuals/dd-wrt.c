@@ -1200,6 +1200,12 @@ void showRadio(webs_t wp, char *propname, char *nvname)
 	showRadio(wp,propname,nvname); \
 	} while(0)
 
+#define showRadioDefaultOff(wp, propname, nvname) \
+	do { \
+	nvram_default_get(nvname,"1"); \
+	showRadio(wp,propname,nvname); \
+	} while(0)
+
 #ifdef HAVE_MADWIFI
 void showAutoOption(webs_t wp, char *propname, char *nvname)
 {
@@ -3256,6 +3262,11 @@ if (has_airtime_fairness(prefix)) {
 	sprintf(wl_atf, "%s_atf", prefix);
 	showRadioDefaultOn(wp, "wl_basic.atf", wl_atf);
 }
+if (is_ath9k(prefix)) {
+	char wl_fc[16];
+	sprintf(wl_fc, "%s_fc", prefix);
+	showRadioDefaultOff(wp, "wl_basic.fc", wl_fc);
+}
 #endif
 sprintf(wmm, "%s_wmm", prefix);
 #ifdef HAVE_ATH9K
@@ -4250,6 +4261,11 @@ if (!strcmp(prefix, "wl2"))
 		char wl_atf[16];
 		sprintf(wl_atf, "%s_atf", prefix);
 		showRadioDefaultOn(wp, "wl_basic.atf", wl_atf);
+	}
+	if (is_ath9k(prefix)) {
+		char wl_fc[16];
+		sprintf(wl_fc, "%s_fc", prefix);
+		showRadioDefaultOff(wp, "wl_basic.fc", wl_fc);
 	}
 #endif
 
