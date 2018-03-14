@@ -2111,7 +2111,7 @@ void ej_getboottime(webs_t wp, int argc, char_t ** argv)
 		time_t boottime = starttime - endtime;
 		if (boottime > 300)
 			boottime = 20;	//something is strange
-		websWrite(wp, "%ld", boottime+10);	//aprox boot time
+		websWrite(wp, "%ld", boottime + 10);	//aprox boot time
 	}
 }
 
