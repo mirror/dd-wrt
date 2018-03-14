@@ -1202,7 +1202,7 @@ void showRadio(webs_t wp, char *propname, char *nvname)
 
 #define showRadioDefaultOff(wp, propname, nvname) \
 	do { \
-	nvram_default_get(nvname,"1"); \
+	nvram_default_get(nvname,"0"); \
 	showRadio(wp,propname,nvname); \
 	} while(0)
 
