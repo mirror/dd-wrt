@@ -2393,6 +2393,13 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		sprintf(wl_protmode, "%s_protmode", var);
 		showOptionsLabel(wp, "wl_basic.protmode", wl_protmode, "None CTS RTS/CTS", nvram_default_get(wl_protmode, "None"));
 		showrtssettings(wp, var);
+#ifdef HAVE_ATH9K
+		if (is_ath9k(prefix)) {
+			char wl_fc[16];
+			sprintf(wl_fc, "%s_fc", prefix);
+			showRadioDefaultOff(wp, "wl_basic.fc", wl_fc);
+		}
+#endif
 
 		sprintf(wmm, "%s_wmm", var);
 #ifdef HAVE_ATH9K
@@ -2404,7 +2411,6 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #endif
 
 #endif				// end BUFFALO
-
 		sprintf(ssid, "%s_ap_isolate", var);
 		showRadio(wp, "wl_adv.label11", ssid);
 #ifdef HAVE_80211AC
