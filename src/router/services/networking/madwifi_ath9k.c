@@ -283,9 +283,9 @@ void configure_single_ath9k(int count)
 #endif
 //      experimental frame compression for internal testing only right now
 	char compr[32];
-	sprintf(compr, "%s_compr", dev);
+	sprintf(compr, "%s_fc", dev);
 	if (nvram_default_match(compr, "1", "0")) {
-		sprintf(compr, "%s_compr_th", dev);
+		sprintf(compr, "%s_fc_th", dev);
 		char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
 		eval("iw", "dev", dev, "set", "compr", "on", threshold);
 	} else {
