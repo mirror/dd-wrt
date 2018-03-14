@@ -332,6 +332,15 @@ void configure_single_ath9k(int count)
 		if (isfirst)
 			sysprintf("iw %s interface add %s.%d type managed", wif, dev, counter);
 		setupHostAP_ath9k(dev, isfirst, counter, 0);
+		sprintf(compr, "%s.%d_fc", dev, counter);
+		if (nvram_default_match(compr, "1", "0")) {
+			sprintf(compr, "%s.%d_fc_th", dev, counter);
+			char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
+			eval("iw", "dev", dev, "set", "compr", "on", threshold);
+		} else {
+			eval("iw", "dev", dev, "set", "compr", "off");
+		}
+
 		isfirst = 0;
 		counter++;
 		}
