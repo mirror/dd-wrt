@@ -3727,6 +3727,7 @@ static void save_prefix(webs_t wp, char *prefix)
 		copytonv(wp, "%s_turbo_qam", prefix);
 	}
 	copytonv(wp, "%s_atf", prefix);
+	copytonv(wp, "%s_fc", prefix);
 
 #ifdef HAVE_80211AC
 #ifndef HAVE_NOAC
