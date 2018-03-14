@@ -2696,6 +2696,7 @@ wl_basic.bfr="Implicit Beamforming";
 wl_basic.subf="Single User Beamforming";  
 wl_basic.mubf="Multi User Beamforming";  
 wl_basic.atf="Airtime Fairness";
+wl_basic.fc="LZO Frame Compression";
 wl_basic.shortgi="Short GI";
 wl_basic.greenfield="Greenfield";
 wl_basic.preamble="Short Preamble";
