@@ -543,8 +543,6 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	char wl_ff[16];
 	char wmm[32];
 	char wl_isolate[32];
-	char wl_sifstime[32];
-	char wl_preambletime[32];
 	char wl_intmit[32];
 	char wl_noise_immunity[32];
 	char wl_ofdm_weak_det[32];
@@ -563,8 +561,6 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 //    sprintf( wl_comp, "%s_compression", prefix );
 	sprintf(wl_ff, "%s_ff", prefix);
 	sprintf(wl_preamble, "%s_preamble", prefix);
-	sprintf(wl_preambletime, "%s_preambletime", prefix);
-	sprintf(wl_sifstime, "%s_sifstime", prefix);
 	sprintf(wl_xr, "%s_xr", prefix);
 
 	sprintf(wl_intmit, "%s_intmit", prefix);

@@ -2917,8 +2917,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_ff[16];
 	char wmm[32];
 	char wl_isolate[32];
-	char wl_sifstime[32];
-	char wl_preambletime[32];
 	char wl_intmit[32];
 	char wl_noise_immunity[32];
 	char wl_ofdm_weak_det[32];
@@ -2942,8 +2940,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_shortgi, "%s_shortgi", prefix);
 	sprintf(wl_subf, "%s_subf", prefix);
 	sprintf(wl_mubf, "%s_mubf", prefix);
-	sprintf(wl_preambletime, "%s_preambletime", prefix);
-	sprintf(wl_sifstime, "%s_sifstime", prefix);
 	sprintf(wl_xr, "%s_xr", prefix);
 	sprintf(wl_intmit, "%s_intmit", prefix);
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
@@ -3240,16 +3236,6 @@ else {
 #ifdef HAVE_MADWIFI
 sprintf(wl_isolate, "%s_ap_isolate", prefix);
 showRadio(wp, "wl_adv.label11", wl_isolate);
-#if 0
-websWrite(wp, "<div class=\"setting\">\n");
-websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.sifstime)</script></div>\n");
-websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,99999999,wl_basic.sifstime)\" value=\"%s\" />\n", wl_sifstime, nvram_default_get(wl_sifstime, "16"));
-websWrite(wp, "</div>\n");
-websWrite(wp, "<div class=\"setting\">\n");
-websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.preambletime)</script></div>\n");
-websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,99999999,wl_basic.preambletime)\" value=\"%s\" />\n", wl_preambletime, nvram_default_get(wl_preambletime, "20"));
-websWrite(wp, "</div>\n");
-#endif
 char bcn[32];
 sprintf(bcn, "%s_bcn", prefix);
 websWrite(wp, "<div class=\"setting\">\n");
@@ -3659,8 +3645,6 @@ if (!strcmp(prefix, "wl2"))
 	char wl_ff[16];
 	char wmm[32];
 	char wl_isolate[32];
-	char wl_sifstime[32];
-	char wl_preambletime[32];
 	char wl_intmit[32];
 	char wl_noise_immunity[32];
 	char wl_ofdm_weak_det[32];
@@ -3684,8 +3668,6 @@ if (!strcmp(prefix, "wl2"))
 	sprintf(wl_shortgi, "%s_shortgi", prefix);
 	sprintf(wl_subf, "%s_subf", prefix);
 	sprintf(wl_mubf, "%s_mubf", prefix);
-	sprintf(wl_preambletime, "%s_preambletime", prefix);
-	sprintf(wl_sifstime, "%s_sifstime", prefix);
 	sprintf(wl_xr, "%s_xr", prefix);
 	sprintf(wl_intmit, "%s_intmit", prefix);
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
@@ -4239,17 +4221,6 @@ if (!strcmp(prefix, "wl2"))
 #ifdef HAVE_MADWIFI
 	sprintf(wl_isolate, "%s_ap_isolate", prefix);
 	showRadio(wp, "wl_adv.label11", wl_isolate);
-#if 0
-	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.sifstime)</script></div>\n");
-	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,99999999,wl_basic.sifstime)\" value=\"%s\" />\n", wl_sifstime, nvram_default_get(wl_sifstime, "16"));
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.preambletime)</script></div>\n");
-	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,99999999,wl_basic.preambletime)\" value=\"%s\" />\n", wl_preambletime,
-		  nvram_default_get(wl_preambletime, "20"));
-	websWrite(wp, "</div>\n");
-#endif
 	char bcn[32];
 	sprintf(bcn, "%s_bcn", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
