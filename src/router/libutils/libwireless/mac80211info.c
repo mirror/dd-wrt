@@ -488,6 +488,8 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		[NL80211_STA_INFO_TX_BYTES] = {.type = NLA_U32},
 		[NL80211_STA_INFO_RX_PACKETS] = {.type = NLA_U32},
 		[NL80211_STA_INFO_TX_PACKETS] = {.type = NLA_U32},
+		[NL80211_STA_INFO_RX_COMPRESSED] = {.type = NLA_U32},
+		[NL80211_STA_INFO_TX_COMPRESSED] = {.type = NLA_U32},
 		[NL80211_STA_INFO_SIGNAL] = {.type = NLA_U8},
 		[NL80211_STA_INFO_TX_BITRATE] = {.type = NLA_NESTED},
 		[NL80211_STA_INFO_RX_BITRATE] = {.type = NLA_NESTED},
@@ -540,11 +542,18 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	if (sinfo[NL80211_STA_INFO_RX_PACKETS]) {
 		mac80211_info->wci->rx_packets = nla_get_u32(sinfo[NL80211_STA_INFO_RX_PACKETS]);
 	}
+	if (sinfo[NL80211_STA_INFO_RX_COMPRESSED]) {
+		mac80211_info->wci->rx_packets = nla_get_u32(sinfo[NL80211_STA_INFO_RX_COMPRESSED]);
+		mac80211_info->wci->islzo = 1;
+	}
 	if (sinfo[NL80211_STA_INFO_TX_BYTES]) {
 		mac80211_info->wci->tx_bytes = nla_get_u32(sinfo[NL80211_STA_INFO_TX_BYTES]);
 	}
 	if (sinfo[NL80211_STA_INFO_TX_PACKETS]) {
 		mac80211_info->wci->tx_packets = nla_get_u32(sinfo[NL80211_STA_INFO_TX_PACKETS]);
+	}
+	if (sinfo[NL80211_STA_INFO_TX_COMPRESSED]) {
+		mac80211_info->wci->tx_compressed = nla_get_u32(sinfo[NL80211_STA_INFO_TX_COMPRESSED]);
 	}
 	if (sinfo[NL80211_STA_INFO_SIGNAL]) {
 		mac80211_info->wci->signal = (int8_t) nla_get_u8(sinfo[NL80211_STA_INFO_SIGNAL]);
