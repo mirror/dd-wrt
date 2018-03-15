@@ -296,16 +296,18 @@ static char *filter[] = {
 	NULL
 };
 
-int nvram_critical(char *name)
+static int nvram_critical_internal(char *name, int ommit)
 {
 	int a = 0;
 	int len = strlen(name);
 	int i;
+	if (ommit) {
 	for (i = 0; i < len; i++) {
 		if (!isascii(name[i])) {
 			fprintf(stderr, "ommit %s (illegal nvram name)\n", name);
 			return 1;
 		}
+	}
 	}
 	while (filter[a] != NULL) {
 		if (!strcmp(name, filter[a++])) {
@@ -317,6 +319,11 @@ int nvram_critical(char *name)
 		return 0;
 	else
 		return 1;
+}
+
+int nvram_critical(char *name)
+{
+    nvram_critical_internal(name, 1);
 }
 
 void nvram_clear(void)
@@ -339,7 +346,7 @@ void nvram_clear(void)
 		for (i = 0; i < len; i++)
 			if (p[i] == '=')
 				p[i] = 0;
-		if (!nvram_critical(p))
+		if (!nvram_critical_internal(p, 0))
 			nvram_immed_set(p, NULL);
 		p += len + 1;
 	}
