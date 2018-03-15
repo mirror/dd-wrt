@@ -63,4 +63,4 @@ ifeq ($(CONFIG_ARCH_ALPINE),y)
 obj-m				+= mii_gpio.o
 endif
 
-obj-m				+= mii_gpio_octeon.o
+#obj-m				+= mii_gpio_octeon.o
