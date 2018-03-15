@@ -2305,7 +2305,7 @@ void add_vifs_single(char *prefix, int device)
 
 	if (vifs == NULL)
 		return;
-	char *n = (char *)safe_malloc(strlen(vifs) + 8);
+	char *n = (char *)safe_malloc(strlen(vifs) + 16);
 	char v[80];
 	char v2[80];
 #ifdef HAVE_GUESTPORT
@@ -2319,7 +2319,7 @@ void add_vifs_single(char *prefix, int device)
 #else
 	sprintf(v, "wl%d.%d", device, count + 1);
 #endif
-	if (strlen(vifs) == 0)
+	if (!strlen(vifs))
 		sprintf(n, "%s", v);
 	else
 		sprintf(n, "%s %s", vifs, v);
@@ -2525,9 +2525,7 @@ void remove_vifs_single(char *prefix)
 	sprintf(wif, "%s_vifs", prefix);
 	int o = -1;
 	char *vifs = nvram_safe_get(wif);
-	char copy[128];
-
-	strcpy(copy, vifs);
+	char *copy = strdup(vifs);
 	int i;
 	int slen = strlen(copy);
 
@@ -2620,6 +2618,7 @@ void remove_vifs_single(char *prefix)
 		nvram_commit();
 	}
 #endif
+	free(copy);
 }
 
 void remove_vifs(webs_t wp)
@@ -3553,7 +3552,11 @@ void del_ipvstarget(webs_t wp)
 static void save_prefix(webs_t wp, char *prefix)
 {
 	char n[80];
-
+#ifdef HAVE_MADWIFI
+	char turbo[80];
+	char chanbw[80];
+	int cbwchanged = 0;
+#endif
 #ifdef HAVE_RELAYD
 	char gwaddr[32];
 	copytonv(wp, "%s_relayd_gw_auto", prefix);
@@ -3566,14 +3569,9 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_note", prefix);
 #endif
 #ifdef HAVE_MADWIFI
-	char sifs[80];
-	char turbo[80];
-	char chanbw[80];
-	char preamble[80];
-	int cbwchanged = 0;
 	copytonv(wp, "rate_control");
 #endif
-	sprintf(n, "%s_ssid", prefix);
+	snprintf(n, sizeof(n), "%s_ssid", prefix);
 	copytonv(wp, n);
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
 		char *wl = websGetVar(wp, n, NULL);
@@ -3591,7 +3589,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_distance", prefix);
 #ifdef HAVE_MADWIFI
 	{
-		sprintf(n, "%s_txpwrdbm", prefix);
+		snprintf(n, sizeof(n), "%s_txpwrdbm", prefix);
 		char *sl = websGetVar(wp, n, NULL);
 
 		if (sl) {
@@ -3625,20 +3623,18 @@ static void save_prefix(webs_t wp, char *prefix)
 
 			if (txpower < 1)
 				txpower = 1;
-			sprintf(turbo, "%d", txpower);
+			snprintf(turbo, sizeof(turbo), "%d", txpower);
 			nvram_set(n, turbo);
 		}
 	}
 	copytonv(wp, "%s_antgain", prefix);
 	copytonv(wp, "%s_regulatory", prefix);
-	sprintf(n, "%s_scanlist", prefix);
+	snprintf(n, sizeof(n), "%s_scanlist", prefix);
 	{
 		char *sl = websGetVar(wp, n, NULL);
 
 		if (sl) {
-			char *slc = (char *)safe_malloc(strlen(sl) + 1);
-
-			strcpy(slc, sl);
+			char *slc = strdup(sl);
 			int i, sllen = strlen(slc);
 
 			for (i = 0; i < sllen; i++) {
@@ -3658,7 +3654,7 @@ static void save_prefix(webs_t wp, char *prefix)
 
 	copytonv(wp, "%s_rts", prefix);
 	if (nvram_nmatch("1", "%s_rts", prefix)) {
-		sprintf(turbo, "%s_rtsvalue", prefix);
+		snprintf(turbo, sizeof(turbo), "%s_rtsvalue", prefix);
 		char *tw = websGetVar(wp, turbo, NULL);
 
 		if (tw) {
@@ -3706,7 +3702,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_doth", prefix);
 	copytonv(wp, "%s_maxassoc", prefix);
 
-	sprintf(chanbw, "%s_channelbw", prefix);
+	sprintf(chanbw, sizeof(chanbw), "%s_channelbw", prefix);
 	char *cbw = websGetVar(wp, chanbw, NULL);
 
 	if (cbw && !nvram_match(chanbw, cbw)) {
@@ -3716,8 +3712,6 @@ static void save_prefix(webs_t wp, char *prefix)
 		nvram_set(chanbw, cbw);
 
 	copytonv(wp, "%s_xr", prefix);
-	copytonv(wp, "%s_sifstime", prefix);
-	copytonv(wp, "%s_preambletime", prefix);
 	copytonv(wp, "%s_mtikie", prefix);
 	copytonv(wp, "%s_cardtype", prefix);
 
@@ -3786,7 +3780,7 @@ static void save_prefix(webs_t wp, char *prefix)
 #endif
 
 	copytonv(wp, "%s_ap_isolate", prefix);
-	sprintf(n, "%s_mode", prefix);
+	snprintf(n, sizeof(n), "%s_mode", prefix);
 	char *wl_newmode = websGetVar(wp, n, NULL);
 	if (wl_newmode && (nvram_match(n, "sta") || nvram_match(n, "apsta")) && strcmp(wl_newmode, "sta") && strcmp(wl_newmode, "apsta"))
 		notifywanChange();
@@ -3827,7 +3821,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2"))
 #endif
 	{
-		sprintf(n, "%s_net_mode", prefix);
+		snprintf(n, sizeof(n), "%s_net_mode", prefix);
 		if (!nvram_match(n, websGetVar(wp, n, ""))) {
 			chanchanged = 1;
 			copytonv(wp, n);
@@ -3843,7 +3837,10 @@ static void save_prefix(webs_t wp, char *prefix)
 		}
 	}
 #ifdef HAVE_MADWIFI
+#if 0
 	if (cbwchanged || chanchanged) {
+		snprintf(sifs, sizeof(sifs), "%s_sifstime", prefix);
+		snprintf(preamble, sizeof(preamble), "%s_preambletime", prefix);
 		if (nvram_matchi(chanbw, 40)) {
 			nvram_seti(sifs, 8);
 			nvram_seti(preamble, 14);
@@ -3860,11 +3857,12 @@ static void save_prefix(webs_t wp, char *prefix)
 
 	}
 #endif
+#endif
 
 	copytonv(wp, "%s_nbw", prefix);
 	copytonv(wp, "%s_nctrlsb", prefix);
 
-	sprintf(n, "%s_channel", prefix);
+	snprintf(n, sizeof(n), "%s_channel", prefix);
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
 		char *wl = websGetVar(wp, n, NULL);
 
@@ -3878,7 +3876,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	}
 	copytonv(wp, n);
 
-	sprintf(n, "%s_wchannel", prefix);
+	snprintf(n, sizeof(n), "%s_wchannel", prefix);
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1") || !strcmp(prefix, "wl2")) {
 		char *wl = websGetVar(wp, n, NULL);
 
@@ -3897,7 +3895,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "wl_tpc_db");
 
 #if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
-	sprintf(n, "wl_regdomain");
+	snprintf(n, sizeof(n), "wl_regdomain");
 	char *reg = websGetVar(wp, n, NULL);
 	if (reg) {
 		if (strcmp(nvram_safe_get("wl_regdomain"), reg)) {
