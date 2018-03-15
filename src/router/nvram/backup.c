@@ -299,9 +299,13 @@ static char *filter[] = {
 int nvram_critical(char *name)
 {
 	int a = 0;
-	if (name[0] == '@') {
-		fprintf(stderr, "ommit %s\n", name);
-		return 1;
+	int len = strlen(name);
+	int i;
+	for (i = 0; i < len; i++) {
+		if (!isascii(name[i])) {
+			fprintf(stderr, "ommit %s (illegal nvram name)\n", name);
+			return 1;
+		}
 	}
 	while (filter[a] != NULL) {
 		if (!strcmp(name, filter[a++])) {
@@ -348,7 +352,7 @@ static void save(FILE * fp, char *p, int not)
 	int i;
 	while (strlen(p) != 0) {
 		int len = strlen(p);
-		if (len > 2 && (! !strncmp(p, "wl_", 3)) == not) {
+		if (len > 2 && (!!strncmp(p, "wl_", 3)) == not) {
 			p += len + 1;
 			continue;
 		}
