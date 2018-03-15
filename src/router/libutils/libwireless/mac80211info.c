@@ -544,7 +544,8 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	}
 	if (sinfo[NL80211_STA_INFO_RX_COMPRESSED]) {
 		mac80211_info->wci->rx_packets = nla_get_u32(sinfo[NL80211_STA_INFO_RX_COMPRESSED]);
-		mac80211_info->wci->islzo = 1;
+		if (mac80211_info->wci->rx_packets)
+			mac80211_info->wci->islzo = 1;
 	}
 	if (sinfo[NL80211_STA_INFO_TX_BYTES]) {
 		mac80211_info->wci->tx_bytes = nla_get_u32(sinfo[NL80211_STA_INFO_TX_BYTES]);
@@ -1451,6 +1452,7 @@ nla_put_failure:
 	nlmsg_free(msg);
 	return NULL;
 }
+
 struct wifi_channels *mac80211_get_channels_simple(char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband)
 {
 	struct unl unl;
@@ -1459,6 +1461,7 @@ struct wifi_channels *mac80211_get_channels_simple(char *interface, const char *
 	unl_free(&unl);
 	return chan;
 }
+
 int has_ht40(char *interface)
 {
 	struct wifi_channels *chan;

@@ -43,7 +43,6 @@ int getValueFromPath(char *path, int dev, char *fmt, int *err)
 	return value;
 }
 
-
 /*
  * DD-WRT addition (loaned from radauth) 
  */
