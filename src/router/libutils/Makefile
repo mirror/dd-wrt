@@ -1464,7 +1464,7 @@ endif
 
 HFLAGS := $(CFLAGS)
 CFLAGS += $(COPTS)
-all: libshutils.so libutils.so libwireless.so libqos.so $(ADDLIB)
+all: clean libshutils.so libutils.so libwireless.so libqos.so $(ADDLIB)
 
 install: all
 ifeq ($(CONFIG_XSCALE),y)
