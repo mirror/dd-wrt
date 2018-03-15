@@ -128,9 +128,9 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 		if (wc->ht40intol)
 			sprintf(info, "%si", info);
 		if (sgi)
-			sprintf(info, "%s%s", "SGI");
+			sprintf(info, "%s%s", info, "SGI");
 		if (wc->islzo)
-			sprintf(info, "%s %d", "LZO");
+			sprintf(info, "%s %s", info, "LZO");
 		char str[64] = { 0 };
 
 		websWrite(wp, "'%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d'", mac, wc->ifname, UPTIME(wc->uptime, str), wc->txrate / 10 * mul / div, wc->rxrate / 10 * mul / div, info, wc->signal + bias,
