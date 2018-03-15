@@ -118,19 +118,19 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 			ht = 0;
 		if (ht == 5 && vht)
 			ht = 0;
-
-		if (ht == 0)
-			sprintf(info, "%s20%s%s", vht ? "VHT" : "HT", wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
-		if (ht == 1)
-			sprintf(info, "%s40%s%s", vht ? "VHT" : "HT", wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
-		if (ht == 2)
-			sprintf(info, "%s80%s%s", vht ? "VHT" : "HT", wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
-		if (ht == 3)
-			sprintf(info, "%s160%s%s", vht ? "VHT" : "HT", wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
-		if (ht == 4)
-			sprintf(info, "%s80+80%s%s", vht ? "VHT" : "HT", wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
 		if (ht == 5)
-			sprintf(info, "LEGACY%s", wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
+			strcpy(info, "LEGACY");
+		else
+			strcpy(info, vht ? "VHT" : "HT");
+		char *bwinfo[] = { "20", "40", "80", "160", "80+80" };
+		if (ht < 5 && ht >= 0)
+			sprintf(info, "%s%s", info, bwinfo[ht]);
+		if (wc->ht40intol)
+			sprintf(info, "%si", info);
+		if (sgi)
+			sprintf(info, "%s%s", "SGI");
+		if (wc->islzo)
+			sprintf(info, "%s %d", "LZO");
 		char str[64] = { 0 };
 
 		websWrite(wp, "'%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d'", mac, wc->ifname, UPTIME(wc->uptime, str), wc->txrate / 10 * mul / div, wc->rxrate / 10 * mul / div, info, wc->signal + bias,
