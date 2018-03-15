@@ -33,7 +33,6 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 #endif
 
-
 static struct mac80211_ac *add_to_mac80211_ac(struct mac80211_ac *list_root);
 void free_mac80211_ac(struct mac80211_ac *acs);
 
@@ -48,7 +47,6 @@ struct frequency {
 	int noise_count;
 	int eirp;
 };
-
 
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
 	[NL80211_SURVEY_INFO_FREQUENCY] = {.type = NLA_U32},
@@ -189,7 +187,7 @@ static int freq_add_stats(struct nl_msg *msg, void *data)
 	int freq;
 	if (mac80211_parse_survey(msg, sinfo))
 		goto out;
-	
+
 	freq = nla_get_u32(sinfo[NL80211_SURVEY_INFO_FREQUENCY]);
 	f = get_freq(freq, frequencies);
 	if (!f)
@@ -296,7 +294,7 @@ static int get_max_eirp(struct wifi_channels *wifi_channels)
 	return eirp;
 }
 
-static int get_eirp(struct wifi_channels *wifi_channels,int freq)
+static int get_eirp(struct wifi_channels *wifi_channels, int freq)
 {
 	int i = 0;
 	struct wifi_channels *chan = NULL;
@@ -429,10 +427,10 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	freq_list(&unl, phy, freq_range, &frequencies);
 	for (i = 0; i < scans; i++) {
 		int x = 0;
-		while(x++ < 10) {
-		    if (!scan(&unl, wdev, &frequencies))
-			break;
-		    sleep(1); // try again
+		while (x++ < 10) {
+			if (!scan(&unl, wdev, &frequencies))
+				break;
+			sleep(1);	// try again
 		}
 		survey(&unl, wdev, freq_add_stats, &frequencies);
 	}
