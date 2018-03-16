@@ -121,7 +121,7 @@ addEvent(window, "unload", function() {
 										<% nvm("wan_proto", "pppoe", "PPPoE"); %>
 										<% nvm("wan_proto", "pptp", "PPTP"); %>
 										<% nvm("wan_proto", "l2tp", "L2TP"); %>
-										<% nvm("wan_proto", "3g", "3G/UMTS"); %>
+										<% nvm("wan_proto", "3g", "LTE-4G/3G/2G"); %>
 										<% nvm("wan_proto", "heartbeat", "HeartBeatSignal"); %>
 										<% nvm("wan_proto", "disabled", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
 									</div>
