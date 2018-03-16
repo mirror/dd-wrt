@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r3983 | brainslayer | 2018-03-16 10:50:16 +0100 (Fri, 16 Mar 2018) | 1 line
+
+kmt move gpios from sysinit-script to here
+------------------------------------------------------------------------
+r3982 | brainslayer | 2018-03-16 10:29:12 +0100 (Fri, 16 Mar 2018) | 1 line
+
+kmt move gpios from sysinit-script to here
+------------------------------------------------------------------------
+r3981 | brainslayer | 2018-03-16 10:07:32 +0100 (Fri, 16 Mar 2018) | 1 line
+
+add MC73xx change scripts
+------------------------------------------------------------------------
 r3980 | brainslayer | 2018-03-16 00:33:24 +0100 (Fri, 16 Mar 2018) | 1 line
 
 if compressed frame was received, we assume the station is lzo capable
