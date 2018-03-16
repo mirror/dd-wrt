@@ -24,6 +24,8 @@ libmbim-install:
 	install -D private/lte-scripte/mbim-connect.sh $(INSTALLDIR)/libmbim/usr/sbin/mbim-connect.sh
 	install -D private/lte-scripte/json_to_grepable.awk $(INSTALLDIR)/libmbim/usr/sbin/json_to_grepable.awk
 	install -D private/lte-scripte/check-mbim-con-status.sh $(INSTALLDIR)/libmbim/usr/sbin/check-mbim-con-status.sh
+	install -D private/lte-scripte/7304-mbim.comgt $(INSTALLDIR)/libmbim/etc/comgt/7304-mbim.comgt
+	install -D private/lte-scripte/7304-qmi.comgt $(INSTALLDIR)/libmbim/etc/comgt/7304-qmi.comgt
 	cp private/lte-scripte/mbim-status* $(INSTALLDIR)/libmbim/usr/sbin/
 	cp private/lte-scripte/7*xx-set-mode-* $(INSTALLDIR)/libmbim/usr/sbin/
 	cp private/lte-scripte/check_mbim_qmi_mode.sh $(INSTALLDIR)/libmbim/usr/sbin/
