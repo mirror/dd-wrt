@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3980 | brainslayer | 2018-03-16 00:33:24 +0100 (Fri, 16 Mar 2018) | 1 line
+
+if compressed frame was received, we assume the station is lzo capable
+------------------------------------------------------------------------
 r3979 | brainslayer | 2018-03-15 22:41:17 +0100 (Thu, 15 Mar 2018) | 1 line
 
 export compressed packets statistic
