@@ -676,7 +676,8 @@ char *copytonv(webs_t wp, const char *fmt, ...)
 	va_end(args);
 
 	char *wl = websGetVar(wp, varbuf, NULL);
-
+	if (nvram_match("console_debug","1"))
+		fprintf(stderr, "save %s with value %s\n", varbuf, wl);
 	if (wl)
 		nvram_set(varbuf, wl);
 	return wl;
@@ -3702,7 +3703,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_doth", prefix);
 	copytonv(wp, "%s_maxassoc", prefix);
 
-	sprintf(chanbw, sizeof(chanbw), "%s_channelbw", prefix);
+	snprintf(chanbw, sizeof(chanbw), "%s_channelbw", prefix);
 	char *cbw = websGetVar(wp, chanbw, NULL);
 
 	if (cbw && !nvram_match(chanbw, cbw)) {
