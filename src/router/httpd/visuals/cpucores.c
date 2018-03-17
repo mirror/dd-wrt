@@ -114,7 +114,7 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 		fscanf(fp, "%d", &freq);
 		int freq2;
 		fscanf(fp2, "%d", &freq2);
-		websWrite(wp, "%d MHz / %d", freq / 1000000, freq2 / 1000000);
+		websWrite(wp, "%d / %d", freq / 1000000, freq2 / 1000000);
 	} else {
 		websWrite(wp, "1400");
 
