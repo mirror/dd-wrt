@@ -109,12 +109,16 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *fp2 = fopen("/sys/kernel/debug/clk/krait1_pri_mux/clk_rate", "rb");
 	FILE *fp = fopen("/sys/kernel/debug/clk/krait0_pri_mux/clk_rate", "rb");
+	if (argc && !strcmp(argv[0],"1"))
 	if (fp && fp2) {
 		int freq;
 		fscanf(fp, "%d", &freq);
 		int freq2;
 		fscanf(fp2, "%d", &freq2);
-		websWrite(wp, "%d / %d", freq / 1000000, freq2 / 1000000);
+		if (argc && !strcmp(argv[0],"1"))
+		websWrite(wp, "%d", freq / 1000000, freq2 / 1000000);
+		else
+		websWrite(wp, "%d MHz / %d", freq / 1000000, freq2 / 1000000);
 	} else {
 		websWrite(wp, "1400");
 
