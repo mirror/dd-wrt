@@ -2396,7 +2396,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #ifdef HAVE_ATH9K
 		if (is_ath9k(prefix)) {
 			char wl_fc[16];
-			sprintf(wl_fc, "%s_fc", prefix);
+			sprintf(wl_fc, "%s_fc", var);
 			showRadioDefaultOff(wp, "wl_basic.fc", wl_fc);
 		}
 #endif
