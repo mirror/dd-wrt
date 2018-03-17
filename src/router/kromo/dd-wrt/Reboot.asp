@@ -2,7 +2,7 @@
 
 <script type="text/javascript">
 //<![CDATA[
-var clk = <% get_clkfreq(); %>;
+var clk = <% get_clkfreq("1"); %>;
 var rest_default = <% nvg("sv_restore_defaults"); %>;
 var submit_button = "<% get_web_page_name(); %>";
 var timer = setTimeout("message()", <% getboottime(); %> * 1000);
