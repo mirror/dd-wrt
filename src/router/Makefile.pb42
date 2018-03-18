@@ -304,6 +304,9 @@ endif
 ifeq ($(CONFIG_MMS344),y)
 	cp $(LINUXDIR)/.config_dir825c1 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_CPE880),y)
+	cp $(LINUXDIR)/.config_dir825c1 $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_RB2011),y)
 	cp $(LINUXDIR)/.config_rb2011 $(LINUXDIR)/.config
 endif
@@ -528,6 +531,11 @@ ifeq ($(CONFIG_WDR2543),y)
 	echo CONFIG_WDR2543=y >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_WDR2543 is not set" >> $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_CPE880),y)
+	echo CONFIG_CPE880=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_CPE880 is not set" >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_MMS344),y)
 	echo CONFIG_MMS344=y >> $(LINUXDIR)/.config
@@ -1755,6 +1763,7 @@ ifeq ($(CONFIG_DIR615I),y)
 endif
 ifeq ($(CONFIG_WRT160NL),y)
 	./tools/wrt160nl/pad $(ARCH)-uclibc/root.uimage $(ARCH)-uclibc/aligned.uimage
+#	cp $(ARCH)-uclibc/root.uimage $(ARCH)-uclibc/aligned.uimage
 	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
 	./tools/wrt160nl/trx -m 40000000 -o $(ARCH)-uclibc/wrt160nl-firmware.trx -f $(ARCH)-uclibc/aligned.uimage
 	./tools/wrt160nl/trx -m 40000000 -o $(ARCH)-uclibc/e2100l-firmware.trx -f $(ARCH)-uclibc/aligned.uimage
@@ -1933,6 +1942,11 @@ endif
 ifeq ($(CONFIG_WR941V6),y)
 	-./tools/tplink/mktplinkfw -B TL-WR941NDv6 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR941NDv6-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR941NDv6-firmware.bin mips-uclibc/tplink-WR941NDv6-firmware.bin
+endif
+ifeq ($(CONFIG_WR940V4),y)
+	-./tools/tplink/mktplinkfw -s "00000000;45550000;" -B TL-WR940NDv4 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR940NDv4-firmware-eu.bin
+	-./tools/tplink/mktplinkfw -s "00000000;55530000;" -B TL-WR940NDv4 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR940NDv4-firmware-us.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR940NDv4-firmware.bin mips-uclibc/tplink-WR940NDv4-firmware-eu.bin
 endif
 ifeq ($(CONFIG_WR842V2),y)
 	-./tools/tplink/mktplinkfw -B TL-WR842NDv2 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR842NDv2-firmware.bin
