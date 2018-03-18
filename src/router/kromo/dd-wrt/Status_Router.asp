@@ -121,7 +121,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.sys_time"); %></div>
-									<span id="router_time"><% localtimejs(); %></span>&nbsp;
+									<span id="router_time"><% localtime("1"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.sys_up"); %></div>
