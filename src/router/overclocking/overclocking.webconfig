@@ -3,4 +3,5 @@
   <legend><% tran("management.clock_legend"); %></legend>
   <div class="setting">
     <% show_clocks(); %>
+  </div>
 </fieldset><br/>
