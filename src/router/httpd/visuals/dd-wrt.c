@@ -101,15 +101,21 @@ void show_caption_pp(webs_t wp, const char *class, const char *caption, const ch
 		asprintf(&buf, "%s<div class=\"%s\"><script type=\"text/javascript\">Capture(%s)</script></div>%s\n", pre ? pre : "", class, caption, post ? post : "");
 	else
 		asprintf(&buf, "%s<script type=\"text/javascript\">Capture(%s)</script>%s", pre ? pre : "", caption, post ? post : "");
-	websWrite(wp, buf);
-
-	free(buf);
+	if (buf) {
+		websWrite(wp, buf);
+		free(buf);
+	}
 
 }
 
 void show_caption(webs_t wp, const char *class, const char *caption, const char *ext)
 {
 	show_caption_pp(wp, class, caption, NULL, ext);
+}
+
+void show_caption_simple(webs_t wp, const char *caption)
+{
+	show_caption_pp(wp, NULL, caption, NULL, NULL);
 }
 
 void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type)
@@ -1384,7 +1390,7 @@ void ej_show_mmc_cardinfo(webs_t wp, int argc, char_t ** argv)
 		}
 		fclose(fp);
 	} else
-		websWrite(wp, "%s", tran_string(buff, "status_router.notavail"));
+		show_caption_simple(wp, "status_router.notavail");
 
 	return;
 }
@@ -1399,7 +1405,7 @@ void show_legend(webs_t wp, char *labelname, int translate)
 	 * ? ")</script>" : ""); 
 	 */
 	if (translate)
-		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(%s)</script></legend>\n", labelname);
+		show_caption_pp(wp, NULL, labelname, "<legend>", "</legend>\n");
 	else
 		websWrite(wp, "<legend>%s</legend>\n", labelname);
 
@@ -5312,14 +5318,14 @@ void ej_get_wan_uptime(webs_t wp, int argc, char_t ** argv)
 		return;
 	if (nvram_match("wan_ipaddr", "0.0.0.0")) {
 		if (fmt)
-			websWrite(wp, "%s", tran_string(buf, "status_router.notavail"));
+			show_caption_simple(wp, "status_router.notavail");
 		else
 			websWrite(wp, "%s", live_translate("status_router.notavail"));
 		return;
 	}
 	if (!(fp = fopen("/tmp/.wanuptime", "r"))) {
 		if (fmt)
-			websWrite(wp, "%s", tran_string(buf, "status_router.notavail"));
+			show_caption_simple(wp, "status_router.notavail");
 		else
 			websWrite(wp, "%s", live_translate("status_router.notavail"));
 		return;

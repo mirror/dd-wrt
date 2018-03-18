@@ -34,14 +34,14 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 	if (strlen(nvram_safe_get("ipvs"))) {
 		int realcount = nvram_default_geti("ipvstarget_count", 0);
 		websWrite(wp, "<fieldset>\n");
-		websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, "networking.ipvs_targets"));
+		show_caption_pp(wp, NULL, "networking.ipvs_targets", "<legend>", "</legend>\n");
 
 		websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvstargets\" id=\"ipvstarget_table\" class=\"table center\"><tr>\n");
-		websWrite(wp, "<th>%s</th>\n", tran_string(buf, "networking.ipvs_name"));
-		websWrite(wp, "<th>%s</th>\n", tran_string(buf, "networking.ipvs_targetip"));
-		websWrite(wp, "<th>%s</th>\n", tran_string(buf, "networking.ipvs_targetport"));
-		websWrite(wp, "<th>%s</th>\n", tran_string(buf, "networking.ipvs_weight"));
-		websWrite(wp, "<th>%s</th>\n", tran_string(buf, "wl_basic.masquerade"));
+		show_caption_pp(wp, NULL, "networking.ipvs_name", "<th>", "</th>\n");
+		show_caption_pp(wp, NULL, "networking.ipvs_targetip", "<th>", "</th>\n");
+		show_caption_pp(wp, NULL, "networking.ipvs_targetport", "<th>", "</th>\n");
+		show_caption_pp(wp, NULL, "networking.ipvs_weight", "<th>", "</th>\n");
+		show_caption_pp(wp, NULL, "wl_basic.masquerade", "<th>", "</th>\n");
 		websWrite(wp, "<th>&nbsp;</th></tr>\n");
 
 		wordlist = nvram_safe_get("ipvstarget");
@@ -148,20 +148,20 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 
 	int realcount = nvram_default_geti("ipvs_count", 0);
 
-	websWrite(wp, "<h2>%s</h2>\n", tran_string(buf, "networking.ipvs"));
+	show_caption_pp(wp, NULL, "networking.ipvs", "<h2>", "</h2>\n");
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, "networking.ipvs_config"));
+	show_caption_pp(wp, NULL, "networking.ipvs_config", "<legend>", "</legend>\n");
 	showOptionsLabel(wp, "networking.ipvs_role", "ipvsrole", "Master Backup", nvram_default_match("ipvs_role", "master", "master") ? "Master" : "Backup");
 	websWrite(wp, "</fieldset>\n");
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, "networking.create_ipvs"));
+	show_caption_pp(wp, NULL, "networking.create_ipvs", "<legend>", "</legend>\n");
 
 	websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvs\" id=\"ipvs_table\" class=\"table center\"><tr>\n");
-	websWrite(wp, "<th>%s</th>\n", tran_string(buf, "networking.ipvs_name"));
-	websWrite(wp, "<th>%s</th>\n", tran_string(buf, "networking.ipvs_sourceip"));
-	websWrite(wp, "<th>%s</th>\n", tran_string(buf, "networking.ipvs_sourceport"));
-	websWrite(wp, "<th>%s</th>\n", tran_string(buf, "share.proto"));
-	websWrite(wp, "<th>%s</th>\n", tran_string(buf, "networking.ipvs_scheduler"));
+	show_caption_pp(wp, NULL, "networking.ipvs_name", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "networking.ipvs_sourceip", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "networking.ipvs_sourceport", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "share.proto", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "networking.ipvs_scheduler", "<th>", "</th>\n");
 	websWrite(wp, "<th>&nbsp;</th></tr>\n");
 
 	wordlist = nvram_safe_get("ipvs");

@@ -33,6 +33,7 @@
 
 void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type);
 void show_caption(webs_t wp, const char *class, const char *cap, const char *ext);
+void show_caption_simple(webs_t wp, const char *cap);
 
 void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 {
@@ -47,7 +48,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		sprintf(oet, "oet%d", tun);
 		websWrite(wp, "<fieldset>\n");
 		websWrite(wp, "<legend>");
-		show_caption(wp, NULL, "oeip.tunnel", NULL);
+		show_caption_simple(wp, "oeip.tunnel");
 		websWrite(" %s</legend>\n", getNetworkLabel(wp, oet));
 		websWrite(wp, "<div class=\"setting\">\n");
 		{
@@ -60,7 +61,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp,
 				  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idoet%d', false)\" />", temp, (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""),
 				  tun);
-			show_caption(wp, NULL, "share.disable", NULL);
+			show_caption_simple(wp, "share.disable");
 		}
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"idoet%d\">\n", tun);
@@ -141,7 +142,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							websWrite(wp,
 								  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idendpoint%d_peer%d', false)\" />", temp,
 								  (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""), tun, peer);
-							show_caption(wp, NULL, "share.disable", NULL);
+							show_caption_simple(wp, "share.disable");
 						}
 						websWrite(wp, "</div>\n");
 						websWrite(wp, "<div id=\"idendpoint%d_peer%d\">\n", tun, peer);
@@ -197,7 +198,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							websWrite(wp,
 								  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idpsk%d_peer%d', false)\" />", temp,
 								  (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""), tun, peer);
-							show_caption(wp, NULL, "share.disable", NULL);
+							show_caption_simple(wp, "share.disable");
 						}
 						websWrite(wp, "</div>\n");
 						websWrite(wp, "<div id=\"idpsk%d_peer%d\">\n", tun, peer);
@@ -278,7 +279,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp,
 						  " <input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idbridged%d', true)\" />", temp,
 						  (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""), tun);
-					show_caption(wp, NULL, "share.disable", NULL);
+					show_caption_simple(wp, "share.disable");
 				}
 				websWrite(wp, "</div>\n");
 			}
