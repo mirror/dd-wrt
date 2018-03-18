@@ -81,6 +81,11 @@
 				};
 			};
 
+			rtc@a3800 {
+				/* No crystal connected to the internal RTC */
+				status = "disabled";
+			};
+
 			/* J10: VCC, NC, RX, NC, TX, GND  */
 			serial@12000 {
 				status = "okay";
@@ -367,7 +372,3 @@
 	status = "disabled";
 };
 
-&rtc {
-	/* No crystal connected to the internal RTC */
-	status = "disabled";
-};
