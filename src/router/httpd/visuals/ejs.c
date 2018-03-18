@@ -2184,7 +2184,8 @@ void ej_make_time_list(webs_t wp, int argc, char_t ** argv)
 void ej_get_service_state(webs_t wp, int argc, char_t ** argv)
 {
 	char buf[128];
-	websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", tran_string(buf, "service.dhcp_legend2"));
+	websWrite(wp, "<div class=\"setting\">");
+	show_caption(wp, "label", "service.dhcp_legend2", NULL);
 	if (nvram_match("lan_proto", "dhcp")) {
 		websWrite(wp, "%s", tran_string(buf, "share.enabled"));
 		if (pidof("dnsmasq") > 0 || pidof("udhcpd") > 0) {

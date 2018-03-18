@@ -53,7 +53,7 @@ void ej_get_voltage(webs_t wp, int argc, char_t ** argv)
 void ej_show_voltage(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_router.inpvolt)</script></div>\n");
+	show_caption(wp, "label", "status_router.inpvolt", NULL);
 	websWrite(wp, "<span id=\"voltage\">");
 	ej_get_voltage(wp, argc, argv);
 	websWrite(wp, "</span>&nbsp;\n");

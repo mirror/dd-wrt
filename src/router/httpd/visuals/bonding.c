@@ -31,13 +31,13 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 	bzero(buffer, 256);
 	bzero(bondnames, 256);
 	bzero(bufferif, 512);
-	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(networking.bonding)</script></h2>\n");
+	show_caption_pp(wp, NULL, "networking.bonding", "<h2>", "</h2>\n");
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(networking.bonding)</script></legend>\n");
+	show_caption_pp(wp, NULL, "networking.bonding", "<legend>", "</legend>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(networking.bondtype)</script></div>\n", count);
+	show_caption(wp, "label", "networking.bondtype", NULL);
 	showOptions(wp, "bonding_type", "balance-rr active-backup balance-xor broadcast 802.3ad balance-tlb balance-alb weighted-rr duplex", nvram_default_get("bonding_type", "balance-rr"));
-	websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.bondifaces)</script>&nbsp;");
+	show_caption_pp(wp, NULL, "networking.bondifaces", "&nbsp;", "&nbsp;");
 	websWrite(wp, "<input class=\"num\" name=\"bonding_number\"size=\"5\" value=\"%s\" />\n", nvram_default_get("bonding_number", "1"));
 	websWrite(wp, "</div>\n");
 
@@ -116,11 +116,11 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(networking.bonding) + Capture(\" %d \")  + Capture(networking.iface)</script></div>\n", i);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.bond)</script>&nbsp;");
+		show_caption_pp(wp, NULL, "networking.bond", "&nbsp;", "&nbsp;");
 		sprintf(vlan_name, "bondingifname%d", i);
 		showOptions(wp, vlan_name, bondnames, "");
 		sprintf(vlan_name, "bondingattach%d", i);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.slave)</script>&nbsp;");
+		show_caption_pp(wp, NULL, "networking.slave", "&nbsp;", "&nbsp;");
 		showIfOptions(wp, vlan_name, bufferif, "");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bond_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",

@@ -42,7 +42,8 @@ void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		char *netmask = nvram_nget("%s_netmask", interface);
 
 		if (strlen(ipaddr) > 0 && strlen(netmask) > 0) {
-			websWrite(wp, "<script type=\"text/javascript\">Capture(networking.iface);</script> %s: IP %s/%s\n", getNetworkLabel(wp, interface), ipaddr, netmask);
+			show_caption_simple(wp, "networking.iface");
+			websWrite(wp, " %s: IP %s/%s\n", getNetworkLabel(wp, interface), ipaddr, netmask);
 		}
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "DHCP %d &nbsp;\n", count);
@@ -53,14 +54,14 @@ void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		showOptions(wp, vlan_name, "On Off", dhcpon);
 		// start
 		sprintf(vlan_name, "mdhcpstart%d", count);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(share.start);</script>&nbsp;");
+		show_caption_pp(wp, NULL, "share.start", "&nbsp;", "&nbsp;");
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n", vlan_name, start);
 		// max
 		sprintf(vlan_name, "mdhcpmax%d", count);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.max);</script>&nbsp;");
+		show_caption_pp(wp, NULL, "networking.max", "&nbsp;", "&nbsp;");
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n", vlan_name, max);
 		sprintf(vlan_name, "mdhcpleasetime%d", count);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.leasetime);</script>&nbsp;");
+		show_caption_pp(wp, NULL, "networking.leasetime", "&nbsp;", "&nbsp;");
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n", vlan_name, leasetime);
 		// 
 		websWrite(wp,
