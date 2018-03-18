@@ -327,7 +327,7 @@ void __init bcm47xx_adjust_zones(unsigned long *size, unsigned long *hole)
 //#error IO_BASE_VA 
 //#endif
 
-void brcm_reset(char mode, const char *cmd)
+void brcm_reset(enum reboot_mode mode, const char *cmd)
 {
 #ifdef CONFIG_OUTER_CACHE_SYNC
 	outer_cache.sync = NULL;
@@ -521,6 +521,7 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 	uint32 top = 0;
 	uint32 bootsz;
 	uint32 maxsize = 0;
+	uint32 extraspace = 0;
 	int is_ex6200 = 0;
 	int nobackup = 0;
 #ifdef CONFIG_FAILSAFE_UPGRADE
@@ -610,6 +611,10 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 		size = maxsize;
 	}
 
+	if (nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1102") && nvram_match("boardnum", "001")) {
+		extraspace = 0x100000 - 0x10000;
+	}
+
 	bootdev = soc_boot_dev((void *)sih);
 	knldev = soc_knl_dev((void *)sih);
 
@@ -639,6 +644,7 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 
 			/* Reserve for NVRAM */
 			bcm947xx_flash_parts[nparts].size -= ROUNDUP(nvram_space, mtd->erasesize);
+			bcm947xx_flash_parts[nparts].size -= extraspace;
 #ifdef PLC
 			/* Reserve for PLC */
 			bcm947xx_flash_parts[nparts].size -= ROUNDUP(0x1000, mtd->erasesize);
@@ -659,6 +665,7 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 #endif
 		/* Reserve for NVRAM */
 		bcm947xx_flash_parts[nparts].size -= ROUNDUP(nvram_space, mtd->erasesize);
+		bcm947xx_flash_parts[nparts].size -= extraspace;
 
 #ifdef BCMCONFMTD
 		bcm947xx_flash_parts[nparts].size -= (mtd->erasesize * 4);
@@ -754,7 +761,7 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 		bcm947xx_flash_parts[nparts].offset = bcm947xx_flash_parts[2].offset + bcm947xx_flash_parts[2].size;
 		bcm947xx_flash_parts[nparts].offset += (mtd->erasesize - 1);
 		bcm947xx_flash_parts[nparts].offset &= ~(mtd->erasesize - 1);
-		bcm947xx_flash_parts[nparts].size = (size - bcm947xx_flash_parts[nparts].offset) - ROUNDUP(nvram_space, mtd->erasesize);
+		bcm947xx_flash_parts[nparts].size = (size - bcm947xx_flash_parts[nparts].offset) - (ROUNDUP(nvram_space, mtd->erasesize) + extraspace);
 		nparts++;
 	}
 	
@@ -778,12 +785,14 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 
 	bcm947xx_flash_parts[nparts].name = "nvram";
 	bcm947xx_flash_parts[nparts].size = ROUNDUP(nvram_space, mtd->erasesize);
-	if (maxsize)
+	if (maxsize){
 		bcm947xx_flash_parts[nparts].offset = (size - 0x10000) - bcm947xx_flash_parts[nparts].size;
-		if(is_ex6200 || nobackup)
+		if(is_ex6200 || nobackup) {
 			bcm947xx_flash_parts[nparts].offset = size + 0x10000 - bcm947xx_flash_parts[nparts].size;
-	else
+		}
+	}else{
 		bcm947xx_flash_parts[nparts].offset = size - bcm947xx_flash_parts[nparts].size;
+	}
 	bcm947xx_flash_parts[nparts].offset-=bcm947xx_flash_parts[nparts].size;
 	nparts++;
 
