@@ -366,3 +366,8 @@
 &spi0 {
 	status = "disabled";
 };
+
+&rtc {
+	/* No crystal connected to the internal RTC */
+	status = "disabled";
+};
