@@ -59,6 +59,8 @@ void start_sshd(void)
 
 	if (!nvram_invmatchi("sshd_enable", 0))
 		return;
+	if (nvram_match("http_username", DEFAULT_USER) && nvram_match("http_passwd", DEFAULT_PASS))
+		return;
 	empty_dir_check();
 	int changed = 0;
 
