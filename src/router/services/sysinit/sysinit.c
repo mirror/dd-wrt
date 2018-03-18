@@ -2933,7 +2933,7 @@ void start_restore_defaults(void)
 #ifdef HAVE_POWERNOC
 			nvram_set("http_username", "bJz7PcC1rCRJQ");	// admin
 #else
-			nvram_set("http_username", "bJ/GddyoJuiU2");	// root
+			nvram_set("http_username", DEFAULT_USER);	// root
 #endif
 		}
 	}
