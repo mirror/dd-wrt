@@ -94,6 +94,24 @@ static void s_END(char *service, int line)
 #define END() s_END(__func__,__LINE__);
 #endif
 
+void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post)
+{
+	char *buf;
+	if (class)
+		asprintf(&buf, "%s<div class=\"%s\"><script type=\"text/javascript\">Capture(%s)</script></div>%s\n", pre ? pre : "", class, caption, post ? post : "");
+	else
+		asprintf(&buf, "%s<script type=\"text/javascript\">Capture(%s)</script>%s", pre ? pre : "", caption, post ? post : "");
+	websWrite(wp, buf);
+
+	free(buf);
+
+}
+
+void show_caption(webs_t wp, const char *class, const char *caption, const char *ext)
+{
+	show_caption_pp(wp, class, caption, NULL, ext);
+}
+
 void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type)
 {
 	char name[64];
@@ -112,11 +130,11 @@ void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type)
 void show_ipnetmask(webs_t wp, char *var)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
+	show_caption(wp, "label", "share.ip", NULL);
 	show_ip(wp, var, "ipaddr", 0, "share.ip");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
+	show_caption(wp, "label", "share.subnet", NULL);
 	show_ip(wp, var, "netmask", 1, "share.subnet");
 	websWrite(wp, "</div>\n");
 
@@ -146,7 +164,7 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 		c = ns_type7_clocks;
 		break;
 	default:
-		websWrite(wp, "<script type=\"text/javascript\">Capture(management.clock_support)</script>\n</div>\n");
+		show_caption(wp, NULL, "management.clock_support", "\n");
 		return;
 	}
 #else
@@ -170,7 +188,7 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 		c = type10_clocks;
 		break;
 	default:
-		websWrite(wp, "<script type=\"text/javascript\">Capture(management.clock_support)</script>\n</div>\n");
+		show_caption(wp, NULL, "management.clock_support", "</div>\n");
 		return;
 	}
 #endif
@@ -192,17 +210,19 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 
 	if (in_clock_array && nvram_get("clkfreq") != NULL) {
 
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(management.clock_frq)</script></div>\n");
+		show_caption(wp, "label", "management.clock_frq", "</div>\n");
 		websWrite(wp, "<select name=\"overclocking\">\n");
 		i = 0;
 		while (c[i] != 0) {
-			websWrite(wp, "<option value=\"%d\" %s >%d <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n", c[i], c[i] == cclk ? "selected=\"selected\"" : "", c[i]);
+			websWrite(wp, "<option value=\"%d\" %s >%d ", c[i], c[i] == cclk ? "selected=\"selected\"" : "", c[i]);
+			show_caption(wp, NULL, "wl_basic.mhz", "</option>\n");
 			i++;
+
 		}
 
 		websWrite(wp, "</select>\n</div>\n");
 	} else {
-		websWrite(wp, "<script type=\"text/javascript\">Capture(management.clock_support)</script>\n</div>\n");
+		show_caption(wp, "label", "management.clock_support", "</div>\n");
 		fprintf(stderr, "CPU frequency list for rev: %d does not contain current clkfreq: %d.", rev, cclk);
 	}
 }
