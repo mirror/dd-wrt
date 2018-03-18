@@ -708,7 +708,7 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_IDEXX
 	{"http_username", "$1$IpR13S3g$E1hg4idP4TZmfQeHIX20L/"},	/* Password */
 #else
-	{"http_username", "$1$gHo0JRUz$DhmErZyHtCmTxxKPPb13o."},	/* Username */
+	{"http_username", DEFAULT_USER},	/* Username */
 #endif
 
 #ifdef HAVE_SKYTRON
@@ -745,7 +745,7 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_RAYTRONIK
 	{"http_passwd", "$1$iuIXI3we$ZM4nJ4QVrzGySwLd/9PDF0"},	/* Password */
 #else
-	{"http_passwd", "$1$gHo0JRUz$cbb1yYxlmSCh0mTlTUsV81"},	/* Password */
+	{"http_passwd", DEFAULT_PASS},	/* Password */
 #endif
 
 	{"remote_ip_any", "1"},	/* allowed remote ip */
