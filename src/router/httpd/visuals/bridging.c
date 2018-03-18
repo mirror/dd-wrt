@@ -50,8 +50,8 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 #else
 	websWrite(wp, "<th>STP</th>\n");
 #endif
-	websWrite(wp, "<th><script type=\"text/javascript\">Capture(networking.snooping)</script></th>\n");
-	websWrite(wp, "<th><script type=\"text/javascript\">Capture(networking.prio)</script></th>\n");
+	show_caption_pp(wp, NULL, "networking.snooping", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
 	websWrite(wp, "<th>MTU</th>\n");
 	websWrite(wp, "<th>Root MAC</th>\n");
 	websWrite(wp, "<th>&nbsp;</th></tr>\n");
@@ -270,13 +270,14 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		char vlan_name[32];
 
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<script type=\"text/javascript\">Capture(networking.assign);</script> %d\n", count);
+		show_caption_simple(wp, "networking.assign");
+		websWrite(wp, " %d\n", count);
 		sprintf(vlan_name, "bridge%d", count);
 		showIfOptions(wp, vlan_name, finalbuffer, tag);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.iface);</script>&nbsp;");
+		show_caption_pp(wp, NULL, "networking.iface", "&nbsp;", "&nbsp;");
 		sprintf(vlan_name, "bridgeif%d", count);
 		showIfOptions(wp, vlan_name, bufferif, port);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.prio);</script>&nbsp;");
+		show_caption_pp(wp, NULL, "networking.prio", "&nbsp;", "&nbsp;");
 		sprintf(vlan_name, "bridgeifprio%d", count);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" />\n", vlan_name, prio != NULL ? prio : "63");
 		websWrite(wp,
@@ -291,13 +292,14 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		char vlan_name[32];
 
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<script type=\"text/javascript\">Capture(networking.assign)</script> %d\n", i);
+		show_caption_simple(wp, "networking.assign");
+		websWrite(wp, " %i\n", count);
 		sprintf(vlan_name, "bridge%d", i);
 		showIfOptions(wp, vlan_name, finalbuffer, "");
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.iface)</script>&nbsp;");
+		show_caption_pp(wp, NULL, "networking.iface", "&nbsp;", "&nbsp;");
 		sprintf(vlan_name, "bridgeif%d", i);
 		showIfOptions(wp, vlan_name, bufferif, "");
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.prio)</script>&nbsp;");
+		show_caption_pp(wp, NULL, "networking.prio", "&nbsp;", "&nbsp;");
 		sprintf(vlan_name, "bridgeifprio%d", i);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n", vlan_name, "63");
 		websWrite(wp,

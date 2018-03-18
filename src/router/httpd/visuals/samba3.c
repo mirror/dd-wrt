@@ -58,15 +58,13 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 	// table header
 	websWrite(wp, "	<table id=\"samba_shares\" class=\"table center\" summary=\"samba share table\">\n");
-	websWrite(wp, "		<tr><th colspan=\"6\"><script type=\"text/javascript\">Capture(service.samba3_shares)</script></th></tr>\n");
-	websWrite(wp, "		<tr>\n");
-	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_path)</script></th>\n");
-	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_subdir)</script></th>\n");
-	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_label)</script></th>\n");
-	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_public)</script></th>\n");
-	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_access)</script></th>\n");
-	websWrite(wp, "			<th style=\"width: 50px;\">&nbsp;</th>\n");
-	websWrite(wp, "		</tr>\n");
+	show_caption_pp(wp, NULL, "service.samba3_shares", "<tr><th colspan=\"6\">", "</th></tr>\n<tr>\n");
+	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "service.samba3_share_subdir", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "service.samba3_share_label", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "service.samba3_share_public", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "service.samba3_share_access", "<th>", "</th>\n");
+	websWrite(wp, "<th style=\"width: 50px;\">&nbsp;</th>\n</tr>\n");
 
 	for (cs = samba3shares; cs; cs = csnext) {
 
@@ -141,10 +139,10 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 			  "					<select name=\"smbshare_access_perms%s\" id=\"smbshare_access_perms%s\" style=\"width: 100%%;\"%s>\n",
 			  number, number, !strcmp(perms, "") ? " disabled" : "");
 		if (rows == 0 || strcmp(perms, "")) {
-			websWrite(wp, "						<option value=\"rw\"%s><script type=\"text/javascript\">Capture(nas.perm_rw);</script></option>\n",
-				  !strcmp(cs->access_perms, "rw") ? " selected" : "");
-			websWrite(wp, "						<option value=\"ro\"%s><script type=\"text/javascript\">Capture(nas.perm_ro);</script></option>\n",
-				  !strcmp(cs->access_perms, "ro") ? " selected" : "");
+			websWrite(wp, "<option value=\"rw\"%s>", !strcmp(cs->access_perms, "rw") ? " selected" : "");
+			show_caption(wp, NULL, "nas.perm_rw", "</option>\n");
+			websWrite(wp, "<option value=\"ro\"%s>", !strcmp(cs->access_perms, "ro") ? " selected" : "");
+			show_caption(wp, NULL, "nas.perm_ro", "</option>\n");
 		}
 		websWrite(wp, "					</select>\n");
 		websWrite(wp, "					<input type=\"hidden\" name=\"smbshare_access_perms_prev_%d\" value=\"%s\">\n", rows, cs->access_perms);
@@ -199,11 +197,11 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 	// table header
 	websWrite(wp, "	<table id=\"samba_users\" class=\"table center\" summary=\"samba user table\">\n");
 
-	websWrite(wp, "		<tr><th colspan=\"6\"><script type=\"text/javascript\">Capture(service.samba3_users)</script></th></tr>\n");
+	show_caption_pp(wp, NULL, "service.samba3_users", "<tr><th colspan=\"6\">", "</th></tr>\n");
 	websWrite(wp, "		<tr>\n");
 	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(nas.uname);</script></th>\n");
-	websWrite(wp, "			<th style=\"width:180px;\"><script type=\"text/javascript\">Capture(nas.pwd);</script></th>\n");
-	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_user_shares)</script></th>\n");
+	show_caption_pp(wp, NULL, "nas.pwd", "<th style=\"width:180px;\">", "</th>\n");
+	show_caption_pp(wp, NULL, "service.samba3_user_shares", "<th>", "</th>\n");
 	websWrite(wp, "			<th>samba</th>\n");
 	websWrite(wp, "			<th>ftp</th>\n");
 
@@ -232,8 +230,9 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "				<input type=\"password\" name=\"smbuser_password%s\" id=\"smbuser_password%s\" value=\"%s\" size=\"12\">&nbsp;\n", number, number, cu->password);
 		//websWrite(wp, "                               <div style=\"float: left;padding-top: 2px;\">\n");
 		websWrite(wp,
-			  "					<input type=\"checkbox\" name=\"smbuser_password_unmask%s\" value=\"0\" onclick=\"setElementMask('smbuser_password' + this.name.substr(23, this.name.length - 23), this.checked);\" /><script type=\"text/javascript\">Capture(share.unmask);</script>\n",
+			  "					<input type=\"checkbox\" name=\"smbuser_password_unmask%s\" value=\"0\" onclick=\"setElementMask('smbuser_password' + this.name.substr(23, this.name.length - 23), this.checked);\" />",
 			  number, number);
+		show_caption_simple(wp, "share.unmask");
 		//websWrite(wp, "                               </div>\n");
 		websWrite(wp, "			</td>\n");
 
