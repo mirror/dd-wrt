@@ -6249,6 +6249,9 @@ void start_sysinit(void)
 		nvram_seti("0:ledbh2", 11);
 		nvram_seti("1:ledbh2", 11);
 		set_gpio(0, 1);	// fixup ses button
+		char *username = nvram_safe_get("http_username");
+		if (username[0] != '$')
+			nvram_clear();
 		break;
 	case ROUTER_BUFFALO_WZR1750:
 		nvram_seti("0:ledbh12", 7);
