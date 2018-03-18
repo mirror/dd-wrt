@@ -57,13 +57,13 @@ void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 	// table header
 	websWrite(wp, "	<table id=\"dlna_shares\" class=\"table center\" summary=\"dlna share table\">\n");
-	websWrite(wp, "		<tr><th colspan=\"6\"><script type=\"text/javascript\">Capture(service.samba3_shares)</script></th></tr>\n");
+	show_caption_pp(wp, NULL, "service.samba3_shares", "<tr><th colspan=\"6\">", "</th></tr>\n");
 	websWrite(wp, "		<tr>\n");
-	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_path)</script></th>\n");
-	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_subdir)</script></th>\n");
-	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.dlna_type_audio)</script></th>\n");
-	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.dlna_type_video)</script></th>\n");
-	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.dlna_type_images)</script></th>\n");
+	show_caption_pp(wp, NULL, "service.samba3_share_path", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "service.samba3_share_subdir", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "service.dlna_type_audio", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "service.dlna_type_video", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "service.dlna_type_images", "<th>", "</th>\n");
 	websWrite(wp, "			<th style=\"width: 50px;\">&nbsp;</th>\n");
 	websWrite(wp, "		</tr>\n");
 
