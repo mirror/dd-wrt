@@ -1138,8 +1138,8 @@ int doMultiCast(void);
 int getMTD(char *name);
 void getIPFromName(char *name, char *ip);
 
-#define DEFAULT_USER "bJ/GddyoJuiU2"
-#define DEFAULT_PASS "bJz7PcC1rCRJQ"
+#define DEFAULT_USER "$1$gHo0JRUz$DhmErZyHtCmTxxKPPb13o."
+#define DEFAULT_PASS "$1$gHo0JRUz$cbb1yYxlmSCh0mTlTUsV81"
 
 #define MAX_WDS_DEVS 10
 
