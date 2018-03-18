@@ -30,6 +30,9 @@
 #define RTC_IRQ_FREQ_1HZ	    BIT(2)
 #define RTC_CCR		    0x18
 #define RTC_CCR_MODE		    BIT(15)
+#define RTC_CCR_NORMAL_PPB	    0x2000
+#define RTC_TEST_CONF		    0x1c
+#define RTC_TEST_CONF_MASK	    0xff
 
 #define RTC_TIME	    0xC
 #define RTC_ALARM1	    0x10
@@ -97,6 +100,7 @@ struct armada38x_rtc_data {
 	void (*clear_isr)(struct armada38x_rtc *rtc);
 	void (*unmask_interrupt)(struct armada38x_rtc *rtc);
 	u32 alarm;
+	void (*init_rtc)(struct armada38x_rtc *rtc);
 };
 
 /*
@@ -206,6 +210,23 @@ static void armada38x_unmask_interrupt(struct armada38x_rtc *rtc)
 	u32 val = readl(rtc->regs_soc + SOC_RTC_INTERRUPT);
 
 	writel(val | SOC_RTC_ALARM1_MASK, rtc->regs_soc + SOC_RTC_INTERRUPT);
+}
+
+static void armada38x_rtc_init(struct armada38x_rtc *rtc)
+{
+	u32 reg;
+
+	/* Test RTC test configuration register bits [7:0] */
+	reg = readl(rtc->regs + RTC_TEST_CONF);
+	/* If bits [7:0] are non-zero, assume RTC was uninitialized */
+	if (reg & RTC_TEST_CONF_MASK) {
+		rtc_delayed_write(0, rtc, RTC_TEST_CONF);
+		rtc_delayed_write(0, rtc, RTC_TIME);
+		rtc_delayed_write((RTC_STATUS_ALARM1 | RTC_STATUS_ALARM2),
+				rtc, RTC_STATUS);
+		rtc_delayed_write(RTC_CCR_NORMAL_PPB, rtc, RTC_CCR);
+	}
+	return;
 }
 
 static void armada8k_clear_isr(struct armada38x_rtc *rtc)
@@ -510,6 +531,7 @@ static const struct armada38x_rtc_data armada38x_data = {
 	.clear_isr = armada38x_clear_isr,
 	.unmask_interrupt = armada38x_unmask_interrupt,
 	.alarm = ALARM1,
+	.init_rtc = armada38x_rtc_init,
 };
 
 static const struct armada38x_rtc_data armada8k_data = {
@@ -612,6 +634,17 @@ static __init int armada38x_rtc_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "%probe: Error in rtc_init_state\n", __func__);
 		return -ENODEV;
 	}
+
+	/*
+	 * Try to detect if RTC is in uninitialized state.
+	 * It is not definitive to know if the RTC is in an uninialized state or not,
+	 * but the following call will read some bits in the RTC unit and guess if
+	 * if it's in that state, and accordingly set it to sane default values.
+	 */
+	if (rtc->data->init_rtc) {
+		rtc->data->init_rtc(rtc);
+	}
+
 	return 0;
 }
 
