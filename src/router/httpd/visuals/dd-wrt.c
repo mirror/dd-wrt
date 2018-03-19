@@ -1200,7 +1200,7 @@ static void showOption(webs_t wp, char *propname, char *nvname)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", propname, NULL);
-	websWrite(wp, "<select name=\"%s\">\n",nvname);
+	websWrite(wp, "<select name=\"%s\">\n", nvname);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n", nvram_default_match(nvname, "0", "0") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n", nvram_default_match(nvname, "1", "0") ? "selected=\\\"selected\\\"" : "");
@@ -2027,7 +2027,7 @@ static void show_netmode(webs_t wp, char *prefix)
 		sprintf(wl_greenfield, "%s_greenfield", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.label7", NULL);
-		websWrite(wp,"<select name=\"%s\" >\n", wl_greenfield);
+		websWrite(wp, "<select name=\"%s\" >\n", wl_greenfield);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + wl_basic.mixed + \"</option>\");\n", nvram_default_match(wl_greenfield, "0", "0") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s>\" + wl_basic.greenfield + \"</option>\");\n", nvram_default_match(wl_greenfield, "1", "0") ? "selected=\\\"selected\\\"" : "");
