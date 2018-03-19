@@ -217,7 +217,7 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 
 	if (in_clock_array && nvram_get("clkfreq") != NULL) {
 
-		show_caption(wp, "label", "management.clock_frq", "</div>\n");
+		show_caption(wp, "label", "management.clock_frq", NULL);
 		websWrite(wp, "<select name=\"overclocking\">\n");
 		i = 0;
 		while (c[i] != 0) {
@@ -229,7 +229,7 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "</select>\n</div>\n");
 	} else {
-		show_caption(wp, "label", "management.clock_support", "</div>\n");
+		show_caption(wp, NULL, "management.clock_support", "</div>\n");
 		fprintf(stderr, "CPU frequency list for rev: %d does not contain current clkfreq: %d.", rev, cclk);
 	}
 }
