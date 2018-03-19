@@ -839,7 +839,7 @@ struct cond_domain {
 #ifdef HAVE_IPV6
   struct in6_addr start6, end6;
 #endif
-  int is6;
+  int is6, indexed;
   struct cond_domain *next;
 }; 
 

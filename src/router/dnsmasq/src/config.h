@@ -137,9 +137,6 @@ NO_INOTIFY
    otherwise be enabled automatically (HAVE_IPV6, >2Gb file sizes) or 
    which are enabled  by default in the distributed source tree. Building dnsmasq
    with something like "make COPTS=-DNO_SCRIPT" will do the trick.
-
-NO_NETTLE_ECC
-   Don't include the ECDSA cypher in DNSSEC validation. Needed for older Nettle versions.
 NO_GMP
    Don't use and link against libgmp, Useful if nettle is built with --enable-mini-gmp.
 

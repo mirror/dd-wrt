@@ -20,19 +20,11 @@
 
 #include <nettle/rsa.h>
 #include <nettle/dsa.h>
-#ifndef NO_NETTLE_ECC
-#  include <nettle/ecdsa.h>
-#  include <nettle/ecc-curve.h>
-#  include <nettle/eddsa.h>
-#endif
+#include <nettle/ecdsa.h>
+#include <nettle/ecc-curve.h>
+#include <nettle/eddsa.h>
 #include <nettle/nettle-meta.h>
 #include <nettle/bignum.h>
-
-/* Nettle-3.0 moved to a new API for DSA. We use a name that's defined in the new API
-   to detect Nettle-3, and invoke the backwards compatibility mode. */
-#ifdef dsa_params_init
-#include <nettle/dsa-compat.h>
-#endif
 
 /* Implement a "hash-function" to the nettle API, which simply returns
    the input data, concatenated into a single, statically maintained, buffer.
@@ -109,22 +101,31 @@ static struct nettle_hash null_hash = {
 /* Find pointer to correct hash function in nettle library */
 const struct nettle_hash *hash_find(char *name)
 {
-  int i;
-  
   if (!name)
     return NULL;
   
-  for (i = 0; nettle_hashes[i]; i++)
-    {
-      if (strcmp(nettle_hashes[i]->name, name) == 0)
-	return nettle_hashes[i];
-    }
-
   /* We provide a "null" hash which returns the input data as digest. */
   if (strcmp(null_hash.name, name) == 0)
     return &null_hash;
 
+  /* libnettle >= 3.4 provides nettle_lookup_hash() which avoids nasty ABI
+     incompatibilities if sizeof(nettle_hashes) changes between library
+     versions. It also #defines nettle_hashes, so use that to tell
+     if we have the new facilities. */
+  
+#ifdef nettle_hashes
+  return nettle_lookup_hash(name);
+#else
+  {
+    int i;
+
+    for (i = 0; nettle_hashes[i]; i++)
+      if (strcmp(nettle_hashes[i]->name, name) == 0)
+	return nettle_hashes[i];
+  }
+  
   return NULL;
+#endif
 }
 
 /* expand ctx and digest memory allocations if necessary and init hash function */
@@ -224,19 +225,21 @@ static int dnsmasq_dsa_verify(struct blockdata *key_data, unsigned int key_len, 
 {
   unsigned char *p;
   unsigned int t;
-  
-  static struct dsa_public_key *key = NULL;
+
+  static mpz_t y;
+  static struct dsa_params *params = NULL;
   static struct dsa_signature *sig_struct;
   
   (void)digest_len;
 
-  if (key == NULL)
+  if (params == NULL)
     {
       if (!(sig_struct = whine_malloc(sizeof(struct dsa_signature))) || 
-	  !(key = whine_malloc(sizeof(struct dsa_public_key)))) 
+	  !(params = whine_malloc(sizeof(struct dsa_params)))) 
 	return 0;
       
-      nettle_dsa_public_key_init(key);
+      mpz_init(y);
+      nettle_dsa_params_init(params);
       nettle_dsa_signature_init(sig_struct);
     }
   
@@ -248,20 +251,19 @@ static int dnsmasq_dsa_verify(struct blockdata *key_data, unsigned int key_len, 
   if (key_len < (213 + (t * 24)))
     return 0;
   
-  mpz_import(key->q, 20, 1, 1, 0, 0, p); p += 20;
-  mpz_import(key->p, 64 + (t*8), 1, 1, 0, 0, p); p += 64 + (t*8);
-  mpz_import(key->g, 64 + (t*8), 1, 1, 0, 0, p); p += 64 + (t*8);
-  mpz_import(key->y, 64 + (t*8), 1, 1, 0, 0, p); p += 64 + (t*8);
+  mpz_import(params->q, 20, 1, 1, 0, 0, p); p += 20;
+  mpz_import(params->p, 64 + (t*8), 1, 1, 0, 0, p); p += 64 + (t*8);
+  mpz_import(params->g, 64 + (t*8), 1, 1, 0, 0, p); p += 64 + (t*8);
+  mpz_import(y, 64 + (t*8), 1, 1, 0, 0, p); p += 64 + (t*8);
   
   mpz_import(sig_struct->r, 20, 1, 1, 0, 0, sig+1);
   mpz_import(sig_struct->s, 20, 1, 1, 0, 0, sig+21);
   
   (void)algo;
   
-  return nettle_dsa_sha1_verify_digest(key, digest, sig_struct);
+  return nettle_dsa_verify(params, y, digest_len, digest, sig_struct);
 } 
  
-#ifndef NO_NETTLE_ECC
 static int dnsmasq_ecdsa_verify(struct blockdata *key_data, unsigned int key_len, 
 				unsigned char *sig, size_t sig_len,
 				unsigned char *digest, size_t digest_len, int algo)
@@ -363,8 +365,6 @@ static int dnsmasq_eddsa_verify(struct blockdata *key_data, unsigned int key_len
   return 0;
 }
 
-#endif 
-
 static int (*verify_func(int algo))(struct blockdata *key_data, unsigned int key_len, unsigned char *sig, size_t sig_len,
 			     unsigned char *digest, size_t digest_len, int algo)
 {
@@ -381,14 +381,12 @@ static int (*verify_func(int algo))(struct blockdata *key_data, unsigned int key
       
     case 3: case 6: 
       return dnsmasq_dsa_verify;
- 
-#ifndef NO_NETTLE_ECC   
+    
     case 13: case 14:
       return dnsmasq_ecdsa_verify;
 
     case 15: case 16:
       return dnsmasq_eddsa_verify;
-#endif
     }
   
   return NULL;
