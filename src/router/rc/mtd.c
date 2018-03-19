@@ -617,7 +617,6 @@ static int write_main(int argc, char *argv[])
 		 * for debug 
 		 */
 		sum = sum + count;
-		fprintf(stderr, "write=[%d]         \n", sum);
 
 		if (((count < len)
 		     && (len - off) > (mtd_info.erasesize * mul))
@@ -671,7 +670,7 @@ static int write_main(int argc, char *argv[])
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
 			int redo = 0;
 		      again:;
-			fprintf(stderr, "write block [%d] at [0x%08X]        \r", i * mtd_info.erasesize, base + (i * mtd_info.erasesize));
+			fprintf(stderr, "write block [%d] at [0x%08X]\n", sum, base + (i * mtd_info.erasesize));
 			erase_info.start = base + (i * mtd_info.erasesize);
 			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 			if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
