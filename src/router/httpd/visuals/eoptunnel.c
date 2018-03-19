@@ -48,8 +48,8 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		sprintf(oet, "oet%d", tun);
 		websWrite(wp, "<fieldset>\n");
 		websWrite(wp, "<legend>");
-		show_caption_simple(wp, "oeip.tunnel");
-		websWrite(" %s</legend>\n", getNetworkLabel(wp, oet));
+		show_caption_simple(wp, "eoip.tunnel");
+		websWrite(wp, " %s</legend>\n", getNetworkLabel(wp, oet));
 		websWrite(wp, "<div class=\"setting\">\n");
 		{
 			show_caption(wp, "label", "eoip.srv", NULL);
