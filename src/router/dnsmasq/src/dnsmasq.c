@@ -1213,31 +1213,40 @@ static void fatal_event(struct event_desc *ev, char *msg)
 
     case EVENT_FORK_ERR:
       die(_("cannot fork into background: %s"), NULL, EC_MISC);
-  
+
+      /* fall through */
     case EVENT_PIPE_ERR:
       die(_("failed to create helper: %s"), NULL, EC_MISC);
-  
+
+      /* fall through */
     case EVENT_CAP_ERR:
       die(_("setting capabilities failed: %s"), NULL, EC_MISC);
 
+      /* fall through */
     case EVENT_USER_ERR:
       die(_("failed to change user-id to %s: %s"), msg, EC_MISC);
 
+      /* fall through */
     case EVENT_GROUP_ERR:
       die(_("failed to change group-id to %s: %s"), msg, EC_MISC);
-      
+
+      /* fall through */
     case EVENT_PIDFILE:
       die(_("failed to open pidfile %s: %s"), msg, EC_FILE);
 
+      /* fall through */
     case EVENT_LOG_ERR:
       die(_("cannot open log %s: %s"), msg, EC_FILE);
-    
+
+      /* fall through */
     case EVENT_LUA_ERR:
       die(_("failed to load Lua script: %s"), msg, EC_MISC);
 
+      /* fall through */
     case EVENT_TFTP_ERR:
       die(_("TFTP directory %s inaccessible: %s"), msg, EC_FILE);
-    
+
+      /* fall through */
     case EVENT_TIME_ERR:
       die(_("cannot create timestamp file %s: %s" ), msg, EC_BADCONF);
     }
@@ -1502,9 +1511,6 @@ void clear_cache_and_reload(time_t now)
       if (option_bool(OPT_ETHERS))
 	dhcp_read_ethers();
       reread_dhcp();
-#ifdef HAVE_INOTIFY
-      set_dynamic_inotify(AH_DHCP_HST | AH_DHCP_OPT, 0, NULL, 0);
-#endif
       dhcp_update_configs(daemon->dhcp_conf);
       lease_update_from_configs(); 
       lease_update_file(now); 
