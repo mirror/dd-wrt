@@ -626,13 +626,16 @@ address by repeating the flag; in that case the first instance is used
 for the reverse address-to-name mapping. Note that a name used in 
 --interface-name may not appear in /etc/hosts.
 .TP
-.B --synth-domain=<domain>,<address range>[,<prefix>]
+.B --synth-domain=<domain>,<address range>[,<prefix>[*]]
 Create artificial A/AAAA and PTR records for an address range. The
-records use the address, with periods (or colons for IPv6) replaced
-with dashes.
+records either seqential numbers or the address, with periods (or colons for IPv6) replaced with dashes.
 
-An example should make this clearer.
-.B --synth-domain=thekelleys.org.uk,192.168.0.0/24,internal-
+An examples should make this clearer. First sequential numbers.
+.B --synth-domain=thekelleys.org.uk,192.168.0.50,192.168.0.70,internal-*
+results in the name internal-0.thekelleys.org.uk. returning 192.168.0.50, internal-1.thekelleys.org.uk returning 192.168.0.51 and so on. (note the *) The same principle applies to IPv6 addresses (where the numbers may be very large). Reverse lookups from address to name behave as expected.
+
+Second, 
+.B --synth-domain=thekelleys.org.uk,192.168.0.0/24,internal- (no *)
 will result in a query for internal-192-168-0-56.thekelleys.org.uk returning
 192.168.0.56 and a reverse query vice versa. The same applies to IPv6,
 but IPv6 addresses may start with '::'
@@ -642,7 +645,7 @@ configured a zero is added in front of the label. ::1 becomes 0--1.
 V4 mapped IPv6 addresses, which have a representation like ::ffff:1.2.3.4 are handled specially, and become like 0--ffff-1-2-3-4
 
 The address range can be of the form
-<ip address>,<ip address> or <ip address>/<netmask>
+<ip address>,<ip address> or <ip address>/<netmask> in both forms of the option.
 .TP
 .B --add-mac[=base64|text]
 Add the MAC address of the requestor to DNS queries which are
@@ -1078,7 +1081,7 @@ in a dhcp-optsfile.
 This is equivalent to dhcp-hostsfile, except for the following. The path MUST be a
 directory, and not an individual file. Changed or new files within
 the directory are read automatically, without the need to send SIGHUP.
-If a file is deleted for changed after it has been read by dnsmasq, then the
+If a file is deleted or changed after it has been read by dnsmasq, then the
 host record it contained will remain until dnsmasq receives a SIGHUP, or 
 is restarted; ie host records are only added dynamically.
 .TP
