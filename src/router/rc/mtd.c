@@ -648,7 +648,7 @@ static int write_main(int argc, char *argv[])
 		/* 
 		 * Check CRC before writing if possible 
 		 */
-		if (count == trx.len) {
+		if (sum == trx.len) {
 			if (crc != trx.crc32) {
 				fprintf(stderr, "%s: Bad CRC (0x%08X expected, but 0x%08X calculated)\n", path, trx.crc32, crc);
 				goto fail;
