@@ -185,10 +185,10 @@ $(SLDNS_OBJ) $(COMPAT_OBJ) @WIN_CONTROL_OBJ_LINK@
 HOST_SRC=smallapp/unbound-host.c
 HOST_OBJ=unbound-host.lo
 HOST_OBJ_LINK=$(HOST_OBJ) $(SLDNS_OBJ) $(COMPAT_OBJ_WITHOUT_CTIMEARC4) @WIN_HOST_OBJ_LINK@
-UBANCHOR_SRC=smallapp/unbound-anchor.c
-UBANCHOR_OBJ=unbound-anchor.lo
-UBANCHOR_OBJ_LINK=$(UBANCHOR_OBJ) parseutil.lo \
-$(COMPAT_OBJ_WITHOUT_CTIME) @WIN_UBANCHOR_OBJ_LINK@
+#UBANCHOR_SRC=smallapp/unbound-anchor.c
+#UBANCHOR_OBJ=unbound-anchor.lo
+#UBANCHOR_OBJ_LINK=$(UBANCHOR_OBJ) parseutil.lo \
+#$(COMPAT_OBJ_WITHOUT_CTIME) @WIN_UBANCHOR_OBJ_LINK@
 TESTBOUND_SRC=testcode/testbound.c testcode/testpkts.c \
 daemon/worker.c daemon/acl_list.c daemon/daemon.c daemon/stats.c \
 testcode/replay.c testcode/fake_event.c
@@ -251,14 +251,14 @@ ALL_SRC=$(COMMON_SRC) $(UNITTEST_SRC) $(DAEMON_SRC) \
 	$(TESTBOUND_SRC) $(LOCKVERIFY_SRC) $(PKTVIEW_SRC) \
 	$(MEMSTATS_SRC) $(CHECKCONF_SRC) $(LIBUNBOUND_SRC) $(HOST_SRC) \
 	$(ASYNCLOOK_SRC) $(STREAMTCP_SRC) $(PERF_SRC) $(DELAYER_SRC) \
-	$(CONTROL_SRC) $(UBANCHOR_SRC) $(PETAL_SRC) \
+	$(CONTROL_SRC) $(PETAL_SRC) \
 	$(PYTHONMOD_SRC) $(PYUNBOUND_SRC) $(WIN_DAEMON_THE_SRC)\
 	$(SVCINST_SRC) $(SVCUNINST_SRC) $(ANCHORUPD_SRC) $(SLDNS_SRC)
 ALL_OBJ=$(COMMON_OBJ) $(UNITTEST_OBJ) $(DAEMON_OBJ) \
 	$(TESTBOUND_OBJ) $(LOCKVERIFY_OBJ) $(PKTVIEW_OBJ) \
 	$(MEMSTATS_OBJ) $(CHECKCONF_OBJ) $(LIBUNBOUND_OBJ) $(HOST_OBJ) \
 	$(ASYNCLOOK_OBJ) $(STREAMTCP_OBJ) $(PERF_OBJ) $(DELAYER_OBJ) \
-	$(CONTROL_OBJ) $(UBANCHOR_OBJ) $(PETAL_OBJ) \
+	$(CONTROL_OBJ) $(PETAL_OBJ) \
 	$(COMPAT_OBJ) $(PYUNBOUND_OBJ) \
 	$(SVCINST_OBJ) $(SVCUNINST_OBJ) $(ANCHORUPD_OBJ) $(SLDNS_OBJ)
 
@@ -270,7 +270,7 @@ LINK_LIB=$(LIBTOOL) --tag=CC --mode=link $(CC) $(RUNTIME_PATH) $(CPPFLAGS) $(CFL
 
 all:	$(COMMON_OBJ) $(ALLTARGET)
 
-alltargets:	unbound$(EXEEXT) unbound-checkconf$(EXEEXT) lib unbound-host$(EXEEXT) unbound-control$(EXEEXT) unbound-anchor$(EXEEXT) unbound-control-setup $(WINAPPS) $(PYUNBOUND_TARGET)
+alltargets:	unbound$(EXEEXT) unbound-checkconf$(EXEEXT) lib unbound-host$(EXEEXT) unbound-control$(EXEEXT) unbound-control-setup $(WINAPPS) $(PYUNBOUND_TARGET)
 
 # compat with BSD make, register suffix, and an implicit rule to actualise it.
 .SUFFIXES: .lo
@@ -290,7 +290,7 @@ rsrc_svcuninst.o:	$(srcdir)/winrc/rsrc_svcuninst.rc config.h
 rsrc_anchorupd.o:	$(srcdir)/winrc/rsrc_anchorupd.rc config.h
 rsrc_unbound.o:	$(srcdir)/winrc/rsrc_unbound.rc config.h
 rsrc_unbound_host.o:	$(srcdir)/winrc/rsrc_unbound_host.rc config.h
-rsrc_unbound_anchor.o:	$(srcdir)/winrc/rsrc_unbound_anchor.rc config.h
+#rsrc_unbound_anchor.o:	$(srcdir)/winrc/rsrc_unbound_anchor.rc config.h
 rsrc_unbound_control.o:	$(srcdir)/winrc/rsrc_unbound_control.rc config.h
 rsrc_unbound_checkconf.o:	$(srcdir)/winrc/rsrc_unbound_checkconf.rc config.h
 
@@ -329,8 +329,8 @@ unbound-control$(EXEEXT):	$(CONTROL_OBJ_LINK) libunbound.la
 unbound-host$(EXEEXT):	$(HOST_OBJ_LINK) libunbound.la
 	$(LINK) -o $@ $(HOST_OBJ_LINK) -L. -L.libs -lunbound $(LIBS)
 
-unbound-anchor$(EXEEXT):	$(UBANCHOR_OBJ_LINK) libunbound.la
-	$(LINK) -o $@ $(UBANCHOR_OBJ_LINK) -L. -L.libs -lunbound -lexpat $(SSLLIB) $(LIBS)
+#unbound-anchor$(EXEEXT):	$(UBANCHOR_OBJ_LINK) libunbound.la
+#	$(LINK) -o $@ $(UBANCHOR_OBJ_LINK) -L. -L.libs -lunbound -lexpat $(SSLLIB) $(LIBS)
 
 unbound-service-install$(EXEEXT):	$(SVCINST_OBJ_LINK)
 	$(LINK) -o $@ $(SVCINST_OBJ_LINK) $(LIBS)
@@ -442,7 +442,7 @@ util/configparser.c util/configparser.h:  $(srcdir)/util/configparser.y
 
 clean:
 	rm -f *.o *.d *.lo *~ tags
-	rm -f unbound$(EXEEXT) unbound-checkconf$(EXEEXT) unbound-host$(EXEEXT) unbound-control$(EXEEXT) unbound-anchor$(EXEEXT) unbound-control-setup libunbound.la unbound.h
+	rm -f unbound$(EXEEXT) unbound-checkconf$(EXEEXT) unbound-host$(EXEEXT) unbound-control$(EXEEXT) unbound-control-setup libunbound.la unbound.h
 	rm -f $(ALL_SRC:.c=.lint)
 	rm -f _unbound.la libunbound/python/libunbound_wrap.c libunbound/python/unbound.py pythonmod/interface.h pythonmod/unboundmodule.py
 	rm -rf autom4te.cache .libs build doc/html doc/xml
@@ -488,7 +488,6 @@ strip:
 	$(STRIP) unbound-checkconf$(EXEEXT)
 	$(STRIP) unbound-control$(EXEEXT)
 	$(STRIP) unbound-host$(EXEEXT) || $(STRIP) .libs/unbound-host$(EXEEXT)
-	$(STRIP) unbound-anchor$(EXEEXT) || $(STRIP) .libs/unbound-anchor$(EXEEXT)
 
 pythonmod-install:
 	$(INSTALL) -m 755 -d $(DESTDIR)$(PYTHON_SITE_PKG)
@@ -538,7 +537,6 @@ install-all:	all $(PYTHONMOD_INSTALL) $(PYUNBOUND_INSTALL) $(UNBOUND_EVENT_INSTA
 	$(LIBTOOL) --mode=install cp -f unbound-checkconf$(EXEEXT) $(DESTDIR)$(sbindir)/unbound-checkconf$(EXEEXT)
 	$(LIBTOOL) --mode=install cp -f unbound-control$(EXEEXT) $(DESTDIR)$(sbindir)/unbound-control$(EXEEXT)
 	$(LIBTOOL) --mode=install cp -f unbound-host$(EXEEXT) $(DESTDIR)$(sbindir)/unbound-host$(EXEEXT)
-	$(LIBTOOL) --mode=install cp -f unbound-anchor$(EXEEXT) $(DESTDIR)$(sbindir)/unbound-anchor$(EXEEXT)
 	$(INSTALL) -c -m 644 doc/unbound.8 $(DESTDIR)$(mandir)/man8
 	$(INSTALL) -c -m 644 doc/unbound-checkconf.8 $(DESTDIR)$(mandir)/man8
 	$(INSTALL) -c -m 644 doc/unbound-control.8 $(DESTDIR)$(mandir)/man8
@@ -560,7 +558,7 @@ unbound-event-uninstall:
 	rm -f -- $(DESTDIR)$(includedir)/unbound-event.h
 
 uninstall:	$(PYTHONMOD_UNINSTALL) $(PYUNBOUND_UNINSTALL) $(UNBOUND_EVENT_UNINSTALL)
-	rm -f -- $(DESTDIR)$(sbindir)/unbound$(EXEEXT) $(DESTDIR)$(sbindir)/unbound-checkconf$(EXEEXT) $(DESTDIR)$(sbindir)/unbound-host$(EXEEXT) $(DESTDIR)$(sbindir)/unbound-control$(EXEEXT) $(DESTDIR)$(sbindir)/unbound-anchor$(EXEEXT) $(DESTDIR)$(sbindir)/unbound-control-setup
+	rm -f -- $(DESTDIR)$(sbindir)/unbound$(EXEEXT) $(DESTDIR)$(sbindir)/unbound-checkconf$(EXEEXT) $(DESTDIR)$(sbindir)/unbound-host$(EXEEXT) $(DESTDIR)$(sbindir)/unbound-control$(EXEEXT) $(DESTDIR)$(sbindir)/unbound-control-setup
 	rm -f -- $(DESTDIR)$(mandir)/man8/unbound.8 $(DESTDIR)$(mandir)/man8/unbound-checkconf.8 $(DESTDIR)$(mandir)/man5/unbound.conf.5 $(DESTDIR)$(mandir)/man8/unbound-control.8 $(DESTDIR)$(mandir)/man8/unbound-anchor.8 $(DESTDIR)$(mandir)/man8/unbound-control-setup.8
 	rm -f -- $(DESTDIR)$(mandir)/man1/unbound-host.1 $(DESTDIR)$(mandir)/man3/libunbound.3
 	for mpage in ub_ctx ub_result ub_ctx_create ub_ctx_delete \
@@ -1433,8 +1431,6 @@ unbound-control.lo unbound-control.o: $(srcdir)/smallapp/unbound-control.c confi
  $(srcdir)/util/log.h $(srcdir)/util/config_file.h $(srcdir)/util/locks.h $(srcdir)/testcode/checklocks.h \
  $(srcdir)/util/net_help.h $(srcdir)/util/shm_side/shm_main.h $(srcdir)/libunbound/unbound.h \
  $(srcdir)/daemon/stats.h $(srcdir)/util/timehist.h $(srcdir)/sldns/wire2str.h $(srcdir)/sldns/pkthdr.h
-unbound-anchor.lo unbound-anchor.o: $(srcdir)/smallapp/unbound-anchor.c config.h $(srcdir)/libunbound/unbound.h \
- $(srcdir)/sldns/rrdef.h $(srcdir)/sldns/parseutil.h \
  
 petal.lo petal.o: $(srcdir)/testcode/petal.c config.h \
  
