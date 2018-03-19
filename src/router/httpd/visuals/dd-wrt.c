@@ -119,6 +119,11 @@ void show_caption_simple(webs_t wp, const char *caption)
 	show_caption_pp(wp, NULL, caption, NULL, NULL);
 }
 
+void show_caption_legend(webs_t wp, const char *caption)
+{
+	show_caption_pp(wp, NULL, caption, "<legend>", "</legend>");
+}
+
 void show_ip(webs_t wp, char *prefix, char *var, int nm, char *type)
 {
 	char name[64];
@@ -768,7 +773,7 @@ void ej_show_default_level(webs_t wp, int argc, char_t ** argv)
 	char *defaults = nvram_safe_get("svqos_defaults");
 
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(qos.legend6)</script></legend>\n");
+	show_caption_legend(wp, "qos.legend6");
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "qos.enabledefaultlvls", NULL);
 	websWrite(wp, "<input type=\"checkbox\" onclick=\"defaultlvl_grey(this.checked,this.form)\" name=\"svqos_defaults\" value=\"1\" %s />\n", nvram_matchi("svqos_defaults", 1) ? "checked=\"checked\"" : "");
@@ -4401,7 +4406,7 @@ if (!strcmp(prefix, "wl2"))
 	sscanf(prefix, "ath%d", &inst);
 	sprintf(radio_timer, "radio%d_timer_enable", inst);
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(wl_basic.legend2)</script></legend>\n");
+	show_caption_legend(wp, "wl_basic.legend2");
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wl_basic.radiotimer", NULL);
 	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"radio%d_timer_enable\" %s onclick=\"show_layer_ext(this, 'radio%d', true)\" />", inst,

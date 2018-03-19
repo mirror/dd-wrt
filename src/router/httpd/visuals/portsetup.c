@@ -41,7 +41,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 	getIfLists(eths, 256);
 	if (strlen(wanifname) > 0) {
 
-		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(idx.portsetup)</script></legend>\n");
+		show_caption_legend(wp, "idx.portsetup");
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.wanport)</script></div>\n");
 		websWrite(wp, "<select name=\"wan_ifname\">\n");
 
