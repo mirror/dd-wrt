@@ -96,21 +96,15 @@ static void s_END(char *service, int line)
 
 void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post)
 {
-	fprintf(stderr, "show_caption: %s %s %s %s\n",class?class:"NULL", caption? caption: "NULL", pre? pre:"NULL", post ? post : "NULL");
 	char *buf;
 	if (class)
 		asprintf(&buf, "%s<div class=\"%s\"><script type=\"text/javascript\">Capture(%s)</script></div>%s\n", pre ? pre : "", class, caption, post ? post : "");
 	else {
-		fprintf(stderr, "%d\n", __LINE__);
 		asprintf(&buf, "%s<script type=\"text/javascript\">Capture(%s)</script>%s", pre ? pre : "", caption, post ? post : "");
-		fprintf(stderr, "%d\n", __LINE__);
 	}
 	if (buf) {
-		fprintf(stderr, "%d\n", __LINE__);
 		websWrite(wp, buf);
-		fprintf(stderr, "%d\n", __LINE__);
 		free(buf);
-		fprintf(stderr, "%d\n", __LINE__);
 	}
 
 }
