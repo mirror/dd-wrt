@@ -358,7 +358,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 void ej_show_cpu_temperature(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "status_router.cputemp");
+	show_caption(wp, "label", "status_router.cputemp", NULL);
 	websWrite(wp, "<span id=\"cpu_temp\">");
 	ej_get_cputemp(wp, argc, argv);
 	websWrite(wp, "</span>&nbsp;\n");
