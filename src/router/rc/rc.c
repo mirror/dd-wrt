@@ -98,53 +98,43 @@ static int softwarerevision_main(int argc, char **argv)
 static int service_main(int argc, char *argv[])
 {
 	char *base = argv[0];
+	if (argc < 2) {
+		fprintf(stdout, "%s: servicename [-f]\n");
+		fprintf(stdout, "-f : forces start/stop of service and without any care if service was already started or stopped\n");
+		return 1;
+	}
+
+	int force = (argc == 3 && !strcmp(argv[2], "-f"));
 	if (strstr(base, "startservice_f")) {
-		if (argc < 2) {
-			puts("try to be professional\n");
-			goto out;
-		}
-		if (argc == 3 && !strcmp(argv[2], "-f"))
+		if (force)
 			start_service_force_f(argv[1]);
 		else
 			start_service_f(argv[1]);
 		goto out;
 	}
 	if (strstr(base, "startservice")) {
-		if (argc < 2) {
-			puts("try to be professional\n");
-			goto out;
-		}
-		if (argc == 3 && !strcmp(argv[2], "-f"))
+		if (force)
 			start_service_force(argv[1]);
 		else
 			start_service(argv[1]);
 		goto out;
 	}
-
 	if (strstr(base, "stopservice_f")) {
-		if (argc < 2) {
-			puts("try to be professional\n");
-			goto out;
-		}
-		if (argc == 3 && !strcmp(argv[2], "-f"))
+		if (force)
 			stop_service_force_f(argv[1]);
 		else
 			stop_service_f(argv[1]);
 		goto out;
 	}
-
 	if (strstr(base, "stopservice")) {
-		if (argc < 2) {
-			puts("try to be professional\n");
-			goto out;
-		}
-		if (argc == 3 && !strcmp(argv[2], "-f"))
+		if (force)
 			stop_service_force(argv[1]);
 		else
 			stop_service(argv[1]);
 		goto out;
 	}
       out:;
+	return 0;
 }
 
 static int rc_main(int argc, char *argv[])
