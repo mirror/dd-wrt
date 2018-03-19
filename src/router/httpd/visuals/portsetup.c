@@ -91,7 +91,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		// qlen end
 		if (!isbridge) {
 			websWrite(wp, "<div class=\"setting\">\n");
-			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(networking.bridgeassign)</script></div>\n");
+			show_caption(wp, "label", "networking.bridgeassign", NULL);
 			websWrite(wp,
 				  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnet', true);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script>&nbsp;\n",
 				  layer, var, nvram_default_match(ssid, "0", "1") ? "checked=\"checked\"" : "");
@@ -142,7 +142,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "<div id=\"%s_idredirect\">\n", layer);
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dns_redirect)</script></div>\n");
+		show_caption(wp, "label", "idx.dns_redirect", NULL);
 		websWrite(wp, "<input type=\"hidden\" name=\"%s_dns_ipaddr\" value=\"4\" />\n", var);
 		show_ip(wp, var, "dns_ipaddr", 0, "share.ip");
 

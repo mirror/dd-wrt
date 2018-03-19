@@ -122,7 +122,7 @@ void ej_show_olsrd(webs_t wp, int argc, char_t ** argv)
 			count++;
 		}
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_newiface)</script></div>\n");
+		show_caption(wp, "label", "route.olsrd_newiface", NULL);
 		char buffer[256];
 
 		bzero(buffer, 256);
