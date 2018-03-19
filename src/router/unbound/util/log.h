@@ -194,6 +194,7 @@ void log_vmsg(int pri, const char* type, const char* format, va_list args);
 #define log_thread_set(num)  do { } while(0)
 #define log_ident_set(id) do { } while(0)
 #define log_set_time(t)  do { } while(0)
+#define log_get_lock() do { } while(0)
 #define log_set_time_asc(use_asc)  do { } while(0)
 #define log_info(format, ...) do { } while(0)
 #define log_err(format, ...) do { } while(0)
