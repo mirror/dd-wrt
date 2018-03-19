@@ -95,6 +95,119 @@ static int softwarerevision_main(int argc, char **argv)
 	return 0;
 }
 
+static int service_main(int argc, char *argv[])
+{
+	char *base = argv[0];
+	if (strstr(base, "startservice_f")) {
+		if (argc < 2) {
+			puts("try to be professional\n");
+			goto out;
+		}
+		if (argc == 3 && !strcmp(argv[2], "-f"))
+			start_service_force_f(argv[1]);
+		else
+			start_service_f(argv[1]);
+		goto out;
+	}
+	if (strstr(base, "startservice")) {
+		if (argc < 2) {
+			puts("try to be professional\n");
+			goto out;
+		}
+		if (argc == 3 && !strcmp(argv[2], "-f"))
+			start_service_force(argv[1]);
+		else
+			start_service(argv[1]);
+		goto out;
+	}
+
+	if (strstr(base, "stopservice_f")) {
+		if (argc < 2) {
+			puts("try to be professional\n");
+			goto out;
+		}
+		if (argc == 3 && !strcmp(argv[2], "-f"))
+			stop_service_force_f(argv[1]);
+		else
+			stop_service_f(argv[1]);
+		goto out;
+	}
+
+	if (strstr(base, "stopservice")) {
+		if (argc < 2) {
+			puts("try to be professional\n");
+			goto out;
+		}
+		if (argc == 3 && !strcmp(argv[2], "-f"))
+			stop_service_force(argv[1]);
+		else
+			stop_service(argv[1]);
+		goto out;
+	}
+      out:;
+}
+
+static int rc_main(int argc, char *argv[])
+{
+	int ret = 0;
+	if (argv[1]) {
+		if (strncmp(argv[1], "start", 5) == 0) {
+			ret = kill(1, SIGUSR2);
+		} else if (strncmp(argv[1], "stop", 4) == 0) {
+			ret = kill(1, SIGINT);
+		} else if (strncmp(argv[1], "restart", 7) == 0) {
+			ret = kill(1, SIGHUP);
+		}
+	} else {
+		fprintf(stderr, "usage: rc [start|stop|restart]\n");
+		ret = EINVAL;
+	}
+
+	return ret;
+}
+
+static int erase_main(int argc, char *argv[])
+{
+	int ret = 0;
+#ifndef HAVE_RB500
+#if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
+	/* 
+	 * erase [device] 
+	 */
+	int brand = getRouterBrand();
+
+	if (brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_MOTOROLA_WE800G || brand == ROUTER_RT210W || brand == ROUTER_BUFFALO_WZRRSG54) {
+		if (argv[1] && strcmp(argv[1], "nvram")) {
+			fprintf(stderr, "Sorry, erasing nvram will turn this router into a brick\n");
+		}
+	} else {
+		if (argv[1]) {
+			ret = mtd_erase(argv[1]);
+		} else {
+			fprintf(stderr, "usage: erase [device]\n");
+			ret = EINVAL;
+		}
+	}
+
+	/* 
+	 * write [path] [device] 
+	 */
+#else
+	if (argv[1] && strcmp(argv[1], "nvram")) {
+		fprintf(stderr, "Erasing configuration data...\n");
+		eval("mount", "/usr/local", "-o", "remount,rw");
+		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
+		unlink("/tmp/nvram/.lock");	// delete nvram
+		// database
+		eval("rm", "-f", "/etc/nvram/*");	// delete nvram database
+		eval("mount", "/usr/local", "-o", "remount,ro");
+	}
+#endif
+#endif
+	return ret;
+
+}
+
 static struct MAIN maincalls[] = {
 	// {"init", NULL, &main_loop},
 	{"ip-up", "ipup", NULL},
@@ -203,6 +316,13 @@ static struct MAIN maincalls[] = {
 #ifdef HAVE_QTN
 	{"qtn_monitor", NULL, &qtn_monitor_main},
 #endif
+	{"write", NULL, &write_main},
+	{"startservice_f", NULL, &service_main},
+	{"startservice", NULL, &service_main},
+	{"stopservice_f", NULL, &service_main},
+	{"stopservice", NULL, &service_main},
+	{"rc", NULL, &rc_main},
+	{"erase", NULL, &erase_main},
 };
 
 int main(int argc, char **argv)
@@ -211,7 +331,6 @@ int main(int argc, char **argv)
 	char *base = strrchr(argv[0], '/');
 	base = base ? base + 1 : argv[0];
 	int i;
-	int ret = 0;
 	for (i = 0; i < sizeof(maincalls) / sizeof(struct MAIN); i++) {
 		if (strstr(base, maincalls[i].callname)) {
 			if (maincalls[i].execname)
@@ -220,130 +339,6 @@ int main(int argc, char **argv)
 				return maincalls[i].exec(argc, argv);
 		}
 	}
-
-	if (strstr(base, "startservice_f")) {
-		if (argc < 2) {
-			puts("try to be professional\n");
-			goto out;
-		}
-		if (argc == 3 && !strcmp(argv[2], "-f"))
-			start_service_force_f(argv[1]);
-		else
-			start_service_f(argv[1]);
-		goto out;
-	}
-	if (strstr(base, "startservice")) {
-		if (argc < 2) {
-			puts("try to be professional\n");
-			goto out;
-		}
-		if (argc == 3 && !strcmp(argv[2], "-f"))
-			start_service_force(argv[1]);
-		else
-			start_service(argv[1]);
-		goto out;
-	}
-
-	if (strstr(base, "stopservice_f")) {
-		if (argc < 2) {
-			puts("try to be professional\n");
-			goto out;
-		}
-		if (argc == 3 && !strcmp(argv[2], "-f"))
-			stop_service_force_f(argv[1]);
-		else
-			stop_service_f(argv[1]);
-		goto out;
-	}
-
-	if (strstr(base, "stopservice")) {
-		if (argc < 2) {
-			puts("try to be professional\n");
-			goto out;
-		}
-		if (argc == 3 && !strcmp(argv[2], "-f"))
-			stop_service_force(argv[1]);
-		else
-			stop_service(argv[1]);
-		goto out;
-	}
-#ifndef HAVE_RB500
-#if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
-	/* 
-	 * erase [device] 
-	 */
-	if (strstr(base, "erase")) {
-		int brand = getRouterBrand();
-
-		if (brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_MOTOROLA_WE800G || brand == ROUTER_RT210W || brand == ROUTER_BUFFALO_WZRRSG54) {
-			if (argv[1] && strcmp(argv[1], "nvram")) {
-				fprintf(stderr, "Sorry, erasing nvram will turn this router into a brick\n");
-				goto out;
-			}
-		} else {
-			if (argv[1]) {
-				ret = mtd_erase(argv[1]);
-				goto out;
-			} else {
-				fprintf(stderr, "usage: erase [device]\n");
-				ret = EINVAL;
-				goto out;
-			}
-		}
-		goto out;
-	}
-
-	/* 
-	 * write [path] [device] 
-	 */
-	if (strstr(base, "write")) {
-		if (argc >= 3) {
-			ret = mtd_write(argv[1], argv[2]);
-			goto out;
-		} else {
-			fprintf(stderr, "usage: write [path] [device]\n");
-			ret = EINVAL;
-			goto out;
-		}
-	}
-#else
-	if (strstr(base, "erase")) {
-		if (argv[1] && strcmp(argv[1], "nvram")) {
-			fprintf(stderr, "Erasing configuration data...\n");
-			eval("mount", "/usr/local", "-o", "remount,rw");
-			eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-			unlink("/tmp/nvram/.lock");	// delete nvram
-			// database
-			eval("rm", "-f", "/etc/nvram/*");	// delete nvram database
-			eval("mount", "/usr/local", "-o", "remount,ro");
-		}
-		goto out;
-	}
-#endif
-#endif
-
-	/* 
-	 * rc [stop|start|restart ] 
-	 */
-	else if (strstr(base, "rc")) {
-		if (argv[1]) {
-			if (strncmp(argv[1], "start", 5) == 0) {
-				ret = kill(1, SIGUSR2);
-			} else if (strncmp(argv[1], "stop", 4) == 0) {
-				ret = kill(1, SIGINT);
-			} else if (strncmp(argv[1], "restart", 7) == 0) {
-				ret = kill(1, SIGHUP);
-			}
-			goto out;
-		} else {
-			fprintf(stderr, "usage: rc [start|stop|restart]\n");
-			ret = EINVAL;
-			goto out;
-		}
-	}
-
-	ret = 1;
-      out:;
 	airbag_deinit();
-	return ret;
+	return 1;		// no command found
 }

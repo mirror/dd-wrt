@@ -240,7 +240,7 @@ struct etrx_header {
 
 #define SQUASHFS_MAGIC			0x74717368
 
-int mtd_write(const char *path, const char *mtd)
+static int write_main(int argc, char *argv[])
 {
 	int mtd_fd = -1;
 	struct mtd_info_user mtd_info;
@@ -266,6 +266,14 @@ int mtd_write(const char *path, const char *mtd)
 	int badblocks = 0;
 	unsigned char lzmaloader[4096];
 	int brand = getRouterBrand();
+
+	if (argc < 3) {
+		fprintf(stderr, "usage: write [path] [device]\n");
+		return -EINVAL;
+	}
+	const char *path = argv[1];
+	const char *mtd = argv[2];
+
 	/* 
 	 * Netgear WGR614v8_L: Read, store and write back old lzma loader from 1st block 
 	 */
