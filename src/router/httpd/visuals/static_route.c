@@ -32,6 +32,9 @@
 
 #include <broadcom.h>
 
+extern int (*websGetVari) (webs_t wp, char *var, int d);
+extern int (*websWrite) (webs_t wp, char *fmt, ...);
+
 void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 {
 	int which;

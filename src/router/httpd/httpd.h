@@ -151,11 +151,6 @@ typedef struct {
 
 extern struct mime_handler mime_handlers[];
 
-/* CGI helper functions */
-extern void init_cgi(webs_t wp, char *query);
-extern char *get_cgi(webs_t wp, char *name);
-extern void set_cgi(webs_t wp, char *name, char *value);
-
 /* Regular file handler */
 extern void do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
 extern void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment);
@@ -178,8 +173,8 @@ typedef char char_t;
 
 #ifndef VALIDSOURCE
 #ifndef VISUALSOURCE
-char *websGetVar(webs_t wp, char *var, char *d);
-int websGetVari(webs_t wp, char *var, int d);
+//char *websGetVar(webs_t wp, char *var, char *d);
+//int websGetVari(webs_t wp, char *var, int d);
 #endif
 #endif
 
@@ -196,7 +191,7 @@ struct Webenvironment {
 	char *(*PGOZILA_GET) (webs_t wp, char *name);
 	char *(*Plive_translate) (const char *tran);
 	void (*Pvalidate_cgi) (webs_t fp);
-	websRomPageIndexType *PwebsRomPageIndex;
+	const websRomPageIndexType *PwebsRomPageIndex;
 };
 
 #define websSetVar(wp, var, value) set_cgi(wp, var, value)
@@ -212,13 +207,13 @@ extern int getWebsFileLen(char *path);
 #ifndef VALIDSOURCE
 extern FILE *getWebsFile(char *path);
 extern int ejArgs(int argc, char_t ** argv, char_t * fmt, ...);
-extern void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
-extern void do_ej_buffer(char *buffer, webs_t stream);
+static void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
+static void do_ej_buffer(char *buffer, webs_t stream);
 extern int websWrite(webs_t wp, char *fmt, ...);
 #endif
 #endif
-int do_auth(webs_t wp, int (*auth_check) (webs_t conn_fp));
+static int do_auth(webs_t wp, int (*auth_check) (webs_t conn_fp));
 void Initnvramtab(void);
-void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv);
+static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv);
 
 #endif				/* _httpd_h_ */

@@ -17,11 +17,8 @@
 #include <utils.h>
 
 #include <broadcom.h>
-#include <cyutils.h>
+#include <dd_defs.h>
 
-#define MIN_BUF_SIZE    4096
-
-#define SERVICE_MODULE "/lib/services.so"
 #define cprintf(fmt, args...)
 
 /*
@@ -30,7 +27,7 @@
  * (0) 
  */
 
-void nv_file_in(char *url, webs_t wp, int len, char *boundary)
+static void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 {
 
 	char buf[1024];
@@ -83,7 +80,7 @@ void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 	chdir("/www");
 }
 
-void sr_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
+static void sr_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {
 	if (wp->restore_ret != 0)
 		do_ej(METHOD_GET, handler, "Fail.asp", wp);
@@ -102,7 +99,7 @@ void sr_config_cgi(unsigned char method, struct mime_handler *handler, char *pat
 	}
 }
 
-void nv_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
+static void nv_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {
 
 #ifdef HAVE_REGISTER
@@ -116,7 +113,7 @@ void nv_file_out(unsigned char method, struct mime_handler *handler, char *path,
 	return;
 }
 
-void td_file_in(char *url, webs_t wp, int len, char *boundary)	//load and set traffic data from config file
+static void td_file_in(char *url, webs_t wp, int len, char *boundary)	//load and set traffic data from config file
 {
 	char *buf = malloc(2048);
 	char *name = NULL;
@@ -179,7 +176,7 @@ void td_file_in(char *url, webs_t wp, int len, char *boundary)	//load and set tr
 	nvram_commit();
 }
 
-void td_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
+static void td_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {
 	do_ej(METHOD_GET, handler, "Traff_admin.asp", wp);
 	websDone(wp, 200);
