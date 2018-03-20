@@ -284,10 +284,13 @@ void configure_single_ath9k(int count)
 //      experimental frame compression for internal testing only right now
 	char compr[32];
 	sprintf(compr, "%s_fc", dev);
+	sprintf(compr, "%s_fc_th", dev);
+	char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
+
 	if (nvram_default_match(compr, "1", "0")) {
-		sprintf(compr, "%s_fc_th", dev);
-		char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
-		eval("iw", "dev", dev, "set", "compr", "on", threshold);
+		eval("iw", "dev", dev, "set", "compr", "lzo", threshold);
+	} else if (nvram_default_match(compr, "2", "0")) {
+		eval("iw", "dev", dev, "set", "compr", "lzma", threshold);
 	} else {
 		eval("iw", "dev", dev, "set", "compr", "off");
 	}
@@ -332,13 +335,16 @@ void configure_single_ath9k(int count)
 		if (isfirst)
 			sysprintf("iw %s interface add %s.%d type managed", wif, dev, counter);
 		setupHostAP_ath9k(dev, isfirst, counter, 0);
-		sprintf(compr, "%s.%d_fc", dev, counter);
+		sprintf(compr, "%s_fc", var);
+		sprintf(compr, "%s_fc_th", var);
+		char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
+
 		if (nvram_default_match(compr, "1", "0")) {
-			sprintf(compr, "%s.%d_fc_th", dev, counter);
-			char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
-			eval("iw", "dev", dev, "set", "compr", "on", threshold);
+			eval("iw", "dev", var, "set", "compr", "lzo", threshold);
+		} else if (nvram_default_match(compr, "2", "0")) {
+			eval("iw", "dev", var, "set", "compr", "lzma", threshold);
 		} else {
-			eval("iw", "dev", dev, "set", "compr", "off");
+			eval("iw", "dev", var, "set", "compr", "off");
 		}
 
 		isfirst = 0;

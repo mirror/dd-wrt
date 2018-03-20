@@ -2415,7 +2415,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 				fclose(check);
 			}
 		}
-		fprintf(stderr,"waiting for %d interfaces, %d finished\n",c, cnf);
+		fprintf(stderr, "waiting for %d interfaces, %d finished\n", c, cnf);
 		if (cnf == c)
 			break;
 		sleep(1);

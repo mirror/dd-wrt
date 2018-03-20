@@ -5495,10 +5495,12 @@ void start_hotplug_net(void)
 	if (!strcmp(action, "add")) {
 		char compr[32];
 		sprintf(compr, "%s_fc", ifname);
+		sprintf(compr, "%s_fc_th", ifname);
+		char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
 		if (nvram_default_match(compr, "1", "0")) {
-			sprintf(compr, "%s_fc_th", ifname);
-			char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
-			eval("iw", "dev", interface, "set", "compr", "on", threshold);
+			eval("iw", "dev", interface, "set", "compr", "lzo", threshold);
+		} else if (nvram_default_match(compr, "2", "0")) {
+			eval("iw", "dev", interface, "set", "compr", "lzma", threshold);
 		} else {
 			eval("iw", "dev", interface, "set", "compr", "off");
 		}
