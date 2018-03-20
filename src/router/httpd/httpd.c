@@ -29,6 +29,27 @@
 ** SUCH DAMAGE.
 */
 #define _GNU_SOURCE
+
+#include "modules/combine.c"
+
+static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
+static char *wfgets(char *buf, int len, webs_t fp);
+static int wfprintf(webs_t fp, char *fmt, ...);
+static size_t wfwrite(char *buf, int size, int n, webs_t fp);
+static size_t wfread(char *buf, int size, int n, webs_t fp);
+static int wfclose(webs_t fp);
+static int wfflush(webs_t fp);
+#ifndef VALIDSOURCE
+#ifndef VISUALSOURCE
+
+static int wfputs(char *buf, webs_t fp);
+#endif
+#endif
+/* Basic authorization userid and passwd limit */
+
+static void send_authenticate(webs_t conn_fp);
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -128,7 +149,7 @@ FILE *debout;
 #endif
 
 #ifdef HAVE_POLARSSL
-int my_ciphers[] = {
+static int my_ciphers[] = {
 	TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
 	TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
 	TLS_RSA_WITH_AES_256_CBC_SHA,
@@ -143,12 +164,12 @@ int my_ciphers[] = {
 	0
 };
 
-char *dhm_P =
+static char *dhm_P =
     "E4004C1F94182000103D883A448B3F80"
     "2CE4B44A83301270002C20D0321CFD00"
     "11CCEF784C26A400F43DFB901BCA7538" "F2C6B176001CF5A0FD16D2C48B1D0C1C" "F6AC8E1DA6BCC3B4E1F96B0564965300" "FFA1D0B601EB2800F489AA512C4B248C" "01F76949A60BB7F00A40B1EAB64BDD48" "E8A700D60B7F1200FA8E77B0A979DABF";
 
-char *dhm_G = "4";
+static char *dhm_G = "4";
 //unsigned char session_table[SSL_SESSION_TBL_LEN];
 #endif
 
@@ -161,9 +182,9 @@ static int superchannel = -1;
 #endif
 
 #define DEFAULT_HTTP_PORT 80
-int server_port;
-char pid_file[80];
-char *server_dir = NULL;
+static int server_port;
+static char pid_file[80];
+static char *server_dir = NULL;
 
 extern char *get_mac_from_ip(char *mac, char *ip);
 
@@ -171,7 +192,7 @@ extern char *get_mac_from_ip(char *mac, char *ip);
 static int initialize_listen_socket(usockaddr * usaP);
 static int auth_check(webs_t conn_fp);
 static void send_error(webs_t conn_fp, int status, char *title, char *extra_header, char *text);
-void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file, int nocache);
+static void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file, int nocache);
 static int b64_decode(const char *str, unsigned char *space, int size);
 static int match(const char *pattern, const char *string);
 static int match_one(const char *pattern, int patternlen, const char *string);
@@ -181,10 +202,10 @@ static int numthreads = 0;
 #ifndef HAVE_MICRO
 
 #ifdef __UCLIBC__
-pthread_mutex_t crypt_mutex;
+static pthread_mutex_t crypt_mutex;
 #endif
-pthread_mutex_t httpd_mutex;
-pthread_mutex_t input_mutex;
+static pthread_mutex_t httpd_mutex;
+static pthread_mutex_t input_mutex;
 #endif
 
 static void lookup_hostname(usockaddr * usa4P, size_t sa4_len, int *gotv4P, usockaddr * usa6P, size_t sa6_len, int *gotv6P)
@@ -291,7 +312,7 @@ static size_t sockaddr_len(usockaddr * usaP)
 	}
 }
 
-void setnaggle(webs_t wp, int on)
+static void setnaggle(webs_t wp, int on)
 {
 	int r;
 
@@ -424,7 +445,7 @@ static int auth_check(webs_t conn_fp)
 	return ret;
 }
 
-void send_authenticate(webs_t conn_fp)
+static void send_authenticate(webs_t conn_fp)
 {
 	char *header;
 	(void)asprintf(&header, "WWW-Authenticate: Basic realm=\"%s\"", conn_fp->auth_realm);
@@ -448,7 +469,7 @@ static void send_error(webs_t conn_fp, int status, char *title, char *extra_head
 	(void)wfflush(conn_fp);
 }
 
-void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file, int nocache)
+static void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file, int nocache)
 {
 	time_t now;
 	char timebuf[100];
@@ -650,7 +671,7 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 	fclose(web);
 }
 
-void
+static void
 //do_file(char *path, FILE *stream)
 do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	//jimmy, https, 8/4/2003
 {
@@ -658,7 +679,7 @@ do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t s
 	do_file_2(handler, path, stream, NULL);
 }
 
-void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment)	//jimmy, https, 8/4/2003
+static void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment)	//jimmy, https, 8/4/2003
 {
 
 	do_file_2(handler, path, stream, attachment);
@@ -1792,7 +1813,7 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-char *wfgets(char *buf, int len, webs_t wp)
+static char *wfgets(char *buf, int len, webs_t wp)
 {
 	FILE *fp = wp->fp;
 	char *ret = NULL;
@@ -1837,7 +1858,7 @@ char *wfgets(char *buf, int len, webs_t wp)
 	return ret;
 }
 
-int wfputs(char *buf, webs_t wp)
+static int wfputs(char *buf, webs_t wp)
 {
 
 	FILE *fp = wp->fp;
@@ -1860,7 +1881,7 @@ int wfputs(char *buf, webs_t wp)
 	return ret;
 }
 
-int wfprintf(webs_t wp, char *fmt, ...)
+static int wfprintf(webs_t wp, char *fmt, ...)
 {
 
 	FILE *fp = wp->fp;
@@ -1888,7 +1909,7 @@ int wfprintf(webs_t wp, char *fmt, ...)
 	return ret;
 }
 
-int websWrite(webs_t wp, char *fmt, ...)
+static int websWrite(webs_t wp, char *fmt, ...)
 {
 
 	va_list args;
@@ -1918,7 +1939,7 @@ int websWrite(webs_t wp, char *fmt, ...)
 	return ret;
 }
 
-size_t wfwrite(char *buf, int size, int n, webs_t wp)
+static size_t wfwrite(char *buf, int size, int n, webs_t wp)
 {
 
 	FILE *fp = wp->fp;
@@ -1941,14 +1962,14 @@ size_t wfwrite(char *buf, int size, int n, webs_t wp)
 	return ret;
 }
 
-int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp)
+static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp)
 {
 	off_t lo = offset;
 	return sendfile(wp->conn_fd, fd, &lo, nbytes);
 
 }
 
-size_t wfread(char *buf, int size, int n, webs_t wp)
+static size_t wfread(char *buf, int size, int n, webs_t wp)
 {
 	size_t ret;
 	FILE *fp = wp->fp;
@@ -1979,7 +2000,7 @@ size_t wfread(char *buf, int size, int n, webs_t wp)
 	return ret;
 }
 
-int wfflush(webs_t wp)
+static int wfflush(webs_t wp)
 {
 	int ret;
 	FILE *fp = wp->fp;
@@ -2001,7 +2022,7 @@ int wfflush(webs_t wp)
 	return ret;
 }
 
-int wfclose(webs_t wp)
+static int wfclose(webs_t wp)
 {
 	int ret = 0;
 	FILE *fp = wp->fp;
@@ -2027,7 +2048,7 @@ int wfclose(webs_t wp)
 }
 
 #ifdef HAVE_IAS
-void ias_sid_set(webs_t wp)
+static void ias_sid_set(webs_t wp)
 {
 
 	struct sysinfo sinfo;
@@ -2041,7 +2062,7 @@ void ias_sid_set(webs_t wp)
 	return;
 }
 
-int ias_sid_valid(webs_t wp)
+static int ias_sid_valid(webs_t wp)
 {
 
 	struct sysinfo sinfo;

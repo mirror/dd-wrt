@@ -72,6 +72,22 @@ static int websGetVari(webs_t wp, char *var, int d);
 static void start_gozila(char *name, webs_t wp);
 static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, struct variable *v);
 static void do_upgrade_post(char *url, webs_t stream, int len, char *boundary);
+static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
+static char *wfgets(char *buf, int len, webs_t fp);
+static int wfprintf(webs_t fp, char *fmt, ...);
+static size_t wfwrite(char *buf, int size, int n, webs_t fp);
+static size_t wfread(char *buf, int size, int n, webs_t fp);
+static int wfclose(webs_t fp);
+static int wfflush(webs_t fp);
+#ifndef VALIDSOURCE
+#ifndef VISUALSOURCE
+
+static int wfputs(char *buf, webs_t fp);
+#endif
+#endif
+/* Basic authorization userid and passwd limit */
+
+static void send_authenticate(webs_t conn_fp);
 
 static char *_live_translate(const char *tran);
 #ifdef HAVE_BUFFALO
@@ -2497,7 +2513,7 @@ static void do_language(unsigned char method, struct mime_handler *handler, char
 static char no_cache[] = "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "Expires: 0";
 static char do_cache[] = "Cache-Control: private, max-age=600\r\n";
 
-struct mime_handler mime_handlers[] = {
+static struct mime_handler mime_handlers[] = {
 	// { "ezconfig.asp", "text/html", ezc_version, do_apply_ezconfig_post,
 	// do_ezconfig_asp, do_auth ,0},
 #ifdef HAVE_SKYTRON
