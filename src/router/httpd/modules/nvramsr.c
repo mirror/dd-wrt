@@ -21,6 +21,14 @@
 
 #define cprintf(fmt, args...)
 
+static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
+static char *wfgets(char *buf, int len, webs_t fp);
+static int wfprintf(webs_t fp, char *fmt, ...);
+static size_t wfwrite(char *buf, int size, int n, webs_t fp);
+static size_t wfread(char *buf, int size, int n, webs_t fp);
+static int wfclose(webs_t fp);
+static int wfflush(webs_t fp);
+
 /*
  * #define cprintf(fmt, args...) do { \ FILE *fp = fopen("/dev/console",
  * "w"); \ if (fp) { \ fprintf(fp, fmt, ## args); \ fclose(fp); \ } \ } while 

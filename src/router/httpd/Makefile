@@ -1392,7 +1392,7 @@ endif
 endif
 endif
 	
-httpd: httpd.o combine.o $(ADDOBJ) $(OBJS)
+httpd: httpd.o $(ADDOBJ) $(OBJS)
 #	gcc -o write_web write_web.c
 #	./write_web www 
 	$(CC) -o $@ $^ $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(LDFLAGS)
