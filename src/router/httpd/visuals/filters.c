@@ -62,6 +62,8 @@ extern FILE *debout;
  * hours)
  * 
  */
+extern int (*websGetVari) (webs_t wp, char *var, int d);
+extern int (*websWrite) (webs_t wp, char *fmt, ...);
 
 int day_all = 0, week0 = 0, week1 = 0, week2 = 0, week3 = 0, week4 = 0, week5 = 0, week6 = 0;
 int start_week = 0, end_week = 0;

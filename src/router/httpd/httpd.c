@@ -1251,7 +1251,7 @@ static void *handle_request(void *arg)
 	return NULL;
 }
 
-void				// add by honor 2003-04-16
+static void				// add by honor 2003-04-16
 get_client_ip_mac(int conn_fd, webs_t conn_fp)
 {
 	struct sockaddr_in sa;
@@ -1267,7 +1267,7 @@ static void handle_server_sig_int(int sig)
 	exit(0);
 }
 
-void settimeouts(webs_t wp, int secs)
+static void settimeouts(webs_t wp, int secs)
 {
 	struct timeval tv;
 

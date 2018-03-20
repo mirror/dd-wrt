@@ -31,7 +31,7 @@
 #include <stdarg.h>
 
 #include <broadcom.h>
-#include <cyutils.h>
+#include <dd_defs.h>
 #include <code_pattern.h>
 #include <cy_conf.h>
 

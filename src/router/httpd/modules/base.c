@@ -19,9 +19,7 @@
  *
  * $Id:
  */
-
 #ifdef WEBS
-#include <webs.h>
 #include <uemf.h>
 #include <ej.h>
 #else				/* !WEBS */
@@ -46,7 +44,7 @@
 #include <time.h>
 #include <sys/klog.h>
 #include <sys/wait.h>
-#include <cyutils.h>
+#include <dd_defs.h>
 #include <cy_conf.h>
 // #ifdef EZC_SUPPORT
 #include <ezc.h>
@@ -66,14 +64,23 @@
 
 // tofu
 
-char *live_translate(const char *tran);
+static void
+do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream);
+static int start_validator(char *name, webs_t wp, char *value, struct variable *v);
+static char *websGetVar(webs_t wp, char *var, char *d);
+static int websGetVari(webs_t wp, char *var, int d);
+static void start_gozila(char *name, webs_t wp);
+static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, struct variable *v);
+static void do_upgrade_post(char *url, webs_t stream, int len, char *boundary);
+
+static char *_live_translate(const char *tran);
 #ifdef HAVE_BUFFALO
 void do_vsp_page(unsigned char method, struct mime_handler *handler, char *url, webs_t stream);
 #endif
 /*
  * Deal with side effects before committing 
  */
-int sys_commit(void)
+static int _sys_commit(void)
 {
 	if (nvram_matchi("dhcpnvram", 1)) {
 		killall("dnsmasq", SIGUSR2);	// update lease -- tofu
@@ -389,6 +396,12 @@ static int calclength(char *webfile, char *ifname)
 	return len + 1;
 }
 
+static char *_tran_string(char *buf, char *str)
+{
+	sprintf(buf, "<script type=\"text/javascript\">Capture(%s)</script>", str);
+	return buf;
+}
+
 static char *readweb(char *filename)
 {
 	FILE *web = getWebsFile(filename);
@@ -625,7 +638,7 @@ static void do_radiuscert(unsigned char method, struct mime_handler *handler, ch
 			  "Error: please specify a value username and password\n"
 			  "<div class=\"submitFooter\">\n"
 			  "<script type=\"text/javascript\">\n"
-			  "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n" "</html>\n", tran_string(buf, "freeradius.clientcert"));
+			  "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n" "</html>\n", _tran_string(buf, "freeradius.clientcert"));
 		goto out;
 	}
 	char filename[128];
@@ -719,7 +732,7 @@ static void do_radiuscert(unsigned char method, struct mime_handler *handler, ch
 		"freeradius.clientcert"
 	};
 	call_ej("do_pagehead", NULL, wp, 1, argv);	// thats dirty
-	websWrite(wp, "</head>\n" "<body>\n" "<div id=\"main\">\n" "<div id=\"contentsInfo\">\n" "<h2>%s</h2>\n", tran_string(buf, "freeradius.clientcert"));
+	websWrite(wp, "</head>\n" "<body>\n" "<div id=\"main\">\n" "<div id=\"contentsInfo\">\n" "<h2>%s</h2>\n", _tran_string(buf, "freeradius.clientcert"));
 	sprintf(filename, "ca.pem");
 	show_certfield(wp, "CA Certificate", filename);
 	sprintf(filename, "%s-cert.pem", db->users[radiusindex].user);
@@ -874,7 +887,7 @@ static void do_wireless_adv(unsigned char method, struct mime_handler *handler, 
 	free(temp);
 }
 
-void validate_cgi(webs_t wp)
+static void _validate_cgi(webs_t wp)
 {
 	char *value;
 	int i;
@@ -1254,14 +1267,14 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	if (action == REFRESH) {
 		sleep(sleep_time);
 	} else if (action == SERVICE_RESTART) {
-		sys_commit();
+		_sys_commit();
 		service_restart();
 		sleep(sleep_time);
 	} else if (action == SYS_RESTART) {
-		sys_commit();
+		_sys_commit();
 		sys_restart();
 	} else if (action == RESTART) {
-		sys_commit();
+		_sys_commit();
 		sys_restart();
 	}
 
@@ -1456,7 +1469,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		struct apply_action *act;
 
 		cprintf("validate cgi");
-		validate_cgi(wp);
+		_validate_cgi(wp);
 		cprintf("handle apply action\n");
 		act = handle_apply_action(submit_button);
 		cprintf("done\n");
@@ -1487,7 +1500,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		diag_led(DIAG, STOP_LED);
 #endif
-		sys_commit();
+		_sys_commit();
 	}
 
   /** Restore defaults **/
@@ -1500,7 +1513,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 			region_sa = 1;
 #endif
 		killall("udhcpc", SIGKILL);
-		sys_commit();
+		_sys_commit();
 #ifdef HAVE_X86
 #ifdef HAVE_ERC
 		eval("nvram", "restore", "/etc/defaults/x86ree.backup");
@@ -1567,7 +1580,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		if (region_sa)
 			nvram_set("region", "SA");
 #endif
-		sys_commit();
+		_sys_commit();
 
 		action = REBOOT;
 	}
@@ -1650,7 +1663,7 @@ footer:
 }
 
 //int auth_check( char *dirname, char *authorization )
-int do_auth(webs_t wp, int (*auth_check) (webs_t conn_fp))
+static int do_auth(webs_t wp, int (*auth_check) (webs_t conn_fp))
 {
 	strncpy(wp->auth_userid, nvram_safe_get("http_username"), AUTH_MAX);
 	strncpy(wp->auth_passwd, nvram_safe_get("http_passwd"), AUTH_MAX);
@@ -1711,7 +1724,7 @@ char ezc_version[128];
 
 // #endif
 
-void				// support GET and POST 2003-08-22
+static void				// support GET and POST 2003-08-22
 do_apply_post(char *url, webs_t stream, int len, char *boundary)
 {
 	int count;
@@ -2177,7 +2190,7 @@ static void clear_translationcache(void)
 
 }
 
-char *live_translate(const char *tran)	// todo: add locking to be thread safe
+static char *_live_translate(const char *tran)	// todo: add locking to be thread safe
 {
 	static char *cur_language = NULL;
 	if (!tran || strlen(tran) == 0)
@@ -2237,14 +2250,14 @@ char *live_translate(const char *tran)	// todo: add locking to be thread safe
 	return entry->translation;
 }
 
+static char *charset = NULL;
 #ifdef HAVE_STATUS_SYSLOG
 static void do_syslog(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 
 	static const char filename[] = "/var/log/messages";
-	static char *charset = NULL;
 	if (!charset)
-		charset = strdup(live_translate("lang_charset.set"));
+		charset = strdup(_live_translate("lang_charset.set"));
 	int offset = 0;
 	int count = 0;
 	char *query = strchr(url, '?');
@@ -2292,17 +2305,11 @@ static void do_syslog(unsigned char method, struct mime_handler *handler, char *
 	return;
 }
 #endif
-char *tran_string(char *buf, char *str)
-{
-	sprintf(buf, "<script type=\"text/javascript\">Capture(%s)</script>", str);
-	return buf;
-}
 
 static void do_ttgraph(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
-	static char *charset = NULL;
 	if (!charset)
-		charset = strdup(live_translate("lang_charset.set"));
+		charset = strdup(_live_translate("lang_charset.set"));
 
 #define COL_WIDTH 16		/* single column width */
 
@@ -2373,9 +2380,9 @@ static void do_ttgraph(unsigned char method, struct mime_handler *handler, char 
 		f = f * 10;
 	}
 
-	char *incom = live_translate("status_inet.traffin");
-	char *outcom = live_translate("status_inet.traffout");
-	char *monthname = live_translate(months[month - 1]);
+	char *incom = _live_translate("status_inet.traffin");
+	char *outcom = _live_translate("status_inet.traffout");
+	char *monthname = _live_translate(months[month - 1]);
 
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
@@ -2698,7 +2705,7 @@ struct mime_handler mime_handlers[] = {
  * name2 = test&nbsp;123&semi;abc filter_name("name2", new_name, GET);
  * new_name="test 123:abc" 
  */
-int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
+static int _httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 {
 	int i, j, match;
 

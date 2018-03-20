@@ -46,7 +46,7 @@ static char *get_arg(char *args, char **next);
 static void *call(void *handle, char *func, webs_t stream);
 #define PATTERN_BUFFER 1000
 
-char *uqstrchr(char *buf, char find)
+static char *uqstrchr(char *buf, char find)
 {
 	int q = 0;
 	char val;
@@ -186,6 +186,7 @@ static int buffer_get(webs_t wp)
 	return c;
 }
 
+#ifdef HAVE_MICRO
 static int file_get(webs_t wp)
 {
 	if (wp->s_filecount >= wp->s_filelen)
@@ -193,6 +194,7 @@ static int file_get(webs_t wp)
 	wp->s_filecount++;
 	return getc(wp->s_fp);
 }
+#endif
 
 static void *global_handle = NULL;
 static void do_ej_s(int (*get) (webs_t wp), webs_t stream)	// jimmy, https, 8/4/2003
@@ -274,7 +276,7 @@ static void do_ej_s(int (*get) (webs_t wp), webs_t stream)	// jimmy, https, 8/4/
 	memdebug_leave();
 }
 
-void do_ej_buffer(char *buffer, webs_t stream)
+static void do_ej_buffer(char *buffer, webs_t stream)
 {
 	stream->s_filecount = 0;
 	stream->s_filelen = strlen(buffer);
@@ -282,7 +284,7 @@ void do_ej_buffer(char *buffer, webs_t stream)
 	do_ej_s(&buffer_get, stream);
 }
 
-void do_ej_file(FILE * fp, int len, webs_t stream)
+static void do_ej_file(FILE * fp, int len, webs_t stream)
 {
 #ifndef HAVE_MICRO
 	stream->s_filebuffer = (unsigned char *)malloc(len);
@@ -301,8 +303,8 @@ void do_ej_file(FILE * fp, int len, webs_t stream)
 
 #define WEBS_PAGE_ROM
 
-#include "webs.h"
-#include "html.c"
+
+#include "../html.c"
 
 FILE *getWebsFile(char *path2)
 {

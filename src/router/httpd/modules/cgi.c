@@ -40,7 +40,7 @@ static void unescape(char *s)
 	}
 }
 
-char *get_cgi(webs_t wp, char *name)
+static char *get_cgi(webs_t wp, char *name)
 {
 	ENTRY e, *ep;
 
@@ -57,7 +57,7 @@ char *get_cgi(webs_t wp, char *name)
 	return ep ? ep->data : NULL;
 }
 
-void set_cgi(webs_t wp, char *name, char *value)
+static void set_cgi(webs_t wp, char *name, char *value)
 {
 	ENTRY e, *ep;
 
@@ -84,7 +84,7 @@ void set_cgi(webs_t wp, char *name, char *value)
 	assert(ep);
 }
 
-void init_cgi(webs_t wp, char *query)
+static void init_cgi(webs_t wp, char *query)
 {
 	int len, nel;
 	char *q, *name, *value;

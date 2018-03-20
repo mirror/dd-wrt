@@ -236,8 +236,7 @@ ifeq ($(CONFIG_OCTEON),y)
 CFLAGS += -DHAVE_OCTEON
 endif
 ifeq ($(CONFIG_EROUTER),y)
-CFLAGS += -DHAVE_EROUTER
-OBJS += upgrade_x86.o
+CFLAGS += -DHAVE_EROUTER -DHAVE_UPX86
 endif
 ifeq ($(CONFIG_MULTICAST),y)
 CFLAGS += -DHAVE_MULTICAST
@@ -355,11 +354,9 @@ endif
 
 
 ifeq ($(CONFIG_RB500),y)
-CFLAGS += -DHAVE_RB500
-OBJS += upgrade_rb500.o
+CFLAGS += -DHAVE_RB500 -DHAVE_UPRB500
 else
 ifeq ($(CONFIG_WDR4900),y)
-OBJS += upgrade.o
 else
 
 
@@ -370,10 +367,8 @@ ifeq ($(CONFIG_BUFFALO),y)
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),JP)
 OBJS += upgrade_buffalo.o
 else
-OBJS += upgrade.o
 endif
 else
-OBJS += upgrade.o
 endif
 CFLAGS += -DHAVE_LOUD
 endif
@@ -589,14 +584,13 @@ CFLAGS += -DHAVE_NOWIFI
 endif
 
 ifeq ($(CONFIG_X86),y)
-CFLAGS += -DHAVE_X86
-OBJS += upgrade_x86.o
+CFLAGS += -DHAVE_X86 -DHAVE_UPX86
 endif
 ifeq ($(CONFIG_RB600),y)
 CFLAGS += -DHAVE_RB600
 
 ifneq ($(CONFIG_WDR4900),y)
-OBJS += upgrade_x86.o
+CFLAGS += -DHAVE_UPX86
 endif
 endif
 
@@ -1398,8 +1392,7 @@ endif
 endif
 endif
 	
-httpd: cgi.o ej.o httpd.o base.o \
-       $(ADDOBJ) nvramsr.o callvalidate.o $(OBJS)
+httpd: httpd.o combine.o $(ADDOBJ) $(OBJS)
 #	gcc -o write_web write_web.c
 #	./write_web www 
 	$(CC) -o $@ $^ $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(LDFLAGS)
