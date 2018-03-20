@@ -1266,6 +1266,22 @@ static void showOptions(webs_t wp, char *propname, char *names, char *select)
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
 }
 
+static void showOptionsNames(webs_t wp, char *label, char *propname, char *valuenames, char **names, char *select)
+{
+	char *next;
+	char var[80];
+	int idx = 0;
+	websWrite(wp, "<div class=\"setting\">\n");
+	show_caption(wp, "label", label, NULL);
+	websWrite(wp, "<select name=\"%s\">\n", propname);
+	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+	foreach(var, valuenames, next) {
+		if (names[idx])
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", names[idx++]);
+	}
+	websWrite(wp, "//]]>\n</script>\n</select></div>\n");
+}
+
 static void showIfOptions(webs_t wp, char *propname, char *names, char *select)
 {
 	char *next;
@@ -2433,7 +2449,8 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		if (is_ath9k(prefix)) {
 			char wl_fc[16];
 			sprintf(wl_fc, "%s_fc", var);
-			showRadioDefaultOff(wp, "wl_basic.fc", wl_fc);
+			showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 2", (char **) {
+					 "\" + share.disabled + \"", "LZO", "LZMA"}, nvram_default_get(wl_fc, "0"));
 		}
 #endif
 
@@ -2541,7 +2558,6 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		}
 #endif
 	}
-
 #ifndef HAVE_GUESTPORT
 	websWrite(wp, "<div class=\"center\">\n");
 #ifdef HAVE_MADWIFI
@@ -2782,10 +2798,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		char wl_regdomain[16];
 		sprintf(wl_regdomain, "%s_regdomain", prefix);
 		if (is_ath9k(prefix) || nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
-			websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
 			char *list = getCountryList();
-			showOptions(wp, wl_regdomain, list, nvram_safe_get(wl_regdomain));
-			websWrite(wp, "</div>\n");
+			showOptionsLabel(wp, "wl_basic.regdom", wl_regdomain, list, nvram_safe_get(wl_regdomain));
 		}
 	}
 #endif				// ! HAVE MAKSAT
@@ -3297,7 +3311,8 @@ if (has_airtime_fairness(prefix)) {
 if (is_ath9k(prefix)) {
 	char wl_fc[16];
 	sprintf(wl_fc, "%s_fc", prefix);
-	showRadioDefaultOff(wp, "wl_basic.fc", wl_fc);
+	showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 2", (char **) {
+			 "\" + share.disabled + \"", "LZO", "LZMA"}, nvram_default_get(wl_fc, "0"));
 }
 #endif
 sprintf(wmm, "%s_wmm", prefix);
@@ -3347,7 +3362,8 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 //                        nvram_nmatch("0", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "<option value=\"20\" %s>20 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n", nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "<option value=\"40\" %s><script type=\"text/javascript\">Capture(share.ht40);</script></option>\n", nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
-		if (has_ac(prefix) && has_5ghz(prefix) && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))) {
+		if (has_ac(prefix) && has_5ghz(prefix)
+		    && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))) {
 			websWrite(wp, "<option value=\"80\" %s><script type=\"text/javascript\">Capture(share.vht80);</script></option>\n", nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 			if (has_vht160(prefix)) {
 				websWrite(wp, "<option value=\"160\" %s><script type=\"text/javascript\">Capture(share.vht160);</script></option>\n",
@@ -3509,13 +3525,13 @@ if (has_beamforming(prefix)) {
 	// ACKnot working
 
 sprintf(power, "%s_distance", prefix);
-			  //websWrite(wp, "<br />\n");
+	//websWrite(wp, "<br />\n");
 websWrite(wp, "<div class=\"setting\">\n");
 show_caption(wp, "label", "wl_basic.label6", NULL);
 websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n", power, nvram_default_get(power, "2000"));
 websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
 websWrite(wp, "</div>\n");
-			  // end ACK timing
+	// end ACK timing
 #endif
 #ifdef HAVE_MADWIFI
 if (nvram_nmatch("ap", "%s_mode", prefix)
@@ -3814,7 +3830,8 @@ if (!strcmp(prefix, "wl2"))
 //                                nvram_nmatch("0", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "<option value=\"20\" %s>20 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n", nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "<option value=\"40\" %s>40 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n", nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
-			if (has_ac(prefix) && has_5ghz(prefix) && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))) {
+			if (has_ac(prefix) && has_5ghz(prefix)
+			    && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))) {
 				websWrite(wp, "<option value=\"80\" %s><script type=\"text/javascript\">Capture(share.vht80);</script></option>\n",
 					  nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 				if (has_vht160(prefix)) {
@@ -4033,10 +4050,8 @@ if (!strcmp(prefix, "wl2"))
 		char wl_regdomain[16];
 		sprintf(wl_regdomain, "%s_regdomain", prefix);
 		if (1 || nvram_nmatch("1", "%s_regulatory", prefix) || !issuperchannel()) {
-			websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
 			char *list = getCountryList();
-			showOptions(wp, wl_regdomain, list, nvram_safe_get(wl_regdomain));
-			websWrite(wp, "</div>\n");
+			showOptionsLabel(wp, "wl_basic.regdom", wl_regdomain, list, nvram_safe_get(wl_regdomain));
 		}
 	}
 #endif				// ! HAVE MAKSAT
@@ -4287,7 +4302,8 @@ if (!strcmp(prefix, "wl2"))
 	if (is_ath9k(prefix)) {
 		char wl_fc[16];
 		sprintf(wl_fc, "%s_fc", prefix);
-		showRadioDefaultOff(wp, "wl_basic.fc", wl_fc);
+		showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 2", (char **) {
+				 "\" + share.disabled + \"", "LZO", "LZMA"}, nvram_default_get(wl_fc, "0"));
 	}
 #endif
 
@@ -4482,10 +4498,8 @@ void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 		sprintf(wl_regdomain, "wl_regdomain");
 		websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.country_settings)</script></h2>\n");
 		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></legend>\n");
-		websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
 		char *list = getCountryList();
-		showOptions(wp, wl_regdomain, list, nvram_default_get("wl_regdomain", "EUROPE"));
-		websWrite(wp, "</div>\n");
+		showOptionsLabel(wp, "wl_basic.regdom", wl_regdomain, list, nvram_default_get("wl_regdomain", "EUROPE"));
 		websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regmode)</script></div>\n");
 		char *wl_regmode = nvram_default_get("wl_reg_mode", "off");
 		websWrite(wp, "<select name=\"wl_reg_mode\">\n");
