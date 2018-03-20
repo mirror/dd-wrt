@@ -24,13 +24,13 @@
 #include <sys/wait.h>
 
 #include <broadcom.h>
-#include <cyutils.h>
+#include <dd_defs.h>
 
 #define MIN_BUF_SIZE    4096
 #define CODE_PATTERN_ERROR 9999
 static int upgrade_ret;
 
-void
+static void
 // do_upgrade_cgi(char *url, FILE *stream)
 do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t streamm)	// jimmy,
 								// https,
@@ -60,7 +60,7 @@ do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, we
 #endif
 }
 
-int
+static int
 // sys_upgrade(char *url, FILE *stream, int *total)
 sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 								// https,
@@ -205,7 +205,7 @@ err:
 #endif
 }
 
-void
+static void
 // do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy, 
 									// https, 

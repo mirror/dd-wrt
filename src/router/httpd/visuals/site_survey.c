@@ -31,7 +31,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#include <cyutils.h>
+#include <dd_defs.h>
 #include <code_pattern.h>
 #include <broadcom.h>
 #include <proto/802.11.h>

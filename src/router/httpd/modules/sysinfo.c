@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include <broadcom.h>
-#include <cyutils.h>
+#include <dd_defs.h>
 #include <sys/sysinfo.h>
 
 // for test

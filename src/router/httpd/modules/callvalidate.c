@@ -20,7 +20,6 @@
  * $Id:
  */
 #ifdef WEBS
-#include <webs.h>
 #include <uemf.h>
 #include <ej.h>
 #else				/* !WEBS */
@@ -46,7 +45,7 @@
 #include <sys/time.h>
 #include <sys/klog.h>
 #include <sys/wait.h>
-#include <cyutils.h>
+#include <dd_defs.h>
 #include <cy_conf.h>
 // #ifdef EZC_SUPPORT
 #include <ezc.h>
@@ -58,7 +57,6 @@
 
 #include <dlfcn.h>
 #include <stdio.h>
-#include "webs.h"
 // #include <shutils.h>
 
 #if defined(HAVE_ADM5120) && !defined(HAVE_WP54G)
@@ -90,18 +88,18 @@
 } while (0)
 #endif
 int websWrite(webs_t wp, char *fmt, ...);
-char *websGetVar(webs_t wp, char *var, char *d)
+static char *websGetVar(webs_t wp, char *var, char *d)
 {
 	return get_cgi(wp, var) ? : d;
 }
 
-int websGetVari(webs_t wp, char *var, int d)
+static int websGetVari(webs_t wp, char *var, int d)
 {
 	char *res = get_cgi(wp, var);
 	return res ? atoi(res) : d;
 }
 
-char *GOZILA_GET(webs_t wp, char *name)
+static char *_GOZILA_GET(webs_t wp, char *name)
 {
 	if (!name)
 		return NULL;
@@ -159,13 +157,13 @@ static void *load_service(char *name)
 	return handle;
 }
 
-extern websRomPageIndexType websRomPageIndex[];
-struct wl_client_mac wl_client_macs[MAX_LEASES];
+extern const websRomPageIndexType websRomPageIndex[];
+static struct wl_client_mac wl_client_macs[MAX_LEASES];
 
 // extern struct wl_client_mac *wl_client_macs;
 
-extern char *live_translate(const char *tran);
-extern void validate_cgi(webs_t wp);
+static char *_live_translate(const char *tran);
+static void _validate_cgi(webs_t wp);
 
 static int initWeb(void *handle)
 {
@@ -180,23 +178,23 @@ static int initWeb(void *handle)
 	env.PwebsGetVar = websGetVar;
 	env.PwebsGetVari = websGetVari;
 	env.PwebsWrite = websWrite;
-	env.Phttpd_filter_name = httpd_filter_name;
+	env.Phttpd_filter_name = _httpd_filter_name;
 	env.Pwl_client_macs = wl_client_macs;
 	env.Pdo_ej_buffer = do_ej_buffer;
 	env.Pdo_ej = do_ej;
 	env.PgetWebsFile = getWebsFile;
 	env.Pwfputs = wfputs;
 	env.PwebsRomPageIndex = websRomPageIndex;
-	env.Plive_translate = live_translate;
-	env.PGOZILA_GET = GOZILA_GET;
-	env.Pvalidate_cgi = validate_cgi;
+	env.Plive_translate = _live_translate;
+	env.PGOZILA_GET = _GOZILA_GET;
+	env.Pvalidate_cgi = _validate_cgi;
 	init(&env);
 	return 0;
 }
 
 static void *s_service = NULL;
 
-void start_gozila(char *name, webs_t wp)
+static void start_gozila(char *name, webs_t wp)
 {
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_gozila %s\n", name);
@@ -231,7 +229,7 @@ void start_gozila(char *name, webs_t wp)
 	cprintf("start_sevice done()\n");
 }
 
-int start_validator(char *name, webs_t wp, char *value, struct variable *v)
+static int start_validator(char *name, webs_t wp, char *value, struct variable *v)
 {
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_validator %s\n", name);
@@ -270,7 +268,7 @@ int start_validator(char *name, webs_t wp, char *value, struct variable *v)
 	return ret;
 }
 
-void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, struct variable *v)
+static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, struct variable *v)
 {
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_service_nofree %s\n", name);
@@ -304,7 +302,7 @@ void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, s
 	return handle;
 }
 
-void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv)
+static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv)
 {
 	struct timeval before, after, r;
 
