@@ -84,7 +84,7 @@ static void set_tcp_params(void)
 void start_post_sysinit(void)
 {
 	int brand = getRouterBrand();
-
+	nvram_set("ntp_done", "0");
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_SES, LED_OFF);
 	led_control(LED_SES2, LED_OFF);
