@@ -1,3 +1,6 @@
+#ifndef BROADCOM_H_
+#define BROADCOM_H_
+
 #include <httpd.h>
 #include <typedefs.h>
 #include <bcmnvram.h>
@@ -240,8 +243,6 @@ extern void filtersummary_onload(webs_t wp, char *arg);
 /*
  * for upgrade 
  */
-extern void do_upgrade_post(char *url, webs_t stream, int len, char *boundary);
-extern void do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream);
 extern int sys_restore(char *url, webs_t stream, int *total);
 extern void do_restore_post(char *url, webs_t stream, int len, char *boundary);
 extern void do_restore_cgi(char *url, webs_t stream);
@@ -339,16 +340,10 @@ extern void validate_wl_net_mode(webs_t wp, char *value, struct variable *v);
 /*
  * for nvram save-restore 
  */
-extern void nv_file_in(char *url, webs_t stream, int len, char *boundary);
-extern void nv_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t wp);
-extern void sr_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp);
-
 /*
  * for traff data save-restore 
  */
 extern void ttraff_erase(webs_t wp);
-extern void td_file_in(char *url, webs_t stream, int len, char *boundary);
-extern void td_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp);
 
 /*
  * for ddns 
@@ -655,10 +650,6 @@ extern void ej_show_rflowif(webs_t wp, int argc, char_t ** argv);
 
 void ej_showbridgesettings(webs_t wp, int argc, char_t ** argv);
 
-void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, struct variable *v);
-int start_validator(char *name, webs_t wp, char *value, struct variable *v);
-void start_gozila(char *name, webs_t wp);
-
 #ifdef VISUALSOURCE
 extern void (*do_ej_buffer) (char *buffer, webs_t stream);
 
@@ -729,4 +720,5 @@ extern void (*Uvalidate_cgi) (webs_t wp);
 
 #define validate_cgi Uvalidate_cgi
 
+#endif
 #endif
