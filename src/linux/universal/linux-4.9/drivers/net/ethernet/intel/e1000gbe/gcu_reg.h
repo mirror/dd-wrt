@@ -43,13 +43,13 @@ GPL LICENSE SUMMARY
 #define MDIO_COMMAND_REG   0x00000014UL
 
 /* MDIO_STATUS_REG fields */
-#define MDIO_STATUS_STATUS_MASK     0x80000000UL	/* bit 31 = 1 on error */
+#define MDIO_STATUS_STATUS_MASK     0x80000000UL  /* bit 31 = 1 on error */
 #define MDIO_STATUS_READ_DATA_MASK  0x0000FFFFUL
 
 /* MDIO_COMMAND_REG fields */
-#define MDIO_COMMAND_GO_MASK         0x80000000UL	/* bit 31 = 1 during read or
-							 * write, 0 on completion */
-#define MDIO_COMMAND_OPER_MASK       0x04000000UL	/* bit = 1 is  a write */
+#define MDIO_COMMAND_GO_MASK         0x80000000UL /* bit 31 = 1 during read or
+                                                   * write, 0 on completion */
+#define MDIO_COMMAND_OPER_MASK       0x04000000UL /* bit = 1 is  a write */
 #define MDIO_COMMAND_PHY_ADDR_MASK   0x03E00000UL
 #define MDIO_COMMAND_PHY_REG_MASK    0x001F0000UL
 #define MDIO_COMMAND_WRITE_DATA_MASK 0x0000FFFFUL
@@ -60,8 +60,9 @@ GPL LICENSE SUMMARY
 #define MDIO_COMMAND_PHY_REG_OFFSET    16
 #define MDIO_COMMAND_WRITE_DATA_OFFSET 0
 
-#define MDIO_COMMAND_PHY_ADDR_MAX      2	/* total phys supported by GCU */
-#define MDIO_COMMAND_PHY_REG_MAX       31	/* total registers available on 
-						 * the M88 Phy used on truxton */
+#define MDIO_COMMAND_PHY_ADDR_MAX      2  /* total phys supported by GCU */
+#define MDIO_COMMAND_PHY_REG_MAX       31 /* total registers available on 
+                                           * the M88 Phy used on truxton */
 
-#endif				/* ifndef GCU_REG_H */
+#endif /* ifndef GCU_REG_H */
+ 

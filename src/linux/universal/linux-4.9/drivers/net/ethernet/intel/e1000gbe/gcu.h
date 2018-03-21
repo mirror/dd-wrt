@@ -30,6 +30,7 @@ GPL LICENSE SUMMARY
 
 *****************************************************************************/
 
+
 /* Linux GCU Driver main header file */
 
 #ifndef _GCU_H_
@@ -74,22 +75,22 @@ GPL LICENSE SUMMARY
 		__FUNCTION__ , ## args))
 
 struct gcu_adapter {
-	struct pci_dev *pdev;
-	uint32_t mem_start;
-	uint32_t mem_end;
-	uint32_t base_addr;
-	uint8_t *hw_addr;
-	char name[GCU_DEV_NAME_SIZE];
-	uint32_t pci_state[16];
-	int32_t msg_enable;
-	uint16_t device_id;
-	uint16_t vendor_id;
-	uint16_t subsystem_id;
-	uint16_t subsystem_vendor_id;
-	uint16_t pci_cmd_word;
-	uint8_t revision_id;
-	/* open/release and usage marking */
-	struct module *owner;
+    struct pci_dev *pdev;
+    uint32_t mem_start;
+    uint32_t mem_end;
+    uint32_t base_addr;
+    uint8_t *hw_addr;
+    char name[GCU_DEV_NAME_SIZE];
+    uint32_t pci_state[16];
+    int32_t msg_enable;
+    uint16_t device_id;
+    uint16_t vendor_id;
+    uint16_t subsystem_id;
+    uint16_t subsystem_vendor_id;
+    uint16_t pci_cmd_word;
+    uint8_t revision_id;
+    /* open/release and usage marking */
+    struct module *owner;
 
 };
 
@@ -100,4 +101,5 @@ struct gcu_adapter {
 const struct gcu_adapter *gcu_get_adapter(void);
 void gcu_release_adapter(const struct gcu_adapter **adapter);
 
-#endif				/* _GCU_H_ */
+#endif /* _GCU_H_ */
+ 
