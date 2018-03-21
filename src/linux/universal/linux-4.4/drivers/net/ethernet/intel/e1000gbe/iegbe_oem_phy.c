@@ -65,10 +65,6 @@ static int32_t iegbe_oem_link_m88_setup(struct iegbe_hw *hw);
 static int32_t iegbe_oem_set_phy_mode(struct iegbe_hw *hw);
 static int32_t iegbe_oem_detect_phy(struct iegbe_hw *hw);
 
-static int32_t iegbe_oem_link_bcm5481_setup(struct iegbe_hw *hw);
-static int32_t bcm5481_read_18sv (struct iegbe_hw *hw, int sv, uint16_t *data);
-static int32_t oi_phy_setup (struct iegbe_hw *hw);
-
 /**
  * iegbe_oem_setup_link
  * @hw: iegbe_hw struct containing device specific information
@@ -118,10 +114,6 @@ iegbe_oem_setup_link(struct iegbe_hw *hw)
     }
 
     switch (hw->phy_id) {
-	case BCM5395S_PHY_ID:
-		return E1000_SUCCESS;
-		break;
-
         case M88E1000_I_PHY_ID:
         case M88E1141_E_PHY_ID:
             ret_val = iegbe_oem_link_m88_setup(hw);
@@ -129,12 +121,6 @@ iegbe_oem_setup_link(struct iegbe_hw *hw)
                 return ret_val; 
             }
         break; 
-	case BCM5481_PHY_ID:
-		ret_val = iegbe_oem_link_bcm5481_setup(hw);
-		if(ret_val) { 
-			return ret_val; 
-		}
-		break; 
         default:
             DEBUGOUT("Invalid PHY ID\n");
             return -E1000_ERR_PHY_TYPE;
@@ -193,51 +179,6 @@ iegbe_oem_setup_link(struct iegbe_hw *hw)
 #endif /* ifdef EXTERNAL_MDIO */
 }
 
-/**
- * iegbe_oem_link_bcm5481_setup
- * @hw: iegbe_hw struct containing device specific information
- *
- * Returns E1000_SUCCESS, negative E1000 error code on failure
- *
- * copied verbatim from iegbe_oem_link_m88_setup
- **/
-static int32_t
-iegbe_oem_link_bcm5481_setup(struct iegbe_hw *hw)
-{
-	int32_t ret_val;
-	uint16_t phy_data;
-
-	//DEBUGFUNC(__func__);
-
-	if(!hw)
-		return -1;
-
-	/* phy_reset_disable is set in iegbe_oem_set_phy_mode */
-	if(hw->phy_reset_disable)
-		return E1000_SUCCESS;
-
-	// Enable MDIX in extended control reg.
-	ret_val = iegbe_oem_read_phy_reg_ex(hw, BCM5481_ECTRL, &phy_data);
-	if(ret_val)
-	{
-		DEBUGOUT("Unable to read BCM5481_ECTRL register\n");
-		return ret_val;
-	}
-
-	phy_data &= ~BCM5481_ECTRL_DISMDIX;
-	ret_val = iegbe_oem_write_phy_reg_ex(hw, BCM5481_ECTRL, phy_data);
-	if(ret_val)
-	{
-		DEBUGOUT("Unable to write BCM5481_ECTRL register\n");
-		return ret_val;
-	}
-
-	ret_val = oi_phy_setup (hw);
-	if (ret_val)
-		return ret_val;
-
-	return E1000_SUCCESS;
-}
 
 /**
  * iegbe_oem_link_m88_setup
@@ -399,11 +340,6 @@ iegbe_oem_force_mdi(struct iegbe_hw *hw, int *resetPhy)
      * see iegbe_phy_force_speed_duplex, which does the following for M88
      */
       switch (hw->phy_id) {
-		case BCM5395S_PHY_ID:
-		case BCM5481_PHY_ID:
-			DEBUGOUT("WARNING: An empty iegbe_oem_force_mdi() has been called!\n");
-			break;
-
           case M88E1000_I_PHY_ID:
           case M88E1141_E_PHY_ID:
               ret_val = iegbe_oem_read_phy_reg_ex(hw, 
@@ -479,8 +415,6 @@ iegbe_oem_phy_reset_dsp(struct iegbe_hw *hw)
      switch (hw->phy_id) {
          case M88E1000_I_PHY_ID:
          case M88E1141_E_PHY_ID:
-		case BCM5481_PHY_ID:
-		case BCM5395S_PHY_ID:
              DEBUGOUT("No DSP to reset on OEM PHY\n");
          break;
          default:
@@ -526,11 +460,6 @@ iegbe_oem_cleanup_after_phy_reset(struct iegbe_hw *hw)
      * see iegbe_phy_force_speed_duplex, which does the following for M88
      */
     switch (hw->phy_id) {
-		case BCM5395S_PHY_ID:
-		case BCM5481_PHY_ID:
-            DEBUGOUT("WARNING: An empty iegbe_oem_cleanup_after_phy_reset() has been called!\n");
-        break;
-
         case M88E1000_I_PHY_ID:
         case M88E1141_E_PHY_ID:
             /*
@@ -644,11 +573,6 @@ iegbe_oem_set_phy_mode(struct iegbe_hw *hw)
      * use iegbe_set_phy_mode as example
      */
     switch (hw->phy_id) {
-		case BCM5395S_PHY_ID:
-		case BCM5481_PHY_ID:
-             DEBUGOUT("WARNING: An empty iegbe_oem_set_phy_mode() has been called!\n");
-         break;
-
          case M88E1000_I_PHY_ID:
          case M88E1141_E_PHY_ID:
              ret_val = iegbe_read_eeprom(hw, 
@@ -717,19 +641,6 @@ iegbe_oem_detect_phy(struct iegbe_hw *hw)
     }
     hw->phy_type = iegbe_phy_oem;
 
-{
-	// If MAC2 (BCM5395 switch), manually detect the phy
-	struct iegbe_adapter *adapter;
-	uint32_t device_number;
-	adapter = (struct iegbe_adapter *) hw->back;
-	device_number = PCI_SLOT(adapter->pdev->devfn);
-	if (device_number == ICP_XXXX_MAC_2) {
-		hw->phy_id = BCM5395S_PHY_ID;
-		hw->phy_revision = 0;
-		return E1000_SUCCESS;
-	}
-}
-
     ret_val = iegbe_oem_read_phy_reg_ex(hw, PHY_ID1, &phy_id_high);
     if(ret_val) {
         DEBUGOUT("Unable to read PHY register PHY_ID1\n");
@@ -779,8 +690,6 @@ iegbe_oem_get_tipg(struct iegbe_hw *hw)
     switch (hw->phy_id) {
          case M88E1000_I_PHY_ID:
          case M88E1141_E_PHY_ID:
-		case BCM5481_PHY_ID:
-		case BCM5395S_PHY_ID:
              phy_num = DEFAULT_ICP_XXXX_TIPG_IPGT;
          break;
          default:
@@ -829,8 +738,6 @@ iegbe_oem_phy_is_copper(struct iegbe_hw *hw)
     switch (hw->phy_id) {
         case M88E1000_I_PHY_ID:
         case M88E1141_E_PHY_ID:
-		case BCM5481_PHY_ID:
-		case BCM5395S_PHY_ID:
             isCopper = TRUE;
         break;
         default:
@@ -889,13 +796,13 @@ iegbe_oem_get_phy_dev_number(struct iegbe_hw *hw)
 	switch(device_number)
     {
       case ICP_XXXX_MAC_0: 
-	      hw->phy_addr = 0x01;
+	      hw->phy_addr = 0x00;
 	  break;
       case ICP_XXXX_MAC_1: 
-	      hw->phy_addr = 0x02;
+	      hw->phy_addr = 0x01;
 	  break;
       case ICP_XXXX_MAC_2: 
-	      hw->phy_addr = 0x00;
+	      hw->phy_addr = 0x02;
 	  break;
 	  default:  hw->phy_addr = 0x00;
     }
@@ -944,12 +851,6 @@ iegbe_oem_mii_ioctl(struct iegbe_adapter *adapter, unsigned long flags,
     if(!adapter || !ifr) {
         return -1;
     }
-
-	// If MAC2 (BCM5395 switch) then leave now
-	if ((PCI_SLOT(adapter->pdev->devfn)) == ICP_XXXX_MAC_2) {
-			return -1;
-	}
-
     switch (data->reg_num) {
         case PHY_CTRL:
             if(mii_reg & MII_CR_POWER_DOWN) {
@@ -1086,11 +987,6 @@ void iegbe_oem_get_phy_regs(struct iegbe_adapter *adapter, uint32_t *data,
      * [10] = mdix mode
      */
     switch (adapter->hw.phy_id) {
-	case BCM5395S_PHY_ID:
-	case BCM5481_PHY_ID:
-		DEBUGOUT("WARNING: An empty iegbe_oem_get_phy_regs() has been called!\n");
-	break;
-
         case M88E1000_I_PHY_ID:
         case M88E1141_E_PHY_ID:
             if(corrected_len > 0) {
@@ -1172,13 +1068,8 @@ iegbe_oem_phy_loopback(struct iegbe_adapter *adapter)
      * Loopback configuration is the same for each of the supported PHYs.
      */
     switch (adapter->hw.phy_id) {
-		case BCM5395S_PHY_ID:
-			DEBUGOUT("WARNING: An empty iegbe_oem_phy_loopback() has been called!\n");
-			break;
-
         case M88E1000_I_PHY_ID:
         case M88E1141_E_PHY_ID:
-		case BCM5481_PHY_ID:
 
           adapter->hw.autoneg = FALSE;
 
@@ -1291,14 +1182,8 @@ iegbe_oem_loopback_cleanup(struct iegbe_adapter *adapter)
     }
 
     switch (adapter->hw.phy_id) {
-		case BCM5395S_PHY_ID:
-		DEBUGOUT("WARNING: An empty iegbe_oem_loopback_cleanup() has been called!\n");
-		return;
-		break;
-
         case M88E1000_I_PHY_ID:
         case M88E1141_E_PHY_ID:
-		case BCM5481_PHY_ID:
         default:
             adapter->hw.autoneg = TRUE;
         
@@ -1358,11 +1243,6 @@ iegbe_oem_phy_speed_downgraded(struct iegbe_hw *hw, uint16_t *isDowngraded)
      */
 
     switch (hw->phy_id) {
-		case BCM5395S_PHY_ID:
-		case BCM5481_PHY_ID:
-			*isDowngraded = 0;
-			break;
-
         case M88E1000_I_PHY_ID:
         case M88E1141_E_PHY_ID:
             ret_val = iegbe_oem_read_phy_reg_ex(hw, M88E1000_PHY_SPEC_STATUS, 
@@ -1425,11 +1305,6 @@ iegbe_oem_check_polarity(struct iegbe_hw *hw, uint16_t *polarity)
      */
 
     switch (hw->phy_id) {
-		case BCM5395S_PHY_ID:
-		case BCM5481_PHY_ID:
-			*polarity = 0;
-			break;
-
         case M88E1000_I_PHY_ID:
         case M88E1141_E_PHY_ID:
             /* return the Polarity bit in the Status register. */
@@ -1492,25 +1367,6 @@ iegbe_oem_phy_is_full_duplex(struct iegbe_hw *hw, int *isFD)
      */
         
       switch (hw->phy_id) {
-		case BCM5395S_PHY_ID:
-			/* Always full duplex */
-			*isFD = 1;
-			break;
-
-		case BCM5481_PHY_ID:
-			ret_val = iegbe_read_phy_reg(hw, BCM5481_ASTAT, &phy_data);
-			if(ret_val) return ret_val;
-
-				switch (BCM5481_ASTAT_HCD(phy_data)) {
-					case BCM5481_ASTAT_1KBTFD:
-					case BCM5481_ASTAT_100BTXFD:
-						*isFD = 1;
-						break;
-					default:
-						*isFD = 0;
-				}
-			break;
-
           case M88E1000_I_PHY_ID:
           case M88E1141_E_PHY_ID:
              ret_val = iegbe_oem_read_phy_reg_ex(hw, M88E1000_PHY_SPEC_STATUS,
@@ -1567,25 +1423,6 @@ iegbe_oem_phy_is_speed_1000(struct iegbe_hw *hw, int *is1000)
      */
 
     switch (hw->phy_id) {
-		case BCM5395S_PHY_ID:
-			/* Always 1000mb */
-			*is1000 = 1;
-			break;
-
-		case BCM5481_PHY_ID:
-			ret_val = iegbe_read_phy_reg(hw, BCM5481_ASTAT, &phy_data);
-			if(ret_val) return ret_val;
-
-				switch (BCM5481_ASTAT_HCD(phy_data)) {
-					case BCM5481_ASTAT_1KBTFD:
-					case BCM5481_ASTAT_1KBTHD:
-						*is1000 = 1;
-					break;
-				default:
-					*is1000 = 0;
-				}
-			break;
-
         case M88E1000_I_PHY_ID:
         case M88E1141_E_PHY_ID:
             ret_val = iegbe_oem_read_phy_reg_ex(hw, M88E1000_PHY_SPEC_STATUS, 
@@ -1641,25 +1478,6 @@ iegbe_oem_phy_is_speed_100(struct iegbe_hw *hw, int *is100)
      * see iegbe_config_mac_to_phy
      */
     switch (hw->phy_id) {
-		case BCM5395S_PHY_ID:
-			/* Always 1000Mb, never 100mb */
-			*is100 = 0;
-			break;
-
-		case BCM5481_PHY_ID:
-			ret_val = iegbe_read_phy_reg(hw, BCM5481_ASTAT, &phy_data);
-			if(ret_val) return ret_val;
-
-			switch (BCM5481_ASTAT_HCD(phy_data)) {
-				case BCM5481_ASTAT_100BTXFD:
-				case BCM5481_ASTAT_100BTXHD:
-					*is100 = 1;
-					break;
-				default:
-					*is100 = 0;
-			}
-			break;
-
         case M88E1000_I_PHY_ID:
         case M88E1141_E_PHY_ID:
             ret_val = iegbe_oem_read_phy_reg_ex(hw, 
@@ -1717,11 +1535,6 @@ iegbe_oem_phy_get_info(struct iegbe_hw *hw,
      * see iegbe_phy_m88_get_info
      */
     switch (hw->phy_id) {
-		case BCM5395S_PHY_ID:
-		case BCM5481_PHY_ID:
-			DEBUGOUT("WARNING: An empty iegbe_oem_phy_get_info() has been called!\n");
-			break;
-
         case M88E1000_I_PHY_ID:
         case M88E1141_E_PHY_ID:
   /* The downshift status is checked only once, after link is
@@ -1823,13 +1636,8 @@ iegbe_oem_phy_hw_reset(struct iegbe_hw *hw)
      * the M88 used in truxton. 
      */
     switch (hw->phy_id) {
-		case BCM5395S_PHY_ID:
-			DEBUGOUT("WARNING: An empty iegbe_oem_phy_hw_reset() has been called!\n");
-			break;
-
         case M88E1000_I_PHY_ID:
         case M88E1141_E_PHY_ID:
-		case BCM5481_PHY_ID:
             ret_val = iegbe_oem_read_phy_reg_ex(hw, PHY_CTRL, &phy_data);
             if(ret_val) {
                 DEBUGOUT("Unable to read register PHY_CTRL\n");
@@ -1891,8 +1699,6 @@ iegbe_oem_phy_init_script(struct iegbe_hw *hw)
     switch (hw->phy_id) {
         case M88E1000_I_PHY_ID:
         case M88E1141_E_PHY_ID:
-		case BCM5481_PHY_ID:
-		case BCM5395S_PHY_ID:
             DEBUGOUT("Nothing to do for OEM PHY Init");
         break;
         default:
@@ -1928,11 +1734,6 @@ iegbe_oem_read_phy_reg_ex(struct iegbe_hw *hw,
     if(!hw || !phy_data) {
         return -1;
     }
-
-	if (hw->phy_id == BCM5395S_PHY_ID) {
-		DEBUGOUT("WARNING: iegbe_oem_read_phy_reg_ex() has been unexpectedly called!\n");
-		return -1;
-	}
 
     /* call the GCU func that will read the phy
      * 
@@ -1981,11 +1782,6 @@ iegbe_oem_set_trans_gasket(struct iegbe_hw *hw)
     }
 
      switch (hw->phy_id) {
-		case BCM5395S_PHY_ID:
-		case BCM5481_PHY_ID:
-			DEBUGOUT("WARNING: An empty iegbe_oem_set_trans_gasket() has been called!\n");
-			break;
-
          case M88E1000_I_PHY_ID:
          case M88E1141_E_PHY_ID:
          /* Gasket set correctly for Marvell Phys, so nothing to do */
@@ -2090,8 +1886,6 @@ iegbe_oem_phy_needs_reset_with_mac(struct iegbe_hw *hw)
     switch (hw->phy_id) {
         case M88E1000_I_PHY_ID:
         case M88E1141_E_PHY_ID:
-		case BCM5481_PHY_ID:
-		case BCM5395S_PHY_ID:
             ret_val = FALSE;
         break;
         default:
@@ -2141,8 +1935,6 @@ iegbe_oem_config_dsp_after_link_change(struct iegbe_hw *hw,
     switch (hw->phy_id) {
         case M88E1000_I_PHY_ID:
         case M88E1141_E_PHY_ID:
-		case BCM5481_PHY_ID:
-		case BCM5395S_PHY_ID:
             DEBUGOUT("No DSP to configure on OEM PHY");
         break;
         default:
@@ -2186,12 +1978,6 @@ iegbe_oem_get_cable_length(struct iegbe_hw *hw,
     }
 
     switch (hw->phy_id) {
-		case BCM5395S_PHY_ID:
-		case BCM5481_PHY_ID:
-			*min_length = 0;
-			*max_length = iegbe_igp_cable_length_150;
-			break;
-
         case M88E1000_I_PHY_ID:
         case M88E1141_E_PHY_ID:
             ret_val = iegbe_oem_read_phy_reg_ex(hw, 
@@ -2275,23 +2061,6 @@ iegbe_oem_phy_is_link_up(struct iegbe_hw *hw, int *isUp)
      */
 
     switch (hw->phy_id) {
-		case BCM5395S_PHY_ID:
-			/* Link always up */
-			*isUp = TRUE;
-			return E1000_SUCCESS;
-			break;
-
-		case BCM5481_PHY_ID:
-			iegbe_oem_read_phy_reg_ex(hw, BCM5481_ESTAT, &phy_data);
-			ret_val = iegbe_oem_read_phy_reg_ex(hw, BCM5481_ESTAT, &phy_data);
-			if(ret_val)
-			{
-				DEBUGOUT("Unable to read PHY register BCM5481_ESTAT\n");
-				return ret_val;
-			}
-			statusMask = BCM5481_ESTAT_LINK;
-			break;
-
         case M88E1000_I_PHY_ID:
         case M88E1141_E_PHY_ID:
             iegbe_oem_read_phy_reg_ex(hw, M88E1000_PHY_SPEC_STATUS, &phy_data); 
@@ -2323,210 +2092,3 @@ iegbe_oem_phy_is_link_up(struct iegbe_hw *hw, int *isUp)
 #endif /* ifdef EXTERNAL_MDIO */
 }
 
-
-
-//-----
-// Read BCM5481 expansion register
-//
-int32_t
-bcm5481_read_ex (struct iegbe_hw *hw, uint16_t reg, uint16_t *data)
-{
-	int ret;
-	uint16_t selector;
-	uint16_t reg_data;
-
-	// Get the current value of bits 15:12
-	ret = iegbe_oem_read_phy_reg_ex (hw, 0x15, &selector);
-	if (ret)
-		return ret;
-
-	// Select the expansion register
-	selector &= 0xf000;
-	selector |= (0xf << 8) | (reg);
-	iegbe_oem_write_phy_reg_ex (hw, 0x17, selector);
-
-	// Read the expansion register
-	ret = iegbe_oem_read_phy_reg_ex (hw, 0x15, &reg_data);
-
-	// De-select the expansion registers.
-	selector &= 0xf000;
-	iegbe_oem_write_phy_reg_ex (hw, 0x17, selector);
-
-	if (ret)
-		return ret;
-
-	*data = reg_data;
-	return ret;
-}
-
-//-----
-//	Read reg 0x18 sub-register
-//
-static int32_t
-bcm5481_read_18sv (struct iegbe_hw *hw, int sv, uint16_t *data)
-{
-	int	ret;
-	uint16_t	tmp_data;
-
-	// Select reg 0x18, sv
-	tmp_data = ((sv & BCM5481_R18H_SV_MASK) << 12) | BCM5481_R18H_SV_MCTRL;
-	ret = iegbe_oem_write_phy_reg_ex (hw, BCM5481_R18H, tmp_data);
-	if(ret)
-		return ret;
-
-	// Read reg 0x18, sv
-	ret = iegbe_oem_read_phy_reg_ex (hw, BCM5481_R18H, &tmp_data);
-	if(ret)
-		return ret;
-
-	*data = tmp_data;
-	return ret;
-}
-
-//-----
-//	Read reg 0x1C sub-register
-//
-int32_t
-bcm5481_read_1csv (struct iegbe_hw *hw, int sv, uint16_t *data)
-{
-	int ret;
-	uint16_t tmp_data;
-
-	// Select reg 0x1c, sv
-	tmp_data = ((sv & BCM5481_R1CH_SV_MASK) << BCM5481_R1CH_SV_SHIFT);
-
-	ret = iegbe_oem_write_phy_reg_ex (hw, BCM5481_R1CH, tmp_data);
-	if(ret)
-		return ret;
-
-	// Read reg 0x1c, sv
-	ret = iegbe_oem_read_phy_reg_ex (hw, BCM5481_R1CH, &tmp_data);
-	if(ret)
-		return ret;
-
-	*data = tmp_data;
-	return ret;
-}
-
-//-----
-//	Read-modify-write a 0x1C register.
-//
-//	hw   - hardware access info.
-//	reg  - 0x1C register to modify.
-//	data - bits which should be set.
-//	mask - the '1' bits in this argument will be cleared in the data
-//         read from 'reg' then 'data' will be or'd in and the result
-//         will be written to 'reg'.
-
-int32_t
-bcm5481_rmw_1csv (struct iegbe_hw *hw, uint16_t reg, uint16_t data, uint16_t mask)
-{
-	int32_t		ret;
-	uint16_t	reg_data;
-
-	ret = 0;
-
-	ret = bcm5481_read_1csv (hw, reg, &reg_data);
-	if (ret)
-	{
-		DEBUGOUT("Unable to read BCM5481 1CH register\n");
-		printk (KERN_ERR "Unable to read BCM5481 1CH register [0x%x]\n", reg);
-		return ret;
-	}
-
-	reg_data &= ~mask;
-	reg_data |= (BCM5481_R1CH_WE | data);
-
-	ret = iegbe_oem_write_phy_reg_ex (hw, BCM5481_R1CH, reg_data);
-	if(ret)
-	{
-		DEBUGOUT("Unable to write BCM5481 1CH register\n");
-		printk (KERN_ERR "Unable to write BCM5481 1CH register\n");
-		return ret;
-	}
-
-	return ret;
-}
-
-int32_t
-oi_phy_setup (struct iegbe_hw *hw)
-{
-	int	ret;
-	uint16_t	pmii_data;
-	uint16_t	mctrl_data;
-	uint16_t	cacr_data;
-
-	ret = 0;
-
-	// Set low power mode via reg 0x18, sv010, bit 6
-	// Do a read-modify-write on reg 0x18, sv010 register to preserve existing bits.
-	ret = bcm5481_read_18sv (hw, BCM5481_R18H_SV_PMII, &pmii_data);
-	if (ret)
-	{
-		DEBUGOUT("Unable to read BCM5481_R18H_SV_PMII register\n");
-		printk (KERN_ERR "Unable to read BCM5481_R18H_SV_PMII register\n");
-		return ret;
-	}
-
-	// Set the LPM bit in the data just read and write back to sv010
-	// The shadow register select bits [2:0] are set by reading the sv010
-	// register.
-	pmii_data |= BCM5481_R18H_SV010_LPM;
-	ret = iegbe_oem_write_phy_reg_ex (hw, BCM5481_R18H, pmii_data);
-	if(ret)
-	{
-		DEBUGOUT("Unable to write BCM5481_R18H register\n");
-		printk (KERN_ERR "Unable to write BCM5481_R18H register\n");
-		return ret;
-	}
-
-
-	// Set the RGMII RXD to RXC skew bit in reg 0x18, sv111
-
-	if (bcm5481_read_18sv (hw, BCM5481_R18H_SV_MCTRL, &mctrl_data))
-	{
-		DEBUGOUT("Unable to read BCM5481_R18H_SV_MCTRL register\n");
-		printk (KERN_ERR "Unable to read BCM5481_R18H_SV_MCTRL register\n");
-		return ret;
-	}
-	mctrl_data |= (BCM5481_R18H_WE | BCM5481_R18H_SV111_SKEW);
-
-	ret = iegbe_oem_write_phy_reg_ex (hw, BCM5481_R18H, mctrl_data);
-	if(ret)
-	{
-		DEBUGOUT("Unable to write BCM5481_R18H register\n");
-		printk (KERN_ERR "Unable to write BCM5481_R18H register\n");
-		return ret;
-	}
-
-	// Enable RGMII transmit clock delay in reg 0x1c, sv00011
-	ret = bcm5481_read_1csv (hw, BCM5481_R1CH_CACR, &cacr_data);
-	if (ret)
-	{
-		DEBUGOUT("Unable to read BCM5481_R1CH_CACR register\n");
-		printk (KERN_ERR "Unable to read BCM5481_R1CH_CACR register\n");
-		return ret;
-	}
-
-	cacr_data |= (BCM5481_R1CH_WE | BCM5481_R1CH_CACR_TCD);
-
-	ret = iegbe_oem_write_phy_reg_ex (hw, BCM5481_R1CH, cacr_data);
-	if(ret)
-	{
-		DEBUGOUT("Unable to write BCM5481_R1CH register\n");
-		printk (KERN_ERR "Unable to write BCM5481_R1CH register\n");
-		return ret;
-	}
-
-	// Enable dual link speed indication (0x1c, sv 00010, bit 2)
-	ret = bcm5481_rmw_1csv (hw, BCM5481_R1CH_SC1, BCM5481_R1CH_SC1_LINK, BCM5481_R1CH_SC1_LINK);
-	if (ret)
-		return ret;
-
-	// Enable link and activity on ACTIVITY LED (0x1c, sv 01001, bit 4=1, bit 3=0)
-	ret = bcm5481_rmw_1csv (hw, BCM5481_R1CH_LCTRL, BCM5481_R1CH_LCTRL_ALEN, BCM5481_R1CH_LCTRL_ALEN | BCM5481_R1CH_LCTRL_AEN);
-	if (ret)
-		return ret;
-
-	return ret;
-}
