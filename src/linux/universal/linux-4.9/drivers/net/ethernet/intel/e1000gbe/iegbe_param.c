@@ -214,11 +214,11 @@ E1000_PARAM(RxAbsIntDelay, "Receive Absolute Interrupt Delay");
 E1000_PARAM(InterruptThrottleRate, "Interrupt Throttling Rate");
 
 #ifdef	IEGBE_10_100_ONLY
-    #define AUTONEG_ADV_DEFAULT  0x0F
-    #define AUTONEG_ADV_MASK     0x0F
+#define AUTONEG_ADV_DEFAULT  0x0F
+#define AUTONEG_ADV_MASK     0x0F
 #else
-    #define AUTONEG_ADV_DEFAULT  0x2F
-    #define AUTONEG_ADV_MASK     0x2F
+#define AUTONEG_ADV_DEFAULT  0x2F
+#define AUTONEG_ADV_MASK     0x2F
 #endif
 
 #define FLOW_CONTROL_DEFAULT FLOW_CONTROL_FULL
@@ -241,79 +241,75 @@ E1000_PARAM(InterruptThrottleRate, "Interrupt Throttling Rate");
 
 #define DEFAULT_ITR                 8000
 
-
 #define MAX_ITR                   100000
 #define MIN_ITR                      100
 
 struct iegbe_option {
-    enum { enable_option, range_option, list_option } type;
-    char *name;
-    char *err;
-    int  def;
-    union {
-        struct { /* range_option info */
-            int min;
-            int max;
-        } r;
-        struct { /* list_option info */
-            int nr;
-            struct iegbe_opt_list { int i; 
-                                    char *str; 
-                                  } *p;
-        } l;
-    } arg;
+	enum { enable_option, range_option, list_option } type;
+	char *name;
+	char *err;
+	int def;
+	union {
+		struct {	/* range_option info */
+			int min;
+			int max;
+		} r;
+		struct {	/* list_option info */
+			int nr;
+			struct iegbe_opt_list {
+				int i;
+				char *str;
+			} *p;
+		} l;
+	} arg;
 };
 
-static int 
-iegbe_validate_option(int *value, struct iegbe_option *opt,
-        struct iegbe_adapter *adapter)
+static int iegbe_validate_option(int *value, struct iegbe_option *opt, struct iegbe_adapter *adapter)
 {
-    if(*value == OPTION_UNSET) {
-        *value = opt->def;
-        return 0;
-    }
+	if (*value == OPTION_UNSET) {
+		*value = opt->def;
+		return 0;
+	}
 
-    switch (opt->type) {
-    case enable_option:
-        switch (*value) {
-        case OPTION_ENABLED:
-            DPRINTK(PROBE, INFO, "%s Enabled\n", opt->name);
-            return 0;
-        case OPTION_DISABLED:
-            DPRINTK(PROBE, INFO, "%s Disabled\n", opt->name);
-            return 0;
-        }
-        break;
-    case range_option:
-        if(*value >= opt->arg.r.min && *value <= opt->arg.r.max) {
-            DPRINTK(PROBE, INFO,
-                    "%s set to %i\n", opt->name, *value);
-            return 0;
-        }
-        break;
-    case list_option: {
-        int i;
-        struct iegbe_opt_list *ent;
+	switch (opt->type) {
+	case enable_option:
+		switch (*value) {
+		case OPTION_ENABLED:
+			DPRINTK(PROBE, INFO, "%s Enabled\n", opt->name);
+			return 0;
+		case OPTION_DISABLED:
+			DPRINTK(PROBE, INFO, "%s Disabled\n", opt->name);
+			return 0;
+		}
+		break;
+	case range_option:
+		if (*value >= opt->arg.r.min && *value <= opt->arg.r.max) {
+			DPRINTK(PROBE, INFO, "%s set to %i\n", opt->name, *value);
+			return 0;
+		}
+		break;
+	case list_option:{
+			int i;
+			struct iegbe_opt_list *ent;
 
-        for(i = 0; i < opt->arg.l.nr; i++) {
-            ent = &opt->arg.l.p[i];
-            if(*value == ent->i) {
-                if(ent->str[0] != '\0'){
-                    DPRINTK(PROBE, INFO, "%s\n", ent->str);
-                }                          
-                return 0;
-            }
-        }
-    }
-        break;
-    default:
-        BUG();
-    }
+			for (i = 0; i < opt->arg.l.nr; i++) {
+				ent = &opt->arg.l.p[i];
+				if (*value == ent->i) {
+					if (ent->str[0] != '\0') {
+						DPRINTK(PROBE, INFO, "%s\n", ent->str);
+					}
+					return 0;
+				}
+			}
+		}
+		break;
+	default:
+		BUG();
+	}
 
-    DPRINTK(PROBE, INFO, "Invalid %s specified (%i) %s\n",
-           opt->name, *value, opt->err);
-    *value = opt->def;
-    return -1;
+	DPRINTK(PROBE, INFO, "Invalid %s specified (%i) %s\n", opt->name, *value, opt->err);
+	*value = opt->def;
+	return -1;
 }
 
 static void iegbe_check_fiber_options(struct iegbe_adapter *adapter);
@@ -329,270 +325,255 @@ static void iegbe_check_copper_options(struct iegbe_adapter *adapter);
  * in a variable in the adapter structure.
  **/
 
-void 
-iegbe_check_options(struct iegbe_adapter *adapter)
+void iegbe_check_options(struct iegbe_adapter *adapter)
 {
-    int bd = adapter->bd_number;
-    if(bd >= E1000_MAX_NIC) {
-        DPRINTK(PROBE, NOTICE,
-               "Warning: no configuration for board #%i\n", bd);
-        DPRINTK(PROBE, NOTICE, "Using defaults for all values\n");
+	int bd = adapter->bd_number;
+	if (bd >= E1000_MAX_NIC) {
+		DPRINTK(PROBE, NOTICE, "Warning: no configuration for board #%i\n", bd);
+		DPRINTK(PROBE, NOTICE, "Using defaults for all values\n");
 #ifndef module_param_array
-        bd = E1000_MAX_NIC;
+		bd = E1000_MAX_NIC;
 #endif
-    }
+	}
 
-    { /* Transmit Descriptor Count */
-        struct iegbe_option opt = {
-            .type = range_option,
-            .name = "Transmit Descriptors",
-            .err  = "using default of "
-                __MODULE_STRING(E1000_DEFAULT_TXD),
-            .def  = E1000_DEFAULT_TXD,
-            .arg  = { .r = { .min = E1000_MIN_TXD }}
-        };
-        struct iegbe_tx_ring *tx_ring = adapter->tx_ring;
-        int i;
-        iegbe_mac_type mac_type = adapter->hw.mac_type;
-        opt.arg.r.max = mac_type < iegbe_82544 ?
-            E1000_MAX_TXD : E1000_MAX_82544_TXD;
+	{			/* Transmit Descriptor Count */
+		struct iegbe_option opt = {
+			.type = range_option,
+			.name = "Transmit Descriptors",
+			.err = "using default of " __MODULE_STRING(E1000_DEFAULT_TXD),
+			.def = E1000_DEFAULT_TXD,
+			.arg = {.r = {.min = E1000_MIN_TXD}}
+		};
+		struct iegbe_tx_ring *tx_ring = adapter->tx_ring;
+		int i;
+		iegbe_mac_type mac_type = adapter->hw.mac_type;
+		opt.arg.r.max = mac_type < iegbe_82544 ? E1000_MAX_TXD : E1000_MAX_82544_TXD;
 
 #ifdef module_param_array
-        if(num_TxDescriptors > bd) {
+		if (num_TxDescriptors > bd) {
 #endif
-            tx_ring->count = TxDescriptors[bd];
-            iegbe_validate_option(&tx_ring->count, &opt, adapter);
-            E1000_ROUNDUP(tx_ring->count, 
-                        REQ_TX_DESCRIPTOR_MULTIPLE);
+			tx_ring->count = TxDescriptors[bd];
+			iegbe_validate_option(&tx_ring->count, &opt, adapter);
+			E1000_ROUNDUP(tx_ring->count, REQ_TX_DESCRIPTOR_MULTIPLE);
 #ifdef module_param_array
-        } else {
-            tx_ring->count = opt.def;
-        }
+		} else {
+			tx_ring->count = opt.def;
+		}
 #endif
 		for (i = 0; i < adapter->num_tx_queues; i++)
-            tx_ring[i].count = tx_ring->count;
-    }
-    { /* Receive Descriptor Count */
-        struct iegbe_option opt = {
-            .type = range_option,
-            .name = "Receive Descriptors",
-            .err  = "using default of "
-                __MODULE_STRING(E1000_DEFAULT_RXD),
-            .def  = E1000_DEFAULT_RXD,
-            .arg  = { .r = { .min = E1000_MIN_RXD }}
-        };
-        struct iegbe_rx_ring *rx_ring = adapter->rx_ring;
-        int i;
-        iegbe_mac_type mac_type = adapter->hw.mac_type;
-        opt.arg.r.max = mac_type < iegbe_82544 ? E1000_MAX_RXD :
-            E1000_MAX_82544_RXD;
+			tx_ring[i].count = tx_ring->count;
+	}
+	{			/* Receive Descriptor Count */
+		struct iegbe_option opt = {
+			.type = range_option,
+			.name = "Receive Descriptors",
+			.err = "using default of " __MODULE_STRING(E1000_DEFAULT_RXD),
+			.def = E1000_DEFAULT_RXD,
+			.arg = {.r = {.min = E1000_MIN_RXD}}
+		};
+		struct iegbe_rx_ring *rx_ring = adapter->rx_ring;
+		int i;
+		iegbe_mac_type mac_type = adapter->hw.mac_type;
+		opt.arg.r.max = mac_type < iegbe_82544 ? E1000_MAX_RXD : E1000_MAX_82544_RXD;
 
 #ifdef module_param_array
-        if(num_RxDescriptors > bd) {
+		if (num_RxDescriptors > bd) {
 #endif
-            rx_ring->count = RxDescriptors[bd];
-            iegbe_validate_option(&rx_ring->count, &opt, adapter);
-            E1000_ROUNDUP(rx_ring->count, 
-                        REQ_RX_DESCRIPTOR_MULTIPLE);
+			rx_ring->count = RxDescriptors[bd];
+			iegbe_validate_option(&rx_ring->count, &opt, adapter);
+			E1000_ROUNDUP(rx_ring->count, REQ_RX_DESCRIPTOR_MULTIPLE);
 #ifdef module_param_array
-        } else {
-            rx_ring->count = opt.def;
-        }
+		} else {
+			rx_ring->count = opt.def;
+		}
 #endif
 		for (i = 0; i < adapter->num_rx_queues; i++)
-            rx_ring[i].count = rx_ring->count;
-    }
-    { /* Checksum Offload Enable/Disable */
-        struct iegbe_option opt = {
-            .type = enable_option,
-            .name = "Checksum Offload",
-            .err  = "defaulting to Enabled",
-            .def  = OPTION_ENABLED
-        };
+			rx_ring[i].count = rx_ring->count;
+	}
+	{			/* Checksum Offload Enable/Disable */
+		struct iegbe_option opt = {
+			.type = enable_option,
+			.name = "Checksum Offload",
+			.err = "defaulting to Enabled",
+			.def = OPTION_ENABLED
+		};
 
 #ifdef module_param_array
-        if(num_XsumRX > bd) {
+		if (num_XsumRX > bd) {
 #endif
-            int rx_csum = XsumRX[bd];
-            iegbe_validate_option(&rx_csum, &opt, adapter);
-            adapter->rx_csum = rx_csum;
+			int rx_csum = XsumRX[bd];
+			iegbe_validate_option(&rx_csum, &opt, adapter);
+			adapter->rx_csum = rx_csum;
 #ifdef module_param_array
-        } else {
-            adapter->rx_csum = opt.def;
-        }
+		} else {
+			adapter->rx_csum = opt.def;
+		}
 #endif
-    }
-    { /* Flow Control */
+	}
+	{			/* Flow Control */
 
-        struct iegbe_opt_list fc_list[] =
-            {{ iegbe_fc_none,    "Flow Control Disabled" },
-             { iegbe_fc_rx_pause,"Flow Control Receive Only" },
-             { iegbe_fc_tx_pause,"Flow Control Transmit Only" },
-             { iegbe_fc_full,    "Flow Control Enabled" },
-             { iegbe_fc_default, "Flow Control Hardware Default" }};
+		struct iegbe_opt_list fc_list[] = { {iegbe_fc_none, "Flow Control Disabled"},
+		{iegbe_fc_rx_pause, "Flow Control Receive Only"},
+		{iegbe_fc_tx_pause, "Flow Control Transmit Only"},
+		{iegbe_fc_full, "Flow Control Enabled"},
+		{iegbe_fc_default, "Flow Control Hardware Default"}
+		};
 
-        struct iegbe_option opt = {
-            .type = list_option,
-            .name = "Flow Control",
-            .err  = "reading default settings from EEPROM",
-            .def  = iegbe_fc_default,
-            .arg  = { .l = { .nr = ARRAY_SIZE(fc_list),
-                     .p = fc_list }}
-        };
-
-#ifdef module_param_array
-        if(num_FlowControl > bd) {
-#endif
-            int fc = FlowControl[bd];
-            iegbe_validate_option(&fc, &opt, adapter);
-            adapter->hw.fc = adapter->hw.original_fc = fc;
-#ifdef module_param_array
-        } else {
-            adapter->hw.fc = adapter->hw.original_fc = opt.def;
-        }
-#endif
-    }
-    { /* Transmit Interrupt Delay */
-        struct iegbe_option opt = {
-            .type = range_option,
-            .name = "Transmit Interrupt Delay",
-            .err  = "using default of " __MODULE_STRING(DEFAULT_TIDV),
-            .def  = DEFAULT_TIDV,
-            .arg  = { .r = { .min = MIN_TXDELAY,
-                     .max = MAX_TXDELAY }}
-        };
+		struct iegbe_option opt = {
+			.type = list_option,
+			.name = "Flow Control",
+			.err = "reading default settings from EEPROM",
+			.def = iegbe_fc_default,
+			.arg = {.l = {.nr = ARRAY_SIZE(fc_list),
+				      .p = fc_list}}
+		};
 
 #ifdef module_param_array
-        if(num_TxIntDelay > bd) {
+		if (num_FlowControl > bd) {
 #endif
-            adapter->tx_int_delay = TxIntDelay[bd];
-            iegbe_validate_option(&adapter->tx_int_delay, &opt, 
-                                adapter);
+			int fc = FlowControl[bd];
+			iegbe_validate_option(&fc, &opt, adapter);
+			adapter->hw.fc = adapter->hw.original_fc = fc;
 #ifdef module_param_array
-        } else {
-            adapter->tx_int_delay = opt.def;
-        }
+		} else {
+			adapter->hw.fc = adapter->hw.original_fc = opt.def;
+		}
 #endif
-    }
-    { /* Transmit Absolute Interrupt Delay */
-        struct iegbe_option opt = {
-            .type = range_option,
-            .name = "Transmit Absolute Interrupt Delay",
-            .err  = "using default of " __MODULE_STRING(DEFAULT_TADV),
-            .def  = DEFAULT_TADV,
-            .arg  = { .r = { .min = MIN_TXABSDELAY,
-                     .max = MAX_TXABSDELAY }}
-        };
+	}
+	{			/* Transmit Interrupt Delay */
+		struct iegbe_option opt = {
+			.type = range_option,
+			.name = "Transmit Interrupt Delay",
+			.err = "using default of " __MODULE_STRING(DEFAULT_TIDV),
+			.def = DEFAULT_TIDV,
+			.arg = {.r = {.min = MIN_TXDELAY,
+				      .max = MAX_TXDELAY}}
+		};
 
 #ifdef module_param_array
-        if(num_TxAbsIntDelay > bd) {
+		if (num_TxIntDelay > bd) {
 #endif
-            adapter->tx_abs_int_delay = TxAbsIntDelay[bd];
-            iegbe_validate_option(&adapter->tx_abs_int_delay, &opt, 
-                                adapter);
+			adapter->tx_int_delay = TxIntDelay[bd];
+			iegbe_validate_option(&adapter->tx_int_delay, &opt, adapter);
 #ifdef module_param_array
-        } else {
-            adapter->tx_abs_int_delay = opt.def;
-        }
+		} else {
+			adapter->tx_int_delay = opt.def;
+		}
 #endif
-    }
-    { /* Receive Interrupt Delay */
-        struct iegbe_option opt = {
-            .type = range_option,
-            .name = "Receive Interrupt Delay",
-            .err  = "using default of " __MODULE_STRING(DEFAULT_RDTR),
-            .def  = DEFAULT_RDTR,
-            .arg  = { .r = { .min = MIN_RXDELAY,
-                     .max = MAX_RXDELAY }}
-        };
+	}
+	{			/* Transmit Absolute Interrupt Delay */
+		struct iegbe_option opt = {
+			.type = range_option,
+			.name = "Transmit Absolute Interrupt Delay",
+			.err = "using default of " __MODULE_STRING(DEFAULT_TADV),
+			.def = DEFAULT_TADV,
+			.arg = {.r = {.min = MIN_TXABSDELAY,
+				      .max = MAX_TXABSDELAY}}
+		};
 
 #ifdef module_param_array
-        if(num_RxIntDelay > bd) {
+		if (num_TxAbsIntDelay > bd) {
 #endif
-            adapter->rx_int_delay = RxIntDelay[bd];
-            iegbe_validate_option(&adapter->rx_int_delay, &opt, 
-                                adapter);
+			adapter->tx_abs_int_delay = TxAbsIntDelay[bd];
+			iegbe_validate_option(&adapter->tx_abs_int_delay, &opt, adapter);
 #ifdef module_param_array
-        } else {
-            adapter->rx_int_delay = opt.def;
-        }
+		} else {
+			adapter->tx_abs_int_delay = opt.def;
+		}
 #endif
-    }
-    { /* Receive Absolute Interrupt Delay */
-        struct iegbe_option opt = {
-            .type = range_option,
-            .name = "Receive Absolute Interrupt Delay",
-            .err  = "using default of " __MODULE_STRING(DEFAULT_RADV),
-            .def  = DEFAULT_RADV,
-            .arg  = { .r = { .min = MIN_RXABSDELAY,
-                     .max = MAX_RXABSDELAY }}
-        };
+	}
+	{			/* Receive Interrupt Delay */
+		struct iegbe_option opt = {
+			.type = range_option,
+			.name = "Receive Interrupt Delay",
+			.err = "using default of " __MODULE_STRING(DEFAULT_RDTR),
+			.def = DEFAULT_RDTR,
+			.arg = {.r = {.min = MIN_RXDELAY,
+				      .max = MAX_RXDELAY}}
+		};
 
 #ifdef module_param_array
-        if(num_RxAbsIntDelay > bd) {
+		if (num_RxIntDelay > bd) {
 #endif
-            adapter->rx_abs_int_delay = RxAbsIntDelay[bd];
-            iegbe_validate_option(&adapter->rx_abs_int_delay, &opt, 
-                                adapter);
+			adapter->rx_int_delay = RxIntDelay[bd];
+			iegbe_validate_option(&adapter->rx_int_delay, &opt, adapter);
 #ifdef module_param_array
-        } else {
-            adapter->rx_abs_int_delay = opt.def;
-        }
+		} else {
+			adapter->rx_int_delay = opt.def;
+		}
 #endif
-    }
-    { /* Interrupt Throttling Rate */
-        struct iegbe_option opt = {
-            .type = range_option,
-            .name = "Interrupt Throttling Rate (ints/sec)",
-            .err  = "using default of " __MODULE_STRING(DEFAULT_ITR),
-            .def  = DEFAULT_ITR,
-            .arg  = { .r = { .min = MIN_ITR,
-                     .max = MAX_ITR }}
-        };
+	}
+	{			/* Receive Absolute Interrupt Delay */
+		struct iegbe_option opt = {
+			.type = range_option,
+			.name = "Receive Absolute Interrupt Delay",
+			.err = "using default of " __MODULE_STRING(DEFAULT_RADV),
+			.def = DEFAULT_RADV,
+			.arg = {.r = {.min = MIN_RXABSDELAY,
+				      .max = MAX_RXABSDELAY}}
+		};
 
 #ifdef module_param_array
-        if(num_InterruptThrottleRate > bd) {
+		if (num_RxAbsIntDelay > bd) {
 #endif
-            adapter->itr = InterruptThrottleRate[bd];
-            switch(adapter->itr) {
-            case 0:
-                DPRINTK(PROBE, INFO, "%s turned off\n", 
-                    opt.name);
-                break;
-            case 1:
-                DPRINTK(PROBE, INFO, "%s set to dynamic mode\n", 
-                    opt.name);
-                break;
-            default:
-                iegbe_validate_option(&adapter->itr, &opt, 
-                    adapter);
-                break;
-            }
+			adapter->rx_abs_int_delay = RxAbsIntDelay[bd];
+			iegbe_validate_option(&adapter->rx_abs_int_delay, &opt, adapter);
 #ifdef module_param_array
-        } else {
-            adapter->itr = opt.def;
-        }
+		} else {
+			adapter->rx_abs_int_delay = opt.def;
+		}
 #endif
-    }
+	}
+	{			/* Interrupt Throttling Rate */
+		struct iegbe_option opt = {
+			.type = range_option,
+			.name = "Interrupt Throttling Rate (ints/sec)",
+			.err = "using default of " __MODULE_STRING(DEFAULT_ITR),
+			.def = DEFAULT_ITR,
+			.arg = {.r = {.min = MIN_ITR,
+				      .max = MAX_ITR}}
+		};
 
-    switch(adapter->hw.media_type) {
-    case iegbe_media_type_fiber:
-    case iegbe_media_type_internal_serdes:
-        iegbe_check_fiber_options(adapter);
-        break;
-    case iegbe_media_type_copper:
-        iegbe_check_copper_options(adapter);
-        break;
-    case iegbe_media_type_oem:
-        if(iegbe_oem_phy_is_copper(&adapter->hw)) {
-            iegbe_check_copper_options(adapter);
-        }else {
-            iegbe_check_fiber_options(adapter);
-        }                
-        break;
-    default:
-        BUG();
-    }
+#ifdef module_param_array
+		if (num_InterruptThrottleRate > bd) {
+#endif
+			adapter->itr = InterruptThrottleRate[bd];
+			switch (adapter->itr) {
+			case 0:
+				DPRINTK(PROBE, INFO, "%s turned off\n", opt.name);
+				break;
+			case 1:
+				DPRINTK(PROBE, INFO, "%s set to dynamic mode\n", opt.name);
+				break;
+			default:
+				iegbe_validate_option(&adapter->itr, &opt, adapter);
+				break;
+			}
+#ifdef module_param_array
+		} else {
+			adapter->itr = opt.def;
+		}
+#endif
+	}
+
+	switch (adapter->hw.media_type) {
+	case iegbe_media_type_fiber:
+	case iegbe_media_type_internal_serdes:
+		iegbe_check_fiber_options(adapter);
+		break;
+	case iegbe_media_type_copper:
+		iegbe_check_copper_options(adapter);
+		break;
+	case iegbe_media_type_oem:
+		if (iegbe_oem_phy_is_copper(&adapter->hw)) {
+			iegbe_check_copper_options(adapter);
+		} else {
+			iegbe_check_fiber_options(adapter);
+		}
+		break;
+	default:
+		BUG();
+	}
 }
 
 /**
@@ -602,38 +583,31 @@ iegbe_check_options(struct iegbe_adapter *adapter)
  * Handles speed and duplex options on fiber adapters
  **/
 
-static void 
-iegbe_check_fiber_options(struct iegbe_adapter *adapter)
+static void iegbe_check_fiber_options(struct iegbe_adapter *adapter)
 {
-    int bd = adapter->bd_number;
+	int bd = adapter->bd_number;
 #ifndef module_param_array
-    bd = bd > E1000_MAX_NIC ? E1000_MAX_NIC : bd;
-    if((Speed[bd] != OPTION_UNSET)) {
+	bd = bd > E1000_MAX_NIC ? E1000_MAX_NIC : bd;
+	if ((Speed[bd] != OPTION_UNSET)) {
 #else
-    if(num_Speed > bd) {
+	if (num_Speed > bd) {
 #endif
-        DPRINTK(PROBE, INFO, "Speed not valid for fiber adapters, "
-               "parameter ignored\n");
-    }
-
+		DPRINTK(PROBE, INFO, "Speed not valid for fiber adapters, " "parameter ignored\n");
+	}
 #ifndef module_param_array
-    if((Duplex[bd] != OPTION_UNSET)) {
+	if ((Duplex[bd] != OPTION_UNSET)) {
 #else
-    if(num_Duplex > bd) {
+	if (num_Duplex > bd) {
 #endif
-        DPRINTK(PROBE, INFO, "Duplex not valid for fiber adapters, "
-               "parameter ignored\n");
-    }
-
+		DPRINTK(PROBE, INFO, "Duplex not valid for fiber adapters, " "parameter ignored\n");
+	}
 #ifndef module_param_array
-    if((AutoNeg[bd] != OPTION_UNSET) && (AutoNeg[bd] != 0x20)) {
+	if ((AutoNeg[bd] != OPTION_UNSET) && (AutoNeg[bd] != 0x20)) {
 #else
-    if((num_AutoNeg > bd) && (AutoNeg[bd] != 0x20)) {
+	if ((num_AutoNeg > bd) && (AutoNeg[bd] != 0x20)) {
 #endif
-        DPRINTK(PROBE, INFO, "AutoNeg other than 1000/Full is "
-                 "not valid for fiber adapters, "
-                 "parameter ignored\n");
-    }
+		DPRINTK(PROBE, INFO, "AutoNeg other than 1000/Full is " "not valid for fiber adapters, " "parameter ignored\n");
+	}
 }
 
 /**
@@ -643,229 +617,207 @@ iegbe_check_fiber_options(struct iegbe_adapter *adapter)
  * Handles speed and duplex options on copper adapters
  **/
 
-static void 
-iegbe_check_copper_options(struct iegbe_adapter *adapter)
+static void iegbe_check_copper_options(struct iegbe_adapter *adapter)
 {
-    int speed, dplx;
-    int bd = adapter->bd_number;
+	int speed, dplx;
+	int bd = adapter->bd_number;
 #ifndef module_param_array
-    bd = bd > E1000_MAX_NIC ? E1000_MAX_NIC : bd;
+	bd = bd > E1000_MAX_NIC ? E1000_MAX_NIC : bd;
 #endif
 
-    { /* Speed */
-        struct iegbe_opt_list speed_list[] = {{          0, "" },
-                              {   SPEED_10, "" },
-                              {  SPEED_100, "" },
-                              { SPEED_1000, "" }};
+	{			/* Speed */
+		struct iegbe_opt_list speed_list[] = { {0, ""},
+		{SPEED_10, ""},
+		{SPEED_100, ""},
+		{SPEED_1000, ""}
+		};
 
-        struct iegbe_option opt = {
-            .type = list_option,
-            .name = "Speed",
-            .err  = "parameter ignored",
-            .def  = 0,
-            .arg  = { .l = { .nr = ARRAY_SIZE(speed_list),
-                     .p = speed_list }}
-        };
+		struct iegbe_option opt = {
+			.type = list_option,
+			.name = "Speed",
+			.err = "parameter ignored",
+			.def = 0,
+			.arg = {.l = {.nr = ARRAY_SIZE(speed_list),
+				      .p = speed_list}}
+		};
 
 #ifdef module_param_array
-        if(num_Speed > bd) {
+		if (num_Speed > bd) {
 #endif
-            speed = Speed[bd];
-            iegbe_validate_option(&speed, &opt, adapter);
+			speed = Speed[bd];
+			iegbe_validate_option(&speed, &opt, adapter);
 #ifdef module_param_array
-        } else {
-            speed = opt.def;
-        }
+		} else {
+			speed = opt.def;
+		}
 #endif
-    }
-    { /* Duplex */
-        struct iegbe_opt_list dplx_list[] = {{           0, "" },
-                             { HALF_DUPLEX, "" },
-                             { FULL_DUPLEX, "" }};
+	}
+	{			/* Duplex */
+		struct iegbe_opt_list dplx_list[] = { {0, ""},
+		{HALF_DUPLEX, ""},
+		{FULL_DUPLEX, ""}
+		};
 
-        struct iegbe_option opt = {
-            .type = list_option,
-            .name = "Duplex",
-            .err  = "parameter ignored",
-            .def  = 0,
-            .arg  = { .l = { .nr = ARRAY_SIZE(dplx_list),
-                     .p = dplx_list }}
-        };
-
-#ifdef module_param_array
-        if(num_Duplex > bd) {
-#endif
-            dplx = Duplex[bd];
-            iegbe_validate_option(&dplx, &opt, adapter);
-#ifdef module_param_array
-        } else {
-            dplx = opt.def;
-        }
-#endif
-    }
+		struct iegbe_option opt = {
+			.type = list_option,
+			.name = "Duplex",
+			.err = "parameter ignored",
+			.def = 0,
+			.arg = {.l = {.nr = ARRAY_SIZE(dplx_list),
+				      .p = dplx_list}}
+		};
 
 #ifdef module_param_array
-    if((num_AutoNeg > bd) && (speed != 0 || dplx != 0)) {
+		if (num_Duplex > bd) {
+#endif
+			dplx = Duplex[bd];
+			iegbe_validate_option(&dplx, &opt, adapter);
+#ifdef module_param_array
+		} else {
+			dplx = opt.def;
+		}
+#endif
+	}
+
+#ifdef module_param_array
+	if ((num_AutoNeg > bd) && (speed != 0 || dplx != 0)) {
 #else
-    if(AutoNeg[bd] != OPTION_UNSET && (speed != 0 || dplx != 0)) {
+	if (AutoNeg[bd] != OPTION_UNSET && (speed != 0 || dplx != 0)) {
 #endif
-        DPRINTK(PROBE, INFO,
-               "AutoNeg specified along with Speed or Duplex, "
-               "parameter ignored\n");
-        adapter->hw.autoneg_advertised = AUTONEG_ADV_DEFAULT;
-    } else {  
-        struct iegbe_opt_list an_list[] =
-            #define AA "AutoNeg advertising "
-            {{ 0x01, AA "10/HD" },
-             { 0x02, AA "10/FD" },
-             { 0x03, AA "10/FD, 10/HD" },
-             { 0x04, AA "100/HD" },
-             { 0x05, AA "100/HD, 10/HD" },
-             { 0x06, AA "100/HD, 10/FD" },
-             { 0x07, AA "100/HD, 10/FD, 10/HD" },
-             { 0x08, AA "100/FD" },
-             { 0x09, AA "100/FD, 10/HD" },
-             { 0x0a, AA "100/FD, 10/FD" },
-             { 0x0b, AA "100/FD, 10/FD, 10/HD" },
-             { 0x0c, AA "100/FD, 100/HD" },
-             { 0x0d, AA "100/FD, 100/HD, 10/HD" },
-             { 0x0e, AA "100/FD, 100/HD, 10/FD" },
-             { 0x0f, AA "100/FD, 100/HD, 10/FD, 10/HD" },
-             { 0x20, AA "1000/FD" },
-             { 0x21, AA "1000/FD, 10/HD" },
-             { 0x22, AA "1000/FD, 10/FD" },
-             { 0x23, AA "1000/FD, 10/FD, 10/HD" },
-             { 0x24, AA "1000/FD, 100/HD" },
-             { 0x25, AA "1000/FD, 100/HD, 10/HD" },
-             { 0x26, AA "1000/FD, 100/HD, 10/FD" },
-             { 0x27, AA "1000/FD, 100/HD, 10/FD, 10/HD" },
-             { 0x28, AA "1000/FD, 100/FD" },
-             { 0x29, AA "1000/FD, 100/FD, 10/HD" },
-             { 0x2a, AA "1000/FD, 100/FD, 10/FD" },
-             { 0x2b, AA "1000/FD, 100/FD, 10/FD, 10/HD" },
-             { 0x2c, AA "1000/FD, 100/FD, 100/HD" },
-             { 0x2d, AA "1000/FD, 100/FD, 100/HD, 10/HD" },
-             { 0x2e, AA "1000/FD, 100/FD, 100/HD, 10/FD" },
-             { 0x2f, AA "1000/FD, 100/FD, 100/HD, 10/FD, 10/HD" }};
+		DPRINTK(PROBE, INFO, "AutoNeg specified along with Speed or Duplex, " "parameter ignored\n");
+		adapter->hw.autoneg_advertised = AUTONEG_ADV_DEFAULT;
+	} else {
+		struct iegbe_opt_list an_list[] =
+#define AA "AutoNeg advertising "
+		{ {0x01, AA "10/HD"},
+		{0x02, AA "10/FD"},
+		{0x03, AA "10/FD, 10/HD"},
+		{0x04, AA "100/HD"},
+		{0x05, AA "100/HD, 10/HD"},
+		{0x06, AA "100/HD, 10/FD"},
+		{0x07, AA "100/HD, 10/FD, 10/HD"},
+		{0x08, AA "100/FD"},
+		{0x09, AA "100/FD, 10/HD"},
+		{0x0a, AA "100/FD, 10/FD"},
+		{0x0b, AA "100/FD, 10/FD, 10/HD"},
+		{0x0c, AA "100/FD, 100/HD"},
+		{0x0d, AA "100/FD, 100/HD, 10/HD"},
+		{0x0e, AA "100/FD, 100/HD, 10/FD"},
+		{0x0f, AA "100/FD, 100/HD, 10/FD, 10/HD"},
+		{0x20, AA "1000/FD"},
+		{0x21, AA "1000/FD, 10/HD"},
+		{0x22, AA "1000/FD, 10/FD"},
+		{0x23, AA "1000/FD, 10/FD, 10/HD"},
+		{0x24, AA "1000/FD, 100/HD"},
+		{0x25, AA "1000/FD, 100/HD, 10/HD"},
+		{0x26, AA "1000/FD, 100/HD, 10/FD"},
+		{0x27, AA "1000/FD, 100/HD, 10/FD, 10/HD"},
+		{0x28, AA "1000/FD, 100/FD"},
+		{0x29, AA "1000/FD, 100/FD, 10/HD"},
+		{0x2a, AA "1000/FD, 100/FD, 10/FD"},
+		{0x2b, AA "1000/FD, 100/FD, 10/FD, 10/HD"},
+		{0x2c, AA "1000/FD, 100/FD, 100/HD"},
+		{0x2d, AA "1000/FD, 100/FD, 100/HD, 10/HD"},
+		{0x2e, AA "1000/FD, 100/FD, 100/HD, 10/FD"},
+		{0x2f, AA "1000/FD, 100/FD, 100/HD, 10/FD, 10/HD"}
+		};
 
-        struct iegbe_option opt = {
-            .type = list_option,
-            .name = "AutoNeg",
-            .err  = "parameter ignored",
-            .def  = AUTONEG_ADV_DEFAULT,
-            .arg  = { .l = { .nr = ARRAY_SIZE(an_list),
-                     .p = an_list }}
-        };
+		struct iegbe_option opt = {
+			.type = list_option,
+			.name = "AutoNeg",
+			.err = "parameter ignored",
+			.def = AUTONEG_ADV_DEFAULT,
+			.arg = {.l = {.nr = ARRAY_SIZE(an_list),
+				      .p = an_list}}
+		};
 
-        int an = AutoNeg[bd];
-        iegbe_validate_option(&an, &opt, adapter);
-        adapter->hw.autoneg_advertised = an;
-    }
+		int an = AutoNeg[bd];
+		iegbe_validate_option(&an, &opt, adapter);
+		adapter->hw.autoneg_advertised = an;
+	}
 
-    switch (speed + dplx) {
-    case 0:
-        adapter->hw.autoneg = adapter->fc_autoneg = 1;
+	switch (speed + dplx) {
+	case 0:
+		adapter->hw.autoneg = adapter->fc_autoneg = 1;
 #ifdef module_param_array
-        if((num_Speed > bd) && (speed != 0 || dplx != 0)) {
+		if ((num_Speed > bd) && (speed != 0 || dplx != 0)) {
 #else
-        if(Speed[bd] != OPTION_UNSET || Duplex[bd] != OPTION_UNSET) {
+		if (Speed[bd] != OPTION_UNSET || Duplex[bd] != OPTION_UNSET) {
 #endif
-            DPRINTK(PROBE, INFO,
-                   "Speed and duplex autonegotiation enabled\n");
-        }                         
-        break;
-    case HALF_DUPLEX:
-        DPRINTK(PROBE, INFO, "Half Duplex specified without Speed\n");
-        DPRINTK(PROBE, INFO, "Using Autonegotiation at "
-            "Half Duplex only\n");
-        adapter->hw.autoneg = adapter->fc_autoneg = 1;
-        adapter->hw.autoneg_advertised = ADVERTISE_10_HALF |
-                                         ADVERTISE_100_HALF;
-        break;
-    case FULL_DUPLEX:
-        DPRINTK(PROBE, INFO, "Full Duplex specified without Speed\n");
-        DPRINTK(PROBE, INFO, "Using Autonegotiation at "
-            "Full Duplex only\n");
-        adapter->hw.autoneg = adapter->fc_autoneg = 1;
-        adapter->hw.autoneg_advertised = ADVERTISE_10_FULL |
-                                         ADVERTISE_100_FULL |
-                                         ADVERTISE_1000_FULL;
-        break;
-    case SPEED_10:
-        DPRINTK(PROBE, INFO, "10 Mbps Speed specified "
-            "without Duplex\n");
-        DPRINTK(PROBE, INFO, "Using Autonegotiation at 10 Mbps only\n");
-        adapter->hw.autoneg = adapter->fc_autoneg = 1;
-        adapter->hw.autoneg_advertised = ADVERTISE_10_HALF |
-                                         ADVERTISE_10_FULL;
-        break;
-    case SPEED_10 + HALF_DUPLEX:
-        DPRINTK(PROBE, INFO, "Forcing to 10 Mbps Half Duplex\n");
-        adapter->hw.autoneg = adapter->fc_autoneg = 0;
-        adapter->hw.forced_speed_duplex = iegbe_10_half;
-        adapter->hw.autoneg_advertised = 0;
-        break;
-    case SPEED_10 + FULL_DUPLEX:
-        DPRINTK(PROBE, INFO, "Forcing to 10 Mbps Full Duplex\n");
-        adapter->hw.autoneg = adapter->fc_autoneg = 0;
-        adapter->hw.forced_speed_duplex = iegbe_10_full;
-        adapter->hw.autoneg_advertised = 0;
-        break;
-    case SPEED_100:
-        DPRINTK(PROBE, INFO, "100 Mbps Speed specified "
-            "without Duplex\n");
-        DPRINTK(PROBE, INFO, "Using Autonegotiation at "
-            "100 Mbps only\n");
-        adapter->hw.autoneg = adapter->fc_autoneg = 1;
-        adapter->hw.autoneg_advertised = ADVERTISE_100_HALF |
-                                         ADVERTISE_100_FULL;
-        break;
-    case SPEED_100 + HALF_DUPLEX:
-        DPRINTK(PROBE, INFO, "Forcing to 100 Mbps Half Duplex\n");
-        adapter->hw.autoneg = adapter->fc_autoneg = 0;
-        adapter->hw.forced_speed_duplex = iegbe_100_half;
-        adapter->hw.autoneg_advertised = 0;
-        break;
-    case SPEED_100 + FULL_DUPLEX:
-        DPRINTK(PROBE, INFO, "Forcing to 100 Mbps Full Duplex\n");
-        adapter->hw.autoneg = adapter->fc_autoneg = 0;
-        adapter->hw.forced_speed_duplex = iegbe_100_full;
-        adapter->hw.autoneg_advertised = 0;
-        break;
-    case SPEED_1000:
-        DPRINTK(PROBE, INFO, "1000 Mbps Speed specified without "
-            "Duplex\n");
-        DPRINTK(PROBE, INFO,
-            "Using Autonegotiation at 1000 Mbps "
-            "Full Duplex only\n");
-        adapter->hw.autoneg = adapter->fc_autoneg = 1;
-        adapter->hw.autoneg_advertised = ADVERTISE_1000_FULL;
-        break;
-    case SPEED_1000 + HALF_DUPLEX:
-        DPRINTK(PROBE, INFO,
-            "Half Duplex is not supported at 1000 Mbps\n");
-        DPRINTK(PROBE, INFO,
-            "Using Autonegotiation at 1000 Mbps "
-            "Full Duplex only\n");
-        adapter->hw.autoneg = adapter->fc_autoneg = 1;
-        adapter->hw.autoneg_advertised = ADVERTISE_1000_FULL;
-        break;
-    case SPEED_1000 + FULL_DUPLEX:
-        DPRINTK(PROBE, INFO,
-               "Using Autonegotiation at 1000 Mbps Full Duplex only\n");
-        adapter->hw.autoneg = adapter->fc_autoneg = 1;
-        adapter->hw.autoneg_advertised = ADVERTISE_1000_FULL;
-        break;
-    default:
-        BUG();
-    }
+			DPRINTK(PROBE, INFO, "Speed and duplex autonegotiation enabled\n");
+		}
+		break;
+	case HALF_DUPLEX:
+		DPRINTK(PROBE, INFO, "Half Duplex specified without Speed\n");
+		DPRINTK(PROBE, INFO, "Using Autonegotiation at " "Half Duplex only\n");
+		adapter->hw.autoneg = adapter->fc_autoneg = 1;
+		adapter->hw.autoneg_advertised = ADVERTISE_10_HALF | ADVERTISE_100_HALF;
+		break;
+	case FULL_DUPLEX:
+		DPRINTK(PROBE, INFO, "Full Duplex specified without Speed\n");
+		DPRINTK(PROBE, INFO, "Using Autonegotiation at " "Full Duplex only\n");
+		adapter->hw.autoneg = adapter->fc_autoneg = 1;
+		adapter->hw.autoneg_advertised = ADVERTISE_10_FULL | ADVERTISE_100_FULL | ADVERTISE_1000_FULL;
+		break;
+	case SPEED_10:
+		DPRINTK(PROBE, INFO, "10 Mbps Speed specified " "without Duplex\n");
+		DPRINTK(PROBE, INFO, "Using Autonegotiation at 10 Mbps only\n");
+		adapter->hw.autoneg = adapter->fc_autoneg = 1;
+		adapter->hw.autoneg_advertised = ADVERTISE_10_HALF | ADVERTISE_10_FULL;
+		break;
+	case SPEED_10 + HALF_DUPLEX:
+		DPRINTK(PROBE, INFO, "Forcing to 10 Mbps Half Duplex\n");
+		adapter->hw.autoneg = adapter->fc_autoneg = 0;
+		adapter->hw.forced_speed_duplex = iegbe_10_half;
+		adapter->hw.autoneg_advertised = 0;
+		break;
+	case SPEED_10 + FULL_DUPLEX:
+		DPRINTK(PROBE, INFO, "Forcing to 10 Mbps Full Duplex\n");
+		adapter->hw.autoneg = adapter->fc_autoneg = 0;
+		adapter->hw.forced_speed_duplex = iegbe_10_full;
+		adapter->hw.autoneg_advertised = 0;
+		break;
+	case SPEED_100:
+		DPRINTK(PROBE, INFO, "100 Mbps Speed specified " "without Duplex\n");
+		DPRINTK(PROBE, INFO, "Using Autonegotiation at " "100 Mbps only\n");
+		adapter->hw.autoneg = adapter->fc_autoneg = 1;
+		adapter->hw.autoneg_advertised = ADVERTISE_100_HALF | ADVERTISE_100_FULL;
+		break;
+	case SPEED_100 + HALF_DUPLEX:
+		DPRINTK(PROBE, INFO, "Forcing to 100 Mbps Half Duplex\n");
+		adapter->hw.autoneg = adapter->fc_autoneg = 0;
+		adapter->hw.forced_speed_duplex = iegbe_100_half;
+		adapter->hw.autoneg_advertised = 0;
+		break;
+	case SPEED_100 + FULL_DUPLEX:
+		DPRINTK(PROBE, INFO, "Forcing to 100 Mbps Full Duplex\n");
+		adapter->hw.autoneg = adapter->fc_autoneg = 0;
+		adapter->hw.forced_speed_duplex = iegbe_100_full;
+		adapter->hw.autoneg_advertised = 0;
+		break;
+	case SPEED_1000:
+		DPRINTK(PROBE, INFO, "1000 Mbps Speed specified without " "Duplex\n");
+		DPRINTK(PROBE, INFO, "Using Autonegotiation at 1000 Mbps " "Full Duplex only\n");
+		adapter->hw.autoneg = adapter->fc_autoneg = 1;
+		adapter->hw.autoneg_advertised = ADVERTISE_1000_FULL;
+		break;
+	case SPEED_1000 + HALF_DUPLEX:
+		DPRINTK(PROBE, INFO, "Half Duplex is not supported at 1000 Mbps\n");
+		DPRINTK(PROBE, INFO, "Using Autonegotiation at 1000 Mbps " "Full Duplex only\n");
+		adapter->hw.autoneg = adapter->fc_autoneg = 1;
+		adapter->hw.autoneg_advertised = ADVERTISE_1000_FULL;
+		break;
+	case SPEED_1000 + FULL_DUPLEX:
+		DPRINTK(PROBE, INFO, "Using Autonegotiation at 1000 Mbps Full Duplex only\n");
+		adapter->hw.autoneg = adapter->fc_autoneg = 1;
+		adapter->hw.autoneg_advertised = ADVERTISE_1000_FULL;
+		break;
+	default:
+		BUG();
+	}
 
-    /* Speed, AutoNeg and MDI/MDI-X must all play nice */
-    if(iegbe_validate_mdi_setting(&(adapter->hw)) < 0) {
-        DPRINTK(PROBE, INFO,
-            "Speed, AutoNeg and MDI-X specifications are "
-            "incompatible. Setting MDI-X to a compatible value.\n");
-    }
+	/* Speed, AutoNeg and MDI/MDI-X must all play nice */
+	if (iegbe_validate_mdi_setting(&(adapter->hw)) < 0) {
+		DPRINTK(PROBE, INFO, "Speed, AutoNeg and MDI-X specifications are " "incompatible. Setting MDI-X to a compatible value.\n");
+	}
 }
-
- 
