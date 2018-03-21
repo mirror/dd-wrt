@@ -1276,8 +1276,7 @@ static void showOptionsNames(webs_t wp, char *label, char *propname, char *value
 	websWrite(wp, "<select name=\"%s\">\n", propname);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	foreach(var, valuenames, next) {
-		if (names[idx])
-			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", names[idx++]);
+		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", names[idx++]);
 	}
 	websWrite(wp, "//]]>\n</script>\n</select></div>\n");
 }
@@ -2449,8 +2448,8 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		if (is_ath9k(prefix)) {
 			char wl_fc[16];
 			sprintf(wl_fc, "%s_fc", var);
-			showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 2", (char **) {
-					 "\" + share.disabled + \"", "LZO", "LZMA"}, nvram_default_get(wl_fc, "0"));
+			char *names[] = { "\" + share.disabled + \"", "LZO", "LZMA" };
+			showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 2", names, nvram_default_get(wl_fc, "0"));
 		}
 #endif
 
@@ -3311,8 +3310,8 @@ if (has_airtime_fairness(prefix)) {
 if (is_ath9k(prefix)) {
 	char wl_fc[16];
 	sprintf(wl_fc, "%s_fc", prefix);
-	showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 2", (char **) {
-			 "\" + share.disabled + \"", "LZO", "LZMA"}, nvram_default_get(wl_fc, "0"));
+	char *names[] = { "\" + share.disabled + \"", "LZO", "LZMA" };
+	showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 2", names, nvram_default_get(wl_fc, "0"));
 }
 #endif
 sprintf(wmm, "%s_wmm", prefix);
@@ -4302,8 +4301,8 @@ if (!strcmp(prefix, "wl2"))
 	if (is_ath9k(prefix)) {
 		char wl_fc[16];
 		sprintf(wl_fc, "%s_fc", prefix);
-		showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 2", (char **) {
-				 "\" + share.disabled + \"", "LZO", "LZMA"}, nvram_default_get(wl_fc, "0"));
+		char *names[] = { "\" + share.disabled + \"", "LZO", "LZMA" };
+		showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 2", names, nvram_default_get(wl_fc, "0"));
 	}
 #endif
 
