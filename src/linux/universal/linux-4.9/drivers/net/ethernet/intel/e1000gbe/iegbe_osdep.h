@@ -30,6 +30,7 @@ GPL LICENSE SUMMARY
 
 *******************************************************************************/
 
+
 /* glue for the OS independent part of iegbe
  * includes register access macros
  */
@@ -66,9 +67,9 @@ GPL LICENSE SUMMARY
 #define CMD_MEM_WRT_INVALIDATE PCI_COMMAND_INVALIDATE
 typedef enum {
 #undef FALSE
-	FALSE = 0,
+    FALSE = 0,
 #undef TRUE
-	TRUE = 1
+    TRUE = 1
 } boolean_t;
 
 #define MSGOUT(S, A, B)	printk(KERN_DEBUG S "\n", A, B)
@@ -81,11 +82,12 @@ typedef enum {
 #endif
 
 #define DEBUGFUNC(F) DEBUGOUT(F)
-#define DEBUGFUNC1(F, B...) DEBUGOUT1(F, B)
+#define DEBUGFUNC1(F, B...) DEBUGOUT1(F, B)  
 
 #define DEBUGOUT2 DEBUGOUT1
 #define DEBUGOUT3 DEBUGOUT2
 #define DEBUGOUT7 DEBUGOUT3
+
 
 #define E1000_WRITE_REG(a, reg, value) ( \
     writel((unsigned int)(value), ((a)->hw_addr + \
@@ -130,4 +132,5 @@ typedef enum {
 
 #define E1000_WRITE_FLUSH(a) E1000_READ_REG(a, STATUS)
 
-#endif				/* _IEGBE_OSDEP_H_ */
+#endif /* _IEGBE_OSDEP_H_ */
+ 
