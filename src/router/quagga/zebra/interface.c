@@ -1143,7 +1143,7 @@ DEFUN (show_interface_name, show_interface_name_cmd,
        "show interface IFNAME",
        SHOW_STR
        "Interface status and configuration\n"
-       "Inteface name\n")
+       "Interface name\n")
 {
   struct interface *ifp;
   vrf_id_t vrf_id = VRF_DEFAULT;
@@ -1178,7 +1178,7 @@ ALIAS (show_interface_name,
        "show interface IFNAME " VRF_CMD_STR,
        SHOW_STR
        "Interface status and configuration\n"
-       "Inteface name\n"
+       "Interface name\n"
        VRF_CMD_HELP_STR)
 
 /* Show specified interface to vty. */
@@ -1186,7 +1186,7 @@ DEFUN (show_interface_name_vrf_all, show_interface_name_vrf_all_cmd,
        "show interface IFNAME " VRF_ALL_CMD_STR,
        SHOW_STR
        "Interface status and configuration\n"
-       "Inteface name\n"
+       "Interface name\n"
        VRF_ALL_CMD_HELP_STR)
 {
   struct interface *ifp;
@@ -1706,7 +1706,7 @@ DEFUN (no_link_params_metric,
        no_link_params_metric_cmd,
        "no metric",
        NO_STR
-       "Disbale Link Metric on this interface\n")
+       "Disable Link Metric on this interface\n")
 {
   struct interface *ifp = (struct interface *) vty->index;
   
@@ -1861,7 +1861,7 @@ DEFUN (no_link_params_admin_grp,
        no_link_params_admin_grp_cmd,
        "no admin-grp",
        NO_STR
-       "Disbale Administrative group membership on this interface\n")
+       "Disable Administrative group membership on this interface\n")
 {
   struct interface *ifp = (struct interface *) vty->index;
   
@@ -2031,7 +2031,7 @@ DEFUN (no_link_params_delay,
        no_link_params_delay_cmd,
        "no delay",
        NO_STR
-       "Disbale Unidirectional Average, Min & Max Link Delay on this interface\n")
+       "Disable Unidirectional Average, Min & Max Link Delay on this interface\n")
 {
   struct interface *ifp = (struct interface *) vty->index;
   struct if_link_params *iflp = if_link_params_get (ifp);
@@ -2072,7 +2072,7 @@ DEFUN (no_link_params_delay_var,
        no_link_params_delay_var_cmd,
        "no delay-variation",
        NO_STR
-       "Disbale Unidirectional Delay Variation on this interface\n")
+       "Disable Unidirectional Delay Variation on this interface\n")
 {
   struct interface *ifp = (struct interface *) vty->index;
   
@@ -2112,7 +2112,7 @@ DEFUN (no_link_params_pkt_loss,
        no_link_params_pkt_loss_cmd,
        "no packet-loss",
        NO_STR
-       "Disbale Unidirectional Link Packet Loss on this interface\n")
+       "Disable Unidirectional Link Packet Loss on this interface\n")
 {
   struct interface *ifp = (struct interface *) vty->index;
   
@@ -2158,7 +2158,7 @@ DEFUN (no_link_params_res_bw,
        no_link_params_res_bw_cmd,
        "no res-bw",
        NO_STR
-       "Disbale Unidirectional Residual Bandwidth on this interface\n")
+       "Disable Unidirectional Residual Bandwidth on this interface\n")
 {
   struct interface *ifp = (struct interface *) vty->index;
   
@@ -2204,7 +2204,7 @@ DEFUN (no_link_params_ava_bw,
        no_link_params_ava_bw_cmd,
        "no ava-bw",
        NO_STR
-       "Disbale Unidirectional Available Bandwidth on this interface\n")
+       "Disable Unidirectional Available Bandwidth on this interface\n")
 {
   struct interface *ifp = (struct interface *) vty->index;
   
@@ -2250,7 +2250,7 @@ DEFUN (no_link_params_use_bw,
        no_link_params_use_bw_cmd,
        "no use-bw",
        NO_STR
-       "Disbale Unidirectional Utilised Bandwidth on this interface\n")
+       "Disable Unidirectional Utilised Bandwidth on this interface\n")
 {
   struct interface *ifp = (struct interface *) vty->index;
   

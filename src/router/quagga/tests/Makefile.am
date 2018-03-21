@@ -1,15 +1,5 @@
-AUTOMAKE_OPTIONS    = dejagnu
-DEJATOOL = libzebra
-
-SUBDIRS = \
-	bgpd.tests \
-	libzebra.tests
 
 EXTRA_DIST = \
-	config/unix.exp \
-	lib/bgpd.exp \
-	lib/libzebra.exp \
-	global-conf.exp \
 	testcommands.in \
 	testcommands.refout \
 	testcli.in \
@@ -20,7 +10,6 @@ DEFS = @DEFS@ $(LOCAL_OPTS) -DSYSCONFDIR=\"$(sysconfdir)/\"
 
 if BGPD
 TESTS_BGPD = aspathtest testbgpcap ecommtest testbgpmpattr testbgpmpath
-DEJATOOL += bgpd
 else
 TESTS_BGPD =
 endif
@@ -30,6 +19,10 @@ check_PROGRAMS = testsig testsegv testbuffer testmemory heavy heavywq heavythrea
 		testcommands test-timer-correctness test-timer-performance \
 		testcli \
 		$(TESTS_BGPD)
+
+TESTS = $(TESTS_BGPD) teststream tabletest testmemory testnexthopiter \
+	test-timer-correctness tabletest
+
 
 ../vtysh/vtysh_cmd.c:
 	$(MAKE) -C ../vtysh vtysh_cmd.c

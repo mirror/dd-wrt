@@ -143,7 +143,7 @@ Matches the specified @var{access_list}
 Matches the specified @var{ipv4_addr}.
 @end deffn
 
-@deffn {Route-map Command} {match aspath @var{as_path}} {}
+@deffn {Route-map Command} {match as-path @var{as_path}} {}
 Matches the specified @var{as_path}.
 @end deffn
 

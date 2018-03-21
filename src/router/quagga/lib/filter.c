@@ -85,10 +85,10 @@ struct access_master
   struct access_list_list str;
 
   /* Hook function which is executed when new access_list is added. */
-  void (*add_hook) (struct access_list *);
+  void (*add_hook) (const char *);
 
   /* Hook function which is executed when access_list is deleted. */
-  void (*delete_hook) (struct access_list *);
+  void (*delete_hook) (const char *);
 };
 
 /* Static structure for IPv4 access_list's master. */
@@ -317,7 +317,7 @@ access_list_insert (afi_t afi, const char *name)
   
       /* Set point to insertion point. */
       for (point = alist->head; point; point = point->next)
-	if (strcmp (point->name, name) >= 0)
+	if (point->name && strcmp (point->name, name) >= 0)
 	  break;
     }
 
@@ -372,11 +372,11 @@ access_list_lookup (afi_t afi, const char *name)
     return NULL;
 
   for (access = master->num.head; access; access = access->next)
-    if (strcmp (access->name, name) == 0)
+    if (access->name && strcmp (access->name, name) == 0)
       return access;
 
   for (access = master->str.head; access; access = access->next)
-    if (strcmp (access->name, name) == 0)
+    if (access->name && strcmp (access->name, name) == 0)
       return access;
 
   return NULL;
@@ -426,7 +426,7 @@ access_list_apply (struct access_list *access, void *object)
 
 /* Add hook function. */
 void
-access_list_add_hook (void (*func) (struct access_list *access))
+access_list_add_hook (void (*func) (const char *))
 {
   access_master_ipv4.add_hook = func;
 #ifdef HAVE_IPV6
@@ -436,7 +436,7 @@ access_list_add_hook (void (*func) (struct access_list *access))
 
 /* Delete hook function. */
 void
-access_list_delete_hook (void (*func) (struct access_list *access))
+access_list_delete_hook (void (*func) (const char *))
 {
   access_master_ipv4.delete_hook = func;
 #ifdef HAVE_IPV6
@@ -459,7 +459,7 @@ access_list_filter_add (struct access_list *access, struct filter *filter)
 
   /* Run hook function. */
   if (access->master->add_hook)
-    (*access->master->add_hook) (access);
+    (*access->master->add_hook) (access->name);
 }
 
 /* If access_list has no filter then return 1. */
@@ -478,7 +478,22 @@ static void
 access_list_filter_delete (struct access_list *access, struct filter *filter)
 {
   struct access_master *master;
-
+  /* transfer ownership of access->name to a local, to retain the name
+   * to pass to a delete hook, while the access-list is deleted
+   *
+   * It is important that access-lists that are deleted, or are in process
+   * of being deleted, are not visible via access_list_lookup. This is
+   * because some (all?) users process the delete_hook callback the same
+   * as an add - they simply refresh all their access_list name references
+   * by looking up the name.
+   *
+   * If an access list can be looked up while being deleted, such users will
+   * not remove an access-list, and will keep dangling references to
+   * freed access lists.
+   */
+  char *name = access->name;
+  access->name = NULL;
+  
   master = access->master;
 
   if (filter->next)
@@ -492,14 +507,16 @@ access_list_filter_delete (struct access_list *access, struct filter *filter)
     access->head = filter->next;
 
   filter_free (filter);
-
-  /* Run hook function. */
-  if (master->delete_hook)
-    (*master->delete_hook) (access);
-
+  
   /* If access_list becomes empty delete it from access_master. */
   if (access_list_empty (access))
     access_list_delete (access);
+  
+  /* Run hook function. */
+  if (master->delete_hook)
+    (*master->delete_hook) (name);
+  
+  XFREE (MTYPE_ACCESS_LIST_STR, name);
 }
 
 /*
@@ -1325,7 +1342,8 @@ DEFUN (no_access_list_all,
 {
   struct access_list *access;
   struct access_master *master;
-
+  char *name;
+    
   /* Looking up access_list. */
   access = access_list_lookup (AFI_IP, argv[0]);
   if (access == NULL)
@@ -1336,14 +1354,20 @@ DEFUN (no_access_list_all,
     }
 
   master = access->master;
-
-  /* Run hook function. */
-  if (master->delete_hook)
-    (*master->delete_hook) (access);
- 
+  /* transfer ownership of access->name to a local, to retain 
+   * a while longer, past access_list being freed */
+  name = access->name;
+  access->name = NULL;
+  
   /* Delete all filter from access-list. */
   access_list_delete (access);
 
+  /* Run hook function. */
+  if (master->delete_hook)
+    (*master->delete_hook) (name);
+ 
+  XFREE (MTYPE_ACCESS_LIST_STR, name);
+  
   return CMD_SUCCESS;
 }
 
@@ -1496,7 +1520,8 @@ DEFUN (no_ipv6_access_list_all,
 {
   struct access_list *access;
   struct access_master *master;
-
+  char *name;
+  
   /* Looking up access_list. */
   access = access_list_lookup (AFI_IP6, argv[0]);
   if (access == NULL)
@@ -1507,14 +1532,17 @@ DEFUN (no_ipv6_access_list_all,
     }
 
   master = access->master;
-
-  /* Run hook function. */
-  if (master->delete_hook)
-    (*master->delete_hook) (access);
-
+  name = access->name;
+  access->name = NULL;
+  
   /* Delete all filter from access-list. */
   access_list_delete (access);
 
+  /* Run hook function. */
+  if (master->delete_hook)
+    (*master->delete_hook) (name);
+
+  XFREE (MTYPE_ACCESS_LIST_STR, name);
   return CMD_SUCCESS;
 }
 
@@ -1588,7 +1616,7 @@ filter_show (struct vty *vty, const char *name, afi_t afi)
 
   for (access = master->num.head; access; access = access->next)
     {
-      if (name && strcmp (access->name, name) != 0)
+      if (!access->name || (name && strcmp (access->name, name) != 0))
 	continue;
 
       write = 1;
@@ -1631,7 +1659,7 @@ filter_show (struct vty *vty, const char *name, afi_t afi)
 
   for (access = master->str.head; access; access = access->next)
     {
-      if (name && strcmp (access->name, name) != 0)
+      if (!access->name || (name && strcmp (access->name, name) != 0))
 	continue;
 
       write = 1;

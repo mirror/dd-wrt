@@ -5,10 +5,13 @@ Wants=network.target
 After=zebra.service network-pre.target
 Before=network.target
 ConditionPathExists=/etc/quagga/isisd.conf
+Documentation=man:isisd
 
 [Service]
 Type=forking
 EnvironmentFile=/etc/sysconfig/quagga
+ExecStartPre=-/bin/chmod -f 640 /etc/quagga/isisd.conf
+ExecStartPre=-/bin/chown -f $QUAGGA_USER:$QUAGGA_GROUP /etc/quagga/isisd.conf
 ExecStart=/usr/sbin/isisd -d $ISISD_OPTS -f /etc/quagga/isisd.conf
 Restart=on-abort
 

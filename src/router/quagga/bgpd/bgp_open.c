@@ -120,7 +120,8 @@ bgp_capability_vty_out (struct vty *vty, struct peer *peer)
 static void 
 bgp_capability_mp_data (struct stream *s, struct capability_mp_data *mpc)
 {
-  mpc->afi = stream_getw (s);
+  afi_t afi = stream_getw (s);
+  memcpy(&mpc->afi, &afi, sizeof(mpc->afi));
   mpc->reserved = stream_getc (s);
   mpc->safi = stream_getc (s);
 }

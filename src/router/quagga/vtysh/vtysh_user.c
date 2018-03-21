@@ -59,6 +59,8 @@ vtysh_pam (const char *user)
   /* Is user really user? */
   if (ret == PAM_SUCCESS)
     ret = pam_authenticate (pamh, 0);
+  if (ret != PAM_SUCCESS)
+    printf("Not authenticated. Check /etc/pam.d/quagga.\n");
   /* printf ("ret %d\n", ret); */
   
 #if 0

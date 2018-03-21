@@ -168,7 +168,7 @@ do { \
  * The logic below ((TMPL) <= ((MIN) && (TMPL) != (MIN)) is
  * done to circumvent the compiler complaining about
  * comparing unsigned numbers against zero, if MIN is zero.
- * NB: The compiler isn't smart enough to supress the warning
+ * NB: The compiler isn't smart enough to suprress the warning
  * if you write (MIN) != 0 && tmpl < (MIN).
  */
 #define VTY_GET_INTEGER_RANGE_HEART(NAME,TMPL,STR,MIN,MAX)      \

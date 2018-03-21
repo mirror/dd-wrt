@@ -273,7 +273,6 @@ main (int argc, char **argv)
   int daemon_mode = 0;
   char *config_file = NULL;
   char *progname;
-  struct thread thread;
 
   /* Set umask before anything for security */
   umask (0027);
@@ -388,8 +387,7 @@ main (int argc, char **argv)
   /* Print banner. */
   zlog_notice ("Zebra %s starting: vty@%d", QUAGGA_VERSION, vty_port);
 
-  while (thread_fetch (zebrad.master, &thread))
-    thread_call (&thread);
+  thread_main (zebrad.master);
 
   /* Not reached... */
   return 0;

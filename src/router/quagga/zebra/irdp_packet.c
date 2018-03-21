@@ -102,7 +102,7 @@ parse_irdp_packet(char *p,
 
   if (len != iplen)
     {
-      zlog_err ("IRDP: RX length doesnt match IP length");
+      zlog_err ("IRDP: RX length doesn't match IP length");
       return;
     }
 
@@ -113,7 +113,7 @@ parse_irdp_packet(char *p,
       return;
     }
     
-  /* XXX: RAW doesnt receive link-layer, surely? ??? */
+  /* XXX: RAW doesn't receive link-layer, surely? ??? */
   /* Check so we don't checksum packets longer than oure RX_BUF - (ethlen +
    len of IP-header) 14+20 */
   if (iplen > IRDP_RX_BUF-34) 

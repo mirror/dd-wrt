@@ -5,10 +5,13 @@ Wants=network.target
 After=zebra.service network-pre.target
 Before=network.target
 ConditionPathExists=/etc/quagga/bgpd.conf
+Documentation=man:bgpd
 
 [Service]
 Type=forking
 EnvironmentFile=/etc/sysconfig/quagga
+ExecStartPre=-/bin/chmod -f 640 /etc/quagga/bgpd.conf
+ExecStartPre=-/bin/chown -f $QUAGGA_USER:$QUAGGA_GROUP /etc/quagga/bgpd.conf
 ExecStart=/usr/sbin/bgpd -d $BGPD_OPTS -f /etc/quagga/bgpd.conf
 Restart=on-abort
 

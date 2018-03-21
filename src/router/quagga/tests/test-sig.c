@@ -57,7 +57,6 @@ struct quagga_signal_t sigs[] =
 };
 
 struct thread_master *master;
-struct thread t;
 
 int
 main (void)
@@ -71,8 +70,7 @@ main (void)
   zlog_set_level (NULL, ZLOG_DEST_STDOUT, LOG_DEBUG);
   zlog_set_level (NULL, ZLOG_DEST_MONITOR, ZLOG_DISABLED);
   
-  while (thread_fetch (master, &t))
-    thread_call (&t);
+  thread_main (master);
 
   exit (0);
 }

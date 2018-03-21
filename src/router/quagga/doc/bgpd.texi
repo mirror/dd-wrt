@@ -104,6 +104,8 @@ so @code{router-id} is set to 0.0.0.0.  So please set router-id by hand.
 @deffn {BGP} {distance bgp <1-255> <1-255> <1-255>} {}
 This command change distance value of BGP.  Each argument is distance
 value for external routes, internal routes and local routes.
+
+To have this command applied to existing routes requires a hard clear.
 @end deffn
 
 @deffn {BGP} {distance <1-255> @var{A.B.C.D/M}} {}
@@ -1163,7 +1165,7 @@ route-map RMAP permit 10
 
 Following configuration is an example of BGP route filtering using
 communities attribute.  This configuration only permit BGP routes
-which has BGP communities value 0:80 or 0:90.  Network operator can
+which has BGP communities value 0:80 and 0:90.  Network operator can
 put special internal communities value at BGP border router, then
 limit the BGP routes announcement into the internal network.
 

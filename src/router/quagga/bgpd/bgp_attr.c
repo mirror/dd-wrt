@@ -199,15 +199,17 @@ cluster_intern (struct cluster_list *cluster)
 }
 
 void
-cluster_unintern (struct cluster_list *cluster)
+cluster_unintern (struct cluster_list **cluster)
 {
-  if (cluster->refcnt)
-    cluster->refcnt--;
+  struct cluster_list *c = *cluster;
+  if (c->refcnt)
+    c->refcnt--;
 
-  if (cluster->refcnt == 0)
+  if (c->refcnt == 0)
     {
-      hash_release (cluster_hash, cluster);
-      cluster_free (cluster);
+      hash_release (cluster_hash, c);
+      cluster_free (c);
+      *cluster = NULL;
     }
 }
 
@@ -357,15 +359,18 @@ transit_intern (struct transit *transit)
 }
 
 void
-transit_unintern (struct transit *transit)
+transit_unintern (struct transit **transit)
 {
-  if (transit->refcnt)
-    transit->refcnt--;
+  struct transit *t = *transit;
+  
+  if (t->refcnt)
+    t->refcnt--;
 
-  if (transit->refcnt == 0)
+  if (t->refcnt == 0)
     {
-      hash_release (transit_hash, transit);
-      transit_free (transit);
+      hash_release (transit_hash, t);
+      transit_free (t);
+      *transit = NULL;
     }
 }
 
@@ -820,11 +825,11 @@ bgp_attr_unintern_sub (struct attr *attr)
       UNSET_FLAG(attr->flag, ATTR_FLAG_BIT (BGP_ATTR_LARGE_COMMUNITIES));
       
       if (attr->extra->cluster)
-        cluster_unintern (attr->extra->cluster);
+        cluster_unintern (&attr->extra->cluster);
       UNSET_FLAG(attr->flag, ATTR_FLAG_BIT (BGP_ATTR_CLUSTER_LIST));
       
       if (attr->extra->transit)
-        transit_unintern (attr->extra->transit);
+        transit_unintern (&attr->extra->transit);
     }
 }
 
@@ -897,7 +902,7 @@ bgp_attr_flush (struct attr *attr)
     }
 }
 
-/* Implement draft-scudder-idr-optional-transitive behaviour and
+/* Implement some draft-ietf-idr-error-handling behaviour and
  * avoid resetting sessions for malformed attributes which are
  * are partial/optional and hence where the error likely was not
  * introduced by the sending neighbour.
@@ -913,6 +918,11 @@ bgp_attr_malformed (struct bgp_attr_parser_args *args, u_char subcode,
    * the caller therefore signals this with the seperate length argument
    */
   u_char *notify_datap = (length > 0 ? args->startp : NULL);
+  
+  /* The malformed attribute shouldn't be passed on, should
+   * we decide to proceed with parsing the UPDATE
+   */
+  UNSET_FLAG (args->attr->flag,  ATTR_FLAG_BIT (args->type));
   
   /* Only relax error handling for eBGP peers */
   if (peer->sort != BGP_PEER_EBGP)
@@ -970,7 +980,9 @@ bgp_attr_malformed (struct bgp_attr_parser_args *args, u_char subcode,
     return BGP_ATTR_PARSE_WITHDRAW;
   
   /* default to reset */
-  return BGP_ATTR_PARSE_ERROR_NOTIFYPLS;
+  bgp_notify_send_with_data (peer, BGP_NOTIFY_UPDATE_ERR, subcode,
+                             notify_datap, length);
+  return BGP_ATTR_PARSE_ERROR;
 }
 
 /* Find out what is wrong with the path attribute flag bits and log the error.
@@ -2140,6 +2152,8 @@ bgp_attr_parse (struct peer *peer, struct attr *attr, bgp_size_t size,
   memset (seen, 0, BGP_ATTR_BITMAP_SIZE);
 
   /* End pointer of BGP attribute. */
+  assert (size <= stream_get_size (BGP_INPUT (peer)));
+  assert (size <= stream_get_endp (BGP_INPUT (peer)));
   endp = BGP_INPUT_PNT (peer) + size;
   
   /* Get attributes to the end of attribute length. */
@@ -2221,7 +2235,7 @@ bgp_attr_parse (struct peer *peer, struct attr *attr, bgp_size_t size,
           bgp_notify_send_with_data (peer,
                                      BGP_NOTIFY_UPDATE_ERR,
                                      BGP_NOTIFY_UPDATE_ATTR_LENG_ERR,
-                                     startp, attr_endp - startp);
+                                     startp, endp - startp);
 	  return BGP_ATTR_PARSE_ERROR;
 	}
 	
@@ -2320,7 +2334,7 @@ bgp_attr_parse (struct peer *peer, struct attr *attr, bgp_size_t size,
 	  ret = BGP_ATTR_PARSE_ERROR;
 	}
 
-      /* If hard error occured immediately return to the caller. */
+      /* If hard error occurred immediately return to the caller. */
       if (ret == BGP_ATTR_PARSE_ERROR)
         {
           zlog (peer->log, LOG_WARNING,

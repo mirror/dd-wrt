@@ -44,7 +44,7 @@ void zebra_redistribute_default_delete (int a, struct zserv *b, int c,
 { return; }
 #endif
 
-void redistribute_add (struct prefix *a, struct rib *b)
+void redistribute_add (struct prefix *a, struct rib *b, struct rib *c)
 { return; }
 #ifdef HAVE_SYS_WEAK_ALIAS_PRAGMA
 #pragma weak redistribute_delete = redistribute_add

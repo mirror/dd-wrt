@@ -284,8 +284,6 @@ static int usage()
 int
 main (int argc, char *argv[])
 {
-  struct thread thread;
-
   args = argv;
 
   /* ospfclient should be started with the following arguments:
@@ -340,11 +338,7 @@ main (int argc, char *argv[])
   thread_add_read (master, lsa_read, oclient, oclient->fd_async);
 
   /* Now connection is established, run loop */
-  while (1)
-    {
-      thread_fetch (master, &thread);
-      thread_call (&thread);
-    }
+  thread_main (master);
 
   /* Never reached */
   return 0;

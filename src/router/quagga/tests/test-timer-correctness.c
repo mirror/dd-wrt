@@ -113,7 +113,6 @@ static int cmp_timeval(const void* a, const void *b)
 int main(int argc, char **argv)
 {
   int i, j;
-  struct thread t;
   struct timeval **alarms;
 
   master = thread_master_create();
@@ -190,8 +189,7 @@ int main(int argc, char **argv)
     }
   XFREE(MTYPE_TMP, alarms);
 
-  while (thread_fetch(master, &t))
-    thread_call(&t);
+  thread_main (master);
 
   return 0;
 }

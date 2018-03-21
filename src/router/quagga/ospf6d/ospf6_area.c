@@ -657,7 +657,7 @@ DEFUN (show_ipv6_ospf6_spf_tree,
        SHOW_STR
        IP6_STR
        OSPF6_STR
-       "Shortest Path First caculation\n"
+       "Shortest Path First calculation\n"
        "Show SPF tree\n")
 {
   struct listnode *node;
@@ -694,7 +694,7 @@ DEFUN (show_ipv6_ospf6_area_spf_tree,
        OSPF6_STR
        OSPF6_AREA_STR
        OSPF6_AREA_ID_STR
-       "Shortest Path First caculation\n"
+       "Shortest Path First calculation\n"
        "Show SPF tree\n")
 {
   u_int32_t area_id;
@@ -738,7 +738,7 @@ DEFUN (show_ipv6_ospf6_simulate_spf_tree_root,
        SHOW_STR
        IP6_STR
        OSPF6_STR
-       "Shortest Path First caculation\n"
+       "Shortest Path First calculation\n"
        "Show SPF tree\n"
        "Specify root's router-id to calculate another router's SPF tree\n")
 {

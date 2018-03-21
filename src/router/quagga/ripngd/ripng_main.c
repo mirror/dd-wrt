@@ -192,7 +192,6 @@ main (int argc, char **argv)
   int vty_port = RIPNG_VTY_PORT;
   int daemon_mode = 0;
   char *progname;
-  struct thread thread;
   int dryrun = 0;
 
   /* Set umask before anything for security */
@@ -308,8 +307,7 @@ main (int argc, char **argv)
   zlog_notice ("RIPNGd %s starting: vty@%d", QUAGGA_VERSION, vty_port);
 
   /* Fetch next active thread. */
-  while (thread_fetch (master, &thread))
-    thread_call (&thread);
+  thread_main (master);
 
   /* Not reached. */
   return 0;
