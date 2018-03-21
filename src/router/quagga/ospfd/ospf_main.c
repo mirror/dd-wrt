@@ -186,7 +186,6 @@ main (int argc, char **argv)
   int daemon_mode = 0;
   char *config_file = NULL;
   char *progname;
-  struct thread thread;
   int dryrun = 0;
 
   /* Set umask before anything for security */
@@ -334,10 +333,8 @@ main (int argc, char **argv)
   /* Print banner. */
   zlog_notice ("OSPFd %s starting: vty@%d", QUAGGA_VERSION, vty_port);
 
-  /* Fetch next active thread. */
-  while (thread_fetch (master, &thread))
-    thread_call (&thread);
-
+  thread_main (master);
+  
   /* Not reached. */
   return (0);
 }

@@ -12,15 +12,16 @@
 
 
 /* NATIVE ELEMENTS */
-a:link,
+a:link {color: #000099; text-decoration: none;}
 a:visited {
-    color: #1E90FF;
+    color: #6666cc;
     text-decoration: none;
 }
 
 a:active,
 a:focus,
 a:hover {
+    color: #cc0000;
     text-decoration: underline;
 }
 

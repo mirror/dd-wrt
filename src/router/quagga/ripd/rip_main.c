@@ -193,7 +193,6 @@ main (int argc, char **argv)
   int daemon_mode = 0;
   int dryrun = 0;
   char *progname;
-  struct thread thread;
 
   /* Set umask before anything for security */
   umask (0027);
@@ -313,8 +312,7 @@ main (int argc, char **argv)
   zlog_notice ("RIPd %s starting: vty@%d", QUAGGA_VERSION, vty_port);
 
   /* Execute each thread. */
-  while (thread_fetch (master, &thread))
-    thread_call (&thread);
+  thread_main (master);
 
   /* Not reached. */
   return (0);

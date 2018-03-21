@@ -16088,6 +16088,9 @@ bgp_distance_free (struct bgp_distance *bdistance)
   XFREE (MTYPE_BGP_DISTANCE, bdistance);
 }
 
+/* XXX: Ideally, this should re-announce affected routes to zebra. 
+ * See Bugzilla #949
+ */
 static int
 bgp_distance_set (struct vty *vty, const char *distance_str, 
                   const char *ip_str, const char *access_list_str)

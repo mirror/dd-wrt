@@ -1386,14 +1386,9 @@ main(int argc, char **argv)
       		  progname, QUAGGA_VERSION, buf, mode_str[gs.mode]);
     }
   }
-
-  {
-    struct thread thread;
-
-    while (thread_fetch (master, &thread))
-      thread_call (&thread);
-  }
-
+  
+  thread_main (master);
+  
   /* Not reached. */
   return 0;
 }

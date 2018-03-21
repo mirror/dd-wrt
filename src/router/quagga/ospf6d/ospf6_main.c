@@ -229,7 +229,6 @@ main (int argc, char *argv[], char *envp[])
   char *vty_addr = NULL;
   int vty_port = 0;
   char *config_file = NULL;
-  struct thread thread;
   int dryrun = 0;
 
   /* Set umask before anything for security */
@@ -352,9 +351,8 @@ main (int argc, char *argv[], char *envp[])
                QUAGGA_VERSION, OSPF6_DAEMON_VERSION,vty_port);
 
   /* Start finite state machine, here we go! */
-  while (thread_fetch (master, &thread))
-    thread_call (&thread);
-
+  thread_main (master);
+  
   /* Log in case thread failed */
   zlog_warn ("Thread failed");
 

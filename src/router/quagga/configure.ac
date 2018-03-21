@@ -7,7 +7,7 @@
 ##
 AC_PREREQ(2.60)
 
-AC_INIT(Quagga, 1.2.2, [https://bugzilla.quagga.net])
+AC_INIT(Quagga, 1.2.4, [https://bugzilla.quagga.net])
 CONFIG_ARGS="$*"
 AC_SUBST(CONFIG_ARGS)
 AC_CONFIG_SRCDIR(lib/zebra.h)
@@ -74,7 +74,6 @@ AC_LANG([C])
 AC_PROG_CC
 AC_PROG_CPP
 AM_PROG_CC_C_O
-AC_PROG_RANLIB
 AC_PROG_EGREP
 PKG_PROG_PKG_CONFIG
 AC_PROG_CC_C99
@@ -117,9 +116,9 @@ AM_CONDITIONAL([HAVE_PANDOC], [test "x$HAVE_PANDOC" = "xtrue"])
 if test "x${GCC}" != "xyes" ; then
   AC_MSG_CHECKING([whether we are using SunPro compiler])
   AC_EGREP_CPP([^__SUNPRO_C.*0x5(7|8|9)], ["__SUNPRO_C" __SUNPRO_C],
-      [AC_MSG_RESULT([no])],
       [COMPILER="SUNPRO"
-       AC_MSG_RESULT([yes])]
+       AC_MSG_RESULT([yes])],
+      [AC_MSG_RESULT([no])]
   )
 fi
 
@@ -184,12 +183,14 @@ if test "x${cflags_specified}" = "x" ; then
         dnl from ld. Disable. An issue with libtool < 2.4.6 dropping the
         dnl -fstack-protector-strong argument from the shared link.
         AC_MSG_CHECKING([whether libtool can support fstack-protector])
-        if test x"$(./libtool --version \
-         	    | awk -F '[[ \t.]]' \
-        		'NR == 1 { \
-   				if ($(NF-2) <= 2 && $(NF-1) <= 4 && $NF < 6) \
-        				print 0; \
-        			else print 1 \
+        if test x"$(./libtool --version | awk 'NR == 1 { print $NF }' \
+         	    | awk -F. '{ \
+         	    	if ($(NF-2) < 2) print 0; \
+         	    	else if ($(NF-2) > 2) print 1; \
+         	    	else if ($(NF-1) < 4) print 0; \
+         	    	else if ($(NF-1) > 4) print 1; \
+         	    	else if ($NF < 6) print 0; \
+         	    	else print 1;  \
         		}')" = "x1" ; then
         	AC_MSG_RESULT([yes])
         	AC_C_FLAG([-fstack-protector-strong])
@@ -1577,18 +1578,6 @@ dnl ----------
 CONFDATE=`date '+%Y%m%d'`
 AC_SUBST(CONFDATE)
 
-dnl -------
-dnl DejaGNU
-dnl -------
-if test x"$DEJAGNU" = x
-then
-  DEJAGNU="\$(top_srcdir)/tests/global-conf.exp"
-fi
-RUNTESTDEFAULTFLAGS="-x --tool \$\$tool"
-
-AC_SUBST(DEJAGNU)
-AC_SUBST(RUNTESTDEFAULTFLAGS)
-
 dnl ------------------------------
 dnl set paths for state directory
 dnl ------------------------------
@@ -1665,12 +1654,10 @@ AC_CONFIG_FILES([Makefile lib/Makefile qpb/Makefile zebra/Makefile ripd/Makefile
 	  ospf6d/Makefile isisd/Makefile vtysh/Makefile
 	  doc/Makefile ospfclient/Makefile tests/Makefile m4/Makefile
 	  pimd/Makefile nhrpd/Makefile
-	  tests/bgpd.tests/Makefile
-	  tests/libzebra.tests/Makefile
 	  redhat/Makefile
 	  pkgsrc/Makefile
 	  fpm/Makefile
-	  redhat/quagga.spec 
+	  redhat/quagga.spec redhat/quagga.sysconfig
 	  lib/version.h
 	  isisd/topology/Makefile
 	  pkgsrc/bgpd.sh pkgsrc/ospf6d.sh pkgsrc/ospfd.sh

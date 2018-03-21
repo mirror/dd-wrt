@@ -5,10 +5,13 @@ Wants=network.target
 After=zebra.service network-pre.target
 Before=network.target
 ConditionPathExists=/etc/quagga/ripngd.conf
+Documentation=man:ripngd
 
 [Service]
 Type=forking
 EnvironmentFile=/etc/sysconfig/quagga
+ExecStartPre=-/bin/chmod -f 640 /etc/quagga/ripngd.conf
+ExecStartPre=-/bin/chown -f $QUAGGA_USER:$QUAGGA_GROUP /etc/quagga/ripngd.conf
 ExecStart=/usr/sbin/ripngd -d $RIPNGD_OPTS -f /etc/quagga/ripngd.conf
 Restart=on-abort
 

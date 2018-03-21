@@ -55,8 +55,6 @@ static void vty_do_exit(void)
 int
 main (int argc, char **argv)
 {
-  struct thread thread;
-
   /* Set umask before anything for security */
   umask (0027);
 
@@ -81,8 +79,7 @@ main (int argc, char **argv)
   vty_stdio (vty_do_exit);
 
   /* Fetch next active thread. */
-  while (thread_fetch (master, &thread))
-    thread_call (&thread);
+  thread_main (master);
 
   /* Not reached. */
   exit (0);

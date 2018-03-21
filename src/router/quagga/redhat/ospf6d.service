@@ -5,10 +5,13 @@ Wants=network.target
 After=zebra.service network-pre.target
 Before=network.target
 ConditionPathExists=/etc/quagga/ospf6d.conf
+Documentation=man:ospf6d
 
 [Service]
 Type=forking
 EnvironmentFile=/etc/sysconfig/quagga
+ExecStartPre=-/bin/chmod -f 640 /etc/quagga/ospf6d.conf
+ExecStartPre=-/bin/chown -f $QUAGGA_USER:$QUAGGA_GROUP /etc/quagga/ospf6d.conf
 ExecStart=/usr/sbin/ospf6d -d $OSPF6D_OPTS -f /etc/quagga/ospf6d.conf
 Restart=on-abort
 

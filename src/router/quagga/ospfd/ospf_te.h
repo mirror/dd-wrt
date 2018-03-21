@@ -386,7 +386,7 @@ struct te_link_subtlv
 /* Following structure are internal use only. */
 struct ospf_mpls_te
 {
-  /* Status of MPLS-TE: enable or disbale */
+  /* Status of MPLS-TE: enable or disable */
   status_t status;
 
   /* RFC5392 */

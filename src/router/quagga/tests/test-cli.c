@@ -20,6 +20,11 @@
  * 02111-1307, USA.
  */
 
+ /* example usage:
+  *
+  * ./testcli < testcli.in | diff -au testcli.refout -
+  */
+
 #include <zebra.h>
 
 #include "common-cli.h"

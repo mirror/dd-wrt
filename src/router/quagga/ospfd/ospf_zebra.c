@@ -1069,7 +1069,7 @@ ospf_distribute_list_update (struct ospf *ospf, uintptr_t type)
 
 /* If access-list is updated, apply some check. */
 static void
-ospf_filter_update (struct access_list *access)
+ospf_filter_update (const char *name)
 {
   struct ospf *ospf;
   int type;
@@ -1112,7 +1112,7 @@ ospf_filter_update (struct access_list *access)
 
           /* Schedule distribute-list update timer. */
           if (DISTRIBUTE_LIST (ospf, type) == NULL ||
-              strcmp (DISTRIBUTE_NAME (ospf, type), access->name) == 0)
+              strcmp (DISTRIBUTE_NAME (ospf, type), name) == 0)
             ospf_distribute_list_update (ospf, type);
         }
     }

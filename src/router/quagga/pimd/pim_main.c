@@ -129,7 +129,6 @@ int main(int argc, char** argv, char** envp) {
   int daemon_mode = 0;
   char *config_file = NULL;
   char *zebra_sock_path = NULL;
-  struct thread thread;
           
   umask(0027);
  
@@ -273,8 +272,7 @@ int main(int argc, char** argv, char** envp) {
   zlog_notice("!HAVE_CLOCK_MONOTONIC");
 #endif
 
-  while (thread_fetch(master, &thread))
-    thread_call(&thread);
+  thread_main (master);
 
   zlog_err("%s %s: thread_fetch() returned NULL, exiting",
 	   __FILE__, __PRETTY_FUNCTION__);

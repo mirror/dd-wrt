@@ -1347,7 +1347,7 @@ rib_process (struct route_node *rn)
         {
           /* Install new or replace existing redistributed entry */
           SET_FLAG (new_selected->flags, ZEBRA_FLAG_SELECTED);
-          redistribute_add (&rn->p, new_selected);
+          redistribute_add (&rn->p, new_selected, old_selected);
         }
      }
 

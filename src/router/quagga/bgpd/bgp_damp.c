@@ -663,7 +663,7 @@ bgp_show_dampening_parameters (struct vty *vty, afi_t afi, safi_t safi)
                     damp->suppress_value, VTY_NEWLINE);
       vty_out (vty, "Max suppress time: %ld min%s",
                     damp->max_suppress_time / 60, VTY_NEWLINE);
-      vty_out (vty, "Max supress penalty: %u%s",
+      vty_out (vty, "Max suppress penalty: %u%s",
                     damp->ceiling, VTY_NEWLINE);
       vty_out (vty, "%s", VTY_NEWLINE);
     }

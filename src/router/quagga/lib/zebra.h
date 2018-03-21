@@ -130,16 +130,6 @@ typedef int socklen_t;
 #endif /* !va_copy */
 #endif /* !C99 */
 
-
-#ifdef HAVE_LCAPS
-#include <sys/capability.h>
-#include <sys/prctl.h>
-#endif /* HAVE_LCAPS */
-
-#ifdef HAVE_SOLARIS_CAPABILITIES
-#include <priv.h>
-#endif /* HAVE_SOLARIS_CAPABILITIES */
-
 /* network include group */
 
 #include <sys/socket.h>
@@ -223,6 +213,16 @@ typedef int socklen_t;
 #ifdef HAVE_NETINET6_ND6_H
 #include <netinet6/nd6.h>
 #endif /* HAVE_NETINET6_ND6_H */
+
+/* Privileges / capabilities */
+#ifdef HAVE_LCAPS
+#include <sys/capability.h>
+#include <sys/prctl.h>
+#endif /* HAVE_LCAPS */
+
+#ifdef HAVE_SOLARIS_CAPABILITIES
+#include <priv.h>
+#endif /* HAVE_SOLARIS_CAPABILITIES */
 
 /* Some systems do not define UINT32_MAX, etc.. from inttypes.h
  * e.g. this makes life easier for FBSD 4.11 users.

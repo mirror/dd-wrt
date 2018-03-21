@@ -43,8 +43,8 @@
 
 #### Version String tweak
 # Remove invalid characters form version string and replace with _
-%{expand: %%global rpmversion %(echo '1.2.2' | tr [:blank:]- _ )}
-%define		quaggaversion	1.2.2
+%{expand: %%global rpmversion %(echo '1.2.4' | tr [:blank:]- _ )}
+%define		quaggaversion	1.2.4
 
 #### Check version of texi2html 
 # Old versions don't support "--number-footnotes" option.
@@ -115,7 +115,7 @@
 Summary: Routing daemon
 Name:			quagga
 Version:		%{rpmversion}
-Release:		20171003%{release_rev}%{?dist}
+Release:		20180219%{release_rev}%{?dist}
 License:		GPLv2+
 Group:			System Environment/Daemons
 Source0:		https://download.savannah.gnu.org/releases/quagga/%{name}-%{quaggaversion}.tar.gz

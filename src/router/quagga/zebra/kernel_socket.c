@@ -476,7 +476,7 @@ ifm_read (struct if_msghdr *ifm)
       if (ifnlen && (strncmp (ifp->name, ifname, IFNAMSIZ) != 0) )
         {
           if (IS_ZEBRA_DEBUG_KERNEL)
-            zlog_debug ("%s: ifp name %s doesnt match sdl name %s",
+            zlog_debug ("%s: ifp name %s doesn't match sdl name %s",
                         __func__, ifp->name, ifname);
           ifp = NULL;
         }

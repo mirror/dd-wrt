@@ -11,6 +11,12 @@ RIPNGD_OPTS="-A ::1"
 ZEBRA_OPTS="-A 127.0.0.1"
 PIMD_OPTS="-A 127.0.0.1"
 
+# Default: The compiled in default user and group(s), useful to
+# system startup to chmod config files.
+QUAGGA_USER=quagga
+QUAGGA_GROUP=quagga
+VTY_GROUP=
+
 # Watchquagga configuration for LSB initscripts
 #
 # (Not needed with systemd: the service files are configured to automatically

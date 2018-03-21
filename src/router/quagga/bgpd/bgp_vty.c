@@ -4340,7 +4340,7 @@ ALIAS (neighbor_allowas_in,
        NEIGHBOR_STR
        NEIGHBOR_ADDR_STR2
        "Accept as-path with my AS present in it\n"
-       "Number of occurances of AS number\n")
+       "Number of occurrences of AS number\n")
 
 DEFUN (no_neighbor_allowas_in,
        no_neighbor_allowas_in_cmd,

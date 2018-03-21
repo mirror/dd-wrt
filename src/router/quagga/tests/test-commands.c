@@ -27,6 +27,11 @@
  * 02111-1307, USA.
  */
 
+ /* Example use for testing:
+  * ./testcommands -e 0 < testcommands.in | \
+  *	diff -au - testcommands.refout
+  */
+
 #define REALLY_NEED_PLAIN_GETOPT 1
 
 #include <zebra.h>
@@ -91,6 +96,12 @@ static struct cmd_node bgp_vpnv4_node =
   "%s(config-router-af)# "
 };
 
+static struct cmd_node bgp_vpnv6_node =
+{
+  BGP_VPNV6_NODE,
+  "%s(config-router-af-vpnv6)# ",
+};
+
 static struct cmd_node bgp_ipv4_node =
 {
   BGP_IPV4_NODE,
@@ -113,6 +124,18 @@ static struct cmd_node bgp_ipv6m_node =
 {
   BGP_IPV6M_NODE,
   "%s(config-router-af)# "
+};
+
+static struct cmd_node bgp_encap_node =
+{
+  BGP_ENCAP_NODE,
+  "%s(config-router-af-encap)# ",
+};
+
+static struct cmd_node bgp_encapv6_node =
+{
+  BGP_ENCAPV6_NODE,
+  "%s(config-router-af-encapv6)# ",
 };
 
 static struct cmd_node ospf_node =
@@ -150,6 +173,14 @@ static struct cmd_node keychain_key_node =
   KEYCHAIN_KEY_NODE,
   "%s(config-keychain-key)# "
 };
+
+static struct cmd_node link_params_node =
+{
+  LINK_PARAMS_NODE,
+  "%s(config-link-params)# ",
+};
+
+
 
 static int
 test_callback(struct cmd_element *cmd, struct vty *vty, int argc, const char *argv[])
@@ -210,10 +241,13 @@ test_init(void)
   install_node (&rmap_node, NULL);
   install_node (&zebra_node, NULL);
   install_node (&bgp_vpnv4_node, NULL);
+  install_node (&bgp_vpnv6_node, NULL);
   install_node (&bgp_ipv4_node, NULL);
   install_node (&bgp_ipv4m_node, NULL);
   install_node (&bgp_ipv6_node, NULL);
   install_node (&bgp_ipv6m_node, NULL);
+  install_node (&bgp_encap_node, NULL);
+  install_node (&bgp_encapv6_node, NULL);
   install_node (&ospf_node, NULL);
   install_node (&ripng_node, NULL);
   install_node (&ospf6_node, NULL);
@@ -222,7 +256,9 @@ test_init(void)
   install_node (&keychain_key_node, NULL);
   install_node (&isis_node, NULL);
   install_node (&vty_node, NULL);
-
+  install_node (&link_params_node, NULL);
+  //install_node (&zebra_if_defaults_node, NULL);
+  
   test_init_cmd();
 
   for (node = 0; node < vector_active(cmdvec); node++)

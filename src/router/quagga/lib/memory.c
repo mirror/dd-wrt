@@ -43,7 +43,7 @@ static const struct message mstr [] =
   { 0, NULL },
 };
 
-/* Fatal memory allocation error occured. */
+/* Fatal memory allocation error occurred. */
 static void __attribute__ ((noreturn))
 zerror (const char *fname, int type, size_t size)
 {

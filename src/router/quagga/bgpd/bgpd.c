@@ -3938,7 +3938,7 @@ peer_distribute_unset (struct peer *peer, afi_t afi, safi_t safi, int direct)
 
 /* Update distribute list. */
 static void
-peer_distribute_update (struct access_list *access)
+peer_distribute_update (const char *name)
 {
   afi_t afi;
   safi_t safi;

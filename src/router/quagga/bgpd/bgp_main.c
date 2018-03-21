@@ -346,7 +346,6 @@ main (int argc, char **argv)
   int daemon_mode = 0;
   int dryrun = 0;
   char *progname;
-  struct thread thread;
   int tmp_port;
   int skip_runas = 0;
 
@@ -485,8 +484,7 @@ main (int argc, char **argv)
 	       getpid ());
 
   /* Start finite state machine, here we go! */
-  while (thread_fetch (bm->master, &thread))
-    thread_call (&thread);
+  thread_main (bm->master);
 
   /* Not reached. */
   return (0);
