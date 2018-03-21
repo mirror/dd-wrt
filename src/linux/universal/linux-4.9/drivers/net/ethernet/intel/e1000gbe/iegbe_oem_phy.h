@@ -95,8 +95,6 @@ int32_t iegbe_oem_phy_is_link_up(struct iegbe_hw *hw, int *isUp);
 
 #define DEFAULT_ICP_XXXX_TIPG_IPGT 8      /* Inter Packet Gap Transmit Time */
 #define ICP_XXXX_TIPG_IPGT_MASK 0x000003FFUL 
-#define BCM5481_PHY_ID		0x0143BCA0
-#define BCM5395S_PHY_ID		0x0143BCF0
 
 /* Miscellaneous defines */
 #ifdef IEGBE_10_100_ONLY
@@ -104,66 +102,6 @@ int32_t iegbe_oem_phy_is_link_up(struct iegbe_hw *hw, int *isUp);
 #else
     #define ICP_XXXX_AUTONEG_ADV_DEFAULT	0x2F
 #endif
-
-/* BCM5481 specifics */
-
-#define BCM5481_ECTRL		(0x10)
-#define BCM5481_ESTAT		(0x11)
-#define BCM5481_RXERR		(0x12)
-#define BCM5481_EXPRW		(0x15)
-#define BCM5481_EXPACC		(0x17)
-#define BCM5481_ASTAT		(0x19)
-#define BCM5481_R18H		(0x18)
-#define BCM5481_R1CH		(0x1c)
-
-/* indirect register access via register 18h */
-
-#define BCM5481_R18H_SV_MASK	(7) // Mask for SV bits.
-#define BCM5481_R18H_SV_ACTRL	(0) // SV000 Aux. control
-#define BCM5481_R18H_SV_10BT	(1) // SV001 10Base-T
-#define BCM5481_R18H_SV_PMII	(2) // SV010 Power/MII control
-#define BCM5481_R18H_SV_MTEST	(4) // SV100 Misc. test
-#define BCM5481_R18H_SV_MCTRL	(7) // SV111 Misc. control
-
-#define BCM5481_R18H_SV001_POL	(1 << 13) // Polarity
-#define BCM5481_R18H_SV010_LPM	(1 << 6)
-#define BCM5481_R18H_SV111_SKEW	(1 << 8)
-#define BCM5481_R18H_WE		(1 << 15) // Write enable
-
-// 0x1c registers
-#define BCM5481_R1CH_SV_SHIFT	(10)
-#define BCM5481_R1CH_SV_MASK	(0x1f)
-#define BCM5481_R1CH_SC1	(0x02) // sv00010 Spare control 1
-#define BCM5481_R1CH_CACR	(0x03) // sv00011 Clock alignment control
-#define BCM5481_R1CH_LCTRL	(0x09) // sv01001 LED control
-#define BCM5481_R1CH_LEDS1	(0x0d) // sv01101 LED selector 1
-
-// 0x1c common
-#define BCM5481_R1CH_WE		(1 << 15) // Write enable
-
-// 0x1c, sv 00010
-#define BCM5481_R1CH_SC1_LINK	(1 << 2) // sv00010 Linkspeed
-
-// 0x1c, sv 00011
-#define BCM5481_R1CH_CACR_TCD	(1 << 9) // sv00011 RGMII tx clock delay
-
-// 0x1c, sv 01001
-#define BCM5481_R1CH_LCTRL_ALEN	(1 << 4) // Activity/Link enable on ACTIVITY LED
-#define BCM5481_R1CH_LCTRL_AEN	(1 << 3) // Activity enable on ACTIVITY LED
-
-#define BCM5481_ECTRL_DISMDIX	(1 <<14)
-
-#define BCM5481_MCTRL_AUTOMDIX	(1 <<9)
-
-#define BCM5481_ESTAT_LINK	(1 << 8)
-
-#define BCM5481_ASTAT_ANC	(1 << 15)
-#define BCM5481_ASTAT_ANHCD	(7 << 8)
-#define BCM5481_ASTAT_HCD(x)	((x >> 8) & 7)
-#define BCM5481_ASTAT_1KBTFD	(0x7)
-#define BCM5481_ASTAT_1KBTHD	(0x6)
-#define BCM5481_ASTAT_100BTXFD	(0x5)
-#define BCM5481_ASTAT_100BTXHD	(0x3)
 
 #endif /* ifndef _IEGBE_OEM_PHY_H_ */
  
