@@ -40,13 +40,10 @@ GPL LICENSE SUMMARY
 #define GCU_DEVID 0x503E
 #define GCU_MAX_ATTEMPTS 64
 
-int32_t gcu_write_eth_phy(uint32_t phy_num, uint32_t reg_addr, 
-                          uint16_t phy_data);
+int32_t gcu_write_eth_phy(uint32_t phy_num, uint32_t reg_addr, uint16_t phy_data);
 
-int32_t gcu_read_eth_phy(uint32_t phy_num, uint32_t reg_addr, 
-                         uint16_t *phy_data);
+int32_t gcu_read_eth_phy(uint32_t phy_num, uint32_t reg_addr, uint16_t * phy_data);
 
 int gcu_iegbe_suspend(struct pci_dev *pdev, uint32_t state);
 void gcu_iegbe_resume(struct pci_dev *pdev);
-#endif /* ifndef GCU_IF_H */
- 
+#endif				/* ifndef GCU_IF_H */
