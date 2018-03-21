@@ -1037,7 +1037,7 @@ validate (struct aspath *as, const struct test_spec *sp)
       fails++;
       printf ("firstas: %d,  got %d\n", sp->first,
               aspath_firstas_check (as,sp->first));
-      printf ("loop does: %d %d, doesnt: %d %d\n",
+      printf ("loop does: %d %d, doesn't: %d %d\n",
               sp->does_loop, aspath_loop_check (as, sp->does_loop),
               sp->doesnt_loop, aspath_loop_check (as, sp->doesnt_loop));
       printf ("private check: %d %d\n", sp->private_as,

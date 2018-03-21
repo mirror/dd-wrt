@@ -1,4 +1,4 @@
-This is quagga.info, produced by makeinfo version 6.1 from quagga.texi.
+This is quagga.info, produced by makeinfo version 6.3 from quagga.texi.
 
 Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
@@ -23,8 +23,8 @@ END-INFO-DIR-ENTRY
    This file documents the Quagga Software Routing Suite which manages
 common TCP/IP routing protocols.
 
-   This is Edition 1.2.2, last updated 3 October 2017 of 'The Quagga
-Manual', for Quagga Version 1.2.2.
+   This is Edition 1.2.4, last updated 19 February 2018 of 'The Quagga
+Manual', for Quagga Version 1.2.4.
 
    Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
@@ -49,7 +49,7 @@ Quagga
 ******
 
 Quagga is an advanced routing software package that provides a suite of
-TCP/IP based routing protocols.  This is the Manual for Quagga 1.2.2.
+TCP/IP based routing protocols.  This is the Manual for Quagga 1.2.4.
 Quagga is a fork of GNU Zebra.
 
    Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
@@ -1038,7 +1038,7 @@ all.
      Connected to localhost.
      Escape character is '^]'.
 
-     Hello, this is Quagga (version 1.2.2)
+     Hello, this is Quagga (version 1.2.4)
      Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
      User Access Verification
@@ -4628,6 +4628,9 @@ File: quagga.info,  Node: BGP distance,  Next: BGP decision process,  Up: BGP ro
      distance value for external routes, internal routes and local
      routes.
 
+     To have this command applied to existing routes requires a hard
+     clear.
+
  -- BGP: distance <1-255> A.B.C.D/M
  -- BGP: distance <1-255> A.B.C.D/M WORD
      This command set distance value to
@@ -4999,9 +5002,9 @@ binary ordering relation that is defined for _every_ combination of
 those objects, and that relation _must_ be transitive.  I.e., if the
 relation operator is ≺, and if a ≺ b and b ≺ c then that relation
 must carry over and it _must_ be that a ≺ c for the objects to have an
-order.  The ordering relation may allow for equality, i.e.  a ≺ b and b
-≺ a may both be true amd imply that a and b are equal in the order and
-not distinguished by it, in which case the set has a partial order.
+order.  The ordering relation may allow for equality, i.e.  a ≺ b and
+b ≺ a may both be true amd imply that a and b are equal in the order
+and not distinguished by it, in which case the set has a partial order.
 Otherwise, if there is an order, all the objects have a distinct place
 in the order and the set has a total order.
 
@@ -5651,7 +5654,7 @@ value 80.
 
    Following configuration is an example of BGP route filtering using
 communities attribute.  This configuration only permit BGP routes which
-has BGP communities value 0:80 or 0:90.  Network operator can put
+has BGP communities value 0:80 and 0:90.  Network operator can put
 special internal communities value at BGP border router, then limit the
 BGP routes announcement into the internal network.
 
@@ -6192,8 +6195,8 @@ File: quagga.info,  Node: Dump BGP packets and table,  Next: BGP Configuration E
      Dump only BGP updates messages to PATH file.  If INTERVAL is set, a
      new file will be created for echo INTERVAL of seconds.  The path
      PATH can be set with date and time formatting (strftime).  The type
-     ‘updates-et’ enables support for Extended Timestamp Header (*note
-     Packet Binary Dump Format::).
+     ‘updates-et’ enables support for Extended Timestamp Header
+     (*note Packet Binary Dump Format::).
 
  -- Command: dump bgp routes-mrt PATH
  -- Command: dump bgp routes-mrt PATH INTERVAL
@@ -7397,7 +7400,7 @@ File: quagga.info,  Node: Route Map Match Command,  Next: Route Map Set Command,
  -- Route-map Command: match ip next-hop IPV4_ADDR
      Matches the specified IPV4_ADDR.
 
- -- Route-map Command: match aspath AS_PATH
+ -- Route-map Command: match as-path AS_PATH
      Matches the specified AS_PATH.
 
  -- Route-map Command: match metric METRIC

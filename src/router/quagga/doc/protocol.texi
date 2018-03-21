@@ -11,22 +11,18 @@ nexthop-validation, and so on. Protocol daemons may also install routes
 with zebra. The zebra daemon manages which route is installed into the
 forwarding table with the kernel.
 
-Zebra Protocol is a streaming protocol, with a common header. Two
-versions of the header are in use. Version 0 is implicitely versioned.
-Version 1 has an explicit version field. Version 0 can be distinguished
-from all other versions by examining the 3rd byte of the header, which
-contains a marker value for all versions bar version 0. The marker byte
-corresponds to the command field in version 0, and the marker value is
-a reserved command in version 0.
-
-We do not anticipate there will be further versions of the header for
-the foreseeable future, as the command field in version 1 is wide
-enough to allow for future extensions to done compatibly through
-seperate commands.
+Zebra Protocol is a streaming protocol, with a common header.  The protocol
+is versioned to allow for incompatible changes.  Version 0 is implicitely
+versioned.  Version 1 onwards has an explicit version field.  Version 0 can
+be distinguished from all other versions by examining the 3rd byte of the
+header, which contains a marker value of 255 for all versions bar version 0. 
+The marker byte corresponds to the command field in version 0, and the
+marker value is a reserved command in version 0.
 
 Version 0 is used by all versions of GNU Zebra as of this writing, and
-versions of Quagga up to and including Quagga 0.98. Version 1 will be
-used as of Quagga 1.0.
+versions of Quagga up to and including Quagga 0.98.  The version 1 header
+was introduced with Quagga 0.99.3.  The version 3 header was introduced with
+Quagga 1.0.20160309.
 
 @appendixsection Zebra Protocol Definition
 @appendixsubsec Zebra Protocol Header (version 0)
@@ -40,7 +36,7 @@ used as of Quagga 1.0.
 @end group
 @end example
 
-@appendixsubsec Zebra Protocol Common Header (version 1)
+@appendixsubsec Zebra Protocol Common Header (version 1 and 2)
 @example
 @group
 0                   1                   2                   3
@@ -53,11 +49,26 @@ used as of Quagga 1.0.
 @end group
 @end example
 
+@appendixsubsec Zebra Protocol Common Header (version 3)
+@example
+@group
+0                   1                   2                   3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-------------------------------+---------------+-------------+
+|           Length (2)          |   Marker (1)  | Version (1) |
++-------------------------------+---------------+-------------+
+|          VRF ID  (2)          |        Command (2)          |
++-------------------------------+-----------------------------+
+@end group
+@end example
+
+
 @appendixsubsec Zebra Protocol Header Field Definitions
 @table @samp
 @item Length
 Total packet length including this header. The minimum length is 3
-bytes for version 0 messages and 6 bytes for version 1 messages.
+bytes for version 0 messages, 6 bytes for version 1 and 2 messages, and
+8 bytes for version 3.
 
 @item Marker
 Static marker with a value of 255 always. This is to allow version 0
@@ -69,6 +80,10 @@ messages.
 Version number of the Zserv message. Clients should not continue
 processing messages past the version field for versions they do not
 recognise. Not present in version 0 messages.
+
+@item VRF ID
+Virtual Routing/Forwarding context ID, to which the message applies. Only
+present from version 3 onwards.
 
 @item Command
 The Zebra Protocol command.

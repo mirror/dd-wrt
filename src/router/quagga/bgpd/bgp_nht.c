@@ -409,8 +409,8 @@ make_prefix (int afi, struct bgp_info *ri, struct prefix *p)
       break;
 #ifdef HAVE_IPV6
     case AFI_IP6:
-      if (ri->attr->extra->mp_nexthop_len != 16
-	  || IN6_IS_ADDR_LINKLOCAL (&ri->attr->extra->mp_nexthop_global))
+      if (ri->attr->extra->mp_nexthop_len == 16
+	  && IN6_IS_ADDR_LINKLOCAL (&ri->attr->extra->mp_nexthop_global))
 	return -1;
 
       p->family = AF_INET6;

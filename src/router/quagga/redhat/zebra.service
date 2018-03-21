@@ -4,11 +4,15 @@ Wants=network.target
 Before=network.target
 After=network-pre.target
 ConditionPathExists=/etc/quagga/zebra.conf
+Documentation=man:zebra
 
 [Service]
 Type=forking
 EnvironmentFile=-/etc/sysconfig/quagga
 ExecStartPre=/sbin/ip route flush proto zebra
+ExecStartPre=-/bin/chmod -f 640 /etc/quagga/vtysh.conf /etc/quagga/zebra.conf
+ExecStartPre=-/bin/chown -f $QUAGGA_USER:$QUAGGA_GROUP /run/quagga /etc/quagga/zebra.conf
+ExecStartPre=-/bin/chown -f ${QUAGGA_USER}${VTY_GROUP:+":$VTY_GROUP"} quaggavty /etc/quagga/vtysh.conf
 ExecStart=/usr/sbin/zebra -d $ZEBRA_OPTS -f /etc/quagga/zebra.conf
 Restart=on-abort
 

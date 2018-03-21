@@ -184,7 +184,6 @@ static struct quagga_signal_t sighandlers[] = {
 
 int main(int argc, char **argv)
 {
-	struct thread thread;
 	const char *progname;
 
 	/* Set umask before anything for security */
@@ -240,8 +239,7 @@ int main(int argc, char **argv)
 	zlog_notice("nhrpd starting: vty@%d", vty_port);
 
 	/* Main loop */
-	while (thread_fetch(master, &thread))
-		thread_call(&thread);
+	thread_main (master);
 
 	return 0;
 }

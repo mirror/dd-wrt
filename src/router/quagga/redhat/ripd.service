@@ -5,10 +5,13 @@ Wants=network.target
 After=zebra.service network-pre.target
 Before=network.target
 ConditionPathExists=/etc/quagga/ripd.conf
+Documentation=man:ripd
 
 [Service]
 Type=forking
 EnvironmentFile=/etc/sysconfig/quagga
+ExecStartPre=-/bin/chmod -f 640 /etc/quagga/ripd.conf
+ExecStartPre=-/bin/chown -f $QUAGGA_USER:$QUAGGA_GROUP /etc/quagga/ripd.conf
 ExecStart=/usr/sbin/ripd -d $RIPD_OPTS -f /etc/quagga/ripd.conf
 Restart=on-abort
 

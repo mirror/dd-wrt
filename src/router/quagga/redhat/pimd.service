@@ -3,10 +3,13 @@ Description=PIM multicast routing engine
 BindTo=zebra.service
 After=syslog.target network.target zebra.service
 ConditionPathExists=/etc/quagga/pimd.conf
+Documentation=man:pimd
 
 [Service]
 Type=forking
 EnvironmentFile=/etc/sysconfig/quagga
+ExecStartPre=-/bin/chmod -f 640 /etc/quagga/pimd.conf
+ExecStartPre=-/bin/chown -f $QUAGGA_USER:$QUAGGA_GROUP /etc/quagga/pimd.conf
 ExecStart=/usr/sbin/pimd -d $PIMD_OPTS -f /etc/quagga/pimd.conf
 Restart=on-abort
 

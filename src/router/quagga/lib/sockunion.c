@@ -286,7 +286,7 @@ sockunion_log (const union sockunion *su, char *buf, size_t len)
 }
 
 /* sockunion_connect returns
-   -1 : error occured
+   -1 : error occurred
    0 : connect success
    1 : connect is in progress */
 enum connect_result

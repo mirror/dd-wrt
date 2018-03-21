@@ -391,7 +391,7 @@ bgp_graceful_stale_timer_expire (struct thread *thread)
   return 0;
 }
 
-/* Called after event occured, this function change status and reset
+/* Called after event occurred, this function change status and reset
    read/write and timer thread. */
 void
 bgp_fsm_change_status (struct peer *peer, int status)

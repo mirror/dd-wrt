@@ -400,7 +400,7 @@ vtysh_read_file (FILE *confp)
 	  fprintf (stderr, "There is no such command.\n");
 	  break;
 	}
-      fprintf (stderr, "Error occured during reading below line.\n%s\n", 
+      fprintf (stderr, "Error occurred during reading below line.\n%s\n",
 	       vty->buf);
       exit (1);
     }

@@ -1,4 +1,4 @@
-This is quagga.info, produced by makeinfo version 6.1 from quagga.texi.
+This is quagga.info, produced by makeinfo version 6.3 from quagga.texi.
 
 Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
@@ -23,8 +23,8 @@ END-INFO-DIR-ENTRY
    This file documents the Quagga Software Routing Suite which manages
 common TCP/IP routing protocols.
 
-   This is Edition 1.2.2, last updated 3 October 2017 of 'The Quagga
-Manual', for Quagga Version 1.2.2.
+   This is Edition 1.2.4, last updated 19 February 2018 of 'The Quagga
+Manual', for Quagga Version 1.2.4.
 
    Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
@@ -301,22 +301,19 @@ nexthop-validation, and so on.  Protocol daemons may also install routes
 with zebra.  The zebra daemon manages which route is installed into the
 forwarding table with the kernel.
 
-   Zebra Protocol is a streaming protocol, with a common header.  Two
-versions of the header are in use.  Version 0 is implicitely versioned.
-Version 1 has an explicit version field.  Version 0 can be distinguished
-from all other versions by examining the 3rd byte of the header, which
-contains a marker value for all versions bar version 0.  The marker byte
-corresponds to the command field in version 0, and the marker value is a
-reserved command in version 0.
-
-   We do not anticipate there will be further versions of the header for
-the foreseeable future, as the command field in version 1 is wide enough
-to allow for future extensions to done compatibly through seperate
-commands.
+   Zebra Protocol is a streaming protocol, with a common header.  The
+protocol is versioned to allow for incompatible changes.  Version 0 is
+implicitely versioned.  Version 1 onwards has an explicit version field.
+Version 0 can be distinguished from all other versions by examining the
+3rd byte of the header, which contains a marker value of 255 for all
+versions bar version 0.  The marker byte corresponds to the command
+field in version 0, and the marker value is a reserved command in
+version 0.
 
    Version 0 is used by all versions of GNU Zebra as of this writing,
-and versions of Quagga up to and including Quagga 0.98.  Version 1 will
-be used as of Quagga 1.0.
+and versions of Quagga up to and including Quagga 0.98.  The version 1
+header was introduced with Quagga 0.99.3.  The version 3 header was
+introduced with Quagga 1.0.20160309.
 
 A.2 Zebra Protocol Definition
 =============================
@@ -330,8 +327,8 @@ A.2.1 Zebra Protocol Header (version 0)
      |           Length (2)          |   Command (1) |
      +-------------------------------+---------------+
 
-A.2.2 Zebra Protocol Common Header (version 1)
-----------------------------------------------
+A.2.2 Zebra Protocol Common Header (version 1 and 2)
+----------------------------------------------------
 
      0                   1                   2                   3
      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -341,12 +338,24 @@ A.2.2 Zebra Protocol Common Header (version 1)
      |          Command (2)          |
      +-------------------------------+
 
-A.2.3 Zebra Protocol Header Field Definitions
+A.2.3 Zebra Protocol Common Header (version 3)
+----------------------------------------------
+
+     0                   1                   2                   3
+     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-------------------------------+---------------+-------------+
+     |           Length (2)          |   Marker (1)  | Version (1) |
+     +-------------------------------+---------------+-------------+
+     |          VRF ID  (2)          |        Command (2)          |
+     +-------------------------------+-----------------------------+
+
+A.2.4 Zebra Protocol Header Field Definitions
 ---------------------------------------------
 
 'Length'
      Total packet length including this header.  The minimum length is 3
-     bytes for version 0 messages and 6 bytes for version 1 messages.
+     bytes for version 0 messages, 6 bytes for version 1 and 2 messages,
+     and 8 bytes for version 3.
 
 'Marker'
      Static marker with a value of 255 always.  This is to allow version
@@ -359,10 +368,14 @@ A.2.3 Zebra Protocol Header Field Definitions
      processing messages past the version field for versions they do not
      recognise.  Not present in version 0 messages.
 
+'VRF ID'
+     Virtual Routing/Forwarding context ID, to which the message
+     applies.  Only present from version 3 onwards.
+
 'Command'
      The Zebra Protocol command.
 
-A.2.4 Zebra Protocol Commands
+A.2.5 Zebra Protocol Commands
 -----------------------------
 
 Command                                      Value
@@ -579,9 +592,9 @@ Family == IP version 6
      |      BGP Attribute [variable length]    			    |
      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
-   BGP4 Attribute must not contain MP_UNREACH_NLRI. If BGP Attribute has
-MP_REACH_NLRI field, it must has zero length NLRI, e.g., MP_REACH_NLRI
-has only Address Family, SAFI and next-hop values.
+   BGP4 Attribute must not contain MP_UNREACH_NLRI.	If BGP Attribute has
+MP_REACH_NLRI field, it must has	zero length NLRI, e.g., MP_REACH_NLRI
+has only Address	Family, SAFI and next-hop values.
 
    If 'type' is PROTOCOL_BGP4MP and 'subtype' is BGP4MP_SNAPSHOT,
 
@@ -765,9 +778,9 @@ Command Index
 * distance <1-255> <1>:                  Redistribute routes to OSPF.
                                                               (line  67)
 * distance <1-255> A.B.C.D/M:            RIP distance.        (line  12)
-* distance <1-255> A.B.C.D/M <1>:        BGP distance.        (line  11)
+* distance <1-255> A.B.C.D/M <1>:        BGP distance.        (line  14)
 * distance <1-255> A.B.C.D/M ACCESS-LIST: RIP distance.       (line  17)
-* distance <1-255> A.B.C.D/M WORD:       BGP distance.        (line  12)
+* distance <1-255> A.B.C.D/M WORD:       BGP distance.        (line  15)
 * distance bgp <1-255> <1-255> <1-255>:  BGP distance.        (line   6)
 * distance ospf (intra-area|inter-area|external) <1-255>: Redistribute routes to OSPF.
                                                               (line  70)
@@ -979,10 +992,10 @@ Command Index
                                                               (line  14)
 * lsp-refresh-interval [level-1 | level-2] <1-65235> <1>: ISIS Timer.
                                                               (line  21)
+* match as-path AS_PATH:                 Route Map Match Command.
+                                                              (line  12)
 * match as-path WORD:                    Using AS Path in Route Map.
                                                               (line   6)
-* match aspath AS_PATH:                  Route Map Match Command.
-                                                              (line  12)
 * match community COMMUNITY_LIST:        Route Map Match Command.
                                                               (line  21)
 * match community WORD:                  BGP Community in Route Map.

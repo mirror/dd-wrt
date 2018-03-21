@@ -2827,7 +2827,7 @@ ripng_distribute_update_all (struct prefix_list *notused)
 }
 
 static void
-ripng_distribute_update_all_wrapper (struct access_list *notused)
+ripng_distribute_update_all_wrapper (const char *notused)
 {
   ripng_distribute_update_all(NULL);
 }

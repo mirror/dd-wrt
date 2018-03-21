@@ -236,7 +236,6 @@ main (int argc, char **argv, char **envp)
 {
   char *p;
   int opt, vty_port = ISISD_VTY_PORT;
-  struct thread thread;
   char *config_file = NULL;
   char *vty_addr = NULL;
   int dryrun = 0;
@@ -375,8 +374,7 @@ main (int argc, char **argv, char **envp)
   zlog_notice ("Quagga-ISISd %s starting: vty@%d", QUAGGA_VERSION, vty_port);
 
   /* Start finite state machine. */
-  while (thread_fetch (master, &thread))
-    thread_call (&thread);
+  thread_main (master);
 
   /* Not reached. */
   exit (0);

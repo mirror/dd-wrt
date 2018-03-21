@@ -187,10 +187,10 @@ extern unsigned long int attr_unknown_count (void);
 
 /* Cluster list prototypes. */
 extern int cluster_loop_check (struct cluster_list *, struct in_addr);
-extern void cluster_unintern (struct cluster_list *);
+extern void cluster_unintern (struct cluster_list **);
 
 /* Transit attribute prototypes. */
-void transit_unintern (struct transit *);
+void transit_unintern (struct transit **);
 
 /* Below exported for unit-test purposes only */
 struct bgp_attr_parser_args {
