@@ -1276,7 +1276,8 @@ static void showOptionsNames(webs_t wp, char *label, char *propname, char *value
 	websWrite(wp, "<select name=\"%s\">\n", propname);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	foreach(var, valuenames, next) {
-		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", names[idx++]);
+		if (names[idx])
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", names[idx++]);
 	}
 	websWrite(wp, "//]]>\n</script>\n</select></div>\n");
 }
