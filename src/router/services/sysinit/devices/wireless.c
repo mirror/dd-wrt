@@ -235,6 +235,8 @@ static void detect_wireless_devices(void)
 			// some are just for future use and not (yet) there
 			insmod("lzo_compress");
 			insmod("lzo_decompress");
+			insmod("lz4_compress");
+			insmod("lz4_decompress");
 			insmod("lzma_compress");
 			insmod("lzma_decompress");
 			insmod("compat");
