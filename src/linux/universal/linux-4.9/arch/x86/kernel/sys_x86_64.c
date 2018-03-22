@@ -16,6 +16,7 @@
 #include <linux/uaccess.h>
 #include <linux/elf.h>
 
+#include <asm/compat.h>
 #include <asm/ia32.h>
 #include <asm/syscalls.h>
 
