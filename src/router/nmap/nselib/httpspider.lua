@@ -347,16 +347,16 @@ LinkExtractor = {
   parse = function(self)
     local links = {}
     local patterns = {
-      '[hH][rR][eE][fF]%s*=%s*[\'"]%s*([^"^\']-)%s*[\'"]',
-      '[hH][rR][eE][fF]%s*=%s*([^\'\"][^%s>]+)',
-      '[sS][rR][cC]%s*=%s*[\'"]%s*([^"^\']-)%s*[\'"]',
-      '[sS][rR][cC]%s*=%s*([^\'\"][^%s>]+)',
-      '[aA][cC][tT][iI][oO][nN]%s*=%s*[\'"]%s*([^"^\']+%s*)[\'"]',
+      '<[^>]+[hH][rR][eE][fF]%s*=%s*[\'"]%s*([^"^\']-)%s*[\'"]',
+      '<[^>]+[hH][rR][eE][fF]%s*=%s*([^\'\"][^%s>]+)',
+      '<[^>]+[sS][rR][cC]%s*=%s*[\'"]%s*([^"^\']-)%s*[\'"]',
+      '<[^>]+[sS][rR][cC]%s*=%s*([^\'\"][^%s>]+)',
+      '<[^>]+[aA][cC][tT][iI][oO][nN]%s*=%s*[\'"]%s*([^"^\']+%s*)[\'"]',
     }
 
     local base_hrefs = {
-      '[Bb][Aa][Ss][Ee]%s*[Hh][Rr][Ee][Ff]%s*=%s*[\'"](%s*[^"^\']+%s*)[\'"]',
-      '[Bb][Aa][Ss][Ee]%s*[Hh][Rr][Ee][Ff]%s*=%s*([^\'\"][^%s>]+)'
+      '<[^>]+[Bb][Aa][Ss][Ee]%s*[Hh][Rr][Ee][Ff]%s*=%s*[\'"](%s*[^"^\']+%s*)[\'"]',
+      '<[^>]+[Bb][Aa][Ss][Ee]%s*[Hh][Rr][Ee][Ff]%s*=%s*([^\'\"][^%s>]+)'
     }
 
     local base_href
@@ -489,7 +489,14 @@ URL = {
 
   -- Converts the URL to a string
   -- @return url string containing the string representation of the url
-  __tostring = function(self) return self.raw end,
+  __tostring = function(self)
+    return string.format("%s://%s:%s%s",
+      self.proto,
+      self.host,
+      self.port,
+      self.file
+      )
+  end,
 }
 
 -- An UrlQueue
