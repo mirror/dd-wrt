@@ -4,7 +4,7 @@ dnl             session authentication and key exchange,
 dnl             packet encryption, packet authentication, and
 dnl             packet compression.
 dnl
-dnl  Copyright (C) 2002-2017 OpenVPN Technologies, Inc. <sales@openvpn.net>
+dnl  Copyright (C) 2002-2018 OpenVPN Inc <sales@openvpn.net>
 dnl  Copyright (C) 2006-2012 Alon Bar-Lev <alon.barlev@gmail.com>
 dnl
 dnl  This program is free software; you can redistribute it and/or modify
@@ -851,10 +851,11 @@ if test "${enable_crypto}" = "yes" -a "${with_crypto_library}" = "openssl"; then
 		# if the user did not explicitly specify flags, try to autodetect
 		PKG_CHECK_MODULES(
 			[OPENSSL],
-			[openssl >= 1.0.1],
-			[have_openssl="yes"],
-			[] # If this fails, we will do another test next
+			[libcrypto >= 0.9.8, libssl >= 0.9.8],
+	        [have_openssl="yes"],
+			[have_openssl="no"] # Provide if-not-found to prevent erroring out
 		)
+
 		OPENSSL_LIBS=${OPENSSL_LIBS:--lssl -lcrypto}
 	fi
 
@@ -862,27 +863,6 @@ if test "${enable_crypto}" = "yes" -a "${with_crypto_library}" = "openssl"; then
 	saved_LIBS="${LIBS}"
 	CFLAGS="${CFLAGS} ${OPENSSL_CFLAGS}"
 	LIBS="${LIBS} ${OPENSSL_LIBS}"
-
-	# If pkgconfig check failed or OPENSSL_CFLAGS/OPENSSL_LIBS env vars
-	# are used, check the version directly in the OpenSSL include file
-	if test "${have_openssl}" != "yes"; then
-		AC_MSG_CHECKING([additionally if OpenSSL is available and version >= 1.0.1])
-		AC_COMPILE_IFELSE(
-			[AC_LANG_PROGRAM(
-				[[
-#include <openssl/opensslv.h>
-				]],
-				[[
-/*	     Version encoding: MNNFFPPS - see opensslv.h for details */
-#if OPENSSL_VERSION_NUMBER < 0x10001000L
-#error OpenSSL too old
-#endif
-				]]
-			)],
-			[AC_MSG_RESULT([ok])],
-			[AC_MSG_ERROR([OpenSSL version too old])]
-		)
-	fi
 
 	AC_CHECK_FUNCS([SSL_CTX_new EVP_CIPHER_CTX_set_key_length],
 				   ,
@@ -899,6 +879,13 @@ if test "${enable_crypto}" = "yes" -a "${with_crypto_library}" = "openssl"; then
 		,
 		[have_openssl_engine="no"; break]
 	)
+	if test "${have_openssl_engine}" = "no"; then
+		AC_CHECK_DECL( [ENGINE_cleanup], [have_openssl_engine="yes"],,
+			[[
+				#include <openssl/engine.h>
+			]]
+		)
+	fi
 	if test "${have_openssl_engine}" = "yes"; then
 		AC_DEFINE([HAVE_OPENSSL_ENGINE], [1], [OpenSSL engine support available])
 	fi
@@ -920,6 +907,7 @@ if test "${enable_crypto}" = "yes" -a "${with_crypto_library}" = "openssl"; then
 			EVP_MD_CTX_reset \
 			SSL_CTX_get_default_passwd_cb \
 			SSL_CTX_get_default_passwd_cb_userdata \
+			SSL_CTX_set_security_level \
 			X509_get0_pubkey \
 			X509_STORE_get0_objects \
 			X509_OBJECT_free \
@@ -943,6 +931,7 @@ if test "${enable_crypto}" = "yes" -a "${with_crypto_library}" = "openssl"; then
 			RSA_meth_set_init \
 			RSA_meth_set_finish \
 			RSA_meth_set0_app_data \
+			RSA_meth_get0_app_data \
 			EC_GROUP_order_bits
 		]
 	)
@@ -1297,13 +1286,25 @@ if test "${enable_pkcs11}" = "yes"; then
 	)
 fi
 
+AC_DEFUN([ACL_CHECK_ADD_COMPILE_FLAGS], [
+    old_cflags="$CFLAGS"
+    CFLAGS="$1 $CFLAGS"
+    AC_MSG_CHECKING([whether the compiler acceppts $1])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM()], [AC_MSG_RESULT([yes])],
+        [AC_MSG_RESULT([no]); CFLAGS="$old_cflags"])]
+)
+
+ACL_CHECK_ADD_COMPILE_FLAGS([-Wno-unused-function])
+ACL_CHECK_ADD_COMPILE_FLAGS([-Wno-unused-parameter])
+ACL_CHECK_ADD_COMPILE_FLAGS([-Wall])
+
 if test "${enable_pedantic}" = "yes"; then
 	enable_strict="yes"
 	CFLAGS="${CFLAGS} -pedantic"
 	AC_DEFINE([PEDANTIC], [1], [Enable pedantic mode])
 fi
 if test "${enable_strict}" = "yes"; then
-	CFLAGS="${CFLAGS} -Wall -Wno-unused-parameter -Wno-unused-function"
+	CFLAGS="${CFLAGS} -Wsign-compare -Wuninitialized"
 fi
 if test "${enable_werror}" = "yes"; then
 	CFLAGS="${CFLAGS} -Werror"
