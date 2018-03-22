@@ -5501,6 +5501,8 @@ void start_hotplug_net(void)
 			eval("iw", "dev", interface, "set", "compr", "lzo", threshold);
 		} else if (nvram_default_match(compr, "2", "0")) {
 			eval("iw", "dev", interface, "set", "compr", "lzma", threshold);
+		} else if (nvram_default_match(compr, "3", "0")) {
+			eval("iw", "dev", interface, "set", "compr", "lz4", threshold);
 		} else {
 			eval("iw", "dev", interface, "set", "compr", "off");
 		}

@@ -291,6 +291,8 @@ void configure_single_ath9k(int count)
 		eval("iw", "dev", dev, "set", "compr", "lzo", threshold);
 	} else if (nvram_default_match(compr, "2", "0")) {
 		eval("iw", "dev", dev, "set", "compr", "lzma", threshold);
+	} else if (nvram_default_match(compr, "3", "0")) {
+		eval("iw", "dev", dev, "set", "compr", "lz4", threshold);
 	} else {
 		eval("iw", "dev", dev, "set", "compr", "off");
 	}
@@ -343,6 +345,8 @@ void configure_single_ath9k(int count)
 			eval("iw", "dev", var, "set", "compr", "lzo", threshold);
 		} else if (nvram_default_match(compr, "2", "0")) {
 			eval("iw", "dev", var, "set", "compr", "lzma", threshold);
+		} else if (nvram_default_match(compr, "3", "0")) {
+			eval("iw", "dev", var, "set", "compr", "lz4", threshold);
 		} else {
 			eval("iw", "dev", var, "set", "compr", "off");
 		}
