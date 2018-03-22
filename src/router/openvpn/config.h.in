@@ -340,6 +340,9 @@
 /* Define to 1 if you have the <libgen.h> header file. */
 #undef HAVE_LIBGEN_H
 
+/* Define to 1 if you have the `lz4' library (-llz4). */
+#undef HAVE_LIBLZ4
+
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
@@ -457,6 +460,9 @@
 /* Define to 1 if you have the `RSA_meth_free' function. */
 #undef HAVE_RSA_METH_FREE
 
+/* Define to 1 if you have the `RSA_meth_get0_app_data' function. */
+#undef HAVE_RSA_METH_GET0_APP_DATA
+
 /* Define to 1 if you have the `RSA_meth_new' function. */
 #undef HAVE_RSA_METH_NEW
 
@@ -538,6 +544,9 @@
 
 /* Define to 1 if you have the `SSL_CTX_new' function. */
 #undef HAVE_SSL_CTX_NEW
+
+/* Define to 1 if you have the `SSL_CTX_set_security_level' function. */
+#undef HAVE_SSL_CTX_SET_SECURITY_LEVEL
 
 /* Define to 1 if you have the `stat' function. */
 #undef HAVE_STAT
@@ -692,8 +701,7 @@
 /* Path to iproute tool */
 #undef IPROUTE_PATH
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* use copy of LZ4 source in compat/ */
