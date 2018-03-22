@@ -2449,8 +2449,8 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		if (is_ath9k(prefix)) {
 			char wl_fc[16];
 			sprintf(wl_fc, "%s_fc", var);
-			char *names[] = { "\" + share.disabled + \"", "LZO", "LZMA" };
-			showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 2", names, nvram_default_get(wl_fc, "0"));
+			char *names[] = { "\" + share.disabled + \"", "LZO", "LZ4", "LZMA" };
+			showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2", names, nvram_default_get(wl_fc, "0"));
 		}
 #endif
 
@@ -3311,8 +3311,8 @@ if (has_airtime_fairness(prefix)) {
 if (is_ath9k(prefix)) {
 	char wl_fc[16];
 	sprintf(wl_fc, "%s_fc", prefix);
-	char *names[] = { "\" + share.disabled + \"", "LZO", "LZMA" };
-	showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 2", names, nvram_default_get(wl_fc, "0"));
+	char *names[] = { "\" + share.disabled + \"", "LZO", "LZ4", "LZMA" };
+	showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2", names, nvram_default_get(wl_fc, "0"));
 }
 #endif
 sprintf(wmm, "%s_wmm", prefix);
@@ -4302,8 +4302,8 @@ if (!strcmp(prefix, "wl2"))
 	if (is_ath9k(prefix)) {
 		char wl_fc[16];
 		sprintf(wl_fc, "%s_fc", prefix);
-		char *names[] = { "\" + share.disabled + \"", "LZO", "LZMA" };
-		showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 2", names, nvram_default_get(wl_fc, "0"));
+		char *names[] = { "\" + share.disabled + \"", "LZO", "LZ4", "LZMA" };
+		showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2", names, nvram_default_get(wl_fc, "0"));
 	}
 #endif
 
