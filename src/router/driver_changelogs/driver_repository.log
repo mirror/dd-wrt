@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4007 | brainslayer | 2018-03-22 18:43:54 +0100 (Thu, 22 Mar 2018) | 1 line
+
+mac80211: avoid changing skb truesize in A-MSDU aggregation
+------------------------------------------------------------------------
 r4006 | brainslayer | 2018-03-22 15:51:11 +0100 (Thu, 22 Mar 2018) | 1 line
 
 fix compiling if debugfs is disabled
