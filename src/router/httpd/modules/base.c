@@ -1529,6 +1529,15 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 			region_sa = 1;
 #endif
 		killall("udhcpc", SIGKILL);
+#ifdef HAVE_TMK
+#ifdef HAVE_CAMBRIA
+	eval("/sbin/kmtdefaults.sh", "noreboot");
+	do_ej(METHOD_GET, NULL, "Reboot.asp", wp);
+	websDone(wp, 200);
+	eval("reboot");
+	eval("event", "5", "1", "15");
+#endif
+#endif
 #ifdef HAVE_X86
 #ifdef HAVE_ERC
 		eval("nvram", "restore", "/etc/defaults/x86ree.backup");
