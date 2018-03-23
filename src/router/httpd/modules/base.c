@@ -1529,7 +1529,6 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 			region_sa = 1;
 #endif
 		killall("udhcpc", SIGKILL);
-		_sys_commit();
 #ifdef HAVE_X86
 #ifdef HAVE_ERC
 		eval("nvram", "restore", "/etc/defaults/x86ree.backup");
