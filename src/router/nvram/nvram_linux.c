@@ -24,6 +24,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
+#define FROM_NVRAM
 #include <typedefs.h>
 #include <bcmnvram.h>
 #include <shutils.h>

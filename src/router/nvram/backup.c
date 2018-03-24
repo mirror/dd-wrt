@@ -458,7 +458,7 @@ int nvram_restore(char *filename, int force)
 			}
 			if (c) {
 				nvram_close();
-				nvram_commit();
+				_nvram_commit();
 			}
 		} else {
 			fclose(fp);
