@@ -331,7 +331,7 @@ void nvram_clear(void)
 	NVRAMSPACE = nvram_size();
 	if (NVRAMSPACE < 0) {
 		fprintf(stderr, "nvram driver returns bogus space\n");
-		return -1;
+		return;
 	}
 	char *buf = (char *)malloc(NVRAMSPACE);
 
