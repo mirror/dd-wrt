@@ -39,7 +39,7 @@ static int NVRAMSPACE = NVRAM_SPACE;
 static int nvram_fd = -1;
 static char *nvram_buf = NULL;
 
-static int nvram_init(void)
+static int _nvram_init(void)
 {
 #if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
@@ -81,7 +81,7 @@ char *nvram_get(const char *name)
 	char *value = NULL;
 	unsigned long *off;
 
-	if (nvram_init())
+	if (_nvram_init())
 		return NULL;
 
 	if (!(off = malloc(count))) {
@@ -116,7 +116,7 @@ int nvram_getall(char *buf, int count)
 			return 0;
 		fclose(in);
 #endif
-		if ((ret = nvram_init())) {
+		if ((ret = _nvram_init())) {
 			return ret;
 		}
 	}
@@ -145,7 +145,7 @@ static int _nvram_set(const char *name, const char *value)
 	char *buf;
 	int ret = -1;
 
-	if (nvram_init())
+	if (_nvram_init())
 		return -1;
 
 	/* Wolf add - keep nvram varname to sane len - may prevent corruption */
@@ -218,7 +218,7 @@ int _nvram_commit(void)
 		return 1;
 	}
 	int ret = -1;
-	if (nvram_init())
+	if (_nvram_init())
 		return ret;
 
 	ret = ioctl(nvram_fd, NVRAM_MAGIC, NULL);
@@ -296,7 +296,7 @@ int nvram2file(char *varname, char *filename)
 
 int nvram_size(void)
 {
-	if (nvram_init())
+	if (_nvram_init())
 		return -1;
 	return NVRAMSPACE;
 }
@@ -304,7 +304,7 @@ int nvram_size(void)
 int nvram_used(int *space)
 {
 	char *name, *buf;
-	if (nvram_init())
+	if (_nvram_init())
 		return -1;
 
 	*space = NVRAMSPACE;
