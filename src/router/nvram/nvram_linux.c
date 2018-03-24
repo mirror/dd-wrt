@@ -38,39 +38,6 @@ static int NVRAMSPACE = NVRAM_SPACE;
 static int nvram_fd = -1;
 static char *nvram_buf = NULL;
 
-#ifndef HAVE_MICRO
-#include <pthread.h>
-static pthread_mutex_t nv_mutex;
-#define mutex_init() pthread_mutex_init(&nv_mutex,NULL);
-#define lock() pthread_mutex_lock(&nv_mutex);
-#define unlock() pthread_mutex_unlock(&nv_mutex);
-#else
-#define mutex_init()
-static void lock(void)
-{
-	FILE *in;
-	int lockwait = 0;
-	while ((in = fopen("/tmp/.nvlock", "rb")) != NULL) {
-		fclose(in);
-		lockwait++;
-		if (lockwait == 30) {
-			unlink("/tmp/.nvlock");	//something crashed, we fix it
-			break;
-		}
-		usleep(1000);
-	}
-	in = fopen("/tmp/.nvlock", "wb");
-	if (in) {
-		fprintf(in, "lock");
-		fclose(in);
-	}
-}
-
-static void unlock(void)
-{
-	unlink("/tmp/.nvlock");
-}
-#endif
 
 int nvram_init(void *unused)
 {
@@ -118,7 +85,6 @@ char *nvram_get(const char *name)
 			return NULL;
 		}
 	}
-	lock();
 
 	if (!(off = malloc(count))) {
 		goto out;
@@ -126,9 +92,6 @@ char *nvram_get(const char *name)
 
 	/* Get offset into mmap() space */
 	strcpy((char *)off, name);
-#ifndef HAVE_MICRO
-	msync(nvram_buf, NVRAMSPACE, MS_SYNC);
-#endif
 
 	count = read(nvram_fd, off, count);
 	if (count == sizeof(unsigned long))
@@ -141,7 +104,6 @@ char *nvram_get(const char *name)
 
 	free(off);
       out:;
-	unlock();
 	return value;
 }
 
@@ -163,11 +125,9 @@ int nvram_getall(char *buf, int count)
 	if (count == 0) {
 		return 0;
 	}
-	lock();
 	/* Get all variables */
 	*buf = '\0';
 	ret = read(nvram_fd, buf, count);
-	unlock();
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
 	return (ret == count) ? 0 : ret;
@@ -211,9 +171,7 @@ static int _nvram_set(const char *name, const char *value)
 		strcpy(buf, name);
 
 	count = strlen(buf) + 1;
-	lock();
 	ret = write(nvram_fd, buf, count);
-	unlock();
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
 
@@ -257,21 +215,12 @@ int nvram_unset(const char *name)
 	return v;
 }
 
-int nvram_commit(void)
+int _nvram_commit(void)
 {
 	if (nvram_match("flash_active", "1")) {
 		fprintf(stderr, "not allowed, flash process in progress");
 		return 1;
 	}
-#if defined(HAVE_WZRHPG300NH) || defined(HAVE_WHRHPGN) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_DIR825) || defined(HAVE_TEW632BRP) || defined(HAVE_TG2521) || defined(HAVE_WR1043)  || defined(HAVE_WRT400) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450) || defined(HAVE_DANUBE) || defined(HAVE_WR741) || defined(HAVE_NORTHSTAR) || defined(HAVE_DIR615I) || defined(HAVE_WDR4900) || defined(HAVE_VENTANA) || defined(HAVE_UBNTM)
-	eval("ledtool","1");
-#elif HAVE_LSX
-	//nothing
-#elif HAVE_XSCALE
-	//nothing
-#else
-	eval("ledtool","1");
-#endif
 	int ret;
 	if (nvram_fd < 0) {
 		if ((ret = nvram_init(NULL))) {
@@ -279,7 +228,6 @@ int nvram_commit(void)
 			return ret;
 		}
 	}
-	lock();
 
 	ret = ioctl(nvram_fd, NVRAM_MAGIC, NULL);
 
@@ -287,8 +235,6 @@ int nvram_commit(void)
 		fprintf(stderr, "%s(): failed\n", __func__);
 		perror(PATH_DEV_NVRAM);
 	}
-	sync();
-	unlock();
 	return ret;
 }
 
