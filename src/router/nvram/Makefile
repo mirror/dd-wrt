@@ -15,6 +15,20 @@
 
 include $(TOP)/.config
 
+ifeq ($(CONFIG_80211AC),y)
+CFLAGS	+= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
+else
+ifeq ($(CONFIG_MSSID),y)
+ifeq ($(CONFIG_BUFFALO),y)
+CFLAGS	+= -I. -I$(SRCBASE)/include.bcm -Wall
+else
+CFLAGS	+= -I. -I$(SRCBASE)/include.v24 -Wall
+endif
+else
+CFLAGS	+= -I. -I$(SRCBASE)/include.v23 -Wall
+endif
+endif
+
 CFLAGS	+= -I. -I$(TOP)/shared
 
 #CFLAGS	+= -g -DDEBUG
@@ -168,4 +182,3 @@ libnvram.so: nvram_linux.o nvram_convert.o backup.o
 
 convertnvram: convertnvram.o
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -lnvram
-
