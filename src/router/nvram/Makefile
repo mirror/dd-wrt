@@ -183,5 +183,3 @@ libnvram.so: nvram_linux.o nvram_convert.o backup.o
 convertnvram: convertnvram.o
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -lnvram
 
-nvram: main.o
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -lnvram

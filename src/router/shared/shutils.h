@@ -124,13 +124,14 @@ extern int get_ifname_unit(const char *ifname, int *unit, int *subunit);
  */
 char *strcat_r(const char *s1, const char *s2, char *buf);
 
+#ifndef FROM_NVRAM
 extern int dd_sprintf(char *str, const char *fmt, ...);
 
 extern int dd_snprintf(char *str, int len, const char *fmt, ...);
 
 #define sprintf(output,format,args...) dd_sprintf(output, format, ## args)
 #define snprintf(output,len,format,args...) dd_snprintf(output, len,format, ## args)
-
+#endif
 #ifdef MEMDEBUG
 
 void *mymalloc(int size, char *func);
