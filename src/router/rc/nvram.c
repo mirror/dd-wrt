@@ -111,6 +111,9 @@ static int nvram_main(int argc, char **argv)
 				nvram_unset(*argv);
 		} else if (!strncmp(*argv, "commit", 5)) {
 			nvram_commit();
+		} else if (!strncmp(*argv, "clear", 5) || !strncmp(*argv, "erase", 5)) {
+			nvram_clear();
+			nvram_commit();
 		} else if (!strncmp(*argv, "show", 4)
 			   || !strncmp(*argv, "getall", 6)) {
 			nvram_getall(buf, NVRAMSPACE);
