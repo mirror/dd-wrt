@@ -264,22 +264,8 @@ void shutdown_system(void)
 	kill(-1, SIGKILL);
 	sync();
 	unmount_fs();		// try it a second time, but consider that kill already could have reached init process
-
-	//before nvram commit check if partition has been erased by erase nvram
-	int mtd = getMTD("nvram");
-	char cmd[64];
-	char line[256];
-	sprintf(cmd, "strings /dev/mtdblock/%d | grep DD", mtd);
-	FILE *fp = popen(cmd, "r");
-	if (fp != NULL) {
-		while (fgets(line, sizeof(line) - 1, fp) != NULL) {
-			if (strstr(line, "DD")) {
-				nvram_seti("end_time", time(NULL));
-        			nvram_commit();
-			}
-		}
-		pclose(fp);
-	}
+	nvram_seti("end_time", time(NULL));
+	nvram_commit();
 
 }
 
