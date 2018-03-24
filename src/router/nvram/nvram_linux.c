@@ -26,6 +26,7 @@
 
 #include <typedefs.h>
 #include <bcmnvram.h>
+#include <shutils.h>
 #include <nvram_convert.h>
 
 #define PATH_DEV_NVRAM "/dev/nvram"
