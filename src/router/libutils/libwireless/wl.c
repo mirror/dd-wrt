@@ -2016,7 +2016,8 @@ int getWifiInfo(char *ifname, unsigned char *mac, int field)
 		si = (struct ieee80211req_sta_info *)cp;
 		if (!memcmp(&si->isi_macaddr[0], mac, 6)) {
 			close(s);
-			free(buf);
+			
+			int result = 0;
 
 			char turbo[32];
 			char *ifn = strdup(ifname);
@@ -2033,18 +2034,20 @@ int getWifiInfo(char *ifname, unsigned char *mac, int field)
 
 			switch (field) {
 			case INFO_RSSI:
-				return si->isi_noise + si->isi_rssi + nvram_default_geti(nb, 0);
+				result = si->isi_noise + si->isi_rssi + nvram_default_geti(nb, 0);
 			case INFO_NOISE:
-				return si->isi_noise + nvram_default_geti(nb, 0);
+				result = si->isi_noise + nvram_default_geti(nb, 0);
 			case INFO_UPTIME:
-				return si->isi_uptime;
+				result = si->isi_uptime;
 			case INFO_RXRATE:
-				return ((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) / 2) * t;
+				result = ((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) / 2) * t;
 			case INFO_TXRATE:
-				return ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) / 2) * t;
+				result = ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) / 2) * t;
 			default:
-				return 0;
+				result = 0;
 			}
+			free(buf);
+			return result;
 		}
 		if (!memcmp(&si->isi_macaddr[0], mac, 6))
 			break;
