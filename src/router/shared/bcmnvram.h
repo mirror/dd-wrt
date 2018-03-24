@@ -35,12 +35,6 @@ struct nvram_tuple {
 };
 
 /*
- * Initialize NVRAM access. May be unnecessary or undefined on certain
- * platforms.
- */
-extern int nvram_init(void *sbh);
-
-/*
  * Disable NVRAM access. May be unnecessary or undefined on certain
  * platforms.
  */
@@ -148,6 +142,15 @@ extern int nvram_unset(const char *name);
 
 /*
  * Commit NVRAM variables to permanent storage. All pointers to values
+ * may be invalid after a commit.
+ * NVRAM values are undefined after a commit.
+ * @return	0 on success and errno on failure
+ */
+extern int _nvram_commit(void);
+
+
+/*
+ * Commit NVRAM variables to permanent storage. All pointers to values, but triggers diag led
  * may be invalid after a commit.
  * NVRAM values are undefined after a commit.
  * @return	0 on success and errno on failure
