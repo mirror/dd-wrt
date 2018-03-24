@@ -33,7 +33,7 @@ CFLAGS	+= -I. -I$(TOP)/shared
 
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -s $(COPTS) $(MIPS16_OPT) -fPIC
-LDFLAGS += -L. -L$(TOP)/libutils -lshutils
+LDFLAGS += -L.
 ifeq ($(ARCH),powerpc)
 #CFLAGS  += -DHAVE_MAGICBOX -fpic
 endif
