@@ -38,10 +38,17 @@ static int NVRAMSPACE = NVRAM_SPACE;
 static int nvram_fd = -1;
 static char *nvram_buf = NULL;
 
-
-int nvram_init(void *unused)
+static int nvram_init(void)
 {
-	mutex_init();
+#if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
+	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
+	if (in == NULL) {
+		return -1;
+	}
+	fclose(in);
+#endif
+	if (nvram_fd >= 0)
+		return 0;
 
 	if ((nvram_fd = open(PATH_DEV_NVRAM, O_RDWR)) < 0) {
 		fprintf(stderr, "cannot open /dev/nvram\n");
@@ -73,18 +80,8 @@ char *nvram_get(const char *name)
 	char *value = NULL;
 	unsigned long *off;
 
-	if (nvram_fd < 0) {
-#if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
-		FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
-		if (in == NULL) {
-			return NULL;
-		}
-		fclose(in);
-#endif
-		if (nvram_init(NULL)) {
-			return NULL;
-		}
-	}
+	if (nvram_init())
+		return NULL;
 
 	if (!(off = malloc(count))) {
 		goto out;
@@ -118,7 +115,7 @@ int nvram_getall(char *buf, int count)
 			return 0;
 		fclose(in);
 #endif
-		if ((ret = nvram_init(NULL))) {
+		if ((ret = nvram_init())) {
 			return ret;
 		}
 	}
@@ -145,12 +142,10 @@ static int _nvram_set(const char *name, const char *value)
 {
 	size_t count = strlen(name) + 1;
 	char *buf;
-	int ret;
+	int ret = -1;
 
-	if (nvram_fd < 0)
-		if ((ret = nvram_init(NULL))) {
-			return ret;
-		}
+	if (nvram_init())
+		return -1;
 
 	/* Wolf add - keep nvram varname to sane len - may prevent corruption */
 	if (strlen(name) > 64) {
@@ -221,13 +216,9 @@ int _nvram_commit(void)
 		fprintf(stderr, "not allowed, flash process in progress");
 		return 1;
 	}
-	int ret;
-	if (nvram_fd < 0) {
-		if ((ret = nvram_init(NULL))) {
-			fprintf(stderr, "%s(): failed\n", __func__);
-			return ret;
-		}
-	}
+	int ret = -1;
+	if (nvram_init())
+		return ret;
 
 	ret = ioctl(nvram_fd, NVRAM_MAGIC, NULL);
 
@@ -304,26 +295,16 @@ int nvram2file(char *varname, char *filename)
 
 int nvram_size(void)
 {
-	int ret;
-	if (nvram_fd < 0) {
-		if ((ret = nvram_init(NULL))) {
-			fprintf(stderr, "%s(): failed\n", __func__);
-			return -1;
-		}
-	}
+	if (nvram_init())
+		return -1;
 	return NVRAMSPACE;
 }
 
 int nvram_used(int *space)
 {
 	char *name, *buf;
-	int ret;
-	if (nvram_fd < 0) {
-		if ((ret = nvram_init(NULL))) {
-			fprintf(stderr, "%s(): failed\n", __func__);
-			return ret;
-		}
-	}
+	if (nvram_init())
+		return -1;
 
 	*space = NVRAMSPACE;
 
