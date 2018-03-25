@@ -111,11 +111,11 @@ void start_check_sierrappp(void)
 void start_check_mbim(void)
 {
 #ifdef HAVE_REGISTER
-	if (registered_has_cap(27)) 
+	if (registered_has_cap(27))
 #endif
-{
+	{
 		// char *str;
-		// asprintf(&str, "/dev/%s", nvram_safe_get("3gctrl"));	// ???? no where set
+		// asprintf(&str, "/dev/%s", nvram_safe_get("3gctrl")); // ???? no where set
 		eval("/usr/sbin/mbim-status.sh");
 		// free(str);
 	}

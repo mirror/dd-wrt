@@ -2397,8 +2397,8 @@ void start_restore_defaults(void)
 	free_defaults();
 	if (!strlen(nvram_safe_get("http_username")) || nvram_match("http_username", "admin")) {
 		char passout[MD5_OUT_BUFSIZE];
-		nvram_set("http_username", zencrypt("root", passout));
-		nvram_set("http_passwd", zencrypt("admin", passout));
+		nvram_set("http_username", DEFAULT_PASS);
+		nvram_set("http_passwd", DEFAULT_USER);
 	}
 	if (restore_defaults) {
 		switch (brand) {
