@@ -372,6 +372,7 @@ void ej_show_cpufeatures(webs_t wp, int argc, char_t ** argv)
 
 		}
 	}
+	free(line);
 	fclose(fp);
 	if (result && strlen(result)) {
 		char buf[128];
