@@ -266,6 +266,7 @@ static int scan(struct unl *unl, int wdev, struct list_head *frequencies)
 	}
 
 	unl_genl_loop(unl, scan_event_cb, unl);
+	return ret;
 out:
 	unl_genl_unsubscribe(unl, "scan");
 	return ret;
