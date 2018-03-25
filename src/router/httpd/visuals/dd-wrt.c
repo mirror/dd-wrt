@@ -2446,7 +2446,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		showOptionsLabel(wp, "wl_basic.protmode", wl_protmode, "None CTS RTS/CTS", nvram_default_get(wl_protmode, "None"));
 		showrtssettings(wp, var);
 #ifdef HAVE_ATH9K
-		if (is_ath9k(prefix)) {
+		if (is_ath9k(prefix) && !is_mvebu(prefix)) {
 			char wl_fc[16];
 			sprintf(wl_fc, "%s_fc", var);
 			char *names[] = { "\" + share.disabled + \"", "LZO", "LZ4", "LZMA" };
@@ -3308,7 +3308,7 @@ if (has_airtime_fairness(prefix)) {
 	sprintf(wl_atf, "%s_atf", prefix);
 	showRadioDefaultOn(wp, "wl_basic.atf", wl_atf);
 }
-if (is_ath9k(prefix)) {
+if (is_ath9k(prefix) && !is_mvebu(prefix)) {
 	char wl_fc[16];
 	sprintf(wl_fc, "%s_fc", prefix);
 	char *names[] = { "\" + share.disabled + \"", "LZO", "LZ4", "LZMA" };
@@ -4299,7 +4299,7 @@ if (!strcmp(prefix, "wl2"))
 		sprintf(wl_atf, "%s_atf", prefix);
 		showRadioDefaultOn(wp, "wl_basic.atf", wl_atf);
 	}
-	if (is_ath9k(prefix)) {
+	if (is_ath9k(prefix) && !is_mvebu(prefix)) {
 		char wl_fc[16];
 		sprintf(wl_fc, "%s_fc", prefix);
 		char *names[] = { "\" + share.disabled + \"", "LZO", "LZ4", "LZMA" };
