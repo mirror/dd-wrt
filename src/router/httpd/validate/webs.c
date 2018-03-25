@@ -676,7 +676,7 @@ char *copytonv(webs_t wp, const char *fmt, ...)
 	va_end(args);
 
 	char *wl = websGetVar(wp, varbuf, NULL);
-	if (nvram_match("console_debug","1"))
+	if (nvram_match("console_debug", "1"))
 		fprintf(stderr, "save %s with value %s\n", varbuf, wl);
 	if (wl)
 		nvram_set(varbuf, wl);
@@ -4074,6 +4074,8 @@ void changepass(webs_t wp)
 	if (pass && value && strcmp(pass, TMP_PASSWD)
 	    && valid_name(wp, pass, NULL)) {
 		char passout[MD5_OUT_BUFSIZE];
+		if (nvram_match("http_username", DEFAULT_PASSWD))
+			nvram_seti("unblock", 1);
 		nvram_set("http_passwd", zencrypt(pass, passout));
 
 		eval("/sbin/setpasswd");
