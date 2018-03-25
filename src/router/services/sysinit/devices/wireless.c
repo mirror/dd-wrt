@@ -99,6 +99,22 @@ static char *has_device(char *dev)
 
 #define AR5416_AR9100_DEVID	0x000b
 
+static void load_mac80211(void)
+{
+
+	insmod("lzo_compress");
+	insmod("lzo_decompress");
+	insmod("lz4_compress");
+	insmod("lz4_decompress");
+	insmod("lzma_compress");
+	insmod("lzma_decompress");
+	insmod("compat");
+	insmod("compat_firmware_class");
+	insmod("cfg80211");
+	insmod("mac80211");
+
+}
+
 static void detect_wireless_devices(void)
 {
 	int loadath9k = 1;
@@ -224,25 +240,11 @@ static void detect_wireless_devices(void)
 		}
 	}
 #ifdef HAVE_ATH9K
-#ifndef HAVE_MADWIFI_MIMO
-	if (1)
-#else
-	if (nvram_match("mimo_driver", "ath9k"))
-#endif
 	{
 		if (loadath9k || loadath5k) {
 			fprintf(stderr, "load ATH9K 802.11n Driver\n");
+			load_mac80211();
 			// some are just for future use and not (yet) there
-			insmod("lzo_compress");
-			insmod("lzo_decompress");
-			insmod("lz4_compress");
-			insmod("lz4_decompress");
-			insmod("lzma_compress");
-			insmod("lzma_decompress");
-			insmod("compat");
-			insmod("compat_firmware_class");
-			insmod("cfg80211");
-			insmod("mac80211");
 			insmod("ath");
 #ifdef HAVE_ATH5K
 			if (loadath5k) {
@@ -262,27 +264,9 @@ static void detect_wireless_devices(void)
 			}
 			delete_ath9k_devices(NULL);
 		}
-	} else {
-#endif
-#ifdef HAVE_MADWIFI_MIMO
-		if (loadath9k) {
-			fprintf(stderr, "load ATH 802.11n Driver\n");
-			insmod("/lib/80211n/ath_mimo_hal.ko");
-			if (nvram_get("rate_control") != NULL) {
-				char rate[64];
-
-				sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));
-				insmod("/lib/80211n/ath_mimo_pci.ko");
-				insmod("/lib/80211n/ath_mimo_ahb.ko");
-			} else {
-				insmod("/lib/80211n/ath_mimo_pci.ko");
-				insmod("/lib/80211n/ath_mimo_ahb.ko");
-			}
-		}
-#endif
-#ifdef HAVE_ATH9K
 	}
 #endif
+
 #ifdef HAVE_ATH10K
 	fprintf(stderr, "load ATH/QCA 802.11ac Driver\n");
 	insmod("hwmon");
