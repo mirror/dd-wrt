@@ -104,15 +104,7 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
-	insmod("lzo_compress");
-	insmod("lzo_decompress");
-	insmod("lz4_compress");
-	insmod("lz4_decompress");
-	insmod("lzma_compress");
-	insmod("lzma_decompress");
-	insmod("compat");
-	insmod("cfg80211");
-	insmod("mac80211");
+	load_mac80211();
 	insmod("mwlwifi");
 	insmod("mwifiex");
 
