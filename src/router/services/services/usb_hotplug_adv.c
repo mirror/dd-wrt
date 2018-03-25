@@ -208,7 +208,7 @@ void start_hotplug_block(void)
 	strcpy(part, devp + 1);
 	optimize_block_device(devp + 1);
 
-	if (strncmp(part, "sd", 2) && strncmp(part, "mmc", 3) && strncmp(part, "hd", 2) && strncmp(part, "sr" ,2))
+	if (strncmp(part, "sd", 2) && strncmp(part, "mmc", 3) && strncmp(part, "hd", 2) && strncmp(part, "sr", 2))
 		return;
 
 	if (strlen(part) == 4 || strlen(part) == 7) {	// example: sr0, sda, hda or mmcblock0
