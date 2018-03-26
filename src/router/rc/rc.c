@@ -159,41 +159,25 @@ static int rc_main(int argc, char *argv[])
 static int erase_main(int argc, char *argv[])
 {
 	int ret = 0;
-#ifndef HAVE_RB500
-#if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
 	/* 
 	 * erase [device] 
 	 */
-	int brand = getRouterBrand();
-
-	if (brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_MOTOROLA_WE800G || brand == ROUTER_RT210W || brand == ROUTER_BUFFALO_WZRRSG54) {
-		if (argv[1] && strcmp(argv[1], "nvram")) {
-			fprintf(stderr, "Sorry, erasing nvram will turn this router into a brick\n");
+	if (argv[1]) {
+		if (!strcmp(argv[1], "nvram")) {
+			int brand = getRouterBrand();
+			if (brand == ROUTER_MOTOROLA || brand == ROUTER_MOTOROLA_V1 || brand == ROUTER_MOTOROLA_WE800G || brand == ROUTER_RT210W || brand == ROUTER_BUFFALO_WZRRSG54) {
+				fprintf(stderr, "Sorry, erasing nvram will turn this router into a brick\n");
+			} else {
+				nvram_clear();
+				nvram_commit();
+			}
 		}
+		ret = mtd_erase(argv[1]);
 	} else {
-		if (argv[1]) {
-			ret = mtd_erase(argv[1]);
-		} else {
-			fprintf(stderr, "usage: erase [device]\n");
-			ret = EINVAL;
-		}
-	}
+		fprintf(stderr, "usage: erase [device]\n");
+		ret = EINVAL;
 
-	/* 
-	 * write [path] [device] 
-	 */
-#else
-	if (argv[1] && strcmp(argv[1], "nvram")) {
-		fprintf(stderr, "Erasing configuration data...\n");
-		eval("mount", "/usr/local", "-o", "remount,rw");
-		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-		unlink("/tmp/nvram/.lock");	// delete nvram
-		// database
-		eval("rm", "-f", "/etc/nvram/*");	// delete nvram database
-		eval("mount", "/usr/local", "-o", "remount,ro");
 	}
-#endif
-#endif
 	return ret;
 
 }
