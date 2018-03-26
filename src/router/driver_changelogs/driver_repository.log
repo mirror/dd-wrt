@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r4031 | brainslayer | 2018-03-26 23:16:12 +0200 (Mon, 26 Mar 2018) | 1 line
+
+ath10k: add memory dump support QCA9984
+------------------------------------------------------------------------
+r4030 | brainslayer | 2018-03-26 23:15:21 +0200 (Mon, 26 Mar 2018) | 1 line
+
+ath10k: refactor ath10k_pci_dump_memory() in preparation for QCA9984 support
+------------------------------------------------------------------------
+r4029 | brainslayer | 2018-03-26 23:14:46 +0200 (Mon, 26 Mar 2018) | 1 line
+
+ath10k: Suppress "Unknown eventid: 36925" warnings
+------------------------------------------------------------------------
 r4028 | brainslayer | 2018-03-25 15:34:19 +0200 (Sun, 25 Mar 2018) | 1 line
 
 fix parameter doc
