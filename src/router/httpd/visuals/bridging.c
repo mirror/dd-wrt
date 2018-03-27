@@ -269,7 +269,7 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		char *port = word;
 		char *tag = strsep(&port, ">");
 		char *hairpin = port;
-		char *port = strsep(&hairpin, ">");
+		port = strsep(&hairpin, ">");
 
 		strsep(&prio, ">");
 		if (!tag || !port)
