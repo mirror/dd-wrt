@@ -27,14 +27,12 @@
 #include "libbridge_private.h"
 
 int br_socket_fd = -1;
-struct sysfs_class *br_class_net;
 
 int br_init(void)
 {
 	if ((br_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 		return errno;
 
-	br_class_net = sysfs_open_class("net");
 	return 0;
 }
 
@@ -42,7 +40,6 @@ int br_refresh(void)
 {
 	if (br_class_net) {
 		sysfs_close_class(br_class_net);
-		br_class_net = sysfs_open_class("net");
 	}
 	
 	return 0;
@@ -50,13 +47,10 @@ int br_refresh(void)
 
 void br_shutdown(void)
 {
-	sysfs_close_class(br_class_net);
-	br_class_net = NULL;
 	close(br_socket_fd);
 	br_socket_fd = -1;
 }
 
-#ifdef HAVE_LIBSYSFS
 /* If /sys/class/net/XXX/bridge exists then it must be a bridge */
 static int isbridge(const struct sysfs_class_device *dev) 
 {
@@ -97,7 +91,6 @@ static int new_foreach_bridge(int (*iterator)(const char *name, void *),
 
 	return count;
 }
-#endif
 
 /*
  * Old interface uses ioctl
@@ -143,11 +136,9 @@ int br_foreach_bridge(int (*iterator)(const char *, void *),
 		     void *arg)
 {
 	int ret;
-#ifdef HAVE_LIBSYSFS
 
 	ret = new_foreach_bridge(iterator, arg);
 	if (ret <= 0)
-#endif
 		ret = old_foreach_bridge(iterator, arg);
 
 	return ret;
