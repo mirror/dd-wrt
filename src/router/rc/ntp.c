@@ -145,7 +145,7 @@ static int do_ntp(void)		// called from ntp_main and
 #if defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_LAGUNA) || defined(HAVE_STORM) || (defined(HAVE_GATEWORX) && !defined(HAVE_NOP8670))
 	eval("hwclock", "-w", "-u");
 #endif
-	dd_syslog(LOG_ERR, "cyclic NTP Update success (servers %s)\n", servers);
+	dd_syslog(LOG_INFO, "cyclic NTP Update success (servers %s)\n", servers);
 	gettimeofday(&then, NULL);
 
 	if ((abs(now.tv_sec - then.tv_sec) > 100000000)) {
