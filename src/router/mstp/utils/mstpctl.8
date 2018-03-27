@@ -55,7 +55,7 @@ sets the port cost of the <port> in <bridge> to <cost>. Default is 0 (= auto).
 Enables/disables the admin edge state of the <port> in <bridge>, default is no.
 
 .B mstpctl setportautoedge <bridge> <port> {yes|no}
-Enables/disables the auto transition to/from edge state of the <port> in <bridge>, default is no.
+Enables/disables the auto transition to/from edge state of the <port> in <bridge>, default is yes.
 
 .B mstpctl setportp2p <bridge> <port> {yes|no|auto}
 Enables/disables the point2point detection mode of the <port> in <bridge>, default is auto.
@@ -103,5 +103,5 @@ will show detailed information about the <port> of the <bridge>'s MST instance w
 
 .SH AUTHOR
 The source code for mstpctl was written by Vitalii Demianets
-<vitas@nppfactor.kiev.ua>. This manpage was written by Satish Ashok
+<dvitasgs@gmail.com>. This manpage was written by Satish Ashok
 <sashok@cumulusnetworks.com> based on \fBbrctl\fP(8).
