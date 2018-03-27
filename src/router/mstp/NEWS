@@ -1,0 +1,41 @@
+mstpd: Multiple Spanning Tree Protocol Daemon
+=============================================
+
+Version: 0.0.6
+---------------------------------------------
+- Tagging this version as 0.0.6, since internally
+  versions are x.y.z, while the last 2 git tags
+  were 0.04 & 0.05
+- Fixed compilation on GCC 7
+- Default protocol version is RSTP since that is
+  what most people use. To use MSTP, users will need
+  to use `--setforcevers mstp`.
+- Various fixes to `ifupdown.sh` script
+  - Paul Donohue <git@PaulSD.com>
+- Small code fixes
+  - Lionel Flandrin <lflandrin@ereca.fr>
+
+Version: 0.05
+---------------------------------------------
+- [Internal] Integration with Travis-CI
+  - added shellcheck validation to shell scripts
+  - support for Debian's travis script (http://travis.debian.net/)
+- Build supports autotools
+  - initial autotools by Jonas Johansson <jonasj76@gmail.com>
+  - Paul Donohue <git@PaulSD.com>
+  - Gerson Fernando Budke <gerson.budke@intelbras.com.br>
+- Added support for packaging .deb & .rpm files
+  - Paul Donohue <git@PaulSD.com>
+  - Luca Boccassi <luca.boccassi@gmail.com>
+- Bumped default netlink socket buffers to 256k
+- Display the BPDU receive and transmit status info
+  by Ian Wilson <iwilson@brocade.com>
+- Support to build with musl libc
+- Improve compatibility with generic Bourne Shell
+  - Mantas Mikulėnas <grawity@gmail.com>
+  - Paul Donohue <git@PaulSD.com>
+- Various improvements in mstpd's shell scripts
+  - Paul Donohue <git@PaulSD.com>
+  - dvlemplgk <guenther.kelleter@devolo.de> 
+- Stop bridges on exit to prevent loops
+  - Felix Kaiser <felix.kaiser@fxkr.net>
