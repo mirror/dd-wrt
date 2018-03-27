@@ -180,7 +180,7 @@ void start_bridgesif(void)
 		char *port = word;
 		char *tag = strsep(&port, ">");
 		char *hairpin = port;
-		char *port = strsep(&hairpin, ">");
+		port = strsep(&hairpin, ">");
 
 		strsep(&prio, ">");
 		if (!tag || !port)
