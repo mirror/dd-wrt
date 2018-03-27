@@ -265,6 +265,7 @@ static int old_get_port_info(const char *brname, const char *port,
 	__jiffies_to_tv(&info->forward_delay_timer_value, 
 			i.forward_delay_timer_value);
 	__jiffies_to_tv(&info->hold_timer_value, i.hold_timer_value);
+	info->hairpin_mode = 0;
 	return 0;
 }
 
@@ -309,6 +310,7 @@ int br_get_port_info(const char *brname, const char *port,
 		 &info->forward_delay_timer_value);
 	fetch_tv(dev, BRPORT("hold_timer"),
 		 &info->hold_timer_value);
+	info->hairpin_mode = fetch_int(path, "hairpin_mode");
 	sysfs_close_class_device(dev);
 
 	return 0;
@@ -506,6 +508,11 @@ int br_enable_port_snooping(int enable)
 int br_set_path_cost(const char *bridge, const char *port, int cost)
 {
 	return port_set(bridge, port, "path_cost", cost, BRCTL_SET_PATH_COST);
+}
+
+int br_set_hairpin_mode(const char *bridge, const char *port, int hairpin_mode)
+{
+	return port_set(bridge, port, "hairpin_mode", hairpin_mode, 0);
 }
 
 static inline void __copy_fdb(struct fdb_entry *ent, 
