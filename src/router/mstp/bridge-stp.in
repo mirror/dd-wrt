@@ -1,0 +1,251 @@
+#!/bin/sh
+#
+# Configuration is in @bridgestpconffile@
+#
+# `/sbin/bridge-stp <bridge> <start|stop>` is called by the kernel when STP is
+# enabled/disabled on a bridge (via `brctl stp <bridge> <on|off>`).  The kernel
+# enables user_stp mode if that command returns 0, or enables kernel_stp mode if
+# that command returns any other value.
+#
+# If called with the above arguments, this script determines whether MSTP should
+# be used for the specified bridge (based on the "MSTP_BRIDGES" configuration
+# value), starts/stops mstpd if necessary, and calls
+# `mstpctl <addbridge|delbridge> <bridge>` to add/remove the bridge from mstpd
+# (possibly in a background job after a delay; see the comments in the code
+# below).  No further configuration is performed automatically by this script at
+# that time.  Additional configuration is usually performed by
+# @ifupdownfile@ (which calls `brctl stp <bridge> on`
+# to trigger this script to start mstpd if necessary).
+#
+# This script is not intended to be called with the above arguments directly
+# (not via the kernel).  However, this script may be called directly as
+# `mstpctl_restart_config` or `/sbin/bridge-stp restart_config` to reconfigure
+# (using `@configbridgefile@ <bridge>` or an alternative command specified using
+# a "config_cmd" configuration value) all existing bridges that are using mstpd,
+# or called as `mstp_restart` or `/sbin/bridge-stp restart` to restart mstpd and
+# then reconfigure all bridges that are using it.
+#
+# To avoid kernel deadlocks, this script (and any foreground processes it runs)
+# must not make any changes (using brctl, ifconfig, ip, /sys/..., etc) to the
+# bridge or any associated kernel network interfaces in any code paths that are
+# used when this script is called by the kernel.
+
+# Parse arguments.
+CalledAs="$(basename "$0")"
+if [ "$CalledAs" = 'mstpctl_restart_config' ]; then
+    action='restart_config'
+elif [ $# -eq 1 ] && [ "$1" = 'restart_config' ]; then
+    action='restart_config'
+elif [ "$CalledAs" = 'mstp_restart' ]; then
+    action='restart'
+elif [ $# -eq 1 ] && [ "$1" = 'restart' ]; then
+    action='restart'
+elif [ $# -eq 2 ] && [ "$2" = 'start' ]; then
+    action='start'
+    bridge="$1"
+elif [ $# -eq 2 ] && [ "$2" = 'stop' ]; then
+    action='stop'
+    bridge="$1"
+else
+    echo "Usage: $0 <bridge> {start|stop}" >&2
+    echo "   or: $0 {restart|restart_config}" >&2
+    exit 1
+fi
+
+# Make sure this script is being run as root.
+if [ "$(id -u)" != '0' ]; then
+    echo 'This script must be run as root' >&2
+    exit 1
+fi
+
+# Ensure that we have a sane umask.
+umask 022
+
+# Ensure that we have a sane PATH.
+PATH='/sbin:/usr/sbin:/bin:/usr/bin'
+export PATH
+
+# Define some relevant paths.
+mstpctl='@mstpctlfile@'
+mstpd='@mstpdfile@'
+config_cmd='@configbridgefile@'
+pid_file='@mstpdpidfile@'
+net_dir='/sys/class/net'
+
+# Set default config values.
+# If 'y', mstpd will be automatically started/stopped as needed.
+MANAGE_MSTPD='y'
+# Arguments to pass to mstpd when it is started.
+MSTPD_ARGS=''
+# A space-separated list of bridges for which MSTP should be used in place of
+# the kernel's STP implementation.  If empty, MSTP will be used for all bridges.
+MSTP_BRIDGES=''
+
+# Read the config.
+if [ -e '@bridgestpconffile@' ]; then
+    . '@bridgestpconffile@'
+fi
+
+# Ensure that mstpctl and mstpd exist and are executable.
+if [ -z "$mstpctl" ] || [ ! -x "$mstpctl" ]; then
+    echo "mstpctl binary does not exist or is not executable" >&2
+    exit 2
+fi
+if [ "$MANAGE_MSTPD" = 'y' ]; then
+    if [ -z "$mstpd" ] || [ ! -x "$mstpd" ]; then
+        echo "mstpd binary does not exist or is not executable" >&2
+        exit 2
+    fi
+fi
+
+# Determine whether mstpd should manage STP for the specified bridge.
+# Returns 0 if mstpd should manage STP for the specified bridge, or 1 if mstpd
+# should not manage STP for the specified bridge.
+is_mstp_bridge()
+{
+    if [ -z "$MSTP_BRIDGES" ]; then
+        return 0
+    fi
+    for b in $MSTP_BRIDGES; do
+        if [ "$1" = "$b" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+case "$action" in
+    start)
+        # Make sure the specified bridge is valid.
+        if [ ! -d "$net_dir/$bridge/bridge" ]; then
+            echo "'$bridge' is not a bridge" >&2
+            exit 1
+        fi
+
+        # Determine whether the specified bridge should use MSTP.
+        if ! is_mstp_bridge "$bridge"; then
+            echo "Ignoring bridge '$bridge' that is not listed in \$MSTP_BRIDGES"
+            exit 10
+        fi
+
+        # Start mstpd if necessary.
+        if ! pidof -c -s mstpd >/dev/null; then
+            if [ "$MANAGE_MSTPD" != 'y' ]; then
+                echo 'mstpd is not running' >&2
+                exit 3
+            fi
+            echo 'mstpd is not running'
+            echo 'Starting mstpd ...'
+            "$mstpd" $MSTPD_ARGS || exit 3
+
+            # Due to kernel locks, mstpd will not respond to mstpctl until after
+            # this script exits, so `mstpctl addbridge <bridge>` must be run as
+            # an asynchronous background process.
+            # On some systems (eg. OpenWrt), mstpctl will fail if it is called
+            # too soon after mstpd is started, so the call must also be delayed.
+            #
+            # To avoid race conditions, any scripts that configure the bridge
+            # immediately after calling `brctl stp <bridge> on` should
+            # explicitly call `mstpctl addbridge <bridge>` themselves before
+            # configuring the bridge.  (It should not hurt to call
+            # `mstpctl addbridge <bridge>` multiple times.)
+            #
+            # If `mstpctl addbridge` fails, we could turn STP off and back on
+            # again to fall back to kernel STP mode.  However, that could cause
+            # an infinite loop if mstpd is being started successfully but is
+            # then dying before or when mstpctl connects to it.  To avoid that
+            # possibility, we instead simply turn STP off if `mstpctl addbridge`
+            # fails.
+            ( sleep 1 ; "$mstpctl" addbridge "$bridge" || brctl stp "$bridge" off ) &
+            exit 0
+        fi
+
+        # Add bridge to mstpd.
+        "$mstpctl" addbridge "$bridge" || exit 3
+        ;;
+    stop)
+        # Remove bridge from mstpd.
+        "$mstpctl" delbridge "$bridge" || exit 3
+
+        # Exit if mstpd should not be stopped when it is no longer used.
+        if [ "$MANAGE_MSTPD" != 'y' ]; then
+            exit 0
+        fi
+
+        # Exit if any other bridges are using mstpd.
+        for bridge in $(ls "$net_dir"); do
+            # Ignore interfaces that are not bridges.
+            if [ ! -e "$net_dir/$bridge/bridge/stp_state" ]; then
+                continue
+            fi
+
+            # Ignore bridges that should not use MSTP.
+            if ! is_mstp_bridge "$bridge"; then
+                continue
+            fi
+
+            # If bridge is in user_stp mode, then it is probably using MSTP.
+            if [ "$State" = '2' ]; then
+                exit 0
+            fi
+        done
+
+        # Kill mstpd, since no bridges are currently using it.
+        kill $(pidof -c mstpd)
+        ;;
+    restart|restart_config)
+        if [ "$action" = 'restart' ]; then
+            # Kill mstpd.
+            pids="$(pidof -c mstpd)" ; Err=$?
+            if [ $Err -eq 0 ]; then
+                echo 'Stopping mstpd ...'
+                kill $pids
+            fi
+
+            # Start mstpd.
+            echo 'Starting mstpd ...'
+            "$mstpd" $MSTPD_ARGS || exit 3
+        fi
+
+        # Reconfigure bridges.
+        for bridge in $(ls "$net_dir"); do
+            # Ignore interfaces that are not bridges.
+            if [ ! -e "$net_dir/$bridge/bridge/stp_state" ]; then
+                continue
+            fi
+
+            # Ignore bridges that should not use MSTP.
+            if ! is_mstp_bridge "$bridge"; then
+                continue
+            fi
+
+            # Skip bridges that have STP disabled.
+            read State < "$net_dir/$bridge/bridge/stp_state"
+            if [ "$State" = '0' ]; then
+                echo
+                echo "Skipping bridge '$bridge' that has STP disabled."
+                echo "To configure this bridge to use MSTP, run:"
+                echo "brctl stp '$bridge' on"
+                continue
+            fi
+
+            # Skip bridges that are not in user_stp mode.
+            if [ "$State" != '2' ]; then
+                echo
+                echo "Skipping bridge '$bridge' that is not in user_stp mode."
+                echo "To reconfigure this bridge to use MSTP, run:"
+                echo "brctl stp '$bridge' off ; brctl stp '$bridge' on"
+                continue
+            fi
+
+            # Add bridge to mstpd and configure.
+            echo "Adding/configuring bridge '$bridge' ..."
+            "$mstpctl" addbridge "$bridge" || continue
+            if [ -x "$config_cmd" ] || type "$config_cmd" 2>/dev/null >/dev/null ; then
+                "$config_cmd" "$bridge"
+            fi
+        done
+        echo
+        echo 'Done'
+        ;;
+esac

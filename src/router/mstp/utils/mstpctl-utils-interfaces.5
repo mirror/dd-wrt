@@ -40,6 +40,7 @@ iface br0 inet static
     netmask 255.255.255.0
     mstpctl_ports swp1 swp2 swp3
     mstpctl_stp on
+    mstpctl_maxwait auto
     mstpctl_maxage 20
     mstpctl_fdelay 15
     mstpctl_maxhops 20
@@ -52,8 +53,8 @@ iface br0 inet static
     mstpctl_portrestrrole swp1=no swp2=no
     mstpctl_bpduguard swp1=no swp2=no
     mstpctl_portrestrtcn swp1=no swp2=no
-    mstpctl_treeprio 32768
-    mstpctl_treeportprio swp3=128
+    mstpctl_treeprio 8
+    mstpctl_treeportprio swp3=8
     mstpctl_hello 2
     mstpctl_portnetwork swp1=no
 
@@ -80,6 +81,13 @@ the expressions that
 follow after "regex" until either the end or a "noregex" statement
 is reached.
 .SS
+.TP
+.BI mstpctl_stp " yes|no"
+turn spanning tree protocol on/off, default is no.
+.TP
+.BI mstpctl_maxwait " time|auto"
+set max time in seconds to wait for initial STP convergence before
+allowing ifup to exit, default is auto (=\fIfdelay\fP*2+1).
 .TP
 .BI mstpctl_maxage " time"
 set max message age to \fItime\fP seconds, default is 20.
@@ -108,7 +116,7 @@ Enables/disables the admin edge state of the \fIport\fP, default is no.
 .TP
 .BI mstpctl_portautoedge " port yes|no"
 Enables/disables the auto transition to/from edge state of the \fIport\fP,
-default is no.
+default is yes.
 .TP
 .BI mstpctl_portp2p " port yes|no|auto"
 Enables/disables the point2point detection mode of the \fIport\fP,
@@ -135,10 +143,6 @@ sets the ethernet (MAC) address ageing \fItime\fP, in seconds. Used only when pr
 .TP
 .BI mstpctl_portnetwork " port yes|no"
 Enables/disables the bridge assurance capability for a \fIport\fP,
-default is no.
-.TP
-.BI mstpctl_stp " state"
-turn spanning tree protocol on/off, \fIstate\fP values are no/yes,
 default is no.
 .RE
 .SH FILES
