@@ -179,8 +179,8 @@ void start_bridgesif(void)
 	foreach(word, wordlist, next) {
 		char *port = word;
 		char *tag = strsep(&port, ">");
-		char *prio = port;
-		char *hairpin = strsep(&prio, ">");
+		char *hairpin = port;
+		char *port = strsep(&hairpin, ">");
 
 		strsep(&prio, ">");
 		if (!tag || !port)
