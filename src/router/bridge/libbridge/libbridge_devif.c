@@ -22,70 +22,55 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <dirent.h>
 #include <sys/fcntl.h>
 
 #include "libbridge.h"
 #include "libbridge_private.h"
 
-#ifdef HAVE_LIBSYSFS
-/* Given two two character "0a" convert it to a byte */
-static unsigned char getoctet(const char *cp) 
+static FILE *fpopen(const char *dir, const char *name)
 {
-	char t[3] = { cp[0], cp[1], 0 };
-	return strtoul(t, NULL, 16);
+	char path[SYSFS_PATH_MAX];
+
+	snprintf(path, SYSFS_PATH_MAX, "%s/%s", dir, name);
+	return fopen(path, "r");
 }
 
-#define BRIDGEATTR(_a)	SYSFS_BRIDGE_ATTR "/" _a
-#define BRPORT(_a)	SYSFS_BRIDGE_PORT_ATTR "/" _a
-
-static void fetch_id(struct sysfs_class_device *dev,
-		     const char *name, struct bridge_id *id)
+static void fetch_id(const char *dev, const char *name, struct bridge_id *id)
 {
-	struct sysfs_attribute *attr;
-	
-	attr = sysfs_get_classdev_attr(dev, name);
-	if (!attr) {
-		dprintf("Can't find attribute %s/%s\n", dev->path, name);
-		return;
-	}
+	FILE *f = fpopen(dev, name);
 
-	if (strlen(attr->value) < 17) 
-		dprintf("Bad format for %s: '%s'\n", name, attr->value);
+	if (!f)
+		fprintf(stderr, "%s: %s\n", dev, strerror(errno));
 	else {
-		const char *cp = attr->value;
-		id->prio[0] = getoctet(cp); cp += 2;
-		id->prio[1] = getoctet(cp); cp += 3;
-		id->addr[0] = getoctet(cp); cp += 2;
-		id->addr[1] = getoctet(cp); cp += 2;
-		id->addr[2] = getoctet(cp); cp += 2;
-		id->addr[3] = getoctet(cp); cp += 2;
-		id->addr[4] = getoctet(cp); cp += 2;
-		id->addr[5] = getoctet(cp);
+		fscanf(f, "%2hhx%2hhx.%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx",
+		       &id->prio[0], &id->prio[1],
+		       &id->addr[0], &id->addr[1], &id->addr[2],
+		       &id->addr[3], &id->addr[4], &id->addr[5]);
+		fclose(f);
 	}
-}
-
-/* Get a time value out of sysfs */
-static void fetch_tv(struct sysfs_class_device *dev,
-		     const char *name,
-		     struct timeval *tv)
-{
-	struct sysfs_attribute *attr;
-
-	attr = sysfs_get_classdev_attr(dev, name);
-	if (attr)
-		__jiffies_to_tv(tv, strtoul(attr->value, NULL, 0));
-
 }
 
 /* Fetch an integer attribute out of sysfs. */
-static int fetch_int(struct sysfs_class_device *dev, const char *name)
+static int fetch_int(const char *dev, const char *name)
 {
-	struct sysfs_attribute *attr;
+	FILE *f = fpopen(dev, name);
+	int value = -1;
 
-	attr = sysfs_get_classdev_attr(dev, name);
-	return attr ? strtol(attr->value, NULL, 0) : 0;
+	if (!f) 
+		return 0;
+
+	fscanf(f, "%i", &value);
+	fclose(f);
+	return value;
 }
-#endif
+
+/* Get a time value out of sysfs */
+static void fetch_tv(const char *dev, const char *name, 
+		    struct timeval *tv)
+{
+	__jiffies_to_tv(tv, fetch_int(dev, name));
+}
 
 /*
  * Convert device name to an index in the list of ports in bridge.
@@ -172,55 +157,44 @@ static int old_get_bridge_info(const char *bridge, struct bridge_info *info)
  */
 int br_get_bridge_info(const char *bridge, struct bridge_info *info)
 {
-#ifdef HAVE_LIBSYSFS
-	struct sysfs_class_device *dev;
+	DIR *dir;
 	char path[SYSFS_PATH_MAX];
 
-	if (!br_class_net) 
-		goto fallback;
-
-	dev = sysfs_get_class_device(br_class_net, bridge);
-	if (!dev) {
-		dprintf("get_class_device '%s' failed\n", bridge);
-		goto fallback;
-	}
-
-	snprintf(path, SYSFS_PATH_MAX, "%s/bridge", dev->path);
-	if (sysfs_path_is_dir(path)) {
+	snprintf(path, SYSFS_PATH_MAX, SYSFS_CLASS_NET "%s/bridge", bridge);
+	dir = opendir(path);
+	if (dir == NULL) {
 		dprintf("path '%s' is not a directory\n", path);
-		sysfs_close_class_device(dev);
 		goto fallback;
 	}
 
 	memset(info, 0, sizeof(*info));
-	fetch_id(dev, BRIDGEATTR("root_id"), &info->designated_root);
-	fetch_id(dev, BRIDGEATTR("bridge_id"), &info->bridge_id);
-	info->root_path_cost = fetch_int(dev, BRIDGEATTR("root_path_cost"));
-	fetch_tv(dev, BRIDGEATTR("max_age"), &info->max_age);
-	fetch_tv(dev, BRIDGEATTR("hello_time"), &info->hello_time);
-	fetch_tv(dev, BRIDGEATTR("forward_delay"), &info->forward_delay);
-	fetch_tv(dev, BRIDGEATTR("max_age"), &info->bridge_max_age);
-	fetch_tv(dev, BRIDGEATTR("hello_time"), &info->bridge_hello_time);
-	fetch_tv(dev, BRIDGEATTR("forward_delay"), &info->bridge_forward_delay);
-	fetch_tv(dev, BRIDGEATTR("ageing_time"), &info->ageing_time);
-	fetch_tv(dev, BRIDGEATTR("hello_timer"), &info->hello_timer_value);
-	fetch_tv(dev, BRIDGEATTR("tcn_timer"), &info->tcn_timer_value);
-	fetch_tv(dev, BRIDGEATTR("topology_change_timer"), 
+	fetch_id(path, "root_id", &info->designated_root);
+	fetch_id(path, "bridge_id", &info->bridge_id);
+	info->root_path_cost = fetch_int(path, "root_path_cost");
+	fetch_tv(path, "max_age", &info->max_age);
+	fetch_tv(path, "hello_time", &info->hello_time);
+	fetch_tv(path, "forward_delay", &info->forward_delay);
+	fetch_tv(path, "max_age", &info->bridge_max_age);
+	fetch_tv(path, "hello_time", &info->bridge_hello_time);
+	fetch_tv(path, "forward_delay", &info->bridge_forward_delay);
+	fetch_tv(path, "ageing_time", &info->ageing_time);
+	fetch_tv(path, "hello_timer", &info->hello_timer_value);
+	fetch_tv(path, "tcn_timer", &info->tcn_timer_value);
+	fetch_tv(path, "topology_change_timer", 
 		 &info->topology_change_timer_value);;
-	fetch_tv(dev, BRIDGEATTR("gc_timer"), &info->gc_timer_value);
+	fetch_tv(path, "gc_timer", &info->gc_timer_value);
 
-	info->root_port = fetch_int(dev, BRIDGEATTR("root_port"));
-	info->stp_enabled = fetch_int(dev, BRIDGEATTR("stp_state"));
-	info->topology_change = fetch_int(dev, BRIDGEATTR("topology_change"));
-	info->topology_change_detected = fetch_int(dev, 
-						   BRIDGEATTR("topology_change_detected"));
-	sysfs_close_class_device(dev);
+	info->root_port = fetch_int(path, "root_port");
+	info->stp_enabled = fetch_int(path, "stp_state");
+	info->topology_change = fetch_int(path, "topology_change");
+	info->topology_change_detected = fetch_int(path, "topology_change_detected");
 
+	closedir(dir);
 	return 0;
 
 fallback:
-#endif
 	return old_get_bridge_info(bridge, info);
+
 }
 
 static int old_get_port_info(const char *brname, const char *port,
@@ -275,48 +249,53 @@ static int old_get_port_info(const char *brname, const char *port,
 int br_get_port_info(const char *brname, const char *port, 
 		     struct port_info *info)
 {
-#ifdef HAVE_LIBSYSFS
-	struct sysfs_class_device *dev;
+	DIR *d;
 	char path[SYSFS_PATH_MAX];
 
-	if (!br_class_net) 
+	snprintf(path, SYSFS_PATH_MAX, SYSFS_CLASS_NET "%s/brport", port);
+	d = opendir(path);
+	if (!d)
 		goto fallback;
-
-	dev = sysfs_get_class_device(br_class_net, port);
-	if (!dev)
-		goto fallback;
-
-	snprintf(path, SYSFS_PATH_MAX, "%s/brport", dev->path);
-	if (sysfs_path_is_dir(path)) {
-		sysfs_close_class_device(dev);
-		goto fallback;
-	}
 
 	memset(info, 0, sizeof(*info));
 
-	fetch_id(dev, BRPORT("designated_root"), &info->designated_root);
-	fetch_id(dev, BRPORT("designated_bridge"), &info->designated_bridge);
-	info->port_no = fetch_int(dev, BRPORT("port_no"));
-	info->port_id = fetch_int(dev, BRPORT("port_id"));
-	info->designated_port = fetch_int(dev, BRPORT("designated_port"));
-	info->path_cost = fetch_int(dev, BRPORT("path_cost"));
-	info->designated_cost = fetch_int(dev, BRPORT("designated_cost"));
-	info->state = fetch_int(dev, BRPORT("state"));
-	info->top_change_ack = fetch_int(dev, BRPORT("change_ack"));
-	info->config_pending = fetch_int(dev, BRPORT("config_pending"));
-	fetch_tv(dev, BRPORT("message_age_timer"), 
-		 &info->message_age_timer_value);
-	fetch_tv(dev, BRPORT("forward_delay_timer"),
-		 &info->forward_delay_timer_value);
-	fetch_tv(dev, BRPORT("hold_timer"),
-		 &info->hold_timer_value);
+	fetch_id(path, "designated_root", &info->designated_root);
+	fetch_id(path, "designated_bridge", &info->designated_bridge);
+	info->port_no = fetch_int(path, "port_no");
+	info->port_id = fetch_int(path, "port_id");
+	info->designated_port = fetch_int(path, "designated_port");
+	info->path_cost = fetch_int(path, "path_cost");
+	info->designated_cost = fetch_int(path, "designated_cost");
+	info->state = fetch_int(path, "state");
+	info->top_change_ack = fetch_int(path, "change_ack");
+	info->config_pending = fetch_int(path, "config_pending");
+	fetch_tv(path, "message_age_timer", &info->message_age_timer_value);
+	fetch_tv(path, "forward_delay_timer", &info->forward_delay_timer_value);
+	fetch_tv(path, "hold_timer", &info->hold_timer_value);
 	info->hairpin_mode = fetch_int(path, "hairpin_mode");
-	sysfs_close_class_device(dev);
+
+	closedir(d);
 
 	return 0;
 fallback:
-#endif
 	return old_get_port_info(brname, port, info);
+}
+
+static int set_sysfs(const char *path, unsigned long value)
+{
+	int fd, ret = 0, cc;
+	char buf[32];
+
+	fd = open(path, O_WRONLY);
+	if (fd < 0)
+		return -1;
+
+	cc = snprintf(buf, sizeof(buf), "%lu\n", value);
+	if (write(fd, buf, cc) < 0)
+		ret = -1;
+	close(fd);
+
+	return ret;
 }
 
 
@@ -324,26 +303,21 @@ static int br_set(const char *bridge, const char *name,
 		  unsigned long value, unsigned long oldcode)
 {
 	int ret = -1;
-#ifdef HAVE_LIBSYSFS
-	struct sysfs_class_device *dev;
+	char path[SYSFS_PATH_MAX];
 
-	dev = sysfs_get_class_device(br_class_net, bridge);
-	if (dev) {
-		struct sysfs_attribute *attr;
-		char buf[32];
-		char path[SYSFS_PATH_MAX];
+	snprintf(path, SYSFS_PATH_MAX, SYSFS_CLASS_NET "%s/bridge/%s",
+		 bridge, name);
 
-		snprintf(buf, sizeof(buf), "%ld\n", value);
-		snprintf(path, SYSFS_PATH_MAX, "%s/bridge/%s", dev->path, name);
+	if ((ret = set_sysfs(path, value)) < 0) {
+		/* fallback to old ioctl */
+		struct ifreq ifr;
+		unsigned long args[4] = { oldcode, value, 0, 0 };
 
-		attr = sysfs_open_attribute(path);
-		if (attr) {
-			ret = sysfs_write_attribute(attr, buf, strlen(buf));
-			sysfs_close_attribute(attr);
-		}
-		sysfs_close_class_device(dev);
+		strncpy(ifr.ifr_name, bridge, IFNAMSIZ);
+		ifr.ifr_data = (char *) &args;
+		ret = ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr);
 	} else
-#endif
+
 	{
 		struct ifreq ifr;
 		unsigned long args[4] = { oldcode, value, 0, 0 };
@@ -395,27 +369,25 @@ static int port_set(const char *bridge, const char *ifname,
 		    const char *name, unsigned long value, 
 		    unsigned long oldcode)
 {
-	int ret = -1;
-#ifdef HAVE_LIBSYSFS
-	struct sysfs_class_device *dev;
+	int ret;
+	char path[SYSFS_PATH_MAX];
 
-	dev = sysfs_get_class_device(br_class_net, ifname);
-	if (dev) {
-		struct sysfs_attribute *attr;
-		char path[SYSFS_PATH_MAX];
-		char buf[32];
+	snprintf(path, SYSFS_PATH_MAX, SYSFS_CLASS_NET "%s/brport/%s", ifname, name);
 
-		sprintf(buf, "%ld", value);
-		snprintf(path, SYSFS_PATH_MAX, "%s/brport/%s", dev->path, name);
+	if ((ret = set_sysfs(path, value)) < 0) {
+		int index = get_portno(bridge, ifname);
 
-		attr = sysfs_open_attribute(path);
-		if (attr) {
-			ret = sysfs_write_attribute(attr, buf, strlen(buf));
-			sysfs_close_attribute(attr);
+		if (index < 0)
+			ret = index;
+		else {
+			struct ifreq ifr;
+			unsigned long args[4] = { oldcode, index, value, 0 };
+			
+			strncpy(ifr.ifr_name, bridge, IFNAMSIZ);
+			ifr.ifr_data = (char *) &args;
+			ret = ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr);
 		}
-		sysfs_close_class_device(dev);
-	} else
-#endif
+	} else 
 	{
 		int index = get_portno(bridge, ifname);
 
@@ -527,30 +499,19 @@ static inline void __copy_fdb(struct fdb_entry *ent,
 int br_read_fdb(const char *bridge, struct fdb_entry *fdbs, 
 		unsigned long offset, int num)
 {
-	int i, fd = -1, n;
+	FILE *f;
+	int i, n;
 	struct __fdb_entry fe[num];
-#ifdef HAVE_LIBSYSFS
-	struct sysfs_class_device *dev;
+	char path[SYSFS_PATH_MAX];
 	
 	/* open /sys/class/net/brXXX/brforward */
-	if (br_class_net &&
-	    (dev = sysfs_get_class_device(br_class_net, (char *) bridge))) {
-		char path[SYSFS_PATH_MAX];
-
-		snprintf(path, SYSFS_PATH_MAX, "%s/%s", dev->path, 
-			 SYSFS_BRIDGE_FDB);
-		fd = open(path, O_RDONLY, 0);
-	}
-
-	if (fd != -1) {
-		/* read records from file */
-		lseek(fd, offset*sizeof(struct __fdb_entry), SEEK_SET);
-		n = read(fd, fe, num*sizeof(struct __fdb_entry));
-		if (n > 0)
-			n /= sizeof(struct __fdb_entry);
-	} else
-#endif
-	{
+	snprintf(path, SYSFS_PATH_MAX, SYSFS_CLASS_NET "%s/brforward", bridge);
+	f = fopen(path, "r");
+	if (f) {
+		fseek(f, offset*sizeof(struct __fdb_entry), SEEK_SET);
+		n = fread(fe, sizeof(struct __fdb_entry), num, f);
+		fclose(f);
+	} else {
 		/* old kernel, use ioctl */
 		unsigned long args[4] = { BRCTL_GET_FDB_ENTRIES,
 					  (unsigned long) fe,
@@ -574,8 +535,5 @@ int br_read_fdb(const char *bridge, struct fdb_entry *fdbs,
 	for (i = 0; i < n; i++) 
 		__copy_fdb(fdbs+i, fe+i);
 
-	if (fd > 0)
-		close(fd);
-	
 	return n;
 }
