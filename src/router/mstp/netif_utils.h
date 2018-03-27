@@ -20,7 +20,7 @@
   file called LICENSE.
 
   Authors: Srinivas Aji <Aji_Srinivas@emc.com>
-  Authors: Vitalii Demianets <vitas@nppfactor.kiev.ua>
+  Authors: Vitalii Demianets <dvitasgs@gmail.com>
 
 ******************************************************************************/
 
@@ -39,5 +39,8 @@ int ethtool_get_speed_duplex(char *ifname, int *speed, int *duplex);
 bool is_bridge(char *if_name);
 
 int get_bridge_portno(char *if_name);
+
+char *index_to_name(int index, char *name);
+char *index_to_port_name(int index, char *name);
 
 #endif /* NETIF_UTILS_H */

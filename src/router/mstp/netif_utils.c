@@ -20,7 +20,7 @@
   file called LICENSE.
 
   Authors: Srinivas Aji <Aji_Srinivas@emc.com>
-  Authors: Vitalii Demianets <vitas@nppfactor.kiev.ua>
+  Authors: Vitalii Demianets <dvitasgs@gmail.com>
 
 ******************************************************************************/
 
@@ -38,6 +38,10 @@
 #include <linux/sockios.h>
 
 #include "log.h"
+
+#ifndef SYSFS_CLASS_NET
+#define SYSFS_CLASS_NET "/sys/class/net"
+#endif
 
 static int netsock = -1;
 
@@ -119,20 +123,30 @@ int ethtool_get_speed_duplex(char *ifname, int *speed, int *duplex)
     return 0;
 }
 
+char *index_to_name(int index, char *name)
+{
+    return if_indextoname(index, name);
+}
+
+char *index_to_port_name(int index, char *name)
+{
+    return if_indextoname(index, name);
+}
+
 /********* Sysfs based utility functions *************/
 
 /* This sysfs stuff might break with interface renames */
 bool is_bridge(char *if_name)
 {
     char path[32 + IFNAMSIZ];
-    sprintf(path, "/sys/class/net/%s/bridge", if_name);
+    sprintf(path, SYSFS_CLASS_NET "/%s/bridge", if_name);
     return (0 == access(path, R_OK));
 }
 
 int get_bridge_portno(char *if_name)
 {
     char path[32 + IFNAMSIZ];
-    sprintf(path, "/sys/class/net/%s/brport/port_no", if_name);
+    sprintf(path, SYSFS_CLASS_NET "/%s/brport/port_no", if_name);
     char buf[128];
     int fd;
     long res = -1;

@@ -18,9 +18,11 @@
   The full GNU General Public License is included in this distribution in the
   file called LICENSE.
 
-  Authors: Vitalii Demianets <vitas@nppfactor.kiev.ua>
+  Authors: Vitalii Demianets <dvitasgs@gmail.com>
 
 ******************************************************************************/
+
+#include <config.h>
 
 #include <string.h>
 #include <getopt.h>
@@ -31,12 +33,6 @@
 
 #include "ctl_socket_client.h"
 #include "log.h"
-
-#ifdef  __LIBC_HAS_VERSIONSORT__
-#define sorting_func    versionsort
-#else
-#define sorting_func    alphasort
-#endif
 
 static int get_index_die(const char *ifname, const char *doc, bool die)
 {
@@ -283,7 +279,9 @@ static int do_showbridge(const char *br_name, param_id_t param_id)
 }
 
 #define SYSFS_PATH_MAX 256
+#ifndef SYSFS_CLASS_NET
 #define SYSFS_CLASS_NET "/sys/class/net"
+#endif
 
 static int isbridge(const struct dirent *entry)
 {
@@ -292,12 +290,19 @@ static int isbridge(const struct dirent *entry)
     bool result;
     struct stat st;
 
-    snprintf(path, SYSFS_PATH_MAX, SYSFS_CLASS_NET "/%s/bridge",
+    /* strlen(SYSFS_CLASS_NET) + strlen("/%.230s/bridge") must be < SYSFS_PATH_MAX
+       to prevent string truncation ; gcc7's fortify headers complain about that */
+    snprintf(path, SYSFS_PATH_MAX, SYSFS_CLASS_NET "/%.230s/bridge",
              entry->d_name);
     save_errno = errno;
     result = (0 == stat(path, &st)) && S_ISDIR(st.st_mode);
     errno = save_errno;
     return result;
+}
+
+static inline int get_bridge_list(struct dirent ***namelist)
+{
+    return scandir(SYSFS_CLASS_NET, namelist, isbridge, versionsort);
 }
 
 static int cmd_showbridge(int argc, char *const *argv)
@@ -325,7 +330,7 @@ static int cmd_showbridge(int argc, char *const *argv)
     }
     else
     {
-        count = scandir(SYSFS_CLASS_NET, &namelist, isbridge, sorting_func);
+        count = get_bridge_list(&namelist);
         if(0 > count)
         {
             fprintf(stderr, "Error getting list of all bridges\n");
@@ -574,6 +579,12 @@ static int do_showport(int br_index, const char *bridge_name,
                 printf("Num RX TCN           %u\n", s.num_rx_tcn);
                 printf("  Num Transition FWD %-23u ", s.num_trans_fwd);
                 printf("Num Transition BLK   %u\n", s.num_trans_blk);
+                printf("  Rcvd BPDU          %-23s ", BOOL_STR(s.rcvdBpdu));
+                printf("Rcvd STP             %s\n", BOOL_STR(s.rcvdSTP));
+                printf("  Rcvd RSTP          %-23s ", BOOL_STR(s.rcvdRSTP));
+                printf("Send RSTP            %s\n", BOOL_STR(s.sendRSTP));
+                printf("  Rcvd TC Ack        %-23s ", BOOL_STR(s.rcvdTcAck));
+                printf("Rcvd TCN             %s\n", BOOL_STR(s.rcvdTcn));
             }
             else
             {
@@ -693,8 +704,10 @@ static int get_port_list(const char *br_ifname, struct dirent ***namelist)
     int res;
     char buf[SYSFS_PATH_MAX];
 
-    snprintf(buf, sizeof(buf), SYSFS_CLASS_NET "/%s/brif", br_ifname);
-    if(0 > (res = scandir(buf, namelist, not_dot_dotdot, sorting_func)))
+    /* strlen(sysfs_class_net) + strlen("/%.230s/brif") must be < sizeof(buf)
+       to prevent truncation ; gcc7's fortify headers complain about that */
+    snprintf(buf, sizeof(buf), SYSFS_CLASS_NET "/%.230s/brif", br_ifname);
+    if(0 > (res = scandir(buf, namelist, not_dot_dotdot, versionsort)))
         fprintf(stderr, "Error getting list of all ports of bridge %s\n",
                 br_ifname);
     return res;
@@ -927,7 +940,7 @@ static int cmd_setmstconfid(int argc, char *const *argv)
         fprintf(stderr, "Bad revision %s\n", argv[2]);
         return -1;
     }
-    return CTL_set_mstconfid(br_index, revision, argv[3]);
+    return CTL_set_mstconfid(br_index, revision, (__u8 *)argv[3]);
 }
 
 #define set_bridge_cfg(field, value)                       \
@@ -1619,9 +1632,6 @@ static void help(void)
     command_helpall();
 }
 
-#define PACKAGE_VERSION2(v, b) "mstp, " #v "-" #b
-#define PACKAGE_VERSION(v, b) PACKAGE_VERSION2(v, b)
-
 int main(int argc, char *const *argv)
 {
     const struct command *cmd;
@@ -1640,7 +1650,7 @@ int main(int argc, char *const *argv)
                 help();
                 return 0;
             case 'V':
-                printf("%s\n", PACKAGE_VERSION(VERSION, BUILD));
+                printf(PACKAGE_VERSION "\n");
                 return 0;
             default:
                 fprintf(stderr, "Unknown option '%c'\n", f);

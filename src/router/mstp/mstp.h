@@ -6,12 +6,13 @@
  *  as published by the Free Software Foundation; either version
  *  2 of the License, or (at your option) any later version.
  *
- * Authors: Vitalii Demianets <vitas@nppfactor.kiev.ua>
+ * Authors: Vitalii Demianets <dvitasgs@gmail.com>
  */
 
 #ifndef MSTP_H
 #define MSTP_H
 
+#include <sys/types.h>
 #include <stdlib.h>
 #include <sys/types.h>
 
@@ -708,6 +709,12 @@ typedef struct
     unsigned int num_tx_tcn;
     unsigned int num_trans_fwd;
     unsigned int num_trans_blk;
+    bool rcvdBpdu;
+    bool rcvdRSTP;
+    bool rcvdSTP;
+    bool rcvdTcAck;
+    bool rcvdTcn;
+    bool sendRSTP;
 } CIST_PortStatus;
 
 void MSTP_IN_get_cist_port_status(port_t *prt, CIST_PortStatus *status);

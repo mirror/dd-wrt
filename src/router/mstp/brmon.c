@@ -9,7 +9,7 @@
  * Authors: Stephen Hemminger <shemminger@osdl.org>
  * Modified by Srinivas Aji <Aji_Srinivas@emc.com>
  *    for use in RSTP daemon. - 2006-09-01
- * Modified by Vitalii Demianets <vitas@nppfactor.kiev.ua>
+ * Modified by Vitalii Demianets <dvitasgs@gmail.com>
  *    for use in MSTP daemon. - 2011-07-18
  */
 
@@ -19,6 +19,7 @@
 #include <netinet/in.h>
 #include <linux/if_bridge.h>
 
+#include "log.h"
 #include "libnetlink.h"
 #include "bridge_ctl.h"
 #include "netif_utils.h"
@@ -60,12 +61,11 @@ struct rtnl_handle rth_state;
 static int dump_msg(const struct sockaddr_nl *who, struct nlmsghdr *n,
                     void *arg)
 {
-    FILE *fp = arg;
     struct ifinfomsg *ifi = NLMSG_DATA(n);
     struct rtattr * tb[IFLA_MAX + 1];
     int len = n->nlmsg_len;
     char b1[IFNAMSIZ];
-    int af_family = ifi->ifi_family;
+    int af_family;
     bool newlink;
     int br_index;
 
@@ -77,6 +77,8 @@ static int dump_msg(const struct sockaddr_nl *who, struct nlmsghdr *n,
     {
         return -1;
     }
+
+    af_family = ifi->ifi_family;
 
     if(af_family != AF_BRIDGE && af_family != AF_UNSPEC)
         return 0;
@@ -92,52 +94,52 @@ static int dump_msg(const struct sockaddr_nl *who, struct nlmsghdr *n,
 
     if(tb[IFLA_IFNAME] == NULL)
     {
-        fprintf(stderr, "BUG: nil ifname\n");
+        ERROR("BUG: nil ifname\n");
         return -1;
     }
 
     if(n->nlmsg_type == RTM_DELLINK)
-        fprintf(fp, "Deleted ");
+        LOG("Deleted ");
 
-    fprintf(fp, "%d: %s ", ifi->ifi_index, (char*)RTA_DATA(tb[IFLA_IFNAME]));
+    LOG("%d: %s ", ifi->ifi_index, (char*)RTA_DATA(tb[IFLA_IFNAME]));
 
     if(tb[IFLA_OPERSTATE])
     {
-        int state = *(int*)RTA_DATA(tb[IFLA_OPERSTATE]);
+        __u8 state = *(__u8*)RTA_DATA(tb[IFLA_OPERSTATE]);
         switch (state)
         {
             case IF_OPER_UNKNOWN:
-                fprintf(fp, "Unknown ");
+                LOG("Unknown ");
                 break;
             case IF_OPER_NOTPRESENT:
-                fprintf(fp, "Not Present ");
+                LOG("Not Present ");
                 break;
             case IF_OPER_DOWN:
-                fprintf(fp, "Down ");
+                LOG("Down ");
                 break;
             case IF_OPER_LOWERLAYERDOWN:
-                fprintf(fp, "Lowerlayerdown ");
+                LOG("Lowerlayerdown ");
                 break;
             case IF_OPER_TESTING:
-                fprintf(fp, "Testing ");
+                LOG("Testing ");
                 break;
             case IF_OPER_DORMANT:
-                fprintf(fp, "Dormant ");
+                LOG("Dormant ");
                 break;
             case IF_OPER_UP:
-                fprintf(fp, "Up ");
+                LOG("Up ");
                 break;
             default:
-                fprintf(fp, "State(%d) ", state);
+                LOG("State(%d) ", state);
         }
     }
 
     if(tb[IFLA_MTU])
-        fprintf(fp, "mtu %u ", *(int*)RTA_DATA(tb[IFLA_MTU]));
+        LOG("mtu %u ", *(int*)RTA_DATA(tb[IFLA_MTU]));
 
     if(tb[IFLA_MASTER])
     {
-        fprintf(fp, "master %s ",
+        LOG("master %s ",
                 if_indextoname(*(int*)RTA_DATA(tb[IFLA_MASTER]), b1));
     }
 
@@ -145,13 +147,10 @@ static int dump_msg(const struct sockaddr_nl *who, struct nlmsghdr *n,
     {
         uint8_t state = *(uint8_t *)RTA_DATA(tb[IFLA_PROTINFO]);
         if(state <= BR_STATE_BLOCKING)
-            fprintf(fp, "state %s", port_states[state]);
+            LOG("state %s", port_states[state]);
         else
-            fprintf(fp, "state (%d)", state);
+            LOG("state (%d)", state);
     }
-
-    fprintf(fp, "\n");
-    fflush(fp);
 
     newlink = (n->nlmsg_type == RTM_NEWLINK);
 
@@ -171,8 +170,7 @@ static inline void br_ev_handler(uint32_t events, struct epoll_event_handler *h)
 {
     if(rtnl_listen(&rth, dump_msg, stdout) < 0)
     {
-        fprintf(stderr, "Error on bridge monitoring socket\n");
-        exit(-1);
+        ERROR("Error on bridge monitoring socket\n");
     }
 }
 
@@ -180,31 +178,31 @@ int init_bridge_ops(void)
 {
     if(rtnl_open(&rth, RTMGRP_LINK) < 0)
     {
-        fprintf(stderr, "Couldn't open rtnl socket for monitoring\n");
+        ERROR("Couldn't open rtnl socket for monitoring\n");
         return -1;
     }
 
     if(rtnl_open(&rth_state, 0) < 0)
     {
-        fprintf(stderr, "Couldn't open rtnl socket for setting state\n");
+        ERROR("Couldn't open rtnl socket for setting state\n");
         return -1;
     }
 
     if(rtnl_wilddump_request(&rth, PF_BRIDGE, RTM_GETLINK) < 0)
     {
-        fprintf(stderr, "Cannot send dump request: %m\n");
+        ERROR("Cannot send dump request: %m\n");
         return -1;
     }
 
     if(rtnl_dump_filter(&rth, dump_msg, stdout, NULL, NULL) < 0)
     {
-        fprintf(stderr, "Dump terminated\n");
+        ERROR("Dump terminated\n");
         return -1;
     }
 
     if(fcntl(rth.fd, F_SETFL, O_NONBLOCK) < 0)
     {
-        fprintf(stderr, "Error setting O_NONBLOCK: %m\n");
+        ERROR("Error setting O_NONBLOCK: %m\n");
         return -1;
     }
 
