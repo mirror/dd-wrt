@@ -1,0 +1,78 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: mstpd
+Source: https://github.com/mstpd/mstpd
+
+Files: *
+Copyright: 2017 Vitalii Demianets <dvitasgs@gmail.com>
+           2011 Factor-SPE
+           2006 EMC Corporation
+License: GPL-2+
+
+Files: brmon.c
+Copyright: 2006-2015 Stephen Hemminger <shemminger@osdl.org>
+           2006-2015 Srinivas Aji <Aji_Srinivas@emc.com>
+           2011-2015 Vitalii Demianets <dvitasgs@gmail.com>
+License: GPL-2+
+
+Files: broadcom_xstrata/*
+Copyright: 2011-2015 Vitalii Demianets <dvitasgs@gmail.com>
+           2011-2015 Vladimir Cotfas <unix_router@yahoo.com>
+           2012 Phybridge Inc
+License: GPL-2+
+
+Files: libnetlink.*
+Copyright: 2011-2015 Alexey Kuznetsov, <kuznet@ms2.inr.ac.ru>
+License: GPL-2+
+
+Files: list.h
+Copyright: 2011-2015 kazutomo@mcs.anl.gov
+License: GPL-2+
+
+Files: packet.c
+Copyright: 2006-2015 Stephen Hemminger <shemminger@linux-foundation.org>
+           2006-2015 Srinivas Aji <Aji_Srinivas@emc.com>
+License: GPL-2+
+
+Files: debian/*
+Copyright: 2017 Vitalii Demianets <vitalii@orsoc.se>
+License: GPL-2+
+
+Files: hmac_md5.c
+Copyright: 1991-2, RSA Data Security, Inc.
+License: RSA
+
+License: GPL-2+
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ .
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <https://www.gnu.org/licenses/>
+ .
+ On Debian systems, the complete text of the GNU General
+ Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
+
+License: RSA
+ License to copy and use this software is granted provided that it
+ is identified as the "RSA Data Security, Inc. MD5 Message-Digest
+ Algorithm" in all material mentioning or referencing this software
+ or this function.
+ .
+ License is also granted to make and use derivative works provided
+ that such works are identified as "derived from the RSA Data
+ Security, Inc. MD5 Message-Digest Algorithm" in all material
+ mentioning or referencing the derived work.
+ .
+ RSA Data Security, Inc. makes no representations concerning either
+ the merchantability of this software or the suitability of this
+ software for any particular purpose. It is provided "as is"
+ without express or implied warranty of any kind.
+ .
+ These notices must be retained in any copies of any part of this
+ documentation and/or software.

@@ -2,7 +2,7 @@
 
 _mstpctl()
 {
-    local cur prev words cword
+    local cur words cword
     _init_completion || return
 
     local command=${words[1]}
