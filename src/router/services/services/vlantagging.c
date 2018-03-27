@@ -185,28 +185,33 @@ int getBridgeSTPType(char *br)
 		return stp;
 	}
 	if (!strcmp(br, "br0"))
-		return nvram_matchi("lan_stp", 1) ? "stp" : "Off";
+		return nvram_matchi("lan_stp", 1) ? "STP" : "Off";
 	return -1;
 }
 
-void start_bridgesif(void)
+static void set_stp_state(char *bridge, char *stp)
 {
+	br_set_stp_state("br0", strcmp(stp, "Off") ? 1 : 0);
 
-	br_set_stp_state("br0", getBridgeSTP("br0"));
 #ifdef HAVE_MSTP
-	char *stp = getBridgeSTPType("br0");
 	if (strcmp(stp, "Off"))
 		eval("mstpctl", "addbridge", bridge);
 	else
 		eval("mstpctl", "delbridge", bridge);
 
 	if (!strcmp(stp, "STP"))
-		eval("mstpctl", "br0", "setforcevers", "stp");
+		eval("mstpctl", bridge, "setforcevers", "stp");
 	if (!strcmp(stp, "MSTP"))
-		eval("mstpctl", "br0", "setforcevers", "mstp");
+		eval("mstpctl", bridge, "setforcevers", "mstp");
 	if (!strcmp(stp, "RSTP"))
-		eval("mstpctl", "br0", "setforcevers", "rstp");
+		eval("mstpctl", bridge, "setforcevers", "rstp");
 #endif
+
+
+}
+void start_bridgesif(void)
+{
+	set_stp_state("br0", getBridgeSTPType("br0"));
 	char word[256];
 	char *next, *wordlist;
 
@@ -263,25 +268,7 @@ void start_bridging(void)
 		if (prio && mtu && strlen(mtu) > 0)
 			nvram_nset(mtu, "%s_mtu", bridge);
 		br_add_bridge(bridge);
-		if (strcmp(stp, "Off"))
-			br_set_stp_state(bridge, 1);
-		else
-			br_set_stp_state(bridge, 0);
-
-#ifdef HAVE_MSTP
-		if (strcmp(stp, "Off"))
-			eval("mstpctl", "addbridge", bridge);
-		else
-			eval("mstpctl", "delbridge", bridge);
-
-		if (!strcmp(stp, "STP"))
-			eval("mstpctl", bridge, "setforcevers", "stp");
-		if (!strcmp(stp, "MSTP"))
-			eval("mstpctl", bridge, "setforcevers", "mstp");
-		if (!strcmp(stp, "RSTP"))
-			eval("mstpctl", bridge, "setforcevers", "rstp");
-#endif
-
+		set_stp_state(bridge, stp);
 		br_set_bridge_forward_delay(bridge, 2);
 
 		if (prio)
