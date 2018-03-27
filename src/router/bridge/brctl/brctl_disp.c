@@ -93,6 +93,8 @@ static int dump_port_info(const char *br, const char *p,  void *arg)
 		printf("CONFIG_PENDING ");
 	if (pinfo.top_change_ack)
 		printf("TOPOLOGY_CHANGE_ACK ");
+	if (pinfo.hairpin_mode)
+		printf("\n hairpin mode\t\t\%4i", pinfo.hairpin_mode);
 	printf("\n");
 	printf("\n");
 	return 0;
