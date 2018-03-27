@@ -72,7 +72,8 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 			foreach(tword, twordlist, tnext) {
 				char *tempword = tword;
 				matchname = strsep(&tempword, ">");
-				websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", matchname, !strcmp(matchname, ipvsname) ? "selected=\\\"selected\\\"" : "", matchname);
+				websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", matchname ? matchname : "", (matchname && !strcmp(matchname, ipvsname)) ? "selected=\\\"selected\\\"" : "",
+					  matchname);
 			}
 			websWrite(wp, "//]]>\n</script>\n</select>\n");
 			websWrite(wp, "</td>");
@@ -104,7 +105,8 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 			foreach(tword, twordlist, tnext) {
 				char *tempword = tword;
 				matchname = strsep(&tempword, ">");
-				websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", matchname, !strcmp(matchname, "") ? "selected=\\\"selected\\\"" : "", matchname);
+				websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", matchname ? matchname : "", (matchname && !strcmp(matchname, "")) ? "selected=\\\"selected\\\"" : "",
+					  matchname);
 			}
 			websWrite(wp, "//]]>\n</script>\n</select>\n");
 			websWrite(wp, "</td>");
