@@ -155,6 +155,13 @@ int mtd_erase(const char *mtd)
 	int mtd_fd;
 	struct mtd_info_user mtd_info;
 	struct erase_info_user erase_info;
+	
+	if(!strcmp(mtd, "nvram"))
+	{
+		fprintf(stderr, "erase nvram command is deprecated, please use nvram erase\n");
+		sysprintf("nvram erase");
+		return 0;
+	}
 
 	/* 
 	 * char *et0; char *et1;
