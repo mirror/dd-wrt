@@ -75,6 +75,7 @@ struct port_info
 	struct timeval message_age_timer_value;
 	struct timeval forward_delay_timer_value;
 	struct timeval hold_timer_value;
+	unsigned char hairpin_mode;
 };
 
 extern int br_init(void);
@@ -116,4 +117,6 @@ extern int br_set_path_cost(const char *br, const char *p,
 			    int path_cost);
 extern int br_read_fdb(const char *br, struct fdb_entry *fdbs, 
 		       unsigned long skip, int num);
+extern int br_set_hairpin_mode(const char *bridge, const char *dev,
+			       int hairpin_mode);
 #endif
