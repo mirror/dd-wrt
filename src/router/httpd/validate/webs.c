@@ -3122,7 +3122,7 @@ void save_networking(webs_t wp)
 	// save bridge assignment
 	bzero(buffer, 1024);
 	for (i = 0; i < bridgesifcount; i++) {
-		char *ifname, *tag, *prio;
+		char *ifname, *tag, *prio, *hairpin;
 		char var[32];
 
 		sprintf(var, "bridge%d", i);
@@ -3134,16 +3134,20 @@ void save_networking(webs_t wp)
 		if (!tag)
 			break;
 		sprintf(var, "bridgeifprio%d", i);
-		prio = websGetVar(wp, var, NULL);
-		if (!prio)
-			prio = "128";
+		prio = websGetVar(wp, var, "128");
 		if (strlen(prio) == 0)
 			prio = "128";
+
+		sprintf(var, "bridgeifhairpin%d", i);
+		hairpin = websGetVar(wp, var, "0");
+
 		strcat(buffer, ifname);
 		strcat(buffer, ">");
 		strcat(buffer, tag);
 		strcat(buffer, ">");
 		strcat(buffer, prio);
+		strcat(buffer, ">");
+		strcat(buffer, hairpin);
 		if (i < bridgesifcount - 1)
 			strcat(buffer, " ");
 	}

@@ -257,33 +257,52 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	strcpy(finalbuffer, checkbuffer);
 	free(checkbuffer);
 	int realcount = nvram_default_geti("bridgesif_count", 0);
+	websWrite(wp, "<table cellspacing=\"5\" summary=\"bridgeassignments\" id=\"bridgeassignments_table\" class=\"table center\"><tr>\n");
+	show_caption_pp(wp, NULL, "networking.assign", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "networking.hairpin", "<th>", "</th>\n");
+	websWrite(wp, "<th>&nbsp;</th></tr>\n");
 
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {
 		char *port = word;
 		char *tag = strsep(&port, ">");
 		char *prio = port;
+		char *hairpin = strsep(&prio, ">");
 
 		strsep(&prio, ">");
 		if (!tag || !port)
 			break;
 		char vlan_name[32];
+		websWrite(wp, "<tr>\n");
 
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption_simple(wp, "networking.assign");
-		websWrite(wp, " %d\n", count);
+		websWrite(wp, "<td>");
 		sprintf(vlan_name, "bridge%d", count);
 		showIfOptions(wp, vlan_name, finalbuffer, tag);
-		show_caption_pp(wp, NULL, "networking.iface", "&nbsp;", "&nbsp;");
+		websWrite(wp, "</td>");
+
+		websWrite(wp, "<td>");
 		sprintf(vlan_name, "bridgeif%d", count);
 		showIfOptions(wp, vlan_name, bufferif, port);
-		show_caption_pp(wp, NULL, "networking.prio", "&nbsp;", "&nbsp;");
+		websWrite(wp, "</td>");
+
+		websWrite(wp, "<td>");
 		sprintf(vlan_name, "bridgeifprio%d", count);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" />\n", vlan_name, prio != NULL ? prio : "63");
+		websWrite(wp, "</td>");
+
+		websWrite(wp, "<td>");
+		sprintf(vlan_name, "bridgeifhairpin%d", count);
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s/>\n", vlan_name, (hairpin && !strcmp(hairpin, "1")) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</td>");
+
+		websWrite(wp, "<td>");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridgeif_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  count);
-		websWrite(wp, "</div>\n");
+		websWrite(wp, "</td>");
+		websWrite(wp, "</tr>\n");
 		count++;
 	}
 	int totalcount = count;
@@ -291,23 +310,38 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	for (i = count; i < realcount; i++) {
 		char vlan_name[32];
 
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption_simple(wp, "networking.assign");
-		websWrite(wp, " %i\n", count);
+		websWrite(wp, "<tr>\n");
+
+		websWrite(wp, "<td>");
 		sprintf(vlan_name, "bridge%d", i);
 		showIfOptions(wp, vlan_name, finalbuffer, "");
-		show_caption_pp(wp, NULL, "networking.iface", "&nbsp;", "&nbsp;");
+		websWrite(wp, "</td>");
+
+		websWrite(wp, "<td>");
 		sprintf(vlan_name, "bridgeif%d", i);
 		showIfOptions(wp, vlan_name, bufferif, "");
-		show_caption_pp(wp, NULL, "networking.prio", "&nbsp;", "&nbsp;");
+		websWrite(wp, "</td>");
+
+		websWrite(wp, "<td>");
 		sprintf(vlan_name, "bridgeifprio%d", i);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n", vlan_name, "63");
+		websWrite(wp, "</td>");
+
+		websWrite(wp, "<td>");
+		sprintf(vlan_name, "bridgeifhairpin%d", count);
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" />\n", vlan_name);
+		websWrite(wp, "</td>");
+
+		websWrite(wp, "<td>");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridgeif_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  i);
-		websWrite(wp, "</div>\n");
+		websWrite(wp, "</td>");
+
+		websWrite(wp, "</tr>\n");
 		totalcount++;
 	}
+	websWrite(wp, "</table>");
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bridgeif_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 	char var[32];
