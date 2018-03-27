@@ -25,39 +25,16 @@
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <linux/if_bridge.h>
-#include <asm/param.h>
 
 #define MAX_BRIDGES	1024
 #define MAX_PORTS	1024
 
+#define SYSFS_CLASS_NET "/sys/class/net/"
+#define SYSFS_PATH_MAX	256
+
 #define dprintf(fmt,arg...)
 
-#ifdef HAVE_LIBSYSFS
-#include <sysfs/libsysfs.h>
-
-#ifndef SYSFS_BRIDGE_PORT_ATTR
-#error Using wrong kernel headers if_bridge.h is out of date.
-#endif
-
-#ifndef SIOCBRADDBR
-#error Using wrong kernel headers sockios.h is out of date.
-#endif
-
-#else
-struct sysfs_class { const char *name; };
-
-static inline struct sysfs_class *sysfs_open_class(const char *name)
-{
-	return NULL;
-}
-
-static inline void sysfs_close_class(struct sysfs_class *class)
-{
-}
-#endif
-
 extern int br_socket_fd;
-extern struct sysfs_class *br_class_net;
 
 static inline unsigned long __tv_to_jiffies(const struct timeval *tv)
 {
@@ -65,14 +42,14 @@ static inline unsigned long __tv_to_jiffies(const struct timeval *tv)
 
 	jif = 1000000ULL * tv->tv_sec + tv->tv_usec;
 
-	return (HZ*jif)/1000000;
+	return jif/10000;
 }
 
 static inline void __jiffies_to_tv(struct timeval *tv, unsigned long jiffies)
 {
 	unsigned long long tvusec;
 
-	tvusec = (1000000ULL*jiffies)/HZ;
+	tvusec = 10000ULL*jiffies;
 	tv->tv_sec = tvusec/1000000;
 	tv->tv_usec = tvusec - 1000000 * tv->tv_sec;
 }
