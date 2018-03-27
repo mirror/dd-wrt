@@ -1396,6 +1396,7 @@ networking.vlan="VLAN";
 networking.iface="Interface";
 networking.tg_number="Tag Number";
 networking.prio="Prio";
+networking.hairpin="Hairpin Mode";
 networking.bridge="Bridge";
 networking.snooping="IGMP Snooping";
 networking.assign="Assignment";
