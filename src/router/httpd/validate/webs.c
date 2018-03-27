@@ -3477,7 +3477,10 @@ void del_ipvs(webs_t wp)
 	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("ipvs");
-	newwordlist = (char *)calloc(strlen(wordlist), 1);
+	if (!strlen(wordlist))
+		newwordlist = NULL;
+	else
+		newwordlist = (char *)calloc(strlen(wordlist), 1);
 	int count = 0;
 
 	foreach(word, wordlist, next) {
@@ -3495,7 +3498,8 @@ void del_ipvs(webs_t wp)
 	nvram_set("ipvs_count", var);
 	nvram_set("ipvs", newwordlist);
 	nvram_commit();
-	free(newwordlist);
+	if (newwordlist)
+    		free(newwordlist);
 	return;
 }
 
@@ -3530,7 +3534,10 @@ void del_ipvstarget(webs_t wp)
 	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("ipvstarget");
-	newwordlist = (char *)calloc(strlen(wordlist), 1);
+	if (!strlen(wordlist))
+		newwordlist = NULL;
+	else
+		newwordlist = (char *)calloc(strlen(wordlist), 1);
 	int count = 0;
 
 	foreach(word, wordlist, next) {
@@ -3548,7 +3555,8 @@ void del_ipvstarget(webs_t wp)
 	nvram_set("ipvstarget_count", var);
 	nvram_set("ipvstarget", newwordlist);
 	nvram_commit();
-	free(newwordlist);
+	if (newwordlist)
+		free(newwordlist);
 	return;
 }
 
