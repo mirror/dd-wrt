@@ -20,7 +20,7 @@
   file called LICENSE.
 
   Authors: Srinivas Aji <Aji_Srinivas@emc.com>
-  Authors: Vitalii Demianets <vitas@nppfactor.kiev.ua>
+  Authors: Vitalii Demianets <dvitasgs@gmail.com>
 
 ******************************************************************************/
 
@@ -44,7 +44,7 @@ int init_epoll(void);
 
 void clear_epoll(void);
 
-int epoll_main_loop(void);
+int epoll_main_loop(volatile bool *quit);
 
 int add_epoll(struct epoll_event_handler *h);
 

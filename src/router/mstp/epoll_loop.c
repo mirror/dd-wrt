@@ -20,26 +20,31 @@
   file called LICENSE.
 
   Authors: Srinivas Aji <Aji_Srinivas@emc.com>
-  Authors: Vitalii Demianets <vitas@nppfactor.kiev.ua>
+  Authors: Vitalii Demianets <dvitasgs@gmail.com>
 
 ******************************************************************************/
 
+#include <config.h>
+
 #include <stdio.h>
 #include <unistd.h>
+#include <stdbool.h>
 
+#include "log.h"
 #include "epoll_loop.h"
 #include "bridge_ctl.h"
+#include "clock_gettime.h"
 
 /* globals */
 static int epoll_fd = -1;
-static struct timeval nexttimeout;
+static struct timespec nexttimeout;
 
 int init_epoll(void)
 {
     int r = epoll_create(128);
     if(r < 0)
     {
-        fprintf(stderr, "epoll_create failed: %m\n");
+        ERROR("epoll_create failed: %m\n");
         return -1;
     }
     epoll_fd = r;
@@ -57,7 +62,7 @@ int add_epoll(struct epoll_event_handler *h)
     int r = epoll_ctl(epoll_fd, EPOLL_CTL_ADD, h->fd, &ev);
     if(r < 0)
     {
-        fprintf(stderr, "epoll_ctl_add: %m\n");
+        ERROR("epoll_ctl_add: %m\n");
         return -1;
     }
     return 0;
@@ -68,7 +73,7 @@ int remove_epoll(struct epoll_event_handler *h)
     int r = epoll_ctl(epoll_fd, EPOLL_CTL_DEL, h->fd, NULL);
     if(r < 0)
     {
-        fprintf(stderr, "epoll_ctl_del: %m\n");
+        ERROR("epoll_ctl_del: %m\n");
         return -1;
     }
     if(h->ref_ev && h->ref_ev->data.ptr == h)
@@ -85,10 +90,10 @@ void clear_epoll(void)
         close(epoll_fd);
 }
 
-static inline int time_diff(struct timeval *second, struct timeval *first)
+static inline int time_diff(struct timespec *second, struct timespec *first)
 {
     return (second->tv_sec - first->tv_sec) * 1000
-            + (second->tv_usec - first->tv_usec) / 1000;
+            + (second->tv_nsec - first->tv_nsec) / 1000000;
 }
 
 static inline void run_timeouts(void)
@@ -97,38 +102,31 @@ static inline void run_timeouts(void)
     ++(nexttimeout.tv_sec);
 }
 
-int epoll_main_loop(void)
+int epoll_main_loop(volatile bool *quit)
 {
-    gettimeofday(&nexttimeout, NULL);
+    clock_gettime(CLOCK_MONOTONIC, &nexttimeout);
     ++(nexttimeout.tv_sec);
 #define EV_SIZE 8
     struct epoll_event ev[EV_SIZE];
 
-    while(1)
+    while(!*quit)
     {
         int r, i;
         int timeout;
 
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
+        struct timespec tv;
+        clock_gettime(CLOCK_MONOTONIC, &tv);
         timeout = time_diff(&nexttimeout, &tv);
         if(timeout < 0 || timeout > 1000)
         {
             run_timeouts();
             /*
              * Check if system time has changed.
-             * NOTE: we can not differentiate reliably if system
-             * time has changed or we have spent too much time
-             * inside event handlers and run_timeouts().
-             * Fix: use clock_gettime(CLOCK_MONOTONIC, ) instead of
-             * gettimeofday, if it is available.
-             * If it is not available on given system -
-             * the following is the best we can do.
              */
             if(timeout < -4000 || timeout > 1000)
             {
                 /* Most probably, system time has changed */
-                nexttimeout.tv_usec = tv.tv_usec;
+                nexttimeout.tv_nsec = tv.tv_nsec;
                 nexttimeout.tv_sec = tv.tv_sec + 1;
             }
             timeout = 0;
@@ -137,7 +135,7 @@ int epoll_main_loop(void)
         r = epoll_wait(epoll_fd, ev, EV_SIZE, timeout);
         if(r < 0 && errno != EINTR)
         {
-            fprintf(stderr, "epoll_wait: %m\n");
+            ERROR("epoll_wait: %m\n");
             return -1;
         }
         for(i = 0; i < r; ++i)

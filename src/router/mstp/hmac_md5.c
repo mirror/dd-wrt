@@ -471,7 +471,7 @@ bool MD5TestSuite(void)
 
     /* Tests from RFC-2104 */
     memset(key, 0x0B, 16);
-    hmac_md5("Hi There", 8, key, 16, digest);
+    hmac_md5((unsigned char *)"Hi There", 8, key, 16, (caddr_t)digest);
     {
         unsigned char expected_result[16] = {
             0x92, 0x94, 0x72, 0x7a, 0x36, 0x38, 0xbb, 0x1c,
@@ -479,7 +479,7 @@ bool MD5TestSuite(void)
         if(memcmp(expected_result, digest, 16))
             return false;
     }
-    hmac_md5("what do ya want for nothing?", 28, "Jefe", 4, digest);
+    hmac_md5((unsigned char *)"what do ya want for nothing?", 28, (unsigned char *)"Jefe", 4, (caddr_t)digest);
     {
         unsigned char expected_result[16] = {
             0x75, 0x0c, 0x78, 0x3e, 0x6a, 0xb0, 0xb5, 0x03,
@@ -489,7 +489,7 @@ bool MD5TestSuite(void)
     }
     memset(key, 0xAA, 16);
     memset(data, 0xDD, 50);
-    hmac_md5(data, 50, key, 16, digest);
+    hmac_md5(data, 50, key, 16, (caddr_t)digest);
     {
         unsigned char expected_result[16] = {
             0x56, 0xbe, 0x34, 0x52, 0x1d, 0x14, 0x4c, 0x88,
@@ -500,7 +500,7 @@ bool MD5TestSuite(void)
 
     /* Tests from IEEE 802.1Q-2005 13.7 Table 13-2 */
     memset(data, 0, 4096 * 2);
-    hmac_md5(data, 4096 * 2, mstp_key, 16, digest);
+    hmac_md5(data, 4096 * 2, mstp_key, 16, (caddr_t)digest);
     {
         unsigned char expected_result[16] = {
             0xac, 0x36, 0x17, 0x7f, 0x50, 0x28, 0x3c, 0xd4,
@@ -510,7 +510,7 @@ bool MD5TestSuite(void)
     }
     for(i = 3; i < 4095 * 2; i+= 2)
         data[i] = 1;
-    hmac_md5(data, 4096 * 2, mstp_key, 16, digest);
+    hmac_md5(data, 4096 * 2, mstp_key, 16, (caddr_t)digest);
     {
         unsigned char expected_result[16] = {
             0xe1, 0x3a, 0x80, 0xf1, 0x1e, 0xd0, 0x85, 0x6a,
@@ -520,7 +520,7 @@ bool MD5TestSuite(void)
     }
     for(i = 3; i < 4095 * 2; i+= 2)
         data[i] = (i / 2) % 32 + 1;
-    hmac_md5(data, 4096 * 2, mstp_key, 16, digest);
+    hmac_md5(data, 4096 * 2, mstp_key, 16, (caddr_t)digest);
     {
         unsigned char expected_result[16] = {
             0x9d, 0x14, 0x5c, 0x26, 0x7d, 0xbe, 0x9f, 0xb5,

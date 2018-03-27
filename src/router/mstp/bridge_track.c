@@ -20,7 +20,7 @@
   file called LICENSE.
 
   Authors: Srinivas Aji <Aji_Srinivas@emc.com>
-  Authors: Vitalii Demianets <vitas@nppfactor.kiev.ua>
+  Authors: Vitalii Demianets <dvitasgs@gmail.com>
 
 ******************************************************************************/
 
@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <linux/param.h>
+#include <netinet/in.h>
 #include <linux/if_bridge.h>
 #include <asm/byteorder.h>
 
@@ -40,6 +41,10 @@
 #include "driver.h"
 #include "libnetlink.h"
 
+#ifndef SYSFS_CLASS_NET
+#define SYSFS_CLASS_NET "/sys/class/net"
+#endif
+
 static LIST_HEAD(bridges);
 
 static bridge_t * create_br(int if_index)
@@ -49,18 +54,20 @@ static bridge_t * create_br(int if_index)
 
     /* Init system dependent info */
     br->sysdeps.if_index = if_index;
-    if_indextoname(if_index, br->sysdeps.name);
-    get_hwaddr(br->sysdeps.name, br->sysdeps.macaddr);
+    if (!index_to_name(if_index, br->sysdeps.name))
+        goto err;
+    if (get_hwaddr(br->sysdeps.name, br->sysdeps.macaddr))
+        goto err;
 
     INFO("Add bridge %s", br->sysdeps.name);
     if(!MSTP_IN_bridge_create(br, br->sysdeps.macaddr))
-    {
-        free(br);
-        return NULL;
-    }
+        goto err;
 
     list_add_tail(&br->list, &bridges);
     return br;
+err:
+    free(br);
+    return NULL;
 }
 
 static bridge_t * find_br(int if_index)
@@ -81,33 +88,33 @@ static port_t * create_if(bridge_t * br, int if_index)
 
     /* Init system dependent info */
     prt->sysdeps.if_index = if_index;
-    if_indextoname(if_index, prt->sysdeps.name);
-    get_hwaddr(prt->sysdeps.name, prt->sysdeps.macaddr);
+    if (!index_to_port_name(if_index, prt->sysdeps.name))
+        goto err;
+    if (get_hwaddr(prt->sysdeps.name, prt->sysdeps.macaddr))
+        goto err;
 
     int portno;
     if(0 > (portno = get_bridge_portno(prt->sysdeps.name)))
     {
         ERROR("Couldn't get port number for %s", prt->sysdeps.name);
-        free(prt);
-        return NULL;
+        goto err;
     }
     if((0 == portno) || (portno > MAX_PORT_NUMBER))
     {
         ERROR("Port number for %s is invalid (%d)", prt->sysdeps.name, portno);
-        free(prt);
-        return NULL;
+        goto err;
     }
 
     INFO("Add iface %s as port#%d to bridge %s", prt->sysdeps.name,
          portno, br->sysdeps.name);
     prt->bridge = br;
     if(!MSTP_IN_port_create_and_add_tail(prt, portno))
-    {
-        free(prt);
-        return NULL;
-    }
+        goto err;
 
     return prt;
+err:
+    free(prt);
+    return NULL;
 }
 
 static port_t * find_if(bridge_t * br, int if_index)
@@ -176,13 +183,12 @@ static bool check_mac_address(char *name, __u8 *addr)
 
 static void set_br_up(bridge_t * br, bool up)
 {
-    INFO("%s was %s", br->sysdeps.name, br->sysdeps.up ? "up" : "down");
-    INFO("Set bridge %s %s", br->sysdeps.name, up ? "up" : "down");
-
     bool changed = false;
 
     if(up != br->sysdeps.up)
     {
+        INFO("%s was %s. Set %s", br->sysdeps.name,
+             br->sysdeps.up ? "up" : "down", up ? "up" : "down");
         br->sysdeps.up = up;
         changed = true;
     }
@@ -375,8 +381,9 @@ void bridge_bpdu_rcv(int if_index, const unsigned char *data, int len)
         return;
 
     /* sanity checks */
-    TST(br == prt->bridge,);
-    TST(prt->sysdeps.up,);
+    TSTM(br == prt->bridge,, "Bridge mismatch. This bridge is '%s' but port "
+        "'%s' belongs to bridge '%s'", br->sysdeps.name, prt->bridge->sysdeps.name);
+    TSTM(prt->sysdeps.up,, "Port '%s' should be up", prt->sysdeps.name);
 
     /* Validate Ethernet and LLC header,
      * maybe we can skip this check thanks to Berkeley filter in packet socket?
@@ -425,7 +432,7 @@ static int br_set_state(struct rtnl_handle *rth, unsigned ifindex, __u8 state)
 static int br_flush_port(char *ifname)
 {
     char fname[128];
-    snprintf(fname, sizeof(fname), "/sys/class/net/%s/brport/flush", ifname);
+    snprintf(fname, sizeof(fname), SYSFS_CLASS_NET "/%s/brport/flush", ifname);
     int fd = open(fname, O_WRONLY);
     TSTM(0 <= fd, -1, "Couldn't open flush file %s for write: %m", fname);
     int write_result = write(fd, "1", 1);
@@ -437,7 +444,7 @@ static int br_flush_port(char *ifname)
 static int br_set_ageing_time(char *brname, unsigned int ageing_time)
 {
     char fname[128], str_time[32];
-    snprintf(fname, sizeof(fname), "/sys/class/net/%s/bridge/ageing_time",
+    snprintf(fname, sizeof(fname), SYSFS_CLASS_NET "/%s/bridge/ageing_time",
              brname);
     int fd = open(fname, O_WRONLY);
     TSTM(0 <= fd, -1, "Couldn't open file %s for write: %m", fname);
@@ -486,12 +493,9 @@ void MSTP_OUT_set_state(per_tree_port_t *ptp, int new_state)
     /* Translate new CIST state to the kernel bridge code */
     if(0 == ptp->MSTID)
     { /* CIST */
-        if(prt->sysdeps.up)
-        {
-            if(0 > br_set_state(&rth_state, prt->sysdeps.if_index, ptp->state))
-                ERROR_PRTNAME(br, prt, "Couldn't set kernel bridge state %s",
-                              state_name);
-        }
+        if(0 > br_set_state(&rth_state, prt->sysdeps.if_index, ptp->state))
+            ERROR_PRTNAME(br, prt, "Couldn't set kernel bridge state %s",
+                          state_name);
     }
 }
 
@@ -781,7 +785,7 @@ int CTL_get_mstconfid(int br_index, mst_configuration_identifier_t *cfg)
     return 0;
 }
 
-int CTL_set_mstconfid(int br_index, __u16 revision, char *name)
+int CTL_set_mstconfid(int br_index, __u16 revision, __u8 *name)
 {
     CTL_CHECK_BRIDGE;
     MSTP_IN_set_mst_config_id(br, revision, name);
@@ -908,5 +912,16 @@ int CTL_del_bridges(int *br_array)
     for(i = 1; i <= brcount; ++i)
         delete_br_byindex(br_array[i]);
 
+    return 0;
+}
+
+int bridge_track_fini(void)
+{
+    INFO("Stopping all bridges");
+    bridge_t *br;
+    list_for_each_entry(br, &bridges, list)
+    {
+        set_br_up(br, false);
+    }
     return 0;
 }

@@ -6,7 +6,7 @@
  *  as published by the Free Software Foundation; either version
  *  2 of the License, or (at your option) any later version.
  *
- * Authors: Vitalii Demianets <vitas@nppfactor.kiev.ua>
+ * Authors: Vitalii Demianets <dvitasgs@gmail.com>
  */
 
 /* NOTE: The standard messes up Hello_Time timer management.
@@ -35,13 +35,17 @@
  *      Otherwise (!dry_run || !state_change) they return false.
  */
 
+#include <config.h>
+
 #include <string.h>
-#include <sys/time.h>
+#include <netinet/in.h>
 #include <linux/if_bridge.h>
 #include <asm/byteorder.h>
 
 #include "mstp.h"
 #include "log.h"
+#include "driver.h"
+#include "clock_gettime.h"
 
 static void PTSM_tick(port_t *prt);
 static bool TCSM_run(per_tree_port_t *ptp, bool dry_run);
@@ -82,7 +86,7 @@ static void RecalcConfigDigest(bridge_t *br)
         vid2mstid[vid] = br->fid2mstid[br->vid2fid[vid]];
 
     hmac_md5((void *)vid2mstid, sizeof(vid2mstid), mstp_key, sizeof(mstp_key),
-             br->MstConfigId.s.configuration_digest);
+             (caddr_t)br->MstConfigId.s.configuration_digest);
 }
 
 /*
@@ -231,6 +235,9 @@ bool MSTP_IN_bridge_create(bridge_t *br, __u8 *macaddr)
 {
     tree_t *cist;
 
+    if (!driver_create_bridge(br, macaddr))
+        return false;
+
     /* Initialize all fields except sysdeps and anchor */
     INIT_LIST_HEAD(&br->ports);
     INIT_LIST_HEAD(&br->trees);
@@ -238,13 +245,13 @@ bool MSTP_IN_bridge_create(bridge_t *br, __u8 *macaddr)
     memset(br->vid2fid, 0, sizeof(br->vid2fid));
     memset(br->fid2mstid, 0, sizeof(br->fid2mstid));
     assign(br->MstConfigId.s.selector, (__u8)0);
-    sprintf(br->MstConfigId.s.configuration_name,
+    sprintf((char *)br->MstConfigId.s.configuration_name,
             "%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX",
             macaddr[0], macaddr[1], macaddr[2],
             macaddr[3], macaddr[4], macaddr[5]);
     assign(br->MstConfigId.s.revision_level, __constant_cpu_to_be16(0));
     RecalcConfigDigest(br); /* set br->MstConfigId.s.configuration_digest */
-    br->ForceProtocolVersion = protoMSTP;
+    br->ForceProtocolVersion = protoRSTP;
     assign(br->MaxHops, (__u8)20);       /* 13.37.3 */
     assign(br->Forward_Delay, (__u8)15); /* 17.14 of 802.1D */
     assign(br->Max_Age, (__u8)20);       /* 17.14 of 802.1D */
@@ -268,6 +275,9 @@ bool MSTP_IN_port_create_and_add_tail(port_t *prt, __u16 portno)
     tree_t *tree;
     per_tree_port_t *ptp, *nxt;
     bridge_t *br = prt->bridge;
+
+    if (!driver_create_port(prt, portno))
+        return false;
 
     /* Initialize all fields except sysdeps and bridge */
     INIT_LIST_HEAD(&prt->trees);
@@ -328,6 +338,8 @@ void MSTP_IN_delete_port(port_t *prt)
     per_tree_port_t *ptp, *nxt;
     bridge_t *br = prt->bridge;
 
+    driver_delete_port(prt);
+
     prt->deleted = true;
     if(prt->portEnabled)
     {
@@ -350,6 +362,8 @@ void MSTP_IN_delete_bridge(bridge_t *br)
 {
     tree_t *tree, *nxt_tree;
     port_t *prt, *nxt_prt;
+
+    driver_delete_bridge(br);
 
     br->bridgeEnabled = false;
 
@@ -1015,6 +1029,12 @@ void MSTP_IN_get_cist_port_status(port_t *prt, CIST_PortStatus *status)
     status->num_tx_tcn = prt->num_tx_tcn;
     status->num_trans_fwd = prt->num_trans_fwd;
     status->num_trans_blk = prt->num_trans_blk;
+    status->rcvdBpdu = prt->rcvdBpdu;
+    status->rcvdRSTP = prt->rcvdRSTP;
+    status->rcvdSTP = prt->rcvdSTP;
+    status->rcvdTcAck = prt->rcvdTcAck;
+    status->rcvdTcn = prt->rcvdTcn;
+    status->sendRSTP = prt->sendRSTP;
 }
 
 /* 12.8.2.2 Read MSTI Port Parameters */
@@ -1561,7 +1581,7 @@ bool MSTP_IN_delete_msti(bridge_t *br, __u16 mstid)
 void MSTP_IN_set_mst_config_id(bridge_t *br, __u16 revision, __u8 *name)
 {
     __be16 valueRevision = __cpu_to_be16(revision);
-    bool changed = (0 != strncmp(name, br->MstConfigId.s.configuration_name,
+    bool changed = (0 != strncmp((char *)name, (char *)br->MstConfigId.s.configuration_name,
                                  sizeof(br->MstConfigId.s.configuration_name))
                    )
                    || (valueRevision != br->MstConfigId.s.revision_level);
@@ -1571,7 +1591,7 @@ void MSTP_IN_set_mst_config_id(bridge_t *br, __u16 revision, __u8 *name)
         assign(br->MstConfigId.s.revision_level, valueRevision);
         memset(br->MstConfigId.s.configuration_name, 0,
                sizeof(br->MstConfigId.s.configuration_name));
-        strncpy(br->MstConfigId.s.configuration_name, name,
+        strncpy((char *)br->MstConfigId.s.configuration_name, (char *)name,
                 sizeof(br->MstConfigId.s.configuration_name));
         br_state_machines_begin(br);
     }
@@ -2105,7 +2125,7 @@ static void recordTimes(per_tree_port_t *ptp)
      *   preserve the configured Hello_Time, It is in accordance with the
      *   spirit of 802.1Q-2011, if we allow Hello_Time to be configurable.
      */
-    __u8 prev_Hello_Time;
+    __u8 prev_Hello_Time = 0;
     assign(prev_Hello_Time, ptp->portTimes.Hello_Time);
     assign(ptp->portTimes, ptp->msgTimes);
     assign(ptp->portTimes.Hello_Time, prev_Hello_Time);
@@ -2526,7 +2546,6 @@ static void updtRcvdInfoWhile(per_tree_port_t *ptp)
 static void updtbrAssuRcvdInfoWhile(port_t *prt)
 {
     per_tree_port_t *cist = GET_CIST_PTP_FROM_PORT(prt);
-    unsigned int Hello_Time = cist->portTimes.Hello_Time;
 
     prt->brAssuRcvdInfoWhile = 3 * cist->portTimes.Hello_Time;
 }
@@ -2913,6 +2932,7 @@ static bool PRSM_run(port_t *prt, bool dry_run)
                     return true;
                 PRSM_to_RECEIVE(prt);
             }
+        default:
             return false;
     }
 }
@@ -3071,6 +3091,7 @@ static bool BDSM_run(port_t *prt, bool dry_run)
                     return true;
                 BDSM_to_EDGE(prt);
             }
+        default:
             return false;
     }
 }
@@ -5076,13 +5097,13 @@ static bool __br_state_machines_run(bridge_t *br, bool dry_run)
  */
 static void br_state_machines_run(bridge_t *br)
 {
-    struct timeval tv, tv_end;
+    struct timespec tv, tv_end;
     signed long delta;
 
     if(!br->bridgeEnabled)
         return;
 
-    gettimeofday(&tv_end, NULL);
+    clock_gettime(CLOCK_MONOTONIC, &tv_end);
     ++(tv_end.tv_sec);
 
     do {
@@ -5091,12 +5112,12 @@ static void br_state_machines_run(bridge_t *br)
         __br_state_machines_run(br, false /* actual run */);
 
         /* Check for the timeout */
-        gettimeofday(&tv, NULL);
+        clock_gettime(CLOCK_MONOTONIC, &tv);
         if(0 < (delta = tv.tv_sec - tv_end.tv_sec))
             return;
         if(0 == delta)
         {
-            delta = tv.tv_usec - tv_end.tv_usec;
+            delta = tv.tv_nsec - tv_end.tv_nsec;
             if(0 < delta)
                 return;
         }
