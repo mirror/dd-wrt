@@ -268,12 +268,15 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	foreach(word, wordlist, next) {
 		char *port = word;
 		char *tag = strsep(&port, ">");
-		char *hairpin = port;
-		port = strsep(&hairpin, ">");
-
-		strsep(&prio, ">");
 		if (!tag || !port)
 			break;
+		char *prio = port;
+		port = strsep(&prio, ">");
+		char *hairpin = NULL;
+		if (prio) {
+			hairpin = prio;
+			prio = strsep(&hairpin, ">");
+		}
 		char vlan_name[32];
 		websWrite(wp, "<tr>\n");
 
