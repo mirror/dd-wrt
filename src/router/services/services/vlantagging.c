@@ -158,7 +158,7 @@ int getBridgeSTP(char *br)
 		stp = strsep(&prio, ">");
 		if (!stp)
 			break;
-		if (!strcmp(stp, "On"))
+		if (strcmp(stp, "Off"))
 			return 1;
 		return 0;
 	}
@@ -167,11 +167,46 @@ int getBridgeSTP(char *br)
 	return -1;
 }
 
+int getBridgeSTPType(char *br)
+{
+
+	char word[256];
+	char *next, *wordlist;
+	wordlist = nvram_safe_get("bridges");
+	foreach(word, wordlist, next) {
+		char *stp = word;
+		char *bridge = strsep(&stp, ">");
+		char *prio = stp;
+		if (strcmp(bridge, br))
+			continue;
+		stp = strsep(&prio, ">");
+		if (!stp)
+			break;
+		return stp;
+	}
+	if (!strcmp(br, "br0"))
+		return nvram_matchi("lan_stp", 1) ? "stp" : "Off";
+	return -1;
+}
+
 void start_bridgesif(void)
 {
 
 	br_set_stp_state("br0", getBridgeSTP("br0"));
+#ifdef HAVE_MSTP
+	char *stp = getBridgeSTPType("br0");
+	if (strcmp(stp, "Off"))
+		eval("mstpctl", "addbridge", bridge);
+	else
+		eval("mstpctl", "delbridge", bridge);
 
+	if (!strcmp(stp, "STP"))
+		eval("mstpctl", "br0", "setforcevers", "stp");
+	if (!strcmp(stp, "MSTP"))
+		eval("mstpctl", "br0", "setforcevers", "mstp");
+	if (!strcmp(stp, "RSTP"))
+		eval("mstpctl", "br0", "setforcevers", "rstp");
+#endif
 	char word[256];
 	char *next, *wordlist;
 
@@ -190,12 +225,6 @@ void start_bridgesif(void)
 		}
 
 		if (strncmp(tag, "EOP", 3)) {
-/*	    char *mtu = nvram_nget("%s_mtu",tag);
-	    if (mtu && strlen(mtu))
-		{
-		eval( "ifconfig", tag, "mtu", mtu); 
-		eval( "ifconfig", port, "mtu", mtu); //sync mtu for interface
-		}*/
 			br_add_interface(tag, port);
 			if (prio)
 				br_set_port_prio(tag, port, atoi(prio));
@@ -234,10 +263,24 @@ void start_bridging(void)
 		if (prio && mtu && strlen(mtu) > 0)
 			nvram_nset(mtu, "%s_mtu", bridge);
 		br_add_bridge(bridge);
-		if (!strcmp(stp, "On"))
+		if (strcmp(stp, "Off"))
 			br_set_stp_state(bridge, 1);
 		else
 			br_set_stp_state(bridge, 0);
+
+#ifdef HAVE_MSTP
+		if (strcmp(stp, "Off"))
+			eval("mstpctl", "addbridge", bridge);
+		else
+			eval("mstpctl", "delbridge", bridge);
+
+		if (!strcmp(stp, "STP"))
+			eval("mstpctl", bridge, "setforcevers", "stp");
+		if (!strcmp(stp, "MSTP"))
+			eval("mstpctl", bridge, "setforcevers", "mstp");
+		if (!strcmp(stp, "RSTP"))
+			eval("mstpctl", bridge, "setforcevers", "rstp");
+#endif
 
 		br_set_bridge_forward_delay(bridge, 2);
 

@@ -45,10 +45,11 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 
 	websWrite(wp, "<table cellspacing=\"5\" summary=\"bridges\" id=\"Bridge_table\" class=\"table center\"><tr>\n");
 	websWrite(wp, "<th>Name</th>\n");
+	websWrite(wp, "<th>Spanning Tree</th>\n");
 #ifdef HAVE_MSTP
-	websWrite(wp, "<th>MSTP</th>\n");
+	char *stpoptions = "STP RSTP MSTP Off";
 #else
-	websWrite(wp, "<th>STP</th>\n");
+	char *stpoptions = "STP Off";
 #endif
 	show_caption_pp(wp, NULL, "networking.snooping", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
@@ -63,7 +64,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 
 		sprintf(bridge_name, "bridgestp%d", count);
 		websWrite(wp, "<td>");
-		showOptions(wp, bridge_name, "On Off", "Off");
+		showOptions(wp, bridge_name, stpoptions, "Off");
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgemcastbr%d", count);
 		websWrite(wp, "<td>");
@@ -113,7 +114,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" /></td>\n", bridge_name, bridge);
 		sprintf(bridge_name, "bridgestp%d", count);
 		websWrite(wp, "<td>");
-		showOptions(wp, bridge_name, "On Off", stp);
+		showOptions(wp, bridge_name, stpoptions, stp);
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgemcastbr%d", count);
 		char mcast[32];
@@ -162,7 +163,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\"size=\"3\" /></td>\n", bridge_name);
 		sprintf(bridge_name, "bridgestp%d", i);
 		websWrite(wp, "<td>");
-		showOptions(wp, bridge_name, "On Off", "On");
+		showOptions(wp, bridge_name, stpoptions, "STP");
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgemcastbr%d", count);
 		websWrite(wp, "<td>");
