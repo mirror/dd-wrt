@@ -22,6 +22,8 @@
 #include <errno.h>
 #include <string.h>
 #include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "libbridge.h"
 #include "libbridge_private.h"
@@ -37,11 +39,7 @@ int br_init(void)
 }
 
 int br_refresh(void)
-{
-	if (br_class_net) {
-		sysfs_close_class(br_class_net);
-	}
-	
+{	
 	return 0;
 }
 
@@ -52,12 +50,28 @@ void br_shutdown(void)
 }
 
 /* If /sys/class/net/XXX/bridge exists then it must be a bridge */
-static int isbridge(const struct sysfs_class_device *dev) 
+static int isbridge(const struct dirent *entry)
 {
 	char path[SYSFS_PATH_MAX];
+	struct stat st;
+	int ret, saved_errno;
 
-	snprintf(path, sizeof(path), "%s/bridge", dev->path);
-	return !sysfs_path_is_dir(path);
+	if (entry->d_name[0] == '.'
+	    && (entry->d_name[1] == '\0'
+		|| (entry->d_name[1] == '.'
+		    && entry->d_name[2] == '\0')))
+		return 0;
+
+	snprintf(path, SYSFS_PATH_MAX, 
+		 SYSFS_CLASS_NET "%s/bridge", entry->d_name);
+
+	/* Workaround old glibc breakage.
+	   If errno is set, then it fails scandir! */
+	saved_errno = errno;
+	ret = (stat(path, &st) == 0 && S_ISDIR(st.st_mode));
+	errno = saved_errno;
+
+	return ret;
 }
 
 /*
@@ -66,28 +80,21 @@ static int isbridge(const struct sysfs_class_device *dev)
 static int new_foreach_bridge(int (*iterator)(const char *name, void *),
 			      void *arg)
 {
-	struct sysfs_class_device *dev;
-	struct dlist *devlist;
-	int count = 0;
+	struct dirent **namelist;
+	int i, count = 0;
 
-	if (!br_class_net) {
-		dprintf("no class /sys/class/net\n");
-		return -EOPNOTSUPP;
+	count = scandir(SYSFS_CLASS_NET, &namelist, isbridge, alphasort);
+	if (count < 0)
+		return -1;
+
+	for (i = 0; i < count; i++) {
+		if (iterator(namelist[i]->d_name, arg))
+			break;
 	}
 
-	devlist = sysfs_get_class_devices(br_class_net);
-	if (!devlist) {
-		dprintf("Can't read devices from sysfs\n");
-		return -errno;
-	}
-
-	dlist_for_each_data(devlist, dev, struct sysfs_class_device) {
-		if (isbridge(dev)) {
-			++count;
-			if (iterator(dev->name, arg))
-				break;
-		}
-	}
+	for (i = 0; i < count; i++)
+		free(namelist[i]);
+	free(namelist);
 
 	return count;
 }
@@ -196,45 +203,28 @@ int br_foreach_port(const char *brname,
 		    int (*iterator)(const char *br, const char *port, void *arg),
 		    void *arg)
 {
-#ifdef HAVE_LIBSYSFS
-	struct sysfs_class_device *dev;
-	DIR *dir;
-	struct dirent *dirent;
-	int err = 0;
+	int i, count;
+	struct dirent **namelist;
 	char path[SYSFS_PATH_MAX];
 
-	if (!br_class_net ||
-	    !(dev = sysfs_get_class_device(br_class_net, (char *) brname)))
-		goto old;
+	snprintf(path, SYSFS_PATH_MAX, SYSFS_CLASS_NET "%s/brif", brname);
+	count = scandir(path, &namelist, 0, alphasort);
+	if (count < 0)
+		return old_foreach_port(brname, iterator, arg);
 
-	snprintf(path, sizeof(path), "%s/%s", 
-		 dev->path, SYSFS_BRIDGE_PORT_SUBDIR);
-
-
-	dir = opendir(path);
-	if (!dir) {
-		/* no /sys/class/net/ethX/brif subdirectory
-		 * either: old kernel, or not really a bridge
-		 */
-		goto old;
-	}
-
-	err = 0;
-	while ((dirent = readdir(dir)) != NULL) {
-		if (0 == strcmp(dirent->d_name, "."))
-			 continue;
-		if (0 == strcmp(dirent->d_name, ".."))
+	for (i = 0; i < count; i++) {
+		if (namelist[i]->d_name[0] == '.'
+		    && (namelist[i]->d_name[1] == '\0'
+			|| (namelist[i]->d_name[1] == '.'
+			    && namelist[i]->d_name[2] == '\0')))
 			continue;
-		++err;
-		if (iterator(brname, dirent->d_name, arg))
+
+		if (iterator(brname, namelist[i]->d_name, arg))
 			break;
 	}
-	closedir(dir);
+	for (i = 0; i < count; i++)
+		free(namelist[i]);
+	free(namelist);
 
-	return err;
-
- old:
-#endif
-	return old_foreach_port(brname, iterator, arg);
-	
+	return count;	
 }
