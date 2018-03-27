@@ -209,10 +209,10 @@ int br_del_bridge(const char *brname);
 int br_add_interface(const char *br, const char *dev);
 int br_del_interface(const char *br, const char *dev);
 int br_set_stp_state(const char *br, int stp_state);
-int br_set_port_prio(const char *br, char *port, char *prio);
-int br_set_port_hairpin(const char *br, const char *port, int val);
+int br_set_port_prio(const char *br, char *port, int prio);
+int br_set_port_hairpin(const char *br, char *port, int val);
 int br_set_bridge_forward_delay(const char *br, int sec);
-int br_set_bridge_prio(const char *br, char *prio);
+int br_set_bridge_prio(const char *br, int prio);
 
 void reset_hwaddr(char *ifname);
 void start_force_to_dial(void);

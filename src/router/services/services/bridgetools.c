@@ -64,7 +64,7 @@ int brctl_main(int argc, char **argv)
 #else
 
 #ifdef HAVE_MSTP
-int br_set_hairpin(const char *br, const char *port, int on)
+int br_set_port_hairpin(const char *br, char *port, int on)
 {
 	if (!ifexists(br))
 		return -1;
@@ -86,20 +86,24 @@ int br_set_stp_state(const char *br, int stp_state)
 	}
 }
 
-int br_set_port_prio(const char *br, char *port, char *prio)
+int br_set_port_prio(const char *br, char *port, int prio)
 {
 	if (!ifexists(br))
 		return -1;
 	if (!ifexists(port))
 		return -1;
-	return eval("mstpctl", "settreeportprio", br, port, "0", prio);
+	char sprio[32];
+	snprintf(sprio, sizeof(sprio), "%d", prio);
+	return eval("mstpctl", "settreeportprio", br, port, "0", sprio);
 }
 
-int br_set_bridge_prio(const char *br, char *prio)
+int br_set_bridge_prio(const char *br, int prio)
 {
 	if (!ifexists(br))
 		return -1;
-	return eval("mstpctl", "settreeprio", br, "0", prio);
+	char sprio[32];
+	snprintf(sprio, sizeof(sprio), "%d", prio);
+	return eval("mstpctl", "settreeprio", br, "0", sprio);
 }
 
 int br_set_bridge_forward_delay(const char *br, int sec)
@@ -111,7 +115,7 @@ int br_set_bridge_forward_delay(const char *br, int sec)
 
 }
 #else
-int br_set_hairpin(const char *br, const char *port, int on)
+int br_set_port_hairpin(const char *br, char *port, int on)
 {
 	if (!ifexists(br))
 		return -1;
@@ -142,20 +146,24 @@ int br_set_stp_state(const char *br, int stp_state)
 	}
 }
 
-int br_set_port_prio(const char *br, char *port, char *prio)
+int br_set_port_prio(const char *br, char *port, int prio)
 {
 	if (!ifexists(br))
 		return -1;
 	if (!ifexists(port))
 		return -1;
-	return eval("brctl", "setportprio", br, port, prio);
+	char sprio[32];
+	snprintf(sprio, sizeof(sprio), "%d", prio);
+	return eval("brctl", "setportprio", br, port, sprio);
 }
 
-int br_set_bridge_prio(const char *br, char *prio)
+int br_set_bridge_prio(const char *br, int prio)
 {
 	if (!ifexists(br))
 		return -1;
-	return eval("brctl", "setbridgeprio", br, prio);
+	char sprio[32];
+	snprintf(sprio, sizeof(sprio), "%d", prio);
+	return eval("brctl", "setbridgeprio", br, sprio);
 }
 
 #endif

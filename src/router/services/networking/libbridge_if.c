@@ -305,11 +305,11 @@ int br_set_stp_state(const char *br, int stp_state)
 	return br_set(br, "stp_state", stp_state, BRCTL_SET_BRIDGE_STP_STATE);
 }
 
-int br_set_bridge_prio(const char *br, char *prio)
+int br_set_bridge_prio(const char *br, int prio)
 {
 	if (!ifexists(br))
 		return -1;
-	return br_set(br, "priority", atoi(prio), BRCTL_SET_BRIDGE_PRIORITY);
+	return br_set(br, "priority", prio, BRCTL_SET_BRIDGE_PRIORITY);
 }
 
 /*
@@ -391,11 +391,11 @@ static int port_set(const char *bridge, const char *ifname, const char *name, un
 	return ret < 0 ? errno : 0;
 }
 
-int br_set_port_prio(const char *bridge, char *port, char *prio)
+int br_set_port_prio(const char *bridge, char *port, int prio)
 {
 	if (!ifexists(bridge))
 		return -1;
-	return port_set(bridge, port, "priority", atoi(prio), BRCTL_SET_PORT_PRIORITY);
+	return port_set(bridge, port, "priority", prio, BRCTL_SET_PORT_PRIORITY);
 }
 
 static void br_dump_bridge_id(const unsigned char *x)

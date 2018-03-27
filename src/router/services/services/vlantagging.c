@@ -180,6 +180,7 @@ void start_bridgesif(void)
 		char *port = word;
 		char *tag = strsep(&port, ">");
 		char *prio = port;
+		char *hairpin = strsep(&prio, ">");
 
 		strsep(&prio, ">");
 		if (!tag || !port)
@@ -193,7 +194,9 @@ void start_bridgesif(void)
 		}*/
 			br_add_interface(tag, port);
 			if (prio)
-				br_set_port_prio(tag, port, prio);
+				br_set_port_prio(tag, port, atoi(prio));
+			if (hairpin)
+				br_set_port_hairpin(tag, port, atoi(hairpin));
 		}
 	}
 }
@@ -235,7 +238,7 @@ void start_bridging(void)
 		br_set_bridge_forward_delay(bridge, 2);
 
 		if (prio)
-			br_set_bridge_prio(bridge, prio);
+			br_set_bridge_prio(bridge, atoi(prio));
 
 		sprintf(hwaddr, "%s_hwaddr", bridge);
 		if (strcmp(bridge, "br0") && strlen(nvram_safe_get(hwaddr)) > 0) {
