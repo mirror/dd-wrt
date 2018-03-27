@@ -64,6 +64,11 @@ int brctl_main(int argc, char **argv)
 #else
 
 #ifdef HAVE_MSTP
+int br_set_hairpin(const char *br, const char *port, int on)
+{
+	return eval("brctl", "hairpin", br, port, on ? "on" : "off");
+
+}
 
 int br_set_stp_state(const char *br, int stp_state)
 {
@@ -101,6 +106,12 @@ int br_set_bridge_forward_delay(const char *br, int sec)
 
 }
 #else
+int br_set_hairpin(const char *br, const char *port, int on)
+{
+	return eval("brctl", "hairpin", br, port, on ? "on" : "off");
+
+}
+
 int br_set_bridge_forward_delay(const char *br, int sec)
 {
 	char delay[32];
