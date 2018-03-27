@@ -179,12 +179,16 @@ void start_bridgesif(void)
 	foreach(word, wordlist, next) {
 		char *port = word;
 		char *tag = strsep(&port, ">");
-		char *hairpin = port;
-		port = strsep(&hairpin, ">");
-
-		strsep(&prio, ">");
 		if (!tag || !port)
 			break;
+		char *prio = port;
+		port = strsep(&prio, ">");
+		char *hairpin = NULL;
+		if (prio) {
+			hairpin = prio;
+			prio = strsep(&hairpin, ">");
+		}
+
 		if (strncmp(tag, "EOP", 3)) {
 /*	    char *mtu = nvram_nget("%s_mtu",tag);
 	    if (mtu && strlen(mtu))
