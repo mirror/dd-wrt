@@ -73,6 +73,7 @@ struct port_info {
 	struct timeval message_age_timer_value;
 	struct timeval forward_delay_timer_value;
 	struct timeval hold_timer_value;
+	unsigned char hairpin_mode;
 };
 
 extern int br_init(void);
