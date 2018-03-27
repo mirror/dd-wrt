@@ -26,7 +26,7 @@
 
 #include <sys/un.h>
 #include <unistd.h>
-#include <sys/poll.h>
+#include <poll.h>
 #include <string.h>
 
 #include "ctl_functions.h"
@@ -93,7 +93,7 @@ int send_ctl_message(int cmd, void *inbuf, int lin, void *outbuf, int lout,
 
     msg.msg_name = NULL;
     msg.msg_namelen = 0;
-    msg.msg_iov = &iov;
+    msg.msg_iov = &iov[0];
     msg.msg_iovlen = 3;
     msg.msg_control = NULL;
     msg.msg_controllen = 0;

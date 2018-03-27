@@ -20,7 +20,7 @@
   file called LICENSE.
 
   Authors: Srinivas Aji <Aji_Srinivas@emc.com>
-  Authors: Vitalii Demianets <vitas@nppfactor.kiev.ua>
+  Authors: Vitalii Demianets <dvitasgs@gmail.com>
 
 ******************************************************************************/
 

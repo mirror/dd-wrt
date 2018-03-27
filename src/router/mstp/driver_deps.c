@@ -6,7 +6,7 @@
  *  as published by the Free Software Foundation; either version
  *  2 of the License, or (at your option) any later version.
  *
- * Authors: Vitalii Demianets <vitas@nppfactor.kiev.ua>
+ * Authors: Vitalii Demianets <dvitasgs@gmail.com>
  */
 
 #include <string.h>
@@ -16,6 +16,43 @@
 
 #include "log.h"
 #include "mstp.h"
+
+/* Initialize driver objects & states */
+int driver_mstp_init()
+{
+    return 0;
+}
+
+/* Cleanup driver objects & states */
+void driver_mstp_fini()
+{
+
+}
+
+/* Driver hook that is called before a bridge is created */
+bool driver_create_bridge(bridge_t *br, __u8 *macaddr)
+{
+    return true;
+}
+
+/* Driver hook that is called before a port is created */
+bool driver_create_port(port_t *prt, __u16 portno)
+{
+    return true;
+}
+
+/* Driver hook that is called when a bridge is deleted */
+void driver_delete_bridge(bridge_t *br)
+{
+
+}
+
+/* Driver hook that is called when a port is deleted */
+void driver_delete_port(port_t *prt)
+{
+
+}
+
 
 /*
  * Set new state (BR_STATE_xxx) for the given port and MSTI.

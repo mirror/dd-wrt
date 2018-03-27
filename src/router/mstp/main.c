@@ -20,14 +20,20 @@
   file called LICENSE.
 
   Authors: Srinivas Aji <Aji_Srinivas@emc.com>
-  Authors: Vitalii Demianets <vitas@nppfactor.kiev.ua>
+  Authors: Vitalii Demianets <dvitasgs@gmail.com>
 
 ******************************************************************************/
 
 /* #define MISC_TEST_FUNCS */
 
+#include <config.h>
+
 #include <unistd.h>
 #include <syslog.h>
+#include <signal.h>
+#include <stdbool.h>
+#include <string.h>
+#include <sys/types.h>
 
 #include "epoll_loop.h"
 #include "bridge_ctl.h"
@@ -36,20 +42,57 @@
 #include "log.h"
 #include "mstp.h"
 #include "ctl_socket_server.h"
+#include "driver.h"
+#include "bridge_track.h"
 
 #define APP_NAME    "mstpd"
 
-static int become_daemon = 1;
-static int is_daemon = 0;
+static int print_to_syslog = 0;
 int log_level = LOG_LEVEL_DEFAULT;
 
 #ifdef MISC_TEST_FUNCS
 static bool test_ports_trees_mesh(void);
 #endif /* MISC_TEST_FUNCS */
 
+volatile bool quit = false;
+
+static void handle_signal(int sig)
+{
+    quit = true;
+}
+
+static void handle_sigusr1(int sig)
+{
+    log_level = LOG_LEVEL_DEBUG;
+}
+
+int signal_init(void)
+{
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = handle_signal;
+    sa.sa_flags = 0;
+
+    sigaction(SIGTERM, &sa, NULL);
+    sigaction(SIGINT, &sa, NULL);
+    sigaction(SIGHUP, &sa, NULL);
+    sigaction(SIGUSR2, &sa, NULL);
+
+    sa.sa_handler = handle_sigusr1;
+    sigaction(SIGUSR1, &sa, NULL);
+
+    sa.sa_handler = SIG_IGN;
+    sigaction(SIGPIPE, &sa, NULL);
+
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
     int c;
+    int daemonize = 1;
+
+    INFO("Version - " PACKAGE_VERSION "\n");
 
     /* Sanity check */
     {
@@ -72,12 +115,15 @@ int main(int argc, char *argv[])
         INFO("Sanity checks succeeded");
     }
 
-    while((c = getopt(argc, argv, "dv:")) != -1)
+    while((c = getopt(argc, argv, "Vdsv:")) != -1)
     {
         switch (c)
         {
             case 'd':
-                become_daemon = 0;
+                daemonize = 0;
+                break;
+            case 's':
+                print_to_syslog = 1;
                 break;
             case 'v':
             {
@@ -92,37 +138,49 @@ int main(int argc, char *argv[])
                 log_level = l;
                 break;
             }
+            case 'V':
+                printf(PACKAGE_VERSION "\n");
+                return 0;
             default:
                 return -1;
         }
     }
 
-    if(become_daemon)
+    if(daemonize)
     {
-        FILE *f = fopen("/var/run/"APP_NAME".pid", "w");
+        FILE *f = fopen(MSTPD_PID_FILE, "w");
         if(!f)
         {
-            ERROR("can't open /var/run/"APP_NAME".pid");
+            ERROR("can't open "MSTPD_PID_FILE);
             return -1;
         }
-        openlog(APP_NAME, 0, LOG_DAEMON);
         if(daemon(0, 0))
         {
             ERROR("can't daemonize");
             return -1;
         }
-        is_daemon = 1;
         fprintf(f, "%d", getpid());
         fclose(f);
+        print_to_syslog = 1;
     }
 
+    if(print_to_syslog)
+        openlog(APP_NAME, 0, LOG_DAEMON);
+
+
+    TST(signal_init() == 0, -1);
+    TST(driver_mstp_init() == 0, -1);
     TST(init_epoll() == 0, -1);
     TST(ctl_socket_init() == 0, -1);
     TST(packet_sock_init() == 0, -1);
     TST(netsock_init() == 0, -1);
     TST(init_bridge_ops() == 0, -1);
 
-    return epoll_main_loop();
+    c = epoll_main_loop(&quit);
+    bridge_track_fini();
+    driver_mstp_fini();
+
+    return c;
 }
 
 /*********************** Logging *********************/
@@ -135,7 +193,7 @@ void vDprintf(int level, const char *fmt, va_list ap)
     if(level > log_level)
         return;
 
-    if(!is_daemon)
+    if(!print_to_syslog)
     {
         char logbuf[256];
         logbuf[255] = 0;
