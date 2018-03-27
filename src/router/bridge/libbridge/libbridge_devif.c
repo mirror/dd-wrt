@@ -316,15 +316,6 @@ static int br_set(const char *bridge, const char *name,
 		strncpy(ifr.ifr_name, bridge, IFNAMSIZ);
 		ifr.ifr_data = (char *) &args;
 		ret = ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr);
-	} else
-
-	{
-		struct ifreq ifr;
-		unsigned long args[4] = { oldcode, value, 0, 0 };
-		
-		strncpy(ifr.ifr_name, bridge, IFNAMSIZ);
-		ifr.ifr_data = (char *) &args;
-		ret = ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr);
 	}
 
 	return ret < 0 ? errno : 0;
@@ -373,22 +364,7 @@ static int port_set(const char *bridge, const char *ifname,
 	char path[SYSFS_PATH_MAX];
 
 	snprintf(path, SYSFS_PATH_MAX, SYSFS_CLASS_NET "%s/brport/%s", ifname, name);
-
 	if ((ret = set_sysfs(path, value)) < 0) {
-		int index = get_portno(bridge, ifname);
-
-		if (index < 0)
-			ret = index;
-		else {
-			struct ifreq ifr;
-			unsigned long args[4] = { oldcode, index, value, 0 };
-			
-			strncpy(ifr.ifr_name, bridge, IFNAMSIZ);
-			ifr.ifr_data = (char *) &args;
-			ret = ioctl(br_socket_fd, SIOCDEVPRIVATE, &ifr);
-		}
-	} else 
-	{
 		int index = get_portno(bridge, ifname);
 
 		if (index < 0)
