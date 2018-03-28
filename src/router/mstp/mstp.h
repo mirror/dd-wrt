@@ -478,6 +478,7 @@ typedef struct
     bool NetworkPort;
     bool BaInconsistent;
     bool dontTxmtBpdu;
+    bool bpduFilterPort;
 
     unsigned int rapidAgeingWhile;
     unsigned int brAssuRcvdInfoWhile;
@@ -701,6 +702,7 @@ typedef struct
     __u32 internal_port_path_cost; /* not in standard */
     bool bpdu_guard_port;
     bool bpdu_guard_error;
+    bool bpdu_filter_port;
     bool network_port;
     bool ba_inconsistent;
     unsigned int num_rx_bpdu;
@@ -775,6 +777,9 @@ typedef struct
 
     bool dont_txmt;
     bool set_dont_txmt;
+
+    bool bpdu_filter_port;
+    bool set_bpdu_filter_port;
 } CIST_PortConfig;
 
 int MSTP_IN_set_cist_port_config(port_t *prt, CIST_PortConfig *cfg);
