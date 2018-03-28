@@ -3081,9 +3081,12 @@ void save_networking(webs_t wp)
 		sprintf(var, "bridgeprio%d", i);
 		prio = websGetVar(wp, var, NULL);
 		if (!prio)
-			prio = "32768";
+			prio = "8";
 		if (strlen(prio) == 0)
-			prio = "32768";
+			prio = "8";
+
+		if (atoi(prio) > 15)
+			prio = "15";
 
 		sprintf(var, "bridgemtu%d", i);
 		mtu = websGetVar(wp, var, NULL);
@@ -3496,7 +3499,7 @@ void del_ipvs(webs_t wp)
 	nvram_set("ipvs", newwordlist);
 	nvram_commit();
 	if (newwordlist)
-    		free(newwordlist);
+		free(newwordlist);
 	return;
 }
 
