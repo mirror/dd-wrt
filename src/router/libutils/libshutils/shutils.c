@@ -1020,7 +1020,9 @@ char *chomp(char *s)
 
 char *foreach_first(char *foreachwordlist, char *word, char delim)
 {
-	char *next = &foreachwordlist[strcpn(foreachwordlist, delim)];
+	char *delimiter_s = " ";
+	delimiter_s[0] = delim;
+	char *next = &foreachwordlist[strspn(foreachwordlist, delimiter_s)];
 	strcpyto(word, next, delim);
 	next = strchr(next, delim);
 	return next;
@@ -1028,7 +1030,9 @@ char *foreach_first(char *foreachwordlist, char *word, char delim)
 
 char *foreach_last(char *next, char *word, char delim)
 {
-	next = next ? &next[strcpn(next, delim)] : "";
+	char *delimiter_s = " ";
+	delimiter_s[0] = delim;
+	next = next ? &next[strspn(next, delimiter_s)] : "";
 	strcpyto(word, next, delim);
 	next = strchr(next, delim);
 	return next;
