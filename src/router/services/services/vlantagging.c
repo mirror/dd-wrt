@@ -191,7 +191,7 @@ int getBridgeSTPType(char *br)
 
 static void set_stp_state(char *bridge, char *stp)
 {
-	br_set_stp_state("br0", strcmp(stp, "Off") ? 1 : 0);
+	br_set_stp_state(stp, strcmp(stp, "Off") ? 1 : 0);
 
 #ifdef HAVE_MSTP
 	if (strcmp(stp, "Off"))
