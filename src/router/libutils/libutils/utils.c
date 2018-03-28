@@ -1923,7 +1923,7 @@ char *get_wan_face(void)
 	return localwanface;
 }
 
-int getBridgeSTP(char *br)
+char *getBridgeSTPType(char *br)
 {
 
 	char word[256];
@@ -1938,11 +1938,17 @@ int getBridgeSTP(char *br)
 		stp = strsep(&prio, ">");
 		if (!stp)
 			break;
-		if (strcmp(stp, "Off"))
-			return 1;
-		return 0;
+		return stp;
 	}
 	if (!strcmp(br, "br0"))
-		return nvram_matchi("lan_stp", 1) ? 1 : 0;
-	return -1;
+		return nvram_matchi("lan_stp", 1) ? "STP" : "Off";
+	return "Off";
+}
+
+int getBridgeSTP(char *br)
+{
+	if (strcmp(getBridgeSTPType(br), "Off"))
+		return 1;
+	else
+		return 0;
 }

@@ -815,6 +815,7 @@ extern char *get_mac_from_ip(char *mac, char *ip);
 extern int dns_to_resolv(void);
 extern char *get_wan_face(void);
 extern int getBridgeSTP(char *br);
+extern char *getBridgeSTPType(char *br);
 
 extern int check_wan_link(int num);
 extern char *get_wan_ipaddr(void);
