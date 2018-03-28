@@ -19,6 +19,7 @@
  *
  * $Id:
  */
+
 void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 {
 	char buffer[256];
@@ -230,6 +231,41 @@ void ej_show_bridgetable(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
+static void show_bridgeifname(webs_t wp, char *bridges, char *devs, int count, char *bridge, char *port, char *prio, char *hairpin)
+{
+
+	char vlan_name[32];
+	websWrite(wp, "<tr>\n");
+
+	websWrite(wp, "<td>");
+	sprintf(vlan_name, "bridge%d", count);
+	showIfOptions(wp, vlan_name, bridges, bridge);
+	websWrite(wp, "</td>");
+
+	websWrite(wp, "<td>");
+	sprintf(vlan_name, "bridgeif%d", count);
+	showIfOptions(wp, vlan_name, devs, port);
+	websWrite(wp, "</td>");
+
+	websWrite(wp, "<td>");
+	sprintf(vlan_name, "bridgeifprio%d", count);
+	websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" />\n", vlan_name, prio != NULL ? prio : "63");
+	websWrite(wp, "</td>");
+
+	websWrite(wp, "<td>");
+	sprintf(vlan_name, "bridgeifhairpin%d", count);
+	websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s/>\n", vlan_name, (hairpin && !strcmp(hairpin, "1")) ? "checked=\"checked\"" : "");
+	websWrite(wp, "</td>");
+
+	websWrite(wp, "<td>");
+	websWrite(wp,
+		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridgeif_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+		  count);
+	websWrite(wp, "</td>");
+	websWrite(wp, "</tr>\n");
+
+}
+
 void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 {
 	char bufferif[512];
@@ -278,71 +314,13 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 			hairpin = prio;
 			prio = strsep(&hairpin, ">");
 		}
-		char vlan_name[32];
-		websWrite(wp, "<tr>\n");
-
-		websWrite(wp, "<td>");
-		sprintf(vlan_name, "bridge%d", count);
-		showIfOptions(wp, vlan_name, finalbuffer, tag);
-		websWrite(wp, "</td>");
-
-		websWrite(wp, "<td>");
-		sprintf(vlan_name, "bridgeif%d", count);
-		showIfOptions(wp, vlan_name, bufferif, port);
-		websWrite(wp, "</td>");
-
-		websWrite(wp, "<td>");
-		sprintf(vlan_name, "bridgeifprio%d", count);
-		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" />\n", vlan_name, prio != NULL ? prio : "63");
-		websWrite(wp, "</td>");
-
-		websWrite(wp, "<td>");
-		sprintf(vlan_name, "bridgeifhairpin%d", count);
-		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s/>\n", vlan_name, (hairpin && !strcmp(hairpin, "1")) ? "checked=\"checked\"" : "");
-		websWrite(wp, "</td>");
-
-		websWrite(wp, "<td>");
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridgeif_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
-			  count);
-		websWrite(wp, "</td>");
-		websWrite(wp, "</tr>\n");
+		show_bridgeifname(wp, finalbuffer, bufferif, count, tag, port, prio, hairpin);
 		count++;
 	}
 	int totalcount = count;
 
 	for (i = count; i < realcount; i++) {
-		char vlan_name[32];
-
-		websWrite(wp, "<tr>\n");
-
-		websWrite(wp, "<td>");
-		sprintf(vlan_name, "bridge%d", i);
-		showIfOptions(wp, vlan_name, finalbuffer, "");
-		websWrite(wp, "</td>");
-
-		websWrite(wp, "<td>");
-		sprintf(vlan_name, "bridgeif%d", i);
-		showIfOptions(wp, vlan_name, bufferif, "");
-		websWrite(wp, "</td>");
-
-		websWrite(wp, "<td>");
-		sprintf(vlan_name, "bridgeifprio%d", i);
-		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n", vlan_name, "63");
-		websWrite(wp, "</td>");
-
-		websWrite(wp, "<td>");
-		sprintf(vlan_name, "bridgeifhairpin%d", count);
-		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" />\n", vlan_name);
-		websWrite(wp, "</td>");
-
-		websWrite(wp, "<td>");
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridgeif_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
-			  i);
-		websWrite(wp, "</td>");
-
-		websWrite(wp, "</tr>\n");
+		show_bridgeifname(wp, finalbuffer, bufferif, i, "", "", NULL, NULL);
 		totalcount++;
 	}
 	websWrite(wp, "</table>");
