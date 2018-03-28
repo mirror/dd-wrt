@@ -223,7 +223,7 @@ char *foreach_last(char *next, char *word, char delim);
 
 
 #define foreach(word, foreachwordlist, next) \
-	foreach_delim(word, foreachwordlist, next, delim)
+	foreach_delim(word, foreachwordlist, next, ' ')
 
 /*
  * Return NUL instead of NULL if undefined 
