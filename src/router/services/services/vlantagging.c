@@ -191,7 +191,7 @@ int getBridgeSTPType(char *br)
 
 static void set_stp_state(char *bridge, char *stp)
 {
-	br_set_stp_state(stp, strcmp(stp, "Off") ? 1 : 0);
+	br_set_stp_state(bridge, strcmp(stp, "Off") ? 1 : 0);
 
 #ifdef HAVE_MSTP
 	if (strcmp(stp, "Off"))
@@ -270,7 +270,6 @@ void start_bridging(void)
 		br_add_bridge(bridge);
 		set_stp_state(bridge, stp);
 		br_set_bridge_forward_delay(bridge, 15);
-
 		if (prio)
 			br_set_bridge_prio(bridge, atoi(prio));
 
