@@ -1018,19 +1018,19 @@ char *chomp(char *s)
 	return s;
 }
 
-char *foreach_first(char *foreachwordlist, char *word)
+char *foreach_first(char *foreachwordlist, char *word, char delim)
 {
-	char *next = &foreachwordlist[strspn(foreachwordlist, " ")];
-	strcpyto(word, next, ' ');
-	next = strchr(next, ' ');
+	char *next = &foreachwordlist[strcpn(foreachwordlist, delim)];
+	strcpyto(word, next, delim);
+	next = strchr(next, delim);
 	return next;
 }
 
-char *foreach_last(char *next, char *word)
+char *foreach_last(char *next, char *word, char delim)
 {
-	next = next ? &next[strspn(next, " ")] : "";
-	strcpyto(word, next, ' ');
-	next = strchr(next, ' ');
+	next = next ? &next[strcpn(next, delim)] : "";
+	strcpyto(word, next, delim);
+	next = strchr(next, delim);
 	return next;
 }
 
