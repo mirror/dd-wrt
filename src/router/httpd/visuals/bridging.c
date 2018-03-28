@@ -248,7 +248,7 @@ static void show_bridgeifname(webs_t wp, char *bridges, char *devs, int count, c
 	websWrite(wp, "</td>");
 
 #ifdef HAVE_MSTP
-	int stp;
+	int hasstp;
 	if (strlen(bridge))
 		hasstp = getBridgeSTP(bridge);
 	else
