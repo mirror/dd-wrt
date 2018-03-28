@@ -132,6 +132,7 @@ typedef enum {
     PARAM_BPDUGUARDERROR,
     PARAM_NETWORKPORT,
     PARAM_BA_INCONSISTENT,
+    PARAM_BPDUFILTERPORT,
 } param_id_t;
 
 typedef struct {
@@ -498,6 +499,7 @@ static const cmd_param_t cist_port_params[] = {
     { PARAM_BPDUGUARDERROR, "bpdu-guard-error" },
     { PARAM_NETWORKPORT,    "network-port" },
     { PARAM_BA_INCONSISTENT,"ba-inconsistent" },
+    { PARAM_BPDUFILTERPORT, "bpdufilter-port" },
 };
 
 static int detail = 0;
@@ -579,6 +581,7 @@ static int do_showport(int br_index, const char *bridge_name,
                 printf("Num RX TCN           %u\n", s.num_rx_tcn);
                 printf("  Num Transition FWD %-23u ", s.num_trans_fwd);
                 printf("Num Transition BLK   %u\n", s.num_trans_blk);
+                printf("  bpdufilter port    %-23s\n", BOOL_STR(s.bpdu_filter_port));
                 printf("  Rcvd BPDU          %-23s ", BOOL_STR(s.rcvdBpdu));
                 printf("Rcvd STP             %s\n", BOOL_STR(s.rcvdSTP));
                 printf("  Rcvd RSTP          %-23s ", BOOL_STR(s.rcvdRSTP));
@@ -684,6 +687,9 @@ static int do_showport(int br_index, const char *bridge_name,
             break;
         case PARAM_BA_INCONSISTENT:
             printf("%s\n", BOOL_STR(s.ba_inconsistent));
+            break;
+        case PARAM_BPDUFILTERPORT:
+            printf("%s\n", BOOL_STR(s.bpdu_filter_port));
             break;
         default:
             return -2; /* -2 = unknown param */
@@ -1164,6 +1170,17 @@ static int cmd_setportdonttxmt(int argc, char *const *argv)
     return set_port_cfg(dont_txmt, getyesno(argv[3], "yes", "no"));
 }
 
+static int cmd_setportbpdufilter(int argc, char *const *argv)
+{
+    int br_index = get_index(argv[1], "bridge");
+    if (0 > br_index)
+        return br_index;
+    int port_index = get_index(argv[2], "port");
+    if (0 > port_index)
+        return port_index;
+    return set_port_cfg(bpdu_filter_port, getyesno(argv[3], "yes", "no"));
+}
+
 static int cmd_settreeportprio(int argc, char *const *argv)
 {
     int br_index = get_index(argv[1], "bridge");
@@ -1595,6 +1612,8 @@ static const struct command commands[] =
      "<bridge> <port> {yes|no}", "Set port network state"},
     {3, 0, "setportdonttxmt", cmd_setportdonttxmt,
      "<bridge> <port> {yes|no}", "Disable/Enable sending BPDU"},
+    {3, 0, "setportbpdufilter", cmd_setportbpdufilter,
+     "<bridge> <port> {yes|no}", "Set BPDU filter state"},
 
     /* Other */
     {1, 0, "debuglevel", cmd_debuglevel, "<level>", "Level of verbosity"},
