@@ -3098,10 +3098,7 @@ void save_networking(webs_t wp)
 
 		strcat(buffer, ifname);
 		strcat(buffer, ">");
-		if (!strcmp(tag, "On"))
-			strcat(buffer, "On");
-		else
-			strcat(buffer, "Off");
+		strcat(buffer, tag);
 		strcat(buffer, ">");
 		strcat(buffer, prio);
 		strcat(buffer, ">");
