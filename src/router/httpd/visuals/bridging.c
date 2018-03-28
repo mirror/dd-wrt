@@ -250,9 +250,9 @@ static void show_bridgeifname(webs_t wp, char *bridges, char *devs, int count, c
 #ifdef HAVE_MSTP
 	int stp;
 	if (strlen(bridge))
-	    hasstp = getBridgeSTP(bridge);
+		hasstp = getBridgeSTP(bridge);
 	else
-	    hasstp = 0;
+		hasstp = 0;
 	websWrite(wp, "<td>");
 	sprintf(vlan_name, "bridgeifstp%d", count);
 	showIfOptions(wp, vlan_name, "On Off", stp ? hasstp ? stp : "Off" : hasstp ? "On" : "Off");
@@ -329,8 +329,8 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 			hairpin = prio;
 			prio = strsep(&hairpin, ">");
 			if (hairpin) {
-			    stp = hairpin;
-			    hairpin = strsep(&stp,">");
+				stp = hairpin;
+				hairpin = strsep(&stp, ">");
 			}
 		}
 		show_bridgeifname(wp, finalbuffer, bufferif, count, tag, port, stp, prio, hairpin);
@@ -339,7 +339,7 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	int totalcount = count;
 
 	for (i = count; i < realcount; i++) {
-		show_bridgeifname(wp, finalbuffer, bufferif, i "", NULL, "", NULL, NULL);
+		show_bridgeifname(wp, finalbuffer, bufferif, i, "", NULL, "", NULL, NULL);
 		totalcount++;
 	}
 	websWrite(wp, "</table>");
