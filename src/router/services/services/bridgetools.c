@@ -85,10 +85,10 @@ int br_set_stp_state(const char *br, int stp_state)
 		return -1;
 	if (stp_state == 1) {
 		// syslog (LOG_INFO, "stp is set to on\n");
-		return eval("brctl", "stp", br, "1");
+		return eval("brctl", "stp", br, "on");
 	} else {
 		// syslog (LOG_INFO, "stp is set to off\n");
-		return eval("brctl", "stp", br, "0");
+		return eval("brctl", "stp", br, "off");
 	}
 }
 
@@ -136,10 +136,10 @@ int br_set_stp_state(const char *br, int stp_state)
 		return -1;
 	if (stp_state == 1) {
 		// syslog (LOG_INFO, "stp is set to on\n");
-		return eval("brctl", "stp", br, "1");
+		return eval("brctl", "stp", br, "on");
 	} else {
 		// syslog (LOG_INFO, "stp is set to off\n");
-		return eval("brctl", "stp", br, "0");
+		return eval("brctl", "stp", br, "off");
 	}
 }
 
