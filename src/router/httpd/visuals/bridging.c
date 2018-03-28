@@ -46,7 +46,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 
 	websWrite(wp, "<table cellspacing=\"5\" summary=\"bridges\" id=\"Bridge_table\" class=\"table center\"><tr>\n");
 	websWrite(wp, "<th>Name</th>\n");
-	websWrite(wp, "<th>Spanning Tree</th>\n");
+	show_caption_pp(wp, NULL, "networking.stp", "<th>", "</th>\n");
 #ifdef HAVE_MSTP
 	char *stpoptions = "STP RSTP MSTP Off";
 #else
@@ -231,7 +231,7 @@ void ej_show_bridgetable(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-static void show_bridgeifname(webs_t wp, char *bridges, char *devs, int count, char *bridge, char *port, char *prio, char *hairpin)
+static void show_bridgeifname(webs_t wp, char *bridges, char *devs, int count, char *bridge, char *port, char *stp, char *prio, char *hairpin)
 {
 
 	char vlan_name[32];
@@ -247,6 +247,17 @@ static void show_bridgeifname(webs_t wp, char *bridges, char *devs, int count, c
 	showIfOptions(wp, vlan_name, devs, port);
 	websWrite(wp, "</td>");
 
+#ifdef HAVE_MSTP
+	int stp;
+	if (strlen(bridge))
+	    hasstp = getBridgeSTP(bridge);
+	else
+	    hasstp = 0;
+	websWrite(wp, "<td>");
+	sprintf(vlan_name, "bridgeifstp%d", count);
+	showIfOptions(wp, vlan_name, "On Off", stp ? hasstp ? stp : "Off" : hasstp ? "On" : "Off");
+	websWrite(wp, "</td>");
+#endif
 	websWrite(wp, "<td>");
 	sprintf(vlan_name, "bridgeifprio%d", count);
 	websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" />\n", vlan_name, prio != NULL ? prio : "63");
@@ -297,6 +308,9 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<table cellspacing=\"5\" summary=\"bridgeassignments\" id=\"bridgeassignments_table\" class=\"table center\"><tr>\n");
 	show_caption_pp(wp, NULL, "networking.assign", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.iface", "<th>", "</th>\n");
+#ifdef HAVE_MSTP
+	show_caption_pp(wp, NULL, "networking.stp", "<th>", "</th>\n");
+#endif
 	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.hairpin", "<th>", "</th>\n");
 	websWrite(wp, "<th>&nbsp;</th></tr>\n");
@@ -310,17 +324,22 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		char *prio = port;
 		port = strsep(&prio, ">");
 		char *hairpin = NULL;
+		char *stp = NULL;
 		if (prio) {
 			hairpin = prio;
 			prio = strsep(&hairpin, ">");
+			if (hairpin) {
+			    stp = hairpin;
+			    hairpin = strsep(&stp,">");
+			}
 		}
-		show_bridgeifname(wp, finalbuffer, bufferif, count, tag, port, prio, hairpin);
+		show_bridgeifname(wp, finalbuffer, bufferif, count, tag, port, stp, prio, hairpin);
 		count++;
 	}
 	int totalcount = count;
 
 	for (i = count; i < realcount; i++) {
-		show_bridgeifname(wp, finalbuffer, bufferif, i, "", "", NULL, NULL);
+		show_bridgeifname(wp, finalbuffer, bufferif, i "", NULL, "", NULL, NULL);
 		totalcount++;
 	}
 	websWrite(wp, "</table>");
