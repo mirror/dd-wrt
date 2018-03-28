@@ -1922,3 +1922,27 @@ char *get_wan_face(void)
 
 	return localwanface;
 }
+
+int getBridgeSTP(char *br)
+{
+
+	char word[256];
+	char *next, *wordlist;
+	wordlist = nvram_safe_get("bridges");
+	foreach(word, wordlist, next) {
+		char *stp = word;
+		char *bridge = strsep(&stp, ">");
+		char *prio = stp;
+		if (strcmp(bridge, br))
+			continue;
+		stp = strsep(&prio, ">");
+		if (!stp)
+			break;
+		if (strcmp(stp, "Off"))
+			return 1;
+		return 0;
+	}
+	if (!strcmp(br, "br0"))
+		return nvram_matchi("lan_stp", 1) ? 1 : 0;
+	return -1;
+}

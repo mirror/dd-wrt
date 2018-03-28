@@ -1406,6 +1406,7 @@ networking.bondtype="Bonding Type";
 networking.bondifaces="Bonding Interfaces";
 networking.bond="Bond";
 networking.slave="Slave";
+networking.stp="STP";
 networking.max="Max";
 networking.leasetime="Leasetime";
 networking.ipvs="IP Virtual Server";

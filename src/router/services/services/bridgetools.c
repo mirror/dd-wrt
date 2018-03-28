@@ -61,7 +61,13 @@ int brctl_main(int argc, char **argv)
 	}
 	br_shutdown();
 }
-int br_set_port_hairpin(const char *br, char *port, int on) // unsupported
+
+int br_set_port_hairpin(const char *br, char *port, int on)	// unsupported
+{
+	return 0;
+}
+
+int br_set_port_stp(const char *br, char *port, int on)	// unsupported
 {
 	return 0;
 }
@@ -79,11 +85,25 @@ int br_set_port_hairpin(const char *br, char *port, int on)
 
 #ifdef HAVE_MSTP
 
+int br_set_port_stp(const char *br, char *port, int on)	// unsupported
+{
+	if (!ifexists(br))
+		return -1;
+
+	if (on) {
+		return eval("mstpctl", "setportbpdufilter", br, port, "yes");
+	} else {
+		return eval("mstpctl", "setportbpdufilter", br, port, "no");
+	}
+
+	return 0;
+}
+
 int br_set_stp_state(const char *br, int stp_state)
 {
 	if (!ifexists(br))
 		return -1;
-	if (stp_state == 1) {
+	if (stp_state) {
 		// syslog (LOG_INFO, "stp is set to on\n");
 		return eval("brctl", "stp", br, "on");
 	} else {
@@ -121,6 +141,11 @@ int br_set_bridge_forward_delay(const char *br, int sec)
 
 }
 #else
+
+int br_set_port_stp(const char *br, char *port, int on)	// unsupported
+{
+	return 0;
+}
 
 int br_set_bridge_forward_delay(const char *br, int sec)
 {

@@ -143,30 +143,6 @@ void stop_vlantagging(void)
 	}
 }
 
-int getBridgeSTP(char *br)
-{
-
-	char word[256];
-	char *next, *wordlist;
-	wordlist = nvram_safe_get("bridges");
-	foreach(word, wordlist, next) {
-		char *stp = word;
-		char *bridge = strsep(&stp, ">");
-		char *prio = stp;
-		if (strcmp(bridge, br))
-			continue;
-		stp = strsep(&prio, ">");
-		if (!stp)
-			break;
-		if (strcmp(stp, "Off"))
-			return 1;
-		return 0;
-	}
-	if (!strcmp(br, "br0"))
-		return nvram_matchi("lan_stp", 1) ? 1 : 0;
-	return -1;
-}
-
 int getBridgeSTPType(char *br)
 {
 
@@ -224,9 +200,14 @@ void start_bridgesif(void)
 		char *prio = port;
 		port = strsep(&prio, ">");
 		char *hairpin = NULL;
+		char *stp = NULL;
 		if (prio) {
 			hairpin = prio;
 			prio = strsep(&hairpin, ">");
+			if (hairpin) {
+			    stp = hairpin;
+			    hairpin = strsep(&stp,">");
+			}
 		}
 
 		if (strncmp(tag, "EOP", 3)) {
@@ -235,6 +216,8 @@ void start_bridgesif(void)
 				br_set_port_prio(tag, port, atoi(prio));
 			if (hairpin)
 				br_set_port_hairpin(tag, port, atoi(hairpin));
+			if (stp)
+				br_set_port_stp(tag, port, atoi(stp));
 		}
 	}
 }
