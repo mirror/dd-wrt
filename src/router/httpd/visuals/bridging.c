@@ -71,7 +71,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		showOptions(wp, bridge_name, "On Off", nvram_default_match("br0_mcast", "1", "0") ? "On" : "Off");
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", count);
-		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"5\" value=\"32768\" /></td>\n", bridge_name);
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"8\" /></td>\n", bridge_name);
 		// Bridges are bridges, Ports are ports, show it again HERE          
 		sprintf(bridge_name, "bridgemtu%d", count);
 		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"1500\" /></td>\n", bridge_name);
@@ -123,7 +123,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		showOptions(wp, bridge_name, "On Off", nvram_default_match(mcast, "1", "0") ? "On" : "Off");
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", count);
-		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" /></td>\n", bridge_name, prio != NULL ? prio : "32768");
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"%s\" /></td>\n", bridge_name, prio != NULL ? prio : "8");
 		// Bridges are bridges, Ports are ports, show it again HERE          
 		sprintf(bridge_name, "bridgemtu%d", count);
 		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" /></td>\n", bridge_name, mtu != NULL ? mtu : "1500");
@@ -170,7 +170,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		showOptions(wp, bridge_name, "On Off", "Off");
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", i);
-		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" /></td>\n", bridge_name, "32768");
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"%s\" /></td>\n", bridge_name, "8");
 		sprintf(bridge_name, "bridgemtu%d", count);
 		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" /></td>\n", bridge_name, "1500");
 		websWrite(wp, "<td></td><td>");
