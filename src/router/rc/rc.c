@@ -248,7 +248,6 @@ static struct MAIN maincalls[] = {
 #ifdef HAVE_MICRO
 	{"brctl", "brctl", NULL},
 #endif
-	{"getportprio", "getportprio", NULL},
 	{"setportprio", "setportprio", NULL},
 #ifdef HAVE_NORTHSTAR
 	{"rtkswitch", "rtkswitch", NULL},
