@@ -242,7 +242,7 @@ static void show_bridgeifname(webs_t wp, char *bridges, char *devs, int count, c
 		hasstp = 0;
 	websWrite(wp, "<td>");
 	sprintf(vlan_name, "bridgeifstp%d", count);
-	showIfOptions(wp, vlan_name, "On Off", stp ? hasstp ? stp : "Off" : hasstp ? "On" : "Off");
+	showIfOptions(wp, vlan_name, "On Off", stp ? hasstp ? !strcmp(stp, "1") ? "On" : "Off" : "Off" : hasstp ? "On" : "Off");
 	websWrite(wp, "</td>");
 #endif
 	websWrite(wp, "<td>");
