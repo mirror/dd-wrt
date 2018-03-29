@@ -45,14 +45,12 @@ void start_ipvs(void)
 		return;
 	wordlist = ipvs;
 	foreach(word, wordlist, next) {
-		sourceip = word;
-		ipvsname = strsep(&sourceip, ">");
-		sourceport = sourceip;
-		sourceip = strsep(&sourceport, ">");
-		scheduler = sourceport;
-		sourceport = strsep(&scheduler, ">");
-		sourceproto = scheduler;
-		scheduler = strsep(&sourceproto, ">");
+		GETENTRYBYIDX(ipvsname, word, 0);
+		GETENTRYBYIDX(sourceip, word, 1);
+		GETENTRYBYIDX(sourceport, word, 2);
+		GETENTRYBYIDX(scheduler, word, 3);
+		GETENTRYBYIDX(sourceproto, word, 4);
+
 		if (!ipvsname || !sourceport || !sourceip || !scheduler || !sourceproto)
 			break;
 		if (!first) {
@@ -93,14 +91,11 @@ void start_ipvs(void)
 
 	wordlist = ipvstarget;
 	foreach(word, wordlist, next) {
-		targetip = word;
-		ipvsname = strsep(&targetip, ">");
-		targetport = targetip;
-		targetip = strsep(&targetport, ">");
-		targetweight = targetport;
-		targetport = strsep(&targetweight, ">");
-		targetnat = targetweight;
-		targetweight = strsep(&targetnat, ">");
+		GETENTRYBYIDX(ipvsname, word, 0);
+		GETENTRYBYIDX(targetip, word, 1);
+		GETENTRYBYIDX(targetport, word, 2);
+		GETENTRYBYIDX(targetweight, word, 3);
+		GETENTRYBYIDX(targetnat, word, 4);
 
 		if (!ipvsname || !targetport || !targetip || !targetnat)
 			break;
@@ -108,14 +103,12 @@ void start_ipvs(void)
 		int found = 0;
 		foreach(tword, twordlist, tnext) {
 
-			sourceip = tword;
-			matchname = strsep(&sourceip, ">");
-			sourceport = sourceip;
-			sourceip = strsep(&sourceport, ">");
-			scheduler = sourceport;
-			sourceport = strsep(&scheduler, ">");
-			sourceproto = scheduler;
-			scheduler = strsep(&sourceproto, ">");
+			GETENTRYBYIDX(matchname, word, 0);
+			GETENTRYBYIDX(sourceip, word, 1);
+			GETENTRYBYIDX(sourceport, word, 2);
+			GETENTRYBYIDX(scheduler, word, 3);
+			GETENTRYBYIDX(sourceproto, word, 4);
+
 			if (!ipvsname || !sourceport || !sourceip || !scheduler || !sourceproto)
 				break;
 

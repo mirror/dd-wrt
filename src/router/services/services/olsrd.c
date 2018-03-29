@@ -118,31 +118,15 @@ void start_olsrd(void)
 		char word[128];
 
 		foreach(word, wordlist, next) {
-			char *interface = word;
-			char *hellointerval = interface;
-
-			strsep(&hellointerval, ">");
-			char *hellovaliditytime = hellointerval;
-
-			strsep(&hellovaliditytime, ">");
-			char *tcinterval = hellovaliditytime;
-
-			strsep(&tcinterval, ">");
-			char *tcvaliditytime = tcinterval;
-
-			strsep(&tcvaliditytime, ">");
-			char *midinterval = tcvaliditytime;
-
-			strsep(&midinterval, ">");
-			char *midvaliditytime = midinterval;
-
-			strsep(&midvaliditytime, ">");
-			char *hnainterval = midvaliditytime;
-
-			strsep(&hnainterval, ">");
-			char *hnavaliditytime = hnainterval;
-
-			strsep(&hnavaliditytime, ">");
+			GETENTRYBYIDX(interface, word, 0);
+			GETENTRYBYIDX(hellointerval, word, 1);
+			GETENTRYBYIDX(hellovaliditytime, word, 2);
+			GETENTRYBYIDX(tcinterval, word, 3);
+			GETENTRYBYIDX(tcvaliditytime, word, 4);
+			GETENTRYBYIDX(midinterval, word, 5);
+			GETENTRYBYIDX(midvaliditytime, word, 6);
+			GETENTRYBYIDX(hnainterval, word, 7);
+			GETENTRYBYIDX(hnavaliditytime, word, 8);
 			fprintf(fp, "Interface \"%s\"\n", interface);
 			fprintf(fp, "{\n");
 			fprintf(fp, "\tHelloInterval\t%s\n", hellointerval);
