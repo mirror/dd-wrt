@@ -1035,7 +1035,7 @@ char *foreach_last(char *next, char *word, char *delimiters)
 
 char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters)
 {
-	char *next, word[32];
+	char *next, word[128];
 	if (!list || !buf)
 		return NULL;
 	int count = 0;
