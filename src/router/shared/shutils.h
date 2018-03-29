@@ -215,6 +215,10 @@ char *foreach_last(char *next, char *word, char delim);
 char *getentrybyidx(char *buf, char *list, int idx);
 
 
+#define GETENTRYBYIDX(name, list, idx) \
+	char name## _priv[32]; \
+	char *name = getentrybyidx(name## _priv, list, idx);
+
 /*
  * Copy each token in wordlist delimited by space into word 
  */
