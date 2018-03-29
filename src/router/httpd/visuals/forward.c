@@ -36,7 +36,6 @@ void port_forward_table(webs_t wp, char *type, int which)
 {
 	char word[256];
 	char *next, *wordlist;
-	char *name, *from, *to, *proto, *ip, *enable;
 	char new_name[200];
 	int temp;
 
@@ -45,25 +44,13 @@ void port_forward_table(webs_t wp, char *type, int which)
 
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {
-			enable = word;
-			name = strsep(&enable, ":");
-			if (!name || !enable)
-				continue;
-			proto = enable;
-			enable = strsep(&proto, ":");
-			if (!enable || !proto)
-				continue;
-			from = proto;
-			proto = strsep(&from, ":");
-			if (!proto || !from)
-				continue;
-			to = from;
-			from = strsep(&to, ":");
-			if (!to || !from)
-				continue;
-			ip = to;
-			to = strsep(&ip, ">");
-			if (!ip || !to)
+			GETENTRYBYIDXD(name, word, 0, ":>");
+			GETENTRYBYIDXD(enable, word, 1, ":>");
+			GETENTRYBYIDXD(proto, word, 2, ":>");
+			GETENTRYBYIDXD(from, word, 3, ":>");
+			GETENTRYBYIDXD(to, word, 4, ":>");
+			GETENTRYBYIDXD(ip, word, 5, ":>");
+			if (!name || !enable || !proto || !from || !to || !ip)
 				continue;
 
 			if (!strcmp(type, "name")) {
@@ -123,7 +110,6 @@ void port_forward_spec(webs_t wp, char *type, int which)
 {
 	char word[256];
 	char *next, *wordlist;
-	char *name, *from, *to, *proto, *ip, *enable, *src = NULL;
 	char new_name[200];
 	int temp;
 
@@ -132,32 +118,16 @@ void port_forward_spec(webs_t wp, char *type, int which)
 
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {
-			enable = word;
-			name = strsep(&enable, ":");
-			if (!name || !enable)
+			GETENTRYBYIDXD(name, word, 0, ":><");
+			GETENTRYBYIDXD(enable, word, 1, ":><");
+			GETENTRYBYIDXD(proto, word, 2, ":><");
+			GETENTRYBYIDXD(from, word, 3, ":><");
+			GETENTRYBYIDXD(ip, word, 4, ":><");
+			GETENTRYBYIDXD(to, word, 5, ":><");
+			GETENTRYBYIDXD(src, word, 6, ":><");
+			if (!name || !enable || !proto || !from || !to || !ip)
 				continue;
-			proto = enable;
-			enable = strsep(&proto, ":");
-			if (!enable || !proto)
-				continue;
-			from = proto;
-			proto = strsep(&from, ":");
-			if (!proto || !from)
-				continue;
-			ip = from;
-			from = strsep(&ip, ">");
-			if (!from || !ip)
-				continue;
-			to = ip;
-			ip = strsep(&to, ":");
-			if (!ip || !to)
-				continue;
-			src = to;
-			to = strsep(&src, "<");
-			if (!to) {
-				to = src;
-				src = NULL;
-			}
+
 			if (!strcmp(type, "name")) {
 				httpd_filter_name(name, new_name, sizeof(new_name), GET);
 				websWrite(wp, "%s", new_name);
@@ -228,7 +198,6 @@ void port_trigger_table(webs_t wp, char *type, int which)
 
 	char word[256];
 	char *next, *wordlist;
-	char *name = NULL, *enable = NULL, *proto = NULL, *i_from = NULL, *i_to = NULL, *o_from = NULL, *o_to = NULL;
 	char new_name[200];
 	int temp;
 
@@ -237,29 +206,14 @@ void port_trigger_table(webs_t wp, char *type, int which)
 
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {
-			enable = word;
-			name = strsep(&enable, ":");
-			if (!name || !enable)
-				continue;
-			proto = enable;
-			enable = strsep(&proto, ":");
-			if (!enable || !proto)
-				continue;
-			i_from = proto;
-			proto = strsep(&i_from, ":");
-			if (!proto || !i_from)
-				continue;
-			i_to = i_from;
-			i_from = strsep(&i_to, "-");
-			if (!i_from || !i_to)
-				continue;
-			o_from = i_to;
-			i_to = strsep(&o_from, ">");
-			if (!i_to || !o_from)
-				continue;
-			o_to = o_from;
-			o_from = strsep(&o_to, "-");
-			if (!o_from || !o_to)
+			GETENTRYBYIDXD(name, word, 0, ":>-");
+			GETENTRYBYIDXD(enable, word, 1, ":>-");
+			GETENTRYBYIDXD(proto, word, 2, ":>-");
+			GETENTRYBYIDXD(i_from, word, 3, ":>-");
+			GETENTRYBYIDXD(i_to, word, 4, ":>-");
+			GETENTRYBYIDXD(o_from, word, 5, ":>-");
+			GETENTRYBYIDXD(o_to, word, 6, ":>-");
+			if (!name || !enable || !proto || !i_from || !i_to || !o_from || !o_to)
 				continue;
 
 			if (!strcmp(type, "name")) {
