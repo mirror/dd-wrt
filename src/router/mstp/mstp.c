@@ -966,15 +966,23 @@ int MSTP_IN_set_msti_bridge_config(tree_t *tree, __u8 bridge_priority)
     per_tree_port_t *ptp;
     __u8 valuePri;
 
-    if(15 < bridge_priority)
+    if(65535 < bridge_priority)
     {
         ERROR_BRNAME(tree->bridge,
-                     "MSTI %hu: Bridge Priority must be between 0 and 15",
+                     "MSTI %hu: Bridge Priority must be between 0 and 65535",
                      __be16_to_cpu(tree->MSTID));
         return -1;
     }
 
-    valuePri = bridge_priority << 4;
+    if(bridge_priority % 4096)
+    {
+        ERROR_BRNAME(tree->bridge,
+                     "MSTI %hu: Bridge Priority must be a multiple of 4096",
+                     __be16_to_cpu(tree->MSTID));
+        return -1;
+    }
+
+    valuePri = (bridge_priority/4096) << 4;
     if(GET_PRIORITY_FROM_IDENTIFIER(tree->BridgeIdentifier) == valuePri)
         return 0;
     SET_PRIORITY_IN_IDENTIFIER(valuePri, tree->BridgeIdentifier);
@@ -1229,13 +1237,20 @@ int MSTP_IN_set_msti_port_config(per_tree_port_t *ptp, MSTI_PortConfig *cfg)
 
     if(cfg->set_port_priority)
     {
-        if(15 < cfg->port_priority)
+        if(240 < cfg->port_priority)
         {
             ERROR_MSTINAME(br, prt, ptp,
                            "Port Priority must be between 0 and 15");
             return -1;
         }
-        valuePri = cfg->port_priority << 4;
+        if((cfg->port_priority % 16))
+        {
+            ERROR_MSTINAME(br, prt, ptp,
+                           "Port Priority must be a multiple of 16");
+            return -1;
+        }
+
+        valuePri = (cfg->port_priority/16) << 4;
         if(GET_PRIORITY_FROM_IDENTIFIER(ptp->portId) != valuePri)
         {
             SET_PRIORITY_IN_IDENTIFIER(valuePri, ptp->portId);

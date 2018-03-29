@@ -130,12 +130,12 @@ CTL_DECLARE(set_cist_bridge_config);
 /* set_msti_bridge_config */
 #define CMD_CODE_set_msti_bridge_config 104
 #define set_msti_bridge_config_ARGS (int br_index, __u16 mstid, \
-                                     __u8 bridge_priority)
+                                     __u16 bridge_priority)
 struct set_msti_bridge_config_IN
 {
     int br_index;
     __u16 mstid;
-    __u8 bridge_priority;
+    __u16 bridge_priority;
 };
 struct set_msti_bridge_config_OUT
 {
