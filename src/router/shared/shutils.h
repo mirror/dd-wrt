@@ -206,18 +206,22 @@ char *chomp(char *s);
 #define cprintf(fmt, args...)
 #endif
 
-void strcpyto(char *dest, char *src, char c);
+char *foreach_first(char *foreachwordlist, char *word, char *delim);
 
-char *foreach_first(char *foreachwordlist, char *word, char delim);
-
-char *foreach_last(char *next, char *word, char delim);
+char *foreach_last(char *next, char *word, char *delim);
 
 char *getentrybyidx(char *buf, char *list, int idx);
+
+char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters);
 
 
 #define GETENTRYBYIDX(name, list, idx) \
 	char name## _priv[32]; \
 	char *name = getentrybyidx(name## _priv, list, idx);
+
+#define GETENTRYBYIDXD(name, list, idx, delimiters) \
+	char name## _priv[32]; \
+	char *name = getentrybyidx_d(name## _priv, list, idx, delimiters);
 
 /*
  * Copy each token in wordlist delimited by space into word 
@@ -230,7 +234,7 @@ char *getentrybyidx(char *buf, char *list, int idx);
 
 
 #define foreach(word, foreachwordlist, next) \
-	foreach_delim(word, foreachwordlist, next, ' ')
+	foreach_delim(word, foreachwordlist, next, " ")
 
 /*
  * Return NUL instead of NULL if undefined 

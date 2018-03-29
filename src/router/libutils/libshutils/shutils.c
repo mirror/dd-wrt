@@ -999,15 +999,14 @@ int dd_sprintf(char *str, const char *fmt, ...)
 	return n;
 }
 
-void strcpyto(char *dest, char *src, char c)
+static void strcpyto(char *dest, char *src, char *delim)
 {
 	int cnt = 0;
 	int len = strlen(src);
-	while (cnt < len && src[cnt] != c) {
-		dest[cnt] = src[cnt];
-		cnt++;
-	}
-	dest[cnt] = '\0';
+	char *to = strpbrk(src, delim);
+	if (to)
+		len = to - src;
+	strncpy(dest, src, len);
 }
 
 char *chomp(char *s)
@@ -1018,35 +1017,29 @@ char *chomp(char *s)
 	return s;
 }
 
-char *foreach_first(char *foreachwordlist, char *word, char delim)
+char *foreach_first(char *foreachwordlist, char *word, char *delimiters)
 {
-	char delimiter_s[2];
-	delimiter_s[0] = delim;
-	delimiter_s[1] = '\0';
-	char *next = &foreachwordlist[strspn(foreachwordlist, delimiter_s)];
-	strcpyto(word, next, delim);
-	next = strchr(next, delim);
+	char *next = &foreachwordlist[strspn(foreachwordlist, delimiters)];
+	strcpyto(word, next, delimiters);
+	next = strpbrk(next, delimiters);
 	return next;
 }
 
-char *foreach_last(char *next, char *word, char delim)
+char *foreach_last(char *next, char *word, char *delimiters)
 {
-	char delimiter_s[2];
-	delimiter_s[0] = delim;
-	delimiter_s[1] = '\0';
-	next = next ? &next[strspn(next, delimiter_s)] : "";
-	strcpyto(word, next, delim);
-	next = strchr(next, delim);
+	next = next ? &next[strspn(next, delimiters)] : "";
+	strcpyto(word, next, delimiters);
+	next = strpbrk(next, delimiters);
 	return next;
 }
 
-char *getentrybyidx(char *buf, char *list, int idx)
+char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters)
 {
 	char *next, word[32];
 	if (!list || !buf)
 		return NULL;
 	int count = 0;
-	foreach_delim(word, list, next, '>') {
+	foreach_delim(word, list, next, delimiters) {
 		if (count == idx) {
 			strcpy(buf, word);
 			return buf;
@@ -1054,6 +1047,11 @@ char *getentrybyidx(char *buf, char *list, int idx)
 		count++;
 	}
 	return NULL;
+}
+
+char *getentrybyidx(char *buf, char *list, int idx)
+{
+	return getentrybyidx_d(buf, list, idx, ">");
 }
 
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
