@@ -225,23 +225,6 @@ char *getRealBridge(char *ifname, char *word)
 	return NULL;
 }
 
-char *getPortPrio(char *ifname, char *word)
-{
-	char *next, *wordlist;
-
-	wordlist = nvram_safe_get("bridgesif");
-	foreach(word, wordlist, next) {
-		GETENTRYBYIDX(tag, word, 0);
-		GETENTRYBYIDX(port, word, 1);
-		GETENTRYBYIDX(prio, word, 2);
-		if (!tag || !port)
-			break;
-		if (!strcmp(port, ifname))
-			return prio;
-	}
-	return "0";
-}
-
 void stop_bridgesif(void)
 {
 	char word[256];
@@ -298,10 +281,6 @@ char *getRealBridge(char *ifname, char *word)
 	return NULL;
 }
 
-char *getPortPrio(char *ifname, char *word)
-{
-	return "0";
-}
 #endif
 
 int getbridge_main(int argc, char *argv[])
@@ -317,27 +296,29 @@ int getbridge_main(int argc, char *argv[])
 	return 0;
 }
 
-int getportprio_main(int argc, char *argv[])
-{
-	if (argc < 2) {
-		fprintf(stderr, "syntax: getportprio [ifname]\n");
-		return -1;
-	}
-	char tmp[256];
-	char *prio = getPortPrio(argv[1], tmp);
-
-	fprintf(stdout, "%s\n", prio);
-	return 0;
-}
-
 int setportprio_main(int argc, char *argv[])
 {
 	if (argc < 3) {
 		fprintf(stderr, "syntax: setportprio [bridge] [ifname]\n");
 		return -1;
 	}
-	char tmp[256];
-	char *prio = getPortPrio(argv[1], tmp);
-	br_set_port_prio(argv[1], argv[2], atoi(prio));
+	wordlist = nvram_safe_get("bridgesif");
+	foreach(word, wordlist, next) {
+		char *tag = argv[1];
+		GETENTRYBYIDX(port, word, 1);
+		GETENTRYBYIDX(prio, word, 2);
+		GETENTRYBYIDX(hairpin, word, 3);
+		GETENTRYBYIDX(stp, word, 4);
+		if (!port)
+			continue;
+		if (!strcmp(port, argv[2])) {
+			if (prio)
+				br_set_port_prio(tag, port, atoi(prio));
+			if (hairpin)
+				br_set_port_hairpin(tag, port, atoi(hairpin));
+			if (stp)
+				br_set_port_stp(tag, port, atoi(stp));
+		}
+	}
 	return 0;
 }
