@@ -1064,8 +1064,8 @@ static int cmd_settreeprio(int argc, char *const *argv)
     if(0 > mstid)
         return mstid;
     unsigned int prio = getuint(argv[3]);
-    if(prio > 255)
-        prio = 255;
+    if(prio > 65535)
+        prio = 65535;
     return CTL_set_msti_bridge_config(br_index,  mstid, prio);
 }
 
@@ -1581,7 +1581,7 @@ static const struct command commands[] =
      "<bridge> <mstid>", "Delete existing MSTI"},
     {3, 0, "settreeprio", cmd_settreeprio,
      "<bridge> <mstid> <priority>",
-     "Set bridge priority (0-15) for the given MSTI"},
+     "Set bridge priority (0-65535) for the given MSTI"},
     /* Set global port */
     {3, 0, "setportpathcost", cmd_setportpathcost,
      "<bridge> <port> <cost>",
@@ -1604,7 +1604,7 @@ static const struct command commands[] =
     /* Set tree port */
     {4, 0, "settreeportprio", cmd_settreeportprio,
      "<bridge> <port> <mstid> <priority>",
-     "Set port priority (0-15) for the given MSTI"},
+     "Set port priority (0-240) for the given MSTI"},
     {4, 0, "settreeportcost", cmd_settreeportcost,
      "<bridge> <port> <mstid> <cost>",
      "Set port internal path cost for the given MSTI (0 = auto)"},

@@ -707,7 +707,7 @@ int CTL_set_cist_bridge_config(int br_index, CIST_BridgeConfig *cfg)
     return MSTP_IN_set_cist_bridge_config(br, cfg);
 }
 
-int CTL_set_msti_bridge_config(int br_index, __u16 mstid, __u8 bridge_priority)
+int CTL_set_msti_bridge_config(int br_index, __u16 mstid, __u16 bridge_priority)
 {
     CTL_CHECK_BRIDGE_TREE;
     return MSTP_IN_set_msti_bridge_config(tree, bridge_priority);
