@@ -4523,12 +4523,12 @@ static bool PRTSM_runr(per_tree_port_t *ptp, bool recursive_call, bool dry_run)
                 }
             }
             /* Transition to discarding when BA inconsistent */
-            if(((ptp->sync && !ptp->synced)
+            if((((ptp->sync && !ptp->synced)
                 || (ptp->reRoot && (0 != ptp->rrWhile))
                 || ptp->disputed
-                || ptp->port->BaInconsistent
                )
                && !prt->operEdge && (ptp->learn || ptp->forward)
+               ) || (ptp->port->BaInconsistent && (ptp->learn || ptp->forward))
               )
             {
                 if(dry_run) /* state change */
