@@ -36,7 +36,6 @@ static void show_chaps_table(webs_t wp, char *type, int which)
 
 	char word[256];
 	char *next, *wordlist;
-	char *user, *pass, *ip, *enable;
 	char new_user[200], new_pass[200];
 	int temp;
 
@@ -45,19 +44,11 @@ static void show_chaps_table(webs_t wp, char *type, int which)
 
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {
-			pass = word;
-			user = strsep(&pass, ":");
-			if (!user || !pass)
-				continue;
-
-			ip = pass;
-			pass = strsep(&ip, ":");
-			if (!pass || !ip)
-				continue;
-
-			enable = ip;
-			ip = strsep(&enable, ":");
-			if (!ip || !enable)
+			GETENTRYBYIDXD(user, word, 0, ":");
+			GETENTRYBYIDXD(pass, word, 1, ":");
+			GETENTRYBYIDXD(ip, word, 2, ":");
+			GETENTRYBYIDXD(enable, word, 3, ":");
+			if (!user || !pass || !ip || !enable)
 				continue;
 
 			if (!strcmp(type, "user")) {

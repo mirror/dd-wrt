@@ -40,47 +40,27 @@ void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 	int which;
 	char word[256];
 	char *next = NULL;
-	char *ipaddr = NULL, *netmask = NULL, *gateway = NULL, *metric = NULL, *ifname = NULL, *nat = NULL;
 	char ifnamecopy[32];
 	char bufferif[512];
 
 	which = websGetVari(wp, "route_page", 0);
+	strcpy(ifnamecopy, "br0");
+
 	char *sroute = nvram_safe_get("static_route");
 
 	foreach(word, sroute, next) {
 		if (which-- == 0) {
-			netmask = word;
-			ipaddr = strsep(&netmask, ":");
-			if (!ipaddr || !netmask)
-				continue;
-			gateway = netmask;
-			netmask = strsep(&gateway, ":");
-			if (!netmask || !gateway)
-				continue;
-			metric = gateway;
-			gateway = strsep(&metric, ":");
-			if (!gateway || !metric)
-				continue;
-			ifname = metric;
-			metric = strsep(&ifname, ":");
-			if (!metric || !ifname)
-				continue;
-			if (strchr(ifname, ':')) {
-				nat = ifname;
-				ifname = strsep(&nat, ":");
-				if (!ifname || !nat)
-					continue;
-			}
-			break;
+			GETENTRYBYIDXD(ifname, word, 4, ":");
+			if (!ifname)
+				break;
+			strcpy(ifnamecopy, ifname);
 		}
 	}
-	if (!ifname)
-		ifname = "br0";
-	strcpy(ifnamecopy, ifname);
+
 	bzero(bufferif, 512);
 	getIfList(bufferif, NULL);
-	websWrite(wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n", nvram_match("lan_ifname", ifname) ? "selected=\"selected\"" : "");
-	websWrite(wp, "<option value=\"wan\" %s >WAN</option>\n", nvram_match("wan_ifname", ifname) ? "selected=\"selected\"" : "");
+	websWrite(wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n", nvram_match("lan_ifname", ifnamecopy) ? "selected=\"selected\"" : "");
+	websWrite(wp, "<option value=\"wan\" %s >WAN</option>\n", nvram_match("wan_ifname", ifnamecopy) ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"any\" %s >ANY</option>\n", strcmp("any", ifnamecopy) == 0 ? "selected=\"selected\"" : "");
 	bzero(word, 256);
 	next = NULL;
@@ -105,8 +85,8 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 	int which, count;
 	char word[256];
 	char *next, *page;
-	char name[50] = "", *ipaddr, *netmask, *gateway, *metric, *ifname, *nat = NULL;
 	int temp;
+	char name[50] = "";
 	char new_name[200];
 	arg = argv[0];
 	count = atoi(argv[1]);
@@ -133,28 +113,15 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 	foreach(word, sroute, next) {
 		//if (which-- == 0) {
 		if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
-			netmask = word;
-			ipaddr = strsep(&netmask, ":");
-			if (!ipaddr || !netmask)
+			GETENTRYBYIDXD(ipaddr, word, 0, ":");
+			GETENTRYBYIDXD(netmask, word, 1, ":");
+			GETENTRYBYIDXD(gateway, word, 2, ":");
+			GETENTRYBYIDXD(metric, word, 3, ":");
+			GETENTRYBYIDXD(ifname, word, 4, ":");
+			GETENTRYBYIDXD(nat, word, 5, ":");
+			if (!ipaddr || !netmask || !gateway || !metric || !ifname)
 				continue;
-			gateway = netmask;
-			netmask = strsep(&gateway, ":");
-			if (!netmask || !gateway)
-				continue;
-			metric = gateway;
-			gateway = strsep(&metric, ":");
-			if (!gateway || !metric)
-				continue;
-			ifname = metric;
-			metric = strsep(&ifname, ":");
-			if (!metric || !ifname)
-				continue;
-			if (strchr(ifname, ':')) {
-				nat = ifname;
-				ifname = strsep(&nat, ":");
-				if (!ifname || !nat)
-					continue;
-			}
+
 			if (!strcmp(arg, "ipaddr")) {
 				websWrite(wp, "%d", get_single_ip(ipaddr, count));
 				return;
