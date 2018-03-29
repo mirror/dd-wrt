@@ -1051,7 +1051,8 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc ntpd
 	cd $(INSTALLDIR)/sbin && ln -sf rc getbridge
 	cd $(INSTALLDIR)/sbin && ln -sf rc getmask
-	cd $(INSTALLDIR)/sbin && ln -sf rc getbridgeprio
+	cd $(INSTALLDIR)/sbin && ln -sf rc getportprio
+	cd $(INSTALLDIR)/sbin && ln -sf rc setportprio
 	cd $(INSTALLDIR)/sbin && ln -sf rc ipupdated
 	cd $(INSTALLDIR)/sbin && ln -sf rc redial
 	cd $(INSTALLDIR)/sbin && ln -sf rc setuserpasswd

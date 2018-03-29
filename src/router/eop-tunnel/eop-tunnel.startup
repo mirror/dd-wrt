@@ -62,7 +62,7 @@ do
 				ifconfig oet${i} up 2>&1 > /dev/null
 				ifconfig oet${i} promisc 2>&1 > /dev/null
 				brctl addif $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
-				brctl setportprio $(getbridge oet${i}) oet${i} $(getbridgeprio oet${i})
+				setportprio $(getbridge oet${i}) oet${i}
 				emf add iface $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
 			else
 				ifconfig oet${i} promisc up 2>&1 > /dev/null
@@ -85,7 +85,7 @@ do
 				ifconfig oet${i} up 2>&1 > /dev/null
 				ifconfig oet${i} promisc 2>&1 > /dev/null
 				brctl addif $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
-				brctl setportprio $(getbridge oet${i}) oet${i} $(getbridgeprio oet${i})
+				setportprio $(getbridge oet${i}) oet${i}
 				emf add iface $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
 			else
 				ip link set dev oet${i} up
