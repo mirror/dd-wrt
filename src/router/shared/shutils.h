@@ -212,6 +212,9 @@ char *foreach_first(char *foreachwordlist, char *word, char delim);
 
 char *foreach_last(char *next, char *word, char delim);
 
+char *getentrybyidx(char *buf, char *list, int idx);
+
+
 /*
  * Copy each token in wordlist delimited by space into word 
  */
