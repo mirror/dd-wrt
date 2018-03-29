@@ -213,6 +213,8 @@ int br_set_port_prio(const char *br, char *port, int prio);
 int br_set_port_hairpin(const char *br, char *port, int val);
 int br_set_bridge_forward_delay(const char *br, int sec);
 int br_set_bridge_prio(const char *br, int prio);
+int br_set_port_stp(const char *br, char *port, int on);
+
 
 void reset_hwaddr(char *ifname);
 void start_force_to_dial(void);

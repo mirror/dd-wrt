@@ -298,6 +298,8 @@ int getbridge_main(int argc, char *argv[])
 
 int setportprio_main(int argc, char *argv[])
 {
+	char word[256];
+	char *next, *wordlist;
 	if (argc < 3) {
 		fprintf(stderr, "syntax: setportprio [bridge] [ifname]\n");
 		return -1;
