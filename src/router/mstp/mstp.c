@@ -345,6 +345,11 @@ void MSTP_IN_delete_port(port_t *prt)
     if(prt->portEnabled)
     {
         prt->portEnabled = false;
+        FOREACH_PTP_IN_PORT(ptp, prt)
+        {
+            ptp->selected = false;
+            ptp->reselect = true;
+        }
         br_state_machines_run(br);
     }
 
@@ -3263,6 +3268,14 @@ static bool PTSM_run(port_t *prt, bool dry_run)
                 return false;
             }
             cistRole = ptp->role;
+            /* Dont send BPDU in disabled role, this happens when port
+             * is just enabled */
+            if (cistRole == roleDisabled)
+            {
+                INFO_PRTNAME(prt->bridge, prt,
+                        "not send from port with Disabled role");
+                return false;
+            }
             mstiMasterPort = false;
             list_for_each_entry_continue(ptp, &prt->trees, port_list)
             {
