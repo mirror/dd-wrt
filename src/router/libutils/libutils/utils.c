@@ -1930,14 +1930,10 @@ char *getBridgeSTPType(char *br)
 	char *next, *wordlist;
 	wordlist = nvram_safe_get("bridges");
 	foreach(word, wordlist, next) {
-		char *stp = word;
-		char *bridge = strsep(&stp, ">");
-		char *prio = stp;
+		GETENTRYBYIDX(bridge, word, 0);
+		GETENTRYBYIDX(stp, word, 1);
 		if (strcmp(bridge, br))
 			continue;
-		stp = strsep(&prio, ">");
-		if (!stp)
-			break;
 		return stp;
 	}
 	if (!strcmp(br, "br0"))
