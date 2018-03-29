@@ -3101,20 +3101,18 @@ void save_networking(webs_t wp)
 				nvram_seti(n, 0);
 		}
 		sprintf(var, "bridgeprio%d", i);
-		prio = websGetVar(wp, var, NULL);
-		if (!prio)
-			prio = "112";
+		prio = websGetVar(wp, var, "32768");
 		if (strlen(prio) == 0)
-			prio = "112";
+			prio = "32768";
 
-		if (atoi(prio) > 240)
-			prio = "240";
+		if (atoi(prio) > 61440)
+			prio = "61440";
 
 		sprintf(var, "bridgemtu%d", i);
 		mtu = websGetVar(wp, var, NULL);
 		if (!mtu)
 			mtu = "1500";
-		if (strlen(prio) == 0)
+		if (strlen(mtu) == 0)
 			mtu = "1500";
 
 		copymergetonv(wp, "%s_ipaddr", ifname);
@@ -3162,9 +3160,13 @@ void save_networking(webs_t wp)
 		else 
 		    stp = "0";
 		sprintf(var, "bridgeifprio%d", i);
-		prio = websGetVar(wp, var, "63");
+		prio = websGetVar(wp, var, "112");
 		if (strlen(prio) == 0)
-			prio = "32768";
+			prio = "112";
+
+		if (atoi(prio) > 240)
+			prio = "240";
+
 
 		sprintf(var, "bridgeifhairpin%d", i);
 		hairpin = websGetVar(wp, var, "0");
