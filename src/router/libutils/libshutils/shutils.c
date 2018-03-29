@@ -131,7 +131,7 @@ int system2(char *command)
 		flog("%s\n", command);
 	}
 
-	if (nvram_match("debug_delay","1")) {
+	if (nvram_match("debug_delay", "1")) {
 		sleep(1);
 	}
 #endif
@@ -227,7 +227,7 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 #endif
 #if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)	//we must disable this on x86 since nvram is not available at startup
 
-	if (nvram_match("debug_delay","1")) {
+	if (nvram_match("debug_delay", "1")) {
 		sleep(1);
 	}
 #endif
@@ -1040,11 +1040,27 @@ char *foreach_last(char *next, char *word, char delim)
 	return next;
 }
 
+char *getentrybyidx(char *buf, char *list, int idx)
+{
+	char *next, word[32];
+	if (!list || !buf)
+		return NULL;
+	int count = 0;
+	foreach_delim(word, list, next, '>') {
+		if (count == idx) {
+			strcpy(buf, word);
+			return buf;
+		}
+		count++;
+	}
+	return NULL;
+}
+
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
 char *getdisc(void)		// works only for squashfs 
 {
 #ifdef HAVE_NEWPORT
-return "mmcblk0p1";
+	return "mmcblk0p1";
 #else
 	int i;
 	static char ret[8];
@@ -1082,19 +1098,18 @@ return "mmcblk0p1";
 }
 #endif
 
-
-int nvram_commit(void) 
+int nvram_commit(void)
 {
 #if defined(HAVE_WZRHPG300NH) || defined(HAVE_WHRHPGN) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_DIR825) || defined(HAVE_TEW632BRP) || defined(HAVE_TG2521) || defined(HAVE_WR1043)  || defined(HAVE_WRT400) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450) || defined(HAVE_DANUBE) || defined(HAVE_WR741) || defined(HAVE_NORTHSTAR) || defined(HAVE_DIR615I) || defined(HAVE_WDR4900) || defined(HAVE_VENTANA) || defined(HAVE_UBNTM)
-	eval("ledtool","1");
+	eval("ledtool", "1");
 #elif HAVE_LSX
 	//nothing
 #elif HAVE_XSCALE
 	//nothing
 #else
-	eval("ledtool","1");
+	eval("ledtool", "1");
 #endif
-    _nvram_commit();
+	_nvram_commit();
 }
 
 #ifdef MEMDEBUG
@@ -1149,4 +1164,3 @@ void showmemdebugstat(void)
 }
 
 #endif
-
