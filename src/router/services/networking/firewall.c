@@ -1865,12 +1865,9 @@ static void add_bridges(char *chain, int forward)
 	char *wan = get_wan_face();
 	wordlist = nvram_safe_get("bridges");
 	foreach(word, wordlist, next) {
-		char *port = word;
-		char *tag = strsep(&port, ">");
-		char *prio = port;
+		GETENTRYBYIDX(tag, word, 0);
 
-		strsep(&prio, ">");
-		if (!tag || !port)
+		if (!tag)
 			break;
 		char ipaddr[32];
 
