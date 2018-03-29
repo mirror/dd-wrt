@@ -298,7 +298,7 @@ char *getRealBridge(char *ifname, char *word)
 	return NULL;
 }
 
-char *getBridgePrio(char *ifname, char *word)
+char *getPortPrio(char *ifname, char *word)
 {
 	return "0";
 }
@@ -314,19 +314,6 @@ int getbridge_main(int argc, char *argv[])
 	char *bridge = getBridge(argv[1], tmp);
 
 	fprintf(stdout, "%s\n", bridge);
-	return 0;
-}
-
-int getbridgeprio_main(int argc, char *argv[])
-{
-	if (argc < 2) {
-		fprintf(stderr, "syntax: getbridgeprio [ifname]\n");
-		return -1;
-	}
-	char tmp[256];
-	char *prio = getBridgePrio(argv[1], tmp);
-
-	fprintf(stdout, "%s\n", prio);
 	return 0;
 }
 
