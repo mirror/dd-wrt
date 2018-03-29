@@ -38,7 +38,6 @@ void start_ipvs(void)
 
 	char tword[256];
 	char *tnext, *twordlist;
-	char *ipvsname, *sourceip, *sourceport, *scheduler, *targetip, *targetport, *matchname, *sourceproto, *targetweight, *targetnat;
 	char *ipvs = nvram_safe_get("ipvs");
 	char *ipvstarget = nvram_safe_get("ipvstarget");
 	if (!strlen(ipvs) || !strlen(ipvstarget))
@@ -101,11 +100,15 @@ void start_ipvs(void)
 			break;
 		twordlist = ipvs;
 		int found = 0;
+		char *sourceipcopy;
+		char *sourceportcopy;
 		foreach(tword, twordlist, tnext) {
 
 			GETENTRYBYIDX(matchname, word, 0);
 			GETENTRYBYIDX(sourceip, word, 1);
+			sourceipcopy = sourceip;
 			GETENTRYBYIDX(sourceport, word, 2);
+			sourceportcopy = sourceport;
 			GETENTRYBYIDX(scheduler, word, 3);
 			GETENTRYBYIDX(sourceproto, word, 4);
 
@@ -124,7 +127,7 @@ void start_ipvs(void)
 		}
 		if (found) {
 			char source[64];
-			snprintf(source, sizeof(source), "%s:%s", sourceip, sourceport);
+			snprintf(source, sizeof(source), "%s:%s", sourceipcopy, sourceportcopy);
 			char target[64];
 			snprintf(target, sizeof(target), "%s:%s", targetip, targetport);
 			if (targetweight) {
