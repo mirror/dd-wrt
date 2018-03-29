@@ -966,7 +966,7 @@ int MSTP_IN_set_cist_bridge_config(bridge_t *br, CIST_BridgeConfig *cfg)
 }
 
 /* 12.8.1.4 Set MSTI Bridge Protocol Parameters */
-int MSTP_IN_set_msti_bridge_config(tree_t *tree, __u8 bridge_priority)
+int MSTP_IN_set_msti_bridge_config(tree_t *tree, __u16 bridge_priority)
 {
     per_tree_port_t *ptp;
     __u8 valuePri;
@@ -3101,9 +3101,9 @@ static bool BDSM_run(port_t *prt, bool dry_run)
     switch(prt->BDSM_state)
     {
         case BDSM_EDGE:
-            if(((!prt->portEnabled || !prt->AutoEdge) && !prt->AdminEdgePort)
-               || !prt->operEdge
-              )
+            if((((!prt->portEnabled) || (!prt->bridge->bridgeEnabled) ||
+                (!prt->AutoEdge)) &&
+                 !prt->AdminEdgePort) || !prt->operEdge)
             {
                 if(dry_run) /* state change */
                     return true;
