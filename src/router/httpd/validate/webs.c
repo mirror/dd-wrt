@@ -3103,12 +3103,12 @@ void save_networking(webs_t wp)
 		sprintf(var, "bridgeprio%d", i);
 		prio = websGetVar(wp, var, NULL);
 		if (!prio)
-			prio = "8";
+			prio = "112";
 		if (strlen(prio) == 0)
-			prio = "8";
+			prio = "112";
 
-		if (atoi(prio) > 15)
-			prio = "15";
+		if (atoi(prio) > 240)
+			prio = "240";
 
 		sprintf(var, "bridgemtu%d", i);
 		mtu = websGetVar(wp, var, NULL);
@@ -3164,7 +3164,7 @@ void save_networking(webs_t wp)
 		sprintf(var, "bridgeifprio%d", i);
 		prio = websGetVar(wp, var, "63");
 		if (strlen(prio) == 0)
-			prio = "63";
+			prio = "32768";
 
 		sprintf(var, "bridgeifhairpin%d", i);
 		hairpin = websGetVar(wp, var, "0");

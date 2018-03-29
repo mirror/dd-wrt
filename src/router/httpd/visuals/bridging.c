@@ -72,7 +72,9 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		showOptions(wp, bridge_name, "On Off", nvram_default_match("br0_mcast", "1", "0") ? "On" : "Off");
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", count);
-		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"8\" /></td>\n", bridge_name);
+		websWrite(wp, "<td>");
+		showOptions(wp, bridge_name, "0 4096 8192 12288 16384 20480 24576 28672 32768 36864 40960 45056 49152 53248 57344 61440", "32768");
+		websWrite(wp, "</td>");
 		// Bridges are bridges, Ports are ports, show it again HERE          
 		sprintf(bridge_name, "bridgemtu%d", count);
 		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"1500\" /></td>\n", bridge_name);
@@ -112,7 +114,11 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		showOptions(wp, bridge_name, "On Off", nvram_default_match(mcast, "1", "0") ? "On" : "Off");
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", count);
-		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"%s\" /></td>\n", bridge_name, prio != NULL ? prio : "8");
+
+		websWrite(wp, "<td>");
+		showOptions(wp, bridge_name, "0 4096 8192 12288 16384 20480 24576 28672 32768 36864 40960 45056 49152 53248 57344 61440", prio != NULL ? prio : "32768");
+		websWrite(wp, "</td>");
+
 		// Bridges are bridges, Ports are ports, show it again HERE          
 		sprintf(bridge_name, "bridgemtu%d", count);
 		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" /></td>\n", bridge_name, mtu != NULL ? mtu : "1500");
@@ -159,7 +165,9 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		showOptions(wp, bridge_name, "On Off", "Off");
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", i);
-		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"2\" value=\"%s\" /></td>\n", bridge_name, "8");
+		websWrite(wp, "<td>");
+		showOptions(wp, bridge_name, "0 4096 8192 12288 16384 20480 24576 28672 32768 36864 40960 45056 49152 53248 57344 61440", "32768");
+		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgemtu%d", count);
 		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" /></td>\n", bridge_name, "1500");
 		websWrite(wp, "<td></td><td>");
@@ -248,9 +256,9 @@ static void show_bridgeifname(webs_t wp, char *bridges, char *devs, int count, c
 		showIfOptions(wp, vlan_name, "Off", "Off");
 	websWrite(wp, "</td>");
 #endif
-	websWrite(wp, "<td>");
 	sprintf(vlan_name, "bridgeifprio%d", count);
-	websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" />\n", vlan_name, prio != NULL ? prio : "63");
+	websWrite(wp, "<td>");
+	showOptions(wp, vlan_name, "0 16 32 48 64 80 96 112 128 144 160 176 192 208 224 240", prio != NULL ? prio : "128");
 	websWrite(wp, "</td>");
 
 	websWrite(wp, "<td>");
