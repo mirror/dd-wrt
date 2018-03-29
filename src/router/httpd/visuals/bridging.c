@@ -37,8 +37,8 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 
 	wordlist = nvram_safe_get("bridges");
 	foreach(word, wordlist, next) {
-		bridge = strsep(&stp, ">");
-		if (!strcmp(bridge, "br0")) {
+		GETENTRYBYIDX(bridge, word, 0);
+		if (bridge && !strcmp(bridge, "br0")) {
 			br0found = 1;
 			break;
 		}
@@ -83,31 +83,19 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" disabled />\");\n//]]>\n</script></td></tr>\n");
 
-		// don't show that here, since that is under Basic Setup
-		// show_ipnetmask(wp, bridge);
 		count++;
 	}
 
 	foreach(word, wordlist, next) {
 
-		stp = word;
-		bridge = strsep(&stp, ">");
-		prio = stp;
-
-		stp = strsep(&prio, ">");
-		mtu = prio;
-
-		prio = strsep(&mtu, ">");
-		if (!prio) {
-			prio = mtu;
+		GETENTRYBYIDX(bridge, word, 0);
+		GETENTRYBYIDX(stp, word, 1);
+		GETENTRYBYIDX(prio, word, 2);
+		GETENTRYBYIDX(mtu, word, 3);
+		if (!mtu) {
 			mtu = "1500";
 		}
 
-/*	char *stp = word;
-	char *bridge = strsep( &stp, ">" );
-	char *mtu = stp;
-	char *prio = strsep( &mtu, ">" );
-*/
 		if (!bridge || !stp)
 			break;
 
@@ -236,7 +224,6 @@ static void show_bridgeifname(webs_t wp, char *bridges, char *devs, int count, c
 
 	char vlan_name[32];
 	websWrite(wp, "<tr>\n");
-
 	websWrite(wp, "<td>");
 	sprintf(vlan_name, "bridge%d", count);
 	showIfOptions(wp, vlan_name, bridges, bridge);
@@ -249,7 +236,7 @@ static void show_bridgeifname(webs_t wp, char *bridges, char *devs, int count, c
 
 #ifdef HAVE_MSTP
 	int hasstp;
-	if (strlen(bridge))
+	if (bridge && strlen(bridge))
 		hasstp = getBridgeSTP(bridge);
 	else
 		hasstp = 0;
@@ -317,29 +304,19 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {
-		char *port = word;
-		char *tag = strsep(&port, ">");
-		if (!tag || !port)
-			break;
-		char *prio = port;
-		port = strsep(&prio, ">");
-		char *hairpin = NULL;
-		char *stp = NULL;
-		if (prio) {
-			hairpin = prio;
-			prio = strsep(&hairpin, ">");
-			if (hairpin) {
-				stp = hairpin;
-				hairpin = strsep(&stp, ">");
-			}
-		}
+		GETENTRYBYIDX(tag, word, 0);
+		GETENTRYBYIDX(port, word, 1);
+		GETENTRYBYIDX(prio, word, 2);
+		GETENTRYBYIDX(hairpin, word, 3);
+		GETENTRYBYIDX(stp, word, 4);
+
 		show_bridgeifname(wp, finalbuffer, bufferif, count, tag, port, stp, prio, hairpin);
 		count++;
 	}
 	int totalcount = count;
 
 	for (i = count; i < realcount; i++) {
-		show_bridgeifname(wp, finalbuffer, bufferif, i, "", NULL, "", NULL, NULL);
+		show_bridgeifname(wp, finalbuffer, bufferif, i, "", "", NULL, NULL, NULL);
 		totalcount++;
 	}
 	websWrite(wp, "</table>");
