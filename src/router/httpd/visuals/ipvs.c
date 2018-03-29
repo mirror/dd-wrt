@@ -47,14 +47,11 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 		wordlist = nvram_safe_get("ipvstarget");
 
 		foreach(word, wordlist, next) {
-			targetip = word;
-			ipvsname = strsep(&targetip, ">");
-			targetport = targetip;
-			targetip = strsep(&targetport, ">");
-			targetweight = targetport;
-			targetport = strsep(&targetweight, ">");
-			targetnat = targetweight;
-			targetweight = strsep(&targetnat, ">");
+			GETENTRYBYIDX(ipvsname, word, 0);
+			GETENTRYBYIDX(targetip, word, 1);
+			GETENTRYBYIDX(targetport, word, 2);
+			GETENTRYBYIDX(targetweight, word, 3);
+			GETENTRYBYIDX(targetnat, word, 4);
 
 			if (!targetweight)
 				targetweight = "5";
@@ -70,8 +67,7 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 			twordlist = nvram_safe_get("ipvs");
 			char *matchname = "";
 			foreach(tword, twordlist, tnext) {
-				char *tempword = tword;
-				matchname = strsep(&tempword, ">");
+				GETENTRYBYIDX(matchname, tword, 0);
 				websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", matchname ? matchname : "", (matchname && !strcmp(matchname, ipvsname)) ? "selected=\\\"selected\\\"" : "",
 					  matchname);
 			}
@@ -103,8 +99,7 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 			twordlist = nvram_safe_get("ipvs");
 			char *matchname = "";
 			foreach(tword, twordlist, tnext) {
-				char *tempword = tword;
-				matchname = strsep(&tempword, ">");
+				GETENTRYBYIDX(matchname, tword, 0);
 				websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", matchname ? matchname : "", (matchname && !strcmp(matchname, "")) ? "selected=\\\"selected\\\"" : "",
 					  matchname);
 			}
@@ -169,14 +164,11 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 	wordlist = nvram_safe_get("ipvs");
 
 	foreach(word, wordlist, next) {
-		sourceip = word;
-		ipvsname = strsep(&sourceip, ">");
-		sourceport = sourceip;
-		sourceip = strsep(&sourceport, ">");
-		scheduler = sourceport;
-		sourceport = strsep(&scheduler, ">");
-		sourceproto = scheduler;
-		scheduler = strsep(&sourceproto, ">");
+		GETENTRYBYIDX(ipvsname, word, 0);
+		GETENTRYBYIDX(sourceip, word, 1);
+		GETENTRYBYIDX(sourceport, word, 2);
+		GETENTRYBYIDX(scheduler, word, 3);
+		GETENTRYBYIDX(sourceproto, word, 4);
 		if (!sourceproto)
 			sourceproto = "tcp";
 		if (!ipvsname || !sourceport || !sourceip || !scheduler || !sourceproto)
