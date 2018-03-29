@@ -72,8 +72,8 @@
 //#define SERVICEALT_MODULE "/tmp/validate.so"
 //#define VISSERVICEALT_MODULE "/tmp/visuals.so"
 
-//#define SERVICE_MODULE "/tmp/validate.so"
-//#define VISSERVICE_MODULE "/tmp/visuals.so"
+#define SERVICE_MODULE "/tmp/validate.so"
+#define VISSERVICE_MODULE "/tmp/visuals.so"
 
 #define cprintf(fmt, args...)
 

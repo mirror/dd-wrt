@@ -34,11 +34,9 @@ void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 	wordlist = nvram_safe_get("vlan_tags");
 	foreach(word, wordlist, next) {
 
-		char *port = word;
-		char *tag = strsep(&port, ">");
-		char *prio = port;
-		strsep(&prio, ">");
-
+		GETENTRYBYIDX(tag, word, 0);
+		GETENTRYBYIDX(port, word, 1);
+		GETENTRYBYIDX(prio, word, 2);
 		if (!tag || !port)
 			break;
 		if (!prio)

@@ -38,21 +38,12 @@ void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 
 	wordlist = nvram_safe_get("mdhcpd");
 	foreach(word, wordlist, next) {
-		char *interface = word;
-		char *dhcpon = interface;
-
-		interface = strsep(&dhcpon, ">");
-		char *start = dhcpon;
-
-		dhcpon = strsep(&start, ">");
-		char *max = start;
-
-		start = strsep(&max, ">");
-		char *leasetime = max;
-
-		max = strsep(&leasetime, ">");
-		if (max == NULL) {
-			max = leasetime;
+		GETENTRYBYIDX(interface, word, 0);
+		GETENTRYBYIDX(dhcpon, word, 1);
+		GETENTRYBYIDX(start, word, 2);
+		GETENTRYBYIDX(max, word, 3);
+		GETENTRYBYIDX(leasetime, word, 4);
+		if (leasetime == NULL) {
 			leasetime = "3660";
 		}
 		if (!interface || !start || !dhcpon || !max || !leasetime)
