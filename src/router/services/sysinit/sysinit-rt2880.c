@@ -386,16 +386,11 @@ void start_sysinit(void)
 #endif
 	}
 
-	struct ifreq ifr;
-	int s;
-
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
-
-		strncpy(ifr.ifr_name, "eth2", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr_safe", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		close(s);
+	{
+		char macaddr[32];
+		if (get_hwaddr("eth2", macaddr)) {
+			nvram_set("et0macaddr_safe", macaddr);
+		}
 	}
 #endif
 #ifdef HAVE_WCRGN
