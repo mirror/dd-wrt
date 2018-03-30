@@ -277,7 +277,7 @@ char *getBridge(char *ifname, char *word)
 	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(bridge, word, 0);
 		GETENTRYBYIDX(port, word, 1);
-		if (!bridge )
+		if (!bridge)
 			break;
 		if (!strcmp(port, ifname))
 			return bridge;
@@ -1940,10 +1940,10 @@ int getBridgeSTP(char *br)
 		return 0;
 }
 
-unsigned char *get_hwaddr(char *name, unsigned char *hwaddr)
+unsigned char *get_ether_hwaddr(const char *name, unsigned char *hwaddr)
 {
 	struct ifreq ifr;
-	unsigned char  *ret = NULL;
+	unsigned char *ret = NULL;
 	int s;
 
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -1961,8 +1961,7 @@ unsigned char *get_hwaddr(char *name, unsigned char *hwaddr)
 	return ret;
 }
 
-
-int set_hwaddr(char *name, unsigned char *hwaddr)
+int set_ether_hwaddr(const char *name, unsigned char *hwaddr)
 {
 	struct ifreq ifr;
 	int ret;
@@ -1974,12 +1973,29 @@ int set_hwaddr(char *name, unsigned char *hwaddr)
 	}
 
 	strncpy(ifr.ifr_name, name, IFNAMSIZ);
-	memcpy(ifr.ifr_hwaddr.sa_data, hwaddr);
+	memcpy(ifr.ifr_hwaddr.sa_data, hwaddr, ETHER_ADDR_LEN);
 	ioctl(s, SIOCSIFHWADDR, &ifr);
 	close(s);
 	return ret;
 }
 
+int set_hwaddr(const char *name, unsigned char *hwaddr)
+{
+	unsigned char mac[6];
+	if (ether_atoe(hwaddr, mac)) {
+		return set_ether_hwaddr(name, mac);
+	}
+	return -1;
+}
 
-
-
+char *get_hwaddr(const char *name, unsigned char *eabuf)
+{
+	unsigned char buf[6];
+	unsigned char *mac = get_ether_hwaddr(name, buf);
+	if (mac) {
+		if (ether_etoa(mac, eabuf)) {
+			return eabuf;
+		}
+	}
+	return NULL;
+}
