@@ -5261,7 +5261,6 @@ void stop_wan(void)
 void start_set_routes(void)
 {
 	char word[80], *tmp;
-	char *ipaddr, *netmask, *gateway, *metric, *ifname, *nat;
 
 	if (!nvram_match("lan_gateway", "0.0.0.0")) {
 		eval("route", "del", "default");
@@ -5282,29 +5281,13 @@ void start_set_routes(void)
 	}
 	char *sr = nvram_safe_get("static_route");
 	foreach(word, sr, tmp) {
-		netmask = word;
-		ipaddr = strsep(&netmask, ":");
-		if (!ipaddr || !netmask)
-			continue;
-		gateway = netmask;
-		netmask = strsep(&gateway, ":");
-		if (!netmask || !gateway)
-			continue;
-		metric = gateway;
-		gateway = strsep(&metric, ":");
-		if (!gateway || !metric)
-			continue;
-		ifname = metric;
-		metric = strsep(&ifname, ":");
-		if (!metric || !ifname)
-			continue;
-		if (strchr(ifname, ':')) {
-			nat = ifname;
-			ifname = strsep(&nat, ":");
-			if (!ifname || !nat)
+			GETENTRYBYIDX(ipaddr, word, 0);
+			GETENTRYBYIDX(netmask, word, 1);
+			GETENTRYBYIDX(gateway, word, 2);
+			GETENTRYBYIDX(metric, word, 3);
+			GETENTRYBYIDX(ifname, word, 4);
+			if (!ipaddr || !netmask || !gateway || !metric || !ifname)
 				continue;
-		}
-
 		if (!strcmp(ipaddr, "0.0.0.0") && !strcmp(gateway, "0.0.0.0"))
 			continue;
 		if (!strcmp(ipaddr, "0.0.0.0")) {

@@ -245,26 +245,17 @@ void start_pppoeserver(void)
 			// parse chaps from nvram to file
 			char word[256];
 			char *next, *wordlist;
-			char *user, *pass, *ip, *enable;
 
 			wordlist = nvram_safe_get("pppoeserver_chaps");
 
 			fp = fopen("/tmp/pppoeserver/chap-secrets", "wb");
 
 			foreach(word, wordlist, next) {
-				pass = word;
-				user = strsep(&pass, ":");
-				if (!user || !pass)
-					continue;
-
-				ip = pass;
-				pass = strsep(&ip, ":");
-				if (!pass || !ip)
-					continue;
-
-				enable = ip;
-				ip = strsep(&enable, ":");
-				if (!ip || !enable)
+				GETENTRYBYIDX(user, word, 0);
+				GETENTRYBYIDX(pass, word, 1);
+				GETENTRYBYIDX(ip, word, 2);
+				GETENTRYBYIDX(enable, word, 3);
+				if (!user || !pass || !ip || !enable)
 					continue;
 
 				if (!strcmp(ip, "0.0.0.0"))

@@ -278,7 +278,6 @@ static int ip2cclass(char *ipaddr, char *new, int count)
 static void parse_port_forward(char *wordlist)
 {
 	char var[256], *next;
-	char *name, *enable, *proto, *port, *ip;
 	char buff[256], ip2[16];
 	int flag_dis = 0;
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
@@ -292,21 +291,13 @@ static void parse_port_forward(char *wordlist)
 	 * name:enable:proto:port>ip name:enable:proto:port>ip 
 	 */
 	foreach(var, wordlist, next) {
-		enable = var;
-		name = strsep(&enable, ":");
-		if (!name || !enable)
-			continue;
-		proto = enable;
-		enable = strsep(&proto, ":");
-		if (!enable || !proto)
-			continue;
-		port = proto;
-		proto = strsep(&port, ":");
-		if (!proto || !port)
-			continue;
-		ip = port;
-		port = strsep(&ip, ">");
-		if (!port || !ip)
+		GETENTRYBYIDX(name, var, 0);
+		GETENTRYBYIDX(enable, var, 1);
+		GETENTRYBYIDX(proto, var, 2);
+		GETENTRYBYIDX(from, var, 3);
+		GETENTRYBYIDX(to, var, 4);
+		GETENTRYBYIDX(ip, var, 5);
+		if (!name || !enable || !proto || !from || !to || !ip)
 			continue;
 
 		/*
@@ -334,17 +325,17 @@ static void parse_port_forward(char *wordlist)
 			bzero(buff, sizeof(buff));
 
 			if (flag_dis == 0) {
-				save2file("-A PREROUTING -p tcp -d %s --dport %s -j DNAT --to-destination %s", wanaddr, port, ip);
+				save2file("-A PREROUTING -p tcp -d %s --dport %s:%s -j DNAT --to-destination %s", wanaddr, from, to, ip);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
 				if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) || (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1))
 				    )
-					save2file("-A PREROUTING -i %s -p tcp --dport %s -j DNAT --to-destination %s", wan_iface, port, ip);
+					save2file("-A PREROUTING -i %s -p tcp --dport %s:%s -j DNAT --to-destination %s", wan_iface, from, to, ip);
 #endif
-				snprintf(buff, sizeof(buff), "-A FORWARD -p tcp -m tcp -d %s --dport %s -j %s\n", ip, port, log_accept);
+				snprintf(buff, sizeof(buff), "-A FORWARD -p tcp -m tcp -d %s --dport %s:%s -j %s\n", ip, from, to, log_accept);
 			} else {
 				if ((!dmzenable)
 				    || (dmzenable && strcmp(ip, nvram_safe_get("dmz_ipaddr")))) {
-					snprintf(buff, sizeof(buff), "-A FORWARD -p tcp -m tcp -d %s --sport %s -j %s\n", ip, port, log_drop);
+					snprintf(buff, sizeof(buff), "-A FORWARD -p tcp -m tcp -d %s --sport %s:%s -j %s\n", ip, from, to, log_drop);
 				}
 			}
 
@@ -356,17 +347,17 @@ static void parse_port_forward(char *wordlist)
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
 			bzero(buff, sizeof(buff));
 			if (flag_dis == 0) {
-				save2file("-A PREROUTING -p udp -d %s --dport %s -j DNAT --to-destination %s", wanaddr, port, ip);
+				save2file("-A PREROUTING -p udp -d %s --dport %s:%s -j DNAT --to-destination %s", wanaddr, from, to, ip);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
 				if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) || (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1))
 				    )
-					save2file("-A PREROUTING -i %s -p udp -m udp --dport %s -j DNAT --to-destination %s", wan_iface, port, ip);
+					save2file("-A PREROUTING -i %s -p udp -m udp --dport %s:%s -j DNAT --to-destination %s", wan_iface, from, to, ip);
 #endif
-				snprintf(buff, sizeof(buff), "-A FORWARD -p udp -m udp -d %s --dport %s -j %s\n", ip, port, log_accept);
+				snprintf(buff, sizeof(buff), "-A FORWARD -p udp -m udp -d %s --dport %s:%s -j %s\n", ip, from, to, log_accept);
 			} else {
 				if ((!dmzenable)
 				    || (dmzenable && strcmp(ip, nvram_safe_get("dmz_ipaddr")))) {
-					snprintf(buff, sizeof(buff), "-A FORWARD -p udp -m udp -d %s --dport %s -j %s\n", ip, port, log_drop);
+					snprintf(buff, sizeof(buff), "-A FORWARD -p udp -m udp -d %s --dport %s:%s -j %s\n", ip, from, to, log_drop);
 
 				}
 			}
@@ -548,7 +539,6 @@ static void create_spec_forward(char *proto, char *src, char *wanaddr, char *fro
 static void parse_spec_forward(char *wordlist)
 {
 	char var[256], *next;
-	char *name, *enable, *proto, *from, *to, *ip, *src;
 	char buff[256];
 
 	/*
@@ -556,33 +546,15 @@ static void parse_spec_forward(char *wordlist)
 	 * name:enable:proto:ext_port>ip:int_port 
 	 */
 	foreach(var, wordlist, next) {
-		enable = var;
-		name = strsep(&enable, ":");
-		if (!name || !enable)
+		GETENTRYBYIDX(name, var, 0);
+		GETENTRYBYIDX(enable, var, 1);
+		GETENTRYBYIDX(proto, var, 2);
+		GETENTRYBYIDX(from, var, 3);
+		GETENTRYBYIDX(ip, var, 4);
+		GETENTRYBYIDX(to, var, 5);
+		GETENTRYBYIDX(src, var, 6);
+		if (!name || !enable || !proto || !from || !to || !ip)
 			continue;
-		proto = enable;
-		enable = strsep(&proto, ":");
-		if (!enable || !proto)
-			continue;
-		from = proto;
-		proto = strsep(&from, ":");
-		if (!proto || !from)
-			continue;
-		ip = from;
-		from = strsep(&ip, ">");
-		if (!from || !ip)
-			continue;
-		to = ip;
-		ip = strsep(&to, ":");
-		if (!ip || !to)
-			continue;
-
-		src = to;
-		to = strsep(&src, "<");
-		if (!to) {
-			to = src;
-			src = NULL;
-		}
 		// cprintf("%s %s %s %s %s\n",enable,proto,from,ip,to);
 
 		/*
@@ -788,7 +760,6 @@ static int wanactive(void)
 static void nat_postrouting(void)
 {
 	char word[80], *tmp;
-	char *ipaddr, *netmask, *gateway, *metric, *ifname, *nat;
 	if (has_gateway()) {
 
 		// added for logic test
@@ -809,28 +780,9 @@ static void nat_postrouting(void)
 			save2file("-A POSTROUTING -s %s/%d -o %s -j SNAT --to-source %s", nvram_safe_get("lan_ipaddr"), loopmask, wanface, wanaddr);
 		char *sr = nvram_safe_get("static_route");
 		foreach(word, sr, tmp) {
-			netmask = word;
-			ipaddr = strsep(&netmask, ":");
-			if (!ipaddr || !netmask)
-				continue;
-			gateway = netmask;
-			netmask = strsep(&gateway, ":");
-			if (!netmask || !gateway)
-				continue;
-			metric = gateway;
-			gateway = strsep(&metric, ":");
-			if (!gateway || !metric)
-				continue;
-			ifname = metric;
-			metric = strsep(&ifname, ":");
-			if (!metric || !ifname)
-				continue;
-			if (strchr(ifname, ':')) {
-				nat = ifname;
-				ifname = strsep(&nat, ":");
-				if (!ifname || !nat)
-					continue;
-			}
+			GETENTRYBYIDX(ipaddr, word, 0);
+			GETENTRYBYIDX(netmask, word, 1);
+			GETENTRYBYIDX(nat, word, 5);
 			if (nat && !strcmp(nat, "1")) {
 				save2file("-A POSTROUTING -s %s/%d -o %s -j SNAT --to-source %s", ipaddr, getmask(netmask), wanface, wanaddr);
 			}
@@ -1809,38 +1761,18 @@ int filtersync_main(int argc, char *argv[])
 static void parse_trigger_out(char *wordlist)
 {
 	char var[256], *next;
-	char *name, *enable, *proto;
-	char *wport0, *wport1, *lport0, *lport1;
 
 	/*
 	 * port_trigger=name:[on|off]:[tcp|udp|both]:wport0-wport1>lport0-lport1 
 	 */
 	foreach(var, wordlist, next) {
-		enable = var;
-		name = strsep(&enable, ":");
-		if (!name || !enable)
-			continue;
-		proto = enable;
-		enable = strsep(&proto, ":");
-		if (!enable || !proto)
-			continue;
-		wport0 = proto;
-		proto = strsep(&wport0, ":");
-		if (!proto || !wport0)
-			continue;
-		wport1 = wport0;
-		wport0 = strsep(&wport1, "-");
-		if (!wport0 || !wport1)
-			continue;
-		lport0 = wport1;
-		wport1 = strsep(&lport0, ">");
-		if (!wport1 || !lport0)
-			continue;
-		lport1 = lport0;
-		lport0 = strsep(&lport1, "-");
-		if (!lport0 || !lport1)
-			continue;
-
+		GETENTRYBYIDX(name, var, 0);
+		GETENTRYBYIDX(enable, var, 1);
+		GETENTRYBYIDX(proto, var, 2);
+		GETENTRYBYIDX(wport0, var, 3);
+		GETENTRYBYIDX(wport1, var, 4);
+		GETENTRYBYIDX(lport0, var, 5);
+		GETENTRYBYIDX(lport1, var, 6);
 		/*
 		 * skip if it's disabled 
 		 */
