@@ -312,6 +312,11 @@ int br_set_bridge_prio(const char *br, int prio)
 	return br_set(br, "priority", prio, BRCTL_SET_BRIDGE_PRIORITY);
 }
 
+int br_set_path_cost(const char *bridge, const char *port, int cost)
+{
+	return port_set(bridge, port, "path_cost", cost, BRCTL_SET_PATH_COST);
+}
+
 /*
  * Convert device name to an index in the list of ports in bridge.
  *

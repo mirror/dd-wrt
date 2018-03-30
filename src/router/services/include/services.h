@@ -214,6 +214,7 @@ int br_set_port_hairpin(const char *br, char *port, int val);
 int br_set_bridge_forward_delay(const char *br, int sec);
 int br_set_bridge_prio(const char *br, int prio);
 int br_set_port_stp(const char *br, char *port, int on);
+int br_set_path_cost(const char *bridge, const char *port, int cost);
 
 
 void reset_hwaddr(char *ifname);
