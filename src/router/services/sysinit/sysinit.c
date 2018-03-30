@@ -289,22 +289,14 @@ static void buffalo_defaults(int force)
 					nvram_seti("wl1_wpa_psk", 12345678);
 			}
 		}
-		struct ifreq ifr;
-		int s;
-
-		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-			char eabuf[32];
-
-			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-			ioctl(s, SIOCGIFHWADDR, &ifr);
-			close(s);
-			unsigned char *edata = (unsigned char *)ifr.ifr_hwaddr.sa_data;
-			sprintf(eabuf, "Buffalo-A-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
-			nvram_set("wl_ssid", eabuf);
-			nvram_set("wl0_ssid", eabuf);
-			sprintf(eabuf, "Buffalo-G-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
-			nvram_set("wl1_ssid", eabuf);
-		}
+		char eabuf[32];
+		unsigned char edata[6];
+		get_hwaddr("eth0", edata);
+		sprintf(eabuf, "Buffalo-A-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
+		nvram_set("wl_ssid", eabuf);
+		nvram_set("wl0_ssid", eabuf);
+		sprintf(eabuf, "Buffalo-G-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
+		nvram_set("wl1_ssid", eabuf);
 
 		region = getUEnv("region");
 		if (region == NULL) {
@@ -568,22 +560,13 @@ static void buffalo_defaults(int force)
 		eval("umount", partition);
 		rmdir(mountpoint);
 
-		struct ifreq ifr;
-		int s;
-
-		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-			char eabuf[32];
-
-			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-			ioctl(s, SIOCGIFHWADDR, &ifr);
-			close(s);
-			unsigned char *edata = (unsigned char *)ifr.ifr_hwaddr.sa_data;
-			sprintf(eabuf, "Buffalo-G-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
-			nvram_set("wl0_ssid", eabuf);
-			sprintf(eabuf, "Buffalo-A-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
-			nvram_set("wl1_ssid", eabuf);
-
-		}
+		char eabuf[32];
+		unsigned char edata[6];
+		get_hwaddr("eth0", edata);
+		sprintf(eabuf, "Buffalo-G-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
+		nvram_set("wl0_ssid", eabuf);
+		sprintf(eabuf, "Buffalo-A-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
+		nvram_set("wl1_ssid", eabuf);
 
 		nvram_seti("ias_startup", 3);
 		nvram_unset("http_userpln");
@@ -720,45 +703,29 @@ static void buffalo_defaults(int force)
 					nvram_set("ath1_wpa_psk", wpapsk);
 			}
 		}
-		struct ifreq ifr;
-		int s;
+		char eabuf[32];
+		unsigned char edata[6];
+		get_hwaddr("eth0", edata);
+		sprintf(eabuf, "Buffalo-G-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
+		nvram_set("ath0_ssid", eabuf);
+		sprintf(eabuf, "Buffalo-A-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
+		nvram_set("ath1_ssid", eabuf);
 
-		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-			char eabuf[32];
-
-			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-			ioctl(s, SIOCGIFHWADDR, &ifr);
-			close(s);
-			unsigned char *edata = (unsigned char *)ifr.ifr_hwaddr.sa_data;
-			sprintf(eabuf, "BUFFALO-%02X%02X%02X_G", edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
-			nvram_set("ath0_ssid", eabuf);
-			sprintf(eabuf, "BUFFALO-%02X%02X%02X_A", edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
-			nvram_set("ath1_ssid", eabuf);
-
-		}
 #else
 		}
-		struct ifreq ifr;
-		int s;
-
-		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-			char eabuf[32];
-
-			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-			ioctl(s, SIOCGIFHWADDR, &ifr);
-			close(s);
-			unsigned char *edata = (unsigned char *)ifr.ifr_hwaddr.sa_data;
+		char eabuf[32];
+		unsigned char edata[6];
+		get_hwaddr("eth0", edata);
 #if defined(HAVE_WZR300HP) || defined(HAVE_WHR300HP)
-			sprintf(eabuf, "BUFFALO-%02X%02X%02X", edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
+		sprintf(eabuf, "BUFFALO-%02X%02X%02X", edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
 #elif defined(HAVE_WZR450HP2)
-			sprintf(eabuf, "BUFFALO-G-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
+		sprintf(eabuf, "BUFFALO-G-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
 #elif defined(HAVE_AXTEL)
-			sprintf(eabuf, "AXTELEXTREMO-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
+		sprintf(eabuf, "AXTELEXTREMO-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
 #else
-			sprintf(eabuf, "%02X%02X%02X%02X%02X%02X", edata[0] & 0xff, edata[1] & 0xff, edata[2] & 0xff, edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
+		sprintf(eabuf, "%02X%02X%02X%02X%02X%02X", edata[0] & 0xff, edata[1] & 0xff, edata[2] & 0xff, edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
 #endif
-			nvram_set("ath0_ssid", eabuf);
-		}
+		nvram_set("ath0_ssid", eabuf);
 #endif
 
 		region = getUEnv("region");
