@@ -876,13 +876,11 @@ static void parse_port_filter(char *wordlist)
 	 * Parse protocol:lan_port0-lan_port1 ... 
 	 */
 	foreach(var, wordlist, next) {
-		lan_port0 = var;
-		protocol = strsep(&lan_port0, ":");
-		if (!protocol || !lan_port0)
-			continue;
-		lan_port1 = lan_port0;
-		lan_port0 = strsep(&lan_port1, "-");
-		if (!lan_port0 || !lan_port1)
+		GETENTRYBYIDX(protocol, var, 0);
+		GETENTRYBYIDX(lan_port0, var, 1);
+		GETENTRYBYIDX(lan_port1, var, 2);
+
+		if (!protocol || !lan_port0 || !lan_port1)
 			continue;
 
 		if (!strcmp(protocol, "disable"))
@@ -1230,13 +1228,10 @@ static void portgrp_chain(int seq, unsigned int mark, int urlenable)
 	 * Parse protocol:lan_port0-lan_port1 ... 
 	 */
 	foreach(var, wordlist, next) {
-		lan_port0 = var;
-		protocol = strsep(&lan_port0, ":");
-		if (!protocol || !lan_port0)
-			continue;
-		lan_port1 = lan_port0;
-		lan_port0 = strsep(&lan_port1, "-");
-		if (!lan_port0 || !lan_port1)
+		GETENTRYBYIDX(protocol, var, 0);
+		GETENTRYBYIDX(lan_port0, var, 1);
+		GETENTRYBYIDX(lan_port1, var, 2);
+		if (!protocol || !lan_port0 || !lan_port1)
 			continue;
 
 		if (!strcmp(protocol, "disable"))
