@@ -1979,7 +1979,7 @@ int set_ether_hwaddr(const char *name, unsigned char *hwaddr)
 	return ret;
 }
 
-int set_hwaddr(const char *name, unsigned char *hwaddr)
+int set_hwaddr(const char *name, char *hwaddr)
 {
 	unsigned char mac[6];
 	if (ether_atoe(hwaddr, mac)) {
@@ -1988,7 +1988,7 @@ int set_hwaddr(const char *name, unsigned char *hwaddr)
 	return -1;
 }
 
-char *get_hwaddr(const char *name, unsigned char *eabuf)
+char *get_hwaddr(const char *name, char *eabuf)
 {
 	unsigned char buf[6];
 	unsigned char *mac = get_ether_hwaddr(name, buf);
