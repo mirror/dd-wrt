@@ -816,8 +816,11 @@ extern int dns_to_resolv(void);
 extern char *get_wan_face(void);
 extern int getBridgeSTP(char *br);
 extern char *getBridgeSTPType(char *br);
-extern unsigned char *get_hwaddr(char *name, unsigned char *hwaddr);
-extern int set_hwaddr(char *name, unsigned char *hwaddr);
+extern unsigned char *get_ether_hwaddr(const char *name, unsigned char *hwaddr);
+extern int set_ether_hwaddr(const char *name, unsigned char *hwaddr);
+
+extern char *get_hwaddr(const char *name, char *hwaddr);
+extern int set_hwaddr(const char *name, char *hwaddr);
 
 extern int check_wan_link(int num);
 extern char *get_wan_ipaddr(void);
