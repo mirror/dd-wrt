@@ -1973,8 +1973,9 @@ int set_ether_hwaddr(const char *name, unsigned char *hwaddr)
 	}
 
 	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	ioctl(s, SIOCGIFHWADDR, &ifr); // must read to update struct
 	memcpy(ifr.ifr_hwaddr.sa_data, hwaddr, ETHER_ADDR_LEN);
-	ioctl(s, SIOCSIFHWADDR, &ifr);
+	ioctl(s, SIOCSIFHWADDR, &ifr); // rewrite with updated mac
 	close(s);
 	return ret;
 }

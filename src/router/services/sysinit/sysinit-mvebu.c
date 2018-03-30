@@ -125,24 +125,6 @@ void start_sysinit(void)
 		eval("ubootenv", "set", "auto_recovery", "yes");
 	eval("mtd", "resetbc", "s_env");	// reset boot counter
 
-/*	
-	system("swconfig dev switch0 set reset 1");
-	system("swconfig dev switch0 set enable_vlan 1");
-	if (nvram_match("wan_proto", "disabled") && nvram_matchi("fullswitch",1)) {
-		system("swconfig dev switch0 vlan 1 set ports \"0 1 2 3 5\"");
-	} else {
-		system("swconfig dev switch0 vlan 1 set ports \"5t 0 1 2 3\"");
-		system("swconfig dev switch0 vlan 2 set ports \"5t 4\"");
-	}
-	system("swconfig dev switch0 set apply");
-
-	eval("ifconfig", "eth0", "up");
-	//eval("ifconfig", "eth1", "up");
-	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-	eval("vconfig", "add", "eth0", "1");
-	eval("vconfig", "add", "eth0", "2");
-
-*/
 	/*
 	 * Set a sane date 
 	 */
@@ -161,6 +143,8 @@ void start_sysinit(void)
 				nvram_set("et0macaddr", mac);
 				nvram_set("et0macaddr_safe", mac);
 				set_hwaddr("eth0", mac);
+				MAC_ADD(mac);
+				set_hwaddr("eth1", mac);
 			}
 		}
 		fclose(fp);

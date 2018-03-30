@@ -764,6 +764,7 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 	getIfLists(eths, 256);
 	foreach(var, eths, next) {
 		copytonv(wp, "%s_label", var);
+		copytonv(wp, "%s_hwaddr", var);
 		char *bridged = copytonv(wp, "%s_bridged", var);
 		copytonv(wp, "%s_multicast", var);
 		copytonv(wp, "%s_nat", var);
