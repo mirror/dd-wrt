@@ -97,26 +97,12 @@ void start_sysinit(void)
 
 	detect_wireless_devices();
 
-	int s;
-	struct ifreq ifr;
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
-
-		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		char macaddr[32];
-
-		strcpy(macaddr, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
+	char macaddr[32];
+	if (get_hwaddr("eth1", macaddr)) {
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
-
-		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		strcpy(macaddr, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-
-		close(s);
-
-		eval("ifconfig", "eth2", "hw", "ether", macaddr);
+		get_hwaddr("eth0", macaddr);
+		set_hwaddr("eth2", macaddr);
 	}
 
 	insmod("mii_gpio");
@@ -287,8 +273,8 @@ void start_sysinit(void)
 
 void start_postnetwork(void)
 {
-	set_gpio(442 + 17, 1);  // reset wifi card gpio pin
-	set_gpio(477 + 17, 1);  // reset wifi card gpio pin
+	set_gpio(442 + 17, 1);	// reset wifi card gpio pin
+	set_gpio(477 + 17, 1);	// reset wifi card gpio pin
 }
 
 int check_cfe_nv(void)

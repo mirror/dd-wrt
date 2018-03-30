@@ -87,22 +87,13 @@ void start_sysinit(void)
 #else
 	insmod("ar2313");
 #endif
-	int s;
-	struct ifreq ifr;
-
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
-
-		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		char macaddr[32];
-
-		strcpy(macaddr, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
+	char macaddr[32];
+	if (get_hwaddr("eth0", macaddr)) {
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
 		nvram_set("lan_hwaddr", macaddr);
-		close(s);
 	}
+
 	detect_wireless_devices();
 #ifdef HAVE_WRK54G
 	writeprocsys("dev/wifi0/ledpin", "2");

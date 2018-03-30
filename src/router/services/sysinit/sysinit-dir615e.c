@@ -155,9 +155,9 @@ void start_sysinit(void)
 #ifdef HAVE_WR940V4
 	setEthLED(14, "eth1");
 	setSwitchLED(4, 0x2);
-	setSwitchLED(18, 0x4); 
-	setSwitchLED(6, 0x8); 
-	setSwitchLED(8, 0x10);  
+	setSwitchLED(18, 0x4);
+	setSwitchLED(6, 0x8);
+	setSwitchLED(8, 0x10);
 #elif HAVE_WR941V6
 	setEthLED(14, "eth1");
 	setSwitchLED(7, 0x2);
@@ -179,17 +179,10 @@ void start_sysinit(void)
 #endif
 #endif
 #endif
-	struct ifreq ifr;
-	int s;
-
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
-
-		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		nvram_set("et0macaddr_safe", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		close(s);
+	char macaddr[32];
+	if (get_hwaddr("eth0", macaddr)) {
+		nvram_set("et0macaddr", macaddr);
+		nvram_set("et0macaddr_safe", macaddr);
 	}
 	detect_wireless_devices();
 #ifndef HAVE_ATH9K
