@@ -80,7 +80,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"1500\" /></td>\n", bridge_name);
 
 		sprintf(bridge_name, "lan_hwaddr");
-		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"16\" value=\"%s\" /></td>\n", bridge_name, nvram_safe_get(bridge_name));
+		websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"16\" value=\"%s\" /></td>\n", bridge_name, nvram_safe_get(bridge_name));
 
 		websWrite(wp,
 			  "<td><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" disabled />\");\n//]]>\n</script></td></tr>\n");
@@ -124,14 +124,14 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" /></td>\n", bridge_name, mtu != NULL ? mtu : "1500");
 		if (!strcmp(bridge, "br0")) {
 			sprintf(bridge_name, "lan_hwaddr");
-			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"16\" value=\"%s\" /></td>\n", bridge_name, nvram_safe_get(bridge_name));
+			websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"16\" value=\"%s\" /></td>\n", bridge_name, nvram_safe_get(bridge_name));
 		} else {
 			sprintf(bridge_name, "%s_hwaddr", bridge);
 			mac = nvram_safe_get(bridge_name);
 			if (!strcmp(mac, "")) {
 				websWrite(wp, "<td align=\"center\">...</td>\n");
 			} else {
-				websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\"size=\"16\" value=\"%s\" /></td>\n", bridge_name, nvram_safe_get(bridge_name));
+				websWrite(wp, "<td align=\"center\"><input class=\"num\" name=\"%s\" size=\"16\" value=\"%s\" /></td>\n", bridge_name, nvram_safe_get(bridge_name));
 			}
 		}
 
