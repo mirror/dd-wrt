@@ -1208,7 +1208,7 @@ int isap8x(void)
 
 int insmod(char *module)
 {
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 	int ret = 0;
 	wordlist = module;
@@ -1221,7 +1221,7 @@ int insmod(char *module)
 
 void rmmod(char *module)
 {
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 	wordlist = module;
 	foreach(word, wordlist, next) {
