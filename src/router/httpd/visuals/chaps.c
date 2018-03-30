@@ -44,10 +44,10 @@ static void show_chaps_table(webs_t wp, char *type, int which)
 
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {
-			GETENTRYBYIDXD(user, word, 0, ":");
-			GETENTRYBYIDXD(pass, word, 1, ":");
-			GETENTRYBYIDXD(ip, word, 2, ":");
-			GETENTRYBYIDXD(enable, word, 3, ":");
+			GETENTRYBYIDX(user, word, 0);
+			GETENTRYBYIDX(pass, word, 1);
+			GETENTRYBYIDX(ip, word, 2);
+			GETENTRYBYIDX(enable, word, 3);
 			if (!user || !pass || !ip || !enable)
 				continue;
 

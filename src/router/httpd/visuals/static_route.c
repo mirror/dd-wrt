@@ -50,7 +50,7 @@ void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 
 	foreach(word, sroute, next) {
 		if (which-- == 0) {
-			GETENTRYBYIDXD(ifname, word, 4, ":");
+			GETENTRYBYIDX(ifname, word, 4);
 			if (!ifname)
 				break;
 			strcpy(ifnamecopy, ifname);
@@ -113,12 +113,12 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 	foreach(word, sroute, next) {
 		//if (which-- == 0) {
 		if (which-- == 0 || (next == NULL && !strcmp("", websGetVar(wp, "change_action", "-")))) {
-			GETENTRYBYIDXD(ipaddr, word, 0, ":");
-			GETENTRYBYIDXD(netmask, word, 1, ":");
-			GETENTRYBYIDXD(gateway, word, 2, ":");
-			GETENTRYBYIDXD(metric, word, 3, ":");
-			GETENTRYBYIDXD(ifname, word, 4, ":");
-			GETENTRYBYIDXD(nat, word, 5, ":");
+			GETENTRYBYIDX(ipaddr, word, 0);
+			GETENTRYBYIDX(netmask, word, 1);
+			GETENTRYBYIDX(gateway, word, 2);
+			GETENTRYBYIDX(metric, word, 3);
+			GETENTRYBYIDX(ifname, word, 4);
+			GETENTRYBYIDX(nat, word, 5);
 			if (!ipaddr || !netmask || !gateway || !metric || !ifname)
 				continue;
 

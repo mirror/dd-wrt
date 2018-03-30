@@ -44,12 +44,12 @@ void port_forward_table(webs_t wp, char *type, int which)
 
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {
-			GETENTRYBYIDXD(name, word, 0, ":>");
-			GETENTRYBYIDXD(enable, word, 1, ":>");
-			GETENTRYBYIDXD(proto, word, 2, ":>");
-			GETENTRYBYIDXD(from, word, 3, ":>");
-			GETENTRYBYIDXD(to, word, 4, ":>");
-			GETENTRYBYIDXD(ip, word, 5, ":>");
+			GETENTRYBYIDX(name, word, 0);
+			GETENTRYBYIDX(enable, word, 1);
+			GETENTRYBYIDX(proto, word, 2);
+			GETENTRYBYIDX(from, word, 3);
+			GETENTRYBYIDX(to, word, 4);
+			GETENTRYBYIDX(ip, word, 5);
 			if (!name || !enable || !proto || !from || !to || !ip)
 				continue;
 
@@ -118,13 +118,13 @@ void port_forward_spec(webs_t wp, char *type, int which)
 
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {
-			GETENTRYBYIDXD(name, word, 0, ":><");
-			GETENTRYBYIDXD(enable, word, 1, ":><");
-			GETENTRYBYIDXD(proto, word, 2, ":><");
-			GETENTRYBYIDXD(from, word, 3, ":><");
-			GETENTRYBYIDXD(ip, word, 4, ":><");
-			GETENTRYBYIDXD(to, word, 5, ":><");
-			GETENTRYBYIDXD(src, word, 6, ":><");
+			GETENTRYBYIDX(name, word, 0);
+			GETENTRYBYIDX(enable, word, 1);
+			GETENTRYBYIDX(proto, word, 2);
+			GETENTRYBYIDX(from, word, 3);
+			GETENTRYBYIDX(ip, word, 4);
+			GETENTRYBYIDX(to, word, 5);
+			GETENTRYBYIDX(src, word, 6);
 			if (!name || !enable || !proto || !from || !to || !ip)
 				continue;
 
@@ -206,13 +206,13 @@ void port_trigger_table(webs_t wp, char *type, int which)
 
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {
-			GETENTRYBYIDXD(name, word, 0, ":>-");
-			GETENTRYBYIDXD(enable, word, 1, ":>-");
-			GETENTRYBYIDXD(proto, word, 2, ":>-");
-			GETENTRYBYIDXD(i_from, word, 3, ":>-");
-			GETENTRYBYIDXD(i_to, word, 4, ":>-");
-			GETENTRYBYIDXD(o_from, word, 5, ":>-");
-			GETENTRYBYIDXD(o_to, word, 6, ":>-");
+			GETENTRYBYIDX(name, word, 0);
+			GETENTRYBYIDX(enable, word, 1);
+			GETENTRYBYIDX(proto, word, 2);
+			GETENTRYBYIDX(i_from, word, 3);
+			GETENTRYBYIDX(i_to, word, 4);
+			GETENTRYBYIDX(o_from, word, 5);
+			GETENTRYBYIDX(o_to, word, 6);
 			if (!name || !enable || !proto || !i_from || !i_to || !o_from || !o_to)
 				continue;
 
