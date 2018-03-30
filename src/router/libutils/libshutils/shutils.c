@@ -1006,7 +1006,8 @@ static void strcpyto(char *dest, char *src, char *delim)
 	char *to = strpbrk(src, delim);
 	if (to)
 		len = to - src;
-	strncpy(dest, src, len);
+	memcpy(dest, src, len);
+	dest[len] = '\0';
 }
 
 char *chomp(char *s)
