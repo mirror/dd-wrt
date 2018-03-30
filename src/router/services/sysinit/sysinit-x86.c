@@ -203,17 +203,10 @@ void start_sysinit(void)
 	eval("ifconfig", "eth2", "0.0.0.0", "up");
 	eval("ifconfig", "eth3", "0.0.0.0", "up");
 
-	struct ifreq ifr;
-	int s;
-
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
-
-		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr_safe", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		nvram_set("et0macaddr", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		close(s);
+	char macaddr[32];
+	if (get_hwaddr("eth0", macaddr)) {
+		nvram_set("et0macaddr", macaddr);
+		nvram_set("et0macaddr_safe", macaddr);
 	}
 	FILE *fp = fopen("/sys/bus/pci/devices/0000:04:00.0/device", "rb");	//pcengines apu fuckup check
 	if (fp) {

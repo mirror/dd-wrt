@@ -270,14 +270,10 @@ void start_sysinit(void)
 					ioctl(s, SIOCSIFHWADDR, &ifr);
 					close(s);
 				}
-				if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-					strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-					ioctl(s, SIOCGIFHWADDR, &ifr);
-					nvram_set("et0macaddr_safe", ether_etoa((char *)
-										ifr.ifr_hwaddr.sa_data, eabuf));
-					nvram_set("et0macaddr", ether_etoa((char *)
-									   ifr.ifr_hwaddr.sa_data, eabuf));
-					close(s);
+				char macaddr[32];
+				if (get_hwaddr("eth0", macaddr)) {
+					nvram_set("et0macaddr", macaddr);
+					nvram_set("et0macaddr_safe", macaddr);
 				}
 			}
 			if (!foundmac) {
@@ -298,15 +294,12 @@ void start_sysinit(void)
 						ioctl(s, SIOCSIFHWADDR, &ifr);
 						close(s);
 					}
-					if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-						strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-						ioctl(s, SIOCGIFHWADDR, &ifr);
-						nvram_set("et0macaddr_safe", ether_etoa((char *)
-											ifr.ifr_hwaddr.sa_data, eabuf));
-						nvram_set("et0macaddr", ether_etoa((char *)
-										   ifr.ifr_hwaddr.sa_data, eabuf));
-						close(s);
+					char macaddr[32];
+					if (get_hwaddr("eth0", macaddr)) {
+						nvram_set("et0macaddr", macaddr);
+						nvram_set("et0macaddr_safe", macaddr);
 					}
+
 				}
 			}
 
@@ -347,14 +340,10 @@ void start_sysinit(void)
 					ioctl(s, SIOCSIFHWADDR, &ifr);
 					close(s);
 				}
-				if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-					strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-					ioctl(s, SIOCGIFHWADDR, &ifr);
-					nvram_set("et0macaddr_safe", ether_etoa((char *)
-										ifr.ifr_hwaddr.sa_data, eabuf));
-					nvram_set("et0macaddr", ether_etoa((char *)
-									   ifr.ifr_hwaddr.sa_data, eabuf));
-					close(s);
+				char macaddr[32];
+				if (get_hwaddr("eth0", macaddr)) {
+					nvram_set("et0macaddr", macaddr);
+					nvram_set("et0macaddr_safe", macaddr);
 				}
 
 			}

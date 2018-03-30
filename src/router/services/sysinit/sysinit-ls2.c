@@ -62,6 +62,7 @@ void start_sysinit(void)
 	time_t tm = 0;
 	struct ifreq ifr;
 	int s;
+	char macaddr[32];
 
 	mknod("/dev/mmc", S_IFBLK | 0660, makedev(126, 0));
 	mknod("/dev/mmc0", S_IFBLK | 0660, makedev(126, 1));
@@ -129,38 +130,20 @@ void start_sysinit(void)
 	writeprocsys("dev/wifi0/ledpin", "7");
 	writeprocsys("dev/wifi0/softled", "1");
 #endif
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
-
-		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		char macaddr[32];
-
-		strcpy(macaddr, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
+	if (get_hwaddr("eth0", macaddr)) {
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
-		// MAC_ADD (macaddr);
-		ether_atoe(macaddr, (char *)ifr.ifr_hwaddr.sa_data);
-		strncpy(ifr.ifr_name, "vlan2", IFNAMSIZ);
-		ioctl(s, SIOCSIFHWADDR, &ifr);
-		close(s);
+		set_hwaddr("vlan2", macaddr);
 	}
 #endif
 #endif
 #endif
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
-
-		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		char macaddr[32];
-
-		strcpy(macaddr, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
+	if (get_hwaddr("eth0", macaddr)) {
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
 		nvram_set("lan_hwaddr", macaddr);
-		close(s);
 	}
+	close(s);
 #if defined(HAVE_MS2)
 	writeprocsys("dev/wifi0/ledpin", "2");
 	writeprocsys("dev/wifi0/softled", "1");

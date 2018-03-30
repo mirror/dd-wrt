@@ -564,19 +564,10 @@ void start_sysinit(void)
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold_any_cpu_load", "50");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold_multi_core", "50");
 
-	int s;
-	struct ifreq ifr;
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
-
-		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		char macaddr[32];
-
-		strcpy(macaddr, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
+	char macaddr[32];
+	if (get_hwaddr("eth1", macaddr)) {
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
-		close(s);
 	}
 
 	switch (board) {
@@ -597,8 +588,8 @@ void start_sysinit(void)
 
 void start_postnetwork(void)
 {
-	set_gpio(442 + 17, 1);  // reset wifi card gpio pin
-	set_gpio(477 + 17, 1);  // reset wifi card gpio pin
+	set_gpio(442 + 17, 1);	// reset wifi card gpio pin
+	set_gpio(477 + 17, 1);	// reset wifi card gpio pin
 }
 
 int check_cfe_nv(void)
