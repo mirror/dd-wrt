@@ -632,23 +632,12 @@ void vlan_init(int numports)
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
-	struct ifreq ifr;
-	int s;
 
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
-
-		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		char macaddr[32];
-
-		strcpy(macaddr, ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+	char macaddr[32];
+	if (get_hwaddr("eth0", macaddr)) {
 		nvram_set("et0macaddr", macaddr);
 		MAC_ADD(macaddr);
-		ether_atoe(macaddr, (unsigned char *)ifr.ifr_hwaddr.sa_data);
-		strncpy(ifr.ifr_name, "vlan2", IFNAMSIZ);
-		ioctl(s, SIOCSIFHWADDR, &ifr);
-		close(s);
+		set_hwaddr("vlan2", macaddr);
 	}
 
 }

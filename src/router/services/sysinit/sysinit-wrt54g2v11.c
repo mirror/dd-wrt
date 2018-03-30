@@ -122,25 +122,14 @@ void start_sysinit(void)
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
 
-	struct ifreq ifr;
-	int s;
-
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
-
-		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		char macaddr[32];
-
-		strcpy(macaddr, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
+	char macaddr[32];
+	if (get_hwaddr("eth0", macaddr)) {
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("lan_hwaddr", macaddr);
 		MAC_ADD(macaddr);
-		ether_atoe(macaddr, (char *)ifr.ifr_hwaddr.sa_data);
-		strncpy(ifr.ifr_name, "vlan2", IFNAMSIZ);
-		ioctl(s, SIOCSIFHWADDR, &ifr);
-		close(s);
+		set_hwaddr("vlan2", macaddr);
 	}
+
 	set_gpio(1, 1);
 #ifdef HAVE_RTG32
 	writeprocsys("dev/wifi0/ledpin", "7");
