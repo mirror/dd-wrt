@@ -322,9 +322,9 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		GETENTRYBYIDX(prio, word, 2);
-		GETENTRYBYIDX(pathcost, word, 3);
 		GETENTRYBYIDX(hairpin, word, 3);
 		GETENTRYBYIDX(stp, word, 4);
+		GETENTRYBYIDX(pathcost, word, 5);
 
 		show_bridgeifname(wp, finalbuffer, bufferif, count, tag, port, stp, prio, hairpin, pathcost);
 		count++;
