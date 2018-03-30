@@ -1948,11 +1948,11 @@ unsigned char *get_hwaddr(char *name, unsigned char *hwaddr)
 
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("socket");
-		return errno;
+		return NULL;
 	}
 
 	strncpy(ifr.ifr_name, name, IFNAMSIZ);
-	if ((ret = ioctl(s, SIOCGIFHWADDR, &ifr)) == 0) {
+	if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
 		memcpy(hwaddr, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
 		ret = hwaddr;
 	}
@@ -1960,3 +1960,26 @@ unsigned char *get_hwaddr(char *name, unsigned char *hwaddr)
 	close(s);
 	return ret;
 }
+
+
+int set_hwaddr(char *name, unsigned char *hwaddr)
+{
+	struct ifreq ifr;
+	int ret;
+	int s;
+
+	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		perror("socket");
+		return errno;
+	}
+
+	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	memcpy(ifr.ifr_hwaddr.sa_data, hwaddr);
+	ioctl(s, SIOCSIFHWADDR, &ifr);
+	close(s);
+	return ret;
+}
+
+
+
+
