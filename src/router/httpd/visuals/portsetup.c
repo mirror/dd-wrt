@@ -83,7 +83,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		if (r && !strlen(nvmac))
 			nvram_nset(r, "%s_hwaddr", var);
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(share.mac)</script></div>\n");
-		websWrite(wp, "<input maxlength=\"17\" size=\"17\" name=\"%s_hwaddr\" value=\"%s\" /></div>\n", var, nvram_nget("%s_hwaddr", var));
+		websWrite(wp, "<input class=\"num\" maxlength=\"17\" size=\"16\" name=\"%s_hwaddr\" value=\"%s\" /></div>\n", var, nvram_nget("%s_hwaddr", var));
 		// label here
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.label)</script></div>\n");
 		websWrite(wp, "<input maxlength=\"32\" size=\"25\" name=\"%s_label\" value=\"%s\" /></div>\n", var, nvram_nget("%s_label", var));
