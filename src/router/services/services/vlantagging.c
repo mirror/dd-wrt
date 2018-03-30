@@ -130,11 +130,11 @@ static void set_stp_state(char *bridge, char *stp)
 		eval("mstpctl", "delbridge", bridge);
 
 	if (!strcmp(stp, "STP"))
-		eval("mstpctl", bridge, "setforcevers", "stp");
+		eval("mstpctl", "setforcevers", bridge, "stp");
 	if (!strcmp(stp, "MSTP"))
-		eval("mstpctl", bridge, "setforcevers", "mstp");
+		eval("mstpctl", "setforcevers", bridge, "mstp");
 	if (!strcmp(stp, "RSTP"))
-		eval("mstpctl", bridge, "setforcevers", "rstp");
+		eval("mstpctl", "setforcevers", bridge, "rstp");
 #endif
 
 }
@@ -152,6 +152,7 @@ void start_bridgesif(void)
 		GETENTRYBYIDX(prio, word, 2);
 		GETENTRYBYIDX(hairpin, word, 3);
 		GETENTRYBYIDX(stp, word, 4);
+		GETENTRYBYIDX(pathcost, word, 5);
 
 		if (strncmp(tag, "EOP", 3)) {
 			br_add_interface(tag, port);
@@ -161,6 +162,8 @@ void start_bridgesif(void)
 				br_set_port_hairpin(tag, port, atoi(hairpin));
 			if (stp)
 				br_set_port_stp(tag, port, atoi(stp));
+			if (pathcost)
+				br_set_path_cost(tag, port, atoi(pathcost));
 		}
 	}
 }
@@ -311,6 +314,7 @@ int setportprio_main(int argc, char *argv[])
 		GETENTRYBYIDX(prio, word, 2);
 		GETENTRYBYIDX(hairpin, word, 3);
 		GETENTRYBYIDX(stp, word, 4);
+		GETENTRYBYIDX(pathcost, word, 5);
 		if (!port)
 			continue;
 		if (!strcmp(port, argv[2])) {
@@ -320,6 +324,8 @@ int setportprio_main(int argc, char *argv[])
 				br_set_port_hairpin(tag, port, atoi(hairpin));
 			if (stp)
 				br_set_port_stp(tag, port, atoi(stp));
+			if (pathcost)
+				br_set_path_cost(tag, port, atoi(pathcost));
 		}
 	}
 	return 0;

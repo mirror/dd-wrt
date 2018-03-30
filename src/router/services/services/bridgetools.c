@@ -112,6 +112,17 @@ int br_set_stp_state(const char *br, int stp_state)
 	}
 }
 
+int br_set_path_cost(const char *br, const char *port, int cost)
+{
+	if (!ifexists(br))
+		return -1;
+	if (!ifexists(port))
+		return -1;
+	char sprio[32];
+	snprintf(sprio, sizeof(sprio), "%d", prio);
+	return eval("mstpctl", "setportpathcost", br, port, sprio);
+}
+
 int br_set_port_prio(const char *br, char *port, int prio)
 {
 	if (!ifexists(br))
@@ -166,6 +177,17 @@ int br_set_stp_state(const char *br, int stp_state)
 		// syslog (LOG_INFO, "stp is set to off\n");
 		return eval("brctl", "stp", br, "off");
 	}
+}
+
+int br_set_path_cost(const char *br, const char *port, int cost)
+{
+	if (!ifexists(br))
+		return -1;
+	if (!ifexists(port))
+		return -1;
+	char sprio[32];
+	snprintf(sprio, sizeof(sprio), "%d", prio);
+	return eval("brctl", "setpathcost", br, port, sprio);
 }
 
 int br_set_port_prio(const char *br, char *port, int prio)
