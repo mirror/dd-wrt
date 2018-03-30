@@ -339,34 +339,20 @@ void start_sysinit(void)
 		fprintf(stderr, "Pronghorn Metro detected\n");
 		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r", "npe_eth0_esa");
 		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "1", "-r", "npe_eth1_esa");
-		struct ifreq ifr;
-		int s;
-
-		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-			char eabuf[32];
-
-			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
-			ioctl(s, SIOCGIFHWADDR, &ifr);
-			nvram_set("et0macaddr_safe", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-			nvram_set("et0macaddr", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-			close(s);
+		char macaddr[32];
+		if (get_hwaddr("ixp0", macaddr)) {
+			nvram_set("et0macaddr", macaddr);
+			nvram_set("et0macaddr_safe", macaddr);
 		}
 	}
 #ifdef HAVE_MI424WR
 	{
 		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r", "npe_eth0_esa");
 		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "1", "-r", "npe_eth1_esa");
-		struct ifreq ifr;
-		int s;
-
-		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-			char eabuf[32];
-
-			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
-			ioctl(s, SIOCGIFHWADDR, &ifr);
-			nvram_set("et0macaddr_safe", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-			nvram_set("et0macaddr", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-			close(s);
+		char macaddr[32];
+		if (get_hwaddr("ixp0", macaddr)) {
+			nvram_set("et0macaddr", macaddr);
+			nvram_set("et0macaddr_safe", macaddr);
 		}
 	}
 #endif
@@ -374,64 +360,41 @@ void start_sysinit(void)
 	{
 		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r", "npe_eth0_esa");
 		eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "1", "-r", "npe_eth1_esa");
-		struct ifreq ifr;
-		int s;
-
-		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-			char eabuf[32];
-
-			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
-			ioctl(s, SIOCGIFHWADDR, &ifr);
-			nvram_set("et0macaddr_safe", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-			nvram_set("et0macaddr", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-			close(s);
+		char macaddr[32];
+		if (get_hwaddr("ixp0", macaddr)) {
+			nvram_set("et0macaddr", macaddr);
+			nvram_set("et0macaddr_safe", macaddr);
 		}
 	}
 #endif
 
 #ifdef HAVE_WG302V1
 	eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r", "zcom_npe_esa");
-	struct ifreq ifr;
-	int s;
-
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
-
-		strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr_safe", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		nvram_set("et0macaddr", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		close(s);
+	{
+		char macaddr[32];
+		if (get_hwaddr("ixp0", macaddr)) {
+			nvram_set("et0macaddr", macaddr);
+			nvram_set("et0macaddr_safe", macaddr);
+		}
 	}
 #else
 #ifdef HAVE_WG302
 	eval("setmac", "-f", "/dev/mtdblock/7", "-n", "1", "-i", "0", "-r", "npe_eth0_esa");
-	struct ifreq ifr;
-	int s;
-
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
-
-		strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr_safe", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		nvram_set("et0macaddr", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		close(s);
+	{
+		char macaddr[32];
+		if (get_hwaddr("ixp0", macaddr)) {
+			nvram_set("et0macaddr", macaddr);
+			nvram_set("et0macaddr_safe", macaddr);
+		}
 	}
 #endif
 #endif
 #ifdef HAVE_TONZE
 	{
-		struct ifreq ifr;
-		int s;
-
-		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-			char eabuf[32];
-
-			strncpy(ifr.ifr_name, "ixp0", IFNAMSIZ);
-			ioctl(s, SIOCGIFHWADDR, &ifr);
-			nvram_set("et0macaddr_safe", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-			close(s);
+		char macaddr[32];
+		if (get_hwaddr("ixp0", macaddr)) {
+			nvram_set("et0macaddr", macaddr);
+			nvram_set("et0macaddr_safe", macaddr);
 		}
 	}
 #endif

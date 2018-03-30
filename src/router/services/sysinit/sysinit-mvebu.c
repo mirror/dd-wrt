@@ -160,14 +160,7 @@ void start_sysinit(void)
 				//fprintf(stderr, "Found mac: %s\n", mac);
 				nvram_set("et0macaddr", mac);
 				nvram_set("et0macaddr_safe", mac);
-				if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-					//fprintf(stderr, "Assign mac: %s to eth0\n", mac);
-					strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-					ioctl(s, SIOCGIFHWADDR, &ifr);
-					ether_atoe(mac, (unsigned char *)ifr.ifr_hwaddr.sa_data);
-					ioctl(s, SIOCSIFHWADDR, &ifr);
-					close(s);
-				}
+				set_hwaddr("eth0", mac);
 			}
 		}
 		fclose(fp);

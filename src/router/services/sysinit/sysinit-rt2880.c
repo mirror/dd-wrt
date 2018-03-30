@@ -195,13 +195,9 @@ void start_sysinit(void)
 	struct ifreq ifr;
 	int s;
 
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
-
-		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		nvram_set("et0macaddr_safe", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		close(s);
+	char eabuf[32];
+	if (get_hwaddr("eth0", eabuf)) {
+		nvram_set("et0macaddr_safe", eabuf);
 	}
 #else
 
