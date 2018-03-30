@@ -91,9 +91,9 @@ int br_set_port_stp(const char *br, char *port, int on)	// unsupported
 		return -1;
 
 	if (on) {
-		return eval("mstpctl", "setportbpdufilter", br, port, "yes");
-	} else {
 		return eval("mstpctl", "setportbpdufilter", br, port, "no");
+	} else {
+		return eval("mstpctl", "setportbpdufilter", br, port, "yes");
 	}
 
 	return 0;
