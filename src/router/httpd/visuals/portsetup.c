@@ -77,11 +77,8 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<fieldset>\n");
 		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</legend>\n", getNetworkLabel(wp, var));
 		// mac address
-		unsigned char mac[6];
-		unsigned char buf[20];
+		unsigned char mac[20];
 		char *r = get_hwaddr(var, mac);
-		if (r)
-		    r = ether_etoa(mac, buf);
 		char *nvmac = nvram_nget("%s_hwaddr");
 		if (r && !strlen(nvmac))
 			nvram_nset(r, "%s_hwaddr", var);
