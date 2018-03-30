@@ -119,7 +119,7 @@ int br_set_path_cost(const char *br, const char *port, int cost)
 	if (!ifexists(port))
 		return -1;
 	char scost[32];
-	snprintf(scost, sizeof(sprio), "%d", cost);
+	snprintf(scost, sizeof(scost), "%d", cost);
 	return eval("mstpctl", "setportpathcost", br, port, scost);
 }
 
