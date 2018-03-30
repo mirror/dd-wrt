@@ -260,16 +260,7 @@ void start_sysinit(void)
 					mac[i] = toNumeric(os[count++]) * 16;
 					mac[i] |= toNumeric(os[count++]);
 				}
-				struct ifreq ifr;
-				int s;
-
-				if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-					strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-					ioctl(s, SIOCGIFHWADDR, &ifr);
-					memcpy((unsigned char *)ifr.ifr_hwaddr.sa_data, mac, 6);
-					ioctl(s, SIOCSIFHWADDR, &ifr);
-					close(s);
-				}
+				set_ether_hwaddr("eth0", mac);
 				char macaddr[32];
 				if (get_hwaddr("eth0", macaddr)) {
 					nvram_set("et0macaddr", macaddr);
@@ -286,14 +277,7 @@ void start_sysinit(void)
 
 					foundmac = 1;
 					fprintf(stderr, "found Tonze-AP120\n");
-					if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-						strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-						ioctl(s, SIOCGIFHWADDR, &ifr);
-						memcpy((char *)
-						       ifr.ifr_hwaddr.sa_data, mac, 6);
-						ioctl(s, SIOCSIFHWADDR, &ifr);
-						close(s);
-					}
+					set_ether_hwaddr("eth0", mac);
 					char macaddr[32];
 					if (get_hwaddr("eth0", macaddr)) {
 						nvram_set("et0macaddr", macaddr);
@@ -326,20 +310,8 @@ void start_sysinit(void)
 			fclose(fp);
 			if (params.magic == 0x20021103) {
 				fprintf(stderr, "Found compex board magic!\n");
-				if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-					strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-					ioctl(s, SIOCGIFHWADDR, &ifr);
-					memcpy((char *)ifr.ifr_hwaddr.sa_data, params.addr[0].mac, 6);
-					ioctl(s, SIOCSIFHWADDR, &ifr);
-					close(s);
-				}
-				if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-					strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
-					ioctl(s, SIOCGIFHWADDR, &ifr);
-					memcpy((char *)ifr.ifr_hwaddr.sa_data, params.addr[1].mac, 6);
-					ioctl(s, SIOCSIFHWADDR, &ifr);
-					close(s);
-				}
+				set_ether_hwaddr("eth0", params.addr[0].mac);
+				set_ether_hwaddr("eth1", params.addr[1].mac);
 				char macaddr[32];
 				if (get_hwaddr("eth0", macaddr)) {
 					nvram_set("et0macaddr", macaddr);

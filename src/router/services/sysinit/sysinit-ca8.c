@@ -93,28 +93,16 @@ void start_sysinit(void)
 #else
 	insmod("ar2313");
 #endif
-	int s;
-	struct ifreq ifr;
 	if (getRouterBrand() == ROUTER_BOARD_CA8PRO) {
 //              eval("ifconfig", "eth0", "up", "promisc");      // required for vlan config
 		eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("/sbin/vconfig", "add", "eth0", "0");
 		eval("/sbin/vconfig", "add", "eth0", "1");
 
-		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-			char eabuf[32];
-
-			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-			ioctl(s, SIOCGIFHWADDR, &ifr);
-			char macaddr[32];
-
-			strcpy(macaddr, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		char macaddr[32];
+		if (get_hwaddr("eth0", macaddr)) {
 			nvram_set("et0macaddr", macaddr);
-//          MAC_ADD( macaddr );
-			ether_atoe(macaddr, (char *)ifr.ifr_hwaddr.sa_data);
-			strncpy(ifr.ifr_name, "vlan1", IFNAMSIZ);
-			ioctl(s, SIOCSIFHWADDR, &ifr);
-			close(s);
+			set_hwaddr("vlan1", macaddr);
 		}
 	}
 	char macaddr[32];
