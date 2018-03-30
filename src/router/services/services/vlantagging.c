@@ -196,9 +196,9 @@ void start_bridging(void)
 
 		sprintf(hwaddr, "%s_hwaddr", bridge);
 		if (strcmp(bridge, "br0") && strlen(nvram_safe_get(hwaddr)) > 0) {
-			eval("ifconfig", bridge, "hw", "ether", nvram_safe_get(hwaddr));
+			set_hwaddr(bridge, nvram_safe_get(hwaddr));
 		} else {
-			eval("ifconfig", bridge, "hw", "ether", nvram_safe_get("lan_hwaddr"));
+			set_hwaddr(bridge, nvram_safe_get("lan_hwaddr"));
 		}
 		eval("ifconfig", bridge, "up");
 

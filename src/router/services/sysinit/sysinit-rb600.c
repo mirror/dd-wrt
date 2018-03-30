@@ -144,7 +144,7 @@ void start_sysinit(void)
 		for (i = 3; i < 9; i++) {
 			char ifname[32];
 			sprintf(ifname, "eth%d", i);
-			eval("ifconfig", ifname, "hw", "ether", macbase);
+			set_hwaddr(ifname, macbase);
 			MAC_ADD(macbase);
 		}
 	}
@@ -241,16 +241,16 @@ void start_sysinit(void)
 			copy[i] = buf2[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
+		set_hwaddr("eth0", mac);
 		MAC_SUB(mac);
 		MAC_SUB(mac);
 		fprintf(stderr, "configure vlan1 to %s\n", mac);
-		eval("ifconfig", "vlan1", "hw", "ether", mac);
+		set_hwaddr("vlan1", mac);
 		MAC_ADD(mac);
 		MAC_ADD(mac);
 		MAC_ADD(mac);
 		fprintf(stderr, "configure vlan2 to %s\n", mac);
-		eval("ifconfig", "vlan2", "hw", "ether", mac);
+		set_hwaddr("vlan2", mac);
 	}
 #else
 	set_gpio(244, 1);	//gps

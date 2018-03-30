@@ -249,9 +249,9 @@ int br_add_bridge(const char *brname)
 		eval("ifconfig", brname, "mtu", getBridgeMTU(brname, tmp));
 
 	if (strcmp(brname, "br0") && strlen(nvram_safe_get(hwaddr)) > 0) {
-		eval("ifconfig", brname, "hw", "ether", nvram_safe_get(hwaddr));
+		set_hwaddr(brname, nvram_safe_get(hwaddr));
 	} else {
-		eval("ifconfig", brname, "hw", "ether", nvram_safe_get("lan_hwaddr"));
+		set_hwaddr(brname, nvram_safe_get("lan_hwaddr"));
 	}
 
 	return ret;
@@ -274,10 +274,8 @@ int br_del_bridge(const char *brname)
 
 int br_add_interface(const char *br, const char *dev)
 {
-	struct ifreq ifr;
 	char eabuf[32];
 	char tmp[256];
-	int s;
 
 	if (!ifexists(dev))
 		return -1;
@@ -287,16 +285,19 @@ int br_add_interface(const char *br, const char *dev)
 	}
 
 	char ipaddr[32];
-
-	sprintf(ipaddr, "%s_ipaddr", dev);
+	char hwaddr[32];
 	char netmask[32];
 
+	sprintf(ipaddr, "%s_ipaddr", dev);
 	sprintf(netmask, "%s_netmask", dev);
+	sprintf(hwaddr, "%s_hwaddr", dev);
 
 	eval("ifconfig", dev, "0.0.0.0");
 	if (strncmp(dev, "ath", 3) != 0) {	// this is not an ethernet driver
 		eval("ifconfig", dev, "down");	//fixup for some ethernet drivers
 	}
+	if (!nvram_match(hwaddr, ""))
+		set_hwaddr(dev, nvram_safe_get(hwaddr));
 	eval("ifconfig", dev, "mtu", getBridgeMTU(br, tmp));
 	if (strncmp(dev, "ath", 3) != 0) {	// this is not an ethernet driver
 		eval("ifconfig", dev, "up");
@@ -307,14 +308,10 @@ int br_add_interface(const char *br, const char *dev)
 #ifdef HAVE_80211AC
 	eval("emf", "add", "iface", br, dev);
 #endif
-	if (strcmp(br, "br0") && (nvram_nget("%s_hwaddr", br) == NULL || strlen(nvram_nget("%s_hwaddr", br)) == 0)) {
-		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
-			return ret;
-		strncpy(ifr.ifr_name, br, IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);	// get hw addr
-		nvram_nset(ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf), "%s_hwaddr", br);	// safe addr for gui 
-		ioctl(s, SIOCSIFHWADDR, &ifr);	// set hw addr and fix it
-		close(s);
+	if (strcmp(br, "br0") && strlen(nvram_nget("%s_hwaddr", br)) == 0) {
+		get_hwaddr(br, eabuf);
+		nvram_nset(eabuf, "%s_hwaddr", br);	// safe for gui
+		set_hwaddr(br, eabuf);
 	}
 
 	return ret;

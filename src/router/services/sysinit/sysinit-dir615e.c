@@ -75,8 +75,8 @@ void start_sysinit(void)
 	system("insmod ag71xx || insmod ag7240_mod");
 //#ifndef HAVE_DIR632
 #ifndef HAVE_WR841V8
-	eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
-	eval("ifconfig", "eth1", "hw", "ether", "00:11:22:33:44:66");
+	set_hwaddr("eth0", "00:11:22:33:44:55");
+	set_hwaddr("eth1", "00:11:22:33:44:66");
 	FILE *in = fopen("/dev/mtdblock/6", "rb");
 	char *lanmac = NULL;
 	if (in != NULL) {
@@ -103,9 +103,9 @@ void start_sysinit(void)
 				lanmac = malloc(32);
 				strcpy(lanmac, mac);
 #ifdef HAVE_DIR632
-				eval("ifconfig", "eth0", "hw", "ether", mac);
+				set_hwaddr("eth0", mac);
 #else
-				eval("ifconfig", "eth1", "hw", "ether", mac);
+				set_hwaddr("eth1", mac);
 #endif
 				nvram_set("et0macaddr_safe", mac);
 				nvram_set("et0macaddr", mac);
@@ -119,9 +119,9 @@ void start_sysinit(void)
 					mac++;
 				mac[17] = 0;
 #ifdef HAVE_DIR632
-				eval("ifconfig", "eth1", "hw", "ether", mac);
+				set_hwaddr("eth1", mac);
 #else
-				eval("ifconfig", "eth0", "hw", "ether", mac);
+				set_hwaddr("eth0", mac);
 #endif
 				nvram_set("et0macaddr_safe", mac);
 				nvram_set("et0macaddr", mac);
@@ -188,7 +188,7 @@ void start_sysinit(void)
 #ifndef HAVE_ATH9K
 	if (lanmac != NULL) {
 		fprintf(stderr, "configure wifi0 to %s\n", lanmac);
-		eval("ifconfig", "wifi0", "hw", "ether", lanmac);
+		set_hwaddr("wifi0", lanmac);
 		free(lanmac);
 	}
 #endif

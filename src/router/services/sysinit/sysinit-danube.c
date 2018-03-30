@@ -226,7 +226,7 @@ void start_sysinit(void)
 		for (i = 0; i < 6; i++)
 			copy[i] &= 0xff;
 		sprintf(mac1, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
-		eval("ifconfig", "wifi0", "hw", "ether", mac1);
+		set_hwaddr("wifi0", mac1);
 	}
 #ifdef HAVE_ATH9K
 	sysprintf("echo phy0tpt > /sys/devices/platform/leds-gpio/leds/soc:green:wlan/trigger");
@@ -247,7 +247,7 @@ void start_sysinit(void)
 	char mac[18];
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 	MAC_ADD(mac);
-	eval("ifconfig", "wifi0", "hw", "ether", mac);
+	set_hwaddr("wifi0", mac);
 	writeprocsys("dev/wifi0/ledpin", "219");
 	writeprocsys("dev/wifi0/softled", "1");
 #endif

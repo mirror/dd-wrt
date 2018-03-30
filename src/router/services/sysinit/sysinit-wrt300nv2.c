@@ -108,12 +108,12 @@ void start_sysinit(void)
 
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5]);
 		fprintf(stderr, "configure primary mac %s\n", mac);
-		eval("ifconfig", "ixp0", "hw", "ether", mac);
-		eval("ifconfig", "wifi0", "hw", "ether", mac);
+		set_hwaddr("ixp0", mac);
+		set_hwaddr("wifi0", mac);
 		nvram_set("et0macaddr", mac);
 		MAC_ADD(mac);
 		fprintf(stderr, "configure secondary mac %s\n", mac);
-		eval("ifconfig", "ixp1", "hw", "ether", mac);
+		set_hwaddr("ixp1", mac);
 
 		fclose(file);
 	}

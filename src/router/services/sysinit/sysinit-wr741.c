@@ -89,11 +89,11 @@ void start_sysinit(void)
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		MAC_SUB(mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
+		set_hwaddr("eth0", mac);
 		MAC_ADD(mac);
 		MAC_ADD(mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
-		eval("ifconfig", "eth1", "hw", "ether", mac);
+		set_hwaddr("eth1", mac);
 #ifndef HAVE_ATH9K
 		MAC_SUB(mac);
 #endif
@@ -143,7 +143,7 @@ void start_sysinit(void)
 	detect_wireless_devices();
 #ifndef HAVE_ATH9K
 	fprintf(stderr, "configure wifi0 to %s\n", mac);
-	eval("ifconfig", "wifi0", "hw", "ether", mac);
+	set_hwaddr("wifi0", mac);
 #endif
 	//enable wlan led (card gpio based)
 #ifndef HAVE_WR810N

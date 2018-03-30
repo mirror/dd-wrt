@@ -473,8 +473,8 @@ void start_sysinit(void)
 	switch (board) {
 	case ROUTER_TRENDNET_TEW827:
 		if (maddr) {
-			eval("ifconfig", "eth0", "hw", "ether", getUEnv("wan_mac"));
-			eval("ifconfig", "eth1", "hw", "ether", getUEnv("lan_mac"));
+			set_hwaddr("eth0", getUEnv("wan_mac"));
+			set_hwaddr("eth1", getUEnv("lan_mac"));
 		}
 		start_finishupgrade();
 		if (getbootdevice())
@@ -484,8 +484,8 @@ void start_sysinit(void)
 		break;
 	case ROUTER_ASROCK_G10:
 		if (maddr) {
-			eval("ifconfig", "eth1", "hw", "ether", maddr);
-			eval("ifconfig", "eth0", "hw", "ether", maddr);
+			set_hwaddr("eth1", maddr);
+			set_hwaddr("eth0", maddr);
 		}
 		start_finishupgrade();
 		if (getbootdevice())
@@ -495,8 +495,8 @@ void start_sysinit(void)
 		break;
 	case ROUTER_LINKSYS_EA8500:
 		if (maddr) {
-			eval("ifconfig", "eth1", "hw", "ether", maddr);
-			eval("ifconfig", "eth0", "hw", "ether", maddr);
+			set_hwaddr("eth1", maddr);
+			set_hwaddr("eth0", maddr);
 			nvram_set("lan_hwaddr", maddr);
 			nvram_commit();
 		}
