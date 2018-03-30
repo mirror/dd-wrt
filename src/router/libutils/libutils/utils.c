@@ -1939,3 +1939,24 @@ int getBridgeSTP(char *br)
 	else
 		return 0;
 }
+
+unsigned char *get_hwaddr(char *name, unsigned char *hwaddr)
+{
+	struct ifreq ifr;
+	unsigned char  *ret = NULL;
+	int s;
+
+	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		perror("socket");
+		return errno;
+	}
+
+	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	if ((ret = ioctl(s, SIOCGIFHWADDR, &ifr)) == 0) {
+		memcpy(hwaddr, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
+		ret = hwaddr;
+	}
+
+	close(s);
+	return ret;
+}
