@@ -1200,6 +1200,7 @@ networking.vlan="VLAN";
 networking.iface="Schnittstelle";
 networking.tg_number="Tag Nummer";
 networking.prio="Prio";
+networking.pathcost="Pfadkosten";
 networking.hairpin="Hairpin Modus";
 networking.bridge="Bridge";
 networking.snooping="IGMP Snooping";
