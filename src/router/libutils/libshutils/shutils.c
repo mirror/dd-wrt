@@ -1052,7 +1052,7 @@ static char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters)
 
 char *getentrybyidx(char *buf, char *list, int idx)
 {
-	return getentrybyidx_d(buf, list, idx, "><:-");
+	return getentrybyidx_d(buf, list, idx, "><:-,");
 }
 
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
