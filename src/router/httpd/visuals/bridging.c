@@ -227,7 +227,7 @@ void ej_show_bridgetable(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-static void show_bridgeifname(webs_t wp, char *bridges, char *devs, int count, char *bridge, char *port, char *stp, char *prio, char *hairpin)
+static void show_bridgeifname(webs_t wp, char *bridges, char *devs, int count, char *bridge, char *port, char *stp, char *prio, char *hairpin, char *cost)
 {
 
 	char vlan_name[32];
@@ -260,6 +260,9 @@ static void show_bridgeifname(webs_t wp, char *bridges, char *devs, int count, c
 	websWrite(wp, "<td>");
 	showOptions(wp, vlan_name, "0 16 32 48 64 80 96 112 128 144 160 176 192 208 224 240", prio != NULL ? prio : "128");
 	websWrite(wp, "</td>");
+
+	sprintf(vlan_name, "bridgeifcost%d", count);
+	websWrite(wp, "<td><input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" /></td>\n", vlan_name, cost ? cost : "100");
 
 	websWrite(wp, "<td>");
 	sprintf(vlan_name, "bridgeifhairpin%d", count);
@@ -310,6 +313,7 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	show_caption_pp(wp, NULL, "networking.stp", "<th>", "</th>\n");
 #endif
 	show_caption_pp(wp, NULL, "networking.prio", "<th>", "</th>\n");
+	show_caption_pp(wp, NULL, "networking.pathcost", "<th>", "</th>\n");
 	show_caption_pp(wp, NULL, "networking.hairpin", "<th>", "</th>\n");
 	websWrite(wp, "<th>&nbsp;</th></tr>\n");
 
@@ -318,16 +322,17 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		GETENTRYBYIDX(prio, word, 2);
+		GETENTRYBYIDX(pathcost, word, 3);
 		GETENTRYBYIDX(hairpin, word, 3);
 		GETENTRYBYIDX(stp, word, 4);
 
-		show_bridgeifname(wp, finalbuffer, bufferif, count, tag, port, stp, prio, hairpin);
+		show_bridgeifname(wp, finalbuffer, bufferif, count, tag, port, stp, prio, hairpin, pathcost);
 		count++;
 	}
 	int totalcount = count;
 
 	for (i = count; i < realcount; i++) {
-		show_bridgeifname(wp, finalbuffer, bufferif, i, "", "", NULL, NULL, NULL);
+		show_bridgeifname(wp, finalbuffer, bufferif, i, "", "", NULL, NULL, NULL, NULL);
 		totalcount++;
 	}
 	websWrite(wp, "</table>");
