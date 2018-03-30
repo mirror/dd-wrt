@@ -89,19 +89,19 @@ void start_sysinit(void)
 		fprintf(stderr, "configure ETH0 to %s\n", mac);
 		nvram_set("et0macaddr_safe", mac);
 		nvram_set("et0macaddr", mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
+		set_hwaddr("eth0", mac);
 		fread(&buf[6], 6, 1, fp);
 		for (i = 0; i < 12; i++)
 			copy[i] = buf[i] & 0xff;
 		sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
 		fprintf(stderr, "configure ETH1 to %s\n", mac);
-		eval("ifconfig", "eth1", "hw", "ether", mac);
+		set_hwaddr("eth1", mac);
 
 		fclose(fp);
 	}
 	// no mac found, use default
-//      eval("ifconfig", "eth0", "hw", "ether", "00:15:6D:FE:00:00");
-//      eval("ifconfig", "eth1", "hw", "ether", "00:15:6D:FE:00:01");
+//      set_hwaddr("eth0", "00:15:6D:FE:00:00");
+//      set_hwaddr("eth1", "00:15:6D:FE:00:01");
 
 //#endif
 	// eval("ifconfig", "eth0", "up");

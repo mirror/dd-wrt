@@ -114,9 +114,9 @@ void start_sysinit(void)
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure mac address to %s\n", mac);
 		if (!strcmp(mac, "ff:ff:ff:ff:ff:ff"))
-			eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
+			set_hwaddr("eth0", "00:11:22:33:44:55");
 		else
-			eval("ifconfig", "eth0", "hw", "ether", mac);
+			set_hwaddr("eth0", mac);
 	}
 	//LAN/WAN ports as security mode
 	if (brand == ROUTER_DIR860LB1) {
@@ -220,9 +220,9 @@ void start_sysinit(void)
 			copy[i] = mac[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		if (!strcmp(mac, "ff:ff:ff:ff:ff:ff"))
-			eval("ifconfig", "eth2", "hw", "ether", "00:11:22:33:44:55");
+			set_hwaddr("eth2", "00:11:22:33:44:55");
 		else
-			eval("ifconfig", "eth2", "hw", "ether", mac);
+			set_hwaddr("eth2", mac);
 	}
 #endif
 #ifdef HAVE_HAMEA15
@@ -238,7 +238,7 @@ void start_sysinit(void)
 				if (mac[0] == '"')
 					mac++;
 				mac[17] = 0;
-				eval("ifconfig", "eth2", "hw", "ether", mac);
+				set_hwaddr("eth2", mac);
 				nvram_set("et0macaddr_safe", mac);
 				nvram_set("et0macaddr", mac);
 				break;
@@ -271,7 +271,7 @@ void start_sysinit(void)
 				if (mac[0] == '"')
 					mac++;
 				mac[17] = 0;
-				eval("ifconfig", "eth2", "hw", "ether", mac);
+				set_hwaddr("eth2", mac);
 				nvram_set("et0macaddr_safe", mac);
 				nvram_set("et0macaddr", mac);
 				break;
@@ -293,7 +293,7 @@ void start_sysinit(void)
 		eval("vconfig", "add", "eth2", "2");	//WAN
 #ifdef HAVE_RT10N
 		MAC_ADD(mac);
-		eval("ifconfig", "vlan2", "hw", "ether", mac);
+		set_hwaddr("vlan2", mac);
 #endif
 #endif
 

@@ -108,8 +108,8 @@ void start_sysinit(void)
 		sprintf(mac1, "00:11:22:33:44:55");
 		sprintf(mac2, "00:11:22:33:44:66");
 	}
-	eval("ifconfig", "eth0", "hw", "ether", mac1);
-	eval("ifconfig", "eth1", "hw", "ether", mac2);
+	set_hwaddr("eth0", mac1);
+	set_hwaddr("eth1", mac2);
 
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
@@ -120,8 +120,8 @@ void start_sysinit(void)
 	}
 	detect_wireless_devices();
 #ifdef HAVE_WRT400
-//      eval("ifconfig", "wifi0", "hw", "ether", mac1);
-//      eval("ifconfig", "wifi1", "hw", "ether", mac1);
+//      set_hwaddr("wifi0", mac1);
+//      set_hwaddr("wifi1", mac1);
 	setWirelessLedPhy0(0);
 	setWirelessLedPhy1(0);
 
@@ -133,8 +133,8 @@ void start_sysinit(void)
 #else
 
 #ifndef HAVE_WNDR3700
-	eval("ifconfig", "wifi0", "hw", "ether", mac1);
-	eval("ifconfig", "wifi1", "hw", "ether", mac1);
+	set_hwaddr("wifi0", mac1);
+	set_hwaddr("wifi1", mac1);
 #endif
 	setWirelessLedPhy0(5);
 	setWirelessLedPhy1(5);

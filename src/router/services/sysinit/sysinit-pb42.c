@@ -81,7 +81,6 @@ void start_sysinit(void)
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
 	}
-
 #ifdef HAVE_MADWIFI_MIMO
 	// insmod("ath_pci", "autocreate=none");
 	insmod("ath_mimo_pci");

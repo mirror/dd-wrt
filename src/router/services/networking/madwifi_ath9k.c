@@ -264,7 +264,7 @@ void configure_single_ath9k(int count)
 	// interface is created at this point, so that should work
 #if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
 	getWirelessMac(macaddr, count);
-	eval("ifconfig", dev, "hw", "ether", macaddr);
+	set_hwaddr(dev, macaddr);
 #else
 	getMacAddr(dev, macaddr);
 #endif
@@ -315,7 +315,7 @@ void configure_single_ath9k(int count)
 		if (nvram_matchi("mac_clone_enable", 1)
 		    && nvram_invmatch(clonename, "00:00:00:00:00:00")
 		    && nvram_invmatch(clonename, "")) {
-			eval("ifconfig", dev, "hw", "ether", nvram_safe_get(clonename));
+			set_hwaddr(dev, nvram_safe_get(clonename));
 		}
 
 		setupSupplicant_ath9k(dev, NULL, isadhoc);

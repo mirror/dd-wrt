@@ -2479,7 +2479,7 @@ void start_lan(void)
 		char *wifi = "ra0";
 #endif
 		eval("ifconfig", wifi, "down");
-		eval("ifconfig", wifi, "hw", "ether", nvram_safe_get("def_whwaddr"));
+		set_hwaddr(wifi, nvram_safe_get("def_whwaddr"));
 //              eval("ifconfig", wifi, "up");
 	}
 	if (nvram_matchi("mac_clone_enable", 1) && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
@@ -2489,7 +2489,7 @@ void start_lan(void)
 		char *wifi = "ra0";
 #endif
 		eval("ifconfig", wifi, "down");
-		eval("ifconfig", wifi, "hw", "ether", nvram_safe_get("def_whwaddr"));
+		set_hwaddr(wifi, nvram_safe_get("def_whwaddr"));
 //              eval("ifconfig", wifi, "up");
 	}
 	ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));

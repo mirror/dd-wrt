@@ -97,9 +97,9 @@ void start_sysinit(void)
 			copy[i] = buf2[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
+		set_hwaddr("eth0", mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
-		eval("ifconfig", "eth1", "hw", "ether", mac);
+		set_hwaddr("eth1", mac);
 	}
 #endif
 #ifdef HAVE_WR1043
@@ -122,16 +122,16 @@ void start_sysinit(void)
 			copy[i] = buf2[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
+		set_hwaddr("eth0", mac);
 		eval("ifconfig", "eth0", "up");
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
 		fprintf(stderr, "configure vlan1 to %s\n", mac);
-		eval("ifconfig", "vlan1", "hw", "ether", mac);
+		set_hwaddr("vlan1", mac);
 		MAC_ADD(mac);
 		fprintf(stderr, "configure vlan2 to %s\n", mac);
-		eval("ifconfig", "vlan2", "hw", "ether", mac);
+		set_hwaddr("vlan2", mac);
 		MAC_SUB(mac);
 	}
 #endif
@@ -149,7 +149,7 @@ void start_sysinit(void)
 			copy[i] = buf2[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
+		set_hwaddr("eth0", mac);
 		eval("ifconfig", "eth0", "up");
 	}
 #elif HAVE_WR941
@@ -167,18 +167,18 @@ void start_sysinit(void)
 			copy[i] = buf2[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
+		set_hwaddr("eth0", mac);
 		eval("ifconfig", "eth0", "up");
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "0");
 		eval("vconfig", "add", "eth0", "1");
 		fprintf(stderr, "configure vlan0 to %s\n", mac);
 		MAC_SUB(mac);
-		eval("ifconfig", "vlan0", "hw", "ether", mac);
+		set_hwaddr("vlan0", mac);
 		MAC_ADD(mac);
 		MAC_ADD(mac);
 		fprintf(stderr, "configure vlan1 to %s\n", mac);
-		eval("ifconfig", "vlan1", "hw", "ether", mac);
+		set_hwaddr("vlan1", mac);
 		MAC_SUB(mac);
 		MAC_SUB(mac);
 	}
@@ -204,15 +204,15 @@ void start_sysinit(void)
 
 		fclose(fp);
 		fprintf(stderr, "configure eth0 to %s\n", buf2);
-		eval("ifconfig", "eth0", "hw", "ether", buf2);
+		set_hwaddr("eth0", buf2);
 		MAC_ADD(buf2);
 		fprintf(stderr, "configure eth1 to %s\n", buf2);
-		eval("ifconfig", "eth1", "hw", "ether", buf2);
+		set_hwaddr("eth1", buf2);
 	}
 #endif
 #ifdef HAVE_TG2521
-	eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
-	eval("ifconfig", "eth1", "hw", "ether", "00:11:22:33:44:66");
+	set_hwaddr("eth0", "00:11:22:33:44:55");
+	set_hwaddr("eth1", "00:11:22:33:44:66");
 	FILE *fp = fopen("/dev/mtdblock/7", "rb");
 	char mac[32];
 	if (fp) {
@@ -226,16 +226,16 @@ void start_sysinit(void)
 			copy[i] = buf2[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
+		set_hwaddr("eth0", mac);
 		MAC_ADD(mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
-		eval("ifconfig", "eth1", "hw", "ether", mac);
+		set_hwaddr("eth1", mac);
 		MAC_SUB(mac);
 	}
 #endif
 #if defined(HAVE_TEW632BRP) || defined(HAVE_DIR615E)
-	eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
-	eval("ifconfig", "eth1", "hw", "ether", "00:11:22:33:44:66");
+	set_hwaddr("eth0", "00:11:22:33:44:55");
+	set_hwaddr("eth1", "00:11:22:33:44:66");
 	FILE *in = fopen("/dev/mtdblock/0", "rb");
 	char *lanmac = NULL;
 	if (in != NULL) {
@@ -255,7 +255,7 @@ void start_sysinit(void)
 				mac[17] = 0;
 				lanmac = malloc(32);
 				strcpy(lanmac, mac);
-				eval("ifconfig", "eth0", "hw", "ether", mac);
+				set_hwaddr("eth0", mac);
 				nvram_set("et0macaddr_safe", mac);
 				nvram_set("et0macaddr", mac);
 				if (haswan)
@@ -267,7 +267,7 @@ void start_sysinit(void)
 				if (mac[0] == '"')
 					mac++;
 				mac[17] = 0;
-				eval("ifconfig", "eth1", "hw", "ether", mac);
+				set_hwaddr("eth1", mac);
 				nvram_set("et0macaddr_safe", mac);
 				nvram_set("et0macaddr", mac);
 				if (haslan)
@@ -289,33 +289,33 @@ void start_sysinit(void)
 #ifdef HAVE_WRT160NL
 	MAC_ADD(buf2);
 	fprintf(stderr, "configure wifi0 to %s\n", buf2);
-	eval("ifconfig", "wifi0", "hw", "ether", buf2);
+	set_hwaddr("wifi0", buf2);
 	led_control(LED_POWER, LED_ON);
 #endif
 #if defined(HAVE_TEW632BRP) || defined(HAVE_DIR615E)
 	if (lanmac != NULL) {
 		fprintf(stderr, "configure wifi0 to %s\n", lanmac);
-		eval("ifconfig", "wifi0", "hw", "ether", lanmac);
+		set_hwaddr("wifi0", lanmac);
 		free(lanmac);
 	}
 #endif
 #ifdef HAVE_TG2521
 	{
 		fprintf(stderr, "configure wifi0 to %s\n", mac);
-		eval("ifconfig", "wifi0", "hw", "ether", mac);
+		set_hwaddr("wifi0", mac);
 	}
 //      eval("gpio", "disable", "5");   // enable usb port
 #endif
 #ifdef HAVE_WR1043
 	{
 		fprintf(stderr, "configure wifi0 to %s\n", mac);
-		eval("ifconfig", "wifi0", "hw", "ether", mac);
+		set_hwaddr("wifi0", mac);
 	}
 #endif
 #ifdef HAVE_WR941
 	{
 		fprintf(stderr, "configure wifi0 to %s\n", mac);
-		eval("ifconfig", "wifi0", "hw", "ether", mac);
+		set_hwaddr("wifi0", mac);
 	}
 #endif
 
