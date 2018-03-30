@@ -124,7 +124,7 @@ void start_sysinit(void)
 	}
 	char *eth1addr = getUEnv("eth1addr");
 	if (eth1addr)
-		eval("ifconfig", "eth1", "hw", "ether", eth1addr);
+		set_hwaddr("eth1", eth1addr);
 
 	eval("ifconfig", "eth0", "promisc");
 	eval("ifconfig", "eth1", "promisc");

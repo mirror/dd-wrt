@@ -157,15 +157,15 @@ void start_sysinit(void)
 #endif
 
 		fprintf(stderr, "configure eth0 to %s\n", mac2);
-		eval("ifconfig", "eth0", "hw", "ether", mac2);
+		set_hwaddr("eth0", mac2);
 		eval("ifconfig", "eth0", "up");
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
 		fprintf(stderr, "configure vlan1 to %s\n", mac2);
-		eval("ifconfig", "vlan1", "hw", "ether", mac2);
+		set_hwaddr("vlan1", mac2);
 		fprintf(stderr, "configure vlan2 to %s\n", mac2);
-		eval("ifconfig", "vlan2", "hw", "ether", mac2);
+		set_hwaddr("vlan2", mac2);
 #elif HAVE_WZRG450
 		fseek(fp, 0x51002, SEEK_SET);	//osprey eeprom mac location
 		fread(mactmp, 6, 1, fp);
@@ -197,15 +197,15 @@ void start_sysinit(void)
 #endif
 
 		fprintf(stderr, "configure eth0 to %s\n", mac2);
-		eval("ifconfig", "eth0", "hw", "ether", mac2);
+		set_hwaddr("eth0", mac2);
 		eval("ifconfig", "eth0", "up");
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("vconfig", "add", "eth0", "1");
 		eval("vconfig", "add", "eth0", "2");
 		fprintf(stderr, "configure vlan1 to %s\n", mac2);
-		eval("ifconfig", "vlan1", "hw", "ether", mac2);
+		set_hwaddr("vlan1", mac2);
 		fprintf(stderr, "configure vlan2 to %s\n", mac2);
-		eval("ifconfig", "vlan2", "hw", "ether", mac2);
+		set_hwaddr("vlan2", mac2);
 #else
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
@@ -231,12 +231,12 @@ void start_sysinit(void)
 		sprintf(mac2, "00:11:22:33:44:66");
 	}
 #ifndef HAVE_WZRG450
-	eval("ifconfig", "eth0", "hw", "ether", mac1);
+	set_hwaddr("eth0", mac1);
 	eval("ifconfig", "eth0", "up");
-	eval("ifconfig", "eth1", "hw", "ether", mac2);
+	set_hwaddr("eth1", mac2);
 	eval("ifconfig", "eth1", "up");
 #else
-	eval("ifconfig", "eth0", "hw", "ether", mac2);
+	set_hwaddr("eth0", mac2);
 	eval("ifconfig", "eth0", "up");
 #endif
 	struct ifreq ifr;
@@ -249,7 +249,7 @@ void start_sysinit(void)
 	}
 	detect_wireless_devices();
 #ifdef HAVE_WZRHPAG300NH
-//      eval("ifconfig", "wifi1", "hw", "ether", wmac);
+//      set_hwaddr("wifi1", wmac);
 	setWirelessLedPhy0(1);
 	setWirelessLedPhy1(5);
 
@@ -265,8 +265,8 @@ void start_sysinit(void)
 #endif
 #endif
 #else
-	eval("ifconfig", "wifi0", "hw", "ether", mac1);
-	eval("ifconfig", "wifi1", "hw", "ether", wmac);
+	set_hwaddr("wifi0", mac1);
+	set_hwaddr("wifi1", wmac);
 	setWirelessLedPhy0(5);
 	setWirelessLedPhy1(5);
 #endif

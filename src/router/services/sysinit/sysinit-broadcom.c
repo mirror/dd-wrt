@@ -322,7 +322,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 //              eval("/sbin/reboot");
 //              exit( 0 );
 		}
-		eval("/sbin/ifconfig", "eth2", "hw", "ether", eaddr);
+		set_hwaddr("eth2", eaddr);
 		wl_hwaddr("eth1", macbuf);
 		ether_etoa((char *)macbuf, eaddr);
 		nvram_set("wl1_hwaddr", eaddr);
@@ -2731,7 +2731,7 @@ void start_sysinit(void)
 
 				sprintf(macstr, "%02X:%02X:%02X:%02X:%02X:%02X", (int)mac[0] & 0xff, (int)mac[1] & 0xff, (int)mac[2] & 0xff, (int)mac[3] & 0xff, (int)mac[4] & 0xff, (int)mac[5] & 0xff);
 				nvram_set("et0macaddr", macstr);
-				eval("ifconfig", "eth0", "hw", "ether", macstr);
+				set_hwaddr("eth0", macstr);
 			}
 		}
 		break;

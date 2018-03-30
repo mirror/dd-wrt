@@ -94,10 +94,10 @@ void start_sysinit(void)
 			copy[i] = buf2[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
+		set_hwaddr("eth0", mac);
 		MAC_ADD(mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
-		eval("ifconfig", "eth1", "hw", "ether", mac);
+		set_hwaddr("eth1", mac);
 #else
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
@@ -109,9 +109,9 @@ void start_sysinit(void)
 			copy[i] = buf2[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
+		set_hwaddr("eth0", mac);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
-		eval("ifconfig", "eth1", "hw", "ether", mac);
+		set_hwaddr("eth1", mac);
 #endif
 	}
       out:;

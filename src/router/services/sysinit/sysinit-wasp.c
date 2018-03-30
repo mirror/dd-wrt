@@ -232,7 +232,7 @@ void start_sysinit(void)
 			copy[i] = buf2[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
+		set_hwaddr("eth0", mac);
 	}
 #elif defined(HAVE_MMS344) && !defined(HAVE_DAP3662)
 	FILE *fp = fopen("/dev/mtdblock/6", "rb");
@@ -254,7 +254,7 @@ void start_sysinit(void)
 			copy[i] = buf2[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
+		set_hwaddr("eth0", mac);
 	      out:;
 	}
 #endif
@@ -277,9 +277,9 @@ void start_sysinit(void)
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
 		strcpy(mac, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		eval("ifconfig", "vlan1", "hw", "ether", mac);
+		set_hwaddr("vlan1", mac);
 		MAC_ADD(mac);
-		eval("ifconfig", "vlan2", "hw", "ether", mac);
+		set_hwaddr("vlan2", mac);
 		close(s);
 	}
 #elif defined(HAVE_WZR450HP2) || defined(HAVE_WDR3500)
@@ -295,9 +295,9 @@ void start_sysinit(void)
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
 		strcpy(mac, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		eval("ifconfig", "vlan1", "hw", "ether", mac);
+		set_hwaddr("vlan1", mac);
 		MAC_ADD(mac);
-		eval("ifconfig", "vlan2", "hw", "ether", mac);
+		set_hwaddr("vlan2", mac);
 		close(s);
 	}
 #endif

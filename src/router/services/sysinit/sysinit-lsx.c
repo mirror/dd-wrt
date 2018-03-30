@@ -102,7 +102,7 @@ void start_sysinit(void)
 
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0 + offsetmac1], copy[1 + offsetmac1], copy[2 + offsetmac1], copy[3 + offsetmac1], copy[4 + offsetmac1], copy[5 + offsetmac1]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
+		set_hwaddr("eth0", mac);
 		/*
 		 * Right now the routerstation has no on-board mac stored for the secondary interface (LAN)
 		 * to solve this i advised UBNT to use "ar7100_esa_2" as future redboot parameter for the secondary mac address
@@ -118,11 +118,11 @@ void start_sysinit(void)
 			MAC_ADD(mac);
 		}
 		fprintf(stderr, "configure eth1 to %s\n", mac);
-		eval("ifconfig", "eth1", "hw", "ether", mac);
+		set_hwaddr("eth1", mac);
 	} else {
 		// no mac found, use default
-		eval("ifconfig", "eth0", "hw", "ether", "00:15:6D:FE:00:00");
-		eval("ifconfig", "eth1", "hw", "ether", "00:15:6D:FE:00:01");
+		set_hwaddr("eth0", "00:15:6D:FE:00:00");
+		set_hwaddr("eth1", "00:15:6D:FE:00:01");
 	}
 
 	fp = fopen("/dev/mtdblock/0", "r");
@@ -150,14 +150,14 @@ void start_sysinit(void)
 			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 			fprintf(stderr, "configure ETH0 to %s\n", mac);
 			nvram_set("et0macaddr_safe", mac);
-			eval("ifconfig", "eth0", "hw", "ether", mac);
+			set_hwaddr("eth0", mac);
 			fseek(fp, 0x1f818, SEEK_SET);
 			fread(&buf[6], 6, 1, fp);
 			for (i = 0; i < 12; i++)
 				copy[i] = buf[i] & 0xff;
 			sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
 			fprintf(stderr, "configure ETH1 to %s\n", mac);
-			eval("ifconfig", "eth1", "hw", "ether", mac);
+			set_hwaddr("eth1", mac);
 
 		}
 		fclose(fp);
