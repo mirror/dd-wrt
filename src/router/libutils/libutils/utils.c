@@ -275,15 +275,12 @@ char *getBridge(char *ifname, char *word)
 
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {
-		char *port = word;
-		char *tag = strsep(&port, ">");
-		char *prio = port;
-
-		strsep(&prio, ">");
-		if (!tag || !port)
+		GETENTRYBYIDX(bridge, word, 0);
+		GETENTRYBYIDX(port, word, 1);
+		if (!bridge )
 			break;
 		if (!strcmp(port, ifname))
-			return tag;
+			return bridge;
 	}
 	return nvram_safe_get("lan_ifname");
 }
@@ -300,18 +297,12 @@ char *getBridgeMTU(const char *ifname, char *word)
 
 	wordlist = nvram_safe_get("bridges");
 	foreach(word, wordlist, next) {
-		char *stp = word;
-		char *bridge = strsep(&stp, ">");
-		char *mtu = stp;
-		char *prio = strsep(&mtu, ">");
-
-		if (prio)
-			strsep(&mtu, ">");
-
-		if (!bridge || !stp)
+		GETENTRYBYIDX(bridge, word, 0);
+		GETENTRYBYIDX(mtu, word, 3);
+		if (!bridge)
 			break;
 		if (!strcmp(bridge, ifname)) {
-			if (!prio || !mtu)
+			if (!mtu)
 				return "1500";
 			else
 				return mtu;
