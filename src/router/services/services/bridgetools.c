@@ -185,9 +185,9 @@ int br_set_path_cost(const char *br, const char *port, int cost)
 		return -1;
 	if (!ifexists(port))
 		return -1;
-	char sprio[32];
-	snprintf(sprio, sizeof(sprio), "%d", prio);
-	return eval("brctl", "setpathcost", br, port, sprio);
+	char scost[32];
+	snprintf(scost, sizeof(scost), "%d", cost);
+	return eval("brctl", "setpathcost", br, port, scost);
 }
 
 int br_set_port_prio(const char *br, char *port, int prio)
