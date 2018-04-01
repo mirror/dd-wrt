@@ -17,7 +17,8 @@
 
    For comments look at net/ipv4/ip_gre.c
  */
-
+ 
+#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/types.h>
 #include <linux/sched.h>
@@ -656,13 +657,14 @@ static int etherip_tunnel_change_mtu(struct net_device *dev, int new_mtu)
 	return 0;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)
 int etherip_get_iflink(const struct net_device *dev)
 {
 	struct ip_tunnel *tunnel = netdev_priv(dev);
 
 	return tunnel->parms.link;
 }
-
+#endif
 static int etherip_tunnel_set_mac_address(struct net_device *dev, void *p) {
 	struct sockaddr *addr = p;
 
@@ -682,7 +684,9 @@ static const struct net_device_ops etherip_netdev_ops_fb = {
 	.ndo_do_ioctl	= etherip_tunnel_ioctl,
 	.ndo_change_mtu = etherip_tunnel_change_mtu,
 	.ndo_get_stats64 = etherip_tunnel_get_stats64,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)
 	.ndo_get_iflink = etherip_get_iflink,
+#endif
 };
 
 static const struct net_device_ops etherip_netdev_ops = {
@@ -692,7 +696,9 @@ static const struct net_device_ops etherip_netdev_ops = {
 	.ndo_do_ioctl	= etherip_tunnel_ioctl,
 	.ndo_change_mtu = etherip_tunnel_change_mtu,
 	.ndo_get_stats64 = etherip_tunnel_get_stats64,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)
 	.ndo_get_iflink = etherip_get_iflink,
+#endif
 	.ndo_set_mac_address = etherip_tunnel_set_mac_address,
 };
 
@@ -702,6 +708,9 @@ static void etherip_tunnel_setup_fb(struct net_device *dev)
 	
 	dev->netdev_ops		= &etherip_netdev_ops_fb;
 	dev->destructor 	= free_netdev;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
+	dev->iflink = 0;
+#endif
 
 	dev->hard_header_len	= ETH_HLEN;	//  + sizeof(struct etheriphdr);
 	dev->tx_queue_len	= 0;
@@ -752,6 +761,9 @@ static int etherip_tunnel_init(struct net_device *dev)
 		dev->hard_header_len = tdev->hard_header_len + sizeof(struct etheriphdr);
 		dev->mtu = tdev->mtu - sizeof(struct etheriphdr);
 	}
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
+	dev->iflink = tunnel->parms.link;
+#endif
 
 	return 0;
 }
