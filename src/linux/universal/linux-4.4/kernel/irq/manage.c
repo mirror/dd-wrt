@@ -1189,21 +1189,8 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
 		 * set the trigger type must match. Also all must
 		 * agree on ONESHOT.
 		 */
-		unsigned int oldtype;
-
-		/*
-		 * If nobody did set the configuration before, inherit
-		 * the one provided by the requester.
-		 */
-		if (irqd_trigger_type_was_set(&desc->irq_data)) {
-			oldtype = irqd_get_trigger_type(&desc->irq_data);
-		} else {
-			oldtype = new->flags & IRQF_TRIGGER_MASK;
-			irqd_set_trigger_type(&desc->irq_data, oldtype);
-		}
-
 		if (!((old->flags & new->flags) & IRQF_SHARED) ||
-		    (oldtype != (new->flags & IRQF_TRIGGER_MASK)) ||
+		    ((old->flags ^ new->flags) & IRQF_TRIGGER_MASK) ||
 		    ((old->flags ^ new->flags) & IRQF_ONESHOT))
 			goto mismatch;
 
