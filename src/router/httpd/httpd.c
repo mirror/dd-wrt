@@ -770,10 +770,10 @@ static void *handle_request(void *arg)
 
 	/* Parse the first line of the request. */
 	int cnt = 0;
-
-	for (cnt = 0; cnt < 10; cnt++) {
+	time_t start = time(NULL);
+	for (;;) {
 		wfgets(line, LINE_LEN, conn_fp);
-		if (strlen(line) > 0)
+		if (strlen(line) > 0 || time(NULL) > (start + 2))
 			break;
 	}
 
