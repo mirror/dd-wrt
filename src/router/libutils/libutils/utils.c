@@ -1020,17 +1020,19 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort)
 			ifname[ifcount++] = c;
 	}
       sort:;
-	if (!nosort) {
+	if (!nosort && sort != NULL) {
 		qsort(sort, count, sizeof(char *), ifcompare);
 	}
 	int i;
-	for (i = 0; i < count; i++) {
-		strcat(buffer, sort[i]);
-		strcat(buffer, " ");
-		free(sort[i]);
-	}
-	if (sort)
+	if(sort){
+		for (i = 0; i < count; i++) {
+			strcat(buffer, sort[i]);
+			strcat(buffer, " ");
+			free(sort[i]);
+		}
 		free(sort);
+	}
+	
 	if (count)
 		buffer[strlen(buffer) - 1] = 0;	// fixup last space
 	return count;
@@ -1964,7 +1966,7 @@ unsigned char *get_ether_hwaddr(const char *name, unsigned char *hwaddr)
 int set_ether_hwaddr(const char *name, unsigned char *hwaddr)
 {
 	struct ifreq ifr;
-	int ret;
+	int ret = 0;
 	int s;
 
 	if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
