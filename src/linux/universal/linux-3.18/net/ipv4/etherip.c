@@ -84,6 +84,26 @@ static struct ip_tunnel **tunnels[4] = { tunnels_wc, tunnels_l, tunnels_r, tunne
 
 static DEFINE_RWLOCK(etherip_lock);
 
+static void etherip_tunnel_destroy(void)
+{
+	struct ip_tunnel *t, **tp;
+	int i, h;
+	for (i = 1;i < 4 ;i++) {
+		for (h = 0;h < ETHERIP_HASH_SIZE ;h++) {
+			for (tp = &tunnels[i][h]; (t = *tp) != NULL; tp = &t->next) {
+				if (t->dev && t->dev != etherip_fb_tunnel_dev) {
+					unregister_netdevice(t->dev);
+					t->dev = NULL;
+				} else {
+					break;
+				}
+			}
+		}
+	}
+}
+
+
+
 static struct ip_tunnel * etherip_tunnel_lookup(u32 remote, u32 local)
 {
 	unsigned h0 = ETHERIP_HASH(remote);
@@ -332,8 +352,10 @@ int etherip_rcv(struct sk_buff *skb)
 		memset(&(IPCB(skb)->opt), 0, sizeof(struct ip_options));
 
 		tstats = this_cpu_ptr(tunnel->dev->tstats);
+		u64_stats_update_begin(&tstats->syncp);
 		tstats->rx_packets++;
 		tstats->rx_bytes += skb->len;
+		u64_stats_update_end(&tstats->syncp);
 
 		skb->dev = tunnel->dev;
 		skb_dst_drop(skb);
@@ -758,12 +780,14 @@ static int etherip_tunnel_init(struct net_device *dev)
 	/* Guess output device to choose reasonable mtu and hard_header_len */
 	if (iph->daddr) {
 		struct flowi4 fl;
+		memset(&fl, 0, sizeof(fl));
 		fl.flowi4_oif = tunnel->parms.link,
 		fl.daddr = iph->daddr,
 		fl.saddr = iph->saddr,
 		fl.flowi4_tos = RT_TOS(iph->tos),
 		fl.flowi4_proto = IPPROTO_ETHERIP;
-		if ((rt = ip_route_output_key(dev_net(dev), &fl))) {
+		rt = ip_route_output_key(dev_net(dev), &fl);
+		if (IS_ERR(rt)){
 			tdev = rt->dst.dev;
 			ip_rt_put(rt);
 		}
@@ -824,7 +848,6 @@ static int __init etherip_init(void)
 		printk(KERN_INFO "etherip init: can't add protocol\n");
 		return -EAGAIN;
 	}
-
 	etherip_fb_tunnel_dev = alloc_netdev(sizeof(struct ip_tunnel),
 					     "etherip0", NET_NAME_UNKNOWN, etherip_tunnel_setup_fb);
 	if (!etherip_fb_tunnel_dev) {
@@ -848,7 +871,7 @@ void etherip_fini(void)
 {
 	if (inet_del_protocol(&etherip_protocol, IPPROTO_ETHERIP) < 0)
 		printk(KERN_INFO "etherip close: can't remove protocol\n");
-
+	etherip_tunnel_destroy();
 	unregister_netdev(etherip_fb_tunnel_dev);
 }
 
