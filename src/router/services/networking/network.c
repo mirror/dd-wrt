@@ -2116,7 +2116,8 @@ void start_lan(void)
 	if (strncmp(lan_ifname, "br0", 3) == 0) {
 		br_add_bridge(lan_ifname);
 		eval("ifconfig", lan_ifname, "promisc");
-		br_set_stp_state(lan_ifname, getBridgeSTP(lan_ifname));
+		char word[256];
+		br_set_stp_state(lan_ifname, getBridgeSTP(lan_ifname, word));
 #ifdef HAVE_MICRO
 		br_set_bridge_forward_delay(lan_ifname, 2);
 #else
@@ -2546,8 +2547,9 @@ void start_lan(void)
 			// eval ("ifconfig", "br1", "down");
 			br_del_bridge("br1");
 			br_add_bridge("br1");
+			char word[256];
 
-			br_set_stp_state("br1", getBridgeSTP("br1"));
+			br_set_stp_state("br1", getBridgeSTP("br1", word));
 			br_set_bridge_forward_delay("br1", 2);
 
 			/*
@@ -2556,7 +2558,7 @@ void start_lan(void)
 			if (nvram_invmatch(br1ipaddr, "0.0.0.0")) {
 				ifconfig("br1", IFUP, nvram_safe_get(br1ipaddr), nvram_safe_get(br1netmask));
 
-				br_set_stp_state("br1", getBridgeSTP("br1"));
+				br_set_stp_state("br1", getBridgeSTP("br1", word));
 				sleep(2);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 				notify_nas("lan", "br1", "up");
@@ -2795,7 +2797,9 @@ void start_lan(void)
 			diag_led(DMZ, STOP_LED);
 	}
 #endif
-	br_set_stp_state("br0", getBridgeSTP("br0"));
+{
+	char word[256];
+	br_set_stp_state("br0", getBridgeSTP("br0", word));
 	// eval ("rm", "/tmp/hosts");
 	addHost("localhost", "127.0.0.1", 0);
 	if (strlen(nvram_safe_get("wan_hostname"))) {
@@ -2805,6 +2809,7 @@ void start_lan(void)
 		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 0);
 		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 1);
 	}
+}
 #ifdef HAVE_MICRO
 	br_shutdown();
 #endif
@@ -4485,8 +4490,11 @@ void start_wan(int status)
 #ifdef HAVE_MICRO
 	br_init();
 #endif
-	br_set_stp_state("br0", getBridgeSTP("br0"));
+{
+			char word[256];
 
+	br_set_stp_state("br0", getBridgeSTP("br0", word));
+}
 #ifdef HAVE_MICRO
 	br_shutdown();
 #endif
@@ -4792,7 +4800,10 @@ void start_wan_done(char *wan_ifname)
 	br_init();
 #endif
 
-	br_set_stp_state(nvram_safe_get("lan_ifname"), getBridgeSTP(nvram_safe_get("lan_ifname")));
+{
+	char word[256];
+	br_set_stp_state(nvram_safe_get("lan_ifname"), getBridgeSTP(nvram_safe_get("lan_ifname")), word);
+}
 #ifdef HAVE_MICRO
 	br_shutdown();
 #endif
@@ -5342,8 +5353,10 @@ void start_hotplug_net(void)
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 		notify_nas("lan", interface, "up");
 #endif
-		br_set_stp_state("br0", getBridgeSTP("br0"));
-
+{
+		char word[256];
+		br_set_stp_state("br0", getBridgeSTP("br0", word));
+}
 #ifdef HAVE_MICRO
 		br_shutdown();
 #endif
