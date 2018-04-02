@@ -4802,7 +4802,7 @@ void start_wan_done(char *wan_ifname)
 
 {
 	char word[256];
-	br_set_stp_state(nvram_safe_get("lan_ifname"), getBridgeSTP(nvram_safe_get("lan_ifname")), word);
+	br_set_stp_state(nvram_safe_get("lan_ifname"), getBridgeSTP(nvram_safe_get("lan_ifname"), word));
 }
 #ifdef HAVE_MICRO
 	br_shutdown();
