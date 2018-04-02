@@ -274,11 +274,6 @@ void stop_bridging(void)
 }
 
 #else
-char *getBridge(char *ifname, char *buf)
-{
-	return nvram_safe_get("lan_ifname");
-}
-
 char *getRealBridge(char *ifname, char *word)
 {
 	return NULL;
