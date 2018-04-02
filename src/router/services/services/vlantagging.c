@@ -141,7 +141,8 @@ static void set_stp_state(char *bridge, char *stp)
 
 void start_bridgesif(void)
 {
-	set_stp_state("br0", getBridgeSTPType("br0"));
+	char stp[256];
+	set_stp_state("br0", getBridgeSTPType("br0", stp));
 	char word[256];
 	char *next, *wordlist;
 
