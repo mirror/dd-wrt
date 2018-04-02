@@ -1395,6 +1395,7 @@ void init_network(int idx)
 	char br1enable[32];
 	char br1ipaddr[32];
 	char br1netmask[32];
+	char word[256];
 
 	sprintf(br1enable, "wl%d_br1_enable", idx);
 	sprintf(br1ipaddr, "wl%d_br1_ipaddr", idx);
@@ -1420,7 +1421,7 @@ void init_network(int idx)
 		 */
 		if (nvram_invmatch(br1ipaddr, "0.0.0.0")) {
 			ifconfig("br1", IFUP, nvram_safe_get(br1ipaddr), nvram_safe_get(br1netmask));
-			br_set_stp_state("br1", getBridgeSTP("br1"));
+			br_set_stp_state("br1", getBridgeSTP("br1", word));
 			sleep(2);
 		}
 

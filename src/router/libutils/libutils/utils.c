@@ -279,8 +279,10 @@ char *getBridge(char *ifname, char *word)
 		GETENTRYBYIDX(port, word, 1);
 		if (!bridge)
 			break;
-		if (!strcmp(port, ifname))
-			return bridge;
+		if (!strcmp(port, ifname)) {
+			strcpy(word, bridge);
+			return word;
+		}
 	}
 	return nvram_safe_get("lan_ifname");
 }
@@ -304,8 +306,10 @@ char *getBridgeMTU(const char *ifname, char *word)
 		if (!strcmp(bridge, ifname)) {
 			if (!mtu)
 				return "1500";
-			else
-				return mtu;
+			else {
+				strcpy(word, mtu);
+				return word;
+			}
 		}
 	}
 	return "1500";
@@ -1916,10 +1920,8 @@ char *get_wan_face(void)
 	return localwanface;
 }
 
-char *getBridgeSTPType(char *br)
+char *getBridgeSTPType(char *br, char *word)
 {
-
-	char word[256];
 	char *next, *wordlist;
 	wordlist = nvram_safe_get("bridges");
 	foreach(word, wordlist, next) {
@@ -1927,16 +1929,17 @@ char *getBridgeSTPType(char *br)
 		GETENTRYBYIDX(stp, word, 1);
 		if (strcmp(bridge, br))
 			continue;
-		return stp;
+		strcpy(word,stp);
+		return word;
 	}
 	if (!strcmp(br, "br0"))
 		return nvram_matchi("lan_stp", 1) ? "STP" : "Off";
 	return "Off";
 }
 
-int getBridgeSTP(char *br)
+int getBridgeSTP(char *br, char *word)
 {
-	if (strcmp(getBridgeSTPType(br), "Off"))
+	if (strcmp(getBridgeSTPType(br, word), "Off"))
 		return 1;
 	else
 		return 0;
