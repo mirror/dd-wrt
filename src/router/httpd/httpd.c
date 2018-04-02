@@ -114,7 +114,7 @@ static void send_authenticate(webs_t conn_fp);
 #include <crypt.h>
 
 #define SERVER_NAME "httpd"
-#define PROTOCOL "HTTP/1.0"
+#define PROTOCOL "HTTP/1.1"
 #define RFC1123FMT "%a, %d %b %Y %H:%M:%S GMT"
 #define TIMEOUT	5
 
