@@ -789,6 +789,8 @@ int __init etherip_fb_tunnel_init(struct net_device *dev)
 static struct net_protocol etherip_protocol = {
 	.handler	=	etherip_rcv,
 	.err_handler	=	etherip_err,
+	.no_policy    = 1,
+	.netns_ok     = 1,
 };
 
 
