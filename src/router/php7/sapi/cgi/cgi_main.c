@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2017 The PHP Group                                |
+   | Copyright (c) 1997-2018 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -94,6 +94,10 @@ int __riscosify_control = __RISCOSIFY_STRICT_UNIX_SPECS;
 
 #if defined(PHP_WIN32) && defined(HAVE_OPENSSL)
 # include "openssl/applink.c"
+#endif
+
+#ifdef HAVE_VALGRIND
+# include "valgrind/callgrind.h"
 #endif
 
 #ifndef PHP_WIN32
@@ -530,9 +534,47 @@ static size_t sapi_fcgi_read_post(char *buffer, size_t count_bytes)
 	return read_bytes;
 }
 
+#ifdef PHP_WIN32
+/* The result needs to be freed! See sapi_getenv(). */
+static char *cgi_getenv_win32(const char *name, size_t name_len)
+{
+	char *ret = NULL;
+	wchar_t *keyw, *valw;
+	size_t size;
+	int rc;
+
+	keyw = php_win32_cp_conv_any_to_w(name, name_len, PHP_WIN32_CP_IGNORE_LEN_P);
+	if (!keyw) {
+		return NULL;
+	}
+
+	rc = _wgetenv_s(&size, NULL, 0, keyw);
+	if (rc || 0 == size) {
+		free(keyw);
+		return NULL;
+	}
+
+	valw = emalloc((size + 1) * sizeof(wchar_t));
+
+	rc = _wgetenv_s(&size, valw, size, keyw);
+	if (!rc) {
+		ret = php_win32_cp_w_to_any(valw);
+	}
+
+	free(keyw);
+	efree(valw);
+
+	return ret;
+}
+#endif
+
 static char *sapi_cgi_getenv(char *name, size_t name_len)
 {
+#ifndef PHP_WIN32
 	return getenv(name);
+#else
+	return cgi_getenv_win32(name, name_len);
+#endif
 }
 
 static char *sapi_fcgi_getenv(char *name, size_t name_len)
@@ -544,10 +586,22 @@ static char *sapi_fcgi_getenv(char *name, size_t name_len)
 	fcgi_request *request = (fcgi_request*) SG(server_context);
 	char *ret = fcgi_getenv(request, name, (int)name_len);
 
+#ifndef PHP_WIN32
 	if (ret) return ret;
 	/*  if cgi, or fastcgi and not found in fcgi env
 		check the regular environment */
 	return getenv(name);
+#else
+	if (ret) {
+		/* The functions outside here don't know, where does it come
+			from. They'll need to free the returned memory as it's
+			not necessary from the fcgi env. */
+		return strdup(ret);
+	}
+	/*  if cgi, or fastcgi and not found in fcgi env
+		check the regular environment */
+	return cgi_getenv_win32(name, name_len);
+#endif
 }
 
 static char *_sapi_cgi_putenv(char *name, size_t name_len, char *value)
@@ -1774,16 +1828,6 @@ int main(int argc, char *argv[])
 	char *decoded_query_string;
 	int skip_getopt = 0;
 
-#if 0 && defined(PHP_DEBUG)
-	/* IIS is always making things more difficult.  This allows
-	 * us to stop PHP and attach a debugger before much gets started */
-	{
-		char szMessage [256];
-		wsprintf (szMessage, "Please attach a debugger to the process 0x%X [%d] (%s) and click OK", GetCurrentProcessId(), GetCurrentProcessId(), argv[0]);
-		MessageBox(NULL, szMessage, "CGI Debug Time!", MB_OK|MB_SERVICE_NOTIFICATION);
-	}
-#endif
-
 #ifdef HAVE_SIGNAL_H
 #if defined(SIGPIPE) && defined(SIG_IGN)
 	signal(SIGPIPE, SIG_IGN); /* ignore SIGPIPE in standalone mode so
@@ -2256,6 +2300,11 @@ consult the installation file that came with this distribution, or visit \n\
 						if (comma) {
 							warmup_repeats = atoi(php_optarg);
 							repeats = atoi(comma + 1);
+#ifdef HAVE_VALGRIND
+							if (warmup_repeats > 0) {
+								CALLGRIND_STOP_INSTRUMENTATION;
+							}
+#endif
 						} else {
 							repeats = atoi(php_optarg);
 						}
@@ -2378,9 +2427,9 @@ consult the installation file that came with this distribution, or visit \n\
 								SG(request_info).no_headers = 1;
 							}
 #if ZEND_DEBUG
-							php_printf("PHP %s (%s) (DEBUG)\nCopyright (c) 1997-2017 The PHP Group\n%s", PHP_VERSION, sapi_module.name, get_zend_version());
+							php_printf("PHP %s (%s) (built: %s %s) (DEBUG)\nCopyright (c) 1997-2018 The PHP Group\n%s", PHP_VERSION, sapi_module.name, __DATE__, __TIME__, get_zend_version());
 #else
-							php_printf("PHP %s (%s)\nCopyright (c) 1997-2017 The PHP Group\n%s", PHP_VERSION, sapi_module.name, get_zend_version());
+							php_printf("PHP %s (%s) (built: %s %s)\nCopyright (c) 1997-2018 The PHP Group\n%s", PHP_VERSION, sapi_module.name, __DATE__, __TIME__, get_zend_version());
 #endif
 							php_request_shutdown((void *) 0);
 							fcgi_shutdown();
@@ -2467,7 +2516,7 @@ consult the installation file that came with this distribution, or visit \n\
 				file_handle.filename = SG(request_info).path_translated;
 				file_handle.handle.fp = NULL;
 			} else {
-				file_handle.filename = "-";
+				file_handle.filename = "Standard input code";
 				file_handle.type = ZEND_HANDLE_FP;
 				file_handle.handle.fp = stdin;
 			}
@@ -2677,6 +2726,9 @@ fastcgi_request_done:
 							gettimeofday(&start, NULL);
 #else
 							time(&start);
+#endif
+#ifdef HAVE_VALGRIND
+							CALLGRIND_START_INSTRUMENTATION;
 #endif
 						}
 						continue;

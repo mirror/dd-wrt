@@ -3,7 +3,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2017 The PHP Group                                |
+  | Copyright (c) 1997-2018 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -192,13 +192,6 @@ static inline void append_modified_url(smart_str *url, smart_str *dest, smart_st
 		return;
 	}
 
-	/* Don't modify URLs of the format "#mark" */
-	if (url_parts->fragment && '#' == ZSTR_VAL(url->s)[0]) {
-		smart_str_append_smart_str(dest, url);
-		php_url_free(url_parts);
-		return;
-	}
-
 	/* Check protocol. Only http/https is allowed. */
 	if (url_parts->scheme
 		&& strcasecmp("http", url_parts->scheme)
@@ -222,12 +215,13 @@ static inline void append_modified_url(smart_str *url, smart_str *dest, smart_st
 	 * When URL does not have path and query string add "/?".
 	 * i.e. If URL is only "?foo=bar", should not add "/?".
 	 */
-	if (!url_parts->path && !url_parts->query && !url_parts->fragment) {
+	if (!url_parts->path && !url_parts->query) {
 		/* URL is http://php.net or like */
 		smart_str_append_smart_str(dest, url);
 		smart_str_appendc(dest, '/');
 		smart_str_appendc(dest, '?');
 		smart_str_append_smart_str(dest, url_app);
+		/* There should not be fragment. Just return */
 		php_url_free(url_parts);
 		return;
 	}
@@ -1063,7 +1057,7 @@ static inline void php_url_scanner_session_handler_impl(char *output, size_t out
 
 	if (ZSTR_LEN(url_state->url_app.s) != 0) {
 		*handled_output = url_adapt_ext(output, output_len, &len, (zend_bool) (mode & (PHP_OUTPUT_HANDLER_END | PHP_OUTPUT_HANDLER_CONT | PHP_OUTPUT_HANDLER_FLUSH | PHP_OUTPUT_HANDLER_FINAL) ? 1 : 0), url_state);
-		if (sizeof(uint) < sizeof(size_t)) {
+		if (sizeof(uint32_t) < sizeof(size_t)) {
 			if (len > UINT_MAX)
 				len = UINT_MAX;
 		}

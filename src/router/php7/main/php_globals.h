@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2017 The PHP Group                                |
+   | Copyright (c) 1997-2018 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -58,7 +58,6 @@ struct _php_core_globals {
 
 	zend_long output_buffering;
 
-	zend_bool sql_safe_mode;
 	zend_bool enable_dl;
 
 	char *output_handler;
@@ -107,7 +106,12 @@ struct _php_core_globals {
 	HashTable rfc1867_protected_variables;
 
 	short connection_status;
-	short ignore_user_abort;
+
+	/* In 7.1/7.2 branches, this was initially a short,
+	 * maintain struct alignment with subsequent padding.
+	 */
+	zend_bool ignore_user_abort;
+	char ignore_user_abort_reserved_padding;
 
 	unsigned char header_is_being_sent;
 
@@ -177,4 +181,6 @@ struct _php_core_globals {
  * tab-width: 4
  * c-basic-offset: 4
  * End:
+ * vim600: sw=4 ts=4 fdm=marker
+ * vim<600: sw=4 ts=4
  */

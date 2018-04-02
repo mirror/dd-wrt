@@ -1,79 +1,52 @@
-PHP 7.1 INTERNALS UPGRADE NOTES
+PHP 7.2 INTERNALS UPGRADE NOTES
 
-0. Wiki Examples
 1. Internal API changes
-  e. Codepage handling on Windows
-  f. Path handling on Windows
-  g. SAPI logging
+  a. Path related functions
+  b. php_win32_get_random_bytes()
+  c. nice() Windows implementation
+  d. ZEND_ACC_CLONE removed
+  e. IS_TYPE_IMMUTABLE removed
+  f. zend_arg_info.class_name removed
+  g. ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX changed
+  h. valid_symbol_table removed
 
 2. Build system changes
   a. Unix build system changes
   b. Windows build system changes
 
+
 3. Module changes
-
-================
-0. Wiki Examples
-================
-
-The wiki contains multiple examples and further explanations of the internal
-changes. See: https://wiki.php.net/phpng-upgrading
-
 
 ========================
 1. Internal API changes
 ========================
 
-  e. Codepage handling on Windows
-     
-    A set of new APIs was introduced, which allows to handle codepage
-    conversions. The corresponding prototypes and macros are contained
-    in win32/codepage.h.
+  a. Path related functions
+    - CWD_API void realpath_cache_del(const char *path, size_t path_len);
+    - CWD_API realpath_cache_bucket* realpath_cache_lookup(const char *path, size_t path_len, time_t t);
+    - PHPAPI void php_clear_stat_cache(zend_bool clear_realpath_cache, const char *filename, size_t filename_len);
+    - PHPAPI void php_stat(const char *filename, size_t filename_length, int type, zval *return_value);
 
-    Functions with php_win32_cp_* signatures provide handling for various
-    codepage aspects. Primarily they are in use at various places in the
-    I/O utils code and directly in the core where necessary, providing
-    conversions to/from UTF-16. Arbitrary conversions between codepages
-    are possible as well, whereby UTF-16 will be always an intermediate
-    state in this case.
+  b. php_win32_get_random_bytes()
+    The internal randomness source on Windows switched to use CNG API.
 
-    For input length arguments, the macro PHP_WIN32_CP_IGNORE_LEN can be
-    passed, then the API will calculate the length.  For output length
-    arguments, the macro PHP_WIN32_CP_IGNORE_LEN_P can be passed, then
-    the API won't set the output length.
+  c. nice() now have a Windows alternative that is implemented in win32/nice.c, using
+	   SetPriorityClass(). See the implementation for more in-depth details. This also 
+	   defines HAVE_NICE.
 
-    The mapping between encodings and codepages is provided by the predefined
-    array of data contained in win32/cp_enc_map.c. To change the data,
-    a generator win32/cp_enc_map_gen.c needs to be edited and run.
+  d. ZEND_ACC_CLONE is removed, but was not used in previous versions
 
-  f. Path handling on Windows
+  e. IS_TYPE_IMMUTABLE is removed, IS_TYPE_COPYABLE can be used instead
+     Z_IMMUTABLE() check function is still available
 
-    A set of new APIs was introduced, which allows to handle UTF-8 paths. The
-    corresponding prototypes and macros are contained in win32/ioutil.h.
+  f. zend_arg_info class_name member is removed, use ZEND_TYPE_NAME instead
 
-    Functions with php_win32_ioutil_* signatures provide POSIX I/O analogues.
-    These functions are integrated in various places across the code base to
-    support Unicode filenames. While accepting char * arguments, internally 
-    the conversion to wchar_t * happens. Internally almost no ANSI APIs are
-    used, but directly their wide equivalents. The string conversion rules
-    correspond to those already present in the core and depend on the current
-    encoding settings. Doing so allows to move away from the ANSI Windows API
-    with its dependency on the system OEM/ANSI codepage.
+  g. ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX classname option is removed
+     use ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX for simple type
+     use ZEND_BEGIN_ARG_WITH_RETURN_OBJ_INFO_EX for object
 
-    Thanks to the wide API usage, the long paths are now supported as well. The
-    PHP_WIN32_IOUTIL_MAXPATHLEN macro is defined to 2048 bytes and will override
-    the MAXPATHLEN in files where the header is included.
-
-    The most optimal use case for scripts is utilizing UTF-8 for any I/O
-    related functions. UTF-8 filenames are supported on any system disregarding
-    the system OEM/ANSI codepage.
-
-  g. SAPI logging
-    The log_message callback in the SAPI struct was extended with the severity
-    argument. This allows SAPI modules to implement mapping between PHP and
-    corresponding server error levels. A reference mapping implementation
-    can be found in apache2handler.
-
+  h. valid_symbol_table is removed from executor_globals.
+     Use EG(active) instead of removed EG(valid_symbol_table)
 
 ========================
 2. Build system changes
@@ -82,10 +55,29 @@ changes. See: https://wiki.php.net/phpng-upgrading
   a. Unix build system changes
 
   b. Windows build system changes
-    Static analysis with clang and Cppcheck is supported by passing "clang" or
-    "cppcheck" keyword to the --with-analyzer configure option.
+
+    .  Minimum supported Windows versions are Windows 7/Server 2008 R2.
+    . --enable-one-shot configure option is removed, --with-mp is usable.
+    . The new binary tools SDK is required for Windows builds, the
+      documentation is available under https://wiki.php.net/internals/windows/stepbystepbuild_sdk_2
+    . Visual Studio 2017 is utilized for the Windows builds
+    . Clang build with ASAN is supported with clang 5+
 
 ========================
 3. Module changes
 ========================
+
+- Pcre:
+  . php_pcre_replace and php_pcre_replace_impl expect a zend_string instead of a zval and
+    is_callable_replace options is removed:
+    - PHPAPI zend_string *php_pcre_replace(zend_string *regex, zend_string *subject_str, char *subject, int subject_len, zend_string *replace_str, int limit, int *replace_count);
+    - PHPAPI zend_string *php_pcre_replace_impl(pcre_cache_entry *pce, zend_string *subject_str, char *subject, int subject_len, zend_string *replace_str, int limit, int *replace_count);
+
+- Session:
+  . php_session_start()/session_reset_id() return value is changed from void to int.
+    It returns SUCCESS/FAILURE.
+  . Session module manages session status correctly.
+
+- OpenSSL:
+  . Windows builds ship with OpenSSL 1.1 by default, lower versions are still supported with custom deps.
 

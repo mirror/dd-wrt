@@ -55,8 +55,9 @@ static int					resource_types_table_size;
 static MUTEX_T tsmm_mutex;	/* thread-safe memory manager mutex */
 
 /* New thread handlers */
-static tsrm_thread_begin_func_t tsrm_new_thread_begin_handler;
-static tsrm_thread_end_func_t tsrm_new_thread_end_handler;
+static tsrm_thread_begin_func_t tsrm_new_thread_begin_handler = NULL;
+static tsrm_thread_end_func_t tsrm_new_thread_end_handler = NULL;
+static tsrm_shutdown_func_t tsrm_shutdown_handler = NULL;
 
 /* Debug support */
 int tsrm_error(int level, const char *format, ...);
@@ -93,7 +94,12 @@ static FILE *tsrm_error_file;
 	}
 #endif
 
-#if defined(PTHREADS)
+#if defined(GNUPTH)
+static pth_key_t tls_key;
+# define tsrm_tls_set(what)		pth_key_setdata(tls_key, (void*)(what))
+# define tsrm_tls_get()			pth_key_getdata(tls_key)
+
+#elif defined(PTHREADS)
 /* Thread local storage */
 static pthread_key_t tls_key;
 # define tsrm_tls_set(what)		pthread_setspecific(tls_key, (void*)(what))
@@ -120,11 +126,14 @@ static int32 tls_key;
 # warning tsrm_set_interpreter_context is probably broken on this platform
 #endif
 
+TSRM_TLS uint8_t in_main_thread = 0;
+
 /* Startup TSRM (call once for the entire process) */
 TSRM_API int tsrm_startup(int expected_threads, int expected_resources, int debug_level, char *debug_filename)
-{
+{/*{{{*/
 #if defined(GNUPTH)
 	pth_init();
+	pth_key_create(&tls_key, 0);
 #elif defined(PTHREADS)
 	pthread_key_create( &tls_key, 0 );
 #elif defined(TSRM_ST)
@@ -135,6 +144,9 @@ TSRM_API int tsrm_startup(int expected_threads, int expected_resources, int debu
 #elif defined(BETHREADS)
 	tls_key = tls_allocate();
 #endif
+
+	/* ensure singleton */
+	in_main_thread = 1;
 
 	tsrm_error_file = stderr;
 	tsrm_error_set(debug_level, debug_filename);
@@ -158,17 +170,20 @@ TSRM_API int tsrm_startup(int expected_threads, int expected_resources, int debu
 
 	tsmm_mutex = tsrm_mutex_alloc();
 
-	tsrm_new_thread_begin_handler = tsrm_new_thread_end_handler = NULL;
-
 	TSRM_ERROR((TSRM_ERROR_LEVEL_CORE, "Started up TSRM, %d expected threads, %d expected resources", expected_threads, expected_resources));
 	return 1;
-}
+}/*}}}*/
 
 
 /* Shutdown TSRM (call once for the entire process) */
 TSRM_API void tsrm_shutdown(void)
-{
+{/*{{{*/
 	int i;
+
+	if (!in_main_thread) {
+		/* ensure singleton */
+		return;
+	}
 
 	if (tsrm_tls_table) {
 		for (i=0; i<tsrm_tls_table_size; i++) {
@@ -212,12 +227,18 @@ TSRM_API void tsrm_shutdown(void)
 #elif defined(TSRM_WIN32)
 	TlsFree(tls_key);
 #endif
-}
+	if (tsrm_shutdown_handler) {
+		tsrm_shutdown_handler();
+	}
+	tsrm_new_thread_begin_handler = NULL;
+	tsrm_new_thread_end_handler = NULL;
+	tsrm_shutdown_handler = NULL;
+}/*}}}*/
 
 
 /* allocates a new thread-safe-resource id */
 TSRM_API ts_rsrc_id ts_allocate_id(ts_rsrc_id *rsrc_id, size_t size, ts_allocate_ctor ctor, ts_allocate_dtor dtor)
-{
+{/*{{{*/
 	int i;
 
 	TSRM_ERROR((TSRM_ERROR_LEVEL_CORE, "Obtaining a new resource id, %d bytes", size));
@@ -268,11 +289,11 @@ TSRM_API ts_rsrc_id ts_allocate_id(ts_rsrc_id *rsrc_id, size_t size, ts_allocate
 
 	TSRM_ERROR((TSRM_ERROR_LEVEL_CORE, "Successfully allocated new resource id %d", *rsrc_id));
 	return *rsrc_id;
-}
+}/*}}}*/
 
 
 static void allocate_new_resource(tsrm_tls_entry **thread_resources_ptr, THREAD_T thread_id)
-{
+{/*{{{*/
 	int i;
 
 	TSRM_ERROR((TSRM_ERROR_LEVEL_CORE, "Creating data structures for thread %x", thread_id));
@@ -308,25 +329,16 @@ static void allocate_new_resource(tsrm_tls_entry **thread_resources_ptr, THREAD_
 	}
 
 	tsrm_mutex_unlock(tsmm_mutex);
-}
+}/*}}}*/
 
 
 /* fetches the requested resource for the current thread */
 TSRM_API void *ts_resource_ex(ts_rsrc_id id, THREAD_T *th_id)
-{
+{/*{{{*/
 	THREAD_T thread_id;
 	int hash_value;
 	tsrm_tls_entry *thread_resources;
 
-#ifdef NETWARE
-	/* The below if loop is added for NetWare to fix an abend while unloading PHP
-	 * when an Apache unload command is issued on the system console.
-	 * While exiting from PHP, at the end for some reason, this function is called
-	 * with tsrm_tls_table = NULL. When this happened, the server abends when
-	 * tsrm_tls_table is accessed since it is NULL.
-	 */
-	if(tsrm_tls_table) {
-#endif
 	if (!th_id) {
 		/* Fast path for looking up the resources for the current
 		 * thread. Its used by just about every call to
@@ -380,15 +392,12 @@ TSRM_API void *ts_resource_ex(ts_rsrc_id id, THREAD_T *th_id)
 	 * changes to the structure as we read it.
 	 */
 	TSRM_SAFE_RETURN_RSRC(thread_resources->storage, id, thread_resources->count);
-#ifdef NETWARE
-	}	/* if(tsrm_tls_table) */
-#endif
-}
+}/*}}}*/
 
 /* frees an interpreter context.  You are responsible for making sure that
  * it is not linked into the TSRM hash, and not marked as the current interpreter */
 void tsrm_free_interpreter_context(void *context)
-{
+{/*{{{*/
 	tsrm_tls_entry *next, *thread_resources = (tsrm_tls_entry*)context;
 	int i;
 
@@ -407,10 +416,10 @@ void tsrm_free_interpreter_context(void *context)
 		free(thread_resources);
 		thread_resources = next;
 	}
-}
+}/*}}}*/
 
 void *tsrm_set_interpreter_context(void *new_ctx)
-{
+{/*{{{*/
 	tsrm_tls_entry *current;
 
 	current = tsrm_tls_get();
@@ -423,12 +432,12 @@ void *tsrm_set_interpreter_context(void *new_ctx)
 
 	/* return old context, so caller can restore it when they're done */
 	return current;
-}
+}/*}}}*/
 
 
 /* allocates a new interpreter context */
 void *tsrm_new_interpreter_context(void)
-{
+{/*{{{*/
 	tsrm_tls_entry *new_ctx, *current;
 	THREAD_T thread_id;
 
@@ -442,12 +451,12 @@ void *tsrm_new_interpreter_context(void)
 	/* switch back to the context that was in use prior to our creation
 	 * of the new one */
 	return tsrm_set_interpreter_context(current);
-}
+}/*}}}*/
 
 
 /* frees all resources allocated for the current thread */
 void ts_free_thread(void)
-{
+{/*{{{*/
 	tsrm_tls_entry *thread_resources;
 	int i;
 	THREAD_T thread_id = tsrm_thread_id();
@@ -484,12 +493,12 @@ void ts_free_thread(void)
 		thread_resources = thread_resources->next;
 	}
 	tsrm_mutex_unlock(tsmm_mutex);
-}
+}/*}}}*/
 
 
 /* frees all resources allocated for all threads except current */
 void ts_free_worker_threads(void)
-{
+{/*{{{*/
 	tsrm_tls_entry *thread_resources;
 	int i;
 	THREAD_T thread_id = tsrm_thread_id();
@@ -530,12 +539,12 @@ void ts_free_worker_threads(void)
 		}
 	}
 	tsrm_mutex_unlock(tsmm_mutex);
-}
+}/*}}}*/
 
 
 /* deallocates all occurrences of a given id */
 void ts_free_id(ts_rsrc_id id)
-{
+{/*{{{*/
 	int i;
 	int j = TSRM_UNSHUFFLE_RSRC_ID(id);
 
@@ -564,7 +573,7 @@ void ts_free_id(ts_rsrc_id id)
 	tsrm_mutex_unlock(tsmm_mutex);
 
 	TSRM_ERROR((TSRM_ERROR_LEVEL_CORE, "Successfully freed resource id %d", id));
-}
+}/*}}}*/
 
 
 
@@ -575,7 +584,7 @@ void ts_free_id(ts_rsrc_id id)
 
 /* Obtain the current thread id */
 TSRM_API THREAD_T tsrm_thread_id(void)
-{
+{/*{{{*/
 #ifdef TSRM_WIN32
 	return GetCurrentThreadId();
 #elif defined(GNUPTH)
@@ -591,12 +600,12 @@ TSRM_API THREAD_T tsrm_thread_id(void)
 #elif defined(BETHREADS)
 	return find_thread(NULL);
 #endif
-}
+}/*}}}*/
 
 
 /* Allocate a mutex */
 TSRM_API MUTEX_T tsrm_mutex_alloc(void)
-{
+{/*{{{*/
 	MUTEX_T mutexp;
 #ifdef TSRM_WIN32
 	mutexp = malloc(sizeof(CRITICAL_SECTION));
@@ -622,12 +631,12 @@ TSRM_API MUTEX_T tsrm_mutex_alloc(void)
 	printf("Mutex created thread: %d\n",mythreadid());
 #endif
 	return( mutexp );
-}
+}/*}}}*/
 
 
 /* Free a mutex */
 TSRM_API void tsrm_mutex_free(MUTEX_T mutexp)
-{
+{/*{{{*/
 	if (mutexp) {
 #ifdef TSRM_WIN32
 		DeleteCriticalSection(mutexp);
@@ -651,7 +660,7 @@ TSRM_API void tsrm_mutex_free(MUTEX_T mutexp)
 #ifdef THR_DEBUG
 	printf("Mutex freed thread: %d\n",mythreadid());
 #endif
-}
+}/*}}}*/
 
 
 /*
@@ -659,7 +668,7 @@ TSRM_API void tsrm_mutex_free(MUTEX_T mutexp)
   A return value of 0 indicates success
 */
 TSRM_API int tsrm_mutex_lock(MUTEX_T mutexp)
-{
+{/*{{{*/
 	TSRM_ERROR((TSRM_ERROR_LEVEL_INFO, "Mutex locked thread: %ld", tsrm_thread_id()));
 #ifdef TSRM_WIN32
 	EnterCriticalSection(mutexp);
@@ -683,7 +692,7 @@ TSRM_API int tsrm_mutex_lock(MUTEX_T mutexp)
 		return acquire_sem(mutexp->sem);
 	return 0;
 #endif
-}
+}/*}}}*/
 
 
 /*
@@ -691,7 +700,7 @@ TSRM_API int tsrm_mutex_lock(MUTEX_T mutexp)
   A return value of 0 indicates success
 */
 TSRM_API int tsrm_mutex_unlock(MUTEX_T mutexp)
-{
+{/*{{{*/
 	TSRM_ERROR((TSRM_ERROR_LEVEL_INFO, "Mutex unlocked thread: %ld", tsrm_thread_id()));
 #ifdef TSRM_WIN32
 	LeaveCriticalSection(mutexp);
@@ -715,14 +724,14 @@ TSRM_API int tsrm_mutex_unlock(MUTEX_T mutexp)
 		return release_sem(mutexp->sem);
 	return 0;
 #endif
-}
+}/*}}}*/
 
 /*
   Changes the signal mask of the calling thread
 */
 #ifdef HAVE_SIGPROCMASK
 TSRM_API int tsrm_sigmask(int how, const sigset_t *set, sigset_t *oldset)
-{
+{/*{{{*/
 	TSRM_ERROR((TSRM_ERROR_LEVEL_INFO, "Changed sigmask in thread: %ld", tsrm_thread_id()));
 	/* TODO: add support for other APIs */
 #ifdef PTHREADS
@@ -730,27 +739,35 @@ TSRM_API int tsrm_sigmask(int how, const sigset_t *set, sigset_t *oldset)
 #else
 	return sigprocmask(how, set, oldset);
 #endif
-}
+}/*}}}*/
 #endif
 
 
 TSRM_API void *tsrm_set_new_thread_begin_handler(tsrm_thread_begin_func_t new_thread_begin_handler)
-{
+{/*{{{*/
 	void *retval = (void *) tsrm_new_thread_begin_handler;
 
 	tsrm_new_thread_begin_handler = new_thread_begin_handler;
 	return retval;
-}
+}/*}}}*/
 
 
 TSRM_API void *tsrm_set_new_thread_end_handler(tsrm_thread_end_func_t new_thread_end_handler)
-{
+{/*{{{*/
 	void *retval = (void *) tsrm_new_thread_end_handler;
 
 	tsrm_new_thread_end_handler = new_thread_end_handler;
 	return retval;
-}
+}/*}}}*/
 
+
+TSRM_API void *tsrm_set_shutdown_handler(tsrm_shutdown_func_t shutdown_handler)
+{/*{{{*/
+	void *retval = (void *) tsrm_shutdown_handler;
+
+	tsrm_shutdown_handler = shutdown_handler;
+	return retval;
+}/*}}}*/
 
 
 /*
@@ -759,7 +776,7 @@ TSRM_API void *tsrm_set_new_thread_end_handler(tsrm_thread_end_func_t new_thread
 
 #if TSRM_DEBUG
 int tsrm_error(int level, const char *format, ...)
-{
+{/*{{{*/
 	if (level<=tsrm_error_level) {
 		va_list args;
 		int size;
@@ -774,12 +791,12 @@ int tsrm_error(int level, const char *format, ...)
 	} else {
 		return 0;
 	}
-}
+}/*}}}*/
 #endif
 
 
 void tsrm_error_set(int level, char *debug_filename)
-{
+{/*{{{*/
 	tsrm_error_level = level;
 
 #if TSRM_DEBUG
@@ -796,11 +813,25 @@ void tsrm_error_set(int level, char *debug_filename)
 		tsrm_error_file = stderr;
 	}
 #endif
-}
+}/*}}}*/
 
 TSRM_API void *tsrm_get_ls_cache(void)
-{
+{/*{{{*/
 	return tsrm_tls_get();
-}
+}/*}}}*/
+
+TSRM_API uint8_t tsrm_is_main_thread(void)
+{/*{{{*/
+	return in_main_thread;
+}/*}}}*/
 
 #endif /* ZTS */
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: sw=4 ts=4 fdm=marker
+ * vim<600: sw=4 ts=4
+ */
