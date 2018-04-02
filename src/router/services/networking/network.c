@@ -773,7 +773,7 @@ void reset_hwaddr(char *ifname)
 	 * Get current LAN hardware address 
 	 */
 	char macaddr[32];
-	if (get_hwaddr("ifname", macaddr)) {
+	if (get_hwaddr(ifname, macaddr)) {
 
 		if (!strlen(nvram_safe_get("lan_hwaddr")))
 			nvram_set("lan_hwaddr", macaddr);
@@ -4176,8 +4176,9 @@ void start_wan(int status)
 
 			if (isClient())
 				wan_iface = getSTA();
-
-			ifconfig(wan_iface, IFUP, nvram_safe_get("wan_ipaddr_static"), nvram_safe_get("wan_netmask_static"));
+			if(wan_iface != NULL)
+				ifconfig(wan_iface, IFUP, nvram_safe_get("wan_ipaddr_static"), nvram_safe_get("wan_netmask_static"));
+			
 			dns_to_resolv();
 			dns_list = get_dns_list();
 
@@ -5146,7 +5147,7 @@ static int notify_nas(char *type, char *ifname, char *action)
 	 */
 	unit = get_wl_instance(ifname);
 	if (unit == -1)
-		return;
+		return 0;
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 	if (nvram_match(strcat_r(prefix, "akm", tmp), "") && nvram_match(strcat_r(prefix, "auth_mode", tmp), "none"))
 		return 0;
