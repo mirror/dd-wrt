@@ -814,8 +814,8 @@ extern int get_single_ip(char *ipaddr, int which);
 extern char *get_mac_from_ip(char *mac, char *ip);
 extern int dns_to_resolv(void);
 extern char *get_wan_face(void);
-extern int getBridgeSTP(char *br);
-extern char *getBridgeSTPType(char *br);
+extern int getBridgeSTP(char *br, char *word);
+extern char *getBridgeSTPType(char *br, char *word);
 extern unsigned char *get_ether_hwaddr(const char *name, unsigned char *hwaddr);
 extern int set_ether_hwaddr(const char *name, unsigned char *hwaddr);
 
@@ -1063,7 +1063,7 @@ void lcdmessaged(char *dual, char *message);
 
 extern char *getBridgeMTU(const char *, char *word);
 extern char *getMTU(char *);
-extern int getBridgeSTP(char *br);
+extern int getBridgeSTP(char *br, char *word);
 extern char *get_NFServiceMark(char *service, uint32 mark);
 
 #ifdef HAVE_SVQOS
