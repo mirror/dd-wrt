@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2017 The PHP Group                                |
+  | Copyright (c) 1997-2018 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -69,7 +69,7 @@ static void delete_service(void *service);
 static void delete_url(void *handle);
 static void delete_hashtable(void *hashtable);
 
-static void soap_error_handler(int error_num, const char *error_filename, const uint error_lineno, const char *format, va_list args);
+static void soap_error_handler(int error_num, const char *error_filename, const uint32_t error_lineno, const char *format, va_list args);
 
 #define SOAP_SERVER_BEGIN_CODE() \
 	zend_bool _old_handler = SOAP_GLOBAL(use_soap_error_handler);\
@@ -165,9 +165,8 @@ zend_class_entry* soap_var_class_entry;
 
 ZEND_DECLARE_MODULE_GLOBALS(soap)
 
-static void (*old_error_handler)(int, const char *, const uint, const char*, va_list);
+static void (*old_error_handler)(int, const char *, const uint32_t, const char*, va_list);
 
-#ifdef va_copy
 #define call_old_error_handler(error_num, error_filename, error_lineno, format, args) \
 { \
 	va_list copy; \
@@ -175,12 +174,6 @@ static void (*old_error_handler)(int, const char *, const uint, const char*, va_
 	old_error_handler(error_num, error_filename, error_lineno, format, copy); \
 	va_end(copy); \
 }
-#else
-#define call_old_error_handler(error_num, error_filename, error_lineno, format, args) \
-{ \
-	old_error_handler(error_num, error_filename, error_lineno, format, args); \
-}
-#endif
 
 #define PHP_SOAP_SERVER_CLASSNAME "SoapServer"
 #define PHP_SOAP_CLIENT_CLASSNAME "SoapClient"
@@ -898,16 +891,12 @@ PHP_METHOD(SoapFault, SoapFault)
 		fault_code = Z_STRVAL_P(code);
 		fault_code_len = Z_STRLEN_P(code);
 	} else if (Z_TYPE_P(code) == IS_ARRAY && zend_hash_num_elements(Z_ARRVAL_P(code)) == 2) {
-		zval *t_ns, *t_code;
-
-		zend_hash_internal_pointer_reset(Z_ARRVAL_P(code));
-		t_ns = zend_hash_get_current_data(Z_ARRVAL_P(code));
-		zend_hash_move_forward(Z_ARRVAL_P(code));
-		t_code = zend_hash_get_current_data(Z_ARRVAL_P(code));
-		if (Z_TYPE_P(t_ns) == IS_STRING && Z_TYPE_P(t_code) == IS_STRING) {
-		  fault_code_ns = Z_STRVAL_P(t_ns);
-		  fault_code = Z_STRVAL_P(t_code);
-		  fault_code_len = Z_STRLEN_P(t_code);
+		zval *t_ns = zend_hash_index_find(Z_ARRVAL_P(code), 0);
+		zval *t_code = zend_hash_index_find(Z_ARRVAL_P(code), 1);
+		if (t_ns && t_code && Z_TYPE_P(t_ns) == IS_STRING && Z_TYPE_P(t_code) == IS_STRING) {
+			fault_code_ns = Z_STRVAL_P(t_ns);
+			fault_code = Z_STRVAL_P(t_code);
+			fault_code_len = Z_STRLEN_P(t_code);
 		} else {
 			php_error_docref(NULL, E_WARNING, "Invalid fault code");
 			return;
@@ -2126,7 +2115,7 @@ static void soap_server_fault(char* code, char* string, char *actor, zval* detai
 	zend_bailout();
 }
 
-static void soap_error_handler(int error_num, const char *error_filename, const uint error_lineno, const char *format, va_list args)
+static void soap_error_handler(int error_num, const char *error_filename, const uint32_t error_lineno, const char *format, va_list args)
 {
 	zend_bool _old_in_compilation;
 	zend_execute_data *_old_current_execute_data;
@@ -2163,19 +2152,12 @@ static void soap_error_handler(int error_num, const char *error_filename, const 
 			char* code = SOAP_GLOBAL(error_code);
 			char buffer[1024];
 			size_t buffer_len;
-#ifdef va_copy
 			va_list argcopy;
-#endif
-			zend_object **old_objects;
-			int old = PG(display_errors);
 
-#ifdef va_copy
 			va_copy(argcopy, args);
 			buffer_len = vslprintf(buffer, sizeof(buffer)-1, format, argcopy);
 			va_end(argcopy);
-#else
-			buffer_len = vslprintf(buffer, sizeof(buffer)-1, format, args);
-#endif
+
 			buffer[sizeof(buffer)-1]=0;
 			if (buffer_len > sizeof(buffer) - 1 || buffer_len == (size_t)-1) {
 				buffer_len = sizeof(buffer) - 1;
@@ -2187,24 +2169,6 @@ static void soap_error_handler(int error_num, const char *error_filename, const 
 			add_soap_fault_ex(&fault, &SOAP_GLOBAL(error_object), code, buffer, NULL, NULL);
 			Z_ADDREF(fault);
 			zend_throw_exception_object(&fault);
-
-			old_objects = EG(objects_store).object_buckets;
-			EG(objects_store).object_buckets = NULL;
-			PG(display_errors) = 0;
-			SG(sapi_headers).http_status_line = NULL;
-			zend_try {
-				call_old_error_handler(error_num, error_filename, error_lineno, format, args);
-			} zend_catch {
-				CG(in_compilation) = _old_in_compilation;
-				EG(current_execute_data) = _old_current_execute_data;
-				if (SG(sapi_headers).http_status_line) {
-					efree(SG(sapi_headers).http_status_line);
-				}
-				SG(sapi_headers).http_status_line = _old_http_status_line;
-				SG(sapi_headers).http_response_code = _old_http_response_code;
-			} zend_end_try();
-			EG(objects_store).object_buckets = old_objects;
-			PG(display_errors) = old;
 			zend_bailout();
 		} else if (!use_exceptions ||
 		           !SOAP_GLOBAL(error_code) ||
@@ -2216,9 +2180,7 @@ static void soap_error_handler(int error_num, const char *error_filename, const 
 		int old = PG(display_errors);
 		int fault = 0;
 		zval fault_obj;
-#ifdef va_copy
 		va_list argcopy;
-#endif
 
 		if (error_num == E_USER_ERROR ||
 		    error_num == E_COMPILE_ERROR ||
@@ -2246,13 +2208,10 @@ static void soap_error_handler(int error_num, const char *error_filename, const 
 				size_t buffer_len;
 				zval outbuflen;
 
-#ifdef va_copy
 				va_copy(argcopy, args);
 				buffer_len = vslprintf(buffer, sizeof(buffer)-1, format, argcopy);
 				va_end(argcopy);
-#else
-				buffer_len = vslprintf(buffer, sizeof(buffer)-1, format, args);
-#endif
+
 				buffer[sizeof(buffer)-1]=0;
 				if (buffer_len > sizeof(buffer) - 1 || buffer_len == (size_t)-1) {
 					buffer_len = sizeof(buffer) - 1;
@@ -2952,6 +2911,7 @@ PHP_METHOD(SoapClient, __call)
 		} ZEND_HASH_FOREACH_END();
 	}
 	if (output_headers) {
+		zval_ptr_dtor(output_headers);
 		array_init(output_headers);
 	}
 	do_soap_call(execute_data, this_ptr, function, function_len, arg_count, real_args, return_value, location, soap_action, uri, soap_headers, output_headers);

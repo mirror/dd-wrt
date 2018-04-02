@@ -336,7 +336,9 @@ ordered_range_insert(ac_uint4 c, char *name, int len)
         (len == 3 &&
          (memcmp(name, "NSM", 3) == 0 || memcmp(name, "PDF", 3) == 0 ||
           memcmp(name, "LRE", 3) == 0 || memcmp(name, "LRO", 3) == 0 ||
-          memcmp(name, "RLE", 3) == 0 || memcmp(name, "RLO", 3) == 0))) {
+          memcmp(name, "RLE", 3) == 0 || memcmp(name, "RLO", 3) == 0 ||
+          memcmp(name, "LRI", 3) == 0 || memcmp(name, "RLI", 3) == 0 ||
+          memcmp(name, "FSI", 3) == 0 || memcmp(name, "PDI", 3) == 0))) {
         /*
          * Mark all of these as Other Neutral to preserve compatibility with
          * older versions.
@@ -350,8 +352,10 @@ ordered_range_insert(ac_uint4 c, char *name, int len)
           break;
     }
 
-    if (i == NUMPROPS)
-      return;
+    if (i == NUMPROPS) {
+        printf("Unknown property %s\n", name);
+        return;
+    }
 
     /*
      * Have a match, so insert the code in order.
@@ -538,6 +542,10 @@ add_title(ac_uint4 code)
      * Always map the code to itself.
      */
     cases[2] = code;
+
+    /* If lower/upper case does not exist, stay the same */
+    if (!cases[0]) cases[0] = code;
+    if (!cases[1]) cases[1] = code;
 
     if (title_used == title_size) {
         if (title_size == 0)
@@ -825,7 +833,9 @@ read_cdata(FILE *in)
 
     lineno = skip = 0;
     while (fgets(line, sizeof(line), in)) {
-	if( (s=strchr(line, '\n')) ) *s = '\0';
+        int is_title = 0;
+
+        if( (s=strchr(line, '\n')) ) *s = '\0';
         lineno++;
 
         /*
@@ -967,6 +977,10 @@ read_cdata(FILE *in)
         for (e = s; *e && *e != ';'; e++) ;
 
         ordered_range_insert(code, s, e - s);
+
+        if (e - s == 2 && s[0] == 'L' && s[1] == 't') {
+            is_title = 1;
+        }
 
         /*
          * Locate the combining class code.
@@ -1112,7 +1126,7 @@ read_cdata(FILE *in)
             if (*s == ';')
               s++;
         }
-        if (cases[0] && cases[1])
+        if (is_title)
           /*
            * Add the upper and lower mappings for a title case character.
            */
@@ -1442,7 +1456,7 @@ write_cdata(char *opath)
         " * LowerIndex = _uccase_len[0]\n"
         " * TitleIndex = LowerIndex + _uccase_len[1] */\n\n");
     fprintf(out, PREF "unsigned short _uccase_len[2] = {%ld, %ld};\n\n",
-        (long) upper_used * 3, (long) lower_used * 3);
+        (long) upper_used, (long) lower_used);
     fprintf(out, PREF "unsigned int _uccase_map[] = {");
 
     if (upper_used > 0)

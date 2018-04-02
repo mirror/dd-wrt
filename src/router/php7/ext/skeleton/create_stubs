@@ -67,7 +67,7 @@ BEGIN {
 			
 
 	xmlhead = "<?xml version='1.0' encoding='iso-8859-1'?>\n" \
-    "<!-- $Id: a3f3d196b3f5cd09140e1ae053124e0b92f22d9b $ -->\n" \
+    "<!-- $Id: fe79d6a29c514862151e17ec1f695d3ef384b98f $ -->\n" \
     " <reference id=\"ref." extname "\">\n" \
 		"  <title> functions</title>\n" \
 		"  <titleabbrev></titleabbrev>\n\n" \
@@ -253,7 +253,7 @@ END {
 		if (fetchargs) print fetchargs > stubfile
 		if (resources) {
 				print resources > stubfile
-				if (!stubs) print "" > extname "/function_warning"
+				if (!stubs) print "" > ( extname "/function_warning" )
 		}
 		if (!i_know_what_to_do_shut_up_i_dont_need_your_help_mode) {
 			print "\tphp_error(E_WARNING, \"" funcs[i] ": not yet implemented\");" > stubfile
@@ -264,8 +264,8 @@ END {
 			h_stubs = h_stubs "PHP_FUNCTION(" funcs[i] ");\n"
 			c_stubs = c_stubs "\tPHP_FE(" funcs[i] ",\tNULL)\n"
 		} else {
-			print "PHP_FUNCTION(" funcs[i] ");" > extname "/function_declarations"
-			print "\tPHP_FE(" funcs[i] ",\tNULL)" > extname "/function_entries"
+			print "PHP_FUNCTION(" funcs[i] ");" > ( extname "/function_declarations" )
+			print "\tPHP_FE(" funcs[i] ",\tNULL)" > ( extname "/function_entries" )
 		}
 
 		if (xml) print xmlstr > xmldoc

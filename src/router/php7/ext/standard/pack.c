@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2017 The PHP Group                                |
+   | Copyright (c) 1997-2018 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -28,13 +28,6 @@
 #ifdef PHP_WIN32
 #define O_RDONLY _O_RDONLY
 #include "win32/param.h"
-#elif defined(NETWARE)
-#ifdef USE_WINSOCK
-#include <novsock2.h>
-#else
-#include <sys/socket.h>
-#endif
-#include <sys/param.h>
 #else
 #include <sys/param.h>
 #endif
@@ -247,9 +240,10 @@ PHP_FUNCTION(pack)
 	int outputpos = 0, outputsize = 0;
 	zend_string *output;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "s*", &format, &formatlen, &argv, &num_args) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(1, -1)
+		Z_PARAM_STRING(format, formatlen)
+		Z_PARAM_VARIADIC('*', argv, num_args)
+	ZEND_PARSE_PARAMETERS_END();
 
 	/* We have a maximum of <formatlen> format codes to deal with */
 	formatcodes = safe_emalloc(formatlen, sizeof(*formatcodes), 0);
@@ -727,10 +721,12 @@ PHP_FUNCTION(unpack)
 	int i;
 	zend_long offset = 0;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "SS|l", &formatarg,
-		&inputarg, &offset) == FAILURE) {
-		return;
-	}
+	ZEND_PARSE_PARAMETERS_START(2, 3)
+		Z_PARAM_STR(formatarg)
+		Z_PARAM_STR(inputarg)
+		Z_PARAM_OPTIONAL
+		Z_PARAM_LONG(offset)
+	ZEND_PARSE_PARAMETERS_END();
 
 	format = ZSTR_VAL(formatarg);
 	formatlen = ZSTR_LEN(formatarg);
@@ -977,7 +973,7 @@ PHP_FUNCTION(unpack)
 						zend_long len = (inputlen - inputpos) * 2;	/* Remaining */
 						int nibbleshift = (type == 'h') ? 0 : 4;
 						int first = 1;
-						char *buf;
+						zend_string *buf;
 						zend_long ipos, opos;
 
 						/* If size was given take minimum of len and size */
@@ -989,7 +985,7 @@ PHP_FUNCTION(unpack)
 							len -= argb % 2;
 						}
 
-						buf = emalloc(len + 1);
+						buf = zend_string_alloc(len, 0);
 
 						for (ipos = opos = 0; opos < len; opos++) {
 							char cc = (input[inputpos + ipos] >> nibbleshift) & 0xf;
@@ -1000,7 +996,7 @@ PHP_FUNCTION(unpack)
 								cc += 'a' - 10;
 							}
 
-							buf[opos] = cc;
+							ZSTR_VAL(buf)[opos] = cc;
 							nibbleshift = (nibbleshift + 4) & 7;
 
 							if (first-- == 0) {
@@ -1009,9 +1005,8 @@ PHP_FUNCTION(unpack)
 							}
 						}
 
-						buf[len] = '\0';
-						add_assoc_stringl(return_value, n, buf, len);
-						efree(buf);
+						ZSTR_VAL(buf)[len] = '\0';
+						add_assoc_str(return_value, n, buf);
 						break;
 					}
 

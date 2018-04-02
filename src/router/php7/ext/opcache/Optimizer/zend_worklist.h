@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2017 The PHP Group                                |
+   | Copyright (c) 1998-2018 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -44,9 +44,6 @@ static inline int zend_worklist_stack_prepare(zend_arena **arena, zend_worklist_
 	ZEND_ASSERT(len >= 0);
 
 	stack->buf = (int*)zend_arena_calloc(arena, sizeof(*stack->buf), len);
-	if (!stack->buf) {
-		return FAILURE;
-	}
 	stack->len = 0;
 	stack->capacity = len;
 
@@ -91,9 +88,6 @@ static inline int zend_worklist_prepare(zend_arena **arena, zend_worklist *workl
 {
 	ZEND_ASSERT(len >= 0);
 	worklist->visited = (zend_bitset)zend_arena_calloc(arena, sizeof(zend_ulong), zend_bitset_len(len));
-	if (!worklist->visited) {
-		return FAILURE;
-	}
 	return zend_worklist_stack_prepare(arena, &worklist->stack, len);
 }
 

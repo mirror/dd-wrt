@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2017 Zend Technologies Ltd. (http://www.zend.com) |
+   | Copyright (c) 1998-2018 Zend Technologies Ltd. (http://www.zend.com) |
    +----------------------------------------------------------------------+
    | This source file is subject to version 2.00 of the Zend license,     |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -179,13 +179,15 @@ static void zend_generator_dtor_storage(zend_object *object) /* {{{ */
 		zend_generator *root = generator->node.ptr.root, *next;
 		while (UNEXPECTED(root != generator)) {
 			next = zend_generator_get_child(&root->node, generator);
+			generator->node.ptr.root = next;
+			next->node.parent = NULL;
 			OBJ_RELEASE(&root->std);
 			root = next;
 		}
-		generator->node.parent = NULL;
 	}
 
-	if (EXPECTED(!ex) || EXPECTED(!(ex->func->op_array.fn_flags & ZEND_ACC_HAS_FINALLY_BLOCK))) {
+	if (EXPECTED(!ex) || EXPECTED(!(ex->func->op_array.fn_flags & ZEND_ACC_HAS_FINALLY_BLOCK))
+			|| CG(unclean_shutdown)) {
 		return;
 	}
 
@@ -274,9 +276,9 @@ static uint32_t calc_gc_buffer_size(zend_generator *generator) /* {{{ */
 
 		/* Yield from root references */
 		if (generator->node.children == 0) {
-			zend_generator *child = generator, *root = generator->node.ptr.root;
-			while (root != child) {
-				child = child->node.parent;
+			zend_generator *root = generator->node.ptr.root;
+			while (root != generator) {
+				root = zend_generator_get_child(&root->node, generator);
 				size++;
 			}
 		}
@@ -339,10 +341,10 @@ static HashTable *zend_generator_get_gc(zval *object, zval **table, int *n) /* {
 	}
 
 	if (generator->node.children == 0) {
-		zend_generator *child = generator, *root = generator->node.ptr.root;
-		while (root != child) {
-			child = child->node.parent;
-			ZVAL_OBJ(gc_buffer++, &child->std);
+		zend_generator *root = generator->node.ptr.root;
+		while (root != generator) {
+			ZVAL_OBJ(gc_buffer++, &root->std);
+			root = zend_generator_get_child(&root->node, generator);
 		}
 	}
 
@@ -425,7 +427,7 @@ static void zend_generator_throw_exception(zend_generator *generator, zval *exce
 	if (exception) {
 		zend_throw_exception_object(exception);
 	} else {
-		zend_throw_exception_internal(NULL);
+		zend_rethrow_exception(EG(current_execute_data));
 	}
 	generator->execute_data->opline++;
 	EG(current_execute_data) = original_execute_data;
@@ -663,11 +665,12 @@ ZEND_API zend_generator *zend_generator_update_current(zend_generator *generator
 		}
 	}
 
+	leaf->node.ptr.root = root;
 	if (old_root) {
 		OBJ_RELEASE(&old_root->std);
 	}
 
-	return leaf->node.ptr.root = root;
+	return root;
 }
 
 static int zend_generator_get_next_delegated_value(zend_generator *generator) /* {{{ */
@@ -741,12 +744,8 @@ static int zend_generator_get_next_delegated_value(zend_generator *generator) /*
 	}
 	return SUCCESS;
 
-exception: {
-		zend_execute_data *ex = EG(current_execute_data);
-		EG(current_execute_data) = generator->execute_data;
-		zend_throw_exception_internal(NULL);
-		EG(current_execute_data) = ex;
-	}
+exception:
+	zend_rethrow_exception(generator->execute_data);
 
 failure:
 	zval_ptr_dtor(&generator->values);
@@ -832,7 +831,11 @@ try_again:
 		if (UNEXPECTED(EG(exception) != NULL)) {
 			if (generator == orig_generator) {
 				zend_generator_close(generator, 0);
-				zend_throw_exception_internal(NULL);
+				if (EG(current_execute_data) &&
+				    EG(current_execute_data)->func &&
+				    ZEND_USER_CODE(EG(current_execute_data)->func->common.type)) {
+					zend_rethrow_exception(EG(current_execute_data));
+				}
 			} else {
 				generator = zend_generator_get_current(orig_generator);
 				zend_generator_throw_exception(generator, NULL);
@@ -1259,4 +1262,6 @@ void zend_register_generator_ce(void) /* {{{ */
  * c-basic-offset: 4
  * indent-tabs-mode: t
  * End:
+ * vim600: sw=4 ts=4 fdm=marker
+ * vim<600: sw=4 ts=4
  */

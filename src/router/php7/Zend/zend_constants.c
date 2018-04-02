@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2017 Zend Technologies Ltd. (http://www.zend.com) |
+   | Copyright (c) 1998-2018 Zend Technologies Ltd. (http://www.zend.com) |
    +----------------------------------------------------------------------+
    | This source file is subject to version 2.00 of the Zend license,     |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -66,20 +66,6 @@ static void copy_zend_constant(zval *zv)
 void zend_copy_constants(HashTable *target, HashTable *source)
 {
 	zend_hash_copy(target, source, copy_zend_constant);
-}
-
-
-static int clean_non_persistent_constant(zval *zv)
-{
-	zend_constant *c = Z_PTR_P(zv);
-	return (c->flags & CONST_PERSISTENT) ? ZEND_HASH_APPLY_STOP : ZEND_HASH_APPLY_REMOVE;
-}
-
-
-static int clean_non_persistent_constant_full(zval *zv)
-{
-	zend_constant *c = Z_PTR_P(zv);
-	return (c->flags & CONST_PERSISTENT) ? 0 : 1;
 }
 
 
@@ -150,16 +136,6 @@ int zend_shutdown_constants(void)
 	zend_hash_destroy(EG(zend_constants));
 	free(EG(zend_constants));
 	return SUCCESS;
-}
-
-
-void clean_non_persistent_constants(void)
-{
-	if (EG(full_tables_cleanup)) {
-		zend_hash_apply(EG(zend_constants), clean_non_persistent_constant_full);
-	} else {
-		zend_hash_reverse_apply(EG(zend_constants), clean_non_persistent_constant);
-	}
 }
 
 ZEND_API void zend_register_null_constant(const char *name, size_t name_len, int flags, int module_number)
@@ -439,7 +415,7 @@ failure:
 	}
 }
 
-zend_constant *zend_quick_get_constant(const zval *key, uint32_t flags)
+ZEND_API zend_constant* ZEND_FASTCALL zend_quick_get_constant(const zval *key, uint32_t flags)
 {
 	zend_constant *c;
 
@@ -490,6 +466,10 @@ ZEND_API int zend_register_constant(zend_constant *c)
 	printf("Registering constant for module %d\n", c->module_number);
 #endif
 
+    if (c->module_number != PHP_USER_CONSTANT) {
+		c->name = zend_new_interned_string(c->name);
+	}
+
 	if (!(c->flags & CONST_CS)) {
 		lowercase_name = zend_string_alloc(ZSTR_LEN(c->name), c->flags & CONST_PERSISTENT);
 		zend_str_tolower_copy(ZSTR_VAL(lowercase_name), ZSTR_VAL(c->name), ZSTR_LEN(c->name));
@@ -536,4 +516,6 @@ ZEND_API int zend_register_constant(zend_constant *c)
  * c-basic-offset: 4
  * indent-tabs-mode: t
  * End:
+ * vim600: sw=4 ts=4 fdm=marker
+ * vim<600: sw=4 ts=4
  */

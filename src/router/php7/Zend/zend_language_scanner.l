@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2017 Zend Technologies Ltd. (http://www.zend.com) |
+   | Copyright (c) 1998-2018 Zend Technologies Ltd. (http://www.zend.com) |
    +----------------------------------------------------------------------+
    | This source file is subject to version 2.00 of the Zend license,     |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -1958,6 +1958,9 @@ inline_char_handler:
 
 <ST_IN_SCRIPTING>"?>"{NEWLINE}? {
 	BEGIN(INITIAL);
+	if (yytext[yyleng-1] != '>') {
+		CG(increment_lineno) = 1;
+	}
 	RETURN_TOKEN(T_CLOSE_TAG);  /* implicit ';' at php-end tag */
 }
 

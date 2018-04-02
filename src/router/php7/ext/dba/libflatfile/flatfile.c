@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2017 The PHP Group                                |
+   | Copyright (c) 1997-2018 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -19,7 +19,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 095f84845fa6748ff8b59667dd91c0882d883a09 $ */
+/* $Id: 464bb5af8f2e8462a17d20bf000e48ae24de5bd3 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -286,7 +286,7 @@ datum flatfile_nextkey(flatfile *dba) {
 /* {{{ flatfile_version */
 char *flatfile_version()
 {
-	return "1.0, $Id: 095f84845fa6748ff8b59667dd91c0882d883a09 $";
+	return "1.0, $Id: 464bb5af8f2e8462a17d20bf000e48ae24de5bd3 $";
 }
 /* }}} */
 

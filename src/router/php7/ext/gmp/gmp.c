@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2017 The PHP Group                                |
+   | Copyright (c) 1997-2018 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -173,7 +173,7 @@ const zend_function_entry gmp_functions[] = {
 	ZEND_FE(gmp_legendre,	arginfo_gmp_binary)
 	ZEND_FE(gmp_cmp,		arginfo_gmp_binary)
 	ZEND_FE(gmp_sign,		arginfo_gmp_unary)
-	ZEND_FE(gmp_random,		arginfo_gmp_random)
+	ZEND_DEP_FE(gmp_random,		arginfo_gmp_random)
 	ZEND_FE(gmp_random_seed,	arginfo_gmp_random_seed)
 	ZEND_FE(gmp_random_bits,  arginfo_gmp_random_bits)
 	ZEND_FE(gmp_random_range, arginfo_gmp_random_range)
@@ -1365,7 +1365,16 @@ ZEND_FUNCTION(gmp_fact)
 			RETURN_FALSE;
 		}
 	} else {
-		if (zval_get_long(a_arg) < 0) {
+		/* Use convert_to_number first to detect getting non-integer */
+		convert_scalar_to_number(a_arg);
+		if (Z_TYPE_P(a_arg) != IS_LONG) {
+			convert_to_long(a_arg);
+			if (Z_LVAL_P(a_arg) >= 0) {
+				/* Only warn if we'll make it past the non-negative check */
+				php_error_docref(NULL, E_WARNING, "Number has to be an integer");
+			}
+		}
+		if (Z_LVAL_P(a_arg) < 0) {
 			php_error_docref(NULL, E_WARNING, "Number has to be greater than or equal to 0");
 			RETURN_FALSE;
 		}
@@ -1628,7 +1637,7 @@ ZEND_FUNCTION(gmp_prob_prime)
 
 	FETCH_GMP_ZVAL(gmpnum_a, gmpnumber_arg, temp_a);
 
-	RETVAL_LONG(mpz_probab_prime_p(gmpnum_a, reps));
+	RETVAL_LONG(mpz_probab_prime_p(gmpnum_a, (int)reps));
 	FREE_GMP_TEMP(temp_a);
 }
 /* }}} */
@@ -1956,6 +1965,10 @@ ZEND_FUNCTION(gmp_setbit)
 		php_error_docref(NULL, E_WARNING, "Index must be greater than or equal to zero");
 		RETURN_FALSE;
 	}
+    if (index / GMP_NUMB_BITS >= INT_MAX) {
+        php_error_docref(NULL, E_WARNING, "Index must be less than %d * %d", INT_MAX, GMP_NUMB_BITS);
+        RETURN_FALSE;
+    }
 
 	gmpnum_a = GET_GMP_FROM_ZVAL(a_arg);
 
