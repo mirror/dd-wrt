@@ -66,7 +66,7 @@ struct etheriphdr
 #define ETHERIP_HASH_SIZE  16
 #define ETHERIP_HASH(addr) ((addr^(addr>>4))&0xF)
 
-#define ETHERIP_VERSION		0x3000
+#define ETHERIP_VERSION		0x0300
 
 static int etherip_fb_tunnel_init(struct net_device *dev);
 static int etherip_tunnel_init(struct net_device *dev);
@@ -312,7 +312,7 @@ int etherip_rcv(struct sk_buff *skb)
 	if (!pskb_may_pull(skb, sizeof(struct etheriphdr)))
 		goto out;
 
-	ethiph = (struct etheriphdr *)skb_mac_header(skb);
+	ethiph = (struct etheriphdr *)skb_network_header(skb);
 	if (ethiph->version != htons(ETHERIP_VERSION)) {
 		kfree_skb(skb);
 		return 0;
@@ -336,8 +336,7 @@ int etherip_rcv(struct sk_buff *skb)
 		tstats->rx_bytes += skb->len;
 
 		skb->dev = tunnel->dev;
-		dst_release(skb_dst(skb));
-		skb_dst_set(skb, NULL);
+		skb_dst_drop(skb);
 		nf_reset(skb);
 		etherip_ecn_decapsulate(iph, skb);
 		netif_rx(skb);
@@ -377,12 +376,14 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 		tos &= ~1;
 	}
 
+	memset(&fl, 0, sizeof(fl));
 	fl.flowi4_oif = tunnel->parms.link,
 	fl.daddr = tiph->daddr,
 	fl.saddr = tiph->saddr,
 	fl.flowi4_tos = RT_TOS(tos),
 	fl.flowi4_proto = IPPROTO_ETHERIP;
-	if ((rt = ip_route_output_key(dev_net(dev), &fl))) {
+	rt = ip_route_output_key(dev_net(dev), &fl);
+	if (IS_ERR(rt)) {
 		dev->stats.tx_carrier_errors++;
 		goto tx_error_icmp;
 	}
@@ -466,7 +467,7 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	skb_push(skb, sizeof(struct etheriphdr));
 	skb_reset_network_header(skb);
 	memset(&(IPCB(skb)->opt), 0, sizeof(IPCB(skb)->opt));
-	dst_release(skb_dst(skb));
+	skb_dst_drop(skb);
 	skb_dst_set(skb, &rt->dst);
 
 	/*
