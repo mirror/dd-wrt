@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend OPcache                                                         |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2017 The PHP Group                                |
+   | Copyright (c) 1998-2018 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -37,9 +37,9 @@
 #define MAX_ACCEL_FILES 1000000
 #define TOKENTOSTR(X) #X
 
-static void (*orig_file_exists)(INTERNAL_FUNCTION_PARAMETERS) = NULL;
-static void (*orig_is_file)(INTERNAL_FUNCTION_PARAMETERS) = NULL;
-static void (*orig_is_readable)(INTERNAL_FUNCTION_PARAMETERS) = NULL;
+static zif_handler orig_file_exists = NULL;
+static zif_handler orig_is_file = NULL;
+static zif_handler orig_is_readable = NULL;
 
 ZEND_BEGIN_ARG_INFO(arginfo_opcache_none, 0)
 ZEND_END_ARG_INFO()
@@ -299,7 +299,6 @@ ZEND_INI_BEGIN()
 
 	STD_PHP_INI_ENTRY("opcache.protect_memory"        , "0"  , PHP_INI_SYSTEM, OnUpdateBool,                  accel_directives.protect_memory,            zend_accel_globals, accel_globals)
 	STD_PHP_INI_ENTRY("opcache.save_comments"         , "1"  , PHP_INI_SYSTEM, OnUpdateBool,                  accel_directives.save_comments,             zend_accel_globals, accel_globals)
-	STD_PHP_INI_ENTRY("opcache.fast_shutdown"         , "0"  , PHP_INI_SYSTEM, OnUpdateBool,                  accel_directives.fast_shutdown,             zend_accel_globals, accel_globals)
 
 	STD_PHP_INI_ENTRY("opcache.optimization_level"    , DEFAULT_OPTIMIZATION_LEVEL , PHP_INI_SYSTEM, OnUpdateLong, accel_directives.optimization_level,   zend_accel_globals, accel_globals)
 	STD_PHP_INI_ENTRY("opcache.opt_debug_level"       , "0"      , PHP_INI_SYSTEM, OnUpdateLong,             accel_directives.opt_debug_level,            zend_accel_globals, accel_globals)
@@ -365,7 +364,7 @@ static int accel_file_in_cache(INTERNAL_FUNCTION_PARAMETERS)
 	return filename_is_in_cache(Z_STR(zfilename));
 }
 
-static void accel_file_exists(INTERNAL_FUNCTION_PARAMETERS)
+static ZEND_NAMED_FUNCTION(accel_file_exists)
 {
 	if (accel_file_in_cache(INTERNAL_FUNCTION_PARAM_PASSTHRU)) {
 		RETURN_TRUE;
@@ -374,7 +373,7 @@ static void accel_file_exists(INTERNAL_FUNCTION_PARAMETERS)
 	}
 }
 
-static void accel_is_file(INTERNAL_FUNCTION_PARAMETERS)
+static ZEND_NAMED_FUNCTION(accel_is_file)
 {
 	if (accel_file_in_cache(INTERNAL_FUNCTION_PARAM_PASSTHRU)) {
 		RETURN_TRUE;
@@ -383,7 +382,7 @@ static void accel_is_file(INTERNAL_FUNCTION_PARAMETERS)
 	}
 }
 
-static void accel_is_readable(INTERNAL_FUNCTION_PARAMETERS)
+static ZEND_NAMED_FUNCTION(accel_is_readable)
 {
 	if (accel_file_in_cache(INTERNAL_FUNCTION_PARAM_PASSTHRU)) {
 		RETURN_TRUE;
@@ -406,7 +405,7 @@ void zend_accel_override_file_functions(void)
 	zend_function *old_function;
 	if (ZCG(enabled) && accel_startup_ok && ZCG(accel_directives).file_override_enabled) {
 #ifdef HAVE_OPCACHE_FILE_CACHE
-		if (ZCG(accel_directives).file_cache_only) {
+		if (file_cache_only) {
 			zend_accel_error(ACCEL_LOG_WARNING, "file_override_enabled has no effect when file_cache_only is set");
 			return;
 		}
@@ -442,7 +441,7 @@ void zend_accel_info(ZEND_MODULE_INFO_FUNC_ARGS)
 
 	if (ZCG(enabled) && accel_startup_ok &&
 #ifdef HAVE_OPCACHE_FILE_CACHE
-		((ZCG(counted) || ZCSG(accelerator_enabled)) || ZCG(accel_directives).file_cache_only)
+		((ZCG(counted) || ZCSG(accelerator_enabled)) || file_cache_only)
 #else
 		(ZCG(counted) || ZCSG(accelerator_enabled))
 #endif
@@ -457,7 +456,7 @@ void zend_accel_info(ZEND_MODULE_INFO_FUNC_ARGS)
 		php_info_print_table_row(2, "Optimization", "Disabled");
 	}
 #ifdef HAVE_OPCACHE_FILE_CACHE
-	if (!ZCG(accel_directives).file_cache_only) {
+	if (!file_cache_only) {
 		php_info_print_table_row(2, "SHM Cache", "Enabled");
 	} else {
 		php_info_print_table_row(2, "SHM Cache", "Disabled");
@@ -467,7 +466,7 @@ void zend_accel_info(ZEND_MODULE_INFO_FUNC_ARGS)
 	} else {
 		php_info_print_table_row(2, "File Cache", "Disabled");
 	}
-	if (ZCG(accel_directives).file_cache_only) {
+	if (file_cache_only) {
 		if (!accel_startup_ok || zps_api_failure_reason) {
 			php_info_print_table_row(2, "Startup Failed", zps_api_failure_reason);
 		} else {
@@ -541,7 +540,7 @@ int start_accel_module(void)
    Get the scripts which are accelerated by ZendAccelerator */
 static int accelerator_get_scripts(zval *return_value)
 {
-	uint i;
+	uint32_t i;
 	zval persistent_script_report;
 	zend_accel_hash_entry *cache_entry;
 	struct tm *ta;
@@ -616,7 +615,7 @@ static ZEND_FUNCTION(opcache_get_status)
 	if (ZCG(accel_directives).file_cache) {
 		add_assoc_string(return_value, "file_cache", ZCG(accel_directives).file_cache);
 	}
-	if (ZCG(accel_directives).file_cache_only) {
+	if (file_cache_only) {
 		add_assoc_bool(return_value, "file_cache_only", 1);
 		return;
 	}
@@ -722,7 +721,6 @@ static ZEND_FUNCTION(opcache_get_configuration)
 
 	add_assoc_bool(&directives,   "opcache.protect_memory",         ZCG(accel_directives).protect_memory);
 	add_assoc_bool(&directives,   "opcache.save_comments",          ZCG(accel_directives).save_comments);
-	add_assoc_bool(&directives,   "opcache.fast_shutdown",          ZCG(accel_directives).fast_shutdown);
 	add_assoc_bool(&directives,   "opcache.enable_file_override",   ZCG(accel_directives).file_override_enabled);
 	add_assoc_long(&directives, 	 "opcache.optimization_level",     ZCG(accel_directives).optimization_level);
 

@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2017 Zend Technologies Ltd. (http://www.zend.com) |
+   | Copyright (c) 1998-2018 Zend Technologies Ltd. (http://www.zend.com) |
    +----------------------------------------------------------------------+
    | This source file is subject to version 2.00 of the Zend license,     |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -277,7 +277,7 @@ ZEND_API int zend_ast_evaluate(zval *result, zend_ast *ast, zend_class_entry *sc
 			zval *zv = zend_ast_get_zval(ast);
 
 			if (Z_OPT_CONSTANT_P(zv)) {
-				if (!(Z_TYPE_FLAGS_P(zv) & IS_TYPE_IMMUTABLE)) {
+				if (Z_TYPE_FLAGS_P(zv) & IS_TYPE_REFCOUNTED) {
 					if (UNEXPECTED(zval_update_constant_ex(zv, scope) != SUCCESS)) {
 						ret = FAILURE;
 						break;
@@ -432,11 +432,7 @@ ZEND_API int zend_ast_evaluate(zval *result, zend_ast *ast, zend_class_entry *sc
 			} else {
 				zval tmp;
 
-				if (ast->attr == ZEND_DIM_IS) {
-					zend_fetch_dimension_by_zval_is(&tmp, &op1, &op2, IS_CONST);
-				} else {
-					zend_fetch_dimension_by_zval(&tmp, &op1, &op2);
-				}
+				zend_fetch_dimension_const(&tmp, &op1, &op2, (ast->attr == ZEND_DIM_IS) ? BP_VAR_IS : BP_VAR_R);
 
 				if (UNEXPECTED(Z_ISREF(tmp))) {
 					ZVAL_DUP(result, Z_REFVAL(tmp));
@@ -1725,3 +1721,13 @@ ZEND_API zend_string *zend_ast_export(const char *prefix, zend_ast *ast, const c
 	smart_str_0(&str);
 	return str.s;
 }
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * indent-tabs-mode: t
+ * End:
+ * vim600: sw=4 ts=4 fdm=marker
+ * vim<600: sw=4 ts=4
+ */

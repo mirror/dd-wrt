@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2017 The PHP Group                                |
+  | Copyright (c) 1997-2018 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -18,7 +18,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: 50413b12ac745b94b27ffbdd5454e6e0d7809909 $ */
+/* $Id: 341daed0ee94ea8f728bfd0ba4626e6ed365c0d1 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -35,8 +35,6 @@
 #include "zend_exceptions.h"
 #include "zend_interfaces.h"
 #include "sxe.h"
-
-#define SXE_ELEMENT_BY_NAME 0
 
 zend_class_entry *sxe_class_entry = NULL;
 
@@ -347,20 +345,10 @@ long_dim:
 					_node_as_zval(sxe, node, rv, SXE_ITER_NONE, NULL, sxe->iter.nsprefix, sxe->iter.isprefix);
 				}
 			} else {
-#if SXE_ELEMENT_BY_NAME
-				int newtype;
-
-				GET_NODE(sxe, node);
-				node = sxe_get_element_by_name(sxe, node, &name, &newtype);
-				if (node) {
-					_node_as_zval(sxe, node, rv, newtype, name, sxe->iter.nsprefix, sxe->iter.isprefix);
-				}
-#else
 				/* In BP_VAR_IS mode only return a proper node if it actually exists. */
 				if (type != BP_VAR_IS || sxe_find_element_by_name(sxe, node->children, (xmlChar *) name)) {
 					_node_as_zval(sxe, node, rv, SXE_ITER_ELEMENT, name, sxe->iter.nsprefix, sxe->iter.isprefix);
 				}
-#endif
 			}
 		}
 	}
@@ -2766,7 +2754,7 @@ PHP_MINFO_FUNCTION(simplexml)
 {
 	php_info_print_table_start();
 	php_info_print_table_header(2, "Simplexml support", "enabled");
-	php_info_print_table_row(2, "Revision", "$Id: 50413b12ac745b94b27ffbdd5454e6e0d7809909 $");
+	php_info_print_table_row(2, "Revision", "$Id: 341daed0ee94ea8f728bfd0ba4626e6ed365c0d1 $");
 	php_info_print_table_row(2, "Schema support",
 #ifdef LIBXML_SCHEMAS_ENABLED
 		"enabled");

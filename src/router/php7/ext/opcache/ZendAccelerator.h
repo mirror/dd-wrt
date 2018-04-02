@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend OPcache                                                         |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2017 The PHP Group                                |
+   | Copyright (c) 1998-2018 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -120,6 +120,8 @@ extern int lock_file;
 
 #if defined(HAVE_OPCACHE_FILE_CACHE) && defined(ZEND_WIN32)
 # define ENABLE_FILE_CACHE_FALLBACK 1
+#else
+# define ENABLE_FILE_CACHE_FALLBACK 0
 #endif
 
 #if ZEND_WIN32
@@ -175,7 +177,6 @@ typedef struct _zend_accel_directives {
 	zend_bool      validate_timestamps;
 	zend_bool      revalidate_path;
 	zend_bool      save_comments;
-	zend_bool      fast_shutdown;
 	zend_bool      protect_memory;
 	zend_bool      file_override_enabled;
 	zend_bool      inherited_hack;
@@ -281,9 +282,14 @@ typedef struct _zend_accel_shared_globals {
 	char           *interned_strings_end;
 	char           *interned_strings_saved_top;
 	HashTable       interned_strings;
+	/* uninitialized HashTable Support */
+	uint32_t uninitialized_bucket[-HT_MIN_MASK];
 } zend_accel_shared_globals;
 
 extern zend_bool accel_startup_ok;
+#ifdef HAVE_OPCACHE_FILE_CACHE
+extern zend_bool file_cache_only;
+#endif
 #if ENABLE_FILE_CACHE_FALLBACK
 extern zend_bool fallback_process;
 #endif

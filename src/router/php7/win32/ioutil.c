@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2017 The PHP Group                                |
+   | Copyright (c) 1997-2018 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -422,14 +422,15 @@ PW32IO int php_win32_ioutil_rename_w(const wchar_t *oldname, const wchar_t *newn
 	return ret;
 }/*}}}*/
 
-PW32IO wchar_t *php_win32_ioutil_getcwd_w(const wchar_t *buf, int len)
+PW32IO wchar_t *php_win32_ioutil_getcwd_w(wchar_t *buf, size_t len)
 {/*{{{*/
 	DWORD err = 0;
 	wchar_t *tmp_buf = NULL;
+	DWORD tmp_len = (DWORD)len;
 
 	/* If buf was NULL, the result has to be freed outside here. */
 	if (!buf) {
-		DWORD tmp_len = GetCurrentDirectoryW(0, NULL) + 1;
+		tmp_len = GetCurrentDirectoryW(0, NULL) + 1;
 		if (!tmp_len) {
 			err = GetLastError();
 			SET_ERRNO_FROM_WIN32_CODE(err);
@@ -439,9 +440,7 @@ PW32IO wchar_t *php_win32_ioutil_getcwd_w(const wchar_t *buf, int len)
 			return NULL;
 		}
 
-		len = tmp_len;
-
-		tmp_buf = (wchar_t *)malloc((len)*sizeof(wchar_t));
+		tmp_buf = (wchar_t *)malloc((tmp_len)*sizeof(wchar_t));
 		if (!tmp_buf) {
 			SET_ERRNO_FROM_WIN32_CODE(ERROR_NOT_ENOUGH_MEMORY);
 			return NULL;
@@ -449,7 +448,7 @@ PW32IO wchar_t *php_win32_ioutil_getcwd_w(const wchar_t *buf, int len)
 		buf = tmp_buf;
 	}
 	
-	if (!GetCurrentDirectoryW(len, buf)) {
+	if (!GetCurrentDirectoryW(tmp_len, buf)) {
 		err = GetLastError();
 		SET_ERRNO_FROM_WIN32_CODE(err);
 		free(tmp_buf);
@@ -480,7 +479,7 @@ PW32IO size_t php_win32_ioutil_dirname(char *path, size_t len)
 
 	endw = pathw + pathw_len - 1;
 
-	if ((2 <= len) && isalpha((int)((unsigned char *)path)[0]) && (':' == path[1])) {
+	if ((2 <= pathw_len) && iswalpha((wint_t)(pathw)[0]) && (L':' == pathw[1])) {
 		pathw += 2;
 		path += 2;
 		len_adjust += 2;
@@ -539,6 +538,7 @@ PW32IO size_t php_win32_ioutil_dirname(char *path, size_t len)
 	return ret_len;
 }/*}}}*/
 
+/* Partial normalization can still be acceptable, explicit fail has to be caught. */
 PW32IO php_win32_ioutil_normalization_result php_win32_ioutil_normalize_path_w(wchar_t **buf, size_t len, size_t *new_len)
 {/*{{{*/
 	wchar_t *pos, *idx = *buf, canonicalw[MAXPATHLEN];
@@ -546,15 +546,18 @@ PW32IO php_win32_ioutil_normalization_result php_win32_ioutil_normalize_path_w(w
 
 	if (len >= MAXPATHLEN) {
 		SET_ERRNO_FROM_WIN32_CODE(ERROR_BAD_LENGTH);
+		*new_len = 0;
 		return PHP_WIN32_IOUTIL_NORM_FAIL;
 	}
 
-	while (NULL != (pos = wcschr(idx, PHP_WIN32_IOUTIL_FW_SLASHW)) && idx - *buf <= len) {
+	while (NULL != (pos = wcschr(idx, PHP_WIN32_IOUTIL_FW_SLASHW)) && (size_t)(idx - *buf) <= len) {
 		*pos = PHP_WIN32_IOUTIL_DEFAULT_SLASHW;
 		idx = pos++;
 	}
 
 	if (S_OK != canonicalize_path_w(canonicalw, MAXPATHLEN, *buf, PATHCCH_ALLOW_LONG_PATHS)) {
+		/* Length unchanged. */
+		*new_len = len;
 		return PHP_WIN32_IOUTIL_NORM_PARTIAL;
 	}
 	ret_len = wcslen(canonicalw);
@@ -563,6 +566,8 @@ PW32IO php_win32_ioutil_normalization_result php_win32_ioutil_normalize_path_w(w
 			wchar_t *tmp = realloc(*buf, (ret_len + 1) * sizeof(wchar_t));
 			if (!tmp) {
 				SET_ERRNO_FROM_WIN32_CODE(ERROR_NOT_ENOUGH_MEMORY);
+				/* Length unchanged. */
+				*new_len = len;
 				return PHP_WIN32_IOUTIL_NORM_PARTIAL;
 			}
 			*buf = tmp;
