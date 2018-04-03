@@ -87,8 +87,8 @@ PHP_CONFIGURE_ARGS= \
 	LIBS="-lc -lpthread -lm -lssl -lcrypto" \
 	EXTRA_CFLAGS="-L$(TOP)/glib20/libiconv/lib/.libs -I$(TOP)/libmcrypt -I$(TOP)/zlib -I$(TOP)/libpng -L$(TOP)/openssl -I$(TOP)/openssl/include  -I$(TOP)/curl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	EXTRA_LIBS="-liconv -L$(TOP)/openssl -lcurl -lcrypto -lssl -lcrypt -lxml2 -liconv -lmcrypt -lpng16 -lgd -lz" \
-	EXTRA_LDFLAGS="-L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	EXTRA_LDFLAGS_PROGRAM="-L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs"
+	EXTRA_LDFLAGS="-L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/minidlna/lib   -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	EXTRA_LDFLAGS_PROGRAM="-L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/libpng/.libs -L$(TOP)/minidlna/lib  -L$(TOP)/libgd/src/.libs -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs"
 
 ifeq ($(ARCH),mips64)
 PHP_ENDIAN=ac_cv_c_bigendian_php="yes"
