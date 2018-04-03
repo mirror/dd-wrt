@@ -312,10 +312,6 @@ int br_set_bridge_prio(const char *br, int prio)
 	return br_set(br, "priority", prio, BRCTL_SET_BRIDGE_PRIORITY);
 }
 
-int br_set_path_cost(const char *bridge, const char *port, int cost)
-{
-	return port_set(bridge, port, "path_cost", cost, BRCTL_SET_PATH_COST);
-}
 
 /*
  * Convert device name to an index in the list of ports in bridge.
@@ -401,6 +397,11 @@ int br_set_port_prio(const char *bridge, char *port, int prio)
 	if (!ifexists(bridge))
 		return -1;
 	return port_set(bridge, port, "priority", prio, BRCTL_SET_PORT_PRIORITY);
+}
+
+int br_set_path_cost(const char *bridge, const char *port, int cost)
+{
+	return port_set(bridge, port, "path_cost", cost, BRCTL_SET_PATH_COST);
 }
 
 static void br_dump_bridge_id(const unsigned char *x)
