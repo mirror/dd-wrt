@@ -17,7 +17,7 @@
 
    For comments look at net/ipv4/ip_gre.c
  */
-
+ 
 #include <linux/version.h>
 #include <linux/module.h>
 #include <linux/types.h>
@@ -242,7 +242,7 @@ static void etherip_tunnel_uninit(struct net_device *dev)
 }
 
 
-void etherip_err(struct sk_buff *skb, u32 info)
+static void etherip_err(struct sk_buff *skb, u32 info)
 {
 #ifndef I_WISH_WORLD_WERE_PERFECT
 /* It is not :-( All the routers (except for Linux) return only
@@ -323,7 +323,7 @@ etherip_ecn_encapsulate(u8 tos, struct iphdr *inner_iph, struct sk_buff *skb)
 	return INET_ECN_encapsulate(tos, inner);
 }
 
-int etherip_rcv(struct sk_buff *skb)
+static int etherip_rcv(struct sk_buff *skb)
 {
 	struct iphdr *iph;
 	struct ip_tunnel *tunnel;
@@ -646,8 +646,13 @@ done:
 }
 
 
-struct rtnl_link_stats64 *etherip_tunnel_get_stats64(struct net_device *dev,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0)
+static void etherip_tunnel_get_stats64(struct net_device *dev,
 						struct rtnl_link_stats64 *tot)
+#else
+static struct rtnl_link_stats64 *etherip_tunnel_get_stats64(struct net_device *dev,
+						struct rtnl_link_stats64 *tot)
+#endif
 {
 	int i;
 
@@ -673,7 +678,9 @@ struct rtnl_link_stats64 *etherip_tunnel_get_stats64(struct net_device *dev,
 		tot->tx_bytes   += tx_bytes;
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,14,0)
 	return tot;
+#endif
 }
 
 static int etherip_tunnel_change_mtu(struct net_device *dev, int new_mtu)
@@ -684,13 +691,14 @@ static int etherip_tunnel_change_mtu(struct net_device *dev, int new_mtu)
 	return 0;
 }
 
-int etherip_get_iflink(const struct net_device *dev)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)
+static int etherip_get_iflink(const struct net_device *dev)
 {
 	struct ip_tunnel *tunnel = netdev_priv(dev);
 
 	return tunnel->parms.link;
 }
-
+#endif
 static int etherip_tunnel_set_mac_address(struct net_device *dev, void *p) {
 	struct sockaddr *addr = p;
 
@@ -710,7 +718,9 @@ static const struct net_device_ops etherip_netdev_ops_fb = {
 	.ndo_do_ioctl	= etherip_tunnel_ioctl,
 	.ndo_change_mtu = etherip_tunnel_change_mtu,
 	.ndo_get_stats64 = etherip_tunnel_get_stats64,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)
 	.ndo_get_iflink = etherip_get_iflink,
+#endif
 };
 
 static const struct net_device_ops etherip_netdev_ops = {
@@ -720,7 +730,9 @@ static const struct net_device_ops etherip_netdev_ops = {
 	.ndo_do_ioctl	= etherip_tunnel_ioctl,
 	.ndo_change_mtu = etherip_tunnel_change_mtu,
 	.ndo_get_stats64 = etherip_tunnel_get_stats64,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)
 	.ndo_get_iflink = etherip_get_iflink,
+#endif
 	.ndo_set_mac_address = etherip_tunnel_set_mac_address,
 };
 
@@ -739,6 +751,9 @@ static void etherip_tunnel_setup_fb(struct net_device *dev)
 	dev->destructor		= etherip_dev_free;
 #else
 	dev->priv_destructor 	= etherip_dev_free;
+#endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
+	dev->iflink = 0;
 #endif
 
 	dev->hard_header_len	= ETH_HLEN;	//  + sizeof(struct etheriphdr);
@@ -784,6 +799,7 @@ static int etherip_tunnel_init(struct net_device *dev)
 			ip_rt_put(rt);
 		}
 	}
+	dev->tstats = alloc_percpu(struct pcpu_sw_netstats);
 
 	if (!tdev && tunnel->parms.link)
 		tdev = __dev_get_by_index(dev_net(dev), tunnel->parms.link);
@@ -792,12 +808,14 @@ static int etherip_tunnel_init(struct net_device *dev)
 		dev->hard_header_len = tdev->hard_header_len + sizeof(struct etheriphdr);
 		dev->mtu = tdev->mtu - sizeof(struct etheriphdr);
 	}
-	dev->tstats = alloc_percpu(struct pcpu_sw_netstats);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
+	dev->iflink = tunnel->parms.link;
+#endif
 
 	return 0;
 }
 
-int __init etherip_fb_tunnel_init(struct net_device *dev)
+static int __init etherip_fb_tunnel_init(struct net_device *dev)
 {
 	struct ip_tunnel *tunnel = (struct ip_tunnel*)netdev_priv(dev);
 	struct iphdr *iph = &tunnel->parms.iph;
@@ -856,7 +874,7 @@ err1:
 	goto out;
 }
 
-void etherip_fini(void)
+static void etherip_fini(void)
 {
 	if (inet_del_protocol(&etherip_protocol, IPPROTO_ETHERIP) < 0)
 		printk(KERN_INFO "etherip close: can't remove protocol\n");
