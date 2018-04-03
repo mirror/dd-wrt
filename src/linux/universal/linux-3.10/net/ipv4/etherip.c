@@ -209,7 +209,11 @@ static struct ip_tunnel * etherip_tunnel_locate(struct net_device *ndev, struct 
 			goto failed;
 	}
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+	dev = alloc_netdev(sizeof(*t), name, etherip_tunnel_setup);
+#else
 	dev = alloc_netdev(sizeof(*t), name, NET_NAME_UNKNOWN, etherip_tunnel_setup);
+#endif
 	if (!dev)
 		return NULL;
 
@@ -307,7 +311,11 @@ static inline void etherip_ecn_decapsulate(struct iphdr *iph, struct sk_buff*skb
 		if (skb->protocol == htons(ETH_P_IP)) {
 			IP_ECN_set_ce(ipip_hdr(skb));
 		} else if (skb->protocol == htons(ETH_P_IPV6)) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+			IP6_ECN_set_ce(ipipv6_hdr(skb));
+#else
 			IP6_ECN_set_ce(skb, ipipv6_hdr(skb));
+#endif
 		}
 	}
 }
@@ -342,7 +350,11 @@ static int etherip_rcv(struct sk_buff *skb)
 
 	read_lock(&etherip_lock);
 	if ((tunnel = etherip_tunnel_lookup(iph->saddr, iph->daddr)) != NULL) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+		struct pcpu_tstats *tstats;
+#else
 		struct pcpu_sw_netstats *tstats;
+#endif
 		secpath_reset(skb);
 
 		/* Pull etherip header.  */
@@ -374,7 +386,11 @@ out:
 static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 {
 	struct ip_tunnel *tunnel = (struct ip_tunnel*)netdev_priv(dev);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+	struct pcpu_tstats *tstats;
+#else
 	struct pcpu_sw_netstats *tstats;
+#endif
 	struct iphdr *inner_iph = ip_hdr(skb);
 	struct iphdr *tiph = &tunnel->parms.iph;
 	u8     tos;
@@ -659,23 +675,34 @@ static struct rtnl_link_stats64 *etherip_tunnel_get_stats64(struct net_device *d
 #endif
 {
 	int i;
+	u64 rx_packets, rx_bytes, tx_packets, tx_bytes;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+	struct pcpu_tstats *tstats;
+#else
+	struct pcpu_sw_netstats *tstats;
+#endif
+	unsigned int start;
 
 	netdev_stats_to_stats64(tot, &dev->stats);
 
 	for_each_possible_cpu(i) {
-		const struct pcpu_sw_netstats *tstats =
-						   per_cpu_ptr(dev->tstats, i);
-		u64 rx_packets, rx_bytes, tx_packets, tx_bytes;
-		unsigned int start;
+		tstats = per_cpu_ptr(dev->tstats, i);
 
 		do {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+			start = u64_stats_fetch_begin_bh(&tstats->syncp);
+#else
 			start = u64_stats_fetch_begin_irq(&tstats->syncp);
+#endif
 			rx_packets = tstats->rx_packets;
 			tx_packets = tstats->tx_packets;
 			rx_bytes = tstats->rx_bytes;
 			tx_bytes = tstats->tx_bytes;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+		} while (u64_stats_fetch_retry_bh(&tstats->syncp, start));
+#else
 		} while (u64_stats_fetch_retry_irq(&tstats->syncp, start));
-
+#endif
 		tot->rx_packets += rx_packets;
 		tot->tx_packets += tx_packets;
 		tot->rx_bytes   += rx_bytes;
@@ -803,8 +830,12 @@ static int etherip_tunnel_init(struct net_device *dev)
 			ip_rt_put(rt);
 		}
 	}
-	dev->tstats = alloc_percpu(struct pcpu_sw_netstats);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+	dev->tstats = alloc_percpu(struct pcpu_tstats);
+#else
+	dev->tstats = alloc_percpu(struct pcpu_sw_netstats);
+#endif
 	if (!tdev && tunnel->parms.link)
 		tdev = __dev_get_by_index(dev_net(dev), tunnel->parms.link);
 
@@ -825,7 +856,11 @@ static int __init etherip_fb_tunnel_init(struct net_device *dev)
 	struct iphdr *iph = &tunnel->parms.iph;
 
 	tunnel->dev = dev;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+	dev->tstats = alloc_percpu(struct pcpu_tstats);
+#else
 	dev->tstats = alloc_percpu(struct pcpu_sw_netstats);
+#endif
 	strcpy(tunnel->parms.name, dev->name);
 
 	iph->version		= 4;
@@ -859,8 +894,13 @@ static int __init etherip_init(void)
 		printk(KERN_INFO "etherip init: can't add protocol\n");
 		return -EAGAIN;
 	}
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+	etherip_fb_tunnel_dev = alloc_netdev(sizeof(struct ip_tunnel),
+					     "etherip0", etherip_tunnel_setup_fb);
+#else
 	etherip_fb_tunnel_dev = alloc_netdev(sizeof(struct ip_tunnel),
 					     "etherip0", NET_NAME_UNKNOWN, etherip_tunnel_setup_fb);
+#endif
 	if (!etherip_fb_tunnel_dev) {
 		err = -ENOMEM;
 		goto err1;
