@@ -2799,7 +2799,7 @@ wl_basic.lower="lower";
 
 //help container
 var hwl_basic=new Object();
-hwl_basic.right2="Attention: It is recommended that you press <em>Apply Settings</em> after you change a value in order to update the fileds with the corresponding parameters.";
+hwl_basic.right2="Attention: It is recommended that you press <em>Apply Settings</em> after you change a value in order to update the fields with the corresponding parameters.";
 hwl_basic.right3="Sensitivity Range: ";
 hwl_basic.right4="Adjusts the ACK timing. 0 disables ack timing completely for Broadcom firmwares. On Atheros based firmware, 0 enables auto ACK timing mode.";
 hwl_basic.right6="Click any hour to enable or disable the radio signal (<em>green</em> indicates allowed Wireless access, and <em>red</em> indicates blocked Wireless access)";
