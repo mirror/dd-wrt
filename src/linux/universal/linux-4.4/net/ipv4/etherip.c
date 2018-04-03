@@ -2,7 +2,7 @@
  *	Linux NET3:	Ethernet over IP protocol decoder. 
  *
  *	Authors: Alexey Kuznetsov (kuznet@ms2.inr.ac.ru)
- *	         Sebastian Gottschall (s.gottschall@dd-wrt.com)
+ *	fixing all bugs, port to recent kernels, fixing protocol violation etc. Sebastian Gottschall (s.gottschall@dd-wrt.com)
  *
  *	This program is free software; you can redistribute it and/or
  *	modify it under the terms of the GNU General Public License
@@ -47,8 +47,11 @@
 #include <net/dsfield.h>
 #include <net/inet_ecn.h>
 #include <net/xfrm.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
+#include <net/ipip.h>
+#else
 #include <net/ip_tunnels.h>
-
+#endif
 
 #if IS_ENABLED(CONFIG_IPV6)
 #include <net/ipv6.h>
@@ -81,6 +84,17 @@ static struct ip_tunnel *tunnels_l[ETHERIP_HASH_SIZE];
 static struct ip_tunnel *tunnels_wc[1];
 
 static struct ip_tunnel **tunnels[4] = { tunnels_wc, tunnels_l, tunnels_r, tunnels_r_l};
+
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
+struct pcpu_tstats {
+	unsigned long	rx_packets;
+	unsigned long	rx_bytes;
+	unsigned long	tx_packets;
+	unsigned long	tx_bytes;
+};
+#endif
+
 
 static DEFINE_RWLOCK(etherip_lock);
 
@@ -311,7 +325,9 @@ static inline void etherip_ecn_decapsulate(struct iphdr *iph, struct sk_buff*skb
 		if (skb->protocol == htons(ETH_P_IP)) {
 			IP_ECN_set_ce(ipip_hdr(skb));
 		} else if (skb->protocol == htons(ETH_P_IPV6)) {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
+			IP6_ECN_set_ce(skb, ipipv6_hdr(skb));
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
 			IP6_ECN_set_ce(ipipv6_hdr(skb));
 #else
 			IP6_ECN_set_ce(skb, ipipv6_hdr(skb));
@@ -364,11 +380,14 @@ static int etherip_rcv(struct sk_buff *skb)
 		memset(&(IPCB(skb)->opt), 0, sizeof(struct ip_options));
 
 		tstats = this_cpu_ptr(tunnel->dev->tstats);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 		u64_stats_update_begin(&tstats->syncp);
+#endif
 		tstats->rx_packets++;
 		tstats->rx_bytes += skb->len;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 		u64_stats_update_end(&tstats->syncp);
-
+#endif
 		skb->dev = tunnel->dev;
 		skb_dst_drop(skb);
 		nf_reset(skb);
@@ -439,9 +458,13 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	else
 		mtu = skb_dst(skb) ? dst_mtu(skb_dst(skb)) : dev->mtu;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	if (skb_dst(skb))
 		skb_dst(skb)->ops->update_pmtu(skb_dst(skb), NULL, skb, mtu);
-
+#else
+	if (skb_dst(skb))
+		skb_dst(skb)->ops->update_pmtu(skb_dst(skb), mtu);
+#endif
 
 
 	if (skb->protocol == htons(ETH_P_IP)) {
@@ -539,7 +562,10 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	nf_reset(skb);
 
 	tstats = this_cpu_ptr(dev->tstats);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
+	__IPTUNNEL_XMIT(tstats, &dev->stats);
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
 	__IPTUNNEL_XMIT_COMPAT(tstats, &dev->stats);
 #else
 	__IPTUNNEL_XMIT_COMPAT(dev_net(dev), skb->sk, tstats, &dev->stats);
@@ -665,6 +691,30 @@ done:
 	return err;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,10,0)
+
+static struct net_device_stats *etherip_tunnel_get_stats(struct net_device *dev)
+{
+	struct pcpu_tstats sum = { 0 };
+	int i;
+
+	for_each_possible_cpu(i) {
+		const struct pcpu_tstats *tstats = per_cpu_ptr(dev->tstats, i);
+
+		sum.rx_packets += tstats->rx_packets;
+		sum.rx_bytes   += tstats->rx_bytes;
+		sum.tx_packets += tstats->tx_packets;
+		sum.tx_bytes   += tstats->tx_bytes;
+	}
+	dev->stats.rx_packets = sum.rx_packets;
+	dev->stats.rx_bytes   = sum.rx_bytes;
+	dev->stats.tx_packets = sum.tx_packets;
+	dev->stats.tx_bytes   = sum.tx_bytes;
+	return &dev->stats;
+}
+
+#else
+
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,0)
 static void etherip_tunnel_get_stats64(struct net_device *dev,
@@ -714,6 +764,8 @@ static struct rtnl_link_stats64 *etherip_tunnel_get_stats64(struct net_device *d
 #endif
 }
 
+
+#endif
 static int etherip_tunnel_change_mtu(struct net_device *dev, int new_mtu)
 {
 	if (new_mtu < 68 || new_mtu > 0xFFF8 - sizeof(struct etheriphdr))
@@ -748,7 +800,11 @@ static const struct net_device_ops etherip_netdev_ops_fb = {
 	.ndo_start_xmit	= etherip_tunnel_xmit,
 	.ndo_do_ioctl	= etherip_tunnel_ioctl,
 	.ndo_change_mtu = etherip_tunnel_change_mtu,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	.ndo_get_stats64 = etherip_tunnel_get_stats64,
+#else
+	.ndo_get_stats = etherip_tunnel_get_stats,
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)
 	.ndo_get_iflink = etherip_get_iflink,
 #endif
@@ -760,7 +816,11 @@ static const struct net_device_ops etherip_netdev_ops = {
 	.ndo_start_xmit	= etherip_tunnel_xmit,
 	.ndo_do_ioctl	= etherip_tunnel_ioctl,
 	.ndo_change_mtu = etherip_tunnel_change_mtu,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,10,0)
 	.ndo_get_stats64 = etherip_tunnel_get_stats64,
+#else
+	.ndo_get_stats = etherip_tunnel_get_stats,
+#endif
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4,4,0)
 	.ndo_get_iflink = etherip_get_iflink,
 #endif
