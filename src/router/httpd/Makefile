@@ -65,7 +65,7 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-COPTS += $(MIPS16_OPT) -D_GNU_SOURCE 
+COPTS += $(MIPS16_OPT) -D_GNU_SOURCE  -Werror=return-local-addr
 # -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 
 BCFLAGS	= $(COPTS)  -fPIC -DMEMLEAK_OVERRIDE

@@ -66,10 +66,10 @@ BCFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
 HCFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
 endif
 
-COPTS += $(MIPS16_OPT) -D_GNU_SOURCE 
+COPTS += $(MIPS16_OPT) -D_GNU_SOURCE   -Werror=return-local-addr
 # -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 
-BCFLAGS	 += $(COPTS) -I. -I$(TOP)/shared  -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -I$(TOP)/httpd 
+BCFLAGS	 += $(COPTS) -I. -I$(TOP)/shared  -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -I$(TOP)/httpd
 BCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN -I$(LINUXDIR)/brcm/shared/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 BCFLAGS  += -fpic -I$(TOP)/services/include
 

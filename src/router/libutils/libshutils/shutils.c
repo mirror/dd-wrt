@@ -1034,7 +1034,7 @@ char *foreach_last(char *next, char *word, char *delimiters)
 	return next;
 }
 
-static char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters)
+static void getentrybyidx_d(char *buf, char *list, int idx, char *delimiters)
 {
 	char *next, word[128];
 	if (!list || !buf)
@@ -1050,7 +1050,7 @@ static char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters)
 	return NULL;
 }
 
-char *getentrybyidx(char *buf, char *list, int idx)
+void getentrybyidx(char *buf, char *list, int idx)
 {
 	return getentrybyidx_d(buf, list, idx, "><:-,");
 }
