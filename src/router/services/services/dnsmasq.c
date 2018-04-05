@@ -276,7 +276,7 @@ void start_dnsmasq(void)
 			char *ifname = getmdhcp(IDX_IFNAME, i, word, buffer);
 			if (!strlen(nvram_nget("%s_ipaddr", ifname)) || !strlen(nvram_nget("%s_netmask", ifname)))
 				continue;
-			dhcp_max += atoi(getmdhcp(IDX_LEASEMAX, i, word));
+			dhcp_max += atoi(getmdhcp(IDX_LEASEMAX, i, word, buffer));
 		}
 		fprintf(fp, "dhcp-lease-max=%d\n", dhcp_max);
 		if (landhcp())
@@ -450,5 +450,14 @@ void stop_dnsmasq(void)
 	if (stop_process("dnsmasq", "dnsmasq daemon")) {
 		unlink("/tmp/resolv.dnsmasq");
 	}
+}
+#endif
+
+
+#ifdef TEST
+int main(int argc, char *argv[])
+{
+    start_dnsmasq();
+
 }
 #endif
