@@ -182,8 +182,6 @@ int _nvram_read(char *buf)
 	}
 	filp_close(srcf, NULL);
 	set_fs(old_fs);
-	if (offs != NVRAM_SPACE)
-		return -1;
 	return 0;
 }
 
