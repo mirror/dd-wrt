@@ -885,7 +885,7 @@ static int etherip_tunnel_init(struct net_device *dev)
 		fl.flowi4_tos = RT_TOS(iph->tos),
 		fl.flowi4_proto = IPPROTO_ETHERIP;
 		rt = ip_route_output_key(dev_net(dev), &fl);
-		if (IS_ERR(rt)){
+		if (!IS_ERR(rt)){
 			tdev = rt->dst.dev;
 			ip_rt_put(rt);
 		}
