@@ -93,7 +93,7 @@ static int nvram_main(int argc, char **argv)
 	/* 
 	 * Process the remaining arguments. 
 	 */
-	int force;
+	int force = 0;
 	for (; *argv; argv++) {
 		if (!strncmp(*argv, "get", 3)) {
 			if (*++argv) {
