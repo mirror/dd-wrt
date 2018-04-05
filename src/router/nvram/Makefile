@@ -29,7 +29,7 @@ CFLAGS	+= -I. -I$(SRCBASE)/include.v23 -Wall
 endif
 endif
 
-CFLAGS	+= -I. -I$(TOP)/shared
+CFLAGS	+= -I. -I$(TOP)/shared -Werror=return-local-addr
 
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -s $(COPTS) $(MIPS16_OPT) -fPIC

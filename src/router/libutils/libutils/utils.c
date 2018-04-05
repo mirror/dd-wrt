@@ -272,7 +272,6 @@ const char *getifaddr(char *ifname, int family, int linklocal)
 char *getBridge(char *ifname, char *word)
 {
 	char *next, *wordlist;
-
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(bridge, word, 0);
@@ -566,7 +565,7 @@ int check_wan_link(int num)
 					if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 						break;
 					bzero(&ifr, sizeof(struct ifreq));
-					snprintf(ifr.ifr_name, IFNAMSIZ, "iph0");
+					strncpy(ifr.ifr_name, "iph0", IFNAMSIZ);
 					ioctl(sock, SIOCGIFFLAGS, &ifr);
 					if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP))
 					    == (IFF_RUNNING | IFF_UP))

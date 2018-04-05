@@ -21,7 +21,7 @@ CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/iptables/include/libipq -I$(TOP)/l
 CFLAGS  += $(COPTS) 
 # -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -lutils -ldl
-CFLAGS += -I$(LINUXDIR) -I$(TOP)/libutils/include -fPIC  -D_GNU_SOURCE
+CFLAGS += -I$(LINUXDIR) -I$(TOP)/libutils/include -fPIC  -D_GNU_SOURCE -Werror=return-local-addr
 
 CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 CFLAGS += $(MIPS16_OPT) 
