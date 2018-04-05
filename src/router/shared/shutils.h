@@ -213,7 +213,7 @@ char *foreach_last(char *next, char *word, char *delim);
 void getentrybyidx(char *buf, char *list, int idx);
 
 
-#define GETENTRYBYIDX(name## _priv, list, idx) \
+#define GETENTRYBYIDX(name, list, idx) \
 	char name## _priv[128]; \
 	getentrybyidx(name## _priv, list, idx); \
 	char *name = name## _priv;
