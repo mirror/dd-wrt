@@ -216,15 +216,16 @@ extern char *getMTU(char *);
 char *getRealBridge(char *ifname, char *word)
 {
 	char *next, *wordlist;
-
 	wordlist = nvram_safe_get("bridgesif");
 	foreach(word, wordlist, next) {
 		GETENTRYBYIDX(tag, word, 0);
 		GETENTRYBYIDX(port, word, 1);
 		if (!tag || !port)
 			break;
-		if (!strcmp(port, ifname))
-			return tag;
+		if (!strcmp(port, ifname)) {
+			strcpy(word,tag);
+			return word;
+		}
 	}
 	return NULL;
 }

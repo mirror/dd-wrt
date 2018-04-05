@@ -210,12 +210,12 @@ char *foreach_first(char *foreachwordlist, char *word, char *delim);
 
 char *foreach_last(char *next, char *word, char *delim);
 
-char *getentrybyidx(char *buf, char *list, int idx);
+void getentrybyidx(char *buf, char *list, int idx);
 
 
 #define GETENTRYBYIDX(name, list, idx) \
-	char name## _priv[128]; \
-	char *name = getentrybyidx(name## _priv, list, idx);
+	char name[128]; \
+	getentrybyidx(name, list, idx);
 
 
 /*
