@@ -110,12 +110,6 @@ int nvram_getall(char *buf, int count)
 	int ret;
 
 	if (nvram_fd < 0) {
-#if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
-		FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
-		if (in == NULL)
-			return 0;
-		fclose(in);
-#endif
 		if ((ret = _nvram_init())) {
 			return ret;
 		}
