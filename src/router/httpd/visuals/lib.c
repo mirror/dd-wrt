@@ -34,6 +34,7 @@
 #include <dd_defs.h>
 #include <code_pattern.h>
 #include <cy_conf.h>
+#include <revision.h>
 
 void ej_compile_date(webs_t wp, int argc, char_t ** argv)
 {
@@ -58,7 +59,6 @@ void ej_get_backup_name(webs_t wp, int argc, char_t ** argv)
 }
 
 #ifndef HAVE_SPECIALEDITION
-#include <revision.h>
 
 void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 {
@@ -189,7 +189,6 @@ void ej_get_firmware_title(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "Wireless-G Broadband Router");
 }
 
-#include <revision.h>
 void ej_get_firmware_svnrev(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "%s", SVN_REVISION);
