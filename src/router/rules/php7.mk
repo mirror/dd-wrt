@@ -35,7 +35,7 @@ icu-configure:
 	--host=$(ARCH)-linux-uclibc \
 	--disable-debug \
 	--enable-release \
-	--enable-shared \
+	--disable-shared \
 	--enable-static \
 	--enable-draft \
 	--enable-renaming \
@@ -48,29 +48,30 @@ icu-configure:
 	--with-cross-build="$(TOP)/icu/staging/share/icu/61.1" \
 	--prefix=$(TOP)/icu/target_staging
 	make -C icu install
-	make -C icu clean
-	rm -f icu/config.cache
-	rm -rf icu/autom4te.cach
-	cd icu && autoconf
-	cd icu && ./configure CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF"  CXXFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF" \
-	CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CXX="ccache $(ARCH)-linux-uclibc-g++" \
-	--target=$(ARCH)-linux-uclibc \
-	--host=$(ARCH)-linux-uclibc \
-	--disable-debug \
-	--enable-release \
-	--enable-shared \
-	--enable-static \
-	--enable-draft \
-	--enable-renaming \
-	--disable-tracing \
-	--disable-extras \
-	--enable-dyload \
-	--disable-tools \
-	--disable-tests \
-	--disable-samples \
-	--with-cross-build="$(TOP)/icu/staging/share/icu/61.1" \
-	--prefix=/usr
+
+#	make -C icu clean
+#	rm -f icu/config.cache
+#	rm -rf icu/autom4te.cach
+#	cd icu && autoconf
+#	cd icu && ./configure CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF"  CXXFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF" \
+#	CC="ccache $(ARCH)-linux-uclibc-gcc" \
+#	CXX="ccache $(ARCH)-linux-uclibc-g++" \
+#	--target=$(ARCH)-linux-uclibc \
+#	--host=$(ARCH)-linux-uclibc \
+#	--disable-debug \
+#	--enable-release \
+#	--enable-shared \
+#	--enable-static \
+#	--enable-draft \
+#	--enable-renaming \
+#	--disable-tracing \
+#	--disable-extras \
+#	--enable-dyload \
+#	--disable-tools \
+#	--disable-tests \
+#	--disable-samples \
+#	--with-cross-build="$(TOP)/icu/staging/share/icu/61.1" \
+#	--prefix=/usr
 
 icu:
 	make -C icu
