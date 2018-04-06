@@ -75,13 +75,15 @@ icu-configure:
 
 icu:
 	make -C icu
+	make -C icu install
 
 icu-clean:
 	make -C icu clean
 
 icu-install:
-	mkdir -p $(INSTALLDIR)/icu/usr/lib
-	cp -fpR $(TOP)/icu/lib/*.so* $(INSTALLDIR)/icu/usr/lib/
+	@true
+#	mkdir -p $(INSTALLDIR)/icu/usr/lib
+#	cp -fpR $(TOP)/icu/lib/*.so* $(INSTALLDIR)/icu/usr/lib/
 
 
 php7: libxml2 libmcrypt icu
