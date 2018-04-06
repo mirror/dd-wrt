@@ -66,7 +66,7 @@ BCFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
 HCFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
 endif
 
-COPTS += $(MIPS16_OPT) -D_GNU_SOURCE   -Werror=return-local-addr
+COPTS += $(MIPS16_OPT) -D_GNU_SOURCE  $(call cc-option,-Werror=return-local-addr)
 # -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 
 BCFLAGS	 += $(COPTS) -I. -I$(TOP)/shared  -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -I$(TOP)/httpd

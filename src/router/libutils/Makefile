@@ -88,7 +88,7 @@ endif
 CFLAGS += $(MIPS16_OPT)
 
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Iinclude -Werror=return-local-addr
+CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Iinclude $(call cc-option,-Werror=return-local-addr)
 #  -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 CFLAGS	+= -fPIC
 LDFLAGS += -L. -ldl
@@ -157,14 +157,14 @@ endif
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 CFLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
 NCFLAGS += $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -I../services/networking -I../madwifi.dev/madwifi_mimo.dev/core  -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
-NCFLAGS	+= -fPIC -Werror=return-local-addr
+NCFLAGS	+= -fPIC $(call cc-option,-Werror=return-local-addr)
 NCFLAGS	+= -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
 NOBJS += wl_11n.o
 NFILES += libwireless/wl_11n.c
 endif
 ifeq ($(CONFIG_ATH9K),y)
 ATH9KCFLAGS+= $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -DHAVE_ATH9K -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
-ATH9KCFLAGS	+= -fPIC -Werror=return-local-addr
+ATH9KCFLAGS	+= -fPIC $(call cc-option,-Werror=return-local-addr)
 ATH9KOBJS += wl_ath9k.o list_sort.o mac80211info.o mac80211regulatory.o mac80211autochannel.o
 ATH9KFILES += libwireless/wl_ath9k.c libwireless/list_sort.c libwireless/mac80211info.c libwireless/mac80211regulatory.c libwireless/mac80211autochannel.c
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
