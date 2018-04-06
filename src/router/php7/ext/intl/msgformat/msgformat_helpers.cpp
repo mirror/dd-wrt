@@ -55,7 +55,7 @@ U_NAMESPACE_BEGIN
  */
 class MessageFormatAdapter {
 public:
-    static const Formattable::Type* getArgTypeList(const MessageFormat& m,
+    static const Formattable::Type* getArgTypeList_private(const MessageFormat& m,
                                                    int32_t& count);
 #ifdef HAS_MESSAGE_PATTERN
     static const MessagePattern getMessagePattern(MessageFormat* m);
@@ -63,7 +63,7 @@ public:
 };
 
 const Formattable::Type*
-MessageFormatAdapter::getArgTypeList(const MessageFormat& m,
+MessageFormatAdapter::getArgTypeList_private(const MessageFormat& m,
                                      int32_t& count) {
     return m.getArgTypeList(count);
 }
@@ -89,7 +89,7 @@ using icu::FieldPosition;
 U_CFUNC int32_t umsg_format_arg_count(UMessageFormat *fmt)
 {
 	int32_t fmt_count = 0;
-	MessageFormatAdapter::getArgTypeList(*(const MessageFormat*)fmt, fmt_count);
+	MessageFormatAdapter::getArgTypeList_private(*(const MessageFormat*)fmt, fmt_count);
 	return fmt_count;
 }
 
@@ -112,7 +112,7 @@ static HashTable *umsg_get_numeric_types(MessageFormatter_object *mfo,
 		return mfo->mf_data.arg_types;
 	}
 
-	const Formattable::Type *types = MessageFormatAdapter::getArgTypeList(
+	const Formattable::Type *types = MessageFormatAdapter::getArgTypeList_private(
 		*(MessageFormat*)mfo->mf_data.umsgf, parts_count);
 
 	/* Hash table will store Formattable::Type objects directly,
