@@ -1,4 +1,89 @@
-php7: libxml2 libmcrypt
+icu-configure:
+	-make -C icu clean
+	rm -f icu/config.cache
+	rm -rf icu/autom4te.cach
+	cd icu && autoconf
+	cd icu &&  ./runConfigureICU Linux/gcc CFLAGS= CXXFLAGS= \
+	--disable-debug \
+	--enable-release \
+	--enable-shared \
+	--enable-static \
+	--enable-draft \
+	--enable-renaming \
+	--disable-tracing \
+	--disable-extras \
+	--enable-dyload \
+	--prefix=$(TOP)/icu/staging
+	make -C icu
+	make -C icu install
+	mkdir -p $(TOP)/icu/staging/share/icu/61.1/lib/
+	mkdir -p $(TOP)/icu/staging/share/icu/61.1/bin/
+	mkdir -p $(TOP)/icu/staging/share/icu/61.1/config/
+	cp -fpR  $(TOP)/icu/config/icucross.* $(TOP)/icu/staging/share/icu/61.1/config/
+	cp -fpR  $(TOP)/icu/bin/icupkg $(TOP)/icu/staging/share/icu/61.1/bin/
+	cp -fpR  $(TOP)/icu/bin/pkgdata $(TOP)/icu/staging/share/icu/61.1/bin/
+	cp -fpR  $(TOP)/icu/lib/*.so* $(TOP)/icu/staging/share/icu/61.1/lib/
+
+	make -C icu clean
+	rm -f icu/config.cache
+	rm -rf icu/autom4te.cach
+	cd icu && autoconf
+	cd icu && ./configure CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF"  CXXFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF" \
+	CC="ccache $(ARCH)-linux-uclibc-gcc" \
+	CXX="ccache $(ARCH)-linux-uclibc-g++" \
+	--target=$(ARCH)-linux-uclibc \
+	--host=$(ARCH)-linux-uclibc \
+	--disable-debug \
+	--enable-release \
+	--enable-shared \
+	--enable-static \
+	--enable-draft \
+	--enable-renaming \
+	--disable-tracing \
+	--disable-extras \
+	--enable-dyload \
+	--disable-tools \
+	--disable-tests \
+	--disable-samples \
+	--with-cross-build="$(TOP)/icu/staging/share/icu/61.1" \
+	--prefix=$(TOP)/icu/target_staging
+	make -C icu install
+	make -C icu clean
+	rm -f icu/config.cache
+	rm -rf icu/autom4te.cach
+	cd icu && autoconf
+	cd icu && ./configure CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF"  CXXFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF" \
+	CC="ccache $(ARCH)-linux-uclibc-gcc" \
+	CXX="ccache $(ARCH)-linux-uclibc-g++" \
+	--target=$(ARCH)-linux-uclibc \
+	--host=$(ARCH)-linux-uclibc \
+	--disable-debug \
+	--enable-release \
+	--enable-shared \
+	--enable-static \
+	--enable-draft \
+	--enable-renaming \
+	--disable-tracing \
+	--disable-extras \
+	--enable-dyload \
+	--disable-tools \
+	--disable-tests \
+	--disable-samples \
+	--with-cross-build="$(TOP)/icu/staging/share/icu/61.1" \
+	--prefix=/usr
+
+icu:
+	make -C icu
+
+icu-clean:
+	make -C icu clean
+
+icu-install:
+	mkdir -p $(INSTALLDIR)/icu/usr/lib
+	cp -fpR $(TOP)/icu/lib/*.so* $(INSTALLDIR)/icu/usr/lib/
+
+
+php7: libxml2 libmcrypt icu
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -51,6 +136,8 @@ PHP_CONFIGURE_ARGS= \
 	--enable-cli \
 	--enable-cgi \
 	--enable-zip \
+	--enable-intl \
+	--with-icu-dir=$(TOP)/icu/target_staging \
 	--enable-mbstring \
 	--enable-maintainer-zts \
 	--with-tsrm-pthreads \
@@ -110,10 +197,12 @@ php7-configure: libpng libgd libxml2 zlib curl
 	cd php7 && autoconf
 	cd php7 && './configure'  '--host=$(ARCH)-linux-uclibc' $(PHP_ENDIAN) $(PHP_CONFIGURE_ARGS) \
 	'CFLAGS=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/minidlna/jpeg-8 -I$(TOP)/libmcrypt -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -I$(TOP)/openssl/include -I$(TOP)/curl/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs' \
-	'LDFLAGS=-ffunction-sections -fdata-sections -Wl,--gc-sections  -L$(TOP)/minidlna/lib -L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs'
+	'LDFLAGS=-ffunction-sections -fdata-sections -Wl,--gc-sections  -L$(TOP)/minidlna/lib -L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs' \
+	'CXXFLAGS=$(COPTS) $(MIPS16_OPT) -std=c++0x -DNEED_PRINTF'
 	printf "#define HAVE_GLOB 1\n" >>$(TOP)/php7/main/php_config.h
 	sed -i 's/-L\/lib/ /g' $(TOP)/php7/Makefile
 	sed -i 's/-lltdl/ /g' $(TOP)/php7/Makefile
+	sed -i 's/-I\/usr\/include/ /g' $(TOP)/php7/Makefile
 
 php7-clean:
 	if test -e "php7/Makefile"; then make -C php7 clean; fi
