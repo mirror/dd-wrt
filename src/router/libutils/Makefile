@@ -85,10 +85,15 @@ CFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 CFLAGS += -I$(SRCBASE)/include.v24 
 endif
 
+cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
+             > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
+COPTS +=$(call cc-option,-Werror=return-local-addr,)
+
+
 CFLAGS += $(MIPS16_OPT)
 
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Iinclude $(call cc-option,-Werror=return-local-addr)
+CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Iinclude
 #  -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 CFLAGS	+= -fPIC
 LDFLAGS += -L. -ldl
