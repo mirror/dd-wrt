@@ -323,7 +323,7 @@ static int nvram_critical_internal(char *name, int ommit)
 
 int nvram_critical(char *name)
 {
-	nvram_critical_internal(name, 1);
+	return nvram_critical_internal(name, 1);
 }
 
 void nvram_clear(void)
