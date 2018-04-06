@@ -330,7 +330,6 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 	}
 	cprintf("pointer init\n");
 	void (*fptr) (webs_t wp, int argc, char_t ** argv);
-	void (*altfptr) (webs_t wp);
 
 	sprintf(service, "ej_%s", name);
 	{
@@ -351,12 +350,7 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 		memdebug_enter();
 		if (fptr) {
 			gettimeofday(&before, NULL);
-			if (argc)
-				(*fptr) (wp, argc, argv);
-			else {
-				altfptr = (void (*)(webs_t wp, int argc, char_t ** argv))fptr;
-				(*altfptr) (wp);
-			}
+			(*fptr) (wp, argc, argv);
 			gettimeofday(&after, NULL);
 			timersub(&after, &before, &r);
 			if (nvram_matchi("console_debug", 1)) {
