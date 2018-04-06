@@ -29,7 +29,13 @@ CFLAGS	+= -I. -I$(SRCBASE)/include.v23 -Wall
 endif
 endif
 
-CFLAGS	+= -I. -I$(TOP)/shared $(call cc-option,-Werror=return-local-addr)
+CFLAGS	+= -I. -I$(TOP)/shared
+
+cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
+             > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
+CFLAGS +=$(call cc-option,-Werror=return-local-addr,)
+
+
 
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -s $(COPTS) $(MIPS16_OPT) -fPIC

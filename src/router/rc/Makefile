@@ -4,6 +4,8 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
+
+
 ifeq ($(CONFIG_80211AC),y)
 CFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
 endif
@@ -21,13 +23,13 @@ CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/iptables/include/libipq -I$(TOP)/l
 CFLAGS  += $(COPTS) 
 # -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 LDFLAGS	+= -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/libutils -lutils -ldl
-CFLAGS += -I$(LINUXDIR) -I$(TOP)/libutils/include -fPIC  -D_GNU_SOURCE $(call cc-option,-Werror=return-local-addr)
+CFLAGS += -I$(LINUXDIR) -I$(TOP)/libutils/include -fPIC  -D_GNU_SOURCE 
 CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
-CFLAGS += $(MIPS16_OPT) 
+CFLAGS += $(MIPS16_OPT) $(LERROR)
 
-cc-option = $(shell if $(CC) $(CFLAGS) $(1) -S -o /dev/null -xc /dev/null \
+cc-option = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null \
              > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi ;)
-
+CFLAGS +=$(call cc-option,-Werror=return-local-addr,)
 
 
 INITCFLAGS = $(call cc-option,-ffunction-sections -fdata-sections,)
@@ -1001,6 +1003,7 @@ CFLAGS += -DHAVE_ATH10K
 endif
 
 include $(TOP)/rules/generic.mk
+
 CFLAGS += $(DD_CFLAGS)
 
 vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
