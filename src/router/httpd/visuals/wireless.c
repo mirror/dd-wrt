@@ -300,8 +300,8 @@ void get_hostname_ip(char *type, char *filename)
 				}
 			}
 		}
+		fclose(fp);
 	}
-	fclose(fp);
 }
 
 int nv_count = 0;
