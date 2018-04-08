@@ -1,220 +1,8 @@
-#include "qcom-ipq8064.dtsi"
+#include "qcom-ipq8064-2.0.dtsi"
 
 / {
 	model = "Qualcomm IPQ8065";
 	compatible = "qcom,ipq8065", "qcom,ipq8064";
-
-	cpus {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		cpu0: cpu@0 {
-			compatible = "qcom,krait";
-			enable-method = "qcom,kpss-acc-v1";
-			device_type = "cpu";
-			reg = <0>;
-			next-level-cache = <&L2>;
-			qcom,acc = <&acc0>;
-			qcom,saw = <&saw0>;
-			clocks = <&kraitcc 0>, <&kraitcc 4>;
-			clock-names = "cpu", "l2";
-			clock-latency = <100000>;
-			cpu-supply = <&smb208_s2a>;
-			cpu_fab_threshold = <1000000000>;
-			voltage-tolerance = <5>;
-			cooling-min-state = <0>;
-			cooling-max-state = <10>;
-			#cooling-cells = <2>;
-			cpu-idle-states = <&CPU_SPC>;
-
-			operating-points-0-0 = <
-				/* kHz      uV */
-				1725000 1262500
-				1400000 1175000
-				1000000 1150000
-				 800000 1050000
-				 600000 1000000
- 				 384000 975000
- 			>;
-			operating-points-0-1 = <
-				/* kHz      uV */
-				1725000 1225000
-				1400000 1175000
-				1000000 1075000
-				 800000 1025000
-				 600000  975000
-				 384000  925000
-			>;
-
-			operating-points-0-2 = <
-				/* kHz      uV */
-				1725000 1200000
-				1400000 1125000
-				1000000 1050000
-				 800000  1000000
-				 600000  950000
-				 384000  925000
-			>;
-			operating-points-0-3 = <
-				/* kHz      uV */
-				1725000 1175000
-				1400000 1100000
-				1000000 1025000
-				 800000 975000
-				 600000 925000
-				 384000 900000
-			>;
-
-			operating-points-0-4 = <
-				/* kHz      uV */
-				1725000 1150000
-				1400000 1075000
-				1000000 1000000
-				 800000 950000
-				 600000 900000
-				 384000 875000
-			>;
-
-			operating-points-0-5 = <
-				/* kHz      uV */
-				1725000 1100000
-				1400000 1025000
-				1000000 950000
-				 800000 900000
-				 600000 850000
-				 384000 825000
-			>;
-
-			operating-points-0-6 = <
-				/* kHz      uV */
-				1725000 1050000
-				1400000 975000
-				1000000 900000
-				 800000 850000
-				 600000 800000
-				 384000 775000
-			>;
-		};
-
-		cpu1: cpu@1 {
-			compatible = "qcom,krait";
-			enable-method = "qcom,kpss-acc-v1";
-			device_type = "cpu";
-			reg = <1>;
-			next-level-cache = <&L2>;
-			qcom,acc = <&acc1>;
-			qcom,saw = <&saw1>;
-			clocks = <&kraitcc 1>, <&kraitcc 4>;
-			clock-names = "cpu", "l2";
-			clock-latency = <100000>;
-			cpu-supply = <&smb208_s2b>;
-			cooling-min-state = <0>;
-			cooling-max-state = <10>;
-			#cooling-cells = <2>;
-			cpu_fab_threshold = <1000000000>;
-			cpu-idle-states = <&CPU_SPC>;
-
-			operating-points-0-0 = <
-				/* kHz      uV */
-				1725000 1262500
-				1400000 1175000
-				1000000 1150000
-				 800000 1050000
-				 600000 1000000
- 				 384000 975000
- 			>;
-			operating-points-0-1 = <
-				/* kHz      uV */
-				1725000 1225000
-				1400000 1175000
-				1000000 1075000
-				 800000 1025000
-				 600000  975000
-				 384000  925000
-			>;
-
-			operating-points-0-2 = <
-				/* kHz      uV */
-				1725000 1200000
-				1400000 1125000
-				1000000 1050000
-				 800000  1000000
-				 600000  950000
-				 384000  925000
-			>;
-			operating-points-0-3 = <
-				/* kHz      uV */
-				1725000 1175000
-				1400000 1100000
-				1000000 1025000
-				 800000 975000
-				 600000 925000
-				 384000 900000
-			>;
-
-			operating-points-0-4 = <
-				/* kHz      uV */
-				1725000 1150000
-				1400000 1075000
-				1000000 1000000
-				 800000 950000
-				 600000 900000
-				 384000 875000
-			>;
-
-			operating-points-0-5 = <
-				/* kHz      uV */
-				1725000 1100000
-				1400000 1025000
-				1000000 950000
-				 800000 900000
-				 600000 850000
-				 384000 825000
-			>;
-
-			operating-points-0-6 = <
-				/* kHz      uV */
-				1725000 1050000
-				1400000 975000
-				1000000 900000
-				 800000 850000
-				 600000 800000
-				 384000 775000
-			>;
-		};
-
-		L2: l2-cache {
-			compatible = "cache";
-			cache-level = <2>;
-			qcom,saw = <&saw_l2>;
-			clocks = <&kraitcc 4>;
-			clock-names = "cache";
-			cache-points-kHz = <
-				/* kHz    uV    CPU kHz */
-				1200000 1150000 1725000
-				1000000 1100000 1400000
-				1000000 1100000 1200000
-				1000000 1100000  600000
-				 384000 1100000  384000
-			>;
-			vdd_dig-supply = <&smb208_s1a>;
-		};
-
-		qcom,l2 {
-			qcom,l2-rates = <384000000 1000000000 1200000000>;
-		};
-
-		idle-states {
-			CPU_SPC: spc {
-				compatible = "qcom,idle-state-spc",
-						"arm,idle-state";
-				entry-latency-us = <400>;
-				exit-latency-us = <900>;
-				min-residency-us = <3000>;
-			};
-		};
-	};
-
 
 	qcom,pvs {
 		qcom,pvs-format-a;
@@ -298,20 +86,79 @@
 			mpll = <0xa0>;
 		};
 
-	};
+		/* Temporary fixed regulator */
+		vsdcc_fixed: vsdcc-regulator {
+			compatible = "regulator-fixed";
+			regulator-name = "SDCC Power";
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+			regulator-always-on;
+		};
 
-	nss-common {
-		compatible = "qcom,nss-common";
-		reg = <0x03000000 0x00001000>;
-		reg-names = "nss_fpb_base";
-		clocks = <&gcc NSS_CORE_CLK>, <&gcc NSSTCM_CLK>,
-			 <&nss_fabric0_clk>, <&nss_fabric1_clk>;
-		clock-names = "nss-core-clk", "nss-tcm-clk", "nss-fab0-clk",
-			      "nss-fab0-clk";
-		nss_core-supply = <&smb208_s1b>;
-		nss_core_vdd_nominal = <1100000>;
-		nss_core_vdd_high = <1150000>;
-		nss_core_threshold_freq = <800000000>;
-	};
+		sdcc1bam:dma@12402000 {
+			compatible = "qcom,bam-v1.3.0";
+			reg = <0x12402000 0x8000>;
+			interrupts = <0 98 0>;
+			clocks = <&gcc SDC1_H_CLK>;
+			clock-names = "bam_clk";
+			#dma-cells = <1>;
+			qcom,ee = <0>;
+                };
 
+		sdcc3bam:dma@12182000 {
+			compatible = "qcom,bam-v1.3.0";
+			reg = <0x12182000 0x8000>;
+			interrupts = <0 96 0>;
+			clocks = <&gcc SDC3_H_CLK>;
+			clock-names = "bam_clk";
+			#dma-cells = <1>;
+			qcom,ee = <0>;
+		};
+
+		amba {
+			compatible = "arm,amba-bus";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			sdcc1: sdcc@12400000 {
+				status          = "disabled";
+				compatible      = "arm,pl18x", "arm,primecell";
+				arm,primecell-periphid = <0x00051180>;
+				reg             = <0x12400000 0x2000>;
+				interrupts      = <GIC_SPI 104 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-names = "cmd_irq";
+				clocks          = <&gcc SDC1_CLK>, <&gcc SDC1_H_CLK>;
+				clock-names     = "mclk", "apb_pclk";
+				bus-width       = <8>;
+				max-frequency   = <96000000>;
+				non-removable;
+				cap-sd-highspeed;
+				cap-mmc-highspeed;
+				vmmc-supply = <&vsdcc_fixed>;
+				dmas = <&sdcc1bam 2>, <&sdcc1bam 1>;
+				dma-names = "tx", "rx";
+			};
+
+			sdcc3: sdcc@12180000 {
+				compatible      = "arm,pl18x", "arm,primecell";
+				arm,primecell-periphid = <0x00051180>;
+				status          = "disabled";
+				reg             = <0x12180000 0x2000>;
+				interrupts      = <GIC_SPI 102 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-names = "cmd_irq";
+				clocks          = <&gcc SDC3_CLK>, <&gcc SDC3_H_CLK>;
+				clock-names     = "mclk", "apb_pclk";
+				bus-width       = <8>;
+				cap-sd-highspeed;
+				cap-mmc-highspeed;
+				max-frequency   = <192000000>;
+				#mmc-ddr-1_8v;
+				sd-uhs-sdr104;
+				sd-uhs-ddr50;
+				vqmmc-supply = <&vsdcc_fixed>;
+				dmas = <&sdcc3bam 2>, <&sdcc3bam 1>;
+				dma-names = "tx", "rx";
+			};
+		};
+	};
 };
