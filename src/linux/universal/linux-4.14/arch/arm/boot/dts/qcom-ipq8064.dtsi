@@ -31,7 +31,6 @@
 			clock-names = "cpu", "l2";
 			clock-latency = <100000>;
 			cpu-supply = <&smb208_s2a>;
-			cpu_fab_threshold = <1000000000>;
 			voltage-tolerance = <5>;
 			cooling-min-state = <0>;
 			cooling-max-state = <10>;
@@ -91,7 +90,6 @@
 			cooling-min-state = <0>;
 			cooling-max-state = <10>;
 			#cooling-cells = <2>;
-			cpu_fab_threshold = <1000000000>;
 			cpu-idle-states = <&CPU_SPC>;
 
 			operating-points-0-0 = <
@@ -141,7 +139,6 @@
 			clock-names = "cache";
 			cache-points-kHz = <
 				/* kHz    uV    CPU kHz */
-				1200000 1150000 1400000
 				1200000 1150000 1200000
 				1000000 1100000  600000
 				 384000 1100000  384000
@@ -559,28 +556,6 @@
 		};
 	};
 
-	nss-common {
-		compatible = "qcom,nss-common";
-		reg = <0x03000000 0x00001000>;
-		reg-names = "nss_fpb_base";
-		clocks = <&gcc NSS_CORE_CLK>, <&gcc NSSTCM_CLK>,
-			 <&nss_fabric0_clk>, <&nss_fabric1_clk>;
-		clock-names = "nss-core-clk", "nss-tcm-clk", "nss-fab0-clk",
-			      "nss-fab0-clk";
-		nss_core-supply = <&smb208_s1b>;
-		nss_core_vdd_nominal = <1100000>;
-		nss_core_vdd_high = <1150000>;
-		nss_core_threshold_freq = <733000000>;
-	};
-
-	fab-scaling {
-		compatible = "qcom,fab-scaling";
-		clocks = <&apps_fabric_clk>, <&ebi1_clk>;
-		clock-names = "apps-fab-clk", "ddr-fab-clk";
-		fab_freq_high = <533000000>;
-		fab_freq_nominal = <400000000>;
-        };
-
 	firmware {
 		scm {
 			compatible = "qcom,scm-ipq806x";
@@ -646,20 +621,6 @@
 			interrupt-names = "lpass-irq-lpaif";
 			reg = <0x28100000 0x10000>;
 			reg-names = "lpass-lpaif";
-		};
-
-		nss0: nss@40000000 {
-			compatible = "qcom,nss";
-			qcom,low-frequency = <110000000>;
-			qcom,mid-frequency = <550000000>;
-			qcom,max-frequency = <733000000>;
-		};
-
-		nss1: nss@40800000 {
-			compatible = "qcom,nss";
-			qcom,low-frequency = <110000000>;
-			qcom,mid-frequency = <550000000>;
-			qcom,max-frequency = <733000000>;
 		};
 
 		qfprom: qfprom@700000 {
@@ -731,61 +692,6 @@
 					qcom,switch-mode-frequency = <1200000>;
 				};
 			};
-
-			cxo_clk: cxo-clk {
-				#clock-cells = <0>;
-				compatible = "qcom,rpm-clk";
-				reg = <QCOM_RPM_CXO_CLK>;
-				qcom,rpm-clk-name = "cxo";
-				qcom,rpm-clk-freq = <25000000>;
-				qcom,rpm-clk-active-only;
-			};
-
-			pxo_clk: pxo-clk {
-				#clock-cells = <0>;
-				compatible = "qcom,rpm-clk";
-				reg = <QCOM_RPM_PXO_CLK>;
-				qcom,rpm-clk-name = "pxo";
-				qcom,rpm-clk-freq = <25000000>;
-				qcom,rpm-clk-active-only;
-			};
-
-			ebi1_clk: ebi1-clk {
-				#clock-cells = <0>;
-				compatible = "qcom,rpm-clk";
-				reg = <QCOM_RPM_EBI1_CLK>;
-				qcom,rpm-clk-name = "ebi1";
-				qcom,rpm-clk-freq = <533000000>;
-				qcom,rpm-clk-active-only;
-			};
-
-			apps_fabric_clk: apps-fabric-clk {
-				#clock-cells = <0>;
-				compatible = "qcom,rpm-clk";
-				reg = <QCOM_RPM_APPS_FABRIC_CLK>;
-				qcom,rpm-clk-name = "apps-fabric";
-				qcom,rpm-clk-freq = <533000000>;
-				qcom,rpm-clk-active-only;
-			};
-
-			nss_fabric0_clk: nss-fabric0-clk {
-				#clock-cells = <0>;
-				compatible = "qcom,rpm-clk";
-				reg = <QCOM_RPM_NSS_FABRIC_0_CLK>;
-				qcom,rpm-clk-name = "nss-fabric0";
-				qcom,rpm-clk-freq = <533000000>;
-				qcom,rpm-clk-active-only;
-			};
-
-			nss_fabric1_clk: nss-fabric1-clk {
-				#clock-cells = <0>;
-				compatible = "qcom,rpm-clk";
-				reg = <QCOM_RPM_NSS_FABRIC_1_CLK>;
-				qcom,rpm-clk-name = "nss-fabric1";
-				qcom,rpm-clk-freq = <266500000>;
-				qcom,rpm-clk-active-only;
-			};
-
 		};
 
 		rng@1a500000 {
@@ -1507,82 +1413,5 @@
 		compatible = "qcom,smem";
 		memory-region = <&smem>;
 		hwlocks = <&sfpb_mutex 3>;
-	};
-
-	/* Fixed regulator */
-	vsdcc_fixed: vsdcc-regulator {
-		compatible = "regulator-fixed";
-		regulator-name = "SDCC Power";
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		regulator-always-on;
-	};
-
-	sdcc1bam:dma@12402000 {
-		compatible = "qcom,bam-v1.3.0";
-		reg = <0x12402000 0x8000>;
-		interrupts = <0 98 0>;
-		clocks = <&gcc SDC1_H_CLK>;
-		clock-names = "bam_clk";
-		#dma-cells = <1>;
-		qcom,ee = <0>;
-	};
-
-	sdcc3bam:dma@12182000 {
-		compatible = "qcom,bam-v1.3.0";
-		reg = <0x12182000 0x8000>;
-		interrupts = <0 96 0>;
-		clocks = <&gcc SDC3_H_CLK>;
-		clock-names = "bam_clk";
-		#dma-cells = <1>;
-		qcom,ee = <0>;
-	};
-
-	amba {
-		compatible = "arm,amba-bus";
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
-		sdcc@12400000 {
-			status          = "disabled";
-			compatible      = "arm,pl18x", "arm,primecell";
-			arm,primecell-periphid = <0x00051180>;
-			reg             = <0x12400000 0x2000>;
-			interrupts      = <GIC_SPI 104 IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-names = "cmd_irq";
-			clocks          = <&gcc SDC1_CLK>, <&gcc SDC1_H_CLK>;
-			clock-names     = "mclk", "apb_pclk";
-			bus-width       = <8>;
-			max-frequency   = <96000000>;
-			non-removable;
-			cap-sd-highspeed;
-			cap-mmc-highspeed;
-			mmc-ddr-1_8v;
-			vmmc-supply = <&vsdcc_fixed>;
-			dmas = <&sdcc1bam 2>, <&sdcc1bam 1>;
-			dma-names = "tx", "rx";
-		};
-
-		sdcc@12180000 {
-			compatible      = "arm,pl18x", "arm,primecell";
-			arm,primecell-periphid = <0x00051180>;
-			status          = "disabled";
-			reg             = <0x12180000 0x2000>;
-			interrupts      = <GIC_SPI 102 IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-names = "cmd_irq";
-			clocks          = <&gcc SDC3_CLK>, <&gcc SDC3_H_CLK>;
-			clock-names     = "mclk", "apb_pclk";
-			bus-width       = <8>;
-			cap-sd-highspeed;
-			cap-mmc-highspeed;
-			max-frequency   = <192000000>;
-			#mmc-ddr-1_8v;
-			sd-uhs-sdr104;
-			sd-uhs-ddr50;
-			vqmmc-supply = <&vsdcc_fixed>;
-			dmas = <&sdcc3bam 2>, <&sdcc3bam 1>;
-			dma-names = "tx", "rx";
-			};
 	};
 };

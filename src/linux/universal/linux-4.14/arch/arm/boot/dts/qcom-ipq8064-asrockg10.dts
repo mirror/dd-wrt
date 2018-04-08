@@ -27,7 +27,7 @@
 	};
 
 	chosen {
-		bootargs = "earlyprintk rootfstype=squashfs noinitrd";
+		bootargs = "rootfstype=squashfs noinitrd";
 		linux,stdout-path = "serial0:115200n8";
 	};
 
