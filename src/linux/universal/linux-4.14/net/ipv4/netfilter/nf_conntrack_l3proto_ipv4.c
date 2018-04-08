@@ -224,7 +224,6 @@ getorigdst(struct sock *sk, int optval, void __user *user, int *len)
 	const struct inet_sock *inet = inet_sk(sk);
 	const struct nf_conntrack_tuple_hash *h;
 	struct nf_conntrack_tuple tuple;
-
 	memset(&tuple, 0, sizeof(tuple));
 
 	lock_sock(sk);
