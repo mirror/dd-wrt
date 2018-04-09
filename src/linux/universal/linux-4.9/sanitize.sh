@@ -121,6 +121,7 @@ do
 	    echo CONFIG_ARCHERC7V4=y >> .config
 	    echo CONFIG_UBNTFIX=y >> .config
 	    echo CONFIG_WR810N=y >> .config
+	    echo CONFIG_LIMA=y >> .config
 	    make oldconfig ARCH=mips
 	    sed -i 's/\CONFIG_WR841V8=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR710=y/ /g' .config	    
@@ -163,6 +164,7 @@ do
 	    sed -i 's/\CONFIG_ARCHERC7V4=y/ /g' .config	    
 	    sed -i 's/\CONFIG_UBNTFIX=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR810N=y/ /g' .config	    
+	    sed -i 's/\CONFIG_LIMA=y/ /g' .config	    
     fi
     cp .config $i
 done
