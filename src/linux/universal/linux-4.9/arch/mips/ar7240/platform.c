@@ -282,7 +282,7 @@ static void __init qca953x_usb_setup(void)
 
 	ath79_usb_register("ehci-platform", -1,
 			   QCA953X_EHCI_BASE, QCA953X_EHCI_SIZE,
-			   AR934X_IP3_IRQ(0),
+			   AR71XX_CPU_IRQ_USB,
 			   &ath79_ehci_pdata_v2, sizeof(ath79_ehci_pdata_v2));
 }
 
@@ -1068,6 +1068,10 @@ int __init ar7240_platform_init(void)
 	mac = (u8 *)KSEG1ADDR(0x1fff1002);
 	ee = (u8 *)KSEG1ADDR(0x1fff1000);
 #endif
+#ifdef CONFIG_LIMA
+	mac = (u8 *)KSEG1ADDR(0x1f080000);
+	ee = (u8 *)KSEG1ADDR(0x1f081000);
+#endif
 
 #ifdef CONFIG_WASP_SUPPORT
 #define DB120_MAC0_OFFSET	0
@@ -1227,6 +1231,9 @@ int __init ar7240_platform_init(void)
 	__raw_writel(t, base + AR933X_GMAC_REG_ETH_CFG);
 	iounmap(base);
 	
+    #elif CONFIG_LIMA
+	//swap phy
+	ath79_setup_ar933x_phy4_switch(true, true);
     #elif CONFIG_WR841V8
 	//swap phy
 	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
@@ -1588,6 +1595,28 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_switch_data.phy_poll_mask |= BIT(4);
 	ar71xx_add_device_eth(1);
+    #elif CONFIG_LIMA
+#define LIMA_ETH_PHYS		(BIT(0) | BIT(1))
+	ar71xx_add_device_mdio(0, ~LIMA_ETH_PHYS);
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, -1);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 0);
+
+	/* GMAC0 is connected to the PHY0 of the internal switch */
+	ar71xx_switch_data.phy4_mii_en = 1;
+
+
+	ar71xx_switch_data.phy_poll_mask |= BIT(0);
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_mask = BIT(0);
+	ar71xx_eth0_data.duplex = DUPLEX_FULL;
+	ar71xx_eth0_data.speed = SPEED_100;
+	ar71xx_add_device_eth(0);
+
+	/* GMAC1 is connected to the internal switch */
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+	ar71xx_eth1_data.phy_mask = BIT(1);
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+	ar71xx_add_device_eth(1);
     #elif CONFIG_WR841V8
 	ar71xx_add_device_mdio(1, 0x0);
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, -1);
@@ -1896,7 +1925,7 @@ int __init ar7240_platform_init(void)
 
 #elif defined(CONFIG_DIR825C1)
 	ap91_pci_init(ee + 0x4000, mac1);
-#elif !defined(CONFIG_DIR615I) && !defined(CONFIG_WR841V8)
+#elif !defined(CONFIG_DIR615I) && !defined(CONFIG_WR841V8) || defined(CONFIG_LIMA)
 	ap91_pci_init(NULL, NULL);
 #endif
 #endif
