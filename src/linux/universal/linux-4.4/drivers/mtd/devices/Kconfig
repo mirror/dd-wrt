@@ -358,6 +358,9 @@ config ERC
 config WR841V9
 	bool "support for TPLink WR841V9"
 	depends on WR841V8
+config LIMA
+	bool "support for 8devices Lima"
+	depends on WR841V8
 config WR810N
 	bool "support for TPLink WR810N"
 	depends on WASP_SUPPORT
