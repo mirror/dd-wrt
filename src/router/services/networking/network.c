@@ -1407,6 +1407,16 @@ void start_lan(void)
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
+#elif HAVE_LIMA
+	nvram_setz(lan_ifnames, "eth0 eth1 ath0 ath1");
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		PORTSETUPWAN("");
+	} else {
+		PORTSETUPWAN("eth0");
+	}
+	if (nvram_match("et0macaddr", ""))
+		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
+	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_WASP
 	nvram_setz(lan_ifnames, "vlan1 vlan2 ath0 ath1");
 	if (getSTA() || getWET() || CANBRIDGE()) {
@@ -3177,6 +3187,9 @@ void start_wan(int status)
 #elif HAVE_MMS344
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
+#elif HAVE_LIMA
+	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_ARCHERC7V4
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
