@@ -724,6 +724,9 @@ endif
 ifeq ($(CONFIG_AC622),y)
 CFLAGS_EXTRA += -DHAVE_AC622
 endif
+ifeq ($(CONFIG_LIMA),y)
+CFLAGS_EXTRA += -DHAVE_LIMA
+endif
 ifeq ($(CONFIG_JJAP005),y)
 CFLAGS_EXTRA += -DHAVE_JJAP005
 endif

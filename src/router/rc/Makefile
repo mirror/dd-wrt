@@ -140,6 +140,9 @@ endif
 ifeq ($(CONFIG_UQMI),y)
 CFLAGS += -DHAVE_UQMI
 endif
+ifeq ($(CONFIG_LIMA),y)
+CFLAGS += -DHAVE_LIMA
+endif
 ifeq ($(CONFIG_SOLO51),y)
 CFLAGS += -DHAVE_SOLO51
 endif

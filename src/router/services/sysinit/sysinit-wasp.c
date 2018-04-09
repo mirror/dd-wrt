@@ -201,6 +201,9 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2 3 4 5");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 1");
+#elif defined (HAVE_LIMA)
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 #elif defined (HAVE_ARCHERC7)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
@@ -284,6 +287,9 @@ void start_sysinit(void)
 	}
 #elif defined(HAVE_WZR450HP2) || defined(HAVE_WDR3500)
 	eval("ifconfig", "eth1", "up");
+#elif defined(HAVE_LIMA)
+	eval("ifconfig", "eth0", "up");
+	eval("ifconfig", "eth0", "up");
 #else
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
@@ -426,7 +432,7 @@ void start_sysinit(void)
 	}
 #endif
 	detect_wireless_devices();
-#ifndef HAVE_WR810N
+#if !defined(HAVE_WR810N) && !defined(HAVE_LIMA)
 
 #ifdef HAVE_WNDR3700V4
 	setWirelessLed(0, 11);
