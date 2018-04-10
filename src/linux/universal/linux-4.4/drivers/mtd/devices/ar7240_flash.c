@@ -28,13 +28,10 @@
 #define INTEL_JEDEC_ID        0x89
 #define WINB_JEDEC_ID        0xef
 
-
 #define MXIC_ENSO            0xb1
 #define MXIC_EXSO            0xc1
 
-
 static flash_info_t flash_info;
-
 
 /*
  * statics
@@ -77,23 +74,23 @@ EXPORT_SYMBOL(ar7240_flash_spi_up);
 #define AR7240_FLASH_PG_SIZE_256B       256
 #define AR7240_FLASH_NAME               "ar7240-nor0"
 
-static int zcom=0;
-static int nocalibration=0;
+static int zcom = 0;
+static int nocalibration = 0;
 static unsigned int zcomoffset = 0;
 int guessbootsize(void *offset, unsigned int maxscan)
 {
-	unsigned int i,a;
+	unsigned int i, a;
 	unsigned char *ofsb = (unsigned char *)offset;
 	unsigned int *ofs = (unsigned int *)offset;
 	maxscan -= 0x20000;
 	maxscan /= 4;
-	zcom=0;
+	zcom = 0;
 #ifdef CONFIG_WILLY
 	return 0x50000;
 #endif
 	if (!strncmp((char *)(ofsb + 0x29da), "myloram.bin", 11) || !strncmp((char *)(ofsb + 0x2aba), "myloram.bin", 11)) {
 		printk(KERN_EMERG "compex WP72E detected\n");
-		nocalibration=1;
+		nocalibration = 1;
 		return 0x30000;	// compex, lzma image
 	}
 
@@ -126,11 +123,11 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			printk(KERN_EMERG "WNR2200 uboot detected\n");
 			return 0x50000;	// uboot, lzma image
 		}
-		if (ofs[i] == 0x01000000 && ofs[i+1] == 0x44442d57) {
+		if (ofs[i] == 0x01000000 && ofs[i + 1] == 0x44442d57) {
 			printk(KERN_EMERG "tplink uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
-		if (ofs[i] == 0x01000000 && ofs[i+1] == 0x54502D4C) {
+		if (ofs[i] == 0x01000000 && ofs[i + 1] == 0x54502D4C) {
 			printk(KERN_EMERG "tplink uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
@@ -140,17 +137,17 @@ int guessbootsize(void *offset, unsigned int maxscan)
 		}
 		if (ofs[i] == SQUASHFS_MAGIC_SWAP) {
 			printk(KERN_EMERG "ZCom quirk found\n");
-			zcom=1;
+			zcom = 1;
 			for (a = i; a < maxscan; a += 16384) {
-					if (ofs[a] == 0x27051956) {
-					    printk(KERN_EMERG "ZCom quirk kernel offset %d\n",a*4);
-					    zcomoffset = a * 4;
-					}
-    	
+				if (ofs[a] == 0x27051956) {
+					printk(KERN_EMERG "ZCom quirk kernel offset %d\n", a * 4);
+					zcomoffset = a * 4;
+				}
+
 			}
 			return i * 4;	// filesys starts earlier
 		}
-		
+
 	}
 	return -1;
 }
@@ -165,8 +162,7 @@ static void ar7240_spi_write_enable(void)
 	ar7240_spi_go();
 }
 
-static void
-ar7240_spi_flash_unblock(void)
+static void ar7240_spi_flash_unblock(void)
 {
 	ar7240_spi_write_enable();
 	ar7240_spi_bit_banger(AR7240_SPI_CMD_WRITE_SR);
@@ -179,8 +175,8 @@ ar7240_spi_flash_unblock(void)
 Before we claim the SPI driver we need to clean up any work in progress we have
 pre-empted from user-space SPI or other SPI device drivers.
 */
-static void
-ar7424_flash_spi_reset(void) {
+static void ar7424_flash_spi_reset(void)
+{
 	/* Enable SPI writes and retrieved flash JEDEC ID */
 #ifdef CONFIG_UBNTFIX
 	u_int32_t mfrid = 0;
@@ -196,26 +192,25 @@ ar7424_flash_spi_reset(void) {
 	mfrid = ar7240_reg_rd(AR7240_SPI_RD_STATUS) & 0x00ffffff;
 	ar7240_spi_go();
 	/* If this is an MXIC flash, be sure we are not in secure area */
- 	
- 	mfrid >>=16;
-	if(mfrid == MXIC_JEDEC_ID) {
+
+	mfrid >>= 16;
+	if (mfrid == MXIC_JEDEC_ID) {
 		/* Exit secure area of MXIC (in case we're in it) */
 		ar7240_spi_bit_banger(MXIC_EXSO);
 		ar7240_spi_go();
 	}
 	ar7240_spi_poll();
-	if(mfrid == MXIC_JEDEC_ID || mfrid == ATMEL_JEDEC_ID || mfrid == WINB_JEDEC_ID || mfrid == INTEL_JEDEC_ID || mfrid == SST_JEDEC_ID) {
-		    ar7240_spi_flash_unblock(); // required to unblock software protection mode by ubiquiti (consider that ubnt did not release this in theires gpl sources. likelly to fuck up developers)
+	if (mfrid == MXIC_JEDEC_ID || mfrid == ATMEL_JEDEC_ID || mfrid == WINB_JEDEC_ID || mfrid == INTEL_JEDEC_ID || mfrid == SST_JEDEC_ID) {
+		ar7240_spi_flash_unblock();	// required to unblock software protection mode by ubiquiti (consider that ubnt did not release this in theires gpl sources. likelly to fuck up developers)
 	}
 #endif
 	ar7240_reg_wr(AR7240_SPI_FS, 0);
 }
 
-
 static int ar7240_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
 	int nsect, s_curr, s_last;
-	uint64_t  res;
+	uint64_t res;
 	if (instr->addr + instr->len > mtd->size) {
 		return (-EINVAL);
 	}
@@ -228,18 +223,17 @@ static int ar7240_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 	res = instr->len;
 	do_div(res, mtd->erasesize);
 	nsect = res;
-	if (((uint32_t)instr->len) % mtd->erasesize)
+	if (((uint32_t) instr->len) % mtd->erasesize)
 		nsect++;
 
 	res = instr->addr;
-	do_div(res,mtd->erasesize);
+	do_div(res, mtd->erasesize);
 	s_curr = res;
 	s_last = s_curr + nsect;
 
 	do {
 		qca_sf_sect_erase(&flash_info, s_curr * AR7240_SPI_SECTOR_SIZE);
 	} while (++s_curr < s_last);
-
 
 	preempt_enable();
 
@@ -251,13 +245,10 @@ static int ar7240_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 	return 0;
 }
 
-static int
-ar7240_flash_read(struct mtd_info *mtd, loff_t from, size_t len,
-		  size_t *retlen, u_char * buf)
+static int ar7240_flash_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen, u_char * buf)
 {
 	uint32_t addr = from | 0xbf000000;
 
-	
 	if (!len)
 		return (0);
 	if (from + len > mtd->size)
@@ -265,15 +256,15 @@ ar7240_flash_read(struct mtd_info *mtd, loff_t from, size_t len,
 
 	preempt_disable();
 	if (from + len >= 16 << 20) {
-	    ar7240_flash_spi_down();
-	    ar7424_flash_spi_reset();
-	    qca_sf_read(&flash_info, 0, from, len, buf);
-	    ar7240_flash_spi_up();
+		ar7240_flash_spi_down();
+		ar7424_flash_spi_reset();
+		qca_sf_read(&flash_info, 0, from, len, buf);
+		ar7240_flash_spi_up();
 	} else {
-	    ar7240_flash_spi_down();
-	    ar7424_flash_spi_reset();
-	    ar7240_flash_spi_up();
-	    memcpy(buf, (uint8_t *) (addr), len);
+		ar7240_flash_spi_down();
+		ar7424_flash_spi_reset();
+		ar7240_flash_spi_up();
+		memcpy(buf, (uint8_t *) (addr), len);
 	}
 	preempt_enable();
 	*retlen = len;
@@ -281,9 +272,7 @@ ar7240_flash_read(struct mtd_info *mtd, loff_t from, size_t len,
 	return 0;
 }
 
-static int
-ar7240_flash_write(struct mtd_info *mtd, loff_t to, size_t len,
-		   size_t *retlen, const u_char *buf)
+static int ar7240_flash_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, const u_char * buf)
 {
 	preempt_disable();
 	ar7240_flash_spi_down();
@@ -346,23 +335,22 @@ static int __init ar7240_flash_init(void)
 	size_t rootsize;
 	size_t len;
 	int fsize;
-	int inc=0;
+	int inc = 0;
 	int guess;
 	size_t origlen;
 	init_MUTEX(&ar7240_flash_sem);
 
-
 #if defined(ATH_SST_FLASH)
 	ar7240_reg_wr_nf(AR7240_SPI_CLOCK, 0x3);
 	ar7240_reg_wr(AR7240_SPI_FS, 0);
-        ar7240_spi_flash_unblock();
+	ar7240_spi_flash_unblock();
 #else
 #ifndef CONFIG_WASP_SUPPORT
 	ar7240_reg_wr_nf(AR7240_SPI_CLOCK, 0x43);
 #endif
 #endif
 	buf = (char *)0xbf000000;
-	fsize = flash_get_geom (&flash_info);
+	fsize = flash_get_geom(&flash_info);
 
 	for (i = 0; i < AR7240_FLASH_MAX_BANKS; i++) {
 
@@ -391,10 +379,9 @@ static int __init ar7240_flash_init(void)
 
 		guess = guessbootsize(buf, mtd->size);
 		if (guess > 0) {
-			printk(KERN_EMERG "guessed bootloader size = %X\n",
-			       guess);
+			printk(KERN_EMERG "guessed bootloader size = %X\n", guess);
 			dir_parts[0].offset = 0;
-			dir_parts[0].size = guess;			
+			dir_parts[0].size = guess;
 			dir_parts[7].size = guess;
 			dir_parts[1].offset = guess;
 			dir_parts[1].size = 0;
@@ -403,50 +390,48 @@ static int __init ar7240_flash_init(void)
 		}
 		while ((offset + mtd->erasesize) < mtd->size) {
 //                      printk(KERN_EMERG "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
-			__u32 *check2 = (__u32 *)&buf[0x60];	
-			__u32 *check3 = (__u32 *)&buf[0xc0];	
+			__u32 *check2 = (__u32 *)&buf[0x60];
+			__u32 *check3 = (__u32 *)&buf[0xc0];
 			if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP || *check2 == SQUASHFS_MAGIC_SWAP || *check3 == SQUASHFS_MAGIC_SWAP) {
-				printk(KERN_EMERG "\nfound squashfs at %X\n",
-				       offset);
+				printk(KERN_EMERG "\nfound squashfs at %X\n", offset);
 				if (*check2 == SQUASHFS_MAGIC_SWAP) {
-				    buf+=0x60;
-				    offset +=0x60;
-				    inc = 0x60;
+					buf += 0x60;
+					offset += 0x60;
+					inc = 0x60;
 				}
 				if (*check3 == SQUASHFS_MAGIC_SWAP) {
-				    buf+=0xC0;
-				    offset +=0xC0;
-				    inc = 0xc0;
+					buf += 0xC0;
+					offset += 0xC0;
+					inc = 0xc0;
 				}
 				sb = (struct squashfs_super_block *)buf;
 				dir_parts[2].offset = offset;
 
-				
 				dir_parts[2].size = le64_to_cpu(sb->bytes_used);
 				origlen = dir_parts[2].offset + dir_parts[2].size;
-				
+
 				len = dir_parts[2].offset + dir_parts[2].size;
 				len += (mtd->erasesize - 1);
 				len &= ~(mtd->erasesize - 1);
-				printk(KERN_INFO "adjusted length %X, original length %X\n",len,origlen);
+				printk(KERN_INFO "adjusted length %X, original length %X\n", len, origlen);
 				if ((len - (inc + 4096)) < origlen)
 					len += mtd->erasesize;
 				dir_parts[2].size = (len & 0x1ffffff) - dir_parts[2].offset;
-				
+
 				dir_parts[3].offset = dir_parts[2].offset + dir_parts[2].size;
 
 				dir_parts[5].offset = mtd->size - mtd->erasesize;	//fis config
 				dir_parts[5].size = mtd->erasesize;
-				#ifdef CONFIG_ARCHERC7V4
-				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize*16);	//nvram
-				dir_parts[4].size = mtd->erasesize;				
-				#elif (defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR4300) && !defined(CONFIG_WR1043V2) && !defined(CONFIG_WR841V8) && !defined(CONFIG_UBNTXW)) || defined(CONFIG_DIR862)
-				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize*2);	//nvram
+#ifdef CONFIG_ARCHERC7V4
+				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize * 16);	//nvram
 				dir_parts[4].size = mtd->erasesize;
-				#else
+#elif (defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR4300) && !defined(CONFIG_WR1043V2) && !defined(CONFIG_WR841V8) && !defined(CONFIG_UBNTXW)) || defined(CONFIG_DIR862)
+				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize * 2);	//nvram
+				dir_parts[4].size = mtd->erasesize;
+#else
 				dir_parts[4].offset = dir_parts[5].offset - (mtd->erasesize - (nocalibration * mtd->erasesize));	//nvram
 				dir_parts[4].size = mtd->erasesize;
-				#endif
+#endif
 				dir_parts[3].size = dir_parts[4].offset - dir_parts[3].offset;
 				rootsize = dir_parts[4].offset - offset;	//size of rootfs aligned to nvram offset
 				dir_parts[1].size = (dir_parts[2].offset - dir_parts[1].offset) + rootsize;
