@@ -215,8 +215,8 @@ static int ar7240_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 		return (-EINVAL);
 	}
 
-	preempt_disable();
 	ar7240_flash_spi_down();
+	preempt_disable();
 
 	ar7424_flash_spi_reset();
 
@@ -235,12 +235,12 @@ static int ar7240_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 		qca_sf_sect_erase(&flash_info, s_curr * AR7240_SPI_SECTOR_SIZE);
 	} while (++s_curr < s_last);
 
-	preempt_enable();
 
 	if (instr->callback) {
 		instr->state = MTD_ERASE_DONE;
 		instr->callback(instr);
 	}
+	preempt_enable();
 	ar7240_flash_spi_up();
 	return 0;
 }
@@ -254,19 +254,21 @@ static int ar7240_flash_read(struct mtd_info *mtd, loff_t from, size_t len, size
 	if (from + len > mtd->size)
 		return (-EINVAL);
 
-	preempt_disable();
 	if (from + len >= 16 << 20) {
 		ar7240_flash_spi_down();
+		preempt_disable();
 		ar7424_flash_spi_reset();
 		qca_sf_read(&flash_info, 0, from, len, buf);
+		preempt_enable();
 		ar7240_flash_spi_up();
 	} else {
 		ar7240_flash_spi_down();
+		preempt_disable();
 		ar7424_flash_spi_reset();
+		preempt_enable();
 		ar7240_flash_spi_up();
 		memcpy(buf, (uint8_t *) (addr), len);
 	}
-	preempt_enable();
 	*retlen = len;
 
 	return 0;
@@ -274,11 +276,11 @@ static int ar7240_flash_read(struct mtd_info *mtd, loff_t from, size_t len, size
 
 static int ar7240_flash_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, const u_char * buf)
 {
-	preempt_disable();
 	ar7240_flash_spi_down();
+	preempt_disable();
 	qca_sf_write_buf(&flash_info, 0, to, len, buf);
-	ar7240_flash_spi_up();
 	preempt_enable();
+	ar7240_flash_spi_up();
 	*retlen = len;
 	return 0;
 }
