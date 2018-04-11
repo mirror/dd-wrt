@@ -50,6 +50,15 @@
 #define SPI_FLASH_CMD_REAR		0xC8
 #define SPI_FLASH_CMD_WEAR		0xC5
 
+#define MXIC_ENSO            0xb1
+#define MXIC_EXSO            0xc1
+
+#define MXIC_JEDEC_ID        0xc2
+#define ATMEL_JEDEC_ID        0x1f
+#define SST_JEDEC_ID        0x20
+#define INTEL_JEDEC_ID        0x89
+#define WINB_JEDEC_ID        0xef
+
 #define qca_soc_reg_read(_addr)			*(volatile unsigned int *)(KSEG1ADDR(_addr))
 #define qca_soc_reg_write(_addr, _val)	((*(volatile unsigned int *)KSEG1ADDR(_addr)) = (_val))
 

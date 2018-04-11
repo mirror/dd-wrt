@@ -33,11 +33,6 @@
 
 static flash_info_t flash_info;
 
-/*
- * statics
- */
-static void ar7240_spi_poll(void);
-
 #define down mutex_lock
 #define up mutex_unlock
 #define init_MUTEX mutex_init
@@ -152,61 +147,6 @@ int guessbootsize(void *offset, unsigned int maxscan)
 	return -1;
 }
 
-#ifdef CONFIG_UBNTFIX
-
-static void ar7240_spi_write_enable(void)
-{
-	ar7240_reg_wr_nf(AR7240_SPI_FS, 1);
-	ar7240_reg_wr_nf(AR7240_SPI_WRITE, AR7240_SPI_CS_DIS);
-	ar7240_spi_bit_banger(AR7240_SPI_CMD_WREN);
-	ar7240_spi_go();
-}
-
-static void ar7240_spi_flash_unblock(void)
-{
-	ar7240_spi_write_enable();
-	ar7240_spi_bit_banger(AR7240_SPI_CMD_WRITE_SR);
-	ar7240_spi_bit_banger(0x0);
-	ar7240_spi_go();
-	ar7240_spi_poll();
-}
-#endif
-/*
-Before we claim the SPI driver we need to clean up any work in progress we have
-pre-empted from user-space SPI or other SPI device drivers.
-*/
-static void ar7424_flash_spi_reset(void)
-{
-	/* Enable SPI writes and retrieved flash JEDEC ID */
-#ifdef CONFIG_UBNTFIX
-	u_int32_t mfrid = 0;
-#endif
-	ar7240_reg_wr_nf(AR7240_SPI_FS, 1);
-	ar7240_spi_poll();
-	ar7240_reg_wr_nf(AR7240_SPI_WRITE, AR7240_SPI_CS_DIS);
-#ifdef CONFIG_UBNTFIX
-	ar7240_spi_bit_banger(AR7240_SPI_CMD_RDID);
-	ar7240_spi_bit_banger(0x0);
-	ar7240_spi_bit_banger(0x0);
-	ar7240_spi_bit_banger(0x0);
-	mfrid = ar7240_reg_rd(AR7240_SPI_RD_STATUS) & 0x00ffffff;
-	ar7240_spi_go();
-	/* If this is an MXIC flash, be sure we are not in secure area */
-
-	mfrid >>= 16;
-	if (mfrid == MXIC_JEDEC_ID) {
-		/* Exit secure area of MXIC (in case we're in it) */
-		ar7240_spi_bit_banger(MXIC_EXSO);
-		ar7240_spi_go();
-	}
-	ar7240_spi_poll();
-	if (mfrid == MXIC_JEDEC_ID || mfrid == ATMEL_JEDEC_ID || mfrid == WINB_JEDEC_ID || mfrid == INTEL_JEDEC_ID || mfrid == SST_JEDEC_ID) {
-		ar7240_spi_flash_unblock();	// required to unblock software protection mode by ubiquiti (consider that ubnt did not release this in theires gpl sources. likelly to fuck up developers)
-	}
-#endif
-	ar7240_reg_wr(AR7240_SPI_FS, 0);
-}
-
 static int ar7240_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
 	int nsect, s_curr, s_last;
@@ -217,8 +157,6 @@ static int ar7240_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 
 	ar7240_flash_spi_down();
 	preempt_disable();
-
-	ar7424_flash_spi_reset();
 
 	res = instr->len;
 	do_div(res, mtd->erasesize);
@@ -234,7 +172,6 @@ static int ar7240_flash_erase(struct mtd_info *mtd, struct erase_info *instr)
 	do {
 		qca_sf_sect_erase(&flash_info, s_curr * AR7240_SPI_SECTOR_SIZE);
 	} while (++s_curr < s_last);
-
 
 	if (instr->callback) {
 		instr->state = MTD_ERASE_DONE;
@@ -257,16 +194,10 @@ static int ar7240_flash_read(struct mtd_info *mtd, loff_t from, size_t len, size
 	if (from + len >= 16 << 20) {
 		ar7240_flash_spi_down();
 		preempt_disable();
-		ar7424_flash_spi_reset();
 		qca_sf_read(&flash_info, 0, from, len, buf);
 		preempt_enable();
 		ar7240_flash_spi_up();
 	} else {
-		ar7240_flash_spi_down();
-		preempt_disable();
-		ar7424_flash_spi_reset();
-		preempt_enable();
-		ar7240_flash_spi_up();
 		memcpy(buf, (uint8_t *) (addr), len);
 	}
 	*retlen = len;
@@ -343,9 +274,9 @@ static int __init ar7240_flash_init(void)
 	init_MUTEX(&ar7240_flash_sem);
 
 #if defined(ATH_SST_FLASH)
-	ar7240_reg_wr_nf(AR7240_SPI_CLOCK, 0x3);
-	ar7240_reg_wr(AR7240_SPI_FS, 0);
-	ar7240_spi_flash_unblock();
+//	ar7240_reg_wr_nf(AR7240_SPI_CLOCK, 0x3);
+//	ar7240_reg_wr(AR7240_SPI_FS, 0);
+//	ar7240_spi_flash_unblock();
 #else
 #ifndef CONFIG_WASP_SUPPORT
 	ar7240_reg_wr_nf(AR7240_SPI_CLOCK, 0x43);
@@ -456,22 +387,6 @@ static void __exit ar7240_flash_exit(void)
 	/*
 	 * nothing to do
 	 */
-}
-
-/*
- * Primitives to implement flash operations
- */
-
-static void ar7240_spi_poll()
-{
-	int rd;
-
-	do {
-		ar7240_reg_wr_nf(AR7240_SPI_WRITE, AR7240_SPI_CS_DIS);
-		ar7240_spi_bit_banger(AR7240_SPI_CMD_RD_STATUS);
-		ar7240_spi_delay_8();
-		rd = (ar7240_reg_rd(AR7240_SPI_RD_STATUS) & 1);
-	} while (rd);
 }
 
 module_init(ar7240_flash_init);
