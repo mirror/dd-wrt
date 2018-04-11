@@ -75,6 +75,21 @@ static inline void qca_sf_write_di(void)
 	qca_sf_shift_out(SPI_FLASH_CMD_WRDI, 8, 1);
 }
 
+#ifdef CONFIG_UBNTFIX
+static inline void qca_mxc_unlock(void)
+{
+	qca_sf_spi_en();
+	qca_sf_shift_out(MXIC_EXSO, 8, 1);
+	qca_sf_spi_di();
+}
+
+static inline void qca_flash_unlock(void)
+{
+	qca_sf_spi_en();
+	qca_sf_shift_out(SPI_FLASH_CMD_WSR1 << 8, 16, 1);
+	qca_sf_spi_di();
+}
+#endif
 /* Poll status register and wait till busy bit is cleared */
 static void qca_sf_busy_wait(void)
 {
@@ -438,6 +453,7 @@ void flash_enable_reset(void)
 	}
 	qca_sf_spi_di();
 }
+
 static unsigned int guessflashsize(void *base)
 {
 	unsigned int size;
@@ -464,7 +480,6 @@ static unsigned int guessflashsize(void *base)
 	return size;
 
 }
-
 
 unsigned long flash_get_geom(flash_info_t * flash_info)
 {
@@ -507,11 +522,22 @@ unsigned long flash_get_geom(flash_info_t * flash_info)
 		}
 	} else {
 		flash_info->flash_id = FLASH_M25P64;
-		flash_info->size = guessflashsize((void*)0xbf000000);	/* bytes */
+		flash_info->size = guessflashsize((void *)0xbf000000);	/* bytes */
 		flash_info->sector_size = CFG_DEFAULT_FLASH_SECTOR_SIZE;
 		flash_info->sector_count = flash_info->size / CFG_DEFAULT_FLASH_SECTOR_SIZE;
 		flash_info->erase_cmd = ATH_SPI_CMD_SECTOR_ERASE;
 	}
+#ifdef CONFIG_UBNTFIX
+	switch (JEDEC_MFR(flash_id)) {
+	case MXIC_JEDEC_ID:
+		qca_mxc_unlock();
+	case ATMEL_JEDEC_ID:
+	case WINB_JEDEC_ID:
+	case INTEL_JEDEC_ID:
+	case SST_JEDEC_ID:
+		qca_flash_unlock();
+	}
+#endif
 
 	for (i = 0; i < flash_info->sector_count; i++) {
 		flash_info->start[i] = CFG_FLASH_BASE + (i * flash_info->sector_size);
