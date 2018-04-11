@@ -528,7 +528,7 @@ unsigned long flash_get_geom(flash_info_t * flash_info)
 		flash_info->erase_cmd = ATH_SPI_CMD_SECTOR_ERASE;
 	}
 #ifdef CONFIG_UBNTFIX
-	switch (JEDEC_MFR(flash_id)) {
+	switch ((flash_id >> 16) & 0xff) {
 	case MXIC_JEDEC_ID:
 		qca_mxc_unlock();
 	case ATMEL_JEDEC_ID:
