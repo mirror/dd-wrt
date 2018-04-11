@@ -86,7 +86,7 @@ static inline void qca_mxc_unlock(void)
 static inline void qca_flash_unlock(void)
 {
 	qca_sf_spi_en();
-	qca_sf_shift_out(SPI_FLASH_CMD_WSR1 << 8, 16, 1);
+	qca_sf_shift_out(SPI_FLASH_CMD_WRSR << 8, 16, 1);
 	qca_sf_spi_di();
 }
 #endif
