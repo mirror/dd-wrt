@@ -82,7 +82,7 @@ icu-clean:
 
 icu-install:
 	mkdir -p $(INSTALLDIR)/icu/usr/lib
-	cp -fpR $(TOP)/icu/lib/*.so* $(INSTALLDIR)/icu/usr/lib/
+	cp -fpR $(TOP)/icu/target_staging/lib/*.so* $(INSTALLDIR)/icu/usr/lib/
 
 
 php7: libxml2 libmcrypt icu
