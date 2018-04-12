@@ -35,7 +35,7 @@ icu-configure:
 	--host=$(ARCH)-linux-uclibc \
 	--disable-debug \
 	--enable-release \
-	--disable-shared \
+	--enable-shared \
 	--enable-static \
 	--enable-draft \
 	--enable-renaming \
@@ -81,9 +81,8 @@ icu-clean:
 	make -C icu clean
 
 icu-install:
-	@true
-#	mkdir -p $(INSTALLDIR)/icu/usr/lib
-#	cp -fpR $(TOP)/icu/lib/*.so* $(INSTALLDIR)/icu/usr/lib/
+	mkdir -p $(INSTALLDIR)/icu/usr/lib
+	cp -fpR $(TOP)/icu/lib/*.so* $(INSTALLDIR)/icu/usr/lib/
 
 
 php7: libxml2 libmcrypt icu
