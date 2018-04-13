@@ -7,6 +7,10 @@ define kernelfeatures
 	if [ "$(CONFIG_WIREGUARD)" = "y" ]; then \
 		sed -i 's/\# CONFIG_NET_FOU is not set/CONFIG_NET_FOU=m/g' $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_NTFS3G)" = "y" ]; then \
+		sed -i 's/\# CONFIG_FUSE_FS is not set/CONFIG_FUSE_FS=m/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_CUSE is not set" >> $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_EOP_TUNNEL)" = "y" ]; then \
 		echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config; \
 		echo CONFIG_NET_EOIP=m >> $(LINUXDIR)/.config; \
