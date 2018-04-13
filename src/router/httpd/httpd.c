@@ -1301,19 +1301,11 @@ static void settimeouts(webs_t wp, int secs)
 
 }
 
-static void sigchld(int sig)
+static void handle_sigchld(int sig)
 {
 	while (waitpid(-1, NULL, WNOHANG) > 0) ;
 }
 
-static void set_sigchld_handler(void)
-{
-	struct sigaction act;
-
-	bzero(&act, sizeof(act));
-	act.sa_handler = sigchld;
-	sigaction(SIGCHLD, &act, 0);
-}
 
 #ifdef HAVE_OPENSSL
 #define SSLBUFFERSIZE 16384
@@ -1399,7 +1391,6 @@ int main(int argc, char **argv)
 	fd_set lfdset;
 	int maxfd;
 	airbag_init();
-	set_sigchld_handler();
 #ifdef HAVE_HTTPS
 	int do_ssl = 0;
 #endif
@@ -1482,6 +1473,7 @@ int main(int argc, char **argv)
 	/* Ignore broken pipes */
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGTERM, handle_server_sig_int);	// kill
+	signal(SIGCHLD, handle_sigchld);
 #if 0
 	struct sigaction sa1;
 #ifdef SA_SIGINFO
