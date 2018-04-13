@@ -210,4 +210,10 @@ define kernelfeatures
 	echo "CONFIG_IP_VS_NFCT=y" >> $(LINUXDIR)/.config; \
 	echo "CONFIG_IP_VS_PE_SIP=m" >> $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_VSOCKETS)" = "y" ]; then \
+		sed -i 's/\# CONFIG_VSOCKETS is not set/CONFIG_VSOCKETS=m/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_VMWARE_VMCI_VSOCKETS=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_VIRTIO_VSOCKETS=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_VIRTIO_VSOCKETS_COMMON=m" >> $(LINUXDIR)/.config; \
+	fi
 endef
