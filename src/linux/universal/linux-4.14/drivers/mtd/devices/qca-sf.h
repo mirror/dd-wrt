@@ -62,6 +62,12 @@
 #define qca_soc_reg_read(_addr)			*(volatile unsigned int *)(KSEG1ADDR(_addr))
 #define qca_soc_reg_write(_addr, _val)	((*(volatile unsigned int *)KSEG1ADDR(_addr)) = (_val))
 
+
+#define qca_soc_reg_write_flush(_addr, _val) do {     \
+         qca_soc_reg_write(_addr, _val);     \
+         qca_soc_reg_read(_addr);       \
+}while(0);
+
 #define QCA_FLASH_BASE_REG			0x1F000000
 #define QCA_SPI_FUNC_SEL_REG				QCA_FLASH_BASE_REG + 0x00
 #define QCA_SPI_CTRL_REG					QCA_FLASH_BASE_REG + 0x04
