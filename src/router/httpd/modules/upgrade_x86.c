@@ -125,7 +125,23 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	/*
 	 * Feed write from a temporary FIFO 
 	 */
+#define HAVE_NEW_UPGRADE
+#ifdef HAVE_NEW_UPGRADE
+	char *write_argv_buf[8];
+	eval("mkdir", "-p", "/tmp/new_root");
+	eval("mount", "-n", "-t", "tmpfs", "none", "/tmp/new_root");
+	eval("mkdir", "-p", "/tmp/new_root/tmp");
+	write_argv_buf[0] = "update-prepare.sh";
+	write_argv_buf[1] = "uploadfile.bin";
+	write_argv_buf[2] = drive;
+	write_argv_buf[3] = "nomount";
+	write_argv_buf[4] = "noreboot";
+	write_argv_buf[5] = "usedd";
+	write_argv_buf[6] = NULL;
+	if (!drv || !(fifo = fopen("/tmp/new_root/tmp/uploadfile.bin", "wb"))) {
+#else
 	if (!drv || !(fifo = fopen(drive, "wb"))) {
+#endif
 		if (!ret)
 			ret = errno;
 		goto err;
@@ -179,7 +195,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		for (i = 0; i < linuxsize / MIN_BUF_SIZE; i++) {
 			wfread(&buf[0], 1, MIN_BUF_SIZE, stream);
 			fwrite(&buf[0], 1, MIN_BUF_SIZE, fifo);
-			fprintf(stderr, "%d bytes written\n", i * MIN_BUF_SIZE);
+			// fprintf(stderr, "%d bytes written\n", i * MIN_BUF_SIZE);
 			fsync(fileno(fifo));
 		}
 
@@ -190,11 +206,15 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 	}
 	fclose(fifo);
+#ifdef HAVE_NEW_UPGRADE
+	eval(write_argv_buf);
+#else
 	killall("watchdog", SIGKILL);
 	/*
 	 * Wait for write to terminate 
 	 */
 	// waitpid (pid, &ret, 0);
+#endif
 	cprintf("done\n");
 	ret = 0;
 err:
