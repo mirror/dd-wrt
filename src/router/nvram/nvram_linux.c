@@ -33,7 +33,7 @@
 #define PATH_DEV_NVRAM "/dev/nvram"
 #define NVRAM_SPACE_MAGIC			0x50534341	/* 'SPAC' */
 
-static int NVRAMSPACE = NVRAM_SPACE;
+static long NVRAMSPACE = NVRAM_SPACE;
 
 /* Globals */
 static int nvram_fd = -1;
