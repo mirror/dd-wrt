@@ -22,7 +22,7 @@ inline void qca_sf_spi_en(void)
 inline void qca_sf_spi_di(void)
 {
 	qca_soc_reg_write(QCA_SPI_SHIFT_CNT_REG, 0);
-	qca_soc_reg_write(QCA_SPI_FUNC_SEL_REG, 0);
+	qca_soc_reg_write_flush(QCA_SPI_FUNC_SEL_REG, 0);
 }
 
 static inline u32 qca_sf_shift_in(void)
@@ -336,8 +336,10 @@ u32 qca_sf_sfdp_info(u32 bank, u32 *flash_size, u32 *sect_size, u8 *erase_cmd)
 	data_in = qca_sf_sfdp_bfpt_dword(ptp_offset, 2);
 
 	/* We do not support >= 4 Gbits chips */
-	if ((data_in & (1 << 31)) || data_in == 0)
+	if ((data_in & (1 << 31)) || data_in == 0) {
+		qca_sf_spi_di();
 		return 1;
+	}
 
 	/* TODO: it seems that density is 0-based, like max. available address? */
 	if (flash_size != NULL)
@@ -358,9 +360,10 @@ u32 qca_sf_sfdp_info(u32 bank, u32 *flash_size, u32 *sect_size, u8 *erase_cmd)
 		}
 	}
 
-	if (ss == 0)
+	if (ss == 0) {
+		qca_sf_spi_di();
 		return 1;
-
+	}
 	if (sect_size != NULL)
 		*sect_size = 1 << ss;
 
