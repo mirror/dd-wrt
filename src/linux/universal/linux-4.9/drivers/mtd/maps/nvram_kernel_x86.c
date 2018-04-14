@@ -161,6 +161,7 @@ int _nvram_read(char *buf)
 		header->magic = NVRAM_MAGIC;
 		header->len = 0;
 		set_fs(old_fs);
+		nvram_commit();
 		return 0;
 	}
 	wr = buf;
@@ -172,6 +173,8 @@ int _nvram_read(char *buf)
 		offs += len;
 		wr += PAGE_SIZE;
 	}
+	filp_close(srcf, NULL);
+	set_fs(old_fs);
 	if (!offs || header->magic != NVRAM_MAGIC) {
 		printk(KERN_EMERG "Broken NVRAM found, recovering it (header error) len = %d\n", offs);
 		/* Maybe we can recover some data from early initialization */
@@ -179,9 +182,8 @@ int _nvram_read(char *buf)
 		memset(buf, 0, NVRAM_SPACE);
 		header->magic = NVRAM_MAGIC;
 		header->len = 0;
+		nvram_commit();
 	}
-	filp_close(srcf, NULL);
-	set_fs(old_fs);
 	return 0;
 }
 
@@ -461,12 +463,11 @@ static DEFINE_MUTEX(mtd_mutex);
 
 static long nvram_unlocked_ioctl(struct file *file, u_int cmd, u_long arg)
 {
-	int ret;
+	long ret;
 
 	mutex_lock(&mtd_mutex);
 	ret = dev_nvram_ioctl(file, cmd, arg);
 	mutex_unlock(&mtd_mutex);
-
 	return ret;
 }
 
