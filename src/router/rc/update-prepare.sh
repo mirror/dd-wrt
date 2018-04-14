@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 #
 # Working update script vor Ventana for use with web and file
 # for now only for MUSL
@@ -17,6 +17,13 @@ then
 	REBOOT=0
 else
 	REBOOT=1
+fi
+
+if [ x$5 = xusedd ]
+then
+	USEDD=1
+else
+	USEDD=0
 fi
 
 if [ x$2 = x ]
@@ -64,7 +71,7 @@ do
 	mkdir -p ${R}/$i
 done
 for i in /bin/busybox /bin/sh /bin/mount /bin/umount /bin/sync /bin/ls /bin/cat /bin/ps /bin/cp /bin/mv /sbin/reboot \
-		/sbin/pivot_root /usr/sbin/chroot \
+		/sbin/pivot_root /usr/sbin/chroot /bin/dd \
 	/sbin/mtd \
 	/sbin/rc /sbin/event /sbin/startservice /sbin/stopservice /sbin/write /sbin/ledtool \
 	/usr/sbin/httpd /lib/services.so /usr/lib/validate.so /usr/lib/visuals.so 
@@ -93,4 +100,4 @@ then
 fi
 cd ${R}
 pivot_root . oldroot
-exec chroot . /bin/sh /bin/update-after-pivot.sh ${FIFO} ${MTDPART} ${REBOOT} <dev/console >dev/console 2>&1
+exec chroot . /bin/sh /bin/update-after-pivot.sh ${FIFO} ${MTDPART} ${REBOOT} ${USEDD} <dev/console >dev/console 2>&1

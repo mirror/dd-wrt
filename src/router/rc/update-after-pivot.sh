@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 if [ x$1 = x ]
 then
 	echo "No file/fifo given, exit"
@@ -20,7 +20,12 @@ umount /oldroot/dev/pts
 umount /oldroot/proc
 umount -l /oldroot
 cd /tmp
-write ${FIFO} ${MTDPART}
+if [ x$4 = x1 ]
+then
+	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync
+else
+	write ${FIFO} ${MTDPART}
+fi
 busybox sync
 busybox sync
 busybox sync
