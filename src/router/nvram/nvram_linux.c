@@ -41,13 +41,6 @@ static char *nvram_buf = NULL;
 
 static int _nvram_init(void)
 {
-#if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
-	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
-	if (in == NULL) {
-		return -1;
-	}
-	fclose(in);
-#endif
 	if (nvram_fd >= 0)
 		return 0;
 
@@ -80,6 +73,13 @@ char *nvram_get(const char *name)
 	size_t count = strlen(name) + 1;
 	char *value = NULL;
 	unsigned long *off;
+#if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
+	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
+	if (in == NULL) {
+		return -1;
+	}
+	fclose(in);
+#endif
 
 	if (_nvram_init())
 		return NULL;
@@ -108,6 +108,13 @@ char *nvram_get(const char *name)
 int nvram_getall(char *buf, int count)
 {
 	int ret;
+#if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
+	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
+	if (in == NULL) {
+		return -1;
+	}
+	fclose(in);
+#endif
 
 	if (nvram_fd < 0) {
 		if ((ret = _nvram_init())) {
