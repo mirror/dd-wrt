@@ -1413,7 +1413,7 @@ static struct DEVICES devicelist[] = {
 	{0x2001, 0xa708, none, 0, 0, 2, &modeswitch_std_eject, "D-Link DWM-158 D1"},	//
 	{0x2001, 0xa809, none, 0, 0, 2, &modeswitch_std_eject, "D-Link DWM-157 A1"},	//
 	{0x2001, 0xa80b, none, 0, 0, 2, &modeswitch_mediatek, "D-Link DWM-156 A6"},	//
-	{0x2001, 0xab00, none, 0, 0, 2, &modeswitch_mediatek, "D-Link DWM-222 A1"},	//
+	{0x2001, 0xab00, none, 0, 0, 2, &modeswitch_std_eject, "D-Link DWM-222 A1"},	//
 
 /* Haier */
 	{0x201e, 0x1022, generic, 0, 0, 2, NULL, "Haier CE862"},	//
