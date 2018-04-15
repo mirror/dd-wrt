@@ -1300,6 +1300,17 @@ static int ntfs_fuse_opendir(const char *path,
 						ni,accesstype))
 				res = -EACCES;
 		}
+		if (ni->flags & FILE_ATTR_REPARSE_POINT) {
+#ifndef DISABLE_PLUGINS
+			const plugin_operations_t *ops;
+			REPARSE_POINT *reparse;
+
+			fi->fh = 0;
+			res = CALL_REPARSE_PLUGIN(ni, opendir, fi);
+#else /* DISABLE_PLUGINS */
+			res = -EOPNOTSUPP;
+#endif /* DISABLE_PLUGINS */
+		}
 		if (ntfs_inode_close(ni))
 			set_fuse_error(&res);
 	} else
@@ -1323,9 +1334,22 @@ static int ntfs_fuse_readdir(const char *path, void *buf,
 	ni = ntfs_pathname_to_inode(ctx->vol, NULL, path);
 	if (!ni)
 		return -errno;
-	if (ntfs_readdir(ni, &pos, &fill_ctx,
-			(ntfs_filldir_t)ntfs_fuse_filler))
-		err = -errno;
+
+	if (ni->flags & FILE_ATTR_REPARSE_POINT) {
+#ifndef DISABLE_PLUGINS
+		const plugin_operations_t *ops;
+		REPARSE_POINT *reparse;
+
+		err = CALL_REPARSE_PLUGIN(ni, readdir, &pos, &fill_ctx,
+				(ntfs_filldir_t)ntfs_fuse_filler, fi);
+#else /* DISABLE_PLUGINS */
+		err = -EOPNOTSUPP;
+#endif /* DISABLE_PLUGINS */
+	} else {
+		if (ntfs_readdir(ni, &pos, &fill_ctx,
+				(ntfs_filldir_t)ntfs_fuse_filler))
+			err = -errno;
+	}
 	ntfs_fuse_update_times(ni, NTFS_UPDATE_ATIME);
 	if (ntfs_inode_close(ni))
 		set_fuse_error(&err);
@@ -3732,6 +3756,7 @@ static struct fuse_operations ntfs_3g_ops = {
 #if !KERNELPERMS | (POSIXACLS & !KERNELACLS)
 	.access		= ntfs_fuse_access,
 	.opendir	= ntfs_fuse_opendir,
+	.releasedir	= ntfs_fuse_release,
 #endif
 #ifdef HAVE_SETXATTR
 	.getxattr	= ntfs_fuse_getxattr,
@@ -4188,10 +4213,14 @@ int main(int argc, char *argv[])
 	
 	/* Force read-only mount if the device was found read-only */
 	if (!ctx->ro && NVolReadOnly(ctx->vol)) {
+		ctx->rw = FALSE;
 		ctx->ro = TRUE;
 		if (ntfs_strinsert(&parsed_options, ",ro")) 
                 	goto err_out;
-	}
+		ntfs_log_info("Could not mount read-write, trying read-only\n");
+	} else
+		if (ctx->rw && ntfs_strinsert(&parsed_options, ",rw"))
+			goto err_out;
 	/* We must do this after ntfs_open() to be able to set the blksize */
 	if (ctx->blkdev && set_fuseblk_options(&parsed_options))
 		goto err_out;

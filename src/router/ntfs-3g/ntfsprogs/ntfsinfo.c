@@ -8,7 +8,7 @@
  * Copyright (c) 2004-2005 Yuval Fledel
  * Copyright (c) 2004-2007 Yura Pakhuchiy
  * Copyright (c)      2005 Cristian Klein
- * Copyright (c) 2011-2015 Jean-Pierre Andre
+ * Copyright (c) 2011-2018 Jean-Pierre Andre
  *
  * This utility will dump a file's attributes.
  *
@@ -119,7 +119,7 @@ static void version(void)
 	printf("    2003      Leonard Norrgård\n");
 	printf("    2004-2005 Yuval Fledel\n");
 	printf("    2004-2007 Yura Pakhuchiy\n");
-	printf("    2011-2014 Jean-Pierre Andre\n");
+	printf("    2011-2018 Jean-Pierre Andre\n");
 	printf("\n%s\n%s%s\n", ntfs_gpl, ntfs_bugs, ntfs_home);
 }
 
@@ -411,8 +411,12 @@ static char *ntfs_attr_get_name_mbs(ATTR_RECORD *attr)
 static const char *reparse_type_name(le32 tag)
 {
 	const char *name;
+	le32 seltag;
 
-	switch (tag) {
+	seltag = tag;
+	if (tag & IO_REPARSE_TAG_WITH_FLAGS)
+		seltag &= IO_REPARSE_PLUGIN_SELECT;
+	switch (seltag) {
 	case IO_REPARSE_TAG_MOUNT_POINT :
 		name = " (mount point)";
 		break;
@@ -424,6 +428,18 @@ static const char *reparse_type_name(le32 tag)
 		break;
 	case IO_REPARSE_TAG_DEDUP :
 		name = " (deduplicated)";
+		break;
+	case IO_REPARSE_TAG_WCI :
+		name = " (Windows container)";
+		break;
+	case IO_REPARSE_TAG_CLOUD :
+		name = " (Cloud)";
+		break;
+	case IO_REPARSE_TAG_NFS :
+		name = " (NFS symlink)";
+		break;
+	case IO_REPARSE_TAG_LX_SYMLINK :
+		name = " (Linux symlink)";
 		break;
 	default :
 		name = "";
