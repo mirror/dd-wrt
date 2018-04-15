@@ -1576,6 +1576,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_RAMBUTAN
+	setRouter("8devices Rambutan");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WASP
 	setRouter("Atheros Wasp");
 	nvram_default_get("ath0_rxantenna", "3");
@@ -2099,6 +2104,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	setRouter("8devices Lima");
+	return ROUTER_BOARD_PB42;
+#elif HAVE_RAMBUTAN
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	setRouter("8devices Rambutan");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WR841V8
 	nvram_default_get("ath0_rxantenna", "3");
