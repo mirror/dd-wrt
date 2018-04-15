@@ -1389,6 +1389,14 @@ static struct mtd_partition dir_parts[] = {
       {name:NULL,},
 };
 
+static struct mtd_partition ubi_parts[] = {
+      {name: "RedBoot", offset: 0x0, size:0x80000,},
+      {name: "linux", offset: 0x6c0000, size:0x40000,},
+      {name: "nvram", offset: 0x340000, size:0x80000,},
+      {name: "fullflash", offset: 0x0, size:0x10000,},
+      {name:NULL,},
+};
+
 
 /*
  * Device management interface
@@ -1401,11 +1409,12 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 	uint64_t offset;
 	char buf[512];
 	char *bbuf = NULL;
+	char *ubi = NULL;
 	int retlen;
 	unsigned int rootsize,len;
 	uint64_t base = offset + mtd->erasesize;
 	while (base < mtd->size) {
-		mtd_read(mtd,offset,512,&retlen,&buf[0]);
+		mtd_read(mtd,offset,512,&retlen,&buf[0]);		
 		if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP)
 		    bbuf = buf;
 		else
@@ -1415,7 +1424,13 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 		    offset+=128;
 		}
 		else
+		if (!memcmp(buf, "UBI#",4))
+		    ubi = buf;		
+		else {
 		    bbuf = NULL;
+		    ubi = NULL;
+		}
+				    
 		if (bbuf) {
 				printk(KERN_EMERG "\nfound squashfs at 0x%llX\n",offset);
 				sb = (struct squashfs_super_block *)buf;
@@ -1431,11 +1446,30 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 				dir_parts[6].size = mtd->size;
 				break;
 		}
+
+		if (ubi) {
+				printk(KERN_EMERG "\nfound ubifs at 0x%llX\n",offset);
+				ubi_parts[0].size = offset;
+				ubi_parts[1].offset = offset;
+				ubi_parts[1].size = mtd->size - offset;
+				ubi_parts[1].size -= 0x80000;  // subtract nvram size
+				
+				ubi_parts[2].offset = ubi_parts[1].offset + ubi_parts[1].size;
+				ubi_parts[2].size = 0x80000;
+
+				ubi_parts[3].offset = 0;
+				ubi_parts[3].size = mtd->size;
+				break;
+		}
 	offset += mtd->erasesize;
 	base += mtd->erasesize;
 	}
+	if (bbuf)
+		return add_mtd_partitions(mtd, dir_parts, 7);
+	if (ubi) 
+		return add_mtd_partitions(mtd, ubi_parts, 4);
 
-	return add_mtd_partitions(mtd, dir_parts, 7);
+	return -1;
 #else
 	return add_mtd_device(mtd);
 #endif

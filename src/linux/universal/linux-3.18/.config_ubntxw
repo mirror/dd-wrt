@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.18.92 Kernel Configuration
+# Linux/mips 3.18.105 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -956,6 +956,8 @@ CONFIG_DIR825C1=y
  
  
 CONFIG_UBNTXW=y
+ 
+ 
  
  
  

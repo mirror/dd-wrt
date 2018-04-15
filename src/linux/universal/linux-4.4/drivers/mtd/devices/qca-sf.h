@@ -127,8 +127,6 @@ typedef struct {
 	u32 size;		/* total bank size in bytes             */
 	u16 sector_count;	/* number of erase units                */
 	u32 flash_id;		/* combined device & manufacturer code  */
-	u32 start[CFG_MAX_FLASH_SECT];	/* physical sector start addresses */
-	u8 protect[CFG_MAX_FLASH_SECT];	/* sector protection status        */
 	u32 sector_size;
 	u32 bank;
 	u16 page_size;

@@ -906,7 +906,7 @@ void __init ar71xx_gpio_init(void)
 //      gpio_request(26, "USB power");
 //      gpio_direction_output(26, 1);
 #endif
-#ifdef CONFIG_MTD_NAND_ATH
+#if !defined(CONFIG_RAMBUTAN) && defined(CONFIG_MTD_NAND_ATH)
 #define ATH_APB_BASE			0x18000000	/* 384M */
 #define ATH_GPIO_BASE			ATH_APB_BASE+0x00040000
 #define ATH_GPIO_OUT_FUNCTION2		ATH_GPIO_BASE+0x34

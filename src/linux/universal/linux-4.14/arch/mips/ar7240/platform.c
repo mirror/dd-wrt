@@ -797,6 +797,35 @@ static struct mdio_board_info ap120c_mdio0_info[] = {
 	},
 };
 
+
+static struct at803x_platform_data rambutan_ar8032_data = {
+	.has_reset_gpio = 1,
+	.reset_gpio = 17,
+};
+
+static struct mdio_board_info rambutan_mdio0_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.0",
+		.phy_addr = 0,
+		.platform_data = &rambutan_ar8032_data,
+	},
+};
+
+static struct at803x_platform_data rambutan_ar8033_data = {
+	.has_reset_gpio = 1,
+	.reset_gpio = 23,
+};
+
+static struct mdio_board_info rambutan_mdio1_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.1",
+		.phy_addr = 0,
+		.platform_data = &rambutan_ar8033_data,
+	},
+};
+
+
+
 #define ALFA_AP120C_LAN_PHYMASK		BIT(5)
 #define ALFA_AP120C_MDIO_PHYMASK	ALFA_AP120C_LAN_PHYMASK
 #define ALFA_AP120C_MAC_OFFSET		0x2
@@ -1231,6 +1260,7 @@ int __init ar7240_platform_init(void)
 	__raw_writel(t, base + AR933X_GMAC_REG_ETH_CFG);
 	iounmap(base);
 	
+    #elif CONFIG_RAMBUTAN
     #elif CONFIG_LIMA
 	//swap phy
 	ath79_setup_ar933x_phy4_switch(true, true);
@@ -1595,6 +1625,26 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_switch_data.phy_poll_mask |= BIT(4);
 	ar71xx_add_device_eth(1);
+    #elif CONFIG_RAMBUTAN
+	mdiobus_register_board_info(rambutan_mdio0_info,
+				    ARRAY_SIZE(rambutan_mdio0_info));
+	mdiobus_register_board_info(rambutan_mdio1_info,
+				    ARRAY_SIZE(rambutan_mdio1_info));
+	ar71xx_add_device_mdio(0, 0x0);
+	ar71xx_add_device_mdio(1, 0x0);
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_mask = BIT(0);
+	ar71xx_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
+	ar71xx_add_device_eth(0);
+
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
+	ar71xx_eth1_data.phy_mask = BIT(0);
+	ar71xx_eth1_data.mii_bus_dev = &ath79_mdio1_device.dev;
+	ar71xx_eth1_pll_data.pll_1000 = 0x17000000;
+	ar71xx_eth1_pll_data.pll_10 = 0x1313;
+	ar71xx_add_device_eth(1);
+
     #elif CONFIG_LIMA
 #define LIMA_ETH_PHYS		(BIT(0) | BIT(1))
 	ar71xx_add_device_mdio(0, ~LIMA_ETH_PHYS);
@@ -1957,9 +2007,15 @@ void nand_postinit(struct mtd_info *mtd)
 	u8 *ee = (u8 *)kmalloc(0x9000, GFP_ATOMIC);
 	int i;
 	int mtdlen;
+#ifdef CONFIG_RAMBUTAN
+	mtd_read(mtd, 0x500000, 0x9000, &mtdlen, ee);
+	ar9xxx_add_device_wmac(ee + 0x1000, ee + 6);
+	ap91_pci_init(NULL, NULL);
+#else
 	mtd_read(mtd, 0x80000, 0x9000, &mtdlen, ee);
 	ar9xxx_add_device_wmac(ee + 0x1000, ee + 6);
 	ap91_pci_init(ee + 0x5000, ee + 12);
+#endif
 }
 #endif
 arch_initcall(ar7240_platform_init);
