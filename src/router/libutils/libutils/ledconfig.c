@@ -280,6 +280,10 @@ static void getledconfig(struct ledconfig *cfg)
 //		cfg->disconnected_gpio = 0x00f;
 //		cfg->power_gpio = 0x105;
 //		cfg->diag_gpio = 0x005;
+#elif HAVE_RAMBUTAN
+//		cfg->disconnected_gpio = 0x00f;
+//		cfg->power_gpio = 0x105;
+//		cfg->diag_gpio = 0x005;
 #elif HAVE_WR940V4
 		cfg->disconnected_gpio = 0x00f;
 		cfg->power_gpio = 0x105;
