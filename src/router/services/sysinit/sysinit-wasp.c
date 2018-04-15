@@ -169,6 +169,7 @@ void start_sysinit(void)
 #elif defined (HAVE_WR615N)
 #elif defined (HAVE_AP120C)
 #elif defined (HAVE_E380AC)
+#elif defined (HAVE_RAMBUTAN)
 #elif defined (HAVE_WR650AC)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
@@ -223,7 +224,26 @@ void start_sysinit(void)
 #endif
 #endif
 	eval("swconfig", "dev", "eth0", "set", "apply");
-#if defined(HAVE_WNDR3700V4) || defined(HAVE_CPE880)
+#if defined(HAVE_RAMBUTAN)
+	FILE *fp = fopen("/dev/mtdblock/0", "rb");
+	if (fp) {
+		fseek(in,0x500000,SEEK_SET);
+		unsigned char buf2[256];
+		fread(buf2, 256, 1, fp);
+		fclose(fp);
+		unsigned int copy[256];
+		int i;
+		for (i = 0; i < 256; i++)
+			copy[i] = buf2[i] & 0xff;
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		fprintf(stderr, "configure eth0 to %s\n", mac);
+		set_hwaddr("eth0", mac);
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
+		fprintf(stderr, "configure eth1 to %s\n", mac);
+		set_hwaddr("eth1", mac);
+	
+	}
+#el defined(HAVE_WNDR3700V4) || defined(HAVE_CPE880)
 	FILE *fp = fopen("/dev/mtdblock/5", "rb");
 	if (fp) {
 		unsigned char buf2[256];
@@ -280,9 +300,12 @@ void start_sysinit(void)
 	set_hwaddr("vlan2", mac);
 #elif defined(HAVE_WZR450HP2) || defined(HAVE_WDR3500)
 	eval("ifconfig", "eth1", "up");
+#elif defined(HAVE_RAMBUTAN)
+	eval("ifconfig", "eth0", "up");
+	eval("ifconfig", "eth1", "up");
 #elif defined(HAVE_LIMA)
 	eval("ifconfig", "eth0", "up");
-	eval("ifconfig", "eth0", "up");
+	eval("ifconfig", "eth1", "up");
 #else
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
@@ -405,7 +428,7 @@ void start_sysinit(void)
 	}
 #endif
 	detect_wireless_devices();
-#if !defined(HAVE_WR810N) && !defined(HAVE_LIMA)
+#if !defined(HAVE_WR810N) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN)
 
 #ifdef HAVE_WNDR3700V4
 	setWirelessLed(0, 11);
