@@ -541,12 +541,6 @@ unsigned long flash_get_geom(flash_info_t * flash_info)
 		qca_flash_unlock();
 	}
 #endif
-
-	for (i = 0; i < flash_info->sector_count; i++) {
-		flash_info->start[i] = CFG_FLASH_BASE + (i * flash_info->sector_size);
-		flash_info->protect[i] = 0;
-	}
-
 	printk(KERN_INFO "flash size %dB, sector count = %d\n", flash_info->size, flash_info->sector_count);
 
 	return (flash_info->size);
