@@ -1433,6 +1433,26 @@ typedef enum {
 
 	/* This one is for WinNT&2k. */
 	ACCESS_MAX_MS_ACE_TYPE		= 8,
+
+	/* Windows XP and later */
+	ACCESS_ALLOWED_CALLBACK_ACE_TYPE	= 9,
+	ACCESS_DENIED_CALLBACK_ACE_TYPE		= 10,
+	ACCESS_ALLOWED_CALLBACK_OBJECT_ACE_TYPE	= 11,
+	ACCESS_DENIED_CALLBACK_OBJECT_ACE_TYPE	= 12,
+	SYSTEM_AUDIT_CALLBACK_ACE_TYPE		= 13,
+	SYSTEM_ALARM_CALLBACK_ACE_TYPE		= 14, /* reserved */
+	SYSTEM_AUDIT_CALLBACK_OBJECT_ACE_TYPE   = 15,
+	SYSTEM_ALARM_CALLBACK_OBJECT_ACE_TYPE   = 16, /* reserved */
+
+	/* Windows Vista and later */
+	SYSTEM_MANDATORY_LABEL_ACE_TYPE		= 17,
+
+	/* Windows 8 and later */
+	SYSTEM_RESOURCE_ATTRIBUTE_ACE_TYPE	= 18,
+	SYSTEM_SCOPED_POLICY_ID_ACE_TYPE	= 19,
+
+	/* Windows 10 and later */
+	SYSTEM_PROCESS_TRUST_LABEL_ACE_TYPE	= 20,
 } __attribute__((__packed__)) ACE_TYPES;
 
 /**
@@ -2392,8 +2412,13 @@ typedef struct {
  *		be slow. (E.g. the data is stored on a tape drive.)
  *	bit 31: Microsoft bit. If set, the tag is owned by Microsoft. User
  *		defined tags have to use zero here.
+ * 4. However, on Windows 10 :
+ *	Some flags may be used in bits 12 to 15 to further describe the
+ *	reparse point, and bit 28 may be set, probably to signal the
+ *	presence of these flags.
  */
 typedef enum {
+	IO_REPARSE_TAG_WITH_FLAGS	= const_cpu_to_le32(0x10000000),
 	IO_REPARSE_TAG_IS_ALIAS		= const_cpu_to_le32(0x20000000),
 	IO_REPARSE_TAG_IS_HIGH_LATENCY	= const_cpu_to_le32(0x40000000),
 	IO_REPARSE_TAG_IS_MICROSOFT	= const_cpu_to_le32(0x80000000),
@@ -2413,9 +2438,15 @@ typedef enum {
 	IO_REPARSE_TAG_SIS		= const_cpu_to_le32(0x80000007),
 	IO_REPARSE_TAG_SYMLINK		= const_cpu_to_le32(0xA000000C),
 	IO_REPARSE_TAG_WIM		= const_cpu_to_le32(0x80000008),
+	IO_REPARSE_TAG_DFM		= const_cpu_to_le32(0x80000016),
 	IO_REPARSE_TAG_WOF		= const_cpu_to_le32(0x80000017),
+	IO_REPARSE_TAG_WCI		= const_cpu_to_le32(0x80000018),
+	IO_REPARSE_TAG_CLOUD		= const_cpu_to_le32(0x9000001A),
+	IO_REPARSE_TAG_GVFS             = const_cpu_to_le32(0x9000001C),
+	IO_REPARSE_TAG_LX_SYMLINK       = const_cpu_to_le32(0xA000001D),
 
 	IO_REPARSE_TAG_VALID_VALUES	= const_cpu_to_le32(0xf000ffff),
+	IO_REPARSE_PLUGIN_SELECT	= const_cpu_to_le32(0xffff0fff),
 } PREDEFINED_REPARSE_TAGS;
 
 /**
