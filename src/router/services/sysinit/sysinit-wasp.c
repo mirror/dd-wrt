@@ -274,17 +274,10 @@ void start_sysinit(void)
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
 
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
-
-		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		strcpy(mac, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		set_hwaddr("vlan1", mac);
-		MAC_ADD(mac);
-		set_hwaddr("vlan2", mac);
-		close(s);
-	}
+	get_hwaddr("eth0", mac);
+	set_hwaddr("vlan1", mac);
+	MAC_ADD(mac);
+	set_hwaddr("vlan2", mac);
 #elif defined(HAVE_WZR450HP2) || defined(HAVE_WDR3500)
 	eval("ifconfig", "eth1", "up");
 #elif defined(HAVE_LIMA)
@@ -295,17 +288,10 @@ void start_sysinit(void)
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
 
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
-
-		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		strcpy(mac, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		set_hwaddr("vlan1", mac);
-		MAC_ADD(mac);
-		set_hwaddr("vlan2", mac);
-		close(s);
-	}
+	get_hwaddr("eth0", mac);
+	set_hwaddr("vlan1", mac);
+	MAC_ADD(mac);
+	set_hwaddr("vlan2", mac);
 #endif
 #endif
 #endif
@@ -383,13 +369,7 @@ void start_sysinit(void)
 			putc(getc(fp), out);
 		char eabuf[32];
 		char macaddr[32];
-		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-			ioctl(s, SIOCGIFHWADDR, &ifr);
-			memcpy(mac, ifr.ifr_hwaddr.sa_data, 6);
-			close(s);
-		}
-		strcpy(macaddr, ether_etoa(mac, eabuf));
+		get_hwaddr("eth0", macaddr);
 		MAC_ADD(macaddr);
 		MAC_ADD(macaddr);
 		ether_atoe(macaddr, mac);
@@ -412,14 +392,7 @@ void start_sysinit(void)
 		for (i = 0; i < 6; i++)
 			putc(getc(fp), out);
 		memcpy(mac, "\x00\x01\x02\x03\x04\x05", 6);
-		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-			char eabuf[32];
-
-			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-			ioctl(s, SIOCGIFHWADDR, &ifr);
-			memcpy(mac, ifr.ifr_hwaddr.sa_data, 6);
-			close(s);
-		}
+		get_ether_hwaddr("eth0", mac);
 		for (i = 0; i < 6; i++)
 			putc(mac[i], out);
 		fseek(fp, 12, SEEK_SET);
