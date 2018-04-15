@@ -203,6 +203,9 @@ typedef struct fill_item {
 typedef struct fill_context {
 	struct fill_item *first;
 	struct fill_item *last;
+#ifndef DISABLE_PLUGINS
+	u64 fh;
+#endif /* DISABLE_PLUGINS */
 	off_t off;
 	fuse_req_t req;
 	fuse_ino_t ino;
@@ -1292,6 +1295,17 @@ static void ntfs_fuse_opendir(fuse_req_t req, fuse_ino_t ino,
 			if (!ntfs_allowed_access(&security,ni,accesstype))
 				res = -EACCES;
 		}
+		if (ni->flags & FILE_ATTR_REPARSE_POINT) {
+#ifndef DISABLE_PLUGINS
+			const plugin_operations_t *ops;
+			REPARSE_POINT *reparse;
+
+			fi->fh = 0;
+			res = CALL_REPARSE_PLUGIN(ni, opendir, fi);
+#else /* DISABLE_PLUGINS */
+			res = -EOPNOTSUPP;
+#endif /* DISABLE_PLUGINS */
+		}
 		if (ntfs_inode_close(ni))
 			set_fuse_error(&res);
 		if (!res) {
@@ -1305,6 +1319,9 @@ static void ntfs_fuse_opendir(fuse_req_t req, fuse_ino_t ino,
 				fill->filled = FALSE;
 				fill->ino = ino;
 				fill->off = 0;
+#ifndef DISABLE_PLUGINS
+				fill->fh = fi->fh;
+#endif /* DISABLE_PLUGINS */
 			}
 			fi->fh = (long)fill;
 		}
@@ -1321,9 +1338,15 @@ static void ntfs_fuse_releasedir(fuse_req_t req,
 			fuse_ino_t ino __attribute__((unused)),
 			struct fuse_file_info *fi)
 {
+#ifndef DISABLE_PLUGINS
+	struct fuse_file_info ufi;
+	ntfs_inode *ni;
+#endif /* DISABLE_PLUGINS */
 	ntfs_fuse_fill_context_t *fill;
 	ntfs_fuse_fill_item_t *current;
+	int res;
 
+	res = 0;
 	fill = (ntfs_fuse_fill_context_t*)(long)fi->fh;
 	if (fill && (fill->ino == ino)) {
 			/* make sure to clear results */
@@ -1333,16 +1356,38 @@ static void ntfs_fuse_releasedir(fuse_req_t req,
 			free(fill->first);
 			fill->first = current;
 		}
+#ifndef DISABLE_PLUGINS
+		if (fill->fh) {
+			const plugin_operations_t *ops;
+			REPARSE_POINT *reparse;
+
+			ni = ntfs_inode_open(ctx->vol, INODE(ino));
+			if (ni) {
+				if (ni->flags & FILE_ATTR_REPARSE_POINT) {
+					memcpy(&ufi, fi, sizeof(ufi));
+					ufi.fh = fill->fh;
+					res = CALL_REPARSE_PLUGIN(ni, release,
+								 &ufi);
+				}
+				if (ntfs_inode_close(ni) && !res)
+					res = -errno;
+			} else
+				res = -errno;
+		}
+#endif /* DISABLE_PLUGINS */
 		fill->ino = 0;
 		free(fill);
 	}
-	fuse_reply_err(req, 0);
+	fuse_reply_err(req, -res);
 }
 
 static void ntfs_fuse_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
 			off_t off __attribute__((unused)),
 			struct fuse_file_info *fi __attribute__((unused)))
 {
+#ifndef DISABLE_PLUGINS
+	struct fuse_file_info ufi;
+#endif /* DISABLE_PLUGINS */
 	ntfs_fuse_fill_item_t *first;
 	ntfs_fuse_fill_item_t *current;
 	ntfs_fuse_fill_context_t *fill;
@@ -1379,10 +1424,27 @@ static void ntfs_fuse_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
 				if (!ni)
 					err = -errno;
 				else {
-					if (ntfs_readdir(ni, &pos, fill,
-						(ntfs_filldir_t)
+					if (ni->flags
+						& FILE_ATTR_REPARSE_POINT) {
+#ifndef DISABLE_PLUGINS
+						const plugin_operations_t *ops;
+						REPARSE_POINT *reparse;
+
+						memcpy(&ufi, fi, sizeof(ufi));
+						ufi.fh = fill->fh;
+						err = CALL_REPARSE_PLUGIN(ni,
+							readdir, &pos, fill,
+							(ntfs_filldir_t)
+							ntfs_fuse_filler, &ufi);
+#else /* DISABLE_PLUGINS */
+						err = -EOPNOTSUPP;
+#endif /* DISABLE_PLUGINS */
+					} else {
+						if (ntfs_readdir(ni, &pos, fill,
+							(ntfs_filldir_t)
 							ntfs_fuse_filler))
-						err = -errno;
+							err = -errno;
+					}
 					fill->filled = TRUE;
 					ntfs_fuse_update_times(ni,
 						NTFS_UPDATE_ATIME);
@@ -1927,15 +1989,41 @@ static int ntfs_fuse_utimens(struct SECURITY_CONTEXT *scx, fuse_ino_t ino,
 			if (to_set & FUSE_SET_ATTR_ATIME_NOW)
 				mask |= NTFS_UPDATE_ATIME;
 			else
-				if (to_set & FUSE_SET_ATTR_ATIME)
+				if (to_set & FUSE_SET_ATTR_ATIME) {
+#ifdef HAVE_STRUCT_STAT_ST_ATIMESPEC
+					ni->last_access_time
+						= timespec2ntfs(stin->st_atimespec);
+#elif defined(HAVE_STRUCT_STAT_ST_ATIM)
 					ni->last_access_time
 						= timespec2ntfs(stin->st_atim);
+#else
+					ni->last_access_time.tv_sec
+						= stin->st_atime;
+#ifdef HAVE_STRUCT_STAT_ST_ATIMENSEC
+					ni->last_access_time.tv_nsec
+						= stin->st_atimensec;
+#endif
+#endif
+				}
 			if (to_set & FUSE_SET_ATTR_MTIME_NOW)
 				mask |= NTFS_UPDATE_MTIME;
 			else
-				if (to_set & FUSE_SET_ATTR_MTIME)
+				if (to_set & FUSE_SET_ATTR_MTIME) {
+#ifdef HAVE_STRUCT_STAT_ST_ATIMESPEC
+					ni->last_data_change_time
+						= timespec2ntfs(stin->st_mtimespec);
+#elif defined(HAVE_STRUCT_STAT_ST_ATIM)
 					ni->last_data_change_time 
 						= timespec2ntfs(stin->st_mtim);
+#else
+					ni->last_data_change_time.tv_sec
+						= stin->st_mtime;
+#ifdef HAVE_STRUCT_STAT_ST_ATIMENSEC
+					ni->last_data_change_time.tv_nsec
+						= stin->st_mtimensec;
+#endif
+#endif
+				}
 			ntfs_inode_update_times(ni, mask);
 #if !KERNELPERMS | (POSIXACLS & !KERNELACLS)
 		} else
@@ -4388,10 +4476,14 @@ int main(int argc, char *argv[])
         
 	/* Force read-only mount if the device was found read-only */
 	if (!ctx->ro && NVolReadOnly(ctx->vol)) {
+		ctx->rw = FALSE;
 		ctx->ro = TRUE;
 		if (ntfs_strinsert(&parsed_options, ",ro")) 
                 	goto err_out;
-	}
+		ntfs_log_info("Could not mount read-write, trying read-only\n");
+	} else
+		if (ctx->rw && ntfs_strinsert(&parsed_options, ",rw"))
+			goto err_out;
 	/* We must do this after ntfs_open() to be able to set the blksize */
 	if (ctx->blkdev && set_fuseblk_options(&parsed_options))
 		goto err_out;
