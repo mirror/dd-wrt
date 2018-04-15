@@ -129,24 +129,17 @@ void start_sysinit(void)
 
 #endif
 	struct ifreq ifr;
+	char macbase[32];
+	get_hwaddr("eth0", macbase);
 	int s;
 
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
-		char eabuf[32];
-
-		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
-		ioctl(s, SIOCGIFHWADDR, &ifr);
-		char macbase[32];
-		sprintf(macbase, "%s", ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		close(s);
+	MAC_ADD(macbase);
+	int i;
+	for (i = 3; i < 9; i++) {
+		char ifname[32];
+		sprintf(ifname, "eth%d", i);
+		set_hwaddr(ifname, macbase);
 		MAC_ADD(macbase);
-		int i;
-		for (i = 3; i < 9; i++) {
-			char ifname[32];
-			sprintf(ifname, "eth%d", i);
-			set_hwaddr(ifname, macbase);
-			MAC_ADD(macbase);
-		}
 	}
 #if defined(HAVE_WDR4900) && !defined(HAVE_UNIWIP)
 	eval("mkdir", "/tmp/firmware");
