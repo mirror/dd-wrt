@@ -298,6 +298,9 @@ endif
 ifeq ($(CONFIG_WASP),y)
 	cp $(LINUXDIR)/.config_wasp $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_RAMBUTAN),y)
+	cp $(LINUXDIR)/.config_rambutan $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_DIR825C1),y)
 	cp $(LINUXDIR)/.config_dir825c1 $(LINUXDIR)/.config
 endif
@@ -531,6 +534,16 @@ ifeq ($(CONFIG_WDR2543),y)
 	echo CONFIG_WDR2543=y >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_WDR2543 is not set" >> $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_LIMA),y)
+	echo CONFIG_LIMA=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_LIMA is not set" >> $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_RAMBUTAN),y)
+	echo CONFIG_RAMBUTAN=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_RAMBUTAN is not set" >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_CPE880),y)
 	echo CONFIG_CPE880=y >> $(LINUXDIR)/.config
@@ -1751,7 +1764,7 @@ ifeq ($(CONFIG_DIR615E),y)
 	cat tools/dir615e4.tag >> $(ARCH)-uclibc/dir615e4-uimage.bin
 	dd if=$(ARCH)-uclibc/aligned.uimage of=$(ARCH)-uclibc/dir601-uimage.bin bs=3735552 conv=sync
 	cat tools/dir601.tag >> $(ARCH)-uclibc/dir601-uimage.bin
-	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ap93-firmware.bin $(ARCH)-uclibc/aligned.uimage	
+	-./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ap93-firmware.bin $(ARCH)-uclibc/aligned.uimage	
 endif
 ifeq ($(CONFIG_DIR615I),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
@@ -2041,7 +2054,7 @@ endif
 	./tools/seama/seama -s $(ARCH)-uclibc/web-dir859.img -i $(ARCH)-uclibc/raw-dir859.img.seama -m signature=wrgac37_dlink.2013gui_dir859
 	./tools/seama/seama -d $(ARCH)-uclibc/web-dir859.img
 	dd if=$(ARCH)-uclibc/web-dir859.img of=$(ARCH)-uclibc/webflash-dir859.img skip=52 iflag=skip_bytes 
-	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dir859.trx $(ARCH)-uclibc/webflash-dir859.img
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dir859.trx $(ARCH)-uclibc/webflash-dir859.img
 
 
 	./tools/seama/packimgs -b 64 -o $(ARCH)-uclibc/raw-dir869.img -i $(ARCH)-uclibc/vmlinux.seama -i $(ARCH)-uclibc/root.fs  
@@ -2049,7 +2062,7 @@ endif
 	./tools/seama/seama -s $(ARCH)-uclibc/web-dir869.img -i $(ARCH)-uclibc/raw-dir869.img.seama -m signature=wrgac54_dlink.2015_dir869
 	./tools/seama/seama -d $(ARCH)-uclibc/web-dir869.img
 	dd if=$(ARCH)-uclibc/web-dir869.img of=$(ARCH)-uclibc/webflash-dir869.img skip=48 iflag=skip_bytes 
-	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dir869.trx $(ARCH)-uclibc/webflash-dir869.img
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dir869.trx $(ARCH)-uclibc/webflash-dir869.img
 
 
 
@@ -2078,6 +2091,12 @@ ifeq ($(CONFIG_DAP2330),y)
 	cd tools/alpha_pack && ./packimgs -v -o $(TOP)/$(ARCH)-uclibc/raw.img -i $(TOP)/$(ARCH)-uclibc/vmlinux.lzma -i $(TOP)/$(ARCH)-uclibc/root.fs
 	cd tools/alpha_pack && ./v2image -v -i $(TOP)/$(ARCH)-uclibc/raw.img -o $(TOP)/$(ARCH)-uclibc/web-dap2330.img -d /dev/mtdblock/1 -s wapn24_dkbs_dap2330 -c -b
 	./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/webflash-dap2330.trx $(ARCH)-uclibc/web-dap2330.img
+endif
+ifeq ($(CONFIG_RAMBUTAN),y)
+	cp tools/rambutan/ubinize.cfg $(ARCH)-uclibc
+	tools/rambutan/padjffs2 $(ARCH)-uclibc/root.fs 128
+	cd $(ARCH)-uclibc && ../tools/rambutan/ubinize -v -m 2048 -p 128KiB -s 512 -O 2048 -o root.squashfs.ubi ubinize.cfg && cd ..
+	./tools/trx_n -m 60000000 -o $(ARCH)-uclibc/webflash-rambutan.trx $(ARCH)-uclibc/root.squashfs.ubi
 endif
 
 include rules/all.mk
