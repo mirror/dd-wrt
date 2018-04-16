@@ -385,7 +385,7 @@ zpl_iter_write(struct kiocb *kiocb, struct iov_iter *from)
 	ssize_t ret;
 	uio_seg_t seg = UIO_USERSPACE;
 
-#ifndef HAVE_GENERIC_WRITE_CHECKS_KIOCB
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
 	struct file *file = kiocb->ki_filp;
 	struct address_space *mapping = file->f_mapping;
 	struct inode *ip = mapping->host;
