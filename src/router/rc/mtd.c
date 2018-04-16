@@ -656,7 +656,7 @@ static int write_main(int argc, char *argv[])
 				fprintf(stderr, "Writing image to flash, waiting a moment...\n");
 			}
 		}
-#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_VENTANA)	// erase all blocks first
+#if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_RAMBUTAN) || defined(HAVE_VENTANA)	// erase all blocks first
 		if (!first) {
 			mtd_erase(mtd);
 			first = 1;
