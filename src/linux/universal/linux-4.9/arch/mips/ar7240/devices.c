@@ -340,6 +340,7 @@ void __init ar71xx_add_device_mdio(unsigned int id, u32 phy_mask)
 	case AR71XX_SOC_QCA9556:
 	case AR71XX_SOC_QCA9558:
 		mdio_data->is_ar934x = 1;
+		break;
 
 	case AR71XX_SOC_QCA9563:
 		if (id == 1)

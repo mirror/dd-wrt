@@ -17,6 +17,7 @@
  * kind, whether express or implied.
  */
 
+#include <linux/irqflags.h>
 #include <linux/module.h>
 #include <linux/mdio-bitbang.h>
 #include <linux/types.h>
@@ -155,8 +156,10 @@ static int mdiobb_cmd_addr(struct mdiobb_ctrl *ctrl, int phy, u32 addr)
 static int mdiobb_read(struct mii_bus *bus, int phy, int reg)
 {
 	struct mdiobb_ctrl *ctrl = bus->priv;
-	int ret, i;
+	int ret;
+	unsigned long flags;
 
+	local_irq_save(flags);
 	if (reg & MII_ADDR_C45) {
 		reg = mdiobb_cmd_addr(ctrl, phy, reg);
 		mdiobb_cmd(ctrl, MDIO_C45_READ, phy, reg);
@@ -165,19 +168,7 @@ static int mdiobb_read(struct mii_bus *bus, int phy, int reg)
 
 	ctrl->ops->set_mdio_dir(ctrl, 0);
 
-	/* check the turnaround bit: the PHY should be driving it to zero, if this
-	 * PHY is listed in phy_ignore_ta_mask as having broken TA, skip that
-	 */
-	if (mdiobb_get_bit(ctrl) != 0 &&
-	    !(bus->phy_ignore_ta_mask & (1 << phy))) {
-		/* PHY didn't drive TA low -- flush any bits it
-		 * may be trying to send.
-		 */
-		for (i = 0; i < 32; i++)
-			mdiobb_get_bit(ctrl);
-
-		return 0xffff;
-	}
+	mdiobb_get_bit(ctrl);
 
 	ret = mdiobb_get_num(ctrl, 16);
 	mdiobb_get_bit(ctrl);
@@ -187,7 +178,9 @@ static int mdiobb_read(struct mii_bus *bus, int phy, int reg)
 static int mdiobb_write(struct mii_bus *bus, int phy, int reg, u16 val)
 {
 	struct mdiobb_ctrl *ctrl = bus->priv;
+	unsigned long flags;
 
+	local_irq_save(flags);
 	if (reg & MII_ADDR_C45) {
 		reg = mdiobb_cmd_addr(ctrl, phy, reg);
 		mdiobb_cmd(ctrl, MDIO_C45_WRITE, phy, reg);
@@ -202,6 +195,8 @@ static int mdiobb_write(struct mii_bus *bus, int phy, int reg, u16 val)
 
 	ctrl->ops->set_mdio_dir(ctrl, 0);
 	mdiobb_get_bit(ctrl);
+	local_irq_restore(flags);
+
 	return 0;
 }
 
