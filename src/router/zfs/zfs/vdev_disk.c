@@ -426,7 +426,7 @@ BIO_END_IO_PROTO(vdev_disk_physio_completion, bio, error)
 	int rc;
 
 	if (dr->dr_error == 0) {
-#ifdef HAVE_1ARG_BIO_END_IO_T
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
 		dr->dr_error = BIO_END_IO_ERROR(bio);
 #else
 		if (error)
@@ -640,7 +640,7 @@ retry:
 BIO_END_IO_PROTO(vdev_disk_io_flush_completion, bio, error)
 {
 	zio_t *zio = bio->bi_private;
-#ifdef HAVE_1ARG_BIO_END_IO_T
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
 	zio->io_error = BIO_END_IO_ERROR(bio);
 #else
 	zio->io_error = -error;

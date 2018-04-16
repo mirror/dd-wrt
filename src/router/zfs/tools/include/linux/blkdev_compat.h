@@ -323,7 +323,7 @@ errno_to_bi_status(int error)
  * The bio_endio() prototype changed slightly.  These are helper
  * macro's to ensure the prototype and invocation are handled.
  */
-#ifdef HAVE_1ARG_BIO_END_IO_T
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
 #ifdef HAVE_BIO_BI_STATUS
 #define	BIO_END_IO_ERROR(bio)		bi_status_to_errno(bio->bi_status)
 #define	BIO_END_IO_PROTO(fn, x, z)	static void fn(struct bio *x)
@@ -345,6 +345,7 @@ bio_set_bi_error(struct bio *bio, int error)
 	ASSERT3S(error, <=, 0);
 	bio->bi_error = error;
 	bio_endio(bio);
+
 }
 #endif /* HAVE_BIO_BI_STATUS */
 

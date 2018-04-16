@@ -932,6 +932,10 @@ zvol_read(void *arg)
 	BIO_END_IO(bio, -error);
 	kmem_free(zvr, sizeof (zv_request_t));
 }
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
+#undef MAKE_REQUEST_FN_RET
+#define MAKE_REQUEST_FN_RET int
+#endif
 
 static MAKE_REQUEST_FN_RET
 zvol_request(struct request_queue *q, struct bio *bio)
@@ -1026,7 +1030,7 @@ zvol_request(struct request_queue *q, struct bio *bio)
 
 out:
 	spl_fstrans_unmark(cookie);
-#ifdef HAVE_MAKE_REQUEST_FN_RET_INT
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
 	return (0);
 #elif defined(HAVE_MAKE_REQUEST_FN_RET_QC)
 	return (BLK_QC_T_NONE);
