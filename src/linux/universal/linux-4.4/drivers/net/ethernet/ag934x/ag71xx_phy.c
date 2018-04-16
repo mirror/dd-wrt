@@ -140,6 +140,7 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 		return -ENODEV;
 	}
 
+#ifndef CONFIG_RAMBUTAN
 #if !defined(CONFIG_JWAP606)
 	if (ag->mii_bus->phy_map[phyadd]->phy_id == 0x4dd072 && phyadd == 1)
 #endif
@@ -152,6 +153,7 @@ static int ag71xx_phy_connect_multi(struct ag71xx *ag)
 	ag71xx_mdio_mii_write(ag->mii_bus->priv, phyadd, 0, 0x8000|0x1000);
 	udelay(50000);
  	}
+#endif
 
 	ag->phy_dev = phy_connect(ag->dev, dev_name(&phydev->dev),
 				  &ag71xx_phy_link_adjust,

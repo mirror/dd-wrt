@@ -23,6 +23,7 @@
 #include <linux/mtd/nand_ecc.h>
 #include <linux/mtd/partitions.h>
 #include <linux/squashfs_fs.h>
+#include <asm/mach-ar71xx/ar71xx.h>
 
 #include <asm/cacheflush.h>
 #include "../mtdcore.h"
@@ -55,6 +56,8 @@ typedef unsigned int ath_reg_t;
 #define DRV_VERSION	"0.1"
 #define DRV_AUTHOR	"Atheros"
 #define DRV_DESC	"Atheros on-chip NAND FLash Controller Driver"
+
+static int ATH_NAND_FLASH_BASE=0x1b000000;
 
 #define ATH_NF_COMMAND		(ATH_NAND_FLASH_BASE + 0x200u)
 #define ATH_NF_CTRL		(ATH_NAND_FLASH_BASE + 0x204u)
@@ -1571,6 +1574,7 @@ static int ath_nand_probe(void)
 					  (*(uint32_t *)(&sc->onfi[ONFI_BLOCKS_PER_LUN])) *
 					  sc->onfi[ONFI_NUM_LUNS];
 	}
+	mtd->writebufsize = mtd->writesize;
 
 	for (i = 0; nf_ctrl_pg[i][0]; i++) {
 		if (nf_ctrl_pg[i][0] == mtd->writesize) {
@@ -1641,10 +1645,14 @@ static struct platform_driver ath_nand_driver = {
 };
 #endif
 
+
 static int __init ath_nand_init(void)
 {
 	printk(DRV_DESC ", Version " DRV_VERSION
 		" (c) 2010 Atheros Communications, Ltd.\n");
+
+	if (soc_is_qca955x())
+		ATH_NAND_FLASH_BASE=0x1b800200;
 
 	//return platform_driver_register(&ath_nand_driver);
 	//return platform_driver_probe(&ath_nand_driver, ath_nand_probe);
