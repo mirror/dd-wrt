@@ -401,7 +401,7 @@ typedef mode_t zpl_equivmode_t;
  * posix_acl_valid() now must be passed a namespace, the namespace from
  * from super block associated with the given inode is used for this purpose.
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
 #define	zpl_posix_acl_valid(ip, acl)  posix_acl_valid(ip->i_sb->s_user_ns, acl)
 #else
 #define	zpl_posix_acl_valid(ip, acl)  posix_acl_valid(acl)
@@ -453,7 +453,7 @@ static inline struct dentry *file_dentry(const struct file *f)
 #ifdef HAVE_KUID_HELPERS
 static inline uid_t zfs_uid_read_impl(struct inode *ip)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
 	return (from_kuid(ip->i_sb->s_user_ns, ip->i_uid));
 #else
 	return (from_kuid(kcred->user_ns, ip->i_uid));
@@ -467,7 +467,7 @@ static inline uid_t zfs_uid_read(struct inode *ip)
 
 static inline gid_t zfs_gid_read_impl(struct inode *ip)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
 	return (from_kgid(ip->i_sb->s_user_ns, ip->i_gid));
 #else
 	return (from_kgid(kcred->user_ns, ip->i_gid));
@@ -481,7 +481,7 @@ static inline gid_t zfs_gid_read(struct inode *ip)
 
 static inline void zfs_uid_write(struct inode *ip, uid_t uid)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
 	ip->i_uid = make_kuid(ip->i_sb->s_user_ns, uid);
 #else
 	ip->i_uid = make_kuid(kcred->user_ns, uid);
@@ -490,7 +490,7 @@ static inline void zfs_uid_write(struct inode *ip, uid_t uid)
 
 static inline void zfs_gid_write(struct inode *ip, gid_t gid)
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
 	ip->i_gid = make_kgid(ip->i_sb->s_user_ns, gid);
 #else
 	ip->i_gid = make_kgid(kcred->user_ns, gid);
