@@ -538,7 +538,6 @@ static void __init ap136_gmac_setup(u32 mask)
 	iounmap(base);
 }
 
-
 static struct ar8327_pad_cfg cf_wr650ac_ar8327_pad0_cfg = {
 	/* GMAC0 of the AR8337 switch is connected to GMAC0 via RGMII */
 	.mode = AR8327_PAD_MAC_RGMII,
@@ -1261,6 +1260,7 @@ int __init ar7240_platform_init(void)
 	iounmap(base);
 	
     #elif CONFIG_RAMBUTAN
+//	ath79_setup_qca955x_eth_cfg(QCA955X_ETH_CFG_RGMII_EN);
     #elif CONFIG_LIMA
 	//swap phy
 	ath79_setup_ar933x_phy4_switch(true, true);
@@ -1635,12 +1635,12 @@ int __init ar7240_platform_init(void)
 
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.phy_mask = BIT(0);
-	ar71xx_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
 	ar71xx_add_device_eth(0);
 
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
 	ar71xx_eth1_data.phy_mask = BIT(0);
-	ar71xx_eth1_data.mii_bus_dev = &ath79_mdio1_device.dev;
+	ar71xx_eth1_data.mii_bus_dev = &ar71xx_mdio1_device.dev;
 	ar71xx_eth1_pll_data.pll_1000 = 0x17000000;
 	ar71xx_eth1_pll_data.pll_10 = 0x1313;
 	ar71xx_add_device_eth(1);

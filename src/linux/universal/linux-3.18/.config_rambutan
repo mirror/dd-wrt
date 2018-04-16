@@ -971,7 +971,7 @@ CONFIG_MTD_UBI_WL_THRESHOLD=4096
 CONFIG_MTD_UBI_BEB_LIMIT=20
 # CONFIG_MTD_UBI_FASTMAP is not set
 # CONFIG_MTD_UBI_GLUEBI is not set
-# CONFIG_MTD_UBI_BLOCK is not set
+CONFIG_MTD_UBI_BLOCK=y
 
 #
 # Ralink Non-volatile Device Drivers
@@ -1182,7 +1182,7 @@ CONFIG_SWCONFIG=y
 #
 # MII PHY device drivers
 #
-# CONFIG_AT803X_PHY is not set
+CONFIG_AT803X_PHY=y
 # CONFIG_AMD_PHY is not set
 # CONFIG_MARVELL_PHY is not set
 # CONFIG_DAVICOM_PHY is not set
@@ -2030,7 +2030,7 @@ CONFIG_TRACING_SUPPORT=y
 CONFIG_HAVE_ARCH_KGDB=y
 CONFIG_EARLY_PRINTK=y
 CONFIG_CMDLINE_BOOL=y
-CONFIG_CMDLINE="console=ttyS0,115200 root=1f02 rootfstype=squashfs noinitrd init=/sbin/init"
+CONFIG_CMDLINE="console=ttyS0,115200 rootfstype=squashfs noinitrd init=/sbin/init"
 CONFIG_CMDLINE_OVERRIDE=y
 # CONFIG_SPINLOCK_TEST is not set
 

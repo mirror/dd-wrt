@@ -14,7 +14,7 @@
 #define ATH_USB_OHCI_BASE		0x1b000000
 #define ATH_USB_EHCI_BASE		0x1b000000
 #define ATH_SPI_BASE			0x1f000000
-#define ATH_NAND_FLASH_BASE		0x1b000000u
+
 
 /*
  * Added the PCI LCL RESET register from u-boot
