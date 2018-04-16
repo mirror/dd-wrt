@@ -90,6 +90,7 @@ void start_freeradius(void)
 
 #ifndef HAVE_OPENRISC
 #ifndef HAVE_VENTANA
+#ifndef HAVE_RAMBUTAN
 #ifndef HAVE_WDR4900
 #if defined(HAVE_X86) || defined(HAVE_RB600)
 	system("mount --bind /usr/local /jffs");
@@ -98,6 +99,7 @@ void start_freeradius(void)
 #else
 	if (!nvram_matchi("jffs_mounted", 1) && (freediskSpace("/jffs") < 134217728))
 		return;		//jffs is a requirement for radius and must be mounted at this point here
+#endif
 #endif
 #endif
 #endif
