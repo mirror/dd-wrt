@@ -76,7 +76,7 @@ char *nvram_get(const char *name)
 #if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in == NULL) {
-		return -1;
+		return NULL;
 	}
 	fclose(in);
 #endif
