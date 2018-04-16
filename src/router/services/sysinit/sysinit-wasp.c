@@ -121,7 +121,7 @@ void start_sysinit(void)
 	struct ifreq ifr;
 	int s;
 	char mac[32];
-
+	FILE *fp;
 	if (!nvram_matchi("disable_watchdog", 1))
 		eval("watchdog");
 
@@ -225,9 +225,9 @@ void start_sysinit(void)
 #endif
 	eval("swconfig", "dev", "eth0", "set", "apply");
 #if defined(HAVE_RAMBUTAN)
-	FILE *fp = fopen("/dev/mtdblock/0", "rb");
+	fp = fopen("/dev/mtdblock/0", "rb");
 	if (fp) {
-		fseek(in,0x500000,SEEK_SET);
+		fseek(fp,0x500000,SEEK_SET);
 		unsigned char buf2[256];
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
@@ -243,8 +243,8 @@ void start_sysinit(void)
 		set_hwaddr("eth1", mac);
 	
 	}
-#el defined(HAVE_WNDR3700V4) || defined(HAVE_CPE880)
-	FILE *fp = fopen("/dev/mtdblock/5", "rb");
+#elif defined(HAVE_WNDR3700V4) || defined(HAVE_CPE880)
+	fp = fopen("/dev/mtdblock/5", "rb");
 	if (fp) {
 		unsigned char buf2[256];
 		fread(buf2, 256, 1, fp);
@@ -258,7 +258,7 @@ void start_sysinit(void)
 		set_hwaddr("eth0", mac);
 	}
 #elif defined(HAVE_MMS344) && !defined(HAVE_DAP3662)
-	FILE *fp = fopen("/dev/mtdblock/6", "rb");
+	fp = fopen("/dev/mtdblock/6", "rb");
 	if (fp) {
 		unsigned char buf2[256];
 #ifdef HAVE_WILLY
@@ -328,7 +328,7 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", macaddr);
 	}
 #if defined(HAVE_E355AC)
-	FILE *fp = fopen("/dev/mtdblock/0", "rb");
+	fp = fopen("/dev/mtdblock/0", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 	if (fp) {
 		fseek(fp, 0x10000 + 0x5000, SEEK_SET);
@@ -341,7 +341,7 @@ void start_sysinit(void)
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
 #elif defined(HAVE_XD3200)
-	FILE *fp = fopen("/dev/mtdblock/5", "rb");
+	fp = fopen("/dev/mtdblock/5", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 	if (fp) {
 		fseek(fp, 0x5000, SEEK_SET);
@@ -357,7 +357,7 @@ void start_sysinit(void)
 	nvram_default_get("no_ath9k", "1");
 #endif
 #elif defined(HAVE_E380AC)
-	FILE *fp = fopen("/dev/mtdblock/0", "rb");
+	fp = fopen("/dev/mtdblock/0", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 	if (fp) {
 		fseek(fp, 0x20000 + 0x5000, SEEK_SET);
@@ -370,7 +370,7 @@ void start_sysinit(void)
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
 #elif defined(HAVE_WR650AC)
-	FILE *fp = fopen("/dev/mtdblock/0", "rb");
+	fp = fopen("/dev/mtdblock/0", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 	if (fp) {
 		fseek(fp, 0x20000 + 0x5000, SEEK_SET);
@@ -383,7 +383,7 @@ void start_sysinit(void)
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
 #elif defined(HAVE_ARCHERC7) || defined(HAVE_DIR859) || defined(HAVE_DAP3662)
-	FILE *fp = fopen("/dev/mtdblock/5", "rb");
+	fp = fopen("/dev/mtdblock/5", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 	if (fp) {
 		fseek(fp, 20480, SEEK_SET);
@@ -428,6 +428,9 @@ void start_sysinit(void)
 	}
 #endif
 	detect_wireless_devices();
+#ifdef HAVE_RAMBUTAN
+	mount("/dev/ubi0_2", "/jffs", "ubifs", MS_MGC_VAL, NULL);
+#endif
 #if !defined(HAVE_WR810N) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN)
 
 #ifdef HAVE_WNDR3700V4
