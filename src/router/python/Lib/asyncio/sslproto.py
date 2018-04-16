@@ -294,11 +294,10 @@ class _SSLPipe(object):
 class _SSLProtocolTransport(transports._FlowControlMixin,
                             transports.Transport):
 
-    def __init__(self, loop, ssl_protocol, app_protocol):
+    def __init__(self, loop, ssl_protocol):
         self._loop = loop
         # SSLProtocol instance
         self._ssl_protocol = ssl_protocol
-        self._app_protocol = app_protocol
         self._closed = False
 
     def get_extra_info(self, name, default=None):
@@ -306,10 +305,10 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         return self._ssl_protocol._get_extra_info(name, default)
 
     def set_protocol(self, protocol):
-        self._app_protocol = protocol
+        self._ssl_protocol._app_protocol = protocol
 
     def get_protocol(self):
-        return self._app_protocol
+        return self._ssl_protocol._app_protocol
 
     def is_closing(self):
         return self._closed
@@ -436,8 +435,7 @@ class SSLProtocol(protocols.Protocol):
         self._waiter = waiter
         self._loop = loop
         self._app_protocol = app_protocol
-        self._app_transport = _SSLProtocolTransport(self._loop,
-                                                    self, self._app_protocol)
+        self._app_transport = _SSLProtocolTransport(self._loop, self)
         # _SSLPipe instance (None until the connection is made)
         self._sslpipe = None
         self._session_established = False
@@ -499,6 +497,10 @@ class SSLProtocol(protocols.Protocol):
 
         The argument is a bytes object.
         """
+        if self._sslpipe is None:
+            # transport closing, sslpipe is destroyed
+            return
+
         try:
             ssldata, appdata = self._sslpipe.feed_ssldata(data)
         except ssl.SSLError as e:
@@ -628,7 +630,7 @@ class SSLProtocol(protocols.Protocol):
 
     def _process_write_backlog(self):
         # Try to make progress on the write backlog.
-        if self._transport is None:
+        if self._transport is None or self._sslpipe is None:
             return
 
         try:
