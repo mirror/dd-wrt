@@ -16,6 +16,7 @@ import select
 import shutil
 import gc
 import textwrap
+from test.support import FakePath
 
 try:
     import ctypes
@@ -50,6 +51,8 @@ else:
     SETBINARY = ''
 
 NONEXISTING_CMD = ('nonexisting_i_hope',)
+# Ignore errors that indicate the command was not found
+NONEXISTING_ERRORS = (FileNotFoundError, NotADirectoryError, PermissionError)
 
 
 class BaseTestCase(unittest.TestCase):
@@ -310,9 +313,9 @@ class ProcessTestCase(BaseTestCase):
         # Verify first that the call succeeds without the executable arg.
         pre_args = [sys.executable, "-c"]
         self._assert_python(pre_args)
-        self.assertRaises((FileNotFoundError, PermissionError),
+        self.assertRaises(NONEXISTING_ERRORS,
                           self._assert_python, pre_args,
-                          executable="doesnotexist")
+                          executable=NONEXISTING_CMD[0])
 
     @unittest.skipIf(mswindows, "executable argument replaces shell")
     def test_executable_replaces_shell(self):
@@ -361,12 +364,7 @@ class ProcessTestCase(BaseTestCase):
     def test_cwd_with_pathlike(self):
         temp_dir = tempfile.gettempdir()
         temp_dir = self._normalize_cwd(temp_dir)
-
-        class _PathLikeObj:
-            def __fspath__(self):
-                return temp_dir
-
-        self._assert_cwd(temp_dir, sys.executable, cwd=_PathLikeObj())
+        self._assert_cwd(temp_dir, sys.executable, cwd=FakePath(temp_dir))
 
     @unittest.skipIf(mswindows, "pending resolution of issue #15533")
     def test_cwd_with_relative_arg(self):
@@ -1150,13 +1148,10 @@ class ProcessTestCase(BaseTestCase):
         # value for that limit, but Windows has 2048, so we loop
         # 1024 times (each call leaked two fds).
         for i in range(1024):
-            with self.assertRaises(OSError) as c:
+            with self.assertRaises(NONEXISTING_ERRORS):
                 subprocess.Popen(NONEXISTING_CMD,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
-            # ignore errors that indicate the command was not found
-            if c.exception.errno not in (errno.ENOENT, errno.EACCES):
-                raise c.exception
 
     def test_nonexisting_with_pipes(self):
         # bpo-30121: Popen with pipes must close properly pipes on error.
@@ -1184,7 +1179,7 @@ class ProcessTestCase(BaseTestCase):
                 msvcrt.CrtSetReportFile(report_type, msvcrt.CRTDBG_FILE_STDERR)
 
             try:
-                subprocess.Popen([cmd],
+                subprocess.Popen(cmd,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE)
             except OSError:
@@ -1568,8 +1563,10 @@ class POSIXProcessTestCase(BaseTestCase):
 
         fork_exec.side_effect = proper_error
 
-        with self.assertRaises(IsADirectoryError):
-            self.PopenNoDestructor(["non_existent_command"])
+        with mock.patch("subprocess.os.waitpid",
+                        side_effect=ChildProcessError):
+            with self.assertRaises(IsADirectoryError):
+                self.PopenNoDestructor(["non_existent_command"])
 
     @mock.patch("subprocess._posixsubprocess.fork_exec")
     def test_exception_errpipe_bad_data(self, fork_exec):
@@ -1586,8 +1583,10 @@ class POSIXProcessTestCase(BaseTestCase):
 
         fork_exec.side_effect = bad_error
 
-        with self.assertRaises(subprocess.SubprocessError) as e:
-            self.PopenNoDestructor(["non_existent_command"])
+        with mock.patch("subprocess.os.waitpid",
+                        side_effect=ChildProcessError):
+            with self.assertRaises(subprocess.SubprocessError) as e:
+                self.PopenNoDestructor(["non_existent_command"])
 
         self.assertIn(repr(error_data), str(e.exception))
 
@@ -2535,7 +2534,7 @@ class POSIXProcessTestCase(BaseTestCase):
         # let some time for the process to exit, and create a new Popen: this
         # should trigger the wait() of p
         time.sleep(0.2)
-        with self.assertRaises(OSError) as c:
+        with self.assertRaises(OSError):
             with subprocess.Popen(NONEXISTING_CMD,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE) as proc:
@@ -2974,7 +2973,7 @@ class ContextManagerTests(BaseTestCase):
             self.assertEqual(proc.returncode, 1)
 
     def test_invalid_args(self):
-        with self.assertRaises((FileNotFoundError, PermissionError)) as c:
+        with self.assertRaises(NONEXISTING_ERRORS):
             with subprocess.Popen(NONEXISTING_CMD,
                                   stdout=subprocess.PIPE,
                                   stderr=subprocess.PIPE) as proc:

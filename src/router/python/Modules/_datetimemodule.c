@@ -1533,6 +1533,7 @@ delta_to_microseconds(PyDateTime_Delta *self)
     if (x2 == NULL)
         goto Done;
     result = PyNumber_Add(x1, x2);
+    assert(result == NULL || PyLong_CheckExact(result));
 
 Done:
     Py_XDECREF(x1);
@@ -1555,6 +1556,7 @@ microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
     PyObject *num = NULL;
     PyObject *result = NULL;
 
+    assert(PyLong_CheckExact(pyus));
     tuple = PyNumber_Divmod(pyus, us_per_second);
     if (tuple == NULL)
         goto Done;
@@ -1647,6 +1649,33 @@ multiply_int_timedelta(PyObject *intobj, PyDateTime_Delta *delta)
 }
 
 static PyObject *
+get_float_as_integer_ratio(PyObject *floatobj)
+{
+    PyObject *ratio;
+
+    assert(floatobj && PyFloat_Check(floatobj));
+    ratio = _PyObject_CallMethodId(floatobj, &PyId_as_integer_ratio, NULL);
+    if (ratio == NULL) {
+        return NULL;
+    }
+    if (!PyTuple_Check(ratio)) {
+        PyErr_Format(PyExc_TypeError,
+                     "unexpected return type from as_integer_ratio(): "
+                     "expected tuple, got '%.200s'",
+                     Py_TYPE(ratio)->tp_name);
+        Py_DECREF(ratio);
+        return NULL;
+    }
+    if (PyTuple_Size(ratio) != 2) {
+        PyErr_SetString(PyExc_ValueError,
+                        "as_integer_ratio() must return a 2-tuple");
+        Py_DECREF(ratio);
+        return NULL;
+    }
+    return ratio;
+}
+
+static PyObject *
 multiply_float_timedelta(PyObject *floatobj, PyDateTime_Delta *delta)
 {
     PyObject *result = NULL;
@@ -1656,9 +1685,10 @@ multiply_float_timedelta(PyObject *floatobj, PyDateTime_Delta *delta)
     pyus_in = delta_to_microseconds(delta);
     if (pyus_in == NULL)
         return NULL;
-    ratio = _PyObject_CallMethodId(floatobj, &PyId_as_integer_ratio, NULL);
-    if (ratio == NULL)
+    ratio = get_float_as_integer_ratio(floatobj);
+    if (ratio == NULL) {
         goto error;
+    }
     temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, 0));
     Py_DECREF(pyus_in);
     pyus_in = NULL;
@@ -1754,9 +1784,10 @@ truedivide_timedelta_float(PyDateTime_Delta *delta, PyObject *f)
     pyus_in = delta_to_microseconds(delta);
     if (pyus_in == NULL)
         return NULL;
-    ratio = _PyObject_CallMethodId(f, &PyId_as_integer_ratio, NULL);
-    if (ratio == NULL)
+    ratio = get_float_as_integer_ratio(f);
+    if (ratio == NULL) {
         goto error;
+    }
     temp = PyNumber_Multiply(pyus_in, PyTuple_GET_ITEM(ratio, 1));
     Py_DECREF(pyus_in);
     pyus_in = NULL;
@@ -2079,11 +2110,13 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
     assert(num != NULL);
 
     if (PyLong_Check(num)) {
-        prod = PyNumber_Multiply(num, factor);
+        prod = PyNumber_Multiply(factor, num);
         if (prod == NULL)
             return NULL;
+        assert(PyLong_CheckExact(prod));
         sum = PyNumber_Add(sofar, prod);
         Py_DECREF(prod);
+        assert(sum == NULL || PyLong_CheckExact(sum));
         return sum;
     }
 
@@ -2126,7 +2159,7 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
          * fractional part requires float arithmetic, and may
          * lose a little info.
          */
-        assert(PyLong_Check(factor));
+        assert(PyLong_CheckExact(factor));
         dnum = PyLong_AsDouble(factor);
 
         dnum *= fracpart;
@@ -2141,6 +2174,7 @@ accum(const char* tag, PyObject *sofar, PyObject *num, PyObject *factor,
         Py_DECREF(sum);
         Py_DECREF(x);
         *leftover += fracpart;
+        assert(y == NULL || PyLong_CheckExact(y));
         return y;
     }
 
@@ -3123,7 +3157,7 @@ Inconsistent:
     PyErr_SetString(PyExc_ValueError, "fromutc: tz.dst() gave"
                     "inconsistent results; cannot convert");
 
-    /* fall thru to failure */
+    /* fall through to failure */
 Fail:
     Py_XDECREF(off);
     Py_XDECREF(dst);

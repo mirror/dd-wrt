@@ -1343,13 +1343,15 @@ is_const(expr_ty e)
     case Ellipsis_kind:
     case NameConstant_kind:
         return 1;
+    case Name_kind:
+        return _PyUnicode_EqualToASCIIString(e->v.Name.id, "__debug__");
     default:
         return 0;
     }
 }
 
 static PyObject *
-get_const_value(expr_ty e)
+get_const_value(struct compiler *c, expr_ty e)
 {
     switch (e->kind) {
     case Constant_kind:
@@ -1364,6 +1366,9 @@ get_const_value(expr_ty e)
         return Py_Ellipsis;
     case NameConstant_kind:
         return e->v.NameConstant.value;
+    case Name_kind:
+        assert(_PyUnicode_EqualToASCIIString(e->v.Name.id, "__debug__"));
+        return c->c_optimize ? Py_False : Py_True;
     default:
         assert(!is_const(e));
         return NULL;
@@ -2184,7 +2189,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     _Py_IDENTIFIER(StopAsyncIteration);
 
     basicblock *try, *except, *end, *after_try, *try_cleanup,
-               *after_loop, *after_loop_else;
+               *after_loop_else;
 
     PyObject *stop_aiter_error = _PyUnicode_FromId(&PyId_StopAsyncIteration);
     if (stop_aiter_error == NULL) {
@@ -2196,14 +2201,14 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     end = compiler_new_block(c);
     after_try = compiler_new_block(c);
     try_cleanup = compiler_new_block(c);
-    after_loop = compiler_new_block(c);
     after_loop_else = compiler_new_block(c);
 
     if (try == NULL || except == NULL || end == NULL
-            || after_try == NULL || try_cleanup == NULL)
+            || after_try == NULL || try_cleanup == NULL
+            || after_loop_else == NULL)
         return 0;
 
-    ADDOP_JREL(c, SETUP_LOOP, after_loop);
+    ADDOP_JREL(c, SETUP_LOOP, end);
     if (!compiler_push_fblock(c, LOOP, try))
         return 0;
 
@@ -2251,9 +2256,6 @@ compiler_async_for(struct compiler *c, stmt_ty s)
 
     ADDOP(c, POP_BLOCK); /* for SETUP_LOOP */
     compiler_pop_fblock(c, LOOP, try);
-
-    compiler_use_next_block(c, after_loop);
-    ADDOP_JABS(c, JUMP_ABSOLUTE, end);
 
     compiler_use_next_block(c, after_loop_else);
     VISIT_SEQ(c, stmt, s->v.For.orelse);
@@ -3027,13 +3029,18 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
     PyObject *mangled;
     /* XXX AugStore isn't used anywhere! */
 
-    mangled = _Py_Mangle(c->u->u_private, name);
-    if (!mangled)
-        return 0;
-
     assert(!_PyUnicode_EqualToASCIIString(name, "None") &&
            !_PyUnicode_EqualToASCIIString(name, "True") &&
            !_PyUnicode_EqualToASCIIString(name, "False"));
+
+    if (ctx == Load && _PyUnicode_EqualToASCIIString(name, "__debug__")) {
+        ADDOP_O(c, LOAD_CONST, c->c_optimize ? Py_False : Py_True, consts);
+        return 1;
+    }
+
+    mangled = _Py_Mangle(c->u->u_private, name);
+    if (!mangled)
+        return 0;
 
     op = 0;
     optype = OP_NAME;
@@ -3298,7 +3305,7 @@ compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end
             return 0;
         }
         for (i = begin; i < end; i++) {
-            key = get_const_value((expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
+            key = get_const_value(c, (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
             Py_INCREF(key);
             PyTuple_SET_ITEM(keys, i - begin, key);
         }
@@ -3743,7 +3750,7 @@ compiler_async_comprehension_generator(struct compiler *c,
     _Py_IDENTIFIER(StopAsyncIteration);
 
     comprehension_ty gen;
-    basicblock *anchor, *skip, *if_cleanup, *try,
+    basicblock *anchor, *if_cleanup, *try,
                *after_try, *except, *try_cleanup;
     Py_ssize_t i, n;
 
@@ -3756,13 +3763,12 @@ compiler_async_comprehension_generator(struct compiler *c,
     after_try = compiler_new_block(c);
     try_cleanup = compiler_new_block(c);
     except = compiler_new_block(c);
-    skip = compiler_new_block(c);
     if_cleanup = compiler_new_block(c);
     anchor = compiler_new_block(c);
 
-    if (skip == NULL || if_cleanup == NULL || anchor == NULL ||
+    if (if_cleanup == NULL || anchor == NULL ||
             try == NULL || after_try == NULL ||
-            except == NULL || after_try == NULL) {
+            except == NULL || try_cleanup == NULL) {
         return 0;
     }
 
@@ -3856,8 +3862,6 @@ compiler_async_comprehension_generator(struct compiler *c,
         default:
             return 0;
         }
-
-        compiler_use_next_block(c, skip);
     }
     compiler_use_next_block(c, if_cleanup);
     ADDOP_JABS(c, JUMP_ABSOLUTE, try);
@@ -4044,35 +4048,10 @@ compiler_visit_keyword(struct compiler *c, keyword_ty k)
 static int
 expr_constant(struct compiler *c, expr_ty e)
 {
-    char *id;
-    switch (e->kind) {
-    case Ellipsis_kind:
-        return 1;
-    case Constant_kind:
-        return PyObject_IsTrue(e->v.Constant.value);
-    case Num_kind:
-        return PyObject_IsTrue(e->v.Num.n);
-    case Str_kind:
-        return PyObject_IsTrue(e->v.Str.s);
-    case Name_kind:
-        /* optimize away names that can't be reassigned */
-        id = PyUnicode_AsUTF8(e->v.Name.id);
-        if (id && strcmp(id, "__debug__") == 0)
-            return !c->c_optimize;
-        return -1;
-    case NameConstant_kind: {
-        PyObject *o = e->v.NameConstant.value;
-        if (o == Py_None)
-            return 0;
-        else if (o == Py_True)
-            return 1;
-        else if (o == Py_False)
-            return 0;
+    if (is_const(e)) {
+        return PyObject_IsTrue(get_const_value(c, e));
     }
-    /* fall through */
-    default:
-        return -1;
-    }
+    return -1;
 }
 
 
@@ -5170,7 +5149,6 @@ compute_code_flags(struct compiler *c)
 {
     PySTEntryObject *ste = c->u->u_ste;
     int flags = 0;
-    Py_ssize_t n;
     if (ste->ste_type == FunctionBlock) {
         flags |= CO_NEWLOCALS | CO_OPTIMIZED;
         if (ste->ste_nested)
@@ -5189,18 +5167,6 @@ compute_code_flags(struct compiler *c)
 
     /* (Only) inherit compilerflags in PyCF_MASK */
     flags |= (c->c_flags->cf_flags & PyCF_MASK);
-
-    n = PyDict_Size(c->u->u_freevars);
-    if (n < 0)
-        return -1;
-    if (n == 0) {
-        n = PyDict_Size(c->u->u_cellvars);
-        if (n < 0)
-            return -1;
-        if (n == 0) {
-            flags |= CO_NOFREE;
-        }
-    }
 
     return flags;
 }

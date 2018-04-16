@@ -1564,7 +1564,7 @@ class TestGetattrStatic(unittest.TestCase):
         foo.__dict__['d'] = 1
         self.assertEqual(inspect.getattr_static(foo, 'd'), 1)
 
-        # if the descriptor is a data-desciptor we should return the
+        # if the descriptor is a data-descriptor we should return the
         # descriptor
         descriptor.__set__ = lambda s, i, v: None
         self.assertEqual(inspect.getattr_static(foo, 'd'), Foo.__dict__['d'])
@@ -2021,7 +2021,7 @@ class TestSignatureObject(unittest.TestCase):
                          ((('args', ..., ..., 'var_positional'),), ...))
         self.assertEqual(self.signature(A.f3),
                          ((('args', ..., ..., 'var_positional'),), ...))
-        self.assertEqual(self.signature(A.f4), 
+        self.assertEqual(self.signature(A.f4),
                          ((('args', ..., ..., 'var_positional'),
                             ('kwargs', ..., ..., 'var_keyword')), ...))
     @cpython_only
@@ -2525,6 +2525,16 @@ class TestSignatureObject(unittest.TestCase):
                          ((('a', ..., ..., 'positional_or_keyword'),
                            ('c', 1, ..., 'keyword_only')),
                           'spam'))
+
+        class Spam:
+            def test(self: 'anno', x):
+                pass
+
+            g = partialmethod(test, 1)
+
+        self.assertEqual(self.signature(Spam.g),
+                         ((('self', ..., 'anno', 'positional_or_keyword'),),
+                          ...))
 
     def test_signature_on_fake_partialmethod(self):
         def foo(a): pass
@@ -3557,6 +3567,19 @@ class TestSignatureDefinitions(unittest.TestCase):
                 self.assertIsNone(obj.__text_signature__)
 
 
+class NTimesUnwrappable:
+    def __init__(self, n):
+        self.n = n
+        self._next = None
+
+    @property
+    def __wrapped__(self):
+        if self.n <= 0:
+            raise Exception("Unwrapped too many times")
+        if self._next is None:
+            self._next = NTimesUnwrappable(self.n - 1)
+        return self._next
+
 class TestUnwrap(unittest.TestCase):
 
     def test_unwrap_one(self):
@@ -3611,6 +3634,11 @@ class TestUnwrap(unittest.TestCase):
             __hash__ = None
             __wrapped__ = func
         self.assertIsNone(inspect.unwrap(C()))
+
+    def test_recursion_limit(self):
+        obj = NTimesUnwrappable(sys.getrecursionlimit() + 1)
+        with self.assertRaisesRegex(ValueError, 'wrapper loop'):
+            inspect.unwrap(obj)
 
 class TestMain(unittest.TestCase):
     def test_only_source(self):
