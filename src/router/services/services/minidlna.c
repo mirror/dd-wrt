@@ -47,7 +47,7 @@ void start_dlna(void)
 #ifndef HAVE_VENTANA
 	if (nvram_matchi("jffs_mounted", 1) || (freediskSpace("/jffs") > 134217728)) {
 #endif
-#endig
+#endif
 		mkdir("/jffs/minidlna", 0700);
 		if (nvram_matchi("dlna_cleandb", 1)) {
 			unlink("/jffs/minidlna/files.db");
