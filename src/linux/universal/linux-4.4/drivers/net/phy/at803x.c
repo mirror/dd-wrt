@@ -434,7 +434,7 @@ static void at803x_link_change_notify(struct phy_device *phydev)
 
 			at803x_context_restore(phydev, &context);
 
-			phydev_dbg(phydev, "%s(): phy was reset\n",
+			dev_dbg(&phydev->dev, "%s(): phy was reset\n",
 				   __func__);
 			priv->phy_reset = true;
 		}
