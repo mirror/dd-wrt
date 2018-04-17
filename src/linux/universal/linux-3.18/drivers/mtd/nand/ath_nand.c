@@ -1455,12 +1455,12 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 				ubi_parts[0].size = offset;
 				ubi_parts[1].offset = offset;
 				ubi_parts[1].size = mtd->size - offset;
-				ubi_parts[1].size -= 0x80000;  // subtract nvram size
-				
-				ubi_parts[2].offset = ubi_parts[1].offset + ubi_parts[1].size;
+				ubi_parts[2].offset = ubi_parts[0].size;
+				ubi_parts[2].offset -= mtd->erasesize; // last block safed for special purpose
+				ubi_parts[2].offset -= 0x80000; 
 				ubi_parts[2].size = 0x80000;
 
-				ubi_parts[3].offset = 0;
+				ubi_parts[3].offset = 0; //must use all for ubi, since ubi is shit and doesnt like data beyond itself
 				ubi_parts[3].size = mtd->size;
 				break;
 		}
