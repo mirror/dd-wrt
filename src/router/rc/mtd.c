@@ -501,6 +501,7 @@ static int write_main(int argc, char *argv[])
 		goto fail;
 	}
 	sysinfo(&info);
+	eval("umount", "-r", "-f", "/jffs");
 #ifndef HAVE_CAMBRIA
 	stop_service("sshd");
 	stop_service("snmp");
