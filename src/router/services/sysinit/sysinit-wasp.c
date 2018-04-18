@@ -227,7 +227,7 @@ void start_sysinit(void)
 #if defined(HAVE_RAMBUTAN)
 	fp = fopen("/dev/mtdblock/0", "rb");
 	if (fp) {
-		fseek(fp,0x500000,SEEK_SET);
+		fseek(fp, 0x500000, SEEK_SET);
 		unsigned char buf2[256];
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
@@ -241,7 +241,7 @@ void start_sysinit(void)
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		set_hwaddr("eth1", mac);
-	
+
 	}
 #elif defined(HAVE_WNDR3700V4) || defined(HAVE_CPE880)
 	fp = fopen("/dev/mtdblock/5", "rb");
