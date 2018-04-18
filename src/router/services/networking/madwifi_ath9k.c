@@ -1335,7 +1335,7 @@ static char *makescanlist(char *value)
 			}
 			if (end == start)
 				continue;
-			for (i = start; i < end; i += 5) {
+			for (i = start; i < end + 5; i += 5) {
 				char *old = new;
 				if (!new)
 					asprintf(&new, "%d", i);
