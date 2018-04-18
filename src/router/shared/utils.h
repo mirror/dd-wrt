@@ -971,8 +971,8 @@ struct wl_assoc_mac {
 };
 
 struct nvram_param {
-	const char *name;
-	const char *value;
+	char *name;
+	char *value;
 };
 
 struct mtu_lists {
