@@ -145,15 +145,6 @@ static struct nvram_param ac1450_pci_1_1_params[] = {
 	{0, 0}
 };
 
-			/*
-			 * set router's extra parameters 
-			 */
-extra_params = ac1450_pci_1_1_params;
-while (extra_params->name) {
-	nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
-	extra_params++;
-}
-
 static struct nvram_param ac1450_pci_2_1_params[] = {
 	{"rxgains5ghtrisoa0", "5"},
 	{"rxgains5ghtrisoa1", "4"},
@@ -5075,6 +5066,15 @@ void start_sysinit(void)
 				nvram_set("pci/1/1/macaddr", mac);
 				MAC_ADD(mac);
 				nvram_set("pci/2/1/macaddr", mac);
+			}
+
+			/*
+			 * set router's extra parameters 
+			 */
+			extra_params = ac1450_pci_1_1_params;
+			while (extra_params->name) {
+				nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
+				extra_params++;
 			}
 
 			/*
