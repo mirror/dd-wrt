@@ -92,8 +92,7 @@ void start_sysinit(void)
 	insmod("ar2313");
 #endif
 	detect_wireless_devices();
-	int s;
-	struct ifreq ifr;
+	char macaddr[32];
 	if (getRouterBrand() == ROUTER_BOARD_RDAT81) {
 		writeprocsys("dev/wifi0/ledpin", "7");
 		writeprocsys("dev/wifi0/softled", "1");
@@ -113,7 +112,6 @@ void start_sysinit(void)
 		writeprocsys("dev/wifi1/ledpin", "5");
 		writeprocsys("dev/wifi1/softled", "1");
 	}
-	char macaddr[32];
 	if (get_hwaddr("eth0", macaddr)) {
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
