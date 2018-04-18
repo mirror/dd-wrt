@@ -122,6 +122,7 @@ void start_sysinit(void)
 #endif
 	int s;
 	struct ifreq ifr;
+	char macaddr[32];
 	if (getRouterBrand() == ROUTER_BOARD_FONERA2200) {
 		eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 		eval("/sbin/vconfig", "add", "eth0", "0");
@@ -130,7 +131,6 @@ void start_sysinit(void)
 		set_hwaddr("vlan1", macaddr);
 	}
 
-	char macaddr[32];
 	if (get_hwaddr("eth0", macaddr)) {
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
