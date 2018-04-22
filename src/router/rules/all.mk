@@ -304,6 +304,7 @@ include rules/libmbim.mk
 include rules/libmnl.mk
 include rules/wireguard.mk
 include rules/screen.mk
+include rules/aircrack-ng.mk
 
 #
 # Generic rules
