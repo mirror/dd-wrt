@@ -26,6 +26,7 @@ unbound-install:
 	rm -rf $(INSTALLDIR)/unbound/usr/include
 	rm -rf $(INSTALLDIR)/unbound/usr/share
 	rm -f $(INSTALLDIR)/unbound/usr/lib/*.a
+	rm -rf $(INSTALLDIR)/unbound/usr/lib/pkgconfig
 	rm -f $(INSTALLDIR)/unbound/usr/lib/*.la
 	rm -f $(INSTALLDIR)/unbound/usr/sbin/unbound-checkconf
 	rm -f $(INSTALLDIR)/unbound/usr/sbin/unbound-control
