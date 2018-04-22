@@ -211,14 +211,8 @@ php7-clean:
 	if test -e "php7/Makefile"; then make -C php7 clean; fi
 
 php7-install:
-ifeq ($(CONFIG_PHPCMD),y)
 	install -D php7/sapi/cli/.libs/php $(INSTALLDIR)/php7/usr/bin/php
-endif
-ifneq ($(CONFIG_PHPCGI),y)
-	install -D php7/sapi/cli/.libs/php $(INSTALLDIR)/php7/usr/bin/php
-endif
-ifeq ($(CONFIG_PHPCGI),y)
-	install -D php7/sapi/cgi/.libs/php-cgi $(INSTALLDIR)/php7/usr/bin/php-cgi
+	cd $(INSTALLDIR)/php7/usr/bin && ln -sf php php-cgi
 	mkdir -p $(INSTALLDIR)/php7/etc/php/modules
 	cp php7/modules/*.so $(INSTALLDIR)/php7/etc/php/modules
 	printf "short_open_tag=on\ncgi.fix_pathinfo=1\n" >$(INSTALLDIR)/php7/etc/php.ini
@@ -228,17 +222,3 @@ ifeq ($(CONFIG_PHPCGI),y)
 	printf "extension_dir = /etc/php/modules\n" >>$(INSTALLDIR)/php7/etc/php.ini
 	printf "extension = openssl.so\n" >>$(INSTALLDIR)/php7/etc/php.ini
 	printf "zend_extension = opcache.so\n" >>$(INSTALLDIR)/php7/etc/php.ini
-endif
-ifeq ($(CONFIG_LIGHTTPD),y)
-	install -D php7/sapi/cgi/.libs/php-cgi $(INSTALLDIR)/php7/usr/bin/php-cgi
-	mkdir -p $(INSTALLDIR)/php7/etc/php/modules
-	cp php7/modules/*.so $(INSTALLDIR)/php7/etc/php/modules
-	printf "short_open_tag=on\ncgi.fix_pathinfo=1\n" >$(INSTALLDIR)/php7/etc/php.ini
-	printf "post_max_size = 32M\n" >>$(INSTALLDIR)/php7/etc/php.ini
-	printf "upload_max_filesize = 32M\n" >>$(INSTALLDIR)/php7/etc/php.ini
-	printf "output_buffering = Off\n" >>$(INSTALLDIR)/php7/etc/php.ini
-	printf "extension_dir = /etc/php/modules\n" >>$(INSTALLDIR)/php7/etc/php.ini
-	printf "extension = openssl.so\n" >>$(INSTALLDIR)/php7/etc/php.ini
-	printf "zend_extension = opcache.so\n" >>$(INSTALLDIR)/php7/etc/php.ini
-	
-endif
