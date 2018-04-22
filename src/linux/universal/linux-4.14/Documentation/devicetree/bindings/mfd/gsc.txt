@@ -1,0 +1,69 @@
+Gateworks System Controller multi-function device
+
+The GSC is a Multifunction I2C slave device with the following submodules:
+- WDT
+- GPIO
+- Pushbutton controller
+- HWMON
+
+Required properties:
+- compatible : Must be "gw,gsc_v1", "gw,gsc_v2", "gw,gsc_v3"
+- reg: I2C address of the device
+- interrupts: interrupt triggered by GSC_IRQ# signal
+- interrupt-parent: Interrupt controller GSC is connected to
+- #interrupt-cells: should be <1>, index of the interrupt within the
+  controller, in accordance with the "one cell" variant of
+  <devicetree/bindings/interrupt-controller/interrupt.txt>
+
+Optional nodes:
+* watchdog:
+The GSC provides a Watchdog monitor which can power cycle the board's
+primary power supply on most board models when tripped.
+
+Required properties:
+- compatible: must be "gw,gsc-watchdog"
+
+* input:
+The GSC provides an input device capable of dispatching Linux Input events
+for user pushbutton events, tamper switch events, etc.
+
+Required properties:
+- compatible: must be "gw,gsc-input"
+
+* hwmon:
+The GSC provides a set of Analog to Digitcal Converter (ADC) pins used for
+temperature and/or voltage monitoring.
+
+Required properties:
+- compatible: must be "gw,gsc-hwmon"
+
+Example:
+
+	gsc@20 {
+		compatible = "gw,gsc_v3";
+		reg = <0x20>;
+		interrupt-parent = <&gpio1>;
+		interrupts <4 2>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+
+		watchdog {
+			compatible = "gw,gsc-watchdog";
+		};
+
+		hwmon {
+			compatible = "gw,gsc-hwmon";
+
+			vin: adc1 {
+				label = "vin";
+				min-microvolt = <725000>;
+				max-microvolt = <2075000>;
+			}
+
+			adc-channel@c {
+				reg = <0x00 0x0c>;
+			}
+
+			hwmon@1 {
+			};
+		};

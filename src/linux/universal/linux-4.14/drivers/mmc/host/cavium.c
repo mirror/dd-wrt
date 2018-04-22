@@ -870,8 +870,8 @@ static void cvm_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
 
 	/* Change the clock frequency. */
 	clock = ios->clock;
-	if (clock > 52000000)
-		clock = 52000000;
+	if (clock > 50000000)
+		clock = 50000000;
 	slot->clock = clock;
 
 	if (clock)
@@ -993,8 +993,8 @@ static int cvm_mmc_of_parse(struct device *dev, struct cvm_mmc_slot *slot)
 	/* Set maximum and minimum frequency */
 	if (!mmc->f_max)
 		of_property_read_u32(node, "spi-max-frequency", &mmc->f_max);
-	if (!mmc->f_max || mmc->f_max > 52000000)
-		mmc->f_max = 52000000;
+	if (!mmc->f_max || mmc->f_max > 50000000)
+		mmc->f_max = 50000000;
 	mmc->f_min = 400000;
 
 	/* Sampling register settings, period in picoseconds */
@@ -1003,6 +1003,14 @@ static int cvm_mmc_of_parse(struct device *dev, struct cvm_mmc_slot *slot)
 	of_property_read_u32(node, "cavium,dat-clk-skew", &dat_skew);
 	slot->cmd_cnt = (cmd_skew + clock_period / 2) / clock_period;
 	slot->dat_cnt = (dat_skew + clock_period / 2) / clock_period;
+
+	if ((slot->host->sys_freq / mmc->f_max) < 10) {
+		dev_info(slot->host->dev,
+			 "slot%d: %d too high for SCLK=%d; adjusting to %d\n",
+			 id, mmc->f_max, slot->host->sys_freq,
+			 slot->host->sys_freq / 10);
+		mmc->f_max = slot->host->sys_freq / 10;
+	}
 
 	return id;
 }
