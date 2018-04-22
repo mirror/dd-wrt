@@ -341,6 +341,16 @@ config MFD_EXYNOS_LPASS
 	  Select this option to enable support for Samsung Exynos Low Power
 	  Audio Subsystem.
 
+config MFD_GSC
+	tristate "Gateworks System Controller"
+	depends on (I2C && OF)
+	select MFD_CORE
+	select REGMAP_I2C
+	select REGMAP_IRQ
+	help
+	  Enable support for the Gateworks System Controller found
+	  on Gateworks Single Board Computers.
+
 config MFD_MC13XXX
 	tristate
 	depends on (SPI_MASTER || I2C)

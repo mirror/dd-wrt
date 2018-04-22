@@ -355,16 +355,24 @@ static irqreturn_t regmap_irq_thread(int irq, void *d)
 	 * doing a write per register.
 	 */
 	for (i = 0; i < data->chip->num_regs; i++) {
-		data->status_buf[i] &= ~data->mask_buf[i];
-
-		if (data->status_buf[i] && (chip->ack_base || chip->use_ack)) {
+		if ( (data->status_buf[i] & ~data->mask_buf[i]) &&
+		     (chip->ack_base || chip->use_ack) ) {
 			reg = chip->ack_base +
 				(i * map->reg_stride * data->irq_reg_stride);
-			ret = regmap_write(map, reg, data->status_buf[i]);
+			/* some chips ack by write 0 */
+			if (chip->ack_invert)
+				ret = regmap_write(map, reg,
+						   ~data->status_buf[i] &
+						   data->mask_buf[i]);
+			else
+				ret = regmap_write(map, reg,
+						   data->status_buf[i] &
+						   ~data->mask_buf[i]);
 			if (ret != 0)
 				dev_err(map->dev, "Failed to ack 0x%x: %d\n",
 					reg, ret);
 		}
+		data->status_buf[i] &= ~data->mask_buf[i];
 	}
 
 	for (i = 0; i < chip->num_irqs; i++) {
