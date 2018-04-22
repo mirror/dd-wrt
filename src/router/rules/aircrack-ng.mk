@@ -2,7 +2,10 @@ aircrack-ng:
 	$(MAKE) -C aircrack-ng
 
 aircrack-ng-install:
-	@true
+	$(MAKE) -C aircrack-ng DESTDIR=$(INSTALLDIR)/aircrack-ng install
+	-cp $(TOP)/aircrack-ng/scan $(INSTALLDIR)/aircrack-ng/usr/sbin
+	-cp $(TOP)/aircrack-ng/scantidy $(INSTALLDIR)/aircrack-ng/usr/sbin
+	rm -rf $(INSTALLDIR)/aircrack-ng/usr/share
 
 aircrack-ng-configure:
 	cd aircrack-ng && ./autogen.sh
