@@ -143,6 +143,9 @@ endif
 ifeq ($(CONFIG_LIMA),y)
 CFLAGS += -DHAVE_LIMA
 endif
+ifeq ($(CONFIG_WR1043V4),y)
+CFLAGS += -DHAVE_WR1043V4
+endif
 ifeq ($(CONFIG_RAMBUTAN),y)
 CFLAGS += -DHAVE_RAMBUTAN
 endif
