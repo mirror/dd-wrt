@@ -9,7 +9,7 @@ test_fuzz_once(struct base64_encode_ctx *encode,
 {
   size_t base64_len = BASE64_ENCODE_RAW_LENGTH (size);
   size_t out_len;
-  uint8_t *base64 = xalloc (base64_len + 2);
+  char *base64 = xalloc (base64_len + 2);
   uint8_t *decoded = xalloc (size + 2);
 
   *base64++ = 0x12;
@@ -66,6 +66,20 @@ test_fuzz(void)
     }
 }
 
+static inline void
+base64_encode_in_place (size_t length, uint8_t *data)
+{
+  base64_encode_raw ((char *) data, length, data);
+}
+
+static inline int
+base64_decode_in_place (struct base64_decode_ctx *ctx, size_t *dst_length,
+			size_t length, uint8_t *data)
+{
+  return base64_decode_update (ctx, dst_length,
+			       data, length, (const char *) data);
+}
+
 void
 test_main(void)
 {
@@ -111,12 +125,12 @@ test_main(void)
     size_t dst_length;
     
     ASSERT(BASE64_ENCODE_RAW_LENGTH(5) == 8);
-    base64_encode_raw(buffer, 5, buffer);
+    base64_encode_in_place(5, buffer);
     ASSERT(MEMEQ(9, buffer, "SGVsbG8=x"));
 
     base64_decode_init(&ctx);
     dst_length = 0; /* Output parameter only. */
-    ASSERT(base64_decode_update(&ctx, &dst_length, buffer, 8, buffer));
+    ASSERT(base64_decode_in_place(&ctx, &dst_length, 8, buffer));
     ASSERT(dst_length == 5);
     
     ASSERT(MEMEQ(9, buffer, "HelloG8=x"));

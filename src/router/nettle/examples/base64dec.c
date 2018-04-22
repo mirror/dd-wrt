@@ -58,7 +58,7 @@ int
 main(int argc UNUSED, char **argv UNUSED)
 {
   /* "buffer" will hold the bytes from disk: */
-  uint8_t * buffer = xalloc (CHUNK_SIZE);
+  char * buffer = xalloc (CHUNK_SIZE);
 
   /* "result" will hold bytes before output: */
   uint8_t * result = xalloc (DECODED_SIZE);
