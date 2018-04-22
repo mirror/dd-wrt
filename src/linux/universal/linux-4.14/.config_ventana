@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.14.21-rc1 Kernel Configuration
+# Linux/arm 4.14.35 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -871,7 +871,6 @@ CONFIG_NF_NAT_REDIRECT=y
 CONFIG_NETFILTER_SYNPROXY=m
 # CONFIG_NF_TABLES is not set
 CONFIG_NF_FLOW_TABLE=y
-CONFIG_NF_FLOW_TABLE_HW=y
 CONFIG_NETFILTER_XTABLES=y
 
 #
@@ -2587,6 +2586,7 @@ CONFIG_BCMA_POSSIBLE=y
 # CONFIG_MFD_DA9063 is not set
 # CONFIG_MFD_DA9150 is not set
 # CONFIG_MFD_DLN2 is not set
+# CONFIG_MFD_GSC is not set
 # CONFIG_MFD_MC13XXX_SPI is not set
 # CONFIG_MFD_MC13XXX_I2C is not set
 # CONFIG_MFD_HI6421_PMIC is not set
@@ -3405,6 +3405,7 @@ CONFIG_LEDS_GPIO=y
 #
 # LED driver for blink(1) USB RGB LED is under Special HID drivers (HID_THINGM)
 #
+# CONFIG_LEDS_OMNIA is not set
 # CONFIG_LEDS_BLINKM is not set
 # CONFIG_LEDS_SYSCON is not set
 # CONFIG_LEDS_USER is not set
@@ -4436,4 +4437,3 @@ CONFIG_ARCH_HAS_SG_CHAIN=y
 CONFIG_SBITMAP=y
 # CONFIG_STRING_SELFTEST is not set
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_LEDS_OMNIA is not set
