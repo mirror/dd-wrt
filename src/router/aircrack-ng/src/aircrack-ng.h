@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <sys/time.h>
+#include <sys/types.h>
 #if defined(__FreeBSD__)
 #include <unistd.h>
 #endif
