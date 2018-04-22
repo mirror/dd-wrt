@@ -202,6 +202,11 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 2 3 4");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 5");
+	setSwitchLED(15, 0x20); // wan
+	setSwitchLED(9, 0x10);  // lan1
+	setSwitchLED(14, 0x08); // lan2
+	setSwitchLED(21, 0x04); // lan3
+	setSwitchLED(20, 0x02); // lan4
 #elif defined (HAVE_ARCHERC7V4)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
