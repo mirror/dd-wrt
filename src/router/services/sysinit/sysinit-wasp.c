@@ -197,6 +197,11 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
+#elif defined (HAVE_WR1043V4)
+	eval("swconfig", "dev", "eth0", "set", "reset", "1");
+	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 2 3 4");
+	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 5");
 #elif defined (HAVE_ARCHERC7V4)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
@@ -456,7 +461,9 @@ void start_sysinit(void)
 #ifdef HAVE_WDR4900V2
 	setWirelessLed(1, 17);
 #endif
-#ifdef HAVE_ARCHERC7V4
+#ifdef HAVE_WR1043V4
+	setWirelessLed(0, 19);
+#elif defined(HAVE_ARCHERC7V4)
 	setWirelessLed(0, 24);
 	setWirelessLed(1, 9);
 #elif defined(HAVE_ARCHERC7)
