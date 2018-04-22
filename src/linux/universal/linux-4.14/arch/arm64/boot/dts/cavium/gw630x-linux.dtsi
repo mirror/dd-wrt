@@ -61,6 +61,53 @@
 		};
 	};
 
+	gpio_keys {
+		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		user_pb {
+			label = "user_pb";
+			gpios = <&gsc_gpio 0 1>;
+			linux,code = <256>; /* BTN_0 */
+		};
+
+		user_pb1x {
+			label = "user_pb1x";
+			linux,code = <257>; /* BTN_1 */
+			interrupt-parent = <&gsc>;
+			interrupts = <0>;
+		};
+
+		key_erased {
+			label = "key-erased";
+			linux,code = <258>; /* BTN_2 */
+			interrupt-parent = <&gsc>;
+			interrupts = <1>;
+		};
+
+		eeprom_wp {
+			label = "eeprom_wp";
+			linux,code = <259>; /* BTN_3 */
+			interrupt-parent = <&gsc>;
+			interrupts = <2>;
+		};
+
+		tamper {
+			label = "tamper";
+			linux,code = <260>; /* BTN_4 */
+			interrupt-parent = <&gsc>;
+			interrupts = <5>;
+		};
+
+		switch_hold {
+			label = "switch_hold";
+			linux,code = <261>; /* BTN_5 */
+			interrupt-parent = <&gsc>;
+			interrupts = <7>;
+		};
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -77,6 +124,11 @@
 			gpios = <&gpio_6_0 14 0>;
 			default-state = "off";
 		};
+	};
+
+	pps {
+		compatible = "pps-gpio";
+		gpios = <&gpio_6_0 30 0>;
 	};
 };
 
@@ -131,7 +183,7 @@
 		compatible = "mmc-slot";
 		reg = <0>;
 		vmmc-supply = <&mmc_supply_3v3>;
-		max-frequency = <26000000>;
+		max-frequency = <35000000>;
 		/* 1.8v is not supported */
 		no-1-8-v;
 		/* No write-protect switch is present */
@@ -147,7 +199,7 @@
 		compatible = "mmc-slot";
 		reg = <1>;
 		vmmc-supply = <&mmc_supply_3v3>;
-		max-frequency = <26000000>;
+		max-frequency = <35000000>;
 		/* 1.8v is not supported */
 		no-1-8-v;
 		/* No write-protect switch is present */
@@ -161,6 +213,118 @@
 
 /* TWSI0 */
 &i2c_9_0 {
+	gsc: gsc@20 {
+		compatible = "gw,gsc-v3";
+		reg = <0x20>;
+		interrupt-parent = <&gpio_6_0>;
+		interrupts = <4 1>;
+		interrupt-controller;
+		#interrupt-cells = <1>;
+
+		gsc_hwmon {
+			compatible = "gw,gsc-hwmon";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			gw,fan-base = <0x0a>;
+
+			hwmon@6 {
+				type = "gw,hwmon-temperature";
+				reg = <0x06>;
+				label = "temp";
+			};
+
+			hwmon@82 {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x82>;
+				label = "vdd_vin";
+				gw,voltage-divider = <22100 1000>;
+				gw,voltage-offset = <800>;
+			};
+
+			hwmon@8 {
+				type = "gw,hwmon-voltage";
+				reg = <0x08>;
+				label = "vdd_bat";
+			};
+
+			hwmon@84 {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x84>;
+				label = "vdd_5p0";
+				gw,voltage-divider = <22100 10000>;
+			};
+
+			hwmon@86 {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x86>;
+				label = "vdd_3p3";
+				gw,voltage-divider = <10000 10000>;
+			};
+
+			hwmon@88 {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x88>;
+				label = "vdd_2p5";
+				gw,voltage-divider = <10000 10000>;
+			};
+
+			hwmon@8c {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x8c>;
+				label = "vdd_core";
+			};
+
+			hwmon@8e {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x8e>;
+				label = "vdd_0p9";
+			};
+
+			hwmon@90 {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x90>;
+				label = "vdd_1p0";
+			};
+
+			hwmon@92 {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x92>;
+				label = "vdd_1p2";
+			};
+
+			hwmon@98 {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x98>;
+				label = "vdd_1p5";
+			};
+
+			hwmon@9a {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x9a>;
+				label = "vdd_1p8";
+			};
+
+			hwmon@9c {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x9c>;
+				label = "vdd_an1";
+			};
+
+			hwmon@9e {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0x9e>;
+				label = "vdd_an2";
+			};
+
+			hwmon@a2 {
+				type = "gw,hwmon-voltage-raw";
+				reg = <0xa2>;
+				label = "vdd_gsc";
+				gw,voltage-divider = <10000 10000>;
+			};
+		};
+	};
+
 	/* regulator */
 	regulator_core: max20730-i2c@56 {
 		compatible = "max,max20730";
@@ -191,16 +355,13 @@
 		pagesize = <16>;
 	};
 
-	gpio: pca9555@23 {
+	gsc_gpio: pca9555@23 {
 		compatible = "nxp,pca9555";
 		reg = <0x23>;
 		gpio-controller;
 		#gpio-cells = <2>;
-	};
-
-	gsc: gsc@29 {
-		compatible = "gsc";
-		reg = <0x29>;
+		interrupt-parent = <&gsc>;
+		interrupts = <4>;
 	};
 
 	rtc: ds1672@68 {

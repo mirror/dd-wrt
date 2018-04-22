@@ -475,6 +475,12 @@ config SENSORS_F75375S
 	  This driver can also be built as a module.  If so, the module
 	  will be called f75375s.
 
+config SENSORS_GSC
+        tristate "Gateworks System Controller ADC"
+        depends on MFD_GSC
+        help
+          Support for the Gateworks System Controller A/D converters.
+
 config SENSORS_MC13783_ADC
         tristate "Freescale MC13783/MC13892 ADC"
         depends on MFD_MC13XXX
