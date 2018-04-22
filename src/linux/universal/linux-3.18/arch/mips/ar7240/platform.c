@@ -704,10 +704,6 @@ static struct mdio_board_info wdr4300_mdio0_info[] = {
 static struct ar8327_pad_cfg ap152_ar8337_pad0_cfg = {
 	.mode = AR8327_PAD_MAC_SGMII,
 	.sgmii_delay_en = true,
-//	.txclk_delay_en = true,
-//	.rxclk_delay_en = true,
-//	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
-//	.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2,
 };
 
 static struct ar8327_platform_data ap152_ar8337_data = {
@@ -1213,6 +1209,14 @@ int __init ar7240_platform_init(void)
 	mac = (u8 *)KSEG1ADDR(0x1ff00008);
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);
+    #elif CONFIG_WR1043V5
+	mac = (u8 *)KSEG1ADDR(0x1ff00008);
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);
+    #elif CONFIG_WR1043V4
+	mac = (u8 *)KSEG1ADDR(0x1ff50008);
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);
     #elif CONFIG_WR1043V2
 	mac = (u8 *)KSEG1ADDR(0x1f01fc00);
 	ath79_init_mac(mac0, mac, -1);
@@ -1316,7 +1320,7 @@ int __init ar7240_platform_init(void)
 	iounmap(base);
     #else
 	#ifdef CONFIG_AP135
-	#if !defined(CONFIG_MMS344) && !defined(CONFIG_ARCHERC7V4) || defined(CONFIG_DIR862)
+	#if !defined(CONFIG_MMS344) && !defined(CONFIG_ARCHERC7V4) && !defined(CONFIG_WR1043V4) || defined(CONFIG_DIR862)
 	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN);
 	#endif
 	#else
@@ -1696,18 +1700,22 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 	ar71xx_eth0_data.phy_mask = BIT(0);
+	ar71xx_add_device_eth(0);
+	
+	#elif CONFIG_WR1043V4
+	ar71xx_add_device_mdio(0, 0x0);
+	mdiobus_register_board_info(ap152_mdio0_info,ARRAY_SIZE(ap152_mdio0_info));
 
-
-//	ar71x_init_mac(ar71x_eth0_data.mac_addr, art + AP152_MAC0_OFFSET, 0);
-/*	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 1);
+	/* GMAC0 is connected to the RMGII interface */
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
 	ar71xx_eth0_data.speed = SPEED_1000;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
 	ar71xx_eth0_data.phy_mask = BIT(0);
-	ar71xx_eth0_data.force_link = 1;
-	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
-	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;*/
 	ar71xx_add_device_eth(0);
-
+	
+	
 	
 	#else
 	#ifdef CONFIG_DAP2330
@@ -1815,6 +1823,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 1);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac1, 0);
 	    #elif CONFIG_ARCHERC7V4
+	    #elif CONFIG_WR1043V4
 	    #elif CONFIG_WR1043V2
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 1);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 0);
