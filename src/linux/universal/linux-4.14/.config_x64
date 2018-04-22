@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86_64 4.14.21-rc1 Kernel Configuration
+# Linux/x86_64 4.14.35 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -983,7 +983,6 @@ CONFIG_NF_NAT_TFTP=y
 CONFIG_NF_NAT_REDIRECT=y
 # CONFIG_NF_TABLES is not set
 CONFIG_NF_FLOW_TABLE=y
-CONFIG_NF_FLOW_TABLE_HW=y
 CONFIG_NETFILTER_XTABLES=y
 
 #
@@ -3503,6 +3502,7 @@ CONFIG_LEDS_CLASS=y
 #
 # LED driver for blink(1) USB RGB LED is under Special HID drivers (HID_THINGM)
 #
+# CONFIG_LEDS_OMNIA is not set
 # CONFIG_LEDS_BLINKM is not set
 # CONFIG_LEDS_MLXCPLD is not set
 # CONFIG_LEDS_USER is not set
@@ -4576,4 +4576,3 @@ CONFIG_ARCH_HAS_PMEM_API=y
 CONFIG_ARCH_HAS_UACCESS_FLUSHCACHE=y
 CONFIG_SBITMAP=y
 # CONFIG_STRING_SELFTEST is not set
-# CONFIG_LEDS_OMNIA is not set
