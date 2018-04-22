@@ -706,7 +706,7 @@ static void wifi_send(void *p, int len)
 
 	rc = wi_write(_state.s_wi, p, len, &tx);
 	if (rc == -1)
-		err(1, "wi_wirte()");
+		err(1, "wi_write()");
 }
 
 static void deauth_send(struct network *n, unsigned char *mac)
@@ -2002,6 +2002,7 @@ static void wifi_mgt(struct network *n, struct ieee80211_frame *wh, int len)
 	switch (wh->i_fc[0] & IEEE80211_FC0_SUBTYPE_MASK) {
 	case IEEE80211_FC0_SUBTYPE_BEACON:
 		wifi_beacon(n, wh, len);
+		break;
 
 	case IEEE80211_FC0_SUBTYPE_AUTH:
 		wifi_auth(n, wh, len);
@@ -2550,9 +2551,15 @@ static void wifi_read(void)
     struct ieee80211_frame* wh = (struct ieee80211_frame*) buf;
 	struct network *n;
 
+	memset(buf, 0, sizeof(buf));
+
 	rd = wi_read(s->s_wi, buf, sizeof(buf), &ri);
-	if (rd <= 0)
+	if (rd < 0)
 		err(1, "wi_read()");
+
+	if (rd < sizeof(struct ieee80211_frame)) {
+		return;
+	}
 
 	s->s_ri = &ri;
 
@@ -2647,7 +2654,7 @@ static void print_status(int advance)
 			speed_calculate(&n->n_flood_in);
 			speed_calculate(&n->n_flood_out);
 
-			printf(" - %d IVs rate %d [%d PPS out] len %d",
+			printf(" - %d IVs rate %u [%u PPS out] len %d",
 			       n->n_data_count,
 			       n->n_flood_in.s_speed,
 			       n->n_flood_out.s_speed,
@@ -3095,7 +3102,7 @@ static void print_state(int UNUSED(x))
 	}
 
 	printf("Current chan: %d\n", s->s_chan);
-	printf("Hop cycle %d chans:", s->s_hopcycles);
+	printf("Hop cycle %u chans:", s->s_hopcycles);
 	do {
 		printf(" %d", c->c_num);
 		c = c->c_next;
@@ -3138,7 +3145,7 @@ static void usage(char *prog)
     char *version_info = getVersion("Besside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
         printf("\n"
                 "  %s - (C) 2010 Andrea Bittau\n"
-                "  http://www.aircrack-ng.org\n"
+                "  https://www.aircrack-ng.org\n"
                 "\n"
                 "  Usage: %s [options] <interface>\n"
                 "\n"
@@ -3163,7 +3170,7 @@ static void usage(char *prog)
 
 int main(int argc, char *argv[])
 {
-	int ch;
+	int ch, temp;
 #ifdef HAVE_PCRE
     const char *pcreerror;
     int pcreerroffset;
@@ -3182,14 +3189,24 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'p':
-			_conf.cf_floodfreq = (int) (1.0 / (double) atoi(optarg)
+			temp = atoi(optarg);
+			if (temp <= 0) {
+				printf("Invalid flood rate value, must be > 0");
+				exit(1);
+			}
+			_conf.cf_floodfreq = (int) (1.0 / (double) temp
 					      * 1000.0 * 1000.0);
 			break;
 
 		case 'c':
 			// XXX leak
 			_conf.cf_channels.c_next = &_conf.cf_channels;
-			channel_add(atoi(optarg));
+			temp = atoi(optarg);
+			if (temp <= 0) {
+				printf("Invalid channel, must be > 0\n");
+				exit(1);
+			}
+			channel_add(temp);
 			_state.s_hopchan = _conf.cf_channels.c_next;
 			break;
 

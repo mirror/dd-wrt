@@ -309,7 +309,9 @@ int cpuid_findcpusensorpath(const char *path) {
 	while ((dp = readdir(dirp)) != NULL) {
 		if (!strncmp(dp->d_name, sensor, 5)) {
 			(void)closedir(dirp);
-			asprintf(&cpuinfo.cputemppath, "%stemp%d_input", CORETEMP_PATH, sensorx);
+			if (asprintf(&cpuinfo.cputemppath, "%stemp%d_input", CORETEMP_PATH, sensorx) == -1) {
+				perror("asprintf");
+			}
 			return sensorx;
 		} else if (!strncmp(dp->d_name, "temp", 4))
 			sprintf(tbuf[cnt++], "%s", dp->d_name);
@@ -324,7 +326,9 @@ int cpuid_findcpusensorpath(const char *path) {
 			snprintf(sensor, sizeof(sensor), "temp%d", sensorx);
 
 			if (!strncasecmp(tbuf[i], sensor, strlen(sensor))) {
-				asprintf(&cpuinfo.cputemppath, "%stemp%d_input", CORETEMP_PATH, sensorx);
+				if (asprintf(&cpuinfo.cputemppath, "%stemp%d_input", CORETEMP_PATH, sensorx) == -1) {
+					perror("asprintf");
+				}
 				return sensorx;
 			}
 		}
@@ -532,7 +536,7 @@ int cpuid_getinfo() {
 #endif
 
 	if ((cpuinfo.cores == 0) && (cpuinfo.coreperid != 0)) {
-		// On lower topology processors we have to caclulate the cores from max cores per id (pkg/socket) by max addressable
+		// On lower topology processors we have to calculate the cores from max cores per id (pkg/socket) by max addressable
 		cpuinfo.cores = (cpuinfo.maxlogic / cpuinfo.coreperid);
 	}
 #endif
@@ -599,8 +603,9 @@ int cpuid_getinfo() {
 
 #ifndef JOHN_AVX2
 	if (cpuinfo.simdsize == 8) {
-		printf("NOTE: Your processor is capable of AVX2 but AVX2 support was not compiled in!\n");
-		printf("Please send a copy of this output to the aircrack team to improve autodetection.\n");
+		printf("NOTE: Your processor is capable of AVX2 but AVX2.\n");
+		printf("If using the 'aircrack-ng' executable and not --sse2, --generic or --avx,\n");
+		printf("please report it on Aircrack-ng GitHub to to improve autodetection.\n");
 	}
 #endif
 

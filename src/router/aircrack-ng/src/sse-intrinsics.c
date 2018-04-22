@@ -1766,14 +1766,14 @@ void SSESHA256body(__m128i *data, ARCH_WORD_32 *out, ARCH_WORD_32 *reload_state,
 		else
 		{
 			i=0;
-			a = _mm_add_epi32(a,_mm_load_si128((__m128i *)&reload_state[i*32+0]));
-			b = _mm_add_epi32(b,_mm_load_si128((__m128i *)&reload_state[i*32+4]));
-			c = _mm_add_epi32(c,_mm_load_si128((__m128i *)&reload_state[i*32+8]));
-			d = _mm_add_epi32(d,_mm_load_si128((__m128i *)&reload_state[i*32+12]));
-			e = _mm_add_epi32(e,_mm_load_si128((__m128i *)&reload_state[i*32+16]));
-			f = _mm_add_epi32(f,_mm_load_si128((__m128i *)&reload_state[i*32+20]));
-			g = _mm_add_epi32(g,_mm_load_si128((__m128i *)&reload_state[i*32+24]));
-			h = _mm_add_epi32(h,_mm_load_si128((__m128i *)&reload_state[i*32+28]));
+			a = _mm_add_epi32(a,_mm_load_si128((__m128i *)&reload_state[i*8*2+0]));
+			b = _mm_add_epi32(b,_mm_load_si128((__m128i *)&reload_state[i*8*2+4]));
+			c = _mm_add_epi32(c,_mm_load_si128((__m128i *)&reload_state[i*8*2+8]));
+			d = _mm_add_epi32(d,_mm_load_si128((__m128i *)&reload_state[i*8*2+12]));
+			e = _mm_add_epi32(e,_mm_load_si128((__m128i *)&reload_state[i*8*2+16]));
+			f = _mm_add_epi32(f,_mm_load_si128((__m128i *)&reload_state[i*8*2+20]));
+			g = _mm_add_epi32(g,_mm_load_si128((__m128i *)&reload_state[i*8*2+24]));
+			h = _mm_add_epi32(h,_mm_load_si128((__m128i *)&reload_state[i*8*2+28]));
 		}
 	} else if ((SSEi_flags & SSEi_SKIP_FINAL_ADD) == 0) {
 		if (SSEi_flags & SSEi_CRYPT_SHA224) {
@@ -1813,7 +1813,7 @@ void SSESHA256body(__m128i *data, ARCH_WORD_32 *out, ARCH_WORD_32 *reload_state,
 		SWAP_ENDIAN (h);
 	}
 	/* We store the MMX_mixed values.  This will be in proper 'mixed' format, in BE
-	 * format (i.e. correct to reload on a subsquent call), UNLESS, swapped in the prior
+	 * format (i.e. correct to reload on a subsequent call), UNLESS, swapped in the prior
 	 * if statement (the SHA256_SWAP_FINAL) */
 	if (SSEi_flags & SSEi_OUTPUT_AS_INP_FMT)
 	{
@@ -2174,7 +2174,7 @@ void SSESHA512body(__m128i* data, ARCH_WORD_64 *out, ARCH_WORD_64 *reload_state,
 	}
 
 	/* We store the MMX_mixed values.  This will be in proper 'mixed' format, in BE
-	 * format (i.e. correct to reload on a subsquent call), UNLESS, swapped in the prior
+	 * format (i.e. correct to reload on a subsequent call), UNLESS, swapped in the prior
 	 * if statement (the SHA512_SWAP_FINAL) */
 	if (SSEi_flags & SSEi_OUTPUT_AS_INP_FMT)
 	{

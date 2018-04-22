@@ -1,7 +1,7 @@
 /*
  *  802.11 WEP replay & injection attacks
  *
- *  Copyright (C) 2006-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2006-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
  *  WEP decryption attack (chopchop) developed by KoreK
@@ -72,11 +72,12 @@
 #include "osdep/osdep.h"
 #include "crypto.h"
 #include "common.h"
+#include "verifyssid.h"
 
 #define RTC_RESOLUTION  8192
 
 #define REQUESTS    30
-#define MAX_APS     20
+#define MAX_APS     50
 
 #define NEW_IV  1
 #define RETRY   2
@@ -130,7 +131,6 @@
 
 int bitrates[RATE_NUM]={RATE_1M, RATE_2M, RATE_5_5M, RATE_6M, RATE_9M, RATE_11M, RATE_12M, RATE_18M, RATE_24M, RATE_36M, RATE_48M, RATE_54M};
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern int maccmp(unsigned char *mac1, unsigned char *mac2);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 extern int check_crc_buf( unsigned char *buf, int len );
@@ -140,8 +140,8 @@ extern const unsigned char crc_chop_tbl[256][4];
 char usage[] =
 
 "\n"
-"  %s - (C) 2006-2015 Thomas d\'Otreppe\n"
-"  http://www.aircrack-ng.org\n"
+"  %s - (C) 2006-2018 Thomas d\'Otreppe\n"
+"  https://www.aircrack-ng.org\n"
 "\n"
 "  usage: aireplay-ng <options> <replay interface>\n"
 "\n"
@@ -207,6 +207,7 @@ char usage[] =
 "      -R                    : disable /dev/rtc usage\n"
 "      --ignore-negative-one : if the interface's channel can't be determined,\n"
 "                              ignore the mismatch, needed for unpatched cfg80211\n"
+"      --deauth-rc rc        : Deauthentication reason code [0-254] (Default: 7)\n"
 "\n"
 "  Attack modes (numbers can still be used):\n"
 "\n"
@@ -238,6 +239,7 @@ struct options
     int f_fromds;
     int f_iswep;
 
+    unsigned char deauth_rc;
     int r_nbpps;
     int r_fctrl;
     unsigned char r_bssid[6];
@@ -827,7 +829,7 @@ int getnet( unsigned char* capa, int filter, int force)
     {
         if(memcmp(bssid, NULL_MAC, 6))
         {
-            if( strlen(opt.r_essid) == 0 || opt.r_essid[0] < 32)
+            if( verifyssid((const unsigned char *)opt.r_essid) == 0 )
             {
                 printf( "Please specify an ESSID (-e).\n" );
             }
@@ -1120,7 +1122,7 @@ int capture_ask_packet( int *caplen, int just_grab )
         printf( "\n\nUse this packet ? " );
         fflush( stdout );
         ret=0;
-        while(!ret) ret = scanf( "%s", tmpbuf );
+        while(!ret) ret = scanf( "%1s", tmpbuf );
         printf( "\n" );
 
         if( tmpbuf[0] == 'y' || tmpbuf[0] == 'Y' )
@@ -1209,6 +1211,11 @@ int read_prga(unsigned char **dest, char *file)
 
     fseek(f, 0, SEEK_END);
     size = ftell(f);
+    if (size == -1) {
+        fclose(f);
+        fprintf( stderr, "ftell failed\n");
+        return ( 1 );
+    }
     rewind(f);
 
     if(size > 1500) size = 1500;
@@ -1341,14 +1348,18 @@ int do_attack_deauth( void )
             memcpy( h80211, DEAUTH_REQ, 26 );
             memcpy( h80211 + 16, opt.r_bssid, 6 );
 
+            /* add the deauth reason code */
+	    h80211[24] = opt.deauth_rc;
+
             aacks = 0;
             sacks = 0;
             for( i = 0; i < 64; i++ )
             {
                 if(i == 0)
                 {
-                    PCT; printf( "Sending 64 directed DeAuth. STMAC:"
+                    PCT; printf( "Sending 64 directed DeAuth (code %i). STMAC:"
                                 " [%02X:%02X:%02X:%02X:%02X:%02X] [%2d|%2d ACKs]\r",
+                                opt.deauth_rc,
                                 opt.r_dmac[0],  opt.r_dmac[1],
                                 opt.r_dmac[2],  opt.r_dmac[3],
                                 opt.r_dmac[4],  opt.r_dmac[5],
@@ -1403,8 +1414,9 @@ int do_attack_deauth( void )
                         {
                             sacks++;
                         }
-                        PCT; printf( "Sending 64 directed DeAuth. STMAC:"
+                        PCT; printf( "Sending 64 directed DeAuth (code %i). STMAC:"
                                     " [%02X:%02X:%02X:%02X:%02X:%02X] [%2d|%2d ACKs]\r",
+                                    opt.deauth_rc,
                                     opt.r_dmac[0],  opt.r_dmac[1],
                                     opt.r_dmac[2],  opt.r_dmac[3],
                                     opt.r_dmac[4],  opt.r_dmac[5],
@@ -1418,13 +1430,15 @@ int do_attack_deauth( void )
         {
             /* deauthenticate all stations */
 
-            PCT; printf( "Sending DeAuth to broadcast -- BSSID:"
+    	    PCT; printf( "Sending DeAuth (code %i) to broadcast -- BSSID:"
                          " [%02X:%02X:%02X:%02X:%02X:%02X]\n",
+                         opt.deauth_rc,
                          opt.r_bssid[0], opt.r_bssid[1],
                          opt.r_bssid[2], opt.r_bssid[3],
                          opt.r_bssid[4], opt.r_bssid[5] );
 
             memcpy( h80211, DEAUTH_REQ, 26 );
+	    h80211[24] = opt.deauth_rc;
 
             memcpy( h80211 +  4, BROADCAST,   6 );
             memcpy( h80211 + 10, opt.r_bssid, 6 );
@@ -1484,7 +1498,7 @@ int do_attack_fake_auth( void )
     if(getnet(capa, 0, 1) != 0)
         return 1;
 
-    if( strlen(opt.r_essid) == 0 || opt.r_essid[0] < 32)
+    if( verifyssid((const unsigned char *)opt.r_essid) == 0 )
     {
         printf( "Please specify an ESSID (-e).\n" );
         return 1;
@@ -2235,7 +2249,7 @@ int do_attack_fake_auth( void )
 
 int do_attack_interactive( void )
 {
-    int caplen, n, z;
+    int caplen, n;
     int mi_b, mi_s, mi_d;
     struct timeval tv;
     struct timeval tv2;
@@ -2248,10 +2262,6 @@ read_packets:
 
     if( capture_ask_packet( &caplen, 0 ) != 0 )
         return( 1 );
-
-    z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
-    if ( ( h80211[0] & 0x80 ) == 0x80 ) /* QoS */
-        z+=2;
 
     /* rewrite the frame control & MAC addresses */
 
@@ -2345,10 +2355,10 @@ read_packets:
 
         /* update the status line */
 
-        if( ticks[1] > (RTC_RESOLUTION/10) )
+        if( ticks[1] > RTC_RESOLUTION/10 )
         {
             ticks[1] = 0;
-            printf( "\rSent %ld packets...(%d pps)\33[K\r", nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)));
+            printf( "\rSent %lu packets...(%d pps)\33[K\r", nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)));
             fflush( stdout );
         }
 
@@ -2515,7 +2525,7 @@ int do_attack_arp_resend( void )
         {
             ticks[1] = 0;
             printf( "\rRead %ld packets (got %ld ARP requests and %ld ACKs), "
-                    "sent %ld packets...(%d pps)\r",
+                    "sent %lu packets...(%d pps)\r",
                     nb_pkt_read, nb_arp_tot, nb_ack_pkt, nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)) );
             fflush( stdout );
         }
@@ -2710,6 +2720,7 @@ add_arp:
 
                     h80211[1] = 0x41;   /* ToDS & WEP  */
                 }
+                break;
                 case  2: /* FromDS */
                 {
                     if( opt.r_fromdsinj )
@@ -2733,6 +2744,7 @@ add_arp:
                         h80211[1] = 0x41;   /* ToDS & WEP  */
                     }
                 }
+                break;
             }
 
             //should be correct already, keep qos/wds status
@@ -2951,7 +2963,7 @@ int do_attack_caffe_latte( void )
         {
             ticks[1] = 0;
             printf( "\rRead %ld packets (%ld ARPs, %ld ACKs), "
-                    "sent %ld packets...(%d pps)\r",
+                    "sent %lu packets...(%d pps)\r",
                     nb_pkt_read, nb_arp_tot, nb_ack_pkt, nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)) );
             fflush( stdout );
         }
@@ -3412,7 +3424,7 @@ int do_attack_migmode( void )
         {
             ticks[1] = 0;
             printf( "\rRead %ld packets (%ld ARPs, %ld ACKs), "
-                    "sent %ld packets...(%d pps)\r",
+                    "sent %lu packets...(%d pps)\r",
                     nb_pkt_read, nb_arp_tot, nb_ack_pkt, nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)) );
             fflush( stdout );
         }
@@ -4052,10 +4064,10 @@ read_packets:
 
         /* update the status line */
 
-        if( ticks[1] > (RTC_RESOLUTION/10) )
+        if( ticks[1] > RTC_RESOLUTION/10 )
         {
             ticks[1] = 0;
-            printf( "\rSent %ld packets...(%d pps)\33[K\r", nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)));
+            printf( "\rSent %lu packets...(%d pps)\33[K\r", nb_pkt_sent, (int)((double)nb_pkt_sent/((double)ticks[0]/(double)RTC_RESOLUTION)));
             fflush( stdout );
         }
 
@@ -4354,7 +4366,7 @@ int do_attack_chopchop( void )
         if( ticks[1] > (RTC_RESOLUTION/10) )
         {
             ticks[1] = 0;
-            printf( "\rSent %3ld packets, current guess: %02X...\33[K",
+            printf( "\rSent %3lu packets, current guess: %02X...\33[K",
                     nb_pkt_sent, guess );
             fflush( stdout );
         }
@@ -4596,7 +4608,7 @@ int do_attack_chopchop( void )
         n = caplen - data_start;
 
         printf( "\rOffset %4d (%2d%% done) | xor = %02X | pt = %02X | "
-                "%4ld frames written in %5.0fms\n", data_end - 1,
+                "%4lu frames written in %5.0fms\n", data_end - 1,
                 100 * ( caplen - data_end ) / n,
                 chopped[data_end - 1],
                 chopped[data_end - 1] ^ srcbuf[data_end + srcdiff - 1],
@@ -4795,9 +4807,12 @@ void save_prga(char *filename, unsigned char *iv, unsigned char *prga, int prgal
     FILE *xorfile;
     size_t unused;
     xorfile = fopen(filename, "wb");
-    unused = fwrite (iv, 1, 4, xorfile);
-    unused = fwrite (prga, 1, prgalen, xorfile);
-    fclose (xorfile);
+    if (xorfile) {
+        if (fwrite (iv, 1, 4, xorfile) != -1) {
+            unused = fwrite (prga, 1, prgalen, xorfile);
+        }
+        fclose (xorfile);
+    }
 }
 
 int do_attack_fragment()
@@ -5259,7 +5274,7 @@ int do_attack_fragment()
                         printf("Still nothing, quitting with 384 bytes? [y/n] \n");
                         fflush( stdout );
                         ret=0;
-                        while(!ret) ret = scanf( "%s", tmpbuf );
+                        while(!ret) ret = scanf( "%1s", tmpbuf );
 
                         printf( "\n" );
 
@@ -5353,7 +5368,7 @@ int grab_essid(unsigned char* packet, int len)
     if(taglen > 250) taglen = 250;
     if(pos+2+taglen > len) return -1;
 
-    for(i=0; i<20; i++)
+    for(i=0; i<MAX_APS; i++)
     {
         if( ap[i].set)
         {
@@ -5396,6 +5411,10 @@ static int get_ip_port(char *iface, char *ip, const int ip_size)
 	char *ptr;
 	int port = -1;
 	struct in_addr addr;
+    
+	if (iface == NULL || iface[0] == 0) {
+		return -1;
+	}
 
 	host = strdup(iface);
 	if (!host)
@@ -5458,6 +5477,7 @@ int tcp_test(const char* ip_str, const short port)
     tv3.tv_sec=0;
     tv3.tv_usec=1;
 
+    memset(&s_in, 0, sizeof(struct sockaddr_in));
     s_in.sin_family = PF_INET;
     s_in.sin_port = htons(port);
     if (!inet_aton(ip_str, &s_in.sin_addr))
@@ -5747,7 +5767,7 @@ int do_attack_test()
 
     srand( time( NULL ) );
 
-    memset(ap, '\0', 20*sizeof(struct APt));
+    memset(ap, '\0', sizeof(ap));
 
     essidlen = strlen(opt.r_essid);
     if( essidlen > 250) essidlen = 250;
@@ -6466,6 +6486,7 @@ int main( int argc, char *argv[] )
     opt.npackets  =  1; opt.nodetect    =  0;
     opt.rtc       =  1; opt.f_retry	=  0;
     opt.reassoc   =  0;
+    opt.deauth_rc = 7; /* By default deauth reason code is Class 3 frame recived from nonassociated STA */
 
 /* XXX */
 #if 0
@@ -6502,11 +6523,12 @@ int main( int argc, char *argv[] )
             {"bittest",     0, 0, 'B'},
             {"migmode",     0, 0, '8'},
             {"ignore-negative-one", 0, &opt.ignore_negative_one, 1},
+	    {"deauth-rc",   1, 0, 'Z'},
             {0,             0, 0,  0 }
         };
 
         int option = getopt_long( argc, argv,
-                        "b:d:s:m:n:u:v:t:T:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:Q0:1:23456789HFBDR",
+                        "b:d:s:m:n:u:v:t:Z:T:f:g:w:x:p:a:c:h:e:ji:r:k:l:y:o:q:Q0:1:23456789HFBDR",
                         long_options, &option_index );
 
         if( option < 0 ) break;
@@ -6649,6 +6671,17 @@ int main( int argc, char *argv[] )
                 if( opt.r_nbpps < 1 || opt.r_nbpps > 1024 || ret != 1 )
                 {
                     printf( "Invalid number of packets per second. [1-1024]\n" );
+                    printf("\"%s --help\" for help.\n", argv[0]);
+                    return( 1 );
+                }
+                break;
+
+            case 'Z' :
+
+                ret = sscanf( optarg, "%hhu", &opt.deauth_rc );
+                if( ret != 1 )
+                {
+                    printf( "Invalid deauth reason. [0-254]\n" );
                     printf("\"%s --help\" for help.\n", argv[0]);
                     return( 1 );
                 }

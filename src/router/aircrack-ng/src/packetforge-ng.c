@@ -1,8 +1,8 @@
 /*
  *  802.11 ARP-request WEP packet forgery
- *  UDP, ICMP and custom packet forging developped by Martin Beck
+ *  UDP, ICMP and custom packet forging developed by Martin Beck
  *
- *  Copyright (C) 2006-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2006-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2004, 2005  Christophe Devine (arpforge)
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -69,16 +69,15 @@
     "\x08\x00\x00\x00\xDD\xDD\xDD\xDD\xDD\xDD\xBB\xBB\xBB\xBB\xBB\xBB"  \
     "\xCC\xCC\xCC\xCC\xCC\xCC\xE0\x32"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
 extern int add_crc32(unsigned char* data, int length);
 
 
 char usage[] =
 "\n"
-"  %s - (C) 2006-2015 Thomas d\'Otreppe\n"
+"  %s - (C) 2006-2018 Thomas d\'Otreppe\n"
 "  Original work: Martin Beck\n"
-"  http://www.aircrack-ng.org\n"
+"  https://www.aircrack-ng.org\n"
 "\n"
 "  Usage: packetforge-ng <mode> <options>\n"
 "\n"
@@ -373,7 +372,7 @@ int capture_ask_packet( int *caplen )
     return( 0 );
 }
 
-int packet_dump(unsigned char* packet, int length)
+int packet_dump(unsigned char* packet, const int length)
 {
     int i;
 
@@ -561,7 +560,7 @@ int set_smac(unsigned char* packet)
 }
 
 /* offset for ip&&udp = 48, for arp = 56 */
-int set_dip(unsigned char* packet, int offset)
+int set_dip(unsigned char* packet, const int offset)
 {
     if(packet == NULL) return 1;
     if(offset < 0 || offset > 2046) return 1;
@@ -579,7 +578,7 @@ int set_dip(unsigned char* packet, int offset)
 }
 
 /* offset for ip&&udp = 44, for arp = 46 */
-int set_sip(unsigned char* packet, int offset)
+int set_sip(unsigned char* packet, const int offset)
 {
     if(packet == NULL) return 1;
     if(offset < 0 || offset > 2046) return 1;
@@ -596,7 +595,7 @@ int set_sip(unsigned char* packet, int offset)
     return 0;
 }
 
-int set_ipid(unsigned char* packet, int offset)
+int set_ipid(unsigned char* packet, const int offset)
 {
     unsigned short id;
 
@@ -662,7 +661,7 @@ int set_IVidx(unsigned char* packet)
     return 0;
 }
 
-int next_keystream(unsigned char *dest, int size, unsigned char *bssid, int minlen)
+int next_keystream(unsigned char *dest, const int size, unsigned char *bssid, const int minlen)
 {
     struct ivs2_pkthdr ivs2;
     char *buffer;
@@ -720,13 +719,15 @@ int next_keystream(unsigned char *dest, int size, unsigned char *bssid, int minl
 
     if(feof( opt.ivs2 ))
     {
-        fseek( opt.ivs2, sizeof(IVS2_MAGIC)+sizeof(struct ivs2_filehdr) -1, SEEK_SET);
+        if (fseek( opt.ivs2, sizeof(IVS2_MAGIC)+sizeof(struct ivs2_filehdr) -1, SEEK_SET) == -1) {
+            return -1;
+        }
         return 1;
     }
     return -1;
 }
 
-int encrypt_data(unsigned char *dest, unsigned char* data, int length)
+int encrypt_data(unsigned char *dest, const unsigned char* data, const int length)
 {
     unsigned char cipher[2048];
     int n;
@@ -800,7 +801,7 @@ int create_wep_packet(unsigned char* packet, int *length)
     return 0;
 }
 
-int read_raw_packet(unsigned char* dest, char* srcfile, int length)
+int read_raw_packet(unsigned char* dest, const char* srcfile, const int length)
 {
     size_t readblock;
     FILE *f;
@@ -829,13 +830,20 @@ int read_raw_packet(unsigned char* dest, char* srcfile, int length)
     return 0;
 }
 
-int write_cap_packet(unsigned char* packet, int length)
+int write_cap_packet(unsigned char* packet, const int length)
 {
     FILE *f;
     struct pcap_file_header pfh;
     struct pcap_pkthdr pkh;
     struct timeval tv;
     int n;
+
+    if( length <= 0 )
+    {
+        printf("Invalid length, must be > 0.\n");
+        printf("Please report.\n");
+        return 1;
+    }
 
     if( opt.cap_out == NULL )
     {
@@ -910,10 +918,10 @@ int write_cap_packet(unsigned char* packet, int length)
     return 0;
 }
 
-int read_prga(unsigned char **dest, char *file)
+int read_prga(unsigned char **dest, const char *file)
 {
     FILE *f;
-    int size;
+    size_t size;
     struct ivs2_filehdr fivs2;
 
     if(file == NULL) return( 1 );
@@ -933,7 +941,12 @@ int read_prga(unsigned char **dest, char *file)
     }
 
     fseek(f, 0, SEEK_END);
-    size = (int)ftell(f);
+    size = ftell(f);
+    if (size == -1) {
+        printf("Error getting file position %s\n", file);
+        fclose(f);
+        return ( 1 );
+    }
     rewind(f);
 
     if(size > 1500) size = 1500;
@@ -947,7 +960,7 @@ int read_prga(unsigned char **dest, char *file)
 
     if( memcmp((*dest), IVS2_MAGIC, 4 ) == 0 )
     {
-        if( (unsigned) size < sizeof(struct ivs2_filehdr) + 4)
+        if( size < sizeof(struct ivs2_filehdr) + 4)
         {
             fprintf( stderr, "No valid %s file.", IVS2_EXTENSION);
             fclose( f );
@@ -970,7 +983,7 @@ int read_prga(unsigned char **dest, char *file)
             printf("Are you really sure that this is a valid keystream? Because the index is out of range (0-3): %02X\n", (*dest)[3] );
         }
 
-        opt.prgalen = size;
+        opt.prgalen = (int)size;
         fclose( f );
     }
     return( 0 );

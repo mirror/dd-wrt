@@ -1,3 +1,73 @@
+Version 1.2 (changes from aircrack-ng 1.2-rc5) - Released 15 Apr 2018:
+* General: Fixed compiling Windows binaries and updated README.md/INSTALLING.
+* General: Fixed commands to install dependencies on Debian/Ubuntu and FreeBSD.
+* General: Added command to install dependencies on Fedora/CentOS/RHEL.
+* General: Removed packages/ directory.
+* General: Added Alpine Linux and Kali Linux buildbots.
+* General: Fixed configure with --with-libpcap-include=/somewhere/include and --with-libpcap-lib=/somewhere/lib.
+* General: Fixed search for ethtool when running as a non-root user.
+* General: Various fixes.
+* Airmon-ng: Fixed mktemp on Alpine Linux.
+
+Version 1.2-rc5 (changes from aircrack-ng 1.2-rc4) - Released 03 Apr 2018:
+* General: Switching to autotools which allows compiling on more plateforms.
+* General: Updated README.md and INSTALLING files.
+* General: Fixed compilation on a lot of platforms.
+* General: Fixed compilation warnings across platforms and compilers.
+* General: Fixed typos in the tools and in manpages.
+* General: Replace %d/ld with %u/lu for unsigned printf parameters.
+* General: Added option to disable stack protector.
+* General: Improved makefile to get reproducible builds.
+* General: Fixed compilation with OpenSSL 1.1.0.
+* General: Updated radiotap parsing code.
+* General: Updated all URLs to use HTTPS.
+* General: Fixed compilation with libreSSL.
+* General: Added WPS 2.0 test PCAP.
+* General: Do not use stackguard on Windows.
+* General: Fixed warnings on GCC7.
+* General: Improved code quality using Coverity Scan.
+* General: Added badges for Coverity scan and Intel compiler buildbot
+* Aircrack-ng: Use trampoline binary to automatically select fastest executable depending on the CPU
+* Aircrack-ng: Fixed missing include for linecount.
+* Aircrack-ng: Fixed concurrency issues when reading multiple WEP PCAP.
+* Aircrack-ng: Added support for creating HCCAPx file format.
+* Airodump-ng: Get the channel from HT information.
+* Airodump-ng: Detect WPS 2.x.
+* Airodump-ng: Also check current directory for OUI file.
+* Airodump-ng: Fixed writing ESSID to CSV, Kismet CSV and Kismet NetXML files when ESSID gets decloaked and cloaked length was 1.
+* Aireplay-ng: Added deauthentication reason code option.
+* Aireplay-ng: Increase amount of AP to test when running injection test.
+* Airodump-ng: Fixed 802.11a channel hopping list.
+* Airodump-ng: Fix creation of .xor files.
+* Airodump-ng: Added support for HT channels (HT20/HT40-/HT40+).
+* Airodump-ng: Now displaying correct rate for 802.11n or 802.11ac AP.
+* Airmon-ng: Fixed checking for processes.
+* Airmon-ng: Fixed display of "cannot access '/sys/class/ieee80211/': No such file or directory".
+* Airmon-ng: Fixed bashisms.
+* Airmon-ng: Fixed display of specific drivers.
+* Airmon-ng: Fixed display of cards on the sdio bus.
+* Airmon-ng: Now supports nexmon driver on RPi 3 (and 0 Wireless) using Kali Linux.
+* Airmon-ng: Added identification for another realtek chipset and generic Ralink/MT.
+* Airmon-ng: Handle 2 types of rfkill commands and updated unblock text.
+* Airmon-ng: more portable modinfo usage.
+* Airmon-ng: remove grep -P references upon request.
+* Airmon-ng: Do not replace driver name by ?????? when driver is valid. 
+* Airgraph-ng: Removed irrelevant comment in README.
+* Airgraph-ng: Handle SSID with double quotes.
+* Airgraph-ng: Fixed parsing OUI file.
+* Airdrop-ng: Updated lorcon2 installation instructions.
+* Besside-ng: Fixed 'wi_read(): No child processes' error.
+* Airdecloak-ng: Fixed segfault due to NULL pointer dereference.
+* osdep: Remove wi_set_channel(1) on open wifi interface (cygwin).
+* osdep: Fixed RAW socket resource leak.
+* Patches: Created WPE patches and documentation for current HostAPd and Freeradius versions.
+* Airodump-ng: Fix incorrect if conditions which always are false.
+* Airodump-ng: Remove useless not NULL check.
+* Airventriloquist: New tool from https://github.com/Caesurus/airventriloquist/
+* dcrack: Fixed indentation.
+* TravisCI: Fixed compilation on OSX.
+* AppVeyor: Added support for AppVeyor, CI for cygwin builds.
+
 Version 1.2-rc4 (changes from aircrack-ng 1.2-rc3) - Released 14 Feb 2016:
 * Airodump-ng: Increase console window size.
 * Aircrack-ng: Added time remaining and percentage done when doing WPA cracking with a dictionary (file).
@@ -307,13 +377,13 @@ Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
 * aircrack-ng: Fixed detection of the number of CPU (especially with recent CPUs).
 * aircrack-ng: Fixed long lasting WPA bugs: cannot find the key with SMP computers,
   wasn't exiting correctly, ...
-* aircrack-ng: Fixed usage of a dictionnary with WEP.
+* aircrack-ng: Fixed usage of a dictionary with WEP.
 * aircrack-ng: Now only display ASCII WEP keys when 100% of the hex key can be converted to ASCII.
 * aircrack-ng: You can now specify the number of threads for cracking even if you have a non-SMP computer.
 * aircrack-ng: Now output an error message if using -r and it wasn't compiled with sqlite support.
   It was a problem on some ubuntu.
 * airdecloak-ng: New tool to remove wep cloaked frames from a pcap file.
-  For more details see http://www.aircrack-ng.org/doku.php?id=airdecloak-ng
+  For more details see https://www.aircrack-ng.org/doku.php?id=airdecloak-ng
 * airodump-ng: Added kismet csv output support.
 * airodump-ng: Fixed power value display (for ath interface with a high number, more than 99).
 * airodump-ng: Can work on the new frequencies (allowed by frequency Chaos patch).
@@ -326,7 +396,7 @@ Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
 * tkip-tun: New tool to inject on WPA1 with QoS enabled networks. Full description:
   decrypt packets comming from the AP in a TKIP network, which uses QoS (ieee802.11e).
   It also breaks the MIC Key for sending packets towards the Client correctly encrypted and signed.
-  Stores plaintext packet and keystream in seperate files.
+  Stores plaintext packet and keystream in separate files.
 * airbase-ng: Several improvments ( See http://trac.aircrack-ng.org/ticket/466 ).
 * airbase-ng: Added compatibility with some clients. added random source IPs and MACs for cfrag attack (-N) to evade simple flood protection.
 * airmon-ng: Fixed some 'unary operator expected' errors.
@@ -418,7 +488,7 @@ Version 1.0-rc2 (changes from aircrack-ng 1.0-rc1) - Released 22 Jan 2009:
 * patches: Added Defcon 16 patch (more frequencies than the usuals) for ath5k called frequency Chaos.
 * patches: Added injection patch for rtl8187 (mac80211).
 * patches: Added a universal mac80211 fragmentation and injection speed patch.
-* GUI (windows): Fixed: Windows GUI gives "please specify dictionnary".
+* GUI (windows): Fixed: Windows GUI gives "please specify dictionary".
 
 Version 1.0-rc1 (changes from aircrack-ng 1.0-beta2) - Released 09 Jun 2008:
 * airbase-ng: Multi-purpose tool aimed at attacking clients as opposed to the AP.
@@ -645,7 +715,7 @@ Version 0.7 (changes from aircrack-ng 0.6.2) - Released 20 January 2007:
 * aireplay-ng: Added shared key authentication
 * airmon-ng: Now detect the shell when installing
 * airmon-ng: Added support for rtl8187
-* aircrack-ng: Added WEP dictionnary attack
+* aircrack-ng: Added WEP dictionary attack
 * aircrack-ng: Works with 802.11e QoS packets
 * airodump-ng: Added MAC filtering
 * airodump-ng: Now use the flaw in shared-key authentication
