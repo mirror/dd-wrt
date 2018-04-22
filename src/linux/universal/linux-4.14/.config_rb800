@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 4.14.21-rc1 Kernel Configuration
+# Linux/powerpc 4.14.35 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -730,7 +730,6 @@ CONFIG_NF_NAT_TFTP=y
 CONFIG_NF_NAT_REDIRECT=y
 # CONFIG_NF_TABLES is not set
 CONFIG_NF_FLOW_TABLE=y
-CONFIG_NF_FLOW_TABLE_HW=y
 CONFIG_NETFILTER_XTABLES=y
 
 #
@@ -2131,6 +2130,7 @@ CONFIG_LEDS_GPIO=y
 #
 # LED driver for blink(1) USB RGB LED is under Special HID drivers (HID_THINGM)
 #
+# CONFIG_LEDS_OMNIA is not set
 # CONFIG_LEDS_USER is not set
 
 #
@@ -2784,4 +2784,3 @@ CONFIG_CRYPTO_JITTERENTROPY=m
 #
 # CONFIG_CRYPTODEV is not set
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_LEDS_OMNIA is not set

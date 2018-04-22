@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.14.21-rc1 Kernel Configuration
+# Linux/mips 4.14.35 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -545,7 +545,6 @@ CONFIG_NF_NAT_TFTP=m
 CONFIG_NF_NAT_REDIRECT=m
 # CONFIG_NF_TABLES is not set
 CONFIG_NF_FLOW_TABLE=m
-CONFIG_NF_FLOW_TABLE_HW=m
 CONFIG_NETFILTER_XTABLES=m
 
 #
@@ -1887,4 +1886,3 @@ CONFIG_GENERIC_ATOMIC64=y
 CONFIG_SBITMAP=y
 # CONFIG_STRING_SELFTEST is not set
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_LEDS_OMNIA is not set
