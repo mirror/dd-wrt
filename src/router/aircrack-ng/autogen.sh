@@ -53,7 +53,6 @@ missing_tool()
 	_env="$2"
 
 	echo "Could not auto-detect '${_prog}'; please install or specify the '${_env}' environment variable."
-	exit 1
 }
 
 
@@ -116,8 +115,8 @@ chmod +x reautogen.sh
 
 if [ ! -z "${NOCONFIGURE:-}" ]; then
     echo "Done. ./configure skipped."
-    exit $?
+#    exit $?
 fi
 
-exec ./configure "$@"
+#exec ./configure "$@"
 
