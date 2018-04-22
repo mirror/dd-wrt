@@ -30,7 +30,7 @@
 #elif !defined(__sun__)
 	#include <endian.h>
 #endif
-
+/*
 #define le16_to_cpu		le16toh
 #define le32_to_cpu		le32toh
 #define get_unaligned(p)					\
@@ -43,3 +43,24 @@
 })
 #define get_unaligned_le16(p)	le16_to_cpu(get_unaligned((uint16_t *)(p)))
 #define get_unaligned_le32(p)	le32_to_cpu(get_unaligned((uint32_t *)(p)))
+*/
+static inline unsigned short __get_unaligned_le16(const unsigned char *p)
+{
+	return p[0] | p[1] << 8;
+}
+
+static inline unsigned int __get_unaligned_le32(const unsigned char *p)
+{
+	return p[0] | p[1] << 8 | p[2] << 16 | p[3] << 24;
+}
+
+
+static inline unsigned short get_unaligned_le16(const void *p)
+{
+	return __get_unaligned_le16((const unsigned char *)p);
+}
+
+static inline unsigned int get_unaligned_le32(const void *p)
+{
+	return __get_unaligned_le32((const unsigned char *)p);
+}
