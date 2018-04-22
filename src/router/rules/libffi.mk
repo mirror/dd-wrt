@@ -7,7 +7,9 @@ libffi:
 libffi-install:
 	make -C libffi install DESTDIR=$(INSTALLDIR)/libffi
 	-rm -rf $(INSTALLDIR)/libffi/usr/share
-#	-rm -rf $(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1
+ifneq ($(CONFIG_PYTHON),y)
+	-rm -rf $(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1
+endif
 	-rm -rf $(INSTALLDIR)/libffi/usr/lib/pkgconfig
 	-rm -f $(INSTALLDIR)/libffi/usr/lib/*.a
 	-rm -f $(INSTALLDIR)/libffi/usr/lib/*.la
