@@ -61,8 +61,6 @@
 #define S_OWN_LOG	"own.log"
 #define S_MIN_RTO	10
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
-
 enum {
 	S_SEARCHING = 0,
 	S_SENDAUTH,
@@ -524,7 +522,7 @@ void read_auth(struct east_state *es, struct ieee80211_frame *wh, int len)
 
 	sp++;
 	if (le16toh(*sp) != 0) {
-		printf("Auth unsuccesful %d\n", le16toh(*sp));
+		printf("Auth unsuccessful %d\n", le16toh(*sp));
 		exit(1);
 	}
 
@@ -2377,7 +2375,7 @@ void usage(char *p)
     char *version_info = getVersion("Easside-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		"  %s - (C) 2007, 2008, 2009 Andrea Bittau\n"
-		"  http://www.aircrack-ng.org\n"
+		"  https://www.aircrack-ng.org\n"
 		"\n"
 		"  Usage: easside-ng <options>\n"
 		"\n"

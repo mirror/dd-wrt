@@ -1,4 +1,4 @@
-.TH AIRODUMP-NG 8 "February 2016" "Version 1.2-rc4"
+.TH AIRODUMP-NG 8 "April 2018" "Version 1.2"
 
 .SH NAME
 airodump-ng - a wireless packet capture tool for aircrack-ng
@@ -46,6 +46,15 @@ Indicate the band on which airodump-ng should hop. It can be a combination of \(
 .TP
 .I -s <method>, --cswitch <method>
 Defines the way airodump-ng sets the channels when using more than one card. Valid values: 0 (FIFO, default value), 1 (Round Robin) or 2 (Hop on last).
+.TP
+.I -2, --ht20
+Set the channel to be in HT20 (802.11n).
+.TP
+.I -3, --ht40+
+Set the channel to be in HT40+ (802.11n). It requires the frequency 20MHz above to be available (4 channels above) and thus some channels are not usable in HT40+. Only channels up to 7 are available in HT40+ in the US (and 9 in most of Europe).
+.TP
+.I -5, --ht40-
+Set the channel to be in HT40- (802.11n). It requires the frequency 20MHz below to be available (4 channels be)low and thus some channels are not usable in HT40-. In 2.4GHz, HT40- channels start at channel 5.
 .TP
 .I -r <file>
 Reads packet from a file.
@@ -193,7 +202,7 @@ Maximum speed supported by the AP. If MB = 11, it\(aqs 802.11b, if MB = 22 it\(a
 Encryption algorithm in use. OPN = no encryption,"WEP?" = WEP or higher (not enough data to choose between WEP and WPA/WPA2), WEP (without the question mark) indicates static or dynamic WEP, and WPA or WPA2 if TKIP or CCMP or MGT is present.
 .TP
 .I CIPHER
-The cipher detected. One of CCMP, WRAP, TKIP, WEP, WEP40, or WEP104. Not mandatory, but TKIP is typically used with WPA and CCMP is typically used with WPA2. WEP40 is displayed when the key index is greater then 0. The standard states that the index can be 0-3 for 40bit and should be 0 for 104 bit.
+The cipher detected. One of CCMP, WRAP, TKIP, WEP, WEP40, or WEP104. Not mandatory, but TKIP is typically used with WPA and CCMP is typically used with WPA2. WEP40 is displayed when the key index is greater than 0. The standard states that the index can be 0-3 for 40bit and should be 0 for 104 bit.
 .TP
 .I AUTH
 The authentication protocol used. One of MGT (WPA/WPA2 using a separate authentication server), SKA (shared key for WEP), PSK (pre-shared key for WPA/WPA2), or OPN (open for WEP).
@@ -267,3 +276,5 @@ On Debian systems, the complete text of the GNU General Public License can be fo
 .B packetforge-ng(1)
 .br
 .B wpaclean(1)
+.br
+.B airventriloquist(8)

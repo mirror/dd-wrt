@@ -47,7 +47,7 @@ typedef enum {
 	WEIRD_FRAME_TYPE
 } CLOAKING_STATUS;
 */
-// How far should we check for cloacked packets (backward and forward)
+// How far should we check for cloaked packets (backward and forward)
 #define PACKET_CHECKING_LENGTH 10
 
 
@@ -151,7 +151,6 @@ struct decloak_stats
     unsigned long nb_cloak_wep; /* # of cloaked WEP pkt  */
 };
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
 extern char * mac2string(unsigned char * mac);
 extern int maccmp(unsigned char *mac1, unsigned char *mac2);
@@ -208,7 +207,7 @@ int CFC_filter_signal_duplicate_and_consecutive_sn();
 const char usage[] =
 "\n"
 "  %s - (C) 2008 Thomas d\'Otreppe\n"
-"  http://www.aircrack-ng.org\n"
+"  https://www.aircrack-ng.org\n"
 "\n"
 "  usage: airundefense-ng <filename> <BSSID>\n"
 "\n";

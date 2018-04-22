@@ -40,6 +40,12 @@ int wi_write(struct wif *wi, unsigned char *h80211, int len,
         return wi->wi_write(wi, h80211, len, ti);
 }
 
+int wi_set_ht_channel(struct wif *wi, int chan, unsigned int htval)
+{
+        assert(wi->wi_set_ht_channel);
+        return wi->wi_set_ht_channel(wi, chan, htval);
+}
+
 int wi_set_channel(struct wif *wi, int chan)
 {
         assert(wi->wi_set_channel);
@@ -153,6 +159,10 @@ int wi_set_mtu(struct wif *wi, int mtu)
 struct wif *wi_open(char *iface)
 {
 	struct wif *wi;
+
+	if (iface == NULL || iface[0] == 0) {
+		return NULL;
+	}
 
 	wi = file_open(iface);
 	if (wi == (struct wif*) -1)

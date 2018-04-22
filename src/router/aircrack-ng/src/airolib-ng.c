@@ -43,9 +43,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <fcntl.h>
 
-
-#include "aircrack-ng.h"
+#include "cowpatty.h"
 #include "crypto.h"
 #ifdef HAVE_REGEXP
 #include <regex.h>
@@ -56,13 +56,11 @@
 #define IMPORT_PASSWD "passwd"
 #define IMPORT_COWPATTY "cowpatty"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
-
 void print_help(const char * msg) {
 	char *version_info = getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		"  %s - (C) 2007, 2008, 2009 ebfe\n"
-		"  http://www.aircrack-ng.org\n"
+		"  https://www.aircrack-ng.org\n"
 		"\n"
 		"  Usage: airolib-ng <database> <operation> [options]\n"
 		"\n"
@@ -318,7 +316,7 @@ void batch_process(sqlite3* db) {
 		return;
 	}
 
-	// may fail - thats ok
+	// may fail - that's ok
 	cur_essid = query_int(db,"SELECT essid_id FROM workbench LIMIT 1;");
 
 
@@ -476,9 +474,22 @@ void export_cowpatty(sqlite3* db, char* essid, char* filename) {
 	struct hashdb_head filehead;
 	memset(&filehead, 0, sizeof(filehead));
 	FILE *f = NULL;
+    size_t essid_len;
+    int fd;
 
-	if (access(filename, F_OK)==0) {
-		printf("The file already exists and I won't overwrite it.\n");
+	if (essid == NULL) {
+		printf("Invalid SSID (NULL).\n");
+		return;
+	}
+
+	if (filename == NULL || strlen(filename) == 0) {
+		printf("Invalid filename (NULL)");
+		return;
+	}
+
+	essid_len = strlen(essid);
+	if (essid_len == 0 || essid_len > sizeof(filehead.ssid)) {
+		printf("Invalid SSID (NULL or > %zu chars).\n", sizeof(filehead.ssid));
 		return;
 	}
 
@@ -491,15 +502,24 @@ void export_cowpatty(sqlite3* db, char* essid, char* filename) {
 		return;
 	}
 
-	memcpy(filehead.ssid, essid,strlen(essid));
-	filehead.ssidlen = strlen(essid);
-	filehead.magic = GENPMKMAGIC;
+    if ((fd = open(filename, O_WRONLY | O_CREAT | O_EXCL, 0666)) >= 0) {
+        f = fdopen(fd, "w");
+    } else {
+        printf("The file already exists and I won't overwrite it.\n");
+        return;
+    }
 
-	f = fopen(filename, "w");
-	if (f == NULL || fwrite(&filehead, sizeof(filehead), 1, f) != 1) {
-		printf("Couldn't open the export file for writing.\n");
-		if (f != NULL)
-			fclose(f);
+	if (f == NULL) {
+		printf("Failed to open export file for writing.\n");
+		return;
+	}
+    
+	memcpy(filehead.ssid, essid, essid_len);
+	filehead.ssidlen = essid_len;
+	filehead.magic = GENPMKMAGIC;
+	if (fwrite(&filehead, sizeof(filehead), 1, f) != 1) {
+		printf("Failed to write header to coWPAtty hash DB file.\n");
+		fclose(f);
 		return;
 	}
 
@@ -509,7 +529,7 @@ void export_cowpatty(sqlite3* db, char* essid, char* filename) {
 	rc = sql_exec_cb(db,sql,&sql_exportcow,f);
 	sqlite3_free(sql);
 	if (rc != SQLITE_OK) {
-		printf("There was an error while exporting.\n");
+		printf("There was an error while exporting to coWPAtty hash DB.\n");
 	}
 
 	fclose(f);
@@ -518,51 +538,35 @@ void export_cowpatty(sqlite3* db, char* essid, char* filename) {
 
 // import a cowpatty file
 int import_cowpatty(sqlite3* db, char* filename) {
-	struct hashdb_head filehead;
-	struct hashdb_rec rec;
-	FILE *f = NULL;
-	int rc;
+	struct hashdb_rec * rec = NULL;
+	struct cowpatty_file * hashdb;
 	sqlite3_stmt *stmt;
 	char* sql;
 	int essid_id;
-	int wordlength;
-	char passwd[63+1];
 
-	if (strcmp(filename,"-") == 0) {
-		f = stdin;
-	} else {
-		f = fopen(filename, "r");
-	}
-	if (f == NULL || fread(&filehead, sizeof(filehead),1,f) != 1) {
-		printf("Couldn't open the import file for reading.\n");
-		if (f != NULL)
-			fclose(f);
+	hashdb = open_cowpatty_hashdb(filename, "r");
+	if (hashdb == NULL) {
+		printf("Failed opening file\n");
 		return 0;
-	} else if (filehead.magic != GENPMKMAGIC) {
-		printf("File doesn't seem to be a cowpatty file.\n");
-		fclose(f);
-		return 0;
-	} else if (verify_essid((char *)filehead.ssid) != 0) {
-		printf("The file's ESSID is invalid.\n");
-		fclose(f);
+	} else if (hashdb->error[0]) {
+		printf("Failed opening file: %s\n", hashdb->error);
+		close_free_cowpatty_hashdb(hashdb);
 		return 0;
 	}
-
-	printf("Reading header...\n");
 
 	//We need protection so concurrent transactions can't smash the ID-references
 	sql_exec(db,"BEGIN;");
 
-	sql = sqlite3_mprintf("INSERT OR IGNORE INTO essid (essid) VALUES ('%q');",filehead.ssid);
+	sql = sqlite3_mprintf("INSERT OR IGNORE INTO essid (essid) VALUES ('%q');", hashdb->ssid);
 	sql_exec(db,sql);
 	sqlite3_free(sql);
 
 	//since there is only one essid per file, we can determine it's ID now
-	sql = sqlite3_mprintf("SELECT essid_id FROM essid WHERE essid = '%q'", filehead.ssid);
+	sql = sqlite3_mprintf("SELECT essid_id FROM essid WHERE essid = '%q'", hashdb->ssid);
 	essid_id = query_int(db,sql);
 	sqlite3_free(sql);
 	if (essid_id == 0) {
-		fclose(f);
+		close_free_cowpatty_hashdb(hashdb);
 		sql_exec(db,"ROLLBACK;");
 		printf("ESSID couldn't be inserted. I've given up.\n");
 		return 0;
@@ -574,50 +578,42 @@ int import_cowpatty(sqlite3* db, char* filename) {
 	sql_prepare(db,"INSERT INTO import (passwd,pmk) VALUES (@pw,@pmk)",&stmt,-1);
 
 	printf("Reading...\n");
-	while ((rc = fread(&rec.rec_size, sizeof(rec.rec_size), 1, f)) == 1) {
-		wordlength = rec.rec_size - (sizeof(rec.pmk) + sizeof(rec.rec_size));
-		//prevent out of bounds writing (sigsegv guaranteed) but don't skip the whole file if wordlength < 8
-		if (wordlength > 0 && wordlength < (int) sizeof(passwd)) {
-			passwd[wordlength] = 0;
-			rc += fread(passwd, wordlength, 1, f);
-			if (rc == 2) rc += fread(&rec.pmk, sizeof(rec.pmk), 1, f);
-		}
-		if (rc != 3) {
-			fprintf(stdout,"Error while reading record (%i).\n",rc);
-			sqlite3_finalize(stmt);
-			if (db == NULL) {
-				printf("omg");
-				fflush(stdout);
-			}
-			sql_exec(db, "ROLLBACK;");
-			fclose(f);
-			return 1;
-		}
-
-		if (verify_passwd(passwd) == 0) {
-			sqlite3_bind_text(stmt,1,passwd, strlen(passwd),SQLITE_TRANSIENT);
-			sqlite3_bind_blob(stmt,2,&rec.pmk, sizeof(rec.pmk),SQLITE_TRANSIENT);
+	
+	while ((rec = read_next_cowpatty_record(hashdb))) {
+		if (verify_passwd(rec->word) == 0) {
+			sqlite3_bind_text(stmt, 1, rec->word, strlen(rec->word), SQLITE_TRANSIENT);
+			sqlite3_bind_blob(stmt, 2, &rec->pmk, sizeof(rec->pmk), SQLITE_TRANSIENT);
 			if (sql_step(stmt,-1) == SQLITE_DONE) {
 				sqlite3_reset(stmt);
 			} else {
 				printf("Error while inserting record into database.\n");
 				sqlite3_finalize(stmt);
 				sql_exec(db, "ROLLBACK;");
-				fclose(f);
+				close_free_cowpatty_hashdb(hashdb);
+				free(rec->word);
+				free(rec);
 				return 1;
 			}
 		} else {
-			fprintf(stdout,"Invalid password %s will not be imported.\n",passwd);
+			fprintf(stdout,"Invalid password %s will not be imported.\n",rec->word);
+		}
+		if (rec) {
+			free(rec->word);
+			free(rec);
 		}
 	}
+
+	// Finalize
 	sqlite3_finalize(stmt);
 
-	if (!feof(f)) {
-		printf("Error while reading file.\n");
-		sql_exec(db,"ROLLBACK;");
-		fclose(f);
+	// Rollback if any error happened.
+	if (hashdb->error[0]) {
+		printf("Error: %s, rolling back\n", hashdb->error);
+		sql_exec(db, "ROLLBACK;");
+		close_free_cowpatty_hashdb(hashdb);
 		return 1;
 	}
+	close_free_cowpatty_hashdb(hashdb);
 
 	printf("Updating references...\n");
 	sql_exec(db, "INSERT OR IGNORE INTO passwd (passwd) SELECT passwd FROM import;");
@@ -630,7 +626,6 @@ int import_cowpatty(sqlite3* db, char* filename) {
 
 	sql_exec(db,"COMMIT;");
 
-	fclose(f);
 	return 1;
 }
 
@@ -756,7 +751,7 @@ int initDataBase(const char * filename, sqlite3 ** db)
 		sql_error(*db);
 		sqlite3_close(*db);
 
-		// May be usefull later
+		// May be useful later
 		return rc;
 	}
 
@@ -974,7 +969,7 @@ int main(int argc, char **argv) {
 				// Import
 
 				if (argc < 5) {
-					print_help("You must specifiy an import format and a file.");
+					print_help("You must specify an import format and a file.");
 				} else if (strcasecmp(argv[3], IMPORT_COWPATTY) == 0) {
 					if ( check_for_db(&db, argv[1], 1, 0) ) {
 						return 1;

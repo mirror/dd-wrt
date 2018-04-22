@@ -2,7 +2,7 @@
  *  802.11 WEP network connection tunneling
  *  based on aireplay-ng
  *
- *  Copyright (C) 2006-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2006-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2006-2009 Martin Beck <hirte@aircrack-ng.org>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -74,7 +74,6 @@ static struct wif *_wi_in, *_wi_out;
 //if not all fragments are available 60 seconds after the last fragment was received, they will be removed
 #define FRAG_TIMEOUT (1000000*60)
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 extern int add_crc32(unsigned char* data, int length);
 
@@ -84,9 +83,9 @@ extern const unsigned char crc_chop_tbl[256][4];
 
 char usage[] =
 "\n"
-"  %s - (C) 2006-2015 Thomas d'Otreppe\n"
+"  %s - (C) 2006-2018 Thomas d'Otreppe\n"
 "  Original work: Martin Beck\n"
-"  http://www.aircrack-ng.org\n"
+"  https://www.aircrack-ng.org\n"
 "\n"
 "  usage: airtun-ng <options> <replay interface>\n"
 "\n"
@@ -736,7 +735,7 @@ void print_packet ( unsigned char h80211[], int caplen )
 
 	if( ( h80211[0] & 0x0C ) == 8 && ( h80211[1] & 0x40 ) != 0 )
 	{
-	    if ( ( h80211[1] & 3 ) == 3 ) key_index_offset = 33; //WDS packets have an additional MAC adress
+	    if ( ( h80211[1] & 3 ) == 3 ) key_index_offset = 33; //WDS packets have an additional MAC address
 		else key_index_offset = 27;
 
 	    if( ( h80211[key_index_offset] & 0x20 ) == 0 )
@@ -1029,12 +1028,14 @@ int packet_recv(unsigned char* packet, int length)
         return 1;
     }
 
+    // FromDS/ToDS fields
     switch( packet[1] & 3 )
     {
         case  0:
             memcpy( bssid, packet + 16, 6 );
             memcpy( dmac, packet + 4, 6 );
             memcpy( smac, packet + 10, 6 );
+            memset( stmac, 0, 6);
             break;
         case  1:
             memcpy( bssid, packet + 4, 6 );

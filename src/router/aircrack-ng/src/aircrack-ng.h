@@ -69,23 +69,9 @@
 
 #define KEYHSBYTES PTW_KEYHSBYTES
 
-#define MAX_THREADS 128
+#define MAX_THREADS 256
 
 #define CLOSE_IT	100000
-
-#define GENPMKMAGIC 0x43575041
-struct hashdb_head {
-	uint32_t magic;
-	uint8_t reserved1[3];
-	uint8_t ssidlen;
-	uint8_t ssid[32];
-};
-
-struct hashdb_rec {
-	uint8_t rec_size;
-	char *word;
-	uint8_t pmk[32];
-} __attribute__ ((packed));
 
 struct _cpuinfo {
 	int simdsize;				/* SIMD size		*/
@@ -104,7 +90,7 @@ struct _cpuinfo {
 
 extern float chrono(struct timeval *start, int reset);
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
+extern char * getVersion(char * progname, int maj, int min, int submin, const char * svnrev, int beta, int rc);
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
 extern int readLine(char line[], int maxlength);
 extern int hexToInt(char s[], int len);
@@ -222,7 +208,7 @@ struct options
 
 	char * wkp;					 /* EWSA Project file */
 	char * hccap;				         /* Hashcat capture file */
-
+	char * hccapx;				/* Hashcat X (3.6+) capture file */
 }
 
 opt;
@@ -240,7 +226,7 @@ struct WEP_data
 	int fudge[64];				 /* bruteforce level (1 to 256)  */
 	int depth[64];				 /* how deep we are in the fudge */
 	vote poll[64][256];			 /* KoreK cryptanalysis results  */
-} wep;
+} wep __attribute__((aligned(64)));
 
 struct AP_info
 {

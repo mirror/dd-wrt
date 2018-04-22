@@ -1,7 +1,7 @@
  /*
   *  IVS Tools - Convert or merge IVs
   *
-  *  Copyright (C) 2006-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+  *  Copyright (C) 2006-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
   *  Copyright (C) 2004, 2005  Christophe Devine (pcap2ivs and mergeivs)
   *
   *  This program is free software; you can redistribute it and/or modify
@@ -98,13 +98,11 @@ static unsigned char ZERO[32] =
         "\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00";
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
-
 void usage(int what)
 {
     char *version_info = getVersion("ivsTools", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
-    printf("\n  %s - (C) 2006-2015 Thomas d\'Otreppe\n"
-            "  http://www.aircrack-ng.org\n"
+    printf("\n  %s - (C) 2006-2018 Thomas d\'Otreppe\n"
+            "  https://www.aircrack-ng.org\n"
             "\n   usage: ", version_info);
     free(version_info);
     if (what == 0 || what == 1)
@@ -124,12 +122,19 @@ int merge( int argc, char *argv[] )
     unsigned char buffer[1024];
     FILE *f_in, *f_out;
     struct ivs2_filehdr fivs2;
-    struct ivs2_pkthdr ivs2;
 
     if( argc < 5 )
     {
         usage(2);
         return( 1 );
+    }
+
+    // Check filenames are not empty
+    for (i = 2; i < argc - 1; ++i) {
+        if (argv[i][0] == 0) {
+            printf("Filename #%d is empty, aborting\n", i - 1);
+            return ( 1 );
+        }
     }
 
     printf( "Creating %s\n", argv[argc - 1] );
@@ -196,14 +201,14 @@ int merge( int argc, char *argv[] )
         if( i == 2 )
         {
             unused = fwrite( buffer, 1, 4, f_out );
-            unused = fwrite( &ivs2, 1, sizeof(struct ivs2_filehdr), f_out );
+            unused = fwrite( &fivs2, 1, sizeof(struct ivs2_filehdr), f_out );
         }
 
         while( ( n = fread( buffer, 1, 1024, f_in ) ) > 0 )
         {
             nbw += n;
             unused = fwrite( buffer, 1, n, f_out );
-            printf( "%ld bytes written\r", nbw );
+            printf( "%lu bytes written\r", nbw );
         }
 
         fclose( f_in );
@@ -803,6 +808,17 @@ int main( int argc, char *argv[] )
         return( 1 );
     }
 
+    // Check filenames are not empty
+    if (argv[2][0] == 0) {
+        printf("Invalid pcap file\n");
+        return ( 1 );
+    }
+
+    if (argv[3][0] == 0) {
+        printf("Invalid output file\n");
+        return ( 1 );
+    }
+
     memset( bssid_cur, 0, 6 );
     memset( bssid_prv, 0, 6 );
 
@@ -821,6 +837,7 @@ int main( int argc, char *argv[] )
     if( fread( &pfh, 1, n, f_in ) != (size_t) n )
     {
         perror( "fread(pcap file header) failed" );
+        fclose( f_in );
         return( 1 );
     }
 
@@ -829,6 +846,7 @@ int main( int argc, char *argv[] )
     {
         printf( "\"%s\" isn't a pcap file (expected "
                 "TCPDUMP_MAGIC).\n", argv[2] );
+        fclose( f_in );
         return( 1 );
     }
 
@@ -842,6 +860,7 @@ int main( int argc, char *argv[] )
     {
         printf( "\"%s\" isn't a regular 802.11 "
                 "(wireless) capture.\n", argv[2] );
+        fclose( f_in );
         return( 1 );
     }
 
@@ -852,6 +871,7 @@ int main( int argc, char *argv[] )
     if( ( G.f_ivs = fopen( argv[3], "wb+" ) ) == NULL )
     {
         perror( "fopen failed" );
+        fclose( f_in );
         return( 1 );
     }
 
@@ -869,7 +889,7 @@ int main( int argc, char *argv[] )
     {
         if( time( NULL ) - tt > 0 )
         {
-            printf( "\33[KRead %ld packets...\r", nbr );
+            printf( "\33[KRead %lu packets...\r", nbr );
             fflush( stdout );
             tt = time( NULL );
         }
@@ -957,10 +977,10 @@ int main( int argc, char *argv[] )
     fclose( f_in );
     fclose( G.f_ivs );
 
-    printf( "\33[2KRead %ld packets.\n", nbr );
+    printf( "\33[2KRead %lu packets.\n", nbr );
 
     if ( nbivs > 0 )
-        printf( "Written %ld IVs.\n", nbivs);
+        printf( "Written %lu IVs.\n", nbivs);
     else
     {
         remove ( argv[3] );

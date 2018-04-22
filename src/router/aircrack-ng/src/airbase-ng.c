@@ -2,7 +2,7 @@
  *  802.11 monitor AP
  *  based on airtun-ng
  *
- *  Copyright (C) 2008-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2008-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2008, 2009 Martin Beck <hirte@aircrack-ng.org>
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -152,7 +152,6 @@ static struct wif *_wi_in, *_wi_out;
     "\xf2\x01\x00\x50\xf2\x02\x00\x50\xf2\x03\x00\x50\xf2\x04\x00\x50"  \
     "\xf2\x05\x02\x00\x00\x50\xf2\x01\x00\x50\xf2\x02"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 extern int add_crc32(unsigned char* data, int length);
 
@@ -162,9 +161,9 @@ extern int hexStringToArray(char* in, int in_length, unsigned char* out, int out
 
 char usage[] =
 "\n"
-"  %s - (C) 2008-2015 Thomas d'Otreppe\n"
+"  %s - (C) 2008-2018 Thomas d'Otreppe\n"
 "  Original work: Martin Beck\n"
-"  http://www.aircrack-ng.org\n"
+"  https://www.aircrack-ng.org\n"
 "\n"
 "  usage: airbase-ng <options> <replay interface>\n"
 "\n"
@@ -1616,7 +1615,7 @@ void print_packet ( unsigned char h80211[], int caplen )
 
 	if( ( h80211[0] & 0x0C ) == 8 && ( h80211[1] & 0x40 ) != 0 )
 	{
-	    if ( ( h80211[1] & 3 ) == 3 ) key_index_offset = 33; //WDS packets have an additional MAC adress
+	    if ( ( h80211[1] & 3 ) == 3 ) key_index_offset = 33; //WDS packets have an additional MAC address
 		else key_index_offset = 27;
 
 	    if( ( h80211[key_index_offset] & 0x20 ) == 0 )
@@ -1680,6 +1679,7 @@ void print_packet ( unsigned char h80211[], int caplen )
 int set_IVidx(unsigned char* packet)
 {
     unsigned char ividx[4];
+    memset(ividx, 0, 4);
 
     if(packet == NULL) return 1;
 
@@ -2814,7 +2814,7 @@ int packet_recv(unsigned char* packet, int length, struct AP_conf *apc, int exte
                         return 0;
                     }
 
-                    /* its a packet for us, but we either don't have the key or its WPA -> throw it away */
+                    /* it's a packet for us, but we either don't have the key or its WPA -> throw it away */
                     return 0;
                 }
             }
@@ -3015,7 +3015,7 @@ int packet_recv(unsigned char* packet, int length, struct AP_conf *apc, int exte
                     {
                         addCF(packet, length);
                     }
-                    /* its a packet we can't decrypt -> just replay it through the wireless interface */
+                    /* it's a packet we can't decrypt -> just replay it through the wireless interface */
                     return 0;
                 }
             }
@@ -3038,7 +3038,7 @@ int packet_recv(unsigned char* packet, int length, struct AP_conf *apc, int exte
         memcpy( h80211+14, packet+z+8, length-z-8);
         length = length -z-8+14;
 
-        //ethernet frame must be atleast 60 bytes without fcs
+        //ethernet frame must be at least 60 bytes without fcs
         if(length < 60)
         {
             trailer = 60 - length;
@@ -3297,7 +3297,7 @@ skip_probe:
         {
             if(packet[z] == 0x00) //open system auth
             {
-                //make sure its an auth request
+                //make sure it's an auth request
                 if(packet[z+2] == 0x01)
                 {
                     if(opt.verbose)
@@ -4050,7 +4050,7 @@ int main( int argc, char *argv[] )
     struct pcap_pkthdr pkh;
     fd_set read_fds;
     unsigned char buffer[4096];
-    char *s, buf[128];
+    char *s, buf[128], *tempstr;
     int caplen;
     struct AP_conf apc;
     unsigned char mac[6];
@@ -4417,7 +4417,7 @@ int main( int argc, char *argv[] )
 
                 if( strncasecmp(optarg, "in", 2) == 0 )
                 {
-                    opt.external |= EXT_IN; //process incomming frames
+                    opt.external |= EXT_IN; //process incoming frames
                 }
                 else if( strncasecmp(optarg, "out", 3) == 0)
                 {
@@ -4697,7 +4697,12 @@ usage:
 #endif /* __i386__ */
 
     /* open the replay interface */
-    _wi_out = wi_open(argv[optind]);
+    tempstr = strdup(argv[optind]);
+    if (!tempstr) {
+        return 1;
+    }
+    _wi_out = wi_open(tempstr);
+    free(tempstr);
     if (!_wi_out)
         return 1;
     dev.fd_out = wi_fd(_wi_out);

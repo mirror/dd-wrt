@@ -1,7 +1,7 @@
 /*
  *  802.11 to Ethernet pcap translator
  *
- *  Copyright (C) 2006-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2006-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2004, 2005  Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -50,15 +50,14 @@
 #define CRYPT_WEP  1
 #define CRYPT_WPA  2
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern int check_crc_buf( unsigned char *buf, int len );
 extern int calc_crc_buf( unsigned char *buf, int len );
 
 char usage[] =
 
 "\n"
-"  %s - (C) 2006-2015 Thomas d\'Otreppe\n"
-"  http://www.aircrack-ng.org\n"
+"  %s - (C) 2006-2018 Thomas d\'Otreppe\n"
+"  https://www.aircrack-ng.org\n"
 "\n"
 "  usage: airdecap-ng [options] <pcap file>\n"
 "\n"
@@ -646,7 +645,7 @@ usage:
         {
             /* update the status line every second */
 
-            printf( "\33[KRead %ld packets...\r", stats.nb_read );
+            printf( "\33[KRead %lu packets...\r", stats.nb_read );
             fflush( stdout );
             tt = time( NULL );
         }
@@ -1055,13 +1054,13 @@ usage:
 
     /* write some statistics */
 
-    printf( "\33[KTotal number of packets read      % 8ld\n"
-                 "Total number of WEP data packets  % 8ld\n"
-                 "Total number of WPA data packets  % 8ld\n"
-                 "Number of plaintext data packets  % 8ld\n"
-                 "Number of decrypted WEP  packets  % 8ld\n"
-                 "Number of corrupted WEP  packets  % 8ld\n"
-                 "Number of decrypted WPA  packets  % 8ld\n",
+    printf( "\33[KTotal number of packets read      %8lu\n"
+                 "Total number of WEP data packets  %8lu\n"
+                 "Total number of WPA data packets  %8lu\n"
+                 "Number of plaintext data packets  %8lu\n"
+                 "Number of decrypted WEP  packets  %8lu\n"
+                 "Number of corrupted WEP  packets  %8lu\n"
+                 "Number of decrypted WPA  packets  %8lu\n",
             stats.nb_read, stats.nb_wep, stats.nb_wpa,
             stats.nb_plain, stats.nb_unwep, stats.nb_bad, stats.nb_unwpa );
 

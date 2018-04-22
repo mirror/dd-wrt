@@ -1,4 +1,4 @@
-.TH AIRCRACK-NG 1 "February 2016" "Version 1.2-rc4"
+.TH AIRCRACK-NG 1 "April 2018" "Version 1.2"
 
 .SH NAME
 aircrack-ng - a 802.11 WEP / WPA-PSK key cracker
@@ -20,7 +20,7 @@ Additionally, the program offers a dictionary method for determining the WEP key
 Force the attack mode, 1 or wep for WEP and 2 or wpa for WPA-PSK.
 .TP
 .I -e <essid>
-Select the target network based on the ESSID. This option is also required for WPA cracking if the SSID is cloacked. For SSID containing special characters, see http://www.aircrack-ng.org/doku.php?id=faq#how_to_use_spaces_double_quote_and_single_quote_etc._in_ap_names
+Select the target network based on the ESSID. This option is also required for WPA cracking if the SSID is cloaked. For SSID containing special characters, see https://www.aircrack-ng.org/doku.php?id=faq#how_to_use_spaces_double_quote_and_single_quote_etc_in_ap_names
 .TP
 .I -b <bssid> or --bssid <bssid>
 Select the target network based on the access point MAC address.
@@ -35,7 +35,7 @@ If set, no status information is displayed.
 Merges all those APs MAC (separated by a comma) into a virtual one.
 .TP
 .I -l <file>
-Write the key into a file.
+Write the key into a file. Overwrites the file if it already exists.
 .PP
 .TP
 .B Static WEP cracking options:
@@ -46,7 +46,7 @@ Search alpha-numeric characters only.
 .I -t
 Search binary coded decimal characters only.
 .TP
-.I -h 
+.I -h
 Search the numeric key for Fritz!BOX
 .TP
 .I -d <mask> or --debug <mask>
@@ -59,7 +59,7 @@ Only keep the IVs coming from packets that match this MAC address. Alternatively
 Specify the length of the key: 64 for 40-bit WEP, 128 for 104-bit WEP, etc., until 512 bits of length. The default value is 128.
 .TP
 .I -i <index>
-Only keep the IVs that have this key index (1 to 4). The default behaviour is to ignore the key index in the packet, and use the IV regardless.
+Only keep the IVs that have this key index (1 to 4). The default behavior is to ignore the key index in the packet, and use the IV regardless.
 .TP
 .I -f <fudge>
 By default, this parameter is set to 2. Use a higher value to increase the bruteforce level: cracking will take more time, but with a higher likelihood of success.
@@ -82,10 +82,10 @@ Disable bruteforce multithreading (SMP only).
 .I -s
 Shows ASCII version of the key at the right of the screen.
 .TP
-.I -y  
+.I -y
 This is an experimental single brute-force attack which should only be used when the standard attack mode fails with more than one million IVs.
 .TP
-.I -z  
+.I -z
 Uses PTW (Andrei Pyshkin, Erik Tews and Ralf-Philipp Weinmann) attack (default attack).
 .TP
 .I -P <num> or --ptw-debug <num>
@@ -107,7 +107,7 @@ Specify maximum number of IVs to use.
 .B WEP and WPA-PSK cracking options
 .TP
 .I -w <words>
-Path to a dictionary file for wpa cracking. Specify "-" to use stdin. Here is a list of wordlists: http://www.aircrack-ng.org/doku.php?id=faq#where_can_i_find_good_wordlists
+Path to a dictionary file for wpa cracking. Specify "-" to use stdin. Here is a list of wordlists: https://www.aircrack-ng.org/doku.php?id=faq#where_can_i_find_good_wordlists
 .PP
 .TP
 .B WPA-PSK options:
@@ -115,8 +115,11 @@ Path to a dictionary file for wpa cracking. Specify "-" to use stdin. Here is a 
 .I -E <file>
 Create Elcomsoft Wireless Security Auditor (EWSA) Project file v3.02.
 .TP
+.I -j <file>
+Create Hashcat v3.6+ Capture file (HCCAPX).
+.TP
 .I -J <file>
-Create Hashcat Capture file.
+Create Hashcat Capture file (HCCAP).
 .TP
 .I -S
 WPA cracking speed test.
@@ -179,3 +182,5 @@ On Debian systems, the complete text of the GNU General Public License can be fo
 .B packetforge-ng(1)
 .br
 .B wpaclean(1)
+.br
+.B airventriloquist(8)
