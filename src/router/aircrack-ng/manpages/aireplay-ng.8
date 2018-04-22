@@ -1,4 +1,4 @@
-.TH AIREPLAY-NG 8 "February 2016" "Version 1.2-rc4"
+.TH AIREPLAY-NG 8 "April 2018" "Version 1.2"
 
 .SH NAME
 aireplay-ng - inject packets into a wireless network to generate traffic
@@ -82,7 +82,7 @@ Change ring buffer size (default: 8 packets). The minimum is 1.
 Choose first matching packet.
 .TP
 .I -e <essid>
-Fake Authentication attack: Set target SSID (see below). For SSID containing special characters, see http://www.aircrack-ng.org/doku.php?id=faq#how_to_use_spaces_double_quote_and_single_quote_etc._in_ap_names
+Fake Authentication attack: Set target SSID (see below). For SSID containing special characters, see https://www.aircrack-ng.org/doku.php?id=faq#how_to_use_spaces_double_quote_and_single_quote_etc_in_ap_names
 .TP
 .I -o <npackets>
 Fake Authentication attack: Set the number of packets for every authentication and association attempt (Default: 1). 0 means auto
@@ -100,7 +100,7 @@ Fake Authentication attack: Specifies the keystream file for fake shared key aut
 Fake Authentication attack: Exit if fake authentication fails \(aqn\(aq time(s).
 .TP
 .I -j
-ARP Replay attack : inject FromDS pakets (see below).
+ARP Replay attack : inject FromDS packets (see below).
 .TP
 .I -k <IP>
 Fragmentation attack: Set destination IP in fragments.
@@ -128,6 +128,9 @@ disable /dev/rtc usage.
 .PP
 .I --ignore-negative-one
 if the interface\(aqs channel can\(aqt be determined ignore the mismatch, needed for unpatched cfg80211
+.PP
+.I --deauth-rc <rc>, -Z <rc>
+Provide a reason code when doing deauthication (between 0 and 255). By default, 7 is used: Class 3 frame received from unassociated STA. 0 is a reserved value. Reason codes explanations can be found in the IEEE802.11 standard or in https://mrncciew.com/2014/10/11/802-11-mgmt-deauth-disassociation-frames/
 .PP
 .TP
 .B Attack modes:          
@@ -249,3 +252,5 @@ On Debian systems, the complete text of the GNU General Public License can be fo
 .B packetforge-ng(1)
 .br
 .B wpaclean(1)
+.br
+.B airventriloquist(8)

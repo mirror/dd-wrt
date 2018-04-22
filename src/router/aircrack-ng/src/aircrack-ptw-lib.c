@@ -35,6 +35,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
 #if defined(__sun__)
 #include <alloca.h>
 #endif
@@ -120,7 +123,7 @@ int depth[KEYHSBYTES];
 PTW_tableentry keytable[KEYHSBYTES][n];
 
 // Check if optmizied RC4 for AMD64 has to be compiled
-#if defined(__amd64) && defined(__SSE2__) && !defined(__clang__)
+#if defined(__amd64) && defined(__SSE2__) && (!defined(__clang__) || (defined(__clang__) && (__clang_major__ >= 4 || (__clang_major__ == 3 && __clang_minor__ >= 9))))
 	#define USE_AMD64_RC4_OPTIMIZED
 #endif
 

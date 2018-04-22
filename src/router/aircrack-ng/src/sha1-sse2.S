@@ -1,4 +1,4 @@
-
+// Cygwin, Apple, Clang, (C) 2018 Joseph Benden (joe@benden.us)
 // SHA-1 SSE2 implementation, (C) 2008 Alvaro Salmador (naplam33@msn.com), ported from Simon Marechal's SHA-1 MMX - License: GPLv2
 // SHA-1 MMX implementation, (C) 2005 Simon Marechal (simon@banquise.net) - License: Public Domain
 
@@ -20,35 +20,58 @@
 //  version. *  If you delete this exception statement from all source
 //  files in the program, then also delete it here.
 
-#if defined(__x86_64__) && defined(__APPLE__)
-#define PRELOAD(x)
-#define MANGLE(x) x(%rip)
-#define INIT_PIC()
-#define END_PIC()
+#if defined(__x86_64__)
+#if defined(__APPLE__) || defined(__CYGWIN__)
+#define USE_PIC 1
+#else
+#undef USE_PIC
+#endif
+#else
+#undef USE_PIC
+#endif
+
+#if defined(USE_PIC)
+#define PRELOAD(x,f)
+#define MANGLE(x,f) x(%rip)
+#define INIT_PIC(f)
+#define END_PIC(f)
 #else
 #ifdef __PIC__
 
 #ifdef __x86_64__
-#define PRELOAD(x)  movq x@GOTPCREL(%rip), %rbx;
-#define MANGLE(x)   (%rbx)
-#define INIT_PIC()  pushq %rbx
-#define END_PIC()   popq  %rbx
+#define PRELOAD(x,f)  movq x@GOTPCREL(%rip), %rbx;
+#define MANGLE(x,f)   (%rbx)
+#define INIT_PIC(f)  pushq %rbx
+#define END_PIC(f)   popq  %rbx
+#else
+
+#if __APPLE__
+#define PRELOAD(x,f)  leal x-L0## f ##$pb(%ebx), %esi;
+#define MANGLE(x,f)   (%esi)
+#define INIT_PIC(x) \
+    push %ebx; \
+    call L0## x ##$pb; \
+    L0## x ##$pb:; \
+    pop %ebx;
+#define END_PIC(x)    pop %ebx
 #else
 #undef __i686 /* gcc builtin define gets in our way */
-#define PRELOAD(x)  
-#define MANGLE(x)   x ## @GOTOFF(%ebx)
-#define INIT_PIC() \
+#define PRELOAD(x,f)  
+#define MANGLE(x,f)   x ## @GOTOFF(%ebx)
+#define INIT_PIC(f) \
 	call __i686.get_pc_thunk.bx ; \
 	addl $_GLOBAL_OFFSET_TABLE_, %ebx
-#define END_PIC()
+#define END_PIC(f)
+#endif
+
 #endif
 
 #else
 
-#define PRELOAD(x)  
-#define MANGLE(x) x
-#define INIT_PIC()
-#define END_PIC()
+#define PRELOAD(x,f)  
+#define MANGLE(x,f) x
+#define INIT_PIC(f)
+#define END_PIC(f)
 
 #endif
 #endif
@@ -138,10 +161,14 @@ const_00ff:
 #define tmp4 ctxa
 #define tmp5 ctxb
 
-#ifdef __x86_64__
- #define edx_rsi %rsi
- #define ecx_rdx %rdx
- #define eax_rdi %rdi
+#if defined(__x86_64__) && defined(__CYGWIN__)
+ #define edx_rsi %rdx     // arg2
+ #define ecx_rdx %r8      // arg3
+ #define eax_rdi %rcx     // arg1
+#elif defined(__x86_64__)
+ #define edx_rsi %rsi     // arg2
+ #define ecx_rdx %rdx     // arg3
+ #define eax_rdi %rdi     // arg1
 #else
  #define edx_rsi %edx
  #define ecx_rdx %ecx
@@ -170,7 +197,7 @@ const_00ff:
         pand   z, tmp2; \
         por    tmp2, tmp1;
         
-#if defined(__x86_64__) && defined(__CYGWIN__)
+#if defined(__x86_64__) && (defined(__CYGWIN__) && !defined(__clang__))
 #define subRoundX(a, b, c, d, e, f, k, data)    \
         f(b,c,d);                               \
         movdqa   a, tmp2;                       \
@@ -182,13 +209,13 @@ const_00ff:
         paddd  tmp2, e;                         \
         movdqa   b, tmp2;                       \
         pslld  $30, b;                          \
-        paddd  MANGLE(k), e;			\
+        paddd  MANGLE(k,shasse2_data), e;			\
         psrld  $2, tmp2;                        \
         por    tmp2, b;                         \
         movdqa   (data*16)(edx_rsi), tmp1;      \
         movdqa   tmp1, tmp2;                    \
-        pand   MANGLE(const_ff00), tmp1;        \
-        pand   MANGLE(const_00ff), tmp2;        \
+        pand   MANGLE(const_ff00,shasse2_data), tmp1;        \
+        pand   MANGLE(const_00ff,shasse2_data), tmp2;        \
         psrld  $8, tmp1;                        \
         pslld  $8, tmp2;                        \
         por    tmp2, tmp1;                      \
@@ -210,16 +237,16 @@ const_00ff:
         paddd  tmp2, e;                         \
         movdqa   b, tmp2;                       \
         pslld  $30, b;                          \
-        PRELOAD(k)				\
-        paddd  MANGLE(k), e;			\
+        PRELOAD(k,shasse2_data)				\
+        paddd  MANGLE(k,shasse2_data), e;			\
         psrld  $2, tmp2;                        \
         por    tmp2, b;                         \
         movdqa   (data*16)(edx_rsi), tmp1;      \
         movdqa   tmp1, tmp2;                    \
-        PRELOAD(const_ff00)			\
-        pand   MANGLE(const_ff00), tmp1;        \
-        PRELOAD(const_00ff)			\
-        pand   MANGLE(const_00ff), tmp2;        \
+        PRELOAD(const_ff00,shasse2_data)			\
+        pand   MANGLE(const_ff00,shasse2_data), tmp1;        \
+        PRELOAD(const_00ff,shasse2_data)			\
+        pand   MANGLE(const_00ff,shasse2_data), tmp2;        \
         psrld  $8, tmp1;                        \
         pslld  $8, tmp2;                        \
         por    tmp2, tmp1;                      \
@@ -231,7 +258,7 @@ const_00ff:
         paddd  tmp1, e;
 #endif
 
-#if defined(__x86_64__) && defined(__CYGWIN__)
+#if defined(__x86_64__) && (defined(__CYGWIN__) && !defined(__clang__))
 #define subRoundY(a, b, c, d, e, f, k, data)    \
 	movdqa ((data- 3)*16)(ecx_rdx), tmp1;   \
         pxor   ((data- 8)*16)(ecx_rdx), tmp1;   \
@@ -253,7 +280,7 @@ const_00ff:
         paddd  tmp2, e;                         \
         movdqa   b, tmp2;                       \
         pslld  $30, b;                          \
-        paddd  MANGLE(k), e;                    \
+        paddd  MANGLE(k,shasse2_data), e;                    \
         psrld  $2, tmp2;                        \
         por    tmp2, b;
 #else
@@ -278,8 +305,8 @@ const_00ff:
         paddd  tmp2, e;                         \
         movdqa   b, tmp2;                       \
         pslld  $30, b;                          \
-        PRELOAD(k)				\
-        paddd  MANGLE(k), e;                    \
+        PRELOAD(k,shasse2_data)				\
+        paddd  MANGLE(k,shasse2_data), e;                    \
         psrld  $2, tmp2;                        \
         por    tmp2, b;
 #endif 
@@ -290,27 +317,17 @@ const_00ff:
  shasse2_init:
 _shasse2_init:
 
-        INIT_PIC()
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
-        PRELOAD(const_init_a)
-#endif
-        movdqa   MANGLE(const_init_a), ctxa
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
-        PRELOAD(const_init_b)
-#endif
-        movdqa   MANGLE(const_init_b), ctxb
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
-        PRELOAD(const_init_c)
-#endif
-        movdqa   MANGLE(const_init_c), ctxc
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
-        PRELOAD(const_init_d)
-#endif
-        movdqa   MANGLE(const_init_d), ctxd
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
-        PRELOAD(const_init_e)
-#endif
-        movdqa   MANGLE(const_init_e), ctxe
+        INIT_PIC(shasse2_init)
+        PRELOAD(const_init_a,shasse2_init)
+        movdqa   MANGLE(const_init_a,shasse2_init), ctxa
+        PRELOAD(const_init_b,shasse2_init)
+        movdqa   MANGLE(const_init_b,shasse2_init), ctxb
+        PRELOAD(const_init_c,shasse2_init)
+        movdqa   MANGLE(const_init_c,shasse2_init), ctxc
+        PRELOAD(const_init_d,shasse2_init)
+        movdqa   MANGLE(const_init_d,shasse2_init), ctxd
+        PRELOAD(const_init_e,shasse2_init)
+        movdqa   MANGLE(const_init_e,shasse2_init), ctxe
 
         movdqa   ctxa, 0(eax_rdi)
         movdqa   ctxb, 16(eax_rdi)
@@ -327,25 +344,21 @@ _shasse2_init:
  shasse2_ends:
 _shasse2_ends:
 
-        INIT_PIC()
+        INIT_PIC(shasse2_ends)
 	movdqa    0(eax_rdi), ctxa
         movdqa   16(eax_rdi), ctxb
         movdqa   32(eax_rdi), ctxc
         movdqa   48(eax_rdi), ctxd
         movdqa   64(eax_rdi), ctxe
 
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
-        PRELOAD(const_ff00)
-#endif
-        movdqa   MANGLE(const_ff00), tmp3
+        PRELOAD(const_ff00,shasse2_ends)
+        movdqa   MANGLE(const_ff00,shasse2_ends), tmp3
         movdqa   ctxa, tmp1
         movdqa   ctxb, tmp2
         pand   tmp3, ctxa
         pand   tmp3, ctxb
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
-        PRELOAD(const_00ff)
-#endif
-        movdqa   MANGLE(const_00ff), tmp3
+        PRELOAD(const_00ff,shasse2_ends)
+        movdqa   MANGLE(const_00ff,shasse2_ends), tmp3
         pand   tmp3, tmp1
         pand   tmp3, tmp2
         psrld  $8, ctxa
@@ -365,20 +378,16 @@ _shasse2_ends:
         movdqa   ctxa,  0(edx_rsi)
         movdqa   ctxb,  16(edx_rsi)
 
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
-        PRELOAD(const_ff00)
-#endif
-        movdqa   MANGLE(const_ff00), tmp5
+        PRELOAD(const_ff00,shasse2_ends)
+        movdqa   MANGLE(const_ff00,shasse2_ends), tmp5
         movdqa   ctxc, tmp1
         movdqa   ctxd, tmp2
         movdqa   ctxe, tmp3
         pand   tmp5, ctxc
         pand   tmp5, ctxd
         pand   tmp5, ctxe
-#if !defined(__x86_64__) && !defined(__CYGWIN__)
-        PRELOAD(const_00ff)
-#endif
-        movdqa   MANGLE(const_00ff), tmp5
+        PRELOAD(const_00ff,shasse2_ends)
+        movdqa   MANGLE(const_00ff,shasse2_ends), tmp5
         pand   tmp5, tmp1
         pand   tmp5, tmp2
         pand   tmp5, tmp3
@@ -418,7 +427,7 @@ _shasse2_ends:
  shasse2_data:
 _shasse2_data:
 
-        INIT_PIC()
+        INIT_PIC(shasse2_data)
         movdqa    0(eax_rdi), ctxa
         movdqa   16(eax_rdi), ctxb
         movdqa   32(eax_rdi), ctxc

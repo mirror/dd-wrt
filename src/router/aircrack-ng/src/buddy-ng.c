@@ -40,8 +40,6 @@
 #include "easside.h"
 #include "version.h"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
-
 unsigned char ids[8192];
 unsigned short last_id;
 int wrap;
@@ -87,8 +85,8 @@ int handle(int s, unsigned char* data, int len, struct sockaddr_in *s_in)
 	*cmd++ = htons(S_CMD_PACKET);
 	*cmd++ = *pid;
 	plen = len - 2;
-    if (plen < 0)
-        return 0;
+	if (plen < 0)
+        	return 0;
 
 	last_id = ntohs(*pid);
 	if (last_id > 20000)
@@ -198,7 +196,7 @@ void usage()
     char *version_info = getVersion("Buddy-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		"  %s - (C) 2007,2008 Andrea Bittau\n"
-		"  http://www.aircrack-ng.org\n"
+		"  https://www.aircrack-ng.org\n"
 		"\n"
 		"  Usage: buddy-ng <options>\n"
 		"\n"

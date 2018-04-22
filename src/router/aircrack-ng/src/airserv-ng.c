@@ -42,8 +42,6 @@
 #include "osdep/network.h"
 #include "version.h"
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
-
 void sighandler( int signum )
 {
     if( signum == SIGPIPE )
@@ -76,7 +74,7 @@ static void usage(char *p)
 	char *version_info = getVersion("Airserv-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		"  %s - (C) 2007, 2008, 2009 Andrea Bittau\n"
-		"  http://www.aircrack-ng.org\n"
+		"  https://www.aircrack-ng.org\n"
 		"\n"
 		"  Usage: airserv-ng <options>\n"
 		"\n"
@@ -205,6 +203,7 @@ static void open_sock(struct sstate *ss, int port)
 	int s;
 	struct sockaddr_in s_in;
 	int one = 1;
+	memset(&s_in, 0, sizeof(struct sockaddr_in));
 
 	s_in.sin_family = PF_INET;
 	s_in.sin_port = htons(port);
@@ -437,8 +436,8 @@ static void handle_card(struct sstate *ss)
 	struct client *next_c;
 
 	rd = card_read(ss, ri + 1, sizeof(buf) - sizeof(*ri), ri);
-    if (rd >= 0)
-    	rd += sizeof(*ri);
+	if (rd >= 0)
+	    rd += sizeof(*ri);
 
 	ri->ri_mactime = __cpu_to_be64(ri->ri_mactime);
 	ri->ri_power = __cpu_to_be32(ri->ri_power);

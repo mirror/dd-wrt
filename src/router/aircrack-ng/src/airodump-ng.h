@@ -117,7 +117,6 @@
 //milliseconds to store last packets
 #define BUFFER_TIME 3000
 
-extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern unsigned char * getmac(char * macAddress, int strict, unsigned char * mac);
 extern int get_ram_size(void);
 char *get_manufacturer(unsigned char mac0, unsigned char mac1, unsigned char mac2);
@@ -143,6 +142,7 @@ static unsigned char ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00";
 
 const char *OUI_PATHS[] = {
+    "./airodump-ng-oui.txt",
     "/etc/aircrack-ng/airodump-ng-oui.txt",
     "/usr/local/etc/aircrack-ng/airodump-ng-oui.txt",
     "/usr/share/aircrack-ng/airodump-ng-oui.txt",
@@ -163,10 +163,11 @@ int read_pkts=0;
 int abg_chans [] =
 {
     1, 7, 13, 2, 8, 3, 14, 9, 4, 10, 5, 11, 6, 12,
-    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108,
-    112, 116, 120, 124, 128, 132, 136, 140, 149,
-    153, 157, 161, 184, 188, 192, 196, 200, 204,
-    208, 212, 216,0
+    36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58,
+    60, 62, 64, 100, 102, 104, 106, 108, 110, 112,
+    114, 116, 118, 120, 122, 124, 126, 128, 132,
+    134, 136, 138, 140, 142, 144, 149, 151, 153,
+    155, 157, 159, 161, 165, 169, 173, 0
 };
 
 int bg_chans  [] =
@@ -176,10 +177,11 @@ int bg_chans  [] =
 
 int a_chans   [] =
 {
-    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108,
-    112, 116, 120, 124, 128, 132, 136, 140, 149,
-    153, 157, 161, 184, 188, 192, 196, 200, 204,
-    208, 212, 216,0
+    36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58,
+    60, 62, 64, 100, 102, 104, 106, 108, 110, 112,
+    114, 116, 118, 120, 122, 124, 126, 128, 132,
+    134, 136, 138, 140, 142, 144, 149, 151, 153,
+    155, 157, 159, 161, 165, 169, 173, 0
 };
 
 int *frequencies;
@@ -208,6 +210,48 @@ struct WPS_info {
     unsigned int meth;        /* WPS Config Methods */
 };
 
+#define MAX_AC_MCS_INDEX 8
+
+/* 802.11n channel information */
+struct n_channel_info {
+	char mcs_index;     /* Maximum MCS TX index     */
+    char sec_channel;            /* 802.11n secondary channel*/
+    unsigned char short_gi_20;   /* Short GI for 20MHz       */
+    unsigned char short_gi_40;   /* Short GI for 40MHz       */
+    unsigned char any_chan_width;/* Support for 20 or 40MHz  
+                                    as opposed to only 20 or 
+                                    only 40MHz               */
+};
+
+/* 802.11ac channel information */
+struct ac_channel_info {
+    unsigned char center_sgmt[2];
+                                 /* 802.11ac Center segment 0*/
+    unsigned char mu_mimo;       /* MU-MIMO support          */
+    unsigned char short_gi_80;   /* Short GI for 80MHz       */
+	unsigned char short_gi_160;  /* Short GI for 160MHz      */
+	unsigned char split_chan;    /* 80+80MHz Channel support */
+	unsigned char mhz_160_chan;  /* 160 MHz channel support  */
+    unsigned char wave_2;        /* Wave 2                   */
+	unsigned char mcs_index[MAX_AC_MCS_INDEX];
+	                             /* Maximum TX rate          */
+};
+
+enum channel_width_enum {
+	CHANNEL_UNKNOWN_WIDTH,
+	CHANNEL_3MHZ,
+	CHANNEL_5MHZ,
+	CHANNEL_10MHZ,
+	CHANNEL_20MHZ,
+	CHANNEL_22MHZ,
+	CHANNEL_30MHZ,
+	CHANNEL_20_OR_40MHZ,
+	CHANNEL_40MHZ,
+	CHANNEL_80MHZ,
+	CHANNEL_80_80MHZ,
+	CHANNEL_160MHZ
+};
+
 /* linked list of detected access points */
 struct AP_info
 {
@@ -217,6 +261,13 @@ struct AP_info
     time_t tinit, tlast;      /* first and last time seen */
 
     int channel;              /* AP radio channel         */
+    enum channel_width_enum
+		channel_width;        /* Channel width            */
+    char standard[3];         /* 802.11 standard: n or ac */
+	struct n_channel_info
+		n_channel;            /* 802.11n channel info     */
+	struct ac_channel_info
+		ac_channel;           /* 802.11ac channel info    */
     int max_speed;            /* AP maximum speed in Mb/s */
     int avg_power;            /* averaged signal power    */
     int best_power;           /* best signal power    */
@@ -476,6 +527,9 @@ struct globals
     int file_write_interval;
     u_int maxsize_wps_seen;
     int show_wps;
+#ifdef CONFIG_LIBNL
+    int htval;
+#endif
 }
 G;
 

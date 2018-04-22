@@ -182,10 +182,15 @@ void calc_pmk( char *key, char *essid_pre, unsigned char pmk[40] )
 	SHA_CTX ctx_ipad;
 	SHA_CTX ctx_opad;
 	SHA_CTX sha1_ctx;
+	size_t essid_pre_len;
+
+	if (essid_pre == NULL || essid_pre[0] == 0 || (essid_pre_len = strlen(essid_pre)) > 32 ) {
+		return;
+	}
 
 	memset(essid, 0, sizeof(essid));
-	memcpy(essid, essid_pre, strlen(essid_pre));
-	slen = strlen( essid ) + 4;
+	memcpy(essid, essid_pre, essid_pre_len);
+	slen = essid_pre_len + 4;
 
 	/* setup the inner and outer contexts */
 
@@ -288,7 +293,15 @@ void calc_pmk( char *key, char *essid_pre, unsigned char pmk[40] )
 void calc_mic (struct AP_info *ap, unsigned char pmk[32], unsigned char ptk[80], unsigned char mic[20]) {
 	int i;
 	unsigned char pke[100];
-	HMAC_CTX *ctx;
+	#if defined(USE_GCRYPT) || OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+		#define HMAC_USE_NO_PTR
+	#endif
+
+	#ifdef HMAC_USE_NO_PTR
+	HMAC_CTX ctx;
+	#else
+	HMAC_CTX * ctx;
+	#endif
 
 	memcpy( pke, "Pairwise key expansion", 23 );
 
@@ -314,6 +327,19 @@ void calc_mic (struct AP_info *ap, unsigned char pmk[32], unsigned char ptk[80],
 		memcpy( pke + 67, ap->wpa.snonce, 32 );
 	}
 
+	#ifdef HMAC_USE_NO_PTR
+	HMAC_CTX_init(&ctx);
+	HMAC_Init_ex(&ctx, pmk, 32, EVP_sha1(), NULL);
+	for(i = 0; i < 4; i++ )
+	{
+		pke[99] = i;
+		//HMAC(EVP_sha1(), values[0], 32, pke, 100, ptk + i * 20, NULL);
+		HMAC_Init_ex(&ctx, 0, 0, 0, 0);
+		HMAC_Update(&ctx, pke, 100);
+		HMAC_Final(&ctx, ptk + i*20, NULL);
+	}
+	HMAC_CTX_cleanup(&ctx);
+	#else
 	ctx = HMAC_CTX_new();
 	HMAC_Init_ex(ctx, pmk, 32, EVP_sha1(), NULL);
 	for(i = 0; i < 4; i++ )
@@ -325,6 +351,8 @@ void calc_mic (struct AP_info *ap, unsigned char pmk[32], unsigned char ptk[80],
 		HMAC_Final(ctx, ptk + i*20, NULL);
 	}
 	HMAC_CTX_free(ctx);
+	#endif
+	#undef HMAC_USE_NO_PTR
 
 	if( ap->wpa.keyver == 1 )
 	{
@@ -632,7 +660,7 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
                 len = ptr - ((unsigned char*)clear);
                 *clen = len;
 
-                memcpy(clear+32, clear, len);
+                memmove(clear+32, clear, len);
                 memcpy(clear+32+14, "\x00\x00", 2); //ip flags=none
 
                 num=2;
@@ -929,8 +957,9 @@ int calc_tkip_mic_key(unsigned char* packet, int length, unsigned char key[8])
     memcpy(ptr, packet+z, length-z-8);  ptr+=length-z-8;
     memcpy(ptr, "\x5a", 1);             ptr+=1;
     memcpy(ptr, ZERO, 4);               ptr+=4;
-    if((ptr-message) % 4 > 0)
+    if((ptr-message) % 4 > 0){
         memcpy(ptr, ZERO, 4-((ptr-message)%4)); ptr+=4-((ptr-message)%4);
+    }
 
     init_michael(&mic, packet+length-8);
     michael_remove(&mic, message, (ptr-message));
@@ -1160,6 +1189,111 @@ int calc_tkip_ppk( unsigned char *h80211, int caplen, unsigned char TK1[16], uns
     }
 
     return 0;
+}
+
+int calc_tkip_mic_skip_eiv(unsigned char* packet, int length, unsigned char ptk[80], unsigned char value[8])
+{
+    int z, koffset=0, is_qos=0;
+    unsigned char smac[6], dmac[6], bssid[6];
+    unsigned char prio[4] = {0};
+    struct Michael mic;
+
+    z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
+
+    if(length < z) return 0;
+
+    /* Check if 802.11e (QoS) */
+    if( (packet[0] & 0x80) == 0x80)
+    {
+        z+=2;
+        is_qos = 1;
+    }
+
+    switch( packet[1] & 3 )
+    {
+        case  0:
+            memcpy( bssid, packet + 16, 6 );
+            memcpy( dmac, packet + 4, 6 );
+            memcpy( smac, packet + 10, 6 );
+            break;
+        case  1:
+            memcpy( bssid, packet + 4, 6 );
+            memcpy( dmac, packet + 16, 6 );
+            memcpy( smac, packet + 10, 6 );
+            koffset = 48+8;
+            break;
+        case  2:
+            memcpy( bssid, packet + 10, 6 );
+            memcpy( dmac, packet + 4, 6 );
+            memcpy( smac, packet + 16, 6 );
+            koffset = 48;
+            break;
+        default:
+            memcpy( bssid, packet + 10, 6 );
+            memcpy( dmac, packet + 16, 6 );
+            memcpy( smac, packet + 24, 6 );
+            break;
+    }
+
+    if(koffset != 48 && koffset != 48+8)
+        return 1;
+
+    init_michael(&mic, ptk+koffset);
+
+    michael_append(&mic, dmac, 6);
+    michael_append(&mic, smac, 6);
+
+    //memset(prio, 0, 4);
+    if(is_qos)
+    {
+        prio[0] = packet[z-2] & 0x0f;
+    }
+    michael_append(&mic, prio, 4);
+
+    michael_append(&mic, packet+z+8, length - z -8);
+
+    michael_finalize(&mic);
+
+    memcpy(value, mic.mic, 8);
+
+    return 0;
+}
+
+
+
+void encrypt_tkip( unsigned char *h80211, int caplen, unsigned char ptk[80] )
+{
+    unsigned char *TK1 = ptk +32;
+    unsigned char K[16];
+    int z;
+
+    z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
+    if ( GET_SUBTYPE(h80211[0]) == IEEE80211_FC0_SUBTYPE_QOS ) {
+        z += 2;
+    }
+    //Update the MIC in the frame...
+    // Had to mod calc_tkip_mic to skip extended IV to aviod memmoves
+    unsigned char micval[8] = {0};
+    calc_tkip_mic_skip_eiv(h80211, caplen - 12 , ptk, micval);
+    //hexDump("MICVALafter", micval, 8);
+    unsigned char *mic_in_packet = h80211 + caplen -12;
+    //hexDump("MIC in packet", mic_in_packet, 8);
+    memcpy(mic_in_packet, micval, 8);
+    //hexDump("MIC in packet(updated)", mic_in_packet, 8);
+
+    //Update the CRC in the frame before encrypting
+    uint32_t crc = calc_crc(h80211 + z + 8, caplen - z - 8 - 4);
+
+    unsigned char *buf = h80211 + z + 8;
+    buf += caplen - z - 8 - 4;
+    buf[0] = ( ( crc       ) & 0xFF );
+    buf[2] = ( ( crc >> 16 ) & 0xFF );
+    buf[1] = ( ( crc >>  8 ) & 0xFF );
+    buf[3] = ( ( crc >> 24 ) & 0xFF );
+
+    calc_tkip_ppk( h80211, caplen, TK1, K );
+
+    decrypt_wep( h80211 + z + 8, caplen - z - 8, K, 16 );
 }
 
 int decrypt_tkip( unsigned char *h80211, int caplen, unsigned char TK1[16] )
@@ -1457,7 +1591,7 @@ int decrypt_ccmp( unsigned char *h80211, int caplen, unsigned char TK1[16] )
     #endif
 
     // T := X_n[ 0.. 7]
-    // Note: Decryption is succesful if calculated T is the same as the one
+    // Note: Decryption is successful if calculated T is the same as the one
     //       that was sent with the message.
     return( memcmp( h80211 + offset, MIC, 8 ) == 0 );
 }

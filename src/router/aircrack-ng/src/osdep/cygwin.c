@@ -34,7 +34,7 @@
 #include "cygwin.h"
 
 #ifdef HAVE_AIRPCAP
-	#include "airpcap.h"
+	#include "aircrack_ng_airpcap.h"
 #endif
 
 #define xstr(s) str(s)
@@ -130,7 +130,6 @@ static int do_cygwin_open(struct wif *wi, char *iface)
 	char *file;
 	char *parm;
 	int rc = -1;
-	int tempret = 0;
 
 	if (!iface)
 		return -1;
@@ -216,13 +215,6 @@ errdll:
 				priv->pc_did_init = 1;
 			else
 				fprintf(stderr,"Error initializing <%s>\n", iface);
-		}
-
-		if (priv->pc_did_init) {
-			/* set initial chan */
-			tempret = wi_set_channel(wi, 1);
-			if (tempret)
-				rc = tempret;
 		}
 	}
 	else

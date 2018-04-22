@@ -1,7 +1,7 @@
 /*
  *  WEP Cloaking filtering
  *
- *  Copyright (C) 2008-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
+ *  Copyright (C) 2008-2018 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *
  *  Thanks to Alex Hernandez aka alt3kx for the hardware.
  *
@@ -259,7 +259,9 @@ void remove_last_uncomplete_node() {
 	if (_packet_elt_head->current->complete == 0) {
 		packet = _packet_elt_head->current;
 		_packet_elt_head->nb_packets -=1;
-		_packet_elt_head->current->prev->next = NULL;
+		if (_packet_elt_head->current->prev) {
+			_packet_elt_head->current->prev->next = NULL;
+		}
 		free(packet);
 	}
 }
@@ -383,7 +385,7 @@ BOOLEAN read_packets(void)
 			puts("PPI");
 			break;
 		default:
-			printf("Unknown (%d)\n", _pfh_in.linktype);
+			printf("Unknown (%lu)\n", (unsigned long) _pfh_in.linktype);
 			break;
 	}
 
@@ -396,7 +398,7 @@ BOOLEAN read_packets(void)
         {
             // update the status line every second
 
-            printf( "\33[KRead %ld packets...\r", stats.nb_read );
+            printf( "\33[KRead %lu packets...\r", stats.nb_read );
             fflush( stdout );
             tt = time( NULL );
         }
@@ -427,7 +429,7 @@ BOOLEAN read_packets(void)
 
         if( _packet_elt_head->current->header.caplen <= 0 || _packet_elt_head->current->header.caplen > 65535 )
         {
-            printf( "Corrupted file? Invalid packet length %d.\n", _packet_elt_head->current->header.caplen );
+            printf( "Corrupted file? Invalid packet length %lu.\n", (unsigned long) _packet_elt_head->current->header.caplen );
             break;
         }
 
@@ -440,9 +442,9 @@ BOOLEAN read_packets(void)
 
         if( bytes_read != (size_t) _packet_elt_head->current->header.caplen )
         {
-			printf("Error reading the file: read %lu bytes out of %d.\n",
+			printf("Error reading the file: read %lu bytes out of %lu.\n",
 						(unsigned long) bytes_read,
-						_packet_elt_head->current->header.caplen);
+						(unsigned long) _packet_elt_head->current->header.caplen);
 
             break;
 		}
@@ -510,7 +512,7 @@ BOOLEAN read_packets(void)
 		#endif
         /*------------------------------- drop if control frame (does not contains SN) ----------------------*/
 		// TODO: We should care about control frames since they are not cloaked
-		//       and they can be usefull for signal filtering (have a better average).
+		//       and they can be useful for signal filtering (have a better average).
 
         /* check the BSSID */
         switch( h80211[1] & 3 )
@@ -814,7 +816,7 @@ int CFC_with_valid_packets_mark_others_with_identical_sn_cloaked() {
 
 	puts("Cloaking - Marking all duplicate SN cloaked if frame is valid or uncloaked");
 
-	// Start from the begining (useful comment)
+	// Start from the beginning (useful comment)
 	reset_current_packet_pointer();
 
 	nb_marked = 0;
@@ -862,7 +864,7 @@ int CFC_with_valid_packets_mark_others_with_identical_sn_cloaked() {
 	} while (next_packet_pointer() == 1);
 
 	// Reset packet pointer so that next usages of current packet
-	// will start from the begining (in case it's forgotten).
+	// will start from the beginning (in case it's forgotten).
 	reset_current_packet_pointer();
 
 	printf("%d frames marked\n", nb_marked);
@@ -889,7 +891,7 @@ int CFC_filter_duplicate_sn_client() {
 }
 
 int CFC_filter_duplicate_sn() {
-	// This will remove a lot of legitimate packets unfortunatly
+	// This will remove a lot of legitimate packets unfortunately
 	return CFC_filter_duplicate_sn_ap() + CFC_filter_duplicate_sn_client();
 }
 
@@ -980,6 +982,9 @@ int CFC_filter_signal() {
 						++nb_packets;
 						break;
 					}
+#if __GNUC__ == 7
+					 __attribute__ ((fallthrough));
+#endif
 				case UKNOWN_FRAME_CLOAKING_STATUS:
 					// If variation is > max allowed variation, it's a cloaked packet
 					if (abs(_packet_elt_head->current->signal_quality - average_signal)
@@ -988,17 +993,12 @@ int CFC_filter_signal() {
 						++nb_packets;
 						break;
 					}
-
-
-					if (_packet_elt_head->current->signal_quality - average_signal == 0) {
-						// If there's no variation, I'm sure it's not a cloaked packet
-						_packet_elt_head->current->is_cloaked = VALID_FRAME_UNCLOAKED;
-					}
-					else {
-						// We could play with POTENTIALLY_CLOAKED frame depending on the variation
-						// but currently, it's unloacked if inferior to the max allowed signal
-						_packet_elt_head->current->is_cloaked = VALID_FRAME_UNCLOAKED;
-					}
+					// If the signal quality is the same as the average signal,
+					// we're sure it's not a cloaked packet.
+					// Regarding any other signal difference compared to the average signal
+					// We could play with POTENTIALLY_CLOAKED frame depending on the variation
+					// but currently, it's unloacked if inferior to the max allowed signal
+					_packet_elt_head->current->is_cloaked = VALID_FRAME_UNCLOAKED;
 					break;
 				case VALID_FRAME_UNCLOAKED:
 					break;
@@ -1097,7 +1097,7 @@ int CFC_filter_duplicate_iv() {
 		if (_packet_elt_head->current->frame_type == FRAME_TYPE_DATA) {
 			// In the array, there's as much elements as the number of possible IVs
 			// For each IV, increase by 1 the value of the IV position so that we can
-			// know if it was used AND the number of occurences.
+			// know if it was used AND the number of occurrences.
 			*(ivs_table + get_iv(_packet_elt_head->current)) += 1;
 		}
 	} while (next_packet_pointer() == true);
@@ -1114,6 +1114,9 @@ int CFC_filter_duplicate_iv() {
 						_packet_elt_head->current->is_cloaked = CLOAKED_FRAME;
 						++nb_packets;
 					}
+#if __GNUC__ == 7
+					 __attribute__ ((fallthrough));
+#endif
 				case UKNOWN_FRAME_CLOAKING_STATUS:
 					// If unknown status, mark it as potentially cloaked
 					if (*(ivs_table + get_iv(_packet_elt_head->current)) > 1) {
@@ -1139,27 +1142,28 @@ int CFC_filter_duplicate_iv() {
 char * status_format(int status) {
 	size_t len = 19;
 	char * ret = (char *) calloc(1, (len + 1) * sizeof(char));
+	char * rret;
 
 	switch (status) {
 		case VALID_FRAME_UNCLOAKED:
-			strncpy(ret, "uncloacked", len);
+			strncpy(ret, "uncloacked", len + 1);
 			break;
 		case CLOAKED_FRAME:
-			strncpy(ret, "cloaked", len);
+			strncpy(ret, "cloaked", len + 1);
 			break;
 		case POTENTIALLY_CLOAKED_FRAME:
-			strncpy(ret, "potentially cloaked", len);
+			strncpy(ret, "potentially cloaked", len + 1);
 			break;
 		case UKNOWN_FRAME_CLOAKING_STATUS:
-			strncpy(ret, "unknown cloaking", len);
+			strncpy(ret, "unknown cloaking", len + 1);
 			break;
 		default:
 			snprintf(ret, len + 1,"type %d", status);
 			break;
 	}
 
-	ret = (char *)realloc(ret, strlen(ret) +1);
-	return ret;
+	rret = (char *)realloc(ret, strlen(ret) +1);
+	return (rret) ? rret : ret;
 }
 
 int CFC_mark_all_frames_with_status_to(int original_status, int new_status) {
@@ -1282,6 +1286,7 @@ BOOLEAN write_packets() {
 		if (_output_cloaked_packets_file != NULL) {
 			fclose(_output_cloaked_packets_file);
 		}
+		fclose(invalid_status_file);
 		return false;
 	}
 
@@ -1289,6 +1294,7 @@ BOOLEAN write_packets() {
 	if (_output_cloaked_packets_file == NULL) {
 		printf("FATAL ERROR: Failed to open pcap for cloaked packets\n");
 		fclose(_output_clean_capture_file);
+		fclose(invalid_status_file);
 		return false;
 	}
 
@@ -1331,8 +1337,8 @@ BOOLEAN print_statistics() {
 void usage() {
 	char *version_info = getVersion("Airdecloak-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
-			"  %s - (C) 2008-2015 Thomas d\'Otreppe\n"
-			"  http://www.aircrack-ng.org\n"
+			"  %s - (C) 2008-2018 Thomas d\'Otreppe\n"
+			"  https://www.aircrack-ng.org\n"
 			"\n"
 			"  usage: airdecloak-ng [options]\n"
 			"\n"
@@ -1592,11 +1598,11 @@ int main( int argc, char *argv[] )
         if (!manual_filtered_fname)
             _filename_output_filtered = (char *) calloc(temp + 10 + 5, 1);
 
-	    while (--temp > 0)
-	    {
-		    if (input_filename[temp] == '.')
-			    break;
-	    }
+	while (--temp > 0)
+	{
+	    if (input_filename[temp] == '.')
+		break;
+	}
 
 	    // No extension
         if (temp == 0) {

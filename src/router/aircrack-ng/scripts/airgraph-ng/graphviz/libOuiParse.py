@@ -22,7 +22,10 @@ __data__ = 'a class for dealing with the oui txt file'
 #########################################
 """
 
-import re, urllib, sys, os
+import re
+import urllib
+import sys
+import os
 import pdb
 #this lib is crap and needs to be rewritten -Textile 
 
@@ -93,7 +96,7 @@ class macOUI_lookup:
         look up a company name and return their OUI's
         """
         oui = []
-        if type(companyLst).__name__ == "list":
+        if type(companyLst) is list:
             for name in companyLst:
                 compMatch = re.compile(name,re.I)
                 if self.company_oui.has_key(name):
@@ -103,7 +106,7 @@ class macOUI_lookup:
                         if compMatch.search(key) is not None:
                             oui.extend(self.company_oui[key])
 
-        elif type(companyLst).__name__ == "str":
+        elif type(companyLst) is str:
             if self.company_oui.has_key(companyLst):
                 oui = self.company_oui[companyLst]
             else:
@@ -120,11 +123,11 @@ class macOUI_lookup:
         flag denotes use of read or readlines
         """
         try:
-            ouiFile = open(fname, "r")
-            if flag == 'RL':
-                text = ouiFile.readlines()
-            elif flag == 'R':
-                text = ouiFile.read()
+            with open(fname, "r") as fid:
+                if flag == 'RL':
+                    text = fid.readlines()
+                elif flag == 'R':
+                    text = fid.read()
             return text
         except IOError:
             return False
@@ -137,13 +140,13 @@ class macOUI_lookup:
         HexOui= {}
         Hex = re.compile('.*(hex).*')
         #matches the following example "00-00-00   (hex)\t\tXEROX CORPORATION" 
-        ouiLines = self.ouiRaw.split("\n\n") 
+        ouiLines = self.ouiRaw.split("\n") 
         #split each company into a list one company per position
         for line in ouiLines:
-            if Hex.search(line) != None: 
+            if Hex.search(line) is not None: 
                 lineList = Hex.search(line).group().replace("\t"," ").split("  ") 
                 #return the matched text and build a list out of it
-                HexOui[lineList[0].replace("-",":")] = lineList[2] 
+                HexOui[lineList[0].replace("-",":")] = lineList[2].strip()
                 #build a dict in the format of mac:company name 
         return HexOui
     
@@ -153,10 +156,10 @@ class macOUI_lookup:
         """
         company_oui = {}
         for oui in self.oui_company:
-            if company_oui.has_key(self.oui_company[oui][0]):
-                company_oui[self.oui_company[oui][0]].append(oui)
+            if company_oui.has_key(self.oui_company[oui]):
+                company_oui[self.oui_company[oui]].append(oui)
             else:
-                company_oui[self.oui_company[oui][0]] = [oui]
+                company_oui[self.oui_company[oui]] = [oui]
         return company_oui
         
 

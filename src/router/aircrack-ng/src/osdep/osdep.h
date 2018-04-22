@@ -85,6 +85,7 @@ struct wif {
                            struct rx_info *ri);
         int     (*wi_write)(struct wif *wi, unsigned char *h80211, int len,
                             struct tx_info *ti);
+        int     (*wi_set_ht_channel)(struct wif *wi, int chan, unsigned int htval);
         int     (*wi_set_channel)(struct wif *wi, int chan);
         int     (*wi_get_channel)(struct wif *wi);
         int     (*wi_set_freq)(struct wif *wi, int freq);
@@ -110,6 +111,7 @@ extern int wi_read(struct wif *wi, unsigned char *h80211, int len,
 extern int wi_write(struct wif *wi, unsigned char *h80211, int len,
 		    struct tx_info *ti);
 extern int wi_set_channel(struct wif *wi, int chan);
+extern int wi_set_ht_channel(struct wif *wi, int chan, unsigned int htval);
 extern int wi_get_channel(struct wif *wi);
 extern int wi_set_freq(struct wif *wi, int freq);
 extern int wi_get_freq(struct wif *wi);
@@ -142,7 +144,7 @@ extern int get_battery_state(void);
 
 /* Client code can create a tap interface */
 /* XXX we can unify the tap & wi stuff in the future, but for now, lets keep
- * them seperate until we learn something.
+ * them separate until we learn something.
  */
 struct tif {
 	int	(*ti_read)(struct tif *ti, void *buf, int len);
