@@ -73,7 +73,7 @@ main (int argc, char **argv)
   size_t password_length;
   uint8_t *output;
   size_t salt_length;
-  uint8_t *salt;
+  char *salt;
   int raw = 0;
   int hex_salt = 0;
   int c;
@@ -141,7 +141,7 @@ main (int argc, char **argv)
       return EXIT_FAILURE;
     }
 
-  salt = (uint8_t *) strdup (argv[0]);
+  salt = strdup (argv[0]);
   salt_length = strlen(argv[0]);
   
   if (hex_salt)
@@ -150,7 +150,7 @@ main (int argc, char **argv)
 
       base16_decode_init (&base16);
       if (!base16_decode_update (&base16,
-				 &salt_length, salt,
+				 &salt_length, (uint8_t *) salt,
 				 salt_length, salt)
 	  || !base16_decode_final (&base16))
 	die ("Invalid salt (expecting hex encoding).\n");
@@ -165,7 +165,7 @@ main (int argc, char **argv)
 
   output = xalloc (output_length);
   pbkdf2_hmac_sha256 (password_length, (const uint8_t *) password,
-		      iterations, salt_length, salt,
+		      iterations, salt_length, (const uint8_t*) salt,
 		      output_length, output);
 
   free (salt);

@@ -371,8 +371,8 @@ pgp_armor(struct nettle_buffer *buffer,
        length -= BINARY_PER_LINE, data += BINARY_PER_LINE)
     {
       unsigned done;
-      uint8_t *p
-	= nettle_buffer_space(buffer, TEXT_PER_LINE);
+      char *p
+	= (char *) nettle_buffer_space(buffer, TEXT_PER_LINE);
       
       if (!p)
 	return 0;
@@ -393,8 +393,8 @@ pgp_armor(struct nettle_buffer *buffer,
 	+ BASE64_ENCODE_FINAL_LENGTH;
       unsigned done;
       
-      uint8_t *p
-	= nettle_buffer_space(buffer, text_size);
+      char *p
+	= (char *) nettle_buffer_space(buffer, text_size);
       if (!p)
 	return 0;
 
@@ -412,7 +412,7 @@ pgp_armor(struct nettle_buffer *buffer,
     return 0;
 
   {
-    uint8_t *p = nettle_buffer_space(buffer, 4);
+    char *p = (char *) nettle_buffer_space(buffer, 4);
     if (!p)
       return 0;
     base64_encode_group(p, crc);

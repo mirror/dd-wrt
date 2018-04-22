@@ -90,7 +90,7 @@ sexp_get_char(struct sexp_input *input)
 	 * character at a time. */
 	if (!input->coding->decode_update(&input->state,
 					  &done, &input->c,
-					  1, &input->c))
+					  1, (const char*) &input->c))
 	  die("Invalid coded data.\n");
 	
 	if (done)
