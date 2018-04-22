@@ -1461,12 +1461,12 @@ int internal_getRouterBrand()
 	nvram_default_get("ath1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WR1043V5
-	setRouter("TP-Link WR1043 v5");
+	setRouter("TP-Link WR1043N v5");
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WR1043V4
-	setRouter("TP-Link WR1043 v4");
+	setRouter("TP-Link WR1043ND v4");
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
