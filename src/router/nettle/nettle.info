@@ -1,10 +1,10 @@
-This is nettle.info, produced by makeinfo version 5.2 from
+This is nettle.info, produced by makeinfo version 6.3 from
 nettle.texinfo.
 
-This manual is for the Nettle library (version 3.2), a low-level
+This manual is for the Nettle library (version 3.4), a low-level
 cryptographic library.
 
-   Originally written 2001 by Niels Möller, updated 2015.
+   Originally written 2001 by Niels Möller, updated 2017.
 
      This manual is placed in the public domain.  You may freely copy
      it, in whole or in part, with or without modification.  Attribution
@@ -24,10 +24,10 @@ This document describes the Nettle low-level cryptographic library.  You
 can use the library directly from your C programs, or write or use an
 object-oriented wrapper for your favorite language or application.
 
-   This manual is for the Nettle library (version 3.2), a low-level
+   This manual is for the Nettle library (version 3.4), a low-level
 cryptographic library.
 
-   Originally written 2001 by Niels Möller, updated 2015.
+   Originally written 2001 by Niels Möller, updated 2017.
 
      This manual is placed in the public domain.  You may freely copy
      it, in whole or in part, with or without modification.  Attribution
@@ -70,6 +70,7 @@ Cipher modes
 
 * CBC::                         
 * CTR::                         
+* CFB::
 * GCM::                         
 * CCM::                         
 
@@ -407,7 +408,7 @@ File: nettle.info,  Node: Hash functions,  Next: Cipher functions,  Prev: Refere
 6.1 Hash functions
 ==================
 
-A cryptographic "hash function" is a function that takes variable size
+A cryptographic “hash function” is a function that takes variable size
 strings, and maps them to strings of fixed, short, length.  There are
 naturally lots of collisions, as there are more possible 1MB files than
 20 byte strings.  But the function is constructed such that is hard to
@@ -448,7 +449,7 @@ File: nettle.info,  Node: Recommended hash functions,  Next: Legacy hash functio
 
 The following hash functions have no known weaknesses, and are suitable
 for new applications.  The SHA2 family of hash functions were specified
-by "NIST", intended as a replacement for SHA1.
+by “NIST”, intended as a replacement for SHA1.
 
 6.1.1.1 SHA256
 ..............
@@ -911,7 +912,7 @@ RIPEMD160 in ‘nettle/ripemd160.h’.
 6.1.2.5 SHA1
 ............
 
-SHA1 is a hash function specified by "NIST" (The U.S. National Institute
+SHA1 is a hash function specified by “NIST” (The U.S. National Institute
 for Standards and Technology).  It outputs hash values of 160 bits, or
 20 octets.  Nettle defines SHA1 in ‘<nettle/sha1.h>’ (and in
 ‘<nettle/sha.h>’, for backwards compatibility).
@@ -1007,9 +1008,18 @@ Nettle’s implementation of HMAC (*note Keyed hash functions::).
 
    Nettle also exports a list of all these hashes.
 
- -- Constant Array: struct nettle_hash ** nettle_hashes
-     This list can be used to dynamically enumerate or search the
-     supported algorithms.  NULL-terminated.
+ -- Function: const struct nettle_hash **nettle_get_hashes(void)
+     Returns a NULL-terminated list of pointers to supported hash
+     functions.  This list can be used to dynamically enumerate or
+     search the supported algorithms.
+
+ -- Macro: nettle_hashes
+     A macro expanding to a call to nettle_get_hashes, so that one could
+     write, e.g., ‘nettle_hashes[0]->name’ for the name of the first
+     hash function on the list.  In earlier versions, this was not a
+     macro but the actual array of pointers.  However, referring
+     directly to the array makes the array size leak into the ABI in
+     some cases.
 
 
 File: nettle.info,  Node: Cipher functions,  Next: Cipher modes,  Prev: Hash functions,  Up: Reference
@@ -1017,8 +1027,8 @@ File: nettle.info,  Node: Cipher functions,  Next: Cipher modes,  Prev: Hash fun
 6.2 Cipher functions
 ====================
 
-A "cipher" is a function that takes a message or "plaintext" and a
-secret "key" and transforms it to a "ciphertext".  Given only the
+A “cipher” is a function that takes a message or “plaintext” and a
+secret “key” and transforms it to a “ciphertext”.  Given only the
 ciphertext, but not the key, it should be hard to find the plaintext.
 Given matching pairs of plaintext and ciphertext, it should be hard to
 find the key.
@@ -1027,15 +1037,15 @@ find the key.
 ciphers.
 
    A block cipher can process data only in fixed size chunks, called
-"blocks".  Typical block sizes are 8 or 16 octets.  To encrypt arbitrary
+“blocks”.  Typical block sizes are 8 or 16 octets.  To encrypt arbitrary
 messages, you usually have to pad it to an integral number of blocks,
 split it into blocks, and then process each block.  The simplest way is
 to process one block at a time, independent of each other.  That mode of
-operation is called "ECB", Electronic Code Book mode.  However, using
+operation is called “ECB”, Electronic Code Book mode.  However, using
 ECB is usually a bad idea.  For a start, plaintext blocks that are equal
 are transformed to ciphertext blocks that are equal; that leaks
 information about the plaintext.  Usually you should apply the cipher is
-some “feedback mode”, "CBC" (Cipher Block Chaining) and "CTR" (Counter
+some “feedback mode”, “CBC” (Cipher Block Chaining) and “CTR” (Counter
 mode) being two of of the most popular.  See *Note Cipher modes::, for
 information on how to apply CBC and CTR with Nettle.
 
@@ -1079,7 +1089,7 @@ keys.  There are several good ciphers that don’t have any weak keys.
    To encrypt a message, you first initialize a cipher context for
 encryption or decryption with a particular key.  You then use the
 context to process plaintext or ciphertext messages.  The initialization
-is known as "key setup".  With Nettle, it is recommended to use each
+is known as “key setup”.  With Nettle, it is recommended to use each
 context struct for only one direction, even if some of the ciphers use a
 single key setup function that can be used for both encryption and
 decryption.
@@ -1645,7 +1655,7 @@ resistant if arbitrary inputs are allowed, and furthermore, the input
 and output is of fixed size.
 
    When using Salsa20 to process a message, one specifies both a key and
-a "nonce", the latter playing a similar rôle to the initialization
+a “nonce”, the latter playing a similar rôle to the initialization
 vector (IV) used with CBC or CTR mode.  One can use the same key for
 several messages, provided one uses a unique random iv for each message.
 The iv is 64 bits (8 octets).  The block counter is initialized to zero
@@ -1827,9 +1837,14 @@ in ‘<nettle/nettle-meta.h>’.
    Nettle also exports a list of all these ciphers without weak keys or
 other oddities.
 
- -- Constant Array: struct nettle_cipher ** nettle_ciphers
-     This list can be used to dynamically enumerate or search the
-     supported algorithms.  NULL-terminated.
+ -- Function: const struct nettle_cipher **nettle_get_ciphers(void)
+     Returns a NULL-terminated list of pointers to supported block
+     ciphers.  This list can be used to dynamically enumerate or search
+     the supported algorithms.
+
+ -- Macro: nettle_ciphers
+     A macro expanding to a call to nettle_get_ciphers.  In earlier
+     versions, this was not a macro but the actual array of pointers.
 
 
 File: nettle.info,  Node: Cipher modes,  Next: Authenticated encryption,  Prev: Cipher functions,  Up: Reference
@@ -1843,14 +1858,14 @@ a message that is larger than the cipher’s block size.  As explained in
 processing them independently with the block cipher (Electronic Code
 Book mode, ECB), leaks information.
 
-   Besides ECB, Nettle provides a two other modes of operation: Cipher
-Block Chaining (CBC), Counter mode (CTR), and a couple of AEAD modes
-(*note Authenticated encryption::).  CBC is widely used, but there are a
-few subtle issues of information leakage, see, e.g., SSH CBC
-vulnerability (http://www.kb.cert.org/vuls/id/958563).  Today, CTR is
-usually preferred over CBC.
+   Besides ECB, Nettle provides several other modes of operation: Cipher
+Block Chaining (CBC), Counter mode (CTR), Cipher Feedback (CFB) and a
+couple of AEAD modes (*note Authenticated encryption::).  CBC is widely
+used, but there are a few subtle issues of information leakage, see,
+e.g., SSH CBC vulnerability (http://www.kb.cert.org/vuls/id/958563).
+Today, CTR is usually preferred over CBC.
 
-   Modes like CBC and CTR provide _no_ message authentication, and
+   Modes like CBC, CTR and CFB provide _no_ message authentication, and
 should always be used together with a MAC (*note Keyed hash functions::)
 or signature to authenticate the message.
 
@@ -1858,6 +1873,7 @@ or signature to authenticate the message.
 
 * CBC::                         
 * CTR::                         
+* CFB::
 
 
 File: nettle.info,  Node: CBC,  Next: CTR,  Prev: Cipher modes,  Up: Cipher modes
@@ -1869,20 +1885,20 @@ When using CBC mode, plaintext blocks are not encrypted independently of
 each other, like in Electronic Cook Book mode.  Instead, when encrypting
 a block in CBC mode, the previous ciphertext block is XORed with the
 plaintext before it is fed to the block cipher.  When encrypting the
-first block, a random block called an "IV", or Initialization Vector, is
+first block, a random block called an “IV”, or Initialization Vector, is
 used as the “previous ciphertext block”.  The IV should be chosen
 randomly, but it need not be kept secret, and can even be transmitted in
 the clear together with the encrypted data.
 
    In symbols, if ‘E_k’ is the encryption function of a block cipher,
-and ‘IV’ is the initialization vector, then ‘n’ plaintext blocks ‘M_1’,…
-‘M_n’ are transformed into ‘n’ ciphertext blocks ‘C_1’,… ‘C_n’ as
-follows:
+and ‘IV’ is the initialization vector, then ‘n’ plaintext blocks
+‘M_1’,... ‘M_n’ are transformed into ‘n’ ciphertext blocks ‘C_1’,...
+‘C_n’ as follows:
 
      C_1 = E_k(IV  XOR M_1)
      C_2 = E_k(C_1 XOR M_2)
 
-     …
+     ...
 
      C_n = E_k(C_(n-1) XOR M_n)
 
@@ -1943,7 +1959,7 @@ if the types of F and CTX don’t match, e.g.  if you try to use an
 ‘struct aes_ctx’ context with the ‘des_encrypt’ function.
 
 
-File: nettle.info,  Node: CTR,  Prev: CBC,  Up: Cipher modes
+File: nettle.info,  Node: CTR,  Next: CFB,  Prev: CBC,  Up: Cipher modes
 
 6.3.2 Counter mode
 ------------------
@@ -1953,19 +1969,19 @@ generator.  The output of the generator is XORed with the data to be
 encrypted.  It can be understood as a way to transform a block cipher to
 a stream cipher.
 
-   The message is divided into ‘n’ blocks ‘M_1’,… ‘M_n’, where ‘M_n’ is
-of size ‘m’ which may be smaller than the block size.  Except for the
+   The message is divided into ‘n’ blocks ‘M_1’,... ‘M_n’, where ‘M_n’
+is of size ‘m’ which may be smaller than the block size.  Except for the
 last block, all the message blocks must be of size equal to the cipher’s
 block size.
 
    If ‘E_k’ is the encryption function of a block cipher, ‘IC’ is the
 initial counter, then the ‘n’ plaintext blocks are transformed into ‘n’
-ciphertext blocks ‘C_1’,… ‘C_n’ as follows:
+ciphertext blocks ‘C_1’,... ‘C_n’ as follows:
 
      C_1 = E_k(IC) XOR M_1
      C_2 = E_k(IC + 1) XOR M_2
 
-     …
+     ...
 
      C_(n-1) = E_k(IC + n - 2) XOR M_(n-1)
      C_n = E_k(IC + n - 1) [1..m] XOR M_n
@@ -2005,6 +2021,82 @@ integer, in network byte order.  For the last block, ‘E_k(IC + n - 1)
  -- Macro: CTR_CRYPT (CTX, F, LENGTH, DST, SRC)
      A simpler way to invoke ‘ctr_crypt’.  The first argument is a
      pointer to a context struct as defined by ‘CTR_CTX’, and the second
+     argument is an encryption function following Nettle’s conventions.
+     The last three arguments define the source and destination area for
+     the operation.
+
+
+File: nettle.info,  Node: CFB,  Prev: CTR,  Up: Cipher modes
+
+6.3.3 Cipher Feedback mode
+--------------------------
+
+Cipher Feedback mode (CFB) being a close relative to both CBC mode and
+CTR mode borrows some characteristics from stream ciphers.
+
+   The message is divided into ‘n’ blocks ‘M_1’,... ‘M_n’, where ‘M_n’
+is of size ‘m’ which may be smaller than the block size.  Except for the
+last block, all the message blocks must be of size equal to the cipher’s
+block size.
+
+   If ‘E_k’ is the encryption function of a block cipher, ‘IV’ is the
+initialization vector, then the ‘n’ plaintext blocks are transformed
+into ‘n’ ciphertext blocks ‘C_1’,... ‘C_n’ as follows:
+
+     C_1 = E_k(IV) XOR M_1
+     C_2 = E_k(C_1) XOR M_2
+
+     ...
+
+     C_(n-1) = E_k(C_(n - 2)) XOR M_(n-1)
+     C_n = E_k(C_(n - 1)) [1..m] XOR M_n
+
+   Nettle’s includes two functions for applying a block cipher in Cipher
+Feedback (CFB) mode, one for encryption and one for decryption.  These
+functions uses ‘void *’ to pass cipher contexts around.
+
+ -- Function: void cfb_encrypt (const void *CTX, nettle_cipher_func *F,
+          size_t BLOCK_SIZE, uint8_t *IV, size_t LENGTH, uint8_t *DST,
+          const uint8_t *SRC)
+ -- Function: void cfb_decrypt (const void *CTX, nettle_cipher_func *F,
+          size_t BLOCK_SIZE, uint8_t *IV, size_t LENGTH, uint8_t *DST,
+          const uint8_t *SRC)
+
+     Applies the encryption or decryption function F in CFB mode.  The
+     final ciphertext block processed is copied into IV before
+     returning, so that a large message can be processed by a sequence
+     of calls to ‘cfb_encrypt’.  Note that for CFB mode internally uses
+     encryption only function and hence F should always be the
+     encryption function for the underlying block cipher.
+
+     When a message is encrypted using a sequence of calls to
+     ‘cfb_encrypt’, all but the last call _must_ use a length that is a
+     multiple of the block size.
+
+   Like for CBC, there are also a couple of helper macros.
+
+ -- Macro: CFB_CTX (CONTEXT_TYPE, BLOCK_SIZE)
+     Expands to
+          {
+             context_type ctx;
+             uint8_t iv[block_size];
+          }
+
+ -- Macro: CFB_SET_IV(CTX, IV)
+     First argument is a pointer to a context struct as defined by
+     ‘CFB_CTX’, and the second is a pointer to an initialization vector
+     that is copied into that context.
+
+ -- Macro: CFB_ENCRYPT (CTX, F, LENGTH, DST, SRC)
+     A simpler way to invoke ‘cfb_encrypt’.  The first argument is a
+     pointer to a context struct as defined by ‘CFB_CTX’, and the second
+     argument is an encryption function following Nettle’s conventions.
+     The last three arguments define the source and destination area for
+     the operation.
+
+ -- Macro: CFB_DECRYPT (CTX, F, LENGTH, DST, SRC)
+     A simpler way to invoke ‘cfb_decrypt’.  The first argument is a
+     pointer to a context struct as defined by ‘CFB_CTX’, and the second
      argument is an encryption function following Nettle’s conventions.
      The last three arguments define the source and destination area for
      the operation.
@@ -2873,9 +2965,14 @@ functions.  It is defined in ‘<nettle/nettle-meta.h>’.
 
    Nettle also exports a list of all these constructions.
 
- -- Constant Array: struct nettle_aead ** nettle_aeads
-     This list can be used to dynamically enumerate or search the
-     supported algorithms.  NULL-terminated.
+ -- Function: const struct nettle_aead **nettle_get_aeads(void)
+     Returns a NULL-terminated list of pointers to supported
+     algorithms.This list can be used to dynamically enumerate or search
+     the supported algorithms.
+
+ -- Macro: nettle_aeads
+     A macro expanding to a call to nettle_get_aeads.  In earlier
+     versions, this was not a macro but the actual array of pointers.
 
 
 File: nettle.info,  Node: Keyed hash functions,  Next: Key derivation functions,  Prev: Authenticated encryption,  Up: Reference
@@ -2883,7 +2980,7 @@ File: nettle.info,  Node: Keyed hash functions,  Next: Key derivation functions,
 6.5 Keyed Hash Functions
 ========================
 
-A "keyed hash function", or "Message Authentication Code" (MAC) is a
+A “keyed hash function”, or “Message Authentication Code” (MAC) is a
 function that takes a key and a message, and produces fixed size MAC.
 It should be hard to compute a message and a matching MAC without
 knowledge of the key.  It should also be hard to compute the key given
@@ -3313,14 +3410,56 @@ File: nettle.info,  Node: Key derivation functions,  Next: Public-key algorithms
 6.6 Key derivation Functions
 ============================
 
-A "key derivation function" (KDF) is a function that from a given
+A “key derivation function” (KDF) is a function that from a given
 symmetric key derives other symmetric keys.  A sub-class of KDFs is the
-"password-based key derivation functions" (PBKDFs), which take as input
+“password-based key derivation functions” (PBKDFs), which take as input
 a password or passphrase, and its purpose is typically to strengthen it
 and protect against certain pre-computation attacks by using salting and
 expensive computation.
 
-6.6.1 PBKDF2
+6.6.1 HKDF: HMAC-based Extract-and-Expand
+-----------------------------------------
+
+HKDF is a key derivation function used as a building block of
+higher-level protocols like TLS 1.3.  It is a derivation function based
+on HMAC described in ‘RFC 5869’, and is split into two logical modules,
+called ’extract’ and ’expand’.  The extract module takes an initial
+secret and a random salt to "extract" a fixed-length pseudorandom key
+(PRK). The second stage takes as input the previous PRK and some
+informational data (e.g., text) and expands them into multiple keys.
+
+   Nettle’s HKDF functions are defined in ‘<nettle/hkdf.h>’.  There are
+two abstract functions for the extract and expand operations that
+operate on any HMAC implemented via the ‘nettle_hash_update_func’, and
+‘nettle_hash_digest_func’ interfaces.
+
+ -- Function: void hkdf_extract (void *mac_ctx, nettle_hash_update_func
+          *update, nettle_hash_digest_func *digest, size_t
+          digest_size,size_t secret_size, const uint8_t *secret, uint8_t
+          *dst)
+     Extract a Pseudorandom Key (PRK) from a secret and a salt according
+     to HKDF. The HMAC must have been initialized, with its key being
+     the salt for the Extract operation.  This function will call the
+     UPDATE and DIGEST functions passing the MAC_CTX context parameter
+     as an argument in order to compute digest of size DIGEST_SIZE.
+     Inputs are the secret SECRET of length SECRET_LENGTH.  The output
+     length is fixed to DIGEST_SIZE octets, thus the output buffer DST
+     must have room for at least DIGEST_SIZE octets.
+
+ -- Function: void hkdf_expand (void *mac_ctx, nettle_hash_update_func
+          *update, nettle_hash_digest_func *digest, size_t digest_size,
+          size_t info_size, const uint8_t *info, size_t length, uint8_t
+          *dst)
+     Expand a Pseudorandom Key (PRK) to an arbitrary size according to
+     HKDF. The HMAC must have been initialized, with its key being the
+     PRK from the Extract operation.  This function will call the UPDATE
+     and DIGEST functions passing the MAC_CTX context parameter as an
+     argument in order to compute digest of size DIGEST_SIZE.  Inputs
+     are the info INFO of length INFO_LENGTH, and the desired derived
+     output length LENGTH.  The output buffer is DST which must have
+     room for at least LENGTH octets.
+
+6.6.2 PBKDF2
 ------------
 
 The most well known PBKDF is the ‘PKCS #5 PBKDF2’ described in ‘RFC
@@ -3358,13 +3497,13 @@ correctly.
      desired derived output length LENGTH.  The output buffer is DST
      which must have room for at least LENGTH octets.
 
-6.6.2 Concrete PBKDF2 functions
+6.6.3 Concrete PBKDF2 functions
 -------------------------------
 
 Now we come to the specialized PBKDF2 functions, which are easier to use
 than the general PBKDF2 function.
 
-6.6.2.1 PBKDF2-HMAC-SHA1
+6.6.3.1 PBKDF2-HMAC-SHA1
 ........................
 
  -- Function: void pbkdf2_hmac_sha1 (size_t KEY_LENGTH, const uint8_t
@@ -3375,7 +3514,7 @@ than the general PBKDF2 function.
      SALT_LENGTH, with iteration counter ITERATIONS (> 0).  The output
      buffer is DST which must have room for at least LENGTH octets.
 
-6.6.2.2 PBKDF2-HMAC-SHA256
+6.6.3.2 PBKDF2-HMAC-SHA256
 ..........................
 
  -- Function: void pbkdf2_hmac_sha256 (size_t KEY_LENGTH, const uint8_t
@@ -3398,20 +3537,20 @@ numbers.  In order to use the public-key features of Nettle, you must
 install GMP, at least version 3.0, before compiling Nettle, and you need
 to link your programs with ‘-lhogweed -lnettle -lgmp’.
 
-   The concept of "Public-key" encryption and digital signatures was
+   The concept of “Public-key” encryption and digital signatures was
 discovered by Whitfield Diffie and Martin E. Hellman and described in a
 paper 1976.  In traditional, “symmetric”, cryptography, sender and
 receiver share the same keys, and these keys must be distributed in a
 secure way.  And if there are many users or entities that need to
 communicate, each _pair_ needs a shared secret key known by nobody else.
 
-   Public-key cryptography uses trapdoor one-way functions.  A "one-way
-function" is a function ‘F’ such that it is easy to compute the value
+   Public-key cryptography uses trapdoor one-way functions.  A “one-way
+function” is a function ‘F’ such that it is easy to compute the value
 ‘F(x)’ for any ‘x’, but given a value ‘y’, it is hard to compute a
 corresponding ‘x’ such that ‘y = F(x)’.  Two examples are cryptographic
 hash functions, and exponentiation in certain groups.
 
-   A "trapdoor one-way function" is a function ‘F’ that is one-way,
+   A “trapdoor one-way function” is a function ‘F’ that is one-way,
 unless one knows some secret information about ‘F’.  If one knows the
 secret, it is easy to compute both ‘F’ and it’s inverse.  If this sounds
 strange, look at the RSA example below.
@@ -3422,7 +3561,7 @@ encryption functions in Nettle are not yet documented; the rest of this
 chapter is about digital signatures.
 
    To use a digital signature algorithm, one must first create a
-"key-pair": A public key and a corresponding private key.  The private
+“key-pair”: A public key and a corresponding private key.  The private
 key is used to sign messages, while the public key is used for verifying
 that that signatures and messages match.  Some care must be taken when
 distributing the public key; it need not be kept secret, but if a bad
@@ -3741,6 +3880,55 @@ functions:
      DER-encoding of the digest together with an object identifier for
      the used hash algorithm.
 
+   While the above functions for the RSA signature operations use the
+‘PKCS#1’ padding scheme, Nettle also provides the variants based on the
+PSS padding scheme, specified in ‘RFC 3447’.  These variants take
+advantage of a randomly choosen salt value, which could enhance the
+security by causing output to be different for equivalent inputs.
+However, assuming the same security level as inverting the RSA
+algorithm, a longer salt value does not always mean a better security
+<http://www.iacr.org/archive/eurocrypt2002/23320268/coron.pdf>.  The
+typical choices of the length are between 0 and the digest size of the
+underlying hash function.
+
+   Creating an RSA signature with the PSS padding scheme is done with
+one of the following functions:
+
+ -- Function: int rsa_pss_sha256_sign_digest_tr(const struct
+          rsa_public_key *PUB, const struct rsa_private_key *KEY, void
+          *RANDOM_CTX, nettle_random_func *RANDOM, size_t SALT_LENGTH,
+          const uint8_t *SALT, const uint8_t *DIGEST, mpz_t SIGNATURE)
+ -- Function: int rsa_pss_sha384_sign_digest_tr(const struct
+          rsa_public_key *PUB, const struct rsa_private_key *KEY, void
+          *RANDOM_CTX, nettle_random_func *RANDOM, size_t SALT_LENGTH,
+          const uint8_t *SALT, const uint8_t *DIGEST, mpz_t SIGNATURE)
+ -- Function: int rsa_pss_sha512_sign_digest_tr(const struct
+          rsa_public_key *PUB, const struct rsa_private_key *KEY, void
+          *RANDOM_CTX, nettle_random_func *RANDOM, size_t SALT_LENGTH,
+          const uint8_t *SALT, const uint8_t *DIGEST, mpz_t SIGNATURE)
+     Creates a signature using the PSS padding scheme.  SALT should
+     point to a salt string of size SALT_LENGTH.  DIGEST should point to
+     a digest of size ‘SHA256_DIGEST_SIZE’, ‘SHA384_DIGEST_SIZE’, or
+     ‘SHA512_DIGEST_SIZE’respectively.  The signature is stored in
+     SIGNATURE (which must have been ‘mpz_init’:ed earlier).  Returns
+     one on success, or zero on failure.
+
+   Verifying an RSA signature with the PSS padding scheme is done with
+one of the following functions:
+
+ -- Function: int rsa_pss_sha256_verify_digest (const struct
+          rsa_public_key *KEY, size_t SALT_LENGTH, const uint8_t
+          *DIGEST, const mpz_t SIGNATURE)
+ -- Function: int rsa_pss_sha384_verify_digest (const struct
+          rsa_public_key *KEY, size_t SALT_LENGTH, const uint8_t
+          *DIGEST, const mpz_t SIGNATURE)
+ -- Function: int rsa_pss_sha512_verify_digest (const struct
+          rsa_public_key *KEY, size_t SALT_LENGTH, const uint8_t
+          *DIGEST, const mpz_t SIGNATURE)
+     Returns 1 if the signature is valid, or 0 if it isn’t.  DIGEST
+     should point to a digest of size ‘SHA256_DIGEST_SIZE’,
+     ‘SHA384_DIGEST_SIZE’, or ‘SHA512_DIGEST_SIZE’ respectively.
+
    The following function is used to encrypt a clear text message using
 RSA.
  -- Function: int rsa_encrypt (const struct rsa_public_key *KEY, void
@@ -3851,7 +4039,7 @@ values.
 
      g^x = y mod p
 
-   In mathematical speak, ‘x’ is the "discrete logarithm" of ‘y’ mod
+   In mathematical speak, ‘x’ is the “discrete logarithm” of ‘y’ mod
 ‘p’, with respect to the generator ‘g’.  The size of ‘x’ will also be
 about the same size as ‘q’.  The security of the DSA algorithm relies on
 the difficulty of the discrete logarithm problem.  Current algorithms to
@@ -4154,11 +4342,11 @@ elliptic curve discrete logarithm problem.
 considered as integers modulo a specified prime p.  Curves are
 represented as a ‘struct ecc_curve’.  It also supports curve25519, which
 uses a different form of curve.  Supported curves are declared in
-‘<nettle/ecc-curve.h>’, e.g., ‘nettle_secp_256r1’ for a standardized
-curve using the 256-bit prime p = 2^{256} - 2^{224} + 2^{192} + 2^{96} -
-1.  The contents of these structs is not visible to nettle users.  The
-“bitsize of the curve” is used as a shorthand for the bitsize of the
-curve’s prime p, e.g., 256 bits for ‘nettle_secp_256r1’.
+‘<nettle/ecc-curve.h>’, e.g., call ‘nettle_get_secp_256r1’ for a
+standardized curve using the 256-bit prime p = 2^{256} - 2^{224} +
+2^{192} + 2^{96} - 1.  The contents of these structs is not visible to
+nettle users.  The “bitsize of the curve” is used as a shorthand for the
+bitsize of the curve’s prime p, e.g., 256 bits for the SECP 256R1 curve.
 
 * Menu:
 
@@ -4190,7 +4378,7 @@ be side-channel silent.  The side-channel attacks considered are:
      information about your secrets.  This type of attack can even cross
      virtual machine boundaries.
 
-   Nettle’s ECC implementation is designed to be "side-channel silent",
+   Nettle’s ECC implementation is designed to be “side-channel silent”,
 and not leak any information to these attacks.  Timing and memory
 accesses depend only on the size of the input data and its location in
 memory, not on the actual data bits.  This implies a performance penalty
@@ -4287,7 +4475,7 @@ used.
      signature for the message digest DIGEST (of LENGTH octets).
      Returns 1 if the signature is valid, otherwise 0.
 
-   Finally, to generation of new an ECDSA key pairs
+   Finally, generating a new ECDSA key pair:
 
  -- Function: void ecdsa_generate_keypair (struct ecc_point *PUB, struct
           ecc_scalar *KEY, void *RANDOM_CTX, nettle_random_func
@@ -4553,19 +4741,19 @@ output is determined by the internal state alone.  Let’s call it the
 generator’s key.  The key is initialized from the unguessable seed.
 Important properties of a generator are:
 
-"Key-hiding"
+“Key-hiding”
      An attacker observing the output should not be able to recover the
      generator’s key.
 
-"Independence of outputs"
+“Independence of outputs”
      Observing some of the output should not help the attacker to guess
      previous or future output.
 
-"Forward secrecy"
+“Forward secrecy”
      Even if an attacker compromises the generator’s key, he should not
      be able to guess the generator output _before_ the key compromise.
 
-"Recovery from key compromise"
+“Recovery from key compromise”
      If an attacker compromises the generator’s key, he can compute
      _all_ future output.  This is inevitable if the generator is seeded
      only once, at startup.  However, the generator can provide a
@@ -4625,7 +4813,7 @@ eventually recover after a key compromise.
 generator’s current key.  After each request for output, another 256
 bits are generated which replace the key.  This ensures forward secrecy.
 
-   Yarrow can also use a "seed file" to save state across restarts.
+   Yarrow can also use a “seed file” to save state across restarts.
 Yarrow is seeded by either feeding it the contents of the previous seed
 file, or feeding it input from its sources until a slow reseed happens.
 
@@ -4708,13 +4896,13 @@ User keyboard input.
  -- Function: unsigned yarrow_key_event_estimate (struct
           yarrow_key_event_ctx *CTX, unsigned KEY, unsigned TIME)
      KEY is the id of the key (ASCII value, hardware key code, X keysym,
-     …, it doesn’t matter), and TIME is the timestamp of the event.  The
-     time must be given in units matching the resolution by which you
-     read the clock.  If you read the clock with microsecond precision,
-     TIME should be provided in units of microseconds.  But if you use
-     ‘gettimeofday’ on a typical Unix system where the clock ticks 10 or
-     so microseconds at a time, TIME should be given in units of 10
-     microseconds.
+     ..., it doesn’t matter), and TIME is the timestamp of the event.
+     The time must be given in units matching the resolution by which
+     you read the clock.  If you read the clock with microsecond
+     precision, TIME should be provided in units of microseconds.  But
+     if you use ‘gettimeofday’ on a typical Unix system where the clock
+     ticks 10 or so microseconds at a time, TIME should be given in
+     units of 10 microseconds.
 
      Returns an entropy estimate, in bits, suitable for calling
      ‘yarrow256_update’.  Usually, 0, 1 or 2 bits.
@@ -5111,6 +5299,13 @@ Function and Concept Index
 * CCM_MAX_MSG_SIZE:                      CCM.                 (line  76)
 * ccm_set_nonce:                         CCM.                 (line  80)
 * ccm_update:                            CCM.                 (line  86)
+* CFB Mode:                              CFB.                 (line   6)
+* CFB_CTX:                               CFB.                 (line  50)
+* cfb_decrypt:                           CFB.                 (line  33)
+* CFB_DECRYPT:                           CFB.                 (line  69)
+* cfb_encrypt:                           CFB.                 (line  30)
+* CFB_ENCRYPT:                           CFB.                 (line  62)
+* CFB_SET_IV(CTX,:                       CFB.                 (line  57)
 * chacha_crypt:                          Cipher functions.    (line 482)
 * chacha_poly1305_decrypt:               ChaCha-Poly1305.     (line  68)
 * chacha_poly1305_digest:                ChaCha-Poly1305.     (line  74)
@@ -5122,6 +5317,7 @@ Function and Concept Index
 * chacha_set_nonce:                      Cipher functions.    (line 476)
 * Cipher:                                Cipher functions.    (line   6)
 * Cipher Block Chaining:                 CBC.                 (line   6)
+* Cipher Feedback Mode:                  CFB.                 (line   6)
 * Collision-resistant:                   Hash functions.      (line  18)
 * Conditional entropy:                   Randomness.          (line  51)
 * Counter Mode:                          CTR.                 (line   6)
@@ -5258,6 +5454,12 @@ Function and Concept Index
 * gosthash94_update:                     Legacy hash functions.
                                                               (line 205)
 * Hash function:                         Hash functions.      (line   6)
+* HKDF:                                  Key derivation functions.
+                                                              (line  16)
+* hkdf_expand:                           Key derivation functions.
+                                                              (line  42)
+* hkdf_extract:                          Key derivation functions.
+                                                              (line  29)
 * HMAC:                                  HMAC.                (line   6)
 * HMAC_CTX:                              HMAC.                (line  58)
 * hmac_digest:                           HMAC.                (line  44)
@@ -5281,7 +5483,7 @@ Function and Concept Index
 * hmac_sha512_update:                    HMAC.                (line 193)
 * hmac_update:                           HMAC.                (line  37)
 * KDF:                                   Key derivation functions.
-                                                              (line   6)
+                                                              (line  58)
 * Key Derivation Function:               Key derivation functions.
                                                               (line   6)
 * Keyed Hash Function:                   Keyed hash functions.
@@ -5318,29 +5520,39 @@ Function and Concept Index
                                                               (line   6)
 * nettle_aeads:                          nettle_aead abstraction.
                                                               (line   6)
+* nettle_aeads <1>:                      nettle_aead abstraction.
+                                                              (line  33)
 * nettle_cipher:                         Cipher functions.    (line 774)
 * nettle_ciphers:                        Cipher functions.    (line 774)
+* nettle_ciphers <1>:                    Cipher functions.    (line 821)
+* nettle_get_aeads:                      nettle_aead abstraction.
+                                                              (line   6)
+* nettle_get_ciphers:                    Cipher functions.    (line 774)
+* nettle_get_hashes:                     nettle_hash abstraction.
+                                                              (line   6)
 * nettle_hash:                           nettle_hash abstraction.
                                                               (line   6)
 * nettle_hashes:                         nettle_hash abstraction.
                                                               (line   6)
+* nettle_hashes <1>:                     nettle_hash abstraction.
+                                                              (line  38)
 * One-way:                               Hash functions.      (line  14)
 * One-way function:                      Public-key algorithms.
                                                               (line  18)
 * Password Based Key Derivation Function: Key derivation functions.
-                                                              (line   6)
+                                                              (line  58)
 * PBKDF:                                 Key derivation functions.
-                                                              (line   6)
+                                                              (line  58)
 * pbkdf2:                                Key derivation functions.
-                                                              (line  25)
+                                                              (line  67)
 * PBKDF2:                                Key derivation functions.
-                                                              (line  41)
+                                                              (line  83)
 * pbkdf2_hmac_sha1:                      Key derivation functions.
-                                                              (line  60)
+                                                              (line 102)
 * pbkdf2_hmac_sha256:                    Key derivation functions.
-                                                              (line  71)
+                                                              (line 113)
 * PKCS #5:                               Key derivation functions.
-                                                              (line   6)
+                                                              (line  58)
 * poly1305_aes_digest:                   Poly1305.            (line  56)
 * poly1305_aes_set_key:                  Poly1305.            (line  43)
 * poly1305_aes_set_nonce:                Poly1305.            (line  47)
@@ -5354,12 +5566,12 @@ Function and Concept Index
                                                               (line 136)
 * ripemd160_update:                      Legacy hash functions.
                                                               (line 139)
-* rsa_compute_root:                      RSA.                 (line 311)
-* rsa_compute_root_tr(const:             RSA.                 (line 305)
-* rsa_decrypt:                           RSA.                 (line 286)
-* rsa_decrypt_tr:                        RSA.                 (line 295)
-* rsa_encrypt:                           RSA.                 (line 279)
-* rsa_generate_keypair:                  RSA.                 (line 317)
+* rsa_compute_root:                      RSA.                 (line 360)
+* rsa_compute_root_tr(const:             RSA.                 (line 354)
+* rsa_decrypt:                           RSA.                 (line 335)
+* rsa_decrypt_tr:                        RSA.                 (line 344)
+* rsa_encrypt:                           RSA.                 (line 328)
+* rsa_generate_keypair:                  RSA.                 (line 366)
 * rsa_md5_sign:                          RSA.                 (line 203)
 * rsa_md5_sign_digest:                   RSA.                 (line 218)
 * rsa_md5_sign_digest_tr(const:          RSA.                 (line 171)
@@ -5372,6 +5584,12 @@ Function and Concept Index
 * rsa_private_key_clear:                 RSA.                 (line 104)
 * rsa_private_key_init:                  RSA.                 (line  97)
 * rsa_private_key_prepare:               RSA.                 (line 117)
+* rsa_pss_sha256_sign_digest_tr(const:   RSA.                 (line 291)
+* rsa_pss_sha256_verify_digest:          RSA.                 (line 313)
+* rsa_pss_sha384_sign_digest_tr(const:   RSA.                 (line 295)
+* rsa_pss_sha384_verify_digest:          RSA.                 (line 316)
+* rsa_pss_sha512_sign_digest_tr(const:   RSA.                 (line 299)
+* rsa_pss_sha512_verify_digest:          RSA.                 (line 319)
 * rsa_public_key_clear:                  RSA.                 (line 103)
 * rsa_public_key_init:                   RSA.                 (line  96)
 * rsa_public_key_prepare:                RSA.                 (line 116)
@@ -5473,6 +5691,11 @@ Function and Concept Index
 * Side-channel attack:                   Side-channel silence.
                                                               (line   6)
 * Stream Cipher:                         Cipher functions.    (line  12)
+* struct:                                nettle_hash abstraction.
+                                                              (line  33)
+* struct <1>:                            Cipher functions.    (line 816)
+* struct <2>:                            nettle_aead abstraction.
+                                                              (line  28)
 * twofish_decrypt:                       Cipher functions.    (line 767)
 * twofish_encrypt:                       Cipher functions.    (line 760)
 * twofish_set_key:                       Cipher functions.    (line 755)
@@ -5508,47 +5731,48 @@ Function and Concept Index
 
 Tag Table:
 Node: Top543
-Node: Introduction2669
-Node: Copyright4248
-Node: Conventions9098
-Node: Example11252
-Node: Linking12502
-Node: Reference13363
-Node: Hash functions13911
-Node: Recommended hash functions15441
-Node: Legacy hash functions26968
-Node: nettle_hash abstraction34818
-Node: Cipher functions36519
-Node: Cipher modes72210
-Node: CBC73310
-Node: CTR76698
-Node: Authenticated encryption79299
-Node: EAX82652
-Node: GCM88825
-Node: CCM101662
-Node: ChaCha-Poly1305114448
-Node: nettle_aead abstraction118323
-Node: Keyed hash functions119786
-Node: HMAC121420
-Node: UMAC129440
-Node: Poly1305135315
-Node: Key derivation functions137972
-Node: Public-key algorithms141720
-Node: RSA145775
-Node: RSA-Footnotes163576
-Ref: RSA-Footnote-1163629
-Node: DSA163807
-Node: Elliptic curves179283
-Node: Side-channel silence180636
-Node: ECDSA182079
-Node: Curve 25519186834
-Node: Randomness192352
-Node: ASCII encoding207688
-Node: Miscellaneous functions214415
-Node: Compatibility functions215575
-Node: Nettle soup216923
-Node: Installation217920
-Node: Index219296
+Node: Introduction2677
+Node: Copyright4256
+Node: Conventions9106
+Node: Example11260
+Node: Linking12510
+Node: Reference13371
+Node: Hash functions13919
+Node: Recommended hash functions15453
+Node: Legacy hash functions26984
+Node: nettle_hash abstraction34838
+Node: Cipher functions37000
+Node: Cipher modes72964
+Node: CBC74100
+Node: CTR77492
+Node: CFB80105
+Node: Authenticated encryption83270
+Node: EAX86623
+Node: GCM92796
+Node: CCM105633
+Node: ChaCha-Poly1305118419
+Node: nettle_aead abstraction122294
+Node: Keyed hash functions123981
+Node: HMAC125623
+Node: UMAC133643
+Node: Poly1305139518
+Node: Key derivation functions142175
+Node: Public-key algorithms148301
+Node: RSA152372
+Node: RSA-Footnotes172969
+Ref: RSA-Footnote-1173022
+Node: DSA173200
+Node: Elliptic curves188680
+Node: Side-channel silence190039
+Node: ECDSA191486
+Node: Curve 25519196234
+Node: Randomness201752
+Node: ASCII encoding217107
+Node: Miscellaneous functions223834
+Node: Compatibility functions224994
+Node: Nettle soup226342
+Node: Installation227339
+Node: Index228715
 
 End Tag Table
 

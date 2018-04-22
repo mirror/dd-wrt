@@ -91,7 +91,7 @@ PROLOGUE(nettle_ecc_521_modp)
 	adcs	F0, F0, F3, lsr #9
 	C Copy low 9 bits to H, then shift right including carry
 	and	H, F0, T0
-	rrx	F0, F0
+	mov	F0, F0, rrx
 	lsr	F0, F0, #8
 	C Add in F1 = rp[33], with weight 2^1056 = 2^14
 	adds	F0, F0, F1, lsl #14

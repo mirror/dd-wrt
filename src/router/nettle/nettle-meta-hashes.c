@@ -34,7 +34,10 @@
 #endif
 
 #include <stddef.h>
+
 #include "nettle-meta.h"
+
+#undef nettle_hashes
 
 const struct nettle_hash * const nettle_hashes[] = {
   &nettle_md2,
@@ -52,3 +55,9 @@ const struct nettle_hash * const nettle_hashes[] = {
   &nettle_sha3_512,
   NULL
 };
+
+const struct nettle_hash * const *
+nettle_get_hashes (void)
+{
+  return nettle_hashes;
+}

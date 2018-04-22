@@ -612,7 +612,10 @@ bench_openssl_ecdsa_init (unsigned size)
 
   /* This curve isn't supported in this build of openssl */
   if (ctx->key == NULL)
-    return NULL;
+    {
+      free(ctx);
+      return NULL;
+    }
 
   if (!EC_KEY_generate_key( ctx->key))
     die ("Openssl EC_KEY_generate_key failed.\n");

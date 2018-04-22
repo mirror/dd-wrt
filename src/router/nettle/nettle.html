@@ -1,14 +1,14 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
-<!-- This manual is for the Nettle library (version 3.2), a
+<!-- This manual is for the Nettle library (version 3.4), a
 low-level cryptographic library.
 
-Originally written 2001 by Niels Möller, updated 2015.
+Originally written 2001 by Niels Möller, updated 2017.
 
 This manual is placed in the public domain. You may freely copy it, in
 whole or in part, with or without modification. Attribution is
 appreciated, but not required. -->
-<!-- Created by GNU Texinfo 5.2, http://www.gnu.org/software/texinfo/ -->
+<!-- Created by GNU Texinfo 6.3, http://www.gnu.org/software/texinfo/ -->
 <head>
 <title>Nettle: a low-level cryptographic library</title>
 
@@ -25,16 +25,16 @@ appreciated, but not required. -->
 <style type="text/css">
 <!--
 a.summary-letter {text-decoration: none}
+blockquote.indentedblock {margin-right: 0em}
+blockquote.smallindentedblock {margin-right: 0em; font-size: smaller}
 blockquote.smallquotation {font-size: smaller}
 div.display {margin-left: 3.2em}
 div.example {margin-left: 3.2em}
-div.indentedblock {margin-left: 3.2em}
 div.lisp {margin-left: 3.2em}
 div.smalldisplay {margin-left: 3.2em}
 div.smallexample {margin-left: 3.2em}
-div.smallindentedblock {margin-left: 3.2em; font-size: smaller}
 div.smalllisp {margin-left: 3.2em}
-kbd {font-style:oblique}
+kbd {font-style: oblique}
 pre.display {font-family: inherit}
 pre.format {font-family: inherit}
 pre.menu-comment {font-family: serif}
@@ -43,10 +43,9 @@ pre.smalldisplay {font-family: inherit; font-size: smaller}
 pre.smallexample {font-size: smaller}
 pre.smallformat {font-family: inherit; font-size: smaller}
 pre.smalllisp {font-size: smaller}
-span.nocodebreak {white-space:nowrap}
-span.nolinebreak {white-space:nowrap}
-span.roman {font-family:serif; font-weight:normal}
-span.sansserif {font-family:sans-serif; font-weight:normal}
+span.nolinebreak {white-space: nowrap}
+span.roman {font-family: initial; font-weight: normal}
+span.sansserif {font-family: sans-serif; font-weight: normal}
 ul.no-bullet {list-style: none}
 -->
 </style>
@@ -54,7 +53,7 @@ ul.no-bullet {list-style: none}
 
 </head>
 
-<body lang="en" bgcolor="#FFFFFF" text="#000000" link="#0000FF" vlink="#800080" alink="#FF0000">
+<body lang="en">
 <h1 class="settitle" align="center">Nettle: a low-level cryptographic library</h1>
 
 
@@ -119,6 +118,7 @@ ul.no-bullet {list-style: none}
     <ul class="no-bullet">
       <li><a name="toc-Cipher-Block-Chaining" href="#CBC">6.3.1 Cipher Block Chaining</a></li>
       <li><a name="toc-Counter-mode" href="#CTR">6.3.2 Counter mode</a></li>
+      <li><a name="toc-Cipher-Feedback-mode" href="#CFB">6.3.3 Cipher Feedback mode</a></li>
     </ul></li>
     <li><a name="toc-Authenticated-encryption-with-associated-data" href="#Authenticated-encryption">6.4 Authenticated encryption with associated data</a>
     <ul class="no-bullet">
@@ -160,11 +160,12 @@ ul.no-bullet {list-style: none}
     </ul></li>
     <li><a name="toc-Key-derivation-Functions" href="#Key-derivation-functions">6.6 Key derivation Functions</a>
     <ul class="no-bullet">
-      <li><a name="toc-PBKDF2" href="#PBKDF2">6.6.1 <acronym>PBKDF2</acronym></a></li>
-      <li><a name="toc-Concrete-PBKDF2-functions" href="#Concrete-PBKDF2-functions">6.6.2 Concrete <acronym>PBKDF2</acronym> functions</a>
+      <li><a name="toc-HKDF_003a-HMAC_002dbased-Extract_002dand_002dExpand" href="#HKDF_003a-HMAC_002dbased-Extract_002dand_002dExpand">6.6.1 HKDF: HMAC-based Extract-and-Expand</a></li>
+      <li><a name="toc-PBKDF2" href="#PBKDF2">6.6.2 <acronym>PBKDF2</acronym></a></li>
+      <li><a name="toc-Concrete-PBKDF2-functions" href="#Concrete-PBKDF2-functions">6.6.3 Concrete <acronym>PBKDF2</acronym> functions</a>
       <ul class="no-bullet">
-        <li><a name="toc-PBKDF2_002dHMAC_002dSHA1" href="#PBKDF2_002dHMAC_002dSHA1">6.6.2.1 <acronym>PBKDF2-HMAC-SHA1</acronym></a></li>
-        <li><a name="toc-PBKDF2_002dHMAC_002dSHA256" href="#PBKDF2_002dHMAC_002dSHA256">6.6.2.2 <acronym>PBKDF2-HMAC-SHA256</acronym></a></li>
+        <li><a name="toc-PBKDF2_002dHMAC_002dSHA1" href="#PBKDF2_002dHMAC_002dSHA1">6.6.3.1 <acronym>PBKDF2-HMAC-SHA1</acronym></a></li>
+        <li><a name="toc-PBKDF2_002dHMAC_002dSHA256" href="#PBKDF2_002dHMAC_002dSHA256">6.6.3.2 <acronym>PBKDF2-HMAC-SHA256</acronym></a></li>
       </ul></li>
     </ul></li>
     <li><a name="toc-Public_002dkey-algorithms-1" href="#Public_002dkey-algorithms">6.7 Public-key algorithms</a>
@@ -213,10 +214,10 @@ Next: <a href="#Introduction" accesskey="n" rel="next">Introduction</a>, Previou
 can use the library directly from your C programs, or write or use an
 object-oriented wrapper for your favorite language or application.
 </p>
-<p>This manual is for the Nettle library (version 3.2), a
+<p>This manual is for the Nettle library (version 3.4), a
 low-level cryptographic library.
 </p>
-<p>Originally written 2001 by Niels Möller, updated 2015.
+<p>Originally written 2001 by Niels Möller, updated 2017.
 </p>
 <blockquote>
 <p>This manual is placed in the public domain. You may freely copy it, in
@@ -245,6 +246,7 @@ appreciated, but not required.
 <tr><td align="left" valign="top">&bull; <a href="#Index" accesskey="9">Index</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Function and concept index.
 </td></tr>
 <tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+
 </pre></th></tr><tr><th colspan="3" align="left" valign="top"><pre class="menu-comment"> &mdash; The Detailed Node Listing &mdash;
 
 Reference
@@ -270,6 +272,7 @@ Reference
 <tr><td align="left" valign="top">&bull; <a href="#Compatibility-functions">Compatibility functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 <tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+
 Hash functions
 
 </pre></th></tr><tr><td align="left" valign="top">&bull; <a href="#Recommended-hash-functions">Recommended hash functions</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
@@ -279,17 +282,21 @@ Hash functions
 <tr><td align="left" valign="top">&bull; <a href="#nettle_005fhash-abstraction">nettle_hash abstraction</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 <tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+
 Cipher modes
 
 </pre></th></tr><tr><td align="left" valign="top">&bull; <a href="#CBC">CBC</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 <tr><td align="left" valign="top">&bull; <a href="#CTR">CTR</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#CFB">CFB</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
 <tr><td align="left" valign="top">&bull; <a href="#GCM">GCM</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 <tr><td align="left" valign="top">&bull; <a href="#CCM">CCM</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 <tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+
 Keyed Hash Functions
 
 </pre></th></tr><tr><td align="left" valign="top">&bull; <a href="#HMAC">HMAC</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
@@ -297,6 +304,7 @@ Keyed Hash Functions
 <tr><td align="left" valign="top">&bull; <a href="#UMAC">UMAC</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 <tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+
 Public-key algorithms
 
 </pre></th></tr><tr><td align="left" valign="top">&bull; <a href="#RSA">RSA</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">The RSA public key algorithm.
@@ -306,6 +314,7 @@ Public-key algorithms
 <tr><td align="left" valign="top">&bull; <a href="#Elliptic-curves">Elliptic curves</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">Elliptic curves and ECDSA
 </td></tr>
 <tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+
 <acronym>Elliptic curves</acronym>
 
 </pre></th></tr><tr><td align="left" valign="top">&bull; <a href="#Side_002dchannel-silence">Side-channel silence</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
@@ -315,6 +324,7 @@ Public-key algorithms
 <tr><td align="left" valign="top">&bull; <a href="#Curve-25519">Curve 25519</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 <tr><th colspan="3" align="left" valign="top"><pre class="menu-comment">
+
 </pre></th></tr></table>
 
 
@@ -1436,6 +1446,7 @@ Previous: <a href="#Legacy-hash-functions" accesskey="p" rel="prev">Legacy hash 
 <h4 class="subsection">6.1.3 The <code>struct nettle_hash</code> abstraction</h4>
 <a name="index-nettle_005fhash"></a>
 <a name="index-nettle_005fhashes"></a>
+<a name="index-nettle_005fget_005fhashes"></a>
 
 <p>Nettle includes a struct including information about the supported hash
 functions. It is defined in <samp>&lt;nettle/nettle-meta.h&gt;</samp>, and is used
@@ -1468,9 +1479,19 @@ by Nettle&rsquo;s implementation of <acronym>HMAC</acronym> (see <a href="#Keyed
 <p>Nettle also exports a list of all these hashes.
 </p>
 <dl>
-<dt><a name="index-nettle_005fhashes-1"></a>Constant Array: <em>struct nettle_hash **</em> <strong>nettle_hashes</strong></dt>
-<dd><p>This list can be used to dynamically enumerate or search the supported
-algorithms. NULL-terminated.
+<dt><a name="index-struct"></a>Function: <em>const</em> <strong>struct</strong> <em>nettle_hash **nettle_get_hashes(void)</em></dt>
+<dd><p>Returns a NULL-terminated list of pointers to supported hash functions.
+This list can be used to dynamically enumerate or search the supported
+algorithms.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-nettle_005fhashes-1"></a>Macro: <strong>nettle_hashes</strong></dt>
+<dd><p>A macro expanding to a call to nettle_get_hashes, so that one could
+write, e.g., <code>nettle_hashes[0]-&gt;name</code> for the name of the first
+hash function on the list. In earlier versions, this was not a macro but
+the actual array of pointers. However, referring directly to the array
+makes the array size leak into the ABI in some cases.
 </p></dd></dl>
 
 <hr>
@@ -2363,6 +2384,7 @@ in any other way.
 <h4 class="subsection">6.2.13 The <code>struct nettle_cipher</code> abstraction</h4>
 <a name="index-nettle_005fcipher"></a>
 <a name="index-nettle_005fciphers"></a>
+<a name="index-nettle_005fget_005fciphers"></a>
 
 <p>Nettle includes a struct including information about some of the more
 regular cipher functions. It can be useful for applications that need a
@@ -2404,9 +2426,16 @@ ones without weak keys or other oddities.
 other oddities.
 </p>
 <dl>
-<dt><a name="index-nettle_005fciphers-1"></a>Constant Array: <em>struct nettle_cipher **</em> <strong>nettle_ciphers</strong></dt>
-<dd><p>This list can be used to dynamically enumerate or search the supported
-algorithms. NULL-terminated.
+<dt><a name="index-struct-1"></a>Function: <em>const</em> <strong>struct</strong> <em>nettle_cipher **nettle_get_ciphers(void)</em></dt>
+<dd><p>Returns a NULL-terminated list of pointers to supported block ciphers.
+This list can be used to dynamically enumerate or search the supported
+algorithms.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-nettle_005fciphers-1"></a>Macro: <strong>nettle_ciphers</strong></dt>
+<dd><p>A macro expanding to a call to nettle_get_ciphers. In earlier versions,
+this was not a macro but the actual array of pointers.
 </p></dd></dl>
 
 <hr>
@@ -2424,22 +2453,25 @@ See <a href="#Cipher-functions">Cipher functions</a>, splitting the message into
 processing them independently with the block cipher (Electronic Code
 Book mode, <acronym>ECB</acronym>), leaks information.
 </p>
-<p>Besides <acronym>ECB</acronym>, Nettle provides a two other modes of operation:
-Cipher Block Chaining (<acronym>CBC</acronym>), Counter mode (<acronym>CTR</acronym>), and
-a couple of <acronym>AEAD</acronym> modes (see <a href="#Authenticated-encryption">Authenticated encryption</a>).
-<acronym>CBC</acronym> is widely used, but there are a few subtle issues of
-information leakage, see, e.g.,
+<p>Besides <acronym>ECB</acronym>, Nettle provides several other modes of operation:
+Cipher Block Chaining (<acronym>CBC</acronym>), Counter mode (<acronym>CTR</acronym>), Cipher
+Feedback (<acronym>CFB</acronym>) and a couple of <acronym>AEAD</acronym> modes
+(see <a href="#Authenticated-encryption">Authenticated encryption</a>).  <acronym>CBC</acronym> is widely used, but
+there are a few subtle issues of information leakage, see, e.g.,
 <a href="http://www.kb.cert.org/vuls/id/958563"><acronym>SSH</acronym> <acronym>CBC</acronym>
 vulnerability</a>. Today, <acronym>CTR</acronym> is usually preferred over <acronym>CBC</acronym>.
 </p>
-<p>Modes like <acronym>CBC</acronym> and <acronym>CTR</acronym> provide <em>no</em> message
-authentication, and should always be used together with a <acronym>MAC</acronym>
-(see <a href="#Keyed-hash-functions">Keyed hash functions</a>) or signature to authenticate the message.
+<p>Modes like <acronym>CBC</acronym>, <acronym>CTR</acronym> and <acronym>CFB</acronym> provide <em>no</em>
+message authentication, and should always be used together with a
+<acronym>MAC</acronym> (see <a href="#Keyed-hash-functions">Keyed hash functions</a>) or signature to authenticate
+the message.
 </p>
 <table class="menu" border="0" cellspacing="0">
 <tr><td align="left" valign="top">&bull; <a href="#CBC" accesskey="1">CBC</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 <tr><td align="left" valign="top">&bull; <a href="#CTR" accesskey="2">CTR</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
+</td></tr>
+<tr><td align="left" valign="top">&bull; <a href="#CFB" accesskey="3">CFB</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
 </td></tr>
 </table>
 
@@ -2549,7 +2581,7 @@ an <code>struct aes_ctx</code> context with the <code>des_encrypt</code> functio
 <a name="CTR"></a>
 <div class="header">
 <p>
-Previous: <a href="#CBC" accesskey="p" rel="prev">CBC</a>, Up: <a href="#Cipher-modes" accesskey="u" rel="up">Cipher modes</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="#Index" title="Index" rel="index">Index</a>]</p>
+Next: <a href="#CFB" accesskey="n" rel="next">CFB</a>, Previous: <a href="#CBC" accesskey="p" rel="prev">CBC</a>, Up: <a href="#Cipher-modes" accesskey="u" rel="up">Cipher modes</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="#Index" title="Index" rel="index">Index</a>]</p>
 </div>
 <a name="Counter-mode"></a>
 <h4 class="subsection">6.3.2 Counter mode</h4>
@@ -2625,6 +2657,101 @@ is copied into that context.
 <dt><a name="index-CTR_005fCRYPT"></a>Macro: <strong>CTR_CRYPT</strong> <em>(<var>ctx</var>, <var>f</var>, <var>length</var>, <var>dst</var>, <var>src</var>)</em></dt>
 <dd><p>A simpler way to invoke <code>ctr_crypt</code>. The first argument is a
 pointer to a context struct as defined by <code>CTR_CTX</code>, and the second
+argument is an encryption function following Nettle&rsquo;s conventions. The
+last three arguments define the source and destination area for the
+operation.
+</p></dd></dl>
+
+<hr>
+<a name="CFB"></a>
+<div class="header">
+<p>
+Previous: <a href="#CTR" accesskey="p" rel="prev">CTR</a>, Up: <a href="#Cipher-modes" accesskey="u" rel="up">Cipher modes</a> &nbsp; [<a href="#SEC_Contents" title="Table of contents" rel="contents">Contents</a>][<a href="#Index" title="Index" rel="index">Index</a>]</p>
+</div>
+<a name="Cipher-Feedback-mode"></a>
+<h4 class="subsection">6.3.3 Cipher Feedback mode</h4>
+
+<a name="index-Cipher-Feedback-Mode"></a>
+<a name="index-CFB-Mode"></a>
+
+<p>Cipher Feedback mode (<acronym>CFB</acronym>) being a close relative to both
+<acronym>CBC</acronym> mode and <acronym>CTR</acronym> mode borrows some characteristics
+from stream ciphers.
+</p>
+<p>The message is divided into <code>n</code> blocks <code>M_1</code>,&hellip;
+<code>M_n</code>, where <code>M_n</code> is of size <code>m</code> which may be smaller
+than the block size. Except for the last block, all the message blocks
+must be of size equal to the cipher&rsquo;s block size.
+</p>
+<p>If <code>E_k</code> is the encryption function of a block cipher, <code>IV</code> is
+the initialization vector, then the <code>n</code> plaintext blocks are
+transformed into <code>n</code> ciphertext blocks <code>C_1</code>,&hellip;
+<code>C_n</code> as follows:
+</p>
+<div class="example">
+<pre class="example">C_1 = E_k(IV) XOR M_1
+C_2 = E_k(C_1) XOR M_2
+
+&hellip;
+
+C_(n-1) = E_k(C_(n - 2)) XOR M_(n-1)
+C_n = E_k(C_(n - 1)) [1..m] XOR M_n
+</pre></div>
+
+<p>Nettle&rsquo;s includes two functions for applying a block cipher in Cipher
+Feedback (<acronym>CFB</acronym>) mode, one for encryption and one for
+decryption. These functions uses <code>void *</code> to pass cipher contexts
+around.
+</p>
+<dl>
+<dt><a name="index-cfb_005fencrypt"></a>Function: <em>void</em> <strong>cfb_encrypt</strong> <em>(const void *<var>ctx</var>, nettle_cipher_func *<var>f</var>, size_t <var>block_size</var>, uint8_t *<var>iv</var>, size_t <var>length</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dt><a name="index-cfb_005fdecrypt"></a>Function: <em>void</em> <strong>cfb_decrypt</strong> <em>(const void *<var>ctx</var>, nettle_cipher_func *<var>f</var>, size_t <var>block_size</var>, uint8_t *<var>iv</var>, size_t <var>length</var>, uint8_t *<var>dst</var>, const uint8_t *<var>src</var>)</em></dt>
+<dd>
+<p>Applies the encryption or decryption function <var>f</var> in <acronym>CFB</acronym>
+mode. The final ciphertext block processed is copied into <var>iv</var>
+before returning, so that a large message can be processed by a sequence
+of calls to <code>cfb_encrypt</code>. Note that for <acronym>CFB</acronym> mode
+internally uses encryption only function and hence <var>f</var> should always
+be the encryption function for the underlying block cipher.
+</p>
+<p>When a message is encrypted using a sequence of calls to
+<code>cfb_encrypt</code>, all but the last call <em>must</em> use a length that
+is a multiple of the block size.
+</p></dd></dl>
+
+<p>Like for <acronym>CBC</acronym>, there are also a couple of helper macros.
+</p>
+<dl>
+<dt><a name="index-CFB_005fCTX"></a>Macro: <strong>CFB_CTX</strong> <em>(<var>context_type</var>, <var>block_size</var>)</em></dt>
+<dd><p>Expands to
+</p><div class="example">
+<pre class="example">{
+   context_type ctx;
+   uint8_t iv[block_size];
+}
+</pre></div>
+</dd></dl>
+
+<dl>
+<dt><a name="index-CFB_005fSET_005fIV_0028ctx_002c"></a>Macro: <strong>CFB_SET_IV(<var>ctx</var>,</strong> <em><var>iv</var>)</em></dt>
+<dd><p>First argument is a pointer to a context struct as defined by
+<code>CFB_CTX</code>, and the second is a pointer to an initialization vector
+that is copied into that context.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-CFB_005fENCRYPT"></a>Macro: <strong>CFB_ENCRYPT</strong> <em>(<var>ctx</var>, <var>f</var>, <var>length</var>, <var>dst</var>, <var>src</var>)</em></dt>
+<dd><p>A simpler way to invoke <code>cfb_encrypt</code>. The first argument is a
+pointer to a context struct as defined by <code>CFB_CTX</code>, and the second
+argument is an encryption function following Nettle&rsquo;s conventions. The
+last three arguments define the source and destination area for the
+operation.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-CFB_005fDECRYPT"></a>Macro: <strong>CFB_DECRYPT</strong> <em>(<var>ctx</var>, <var>f</var>, <var>length</var>, <var>dst</var>, <var>src</var>)</em></dt>
+<dd><p>A simpler way to invoke <code>cfb_decrypt</code>. The first argument is a
+pointer to a context struct as defined by <code>CFB_CTX</code>, and the second
 argument is an encryption function following Nettle&rsquo;s conventions. The
 last three arguments define the source and destination area for the
 operation.
@@ -3564,6 +3691,7 @@ Previous: <a href="#ChaCha_002dPoly1305" accesskey="p" rel="prev">ChaCha-Poly130
 <h4 class="subsection">6.4.5 The <code>struct nettle_aead</code> abstraction</h4>
 <a name="index-nettle_005faead"></a>
 <a name="index-nettle_005faeads"></a>
+<a name="index-nettle_005fget_005faeads"></a>
 
 <p>Nettle includes a struct including information about the supported hash
 functions. It is defined in <samp>&lt;nettle/nettle-meta.h&gt;</samp>.
@@ -3590,9 +3718,16 @@ message size is specified in advance makes it incompatible with the
 <p>Nettle also exports a list of all these constructions.
 </p>
 <dl>
-<dt><a name="index-nettle_005faeads-1"></a>Constant Array: <em>struct nettle_aead **</em> <strong>nettle_aeads</strong></dt>
-<dd><p>This list can be used to dynamically enumerate or search the supported
-algorithms. NULL-terminated.
+<dt><a name="index-struct-2"></a>Function: <em>const</em> <strong>struct</strong> <em>nettle_aead **nettle_get_aeads(void)</em></dt>
+<dd><p>Returns a NULL-terminated list of pointers to supported algorithms.This
+list can be used to dynamically enumerate or search the supported
+algorithms.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-nettle_005faeads-1"></a>Macro: <strong>nettle_aeads</strong></dt>
+<dd><p>A macro expanding to a call to nettle_get_aeads. In earlier versions,
+this was not a macro but the actual array of pointers.
 </p></dd></dl>
 
 <hr>
@@ -4126,12 +4261,7 @@ Next: <a href="#Public_002dkey-algorithms" accesskey="n" rel="next">Public-key a
 </div>
 <a name="Key-derivation-Functions"></a>
 <h3 class="section">6.6 Key derivation Functions</h3>
-
 <a name="index-Key-Derivation-Function"></a>
-<a name="index-Password-Based-Key-Derivation-Function"></a>
-<a name="index-PKCS-_00235"></a>
-<a name="index-KDF"></a>
-<a name="index-PBKDF"></a>
 
 <p>A <em>key derivation function</em> (<acronym>KDF</acronym>) is a function that from
 a given symmetric key derives other symmetric keys.  A sub-class of KDFs
@@ -4140,8 +4270,55 @@ which take as input a password or passphrase, and its purpose is
 typically to strengthen it and protect against certain pre-computation
 attacks by using salting and expensive computation.
 </p>
+<a name="HKDF_003a-HMAC_002dbased-Extract_002dand_002dExpand"></a>
+<h4 class="subsection">6.6.1 HKDF: HMAC-based Extract-and-Expand</h4>
+<a name="index-HKDF"></a>
+
+<p>HKDF is a key derivation function used as a building block of
+higher-level protocols like TLS 1.3. It is a derivation function
+based on HMAC described in <cite>RFC 5869</cite>,
+and is split into two logical modules, called &rsquo;extract&rsquo; and &rsquo;expand&rsquo;.
+The extract module takes an initial secret and a random
+salt to &quot;extract&quot; a fixed-length pseudorandom key (PRK). The second stage
+takes as input the previous PRK and some informational data (e.g.,
+text) and expands them into multiple keys.
+</p>
+<p>Nettle&rsquo;s <acronym>HKDF</acronym> functions are defined in
+<samp>&lt;nettle/hkdf.h&gt;</samp>.  There are two abstract functions for the extract
+and expand operations that operate on any HMAC implemented via the <code>nettle_hash_update_func</code>,
+and <code>nettle_hash_digest_func</code> interfaces.
+</p>
+<dl>
+<dt><a name="index-hkdf_005fextract"></a>Function: <em>void</em> <strong>hkdf_extract</strong> <em>(void *mac_ctx, nettle_hash_update_func *update, nettle_hash_digest_func *digest, size_t digest_size,size_t secret_size, const uint8_t *secret, uint8_t *dst)</em></dt>
+<dd><p>Extract a Pseudorandom Key (PRK) from a secret and a salt according
+to HKDF. The HMAC must have been initialized, with its key being the
+salt for the Extract operation. This function will call the
+<var>update</var> and <var>digest</var> functions passing the <var>mac_ctx</var>
+context parameter as an argument in order to compute digest of size
+<var>digest_size</var>.  Inputs are the secret <var>secret</var> of length
+<var>secret_length</var>. The output length is fixed to <var>digest_size</var> octets,
+thus the output buffer <var>dst</var> must have room for at least <var>digest_size</var> octets.
+</p></dd></dl>
+
+<dl>
+<dt><a name="index-hkdf_005fexpand"></a>Function: <em>void</em> <strong>hkdf_expand</strong> <em>(void *mac_ctx, nettle_hash_update_func *update, nettle_hash_digest_func *digest, size_t digest_size, size_t info_size, const uint8_t *info, size_t length, uint8_t *dst)</em></dt>
+<dd><p>Expand a Pseudorandom Key (PRK) to an arbitrary size according to HKDF.
+The HMAC must have been initialized, with its key being the
+PRK from the Extract operation. This function will call the
+<var>update</var> and <var>digest</var> functions passing the <var>mac_ctx</var>
+context parameter as an argument in order to compute digest of size
+<var>digest_size</var>.  Inputs are the info <var>info</var> of length
+<var>info_length</var>, and the desired derived output length <var>length</var>.
+The output buffer is <var>dst</var> which must have room for at least <var>length</var> octets.
+</p></dd></dl>
+
+
 <a name="PBKDF2"></a>
-<h4 class="subsection">6.6.1 <acronym>PBKDF2</acronym></h4>
+<h4 class="subsection">6.6.2 <acronym>PBKDF2</acronym></h4>
+<a name="index-Password-Based-Key-Derivation-Function"></a>
+<a name="index-PKCS-_00235"></a>
+<a name="index-KDF"></a>
+<a name="index-PBKDF"></a>
 <p>The most well known PBKDF is the <code>PKCS #5 PBKDF2</code> described in
 <cite>RFC 2898</cite> which uses a pseudo-random function such as
 <acronym>HMAC-SHA1</acronym>.
@@ -4181,12 +4358,12 @@ at least <var>length</var> octets.
 </p></dd></dl>
 
 <a name="Concrete-PBKDF2-functions"></a>
-<h4 class="subsection">6.6.2 Concrete <acronym>PBKDF2</acronym> functions</h4>
+<h4 class="subsection">6.6.3 Concrete <acronym>PBKDF2</acronym> functions</h4>
 <p>Now we come to the specialized <acronym>PBKDF2</acronym> functions, which are
 easier to use than the general <acronym>PBKDF2</acronym> function.
 </p>
 <a name="PBKDF2_002dHMAC_002dSHA1"></a>
-<h4 class="subsubsection">6.6.2.1 <acronym>PBKDF2-HMAC-SHA1</acronym></h4>
+<h4 class="subsubsection">6.6.3.1 <acronym>PBKDF2-HMAC-SHA1</acronym></h4>
 
 <dl>
 <dt><a name="index-pbkdf2_005fhmac_005fsha1"></a>Function: <em>void</em> <strong>pbkdf2_hmac_sha1</strong> <em>(size_t <var>key_length</var>, const uint8_t *<var>key</var>, unsigned <var>iterations</var>, size_t <var>salt_length</var>, const uint8_t *<var>salt</var>, size_t <var>length</var>, uint8_t *<var>dst</var>)</em></dt>
@@ -4198,7 +4375,7 @@ room for at least <var>length</var> octets.
 </p></dd></dl>
 
 <a name="PBKDF2_002dHMAC_002dSHA256"></a>
-<h4 class="subsubsection">6.6.2.2 <acronym>PBKDF2-HMAC-SHA256</acronym></h4>
+<h4 class="subsubsection">6.6.3.2 <acronym>PBKDF2-HMAC-SHA256</acronym></h4>
 
 <dl>
 <dt><a name="index-pbkdf2_005fhmac_005fsha256"></a>Function: <em>void</em> <strong>pbkdf2_hmac_sha256</strong> <em>(size_t <var>key_length</var>, const uint8_t *<var>key</var>, unsigned <var>iterations</var>, size_t <var>salt_length</var>, const uint8_t *<var>salt</var>, size_t <var>length</var>, uint8_t *<var>dst</var>)</em></dt>
@@ -4562,6 +4739,45 @@ should point to a digest of size <code>MD5_DIGEST_SIZE</code>,
 plain hash digest, but a PKCS#1 &ldquo;DigestInfo&rdquo;, and ASN.1 DER-encoding
 of the digest together with an object identifier for the used hash
 algorithm.
+</p></dd></dl>
+
+<p>While the above functions for the RSA signature operations use the
+<cite>PKCS#1</cite> padding scheme, Nettle also provides the variants based on
+the PSS padding scheme, specified in <cite>RFC 3447</cite>.  These variants
+take advantage of a randomly choosen salt value, which could enhance the
+security by causing output to be different for equivalent inputs.
+However, assuming the same security level as inverting the <acronym>RSA</acronym>
+algorithm, a longer salt value does not always mean a better security
+<a href="http://www.iacr.org/archive/eurocrypt2002/23320268/coron.pdf">http://www.iacr.org/archive/eurocrypt2002/23320268/coron.pdf</a>.
+The typical choices of the length are between 0 and the digest size of
+the underlying hash function.
+</p>
+<p>Creating an RSA signature with the PSS padding scheme is done with one
+of the following functions:
+</p>
+<dl>
+<dt><a name="index-rsa_005fpss_005fsha256_005fsign_005fdigest_005ftr_0028const"></a>Function: <em>int</em> <strong>rsa_pss_sha256_sign_digest_tr(const</strong> <em>struct rsa_public_key *<var>pub</var>, const struct rsa_private_key *<var>key</var>, void *<var>random_ctx</var>, nettle_random_func *<var>random</var>, size_t <var>salt_length</var>, const uint8_t *<var>salt</var>, const uint8_t *<var>digest</var>, mpz_t <var>signature</var>)</em></dt>
+<dt><a name="index-rsa_005fpss_005fsha384_005fsign_005fdigest_005ftr_0028const"></a>Function: <em>int</em> <strong>rsa_pss_sha384_sign_digest_tr(const</strong> <em>struct rsa_public_key *<var>pub</var>, const struct rsa_private_key *<var>key</var>, void *<var>random_ctx</var>, nettle_random_func *<var>random</var>, size_t <var>salt_length</var>, const uint8_t *<var>salt</var>, const uint8_t *<var>digest</var>, mpz_t <var>signature</var>)</em></dt>
+<dt><a name="index-rsa_005fpss_005fsha512_005fsign_005fdigest_005ftr_0028const"></a>Function: <em>int</em> <strong>rsa_pss_sha512_sign_digest_tr(const</strong> <em>struct rsa_public_key *<var>pub</var>, const struct rsa_private_key *<var>key</var>, void *<var>random_ctx</var>, nettle_random_func *<var>random</var>, size_t <var>salt_length</var>, const uint8_t *<var>salt</var>, const uint8_t *<var>digest</var>, mpz_t <var>signature</var>)</em></dt>
+<dd><p>Creates a signature using the PSS padding scheme. <var>salt</var> should
+point to a salt string of size <var>salt_length</var>. <var>digest</var> should
+point to a digest of size <code>SHA256_DIGEST_SIZE</code>,
+<code>SHA384_DIGEST_SIZE</code>, or <code>SHA512_DIGEST_SIZE</code>respectively. The
+signature is stored in <var>signature</var> (which must have been
+<code>mpz_init</code>:ed earlier).
+Returns one on success, or zero on failure.
+</p></dd></dl>
+
+<p>Verifying an RSA signature with the PSS padding scheme is done with one
+of the following functions:
+</p>
+<dl>
+<dt><a name="index-rsa_005fpss_005fsha256_005fverify_005fdigest"></a>Function: <em>int</em> <strong>rsa_pss_sha256_verify_digest</strong> <em>(const struct rsa_public_key *<var>key</var>, size_t <var>salt_length</var>, const uint8_t *<var>digest</var>, const mpz_t <var>signature</var>)</em></dt>
+<dt><a name="index-rsa_005fpss_005fsha384_005fverify_005fdigest"></a>Function: <em>int</em> <strong>rsa_pss_sha384_verify_digest</strong> <em>(const struct rsa_public_key *<var>key</var>, size_t <var>salt_length</var>, const uint8_t *<var>digest</var>, const mpz_t <var>signature</var>)</em></dt>
+<dt><a name="index-rsa_005fpss_005fsha512_005fverify_005fdigest"></a>Function: <em>int</em> <strong>rsa_pss_sha512_verify_digest</strong> <em>(const struct rsa_public_key *<var>key</var>, size_t <var>salt_length</var>, const uint8_t *<var>digest</var>, const mpz_t <var>signature</var>)</em></dt>
+<dd><p>Returns 1 if the signature is valid, or 0 if it isn&rsquo;t. <var>digest</var>
+should point to a digest of size <code>SHA256_DIGEST_SIZE</code>,
+<code>SHA384_DIGEST_SIZE</code>, or <code>SHA512_DIGEST_SIZE</code> respectively.
 </p></dd></dl>
 
 <p>The following function is used to encrypt a clear text message using RSA.
@@ -5001,12 +5217,12 @@ x^3 - 3 x + b (mod p)</em>, i.e., the points have coordinates <em>(x,y)</em>,
 both considered as integers modulo a specified prime <em>p</em>. Curves
 are represented as a <code>struct ecc_curve</code>. It also supports
 curve25519, which uses a different form of curve. Supported curves are
-declared in <samp>&lt;nettle/ecc-curve.h&gt;</samp>, e.g., <code>nettle_secp_256r1</code>
-for a standardized curve using the 256-bit prime <em>p = 2^{256} -
-2^{224} + 2^{192} + 2^{96} - 1</em>. The contents of these structs is not
-visible to nettle users. The &ldquo;bitsize of the curve&rdquo; is used as a
-shorthand for the bitsize of the curve&rsquo;s prime <em>p</em>, e.g., 256 bits
-for <code>nettle_secp_256r1</code>.
+declared in <samp>&lt;nettle/ecc-curve.h&gt;</samp>, e.g., call
+<code>nettle_get_secp_256r1</code> for a standardized curve using the 256-bit
+prime <em>p = 2^{256} - 2^{224} + 2^{192} + 2^{96} - 1</em>. The contents
+of these structs is not visible to nettle users. The &ldquo;bitsize of the
+curve&rdquo; is used as a shorthand for the bitsize of the curve&rsquo;s prime
+<em>p</em>, e.g., 256 bits for the SECP 256R1 curve.
 </p>
 <table class="menu" border="0" cellspacing="0">
 <tr><td align="left" valign="top">&bull; <a href="#Side_002dchannel-silence" accesskey="1">Side-channel silence</a>:</td><td>&nbsp;&nbsp;</td><td align="left" valign="top">
@@ -5162,7 +5378,7 @@ signature for the message digest <var>digest</var> (of <var>length</var> octets)
 Returns 1 if the signature is valid, otherwise 0.
 </p></dd></dl>
 
-<p>Finally, to generation of new an ECDSA key pairs
+<p>Finally, generating a new ECDSA key pair:
 </p>
 <dl>
 <dt><a name="index-ecdsa_005fgenerate_005fkeypair"></a>Function: <em>void</em> <strong>ecdsa_generate_keypair</strong> <em>(struct ecc_point *<var>pub</var>, struct ecc_scalar *<var>key</var>, void *<var>random_ctx</var>, nettle_random_func *<var>random</var>);</em></dt>
@@ -6156,6 +6372,13 @@ Previous: <a href="#Installation" accesskey="p" rel="prev">Installation</a>, Up:
 <tr><td></td><td valign="top"><a href="#index-CCM_005fMAX_005fMSG_005fSIZE"><code>CCM_MAX_MSG_SIZE</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#CCM">CCM</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-ccm_005fset_005fnonce"><code>ccm_set_nonce</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#CCM">CCM</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-ccm_005fupdate"><code>ccm_update</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#CCM">CCM</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-CFB-Mode">CFB Mode</a>:</td><td>&nbsp;</td><td valign="top"><a href="#CFB">CFB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-CFB_005fCTX"><code>CFB_CTX</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#CFB">CFB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-cfb_005fdecrypt"><code>cfb_decrypt</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#CFB">CFB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-CFB_005fDECRYPT"><code>CFB_DECRYPT</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#CFB">CFB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-cfb_005fencrypt"><code>cfb_encrypt</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#CFB">CFB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-CFB_005fENCRYPT"><code>CFB_ENCRYPT</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#CFB">CFB</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-CFB_005fSET_005fIV_0028ctx_002c"><code>CFB_SET_IV(<var>ctx</var>,</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#CFB">CFB</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-chacha_005fcrypt"><code>chacha_crypt</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Cipher-functions">Cipher functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-chacha_005fpoly1305_005fdecrypt"><code>chacha_poly1305_decrypt</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#ChaCha_002dPoly1305">ChaCha-Poly1305</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-chacha_005fpoly1305_005fdigest"><code>chacha_poly1305_digest</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#ChaCha_002dPoly1305">ChaCha-Poly1305</a></td></tr>
@@ -6167,6 +6390,7 @@ Previous: <a href="#Installation" accesskey="p" rel="prev">Installation</a>, Up:
 <tr><td></td><td valign="top"><a href="#index-chacha_005fset_005fnonce"><code>chacha_set_nonce</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Cipher-functions">Cipher functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-Cipher">Cipher</a>:</td><td>&nbsp;</td><td valign="top"><a href="#Cipher-functions">Cipher functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-Cipher-Block-Chaining">Cipher Block Chaining</a>:</td><td>&nbsp;</td><td valign="top"><a href="#CBC">CBC</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-Cipher-Feedback-Mode">Cipher Feedback Mode</a>:</td><td>&nbsp;</td><td valign="top"><a href="#CFB">CFB</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-Collision_002dresistant">Collision-resistant</a>:</td><td>&nbsp;</td><td valign="top"><a href="#Hash-functions">Hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-Conditional-entropy">Conditional entropy</a>:</td><td>&nbsp;</td><td valign="top"><a href="#Randomness">Randomness</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-Counter-Mode">Counter Mode</a>:</td><td>&nbsp;</td><td valign="top"><a href="#CTR">CTR</a></td></tr>
@@ -6308,6 +6532,9 @@ Previous: <a href="#Installation" accesskey="p" rel="prev">Installation</a>, Up:
 <tr><td colspan="4"> <hr></td></tr>
 <tr><th><a name="Index_cp_letter-H">H</a></th><td></td><td></td></tr>
 <tr><td></td><td valign="top"><a href="#index-Hash-function">Hash function</a>:</td><td>&nbsp;</td><td valign="top"><a href="#Hash-functions">Hash functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-HKDF">HKDF</a>:</td><td>&nbsp;</td><td valign="top"><a href="#Key-derivation-functions">Key derivation functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-hkdf_005fexpand"><code>hkdf_expand</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Key-derivation-functions">Key derivation functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-hkdf_005fextract"><code>hkdf_extract</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Key-derivation-functions">Key derivation functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-HMAC">HMAC</a>:</td><td>&nbsp;</td><td valign="top"><a href="#HMAC">HMAC</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-HMAC_005fCTX"><code>HMAC_CTX</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#HMAC">HMAC</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-hmac_005fdigest"><code>hmac_digest</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#HMAC">HMAC</a></td></tr>
@@ -6355,10 +6582,16 @@ Previous: <a href="#Installation" accesskey="p" rel="prev">Installation</a>, Up:
 <tr><th><a name="Index_cp_letter-N">N</a></th><td></td><td></td></tr>
 <tr><td></td><td valign="top"><a href="#index-nettle_005faead">nettle_aead</a>:</td><td>&nbsp;</td><td valign="top"><a href="#nettle_005faead-abstraction">nettle_aead abstraction</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-nettle_005faeads">nettle_aeads</a>:</td><td>&nbsp;</td><td valign="top"><a href="#nettle_005faead-abstraction">nettle_aead abstraction</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-nettle_005faeads-1"><code>nettle_aeads</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#nettle_005faead-abstraction">nettle_aead abstraction</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-nettle_005fcipher">nettle_cipher</a>:</td><td>&nbsp;</td><td valign="top"><a href="#Cipher-functions">Cipher functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-nettle_005fciphers">nettle_ciphers</a>:</td><td>&nbsp;</td><td valign="top"><a href="#Cipher-functions">Cipher functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-nettle_005fciphers-1"><code>nettle_ciphers</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Cipher-functions">Cipher functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-nettle_005fget_005faeads">nettle_get_aeads</a>:</td><td>&nbsp;</td><td valign="top"><a href="#nettle_005faead-abstraction">nettle_aead abstraction</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-nettle_005fget_005fciphers">nettle_get_ciphers</a>:</td><td>&nbsp;</td><td valign="top"><a href="#Cipher-functions">Cipher functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-nettle_005fget_005fhashes">nettle_get_hashes</a>:</td><td>&nbsp;</td><td valign="top"><a href="#nettle_005fhash-abstraction">nettle_hash abstraction</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-nettle_005fhash">nettle_hash</a>:</td><td>&nbsp;</td><td valign="top"><a href="#nettle_005fhash-abstraction">nettle_hash abstraction</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-nettle_005fhashes">nettle_hashes</a>:</td><td>&nbsp;</td><td valign="top"><a href="#nettle_005fhash-abstraction">nettle_hash abstraction</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-nettle_005fhashes-1"><code>nettle_hashes</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#nettle_005fhash-abstraction">nettle_hash abstraction</a></td></tr>
 <tr><td colspan="4"> <hr></td></tr>
 <tr><th><a name="Index_cp_letter-O">O</a></th><td></td><td></td></tr>
 <tr><td></td><td valign="top"><a href="#index-One_002dway">One-way</a>:</td><td>&nbsp;</td><td valign="top"><a href="#Hash-functions">Hash functions</a></td></tr>
@@ -6401,6 +6634,12 @@ Previous: <a href="#Installation" accesskey="p" rel="prev">Installation</a>, Up:
 <tr><td></td><td valign="top"><a href="#index-rsa_005fprivate_005fkey_005fclear"><code>rsa_private_key_clear</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#RSA">RSA</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-rsa_005fprivate_005fkey_005finit"><code>rsa_private_key_init</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#RSA">RSA</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-rsa_005fprivate_005fkey_005fprepare"><code>rsa_private_key_prepare</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#RSA">RSA</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-rsa_005fpss_005fsha256_005fsign_005fdigest_005ftr_0028const"><code>rsa_pss_sha256_sign_digest_tr(const</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#RSA">RSA</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-rsa_005fpss_005fsha256_005fverify_005fdigest"><code>rsa_pss_sha256_verify_digest</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#RSA">RSA</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-rsa_005fpss_005fsha384_005fsign_005fdigest_005ftr_0028const"><code>rsa_pss_sha384_sign_digest_tr(const</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#RSA">RSA</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-rsa_005fpss_005fsha384_005fverify_005fdigest"><code>rsa_pss_sha384_verify_digest</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#RSA">RSA</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-rsa_005fpss_005fsha512_005fsign_005fdigest_005ftr_0028const"><code>rsa_pss_sha512_sign_digest_tr(const</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#RSA">RSA</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-rsa_005fpss_005fsha512_005fverify_005fdigest"><code>rsa_pss_sha512_verify_digest</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#RSA">RSA</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-rsa_005fpublic_005fkey_005fclear"><code>rsa_public_key_clear</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#RSA">RSA</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-rsa_005fpublic_005fkey_005finit"><code>rsa_public_key_init</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#RSA">RSA</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-rsa_005fpublic_005fkey_005fprepare"><code>rsa_public_key_prepare</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#RSA">RSA</a></td></tr>
@@ -6469,6 +6708,9 @@ Previous: <a href="#Installation" accesskey="p" rel="prev">Installation</a>, Up:
 <tr><td></td><td valign="top"><a href="#index-sha512_005fupdate"><code>sha512_update</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Recommended-hash-functions">Recommended hash functions</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-Side_002dchannel-attack">Side-channel attack</a>:</td><td>&nbsp;</td><td valign="top"><a href="#Side_002dchannel-silence">Side-channel silence</a></td></tr>
 <tr><td></td><td valign="top"><a href="#index-Stream-Cipher">Stream Cipher</a>:</td><td>&nbsp;</td><td valign="top"><a href="#Cipher-functions">Cipher functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-struct"><code>struct</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#nettle_005fhash-abstraction">nettle_hash abstraction</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-struct-1"><code>struct</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Cipher-functions">Cipher functions</a></td></tr>
+<tr><td></td><td valign="top"><a href="#index-struct-2"><code>struct</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#nettle_005faead-abstraction">nettle_aead abstraction</a></td></tr>
 <tr><td colspan="4"> <hr></td></tr>
 <tr><th><a name="Index_cp_letter-T">T</a></th><td></td><td></td></tr>
 <tr><td></td><td valign="top"><a href="#index-twofish_005fdecrypt"><code>twofish_decrypt</code></a>:</td><td>&nbsp;</td><td valign="top"><a href="#Cipher-functions">Cipher functions</a></td></tr>
