@@ -634,6 +634,13 @@ ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.pb42 opendpi
 	-$(MAKE) -f Makefile.pb42 opendpi-install
 endif
+ifeq ($(CONFIG_ZFS),y)
+	-$(MAKE) -f Makefile.pb42 spl
+	-$(MAKE) -f Makefile.pb42 spl-install
+	-$(MAKE) -f Makefile.pb42 zfs
+	-$(MAKE) -f Makefile.pb42 zfs-install
+endif
+
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.pb42 wireguard
 	-$(MAKE) -f Makefile.pb42 wireguard-install
@@ -2027,6 +2034,15 @@ ifeq ($(CONFIG_WR1043V2),y)
 	-./tools/safeloader/tplink-safeloader -B ARCHER-C7-V4 -V 1 -k $(ARCH)-uclibc/root.uimage -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7-v4-firmware.bin
 	-./tools/safeloader/tplink-safeloader -B ARCHER-C7-V4 -V 1 -S -k $(ARCH)-uclibc/root.uimage -r $(ARCH)-uclibc/root.fs -o mips-uclibc/archerC7v4_tp_recovery.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v4-firmware.bin mips-uclibc/archerC7v4_tp_recovery.bin
+
+
+	-./tools/safeloader/tplink-safeloader -B TLWR1043NDV4 -V 1 -k $(ARCH)-uclibc/root.uimage -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR1043v4-firmware.bin
+	-./tools/safeloader/tplink-safeloader -B TLWR1043NDV4 -V 1 -S -k $(ARCH)-uclibc/root.uimage -r $(ARCH)-uclibc/root.fs -o mips-uclibc/WR1043v4_tp_recovery.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR1043v4-firmware.bin mips-uclibc/WR1043v4_tp_recovery.bin
+
+	-./tools/safeloader/tplink-safeloader -B TLWR1043NDV5 -V 1 -k $(ARCH)-uclibc/root.uimage -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR1043v5-firmware.bin
+	-./tools/safeloader/tplink-safeloader -B TLWR1043NDV5 -V 1 -S -k $(ARCH)-uclibc/root.uimage -r $(ARCH)-uclibc/root.fs -o mips-uclibc/WR1043v5_tp_recovery.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR1043v5-firmware.bin mips-uclibc/WR1043v5_tp_recovery.bin
 
 
 	-./tools/tplink/mktplinkfw -B TL-WDR4900v2 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4900v2-firmware.bin
