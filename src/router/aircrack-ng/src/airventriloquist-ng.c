@@ -408,7 +408,7 @@ int set_bitrate(struct wif *wi, int rate)
 
 uint32_t calc_fcs(const uint8_t *buf, uint32_t len)
 {
-  uint i;
+  unsigned int i;
   uint32_t crc32 = 0xFFFFFFFF; //Seed
  
   for (i = 0; i < len; i++)

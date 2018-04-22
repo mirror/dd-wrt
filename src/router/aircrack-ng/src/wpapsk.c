@@ -189,6 +189,7 @@ static void set_key(char *key, int index, wpapsk_password *in)
 	in[index].length = length;
 	memcpy(in[index].v, key, length+1);
 }
+#if (defined(SIMD_CORE) && defined(SIMD_COEF_32)) || defined(MMX_COEF)
 
 static MAYBE_INLINE void wpapsk_sse(int threadid, int count, char *salt, wpapsk_password * in)
 {
@@ -219,7 +220,7 @@ static MAYBE_INLINE void wpapsk_sse(int threadid, int count, char *salt, wpapsk_
 			// set the length of all hash1 SSE buffer to 64+20 * 8 bits. The 64 is for the ipad/opad,
 			// the 20 is for the length of the SHA1 buffer that also gets into each crypt.
 			// Works for SSE2i and SSE2
-#ifdef SIMD_CORE
+#if defined(SIMD_CORE)
 			((unsigned int *)sse_hash1)[15*SIMD_COEF_32 + (index&(SIMD_COEF_32-1)) + (unsigned int)index/SIMD_COEF_32*SHA_BUF_SIZ*SIMD_COEF_32] = (84<<3); // all encrypts are 64+20 bytes.
 #else
 			((unsigned int *)sse_hash1)[15*MMX_COEF + (index&(MMX_COEF-1)) + (index>>(MMX_COEF>>1))*SHA_BUF_SIZ*MMX_COEF] = (84<<3); // all encrypts are 64+20 bytes.
@@ -475,7 +476,7 @@ static MAYBE_INLINE void wpapsk_sse(int threadid, int count, char *salt, wpapsk_
 
 	return;
 }
-
+#endif
 void init_atoi() {
 	char *pos;
 
@@ -533,9 +534,9 @@ int init_wpapsk(char (*key)[MAX_THREADS], char *essid, int threadid) {
 #ifdef XDEBUG
 //	printf("%d key (%s) (%s) (%s) (%s)\n",threadid, key1,key2,key3,key4);
 #endif
-
+#if (defined(SIMD_CORE) && defined(SIMD_COEF_32)) || defined(MMX_COEF)
 	wpapsk_sse(threadid, count, essid, inbuffer);
-
+#endif
 	return 0;
 }
 
