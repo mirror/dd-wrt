@@ -58,6 +58,9 @@ struct rand_fips_test {
 
 #endif /* #ifdef CONFIG_FIPS_RNG */
 
+/* Reseed CRNG.  (Superuser only.) */
+#define RNDRESEEDCRNG	_IO( 'R', 0x07 )
+
 struct rand_pool_info {
 	int	entropy_count;
 	int	buf_size;
