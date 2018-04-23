@@ -15,9 +15,9 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <utils.h>
-
 #include <broadcom.h>
 #include <dd_defs.h>
+#include <revision.h>
 
 #define cprintf(fmt, args...)
 
@@ -115,8 +115,11 @@ static void nv_file_out(unsigned char method, struct mime_handler *handler, char
 		return;
 	}
 #endif
+	char *name = nvram_safe_get("router_name");
+	char fname[128];
+	snprintf(fname, sizeof(fname), "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, strlen(name) ? "_" : "", strlen(name) ? name : "", nvram_safe_get("DD_BOARD"));
 	nvram_backup("/tmp/nvrambak.bin");
-	do_file_attach(handler, "/tmp/nvrambak.bin", wp, "nvrambak.bin");
+	do_file_attach(handler, "/tmp/nvrambak.bin", wp, fname);
 	unlink("/tmp/nvrambak.bin");
 	return;
 }
