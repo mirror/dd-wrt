@@ -1109,6 +1109,9 @@ extern void getIfLists(char *eths, int size);
 extern int ifexists(const char *ifname);
 extern void getinterfacelist(const char *ifprefix, char *buffer);
 extern int count_processes(char *pidName);
+char *hash_file_string(char *filename, char *hashbuf);
+char *hash_file(char *filename, char *hashbuf);
+
 #ifdef HAVE_ATH5K
 extern int is_ath5k(const char *prefix);
 #else
