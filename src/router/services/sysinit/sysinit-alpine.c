@@ -70,9 +70,6 @@ void start_sysinit(void)
 	char mtdpath[64];
 	int board = getRouterBrand();
 
-	eval("ifconfig", "eth0", "up");
-	eval("ifconfig", "eth1", "up");
-	eval("ifconfig", "eth2", "up");
 
 	int mtd = getMTD("ART");
 	char *maddr = NULL;
@@ -104,6 +101,9 @@ void start_sysinit(void)
 		get_hwaddr("eth0", macaddr);
 		set_hwaddr("eth2", macaddr);
 	}
+	eval("ifconfig", "eth0", "up");
+	eval("ifconfig", "eth1", "up");
+	eval("ifconfig", "eth2", "up");
 
 	insmod("mii_gpio");
 	insmod("gpio-pca953x");
