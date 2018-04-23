@@ -65,7 +65,7 @@ static struct wifi_channels *getcache(const char *ifname, const char *country)
 #define INITVALUECACHEi(prefix) \
 	static int devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 }; \
 	int dn, ret = 0; \
-	if (!strcmp(prefix,"giwifi")) \
+	if (!strncmp(prefix,"giwifi", 6)) \
 		dn = 2; \
 	else \
 		sscanf(prefix, "ath%d", &dn); \
@@ -74,7 +74,7 @@ static struct wifi_channels *getcache(const char *ifname, const char *country)
 #define INITVALUECACHE() \
 	static int devs[8] = { -1, -1, -1, -1, -1, -1, -1, -1 }; \
 	int dn, ret = 0; \
-	if (!strcmp(prefix,"giwifi")) \
+	if (!strncmp(prefix,"giwifi", 6)) \
 		dn = 2; \
 	else \
 		sscanf(prefix, "ath%d", &dn); \
