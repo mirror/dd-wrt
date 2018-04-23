@@ -1754,7 +1754,7 @@ void get3GControlDevice(void)
 #endif
 
 #if defined(HAVE_LIBQMI) || defined(HAVE_UQMI)
-			int sw = (devicelist[devicecount].modeswitch & 0xf0);
+			int sw = (devicelist[devicecount].modeswitch & 0xfff0);
 			if (nvram_match(checkforce, "98"))
 				sw = QMI;
 			switch (sw) {
