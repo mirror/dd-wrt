@@ -273,6 +273,43 @@ typedef struct MS_MSCHAPV2_PARAMS
 	UCHAR ResponseBuffer[MAX_SIZE];
 } MS_MSCHAPV2_PARAMS;
 
+// The function which should be called once as soon as possible after the process is started
+void MsInitProcessCallOnce()
+{
+	// Mitigate the DLL injection attack
+	char system_dir[MAX_PATH];
+	char kernel32_path[MAX_PATH];
+	UINT len;
+	HINSTANCE hKernel32;
+
+	// Get the full path of kernel32.dll
+	memset(system_dir, 0, sizeof(system_dir));
+	GetSystemDirectory(system_dir, sizeof(system_dir));
+	len = lstrlenA(system_dir);
+	if (system_dir[len] == '\\')
+	{
+		system_dir[len] = 0;
+	}
+	wsprintfA(kernel32_path, "%s\\kernel32.dll", system_dir);
+
+	// Load kernel32.dll
+	hKernel32 = LoadLibraryA(kernel32_path);
+	if (hKernel32 != NULL)
+	{
+		BOOL (WINAPI *_SetDllDirectoryA)(LPCTSTR);
+
+		_SetDllDirectoryA = (BOOL (WINAPI *)(LPCTSTR))
+			GetProcAddress(hKernel32, "SetDllDirectoryA");
+
+		if (_SetDllDirectoryA != NULL)
+		{
+			_SetDllDirectoryA("");
+		}
+
+		FreeLibrary(hKernel32);
+	}
+}
+
 // Collect the information of the VPN software
 bool MsCollectVpnInfo(BUF *bat, char *tmpdir, char *svc_name, wchar_t *config_name, wchar_t *logdir_name)
 {
@@ -8394,6 +8431,76 @@ bool MsUpgradeVLan(char *tag_name, char *connection_tag_name, char *instance_nam
 }
 bool MsUpgradeVLanWithoutLock(char *tag_name, char *connection_tag_name, char *instance_name, MS_DRIVER_VER *ver)
 {
+	char hwid[MAX_PATH];
+	wchar_t hwid_w[MAX_PATH];
+	bool ret = false;
+	UCHAR old_mac_address[6];
+	char *s;
+	// Validate arguments
+	if (instance_name == NULL || tag_name == NULL || connection_tag_name == NULL || ver == NULL)
+	{
+		return false;
+	}
+
+	if (MsIsNt() == false)
+	{
+		// Can not be upgraded in Windows 9x
+		return false;
+	}
+
+	if (MsIsInfCatalogRequired())
+	{
+		if (MsIsValidVLanInstanceNameForInfCatalog(instance_name) == false)
+		{
+			return false;
+		}
+
+		StrUpper(instance_name);
+	}
+
+	Zero(hwid, sizeof(hwid));
+	Format(hwid, sizeof(hwid), DRIVER_DEVICE_ID_TAG, instance_name);
+	StrToUni(hwid_w, sizeof(hwid_w), hwid);
+
+	// Examine whether the virtual LAN card with the specified name has already registered
+	if (MsIsVLanExists(tag_name, instance_name) == false)
+	{
+		// Not registered
+		return false;
+	}
+
+	// Get the previous MAC address
+	s = MsGetMacAddress(tag_name, instance_name);
+	if (s == NULL)
+	{
+		Zero(old_mac_address, 6);
+	}
+	else
+	{
+		BUF *b;
+		b = StrToBin(s);
+		Free(s);
+
+		if (b->Size == 6)
+		{
+			Copy(old_mac_address, b->Buf, b->Size);
+		}
+		else
+		{
+			Zero(old_mac_address, 6);
+		}
+
+		FreeBuf(b);
+	}
+
+	ret = MsUninstallVLanWithoutLock(instance_name);
+
+	ret = MsInstallVLanWithoutLock(tag_name, connection_tag_name, instance_name, ver);
+
+	return ret;
+}
+bool MsUpgradeVLanWithoutLock_old(char *tag_name, char *connection_tag_name, char *instance_name, MS_DRIVER_VER *ver)
+{
 	wchar_t infpath[MAX_PATH];
 	char hwid[MAX_PATH];
 	wchar_t hwid_w[MAX_PATH];
@@ -10509,12 +10616,12 @@ void MsGenMacAddress(UCHAR *mac)
 
 	Hash(hash, hash_src, sizeof(hash_src), true);
 
-	mac[0] = 0x00;
-	mac[1] = 0xAC;
-	mac[2] = hash[0];
-	mac[3] = hash[1];
-	mac[4] = hash[2];
-	mac[5] = hash[3];
+	mac[0] = 0x5E;
+	mac[1] = hash[0];
+	mac[2] = hash[1];
+	mac[3] = hash[2];
+	mac[4] = hash[3];
+	mac[5] = hash[4];
 }
 
 // Finish the driver installation

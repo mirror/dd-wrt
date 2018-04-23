@@ -155,6 +155,7 @@ void vpnbridge_StopProcess()
 // WinMain function
 int vpnbridge_main(int argc, char *argv[])
 {
+	InitProcessCallOnce();
 //	VgUseStaticLink();
 
 #ifdef	OS_WIN32

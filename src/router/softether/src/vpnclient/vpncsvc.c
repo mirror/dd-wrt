@@ -143,6 +143,8 @@ void vpncsvc_StopProcess()
 // WinMain function
 int vpncsvc_main(int argc, char *argv[])
 {
+	InitProcessCallOnce();
+
 #ifdef	OS_WIN32
 
 	return MsService(GC_SVC_NAME_VPNCLIENT, vpncsvc_StartProcess, vpncsvc_StopProcess, ICO_MACHINE, argv[0]);
