@@ -12,7 +12,9 @@
  *
  *  Licensed under the GPL v2 or later, see the file LICENSE in this tarball.
  */
-
+#include <stdio.h>
+#include <utils.h>
+#include <shutils.h>
 #include "md5.h"
 
 #define MD5_SIZE_VS_SPEED 3
@@ -442,4 +444,39 @@ void *FAST_FUNC md5_end(void *resbuf, md5_ctx_t * ctx)
 	((uint32_t *) resbuf)[3] = SWAP_LE32(ctx->D);
 
 	return resbuf;
+}
+
+char *hash_file(char *filename, char *hashbuf)
+{
+	unsigned char buf[1];
+	md5_ctx_t MD;
+	md5_begin(&MD);
+	FILE *in = fopen(filename, "rb");
+	if (in == NULL) {
+		return NULL;
+	}
+	while (1) {
+		int c = getc(in);
+		if (c == EOF)
+			break;
+		buf[0] = c;
+		md5_hash(buf, 1, &MD);
+	}
+	fclose(in);
+	md5_end((unsigned char *)hashbuf, &MD);
+	return hashbuf;
+}
+
+char *hash_file_string(char *filename, char *hashbuf)
+{
+	char hash[16];
+	int i;
+	if (!hash_file(filename, hash))
+		return NULL;
+	for (i = 0; i < 16; i++) {
+		unsigned int k = hash[i];
+
+		sprintf(hashbuf, "%s%X", hashbuf, k & 0xff);
+	}
+	return hashbuf;
 }
