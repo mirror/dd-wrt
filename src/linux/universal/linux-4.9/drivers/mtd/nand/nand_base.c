@@ -4842,9 +4842,9 @@ int nand_scan_tail(struct mtd_info *mtd)
 	}
 	ecc->total = ecc->steps * ecc->bytes;
 	if (ecc->total > mtd->oobsize) {
-		WARN(1, "Total number of ECC bytes exceeded oobsize\n");
-		ret = -EINVAL;
-		goto err_free;
+		printk(KERN_WARNING "Total number of ECC bytes exceeded oobsize (ecc total %d, oobsize %d)\n", ecc->total, mtd->oobsize);
+//		ret = -EINVAL;
+//		goto err_free;
 	}
 
 	/*
