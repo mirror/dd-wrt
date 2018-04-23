@@ -155,6 +155,7 @@ void vpnserver_StopProcess()
 // WinMain function
 int vpnserver_main(int argc, char *argv[])
 {
+	InitProcessCallOnce();
 //	VgUseStaticLink();
 
 #ifdef	OS_WIN32
