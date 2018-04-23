@@ -208,14 +208,18 @@ static int detect_driver(char **drivers, char *list, int delay, int insmod)
 	return rcc;
 }
 
-static int detect_drivers(char *enabled, char *list, char **driverset, int delay, int insmod)
+static int detect_drivers(char *buspath, char *enabled, char *list, char **driverset, int delay, int insmod)
 {
 	char word[256];
 	char *next, *wordlist;
 	int rcc = 0;
-	if (!nvram_matchi(enabled, 1)) {
+	char s_hash[32];
+	char *hash = hash_file_string(buspath, s_hash);
+	if (!hash)
+		return 0;	// bus not present. ignore
+	if (!nvram_match(enabled, hash)) {	// hash does not match, bus has been changed. so redetect drivers
 		rcc = detect_driver(driverset, list, delay, insmod);
-		nvram_seti(enabled, 1);
+		nvram_set(enabled, hash);	// store new hash
 		nvram_commit();
 	} else {
 		wordlist = nvram_safe_get(list);
@@ -234,13 +238,13 @@ static int detect_drivers(char *enabled, char *list, char **driverset, int delay
 
 static int detect_pcidrivers(void)
 {
-	return detect_drivers("pci_detected", "pcidrivers", pcidrivers, 0, 0);
+	return detect_drivers("/proc/bus/pci/devices", "pci_detected", "pcidrivers", pcidrivers, 0, 0);
 }
 
 static int detect_usbdrivers(void)
 {
 	insmod("usb-common usbcore usbnet cdc_ether cdc_ncm dcd-wdm");
-	return detect_drivers("usb_detected", "usbdrivers", usbdrivers, 0, 1);
+	return detect_drivers("/proc/bus/usb/devices", "usb_detected", "usbdrivers", usbdrivers, 0, 1);
 }
 
 static int detect_ethernet_devices(void)
