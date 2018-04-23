@@ -133,9 +133,6 @@ extern int dd_snprintf(char *str, int len, const char *fmt, ...);
 #define snprintf(output,len,format,args...) dd_snprintf(output, len,format, ## args)
 #endif
 
-char *hash_file_string(char *filename, char *hashbuf);
-char *hash_file(char *filename, char *hashbuf);
-
 #ifdef MEMDEBUG
 
 void *mymalloc(int size, char *func);
