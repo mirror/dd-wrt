@@ -8,6 +8,6 @@ struct at803x_platform_data {
        int fixup_rgmii_tx_delay:1;
        int has_reset_gpio:1;
        int reset_gpio;
-;
+};
 
 #endif /* _PHY_AT803X_PDATA_H */
