@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4045 | brainslayer | 2018-04-26 08:26:22 +0200 (Thu, 26 Apr 2018) | 1 line
+
+fix vht160 operation with newer firmwares (testing only)
+------------------------------------------------------------------------
 r4044 | brainslayer | 2018-04-23 21:55:29 +0200 (Mon, 23 Apr 2018) | 1 line
 
 announce AP_VLAN cap for ath10k
