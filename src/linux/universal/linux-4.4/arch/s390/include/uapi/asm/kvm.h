@@ -151,7 +151,7 @@ struct kvm_guest_debug_arch {
 #define KVM_SYNC_ARCH0  (1UL << 4)
 #define KVM_SYNC_PFAULT (1UL << 5)
 #define KVM_SYNC_VRS    (1UL << 6)
-#define KVM_SYNC_BPBC	(1UL << 10)
+#define KVM_SYNC_BPBC   (1UL << 10)
 /* definition of registers in kvm_run */
 struct kvm_sync_regs {
 	__u64 prefix;	/* prefix register */
