@@ -93,7 +93,6 @@ include rules/gpsd.mk
 include rules/libpng.mk
 include rules/libgd.mk
 include rules/libmcrypt.mk
-include rules/php5.mk
 include rules/php7.mk
 include rules/openssl.mk
 include rules/rp-l2tp.mk
